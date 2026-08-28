@@ -79,23 +79,23 @@ var ob={step:0, name:'', mode:'draw', pick:'', strokes:null, ch:'', lid:''};
      3 the letters page
      4 the words page
      5 the grammar page
-     6 the timeline, in the letters just drawn
-     7 name the language
-     8 sign in
+     6 name the language
+     7 sign in
 
    OWNER 2026-08-28: 「キーボードの後、文字のページ、単語のページ、文法のページ、
-   君の文字でSNSを見てみよう（モックのページ）→君の言語を決めよう→ログイン」
+   …→君の言語を決めよう→ログイン」
 
-   Steps 2 to 5 are the app's own finished screens, walked -- 「オンボーディング
-   は追加だから基本完成したページを見せて欲しい。指でここ押すんだよみたいなやつは
-   他のページでもそのまま使って」 OWNER 2026-08-28. Nothing is drawn twice: the
-   walk points at what is already there.
+   Every stop is one of the app's OWN finished screens -- 「オンボーディングは
+   追加だから基本完成したページを見せて欲しい。指でここ押すんだよみたいなやつは
+   他のページでもそのまま使って」 OWNER 2026-08-28. Nothing here draws a picture
+   of a screen; the walk points at what is already there.
 
-   Step 6 is the one that is NOT the app's own screen, and that is not a
-   choice made here. vFeed() in www/sns.js answers snsLocked() to anybody with
-   no account, and the account is step 8 -- so the real timeline shown at this
-   point in the walk is a sign-in form. 「モックのページ」 is the owner's own
-   word for it and obSnsHTML() below is it.
+   THERE IS NO MOCK OF A TIMELINE, and there is not going to be one made up
+   out of nothing. The owner asked for 「君の文字でSNSを見てみよう（モックの
+   ページ）」 and what was built for it was invented people saying invented
+   words -- 「snsの画面それなに？ゴミはいらねえよ」 OWNER 2026-08-28. It is
+   gone. Anything that stands here later has to be somebody's real writing,
+   not something this file made up.
 
    The door was put FIRST once and that was a misreading of
    「とりあえずログインして、文字を書くところからやな」, which is what to
@@ -109,11 +109,11 @@ var ob={step:0, name:'', mode:'draw', pick:'', strokes:null, ch:'', lid:''};
 
    Steps 2 to 5 are not screens of this file. They are the app itself, walked
    with everything but one thing greyed out -- OB_TOUR_STOPS below. The dots
-   count the four SCREENS the onboarding has, in the order they come: the
-   drawing, the timeline, the name, the door. The walk is not one of them,
-   because while it is running the app is showing its own screens and vOb() is
-   not on the page at all. */
-var OB_STEPS=4;
+   count the three SCREENS the onboarding has, in the order they come: the
+   drawing, the name, the door. The walk is not one of them, because while it
+   is running the app is showing its own screens and vOb() is not on the page
+   at all. */
+var OB_STEPS=3;
 /* Which step is which, by name, because 0 1 2 3 in eight places is four
    chances to renumber three of them.
 
@@ -135,14 +135,14 @@ var OB_STEPS=4;
    on 2026-08-26 and that decision stands. Draw, name, and then sign in with
    no way past it.
 
-   The four the dots count are 0, 1, 2 and 3, in the order they happen. The
-   walk is last on purpose and not because it happens last -- it is not a
-   screen of this file at all, vOb() is not on the page while it runs, so
-   keeping it outside the counted range is what lets obDots() stay a plain
-   loop. The numbers are in the order the screens COME, which is what makes
-   `i<=s` in obDots() the right test: the walk runs between OB_DRAW and
-   OB_SNS, and nothing on the screen counts it. */
-var OB_DRAW=0, OB_SNS=1, OB_NAME=2, OB_IN=3, OB_TOUR=4;
+   The three the dots count are 0, 1 and 2, in the order they happen. The walk
+   is last on purpose and not because it happens last -- it is not a screen of
+   this file at all, vOb() is not on the page while it runs, so keeping it
+   outside the counted range is what lets obDots() stay a plain loop. The
+   numbers are in the order the screens COME, which is what makes `i<=s` in
+   obDots() the right test: the walk runs between OB_DRAW and OB_NAME, and
+   nothing on the screen counts it. */
+var OB_DRAW=0, OB_NAME=1, OB_IN=2, OB_TOUR=3;
 
 /* ---- the walk through the app itself -----------------------------------
    Steps three to six of the owner's order are not screens of their own. They
@@ -215,9 +215,8 @@ function obTourAt(){
   if(n.r===c.r && n.a===c.a) return;
   if(here().r===n.r && String(here().a||'')===n.a){ obTour++; }
 }
-/* Done with the walk through the app. What is after it is the timeline in
-   the letters just drawn, and the name after that. */
-function obTourDone(){ obGo(OB_SNS); }
+/* Done with the walk through the app. What is after it is the name. */
+function obTourDone(){ obGo(OB_NAME); }
 /* And back out of it, one stop at a time.
 
    There was no way back inside the walk at all: obBack() ended at
@@ -336,8 +335,12 @@ function obTourHTML(){
        supposed to be over -- invisibly, because it has no colour. */
     ((st.lt || st.look || !b)? '<button class="obtap"' + DO('obTourNext') +
               ' style="position:fixed;background:none;z-index:42;'+
-              (b? 'left:'+Math.round(b.left)+'px;top:'+Math.round(b.top)+'px;'+
-                  'width:'+Math.round(b.width)+'px;height:'+Math.round(b.height)+'px'
+              /* THE WHOLE HOLE, not the lit thing alone. The hand stands under
+                 what it points at and is a HOLE in the grey too -- and it was
+                 outside this button, so the one thing on the screen saying
+                 "press" was the one place a press did nothing. Everything
+                 bright is pressable now, which is also what the grey means. */
+              (b? 'left:'+x+'px;top:'+y+'px;width:'+w+'px;height:'+h+'px'
                 : 'left:0;top:0;width:100%;height:100%')+'"'+
               ' aria-label="'+esc(t(st.lab))+'"></button>' : '')+
     /* THE MOMENT. 「aが自作文字に変わる瞬間みたいなの見せたい」
@@ -496,12 +499,13 @@ function obBack(){
     if(ob.pick){ ob.pick=''; render(); return; }      /* out of one script, back to the fifteen */
     ob.mode='draw'; render(); window.scrollTo(0,0); return;
   }
-  /* Out of the timeline is back INTO the walk, at the stop it was left on --
-     not out of the walk and not past it. obTour is still sitting where the
-     walk ended, because obTourDone() no longer clears it. This is the press
-     the owner made: one back from the step after the walk used to land on the
-     drawing square, four screens away. */
-  if(ob.step===OB_SNS){ ob.step=OB_TOUR; GE=null; obTourGo(); return; }
+  /* Out of the name is back INTO the walk, at the stop it was left on -- not
+     out of the walk and not past it. obTour is still sitting where the walk
+     ended, because obTourDone() no longer clears it. This is the press the
+     owner made: one back from the step after the walk used to land on the
+     drawing square, four screens away.
+     「一個戻るボタンしたら書くところからになるのクソ」 OWNER 2026-08-28. */
+  if(ob.step===OB_NAME){ ob.step=OB_TOUR; GE=null; obTourGo(); return; }
   if(ob.step>0) obGo(ob.step-1);
 }
 function obLang(v){ SET.ui=v; save(); render(); }
@@ -1045,88 +1049,6 @@ function obNameHTML(){
    the title is there whenever the answer arrives. */
 function obNameLater(){ ob.name=''; obGo(OB_IN); }
 
-/* ---- the timeline, in the letters just drawn ---------------------------
-   「君の文字でSNSを見てみよう（モックのページ）」 OWNER 2026-08-28.
-
-   Every other stop of the walk is one of the app's own finished pages
-   -- 「オンボーディングは追加だから基本完成したページを見せて欲しい」 -- and
-   this one cannot be, which is not a choice made here: vFeed() in www/sns.js
-   answers snsLocked() to anybody with no account, and the account is the step
-   AFTER this one. Walked for real at this point, the timeline is a sign-in
-   form. 「モックのページ」 is the owner's own word for what goes here instead.
-
-   NOTHING ON IT IS PRESSABLE, and that is the whole of what makes it honest.
-   There is no account, no post, nobody followed and no thread -- so a row that
-   answered a press would be a row promising something that is not there. It is
-   a picture of a timeline, and the way on is the one button under it.
-
-   The classes are the timeline's own -- .post .pav .pbody .phead .pheadn
-   .pname .pwhen .pline. Nothing new is styled and no corner is added: this
-   page owns no CSS at all. */
-/* The ALPHABET, and neither of the other two kinds. ltOfKind() in www/sound.js
-   is the one place that splits the three, so this asks it rather than filtering
-   LETTERS again -- a row of digits is not what a line of writing looks like,
-   and neither is `?` standing in the middle of a word. It came out as `kt ?ab`
-   before this line, which is why the split is asked for rather than guessed.
-
-   The ones with a FACE come first, and that is the whole point of the page:
-   somebody who has drawn three letters should see those three, not the
-   twenty-five slots they have not touched yet. After them the rest of the
-   alphabet, in the order the alphabet is in, so a line is still a line.
-   ltInk()'s question -- strokes, or a character borrowed from a script -- is
-   what "has a face" means, and it is asked the same way here. */
-function obSnsHasFace(l){ return !!(l && ((l.st && l.st.length) || l.ch)); }
-function obSnsLts(){
-  var all=ltOfKind('alpha');
-  return all.filter(obSnsHasFace).concat(all.filter(function(l){ return !obSnsHasFace(l); }));
-}
-/* A line of them, `ws` words of `per` letters, starting `from` letters in.
-
-   ONE SPAN PER LETTER, and not one span around the line. `.sfont` is the app's
-   one way of setting text in the letters somebody drew -- the font
-   installScriptFont() has already built -- and a letter with no shape falls
-   back to roman there exactly as it does on every other screen of this app,
-   which is what a half-drawn alphabet has always looked like here. What is on
-   this line is the ALPHABET, letter by letter, and not a sentence anybody
-   wrote: one span each is the page saying so, and it is what the i18n mirror
-   reads it as -- letters, which are this language's, rather than words in
-   English somebody forgot to translate. */
-function obSnsLine(from, ws, per){
-  var lts=obSnsLts(), out='', i, j, n=0, nm;
-  if(!lts.length) return '';
-  for(i=0;i<ws;i++){
-    if(i) out+='<span class="sfont"> </span>';
-    for(j=0;j<per;j++){
-      nm=String(ltName(lts[(from+n)%lts.length])||'');
-      n++;
-      if(nm) out+='<span class="sfont">'+esc(nm)+'</span>';
-    }
-  }
-  return out;
-}
-/* One row of it. postWhen() is the app's one place for how long ago a thing
-   was written, so the mock says it the same way every real post does. */
-function obSnsRow(who, ago, from, ws, per){
-  return '<div class="post">'+
-    '<div class="pav"></div>'+
-    '<div class="pbody">'+
-      '<div class="phead"><div class="pheadn">'+
-        '<span class="pname">'+esc(t(who))+'</span>'+
-        '<span class="pwhen">'+esc(postWhen(Date.now()-ago))+'</span>'+
-      '</div></div>'+
-      '<div class="pline">'+obSnsLine(from, ws, per)+'</div>'+
-    '</div></div>';
-}
-function obSnsHTML(){
-  return '<div class="mid obleft">'+
-    '<h2 class="obh">'+t('ob.sns.h')+'</h2>'+
-    '<div class="body">'+
-      obSnsRow('ob.sns.a1', 8*60*1000, 0, 2, 3)+
-      obSnsRow('ob.sns.a2', 95*60*1000, 3, 3, 2)+
-    '</div></div>'+
-    '<div class="obfoot"><button class="btn"' + DO('obSnsGo') + '>'+t('ob.next')+'</button></div>';
-}
-function obSnsGo(){ obGo(OB_NAME); }
 
 /* ---- one letter -------------------------------------------------------
    The app used to pick a sound out of the inventory, put "the letter for k"
@@ -1370,7 +1292,6 @@ function vOb(){
   var h = door? obDoorHTML()
         : (s===OB_DRAW && ob.mode==='borrow')? obBorrowHTML()
         : (s===OB_DRAW)? obDrawHTML()
-        : (s===OB_SNS)? obSnsHTML()
         : obNameHTML();
   return '<div class="ob view'+(door?' center':'')+'">'+head+h+'</div>';
 }
