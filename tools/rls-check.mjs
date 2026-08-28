@@ -82,6 +82,10 @@ const H3 = 'a0000000-0000-4000-8000-0000000000f3';  /* nothing, and newer than H
 const H4 = 'a0000000-0000-4000-8000-0000000000f4';  /* nothing, and older */
 const H5 = 'a0000000-0000-4000-8000-0000000000f5';  /* older than the window */
 const H3b= 'a0000000-0000-4000-8000-0000000000f6';  /* nothing, and newer than H4 */
+/* A search A starred. What somebody looks for is as much about them as
+   what they write, so B tries every way to it that there is. */
+const SV = 'c0000000-0000-4000-8000-0000000000c1';  /* A\u2019s starred search */
+const SV2= 'c0000000-0000-4000-8000-0000000000c2';  /* the one B tries to plant */
 const LD = 'd0000000-0000-4000-8000-00000000000d';  /* the language it makes anyway */
 const LB = 'b0000000-0000-4000-8000-00000000000b';  /* and the frozen account's */
 
@@ -651,6 +655,40 @@ const CASES = [
   ['nobody weighs more than anybody else',    'denied', A, 0,
     `select 1 from profile where feed_weight(id) <> 1`],
 
+  /* --- and a search somebody starred, which is the other one -------------
+     Weaker than a draft and still nobody else's: what a person looks for
+     says as much about them as what they write. The same four attempts, and
+     the read first for the same reason -- it is the one that costs somebody
+     something even when nothing is written, and the one a `using (true)`
+     would hand over without a sound. */
+  ['A stars a search',                        'ok',     A, 0,
+    `insert into saved_search(id,author,q) values ('${SV}','${A}','kano')`],
+  ['and reads it back',                       'ok',     A, 0,
+    `select 1 from saved_search where id='${SV}'`],
+  ['B cannot read what A looks for',          'denied', B, 0,
+    `select 1 from saved_search where id='${SV}'`],
+  ['B cannot change it',                      'denied', B, 0,
+    `update saved_search set q='x' where id='${SV}'`],
+  ['B cannot delete it',                      'denied', B, 0,
+    `delete from saved_search where id='${SV}'`],
+  ['nor can somebody with no account read one', 'denied', D, 1,
+    `select 1 from saved_search where id='${SV}'`],
+  ['B cannot star a search onto A',           'denied', B, 0,
+    `insert into saved_search(id,author,q) values ('${SV2}','${A}','kano')`],
+  ['B stars one of their own',                'ok',     B, 0,
+    `insert into saved_search(id,author,q) values ('${SV2}','${B}','tir')`],
+  ['nor hand it to A',                        'denied', B, 0,
+    `update saved_search set author='${A}' where id='${SV2}'`],
+  /* The same words twice is the same star. Without it the phone would have
+     two rows saying one thing and no way to tell which one the person meant
+     to unstar. */
+  ['starring the same words twice is once',   'denied', A, 0,
+    `insert into saved_search(author,q) values ('${A}','kano')`],
+  /* And an empty star is not a search. A row saying nothing is a row the
+     screen has to draw and nobody can act on. */
+  ['and an empty one is not a search',        'denied', A, 0,
+    `insert into saved_search(author,q) values ('${A}','')`],
+
   /* --- a draft, which is the one thing here that is nobody else's ---------
      Every other table in this file is either already public or on its way to
      being public, and their select policies say so. `draft` is what somebody
@@ -943,6 +981,20 @@ const SHAPE = [
      )) q`, '0'],
   ['and nothing older than the window is in it', `
      select count(*) from feed_hot(500) where body ? 'old'`, '0'],
+  /* Both of the private tables, in one statement. The reason is written over
+     draft's: the three attempts above CANNOT catch a widened update or delete
+     on their own, because PostgreSQL makes an UPDATE or a DELETE with a WHERE
+     find its rows through the SELECT policy first -- so while the read is
+     narrow those two are refused by the read and not by the policy they are
+     named after. Asked of the catalog, where it holds whatever the read says. */
+  ['what is nobody else\u2019s says so in all four policies', `
+     select count(*) from (select 1 from (values
+       ('draft'),('saved_search')) t(tbl)
+       cross join (values ('SELECT'),('INSERT'),('UPDATE'),('DELETE')) v(cmd)
+       where not exists (select 1 from pg_policies p
+                          where p.tablename=t.tbl and p.cmd=v.cmd
+                            and coalesce(p.qual,'') || coalesce(p.with_check,'')
+                                like '%auth.uid()%')) q`, '0'],
   ['a draft is the author\u2019s in all four policies', `
      select count(*) from (select 1 from (values
        ('SELECT'),('INSERT'),('UPDATE'),('DELETE')) v(cmd)

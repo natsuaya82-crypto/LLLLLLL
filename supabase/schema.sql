@@ -339,6 +339,33 @@ create table if not exists draft (
 );
 create index if not exists draft_author_idx on draft(author, updated_at desc);
 
+-- ---- looked for, and kept -------------------------------------------------
+-- A search somebody starred. 「SNSは全部サーバー」 OWNER -- a search is
+-- something a person keeps, so it is theirs on the server and not a habit one
+-- phone remembers.
+--
+-- The WORDS and not the results. What a saved search means is "ask this
+-- again", and a list of ids frozen on the day it was starred would be the one
+-- thing it must not be: a search that stopped searching.
+--
+-- Nobody else's business, the same as `draft` and for a weaker but real
+-- reason: what somebody looks for says as much about them as what they write.
+-- All four policies are the author's.
+--
+-- `unique (author, q)` so starring the same words twice is the same star
+-- rather than two rows that must then be told apart. It also makes the words
+-- the name of the row -- the phone can drop one by what it says, which is
+-- what it has in hand, without first asking what its id is.
+create table if not exists saved_search (
+  id         uuid primary key default gen_random_uuid(),
+  author     uuid not null references profile(id) on delete cascade,
+  q          text not null check (q <> '' and length(q) <= 200),
+  created_at timestamptz not null default now(),
+  unique (author, q)
+);
+create index if not exists saved_search_author_idx
+  on saved_search(author, created_at desc);
+
 -- A word taken from somebody else's language and used in a post. This is the
 -- citation, and it is a table rather than a field in body because it is the
 -- thing being counted: how often a language is spoken by people who did not
@@ -475,6 +502,7 @@ alter table follow      enable row level security;
 alter table block       enable row level security;
 alter table report      enable row level security;
 alter table draft       enable row level security;
+alter table saved_search enable row level security;
 
 -- One question, and until 2026-08-26 there were two.
 --
@@ -704,6 +732,18 @@ create policy draft_edit on draft for update using (is_member() and author = aut
                                             with check (author = auth.uid());
 drop policy if exists draft_drop on draft;
 create policy draft_drop on draft for delete using (is_member() and author = auth.uid());
+
+-- saved_search: the same four sentences `draft` makes, for the same reason.
+-- What somebody looks for is theirs, reading included.
+drop policy if exists saved_read on saved_search;
+create policy saved_read on saved_search for select using (is_member() and author = auth.uid());
+drop policy if exists saved_make on saved_search;
+create policy saved_make on saved_search for insert with check (is_member() and author = auth.uid());
+drop policy if exists saved_edit on saved_search;
+create policy saved_edit on saved_search for update using (is_member() and author = auth.uid())
+                                                  with check (author = auth.uid());
+drop policy if exists saved_drop on saved_search;
+create policy saved_drop on saved_search for delete using (is_member() and author = auth.uid());
 
 -- quote: readable by everyone, because the count is the point. Written only by
 -- the author of the post it sits in -- so nobody can inflate somebody else's

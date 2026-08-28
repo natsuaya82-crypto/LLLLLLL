@@ -1030,6 +1030,46 @@ function netFindPosts(q, ok, bad, more){
       ok(out);
     }, bad);
 }
+/* ---- what somebody looks for, kept -------------------------------------
+
+   A starred search. 「SNSは全部サーバー」 OWNER -- what a person keeps is
+   theirs, so it is a row and not a habit one phone remembers.
+
+   The WORDS and not the results: a saved search means "ask this again", and
+   a list of ids frozen on the day it was starred would be a search that had
+   stopped searching. netFindPosts() and netFindWho() are what it is handed to.
+
+   `saved_search` in supabase/schema.sql is unique on (author, q), so the
+   words ARE the name of the row -- which is why dropping one takes the words
+   and not an id. The phone has the words in its hand; asking what their id
+   was first would be a request to find out something it already knows. */
+function netSearchSaved(ok, bad){
+  if(!netMember()){ ok([]); return; }
+  netGet('/rest/v1/saved_search?select=id,q,created_at&order=created_at.desc'+
+         '&limit='+NET_PAGE,
+    function(d){
+      var out=[], i, r;
+      for(i=0;i<(d||[]).length;i++){
+        r=d[i]||{};
+        out.push({id:r.id||'', q:String(r.q||''),
+                  at:Date.parse(r.created_at)||0});
+      }
+      ok(out);
+    }, bad || function(){});
+}
+function netSearchSave(q, ok, bad){
+  var w=String(q||'').replace(/^\s+|\s+$/g, '');
+  if(!netMember() || !w){ ok && ok(); return; }
+  netSend('POST', '/rest/v1/saved_search', {author:SESS.uid, q:w}, SESS.at,
+          function(){ ok && ok(); }, bad || function(){});
+}
+function netSearchDrop(q, ok, bad){
+  var w=String(q||'').replace(/^\s+|\s+$/g, '');
+  if(!netMember() || !w){ ok && ok(); return; }
+  netSend('DELETE', '/rest/v1/saved_search?author=eq.'+
+          encodeURIComponent(SESS.uid)+'&q=eq.'+encodeURIComponent(w),
+          null, SESS.at, function(){ ok && ok(); }, bad || function(){});
+}
 /* ---- the bytes ---------------------------------------------------------
    A photograph is not a field of a post. It is half a megabyte, and a
    timeline of fifty posts carrying their own pictures is forty megabytes
