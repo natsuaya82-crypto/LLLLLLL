@@ -2031,7 +2031,9 @@ function kbFreeQ(){
 HELP.kbfree=function(){
   return {t:t('kb.title'), h:
     '<div class="note">'+esc(t('kb.is'))+'</div>'+
-    '<div class="note">'+esc(t('kb.is.free'))+'</div>'};
+    /* Board 0 is this same keyboard on the paid plan, where there is nothing
+       to upgrade to. */
+    (can('kb')? '' : '<div class="note">'+esc(t('kb.is.free'))+'</div>')};
 };
 function vKb(){
   /* The free plan has a keyboard. It was shown a wall.
@@ -2059,9 +2061,16 @@ function vKb(){
       kbHTML(null, true)+
       kbFreeQ()+
       kbSysHTML()+
-      /* the same, on the free plan's face of this screen */
-      '<button class="btn ghost" style="width:100%;margin-top:12px"' + DO('goPlans') + '>'+
-        t('up.cta')+'</button>'+
+      /* The way to a second keyboard, in the place the paid list keeps it and
+         wearing the same +. Pressing it on this plan opens what it would
+         give rather than the chooser -- which is where the Upgrade that used
+         to sit at the foot of this screen went. 「アップグレードボタンそこ
+         じゃなくて、キーボードを足そうとするとポップ出るようにしてよ」
+         OWNER 2026-08-28. A button at the foot is a price with nothing
+         asked for; the same words arriving when somebody reaches for the
+         thing are an answer. */
+      '<div class="kblist"><button class="kbadd"' + DO('kbNew') + '>'+ICON_ADD+
+        '<span>'+esc(t('kb.new'))+'</span></button></div>'+
       '</div></div>';
   /* The keyboard, and the row of the ones there are above it. There is no
      "nothing built yet" face any more: kbBoards() answers with the one
@@ -2841,8 +2850,15 @@ function kbToolHTML(){
 /* Making another is choosing a pattern again, on a screen of its own rather
    than a row that pushes the keyboard off the page. */
 function kbNew(){
+  /* The one road to a keyboard of your own, so it is the one place that
+     answers somebody who cannot take it yet. */
+  if(!can('kb')){ openForm('kbup', t('kb.new'),
+    '<div class="note">'+esc(t('kb.up.d'))+'</div>'+
+    '<button class="btn ghost" style="width:100%;margin-top:12px"' + DO('goPlans') + '>'+
+      t('up.cta')+'</button>'); return; }
   openForm('kbnew', t('kb.new'), kbPatsHTML('kbAdd'), function(){ geTiles(); });
 }
+FORM_OPEN.kbup=function(){ kbNew(); };
 FORM_OPEN.kbnew=function(){ kbNew(); };
 /* The pattern of a keyboard that already exists. It could only be chosen when
    the keyboard was made, so somebody who wanted flick after building a QWERTY
