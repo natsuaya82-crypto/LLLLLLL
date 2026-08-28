@@ -2203,10 +2203,16 @@ a.set{text-decoration:none}
    is what a thumb presses to get back into a line, and a 40x16 target on a
    photograph is one somebody has to aim at. The text of a one-line input is
    centred in its box, so the line still sits where its canvas drew it. */
+/* A textarea now, and centred: a line on a photograph wraps inside the
+   picture rather than leaving it 「インスタと同じようにやって」 OWNER
+   2026-08-28. `pwMarkFit()` gives it the width the canvas wraps at and the
+   height what is in it comes to, so it never scrolls -- which is why the
+   overflow is hidden and the corner is not draggable. */
 .mktx{position:absolute;transform:translate(-50%,-50%);
       min-width:44px;min-height:44px;
       background:none;border:0;padding:0;outline:1px dashed rgba(255,255,255,.7);
-      outline-offset:3px;line-height:1;font-family:inherit;
+      outline-offset:3px;line-height:1.25;font-family:inherit;text-align:center;
+      resize:none;overflow:hidden;white-space:pre-wrap;overflow-wrap:break-word;
       -webkit-appearance:none;appearance:none}
 .mktx::placeholder{color:rgba(255,255,255,.5)}
 .mktx:focus{outline:1px dashed rgba(255,255,255,.9)}

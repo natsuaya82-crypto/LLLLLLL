@@ -1548,12 +1548,16 @@ function pwMarkHTML(){
          did not look like the answer.
          「薄灰色のやつ消して天仙のやつが実質その役割」 */
       ((!cr && sel)
-        ? '<input class="mktx sfont mkink c'+
+        /* A textarea, not an input: an input is one row that scrolls sideways
+           forever, and a line on a photograph wraps inside the picture now
+           「インスタと同じようにやって」. The value goes between the tags,
+           which is where a textarea keeps it. */
+        ? '<textarea class="mktx sfont mkink c'+
             Math.max(0, PW_COLS.indexOf(pwMarkCol(sel)))+'" id="mk-tx" '+
-            'value="'+esc(sel.tx||'')+'" placeholder="'+esc(t('post.mark.ph'))+'" '+
+            'rows="1" placeholder="'+esc(t('post.mark.ph'))+'" '+
             'autocomplete="off" autocorrect="off" spellcheck="false" '+
             'style="top:'+(sel.y*100)+'%;left:'+(sel.x*100)+'%"' +
-            IN('pwMarkText') + '>'
+            IN('pwMarkText') + '>'+esc(sel.tx||'')+'</textarea>'
         : '')+
       (cr? pwCutHTML() : '')+
     '</div>'+
@@ -1765,6 +1769,58 @@ function pwMarkAdv(units){
   }
   return w;
 }
+/* ---- a line on a photograph WRAPS -------------------------------------
+   「インスタと同じようにやって」 OWNER 2026-08-28, asked what a line typed
+   onto a photograph should do when it is longer than the picture.
+
+   It ran off the side and kept going: the field grew to whatever was in it
+   (`pwMarkFit` set its width to its own scrollWidth) and the canvas drew one
+   run left to right, so a long line left the frame at both ends and what was
+   typed first was no longer on the picture. That is the same complaint the
+   fields inside the app were fixed for 「全部改行して画面内に文字が収まる
+   ようにして欲しい」, arriving on the one surface that is not a field.
+
+   So a mark is LINES now, wrapped at the width of the picture and stacked
+   centred on the point it was left at. Everything that needs to know how big
+   a mark is asks these three -- the drawing, the hit box and the bake -- the
+   way they already all asked pwMarkWide(). */
+/* Where a line may break. A drawn letter is a piece on its own, so a line of
+   made letters breaks between letters the way a line of Japanese does; a run
+   of ordinary text breaks at its spaces and nowhere else, so a word is not
+   cut in half. The space is kept on the end of the piece before it, which is
+   what makes it disappear at the end of a line. */
+function pwMarkAtoms(units){
+  var out=[], i, u, parts, j;
+  for(i=0;i<units.length;i++){
+    u=units[i];
+    if(u.st){ out.push({st:u.st}); continue; }
+    parts=String(u.t||'').split(/(\s+)/);
+    for(j=0;j<parts.length;j++) if(parts[j]!=='') out.push({t:parts[j]});
+  }
+  return out;
+}
+/* One cell of vertical room per line, and a quarter of one between them --
+   the same 1.25 the field's own font size is worked out with. */
+var PW_MARK_LEAD=1.25;
+/* The lines a mark comes to, at its own size, inside the picture. The width
+   to fill is the picture measured in this mark's cells: the picture is 1 wide
+   and a cell is `s` of it, so there are 800/s of the 800-unit cells across.
+   Nothing is dropped -- a single piece wider than the picture is a line of
+   its own rather than being cut, because cutting it would lose what somebody
+   drew. */
+function pwMarkLines(m){
+  var max=(m && m.s>0)? 800/m.s : 0,
+      atoms=pwMarkAtoms(pwMarkCut(m)),
+      out=[], cur=[], w=0, i, aw, a;
+  for(i=0;i<atoms.length;i++){
+    a=atoms[i];
+    aw=a.st? ((inkAdv(a.st)||{w:800}).w) : String(a.t||'').length*440;
+    if(cur.length && max>0 && w+aw>max){ out.push(cur); cur=[]; w=0; }
+    cur.push(a); w+=aw;
+  }
+  if(cur.length) out.push(cur);
+  return out;
+}
 /* One line of shapes onto a canvas, at scale k, starting at ox/oy. */
 function pwMarkRun(x, units, k, ox, oy, col){
   var i, a, cur=ox;
@@ -1791,10 +1847,18 @@ function pwMarkRun(x, units, k, ox, oy, col){
    the line's own advance. Asked in one place because the drawing, the hit box
    and the bake all need the same answer. */
 function pwMarkWide(m){
-  return m.s*(pwMarkAdv(pwMarkCut(m))/800);
+  var ls=pwMarkLines(m), w=0, i, a;
+  for(i=0;i<ls.length;i++){ a=pwMarkAdv(ls[i]); if(a>w) w=a; }
+  return m.s*(w/800);
+}
+/* And how TALL, which used to be `m.s` everywhere because a mark was one
+   line. One line still is; four are four, with a quarter cell between. */
+function pwMarkTall(m){
+  var n=pwMarkLines(m).length || 1;
+  return m.s*(1+(n-1)*PW_MARK_LEAD);
 }
 function pwMarkDraw(){
-  var ms=pwMarks(), els=document.querySelectorAll('canvas.mkc'), i, c, m, u, H, W,
+  var ms=pwMarks(), els=document.querySelectorAll('canvas.mkc'), i, j, c, m, u, H, W,
       dpr=window.devicePixelRatio||1, box=document.getElementById('mk-box');
   var bw=box? (box.getBoundingClientRect().width||300) : 300;
   for(i=0;i<els.length;i++){
@@ -1802,17 +1866,24 @@ function pwMarkDraw(){
     m=ms[parseInt(c.getAttribute('data-i'), 10)];
     if(!m) continue;
     c.style.width=(pwMarkWide(m)*100)+'%';
+    c.style.height='auto';
     c.style.left=(m.x*100)+'%';
     c.style.top=(m.y*100)+'%';
     /* The one being typed is drawn by the field itself -- it is the field --
        so its canvas would be the same line twice, half a pixel apart. */
     c.style.display=(parseInt(c.getAttribute('data-i'), 10)===pwMarkAt)? 'none' : '';
-    u=pwMarkCut(m);
+    u=pwMarkLines(m);
     if(!u.length) continue;
+    /* One cell tall per line plus the lead between them, and as wide as the
+       longest line -- both asked of the same two functions the hit box and
+       the bake ask. Each line is centred in that width, the way a caption on
+       a photograph is centred and the way the field above it is. */
     H=Math.max(40, Math.round(m.s*bw*dpr));
-    W=Math.max(1, Math.round(H*(pwMarkAdv(u)/800)));
-    c.width=W; c.height=H;
-    pwMarkRun(c.getContext('2d'), u, H/800, 0, 0, cssVar(pwMarkCol(m)));
+    W=Math.max(1, Math.round(H*(pwMarkWide(m)/m.s)));
+    c.width=W; c.height=Math.max(1, Math.round(pwMarkTall(m)*bw*dpr));
+    for(j=0;j<u.length;j++)
+      pwMarkRun(c.getContext('2d'), u[j], H/800,
+        (W-H*(pwMarkAdv(u[j])/800))/2, j*H*PW_MARK_LEAD, cssVar(pwMarkCol(m)));
   }
 }
 /* The field is set at the size the line will be on the picture, which is a
@@ -1833,19 +1904,28 @@ function pwMarkFit(){
      So: rendered once at a hundred, and set to whatever size makes it as wide
      as pwMarkWide() -- the one place that says how wide a mark is -- says the
      line is. Whatever the two renderers disagree about, they agree here. */
-  var want=pwMarkWide(m)*bw, fs=m.s*bw*1.25, at100;
+  /* Measured with the wrapping OFF and on the WHOLE line, because what is
+     being measured is the ratio between the two renderers and not a width:
+     let it wrap here and the answer is the width of one column of letters. */
+  var flat=m.s*(pwMarkAdv(pwMarkCut(m))/800)*bw, fs=m.s*bw*1.25, at100;
+  e.style.whiteSpace='pre';
   e.style.width='0px';
+  e.style.height='auto';
   e.style.fontSize='100px';
   at100=e.scrollWidth;
-  if(at100>0 && want>0) fs=100*want/at100;
+  if(at100>0 && flat>0) fs=100*flat/at100;
   e.style.fontSize=Math.max(11, Math.round(fs))+'px';
-  /* And a field has no width that follows what is typed into it -- left and
-     right do not stretch one the way they stretch a box, so the line ran out
-     of its own frame. Narrowed to nothing, asked how wide what is in it came
-     out, set to that. Narrowing first is what makes it come back in on a
-     delete. */
-  e.style.width='0px';
-  e.style.width=Math.max(44, e.scrollWidth+4)+'px';
+  /* And then the field is the BLOCK: as wide as the widest line the picture
+     leaves room for, wrapping there, and as tall as what that comes to.
+     「インスタと同じようにやって」 OWNER 2026-08-28 -- a line longer than the
+     picture wraps and stacks rather than leaving the frame, and the field has
+     to break in the same place the canvas does or what you type is not what
+     the photograph gets. Both ask pwMarkLines(); the sizes agree because the
+     two renderers were reconciled three lines up. */
+  e.style.whiteSpace='';
+  e.style.width=Math.max(44, Math.round(pwMarkWide(m)*bw)+4)+'px';
+  e.style.height='auto';
+  e.style.height=Math.max(44, e.scrollHeight)+'px';
   e.style.left=(m.x*100)+'%';
   e.style.top=(m.y*100)+'%';
 }
@@ -1879,7 +1959,7 @@ function pwMarkWhere(ev){
 function pwMarkHit(p){
   var ms=pwMarks(), i, m, hw, hh;
   for(i=ms.length-1;i>=0;i--){
-    m=ms[i]; hw=pwMarkWide(m)/2; hh=m.s/2;
+    m=ms[i]; hw=pwMarkWide(m)/2; hh=pwMarkTall(m)/2;
     if(p[0]>=m.x-hw && p[0]<=m.x+hw && p[1]>=m.y-hh && p[1]<=m.y+hh) return i;
   }
   return -1;
@@ -1995,19 +2075,25 @@ function pwBakeOne(pc, done){
   if(!ms.length){ done(pc.u); return; }
   var im=new Image();
   im.onload=function(){
-    var c=document.createElement('canvas'), x, i, m, st, k, out;
+    var c=document.createElement('canvas'), x, i, j, m, st, k, out;
     c.width=im.width; c.height=im.height;
     x=c.getContext('2d');
     x.drawImage(im, 0, 0, c.width, c.height);
     for(i=0;i<ms.length;i++){
       m=ms[i];
-      st=pwMarkCut(m);
+      st=pwMarkLines(m);
       if(!st.length) continue;
-      /* The same numbers the screen used: the height is a fraction of the
-         picture's width, and the line is centred on the point it was left at. */
+      /* The same numbers the screen used, asked of the same two functions:
+         the height is a fraction of the picture's width, the block is centred
+         on the point it was left at, and each line is centred in the block.
+         A line that wraps on the screen and not in the file would be a
+         photograph that is not the one somebody arranged. */
       k=(m.s*c.width)/800;
-      pwMarkRun(x, st, k, m.x*c.width-(pwMarkWide(m)*c.width)/2,
-                m.y*c.height-(m.s*c.width)/2, cssVar(pwMarkCol(m)));
+      for(j=0;j<st.length;j++)
+        pwMarkRun(x, st[j], k,
+          m.x*c.width-(pwMarkAdv(st[j])*k)/2,
+          m.y*c.height-(pwMarkTall(m)*c.width)/2+j*m.s*c.width*PW_MARK_LEAD,
+          cssVar(pwMarkCol(m)));
     }
     try{ out=c.toDataURL('image/jpeg', POST_PICQ); }
     catch(e){ done(pc.u); return; }
