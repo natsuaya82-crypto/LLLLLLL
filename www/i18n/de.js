@@ -188,6 +188,8 @@ defLang('de', (function(){
       "kb.sys.go" : "Einstellungen öffnen",
       "kb.sys.no" : "Einstellungen ließen sich nicht öffnen",
       "kb.rom"               : "Ein Buchstabe auf jeder Taste",
+      "kb.is" : "Deine Buchstaben auf einer QWERTY. Genau das kommt aufs Telefon.",
+      "kb.is.free" : "Hier wird nichts gedrückt: dieser Bildschirm zeigt die Tastatur, getippt wird nicht.",
       "kb.reset"               : "Neu anfangen",
       "kb.pat.set" : "Anordnung",
       "kb.pat.q" : "Die Anordnung zu ändern löscht die auf dieser Tastatur eingerichteten Zeichen und Tasten.",

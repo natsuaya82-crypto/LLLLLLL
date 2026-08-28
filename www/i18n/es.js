@@ -160,6 +160,8 @@ defLang('es', (function(){
       "kb.sys.go" : "Abrir Ajustes",
       "kb.sys.no" : "No se pudieron abrir los Ajustes",
       "kb.rom"               : "Una letra en cada tecla",
+      "kb.is" : "Tus letras en un QWERTY. Es lo que va al teléfono.",
+      "kb.is.free" : "Aquí no se pulsa nada: esta pantalla enseña el teclado, no se escribe en ella.",
       "kb.reset"               : "Empezar de nuevo",
       "kb.pat.set" : "Disposición",
       "kb.pat.q" : "Cambiar la disposición borra las letras y teclas configuradas en este teclado.",

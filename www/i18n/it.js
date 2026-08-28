@@ -200,6 +200,8 @@ defLang('it', (function(){
       "kb.sys.go" : "Apri Impostazioni",
       "kb.sys.no" : "Impossibile aprire Impostazioni",
       "kb.rom"               : "Una lettera su ogni tasto",
+      "kb.is" : "Le tue lettere su una QWERTY. È ciò che va sul telefono.",
+      "kb.is.free" : "Qui non si preme nulla: questa schermata mostra la tastiera, non ci si scrive.",
       "kb.reset"               : "Ricomincia",
       "kb.pat.set" : "Disposizione",
       "kb.pat.q" : "Cambiare la disposizione elimina le lettere e i tasti impostati su questa tastiera.",

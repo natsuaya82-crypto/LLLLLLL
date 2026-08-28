@@ -207,6 +207,8 @@ defLang('pt', (function(){
       "kb.sys.go" : "Abrir Ajustes",
       "kb.sys.no" : "Não foi possível abrir os Ajustes",
       "kb.rom"               : "Uma letra em cada tecla",
+      "kb.is" : "Suas letras num QWERTY. É o que vai para o telefone.",
+      "kb.is.free" : "Aqui não se aperta nada: esta tela mostra o teclado, não se digita nela.",
       "kb.reset"               : "Recomeçar",
       "kb.pat.set" : "Disposição",
       "kb.pat.q" : "Mudar a disposição apaga as letras e teclas definidas neste teclado.",

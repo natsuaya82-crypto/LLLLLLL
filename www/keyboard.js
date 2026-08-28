@@ -2949,6 +2949,15 @@ function kbStepHTML(n, title, body){
 }
 HELP.kb=function(){
   return {t:t('kb.sys.h'), h:
+    /* What the thing on the screen IS, before how to switch it on. The four
+       steps answered "how do I use this on the phone" and nothing answered
+       "what am I looking at" -- which on the free plan is a QWERTY that
+       does not type, so the first thing anybody does is press it and get
+       nothing. 「キーボードも？に説明入れよう」 OWNER 2026-08-28.
+       The second line is free's alone: a paid keyboard IS pressed here,
+       that is what the editor is. */
+    '<div class="note">'+esc(t('kb.is'))+'</div>'+
+    (can('kb')? '' : '<div class="note">'+esc(t('kb.is.free'))+'</div>')+
     /* One step is one tap, and one tap is one photograph. It was two steps
        with both photographs stacked under the second -- so the step reading
        "turn on Full Access" carried a picture of a DIFFERENT page, the one

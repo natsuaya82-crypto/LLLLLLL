@@ -248,6 +248,8 @@ defLang('fr', (function(){
       "kb.sys.go" : "Ouvrir les Réglages",
       "kb.sys.no" : "Impossible d’ouvrir les Réglages",
       "kb.rom"               : "Une lettre sur chaque touche",
+      "kb.is" : "Vos lettres sur un QWERTY. C'est ce qui part sur le téléphone.",
+      "kb.is.free" : "On n'appuie sur rien ici : cet écran montre le clavier, on n'y écrit pas.",
       "kb.reset"               : "Recommencer",
       "kb.pat.set" : "Disposition",
       "kb.pat.q" : "Changer la disposition supprime les lettres et les touches définies sur ce clavier.",

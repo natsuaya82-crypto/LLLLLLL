@@ -102,6 +102,8 @@ defLang('en', (function(){
       "kb.sys.go" : "Open Settings",
       "kb.sys.no" : "Settings would not open",
       "kb.rom"               : "A letter on each key",
+      "kb.is" : "Your own letters on a QWERTY. It is what goes on the phone.",
+      "kb.is.free" : "Nothing here is pressed: this screen shows the keyboard, it is not typed on.",
       "kb.reset"               : "Start over",
       'kb.pat.set' : "Arrangement",
       'kb.pat.q' : "Changing the arrangement deletes the letters and keys set on this keyboard.",
