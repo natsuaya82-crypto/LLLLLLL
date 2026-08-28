@@ -218,6 +218,35 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### 引っ張って更新には、回るものを出す
+- Date: 2026-08-28
+- Area: タイムライン・検索の引っ張って更新
+- Decision:
+
+  オーナーの原文はこれだけです:
+
+  ```
+  クルクル出ないけど？
+  ```
+
+  そのうえでリーダーが二択で訊きました ── 出す / いまのまま出さない。
+  **オーナーは出すほうを選びました。**（原文ではなく選択です。地の文で書く。）
+
+  **引っ張って更新（`pullStart`/`pullMove`/`pullEnd`/`pullLet`）には、回る
+  ものを出す。**タイムラインと検索の二画面。
+
+  **下まで行ったら勝手に読む方（`snsMore*`）はこれに入りません。**そちらは
+  同じ日の「文字は出さない」がそのまま生きています。二つは別の道です。
+- Reason: 引っ張ったのに何も起きないと、引っ張れていないのか、繋がって
+  いないのかが分からない。
+- Affected features: `www/sns.js` の引っ張って更新
+- Affected data: 無し
+- Affected docs: この項、`www/sns.js` の該当コメント、`www/index.html` の
+  該当コメント ── **どちらも「スピナーは出さない」と書いてあるので、直す
+  コミットで消すこと**（`CLAUDE.md`「古いのは消す」）
+- Implementation status: 未着手。`claude/other`（`sns.js`）と `claude/post2`
+  （`index.html` の CSS）に配った
+
 ### 全部の升、触ったら選択。キーを入れるのは帯のボタン
 - Date: 2026-08-28
 - Area: キーボードの編集画面のシート
