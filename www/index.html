@@ -1886,10 +1886,6 @@ a.set{text-decoration:none}
 .pfst b{color:var(--tx);font-weight:700;font-size:.92rem}
 .pfst:active{color:var(--gold)}
 .pftabs{display:flex;border-bottom:1px solid var(--line)}
-/* The timeline's two are the same strip, out to both edges of the screen
-   the way the rows under them go. Inside the body's padding the rule
-   under them stopped 24px short at each end and read as a box. */
-.snstabs{margin:0 -24px}
 .pftab{flex:1;min-height:46px;background:none;border:0;border-bottom:2px solid transparent;
        font-family:inherit;font-size:.9rem;font-weight:600;color:var(--txm);padding:12px 4px}
 .pftab.on{color:var(--tx);border-bottom-color:var(--gold)}
@@ -2593,14 +2589,9 @@ button.spbig{display:block;width:100%;background:none;border:0;padding:0;font:in
                align-items:center;justify-content:center;gap:7px}
 .gtools svg{width:23px;height:23px;display:block;fill:none;stroke:currentColor;
             stroke-width:1.25;stroke-linecap:round;stroke-linejoin:round}
-.gtools .gcap{font-size:.82rem;letter-spacing:.16em;text-transform:uppercase;color:var(--txm);
-            max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .gtools button.on{color:var(--gold)}
-.gtools button.on .gcap{color:var(--gold)}
 .gtools button:disabled,.gtools button.off{opacity:.22}
 .gtools button:active{opacity:.55}
-html[lang="ja"] .gtools .gcap, html[lang="zh"] .gtools .gcap, html[lang="ko"] .gtools .gcap{
-  letter-spacing:.01em;font-size:.82rem}
 .ghintwrap{margin:18px 0 2px;display:flex;justify-content:center;margin-top:0}
 .ghint{width:100%;max-width:152px;aspect-ratio:1/1;display:block;opacity:.85;pointer-events:none}
 /* The one switch the whole feature turns on. Everything it changes is a
