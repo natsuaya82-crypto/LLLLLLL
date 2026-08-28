@@ -549,7 +549,7 @@ function openMe(){
 
        欄そのものは `lnField()`（www/shell.js の一箇所）。`<input>` は
        折り返せないので、書いた字が横に消えていた。 */
-    '<div class="picrow" style="align-items:center">'+
+    '<div class="picrow">'+
       '<label class="pav" style="position:relative;width:96px;height:96px">'+
         postFace({who:meName(), lname:langName, av:postAvatar()})+
         '<input type="file" id="me-pic" accept="image/*" '+

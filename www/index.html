@@ -2461,7 +2461,12 @@ a.set{text-decoration:none}
 .nbv{min-width:2.4em;text-align:center;font-size:1.05rem;color:var(--tx);
      font-variant-numeric:tabular-nums}
 .bpic{width:100%;height:100%;border-radius:999px;object-fit:cover;display:block}
-.picrow{display:flex;align-items:center;gap:14px;margin-bottom:4px}
+/* The face stands in the MIDDLE of the page. 「画像は中央寄せして」
+   OWNER 2026-08-28. It used to sit against the left because the name and the
+   handle stood beside it and a row starts at its left edge; with those moved
+   down to rows of their own, the face is the only thing on this line and a
+   line holding one thing has no left to start from. */
+.picrow{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:4px}
 .picrow .pav{width:64px;height:64px;flex:0 0 auto}
 /* The big letter is a button now: it is how the letter gets drawn. */
 button.spbig{display:block;width:100%;background:none;border:0;padding:0;font:inherit;color:inherit}
