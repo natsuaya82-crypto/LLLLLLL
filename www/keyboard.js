@@ -2288,14 +2288,55 @@ function kbDown(e){
      them". Asked once, here, while the layout still says what the page says. */
   if(!mate && kbSelN()>1 &&
      kbKeyIs(parseInt(b.getAttribute('data-r'), 10),
-             parseInt(b.getAttribute('data-k'), 10)))
+             parseInt(b.getAttribute('data-k'), 10))){
     KBD.run=kbSelKeys();
+    KBD.runEls=kbRunEls(KBD.run);
+  }
   KBD.timer=setTimeout(kbLift, 380);
+}
+/* ---- everything the finger is carrying ----------------------------------
+   「5個とか選択したら選択したのが持ち上がって動くようにしてよ」 OWNER
+   2026-08-28. Lifting, following the finger, coming out of the hit test and
+   being put back down are four things done to the SAME set, and that set is
+   the run when there is one and the single key otherwise. Said once here, so
+   the four cannot drift apart -- the way they had, with the lift on one key
+   and the landing on all of them.
+
+   A merged pair is not in it. kbPairMove() carries the two together already,
+   and the bottom half is a shadow -- the ROOM the tall key takes, drawn
+   clear -- so there is nothing there to raise. */
+function kbRunEls(ms){
+  var g=document.getElementById('kb'), out=[], e, i;
+  if(!g || !ms) return out;
+  for(i=0;i<ms.length;i++){
+    e=g.querySelector('.kbk[data-r="'+ms[i].r+'"][data-k="'+ms[i].i+'"]');
+    if(e) out.push(e);
+  }
+  return out;
+}
+function kbCarried(){
+  if(!KBD) return [];
+  return (KBD.runEls && KBD.runEls.length)? KBD.runEls : [KBD.el];
+}
+/* dx null puts them back where the layout says they are */
+function kbCarryAt(dx, dy){
+  var c=kbCarried(), v=(dx===null)? '' : 'translate('+dx+'px,'+dy+'px)', i;
+  for(i=0;i<c.length;i++) c[i].style.transform=v;
+}
+/* Out of the way of "what is under the finger", and straight back. A carried
+   key is directly under the finger and lifted above the others, so it is the
+   topmost thing at that point and answers the question itself. One key was
+   taken out while one key moved; a run has to take out all of them, or the
+   second key of it answers instead and the carry is silently refused. */
+function kbCarryHit(off){
+  var c=kbCarried(), i;
+  for(i=0;i<c.length;i++) c[i].style.pointerEvents=off? 'none' : '';
 }
 function kbLift(){
   if(!KBD) return;
   KBD.on=true;
-  KBD.el.classList.add('lift');
+  var c=kbCarried(), i;
+  for(i=0;i<c.length;i++) c[i].classList.add('lift');
   var g=document.getElementById('kb');
   if(g) g.classList.add('moving');
   /* And the keyboard goes into the state a phone's home screen goes into
@@ -2315,7 +2356,7 @@ function kbDragTo(e){
     return;
   }
   e.preventDefault();
-  KBD.el.style.transform='translate('+dx+'px,'+dy+'px)';
+  kbCarryAt(dx, dy);
   /* The key being carried is directly under the finger -- that is what
      carrying it means -- and it is lifted above the others, so it is the
      topmost thing at that point and elementFromPoint answered with IT every
@@ -2326,9 +2367,9 @@ function kbDragTo(e){
      So it is taken out of the hit test for the length of the question and put
      straight back. Nothing else can be asked instead: what is wanted is the
      key UNDER the one being carried. */
-  KBD.el.style.pointerEvents='none';
+  kbCarryHit(true);
   var over=kbKeyAt(document.elementFromPoint(p.clientX, p.clientY));
-  KBD.el.style.pointerEvents='';
+  kbCarryHit(false);
   if(!over || over===KBD.el) return;
   /* Into the row the finger is over, beside the key it is over -- which is
      what moving across rows means and is the half a one-dimensional grid
@@ -2362,13 +2403,13 @@ function kbDragTo(e){
     if(over===KBD.mate) return;
     if(!kbPairMove(row, over, carried.w)) return;
     KBD.x=p.clientX; KBD.y=p.clientY;
-    KBD.el.style.transform='';
+    kbCarryAt(null);
     return;
   }
   if(KBD.run){
     if(!kbRunMove(row, over)) return;
     KBD.x=p.clientX; KBD.y=p.clientY;
-    KBD.el.style.transform='';
+    kbCarryAt(null);
     return;
   }
   for(i=0;i<kids.length;i++){ if(kids[i]===KBD.el) a=i; if(kids[i]===over) b=i; }
@@ -2377,7 +2418,7 @@ function kbDragTo(e){
      gap in the keyboard that nothing can be put back into. */
   if(mine!==row && !mine.children.length) mine.parentNode.removeChild(mine);
   KBD.x=p.clientX; KBD.y=p.clientY;
-  KBD.el.style.transform='';
+  kbCarryAt(null);
 }
 /* ---- a RUN of chosen keys, carried as one -------------------------------
    「色んなキー触ったら一気に動かせたりしようよ。横と縦に限定だけど。」
@@ -2500,10 +2541,9 @@ function kbPairMove(row, over, w){
 function kbUp(e){
   if(!KBD) return;
   clearTimeout(KBD.timer);
-  var d=KBD, g=document.getElementById('kb');
+  var d=KBD, g=document.getElementById('kb'), c=kbCarried(), i;
   KBD=null;
-  d.el.style.transform='';
-  d.el.classList.remove('lift');
+  for(i=0;i<c.length;i++){ c[i].style.transform=''; c[i].classList.remove('lift'); }
   if(g) g.classList.remove('moving');
   if(!d.on){
     /* Held long enough to wobble but let go without moving anything: still a

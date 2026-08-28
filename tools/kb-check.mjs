@@ -1637,6 +1637,81 @@ const r = await pg.evaluate(({ s }) => {
         kbAtOf(kbLayer().rows[a[1].r], a[1].i) === kbAtOf(kbLayer().rows[a[0].r], a[0].i);
     }());
 
+
+    /* ---- and every one of them LIFTS, and follows the finger -----------
+       「5個とか選択したら選択したのが持ち上がって動くようにしてよ」 OWNER
+       2026-08-28.
+
+       The block above is about where the keys END UP, and it was green while
+       the carry still looked wrong to the person doing it: only the key under
+       the finger rose and moved, and the other n-1 sat flat in their old
+       places until the drop, when they jumped. The model the owner named is a
+       phone's home screen, where everything picked up travels with the finger.
+
+       So this measures the MIDDLE of a carry rather than its end -- at the one
+       moment the app asks what is under the finger, which is after the
+       transform goes on and before anything is rearranged. Three things are
+       asked of every carried key at that moment, and the third is the one that
+       is easy to miss: a lifted key sits UNDER THE FINGER, so if it is left in
+       the hit test it answers `elementFromPoint` instead of the key being
+       aimed at, and the carry is silently refused. One key out of the way was
+       enough while one key moved. */
+    function dragWatch(fromR, fromK, toR, toK){
+      function el(ri, ki){
+        return document.querySelector('#kb [data-r="' + ri + '"][data-k="' + ki + '"]');
+      }
+      var src = el(fromR, fromK), dst = el(toR, toK), real, seen = null, els, lifted;
+      if (!src || !dst) return null;
+      els = kbSelKeys().map(function (m){ return el(m.r, m.i); });
+      if (els.indexOf(null) >= 0) return null;
+      kbDown({ target: src, touches: [{ clientX: 100, clientY: 100 }] });
+      kbLift();                                   /* the 380ms hold, fired */
+      lifted = els.filter(function (e){ return /(^|\s)lift(\s|$)/.test(e.className); }).length;
+      real = document.elementFromPoint;
+      document.elementFromPoint = function (){
+        seen = els.map(function (e){
+          return { t: e.style.transform, pe: e.style.pointerEvents };
+        });
+        return dst;
+      };
+      kbDragTo({ touches: [{ clientX: 120, clientY: 140 }], preventDefault: function (){} });
+      document.elementFromPoint = real;
+      kbUp({ preventDefault: function (){} });
+      return { n: els.length, lifted: lifted, seen: seen };
+    }
+    fresh();
+    (function (){
+      var rw = kbLayer().rows[3];
+      while (rw.length > 1 && kbUsed(rw) > KB_COLS - 6) rw.pop();
+      saveKb(); render();
+    }());
+    kbTapKey(0, 2); kbTapKey(0, 3); kbTapKey(0, 4); standKb();
+    out.liftChose = kbSelKeys().length === 3;
+    var lw = dragWatch(0, 2, 3, 0);
+    out.liftRan = !!lw && !!lw.seen;
+    out.liftN = lw ? lw.n : 0;
+    out.liftUp = lw ? lw.lifted : 0;
+    /* all of them rose */
+    out.liftAll = !!lw && lw.lifted === lw.n;
+    /* all of them were following the finger, by the same amount -- a run that
+       travels as one thing does not stretch on the way */
+    out.liftMoves = !!lw && !!lw.seen && lw.seen.every(function (s){
+      return s.t && s.t === lw.seen[0].t;
+    });
+    out.liftMoveN = lw && lw.seen ? lw.seen.filter(function (s){ return !!s.t; }).length : 0;
+    /* and not one of them was in the way of the question */
+    out.liftHit = !!lw && !!lw.seen && lw.seen.every(function (s){ return s.pe === 'none'; });
+    out.liftHitN = lw && lw.seen ? lw.seen.filter(function (s){ return s.pe === 'none'; }).length : 0;
+    /* THE CLAIM THAT IS NOT MADE HERE, so the next reader does not add it
+       back believing it holds something: "and letting go puts every one of
+       them back down". kbUp() does clear the lift and the transform off every
+       carried key -- but it then calls kbReadRows(), which ends in render(),
+       and render() REBUILDS the board. Measured: of the 3 elements carried, 0
+       are still in the page after the drop. So a query for a key left lifted
+       finds nothing whether kbUp clears them or not; the claim was written,
+       watched with the clearing removed, and STAYED GREEN. A green line that
+       cannot go red is worse than no line, because it is believed. */
+
     /* ---- a MERGED PAIR is carried as one thing ------------------------
        「長押しの時は動くよ？ iPhoneのホーム画面と同じ ウェジットも2*2とかある
        けどその分みんな動くでしょ？それと同じ」 OWNER 2026-08-27.
@@ -2117,6 +2192,16 @@ say(r.runThree && r.roomForTwo && r.runNoRoomKeys && r.runNoRoomSame,
     'three carried into a row with space for two: nothing moves, and NOT ONE key is lost');
 say(r.runDownChose && r.runDownKeys && r.runDownRows,
     'and a run chosen DOWNWARD arrives one to a row, in the same column');
+say(r.liftChose && r.liftRan && r.liftAll,
+    'and all ' + r.liftN + ' of them LIFT, not just the one under the finger (' +
+    r.liftUp + ' of ' + r.liftN + ' up)');
+say(r.liftMoves,
+    'and all ' + r.liftN + ' follow the finger, by the same amount (' +
+    r.liftMoveN + ' of ' + r.liftN + ' moving)');
+say(r.liftHit,
+    'and not one of them is in the way of "what is under the finger" (' +
+    r.liftHitN + ' of ' + r.liftN + ' out of the hit test)');
+
 say(r.pairMade, 'two keys can be merged into one that is two rows tall');
 say(r.pairMoved, 'and carrying it takes it to the row it was carried to' +
     (r.pairAfter ? ' (row ' + r.pairAfter.row + ')' : ''));
