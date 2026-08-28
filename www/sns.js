@@ -89,6 +89,51 @@ function snsTabs(){
       esc(t(x[1]))+'</button>';
   }).join('')+'</div>';
 }
+/* ---- and where the two are chosen ---------------------------------------
+   「右上にフィルター作ってフォロー中、自分が好きなトピックとかで見れるように
+   できる？」 OWNER 2026-08-28.
+
+   A PAGE and not a sheet. CLAUDE.md bans 「ページ遷移型にせず下からひょいって
+   出すやつ」 and says the same thing the other way round: choosing is a
+   screen, changing is the screen you arrive at. So the corner of the
+   timeline's bar is a way THERE, and the choosing happens there.
+
+   The corner also SAYS which one is on. A filter you cannot see the state of
+   is a timeline that is quietly not the timeline -- somebody who chose
+   「フォロー中」 yesterday arrives on a short list today with nothing on the
+   screen to say why.
+
+   What is on the page is the two timelines and nothing else. The owner also
+   said 「自分が好きなトピックとか」 and there is nothing in this app that is a
+   topic: a post carries which language it is written in and which day's
+   question it answers, and no tags. That is the leader's to put to the
+   owner, and until it comes back nothing here invents one. */
+function snsFilNow(){ return (snsTab==='fo')? 'fo' : 'rec'; }
+function snsFilKey(k){ return (k==='fo')? 'feed.fo' : 'feed.rec'; }
+/* The mark in the corner of the timeline's bar. rootTop()'s second argument
+   is what it is for -- www/home.js already puts the contents page's lens
+   there -- so this is the same bar with the same corner and no new one. */
+function snsFilTop(){
+  return '<button class="navq"' + DO('go', ['filter']) + '>'+
+    esc(t(snsFilKey(snsFilNow())))+'</button>';
+}
+function vFilter(){
+  var ks=['rec','fo'];
+  return '<div class="view">'+navTop('')+'<div class="body">'+
+    ks.map(function(k){
+      return '<button class="set"' + DO('snsSetFil', [k]) + '>'+
+        '<span class="sl">'+esc(t(snsFilKey(k)))+'</span>'+
+        '<span class="sv">'+(snsFilNow()===k? ICON_TICK : '')+'</span></button>';
+    }).join('')+
+    '</div></div>';
+}
+/* Chosen, and then you are back on the thing it is about. The same shape as
+   every other chooser that is a page of its own: the answer is the reason
+   you came, so there is nothing left to do here. */
+function snsSetFil(k){
+  snsTab=(k==='fo')? 'fo' : 'rec';
+  back();
+}
 /* Everybody's languages, as they are written. This said "which for the moment
    is yours, because there is no server yet and a post has nowhere else to go",
    and went on saying it after netPush() and netFeed() existed -- the same week
@@ -138,7 +183,7 @@ function vFeed(){
      font anyway. There is no font to hand it now: a post carries the shapes
      its own line is written in, so a row is read out of the row. */
   return '<div class="view">'+
-    rootTop('feed')+
+    rootTop('feed', snsFilTop())+
     '<div class="body">'+
 
     /* A row to write in, at the top of the timeline, because the round button

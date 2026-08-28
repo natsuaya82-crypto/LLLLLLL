@@ -450,6 +450,7 @@ defLang('fr', (function(){
       "sns.none.fo"     : "Personne que vous suivez n’a encore écrit",
       "feed.rec"        : "Pour vous",
       "feed.fo"         : "Abonnements",
+      "feed.fil"        : "Filtre",
       'sns.search'            : "Chercher — @ pour les gens",
       'sns.nohit'             : "Rien trouvé",
       'notif.like'            : "{0} a aimé",

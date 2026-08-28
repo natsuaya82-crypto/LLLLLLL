@@ -44,6 +44,7 @@ function page(r, view){
 page('feed',     vFeed);
 page('explore',  vExplore);
 page('notif',    vNotif);
+page('filter',   vFilter);
 page('profile',  vProfile);
 page('build',    vBuild);
 page('find',     vFind);

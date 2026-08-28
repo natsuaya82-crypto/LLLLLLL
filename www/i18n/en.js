@@ -305,6 +305,7 @@ defLang('en', (function(){
       'sns.none.fo'     : "Nobody you follow has written yet",
       'feed.rec'        : "For you",
       'feed.fo'         : "Following",
+      'feed.fil'        : "Filter",
       'sns.search'            : "Search — @ for people",
       'sns.nohit'             : "Nothing found",
       'notif.like'            : "{0} liked this",
