@@ -407,6 +407,8 @@ defLang('ja', (function(){
       'toc.gram'        : '文法',
       /* what the app proposes */
       /* the grammar, in stages */
+      'stg.grp.rule'     : '規則で作る形',
+      'stg.grp.chap'     : '章',
       'stg.words'        : '必要な単語',
       'stg.rules'        : '規則',
       'stg.rules.ph'     : '　',

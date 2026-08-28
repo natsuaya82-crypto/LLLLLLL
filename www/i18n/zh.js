@@ -499,6 +499,8 @@ defLang('zh', (function(){
       "toc.gram"         : "语法",
       /* what the app proposes */
       /* the grammar, in stages */
+      "stg.grp.rule"     : "规则",
+      "stg.grp.chap"     : "章",
       "stg.words"        : "这个阶段需要的词",
       "stg.rules"        : "规则",
       "stg.rules.ph"     : "　",

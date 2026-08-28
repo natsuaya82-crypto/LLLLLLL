@@ -944,19 +944,34 @@ function g2ChapName(id){
   var c=g2ChapBy(id);
   return c? c.nm : t('stg.order.t');
 }
-/* The list. Names and nothing else -- a row that explained what a chapter was
-   for would be the thing 「無駄に説明をするやつ」 names, and a count would need
-   a definition of "done" per chapter that nobody has given. */
-function g2List(){
-  var a=g2Chaps(), i, out='';
-  for(i=0;i<a.length;i++)
-    out+='<button class="stslot"' + DO('go', ['gram', 'v2:'+a[i].id]) + '>'+
-      '<span class="psm">'+esc(a[i].nm)+'</span>'+ICON_GO+'</button>';
-  return out;
+/* One row of the grammar's list, and the list itself is stListHTML() in
+   www/phases.js -- there is one list of chapters, not two.
+
+   It was a list of its own, reached by a button at the foot of the old list,
+   so the chapters that say what a word actually turns into were two steps
+   down inside a chapter called 語順. 「文法ページはいつ統合されん
+   の？」 OWNER 2026-08-28. Both groups of chapters are on the one list now,
+   these first, and the door at the foot is gone with the list it opened.
+
+   It wears .strow like every other row there, because a row in one list is
+   one height. What it has not got is a count: "done" per chapter is not
+   defined for these, and stRow's own — is what this app already writes
+   where there is no number to write. Names and nothing else otherwise -- a
+   row that explained what a chapter was for would be the thing
+   「無駄に説明をするやつ」 names. */
+function g2ChapRow(c, n){
+  return '<button class="strow"' + DO('go', ['gram', 'v2:'+c.id]) + '>'+
+    '<span class="stn">'+n+'</span>'+
+    '<span class="stt">'+esc(c.nm)+'</span>'+
+    '<span class="lead"></span>'+
+    '<span class="stv">—</span>'+
+    ICON_GO+'</button>';
 }
-function g2Page(a){
-  var c=(a && a.indexOf('v2:')===0)? g2ChapBy(a.slice(3)) : null;
-  return c? (c.body()+g2Add(c.id)+g2MakeAll(c.id)) : g2List();
+/* One chapter's page. It is handed the chapter rather than the argument now:
+   vGram() looks it up, because it is vGram() that has to fall back to the
+   list when the argument names no chapter. */
+function g2Page(c){
+  return c.body()+g2Add(c.id)+g2MakeAll(c.id);
 }
 
 /* ---- the screen -------------------------------------------------------- */

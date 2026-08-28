@@ -539,6 +539,8 @@ defLang('fr', (function(){
       "toc.gram"         : "Grammaire",
       /* what the app proposes */
       /* the grammar, in stages */
+      "stg.grp.rule"     : "Règles",
+      "stg.grp.chap"     : "Chapitres",
       "stg.words"        : "Les mots dont cette étape a besoin",
       "stg.rules"        : "La règle",
       "stg.rules.ph"     : "　",

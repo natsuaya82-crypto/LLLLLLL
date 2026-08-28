@@ -499,13 +499,38 @@ function stRow(p, n){
     '<span class="stv">'+(tot? (stFilled(p)+' / '+tot) : '—')+'</span>'+
     ICON_GO+'</button>';
 }
+/* ONE list of chapters. There were two: this one, and the chapters that say
+   what a word actually turns into, which sat behind a button at the foot of
+   it labelled 語順 -- so they were two steps down inside one of the sixteen.
+   「文法ページはいつ統合されんの？」 OWNER 2026-08-28.
+
+   The rule-made forms come first: docs/GRAMMAR-V2-SPEC.md §14 is the chapter
+   that says how a word changes, which is what the grammar is FOR. The
+   sixteen follow, in the order they were in, numbered on from the eight.
+   Nothing is folded away.
+
+   Each group is NAMED, in the shape vWsys() puts `dir.title` over its three
+   directions: a `sec` and a name, no frame, no panel, no corner, and no
+   sentence. It is what CLAUDE.md §14 already calls that group from outside
+   the app, so nothing new was decided here. The names earn their place
+   because five pairs of rows are called the same thing -- 語順, 否定, 疑問,
+   形容詞, 場所 are each a chapter of both groups, invisible while one list
+   was hidden inside the other. Which group a row is in is the whole of what
+   tells them apart, so it has to be on the screen. */
 function stListHTML(){
-  var a=stAll(), i, rows='';
-  for(i=0;i<a.length;i++) rows+=stRow(a[i], i+1);
+  var g=g2Chaps(), a=stAll(), i, n=0, grow='', srow='';
+  for(i=0;i<g.length;i++) grow+=g2ChapRow(g[i], ++n);
+  for(i=0;i<a.length;i++) srow+=stRow(a[i], ++n);
   /* The rules that make a form out of a word were at the head of this list.
      They are not a stage of the grammar and they are about the dictionary, so
      they are behind the ... in the dictionary's bar -- wordsMore(). */
-  return '<div class="stlist">'+rows+'</div>'+
+  /* Two containers rather than one, and a name is not a row: a `sec` inside
+     `.stlist` would be a sibling of the rows, and the rows in one list are
+     one height. */
+  return '<div class="sec">'+esc(t('stg.grp.rule'))+'</div>'+
+    '<div class="stlist">'+grow+'</div>'+
+    '<div class="sec">'+esc(t('stg.grp.chap'))+'</div>'+
+    '<div class="stlist">'+srow+'</div>'+
     /* The fifteen are free and are the whole of the chapter there. They ask
        for forty-six words between them, which is most of what a free
        dictionary is for; a stage of your own is the sixteenth and past that
@@ -524,12 +549,6 @@ function stListHTML(){
       ? ''
       : '<button class="btn ghost" style="width:100%;margin-top:14px"' + DO('stAddPart') + '>'+
           ICON_ADD+t('stg.part.t')+'</button>')+
-    /* The way in to the chapter that is being rebuilt. It says the name of
-       what it opens and nothing else -- docs/GRAMMAR-V2-SPEC.md §14 is a page
-       about the word order among other things, and 語順 is what that is
-       called here already. */
-    '<button class="btn ghost" style="width:100%;margin-top:14px"' + DO('go', ['gram', 'v2']) + '>'+
-      esc(t('stg.order.t'))+'</button>'+
     (can('gram')
       ? '<button class="btn ghost" style="width:100%;margin-top:14px"' + DO('openOwnPhase') + '>'+
           ICON_ADD+t('stg.own.add.btn')+'</button>'
@@ -630,14 +649,19 @@ function stFeatHTML(id){
 function vGram(){
   var gOpen=gOpenOf();
   var p;
-  /* docs/GRAMMAR-V2-SPEC.md §14 -- the page that DEFINES a language. It is
-     built beside the old chapter, not over it, so it arrives as an argument of
-     this route rather than as a route of its own: www/shell.js's PAGES is
-     another session's file and a view with no page there fails act-check.
-     When it is given a route, this branch is what moves. */
-  if(gOpen==='v2' || (gOpen && gOpen.indexOf('v2:')===0))
+  /* docs/GRAMMAR-V2-SPEC.md §14 -- the chapters that say what a word turns
+     into. They arrive as arguments of this route rather than as a route of
+     their own: www/shell.js's PAGES is another session's file and a view with
+     no page there fails act-check. Their names are on the one list below,
+     which is where they are opened from now.
+
+     An argument that names no chapter -- the bare `v2` the foot of the old
+     list used to open, or a chapter that has gone -- falls through to the
+     list rather than to a blank page. */
+  var c=(gOpen && gOpen.indexOf('v2:')===0)? g2ChapBy(gOpen.slice(3)) : null;
+  if(c)
     return '<div class="view">'+navTop()+
-      '<div class="body">'+g2Page(gOpen)+'</div></div>';
+      '<div class="body">'+g2Page(c)+'</div></div>';
   p = gOpen? stBy(gOpen) : null;
   return '<div class="view">'+
     navTop()+

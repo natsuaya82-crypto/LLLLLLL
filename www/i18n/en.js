@@ -394,6 +394,8 @@ defLang('en', (function(){
       'toc.gram'        : "Grammar",
       /* what the app proposes */
       /* the grammar, in stages */
+      'stg.grp.rule'     : 'Rules',
+      'stg.grp.chap'     : 'Chapters',
       'stg.words'        : "Words this stage needs",
       'stg.rules'        : 'The rule',
       'stg.rules.ph'     : '　',
