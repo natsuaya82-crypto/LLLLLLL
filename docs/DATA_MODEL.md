@@ -92,16 +92,46 @@ never held, stored or logged.** `lingua.posts` (`POSTS`) is the timeline, and
 `lingua.drafts` (`DRAFTS`) is what was written and not sent — the composer,
 kept: the line, the meaning, whom it answers, the pictures with their letters
 still placed on them, the recording, and whether it was going to be private.
-Nothing prunes it and nothing ages it out.
+Every one of them carries an `id`, minted on this phone by `netUUID()`, which
+is the name its row on the server has; a draft written with no signal already
+has the name it will go up under. Nothing prunes it and nothing ages it out.
 
 **Both of those are the copy that survives a bad network, and NEITHER is where
 they live.** 「SNSは全部サーバー」 OWNER, said again on 2026-08-27 — a draft is
 the timeline's, and so is a voice, so both belong on the server the same way a
-post does. The code has not caught up: `lingua.drafts` is a flat key on this
-phone and a recording is a file in `Documents/Voices/`, and neither goes up.
-**That is the code being old, not the spec** — write them as the server's when
-the code is fixed, and until then know that a person who changes phones loses
-both. `docs/BACKLOG.md` carries what is left to move.
+post does.
+
+Both are there now. A voice already was: `netUpVoice()` (`www/net.js`) puts a
+posted recording in Storage at `<uid>/<pid>/vo.m4a` and writes the path onto
+`row.body.vu`, and `voRemote()` (`www/rec.js`) tells one on this phone from one
+on the server by whether the name holds a slash. The drafts went up on
+**2026-08-28**: `draft` in `supabase/schema.sql`, one row per draft, `body`
+holding what the composer held. `lingua.drafts` stays and is the copy that
+works with no signal — written FIRST and always, whatever the network is doing,
+because what somebody wrote must not depend on a signal — and it is no longer
+where a draft lives.
+
+A draft is read back by `draftsPull()` (`www/post.js`), which **fills in what
+this phone is missing and never writes over what is here** — § 2 of
+`docs/DATA_SAFETY.md`, and the reason is the one that file gives: the way a
+copy destroys somebody's work is by winning.
+
+What is IN a draft's `body` is what the composer had in its hands, pictures and
+recording as base64 — **not** files in the media bucket. That is not a
+shortcut. `post-media` is public (`media_read` is `using (bucket_id =
+'post-media')`), so a draft's photographs put there would be readable by
+anybody holding the publishable key while the draft itself was not; and
+`netMyFiles()` collects what an account deletion removes out of `post.body`
+only, so a draft owning files in the bucket would be files nothing points at.
+The bytes go up when the post does, and not before.
+
+A draft carries no `ink`: ink is cut onto a post as it is sent (rule 13), and a
+draft has not been sent.
+
+**Deleting the account takes both sides.** `lsWipeNS()` removes every key
+beginning `lingua.`, counted rather than listed, so `lingua.drafts` goes with
+it; `draft.author` is `references profile(id) on delete cascade`, so
+`account_delete()` takes the rows. 「アカウント削除で残るものねえ」
 
 ## The index of languages, and what is actually in it
 
