@@ -188,8 +188,6 @@ defLang('de', (function(){
       "kb.sys.go" : "Einstellungen öffnen",
       "kb.sys.no" : "Einstellungen ließen sich nicht öffnen",
       "kb.rom"               : "Ein Buchstabe auf jeder Taste",
-      "kb.is" : "Deine Buchstaben auf einer QWERTY. Mehr ist es nicht.",
-      "kb.is.free" : "Für eine eigene Tastatur auf einen größeren Plan wechseln.",
       "kb.up.d" : "Füge die Tastaturen hinzu, die du willst.",
       "kb.reset"               : "Neu anfangen",
       "kb.pat.set" : "Anordnung",

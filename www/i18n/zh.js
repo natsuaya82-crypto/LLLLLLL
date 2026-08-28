@@ -208,8 +208,6 @@ defLang('zh', (function(){
       "kb.sys.go" : "打开设置",
       "kb.sys.no" : "设置打不开",
       "kb.rom"               : "每个键上显示字母",
-      "kb.is" : "把你的字放到 QWERTY 的键上，仅此而已。",
-      "kb.is.free" : "升级后可以做自己的键盘。",
       "kb.up.d" : "想加几个键盘都可以。",
       "kb.reset"               : "重新开始",
       "kb.pat.set" : "排列",

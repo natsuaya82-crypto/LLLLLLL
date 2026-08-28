@@ -102,8 +102,6 @@ defLang('en', (function(){
       "kb.sys.go" : "Open Settings",
       "kb.sys.no" : "Settings would not open",
       "kb.rom"               : "A letter on each key",
-      "kb.is" : "Your letters put onto a QWERTY. That is all it is.",
-      "kb.is.free" : "Upgrade to build a keyboard of your own.",
       "kb.up.d" : "Add the keyboards you want.",
       "kb.reset"               : "Start over",
       'kb.pat.set' : "Arrangement",

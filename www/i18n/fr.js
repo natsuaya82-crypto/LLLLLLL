@@ -248,8 +248,6 @@ defLang('fr', (function(){
       "kb.sys.go" : "Ouvrir les Réglages",
       "kb.sys.no" : "Impossible d’ouvrir les Réglages",
       "kb.rom"               : "Une lettre sur chaque touche",
-      "kb.is" : "Vos lettres posées sur un QWERTY. Rien de plus.",
-      "kb.is.free" : "Passez au plan supérieur pour créer votre propre clavier.",
       "kb.up.d" : "Ajoutez les claviers que vous voulez.",
       "kb.reset"               : "Recommencer",
       "kb.pat.set" : "Disposition",

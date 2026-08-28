@@ -200,8 +200,6 @@ defLang('it', (function(){
       "kb.sys.go" : "Apri Impostazioni",
       "kb.sys.no" : "Impossibile aprire Impostazioni",
       "kb.rom"               : "Una lettera su ogni tasto",
-      "kb.is" : "Le tue lettere messe su una QWERTY. Tutto qui.",
-      "kb.is.free" : "Passa a un piano superiore per creare la tua tastiera.",
       "kb.up.d" : "Aggiungi le tastiere che vuoi.",
       "kb.reset"               : "Ricomincia",
       "kb.pat.set" : "Disposizione",

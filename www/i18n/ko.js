@@ -379,8 +379,6 @@ defLang('ko', (function(){
       "kb.sys.go" : "설정 열기",
       "kb.sys.no" : "설정을 열 수 없습니다",
       "kb.rom"               : "각 키에 글자 표시",
-      "kb.is" : "QWERTY 자리에 그린 글자를 얹은 것뿐입니다.",
-      "kb.is.free" : "내 키보드를 만들려면 업그레이드하세요.",
       "kb.up.d" : "원하는 키보드를 얼마든지 추가할 수 있습니다.",
       "kb.reset"               : "처음부터 다시",
       "kb.pat.set" : "배열",

@@ -207,8 +207,6 @@ defLang('pt', (function(){
       "kb.sys.go" : "Abrir Ajustes",
       "kb.sys.no" : "Não foi possível abrir os Ajustes",
       "kb.rom"               : "Uma letra em cada tecla",
-      "kb.is" : "Suas letras postas num QWERTY. É só isso.",
-      "kb.is.free" : "Faça upgrade para criar seu próprio teclado.",
       "kb.up.d" : "Adicione os teclados que quiser.",
       "kb.reset"               : "Recomeçar",
       "kb.pat.set" : "Disposição",

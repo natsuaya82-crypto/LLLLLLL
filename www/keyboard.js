@@ -2018,23 +2018,6 @@ function kbListHTML(){
       : '')+
     '</div>';
 }
-/* The free QWERTY has no editor, so the screen is a keyboard nothing on it
-   answers to -- and the first thing anybody does is press it. What it is
-   goes under it, behind a ? of its own rather than in the bar's, which is
-   the four steps for switching the keyboard on and stays that.
-   「設定方法だけでいいや」「キーボードの中に入った無料のqwartyの中に？つけて」
-   OWNER 2026-08-28. Under the keyboard and not over it, the same place the
-   drawing screen's ? sits: what it explains is the thing above it. */
-function kbFreeQ(){
-  return '<div style="display:flex">'+helpQ('kbfree')+'</div>';
-}
-HELP.kbfree=function(){
-  return {t:t('kb.title'), h:
-    '<div class="note">'+esc(t('kb.is'))+'</div>'+
-    /* Board 0 is this same keyboard on the paid plan, where there is nothing
-       to upgrade to. */
-    (can('kb')? '' : '<div class="note">'+esc(t('kb.is.free'))+'</div>')};
-};
 function vKb(){
   /* The free plan has a keyboard. It was shown a wall.
 
@@ -2059,7 +2042,6 @@ function vKb(){
   if(!can('kb'))
     return '<div class="view">'+navTop('', helpQ('kb'))+'<div class="body">'+
       kbHTML(null, true)+
-      kbFreeQ()+
       kbSysHTML()+
       /* The way to a second keyboard, in the place the paid list keeps it and
          wearing the same +. Pressing it on this plan opens what it would
@@ -2096,7 +2078,6 @@ function vKb(){
   if(kbIsFree(now))
     return '<div class="view">'+navTop('', kbMoreQ())+'<div class="body">'+
       kbHTML(null, true)+
-      kbFreeQ()+
       kbSysHTML()+
       kbApplyHTML()+
       '</div></div>';
