@@ -373,6 +373,8 @@ defLang('es', (function(){
       'me.link.ph' : "https://",
       'me.loc'    : "Ubicación",
       'me.loc.ph' : "",
+      'me.pic' : "Foto",
+      'me.pic.change' : "Cambiar la foto",
       'me.pic.drop' : "Quitar la foto",
       'me.pic.bad' : "No se pudo leer esa imagen",
       'notes.search' : "Buscar en las notas",

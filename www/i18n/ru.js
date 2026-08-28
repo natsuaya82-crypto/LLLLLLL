@@ -416,6 +416,8 @@ defLang('ru', (function(){
       'me.link.ph' : "https://",
       'me.loc'    : "Место",
       'me.loc.ph' : "",
+      'me.pic' : "Фото",
+      'me.pic.change' : "Заменить фото",
       'me.pic.drop' : "Убрать фото",
       'me.pic.bad' : "Не удалось прочитать это изображение",
       'notes.search' : "Поиск по заметкам",

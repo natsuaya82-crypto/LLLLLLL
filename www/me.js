@@ -554,9 +554,10 @@ function openMe(){
      face is the thing they came to change, and it used to be at the bottom
      under three text fields.
 
-     The drop-the-picture row keeps `border-bottom:none` now that it is no
-     longer the last row. The line it would otherwise draw is a border, and
-     borders are not added here. */
+     画像を外す行はここに無い。**触った顔が、選ぶ画面に行く。** ──
+     「あとアイコン設定したあとなんでアイコンの下に画像消すみたいな垢文字
+       でんの？ もっかいがぞうさわって画像変えるか消すかでしょ？」
+     OWNER 2026-08-28。openMePic() がその画面。 */
   openForm('me:', pageName('profile'),
     /* The face is the label, and the input lives inside it -- so the thing
        somebody reaches for is the thing that opens the camera roll, in one
@@ -582,15 +583,20 @@ function openMe(){
 
        欄そのものは `lnField()`（www/shell.js の一箇所）。`<input>` は
        折り返せないので、書いた字が横に消えていた。 */
+    /* 顔がまだ無いうちは、触ったらそのままカメラロールが開く ── 外すものが
+       無い画面に行かせても、行がひとつしかない。顔が在るときだけ選ぶ画面に
+       行く。触ったら必ずカメラロールが開くのをやめたのはそこだけ。 */
     '<div class="picrow">'+
-      '<label class="pav" style="position:relative;width:96px;height:96px">'+
-        postFace({who:meName(), lname:langName, av:postAvatar()})+
-        '<input type="file" id="me-pic" accept="image/*" '+
-          'style="position:absolute;left:0;top:0;width:100%;height:100%;opacity:0"' +
-          CH('meSetPic') + '></label>'+
+      (ME.pic
+        ? '<button class="pav pavb" style="position:relative;width:96px;height:96px;margin:0"' +
+            DO('go', ["form", "mepic:"]) + '>'+
+            postFace({who:meName(), lname:langName, av:postAvatar()})+'</button>'
+        : '<label class="pav" style="position:relative;width:96px;height:96px">'+
+            postFace({who:meName(), lname:langName, av:postAvatar()})+
+            '<input type="file" id="me-pic" accept="image/*" '+
+              'style="position:absolute;left:0;top:0;width:100%;height:100%;opacity:0"' +
+              CH('meSetPic') + '></label>')+
     '</div>'+
-    (ME.pic? '<button class="set" style="border-bottom:none"' + DO('meDropPic') + '>'+
-       '<span class="sl bad">'+esc(t('me.pic.drop'))+'</span></button>' : '')+
     '<div class="field at" style="gap:14px;margin-bottom:20px">'+
       '<span style="flex:0 0 auto;white-space:nowrap;min-width:4.5em">'+esc(t('me.name'))+'</span>'+
       lnField('me-nm', langName||'',
@@ -627,6 +633,36 @@ function openMe(){
         ' maxlength="'+ME_MAX.loc+'"' + IN('meSetLoc'), ME.loc||'')+'</div>');
 }
 FORM_OPEN.me=function(){ openMe(); };
+/* 顔をもう一度触ったとき ── 変えるか、外すか。
+
+   「もっかいがぞうさわって画像変えるか消すかでしょ？」OWNER 2026-08-28。
+   選ぶのは画面で、変えるのは着いた先。下からひょいと出るものではないし、
+   選ぶ二つが顔と同じ画面に並ぶものでもない ── 赤い行が顔の下に居たのは
+   その形だった。
+
+   新しい経路は要らない。`form` は既に経路で、`FORM_OPEN` にひとつ名前を
+   足せば戻るボタンで帰ってきたときも建て直る。だから www/shell.js の
+   PAGES にも www/route-map.js にも触っていない。
+
+   変える行はファイル選びを重ねた `<label>` ── 顔がそうだったのと同じ手で、
+   押した所がそのまま入力になる。二つとも `.set` を着るので、行の高さは
+   タグではなくクラスが決める。
+
+   選んだ後も外した後も `openMe()` に戻る。`go()` は既に通った所へ戻るのを
+   戻ると読むので、プロフィールが二枚積まれることはない。 */
+function openMePic(){
+  /* 顔が無ければ外すものが無い。開き直しで消えた場合はプロフィールへ。 */
+  if(!ME.pic){ openMe(); return; }
+  openForm('mepic:', t('me.pic'),
+    '<label class="set" style="position:relative">'+
+      '<span class="sl">'+esc(t('me.pic.change'))+'</span>'+
+      '<input type="file" id="me-pic" accept="image/*" '+
+        'style="position:absolute;left:0;top:0;width:100%;height:100%;opacity:0"' +
+        CH('meSetPic') + '></label>'+
+    '<button class="set"' + DO('meDropPic') + '>'+
+      '<span class="sl bad">'+esc(t('me.pic.drop'))+'</span></button>');
+}
+FORM_OPEN.mepic=function(){ openMePic(); };
 /* The two lists behind the two numbers. One screen, and which one it is is the
    route's argument -- they differ in the list and in what to say when it is
    empty, and in nothing else. */

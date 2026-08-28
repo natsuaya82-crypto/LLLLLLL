@@ -401,6 +401,8 @@ defLang('de', (function(){
       'me.link.ph' : "https://",
       'me.loc'    : "Ort",
       'me.loc.ph' : "",
+      'me.pic' : "Bild",
+      'me.pic.change' : "Bild ändern",
       'me.pic.drop' : "Bild entfernen",
       'me.pic.bad' : "Dieses Bild ließ sich nicht lesen",
       'notes.search' : "Notizen durchsuchen",
