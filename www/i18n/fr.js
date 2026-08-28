@@ -687,7 +687,6 @@ defLang('fr', (function(){
       "ob.name.note"      : "Modifiable plus tard",
       "ob.name.later"      : "Plus tard",
       "ob.draw.h"        : "Dessinez votre {0}.",
-      "ob.draw.later"     : "La dessiner plus tard",
       /* the writing system */
       "script.show"     : "Afficher",
       "script.show.own"   : "Vos lettres",

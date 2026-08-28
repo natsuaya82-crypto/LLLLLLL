@@ -818,7 +818,6 @@ defLang('ko', (function(){
       "ob.name.note"    : "나중에 바꿀 수 있습니다",
       "ob.name.later"    : "나중에 정하기",
       "ob.draw.h"      : "당신의 {0} 를 그려 보세요.",
-      "ob.draw.later"   : "나중에 그리기",
       /* the writing system */
       "script.show"     : "표시",
       "script.show.own"   : "내 글자",

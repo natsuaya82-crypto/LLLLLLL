@@ -647,7 +647,6 @@ defLang('zh', (function(){
       "ob.name.note"     : "以后可以改",
       "ob.name.later"     : "稍后再定",
       "ob.draw.h"       : "画出你自己的 {0}。",
-      "ob.draw.later"    : "以后再画",
       /* the writing system */
       "script.show"     : "显示",
       "script.show.own"   : "自造文字",

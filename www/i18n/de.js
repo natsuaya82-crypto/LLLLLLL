@@ -627,7 +627,6 @@ defLang('de', (function(){
       "ob.name.note"     : "Später änderbar",
       "ob.name.later"     : "Später entscheiden",
       "ob.draw.h"       : "Zeichne dein eigenes {0}.",
-      "ob.draw.later"    : "Später zeichnen",
       /* the writing system */
       "script.show"     : "Anzeigen",
       "script.show.own"   : "Deinen Buchstaben",

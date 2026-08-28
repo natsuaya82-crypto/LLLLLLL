@@ -254,8 +254,8 @@ function obTourDone(){ obGo(OB_SNS); }
    OWNER 2026-08-28.
 
    Out of the first stop is out of the walk, which is the drawing square: it is
-   where the walk was entered from, by all three roads (obDone, obTakeCh,
-   obSkipDraw). obTour is left where it is by obGo(), which is what lets the
+   where the walk was entered from, by both roads (obDone and obTakeCh,
+   obTakeCh). obTour is left where it is by obGo(), which is what lets the
    step after the walk come back INTO it at the stop it left. */
 function obTourBack(){
   obAuto=-1;
@@ -1373,19 +1373,9 @@ function obTakeCh(ch){
   save(); installScriptFont();
   ob.mode=''; obTour=0; ob.step=OB_TOUR; save(); obTourGo();
 }
-/* Nothing was drawn, so there is nothing to say which letter it is: the stop
-   that lights the key of the letter just drawn has no key to light.
-
-   THE WALK IS THE SAME WALK ANYWAY, and the keyboard is not skipped.
-   「後で書くしたなら、キーボード画面飛ばす必要ないし」 OWNER 2026-08-28, and
-   the reason is the whole point of the walk: 「オンボーディングは使い方をレク
-   チャーするページだから」. Lighting one key is not what that stop is FOR --
-   showing somebody the keyboard is -- so with no letter drawn, the keyboard
-   itself is what is lit, which is obTourFind()'s fallback and is the true
-   sentence either way: this is where your letters are. */
-/* Past the drawing, the walk, the timeline and the name, to the door. */
+/* Past the drawing, the walk, the timeline and the name, to the door -- and
+   not past the door. 「ログイン画面までスキップ」 OWNER 2026-08-28. */
 function obSkipAll(){ ob.lid=''; obTour=0; obGo(OB_IN); }
-function obSkipDraw(){ ob.lid=''; obTour=0; ob.step=OB_TOUR; save(); obTourGo(); }
 
 function obFinish(){
   /* A language that reached the end of this without a name keeps not having
@@ -1481,7 +1471,6 @@ function obDrawHTML(){
     '<div class="obfoot">'+
     '<button class="btn"' + DO('obDone') + (n? '' : ' disabled') + '>'+
       t('ob.draw.done')+'</button>'+
-    '<button class="obskip"' + DO('obSkipDraw') + '>'+t('ob.draw.later')+'</button>'+
     /* Straight to the door, past all of it. 「ログインまでスキップ」 OWNER
        2026-08-28 -- for somebody who has an account already and is looking at
        this screen because they reinstalled the app.

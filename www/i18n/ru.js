@@ -644,7 +644,6 @@ defLang('ru', (function(){
       "ob.name.note"      : "Можно изменить позже",
       "ob.name.later"      : "Решить позже",
       "ob.draw.h"        : "Нарисуйте свою {0}.",
-      "ob.draw.later"     : "Нарисовать позже",
       /* the writing system */
       "script.show"     : "Показывать",
       "script.show.own"   : "Своими буквами",

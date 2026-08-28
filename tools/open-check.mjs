@@ -153,8 +153,8 @@ const SESS = JSON.stringify({ at: 'not a jwt', rt: 'a refresh token',
 
 /* ---- 4. the walk through the app, which IS the app --------------------- */
 {
-  /* Every road out of the drawing step ends here -- obDone(), obTakeCh() and
-     obSkipDraw() all set OB_TOUR and start the walk -- so this is the screen
+  /* Every road out of the drawing step ends here -- obDone() and
+     obTakeCh() both set OB_TOUR and start the walk -- so this is the screen
      after the first one a new phone ever shows. It is not a face of vOb():
      it is the app with everything but one thing greyed out, and render() in
      www/glyph.js falls through to the ordinary render to build it.
@@ -164,7 +164,11 @@ const SESS = JSON.stringify({ at: 'not a jwt', rt: 'a refresh token',
      never is -- the account comes AFTER -- so an appIs() that asks only
      "is there a session" answers 'door', and somebody who has just drawn
      their first letter is shown a sign-in form instead of their app. */
-  const r = await boot(null, () => { obSkipDraw(); });
+  /* Borrowing a character is the road that needs no drawing. It was
+     obSkipDraw() until 「後で描く」 came off the screen on 2026-08-28 -- the
+     button was removed, so the function went with it (nothing may be left
+     that no screen names), and this drives the road that is still there. */
+  const r = await boot(null, () => { obTakeCh('\u16a0'); });
   say('the walk: appIs()=' + r.is + '  ob.step=' + r.step + '  screen=' + JSON.stringify(r.text));
   if (r.step === null) no('the walk: could not be started at all');
   if (r.door) no('THE WALK SHOWS THE DOOR. A new phone draws a letter and is ' +

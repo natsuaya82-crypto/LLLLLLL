@@ -599,7 +599,6 @@ defLang('es', (function(){
       "ob.name.note"      : "Se puede cambiar después",
       "ob.name.later"      : "Decidir después",
       "ob.draw.h"        : "Dibuja tu propia {0}.",
-      "ob.draw.later"     : "Dibujarla más tarde",
       /* the writing system */
       "script.show"     : "Mostrar",
       "script.show.own"   : "Tus letras",

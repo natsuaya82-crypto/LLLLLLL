@@ -544,7 +544,6 @@ defLang('en', (function(){
       'ob.name.note'    : "You can change it later",
       'ob.name.later'   : "Decide later",
       'ob.draw.h'      : "Draw your own {0}.",
-      'ob.draw.later'   : "Draw it later",
       /* the writing system */
       'script.show'     : 'Show',
       'script.show.own'   : "Your letters",
