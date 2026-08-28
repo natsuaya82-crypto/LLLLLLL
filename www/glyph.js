@@ -564,7 +564,7 @@ function newGE(lid, label){
      stroke instead of picking up the last one you drew last time. Only what
      is drawn in this sitting, before the finger comes up, can be grabbed. */
   return { lid:lid, r:r, st:JSON.parse(JSON.stringify(src)),
-           si:src.length?src.length-1:-1, pi:-1, undo:[], pre:null,
+           si:src.length?src.length-1:-1, pi:-1, undo:[], redo:[], pre:null,
            drag:false, hit:false, again:false, moved:false, fresh:false,
            free:false, round:false, fill:false, flat:null, flatBy:'',
            raw:null, rawFor:-1, z:1, cx:400, cy:400,
@@ -610,41 +610,61 @@ function newLetter(kind){
   var l=ltNew(v>=0? {val:v} : {});
   go('letter', l.id);
 }
-/* Every change stamps a copy of the whole letter — it is a few hundred bytes,
-   so there is no reason to be clever about it. */
+/* ---- the step back, and the step forward again --------------------------
+   Every change stamps a copy of the whole letter — it is a few hundred bytes,
+   so there is no reason to be clever about it.
+
+   THE SAME SHAPE AS THE KEYBOARD'S, because 「進むはキーボードと同じで！」
+   OWNER 2026-08-27 and that sentence is the specification. `www/keyboard.js`
+   § kbNoted/kbStep is the original: two stacks, what comes off one goes onto
+   the other, and a NEW change empties the forward one. There is one
+   difference in the bookkeeping and it is not a difference in behaviour: the
+   keyboard has to keep `KBU.cur` as a string because kbNoted() is called
+   after the change, from saveKb(); here every change is stamped BEFORE it
+   happens, so the live GE.st is always the current state and there is
+   nothing to keep beside it.
+
+   ONE PLACE pushes -- gePush() -- rather than the two that used to. geMark()
+   is one road in and the end of a gesture in geUp() is the other, and both
+   have to empty the forward stack: a step forward that survives a new stroke
+   would put back a drawing that was never in front of this one. The two
+   pushed and capped the stack in two copies of the same three lines, and a
+   third road added tomorrow would have been a third. */
+var GE_STEPS=60;
+function gePush(str){
+  if(!GE) return;
+  GE.undo.push(str);
+  if(GE.undo.length>GE_STEPS) GE.undo.shift();
+  /* Drawing something new is where you are now, so there is no longer a
+     forward. Exactly kbNoted()'s `KBU.r=[]`. */
+  GE.redo=[];
+}
 function geMark(){
   if(!GE) return;
-  GE.undo.push(JSON.stringify(GE.st));
-  if(GE.undo.length>60) GE.undo.shift();
+  gePush(JSON.stringify(GE.st));
 }
 /* ---- the toolbar ---------------------------------------------------------
    Two marks, because two is what a hand actually makes: a stroke and a ring.
    Everything else that used to sit here was a mechanic pretending to be a
    tool — closing a contour, deleting a point — and each of those is now the
    canvas answering a tap instead of a word asking to be understood. One
-   24-unit box each, stroked not filled, so they inherit the caption's colour
-   and go gold with it. */
+   24-unit box each, stroked not filled, so each takes the button's own colour
+   and goes gold with it. The mark is the whole of the button -- there is no
+   word under it. 「2は文字なくそう」 */
 var GICON={
   /* Each mark is the thing it does. Bowed line through a dot that sits on it;
      one arrow turning back on itself; a ring drawn in dots, which is the shape
      of something that is no longer there. */
   'circle': '<path d="M4.5 17.5Q12 3.5 19.5 17.5"/><circle cx="12" cy="10.5" r="1.6"/>',
   /* The inside of a shape being blackened, which is the whole of what it
-     does. Stroked like the rest of them, so it goes gold with its caption. */
+     does. Stroked like the rest of them, so it goes gold with them. */
   'fill'  : '<path d="M12 4.4 20 19.6H4z"/><path d="M7.4 16.4h9.2M9.2 13h5.6M10.6 9.6h2.8"/>',
   'undo'  : '<path d="M4.5 9.5h10a5 5 0 0 1 0 10h-6"/><path d="M8 5.5 4 9.5l4 4"/>',
-  'clear' : '<circle cx="12" cy="12" r="7.5" stroke-dasharray="2.2 2.8"/>',
-  /* The magnifier, and it is the one the app already draws -- ICON_LENS, the
-     same circle and the same handle -- with a bar across it for smaller and
-     a cross for bigger. 「虫眼鏡マークタップして大きくしたり小さくしたり
-     したい。」 OWNER 2026-08-27. Two marks rather than one that cycles:
-     「大きくしたり小さくしたり」 is two things, and a single button that
-     wrapped round from biggest to smallest would make one of them a
-     four-press journey. Stroked, no fill, no corner -- like the other four. */
-  'zin'   : '<circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l4.5 4.5"/>'+
-            '<path d="M10.5 7.8v5.4M7.8 10.5h5.4"/>',
-  'zout'  : '<circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l4.5 4.5"/>'+
-            '<path d="M7.8 10.5h5.4"/>'
+  /* The same curve turned back the other way -- what every program that has
+     ever had these two has drawn, and what ICON_REDO already draws on the
+     sheet that builds a keyboard. 「進むはキーボードと同じで！」 */
+  'redo'  : '<path d="M19.5 9.5h-10a5 5 0 0 0 0 10h6"/><path d="M16 5.5l4 4-4 4"/>',
+  'clear' : '<circle cx="12" cy="12" r="7.5" stroke-dasharray="2.2 2.8"/>'
 };
 /* Drawn, not typed. A glyph borrowed from the emoji block is somebody else's
    drawing: it arrives at whatever weight and colour the system feels like,
@@ -954,9 +974,17 @@ function geBtn(fn,n,key,en,on){
   }else{
     off=en? '' : ' disabled';
   }
+  /* The mark, and nothing under it. 「2は文字なくそう」 OWNER 2026-08-27.
+     The word was a caption in a font small enough to need it, and in French
+     and German it did not fit -- ANNULER and ZURUCKSETZEN under a 23px icon
+     came back cut off with an ellipsis, which says less than no word at all.
+
+     The label is NOT gone. It is the aria-label, which is what a screen
+     reader says and what press-check reads, and it still goes through t() in
+     all ten languages -- so nothing was taken out of the translations. */
   return '<button data-g="'+n+'"'+act+off+
          (cl?' class="'+cl+'"':'')+' aria-label="'+esc(lb)+'">'+
-         geIcon(n)+'<span class="gcap">'+esc(lb)+'</span></button>';
+         geIcon(n)+'</button>';
 }
 function vGlyph(){
   /* GE is always set by editGlyph before this is routed to; the fallback is
@@ -999,8 +1027,9 @@ function vGlyph(){
        that was left for it is not left. What is under the page is the tab
        bar, which is what .body's own padding is already about. */
     '<div class="body" style="padding-bottom:calc(env(safe-area-inset-bottom,0) + var(--tabh) + 24px)">'+
+    geRail(st, pts, 'top')+
     '<div class="gcanvwrap"><canvas id="gcanv" class="gcanv"></canvas></div>'+
-    geRail(st, pts)+
+    geRail(st, pts, 'bot')+
     '<div class="ghintwrap"><canvas id="ghint" class="ghint"></canvas></div>'+
     '</div></div>';
 }
@@ -1328,45 +1357,31 @@ function geFill(){
   if(st && st.pts.length){ if(GE.fill) st.fill=true; else delete st.fill; }
   GE.pi=-1; render();
 }
-/* ---- bigger and smaller ------------------------------------------------
-   The magnifier moves through 1, 1.5, 2 and 3. At 3 the dots are about 51px
-   apart, which is a thumb's width, which is the point of it.
+/* Both steps are the same move in opposite directions, so they are one
+   function told which way -- kbStep()'s own sentence. What comes off one
+   stack goes onto the other, and the drawing put back is a copy, JSON out
+   and JSON in, so nothing on either stack is the live object.
 
-   WHERE it magnifies is the thing worth writing down. A magnifier held over
-   a page shows what you are looking at, so this one centres on the point you
-   have selected -- and failing that on the last point of the stroke you are
-   drawing, which is where your hand already is. Only when the magnifier is
-   pressed, never while drawing: recentring on every tap would slide the
-   whole square out from under the finger placing it, which is the one thing
-   a drawing surface may not do.
-
-   It is not stored. Zoom is where you are standing, not part of the letter,
-   so it goes when the screen does and nothing new is written to a language.
-   (`docs/DATA_MODEL.md` stays as it is.) */
-function geZoomStep(d){
+   It goes onto the other stack BEFORE the drawing is replaced, because the
+   thing a step forward gives back is the drawing you were standing on when
+   you pressed back. */
+/* geHist and not geStep: geStep() is the lattice's spacing, ten lines from
+   the top of this file, and a second `function geStep` would simply have
+   replaced it -- every dot, every letter and every font measured off
+   undefined, with nothing thrown. */
+function geHist(fwd){
   if(!GE) return;
-  var i=0, j;
-  for(j=0;j<GEZOOM.length;j++) if(GEZOOM[j]===geZ()) i=j;
-  i+=d;
-  if(i<0 || i>=GEZOOM.length) return;
-  /* what to look at, decided BEFORE the zoom changes */
-  var st=GE.st[GE.si], p=null;
-  if(st && st.pts.length){ p=(GE.pi>=0 && st.pts[GE.pi])? st.pts[GE.pi] : st.pts[st.pts.length-1]; }
-  if(GEZOOM[i]===1){ GE.cx=400; GE.cy=400; }
-  else if(p){ GE.cx=p[0]; GE.cy=p[1]; }
-  GE.z=GEZOOM[i];
-  render();
-}
-function geZoomIn(){ geZoomStep(1); }
-function geZoomOut(){ geZoomStep(-1); }
-function geUndo(){
-  if(!GE.undo.length) return;
-  GE.st=JSON.parse(GE.undo.pop());
+  var from=fwd? GE.redo : GE.undo, to=fwd? GE.undo : GE.redo, str;
+  if(!from.length) return;
+  str=from.pop();
+  to.push(JSON.stringify(GE.st));
+  if(to.length>GE_STEPS) to.shift();
+  GE.st=JSON.parse(str);
   GE.si=GE.st.length-1; GE.pi=-1;
-  /* What comes back from undo is a finished drawing, not a stroke still under
-     the finger, so it is sealed like one. Left open, the last stroke's dots
-     stayed live and the next press -- meant to begin a new line -- landed on
-     one of them and dragged the old line out of shape instead. */
+  /* What comes back from a step is a finished drawing, not a stroke still
+     under the finger, so it is sealed like one. Left open, the last stroke's
+     dots stayed live and the next press -- meant to begin a new line --
+     landed on one of them and dragged the old line out of shape instead. */
   GE.seal=!!(GE.st.length && GE.st[GE.st.length-1].pts.length);
   /* What came back is a drawing, not the stroke the rail was pointing at:
      the straight copy behind it belonged to a stroke that may no longer be
@@ -1375,6 +1390,8 @@ function geUndo(){
   GE.round=false; GE.flat=null; GE.flatBy='';
   render();
 }
+function geUndo(){ geHist(false); }
+function geRedo(){ geHist(true); }
 function geClear(){ geMark(); GE.st=[]; GE.si=-1; GE.pi=-1; GE.seal=false;
   GE.round=false; GE.flat=null; GE.flatBy=''; render(); }
 /* Putting the drawing where the letter keeps it, and nothing else -- no
@@ -1494,8 +1511,11 @@ function geMount(){
   GEFIT=0;
   var s=Math.round(w*dpr);
   c.width=s; c.height=s;
-  c.onpointerdown=geDown; c.onpointermove=geMove;
-  c.onpointerup=geUp; c.onpointercancel=geUp;
+  /* gePtDown and not geDown: those three count the fingers and hand a single
+     one straight through. The drawing handlers are not told about any of it. */
+  gePinReset();
+  c.onpointerdown=gePtDown; c.onpointermove=gePtMove;
+  c.onpointerup=gePtUp; c.onpointercancel=gePtUp;
   /* Said again in an inline style so no later rule, and no page that embeds
      this canvas somewhere new, can quietly hand these gestures back to the
      browser. */
@@ -1727,8 +1747,11 @@ var GEPAD=0.055;
    about zoom beyond asking these.
 
    `z` is how much bigger, and the window on the square is the middle 800/z
-   of it, clamped so it never shows past the edge. */
-var GEZOOM=[1, 1.5, 2, 3];
+   of it, clamped so it never shows past the edge.
+
+   It is not stored. Zoom is where you are standing, not part of the letter,
+   so it goes when the screen does and nothing new is written to a language.
+   (`docs/DATA_MODEL.md` stays as it is.) */
 function geZ(){ return (GE && GE.z)? GE.z : 1; }
 /* The top-left corner of what is visible, in the square's own 0-800. */
 function geOrg(){
@@ -1952,13 +1975,222 @@ function geUp(ev){
      first tap files a snapshot; the taps that extend it do not. */
   if(GE.pre && GE.pre!==JSON.stringify(GE.st)){
     var only=GE.st[GE.si], fresh=!!(only && only.pts.length<=1);
-    if(fresh || GE.moved || GE.hit){
-      GE.undo.push(GE.pre);
-      if(GE.undo.length>60) GE.undo.shift();
-    }
+    if(fresh || GE.moved || GE.hit) gePush(GE.pre);
   }
   GE.pre=null;
   geDraw(); geTools();
+}
+/* ---- two fingers -------------------------------------------------------
+   「2本指を上下に開いたらズーム、スライドさせたら移動」
+   「指でやるならボタンなし」 OWNER 2026-08-27.
+
+   The two magnifiers are gone, so this is the only way to get closer, and
+   the ladder went with them: the gap between the fingers says how much
+   bigger, continuously, between 1 and 3. There is nothing to step through
+   when there is no button to press.
+
+   A SEPARATE ENTRANCE, and that is the load-bearing part. geDown, geMove and
+   geUp are not touched -- not one `if`, not one early return -- because they
+   are the drawing, and drawing is the thing this app is. The canvas is wired
+   to gePtDown/gePtMove/gePtUp instead: those count the fingers on the glass
+   and hand a single one straight through, unchanged. 「描く手つきは一ミリも
+   変えないでください」 and `docs/BACKLOG.md` has the list of places that said
+   "this is the one place" and were two.
+
+   Three things it must get right, and not one of them throws when it does
+   not:
+
+   ONE OR THE OTHER, DECIDED ONCE. 「どちらかに決めたら、指を離すまで変え
+   ない。」 Asking every frame whether this is a zoom or a move means a hand
+   that drifts a little off straight flips between them several times a
+   second, and the paper judders. So nothing happens at all until the fingers
+   have moved enough to mean something, and what they meant then is what they
+   go on meaning until the glass is clear.
+
+   WHAT IS UNDER THE FINGERS STAYS UNDER THE FINGERS. Both modes are the
+   same sentence -- one paper point pinned to one place on the glass -- so
+   they are one function, gePinTo(). What differs is which place: a move pins
+   it under the fingers as they travel, and a zoom pins it where the fingers
+   started, so that growing the paper does not also slide it.
+
+   THE STROKE UNDER THE FIRST FINGER IS THROWN AWAY. Without it every pinch
+   leaves a dot or a short line behind, because the first finger down went
+   through geDown and started one. It is thrown away by putting back GE.pre
+   -- the copy geDown itself took before it touched anything -- which is
+   exactly this gesture and cannot reach anything else. A stroke that was
+   FINISHED, by a finger lifting, has no GE.pre and is not touched:
+   「人が作ったものを消さない」.
+
+   Nothing here is stored. Zoom is where you are standing, not part of the
+   letter, and geOrg() already refuses to show past the paper's edge. */
+var GEZMIN=1, GEZMAX=3;
+/* how far the fingers have to travel before this is a gesture at all */
+var GEPINGO=8;
+var GEPIN={ on:false, pts:[], mode:'', d0:0, z0:1, anchor:null, mid0:null };
+function gePinAt(id){
+  var i;
+  for(i=0;i<GEPIN.pts.length;i++) if(GEPIN.pts[i].id===id) return i;
+  return -1;
+}
+/* the two fingers, as the canvas's own pixels */
+function gePinXY(c, ev){
+  var b=c.getBoundingClientRect();
+  return [ev.clientX-b.left, ev.clientY-b.top];
+}
+function gePinGap(){
+  var a=GEPIN.pts[0], b=GEPIN.pts[1];
+  if(!a||!b) return 0;
+  return Math.sqrt((a.x-b.x)*(a.x-b.x)+(a.y-b.y)*(a.y-b.y));
+}
+function gePinMid(){
+  var a=GEPIN.pts[0], b=GEPIN.pts[1];
+  if(!a||!b) return [0,0];
+  return [(a.x+b.x)/2, (a.y+b.y)/2];
+}
+/* Put paper point `pp` under glass point `px`, at zoom `z`. The window on
+   the square is what GE.cx/GE.cy name the middle of, so this is geTo/geFrom's
+   own formula turned round -- and it is written ONCE, because a mapping that
+   must agree with the one in geDraw is exactly the place a zoom goes wrong.
+   geOrg() does the clamping, so nothing here has to know where the edge is. */
+function gePinTo(c, pp, px, z){
+  var b=c.getBoundingClientRect(), S=[b.width||1, b.height||1], span=800/z, i, org;
+  GE.z=z;
+  for(i=0;i<2;i++){
+    org=pp[i] - (px[i]-geMar(S[i]))/(geK0(S[i])*z);
+    if(i===0) GE.cx=org+span/2; else GE.cy=org+span/2;
+  }
+}
+/* the stroke still under a finger, and only that one */
+function gePinDrop(){
+  if(!GE || !GE.pre) return;
+  GE.st=JSON.parse(GE.pre);
+  GE.pre=null;
+  GE.si=GE.st.length-1; GE.pi=-1;
+  GE.drag=false; GE.free=false; GE.fresh=false; GE.hit=false;
+  GE.again=false; GE.moved=false; GE.raw=null; GE.rawFor=-1;
+  GE.seal=!!(GE.st.length && GE.st[GE.st.length-1].pts.length);
+}
+function gePinStart(c){
+  var b=c.getBoundingClientRect(), w=b.width||1, h=b.height||1, m=gePinMid(), i;
+  gePinDrop();
+  /* the gesture starts HERE, so where each finger is now is where it landed.
+     The first finger has usually been drawing a line for a second by the
+     time the second one arrives, and none of that travel is part of this. */
+  for(i=0;i<GEPIN.pts.length;i++){
+    GEPIN.pts[i].x0=GEPIN.pts[i].x; GEPIN.pts[i].y0=GEPIN.pts[i].y;
+  }
+  GEPIN.on=true; GEPIN.mode='';
+  GEPIN.d0=gePinGap();
+  GEPIN.z0=geZ();
+  GEPIN.anchor=m;
+  /* the paper under the middle of the two, read BEFORE anything moves */
+  GEPIN.mid0=[geFrom(w, m[0], 0), geFrom(h, m[1], 1)];
+}
+/* how far each finger has come from where it landed */
+function gePinRun(i){
+  var q=GEPIN.pts[i];
+  if(!q) return 0;
+  return Math.sqrt((q.x-q.x0)*(q.x-q.x0)+(q.y-q.y0)*(q.y-q.y0));
+}
+/* Which of the two this is, decided ONCE and then not asked again.
+   「どちらかに決めたら、指を離すまで変えない。」
+
+   WAIT FOR BOTH FINGERS, and that is the part that is easy to get wrong. A
+   phone sends one pointermove per finger, so the two never move in the same
+   event: half way through a slide, one finger has travelled the whole way
+   and the other has not moved at all -- and at that instant the gap between
+   them has changed by the whole of it while the middle has moved by half.
+   Read then, every slide is a pinch, and it was: two fingers dragged across
+   the paper magnified instead of moving it, and what was under them ended up
+   56px from under them.
+
+   AND NO ARITHMETIC ON ONE FINGER CAN TELL THEM APART. "The right-hand
+   finger went right" is exactly as much a slide beginning as a pinch
+   opening -- the two are the same numbers, so any threshold that answers is
+   guessing, and it will guess wrong on somebody's hand. The only thing that
+   separates them is the other finger, so this waits for it: neither is
+   answered until BOTH have gone somewhere. Once they have, a slide has the
+   two travelling together (the gap held, the middle moved) and a pinch has
+   them travelling apart (the gap moved, the middle held), and one comparison
+   settles it for the rest of the gesture.
+
+   The cost is a finger planted while the other opens: that waits, and does
+   nothing, until the planted one moves its eight pixels too. It is the right
+   side to be wrong on -- a gesture that has not started yet is a paper that
+   has not moved, and the other way round is a paper that jumps. */
+function gePinMove(c){
+  var m=gePinMid(), d=gePinGap(), dd, dm, r0, r1, z;
+  if(!GEPIN.d0) return;
+  dd=Math.abs(d-GEPIN.d0);
+  dm=Math.sqrt((m[0]-GEPIN.anchor[0])*(m[0]-GEPIN.anchor[0])+
+               (m[1]-GEPIN.anchor[1])*(m[1]-GEPIN.anchor[1]));
+  if(!GEPIN.mode){
+    r0=gePinRun(0); r1=gePinRun(1);
+    if(r0<GEPINGO || r1<GEPINGO) return;      /* the other one has not moved */
+    if(dd<GEPINGO && dm<GEPINGO) return;
+    GEPIN.mode=(dd>=dm)? 'z' : 'm';
+  }
+  if(GEPIN.mode==='z'){
+    z=GEPIN.z0*(d/GEPIN.d0);
+    if(z<GEZMIN) z=GEZMIN;
+    if(z>GEZMAX) z=GEZMAX;
+    /* pinned where the fingers STARTED: a pinch that also slid the paper
+       would be both things at once, which is the thing decided against */
+    gePinTo(c, GEPIN.mid0, GEPIN.anchor, z);
+  }else{
+    gePinTo(c, GEPIN.mid0, m, GEPIN.z0);
+  }
+  geDraw();
+}
+/* The canvas's own handlers. One finger is handed straight through; two are
+   this. It stays this until the glass is clear -- a pinch that became a
+   stroke the moment one finger came up would draw a line nobody asked for
+   with the other. */
+function gePtDown(ev){
+  if(ev.preventDefault) ev.preventDefault();
+  var c=ev.currentTarget, p=gePinXY(c, ev);
+  if(gePinAt(ev.pointerId)<0)
+    GEPIN.pts.push({id:ev.pointerId, x:p[0], y:p[1], x0:p[0], y0:p[1]});
+  if(GEPIN.pts.length>=2){
+    if(!GEPIN.on) gePinStart(c);
+    if(c.setPointerCapture) try{ c.setPointerCapture(ev.pointerId); }catch(e){}
+    return;
+  }
+  geDown(ev);
+}
+function gePtMove(ev){
+  var c=ev.currentTarget, i=gePinAt(ev.pointerId), p;
+  if(i>=0){
+    p=gePinXY(c, ev);
+    GEPIN.pts[i].x=p[0]; GEPIN.pts[i].y=p[1];
+  }
+  if(GEPIN.on){
+    if(ev.preventDefault) ev.preventDefault();
+    if(GEPIN.pts.length>=2) gePinMove(c);
+    return;
+  }
+  geMove(ev);
+}
+function gePtUp(ev){
+  var i=gePinAt(ev.pointerId), was=GEPIN.on;
+  if(i>=0) GEPIN.pts.splice(i, 1);
+  if(was){
+    if(ev.preventDefault) ev.preventDefault();
+    if(GEPIN.pts.length) return;          /* still a finger down: still a pinch */
+    GEPIN.on=false; GEPIN.mode=''; GEPIN.anchor=null; GEPIN.mid0=null;
+    /* the rail, because throwing the half-drawn stroke away may have taken
+       the last dot off the paper */
+    geDraw(); geTools();
+    return;
+  }
+  geUp(ev);
+}
+/* Leaving the screen leaves no fingers on it. Without this a pinch
+   interrupted by the app going somewhere else comes back still on, and the
+   next single finger draws nothing. */
+function gePinReset(){
+  GEPIN.on=false; GEPIN.pts=[]; GEPIN.mode='';
+  GEPIN.d0=0; GEPIN.anchor=null; GEPIN.mid0=null;
 }
 /* The toolbar's enabled/disabled state depends on the selection, and the
    selection changes on every tap — but re-rendering the whole view would tear
@@ -1973,20 +2205,48 @@ function geBendable(){
   var st=GE && GE.st[GE.st.length-1];
   return !!(st && st.pts.length>=3);
 }
-function geRail(st, pts){
+/* ---- and it is two rails, not one --------------------------------------
+   「戻す進む、ズームは四角の上にしよう。四角の下は塗りとラウンドと消去で。」
+   OWNER 2026-08-27.
+
+       paper's top    undo   redo
+       paper's foot   fill   round   clear
+
+   Where you have BEEN is over the paper and what you are DOING is under it,
+   which is the sentence the split is: the two above take the drawing
+   somewhere it has already been, and the three below act on the drawing in
+   front of you.
+
+   The two magnifiers are not on either. 「指でやるならボタンなし」 -- two
+   fingers do that now, so a button for it would be a second way to say the
+   same thing, and the seven that were in one row here is what the caption
+   under each of them could not fit under.
+
+   `half` says which of the two this call is. WITHOUT it every button comes
+   back in one row, which is what the onboarding's own drawing step asks for
+   -- there the canvas is inside a step of its own and the rail sits under it,
+   so there is no top for a top rail to be at. */
+function geRail(st, pts, half){
+  var top = (half!=='bot'), bot = (half!=='top');
   return '<div class="gtools">'+
-    geBtn('geCircle','circle','glyph.circle', geBendable(), !!GE.round)+
-    geBtn('geFill','fill','glyph.fill', true, !!GE.fill)+
-    geBtn('geUndo','undo','glyph.undo', !!GE.undo.length, false)+
-    geBtn('geClear','clear','glyph.clear', !!pts, false)+
-    geBtn('geZoomOut','zout','glyph.zout', geZ()>GEZOOM[0], false)+
-    geBtn('geZoomIn','zin','glyph.zin', geZ()<GEZOOM[GEZOOM.length-1], !!(GE && GE.z>1))+
+    (top?
+      geBtn('geUndo','undo','glyph.undo', !!GE.undo.length, false)+
+      geBtn('geRedo','redo','glyph.redo', !!GE.redo.length, false) : '')+
+    (bot?
+      geBtn('geFill','fill','glyph.fill', true, !!GE.fill)+
+      geBtn('geCircle','circle','glyph.circle', geBendable(), !!GE.round)+
+      geBtn('geClear','clear','glyph.clear', !!pts, false) : '')+
   '</div>';
 }
 
 function geTools(){
-  var box=document.querySelector('.gtools');
-  if(!box) return;
+  /* Both rails, because there are two of them now and the first one on the
+     page holds only half the buttons. querySelector answered the top one and
+     left fill, round and clear frozen at whatever they were when the screen
+     was drawn -- so the bin stayed down over a drawing that had just been
+     made. */
+  var boxes=document.querySelectorAll('.gtools');
+  if(!boxes.length) return;
   var st=GE.st[GE.si], pts=0;
   GE.st.forEach(function(s){ pts+=s.pts.length; });
   /* Keyed by name, not by position: the row can be reordered or added to
@@ -1994,20 +2254,24 @@ function geTools(){
   var S={ 'circle':[geBendable(), !!GE.round],
           'fill'  :[true, !!GE.fill],
           'undo'  :[!!GE.undo.length, false],
+          'redo'  :[!!GE.redo.length, false],
           'clear' :[!!pts, false] };
-  var b=box.getElementsByTagName('button'), i, s, g, cl;
-  for(i=0;i<b.length;i++){
-    g=b[i].getAttribute('data-g'); s=S[g];
-    if(!s) continue;
-    if(GE_HINT_DEMO[g]){
-      cl=s[1]?'on':'';
-      if(!s[0]) cl=cl?cl+' off':'off';
-      b[i].className=cl;
-      if(s[0]) b[i].removeAttribute('aria-disabled');
-      else b[i].setAttribute('aria-disabled','true');
-    } else {
-      b[i].disabled=!s[0];
-      b[i].className=s[1]?'on':'';
+  var bi, b, i, s, g, cl;
+  for(bi=0;bi<boxes.length;bi++){
+    b=boxes[bi].getElementsByTagName('button');
+    for(i=0;i<b.length;i++){
+      g=b[i].getAttribute('data-g'); s=S[g];
+      if(!s) continue;
+      if(GE_HINT_DEMO[g]){
+        cl=s[1]?'on':'';
+        if(!s[0]) cl=cl?cl+' off':'off';
+        b[i].className=cl;
+        if(s[0]) b[i].removeAttribute('aria-disabled');
+        else b[i].setAttribute('aria-disabled','true');
+      } else {
+        b[i].disabled=!s[0];
+        b[i].className=s[1]?'on':'';
+      }
     }
   }
   /* the onboarding's own step, which is the other thing on this screen that
