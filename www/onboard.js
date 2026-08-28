@@ -108,11 +108,17 @@ var ob={step:0, name:'', mode:'draw', pick:'', strokes:null, ch:'', lid:''};
    step 7 is where the account is asked for.
 
    Steps 2 to 5 are not screens of this file. They are the app itself, walked
-   with everything but one thing greyed out -- OB_TOUR_STOPS below. The dots
-   count the three SCREENS the onboarding has, in the order they come: the
-   drawing, the name, the door. The walk is not one of them, because while it
-   is running the app is showing its own screens and vOb() is not on the page
-   at all. */
+   with everything but one thing greyed out -- OB_TOUR_STOPS below.
+
+   The dots count FOUR: the drawing, the timeline, the name, the door, in the
+   order they come. Two of those four never draw a dot, and for one reason --
+   the walk and the timeline are both the app itself, so vOb() is not on the
+   page at all while either is showing and the head that holds the dots is not
+   there to hold them. They are counted anyway because `i<=s` in obDots() is
+   what lights them, and that is a comparison against the step NUMBER: leaving
+   the timeline out of the count would light the name's dot for the door as
+   well. The walk is the one step outside the numbering, and it can be because
+   nothing after it ever needs to say it has been passed. */
 var OB_STEPS=4;
 /* Which step is which, by name, because 0 1 2 3 in eight places is four
    chances to renumber three of them.
@@ -135,13 +141,13 @@ var OB_STEPS=4;
    on 2026-08-26 and that decision stands. Draw, name, and then sign in with
    no way past it.
 
-   The three the dots count are 0, 1 and 2, in the order they happen. The walk
-   is last on purpose and not because it happens last -- it is not a screen of
-   this file at all, vOb() is not on the page while it runs, so keeping it
-   outside the counted range is what lets obDots() stay a plain loop. The
-   numbers are in the order the screens COME, which is what makes `i<=s` in
-   obDots() the right test: the walk runs between OB_DRAW and OB_NAME, and
-   nothing on the screen counts it. */
+   The four the dots count are 0, 1, 2 and 3, in the order they happen. The
+   walk is last on purpose and not because it happens last -- it is not a
+   screen of this file at all, vOb() is not on the page while it runs, so
+   keeping it outside the counted range is what lets obDots() stay a plain
+   loop. The numbers are in the order the screens COME, which is what makes
+   `i<=s` in obDots() the right test: the walk runs between OB_DRAW and
+   OB_SNS, and nothing on the screen counts it. */
 var OB_DRAW=0, OB_SNS=1, OB_NAME=2, OB_IN=3, OB_TOUR=4;
 
 /* ---- the walk through the app itself -----------------------------------
@@ -210,12 +216,26 @@ var OB_TOUR_STOPS=[
      shortcut: vFeed() in www/sns.js answers snsLocked() to anybody with no
      account, so pressing this tab for real lands on a sign-in form in the
      middle of the walk. Pressing it here ends the walk, and what comes up is
-     the timeline -- obSnsHTML() -- with the door two steps after it. */
+     the real timeline on the real `feed` route -- obTourDone() goes there and
+     obSnsMock() is what puts the six on it -- with the door two steps after. */
   { r:'build',   a:'', tab:'feed', look:1, lab:'ob.tour.sns' }
 ];
 /* Where the tour has got to. Where you are standing, so viewReset() drops it. */
 var obTour=0;
-function obTourOn(){ return !SET.done && ob.step===OB_TOUR; }
+/* Is the app itself what is on the screen? appIs() in www/shell.js asks this,
+   and what it decides is everything the shell paints around a view -- the bar
+   at the top and the bar of tabs at the foot.
+
+   TWO of the onboarding's steps are the app: the walk, and the timeline after
+   it. 「TLの見た目全然違うだろちゃんと同じにしろ」 OWNER 2026-08-28 -- the SNS
+   stage was a face of vOb(), so it got the onboarding's frame and none of the
+   app's, and no amount of work inside that face could have given it the tab
+   bar, which is painted into an element beside #app that vOb() never reaches.
+   It is the real feed screen now, so it has to be answered for here.
+
+   Everything else about the two stays different: the walk greys the screen and
+   lights one thing, the timeline greys nothing and is sealed whole. */
+function obTourOn(){ return !SET.done && (ob.step===OB_TOUR || ob.step===OB_SNS); }
 function obTourStop(){ return OB_TOUR_STOPS[Math.min(obTour, OB_TOUR_STOPS.length-1)]; }
 /* The route the tour wants to be on. render() sends the app there rather than
    drawing a picture of it. */
@@ -235,8 +255,12 @@ function obTourAt(){
   if(n.r===c.r && n.a===c.a) return;
   if(here().r===n.r && String(here().a||'')===n.a){ obTour++; }
 }
-/* Done with the walk through the app. What is after it is the timeline. */
-function obTourDone(){ obGo(OB_SNS); }
+/* Done with the walk through the app. What is after it is the timeline -- and
+   the timeline is a ROUTE, not a face of this file, so this goes there. The
+   walk's own position is left exactly where it stopped: obTourBack() reads it
+   to put somebody back on the stop they came off, and go() does not reset it
+   (viewReset() would, and nothing on this road calls it). */
+function obTourDone(){ ob.step=OB_SNS; GE=null; go('feed'); }
 /* And back out of it, one stop at a time.
 
    There was no way back inside the walk at all: obBack() ended at
@@ -247,9 +271,17 @@ function obTourDone(){ obGo(OB_SNS); }
 
    Out of the first stop is out of the walk, which is the drawing square: it is
    where the walk was entered from, by all three roads (obDone, obTakeCh,
-   obSkipDraw). obTour is left where it is by obGo(), which is what lets the
-   step after the walk come back INTO it at the stop it left. */
+   obSkipDraw). obTour is left where it is by everything that leaves the walk
+   forwards, which is what lets the timeline after it come back INTO it at the
+   stop it left. */
 function obTourBack(){
+  /* Out of the TIMELINE is back into the walk, at the stop it stopped on. The
+     timeline is the other step that is the app itself, and it is reached from
+     the walk's last stop -- so this is the same "one stop at a time" the two
+     lines below are, said for the one step that is not counted in obTour.
+     It has to put ob.step back first: obTourGo() renders, and the render would
+     draw this stage's seal again over whichever screen it landed on. */
+  if(ob.step===OB_SNS){ ob.step=OB_TOUR; GE=null; obTourGo(); return; }
   if(obTour>0){ obTour--; obTourGo(); return; }
   obTour=0; obGo(OB_DRAW);
 }
@@ -316,6 +348,9 @@ function obTapBox(b, hb){
    time this runs: render() inserts the screen, then adds the walk to the end
    of it. */
 function obTourHTML(){
+  /* The timeline is the other step that IS the app, and it is not a stop of
+     the walk: nothing on it is lit, because all of it is. */
+  if(ob.step===OB_SNS) return obSnsSealHTML();
   var st=obTourStop(),
       el=obTourFind(st), b=el? el.getBoundingClientRect() : null,
       W=window.innerWidth, H=window.innerHeight,
@@ -445,14 +480,19 @@ function obTourHTML(){
 /* Where the walk's chevron stands: on the screen's own back arrow, or in the
    corner when the screen has none. Everything up to the `>` of the tag,
    because the two cases differ only in the four numbers. */
-function obBackBox(){
+function obBackBox(at){
   /* Nothing at all on a stop whose lit thing IS the back arrow: the walk's
      chevron stands exactly there, and two back arrows in one corner going two
      different ways is worse than being one screen without ours. The stop
      after it has it again, and stepping back from there returns here. */
   if(obTourStop().bk) return '';
+  /* `at` is a place to stand, for the one screen that has nowhere. Everywhere
+     else this measures, and the two cases differ only in the four numbers --
+     which is why the button itself is built once, here, rather than a second
+     time wherever a different corner is wanted. */
   var el=document.querySelector('.navtop .back.nb'), b=el? el.getBoundingClientRect() : null,
-      pos=(b && b.width)
+      pos=at? at
+        : (b && b.width)
         ? 'left:'+Math.round(b.left)+'px;top:'+Math.round(b.top)+'px;'+
           'width:'+Math.round(b.width)+'px;height:'+Math.round(b.height)+'px'
         : 'left:8px;top:8px';
@@ -570,13 +610,18 @@ function obBack(){
     if(ob.pick){ ob.pick=''; render(); return; }      /* out of one script, back to the fifteen */
     ob.mode='draw'; render(); window.scrollTo(0,0); return;
   }
-  /* Out of the name is back INTO the walk, at the stop it was left on -- not
-     out of the walk and not past it. obTour is still sitting where the walk
-     ended, because obTourDone() no longer clears it. This is the press the
-     owner made: one back from the step after the walk used to land on the
-     drawing square, four screens away.
-     「一個戻るボタンしたら書くところからになるのクソ」 OWNER 2026-08-28. */
-  if(ob.step===OB_SNS){ ob.step=OB_TOUR; GE=null; obTourGo(); return; }
+  /* And otherwise one step, which is the whole of what the owner asked for
+     here: 「一個戻るボタンしたら書くところからになるのクソ」 OWNER 2026-08-28,
+     of a back press on the name screen landing on the drawing square four
+     screens away. The steps are numbered in the order they come, so one back
+     from the name is the timeline and one back from the door is the name.
+
+     It does NOT reach into the walk any more, and that is the same fix rather
+     than a change to it: back from the name used to land on the stop the walk
+     stopped at, and the timeline now sits in between, so that same line would
+     be two steps in one press. The step off the timeline and back into the
+     walk is obTourBack()'s, on the chevron the sealed stage carries -- one
+     press, one step, the whole way down to the drawing square. */
   if(ob.step>0) obGo(ob.step-1);
 }
 function obLang(v){ SET.ui=v; save(); render(); }
@@ -1204,18 +1249,82 @@ function obSnsPost(w, i){
            ln:ln, ink:postInk(ln), dir:'ltr',
            av:{pic:obSnsPic(i)}, pics:pics, re:w.re, bo:w.bo, mine:false };
 }
-function obSnsHTML(){
-  /* The shapes are canvases and a canvas is filled after the HTML is on the
-     page. render() does that for the app -- postLines() -- but it returns
-     before those lines when the onboarding is what is on screen, and
-     www/glyph.js is another session's file today. One line there would do it;
-     until then this is that line, run after the page exists. */
-  setTimeout(function(){ if(typeof postLines==='function') postLines(); }, 0);
-  return '<div class="mid obleft"><div class="obscroll">'+
-    '<div class="body" style="pointer-events:none">'+
-      OB_SNS_WHO.map(function(w, i){ return postRow(obSnsPost(w, i)); }).join('')+
-    '</div></div></div>'+
-    '<div class="obfoot"><button class="btn"' + DO('obSnsGo') + '>'+t('ob.next')+'</button></div>';
+/* THE SIX, AND ONLY WHILE THAT STAGE IS SHOWING. www/sns.js asks this before
+   it draws the timeline: an array means "draw these instead of the phone's own
+   posts, and ask the network for nothing", and null means the app.
+
+   It is a function and not a flag because it answers both halves of the
+   question in one -- whether, and which -- so there is no state anywhere that
+   can say yes with nothing behind it.
+
+   Nothing is cached. Six rows are six string concatenations, and a cache would
+   be a copy of the person's alphabet frozen at the moment they first arrived
+   here: postInk() below cuts each line against the letters they have drawn,
+   and the whole point of this page is that it fills in as they draw. */
+function obSnsMock(){
+  if(SET.done || ob.step!==OB_SNS) return null;
+  /* Written out rather than `map(obSnsPost)`: obSnsPost takes two arguments,
+     and map hands its callback the index as a second whether it was wanted or
+     not. Here it IS wanted -- the index picks the avatar and the photographs
+     -- which is exactly the case that reads as correct and is one rename away
+     from not being. sides-check refuses the bare form in every file for that
+     reason. */
+  return OB_SNS_WHO.map(function(w, i){ return obSnsPost(w, i); });
+}
+/* And the stage sealed shut.
+
+   The screen under this is the REAL timeline -- every button on it goes
+   somewhere, and every one of those somewheres is out of the onboarding, which
+   is not done until the door two steps from here. 「オンボーディングは SET.done
+   が立つまでアプリそのもの」 -- so there is no way off this screen but the way
+   on.
+
+   One pad over the whole of it does that, and does it by construction rather
+   than by disabling things one at a time: nothing underneath is reachable, so
+   nothing underneath can navigate and nothing underneath can throw. It is the
+   walk's own `.obtap` and the walk's own hand -- the same two things every
+   stop before this one ends with -- so a person who has just walked five
+   screens already knows what it means. The hand stands low, where the thumb
+   is, because there is nothing on this screen it is pointing AT: the whole
+   screen is the thing.
+
+   It is drawn from obTourHTML(), which render() appends after the screen is on
+   the page -- so it is over the timeline, the round button and the bar of tabs
+   alike without any of the three being named here, and the hand can be stood
+   against a bar that is already drawn. */
+function obSnsSealHTML(){
+  var W=window.innerWidth, H=window.innerHeight,
+      /* Above the bar of tabs, which is MEASURED rather than guessed at: it is
+         painted into an element beside #app, its height is index.html's, and a
+         number copied here would be a second copy of it that nothing holds.
+         Nothing at all when the bar has not been painted yet -- then it stands
+         where a thumb rests on a bare screen. */
+      bar=document.querySelector('.tabbar'),
+      bt=bar? bar.getBoundingClientRect().top : H-24,
+      s=54, x=Math.round(W/2-s/2), y=Math.round(bt-16-s),
+      /* Both bottoms on one line, 16 above the bar of tabs. */
+      bk=obBackBox('left:8px;top:'+Math.round(bt-16-44)+'px;width:44px;height:44px');
+  return '<button class="obtap"' + DO('obSnsGo') +
+      ' style="position:fixed;left:0;top:0;width:100%;height:100%;background:none;z-index:42"'+
+      ' aria-label="'+esc(t('ob.tour.sns'))+'"></button>'+
+    /* And the walk's own chevron, which every stop before this one carries.
+       Without it this is the one screen of the onboarding with no way back,
+       and the owner asked for the opposite 「戻るボタン押させてないね」. Same
+       arrow, same one step -- obBackBox() builds it, here as everywhere.
+
+       It is told where to stand, and this is the one screen that has to be:
+       the feed's bar is a ROOT's, so it carries the screen's NAME at the left
+       and the filter at the right, and there is no free corner at the top at
+       all. At 8,8 the chevron lies across the H of Home. So it goes down
+       beside the bar of tabs, on the line the hand is on and opposite the
+       round button -- clear of everything, and the bar at the top is left
+       looking exactly like the bar at the top of the real timeline, which is
+       the whole of what this stage is for. */
+    (bk? bk+'>'+OB_CHEV+'</button>' : '')+
+    '<div class="obhand" aria-hidden="true" style="position:fixed;z-index:43;'+
+      'pointer-events:none;color:var(--gold);line-height:0;'+
+      'left:'+x+'px;top:'+y+'px;width:'+s+'px;height:'+s+'px;'+
+      'animation:vopulse 1.1s ease-in-out infinite">'+OB_HAND+'</div>';
 }
 function obSnsGo(){ obGo(OB_NAME); }
 
@@ -1462,7 +1571,6 @@ function vOb(){
   var h = door? obDoorHTML()
         : (s===OB_DRAW && ob.mode==='borrow')? obBorrowHTML()
         : (s===OB_DRAW)? obDrawHTML()
-        : (s===OB_SNS)? obSnsHTML()
         : obNameHTML();
   return '<div class="ob view'+(door?' center':'')+'">'+head+h+'</div>';
 }
