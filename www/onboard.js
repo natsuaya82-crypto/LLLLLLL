@@ -1427,7 +1427,14 @@ function obStrokes(){
    which is the one place CLAUDE.md's rule against explaining is not about --
    the rule is that a SCREEN does not explain itself, and the onboarding is
    not a screen somebody arrives at, it is what the app is until it is done. */
-function obCoachSay(n){ return t(n? 'ob.coach.drawn' : 'ob.coach.draw'); }
+/* What the step says AND that it is not for ever, on one line under the
+   heading. 「指で線を引いて。後で書き直せます。」 OWNER 2026-08-28 -- the
+   reassurance used to sit at the foot, under the buttons, which is after
+   somebody has decided. Somebody who thinks the first stroke has to be right
+   will not draw one, so they have to know before they decide, not after. */
+function obCoachSay(n){
+  return t(n? 'ob.coach.drawn' : 'ob.coach.draw')+' '+t('ob.draw.note');
+}
 function obCoach(n){
   /* .obsub, which is the line this step already had -- what changes is the
      words, and the words changing IS the coaching. No new class, because
@@ -1468,15 +1475,23 @@ function obDrawHTML(){
     '<div class="obesc"><button class="obescb"' + DO('obBorrow', [""]) + '>'+
       '<span>'+t('ob.or')+'</span>'+OB_CHEVR+
     '</button></div></div>'+
-    '<div class="obfoot">'+
-    /* THE NOTE IS FIRST. 「あとでかきなおせます / 完了 / ログインへ」 OWNER
-       2026-08-28 -- what it says belongs to the drawing above it, not to the
-       buttons under it: somebody who thinks the first stroke has to be right
-       will not draw one, and they need to know that before they decide, not
-       after. 「あとで編集できるよって」 */
-    '<div class="mini obnote">'+esc(t('ob.draw.note'))+'</div>'+
-    '<button class="btn"' + DO('obDone') + (n? '' : ' disabled') + '>'+
-      t('ob.draw.done')+'</button>'+
+    /* The foot takes the room that is left, so the two rows can stand apart:
+       Done just under the strip above, and the way to the door pinned to the
+       bottom of the screen. 「完了の位置が下帯のちょい下 / ログインへは一番下に
+       張り付く感じで」 OWNER 2026-08-28.
+
+       Written here rather than in a rule, because `.ob .obfoot` is
+       `flex:0 0 auto` -- it hugs its rows -- and www/index.html is another
+       session's file today. Nothing but layout: no corner, no border, no
+       colour. */
+    '<div class="obfoot" style="flex:1 1 auto;min-height:0;display:flex;'+
+      'flex-direction:column;align-items:stretch">'+
+    /* flex:0 0 auto, because `.btn` is `flex:1` -- written for a ROW of
+       buttons, where it shares the width. In a column it shares the HEIGHT,
+       and the button came out 117px tall with the row under it pushed up
+       against it. */
+    '<button class="btn" style="flex:0 0 auto"' + DO('obDone') +
+      (n? '' : ' disabled') + '>'+t('ob.draw.done')+'</button>'+
     /* Straight to the door, past all of it. 「ログインまでスキップ」 OWNER
        2026-08-28 -- for somebody who has an account already and is looking at
        this screen because they reinstalled the app.
@@ -1490,7 +1505,8 @@ function obDrawHTML(){
        Here and nowhere else. This is the FIRST screen, which is where somebody
        decides they do not want the walk; the name step already reaches the
        door through 「あとで決める」, and the walk's own chevron comes back here. */
-    '<button class="obskip"' + DO('obSkipAll') + '>'+t('ob.skip')+'</button>'+
+    '<button class="obskip" style="margin-top:auto"' + DO('obSkipAll') + '>'+
+      t('ob.skip')+'</button>'+
     '</div>';
 }
 
