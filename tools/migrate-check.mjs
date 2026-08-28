@@ -302,9 +302,14 @@ const c = await pg.evaluate(REPORT);
 want('a fresh install gets one language', c.langs, 1);
 want('and it is theirs to write in', c.mine, true);
 want('with nothing in it', c.words, 0);
-/* not nothing at all: a language with no sounds is one where every letter
-   drawn in it reads nothing, so a fresh one is given a set to start from */
-want('and sounds to start from', addedSndLen(c.snd) > 0, true);
+/* and nothing said about how it sounds. This asked for the opposite -- that a
+   fresh language arrive holding sounds -- and sndStart() put twelve in to
+   satisfy it, which is the app saying what somebody's language sounds like.
+   CLAUDE.md § What the free plan is refuses that in the note under ltStart:
+   the inventory is not touched, and a sound goes in when somebody names a
+   letter by hand, because they said the word. Nobody has said anything on the
+   launch a language is made. */
+want('and no sounds, because nobody has said one', addedSndLen(c.snd), 0);
 want('and it is the one that is open', c.id, await pg.evaluate(() => langId));
 
 /* ---- 5: two languages, and the door between them ------------------------
