@@ -686,7 +686,14 @@ function snsClearQ(){ snsQ=''; snsHits=null; snsMode='who'; render(); }
 
    The two lists are exclusive by the `@`: a query for a person asks for
    people and gets no posts, and the other way round. That is the server's
-   business too -- it is cheaper to ask for one thing. */
+   business too -- it is cheaper to ask for one thing.
+
+   AND THIS IS WHERE THE ORDER IS ASKED FOR. `snsSort` is 'new' or 'buzz',
+   and netFindPosts() does not take it yet -- www/net.js is another session's
+   and the ordering lives there, beside the numbers that make it. When it
+   takes one, it is the call below and nothing else on this screen: what
+   comes back is drawn in the order it comes back in, which is already true.
+   Nothing here scores a post or re-arranges an answer, deliberately. */
 function snsFind(q, done){
   q=String(q||'').trim();
   if(!q){ done({q:q, who:[], posts:[]}); return; }
@@ -817,33 +824,29 @@ function snsPickSaved(q){
   goTab('explore');
 }
 /* ---- newest, or what people answered ------------------------------------
-   「話題＝おすすめと同じバズ順（いいね1・リポスト3・返信5、同じ数なら新しい
-   方が上）」 OWNER 2026-08-28, through the leader.
+   「最新／話題」 OWNER 2026-08-28.
 
-   ONE place, and the weights are the whole of it: a like is one, a repost is
-   three, an answer is five. They are not the same act -- writing back costs
-   more than tapping a heart, and a repost puts a post in front of somebody
-   else's timeline -- so the number says how much of that happened rather
-   than how many times anything was touched.
+   THE ORDER IS THE SERVER'S AND THIS FILE DOES NOT HOLD IT.
+   「SNSは全部サーバー」, and the leader said it again on 2026-08-28 when this
+   screen was sorting the answer itself: **a phone that sorts is a phone that
+   reorders the fifty rows it happens to have, and fifty rows reordered are
+   not the top fifty.** Whichever way somebody asks for them, the question
+   "which posts" and the question "in what order" have one answer and it is
+   made where all the posts are.
 
-   Ties go to the newer one. Without that a hundred posts nobody has touched
-   come back in whatever order the answer arrived in, which is no order at
-   all and changes between two asks.
+   So this screen has a MOUTH and no opinion. `snsSort` is what was asked
+   for; www/net.js carries it to the server and the answer arrives in the
+   order it arrives in, and gets drawn in that order.
 
-   This is the comparator and NOT where the feed's own order is decided:
-   asking the server for 'rec' is www/net.js's, and this file must not grow a
-   second opinion about it. What it sorts is what a search brought back. */
-function snsBuzz(p){
-  return (p.li||0) + (p.bo||0)*3 + (p.re||0)*5;
-}
-function snsByBuzz(a, b){
-  var d=snsBuzz(b)-snsBuzz(a);
-  return d? d : ((b.at||0)-(a.at||0));
-}
-function snsByNew(a, b){ return (b.at||0)-(a.at||0); }
-/* Which of the two a search is showing. Where you are standing rather than
-   anything the language or the account has, so viewReset() drops it with the
-   query it is about. */
+   It used to score the posts here -- a like one, a repost three, an answer
+   five. Those numbers are gone from this file on purpose and must not come
+   back: they live in one place, beside the query that uses them, because two
+   copies of a number in two languages is the thing that drifts. The badge's
+   own multiplier is the same argument and this file has never held it.
+
+   Changing it therefore ASKS AGAIN rather than re-arranging what is here --
+   emptying `snsHits` is what makes vExplore put the question again, which is
+   the one place that asks it. */
 function snsSortNow(){ return (snsSort==='buzz')? 'buzz' : 'new'; }
 function snsSortKey(k){ return (k==='buzz')? 'sort.buzz' : 'sort.new'; }
 /* The mark in the corner of the search's bar, the same corner the timeline
@@ -865,10 +868,13 @@ function vSort(){
 }
 function snsSetSort(k){
   snsSort=(k==='buzz')? 'buzz' : 'new';
+  /* The answer is in the old order, so it is not an answer to this question
+     any more. Thrown away rather than re-sorted, and vExplore asks again. */
+  snsHits=null;
   back();
 }
 function snsHitsHTML(){
-  var r=snsHits, out='', i, ps, by;
+  var r=snsHits, out='', i, ps;
   if(!snsQ.trim() || !r) return '';
   /* Could not ask, which is not the same as found nothing. */
   if(r.bad) return '<div class="note">'+esc(r.bad)+'</div>';
@@ -876,12 +882,9 @@ function snsHitsHTML(){
      not somebody you are looking for, and neither is what they wrote. */
   for(i=0;i<(r.who||[]).length;i++)
     if(!meBlocks(r.who[i].hd)) out+=snsWhoRow(r.who[i]);
-  /* Sorted here rather than in the answer, because the answer is what the
-     server sent and re-sorting it is a question about this screen. slice()
-     first: sort() works in place, and snsHits is what came back. */
-  by=snsByNew;
-  if(snsSortNow()==='buzz') by=snsByBuzz;
-  ps=(r.posts||[]).slice().sort(by);
+  /* In the order it arrived. The order is the server's answer to `snsSort`,
+     not something to be worked out again here. */
+  ps=r.posts||[];
   for(i=0;i<ps.length;i++)
     if(!postBlocked(ps[i])) out+=postRow(ps[i]);
   return out || '<div class="note">'+esc(t('sns.nohit'))+'</div>';
