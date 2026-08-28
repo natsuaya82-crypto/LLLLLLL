@@ -1187,12 +1187,38 @@ function notPull(){
     render();
   }, function(){ notPulling=false; });
 }
+/* The face, and the way to whoever wears it. 「行に顔、顔を押すとその人の
+   ページ」 OWNER -- which is the same sentence the timeline already answered
+   with postAvHTML(): 「人のツイートのアイコン押したらその人のホーム画面に
+   飛ぶようにしてよ」. One builder and not a second one, so a notice's face is
+   a door for the same reason a post's is, and stops being one in the same
+   place if that ever changes.
+
+   A notice describes a person with the four fields everything else does --
+   netNotices() says so where it reads them -- so what is handed over is those
+   four and nothing invented.
+
+   THE `id` IS THE FACE'S KEY, NOT A POST'S. postFace() caches a drawn face
+   under `id`, and a notice's own `id` is the post it is ABOUT: two people who
+   liked the same post would share one key and both wear whichever face was
+   written last, and a follow -- which has no post at all -- would fall to
+   'me' and wear mine. It is keyed by the handle, which is who the face is OF.
+
+   Nobody in it, no face. A 'pick' is a post worth reading and not somebody
+   doing something, so it carries no handle; drawing the empty circle there
+   would put a '?' on the one row that never had a person in it. */
+function notFace(n){
+  var h=String(n.hd||'');
+  if(!h) return '';
+  return postAvHTML({hd:h, who:n.who, av:n.av, id:'n:'+h});
+}
 function notRow(n){
   var k=String(n.kind||''), p=postById(n.id), ic=
     k==='like'? ICON_HEART : k==='boost'? ICON_BOOST :
     k==='reply'? ICON_REPLY : k==='follow'? ICON_ADD : ICON_LINE;
   return '<div class="ntf">'+
     '<span class="ntfi '+esc(k)+'">'+ic+'</span>'+
+    notFace(n)+
     '<span class="ntfb">'+
       '<span class="ntfw">'+esc(t('notif.'+(k||'other'), postWho(n)))+'</span>'+
       (p? '<span class="ntfp">'+esc(p.mn || p.ln || '')+'</span>' : '')+
