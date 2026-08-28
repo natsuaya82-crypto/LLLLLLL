@@ -324,7 +324,6 @@ defLang('en', (function(){
       'post.new'        : 'New post',
       'post.ln.ph'      : 'a line in your language',
       'post.mn'         : 'What it means',
-      'post.re'         : 'Replying to {0}',
       'post.send'       : 'Post',
       'post.none'       : 'Nothing to post',
       'post.del'        : 'Delete',

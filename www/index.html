@@ -832,13 +832,6 @@ canvas.pkc{width:34px;height:34px;display:block}
        padding:0 6px;border:0;background:none;
        color:var(--gold);font-family:inherit;font-size:.92rem;font-weight:700}
 .navdo:active{opacity:.75}
-/* Smaller than it was (.86/8), and the 6px it gives back is not spare change:
-   at 260 -- the smallest a phone leaves, a keyboard extension capped at 0.55
-   of an SE -- the two fields, the row of pictures and this line came to 8px
-   more than there is, and what went under the row of pictures was the
-   meaning. It is a grey label over a post that already carries the name and
-   the handle, so it is the cheapest 6px on the screen. */
-.pwto{font-size:.8rem;color:var(--txm);margin-bottom:5px}
 .pwtop{display:flex;gap:12px;margin-bottom:6px}
 .pwfield{flex:1 1 auto;min-width:0}
 .pwfield input, .pwfield textarea{width:100%;background:none;border:0;color:var(--tx);
@@ -1791,8 +1784,15 @@ a.set{text-decoration:none}
    its own -- and on the small phone this box is squeezed to nothing and its
    margins are not, so every pixel here is spent whether or not there is
    anything to look at. */
-.pwqs{margin:0 0 6px;max-height:76px;overflow:auto}
-.pwq{display:flex;gap:10px;padding:5px 2px;border-bottom:1px solid var(--line)}
+.pwqs{margin:0 0 6px;max-height:76px;overflow:auto;
+   border-bottom:1px solid var(--line)}
+/* The line is on the BOX and not on the row, and that is the cap's doing: the
+   row is 78 and the cap is 76, so a hairline drawn under the row was the first
+   thing scrolled out of sight and the quoted post ran into the composer with
+   nothing closing it. Photographed on both phones before it was believed. On
+   the box it is where it is meant to be either way -- the line under what you
+   are answering IS the line over what you are writing. */
+.pwq{display:flex;gap:10px;padding:5px 2px}
 .pwq .pav{width:26px;height:26px}
 .pwq .pname{font-size:.82rem}
 .pwq .phandle{font-size:.78rem}

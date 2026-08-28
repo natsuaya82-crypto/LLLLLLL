@@ -976,11 +976,16 @@ function pwToHTML(to){
 }
 function pwHTML(){
   var to=PW.to? postById(PW.to) : null;
-  /* Whom you are replying to is on the post you pressed reply on. It read the
-     account here, so every reply said you were replying to yourself. */
-  return (to? '<div class="pwto">'+
-      esc(t('post.re', '@'+(to.hd || to.who || to.lname || '')))+'</div>'+
-      '<div class="pwqs">'+pwToHTML(to)+'</div>' : '')+
+  /* The post, and no line of words over it saying whose it is.
+     「リプライングトゥーのやついらん。返事する時その画面固定で。」 OWNER
+     2026-08-28. It said "Replying to @aya" directly above a post carrying
+     "Aya @aya" -- the same fact twice, and on a 320 it cost 26px, more than
+     half of what the post itself had. Whom you are answering is the post.
+
+     It also read the ACCOUNT once, so every reply announced you were replying
+     to yourself; that is why the handle came off `to`. Nothing reads either
+     one here now. */
+  return (to? '<div class="pwqs">'+pwToHTML(to)+'</div>' : '')+
     /* The face you are about to post under, which is the one this post will
        carry -- worked out here, on the making side, where the letters are. */
     '<div class="pwscroll">'+
