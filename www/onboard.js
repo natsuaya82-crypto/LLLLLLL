@@ -173,7 +173,15 @@ var OB_TOUR_STOPS=[
      chapter opens straight onto it -- so the owner's fourth and fifth stops
      are one screen here, and the thing lit on it is the key the letter just
      drawn ended up on. It is the last of them: tapping it ends the walk. */
-  { r:'kb',    a:'', lt:1,     lab:'ob.tour.kb1' },
+  /* NOBODY TAPS THE KEY. The stop shows itself: the key is lit, `a` fades off
+     it and the letter just drawn is underneath -- obTourHTML()'s `obwas`,
+     which starts .9s in and is done at 1.4s -- and then the walk moves itself
+     on to the back arrow, where the hand is waiting.
+     「キーボードもaをタップしないで開いて1秒後にぱって変わって、変わったら戻るに
+       手を置いて欲しい」 OWNER 2026-08-28.
+     `auto` is the milliseconds. The key is still pressable; it is simply no
+     longer the only way out. */
+  { r:'kb',    a:'', lt:1, auto:1800, lab:'ob.tour.kb1' },
   /* And then the chapters, each one ENTERED from the contents and LEFT by
      pressing the app's own back arrow. 「単語とかやったら戻る」 and
      「戻るボタン押させてないね」 OWNER 2026-08-28 -- the second of those is
@@ -182,9 +190,12 @@ var OB_TOUR_STOPS=[
      the walk never let them make. Now the finger points at the arrow and the
      press is theirs. 「指で合図してあげて」
 
-     THE WORDS CHAPTER IS NOT ON THE WALK. 「単語のとこなにもないなら行かせなく
-     ていいか」 OWNER 2026-08-28 -- a new dictionary is empty, so the stop lit
-     an empty list and pointed a finger at nothing.
+     THE WORDS AND GRAMMAR CHAPTERS ARE NOT ON THE WALK.
+     「単語のとこなにもないなら行かせなくていいか」 and 「文法ページも開かなくて
+     いいかも」 OWNER 2026-08-28 -- a new dictionary is empty, so that stop lit
+     an empty list and pointed a finger at nothing; grammar came off with it.
+     What is left is the two a new phone has something in: the keyboard, with
+     the letter just drawn on a key, and the alphabet.
 
      Three kinds of stop and each says what a press does -- obTourNext():
 
@@ -198,9 +209,6 @@ var OB_TOUR_STOPS=[
   { r:'build',   a:'', go:'letters', lab:'ob.tour.row.letters' },
   { r:'letters', a:'', spot:'.body', look:1, lab:'ob.tour.letters' },
   { r:'letters', a:'', spot:'.navtop .back.nb', bk:1, lab:'ob.back' },
-  { r:'build',   a:'', go:'gram',    lab:'ob.tour.row.gram' },
-  { r:'gram',    a:'', spot:'.body', look:1, lab:'ob.tour.gram' },
-  { r:'gram',    a:'', spot:'.navtop .back.nb', bk:1, lab:'ob.back' },
   /* And the other half of the app. 「ここが制作、ここがsnsって最後まで見せて
      ログイン画面にしよう」 OWNER 2026-08-28: the first stop of the walk points
      at the making side, and this one points at the timeline.
@@ -250,6 +258,7 @@ function obTourDone(){ obGo(OB_SNS); }
    obSkipDraw). obTour is left where it is by obGo(), which is what lets the
    step after the walk come back INTO it at the stop it left. */
 function obTourBack(){
+  obAuto=-1;
   if(obTour>0){ obTour--; obTourGo(); return; }
   obTour=0; obGo(OB_DRAW);
 }
@@ -339,13 +348,20 @@ function obTourHTML(){
      part of is the TAP TARGET, not the light -- obTapBox() below. */
   if(!b) out=obPane(0,0,W,H);   /* nothing found: the grey is the whole screen */
   else{
-    x=b.left-m;  y=b.top-m;  w=b.width+m*2;  h=b.height+m*2;
+    /* ROUNDED ONCE, HERE. Every pane used to round its own edge, so two that
+       meet along the same line landed a pixel apart -- and where they
+       overlapped, two half-black scrims made a black line round the lit thing.
+       That is the "frame": there is no border anywhere, it was the grey drawn
+       twice. 「黒い枠がずれてるからなくてもいい」 OWNER 2026-08-28. Integers
+       from one calculation abut exactly. */
+    x=Math.round(b.left-m);  y=Math.round(b.top-m);
+    w=Math.round(b.width+m*2);  h=Math.round(b.height+m*2);
     out=obPane(0,0,W,y)+                   /* above */
         obPane(0,y+h,W,H-(y+h))+           /* below */
         obPane(0,y,x,h)+                   /* left  */
         obPane(x+w,y,W-(x+w),h);           /* right */
   }
-  return out+
+  return obTourArm()+out+
     /* A lit thing that does something of its own is pressed for real -- the
        row into the keyboard chapter goes there, and going there is what moves
        the tour on. Three cases need a tap target of the walk's own:
@@ -508,6 +524,19 @@ function obTourArg(sel, want){
 
    A stop that is a PAGE, or a key, or a screen with nothing found to light,
    has nothing of its own to do, so the walk moves itself. */
+/* A stop that moves on by itself after a beat. Armed from the markup, once per
+   stop: obAuto remembers which one it fired for, so a re-render does not set a
+   second timer and a timer that outlives its stop does nothing. */
+var obAuto=-1;
+function obTourArm(){
+  var st=obTourStop(), at=obTour;
+  if(!st.auto || obAuto===at) return '';
+  obAuto=at;
+  setTimeout(function(){
+    if(obTourOn() && obTour===at) obTourNext();
+  }, st.auto);
+  return '';
+}
 function obTourNext(){
   var st=obTourStop(), el;
   if(!st.lt && !st.look){
