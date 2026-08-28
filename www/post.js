@@ -1826,6 +1826,25 @@ function pwMarkLines(m){
   if(cur.length) out.push(cur);
   return out;
 }
+/* The plate a line sits on, exactly as wide as the line 「行ごとに背景の板が
+   ある。文字幅ぴったりの黒い板。行の長さで板の幅も変わる」 -- read off the
+   picture the owner sent of Instagram, 2026-08-28.
+
+   **The colour is the page's own ground and not a new one.** `--bg` is what
+   the body is, in both themes, and index.html's two theme blocks are the only
+   place a colour is named: 「Every colour lives in these two blocks and
+   nowhere else; the views only ever touch the variables.」 The letters keep
+   the colour somebody picked from the eight -- the plate goes behind them and
+   changes nothing about them.
+
+   A cell tall, because that is what a line of this is: `k` is the cell over
+   800, so 800k is one cell. */
+function pwMarkPlate(x, units, k, ox, oy){
+  var w=pwMarkAdv(units)*k;
+  if(w<=0) return;
+  x.fillStyle=cssVar('--bg', '#000');
+  x.fillRect(ox, oy, w, 800*k);
+}
 /* One line of shapes onto a canvas, at scale k, starting at ox/oy. */
 function pwMarkRun(x, units, k, ox, oy, col){
   var i, a, cur=ox;
@@ -1886,9 +1905,12 @@ function pwMarkDraw(){
     H=Math.max(40, Math.round(m.s*bw*dpr));
     W=Math.max(1, Math.round(H*(pwMarkWide(m)/m.s)));
     c.width=W; c.height=Math.max(1, Math.round(pwMarkTall(m)*bw*dpr));
-    for(j=0;j<u.length;j++)
+    for(j=0;j<u.length;j++){
+      pwMarkPlate(c.getContext('2d'), u[j], H/800,
+        (W-H*(pwMarkAdv(u[j])/800))/2, j*H*PW_MARK_LEAD);
       pwMarkRun(c.getContext('2d'), u[j], H/800,
         (W-H*(pwMarkAdv(u[j])/800))/2, j*H*PW_MARK_LEAD, cssVar(pwMarkCol(m)));
+    }
   }
 }
 /* The field is set at the size the line will be on the picture, which is a
@@ -2094,11 +2116,15 @@ function pwBakeOne(pc, done){
          A line that wraps on the screen and not in the file would be a
          photograph that is not the one somebody arranged. */
       k=(m.s*c.width)/800;
-      for(j=0;j<st.length;j++)
+      for(j=0;j<st.length;j++){
+        pwMarkPlate(x, st[j], k,
+          m.x*c.width-(pwMarkAdv(st[j])*k)/2,
+          m.y*c.height-(pwMarkTall(m)*c.width)/2+j*m.s*c.width*PW_MARK_LEAD);
         pwMarkRun(x, st[j], k,
           m.x*c.width-(pwMarkAdv(st[j])*k)/2,
           m.y*c.height-(pwMarkTall(m)*c.width)/2+j*m.s*c.width*PW_MARK_LEAD,
           cssVar(pwMarkCol(m)));
+      }
     }
     try{ out=c.toDataURL('image/jpeg', POST_PICQ); }
     catch(e){ done(pc.u); return; }
