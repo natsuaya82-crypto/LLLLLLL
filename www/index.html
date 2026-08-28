@@ -493,6 +493,28 @@ canvas.pkc{width:34px;height:34px;display:block}
 /* Two auto margins would split the free space and stand the count in the
    middle of the bar. The one in front does the pushing. */
 .navc + .navq{margin-left:6px}
+/* The timeline's corner says WHICH answer is being looked at, and it was
+   reading as a second heading: .navq is face-caps 1.05rem 600 and .navt is
+   face-caps 1.12rem 600, so on the bar 「Home」 and 「おすすめ」 were the same
+   lettering at all but the same size and the eye took the pair for one line.
+   「右上の絞り込みだけどホームと同じ文字にするのやめて少し小さく」 OWNER
+   2026-08-28.
+
+   It takes .navc's treatment -- the italic face, at the same weight as the
+   body -- because .navc is what this bar already puts a NOT-the-heading thing
+   in, and a third look would be a third rule. Nothing is added: no corner, no
+   border, no panel (CLAUDE.md § 18), and the 44pt box .navq carries is
+   untouched, so what changed is the lettering and nothing a thumb can feel.
+
+   .navq itself is left where it is. Nine other corners on six screens wear it
+   -- the ? mark, the save mark, the keyboard's ..., the done mark -- and none
+   of them was asked about. So this corner gets a class of its own and the
+   class is what is written here. It was very nearly written as
+   `.navq[data-do="go"][data-a='["filter"]']` instead, which needs no class and
+   is exact today -- and which stops matching, in silence, the day that press
+   is given another argument. A rule nothing holds is a rule that comes off. */
+.navq.navfil{font-family:var(--face-ital);font-style:italic;
+             font-size:.92rem;font-weight:400}
 .navtop:after{content:"";position:absolute;left:0;right:0;top:100%;height:8px;
               background:linear-gradient(180deg,var(--bg),transparent)}
 .chead{padding:0 24px 6px}
