@@ -1249,10 +1249,25 @@ function kbDragMount(){
    which was the one place on this sheet where a press did something rather
    than choosing something -- and it was standing exactly where a second key
    would have to be chosen 「あと複数キー選べないから」. */
-function kbCellHTML(ri, at, span){
-  return '<button class="kbk cell"' + DO('kbCellAdd', [ri, at]) +
-    ' style="grid-column:span '+span+'"' +
-    ' aria-label="'+esc(t('kb.cell.add'))+'"></button>';
+/* An empty cell, and whether a key can actually go in it.
+   `can` is false for a leftover of ONE column, which is half a key. A column
+   is half a key wide -- that is what makes a short row always divide -- so a
+   row that stops half a key short of the widest leaves one column over, and
+   it was being drawn as a cell like any other. Pressing it did nothing: a key
+   is one key wide, kbCellAdd() asks kbRoomIn(ri, 1) for that much room, and
+   half a column is not it.
+   「ここに謎のスペースできてキーの追加もできない」 OWNER 2026-08-28.
+
+   So the half column is drawn as SPACE and not as something to press. It is
+   not a key's worth of room and it never was; what was wrong was the app
+   offering it. A key half a column wide would be a new kind of key and a
+   different question -- it is the owner's, and it is not answered here. */
+function kbCellHTML(ri, at, span, can){
+  return can
+    ? '<button class="kbk cell"' + DO('kbCellAdd', [ri, at]) +
+      ' style="grid-column:span '+span+'"' +
+      ' aria-label="'+esc(t('kb.cell.add'))+'"></button>'
+    : '<span style="grid-column:span '+span+'"></span>';
 }
 /* Where in the row a key goes when the cell at this column is pressed.
    kbColAt() is the same arithmetic the column insert uses -- a cell before
@@ -1896,7 +1911,7 @@ function kbHTML(sel, ro){
       lead=kbLead(cols, tot);
       while(at<lead){
         b=Math.min(2, lead-at);
-        out+=kbCellHTML(ri, at, b);
+        out+=kbCellHTML(ri, at, b, b>1);
         at+=b;
       }
     }
@@ -1930,14 +1945,14 @@ function kbHTML(sel, ro){
           'style="grid-column:span '+kbU(key.w)+kbRhCSS(key)+
             (ro? '' : kbPickCSS(ri, ki))+'" '+
           'data-r="'+ri+'" data-k="'+ki+'"'+
-          (kbWob? '' : DO('kbTapKey', [ri, ki])) + '>'+kbFlicks(key, slots)+
+          DO('kbTapKey', [ri, ki]) + '>'+kbFlicks(key, slots)+
           '<span class="kbc">'+kbFace(key)+'</span>'+kbMark(key)+'</button>';
     }
     /* and the other half, after them. A row of a keyboard built from a
        pattern comes to the same total as the widest and has neither. */
     if(!ro) while(at<cols){
       b=Math.min(2, cols-at);
-      out+=kbCellHTML(ri, at, b);
+      out+=kbCellHTML(ri, at, b, b>1);
       at+=b;
     }
     out+='</div>';
@@ -2492,7 +2507,7 @@ function kbUp(e){
   if(g) g.classList.remove('moving');
   if(!d.on){
     /* Held long enough to wobble but let go without moving anything: still a
-       hold, so the ⊖ appear. */
+       hold, so the keys are drawn wobbling. */
     if(kbWob) render();
     return;
   }
@@ -2501,10 +2516,24 @@ function kbUp(e){
   kbReadRows();
 }
 /* ---- the state a home screen is in while an icon is held ---------------
-   Every key wobbling, a ⊖ on each one, and Done in the bar. Pressing a key
-   does nothing while it lasts -- what a press is FOR in this state is the ⊖,
-   and a key that opened its own sheet from under a wobble would be two
-   answers to one press.
+   Every key wobbling, and Done in the bar.
+
+   A press still SELECTS while it lasts, and that is a fix rather than a
+   choice. This state used to strip `kbTapKey` off every key, and the reason
+   written here was that a press was for the ⊖ on the key's corner -- so a key
+   that also opened its own sheet would have been two answers to one press.
+   The ⊖ came off. Nothing took its place, and the sentence justifying the
+   strip stayed, so what was left was a keyboard where **no key answered a
+   finger at all**: not to select, not to let go of a selection, and with no
+   way out but Done in the bar.
+   「キー触っても反応ないし、選択しているところと違うとこさわれば選択解除される
+   はずなのにそれもない」 OWNER 2026-08-28.
+
+   With no ⊖ there is no second answer to compete with, so a press means here
+   what it means everywhere else on this sheet: press to select, press
+   somewhere the run cannot reach to let go. A press that ENDED a carry is
+   already stopped in kbUp() -- it calls preventDefault(), which is what keeps
+   a key from being selected by the finger that just put it down.
 
    Where you are standing, so viewReset() drops it. */
 var kbWob=false;

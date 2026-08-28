@@ -1862,6 +1862,54 @@ const r = await pg.evaluate(({ s }) => {
     }
     ltQ = wasQ; ltSort = wasS; ltFil = wasF;
   }());
+  /* ---- a press answers while the keys wobble, and half a column is not
+          something to press ------------------------------------------------
+     Both are the same shape of fault: something was taken away and what stood
+     on it was left behind. */
+  SET.plan = 'pro';
+  fresh();
+  /* fresh() leaves the read-only board 0 showing on this path, and board 0 is
+     the free QWERTY -- its keys are spans and answer nothing on purpose. The
+     claim below is about the board somebody EDITS. */
+  kbShow = 1; kbLay = 0;
+  window.route = 'kb'; NAV = [{ r: 'kb', a: '1' }];
+  function keysOnPage(){
+    return [].slice.call(document.querySelectorAll('#kb .kbk'))
+      .filter(function(el){ return el.className.indexOf('cell') < 0; });
+  }
+  function pressable(list){
+    return list.filter(function(el){
+      return el.getAttribute('data-do') === 'kbTapKey';
+    }).length;
+  }
+  render();
+  kbWob = true; render();
+  out.wobKeys = keysOnPage().length;
+  out.wobPressable = pressable(keysOnPage());
+  kbWob = false; render();
+
+  /* every cell OFFERED holds a key; a leftover of one column is drawn as
+     space instead. Counted off the page, because what is wrong is what a
+     finger meets.
+
+     A row is made short by exactly ONE column to get the case: a column is
+     half a key, so this is the row that ends half a key from the edge -- what
+     the free QWERTY's third row does by construction, and what any row does
+     once a key on it is narrowed. */
+  kbLayer().rows[0][0].w = 0.5;
+  /* and a row short by a whole key, so the claim above is about something:
+     that row DOES get a cell, and it is a button. */
+  kbLayer().rows[1].splice(0, 1);
+  saveKb(); render();
+  function spanOf(el){
+    var m = /span (\d+)/.exec(el.style.gridColumn || '');
+    return m ? +m[1] : 0;
+  }
+  out.cellSpans = [].slice.call(document.querySelectorAll('#kb .kbk.cell'))
+    .map(spanOf);
+  out.halfSpacers = [].slice.call(document.querySelectorAll('#kb .kbrow > span'))
+    .filter(function(el){ return spanOf(el) === 1; }).length;
+
   return out;
 }, { s: seed.toString() });
 /* ---- and the SHEET, on the smallest phone the app runs on ---------------
@@ -2305,6 +2353,22 @@ r.midWays.forEach(function(w){
       'a letter drawn ' + w[0] + ' stands in the middle of its key (off by '
       + (w[1] < 0 ? 'nothing drawn' : w[1] + 'px, ' + w[2] + 'px of ' + w[3]) + ')');
 });
+
+say(r.wobKeys > 0 && r.wobPressable === r.wobKeys,
+    'while the keys wobble, every one of them still answers a finger ('
+    + r.wobPressable + ' of ' + r.wobKeys + ')');
+
+/* The ⊖ on a held key came off and this is what was standing on it: the press
+   was stripped because the ⊖ was what a press was FOR, and nothing took its
+   place. 「キー触っても反応ないし、選択しているところと違うとこさわれば選択解除
+   されるはずなのにそれもない」 */
+
+say(r.cellSpans.length > 0 && r.cellSpans.every(function(n){ return n > 1; }),
+    'every empty cell offered has a key\'s worth of room in it ('
+    + r.cellSpans.length + ' cells, narrowest ' + Math.min.apply(null, r.cellSpans) + ' columns)');
+say(r.halfSpacers > 0,
+    'a leftover of one column is drawn as space rather than as something to press ('
+    + r.halfSpacers + ' of them on this board)');
 
 if (bad.length){ console.error('\nkb-check: ' + bad.length + ' FAILED'); process.exit(1); }
 console.log('\nkb: pressing a row number or a column letter SELECTS it and lights it up;\n' +
