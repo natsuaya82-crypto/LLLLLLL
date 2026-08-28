@@ -1020,28 +1020,11 @@ grant execute on function notices(int) to authenticated;
 --
 -- WHAT IS NOT HERE, and both are deliberate:
 --
---   The blue mark. 「Twitterと同じだから青パッチ。上に上がりやすい」 OWNER --
---   a paid account's posts rise more easily. It CANNOT be computed today:
---   there is no column anywhere in this file saying who has paid.
---   www/post.js's postBadge() draws the mark only for `p.mine` and reads
---   can('badge'), which is this phone's own plan -- so the only thing that
---   knows is the phone, and a phone that could tell the server it was paid is
---   an app where anybody marks themselves. The column, when it comes, is
---   written by nobody: shut the same way `staff` and `admin` are (not in the
---   grant insert or grant update lists at the foot of this file), and set by
---   the server receiving Apple's signed notice.
---   feed_weight() below is the one line that changes on that day.
---
---   The list STANDING STILL between turns. 「4時間ごと。0 4 8 12 16 20 24
---   これは入れ替わらない。」 OWNER -- the tick is decided and feed_slot()
---   below is it. What is NOT decided is whether the order is frozen at the
---   tick and does not move until the next one, or is computed as it is asked
---   for and only the WINDOW turns over. Those are two different lists: under
---   the first, a post written a minute ago cannot appear for four hours.
---   The window is anchored to the tick here, because that much is the tick
---   being real; the scores are still counted as they stand, so the order does
---   move inside a slot. Freezing them is one more line and it is not written
---   until somebody has answered which of the two it is.
+--   Nothing. Both of the halves that were open on 2026-08-28 have been
+--   answered and are in: the list stands still between ticks (feed_hot()
+--   below, and the note inside it), and the blue mark is worth four
+--   (feed_paid_weight()). What is still missing is the COLUMN the mark would
+--   be read off, and feed_weight() says what happens on the day it lands.
 --
 -- `off` and not a timestamp for the continuation: this list is ordered by a
 -- score, and a score is not something you can ask for "the ones after". A
@@ -1086,8 +1069,51 @@ returns timestamptz language sql stable as $$
          - make_interval(hours => (extract(hour from now())::int % 4))
 $$;
 
+-- What a blue mark is worth. FOUR.
+--
+-- 「Twitterと同じだから青パッチ。上に上がりやすい」 OWNER, and when the number
+-- itself was asked for: 「Xと同じアルゴリズムって言ってるよね？」 -- which is
+-- not a refusal to answer, it is where the answer is. X published its ranking
+-- in 2023 and a paid account's posts are multiplied there: twice among people
+-- who follow them, four times when shown to people who do not. This list and
+-- the search's 話題 are both places somebody is shown to people who do NOT
+-- follow them, so it is the four and not the two.
+--
+-- A function and not a number inside the ORDER BY, because it is the thing
+-- here most likely to be told to be something else, and a number buried in an
+-- ordering is a number nobody finds.
+create or replace function feed_paid_weight()
+returns numeric language sql immutable as $$ select 4::numeric $$;
+
+-- And whether an account carries the mark, which is what the four multiplies.
+--
+-- IT IS NOBODY, TODAY. No column in this file says who has paid, so this
+-- answers one for everybody and the ranking is the reactions alone.
+-- www/post.js's postBadge() draws the mark only for `p.mine` and reads
+-- can('badge') -- this phone's own plan -- so the only thing that knows is a
+-- phone, and a phone that could TELL the server it had paid is an app where
+-- anybody marks themselves.
+--
+-- Asked of the row AS JSONB rather than by naming the column. That is the one
+-- odd line in this file and it is deliberate: `to_jsonb(p) ->> 'paid'` is
+-- NULL where there is no such column and the boolean where there is, so this
+-- begins working the day the column is added and not one edit later. Naming
+-- the column instead could not be written at all today -- the function would
+-- not compile -- and returning a bare 1 would be a line somebody has to
+-- remember to come back to, in a file nobody opens except when something is
+-- wrong.
+--
+-- The column, when it comes: `paid boolean not null default false`, shut the
+-- way `staff` and `admin` are -- kept out of the `grant insert (...)` and
+-- `grant update (...)` lines at the foot of this file, so nobody can arrive
+-- holding it or write it onto themselves -- and set by the server receiving
+-- Apple's signed notice. Nothing on a phone ever writes it.
 create or replace function feed_weight(who uuid)
-returns numeric language sql stable as $$ select 1::numeric $$;
+returns numeric language sql stable as $$
+  select case when coalesce((to_jsonb(p) ->> 'paid')::boolean, false)
+              then feed_paid_weight() else 1::numeric end
+    from profile p where p.id = who
+$$;
 
 create or replace function feed_hot(lim int default 50, off int default 0)
 returns table (id uuid, author uuid, language uuid, prompt bigint,
@@ -1100,12 +1126,26 @@ language sql stable as $$
     left join lateral (
       select coalesce(sum(case r.kind when 'like'  then 1
                                       when 'boost' then 3 end), 0) as pts
-        from react r where r.post = v.id
+        from react r
+       where r.post = v.id and r.created_at <= feed_slot()
     ) k on true
     left join lateral (
-      select (count(*) * 5) as pts from post q where q.reply_to = v.id
+      select (count(*) * 5) as pts
+        from post q
+       where q.reply_to = v.id and q.created_at <= feed_slot()
     ) a on true
-   where v.created_at > feed_slot() - interval '48 hours'
+   /* AS THE TICK LEFT IT, on both sides: the posts that existed then, and the
+      reactions that had happened by then. That is what makes the list stand
+      still. Counting reactions as they stand would move the order inside a
+      slot; letting posts in as they are written would move the tail of it.
+      「時間もお題のページに合わせるってこと」 OWNER -- and the day's sentence
+      is one row that does not move until the next one is written.
+
+      It costs what standing still costs, and the cost is real: a post written
+      a minute ago is not in this list and cannot be until the tick comes
+      round. That is the shape that was asked for. */
+   where v.created_at >  feed_slot() - interval '48 hours'
+     and v.created_at <= feed_slot()
      and v.hidden_at is null
    order by ((k.pts + a.pts) * feed_weight(v.author)) desc, v.created_at desc
    limit lim offset off
