@@ -360,10 +360,12 @@ exception.** The sentence above says *you* run it once before pushing, and
 `docs/SESSIONS.md` says a session never runs it at all — the leader does, once, after
 integrating. Both are true and they are about different days:
 
-- **Parallel sessions are running** → `docs/SESSIONS.md` wins. A session runs the one
-  check that holds what it changed, by name, and nothing else. The whole gate is the
-  leader's, once, at the end. Sixteen minutes of gate multiplied by three sessions is
-  the same green proved three times, and the third one is not more true.
+- **Parallel sessions are running** → `docs/SESSIONS.md` wins. **A session runs
+  nothing.** It pushes, and the SUB-LEADER runs the gate on what was pushed —
+  「ゲートは全部プッシュしてサブリが確認するんでしょ？個人ではやらない」 OWNER
+  2026-08-28. Sixteen minutes of gate multiplied by three sessions is the same green
+  proved three times, and the third one is not more true. **Do not tell a session to
+  run a check** — not the whole gate, and not one by name.
 - **One session, nobody else in the tree** → this section wins. You are the leader,
   so "once before pushing" and "the leader runs it once at the end" are the same
   sentence.

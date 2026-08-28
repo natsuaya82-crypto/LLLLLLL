@@ -368,7 +368,7 @@ The declaration:
 - Owns (may change):     files, by name
 - Does NOT own:          everything else
 - Decision it implements: which entry in the owner decision log
-- Check to run:          the one check that holds it
+- Check to run:          none. Push; the sub-leader runs the gate
 ```
 
 ---
