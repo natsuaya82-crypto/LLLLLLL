@@ -400,8 +400,23 @@ function obTourHTML(){
 
        What a press DOES is obTourNext()'s to say, in one place, and it is not
        the same answer on both kinds -- see there. */
-    ('<button class="obtap"' + DO('obTourNext') +
-              ' style="position:fixed;background:none;z-index:42;'+
+    /* NOT ON A STOP THAT MOVES ON BY ITSELF. The keyboard shows the letter
+       arriving and then walks on; a tap target sitting on the key says press
+       me, and there is nothing to press.
+       「キーボードのaのところまだタップボタン出るからそれ無くして」 OWNER
+       2026-08-28. */
+    (st.auto? '' :
+     '<button class="obtap"' + DO('obTourNext') +
+              /* border:0 AND padding:0. `.obtap` has no rule in the stylesheet
+                 -- it is positioned from here, because a fixed thing over the
+                 app's own screen cannot be laid out by a class -- so the
+                 button kept the BROWSER'S default border, and that is the
+                 black square. It looked misaligned because it is not the lit
+                 box: this is the lit thing AND the hand.
+                 「枠の黒四角もなくして欲しいけどそれはなに？」 OWNER 2026-08-28.
+                 Not a corner and not a rule in index.html, so rule 18 is
+                 untouched -- this takes a border AWAY. */
+              ' style="position:fixed;background:none;border:0;padding:0;z-index:42;'+
               /* THE LIT THING AND THE HAND, which is bigger than the light.
                  The hand stands under what it points at, and it was outside
                  this button -- so the one thing on the screen saying "press"
