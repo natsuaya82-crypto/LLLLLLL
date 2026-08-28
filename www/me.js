@@ -560,8 +560,31 @@ function whoCard(h){
       : '')+
     '</div>'+
     (p.bio? '<div class="pbio">'+esc(p.bio)+'</div>' : '')+
-    (p.lname? '<button class="wldrow"' + DO('go', ["about"]) + '>'+
-        '<span class="wldnm">'+esc(p.lname)+'</span>'+ICON_GO+'</button>' : '')+
+    /* THE NAME, AND NOT A WAY THROUGH.
+       「この言語についてで人のをタップしても自分のが出る」 OWNER.
+
+       It was a button, and it called go("about") without saying WHOSE. The
+       page it opens -- vAbout() -> wldPage() in www/home.js -- draws world(),
+       LETTERS and langName: the OPEN language, every one of them. So pressing
+       somebody else's language name showed them mine, with their name at the
+       head of it. Rule 8 exactly, on the one screen a language is read on.
+
+       IT CANNOT BE MADE TRUE YET, AND NOT FOR WANT OF THE CALL. The article
+       is a `wld` slice, and `slice_read` in supabase/schema.sql is
+       `l.owner = auth.uid()` -- ANOTHER PERSON'S LANGUAGE IS NOT READABLE AT
+       ALL, published or not. There is nothing to fetch and so nothing to
+       draw, and a door that opens on nothing is what this already was.
+
+       So the door closes and the name stays: the language a person writes is
+       a fact of their profile, which is what 「lingua マーク」 asked for. The
+       same shape wldRow() takes when a language is private --
+       「そもそも非公開ならプロフィールから飛べないんだって」 -- a row, no arrow,
+       nothing to press.
+
+       What reopens it is one line here, the day slice_read lets a published
+       language be read and there is something to put on the page. */
+    (p.lname? '<div class="wldrow">'+
+        '<span class="wldnm">'+esc(p.lname)+'</span></div>' : '')+
     /* The counts, in the same place and the same shape as your own. They come
        off the person -- FOLLOW_SEAM -- and a person who arrived on a post
        carries none, so they read zero until somebody arrives carrying them.
