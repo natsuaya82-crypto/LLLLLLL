@@ -15,6 +15,44 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 文字を描く画面 ── 印の下の小さい言葉が消えました
+
+**オーナー 2026-08-27**（原文）:
+
+> 「2は文字なくそう」
+
+道具の帯は「細い印＋その下に小さく言葉」でした。言葉が消えて、**印だけ**に
+なります。
+
+**言葉は翻訳から消えていません。** `aria-label` に残っていて、そこも
+`t()` を通っているので、十言語の鍵（`glyph.circle` `glyph.fill`
+`glyph.undo` `glyph.clear`）は全部生きています。読み上げは今まで通り
+言語ごとの言葉を言います。
+
+#### これで消える不具合
+
+フランス語・スペイン語・ポルトガル語・ロシア語で、**説明の字が切れていた**
+のが消えます（`ANNULER` `Deshacer` `Preencher` `Очистить` などが 86px に
+入らず `…` で切れていました）。`docs/BACKLOG.md` のその項目を閉じました。
+
+#### データ
+
+**何も変わりません。**
+
+#### `www/index.html` に一つ残っています ── このセッションのものではありません
+
+`.gcap` を誰も着なくなるので、`www/index.html` の次の四つが浮きます:
+
+    .gtools .gcap{ ... }                          （2525-2526行目）
+    .gtools button.on .gcap{color:var(--gold)}    （2528行目）
+    html[lang="ja"] .gtools .gcap, ...            （2531-2532行目）
+    .gtools button の flex-direction:column と gap:7px（印一つなので効きません）
+
+**消すまで `npm run press` が赤です** ──「styled and unworn」に `.gcap` が
+新しく出て、`tools/css-baseline.txt` は「新しい一つは失格」の掛け金だからです。
+`www/index.html` は `claude/wrap` のもの、`tools/css-baseline.txt` は
+このセッションのものではないので、リーダーに渡します。
+
 ### 文字を描く画面 ── 道具の帯が、紙の上と下の二つになりました
 
 **オーナー 2026-08-27**（原文）:

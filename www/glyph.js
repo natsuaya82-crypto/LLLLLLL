@@ -622,15 +622,16 @@ function geMark(){
    Everything else that used to sit here was a mechanic pretending to be a
    tool — closing a contour, deleting a point — and each of those is now the
    canvas answering a tap instead of a word asking to be understood. One
-   24-unit box each, stroked not filled, so they inherit the caption's colour
-   and go gold with it. */
+   24-unit box each, stroked not filled, so each takes the button's own colour
+   and goes gold with it. The mark is the whole of the button -- there is no
+   word under it. 「2は文字なくそう」 */
 var GICON={
   /* Each mark is the thing it does. Bowed line through a dot that sits on it;
      one arrow turning back on itself; a ring drawn in dots, which is the shape
      of something that is no longer there. */
   'circle': '<path d="M4.5 17.5Q12 3.5 19.5 17.5"/><circle cx="12" cy="10.5" r="1.6"/>',
   /* The inside of a shape being blackened, which is the whole of what it
-     does. Stroked like the rest of them, so it goes gold with its caption. */
+     does. Stroked like the rest of them, so it goes gold with them. */
   'fill'  : '<path d="M12 4.4 20 19.6H4z"/><path d="M7.4 16.4h9.2M9.2 13h5.6M10.6 9.6h2.8"/>',
   'undo'  : '<path d="M4.5 9.5h10a5 5 0 0 1 0 10h-6"/><path d="M8 5.5 4 9.5l4 4"/>',
   'clear' : '<circle cx="12" cy="12" r="7.5" stroke-dasharray="2.2 2.8"/>'
@@ -943,9 +944,17 @@ function geBtn(fn,n,key,en,on){
   }else{
     off=en? '' : ' disabled';
   }
+  /* The mark, and nothing under it. 「2は文字なくそう」 OWNER 2026-08-27.
+     The word was a caption in a font small enough to need it, and in French
+     and German it did not fit -- ANNULER and ZURUCKSETZEN under a 23px icon
+     came back cut off with an ellipsis, which says less than no word at all.
+
+     The label is NOT gone. It is the aria-label, which is what a screen
+     reader says and what press-check reads, and it still goes through t() in
+     all ten languages -- so nothing was taken out of the translations. */
   return '<button data-g="'+n+'"'+act+off+
          (cl?' class="'+cl+'"':'')+' aria-label="'+esc(lb)+'">'+
-         geIcon(n)+'<span class="gcap">'+esc(lb)+'</span></button>';
+         geIcon(n)+'</button>';
 }
 function vGlyph(){
   /* GE is always set by editGlyph before this is routed to; the fallback is
