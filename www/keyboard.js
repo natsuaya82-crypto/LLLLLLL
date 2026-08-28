@@ -2789,9 +2789,22 @@ var ICON_JOIN='<svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="
   'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
   '<path d="M4 6v12"/><path d="M20 6v12"/><path d="M9 12h6"/>'+
   '<path d="M11 9l-2 3 2 3"/><path d="M13 9l2 3-2 3"/></svg>';
+/* OPENING THE KEY THAT IS SELECTED, and it is a PENCIL.
+   「編集のマークもなんか削除っぽいから編集っぽいマークにして欲しい」 OWNER
+   2026-08-28. It was a rectangle with a bar across the middle of it, which is
+   a key with a MINUS on it -- the same shape as taking something away, one
+   button along from the bin, on the one screen where a wrong press deletes a
+   row of somebody's keyboard. Nothing about that could throw: the button
+   worked, and the picture said the opposite of what it did.
+
+   The same drawing as ICON_PEN in glyph.js, at the size and the weight the
+   rest of this toolbar is (19px, 1.7). It is written out here rather than
+   shared for the reason ICON_INLF gives above -- glyph.js is being changed on
+   other branches today -- and docs/BACKLOG.md carries the move. */
 var ICON_KEYSET='<svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" '+
   'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
-  '<rect x="4" y="5" width="16" height="14" rx="2"/><path d="M9 12h6"/></svg>';
+  '<path d="M4 20h4L19.2 8.8a2 2 0 0 0-2.8-2.8L5 17.2V20Z"/>'+
+  '<path d="M15.2 7.2 18 10"/></svg>';
 function kbToolHTML(){
   var row=!!KBH && KBH.k==='r', col=!!KBH && KBH.k==='c',
       key=!!KBH && KBH.k==='k', ask=!!KBH && !!KBH.ins,

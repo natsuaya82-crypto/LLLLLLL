@@ -2180,6 +2180,35 @@ const r = await pg.evaluate(({ s }) => {
   q = chooseKey(0, 3); out.seqKey2 = q.got && q.n === 1;
   out.seqKeyTool = toolFor().indexOf('kbOpenSel') >= 0 &&
                    toolFor().indexOf('kbCut') >= 0;
+  /* AND THE MARK ON THE EDIT BUTTON DOES NOT SAY DELETE.
+     「編集のマークもなんか削除っぽいから編集っぽいマークにして欲しい」 OWNER
+     2026-08-28. It was a rectangle with one bar across the middle -- a key
+     with a MINUS on it -- standing one button along from the bin, on the
+     screen where a wrong press takes a row of somebody's keyboard away. A
+     picture cannot throw and no other check in this file looks at one.
+
+     What is asked is the shape that made it read that way and not "is it a
+     pencil", which nothing mechanical can answer: a closed box, and a stroke
+     that goes across and nowhere else. Read off the button on the page, with
+     a key chosen, so it is the mark a finger is actually looking at. */
+  (function (){
+    var b = document.querySelector('.kbtool [data-do="kbOpenSel"]'),
+        svg = b && b.querySelector('svg'), ds;
+    out.editMarkFound = !!svg;
+    if (!svg) return;
+    ds = [].slice.call(svg.querySelectorAll('path')).map(function (p){
+      return p.getAttribute('d') || '';
+    });
+    out.editMarkBoxed = svg.querySelectorAll('rect,circle,ellipse').length > 0;
+    /* a lone horizontal stroke: an M, an h, and no other direction on it */
+    out.editMarkBar = ds.filter(function (d){
+      return /^\s*M[^a-zA-Z]*[hH][^a-zA-Z]*$/.test(d);
+    }).length > 0;
+    out.editMarkPaths = ds.length;
+    /* and it is not the bin's drawing either */
+    var bin = document.querySelector('.kbtool [data-do="kbCut"] svg');
+    out.editMarkOwn = !!bin && bin.innerHTML !== svg.innerHTML;
+  }());
   /* 2. choose a row while a key is chosen, bin it, choose another */
   q = chooseRow(1); out.seqRow1 = q.got; out.seqRowN = q.n;
   out.seqRowCut = (tapDo('kbCut'), !KBH);
@@ -2751,6 +2780,11 @@ say(r.alLOneEnd, 'and pushing it to the left leaves one run at the other');
 say(r.seqKey1 && r.seqKeyCut && r.seqKey2,
     'choose a key, bin it, and another key can be chosen');
 say(r.seqKeyTool, 'and the buttons over the sheet answer to it');
+say(r.editMarkFound && !r.editMarkBoxed && !r.editMarkBar && r.editMarkOwn &&
+    r.editMarkPaths > 0,
+    'and the mark on the edit button is not a box with a bar across it -- a'
+    + ' minus is what the bin does (' + r.editMarkPaths + ' strokes, box '
+    + r.editMarkBoxed + ', bar ' + r.editMarkBar + ')');
 say(r.seqRow1 && r.seqRowN <= 2 && r.seqRowCut && r.seqRow2,
     'choose a row while a key is chosen, bin it, and another row can be chosen ('
     + r.seqRowN + ' presses to leave the key)');
