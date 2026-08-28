@@ -122,6 +122,9 @@ function snsFilTop(){
 }
 function vFilter(){
   var ks=['rec','fo'];
+  /* The page that lists them asks for them. Once a session, and it draws
+     what the phone already has while the answer is on its way. */
+  snsSavedPull();
   return '<div class="view">'+navTop('')+'<div class="body">'+
     ks.map(function(k){
       return '<button class="set"' + DO('snsSetFil', [k]) + '>'+
@@ -769,31 +772,72 @@ function snsWhoRow(p){
 }
 /* ---- the words somebody keeps ------------------------------------------
    「検索ページで言葉を⭐️で保存、絞り込みから選ぶとその言葉で検索し直す」
-   OWNER 2026-08-28, through the leader -- and it is what the owner meant by
-   「自分が好きなトピックとか」 back when the filter was built. There are no
-   tags in this app and none have been invented: a kept word is a SEARCH
-   somebody made, and choosing it makes that search again.
+   OWNER 2026-08-28 -- and it is what the owner meant by 「自分が好きなトピック
+   とか」 back when the filter was built. There are no tags in this app and
+   none have been invented: a kept word is a SEARCH somebody made, and
+   choosing it makes that search again.
 
-   WHERE THEY LIVE IS NOT SETTLED AND THIS IS NOT THE DECISION.
-   `SET` is the person's settings, which docs/ says outright is the phone's
-   ("What is NOT the timeline's -- a language's backup file, an exported
-   sheet, the settings -- is the phone's and stays there"), and a kept word is
-   in none of the things 「SNSは全部サーバー」 lists. So it is a setting today
-   and it persists with the rest of them, `setOnDisk()` copying every key it
-   finds. If the answer comes back that these belong to the ACCOUNT and
-   should follow somebody to a new phone, the two functions below are the
-   only places that read and write them, which is the whole reason they are
-   two functions and not a dozen `SET.saved` all over this file. */
+   THE SERVER IS THE RECORD AND `SET.saved` IS THE COPY. 「SNSは全部サーバー」
+   -- what a person keeps is theirs and follows them to the next phone, so it
+   is a row in `saved_search` and not a habit one handset remembers. This
+   screen held it in `SET` alone for half a day, which meant a new phone
+   arrived with nobody's list; that is the bug this pair of functions closes.
+
+   The copy earns its keep the way every copy in this app does: with no
+   signal the filter still opens and still has the words on it. It is never
+   where they live.
+
+   `netSearchSave()` and `netSearchDrop()` take the WORDS, not an id --
+   `saved_search` is unique on (author, q), so the words are the name of the
+   row, and the phone already has them in its hand. */
 var ICON_STAR='<svg class="ic" viewBox="0 0 24 24" width="16" height="16" fill="none" '+
   'stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true">'+
   '<path d="M12 4.2l2.35 4.76 5.25.76-3.8 3.7.9 5.23L12 16.18l-4.7 2.47.9-5.23-3.8-3.7 5.25-.76z"/></svg>';
 var ICON_STAR_ON='<svg class="ic" viewBox="0 0 24 24" width="16" height="16" fill="currentColor" '+
   'stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true">'+
   '<path d="M12 4.2l2.35 4.76 5.25.76-3.8 3.7.9 5.23L12 16.18l-4.7 2.47.9-5.23-3.8-3.7 5.25-.76z"/></svg>';
-/* The one place they are read. An array of the words as they were typed. */
+/* The one place they are read, and it reads the COPY -- so every screen
+   draws instantly and draws in a tunnel. What keeps the copy true is the
+   pull below. */
 function snsSaved(){
   var a=SET.saved;
   return (a && a.length)? a : [];
+}
+function snsSameWords(a, b){
+  var i;
+  if(a.length!==b.length) return false;
+  for(i=0;i<a.length;i++) if(a[i]!==b[i]) return false;
+  return true;
+}
+/* Asked once, the shape dayPull() already uses: the screens that show these
+   call it every time they are drawn, and it returns immediately once it has
+   an answer. Without that, writing the answer down calls render(), which
+   draws the screen, which asks again.
+
+   `netMember()` is asked HERE and not left to net.js, and that is the whole
+   care in this function. netSearchSaved() answers `ok([])` when there is no
+   member -- an empty list that means "nobody asked", not "this person keeps
+   nothing" -- and writing that over the copy would erase somebody's list on
+   a launch that had not signed in yet. So it is not asked at all until there
+   is somebody to ask for, and then an empty answer is a real one: they
+   deleted them on their other phone, and the copy should follow.
+
+   A refusal leaves the copy exactly as it is. No signal is not an answer. */
+var snsSavedAsk=false, snsSavedGot=false;
+function snsSavedPull(){
+  if(snsSavedAsk || snsSavedGot) return;
+  if(!netMember()) return;
+  snsSavedAsk=true;
+  netSearchSaved(function(rows){
+    snsSavedAsk=false; snsSavedGot=true;
+    var out=[], i;
+    for(i=0;i<(rows||[]).length;i++)
+      if(rows[i] && rows[i].q) out.push(String(rows[i].q));
+    if(snsSameWords(out, snsSaved())) return;
+    SET.saved=out;
+    save();
+    render();
+  }, function(){ snsSavedAsk=false; });
 }
 function snsIsSaved(q){
   var a=snsSaved(), i, k=String(q||'').trim();
@@ -803,12 +847,22 @@ function snsIsSaved(q){
 /* And the one place they are written. A toggle, because the star is one
    button and pressing it again is how somebody takes a word off a list they
    put it on -- a second screen to remove one would be a screen. Newest
-   first: the word just kept is the one being looked for. */
+   first: the word just kept is the one being looked for.
+
+   The row goes up and the copy is written in the same breath, and the screen
+   does not wait for the server: a star that only lit once the network came
+   back would be a button that does nothing on a train. With no signal the
+   copy still changes and the filter still works -- and the word is NOT on
+   the server, so the next pull will not find it. That is what "the server is
+   the record" costs, and it is the leader's decision of 2026-08-28 rather
+   than something worked around here with a queue nobody asked for. */
 function snsSaveQ(){
-  var k=String(snsQ||'').trim(), a=snsSaved(), out=[], i;
+  var k=String(snsQ||'').trim(), a=snsSaved(), out=[], i, had=false;
   if(!k) return;
-  for(i=0;i<a.length;i++) if(a[i]!==k) out.push(a[i]);
-  if(out.length===a.length) out.unshift(k);
+  for(i=0;i<a.length;i++){ if(a[i]===k) had=true; else out.push(a[i]); }
+  if(!had) out.unshift(k);
+  if(had) netSearchDrop(k, function(){}, function(){});
+  else    netSearchSave(k, function(){}, function(){});
   SET.saved=out;
   save();
   render();
@@ -891,6 +945,9 @@ function snsHitsHTML(){
 }
 function vExplore(){
   if(!netSignedIn()) return snsLocked('explore');
+  /* And the screen the star is on, because whether it is filled is the same
+     question the filter asks. */
+  snsSavedPull();
   /* Asked once when the screen is built, so coming back to a query already
      typed shows its answer rather than an empty page. */
   if(snsQ.trim() && !snsHits) snsFind(snsQ, snsGot);

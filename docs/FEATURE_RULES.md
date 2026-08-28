@@ -218,6 +218,42 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### 規約ページの三つ ── 準拠法はそのまま、通報は24時間、13歳以上
+- Date: 2026-08-28
+- Area: `tokinets.com/lingua/terms.html` と `/privacy.html`
+- Decision:
+
+  ```
+  それでいいよ。
+  24時間でいいよ。
+  13さん以上だね。snsって基本そうやん
+  ```
+
+  三行はリーダーが並べた三つに、上から順に答えたもの。
+
+  1. **準拠法・裁判管轄はいまの文のまま。**「日本法・東京地裁を第一審の専属的
+     合意管轄、ただし居住国の消費者保護法が与える権利は奪わない」。
+  2. **通報への対応は24時間。**
+  3. **13歳以上のみ。**（原文の「13さん」は打ち間違いで、13歳。）
+- Reason:
+
+  ```
+  snsって基本そうやん
+  ```
+
+  3 について。1 と 2 に理由は付いていない。
+- Affected features: 利用規約とプライバシーポリシー（`natsuaya82-crypto/tokine2`
+  の `lingua/`）
+- Affected data: 無し
+- Affected docs: この項、`docs/BACKLOG.md`
+- Implementation status: 実装中（`claude/legal`。1 は既に入っている、2 と 3 を入れる）
+
+#### これが置き換えたもの
+
+**「準拠法と裁判管轄はまだ決まっていない」は無い。**`docs/BACKLOG.md` に
+「これは私が置いた既定値で、オーナーが確かめる所です」と書いてあったのは、
+2026-08-28 のこの決定で確かめられた。その文は同じコミットで消した。
+
 ### ゲートは、全部プッシュしてからサブリーダーが回す。個人は回さない
 - Date: 2026-08-28
 - Area: 検査の回し方
