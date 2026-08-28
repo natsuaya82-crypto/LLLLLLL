@@ -1121,118 +1121,99 @@ function obNameHTML(){
 function obNameLater(){ ob.name=''; obGo(OB_IN); }
 
 /* ---- the timeline ------------------------------------------------------
-   「snsのモックはリアルな画面に人がたくさんいるように見せて。トプ画もつけて。
-     文字の線画は禁止」 OWNER 2026-08-28.
+   「TLの見た目全然違うだろちゃんと同じにしろ」「画像は？」「自作文字って言って
+     んだろ」 OWNER 2026-08-28.
 
-   Three things in that sentence and all three are the shape of this screen:
-   it looks like the real thing, there are a lot of people on it, and every
-   one of them has a face. NO DRAWN LETTERS -- not a canvas, not `.sfont`,
-   not a stroke. The first go at this page put the person's own half-drawn
-   alphabet on the line and it came out as invented people saying invented
-   letters. 「snsの画面それなに？ゴミはいらねえよ」 was that page.
+   IT IS THE REAL ROW. postRow() in www/post.js draws it -- the same function
+   the feed, the thread and a profile draw a post with -- so it cannot look
+   different from the real timeline, because it is not a second drawing of
+   one. What was here before was a hand-built approximation and it was wrong in
+   every way somebody would notice.
 
-   It is the one stop of the walk that is not the app's own screen, and not by
-   choice: vFeed() in www/sns.js answers snsLocked() to anybody with no
-   account, and the account is the step AFTER this one. Walked for real here,
-   the timeline is a sign-in form.
+   That is exactly what post.js's line is FOR. Below it a post renders FROM THE
+   POST: the name, the handle, the shapes the line is written in, the pictures.
+   A mock is a reader with none of the writer's language, which is the case
+   rule 8 and rule 12 exist for -- so these posts carry everything on them, the
+   way a post from a stranger's phone does.
 
-   NOTHING ON IT IS PRESSABLE except the way on. There is no account, no post
-   and no thread behind any of it, so a row that answered a press would be a
-   row promising something that is not there -- the counts are text, not
-   buttons. Every class is the timeline's own, so this page owns no CSS and
-   adds no corner: .post .pav .bch .pbody .phead .pheadn .pname .pwhen
-   .pheadm .phandle .pline .pacts .pact .pn.
+   THE LINES ARE IN THEIR OWN LETTERS. Six people who have made a language,
+   writing in it. The shapes are the mock's own alphabet below -- not the
+   person's, who has drawn one letter so far, and not roman.
 
-   No heading. The screen shows what it is, which is the rule everywhere else
-   in the app and is also the only way it can look like a real one. */
-/* THE TIMELINE IS NOT IN THE READER'S LANGUAGE. It is in a made-up one, which
-   is what this app is for. 「snsは日本語じゃなくて人工言語のモック」
-   「TLは日本語にしないで」 OWNER 2026-08-28.
+   The only thing added around the real row is that nothing here is pressable:
+   there is no account, no thread and no picture behind any of it, so a press
+   would promise something that is not there. One `pointer-events:none` on the
+   wrapper; the rows are untouched. */
+/* THE LETTERS ARE THE PERSON'S OWN. 「自作文字って言ってんだろ」 OWNER
+   2026-08-28, and 「君の文字でSNSを見てみよう」 the first time they asked.
 
-   The first go at this translated the names and the lines into all ten, so a
-   Japanese phone showed マラ saying a Japanese sentence -- a timeline of people
-   who had made a language and were not writing in it. Every string below is
-   ONE string: the same in en, ja, ru and the other seven, because a name is a
-   name and a sentence in somebody's own language is that sentence. They still
-   go through `t()`, which is how the i18n mirror can see they did.
+   postInk() is the app's own cut: the line against LETTERS, so every letter
+   this person has drawn a shape for arrives as that shape and the rest stays
+   text. It is the same function the real composer freezes onto a real post.
 
-   They are ROMAN and not the person's drawn letters: 「文字の線画は禁止」
-   OWNER 2026-08-28, and nothing on this page is a canvas or a stroke.
+   An alphabet was invented here for one commit -- fifteen made-up glyphs, so
+   that the mock would be full of shapes whatever the person had drawn. That is
+   the same 作り話 as the first go at this page: shapes belonging to nobody.
+   What goes on this page is what this person has made. One letter drawn means
+   one shape in these lines and the rest roman, which is exactly what their
+   timeline WILL look like -- and it fills in as they draw. */
+/* トプ画, and the photographs on the posts. Both are small SVGs carried as
+   data URIs -- nothing is fetched and nothing is stored. They are the one
+   place this file names a colour, and that is what a picture IS: content, the
+   way a photograph is, not a surface of the interface. */
+var OB_SNS_TONE=['#8c7a5b,#e6dcc4','#6f7f74,#dae2d8','#8a6b6b,#eddcd6',
+                 '#6b7288,#dbe0ea','#8a7f5c,#e9e3c9','#7a6a80,#e3d9e8'];
+function obSnsSvg(body){
+  return 'data:image/svg+xml;charset=utf-8,'+
+    encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" '+body+'</svg>');
+}
+function obSnsPic(i){
+  var c=OB_SNS_TONE[i%OB_SNS_TONE.length].split(',');
+  return obSnsSvg('viewBox="0 0 80 80"><rect width="80" height="80" fill="'+c[1]+'"/>'+
+    '<circle cx="40" cy="30" r="16" fill="'+c[0]+'" opacity=".9"/>'+
+    '<circle cx="26" cy="58" r="20" fill="'+c[0]+'" opacity=".55"/>'+
+    '<circle cx="58" cy="62" r="16" fill="'+c[0]+'" opacity=".7"/>');
+}
+function obSnsShot(i){
+  var c=OB_SNS_TONE[(i+2)%OB_SNS_TONE.length].split(',');
+  return obSnsSvg('viewBox="0 0 160 120"><rect width="160" height="120" fill="'+c[1]+'"/>'+
+    '<circle cx="122" cy="30" r="13" fill="'+c[0]+'" opacity=".45"/>'+
+    '<path d="M0 96 L44 52 L78 88 L104 66 L160 108 L160 120 L0 120 Z" fill="'+c[0]+'" opacity=".8"/>'+
+    '<path d="M0 110 L38 78 L86 120 L0 120 Z" fill="'+c[0]+'" opacity=".5"/>');
+}
+/* Who is on it. Every string is ONE string -- the same in all ten interface
+   languages -- because a name is a name and a sentence somebody wrote in their
+   own language is that sentence. 「TLは日本語にしないで」 They still go through
+   t(), which is how the i18n mirror can see that they did.
 
-   The minutes are a number rather than a word -- postWhen() is the app's one
-   place for how long ago a thing was written, so these say it exactly as a
-   real row does. */
-/* The keys are written out whole and not built out of a number and a suffix.
-   i18n-check reads the SOURCE for which keys a screen asks for, so a key
-   assembled by concatenation is a key nothing can see being asked for -- it
-   reported all twelve of these as translated into ten languages and dead. */
+   The keys are written out whole and not built from a number and a suffix:
+   i18n-check reads the SOURCE for which keys a screen asks for. */
 var OB_SNS_WHO=[
-  {n:'ob.sns.1.n', h:'ob.sns.1.h', l:'ob.sns.1.l', ago:4,    re:3,  bo:11},
+  {n:'ob.sns.1.n', h:'ob.sns.1.h', l:'ob.sns.1.l', ago:4,    re:3,  bo:11, pics:1},
   {n:'ob.sns.2.n', h:'ob.sns.2.h', l:'ob.sns.2.l', ago:26,   re:1,  bo:4},
-  {n:'ob.sns.3.n', h:'ob.sns.3.h', l:'ob.sns.3.l', ago:73,   re:12, bo:38},
+  {n:'ob.sns.3.n', h:'ob.sns.3.h', l:'ob.sns.3.l', ago:73,   re:12, bo:38, pics:2},
   {n:'ob.sns.4.n', h:'ob.sns.4.h', l:'ob.sns.4.l', ago:140,  re:0,  bo:2},
-  {n:'ob.sns.5.n', h:'ob.sns.5.h', l:'ob.sns.5.l', ago:395,  re:5,  bo:19},
+  {n:'ob.sns.5.n', h:'ob.sns.5.h', l:'ob.sns.5.l', ago:395,  re:5,  bo:19, pics:1},
   {n:'ob.sns.6.n', h:'ob.sns.6.h', l:'ob.sns.6.l', ago:1220, re:2,  bo:7}
 ];
-/* The handle is its own string and not the name lower-cased. Read off the
-   name it came out as @マラ under @マラ -- the same characters twice, which is
-   not what a handle is anywhere. It is the same value in all ten languages,
-   because a handle is an id rather than copy; it goes through t() all the
-   same, so the mirror can see it has. */
-/* トプ画. 「トプ画も設置して」 OWNER 2026-08-28, twice -- and a letter in a
-   circle, which is what postFace() falls back to for somebody with no picture,
-   is the ABSENCE of one. These are pictures: six small SVGs carried as data
-   URIs, worn through `.bpic`, which is the app's own class for a photograph on
-   an avatar. No file is fetched and nothing is stored.
-
-   They are the one place in this file that names a colour, and that is
-   deliberate rather than an oversight of the rule that colour lives in
-   index.html's two theme blocks: these are picture CONTENT, the way a
-   photograph is, not a surface of the interface -- and a photograph does not
-   change with the theme. Six warm tones that sit beside the app's own. */
-var OB_SNS_FACE=['#8c7a5b,#d9c9a3','#6f7f74,#cfd8cd','#8a6b6b,#e0c9c2',
-                 '#6b7288,#ccd2e0','#8a7f5c,#ddd6b6','#7a6a80,#d6cadd'];
-function obSnsPic(i){
-  var c=OB_SNS_FACE[i%OB_SNS_FACE.length].split(','),
-      svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80">'+
-        '<rect width="80" height="80" fill="'+c[1]+'"/>'+
-        '<circle cx="40" cy="31" r="15" fill="'+c[0]+'"/>'+
-        '<path d="M8 80c0-19 14-30 32-30s32 11 32 30z" fill="'+c[0]+'"/></svg>';
-  return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
-}
-function obSnsRow(w, i){
-  var nm=t(w.n), at=Date.now()-w.ago*60000;
-  return '<div class="post">'+
-    '<div class="pav"><img class="bpic" src="'+esc(obSnsPic(i))+'" alt=""></div>'+
-    '<div class="pbody">'+
-      '<div class="phead">'+
-        '<div class="pheadn">'+
-          '<span class="pname">'+esc(nm)+'</span>'+
-          '<span class="pwhen">'+esc(postWhen(at))+'</span>'+
-        '</div>'+
-        '<div class="pheadm"><span class="phandle">@'+esc(t(w.h))+'</span></div>'+
-      '</div>'+
-      /* .pline, which is the app's own row for what a post SAYS in its own
-         language -- and that is what is on it now. It was .pmn, the row for a
-         post said in a language you read, while the line was in the reader's
-         own: both halves of that were the same mistake. */
-      '<div class="pline">'+esc(t(w.l))+'</div>'+
-      '<div class="pacts">'+
-        '<span class="pact">'+ICON_REPLY+'<span class="pn">'+(w.re||'')+'</span></span>'+
-        '<span class="pact">'+ICON_BOOST+'<span class="pn">'+(w.bo||'')+'</span></span>'+
-      '</div>'+
-    '</div></div>';
+/* One post, in the shape post.js reads: everything a reader needs is ON it. */
+function obSnsPost(w, i){
+  var ln=t(w.l), pics=[], k;
+  for(k=0;k<(w.pics||0);k++) pics.push(obSnsShot(i+k));
+  return { id:'ob'+i, who:t(w.n), hd:t(w.h), at:Date.now()-w.ago*60000,
+           ln:ln, ink:postInk(ln), dir:'ltr',
+           av:{pic:obSnsPic(i)}, pics:pics, re:w.re, bo:w.bo, mine:false };
 }
 function obSnsHTML(){
-  /* .obscroll, which is the onboarding's own scrolling list -- the one the
-     fifteen scripts to borrow from sits in. Without it the six rows ran under
-     the foot and 次へ was printed across somebody's post. */
-  return '<div class="mid obleft"><div class="obscroll"><div class="body">'+
-    /* Written out rather than handed to map bare. A two-argument function
-       passed straight to map is the fault CLAUDE.md rule 8 was written after:
-       there the second argument arrived by accident. Here it is wanted, and
-       saying so is what stops the next reader having to work out which. */
-    OB_SNS_WHO.map(function(w, i){ return obSnsRow(w, i); }).join('')+
+  /* The shapes are canvases and a canvas is filled after the HTML is on the
+     page. render() does that for the app -- postLines() -- but it returns
+     before those lines when the onboarding is what is on screen, and
+     www/glyph.js is another session's file today. One line there would do it;
+     until then this is that line, run after the page exists. */
+  setTimeout(function(){ if(typeof postLines==='function') postLines(); }, 0);
+  return '<div class="mid obleft"><div class="obscroll">'+
+    '<div class="body" style="pointer-events:none">'+
+      OB_SNS_WHO.map(function(w, i){ return postRow(obSnsPost(w, i)); }).join('')+
     '</div></div></div>'+
     '<div class="obfoot"><button class="btn"' + DO('obSnsGo') + '>'+t('ob.next')+'</button></div>';
 }
