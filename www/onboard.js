@@ -1046,8 +1046,11 @@ function obNameLater(){ ob.name=''; obGo(OB_IN); }
    The classes are the timeline's own -- .post .pav .pbody .phead .pheadn
    .pname .pwhen .pline. Nothing new is styled and no corner is added: this
    page owns no CSS at all. */
-/* The letters this language has, without the digits -- a row of digits is not
-   what a line of writing looks like.
+/* The ALPHABET, and neither of the other two kinds. ltOfKind() in www/sound.js
+   is the one place that splits the three, so this asks it rather than filtering
+   LETTERS again -- a row of digits is not what a line of writing looks like,
+   and neither is `?` standing in the middle of a word. It came out as `kt ?ab`
+   before this line, which is why the split is asked for rather than guessed.
 
    The ones with a FACE come first, and that is the whole point of the page:
    somebody who has drawn three letters should see those three, not the
@@ -1057,7 +1060,7 @@ function obNameLater(){ ob.name=''; obGo(OB_IN); }
    what "has a face" means, and it is asked the same way here. */
 function obSnsHasFace(l){ return !!(l && ((l.st && l.st.length) || l.ch)); }
 function obSnsLts(){
-  var all=ltOrder(LETTERS.filter(function(l){ return !numIsDigit(l); }));
+  var all=ltOfKind('alpha');
   return all.filter(obSnsHasFace).concat(all.filter(function(l){ return !obSnsHasFace(l); }));
 }
 /* A line of them, `ws` words of `per` letters, starting `from` letters in.
