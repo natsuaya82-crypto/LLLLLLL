@@ -623,7 +623,7 @@ function netRow(r){
   p.mine=!!(SESS && SESS.uid && r.author===SESS.uid);
   return p;
 }
-function netFeed(which, ok, bad){
+function netFeed(which, ok, bad, more){
   /* `which` is 'rec' or 'fo' — everything, or the people this account
      follows. Two questions and not one list filtered twice: a phone that
      asked for everything and then hid most of it would be downloading a
@@ -636,6 +636,21 @@ function netFeed(which, ok, bad){
      cannot: there is nobody to have followed anybody. */
   var sel='/rest/v1/post_seen?select=id,author,created_at,reply_to,body,hidden_at,author_out'+
           '&order=created_at.desc&limit='+NET_PAGE;
+  /* `more` is where to carry on from, and it is a different thing on the two
+     sides because the two lists are in different orders.
+
+     'fo' is in time order, so it is the `created_at` of the last row already
+     held -- keyset and not an offset, because a timeline gains rows at the
+     top while somebody is reading it and an offset would hand them the same
+     post twice, or step over one.
+
+     'rec' is in SCORE order, and "the ones after a score" is not a question
+     anybody can ask: two posts on the same score have no order between them
+     to continue from. So it is a count. That is honest rather than ideal, and
+     it is the reason the owner's twelve-hourly turn helps -- a list that
+     stands still between turns is a list a count can walk without repeating.
+
+     Left out entirely, both sides behave exactly as they did. */
   function got(d){
     var out=[], i;
     if(!d || !d.length){ ok([]); return; }
@@ -645,13 +660,38 @@ function netFeed(which, ok, bad){
   /* Whoever you have blocked is asked for FIRST and left out by the server. A
      timeline that downloaded their posts and then hid them would be a block
      the phone knows about and the server does not, which is not a block. */
-  function pull(more){
-    var q=sel+(more||'');
+  function pull(who){
+    var q=sel+(who||'');
+    if(more) q+='&created_at=lt.'+encodeURIComponent(String(more));
     netBlocked(function(bl){
       netGet(bl.length? q+'&author=not.in.('+bl.join(',')+')' : q, got, bad);
     });
   }
-  if(which!=='fo'){ pull(''); return; }
+  /* What is going round, which is one question the server answers -- the
+     weights, the window and the tie are supabase/schema.sql's feed_hot() and
+     not this file's. A phone that scored posts itself would be scoring the
+     fifty it had rather than the ones there are.
+     「12時間ごとにバズった順」「検索の話題はTwitterと同じアルゴリズムで」 */
+  if(which!=='fo'){
+    netSend('POST', '/rest/v1/rpc/feed_hot',
+            {lim:NET_PAGE, off:(parseInt(more, 10) || 0)},
+            (SESS && SESS.at) || '',
+      function(d){
+        /* Blocked accounts are taken out here and not by the server, which is
+           the one place this list differs from the other: feed_hot() is asked
+           with the publishable key by somebody who may have no account, and
+           there is no block list to ask about when there is nobody to have
+           made one. */
+        netBlocked(function(bl){
+          var out=[], i, j, skip={};
+          for(i=0;i<bl.length;i++) skip[bl[i]]=1;
+          for(i=0;i<(d||[]).length;i++)
+            if(!skip[d[i].author]) out.push(netRow(d[i]));
+          ok(out);
+        });
+      }, bad);
+    return;
+  }
   if(!netSignedIn()){ ok(null); return; }
   /* Two requests and not a join, because there is no foreign key from a post
      to a follow and PostgREST will not invent one. The follow list is small

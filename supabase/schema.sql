@@ -960,6 +960,85 @@ $$;
 grant execute on function notices(int) to authenticated;
 
 -- ---------------------------------------------------------------------------
+-- What is going round
+--
+-- 「12時間ごとにバズった順」 OWNER, and 「検索の話題はTwitterと同じアルゴリズム
+-- で」. The recommended timeline and the search's 話題 are the SAME list --
+-- the owner said so -- so there is one function and not two.
+--
+-- The weights are decided: a like is 1, a repost is 3, an answer is 5. Somebody
+-- who wrote a sentence under your post did more than somebody who tapped a
+-- heart, and the numbers say so. The window is the last 48 hours. A tie is
+-- broken by the newer post, which is the second half of the owner's sentence
+-- and not a detail: without it two posts on the same score swap places every
+-- time the list is asked for.
+--
+-- Read as `post_seen` reads, column for column, so the phone's netRow() does
+-- not learn a second shape. `stable` and no `security definer`: it walks the
+-- same world-readable tables the timeline already walks, and post's own read
+-- policy is what decides that a taken-down post is nobody's business.
+--
+-- WHAT IS NOT HERE, and both are deliberate:
+--
+--   The blue mark. 「Twitterと同じだから青パッチ。上に上がりやすい」 OWNER --
+--   a paid account's posts rise more easily. It CANNOT be computed today:
+--   there is no column anywhere in this file saying who has paid.
+--   www/post.js's postBadge() draws the mark only for `p.mine` and reads
+--   can('badge'), which is this phone's own plan -- so the only thing that
+--   knows is the phone, and a phone that could tell the server it was paid is
+--   an app where anybody marks themselves. The column, when it comes, is
+--   written by nobody: shut the same way `staff` and `admin` are (not in the
+--   grant insert or grant update lists at the foot of this file), and set by
+--   the server receiving Apple's signed notice.
+--   feed_weight() below is the one line that changes on that day.
+--
+--   The twelve-hourly turn. 「12時間ごとに入れ替え」 is decided; WHICH of the
+--   two it means -- the order is rebuilt at 00:00 and 12:00 and stands still
+--   between them, or it is always computed and only what is SHOWN turns over
+--   -- has not been asked of the owner yet, and the two are different lists.
+--   The scoring below is the half both of them are built on, so it is here
+--   and the turn is not. Nothing guesses.
+--
+-- `off` and not a timestamp for the continuation: this list is ordered by a
+-- score, and a score is not something you can ask for "the ones after". A
+-- count is honest about being a count.
+-- ---------------------------------------------------------------------------
+
+-- How much a post's author counts for. ONE for everybody today, and this is
+-- the whole of the reason it is a function: the day there is a column saying
+-- who has paid and a number saying what the mark is worth, this is the line
+-- that changes, and nothing else in the file moves.
+--
+-- The number is NOT decided. It has not been asked of the owner, so it is not
+-- invented here -- a made-up multiplier is a made-up ranking, and nobody would
+-- be able to tell by looking at the app that it had been guessed.
+create or replace function feed_weight(who uuid)
+returns numeric language sql stable as $$ select 1::numeric $$;
+
+create or replace function feed_hot(lim int default 50, off int default 0)
+returns table (id uuid, author uuid, language uuid, prompt bigint,
+               reply_to uuid, created_at timestamptz, hidden_at timestamptz,
+               author_out boolean, body jsonb)
+language sql stable as $$
+  select v.id, v.author, v.language, v.prompt, v.reply_to, v.created_at,
+         v.hidden_at, v.author_out, v.body
+    from post_seen v
+    left join lateral (
+      select coalesce(sum(case r.kind when 'like'  then 1
+                                      when 'boost' then 3 end), 0) as pts
+        from react r where r.post = v.id
+    ) k on true
+    left join lateral (
+      select (count(*) * 5) as pts from post q where q.reply_to = v.id
+    ) a on true
+   where v.created_at > now() - interval '48 hours'
+     and v.hidden_at is null
+   order by ((k.pts + a.pts) * feed_weight(v.author)) desc, v.created_at desc
+   limit lim offset off
+$$;
+grant execute on function feed_hot(int, int) to anon, authenticated;
+
+-- ---------------------------------------------------------------------------
 -- Leaving
 --
 -- Signing out is not here, because signing out is not a change to anything:

@@ -73,6 +73,15 @@ const F = 'f0000000-0000-4000-8000-00000000000f';   /* somebody starting today *
    and that reads exactly like the policy refusing it. */
 const DR = 'd0000000-0000-4000-8000-0000000000d1';  /* what A wrote and did not send */
 const DR2= 'd0000000-0000-4000-8000-0000000000d2';  /* the one B tries to plant */
+/* Three posts to put in an order. B writes them so that A and F are free to
+   react to them -- notices() and feed_hot() both leave out what you did to
+   your own. */
+const H1 = 'a0000000-0000-4000-8000-0000000000f1';  /* one boost  = 3 */
+const H2 = 'a0000000-0000-4000-8000-0000000000f2';  /* one answer = 5 */
+const H3 = 'a0000000-0000-4000-8000-0000000000f3';  /* nothing, and newer than H4 */
+const H4 = 'a0000000-0000-4000-8000-0000000000f4';  /* nothing, and older */
+const H5 = 'a0000000-0000-4000-8000-0000000000f5';  /* older than the window */
+const H3b= 'a0000000-0000-4000-8000-0000000000f6';  /* nothing, and newer than H4 */
 const LD = 'd0000000-0000-4000-8000-00000000000d';  /* the language it makes anyway */
 const LB = 'b0000000-0000-4000-8000-00000000000b';  /* and the frozen account's */
 
@@ -601,6 +610,47 @@ const CASES = [
   ['one person is a notice that says one',    'ok',     A, 0,
     `select 1 from notices(50) where kind='boost' and post='${P}' and n = 1`],
 
+  /* --- and what is going round -------------------------------------------
+     「12時間ごとにバズった順」 OWNER. A like is 1, a repost 3, an answer 5,
+     and a tie goes to the newer post.
+
+     The claim is an ORDER, so it is read as one: the two posts are found in
+     what feed_hot() actually returns and their positions compared. Asking
+     "is the score right" would be asking the function to agree with itself. */
+  ['B writes one that gets boosted',          'ok',     B, 0,
+    `insert into post(id,author,body) values ('${H1}','${B}','{}'::jsonb)`],
+  ['B writes one that gets answered',         'ok',     B, 0,
+    `insert into post(id,author,body) values ('${H2}','${B}','{}'::jsonb)`],
+  ['A boosts the first',                      'ok',     A, 0,
+    `insert into react(post,actor,kind) values ('${H1}','${A}','boost')`],
+  ['A answers the second',                    'ok',     A, 0,
+    `insert into post(author,body,reply_to) values ('${A}','{}'::jsonb,'${H2}')`],
+  /* 5 beats 3. An answer is somebody writing a sentence under you and a
+     repost is a tap, and the order says which was more. */
+  ['an answer outranks a boost',              'ok',     A, 0,
+    `with r as (select id, row_number() over () rn from feed_hot(200))
+     select 1 from r a, r b where a.id='${H2}' and b.id='${H1}' and a.rn < b.rn`],
+  /* A like is 1, so it is under both of them. All three weights, in one
+     order, rather than three claims that each hold on their own. */
+  ['B writes one that gets a single like',    'ok',     B, 0,
+    `insert into post(id,author,body) values ('${H3}','${B}','{}'::jsonb)`],
+  ['F likes it',                              'ok',     F, 0,
+    `insert into react(post,actor,kind) values ('${H3}','${F}','like')`],
+  ['and a boost outranks a like',             'ok',     A, 0,
+    `with r as (select id, row_number() over () rn from feed_hot(200))
+     select 1 from r a, r b where a.id='${H1}' and b.id='${H3}' and a.rn < b.rn`],
+  /* The tie and the window are NOT here, and cannot be: `created_at` is left
+     out of the `grant insert (...)` on post at the foot of schema.sql on
+     purpose -- a post may not lie about when it was written -- so two posts
+     of different ages cannot be made by anybody a policy lets write. Every
+     row this file writes lands in one transaction, so writing them as
+     somebody would give them the same instant and the tie would be a tie.
+     They are in SHAPE below, where the statements run as the table's owner. */
+  /* Nobody is paid yet and nothing pretends otherwise: the multiplier is one
+     for everybody, so it cannot be quietly holding a number nobody chose. */
+  ['nobody weighs more than anybody else',    'denied', A, 0,
+    `select 1 from profile where feed_weight(id) <> 1`],
+
   /* --- a draft, which is the one thing here that is nobody else's ---------
      Every other table in this file is either already public or on its way to
      being public, and their select policies say so. `draft` is what somebody
@@ -862,6 +912,16 @@ const SHAPE = [
      not by the policy they are named after -- a pass for the wrong reason,
      which is the one thing the head of this file says is worth knowing about.
      Asked of the catalog, where it holds whatever the read policy says. */
+  /* The tie and the window, asked of the three posts seeded above. Here and
+     not among the attempts because these statements run as the table's owner,
+     which is the only way rows of different ages exist at all. */
+  ['on the same score the newer post is above', `
+     select count(*) from (select 1 where not exists (
+       with r as (select id, row_number() over () rn from feed_hot(500))
+       select 1 from r a, r b where a.id='${H3b}' and b.id='${H4}' and a.rn < b.rn
+     )) q`, '0'],
+  ['and nothing older than the window is in it', `
+     select count(*) from feed_hot(500) where body ? 'old'`, '0'],
   ['a draft is the author\u2019s in all four policies', `
      select count(*) from (select 1 from (values
        ('SELECT'),('INSERT'),('UPDATE'),('DELETE')) v(cmd)
@@ -990,6 +1050,19 @@ const sql = [
      A staff account that could be made through a policy would be the bug. */
   `insert into profile(id,handle,staff) values (${q(C)},'mod',true);`,
   run,
+  /* Three posts of different ages, written HERE by the owner of the table and
+     not by anybody a policy lets write. That is not a shortcut around a
+     policy: `created_at` is deliberately left out of the `grant insert (...)`
+     on post at the foot of schema.sql, so a post may not lie about when it
+     was written, and there is therefore no account anywhere that could make
+     these. Everything above lands in ONE transaction and shares one now(),
+     so ages have to be put on from outside it or there are no ages at all.
+     What is being asked of them is an ORDER, and nothing here opens a door:
+     they are three ordinary posts by B with nothing done to them. */
+  `insert into post(id,author,body,created_at) values
+     (${q(H4)}, ${q(B)}, '{}'::jsonb,          now() - interval '2 minutes'),
+     (${q(H3b)},${q(B)}, '{}'::jsonb,          now() - interval '1 minute'),
+     (${q(H5)}, ${q(B)}, '{"old":1}'::jsonb,   now() - interval '3 days');`,
   `\\pset format unaligned`,
   `\\pset tuples_only on`,
   /* chr(9) rather than a backslash-t: PostgreSQL string literals are standard
