@@ -185,16 +185,36 @@ function migrateSnd(){
   delete SET.snd;
   saveSnd(); save();
 }
-/* A language has sounds from the moment it exists: a drawn letter takes the
-   next one nothing reads yet, so a language with none is one where every
-   letter reads nothing. Called when the app starts and when a different
-   language is opened, which are the two moments a language can turn out to
-   have none. Never overwrites. */
-function sndStart(){
-  if(SND.length) return;
-  SND=asOrder(asSounds('plain', 12));
-  saveSnd();
-}
+/* Nothing. A new language has no sounds, because nobody has said one yet.
+
+   This filled an empty SND with twelve proposed sounds -- asSounds('plain',
+   12) -- so a language got an inventory on the launch it was made, and the
+   alphabet page drew a pencil cell for every one of them no letter read.
+   That is the app saying what the language sounds like, which CLAUDE.md
+   § What the free plan is names as the thing not to do, in the note under
+   ltStart: the inventory is not touched, and ltSetRoman puts a sound in it
+   when somebody names a letter by hand, because they said the word.
+
+   The reason written here was that a drawn letter takes the next sound
+   nothing reads yet, so a language with none is one where every letter reads
+   nothing. That reason is not in the code: ltNew() makes a letter with
+   snd:[] and no path gives a new letter a sound of its own accord. A letter
+   reading nothing is the state the alphabet page is built to draw -- a
+   pencil where the shape goes and a dot where the name goes -- and it is
+   where every letter starts.
+
+   It stays as a function, doing nothing, because it is called from
+   www/core.js (langOpen), www/boot.js and www/settings.js, and none of those
+   is this session's file. Deleting it before those five calls go is a
+   ReferenceError on launch, which is a white screen. The calls, and the now
+   unread AS_CHARS / asChar / asReal / asSounds in www/assist.js, go with
+   whoever owns those files -- docs/CHANGELOG.md carries the list.
+
+   What it does NOT do is take anything away. A language holding those twelve
+   today keeps them: this only ever wrote when SND was empty, and the one
+   door out of the inventory is still sndDrop(), which is somebody pressing
+   it. */
+function sndStart(){}
 /* The chart is also how a letter is told what it reads, and that is a
    different thing to do with the same button, so the name it says is passed
    in rather than assumed. Nothing else about the chart changes. */
@@ -589,9 +609,9 @@ function sndDrop(sym){
    this is the second half of somebody else's press, and the caller is already
    on its way to say what happened and to redraw.
 
-   DELETE REVIEW is in docs/CHANGELOG.md. The one thing it leaves open and
-   this comment will not restate: SND can now reach zero, and sndStart() fills
-   a zero-length SND with twelve plain sounds at the next launch. */
+   DELETE REVIEW is in docs/CHANGELOG.md. SND can reach zero here, and zero is
+   now where it stays: sndStart() used to fill an empty inventory with twelve
+   plain sounds at the next launch and no longer fills anything. */
 function sndDropLoose(syms){
   var went=false, i, k;
   if(!syms || !syms.length) return;
