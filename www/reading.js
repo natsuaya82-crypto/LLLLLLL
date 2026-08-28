@@ -1,18 +1,8 @@
-/* Lingua — how a word is read out: IPA, the approximation, and the voice
+/* Lingua — how a word is read out, and how a new one is coined
    Loaded by www/index.html as a plain script, in the order listed there.
    ES5 only: this runs in an old WKWebView. tools/es5-check.mjs enforces it. */
 
 
-/* ---- What the rest of the app is allowed to know ------------------------
-   The IPA is universal, so it is never swapped. Only the reading changes,
-   and every screen goes through rd(), so no screen knows which language it
-   is showing. What rd() is handed is the Latin approximation of a sequence,
-   never a word as it is stored. */
-function approx(){ return langDef().read || LANG.en.read; }
-function rd(word){ return approx().word(word); }        /* reading for this language */
-/* The name of the approximation reads as a common noun inside a sentence
-   ("respelling is an approximation") but wants a capital as a button. */
-function capFirst(s){ return String(s).charAt(0).toUpperCase()+String(s).slice(1); }
 /* Search hits on any of spelling, meaning, reading or IPA */
 /* What a search looks in. The fields a word is filed under are in it, so
    typing `cooking` finds the words about cooking -- which is the only
@@ -29,16 +19,12 @@ function srcKey(w){ return (w.hw+' '+wMns(w).join(' ')+' '+phIpa(wPh(w))+
    long one, x was ks. Every one of those is a rule from somebody else's
    language. All of it is gone.
 
-   The respelling stays, because it answers a different question: not what
-   the sound is, but what it looks like to somebody who does not read the
-   IPA. It is handed the Latin approximation from ipaRoman(), and the ten
-   engines below carry on reading Latin as they always did. */
-function readSeq(seq){
-  var m=readMode();
-  if(m==='ipa')  return phIpa(seq);
-  if(m==='kana') return rd(phRoman(seq));
-  return phIpa(seq)+t('read.sep')+rd(phRoman(seq));
-}
+   The respelling is gone with it. It answered a different question -- what
+   a word looks like to somebody who does not read the IPA -- and it was
+   shown only behind the setting that offered IPA / katakana / both, which
+   the owner had removed. Nothing was left to ask it. The ten `read` engines
+   in www/i18n/*.js are what it was built out of and nothing reads them now;
+   they are not this file's to take out. */
 /* Called with a headword, which is what every screen has to hand. A word in
    the dictionary is read from its own sounds; anything else -- a word being
    coined, a sample -- from the sounds its spelling would be made of. */
@@ -48,10 +34,6 @@ function seqOf(hw){
 }
 /* Words run together when one ends on a consonant and the next opens on a
    vowel. Decided on the sounds, which is where it was always happening. */
-/* How readings are displayed (a setting): IPA / approximation / both.
-   The stored value 'kana' is kept as-is for dictionaries saved before this
-   layer existed; it means "the approximation", whatever language that is. */
-function readMode(){ return SET.read||'both'; }
 
 /* ---- The device's voice is not here any more ---------------------------
    There used to be a block below this line that found a voice on the phone,
