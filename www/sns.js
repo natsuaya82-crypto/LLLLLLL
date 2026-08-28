@@ -316,8 +316,12 @@ function snsPull(){
        answer itself is now something the screen shows -- an empty one is what
        turns the tab into snsNoneFo() rather than leaving the list from before
        it was asked. */
+    /* The mark stops turning when the asking is over, whatever came back. A
+       render takes it out by itself; the road where `ps` is null does not
+       render, and that is the one this line is for. */
+    pullSpinOff();
     if(ps) render();
-  }, function(){ snsPulling=false; });
+  }, function(){ snsPulling=false; pullSpinOff(); });
 }
 /* ---- pulling a timeline down to ask again --------------------------------
    「プルトゥーリフレッシュも入れて欲しい」 OWNER 2026-08-28.
@@ -338,6 +342,22 @@ function snsPull(){
    having come loose. The bar does not move: it is outside `.body`, so what
    slides is the timeline and what stays is where you are.
 
+   AND SOMETHING TURNS IN THE GAP. 「引っ張って更新に、回るものを出す」 OWNER
+   2026-08-28, said twice. The page moving says a gesture is happening; it
+   does not say the app went and asked. So a mark sits in the gap the pull
+   opens, turning with the finger on the way down and turning by itself while
+   the answer is out.
+
+   THIS FILE MAKES IT AND TURNS IT; IT DOES NOT DRAW IT. What it looks like is
+   `www/index.html`, which is another session's -- so what is put in the page
+   is an empty `div.pullspin`, and an empty div with no rule behind it is zero
+   pixels tall and marks nothing. This can land before the stylesheet does and
+   change no screen.
+
+   It turns ONCE by the time it would fire. `PULL_GO` is the distance that
+   asks, so a full turn is the mark saying "this far" -- the number is read
+   off that rather than chosen, and moving one moves the other.
+
    Already asking is not asked twice. `snsPulling` and `notPulling` have held
    that since the two pulls were written -- a person flicking between tabs
    would otherwise have four asks in the air -- so this hands the pull to
@@ -350,6 +370,35 @@ function snsPull(){
 var PULL_R=0.5, PULL_GO=64, PULL_MAX=96;
 var PULL_ON={feed:1, explore:1, notif:1};
 var pullY=-1, pullEl=null, pullAt=0;
+/* The mark that turns in the gap. Put in beside `.body` rather than inside
+   it, because `.body` is the thing sliding down and a mark carried on it
+   would sit still relative to the gap it is supposed to be in.
+
+   `on` is the second half: while a finger is on it, this file turns it; once
+   let go and asking, the class goes on and the stylesheet turns it, because
+   an animation that runs on its own is CSS's and a rotation that answers a
+   thumb is not. */
+var PULL_SPIN=null;
+function pullSpinOn(){
+  var v, b;
+  if(PULL_SPIN && document.contains(PULL_SPIN)) return PULL_SPIN;
+  v=document.querySelector('#app .view');
+  b=document.querySelector('#app .view > .body');
+  if(!v || !b) return null;
+  PULL_SPIN=document.createElement('div');
+  PULL_SPIN.className='pullspin';
+  v.insertBefore(PULL_SPIN, b);
+  return PULL_SPIN;
+}
+/* Taken out when the answer lands, when the pull is let go short, and when
+   the asking failed. A render takes it out on its own -- it rebuilds `#app`
+   -- but the road where nothing came back does not render, and a mark left
+   turning over a timeline nobody is waiting for is worse than none. */
+function pullSpinOff(){
+  if(PULL_SPIN && PULL_SPIN.parentNode)
+    PULL_SPIN.parentNode.removeChild(PULL_SPIN);
+  PULL_SPIN=null;
+}
 /* Which timeline is under the finger, or '' for a screen this is not about.
    Signed out there is nothing to ask for: the three screens are the door. */
 function pullWhere(){
@@ -383,6 +432,12 @@ function pullMove(e){
   if(e.cancelable) e.preventDefault();
   pullAt=Math.min(PULL_MAX, dy*PULL_R);
   pullEl.style.transform='translateY('+pullAt+'px)';
+  /* One full turn by the distance that asks. Only `transform` is set from
+     here: what the mark IS -- its size, its line, its place in the gap -- is
+     the stylesheet's, and a shape set from JavaScript would be in no
+     stylesheet for anything to hold. */
+  var sp=pullSpinOn();
+  if(sp) sp.style.transform='rotate('+(360*pullAt/PULL_GO)+'deg)';
 }
 function pullEnd(){ pullLet(pullAt>=PULL_GO); }
 /* Let go: the body goes back where it was, and far enough down it asks.
@@ -396,9 +451,13 @@ function pullLet(ask){
     el.style.transform='';
     setTimeout(function(){ if(el.style) el.style.transition=''; }, 300);
   }
-  if(!ask) return;
+  /* Let go short: the gap closes and the mark goes with it. */
+  if(!ask){ pullSpinOff(); return; }
+  /* Let go far enough: it stops answering the finger and starts turning on
+     its own, which is the stylesheet's animation and this file's class. */
+  if(PULL_SPIN){ PULL_SPIN.className='pullspin on'; PULL_SPIN.style.transform=''; }
   if(r==='notif'){ notPull(); return; }
-  if(!r) return;
+  if(!r){ pullSpinOff(); return; }
   /* A pull is somebody saying "ask again", and what the feed is showing
      while a word is on is the answer to that word -- so that is what gets
      asked again. It is said HERE and not inside snsFilFind()'s own guard,
@@ -1251,10 +1310,13 @@ function notPull(){
   notPulling=true;
   netNotices(function(ns){
     notPulling=false;
+    /* Beside snsPull()'s, and for the same reason: the road where nothing
+       came back does not render, so the mark has to be taken out by name. */
+    pullSpinOff();
     if(!ns) return;
     NOTES_HAVE=ns;
     render();
-  }, function(){ notPulling=false; });
+  }, function(){ notPulling=false; pullSpinOff(); });
 }
 /* The face, and the way to whoever wears it. 「行に顔、顔を押すとその人の
    ページ」 OWNER -- which is the same sentence the timeline already answered
