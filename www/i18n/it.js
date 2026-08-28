@@ -612,8 +612,6 @@ defLang('it', (function(){
       "glyph.fill"     : "Riempi",
       "glyph.undo"        : "Indietro",
       "glyph.clear"       : "Svuota",
-      "glyph.zin"        : "Più",
-      "glyph.zout"       : "Meno",
       "glyph.save"        : "Salva",
       "glyph.saved"       : "{0} salvata",
       "fmr.title"        : "Forme fatte da una regola",

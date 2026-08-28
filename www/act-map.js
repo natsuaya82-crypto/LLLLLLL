@@ -84,8 +84,6 @@ act('ltWobEnd', ltWobEnd);
 act('ltForUnitGo', ltForUnitGo);
 act('ltSave', ltSave);
 act('geUndo', geUndo);
-act('geZoomIn', geZoomIn);
-act('geZoomOut', geZoomOut);
 act('geSave', geSave);
 act('geHintShow', geHintShow);
 act('go', go);

@@ -517,8 +517,6 @@ defLang('en', (function(){
       'glyph.fill'     : "Fill",
       'glyph.undo'        : "Undo",
       'glyph.clear'       : "Clear",
-      'glyph.zin'        : "In",
-      'glyph.zout'       : "Out",
       'glyph.save'        : "Save",
       'glyph.saved'       : "{0} saved",
       'fmr.title'        : "Forms made by a rule",

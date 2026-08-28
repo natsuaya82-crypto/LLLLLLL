@@ -620,8 +620,6 @@ defLang('zh', (function(){
       "glyph.fill"     : "填充",
       "glyph.undo"        : "撤销",
       "glyph.clear"       : "清空",
-      "glyph.zin"        : "放大",
-      "glyph.zout"       : "缩小",
       "glyph.save"        : "保存",
       "glyph.saved"       : "已保存 {0}",
       "fmr.title"        : "按规则造的形式",

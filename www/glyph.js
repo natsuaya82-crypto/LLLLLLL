@@ -633,18 +633,7 @@ var GICON={
      does. Stroked like the rest of them, so it goes gold with its caption. */
   'fill'  : '<path d="M12 4.4 20 19.6H4z"/><path d="M7.4 16.4h9.2M9.2 13h5.6M10.6 9.6h2.8"/>',
   'undo'  : '<path d="M4.5 9.5h10a5 5 0 0 1 0 10h-6"/><path d="M8 5.5 4 9.5l4 4"/>',
-  'clear' : '<circle cx="12" cy="12" r="7.5" stroke-dasharray="2.2 2.8"/>',
-  /* The magnifier, and it is the one the app already draws -- ICON_LENS, the
-     same circle and the same handle -- with a bar across it for smaller and
-     a cross for bigger. 「虫眼鏡マークタップして大きくしたり小さくしたり
-     したい。」 OWNER 2026-08-27. Two marks rather than one that cycles:
-     「大きくしたり小さくしたり」 is two things, and a single button that
-     wrapped round from biggest to smallest would make one of them a
-     four-press journey. Stroked, no fill, no corner -- like the other four. */
-  'zin'   : '<circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l4.5 4.5"/>'+
-            '<path d="M10.5 7.8v5.4M7.8 10.5h5.4"/>',
-  'zout'  : '<circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l4.5 4.5"/>'+
-            '<path d="M7.8 10.5h5.4"/>'
+  'clear' : '<circle cx="12" cy="12" r="7.5" stroke-dasharray="2.2 2.8"/>'
 };
 /* Drawn, not typed. A glyph borrowed from the emoji block is somebody else's
    drawing: it arrives at whatever weight and colour the system feels like,
@@ -999,8 +988,9 @@ function vGlyph(){
        that was left for it is not left. What is under the page is the tab
        bar, which is what .body's own padding is already about. */
     '<div class="body" style="padding-bottom:calc(env(safe-area-inset-bottom,0) + var(--tabh) + 24px)">'+
+    geRail(st, pts, 'top')+
     '<div class="gcanvwrap"><canvas id="gcanv" class="gcanv"></canvas></div>'+
-    geRail(st, pts)+
+    geRail(st, pts, 'bot')+
     '<div class="ghintwrap"><canvas id="ghint" class="ghint"></canvas></div>'+
     '</div></div>';
 }
@@ -1328,37 +1318,6 @@ function geFill(){
   if(st && st.pts.length){ if(GE.fill) st.fill=true; else delete st.fill; }
   GE.pi=-1; render();
 }
-/* ---- bigger and smaller ------------------------------------------------
-   The magnifier moves through 1, 1.5, 2 and 3. At 3 the dots are about 51px
-   apart, which is a thumb's width, which is the point of it.
-
-   WHERE it magnifies is the thing worth writing down. A magnifier held over
-   a page shows what you are looking at, so this one centres on the point you
-   have selected -- and failing that on the last point of the stroke you are
-   drawing, which is where your hand already is. Only when the magnifier is
-   pressed, never while drawing: recentring on every tap would slide the
-   whole square out from under the finger placing it, which is the one thing
-   a drawing surface may not do.
-
-   It is not stored. Zoom is where you are standing, not part of the letter,
-   so it goes when the screen does and nothing new is written to a language.
-   (`docs/DATA_MODEL.md` stays as it is.) */
-function geZoomStep(d){
-  if(!GE) return;
-  var i=0, j;
-  for(j=0;j<GEZOOM.length;j++) if(GEZOOM[j]===geZ()) i=j;
-  i+=d;
-  if(i<0 || i>=GEZOOM.length) return;
-  /* what to look at, decided BEFORE the zoom changes */
-  var st=GE.st[GE.si], p=null;
-  if(st && st.pts.length){ p=(GE.pi>=0 && st.pts[GE.pi])? st.pts[GE.pi] : st.pts[st.pts.length-1]; }
-  if(GEZOOM[i]===1){ GE.cx=400; GE.cy=400; }
-  else if(p){ GE.cx=p[0]; GE.cy=p[1]; }
-  GE.z=GEZOOM[i];
-  render();
-}
-function geZoomIn(){ geZoomStep(1); }
-function geZoomOut(){ geZoomStep(-1); }
 function geUndo(){
   if(!GE.undo.length) return;
   GE.st=JSON.parse(GE.undo.pop());
@@ -1727,8 +1686,11 @@ var GEPAD=0.055;
    about zoom beyond asking these.
 
    `z` is how much bigger, and the window on the square is the middle 800/z
-   of it, clamped so it never shows past the edge. */
-var GEZOOM=[1, 1.5, 2, 3];
+   of it, clamped so it never shows past the edge.
+
+   It is not stored. Zoom is where you are standing, not part of the letter,
+   so it goes when the screen does and nothing new is written to a language.
+   (`docs/DATA_MODEL.md` stays as it is.) */
 function geZ(){ return (GE && GE.z)? GE.z : 1; }
 /* The top-left corner of what is visible, in the square's own 0-800. */
 function geOrg(){
@@ -1973,20 +1935,47 @@ function geBendable(){
   var st=GE && GE.st[GE.st.length-1];
   return !!(st && st.pts.length>=3);
 }
-function geRail(st, pts){
+/* ---- and it is two rails, not one --------------------------------------
+   「戻す進む、ズームは四角の上にしよう。四角の下は塗りとラウンドと消去で。」
+   OWNER 2026-08-27.
+
+       paper's top    undo   redo
+       paper's foot   fill   round   clear
+
+   Where you have BEEN is over the paper and what you are DOING is under it,
+   which is the sentence the split is: the two above take the drawing
+   somewhere it has already been, and the three below act on the drawing in
+   front of you.
+
+   The two magnifiers are not on either. 「指でやるならボタンなし」 -- two
+   fingers do that now, so a button for it would be a second way to say the
+   same thing, and the seven that were in one row here is what the caption
+   under each of them could not fit under.
+
+   `half` says which of the two this call is. WITHOUT it every button comes
+   back in one row, which is what the onboarding's own drawing step asks for
+   -- there the canvas is inside a step of its own and the rail sits under it,
+   so there is no top for a top rail to be at. */
+function geRail(st, pts, half){
+  var top = (half!=='bot'), bot = (half!=='top');
   return '<div class="gtools">'+
-    geBtn('geCircle','circle','glyph.circle', geBendable(), !!GE.round)+
-    geBtn('geFill','fill','glyph.fill', true, !!GE.fill)+
-    geBtn('geUndo','undo','glyph.undo', !!GE.undo.length, false)+
-    geBtn('geClear','clear','glyph.clear', !!pts, false)+
-    geBtn('geZoomOut','zout','glyph.zout', geZ()>GEZOOM[0], false)+
-    geBtn('geZoomIn','zin','glyph.zin', geZ()<GEZOOM[GEZOOM.length-1], !!(GE && GE.z>1))+
+    (top?
+      geBtn('geUndo','undo','glyph.undo', !!GE.undo.length, false) : '')+
+    (bot?
+      geBtn('geFill','fill','glyph.fill', true, !!GE.fill)+
+      geBtn('geCircle','circle','glyph.circle', geBendable(), !!GE.round)+
+      geBtn('geClear','clear','glyph.clear', !!pts, false) : '')+
   '</div>';
 }
 
 function geTools(){
-  var box=document.querySelector('.gtools');
-  if(!box) return;
+  /* Both rails, because there are two of them now and the first one on the
+     page holds only half the buttons. querySelector answered the top one and
+     left fill, round and clear frozen at whatever they were when the screen
+     was drawn -- so the bin stayed down over a drawing that had just been
+     made. */
+  var boxes=document.querySelectorAll('.gtools');
+  if(!boxes.length) return;
   var st=GE.st[GE.si], pts=0;
   GE.st.forEach(function(s){ pts+=s.pts.length; });
   /* Keyed by name, not by position: the row can be reordered or added to
@@ -1995,19 +1984,22 @@ function geTools(){
           'fill'  :[true, !!GE.fill],
           'undo'  :[!!GE.undo.length, false],
           'clear' :[!!pts, false] };
-  var b=box.getElementsByTagName('button'), i, s, g, cl;
-  for(i=0;i<b.length;i++){
-    g=b[i].getAttribute('data-g'); s=S[g];
-    if(!s) continue;
-    if(GE_HINT_DEMO[g]){
-      cl=s[1]?'on':'';
-      if(!s[0]) cl=cl?cl+' off':'off';
-      b[i].className=cl;
-      if(s[0]) b[i].removeAttribute('aria-disabled');
-      else b[i].setAttribute('aria-disabled','true');
-    } else {
-      b[i].disabled=!s[0];
-      b[i].className=s[1]?'on':'';
+  var bi, b, i, s, g, cl;
+  for(bi=0;bi<boxes.length;bi++){
+    b=boxes[bi].getElementsByTagName('button');
+    for(i=0;i<b.length;i++){
+      g=b[i].getAttribute('data-g'); s=S[g];
+      if(!s) continue;
+      if(GE_HINT_DEMO[g]){
+        cl=s[1]?'on':'';
+        if(!s[0]) cl=cl?cl+' off':'off';
+        b[i].className=cl;
+        if(s[0]) b[i].removeAttribute('aria-disabled');
+        else b[i].setAttribute('aria-disabled','true');
+      } else {
+        b[i].disabled=!s[0];
+        b[i].className=s[1]?'on':'';
+      }
     }
   }
   /* the onboarding's own step, which is the other thing on this screen that
