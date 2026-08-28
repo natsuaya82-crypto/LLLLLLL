@@ -320,6 +320,161 @@ for (const f of files) {
 }
 console.log('bare callbacks checked: ' + checked);
 
+/* ---- rule three: an embed is a foreign key being walked --------------------
+
+   NOT ABOUT THE TWO SIDES, and it is here because this is the file that holds
+   what one side may assume about the other -- and the server is a side.
+
+   `www/net.js` asks PostgREST for a row and, sometimes, for rows of another
+   table alongside it:
+
+     /rest/v1/profile?select=id,handle,display,av,language(name)
+
+   That `language(name)` is not a wish. PostgREST walks a FOREIGN KEY to reach
+   it, and when there is no key between the two tables it does not answer with
+   the row and no embed -- it refuses the WHOLE request with PGRST200, 400.
+
+   This is written because it happened. On 2026-08-19 the line above was
+   correct: `language.owner` was `references profile(id)`. On 2026-08-22
+   `language.owner` was repointed to `auth.users(id)` so that an anonymous
+   account with no profile row could own a language -- a good change, in a
+   file about the database, that broke a string in a file about the network.
+   Both tables point at `auth.users` now; neither points at the other;
+   PostgREST does not join two tables through a third they share. Every people
+   search in the app had been failing since, and nothing said so:
+   `tools/fixture.mjs` hands netFindWho()'s ANSWER to the walk by hand,
+   because there is no server in a walk, so the question itself was never
+   asked by anything. 「新しいアカウントが検索に出てこない」 was the owner
+   finding it on a phone.
+
+   IT READS THE URL AND NOT THE ANSWER. That is the whole point: an answer put
+   in by hand is a claim about what the server would say, and this is the one
+   bug that lives in what we ASK. Nothing here talks to a server, and it needs
+   nothing to be running.
+
+   The rule it holds: every embed named in a select in www/net.js has a
+   foreign key behind it, in either direction, or is the name of a COLUMN that
+   is itself a foreign key -- which is the third way PostgREST resolves one,
+   and how `report?select=...,who(id,handle)` reaches `profile`. */
+
+const SCHEMA = path.join(HERE, '..', 'supabase', 'schema.sql');
+const sql = fs.readFileSync(SCHEMA, 'utf8').replace(/--[^\n]*/g, '');
+
+/* Where every foreign key points, as `table.column` -> table, built by
+   walking the file in the order Postgres would run it. A constraint that is
+   dropped and added again ends up as the ADD says, which is exactly the shape
+   `language_owner_fkey` has -- so a set collected all at once would find the
+   old inline key still in it and call the broken embed fine. */
+const fk = {};
+const tables = new Set();
+{
+  /* Inline, inside `create table`. The name Postgres gives such a key is
+     <table>_<column>_fkey, which is the name the drops below use. */
+  const re = /create table if not exists (\w+)\s*\(([\s\S]*?)\n\);/g;
+  let m;
+  while ((m = re.exec(sql))) {
+    tables.add(m[1]);
+    for (const line of m[2].split('\n')) {
+      const c = /^\s*(\w+)\s+\w+[^,]*?references\s+(?:\w+\.)?(\w+)\s*\(/.exec(line);
+      if (c) fk[m[1] + '.' + c[1]] = c[2];
+    }
+  }
+}
+{
+  /* Then every alter, in order. */
+  const re = /alter table (\w+)\s+(drop constraint if exists (\w+)|add\s+constraint\s+(\w+)\s+foreign key\s*\(\s*(\w+)\s*\)\s*references\s+(?:\w+\.)?(\w+)\s*\()/g;
+  let m;
+  while ((m = re.exec(sql))) {
+    if (m[3]) {
+      const c = new RegExp('^' + m[1] + '_(\\w+)_fkey$').exec(m[3]);
+      if (c) delete fk[m[1] + '.' + c[1]];
+    } else if (m[5]) {
+      fk[m[1] + '.' + m[5]] = m[6];
+    }
+  }
+}
+
+/* What a select asks for, with the nesting kept: `post(id,author(handle))` is
+   `author` under `post` under whatever the path named, and each hop is a
+   separate key to find. */
+function embeds(sel) {
+  const out = [];
+  let name = '';
+  for (let i = 0; i < sel.length; i++) {
+    const ch = sel[i];
+    if (ch === '(') {
+      let depth = 1, j = i + 1;
+      while (j < sel.length && depth) {
+        if (sel[j] === '(') depth++;
+        if (sel[j] === ')') depth--;
+        j++;
+      }
+      /* An alias (`want:table(...)`) names the same relationship; the half
+         after the colon is what is resolved. `!inner` is a modifier on it. */
+      const n = name.split(':').pop().split('!')[0];
+      if (n) out.push({ name: n, inner: sel.slice(i + 1, j - 1) });
+      i = j - 1;
+      name = '';
+    } else if (/[\w:!]/.test(ch)) name += ch;
+    else name = '';
+  }
+  return out;
+}
+
+/* Whether `T` can reach `name`, and what table that lands on. */
+function hop(T, name) {
+  if (fk[T + '.' + name]) return fk[T + '.' + name];        /* named by column */
+  if (tables.has(name)) {
+    for (const k in fk) {
+      if (k.indexOf(T + '.') === 0 && fk[k] === name) return name;   /* T -> N */
+      if (k.indexOf(name + '.') === 0 && fk[k] === T) return name;   /* N -> T */
+    }
+  }
+  return '';
+}
+
+/* The URLs, with adjacent string literals glued back together -- a select
+   long enough to wrap is written as `'...' + '...'` and is one string by the
+   time it reaches the server. */
+const net = fs.readFileSync(path.join(WWW, 'net.js'), 'utf8')
+              .replace(/'\s*\+\s*'/g, '');
+let asked = 0;
+const badBefore = fail.length;
+{
+  const re = /\/rest\/v1\/(\w+)\?([^']*)/g;
+  let m;
+  while ((m = re.exec(net))) {
+    const sel = /(?:^|&)select=([^&]*)/.exec(m[2]);
+    if (!sel) continue;
+    const walk = (T, s) => {
+      for (const e of embeds(s)) {
+        asked++;
+        const to = hop(T, e.name);
+        if (!to) {
+          fail.push('www/net.js asks ' + T + ' for `' + e.name +
+                    '(...)`, and supabase/schema.sql has no foreign key ' +
+                    'between them in either direction:\n  /rest/v1/' + m[1] +
+                    '?select=' + sel[1] + '\n  PostgREST answers PGRST200 ' +
+                    'and refuses the whole request -- not the embed, the ' +
+                    'request.');
+          continue;
+        }
+        walk(to, e.inner);
+      }
+    };
+    walk(m[1], sel[1]);
+  }
+}
+/* Only said when it is true. A count that goes on announcing the rule holds
+   while the lines under it say which embed broke it is the check arguing with
+   itself, and the half anybody pastes into a report is the cheerful half. */
+if (fail.length === badBefore)
+  console.log('embeds asked of the server: ' + asked +
+              ', every one with a foreign key behind it');
+else
+  console.log('embeds asked of the server: ' + asked + ', ' +
+              (fail.length - badBefore) + ' with no foreign key behind them');
+
 if (fail.length) {
   console.error('\nthe two sides have run into each other:\n');
   for (const f of fail) console.error('  ' + f + '\n');
