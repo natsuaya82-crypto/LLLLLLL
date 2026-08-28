@@ -19,12 +19,17 @@ function srcKey(w){ return (w.hw+' '+wMns(w).join(' ')+' '+phIpa(wPh(w))+
    long one, x was ks. Every one of those is a rule from somebody else's
    language. All of it is gone.
 
-   The respelling is gone with it. It answered a different question -- what
-   a word looks like to somebody who does not read the IPA -- and it was
-   shown only behind the setting that offered IPA / katakana / both, which
-   the owner had removed. Nothing was left to ask it. The ten `read` engines
-   in www/i18n/*.js are what it was built out of and nothing reads them now;
-   they are not this file's to take out. */
+   The respelling has gone from HERE with it. It answered a different
+   question -- what a word looks like to somebody who does not read the IPA
+   -- and on a WORD it was shown only behind the setting that offered
+   IPA / katakana / both, which the owner removed. Nothing in this file was
+   left to ask it.
+
+   It is alive elsewhere and this is the sentence to read before deleting
+   anything: the ten `read` engines in www/i18n/*.js are still on screen in
+   the interface-language chooser, where `vSet('ui')` renders one sample word
+   through each language's own respelling so the ten rows are ten readings
+   rather than ten labels. `www/settings.js` is the one caller. */
 /* Called with a headword, which is what every screen has to hand. A word in
    the dictionary is read from its own sounds; anything else -- a word being
    coined, a sample -- from the sounds its spelling would be made of. */
