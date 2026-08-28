@@ -975,10 +975,66 @@ function netStore(ok, bad){
 function netLike(q){
   return encodeURIComponent('*'+String(q||'').replace(/[*,()]/g, ' ')+'*');
 }
-/* People. The language's NAME comes with them where there is one: the embed
-   reads `language`, whose policy answers with what has been published and
-   with your own, so an unpublished language is nobody's business and simply
-   does not arrive. 「lingua マーク」 */
+/* The names of the languages these accounts have, by owner -- the second half
+   of looking people up.
+   -------------------------------------------------------------------------
+   TWO REQUESTS AND NOT A JOIN, for the same reason netFeed() asks for the
+   follow list separately: there is no foreign key for PostgREST to travel.
+
+   It USED to be a join. netFindWho() asked for `language(name)` as an embed,
+   and on 2026-08-19 that worked, because `language.owner` was
+   `references profile(id)` and an embed is a foreign key being walked. On
+   2026-08-22 the column was repointed to `auth.users(id)` so that an
+   anonymous account with no profile row could own a language -- which is
+   right, and which quietly took the embed's road away. Both tables point at
+   `auth.users` now and neither points at the other, and PostgREST does not
+   join two tables through a third they happen to share. It answers PGRST200
+   and the WHOLE request fails: not "somebody with no language", but nobody at
+   all, for every search anybody made. 「新しいアカウントが検索に出てこない」
+   was that, seen from the one account the owner was looking for.
+
+   `profile.id` and `language.owner` are still the same uuid -- both are the
+   account -- so the second question can be asked by hand. That is all this is.
+
+   THE NAME IS DECORATION AND THE PEOPLE ARE THE ANSWER, so a failure here
+   comes back as no names rather than as no people. A search that lost every
+   result because a tag beside a handle could not be fetched would be this
+   same bug in a smaller costume.
+
+   Which one, when somebody has several: the OLDEST, and it is ordered so that
+   it is the same one twice. netFindWho() argues that for its own paging --
+   「it just has to be the SAME answer twice」 -- and an unordered pick would
+   give a person a different tag every time somebody searched. It is not a
+   decision about which language represents somebody; nothing has asked that
+   yet, and the embed did not answer it either.
+
+   Unpublished languages do not arrive and are not meant to: `language_read`
+   in supabase/schema.sql is `published_at is not null or owner = auth.uid()`,
+   so this asks with the same policy the embed asked with. 「lingua マーク」 */
+function netLangNames(ids, done){
+  var want=[], seen={}, i, id;
+  for(i=0;i<(ids||[]).length;i++){
+    id=String(ids[i]||'');
+    if(id && !seen[id]){ seen[id]=1; want.push(id); }
+  }
+  if(!want.length){ done({}); return; }
+  netGet('/rest/v1/language?select=owner,name&order=created_at.asc'+
+         '&owner=in.('+want.join(',')+')',
+    function(d){
+      var by={}, j, r, o;
+      for(j=0;j<(d||[]).length;j++){
+        r=d[j]||{};
+        o=String(r.owner||'');
+        /* The first row for an owner wins, and the order above is what makes
+           "first" mean the oldest rather than whichever the server reached
+           for. */
+        if(o && !(o in by)) by[o]=String(r.name||'');
+      }
+      done(by);
+    }, function(){ done({}); });
+}
+/* People. The language's name is asked for separately and pasted on --
+   netLangNames() above says why it cannot be an embed any more. */
 function netFindWho(q, ok, bad, more){
   var like=netLike(q);
   /* Ordered by handle, which it was not until there was a second page to
@@ -991,21 +1047,32 @@ function netFindWho(q, ok, bad, more){
      People have no `created_at` worth sorting by here: a search is not a
      timeline, and whoever matched first alphabetically is as good an answer
      as whoever signed up first -- it just has to be the SAME answer twice. */
-  netGet('/rest/v1/profile?select=id,handle,display,av,language(name)'+
+  netGet('/rest/v1/profile?select=id,handle,display,av'+
          '&or=(handle.ilike.'+like+',display.ilike.'+like+')'+
          '&order=handle.asc'+
          (more? '&handle=gt.'+encodeURIComponent(String(more)) : '')+
          '&limit='+NET_PAGE,
     function(d){
-      var out=[], i, r, ls;
+      var out=[], ids=[], i, r;
       for(i=0;i<(d||[]).length;i++){
         r=d[i]||{};
-        ls=r.language||[];
         out.push({who:String(r.display||''), hd:String(r.handle||''),
-                  av:r.av||null, lname:(ls.length? String(ls[0].name||'') : ''),
+                  av:r.av||null, lname:'',
                   mine:!!(SESS && SESS.uid && r.id===SESS.uid)});
+        /* Beside the answer rather than on it: the shape a person comes back
+           in is what every screen already draws, and an `id` added to it
+           would be an account's uuid travelling to places that read a handle. */
+        ids.push(String(r.id||''));
       }
-      ok(out);
+      if(!out.length){ ok(out); return; }
+      netLangNames(ids, function(by){
+        var j, id;
+        for(j=0;j<out.length;j++){
+          id=ids[j];
+          if(id && by[id]) out[j].lname=by[id];
+        }
+        ok(out);
+      });
     }, bad);
 }
 /* Posts, matched on the line as it is spelled, on what it means, and on the
