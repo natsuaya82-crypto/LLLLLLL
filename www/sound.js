@@ -273,7 +273,9 @@ function sndTake(sym){
    typing in the search can repaint the tiles without knowing which of the
    three screens it is standing on. */
 var ipaQ='';
-function ipaSetQ(v){ ipaQ=String(v||''); ipaPaint(); }
+/* The box is as tall as what is in it, and only render() does that on its
+   own -- typing repaints the list rather than the screen. */
+function ipaSetQ(v){ ipaQ=String(v||''); lnGrow('ipa-q'); ipaPaint(); }
 /* The list again, without the page around it: what a press calls and what is
    already on travel on the element, so nothing here has to know which of the
    three screens it is standing on. */
@@ -412,7 +414,12 @@ function ipaGroupsHTML(act, on){
 function ipaPickHTML(act, on){
   on=on||[];
   return '<div class="search"><span class="lens">'+ICON_LENS+'</span>'+
-    '<input id="ipa-q" value="'+esc(ipaQ)+'"' + IN('ipaSetQ') + '></div>'+
+      /* THE SAME FIELD AS EVERYWHERE ELSE, and it was an <input>.
+         「全部改行して画面内に文字が収まるようにして欲しい」 OWNER 2026-08-27,
+         and 「全部なくせ」 when asked what was left. An <input> is one row that
+         scrolls sideways forever; there is no CSS for it, so the element
+         changes. lnField() is the one place that shape lives. */
+      lnField('ipa-q', '', IN('ipaSetQ'), ipaQ)+'</div>'+
     '<div id="ipa-list" data-act="'+esc(act)+'" data-on="'+esc(on.join(' '))+'">'+
     ipaGroupsHTML(act, on)+'</div>';
 }
@@ -765,7 +772,7 @@ function ltPaint(){
      itself, which a narrowed list does not have */
   ltDragMount();
 }
-function ltSetQ(v){ ltQ=String(v||''); ltPaint(); }
+function ltSetQ(v){ ltQ=String(v||''); lnGrow('lt-q'); ltPaint(); }
 /* One row, and it opens a screen. It was two rows of round chips -- the shape
    CLAUDE.md forbids by name, written by the one thing that had read it.
    Choosing is a screen and changing is the screen you arrive at. */
@@ -781,7 +788,12 @@ function ltViewRow(){
      No placeholder and no clear button, which is ipaPickHTML() four hundred
      lines up -- the same .search, on the same chapter's other list. */
   return '<div class="search"><span class="lens">'+ICON_LENS+'</span>'+
-      '<input id="lt-q" value="'+esc(ltQ)+'"' + IN('ltSetQ') + '></div>'+
+      /* THE SAME FIELD AS EVERYWHERE ELSE, and it was an <input>.
+         「全部改行して画面内に文字が収まるようにして欲しい」 OWNER 2026-08-27,
+         and 「全部なくせ」 when asked what was left. An <input> is one row that
+         scrolls sideways forever; there is no CSS for it, so the element
+         changes. lnField() is the one place that shape lives. */
+      lnField('lt-q', '', IN('ltSetQ'), ltQ)+'</div>'+
     '<div class="wfilrow">'+
     '<button class="wfil"' + DO('openLtView') + '>'+
       '<span class="wfilv">'+esc(t('lt.fil.'+ltFil))+'</span>'+ICON_GO+'</button>'+

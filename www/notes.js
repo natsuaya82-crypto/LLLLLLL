@@ -114,8 +114,15 @@ function vNotes(){
     '<div class="body">'+
     (ntFind
       ? '<div class="search"><span class="lens">'+ICON_LENS+'</span>'+
-        '<input id="nt-q" placeholder="'+esc(t('notes.search'))+'" value="'+esc(ntQ)+'"' +
-        IN('ntSetQ') + '></div>'
+      /* THE SAME FIELD AS EVERYWHERE ELSE, and it was an <input>.
+         「全部改行して画面内に文字が収まるようにして欲しい」 OWNER 2026-08-27,
+         and 「全部なくせ」 when asked what was left. An <input> is one row that
+         scrolls sideways forever; there is no CSS for it, so the element
+         changes. lnField() is the one place that shape lives.
+
+         ntSetQ() calls render(), and lnGrowAll() runs there, so this one
+         needs no lnGrow of its own. */
+        lnField('nt-q', t('notes.search'), IN('ntSetQ'), ntQ)+'</div>'
       : '<div class="note" style="margin-bottom:12px">'+t('notes.note')+'</div>')+
     (found.length
       ? '<div class="ntlist">'+rows+'</div>'
