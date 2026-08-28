@@ -185,19 +185,52 @@ function meSetName(v){ ME.name=String(v||''); lnGrow('me-nm'); saveMe(); }
    about the language. It is never invented and never stands in for
    anything: with nothing written there is nothing there. */
 function meSetBio(v){ ME.bio=String(v||''); saveMe(); }
-/* リンクと、居るところ。どちらも bio と同じただの文字列で、同じ形で書いて
-   ある ── 検証も、書式も、候補も無い。
-
-   位置情報が自由入力なのは OWNER DECISION, 2026-08-25:
+/* 居るところは、ただの文字列。検証も、書式も、候補も無い ──
+   OWNER DECISION, 2026-08-25:
      「自由入力です。」
      「だって自分の国入れたい人だっているやん」
    国名を入れる人が居る、というのが理由。だから国コードにしない、候補リスト
    にしない、検証しない、地図にしない。端末の位置は使わない ── CoreLocation
    も権限も Info.plist も要らないし、開けてもいけない。
 
-   リンクについてはオーナーは何も言っていない。位置情報の答えを当てはめない
-   ため、こちらも同じ「ただの文字列」以上のことはしていない。 */
-function meSetLink(v){ ME.link=String(v||''); lnGrow('me-lk'); saveMe(); }
+   **リンクは違う。** 「リンクもhttpのリンクの形からじゃないと入力できない
+   ようにして欲しい」 OWNER 2026-08-28。この欄はリンクの形からしか打てない。
+
+   2026-08-25 の決定を覆したのではない ── あの日オーナーが答えたのは
+   **居るところ**についてで（理由が「自分の国入れたい人」なのがその証拠）、
+   リンクについては何も言っていなかった。この欄が自由入力だったのは、
+   居るところの答えをリンクに当てはめた**こちらの推測**で、決定ではない。 */
+/* 打てるのは、リンクの形になっているものと、そこへ向かって打っている途中の
+   ものだけ。`h` `ht` `htt` `http` `http:` `http://` は途中なので通り、`e` は
+   通らない ── そこから始まるリンクは無いので。
+
+   空も通る。リンクが無いことは、書式の間違いではない。
+
+   そして**前からあった値を消している最中も通す**。この規則より前に入った
+   `example.com` のような値は、一字ずつ消せないと消せなくなる ── 人が入れた
+   ものを消せない画面にはしない。 */
+function meLinkOK(v, was){
+  var s=String(v||''), w=String(was||''), c=s.toLowerCase();
+  if(!s) return true;
+  /* 大文字小文字は見ない。`HTTPS://` は綴りの間違いではなく、打った字は
+     打ったまま残す ── ここで決めているのは形であって、綴りではない。 */
+  if(c.indexOf('http://')===0 || c.indexOf('https://')===0) return true;
+  if('http://'.indexOf(c)===0 || 'https://'.indexOf(c)===0) return true;
+  return w.indexOf(s)===0 && s.length < w.length;
+}
+/* 通らなかった打鍵は**無かったことにする**。画面には何も出ない ──
+   「アプリ内に説明を書くの禁止」。欄が受け付けないことが、それ自体で
+   言っていることになる。 */
+function meSetLink(v){
+  var s=String(v||''), e;
+  if(!meLinkOK(s, ME.link)){
+    e=document.getElementById('me-lk');
+    if(e) e.value=String(ME.link||'');
+    lnGrow('me-lk');
+    return;
+  }
+  ME.link=s; lnGrow('me-lk'); saveMe();
+}
 function meSetLoc(v){ ME.loc=String(v||''); lnGrow('me-lc'); saveMe(); }
 /* ---- a face of your own ------------------------------------------------
    A file input, because that is the one way a WKWebView opens the camera
