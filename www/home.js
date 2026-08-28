@@ -373,6 +373,9 @@ function vProfile(){
   /* And whether you follow them, which is the one thing on somebody else's
      card that is about YOU. On your own page it is the count under the name. */
   meFollowPull();
+  /* And the count beside it, which is the other direction and had nobody
+     asking for it at all. 「フォローされてもフォロワー1って増えない」 */
+  if(pfMine()) meFollowerPull();
   return '<div class="view">'+
     /* The gear is yours and only yours: somebody else's page is arrived at
        from the search, so it gets a way back instead. */

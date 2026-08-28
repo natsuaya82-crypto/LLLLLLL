@@ -494,6 +494,30 @@ function meFollowPull(){
     render();
   }, function(){ FO_ASKED=false; });
 }
+/* AND WHO FOLLOWS YOU, which nothing had ever asked for.
+   -------------------------------------------------------------------------
+   「フォローされてもフォロワー1って増えないのはなぜ？」 OWNER 2026-08-28.
+
+   `ME.fr` was read by meFollowers() and filled in from localStorage by
+   meFrom() -- and written by NOTHING. The number under a profile was the
+   length of a list that started empty and had no way to stop being empty, so
+   it was not a wrong count: it was a count nobody had ever taken.
+
+   No press can move this one, which is the difference from the list above:
+   being followed is something somebody ELSE does, so there is no local change
+   to protect and the answer is simply written down. Asked once a session,
+   and only a request that could not be MADE is asked again. */
+var FR_ASKED=false;
+function meFollowerPull(){
+  if(FR_ASKED || !netSignedIn()) return;
+  FR_ASKED=true;
+  netFollowers(function(hs){
+    if(!hs) return;
+    ME.fr=hs;
+    saveMe();
+    render();
+  }, function(){ FR_ASKED=false; });
+}
 /* Who you have blocked, as handles, beside who you follow -- both are the
    account's and neither is a language's. The uuids the timeline needs are the
    server's answer (netBlocked); this is what a screen asks so a button can
@@ -777,6 +801,11 @@ FORM_OPEN.mepic=function(){ openMePic(); };
    route's argument -- they differ in the list and in what to say when it is
    empty, and in nothing else. */
 function vFollows(){
+  /* Both lists are asked for here, because this screen is the only place
+     either is shown in full and the two numbers that lead to it are drawn on
+     a page that may never have been opened this session. */
+  meFollowPull();
+  meFollowerPull();
   var ers=(here().a==='ers'), list=ers? meFollowers() : meFollowing();
   return '<div class="view">'+navTop()+'<div class="body">'+
     (list.length

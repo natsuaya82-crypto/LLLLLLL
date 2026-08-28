@@ -774,6 +774,36 @@ function netFollowing(ok, bad){
       ok(out);
     }, bad);
 }
+/* AND THE OTHER DIRECTION, WHICH NOTHING HAD EVER ASKED.
+   -------------------------------------------------------------------------
+   「フォローされてもフォロワー1って増えないのはなぜ？」 OWNER 2026-08-28.
+
+   Because nobody was counting. `ME.fr` in www/me.js is READ by meFollowers()
+   and filled in from localStorage by meFrom(), and **no line in www/ has ever
+   written it** -- so the number under a profile was the length of a list that
+   started empty and stayed empty. Every `follow` request in this file asked
+   `follower=eq.<me>` ("who I follow"); not one asked the reverse.
+
+   It is the same row read the other way round, and the same policy allows it:
+   `follow_read` is `using (true)`, because who follows whom is public the way
+   it is in every timeline.
+
+   `follower(handle)` names the COLUMN and not the table, for netFollowing()'s
+   reason: `follow` has two foreign keys into `profile` and asking for
+   `profile(handle)` is ambiguous. */
+function netFollowers(ok, bad){
+  if(!netSignedIn()){ ok(null); return; }
+  netGet('/rest/v1/follow?select=follower(handle)&followed=eq.'+
+         encodeURIComponent(SESS.uid),
+    function(d){
+      var out=[], i, r;
+      for(i=0;i<(d||[]).length;i++){
+        r=(d[i] && d[i].follower) || null;
+        if(r && r.handle) out.push(String(r.handle));
+      }
+      ok(out);
+    }, bad);
+}
 /* ---- keeping somebody away from you ------------------------------------
    A block one phone knows about is not a block: the other person's posts have
    to stop arriving, so it is a row on the server and the timeline asks about
