@@ -1301,9 +1301,14 @@ function kbDragMount(){
    key that goes in is span/2 wide. One number, carried from the drawing to
    the press, so the two cannot disagree about how wide the frame was. */
 function kbCellHTML(ri, at, span, ki){
-  return '<button class="kbk cell'+(kbCellIs(ri, at)? ' pick':'')+'"' +
+  return '<button class="kbk'+(ki===undefined? '' : ' gap')+' cell'+
+    (kbCellIs(ri, at)? ' pick':'')+'"' +
     DO('kbCellAdd', [ri, at, span]) +
-    ' style="grid-column:span '+span+'"' +
+    /* The paint, because a selection nobody can see is not one. There is no
+       `.kbk.pick` rule in the stylesheet -- a chosen key is painted from
+       here, inline -- so a frame that wore only the class was chosen and
+       looked exactly like the frame beside it. */
+    ' style="grid-column:span '+span+(kbCellIs(ri, at)? kbPickPaint() : '')+'"' +
     /* A frame drawn over a gap the row WRITES DOWN says which key it is,
        once, on the first of them. kbReadRows() builds a row back out of the
        page after a carry -- it is the layout, briefly, and a gap that named
@@ -1590,8 +1595,14 @@ function kbRhCSS(k){ return kbTall(k)? ';--rh:'+(k.h||1) : ''; }
    colour itself still lives in the two theme blocks and nowhere else, which is
    what that rule asks for. If it should be a stylesheet rule, it is one line
    -- `.kbk.pick{background:var(--pur);color:var(--bg)}` -- and this goes. */
+/* What a chosen thing on the sheet is painted. One place, so a frame and a
+   key cannot come to wear two different purples -- and it is the purple the
+   sheet already uses, not a new one: 「選んだキーは色変えないと選んでるか
+   わかんなくない？」OWNER 2026-08-27 is answered once for everything the sheet
+   can choose. */
+function kbPickPaint(){ return ';background:var(--pur);color:var(--bg)'; }
 function kbPickCSS(ri, ki){
-  return kbKeyIs(ri, ki)? ';background:var(--pur);color:var(--bg)' : '';
+  return kbKeyIs(ri, ki)? kbPickPaint() : '';
 }
 function kbShadow(k){ return !!k && k.k==='gap' && !!k.up; }
 /* Where a key starts, in columns, and which key stands at a column. A merge

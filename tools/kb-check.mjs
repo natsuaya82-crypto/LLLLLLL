@@ -827,7 +827,17 @@ const r = await pg.evaluate(({ s }) => {
   if (c0) c0.click();
   standKb();
   out.cellSel = !!(KBH && KBH.k === 'f' && KBH.r === 0);
-  out.cellLit = !!document.querySelector('.kb.kbsheet .kbk.cell.pick');
+  /* Asked of the PAGE and not of the class, the same as the key claim above:
+     what this is about is that it LOOKS different from the frame beside it.
+     Asked of the class it was a false green -- a frame wore `pick` and was
+     painted exactly like its neighbour, because a chosen key is painted from
+     an inline style and there is no `.kbk.pick` rule to inherit. */
+  out.cellLit = (function (){
+    var on = document.querySelector('.kb.kbsheet .kbk.cell.pick'),
+        off = document.querySelectorAll('.kb.kbsheet .kbk.cell:not(.pick)')[0];
+    return !!on && !!off &&
+      getComputedStyle(on).backgroundColor !== getComputedStyle(off).backgroundColor;
+  }());
   /* and what the band offers for it is the one button that fills it */
   out.cellTool = [].slice.call(document.querySelectorAll('.kbtool [data-do]'))
     .filter(function (b){ return !b.disabled; })
@@ -878,6 +888,15 @@ const r = await pg.evaluate(({ s }) => {
     wasKeys = kbLayer().rows[0].length;
     fs[0].click(); standKb();
     out.alSel = !!(KBH && KBH.k === 'f' && KBH.r === 0 && KBH.at === 0 && KBH.span === 2);
+    out.alLit = (function (){
+      var on = document.querySelector('.kb.kbsheet .kbk.cell.pick'),
+          off = document.querySelectorAll('.kb.kbsheet .kbk.cell:not(.pick)')[0];
+      return !!on && !!off &&
+        getComputedStyle(on).backgroundColor !== getComputedStyle(off).backgroundColor;
+    }());
+    /* and it is still drawn as the gap it stands for -- the class it wore
+       before any of this, so nothing about how it looks at rest moved */
+    out.alGapCls = !!document.querySelector('.kb.kbsheet .kbk.gap.cell');
     /* and the bin is DOWN on a frame -- there is nothing in it to take */
     out.alBin = [].slice.call(document.querySelectorAll('.kbtool [data-do="kbCut"]'))
       .every(function (b){ return b.disabled; });
@@ -2741,7 +2760,8 @@ say(r.alGaps === 2 && r.alFrames === '2,2,2,1,2,2,2,1',
     + ' each end, not one frame of three and a half [' + r.alFrames + ']');
 say(r.alNamed === 2, 'and the first frame of each names the gap it stands for,'
     + ' so a carry reads the row back whole (' + r.alNamed + ')');
-say(r.alSel, 'pressing one of them SELECTS it, the same as any other frame');
+say(r.alSel && r.alLit, 'pressing one of them SELECTS it and lights it, the same as any other frame');
+say(r.alGapCls, 'and at rest it is drawn exactly as the gap it stands for was');
 say(r.alBin, 'and the bin is down on it -- there is nothing in it to take');
 say(r.alSame && r.alKey,
     'and the band puts one key in it, the row staying exactly as wide ['
