@@ -1078,7 +1078,6 @@ defLang('fr', (function(){
       'post.save'             : "Enregistrer",
       'post.edited'           : "Modifié",
       'post.pv'               : "Privé",
-      'post.unsent'               : "Pas encore envoyé",
       'post.pv.on'            : "Vous seul le verrez",
       'post.pv.off'           : "Tout le monde le verra",
       'post.draft.save'       : "Garder un brouillon",

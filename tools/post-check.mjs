@@ -387,25 +387,6 @@ const R = await pg.evaluate(async () => {
     fails.push('an empty composer made a post. No line, no photograph, no '
              + 'voice -- there is nothing there to put on a timeline');
 
-  /* ---- a post that has not reached the server says so ----------------
-     netPush() was handed an empty failure function, so a post the server
-     refused looked exactly like one it took: the timeline showed it, nothing
-     was said, and the only way to find out was somebody's dashboard.
-     「spl流したのにまだ投稿載らんの？」
-
-     There is no server here and there is not meant to be -- which makes this
-     the honest case rather than a contrived one: every post written in this
-     check is a post that did not go up. `sid` is the server's name for it and
-     postSid() is the only thing that writes one. */
-  const unsent = POSTS.filter(p => p.mine && !p.pv && !p.sid);
-  if (!unsent.length)
-    fails.push('every post in this check reached a server that is not there, ' +
-               'so nothing below is a test of anything');
-  else if (postRow(unsent[0]).indexOf(ICON_UNSENT) < 0)
-    fails.push('a post that never reached the server is drawn exactly like one ' +
-               'that did. Nothing on the row, nothing on the screen, and the ' +
-               'only place the truth is written is a dashboard');
-
   /* ---- and none of it happens without an account --------------------
      A post has a writer. The three sns tabs and the composer were built when
      there was no server -- a post was an object in localStorage with nowhere
@@ -1340,8 +1321,7 @@ console.log('post: a letter placed on a black photograph is IN the file that goe
             '      A reply carries the handle of whoever it answers, and goes on\n' +
             '      saying so after that post has been deleted.\n' +
             '      With nobody signed in the timeline is the door and nothing\n' +
-            '      else, and the composer will not open at all. A post that has\n' +
-            '      not reached the server says so on its own row.\n' +
+            '      else, and the composer will not open at all.\n' +
             '      The timeline is sent a small copy -- ' + R.thumb + ' KB against ' +
             R.full + ' KB --\n' +
             '      and pressing it still opens the photograph. A picture whose\n' +

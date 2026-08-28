@@ -944,7 +944,6 @@ defLang('en', (function(){
       'post.save'             : "Save",
       'post.edited'           : "Edited",
       'post.pv'               : "Private",
-      'post.unsent'               : "Not sent yet",
       'post.pv.on'            : "Only you will see this",
       'post.pv.off'           : "Everybody will see this",
       'post.draft.save'       : "Save a draft",

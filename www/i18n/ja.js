@@ -946,7 +946,6 @@ defLang('ja', (function(){
       'post.save'             : "保存",
       'post.edited'           : "編集済み",
       'post.pv'               : "自分だけ",
-      'post.unsent'               : "未送信",
       'post.pv.on'            : "自分だけの投稿になります",
       'post.pv.off'           : "公開の投稿になります",
       'post.draft.save'       : "下書きに保存",

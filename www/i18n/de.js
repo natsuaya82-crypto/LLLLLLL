@@ -1019,7 +1019,6 @@ defLang('de', (function(){
       'post.save'             : "Sichern",
       'post.edited'           : "Bearbeitet",
       'post.pv'               : "Privat",
-      'post.unsent'               : "Noch nicht gesendet",
       'post.pv.on'            : "Nur du siehst das",
       'post.pv.off'           : "Alle sehen das",
       'post.draft.save'       : "Entwurf sichern",

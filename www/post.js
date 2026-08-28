@@ -2565,8 +2565,8 @@ function postRow(p){
       /* Two lines, not eleven things on one.
          「名前 言語名 ユーザー名 日付 編集済み ↑これ全部一列に表示すると
          なにも見えない」 This was ONE flex row carrying the name, the badge,
-         the language, the handle, a dot, the time, the lock, the unsent mark,
-         "edited", "taken down", the pin and the ... -- twelve things, on a
+         the language, the handle, a dot, the time, the lock, "edited",
+         "taken down", the pin and the ... -- eleven things, on a
          phone, in the width of a post. `.pname` has `text-overflow:ellipsis`,
          so what actually happened is that the name -- the one thing on the
          line somebody is looking for -- gave up its width first and came out
@@ -2637,18 +2637,6 @@ function postRow(p){
              TO IT, and the one that decides who is reading it comes first. */
           (p.pv? '<span class="ppv" aria-label="'+esc(t('post.pv'))+'">'+ICON_LOCK+'</span>' : '')+
           (p.ed? '<span class="ped">'+esc(t('post.edited'))+'</span>' : '')+
-          /* Yours, public, and not on the server yet. It was nothing at all:
-             netPush() was handed an empty failure function in both places that
-             call it, so a post the server refused looked exactly like one it
-             took, and the only way to find out was somebody's dashboard.
-             「spl流したのにまだ投稿載らんの？」
-
-             `sid` is the server's name for this post and postSid() writes it,
-             so having none is the whole of the question. A post kept to
-             yourself never goes anywhere and is not waiting for anything. */
-          ((p.mine && !p.pv && !p.sid)
-            ? '<span class="ppv" aria-label="'+esc(t('post.unsent'))+'">'+ICON_UNSENT+'</span>'
-            : '')+
           /* Taken down. Only its author is ever handed one of these -- post_read
              in schema.sql -- so it is for them, and it belongs up here beside
              the lock and "edited": a word for what state the post is in.

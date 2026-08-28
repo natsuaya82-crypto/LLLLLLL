@@ -1037,7 +1037,6 @@ defLang('pt', (function(){
       'post.save'             : "Guardar",
       'post.edited'           : "Editado",
       'post.pv'               : "Privado",
-      'post.unsent'               : "Ainda não enviado",
       'post.pv.on'            : "Só você vai ver",
       'post.pv.off'           : "Todos vão ver",
       'post.draft.save'       : "Guardar rascunho",
