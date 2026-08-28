@@ -1228,18 +1228,26 @@ function obSnsInk(ln){
 
    The keys are written out whole rather than built from a number and a
    suffix: i18n-check reads the SOURCE for which keys a screen asks for. */
-/* Two people, and four posts between them. A slice of a timeline is what this
-   is -- not a directory -- so the same two faces come round again, which is
-   what a feed of people you follow actually looks like. */
+/* Five people, eight posts. A slice of a timeline is what this is -- not a
+   directory -- so a face comes round twice, which is what a feed of people you
+   follow actually looks like. The faces and the photographs are files in
+   www/img/, beside the keyboard's own. */
 var OB_SNS_ME=[
   {n:'ob.sns.a.n', h:'ob.sns.a.h', av:'img/av2.jpg'},
-  {n:'ob.sns.b.n', h:'ob.sns.b.h', av:'img/av1.jpg'}
+  {n:'ob.sns.b.n', h:'ob.sns.b.h', av:'img/av1.jpg'},
+  {n:'ob.sns.c.n', h:'ob.sns.c.h', av:'img/av3.jpg'},
+  {n:'ob.sns.d.n', h:'ob.sns.d.h', av:'img/av4.jpg'},
+  {n:'ob.sns.e.n', h:'ob.sns.e.h', av:'img/av5.jpg'}
 ];
 var OB_SNS_WHO=[
-  {w:0, l:'ob.sns.1.l', m:'ob.sns.1.m', ago:4,   re:3,  bo:11},
-  {w:1, l:'ob.sns.2.l', m:'ob.sns.2.m', ago:26,  re:1,  bo:4,  pic:'img/pic2.jpg'},
-  {w:0, l:'ob.sns.3.l', m:'ob.sns.3.m', ago:73,  re:12, bo:38, pic:'img/pic1.jpg'},
-  {w:1, l:'ob.sns.4.l', m:'ob.sns.4.m', ago:190, re:2,  bo:7}
+  {w:0, l:'ob.sns.1.l', m:'ob.sns.1.m', ago:4,    re:3,  bo:11},
+  {w:1, l:'ob.sns.2.l', m:'ob.sns.2.m', ago:26,   re:1,  bo:4,  pic:'img/pic2.jpg'},
+  {w:4, l:'ob.sns.3.l', m:'ob.sns.3.m', ago:52,   re:0,  bo:6,  pic:'img/pic4.jpg'},
+  {w:2, l:'ob.sns.4.l', m:'ob.sns.4.m', ago:88,   re:7,  bo:15},
+  {w:0, l:'ob.sns.5.l', m:'ob.sns.5.m', ago:190,  re:12, bo:38, pic:'img/pic1.jpg'},
+  {w:2, l:'ob.sns.6.l', m:'ob.sns.6.m', ago:260,  re:4,  bo:27, pic:'img/pic5.jpg'},
+  {w:3, l:'ob.sns.7.l', m:'ob.sns.7.m', ago:340,  re:2,  bo:9},
+  {w:1, l:'ob.sns.8.l', m:'ob.sns.8.m', ago:1180, re:5,  bo:21, pic:'img/pic3.jpg'}
 ];
 /* One post, in the shape post.js reads: everything a reader needs is ON it. */
 function obSnsPost(w, i){
