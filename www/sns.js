@@ -67,12 +67,14 @@ function snsLocked(r){
    why `netFeed` takes which one it is being asked for: on a server "everything"
    and "the people I follow" are two queries with two answers, and a phone that
    asked for everything and then threw most of it away would be downloading a
-   timeline to hide it. Until there is a server the answer to both is what is
-   already here, and `snsMine()` is the sieve — which is the seam being filled
-   in, not the design.
+   timeline to hide it. THE SERVER IS HERE, so the answer to "the people I
+   follow" is the one it sent -- `FO_HAVE` below -- and not a sieve run over
+   everything this phone happens to be holding.
 
-   Following is by HANDLE, off the post, the way everything on the reading side
-   is: `p.hd` is who wrote it, frozen when it was written. Your own are in it,
+   The sieve is still written, and it is now the COPY: what the tab falls back
+   to in the moment before the first answer arrives. Following is by HANDLE
+   there, off the post, the way everything on the reading side is -- `p.hd` is
+   who wrote it, frozen when it was written. Your own are in it either way,
    because a timeline of people you follow that leaves you out is a timeline
    you cannot see yourself having spoken in.
 
@@ -87,7 +89,41 @@ function snsLocked(r){
    queries with two answers -- so what went is the ROW, not the question. It
    is answered in the corner of the bar now, which is the block below. */
 var snsTab='rec';
-function snsMine(p){ return !!p.mine || meFollows(p.hd); }
+/* WHICH POSTS THE FOLLOWED TIMELINE IS, BY ID -- the server's answer, kept.
+   `null` until one has arrived, which is not the same as none.
+
+   netFeed('fo') asks the server for posts by the people this account follows,
+   and the server answers off the `follow` table. What came back was then put
+   through meFollows() a second time -- and meFollows() reads ME.fo, which is
+   written by meFollow() when somebody presses Follow ON THIS PHONE and is
+   filled from the server by nothing at all.
+
+   So the same account on a second phone follows the same people and has an
+   empty ME.fo: every post the server correctly sent arrived and was thrown
+   away by the sieve, and the tab read 0 with the answer to its own question
+   already in its hands. The owner has an SE2 and a 17, which is exactly the
+   two phones that makes it.
+
+   A LIST THE SERVER SELECTED MUST NOT BE SELECTED AGAIN HERE. Filtering an
+   answer with a weaker copy of the question can only take correct rows out.
+   ME.fo stays as the copy -- it is what the Follow button reads, and it is
+   what this falls back to before any answer has come -- but where the two
+   disagree the server is the record. The same shape as the kept searches
+   further down this file: 「SNSは全部サーバー」.
+
+   Filling ME.fo from the server is the other half and is NOT here: it is a
+   read in www/net.js and a write in www/me.js, and both belong to other
+   sessions. Until it lands the Follow button on a second phone still says
+   Follow for somebody already followed. That is one wrong word on a button;
+   this was the whole timeline. */
+var FO_HAVE=null;
+/* Your own are in it, and that has not moved -- 「a timeline of people you
+   follow that leaves you out is a timeline you cannot see yourself having
+   spoken in」. The server does not send them: netFeed('fo') asks for
+   `author=in.(the followed)` and you do not follow yourself. */
+function snsMine(p){
+  return !!p.mine || (FO_HAVE? !!FO_HAVE[p.id] : meFollows(p.hd));
+}
 function snsList(){
   var all=postAll();
   return (snsTab==='fo')? all.filter(snsMine) : all;
@@ -252,16 +288,35 @@ function snsSetFil(k){
 var snsPulling=false;
 function snsPull(){
   if(snsPulling) return;
+  /* WHICH timeline was asked for, held while the answer is out. snsTab moves
+     when somebody switches tabs, and switching tabs is exactly when a pull is
+     in the air -- so reading it again in the callback is how the followed
+     timeline's answer gets written down as the recommended one's. */
+  var which=snsTab;
   snsPulling=true;
-  netFeed(snsTab, function(ps){
+  netFeed(which, function(ps){
+    var have, i;
     snsPulling=false;
     /* And what this phone has that the server has not. It goes off the back
        of a pull rather than on a timer: the moment somebody is looking at a
        timeline is the moment the network is known to be working. */
     postCatchUp();
-    if(!ps || !ps.length) return;
-    postTake(ps);
-    render();
+    /* The followed timeline, as the server answered it. `null` is "could not
+       ask" and is not an answer -- writing it down as one would empty the tab
+       on every phone that went through a tunnel. An empty ARRAY is an answer
+       and is written down: following nobody is a real 0 and has to be able to
+       replace a list from before somebody unfollowed everyone. */
+    if(which==='fo' && ps){
+      have={};
+      for(i=0;i<ps.length;i++) if(ps[i] && ps[i].id) have[ps[i].id]=1;
+      FO_HAVE=have;
+    }
+    if(ps && ps.length) postTake(ps);
+    /* Drawn again even when nothing came back, which it was not before: the
+       answer itself is now something the screen shows -- an empty one is what
+       turns the tab into snsNoneFo() rather than leaving the list from before
+       it was asked. */
+    if(ps) render();
   }, function(){ snsPulling=false; });
 }
 /* ---- pulling a timeline down to ask again --------------------------------
@@ -441,6 +496,12 @@ function snsMoreCheck(){
      if(!ps) return;                          could not ask -- NOT the end
      if(ps.length < NET_PAGE) snsMoreEnd=true; a short answer IS the end
      if(ps.length){ postTake(ps); render(); }
+
+   AND ON THE FOLLOWED TAB, THE NEW IDS GO INTO `FO_HAVE` -- added to it, not
+   written over it, because a second page is the rest of one answer and not a
+   new one. That tab draws what the server selected; a page whose posts were
+   taken in without being added to the set would arrive on the phone and not
+   on the screen, which is the bug FO_HAVE exists to close, one page down.
 
    The middle two are the ones that cannot be collapsed. A phone in a tunnel
    answering `null` must not set the end, or the timeline stops for the rest
