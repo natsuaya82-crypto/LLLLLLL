@@ -351,7 +351,7 @@ function numWdayName(i){
   catch(e){ return numLabel(i); }
 }
 /* Twelve or twenty-four is the PHONE's answer, and every clock on the device
-   obeys it. 「電話設置に合わせよう」 */
+   obeys it. 「端末設置に合わせよう」 */
 function numIs24(){
   try{ return Intl.DateTimeFormat(undefined, {hour:'numeric'})
               .resolvedOptions().hour12===false; }

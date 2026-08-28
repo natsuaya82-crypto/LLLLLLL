@@ -188,7 +188,7 @@ const R = await pg.evaluate(() => {
   if (ME.name !== 'Lingua') no('3: A に B の名前が出た — ME.name=' + JSON.stringify(ME.name));
   netOut(); arrive(B);
   if (ME.name !== 'Two') no('3: B の名前が保たれていない — ME.name=' + JSON.stringify(ME.name));
-  say('3: 二人が同じ電話を使っても、互いのものは見えない');
+  say('3: 二人が同じ端末を使っても、互いのものは見えない');
 
   /* ---- 4. the field the photograph showed ------------------------------
      obIn() itself, with the server answering the way it answers for a brand

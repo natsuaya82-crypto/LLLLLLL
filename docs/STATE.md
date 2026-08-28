@@ -55,8 +55,8 @@ answers it is in §3 and takes a second.
 | 文法ページ | **誰も動かしていない。**`feature/grammar-engine`（`claude/grammar2` を含む）が master より **364進み・281遅れ**、140ファイル。`index.html` `act-map.js` `core.js` `glyph.js` i18n×10 に触る | `origin/feature/grammar-engine` |
 | 絞り込みの⭐️ | `snsPickSaved()` が `goTab('explore')` で**検索タブへ飛ぶ**。決定は「その言葉で検索し直す（飛ばすのではない）」 | `sns.js` `snsPickSaved` |
 
-**「電話」と書かないこと。端末、または iPhone。**オーナーが何度も言っています
-──「電話って言うのやめろって俺は思う2000回くらい言ってるんだけどなんで治らない
+**「端末」と書かないこと。端末、または iPhone。**オーナーが何度も言っています
+──「端末って言うのやめろって俺は思う2000回くらい言ってるんだけどなんで治らない
 かな」OWNER 2026-08-28。報告でも、コメントでも、画面の文字でも。
 
 **オンボーディングはオーナーが直しています。誰も触らないこと。**

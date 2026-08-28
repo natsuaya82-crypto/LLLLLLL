@@ -8,7 +8,7 @@
 //  Twelve or twenty-four is the PHONE's answer, not ours. iOS has one switch
 //  for it and every clock on the device obeys it; a widget that disagreed
 //  with the status bar six inches above it would be a widget nobody trusts.
-//  「電話設置に合わせよう」
+//  「端末設置に合わせよう」
 //
 //  Minutes, not seconds, for the reason ClockWidget.swift gives at length:
 //  a timeline is entries, iOS budgets the wakes and not the entries, and an
