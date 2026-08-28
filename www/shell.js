@@ -357,7 +357,23 @@ var route='profile';
    sets SET.done = true before it walks, so every case in this file was about
    the second person. */
 function appIs(){
-  if(!SET.done && !obTourOn()) return 'ob';
+  /* The walk through the app IS the app -- the real screens, dimmed, with one
+     thing lit -- so it is answered for before anything else and before the
+     session is asked about. It used to fall through to the session line and
+     be right by accident: the door was the onboarding's FIRST step for two
+     days, so by the time the walk ran somebody was always signed in.
+     「オンボーディング→最後にログイン」 OWNER 2026-08-27 put the door back at
+     the end, and the walk now runs with no account at all -- which made this
+     answer 'door' and put a sign-in form over the app somebody had just drawn
+     their first letter into.
+
+     The three answers below are unchanged and this line changes none of them:
+     obTourOn() is `!SET.done && ob.step===OB_TOUR`, so it is false for every
+     phone that has finished the onboarding, and false for one that has not
+     started the walk. tools/open-check.mjs holds all four by reading what is
+     on the screen. */
+  if(obTourOn()) return 'app';
+  if(!SET.done) return 'ob';
   if(typeof netSignedIn!=='function' || !netSignedIn()) return 'door';
   return 'app';
 }
