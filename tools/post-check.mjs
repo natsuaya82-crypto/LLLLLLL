@@ -37,11 +37,15 @@
     10  a reply carries the HANDLE of whoever it answers, not only the id.
         The id finds the post on a phone that has it; the handle is what a
         reader is shown, and a reply can outlive the thing it answers
+    11  the head reads name, badge, handle, time, on one line while it fits
+        and folded in two when it does not; and the body reads the line, then
+        what the line MEANS, then everything the post carries -- the
+        photographs and the voice. 投稿 / 翻訳 / そのた
 
    Claim 1 is checked by reading the pixels of the file that came out, because
    "the string is different" would also be true of a bake that drew nothing.
 
-   Exit code is 0 only when all ten hold.
+   Exit code is 0 only when all eleven hold.
    --------------------------------------------------------------------------- */
 import http from 'http';
 import fs from 'fs';
@@ -467,6 +471,53 @@ const R = await pg.evaluate(async () => {
     }
     SET.plan = wasPlan;
     app.innerHTML = '';
+  }
+
+  /* ---- the line, then what it means, then everything else --------------
+     「投稿の翻訳画面さ画像の下に行くのやめてくれる？ 投稿 / 翻訳 / そのた に
+     なるようにして」 OWNER 2026-08-28. The meaning sat after the pictures and
+     the voice, so on a post carrying four photographs the two rows that say
+     the same thing in two languages had a strip of pictures between them, and
+     on a phone the second one was off the bottom.
+
+     Nothing about the wrong order throws and every post renders, so it is
+     asked of the real postRow() -- and of ONE post carrying all four things,
+     because a post with no picture and no voice comes out in the right order
+     whatever this function does with them. The posts this check has written
+     by now carry three of the four between them; the fourth is put on by
+     hand, which is the composer's job and not this claim's.
+
+     A one-line summary of the order lives in the head of this file. */
+  {
+    const shown = POSTS.filter(p => postThumbs(p).length && postSay(p))[0];
+    const spoke = POSTS.filter(p => postVoAt(p))[0];
+    if (!shown || !spoke)
+      fails.push('nothing here carries a photograph, a meaning and a voice ' +
+                 'between them, so the order the owner asked for is a test ' +
+                 'of nothing');
+    else {
+      const all = Object.assign({}, shown, { vo: spoke.vo, vu: spoke.vu });
+      const h = postRow(all);
+      const iLn = h.indexOf('class="pline'), iMn = h.indexOf('class="pmn"'),
+            iPic = h.indexOf('class="ppics'), iVo = h.indexOf('class="povo');
+      if (iLn < 0 || iMn < 0 || iPic < 0 || iVo < 0)
+        fails.push('a post carrying a line, a meaning, a photograph and a ' +
+                   'voice drew fewer than four of them, so their order is ' +
+                   'a test of nothing');
+      else {
+        if (!(iLn < iMn))
+          fails.push('what a line MEANS is drawn above the line itself');
+        if (!(iMn < iPic))
+          fails.push('a post reads line, pictures, meaning. What the line ' +
+                     'means belongs against the line -- 投稿 / 翻訳 / そのた ' +
+                     '-- and a strip of photographs between the two of them ' +
+                     'puts the second off the bottom of the phone');
+        if (!(iMn < iVo))
+          fails.push('the voice of a post is drawn above what its line ' +
+                     'means. A voice is what the post CARRIES, and ' +
+                     'everything it carries comes after what it says');
+      }
+    }
   }
 
   /* ---- and none of it happens without an account --------------------
@@ -1405,7 +1456,9 @@ console.log('post: a letter placed on a black photograph is IN the file that goe
             '      With nobody signed in the timeline is the door and nothing\n' +
             '      else, and the composer will not open at all.\n' +
             '      The head of a post reads name, badge, handle, time, on one\n' +
-            '      line while the name is short and folded in two when it is not.\n' +
+            '      line while the name is short and folded in two when it is not,\n' +
+            '      and the body reads the line, then what it means, then the\n' +
+            '      photographs and the voice.\n' +
             '      The timeline is sent a small copy -- ' + R.thumb + ' KB against ' +
             R.full + ' KB --\n' +
             '      and pressing it still opens the photograph. A picture whose\n' +

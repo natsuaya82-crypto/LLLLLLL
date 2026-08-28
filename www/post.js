@@ -2684,9 +2684,24 @@ function postRow(p){
          voice. An empty div here is a gap above the picture that nothing
          explains. 「文字無しでもポストできるようにできない？」 */
       (p.ln? '<div class="pline '+dirClass(postDir(p))+'">'+postLnHTML(p)+'</div>' : '')+
-      /* The pictures, and they are the one thing on a post that slides
-         sideways. 「画像だけ横スライドできる感じ」 One is a picture; several
-         are a strip, and the strip scrolls rather than the post. */
+      /* The natural language, in the reader's own if the post carries it and
+         in the author's if it does not -- which is every post until the
+         translator is wired up, and is not a failure. Not "always" any more:
+         a post with no line has nothing to mean.
+
+         It is DIRECTLY under the line and above everything else --
+         「投稿の翻訳画面さ画像の下に行くのやめてくれる？ 投稿 / 翻訳 / そのた
+         になるようにして」 OWNER 2026-08-28. It sat after the pictures and the
+         voice, so on a post carrying four photographs the two rows that say
+         the same thing in two languages had a strip of pictures between them
+         and the second one was off the bottom of the phone. The line and what
+         it means are one thing read twice; everything else the post carries
+         comes after them. */
+      (postSay(p)? '<div class="pmn">'+esc(postSay(p))+'</div>' : '')+
+      /* And then everything else the post carries -- the pictures first, and
+         they are the one thing on a post that slides sideways.
+         「画像だけ横スライドできる感じ」 One is a picture; several are a strip,
+         and the strip scrolls rather than the post. */
       (postThumbs(p).length
         ? '<div class="ppics'+(postThumbs(p).length>1? ' many':'')+'">'+
             postThumbs(p).map(function(u, i){
@@ -2698,12 +2713,9 @@ function postRow(p){
                 DO('postPic', [p.id, i]) + '>';
             }).join('')+'</div>'
         : '')+
+      /* The voice, and it is below the meaning for the same reason the
+         pictures are: it is what the post CARRIES, not what it says. */
       postVoHTML(p)+
-      /* The natural language, in the reader's own if the post carries it and
-         in the author's if it does not -- which is every post until the
-         translator is wired up, and is not a failure. Not "always" any more:
-         a post with no line has nothing to mean. */
-      (postSay(p)? '<div class="pmn">'+esc(postSay(p))+'</div>' : '')+
       /* Three layers, and there is no fourth.
 
            the writer's own letters      ln + ink
