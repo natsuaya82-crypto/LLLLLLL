@@ -517,6 +517,37 @@ canvas.pkc{width:34px;height:34px;display:block}
              font-size:.92rem;font-weight:400}
 .navtop:after{content:"";position:absolute;left:0;right:0;top:100%;height:8px;
               background:linear-gradient(180deg,var(--bg),transparent)}
+/* ---------- pulling the timeline down to ask again ----------
+   「4は出すって言ってんだろ」 OWNER 2026-08-28. The pull itself is
+   `pullMove()` in www/sns.js and has been there since it was asked for; what
+   it never had was anything to look at. The body slides down under the
+   finger, up to 96px, and that gap is where this goes.
+
+   A LINE, because that is what this app already is. `.splrule` is a 1px rule
+   in `--goldln` and `kbwob` turns a thing with `transform:rotate`; both are
+   in this file already, and between them there is nothing left to invent. A
+   line turning about its middle is not a ring, a disc or a box, so it adds no
+   corner, no border and no filled panel -- CLAUDE.md § 18, and `box-check`
+   counts `border` and `border-radius`, neither of which is here.
+
+   `top:100%` off `.navtop` and not a height written out: the bar is
+   `safe-area + 8 + 44 + 8` and that number lives in `.navtop`'s own rule
+   twenty lines up. Copying it here is how two numbers for one fact drift, and
+   `.navtop:after` directly above already hangs off the same edge -- this is
+   that pattern, one gap further down. `.navtop` is `position:sticky`, which
+   is what gives an absolute child something to be measured against.
+
+   Still while the finger is down, turning once the ask is in the air: `go` is
+   the difference, the way `.ltc.wob` and `#splash.off` are. 18px, because
+   nothing presses it and 44 is the size of a target.
+
+   And it stops for somebody who has asked for less movement, which `kbwob`
+   two rules down has done since it was written. */
+.pullrule{position:absolute;left:0;right:0;top:100%;margin:26px auto 0;
+          width:18px;height:1px;background:var(--goldln)}
+.pullrule.go{animation:pullsp .9s linear infinite}
+@keyframes pullsp{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.pullrule.go{animation:none}}
 .chead{padding:0 24px 6px}
 .body{padding:10px 24px calc(var(--tabh) + 90px)}
 /* As tall as what is left of the screen, so something can be put at the FOOT
@@ -985,9 +1016,10 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
 .cardbox{border-radius:14px;overflow:hidden}
 .cardc{display:block;width:auto;height:auto;max-width:100%;max-height:52vh;margin:0 auto}
 /* ---------- the door ----------
-   The name, a rule under it, and then the app. Nothing moves except the
-   rule drawing itself, because a spinner says "this is slow" and this is
-   not slow -- it is a moment on purpose. */
+   The name, a rule under it, and then the app. The rule draws itself and
+   nothing else on this screen moves: the door is a moment on purpose, and
+   the thing that turns belongs to the timeline being asked again -- that is
+   `.pullrule`, further down this file. */
 #splash{position:fixed;inset:0;z-index:900;background:var(--bg);
         display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
         transition:opacity .38s ease}
