@@ -1096,15 +1096,20 @@ function regPick(r){ wdSetReg(r); relDirty(); back(); }
    「四角のなかにつづりとか読みとか書くの消して」 The name stays as aria-label,
    for anybody not looking at the screen. */
 function wdTagsHTML(){
-  return '<div class="field"><input id="wd-tags" value="'+esc((wEdit.tags||[]).join(', '))+
-    '" aria-label="'+esc(t('word.tags'))+'"' + IN('wdSetTags') + '></div>';
+  /* THE SAME FIELD AS EVERYWHERE ELSE, and it was an <input>.
+     「全部改行して画面内に文字が収まるようにして欲しい」 OWNER 2026-08-27.
+     Tags are a list run together with commas, so this is the field most
+     likely to be long, and it was the one that scrolled off the side. */
+  return '<div class="field">'+
+    lnField('wd-tags', '', ' aria-label="'+esc(t('word.tags'))+'"' + IN('wdSetTags'),
+      (wEdit.tags||[]).join(', '))+'</div>';
 }
 function wdEtyHTML(){
   return '<div class="field"><textarea id="wd-ety" rows="2" aria-label="'+
     esc(t('word.ety'))+'"' + IN('wdSetEty') + '>'+esc(wEdit.ety||'')+'</textarea></div>';
 }
 function wdSetReg(v){ wEdit.reg=v; }
-function wdSetTags(v){ wEdit.tags=tagCut(v); }
+function wdSetTags(v){ wEdit.tags=tagCut(v); lnGrow('wd-tags'); }
 function wdSetEty(v){ wEdit.ety=v; }
 /* The sheet a word is written on -- the same one whether the word is in the
    dictionary or is being made. Three things differ, and all three are real:

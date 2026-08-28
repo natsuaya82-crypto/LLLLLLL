@@ -1020,10 +1020,16 @@ function ltForUnitGo(sym){
    so it answers to the saved name and not to the one being typed. */
 function ltAbField(l, id){
   var dup=ltDupOf(l);
-  return '<div class="field"><input id="lt-rom" value="'+esc(ltDraftAb(l))+'" '+
-    'class="'+(dup? 'dup':'')+'" placeholder="'+esc(t('lt.reads.ph'))+'" '+
-    'autocapitalize="none" autocorrect="off" spellcheck="false"' +
-    IN('ltDraftName', [id]) + '></div>'+
+  /* THE SAME FIELD AS EVERYWHERE ELSE, and it was an <input>.
+     「全部改行して画面内に文字が収まるようにして欲しい」 OWNER 2026-08-27.
+     An <input> is one row that scrolls sideways forever and no CSS makes it
+     wrap, so the element changes; lnField() is the one place that shape
+     lives. The red-when-taken class goes through its `cls`, because that is
+     where a class on this field is said. */
+  return '<div class="field">'+
+    lnField('lt-rom', t('lt.reads.ph'),
+      ' autocapitalize="none"' + IN('ltDraftName', [id]),
+      ltDraftAb(l), (dup? 'dup' : ''))+'</div>'+
     (dup? '<div class="ltdup">'+esc(t('lt.dup', dup))+'</div>' : '');
 }
 /* One letter of the alphabet, opened from the list. Not where an alphabet is
