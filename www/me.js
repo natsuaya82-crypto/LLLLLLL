@@ -395,13 +395,63 @@ function meCard(){
    No bio and no counts: neither is on a post, and inventing them out of
    nothing is how a profile starts lying. They arrive with the person when
    there is a server, and they arrive HERE. */
-function whoOf(h){
-  var i, p;
+/* THE PEOPLE THIS PHONE HAS ASKED ABOUT, by handle -- the server's answer,
+   kept for as long as the app is open.
+
+   Everything on a person's page used to come off a POST of theirs, and a
+   person found in the search has written nothing this phone is holding: the
+   loop below fell out of its end, postFace() got a person with no name and
+   drew '?' out of it, and the page was a question mark with a Follow button.
+   「人のプロフィールが？」
+
+   WHO_ASKED is separate from WHO_HAVE because "asked, and there is nobody by
+   that name" is an answer and has to stop the asking. Only a request that
+   could not be MADE clears it, so a phone that went through a tunnel tries
+   again and a handle that has been deleted is asked about once. */
+var WHO_HAVE={}, WHO_ASKED={};
+/* Asked for by the page that draws them, the way the timeline and the notices
+   ask for theirs. Never for your own: that is ME, it is on this phone, and a
+   request for it would be the app asking somebody else who you are. */
+function whoPull(h){
   h=String(h||'');
+  if(!h || h===meHandle() || WHO_ASKED[h]) return;
+  WHO_ASKED[h]=1;
+  netWho(h, function(p){
+    /* Nobody by that name. It stays asked -- there is nothing to ask again. */
+    if(!p) return;
+    WHO_HAVE[h]=p;
+    render();
+  }, function(){ WHO_ASKED[h]=0; });
+}
+function whoOf(h){
+  var i, p, got;
+  h=String(h||'');
+  /* THE SERVER IS THE RECORD. What it sent is what the person looks like NOW,
+     which is the right answer for a page about them; a post's copy is frozen
+     at the moment it was written (rule 8) and is right for the post. */
+  got=WHO_HAVE[h];
+  if(got)
+    return {who:got.who||'', hd:h, av:got.av, lname:got.lname||'',
+            /* THE FACE'S KEY, and it is the person. postFace() caches a drawn
+               face under `id` and falls back to 'me' when there is none -- so
+               a person wearing letters they drew was filed under MY key, and
+               the one face on a page is only why it did not show yet. A page
+               about somebody else is the last place to key anything as mine. */
+            id:'w:'+h,
+            /* Neither is on `profile` at all -- see netWho(). Absent rather
+               than zero: a profile that fills them in with a 0 is a profile
+               saying something it was never told. */
+            bio:'', fo:0, fr:0, out:!!got.out};
+  /* And until it answers, the copy: a post of theirs, if this phone has one.
+     Better than an empty page for the moment the request is out, and it is
+     where the whole page came from before there was anywhere else. */
   for(i=0;i<POSTS.length;i++){
     p=POSTS[i];
     if(String(p.hd||'')===h)
-      return {who:p.who||'', hd:h, av:p.av, lname:p.lname||'',
+      /* `id` is the FACE'S key here and not the post's -- the same reason as
+         above. Taking p.id would file this person's face under one of their
+         posts, which is a key that means something else. */
+      return {who:p.who||'', hd:h, av:p.av, lname:p.lname||'', id:'w:'+h,
               bio:p.bio||'', fo:p.fo||0, fr:p.fr||0, out:!!p.out};
   }
   return {who:'', hd:h, av:null, lname:'', bio:'', fo:0, fr:0, out:false};

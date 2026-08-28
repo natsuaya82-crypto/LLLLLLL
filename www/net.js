@@ -1033,6 +1033,50 @@ function netLangNames(ids, done){
       done(by);
     }, function(){ done({}); });
 }
+/* ONE person, by the name one person knows another by.
+   -------------------------------------------------------------------------
+   Everything a profile page draws about somebody else used to come off a POST
+   of theirs -- whoOf() in www/me.js walks POSTS looking for one. That is the
+   right place for a post's name and face, and the wrong place for a page
+   about a person: somebody found in the search has never written anything
+   this phone is holding, so the page drew the empty shape and postFace() fell
+   through to '?'. 「人のプロフィールが？」
+
+   What arrives here is what the person looks like NOW, which is what a page
+   about them should say -- supabase/schema.sql makes exactly that distinction
+   over `profile.av`: a post freezes its own face when it is written (rule 8)
+   and this one does not.
+
+   NOBODY IS AN ANSWER. A handle with no row is `null` and not an error: the
+   search can hand over a name that has since been deleted, and a page saying
+   so is not the same as a page that could not ask.
+
+   No bio and no counts, and that is not an omission here: there is no `bio`
+   column and no follower count on `profile` at all -- what somebody writes
+   about themselves lives on their own phone (www/me.js). whoCard() already
+   draws neither rather than drawing a zero. */
+function netWho(handle, ok, bad){
+  var h=String(handle||'');
+  if(!h){ bad(null, 0); return; }
+  netGet('/rest/v1/profile?select=id,handle,display,av,banned_at'+
+         '&limit=1&handle=eq.'+encodeURIComponent(h),
+    function(d){
+      var r, who;
+      if(!d || !d.length){ ok(null); return; }
+      r=d[0]||{};
+      who={who:String(r.display||''), hd:String(r.handle||''),
+           av:r.av||null, lname:'',
+           /* Frozen. Off `banned_at`, which is the same fact `author_out`
+              carries onto a post -- one column, asked of the person here and
+              answered about the writer there. */
+           out:!!r.banned_at};
+      netLangNames([r.id], function(by){
+        var id=String(r.id||'');
+        if(id && by[id]) who.lname=by[id];
+        ok(who);
+      });
+    }, bad);
+}
 /* People. The language's name is asked for separately and pasted on --
    netLangNames() above says why it cannot be an embed any more. */
 function netFindWho(q, ok, bad, more){
