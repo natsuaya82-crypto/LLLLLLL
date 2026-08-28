@@ -113,12 +113,81 @@ function snsList(){
    owner, and until it comes back nothing here invents one. */
 function snsFilNow(){ return (snsTab==='fo')? 'fo' : 'rec'; }
 function snsFilKey(k){ return (k==='fo')? 'feed.fo' : 'feed.rec'; }
+/* ---- and the third answer: a word somebody kept -------------------------
+   「絞り込みで星つけたやつはなんで検索欄行くの？ホームからね。」OWNER
+   2026-08-28. Choosing a starred word used to call goTab('explore') -- which
+   moves the tab, throws NAV away, and puts somebody in front of a search
+   field they never asked for. The recorded decision of the same day already
+   said what it should do instead: 「絞り込みから選ぶとその言葉で検索し直す」,
+   and 「飛ばすのではない」.
+
+   So the filter has three answers and not two, and they are one question:
+   which of these am I looking at. `snsTab` answers the first two; this
+   answers the third, and they are exclusive -- choosing a timeline is how a
+   word comes OFF, which is why there is no second button for that.
+
+   `null` is no word. Otherwise `{q: <the word>, r: <the answer, or null>}`,
+   and the three states of `r` are three and never share a branch:
+
+     r === null   not answered yet     -- nothing is drawn, nothing is claimed
+     r.bad        could not ask        -- the reason, netWhy()'s
+     r.posts      an answer            -- the rows, or `sns.nohit` if none
+
+   That middle line is the one that matters. A phone in a tunnel drawn as an
+   empty list is the app saying "nobody has written that", which is
+   `CLAUDE.md` § Data: 「empty」 and 「broken」 are different states.
+
+   It is where you are STANDING and not something the language has, so it
+   belongs in viewReset() beside snsTab, snsQ and snsHits. www/shell.js is
+   another session's file today and the line is not in it yet -- the leader
+   has it. Until then, switching languages leaves a word filter on. */
+var snsFil=null, snsFilAsk=false;
+/* THE ANSWER IS THE SERVER'S. Not postAll() narrowed by a word: this file
+   already says why one screen down -- 「手元で並べ替えた50件は上位50件では
+   ない」 -- and a phone filtering the fifty rows it happens to hold is the
+   same sentence about a different verb. netFindPosts() is the one that asks.
+
+   Asked once per word, and again only when somebody PULLS. `again` is what
+   tells the two apart: vFeed() calls this on every render and must not ask
+   twice for an answer it already has, and a pull is a person saying "ask it
+   again" out loud. On a pull the old answer stays on the screen until the
+   new one lands -- blanking it first would flash an empty timeline at
+   somebody who asked for a fresh one.
+
+   A late answer to a word that has since been taken off, or swapped for
+   another, is thrown away by comparing the word -- snsGot() has done that
+   since there was a search, and for the same reason. */
+function snsFilFind(again){
+  var q=snsFil? String(snsFil.q||'').trim() : '';
+  if(!q || snsFilAsk) return;
+  if(snsFil.r && !again) return;
+  snsFilAsk=true;
+  netFindPosts(q, function(ps){
+    snsFilAsk=false;
+    if(!snsFil || String(snsFil.q||'').trim()!==q) return;
+    snsFil.r={q:q, posts:ps||[]};
+    render();
+  }, function(d, st){
+    snsFilAsk=false;
+    if(!snsFil || String(snsFil.q||'').trim()!==q) return;
+    /* Could not ask, which is not nothing found. */
+    snsFil.r={q:q, posts:[], bad:netWhy(d, st)};
+    render();
+  });
+}
 /* The mark in the corner of the timeline's bar. rootTop()'s second argument
    is what it is for -- www/home.js already puts the contents page's lens
    there -- so this is the same bar with the same corner and no new one. */
 function snsFilTop(){
+  /* The word itself when one is on. What this corner has always said is
+     WHICH of the answers is being looked at, and the third answer is a word
+     somebody kept -- so the word is what it says. Not a sentence about the
+     word: a state is not an explanation, and CLAUDE.md § Explaining would
+     refuse one. It is the person's own text and not an interface string, so
+     it does not go through t() -- the same as a word in the dictionary or
+     the body of a post. */
   return '<button class="navq"' + DO('go', ['filter']) + '>'+
-    esc(t(snsFilKey(snsFilNow())))+'</button>';
+    esc(snsFil? snsFil.q : t(snsFilKey(snsFilNow())))+'</button>';
 }
 function vFilter(){
   var ks=['rec','fo'];
@@ -129,7 +198,10 @@ function vFilter(){
     ks.map(function(k){
       return '<button class="set"' + DO('snsSetFil', [k]) + '>'+
         '<span class="sl">'+esc(t(snsFilKey(k)))+'</span>'+
-        '<span class="sv">'+(snsFilNow()===k? ICON_TICK : '')+'</span></button>';
+        /* Nothing ticked here while a word is on: the three rows are one
+           answer, so a timeline and a word are never both marked. */
+        '<span class="sv">'+((!snsFil && snsFilNow()===k)? ICON_TICK : '')+
+        '</span></button>';
     }).join('')+
     /* And the words somebody keeps, under the two timelines because they are
        the same question asked a third way: what am I looking at. The heading
@@ -139,9 +211,14 @@ function vFilter(){
     (snsSaved().length
       ? '<div class="sec">'+esc(t('sns.saved'))+'</div>'+
         snsSaved().map(function(q){
+          /* The same mark the two timelines wear, for the same reason: this
+             row is one of the three answers now. The chevron that used to be
+             here said "a way there" and it was true -- this went to another
+             tab. It goes nowhere now, so it is a tick or it is nothing. */
           return '<button class="set"' + DO('snsPickSaved', [q]) + '>'+
             '<span class="sl">'+esc(q)+'</span>'+
-            '<span class="sv">'+ICON_GO+'</span></button>';
+            '<span class="sv">'+((snsFil && snsFil.q===q)? ICON_TICK : '')+
+            '</span></button>';
         }).join('')
       : '')+
     '</div></div>';
@@ -151,6 +228,11 @@ function vFilter(){
    you came, so there is nothing left to do here. */
 function snsSetFil(k){
   snsTab=(k==='fo')? 'fo' : 'rec';
+  /* And this is how a word comes off. There is no second button for it and
+     pressing the same word again does not do it either -- that shape was
+     refused on the keyboard 「同じとこ触ると選択解除されるからわかりにくい」
+     and it would be the same mistake here. */
+  snsFil=null;
   back();
 }
 /* Everybody's languages, as they are written. This said "which for the moment
@@ -260,7 +342,16 @@ function pullLet(ask){
     setTimeout(function(){ if(el.style) el.style.transition=''; }, 300);
   }
   if(!ask) return;
-  if(r==='notif') notPull(); else if(r) snsPull();
+  if(r==='notif'){ notPull(); return; }
+  if(!r) return;
+  /* A pull is somebody saying "ask again", and what the feed is showing
+     while a word is on is the answer to that word -- so that is what gets
+     asked again. It is said HERE and not inside snsFilFind()'s own guard,
+     because vFeed() calls that on every render and a render is not a person
+     asking. The timeline underneath is asked for too: it is still the list
+     the word comes off onto. */
+  if(r==='feed' && snsFil) snsFilFind(true);
+  snsPull();
 }
 /* touchmove has to be able to say no to the browser's own bounce, and a
    listener the browser thinks is passive cannot. Whether the third argument
@@ -379,6 +470,10 @@ function vFeed(){
      is looking at a timeline is the moment the network is known to be
      working. Once a session -- dayPull() returns immediately once it has one. */
   dayPull();
+  /* And the word, if one is on. Once per word: it returns immediately once
+     it has an answer, or this would ask, write the answer down, render, and
+     ask again. Same shape as the two above it. */
+  snsFilFind();
   var list=snsList();
   /* A row takes one argument again. It used to take a second -- whether YOUR
      font was switched on -- and `list.map(postRow)` handed each row its index
@@ -419,6 +514,13 @@ function vFeed(){
           '<a class="btn ghost outapp" href="'+esc(APPEAL)+'">'+
             esc(t('out.appeal'))+'</a>'+
         '</div>'
+      /* A word chosen from the filter. The same rows the search draws,
+         because it is the same answer to the same question -- and the three
+         states of it are three: nothing at all while it is still in the air
+         (no claim is made), the reason when it could not be asked, and
+         `sns.nohit` only when an answer really came back empty. */
+      : snsFil
+      ? snsAnsHTML(snsFil.q, snsFil.r)
       : list.length
       ? list.map(postRow).join('')
       /* Two different emptinesses. Nothing at all is a timeline that has not
@@ -867,15 +969,27 @@ function snsSaveQ(){
   save();
   render();
 }
-/* Chosen from the filter, and it SEARCHES rather than taking you to a field
-   with the word already in it. snsHits is emptied so that vExplore's own ask
-   fires -- that screen already asks for a query it has no answer for, and a
-   second ask here would be two places asking one question. */
+/* Chosen from the filter, and the timeline you were standing on is what gets
+   filtered. 「絞り込みで星つけたやつはなんで検索欄行くの？ホームからね。」
+   OWNER 2026-08-28.
+
+   It called goTab('explore'), and all three things that does were wrong. It
+   moved the TAB, so a word chosen from the timeline's own chooser answered
+   on a different screen. It threw NAV away, so there was no way back to the
+   timeline it was chosen from. And it landed on a search FIELD, which is the
+   thing the owner named -- the recorded decision of the same day already
+   said 「その言葉で検索し直す」 and 「飛ばすのではない」, and the code was
+   doing the second half of that while doing exactly the first.
+
+   Same shape as snsSetFil() above it, because it is the same chooser: the
+   answer is the reason you came, so you are put back on the thing it is
+   about. The asking happens where the answer is drawn -- vFeed() -- rather
+   than here, so that one screen owns one question. */
 function snsPickSaved(q){
-  snsQ=String(q||'');
-  snsMode='posts';
-  snsHits=null;
-  goTab('explore');
+  var k=String(q||'').trim();
+  if(!k) return;
+  snsFil={q:k, r:null};
+  back();
 }
 /* ---- newest, or what people answered ------------------------------------
    「最新／話題」 OWNER 2026-08-28.
@@ -927,9 +1041,15 @@ function snsSetSort(k){
   snsHits=null;
   back();
 }
-function snsHitsHTML(){
-  var r=snsHits, out='', i, ps;
-  if(!snsQ.trim() || !r) return '';
+/* The rows an answer draws, wherever an answer is drawn. The search has had
+   one since there was a search; the timeline has one now, because a word
+   chosen from the filter is the same question put to the same server. Two
+   copies of "what an answer looks like" is the thing that drifts, and what
+   would drift first is who is left OUT of it -- somebody blocked has to be
+   out of both, and a second copy is a second place to remember that. */
+function snsAnsHTML(q, r){
+  var out='', i, ps;
+  if(!String(q||'').trim() || !r) return '';
   /* Could not ask, which is not the same as found nothing. */
   if(r.bad) return '<div class="note">'+esc(r.bad)+'</div>';
   /* And out of the search too, on both sides: a person you have blocked is
@@ -943,6 +1063,7 @@ function snsHitsHTML(){
     if(!postBlocked(ps[i])) out+=postRow(ps[i]);
   return out || '<div class="note">'+esc(t('sns.nohit'))+'</div>';
 }
+function snsHitsHTML(){ return snsAnsHTML(snsQ, snsHits); }
 function vExplore(){
   if(!netSignedIn()) return snsLocked('explore');
   /* And the screen the star is on, because whether it is filled is the same
