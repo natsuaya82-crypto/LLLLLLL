@@ -509,6 +509,38 @@ function netLangRow(ok, bad){
       ok(sid);
     }, bad);
 }
+/* WHETHER THIS LANGUAGE'S PAGE MAY BE READ BY ANYBODY ELSE.
+   -------------------------------------------------------------------------
+   「この言語については公開したら公開、非公開にしたら非公開だけどそれ以外に
+     あんのか？」 OWNER 2026-08-28.
+
+   `language.published_at` is what `slice_read` in supabase/schema.sql opens
+   the article on, and until now **nothing in www/ ever wrote it** -- the
+   column was read by one policy, indexed, and set by nobody, so no language
+   had ever been published and the switch on the About page was a fact this
+   phone kept to itself.
+
+   The switch is the one the owner already operates -- setWldHide() in
+   www/home.js, the 「一番上のトグル」 on the article's writing face. There is
+   one question and so there is one flag; this is that flag reaching the
+   server.
+
+   A time and not a boolean, because that is the column: it is `published_at`,
+   and when it was published is worth more than that it was. Turning the
+   switch back writes null and the door shuts -- nothing is destroyed, and the
+   page comes back exactly as it was left.
+
+   Fired and not waited on, like netFollow(): the switch has already moved on
+   the screen. netLangSync() sends it again on the next launch, which is what
+   makes a request that never arrived correct itself. */
+function netLangPublic(on){
+  if(!netSignedIn()) return;
+  netLangRow(function(sid){
+    netSend('PATCH', '/rest/v1/language?id=eq.'+encodeURIComponent(sid),
+            {published_at: on? new Date().toISOString() : null},
+            SESS.at, function(){}, function(){});
+  }, function(){});
+}
 /* Every slice of one language, as {kind: {body, no}}. */
 function netSlices(sid, ok, bad){
   netGet('/rest/v1/slice?select=kind,body,no&language=eq.'+encodeURIComponent(sid),
@@ -564,6 +596,17 @@ function netLangSync(then){
             langRead(); ltRead(); ntRead(); stRead(); sndRead(); kbRead(); wldRead();
             render();
           }
+          /* And the one fact about this language that is a COLUMN rather than
+             a slice: whether its page may be read by anybody else. Sent here,
+             once a launch, after the slices have been merged -- so it is the
+             switch as it stands after the sync rather than before it.
+
+             This is what makes a failed toggle correct itself. setWldHide()
+             sends it on the press and does not wait; if that request never
+             arrived, the phone would say private while the server went on
+             saying published, and THAT direction is a leak rather than a
+             nuisance. One small write on the next launch closes it. */
+          netLangPublic(!wldHidden());
           stop(moved); return;
         }
         kind=SLICES[i]; i++;
