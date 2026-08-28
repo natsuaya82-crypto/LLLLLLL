@@ -670,6 +670,8 @@ defLang('ko', (function(){
       "toc.gram"         : "문법",
       /* what the app proposes */
       /* the grammar, in stages */
+      "stg.grp.rule"     : "규칙",
+      "stg.grp.chap"     : "장",
       "stg.words"        : "이 단계에 필요한 낱말",
       "stg.rules"        : "규칙",
       "stg.rules.ph"     : "　",

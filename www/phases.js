@@ -507,17 +507,30 @@ function stRow(p, n){
    The rule-made forms come first: docs/GRAMMAR-V2-SPEC.md §14 is the chapter
    that says how a word changes, which is what the grammar is FOR. The
    sixteen follow, in the order they were in, numbered on from the eight.
-   Nothing is folded away and nothing is named over either group -- they are
-   one list of chapters, and a heading saying so would be the app explaining
-   itself. */
+   Nothing is folded away.
+
+   Each group is NAMED, in the shape vWsys() puts `dir.title` over its three
+   directions: a `sec` and a name, no frame, no panel, no corner, and no
+   sentence. It is what CLAUDE.md §14 already calls that group from outside
+   the app, so nothing new was decided here. The names earn their place
+   because five pairs of rows are called the same thing -- 語順, 否定, 疑問,
+   形容詞, 場所 are each a chapter of both groups, invisible while one list
+   was hidden inside the other. Which group a row is in is the whole of what
+   tells them apart, so it has to be on the screen. */
 function stListHTML(){
-  var g=g2Chaps(), a=stAll(), i, n=0, rows='';
-  for(i=0;i<g.length;i++) rows+=g2ChapRow(g[i], ++n);
-  for(i=0;i<a.length;i++) rows+=stRow(a[i], ++n);
+  var g=g2Chaps(), a=stAll(), i, n=0, grow='', srow='';
+  for(i=0;i<g.length;i++) grow+=g2ChapRow(g[i], ++n);
+  for(i=0;i<a.length;i++) srow+=stRow(a[i], ++n);
   /* The rules that make a form out of a word were at the head of this list.
      They are not a stage of the grammar and they are about the dictionary, so
      they are behind the ... in the dictionary's bar -- wordsMore(). */
-  return '<div class="stlist">'+rows+'</div>'+
+  /* Two containers rather than one, and a name is not a row: a `sec` inside
+     `.stlist` would be a sibling of the rows, and the rows in one list are
+     one height. */
+  return '<div class="sec">'+esc(t('stg.grp.rule'))+'</div>'+
+    '<div class="stlist">'+grow+'</div>'+
+    '<div class="sec">'+esc(t('stg.grp.chap'))+'</div>'+
+    '<div class="stlist">'+srow+'</div>'+
     /* The fifteen are free and are the whole of the chapter there. They ask
        for forty-six words between them, which is most of what a free
        dictionary is for; a stage of your own is the sixteenth and past that
