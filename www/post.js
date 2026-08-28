@@ -925,31 +925,30 @@ function postBadge(p){
    No buttons on it. It is what you are looking at, not something to act on;
    the four things a post can be given are on the post itself, in the
    timeline. */
-/* The conversation the reply is going into, and not only the post it answers.
-   「返信するとき、スレッドを開いてそのスレッドを見ながら返信できるように。
-   今は返信先が見えない」
+/* ONE post, small, and it does not move. 「相手の投稿は小さく固定、
+   その下から自分が打てるようにしてくれ」 OWNER 2026-08-28, on
+   「投稿の返信画面みづらいや」.
 
-   It was the one post above, in a filled rounded panel. What that could not
-   show is the thing a reply is actually being written into -- a post two
-   answers deep says almost nothing on its own, and going to look at the
-   thread meant leaving the composer, which is where what had been typed was.
+   It was the whole line of ancestors -- oldest first, the post being answered
+   last -- put here for 「返信するとき、スレッドを開いてそのスレッドを
+   見ながら返信できるように」. Measured on the owner's narrow phone
+   (320x568, keyboard up, 308 visible) it was three posts of 90 each showing
+   through a 44px slot -- 288px of conversation in 44 -- while what it cost
+   was the field underneath: the composer's own two fields came to 314 in a
+   box of 248, and `.body` is overflow:hidden, so the MEANING field sat behind
+   the row of pictures with no way to reach it. The thread was unreadable and
+   the person could not type. Both from the same 44 lines of screen.
 
-   So the whole line up to it is here, oldest first, with the post being
-   answered last and therefore nearest the field. Same walk vThread() does --
-   postUps() -- and a taken-down ancestor is skipped for the same reason it is
-   skipped there: it is somebody else's line and the conversation does not
-   stand or fall with it.
+   So the post being answered, and nothing above it. The owner's sentence says
+   相手の投稿 -- one post -- and on 320 there is no reading of it that also
+   holds a conversation. Going to look at the thread means leaving the
+   composer, which is what the older decision was about, and that is a real
+   cost; it is reported up rather than decided here.
 
-   It scrolls inside itself rather than pushing the field down the screen. The
-   cap is a third of the visible part, and it is `--vvmin` rather than `vh`
-   because with the phone's keyboard up `vh` is still the whole phone -- the
-   same reason the vertical field two rules down in index.html uses it. */
-function pwThreadHTML(to){
-  if(!to) return '';
-  var ups=postUps(to), out='', i;
-  for(i=0;i<ups.length;i++) if(!postGone(ups[i])) out+=pwToHTML(ups[i]);
-  return '<div class="pwqs">'+out+pwToHTML(to)+'</div>';
-}
+   Small and fixed is the whole of its rule now: it is the same height on both
+   of the owner's phones (index.html caps it), it never gives its room to
+   anything and never takes any, and a line too long for it scrolls inside
+   itself rather than pushing the field down the screen. */
 function pwToHTML(to){
   if(!to) return '';
   return '<div class="pwq">'+
@@ -981,7 +980,7 @@ function pwHTML(){
      account here, so every reply said you were replying to yourself. */
   return (to? '<div class="pwto">'+
       esc(t('post.re', '@'+(to.hd || to.who || to.lname || '')))+'</div>'+
-      pwThreadHTML(to) : '')+
+      '<div class="pwqs">'+pwToHTML(to)+'</div>' : '')+
     /* The face you are about to post under, which is the one this post will
        carry -- worked out here, on the making side, where the letters are. */
     '<div class="pwscroll">'+
