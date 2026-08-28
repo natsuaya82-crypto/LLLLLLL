@@ -1511,8 +1511,11 @@ function geMount(){
   GEFIT=0;
   var s=Math.round(w*dpr);
   c.width=s; c.height=s;
-  c.onpointerdown=geDown; c.onpointermove=geMove;
-  c.onpointerup=geUp; c.onpointercancel=geUp;
+  /* gePtDown and not geDown: those three count the fingers and hand a single
+     one straight through. The drawing handlers are not told about any of it. */
+  gePinReset();
+  c.onpointerdown=gePtDown; c.onpointermove=gePtMove;
+  c.onpointerup=gePtUp; c.onpointercancel=gePtUp;
   /* Said again in an inline style so no later rule, and no page that embeds
      this canvas somewhere new, can quietly hand these gestures back to the
      browser. */
@@ -1976,6 +1979,218 @@ function geUp(ev){
   }
   GE.pre=null;
   geDraw(); geTools();
+}
+/* ---- two fingers -------------------------------------------------------
+   「2本指を上下に開いたらズーム、スライドさせたら移動」
+   「指でやるならボタンなし」 OWNER 2026-08-27.
+
+   The two magnifiers are gone, so this is the only way to get closer, and
+   the ladder went with them: the gap between the fingers says how much
+   bigger, continuously, between 1 and 3. There is nothing to step through
+   when there is no button to press.
+
+   A SEPARATE ENTRANCE, and that is the load-bearing part. geDown, geMove and
+   geUp are not touched -- not one `if`, not one early return -- because they
+   are the drawing, and drawing is the thing this app is. The canvas is wired
+   to gePtDown/gePtMove/gePtUp instead: those count the fingers on the glass
+   and hand a single one straight through, unchanged. 「描く手つきは一ミリも
+   変えないでください」 and `docs/BACKLOG.md` has the list of places that said
+   "this is the one place" and were two.
+
+   Three things it must get right, and not one of them throws when it does
+   not:
+
+   ONE OR THE OTHER, DECIDED ONCE. 「どちらかに決めたら、指を離すまで変え
+   ない。」 Asking every frame whether this is a zoom or a move means a hand
+   that drifts a little off straight flips between them several times a
+   second, and the paper judders. So nothing happens at all until the fingers
+   have moved enough to mean something, and what they meant then is what they
+   go on meaning until the glass is clear.
+
+   WHAT IS UNDER THE FINGERS STAYS UNDER THE FINGERS. Both modes are the
+   same sentence -- one paper point pinned to one place on the glass -- so
+   they are one function, gePinTo(). What differs is which place: a move pins
+   it under the fingers as they travel, and a zoom pins it where the fingers
+   started, so that growing the paper does not also slide it.
+
+   THE STROKE UNDER THE FIRST FINGER IS THROWN AWAY. Without it every pinch
+   leaves a dot or a short line behind, because the first finger down went
+   through geDown and started one. It is thrown away by putting back GE.pre
+   -- the copy geDown itself took before it touched anything -- which is
+   exactly this gesture and cannot reach anything else. A stroke that was
+   FINISHED, by a finger lifting, has no GE.pre and is not touched:
+   「人が作ったものを消さない」.
+
+   Nothing here is stored. Zoom is where you are standing, not part of the
+   letter, and geOrg() already refuses to show past the paper's edge. */
+var GEZMIN=1, GEZMAX=3;
+/* how far the fingers have to travel before this is a gesture at all */
+var GEPINGO=8;
+var GEPIN={ on:false, pts:[], mode:'', d0:0, z0:1, anchor:null, mid0:null };
+function gePinAt(id){
+  var i;
+  for(i=0;i<GEPIN.pts.length;i++) if(GEPIN.pts[i].id===id) return i;
+  return -1;
+}
+/* the two fingers, as the canvas's own pixels */
+function gePinXY(c, ev){
+  var b=c.getBoundingClientRect();
+  return [ev.clientX-b.left, ev.clientY-b.top];
+}
+function gePinGap(){
+  var a=GEPIN.pts[0], b=GEPIN.pts[1];
+  if(!a||!b) return 0;
+  return Math.sqrt((a.x-b.x)*(a.x-b.x)+(a.y-b.y)*(a.y-b.y));
+}
+function gePinMid(){
+  var a=GEPIN.pts[0], b=GEPIN.pts[1];
+  if(!a||!b) return [0,0];
+  return [(a.x+b.x)/2, (a.y+b.y)/2];
+}
+/* Put paper point `pp` under glass point `px`, at zoom `z`. The window on
+   the square is what GE.cx/GE.cy name the middle of, so this is geTo/geFrom's
+   own formula turned round -- and it is written ONCE, because a mapping that
+   must agree with the one in geDraw is exactly the place a zoom goes wrong.
+   geOrg() does the clamping, so nothing here has to know where the edge is. */
+function gePinTo(c, pp, px, z){
+  var b=c.getBoundingClientRect(), S=[b.width||1, b.height||1], span=800/z, i, org;
+  GE.z=z;
+  for(i=0;i<2;i++){
+    org=pp[i] - (px[i]-geMar(S[i]))/(geK0(S[i])*z);
+    if(i===0) GE.cx=org+span/2; else GE.cy=org+span/2;
+  }
+}
+/* the stroke still under a finger, and only that one */
+function gePinDrop(){
+  if(!GE || !GE.pre) return;
+  GE.st=JSON.parse(GE.pre);
+  GE.pre=null;
+  GE.si=GE.st.length-1; GE.pi=-1;
+  GE.drag=false; GE.free=false; GE.fresh=false; GE.hit=false;
+  GE.again=false; GE.moved=false; GE.raw=null; GE.rawFor=-1;
+  GE.seal=!!(GE.st.length && GE.st[GE.st.length-1].pts.length);
+}
+function gePinStart(c){
+  var b=c.getBoundingClientRect(), w=b.width||1, h=b.height||1, m=gePinMid(), i;
+  gePinDrop();
+  /* the gesture starts HERE, so where each finger is now is where it landed.
+     The first finger has usually been drawing a line for a second by the
+     time the second one arrives, and none of that travel is part of this. */
+  for(i=0;i<GEPIN.pts.length;i++){
+    GEPIN.pts[i].x0=GEPIN.pts[i].x; GEPIN.pts[i].y0=GEPIN.pts[i].y;
+  }
+  GEPIN.on=true; GEPIN.mode='';
+  GEPIN.d0=gePinGap();
+  GEPIN.z0=geZ();
+  GEPIN.anchor=m;
+  /* the paper under the middle of the two, read BEFORE anything moves */
+  GEPIN.mid0=[geFrom(w, m[0], 0), geFrom(h, m[1], 1)];
+}
+/* how far each finger has come from where it landed */
+function gePinRun(i){
+  var q=GEPIN.pts[i];
+  if(!q) return 0;
+  return Math.sqrt((q.x-q.x0)*(q.x-q.x0)+(q.y-q.y0)*(q.y-q.y0));
+}
+/* Which of the two this is, decided ONCE and then not asked again.
+   「どちらかに決めたら、指を離すまで変えない。」
+
+   WAIT FOR BOTH FINGERS, and that is the part that is easy to get wrong. A
+   phone sends one pointermove per finger, so the two never move in the same
+   event: half way through a slide, one finger has travelled the whole way
+   and the other has not moved at all -- and at that instant the gap between
+   them has changed by the whole of it while the middle has moved by half.
+   Read then, every slide is a pinch, and it was: two fingers dragged across
+   the paper magnified instead of moving it, and what was under them ended up
+   56px from under them.
+
+   AND NO ARITHMETIC ON ONE FINGER CAN TELL THEM APART. "The right-hand
+   finger went right" is exactly as much a slide beginning as a pinch
+   opening -- the two are the same numbers, so any threshold that answers is
+   guessing, and it will guess wrong on somebody's hand. The only thing that
+   separates them is the other finger, so this waits for it: neither is
+   answered until BOTH have gone somewhere. Once they have, a slide has the
+   two travelling together (the gap held, the middle moved) and a pinch has
+   them travelling apart (the gap moved, the middle held), and one comparison
+   settles it for the rest of the gesture.
+
+   The cost is a finger planted while the other opens: that waits, and does
+   nothing, until the planted one moves its eight pixels too. It is the right
+   side to be wrong on -- a gesture that has not started yet is a paper that
+   has not moved, and the other way round is a paper that jumps. */
+function gePinMove(c){
+  var m=gePinMid(), d=gePinGap(), dd, dm, r0, r1, z;
+  if(!GEPIN.d0) return;
+  dd=Math.abs(d-GEPIN.d0);
+  dm=Math.sqrt((m[0]-GEPIN.anchor[0])*(m[0]-GEPIN.anchor[0])+
+               (m[1]-GEPIN.anchor[1])*(m[1]-GEPIN.anchor[1]));
+  if(!GEPIN.mode){
+    r0=gePinRun(0); r1=gePinRun(1);
+    if(r0<GEPINGO || r1<GEPINGO) return;      /* the other one has not moved */
+    if(dd<GEPINGO && dm<GEPINGO) return;
+    GEPIN.mode=(dd>=dm)? 'z' : 'm';
+  }
+  if(GEPIN.mode==='z'){
+    z=GEPIN.z0*(d/GEPIN.d0);
+    if(z<GEZMIN) z=GEZMIN;
+    if(z>GEZMAX) z=GEZMAX;
+    /* pinned where the fingers STARTED: a pinch that also slid the paper
+       would be both things at once, which is the thing decided against */
+    gePinTo(c, GEPIN.mid0, GEPIN.anchor, z);
+  }else{
+    gePinTo(c, GEPIN.mid0, m, GEPIN.z0);
+  }
+  geDraw();
+}
+/* The canvas's own handlers. One finger is handed straight through; two are
+   this. It stays this until the glass is clear -- a pinch that became a
+   stroke the moment one finger came up would draw a line nobody asked for
+   with the other. */
+function gePtDown(ev){
+  if(ev.preventDefault) ev.preventDefault();
+  var c=ev.currentTarget, p=gePinXY(c, ev);
+  if(gePinAt(ev.pointerId)<0)
+    GEPIN.pts.push({id:ev.pointerId, x:p[0], y:p[1], x0:p[0], y0:p[1]});
+  if(GEPIN.pts.length>=2){
+    if(!GEPIN.on) gePinStart(c);
+    if(c.setPointerCapture) try{ c.setPointerCapture(ev.pointerId); }catch(e){}
+    return;
+  }
+  geDown(ev);
+}
+function gePtMove(ev){
+  var c=ev.currentTarget, i=gePinAt(ev.pointerId), p;
+  if(i>=0){
+    p=gePinXY(c, ev);
+    GEPIN.pts[i].x=p[0]; GEPIN.pts[i].y=p[1];
+  }
+  if(GEPIN.on){
+    if(ev.preventDefault) ev.preventDefault();
+    if(GEPIN.pts.length>=2) gePinMove(c);
+    return;
+  }
+  geMove(ev);
+}
+function gePtUp(ev){
+  var i=gePinAt(ev.pointerId), was=GEPIN.on;
+  if(i>=0) GEPIN.pts.splice(i, 1);
+  if(was){
+    if(ev.preventDefault) ev.preventDefault();
+    if(GEPIN.pts.length) return;          /* still a finger down: still a pinch */
+    GEPIN.on=false; GEPIN.mode=''; GEPIN.anchor=null; GEPIN.mid0=null;
+    /* the rail, because throwing the half-drawn stroke away may have taken
+       the last dot off the paper */
+    geDraw(); geTools();
+    return;
+  }
+  geUp(ev);
+}
+/* Leaving the screen leaves no fingers on it. Without this a pinch
+   interrupted by the app going somewhere else comes back still on, and the
+   next single finger draws nothing. */
+function gePinReset(){
+  GEPIN.on=false; GEPIN.pts=[]; GEPIN.mode='';
+  GEPIN.d0=0; GEPIN.anchor=null; GEPIN.mid0=null;
 }
 /* The toolbar's enabled/disabled state depends on the selection, and the
    selection changes on every tap — but re-rendering the whole view would tear
