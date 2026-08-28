@@ -1281,11 +1281,26 @@ function notFace(n){
   if(!h) return '';
   return postAvHTML({hd:h, who:n.who, av:n.av, id:'n:'+h});
 }
+/* A notice is a way to the thing it is about. 「通知で飛べないよ」 OWNER
+   2026-08-28 -- the row was a plain <div> with nothing on it to press, so
+   every notice was a sentence you could read and not follow.
+
+   THE SAME SHAPE A POST'S ROW HAS: the row carries the press and the face
+   inside it carries its own, so pressing the row opens the post and pressing
+   the face opens the person. postRow() has been that since a post opened onto
+   its thread, and act.js hands a press to the nearest name above it, which is
+   what lets the two live in one row.
+
+   Only where there IS a post. A follow carries none -- somebody followed you,
+   there is nothing to open -- and postOpen() refuses an id this phone does
+   not hold, so the press is put on rather than the row pretending. Nothing
+   moves on the screen either way: no class, no mark, no arrow.
+   「ui変更は俺が頼んだの以外は勝手な判断でやるなよ？」 */
 function notRow(n){
   var k=String(n.kind||''), p=postById(n.id), ic=
     k==='like'? ICON_HEART : k==='boost'? ICON_BOOST :
     k==='reply'? ICON_REPLY : k==='follow'? ICON_ADD : ICON_LINE;
-  return '<div class="ntf">'+
+  return '<div class="ntf"'+(n.id? DO('postOpen', [String(n.id)]) : '')+'>'+
     '<span class="ntfi '+esc(k)+'">'+ic+'</span>'+
     notFace(n)+
     '<span class="ntfb">'+
