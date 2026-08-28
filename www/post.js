@@ -2583,7 +2583,13 @@ function postRow(p){
          this app does with a line of small facts. */
       '<div class="phead">'+
         '<div class="pheadn">'+
-          '<span class="pname">'+esc(postWho(p))+'</span>'+
+          /* The badge is against the NAME and nothing stands between them --
+             「バッチの話してんの、名前の横にしろって話聞いてんの？」 OWNER
+             2026-08-28. It is a fact about the PERSON, so it belongs to the
+             person's name; sitting after the time it read as a fact about the
+             post. One call, here, and there is no second one anywhere in the
+             app. */
+          '<span class="pname">'+esc(postWho(p))+'</span>'+postBadge(p)+
           /* WHEN, on the first line beside the name. OWNER 2026-08-25:
              「名前　まるまる分前　バッチ / @ 編集済み　🔑」 -- and the reason is
              that the second line stopped fitting. With a long name, a language
@@ -2591,7 +2597,7 @@ function postRow(p){
              out THREE lines, and a reply put a fourth under them; "edited" fell
              onto a line by itself. The fixture's `Aya` / `Shango @aya · 15分` is
              short enough that nobody had seen it. */
-          '<span class="pwhen">'+esc(postWhen(p.at))+'</span>'+postBadge(p)+
+          '<span class="pwhen">'+esc(postWhen(p.at))+'</span>'+
           /* The ... and, when it is the one that is open, the menu hanging off
              it. It is IN the post rather than a screen you go to, so what you
              are choosing about stays in front of you. 「画面遷移じゃなくて投稿の
