@@ -161,6 +161,25 @@ Pushing to `master` is the owner's call and is asked for each time.
   builds to learn.
 - **Accounts.** Sign up, sign in, verify, sign out, password reset, and a
   profile with a handle. `www/net.js`.
+- **The onboarding, in the owner's order** 「オンボーディング→最後にログイン」.
+  Draw one letter, be walked through the app, name the language, **then** the
+  door — `OB_DRAW=0, OB_NAME=1, OB_IN=2` in `www/onboard.js`, with `OB_TOUR=3`
+  outside the counted range because the walk is not a screen of that file.
+  There is no way past the door: 「あとで」 went on 2026-08-26 and stayed gone.
+  What the walk made before the account existed goes to the server at the
+  door — `obFinish()` calls `netLangSync()`.
+
+  **It was the other way round for two days and that is why `open-check`
+  exists.** A session read 「言語はアカウントないと作れないです」 as "so the
+  door is first" and moved it (`b64c491`), and the owner's phone opened on a
+  sign-in form 「そんなの俺頼んでねえぞ」. Every check stayed green: `appIs()`
+  answered `'ob'` for a brand new phone, correctly, and `vOb()` drew the door
+  anyway because the door was the step `ob.step` was sitting on. So
+  `open-check` boots from an empty `localStorage` and reads `#app` rather than
+  asking `appIs()` — three states, three screens: new phone → the onboarding,
+  finished then signed out → the door, finished and signed in → the app.
+  `appIs()` (`www/shell.js`, `b62ac29`) is the one that decides the three and
+  is correct; it was never the bug.
 
 ## 3. What is NOT built, however much it looks like it is
 
