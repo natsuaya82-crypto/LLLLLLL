@@ -457,6 +457,43 @@ function whoOf(h){
   return {who:'', hd:h, av:null, lname:'', bio:'', fo:0, fr:0, out:false};
 }
 function meFollows(h){ return meFollowing().indexOf(String(h||''))>=0; }
+/* AND WHERE THAT LIST COMES FROM WHEN IT IS NOT THIS PHONE THAT MADE IT.
+   -------------------------------------------------------------------------
+   ME.fo was written by meFollow() and by nothing else -- a press on THIS
+   handset -- while netFollow() had been telling the server about every press
+   since follows existed. Nothing ever read it back. So the same account on a
+   second phone followed the same people and knew none of it.
+
+   The owner has an SE2 and a 17, which is exactly the two phones that makes
+   it: every Follow button said Follow for somebody already followed, and the
+   followed timeline threw the server's own answer away against an empty list.
+
+   Once a session, and the copy is replaced rather than merged: an unfollow
+   made on the other phone is a row that is GONE, and there is no way to tell
+   a missing row from one this phone has not heard of yet by merging. The
+   server is the record -- 「SNSは全部サーバー」 -- and this is the copy
+   catching up with it.
+
+   Only a request that could not be MADE is asked again. `null` is that;
+   an empty list is an answer and means this account follows nobody. */
+var FO_ASKED=false;
+function meFollowPull(){
+  var was;
+  if(FO_ASKED || !netSignedIn()) return;
+  FO_ASKED=true;
+  was=meFollowing().join(',');
+  netFollowing(function(hs){
+    if(!hs) return;
+    /* Somebody pressed Follow while this was in the air. That press is newer
+       than this answer and netFollow() has already carried it to the server,
+       so writing the older list over it would take it off the screen and
+       leave the server holding the right one. */
+    if(meFollowing().join(',')!==was) return;
+    ME.fo=hs;
+    saveMe();
+    render();
+  }, function(){ FO_ASKED=false; });
+}
 /* Who you have blocked, as handles, beside who you follow -- both are the
    account's and neither is a language's. The uuids the timeline needs are the
    server's answer (netBlocked); this is what a screen asks so a button can

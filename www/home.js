@@ -370,6 +370,9 @@ function vProfile(){
      '?' with a Follow button. whoPull() asks once per handle and does nothing
      at all on your own page. */
   if(!pfMine()) whoPull(pfWho());
+  /* And whether you follow them, which is the one thing on somebody else's
+     card that is about YOU. On your own page it is the count under the name. */
+  meFollowPull();
   return '<div class="view">'+
     /* The gear is yours and only yours: somebody else's page is arrived at
        from the search, so it gets a way back instead. */

@@ -706,6 +706,40 @@ function netFeed(which, ok, bad, more){
       pull('&author=in.('+ids.join(',')+')');
     }, bad);
 }
+/* WHO THIS ACCOUNT FOLLOWS, as handles.
+   -------------------------------------------------------------------------
+   netFollow() has told the server about every press since follows existed,
+   and nothing ever read the list back. So `ME.fo` in www/me.js was written
+   only by a press ON THIS PHONE: the same account on a second phone followed
+   the same people and knew none of it -- every Follow button said Follow, and
+   the followed timeline filtered the server's own answer away to nothing.
+   That last part is fixed at the sieve (www/sns.js); this is the list itself.
+
+   BY HANDLE, because a handle is what one person knows another by and what
+   ME.fo has always held. The uuid is turned back here, where the request
+   already is, rather than by every screen that draws a button.
+
+   `followed(handle)` names the COLUMN and not the table on purpose: `follow`
+   has two foreign keys into `profile` -- follower and followed -- so asking
+   for `profile(handle)` is ambiguous and asking for the column is not.
+
+   Reading a follow needs no account (`follow_read` is `using (true)`): who
+   follows whom is public, the way it is in every timeline. Signed out there
+   is nobody to have followed anybody, and the answer is `null` -- could not
+   ask -- rather than an empty list. */
+function netFollowing(ok, bad){
+  if(!netSignedIn()){ ok(null); return; }
+  netGet('/rest/v1/follow?select=followed(handle)&follower=eq.'+
+         encodeURIComponent(SESS.uid),
+    function(d){
+      var out=[], i, r;
+      for(i=0;i<(d||[]).length;i++){
+        r=(d[i] && d[i].followed) || null;
+        if(r && r.handle) out.push(String(r.handle));
+      }
+      ok(out);
+    }, bad);
+}
 /* ---- keeping somebody away from you ------------------------------------
    A block one phone knows about is not a block: the other person's posts have
    to stop arriving, so it is a row on the server and the timeline asks about

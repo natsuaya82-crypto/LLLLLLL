@@ -526,6 +526,11 @@ window.addEventListener('scroll', snsMoreCheck, false);
 var APPEAL='mailto:Lingua@tokinets.com?subject=Lingua';
 function vFeed(){
   if(!netSignedIn()) return snsLocked('feed');
+  /* Who this account follows, once a session. The followed timeline falls
+     back to it before the server's own answer lands, and every Follow button
+     on every screen reads it. Same shape as the three below: it returns
+     immediately once it has an answer. */
+  meFollowPull();
   snsPull();
   /* Beside the feed's own pull and for the same reason: the moment somebody
      is looking at a timeline is the moment the network is known to be
@@ -1186,6 +1191,9 @@ function snsAnsHTML(q, r){
 function snsHitsHTML(){ return snsAnsHTML(snsQ, snsHits); }
 function vExplore(){
   if(!netSignedIn()) return snsLocked('explore');
+  /* The rows this screen draws carry Follow, and it has to say which state it
+     is in. */
+  meFollowPull();
   /* And the screen the star is on, because whether it is filled is the same
      question the filter asks. */
   snsSavedPull();
