@@ -1095,7 +1095,6 @@ defLang('ru', (function(){
       "csv.ph"            : "кошка\nвода\nидти\n\nkano, гора, существительное",
       "csv.btn"           : "Импортировать",
       "csv.full"        : "{0} перенесено, {1} создано — Free заполнен",
-      "read.sep"          : "  ",
       /* the day's sentence. The sentence itself is not here: it comes
          from the server, one row a day, in every interface language. */
       "day.k"  : "Сегодня",

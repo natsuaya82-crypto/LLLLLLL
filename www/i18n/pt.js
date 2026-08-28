@@ -1089,7 +1089,6 @@ defLang('pt', (function(){
       "csv.ph"           : "gato\nágua\nandar\n\nkano, montanha, substantivo",
       "csv.btn"          : "Importar",
       "csv.full"        : "{0} importadas, {1} criadas — o Free está cheio",
-      "read.sep"         : "  ",
       /* the day's sentence. The sentence itself is not here: it comes
          from the server, one row a day, in every interface language. */
       "day.k"  : "Hoje",
