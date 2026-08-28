@@ -319,3 +319,64 @@ bio とフォロー数は入れていない ── **`profile` にその列が�
 `supabase/schema.sql` ── 渡されましたが、上の理由で一行も変えていません。
 `npm run rls` は**変更前の状態で**回して緑を確認しました
 （182 attempts / 43 shape、そのうち二本が上の主張）。
+
+---
+
+# 公開なら公開 ── サーバーの守り（2026-08-28）
+
+オーナー:「この言語については公開したら公開、非公開にしたら非公開だけど
+それ以外にあんのか？」── 二つの状態しかない。
+
+## 当てる順番（オーナーが当てます）
+
+**一手だけ。**Supabase のダッシュボード → SQL Editor に
+`supabase/schema.sql` を**丸ごと貼って実行**。政策は全部
+`drop policy if exists` → `create policy` なので、何度当てても同じ結果に
+なります。**先に当てるものも、あとに当てるものもありません。**
+
+## 何が変わるか
+
+`slice_read` に二本目の道が付きます:
+
+- **持ち主** ── 今までどおり、全部
+- **公開された言語の、記事が読む五つ**（`wld` `script` `snd` `letters`
+  `kb`）── 誰でも読める（アカウント無しでも。投稿やプロフィールと同じ）
+
+**辞書と文法は開きません**（`words` `phases` `gram2` `lines` `notes`
+`talk` `lang`）。「言語ページ公開と単語や文字のdl可能は別だし」── 人の
+ページを読めることと、その裏の何ヶ月かを渡されることは別の問い。
+
+**書き込みは一つも変えていません。**公開はページが読めることであって、
+入口ではない。
+
+## 突いた行（`npm run rls`、197 attempts / 45 shape、全部緑）
+
+譲れない側:
+- `nor the article of a language kept private` ── 非公開の記事は読めない
+- `nor its letters, nor its keyboard` ── 非公開の文字も鍵盤も読めない
+- `nor read a private article with no account` ── アカウント無しでも同じ
+
+開く側:
+- `B reads a published language's article` / `and its letters`
+- `and so does somebody with no account at all`
+
+開かない側:
+- `but not its dictionary` / `nor its grammar`
+- `nor the dictionary with no account at all`
+- `nor rewrite the article it can read` / `nor delete it`
+
+**赤を見ました:** 節の一覧に `words` と `phases` を足したら
+`but not its dictionary`・`nor its grammar`・`nor the dictionary with no
+account at all` の三本が赤（wanted denied, got ok）。戻して緑。
+
+**ついでに分かったこと:** `published_at is not null` を外しても
+`nor the article of a language kept private` は緑のままでした ──
+`language_read`（公開 or 自分）が**この政策の中の副問い合わせにも効く**ため。
+守りは二重になっています。外したことは形の主張
+（`and published is what opens the other one`）が捕まえます。
+
+## まだ足りない半分
+
+**`published_at` を書くコードがまだ 0 本**なので、これを当てても**今日は何も
+公開されません。**記事の公開スイッチ（`setWldHide`）をこの列に繋ぐのが次の
+コミットです。

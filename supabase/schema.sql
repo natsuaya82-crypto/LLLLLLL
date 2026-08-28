@@ -594,16 +594,40 @@ drop policy if exists language_drop on language;
 create policy language_drop on language for delete
   using (is_member() and owner = auth.uid());
 
--- slice: nobody else's business. Read and written by whoever owns the
--- language and by nobody else -- not even for a language that is PUBLISHED,
--- because publishing is a copy somebody is given and not a door into the
--- phone. is_member(), the same as language above, and for the same reason:
--- what is filed under a language travels with it.
+-- slice: published means published, and the rest stays its owner's.
+--
+-- 「この言語については公開したら公開、非公開にしたら非公開だけどそれ以外に
+--   あんのか？」 OWNER 2026-08-28. Two states and no third, so this is one
+-- flag and not a set of them.
+--
+-- WHAT OPENS IS THE FIVE THE ABOUT PAGE READS: the article itself (`wld`),
+-- the writing system, the sounds, the letters and the keyboard. Those are
+-- what vAbout() draws, and drawing them for somebody else is the whole of
+-- what publishing a language page is.
+--
+-- THE DICTIONARY AND THE GRAMMAR DO NOT OPEN. 「言語ページ公開と単語や文字の
+-- dl可能は別だし」 OWNER -- being allowed to READ somebody's page and being
+-- handed the months of work behind it are two questions, and publishing the
+-- page answers only the first. `words`, `phases`, `gram2`, `lines`, `notes`,
+-- `talk` and `lang` are nobody else's at any setting.
+--
+-- `published_at` is what the About page's own switch writes -- setWldHide()
+-- in www/home.js through netLangPublic() in www/net.js. Turning the switch
+-- off writes null back and the door shuts: nothing is destroyed, nothing is
+-- copied, and the page comes back exactly as it was left.
+--
+-- Writing is unchanged and is the owner's alone. Publishing is a page being
+-- readable, never a way in.
 alter table slice enable row level security;
 drop policy if exists slice_read on slice;
 create policy slice_read on slice for select
-  using (exists (select 1 from language l
-                  where l.id = language and l.owner = auth.uid()));
+  using (
+    exists (select 1 from language l
+             where l.id = language and l.owner = auth.uid())
+    or (kind in ('wld', 'script', 'snd', 'letters', 'kb')
+        and exists (select 1 from language l
+                     where l.id = language and l.published_at is not null))
+  );
 drop policy if exists slice_make on slice;
 create policy slice_make on slice for insert
   with check (is_member() and exists (select 1 from language l
