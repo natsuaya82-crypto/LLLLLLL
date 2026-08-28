@@ -1256,14 +1256,20 @@ function obSnsHTML(){
      www/glyph.js is another session's file today. One line there would do it;
      until then this is that line, run once the page exists. */
   setTimeout(function(){ if(typeof postLines==='function') postLines(); }, 0);
-  return '<div class="view obsns" style="pointer-events:none">'+
+  /* The real page goes in `.obscroll` -- the onboarding's own scrolling box,
+     the one the fifteen scripts to borrow from sit in. Without it the page is
+     a full-height `.view` and the foot under it is pushed out of `.ob`, which
+     is overflow:hidden: the button that ends this step sat at y=1487 on an
+     844-tall phone, with nothing to scroll. It was on the page and could not
+     be reached. */
+  return '<div class="obscroll"><div class="view obsns" style="pointer-events:none">'+
       rootTop('feed', snsFilTop())+
       '<div class="body">'+
         dayRow()+
         OB_SNS_WHO.map(function(w, i){ return postRow(obSnsPost(w, i)); }).join('')+
       '</div>'+
       snsFab()+
-    '</div>'+
+    '</div></div>'+
     '<div class="obfoot"><button class="btn"' + DO('obSnsGo') + '>'+t('ob.next')+'</button></div>';
 }
 function obSnsGo(){ obGo(OB_NAME); }
