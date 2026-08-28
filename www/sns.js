@@ -814,29 +814,83 @@ function snsSameWords(a, b){
    an answer. Without that, writing the answer down calls render(), which
    draws the screen, which asks again.
 
-   `netMember()` is asked HERE and not left to net.js, and that is the whole
-   care in this function. netSearchSaved() answers `ok([])` when there is no
-   member -- an empty list that means "nobody asked", not "this person keeps
-   nothing" -- and writing that over the copy would erase somebody's list on
-   a launch that had not signed in yet. So it is not asked at all until there
-   is somebody to ask for, and then an empty answer is a real one: they
-   deleted them on their other phone, and the copy should follow.
+   `netMember()` is asked HERE and not left to net.js. netSearchSaved()
+   answers `ok([])` when there is no member -- an empty list that means
+   "nobody asked", not "this person keeps nothing" -- and writing that over
+   the copy would erase somebody's list on a launch that had not signed in
+   yet. So it is not asked at all until there is somebody to ask for.
 
-   A refusal leaves the copy exactly as it is. No signal is not an answer. */
+   A refusal leaves the copy exactly as it is. No signal is not an answer.
+
+   ---- and what the phone kept before there was a row for it ---------------
+
+   THE FIRST ANSWER IS ADDED TO, NOT SUBSTITUTED FOR. 「制作はオフラインでも
+   可能次つながった時に更新される」 -- what somebody made without a signal goes
+   up when there is one, and a starred word is something somebody made. The
+   other reading, that the server simply wins, is the way docs/DATA_SAFETY.md
+   says a backup destroys somebody's work: by winning. So a word this phone
+   has and the server does not is UPLOADED, never read as "deleted".
+
+   ONCE, and that is the half that is easy to get wrong. Union on every pull
+   means a word taken off on the other phone comes back from this one for
+   ever, and the star stops being something you can turn off. `SET.savedUp`
+   remembers that this phone has handed its copy over; after it, the answer
+   IS the copy, and a word removed elsewhere is removed here.
+
+   The flag is not what stops a word going up twice -- the difference of the
+   two lists is, and it would hold with no flag at all. What the flag decides
+   is the OTHER thing: when the server's answer is allowed to be the whole
+   truth. It is set only when every upload came back, so a phone that lost
+   its signal half way through tries again next time. */
 var snsSavedAsk=false, snsSavedGot=false;
+function snsSavedHas(a, w){
+  var i;
+  for(i=0;i<a.length;i++) if(a[i]===w) return true;
+  return false;
+}
+/* Every word up, and then say whether they all made it. Counted rather than
+   chained: they are independent rows and one refusing says nothing about the
+   next. */
+function snsSavedPush(add, done){
+  var left=add.length, ok=true, i;
+  if(!left){ done(true); return; }
+  function one(fine){
+    if(!fine) ok=false;
+    left--;
+    if(!left) done(ok);
+  }
+  for(i=0;i<add.length;i++)
+    netSearchSave(add[i],
+      function(){ one(true); },
+      function(){ one(false); });
+}
 function snsSavedPull(){
   if(snsSavedAsk || snsSavedGot) return;
   if(!netMember()) return;
   snsSavedAsk=true;
   netSearchSaved(function(rows){
     snsSavedAsk=false; snsSavedGot=true;
-    var out=[], i;
+    var got=[], mine=snsSaved(), add=[], out, i;
     for(i=0;i<(rows||[]).length;i++)
-      if(rows[i] && rows[i].q) out.push(String(rows[i].q));
-    if(snsSameWords(out, snsSaved())) return;
-    SET.saved=out;
-    save();
-    render();
+      if(rows[i] && rows[i].q) got.push(String(rows[i].q));
+    /* Once handed over, the server is simply the answer -- including an
+       empty one, which is somebody having cleared them on another phone. */
+    if(SET.savedUp){
+      if(snsSameWords(got, mine)) return;
+      SET.saved=got; save(); render();
+      return;
+    }
+    for(i=0;i<mine.length;i++)
+      if(!snsSavedHas(got, mine[i])) add.push(mine[i]);
+    /* The server's first, then the ones this phone is handing over. Nothing
+       is dropped from either side. */
+    out=got.concat(add);
+    snsSavedPush(add, function(allWent){
+      if(!allWent) return;         /* try again next launch */
+      SET.savedUp=true;
+      save();
+    });
+    if(!snsSameWords(out, mine)){ SET.saved=out; save(); render(); }
   }, function(){ snsSavedAsk=false; });
 }
 function snsIsSaved(q){
