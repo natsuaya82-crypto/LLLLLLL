@@ -2962,7 +2962,18 @@ function kbStepHTML(n, title, body){
     '<div class="kbstept">'+esc(title)+'</div>'+body+'</div>';
 }
 HELP.kb=function(){
+  /* On the free plan the first thing this ? is asked is why the keys do
+     nothing, so that is what it answers first. 「無料プランのキーボードは編集
+     ができません。／自作キーボードを作りたい場合はアップグレードしてください。
+     ／アップグレードする。」 OWNER 2026-08-28. The four steps stay under it:
+     switching the keyboard on in iOS is not a paid feature and free needs
+     them more than anybody. */
   return {t:t('kb.sys.h'), h:
+    (can('kb')? '' :
+      '<div class="note">'+esc(t('kb.free.no'))+'</div>'+
+      '<div class="note">'+esc(t('kb.free.up'))+'</div>'+
+      '<button class="btn ghost" style="width:100%;margin:12px 0 4px"' + DO('goPlans') + '>'+
+        t('kb.up.go')+'</button>')+
     /* One step is one tap, and one tap is one photograph. It was two steps
        with both photographs stacked under the second -- so the step reading
        "turn on Full Access" carried a picture of a DIFFERENT page, the one
