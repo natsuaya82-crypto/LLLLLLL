@@ -2383,3 +2383,45 @@ throw しない**。`post(id)` を参照する表も三つあり（`quote` `reac
   思っているかは**決まっていない**。決めるのはオーナー。
 - `tokinets.com/lingua/privacy.html` は、これで書ける。
 
+
+## `www/reading.js` に、読みの部屋が消えて誰も呼ばなくなったものが四つ
+
+**2026-08-28、`claude/acct2`。** 設定の「読みの表示」の部屋を消したので
+（OWNER「そもそもこのページ消していいよ」）、`SET.read` を読む唯一の道が
+無くなりました。`npm run dead` が二つを名指しします:
+
+```
+  www/reading.js:15  capFirst    その部屋の二箇所からしか呼ばれていなかった
+  www/reading.js:36  readSeq     同じく、その部屋の見本一行からだけ
+```
+
+消すと続けて二つ落ちます ── `rd()` は `readSeq()` からしか呼ばれておらず、
+`approx()` は `rd()` からしか呼ばれていません。**四つで一組です。**
+そのあと `www/i18n/*.js` の `LANG[x].read`（十の respelling エンジン）と
+`rdName` を読む人が居なくなりますが、`dead-check` はオブジェクトの
+フィールドを見ないので赤にはなりません ── 消すかどうかは別の判断です。
+
+**やらなかった理由**: `www/reading.js` はこのセッションの持ち物ではありません
+（`docs/SESSIONS.md` §1）。**一コミット一事**でもあります ── 部屋を消すのと
+死んだ関数を消すのは別のことです。
+
+## 「端末のデータを消す」を押さえる検査がありません
+
+**2026-08-28、`claude/acct2`。** `wipeLangs()`（`www/settings.js`）を足しました
+が、押さえるものがありません。`docs/TESTING.md` は削除に回帰テストを要ると
+言っています。`tools/` はこのセッションの持ち物ではないので書けませんでした。
+
+主張すべきこと（`tools/backup-check.mjs` の隣か、`del-check` として）:
+
+```
+  開いていない二つ目の言語の lingua.<id>.<slice> も消えること
+    ── LANGS を回すので、開いている一つだけ消えるのが一番ありそうな壊れ方
+  lingua.set / lingua.me / lingua.posts / lingua.drafts が残ること
+    ── 「SNSは消えない」がこの四本
+  net* の書き込みが一つも走らないこと
+  Documents のバックアップが残ること（bkDropAll が呼ばれないこと）
+  消したあと save() が古い言語の鍵を書き戻さないこと
+    ── langFirst() で新しい id にしているのはこのため。id を据え置きに
+       戻すと ltStart() が28文字を作り直して赤になるはず（赤を見る道）
+  プランに一切触れないこと
+```

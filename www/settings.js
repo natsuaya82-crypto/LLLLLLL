@@ -69,7 +69,6 @@ var SETS=[
   {id:'pw',    k:'set.pw', off:true},
   {id:'lang',  k:'set.lang'},
   {id:'look',  k:'set.look'},
-  {id:'read',  k:'set.reading'},
   {id:'acct',  k:'set.account'},
   {id:'data',  k:'set.data'},
   {id:'ui',    k:'set.display'}
@@ -174,7 +173,6 @@ function vSettings(){
    without opening anything. */
 function setSummary(id, p){
   if(id==='look')  return t('theme.'+(SET.theme||'system'));
-  if(id==='read')  return readMode()==='kana'? capFirst(langDef().rdName) : t('read.'+readMode());
   if(id==='ui')    return LANG[uiLang()].label;
   if(id==='lang')  return langName||'—';
   if(id==='acct')  return t(netMember()? 'set.account.on' : 'set.account.guest');
@@ -195,19 +193,6 @@ function vSet(){
         DO('setAuto', [SET.theme!=='system']) + '>'+
         '<span class="sl">'+t('theme.system')+'</span>'+
         swtHTML(SET.theme==='system')+'</button>'+
-      '';
-  } else if(id==='read'){
-    /* Down the page, one to a row, ticked -- not three words sharing the
-       width of the screen. 「読みの表示も横に切り替えるやつじゃなくて縦に並ぶ
-       ようにして」 */
-    body=[['ipa',t('read.ipa')],['kana',capFirst(langDef().rdName)],['both',t('read.both')]].map(function(m){
-        return '<button class="set"' + DO('setRead', [m[0]]) + '>'+
-          '<span class="sl">'+esc(m[1])+'</span>'+
-          '<span class="sv">'+(readMode()===m[0]? ICON_TICK : '')+'</span></button>';
-      }).join('')+
-      '<div class="pvbox" style="margin-top:10px"><span class="pvn">'+t('set.sample')+'</span>'+
-        '<span class="pvk">'+esc(readSeq(S.seq))+'</span>'+
-        '<button' + DO('sayPh', [S.seq]) + '>'+ICON_SPK+t('f.listen')+'</button></div>'+
       '';
   } else if(id==='ui'){
     body=UI_LANGS.map(function(k){
@@ -400,7 +385,6 @@ function setAuto(on){
   var dark=!!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
   setTheme(dark? 'dark' : 'light');
 }
-function setRead(m){ SET.read=m; save(); render(); }
 function setUi(l){ SET.ui=l; save(); render(); }
 /* Delete account: everything this phone holds, and the tokens with it.
 
