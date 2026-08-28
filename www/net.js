@@ -1380,10 +1380,21 @@ function netFollow(handle, on, ok, bad){
     }, bad);
 }
 /* NOTIF_SEAM — who liked, answered, boosted or followed, newest first, as
-   { kind, at, hd, who, av, id }. `kind` is 'like' | 'boost' | 'reply' |
-   'follow' | 'pick' -- the last being a post worth reading, which is not
-   somebody doing something and is the only one of the five this phone could
-   never work out on its own. */
+   { kind, at, hd, who, av, id, n, more }. `kind` is 'like' | 'boost' |
+   'reply' | 'follow' | 'pick' -- the last being a post worth reading, which
+   is not somebody doing something and is the only one of the five this phone
+   could never work out on its own.
+
+   ONE ROW PER THING and not per person. 「同じ投稿のいいねとかは X みたいに
+   まとめていい」 OWNER 2026-08-28. `hd`, `who` and `av` are whoever did it
+   LAST, which is what they have always been; `n` is how many people, 1 for a
+   thing one person did; `more` is the next few after that one, newest first,
+   as [{hd, who, av}].
+
+   The folding is the server's (supabase/schema.sql § what happened to you)
+   and NOT this function's. Fifty rows folded here would be fifty rows that
+   became twenty, and somebody would see less than they did; folded there,
+   fifty rows are fifty things that happened. */
 function netNotices(ok, bad){
   if(!netSignedIn()){ ok(null); return; }
   /* One request and not four. A notice list is ONE list in time order, and a
@@ -1396,7 +1407,11 @@ function netNotices(ok, bad){
       for(i=0;i<(d||[]).length;i++){
         r=d[i];
         out.push({kind:r.kind, at:Date.parse(r.at)||0, hd:r.hd||'',
-                  who:r.who||r.hd||'', av:r.av||null, id:r.post||''});
+                  who:r.who||r.hd||'', av:r.av||null, id:r.post||'',
+                  /* A row that says nothing about how many is one person --
+                     the server sends 1, and a server that has not been
+                     updated sends nothing at all. */
+                  n:r.n||1, more:r.more||[]});
       }
       ok(out);
     }, bad);

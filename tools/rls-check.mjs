@@ -558,6 +558,49 @@ const CASES = [
   ['and B writes again',                      'ok',     B, 0,
     `insert into react(post,actor,kind) values ('${P}','${B}','boost')`],
 
+  /* --- and what a notice is, now that it is one row per thing -------------
+     「同じ投稿のいいねとかは X みたいにまとめていい」 OWNER 2026-08-28.
+     Folded on the SERVER, so that fifty rows are fifty things that happened
+     rather than fifty rows that become twenty on the phone.
+
+     B has liked P further up this file and F has not, so F liking it is the
+     second person on one post. The claim is not "two likes exist" -- it is
+     that A is handed ONE row for them, carrying the number two. */
+  /* A minute later, and said out loud: every row this file writes lands in
+     ONE transaction, so `now()` is the same instant for all of them and
+     "newest" would otherwise be a tie the planner breaks. */
+  ['F likes the same post B liked',           'ok',     F, 0,
+    `insert into react(post,actor,kind,created_at)
+          values ('${P}','${F}','like', now() + interval '1 minute')`],
+  ['two people liking one post is ONE notice', 'ok',    A, 0,
+    `select 1 from (select count(*) c from notices(50)
+                     where kind='like' and post='${P}') q where q.c = 1`],
+  ['and it says how many',                    'ok',     A, 0,
+    `select 1 from notices(50) where kind='like' and post='${P}' and n = 2`],
+  /* The newest is the one the row is named after, and the other is under
+     `more`. Both halves: a row that named the OLDEST would read as the wrong
+     person having just done it. */
+  ['named after whoever did it last',         'ok',     A, 0,
+    `select 1 from notices(50) where kind='like' and post='${P}'
+       and hd = (select handle from profile where id='${F}')`],
+  ['and the one before them is carried too',  'ok',     A, 0,
+    `select 1 from notices(50) where kind='like' and post='${P}'
+       and more @> jsonb_build_array(jsonb_build_object(
+             'hd', (select handle from profile where id='${B}')))`],
+  /* And nobody is dropped on the way: both people are named across the row,
+     one as the row's own name and the rest under `more`. A fold that kept
+     only the newest would pass both lines above and still lose somebody. */
+  ['and nobody is lost between the two',      'ok',     A, 0,
+    `select 1 from notices(50) where kind='like' and post='${P}'
+       and (jsonb_build_array(jsonb_build_object('hd', hd)) || more)
+           @> jsonb_build_array(
+                jsonb_build_object('hd', (select handle from profile where id='${B}')),
+                jsonb_build_object('hd', (select handle from profile where id='${F}')))`],
+  /* A thing one person did is still a row, and says one. A fold that only
+     worked when there were two would be a fold that hid single notices. */
+  ['one person is a notice that says one',    'ok',     A, 0,
+    `select 1 from notices(50) where kind='boost' and post='${P}' and n = 1`],
+
   /* --- a draft, which is the one thing here that is nobody else's ---------
      Every other table in this file is either already public or on its way to
      being public, and their select policies say so. `draft` is what somebody

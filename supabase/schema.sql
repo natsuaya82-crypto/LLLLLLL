@@ -883,33 +883,79 @@ create policy media_drop on storage.objects for delete using (
 -- 'pick' is in www/net.js's list and not here: a post worth reading is not
 -- somebody doing something to you, and it is the one of the five this phone
 -- could never work out on its own. It comes from us, later, or not at all.
+-- ONE ROW PER THING, not one per person. 「同じ投稿のいいねとかは X みたいに
+-- まとめていい」 OWNER 2026-08-28, and 「同じでいい」 for follows.
+--
+-- Folded HERE and not on the phone, and that is the whole point of it being
+-- here: fifty rows fetched and then folded on the phone is fifty rows that
+-- become twenty, and the person sees LESS than they did. Folded first, fifty
+-- rows are fifty things that happened. 「50件でいい」 OWNER, so there is no
+-- road past them and none is built.
+--
+-- Grouped by (kind, post). Follows carry no post and GROUP BY puts every NULL
+-- in one group, which is exactly right: they are one row saying how many
+-- people. Replies are grouped by the REPLY's own id, so they never fold into
+-- each other -- two answers are two things to read, and the id is what
+-- pressing the row opens.
+--
+-- What a row carries: the newest person, by the same three fields as before
+-- (`hd`, `who`, `av`), so a screen that has not been changed yet still draws
+-- something true; `n`, how many people, which is 1 for a thing one person
+-- did; and `more`, the next few after the newest, newest first, as
+-- [{hd, who, av}]. `n` and `more` are what "〇〇さん他3人" is made of.
+--
+-- `count(*)` is a count of PEOPLE without having to say so: react's primary
+-- key is (post, actor, kind), so one person cannot like one post twice, and a
+-- follow is one row per pair.
+--
+-- Dropped and remade rather than replaced: the returning shape changed, and
+-- `create or replace` will not do that. `if exists` so the file goes on being
+-- applied twice in a row.
+drop function if exists notices(int);
 create or replace function notices(lim int default 50)
-returns table (kind text, at timestamptz, hd text, who text, av jsonb, post uuid)
+returns table (kind text, at timestamptz, hd text, who text, av jsonb,
+               post uuid, n int, more jsonb)
 language sql stable as $$
-  select 'like', r.created_at, p.handle, p.display, p.av, r.post
-    from react r
-    join post ps on ps.id = r.post
-    join profile p on p.id = r.actor
-   where ps.author = auth.uid() and r.actor <> auth.uid() and r.kind = 'like'
-  union all
-  select 'boost', r.created_at, p.handle, p.display, p.av, r.post
-    from react r
-    join post ps on ps.id = r.post
-    join profile p on p.id = r.actor
-   where ps.author = auth.uid() and r.actor <> auth.uid() and r.kind = 'boost'
-  union all
-  select 'reply', q.created_at, p.handle, p.display, p.av, q.id
-    from post q
-    join post ps on ps.id = q.reply_to
-    join profile p on p.id = q.author
-   where ps.author = auth.uid() and q.author <> auth.uid()
-  union all
-  select 'follow', f.created_at, p.handle, p.display, p.av, null::uuid
-    from follow f
-    join profile p on p.id = f.follower
-   where f.followed = auth.uid()
-  order by 2 desc
-  limit lim
+  with ev as (
+    select 'like'::text as kind, r.created_at as at, r.actor as actor, r.post as post
+      from react r
+      join post ps on ps.id = r.post
+     where ps.author = auth.uid() and r.actor <> auth.uid() and r.kind = 'like'
+    union all
+    select 'boost', r.created_at, r.actor, r.post
+      from react r
+      join post ps on ps.id = r.post
+     where ps.author = auth.uid() and r.actor <> auth.uid() and r.kind = 'boost'
+    union all
+    select 'reply', q.created_at, q.author, q.id
+      from post q
+      join post ps on ps.id = q.reply_to
+     where ps.author = auth.uid() and q.author <> auth.uid()
+    union all
+    select 'follow', f.created_at, f.follower, null::uuid
+      from follow f
+     where f.followed = auth.uid()
+  ),
+  g as (
+    select ev.kind, ev.post, max(ev.at) as at, count(*)::int as n,
+           /* `actor` after `at` so two things that happened in the same
+              instant still come out in one settled order. Without it the
+              person a row is NAMED after is whichever the planner handed
+              over first, and that is a name that can change between two
+              readings of the same list. */
+           (array_agg(ev.actor order by ev.at desc, ev.actor desc))[1:4] as few
+      from ev group by ev.kind, ev.post
+  )
+  select g.kind, g.at, p0.handle, p0.display, p0.av, g.post, g.n,
+         coalesce((select jsonb_agg(jsonb_build_object(
+                            'hd', p.handle, 'who', p.display, 'av', p.av)
+                          order by u.ord)
+                     from unnest(g.few[2:4]) with ordinality as u(id, ord)
+                     join profile p on p.id = u.id), '[]'::jsonb)
+    from g
+    join profile p0 on p0.id = g.few[1]
+   order by g.at desc
+   limit lim
 $$;
 grant execute on function notices(int) to authenticated;
 
