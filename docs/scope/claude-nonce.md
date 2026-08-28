@@ -257,6 +257,12 @@ Passed nonce and nonce in id_token should either both exist or not. (nonce id_to
 **押すのは画面のいちばん下の Google、出るのはその上です。**同じ画面ですが
 指の位置とは離れているので、そこを見てください。
 
+**下の図は、いま在る並びを `obFormHTML()`（`www/onboard.js:994-1007`）から
+写したものです。動かす案ではありません。**`claude/nonce` は `www/onboard.js`
+と `www/index.html` を一行も変えていません（`git diff origin/master...HEAD --
+www/onboard.js www/index.html` は空）。**ボタンの位置は誰も動かしません** ──
+動かすとしたらオーナーの決めることで、ここの話ではありません。
+
 扉（オンボーディングの最後、サインインの面）はこの並びです:
 
 ```
