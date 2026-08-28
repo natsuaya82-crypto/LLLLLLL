@@ -332,10 +332,6 @@ canvas.pkc{width:34px;height:34px;display:block}
 /* and the keys standing in it are outlined, so a key spanning three columns
    says which of the three it is being counted in */
 .kb.kbsheet .kbk.sel{border-color:var(--purln)}
-/* A cell of the sheet with no key on it. Not a key and not pressable -- it is
-   the part of the row that is not filled, drawn so it can be seen to be
-   there. It is a .kbk so that a key being carried can be dropped on it. */
-.kbk.cell{background:none;opacity:.35}
 /* --kh is this screen's own drawing of a key and is not what goes to the
    phone: the extension decides that, and nothing in the app sets it now. */
 .kbrow{display:flex;gap:5px;--rh:1}
@@ -363,6 +359,23 @@ canvas.pkc{width:34px;height:34px;display:block}
    row of the fixed QWERTY comes to ten units so the columns line up, and the
    only way to inset a row is a key that is not one. */
 .kbk.gap{background:none;border-color:transparent}
+/* A FRAME OF THE SHEET WITH NO KEY IN IT, and there is no other state it can
+   be in. 「エクセルと同じだって。点線キーが入ってんの。追加するならタップまで
+   追加ボタン。キーガーないところがあるのがおかしい」 OWNER 2026-08-28.
+
+   A dotted key, so a place with no key looks like a place a key GOES rather
+   than like nothing at all. Pressing it puts one in, the width of the frame
+   it was.
+
+   The gaps that hold a short row's slack wear this too, and that is the whole
+   of what the owner was looking at: the free QWERTY's third row is inset by
+   half a key at each end, and those two ends were neither frame nor key.
+   They are written down as gap keys because that is how the phone is told
+   where a row is short from -- but what they LOOK like is an empty frame,
+   because that is what they are. The lower half of a merged key is not one:
+   there is a key standing in it, and kbHTML() leaves the class off. */
+.kbk.cell{background:none;border-style:dashed;border-color:var(--line);opacity:.5}
+.kbk.cell:active{border-color:var(--goldln);background:var(--goldsf);opacity:1}
 /* A flick direction with nothing on it yet, while the keyboard is being
    built. It is a place, not a letter, so it is a dot rather than a shape. */
 .kbf.kbfx{color:var(--txm);opacity:.45}

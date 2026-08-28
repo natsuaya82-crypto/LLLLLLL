@@ -1249,35 +1249,41 @@ function kbDragMount(){
    which was the one place on this sheet where a press did something rather
    than choosing something -- and it was standing exactly where a second key
    would have to be chosen 「あと複数キー選べないから」. */
-/* An empty cell, and whether a key can actually go in it.
-   `can` is false for a leftover of ONE column, which is half a key. A column
-   is half a key wide -- that is what makes a short row always divide -- so a
-   row that stops half a key short of the widest leaves one column over, and
-   it was being drawn as a cell like any other. Pressing it did nothing: a key
-   is one key wide, kbCellAdd() asks kbRoomIn(ri, 1) for that much room, and
-   half a column is not it.
-   「ここに謎のスペースできてキーの追加もできない」 OWNER 2026-08-28.
+/* An empty frame of the sheet, and every one of them is one.
+   「エクセルと同じだって。点線キーが入ってんの。追加するならタップまで追加ボタン。
+   キーガーないところがあるのがおかしい」 OWNER DECISION 2026-08-28.
 
-   So the half column is drawn as SPACE and not as something to press. It is
-   not a key's worth of room and it never was; what was wrong was the app
-   offering it. A key half a column wide would be a new kind of key and a
-   different question -- it is the owner's, and it is not answered here. */
-function kbCellHTML(ri, at, span, can){
-  return can
-    ? '<button class="kbk cell"' + DO('kbCellAdd', [ri, at]) +
-      ' style="grid-column:span '+span+'"' +
-      ' aria-label="'+esc(t('kb.cell.add'))+'"></button>'
-    : '<span style="grid-column:span '+span+'"></span>';
+   The sheet is a grid of frames and a frame with no key in it is a DOTTED
+   KEY -- there is no such state as a blank. A leftover of one column is half
+   a frame and is a frame all the same: pressing it puts in a key half a key
+   wide, which is a width this keyboard has had since it had a QWERTY (the
+   third row is inset by exactly that at each end).
+
+   It was drawn as SPACE for a day, with `can` false on the half, on the
+   grounds that a key is one key wide. That was the app deciding a frame was
+   not one because what goes in it is small, and the owner said no:
+   「半キーも左に寄せたら右に1枠開くでしょ？そういう話」
+
+   `span` is the frame's width in COLUMNS and a column is half a key, so the
+   key that goes in is span/2 wide. One number, carried from the drawing to
+   the press, so the two cannot disagree about how wide the frame was. */
+function kbCellHTML(ri, at, span){
+  return '<button class="kbk cell"' + DO('kbCellAdd', [ri, at, span]) +
+    ' style="grid-column:span '+span+'"' +
+    ' aria-label="'+esc(t('kb.cell.add'))+'"></button>';
 }
-/* Where in the row a key goes when the cell at this column is pressed.
-   kbColAt() is the same arithmetic the column insert uses -- a cell before
-   the keys lands at the front, one after them at the end. */
-function kbCellAdd(ri, at){
-  var b=kbEdit(), rows, k;
+/* Where in the row a key goes when the frame at this column is pressed, and
+   how wide it is: the frame's own width. kbColAt() is the same arithmetic the
+   column insert uses -- a frame before the keys lands at the front, one after
+   them at the end. */
+function kbCellAdd(ri, at, span){
+  var b=kbEdit(), rows, w, k;
   if(!b) return;
   rows=kbLayer().rows;
-  if(!rows[ri] || !kbRoomIn(ri, 1)) return;
+  w=(span||2)/2;
+  if(!rows[ri] || !kbRoomIn(ri, w)) return;
   k=kbKey('lt', '');
+  k.w=w;
   rows[ri].splice(kbColAt(rows[ri], at), 0, k);
   KBH=null; kbSel=null;
   saveKb(); render();
@@ -1827,10 +1833,12 @@ function kbAlign(how){
   tot=kbUsed(row);
   rem=kbCols(rows)-tot;
   if(rem>0){
-    lead = how==='r'? rem : (how==='c'? kbLead(rem+tot, tot) : 0);
-    /* CENTRE rounds to a whole key; LEFT and RIGHT do not.
+    /* LEFT and RIGHT put the whole leftover at one end; CENTRE splits it
+       between the two. None of the three rounds anything.
        「キーボードも左右寄せにするなら、ハンキーとか関係なく寄せて。」
-       OWNER DECISION 2026-08-27.
+       OWNER DECISION 2026-08-27, and
+       「中心に寄せたら半キーが二つできるけど寄せたら1つになるの」
+       OWNER DECISION 2026-08-28.
 
        Right used to send the odd half to the other end, so that the row's
        first key landed on a whole column -- which is what centring is FOR
@@ -1838,11 +1846,18 @@ function kbAlign(how){
        is not what an end is for. Pushing a row to the right means putting it
        against the right, and if half a key is left over it stays left over.
 
-       It agrees with the decision of the day before: a column takes only the
-       keys it is entirely made of, so a row that ends up half a key out lines
-       up with no column and lights for none -- the same as the free QWERTY's
-       inset third row, and true for the same reason. */
-    if(how==='c' && lead%2) lead--;
+       Centre used to round its half away for the same reason and no longer
+       does: a row of nine keys on a sheet of ten has one key left over, and
+       what the owner asked for is half a frame at EACH end -- two of them --
+       rather than a whole frame at one end and nothing at the other. Pushed
+       to an end, that same leftover is one whole frame.
+
+       A row that ends up half a key out lines up with no column and lights
+       for none. That is not a fault to round away: it is the same answer the
+       free QWERTY's inset third row has always given, and the sheet saying a
+       row does not line up with it is what somebody needs to know before they
+       cut a column. */
+    lead = how==='r'? rem : (how==='c'? kbLead(rem+tot, tot) : 0);
     tail = rem-lead;
     if(tail>0) row.push(kbGap(kbGapW(tail)));
     if(lead>0) row.unshift(kbGap(kbGapW(lead)));
@@ -1855,23 +1870,24 @@ function kbAlign(how){
      ・・・・・
      　・・・
 
-   Rounded down to a whole KEY, and that is the whole of what this function is
-   for. A column is half a key, so half of what is left over is very often an
-   odd number of columns -- three keys on a sheet of ten leave fourteen, and
-   seven of those is three keys and a half. Put that in front and the row sits
-   BETWEEN the columns: every key on it straddles two, and the letters across
-   the top, which are the reason this is a sheet at all, stop naming anything
-   on that row. 「行の中央寄せした後列がずれてるのはどうなる？」
+   Half of what is left over, in columns, and NOT rounded to a whole key.
+   「中心に寄せたら半キーが二つできるけど寄せたら1つになるの」 OWNER DECISION
+   2026-08-28. A column is half a key, so a row one key short of the sheet has
+   two columns left over and centring gives half a frame at each end -- two of
+   them, which is what the owner counted. Pushed to one end the same leftover
+   is one whole frame.
 
-   So the odd half goes to the other end instead. The row is off centre by
-   half a key, which nobody can see, and every key on it is on a column, which
-   is the thing the sheet is for.
+   It DID round down to a whole key, and the reason it did is still true and
+   is no longer a reason: a row off by half a key lines up with no column, so
+   pressing a column's letter lights nothing on it. That is now simply what
+   such a row says. The free QWERTY's inset third row has said it from the
+   first day, and CLAUDE.md § 19 calls it the right answer -- the row telling
+   somebody it does not line up with the columns, before they cut one.
 
    One place, because the drawing of a short row and the button that aligns
    one have to agree -- kbAlign() asks here too. */
 function kbLead(cols, tot){
-  var half=Math.floor((cols-tot)/2);
-  return half-(half%2);
+  return Math.floor((cols-tot)/2);
 }
 function kbHTML(sel, ro){
   var lay=kbLayer(), out='', ri, ki, row, key, cls, slots=!ro && kbHasFlick(),
@@ -1911,13 +1927,20 @@ function kbHTML(sel, ro){
       lead=kbLead(cols, tot);
       while(at<lead){
         b=Math.min(2, lead-at);
-        out+=kbCellHTML(ri, at, b, b>1);
+        out+=kbCellHTML(ri, at, b);
         at+=b;
       }
     }
     for(ki=0;ki<row.length;ki++){
       key=row[ki];
       cls='kbk'+(key.k!=='lt'? ' fn':'')+(key.k==='gap'? ' gap':'')+(ro? ' ro':'')+
+        /* A gap is an empty frame that happens to be written down -- the slack
+           an alignment put at the end of a row, or the half key that insets a
+           QWERTY's third row -- so it is drawn as one. 「キーガーないところが
+           あるのがおかしい」 OWNER 2026-08-28. Not the lower half of a merged
+           key: there is a key standing in that one. Not on the read-only
+           board either -- on a phone a gap is genuinely nothing. */
+        ((!ro && key.k==='gap' && !kbShadow(key))? ' cell':'')+
         ((!ro && sel && sel.r===ri && sel.k===ki)? ' on':'')+
         /* the key being worked on, and a key standing in the column that is.
            `pick` and not `on`: those are two different states that had been
@@ -1952,7 +1975,7 @@ function kbHTML(sel, ro){
        pattern comes to the same total as the widest and has neither. */
     if(!ro) while(at<cols){
       b=Math.min(2, cols-at);
-      out+=kbCellHTML(ri, at, b, b>1);
+      out+=kbCellHTML(ri, at, b);
       at+=b;
     }
     out+='</div>';
@@ -2766,9 +2789,22 @@ var ICON_JOIN='<svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="
   'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
   '<path d="M4 6v12"/><path d="M20 6v12"/><path d="M9 12h6"/>'+
   '<path d="M11 9l-2 3 2 3"/><path d="M13 9l2 3-2 3"/></svg>';
+/* OPENING THE KEY THAT IS SELECTED, and it is a PENCIL.
+   「編集のマークもなんか削除っぽいから編集っぽいマークにして欲しい」 OWNER
+   2026-08-28. It was a rectangle with a bar across the middle of it, which is
+   a key with a MINUS on it -- the same shape as taking something away, one
+   button along from the bin, on the one screen where a wrong press deletes a
+   row of somebody's keyboard. Nothing about that could throw: the button
+   worked, and the picture said the opposite of what it did.
+
+   The same drawing as ICON_PEN in glyph.js, at the size and the weight the
+   rest of this toolbar is (19px, 1.7). It is written out here rather than
+   shared for the reason ICON_INLF gives above -- glyph.js is being changed on
+   other branches today -- and docs/BACKLOG.md carries the move. */
 var ICON_KEYSET='<svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" '+
   'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
-  '<rect x="4" y="5" width="16" height="14" rx="2"/><path d="M9 12h6"/></svg>';
+  '<path d="M4 20h4L19.2 8.8a2 2 0 0 0-2.8-2.8L5 17.2V20Z"/>'+
+  '<path d="M15.2 7.2 18 10"/></svg>';
 function kbToolHTML(){
   var row=!!KBH && KBH.k==='r', col=!!KBH && KBH.k==='c',
       key=!!KBH && KBH.k==='k', ask=!!KBH && !!KBH.ins,
