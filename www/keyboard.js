@@ -569,15 +569,45 @@ function kbAdd(pat){
   /* And onto it. This is pressed on the sheet that offers the five patterns,
      so render() alone redrew the sheet -- somebody chose a keyboard and was
      left looking at the chooser. 「追加した時に画面動かないまま追加される
-     のやめてくれ」 */
-  kbGo();
+     のやめてくれ」 The board is NAMED, because the chapter's own page is the
+     chooser as well. */
+  kbGo(kbShow);
 }
 /* The keyboard chapter, from wherever this was pressed. go() lands on a
    screen already behind you by cutting the trail back to it, so pressing
-   Apply from a sheet does not push a second copy of the chapter. */
-function kbGo(){
-  if(here().r==='kb') render();
-  else go('kb');
+   Apply from a sheet does not push a second copy of the chapter.
+
+   And ONTO A BOARD when one is named, because the chapter's own page is the
+   LIST. Cutting back to the chapter was only half of "onto it": the route
+   carries which keyboard you are on, and this put nothing there, so a
+   keyboard made from the sheet of patterns landed on the chooser it was
+   chosen from -- 「追加した時に画面動かないまま追加されるのやめてくれ」 is
+   what that was written to answer and is not what it got. Changing an
+   existing keyboard's pattern landed there too, one screen away from the
+   keyboard it had just changed.
+
+   That is also what took the ⋯ off the screen. kbMoreQ() is drawn on a
+   BOARD's page and the list carries helpQ() instead, so the road that
+   changes a keyboard's arrangement -- ⋯ then kbRepat() then kbSetPat() --
+   had no first step from the one screen somebody arrives on after making a
+   keyboard. Nothing was wrong with any of the three: kbSetPat('flick')
+   turned 1x10 into 2.5x4 and sent the 2.5 to the phone the whole time. It
+   was the way there that was missing.
+
+   The board goes on TOP of the chapter, so the back arrow still walks to the
+   list rather than out of the chapter altogether. Pressed with nothing named
+   -- which is what deleting a keyboard does -- it is the list, because the
+   board it was pressed on is gone. */
+function kbGo(i){
+  var to = (i===undefined || i===null)? undefined
+         : String(kbClamp(i, Math.max(1, kbBoards().length)));
+  var h = here();
+  /* Already the screen being asked for. go() returns without drawing in that
+     case, which is right for a press that is going somewhere and wrong for
+     one that has just changed what is on the screen. */
+  if(h.r==='kb' && h.a===to){ render(); return; }
+  if(h.r!=='kb') go('kb');
+  if(to!==undefined) go('kb', to);
 }
 /* Which one goes to the phone. The only thing on this screen that changes
    what somebody types with. */
@@ -593,7 +623,10 @@ function kbApply(i){
 function kbGoBoard(i){
   kbShow=kbClamp(i, Math.max(1, kbBoards().length));
   kbLay=0; kbSel=null;
-  go('kb', String(kbShow));
+  /* One place says what landing on a board's page is. This said it a second
+     time, which is how the other two roads onto a board came to say
+     something else. */
+  kbGo(kbShow);
 }
 /* A keyboard goes only when somebody says so, and never the last one: with
    none left there is nothing to apply, and the app would be quietly back to
@@ -1267,24 +1300,96 @@ function kbDragMount(){
    `span` is the frame's width in COLUMNS and a column is half a key, so the
    key that goes in is span/2 wide. One number, carried from the drawing to
    the press, so the two cannot disagree about how wide the frame was. */
-function kbCellHTML(ri, at, span){
-  return '<button class="kbk cell"' + DO('kbCellAdd', [ri, at, span]) +
-    ' style="grid-column:span '+span+'"' +
+function kbCellHTML(ri, at, span, ki){
+  return '<button class="kbk'+(ki===undefined? '' : ' gap')+' cell'+
+    (kbCellIs(ri, at)? ' pick':'')+'"' +
+    DO('kbCellAdd', [ri, at, span]) +
+    /* The paint, because a selection nobody can see is not one. There is no
+       `.kbk.pick` rule in the stylesheet -- a chosen key is painted from
+       here, inline -- so a frame that wore only the class was chosen and
+       looked exactly like the frame beside it. */
+    ' style="grid-column:span '+span+(kbCellIs(ri, at)? kbPickPaint() : '')+'"' +
+    /* A frame drawn over a gap the row WRITES DOWN says which key it is,
+       once, on the first of them. kbReadRows() builds a row back out of the
+       page after a carry -- it is the layout, briefly, and a gap that named
+       itself nowhere would be dropped from it, which is a row losing the
+       alignment somebody gave it the next time any key on the board is
+       carried. Once and not on each, because that walk pushes a key per
+       element it can name and four frames naming one gap would be four gaps.
+       Slack the row does not write down names nothing, which is what it has
+       always done. */
+    (ki===undefined? '' : ' data-r="'+ri+'" data-k="'+ki+'"') +
     ' aria-label="'+esc(t('kb.cell.add'))+'"></button>';
 }
-/* Where in the row a key goes when the frame at this column is pressed, and
-   how wide it is: the frame's own width. kbColAt() is the same arithmetic the
-   column insert uses -- a frame before the keys lands at the front, one after
-   them at the end. */
+/* Which frame is being worked on. KBH's fourth kind, beside the row, the
+   column and the key, and it is held by WHERE it is -- the row and the column
+   it starts at -- because a frame is not written down anywhere to have an
+   index. */
+function kbCellIs(ri, at){
+  return !!KBH && KBH.k==='f' && KBH.r===ri && KBH.at===at;
+}
+/* PRESSING A FRAME SELECTS IT. 「全部のます触ったら選択で」 OWNER 2026-08-28.
+
+   It used to put a key in on the press, and that was the one exception left
+   on this sheet: two kinds of empty frame were drawn identically and did
+   different things -- the slack a row has never had written down added a key,
+   and the gap an alignment wrote down selected itself, because a gap is a key
+   and a key is pressed to be selected. One habit and no exceptions now: press
+   to select, and the buttons over the sheet act on what is selected, which is
+   the sentence at the head of CLAUDE.md § 19 and is how the row's number and
+   the column's letter have always worked.
+
+   Called with NO ARGUMENTS it is the button over the sheet, acting on the
+   selection the way kbCut(), kbAlign(), kbOpenSel() and kbJoinSel() do. Two
+   controls, one act, and the arguments say which is asking -- the same shape
+   as kbIns(down) and kbInsCol(right). */
 function kbCellAdd(ri, at, span){
-  var b=kbEdit(), rows, w, k;
-  if(!b) return;
+  if(ri===undefined){ kbCellPut(); return; }
+  if(kbIsFree(kbShow)) return;
+  if(!kbEdit()) return;
+  KBH={k:'f', r:ri, at:at, span:span};
+  kbSel=null;
+  render();
+}
+/* And what the button over the sheet does: a key goes into the selected
+   frame, THE WIDTH OF THAT FRAME -- half a key into half a frame. A frame is
+   at most one key wide wherever the sheet draws one, so this is the only
+   width there is to take.
+
+   Two places a frame can be, and the difference is whether the row writes it
+   down. Slack it does not write down is beyond the keys, so the key is spliced
+   in and the row gets WIDER -- ten across is asked about there. A gap key is
+   room the row already holds, so the key takes that frame's share of it and
+   what is left stays a gap on either side; the row's total does not move and
+   there is nothing to ask. */
+function kbCellPut(){
+  var b=kbEdit(), rows, row, w, i, at, u, k, put;
+  if(!b || !KBH || KBH.k!=='f') return;
   rows=kbLayer().rows;
-  w=(span||2)/2;
-  if(!rows[ri] || !kbRoomIn(ri, w)) return;
+  row=rows[KBH.r];
+  if(!row) return;
+  w=(KBH.span||2)/2;
   k=kbKey('lt', '');
   k.w=w;
-  rows[ri].splice(kbColAt(rows[ri], at), 0, k);
+  /* the gap this frame is drawn over, if there is one */
+  at=0;
+  for(i=0;i<row.length;i++){
+    u=kbU(row[i].w);
+    if(row[i].k==='gap' && !kbShadow(row[i]) &&
+       KBH.at>=at && KBH.at+KBH.span<=at+u) break;
+    at+=u;
+  }
+  if(i<row.length){
+    put=[];
+    if(KBH.at-at>0) put.push(kbGap(kbGapW(KBH.at-at)));
+    put.push(k);
+    if((at+u)-(KBH.at+KBH.span)>0)
+      put.push(kbGap(kbGapW((at+u)-(KBH.at+KBH.span))));
+    row.splice.apply(row, [i, 1].concat(put));
+  }else{
+    if(!kbRoomFor(row, w)) return;
+    row.splice(kbColAt(row, KBH.at), 0, k);
+  }
   KBH=null; kbSel=null;
   saveKb(); render();
 }
@@ -1490,8 +1595,14 @@ function kbRhCSS(k){ return kbTall(k)? ';--rh:'+(k.h||1) : ''; }
    colour itself still lives in the two theme blocks and nowhere else, which is
    what that rule asks for. If it should be a stylesheet rule, it is one line
    -- `.kbk.pick{background:var(--pur);color:var(--bg)}` -- and this goes. */
+/* What a chosen thing on the sheet is painted. One place, so a frame and a
+   key cannot come to wear two different purples -- and it is the purple the
+   sheet already uses, not a new one: 「選んだキーは色変えないと選んでるか
+   わかんなくない？」OWNER 2026-08-27 is answered once for everything the sheet
+   can choose. */
+function kbPickPaint(){ return ';background:var(--pur);color:var(--bg)'; }
 function kbPickCSS(ri, ki){
-  return kbKeyIs(ri, ki)? ';background:var(--pur);color:var(--bg)' : '';
+  return kbKeyIs(ri, ki)? kbPickPaint() : '';
 }
 function kbShadow(k){ return !!k && k.k==='gap' && !!k.up; }
 /* Where a key starts, in columns, and which key stands at a column. A merge
@@ -1678,7 +1789,11 @@ function kbHeadCol(ci){
    so it is refused when any one of those rows is already ten across. */
 function kbInsRoom(){
   if(!KBH) return false;
-  if(KBH.k==='k') return false;
+  /* A key and a frame are both places IN the sheet rather than a whole row or
+     a whole column, so there is no side for a new one to go on. Said here as
+     well as on the button: a button being down is a look, and the act has to
+     refuse on its own. */
+  if(KBH.k==='k' || KBH.k==='f') return false;
   return KBH.k==='r'? kbRoomRow() : kbRoomCol(KBH.i);
 }
 function kbInsAsk(){
@@ -1772,6 +1887,10 @@ function kbIns(down){
 function kbCut(){
   if(!KBH) return;
   var h=KBH, ms, j;
+  /* An empty frame holds nothing to take. Without this the bin would ask
+     kbDelCol() for column `undefined`, which is a keyboard that still renders
+     and is not the one somebody built. */
+  if(h.k==='f') return;
   if(h.k==='k'){
     ms=kbSelKeys();
     KBH=null;
@@ -1909,7 +2028,7 @@ function kbHTML(sel, ro){
          another key, so nothing is ever made smaller to fit something in.
          kbRoomIn() has always said that; what was missing was the fixed
          width for it to be true against. */
-      cols=ro? 0 : KB_COLS, at, b, lead, tot;
+      cols=ro? 0 : KB_COLS, at, b, lead, tot, ki2;
   if(!ro){ kbNoted(); out+=kbHdrHTML(cols); }
   for(ri=0;ri<lay.rows.length;ri++){
     row=lay.rows[ri];
@@ -1933,14 +2052,34 @@ function kbHTML(sel, ro){
     }
     for(ki=0;ki<row.length;ki++){
       key=row[ki];
+      /* A gap is an empty frame that happens to be written down -- the slack
+         an alignment put at the end of a row, or the half key that insets a
+         QWERTY's third row -- so it is drawn as one. 「キーガーないところが
+         あるのがおかしい」 OWNER 2026-08-28. Not the lower half of a merged
+         key: there is a key standing in that one. Not on the read-only board
+         either -- on a phone a gap is genuinely nothing.
+
+         As MANY frames as it covers, which is what makes "the width of that
+         frame" a width. A row of three keys centred on a sheet of ten leaves
+         seven columns at each end, and CLAUDE.md § 19 counts those as three
+         frames and a half -- 「中心に寄せたら半キーが二つできるけど寄せたら
+         1つになるの」 -- every one of them a key you can press. It was drawn
+         as ONE dashed key three and a half wide, so pressing it could only
+         have meant a key three and a half wide, and the sheet said the
+         leftover was one thing when the owner had counted four. Same
+         arithmetic as the slack outside the keys, in the same function, so
+         the two cannot disagree about where a frame starts or how wide it
+         is. */
+      if(!ro && key.k==='gap' && !kbShadow(key)){
+        b=kbU(key.w); tot=at; at+=b;
+        while(tot<at){
+          ki2=Math.min(2, at-tot);
+          out+=kbCellHTML(ri, tot, ki2, tot===at-b? ki : undefined);
+          tot+=ki2;
+        }
+        continue;
+      }
       cls='kbk'+(key.k!=='lt'? ' fn':'')+(key.k==='gap'? ' gap':'')+(ro? ' ro':'')+
-        /* A gap is an empty frame that happens to be written down -- the slack
-           an alignment put at the end of a row, or the half key that insets a
-           QWERTY's third row -- so it is drawn as one. 「キーガーないところが
-           あるのがおかしい」 OWNER 2026-08-28. Not the lower half of a merged
-           key: there is a key standing in that one. Not on the read-only
-           board either -- on a phone a gap is genuinely nothing. */
-        ((!ro && key.k==='gap' && !kbShadow(key))? ' cell':'')+
         ((!ro && sel && sel.r===ri && sel.k===ki)? ' on':'')+
         /* the key being worked on, and a key standing in the column that is.
            `pick` and not `on`: those are two different states that had been
@@ -2808,6 +2947,10 @@ var ICON_KEYSET='<svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill
 function kbToolHTML(){
   var row=!!KBH && KBH.k==='r', col=!!KBH && KBH.k==='c',
       key=!!KBH && KBH.k==='k', ask=!!KBH && !!KBH.ins,
+      /* An empty frame of the sheet. What acts on it is the one button that
+         puts a key in -- of that frame's width -- because that is what there
+         is to do to a frame. 「キーを入れるのはシートの上の帯のボタン」 */
+      cell=!!KBH && KBH.k==='f',
       /* and whether that row may be pushed left or right at all. A row with
          half a merge in it may not: where a merged pair goes when its row is
          pushed is the OWNER's and has not been asked, and moving one half
@@ -2827,6 +2970,9 @@ function kbToolHTML(){
               ' aria-label="'+esc(t('kb.row.up'))+'">'+ICON_INUP+'</button>'+
             '<button class="kbtb"' + DO('kbIns', [true]) +
               ' aria-label="'+esc(t('kb.row.down'))+'">'+ICON_INDN+'</button>')
+      : cell
+        ? '<button class="kbtb"' + DO('kbCellAdd') +
+            ' aria-label="'+esc(t('kb.cell.add'))+'">'+ICON_ADD+'</button>'
       : key
         /* KEYS are selected, and WHICH buttons is how many.
            「編集ボタンは1キー選択時のみ」 OWNER 2026-08-27 -- a key's page is
@@ -2850,11 +2996,14 @@ function kbToolHTML(){
        at the FOOT of the sheet is the one that goes away entirely, because
        that one is drawn where a row would go rather than sitting in a row of
        buttons. */
-    (key? ''
+    (key || cell? ''
       : '<button class="kbtb'+(ask? ' on':'')+'"' + DO('kbInsAsk') +
         (kbInsRoom()? '' : ' disabled') +
         ' aria-label="'+esc(t(col? 'kb.col.ins' : 'kb.row.ins'))+'">'+ICON_ADD+'</button>')+
-    (ask? '' : kbTb('kbCut', ICON_BIN, t('kb.cut'), !KBH))+
+    /* and the bin is DOWN on a frame. There is nothing in it to take away,
+       and a button that can be pressed and does nothing is the app saying it
+       did something. */
+    (ask? '' : kbTb('kbCut', ICON_BIN, t('kb.cut'), !KBH || cell))+
     '</div>';
 }
 /* Making another is choosing a pattern again, on a screen of its own rather
@@ -2897,7 +3046,9 @@ function kbSetPat(pat){
   x.pat=pat; x.lay=kbBlank(kbPatLay(pat));
   kbLay=0; kbSel=null;
   saveKb();
-  kbGo();
+  /* Back onto the keyboard whose arrangement this just changed, which is the
+     one screen that shows the change. */
+  kbGo(kbShow);
 }
 /* What this chapter IS, which the screen never said.
    「ここの画面どういうこと？」「Linguaで書いてくださいの画面にどう結びつけるのか
