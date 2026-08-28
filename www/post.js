@@ -510,50 +510,24 @@ FORM_OPEN.post=function(){ openPost(); };
    the field works on the roman spelling. */
 function pwLn(){ return puaRoman(PW.ln); }
 function pwMn(){ return postGlossLine(postGloss(pwLn())); }
-/* And the row of it, which is drawn once when the screen is built and again
-   on every letter typed. */
-/* The red is for a word the dictionary does not know, and it was on EVERY
-   word it did not know -- so writing the meaning in Japanese, or anything
-   else that is not this language, came out as a line of red.
-   「赤文字は自作文字でアルファベット打ってる時だけ」 OWNER 2026-08-28.
+/* The composer is TWO rows, the same two the timeline is:
+   「やっぱり、タイムラインも投稿も2段で。赤文字消して。」
+   「これもお題のページと合わせるんだけど」 OWNER 2026-08-28
 
-   What tells them apart is already in this file, one function down:
-   「What the Lingua keyboard typed is a private use code point and nothing
-   else on a phone types one」. So the gloss is built from the RAW line
-   rather than from the roman one, and each word carries whether it was typed
-   in the person's own letters. Split before the conversion, not after: a
-   letter's name may be more than one character, and splitting afterwards
-   would cut one letter in two.
+     the line, in the letters somebody drew
+     what it means
 
-   `postGloss()` is untouched -- it answers what the meaning field falls back
-   to, which is about the words and not about the keyboard. */
-function pwGloss(){
-  var raw=String(PW.ln||'').split(/\s+/), out=[], i, rw, w;
-  for(i=0;i<raw.length;i++){
-    if(!raw[i]) continue;
-    rw=puaRoman(raw[i]);
-    w=findWord(rw);
-    out.push({raw:raw[i], w:rw, m:(w? wMns(w)[0]||'' : ''), p:(w? w.pos||'' : ''),
-              own:pwOwnTyped(raw[i]),
-              /* Whether the top line is SET in the drawn letters is the field's
-                 own question, asked in one place -- `pw-ln` wears `.tfont` on
-                 exactly this condition. Asked here because the drawing is
-                 below the line, where the making side may not be named. */
-              face:(pwOwnTyped(raw[i]) && myFontOn())});
-  }
-  return out;
-}
-/* One character of the Lingua keyboard is enough: a word is typed in the
-   person's letters or it is not, and a half-typed one is still theirs. */
-function pwOwnTyped(raw){
-  var s=String(raw||''), lts=ltPuaOrder(), i, at;
-  for(i=0;i<s.length;i++){
-    at=s.charCodeAt(i)-PUA0;
-    if(at>=0 && at<lts.length) return true;
-  }
-  return false;
-}
-function pwGl(){ return postGlossHTML(pwGloss()); }
+   A word-by-word gloss sat between them, and the red in it was a word the
+   dictionary did not know. The timeline dropped that row already -- the
+   comment at the foot of postRow() says why, and says the composer kept one
+   「where it is the writer checking their own line before it goes out」.
+   **That is superseded**: the owner has asked for the same two rows in both
+   places, and the day's-sentence row (`dayRow()` in sns.js) is those two
+   rows as well -- what is written, and the line under it.
+
+   The red went with the row that carried it. Nothing else did: `postGloss()`
+   and `postGlossLine()` are untouched and still fill the meaning field's
+   placeholder and the meaning a post falls back to. */
 /* ---- a photograph on a post -------------------------------------------
 
    The long edge, and how hard it is squeezed. A photograph is stored as text
@@ -1031,7 +1005,6 @@ function pwHTML(){
          what is in it and everything under it moves down. */
       lnField('pw-ln', t('post.ln.ph'), ' maxlength="'+POST_MAX+'"'+IN('pwSetLn'),
         PW.ln, dirClass(scriptDir())+(myFontOn()? ' tfont' : ''))+
-      '<div class="pwgl" id="pw-gl">'+pwGl()+'</div>'+
       /* The meaning sits in the same column as the line, in the same
          borderless field, because it is the second half of the same act. */
       /* Read-only when it is the day's sentence. Not disabled: a disabled
@@ -1110,8 +1083,6 @@ function pwKbGuard(){
 }
 function pwSetLn(v){
   PW.ln=String(v||'');
-  var g=document.getElementById('pw-gl');
-  if(g) g.innerHTML=pwGl();
   var m=document.getElementById('pw-mn');
   if(m) m.setAttribute('placeholder', pwMn());
   lnGrow('pw-ln');
@@ -2183,46 +2154,6 @@ function postWhen(at){
    which is what stood in before there were accounts. The face and the head of
    the row both need it and they were answering it separately. */
 function postWho(p){ return String((p && (p.who || p.lname)) || ''); }
-/* The gloss, word by word, and a word is TWO lines.
-
-     「やっぱり、タイムラインも投稿も2段で。赤文字消して。」 OWNER 2026-08-28
-     ── 打った行と、翻訳した形。アルファベット表記の段は作らない。
-
-   It was ONE line: the meaning if the dictionary knew the word, and the
-   spelling **in the colour of a problem** if it did not. Two things were
-   wrong with that and the owner named both. The spelling had no line of its
-   own, so it appeared only as a failure; and a word typed on the phone's own
-   keyboard was never going to be in this dictionary, so calling it a problem
-   said nothing 「赤文字消して」.
-
-     1  what was typed  -- the drawn letters, or the alphabet if that is what
-                           was typed. Set in the drawn letters on exactly the
-                           condition the field above it uses.
-     2  what it means
-
-   A third line for the alphabet spelling was asked for and then withdrawn:
-   typed in the alphabet it is the same string twice
-   「アルファベットで打ってるのに同じ綴が並ぶと意味わからんやろ」, and two
-   lines is the answer for both sides of the app.
-
-   No class per line. Which line is which is WHERE it is -- first is what was
-   typed, last is what it means.
-
-   **What the second line says for a word the dictionary does not know is NOT
-   decided yet.** It is empty here, and that is a placeholder rather than an
-   answer -- the owner has been asked whether it should be empty or carry the
-   spelling in the ordinary colour. Do not read this line as the decision.
-
-   `pwGl()` is the only caller and `.pwgl` is worn in one place, so this is
-   the composer's row. The timeline draws the meaning the post carries. */
-function postGlossHTML(gl){
-  return (gl||[]).map(function(g){
-    return '<span class="pwg">'+
-      '<span'+(g.face? ' class="tfont"' : '')+'>'+esc(g.own? g.raw : g.w)+'</span>'+
-      '<span>'+esc(g.m)+'</span>'+
-      '</span>';
-  }).join('');
-}
 var PFACE={};
 function postFace(p){
   var av=p && p.av, k;
@@ -2650,10 +2581,11 @@ function postRow(p){
 
          It is not written onto a post any more either. Nothing read it
          once the line was gone, and a field written and never read is what
-         makes a codebase hard to read. The composer still shows one, where
-         it is the writer checking their own line before it goes out -- which
-         is the errand it was written for, and where the default meaning
-         comes from.
+         makes a codebase hard to read. **The composer does not show one
+         either, as of 2026-08-28** 「やっぱり、タイムラインも投稿も2段で。
+         赤文字消して。」 -- this row and the composer's are the same two rows
+         now, and so is the day's sentence. Where the default meaning comes
+         from is `postGloss()`, which is still here and is not a row.
 
          Posts made before this keep whatever is on them. Nothing goes and
          removes it: it is somebody's, and deleting what a person made

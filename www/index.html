@@ -761,19 +761,6 @@ canvas.pkc{width:34px;height:34px;display:block}
 .numcn{position:relative}
 .numsep{display:inline-block;padding:0 .1em;opacity:.55}
 .pmn{font-size:1.0rem;line-height:1.5;color:var(--txs);margin-top:8px}
-.pwgl{display:flex;flex-wrap:wrap;gap:2px 12px;margin-top:6px}
-/* A word of the gloss is a COLUMN of up to three lines: what was typed, how
-   it is spelled in the alphabet, and what it means.
-   「自作文字 / アルファベットでどう表記されるか / それを翻訳した形」
-   OWNER 2026-08-28. The middle line is only there when what was typed is not
-   already the alphabet, so which line is which is said by WHERE it is rather
-   than by a class -- a class worn only while somebody types in their own
-   letters is one no walk ever reaches. */
-.pwg{display:inline-flex;flex-direction:column;gap:1px;
-     font-size:.76rem;color:var(--txm)}
-.pwg>span{display:block}
-.pwg>span:first-child{color:var(--tx)}
-.pwg>span:last-child{color:var(--txs)}
 /* Spread edge to edge under the post, the way a thumb expects to find them. */
 /* Edge to edge under the post, the way a thumb expects to find them. */
 .pacts{display:flex;justify-content:space-between;margin:2px -8px -10px -10px}
@@ -1075,7 +1062,9 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
 /* The box you write in is TWO fields, and that does not change with whether
    this is a reply. It was said twice in two numbers -- 44 here and 88 when a
    quoted post was above it -- and two numbers for one fact is how they drift.
-   162 is measured: the line 44, `.pwgl` 6, the meaning 10+44, the foot 6, and
+   162 was measured with a word-by-word gloss between the line and the
+   meaning, which is gone (「やっぱり、タイムラインも投稿も2段で」 OWNER
+   2026-08-28): the line 44, that row's 6, the meaning 10+44, the foot 6, and
    the floor a column needs. 「自分の言語で一行と意味がこのページで見れるように」
    OWNER 2026-08-26. The flex column is one thing with the rule below it: with
    no settled height on `.pwtop` a vertical line cannot ask what it is inside. */
