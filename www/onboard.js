@@ -1357,10 +1357,41 @@ function obFirst(){ return LT_START.charAt(0); }
    whether it may, so a slot somebody has already drawn on is left alone here
    too and the shape stays a letter of its own. */
 function obIntoSlot(id){ return ltSetRoman(id, obFirst())||id; }
+/* THE SLOT THIS STEP IS ABOUT, and drawing goes ONTO it.
+
+   It used to mint a new letter every time and then ask ltSetRoman() to move it
+   into the slot -- and ltFreeSlot(), which decides whether it may, answers only
+   for an EMPTY slot. So somebody who left the onboarding part-way and came back
+   and drew again got a SECOND letter also called `a`, with the first one still
+   in the alphabet. kbNamed() walks LETTERS for the first one called `a`, so the
+   keyboard went on showing the drawing they had replaced.
+   「もう一回書いたのに前の文字に勝手になる」 OWNER 2026-08-28.
+
+   Measured before it was believed: after the second drawing the alphabet held
+   `a:1本` and `a:2本`, two letters, one name.
+
+   ltStart() puts a-z in a free language before anything is drawn, so the slot
+   is always there and drawing is an EDIT of it -- which is what redrawing is
+   everywhere else in this app, and what 「あとで書き直せます」 on this very
+   screen promises. Nothing is left behind and nothing is duplicated.
+
+   The old road is kept for a language that somehow has no such slot: then
+   there is nothing to draw onto and a letter of its own is right. */
+function obSlot(){
+  var i, l, nm=String(obFirst()).toLowerCase();
+  for(i=0;i<LETTERS.length;i++){
+    l=LETTERS[i];
+    if(ltIsBase(l) && String(ltName(l)||'').toLowerCase()===nm) return l;
+  }
+  return null;
+}
 function obDone(){
-  var keep=(GE && GE.st)? GE.st.filter(function(x){ return x.pts.length>0; }) : [];
+  var keep=(GE && GE.st)? GE.st.filter(function(x){ return x.pts.length>0; }) : [], slot, st;
   if(!keep.length){ toast(t('ob.draw.empty')); return; }
-  ob.lid=obIntoSlot(ltNew({ st: JSON.parse(JSON.stringify(keep)) }).id);
+  st=JSON.parse(JSON.stringify(keep));
+  slot=obSlot();
+  ob.lid = slot? ((ltSetStrokes(slot.id, st)||slot).id)
+               : obIntoSlot(ltNew({ st: st }).id);
   SET.myfont=true;
   save(); installScriptFont(); GE=null;
   obTour=0; ob.step=OB_TOUR; save(); obTourGo();
@@ -1368,7 +1399,11 @@ function obDone(){
 function obBorrow(id){ ob.mode='borrow'; ob.pick=id||''; GE=null; render(); window.scrollTo(0,0); }
 function obPickScript(id){ ob.pick=id; render(); window.scrollTo(0,0); }
 function obTakeCh(ch){
-  ob.lid=obIntoSlot(ltNew({ ch: ch }).id);
+  /* Onto the slot, for the same reason obDone() is -- borrowing twice made two
+     letters called `a` exactly as drawing twice did. */
+  var slot=obSlot();
+  ob.lid = slot? ((ltSetChar(slot.id, ch)||slot).id)
+               : obIntoSlot(ltNew({ ch: ch }).id);
   SET.showScript=true;
   save(); installScriptFont();
   ob.mode=''; obTour=0; ob.step=OB_TOUR; save(); obTourGo();
