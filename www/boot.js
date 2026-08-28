@@ -18,7 +18,7 @@ bkRestore(function(put){
   migratePh(); migrateMn(); migrateLetters(); migrateMarks();
   migrateSndName(); migrateSnd(); migratePosts(); migratePostInk(); migrateSp();
   migrateKbFree();
-  sndStart(); ltStart(); installScriptFont();
+  ltStart(); installScriptFont();
   render();
 });
 /* And the language that is here now is written out on the first render,
@@ -41,8 +41,6 @@ migrateSp();
 migrateWorld();
 /* and the free QWERTY out of the keyboard list, keeping an edited one */
 migrateKbFree();
-/* and a language that still has none gets a set to start from */
-sndStart();
 /* and a free language gets the twenty-eight slots it is allowed */
 ltStart();
 /* the font built from whatever letters have been drawn */
