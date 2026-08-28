@@ -306,19 +306,13 @@ export function obStates(){
         var h = vKb();
         document.getElementById('app').innerHTML = h;
         return h + obTourHTML(); }],
-    /* And the stage AFTER the walk: the real timeline, with six made-up people
-       on it and no account anywhere. It is not a face of vOb() either --
-       obTourOn() answers for it too, so the shell paints the real bar and the
-       real bar of tabs around vFeed(). obSnsMock() in www/onboard.js is what
-       puts the six on it, and the seal over the whole screen -- the only thing
-       on this stage anybody can press -- is what names obSnsGo. */
-    ['the walk: the timeline, before there is an account', () => {
-        SET.done = false; ob.step = OB_SNS; obTour = OB_TOUR_STOPS.length - 1;
-        ob.mode = '';
-        window.route = 'feed'; NAV = [{ r: 'feed', a: '' }];
-        var h = vFeed();
-        document.getElementById('app').innerHTML = h;
-        return h + obTourHTML(); }],
+    /* And the stage after the walk: the SNS mock. obSnsHTML() builds the
+       feed's own shape -- rootTop(), dayRow(), postRow(), snsFab() -- from
+       the same parts the real one does, inside the onboarding's scrolling
+       box, with pointer-events off. It is a face of vOb(). */
+    ['the walk: the timeline, before there is an account',
+        () => { SET.done = false; SET.obback = null; ob.step = OB_SNS;
+                ob.mode = ''; return vOb(); }],
     ['naming the language',      () => { SET.obback = null; ob.step = OB_NAME; ob.mode = ''; return vOb(); }],
     /* The door's other three faces. None is reachable from a screen at rest,
        so a walk that only ever renders the door presses none of their

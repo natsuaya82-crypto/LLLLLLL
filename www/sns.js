@@ -463,48 +463,18 @@ window.addEventListener('scroll', snsMoreCheck, false);
    a form here would need a table with the door open, which is a door. Mail
    is a channel that already exists and is not ours to break. */
 var APPEAL='mailto:Lingua@tokinets.com?subject=Lingua';
-/* ---- the timeline the onboarding shows ---------------------------------
-   「君の文字でSNSを見てみよう（モックのページ）」 and then
-   「TLの見た目全然違うだろちゃんと同じにしろ」 OWNER 2026-08-28.
-
-   The onboarding's SNS stage used to draw a timeline of its own -- the rows
-   were postRow(), so the POSTS were right, but the screen around them was the
-   onboarding's frame: no bar, no row to write in, no two tabs, no round
-   button, no tab bar. It was a second timeline, and a second one is a rule
-   written down twice: the day somebody adds a thing to the feed, one of the
-   two gets it.
-
-   So there is one timeline and this is it. What the onboarding changes is
-   WHOSE POSTS are on it and nothing else -- obSnsMock() in www/onboard.js
-   hands back six made-up people while that stage is showing, and null every
-   other moment of the app's life. Every line below is the line the real
-   timeline has always run.
-
-   It is asked THROUGH a function rather than read off a variable so that this
-   file needs to know nothing about the onboarding's steps. */
-function snsMock(){
-  return (typeof obSnsMock==='function')? obSnsMock() : null;
-}
 function vFeed(){
-  /* A mock timeline is shown to somebody who has no account yet -- the door is
-     the step after the one after this -- so the two things a real feed opens
-     with are both wrong here: the sign-in wall, and the two network asks.
-     Nothing is fetched for a timeline that is not anybody's. */
-  var mock=snsMock();
-  if(!mock && !netSignedIn()) return snsLocked('feed');
-  if(!mock){
-    snsPull();
-    /* Beside the feed's own pull and for the same reason: the moment somebody
-       is looking at a timeline is the moment the network is known to be
-       working. Once a session -- dayPull() returns immediately once it has one. */
-    dayPull();
-    /* And the word, if one is on. Once per word: it returns immediately once
-       it has an answer, or this would ask, write the answer down, render, and
-       ask again. Same shape as the two above it. A mock timeline is nobody's
-       and has no saved words to be filtered to. */
-    snsFilFind();
-  }
-  var list=mock||snsList();
+  if(!netSignedIn()) return snsLocked('feed');
+  snsPull();
+  /* Beside the feed's own pull and for the same reason: the moment somebody
+     is looking at a timeline is the moment the network is known to be
+     working. Once a session -- dayPull() returns immediately once it has one. */
+  dayPull();
+  /* And the word, if one is on. Once per word: it returns immediately once
+     it has an answer, or this would ask, write the answer down, render, and
+     ask again. Same shape as the two above it. */
+  snsFilFind();
+  var list=snsList();
   /* A row takes one argument again. It used to take a second -- whether YOUR
      font was switched on -- and `list.map(postRow)` handed each row its index
      as that argument, so post 0 was right and every post after it wore my
@@ -690,7 +660,7 @@ function snsFab(){
      sealed under one pad, so nothing on it is ever pressed. Written as one
      condition and not as a second return, because two returns building the
      same button is the thing this whole change is about. */
-  if(!snsMock() && (!netSignedIn() || NET_BANNED)) return '';
+  if(!netSignedIn() || NET_BANNED) return '';
   return '<button class="fab"' + DO('openPost', ["new"]) +
     ' aria-label="'+esc(t('post.new'))+'">'+ICON_ADD2+'</button>';
 }
