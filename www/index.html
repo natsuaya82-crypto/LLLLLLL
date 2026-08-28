@@ -513,11 +513,20 @@ canvas.pkc{width:34px;height:34px;display:block}
 .pav.pavb{width:44px;height:44px;margin:-2px;padding:0;border:0;background:none}
 .pav .bch{font-size:1.05rem;color:var(--txs);line-height:1}
 .pbody{flex:1 1 auto;min-width:0}
-/* The head is two lines now, and the reason is in www/post.js over the markup.
-   `.phead` is the pair; `.pheadn` is who wrote it and the ...; `.pheadm` is
-   when and what state.
+/* The head is one line where one line fits, and the reason is in www/post.js
+   over the markup. `.phead` is the whole of it; `.pheadn` is the row that
+   holds the ... against the right edge; `.pheadw` is the WRAPPING row inside
+   it, carrying two groups -- `.pnamew`, who wrote it, and `.pheadm`, when and
+   what state.
 
-   The type is set HERE, on both row classes, and not left to the tag: two
+   The wrap is the whole mechanism and there is no number in it. Both groups
+   are flex items with their own content width, so they share a line while
+   they fit and `.pheadm` drops under `.pnamew` when they do not -- and a name
+   too long for a line of its own still ellipsises, which is `.pname` and was
+   already true. Nothing measures a name in JavaScript: a width is the phone's
+   and the font's.
+
+   The type is set HERE, on the row classes, and not left to the tag: two
    posts differing in height AND in computed type is the fault press measures
    («one list, one height»), and content differing -- a state a post is in that
    another is not -- must not be able to drag the type with it. (It said "a
@@ -525,11 +534,19 @@ canvas.pkc{width:34px;height:34px;display:block}
    on 2026-08-25 and the sentence is about any of them.) */
 .phead{line-height:1.3}
 .pheadn{display:flex;align-items:center;gap:5px;font-size:.95rem;line-height:1.3}
-/* Small, quiet, and allowed to wrap. It wraps rather than clipping because
-   every word on it is a fact about the post and none of them is the one that
-   can be spared -- and a second line here changes the post's height, which is
-   content, not type, and is the case press deliberately leaves alone. */
-.pheadm{display:flex;align-items:center;flex-wrap:wrap;gap:5px;margin-top:1px;
+.pheadw{flex:1 1 auto;min-width:0;display:flex;flex-wrap:wrap;align-items:center;
+        gap:0 5px}
+/* The name and the mark beside it, and they never come apart: a badge on the
+   line under its own name is a badge belonging to the handle. 3px rather than
+   the row's 5 so the pair reads as one thing against the group beside it. */
+.pnamew{flex:0 1 auto;min-width:0;display:flex;align-items:center;gap:3px}
+/* Small, quiet, and allowed to wrap inside itself as well. It wraps rather
+   than clipping because every word on it is a fact about the post and none of
+   them is the one that can be spared -- and a second line here changes the
+   post's height, which is content, not type, and is the case press
+   deliberately leaves alone. */
+.pheadm{flex:0 1 auto;min-width:0;
+        display:flex;align-items:center;flex-wrap:wrap;gap:5px;
         font-size:.9rem;line-height:1.3}
 /* `0 1 auto` and not `1 1 auto`: the name takes the room it needs and no more,
    so the time sits BESIDE it rather than being pushed to the far edge next to

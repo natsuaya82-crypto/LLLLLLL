@@ -2562,42 +2562,93 @@ function postRow(p){
   return '<div class="post'+(foc? ' pfoc':'')+'"'+(foc? '' : DO('postOpen', [p.id]))+'>'+
     postAvHTML(p)+
     '<div class="pbody">'+
-      /* Two lines, not eleven things on one.
+      /* One line where one line fits, and a fold where it does not.
+         「あと名前が長くない時は投稿の時横1列にできる？バッチは名前の横な？」
+         OWNER 2026-08-28. `Aya` and `@aya` are four characters each, and
+         folding those onto two lines spends a line of every post on nothing.
+
+         The fold is still needed, and this is why. It was ONE flex row
+         carrying the name, the badge, the language, the handle, a dot, the
+         time, the lock, "edited", "taken down", the pin and the ... -- eleven
+         things, on a phone, in the width of a post. `.pname` has
+         `text-overflow:ellipsis`, so what happened is that the name -- the
+         one thing on the line somebody is looking for -- gave up its width
+         first and came out as two characters and a dot.
          「名前 言語名 ユーザー名 日付 編集済み ↑これ全部一列に表示すると
-         なにも見えない」 This was ONE flex row carrying the name, the badge,
-         the language, the handle, a dot, the time, the lock, "edited",
-         "taken down", the pin and the ... -- eleven things, on a
-         phone, in the width of a post. `.pname` has `text-overflow:ellipsis`,
-         so what actually happened is that the name -- the one thing on the
-         line somebody is looking for -- gave up its width first and came out
-         as two characters and a dot.
+         なにも見えない」 Folded by hand it went the other way: a long name, a
+         long handle, the lock and "edited" made the head THREE lines, and a
+         reply put a fourth under them.
 
-         The fold is by what the thing IS, not by what fits. WHO wrote it, and
-         the ... that acts on it, are what the post is; they are line one and
-         the name has the whole width to itself. WHEN it was written and WHAT
-         STATE it is in are line two, quiet and small.
+         So neither number is written down anywhere. Two groups sit in a
+         WRAPPING row -- WHO wrote it, and WHAT STATE it is in -- and they
+         share a line while they fit, the second dropping under the first when
+         they do not. That is `flex-wrap` on `.pheadw` and nothing else:
+         nothing here measures a name, because a width belongs to the phone
+         and the font, so a number counted in JavaScript is wrong on every
+         phone but the one it was counted on.
 
-         Nothing was added and nothing was taken away -- the same spans, in
-         the same order, folded once. No chips in a row and no corners: the
-         second line is text separated by spaces, which is what the rest of
-         this app does with a line of small facts. */
+         No chips in a row and no corners: each group is text separated by
+         spaces, which is what the rest of this app does with a line of small
+         facts. */
       '<div class="phead">'+
         '<div class="pheadn">'+
-          /* The badge is against the NAME and nothing stands between them --
-             「バッチの話してんの、名前の横にしろって話聞いてんの？」 OWNER
-             2026-08-28. It is a fact about the PERSON, so it belongs to the
-             person's name; sitting after the time it read as a fact about the
-             post. One call, here, and there is no second one anywhere in the
-             app. */
-          '<span class="pname">'+esc(postWho(p))+'</span>'+postBadge(p)+
-          /* WHEN, on the first line beside the name. OWNER 2026-08-25:
-             「名前　まるまる分前　バッチ / @ 編集済み　🔑」 -- and the reason is
-             that the second line stopped fitting. With a long name, a language
-             name, a long handle, the lock and "edited" all on it, the head came
-             out THREE lines, and a reply put a fourth under them; "edited" fell
-             onto a line by itself. The fixture's `Aya` / `Shango @aya · 15分` is
-             short enough that nobody had seen it. */
-          '<span class="pwhen">'+esc(postWhen(p.at))+'</span>'+
+          '<div class="pheadw">'+
+            /* WHO, and it never splits. The badge is against the NAME with
+               nothing between them -- 「バッチの話してんの、名前の横にしろって
+               話聞いてんの？」 OWNER 2026-08-28. It is a fact about the
+               PERSON, so it belongs to the person's name; after the time it
+               read as a fact about the post. One call, here, and there is no
+               second one anywhere in the app.
+
+               Name and badge are wrapped together because the wrap is between
+               the two GROUPS -- a badge that fell to the line under its own
+               name would be a badge belonging to the handle. */
+            '<span class="pnamew">'+
+              '<span class="pname">'+esc(postWho(p))+'</span>'+postBadge(p)+
+              '</span>'+
+            /* WHAT STATE it is in: the group that drops under the name when
+               the two of them do not fit, and sits beside it when they do.
+
+               WHAT IT IS, and no longer what it is written IN. The language name
+               came off this line -- OWNER 2026-08-25 「多すぎるから言語名表示
+               なくそう。プロフいけば見れる」 -- and that last clause was checked
+               before it was believed: `whoCard()` in me.js draws `p.lname` as a
+               row you press, which goes to "about". It is one tap away, not gone.
+               `plangtag` itself stays: post.js:795 (who you are replying to) and
+               sns.js:510 (a person in a list) both still wear it.
+
+               The `·` went with it. It was there to part `@aya` from `15分`,
+               the gap this row is built with parts them now, and it was worn in
+               this one place -- so its rule came out of index.html in the same
+               commit, or `press` would report a class nothing wears. */
+            '<div class="pheadm">'+
+            '<span class="phandle">@'+esc(p.hd||'')+'</span>'+
+            /* WHEN, after the handle. OWNER 2026-08-28:
+               「名前 バッチ @ハンドル 時刻」 It sat on the name's line, put
+               there when this head was two fixed lines and the lower one had
+               stopped fitting; the lower one wraps now, so the reason it moved
+               up is gone and it goes back where the order says. */
+            '<span class="pwhen">'+esc(postWhen(p.at))+'</span>'+
+            /* Kept to yourself, then edited. OWNER 2026-08-25:「🔑と編集済み
+               逆にしたら終わりかな」-- asked for the other way round first and
+               swapped after looking at it. The two are not the same kind of
+               fact: the lock is WHO CAN SEE IT and the word is WHAT WAS DONE
+               TO IT, and the one that decides who is reading it comes first. */
+            (p.pv? '<span class="ppv" aria-label="'+esc(t('post.pv'))+'">'+ICON_LOCK+'</span>' : '')+
+            (p.ed? '<span class="ped">'+esc(t('post.edited'))+'</span>' : '')+
+            /* Taken down. Only its author is ever handed one of these -- post_read
+               in schema.sql -- so it is for them, and it belongs up here beside
+               the lock and "edited": a word for what state the post is in.
+
+               Two goes at this were wrong. It said "hidden", on a post the person
+               reading it can SEE, which is a word contradicting the screen it is
+               written on. Then it said WHO did it, in a line of its own under the
+               head -- which is the app explaining itself, and is the notice's job
+               rather than this one's. 「アプリ内に説明書くの禁止」 */
+            (p.down? '<span class="pdown">'+esc(t('post.down'))+'</span>' : '')+
+            (p.pin? '<span class="ppin">'+ICON_PIN+'</span>' : '')+
+            '</div>'+
+          '</div>'+
           /* The ... and, when it is the one that is open, the menu hanging off
              it. It is IN the post rather than a screen you go to, so what you
              are choosing about stays in front of you. 「画面遷移じゃなくて投稿の
@@ -2607,47 +2658,15 @@ function postRow(p){
              the one post you might need to do something about -- somebody
              else's -- was the one with nothing on it.
 
-             It is on the first line because it acts on the post rather than
-             describing it, and because a 44pt target has to sit on the line
-             that is 44pt tall. */
+             It is OUTSIDE the wrapping row, hard against the right edge: it
+             acts on the post rather than describing it, so it stays where a
+             thumb has learned it is whether the head came out one line or
+             two, and a 44pt target sits on the line that is 44pt tall. */
           '<span class="pmw">'+
             '<button class="pmore"' + DO('postMore', [p.id]) + ' aria-label="'+
               esc(t('post.more'))+'">'+ICON_DOTS+'</button>'+
             (PMENU===p.id? postMenuHTML(p) : '')+
             '</span>'+
-        '</div>'+
-        '<div class="pheadm">'+
-          /* WHAT IT IS, and no longer what it is written IN. The language name
-             came off this line -- OWNER 2026-08-25 「多すぎるから言語名表示
-             なくそう。プロフいけば見れる」 -- and that last clause was checked
-             before it was believed: `whoCard()` in me.js draws `p.lname` as a
-             row you press, which goes to "about". It is one tap away, not gone.
-             `plangtag` itself stays: post.js:795 (who you are replying to) and
-             sns.js:510 (a person in a list) both still wear it.
-
-             The `·` went with it. It was there to part `@aya` from `15分`, the
-             time is on the line above now, and it was worn in this one place --
-             so its rule came out of index.html in the same commit, or `press`
-             would report a class nothing wears. */
-          '<span class="phandle">@'+esc(p.hd||'')+'</span>'+
-          /* Kept to yourself, then edited. OWNER 2026-08-25:「🔑と編集済み
-             逆にしたら終わりかな」-- asked for the other way round first and
-             swapped after looking at it. The two are not the same kind of
-             fact: the lock is WHO CAN SEE IT and the word is WHAT WAS DONE
-             TO IT, and the one that decides who is reading it comes first. */
-          (p.pv? '<span class="ppv" aria-label="'+esc(t('post.pv'))+'">'+ICON_LOCK+'</span>' : '')+
-          (p.ed? '<span class="ped">'+esc(t('post.edited'))+'</span>' : '')+
-          /* Taken down. Only its author is ever handed one of these -- post_read
-             in schema.sql -- so it is for them, and it belongs up here beside
-             the lock and "edited": a word for what state the post is in.
-
-             Two goes at this were wrong. It said "hidden", on a post the person
-             reading it can SEE, which is a word contradicting the screen it is
-             written on. Then it said WHO did it, in a line of its own under the
-             head -- which is the app explaining itself, and is the notice's job
-             rather than this one's. 「アプリ内に説明書くの禁止」 */
-          (p.down? '<span class="pdown">'+esc(t('post.down'))+'</span>' : '')+
-          (p.pin? '<span class="ppin">'+ICON_PIN+'</span>' : '')+
         '</div>'+
       '</div>'+
       /* Who this answers, under the head and above the line. It is here

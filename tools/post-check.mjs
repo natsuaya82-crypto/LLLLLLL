@@ -387,6 +387,88 @@ const R = await pg.evaluate(async () => {
     fails.push('an empty composer made a post. No line, no photograph, no '
              + 'voice -- there is nothing there to put on a timeline');
 
+  /* ---- the head of a post: what order it is in, and when it folds -----
+     Two claims about the same three spans, and neither of them can throw.
+
+     ORDER. The badge is a fact about the PERSON, so it goes against the name
+     with nothing between -- 「バッチの話してんの、名前の横にしろって話聞いて
+     んの？」 OWNER 2026-08-28. It sat after the time, where it read as a fact
+     about the post, and moving it is one span in one place: nothing renders
+     differently, nothing errors, and the only way to see it is to look. So
+     the real postRow() is asked, and the four are demanded in the order the
+     owner named them -- name, badge, handle, time.
+
+     THE FOLD. 「あと名前が長くない時は投稿の時横1列にできる？」 A short name
+     and a short handle share a line; a long pair does not and the state group
+     drops under the name. Both are the SAME markup and the same rule -- one
+     wrapping row -- so what is measured is where the two groups actually
+     landed on a 390px phone, not which branch was taken, because there is no
+     branch to take. A rule that folds always, or never, passes every other
+     check in this file and every screenshot of the fixture, whose names are
+     three letters long.
+
+     The plan is put up for it: postBadge() answers can('badge'), and free is
+     what these walks run on. */
+  {
+    const app = document.getElementById('app');
+    const wasPlan = SET.plan;
+    const own = POSTS.filter(p => p.mine)[0];
+    const wasWho = own && own.who, wasHd = own && own.hd;
+    if (!own) fails.push('no post of this person\u2019s own, so the badge and the ' +
+                         'fold below are tests of nothing');
+    else {
+      SET.plan = 'pro';
+      const at = (h, cls) => h.indexOf('class="' + cls);
+      const h = postRow(own);
+      const iName = at(h, 'pname"'), iBdg = at(h, 'bdgw'),
+            iHd = at(h, 'phandle"'), iWhen = at(h, 'pwhen"');
+      if (iBdg < 0)
+        fails.push('a post of this person\u2019s own on the plan that carries the ' +
+                   'mark has no mark on it, so where it sits is untested');
+      else if (!(iName < iBdg && iBdg < iHd && iHd < iWhen))
+        fails.push('the head of a post is not name, badge, handle, time. The ' +
+                   'badge is a fact about the person and anything standing ' +
+                   'between it and the name makes it a fact about the post');
+
+      /* Where the two groups landed, on the real feed, at 390px. */
+      /* The row belonging to THIS post, found by the name that was just put
+         on it. `querySelector('.pheadw')` is whichever post the feed sorted
+         to the top -- somebody else's, whose name was never touched -- and it
+         reported a long name held on one line while the screenshot beside it
+         showed the fold. */
+      const laid = (who, hd) => {
+        own.who = who; own.hd = hd;
+        app.innerHTML = vFeed();
+        let n = null;
+        const all = app.querySelectorAll('.pheadw .pnamew');
+        for (const c of all) if (c.textContent.indexOf(who) === 0) { n = c; break; }
+        if (!n) return null;
+        const m = n.parentNode.querySelector('.pheadm');
+        if (!m) return null;
+        const a = n.getBoundingClientRect(), b = m.getBoundingClientRect();
+        return { same: b.top < a.bottom - 1 };
+      };
+      const one = laid('Aya', 'aya');
+      const two = laid('Aya Verethimandra', 'ayaverethimandra');
+      if (!one || !two)
+        fails.push('the head of a post has no wrapping row in it, so nothing ' +
+                   'below was measured');
+      else {
+        if (!one.same)
+          fails.push('a four-letter name and a four-letter handle were folded ' +
+                     'onto two lines. That is a line of every post in the ' +
+                     'timeline spent on nothing');
+        if (two.same)
+          fails.push('a long name and a long handle were held on ONE line. ' +
+                     'The name has text-overflow:ellipsis, so the one thing ' +
+                     'somebody is looking for is what gives up its width');
+      }
+      own.who = wasWho; own.hd = wasHd;
+    }
+    SET.plan = wasPlan;
+    app.innerHTML = '';
+  }
+
   /* ---- and none of it happens without an account --------------------
      A post has a writer. The three sns tabs and the composer were built when
      there was no server -- a post was an object in localStorage with nowhere
@@ -1322,6 +1404,8 @@ console.log('post: a letter placed on a black photograph is IN the file that goe
             '      saying so after that post has been deleted.\n' +
             '      With nobody signed in the timeline is the door and nothing\n' +
             '      else, and the composer will not open at all.\n' +
+            '      The head of a post reads name, badge, handle, time, on one\n' +
+            '      line while the name is short and folded in two when it is not.\n' +
             '      The timeline is sent a small copy -- ' + R.thumb + ' KB against ' +
             R.full + ' KB --\n' +
             '      and pressing it still opens the photograph. A picture whose\n' +
