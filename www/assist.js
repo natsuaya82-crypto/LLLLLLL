@@ -123,20 +123,24 @@ function asOrder(list){
    ten. What is NOT translated is the material -- the sounds, the words, the
    shapes -- because that is what the person made. */
 
-/* Who it opens. The name is never PRINTED on a screen: the mark says "ask an
-   AI" whoever is set, no logo, nothing that reads as a partnership, which is
-   what keeps this clear of OpenAI's brand rules. It is said once, in the
-   phone's own dialog, at the moment of pressing -- 「画面に印刷すんな」
-   「ポップだって話聞いてねえのか」 OWNER 2026-08-27, on the second time of
-   asking: it had been written across the dictionary as a line of prose, which
-   is both the explaining rule and this paragraph broken at once.
-   www/settings.js writes SET.askTo; this is the only list of what that key
-   may say. */
+/* Who it opens, and it is ChatGPT. Gemini, Grok and Perplexity were in this
+   table and are gone: nothing in the app ever wrote SET.askTo, so the other
+   three were three addresses no road reached -- a choice with no screen to
+   make it on.
+
+   The name is never PRINTED on a screen: the mark says "ask an AI", no logo,
+   nothing that reads as a partnership, which is what keeps this clear of
+   OpenAI's brand rules. It is said once, in the phone's own dialog, at the
+   moment of pressing -- 「画面に印刷すんな」「ポップだって話聞いてねえのか」
+   OWNER 2026-08-27, on the second time of asking: it had been written across
+   the dictionary as a line of prose, which is both the explaining rule and
+   this paragraph broken at once.
+
+   It stays a TABLE of one rather than becoming a bare address, because
+   askWho() below is what makes a phone carrying an old SET.askTo safe, and
+   that answer is `is this name in the table` either way. */
 var ASK_TO={
-  chatgpt:    'https://chatgpt.com/?q=',
-  gemini:     'https://gemini.google.com/app?q=',
-  grok:       'https://grok.com/?q=',
-  perplexity: 'https://www.perplexity.ai/search?q='
+  chatgpt: 'https://chatgpt.com/?q='
 };
 /* Bytes of URL, not characters of prompt, and the difference is the whole
    reason it is a number rather than a guess: percent-encoding puts one
@@ -145,8 +149,14 @@ var ASK_TO={
    generous for exactly the people who are hardest to notice it for. */
 var ASK_MAX=4000;
 function askBytes(s){ return encodeURIComponent(String(s)).length; }
-/* An unset key, or one naming somebody who has since gone, is ChatGPT --
-   the default the owner chose 「gptやgeminiみたいな手榴のaiにしないとダメでは？」 */
+/* An unset key, or one naming somebody who has since gone, is ChatGPT.
+   「gptやgeminiみたいな手榴のaiにしないとダメでは？」
+
+   "Somebody who has since gone" is not hypothetical any more -- it is the
+   three that came out of the table above. A phone that has `SET.askTo` set
+   to one of them opens ChatGPT and nothing is thrown; the stored key is left
+   exactly where it is rather than being tidied away, because it is somebody's
+   setting and this is not the place that decides it is worthless. */
 function askWho(){
   var w=SET.askTo;
   return (w && ASK_TO[w]) ? w : 'chatgpt';

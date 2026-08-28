@@ -195,17 +195,37 @@ const r = await pg.evaluate(({s}) => {
 
   /* the stroke still under the finger is thrown away; the finished one is
      not. 「人が作ったものを消さない」 */
+  /* how much ink is actually on the canvas, read off the canvas */
+  function pxOf(c){
+    var x = c.getContext('2d'),
+        d = x.getImageData(0, 0, c.width, c.height).data, n = 0, i;
+    for (i = 0; i < d.length; i += 4) if (d[i] < 100 && d[i+3] > 200) n++;
+    return n;
+  }
   fresh();
+  geDraw();
+  out.pinBare = pxOf(C);                         /* the finished stroke alone */
   gePtDown(at(1, M, M));
   gePtMove(at(1, M, M+40));
   out.pinDrew = GE.st.length;                    /* the half-drawn one exists */
+  out.pinBusy = pxOf(C);
   gePtDown(at(2, M+60, M));
   out.pinLeft = GE.st.length;
   out.pinKept = JSON.stringify(GE.st[0].pts);
   out.pinWant = JSON.stringify([P(4,4), P(4,12)]);
+  /* AND THE PAPER SAYS SO. The drawing being right and the drawing being
+     ON THE SCREEN are two statements, and only the second is what somebody
+     doing this can see: gePinStart() takes the stroke out of GE.st, and
+     nothing else draws until the fingers have moved enough to decide a
+     mode -- so a pinch that never decides left the thrown-away line painted
+     on the paper for the whole gesture. Photographed before and after the
+     second finger, the two pictures were the same picture, with every claim
+     above this line green. So the canvas is counted, not GE.st. */
+  out.pinPaint = pxOf(C);
   gePtUp(at(1, M, M+40));
   gePtUp(at(2, M+60, M));
   out.pinAfter = GE.st.length;
+  out.pinRest = pxOf(C);
 
   /* opening the fingers magnifies, and it does not step. Both fingers move,
      one event each, which is what a phone sends. */
@@ -314,6 +334,12 @@ say(r.pinDrew === 2, 'one finger down and moving is drawing a stroke');
 say(r.pinLeft === 1, 'the second finger landing throws that stroke away');
 say(r.pinKept === r.pinWant, 'and the stroke that was already finished is untouched');
 say(r.pinAfter === 1, 'and lifting both leaves it that way -- no dot left behind');
+say(r.pinBusy > r.pinBare, 'the half-drawn stroke is ON the paper while it is drawn -- ' +
+    r.pinBare + ' -> ' + r.pinBusy + 'px of ink');
+say(r.pinPaint === r.pinBare,
+    'and the paper says so the moment the second finger lands, not when it lifts -- ' +
+    r.pinPaint + 'px');
+say(r.pinRest === r.pinBare, 'and it is still that when the glass is clear -- ' + r.pinRest + 'px');
 say(r.zOpen > 1, 'opening the fingers magnifies: ' + r.zOpen.toFixed(3));
 say(r.zOpen2 > r.zOpen, 'opening them further magnifies further: ' + r.zOpen2.toFixed(3));
 say(r.zCeil, 'and a gap five times the one they landed with still gives 3 -- ' + r.zWide.toFixed(3));

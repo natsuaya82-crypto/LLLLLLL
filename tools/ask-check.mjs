@@ -25,9 +25,12 @@
    3. A SCAFFOLD THAT DOES NOT FIT DOES NOT OPEN. There is nothing left to
       shorten, so `url` comes back empty and the screen says so. Deleting that
       guard opens a 12,278-byte link.
-   4. WHO IT OPENS, AND WHERE AN UNKNOWN NAME GOES. All four of ASK_TO route,
-      and a value naming somebody who is not in the table falls to ChatGPT --
-      the owner's default (2026-08-27). Softening that test to `w ? w :
+   4. WHO IT OPENS, AND WHERE AN UNKNOWN NAME GOES. Everything in ASK_TO
+      routes -- which is ChatGPT and only ChatGPT (2026-08-28) -- and a value
+      naming somebody who is not in the table falls to it. That second half
+      is what the table shrinking made load-bearing rather than theoretical:
+      a phone with `SET.askTo` still set to one of the three that came out
+      goes through exactly this road. Softening the test to `w ? w :
       'chatgpt'` does not fall back at all: ASK_TO[w] is undefined and the
       builder throws on `base.length`.
 
