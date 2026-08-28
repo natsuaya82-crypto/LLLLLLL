@@ -1019,11 +1019,11 @@ function vGlyph(){
     '<div class="body" style="padding-bottom:calc(env(safe-area-inset-bottom,0) + var(--tabh) + 24px)">'+
     '<div class="gcanvwrap"><canvas id="gcanv" class="gcanv"></canvas></div>'+
     /* The ? belongs to the band, not to the bar: what it explains is the five
-       marks under it. 「？の位置したの帯の右上にしない？」 OWNER 2026-08-28.
+       marks above it. 「帯の下にしよう」 OWNER 2026-08-28.
        Here and not in geRail(), because geRail() is also the onboarding's
        first step and that step is being walked, not read. */
-    '<div style="display:flex">'+helpQ('glyph')+'</div>'+
     geRail(st, pts)+
+    '<div style="display:flex">'+helpQ('glyph')+'</div>'+
     '<div class="ghintwrap"><canvas id="ghint" class="ghint"></canvas></div>'+
     '</div></div>';
 }
