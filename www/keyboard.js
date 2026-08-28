@@ -2018,6 +2018,21 @@ function kbListHTML(){
       : '')+
     '</div>';
 }
+/* The free QWERTY has no editor, so the screen is a keyboard nothing on it
+   answers to -- and the first thing anybody does is press it. What it is
+   goes under it, behind a ? of its own rather than in the bar's, which is
+   the four steps for switching the keyboard on and stays that.
+   「設定方法だけでいいや」「キーボードの中に入った無料のqwartyの中に？つけて」
+   OWNER 2026-08-28. Under the keyboard and not over it, the same place the
+   drawing screen's ? sits: what it explains is the thing above it. */
+function kbFreeQ(){
+  return '<div style="display:flex">'+helpQ('kbfree')+'</div>';
+}
+HELP.kbfree=function(){
+  return {t:t('kb.title'), h:
+    '<div class="note">'+esc(t('kb.is'))+'</div>'+
+    '<div class="note">'+esc(t('kb.is.free'))+'</div>'};
+};
 function vKb(){
   /* The free plan has a keyboard. It was shown a wall.
 
@@ -2042,6 +2057,7 @@ function vKb(){
   if(!can('kb'))
     return '<div class="view">'+navTop('', helpQ('kb'))+'<div class="body">'+
       kbHTML(null, true)+
+      kbFreeQ()+
       kbSysHTML()+
       /* the same, on the free plan's face of this screen */
       '<button class="btn ghost" style="width:100%;margin-top:12px"' + DO('goPlans') + '>'+
@@ -2071,6 +2087,7 @@ function vKb(){
   if(kbIsFree(now))
     return '<div class="view">'+navTop('', kbMoreQ())+'<div class="body">'+
       kbHTML(null, true)+
+      kbFreeQ()+
       kbSysHTML()+
       kbApplyHTML()+
       '</div></div>';
@@ -2949,15 +2966,6 @@ function kbStepHTML(n, title, body){
 }
 HELP.kb=function(){
   return {t:t('kb.sys.h'), h:
-    /* What the thing on the screen IS, before how to switch it on. The four
-       steps answered "how do I use this on the phone" and nothing answered
-       "what am I looking at" -- which on the free plan is a QWERTY that
-       does not type, so the first thing anybody does is press it and get
-       nothing. 「キーボードも？に説明入れよう」 OWNER 2026-08-28.
-       The second line is free's alone: a paid keyboard IS pressed here,
-       that is what the editor is. */
-    '<div class="note">'+esc(t('kb.is'))+'</div>'+
-    (can('kb')? '' : '<div class="note">'+esc(t('kb.is.free'))+'</div>')+
     /* One step is one tap, and one tap is one photograph. It was two steps
        with both photographs stacked under the second -- so the step reading
        "turn on Full Access" carried a picture of a DIFFERENT page, the one
