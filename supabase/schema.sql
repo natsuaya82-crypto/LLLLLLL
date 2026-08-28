@@ -992,12 +992,16 @@ grant execute on function notices(int) to authenticated;
 --   the server receiving Apple's signed notice.
 --   feed_weight() below is the one line that changes on that day.
 --
---   The twelve-hourly turn. 「12時間ごとに入れ替え」 is decided; WHICH of the
---   two it means -- the order is rebuilt at 00:00 and 12:00 and stands still
---   between them, or it is always computed and only what is SHOWN turns over
---   -- has not been asked of the owner yet, and the two are different lists.
---   The scoring below is the half both of them are built on, so it is here
---   and the turn is not. Nothing guesses.
+--   The list STANDING STILL between turns. 「4時間ごと。0 4 8 12 16 20 24
+--   これは入れ替わらない。」 OWNER -- the tick is decided and feed_slot()
+--   below is it. What is NOT decided is whether the order is frozen at the
+--   tick and does not move until the next one, or is computed as it is asked
+--   for and only the WINDOW turns over. Those are two different lists: under
+--   the first, a post written a minute ago cannot appear for four hours.
+--   The window is anchored to the tick here, because that much is the tick
+--   being real; the scores are still counted as they stand, so the order does
+--   move inside a slot. Freezing them is one more line and it is not written
+--   until somebody has answered which of the two it is.
 --
 -- `off` and not a timestamp for the continuation: this list is ordered by a
 -- score, and a score is not something you can ask for "the ones after". A
@@ -1012,6 +1016,22 @@ grant execute on function notices(int) to authenticated;
 -- The number is NOT decided. It has not been asked of the owner, so it is not
 -- invented here -- a made-up multiplier is a made-up ranking, and nobody would
 -- be able to tell by looking at the app that it had been guessed.
+-- The tick the list turns on. 「3はアメリカ時間ね。4時間ごと。0 4 8 12 16 20 24
+-- これは入れ替わらない。」 OWNER 2026-08-28 -- so this answers the most recent
+-- of those six hours, and never anything in between.
+--
+-- WHICH America. The United States is four time zones wide and the owner said
+-- "American time", so this names one in ONE place rather than four call sites
+-- quietly disagreeing. It is the line to change if the answer is a different
+-- coast, and it is in the report as a question.
+create or replace function feed_slot()
+returns timestamptz language sql stable as $$
+  select (date_trunc('hour', (now() at time zone 'America/New_York'))
+          - make_interval(hours =>
+              (extract(hour from (now() at time zone 'America/New_York'))::int % 4)))
+         at time zone 'America/New_York'
+$$;
+
 create or replace function feed_weight(who uuid)
 returns numeric language sql stable as $$ select 1::numeric $$;
 
@@ -1031,7 +1051,7 @@ language sql stable as $$
     left join lateral (
       select (count(*) * 5) as pts from post q where q.reply_to = v.id
     ) a on true
-   where v.created_at > now() - interval '48 hours'
+   where v.created_at > feed_slot() - interval '48 hours'
      and v.hidden_at is null
    order by ((k.pts + a.pts) * feed_weight(v.author)) desc, v.created_at desc
    limit lim offset off
