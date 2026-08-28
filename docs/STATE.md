@@ -22,12 +22,50 @@ The rest of `docs/` is the working detail behind the rules at the head of
 Everything below was checked against the repository on **2026-08-11**, §3 and
 §5 again on **2026-08-19**, the whole file again on **2026-08-21**, §1, §4b
 and §7 on **2026-08-25**, §4b, §6 and §7 once more later that same day after
-build #91 went to a real phone, and **§1 and §3 again on 2026-08-26** — not
-remembered. Where a claim can go stale, it
+build #91 went to a real phone, **§1 and §3 again on 2026-08-26**, and **§0 is
+2026-08-28's own reading** — not remembered. Where a claim can go stale, it
 says how to re-check it — and §3 is the proof that it does: it went on saying
 the timeline was not on the server for a week after it was, **and then said
 the languages were not, for as long again.** Both are. The command that
 answers it is in §3 and takes a second.
+
+---
+
+## 0. 2026-08-28 に分かったこと ── 調べ直さないために
+
+**この節は答えです。**下の七つは実際にコードを読み、走らせて確かめたものです。
+同じことをもう一度調べないでください。**直っているとは書いていません** ── どこが
+原因かが書いてあります。
+
+**役割が変わりました。**取り込むのは**サブリーダー①**（OWNER「取り込むのは
+サブリね？」）。そのままゲート28本もそこで回します。**リーダーは配ってビルドを
+引くだけで、取り込まず、ゲートを回さず、コードを書きません**（OWNER「君が作業
+するんじゃなよね？」）。`docs/SESSIONS.md` と `CLAUDE.md` は直してあります。
+
+今日の決定は `docs/FEATURE_RULES.md` § Owner decision log の上から三つ
+（規約の三つ／消す行は三本／取り込むのはサブリーダー）。
+
+| 何 | 分かったこと | どこ |
+|---|---|---|
+| パスワードを変更 | **忘れた人の出口がこの画面に無い。**忘れた道（メール→コード→新しいもの）は扉にだけある | `settings.js` `id==='pw'` / `onboard.js` `obMailForgot` |
+| 消す行 | **三本あるべきで、二本しか無い。**無いのは「端末のデータを消す」＝端末の言語データが全部消えて SNS は消えない。`set.wipe` は全部消す方 | `settings.js` `id==='acct'` |
+| 読みの表示 | IPA／カタカナ／両方の三択。**部屋ごと消すと決まった** | `settings.js` `id==='read'` |
+| 自作文字の用紙 | **`LinguaPdf.page()` がページを等倍のまま描いている。**`page.draw(with:to:)` は文脈に合わせて拡大しない。印は 14px、`shScan()` が受けるのは 18.3〜73.2px → 四つとも捨てられる。上下反転も同じ箇所。**読み取り側は正常**（往復 0〜18°で二十個一致、印のずれ 0px） | `ios/App/App/LinguaPdf.swift` |
+| キーボード | ① 長押しで入る揺れの状態が全キーから `kbTapKey` を外す ── 理由だった ⊖ は既に削除済みで、外すほうだけ残っていた。② 余りが一列＝キー半分のとき空きマスとして描かれるが `kbCellAdd` はキー一つ分を要求するので絶対に入らない | `keyboard.js:1933` / `kbCellHTML` |
+| 文法ページ | **誰も動かしていない。**`feature/grammar-engine`（`claude/grammar2` を含む）が master より **364進み・281遅れ**、140ファイル。`index.html` `act-map.js` `core.js` `glyph.js` i18n×10 に触る | `origin/feature/grammar-engine` |
+| 絞り込みの⭐️ | `snsPickSaved()` が `goTab('explore')` で**検索タブへ飛ぶ**。決定は「その言葉で検索し直す（飛ばすのではない）」 | `sns.js` `snsPickSaved` |
+
+**取り込まれていない枝が二つあります。**どちらもリーダーが書いたもので、
+**役割が決まる前の作業**です。取り込むかどうかはサブリーダーが決めます。
+
+- `claude/pdf` ── 上の用紙の直し ＋ CHANGELOG。**実機ビルドでの確認が要る**
+- `claude/kb5` ── 上のキーボード二つ ＋ `kb-check` に主張三本
+  （バグを戻して三本とも赤を見てある）
+
+**セッションへの連絡手段が落ちています。**2026-08-28、リーダーのセッションから
+`claude-code-remote` の MCP が消え、`create_trigger` も `SendMessage` も届かず、
+`ListAgents` が空になりました。**この状態のリーダーは配れません。**次に開く人は
+まずそこを確かめてください。
 
 ---
 

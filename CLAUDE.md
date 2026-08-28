@@ -210,8 +210,9 @@ went months out of date while every session opened with it. It said "No
 StoreKit" with `LinguaStore.swift` shipped and `storeBuy` called from
 `setPlan`; it said the Apple capability was still to do after the owner had
 done it. A leader read those sentences and told the owner their own finished
-work was outstanding. **It is the LEADER's file**: the leader integrates, so
-the leader is the one who knows what became true today.
+work was outstanding. **It is the LEADER's file**: the leader is where every
+branch's report arrives and where the owner's decisions land, so the leader is
+the one who knows what became true today.
 
 And the same reason the corners needed `box-check`: prose does not hold a rule.
 This one is not held by anything yet — `docs/BACKLOG.md` carries what a check
@@ -260,8 +261,9 @@ a file — a commit there on a branch that is not yours is another session in
 that file, and that is the moment to stop and report, not when a merge fails.
 Push the scope declaration as the FIRST commit, before any code: a branch
 nobody can see is a branch nobody can avoid. Push after every commit. **Never
-merge, rebase or cherry-pick ANOTHER BRANCH** — the leader integrates, and
-asks the owner where the answer is a decision rather than a merge. **Bringing
+merge, rebase or cherry-pick ANOTHER BRANCH** — **the SUB-LEADER integrates**
+(OWNER 2026-08-28), and asks the leader where the answer is a decision rather
+than a merge. **Bringing
 `master` into your own branch is not that and is required before reporting**
 (2026-08-25): it touches nobody else's work, it is catching up rather than
 integrating, and it is what makes the leader's merge a fast-forward. Every one
@@ -285,7 +287,7 @@ changes behaviour is not a refactor.
 **Done** is not "the code is written". Spec confirmed, blast radius known,
 docs updated, implemented, the check that holds it green, **the bug put back
 and that check watched going red**, static checks, device if it is on the
-list, the whole gate green (the LEADER's run, not the session's), owner
+list, the whole gate green (the SUB-LEADER's run, not the session's), owner
 confirmed, CHANGELOG updated. Every report separates `CODE
 CONFIRMED` / `DEVICE CONFIRMED` / `OWNER CONFIRMED`, and none of the three
 implies another. → `docs/FEATURE_RULES.md`
@@ -340,7 +342,8 @@ go red, take the bug out.
 
 **The build comes first and the gate comes after it** 「先に確認したいから、
 全部取り込んだら君がビルド出して、ゲートはビルド出してから確認でいいよ」OWNER
-2026-08-28. The leader integrates, triggers the build, and THEN the whole gate
+2026-08-28. **The sub-leader integrates and runs the gate; the leader triggers
+the build.** The build goes out on what was taken in, and THEN the whole gate
 runs — because the thing that finds the bugs nothing here can find is a person
 holding a phone, and making them wait sixteen minutes for a green that has
 never once changed what the build contains is sixteen minutes of nobody
