@@ -55,6 +55,12 @@ answers it is in §3 and takes a second.
 | 文法ページ | **誰も動かしていない。**`feature/grammar-engine`（`claude/grammar2` を含む）が master より **364進み・281遅れ**、140ファイル。`index.html` `act-map.js` `core.js` `glyph.js` i18n×10 に触る | `origin/feature/grammar-engine` |
 | 絞り込みの⭐️ | `snsPickSaved()` が `goTab('explore')` で**検索タブへ飛ぶ**。決定は「その言葉で検索し直す（飛ばすのではない）」 | `sns.js` `snsPickSaved` |
 
+**オンボーディングはオーナーが直しています。誰も触らないこと。**
+「オンボーディングはこっちで直してるからいじらないで」OWNER 2026-08-28。
+`www/onboard.js` は誰にも渡しません。`master` の `fb2dab6` までは入っています
+（`claude/ob3` の並び直しと、SNS の段を本物のタイムラインにした分）が、
+**その先はオーナーのものです。**
+
 **取り込まれていない枝が二つあります。**どちらもリーダーが書いたもので、
 **役割が決まる前の作業**です。取り込むかどうかはサブリーダーが決めます。
 
