@@ -979,10 +979,22 @@ function netLike(q){
    reads `language`, whose policy answers with what has been published and
    with your own, so an unpublished language is nobody's business and simply
    does not arrive. 「lingua マーク」 */
-function netFindWho(q, ok, bad){
+function netFindWho(q, ok, bad, more){
   var like=netLike(q);
+  /* Ordered by handle, which it was not until there was a second page to
+     ask for. A list with no order is a list the server may hand back in a
+     different arrangement each time, and "the ones after the last one" is
+     not a question anybody can ask of that -- the same person would arrive
+     twice and somebody else never. A handle is unique (schema.sql § who), so
+     it is a place to carry on from and there is no page that can miss one.
+
+     People have no `created_at` worth sorting by here: a search is not a
+     timeline, and whoever matched first alphabetically is as good an answer
+     as whoever signed up first -- it just has to be the SAME answer twice. */
   netGet('/rest/v1/profile?select=id,handle,display,av,language(name)'+
          '&or=(handle.ilike.'+like+',display.ilike.'+like+')'+
+         '&order=handle.asc'+
+         (more? '&handle=gt.'+encodeURIComponent(String(more)) : '')+
          '&limit='+NET_PAGE,
     function(d){
       var out=[], i, r, ls;
@@ -1000,12 +1012,18 @@ function netFindWho(q, ok, bad){
    name of the language it is written in. Not on the shapes: a shape is not
    something anybody can type. `body` is jsonb and `->>` is how PostgREST is
    asked for one of its fields as text. */
-function netFindPosts(q, ok, bad){
+function netFindPosts(q, ok, bad, more){
   var like=netLike(q);
+  /* `more` is the `at` of the last post already held. Keyset and not an
+     offset for the reason netFeed()'s is: posts are written while somebody
+     is reading, and an offset walked over a list that has grown hands back
+     one they have already read, or steps over one they have not. */
   netGet('/rest/v1/post_seen?select=id,author,created_at,reply_to,body,hidden_at,author_out'+
          '&or=(body->>ln.ilike.'+like+',body->>mn.ilike.'+like+
          ',body->>lname.ilike.'+like+')'+
-         '&order=created_at.desc&limit='+NET_PAGE,
+         '&order=created_at.desc'+
+         (more? '&created_at=lt.'+encodeURIComponent(String(more)) : '')+
+         '&limit='+NET_PAGE,
     function(d){
       var out=[], i;
       for(i=0;i<(d||[]).length;i++) out.push(netRow(d[i]));
