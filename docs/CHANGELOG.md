@@ -15,6 +15,116 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 下書きが、機種を変えても残るようになりました
+
+**オーナー 2026-08-27**（原文）:
+
+> 「SNSは全部サーバー」
+
+下書きは**タイムラインのもの**なので、サーバーに在ります。何度も言われた
+決定で、仕様が曖昧だったのではなく**コードが古いまま読まれていた**ものです
+（`CLAUDE.md` § Online、`05e78ff`）。
+
+**人が気づくこと**: 機種を変えても、アプリを入れ直しても、サインインすれば
+書きかけの投稿が戻ってきます。今までは端末の中の `lingua.drafts` 一つに
+入っていて、その端末を離れると消えていました。
+
+**画面は一つも変わっていません。** 下書きの一覧も、「戻る」を押したときの
+確認も、開いたときの動きもそのままです。
+
+#### 保存するものの変化
+
+```
+足したもの   supabase/schema.sql の `draft` の表
+             id uuid pk / author uuid -> profile(id) on delete cascade
+             body jsonb / updated_at timestamptz
+             policy 四つ全部 is_member() and author = auth.uid()
+
+変えたもの   lingua.drafts の各下書きに `id` が付く（netUUID()）
+             古い下書きには draftsName() が「足す」だけ。読んで消す移行では
+             なく、形も中身も触らない（docs/DATA_SAFETY.md § 2）
+
+消したもの   無し。lingua.drafts はそのまま残り、電波が無くても動く写し
+             としてこれまで通り先に書かれる
+```
+
+`draft.body` には composer が手に持っていたものがそのまま入ります ── 写真も
+録音も base64 で。**メディアバケットには置きません。** `post-media` は public
+なので（`media_read` は `using (bucket_id = 'post-media')`）、下書きの写真を
+そこに置くと下書き本体は他人に読めないのに写真だけ publishable key で読める
+ことになり、さらに `netMyFiles()` は消す道を `post.body` からしか集めないので
+誰も指さないファイルが残ります。バイトが上がるのは投稿されるときだけで、
+そこは今まで通り `netUpPics()` / `netUpVoice()` を通ります。
+
+**`post` の列にしなかった理由**: `post_read` は
+`hidden_at is null or author = auth.uid() or is_staff()` ── 隠されていない行は
+サインインした誰でも読めます。下書きをそこに入れると、読む道の全部に
+「下書きは除く」を足さない限り公開され、**足し忘れは何も throw しません**。
+画面は正しく、スクリーンショットも正しく、`npm test` も緑です（検査の中に
+人は一人しかいないので）。`post(id)` を参照する表も三つあり（`quote` `react`
+`report`）、その形だと**下書きに「いいね」が押せる行が実在します**。
+
+#### DELETE REVIEW
+
+```
+who deletes      user action（下書きの × / 投稿する / アカウント削除）
+when             人が下書きを捨てたとき、その下書きが投稿になったとき、
+                 アカウントを消したとき
+what exactly     `draft` のその一行。名前で指して一行。
+                 何も walk しない、何も「古い」と判断して消さない
+why              捨てたものは捨てたもの。投稿になったものはもう下書きでは
+                 なく、残すと次に開いたとき降りてきて同じ投稿が二度書かれる。
+                 アカウント削除は「残るものねえ」
+recoverable?     いいえ。捨てるのは確認ダイアログの向こう側
+                 （t('post.draft.del.q')）。投稿になった分は投稿として在る
+does the backup survive it?
+                 バックアップは言語のもので、下書きは入っていない
+                 （bkPack() は SLICES を walk する）。変化なし
+anything to do with the plan?    no
+migration / rollback
+                 足すだけの移行（draftsName()）。古い下書きは id を
+                 もらうだけで中身が変わらないので、戻すときも読める
+```
+
+**投稿するときの順番**: `post` に書いてから `draft` を消します。逆にはしません
+── 先に消すと、投稿が上がらなかった日に書いたものが消えます。私的な投稿
+（`pv`）でも下書きの行は消えます: 私的なのは投稿であって、下書きは投稿の
+保管場所ではありません。
+
+**下書きを開いたときサーバーの行は消しません。** 一覧から外すのは「同じ下書きが
+二箇所にある」を避けるためで（`tools/draft-check.mjs`）、そこで消すと、その場で
+アプリが死んだとき書きかけの唯一の写しを捨てたことになります。
+
+#### アカウント削除
+
+両側とも消えます。端末側は `lsWipeNS()` が `lingua.` で始まる鍵を数えて消すので
+`lingua.drafts` も行きます。サーバー側は `draft.author` が
+`profile(id) on delete cascade` なので `account_delete()` が持っていきます ──
+`account_delete()` 自体は一行も変えていません。
+
+> 「アカウント削除で残るものねえって言ってんだろ何回言わせんだよ全部消える」
+
+#### 回した検査
+
+`npm run rls` ── `tools/rls-check.mjs` に他人が突く行を足しました。policy が
+広すぎても何も throw しないので、そこだけが唯一の守りです。B が A の下書きを
+読む・変える・消す、アカウントの無い人が読む、B が A の名前で書く、自分のを
+A に渡す、そして A が消えたら A の下書きも残らない（表の持ち主として、行が
+「無い」ことを見ます ── 他人として訊くと policy に隠れているだけの行も通ります）。
+
+**`draft_edit` と `draft_drop` を広げても「B は変えられない/消せない」は通って
+しまいました。** PostgreSQL は WHERE 付きの UPDATE / DELETE の行を先に SELECT
+policy で引くので、`draft_read` が狭いうちは名前の policy ではなく読みに
+拒まれています ── 理由の違う合格です。catalog に訊く行を足しました。
+
+`npm run post` ── `tools/post-check.mjs` に五つ。保存してサーバーに何も行かない、
+開いた下書きが名前を持って帰らない、投稿しても行が残る、降りてきた写しが端末の
+ものに勝つ、同じ下書きが二つになって帰る ── 全部、バグを戻して落ちるのを見ました。
+
+#### まだ device で見ていません
+
+コードだけです。
+
 ### 新品の端末で、オンボーディングが出るようになりました
 
 **オーナー 2026-08-27**（原文）:
