@@ -378,10 +378,27 @@ function obTourHTML(){
 
        Gold, for the same reason the hand is: over the grey, gold is what this
        app makes things you can press, and `color:inherit` is the page's text
-       colour, which on the light theme is black on a half-black scrim. */
-    '<button class="obback"' + DO('obTourBack') + ' aria-label="'+esc(t('ob.back'))+'"'+
-      ' style="position:fixed;z-index:45;left:8px;top:8px;color:var(--gold)">'+
-      OB_CHEV+'</button>';
+       colour, which on the light theme is black on a half-black scrim.
+
+       It stands ON the screen's own back arrow where the screen has one, and
+       that is not a nicety: at a fixed 8,8 it landed beside `.back.nb` rather
+       than on it, and the corner had TWO arrows in it -- one gold and live,
+       one grey and dead, a few pixels apart. The screens with no arrow of
+       their own (the roots -- profile, feed) have nothing there to stand on
+       and nothing to collide with, so those take the corner. */
+    obBackBox()+'>'+OB_CHEV+'</button>';
+}
+/* Where the walk's chevron stands: on the screen's own back arrow, or in the
+   corner when the screen has none. Everything up to the `>` of the tag,
+   because the two cases differ only in the four numbers. */
+function obBackBox(){
+  var el=document.querySelector('.navtop .back.nb'), b=el? el.getBoundingClientRect() : null,
+      pos=(b && b.width)
+        ? 'left:'+Math.round(b.left)+'px;top:'+Math.round(b.top)+'px;'+
+          'width:'+Math.round(b.width)+'px;height:'+Math.round(b.height)+'px'
+        : 'left:8px;top:8px';
+  return '<button class="obback"' + DO('obTourBack') + ' aria-label="'+esc(t('ob.back'))+'"'+
+    ' style="position:fixed;z-index:45;'+pos+';color:var(--gold)"';
 }
 /* Which thing on the screen is the lit one. A stop names it one of two ways
    and both are read here: a plain CSS selector where the thing has a class of
