@@ -121,7 +121,12 @@ const routes = await pg.evaluate(() => Object.keys(PAGES));
 const withArgs = await pg.evaluate((rs) => {
   const argsOf = (r) =>
     r === 'set'  ? [null].concat(SETS.map((x) => x.id)) :
-    r === 'gram' ? [null].concat(stAll().map((p) => p.id)) :
+    /* Not stAll(): that is only the sixteen written stages, so the chapters
+       that say what a word turns into -- `v2:order`, `v2:n`, ... -- had never
+       been photographed once, --all included. gramArgs() in www/phases.js is
+       where every argument this route takes is already written down, and both
+       walks ask it; a third list here is a third answer waiting to drift. */
+    r === 'gram' ? [null].concat(gramArgs()) :
     r === 'ltset' ? [null].concat(LT_KINDS) :
     r === 'fm' ? ['tira'] :
     r === 'thread' ? [null].concat(POSTS.map((x) => x.id)) :
