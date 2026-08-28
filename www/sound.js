@@ -26,9 +26,43 @@
    purchase: letters that are not a-z. Hidden rather than shown locked,
    because a row that cannot be pressed is a row that has to explain itself
    every time the screen is opened. */
+/* What the five kinds ARE, behind the `?` rather than under each row.
+   「3入れよう」 OWNER 2026-08-28: an abjad and an abugida are words somebody
+   either knows or does not, and the screen was asking them to choose between
+   five of them. On the free plan it is worse than that -- four of the five
+   are one grey line inside the upgrade row, so the person is being asked to
+   pay for something the screen has not named.
+
+   Every word of this was already written and already in ten languages: the
+   paid rows carry `ws.k.X.d`, and `ws.k.X.eg` is the same sentence with the
+   writing systems of the world on the end of it. `.eg` is the one that
+   answers "what is an abugida" -- it says Devanagari. Nothing new is said
+   here; what was on one plan is now on both. */
+/* One line to an item: the name in bold and then what is written that way.
+   The name had a .sec of its own and the group heading below is also a .sec,
+   so a heading with nothing under it read as an item whose description had
+   gone missing. There is one heading on this sheet and it is that one. */
+function wsHelpRow(name, eg){
+  return '<div class="note"><b>'+esc(name)+'</b>  '+esc(eg)+'</div>';
+}
+HELP.wsys=function(){
+  return {t:t('ws.kind'), h:
+    WSYS.map(function(k){
+      return wsHelpRow(t('ws.k.'+k), t('ws.k.'+k+'.eg'));
+    }).join('')+
+    /* The direction is the other thing this screen decides, and it is locked
+       on free the same way, so it is behind the same ? -- 「各方向もついでに
+       追加してあげたら？」 OWNER 2026-08-28. The four names were already
+       plain; what they were missing is a script that is actually written
+       that way, which is what tells somebody they mean it. */
+    '<div class="sec">'+esc(t('dir.title'))+'</div>'+
+    DIRS.map(function(k){
+      return wsHelpRow(t('dir.'+k), t('dir.'+k+'.eg'));
+    }).join('')};
+};
 function vWsys(){
   var kinds=can('wsys')? WSYS : ['alpha'];
-  return '<div class="view">'+navTop('')+'<div class="body">'+
+  return '<div class="view">'+navTop('', helpQ('wsys'))+'<div class="body">'+
     kinds.map(function(k){
       return '<button class="set"' + DO('setWsys', [k]) + '>'+
         '<span class="sl">'+esc(t('ws.k.'+k))+'</span>'+
