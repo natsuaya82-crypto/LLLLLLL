@@ -71,7 +71,8 @@ Scope の空コミット。`docs/SESSIONS.md` は元々そう書いている ─
 規則 6 は「merge / rebase / cherry-pick を一切しない」だった。**他の枝**につい
 てはそのまま。**master を自分の枝に入れることは、そこから外す。**
 
-  他の枝を取り込む     禁止。**サブリーダーの仕事**（OWNER 2026-08-28）
+  他の枝を取り込む     禁止。**サブリーダーの仕事。居なければリーダー**
+                       （OWNER 2026-08-28）
   master を取り込む    **報告の前に必ずやる。** 自分に追いつかせるだけ
 
 なぜ変えたか。2026-08-25 に四つの枝を束ねて、衝突は四箇所出た。**四箇所とも
@@ -84,6 +85,8 @@ Scope の空コミット。`docs/SESSIONS.md` は元々そう書いている ─
 束ねる側の取り込みは `--ff-only` になり、解く仕事が消える。
 
 **束ねるのはサブリーダーです**（OWNER 2026-08-28「取り込むのはサブリね？」）。
+**サブリーダーが居ないときはリーダーが取り込みます**（同じ日、連絡が届かないと
+報告したうえで「じゃあ君が取り込んで」）。
 取り込んで、そのままゲート28本を回す ── 取り込んだ形でしか全部は緑にならない
 ので、取り込む人と回す人は同じです。リーダーは配ってビルドを引く。
 
@@ -205,8 +208,8 @@ Scope の空コミット。`docs/SESSIONS.md` は元々そう書いている ─
    リーダーで三回払うと十五分になり、**三回目の緑が二回目より本当になることは
    ない。**
 
-   **緑はサブリーダーが、取り込んだあとに一度。** 全ゲート28本。取り込むのも
-   回すのも同じ人です（OWNER 2026-08-28「取り込むのはサブリね？」）。
+   **緑は取り込んだ人が、取り込んだあとに一度。** 全ゲート28本。取り込むのも
+   回すのも同じ人です（OWNER 2026-08-28）。サブリーダーが居なければリーダー。
 
    **そしてビルドが先、ゲートが後。**「先に確認したいから、全部取り込んだら君が
    ビルド出して、ゲートはビルド出してから確認でいいよ」OWNER 2026-08-28。
@@ -286,11 +289,11 @@ collide with the others, and it is short on purpose.
 
   the leader       one session. Takes the owner's words, works out what they
                    mean, names what each session owns, and dispatches. Triggers
-                   the build when the owner says so. **Does not integrate and
-                   does not run the gate** -- both are sub-leader ①'s
-                   (OWNER 2026-08-28「取り込むのはサブリね？」). Writes no
-                   feature code either: the leader dispatches, the sessions
-                   write.
+                   the build when the owner says so. Integrates and runs the
+                   gate **only when there is no sub-leader** -- both are
+                   sub-leader ①'s otherwise (OWNER 2026-08-28). Writes no
+                   feature code either, ever: the leader dispatches, the
+                   sessions write.
 
   sub-leader ①     takes what the sessions push, integrates it, and makes the
   (green)          gate GREEN. The gate is run here, once, and nowhere else.

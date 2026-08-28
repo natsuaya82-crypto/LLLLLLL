@@ -79,7 +79,7 @@ fi
 
 echo ""
 echo "read first: docs/STATE.md, then CLAUDE.md, then docs/SESSIONS.md."
-echo "the gate is 'npm test' and it is the SUB-LEADER's, once, after integrating — not a session's."
-echo "the sub-leader integrates AND runs the gate. the leader dispatches and triggers the build,"
-echo "and writes no feature code. (OWNER 2026-08-28)"
+echo "the gate is 'npm test' and it belongs to whoever INTEGRATED, once, after integrating — not a session's."
+echo "the sub-leader integrates AND runs the gate; the leader does both when there is no sub-leader."
+echo "the leader dispatches, triggers the build, and writes no feature code. (OWNER 2026-08-28)"
 exit 0
