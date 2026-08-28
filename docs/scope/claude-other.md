@@ -243,3 +243,79 @@ bio とフォロー数は入れていない ── **`profile` にその列が�
 `www/shell.js`。`www/post.js` / `www/index.html`。`tools/fixture.mjs`。
 `www/boot.js`（`bootSession()` に足したかったが持ち物ではないので、
 `meFollowPull()` は三つの画面から呼んでいる）。
+
+---
+
+# 三巡目 ── `schema.sql` を渡されたが、②では触っていない（2026-08-28）
+
+**`slice_read` は緩めませんでした。**前提が崩れているので止まります。
+
+## 「公開された節だけ他人に読める」は、いま在る決定の反対
+
+`slice_read` が持ち主だけなのは**書き落としではなく、決めてあること**。
+四か所に同じ文で書いてあります:
+
+- `supabase/schema.sql:597` ──「not even for a language that is PUBLISHED,
+  because **publishing is a copy somebody is given and not a door into the
+  phone**」
+- `tools/rls-check.mjs:270` ── 同じ文。そして**それを突く行が既に在る**:
+  `'B cannot read a published language's slices'` → **denied**
+- `tools/rls-check.mjs:800` ── 形の主張:
+  `slice` の SELECT 政策で `owner = auth.uid()` を含まないものは **0本**
+- `docs/FEATURES.md:588` ──「The server may not hand a slice to anybody but
+  its owner. **This is the real block and it is deliberate** … **that is a
+  question, not a gap to close.**」
+
+**指示どおりに書くには、この二本を消すことになります** ── 「他人は読めない」と
+言っている検査を、自分の機能を通すために消す。この repo が防ぐために建って
+いる形そのものです。「either a check holds the claim, or do not make it」の
+裏返しで、**通すために検査を消す**のはその一番悪い形。
+
+そして `docs/FEATURES.md` は**この指示を先回りして**「gap ではなく question」
+と書いています。**公開が何を意味するかはオーナーの決めごと**で、こちらでも、
+おそらくリーダーでもありません。
+
+## 仮に緩めても、今日は何も開きません
+
+**`published_at` を書くコードがどこにも在りません。**`www/` 全体で読むのは
+`language_read` だけ、書く場所は 0。**言語は一つも公開されていない**ので、
+`published_at is not null` を条件にした政策は**誰にも何も開けません**。
+緑になって、端末では何も変わらない ──「緑になる間違いが一番高くつく」。
+
+## 「公開された節」は、政策から読めない所に在ります
+
+`hide`（記事まるごと非公開）も、節ごとの `dl` も、**`wld` スライスの body の
+中の JSON**。`slice.body` は `jsonb` ではなく **`text`** です。政策から読むには
+
+- `text` を jsonb にキャストする（不正な行が一つでも在ると**読みが例外**に
+  なる。拒否ではなく、全員のクエリが落ちる）
+- そして `slice` の政策の中から `slice` を読むので **RLS の無限再帰**。
+  避けるには `security definer` の補助関数が要る
+
+**守る対象そのものの中に、鍵が入っている。**セキュリティ境界にこの複雑さを、
+リリース前に、しかも上の決定に反して入れる理由が見当たりません。
+
+## だから ② の状態は変わっていません
+
+閉じた扉（`10b2e08`）はそのまま。**②は未完で、オーナーの判断待ちです。**
+
+## 訊きたいこと（オーナーへ、リーダー経由）
+
+1. **公開された言語は、他人に「読める」ものですか、それとも「渡される写し」
+   ですか。**いまの決定は後者です。前者にするなら `slice_read` と、それを
+   突く二本の検査を、決定として書き換えることになります
+2. そもそも**言語を公開する道が無い**（`published_at` を書く場所が 0）。
+   公開はいつ、何をすることですか
+
+## ついでに ── ③ の副作用として報告
+
+`netLangNames()` は `language_read`（公開 or 自分）で訊きます。**何も公開
+されていない**ので、**検索結果のハンドルの横の言語名（「lingua マーク」）は
+他人については空**になります。人は返るようになりました（これが③の本体）が、
+タグは公開が始まるまで付きません。**embed だった頃も同じ政策を通っていたので、
+これは後退ではありません。**
+
+## 触っていないもの
+`supabase/schema.sql` ── 渡されましたが、上の理由で一行も変えていません。
+`npm run rls` は**変更前の状態で**回して緑を確認しました
+（182 attempts / 43 shape、そのうち二本が上の主張）。
