@@ -790,9 +790,15 @@ const r = await pg.evaluate(({ s }) => {
      counted in with the empty ones. */
   out.cellNoneFull =
     document.querySelectorAll('.kb.kbsheet .kbk.cell:not([data-k])').length === 0;
-  out.gapFrames = document.querySelectorAll('.kb.kbsheet .kbk.gap.cell').length;
+  /* A gap is drawn as the frames it COVERS, so it wears no class of its own
+     any more -- the two answers the sheet had came from telling them apart,
+     and a look that says "this one is different" is the fault. The first
+     frame over a gap names the key it stands for, which is what a carry
+     reads the row back out of, so `[data-k]` is what a written-down frame is
+     and everything else on the sheet with no key in it is slack. */
+  out.gapFrames = document.querySelectorAll('.kb.kbsheet .kbk.cell[data-k]').length;
   (function (){
-    var g = document.querySelector('.kb.kbsheet .kbk.gap.cell'), st;
+    var g = document.querySelector('.kb.kbsheet .kbk.cell[data-k]'), st;
     st = g && getComputedStyle(g);
     out.gapDashed = !!st && st.borderTopStyle === 'dashed' &&
       st.borderTopColor !== 'rgba(0, 0, 0, 0)' && st.borderTopWidth !== '0px';
@@ -813,12 +819,80 @@ const r = await pg.evaluate(({ s }) => {
   var c0 = document.querySelector('.kb.kbsheet .kbrow .kbk.cell:not([data-k])');
   var c0span = c0 ? spanEl(c0) : 0;
   out.cellHalf = c0span === 1;
+  /* PRESSING IT SELECTS IT. 「全部のます触ったら選択で」 OWNER 2026-08-28 --
+     and the key goes in from the button over the sheet, the way the bin and
+     the three alignments have always worked. This used to press the frame and
+     read the key straight out of the row, which is the habit the owner
+     replaced: two frames drawn the same, one adding and one selecting. */
   if (c0) c0.click();
+  standKb();
+  out.cellSel = !!(KBH && KBH.k === 'f' && KBH.r === 0);
+  out.cellLit = !!document.querySelector('.kb.kbsheet .kbk.cell.pick');
+  /* and what the band offers for it is the one button that fills it */
+  out.cellTool = [].slice.call(document.querySelectorAll('.kbtool [data-do]'))
+    .filter(function (b){ return !b.disabled; })
+    .map(function (b){ return b.getAttribute('data-do'); }).join(' ');
+  out.cellPut = (function (){
+    /* the one in the BAND, not a frame on the sheet: the band's carries no
+       arguments, because a button over the sheet acts on what is selected */
+    var b = document.querySelector('.kbtool [data-do="kbCellAdd"]');
+    if (b) b.click();
+    return !!b;
+  }());
   standKb();
   out.cellAdded = kbLayer().rows[0].length === keysWas + 1;
   out.cellAddedW = out.cellAdded && kbUsed(kbLayer().rows[0]) === usedWas + c0span;
   out.cellSpan = c0span;
   out.cellBack = (kbUndo(), kbLayer().rows[0].length === keysWas);
+
+  /* ---- the leftover an alignment leaves is FRAMES, one to a cell ---------
+     「中心に寄せたら半キーが二つできるけど寄せたら1つになるの」 OWNER
+     2026-08-28, and 「全部のます触ったら選択で」 the same day. A row of three
+     keys on a sheet of ten leaves seven columns at each end when it is
+     centred, and CLAUDE.md § 19 counts those as three frames and a half --
+     every one of them a key you can press.
+
+     It was drawn as ONE dashed key three and a half wide. Nothing threw and
+     the total was right; what was wrong is that "the width of that frame"
+     could then only mean three and a half keys, and the sheet said the
+     leftover was one thing where the owner had counted four.
+
+     And what goes in takes only that frame's room: a gap is room the row
+     already holds, so the row's total does not move and what is left stays a
+     gap on either side. */
+  (function (){
+    var rw, fs, was, wasKeys;
+    fresh(); kbShow = 1; kbLay = 0;
+    kbLayer().rows[0] = [kbKey('lt', 'a'), kbKey('lt', 'b'), kbKey('lt', 'c')];
+    saveKb(); standKb();
+    KBH = { k: 'r', i: 0 }; kbAlign('c'); standKb();
+    out.alGaps = kbLayer().rows[0].filter(function (k){ return k.k === 'gap'; }).length;
+    rw = sheetRows()[0];
+    fs = [].slice.call(rw.querySelectorAll('[data-do="kbCellAdd"]'));
+    out.alFrames = fs.map(function (e){ return spanOf(e); }).join(',');
+    /* the first frame of a written-down gap names the key it stands for, so a
+       carry can read the row back off the page */
+    out.alNamed = fs.filter(function (e){ return e.getAttribute('data-k') !== null; }).length;
+    if (!fs.length) return;
+    was = kbUsed(kbLayer().rows[0]);
+    wasKeys = kbLayer().rows[0].length;
+    fs[0].click(); standKb();
+    out.alSel = !!(KBH && KBH.k === 'f' && KBH.r === 0 && KBH.at === 0 && KBH.span === 2);
+    /* and the bin is DOWN on a frame -- there is nothing in it to take */
+    out.alBin = [].slice.call(document.querySelectorAll('.kbtool [data-do="kbCut"]'))
+      .every(function (b){ return b.disabled; });
+    (document.querySelector('.kbtool [data-do="kbCellAdd"]') || { click: function (){} }).click();
+    standKb();
+    out.alSame = kbUsed(kbLayer().rows[0]) === was;
+    out.alKey = kbLayer().rows[0].filter(function (k){
+      return k.k === 'lt' && k.v === '' && (k.w || 1) === 1;
+    }).length === 1;
+    out.alRest = kbLayer().rows[0].map(function (k){
+      return k.k + ':' + (k.w || 1);
+    }).join(' ');
+    out.alBack = (kbUndo(), kbLayer().rows[0].length === wasKeys &&
+                  kbUsed(kbLayer().rows[0]) === was);
+  }());
 
   /* pressing a key selects it, and pressing it again leaves it selected --
      「同じとこ触ると選択解除されるからわかりにくい」 OWNER 2026-08-27. It used
@@ -2133,9 +2207,10 @@ const r = await pg.evaluate(({ s }) => {
   kbLayer().rows[1].splice(0, 1);
   saveKb(); standKb();
   out.holeShort = noHole('short by a half and by a whole');
-  /* the half frame is a button, and pressing it puts in HALF A KEY */
+  /* the half frame is a button; pressing it SELECTS it, and the band puts in
+     HALF A KEY -- 「全部のます触ったら選択で」 OWNER 2026-08-28 */
   (function (){
-    var rw = sheetRows()[0], el = null, i, was;
+    var rw = sheetRows()[0], el = null, i, was, put;
     for (i = 0; i < rw.children.length; i++)
       if (rw.children[i].getAttribute('data-do') === 'kbCellAdd' &&
           spanOf(rw.children[i]) === 1){ el = rw.children[i]; break; }
@@ -2143,6 +2218,10 @@ const r = await pg.evaluate(({ s }) => {
     if (!el) return;
     was = kbUsed(kbLayer().rows[0]);
     el.click(); standKb();
+    out.halfFrameSel = !!(KBH && KBH.k === 'f' && KBH.span === 1);
+    put = document.querySelector('.kbtool [data-do="kbCellAdd"]');
+    if (put) put.click();
+    standKb();
     out.halfFrameAdds = kbUsed(kbLayer().rows[0]) === was + 1;
     out.halfFrameKey = kbLayer().rows[0].filter(function (k){
       return k.k === 'lt' && (k.w || 1) === 0.5;
@@ -2310,7 +2389,14 @@ const r = await pg.evaluate(({ s }) => {
     rw = sheetRows()[last];
     el = rw && rw.querySelector('[data-do="kbCellAdd"]');
     out.seqAddCell = !!el;
+    /* two presses now, and they are two different controls: the frame is
+       chosen on the sheet, and the key goes in from the band over it.
+       「全部のます触ったら選択で」「キーを入れるのは帯のボタン」 */
     if (el) el.click();
+    standKb();
+    out.seqCellSel = !!(KBH && KBH.k === 'f');
+    tapDo('kbCellAdd');
+    standKb();
     n = kbLayer().rows[last].length;
     out.seqAddGrew = n >= 2;
     chooseKey(last, 0); tapKey(last, 1);
@@ -2643,10 +2729,24 @@ say(r.gapFrames > 0 && r.gapDashed,
 say(r.gapRoPlain, 'and it is nothing at all on the board that goes to the phone');
 say(r.cellShown && r.cellIsButton, 'cut a column out and the empty frames are buttons');
 say(r.cellHalf, 'nine keys on a sheet of ten leave half a frame at each end');
+say(r.cellSel && r.cellLit, 'pressing one SELECTS it and lights it -- it does not put a key in');
+say(r.cellPut && r.cellTool === 'kbUndo kbCellAdd',
+    'and the band over the sheet offers the one button that fills it [' + r.cellTool + ']');
 say(r.cellAdded && r.cellAddedW,
-    'pressing one puts a key exactly the width of the frame it was ('
+    'which puts in a key exactly the width of the frame it was ('
     + (r.cellSpan / 2) + ' of a key)');
 say(r.cellBack, 'and the step back takes it away again');
+say(r.alGaps === 2 && r.alFrames === '2,2,2,1,2,2,2,1',
+    'a row of three centred on a sheet of ten leaves three frames and a half at'
+    + ' each end, not one frame of three and a half [' + r.alFrames + ']');
+say(r.alNamed === 2, 'and the first frame of each names the gap it stands for,'
+    + ' so a carry reads the row back whole (' + r.alNamed + ')');
+say(r.alSel, 'pressing one of them SELECTS it, the same as any other frame');
+say(r.alBin, 'and the bin is down on it -- there is nothing in it to take');
+say(r.alSame && r.alKey,
+    'and the band puts one key in it, the row staying exactly as wide ['
+    + r.alRest + ']');
+say(r.alBack, 'and the step back puts the gap back');
 say(r.keySel && r.keyLit, 'pressing a key selects it and lights it, one at a time');
 say(r.keyStands, 'and pressing it again leaves it selected -- no toggle');
 say(r.joined && r.joinedW,
@@ -2852,8 +2952,8 @@ say(r.wobKeys > 0 && r.wobPressable === r.wobKeys,
 say(r.holeFresh, 'every frame of a board as built is a key or a dotted key');
 say(r.holeShort,
     'and of one short by half a key and of one short by a whole key -- no blank');
-say(r.halfFrameFound && r.halfFrameAdds && r.halfFrameKey,
-    'the half frame is a button, and pressing it puts in half a key');
+say(r.halfFrameFound && r.halfFrameSel && r.halfFrameAdds && r.halfFrameKey,
+    'the half frame is a button; pressing it selects it and the band puts in half a key');
 say(r.holeAfterHalf, 'and the sheet is still whole after it went in');
 say(r.holeAlL && r.holeAlC && r.holeAlR,
     'none of the three alignments leaves a blank on a row carrying half a key');
@@ -2883,9 +2983,12 @@ say(r.seqAlRow && r.seqAl && r.seqAlStill,
 say(r.seqAlHole && r.seqAlFrames,
     'and every frame on the sheet after all three still answers a finger');
 say(r.seqAlKey, 'and a key on that row can be chosen');
-say(r.seqAddA && r.seqAddCell && r.seqAddGrew && r.seqTwo && r.seqJoin && r.seqJoined,
-    'add a row, put a key in beside the one there, choose both, join them [' +
-    [r.seqAddA, r.seqAddCell, r.seqAddGrew, r.seqTwo, r.seqJoin, r.seqJoined, r.seqN].join(' ') + ']');
+say(r.seqAddA && r.seqAddCell && r.seqCellSel && r.seqAddGrew && r.seqTwo &&
+    r.seqJoin && r.seqJoined,
+    'add a row, choose the frame beside the key there and fill it from the band,' +
+    ' choose both, join them [' +
+    [r.seqAddA, r.seqAddCell, r.seqCellSel, r.seqAddGrew, r.seqTwo, r.seqJoin,
+     r.seqJoined, r.seqN].join(' ') + ']');
 say(r.seqUndo && r.seqRedo, 'and the step back and the step forward both land [' +
     [r.seqUndo, r.seqRedo].join(' ') + ']');
 say(r.seqAfterStep, 'and a row can still be chosen after them');

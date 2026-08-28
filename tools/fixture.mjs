@@ -1172,6 +1172,21 @@ export function halfDone(){
                                                   const h = vKb();
                                                   KBH = null; KB = null; kbShow = 0; kbLay = 0;
                                                   SET.plan = 'free'; return h; }],
+    /* An empty FRAME of the sheet selected, which is the state the band's one
+       remaining button lives in: pressing a frame selects it and the button
+       over the sheet puts a key in, the width of that frame.
+       「全部のます触ったら選択で」「キーを入れるのは帯のボタン」 OWNER
+       2026-08-28. The board a pattern makes is ten across with no slack, so a
+       column comes out first to leave frames to press -- and without this face
+       the walk never draws that band at all, because a frame is the only
+       thing that puts it up. */
+    ['an empty frame of the keyboard selected', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
+                                                  kbAdd('qwerty'); kbLay = 0;
+                                                  kbHeadCol(0); kbCut();
+                                                  kbCellAdd(0, 0, 1);
+                                                  const h = vKb();
+                                                  KBH = null; KB = null; kbShow = 0; kbLay = 0;
+                                                  SET.plan = 'free'; return h; }],
     /* and a column, which lights up and can be cut but has no slack to align */
     ['a column of the keyboard selected', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
                                                   kbAdd('qwerty'); kbLay = 0; kbHeadCol(2);
