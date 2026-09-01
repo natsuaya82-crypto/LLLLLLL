@@ -1457,10 +1457,19 @@ function saveWord(){
   if(hw!==old) wRename(old, hw);
   save(); closeSheet({target:{id:'sbg'}}); render(); toast(t('toast.saved', hw));
 }
-function delWord(){
-  var w=findWord(openHw); if(!w) return;
-  if(!confirm(t('confirm.del', w.hw))) return;
-  var gone=String(w.hw);
+/* Taking one word out of the language, and leaving nothing pointing at it.
+   It was the body of `delWord` and is its own function because it is about to
+   be done to more than one word at a time: two places doing this five ways
+   would be two answers to what a deleted word leaves behind, and the one that
+   was not read would be the one that left a `from` pointing at nothing.
+
+   It does not confirm, does not save, does not touch the trail and does not
+   redraw -- those are the deleting SCREEN's, and they are done once however
+   many words go. `wRename` in `www/letters.js` is the same set of pointers
+   read the other way round; this is the one place they are cut. */
+function wDrop(hw){
+  var gone=String(hw), w=findWord(gone);
+  if(!w) return;
   WORDS=WORDS.filter(function(x){return x!==w;});
   /* its children keep their own life; they simply stop pointing at a parent
      that is not there */
@@ -1472,6 +1481,12 @@ function delWord(){
     });
   });
   LINES=LINES.filter(function(l){ return l.ws.indexOf(gone)<0; });
+}
+function delWord(){
+  var w=findWord(openHw); if(!w) return;
+  if(!confirm(t('confirm.del', w.hw))) return;
+  var gone=String(w.hw);
+  wDrop(gone);
   save();
   /* Not closeSheet(): that steps back one, onto the deleted word's own page,
      which then has nothing to show. Both of its screens come off the trail,
