@@ -1413,9 +1413,9 @@ function shBoxShape(scan, i, RES){
    to the sentence above -- it is the same sentence about a different kind of
    sign. 「用紙を入れて数字なら数字に振り分けて」 OWNER 2026-09-01. A digit is
    a letter carrying a VALUE instead of a reading (www/numbers.js), and a
-   value is unique: numSetVal() refuses a second digit holding one. So there
-   is no such thing as two sevens for `7,7,7` to be three boxes of, on any
-   plan. A box called `7` IS the digit seven, and the slot that already holds
+   value is what the BASE gives: one slot per value, made by numTopUp(). There
+   is one seven and no road asks for a second, so `7,7,7` cannot be three
+   boxes. A box called `7` IS the digit seven, and the slot that already holds
    seven is the only place it can go.
 
    What counts as a number is the language's own base and nothing else --

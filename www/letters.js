@@ -444,6 +444,15 @@ function ltCopy(id){
      OWNER 2026-08-25. Same one line ltDelete() already had. */
   if(!l) return;
   if(!can('letters')){ go('plans'); return; }
+  /* A digit cannot be copied, and the copy would not be a digit: a value is
+     unique (there is one seven), so what came out was an ALPHA letter made
+     from the digits room -- the two rooms mixing in the one direction nothing
+     was watching. The name is what a copy exists to be able to change and a
+     digit has no name, so there is nothing here to do.
+     The button is still on a digit's page (www/sound.js § vLetter, which is
+     not this session's file); this is the refusal standing where the rule is
+     rather than where the screen is, the same as ltSetRoman above. */
+  if(numIsDigit(l)) return;
   n=ltNew({});
   if(l.st && l.st.length) n.st=JSON.parse(JSON.stringify(l.st));
   if(l.ch) n.ch=l.ch;
@@ -663,21 +672,34 @@ function ltSetRoman(id, sp){
      belongs here. `base-check` holds it, and holds the other half too: a
      letter somebody ADDED is still theirs to name, because adding letters is
      what paid buys. */
-  /* A digit's VALUE goes through here and is not a name -- 「数字が設定でき
-     ないわ。そこ文字から設定できるように頼む」 -- so it is answered before the
-     refusal below. numSetVal() is called from nowhere else, so putting the
-     refusal above this line killed setting a digit at all, silently: the name
-     is still written down, so dead-check is green, and nothing throws. That
-     was done here and caught by asking for it in base-check rather than by
-     reading the code. */
-  /* numTyped() is where "digits and nothing else" is written down, and the
-     sheet's boxes ask the same one -- what counts as somebody meaning a
-     NUMBER may not be two regexes in two chapters. It is not numInBase()
-     here: a value as big as the base reaches numSetVal() so that it can SAY
-     so (t('num.big')), which a page with one box can do and a sheet with
-     twenty cannot. */
-  var val=numTyped(sp);
-  if(val>=0){ numSetVal(id, val); return id; }
+  /* A NUMBER IS NOT A LETTER'S NAME, and this box may not make one into a
+     digit. 「文字か数字か分けてるのに文字に数字が入るの意味わからないだろ」
+     OWNER 2026-09-01.
+
+     The app splits the alphabet, the digits and the marks into three rooms --
+     ltKindOf() in www/sound.js is that split -- and a letter is made in the
+     room it belongs to. A name typed here could do both of the things the
+     split exists to prevent: leave a number sitting among the letters, and
+     move a letter out of the room somebody made it in.
+
+     It used to hand the value to numSetVal(), on the argument that a digit's
+     value is set from the letter page 「数字が設定できないわ。そこ文字から
+     設定できるように頼む」. That was never what happened. The page hides this
+     field on a digit -- ltIsBase() is true of every digit and vLetter() asks
+     it -- so no digit has ever reached this line. The only thing the value
+     road could do from here was turn an ordinary letter INTO a digit, which
+     is the bug rather than the feature.
+
+     So it is refused, and the app GOES to the room where digits are made
+     rather than saying nothing: the same shape as a paid door going to the
+     plans screen 「全部確認して課金画面に飛ぶようにして」. Nothing is
+     written, so a letter that already had a name keeps it.
+
+     numInBase() and not numTyped() alone, so that this road and the sheet's
+     agree about the same string: `25` in base ten is a number no digit can
+     hold, so it is an ordinary name on both. One rule, both roads -- the two
+     answering differently would be this same fault wearing another coat. */
+  if(numInBase(numTyped(sp))){ go('ltset', 'num'); return id; }
   /* And now the refusal. A digit reaching this line is one being given a
      NAME, and a digit has no name -- its value is the whole of what it is,
      and the keyboard finds it by that. */
@@ -765,7 +787,12 @@ function ltFreeSlot(l){
   if(!nm) return null;
   for(i=0;i<LETTERS.length;i++){
     s=LETTERS[i];
-    if(s===l || !ltIsBase(s)) continue;
+    /* ltIsBase() is true of a digit as well as of a slot, and ltName() of a
+       digit is its value -- so a shape named `7` would have moved INTO the
+       digit seven and left the alphabet. Nothing reaches that today (a number
+       is refused above), and it is one line to make the slot road unable to
+       cross rooms at all rather than to rely on the order of two branches. */
+    if(s===l || numIsDigit(s) || !ltIsBase(s)) continue;
     if(String(ltName(s)||'').toLowerCase()!==nm) continue;
     if((s.st && s.st.length) || s.ch) return null;
     return s;

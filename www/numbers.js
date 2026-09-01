@@ -112,11 +112,12 @@ function numIsDigit(l){ return !!(l && typeof l.val==='number'); }
    rather than a name -- typed into the box on a letter's page, or written
    over a box on a sheet. -1 is "that is a name".
 
-   It is deliberately NOT "a value this language can write". `12` in base ten
-   is digits and is not one sign, and the two callers want different answers
-   about exactly that: the box on the letter page can say so out loud
-   (numSetVal's t('num.big')), and a sheet has twenty boxes and nobody to say
-   it to, so it asks numInBase() as well and lets `12` be an ordinary name. */
+   It is deliberately NOT "a value this language can write", because the two
+   callers want different answers about `12` in base ten. The letter page asks
+   only this one: anything a person meant as a number is refused there and the
+   app goes to the digits room, whether or not this base could write it. The
+   sheet asks numInBase() as well -- a box it cannot file as a digit still has
+   a drawing on it that must not be thrown away, so it becomes a letter. */
 function numTyped(s){
   var v=String(s==null? '' : s).replace(/^\s+|\s+$/g, '');
   return /^[0-9]+$/.test(v)? parseInt(v, 10) : -1;
@@ -133,22 +134,18 @@ function numByVal(v){
   for(i=0;i<LETTERS.length;i++) if(LETTERS[i].val===v) return LETTERS[i];
   return null;
 }
-/* Giving a letter a value. It stops reading a sound, because a sign is one
-   thing: the same rule that keeps a mark from also being a letter. A value
-   another digit already has is refused rather than silently moved, exactly as
-   a reading another letter already has is. */
-function numSetVal(id, v){
-  var l=ltById(id), other;
-  if(!l) return;
-  if(v<0){ delete l.val; saveLetters(); installScriptFont(); render(); return; }
-  /* A quantity as big as the base is two digits, which is what a base IS, so
-     there is no single sign for it. */
-  if(v>=numBase()){ toast(t('num.big', numLabel(numBase()-1))); return; }
-  other=numByVal(v);
-  if(other && other.id!==id){ toast(t('lt.dup', numLabel(v))); return; }
-  l.val=v; l.snd=[];
-  saveLetters(); installScriptFont(); render();
-}
+/* There is no "give this letter a value" any more, and that is the point.
+   numSetVal() lived here with ltSetRoman() as its only caller, so the one
+   thing it could actually do was turn an ordinary letter into a digit from
+   the letters room -- a letter leaving the room somebody made it in.
+   「文字か数字か分けてるのに文字に数字が入るの意味わからないだろ」
+   OWNER 2026-09-01.
+
+   A value is not a thing a person types. It is what the BASE gives: numTopUp()
+   makes one slot per value, and the + in the digits room takes the smallest
+   value nothing has (numFree()). That is the whole of how a digit comes to be
+   worth what it is worth, and it is why nothing here has to guard against two
+   sevens -- no road can ask for one. */
 /* A value is written the way everybody reads a number, in the ten they came
    with -- the point of the base is what the language does with it, not making
    somebody count in twelve to find the button. */
