@@ -2,10 +2,11 @@
 
 「データ消えるのだけはありえない」
 
-Everything a person makes lives in `localStorage` and in one file in
-`Documents`. There is no server copy. Losing it is not a degraded experience;
-it is the end of months of somebody's work, and there is nowhere to get it back
-from.
+**Everything a person makes lives on the server** — the `slice` rows, every
+slice of the language. `localStorage` is the copy that works with no signal,
+and the file in `Documents` is the backup. Three places, and this file is about
+what happens when the first two are not there. Losing somebody's language is not
+a degraded experience; it is the end of months of their work.
 
 ## The four ways it can go
 
@@ -15,6 +16,13 @@ Three of these four are ordinary events, not disasters:
 2. the phone is replaced without a backup
 3. WKWebView reclaims its storage
 4. a migration goes wrong
+
+**A signal answers 1–3 on its own now** — `netLangSync()` brings the slices
+back down at launch. The file is what is left when it does not: no account
+reachable, no network and none for a while, or a server that answers with less
+than it was given. **That is not an argument for keeping it any less
+carefully.** A backup nobody needs on most days is the one that matters on the
+day it is needed.
 
 `www/backup.js` (chapter 24) answers 1–3 by writing the open language into
 `Documents/Languages/`, where iOS puts it in the device backup and the Files
@@ -114,10 +122,12 @@ ms}`. Three things follow, and none of them is optional:
   the file second — a file that cannot be removed must not leave the post
   standing.
 
-They are in Documents, which is what iOS puts in the device backup — the same
-folder the language files are in, and the same argument. What `bkPack()` writes
-does **not** contain them: a language file would be megabytes, and the voices
-are already backed up by being where they are.
+**A posted voice is on the server**: `netUpVoice()` puts it in the `post-media`
+bucket with the post it belongs to. The file this phone recorded stays in
+Documents, which is what iOS puts in the device backup, so a recording made
+with no signal survives until it can go up. What `bkPack()` writes does **not**
+contain them: a language file would be megabytes, and a voice is the post's
+rather than the language's.
 
 ## The save counter
 
@@ -128,8 +138,11 @@ every argument forever and nobody finds out why their work keeps going
 backwards. A counter cannot be wrong about which of two writes came second,
 because the second one made it.
 
-Nothing reads it yet. It is here before the cloud is, because the day the cloud
-arrives is the day it has to already be on every file written before then.
+`bkTake()` reads it, and nothing else does. **The sync does not** — a `slice`
+row carries its own `no`, raised by the server on every write, and `syMerge()`
+adds both sides rather than choosing between them, so nothing anywhere decides
+which copy is newer. That is the same argument as the paragraph above, reached
+from the other end.
 
 ## DELETE REVIEW
 
