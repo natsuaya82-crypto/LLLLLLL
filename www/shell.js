@@ -471,6 +471,20 @@ function pageName(r, a){
     var st=(typeof stBy==='function')? stBy(a) : null;
     if(st) return stTitle(st);
   }
+  /* THE TWO LISTS BEHIND THE TWO NUMBERS ARE ONE SCREEN, so the name is the
+     argument's and not the route's -- the same shape `set`, `ltset` and
+     `letter` above already take.
+
+     It said **Build**. `PAGES.follows` carries no `k`, so it fell to the last
+     line of this function, which is `t('tab.build')` -- the fallback for a
+     route nobody named, printed as the heading of a list of people.
+     （リーダーの見立ては「上の言語の名前が出ている」でしたが、出ていたのは
+     この行の `tab.build` です。）
+
+     Both keys are already written in all ten languages: they are the words
+     under the two numbers on a profile, which is where this screen is
+     reached from. Nothing new is added. */
+  if(r==='follows') return t(a==='ers'? 'me.followers' : 'me.following');
   var p=PAGES[r];
   return (p && p.k)? t(p.k) : t('tab.build');
 }
