@@ -1021,6 +1021,33 @@ const R = await pg.evaluate(() => {
   netGet = realGet;
   say('30: フォロー中／フォロワーは、人のぶんも訊ける（自分のぶんは今までどおり）');
 
+  /* ---- 31. キーボードのプールも、そのアカウントのぶん -------------------
+     「じゃないとアカウント変えたら無限に言語作れるやん」OWNER 2026-09-01。
+     langCount() と同じ穴が kbCount() にもありました ── LANGS は端末のもので
+     サインアウトしても残るので、**他人の言語のキーボードで、この人が作れる
+     プールが埋まります。**
+
+     langAcct() ではなく langOwned() を訊きます: 前者は `mine` も見ますが、
+     この端末が「自分のもの」と言われていない言語のキーボードも、キーボード
+     です。plan-check がそれを捕まえました。 */
+  start();
+  netOut(); arrive(A);
+  const keepKbLangs = LANGS, keepKbId = langId;
+  LANGS = {};
+  LANGS['Lmine']  = { name: '自分', mine: true, uid: A };
+  LANGS['Ltheirs']= { name: '他人', mine: true, uid: B };
+  langId = 'Lmine';
+  localStorage.setItem(langKeyOf('Lmine', 'kb'),
+    JSON.stringify({ kbs: [{ rows: [] }] }));
+  localStorage.setItem(langKeyOf('Ltheirs', 'kb'),
+    JSON.stringify({ kbs: [{ rows: [] }, { rows: [] }] }));
+  kbRead();
+  const mineOnly = kbCount();
+  LANGS = keepKbLangs; langId = keepKbId; kbRead();
+  if (mineOnly !== 1)
+    no('31: 他人の言語のキーボードが数に入っている — ' + mineOnly + '（自分のは1つ）');
+  say('31: キーボードのプールは、そのアカウントの言語のぶんだけ');
+
   return out;
 });
 

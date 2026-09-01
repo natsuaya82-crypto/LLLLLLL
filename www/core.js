@@ -582,13 +582,25 @@ function langCap(){
    ever refuses a NEW language. **It never hides one, never removes one, and
    never shortens a list.** docs/PAID_FEATURES.md -- a ceiling is about
    adding and about nothing else. */
-function langAcct(id){
+/* WHOSE ACCOUNT a language is, and nothing else. Two questions used to be
+   one function and they are not the same question: `mine` is about this
+   PHONE -- a language you are making rather than one you are reading -- and
+   `uid` is about the account. The keyboard pool asks only the second, and
+   folding `mine` into it silently stopped counting a language that had never
+   been given one. plan-check caught it: 「two more in ANOTHER language fill
+   the plan up」 went green-to-red because the fixture's other language is
+   `{nm:'Other'}` and says nothing about `mine`. */
+function langOwned(id){
   var L=LANGS[id], me;
-  if(!L || !L.mine) return false;
+  if(!L) return false;
   me=(typeof SESS!=='undefined' && SESS && SESS.uid)? String(SESS.uid) : '';
   if(!me) return true;
   if(!L.uid) return true;
   return String(L.uid)===me;
+}
+function langAcct(id){
+  var L=LANGS[id];
+  return !!(L && L.mine) && langOwned(id);
 }
 function langCount(){
   var n=0, id;
