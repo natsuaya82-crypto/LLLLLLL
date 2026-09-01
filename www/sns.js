@@ -349,10 +349,11 @@ function snsPull(){
    the answer is out.
 
    THIS FILE MAKES IT AND TURNS IT; IT DOES NOT DRAW IT. What it looks like is
-   `www/index.html`, which is another session's -- so what is put in the page
-   is an empty `div.pullspin`, and an empty div with no rule behind it is zero
-   pixels tall and marks nothing. This can land before the stylesheet does and
-   change no screen.
+   `.pullrule` in `www/index.html` -- an 18px line in `--goldln`, hung off the
+   bottom of `.navtop`. **The name has to be the stylesheet's**, which is the
+   whole of what went wrong the first time: this file invented `pullspin`,
+   nothing drew it, and an empty div wearing a class no rule matches is zero
+   pixels tall.
 
    It turns ONCE by the time it would fire. `PULL_GO` is the distance that
    asks, so a full turn is the mark saying "this far" -- the number is read
@@ -370,24 +371,47 @@ function snsPull(){
 var PULL_R=0.5, PULL_GO=64, PULL_MAX=96;
 var PULL_ON={feed:1, explore:1, notif:1};
 var pullY=-1, pullEl=null, pullAt=0;
-/* The mark that turns in the gap. Put in beside `.body` rather than inside
-   it, because `.body` is the thing sliding down and a mark carried on it
-   would sit still relative to the gap it is supposed to be in.
+/* The mark that turns in the gap.
 
-   `on` is the second half: while a finger is on it, this file turns it; once
+   IT WAS BUILT UNDER A NAME NOTHING DRAWS, AND THAT IS WHY IT NEVER SHOWED
+   ON THE PHONE. The two halves landed in two commits on 2026-08-28 -- the
+   stylesheet in 6d29719, this file in e27c758 -- and they never agreed on
+   three things:
+
+     what it is called   this file made `pullspin`; index.html draws
+                         `.pullrule`
+     what turning is     this file put `on` on it; the animation is on
+                         `.pullrule.go`
+     where it goes       this file put it in `.view` before `.body`;
+                         `.pullrule` is `position:absolute; top:100%` and
+                         that is measured from `.navtop`, which is the only
+                         positioned thing over the gap (`position:sticky`)
+
+   Any one of the three is an invisible mark and not one of them throws: an
+   empty `div` wearing a class no rule matches is zero pixels tall, so the
+   pull worked, the timeline was asked again, every check was green and the
+   owner saw nothing turn. 「引っ張っても更新のグルグル出ない」 OWNER, build
+   #106. The stylesheet is what the owner approved, so the names here are
+   moved to it rather than the other way.
+
+   It goes INSIDE `.navtop` -- 6d29719 said so in its own message -- and not
+   beside `.body`: `.body` is the thing sliding down under the finger, so a
+   mark carried on it would sit still relative to the gap it is supposed to
+   be in. The bar does not move, and the gap opens underneath it.
+
+   `go` is the second half: while a finger is on it, this file turns it; once
    let go and asking, the class goes on and the stylesheet turns it, because
    an animation that runs on its own is CSS's and a rotation that answers a
    thumb is not. */
 var PULL_SPIN=null;
 function pullSpinOn(){
-  var v, b;
+  var bar;
   if(PULL_SPIN && document.contains(PULL_SPIN)) return PULL_SPIN;
-  v=document.querySelector('#app .view');
-  b=document.querySelector('#app .view > .body');
-  if(!v || !b) return null;
+  bar=document.querySelector('#app .view > .navtop');
+  if(!bar) return null;
   PULL_SPIN=document.createElement('div');
-  PULL_SPIN.className='pullspin';
-  v.insertBefore(PULL_SPIN, b);
+  PULL_SPIN.className='pullrule';
+  bar.appendChild(PULL_SPIN);
   return PULL_SPIN;
 }
 /* Taken out when the answer lands, when the pull is let go short, and when
@@ -455,7 +479,10 @@ function pullLet(ask){
   if(!ask){ pullSpinOff(); return; }
   /* Let go far enough: it stops answering the finger and starts turning on
      its own, which is the stylesheet's animation and this file's class. */
-  if(PULL_SPIN){ PULL_SPIN.className='pullspin on'; PULL_SPIN.style.transform=''; }
+  /* The inline transform goes with it: it is what answered the thumb, and
+     the animation on `.pullrule.go` sets transform too -- an inline one wins
+     over a stylesheet's keyframes and the mark would sit still. */
+  if(PULL_SPIN){ PULL_SPIN.className='pullrule go'; PULL_SPIN.style.transform=''; }
   if(r==='notif'){ notPull(); return; }
   if(!r){ pullSpinOff(); return; }
   /* A pull is somebody saying "ask again", and what the feed is showing
