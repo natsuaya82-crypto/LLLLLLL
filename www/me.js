@@ -519,12 +519,29 @@ function whoOf(h){
                request in www/net.js asks for anybody's follow counts but your
                own -- every `follow` query there is keyed on SESS.uid. That is
                net.js's and is in the report. */
+            /* THE ADDRESS OF THEIR LANGUAGE, and whether its page is open.
+               `claude/acct2`'s ccf439d made netWho() answer with both --
+               `lid` is the `language` row's id, which is what netSlices()
+               needs, and `lpub` is whether `published_at` is set. Without the
+               first there is nowhere for a door to go; without the second the
+               app would offer one that `slice_read` refuses.
+
+               Passed through with `||''` and `!!` so this reads the same on a
+               phone whose net.js does not answer with them yet: no address,
+               no door, and the name stays a plain row exactly as it is now. */
+            lid:got.lid||'', lpub:!!got.lpub,
             bio:got.bio||'', fo:0, fr:0, out:!!got.out};
   /* And until it answers, the copy: a post of theirs, if this phone has one.
      Better than an empty page for the moment the request is out, and it is
      where the whole page came from before there was anywhere else. */
   for(i=0;i<POSTS.length;i++){
     p=POSTS[i];
+    /* No `lid` on this road even though a post carries `lang`: that is the
+       id of the language the POST was written in, which is the same language
+       only until somebody makes a second one. A door built on it would open
+       the wrong article for anybody who has two, and 「持っている人には出て、
+       持っていない人には出ない」 is the half-working screen CLAUDE.md bans.
+       The address comes from netWho() or not at all. */
     if(String(p.hd||'')===h)
       /* `id` is the FACE'S key here and not the post's -- the same reason as
          above. Taking p.id would file this person's face under one of their
