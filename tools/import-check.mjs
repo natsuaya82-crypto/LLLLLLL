@@ -246,6 +246,92 @@ function read(sample){
      IMP.impPh('tʃa', []), ['t', 'ʃ', 'a']);
 }
 
+/* ---- 12. and the letters it made can be typed --------------------------- */
+/* A file gets in, and then nothing of it can be written. That is not a
+   reading fault and no sample above can see it: the reader answered
+   correctly, the letters were made, and the font they went into has no way in.
+
+   The road is the NAME. A letter arrives carrying one in two different
+   places and they are not the same field:
+
+     `ab`   what somebody typed in the box on the letter's own page
+     `nm`   the name the letter ARRIVED with -- www/import.js's impPut()
+            puts the file's name column there, and www/sheet.js's shTakeIn()
+            puts the name printed over the box there
+
+   ltName() answers with `nm` first, so the app calls the letter by it
+   everywhere. ltCodes() is what turns a name into a code point on the glyph,
+   and it is asked by scriptGlyphDefs() in www/glyph.js and by shareMapLts()
+   in www/share.js. If those two disagree about what a letter is called, the
+   glyph is built with no character on it: the font installs, `.sfont` matches
+   it, and every word still comes out roman. Nothing throws and no screen
+   looks wrong. 「描いた文字がそもそもフォントになってないけど。」
+
+   So the two roads a NAME comes in by are both asked here. It is in this file
+   rather than in a browser because ltCodes() wants no document -- and because
+   a font with no way into it is the thing that decides whether an imported
+   alphabet was worth importing.
+
+   www/letters.js reads its letters off storage as it loads and www/numbers.js
+   is what tells a digit from a letter, so both come in, in the order
+   index.html loads them, with the three things they touch on the way past. */
+const LTREG = 'var localStorage={getItem:function(){return null;},setItem:function(){}};\n' +
+              'function langKey(k){ return String(k); }\n' +
+              'function bkTouch(){}\n' +
+              'var LETTERS=[];\n';
+let LT;
+try {
+  LT = new Function(LTREG +
+    fs.readFileSync(path.join(WWW, 'numbers.js'), 'utf8') + '\n' +
+    fs.readFileSync(path.join(WWW, 'letters.js'), 'utf8') +
+    '\nreturn {ltNew:ltNew, ltName:ltName, ltCodes:ltCodes, LETTERS:LETTERS};')();
+} catch (e) {
+  console.error('\nimport: www/letters.js and www/numbers.js no longer run on their own.\n' +
+                '  ' + e.message + '\n' +
+                '  Add what they now touch to LTREG above, or move it out of them.\n' +
+                '  Nothing can ask what a letter is typed as until they load.\n');
+  process.exit(1);
+}
+{
+  /* Somebody's own A B C D, kept in a spreadsheet, with nothing to say about
+     sound -- which is the case § One place, not fifteen was written after. */
+  const s = 'Letter,Name\nϘ,qoppa\nᛗ,mannaz\nϠ,sampi\n';
+  const r = read(s);
+  is('an alphabet of names and no sounds: the roles', r.roles, ['ch', 'nm']);
+  is('an alphabet of names and no sounds: the name', r.rows[0].nm, 'qoppa');
+  is('an alphabet of names and no sounds: no sound was invented', r.rows[0].ph, []);
+
+  /* through the REAL ltNew, with the fields impPut() puts on it */
+  const l = LT.ltNew({ ch: r.rows[0].ch, nm: r.rows[0].nm, snd: [] });
+  is('an imported letter is called what the file called it', LT.ltName(l), 'qoppa');
+  is('and that name is a way to type it',
+     LT.ltCodes(l).indexOf('qoppa') >= 0, true);
+
+  /* and the other road: www/sheet.js's shTakeIn(), for a box whose printed
+     name is not a number. The picture is the letter and there is no reading
+     at all, so the name is the ONLY thing that can carry a code point. */
+  const w = LT.ltNew({ nm: 'a', sh: [[[200, 200], [600, 200], [600, 600]]], via: 'write' });
+  is('a letter off a sheet is called what was printed over its box',
+     LT.ltName(w), 'a');
+  is('and that name is a way to type it, in both cases',
+     [LT.ltCodes(w).indexOf('a') >= 0, LT.ltCodes(w).indexOf('A') >= 0], [true, true]);
+
+  /* What it reads is still a way to type it -- the name did not replace it. */
+  const k = LT.ltNew({ nm: 'ka', snd: ['k'] });
+  is('a letter answers to its reading as well as its name',
+     [LT.ltCodes(k).indexOf('ka') >= 0, LT.ltCodes(k).indexOf('k') >= 0], [true, true]);
+
+  /* A name of two words would be written as a ligature over the characters it
+     is spelled with, and one of those characters is a SPACE -- which has no
+     glyph, so scriptGlyphDefs() would make one and every space in the app
+     would come out as the dashed placeholder box. A name a font cannot reach
+     is a letter that is not in the font; a space that draws a box is every
+     screen in the app. */
+  const two = LT.ltNew({ nm: 'my letter', snd: [] });
+  is('a name with a space in it is not made into a ligature over a space',
+     LT.ltCodes(two).filter(c => /\s/.test(c)), []);
+}
+
 if (fails.length){
   console.error('\nimport: ' + fails.length + ' problem' + (fails.length > 1 ? 's' : '') + '.\n');
   fails.forEach(f => console.error('  ' + f + '\n'));
