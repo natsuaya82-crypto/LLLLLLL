@@ -178,7 +178,6 @@ act('openPick', openPick);
 act('openMe', openMe);
 act('meFollow', meFollow);
 act('meBlock', meBlock);
-act('meDropPic', meDropPic);
 act('openPost', openPost);
 act('openReport', openReport);
 act('reportGo', reportGo);

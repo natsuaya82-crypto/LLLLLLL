@@ -272,7 +272,6 @@ function mePicKeep(url){
   im.onerror=function(){ toast(t('me.pic.bad')); };
   im.src=url;
 }
-function meDropPic(){ ME.pic=''; saveMe(); openMe(); }
 /* ---- ID を断る ----------------------------------------------------------
    「IDは2文字以上で登録してくださいと / このIDはもう使われていますと
      みたいに断る文章と実際に断ってほしい」OWNER, 2026-08-25
@@ -773,36 +772,6 @@ function openMe(){
         ' maxlength="'+ME_MAX.loc+'"' + IN('meSetLoc'), ME.loc||'')+'</div>');
 }
 FORM_OPEN.me=function(){ openMe(); };
-/* 顔をもう一度触ったとき ── 変えるか、外すか。
-
-   「もっかいがぞうさわって画像変えるか消すかでしょ？」OWNER 2026-08-28。
-   選ぶのは画面で、変えるのは着いた先。下からひょいと出るものではないし、
-   選ぶ二つが顔と同じ画面に並ぶものでもない ── 赤い行が顔の下に居たのは
-   その形だった。
-
-   新しい経路は要らない。`form` は既に経路で、`FORM_OPEN` にひとつ名前を
-   足せば戻るボタンで帰ってきたときも建て直る。だから www/shell.js の
-   PAGES にも www/route-map.js にも触っていない。
-
-   変える行はファイル選びを重ねた `<label>` ── 顔がそうだったのと同じ手で、
-   押した所がそのまま入力になる。二つとも `.set` を着るので、行の高さは
-   タグではなくクラスが決める。
-
-   選んだ後も外した後も `openMe()` に戻る。`go()` は既に通った所へ戻るのを
-   戻ると読むので、プロフィールが二枚積まれることはない。 */
-function openMePic(){
-  /* 顔が無ければ外すものが無い。開き直しで消えた場合はプロフィールへ。 */
-  if(!ME.pic){ openMe(); return; }
-  openForm('mepic:', t('me.pic'),
-    '<label class="set" style="position:relative">'+
-      '<span class="sl">'+esc(t('me.pic.change'))+'</span>'+
-      '<input type="file" id="me-pic" accept="image/*" '+
-        'style="position:absolute;left:0;top:0;width:100%;height:100%;opacity:0"' +
-        CH('meSetPic') + '></label>'+
-    '<button class="set"' + DO('meDropPic') + '>'+
-      '<span class="sl bad">'+esc(t('me.pic.drop'))+'</span></button>');
-}
-FORM_OPEN.mepic=function(){ openMePic(); };
 /* The two lists behind the two numbers. One screen, and which one it is is the
    route's argument -- they differ in the list and in what to say when it is
    empty, and in nothing else.
