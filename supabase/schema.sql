@@ -771,6 +771,54 @@ create policy publication_make on publication for insert with check (
 -- it does NOT carry is `staff`, `admin` and `banned_why`: they are on
 -- `profile` and readable there, and there is no reason for a view about a
 -- person's page to be the thing that hands them out.
+-- HOW BIG A LANGUAGE IS, WITHOUT HANDING IT OVER.
+--
+-- 「言語の詳細は？」 OWNER 2026-09-01, in the same breath as the bio. A
+-- person's page could say the NAME of their language and nothing else --
+-- netLangNames() asked for `owner,name` -- so there was nowhere to go from
+-- it and nothing to know about it.
+--
+-- The article, the writing system, the sounds, the letters and the keyboard
+-- are already open on a published language: `slice_read` says so. What is
+-- NOT open, and stays shut, is the DICTIONARY -- 「言語ページ公開と単語や
+-- 文字のdl可能は別だし」. `words` is nobody else's at any setting.
+--
+-- So the count is computed HERE and the words never move. `nwords` is a
+-- number about the language the way a page count is a number about a book;
+-- it is not a page of it. **This is the one place where what publishing
+-- exposes has been widened, and it is widened by exactly one integer per
+-- slice.** If that is not wanted, delete the two `slice_count` lines and the
+-- column goes; nothing else depends on them.
+--
+-- Reading is `language_read`'s sentence, written out again because a VIEW
+-- runs with the definer's rights and would otherwise hand out every
+-- unpublished language in the table.
+create or replace function slice_count(b text) returns int
+language plpgsql immutable as $$
+begin
+  /* The body is the string localStorage holds -- an array for `words` and
+     for `letters`. Anything else is 0 rather than an error: a slice that has
+     never been written, or one holding something this does not understand,
+     is a language with none of that thing as far as a reader is concerned,
+     and a page that cannot draw because a count threw is worse than a zero. */
+  if b is null then return 0; end if;
+  /* jsonb_array_length() of a null answers NULL rather than raising, so the
+     line above is not covered by the handler below and has to be its own. */
+  return coalesce(jsonb_array_length(b::jsonb), 0);
+exception when others then
+  return 0;
+end $$;
+
+create or replace view language_seen as
+  select l.id, l.owner, l.name, l.license, l.published_at, l.created_at,
+         slice_count((select s.body from slice s
+                       where s.language = l.id and s.kind = 'words'))   as nwords,
+         slice_count((select s.body from slice s
+                       where s.language = l.id and s.kind = 'letters')) as nletters
+    from language l
+   where l.published_at is not null or l.owner = auth.uid();
+grant select on language_seen to anon, authenticated;
+
 create or replace view profile_seen as
   select p.id, p.handle, p.display, p.av, p.bio, p.banned_at,
          (select count(*) from follow f where f.follower = p.id) as fo,

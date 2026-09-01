@@ -1048,6 +1048,56 @@ const R = await pg.evaluate(() => {
     no('31: 他人の言語のキーボードが数に入っている — ' + mineOnly + '（自分のは1つ）');
   say('31: キーボードのプールは、そのアカウントの言語のぶんだけ');
 
+  /* ---- 32. 言語の一覧に、他人のアカウントの言語が出ない ----------------
+     「あと違うアカウントでログインしてんのに前のやつ出てくるんだけど？」
+     LANGS は端末のもので、サインアウトしても残ります。だからこの一覧は
+     **前のアカウントの言語を、次に入った人に見せていました。**
+
+     **消してはいません。**入り直せば元どおり出ます ── ここで押さえるのは
+     その両方です。そして `docs/DATA_SAFETY.md`「短い一覧は削除ではない」に
+     従って、**出していない件数を必ず言います。** */
+  start();
+  netOut(); arrive(A);
+  const keepL2 = LANGS, keepId2 = langId, keepNm2 = langName;
+  LANGS = {};
+  LANGS['La'] = { name: '自分の', mine: true, uid: A };
+  LANGS['Lb'] = { name: '他人の1', mine: true, uid: B };
+  LANGS['Lc'] = { name: '他人の2', mine: true, uid: B };
+  langId = 'La';
+  /* langRow() draws the OPEN language from the live `langName` and every
+     other from the index, so both have to say the same thing here or the
+     test is about the fixture rather than about the filter. */
+  langName = '自分の';
+  const asA2 = vLangs();
+  netOut(); arrive(B);
+  langId = 'Lb'; langName = '他人の1';
+  const asB2 = vLangs();
+  LANGS = keepL2; langId = keepId2; langName = keepNm2;
+
+  if (asA2.indexOf('自分の') < 0) no('32: 自分の言語が一覧から消えた');
+  if (asA2.indexOf('他人の1') >= 0) no('32: A の一覧に B の言語が出ている');
+  if (asB2.indexOf('他人の1') < 0) no('32: B の一覧に B 自身の言語が出ていない');
+  if (asB2.indexOf('自分の') >= 0) no('32: B の一覧に A の言語が出ている');
+  /* 出していない件数を言うこと。A から見て隠れているのは 2 件。
+     **数字を探すのではなく、その文そのものを探します** ── '2' は class 名にも
+     他人の言語の名前にも出るので、それを見るのは「よく一緒に真になること」を
+     見ているだけで、当たっているようで当たっていません。 */
+  const hidSay = t('cap.hid', 2);
+  if (asA2.indexOf(hidSay) < 0)
+    no('32: 出していない件数を言っていない（' + JSON.stringify(hidSay) +
+       '）── 消えたのと見分けが付かない');
+  /* そして隠すものが無いときは言わない。数えていない一覧は、0 件を
+     「0 件かくしています」と言い出します。 */
+  netOut(); arrive(A);
+  LANGS = { 'La': { name: '自分の', mine: true, uid: A } };
+  langId = 'La'; langName = '自分の';
+  const noneHidden = vLangs();
+  if (noneHidden.indexOf(t('cap.hid', 0)) >= 0)
+    no('32: 隠すものが無いのに件数を言っている');
+  /* そして何も消えていない: LANGS には三つとも在る。 */
+  if (!LANGS || Object.keys({La:1,Lb:1,Lc:1}).length !== 3) no('32: 内部で数が変わった');
+  say('32: 言語の一覧はそのアカウントのぶんだけ ── 消さず、隠した件数を言う');
+
   return out;
 });
 

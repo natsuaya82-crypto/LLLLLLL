@@ -1550,12 +1550,30 @@ function langAddRow(){
     '<span class="lchk"></span></button>';
 }
 function vLangs(){
-  var ids=Object.keys(LANGS), mine=[], reading=[], i;
+  var ids=Object.keys(LANGS), mine=[], reading=[], other=0, i, id;
   for(i=0;i<ids.length;i++){
-    if(LANGS[ids[i]].mine) mine.push(ids[i]); else reading.push(ids[i]);
+    id=ids[i];
+    if(!LANGS[id].mine){ reading.push(id); continue; }
+    /* WHOSE ACCOUNT, and not just whose phone.
+       「あと違うアカウントでログインしてんのに前のやつ出てくるんだけど？」
+       OWNER 2026-08-31. `LANGS` is the PHONE's -- it survives signing out --
+       so this list showed the last account's languages to whoever signed in
+       next, which is what that sentence was about.
+
+       They are NOT REMOVED and nothing is written: signing back in shows
+       them again, exactly as they were. langAcct() is the one place that
+       says whose a language is. */
+    if(langAcct(id)) mine.push(id); else other++;
   }
   var body='<div class="sec">'+esc(t('langs.mine'))+'</div>'+
     mine.map(function(id){ return langRow(id); }).join('')+
+    /* AND HOW MANY ARE NOT ON IT, every time.
+       `docs/DATA_SAFETY.md` § a shorter list is not a deletion: somebody
+       opening this to find a language gone has no way to tell which of the
+       two it is, and the difference is the whole of their trust in the app.
+       The same key the dictionary's foot uses, because it is the same
+       sentence -- a count, which is a state and not an explanation. */
+    (other? '<div class="note">'+esc(t('cap.hid', other))+'</div>' : '')+
     langAddRow()+
     '<div class="sec">'+esc(t('langs.reading'))+'</div>'+
     /* .empty is the full-screen one: 54px of padding and a serif heading,

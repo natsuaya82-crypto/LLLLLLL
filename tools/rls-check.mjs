@@ -487,6 +487,50 @@ const CASES = [
   ['A unfollows B again',                     'ok',     A, 0,
     `delete from follow where follower='${A}' and followed='${B}'`],
 
+  /* --- how big a published language is, without handing it over ---------
+     「言語の詳細は？」OWNER 2026-09-01. A person's page could say the NAME of
+     their language and nothing else, so there was nowhere to go from it.
+
+     The claim with teeth is the SHUT half: a count is not a download.
+     `language_seen` carries how many words there are and `slice_read` still
+     refuses the words themselves -- 「言語ページ公開と単語や文字のdl可能は
+     別だし」. Both are asked, because a view runs with the definer's rights
+     and would otherwise be a way round every policy in this file. */
+  ['A sees their own either way',             'ok',     A, 0,
+    `select 1 from language_seen where id='${L}'`],
+  /* L was published further up this file (line ~223), which is why this is
+     not「A publishes it」here: writing that again would be a claim about a
+     state this block did not make. The unpublished half is asked below,
+     about B's, which nobody has published. */
+  ['anybody may read a published one',        'ok',     B, 0,
+    `select 1 from language_seen where id='${L}'`],
+  ['and somebody with no account may too',    'ok',     B, 1,
+    `select 1 from language_seen where id='${L}'`],
+  ['it says how many words there are',        'ok',     B, 0,
+    `select 1 from language_seen where id='${L}' and nwords = 1`],
+  ['and how many letters',                    'ok',     B, 0,
+    `select 1 from language_seen where id='${L}' and nletters = 1`],
+  ['and when it was published',               'ok',     B, 0,
+    `select 1 from language_seen where id='${L}' and published_at is not null`],
+  /* AND THE WORDS THEMSELVES STAY SHUT. A count is a number about the
+     language; the dictionary is the months of work behind it. */
+  ['but the dictionary is still nobody else\u2019s', 'denied', B, 0,
+    `select 1 from slice where language='${L}' and kind='words'`],
+  ['nor the grammar',                         'denied', B, 0,
+    `select 1 from slice where language='${L}' and kind='gram2'`],
+  /* A slice that was never written counts 0 rather than throwing -- a page
+     that cannot draw because a count failed is worse than a zero. */
+  /* A slice nobody ever wrote, and one holding something this does not
+     understand, both count 0 rather than throwing or answering nothing.
+     「Empty」 and 「broken」 are different states and neither is an error the
+     page can do anything with. */
+  ['a slice never written counts none',       'ok',     B, 0,
+    `select 1 from language_seen where id='${L}'
+       and slice_count(null) = 0 and slice_count('not json') = 0
+       and slice_count('[]') = 0 and slice_count('[1,2,3]') = 3`],
+  ['and an unpublished one is still hidden',  'denied', B, 0,
+    `select 1 from language_seen where owner='${B}' and published_at is null`],
+
   /* --- and the two numbers a profile is made of --------------------------
      They were 0 on every page for everybody: `follow` was read back only
      about YOURSELF. profile_seen counts them beside the row.
