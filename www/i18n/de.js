@@ -345,7 +345,6 @@ defLang('de', (function(){
       "script.own.ph"             : "Zeichen einfügen oder tippen",
       "script.set"                : "Setzen",
       "up.cta"                    : "Upgraden",
-      'up.badge'            : "Ein Abzeichen holen",
       "ws.arabic"                 : "Arabisch",
       "ws.armenian"               : "Armenisch",
       "ws.cyrillic"               : "Kyrillisch",
