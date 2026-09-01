@@ -182,7 +182,7 @@ ui変更は俺が頼んだの以外は勝手な判断でやるなよ？
 ## 1. `master` is the app again. Keep it that way.
 
 `master` is at `523c3af` (2026-09-01) and a fresh clone is the current app.
-The gate is **31 checks** — count `FAST` and `SLOW` in `tools/gate.mjs`, which
+The gate is **33 checks** — count `FAST` and `SLOW` in `tools/gate.mjs`, which
 is the only place the number lives.
 
 **It has NOT been run on this `master`.** That is a statement about today, not
@@ -612,12 +612,12 @@ instructions:**
 
 ## 5. The gate, and what CI does not run
 
-`npm test` is **thirty-one** checks and is the specification. `CLAUDE.md` → "The
+`npm test` is **thirty-three** checks and is the specification. `CLAUDE.md` → "The
 twenty-one rules the gate enforces" -- **and those two numbers are not the same
 kind of thing.** Twenty-one is how many RULES are written down; thirty is how
 many CHECKS run. They have never been equal and making them equal would be
 wrong. `tools/gate.mjs` runs the eight that need no
-browser first, in about two seconds, then the twenty-three browser ones four at a
+browser first, in about two seconds, then the twenty-five browser ones four at a
 time. Run one after another they were ten minutes in this container.
 
 **It is run once before pushing**, not once per commit — the owner's rule, and
