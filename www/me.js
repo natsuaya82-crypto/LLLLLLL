@@ -749,8 +749,26 @@ function whoCard(h){
 
        What reopens it is one line here, the day slice_read lets a published
        language be read and there is something to put on the page. */
-    (p.lname? '<div class="wldrow">'+
-        '<span class="wldnm">'+esc(p.lname)+'</span></div>' : '')+
+    /* AND THE DOOR IS OPEN AGAIN, where the language is published. The note
+       above says what closes it -- there was nothing to fetch. There is now:
+       `language_seen` answers for a published language, `netWho()` carries its
+       address as `lid` and whether it is open as `lpub`, and vAbout() draws it
+       from that and from nothing of this phone's.
+
+       Still a plain row where `lpub` is false: an unpublished language is one
+       `language_seen` and `slice_read` both refuse, so a door would open on a
+       refusal. 「そもそも非公開ならプロフィールから飛べないんだって」
+
+       `.wldrow` was written as a button and has said `background:none;
+       border:0; font-family:inherit; text-align:left` since then, so the two
+       faces are one rule and the row does not move when it becomes pressable. */
+    (p.lname
+      ? ((p.lpub && p.lid)
+          ? '<button class="wldrow"' + DO('go', ["about", String(p.lid)]) + '>'+
+              '<span class="wldnm">'+esc(p.lname)+'</span></button>'
+          : '<div class="wldrow">'+
+              '<span class="wldnm">'+esc(p.lname)+'</span></div>')
+      : '')+
     /* The counts, in the same place and the same shape as your own. They come
        off the person -- FOLLOW_SEAM -- and they are the SERVER's now:
        `profile_seen` counts the `follow` rows both ways and netWho() answers

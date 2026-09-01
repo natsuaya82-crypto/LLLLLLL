@@ -554,6 +554,7 @@ defLang('ko', (function(){
       "ws.tibetan"                : "티베트 문자",
       "wld.title"    : "이 언어는 무엇을 위한 것인가",
       'wld.about'             : "이 언어에 대하여",
+      'wld.pubon'             : "공개일",
       'wld.edit'            : "편집",
       'wld.public'            : "이 언어를 다른 사람에게 보여주기",
       'wld.public.d' : "다른 사람이 당신의 언어 페이지를 열어 읽을 수 있습니다.",

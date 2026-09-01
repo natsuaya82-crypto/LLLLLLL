@@ -1257,7 +1257,62 @@ function abField(k, v){
 
    `about` is the reading face and `world` is the writing one -- the same
    page, and 編集 stays where it is rather than going anywhere. */
-function vAbout(){ return wldPage(false); }
+/* SOMEBODY ELSE'S LANGUAGE, as much of it as the server will say.
+   「言語の詳細は？」 OWNER 2026-09-01.
+
+   `language_seen` in supabase/schema.sql answers with a published language or
+   one of your own and with NOTHING for anybody else's private one, so what is
+   drawn here is only ever what its owner opened. `null` is that refusal and is
+   not an empty language -- the screen says nothing rather than drawing a
+   language with no words in it.
+
+   Asked once per language. Only a request that could not be MADE is asked
+   again, which is the shape whoPull() and meFollowPull() already take. */
+var WLD_HAVE={}, WLD_ASKED={};
+function wldSeenPull(lid){
+  var id=String(lid||'');
+  if(!id || WLD_ASKED[id]) return;
+  WLD_ASKED[id]=1;
+  netLangSeen(id, function(L){
+    if(!L) return;
+    WLD_HAVE[id]=L;
+    render();
+  }, function(){ WLD_ASKED[id]=0; });
+}
+function wldSeen(lid){ return WLD_HAVE[String(lid||'')] || null; }
+/* THE ARGUMENT IS WHOSE. With none this is your own article, drawn from the
+   open language by wldPage(); with a language's id it is somebody else's, and
+   NOT ONE LINE of it comes off the open language -- rule 8, and the reason the
+   door to this page was shut until now: it drew `world()`, `LETTERS` and
+   `langName`, so pressing somebody else's language showed them mine.
+
+   What is drawn is what `language_seen` counts: the name, how many words, how
+   many letters, and the day it was opened. **The dictionary does not move** --
+   `slice_read` keeps `words` shut to everybody, and a number is not a word.
+   「言語ページ公開と単語や文字のdl可能は別だし」 */
+function vAbout(){
+  var a=String(here().a||'');
+  return a? wldSeenHTML(a) : wldPage(false);
+}
+/* Named for the world and not for the view. The checks find a screen by its
+   NAME -- a global that is `v` plus a capital -- so a helper named that way is
+   a screen on no route, and act-check said so the moment this was written. */
+function wldSeenHTML(lid){
+  var L=wldSeen(lid), at;
+  wldSeenPull(lid);
+  /* Nothing while the answer is out, and nothing when the answer was no. An
+     empty page and a page saying a language has no words are different, and
+     only one of them is true. */
+  return '<div class="view">'+navTop('')+'<div class="body">'+
+    (L
+      ? (L.name? '<h1 class="abth">'+esc(L.name)+'</h1>' : '')+
+        abField(t('toc.words'), String(L.nwords))+
+        abField(t('toc.letters'), String(L.nletters))+
+        ((at=L.pub? (Date.parse(L.pub)||0) : 0)
+          ? abField(t('wld.pubon'), postWhen(at)) : '')
+      : '')+
+    '</div></div>';
+}
 function vWorld(){
   /* The note becomes a row of the overview the first time this is opened.
      It cannot be done at load: saveWld() touches the backup and backup.js is

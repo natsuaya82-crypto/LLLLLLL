@@ -485,6 +485,12 @@ function pageName(r, a){
      under the two numbers on a profile, which is where this screen is
      reached from. Nothing new is added. */
   if(r==='follows') return t(a==='ers'? 'me.followers' : 'me.following');
+  /* Somebody else's language names itself, the way a letter and a stage above
+     do. Its own name until the answer lands, and the screen's name until then. */
+  if(r==='about' && a){
+    var wl=(typeof wldSeen==='function')? wldSeen(a) : null;
+    return (wl && wl.name)? wl.name : t('wld.about');
+  }
   var p=PAGES[r];
   return (p && p.k)? t(p.k) : t('tab.build');
 }
