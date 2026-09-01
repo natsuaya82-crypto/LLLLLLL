@@ -1200,10 +1200,27 @@ function shFileName(){
 function openWrIn(){
   openForm('wrin:', t('wr.read'), shInHTML(), shInMount);
 }
-/* Before a file: the one control. After one: what came off it, a row per box.
-   No picture of what was read, and that is on purpose rather than missing --
-   drawing an imported shape is www/glyph.js's, one place, and a second copy
-   of that rule living here is the thing "One place, not fifteen" is about. */
+/* Before a file: the one control. After one: WHAT CAME OFF IT, a row per box
+   -- the picture that was read, beside the name that was printed over the box.
+
+   It used to be the name and the word "drawn", and that is what the owner met:
+   「あとsheet読み込んだら1と書いた文字を取り込みますって見せないと。なにが
+   取り込まれたかわからん。せっかく取り込んで使えるようにするんだから見せない
+   と。淡白にやるのやめてくれ。」 OWNER 2026-09-01, build 107, on a device.
+   A word saying a box was drawn in is not what was drawn in it: two sheets
+   read a week apart said the same eleven characters, and the one thing a
+   person is about to commit to their alphabet was the thing not on the screen.
+
+   It is NOT an explanation. 「アプリ内に説明書くの禁止」 stands and nothing
+   here is prose; what was added is the ink itself.
+
+   The comment that used to stand here said a picture was left out ON PURPOSE,
+   because drawing an imported shape is www/glyph.js's one place and a copy
+   here would be the second of something that already had one. The premise was
+   right and the conclusion was wrong: inkCanvases() takes `stOf` for exactly
+   this -- a shape that is NOT in LETTERS yet, which is what a post's face
+   already is -- so the one place draws these too and there is no second copy.
+   shInMount() hands it the box's rings. */
 function shInHTML(){
   var s = shState(), out = '', i, g, n;
   out = '<label class="btn ghost shfile">'+esc(t('wr.in'))+
@@ -1213,8 +1230,20 @@ function shInHTML(){
   out += '<div class="mini" style="margin-top:14px">'+esc(s.from)+'</div>';
   for(i = 0; i < s.got.length; i++){
     g = s.got[i];
-    out += '<div class="set"><span class="sl">'+esc(g.nm)+'</span>'+
-      '<span class="sv">'+esc(t(g.sh.length ? 'wr.drawn' : 'wr.empty'))+'</span></div>';
+    /* The picture where there is one, and the word only where there is not:
+       "drawn" printed beside the drawing is the same thing said twice, and a
+       box that came back empty has nothing to show and must still say so. */
+    out += '<div class="set">'+
+      (g.sh.length
+        /* A canvas carries no text, so the one word that was here before is
+           what it is CALLED -- said to a screen reader and not printed beside
+           the drawing it would be repeating. */
+        ? '<canvas class="shink" data-i="'+i+'" aria-label="'+esc(t('wr.drawn'))+'"'+
+            ' style="width:30px;height:30px;display:block;flex:0 0 auto"></canvas>'
+        : '')+
+      '<span class="sl">'+esc(g.nm)+'</span>'+
+      (g.sh.length ? '' : '<span class="sv">'+esc(t('wr.empty'))+'</span>')+
+      '</div>';
   }
   /* A sheet with nothing drawn on it says so and offers nothing to press.
      "Take in 0" is a button that does nothing, which is worse than no
@@ -1225,6 +1254,18 @@ function shInHTML(){
   out += '<div class="barfix"><button class="btn ghost"' + DO('shTakeIn') + '>'+
     esc(tn('wr.take', n))+'</button></div>';
   return out;
+}
+/* Every box's ring, into the canvas standing in its row. The rings are on the
+   READ, not on a letter -- nothing has been committed yet, and that is the
+   whole point of the screen -- so they are handed over rather than looked up.
+   inkCanvases() may not be there at all: tools/sheet-spike/*.mjs eval this
+   file with no app around it, the same guard HELP and FORM_OPEN carry. */
+function shInkMount(){
+  if(typeof inkCanvases !== 'function') return;
+  inkCanvases('canvas.shink', 48, 30, function(c){
+    var s = shState(), k = parseInt(c.getAttribute('data-i'), 10);
+    return (s.got && s.got[k] && s.got[k].sh && s.got[k].sh.length)? s.got[k].sh : null;
+  });
 }
 function shTakeCount(got){
   var n = 0, i;
@@ -1237,6 +1278,12 @@ function shTakeCount(got){
    reason, and this is that sentence and not a second rule. */
 function shInMount(){
   var e = document.getElementById('wr-file');
+  /* The pictures first, and before the guard below returns: a canvas has to be
+     filled after the HTML exists and sized in device pixels, which is the same
+     sentence geTiles() is written under, and inkCanvases() is that one place.
+     `stOf` is its hook for a shape that is not a letter yet -- a post's face
+     is the other caller -- so nothing here draws anything itself. */
+  shInkMount();
   if(!e || e.getAttribute('data-wired')) return;
   e.setAttribute('data-wired', '1');
   e.addEventListener('change', function(){
