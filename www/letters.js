@@ -757,6 +757,14 @@ function ltSetRoman(id, sp){
      NAME, and a digit has no name -- its value is the whole of what it is,
      and the keyboard finds it by that. */
   if(ltIsBase(l)) return id;
+  /* And the plan, which the SCREEN used to hold and no longer does. The name
+     field was drawn only where can('letters') was true; on 2026-09-01 every
+     plan started seeing one screen, so the field is drawn for everybody and
+     the rule has to live where it cannot be walked around. It bites exactly
+     one person: somebody who added letters on a paid plan and has come back
+     down to free. Their letters are all still there -- nothing is ever taken
+     away, docs/PAID_FEATURES.md -- and renaming one is a thing paid buys. */
+  if(upStop(can('letters'))) return id;
   var read=ltReadName(sp), units=read.units, seen=read.seen, i;
   /* A clash is shown, not refused. Refusing meant the box silently kept its
      old value and a toast said why, which is a correction somebody has to

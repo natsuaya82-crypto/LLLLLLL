@@ -3071,21 +3071,15 @@ function kbToolHTML(){
 /* Making another is choosing a pattern again, on a screen of its own rather
    than a row that pushes the keyboard off the page. */
 function kbNew(){
-  /* The one road to a keyboard of your own, so it is the one place that
-     answers somebody who cannot take it yet. */
-  /* The five arrangements, drawn, and every one of them a way to the plans
-     page. A sentence saying an upgrade is needed is a price with nothing
-     behind it; the flick, the chart and the rest ARE what is being bought.
-     「フリックとか他のキーボードの写真を載せて自由自在っていうのアピール
-     しろよ」 OWNER 2026-08-28. */
-  if(!can('kb')){ openForm('kbup', t('kb.new'),
-    '<div class="note">'+esc(t('kb.up.d'))+'</div>'+
-    kbPatsHTML('goPlans')+
-    '<button class="btn ghost" style="width:100%;margin-top:12px"' + DO('goPlans') + '>'+
-      t('kb.up.go')+'</button>'); return; }
+  /* The ceiling, met on the press, and it is the SAME answer every other +
+     in the app gives. It used to open a screen of its own -- the five
+     arrangements drawn, each a way to the plans page -- and that is a
+     different screen for the free plan, which is the thing being taken out
+     everywhere else: 「なんでプロの画面から使えって言ってんのに別の画面が
+     出るの？」 OWNER 2026-09-01. */
+  if(upStop(can('kb'))) return;
   openForm('kbnew', t('kb.new'), kbPatsHTML('kbAdd'), function(){ geTiles(); });
 }
-FORM_OPEN.kbup=function(){ kbNew(); };
 FORM_OPEN.kbnew=function(){ kbNew(); };
 /* The pattern of a keyboard that already exists. It could only be chosen when
    the keyboard was made, so somebody who wanted flick after building a QWERTY
