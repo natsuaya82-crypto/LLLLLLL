@@ -670,10 +670,14 @@ function ltSetRoman(id, sp){
      is still written down, so dead-check is green, and nothing throws. That
      was done here and caught by asking for it in base-check rather than by
      reading the code. */
-  if(/^[0-9]+$/.test(String(sp||'').trim())){
-    numSetVal(id, parseInt(String(sp).trim(), 10));
-    return id;
-  }
+  /* numTyped() is where "digits and nothing else" is written down, and the
+     sheet's boxes ask the same one -- what counts as somebody meaning a
+     NUMBER may not be two regexes in two chapters. It is not numInBase()
+     here: a value as big as the base reaches numSetVal() so that it can SAY
+     so (t('num.big')), which a page with one box can do and a sheet with
+     twenty cannot. */
+  var val=numTyped(sp);
+  if(val>=0){ numSetVal(id, val); return id; }
   /* And now the refusal. A digit reaching this line is one being given a
      NAME, and a digit has no name -- its value is the whole of what it is,
      and the keyboard finds it by that. */
