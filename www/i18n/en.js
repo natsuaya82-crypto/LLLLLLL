@@ -421,7 +421,6 @@ defLang('en', (function(){
       'lt.loose.1'      : 'One letter reads nothing yet.',
       'num.word'        : 'Number word',
       'num.h'           : 'Digits',
-      'num.big'         : 'Up to {0}',
       'num.base'        : 'Base',
       'num.wid'         : 'On the home screen',
       'num.wid.how'     : "Hold the Home Screen → Edit → Add Widget → Lingua",

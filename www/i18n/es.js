@@ -477,7 +477,6 @@ defLang('es', (function(){
       "lt.loose.1"       : "Una letra no lee nada todavía.",
       "num.word"        : "Numeral",
       "num.h"           : "Cifras",
-      "num.big"         : "Hasta {0}",
       "num.base"        : "Base",
       "num.wid"         : "En la pantalla de inicio",
       "num.wid.how"     : "Mantén pulsada la pantalla de inicio → Editar → Añadir widget → Lingua",

@@ -525,7 +525,6 @@ defLang('zh', (function(){
       "lt.loose.1"       : "有 1 个字还什么都不读。",
       "num.word"        : "数词",
       "num.h"           : "数字",
-      "num.big"         : "最大 {0}",
       "num.base"        : "进制",
       "num.wid"         : "在主畫面上",
       "num.wid.how"     : "长按主屏幕 → 编辑 → 添加小组件 → Lingua",

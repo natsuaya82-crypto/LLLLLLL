@@ -517,7 +517,6 @@ defLang('it', (function(){
       "lt.loose.1"       : "Una lettera non legge ancora niente.",
       "num.word"        : "Numerale",
       "num.h"           : "Cifre",
-      "num.big"         : "Fino a {0}",
       "num.base"        : "Base",
       "num.wid"         : "Sulla schermata Home",
       "num.wid.how"     : "Tieni premuta la schermata Home → Modifica → Aggiungi widget → Lingua",

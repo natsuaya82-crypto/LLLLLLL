@@ -505,7 +505,6 @@ defLang('de', (function(){
       "lt.loose.1"       : "Ein Buchstabe liest noch nichts.",
       "num.word"        : "Zahlwort",
       "num.h"           : "Ziffern",
-      "num.big"         : "Bis {0}",
       "num.base"        : "Basis",
       "num.wid"         : "Auf dem Home-Bildschirm",
       "num.wid.how"     : "Home-Bildschirm halten → Bearbeiten → Widget hinzufügen → Lingua",

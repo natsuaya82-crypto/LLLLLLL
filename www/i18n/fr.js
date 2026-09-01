@@ -565,7 +565,6 @@ defLang('fr', (function(){
       "lt.loose.1"       : "Une lettre ne lit encore rien.",
       "num.word"        : "Numéral",
       "num.h"           : "Chiffres",
-      "num.big"         : "Jusqu'à {0}",
       "num.base"        : "Base",
       "num.wid"         : "Sur l'écran d'accueil",
       "num.wid.how"     : "Maintiens l'écran d'accueil → Modifier → Ajouter un widget → Lingua",

@@ -346,22 +346,39 @@ const read = await pg.evaluate(({ drew }) => {
 /* ---- 3. and the moment it becomes letters ------------------------------- */
 const took = await pg.evaluate(({ before }) => {
   var was = LETTERS.map(function(l){ return JSON.stringify(l); });
+  var digsWere = numDigits().length;
   shTakeIn();
-  var made = LETTERS.slice(before), still = LETTERS.slice(0, before), i, moved = 0;
-  for (i = 0; i < still.length; i++) if (JSON.stringify(still[i]) !== was[i]) moved++;
+  var made = LETTERS.slice(before), still = LETTERS.slice(0, before), i, moved = [];
+  for (i = 0; i < still.length; i++)
+    if (JSON.stringify(still[i]) !== was[i]) moved.push(ltName(still[i]));
+  /* Where the three drawn boxes actually landed. `7` and `2` are values base
+     ten writes with one sign, so they went into the digits that already hold
+     them; `25` is two signs and is a name, so it is a new letter. */
+  var dest = [numByVal(7), numByVal(2)].concat(made);
   return {
     made: made.length,
     moved: moved,
-    names: made.map(function(l){ return l.nm; }),
-    allSh:  made.filter(function(l){ return l.sh && l.sh.length; }).length,
-    anySt:  made.filter(function(l){ return l.st && l.st.length; }).length,
-    allVia: made.filter(function(l){ return l.via === 'write'; }).length,
-    /* it ADDS. `a` is already in the free alphabet and a box called `a` must
-       not land on it -- a letter with a name somebody already has is a NEW
-       letter, which is what 「a,a,a は三枠」 means. */
-    keptA: still.filter(function(l){
-      var n2 = ltName(l);
-      return n2 === 'a' || n2 === '7' || n2 === '2';
+    names: made.map(function(l){ return ltName(l); }),
+    dest: dest.map(function(l){
+      /* `nm` is the field a LABEL is stored in and `label` is what the letter
+         is called: a digit has no nm at all and ltName() reads its value. The
+         two have to be asked separately or "it went in as a number" is green
+         for a letter labelled with the character 7. */
+      return { label: ltName(l), named: !!(l && l.nm),
+               val: (l && typeof l.val === 'number') ? l.val : null,
+               sh: !!(l && l.sh && l.sh.length), st: !!(l && l.st && l.st.length),
+               via: (l && l.via) || '' };
+    }),
+    /* and made no second seven: a value is unique, so a box that is a number
+       can never add a digit to a base that already has all of them */
+    digsWere: digsWere,
+    digsNow: numDigits().length,
+    twoOf: [7, 2].map(function(v){
+      return numDigits().filter(function(l){ return l.val === v; }).length;
+    }),
+    /* `25` is a name and carries no value */
+    bigIsName: made.filter(function(l){
+      return l.nm === '25' && typeof l.val !== 'number';
     }).length,
     stored: (function(){
       try { return JSON.parse(localStorage.getItem(langKey('letters')) || '[]').length; }
@@ -369,6 +386,54 @@ const took = await pg.evaluate(({ before }) => {
     })()
   };
 }, { before: shot.before });
+
+/* ---- 3b. and the two it may never do -----------------------------------
+   A digit somebody has ALREADY drawn on is theirs: the sheet does not draw
+   over it. And a NAME the alphabet already has is still a new letter, which
+   is 「a,a,a は三枠」 -- the sentence the number road is not an
+   exception to. Both are handed in through the real shTakeIn(), on the state
+   the take above left behind: digit seven is drawn on now. */
+const again = await pg.evaluate(() => {
+  var d = numByVal(7), was = JSON.stringify(d.sh), before = LETTERS.length;
+  var ring = [[[100, 100], [700, 100], [700, 700]]];
+  SH = { names: '', got: [{ nm: '7', sh: ring }, { nm: 'a', sh: ring }], why: '', from: '' };
+  shTakeIn();
+  var made = LETTERS.slice(before);
+  return {
+    kept: JSON.stringify(numByVal(7).sh) === was,
+    stillOne: numDigits().filter(function(l){ return l.val === 7; }).length,
+    made: made.length,
+    names: made.map(function(l){ return ltName(l); }),
+    noVal: made.filter(function(l){ return typeof l.val !== 'number'; }).length,
+    /* the `a` already in the alphabet is untouched, drawing and all */
+    aStill: LETTERS.filter(function(l){ return ltName(l) === 'a'; }).length
+  };
+});
+
+/* ---- 3c. and a digit that came in on a sheet is DRAWN ------------------
+   A digit's picture reaches the clock, the date and the calendar through
+   numSignHTML(), which asked for `st` -- and a sheet's picture is `sh`. So a
+   digit taken off paper put a ROMAN 7 on the widget beside somebody's own
+   six: nothing throws, the face renders, and the sign is not theirs. Asked in
+   pixels, because "it emitted a canvas" is also true of one that paints
+   nothing. Digit seven carries a sheet's picture by now -- the take above put
+   it there. */
+const sign = await pg.evaluate(() => {
+  var host = document.createElement('div');
+  host.style.cssText = 'position:fixed;left:0;top:0;width:200px;font-size:40px';
+  host.innerHTML = '<span id="wr-sign">' + numSignHTML(7) + '</span>';
+  document.body.appendChild(host);
+  numWidMount();
+  var c = document.querySelector('#wr-sign canvas'), n = 0, i, d;
+  var out = { canvas: !!c, roman: host.innerHTML.indexOf('numrm') >= 0, pixels: 0 };
+  if (c && c.width){
+    d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+    for (i = 3; i < d.length; i += 4) if (d[i] > 10) n++;
+    out.pixels = n;
+  }
+  host.parentNode.removeChild(host);
+  return out;
+});
 
 /* ---- 4. and a picture that is not a sheet is refused whole -------------- */
 const refused = await pg.evaluate(() => {
@@ -728,24 +793,56 @@ DREW.forEach(i => {
 say(box <= 8, 'photographed at 6° it is still the size it was drawn: every edge within ' +
               Math.round(box) + ' of 800 (worst: ' + boxAt + ')');
 
-say(took.made === DREW.length,
-    'taking it in made ' + took.made + ' letters and not ' + read.boxes.length);
-say(took.moved === 0,
-    'and moved none of the ' + shot.before + ' that were already there');
-say(took.allSh === took.made && took.anySt === 0,
-    'each carries the picture as it came and no strokes: ' + took.allSh + ' with `sh`, ' +
-    took.anySt + ' with `st`');
-say(took.allVia === took.made,
-    "and says how it got here: " + took.allVia + " marked 'write'");
-/* The free alphabet already holds letters called `a`, `7` and `2`, and two of
-   those are boxes on this sheet. A box called `7` is a NEW letter -- it does
-   not land on the digit already there, and nothing is renamed to make room.
-   That is what 「a,a,a は三枠」 means: on Pro a name is a label, not a key. */
-say(took.keptA === 3 && took.names.join(',') === DREW.map(i => NAMES[i]).join(','),
-    'a box whose name the alphabet already has is a NEW letter: ' +
-    took.keptA + ' of `a` `7` `2` untouched, brought in ' + took.names.join(', '));
-say(took.stored === shot.before + DREW.length,
+/* Three boxes were drawn on and only ONE of them is a new letter: `7` and `2`
+   are values base ten writes with one sign, so they went into the digits that
+   already hold those values. 「用紙を入れて数字なら数字に振り分けて」
+   OWNER 2026-09-01. */
+const shSh = took.dest.filter(d => d.sh).length;
+const shVia = took.dest.filter(d => d.via === 'write').length;
+say(took.dest.length === DREW.length && shSh === DREW.length &&
+    took.dest.filter(d => d.st).length === 0,
+    'each of the ' + DREW.length + ' boxes carries the picture as it came and no strokes: ' +
+    took.dest.length + ' landed, ' + shSh + ' with `sh`, ' +
+    took.dest.filter(d => d.st).length + ' with `st`');
+say(shVia === DREW.length,
+    "and says how it got here: " + shVia + " marked 'write'");
+/* Asked of the digits AND of the picture on them. "digit seven exists and has
+   no label" is true of the untouched slot numTopUp() made, so a claim that
+   stops there is green with the number road taken out -- it would be reading
+   the slot rather than where the box went. What is under test is that the
+   BOX landed there. */
+say(took.dest[0].val === 7 && took.dest[1].val === 2 &&
+    !took.dest[0].named && !took.dest[1].named &&
+    took.dest[0].sh && took.dest[1].sh &&
+    took.dest[0].via === 'write' && took.dest[1].via === 'write',
+    'a box whose name is a NUMBER goes in as a number: the picture landed on ' +
+    'the digits WORTH 7 and 2, which carry no label — not on letters named ' +
+    'with the characters (' +
+    took.dest.map(d => d.label + '=' + d.val + (d.sh ? ' drawn' : ' blank')).join(' ') + ')');
+say(took.moved.slice().sort().join(',') === '2,7',
+    'so exactly those two of the ' + shot.before + ' already here changed, and nothing else: ' +
+    (took.moved.join(', ') || 'none'));
+say(took.digsNow === took.digsWere && took.twoOf.join(',') === '1,1',
+    'and no second seven was made -- a value is unique, so the base still has ' +
+    took.digsNow + ' digits');
+say(took.made === 1 && took.bigIsName === 1 && took.names.join(',') === '25',
+    '`25` is two signs in base ten, so it is a name and not a value: brought in ' +
+    took.names.join(', '));
+say(took.stored === shot.before + 1,
     'and they are in storage, not only in memory: ' + took.stored + ' letters filed');
+say(again.kept && again.stillOne === 1,
+    'a digit somebody has ALREADY drawn on is not drawn over: seven kept its ' +
+    'own picture and there is still one of it');
+say(again.made === 2 && again.names.join(',') === '7,a' && again.noVal === 2,
+    'the box beside it becomes a letter instead, and a box whose NAME the ' +
+    'alphabet already has is a new letter too — 「a,a,a は三枠」: brought in ' +
+    again.names.join(', '));
+say(again.aStill === 2,
+    'so the `a` that was already there is still there, beside the new one (' +
+    again.aStill + ')');
+say(sign.canvas && !sign.roman && sign.pixels > 0,
+    'and a digit that came in on a sheet is drawn with the sign somebody drew ' +
+    'for it, not a roman one: ' + sign.pixels + ' pixels of ink on the clock');
 
 say(!after.got && !!after.why && after.grew === 0,
     'a photograph that is not a sheet is refused whole: ' + after.grew +
