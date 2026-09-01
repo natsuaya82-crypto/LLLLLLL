@@ -487,7 +487,7 @@ function ltCopy(id){
      does not buy letters is a door, and 「全部確認して課金画面に飛ぶようにして」
      OWNER 2026-08-25. Same one line ltDelete() already had. */
   if(!l) return;
-  if(!can('letters')){ go('plans'); return; }
+  if(canStop('letters')) return;
   /* A digit cannot be copied, and the copy would not be a digit: a value is
      unique (there is one seven), so what came out was an ALPHA letter made
      from the digits room -- the two rooms mixing in the one direction nothing
@@ -875,18 +875,14 @@ function ltDelete(id){
      thirty-eight slots, the QWERTY finds its keys BY NAME, and a slot taken
      away is a key answering to nothing.
 
-     Both doors onto this already ask can('letters') -- the mark on a held
-     cell and the button on the letter's page -- so nothing reaches here on
-     free today. It is asked again anyway, and that is the sentence
-     ltSetRoman() carries three functions down about renaming the same slots:
-     a screen is not a rule, this is reachable from any name that can be said,
-     and the road added later is the one that will not remember. base-check
-     holds the rename half for exactly this reason.
-
-     go() rather than a silent return, so the day a screen does draw this door
-     on free it is already the shape the 2026-08-25 decision asks for: drawn
-     anyway, and pressed it goes to the plans screen. */
-  if(!can('letters')){ go('plans'); return; }
+     Both doors onto this ARE drawn on free now -- the mark on a held cell and
+     the button on the letter's page -- because every plan sees one screen
+     (OWNER 2026-09-01). So this line is the one that answers them, rather
+     than a sentence kept for a day that had not come: it is reached on free,
+     it says so, and pressing yes goes to the plans screen. That is exactly
+     the shape the 2026-08-25 decision asked for. base-check holds the rename
+     half for the same reason. */
+  if(canStop('letters')) return;
   var nm=ltName(l)||t('lt.untitled');
   if(!confirm(t('glyph.del.ask'))) return;
   ltDel(id);

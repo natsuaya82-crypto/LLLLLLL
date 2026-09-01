@@ -166,17 +166,21 @@ function numFree(){
    wall of numbers to say one number. 「そんな並べるバカはどこにいんの？」
    A base is a single value and it is a value on a line, so it is nudged. */
 function numStepBase(d){
+  /* The ceiling, met on the press. The ± is drawn on every plan and this is
+     what answers somebody who has not bought the letters it would make.
+     OWNER 2026-09-01「+を押したらそのまま課金のポップが出るだけでしょ？」 */
+  if(canStop('letters')) return;
   var b=numBase()+d;
   if(b<NUM_BASES[0] || b>NUM_BASES[NUM_BASES.length-1]) return;
   numSetBase(b);
 }
 function numBaseRows(){
-  /* Free counts in ten and has no say in it: what the base decides is how
-     many digits there are, and adding a letter is the paid plan's. Without
-     this the row offered a free language twelve slots that ltStart would
-     make and can('letters') would then refuse to let anybody add to.
-     「無料は0〜9しか書けないんだから±はなし」 */
-  if(!can('letters')) return '';
+  /* Drawn on every plan. What the base decides is how many digits there are,
+     and adding a letter is the paid plan's -- so the ± is answered on the
+     PRESS by numStepBase(), not by taking the row away.
+     「無料は0〜9しか書けないんだから±はなし」 was the row being hidden; it is
+     replaced by 「無料でもplusでもproでも同じ画面なのよ。でも無料から文字を
+     足すところは課金のポップが出ないといけない」 OWNER 2026-09-01. */
   var b=numBase(), lo=NUM_BASES[0], hi=NUM_BASES[NUM_BASES.length-1];
   return '<div class="set numbase">'+
     '<span class="sl">'+esc(t('num.base'))+'</span>'+

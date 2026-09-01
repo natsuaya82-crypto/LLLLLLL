@@ -277,6 +277,7 @@ defLang('ja', (function(){
       "script.own.ph"             : "字を入力または貼り付け",
       "script.set"                : "これにする",
       "up.cta"                    : "アップグレード",
+      "up.need"                   : "これは有料プランの機能です。",
       "ws.arabic"                 : "アラビア文字",
       "ws.armenian"               : "アルメニア文字",
       "ws.cyrillic"               : "キリル文字",

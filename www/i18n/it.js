@@ -361,6 +361,7 @@ defLang('it', (function(){
       "script.own.ph"             : "Incolla o scrivi un carattere",
       "script.set"                : "Usa",
       "up.cta"                    : "Passa a Plus",
+      "up.need"                   : "Questo è incluso in un piano a pagamento.",
       "ws.arabic"                 : "Arabo",
       "ws.armenian"               : "Armeno",
       "ws.cyrillic"               : "Cirillico",

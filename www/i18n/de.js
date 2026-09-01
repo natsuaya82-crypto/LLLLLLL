@@ -349,6 +349,7 @@ defLang('de', (function(){
       "script.own.ph"             : "Zeichen einfügen oder tippen",
       "script.set"                : "Setzen",
       "up.cta"                    : "Upgraden",
+      "up.need"                   : "Das gehört zu einem kostenpflichtigen Tarif.",
       "ws.arabic"                 : "Arabisch",
       "ws.armenian"               : "Armenisch",
       "ws.cyrillic"               : "Kyrillisch",

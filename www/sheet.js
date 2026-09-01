@@ -1530,7 +1530,7 @@ function shTakeIn(){
      letters from a sheet keeps every one of them -- a plan decides what may
      be DONE, and docs/PAID_FEATURES.md's first rule is that it decides
      nothing about what exists. */
-  if(!can('file')){ go('plans'); return; }
+  if(canStop('file')) return;
   for(i = 0; i < s.got.length; i++){
     g = s.got[i];
     if(!g.sh.length) continue;

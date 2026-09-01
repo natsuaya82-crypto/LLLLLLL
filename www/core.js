@@ -910,6 +910,34 @@ function capStop(add){
   if(confirm(t('toast.cap', wordCap())+'\n\n'+t('up.cta'))) go('plans');
   return true;
 }
+/* THE SAME THING FOR A CAPABILITY, AND IT IS WHY EVERY PLAN SEES ONE SCREEN.
+   「無料でもplusでもproでも同じ画面なのよ。でも無料から文字を足すところは
+     課金のポップが出ないといけない、画面は変わらないプランで押す場所に
+     よっては課金を促すって話なの」
+   「音もキーボードも単語も+を押したらそのまま課金のポップが出るだけでしょ？
+     増やすを潰す」 OWNER 2026-09-01.
+
+   The screens used to DROP what a plan could not use -- `can('letters')` sat
+   in the markup and the + was simply not drawn. That is the app hiding what
+   it sells from the person it is selling to, and it made the free screen a
+   different screen rather than the same screen with a door on it.
+
+   So: the fullest face is always drawn, and the ceiling is met on the PRESS.
+   Same shape as capStop() above and for the same reasons -- confirm() rather
+   than a box of our own, because the plans screen is one tap away and this
+   has to be answerable with "no"; and nobody is moved off the screen they
+   are standing on unless they say yes.
+
+   ONE sentence and not one per capability. Twelve keys in ten languages is
+   a hundred and twenty strings saying the same thing, and 「アプリ内に説明
+   書くの禁止」 is the other half of the argument: what somebody needs at the
+   moment they press is that this is on a paid plan and where to go, which is
+   two facts and not a paragraph about letters. */
+function canStop(cap){
+  if(can(cap)) return false;
+  if(confirm(t('up.need')+'\n\n'+t('up.cta'))) go('plans');
+  return true;
+}
 /* The day a plan ends, said out loud, once.
 
    A subscription ending puts the app back into the shape the free plan has:

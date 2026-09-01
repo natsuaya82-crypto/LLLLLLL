@@ -61,32 +61,32 @@ HELP.wsys=function(){
     }).join('')};
 };
 function vWsys(){
-  var kinds=can('wsys')? WSYS : ['alpha'];
+  /* Every kind, on every plan. Pressing one somebody has not bought is
+     answered by setWsys() with the popup -- 「無料でもplusでもproでも同じ
+     画面なのよ」 OWNER 2026-09-01. */
   return '<div class="view">'+navTop('', helpQ('wsys'))+'<div class="body">'+
-    kinds.map(function(k){
+    WSYS.map(function(k){
       return '<button class="set"' + DO('setWsys', [k]) + '>'+
         '<span class="sl">'+esc(t('ws.k.'+k))+'</span>'+
         '<span class="sv">'+(wsys()===k? ICON_TICK : '')+'</span></button>';
     }).join('')+
-    (can('wsys')? '' :
-      '<button class="capwarn" style="margin-top:10px"' + DO('goPlans') + '>'+t('ws.locked')+
-        '<span class="capgo">'+t('up.cta')+ICON_GO+'</span></button>')+
     /* Which way it is written. Here rather than in the person's settings
        because it is the language's -- one language, one answer, and it goes
        in the backup with the rest of the language.
 
-       Free shows the one direction a free language has and nothing else, the
-       same as the writing systems above show only `alpha`. Three rows nothing
-       can press is the app explaining itself. 「隠すでしょ」 */
+       All four are drawn on every plan. This used to show a free language
+       the one direction it had, on the grounds that rows nothing can press
+       are the app explaining itself -- and that reading is replaced:
+       「無料でもplusでもproでも同じ画面なのよ。でも無料から文字を足すところは
+       課金のポップが出ないといけない、画面は変わらないプランで押す場所に
+       よっては課金を促すって話なの」 OWNER 2026-09-01. A row that answers
+       with the popup is not a row nothing can press. */
     '<div class="sec">'+t('dir.title')+'</div>'+
-    (can('dir')? DIRS : [scriptDir()]).map(function(k){
+    DIRS.map(function(k){
       return '<button class="set"' + DO('setScriptDir', [k]) + '>'+
         '<span class="sl">'+esc(t('dir.'+k))+'</span>'+
         '<span class="sv">'+(scriptDir()===k? ICON_TICK : '')+'</span></button>';
     }).join('')+
-    (can('dir')? '' :
-      '<button class="capwarn" style="margin-top:10px"' + DO('goPlans') + '>'+t('dir.locked')+
-        '<span class="capgo">'+t('up.cta')+ICON_GO+'</span></button>')+
     /* Roman or your own letters is the same kind of decision -- it changes
        every screen in the app and nobody flips it twice a day -- so it sits
        with the others rather than under a specimen box on a chapter. */
@@ -254,7 +254,7 @@ function sndTake(sym){
      doing two ways. A symbol pressed on purpose and nothing at all happening is
      the shape that sends somebody to look for what they did wrong. Same one line
      ltTakeSnd() below already had. Nothing is written first. */
-  if(!can('snd')){ go('plans'); return; }
+  if(canStop('snd')) return;
   if(addedSnd().indexOf(sym)>=0){ sndDrop(sym); openSndAdd(); return; }
   SND=asOrder(addedSnd().concat([sym]));
   saveSnd();
@@ -502,7 +502,7 @@ function ltTakeSnd(sym){
      `chose` stays off -- it is what tells a sound somebody picked from one
      ltSetRoman worked out, and switching it on here would detach `b` from its
      own name for good -- and SND does not grow. */
-  if(!can('snd')){ go('plans'); return; }
+  if(canStop('snd')) return;
   if(!l.snd) l.snd=[];
   var i=l.snd.indexOf(sym);
   if(i>=0) l.snd.splice(i, 1);
@@ -561,6 +561,10 @@ function sndLetters(sym){
    it. The same chart a letter opens; what differs is what a press does. */
 /* 「+音を足す」 at the foot of the alphabet: making, so it is asked too. */
 function openSndAdd(){
+  /* The ceiling, met on the press. 「+を押したらそのまま課金のポップが出る
+     だけでしょ？」 OWNER 2026-09-01 -- the button is drawn on every plan. */
+  if(canStop('snd')) return;
+
   if(!makeNeed()) return;
   sndFor='';
   openForm('sndadd', t('snd.add'), ipaPickHTML('sndTake', addedSnd()));
@@ -578,7 +582,7 @@ function sndDrop(sym){
      sndTake() calls this one directly, which is safe: it has already refused
      on the same capability before it gets here, so a free plan never arrives
      at this line from there. */
-  if(!can('snd')){ go('plans'); return; }
+  if(canStop('snd')) return;
   if(ls.length){
     toast(t('snd.inuse', ls.map(function(l){ return ltName(l)||'·'; }).join(' ')));
     return;
@@ -896,18 +900,18 @@ function vLtset(){
        a shape to draw, and a sound, which is a thing the language says and
        may not have a shape yet. The sound is the phonology chapter's only
        remaining door, moved here with it. */
-    ((can('letters') || (k==='alpha' && can('snd')))
-      ? '<div class="barfix">'+
-          (can('letters')
-            ? '<button class="btn ghost"' + DO('newLetter', [k]) + '>'+
-                ICON_ADD+t('lt.new')+'</button>'
-            : '')+
-          ((k==='alpha' && can('snd'))
-            ? '<button class="btn ghost"' + DO('openSndAdd') + '>'+
-                ICON_ADD+t('snd.add')+'</button>'
-            : '')+
-        '</div>'
-      : '')+
+    /* Always drawn, on every plan. What a plan may DO is answered on the
+       press by canStop() -- 「+を押したらそのまま課金のポップが出るだけ」
+       OWNER 2026-09-01. Drawing it only for those who already have it is
+       the app hiding what it sells from the person it is selling to. */
+    '<div class="barfix">'+
+      '<button class="btn ghost"' + DO('newLetter', [k]) + '>'+
+        ICON_ADD+t('lt.new')+'</button>'+
+      (k==='alpha'
+        ? '<button class="btn ghost"' + DO('openSndAdd') + '>'+
+            ICON_ADD+t('snd.add')+'</button>'
+        : '')+
+    '</div>'+
     /* And what these signs look like off the phone's home screen, which is
        the one place a language goes without anybody typing. numbers.js says
        why it is here and not a chapter of its own: there is nothing to make
@@ -952,7 +956,7 @@ function ltCell(l, press){
     '<span class="ltcf">'+ltInk(l, '<span class="nol">'+ICON_PEN+'</span>')+'</span>'+
     '<span class="ltcn">'+esc(nm||'\u00b7')+'</span>'+
     '<span class="ltcr">'+esc(rd.length? phIpa(rd) : '')+'</span>'+
-    ((wob && can('letters'))
+    (wob
       ? '<span class="ltx"' + DO('ltDelete', [l.id]) + ' role="button" '+
         'aria-label="'+esc(t('glyph.del'))+'">'+ICON_MINUS+'</span>'
       : '')+
@@ -1089,7 +1093,7 @@ function vLetter(){
        ltIsBase() in letters.js is the one place that says which those are,
        and ltCopy below is what somebody wanting a differently-named letter
        does instead. */
-    ((can('letters') && !ltIsBase(l))
+    (!ltIsBase(l)
       ? '<div class="sec">'+t('lt.ab.h')+'</div>'+ltAbField(l, lid)
       : '')+
     (numIsDigit(l)? numWordRow(l) : '')+
@@ -1121,14 +1125,10 @@ function vLetter(){
     /* Making one of one's own from this one -- the way to have a letter
        called something else when this one may not be renamed, and the way to
        have two letters of one shape at all. */
-    (can('letters')
-      ? '<button class="set" style="margin-top:14px"' + DO('ltCopy', [lid]) + '>'+
-          '<span class="sl">'+t('lt.copy')+'</span>'+ICON_GO+'</button>'
-      : '')+
-    (can('letters')
-      ? '<button class="set" style="border-bottom:none"' + DO('ltDelete', [lid]) + '>'+
-          '<span class="sl bad">'+t('glyph.del')+'</span></button>'
-      : '')+
+    '<button class="set" style="margin-top:14px"' + DO('ltCopy', [lid]) + '>'+
+      '<span class="sl">'+t('lt.copy')+'</span>'+ICON_GO+'</button>'+
+    '<button class="set" style="border-bottom:none"' + DO('ltDelete', [lid]) + '>'+
+      '<span class="sl bad">'+t('glyph.del')+'</span></button>'+
     '</div>'+
     /* At the foot of the screen, on top of the tab bar, where the drawing
        screen's Save already is -- and in reach without scrolling past the

@@ -98,6 +98,10 @@ function wsys(){
   return WSYS.indexOf(SET.wsys)>=0 ? SET.wsys : wsGuess();
 }
 function setWsys(k){
+  /* The ceiling, met on the press. 「+を押したらそのまま課金のポップが出る
+     だけでしょ？」 OWNER 2026-09-01 -- the button is drawn on every plan. */
+  if(canStop('wsys')) return;
+
   if(WSYS.indexOf(k)<0) return;
   /* The screen only offers the alphabet on the free plan; this is the same
      sentence said where it can be relied on, since a route can be arrived at
@@ -278,7 +282,7 @@ function setScriptDir(k){
      said where it can be relied on, since a route can be arrived at from
      anywhere and a plan can end while one of the four is set. Exactly as
      setWsys() does it. */
-  if(!can('dir')){ goPlans(); return; }
+  if(canStop('dir')) return;
   SCRIPT.dir=k; save();
   render();
 }

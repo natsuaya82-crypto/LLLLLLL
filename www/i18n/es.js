@@ -321,6 +321,7 @@ defLang('es', (function(){
       "script.own.ph"             : "Pega o escribe un carácter",
       "script.set"                : "Usar",
       "up.cta"                    : "Mejorar",
+      "up.need"                   : "Esto está en un plan de pago.",
       "ws.arabic"                 : "Árabe",
       "ws.armenian"               : "Armenio",
       "ws.cyrillic"               : "Cirílico",

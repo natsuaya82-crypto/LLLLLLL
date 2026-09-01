@@ -409,6 +409,7 @@ defLang('fr', (function(){
       "script.own.ph"             : "Collez ou saisissez un caractère",
       "script.set"                : "Choisir",
       "up.cta"                    : "Passer à Plus",
+      "up.need"                   : "Ceci fait partie d'une formule payante.",
       "ws.arabic"                 : "Arabe",
       "ws.armenian"               : "Arménien",
       "ws.cyrillic"               : "Cyrillique",

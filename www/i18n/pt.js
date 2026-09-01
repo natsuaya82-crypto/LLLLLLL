@@ -368,6 +368,7 @@ defLang('pt', (function(){
       "script.own.ph"             : "Cole ou digite um caractere",
       "script.set"                : "Usar",
       "up.cta"                    : "Fazer upgrade",
+      "up.need"                   : "Isto está num plano pago.",
       "ws.arabic"                 : "Árabe",
       "ws.armenian"               : "Armênio",
       "ws.cyrillic"               : "Cirílico",

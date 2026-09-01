@@ -605,6 +605,10 @@ function editLetter(id){
    beyond the value a digit starts with. */
 /* 「+文字の追加」 at the foot of the alphabet, the digits and the marks. */
 function newLetter(kind){
+  /* The ceiling, met on the press. 「+を押したらそのまま課金のポップが出る
+     だけでしょ？」 OWNER 2026-09-01 -- the button is drawn on every plan. */
+  if(canStop('letters')) return;
+
   if(!makeNeed()) return;
   var v=(kind==='num')? numFree() : -1;
   var l=ltNew(v>=0? {val:v} : {});
