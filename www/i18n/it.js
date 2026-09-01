@@ -448,6 +448,8 @@ defLang('it', (function(){
       'notif.follow'          : "{0} ti segue",
       'notif.pick'            : "Da leggere",
       'notif.other'           : "{0}",
+      'notif.two'           : "{0} e {1}",
+      'notif.many'           : "{1} e altre {0} persone",
       "tab.find"         : "Cercare",
       "tab.home"         : "Home",
       "help.q"           : "Che cos'è",

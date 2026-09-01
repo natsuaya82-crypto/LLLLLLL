@@ -496,6 +496,8 @@ defLang('fr', (function(){
       'notif.follow'          : "{0} vous suit",
       'notif.pick'            : "À lire",
       'notif.other'           : "{0}",
+      'notif.two'           : "{0} et {1}",
+      'notif.many'           : "{1} et {0} autres",
       "tab.find"         : "Chercher",
       "tab.home"         : "Accueil",
       "help.q"           : "Ce que c'est",

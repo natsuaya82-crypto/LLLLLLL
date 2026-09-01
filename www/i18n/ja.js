@@ -364,6 +364,8 @@ defLang('ja', (function(){
       'notif.follow'          : "{0} がフォロー",
       'notif.pick'            : "読んでみては",
       'notif.other'           : "{0}",
+      'notif.two'           : "{0} と {1}",
+      'notif.many'           : "{1} 他{0}人",
       'tab.find'        : 'さがす',
       'tab.home'        : 'ホーム',
       "help.q"         : "これは何",

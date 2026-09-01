@@ -2523,7 +2523,15 @@ a.set{text-decoration:none}
      border-bottom:1px solid var(--line)}
 .ntfi{flex:0 0 auto;width:26px;display:inline-flex;justify-content:center;color:var(--txm)}
 .ntfi.like{color:var(--bad)} .ntfi.follow{color:var(--gold)}
+/* Up to three faces, side by side. More than one person did the same thing to
+   the same post, and the row says so with their faces the way the owner's
+   picture does. */
+.ntffs{flex:0 0 auto;display:flex;align-items:center;gap:4px}
 .ntfb{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px}
+/* Which post, without reading the row. No corner and no border -- rule 18 --
+   so it is the photograph itself, cut to a square. */
+.ntfpic{flex:0 0 auto;width:44px;height:44px;overflow:hidden}
+.ntfpic img{width:100%;height:100%;object-fit:cover;display:block}
 .ntfw{color:var(--tx);font-size:.95rem}
 .ntfp{color:var(--txm);font-size:.88rem;
       overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

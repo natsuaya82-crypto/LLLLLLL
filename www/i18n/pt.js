@@ -455,6 +455,8 @@ defLang('pt', (function(){
       'notif.follow'          : "{0} começou a seguir-te",
       'notif.pick'            : "Vale a pena ler",
       'notif.other'           : "{0}",
+      'notif.two'           : "{0} e {1}",
+      'notif.many'           : "{1} e outras {0} pessoas",
       "tab.find"         : "Buscar",
       "tab.home"         : "Início",
       "help.q"           : "O que é isto",

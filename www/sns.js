@@ -1487,17 +1487,61 @@ function notFace(n){
    not hold, so the press is put on rather than the row pretending. Nothing
    moves on the screen either way: no class, no mark, no arrow.
    「ui変更は俺が頼んだの以外は勝手な判断でやるなよ？」 */
+/* WHO A NOTICE IS FROM, when it is from more than one person.
+   「同じ投稿のいいねはXみたいにまとめる」「フォローも同じでいい ── 〇〇さん
+   他3人にフォローされました」 OWNER 2026-08-28, docs/FEATURE_RULES.md.
+
+   THE GROUPING IS ALREADY DONE, AND IT IS DONE ON THE SERVER, which is what
+   that decision says. `notices()` in supabase/schema.sql groups by (kind,
+   post), counts them into `n`, and hands back up to four of the people as
+   `few` -- the first becomes the row's `hd`/`who`/`av` and the rest arrive as
+   `more`. **www/sns.js has been throwing `n` and `more` away since the day
+   they were added**, so fifty likes on one post drew as one person's name and
+   the other forty-nine were not mentioned. Nothing threw: the row was correct
+   about the person it named.
+
+   The count is the SERVER's -- `n` -- and not the length of `more`, which is
+   capped at four. Saying 「他3人」 off a capped list would be the app quietly
+   deciding that fifty is three. */
+function notWho(n){
+  var few=n.more||[], k=Number(n.n||1);
+  if(k<=1 || !few.length) return postWho(n);
+  /* Two people are both named. Instagram and X both do this and it is what
+     the owner's own picture shows. */
+  if(k===2) return t('notif.two', postWho(n), postWho(few[0]));
+  /* More than two: the first, and how many others. `tn` because English says
+     「1 other」 and 「3 others」 and Russian counts differently again. */
+  return tn('notif.many', k-1, postWho(n));
+}
+/* Their faces, up to three. Each is its own door, the way the single one
+   always was -- pressing a face opens that person and pressing the row opens
+   the post. */
+function notFaces(n){
+  var few=n.more||[], out=notFace(n), i, o;
+  for(i=0;i<few.length && i<2;i++){
+    o=few[i];
+    out+=postAvHTML({hd:o.hd, who:o.who, av:o.av, id:'n:'+String(o.hd||'')});
+  }
+  return out;
+}
 function notRow(n){
-  var k=String(n.kind||''), p=postById(n.id), ic=
+  var k=String(n.kind||''), p=postById(n.id), pics=p? postPics(p) : [], ic=
     k==='like'? ICON_HEART : k==='boost'? ICON_BOOST :
     k==='reply'? ICON_REPLY : k==='follow'? ICON_ADD : ICON_LINE;
   return '<div class="ntf"'+(n.id? DO('postOpen', [String(n.id)]) : '')+'>'+
     '<span class="ntfi '+esc(k)+'">'+ic+'</span>'+
-    notFace(n)+
+    '<span class="ntffs">'+notFaces(n)+'</span>'+
     '<span class="ntfb">'+
-      '<span class="ntfw">'+esc(t('notif.'+(k||'other'), postWho(n)))+'</span>'+
+      '<span class="ntfw">'+esc(t('notif.'+(k||'other'), notWho(n)))+'</span>'+
       (p? '<span class="ntfp">'+esc(p.mn || p.ln || '')+'</span>' : '')+
     '</span>'+
+    /* The post itself, small, on the right -- which is the owner's picture and
+       is also the only thing on the row that says WHICH post without reading
+       it. Only where this phone has the post: a notice is about something you
+       wrote, so it is in `lingua.posts`, and a notice whose post is not here
+       shows the time alone rather than a gap. */
+    (pics.length? '<span class="ntfpic"><img src="'+esc(pics[0])+'" alt=""></span>'
+                : '')+
     '<span class="pwhen">'+esc(postWhen(n.at))+'</span>'+
     '</div>';
 }

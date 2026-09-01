@@ -627,6 +627,8 @@ defLang('ko', (function(){
       'notif.follow'          : "{0} 님이 팔로우했습니다",
       'notif.pick'            : "읽어볼 만합니다",
       'notif.other'           : "{0}",
+      'notif.two'           : "{0} 및 {1}",
+      'notif.many'           : "{1} 외 {0}명",
       "tab.find"         : "찾기",
       "tab.home"         : "홈",
       "help.q"           : "이게 뭔가요",

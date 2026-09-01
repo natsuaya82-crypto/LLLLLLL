@@ -456,6 +456,8 @@ defLang('zh', (function(){
       'notif.follow'          : "{0} 关注了你",
       'notif.pick'            : "值得一读",
       'notif.other'           : "{0}",
+      'notif.two'           : "{0} 和 {1}",
+      'notif.many'           : "{1} 和其他 {0} 人",
       "tab.find"         : "查找",
       "tab.home"         : "主页",
       "help.q"           : "这是什么",
