@@ -1237,7 +1237,10 @@ function shInHTML(){
         /* A canvas carries no text, so the one word that was here before is
            what it is CALLED -- said to a screen reader and not printed beside
            the drawing it would be repeating. */
-        ? '<canvas class="shink" data-i="'+i+'" aria-label="'+esc(t('wr.drawn'))+'"'+
+        /* `role="img"`: it is a picture of what was read off the paper, and it
+           is not a control -- nothing presses it. An aria-label with no role
+           is a name given to a control, which is what `press` refuses. */
+        ? '<canvas class="shink" data-i="'+i+'" role="img" aria-label="'+esc(t('wr.drawn'))+'"'+
             ' style="width:30px;height:30px;display:block;flex:0 0 auto"></canvas>'
         : '')+
       '<span class="sl">'+esc(g.nm)+'</span>'+

@@ -400,6 +400,31 @@ export function halfDone(){
      body where the app keeps it and asks the app. */
   const sheet = (html) => { if (typeof FORM !== 'undefined' && FORM) FORM.html = html;
                             return vForm(); };
+  /* SOMEBODY ELSE'S PUBLISHED LANGUAGE, on this phone, as the two answers that
+     draw their page: the row `language_seen` gives, and the five slices
+     `slice_read` in supabase/schema.sql opens to a reader -- wld, script, snd,
+     letters, kb, and NOT the dictionary or the grammar, which it refuses to
+     everybody but their owner. `dl:true` is its owner having said its chapters
+     may be taken.
+
+     One place, because two faces below want it and press() re-seeds between
+     them: a copy in each is a face that draws the waiting shell and a check
+     that walks a screen the app never shows. */
+  const __seenLang = () => {
+    const lid = 'seen-lang-1';
+    WLD_HAVE[lid] = { id:lid, name:'Shango', license:'', pub:'2026-08-01',
+                      nwords:12, nletters:5 };
+    WLDS_HAVE[lid] = {
+      wld:     { body: JSON.stringify({ dl:true, where:'the northern valleys',
+                   ov:[{k:'', v:'a language somebody else wrote'}] }), no:3 },
+      script:  { body: JSON.stringify({ dir:'ltr' }), no:1 },
+      snd:     { body: JSON.stringify(['a','k','n']), no:2 },
+      letters: { body: JSON.stringify([{ id:'sx1',
+                   st:[{pts:[[100,100],[700,700]]}], ch:'', nm:'q', snd:[] }]), no:5 },
+      kb:      { body: JSON.stringify({ boards:[] }), no:1 }
+    };
+    return lid;
+  };
   return [
     /* The account screen has two faces and the walk arrives signed IN, so the
        way in -- the three sign-in buttons and the mail door -- is on neither
@@ -518,26 +543,22 @@ export function halfDone(){
        which it refuses to everybody but their owner. `dl:true` in `wld` is
        that language's owner having said its chapters may be taken. */
     ['somebody else\u2019s language page', () => {
-       const lid = 'seen-lang-1';
-       WLD_HAVE[lid] = { id:lid, name:'Shango', license:'', pub:'2026-08-01',
-                         nwords:12, nletters:5 };
-       WLDS_HAVE[lid] = {
-         wld:     { body: JSON.stringify({ dl:true, where:'the northern valleys',
-                      ov:[{k:'', v:'a language somebody else wrote'}] }), no:3 },
-         script:  { body: JSON.stringify({ dir:'ltr' }), no:1 },
-         snd:     { body: JSON.stringify(['a','k','n']), no:2 },
-         letters: { body: JSON.stringify([{ id:'sx1',
-                      st:[{pts:[[100,100],[700,700]]}], ch:'', nm:'q', snd:[] }]), no:5 },
-         kb:      { body: JSON.stringify({ boards:[] }), no:1 }
-       };
+       const lid = __seenLang();
        window.route='about'; NAV=[{ r:'about', a:lid }];
        const h=vAbout();
        return h; }],
     /* and the same page with its download section OPEN, which is where the ↓
        itself is -- ABOPEN records what is open, so the arriving state is
-       everything closed and a walk that never toggles never sees inside one. */
+       everything closed and a walk that never toggles never sees inside one.
+
+       IT SEEDS THE LANGUAGE ITSELF rather than leaning on the face above.
+       tools/press.mjs runs seed() before EVERY one of these, and seed() puts
+       WLD_HAVE and WLDS_HAVE back to empty -- so a face that only set ABOPEN
+       drew the waiting shell, the ↓ was never rendered, and `wldGet` came out
+       as a name no screen ever says. tools/act-check.mjs did not re-seed
+       between them and saw it, which is the two checks walking two apps. */
     ['somebody else\u2019s language page, downloads open', () => {
-       const lid = 'seen-lang-1';
+       const lid = __seenLang();
        const was = ABOPEN.wlddl;
        ABOPEN.wlddl = true;
        window.route='about'; NAV=[{ r:'about', a:lid }];

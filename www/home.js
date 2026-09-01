@@ -1595,7 +1595,18 @@ function wldPage(ed, L, lid){
        heading and an arrow into this phone's own chapters, which is a way
        through that means nothing to anybody but their owner. What is left to
        READ is the overview, the sounds, the letters and the keyboard. */
-    if(!ed && (sec.r==='words' || sec.r==='gram') && !wldSecDl(sec.r, w)) return;
+    /* AND ONLY IF IT CAN ACTUALLY BE TAKEN. The dictionary and the grammar are
+       not READ on the article -- 「単語と文法とはdl専用だから見れなくていいのよ？
+       音と文字とキーボードだけ」 OWNER 2026-08-25 -- so the only reason to draw
+       a heading for one is that there is a ↓ under it. `slice_read` in
+       supabase/schema.sql opens five kinds to a reader and neither of those two
+       is among them, so a publisher who has said 「take my dictionary」 was
+       giving this page a heading with nothing under it, nothing to press, and
+       no way through: a section that says a chapter is there and cannot show
+       it or hand it over. wldDlKind() is the one place that says which
+       sections the server will actually give up. */
+    if(!ed && (sec.r==='words' || sec.r==='gram') &&
+       !(wldSecDl(sec.r, w) && wldDlKind(sec.r))) return;
     /* And what MAY be taken away says so, where it is --
        「DL許可が出てるものはDLマークつけないと」 OWNER 2026-08-25. It is on the
        article and not on the editor: the switch is the answer on the writing
@@ -1608,8 +1619,14 @@ function wldPage(ed, L, lid){
        foot with the others. It was a `<span>` on both faces, carrying no
        action, which is what the owner pressed:
        「ダウンロードボタン押しても言語追加されないけど？」 OWNER 2026-09-01. */
+    /* `role="img"` and not nothing. This is a MARK -- it says a section may be
+       taken away -- and it is not a control: pressing it does nothing and it
+       has no `DO()`. An aria-label with no role is somebody saying what a
+       CONTROL is called, which is the fault `press` is written to catch and
+       which this line was the worked example of. A picture that carries
+       meaning is named as a picture. */
     if(!ed && mine && sec.dl && wldSecDl(sec.r, w))
-      extra='<span class="abdlm" aria-label="'+esc(t('wld.dl.can'))+'">'+
+      extra='<span class="abdlm" role="img" aria-label="'+esc(t('wld.dl.can'))+'">'+
         ICON_DL+'</span>';
     /* And on somebody else's, the row that actually takes it. Held back to
        the foot the same way the editor's four switches are, and for the same
