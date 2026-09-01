@@ -665,7 +665,18 @@ function rootTop(r, right){
    in both places, and `tab.find` was doing duty for two different screens. */
 var TABS=['feed', 'explore', 'notif', 'build', 'profile'];
 function tabBar(){
-  var cur=here().r, i, r, out='';
+  var cur=here().r, i, r, n, out='';
+  /* THE NUMBER ON THE BELL. 「最後に通知の画面を開いた時刻より新しいものを
+     未読とする」「下のタブのベルに数字を出す」 OWNER 2026-09-01.
+
+     The copy is woken and the answer asked for HERE rather than on the
+     notices screen, because a count that only becomes true once you have
+     opened the tab is a count nobody ever sees: opening the tab is what
+     makes it zero. notAsk() is once a session, notWake() reads the copy on
+     the handset, so the bell is right on the first frame of whatever screen
+     the app opened on. www/sns.js owns all three. */
+  notWake();
+  notAsk();
   for(i=0;i<TABS.length;i++){
     r=TABS[i];
     /* The mark and nothing else. 「下タブにホームとかつけるのやめない？」
@@ -674,7 +685,15 @@ function tabBar(){
        by otherwise, and pageName() stays the one place that names a tab. */
     out+='<button class="tab'+(cur===r?' on':'')+'"' + DO('goTab', [r]) +
       (r==='profile'? ' data-hold="1"' : '')+
-      ' aria-label="'+esc(pageName(r))+'">'+TAB_ICON[r]+'</button>';
+      ' aria-label="'+esc(pageName(r))+'">'+TAB_ICON[r]+
+      /* A NUMBER AND NOT A DISC. Rule 18 -- nothing new gets a corner radius,
+         a border or a filled panel -- and the owner asked for 数字, not for a
+         red circle. If the filled circle every other timeline wears is what
+         is wanted, it is two lines in tools/box-baseline.txt and one word
+         from the owner; it is not mine to add. */
+      ((r==='notif' && (n=notUnread())>0)
+        ? '<span class="tabn">'+esc(String(n))+'</span>' : '')+
+      '</button>';
   }
   return '<div class="tabbar">'+out+'</div>';
 }

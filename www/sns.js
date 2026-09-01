@@ -1353,6 +1353,86 @@ function vExplore(){
    in the same four fields everything else describes a person with, and which
    post it was about. */
 var NOTES_HAVE=null, notPulling=false;
+/* THE COPY ON THE HANDSET, and it is the answer to the second of blank.
+   「通知とか表示されるのに1秒くらいの空白の時間があるのうざいからそれ無くして
+   欲しい」 OWNER 2026-08-28.
+
+   The feed draws instantly because `lingua.posts` is a copy; the notices had
+   none at all, so the screen was empty for as long as the request was in the
+   air. This is that copy: drawn first, replaced when the answer lands.
+
+   FILED UNDER THE ACCOUNT, the way `lingua.me` is parked by meParkKey(). Two
+   accounts on one handset must not read each other's notices, and a notice
+   names who did what to whom.
+
+   IT REPLACES RATHER THAN FILLS IN, which is the opposite of what draftsPull()
+   does and is not an exception to it: `notices()` is computed on the server
+   from `react`, `post` and `follow` every time it is asked, so nothing here can
+   ever be the only surviving copy of anything. A draft is something a person
+   MADE; a notice is something that happened to them. `docs/DATA_MODEL.md`. */
+var LS_NOTES='lingua.notices';
+function notKey(){
+  var u=(typeof SESS==='object' && SESS && SESS.uid)? String(SESS.uid) : '';
+  return u? (LS_NOTES+'.'+u) : '';
+}
+/* Read once, when the screen first asks. `NOTES_HAVE` stays null until then,
+   which is still "nobody has asked" -- and a phone with no copy yet is that
+   too, so the two agree without a third flag. */
+var notRead=false;
+function notWake(){
+  var k=notKey(), raw=null, got=null;
+  if(notRead || !k) return;
+  notRead=true;
+  try{ raw=localStorage.getItem(k); }catch(e){ raw=null; }
+  if(!raw) return;
+  try{ got=JSON.parse(raw); }catch(e){ got=null; }
+  if(got && got.length) NOTES_HAVE=got;
+}
+function notKeep(){
+  var k=notKey();
+  if(!k || !NOTES_HAVE) return;
+  try{ localStorage.setItem(k, JSON.stringify(NOTES_HAVE)); }catch(e){}
+}
+/* WHAT MAKES A NOTICE UNREAD, and it is the owner's answer rather than the
+   server's. 「最後に通知の画面を開いた時刻より新しいものを未読とする」 OWNER
+   2026-09-01, X と Instagram と同じ形.
+
+   THE SERVER HOLDS NO READ MARKER. `notices()` in supabase/schema.sql returns
+   eight columns -- kind, at, hd, who, av, post, n, more -- and not one of them
+   says read; there is no `read_at`, no `last_seen` and no table for one. So
+   this is the whole of what unread means here, and it is a decision and not a
+   workaround for a missing column: 「サーバーの既読の表は要りません」.
+
+   `SET.notAt` is the number, in `lingua.set` because it is a fact about the
+   PERSON and not about the notices -- it survives the copy being replaced.
+   `docs/DATA_MODEL.md`. */
+function notUnread(){
+  var i, n=0, at=Number(SET.notAt||0), ns=NOTES_HAVE||[];
+  for(i=0;i<ns.length;i++) if(Number(ns[i].at||0)>at) n++;
+  return n;
+}
+/* Opening the screen is the reading. Written down only when something was
+   actually unread: this runs on every render of the notices, and save() walks
+   the language's slices, so writing a timestamp on each of them would be a
+   dictionary written out to say a bell went quiet.
+
+   Not writing costs nothing that matters -- a phone killed before the write
+   shows the mark again, which is the side that never hides a notice. */
+function notSeen(){
+  var had=notUnread();
+  SET.notAt=Date.now();
+  if(had) save();
+}
+/* Asked once a session, from the tab bar, so the count is right on the screen
+   somebody is actually standing on. Same shape as meFollowPull()'s FO_ASKED
+   and snsSavedPull(): a screen that draws every render must not ask every
+   render. Opening the notices asks again on its own through notPull(). */
+var NOT_ASKED=false;
+function notAsk(){
+  if(NOT_ASKED || !netSignedIn()) return;
+  NOT_ASKED=true;
+  notPull();
+}
 function notPull(){
   if(notPulling) return;
   notPulling=true;
@@ -1363,6 +1443,7 @@ function notPull(){
     pullSpinOff();
     if(!ns) return;
     NOTES_HAVE=ns;
+    notKeep();
     render();
   }, function(){ notPulling=false; pullSpinOff(); });
 }
@@ -1437,14 +1518,17 @@ function notRow(n){
    snsAnsHTML() in this same file has had it right since it was written --
    `if(!r) return ''` -- so this is the search's shape, not a new one.
 
-   **THE SECOND OF BLANK IS NOT REMOVED BY THIS, AND CANNOT BE FROM HERE.**
-   The feed draws instantly because `lingua.posts` is a copy on the handset
-   (measured: 4 rows on the first frame). The notices have no copy at all --
-   there is no `lingua.notices` -- so there is nothing to draw first. Giving
-   them one is new stored data, which is `docs/DATA_MODEL.md`, and this
-   session does not own that file. It is in the report. */
+   The second of blank is gone with `lingua.notices` above: notWake() puts
+   last time's notices on the screen in the first frame, and the answer
+   replaces them when it lands. The three states are still three -- a phone
+   that has never had an answer has no copy either, so it draws nothing rather
+   than saying there is nothing. */
 function vNotif(){
   if(!netSignedIn()) return snsLocked('notif');
+  /* The copy first, so there is something on the screen before the request
+     goes out; then the request. */
+  notWake();
+  notSeen();
   notPull();
   var got=NOTES_HAVE;
   var ns=(got||[]).filter(function(n){ return !meBlocks(n.hd); });
