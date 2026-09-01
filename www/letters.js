@@ -79,7 +79,7 @@ function ltFor(unit){
 function ltMain(unit){ var a=ltFor(unit); return a.length? a[0] : null; }
 function ltStrokes(unit){ var l=ltMain(unit); return (l && l.st && l.st.length)? l.st : null; }
 function ltChar(unit){ var l=ltMain(unit); return (l && l.ch)? l.ch : ''; }
-function ltHasShape(l){ return !!(l && ((l.st && l.st.length) || l.ch)); }
+function ltHasShape(l){ return !!(inkGeo(l) || (l && l.ch)); }
 /* What a letter LOOKS like: what was drawn, or the character it borrows, or
    whatever the caller wants for a letter that is neither yet -- a pen on the
    alphabet, its name on a spelling, nothing at all on a strip.
@@ -92,8 +92,21 @@ function ltHasShape(l){ return !!(l && ((l.st && l.st.length) || l.ch)); }
    class: a key of the keyboard asks for `midink`, which stands the shape in
    the middle of the square instead of where it sits in the lattice.
    「キーボードに配置するときは中央に文字くるようにしてね？」 */
+/* `inkGeo()` and not `l.st`, and it is the same sentence as the one above:
+   a letter brought in on a sheet carries its picture as `sh`, and inkGeo() is
+   the ONE place that knows a shape may be either. Asking for strokes here
+   meant this said a sheet letter had nothing to show -- so the alphabet drew
+   its name and a pen beside twenty empty squares, on the very screen
+   shTakeIn() lands on after a sheet is read.
+   「sheet のページで追加した文字が線画されて出てこない。ただのアルファベットと
+   空白のセルになってる。」OWNER 2026-09-01, build 107, on a device.
+
+   What FILLS the canvas has always asked inkGeo() -- inkCanvases() goes
+   through inkOf(), which does -- so the two halves of one question were
+   giving different answers: the cell was not drawn because this said there
+   was nothing, and the thing that would have drawn it knew there was. */
 function ltInk(l, none, cls){
-  if(l && l.st && l.st.length)
+  if(inkGeo(l))
     return '<canvas class="tc'+(cls? ' '+cls : '')+'" data-l="'+esc(l.id)+'"></canvas>';
   if(l && l.ch) return '<span class="bch">'+esc(l.ch)+'</span>';
   return none||'';
