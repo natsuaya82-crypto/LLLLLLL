@@ -968,6 +968,59 @@ const R = await pg.evaluate(() => {
   }
   say('29: 通知は「何人か」と「何件か」を別々に持って届く');
 
+  /* ---- 30. フォロー中／フォロワーの一覧が、人のぶんも訊ける -------------
+     follow は誰についても書かれるのに、読み戻すのは**自分のぶんだけ**でした
+     ── どの要求も follower=eq.<自分> か followed=eq.<自分> です。だから
+     人のページは**何人か**は言えるようになっても（profile_seen が数える）、
+     **誰か**を訊く道がまだ無く、数を押しても行き先がありませんでした。 */
+  start();
+  netOut(); arrive(A);
+  let asked2 = [];
+  netGet = (path, ok) => {
+    asked2.push(path);
+    if (path.indexOf('/rest/v1/profile?select=id') === 0)
+      return ok([{ id: B }]);
+    if (path.indexOf('/rest/v1/follow?select=followed(handle)') === 0)
+      return ok([{ followed: { handle: 'kai' } }]);
+    if (path.indexOf('/rest/v1/follow?select=follower(handle)') === 0)
+      return ok([{ follower: { handle: 'veth' } }]);
+    return ok([]);
+  };
+
+  /* 自分のぶん ── 今までどおり、引数を足しても呼び出し側は変わらない。 */
+  asked2 = [];
+  let mineFo = null;
+  netFollowing((r) => { mineFo = r; }, () => {});
+  if (!mineFo || mineFo[0] !== 'kai') no('30: 自分のフォロー中が返らなくなった');
+  if (asked2.join('\n').indexOf('follower=eq.' + A) < 0)
+    no('30: 自分のぶんが自分の uid で訊かれていない');
+
+  /* 人のぶん ── ハンドルから uid を引いて、その人について訊く。 */
+  asked2 = [];
+  let hisFo = null;
+  netFollowing((r) => { hisFo = r; }, () => {}, 'iri');
+  const j2 = asked2.join('\n');
+  if (j2.indexOf('handle=eq.iri') < 0) no('30: ハンドルから人を引いていない');
+  if (j2.indexOf('follower=eq.' + B) < 0)
+    no('30: 人のフォロー中を、その人の uid で訊いていない — ' + j2);
+  if (!hisFo || hisFo[0] !== 'kai') no('30: 人のフォロー中が返らない');
+
+  asked2 = [];
+  let hisFr = null;
+  netFollowers((r) => { hisFr = r; }, () => {}, 'iri');
+  if (asked2.join('\n').indexOf('followed=eq.' + B) < 0)
+    no('30: 人のフォロワーを、その人の uid で訊いていない');
+  if (!hisFr || hisFr[0] !== 'veth') no('30: 人のフォロワーが返らない');
+
+  /* 居ない人は空ではなく「訊けなかった」。空の一覧と、そんな人は居ない、は
+     別のことです。 */
+  netGet = (path, ok) => ok([]);
+  let gone2 = 'untouched';
+  netFollowers((r) => { gone2 = r; }, () => {}, 'nobody');
+  if (gone2 !== null) no('30: 居ない人のフォロワーが「空の一覧」で返った — ' + JSON.stringify(gone2));
+  netGet = realGet;
+  say('30: フォロー中／フォロワーは、人のぶんも訊ける（自分のぶんは今までどおり）');
+
   return out;
 });
 

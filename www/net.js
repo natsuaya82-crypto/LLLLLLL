@@ -1144,18 +1144,49 @@ function netFeed(which, ok, bad, more){
    follows whom is public, the way it is in every timeline. Signed out there
    is nobody to have followed anybody, and the answer is `null` -- could not
    ask -- rather than an empty list. */
-function netFollowing(ok, bad){
-  if(!netSignedIn()){ ok(null); return; }
-  netGet('/rest/v1/follow?select=followed(handle)&follower=eq.'+
-         encodeURIComponent(SESS.uid),
+/* WHOSE LISTS THESE ARE, which was always「mine」and could not be anything
+   else. 「当たり前だけどsnsとして機能してない」 OWNER 2026-09-01.
+
+   `follow` was written for anybody and read back only about YOURSELF: every
+   request said `follower=eq.<me>` or `followed=eq.<me>`. So a person's page
+   can now say HOW MANY (profile_seen counts them) and there was still no way
+   to ask WHO -- tapping the number had nowhere to go.
+
+   The handle is an optional LAST argument rather than a new pair of
+   functions, and that is not tidiness: a function nothing calls yet fails
+   dead-check (CLAUDE.md rule 5), and the screens that would call it are
+   www/me.js's, which this session does not own. An argument the existing
+   callers do not pass changes nothing for them and is there the day a screen
+   wants it.
+
+   Reading needs no account -- `follow_read` is `using (true)`, who follows
+   whom is public the way it is in every timeline -- but asking about YOURSELF
+   does, because there is no `SESS.uid` to ask with otherwise. */
+function netWhoseId(handle, ok, bad){
+  var h=String(handle||'');
+  if(!h){
+    if(!netSignedIn()){ bad(null, 0, 'whose −'); return; }
+    ok(SESS.uid); return;
+  }
+  netGet('/rest/v1/profile?select=id&limit=1&handle=eq.'+encodeURIComponent(h),
     function(d){
-      var out=[], i, r;
-      for(i=0;i<(d||[]).length;i++){
-        r=(d[i] && d[i].followed) || null;
-        if(r && r.handle) out.push(String(r.handle));
-      }
-      ok(out);
+      if(!d || !d.length){ bad(null, 0, 'whose −'); return; }
+      ok(String(d[0].id||''));
     }, bad);
+}
+function netFollowing(ok, bad, handle){
+  netWhoseId(handle, function(uid){
+    netGet('/rest/v1/follow?select=followed(handle)&follower=eq.'+
+           encodeURIComponent(uid),
+      function(d){
+        var out=[], i, r;
+        for(i=0;i<(d||[]).length;i++){
+          r=(d[i] && d[i].followed) || null;
+          if(r && r.handle) out.push(String(r.handle));
+        }
+        ok(out);
+      }, bad);
+  }, function(){ ok(null); });
 }
 /* AND THE OTHER DIRECTION, WHICH NOTHING HAD EVER ASKED.
    -------------------------------------------------------------------------
@@ -1174,18 +1205,19 @@ function netFollowing(ok, bad){
    `follower(handle)` names the COLUMN and not the table, for netFollowing()'s
    reason: `follow` has two foreign keys into `profile` and asking for
    `profile(handle)` is ambiguous. */
-function netFollowers(ok, bad){
-  if(!netSignedIn()){ ok(null); return; }
-  netGet('/rest/v1/follow?select=follower(handle)&followed=eq.'+
-         encodeURIComponent(SESS.uid),
-    function(d){
-      var out=[], i, r;
-      for(i=0;i<(d||[]).length;i++){
-        r=(d[i] && d[i].follower) || null;
-        if(r && r.handle) out.push(String(r.handle));
-      }
-      ok(out);
-    }, bad);
+function netFollowers(ok, bad, handle){
+  netWhoseId(handle, function(uid){
+    netGet('/rest/v1/follow?select=follower(handle)&followed=eq.'+
+           encodeURIComponent(uid),
+      function(d){
+        var out=[], i, r;
+        for(i=0;i<(d||[]).length;i++){
+          r=(d[i] && d[i].follower) || null;
+          if(r && r.handle) out.push(String(r.handle));
+        }
+        ok(out);
+      }, bad);
+  }, function(){ ok(null); });
 }
 /* ---- keeping somebody away from you ------------------------------------
    A block one phone knows about is not a block: the other person's posts have
