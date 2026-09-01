@@ -757,16 +757,50 @@ function tabBar(){
    hold sets HELD and the capture-phase listener below eats that one click --
    capture, because act.js's own listener is on the same root and would
    otherwise run first. */
-var HOLD_MS=500, holdT=null, HELD=false;
+/* A THUMB IS NOT A TRIPOD, and until 2026-09-01 this asked for one.
+   `touchmove` went straight to holdClear() with no threshold, so the hold
+   died the moment the finger moved by a single pixel -- which a finger
+   resting on glass always does. Measured on a phone with real touch events:
+   perfectly still reached the language switcher, one pixel reached nothing,
+   and so did six and forty. **The gesture had never once been made by a
+   hand.** Nothing threw and every check was green, because what press threw
+   was a click, and a click is mousedown and mouseup in the same millisecond.
+
+   So the start is remembered and the move is measured against it. `HOLD_SLOP`
+   is a RADIUS -- squared on both sides rather than Math.hypot, which
+   es5-check forbids and which this does not need.
+
+   **10 is provisional and is not this file's to decide.** How far a thumb may
+   wander and still be holding is a threshold, and docs/FEATURE_RULES.md
+   § Deciding says a threshold is the owner's. It is here so the gesture works
+   at all; the number needs their word. */
+var HOLD_MS=500, HOLD_SLOP=10, holdT=null, HELD=false, holdX=0, holdY=0;
+/* Where the finger is, from a touch or from a mouse. A touchend carries its
+   point in `changedTouches`, because by then it is no longer touching. */
+function holdAt(e){
+  var t=(e.touches && e.touches[0]) ||
+        (e.changedTouches && e.changedTouches[0]) || e;
+  return {x:t.clientX||0, y:t.clientY||0};
+}
 function holdStart(e){
-  var el=e.target;
+  var el=e.target, p;
   while(el && el!==document && el.getAttribute && !el.getAttribute('data-hold')) el=el.parentNode;
   if(!el || !el.getAttribute || !el.getAttribute('data-hold')) return;
   holdClear();
+  p=holdAt(e); holdX=p.x; holdY=p.y;
   holdT=setTimeout(function(){
     holdT=null; HELD=true;
     goTab('profile'); go('langs');
   }, HOLD_MS);
+}
+/* Moved far enough to be going somewhere rather than resting. Under the
+   radius nothing happens at all -- not a reset of the timer, which would be
+   a hold that a slowly sliding thumb could keep alive forever. */
+function holdMove(e){
+  var p, dx, dy;
+  if(!holdT) return;
+  p=holdAt(e); dx=p.x-holdX; dy=p.y-holdY;
+  if(dx*dx+dy*dy > HOLD_SLOP*HOLD_SLOP) holdClear();
 }
 function holdClear(){ if(holdT){ clearTimeout(holdT); holdT=null; } }
 function holdEat(e){
@@ -777,7 +811,7 @@ function holdEat(e){
    phase, so capture here is the only place that runs before it. */
 document.addEventListener('touchstart',  holdStart, false);
 document.addEventListener('touchend',    holdClear, false);
-document.addEventListener('touchmove',   holdClear, false);
+document.addEventListener('touchmove',   holdMove,  false);
 document.addEventListener('touchcancel', holdClear, false);
 document.addEventListener('mousedown',   holdStart, false);
 document.addEventListener('mouseup',     holdClear, false);
