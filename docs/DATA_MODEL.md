@@ -86,7 +86,7 @@ saying that flag is temporary has to be written to the same place at the same
 moment. It was a variable, and a reload between the two left a phone claiming
 the onboarding was unfinished with nothing left saying otherwise. Cleared by
 `obReturn()`; it is a pending move, not a preference, and it is the one thing
-in `SET` that is meant to be short-lived. `lingua.me` (`ME`) is the person.
+in `SET` that is meant to be short-lived. `lingua.me` (`ME`) is the person — the copy of their `profile` row.
 `lingua.sess` (`SESS`) is the session — the token pair only; **a password is
 never held, stored or logged.** `lingua.posts` (`POSTS`) is the timeline, and
 `lingua.drafts` (`DRAFTS`) is what was written and not sent — the composer,
@@ -296,7 +296,7 @@ writer's language:
 | `pics` | **up to four photographs**, each squeezed to 900px on the long edge at q0.72 — about 22 KB as text apiece. See below: this is the one field big enough to matter |
 | `pic` | one photograph, on posts written before `pics` existed. Never rewritten. `postPics()` is the one place that reads either |
 | `tr` | what it means in other natural languages, translated at the moment of posting by the writer's own device AI. Absent until that is wired up, and absent is not empty |
-| `vo` | **the voice**, as `{f, ms}` — the name of a file in `Documents/Voices/` and how long it is. The bytes are NOT here: thirty seconds of AAC is about 240 KB, which is ten free-sized languages, and `lingua.posts` shares its quota with everything a person has made. `www/rec.js` writes the file before the post is stored, so a name on a post is a file on the disk. **On the disk is not where it belongs** — 「SNSは全部サーバー」, and a voice is the post's, so it goes up with the post. Not moved yet; `docs/BACKLOG.md` |
+| `vo` | **the voice**, as `{f, ms}` — a name and how long it is, never the bytes: thirty seconds of AAC is about 240 KB, which is ten free-sized languages, and `lingua.posts` shares its quota with everything a person has made. **The bytes are on the server** — `netUpVoice()` puts them in the `post-media` bucket at `<uid>/<pid>/vo.m4a` and writes that path onto `body.vu`. `www/rec.js` writes a local file first so a recording made with no signal is not lost; `voRemote()` tells the two apart by whether the name holds a slash |
 | `ed` | when it was edited, if it ever was. An author may put the **line and the meaning** right; the photographs and the voice stay as they were. The `ink` is re-cut at that moment, which is the one place in this app where a post's shapes are not the shapes it was born with — a changed line with the old shapes is the old line |
 | `to`, `toh` | **what it answers, and who wrote that.** Both, and for two different readers: `to` is the id, which is how a reply and its parent are put back together on a phone that has them both, and `toh` is the handle, which is what is SHOWN — so it is on the reply, because the post it answers may not be here at all. `postToWho()` in `www/post.js` is the one place either is read for display: it takes `toh`, falls back to asking the parent when the parent is here, and shows nothing when it is not. A reply written before `toh` existed has only `to` and is not back-filled |
 | `dir` | **which way the line runs** — `ltr`, `rtl`, `ttb-rl`, `ttb-lr`. The language's, frozen at the moment of writing. A timeline that asked the open language would set every post the way MY language runs, which is `ink` all over again. Absent means `ltr`, which is how every post before this was written |
@@ -383,6 +383,11 @@ mirror image of `ink`, and correct for the same reason. `trUnits()` in
 
 ## What money is allowed to touch
 
-Nothing in this file. `SET.plan` decides what a person may *do*; it decides
-nothing about what exists, what is saved, or what comes back. See
-`docs/PAID_FEATURES.md`.
+Nothing in this file. The plan decides what a person may *do*; it decides
+nothing about what exists, what is saved, or what comes back.
+
+**And the plan is the ACCOUNT's, not a slice and not one of the settings**
+「課金とアカウントとキーボードはアカウントに結びつく」 OWNER 2026-09-01. It follows the
+person to whatever phone they sign in on. `SET.plan` is where the value sits
+today and that is the code, not the model — `docs/STATE.md` § 3 item 4 has the
+gap. See `docs/PAID_FEATURES.md`.
