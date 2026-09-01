@@ -763,8 +763,33 @@ function kbFixed(){
   for(i=0;i<KB_QWERTY.length;i++){
     r=KB_QWERTY[i]; row=[];
     for(j=0;j<r.length;j++){
+      /* THE KEY GOES DOWN WHETHER OR NOT THE LETTER IS FOUND. A row used to
+         push only the letters kbNamed() answered for, so a language missing
+         one by name came out a key short -- and one missing all of them came
+         out with no letter rows at all. The screen was then a digit row and a
+         space bar, which is the free plan's keyboard GONE: 「無料のキーボード
+         はqwartyに書いた文字が置き換わるだけなのにキーボード自体消えてる」
+         OWNER 2026-09-01, build #106.
+
+         Free is a QWERTY with the drawn letters substituted IN, so the QWERTY
+         is the fixed part and a letter is what gets substituted -- a letter
+         that is not there yet may leave its key wearing the roman character,
+         and may not take the key away with it. kbRom() is that key and this
+         is not a new idea here: the digit row above has fallen back to it
+         from the day it was written, for exactly this reason.
+
+         It also keeps the ROW's arithmetic true. Ten, ten, nine and seven is
+         what the inset half keys, the three-wide delete and 「キーボードずれ
+         た。文字サイズとか小さくしていいからずらさないで」 are all counted
+         against; a short row silently re-runs that sum on a different number
+         and the columns stop lining up.
+
+         ltStart() is still what puts the letters there, and nothing here is a
+         second way to make one -- a fallback key is not a letter and is not
+         written to LETTERS. This is the keyboard refusing to vanish while it
+         waits. */
       id=kbNamed(r.charAt(j));
-      if(id) row.push(kbFix(r.charAt(j), id));
+      row.push(id? kbFix(r.charAt(j), id) : kbRom(r.charAt(j)));
     }
     /* Two keys wide. It is the one key you hit without looking, and it was
        the same width as a letter. 「デリートキーは横二つ分欲しいかも」
@@ -805,8 +830,11 @@ function kbFixed(){
   var end0=kbNamed(KB_ENDS.charAt(0)), end1=kbNamed(KB_ENDS.charAt(1));
   /* 1 + 1 + 6 + 2 = ten, the same as every row above. */
   sp.w=6; ret.w=2;
-  if(end0) bot.push(kbFix(KB_ENDS.charAt(0), end0));
-  if(end1) bot.push(kbFix(KB_ENDS.charAt(1), end1));
+  /* The same, and the sum is the reason it matters here too: the bar is 1 + 1
+     + 6 + 2, so a missing `!` makes it nine and the bar stops agreeing with
+     the rows above it. */
+  bot.push(end0? kbFix(KB_ENDS.charAt(0), end0) : kbRom(KB_ENDS.charAt(0)));
+  bot.push(end1? kbFix(KB_ENDS.charAt(1), end1) : kbRom(KB_ENDS.charAt(1)));
   bot.push(sp);
   bot.push(ret);
   rows.push(bot);
