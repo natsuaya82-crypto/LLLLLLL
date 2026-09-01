@@ -366,6 +366,47 @@ create table if not exists saved_search (
 create index if not exists saved_search_author_idx
   on saved_search(author, created_at desc);
 
+-- WHAT THIS ACCOUNT HAS PAID FOR.
+--
+-- 「課金とアカウントとキーボードはアカウントに結びつく。
+--   じゃないとアカウント変えたら無限に言語作れるやん」 OWNER 2026-09-01.
+--
+-- The plan lived in `lingua.set` on the phone -- the person's SETTINGS, which
+-- belong to the device and to no account. So it did not travel: signing in on
+-- a second phone arrived on the free plan, and every ceiling the plan opens
+-- was counted per device rather than per account.
+--
+-- A TABLE OF ITS OWN AND NOT A COLUMN ON `profile`, and the reason is one
+-- line further up this file: `profile_read` is `using (true)`. Everybody can
+-- read every profile, because that is what a profile IS -- a handle and a
+-- display name that other people see. **What somebody pays is not that.**
+-- A `plan` column there would have published every person's tier to every
+-- reader of the timeline, and nothing would have thrown.
+--
+-- It references auth.users rather than profile(id): an account has a plan
+-- from the moment it exists, and picking a handle is a later step it must not
+-- depend on.
+--
+-- WHAT THIS DOES NOT DO, SAID PLAINLY SO SILENCE IS NOT READ AS SAFETY:
+-- it does not make a plan unforgeable. The policies below stop B writing A's
+-- row -- which is a real attack and is probed in tools/rls-check.mjs -- but
+-- the row is written by the PHONE, and the phone is the person. Anybody who
+-- can send this database a request can set their OWN plan to 'pro'.
+--
+-- Closing that needs Apple's receipt checked by something that is not the
+-- phone, and there is no server of ours to check it in. That is a decision
+-- and not a line of SQL, so it is written up rather than guessed at:
+-- docs/scope/claude-acct2.md. Until it is answered, this column is where the
+-- plan LIVES, not proof of what was bought.
+--
+-- `at` is when it last moved, and it is a record rather than a clock anything
+-- reasons with -- the same argument bkNo() makes in docs/DATA_SAFETY.md.
+create table if not exists plan (
+  id    uuid primary key references auth.users on delete cascade,
+  plan  text not null default 'free' check (plan in ('free', 'plus', 'pro')),
+  at    timestamptz not null default now()
+);
+
 -- A word taken from somebody else's language and used in a post. This is the
 -- citation, and it is a table rather than a field in body because it is the
 -- thing being counted: how often a language is spoken by people who did not
@@ -503,6 +544,7 @@ alter table block       enable row level security;
 alter table report      enable row level security;
 alter table draft       enable row level security;
 alter table saved_search enable row level security;
+alter table plan        enable row level security;
 
 -- One question, and until 2026-08-26 there were two.
 --
@@ -768,6 +810,33 @@ create policy saved_edit on saved_search for update using (is_member() and autho
                                                   with check (author = auth.uid());
 drop policy if exists saved_drop on saved_search;
 create policy saved_drop on saved_search for delete using (is_member() and author = auth.uid());
+
+-- plan: yours to read, yours to write, and nobody else's to do either.
+--
+-- 「課金とアカウントとキーボードはアカウントに結びつく」 OWNER 2026-09-01.
+--
+-- READING IS NOT `using (true)` and that is the whole reason this is not a
+-- column on `profile`. What somebody pays is theirs. A tier is not a handle.
+--
+-- Writing is the owner's, which stops the attack this file can stop: B
+-- cannot make themselves Pro on A's account, and B cannot read what A pays.
+-- It does NOT stop somebody setting their own -- see the comment over the
+-- table, and docs/scope/claude-acct2.md for the decision that would.
+--
+-- There is no delete policy and that is deliberate rather than an omission.
+-- A plan row is not somebody's work; it is a fact about their account, and
+-- the account going takes it (`on delete cascade`). Nothing else may remove
+-- it, and `docs/PAID_FEATURES.md` is why a missing row is harmless anyway:
+-- no row reads as `free`, and free is the side to be wrong on.
+drop policy if exists plan_read on plan;
+create policy plan_read on plan for select
+  using (is_member() and id = auth.uid());
+drop policy if exists plan_make on plan;
+create policy plan_make on plan for insert
+  with check (is_member() and id = auth.uid());
+drop policy if exists plan_edit on plan;
+create policy plan_edit on plan for update
+  using (is_member() and id = auth.uid()) with check (id = auth.uid());
 
 -- quote: readable by everyone, because the count is the point. Written only by
 -- the author of the post it sits in -- so nobody can inflate somebody else's

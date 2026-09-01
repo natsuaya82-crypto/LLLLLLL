@@ -753,6 +753,40 @@ const CASES = [
     `insert into draft(id,author,body) values ('${DR2}','${B}','{}'::jsonb)`],
   ['nor hand it to A',                        'denied', B, 0,
     `update draft set author='${A}' where id='${DR2}'`],
+  /* --- what this account has paid for -----------------------------------
+     「課金とアカウントとキーボードはアカウントに結びつく」OWNER 2026-09-01.
+
+     Two different claims and both are real attacks. B WRITING A's plan is
+     somebody buying nothing and giving themselves everything on another
+     person's account. B READING A's plan is why this is a table of its own
+     rather than a column on `profile`, which is `using (true)` -- what
+     somebody pays is not a handle.
+
+     What is NOT claimed here, and must not be read into a green run: that
+     somebody cannot set their OWN plan. They can. The phone writes this row
+     and the phone is the person; closing it needs Apple's receipt checked by
+     something that is not the phone. docs/scope/claude-acct2.md. A test that
+     appeared to cover it would be worse than none. */
+  ['A writes A\u2019s own plan',              'ok',     A, 0,
+    `insert into plan(id,plan) values ('${A}','pro')`],
+  ['B cannot write A\u2019s plan',            'denied', B, 0,
+    `insert into plan(id,plan) values ('${A}','pro')`],
+  ['B cannot change A\u2019s plan',           'denied', B, 0,
+    `update plan set plan='free' where id='${A}'`],
+  ['B cannot read what A pays',               'denied', B, 0,
+    `select 1 from plan where id='${A}'`],
+  ['nor can somebody with no account read a plan', 'denied', B, 1,
+    `select 1 from plan where id='${A}'`],
+  ['nor write a plan',                        'denied', B, 1,
+    `insert into plan(id,plan) values ('${B}','pro')`],
+  ['B cannot delete A\u2019s plan',           'denied', B, 0,
+    `delete from plan where id='${A}'`],
+  ['nor can A delete their own',              'denied', A, 0,
+    `delete from plan where id='${A}'`],
+  ['and a tier nobody sells is refused',      'denied', A, 0,
+    `update plan set plan='studio' where id='${A}'`],
+  ['A still reads their own',                 'ok',     A, 0,
+    `select 1 from plan where id='${A}'`],
   /* Deleting the account takes the drafts with it. Asked by DOING it, and
      asked as the owner of the table rather than through a policy, because
      what has to hold is that the row is GONE -- a select that returns nothing
