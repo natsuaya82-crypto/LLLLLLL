@@ -3,7 +3,7 @@
 ## The gate
 
 ```
-npm test        # thirty checks
+npm test        # thirty-one checks
 ```
 
 `tools/gate.mjs` runs them, and the two numbers below are `FAST` and `SLOW` in
