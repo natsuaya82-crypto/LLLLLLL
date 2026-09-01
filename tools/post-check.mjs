@@ -322,10 +322,21 @@ const R = await pg.evaluate(async () => {
      the WRITER's app said them -- so a Japanese writer's answer read 日本語 on
      an English phone, which is the one sentence on the timeline that is not
      the person's own writing and does not have to. The prompt is the app's
-     own text and the server holds all ten. Only today's, because DAY is one
-     row; anything older falls back to what the post carries, which is what it
-     always showed. */
+     own text and the server holds all ten of it.
+
+     ONE ROW A DAY, THE SAME FOR EVERYBODY, so the phone asks for it by id and
+     remembers it (www/sns.js § dayMap) rather than a copy being put on every
+     post that answers it: 「今日のお題は全員共通なんだからそんな難しいこと考え
+     ないでいいじゃん。日付っていうデータもあるし」 OWNER 2026-09-01. Until the
+     answer lands, and for a prompt the server does not have, the post's own
+     words are what shows -- which is what it always showed. */
   DAY = { id: 'pr1', text: 'the sea', says: { en: 'the sea', ja: '海' } };
+  /* AND ONE THIS PHONE WAS HANDED FOR AN OLDER DAY. The timeline shows
+     answers from other days; dayMap() asks for that row once and remembers
+     it, which is what makes 「誰が投稿しても自分の表示言語で出てくる」 true on
+     a day that is not today. Seeded here rather than fetched: what is under
+     test is that a prompt the phone HAS is used, not the request. */
+  PROMPTS['prOLD'] = { en: 'the wind', ja: '風' };
   const prPost = { id: 'p_pr', mine: false, hd: 'aya', who: 'Aya',
                    ln: 'kano', mn: '海', pr: 'pr1' };
   const wasLang = SET.lang;
@@ -335,7 +346,12 @@ const R = await pg.evaluate(async () => {
      language -- the freeze is not loosened by this */
   const plainPost = { id: 'p_pl', mine: false, hd: 'aya', mn: '海' };
   SET.lang = 'en'; const plEn = postSay(plainPost);
-  /* and an answer to a prompt this phone does not have falls back */
+  /* AND AN ANSWER TO AN OLDER DAY, which is the half that makes this true
+     for a timeline rather than for one morning. */
+  const oldDay = { id: 'p_c', mine: false, hd: 'aya', mn: '海', pr: 'prOLD' };
+  SET.lang = 'en'; const cEn = postSay(oldDay);
+  SET.lang = 'ja'; const cJa = postSay(oldDay);
+  /* and one nothing has been handed at all falls back to the post's words */
   const oldPr = { id: 'p_old', mine: false, hd: 'aya', mn: '海', pr: 'pr0' };
   SET.lang = 'en'; const oldEn = postSay(oldPr);
   SET.lang = wasLang; DAY = null;
@@ -350,6 +366,11 @@ const R = await pg.evaluate(async () => {
     fails.push('a post that answers NO prompt was rewritten too (' +
                JSON.stringify(plEn) + '). Everything a post carries is frozen ' +
                'and this is the one exception, not a door');
+  if (cEn !== 'the wind' || cJa !== '風')
+    fails.push('an answer to an OLDER day answered ' + JSON.stringify([cEn, cJa]) +
+               '. One prompt a day, the same for everybody: the phone asks for ' +
+               'that row once and remembers it, so a post from last week reads ' +
+               'in the language of whoever is looking at it');
   if (oldEn !== '海')
     fails.push('an answer to a prompt this phone does not have came out ' +
                JSON.stringify(oldEn) + ' rather than falling back to what the ' +

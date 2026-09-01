@@ -2218,6 +2218,16 @@ function netExt(mime){
 
    `says` is the ten languages and `text` is the English one under it, so a row
    written before the column existed still shows something. schema.sql § asked. */
+/* One prompt, by its id. The timeline shows answers written on other days,
+   and the phone only ever pulled TODAY's -- so a post from last week had a
+   number and nothing to look it up with. 「今日のお題は全員共通なんだからそんな
+   難しいこと考えないでいいじゃん」 OWNER 2026-09-01: it is one shared row, so
+   it is asked for rather than copied onto every post that answers it. */
+function netPrompt(id, ok){
+  netGet('/rest/v1/prompt?select=id,text,says&id=eq.'+encodeURIComponent(String(id||'')),
+    function(d){ ok(d && d.length? d[0] : null); },
+    function(){ ok(null); });
+}
 function netDay(ok){
   netGet('/rest/v1/prompt?select=id,on_day,text,says&order=on_day.desc&limit=1',
     function(d){ ok(d && d.length? d[0] : null); },

@@ -754,23 +754,28 @@ function daySay(){
    Only TODAY'S, because today's is the one this phone has: `DAY` is one row.
    Anything older falls back to what the post carries, which is what it always
    showed. Nothing is stored differently and nothing is thrown away. */
-function dayMap(id){
-  if(!id || !DAY || String(DAY.id)!==String(id)) return null;
-  return DAY.says || null;
-}
-/* THE WHOLE SENTENCE, IN ALL TEN, TO PUT ON A POST AS IT IS WRITTEN.
-   「お題はどの言語でも見れる、これが大事。誰が投稿しても自分の表示言語で出て
-   くる。それが交流につながる」 OWNER 2026-09-01.
+/* Every prompt this phone has been handed, by id. One row a day, the same
+   for everybody, so it is ASKED FOR rather than copied onto every post that
+   answers it -- 「今日のお題は全員共通なんだからそんな難しいこと考えないで
+   いいじゃん。日付っていうデータもあるし」 OWNER 2026-09-01.
 
-   dayMap() above can only answer for TODAY -- `DAY` is one row -- so a post
-   read tomorrow, or on a phone that has not asked for the prompt, fell back
-   to the words the writer's app happened to say. That is the same shape as
-   every other thing a reader needs and cannot work out: it goes ON the post
-   at the moment it is made (`post.ink` is the worked example, CLAUDE.md
-   § the past). Ten short strings, once, and every reader on every day has it
-   without asking the server anything. */
-function daySays(){
-  return (DAY && DAY.says && typeof DAY.says==='object')? DAY.says : null;
+   Today's is already here (`DAY`); anything older is one row and is fetched
+   once, the first time a post names it. `PROMPT_ASK` is what stops a
+   timeline of twenty answers to one day asking twenty times, and what stops
+   a prompt that is not there being asked for on every render. */
+var PROMPTS={}, PROMPT_ASK={};
+function dayMap(id){
+  var k=String(id||'');
+  if(!k) return null;
+  if(DAY && String(DAY.id)===k) return DAY.says || null;
+  if(PROMPTS[k]) return PROMPTS[k];
+  if(!PROMPT_ASK[k]){
+    PROMPT_ASK[k]=1;
+    netPrompt(k, function(p){
+      if(p && p.says){ PROMPTS[k]=p.says; render(); }
+    });
+  }
+  return null;
 }
 /* Which day this sentence is FOR, drawn. 「日付ないし」
 
