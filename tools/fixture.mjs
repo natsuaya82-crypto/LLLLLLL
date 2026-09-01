@@ -254,7 +254,7 @@ export function seed(){
      they are a session's memory of what came back rather than anything stored
      -- so a face that seeds one must not leave it standing for every render
      after it. Reset where the rest of the state is. */
-  WLD_HAVE = {}; WLD_ASKED = {};
+  WLD_HAVE = {}; WLD_ASKED = {}; WLDS_HAVE = {}; WLDS_ASKED = {};
   /* Where you are standing is the app's to say, not this file's. viewReset()
      in www/shell.js is the one list of what a screen forgets when you leave
      it; a copy here would be a second list to keep in step, and the first
@@ -816,10 +816,32 @@ export function halfDone(){
        The numbers are the SERVER's count. `slice_read` still opens no
        dictionary to anybody, so there is no word list here to seed and none
        is drawn. */
+    /* SOMEBODY ELSE'S LANGUAGE, as the same wiki page. 「このwikiのような感じに
+       するんじゃないの？」 OWNER 2026-09-01 -- so what is seeded is what the
+       SERVER hands over: the row language_seen answers with, and the five
+       slices slice_read opens on a published language. The page is then the
+       real wldPage(), drawn from those and from nothing of this phone's.
+
+       The `wld` slice is the article itself -- the two the book always has
+       and one the person wrote. No `words` and no `gram` slice, because
+       slice_read opens neither to anybody and seeding one would be a fixture
+       showing a state the server cannot produce. */
     ['somebody else\u2019s language', () => {
         WLD_HAVE['L1'] = { id:'L1', name:'Vethi', license:'',
                            pub:'2026-08-20T00:00:00Z', nwords:412, nletters:38 };
         WLD_ASKED['L1'] = 1;
+        WLDS_HAVE['L1'] = {
+          wld: { body: JSON.stringify({
+                   where:'A valley under the north ridge',
+                   who:'The people who winter there',
+                   arts:[{ id:'A1', t:'Seasons', b:'Four, and the fifth is the thaw.' }],
+                   secs:{} }), no:1 },
+          letters: { body: JSON.stringify([
+                   { id:'v1', nm:'ka', snd:['k'], st:[{ pts:[[112,112],[688,112],[400,688]] }] },
+                   { id:'v2', nm:'to', snd:['t'], st:[{ pts:[[112,688],[400,112],[688,688]] }] },
+                   { id:'v3', nm:'ri', snd:['r'], st:[{ pts:[[300,150],[300,650]] }] }]), no:1 },
+          snd: { body: JSON.stringify(['k','t','r','a','i']), no:1 } };
+        WLDS_ASKED['L1'] = 1;
         window.route='about'; NAV=[{ r:'about', a:'L1' }];
         return vAbout(); }],
     ['notices', () => { NOTES_HAVE = [

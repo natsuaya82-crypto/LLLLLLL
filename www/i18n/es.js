@@ -335,7 +335,6 @@ defLang('es', (function(){
       "ws.tibetan"                : "Tibetano",
       "wld.title"    : "Para qué es esta lengua",
       'wld.about'             : "Sobre esta lengua",
-      'wld.pubon'             : "Publicado",
       'wld.edit'            : "Editar",
       'wld.public'            : "Mostrar esta lengua a otras personas",
       'wld.public.d' : "Otras personas pueden abrir la página de tu lengua y leerla.",

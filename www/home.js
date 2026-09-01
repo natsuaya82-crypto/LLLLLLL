@@ -713,8 +713,13 @@ function wldSet(k, v){ world()[k]=String(v||''); saveWld(); }
    No ceiling here. How many a person may write, and on which plan, is a price
    and a threshold, and neither is decided in a tool. docs/CHANGELOG.md says
    so; when it is decided it is one line at the head of wldArtAdd(). */
-function wldArts(){
-  var a=world().arts;
+/* All six take the article they are about, and answer for the OPEN language
+   when nobody says otherwise. That default is what keeps every existing
+   caller reading exactly as it did; the argument is how somebody else's
+   article gets drawn by the same page instead of a second one written to
+   look like it. 「このwikiのような感じにするんじゃないの？」 OWNER 2026-09-01. */
+function wldArts(w){
+  var a=(w||world()).arts;
   return (Object.prototype.toString.call(a)==='[object Array]')? a : [];
 }
 /* Minted the way a language is (www/core.js langMint), and checked against
@@ -811,7 +816,7 @@ function vWldArt(){
    here writes, and「他の人が使えるようになる」is the server's half and is
    not started. What is here is the shape: the article, and under it every
    section of the language with what it is open to. */
-function wldHidden(){ return !!world().hide; }
+function wldHidden(w){ return !!(w||world()).hide; }
 /* From the settings, and it writes the LANGUAGE rather than SET: whether this
    language has a page is about this language, and SET is the person's. The
    flag is `hide`, so absent is public -- which is the default the owner chose,
@@ -845,7 +850,7 @@ function setWldHide(v){
    a section falls back to when nobody has answered for that section --
    `wldSecDl` below. Every value already stored under `dl` is still stored and
    still read. */
-function wldDl(){ return !!world().dl; }
+function wldDl(w){ return !!(w||world()).dl; }
 /* ---- and the same two questions, asked of one SECTION of the page -------
    「キーボードと文字とかそれぞれのセクションで公開非公開できて、DL可能なら
    DL可能になって他の人が使えるようになるイメージ」
@@ -860,8 +865,8 @@ function wldDl(){ return !!world().dl; }
    `wld.secs` is an object of objects rather than two lists, so a section
    carries both answers in one place and a section nobody has touched is not
    in the file at all. */
-function wldSecOf(r){
-  var s=world().secs, o;
+function wldSecOf(r, w){
+  var s=(w||world()).secs, o;
   if(!s || typeof s!=='object' || (s instanceof Array)) return {};
   o=s[r];
   return (o && typeof o==='object' && !(o instanceof Array))? o : {};
@@ -872,9 +877,9 @@ function wldSecOf(r){
    the whole page, and it is `wldHidden()`. `secs[r].hide` is not read and not
    written now; anything already stored under it is left exactly where it is,
    because nothing here deletes what somebody's file already says. */
-function wldSecDl(r){
-  var o=wldSecOf(r);
-  return Object.prototype.hasOwnProperty.call(o,'dl')? !!o.dl : wldDl();
+function wldSecDl(r, w){
+  var o=wldSecOf(r, w);
+  return Object.prototype.hasOwnProperty.call(o,'dl')? !!o.dl : wldDl(w);
 }
 /* ---- and writing those two answers ------------------------------------
    The four above READ `secs`. Nothing anywhere wrote it: every row said
@@ -967,8 +972,8 @@ var ICON_DL='<svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="no
    `k` may be empty. A row with no name is the paragraph an article opens
    with, which is exactly what the note was, and is why the note can become
    one of these without inventing a heading to put over it. */
-function wldOvs(){
-  var a=world().ovs;
+function wldOvs(w){
+  var a=(w||world()).ovs;
   return (Object.prototype.toString.call(a)==='[object Array]')? a : [];
 }
 function wldOvMint(){
@@ -1163,8 +1168,8 @@ function wldSecRows(sec){
    ONE list, asked by the article and by the editor both. The two were about
    to be two copies that could disagree about what a section even is, which
    is the fault this file's own comments keep being written after. */
-function wldSecs(){
-  var out=[{r:'wldov', k:'wld.overview'}], a=wldArts(), i;
+function wldSecs(w){
+  var out=[{r:'wldov', k:'wld.overview'}], a=wldArts(w), i;
   out.push({r:'sound',   k:'toc.sound'});
   /* `dl` marks the four that can actually BE taken away and used --
      「単語と文字とキーボードと文法にDL可能だけつけろ」 OWNER 2026-08-25, which is
@@ -1203,8 +1208,9 @@ function wldSecNm(sec){ return sec.k? t(sec.k) : sec.nm; }
    www/index.html in the commit that closed this. */
 /* The inventory, in rows: each manner that this language actually uses, then
    its vowels, then anything the chart files under neither. */
-function abSounds(){
-  var mine=addedSnd(), out='', ms=ipaManners(), i, got, rest=mine.slice();
+/* `list` is whose sounds. The open language's when nobody says. */
+function abSounds(list){
+  var mine=list||addedSnd(), out='', ms=ipaManners(), i, got, rest=mine.slice();
   function take(list){
     var k=[], j;
     for(j=0;j<rest.length;j++) if(list.indexOf(rest[j])>=0) k.push(rest[j]);
@@ -1297,21 +1303,87 @@ function vAbout(){
 /* Named for the world and not for the view. The checks find a screen by its
    NAME -- a global that is `v` plus a capital -- so a helper named that way is
    a screen on no route, and act-check said so the moment this was written. */
+/* A letter of somebody else's alphabet: drawn, named, and nothing else.
+   ltCell() is the one on your own and carries two marks this cannot have --
+   whether another of YOUR letters already says that sound, and whether a
+   digit is past YOUR base. Both read the open language, and both mean nothing
+   about a language you are only reading. The face and the name still come
+   from the one place each lives: ltInk() and ltName(). */
+function abLtCell(l){
+  return '<span class="ltc">'+
+    '<span class="ltcf">'+ltInk(l, '')+'</span>'+
+    '<span class="ltcn">'+esc(ltName(l)||'\u00b7')+'</span>'+
+    '</span>';
+}
+/* The slices of somebody else's language. `slice_read` opens exactly five of
+   them on a published one -- wld, script, snd, letters, kb -- and refuses the
+   dictionary and the grammar to everybody, which is why nothing here asks for
+   words and nothing here could show them.
+   「言語ページ公開と単語や文字のdl可能は別だし」 */
+var WLDS_HAVE={}, WLDS_ASKED={};
+function wldSlicesPull(lid){
+  var id=String(lid||'');
+  if(!id || WLDS_ASKED[id]) return;
+  WLDS_ASKED[id]=1;
+  netSlices(id, function(m){
+    if(!m) return;
+    WLDS_HAVE[id]=m;
+    render();
+  }, function(){ WLDS_ASKED[id]=0; });
+}
+/* One slice, read back into what it was. A slice holds exactly the string
+   localStorage holds, so this is the same JSON.parse the app does on its own
+   -- and a slice that is not there, or is not readable, is `fb` rather than
+   an exception: an unpublished section is a section with nothing to show,
+   not a broken page. */
+function wldSliceOf(m, kind, fb){
+  var o=m && m[kind], v;
+  if(!o || !o.body) return fb;
+  try{ v=JSON.parse(o.body); }catch(e){ return fb; }
+  return (v===null || v===undefined)? fb : v;
+}
+/* SOMEBODY ELSE'S LANGUAGE AS A BUNDLE, answering the same six questions
+   wldOpen() answers -- so the SAME page draws it. 「このwikiのような感じに
+   するんじゃないの？」 OWNER 2026-09-01: not a second screen, this one.
+
+   Not one of the six reaches the open language. `ws` answers with nothing,
+   because the writing system is `SET.wsys` -- the PERSON's settings, not the
+   language's -- so it is on no server and there is nothing to say; the field
+   is left off rather than filled in with mine. The keyboard is the same shape
+   of gap and is in wldPage()'s own comment. */
+function wldSeenOf(lid){
+  var m=WLDS_HAVE[String(lid||'')], seen=wldSeen(lid);
+  if(!m) return null;
+  return {
+    w:       function(){ return wldSliceOf(m, 'wld', {}); },
+    letters: function(){ return wldSliceOf(m, 'letters', []); },
+    name:    function(){ return seen? seen.name : ''; },
+    ws:      function(){ return ''; },
+    snd:     function(){ return wldSliceOf(m, 'snd', []); },
+    /* Off their `script` slice, which is one of the five slice_read opens.
+       DIRS is the list of the four; anything else, or nothing, is ltr. */
+    dir:     function(){
+               var d=(wldSliceOf(m, 'script', {}) || {}).dir;
+               return (DIRS.indexOf(d)>=0)? d : 'ltr';
+             },
+    mine:    function(){ return false; },
+    kbname:  function(){ return ''; },
+    kblay:   function(){ return null; }
+  };
+}
 function wldSeenHTML(lid){
-  var L=wldSeen(lid), at;
+  var L;
+  /* Both: the row says the language is published and gives it its name, and
+     the slices are what the page is made of. */
   wldSeenPull(lid);
-  /* Nothing while the answer is out, and nothing when the answer was no. An
-     empty page and a page saying a language has no words are different, and
-     only one of them is true. */
-  return '<div class="view">'+navTop('')+'<div class="body">'+
-    (L
-      ? (L.name? '<h1 class="abth">'+esc(L.name)+'</h1>' : '')+
-        abField(t('toc.words'), String(L.nwords))+
-        abField(t('toc.letters'), String(L.nletters))+
-        ((at=L.pub? (Date.parse(L.pub)||0) : 0)
-          ? abField(t('wld.pubon'), postWhen(at)) : '')
-      : '')+
-    '</div></div>';
+  wldSlicesPull(lid);
+  L=wldSeenOf(lid);
+  /* Nothing while the answers are out, and nothing when the answer was no --
+     an unpublished language is one language_seen and slice_read both refuse,
+     and a page saying a language is empty would be saying something it was
+     never told. */
+  if(!L) return '<div class="view">'+navTop('')+'<div class="body"></div></div>';
+  return wldPage(false, L);
 }
 function vWorld(){
   /* The note becomes a row of the overview the first time this is opened.
@@ -1349,6 +1421,14 @@ function wldOpen(){
     letters: function(){ return LETTERS; },
     name:    function(){ return langName; },
     ws:      function(){ return wsys(); },
+    /* The sounds the language is made of, and whether this article is YOURS --
+       the Edit button, the keyboard's picture and the pressable letter cells
+       are the three things that are only true of your own. */
+    snd:     function(){ return addedSnd(); },
+    /* Which way it is written. `scriptDir()` reads SCRIPT -- the open
+       language's -- and it is in the `script` slice for anybody else's. */
+    dir:     function(){ return scriptDir(); },
+    mine:    function(){ return true; },
     /* The applied board's name and its layout. `kbOf()` answers with the free
        QWERTY when nothing is built, which is why it is one question here and
        not two. */
@@ -1358,7 +1438,8 @@ function wldOpen(){
 }
 function wldPage(ed, L){
   L=L||wldOpen();
-  var w=L.w(), drawn=L.letters().filter(ltHasShape), body='', dls='', done, i;
+  var w=L.w(), mine=L.mine(), drawn=L.letters().filter(ltHasShape),
+      body='', dls='', done, i;
   /* The article names its subject: the bar says which SCREEN this is, and the
      page has to say what the article is ABOUT. The name of a language is not
      written here -- it is the language's own, and it is set where a language
@@ -1390,11 +1471,11 @@ function wldPage(ed, L){
      Nothing is deleted and nothing is unset. `hide` is one flag, the sections
      keep their own answers, and every word is where it was: turning the
      switch back on brings the whole page back exactly as it was left. */
-  if(wldHidden()) return '<div class="view">'+
-    navTop('', ed? '' : '<button class="navdo"' + DO('go', ["world"]) + '>'+
-      esc(t('wld.edit'))+'</button>')+
+  if(wldHidden(w)) return '<div class="view">'+
+    navTop('', (!ed && mine)? '<button class="navdo"' + DO('go', ["world"]) + '>'+
+      esc(t('wld.edit'))+'</button>' : '')+
     '<div class="body">'+body+'</div></div>';
-  wldSecs().forEach(function(sec){
+  wldSecs(w).forEach(function(sec){
     var inner='', extra='';
     /* Two of the sections do not reach the writing face at all, and both are
        the same sentence: 「文字とか単語とかはここで編集しないからこれしか出ない」
@@ -1418,12 +1499,12 @@ function wldPage(ed, L){
        heading and an arrow into this phone's own chapters, which is a way
        through that means nothing to anybody but their owner. What is left to
        READ is the overview, the sounds, the letters and the keyboard. */
-    if(!ed && (sec.r==='words' || sec.r==='gram') && !wldSecDl(sec.r)) return;
+    if(!ed && (sec.r==='words' || sec.r==='gram') && !wldSecDl(sec.r, w)) return;
     /* And what MAY be taken away says so, where it is --
        「DL許可が出てるものはDLマークつけないと」 OWNER 2026-08-25. It is on the
        article and not on the editor: the switch is the answer on the writing
        face, and this is what that answer looks like to somebody reading. */
-    if(!ed && sec.dl && wldSecDl(sec.r))
+    if(!ed && sec.dl && wldSecDl(sec.r, w))
       extra='<span class="abdlm" aria-label="'+esc(t('wld.dl.can'))+'">'+
         ICON_DL+'</span>';
     /* Held back rather than drawn here: the four go at the FOOT of the
@@ -1459,8 +1540,8 @@ function wldPage(ed, L){
           '<div class="field">'+
           lnField('wld-who', t('wld.who.ph'), IN('wldSet', ["who"]), w.who||'')+
           '</div>'+
-          abField(t('ws.kind'), t('ws.k.'+L.ws()))+
-          abField(t('dir.title'), t('dir.'+scriptDir()))+
+          (L.ws()? abField(t('ws.kind'), t('ws.k.'+L.ws())) : '')+
+          abField(t('dir.title'), t('dir.'+L.dir()))+
           '<div class="ovlist" data-wdrag="ovs">'+
           wldOvs().map(function(row){
             return '<div class="ovrow" data-wid="'+esc(row.id)+'">'+
@@ -1494,10 +1575,10 @@ function wldPage(ed, L){
       } else {
         if(w.where) inner+=abField(t('wld.where'), w.where);
         if(w.who) inner+=abField(t('wld.who'), w.who);
-        inner+=abField(t('ws.kind'), t('ws.k.'+L.ws()));
-        inner+=abField(t('dir.title'), t('dir.'+scriptDir()));
+        if(L.ws()) inner+=abField(t('ws.kind'), t('ws.k.'+L.ws()));
+        inner+=abField(t('dir.title'), t('dir.'+L.dir()));
         if(!w.ovnote && w.note) inner+='<div class="abfv">'+esc(w.note)+'</div>';
-        wldOvs().forEach(function(row){
+        wldOvs(w).forEach(function(row){
           if(!row || !(row.k || row.v)) return;
           inner+=row.k? abField(row.k, row.v) : '<div class="abfv">'+esc(row.v)+'</div>';
         });
@@ -1507,12 +1588,19 @@ function wldPage(ed, L){
       /* The sounds the language is made of, in the rows a phonology has. They
          are not written here in either face: a sound belongs to the letter
          that says it, so this inventory is made by drawing letters. */
-      inner+=abSounds();
+      inner+=abSounds(L.snd());
     } else if(sec.r==='letters'){
       /* The letters somebody has actually drawn. The article only -- the four
          above return before they reach here. */
+      /* Somebody else's letters are drawn and not pressable, and they are
+         not drawn by ltCell(): that cell asks ltTaken() and numOver(), which
+         read LETTERS and the open language's base -- so a reader's alphabet
+         would be marked up against MY language. Rule 8. abLtCell() below is
+         the reader's, and it goes through ltInk() and ltName(), which are
+         where a letter's face and a letter's name live for everybody. */
       if(drawn.length) inner+='<div class="ltgrid abtlt">'+
-        ltOrder(drawn).map(function(l){ return ltCell(l, ' '); }).join('')+'</div>';
+        ltOrder(drawn).map(function(l){
+          return mine? ltCell(l, ' ') : abLtCell(l); }).join('')+'</div>';
     } else if(sec.r==='kb'){
       /* The keyboard this person actually BUILT, drawn small --
          「キーボードもちゃんとその人が作ってるモックの画像出すように」
@@ -1535,7 +1623,14 @@ function wldPage(ed, L){
          letters rather than a diagram of them, which is what it was written
          for: 「リアルなキーボードを縮小して見せれないの？」. Nothing in it is
          pressable, here or where it came from. */
-      inner+='<div class="abtl abtline">'+esc(L.kbname())+'</div>'+
+      /* THE PICTURE IS ONLY DRAWN FOR YOUR OWN, and that is a hole rather
+         than a decision. `kbShotHTML()` goes through `kbFace()`, which asks
+         `ltById()` -- the open language's letters -- so somebody else's
+         keyboard would be drawn wearing MY alphabet, which is rule 8 and is
+         the fault the card had. `kbFace()` is www/keyboard.js and this session
+         does not own it; the heading stays and what is under it waits for
+         that file. It is in the report. */
+      if(mine) inner+='<div class="abtl abtline">'+esc(L.kbname())+'</div>'+
         '<div class="abkb">'+kbShotHTML(L.kblay())+'</div>';
     } else if(sec.nm!==undefined){
       /* A section somebody wrote, and it is a SECTION on both faces --
@@ -1579,7 +1674,9 @@ function wldPage(ed, L){
   if(ed && dls) body+='<div class="sec">'+esc(t('wld.dl.can'))+'</div>'+dls;
   if(!body) body='<div class="note">'+esc(t('wld.empty'))+'</div>';
   return '<div class="view">'+
-    navTop('', ed? '' : '<button class="navdo"' + DO('go', ["world"]) + '>'+esc(t('wld.edit'))+'</button>')+
+    /* Edit is only on your own. 「Edit は出ません（他人のものなので）」 */
+    navTop('', (!ed && mine)? '<button class="navdo"' + DO('go', ["world"]) + '>'+
+      esc(t('wld.edit'))+'</button>' : '')+
     '<div class="body">'+body+'</div></div>';
 }
 /* What making this language public means, behind the `?` in the bar rather

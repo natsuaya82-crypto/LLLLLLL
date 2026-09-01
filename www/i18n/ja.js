@@ -291,7 +291,6 @@ defLang('ja', (function(){
       "ws.tibetan"                : "チベット文字",
       'wld.title'    : 'この言語の用途',
       'wld.about'             : "この言語について",
-      'wld.pubon'             : "公開日",
       'wld.edit'            : "編集",
       'wld.public'            : "言語のページを公開する",
       'wld.public.d' : "他のユーザーがあなたの言語のページを開いて読めるようになります。",

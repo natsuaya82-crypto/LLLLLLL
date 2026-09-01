@@ -383,7 +383,6 @@ defLang('zh', (function(){
       "ws.tibetan"                : "藏文",
       "wld.title"    : "这门语言是为了什么",
       'wld.about'             : "关于这门语言",
-      'wld.pubon'             : "公开日期",
       'wld.edit'            : "编辑",
       'wld.public'            : "把这门语言展示给别人",
       'wld.public.d' : "其他人可以打开并阅读你的语言页面。",

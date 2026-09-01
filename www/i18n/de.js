@@ -363,7 +363,6 @@ defLang('de', (function(){
       "ws.tibetan"                : "Tibetisch",
       "wld.title"    : "Wozu diese Sprache da ist",
       'wld.about'             : "Über diese Sprache",
-      'wld.pubon'             : "Veröffentlicht",
       'wld.edit'            : "Bearbeiten",
       'wld.public'            : "Diese Sprache anderen zeigen",
       'wld.public.d' : "Andere können deine Sprachseite öffnen und lesen.",
