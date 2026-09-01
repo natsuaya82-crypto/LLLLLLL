@@ -772,27 +772,28 @@ const HELDR = await pg.evaluate(async () => {
      And if there is no `data-hold` on any screen at all, that fails too. A
      gesture nobody can find is the exact shape of the fault this pass was
      written after: something that is not there, and nothing saying so. */
-  /* One hold, at one amount of wobble. `slop` is how far the thumb moves
-     BEFORE the timer would fire, which is the whole of what this asks: a
-     thumb is not a tripod, and a hold that only survives perfect stillness is
-     a hold nobody can make.
+  /* One hold, at one amount of wobble, and WHERE IT LANDED.
+     ------------------------------------------------------------------
+     `slop` is how far the thumb moves BEFORE the timer would fire, which is
+     the whole of what this asks. A thumb is not a tripod, and a hold that
+     only survives perfect stillness is a hold nobody can make. Measured on a
+     phone: still → the language switcher, one pixel → nothing.
 
-        親指が完全に静止 → 動く
-        一画素動いた     → 死ぬ
-
-     Both of those were measured on a real TouchEvent, and the second is what
-     everybody's hand actually does. So the wobble is a parameter and 0 is not
-     the interesting value -- it is the one that was already green. */
+     WHAT IT COMPARES AGAINST IS THE STILL HOLD'S OWN ANSWER, and that is not
+     tidiness -- the first version asked "did anything change" and passed on
+     the feed for the wrong reason. The pull-to-refresh in www/sns.js listens
+     on the same `touchmove`, so a wobble there redraws the timeline whether
+     the hold lived or died, and "something is different" was true either way.
+     A hold with a thumb on it has to do WHAT A HOLD WITH A TRIPOD ON IT DOES,
+     which is a claim this file can make without being told what that is. */
   const holdOnce = async (el, slop, where) => {
     const r = el.getBoundingClientRect();
-    if (!r.width || !r.height) { out.push(where + ': a data-hold element with no size'); return; }
+    if (!r.width || !r.height) { out.push(where + ': a data-hold element with no size'); return null; }
     const x = r.left + r.width / 2, y = r.top + r.height / 2;
     const deep = document.elementFromPoint(x, y) || el;
     const from = '<' + String(deep.tagName).toLowerCase() + '>' +
                  (deep === el ? '' : ' inside <' + String(el.tagName).toLowerCase() + '>');
-    const state = () => JSON.stringify(here()) + '|' +
-                  (document.getElementById('app') || { innerHTML: '' }).innerHTML.length;
-    const was = state();
+    const was = JSON.stringify(here());
     T(deep, 'touchstart', x, y);
     if (slop) {
       /* well before HOLD_MS: the thumb settling, not the thumb leaving */
@@ -802,32 +803,53 @@ const HELDR = await pg.evaluate(async () => {
     /* and then past HOLD_MS, because the WAIT is the gesture */
     await new Promise(r2 => setTimeout(r2, 620));
     T(deep, 'touchend', x + slop, y);
-    const how = slop ? 'held ' + from + ', thumb moved ' + slop + 'px at 120ms,'
-                     : 'held ' + from + ' perfectly still,';
-    if (state() === was)
-      out.push(where + ': ' + how + ' let go at 740ms — and nothing changed. ' +
-               'The route is still ' + JSON.stringify(here()) + '. A thumb is not a ' +
-               'tripod: if one pixel kills the hold, the hold cannot be made on a phone.');
-    else
-      seen.push(where + ': ' + how + ' -> ' + JSON.stringify(here()));
+    return { from: from, was: was, now: JSON.stringify(here()),
+             how: slop ? 'thumb moved ' + slop + 'px at 120ms' : 'perfectly still' };
   };
-  /* Still, and then wobbling. The second is the one a hand can actually do,
-     and it is the one that was never asked: everything this file threw before
-     today was a click, and the hold it learned first never moved at all. */
-  const HOLD_SLOPS = [0, 1, 6];
+  /* Below the threshold it must hold; well above it, it must NOT.
+     A threshold that never lets go is not a threshold, it is the listener
+     deleted -- and that would be a hold that survives being dragged across
+     the screen, which is a different bug wearing this one's clothes. 40px is
+     a drag by anybody's hand. */
+  const SLOP_HOLDS = [1, 6];
+  const SLOP_DRAGS = 40;
   const held = async (where) => {
     const els = [].slice.call(document.querySelectorAll('[data-hold]'));
     if (!els.length) return 0;
     for (let i = 0; i < els.length; i++) {
-      for (let j = 0; j < HOLD_SLOPS.length; j++) {
-        /* the screen is put back between gestures: a hold that WORKED walked
-           off to another route, and the next one would be thrown at nothing */
-        window.__seed(); SET.done = true; SET.plan = 'pro';
-        go(where); render();
-        const again = document.querySelectorAll('[data-hold]')[i];
-        if (!again) break;
-        await holdOnce(again, HOLD_SLOPS[j], where);
+      /* the screen is put back between gestures: a hold that WORKED walked
+         off to another route, and the next one would be thrown at nothing */
+      const fresh = () => { window.__seed(); SET.done = true; SET.plan = 'pro';
+                            go(where); render();
+                            return document.querySelectorAll('[data-hold]')[i]; };
+      let el = fresh(); if (!el) break;
+      const ref = await holdOnce(el, 0, where);
+      if (!ref) continue;
+      if (ref.now === ref.was) {
+        out.push(where + ': held ' + ref.from + ' perfectly still for 620ms and the ' +
+                 'route did not move — it is still ' + ref.was);
+        continue;
       }
+      seen.push(where + ': ' + ref.from + ' ' + ref.how + ' -> ' + ref.now);
+      for (let j = 0; j < SLOP_HOLDS.length; j++) {
+        el = fresh(); if (!el) break;
+        const got = await holdOnce(el, SLOP_HOLDS[j], where);
+        if (!got) continue;
+        if (got.now !== ref.now)
+          out.push(where + ': ' + got.from + ', ' + got.how + ', let go at 740ms — landed on ' +
+                   got.now + ' and a hold that never moved lands on ' + ref.now + '. ' +
+                   'A thumb is not a tripod: if a pixel kills the hold, the hold cannot be ' +
+                   'made on a phone.');
+        else seen.push(where + ': ' + got.from + ' ' + got.how + ' -> ' + got.now);
+      }
+      el = fresh(); if (!el) break;
+      const drag = await holdOnce(el, SLOP_DRAGS, where);
+      if (drag && drag.now === ref.now)
+        out.push(where + ': ' + drag.from + ' was DRAGGED ' + SLOP_DRAGS + 'px and still ' +
+                 'held — a hold that survives a drag is a hold with nothing cancelling it, ' +
+                 'and that is a threshold removed rather than widened.');
+      else if (drag) seen.push(where + ': ' + drag.from + ' ' + drag.how + ' -> ' +
+                 drag.now + ' (a drag, correctly not a hold)');
     }
     return els.length;
   };
