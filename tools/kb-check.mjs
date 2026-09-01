@@ -1632,6 +1632,86 @@ const r = await pg.evaluate(({ s }) => {
      Read off the PAINTED canvas, never off the offset handed to it: a check
      that works the offset out again is a copy of the thing under test and
      agrees with it whatever it does. */
+  /* ---- THE FREE PLAN HAS A KEYBOARD, AND ALL OF IT ---------------------
+     「無料のキーボードはqwartyに書いた文字が置き換わるだけなのにキーボード自体
+     消えてる」 OWNER 2026-09-01, build #106.
+
+     CLAUDE.md § What the free plan is: free is a QWERTY with the drawn letters
+     substituted IN, built by kbFixed() from LETTERS every time it is shown,
+     stored nowhere, with no editor and nothing to set. There is no editor --
+     and the keyboard still has to be SEEN. Nothing in this file asked that.
+     Every other claim here stands on a board somebody BUILT, which is a paid
+     screen, so the free face could lose a row, or all of them, with the whole
+     file green. It did.
+
+     Asked of a language that has its letters AND of one that has none, because
+     the way it went was by name: kbFixed() pushed only the letters kbNamed()
+     answered for, so a language missing one came out a key short and one
+     missing all of them came out with no letter rows at all -- a digit row and
+     a space bar, which is the free plan's keyboard gone. The QWERTY is the
+     fixed part of "a QWERTY with the letters substituted in", so a letter that
+     is not there yet leaves its key wearing the roman character; it does not
+     take the key away with it.
+
+     Counted on the DRAWN face and scoped to #kb, because .kbrow is also the
+     class of a row in the LIST of keyboards -- counting it loose would be a
+     claim about the wrong screen. */
+  (function (){
+    var wasPlan = SET.plan, wasKB = KB, wasShow = kbShow, wasNav = NAV,
+        /* render() reads the ROUTE global, not NAV -- the two are set together
+           by go() and putting only one of them back leaves the next block
+           drawing a screen the trail does not name. */
+        wasRoute = route,
+        keep = LETTERS.slice(), i;
+    SET.plan = 'free'; KB = null; kbShow = 0; kbLay = 0;
+    function face(){
+      NAV = [{ r: 'kb' }];
+      document.getElementById('app').innerHTML = vKb();
+      return {
+        rows: document.querySelectorAll('#kb .kbrow').length,
+        keys: document.querySelectorAll('#kb .kbk').length,
+        /* nothing on the free keyboard answers a finger: it is the one board
+           with no editor, and that is the whole of what Upgrade buys here */
+        press: document.querySelectorAll('#kb [data-do]').length
+      };
+    }
+    out.freeNoEditor = !can('kb');
+    var withLt = face();
+    out.freeRows = withLt.rows;
+    out.freeKeys = withLt.keys;
+    out.freeNothingToPress = withLt.press === 0;
+
+    /* the same language with its letters not there yet */
+    LETTERS.length = 0;
+    var bare = face();
+    out.freeBareRows = bare.rows;
+    out.freeBareKeys = bare.keys;
+
+    LETTERS.length = 0;
+    for (i = 0; i < keep.length; i++) LETTERS.push(keep[i]);
+
+    /* ---- and the upgrade is offered where a keyboard is ADDED ------------
+       「upgradeはそこにはいらんくね。追加するときに出てくるようにして欲しい」
+       OWNER 2026-09-01. It stood at the foot of the free screen, under a
+       keyboard that is not for sale. What it is about is building ANOTHER
+       one, so it is asked on the road that builds one -- and asked twice,
+       because kbNew() is a door and kbAdd() is the act that writes. */
+    out.freeNoUpsell = vKb().indexOf('goPlans') < 0;
+
+    NAV = [{ r: 'kb' }];
+    kbNew();
+    out.freeNewToPlans = here().r === 'plans';
+
+    NAV = [{ r: 'kb' }];
+    KB = null;
+    kbAdd('qwerty');
+    out.freeAddToPlans = here().r === 'plans';
+    out.freeAddWroteNothing = KB === null;
+
+    SET.plan = wasPlan; KB = wasKB; kbShow = wasShow;
+    NAV = wasNav; route = wasRoute; KBH = null; kbSel = null;
+  }());
+
   fresh();
   SET.plan = 'free';
   var kl = LETTERS.filter(function(l){ return String(l.ab||'') === 'a'; })[0];
@@ -3019,6 +3099,26 @@ say(r.seqLiftFound && r.seqLiftSel,
 say(r.seqLiftHole, 'and the sheet is still frames after it');
 console.log('    frames, hole by hole: ' + r.seqSeen);
 
+
+/* ---- the free plan's one keyboard: no editor, and it must be SEEN -------
+   「無料のキーボードはqwartyに書いた文字が置き換わるだけなのにキーボード自体
+   消えてる」 OWNER 2026-09-01, build #106 */
+say(r.freeNoEditor, 'the free plan has no keyboard editor');
+say(r.freeRows === 5 && r.freeKeys === 43,
+    'and it has a keyboard all the same -- the QWERTY, drawn (' +
+    r.freeRows + ' rows, ' + r.freeKeys + ' keys)');
+say(r.freeNothingToPress, 'with nothing on it to press');
+say(r.freeBareRows === r.freeRows && r.freeBareKeys === r.freeKeys,
+    'and a language whose letters are not there yet still has every key of it ('
+    + r.freeBareRows + ' rows, ' + r.freeBareKeys + ' keys) -- a letter that is'
+    + ' missing leaves its key wearing the roman character rather than taking'
+    + ' the key away with it');
+say(r.freeNoUpsell, 'and no Upgrade stands under it -- the keyboard there is not for sale');
+say(r.freeNewToPlans,
+    'the upgrade is offered where a keyboard is ADDED: the door goes to the plans screen');
+say(r.freeAddToPlans && r.freeAddWroteNothing,
+    'and so does the act that writes one, which writes nothing on the way ['
+    + [r.freeAddToPlans, r.freeAddWroteNothing].join(' ') + ']');
 
 if (bad.length){ console.error('\nkb-check: ' + bad.length + ' FAILED'); process.exit(1); }
 console.log('\nkb: pressing a row number or a column letter SELECTS it and lights it up;\n' +

@@ -551,6 +551,11 @@ function kbHasFlick(){
    the one under somebody's thumb away from them mid-sentence. */
 function kbAdd(pat){
   if(KB_PATS.indexOf(pat)<0) return;
+  /* Asked here as well as on the door. kbNew() is a door and a door is a
+     look; the act that WRITES a keyboard has to refuse on its own, the way
+     kbEdit() refuses board 0 for all thirty mutators rather than trusting the
+     buttons to be down. */
+  if(!can('kb')){ goPlans(); return; }
   /* Storage holds only the ones the person built. The free QWERTY is board 0
      and is not among them, so the first one made here is the SECOND board. */
   if(!KB) KB={kbs:[], at:0};
@@ -772,8 +777,33 @@ function kbFixed(){
   for(i=0;i<KB_QWERTY.length;i++){
     r=KB_QWERTY[i]; row=[];
     for(j=0;j<r.length;j++){
+      /* THE KEY GOES DOWN WHETHER OR NOT THE LETTER IS FOUND. A row used to
+         push only the letters kbNamed() answered for, so a language missing
+         one by name came out a key short -- and one missing all of them came
+         out with no letter rows at all. The screen was then a digit row and a
+         space bar, which is the free plan's keyboard GONE: 「無料のキーボード
+         はqwartyに書いた文字が置き換わるだけなのにキーボード自体消えてる」
+         OWNER 2026-09-01, build #106.
+
+         Free is a QWERTY with the drawn letters substituted IN, so the QWERTY
+         is the fixed part and a letter is what gets substituted -- a letter
+         that is not there yet may leave its key wearing the roman character,
+         and may not take the key away with it. kbRom() is that key and this
+         is not a new idea here: the digit row above has fallen back to it
+         from the day it was written, for exactly this reason.
+
+         It also keeps the ROW's arithmetic true. Ten, ten, nine and seven is
+         what the inset half keys, the three-wide delete and 「キーボードずれ
+         た。文字サイズとか小さくしていいからずらさないで」 are all counted
+         against; a short row silently re-runs that sum on a different number
+         and the columns stop lining up.
+
+         ltStart() is still what puts the letters there, and nothing here is a
+         second way to make one -- a fallback key is not a letter and is not
+         written to LETTERS. This is the keyboard refusing to vanish while it
+         waits. */
       id=kbNamed(r.charAt(j));
-      if(id) row.push(kbFix(r.charAt(j), id));
+      row.push(id? kbFix(r.charAt(j), id) : kbRom(r.charAt(j)));
     }
     /* Two keys wide. It is the one key you hit without looking, and it was
        the same width as a letter. 「デリートキーは横二つ分欲しいかも」
@@ -814,8 +844,11 @@ function kbFixed(){
   var end0=kbNamed(KB_ENDS.charAt(0)), end1=kbNamed(KB_ENDS.charAt(1));
   /* 1 + 1 + 6 + 2 = ten, the same as every row above. */
   sp.w=6; ret.w=2;
-  if(end0) bot.push(kbFix(KB_ENDS.charAt(0), end0));
-  if(end1) bot.push(kbFix(KB_ENDS.charAt(1), end1));
+  /* The same, and the sum is the reason it matters here too: the bar is 1 + 1
+     + 6 + 2, so a missing `!` makes it nine and the bar stops agreeing with
+     the rows above it. */
+  bot.push(end0? kbFix(KB_ENDS.charAt(0), end0) : kbRom(KB_ENDS.charAt(0)));
+  bot.push(end1? kbFix(KB_ENDS.charAt(1), end1) : kbRom(KB_ENDS.charAt(1)));
   bot.push(sp);
   bot.push(ret);
   rows.push(bot);
@@ -2209,14 +2242,24 @@ function vKb(){
      がわからんて」
 
      So free gets the steps, the state, and the keyboard itself with nothing
-     to press. Upgrade stays, at the foot, saying the one true thing. */
+     to press.
+
+     AND NO UPGRADE. 「upgradeはそこにはいらんくね。追加するときに出てくるよう
+     にして欲しい」 OWNER 2026-09-01. It stood at the foot of this screen saying
+     the one true thing, and the one true thing is about ADDING a keyboard --
+     so it belongs where somebody adds one, not under a keyboard they already
+     have. Under the keyboard it reads as a price on the thing above it, which
+     is the free QWERTY and is not for sale.
+
+     kbNew() and kbAdd() ask instead, which is where the app already asks
+     every other question of this shape -- ltKind() on a letter, wsysSet() on
+     a writing system, phGo() on a grammar stage all send somebody to the
+     plans screen at the moment the act is pressed rather than standing a
+     button beside it. */
   if(!can('kb'))
     return '<div class="view">'+navTop('', helpQ('kb'))+'<div class="body">'+
       kbHTML(null, true)+
       kbSysHTML()+
-      /* the same, on the free plan's face of this screen */
-      '<button class="btn ghost" style="width:100%;margin-top:12px"' + DO('goPlans') + '>'+
-        t('up.cta')+'</button>'+
       '</div></div>';
   /* The keyboard, and the row of the ones there are above it. There is no
      "nothing built yet" face any more: kbBoards() answers with the one
@@ -3018,6 +3061,13 @@ function kbToolHTML(){
 /* Making another is choosing a pattern again, on a screen of its own rather
    than a row that pushes the keyboard off the page. */
 function kbNew(){
+  /* WHERE THE UPGRADE IS OFFERED. 「追加するときに出てくるようにして欲しい」
+     OWNER 2026-09-01. Building a keyboard is what can('kb') buys, so this is
+     the moment to say so -- and the sheet of five patterns is not opened
+     first: an offer behind a chooser somebody cannot choose from is the
+     screen taken away twice. Same shape as letters.js, wsys.js and
+     phases.js, which is the app's own way of answering this. */
+  if(!can('kb')){ goPlans(); return; }
   openForm('kbnew', t('kb.new'), kbPatsHTML('kbAdd'), function(){ geTiles(); });
 }
 FORM_OPEN.kbnew=function(){ kbNew(); };
