@@ -310,27 +310,14 @@ function vSet(){
       '<span class="sl bad">'+t('set.wipe.langs')+'</span></button>'+
       '<button class="set"' + DO('wipeAll') + '>'+
       '<span class="sl bad">'+t('set.wipe')+'</span></button>'+
-      /* The two documents, at the very foot of this room and nowhere else in
-         the app. Apple asks only that they be reachable from inside it, and
-         nobody reads one on their first day. 「アカウントの一番下やな」
-
-         Signed in is the only way to them, and that is the decision rather
-         than an oversight: 「ログアウト中は見れなくていいでしょ？ログインしたら
-         設定から見れるし」 OWNER 2026-08-26. Signed out the app is the door and
-         nothing else (appIs() in www/shell.js), so the room's signed-out face
-         is not a screen anybody stands on any more -- docRows() stays under
-         both of them because the room is written once, not because the second
-         one is reachable.
-
-         There is no third document. 「出さない。」 OWNER 2026-08-26, about the
-         特定商取引法 notice: the App Store's seller is Apple, so the purchase
-         contract and the refunds are Apple's, and App Store Connect asks only
-         for the privacy policy URL.
-
-         Links and not buttons: they are the published pages, so a change to
-         either is one edit and the version somebody agreed to is the version
-         that is up. */
-      docRows();
+      /* NO DOCUMENTS HERE. They were at the foot of this room 「アカウントの
+         一番下やな」and they are on the plans screen now, where Apple asks for
+         them (Guideline 3.1.2, § planTerms) -- 「設定のアカウントの利用規約と
+         プライバシーポリシー消しといて。課金の方にあるからいらん」 OWNER
+         2026-09-01. One copy of a contract and one place that links to it;
+         two places is two things to keep in step. `docRows()` is unchanged
+         and is the plans screen's now. */
+      '';
   } else if(id==='data'){
     /* What is on the disk, for everybody. Keeping a language is not a paid
        feature -- charging for not losing somebody's work would mean
