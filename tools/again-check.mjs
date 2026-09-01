@@ -244,6 +244,101 @@ say(holds.downLangs && holds.downSlices,
     'and a server that does not answer changes nothing at all — 「the plan is ' +
     'unknown」 and 「this person has no data」 are not the same state');
 
+/* ---- 4. AND NOTHING EVER SHRINKS -----------------------------------------
+   The condition this whole piece of work is written under: 「この変更で
+   localStorage からキーを一本も消さないこと」. The three ways a server says
+   nothing are three different states and none of them is 「this person has no
+   languages」 -- an empty array, a 500, and a connection that dies. All three
+   have to leave the phone exactly as it was.
+
+   Measured as bytes AND as a count of keys, because "the language is still in
+   the index" is also true of one whose slices have been emptied. */
+const safe = await pg.evaluate(async ({ srv, saved }) => {
+  function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
+  eval(srv);
+  var S = window.__SRV, keep = JSON.parse(saved), out = {};
+  S.lang = keep.lang; S.slice = keep.slice;
+  function snap(){
+    var m = {}, i, k;
+    for (i = 0; i < localStorage.length; i++){
+      k = localStorage.key(i);
+      m[k] = String(localStorage.getItem(k) || '').length;
+    }
+    return m;
+  }
+  function lost(was, now){
+    var k, gone = [];
+    for (k in was){
+      if (!Object.prototype.hasOwnProperty.call(was, k)) continue;
+      if (!(k in now)) { gone.push(k + ' GONE'); continue; }
+      if (now[k] < was[k]) gone.push(k + ' ' + was[k] + '→' + now[k]);
+    }
+    return gone;
+  }
+  async function against(how){
+    var was = snap(), keys = Object.keys(was).length;
+    NET_BACK = '';
+    if (how === 'empty'){ S.lang = []; S.slice = []; }
+    if (how === 'down'){ S.down = true; }
+    netTook({ access_token:'t', refresh_token:'r', user:{ id:'me' } });
+    await new Promise(function(f){ netLangSync(function(){ f(); }); });
+    await wait(300);
+    S.down = false; S.lang = keep.lang; S.slice = keep.slice;
+    var now = snap();
+    return { lost: lost(was, now), keys: keys, keysNow: Object.keys(now).length };
+  }
+  out.empty = await against('empty');
+  out.down  = await against('down');
+
+  /* and twice over, which is the other way a merge goes wrong */
+  var one = '', z;
+  for (z = 0; z < S.lang.length; z++) if (LANGS[S.lang[z].id]) one = S.lang[z].id;
+  function words(){
+    try { return (JSON.parse(localStorage.getItem(langKeyOf(one, 'words')) || '[]') || []).length; }
+    catch (e) { return -1; }
+  }
+  await new Promise(function(f){ netLangSync(function(){ f(); }); });
+  await wait(200);
+  var n1 = words();
+  await new Promise(function(f){ netLangSync(function(){ f(); }); });
+  await wait(200);
+  out.twice = [n1, words()];
+  /* and a slice that came back SMALLER is refused rather than written. Driven
+     by handing the merge a shorter body than the phone has -- the one shape
+     the condition names, made to happen rather than reasoned about. */
+  var big = JSON.stringify([{hw:'a'},{hw:'b'},{hw:'c'},{hw:'d'}]);
+  localStorage.setItem(langKeyOf(one, 'words'), big);
+  var oldMerge = syMerge;
+  syMerge = function(){ return JSON.stringify([{hw:'a'}]); };
+  NET_SHRANK = [];
+  await new Promise(function(f){ netLangSync(function(){ f(); }); });
+  await wait(200);
+  syMerge = oldMerge;
+  out.shrankKept = localStorage.getItem(langKeyOf(one, 'words')) === big;
+  out.shrankSaid = NET_SHRANK.length > 0;
+  return out;
+}, { srv: SERVER, saved: up.srv });
+
+say(safe.empty.lost.length === 0 && safe.empty.keysNow >= safe.empty.keys,
+    'a server that answers with an EMPTY LIST takes nothing away — an empty ' +
+    'answer is not 「this person has no languages」: ' + safe.empty.keys + ' keys ' +
+    'before, ' + safe.empty.keysNow + ' after' +
+    (safe.empty.lost.length ? ', LOST ' + safe.empty.lost.join(', ') : ''));
+say(safe.down.lost.length === 0 && safe.down.keysNow >= safe.down.keys,
+    'and a server that does not answer at all takes nothing away: ' +
+    safe.down.keys + ' keys before, ' + safe.down.keysNow + ' after' +
+    (safe.down.lost.length ? ', LOST ' + safe.down.lost.join(', ') : ''));
+say(safe.twice[0] === safe.twice[1] && safe.twice[0] > 0,
+    'and syncing twice in a row does not grow the dictionary — syMerge adds ' +
+    'both sides, so a language that gains a word every launch is the other way ' +
+    'this goes wrong: ' + safe.twice.join(' then '));
+
+say(safe.shrankKept && safe.shrankSaid,
+    'and a merge that comes back SMALLER than what is on the phone is skipped ' +
+    'and said out loud, never written — 「同じキーを、今より少ない中身で書かない」: ' +
+    (safe.shrankKept ? 'the phone kept its four words' : 'THE PHONE LOST WORDS') +
+    ', ' + (safe.shrankSaid ? 'and it was recorded' : 'and nothing said so'));
+
 await br.close();
 if (bad.length){
   console.log('\nagain: ' + bad.length + ' problem' + (bad.length > 1 ? 's' : '') + '.\n');

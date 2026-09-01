@@ -726,6 +726,41 @@ function netSlicePut(sid, kind, body, no, ok, bad){
    is already on the phone and already drawn, and what this does is make the
    two copies the same. A failure is silence, because a phone with no signal
    is a phone somebody is still writing a language on. */
+/* NEVER LESS THAN WHAT IS THERE.
+   -------------------------------------------------------------------------
+   The condition this piece of work is written under, and it is structural
+   rather than careful: 「この変更で localStorage からキーを一本も消さないこと。
+   同じキーを、今より少ない中身で書かない」 OWNER 2026-09-01, asked of a change
+   that touches people's languages a day before a release.
+
+   Two things may happen to a key and no third: something that is not there is
+   PLACED, and something that is there is replaced by something that CONTAINS
+   it. Anything else is skipped and said out loud, so the worst outcome of a
+   wrong merge is a duplicate or a no-op. A duplicate can be fixed. What is
+   gone cannot.
+
+   `syMerge()` in www/sync.js already adds both sides and falls back to what is
+   on the phone whenever it cannot read either half, so this should never fire.
+   That is exactly why it is here: it costs one comparison, and the day it
+   fires is the day something upstream changed. */
+function netKeeps(mine, put){
+  var a, b, k;
+  if(mine===null || mine==='') return true;      /* placing, not replacing */
+  if(put===mine) return true;
+  try{ a=JSON.parse(mine); b=JSON.parse(put); }
+  catch(e){ return String(put).length>=String(mine).length; }
+  if(a instanceof Array)
+    return (b instanceof Array) && b.length>=a.length;
+  if(a && typeof a==='object'){
+    if(!b || typeof b!=='object' || (b instanceof Array)) return false;
+    for(k in a)
+      if(Object.prototype.hasOwnProperty.call(a, k) &&
+         !Object.prototype.hasOwnProperty.call(b, k)) return false;
+    return true;
+  }
+  return String(put).length>=String(mine).length;
+}
+var NET_SHRANK=[];
 var NET_SYNCING=false;
 /* EVERY LANGUAGE THIS PERSON MADE, and it used to be the one that happened to
    be open. That is not a smaller version of the same thing: a second language
@@ -809,7 +844,16 @@ function netLangSync1(id, done){
         got=there[kind];
         put=syMerge(kind, mine===null? '' : mine, got? got.body : '');
         if(put!=='' && put!==mine){
-          try{ localStorage.setItem(langKeyOf(id, kind), put); moved=true; }catch(e){}
+          /* and only where it keeps everything that is already there */
+          if(netKeeps(mine, put)){
+            try{ localStorage.setItem(langKeyOf(id, kind), put); moved=true; }catch(e){}
+          } else {
+            /* Skipped, and remembered rather than swallowed: a merge that came
+               back smaller is a thing somebody has to be told about, and the
+               phone keeps what it had in the meantime. */
+            NET_SHRANK.push(id+'.'+kind);
+            step(); return;
+          }
         }
         if(put==='' || (got && put===got.body)){ step(); return; }
         netSlicePut(sid, kind, put, got? got.no : 0,
