@@ -218,6 +218,28 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### 長押しのしきい値は 10px
+- Date: 2026-09-01
+- Area: プロフィールの長押しで言語を切り替える（⑬）
+- Decision:
+
+  ```
+  10px
+  ```
+
+  親指が **10px を超えて動いたら**、長押しをやめる。それ以下は動いていない
+  ものとして扱う。`HOLD_SLOP` が `www/shell.js` のその一箇所。
+
+- Reason: 閾値が無かったので、`touchmove` が一画素で `holdClear` を呼んでいた。
+  実機の親指は必ず一画素は動くので、**長押しは実機で一度も成立していなかった**
+  （`claude/scan` が本物の TouchEvent で測定: 静止→動く、一画素→死ぬ、
+  六画素→死ぬ、四十画素→死ぬ）。16px も並べたうえで 10 が選ばれた ── 寛くすると
+  スクロールのつもりが切り替わる回数が増える。
+- Affected features: ⑬。`www/sns.js` の同じ形も同じ値
+- Affected data: 無し
+- Affected docs: 無し
+- Implementation status: `claude/words2` `3ba0503`。取り込み待ち
+
 ### オーナーが機能追加をしようとしていたら、リーダーが確認する
 - Date: 2026-09-01
 - Area: リリースまでのあいだ、頼まれたものの扱い
