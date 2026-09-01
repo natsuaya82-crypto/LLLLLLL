@@ -15,6 +15,49 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### access token だけの返事は、もうセッションになりません
+
+**オーナー 2026-08-31**（原文）:
+
+```
+あとGoogleボタン押しただけでログインできるけど？
+```
+
+**まず測ったこと:** `SESS` が書かれる場所は `www/net.js` の `netTook()` **一箇所
+だけ**です（`netRead()` が読み、`netOut()` が消すほか、代入は一つも無い）。そこに
+入る値は Supabase の token 応答で、Google の id_token は Supabase が Google の
+公開鍵と audience で検証します。**つまり Google の扉から入ったセッションは本物
+です** ── ボタンを押すだけで入れるのは「Google でログイン」がそういうものだから
+で、そこは穴ではありませんでした。
+
+**穴だったのはその隣です。** `netTook()` は access token さえあれば
+refresh token が無くても取っていました:
+
+```js
+if(!d || !d.access_token) return false;
+SESS={ at:d.access_token, rt:d.refresh_token||'', ... }
+```
+
+`rt` が `''` になり、そして `rt` を読む三つがそれと食い違います ──
+`netSignedIn()` は偽（**41 箇所が訊いている**）、`netMember()` も偽、そして
+`netRead()` は次の起動で `if(s && s.rt)` に落として**黙って**セッションを捨て
+ます。画面は「ログインしました」と言い、`obIn()` は `SESS.at` を持って profile を
+取りに行った後で、です。これが**立っていないのに立ったように見えている**唯一の形
+でした。
+
+**直したこと:** セッションは両方揃って初めてセッションです。`netTook()` が
+`refresh_token` の無い返事を**取らなく**なりました。一箇所で断るので、入口
+四つ（メール・六桁・Apple・Google）すべてが、access token がそもそも無い返事と
+同じように報告します。
+
+**保存の変化:** `lingua.sess` に `rt:''` のセッションが**書かれなくなりました**。
+形は同じで、移行はありません ── 既に置かれている `rt:''` は `netRead()` が
+前から読まないので、何も壊れず何も消えません。
+
+**検査:** `tools/acct-check.mjs` に 8 番。バグを戻して赤を見ました（2 件）。
+両方向です ── 揃った返事は今までどおりセッションになる、も同時に見ています。
+
+
 ### 課金が、タップしただけで通らなくなりました
 
 **オーナー 2026-08-31**（原文）:

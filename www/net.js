@@ -243,8 +243,22 @@ function netWhy(d, status, mark){
 /* A session, put away. Everything that signs somebody in ends here, so there
    is one place that knows what a session is made of. */
 function netTook(d){
-  if(!d || !d.access_token) return false;
-  SESS={ at:d.access_token, rt:d.refresh_token||'',
+  /* Both halves, because a session is both. netRead() two functions up has
+     always refused a stored session with no refresh token (`if(s && s.rt)`),
+     and netSignedIn() has always answered on `rt` -- so a reply carrying an
+     access token and no refresh token was taken, stored, and then read as
+     signed OUT by all 41 places that ask. The app said 「ログインしました」,
+     obIn() went and fetched the profile with SESS.at in hand, and the next
+     launch dropped the session without a word.
+
+     That is the one shape of 「立っていないのに立ったように見えている」 this
+     file can produce, and it produced it here rather than anywhere else
+     because this is the only place SESS is ever written. A reply that is not
+     a session is not a session: it is refused here, once, and every road in
+     -- the mail door, the six digits, Apple and Google -- reports it the way
+     it already reports a reply with no access token at all. */
+  if(!d || !d.access_token || !d.refresh_token) return false;
+  SESS={ at:d.access_token, rt:d.refresh_token,
          uid:(d.user && d.user.id) || (SESS && SESS.uid) || '',
          /* Whether this one has a name on it, decided here because this is
             the one place that knows what a session is made of. A session

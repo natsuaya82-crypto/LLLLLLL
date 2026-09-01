@@ -254,6 +254,30 @@ const R = await pg.evaluate(() => {
     no('7: 400 が offline の文言になっている');
   say('7: 0 でない status は、これまでどおりの文言');
 
+  /* ---- 8. 立っていないのに立ったように見えない --------------------------
+     OWNER 2026-08-31: 「Googleボタン押しただけでログインできるけど？」
+
+     SESS is written in exactly one place -- netTook() -- so what a session
+     is, is whatever that function accepts. It accepted a reply carrying an
+     access token and NO refresh token, and then three things that all read
+     `rt` disagreed with it: netSignedIn() said no, netMember() said no, and
+     netRead() dropped the stored session at the next launch. The app had
+     already said 「ログインしました」 and gone to fetch the profile.
+
+     Held here rather than in the door, because the door is not where it was
+     decided. Both directions: a whole reply is still a session, so this
+     cannot be passed by refusing everything. */
+  netOut();
+  const half = netTook({ access_token: 'not a jwt', user: { id: B } });
+  if (half) no('8: refresh token の無い返事が、セッションとして取られた');
+  if (netSignedIn())
+    no('8: refresh token が無いのに netSignedIn() が真 — 41箇所が食い違う');
+  if (SESS) no('8: セッションでない返事が SESS に書かれた');
+  netOut();
+  if (!arrive(B)) no('8: 揃った返事がセッションとして取られなくなった');
+  if (!netSignedIn()) no('8: 揃った返事のあとで netSignedIn() が偽');
+  say('8: access token だけの返事はセッションではない（両方向）');
+
   return out;
 });
 
