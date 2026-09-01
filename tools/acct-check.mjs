@@ -928,6 +928,46 @@ const R = await pg.evaluate(() => {
   if (netSignedIn()) no('28: プラグインが無いとサインアウトできない');
   say('28: 伝えられなくても、サインアウトは止まらない');
 
+  /* ---- 29. 通知のまとめは二通りあり、両方が届く ------------------------
+     オーナーが見せてきた形は二つで、サーバーは片方しか作っていませんでした:
+
+       同じ投稿に何人か  → 一行（「A と B がいいねしました」）  ← 前から在った
+       同じ人が何件かに  → 一行（「A が2件にいいねしました」）  ← 無かった
+
+     何人か（n）と何件か（np）は別の数で、片方からもう片方は出ません。
+     画面が文を選ぶのに両方要ります。 */
+  start();
+  netOut(); arrive(A);
+  netSend = (method, path, body, tok, ok2) => {
+    if (path.indexOf('/rest/v1/rpc/notices') === 0)
+      return ok2([
+        { kind:'like', at:'2026-08-30T00:00:00Z', hd:'iri', who:'Iri',
+          av:null, post:'p1', n:2, np:1,
+          more:[{ hd:'veth', who:'Veth', av:null }] },
+        { kind:'like', at:'2026-08-29T00:00:00Z', hd:'kai', who:'Kai',
+          av:null, post:'p9', n:1, np:3, more:[] },
+        { kind:'follow', at:'2026-08-28T00:00:00Z', hd:'one', who:'One',
+          av:null, post:null }        /* np を言わない古いサーバー */
+      ]);
+    return ok2([]);
+  };
+  let notes = null;
+  netNotices((rows) => { notes = rows; }, () => {});
+  netSend = realSend2;
+
+  if (!notes || notes.length !== 3) no('29: 通知が三行返ってこなかった');
+  else {
+    if (notes[0].n !== 2)  no('29: 何人かが載らない — ' + notes[0].n);
+    if (notes[0].np !== 1) no('29: 一つの投稿の行が np=1 になっていない — ' + notes[0].np);
+    if (notes[0].more.length !== 1) no('29: もう一人が落ちている');
+    if (notes[1].np !== 3) no('29: 何件かが載らない — ' + notes[1].np);
+    if (notes[1].n !== 1)  no('29: 一人の行が n=1 になっていない — ' + notes[1].n);
+    /* np を言わないサーバーからの行は 1。0 ではなく、欠けてもいない ──
+       そのサーバーが作れる行はどれも一つの投稿についてのもの。 */
+    if (notes[2].np !== 1) no('29: np を言わないサーバーの行が 1 になっていない — ' + notes[2].np);
+  }
+  say('29: 通知は「何人か」と「何件か」を別々に持って届く');
+
   return out;
 });
 

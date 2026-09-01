@@ -2241,7 +2241,14 @@ function netNotices(ok, bad){
                   /* A row that says nothing about how many is one person --
                      the server sends 1, and a server that has not been
                      updated sends nothing at all. */
-                  n:r.n||1, more:r.more||[]});
+                  n:r.n||1,
+                  /* And how many POSTS the row is about, which is a
+                     different question from how many people and cannot be
+                     worked out from it. 1 is 「this one post」; more than 1
+                     is 「A が n 件に…」. A server that has not been updated
+                     sends nothing at all and 1 is right for it -- every row
+                     it can produce is about one post. */
+                  np:r.np||1, more:r.more||[]});
       }
       ok(out);
     }, bad);

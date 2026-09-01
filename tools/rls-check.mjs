@@ -61,6 +61,8 @@ const E = 'e0000000-0000-4000-8000-00000000000e';   /* whoever may add staff */
    That is a denial for the wrong reason, and it reads exactly like the
    right one. */
 const G4='a0000000-0000-4000-8000-0000000000a4';   /* arrives with a line about themselves */
+const P2='c0000000-0000-4000-8000-0000000000b2';  /* two more of A's posts */
+const P3='c0000000-0000-4000-8000-0000000000b3';
 const G1='a0000000-0000-4000-8000-0000000000a1';   /* tries to arrive holding admin */
 const G2='a0000000-0000-4000-8000-0000000000a2';   /* tries to arrive holding staff */
 const G3='a0000000-0000-4000-8000-0000000000a3';   /* tries to arrive already banned */
@@ -760,6 +762,54 @@ const CASES = [
      worked when there were two would be a fold that hid single notices. */
   ['one person is a notice that says one',    'ok',     A, 0,
     `select 1 from notices(50) where kind='boost' and post='${P}' and n = 1`],
+
+  /* --- and the OTHER way of being the same notice ------------------------
+     The owner gave two shapes and the list only ever made one of them:
+
+       several people, one post   -> 「A と B がいいねしました」   (above)
+       one person, several posts  -> 「A が2件にいいねしました」   (here)
+
+     notices() grouped by (kind, post) only, so ONE person liking two of your
+     posts came out as TWO rows saying the same name twice.
+
+     `n` and `np` are two numbers: how many PEOPLE the row is about, and how
+     many POSTS. A screen needs both to choose its sentence. */
+  ['A writes two more posts',                 'ok',     A, 0,
+    `insert into post(id,author,body) values ('${P2}','${A}','{}'::jsonb),
+                                             ('${P3}','${A}','{}'::jsonb)`],
+  ['one person likes both of them',           'ok',     F, 0,
+    `insert into react(post,actor,kind,created_at)
+          values ('${P2}','${F}','like', now() + interval '2 minutes'),
+                 ('${P3}','${F}','like', now() + interval '3 minutes')`],
+  ['one person on two posts is ONE notice',   'ok',     A, 0,
+    `select 1 from (select count(*) c from notices(50)
+                     where kind='like' and n = 1
+                       and hd = (select handle from profile where id='${F}')) q
+      where q.c = 1`],
+  ['and it says how many POSTS',              'ok',     A, 0,
+    `select 1 from notices(50) where kind='like' and np = 2
+       and hd = (select handle from profile where id='${F}')`],
+  ['and it still says one person',            'ok',     A, 0,
+    `select 1 from notices(50) where kind='like' and np = 2 and n = 1
+       and hd = (select handle from profile where id='${F}')`],
+  /* It has to lead somewhere: a row about two posts still opens one, and it
+     is the newest of them rather than whichever the planner reached for. */
+  ['and it leads to the newest of them',      'ok',     A, 0,
+    `select 1 from notices(50) where kind='like' and np = 2 and post='${P3}'`],
+  /* And the first shape is not damaged by the second. Several people on one
+     post must STAY about the post -- folding those by actor as well would
+     turn 「A と B がいいねしました」 into two rows again. */
+  ['several people on one post stay one row', 'ok',     A, 0,
+    `select 1 from (select count(*) c from notices(50)
+                     where kind='like' and post='${P}') q where q.c = 1`],
+  ['and that row still says two people',      'ok',     A, 0,
+    `select 1 from notices(50) where kind='like' and post='${P}' and n = 2 and np = 1`],
+  /* Nothing is counted twice: every like of A's is in exactly one row. Two
+     on P, two by G4 -- four events, and the numbers across the rows add up
+     to four. A fold that put an event in both shapes would read five. */
+  ['no like is in two rows at once',          'ok',     A, 0,
+    `select 1 from (select sum(greatest(n, np)) t from notices(50)
+                     where kind='like') q where q.t = 4`],
 
   /* --- and what is going round -------------------------------------------
      Four hours, and the list STANDS STILL between ticks (schema.sql § what is

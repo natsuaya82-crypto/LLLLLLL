@@ -1133,7 +1133,7 @@ create policy media_drop on storage.objects for delete using (
 drop function if exists notices(int);
 create or replace function notices(lim int default 50)
 returns table (kind text, at timestamptz, hd text, who text, av jsonb,
-               post uuid, n int, more jsonb)
+               post uuid, n int, np int, more jsonb)
 language sql stable as $$
   with ev as (
     select 'like'::text as kind, r.created_at as at, r.actor as actor, r.post as post
@@ -1164,16 +1164,58 @@ language sql stable as $$
               readings of the same list. */
            (array_agg(ev.actor order by ev.at desc, ev.actor desc))[1:4] as few
       from ev group by ev.kind, ev.post
+  ),
+  /* ---- AND THE SECOND WAY OF BEING THE SAME NOTICE ---------------------
+     The owner gave two shapes and the list only ever made one of them:
+
+       several people, one post   -> 「A と B がいいねしました」
+       one person, several posts  -> 「A が2件にいいねしました」
+
+     `g` above is the first. It groups by (kind, post), so ONE person liking
+     four of your posts came out as four rows saying the same name four
+     times -- which is the shape of notice list that makes people turn
+     notices off.
+
+     The two cannot both be done by one `group by`, so this is the second
+     pass and the rule is the narrowest one that produces both sentences:
+     a row several people are in STAYS about the post, and the rows only one
+     person is in are gathered by that person. Nothing is dropped and nothing
+     is counted twice -- every event is in exactly one row either way.
+
+     `n` and `np` are two numbers and not one, because they are two
+     questions: how many PEOPLE this row is about, and how many POSTS. A
+     screen needs both to choose its sentence, and a single number cannot
+     say which kind of row it is. */
+  many as (
+    select g.kind, g.post, g.at, g.n, 1 as np, g.few
+      from g where g.n > 1
+  ),
+  one as (
+    select g.kind,
+           /* The most recent of them, so tapping the row goes somewhere --
+              a row about four posts still has to lead to one. */
+           (array_agg(g.post order by g.at desc))[1] as post,
+           max(g.at) as at,
+           1 as n,
+           count(*)::int as np,
+           array[g.few[1]] as few
+      from g where g.n = 1
+     group by g.kind, g.few[1]
+  ),
+  r as (
+    select * from many
+    union all
+    select * from one
   )
-  select g.kind, g.at, p0.handle, p0.display, p0.av, g.post, g.n,
+  select r.kind, r.at, p0.handle, p0.display, p0.av, r.post, r.n, r.np,
          coalesce((select jsonb_agg(jsonb_build_object(
                             'hd', p.handle, 'who', p.display, 'av', p.av)
                           order by u.ord)
-                     from unnest(g.few[2:4]) with ordinality as u(id, ord)
-                     join profile p on p.id = u.id), '[]'::jsonb)
-    from g
-    join profile p0 on p0.id = g.few[1]
-   order by g.at desc
+                     from unnest(r.few[2:4]) with ordinality as u(id, ord)
+                     join profile p on p.id = u.id), '[]'::jsonb) as more
+    from r
+    join profile p0 on p0.id = r.few[1]
+   order by r.at desc
    limit lim
 $$;
 grant execute on function notices(int) to authenticated;
