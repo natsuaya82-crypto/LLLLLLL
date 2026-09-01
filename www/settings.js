@@ -668,6 +668,29 @@ function planPage(p){
    ⚠ The box itself is a rule in www/index.html and is NOT in this branch --
    see docs/reports/plan-2026-08-26.md. Until it lands these read exactly as
    they did, because `.ghost` and `.btn` are the same declarations today. */
+/* WHICH TERM IS CHOSEN, and nothing is bought until the button at the foot is
+   pressed. 「プランタップしたらすぐ行くのいやだ。プランタップして下のサブス
+   クライブするみたいなボタン押してやっと課金いけるみたいにしたい」 OWNER
+   2026-09-01 -- pressing a price used to hand the App Store the purchase at
+   once, so the sheet arrived on the first tap and a mis-tap was a sheet
+   somebody had to dismiss.
+
+   It is where you are standing on this screen and not a setting, so
+   viewReset() drops it, the same as every other 「どれを選んでいるか」 in the
+   app. `{id, yr}` and never a plan on its own: the month and the year of one
+   plan are two different things to buy. */
+var PLPICK=null;
+function plPick(id, yr){
+  PLPICK={id:String(id), yr:!!yr};
+  render();
+}
+function plPicked(id, yr){ return !!(PLPICK && PLPICK.id===id && PLPICK.yr===!!yr); }
+/* And the press that actually buys. Down until something is chosen: a button
+   that does nothing is a button that is broken. */
+function plBuy(){
+  if(!PLPICK) return;
+  setPlan(PLPICK.id, PLPICK.yr);
+}
 function planPrice(p, free){
   function term(yr){
     var cost=storeCost(p.id, yr) || t(yr? p.yr : p.mo);
@@ -696,8 +719,8 @@ function planPrice(p, free){
       '<span class="pper">'+esc(t(yr? 'plan.per.yr' : 'plan.per.mo'))+'</span>'+
       ((yr && off)? '<span class="plsave">'+esc(t('plan.off', off))+'</span>' : '');
     return free? (yr? '' : '<span class="plterm no">'+body+'</span>')
-               : '<button class="btn plterm"' + DO('setPlan', [p.id, yr]) +
-                 '>'+body+'</button>';
+               : '<button class="btn plterm'+(plPicked(p.id, yr)? ' on':'')+'"' +
+                 DO('plPick', [p.id, yr]) + '>'+body+'</button>';
   }
   return '<div class="plterms">'+term(false)+term(true)+'</div>';
 }
@@ -753,7 +776,7 @@ function vPlans(){
      typed prices are what is on screen for that moment and the App Store's
      are what is on screen after it. */
   storeAsk();
-  return '<div class="view">'+
+  return '<div class="view plans">'+
     navTop('')+
     /* The picture, and it is this phone's own keyboard wearing the letters
        this person drew. 「絵なんでもいいよ 君のキーボードとか載せる？」 --
@@ -775,6 +798,12 @@ function vPlans(){
        Apple's own sheet.
        「無料に戻すってボタン意味わからないからそこを購入を復元に、
          サブスクリプションを解除するをその下に小さめに入れよう」 */
+    /* THE PRESS THAT BUYS, and it is the only one. A price above chooses a
+       term; this hands it to the App Store. 「プランタップして下のサブスク
+       ライブするみたいなボタン押してやっと課金いけるみたいにしたい」 */
+    '<div class="plgo"><button class="btn plbuy"' + DO('plBuy') +
+      (PLPICK? '' : ' disabled')+' style="width:100%">'+
+      esc(t('plan.buy'))+'</button></div>'+
     '<div class="plfoot"><button class="btn ghost" style="width:100%"' +
       DO('storeRestore') + '>'+esc(t('plan.restore'))+'</button></div>'+
     /* AT THE FOOT, AND UNDER THE BAR OF TABS. 「一番下に置いて欲しい。

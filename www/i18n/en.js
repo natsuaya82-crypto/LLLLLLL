@@ -764,6 +764,7 @@ defLang('en', (function(){
       "plan.price.plus" : "$4.99",
       "plan.price.plus.yr" : "$49.99",
       "plan.off" : "{0}% off",
+      "plan.buy" : "Subscribe",
       "plan.restore" : "Restore purchases",
       "plan.cancel" : "Cancel subscription",
       "store.none" : "Nothing to restore",

@@ -839,6 +839,7 @@ defLang('de', (function(){
       "plan.price.plus" : "$4.99",
       "plan.price.plus.yr" : "$49.99",
       "plan.off" : "{0}% günstiger",
+      "plan.buy" : "Abonnieren",
       "plan.restore" : "Käufe wiederherstellen",
       "plan.cancel" : "Abo kündigen",
       "store.none" : "Nichts wiederherzustellen",

@@ -810,6 +810,7 @@ defLang('es', (function(){
       "plan.price.plus" : "$4.99",
       "plan.price.plus.yr" : "$49.99",
       "plan.off" : "{0}% menos",
+      "plan.buy" : "Suscribirse",
       "plan.restore" : "Restaurar compras",
       "plan.cancel" : "Cancelar la suscripción",
       "store.none" : "No hay nada que restaurar",

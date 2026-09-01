@@ -855,6 +855,7 @@ defLang('zh', (function(){
       "plan.price.plus" : "$4.99",
       "plan.price.plus.yr" : "$49.99",
       "plan.off" : "省 {0}%",
+      "plan.buy" : "订阅",
       "plan.restore" : "恢复购买",
       "plan.cancel" : "取消订阅",
       "store.none" : "没有可恢复的购买",

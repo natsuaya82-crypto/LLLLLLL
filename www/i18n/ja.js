@@ -766,6 +766,7 @@ defLang('ja', (function(){
       "plan.price.plus" : "$4.99",
       "plan.price.plus.yr" : "$49.99",
       "plan.off" : "{0}％お得",
+      "plan.buy" : "サブスクライブする",
       "plan.restore" : "購入を復元",
       "plan.cancel" : "サブスクリプションを解除する",
       "store.none" : "復元するものはありません",

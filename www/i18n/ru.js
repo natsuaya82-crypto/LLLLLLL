@@ -864,6 +864,7 @@ defLang('ru', (function(){
       "plan.price.plus" : "$4.99",
       "plan.price.plus.yr" : "$49.99",
       "plan.off" : "-{0}%",
+      "plan.buy" : "Оформить подписку",
       "plan.restore" : "Восстановить покупки",
       "plan.cancel" : "Отменить подписку",
       "store.none" : "Восстанавливать нечего",

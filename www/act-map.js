@@ -37,7 +37,8 @@ act('back', back);
 act('backKeep', backKeep);
 act('backDrop', backDrop);
 act('backStay', backStay);
-act('setPlan', setPlan);
+act('plPick', plPick);
+act('plBuy', plBuy);
 act('goMod', goMod);
 /* The screen above the reports, and the way in. `adminTap` is the settings
    heading counting presses -- there is no button anywhere that opens this,

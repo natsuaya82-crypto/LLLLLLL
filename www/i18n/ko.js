@@ -1025,6 +1025,7 @@ defLang('ko', (function(){
       "plan.price.plus" : "$4.99",
       "plan.price.plus.yr" : "$49.99",
       "plan.off" : "{0}% 할인",
+      "plan.buy" : "구독하기",
       "plan.restore" : "구매 복원",
       "plan.cancel" : "구독 해지",
       "store.none" : "복원할 구매가 없습니다",
