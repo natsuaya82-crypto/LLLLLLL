@@ -153,7 +153,11 @@ const r = await pg.evaluate(async ({ s, sid }) => {
   /* The sync, with every road out of it OPEN. netLangRow() is stubbed too --
      without it the request simply fails and the claim below is green for the
      wrong reason: nothing was refused, the network merely was not there. */
-  netLangRow = function(ok){ ok(sid); };
+  /* One server id per language, so a put can be attributed. Answering `sid`
+     for everything made this check count the person's OWN languages going
+     up -- which is netLangSync() doing its job -- as the downloaded one
+     being written. */
+  netLangRow = function(id, ok){ ok('srv-of-' + id); };
   /* AND IT IS STILL THEIRS. This is the one that matters: opening a language
      is what WRITES -- ltStart() tops a free alphabet up to a-z and saves it --
      so before langOpen() refused, looking at a downloaded language replaced
@@ -167,7 +171,7 @@ const r = await pg.evaluate(async ({ s, sid }) => {
     var ran = [], oldPut = netSlicePut, k, snap = {};
     for (k = 0; k < SLICES.length; k++)
       snap[SLICES[k]] = localStorage.getItem(langKeyOf(sid, SLICES[k]));
-    netSlicePut = function(a, kind){ ran.push(kind); };
+    netSlicePut = function(a, kind){ if(a === 'srv-of-' + sid) ran.push(kind); };
     /* Both halves, because either one alone is green with the bug in.
        A put is somebody else's language being WRITTEN on the server; a
        changed slice is their copy on this phone being merged into -- and

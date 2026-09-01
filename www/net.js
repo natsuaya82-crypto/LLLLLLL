@@ -263,6 +263,14 @@ function netTook(d){
      that knows what a session is made of -- the same reason `anon` is
      decided here. */
   meFor(SESS.uid);
+  /* AND THE LANGUAGES THIS ACCOUNT MADE, onto a phone that may never have
+     seen them. Here rather than at the five call sites for the same reason
+     `anon` and meFor() are here: this is the one place that knows a session
+     arrived. It fills in what is missing and stops, so a phone that already
+     has everything does one request and writes nothing.
+     Guarded to once per account per launch inside netLangBack(), because a
+     token refresh comes through here too. */
+  if(typeof netLangBack==='function') netLangBack();
   return true;
 }
 /* There used to be netAnon() here, and boot.js called it before the first
@@ -497,11 +505,17 @@ function netIdToken(provider, token, nonce, ok, bad){
 
    `LANGS[id].sid` is the server's name for the language, the same way a post
    carries `sid`. A language with none has never been up. */
-function netLangRow(ok, bad){
-  var L=LANGS[langId];
-  if(!netSignedIn() || !L){ bad(null, 0, 'langrow −'); return; }
+function netLangRow(id, ok, bad){
+  /* WHICH language, and it used to be whichever was open. That was the whole
+     of why a second language never reached the server: everything above this
+     asked about `langId`, so a person's other languages had no row and no
+     `sid` and were never sent. The name comes off the index for a language
+     that is not open -- `langName` is the open one's. */
+  var L=LANGS[String(id||'')], nm;
+  if(!netSignedIn() || !L || L.mine===false){ bad(null, 0, 'langrow −'); return; }
   if(L.sid){ ok(L.sid); return; }
-  netPost('/rest/v1/language', {owner:SESS.uid, name:langName||''}, SESS.at,
+  nm=(id===langId)? (langName||'') : (L.name||'');
+  netPost('/rest/v1/language', {owner:SESS.uid, name:nm}, SESS.at,
     function(d){
       var sid=(d && d.length)? d[0].id : '';
       if(!sid){ bad(d, 0); return; }
@@ -535,11 +549,113 @@ function netLangRow(ok, bad){
    makes a request that never arrived correct itself. */
 function netLangPublic(on){
   if(!netSignedIn()) return;
-  netLangRow(function(sid){
+  /* The switch is on the OPEN language's page, so that is the one it is about. */
+  netLangRow(langId, function(sid){
     netSend('PATCH', '/rest/v1/language?id=eq.'+encodeURIComponent(sid),
             {published_at: on? new Date().toISOString() : null},
             SESS.at, function(){}, function(){});
   }, function(){});
+}
+/* EVERY LANGUAGE THIS PERSON MADE, BACK ONTO A PHONE THAT HAS NONE.
+   -------------------------------------------------------------------------
+   `netOut()` drops the session and nothing else, so on the SAME phone signing
+   back in finds every slice still in localStorage and the app looks whole.
+   On a NEW phone it was not: nothing in `www/` had ever read a `language` row
+   back, `LANGS` came up empty, and `netLangRow()` therefore made a SECOND row
+   on the server for a language that already had one. The first stayed there
+   with nothing pointing at it.
+   「基本は全部サーバー管理」「アカウント消したら残るわけがない」 OWNER 2026-08-26.
+
+   `language_read` in supabase/schema.sql is `published_at is not null or
+   owner = auth.uid()`, so a person can ask for their own by owner and nothing
+   on the server had to change.
+
+   IT FILLS IN WHAT IS MISSING AND STOPS. That is `docs/DATA_SAFETY.md`'s rule
+   for a restore and it is the whole shape of this: a language already in the
+   index is left exactly as it is -- name, `sid`, slices, every byte -- and a
+   slice already in storage is not written over. **The way a backup destroys
+   somebody's work is by winning.** What comes down is what this phone does
+   not have.
+
+   A SERVER THAT DOES NOT ANSWER CHANGES NOTHING. 「it did not answer」 and
+   「there is nothing there」 are different states and never share a branch: a
+   refusal ends this function and leaves the phone as it was.
+
+   Fired and never waited for, the way netLangSync() is. Nothing on screen
+   depends on it -- a phone with no languages is on the onboarding, and one
+   with languages is already drawing them. */
+var NET_BACK='';
+function netLangBack(then){
+  var done=then || function(){};
+  if(!netSignedIn() || !SESS.uid){ done(false); return; }
+  /* Once per account per launch. netTook() runs on every token refresh as
+     well as on a sign-in, and this is a whole account's languages. */
+  if(NET_BACK===SESS.uid){ done(false); return; }
+  NET_BACK=SESS.uid;
+  netGet('/rest/v1/language?select=id,name,published_at&order=created_at.asc'+
+         '&owner=eq.'+encodeURIComponent(SESS.uid),
+    function(d){
+      /* AN ANSWER THAT IS NOT A LIST IS NOT A LIST OF NO LANGUAGES. PostgREST
+         answers a select with an array; anything else -- an error object, a
+         session, a body this code has never seen -- is a request that did not
+         mean what this one asked, and walking it as rows reads `undefined` as
+         a length and never stops. Same sentence as everywhere else in this
+         file: 「it did not answer」 and 「there is nothing there」 are two
+         states and must not share a branch. */
+      var rows=(d && typeof d.length==='number')? d : [], at=0, got=false;
+      /* Which of them this phone has never heard of. A language is known by
+         its `sid` -- the server's name for it -- and NOT by its local id: the
+         same language has a different local id on a phone it was made on and
+         on one it came back to, and matching on the local id would make a
+         second copy of every language on the second phone. */
+      function knows(sid){
+        var id;
+        for(id in LANGS){
+          if(!Object.prototype.hasOwnProperty.call(LANGS, id)) continue;
+          if(LANGS[id].sid===sid) return true;
+        }
+        return false;
+      }
+      function next(){
+        if(at>=rows.length){ done(got); return; }
+        var r=rows[at]||{}; at++;
+        var sid=String(r.id||'');
+        if(!sid || knows(sid)){ next(); return; }
+        netLangBack1(sid, String(r.name||''), function(m){ if(m) got=true; next(); });
+      }
+      next();
+    },
+    /* No answer is not an empty account. */
+    function(){ NET_BACK=''; done(false); });
+}
+/* One language, down. The index row is written FIRST and the slices under it,
+   so a language can never have keys in storage that the index does not know
+   about -- that is a set of keys nothing can find, which is the leftovers bug
+   langKeyOf() exists to prevent.
+
+   The local id IS the server's, the same as a language that is only read:
+   this phone has never named this language, and the server already has. It
+   also makes `knows()` above exact rather than a guess. */
+function netLangBack1(sid, name, done){
+  netSlices(sid, function(there){
+    var i, kind, o, wrote=false;
+    if(!LANGS[sid]){ LANGS[sid]={ name:name, mine:true, sid:sid }; wrote=true; }
+    for(i=0;i<SLICES.length;i++){
+      kind=SLICES[i];
+      o=there[kind];
+      if(!o || !o.body) continue;
+      /* FILLS IN AND STOPS. A slice this phone already has is left alone --
+         netLangSync() is what puts the two together, and it MERGES; this one
+         only ever adds what is not here. */
+      try{
+        if(localStorage.getItem(langKeyOf(sid, kind))!==null) continue;
+        localStorage.setItem(langKeyOf(sid, kind), o.body);
+        wrote=true;
+      }catch(e){}
+    }
+    if(wrote) langStore();
+    done(wrote);
+  }, function(){ done(false); });
 }
 /* SOMEBODY ELSE'S LANGUAGE, ASKED ABOUT.
    「言語の詳細は？」 OWNER 2026-09-01. `language_seen` in supabase/schema.sql
@@ -611,32 +727,64 @@ function netSlicePut(sid, kind, body, no, ok, bad){
    two copies the same. A failure is silence, because a phone with no signal
    is a phone somebody is still writing a language on. */
 var NET_SYNCING=false;
-function netLangSync(then){
-  var done=then || function(){};
-  if(NET_SYNCING || !netSignedIn() || !langId){ done(false); return; }
-  /* AND NEVER ON A LANGUAGE THAT IS NOT YOURS. syMerge() ADDS BOTH SIDES, so
-     one pass over a downloaded language puts something into it --
-     「トキポナに文字足したらトキポナじゃないです」 OWNER 2026-08-25 -- and the
-     write half would be this phone trying to edit somebody else's rows.
+/* EVERY LANGUAGE THIS PERSON MADE, and it used to be the one that happened to
+   be open. That is not a smaller version of the same thing: a second language
+   had no row on the server, so it had no `sid`, so nothing of it was ever
+   sent -- and on a new phone there was nothing to come back. It is the same
+   root as the restore below.
+   「基本は全部サーバー管理」「アカウント消したら残るわけがない」 OWNER 2026-08-26.
 
-     It holds HERE, at the one door, and not by each of the four call sites
-     remembering to ask: the one that forgets is the one that ruins a copy of
-     a language its reader cannot repair. It also has nothing to do: nothing
-     on the phone can change a language that is only read, so the two copies
-     cannot differ. docs/DATA_MODEL.md § A language that is only read. */
-  if(!langMine(langId)){ done(false); return; }
+   THE OPEN ONE FIRST, and then the rest. Sync is fired at launch and never
+   waited for, so the order decides which language is right first on a phone
+   that has just been opened -- and that is the one in front of the person.
+   One at a time rather than all at once: they share NET_SYNCING, the merge
+   writes localStorage, and a launch that fires eleven requests at once on a
+   bad connection is a launch that finishes none of them.
+
+   A language that is only READ is not in this list at all. `syMerge` adds
+   both sides, so one pass would put something into a language somebody else
+   wrote -- 「トキポナに文字足したらトキポナじゃないです」 OWNER 2026-08-25 --
+   and the write half would be this phone trying to edit their rows. */
+function langMineIds(){
+  var out=[], id;
+  if(langId && langMine(langId)) out.push(langId);
+  for(id in LANGS){
+    if(!Object.prototype.hasOwnProperty.call(LANGS, id)) continue;
+    if(id===langId || !langMine(id)) continue;
+    out.push(id);
+  }
+  return out;
+}
+function netLangSync(then){
+  var done=then || function(){}, ids, at=0, moved=false;
+  if(NET_SYNCING || !netSignedIn()){ done(false); return; }
+  ids=langMineIds();
+  if(!ids.length){ done(false); return; }
   NET_SYNCING=true;
-  function stop(moved){ NET_SYNCING=false; done(!!moved); }
-  netLangRow(function(sid){
+  function next(){
+    if(at>=ids.length){ NET_SYNCING=false; done(moved); return; }
+    var id=ids[at]; at++;
+    netLangSync1(id, function(m){ if(m) moved=true; next(); });
+  }
+  next();
+}
+/* One language, both ways. Read, merge, write back whatever moved.
+   `langKeyOf(id, …)` and not `langKey(…)`: this is asked about a language
+   that may not be the open one, which is the whole of the change. */
+function netLangSync1(id, done){
+  netLangRow(id, function(sid){
     netSlices(sid, function(there){
       var i=0, moved=false;
       function step(){
         var kind, mine, got, put;
         if(i>=SLICES.length){
-          if(moved){
+          if(moved && id===langId){
             /* Something came back, so what the screens are holding is older
                than what is in storage. Read it in the way langOpen() does
-               rather than patching each global by hand. */
+               rather than patching each global by hand.
+               ONLY for the open one: the globals are 「the language in front
+               of me」, and filling them from another language is that language
+               appearing on the screen somebody is standing on. */
             langRead(); ltRead(); ntRead(); stRead(); sndRead(); kbRead(); wldRead();
             render();
           }
@@ -649,24 +797,27 @@ function netLangSync(then){
              sends it on the press and does not wait; if that request never
              arrived, the phone would say private while the server went on
              saying published, and THAT direction is a leak rather than a
-             nuisance. One small write on the next launch closes it. */
-          netLangPublic(!wldHidden());
-          stop(moved); return;
+             nuisance. One small write on the next launch closes it.
+             Asked of the open language only, because wldHidden() reads WLD --
+             the open one's -- and sending it for another language would be
+             this language's switch written onto that one. */
+          if(id===langId) netLangPublic(!wldHidden());
+          done(moved); return;
         }
         kind=SLICES[i]; i++;
-        try{ mine=localStorage.getItem(langKey(kind)); }catch(e){ mine=null; }
+        try{ mine=localStorage.getItem(langKeyOf(id, kind)); }catch(e){ mine=null; }
         got=there[kind];
         put=syMerge(kind, mine===null? '' : mine, got? got.body : '');
         if(put!=='' && put!==mine){
-          try{ localStorage.setItem(langKey(kind), put); moved=true; }catch(e){}
+          try{ localStorage.setItem(langKeyOf(id, kind), put); moved=true; }catch(e){}
         }
         if(put==='' || (got && put===got.body)){ step(); return; }
         netSlicePut(sid, kind, put, got? got.no : 0,
                     function(){ step(); }, function(){ step(); });
       }
       step();
-    }, function(){ stop(false); });
-  }, function(){ stop(false); });
+    }, function(){ done(false); });
+  }, function(){ done(false); });
 }
 
 /* ---- the timeline, when there is one -----------------------------------

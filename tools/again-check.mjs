@@ -194,22 +194,43 @@ const holds = await pg.evaluate(async ({ srv, saved }) => {
   var S = window.__SRV, keep = JSON.parse(saved);
   S.lang = keep.lang; S.slice = keep.slice;
   /* this phone has a language already, and its words differ from the server's */
-  var ids = Object.keys(LANGS), one = ids[0];
+  /* A language the SERVER also has, and not the empty one this phone minted
+     for itself at load -- the restore has nothing to write over that one, so
+     pointing the claim at it makes the claim green whatever the code does.
+     That is exactly what it was, until the diagnostics were printed. */
+  var ids = Object.keys(LANGS), one = '', z0;
+  for (z0 = 0; z0 < S.lang.length; z0++) if (LANGS[S.lang[z0].id]) one = S.lang[z0].id;
+  /* This phone's copy of a language the SERVER also has, and it says something
+     different. A restore that wins writes the server's over it; a restore that
+     fills in leaves it. */
   localStorage.setItem(langKeyOf(one, 'words'),
     JSON.stringify([{ hw:'ONPHONE', ph:['o'], mn:'here', mns:['here'], pos:'n', at:9 }]));
   var was = localStorage.getItem(langKeyOf(one, 'words'));
+  /* netLangBack() runs once per account per launch, so a second netTook()
+     with the same uid returns at the door. Cleared here, or the two claims
+     below are green because nothing ran -- which is what they were the first
+     time this was written. */
+  NET_BACK = '';
   netTook({ access_token:'t', refresh_token:'r', user:{ id:'me' } });
   await wait(400);
   var now = localStorage.getItem(langKeyOf(one, 'words'));
   /* and a server that does not answer at all */
   S.down = true;
+  NET_BACK = '';
   var langsWas = JSON.stringify(LANGS);
   var slicesWas = ids.map(function(i2){ return localStorage.getItem(langKeyOf(i2, 'words')); }).join('|');
   netTook({ access_token:'t', refresh_token:'r', user:{ id:'me' } });
   await wait(400);
   S.down = false;
   return {
-    kept: now === was || (now || '').indexOf('ONPHONE') >= 0,
+    srvWords: (function(){ var q, w=''; for(q=0;q<S.slice.length;q++)
+        if(S.slice[q].language===one && S.slice[q].kind==='words') w=S.slice[q].body;
+        return String(w).slice(0,40); })(),
+    langsNow: Object.keys(LANGS).join(','),
+    one: one,
+    kept: (now || '').indexOf('ONPHONE') >= 0,
+    keptWhat: String(now || '').slice(0, 60),
+    ran: NET_BACK,
     downLangs: JSON.stringify(LANGS) === langsWas,
     downSlices: ids.map(function(i2){ return localStorage.getItem(langKeyOf(i2, 'words')); }).join('|') === slicesWas
   };
@@ -217,7 +238,8 @@ const holds = await pg.evaluate(async ({ srv, saved }) => {
 
 say(holds.kept,
     'what is already on the phone is not written over by what is on the server — ' +
-    'a restore fills in what is missing and stops (docs/DATA_SAFETY.md)');
+    'a restore fills in what is missing and stops (docs/DATA_SAFETY.md): the ' +
+    'phone still says `' + holds.keptWhat + '`');
 say(holds.downLangs && holds.downSlices,
     'and a server that does not answer changes nothing at all — 「the plan is ' +
     'unknown」 and 「this person has no data」 are not the same state');
