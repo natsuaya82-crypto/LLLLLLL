@@ -410,6 +410,31 @@ const again = await pg.evaluate(() => {
   };
 });
 
+/* ---- 3c. and a digit that came in on a sheet is DRAWN ------------------
+   A digit's picture reaches the clock, the date and the calendar through
+   numSignHTML(), which asked for `st` -- and a sheet's picture is `sh`. So a
+   digit taken off paper put a ROMAN 7 on the widget beside somebody's own
+   six: nothing throws, the face renders, and the sign is not theirs. Asked in
+   pixels, because "it emitted a canvas" is also true of one that paints
+   nothing. Digit seven carries a sheet's picture by now -- the take above put
+   it there. */
+const sign = await pg.evaluate(() => {
+  var host = document.createElement('div');
+  host.style.cssText = 'position:fixed;left:0;top:0;width:200px;font-size:40px';
+  host.innerHTML = '<span id="wr-sign">' + numSignHTML(7) + '</span>';
+  document.body.appendChild(host);
+  numWidMount();
+  var c = document.querySelector('#wr-sign canvas'), n = 0, i, d;
+  var out = { canvas: !!c, roman: host.innerHTML.indexOf('numrm') >= 0, pixels: 0 };
+  if (c && c.width){
+    d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+    for (i = 3; i < d.length; i += 4) if (d[i] > 10) n++;
+    out.pixels = n;
+  }
+  host.parentNode.removeChild(host);
+  return out;
+});
+
 /* ---- 4. and a picture that is not a sheet is refused whole -------------- */
 const refused = await pg.evaluate(() => {
   var n = LETTERS.length;
@@ -815,6 +840,9 @@ say(again.made === 2 && again.names.join(',') === '7,a' && again.noVal === 2,
 say(again.aStill === 2,
     'so the `a` that was already there is still there, beside the new one (' +
     again.aStill + ')');
+say(sign.canvas && !sign.roman && sign.pixels > 0,
+    'and a digit that came in on a sheet is drawn with the sign somebody drew ' +
+    'for it, not a roman one: ' + sign.pixels + ' pixels of ink on the clock');
 
 say(!after.got && !!after.why && after.grew === 0,
     'a photograph that is not a sheet is refused whole: ' + after.grew +

@@ -214,10 +214,13 @@ function numFace(k){
   var v=parseInt(k, 10), l;
   if(isNaN(v)) return '';
   l=numByVal(v);
-  if(!l || !ltHasShape(l)) return '';
-  return (l.st && l.st.length)
-    ? '<canvas class="tc numsm" data-l="'+esc(l.id)+'"></canvas>'
-    : '<span class="bch numsm">'+esc(l.ch)+'</span>';
+  if(!l) return '';
+  /* Same as numSignHTML: the picture may be `sh` or `st`, and inkGeo() is the
+     one place that knows. ltHasShape() does not -- it is older than the sheet
+     -- so it is not what is asked here. */
+  if(inkGeo(l)) return '<canvas class="tc numsm" data-l="'+esc(l.id)+'"></canvas>';
+  if(l.ch) return '<span class="bch numsm">'+esc(l.ch)+'</span>';
+  return '';
 }
 /* And the other way round: a digit's word, on the digit, with the way to go
    and make it. The sign and the word are one thing seen from two chapters. */
@@ -255,7 +258,10 @@ function numWordRow(l){
    and not one cell. */
 function numSignHTML(v){
   var l=numByVal(v);
-  if(l && l.st && l.st.length)
+  /* inkGeo() and not `st`: a digit drawn on a SHEET carries its picture as
+     `sh` (www/sheet.js), and asking for strokes here put a roman 7 on the
+     clock beside somebody's own six. */
+  if(l && inkGeo(l))
     return '<canvas class="tcln" data-l="'+esc(l.id)+'"></canvas>';
   if(l && l.ch) return '<span class="numrm">'+esc(l.ch)+'</span>';
   return '<span class="numrm">'+esc(v.toString(36))+'</span>';
@@ -459,7 +465,6 @@ function numWidHTML(){
    width its own ink asks for, which is what makes this a line. */
 function numWidMount(){
   inkLine('canvas.tcln', function(c){
-    var l=ltById(c.getAttribute('data-l'));
-    return (l && l.st && l.st.length)? l.st : null;
+    return inkGeo(ltById(c.getAttribute('data-l')));
   });
 }
