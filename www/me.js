@@ -688,10 +688,8 @@ function openMe(){
      face is the thing they came to change, and it used to be at the bottom
      under three text fields.
 
-     画像を外す行はここに無い。**触った顔が、選ぶ画面に行く。** ──
-     「あとアイコン設定したあとなんでアイコンの下に画像消すみたいな垢文字
-       でんの？ もっかいがぞうさわって画像変えるか消すかでしょ？」
-     OWNER 2026-08-28。openMePic() がその画面。 */
+     画像を外す行はここに無い。**触ったらカメラロールが直接開く。** ──
+     「写真をタップしたら変えたいのよ」 OWNER 2026-08-28。 */
   openForm('me:', pageName('profile'),
     /* The face is the label, and the input lives inside it -- so the thing
        somebody reaches for is the thing that opens the camera roll, in one
@@ -717,19 +715,27 @@ function openMe(){
 
        欄そのものは `lnField()`（www/shell.js の一箇所）。`<input>` は
        折り返せないので、書いた字が横に消えていた。 */
-    /* 顔がまだ無いうちは、触ったらそのままカメラロールが開く ── 外すものが
-       無い画面に行かせても、行がひとつしかない。顔が在るときだけ選ぶ画面に
-       行く。触ったら必ずカメラロールが開くのをやめたのはそこだけ。 */
+    /* 触ったら写真を選ぶところが直接開く。それだけです。
+       「ちがう。写真をタップしたら変えたいのよ。104の前のやつは写真を変更
+         するの文字が出てきてたやんそれをやめろって言ってるのよ」
+       「プロフィールの写真変更画面はタップしたら変更して、変更するとかの
+         ページに飛ばないで。」 OWNER 2026-08-28。
+
+       画像が在るときだけ「変える／外す を選ぶ画面」へ行く形でした。文字の
+       行も、その画面も、無くなります ── 在るときと無いときで触った先が
+       違うこと自体が、この画面が説明を挟んでいたということなので、分岐ごと
+       落としました。
+
+       **外す道はこれで一つも無くなります。**外す行は #104 の前に顔の下に
+       在ってオーナーに断られ（「なんでアイコンの下に画像消すみたいな垢文字
+       でんの？」）、選ぶ画面のほうも今日断られた。二つとも断られたので、
+       どこに置くかは決めごと ── 私は決めません。報告に書いてあります。 */
     '<div class="picrow">'+
-      (ME.pic
-        ? '<button class="pav pavb" style="position:relative;width:96px;height:96px;margin:0"' +
-            DO('go', ["form", "mepic:"]) + '>'+
-            postFace({who:meName(), lname:langName, av:postAvatar()})+'</button>'
-        : '<label class="pav" style="position:relative;width:96px;height:96px">'+
-            postFace({who:meName(), lname:langName, av:postAvatar()})+
-            '<input type="file" id="me-pic" accept="image/*" '+
-              'style="position:absolute;left:0;top:0;width:100%;height:100%;opacity:0"' +
-              CH('meSetPic') + '></label>')+
+      '<label class="pav" style="position:relative;width:96px;height:96px">'+
+        postFace({who:meName(), lname:langName, av:postAvatar()})+
+        '<input type="file" id="me-pic" accept="image/*" '+
+          'style="position:absolute;left:0;top:0;width:100%;height:100%;opacity:0"' +
+          CH('meSetPic') + '></label>'+
     '</div>'+
     '<div class="field at" style="gap:14px;margin-bottom:20px">'+
       '<span style="flex:0 0 auto;white-space:nowrap;min-width:4.5em">'+esc(t('me.name'))+'</span>'+
