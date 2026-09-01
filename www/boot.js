@@ -86,6 +86,10 @@ function bootSession(){
      It asks the server nothing on a launch where the face has not moved --
      the comparison is against ME.avSent, which is local. */
   netAvSync();
+  /* And the line about themselves, which was on the phone and only there.
+     「自己紹介を見せないって選択肢を俺はいつ与えた？」 It asks before it
+     writes and takes the account's when this phone has none. */
+  netBioSync();
 }
 /* A session that is still good comes back here and nothing is asked. What
    used to be in the `bad` half was netAnon(): no session, so make one, without

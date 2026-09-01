@@ -387,7 +387,7 @@ function netSetPass(pass, ok, bad){
    ago. */
 function netMyProfile(ok, bad){
   if(!netSignedIn()){ bad(null, 0, 'profile −'); return; }
-  netGet('/rest/v1/profile?select=handle,display&limit=1&id=eq.'+
+  netGet('/rest/v1/profile?select=handle,display,bio&limit=1&id=eq.'+
          encodeURIComponent(SESS.uid),
          function(d){ ok(d && d.length? d[0] : null); }, bad);
 }
@@ -410,7 +410,12 @@ function netMakeProfile(h, name, ok, bad){
   if(!netMember()){ bad(null, 0, 'mkprofile −'); return; }
   var av=postAvatar();
   netPost('/rest/v1/profile',
-          {id:SESS.uid, handle:h, display:name, av:av},
+          {id:SESS.uid, handle:h, display:name, av:av,
+           /* And the line about themselves, which is the account's and not the
+              phone's. schema.sql names it in the INSERT grant beside the
+              other four; a column not named there is one nothing can ever
+              write, with no error to say so. */
+           bio:String(ME.bio||'')},
           SESS.at,
           /* what was sent, so netAvSync() does not send it again on the
              next launch for a face that has not moved */
@@ -442,6 +447,45 @@ function netMakeProfile(h, name, ok, bad){
    Fired and not waited for, like everything else in bootSession(): the little
    face being a launch behind is not worth making the app open slower, and
    there is nothing on screen that depends on the answer. */
+/* The line about themselves, kept the same on both sides.
+   「そもそも端末に保存するもんはないぞほとんど」 OWNER 2026-09-01 -- the
+   server is the record and the phone is the copy that works with no signal.
+
+   It ASKS before it writes, where netAvSync() below compares against a mark
+   it keeps locally (`ME.avSent`). Two reasons, and the second is the one that
+   decided it: a mark would be a new field on ME, and the shape of ME is
+   www/me.js's -- meBlank() and meFrom() build it column by column, so a key
+   this file invented would be dropped on the next read and the mark would
+   never match. Asking the server costs one small request on a launch and
+   cannot go stale.
+
+   WHICH SIDE WINS when they differ, and nothing here destroys anything:
+
+     the phone has none    -> take the account's. A second phone arrives
+                              holding what was written on the first
+     the account has none  -> send the phone's up
+     both, and different   -> the PHONE's goes up. This is where a bio is
+                              edited (www/me.js is the only editor), and it
+                              is syMerge()'s last line for a plain value --
+                              「the phone's own is kept」
+
+   Fired and not waited for. Nothing on screen depends on it. */
+function netBioSync(){
+  if(!netMember() || !SESS || !SESS.uid) return;
+  netGet('/rest/v1/profile?select=bio&limit=1&id=eq.'+encodeURIComponent(SESS.uid),
+    function(d){
+      var there=(d && d.length)? String((d[0] && d[0].bio) || '') : '',
+          mine=String(ME.bio||'');
+      if(there===mine) return;
+      if(!mine){
+        /* Absent here, written there. Fill it in and stop -- the same rule a
+           restore obeys (docs/DATA_SAFETY.md rule 2). */
+        ME.bio=there; saveMe(); render(); return;
+      }
+      netSend('PATCH', '/rest/v1/profile?id=eq.'+encodeURIComponent(SESS.uid),
+              {bio:mine}, SESS.at, function(){}, function(){});
+    }, function(){});
+}
 function netAvSync(){
   if(!netMember() || !SESS || !SESS.uid) return;
   var av=postAvatar(), now=JSON.stringify(av||null);
@@ -1435,7 +1479,7 @@ function netLangNames(ids, done){
 function netWho(handle, ok, bad){
   var h=String(handle||'');
   if(!h){ bad(null, 0); return; }
-  netGet('/rest/v1/profile?select=id,handle,display,av,banned_at'+
+  netGet('/rest/v1/profile?select=id,handle,display,av,bio,banned_at'+
          '&limit=1&handle=eq.'+encodeURIComponent(h),
     function(d){
       var r, who;
@@ -1443,6 +1487,12 @@ function netWho(handle, ok, bad){
       r=d[0]||{};
       who={who:String(r.display||''), hd:String(r.handle||''),
            av:r.av||null, lname:'',
+           /* The line they wrote about themselves. It is SHOWN and there is
+              no switch -- 「自己紹介を見せないって選択肢を俺はいつ与えた？」
+              OWNER 2026-09-01. It used to be on the phone and only there, so
+              a page about somebody else drew an empty one however much they
+              had written. */
+           bio:String(r.bio||''),
            /* Frozen. Off `banned_at`, which is the same fact `author_out`
               carries onto a post -- one column, asked of the person here and
               answered about the writer there. */

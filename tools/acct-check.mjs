@@ -162,10 +162,15 @@ const R = await pg.evaluate(() => {
   say('1: 別のアカウントが入ったとき、前の人は一つも残らない');
 
   /* ---- 2. and nothing was destroyed to do it ---------------------------
-     The half that is easy to lose while fixing the half above. `bio`, `link`
-     and `loc` exist nowhere but this phone -- netMakeProfile() sends handle,
-     display and av and nothing else -- so if signing somebody else in threw
-     them away, they are gone for good. */
+     The half that is easy to lose while fixing the half above. `link` and
+     `loc` exist nowhere but this phone, so if signing somebody else in threw
+     them away, they are gone for good.
+
+     `bio` is on the server as of 2026-09-01 -- 「自己紹介を見せないって選択肢を
+     俺はいつ与えた？」 -- and it stays in this list anyway. Being recoverable
+     is not the claim: what is held here is that signing somebody else in and
+     back does not TOUCH it, and a bio that had to be fetched again to come
+     back would already have been lost by the parking. */
   netOut();
   arrive(A);
   if (ME.name !== 'Lingua') no('2: 入り直した本人の名前が消えている — ME.name=' + JSON.stringify(ME.name));
@@ -536,6 +541,67 @@ const R = await pg.evaluate(() => {
   if (asA === asB && asA === 4)
     no('19: 端末にある全部を数えている ── 他人の言語で上限が埋まる');
   say('19: 言語の数は、そのアカウントのものを数える（持ち主なしは厳しいほうへ）');
+
+  /* ---- 20-21. 自己紹介はアカウントのもので、出すもの -------------------
+     「自己紹介を見せないって選択肢を俺はいつ与えた？」OWNER 2026-09-01
+
+     ME.bio は端末にしか無く、netMakeProfile() は handle と display と av
+     だけを送っていました。だから人のページは、相手がどれだけ書いていても
+     空の自己紹介を描いていました ── www/me.js が `bio:''` と書き込んで
+     いたのは、列が無かったからです。 */
+
+  /* 20. 人のページに、その人の自己紹介が載る。 */
+  start();
+  netOut(); arrive(A);
+  let asked = '';
+  netGet = (path, ok) => {
+    asked += path + '\n';
+    if (path.indexOf('/rest/v1/profile?select=id,handle,display,av') === 0)
+      return ok([{ id: B, handle: 'iri', display: 'Iri',
+                   av: null, bio: 'むこうの人が書いた一行' }]);
+    return ok([]);
+  };
+  let who = null;
+  netWho('iri', (w) => { who = w; }, () => {});
+  netGet = realGet;
+  if (asked.indexOf('bio') < 0) no('20: 人のプロフィールを bio 抜きで訊いている');
+  if (!who) no('20: 人が返ってこなかった');
+  else if (who.bio !== 'むこうの人が書いた一行')
+    no('20: 人のページに自己紹介が載らない — ' + JSON.stringify(who && who.bio));
+  say('20: 人のページに、その人の自己紹介が載る');
+
+  /* 21. 端末に無ければアカウントのを取り、端末にあれば上げる。
+     どちらの向きも何も壊しません ── 埋めるか、送るか。 */
+  start();
+  netOut(); arrive(A);
+  ME.bio = ''; saveMe();
+  netGet = (path, ok) => {
+    if (path.indexOf('/rest/v1/profile?select=bio') === 0)
+      return ok([{ bio: 'アカウントに書いてあった一行' }]);
+    return ok([]);
+  };
+  netBioSync();
+  netGet = realGet;
+  if (ME.bio !== 'アカウントに書いてあった一行')
+    no('21: 端末に無いのにアカウントの自己紹介を取っていない — ' + JSON.stringify(ME.bio));
+
+  ME.bio = 'この端末で書いた一行'; saveMe();
+  let patched = '';
+  const realSend = netSend;
+  netGet = (path, ok) => {
+    if (path.indexOf('/rest/v1/profile?select=bio') === 0) return ok([{ bio: '' }]);
+    return ok([]);
+  };
+  netSend = (method, path, body, tok, ok2, bad2) => {
+    if (method === 'PATCH') patched = String(body && body.bio || '');
+  };
+  netBioSync();
+  netGet = realGet; netSend = realSend;
+  if (patched !== 'この端末で書いた一行')
+    no('21: 端末の自己紹介がアカウントに上がらない — ' + JSON.stringify(patched));
+  if (ME.bio !== 'この端末で書いた一行')
+    no('21: 上げるついでに端末のものを消した');
+  say('21: 端末に無ければアカウントのを取り、端末にあれば上げる（両方向）');
 
   return out;
 });

@@ -64,6 +64,29 @@ create table if not exists profile (
 -- one for a post.
 alter table profile add column if not exists av jsonb;
 
+-- The line somebody writes about themselves, and it is SHOWN.
+--
+-- 「自己紹介を見せないって選択肢を俺はいつ与えた？」 OWNER 2026-09-01. There
+-- is no switch here and there is not going to be one: a profile is what other
+-- people see, and this is part of it. `profile_read` is `using (true)` and
+-- that is the whole of the reading rule -- the same sentence the handle, the
+-- display name and the face are already under.
+--
+-- It existed on the phone and only there. `ME.bio` in www/me.js was written,
+-- kept and drawn, and netMakeProfile() sent `handle`, `display` and `av` and
+-- nothing else -- so a line somebody wrote about themselves was invisible to
+-- every other person and was gone the day the phone was. 「そもそも端末に保存
+-- するもんはないぞほとんど」 OWNER 2026-09-01: the server is the record and
+-- the phone is the copy.
+--
+-- 160 IS `ME_MAX.bio` IN www/me.js AND THE TWO MUST MOVE TOGETHER. SQL cannot
+-- read that file, so this is the one place in this repository where a number
+-- is written twice on purpose; it is here rather than absent because a text
+-- column with no ceiling is a column somebody puts a megabyte in, and the
+-- phone's `maxlength` is a suggestion the way the whole app is a suggestion.
+alter table profile add column if not exists bio text
+  check (bio is null or length(bio) <= 160);
+
 -- Whoever answers the reports. It is set by hand in the Supabase dashboard and
 -- by nothing else: no policy below writes it, and the column is taken out of
 -- what an account may update at the foot of this file. An app that could make
@@ -1515,7 +1538,7 @@ create trigger profile_follows after insert on profile
 -- Said after the tables and the policies because the columns have to exist.
 -- ---------------------------------------------------------------------------
 revoke update on profile from anon, authenticated;
-grant  update (handle, display, av) on profile to anon, authenticated;
+grant  update (handle, display, av, bio) on profile to anon, authenticated;
 
 -- And the same sentence about INSERT, which is not the same statement.
 --
@@ -1531,13 +1554,13 @@ grant  update (handle, display, av) on profile to anon, authenticated;
 -- which opens admin_counts(), staff_add(), staff_drop(), post_hide(),
 -- account_ban() and the report queue behind them.
 --
--- The four named are what netMakeProfile() in www/net.js sends. staff, admin,
+-- The five named are what netMakeProfile() in www/net.js sends. staff, admin,
 -- banned_at and banned_why are the server's, and the only thing that writes
 -- them is profile_first() -- a BEFORE trigger, which assigns to NEW rather
 -- than naming a column in the statement, so it is not what this grant is
 -- about and @lingua still arrives holding both flags.
 revoke insert on profile from anon, authenticated;
-grant  insert (id, handle, display, av) on profile to anon, authenticated;
+grant  insert (id, handle, display, av, bio) on profile to anon, authenticated;
 
 -- ---------------------------------------------------------------------------
 -- And the question that is no longer asked

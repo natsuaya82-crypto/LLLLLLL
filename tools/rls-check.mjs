@@ -60,6 +60,7 @@ const E = 'e0000000-0000-4000-8000-00000000000e';   /* whoever may add staff */
    by somebody who got through on the first is refused by the primary key.
    That is a denial for the wrong reason, and it reads exactly like the
    right one. */
+const G4='a0000000-0000-4000-8000-0000000000a4';   /* arrives with a line about themselves */
 const G1='a0000000-0000-4000-8000-0000000000a1';   /* tries to arrive holding admin */
 const G2='a0000000-0000-4000-8000-0000000000a2';   /* tries to arrive holding staff */
 const G3='a0000000-0000-4000-8000-0000000000a3';   /* tries to arrive already banned */
@@ -753,6 +754,35 @@ const CASES = [
     `insert into draft(id,author,body) values ('${DR2}','${B}','{}'::jsonb)`],
   ['nor hand it to A',                        'denied', B, 0,
     `update draft set author='${A}' where id='${DR2}'`],
+  /* --- the line somebody writes about themselves -------------------------
+     「自己紹介を見せないって選択肢を俺はいつ与えた？」OWNER 2026-09-01.
+
+     It is SHOWN, so the claim here is not the usual one. Reading is open --
+     `profile_read` is `using (true)` and a bio is part of a profile the way
+     a handle is -- and what must hold is that only the person WRITES it.
+
+     The grant is the half that would fail silently. schema.sql revokes UPDATE
+     and INSERT on profile and names the columns back, so a column added
+     without being named in those two lines is one nothing can ever write:
+     no error at the policy, just a row that never changes. Both directions
+     are here for that reason. */
+  ['A writes A\u2019s own bio',               'ok',     A, 0,
+    `update profile set bio='a line about me' where id='${A}'`],
+  ['and it can be read by anybody',           'ok',     B, 0,
+    `select 1 from profile where id='${A}' and bio='a line about me'`],
+  ['and by somebody with no account',         'ok',     B, 1,
+    `select 1 from profile where id='${A}' and bio='a line about me'`],
+  ['B cannot write A\u2019s bio',             'denied', B, 0,
+    `update profile set bio='not theirs to write' where id='${A}'`],
+  ['nor can somebody with no account',        'denied', B, 1,
+    `update profile set bio='not theirs to write' where id='${A}'`],
+  ['and a bio past the ceiling is refused',   'denied', A, 0,
+    `update profile set bio=repeat('x', 161) where id='${A}'`],
+  ['and one at the ceiling is not',           'ok',     A, 0,
+    `update profile set bio=repeat('x', 160) where id='${A}'`],
+  ['and a bio may be given on the way in',    'ok',     G4, 0,
+    `insert into profile(id,handle,bio) values ('${G4}','probe4','hello')`],
+
   /* --- what this account has paid for -----------------------------------
      「課金とアカウントとキーボードはアカウントに結びつく」OWNER 2026-09-01.
 
@@ -1219,7 +1249,7 @@ const sql = [
      through a policy, in the order a real account would do it -- a profile
      before a language, a language before a post -- because a row put here by
      the owner of the table would be a row no policy ever had to allow. */
-  `insert into auth.users(id) values (${q(A)}),(${q(B)}),(${q(C)}),(${q(D)}),(${q(E)}),(${q(F)}),(${q(G1)}),(${q(G2)}),(${q(G3)});`,
+  `insert into auth.users(id) values (${q(A)}),(${q(B)}),(${q(C)}),(${q(D)}),(${q(E)}),(${q(F)}),(${q(G1)}),(${q(G2)}),(${q(G3)}),(${q(G4)});`,
   /* And one row that IS put here by the owner of the table, which the
      paragraph above says nothing else is. That is the claim being tested: no
      policy in schema.sql makes anybody staff, and the column is revoked from
