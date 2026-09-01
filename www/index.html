@@ -1125,6 +1125,13 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
    to the foot of the phone. 「キーボードをおろしても位置は動かない」 With
    --vvmin the screen is the same screen either way; with the keyboard down
    there is simply black under it. */
+/* THE DOCUMENT DOES NOT MOVE WHILE A ONE-SCREEN FORM IS OPEN. www/shell.js
+   § tabPaint puts this on, and the whole of why is written there: a drag
+   rubber-bands the layout viewport, `--vvtop` chases it one event behind, and
+   what shakes is the whole screen because the whole screen is one fixed box.
+   `overscroll-behavior:none` is what stops the rubber-band; the height and
+   the overflow are what stop an ordinary scroll under it. */
+html.fitlock, html.fitlock body{height:100%;overflow:hidden;overscroll-behavior:none}
 .view.fit{position:fixed;left:0;right:0;top:var(--vvtop,0px);
    height:var(--vvmin,55vh);
    display:flex;flex-direction:column;overflow:hidden}

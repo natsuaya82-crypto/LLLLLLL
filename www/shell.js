@@ -1148,6 +1148,29 @@ function tabPaint(){
      it is open -- it is a thing being written -- and the room the bar takes
      is room the picture row needs. 「投稿画面にはホーム画面とかの下タブは要らない」 */
   var one = here().r==='form' && FORM && FORM.fit;
+  /* AND THE PAGE UNDER IT DOES NOT MOVE. 「返信画面ガタガタ揺れるの全然直らない
+     けど本気で揺らせば上から下まで揺れるんだけどなんで固定してないの？」 OWNER
+     2026-09-01.
+
+     `.view.fit` is `position:fixed` and pinned to `--vvtop`, which is
+     `visualViewport.offsetTop` -- how far iOS has scrolled the LAYOUT viewport
+     to lift the focused field over the keyboard. A fixed element on iOS is
+     positioned against the layout viewport, so it goes up with it, and
+     `--vvtop` is what brings it back down.
+
+     What was left out is the DRAG: pull the page and iOS rubber-bands the
+     layout viewport, `offsetTop` changes on every frame of it, and this
+     screen chases the number one event behind. That is the shaking, and it
+     is the whole screen because the whole screen is the fixed element.
+
+     So the document is locked while a one-screen form is open: nothing to
+     rubber-band, `offsetTop` stays where the keyboard put it, and the screen
+     stops moving. What scrolls inside it -- the quoted post, the field -- is
+     unaffected: they scroll in their own boxes and always did. */
+  if(one) document.documentElement.className+=
+    (document.documentElement.className.indexOf('fitlock')>=0? '' : ' fitlock');
+  else document.documentElement.className=
+    document.documentElement.className.replace(/\s*fitlock/g, '');
   /* And the walk through the app has it, because the walk IS the app: the
      onboarding is not done, so this used to hide the bar on every screen the
      walk stands on -- and the first thing the walk points at is the tab that
