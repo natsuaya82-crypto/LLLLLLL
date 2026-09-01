@@ -412,7 +412,8 @@ const took = await pg.evaluate(({ before }) => {
 const again = await pg.evaluate(() => {
   var d = numByVal(7), was = JSON.stringify(d.sh), before = LETTERS.length;
   var ring = [[[100, 100], [700, 100], [700, 700]]];
-  SH = { names: '', got: [{ nm: '7', sh: ring }, { nm: 'a', sh: ring }], why: '', from: '' };
+  SH = { names: '', got: [{ nm: '7', sh: ring }, { nm: 'a', sh: ring },
+                          { nm: '?', sh: ring }], why: '', from: '' };
   shTakeIn();
   var made = LETTERS.slice(before), extra = null, i;
   /* the seven that was NOT there before -- by id, because both answer to 7 */
@@ -446,6 +447,24 @@ const again = await pg.evaluate(() => {
     drawnThere: drawnThere,
     goneAfterDel: goneAfterDel,
     noVal: made.filter(function(l){ return typeof l.val !== 'number'; }).length,
+    /* A box named `?` is not a letter of an alphabet. It arrives with no
+       reading at all -- you draw first and say what it sounds like later --
+       so its NAME is the only thing that can say which of the three rooms it
+       belongs in. 「アルファベットじゃないから記号にしてください」 OWNER
+       2026-09-01. Asked of the ROOMS and not of ltIsMark(), because what the
+       owner met was a page: the `?` was standing on the alphabet. */
+    q: (function(){
+      var l = null, j;
+      for (j = 0; j < made.length; j++) if (ltName(made[j]) === '?') l = made[j];
+      if (!l) return null;
+      return { kind: ltKindOf(l),
+               onMarks: ltOfKind('mark').filter(function(x){ return x.id === l.id; }).length,
+               onAlpha: ltOfKind('alpha').filter(function(x){ return x.id === l.id; }).length,
+               /* and no sound was invented to get it there */
+               snd: (l.snd || []).length,
+               /* nor is it counted as a letter that still has to be finished */
+               loose: ltLoose().filter(function(x){ return x.id === l.id; }).length };
+    })(),
     /* the `a` already in the alphabet is untouched, drawing and all */
     aStill: LETTERS.filter(function(l){ return ltName(l) === 'a'; }).length
   };
@@ -887,9 +906,16 @@ say(again.drawnThere,
     'and it is drawn there rather than being a letter nothing can see');
 say(again.goneAfterDel === true,
     'and it can be taken off again, so nothing was added that cannot be removed');
-say(again.made === 2 && again.names.join(',') === '7,a' && again.noVal === 1,
+say(again.made === 3 && again.names.join(',') === '7,a,?' && again.noVal === 2,
     'a box whose NAME the alphabet already has is still a new letter — ' +
     '「a,a,a は三枠」: brought in ' + again.names.join(', '));
+say(!!again.q && again.q.kind === 'mark' && again.q.onMarks === 1 && again.q.onAlpha === 0,
+    'and a box named `?` goes to the MARKS page and not to the alphabet: kind `' +
+    ((again.q && again.q.kind) || '-') + '`, ' + ((again.q && again.q.onMarks) || 0) +
+    ' on the marks, ' + ((again.q && again.q.onAlpha) || 0) + ' on the alphabet');
+say(!!again.q && again.q.snd === 0 && again.q.loose === 0,
+    'and no sound was invented to put it there, and it is not counted as a ' +
+    'letter still to be finished: ' + ((again.q && again.q.snd) || 0) + ' readings');
 say(again.aStill === 2,
     'so the `a` that was already there is still there, beside the new one (' +
     again.aStill + ')');

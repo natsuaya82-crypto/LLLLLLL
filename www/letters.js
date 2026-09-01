@@ -133,9 +133,15 @@ function ltName(l){
    reads `?` reads something and is finished. */
 function ltLoose(){
   /* A digit is not loose. It reads no sound because it is not for one -- it
-     has a value, which is the whole of what it says. */
+     has a value, which is the whole of what it says.
+     Nor is a MARK, for the same reason and by the sentence above: `?` is a
+     question mark and has no sound because it has no sound. It used to be one
+     only by its READING, and a reading is a unit, so no mark could be in here
+     anyway. A mark known by its NAME has no reading, so without this line the
+     count under the alphabet -- its one caller -- would be counting letters
+     that are on the marks page and not on it. */
   return LETTERS.filter(function(l){
-    return !ltUnits(l).length && !numIsDigit(l); });
+    return !ltUnits(l).length && !numIsDigit(l) && !ltIsMark(l); });
 }
 
 /* ---- writing the join -------------------------------------------------- */
@@ -156,7 +162,32 @@ function ltLoose(){
 function ltIsMark(l){
   if(numIsDigit(l)) return false;   /* a digit is the third kind, not a mark */
   var u=ltUnits(l);
-  return u.length>0 && !ltHasSound(l);
+  if(u.length) return !ltHasSound(l);
+  /* A letter that reads NOTHING YET, and that is every letter which arrived
+     on a sheet (www/sheet.js § shTakeIn) or out of an imported alphabet
+     (www/import.js § impPut): you draw first and say what it sounds like
+     later, which is the reason the two chapters are two chapters. So its
+     name is all there is, and its name is what is asked.
+
+     It went to the alphabet, and a question mark is not one:
+     「アルファベットじゃないから記号にしてください」 OWNER 2026-09-01, said
+     of `?` and `!` coming back off a sheet onto the alphabet page.
+
+     NO SOUND IS INVENTED HERE. Giving the name a reading -- the way ltStart()
+     does for a slot somebody typed -- would put a sound on a letter nobody
+     said one for, and that is the thing the owner has refused twice:
+     「音がなんでいっつもついてくんの？文字は文字 aはaだろ。入力してんだから」
+     「音をそれぞれ分けて作れるようにしろってずっと言ってるのにこいつ音から作る」.
+     The kind is READ off the letter and stored nowhere, which is what this
+     pair of functions already says about itself. */
+  return ltNameIsMark(ltName(l));
+}
+/* One character, and not a roman letter or a digit. Marks are what a sheet's
+   `?` and `!` are, and a name of more than one character is a name -- `ka` and
+   `mountain` are letters somebody drew, not punctuation. */
+function ltNameIsMark(nm){
+  var s=String(nm||'');
+  return s.length===1 && !/[A-Za-z0-9]/.test(s);
 }
 /* Whether any part of what this reads is on the chart. A unit is one or more
    sounds run together, so `ka` counts and `?` does not. */
