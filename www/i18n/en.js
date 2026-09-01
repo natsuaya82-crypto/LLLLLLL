@@ -291,6 +291,7 @@ defLang('en', (function(){
       'wld.art.t.ph'              : "Title",
       'wld.art.b.ph'              : "Write about the language and its world.",
       'wld.shown'             : "Public",
+      'wld.dl.get'            : "Download",
       'wld.dl.can'            : "Downloadable",
       'wld.empty'             : "Nothing here yet.",
       'wld.where'    : 'Where it is spoken',

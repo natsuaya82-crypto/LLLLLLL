@@ -79,7 +79,7 @@ function ltFor(unit){
 function ltMain(unit){ var a=ltFor(unit); return a.length? a[0] : null; }
 function ltStrokes(unit){ var l=ltMain(unit); return (l && l.st && l.st.length)? l.st : null; }
 function ltChar(unit){ var l=ltMain(unit); return (l && l.ch)? l.ch : ''; }
-function ltHasShape(l){ return !!(l && ((l.st && l.st.length) || l.ch)); }
+function ltHasShape(l){ return !!(inkGeo(l) || (l && l.ch)); }
 /* What a letter LOOKS like: what was drawn, or the character it borrows, or
    whatever the caller wants for a letter that is neither yet -- a pen on the
    alphabet, its name on a spelling, nothing at all on a strip.
@@ -92,8 +92,21 @@ function ltHasShape(l){ return !!(l && ((l.st && l.st.length) || l.ch)); }
    class: a key of the keyboard asks for `midink`, which stands the shape in
    the middle of the square instead of where it sits in the lattice.
    「キーボードに配置するときは中央に文字くるようにしてね？」 */
+/* `inkGeo()` and not `l.st`, and it is the same sentence as the one above:
+   a letter brought in on a sheet carries its picture as `sh`, and inkGeo() is
+   the ONE place that knows a shape may be either. Asking for strokes here
+   meant this said a sheet letter had nothing to show -- so the alphabet drew
+   its name and a pen beside twenty empty squares, on the very screen
+   shTakeIn() lands on after a sheet is read.
+   「sheet のページで追加した文字が線画されて出てこない。ただのアルファベットと
+   空白のセルになってる。」OWNER 2026-09-01, build 107, on a device.
+
+   What FILLS the canvas has always asked inkGeo() -- inkCanvases() goes
+   through inkOf(), which does -- so the two halves of one question were
+   giving different answers: the cell was not drawn because this said there
+   was nothing, and the thing that would have drawn it knew there was. */
 function ltInk(l, none, cls){
-  if(l && l.st && l.st.length)
+  if(inkGeo(l))
     return '<canvas class="tc'+(cls? ' '+cls : '')+'" data-l="'+esc(l.id)+'"></canvas>';
   if(l && l.ch) return '<span class="bch">'+esc(l.ch)+'</span>';
   return none||'';
@@ -120,9 +133,15 @@ function ltName(l){
    reads `?` reads something and is finished. */
 function ltLoose(){
   /* A digit is not loose. It reads no sound because it is not for one -- it
-     has a value, which is the whole of what it says. */
+     has a value, which is the whole of what it says.
+     Nor is a MARK, for the same reason and by the sentence above: `?` is a
+     question mark and has no sound because it has no sound. It used to be one
+     only by its READING, and a reading is a unit, so no mark could be in here
+     anyway. A mark known by its NAME has no reading, so without this line the
+     count under the alphabet -- its one caller -- would be counting letters
+     that are on the marks page and not on it. */
   return LETTERS.filter(function(l){
-    return !ltUnits(l).length && !numIsDigit(l); });
+    return !ltUnits(l).length && !numIsDigit(l) && !ltIsMark(l); });
 }
 
 /* ---- writing the join -------------------------------------------------- */
@@ -143,7 +162,32 @@ function ltLoose(){
 function ltIsMark(l){
   if(numIsDigit(l)) return false;   /* a digit is the third kind, not a mark */
   var u=ltUnits(l);
-  return u.length>0 && !ltHasSound(l);
+  if(u.length) return !ltHasSound(l);
+  /* A letter that reads NOTHING YET, and that is every letter which arrived
+     on a sheet (www/sheet.js § shTakeIn) or out of an imported alphabet
+     (www/import.js § impPut): you draw first and say what it sounds like
+     later, which is the reason the two chapters are two chapters. So its
+     name is all there is, and its name is what is asked.
+
+     It went to the alphabet, and a question mark is not one:
+     「アルファベットじゃないから記号にしてください」 OWNER 2026-09-01, said
+     of `?` and `!` coming back off a sheet onto the alphabet page.
+
+     NO SOUND IS INVENTED HERE. Giving the name a reading -- the way ltStart()
+     does for a slot somebody typed -- would put a sound on a letter nobody
+     said one for, and that is the thing the owner has refused twice:
+     「音がなんでいっつもついてくんの？文字は文字 aはaだろ。入力してんだから」
+     「音をそれぞれ分けて作れるようにしろってずっと言ってるのにこいつ音から作る」.
+     The kind is READ off the letter and stored nowhere, which is what this
+     pair of functions already says about itself. */
+  return ltNameIsMark(ltName(l));
+}
+/* One character, and not a roman letter or a digit. Marks are what a sheet's
+   `?` and `!` are, and a name of more than one character is a name -- `ka` and
+   `mountain` are letters somebody drew, not punctuation. */
+function ltNameIsMark(nm){
+  var s=String(nm||'');
+  return s.length===1 && !/[A-Za-z0-9]/.test(s);
 }
 /* Whether any part of what this reads is on the chart. A unit is one or more
    sounds run together, so `ka` counts and `?` does not. */
@@ -466,6 +510,15 @@ function ltCopy(id){
 }
 function ltStart(){
   if(can('letters')) return;
+  /* AND NOT INTO A LANGUAGE THAT IS ONLY READ. The twenty-eight slots are
+     what the free plan gives somebody to draw their own alphabet on; a
+     language taken off somebody else's page already has the letters they
+     drew, and topping it up would write this phone's a-z over them -- through
+     saveLetters(), the moment it was opened, with nobody typing anything.
+     Measured before this line existed: the letters slice stopped being byte
+     for byte what the server sent.
+     「dl言語はへんしゅうはできないってなんかいもいわせんなよ」 OWNER 2026-09-01. */
+  if(!langMine(langId)) return;
   var have={}, made=0, i, c, l, read;
   for(i=0;i<LETTERS.length;i++) have[String(ltName(LETTERS[i])||'').toLowerCase()]=1;
   for(i=0;i<LT_START.length;i++){
@@ -907,9 +960,48 @@ function ltUnits(l){ return (l && l.snd)? l.snd : []; }
 function ltCodes(l){
   var out=[], u=ltUnits(l), i;
   function add(s){
-    var f=[String(s||''), String(s||'').toUpperCase(), String(s||'').toLowerCase()], j;
+    var v=String(s||''), f, j;
+    /* A name of two words is written as a ligature over the characters it is
+       spelled with, and one of those is a SPACE. No letter holds one, so
+       scriptGlyphDefs() would make a placeholder glyph for it and every space
+       in the app would come out as the dashed box. A name the font cannot
+       reach is one letter missing; a space that draws a box is every screen
+       there is. A name arrives from a file and from a sheet and is not typed
+       into this app at all, so it is a string nothing here has checked. */
+    if(!v || /\s/.test(v)) return;
+    f=[v, v.toUpperCase(), v.toLowerCase()];
     for(j=0;j<f.length;j++) if(f[j] && out.indexOf(f[j])<0) out.push(f[j]);
   }
+  /* The name the letter ARRIVED with, and it is first because ltName() puts
+     it first -- so the name the app calls a letter by is the name the font
+     answers to, rather than the two disagreeing.
+
+     ONE CHARACTER ONLY, and that is not tidiness. A code of more than one
+     character has no code point and is reached by a LIGATURE over the
+     characters it is spelled with; an OpenType rule can only fire over glyphs
+     that exist, so scriptGlyphDefs() makes one for every component no letter
+     holds, and that glyph is GPLACE -- the dashed box. One box on a sheet
+     named `mountain` therefore put a dashed box on m, o, u, n, t, a and i, in
+     every word, on every screen wearing `.sfont`. Measured: those five inked
+     588/337/339/233/235 pixels before the sheet and 122 each after, which is
+     the box.
+     A reading and a typed name are things somebody said IN this app, on
+     purpose, and they keep the ligature road they have always had. A name
+     arrives off paper and out of a file -- nobody here typed it -- and it may
+     not spend the roman alphabet to become typeable.
+
+     `nm` and `ab` are two fields and one thing. `ab` is what somebody typed
+     in the box on the letter's own page; `nm` is the name a letter came in
+     under, and it is the ONLY name on the two letters this app makes without
+     anybody typing: www/sheet.js § shTakeIn puts the name printed over a box
+     there, and www/import.js § impPut puts the file's name column there.
+     Neither of those letters need have any reading at all -- a person drawing
+     their own A B C D has nothing to say about sound -- so with `nm` unasked
+     they went into the font as a shape with NO character on it. The font
+     builds, the @font-face installs, `.sfont` matches it, and every word is
+     still roman. Nothing throws.
+     「描いた文字がそもそもフォントになってないけど。」 */
+  if(l && String(l.nm||'').length===1) add(l.nm);
   add(l && l.ab);
   /* A digit's value, which is the only thing it is called. numbers.js takes a
      letter's readings away when it gives it a value, and a digit is never

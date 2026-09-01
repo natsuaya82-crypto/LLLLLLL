@@ -147,6 +147,14 @@ function bkName(){
 function bkPush(){
   var p, out;
   if(!BK.dirty || !langId) return;
+  /* AND NOT SOMEBODY ELSE'S. A language taken off the server is on this phone
+     and is not this person's to hand out: 「入らん」 OWNER 2026-09-01, asked
+     whether a downloaded language goes into their backup file. `dirty` is
+     cleared rather than left standing, or every later save would come back
+     here to be refused again.
+     Nothing is deleted by this and nothing is moved -- the language stays in
+     storage exactly as it landed. It is the FILE that does not carry it. */
+  if(!langMine(langId)){ BK.dirty=false; BK.how='not written: this language is not yours'; return; }
   p=sharePlug();
   if(!p){ BK.how='no bridge'; return; }
   BK.dirty=false;

@@ -391,6 +391,7 @@ defLang('ru', (function(){
       'wld.art.t.ph'              : "Заголовок",
       'wld.art.b.ph'              : "Напишите о языке и его мире.",
       'wld.shown'             : "Открыт",
+      'wld.dl.get'            : "Скачать",
       'wld.dl.can'            : "Можно скачать",
       'wld.empty'             : "Здесь пока ничего нет.",
       "wld.where"    : "Где на нём говорят",

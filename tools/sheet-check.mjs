@@ -53,6 +53,15 @@ const build = ({ names, s, DPI, deg, blur, grain, lit, damage }) => {
   if (typeof shBlank === 'undefined') return null;
   eval('(' + s + ')()');
   SET.done = true;
+  /* THE SHEET IS A PAID CHAPTER, so everything below is walked as somebody
+     who has it. docs/PAID_FEATURES.md: 「letters written on paper and brought
+     back in」 is Pro, and the free plan is 「your own shapes for a-z and
+     0-9」 with nothing on it adding, deleting or renaming a letter -- which is
+     what lets kbFixed() be a QWERTY wearing those names. Set after seed(), so
+     ltStart() has already laid down the free thirty-eight and this is a
+     language that HAS them rather than one that never got them.
+     The free plan gets its own section at the foot of this file. */
+  SET.plan = 'pro';
 
   /* ---- the page IS the file --------------------------------------------
      This used to draw the page itself, out of shBoxAt/shMarks/shCellAt --
@@ -387,27 +396,173 @@ const took = await pg.evaluate(({ before }) => {
   };
 }, { before: shot.before });
 
-/* ---- 3b. and the two it may never do -----------------------------------
-   A digit somebody has ALREADY drawn on is theirs: the sheet does not draw
-   over it. And a NAME the alphabet already has is still a new letter, which
-   is 「a,a,a は三枠」 -- the sentence the number road is not an
-   exception to. Both are handed in through the real shTakeIn(), on the state
-   the take above left behind: digit seven is drawn on now. */
+/* ---- 3b. a second sheet, over work that is already there ----------------
+   A digit somebody has ALREADY drawn on is theirs and is NOT drawn over. What
+   the box becomes instead was a letter named `7`, on the alphabet, and that is
+   the bug the owner met at build 107: 「1なのにアルファベットのページに追加
+   されるのはなに？数字と記号はそれぞれのページあるんだからちゃんと振り分けられる
+   ようにして。」 OWNER 2026-09-01, on a device.
+
+   The answer is neither drawing over it nor turning it away:
+   「別に課金なんだから追加しろよなんで？」 OWNER 2026-09-01. **It is ADDED**
+   -- a second digit of that value, standing beside the first. Nothing anybody
+   drew is overwritten and nothing anybody drew is thrown away.
+
+   The thing that makes "added" mean anything is that the new one can be found,
+   so it is asked for the whole of that: it is a DIGIT (so the digits page is
+   where it is, and the alphabet is not), it is on that page, it is drawn
+   there, and it can be deleted -- a letter nothing can reach and nothing can
+   remove would be worse than the letter that went to the wrong page.
+
+   And a NAME the alphabet already has is still a new letter, which is
+   「a,a,a は三枠」 -- the sentence the number road is not an exception to.
+   Both are handed in through the real shTakeIn(), on the state the take above
+   left behind: digit seven is drawn on now. */
 const again = await pg.evaluate(() => {
   var d = numByVal(7), was = JSON.stringify(d.sh), before = LETTERS.length;
   var ring = [[[100, 100], [700, 100], [700, 700]]];
-  SH = { names: '', got: [{ nm: '7', sh: ring }, { nm: 'a', sh: ring }], why: '', from: '' };
+  SH = { names: '', got: [{ nm: '7', sh: ring }, { nm: 'a', sh: ring },
+                          { nm: '?', sh: ring }], why: '', from: '' };
   shTakeIn();
-  var made = LETTERS.slice(before);
+  var made = LETTERS.slice(before), extra = null, i;
+  /* the seven that was NOT there before -- by id, because both answer to 7 */
+  for (i = 0; i < made.length; i++) if (made[i].val === 7) extra = made[i];
+  var onPage = extra ? ltOfKind('num').filter(function(l){ return l.id === extra.id; }).length : 0;
+  var alpha = extra ? ltOfKind('alpha').filter(function(l){ return l.id === extra.id; }).length : 0;
+  var drawnThere = !!(extra && inkGeo(extra) && ltInk(extra, '').indexOf('<canvas') === 0);
+  /* and it can be taken off again. Done last, and put straight back, so the
+     rest of this file walks the state it was written against. */
+  var goneAfterDel = null;
+  if (extra){
+    ltDel(extra.id);
+    goneAfterDel = LETTERS.filter(function(l){ return l.id === extra.id; }).length === 0;
+    LETTERS.push(extra);
+    saveLetters();
+  }
   return {
     kept: JSON.stringify(numByVal(7).sh) === was,
-    stillOne: numDigits().filter(function(l){ return l.val === 7; }).length,
+    /* TWO of them now, and that is the point: nothing was drawn over */
+    sevens: numDigits().filter(function(l){ return l.val === 7; }).length,
     made: made.length,
     names: made.map(function(l){ return ltName(l); }),
+    /* the box named `7` is a DIGIT and carries no label; `a` is a letter */
+    extraIsDigit: !!(extra && numIsDigit(extra)),
+    extraKind: extra ? ltKindOf(extra) : '',
+    extraNamed: !!(extra && extra.nm),
+    extraVia: (extra && extra.via) || '',
+    extraSh: !!(extra && extra.sh && extra.sh.length),
+    onDigitsPage: onPage,
+    onAlphabet: alpha,
+    drawnThere: drawnThere,
+    goneAfterDel: goneAfterDel,
     noVal: made.filter(function(l){ return typeof l.val !== 'number'; }).length,
+    /* A box named `?` is not a letter of an alphabet. It arrives with no
+       reading at all -- you draw first and say what it sounds like later --
+       so its NAME is the only thing that can say which of the three rooms it
+       belongs in. 「アルファベットじゃないから記号にしてください」 OWNER
+       2026-09-01. Asked of the ROOMS and not of ltIsMark(), because what the
+       owner met was a page: the `?` was standing on the alphabet. */
+    q: (function(){
+      var l = null, j;
+      for (j = 0; j < made.length; j++) if (ltName(made[j]) === '?') l = made[j];
+      if (!l) return null;
+      return { kind: ltKindOf(l),
+               onMarks: ltOfKind('mark').filter(function(x){ return x.id === l.id; }).length,
+               onAlpha: ltOfKind('alpha').filter(function(x){ return x.id === l.id; }).length,
+               /* and no sound was invented to get it there */
+               snd: (l.snd || []).length,
+               /* nor is it counted as a letter that still has to be finished */
+               loose: ltLoose().filter(function(x){ return x.id === l.id; }).length };
+    })(),
     /* the `a` already in the alphabet is untouched, drawing and all */
     aStill: LETTERS.filter(function(l){ return ltName(l) === 'a'; }).length
   };
+});
+
+/* ---- 3b-ii. and a box does not turn the roman alphabet into boxes -------
+   A name of more than one character has no code point of its own, so it is
+   reached by a LIGATURE over the characters it is spelled with -- and an
+   OpenType rule can only fire over glyphs that EXIST, so scriptGlyphDefs()
+   makes one for every component no letter holds. That glyph is GPLACE, the
+   dashed box.
+
+   So one box named `mountain` puts a dashed box on m, o, u, n, t, a and i --
+   everywhere `.sfont` is worn, in every word, on every screen. Nothing throws
+   and the font installs. It is worse than the bug it came in with, and it
+   came in TODAY: until a letter's `nm` became a code point, a sheet could not
+   make a ligature at all.
+
+   Measured in pixels and not in glyph counts, because "a glyph exists for m"
+   is true of the right answer too. The floor is the roman `m` the browser
+   falls through to when the font has nothing to say. */
+const boxes = await pg.evaluate(async () => {
+  function ink(txt){
+    var c = document.createElement('canvas'); c.width = 400; c.height = 120;
+    var g = c.getContext('2d');
+    g.fillStyle = '#fff'; g.fillRect(0, 0, 400, 120);
+    g.fillStyle = '#000'; g.font = '64px LinguaScript, serif';
+    g.textBaseline = 'middle'; g.fillText(txt, 10, 60);
+    var p = g.getImageData(0, 0, 400, 120).data, n = 0, i;
+    for (i = 0; i < 400 * 120; i++) if (p[i * 4] < 128) n++;
+    return n;
+  }
+  var LETTERS_WAS = JSON.stringify(LETTERS), was = SET.myfont;
+  SET.myfont = true;
+  installScriptFont();
+  await document.fonts.load('64px LinguaScript');
+  var before = ['m', 'o', 'u', 't', 'i'].map(ink);
+  SH = { names: '', got: [{ nm: 'mountain',
+          sh: [[[150,150],[650,150],[650,650],[150,650]]] }], why: '', from: '' };
+  shTakeIn();
+  installScriptFont();
+  await document.fonts.load('64px LinguaScript');
+  await new Promise(function(r){ setTimeout(r, 150); });
+  var after = ['m', 'o', 'u', 't', 'i'].map(ink);
+  /* put the language back: everything below this was written against it */
+  LETTERS = JSON.parse(LETTERS_WAS); saveLetters();
+  SET.myfont = was; installScriptFont();
+  return { before: before, after: after };
+});
+
+/* ---- 3b-iii. and none of it happens on the free plan --------------------
+   The free plan is one sentence -- 「your own shapes for a-z and 0-9」 -- and
+   nothing on it adds a letter, deletes one or renames one. That is not a
+   restriction bolted on: kbFixed() is a QWERTY with the drawn letters
+   substituted in, and it can be that only because the letters are exactly
+   a-z, `!`, `?` and a digit per value, with names that cannot change.
+
+   www/sheet.js asked no plan at all, so a free sheet added letters -- `zz`
+   among them, which the free keyboard has no key for. Measured: 39 letters
+   before, 42 after.
+
+   A closed door is DRAWN and goes to the plans screen -- 「無料はタップすると
+   課金ページに飛ばされる」 OWNER 2026-08-25 -- so what is asked for is the
+   door, not its absence. And the take itself is refused where the rule is and
+   not only on the screen, because a button is not the only way in. */
+const free = await pg.evaluate(() => {
+  var was = SET.plan, ring = [[[150,150],[650,150],[650,650],[150,650]]];
+  var lts = JSON.stringify(LETTERS);
+  SET.plan = 'free';
+  SH = shBlank();
+  openWrIn();
+  render();
+  var body = document.getElementById('form-body');
+  var out = {
+    input: !!document.getElementById('wr-file'),
+    door: body ? /data-do="go"[^>]*plans/.test(body.innerHTML) : false,
+    /* and the take, driven straight past the screen */
+    before: LETTERS.length
+  };
+  SH = { names:'', got:[{nm:'a', sh:ring}, {nm:'zz', sh:ring}], why:'', from:'x.pdf' };
+  shTakeIn();
+  out.after = LETTERS.length;
+  out.wentToPlans = here().r === 'plans';
+  /* nothing a person made is touched by a plan, either */
+  SET.plan = was;
+  out.same = JSON.stringify(LETTERS) === lts;
+  LETTERS = JSON.parse(lts); saveLetters();
+  render();
+  return out;
 });
 
 /* ---- 3c. and a digit that came in on a sheet is DRAWN ------------------
@@ -830,16 +985,50 @@ say(took.made === 1 && took.bigIsName === 1 && took.names.join(',') === '25',
     took.names.join(', '));
 say(took.stored === shot.before + 1,
     'and they are in storage, not only in memory: ' + took.stored + ' letters filed');
-say(again.kept && again.stillOne === 1,
+say(again.kept,
     'a digit somebody has ALREADY drawn on is not drawn over: seven kept its ' +
-    'own picture and there is still one of it');
-say(again.made === 2 && again.names.join(',') === '7,a' && again.noVal === 2,
-    'the box beside it becomes a letter instead, and a box whose NAME the ' +
-    'alphabet already has is a new letter too — 「a,a,a は三枠」: brought in ' +
-    again.names.join(', '));
+    'own picture');
+say(again.sevens === 2 && again.extraIsDigit && again.extraSh &&
+    !again.extraNamed && again.extraVia === 'write',
+    'and the box is ADDED beside it rather than turned away or made a letter: ' +
+    again.sevens + ' digits worth seven, the new one carrying the sheet’s ' +
+    'picture and no label');
+say(again.extraKind === 'num' && again.onDigitsPage === 1 && again.onAlphabet === 0,
+    'and it is on the DIGITS page and not on the alphabet: kind `' +
+    again.extraKind + '`, ' + again.onDigitsPage + ' on the digits, ' +
+    again.onAlphabet + ' on the alphabet');
+say(again.drawnThere,
+    'and it is drawn there rather than being a letter nothing can see');
+say(again.goneAfterDel === true,
+    'and it can be taken off again, so nothing was added that cannot be removed');
+say(again.made === 3 && again.names.join(',') === '7,a,?' && again.noVal === 2,
+    'a box whose NAME the alphabet already has is still a new letter — ' +
+    '「a,a,a は三枠」: brought in ' + again.names.join(', '));
+say(!!again.q && again.q.kind === 'mark' && again.q.onMarks === 1 && again.q.onAlpha === 0,
+    'and a box named `?` goes to the MARKS page and not to the alphabet: kind `' +
+    ((again.q && again.q.kind) || '-') + '`, ' + ((again.q && again.q.onMarks) || 0) +
+    ' on the marks, ' + ((again.q && again.q.onAlpha) || 0) + ' on the alphabet');
+say(!!again.q && again.q.snd === 0 && again.q.loose === 0,
+    'and no sound was invented to put it there, and it is not counted as a ' +
+    'letter still to be finished: ' + ((again.q && again.q.snd) || 0) + ' readings');
 say(again.aStill === 2,
     'so the `a` that was already there is still there, beside the new one (' +
     again.aStill + ')');
+say(boxes.before.join(',') === boxes.after.join(','),
+    'a box named with a WORD does not turn the roman alphabet into dashed ' +
+    'placeholder boxes: m o u t i inked ' + boxes.before.join('/') +
+    ' before the sheet and ' + boxes.after.join('/') + ' after');
+say(!free.input && free.door,
+    'on the free plan the sheet does not offer a file: it offers the door to ' +
+    'the plans screen, drawn and pressable (' +
+    (free.input ? 'a file input is still there' : 'no file input') + ', ' +
+    (free.door ? 'the door is drawn' : 'NO DOOR') + ')');
+say(free.after === free.before && free.same,
+    'and the take itself is refused, so a free alphabet does not grow: ' +
+    free.before + ' letters before and ' + free.after + ' after, and every ' +
+    'one of them byte for byte what it was');
+say(free.wentToPlans,
+    'and pressing it goes to the plans screen rather than doing nothing');
 say(sign.canvas && !sign.roman && sign.pixels > 0,
     'and a digit that came in on a sheet is drawn with the sign somebody drew ' +
     'for it, not a roman one: ' + sign.pixels + ' pixels of ink on the clock');

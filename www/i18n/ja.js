@@ -304,6 +304,7 @@ defLang('ja', (function(){
       'wld.art.t.ph'              : "題",
       'wld.art.b.ph'              : "この言語と、その世界について書く。",
       'wld.shown'             : "公開",
+      'wld.dl.get'            : "ダウンロード",
       'wld.dl.can'            : "DL可",
       'wld.empty'             : "まだ何もありません。",
       'wld.where'    : '話される場所',

@@ -395,6 +395,7 @@ defLang('pt', (function(){
       'wld.art.t.ph'              : "Título",
       'wld.art.b.ph'              : "Escreva sobre a língua e o seu mundo.",
       'wld.shown'             : "Pública",
+      'wld.dl.get'            : "Baixar",
       'wld.dl.can'            : "Baixável",
       'wld.empty'             : "Ainda não há nada aqui.",
       "wld.where"    : "Onde se fala",

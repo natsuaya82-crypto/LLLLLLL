@@ -567,6 +567,7 @@ defLang('ko', (function(){
       'wld.art.t.ph'              : "제목",
       'wld.art.b.ph'              : "이 언어와 그 세계에 대해 쓰기.",
       'wld.shown'             : "공개",
+      'wld.dl.get'            : "다운로드",
       'wld.dl.can'            : "내려받기 가능",
       'wld.empty'             : "아직 아무것도 없습니다.",
       "wld.where"    : "말해지는 곳",

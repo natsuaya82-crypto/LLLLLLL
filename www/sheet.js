@@ -861,11 +861,15 @@ function shNames(s){
 function shPages(n){ return n > 0 ? Math.ceil(n / shPerPage()) : 0; }
 
 /* ---- the room ---------------------------------------------------------- */
-/* All three pages of this chapter carry the same `?`, because there is one
-   thing to know and it is the ORDER -- type, save, print and write, scan and
-   install. A person who does not know it is as lost on the reading page as on
-   the writing one. 「説明は嫌いだけどわからないと困るから？ボタンは右上に
-   追加して」 OWNER 2026-08-25.
+/* The `?` is on THIS page and on neither of the other two.
+
+   One thing is behind it and it is the ORDER -- type, save, print and write,
+   scan and install -- so it belongs where the chapter starts, which is the
+   only place somebody has not yet chosen which end they are at. On the making
+   page and the reading page it was the same four steps a second and a third
+   time, opened from a mark that looked like it had something else to say.
+   「sheet のページに謎に同じこと書いてる？ある。それぞれのページには
+   いらない。」 OWNER 2026-09-01, build 107, on a device.
 
    It is behind the mark and NOT on the screen: 「アプリ内に説明書くの禁止」,
    and the `?` in the bar is where a genuinely needed explanation goes -- which
@@ -911,7 +915,7 @@ function shRoomHTML(){
 
 /* ---- making one -------------------------------------------------------- */
 function openWrOut(){
-  openForm('wrout:', t('wr.make'), shOutHTML(), shPvDraw, shQ());
+  openForm('wrout:', t('wr.make'), shOutHTML(), shPvDraw);
 }
 /* The count under the field is a count. It says how many boxes twenty names
    make and how many sheets that is, which is the one thing a person cannot
@@ -1194,23 +1198,51 @@ function shFileName(){
 
 /* ---- reading one back -------------------------------------------------- */
 function openWrIn(){
-  openForm('wrin:', t('wr.read'), shInHTML(), shInMount, shQ());
+  openForm('wrin:', t('wr.read'), shInHTML(), shInMount);
 }
-/* Before a file: the one control. After one: what came off it, a row per box.
-   No picture of what was read, and that is on purpose rather than missing --
-   drawing an imported shape is www/glyph.js's, one place, and a second copy
-   of that rule living here is the thing "One place, not fifteen" is about. */
+/* Before a file: the one control. After one: WHAT CAME OFF IT, a row per box
+   -- the picture that was read, beside the name that was printed over the box.
+
+   It used to be the name and the word "drawn", and that is what the owner met:
+   「あとsheet読み込んだら1と書いた文字を取り込みますって見せないと。なにが
+   取り込まれたかわからん。せっかく取り込んで使えるようにするんだから見せない
+   と。淡白にやるのやめてくれ。」 OWNER 2026-09-01, build 107, on a device.
+   A word saying a box was drawn in is not what was drawn in it: two sheets
+   read a week apart said the same eleven characters, and the one thing a
+   person is about to commit to their alphabet was the thing not on the screen.
+
+   It is NOT an explanation. 「アプリ内に説明書くの禁止」 stands and nothing
+   here is prose; what was added is the ink itself.
+
+   The comment that used to stand here said a picture was left out ON PURPOSE,
+   because drawing an imported shape is www/glyph.js's one place and a copy
+   here would be the second of something that already had one. The premise was
+   right and the conclusion was wrong: inkCanvases() takes `stOf` for exactly
+   this -- a shape that is NOT in LETTERS yet, which is what a post's face
+   already is -- so the one place draws these too and there is no second copy.
+   shInMount() hands it the box's rings. */
 function shInHTML(){
   var s = shState(), out = '', i, g, n;
-  out = '<label class="btn ghost shfile">'+esc(t('wr.in'))+
-    '<input type="file" id="wr-file" accept="application/pdf,.pdf"></label>';
+  out = shInFileHTML();
   if(s.why) return out + '<div class="note">'+esc(s.why)+'</div>';
   if(!s.got) return out;
   out += '<div class="mini" style="margin-top:14px">'+esc(s.from)+'</div>';
   for(i = 0; i < s.got.length; i++){
     g = s.got[i];
-    out += '<div class="set"><span class="sl">'+esc(g.nm)+'</span>'+
-      '<span class="sv">'+esc(t(g.sh.length ? 'wr.drawn' : 'wr.empty'))+'</span></div>';
+    /* The picture where there is one, and the word only where there is not:
+       "drawn" printed beside the drawing is the same thing said twice, and a
+       box that came back empty has nothing to show and must still say so. */
+    out += '<div class="set">'+
+      (g.sh.length
+        /* A canvas carries no text, so the one word that was here before is
+           what it is CALLED -- said to a screen reader and not printed beside
+           the drawing it would be repeating. */
+        ? '<canvas class="shink" data-i="'+i+'" aria-label="'+esc(t('wr.drawn'))+'"'+
+            ' style="width:30px;height:30px;display:block;flex:0 0 auto"></canvas>'
+        : '')+
+      '<span class="sl">'+esc(g.nm)+'</span>'+
+      (g.sh.length ? '' : '<span class="sv">'+esc(t('wr.empty'))+'</span>')+
+      '</div>';
   }
   /* A sheet with nothing drawn on it says so and offers nothing to press.
      "Take in 0" is a button that does nothing, which is worse than no
@@ -1222,10 +1254,50 @@ function shInHTML(){
     esc(tn('wr.take', n))+'</button></div>';
   return out;
 }
+/* Every box's ring, into the canvas standing in its row. The rings are on the
+   READ, not on a letter -- nothing has been committed yet, and that is the
+   whole point of the screen -- so they are handed over rather than looked up.
+   inkCanvases() may not be there at all: tools/sheet-spike/*.mjs eval this
+   file with no app around it, the same guard HELP and FORM_OPEN carry. */
+function shInkMount(){
+  if(typeof inkCanvases !== 'function') return;
+  inkCanvases('canvas.shink', 48, 30, function(c){
+    var s = shState(), k = parseInt(c.getAttribute('data-i'), 10);
+    return (s.got && s.got[k] && s.got[k].sh && s.got[k].sh.length)? s.got[k].sh : null;
+  });
+}
 function shTakeCount(got){
   var n = 0, i;
   for(i = 0; i < got.length; i++) if(got[i].sh.length) n++;
   return n;
+}
+/* THE ONE CONTROL, and whether this plan has it.
+
+   The sheet is a paid chapter -- docs/PAID_FEATURES.md: 「letters written on
+   paper and brought back in」 -- and the free plan is one sentence,
+   「your own shapes for a-z and 0-9」, with nothing on it that adds a letter,
+   deletes one or renames one. That is what lets kbFixed() be a QWERTY wearing
+   the drawn letters: the names are a-z, `!` and `?` and cannot change. A sheet
+   that adds `zz` to a free alphabet takes that away, and this file asked no
+   plan at all.
+
+   The door is DRAWN rather than missing, and pressing it goes to the plans
+   screen: 「だいたい無料で使えないやつは表示させていいよ。課金させる動線を
+   減らしたくない」「無料はタップすると課金ページに飛ばされる」 OWNER
+   2026-08-25. Same shape and same words as impFileHTML() in www/import.js,
+   which is the other file control in this app; it is not shared with it
+   because the two say different things on the button.
+
+   `can('file')` -- 「a list brought in as a file rather than a paste」, and a
+   sheet handed back is a file brought in. docs/PAID_FEATURES.md also names a
+   capability `write` at the same rung for this chapter and `CAN` does not
+   have one; www/core.js is not this session's file. */
+function shInFileHTML(){
+  if(!can('file'))
+    return '<button class="btn ghost"' + DO('go', ["plans"]) + '>'+esc(t('wr.in'))+
+      '<span class="capgo">'+t('up.cta')+ICON_GO+'</span></button>';
+  return '<label class="btn ghost shfile">'+esc(t('wr.in'))+
+    '<input type="file" id="wr-file" accept="application/pdf,.pdf"></label>';
 }
 /* The file input is the one control in the app that cannot go through the
    action tables -- they hand a listener the element's value, and a file
@@ -1233,6 +1305,12 @@ function shTakeCount(got){
    reason, and this is that sentence and not a second rule. */
 function shInMount(){
   var e = document.getElementById('wr-file');
+  /* The pictures first, and before the guard below returns: a canvas has to be
+     filled after the HTML exists and sized in device pixels, which is the same
+     sentence geTiles() is written under, and inkCanvases() is that one place.
+     `stOf` is its hook for a shape that is not a letter yet -- a post's face
+     is the other caller -- so nothing here draws anything itself. */
+  shInkMount();
   if(!e || e.getAttribute('data-wired')) return;
   e.setAttribute('data-wired', '1');
   e.addEventListener('change', function(){
@@ -1441,6 +1519,15 @@ function shBoxShape(scan, i, RES){
 function shTakeIn(){
   var s = shState(), n = 0, i, g, v, d;
   if(!s.got) return;
+  /* And the refusal stands HERE as well as on the screen, because a button is
+     not the only way in -- the action tables reach this by name. It is the
+     same one line ltCopy() and ltSetRoman() already carry, and it is a door:
+     「全部確認して課金画面に飛ぶようにして」 OWNER 2026-08-25.
+     Nothing is deleted and nothing is moved. A free language that already has
+     letters from a sheet keeps every one of them -- a plan decides what may
+     be DONE, and docs/PAID_FEATURES.md's first rule is that it decides
+     nothing about what exists. */
+  if(!can('file')){ go('plans'); return; }
   for(i = 0; i < s.got.length; i++){
     g = s.got[i];
     if(!g.sh.length) continue;
@@ -1455,8 +1542,24 @@ function shTakeIn(){
          place that knows a letter's shape may be `sh` as well as `st`, and a
          borrowed character is a shape too. */
       if(!inkGeo(d) && !d.ch){ d.sh = g.sh; d.via = 'write'; saveLetters(); n++; continue; }
-      /* Otherwise that digit is somebody's work, and this falls through to a
-         letter beside it rather than over it. */
+      /* And that digit is already somebody's work. It is not drawn over, and
+         the box is not thrown away either: a SECOND digit of that value is
+         added beside it. 「別に課金なんだから追加しろよなんで？」 OWNER
+         2026-09-01, asked of a build where the box became a letter called `7`
+         on the alphabet instead. 「数字と記号はそれぞれのページあるんだから
+         ちゃんと振り分けられるようにして。」
+
+         A value is not unique any more, and that is the whole change. What
+         holds it up is that nothing is hidden by it: numDigits() answers with
+         both, so both stand on the digits page in value order, each drawn
+         with its own picture, each pressable and each removable. What
+         numByVal() answers -- the sign on the clock, the date, the calendar --
+         is the FIRST, which is the one that was already there: a second sheet
+         does not silently change what a number looks like everywhere else.
+         Deleting the one you do not want is what chooses between them. */
+      ltNew({val:v, sh:g.sh, via:'write'});
+      n++;
+      continue;
     }
     ltNew({nm:g.nm, sh:g.sh, via:'write'});
     n++;

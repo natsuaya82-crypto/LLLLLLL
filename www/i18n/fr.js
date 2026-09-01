@@ -436,6 +436,7 @@ defLang('fr', (function(){
       'wld.art.t.ph'              : "Titre",
       'wld.art.b.ph'              : "Écrivez sur la langue et son monde.",
       'wld.shown'             : "Publique",
+      'wld.dl.get'            : "Télécharger",
       'wld.dl.can'            : "Téléchargeable",
       'wld.empty'             : "Il n’y a encore rien ici.",
       "wld.where"    : "Où on la parle",
