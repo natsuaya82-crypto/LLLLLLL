@@ -106,7 +106,7 @@ await pg.evaluate('window.__obStates = ' + obStates.toString());
 await pg.evaluate('window.__halfDone = ' + halfDone.toString());
 
 const R = await pg.evaluate(async () => {
-  const out = { screens: 0, pressed: 0, threw: [], blank: [], skipped: [], names: [], never: [],
+  const out = { screens: 0, pressed: 0, threw: [], blank: [], skipped: [], names: [], never: [], mute: [],
                 small: [], big: [], bent: [], picsSeen: 0, picsSkip: [], picsAt: {}, tall: [], rowsSeen: 0, classes: [],
                 wide: [], widthsSeen: 0 };
   /* Apple's floor for anything a thumb has to hit is 44pt, and this file is
@@ -169,6 +169,95 @@ const R = await pg.evaluate(async () => {
       if (seenSmall[k]) continue;
       seenSmall[k] = 1;
       out.small.push(where + ': ' + k + ' -- under ' + TAP);
+    }
+  }
+  /* Looks pressable, and is not.
+     ------------------------------------------------------------------
+     Everything above asks whether a button works. This asks the question one
+     step earlier: whether the thing somebody is going to press is a button at
+     all. Five faults in one day were this shape, and all thirty checks were
+     green through every one of them, because a control that was never wired
+     up is not a control that fails -- it is a `<span>`.
+
+     「ダウンロードボタン押しても言語追加されない」 was the one that named it.
+     `abdlm` in www/home.js is an icon and an `aria-label` in a `<span>`, with
+     no `DO()` on it, so the mark saying a section may be taken away looked
+     exactly like the mark that takes it away.
+
+     WHAT "LOOKS PRESSABLE" IS WAS MEASURED, not chosen. Three candidates were
+     run over every screen this file walks, and the counts decided it:
+
+       cursor:pointer, not pressable       0 distinct -- catches nothing at all
+       an svg.ic and no text, not pressable  7 -- and five of them are ornament:
+                                              .lens .ltck .gsep .kbc .kbsk
+       aria-label, not pressable           3 -- .abdlm, and two that are fine
+
+     So it is the `aria-label`, and the reason it is the right one is not that
+     it is the smallest: an aria-label is somebody SAYING WHAT THIS CONTROL IS
+     CALLED. Putting one on a thing that is not a control is the fault itself,
+     written down by the person making it. A decoration does not get a name --
+     `.lens`, the magnifier in the search field, correctly has none.
+
+     The two it caught that are fine are both fine for a reason with a name,
+     and neither is an exception carved for a class:
+
+       a <label> that labels a control     `.pwab` wraps <input type="file">.
+                                           Pressing it opens the picker,
+                                           through the browser's own
+                                           label-to-control wiring -- which is
+                                           neither a data-do nor a button and
+                                           is a real way for something to be
+                                           pressable
+       a role that is not a control        `.segs` is role="group". An
+                                           aria-label on a group NAMES THE
+                                           GROUP. A role that IS a control and
+                                           has no action behind it fails
+                                           louder than the no-role case, not
+                                           quieter
+
+     What it cannot see, said out loud: something that looks pressable and
+     carries no name at all. That is the same fault with nothing written down
+     on it, and there is nothing here to read. */
+  const ACTATTR = ['data-do','data-do2','data-hold','data-in','data-ch','data-kd'];
+  const CTRL = { BUTTON:1, INPUT:1, SELECT:1, TEXTAREA:1 };
+  /* Roles that ARE a control. An aria-label on one of these with nothing
+     behind it is the fault stated outright. */
+  const ROLE_LIVE = { button:1, link:1, checkbox:1, switch:1, tab:1, radio:1,
+                      option:1, slider:1, spinbutton:1, textbox:1, combobox:1,
+                      searchbox:1, menuitem:1, menuitemcheckbox:1, menuitemradio:1 };
+  const seenMute = {};
+  function isCtrl(e){
+    if (CTRL[e.tagName]) return true;
+    if (e.tagName === 'A' && e.getAttribute('href')) return true;
+    /* a <label> is pressable when it labels a control, which is the browser's
+       own wiring and not this app's */
+    if (e.tagName === 'LABEL' &&
+        (e.getAttribute('for') || e.querySelector('input,select,textarea'))) return true;
+    for (let j = 0; j < ACTATTR.length; j++)
+      if (e.getAttribute(ACTATTR[j])) return true;
+    return false;
+  }
+  function looksLive(where){
+    const els = document.querySelectorAll('#app *');
+    for (let i = 0; i < els.length; i++) {
+      const e = els[i];
+      /* inside a drawing: an <svg> and its parts are painted, not pressed */
+      if (e.tagName === 'svg' || e.ownerSVGElement) continue;
+      const lab = e.getAttribute('aria-label');
+      if (!lab) continue;
+      let up = e, live = false;
+      while (up && up.nodeType === 1 && !live) { live = isCtrl(up); up = up.parentNode; }
+      if (live) continue;
+      const role = String(e.getAttribute('role') || '');
+      if (role && !ROLE_LIVE[role]) continue;      /* it names its role, not a control */
+      const cls = (e.getAttribute('class') || '').trim().split(/\s+/)[0];
+      const k = e.tagName.toLowerCase() + (cls ? '.' + cls : '') + (role ? '[' + role + ']' : '');
+      if (seenMute[k]) continue;
+      seenMute[k] = 1;
+      out.mute.push(where + ': <' + e.tagName.toLowerCase() + (cls ? ' class="' + cls + '"' : '') +
+        (role ? ' role="' + role + '"' : '') + ' aria-label="' + lab + '">' +
+        ' — it is named like a control and nothing presses it: no data-do, ' +
+        'no data-hold, not a button, not a link, not a label for a field');
     }
   }
   /* Nothing goes off the side.
@@ -538,6 +627,7 @@ const R = await pg.evaluate(async () => {
     catch (e) { out.skipped.push(sc.label + ' would not build: ' + e.message); return; }
     out.screens++;
     measure(sc.label);
+    looksLive(sc.label);
     measureRows(sc.label);
     measureWidth(sc.label);
     collectClasses();
@@ -599,6 +689,9 @@ const R = await pg.evaluate(async () => {
           window.route = id; NAV = [{ r: id, a: a }];
           render();
           collectClasses();
+          /* The shell only exists here, so anything named like a control in
+             the bar or the tabs is only reachable from this pass. */
+          looksLive(id + (a ? ':' + a : '') + ' (' + plan + ', rendered)');
         } catch (e) { /* a route that will not render is act-check's to report */ }
       });
     });
@@ -622,8 +715,8 @@ const R = await pg.evaluate(async () => {
    So this holds the gesture and not the code: touchstart, wait past the lift,
    touchmove onto something else, and the order afterwards has to be a
    different order. */
-const HELD = await pg.evaluate(async () => {
-  const out = [];
+const HELDR = await pg.evaluate(async () => {
+  const out = [], seen = [];
   const sp = document.getElementById('splash');
   if (sp && sp.parentNode) sp.parentNode.removeChild(sp);
   const T = (el, type, x, y) => {
@@ -658,7 +751,64 @@ const HELD = await pg.evaluate(async () => {
   if (kbBoards().length < 2) kbAdd(KB_PATS[0]);
   kbGoBoard(1);
   await carry('a key of a keyboard', '#kb', '.kbk[data-r]', 0, 3);
-  return out;
+
+  /* ---- and what is HELD rather than carried -----------------------------
+     `data-hold` is the app's third gesture and NOTHING HAD EVER MADE IT.
+     Everything above this line is a click, and a click is mousedown and
+     mouseup in the same millisecond -- so `holdStart`'s 500ms timer was
+     cleared before it could fire, on every screen, on every run, for as long
+     as the gesture has existed. A hold that stopped working would have cost
+     nothing to notice: green, every time.
+
+     What it holds is the gesture and not the code. Something has to CHANGE --
+     the route, or what is on the screen -- and this file is not told what.
+
+     The touch is started from the DEEPEST node under the middle of the
+     element, not from the element itself, because that is what a thumb hits:
+     a tab is a `<svg>` with `<path>` in it, and `holdStart` finds its way up
+     from wherever the finger landed by walking parents while `getAttribute`
+     is there. If that walk ever stops short, this is where it shows.
+
+     And if there is no `data-hold` on any screen at all, that fails too. A
+     gesture nobody can find is the exact shape of the fault this pass was
+     written after: something that is not there, and nothing saying so. */
+  const held = async (where) => {
+    const els = [].slice.call(document.querySelectorAll('[data-hold]'));
+    if (!els.length) return 0;
+    for (let i = 0; i < els.length; i++) {
+      const el = els[i], r = el.getBoundingClientRect();
+      if (!r.width || !r.height) { out.push(where + ': a data-hold element with no size'); continue; }
+      const x = r.left + r.width / 2, y = r.top + r.height / 2;
+      const deep = document.elementFromPoint(x, y) || el;
+      const from = '<' + String(deep.tagName).toLowerCase() + '>' +
+                   (deep === el ? '' : ' inside <' + String(el.tagName).toLowerCase() + '>');
+      const was = JSON.stringify(here()) + '|' +
+                  (document.getElementById('app') || { innerHTML: '' }).innerHTML.length;
+      T(deep, 'touchstart', x, y);
+      /* past HOLD_MS in www/shell.js, because the WAIT is the gesture */
+      await new Promise(r2 => setTimeout(r2, 620));
+      T(deep, 'touchend', x, y);
+      const now = JSON.stringify(here()) + '|' +
+                  (document.getElementById('app') || { innerHTML: '' }).innerHTML.length;
+      if (now === was)
+        out.push(where + ': held ' + from + ' for 620ms and nothing changed — ' +
+                 'the route is still ' + JSON.stringify(here()));
+      else
+        seen.push(where + ': ' + from + ' -> ' + JSON.stringify(here()));
+    }
+    return els.length;
+  };
+  let holdsFound = 0;
+  for (const r of ['words', 'build', 'feed', 'profile']) {
+    window.__seed(); SET.done = true; SET.plan = 'pro';
+    go(r); render();
+    holdsFound += await held(r);
+  }
+  if (!holdsFound)
+    out.push('no element on any screen carries data-hold — either the gesture ' +
+             'was taken out and nothing said so, or the tab bar did not render ' +
+             'here. Both are this check failing, and neither is silence.');
+  return { out: out, seen: seen };
 });
 
 await br.close();
@@ -718,9 +868,11 @@ if (fs.existsSync(CSS_BASE)) {
     fails.push('tools/css-baseline.txt says nothing wears .' + c + ' and ' +
       'something does now — delete the line.'));
 }
+const HELD = HELDR.out;
 HELD.forEach(m => fails.push('held: ' + m));
 R.threw.forEach(m => fails.push('threw: ' + m));
 R.blank.forEach(m => fails.push('blank: ' + m));
+R.mute.forEach(m => fails.push('looks pressable and is not — ' + m));
 R.small.forEach(m => fails.push('too small to hit: ' + m));
 /* The three screens that were already panning the day this was written, kept
    by name so a FOURTH fails. All three are one fault and it is not this
@@ -772,6 +924,10 @@ if (R.picsSkip.length) {
   R.picsSkip.forEach(m => console.log('  ' + m));
 }
 console.log('held and carried: ' + (HELD.length ? HELD.length + ' FOUND' : 'the alphabet and a keyboard both moved'));
+console.log('held long enough for the timer: ' +
+            (HELDR.seen.length ? HELDR.seen.length + ' data-hold, every one of them answered'
+                               : 'NONE — see the failures'));
+if (process.env.HOLD_AT) HELDR.seen.forEach(m => console.log('  ' + m));
 console.log('buttons pressed: ' + R.pressed +
             '  (' + R.names.length + '/' + (R.names.length + R.never.length) + ' distinct names)');
 /* Printed, not silently tolerated. A name nothing here presses is a button
