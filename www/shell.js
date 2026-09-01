@@ -1093,6 +1093,40 @@ function swtHTML(on){
 }
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 var tt;
+/* ---- OVER the screen, not instead of it -------------------------------
+   「正直自前のpopがいいんだけどな。iPhoneのやつ使ってるsnsないしな」
+   「画面の上に重なる本当のポップ」 OWNER 2026-09-01.
+
+   The first try was openForm(), and openForm() is `go('form', key)` -- a page
+   you travel to. That is not a popup and the owner said so. This one does not
+   navigate: the screen underneath stays exactly where it was, and dismissing
+   it leaves somebody standing where they pressed.
+
+   NO NEW CSS AND NO NEW CLASS. `#sbg` and `#sheet` are already in
+   www/index.html and already in the stylesheet -- the app's own sheet, left
+   behind when the forms became screens. Rule 18 is about what is ADDED; this
+   adds nothing, it fills what is there. A sheet is only banned when it stands
+   in for a SCREEN you would otherwise have gone to (CLAUDE.md § Shape), and
+   the plans screen is still a screen: this is the question before it.
+
+   One line and one button, which is what is left when a box is not allowed. */
+function upSheet(){
+  var bg=document.getElementById('sbg'), sh=document.getElementById('sheet');
+  if(!bg || !sh) return;
+  sh.innerHTML='<h3>'+esc(t('up.cta'))+'</h3>'+
+    '<div class="note">'+esc(t('up.need'))+'</div>'+
+    '<button class="btn ghost" style="width:100%;margin:14px 0 4px"' +
+      DO('goPlans') + '>'+esc(t('up.cta'))+'</button>';
+  bg.classList.add('on'); sh.classList.add('on');
+}
+/* Taken down by: the scrim, the plans button, and any navigation. The last is
+   why it is called from render() -- a popup that survives the screen under it
+   changing is a popup nobody can get rid of. */
+function upSheetOff(){
+  var bg=document.getElementById('sbg'), sh=document.getElementById('sheet');
+  if(bg) bg.classList.remove('on');
+  if(sh) sh.classList.remove('on');
+}
 function toast(m){
   var el=document.getElementById('toast'); el.textContent=m; el.classList.add('on');
   clearTimeout(tt); tt=setTimeout(function(){el.classList.remove('on');},1900);

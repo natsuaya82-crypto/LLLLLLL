@@ -609,7 +609,6 @@ export function halfDone(){
        in the search, because a search that matches nothing leaves the page
        with no tiles at all. */
     ['the sounds, for one letter', () => { openSnd(LETTERS[0].id); return vForm(); }],
-    ['the sounds, for the language', () => { openSndAdd(); return vForm(); }],
     ['the sounds, searched', () => { ipaQ = 'a'; openSnd(LETTERS[0].id);
                                      const h = vForm(); ipaQ = ''; return h; }],
     /* What one sound IS, which is a page of its own behind the ? on a tile.
@@ -1455,9 +1454,6 @@ export function halfDone(){
         window.route='ltset'; NAV=[{r:'ltset', a:'alpha'}];
         const h = vLtset();
         SND.pop(); ltWob = false; SET.plan = 'free'; return h; }],
-    ['the chart, for the language rather than a letter', () => {
-        SET.plan = 'pro'; openSndAdd();
-        const h = vForm(); SET.plan = 'free'; return h; }],
     /* The `?` sheet: how the keyboard gets onto the phone. It is a form and
        nothing walks to it -- and the button that opens iOS Settings is on it
        and nowhere else, so without this face that button belongs to no

@@ -224,47 +224,6 @@ function migrateSnd(){
    in rather than assumed. Nothing else about the chart changes. */
 /* Into the language, or out of it, with no letter involved. Taking one out
    goes through sndDrop() so the refusal is in one place. */
-/* A sound joins the language, and a letter to write it with joins the
-   alphabet in the same breath. 「音を増やしたら必然的に文字も増やすわけでしょ？」
-
-   The letter arrives with the sound on it and nothing else -- no name, no
-   shape -- so the alphabet gains a cell that says what it reads and is
-   waiting to be drawn. That is the state the alphabet page already draws: a
-   pencil where the shape goes, a dot where the name goes, and the reading
-   under it.
-
-   Paid only, because adding a letter is `letters` and the free plan's
-   alphabet is exactly a to z, the two marks and the digits -- a twenty-ninth
-   slot there would be a letter with no key on a keyboard that cannot change.
-   Nothing on this path is reachable on free: the inventory is Plus's page.
-
-   Dropping a sound does NOT drop the letter. A letter is a thing somebody
-   may have drawn on, and sndDrop already refuses while any letter reads the
-   sound -- so the way out is to say what that letter reads instead, on the
-   letter, which is where that has always been said. */
-function sndTake(sym){
-  /* The inventory's own two doors take the refusal with them. Putting a sound
-     into the language and taking one out are what `snd` buys read from the
-     other end, they are gated on the screen and were gated nowhere else, and
-     「音も変えられない」 is one sentence about all of it rather than one about
-     the letter's sheet. openSndAdd() is the only road to either.
-
-     It goes to the plans screen rather than returning: 「全部確認して課金画面に
-     飛ぶようにして」 OWNER 2026-08-25, which settled a refusal that this app was
-     doing two ways. A symbol pressed on purpose and nothing at all happening is
-     the shape that sends somebody to look for what they did wrong. Same one line
-     ltTakeSnd() below already had. Nothing is written first. */
-  if(upStop(can('snd'))) return;
-  if(addedSnd().indexOf(sym)>=0){ sndDrop(sym); openSndAdd(); return; }
-  SND=asOrder(addedSnd().concat([sym]));
-  saveSnd();
-  if(can('letters') && !sndLetters(sym).length){
-    var l=ltNew({});
-    l.snd=[sym]; l.chose=1;
-    saveLetters(); installScriptFont();
-  }
-  sayOne(sym); openSndAdd();
-}
 /* ---- what a letter reads ----------------------------------------------
    There was a chapter here: the language's inventory on one page, its
    letters on another, and a letter's sound a fact you could reach from
@@ -560,16 +519,6 @@ function sndLetters(sym){
 /* The whole chart, to put a sound into the language before any letter says
    it. The same chart a letter opens; what differs is what a press does. */
 /* 「+音を足す」 at the foot of the alphabet: making, so it is asked too. */
-function openSndAdd(){
-  /* The ceiling, met on the press. 「+を押したらそのまま課金のポップが出る
-     だけでしょ？」 OWNER 2026-09-01 -- the button is drawn on every plan. */
-  if(upStop(can('snd'))) return;
-
-  if(!makeNeed()) return;
-  sndFor='';
-  openForm('sndadd', t('snd.add'), ipaPickHTML('sndTake', addedSnd()));
-}
-FORM_OPEN.sndadd=function(){ openSndAdd(); };
 /* Taking one out of the inventory. It refuses while a letter still reads it:
    a letter reading a sound the inventory has never heard of is the one state
    the spelling engine cannot hold, and this is the door that would make one.
@@ -577,11 +526,14 @@ FORM_OPEN.sndadd=function(){ openSndAdd(); };
    rather than a refusal to argue with. */
 function sndDrop(sym){
   var ls=sndLetters(sym), i;
-  /* 「全部確認して課金画面に飛ぶようにして」 OWNER 2026-08-25 -- the other of
-     the inventory's two doors, and the same answer as sndTake() above.
-     sndTake() calls this one directly, which is safe: it has already refused
-     on the same capability before it gets here, so a free plan never arrives
-     at this line from there. */
+  /* 「全部確認して課金画面に飛ぶようにして」 OWNER 2026-08-25.
+
+     The inventory used to have two doors and now has one: the + on the
+     alphabet that opened the whole IPA chart went on 2026-09-01 --
+     「別に+で追加すればそこに音選べる場所あるやろ」. Adding a letter and then
+     choosing its sound IS the road, and a second + beside it was the closed
+     chapter's remnant. Nothing went with it: ltTakeSnd() is what puts a sound
+     in SND, and it asks the same capability before it gets there. */
   if(upStop(can('snd'))) return;
   if(ls.length){
     toast(t('snd.inuse', ls.map(function(l){ return ltName(l)||'·'; }).join(' ')));
@@ -900,18 +852,17 @@ function vLtset(){
        a shape to draw, and a sound, which is a thing the language says and
        may not have a shape yet. The sound is the phonology chapter's only
        remaining door, moved here with it. */
-    /* Always drawn, on every plan. What a plan may DO is answered on the
-       press by canStop() -- 「+を押したらそのまま課金のポップが出るだけ」
-       OWNER 2026-09-01. Drawing it only for those who already have it is
-       the app hiding what it sells from the person it is selling to. */
-    '<div class="barfix">'+
-      '<button class="btn ghost"' + DO('newLetter', [k]) + '>'+
-        ICON_ADD+t('lt.new')+'</button>'+
-      (k==='alpha'
-        ? '<button class="btn ghost"' + DO('openSndAdd') + '>'+
-            ICON_ADD+t('snd.add')+'</button>'
-        : '')+
-    '</div>'+
+    /* THE SAME + AS EVERYWHERE ELSE. 「addは右上に＋でよくね？」「丸い＋一つ
+       （辞書と同じ）」 OWNER 2026-09-01 -- .fab is what the dictionary, the
+       composer and the notebook already add with, so this chapter is being
+       brought to it rather than keeping two wide buttons of its own.
+
+       Drawn on every plan: what a plan may DO is answered on the press by
+       newLetter(), which puts the upgrade popup up. Drawing it only for those
+       who already have it is the app hiding what it sells from the person it
+       is selling to. */
+    '<button class="fab"' + DO('newLetter', [k]) + ' aria-label="'+esc(t('lt.new'))+'">'+
+      ICON_ADD+'</button>'+
     /* And what these signs look like off the phone's home screen, which is
        the one place a language goes without anybody typing. numbers.js says
        why it is here and not a chapter of its own: there is nothing to make

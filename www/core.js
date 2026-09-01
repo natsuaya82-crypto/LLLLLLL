@@ -945,6 +945,9 @@ function capStop(add){
    one line of text and one `.btn.ghost`, which is what CLAUDE.md § 18 leaves
    when a box is not allowed. Pressing the back arrow is the "no".
 
+   upSheet() is www/shell.js's -- the shell is where a thing that sits OVER a
+   screen belongs, and this file holds no DOM.
+
    IT TAKES THE ANSWER AND NOT THE NAME. `can()` may only be given a literal
    (CLAUDE.md § 5, and dead-check refuses anything else) -- a capability read
    from a variable cannot be held by any check and a wrong one reads as free
@@ -955,12 +958,7 @@ function upStop(ok){
   upSheet();
   return true;
 }
-function upSheet(){
-  openForm('up', t('up.cta'),
-    '<div class="note">'+esc(t('up.need'))+'</div>'+
-    '<button class="btn ghost" style="width:100%;margin-top:14px"' + DO('goPlans') + '>'+
-      esc(t('up.cta'))+'</button>');
-}
+
 /* The day a plan ends, said out loud, once.
 
    A subscription ending puts the app back into the shape the free plan has:
@@ -1267,4 +1265,3 @@ function mkApprox(wordFn, sylFn){
     syl:  function(s){ return sylFn(sylParts(s)); }
   };
 }
-

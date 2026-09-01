@@ -3210,15 +3210,18 @@ function kbStepHTML(n, title, body){
     '<div class="kbstept">'+esc(title)+'</div>'+body+'</div>';
 }
 HELP.kb=function(){
-  /* Free: why the keys do nothing, and the way out, and that is the whole of
-     what this ? says on that plan. 「無料プランのキーボードは編集ができません。
-     ／自作キーボードを作りたい場合はアップグレードしてください。／アップ
-     グレードする。」 OWNER 2026-08-28. */
-  if(!can('kb')) return {t:t('kb.sys.h'), h:
-    '<div class="note">'+esc(t('kb.free.no'))+'</div>'+
-    '<div class="note">'+esc(t('kb.free.up'))+'</div>'+
-    '<button class="btn ghost" style="width:100%;margin:12px 0 4px"' + DO('goPlans') + '>'+
-      t('kb.up.go')+'</button>'};
+  /* The four steps are the same on every plan, because the KEYBOARD is on
+     every plan: free types on the QWERTY of drawn letters and has to turn it
+     on in iOS exactly as anybody else does. It used to REPLACE them with
+     three lines about upgrading, which left a free phone with the keyboard
+     and no way to be told how to switch it on -- and it is what put
+     kbSettings() where the free walk could never reach it.
+
+     The upgrade lines are kept and moved to the FOOT, after the steps:
+     「無料プランのキーボードは編集ができません。／自作キーボードを作りたい
+     場合はアップグレードしてください。／アップグレードする。」 OWNER
+     2026-08-28 is answered, and 「無料でもplusでもproでも同じ画面なのよ」
+     OWNER 2026-09-01 decides which way round the two go. */
   return {t:t('kb.sys.h'), h:
     kbStepHTML(1, t('kb.step1'), '<div class="mini">'+t('kb.step1.d')+'</div>'+
       kbShot('kb-list.jpg'))+
@@ -3227,7 +3230,12 @@ HELP.kb=function(){
       '<button class="btn" style="width:100%;margin-top:10px"' + DO('kbSettings') + '>'+
         esc(t('kb.sys.go'))+'</button>'+
       kbShot('kb-app.jpg'))+
-    kbStepHTML(4, t('kb.step4'), kbShot('kb-full.jpg'))};
+    kbStepHTML(4, t('kb.step4'), kbShot('kb-full.jpg'))+
+    (can('kb') ? '' :
+      '<div class="note" style="margin-top:16px">'+esc(t('kb.free.no'))+'</div>'+
+      '<div class="note">'+esc(t('kb.free.up'))+'</div>'+
+      '<button class="btn ghost" style="width:100%;margin:12px 0 4px"' + DO('goPlans') + '>'+
+        esc(t('kb.up.go'))+'</button>')};
 };
 /* What is left on the screen: the one line that is a setting rather than an
    explanation. Free has it too, and free is exactly the case it is for -- a

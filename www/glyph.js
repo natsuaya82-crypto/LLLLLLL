@@ -2592,6 +2592,9 @@ function geTiles(){ inkCanvases('canvas.tc', 48, 72); }
    a redraw of this one from a move to another. */
 var RENDERED=null;
 function render(){
+  /* Any navigation takes the upgrade popup down with it. A popup that
+     survives the screen under it changing is one nobody can get rid of. */
+  if(typeof upSheetOff==='function') upSheetOff();
   /* the document's own language, so the browser picks the right font and
      line-breaking for it — and so the CSS above can drop Latin tracking */
   document.documentElement.setAttribute('lang', uiLang());
