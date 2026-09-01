@@ -696,7 +696,6 @@ defLang('ko', (function(){
       "lt.loose.1"       : "아직 아무것도 읽지 않는 문자가 1개 있습니다.",
       "num.word"        : "수사",
       "num.h"           : "숫자",
-      "num.big"         : "{0}까지",
       "num.base"        : "진법",
       "num.wid"         : "홈 화면에서는",
       "num.wid.how"     : "홈 화면 길게 누르기 → 편집 → 위젯 추가 → Lingua",

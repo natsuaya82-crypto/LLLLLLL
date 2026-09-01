@@ -524,7 +524,6 @@ defLang('pt', (function(){
       "lt.loose.1"       : "Uma letra ainda não lê nada.",
       "num.word"        : "Numeral",
       "num.h"           : "Algarismos",
-      "num.big"         : "Até {0}",
       "num.base"        : "Base",
       "num.wid"         : "No ecrã principal",
       "num.wid.how"     : "Mantém premido o ecrã principal → Editar → Adicionar widget → Lingua",

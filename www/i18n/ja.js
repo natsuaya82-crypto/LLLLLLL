@@ -433,7 +433,6 @@ defLang('ja', (function(){
       'lt.loose.1'      : '読みのない文字 1',
       'num.word'        : '数詞',
       'num.h'           : '数字',
-      'num.big'         : '{0}までです',
       'num.base'        : '進法',
       'num.wid'         : 'ホーム画面では',
       'num.wid.how'     : "ホーム画面を長押し → 編集 → ウィジェットを追加 → Lingua",

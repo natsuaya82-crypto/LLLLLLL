@@ -192,6 +192,51 @@ const r = await pg.evaluate(({s}) => {
   out.mvPaidId = ltSetRoman(paid.id, 'e');
   out.mvPaidSame = out.mvPaidId === paid.id && !!ltById(paid.id);
   SET.plan = 'free';
+
+  /* ---- the rooms are three and the code may not mix them ----------------
+     「文字か数字か分けてるのに文字に数字が入るの意味わからないだろ」
+     OWNER 2026-09-01. The alphabet, the digits and the marks are three rooms
+     (ltKindOf), and a letter belongs to the room it was made in. Nothing here
+     throws when it goes wrong: a letter quietly becomes a digit and leaves
+     the room somebody made it in, or a number sits among the letters, and
+     every screen renders. */
+  SET.plan = 'pro';
+  function names(nm, prep){
+    go('home', '');
+    var l = ltNew({}); if (prep) prep(l);
+    var was = ltName(l);
+    ltDraftName(l.id, nm);
+    var id = ltSave(l.id, true), got = ltById(id) || l;
+    return { kind: ltKindOf(got), name: ltName(got), was: was,
+             at: here().r + ':' + (here().a || '') };
+  }
+  var digitsBefore = numDigits().length;
+  out.rmTaken   = names('1');            /* the digit worth 1 already exists */
+  out.rmKeeps   = names('1', function(l){ l.ab = 'q'; });
+  out.rmBig     = names('25');           /* base ten writes no such digit */
+  out.rmPlain   = names('zz');           /* the control: an ordinary name */
+  out.rmNoDigit = numDigits().length === digitsBefore;
+
+  /* a value nothing holds: the letters room may not make that digit either */
+  numSetBase(14);
+  var freeSlot = numByVal(12); if (freeSlot) ltDel(freeSlot.id);
+  var digitsFree = numDigits().length;
+  out.rmFree = names('12');
+  out.rmFreeNoDigit = numDigits().length === digitsFree;
+  numSetBase(10);
+
+  /* copying a digit gave an ALPHA letter: a value is unique, so the copy
+     could never have been a digit */
+  var cBefore = LETTERS.length;
+  ltCopy(numByVal(7).id);
+  out.rmCopyGrew = LETTERS.length - cBefore;
+  out.rmCopyKind = (LETTERS.length > cBefore) ? ltKindOf(LETTERS[LETTERS.length - 1]) : 'none';
+  /* and an ordinary letter still copies, or the guard above took the feature */
+  var okLetter = ltNew({}); okLetter.ab = 'w';
+  var c2 = LETTERS.length;
+  ltCopy(okLetter.id);
+  out.rmCopyStillWorks = LETTERS.length > c2;
+  SET.plan = 'free';
   return out;
 }, { s: seed.toString() });
 await br.close();
@@ -261,6 +306,33 @@ say(r.mvKeepId !== r.mvSlot, 'a slot ALREADY drawn on does not take a second sha
 say(r.mvKeepBoth && r.mvKeepInk, 'both letters stay and the first drawing is untouched');
 say(r.mvTwo === 2, 'which is the duplicate the alphabet shows in red (' + r.mvTwo + ')');
 say(r.mvPaidSame, 'and on a plan that adds letters nothing moves at all');
+
+/* the three rooms, and the roads that used to cross between them */
+say(r.rmTaken.kind === 'alpha' && !r.rmTaken.name && r.rmNoDigit,
+    'a number is not a letter\'s name: typing `1` on a letter leaves it a ' +
+    'letter with no name, and makes no digit (' + r.rmTaken.kind + '/' +
+    (r.rmTaken.name || 'unnamed') + ')');
+say(r.rmTaken.at === 'ltset:num',
+    'and the app goes to the room where digits are made rather than saying ' +
+    'nothing (' + r.rmTaken.at + ')');
+say(r.rmKeeps.name === 'q',
+    'a letter that already had a name keeps it — nothing anybody made is ' +
+    'written over (' + r.rmKeeps.name + ')');
+say(r.rmFree.kind === 'alpha' && r.rmFreeNoDigit,
+    'and not even when the value is FREE: the letters room does not make a ' +
+    'digit, whichever values are spare (' + r.rmFree.kind + ')');
+say(r.rmBig.kind === 'alpha' && r.rmBig.name === '25',
+    'a number no base of this language can write is an ordinary name, on ' +
+    'this road as on a sheet — one rule, both roads (' + r.rmBig.name + ')');
+say(r.rmPlain.kind === 'alpha' && r.rmPlain.name === 'zz' && r.rmPlain.at !== 'ltset:num',
+    'and an ordinary name is still just a name, going nowhere (' +
+    r.rmPlain.name + ' at ' + r.rmPlain.at + ')');
+say(r.rmCopyGrew === 0 && r.rmCopyKind === 'none',
+    'a digit is not copied into the alphabet: a value is unique, so the copy ' +
+    'could only ever have been a letter (' + r.rmCopyKind + ')');
+say(r.rmCopyStillWorks,
+    'and an ordinary letter still copies — the guard took the crossing, not ' +
+    'the feature');
 
 if (bad.length) { console.error('\nbase: ' + bad.length + ' failed'); process.exit(1); }
 console.log('\nbase: slots arrive when asked, and nothing drawn is ever taken away.');
