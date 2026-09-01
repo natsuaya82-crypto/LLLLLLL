@@ -2569,9 +2569,33 @@ a.set{text-decoration:none}
    than a border so the two read apart where they overlap; rule 18 counts
    `border` and `border-radius`, and this adds neither. `.pav` has been a
    circle since it was written. */
-.ntffs{flex:0 0 auto;display:flex;align-items:center}
-.ntffs .pav + .pav{margin-left:-14px}
-.ntffs .pav{box-shadow:0 0 0 2px var(--bg)}
+/* A FIXED WIDTH, and that is what lines the sentences up. It was `auto`, so
+   the block of words began wherever the faces happened to end -- 130px on a
+   row with two, 102 with one, 62 with none. 「行の左端が揃っていません」
+   「見本は左が一直線です」 OWNER 2026-09-01. Two faces overlapped is 44 + 28,
+   so 72 is the widest it can be and every row now starts its words at 130.
+   A row with one face, or with none, keeps the space rather than sliding
+   left: the list reads down the left edge of the words. 44 + (44-12) = 76. */
+.ntffs{flex:0 0 auto;width:76px;display:flex;align-items:center}
+/* 12 and not 16. The picture's circles hold PHOTOGRAPHS, so how much of the
+   one behind is covered does not matter; ours often hold a single letter,
+   centred, and at 16 the front circle cut into it. 12 still reads as two
+   overlapping circles and leaves the letter behind it whole. */
+.ntffs .pav + .pav{margin-left:-12px}
+/* THE CIRCLE HAS TO BE THERE TO BE SEEN. `.pav` has had `background:var(--sf)`
+   and a 50% radius since it was written, and `.pav.pavb` -- the pressable one,
+   which is what a face on a notice is -- says `background:none` right after
+   it. So every face here was a letter floating with no disc under it:
+   「プロフィール画像が丸になっていません。いまは文字（Ж V）が並んでいるだけ
+   です」 OWNER. `--sf2` rather than `--sf` because on the light theme `--sf`
+   is #f3efe6 against a #faf8f3 page and the circle is invisible even when it
+   is painted. The ring is a shadow, so no border and no radius is added --
+   `.pav`'s own radius is what makes it round. */
+.ntffs .pav{position:relative;background:var(--sf2);box-shadow:0 0 0 2px var(--bg)}
+/* The FIRST one in front, which is the way the picture stacks them: later
+   siblings paint over earlier ones by default, so the person the notice is
+   named after was the one being covered up. */
+.ntffs .pav:first-child{z-index:1}
 .ntfb{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px}
 /* Which post, without reading the row. No corner and no border -- rule 18 --
    so it is the photograph itself, cut to a square. */
@@ -2584,8 +2608,12 @@ a.set{text-decoration:none}
       display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;
       overflow:hidden;min-height:2.8em}
 /* The time, inside the sentence rather than off the end of the row.
-   「Tommy_hirorin and チーデリ liked your post · 1週間」 */
-.ntfwh{color:var(--txm)}
+   「Tommy_hirorin and チーデリ liked your post · 1週間」
+
+   `nowrap` so the dot and the time stay together. Without it the line broke
+   between them and a row ended 「… liked this ·」 with `1m` alone underneath,
+   which reads as a sentence that lost its end. */
+.ntfwh{color:var(--txm);white-space:nowrap}
 .ntfp{color:var(--txm);font-size:.88rem;
       overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* A post kept to yourself, beside the time. */
