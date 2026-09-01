@@ -31,7 +31,7 @@ answers it is in §3 and takes a second.
 
 ---
 
-## 0-a. 2026-08-28 夕方 ── ビルド #104 / #105 / #106 まで
+## 0-a. ビルド #107 まで
 
 **master は `414aafa`。三本のビルドが TestFlight に出ています。**どれもゲート
 28本が緑の形で、`npm run rls` も緑（197件）。
@@ -143,11 +143,15 @@ ui変更は俺が頼んだの以外は勝手な判断でやるなよ？
 
 ## 1. `master` is the app again. Keep it that way.
 
-`master` is at `5721421` (2026-08-26), and the whole gate is green on it --
-**26 checks, all of them**, and `buttons pressed: 10723  (229/229 distinct
-names)`. A fresh clone is the current app, and nothing needs checking out.
-(This paragraph's own commit sits one on top of `5721421`; a file cannot name
-the commit it is part of.)
+`master` is at `523c3af` (2026-09-01) and a fresh clone is the current app.
+The gate is **30 checks** — count `FAST` and `SLOW` in `tools/gate.mjs`, which
+is the only place the number lives.
+
+**It has NOT been run on this `master`.** That is a statement about today, not
+a worry: three branches are out and the gate is run once, by whoever
+integrates, after integrating. Do not write "the gate is green" here again
+unless you watched it. A sentence in this file claiming a green nobody saw is
+the failure this file exists to prevent.
 
 **Four branches went in on 2026-08-26** -- `translate` `wiki` `draft` `me2` --
 on top of the six that went in the day before. Do not read that as the whole
@@ -561,12 +565,12 @@ instructions:**
 
 ## 5. The gate, and what CI does not run
 
-`npm test` is **twenty-six** checks and is the specification. `CLAUDE.md` → "The
-nineteen rules the gate enforces" -- **and those two numbers are not the same
-kind of thing.** Nineteen is how many RULES are written down; twenty-six is how
+`npm test` is **thirty** checks and is the specification. `CLAUDE.md` → "The
+twenty-one rules the gate enforces" -- **and those two numbers are not the same
+kind of thing.** Twenty-one is how many RULES are written down; thirty is how
 many CHECKS run. They have never been equal and making them equal would be
 wrong. `tools/gate.mjs` runs the eight that need no
-browser first, in about two seconds, then the eighteen browser ones four at a
+browser first, in about two seconds, then the twenty-two browser ones four at a
 time. Run one after another they were ten minutes in this container.
 
 **It is run once before pushing**, not once per commit — the owner's rule, and
@@ -690,7 +694,7 @@ written down because otherwise the next person repeats the digging:**
   engine's first three files, the plan rename and StoreKit, the dead-CSS sweep,
   and the sheet's spike. `press` reads **10486 buttons, 217/217 names, 4 styled
   and unworn against a baseline of 4**.
-- **The gate is 26 checks**: eight with no browser (`grammar-engine-check`
+- **The gate was 26 checks that day** (it is 30 now — `tools/gate.mjs`): eight with no browser (`grammar-engine-check`
   joined them) and eighteen with one (`plan-check`, `sheet-check`,
   `shape-check`, `gramlang-check` and `draft-check` joined them). It read 24
   here, then 25, then 26, all on 2026-08-25 -- `4f8b681` wired
