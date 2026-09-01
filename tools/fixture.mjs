@@ -1538,6 +1538,32 @@ export function halfDone(){
                                mns:['a bank of a river','an edge'], pos:'n', at:12 }]);
         window.route = 'words'; NAV = [{ r:'words' }];
         const h = vWords(); WORDS = keep; return h; }],
+    /* ---- the dictionary as a list you CHOOSE from -----------------------
+       Three faces, because the buttons differ on every one of them and none of
+       the three is reachable from the list at rest: nothing here is on a screen
+       until `wSel` is a map, and the two that act on a selection are down
+       until something is in it.
+
+       Each puts the state back, the way the plan faces below do. What is
+       pressed afterwards therefore finds `wSel` and `wUndo` back at null and
+       returns without doing anything, which is the point -- the walk is about
+       every button being reachable and none of them throwing, and a fixture
+       that left a delete armed would be asking a confirm() nobody can answer. */
+    ['the dictionary, choosing, with nothing chosen yet', () => {
+        window.route = 'words'; NAV = [{ r:'words' }];
+        wSel = {};
+        const h = vWords(); wSel = null; return h; }],
+    ['the dictionary, choosing, with two words chosen', () => {
+        window.route = 'words'; NAV = [{ r:'words' }];
+        wSel = {}; WORDS.slice(0, 2).forEach(w => { wSel[w.hw] = 1; });
+        const h = vWords(); wSel = null; return h; }],
+    /* What a bulk delete leaves behind: the row that says what happened and
+       the row that makes it not have happened. `wUndo` is the only thing that
+       draws either, and no walk ever deletes. */
+    ['the dictionary, just after words were deleted together', () => {
+        window.route = 'words'; NAV = [{ r:'words' }];
+        wUndo = { n:2, w:[], other:[], lines:[] };
+        const h = vWords(); wUndo = null; return h; }],
     /* A stage that has been finished. A stage is done when its slots, its
        decisions and the one thing it has to SAY are all answered -- www/
        phases.js stIsDone -- and the fixture finishes none of them, so the

@@ -32,6 +32,19 @@ var app=document.getElementById('app');
    afterwards, which is not a rule anybody has to remember. */
 function viewReset(){
   q=''; wFil='*'; wSort='a';           /* the word list */
+  wSel=null;                           /* and whether it is one you choose from */
+  /* And what a bulk delete could put back. It is dropped in viewLeft() too,
+     and the two are NOT one rule written twice -- they are two different
+     things that must not happen. There it is "the undo is about the list in
+     front of you". Here it is that a copy of THIS language's words, at the
+     positions they were at, may not be alive while ANOTHER language is open:
+     langOpen() reads a different dictionary into WORDS, and an undo pressed
+     after that would splice one language's words into another and save() them
+     there. That road is shut today only because the language list is not
+     reachable from the dictionary, so walking to it drops the undo on the way
+     -- an accident of where the screens are, not a rule, and not what
+     「データ消えるのだけはありえない」 may rest on. */
+  wUndo=null;
   fq=''; fpick=null;                   /* the find screen */
   abVow='';                            /* the abugida editor */
   ltSort='own'; ltFil='all'; ltQ='';   /* the alphabet's order, filter and search */
@@ -96,6 +109,17 @@ function viewReset(){
 var ABPAGES={about:1, world:1};
 function viewLeft(from, to){
   if(ABPAGES[from] && !ABPAGES[to]) ABOPEN={};
+  /* What a bulk delete can put back (`wUndo`, www/words.js) holds words as
+     they were AT THE POSITIONS THEY WERE IN, so pressing it after standing
+     somewhere else would write those over whatever has happened since --
+     which is a restore winning, and docs/DATA_SAFETY.md § 2 is that it must
+     not. It lasts exactly as long as you are looking at the list it is about.
+
+     The choice itself is not here and that is deliberate: editing what was
+     chosen is a page you GO to, so dropping the selection on the way off this
+     screen would empty it on the way to the thing it is for. `viewReset()`
+     drops that one. */
+  if(from==='words') wUndo=null;
 }
 
 /* ---- how much of the screen the phone's own keyboard is covering ------
@@ -733,16 +757,50 @@ function tabBar(){
    hold sets HELD and the capture-phase listener below eats that one click --
    capture, because act.js's own listener is on the same root and would
    otherwise run first. */
-var HOLD_MS=500, holdT=null, HELD=false;
+/* A THUMB IS NOT A TRIPOD, and until 2026-09-01 this asked for one.
+   `touchmove` went straight to holdClear() with no threshold, so the hold
+   died the moment the finger moved by a single pixel -- which a finger
+   resting on glass always does. Measured on a phone with real touch events:
+   perfectly still reached the language switcher, one pixel reached nothing,
+   and so did six and forty. **The gesture had never once been made by a
+   hand.** Nothing threw and every check was green, because what press threw
+   was a click, and a click is mousedown and mouseup in the same millisecond.
+
+   So the start is remembered and the move is measured against it. `HOLD_SLOP`
+   is a RADIUS -- squared on both sides rather than Math.hypot, which
+   es5-check forbids and which this does not need.
+
+   **HOLD_SLOP is 10px, and that is the owner's, decided 2026-09-01.** The
+   other number put to them was 16: wider survives a shakier thumb, and pays
+   for it in scrolls that turn into a language switch. Ten was chosen. It is
+   not this file's to move. */
+var HOLD_MS=500, HOLD_SLOP=10, holdT=null, HELD=false, holdX=0, holdY=0;
+/* Where the finger is, from a touch or from a mouse. A touchend carries its
+   point in `changedTouches`, because by then it is no longer touching. */
+function holdAt(e){
+  var t=(e.touches && e.touches[0]) ||
+        (e.changedTouches && e.changedTouches[0]) || e;
+  return {x:t.clientX||0, y:t.clientY||0};
+}
 function holdStart(e){
-  var el=e.target;
+  var el=e.target, p;
   while(el && el!==document && el.getAttribute && !el.getAttribute('data-hold')) el=el.parentNode;
   if(!el || !el.getAttribute || !el.getAttribute('data-hold')) return;
   holdClear();
+  p=holdAt(e); holdX=p.x; holdY=p.y;
   holdT=setTimeout(function(){
     holdT=null; HELD=true;
     goTab('profile'); go('langs');
   }, HOLD_MS);
+}
+/* Moved far enough to be going somewhere rather than resting. Under the
+   radius nothing happens at all -- not a reset of the timer, which would be
+   a hold that a slowly sliding thumb could keep alive forever. */
+function holdMove(e){
+  var p, dx, dy;
+  if(!holdT) return;
+  p=holdAt(e); dx=p.x-holdX; dy=p.y-holdY;
+  if(dx*dx+dy*dy > HOLD_SLOP*HOLD_SLOP) holdClear();
 }
 function holdClear(){ if(holdT){ clearTimeout(holdT); holdT=null; } }
 function holdEat(e){
@@ -753,7 +811,7 @@ function holdEat(e){
    phase, so capture here is the only place that runs before it. */
 document.addEventListener('touchstart',  holdStart, false);
 document.addEventListener('touchend',    holdClear, false);
-document.addEventListener('touchmove',   holdClear, false);
+document.addEventListener('touchmove',   holdMove,  false);
 document.addEventListener('touchcancel', holdClear, false);
 document.addEventListener('mousedown',   holdStart, false);
 document.addEventListener('mouseup',     holdClear, false);
