@@ -102,9 +102,11 @@ and it will be reported as data that is gone.
 
 ## A voice is a file, and nothing tidies files away
 
-A post can carry thirty seconds of somebody's own voice. The bytes are a file
-in `Documents/Voices/`, and the post carries only its name — `post.vo = {f,
-ms}`. Three things follow, and none of them is optional:
+A post can carry thirty seconds of somebody's own voice. The bytes go up with
+the post; **the recorder writes a file in `Documents/Voices/` first**, so
+nothing depends on there being a signal at the moment somebody speaks, and the
+post carries the name — `post.vo = {f, ms}`. Three things follow about that
+file, and none of them is optional:
 
 - **The file is written before the post is stored.** A name on a post that
   points at nothing is a post claiming a voice it does not have. If the write
