@@ -738,12 +738,47 @@ export function halfDone(){
         const h = vDrafts(); NAV=[{r:'feed'}]; return h; }],
     /* Notices, which arrive and so are never there on a phone with nobody
        else on it. */
+    /* WHAT `notices()` ACTUALLY HANDS BACK, which is not what this said.
+       supabase/schema.sql groups by (kind, post): every row carries `n`, how
+       many there were, and `more`, up to three of the other people. Every
+       notice here was written before those two existed, so all five were
+       n=1 with nobody else on them -- and a screen drawn from them showed
+       five ungrouped rows however well the grouping worked.
+
+       That is the fixture standing in front of the thing it is supposed to
+       show. Three of the five carry a group now: two people on one post,
+       twelve on another, and four follows -- which is 「〇〇さん他3人にフォロー
+       されました」, the shape the owner asked for.
+
+       `who` and `av` are filled in on all of them for the same reason. Two
+       rows had `who:''` and `av:null`, so postFace() fell through to `?` --
+       and `notices()` answers with `p0.display` and `p0.av`, which a person
+       who has set neither would leave empty, but veth has a name and a face
+       everywhere else in this fixture. A face that is `?` because the fixture
+       forgot is a face nobody can tell from one that is `?` because the app
+       is broken.
+
+       NOT here, deliberately: 「A が2件の投稿にいいね」 -- the same person
+       across several posts. `notices()` groups by (kind, post), so two likes
+       by one person on two posts are two rows and there is no shape this
+       fixture could take that would make them one. Putting it in would be
+       seeding a state the app cannot produce -- the wdMode mistake CLAUDE.md
+       records, where six faces were walked in a state that no longer existed.
+       It is a supabase/schema.sql change and it is in the report. */
     ['notices', () => { NOTES_HAVE = [
-        {kind:'like', at:Date.now()-60000, hd:'iri', who:'Iri', av:{ch:'Ж'}, id:'p1'},
-        {kind:'reply', at:Date.now()-120000, hd:'iri', who:'Iri', av:null, id:'p1'},
-        {kind:'boost', at:Date.now()-180000, hd:'veth', who:'', av:null, id:'p1'},
-        {kind:'follow', at:Date.now()-240000, hd:'veth', who:'', av:null, id:''},
-        {kind:'pick', at:Date.now()-300000, hd:'', who:'', av:null, id:'p2'}];
+        {kind:'like', at:Date.now()-60000, hd:'iri', who:'Iri', av:{ch:'Ж'}, id:'p1',
+         n:2, more:[{hd:'veth', who:'Veth', av:{ch:'V'}}]},
+        {kind:'reply', at:Date.now()-120000, hd:'iri', who:'Iri', av:null, id:'p1',
+         n:1, more:[]},
+        {kind:'boost', at:Date.now()-180000, hd:'veth', who:'Veth', av:{ch:'V'}, id:'p1',
+         n:12, more:[{hd:'iri', who:'Iri', av:{ch:'Ж'}},
+                     {hd:'kai', who:'Kai', av:null},
+                     {hd:'mor', who:'Mor', av:null}]},
+        {kind:'follow', at:Date.now()-240000, hd:'veth', who:'Veth', av:{ch:'V'}, id:'',
+         n:4, more:[{hd:'iri', who:'Iri', av:{ch:'Ж'}},
+                    {hd:'kai', who:'Kai', av:null}]},
+        {kind:'pick', at:Date.now()-300000, hd:'', who:'', av:null, id:'p2',
+         n:1, more:[]}];
         window.route='notif'; NAV=[{r:'notif'}];
         const h = vNotif(); NOTES_HAVE = null; return h; }],
     /* The search, with something in it. An empty field draws no results at
