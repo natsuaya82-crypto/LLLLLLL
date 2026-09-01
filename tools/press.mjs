@@ -772,29 +772,62 @@ const HELDR = await pg.evaluate(async () => {
      And if there is no `data-hold` on any screen at all, that fails too. A
      gesture nobody can find is the exact shape of the fault this pass was
      written after: something that is not there, and nothing saying so. */
+  /* One hold, at one amount of wobble. `slop` is how far the thumb moves
+     BEFORE the timer would fire, which is the whole of what this asks: a
+     thumb is not a tripod, and a hold that only survives perfect stillness is
+     a hold nobody can make.
+
+        親指が完全に静止 → 動く
+        一画素動いた     → 死ぬ
+
+     Both of those were measured on a real TouchEvent, and the second is what
+     everybody's hand actually does. So the wobble is a parameter and 0 is not
+     the interesting value -- it is the one that was already green. */
+  const holdOnce = async (el, slop, where) => {
+    const r = el.getBoundingClientRect();
+    if (!r.width || !r.height) { out.push(where + ': a data-hold element with no size'); return; }
+    const x = r.left + r.width / 2, y = r.top + r.height / 2;
+    const deep = document.elementFromPoint(x, y) || el;
+    const from = '<' + String(deep.tagName).toLowerCase() + '>' +
+                 (deep === el ? '' : ' inside <' + String(el.tagName).toLowerCase() + '>');
+    const state = () => JSON.stringify(here()) + '|' +
+                  (document.getElementById('app') || { innerHTML: '' }).innerHTML.length;
+    const was = state();
+    T(deep, 'touchstart', x, y);
+    if (slop) {
+      /* well before HOLD_MS: the thumb settling, not the thumb leaving */
+      await new Promise(r2 => setTimeout(r2, 120));
+      T(deep, 'touchmove', x + slop, y);
+    }
+    /* and then past HOLD_MS, because the WAIT is the gesture */
+    await new Promise(r2 => setTimeout(r2, 620));
+    T(deep, 'touchend', x + slop, y);
+    const how = slop ? 'held ' + from + ', thumb moved ' + slop + 'px at 120ms,'
+                     : 'held ' + from + ' perfectly still,';
+    if (state() === was)
+      out.push(where + ': ' + how + ' let go at 740ms — and nothing changed. ' +
+               'The route is still ' + JSON.stringify(here()) + '. A thumb is not a ' +
+               'tripod: if one pixel kills the hold, the hold cannot be made on a phone.');
+    else
+      seen.push(where + ': ' + how + ' -> ' + JSON.stringify(here()));
+  };
+  /* Still, and then wobbling. The second is the one a hand can actually do,
+     and it is the one that was never asked: everything this file threw before
+     today was a click, and the hold it learned first never moved at all. */
+  const HOLD_SLOPS = [0, 1, 6];
   const held = async (where) => {
     const els = [].slice.call(document.querySelectorAll('[data-hold]'));
     if (!els.length) return 0;
     for (let i = 0; i < els.length; i++) {
-      const el = els[i], r = el.getBoundingClientRect();
-      if (!r.width || !r.height) { out.push(where + ': a data-hold element with no size'); continue; }
-      const x = r.left + r.width / 2, y = r.top + r.height / 2;
-      const deep = document.elementFromPoint(x, y) || el;
-      const from = '<' + String(deep.tagName).toLowerCase() + '>' +
-                   (deep === el ? '' : ' inside <' + String(el.tagName).toLowerCase() + '>');
-      const was = JSON.stringify(here()) + '|' +
-                  (document.getElementById('app') || { innerHTML: '' }).innerHTML.length;
-      T(deep, 'touchstart', x, y);
-      /* past HOLD_MS in www/shell.js, because the WAIT is the gesture */
-      await new Promise(r2 => setTimeout(r2, 620));
-      T(deep, 'touchend', x, y);
-      const now = JSON.stringify(here()) + '|' +
-                  (document.getElementById('app') || { innerHTML: '' }).innerHTML.length;
-      if (now === was)
-        out.push(where + ': held ' + from + ' for 620ms and nothing changed — ' +
-                 'the route is still ' + JSON.stringify(here()));
-      else
-        seen.push(where + ': ' + from + ' -> ' + JSON.stringify(here()));
+      for (let j = 0; j < HOLD_SLOPS.length; j++) {
+        /* the screen is put back between gestures: a hold that WORKED walked
+           off to another route, and the next one would be thrown at nothing */
+        window.__seed(); SET.done = true; SET.plan = 'pro';
+        go(where); render();
+        const again = document.querySelectorAll('[data-hold]')[i];
+        if (!again) break;
+        await holdOnce(again, HOLD_SLOPS[j], where);
+      }
     }
     return els.length;
   };
