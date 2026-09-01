@@ -22,8 +22,11 @@
        formats are documented to be, and the reader is deliberately written
        against column NAMES rather than against a table of services, so a
        heading nobody predicted still lands
-     - anything about what happens after the read: the mapping screen, the
-       duplicate policy and the undo are the app's, and press.mjs walks those
+     - the mapping screen, the duplicate policy and the undo: those are the
+       app's and press.mjs walks them. What § 12 below DOES ask about, and it
+       is the only thing after the read that is asked here, is whether the
+       letters a file made can be typed at all -- a file that got in and then
+       cannot be written did not get in
    --------------------------------------------------------------------------- */
 import fs from 'fs';
 import path from 'path';
@@ -339,4 +342,5 @@ if (fails.length){
 }
 console.log('import: every shape a list arrives in — a spreadsheet with any columns in any\n' +
             '        order, Excel pasted straight in, semicolon CSV, backslash-coded\n' +
-            '        lexicons, JSON, plain lines, and a bare list of meanings.');
+            '        lexicons, JSON, plain lines, and a bare list of meanings —\n' +
+            '        and the letters a file made can be typed by the name it gave them.');

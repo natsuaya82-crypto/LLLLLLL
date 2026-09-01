@@ -907,9 +907,34 @@ function ltUnits(l){ return (l && l.snd)? l.snd : []; }
 function ltCodes(l){
   var out=[], u=ltUnits(l), i;
   function add(s){
-    var f=[String(s||''), String(s||'').toUpperCase(), String(s||'').toLowerCase()], j;
+    var v=String(s||''), f, j;
+    /* A name of two words is written as a ligature over the characters it is
+       spelled with, and one of those is a SPACE. No letter holds one, so
+       scriptGlyphDefs() would make a placeholder glyph for it and every space
+       in the app would come out as the dashed box. A name the font cannot
+       reach is one letter missing; a space that draws a box is every screen
+       there is. A name arrives from a file and from a sheet and is not typed
+       into this app at all, so it is a string nothing here has checked. */
+    if(!v || /\s/.test(v)) return;
+    f=[v, v.toUpperCase(), v.toLowerCase()];
     for(j=0;j<f.length;j++) if(f[j] && out.indexOf(f[j])<0) out.push(f[j]);
   }
+  /* The name the letter ARRIVED with, and it is first because ltName() puts
+     it first -- so the name the app calls a letter by is the name the font
+     answers to, rather than the two disagreeing.
+
+     `nm` and `ab` are two fields and one thing. `ab` is what somebody typed
+     in the box on the letter's own page; `nm` is the name a letter came in
+     under, and it is the ONLY name on the two letters this app makes without
+     anybody typing: www/sheet.js § shTakeIn puts the name printed over a box
+     there, and www/import.js § impPut puts the file's name column there.
+     Neither of those letters need have any reading at all -- a person drawing
+     their own A B C D has nothing to say about sound -- so with `nm` unasked
+     they went into the font as a shape with NO character on it. The font
+     builds, the @font-face installs, `.sfont` matches it, and every word is
+     still roman. Nothing throws.
+     「描いた文字がそもそもフォントになってないけど。」 */
+  add(l && l.nm);
   add(l && l.ab);
   /* A digit's value, which is the only thing it is called. numbers.js takes a
      letter's readings away when it gives it a value, and a digit is never
