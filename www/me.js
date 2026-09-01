@@ -649,6 +649,22 @@ function meBlock(h){
     if(meFollows(h)) meFollow(h);
   }
   ME.bl=bl;
+  /* And the menu this was pressed from, closed the way every other row that
+     ENDS a menu closes it -- postPin(), postDel() and openReport() each do it
+     in their own first lines. Blocking takes every post of theirs out of the
+     timeline (postBlocked() in www/post.js is what filters them), so the menu
+     that was hanging off one of them is gone from the screen while `PMENU`
+     still names the post -- and postMenuTook() then reads the next press
+     anywhere as "close the menu", swallows it, and somebody has pressed
+     something and had nothing happen.
+
+     It could not be reached until today: the ... on somebody else's post did
+     not open, so this row had never once been pressed from a timeline.
+
+     Both, and one press came from one of them. A post's menu is open on a
+     timeline and a person's on their page, never both, and postMenuTook()
+     already closes the two as one pair. */
+  PMENU=''; WMENU=false;
   saveMe();
   render();
   netBlock(h, i<0, function(){}, function(){});
