@@ -726,24 +726,27 @@ function vPlans(){
       DO('storeManage') + '>'+esc(t('plan.cancel'))+'</button></div>'+
   '</div>';
 }
-/* 実機でも、カードを押せばプランが変わる ── OWNER DECISION, 2026-08-25.
+/* 段は、Apple の購入が通ってから書かれる。
+   「課金もタップしたら勝手になるけど？」OWNER 2026-08-31。
 
-   08-23 の `6714cf55`「プラン画面が、端末の上では買う」より前は、実機でも
-   `SET.plan=id` を書くだけだった。それが今日 master に入って、端末の上で段を
-   試す唯一の道が塞がった ── App Store Connect にはまだ商品が一つも無いので
-   (§7 の 17 番、オーナーしかできない)、`storeBuy` に渡した商品は必ず reject
-   され、plan は free のまま動かない。実機では pro も plus も一切試せない。
+   `PLAN_BUY` は買う道を通すかどうかの一箇所の値で、2026-08-25 から `false`
+   でした ── その日 App Store Connect に商品が一つも無く、実機で段を試す道が
+   それしか無かったからです。そのときのコメント自身が「出荷前に true に戻す
+   こと」と書いていて、戻らないままビルド #106 が実機に出て、段のカードを
+   押しただけで Pro が付きました。
 
-   商品を登録しても戻らない。登録した先にあるのは Apple の購入シートで、
-   Sandbox なら課金は無いがシートと Sandbox の Apple ID は毎回通る。求めら
-   れているのは 08-23 以前の「何もせず切り替わる」ほうなので、買う道を通すか
-   どうかを一箇所の値にして、既定を「通さない」にする。
+   `true` です。実機では `storeBuy()` を通り、通らなければ段は動きません
+   ── そして段は**要求ではなく返事から**取られます（`storeTook()` は
+   `r.plan` を読む）ので、取り消しも保留も失敗も `free` のままです。
 
-   ⚠ PLAN_BUY が false のまま App Store に出すと、誰でも自分に Pro を付けら
-   れる。**出荷前に true に戻すこと。** 行ごと消さずに値にしてあるのは、
-   `setPlan` が `storeBuy` の唯一の呼び出し元だからで、消すと StoreKit 側が
-   丸ごと dead-check に落ちる ── 課金の仕組みそのものには手を入れない。 */
-var PLAN_BUY=false;
+   ブラウザには App Store が無いので `storeOn()` が false になり、そこでは
+   今までどおり手で切り替わります ── 検査もスクリーンショットもそれで歩きます。
+
+   値のまま残してあるのは行ごと消せないからではなく、`setPlan` が `storeBuy`
+   の唯一の呼び出し元だからです。消すと StoreKit 側が丸ごと dead-check に
+   落ちます。**false に戻さないこと。** false のまま App Store に出すと、
+   誰でも自分に Pro を付けられます。 */
+var PLAN_BUY=true;
 function setPlan(id, yearly){
   if(PLAN_BUY && id!=='free' && storeOn() && storeBuy(storeId(id, yearly))) return;
   SET.plan=id; planKeep(id); save(); render();
