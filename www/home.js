@@ -218,6 +218,8 @@ function openHelp(k){
   openForm('help:'+k, o.t, o.h);
 }
 FORM_OPEN.help=function(a){ openHelp(String(a||'')); };
+/* Arrived at by the back button: the sheet rebuilds itself. */
+FORM_OPEN.up=function(){ upSheet(); };
 function formMount(){ if(FORM && FORM.mount) FORM.mount(); }
 /* Kept because a dozen save buttons call it. Closing a form is leaving a page. */
 function closeSheet(e){

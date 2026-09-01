@@ -607,7 +607,7 @@ function editLetter(id){
 function newLetter(kind){
   /* The ceiling, met on the press. 「+を押したらそのまま課金のポップが出る
      だけでしょ？」 OWNER 2026-09-01 -- the button is drawn on every plan. */
-  if(canStop('letters')) return;
+  if(upStop(can('letters'))) return;
 
   if(!makeNeed()) return;
   var v=(kind==='num')? numFree() : -1;

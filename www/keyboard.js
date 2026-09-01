@@ -555,7 +555,7 @@ function kbAdd(pat){
      look; the act that WRITES a keyboard has to refuse on its own, the way
      kbEdit() refuses board 0 for all thirty mutators rather than trusting the
      buttons to be down. */
-  if(canStop('kb')) return;
+  if(upStop(can('kb'))) return;
   /* Storage holds only the ones the person built. The free QWERTY is board 0
      and is not among them, so the first one made here is the SECOND board. */
   if(!KB) KB={kbs:[], at:0};

@@ -402,7 +402,7 @@ function stAddPart(){ stMarkSet('part'); go('gram', 'part'); }
 function stAddOwn(){
   /* The screen only offers this on a paid plan; a form is a route and a route
      can be arrived at from anywhere. */
-  if(canStop('gram')) return;
+  if(upStop(can('gram'))) return;
   var a=document.getElementById('st-t'), b=document.getElementById('st-w');
   if(!a) return;
   var title=String(a.value||'').trim();
@@ -425,7 +425,7 @@ function stAddOwn(){
    list, stays in the backup, and cannot be added to or removed until the plan
    that made it is back. Gating a delete never costs anybody anything. */
 function stDelOwn(id){
-  if(canStop('gram')) return;
+  if(upStop(can('gram'))) return;
   if(!confirm(t('stg.own.del.ask'))) return;
   STG.extra=STG.extra.filter(function(x){ return x.id!==id; });
   saveStg(); if(gOpenOf()) back(); else render();

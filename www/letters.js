@@ -487,7 +487,7 @@ function ltCopy(id){
      does not buy letters is a door, and 「全部確認して課金画面に飛ぶようにして」
      OWNER 2026-08-25. Same one line ltDelete() already had. */
   if(!l) return;
-  if(canStop('letters')) return;
+  if(upStop(can('letters'))) return;
   /* A digit cannot be copied, and the copy would not be a digit: a value is
      unique (there is one seven), so what came out was an ALPHA letter made
      from the digits room -- the two rooms mixing in the one direction nothing
@@ -882,7 +882,7 @@ function ltDelete(id){
      it says so, and pressing yes goes to the plans screen. That is exactly
      the shape the 2026-08-25 decision asked for. base-check holds the rename
      half for the same reason. */
-  if(canStop('letters')) return;
+  if(upStop(can('letters'))) return;
   var nm=ltName(l)||t('lt.untitled');
   if(!confirm(t('glyph.del.ask'))) return;
   ltDel(id);

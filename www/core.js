@@ -932,11 +932,34 @@ function capStop(add){
    a hundred and twenty strings saying the same thing, and 「アプリ内に説明
    書くの禁止」 is the other half of the argument: what somebody needs at the
    moment they press is that this is on a paid plan and where to go, which is
-   two facts and not a paragraph about letters. */
-function canStop(cap){
-  if(can(cap)) return false;
-  if(confirm(t('up.need')+'\n\n'+t('up.cta'))) go('plans');
+   two facts and not a paragraph about letters.
+
+   THE APP'S OWN SHEET AND NOT iOS's DIALOG. 「正直自前のpopがいいんだけどな。
+   iPhoneのやつ使ってるsnsないしな」 OWNER 2026-09-01. openForm() is a SCREEN
+   (`go('form', key)`), not a thing that slides up in place of one, so it is
+   not the shape CLAUDE.md § Shape forbids -- and the keyboard's + already
+   opens exactly this, so the other doors are being brought to it rather than
+   a second thing being invented.
+
+   No corner, no border, no panel: the title is the form's own and the body is
+   one line of text and one `.btn.ghost`, which is what CLAUDE.md § 18 leaves
+   when a box is not allowed. Pressing the back arrow is the "no".
+
+   IT TAKES THE ANSWER AND NOT THE NAME. `can()` may only be given a literal
+   (CLAUDE.md § 5, and dead-check refuses anything else) -- a capability read
+   from a variable cannot be held by any check and a wrong one reads as free
+   rather than throwing. So the caller writes `upStop(can('letters'))` and the
+   name stays where a check can see it. */
+function upStop(ok){
+  if(ok) return false;
+  upSheet();
   return true;
+}
+function upSheet(){
+  openForm('up', t('up.cta'),
+    '<div class="note">'+esc(t('up.need'))+'</div>'+
+    '<button class="btn ghost" style="width:100%;margin-top:14px"' + DO('goPlans') + '>'+
+      esc(t('up.cta'))+'</button>');
 }
 /* The day a plan ends, said out loud, once.
 

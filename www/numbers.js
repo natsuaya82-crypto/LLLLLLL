@@ -169,7 +169,7 @@ function numStepBase(d){
   /* The ceiling, met on the press. The ± is drawn on every plan and this is
      what answers somebody who has not bought the letters it would make.
      OWNER 2026-09-01「+を押したらそのまま課金のポップが出るだけでしょ？」 */
-  if(canStop('letters')) return;
+  if(upStop(can('letters'))) return;
   var b=numBase()+d;
   if(b<NUM_BASES[0] || b>NUM_BASES[NUM_BASES.length-1]) return;
   numSetBase(b);

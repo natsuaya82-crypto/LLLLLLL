@@ -254,7 +254,7 @@ function sndTake(sym){
      doing two ways. A symbol pressed on purpose and nothing at all happening is
      the shape that sends somebody to look for what they did wrong. Same one line
      ltTakeSnd() below already had. Nothing is written first. */
-  if(canStop('snd')) return;
+  if(upStop(can('snd'))) return;
   if(addedSnd().indexOf(sym)>=0){ sndDrop(sym); openSndAdd(); return; }
   SND=asOrder(addedSnd().concat([sym]));
   saveSnd();
@@ -502,7 +502,7 @@ function ltTakeSnd(sym){
      `chose` stays off -- it is what tells a sound somebody picked from one
      ltSetRoman worked out, and switching it on here would detach `b` from its
      own name for good -- and SND does not grow. */
-  if(canStop('snd')) return;
+  if(upStop(can('snd'))) return;
   if(!l.snd) l.snd=[];
   var i=l.snd.indexOf(sym);
   if(i>=0) l.snd.splice(i, 1);
@@ -563,7 +563,7 @@ function sndLetters(sym){
 function openSndAdd(){
   /* The ceiling, met on the press. 「+を押したらそのまま課金のポップが出る
      だけでしょ？」 OWNER 2026-09-01 -- the button is drawn on every plan. */
-  if(canStop('snd')) return;
+  if(upStop(can('snd'))) return;
 
   if(!makeNeed()) return;
   sndFor='';
@@ -582,7 +582,7 @@ function sndDrop(sym){
      sndTake() calls this one directly, which is safe: it has already refused
      on the same capability before it gets here, so a free plan never arrives
      at this line from there. */
-  if(canStop('snd')) return;
+  if(upStop(can('snd'))) return;
   if(ls.length){
     toast(t('snd.inuse', ls.map(function(l){ return ltName(l)||'·'; }).join(' ')));
     return;
