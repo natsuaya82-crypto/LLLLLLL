@@ -307,22 +307,35 @@ try {
   /* through the REAL ltNew, with the fields impPut() puts on it */
   const l = LT.ltNew({ ch: r.rows[0].ch, nm: r.rows[0].nm, snd: [] });
   is('an imported letter is called what the file called it', LT.ltName(l), 'qoppa');
-  is('and that name is a way to type it',
-     LT.ltCodes(l).indexOf('qoppa') >= 0, true);
 
-  /* and the other road: www/sheet.js's shTakeIn(), for a box whose printed
-     name is not a number. The picture is the letter and there is no reading
-     at all, so the name is the ONLY thing that can carry a code point. */
+  /* The road that matters, and the one the owner met: a box on a sheet, whose
+     printed name is ONE character. The picture is the letter and there is no
+     reading at all, so the name is the only thing that can carry a code
+     point. www/sheet.js's shTakeIn() makes exactly this. */
   const w = LT.ltNew({ nm: 'a', sh: [[[200, 200], [600, 200], [600, 600]]], via: 'write' });
   is('a letter off a sheet is called what was printed over its box',
      LT.ltName(w), 'a');
-  is('and that name is a way to type it, in both cases',
+  is('and a one-character name is a way to type it, in both cases',
      [LT.ltCodes(w).indexOf('a') >= 0, LT.ltCodes(w).indexOf('A') >= 0], [true, true]);
+
+  /* And a LONGER name is not, on purpose and at a price that was measured.
+     A code of more than one character is reached by a ligature over the
+     characters it is spelled with, and an OpenType rule fires only over
+     glyphs that exist -- so www/glyph.js makes one for every component no
+     letter holds, and that glyph is the dashed placeholder box. One imported
+     letter called `qoppa` would put a box on q, o, p and a, in every word, on
+     every screen. A reading and a name somebody TYPED here keep the ligature
+     road they have always had; a name that arrived off paper or out of a file
+     may not spend the roman alphabet to become typeable. */
+  is('a name of more than one character is NOT a code point',
+     LT.ltCodes(l).indexOf('qoppa') >= 0, false);
+  is('and neither are the letters it is spelled with',
+     LT.ltCodes(l).filter(c => 'qopa'.indexOf(c) >= 0), []);
 
   /* What it reads is still a way to type it -- the name did not replace it. */
   const k = LT.ltNew({ nm: 'ka', snd: ['k'] });
-  is('a letter answers to its reading as well as its name',
-     [LT.ltCodes(k).indexOf('ka') >= 0, LT.ltCodes(k).indexOf('k') >= 0], [true, true]);
+  is('a letter answers to its reading',
+     [LT.ltCodes(k).indexOf('k') >= 0, LT.ltCodes(k).indexOf('K') >= 0], [true, true]);
 
   /* A name of two words would be written as a ligature over the characters it
      is spelled with, and one of those characters is a SPACE -- which has no
@@ -343,4 +356,4 @@ if (fails.length){
 console.log('import: every shape a list arrives in — a spreadsheet with any columns in any\n' +
             '        order, Excel pasted straight in, semicolon CSV, backslash-coded\n' +
             '        lexicons, JSON, plain lines, and a bare list of meanings —\n' +
-            '        and the letters a file made can be typed by the name it gave them.');
+            '        and a one-character name a file gave a letter is a way to type it.');

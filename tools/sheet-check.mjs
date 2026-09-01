@@ -470,6 +470,51 @@ const again = await pg.evaluate(() => {
   };
 });
 
+/* ---- 3b-ii. and a box does not turn the roman alphabet into boxes -------
+   A name of more than one character has no code point of its own, so it is
+   reached by a LIGATURE over the characters it is spelled with -- and an
+   OpenType rule can only fire over glyphs that EXIST, so scriptGlyphDefs()
+   makes one for every component no letter holds. That glyph is GPLACE, the
+   dashed box.
+
+   So one box named `mountain` puts a dashed box on m, o, u, n, t, a and i --
+   everywhere `.sfont` is worn, in every word, on every screen. Nothing throws
+   and the font installs. It is worse than the bug it came in with, and it
+   came in TODAY: until a letter's `nm` became a code point, a sheet could not
+   make a ligature at all.
+
+   Measured in pixels and not in glyph counts, because "a glyph exists for m"
+   is true of the right answer too. The floor is the roman `m` the browser
+   falls through to when the font has nothing to say. */
+const boxes = await pg.evaluate(async () => {
+  function ink(txt){
+    var c = document.createElement('canvas'); c.width = 400; c.height = 120;
+    var g = c.getContext('2d');
+    g.fillStyle = '#fff'; g.fillRect(0, 0, 400, 120);
+    g.fillStyle = '#000'; g.font = '64px LinguaScript, serif';
+    g.textBaseline = 'middle'; g.fillText(txt, 10, 60);
+    var p = g.getImageData(0, 0, 400, 120).data, n = 0, i;
+    for (i = 0; i < 400 * 120; i++) if (p[i * 4] < 128) n++;
+    return n;
+  }
+  var LETTERS_WAS = JSON.stringify(LETTERS), was = SET.myfont;
+  SET.myfont = true;
+  installScriptFont();
+  await document.fonts.load('64px LinguaScript');
+  var before = ['m', 'o', 'u', 't', 'i'].map(ink);
+  SH = { names: '', got: [{ nm: 'mountain',
+          sh: [[[150,150],[650,150],[650,650],[150,650]]] }], why: '', from: '' };
+  shTakeIn();
+  installScriptFont();
+  await document.fonts.load('64px LinguaScript');
+  await new Promise(function(r){ setTimeout(r, 150); });
+  var after = ['m', 'o', 'u', 't', 'i'].map(ink);
+  /* put the language back: everything below this was written against it */
+  LETTERS = JSON.parse(LETTERS_WAS); saveLetters();
+  SET.myfont = was; installScriptFont();
+  return { before: before, after: after };
+});
+
 /* ---- 3c. and a digit that came in on a sheet is DRAWN ------------------
    A digit's picture reaches the clock, the date and the calendar through
    numSignHTML(), which asked for `st` -- and a sheet's picture is `sh`. So a
@@ -919,6 +964,10 @@ say(!!again.q && again.q.snd === 0 && again.q.loose === 0,
 say(again.aStill === 2,
     'so the `a` that was already there is still there, beside the new one (' +
     again.aStill + ')');
+say(boxes.before.join(',') === boxes.after.join(','),
+    'a box named with a WORD does not turn the roman alphabet into dashed ' +
+    'placeholder boxes: m o u t i inked ' + boxes.before.join('/') +
+    ' before the sheet and ' + boxes.after.join('/') + ' after');
 say(sign.canvas && !sign.roman && sign.pixels > 0,
     'and a digit that came in on a sheet is drawn with the sign somebody drew ' +
     'for it, not a roman one: ' + sign.pixels + ' pixels of ink on the clock');

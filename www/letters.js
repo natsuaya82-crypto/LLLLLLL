@@ -967,6 +967,20 @@ function ltCodes(l){
      it first -- so the name the app calls a letter by is the name the font
      answers to, rather than the two disagreeing.
 
+     ONE CHARACTER ONLY, and that is not tidiness. A code of more than one
+     character has no code point and is reached by a LIGATURE over the
+     characters it is spelled with; an OpenType rule can only fire over glyphs
+     that exist, so scriptGlyphDefs() makes one for every component no letter
+     holds, and that glyph is GPLACE -- the dashed box. One box on a sheet
+     named `mountain` therefore put a dashed box on m, o, u, n, t, a and i, in
+     every word, on every screen wearing `.sfont`. Measured: those five inked
+     588/337/339/233/235 pixels before the sheet and 122 each after, which is
+     the box.
+     A reading and a typed name are things somebody said IN this app, on
+     purpose, and they keep the ligature road they have always had. A name
+     arrives off paper and out of a file -- nobody here typed it -- and it may
+     not spend the roman alphabet to become typeable.
+
      `nm` and `ab` are two fields and one thing. `ab` is what somebody typed
      in the box on the letter's own page; `nm` is the name a letter came in
      under, and it is the ONLY name on the two letters this app makes without
@@ -978,7 +992,7 @@ function ltCodes(l){
      builds, the @font-face installs, `.sfont` matches it, and every word is
      still roman. Nothing throws.
      「描いた文字がそもそもフォントになってないけど。」 */
-  add(l && l.nm);
+  if(l && String(l.nm||'').length===1) add(l.nm);
   add(l && l.ab);
   /* A digit's value, which is the only thing it is called. numbers.js takes a
      letter's readings away when it gives it a value, and a digit is never
