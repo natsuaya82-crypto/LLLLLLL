@@ -309,24 +309,26 @@ and is out of date is worse than no file. Re-check rather than believe:
 grep -n "rest/v1" www/net.js          # what the app actually asks the server for
 ```
 
-Today that is `post`, `react`, `follow`, `profile` and the `notices` RPC.
-`netPush()` sends a post, `netFeed()` reads the two timelines, `netNotices()`
-reads the notices, and `postCatchUp()` sends whatever this phone has that the
-server has not. `localStorage` is still where a post is kept — the phone is the
-copy that survives a bad network — but it is no longer the only place one
-exists.
+Today that is `profile`, `post`, `react`, `follow`, `block`, `report`,
+`draft`, `saved_search`, `post_seen`, `prompt`, `language`, `slice` and the
+RPCs. `netPush()` sends a post — its photographs and its voice with it, through
+`netUpPics()` and `netUpVoice()` into the `post-media` bucket — `netFeed()`
+reads the two timelines, `netNotices()` reads the notices, `netDraftUp()` sends
+a draft, `netLangSync()` sends and merges the language, and `postCatchUp()`
+sends whatever this phone has that the server has not. **`lingua.posts` is a
+copy and not a home**: the phone keeps what works with no signal.
 
 **An account is required to read the timeline or post to it**, decided
 2026-08-18 and held by `post-check`. `vFeed`/`vExplore`/`vNotif` answer with the
 app's own door when there is no session.
 
-**There is no such state as "no account", and the sentence that used to stand
-here saying the making side needs none was about an app that no longer exists.**
-`boot.js:96` calls `netAnon()` at first launch, so a phone that has never been
-signed in to is a phone holding an ANONYMOUS account. `netSignedIn()`
-(`net.js:93`) asks whether there is a session at all; `netMember()`
-(`net.js:116`) asks whether that session is more than anonymous. Two questions,
-two functions, and the app asks the second one where it used to ask nothing.
+**There is one kind of account and there are no anonymous ones**
+「匿名アカウントはねえよ」. `netSignedIn()` asks whether there is a session at
+all and `netMember()` asks whether it carries somebody's name; nothing asks a
+third question about what kind of account it is. There is no `netAnon()` — the
+comment where it stood (`net.js:268`) says so — and `supabase/schema.sql`
+**drops** `has_account()` (`drop function if exists has_account()`), so every
+policy that used to ask it asks `is_member()` now.
 
 **OWNER DECISION 2026-08-26**, and it settles what the paragraph above was
 groping at:
@@ -344,20 +346,20 @@ catches up on the next one; **making a language still needs an account**, and
 deleting the account takes the languages with it. The file in Documents
 (`www/backup.js`, chapter 24) is the one thing that is not the server's.
 
-**`language` and `slice` are written and read.** The paragraph that said they
-were unused was the third thing in this file to be wrong about the server in
-one day. **Count it rather than believe it:**
+**`language` and `slice` are written and read.** **Count it rather than believe
+it:**
 
 ```
 grep -o "rest/v1/[a-z_]*" www/net.js | sort | uniq -c | sort -rn
 ```
 
-On 2026-08-26 that answers: `profile` 9, `rpc` 6, `report` 3, `post` 5,
-`follow` 3, `block` 3, `slice` 2, `react` 2, `post_seen` 2, `prompt` 1,
-`language` 1 — and the six `rpc` are `account_ban` `account_delete`
-`account_unban` `notices` `post_hide` `post_show`. `netLangSync()`
-(`net.js:442`) is fired by `boot.js:68` at launch, and `syMerge()`
-(`www/sync.js` ch 26) is what puts two copies together by adding both.
+On 2026-09-01 that answers: `profile` 11, `rpc` 10, `follow` 5, `draft` 4,
+`saved_search` 3, `report` 3, `post` 3, `language` 3, `block` 3, `slice` 2,
+`react` 2, `post_seen` 2, `prompt` 1 — and the ten `rpc` are `account_ban`
+`account_delete` `account_unban` `admin_counts` `feed_hot` `notices`
+`post_hide` `post_show` `staff_add` `staff_drop`. `netLangSync()` is fired by
+`boot.js` at launch, and `syMerge()` (`www/sync.js` ch 26) is what puts two
+copies together by adding both.
 
 **Still unused: `quote` and `publication`. Those two, and nothing else.**
 
@@ -370,41 +372,45 @@ key, the `daily-prompt` function, a cron line) there is no row for today and the
 top of the timeline is the plain write-row it has always been. That is the
 degrade, and it is deliberate: no half-working screen.
 
-**The online half was redesigned on 2026-08-22.** Everything belongs to the
-account, cloud storage is for everybody, and an anonymous account is made at
-first launch. The three entries at the head of `docs/FEATURE_RULES.md` § Owner
-decision log say it; read them first, because most of the list below was
-written for an app whose languages lived on the phone.
+**The online half was redesigned on 2026-08-22 and settled on 2026-08-26.**
+Everything belongs to the account, and **the server is where things live — the
+timeline and the language both.** The entries at the head of
+`docs/FEATURE_RULES.md` § Owner decision log say it.
 
 Order, and where it stands:
 
-1. **Anonymous sign-in — done.** The first launch signs in with no address and
-   no password (`netAnon` in `net.js`, called from `boot.js`), so there is a
-   uid before the first frame. "Signed in" split in two on the phone as well:
-   `netSignedIn()` is a session, `netMember()` is a session with a name, and
-   `obNeed()` asks the second at the six things other people would see — a
-   post, a like, a boost, a report, a follow, a block. The door left the
-   onboarding: the app opens on the square you draw a letter on, and the door
-   is a screen `obDoor()` goes to. Held by `migrate-check` case 7.
-2. **`is_member()` split in two — done.** `has_account()` in `schema.sql` is
-   "there is an account", anonymous and frozen included, and guards the three
-   `language` write policies; `is_member()` is unchanged and guards everything
-   other people see. `language.owner` points at `auth.users` rather than
-   `profile`, because an account exists before a person does. Held by
-   `npm run rls` — 106 attempts, 19 shapes.
-3. **The language actually living on the server — not started, and it is the
-   rest of item 1.** There is nowhere to put a slice yet: `language` holds a
-   name, a licence and a date, and the eleven slices are still `localStorage`
-   only. This is the next thing.
-4. The plan on `profile`, its value still set by hand. Not started.
-5. The rest of moderation — the tombstone in a thread, the ⋯ menu on a
-   profile, the notices, the frozen state on Home. Not started.
+1. **One kind of account — done.** There are no anonymous ones
+   「匿名アカウントはねえよ」. `netSignedIn()` is a session, `netMember()` is a
+   session with a name, and `obNeed()` asks the second at the six things other
+   people would see — a post, a like, a boost, a report, a follow, a block.
+   The door is the LAST step of the onboarding and there is no way past it.
+   Held by `open-check` and by `migrate-check` case 7.
+2. **`is_member()` is the one question — done.** `has_account()` is dropped in
+   `schema.sql`, and the `language` write policies that used to ask it ask
+   `is_member()`. `language.owner` points at `auth.users` rather than
+   `profile`. Held by `npm run rls`.
+3. **The language living on the server — done.** `language` holds the name,
+   the licence, the date and `published_at`; **`slice` holds every slice of
+   it**, one row per slice of `SLICES`, carrying exactly the string
+   `localStorage` holds. `netLangRow()` makes the row, `netSlicePut()` upserts
+   a slice, `netSlices()` reads them back, and `netLangSync()` — fired from
+   `boot.js` at launch — puts the two copies together through `syMerge()`,
+   which adds both sides and lets neither win by being newer.
+4. **The plan.** OWNER 2026-09-01: 「課金とアカウントとキーボードはアカウントに
+   結びつく」 — the plan is the account's, so it belongs on `profile` and
+   follows the person to whatever phone they sign in on. **Not there yet**:
+   `profile` has no plan column, `www/net.js` never sends one, and the value
+   is `SET.plan` on the device, set by hand. This is the gap between the
+   decision and the code, and it is item 7's other half.
+5. The rest of moderation — **the tombstone in a thread (`postTomb()`), the
+   notices (`vNotif`) and the frozen state are in.** What is left is the ⋯
+   menu on a profile.
 6. Terms and privacy, under `/home/user/tokine2`, linked from Settings and not
    from the onboarding. Not started.
 7. What a purchase OPENS. StoreKit itself is **written** ── `ios/App/App/LinguaStore.swift`,
    `www/store.js`, and `setPlan` in `www/settings.js` is `storeBuy`'s one caller.
    What is not done is the other half: a purchase has to reach the server and
-   set the plan on `profile`, and today the plan is still set by hand (item 4).
+   set the plan on `profile` (item 4).
 
 **Everything still to do that needs the server is one list**, in
 `docs/FEATURES.md` → "What is left to do online": the plan (the one with money
