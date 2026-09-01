@@ -464,6 +464,79 @@ const R = await pg.evaluate(() => {
     no('15: 無かったスライスが埋められていない ── 埋めて止まる、の埋めるほう');
   say('15: 降ろす先に既にあるスライスは書かない。無いものだけ埋める');
 
+  /* ---- 16-18. プランはアカウントのもの --------------------------------
+     「課金とアカウントとキーボードはアカウントに結びつく。
+       じゃないとアカウント変えたら無限に言語作れるやん」OWNER 2026-09-01
+
+     プランは SET.plan ── lingua.set、端末の設定 ── にあり、アカウントにも
+     サーバーにも紐づいていませんでした。二台目で入れば無料から始まります。 */
+
+  /* 16. サーバーのほうが上なら、それを採る。 */
+  start();
+  netOut(); arrive(A);
+  SET.plan = 'free'; SET.planWas = 'free'; save();
+  netGet = (path, ok) => {
+    if (path.indexOf('/rest/v1/plan') === 0) return ok([{ plan: 'pro' }]);
+    return ok([]);
+  };
+  netPlanSync(() => {});
+  netGet = realGet;
+  if (plan() !== 'pro') no('16: アカウントが持っている段が降りてこない — ' + plan());
+  say('16: アカウントのほうが上なら、その段になる');
+
+  /* 17. **端末のほうが上なら、取り上げない。**これがいちばん危ない向きです ──
+     サーバーの答えをそのまま採ると、領収書を持っている端末から段を
+     取り上げます。docs/PAID_FEATURES.md。 */
+  start();
+  netOut(); arrive(A);
+  SET.plan = 'pro'; SET.planWas = 'pro'; save();
+  let sent = [];
+  netGet = (path, ok) => {
+    if (path.indexOf('/rest/v1/plan') === 0) return ok([{ plan: 'free' }]);
+    return ok([]);
+  };
+  const realUp = netPlanUp;
+  netPlanUp = (id) => { sent.push(id); };
+  netPlanSync(() => {});
+  netGet = realGet; netPlanUp = realUp;
+  if (plan() !== 'pro') no('17: 端末が持っていた段が取り上げられた — ' + plan());
+  if (sent.indexOf('pro') < 0)
+    no('17: 上の段をアカウントに伝えていない — 送ったもの ' + JSON.stringify(sent));
+  say('17: 端末のほうが上なら取り上げず、アカウントに伝える');
+
+  /* 18. そして段が動いたら、その場でアカウントに伝わる。capLapse() が
+     プランの動いた唯一の場所 ── ボタンでも領収書でも失効でもここに来る。 */
+  start();
+  netOut(); arrive(A);
+  SET.plan = 'free'; SET.planWas = 'free'; save();
+  sent = [];
+  netPlanUp = (id) => { sent.push(id); };
+  SET.plan = 'pro';
+  capLapse();
+  netPlanUp = realUp;
+  if (sent.indexOf('pro') < 0)
+    no('18: 段が動いてもアカウントに伝わらない — 送ったもの ' + JSON.stringify(sent));
+  say('18: 段が動いたら、その場でアカウントに伝わる');
+
+  /* ---- 19. 言語の数は、そのアカウントの言語を数える -------------------
+     「じゃないとアカウント変えたら無限に言語作れるやん」 */
+  start();
+  netOut(); arrive(A);
+  LANGS = {};
+  LANGS['La'] = { name: 'A の1', mine: true, uid: A };
+  LANGS['Lb'] = { name: 'A の2', mine: true, uid: A };
+  LANGS['Lc'] = { name: 'B の1', mine: true, uid: B };
+  LANGS['Ld'] = { name: 'まだ扉を通っていない', mine: true };
+  langStore();
+  const asA = langCount();
+  netOut(); arrive(B);
+  const asB = langCount();
+  if (asA !== 3) no('19: A から見た数が 3 でない（A の2つ＋持ち主なし1つ）— ' + asA);
+  if (asB !== 2) no('19: B から見た数が 2 でない（B の1つ＋持ち主なし1つ）— ' + asB);
+  if (asA === asB && asA === 4)
+    no('19: 端末にある全部を数えている ── 他人の言語で上限が埋まる');
+  say('19: 言語の数は、そのアカウントのものを数える（持ち主なしは厳しいほうへ）');
+
   return out;
 });
 

@@ -62,6 +62,11 @@ function bootSession(){
      language that is OPEN, and this is about the ones that are not here --
      which, until it existed, were unreachable from a second phone.
      「前のアカウント消えたんだが？」 */
+  /* And what this ACCOUNT has paid for, which used to be a fact about the
+     phone. The higher of the two rungs wins -- netPlanSync() has the whole
+     of why. Before the languages, because the plan is what says how many of
+     them there may be. 「課金とアカウントとキーボードはアカウントに結びつく」 */
+  netPlanSync();
   netLangsDown();
   /* And the language, which belongs to this account and exists twice. Read,
      merged and written back -- both ways, so a phone that has been offline

@@ -564,10 +564,36 @@ function langCap(){
 
    docs/DATA_MODEL.md § a language that is only read says what would have to
    exist first. */
+/* Whether a language counts towards the ceiling of the account that is here
+   NOW. 「じゃないとアカウント変えたら無限に言語作れるやん」 OWNER 2026-09-01.
+
+   `mine` is about this PHONE -- a language you are making rather than one you
+   are reading -- and it was the whole of the question while a phone was one
+   person. `uid` is the account, and this is where the two are told apart.
+
+   Signed out, nothing has an account to be compared with, so the count is
+   what it always was. That is not a hole: a language cannot be made without
+   one 「言語はアカウントないと作れないです」, and the onboarding's language
+   is made before there is a door to have come through.
+
+   An entry with NO `uid` counts for whoever is asking, which is the STRICTER
+   of the two answers, and the direction is chosen rather than fallen into:
+   the loose one is what the owner named, and a count that is too strict only
+   ever refuses a NEW language. **It never hides one, never removes one, and
+   never shortens a list.** docs/PAID_FEATURES.md -- a ceiling is about
+   adding and about nothing else. */
+function langAcct(id){
+  var L=LANGS[id], me;
+  if(!L || !L.mine) return false;
+  me=(typeof SESS!=='undefined' && SESS && SESS.uid)? String(SESS.uid) : '';
+  if(!me) return true;
+  if(!L.uid) return true;
+  return String(L.uid)===me;
+}
 function langCount(){
   var n=0, id;
   for(id in LANGS)
-    if(Object.prototype.hasOwnProperty.call(LANGS, id) && LANGS[id] && LANGS[id].mine) n++;
+    if(Object.prototype.hasOwnProperty.call(LANGS, id) && langAcct(id)) n++;
   return n;
 }
 /* The ceiling on languages, met. True means the caller must stop.
@@ -661,6 +687,22 @@ function planKeep(id){
    name of a FREE tier in most apps, so Free and Basic were the confusable
    pair rather than Basic and Plus. Free < Plus < Pro needs nobody told. */
 var PLAN_ORDER=['free', 'plus', 'pro'];
+/* The better of two plans, and the same sentence LinguaStore.swift's best()
+   is -- 「段が二つ見えたときの答えは上の段」. Two copies of a ladder is how
+   the two sides of a bridge come to disagree about which plan is better, so
+   the rule is written the same way on both.
+
+   It is asked when the phone and the SERVER disagree, which they can: a
+   purchase made on another device, a phone that has been offline, a plan
+   written before it belonged to an account. A plan nobody has heard of is
+   not a plan and reads as free -- a Keychain that answered nothing, a row
+   somebody edited. */
+function planBest(a, b){
+  var ia=PLAN_ORDER.indexOf(a), ib=PLAN_ORDER.indexOf(b);
+  if(ia<0) ia=0;
+  if(ib<0) ib=0;
+  return (ia>=ib)? PLAN_ORDER[ia] : PLAN_ORDER[ib];
+}
 function has(level){ /* level: 'plus' | 'pro' */
   var want=PLAN_ORDER.indexOf(level), got=PLAN_ORDER.indexOf(plan());
   /* A plan nobody has heard of is not a plan. It is a Keychain that answered
@@ -822,6 +864,22 @@ function capLapse(){
   if(was===undefined || was===null){ SET.planWas=now; save(); return; }
   if(was===now) return;
   SET.planWas=now; save();
+  /* AND THE ACCOUNT IS TOLD, from here, because here is the one place that
+     knows the plan MOVED. 「課金とアカウントとキーボードはアカウントに
+     結びつく」 OWNER 2026-09-01.
+
+     This function's own comment in www/store.js already says why it is the
+     one: 「capLapse() compares against the plan it last saw, so it does not
+     care whether the change came from a button, a receipt or a lapse.」
+     Every road that changes a plan ends here -- setPlan() on the plans
+     screen, storeTook() with Apple's answer in hand, and a lapse noticed on
+     launch -- so putting the send anywhere else would be putting it in two
+     or three places and missing the fourth.
+
+     Fired and not waited for. A phone with no signal has still changed
+     plan, and netPlanSync() on the next launch is what makes a send that
+     never arrived correct itself. */
+  netPlanUp(now);
   if(now==='free') openCapLapse();
 }
 

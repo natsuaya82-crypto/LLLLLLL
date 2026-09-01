@@ -492,6 +492,82 @@ function netIdToken(provider, token, nonce, ok, bad){
           function(d, s, m){ bad(netIdWhy(d, token, nonce), s, m); });
 }
 
+/* ---- what this account has paid for -------------------------------------
+   「課金とアカウントとキーボードはアカウントに結びつく。じゃないとアカウント
+     変えたら無限に言語作れるやん」 OWNER 2026-09-01.
+
+   The plan was `SET.plan`, in `lingua.set` -- the person's SETTINGS, which
+   belong to the phone and to no account. So it did not travel. Signing in on
+   a second phone started at free, and every ceiling a plan opens was counted
+   per device.
+
+   `plan` in supabase/schema.sql is where it lives now. It is a table of its
+   own rather than a column on `profile` because `profile_read` is
+   `using (true)` -- what somebody pays is not a handle.
+
+   WHAT THIS IS NOT: proof of a purchase. The phone writes the row and the
+   phone is the person, so anybody who can send this database a request can
+   set their own plan. Closing that needs Apple's receipt checked by
+   something that is not the phone, and that is a decision rather than a line
+   of code -- docs/scope/claude-acct2.md holds the three ways and the reason
+   none of them is written yet. Nothing here should be read as more than
+   「the plan lives on the account now」. */
+function netPlanUp(id){
+  var x;
+  if(!netSignedIn()) return;
+  x=new XMLHttpRequest();
+  x.open('POST', SB_URL+'/rest/v1/plan', true);
+  x.setRequestHeader('apikey', SB_KEY);
+  x.setRequestHeader('Content-Type', 'application/json');
+  x.setRequestHeader('Authorization', 'Bearer '+SESS.at);
+  /* The same upsert netSlicePut() uses, and for the same reason: the phone
+     does not have to know whether this account has ever had a row. */
+  x.setRequestHeader('Prefer', 'resolution=merge-duplicates');
+  x.onreadystatechange=function(){};
+  x.onerror=function(){};
+  x.send(JSON.stringify({id:SESS.uid, plan:String(id||'free'),
+                         at:(new Date()).toISOString()}));
+}
+/* The two copies, read together. THE HIGHER RUNG WINS, and that is
+   LinguaStore.swift's best() rather than a new rule -- somebody can hold a
+   plan this phone has not heard of (bought on another device, bought while
+   this one was offline) and the answer to two plans has been 「the higher
+   one, never the last one read」 since there were two tiers.
+
+   Which direction to be wrong in was the whole of the question. Taking the
+   SERVER's answer flat would take a plan away from somebody whose phone
+   holds a receipt the server has not been told about yet -- and
+   docs/PAID_FEATURES.md is explicit that a plan decides what may be DONE and
+   that being wrong on the side that removes is the one that costs somebody
+   their work. Taking the higher rung cannot do that.
+
+   It never writes a plan DOWN. A plan ending is Apple's to say, through
+   storeTook(), and this is not a second place that decides it. */
+function netPlanSync(then){
+  var done=then || function(){};
+  if(!netSignedIn()){ done(''); return; }
+  netGet('/rest/v1/plan?select=plan&id=eq.'+encodeURIComponent(SESS.uid),
+    function(d){
+      var there=(d && d.length)? String(d[0].plan||'free') : '',
+          mine=plan(), best=planBest(mine, there||'free');
+      /* The account had none, or a lower one: tell it what this phone holds.
+         An account with no row at all is a real state -- it has never paid
+         and never been told anything -- and `there===''` is that, kept apart
+         from 'free' because they arrive differently even though they mean
+         the same rung. */
+      if(there!==best) netPlanUp(best);
+      if(best!==mine){
+        SET.plan=best;
+        /* planWas moves with it, so capLapse() does not read a plan arriving
+           from the account as a plan that has just changed on this phone and
+           send it straight back. */
+        SET.planWas=best;
+        save(); planKeep(best); render();
+      }
+      done(best);
+    }, function(){ done(''); });
+}
+
 /* ---- a language, which belongs to the account --------------------------
    Everything somebody makes belongs to the account and the server is where
    it is kept -- 「全部アカウントごとでしょ」「クラウドは全員で」. The phone
