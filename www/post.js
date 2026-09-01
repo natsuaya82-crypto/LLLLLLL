@@ -2875,9 +2875,22 @@ function postCard(id){
    somewhere with a menu hanging off a post you have not looked at yet is the
    filter bug in a smaller costume. */
 var PMENU='';
+/* AND IT OPENS ON ANYBODY'S POST. It read `!p.mine` and went home, so the ...
+   was drawn on every post -- the row that draws it says so in as many words,
+   「On every post, not only your own」 -- and did nothing at all on the ones
+   it mattered on. 「投稿の人の...タップしてもなにも出ないけど？」 OWNER,
+   build 107.
+
+   Nothing was missing on the other side of it: postMenuHTML() has had the
+   other menu since it was written and `if(!p.mine)` is its first line. Block
+   and Report were both there, in ten languages, reachable by nothing at all.
+   The door was the whole of the fault.
+
+   `!p` stays: a menu open on a post this phone does not have is a menu
+   hanging off nothing, and postMenuHTML() would be asked about `undefined`. */
 function postMore(id){
   var p=postById(id);
-  if(!p || !p.mine) return;
+  if(!p) return;
   PMENU=(PMENU===id)? '' : id;
   render();
 }
@@ -2918,8 +2931,18 @@ function postMenuHTML(p){
    a sixth invented here would be refused, which is the right way round. */
 var REPORT_WHY=['spam','abuse','hate','sexual','other'];
 var rpFor=null;
+/* BOTH MENUS, because this row is on both of them. It cleared `PMENU` only,
+   and the same row sits in the menu on a person's page -- so reporting from
+   THERE walked to this form with `WMENU` still standing, and postMenuTook()
+   read the first press on a reason as "a press outside the menu", closed the
+   menu nobody could see, and swallowed it. Measured: the first press sent no
+   report and stayed on the form; the second sent one. Somebody presses Spam
+   and nothing happens.
+
+   Same sentence as meBlock() in www/me.js: a row that ENDS a menu closes it
+   itself, and this row ends whichever one it was pressed from. */
 function openReport(id, handle){
-  PMENU='';
+  PMENU=''; WMENU=false;
   rpFor={post:String(id||''), handle:String(handle||'')};
   openForm('report:'+id, t('post.report'),
     REPORT_WHY.map(function(w){
@@ -2945,15 +2968,26 @@ function reportGo(why){
    covered by being in it rather than by being listed here as well. */
 function postMenuTook(target){
   var el, d;
-  /* Two menus and one rule. A post's is open on a timeline and a person's is
-     open on their page, never both -- but this is the one place that closes
-     either, because "a press that is not part of the menu closes it" is one
-     sentence and a second copy of it is a second thing to keep in step. */
+  /* Two menus and one rule, and this is the one place that closes either --
+     "a press that is not part of the menu closes it" is one sentence, and a
+     second copy of it is a second thing to keep in step.
+
+     NEVER BOTH AT ONCE, and that used to be true by accident rather than by
+     anything here. A person's page draws their card AND their posts, so both
+     kinds of ... are on that one screen -- and every post on it is theirs, so
+     until the ... opened on somebody else's post there was no way to have one
+     of each open. There is now: press a post's ..., then the person's, and
+     two menus stand open (measured, both orders). So the two exemptions below
+     close the OTHER one on the way past. */
   if(!PMENU && !WMENU) return false;
   if(actOf(target, 'data-pm')) return false;
   el=actOf(target, 'data-do');
   d=el && el.getAttribute('data-do');
-  if(d==='postMore' || d==='whoMore') return false;
+  /* The press goes through -- the name about to run is what toggles its own
+     menu, and it renders. What is taken away here is the one that is NOT
+     about to be toggled. */
+  if(d==='postMore'){ WMENU=false; return false; }
+  if(d==='whoMore'){ PMENU=''; return false; }
   PMENU=''; WMENU=false;
   render();
   return true;

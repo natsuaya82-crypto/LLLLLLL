@@ -421,7 +421,26 @@ function gSide(lab, ws, gloss){
     (gloss? '<span class="gsg">'+esc(gloss)+'</span>' : '')+
     '<button class="gsp"' + DO('sayPh', [gFlat(ws)]) + ' aria-label="'+esc(t('f.listen'))+'">'+ICON_SPK+'</button></div>';
 }
-function gNeedWords(){ return '<div class="note gneed">'+t('gram.demo.need')+'</div>'; }
+/* WHAT IS MISSING, AND NOT HOW MANY. This said 「Write a few more words」 to
+   everybody, and to somebody holding a hundred it is simply false --
+   「文法のword orderのページはなに？なにも出てこないけど100単語くらいあるのに」
+   OWNER, build 107.
+
+   The demonstration is three of this language's own words in the order it puts
+   them in, so what it needs is a NOUN and a VERB, not a number. A dictionary
+   can be any size and have neither: `addPos` starts at 'n' and the word sheet
+   keeps whatever was last used, so a hundred words nobody ever set the part of
+   speech on are a hundred nouns, and the old sentence sent that person off to
+   write more of them -- which could never work, however many they wrote.
+
+   One place still. The key comes in rather than a second function going out,
+   and `gram.demo.need` stays for the two callers whose missing piece is not a
+   part of speech at all: the negation word and the word for `where` are made
+   in a stage, not chosen from the dictionary, and naming them here would be
+   this screen saying what another screen is for. Minimum, which is the side
+   the owner narrowed to on 2026-08-22 -- what is missing, and not a word about
+   how to go and get it. */
+function gNeedWords(k){ return '<div class="note gneed">'+t(k||'gram.demo.need')+'</div>'; }
 /* Two words to be heard, in the order this language puts them in. gPair()
    took them already ordered and was the second place that decided which side
    each went; it is gone, and so is the fallback that would have called it --
@@ -441,15 +460,20 @@ function gPosDemo(id){
      button could have agreed with itself and disagreed with a sentence. */
   if(id==='adj'){
     n=gWordOf('n'); a=gWordOf('adj');
-    if(!n || !a) return gNeedWords();
+    if(!n || !a)
+      return gNeedWords(!n && !a? 'gram.demo.need.nadj'
+                      : (n? 'gram.demo.need.adj' : 'gram.demo.need.n'));
     pair = gPairOf([a, n]);
   } else if(id==='negp'){
     v=gWordOf('v'); x=gSlot('neg','not');
-    if(!v || !x) return gNeedWords();
+    /* The word for "not" is made in a stage rather than picked out of the
+       dictionary, so when THAT is what is missing there is no part of speech
+       to name and the older sentence is the true one. */
+    if(!v || !x) return gNeedWords(x? 'gram.demo.need.v' : '');
     pair = gPairOf([x, v]);
   } else {
     n=gWordOf('n'); x=gSlotAny('where');
-    if(!n || !x) return gNeedWords();
+    if(!n || !x) return gNeedWords(x? 'gram.demo.need.n' : '');
     pair = gPairOf([x, n]);
   }
   return '<div class="gdemo">'+gSide(t('gram.pair.phrase'), pair.ws, pair.gl)+'</div>';
@@ -986,7 +1010,9 @@ function gOrderLine(){
 /* The same order, in your own words, so it is a sentence and not a diagram. */
 function gOrderDemo(){
   var n=gWordOf('n'), v=gWordOf('v'), n2=gWordOf('n', n), laid, ws, gl;
-  if(!n || !v) return gNeedWords();
+  if(!n || !v)
+    return gNeedWords(!n && !v? 'gram.demo.need.nv'
+                    : (n? 'gram.demo.need.v' : 'gram.demo.need.n'));
   /* Subject, verb, object -- the order they would be TYPED in, not the order
      they come out in. Which of the six this language uses is the engine's to
      apply, and it applies it in the one place a phrase is arranged. */

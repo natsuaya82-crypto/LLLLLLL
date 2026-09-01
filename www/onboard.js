@@ -1125,6 +1125,19 @@ function obWhoHTML(){
       t(OBM.busy? 'ob.mail.wait' : 'ob.next')+'</button>'+
     '</div>';
 }
+/* ---- the one follow every account starts with --------------------------
+   「他の人が始めたらlinguaアカウントは強制的にフォローしてる状態に
+   したい」 OWNER, and, asked which of the two shapes it should be:
+   「A: 初期状態としてフォロー済み。外せる」. So it is an ordinary follow from
+   the moment it is made -- the button on @lingua's page says Following, and
+   pressing it takes the follow off the way it takes any other one off.
+
+   The handle is written out rather than asked for. It is the account's NAME:
+   supabase/schema.sql says the same word in the same place and the same way
+   (`select id into l from profile where handle = 'lingua'`), and a phone that
+   asked the server which account this is would be asking a question whose
+   answer is the word itself. */
+var OB_LINGUA='lingua';
 /* A handle is what survives being typed after an @, and the range is the
    schema's: check (handle ~ '^[a-z0-9_]{2,24}$'). Cleaning it here and
    showing the cleaned one back is the only way somebody finds out that the
@@ -1142,6 +1155,33 @@ function obWhoGo(){
     netMakeProfile(h, nm, function(){
       ME.name=nm; ME.handle=h; saveMe();
       OBM.busy=false; OBM.mode='in';
+      /* And the follow, here because this is the one place an account comes
+         into existence: netMakeProfile() has exactly one caller in the whole
+         app and it is the line above, so "the moment a new account is made"
+         is this line and nowhere else.
+
+         meFollow() and not a second way of following: it is what every Follow
+         button on every screen presses, so an account starts out following
+         @lingua by the same road anybody else would have taken -- ME.fo
+         written down, the screen drawn again, and netFollow() telling the
+         server. The list matters as much as the row does: the followed
+         timeline filters against ME.fo, so a row on the server that this
+         phone had not heard of would be an empty timeline and a button
+         saying Follow.
+
+         ASKED FIRST BECAUSE meFollow() IS A TOGGLE. A press is what it is
+         written for, and a press on a handle already in the list is an
+         unfollow -- which is the opposite of this line. The only copy of ME
+         that could arrive here already carrying it is an unclaimed one this
+         phone adopted (meFor()), and the guard costs nothing on every other
+         phone.
+
+         Not for @lingua itself: meFollow() drops a handle that is your own,
+         which is the same step-around `l <> new.id` takes on the server.
+
+         `handle` is set one line above, so meHandle() is this account and not
+         the last one. */
+      if(!meFollows(OB_LINGUA)) meFollow(OB_LINGUA);
       /* A brand new account made from Settings is still somebody who has a
          language -- they signed up late, not early. */
       if(obReturn()) return;

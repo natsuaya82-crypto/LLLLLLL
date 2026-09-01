@@ -747,6 +747,11 @@ defLang('zh', (function(){
       "gram.pos.before.v" : "动词前",
       "gram.pos.after.v" : "动词后",
       "gram.demo.need"   : "再写几个词",
+      "gram.demo.need.n": "需要一个名词。",
+      "gram.demo.need.v": "需要一个动词。",
+      "gram.demo.need.nv": "需要一个名词和一个动词。",
+      "gram.demo.need.adj": "需要一个形容词。",
+      "gram.demo.need.nadj": "需要一个名词和一个形容词。",
       "gram.pair.phrase" : "词组",
       "gram.pair.line"   : "整句",
       /* rules */

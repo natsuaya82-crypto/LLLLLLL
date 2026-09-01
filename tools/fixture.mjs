@@ -670,12 +670,25 @@ export function halfDone(){
                               PMENU = 'p1'; window.route='feed'; NAV=[{r:'feed'}];
                               const h = vFeed(); delete p.pin; PMENU = ''; return h; }],
     /* And the OTHER menu, which is a different menu: on somebody else's post
-       what you can do is about them, not about it. `p2` is Iri's. */
-    ['what you can do about somebody else', () => { PMENU = 'p2';
-                              window.route='feed'; NAV=[{r:'feed'}];
+       what you can do is about them, not about it. `p2` is Iri's.
+
+       OPENED THE WAY A THUMB OPENS IT, and that is the whole of why these two
+       are worth reading. They used to set PMENU by hand, so they drew a menu
+       the app itself could not reach: postMore() returned on `!p.mine`, and
+       the ... on somebody else's post did nothing when it was pressed
+       (「投稿の人の...タップしてもなにも出ないけど？」 OWNER, build 107).
+       Everything stayed green because the menu WAS on the screen -- nothing
+       asked who had put it there, and the fixture was the one putting it.
+
+       postMore() is what opens it now. Close that door again and `post.block`,
+       `post.unblock` and `post.report` are keys no screen in the app asks for,
+       which i18n-check fails on. */
+    ['what you can do about somebody else', () => { window.route='feed'; NAV=[{r:'feed'}];
+                              postMore('p2');
                               const h = vFeed(); PMENU = ''; return h; }],
     ['and the same, already blocked', () => { const was = ME.bl; ME.bl = ['iri'];
-                              PMENU = 'p2'; window.route='feed'; NAV=[{r:'feed'}];
+                              window.route='feed'; NAV=[{r:'feed'}];
+                              postMore('p2');
                               const h = vFeed(); ME.bl = was; PMENU = ''; return h; }],
     /* The five reasons. It is a form and nothing walks to it. */
     ['saying what is wrong with a post', () => { openReport('p2', 'iri');
