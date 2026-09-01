@@ -275,8 +275,10 @@ function vWords(){
        does nothing is a button that is broken. */
     (wSel
       ? '<div class="barfix">'+
-          '<button class="btn ghost"' + DO('wSelEdit') + (wSelList().length? '' : ' disabled')+'>'+
-            esc(t('words.sel.edit'))+'</button>'+
+          /* Delete and nothing else. 「複数選択のedit今実装しないでいいや
+             deleteだけにしよう。」OWNER 2026-09-01 -- so the page that wrote
+             one part of speech over everything chosen is not in the app, and
+             neither is the button that opened it. */
           '<button class="btn ghost"' + DO('wSelDel') + (wSelList().length? '' : ' disabled')+'>'+
             esc(t('words.sel.del'))+'</button>'+
         '</div>'
@@ -365,7 +367,7 @@ function wRelHit(x, k, set){
   return false;
 }
 function wKeepDel(hws){
-  var set={}, keep={kind:'del', n:hws.length, w:[], other:[],
+  var set={}, keep={n:hws.length, w:[], other:[],
                     lines:JSON.parse(JSON.stringify(LINES))}, i;
   for(i=0;i<hws.length;i++) set[hws[i]]=1;
   WORDS.forEach(function(x, ix){
@@ -388,57 +390,6 @@ function wSelDel(){
   wUndo=keep; wSel=null;
   render();
 }
-/* ---- what a bulk EDIT can put back -------------------------------------
-   Setting one part of speech over twenty words throws away twenty answers,
-   which is the same shape of loss as deleting them, so it is put back the
-   same way and by the same row. */
-function wKeepSet(hws){
-  var keep={kind:'set', n:hws.length, w:[]}, i, w;
-  for(i=0;i<hws.length;i++){
-    w=findWord(hws[i]);
-    if(w) keep.w.push({hw:String(w.hw), w:JSON.parse(JSON.stringify(w))});
-  }
-  return keep;
-}
-/* Both of the two, through one function, because "write this field on every
-   word that is ticked" is one act and the field is which one.
-   `up` is stamped for the same reason `wdPutExtras` stamps it: here is every
-   time a word changes. An empty register is NO register, not an empty one --
-   the same rule the sheet holds. */
-function wSelSet(k, v){
-  var hws=wSelList(), keep, i, w;
-  if(!hws.length) return;
-  keep=wKeepSet(hws);
-  for(i=0;i<hws.length;i++){
-    w=findWord(hws[i]); if(!w) continue;
-    if(k==='pos') w.pos=v;
-    else if(v) w.reg=v; else delete w.reg;
-    w.up=Date.now();
-  }
-  save();
-  wUndo=keep; wSel=null;
-  if(here().r==='form') back(); else render();
-}
-function wSelPos(k){ wSelSet('pos', k); }
-function wSelReg(r){ wSelSet('reg', r); }
-/* The two things that can be written over several words at once, on one page,
-   the same rows the sheet's own two pickers are made of (`wdOneHTML`). Nothing
-   is ticked: the words that were chosen do not agree about any of it, which is
-   the reason for being here.
-
-   Nothing else is on it. A meaning, a reading and a spelling are what makes
-   one word that word, so there is no value to put on twenty of them; a tag is
-   something you ADD to a word rather than something a word IS, and adding is a
-   different verb from this page's. */
-function wSelEdit(){
-  if(!wSelList().length) return;
-  openForm('wsel', t('words.sel.edit'),
-    '<div class="sec">'+esc(t('f.pos'))+'</div>'+
-    POS.map(function(k){ return wdOneHTML(posLabel(k), false, 'wSelPos', k); }).join('')+
-    '<div class="sec">'+esc(t('word.reg'))+'</div>'+
-    REG.map(function(r){ return wdOneHTML(regLabel(r)||t('word.none'), false, 'wSelReg', r); }).join(''));
-}
-FORM_OPEN.wsel=function(){ wSelEdit(); };
 /* Putting it back. The words that were taken out go in at the index they came
    out of, in the order they were in, so each splice lands where it was; the
    words that were only pointed AT are written back whole, which is what
@@ -446,18 +397,12 @@ FORM_OPEN.wsel=function(){ wSelEdit(); };
 function wSelUndo(){
   var u=wUndo, i, k;
   if(!u) return;
-  for(i=0;i<u.w.length;i++){
-    if(u.kind==='del'){ WORDS.splice(u.w[i].at, 0, u.w[i].w); continue; }
-    k=WORDS.indexOf(findWord(u.w[i].hw));
-    if(k>=0) WORDS[k]=u.w[i].w;
+  for(i=0;i<u.w.length;i++) WORDS.splice(u.w[i].at, 0, u.w[i].w);
+  for(i=0;i<u.other.length;i++){
+    k=WORDS.indexOf(findWord(u.other[i].hw));
+    if(k>=0) WORDS[k]=u.other[i].w;
   }
-  if(u.kind==='del'){
-    for(i=0;i<u.other.length;i++){
-      k=WORDS.indexOf(findWord(u.other[i].hw));
-      if(k>=0) WORDS[k]=u.other[i].w;
-    }
-    LINES=u.lines;
-  }
+  LINES=u.lines;
   save();
   wUndo=null;
   render();
@@ -472,7 +417,7 @@ function wSelUndo(){
 function wordsUndoHTML(){
   if(!wUndo) return '';
   return '<div class="wsub2" style="margin-top:18px">'+
-      esc(t(wUndo.kind==='del'? 'words.sel.gone' : 'words.sel.set', wUndo.n))+'</div>'+
+      esc(t('words.sel.gone', wUndo.n))+'</div>'+
     '<button class="set" style="border-bottom:none"' + DO('wSelUndo') + '>'+
       '<span class="sl">'+esc(t('imp.undo'))+'</span></button>';
 }

@@ -1539,8 +1539,8 @@ export function halfDone(){
         window.route = 'words'; NAV = [{ r:'words' }];
         const h = vWords(); WORDS = keep; return h; }],
     /* ---- the dictionary as a list you CHOOSE from -----------------------
-       Four faces, because the buttons differ on every one of them and none of
-       the four is reachable from the list at rest: nothing here is on a screen
+       Three faces, because the buttons differ on every one of them and none of
+       the three is reachable from the list at rest: nothing here is on a screen
        until `wSel` is a map, and the two that act on a selection are down
        until something is in it.
 
@@ -1562,15 +1562,8 @@ export function halfDone(){
        draws either, and no walk ever deletes. */
     ['the dictionary, just after words were deleted together', () => {
         window.route = 'words'; NAV = [{ r:'words' }];
-        wUndo = { kind:'del', n:2, w:[], other:[], lines:[] };
+        wUndo = { n:2, w:[], other:[], lines:[] };
         const h = vWords(); wUndo = null; return h; }],
-    /* The page that writes one part of speech, or one register, over
-       everything that was chosen. It is a form, so it is reached the way
-       every other form face here is. */
-    ['what is written over the words that were chosen', () => {
-        window.route = 'words'; NAV = [{ r:'words' }];
-        wSel = {}; WORDS.slice(0, 2).forEach(w => { wSel[w.hw] = 1; });
-        wSelEdit(); const h = vForm(); wSel = null; return h; }],
     /* A stage that has been finished. A stage is done when its slots, its
        decisions and the one thing it has to SAY are all answered -- www/
        phases.js stIsDone -- and the fixture finishes none of them, so the
