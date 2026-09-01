@@ -1516,27 +1516,8 @@ function notWho(n){
 /* Their faces, up to three. Each is its own door, the way the single one
    always was -- pressing a face opens that person and pressing the row opens
    the post. */
-/* The app's own mark, for a notice with nobody in it. A recommendation is
-   Lingua speaking -- 「読んでみては」 -- so there is no person to draw and the
-   row had a hole where every other row has a circle.
-
-   「丸の場所を空けて揃えるか、アプリの印を丸に入れるか、どちらかに決めて統一
-   すること」 2026-09-01, and this is the second of the two. The first was
-   what was there: the space was already reserved and the words already lined
-   up, and it still read as a row with something missing.
-
-   `G` is not invented for this. It is the letter the app's own name is
-   written with -- LIN(G)UA on the root bar, `.st` in www/shell.js -- and it
-   goes in through the same door a person's initial does: `av.ch` is the
-   "borrowed character" a face falls back to, so this is postFace() drawing
-   what it always draws rather than a second kind of face. Not pressable:
-   there is nobody to open. */
-function notMark(){
-  return '<div class="pav">'+postFace({av:{ch:'G'}})+'</div>';
-}
 function notFaces(n){
   var few=n.more||[], out=notFace(n), i, o;
-  if(!out) return notMark();
   /* TWO, overlapping. 「プロフィール画像は丸くて、重なって並ぶ」 OWNER
      2026-09-01, which is what the picture has. It drew three side by side,
      and on a 320 that is 128px of the row spent on faces -- the sentence had
@@ -1549,11 +1530,32 @@ function notFaces(n){
   }
   return out;
 }
+/* WHERE A NOTICE GOES, and it is the KIND that decides rather than whether
+   there happens to be a post on it.
+
+   It was `n.id? postOpen : nothing`, so a FOLLOW -- which carries no post,
+   because following somebody is not about one -- had no door at all. One row
+   in the list did nothing when pressed, and nothing said so.
+
+   A follow goes to the person. Where it is a group 「Veth と他3人があなたを
+   フォローしました」 that is the one in front, `n.hd`, which is the one the
+   sentence is named after -- the same person the first circle draws.
+
+   Everything else goes to the post it is about. A recommendation is about a
+   post too, so it goes there like the rest. What is left with nowhere to go
+   is a notice carrying neither, and that gets no door rather than a door
+   onto nothing. */
+function notGo(n){
+  var k=String(n.kind||''), h=String(n.hd||'');
+  if(k==='follow') return h? DO('go', ["profile", h]) : '';
+  if(n.id) return DO('postOpen', [String(n.id)]);
+  return h? DO('go', ["profile", h]) : '';
+}
 function notRow(n){
   var k=String(n.kind||''), p=postById(n.id), pics=p? postPics(p) : [], ic=
     k==='like'? ICON_HEART : k==='boost'? ICON_BOOST :
     k==='reply'? ICON_REPLY : k==='follow'? ICON_ADD : ICON_LINE;
-  return '<div class="ntf"'+(n.id? DO('postOpen', [String(n.id)]) : '')+'>'+
+  return '<div class="ntf"'+notGo(n)+'>'+
     /* THE KIND, NAMESPACED. It was `class="ntfi '+k+'"`, so a notice about a
        recommendation wore `pick` -- and `.pick` is a tab strip somewhere else
        in the stylesheet, with `margin:10px 0 4px` and a border under it. The

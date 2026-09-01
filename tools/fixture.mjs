@@ -245,6 +245,13 @@ export function seed(){
      timeline, not a corner of it. */
   NOTES_HAVE = [{kind:'like', at:Date.now()-60000, hd:'iri', who:'Iri',
                  av:{ch:'\u0416'}, id:'p1', n:1, more:[]}];
+  /* AND THE WATERMARK BACK TO NOTHING. Opening the notices is what marks them
+     read -- notSeen() writes `SET.notAt` -- and the walks render every screen
+     in one page, so the first render of `notif` was making every render after
+     it a phone with nothing unread. The bell then appeared on two screens and
+     never again, which is a fixture that changes under the walk rather than
+     one that seeds a state. Reset here, where every other field of SET is. */
+  SET.notAt = 0;
   /* Where you are standing is the app's to say, not this file's. viewReset()
      in www/shell.js is the one list of what a screen forgets when you leave
      it; a copy here would be a second list to keep in step, and the first
