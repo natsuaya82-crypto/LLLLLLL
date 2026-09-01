@@ -308,6 +308,7 @@ defLang('en', (function(){
       'me.edit'         : 'Edit',
       'me.follow'             : "Follow",
       'me.unfollow'           : "Following",
+      'me.follows.you'           : "Follows you",
       'me.name'         : 'Name',
       'me.handle'       : 'Handle',
       'me.bio' : "About you",

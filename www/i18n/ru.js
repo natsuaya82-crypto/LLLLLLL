@@ -408,6 +408,7 @@ defLang('ru', (function(){
       "me.edit"         : "Изменить",
       'me.follow'             : "Читать",
       'me.unfollow'           : "Вы читаете",
+      'me.follows.you'           : "Читает вас",
       "me.name"         : "Имя",
       "me.handle"       : "Имя пользователя",
       'me.bio' : "О себе",

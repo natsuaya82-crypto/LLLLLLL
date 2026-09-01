@@ -799,7 +799,13 @@ function openMePic(){
 FORM_OPEN.mepic=function(){ openMePic(); };
 /* The two lists behind the two numbers. One screen, and which one it is is the
    route's argument -- they differ in the list and in what to say when it is
-   empty, and in nothing else. */
+   empty, and in nothing else.
+
+   IT WAS A HANDLE AND A DEAD END. Every row drew `@name` with no face and no
+   name on it, and the only thing pressing one did was `go('find')` -- the
+   search screen, empty, about nobody. 「フォロー中からユーザー飛びたいのに
+   飛べないけど？」 OWNER. The row is snsWhoRow() now, which has opened a
+   person's page since the day it was written. */
 function vFollows(){
   /* Both lists are asked for here, because this screen is the only place
      either is shown in full and the two numbers that lead to it are drawn on
@@ -810,8 +816,22 @@ function vFollows(){
   return '<div class="view">'+navTop()+'<div class="body">'+
     (list.length
       ? list.map(function(h){
-          return '<button class="ntrow"' + DO('go', ["find"]) + '>'+
-            '<span class="nth">@'+esc(String(h))+'</span></button>';
+          /* Who this handle IS. The list is handles and nothing else, so
+             every row was `@name` and no face, no name and nothing to press.
+             whoPull() asks the server once per handle and renders again when
+             it answers; whoOf() hands back the copy in the meantime. */
+          var p;
+          h=String(h);
+          whoPull(h);
+          p=whoOf(h);
+          /* Your own row would otherwise offer to follow yourself. It cannot
+             happen through either list today and costs one comparison. */
+          p.mine=(h===meHandle());
+          /* THE SAME ROW AS THE SEARCH'S, and one function draws it. The two
+             lists show the same thing -- a person -- and drawing them twice
+             is how they drift apart. `true` is the follows list's half: the
+             label and the line about themselves. */
+          return snsWhoRow(p, true);
         }).join('')
       : '<div class="note">'+esc(t(ers? 'me.followers.none' : 'me.following.none'))+'</div>')+
     '</div></div>';

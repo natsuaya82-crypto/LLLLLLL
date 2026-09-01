@@ -321,6 +321,7 @@ defLang('ja', (function(){
       'me.edit'         : '編集',
       'me.follow'             : "フォロー",
       'me.unfollow'           : "フォロー中",
+      'me.follows.you'           : "フォローされています",
       'me.name'         : '名前',
       'me.handle'       : 'ID',
       'me.bio' : "自己紹介",

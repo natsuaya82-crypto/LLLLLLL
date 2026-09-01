@@ -976,6 +976,15 @@ function snsGo(){
 }
 /* A person, as a row: the face, the name and the handle, the language they
    write, and the one thing you came here to do about them.
+
+   `full` is the follows list and nothing else -- it adds the 「フォローされて
+   います」 label and the line about themselves, which is the shape the owner
+   named 「フォロー中の見た目これにしろよ」. The search row is left exactly as
+   it was: 「ui変更は俺が頼んだの以外は勝手な判断でやるなよ？」
+
+   Two arguments now, so it may never be handed bare to `map` -- rule 8's
+   own worked example is `postRow` growing a second argument and every row
+   after the first being given its index. `sides-check` holds it.
    「⭕️ @〇〇 lingua マーク　フォローする」
 
    Two controls and not one, so the row is a container: pressing the person
@@ -985,12 +994,24 @@ function snsGo(){
 
    Your own row has neither: you cannot follow yourself, and the chevron is
    not needed to say where your own name goes. */
-function snsWhoRow(p){
-  var h=String(p.hd||''), on=meFollows(h);
+function snsWhoRow(p, full){
+  var h=String(p.hd||''), on=meFollows(h), back=full && meFollowers().indexOf(h)>=0;
   var inner='<span class="pav">'+postFace(p)+'</span>'+
     '<span class="whb">'+
       '<span class="pname">'+esc(postWho(p))+'</span>'+
-      '<span class="phandle">@'+esc(h)+'</span>'+
+      '<span class="whh">'+
+        '<span class="phandle">@'+esc(h)+'</span>'+
+        /* 「フォローされています」の小さい札。相手が自分を追っているか
+           だけの話なので meFollowers() で答えが出る -- サーバーへの問いは
+           増えない。角丸でも枠でもない小さな字にしてある: 規則18 は
+           「新しいものに角丸・枠・塗りを付けない」で、リーダーが名指しで
+           許したのは右のボタンひとつだけ。X の見本では灰色の丸い札です。 */
+        (back? '<span class="whyou">'+esc(t('me.follows.you'))+'</span>' : '')+
+      '</span>'+
+      /* 一行の自己紹介。**いまは誰の分も空になります** -- `profile` に
+         `bio` の列が無く（netWho() のコメントがそう書いている）、投稿も
+         bio を運んでいない。列が出来た日にこの行が埋まる。 */
+      (full && p.bio? '<span class="pbio">'+esc(p.bio)+'</span>' : '')+
     '</span>'+
     (p.lname? '<span class="plangtag">'+esc(p.lname)+'</span>' : '');
   return '<div class="whrow">'+

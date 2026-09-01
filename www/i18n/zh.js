@@ -413,6 +413,7 @@ defLang('zh', (function(){
       "me.edit"         : "编辑",
       'me.follow'             : "关注",
       'me.unfollow'           : "已关注",
+      'me.follows.you'           : "关注了你",
       "me.name"         : "名称",
       "me.handle"       : "用户名",
       'me.bio' : "自我介绍",

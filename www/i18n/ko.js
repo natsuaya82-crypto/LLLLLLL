@@ -584,6 +584,7 @@ defLang('ko', (function(){
       "me.edit"         : "편집",
       'me.follow'             : "팔로우",
       'me.unfollow'           : "팔로잉",
+      'me.follows.you'           : "나를 팔로우합니다",
       "me.name"         : "이름",
       "me.handle"       : "아이디",
       'me.bio' : "자기소개",

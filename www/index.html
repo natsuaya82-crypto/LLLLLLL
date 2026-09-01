@@ -1766,6 +1766,17 @@ a.set{text-decoration:none}
 .whrow .pav{width:40px;height:40px;flex:0 0 auto}
 .whb{flex:1 1 auto;min-width:0;display:flex;flex-direction:column}
 .whb .pname,.whb .phandle{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* The handle and 「フォローされています」 on one line under the name, and the
+   line about themselves under that -- the shape the owner named for the
+   follows list. No corner, no border, no fill: rule 18, and the only box the
+   owner asked for here is .whfo, which was already a box and is already in
+   tools/box-baseline.txt. */
+.whh{display:flex;align-items:baseline;gap:6px;min-width:0}
+.whyou{flex:0 0 auto;font-size:.72rem;color:var(--txm);white-space:nowrap}
+/* One line. .pbio is pre-wrap where a profile shows the whole of it; in a
+   list a row is a row. */
+.whb .pbio{margin-top:2px;font-size:.86rem;line-height:1.45;
+           overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .whrow svg{flex:0 0 auto;color:var(--txm)}
 /* A row to write in, at the top of the timeline. Not a field: pressing it
    opens the screen a post is written on, where the letters, the photographs

@@ -412,6 +412,7 @@ defLang('pt', (function(){
       "me.edit"         : "Editar",
       'me.follow'             : "Seguir",
       'me.unfollow'           : "A seguir",
+      'me.follows.you'           : "Segue-te",
       "me.name"         : "Nome",
       "me.handle"       : "Utilizador",
       'me.bio' : "Sobre você",

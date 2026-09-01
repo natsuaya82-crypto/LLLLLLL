@@ -393,6 +393,7 @@ defLang('de', (function(){
       "me.edit"         : "Bearbeiten",
       'me.follow'             : "Folgen",
       'me.unfollow'           : "Folge ich",
+      'me.follows.you'           : "Folgt dir",
       "me.name"         : "Name",
       "me.handle"       : "Kennung",
       'me.bio' : "Über Sie",

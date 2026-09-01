@@ -365,6 +365,7 @@ defLang('es', (function(){
       "me.edit"         : "Editar",
       'me.follow'             : "Seguir",
       'me.unfollow'           : "Siguiendo",
+      'me.follows.you'           : "Te sigue",
       "me.name"         : "Nombre",
       "me.handle"       : "Usuario",
       'me.bio' : "Sobre ti",

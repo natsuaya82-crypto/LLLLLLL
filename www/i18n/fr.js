@@ -453,6 +453,7 @@ defLang('fr', (function(){
       "me.edit"         : "Modifier",
       'me.follow'             : "Suivre",
       'me.unfollow'           : "Suivi",
+      'me.follows.you'           : "Vous suit",
       "me.name"         : "Nom",
       "me.handle"       : "Identifiant",
       'me.bio' : "À propos de vous",

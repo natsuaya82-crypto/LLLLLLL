@@ -405,6 +405,7 @@ defLang('it', (function(){
       "me.edit"         : "Modifica",
       'me.follow'             : "Segui",
       'me.unfollow'           : "Segui già",
+      'me.follows.you'           : "Ti segue",
       "me.name"         : "Nome",
       "me.handle"       : "Nome utente",
       'me.bio' : "Su di te",
