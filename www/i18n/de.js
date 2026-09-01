@@ -349,8 +349,9 @@ defLang('de', (function(){
       "script.own.ph"             : "Zeichen einfügen oder tippen",
       "script.set"                : "Setzen",
       "up.cta"                    : "Upgraden",
-      "up.need"                   : "Das gehört zu einem kostenpflichtigen Tarif.",
+      "up.need"                   : "Pro ist unbegrenzt.",
       "pop.no"                  : "Schließen",
+      "pop.yes"                 : "Löschen",
       "ws.arabic"                 : "Arabisch",
       "ws.armenian"               : "Armenisch",
       "ws.cyrillic"               : "Kyrillisch",
@@ -758,7 +759,7 @@ defLang('de', (function(){
       /* the conversation */
       /* rules */
       "words.addmn"      : "Bedeutung hinzufügen",
-      "toast.cap"        : "Der Tarif Free fasst {0} Wörter",
+      "toast.cap"        : "Dieser Tarif fasst {0} Wörter. Pro ist unbegrenzt.",
       "set.title"        : "Einstellungen",
       "set.look"         : "Anzeige",
       "theme.system"     : "System",

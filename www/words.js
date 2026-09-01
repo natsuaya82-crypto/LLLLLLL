@@ -375,7 +375,13 @@ function wKeepDel(hws){
 function wSelDel(){
   var hws=wSelList(), keep, i;
   if(!hws.length) return;
-  if(!confirm(t('confirm.delmany', hws.length))) return;
+  /* 確認は自前のポップで。「標準は使わねえって言ってるだろこれも禁止や」
+     OWNER 2026-09-01 -- confirm() は使わない。はいの側がこの下。 */
+  popAsk(t('confirm.delmany', hws.length), function(){ wSelDelGo(); }, t('pop.yes'));
+}
+function wSelDelGo(){
+  var hws=wSelList(), keep, i;
+  if(!hws.length) return;
   keep=wKeepDel(hws);
   for(i=0;i<hws.length;i++) wDrop(hws[i]);
   save();

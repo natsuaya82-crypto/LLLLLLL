@@ -521,6 +521,22 @@ export function halfDone(){
        counts in ten and has no say in it, so the row is on no screen the walk
        renders otherwise. And once more with a digit the base can no longer
        reach, which is the red cell. */
+    /* THE POPUP, open. It is not a route and nothing at rest shows it -- it
+       sits over whatever screen was there -- so without this face its two
+       buttons belong to no screen. 「標準は使わねえって言ってるだろこれも
+       禁止や」 OWNER 2026-09-01: every ask in the app comes through it. */
+    ['the popup, asking', () => {
+        popAsk('...', function(){});
+        const h = document.getElementById('pop').outerHTML;
+        popOff(); return h; }],
+    /* A stage somebody added, on the plan that can add one. Free hides them
+       now (「課金で追加した機能は無料になったら全部隠れる」), so the delete
+       on one is reachable only here. */
+    ['a grammar stage somebody added', () => {
+        SET.plan = 'pro';
+        STG.extra = (STG.extra||[]).concat([{id:'ownfix', slots:[], t:'own'}]);
+        const h = vGram();
+        STG.extra.pop(); SET.plan = 'free'; return h; }],
     ['the digits, where the base is set', () => { SET.plan = 'pro';
        window.route='ltset'; NAV=[{r:'ltset', a:'num'}];
        const h=vLtset('num'); SET.plan='free'; return h; }],

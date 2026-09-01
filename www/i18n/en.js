@@ -261,8 +261,9 @@ defLang('en', (function(){
       "script.own.ph"             : "Paste or type a character",
       "script.set"                : "Use",
       "up.cta"                    : "Upgrade",
-      "up.need"                   : "This is on a paid plan.",
+      "up.need"                   : "Pro has no limits.",
       "pop.no"                  : "Close",
+      "pop.yes"                 : "Delete",
       "ws.arabic"                 : "Arabic",
       "ws.armenian"               : "Armenian",
       "ws.cyrillic"               : "Cyrillic",
@@ -666,7 +667,7 @@ defLang('en', (function(){
       /* sentences */
       'words.addmn'     : 'Add a meaning',
       /* make */
-      'toast.cap'       : "The free plan holds {0} words",
+      'toast.cap'       : "This plan holds {0} words. Pro has no limit.",
       /* settings */
       'set.title'       : "Settings",
       'set.look'        : "Display",

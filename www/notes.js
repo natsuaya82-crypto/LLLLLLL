@@ -74,7 +74,11 @@ function saveNote(){
 }
 function delNote(){
   if(ntAt<0 || !NOTES[ntAt]) return;
-  if(!confirm(t('confirm.note.del'))) return;
+  /* 確認は自前のポップで。「標準は使わねえって言ってるだろこれも禁止や」
+     OWNER 2026-09-01 -- confirm() は使わない。はいの側がこの下。 */
+  popAsk(t('confirm.note.del'), function(){ delNoteGo(); }, t('pop.yes'));
+}
+function delNoteGo(){
   NOTES.splice(ntAt,1); ntAt=-1;
   saveNotes(); closeSheet({target:{id:'sbg'}}); render(); toast(t('toast.note.gone'));
 }

@@ -67,7 +67,11 @@ function modUp(pid){
    by the button turning into the one that undoes it, which is where a person
    will look for it. */
 function modOut(uid){
-  if(!confirm(t('mod.out.sure'))) return;
+  /* 確認は自前のポップで。「標準は使わねえって言ってるだろこれも禁止や」
+     OWNER 2026-09-01 -- confirm() は使わない。はいの側がこの下。 */
+  popAsk(t('mod.out.sure'), function(){ modOutGo(uid); }, t('pop.yes'));
+}
+function modOutGo(uid){
   netBan(uid, modWhyOf(uid), function(){ modMarkOut(uid, true); render(); },
          function(d, st){ toast(netWhy(d, st)); });
 }

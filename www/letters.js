@@ -892,7 +892,14 @@ function ltDelete(id){
      half for the same reason. */
   if(upStop(can('letters'))) return;
   var nm=ltName(l)||t('lt.untitled');
-  if(!confirm(t('glyph.del.ask'))) return;
+  /* 確認は自前のポップで。「標準は使わねえって言ってるだろこれも禁止や」
+     OWNER 2026-09-01 -- confirm() は使わない。はいの側がこの下。 */
+  popAsk(t('glyph.del.ask'), function(){ ltDeleteGo(id); }, t('pop.yes'));
+}
+function ltDeleteGo(id){
+  /* The name is read BEFORE the letter goes, because the line that says what
+     was deleted needs it and there is nothing to read it off afterwards. */
+  var l=ltById(id), nm=l? (ltName(l)||t('lt.untitled')) : '';
   ltDel(id);
   if(GE && GE.lid===id) GE=null;
   save(); installScriptFont();

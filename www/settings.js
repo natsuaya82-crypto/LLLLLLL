@@ -453,7 +453,11 @@ function setUi(l){ SET.ui=l; save(); render(); }
    with the old id kept, ltStart() rebuilds twenty-eight letters under it and
    the language is back. */
 function wipeLangs(){
-  if(!confirm(t('confirm.wipe.langs'))) return;
+  /* 確認は自前のポップで。「標準は使わねえって言ってるだろこれも禁止や」
+     OWNER 2026-09-01 -- confirm() は使わない。はいの側がこの下。 */
+  popAsk(t('confirm.wipe.langs'), function(){ wipeLangsGo(); }, t('pop.yes'));
+}
+function wipeLangsGo(){
   var ids=[], id, i, j;
   for(id in LANGS) if(Object.prototype.hasOwnProperty.call(LANGS, id)) ids.push(id);
   try{
@@ -502,7 +506,11 @@ function wipeLangs(){
   goTab('profile');
 }
 function wipeAll(){
-  if(!confirm(t('confirm.wipe'))) return;
+  /* 確認は自前のポップで。「標準は使わねえって言ってるだろこれも禁止や」
+     OWNER 2026-09-01 -- confirm() は使わない。はいの側がこの下。 */
+  popAsk(t('confirm.wipe'), function(){ wipeAllGo(); }, t('pop.yes'));
+}
+function wipeAllGo(){
   if(netSignedIn()) netDropMe(wipeHere, wipeHere);
   else wipeHere();
 }

@@ -1484,7 +1484,12 @@ function wDrop(hw){
 }
 function delWord(){
   var w=findWord(openHw); if(!w) return;
-  if(!confirm(t('confirm.del', w.hw))) return;
+  /* 確認は自前のポップで。「標準は使わねえって言ってるだろこれも禁止や」
+     OWNER 2026-09-01 -- confirm() は使わない。はいの側がこの下。 */
+  popAsk(t('confirm.del', w.hw), function(){ delWordGo(); }, t('pop.yes'));
+}
+function delWordGo(){
+  var w=findWord(openHw); if(!w) return;
   var gone=String(w.hw);
   wDrop(gone);
   save();

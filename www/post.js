@@ -410,7 +410,11 @@ function draftOpen(i){
 function draftDrop(i){
   i=parseInt(i, 10)||0;
   if(!DRAFTS[i]) return;
-  if(!confirm(t('post.draft.del.q'))) return;
+  /* 確認は自前のポップで。「標準は使わねえって言ってるだろこれも禁止や」
+     OWNER 2026-09-01 -- confirm() は使わない。はいの側がこの下。 */
+  popAsk(t('post.draft.del.q'), function(){ draftDropGo(i); }, t('pop.yes'));
+}
+function draftDropGo(i){
   var d=DRAFTS[i];
   DRAFTS.splice(i, 1);
   draftsSave();
@@ -2233,7 +2237,7 @@ function postEdit(id){
      stops somebody -- core.js:522 (a second language), core.js:703 (the
      hundredth word), keyboard.js:349 (a fifth keyboard). All three are
 
-         if(confirm(<what the ceiling is> + '\n\n' + t('up.cta'))) go('plans');
+         popAsk(<what the ceiling is>, function(){ go('plans'); });
 
      and the pencil is now the fourth. The decision of 2026-08-25 is kept
      whole: pressing it still goes to the plans screen. What changed is that
@@ -3012,7 +3016,11 @@ function postPin(id){
    whose voice is silently missing, which is worse than a file nobody hears.
    Only the file this post names, and only from this post. */
 function postDel(id){
-  if(!confirm(t('post.del.q'))) return;
+  /* 確認は自前のポップで。「標準は使わねえって言ってるだろこれも禁止や」
+     OWNER 2026-09-01 -- confirm() は使わない。はいの側がこの下。 */
+  popAsk(t('post.del.q'), function(){ postDelGo(id); }, t('pop.yes'));
+}
+function postDelGo(id){
   var i, gone=null, vo=null, to='', up;
   PMENU='';
   for(i=0;i<POSTS.length;i++) if(POSTS[i].id===id){

@@ -652,7 +652,13 @@ function kbDrop(i){
   /* Board 0 is not one of these. There is no "never the last one" test any
      more, because it is always there and there is always one to apply. */
   if(kbIsFree(i)) return;
-  if(!confirm(t('kb.rm.q'))) return;
+  /* 確認は自前のポップで。「標準は使わねえって言ってるだろこれも禁止や」
+     OWNER 2026-09-01 -- confirm() は使わない。はいの側がこの下。 */
+  popAsk(t('kb.rm.q'), function(){ kbDropGo(i); }, t('pop.yes'));
+}
+function kbDropGo(i){
+  var b=kbBoards();
+  if(!b.length) return;
   KB.kbs.splice(i-1, 1);
   b=kbBoards();
   KB.at=kbClamp(KB.at>i? KB.at-1 : KB.at, b.length);
@@ -3111,7 +3117,18 @@ function kbSetPat(pat){
   x=KB.kbs[kbShow-1];
   if(!x) return;
   if(x.pat===pat){ back(); return; }
-  if(!confirm(t('kb.pat.q'))) return;
+  /* 確認は自前のポップで。「標準は使わねえって言ってるだろこれも禁止や」
+     OWNER 2026-09-01 -- confirm() は使わない。はいの側がこの下。 */
+  popAsk(t('kb.pat.q'), function(){ kbSetPatGo(pat); }, t('pop.yes'));
+}
+function kbSetPatGo(pat){
+  if(!x) return;
+  if(x.pat===pat){ back(); return; }
+  /* 確認は自前のポップで。「標準は使わねえって言ってるだろこれも禁止や」
+     OWNER 2026-09-01 -- confirm() は使わない。はいの側がこの下。 */
+  popAsk(t('kb.pat.q'), function(){ kbSetPatGoGo(pat); }, t('pop.yes'));
+}
+function kbSetPatGoGo(pat){
   x.pat=pat; x.lay=kbBlank(kbPatLay(pat));
   kbLay=0; kbSel=null;
   saveKb();
@@ -3401,7 +3418,13 @@ function kbDropLay(i){
   if(!b) return;
   if(b.lay.length<2) return;
   i=kbClamp(i, b.lay.length);
-  if(!confirm(t('kb.lay.rm.q'))) return;
+  /* 確認は自前のポップで。「標準は使わねえって言ってるだろこれも禁止や」
+     OWNER 2026-09-01 -- confirm() は使わない。はいの側がこの下。 */
+  popAsk(t('kb.lay.rm.q'), function(){ kbDropLayGo(i); }, t('pop.yes'));
+}
+function kbDropLayGo(i){
+  var b=kbEdit(), j, k, r, key, n;
+  if(!b) return;
   b.lay.splice(i, 1);
   for(j=0;j<b.lay.length;j++)
     for(r=0;r<b.lay[j].rows.length;r++)
@@ -3416,7 +3439,11 @@ function kbDropLay(i){
   saveKb(); render();
 }
 function kbReset(){
-  if(!confirm(t('kb.reset.ask'))) return;
+  /* 確認は自前のポップで。「標準は使わねえって言ってるだろこれも禁止や」
+     OWNER 2026-09-01 -- confirm() は使わない。はいの側がこの下。 */
+  popAsk(t('kb.reset.ask'), function(){ kbResetGo(); }, t('pop.yes'));
+}
+function kbResetGo(){
   KB=null; saveKb(); kbLay=0; kbSel=null; render();
   toast(t('kb.reset.done'));
 }

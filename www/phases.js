@@ -439,7 +439,11 @@ function stAddOwn(){
    that made it is back. Gating a delete never costs anybody anything. */
 function stDelOwn(id){
   if(upStop(can('gram'))) return;
-  if(!confirm(t('stg.own.del.ask'))) return;
+  /* 確認は自前のポップで。「標準は使わねえって言ってるだろこれも禁止や」
+     OWNER 2026-09-01 -- confirm() は使わない。はいの側がこの下。 */
+  popAsk(t('stg.own.del.ask'), function(){ stDelOwnGo(id); }, t('pop.yes'));
+}
+function stDelOwnGo(id){
   STG.extra=STG.extra.filter(function(x){ return x.id!==id; });
   saveStg(); if(gOpenOf()) back(); else render();
 }
@@ -565,15 +569,20 @@ function stListHTML(){
        able to say yes, not for being asked. So it is at the FOOT, next to
        the stage somebody adds themselves, and it is gone once the stage is
        on the list above. The stage names itself; nothing here explains it. */
+    /* THE SAME + AS EVERYWHERE ELSE. 「丸い＋一つ（辞書と同じ）」 OWNER
+       2026-09-01 -- .fab is what the dictionary, the alphabet, the composer
+       and the notebook add with. Drawn on every plan: openOwnPhase() answers
+       on the press with the popup.
+
+       The particles row is not an add of the same kind -- it turns on one of
+       the book's own stages rather than making a new one -- so it stays a row
+       and only the + that MAKES something becomes the circle. */
     (stUsed('part')
       ? ''
       : '<button class="btn ghost" style="width:100%;margin-top:14px"' + DO('stAddPart') + '>'+
           ICON_ADD+t('stg.part.t')+'</button>')+
-    (can('gram')
-      ? '<button class="btn ghost" style="width:100%;margin-top:14px"' + DO('openOwnPhase') + '>'+
-          ICON_ADD+t('stg.own.add.btn')+'</button>'
-      : '')+
-    '';
+    '<button class="fab"' + DO('openOwnPhase') + ' aria-label="'+esc(t('stg.own.add.btn'))+'">'+
+      ICON_ADD+'</button>';
 }
 
 function stSlotRow(p, k){
