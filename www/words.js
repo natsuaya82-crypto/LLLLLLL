@@ -77,10 +77,15 @@ function wSelList(){
 }
 function wSelOn(){ wSel={}; wUndo=null; render(); }
 function wSelOff(){ wSel=null; render(); }
+/* The whole screen, not the list. Ticking the first row is what turns the two
+   buttons at the foot from down to up, and what turns "select all" into
+   "deselect all" -- and both of those are OUTSIDE `#w-list`, which is all
+   `wordsPaint()` redraws. Repainting only the list left the delete dimmed with
+   twenty words ticked. */
 function wSelTap(hw){
   if(!wSel) return;
   if(wSel[hw]) delete wSel[hw]; else wSel[hw]=1;
-  wordsPaint();
+  render();
 }
 /* Everything on the list as it is filtered and searched right now, which is
    what somebody looking at it means by "all of them". */
