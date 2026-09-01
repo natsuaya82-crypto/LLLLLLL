@@ -702,6 +702,11 @@ defLang('de', (function(){
       "gram.pos.before.v" : "Vor dem Tunwort",
       "gram.pos.after.v" : "Nach dem Tunwort",
       "gram.demo.need"   : "Schreiben Sie noch ein paar Wörter",
+      "gram.demo.need.n": "Es fehlt ein Substantiv.",
+      "gram.demo.need.v": "Es fehlt ein Verb.",
+      "gram.demo.need.nv": "Es fehlen ein Substantiv und ein Verb.",
+      "gram.demo.need.adj": "Es fehlt ein Adjektiv.",
+      "gram.demo.need.nadj": "Es fehlen ein Substantiv und ein Adjektiv.",
       "gram.pair.phrase" : "Wortgruppe",
       "gram.pair.line"   : "Zeile",
       /* the notebook */
