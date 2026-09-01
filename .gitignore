@@ -30,6 +30,10 @@ tools/font-spike/shot*.json
 
 # pictures taken to look at once (tools/shot.mjs)
 shots/
+
+# the film, and the frames it is made of (tools/pv.mjs). Rendered from the
+# app in about two minutes; a 3 MB mp4 in git is a copy that goes stale.
+/pv/
 tools/.css-snap.json
 
 # scratch scripts written to look at one thing once

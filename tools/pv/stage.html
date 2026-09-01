@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Lingua PV stage</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Cormorant+Garamond:ital,wght@0,300;0,500;1,300;1,500&family=Noto+Sans+JP:wght@300;400&display=swap" rel="stylesheet">
+<style>
+/* ---------------------------------------------------------------------------
+   The stage the film is shot on. NOT part of the app: nothing here is served
+   to a phone and nothing in www/ knows it exists. The app itself is the
+   iframe in the middle -- the real thing, at a real phone's size, running its
+   own code -- and everything around it is the film.
+
+   Every colour is the app's own, copied on purpose: the film and the app have
+   to be the same object. Rule 18 (no rounded box) is about www/index.html,
+   which is the app; a phone has round corners and this is a picture of one.
+   --------------------------------------------------------------------------- */
+:root{
+  --bg:#0a0a0e; --tx:#ece9e3; --txs:#a9a6b3; --txm:#6f6c7a;
+  --gold:#c9a86a;
+  --caps:'Cinzel',Georgia,serif;
+  --ital:'Cormorant Garamond',Georgia,serif;
+  --ui:-apple-system,BlinkMacSystemFont,system-ui,'Noto Sans JP',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1920px;height:1080px;overflow:hidden;background:var(--bg);color:var(--tx)}
+body{font-family:var(--ui);-webkit-font-smoothing:antialiased}
+
+/* The ground. A single soft pool of light, off to one side, so the black is
+   not a flat wall. */
+#ground{position:absolute;inset:0;background:
+  radial-gradient(120% 90% at 74% 42%, rgba(201,168,106,.055), transparent 62%),
+  radial-gradient(80% 70% at 18% 62%, rgba(201,168,106,.028), transparent 70%),
+  var(--bg)}
+
+/* ---- the phone ---------------------------------------------------------- */
+#stagePhone{position:absolute;left:0;top:0;transform-origin:50% 50%;
+  width:390px;height:844px;will-change:transform,opacity}
+#shell{position:absolute;inset:-13px;border-radius:57px;
+  background:linear-gradient(160deg,#2a2822,#141419 42%,#22201b);
+  box-shadow:0 60px 140px rgba(0,0,0,.72), 0 0 0 1px rgba(201,168,106,.16),
+             inset 0 0 0 1px rgba(255,255,255,.05)}
+#screen{position:absolute;inset:0;border-radius:46px;overflow:hidden;background:#0a0a0e}
+#ph{width:390px;height:844px;border:0;display:block}
+/* A thumb. Not a photograph of a hand -- a soft disc where the press lands,
+   which is what a viewer reads as "somebody touched that". */
+#tap{position:absolute;width:76px;height:76px;margin:-38px 0 0 -38px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,255,255,.30),rgba(255,255,255,.10) 55%,transparent 70%);
+  opacity:0;pointer-events:none;z-index:5}
+
+/* ---- the words ---------------------------------------------------------- */
+/* The words are centred on the frame's own middle line, not hung from a
+   number -- a two-line head and a three-line head then sit in the same
+   place, which is what a viewer reads as the film being steady. */
+#type{position:absolute;left:112px;top:50%;width:840px;opacity:0;
+  will-change:opacity,transform}
+#kicker{font-family:var(--caps);font-size:19px;letter-spacing:.34em;
+  color:var(--gold);text-transform:uppercase;margin-bottom:26px}
+#head{font-family:var(--ital);font-size:88px;line-height:1.06;font-weight:300;
+  letter-spacing:.005em}
+#head em{font-style:italic;color:var(--gold)}
+#sub{margin-top:30px;font-size:25px;line-height:1.65;color:var(--txs);font-weight:300;
+  max-width:660px}
+
+/* ---- the title card ----------------------------------------------------- */
+#card{position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;opacity:0;text-align:center}
+#mark{width:124px;height:124px;margin-bottom:48px;border-radius:28px;opacity:.96}
+#word{font-family:var(--caps);font-size:132px;letter-spacing:.30em;
+  font-weight:600;text-indent:.30em}
+#tag{margin-top:34px;font-family:var(--ital);font-size:36px;font-weight:300;
+  letter-spacing:.02em;color:var(--txs)}
+#rule{width:0;height:1px;background:var(--gold);opacity:.5;margin-top:52px}
+#foot{margin-top:44px;font-family:var(--caps);font-size:17px;letter-spacing:.30em;
+  color:var(--txm);text-indent:.30em}
+
+/* ---- a full-frame wash, for a cut ---------------------------------------- */
+#wash{position:absolute;inset:0;background:var(--bg);opacity:0;pointer-events:none;z-index:9}
+</style>
+</head>
+<body>
+<div id="ground"></div>
+
+<div id="stagePhone">
+  <div id="shell"></div>
+  <div id="screen"><iframe id="ph" src="/" scrolling="no"></iframe></div>
+  <div id="tap"></div>
+</div>
+
+<div id="type">
+  <div id="kicker"></div>
+  <div id="head"></div>
+  <div id="sub"></div>
+</div>
+
+<div id="card">
+  <img id="mark" src="/pv/icon.png" alt="">
+  <div id="word">Lingua</div>
+  <div id="tag"></div>
+  <div id="rule"></div>
+  <div id="foot"></div>
+</div>
+
+<div id="wash"></div>
+</body>
+</html>
