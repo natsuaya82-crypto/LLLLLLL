@@ -511,15 +511,82 @@ function netIdToken(provider, token, nonce, ok, bad){
 
    `LANGS[id].sid` is the server's name for the language, the same way a post
    carries `sid`. A language with none has never been up. */
+/* WHOSE LANGUAGE THIS IS, ASKED BEFORE IT IS PUT ANYWHERE.
+   -------------------------------------------------------------------------
+   「違うアカウントでログインしてんのに前のやつ出てくるんだけど？
+     前のアカウント消えたんだが？」 OWNER 2026-08-31.
+
+   `lingua.langs` and `lingua.<id>.*` are the PHONE's -- `LANGS[id]` was
+   `{name, mine, sid}` and `mine` is about this phone, not about an account.
+   So this function took the language in front of it and made a row for
+   whoever happened to be signed in:
+
+     netPost('/rest/v1/language', {owner:SESS.uid, name:langName||''}, ...)
+
+   A signs out, B signs in, and the language A made -- still on the phone,
+   because nothing here deletes -- went up as B's. Not a copy of it: the id
+   the phone then remembers is B's row, so from that moment on it was B's.
+   Nothing threw, the server was right to accept it, and A's own copy on the
+   server (if there was one) was untouched and unreachable.
+
+   `uid` on the entry is the account it belongs to, and it is asked here
+   because here is the only place a language meets a session. Four states and
+   they are answered separately, because guessing at the fourth is what this
+   bug was:
+
+     it is this account's         -> go
+     it is another account's      -> refused, and nothing is sent
+     no `uid`, but it has a `sid` -> ASK THE SERVER. `language_read` in
+                                     supabase/schema.sql answers with the row
+                                     only for its owner (or if it is
+                                     published), so an empty answer is the
+                                     server saying it is not yours. Nothing
+                                     is guessed and nothing is written until
+                                     it has answered.
+     no `uid` and no `sid`        -> it has never been up and nothing on this
+                                     phone says whose it is. It is adopted,
+                                     which is what www/me.js does with an
+                                     unclaimed copy and for the same reason
+                                     -- and it is what the ONBOARDING needs:
+                                     the walk makes a language before there
+                                     is an account and obFinish() puts it up
+                                     at the door. 「オンボーディング→最後に
+                                     ログイン」
+
+   THE FOURTH IS THE ONE THE OWNER HAS TO DECIDE, and it is in the report
+   rather than settled here. A language made by A, never once uploaded, on a
+   phone B then signs in to, is adopted by B -- because from storage alone
+   there is nothing that tells it from the onboarding's. Every language made
+   from today carries its `uid`, so the hole is exactly the languages that
+   already exist on a phone today and have never been up.
+
+   Nothing here deletes, hides or rewrites a language. A refusal leaves it
+   exactly where it is, on the phone, whole. */
 function netLangRow(ok, bad){
-  var L=LANGS[langId];
+  var L=LANGS[langId], own, me;
   if(!netSignedIn() || !L){ bad(null, 0, 'langrow −'); return; }
-  if(L.sid){ ok(L.sid); return; }
-  netPost('/rest/v1/language', {owner:SESS.uid, name:langName||''}, SESS.at,
+  own=L.uid? String(L.uid) : '';
+  me=String(SESS.uid||'');
+  /* Somebody else's. Not sent, not read, not minted -- and said with its own
+     mark, so 「接続できません」 does not stand in for it (case 6 of
+     tools/acct-check.mjs is the whole argument for marks). */
+  if(own && own!==me){ bad(null, 0, 'langrow ≠'); return; }
+  if(L.sid){
+    if(own){ ok(L.sid); return; }
+    /* Up before a language recorded whose it was. The server settles it. */
+    netGet('/rest/v1/language?select=id&id=eq.'+encodeURIComponent(L.sid),
+      function(d){
+        if(!(d && d.length)){ bad(null, 0, 'langrow ≠'); return; }
+        L.uid=me; langStore();
+        ok(L.sid);
+      }, bad);
+    return;
+  }
+  netPost('/rest/v1/language', {owner:me, name:langName||''}, SESS.at,
     function(d){
       var sid=(d && d.length)? d[0].id : '';
       if(!sid){ bad(d, 0); return; }
-      L.sid=sid; langStore();
+      L.sid=sid; L.uid=me; langStore();
       ok(sid);
     }, bad);
 }

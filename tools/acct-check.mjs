@@ -278,6 +278,115 @@ const R = await pg.evaluate(() => {
   if (!netSignedIn()) no('8: 揃った返事のあとで netSignedIn() が偽');
   say('8: access token だけの返事はセッションではない（両方向）');
 
+  /* ---- 9-11. 言語は、持ち主のアカウントのものである --------------------
+     OWNER 2026-08-31:
+       「違うアカウントでログインしてんのに前のやつ出てくるんだけど？
+         前のアカウント消えたんだが？」
+
+     3 番の上の claim は「二人が同じ端末を使っても、互いのものは見えない」と
+     言っていて、**ME しか見ていませんでした。** `lingua.langs` と
+     `lingua.<id>.*` は端末のもので、持ち主を一人も持っていません。だから
+     3 番は緑のまま、言語のほうは素通しでした。
+
+     ここで押さえるのは、そのうち **失われうる半分だけ** です ── B が入った
+     ときに、A の言語が B のアカウントへ上がってしまうこと。netLangRow() が
+     `owner: SESS.uid` で行を作るので、A が一度も上げていない言語は B のものに
+     なります。
+
+     一覧から隠すかどうかは別の話で、それは www/home.js の vLangs() ──
+     このセッションは持っていません。報告に書いてあります。
+
+     netPost / netGet を差し替えて、出ていくものを数えます。 */
+  const realPost = netPost, realGet = netGet;
+  let posted = [], getted = [];
+  const wire = () => {
+    netPost = (path, body, tok, ok, bad) => { posted.push({ path, body }); ok([{ id: 'server-side-id' }]); };
+    netGet  = (path, ok, bad) => { getted.push(path); ok([]); };
+  };
+  const unwire = () => { netPost = realPost; netGet = realGet; };
+  const askRow = () => {
+    let got = '', refused = false;
+    netLangRow((sid) => { got = sid; }, () => { refused = true; });
+    return { got, refused };
+  };
+
+  /* 9. A が上げた言語に、B が触れない。 */
+  start();
+  wire(); posted = []; getted = [];
+  LANGS[langId] = { name: 'A の言語', mine: true, sid: 'A-lang', uid: A };
+  langStore();
+  netOut(); arrive(B);
+  let r9 = askRow();
+  unwire();
+  if (!r9.refused) no('9: B が A の言語の行を受け取った — sid=' + JSON.stringify(r9.got));
+  if (posted.length)
+    no('9: B のセッションで language に POST した — owner=' +
+       JSON.stringify(posted[0].body && posted[0].body.owner));
+  say('9: 別のアカウントは、前の人の言語をサーバへ上げない');
+
+  /* 10. 一度も上がっていない言語も、前の人のものなら上げない。
+     これが本当に失われる形です ── sid が無いので netLangRow() は
+     `owner: SESS.uid` で新しい行を作り、A の中身が B のものになります。 */
+  start();
+  wire(); posted = []; getted = [];
+  LANGS[langId] = { name: 'A の言語', mine: true, uid: A };
+  langStore();
+  netOut(); arrive(B);
+  let r10 = askRow();
+  unwire();
+  if (posted.length)
+    no('10: A の言語が B のアカウントに作られた — owner=' +
+       JSON.stringify(posted[0].body && posted[0].body.owner) +
+       ' name=' + JSON.stringify(posted[0].body && posted[0].body.name));
+  if (!r10.refused) no('10: 上がっていない他人の言語の行が受け取られた');
+  say('10: 一度も上がっていない他人の言語も、上げない');
+
+  /* 11. そして本人は今までどおり通る。片側だけ閉じても通ってしまうので、
+     両方向を見ます ── 閉じすぎると自分の言語が上がらなくなります。 */
+  start();
+  wire(); posted = []; getted = [];
+  LANGS[langId] = { name: '自分の言語', mine: true, uid: A };
+  langStore();
+  netOut(); arrive(A);
+  let r11 = askRow();
+  unwire();
+  if (r11.refused) no('11: 本人が自分の言語の行を断られた');
+  if (!posted.length) no('11: 本人の言語がサーバに作られなかった');
+  if (!LANGS[langId].sid) no('11: 作った行の sid が端末に残っていない');
+  say('11: 本人の言語は、今までどおり上がる');
+
+  /* 12. uid の無い、しかし一度は上がった言語 ── 今日どの端末にもあるやつ。
+     ここは端末の中に答えが無いので、**サーバに訊きます。**
+     `language_read` は持ち主にしか行を返さないので、空の返事は
+     「あなたのではない」というサーバの言葉です。憶測は一つもありません。 */
+  start();
+  wire(); posted = []; getted = [];
+  LANGS[langId] = { name: '前からある言語', mine: true, sid: 'old-lang' };
+  langStore();
+  netOut(); arrive(B);
+  netGet = (path, ok) => { getted.push(path); ok([]); };     /* 持ち主ではない */
+  let r12 = askRow();
+  unwire();
+  if (!getted.length) no('12: uid が無いのにサーバへ訊かなかった');
+  if (!r12.refused) no('12: サーバが行を返さないのに通した');
+  if (posted.length) no('12: 断ったあとで行を作りに行った');
+  if (LANGS[langId].uid) no('12: 持ち主でないのに uid を書いた');
+  say('12: uid の無い言語は、サーバが持ち主を答える（他人なら断る）');
+
+  /* そして持ち主なら通り、そのとき uid が端末に残る ── 次からは訊かない。 */
+  start();
+  wire(); posted = []; getted = [];
+  LANGS[langId] = { name: '前からある言語', mine: true, sid: 'old-lang' };
+  langStore();
+  netOut(); arrive(A);
+  netGet = (path, ok) => { getted.push(path); ok([{ id: 'old-lang' }]); };
+  let r12b = askRow();
+  unwire();
+  if (r12b.refused) no('12: 持ち主が自分の言語を断られた');
+  if (r12b.got !== 'old-lang') no('12: 持ち主に sid が渡らなかった');
+  if (LANGS[langId].uid !== A) no('12: 通ったのに uid が端末に残っていない');
+  say('12: 持ち主なら通り、uid が残るので次からは訊かない');
+
   return out;
 });
 

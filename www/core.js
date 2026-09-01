@@ -18,6 +18,9 @@
         lingua.<id>.words          the dictionary of that language
         lingua.<id>.letters        its alphabet
         lingua.langs               which languages exist here, and whose
+                                   -- `uid` on the entry, which netLangRow()
+                                   writes. `mine` is a different word and is
+                                   about this PHONE, not about an account
         lingua.cur                 which one is open
         lingua.set                 the person's settings -- not a language's
 
@@ -87,13 +90,32 @@ function lsWipeNS(){
    written, it restored, every check was green, and the keyboard somebody
    built was simply not in the file. */
 var SLICES=['words','lines','lang','script','letters','notes','phases','talk','snd','kb','wld','gram2'];
-/* id -> { name, mine, sid }: the index says which languages are here, and the
-   language's own keys hold what it is.
+/* id -> { name, mine, sid, uid }: the index says which languages are here, and
+   the language's own keys hold what it is.
 
    It said `{ name, mine } and nothing more`, and there were three. `sid` is
    the server's id for the language, put on by netLangRow() (www/net.js) the
    first time the language goes up and langStore()'d on the spot: an entry
-   with no `sid` has never been up. */
+   with no `sid` has never been up.
+
+   `uid` is the ACCOUNT the language belongs to, written by netLangRow() at
+   the same moment and for a bug that had no other place to be fixed:
+   「違うアカウントでログインしてんのに前のやつ出てくるんだけど？」 OWNER
+   2026-08-31. This index is the PHONE's -- it survives signing out, because
+   nothing here deletes anything -- so a language sat here with nothing on it
+   saying whose it was, and netLangRow() made a server row for whoever was
+   signed in. A's language became B's.
+
+   **`mine` is not this and never was.** It is about this phone: whether the
+   language is one you are making rather than one you are reading, and
+   langCap() counts it. Two words that both sound like ownership, and only
+   one of them names an account.
+
+   An entry with no `uid` has never been through a door. That is a real state
+   and not a gap -- the onboarding makes a language before there is an account
+   and obFinish() puts it up at the door 「オンボーディング→最後にログイン」 --
+   so it is answered rather than repaired, in netLangRow(), which is the only
+   place a language meets a session. */
 var LANGS={}, langId='';
 var WORDS=[], LINES=[], langName='', SET=setDefaults();
 /* What a person's settings are before they touch anything. A function rather
