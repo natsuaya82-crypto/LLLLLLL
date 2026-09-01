@@ -210,10 +210,6 @@ function wordsHidHTML(){
 function vWords(){
   var items=wordsList();
   return '<div class="view">'+
-    /* The mark for asking an AI is ON the bar, not inside the ⋯. Somebody
-       wants it at the moment they are looking at their dictionary and short
-       of a word, and a thing you have to open a menu to find is a thing
-       nobody finds. www/assist.js builds it. */
     /* One mark, so .navq's own margin-left:auto is the whole of the push and
        the .bkw wrapper is not needed. The ⋯ that stood beside it is gone: two
        sessions each took a row out of the sheet it opened -- the word ask
@@ -227,8 +223,7 @@ function vWords(){
        lands against it. */
     navTop('', wSel
       ? '<button class="navdo"' + DO('wSelOff') + '>'+esc(t('words.sel.done'))+'</button>'
-      : askBtn(t('ask.word.ask'), null)+
-        '<button class="navdo"' + DO('wSelOn') + '>'+esc(t('words.sel'))+'</button>')+
+      : '<button class="navdo"' + DO('wSelOn') + '>'+esc(t('words.sel'))+'</button>')+
     '<div class="chead">'+
     /* THE SAME FIELD AS EVERYWHERE ELSE, and it was an <input>.
        「全部改行して画面内に文字が収まるようにして欲しい」 OWNER 2026-08-27,

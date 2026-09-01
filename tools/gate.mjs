@@ -38,7 +38,7 @@ const FAST = ['assets-check', 'es5-check', 'grammar-engine-check', 'dead-check',
 const SLOW = ['migrate-check', 'i18n-check', 'act-check', 'conv-check', 'card-check',
               'word-check', 'post-check', 'backup-check', 'fill-check', 'round-check',
               'base-check', 'kb-check', 'plan-check', 'term-check', 'sheet-check',
-              'shape-check', 'draft-check', 'gramlang-check', 'world-check', 'ask-check',
+              'shape-check', 'draft-check', 'gramlang-check', 'world-check', 
               'acct-check', 'page-check', 'dl-check', 'again-check', 'open-check', 'press'];
 const WIDE = Math.max(1, Math.min(4, (os.cpus() || []).length || 4));
 

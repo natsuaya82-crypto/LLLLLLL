@@ -600,20 +600,6 @@ defLang('ja', (function(){
          the answer comes back in. What is around the material is translated;
          the material itself -- the sounds, the words, the shapes -- is what
          the person made and is never touched. */
-      'ask.open'     : "AIに相談",
-      'ask.leave'    : "{0} に移動します",
-      'ask.to.chatgpt' : "ChatGPT",
-      'ask.head'     : "Lingua というアプリで人工言語を作っています。",
-      'ask.f.name'   : "言語の名前",
-      'ask.f.snd'    : "使う音 (IPA)",
-      'ask.f.lts'    : "文字数",
-      'ask.f.order'  : "語順",
-      'ask.f.syl'    : "音節数",
-      'ask.f.syl.v'  : "{2} 語中 {1} 語が {0}",
-      'ask.f.end'    : "語末",
-      'ask.f.end.v'  : "{0}は {3} 語中 {2} 語が -{1}",
-      'ask.f.words'  : "すでにある単語",
-      'ask.word.ask' : "この言語の単語をまとめて作りたいです。進め方は任せます ── 聞きたいことがあれば聞いてください、違うと思ったら言ってください、こちらが思いつかない方向でもかまいません。形だけ一つお願いです: 一覧はコードブロックで、一行に一語、単語と意味をタブで区切ってください。そのままアプリに貼り戻すので。",
       'words.search'    : "検索",
       'words.clear'     : '検索の消去',
       'words.sort.a'    : 'アルファベット順',

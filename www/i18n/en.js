@@ -591,20 +591,6 @@ defLang('en', (function(){
          the answer comes back in. What is around the material is translated;
          the material itself -- the sounds, the words, the shapes -- is what
          the person made and is never touched. */
-      'ask.open'     : "Ask an AI",
-      'ask.leave'    : "Opens {0}",
-      'ask.to.chatgpt' : "ChatGPT",
-      'ask.head'     : "I am building a constructed language in an app called Lingua.",
-      'ask.f.name'   : "Language name",
-      'ask.f.snd'    : "Sounds (IPA)",
-      'ask.f.lts'    : "Letters",
-      'ask.f.order'  : "Word order",
-      'ask.f.syl'    : "Syllables",
-      'ask.f.syl.v'  : "{0} in {1} of {2} words",
-      'ask.f.end'    : "Word ending",
-      'ask.f.end.v'  : "{0}: -{1} in {2} of {3}",
-      'ask.f.words'  : "Words it already has",
-      'ask.word.ask' : "I want to make a lot of words for this language. Take it wherever you think is right — ask me things, push back, try directions I have not thought of. One thing only about the shape: give the list as a code block, one word per line, the word and its meaning separated by a tab, so I can paste it straight back into the app.",
       'words.search'    : "Search",
       'words.clear'     : 'Clear',
       'words.sort.a'    : 'Alphabetical',
