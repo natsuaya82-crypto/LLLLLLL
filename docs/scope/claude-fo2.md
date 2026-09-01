@@ -119,7 +119,15 @@ an account's uuid travelling to places that read a handle」）。
 `docs/DATA_MODEL.md` `docs/CHANGELOG.md` `www/act-map.js` `tools/fixture.mjs`
 `CLAUDE.md` を使いました。
 
-## H. ⑪ の本体 ── アクションシートにはネイティブが要ります
+## H.（済）⑪ の本体 ── アクションシートは入りました
+
+**2026-09-01、リーダーが「あなたが作ってください」と渡してくれたので作りました。**
+`LinguaShare.ask()`（`UIAlertController`）を足し、`www/me.js` から呼んでいます。
+新しいファイルは作っていないので `project.pbxproj` は触っておらず、
+`assets-check` は緑のままです。**Swift はここでコンパイルできないので、実機
+ビルドでの確認が要ります。**
+
+以下は、そのとき調べた記録です（何が無かったか）:
 
 **オーナー決定 2026-09-01:**「アイコンをタップした時にiPhone標準の写真を選ぶか、
 削除するか出てくるやつでいいだろ」。基準の1番「システム標準を最優先。独自実装は
@@ -160,3 +168,20 @@ www/me.js から  Capacitor.nativePromise('LinguaShare','ask',{...})
 
 `docs/CHANGELOG.md` に原文で記録しました。**`docs/FEATURE_RULES.md` §
 Owner decision log にも要ります** ── そのファイルは渡されていません。
+
+
+## J. CLAUDE.md は `claude/docs` のもの（2026-09-01）
+
+シート禁止の一文の直しは `claude/docs` がやります。この枝が一度直したもの
+(cbc3965) は 5de1ccf で元に戻してあり、**`CLAUDE.md` は `origin/master` と
+一字一句同じ**です。衝突しません。
+
+**`claude/docs` へ必ず伝えること ── 狭めかたは二つで一組です:**
+
+  禁止のまま  画面の代わりに使うシート（一画面ぶんの操作を、ページを作りたく
+              ないからという理由で下から持ち上げたもの）
+  許す        指の下の一つを消すか変えるかを訊く、**iOS 自身**が出すもの
+
+**二つめが抜けると「アクションシートが許された」だけが残り、HTML で自前に
+描いたシートが通ります。**それは禁止されている側が許可された側の名前を着て
+いるだけです。書いた文は cbc3965 に残っているので読めます。
