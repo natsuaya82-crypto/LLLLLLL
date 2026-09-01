@@ -963,8 +963,19 @@ Two of them were about capabilities that had been deleted.
     in: Restore (**Apple requires it**), Plus's own card, and Cancel opening
     Apple's own sheet rather than setting a flag. What the screen still lacks
     is **the subscription text Apple requires beside a price** — that it
-    renews until cancelled, and links to Terms and to the privacy policy —
-    which needs two URLs that do not exist yet. `docs/BACKLOG.md`.
+    renews until cancelled, with the term and the price, and links to Terms
+    and to the privacy policy. **The two pages exist and are live**, checked
+    2026-09-01 in `natsuaya82-crypto/tokine2` on `main`: `lingua/terms.html`
+    (140 lines, dated 2026-08-28, and § 12 Governing law — Japanese law,
+    Tokyo District Court — is written, so the clause that once blocked it is
+    not open) and `lingua/privacy.html` (141 lines). The app already points
+    at them: `DOC_TERMS` / `DOC_PRIVACY` in `www/settings.js:52-53`. Vercel
+    serves the repo root with `cleanUrls: true`, so `/lingua/terms.html`
+    redirects to `/lingua/terms` — a redirect a browser follows, not a 404.
+
+    **What is missing is the sentence in the app.** Not one of the ten
+    `www/i18n/*.js` carries an auto-renew disclosure; `set.terms` and
+    `set.privacy` are the link labels and nothing else. `claude/pay` has it.
 17a. **Sandbox testing**, once the products exist: buy, then `restore` after
     deleting and reinstalling, then a renewal arriving while the app is shut,
     and — new since the middle tier — **a Plus receipt reading as Plus and not
