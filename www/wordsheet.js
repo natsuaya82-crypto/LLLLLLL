@@ -78,7 +78,7 @@ function openAdd(from){
   openForm('add:'+addFrom,
     (addFrom? t('add.title.from', addFrom) : t('add.title')),
     '<div id="wd-body">'+wdFormHTML()+'</div>',
-    function(){ phkMount(); geTiles(); });
+    function(){ phkMount(); geTiles(); }, wdSaveBtn(true));
 }
 FORM_OPEN.add=function(from){ openAdd(from||''); };
 function addOne(){
@@ -1197,14 +1197,23 @@ function wdFormHTML(){
     '<div class="sec">'+t('word.note')+'</div>'+
     wdNoteHTML()+
 
+    /* Delete is the LAST thing on the page and Save is in the bar, top right,
+       which is what an iPhone does with a form.
+       「編集画面もセーブは右上にして欲しい。一番下がデリートになるように」 OWNER 2026-09-01.
+
+       Save was a fixed bar across the foot, so the destructive row sat ABOVE
+       the ordinary one and the thing you press most had a bar of its own over
+       the last of the word. The bar the sheet already has is where it goes --
+       `openForm`'s sixth argument, the same slot the read page's 編集 is in --
+       so nothing new was invented for it. Nothing else on the sheet moves. */
     (mk? '' : '<button class="set" style="margin-top:18px;border-bottom:none"' + DO('delWord') + '>'+
-      '<span class="sl bad">'+t('word.del')+'</span></button>')+
-    /* At the foot of the screen rather than at the foot of the page. It was
-       under the meanings, the part of speech, the family, the synonyms, the
-       antonyms, the examples and the note -- so saving a word meant scrolling
-       past everything the word has. 「保存ボタンつけようもう」 */
-    '<div class="barfix"><button class="btn"' + DO(mk? 'addOne' : 'saveWord') + '>'+
-      t(mk? 'add.btn' : 'word.save')+'</button></div>';
+      '<span class="sl bad">'+t('word.del')+'</span></button>');
+}
+/* The one place that builds it, so the sheet that makes a word and the sheet
+   that changes one cannot end up with two different buttons in that corner. */
+function wdSaveBtn(mk){
+  return '<button class="navdo"' + DO(mk? 'addOne' : 'saveWord') + '>'+
+    esc(t(mk? 'add.btn' : 'word.save'))+'</button>';
 }
 /* ---- a word, read -------------------------------------------------------
    Opening a word used to open its editor: every field live, a Save at the
@@ -1369,7 +1378,7 @@ function openEdit(hw){
          pos:w.pos, reg:w.reg||'', tags:(w.tags||[]).slice(),
          ety:w.ety||'', nt:w.nt||''};
   openForm('edit:'+w.hw, wOut(w.hw), '<div id="wd-body">'+wdFormHTML()+'</div>',
-           function(){ phkMount(); geTiles(); });
+           function(){ phkMount(); geTiles(); }, wdSaveBtn(false));
 }
 FORM_OPEN.edit=function(hw){ openEdit(hw); };
 FORM_OPEN.word=function(hw){ openWord(hw); };
