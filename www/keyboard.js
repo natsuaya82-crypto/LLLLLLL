@@ -2260,8 +2260,6 @@ function vKb(){
     return '<div class="view">'+navTop('', helpQ('kb'))+'<div class="body">'+
       kbHTML(null, true)+
       kbSysHTML()+
-<<<<<<< HEAD
-=======
       /* The way to a second keyboard, in the place the paid list keeps it and
          wearing the same +. Pressing it on this plan opens what it would
          give rather than the chooser -- which is where the Upgrade that used
@@ -2272,7 +2270,6 @@ function vKb(){
          thing are an answer. */
       '<div class="kblist"><button class="kbadd"' + DO('kbNew') + '>'+ICON_ADD+
         '<span>'+esc(t('kb.new'))+'</span></button></div>'+
->>>>>>> origin/claude/help
       '</div></div>';
   /* The keyboard, and the row of the ones there are above it. There is no
      "nothing built yet" face any more: kbBoards() answers with the one
@@ -3074,15 +3071,6 @@ function kbToolHTML(){
 /* Making another is choosing a pattern again, on a screen of its own rather
    than a row that pushes the keyboard off the page. */
 function kbNew(){
-<<<<<<< HEAD
-  /* WHERE THE UPGRADE IS OFFERED. 「追加するときに出てくるようにして欲しい」
-     OWNER 2026-09-01. Building a keyboard is what can('kb') buys, so this is
-     the moment to say so -- and the sheet of five patterns is not opened
-     first: an offer behind a chooser somebody cannot choose from is the
-     screen taken away twice. Same shape as letters.js, wsys.js and
-     phases.js, which is the app's own way of answering this. */
-  if(!can('kb')){ goPlans(); return; }
-=======
   /* The one road to a keyboard of your own, so it is the one place that
      answers somebody who cannot take it yet. */
   /* The five arrangements, drawn, and every one of them a way to the plans
@@ -3095,7 +3083,6 @@ function kbNew(){
     kbPatsHTML('goPlans')+
     '<button class="btn ghost" style="width:100%;margin-top:12px"' + DO('goPlans') + '>'+
       t('kb.up.go')+'</button>'); return; }
->>>>>>> origin/claude/help
   openForm('kbnew', t('kb.new'), kbPatsHTML('kbAdd'), function(){ geTiles(); });
 }
 FORM_OPEN.kbup=function(){ kbNew(); };
