@@ -1518,7 +1518,13 @@ function notWho(n){
    the post. */
 function notFaces(n){
   var few=n.more||[], out=notFace(n), i, o;
-  for(i=0;i<few.length && i<2;i++){
+  /* TWO, overlapping. 「プロフィール画像は丸くて、重なって並ぶ」 OWNER
+     2026-09-01, which is what the picture has. It drew three side by side,
+     and on a 320 that is 128px of the row spent on faces -- the sentence had
+     46px left and wrapped to six lines, so no two rows in the list were the
+     same height. Two is the picture's number and it is also what gives the
+     sentence its width back. */
+  for(i=0;i<few.length && i<1;i++){
     o=few[i];
     out+=postAvHTML({hd:o.hd, who:o.who, av:o.av, id:'n:'+String(o.hd||'')});
   }
@@ -1532,7 +1538,13 @@ function notRow(n){
     '<span class="ntfi '+esc(k)+'">'+ic+'</span>'+
     '<span class="ntffs">'+notFaces(n)+'</span>'+
     '<span class="ntfb">'+
-      '<span class="ntfw">'+esc(t('notif.'+(k||'other'), notWho(n)))+'</span>'+
+      /* The time is IN the sentence -- 「A と B がいいねしました · 1週間」 --
+         rather than off the right-hand end of the row. 「文字の位置違うやん」
+         OWNER 2026-09-01: the picture reads as one line of words, and a
+         column of times against the right edge was taking 32px out of the
+         middle of it on a phone that had none to spare. */
+      '<span class="ntfw">'+esc(t('notif.'+(k||'other'), notWho(n)))+
+        '<span class="ntfwh"> \u00b7 '+esc(postWhen(n.at))+'</span></span>'+
       (p? '<span class="ntfp">'+esc(p.mn || p.ln || '')+'</span>' : '')+
     '</span>'+
     /* The post itself, small, on the right -- which is the owner's picture and
@@ -1542,7 +1554,6 @@ function notRow(n){
        shows the time alone rather than a gap. */
     (pics.length? '<span class="ntfpic"><img src="'+esc(pics[0])+'" alt=""></span>'
                 : '')+
-    '<span class="pwhen">'+esc(postWhen(n.at))+'</span>'+
     '</div>';
 }
 /* WAITING FOR AN ANSWER IS NOT THE SAME AS THERE BEING NOTHING, and this

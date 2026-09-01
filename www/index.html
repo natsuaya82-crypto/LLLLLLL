@@ -1758,7 +1758,18 @@ a.set{text-decoration:none}
    one row -- face, words, button -- that line read in a column two thirds of
    the phone wide, indented from both sides, and on somebody else's page it is
    most of what there is to read. */
-.mecard{padding:2px 24px 0}
+/* FULL WIDTH, like a post. 「なんでプロフィールの画面そんなに真ん中によってん
+   の？ もっと画面全体に広げて欲しいんだけど」 OWNER 2026-09-01.
+
+   `.body` already pads 24 each side and this added 24 MORE, so the card's
+   contents began 48px in -- on the owner's SE2 that is 96 of 320, thirty per
+   cent of the screen given to margin. `.post` has solved this since it was
+   written: `margin:0 -24px` cancels the body's padding and the row carries
+   its own 16. Same idiom, same number, so the card lines up with the posts
+   underneath it instead of being indented past them.
+   Measured: contents start at 48px -> 16px; usable width on 320 goes 224 ->
+   288, and on 402 354 -> 370. */
+.mecard{margin:0 -24px;padding:2px 16px 0}
 /* position: the ... menu inside it hangs off `top:100%` and needs something
    to be 100% OF. Without this it took the page as its ancestor and opened at
    the bottom of the screen, over the tab bar. A post row is positioned for
@@ -2061,7 +2072,10 @@ a.set{text-decoration:none}
       display:inline-flex;align-items:center;gap:5px}
 .pfst b{color:var(--tx);font-weight:700;font-size:.92rem}
 .pfst:active{color:var(--gold)}
-.pftabs{display:flex;border-bottom:1px solid var(--line)}
+/* And the rule under the three tabs runs the whole way, which is what every
+   timeline does and what it could not do while the body's padding held it in
+   24px short at each end. */
+.pftabs{display:flex;margin:0 -24px;border-bottom:1px solid var(--line)}
 .pftab{flex:1;min-height:46px;background:none;border:0;border-bottom:2px solid transparent;
        font-family:inherit;font-size:.9rem;font-weight:600;color:var(--txm);padding:12px 4px}
 .pftab.on{color:var(--tx);border-bottom-color:var(--gold)}
@@ -2519,20 +2533,59 @@ a.set{text-decoration:none}
       display:inline-flex;align-items:center;gap:8px}
 .povo.on{border-color:var(--goldln);color:var(--gold)}
 /* A notice: what happened, who did it, and which post it was about. */
-.ntf{display:flex;align-items:flex-start;gap:12px;padding:14px 2px;
-     border-bottom:1px solid var(--line)}
+/* A NOTICE, IN THE SHAPE THE OWNER SENT. 「見た目はこれに合わせて。文字の位置
+   違うやん」 OWNER 2026-09-01, with a picture of Instagram's.
+
+   Left to right: the mark, the faces, the sentence with the time inside it,
+   and the post's photograph on the right. Full width like a post -- the same
+   `margin:0 -24px` -- so the row is not indented past the ones above it.
+
+   `align-items:center`, not `flex-start`: the faces and the photograph are
+   both 40-44 tall and the sentence is one or two lines, so hanging everything
+   from the top left the short rows looking broken.
+
+   ONE HEIGHT. CLAUDE.md: rows in one list are one height, and these were 132
+   on a 402 and 210 on a 320 -- the sentence had 46px of width left on the
+   small phone and wrapped to six lines. What fixed it is not this rule but
+   the two below: two faces instead of three, overlapped, and the time moved
+   off the end of the row into the sentence.
+
+   93 is the tallest a row can be and is therefore the floor for all of them:
+   two lines of the sentence (`.ntfw` reserves them whether or not they are
+   used), the post's own line under it, and this padding. Measured on both of
+   the owner's phones -- 402x874 and 320x568 -- and the five faces of the
+   notices come out 93 on each. A FOLLOW is the one with no post line, so
+   without the floor it sat 5px short of the four around it. */
+.ntf{display:flex;align-items:center;gap:10px;margin:0 -24px;padding:12px 16px;
+     min-height:93px;border-bottom:1px solid var(--line)}
 .ntfi{flex:0 0 auto;width:26px;display:inline-flex;justify-content:center;color:var(--txm)}
 .ntfi.like{color:var(--bad)} .ntfi.follow{color:var(--gold)}
 /* Up to three faces, side by side. More than one person did the same thing to
    the same post, and the row says so with their faces the way the owner's
    picture does. */
-.ntffs{flex:0 0 auto;display:flex;align-items:center;gap:4px}
+/* Two circles, overlapping, the way the picture has them. They were three in
+   a row with a gap, which is 128px of a 320 screen spent on faces -- and it
+   was what left the sentence 46px to wrap in. The ring is a shadow rather
+   than a border so the two read apart where they overlap; rule 18 counts
+   `border` and `border-radius`, and this adds neither. `.pav` has been a
+   circle since it was written. */
+.ntffs{flex:0 0 auto;display:flex;align-items:center}
+.ntffs .pav + .pav{margin-left:-14px}
+.ntffs .pav{box-shadow:0 0 0 2px var(--bg)}
 .ntfb{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px}
 /* Which post, without reading the row. No corner and no border -- rule 18 --
    so it is the photograph itself, cut to a square. */
 .ntfpic{flex:0 0 auto;width:44px;height:44px;overflow:hidden}
 .ntfpic img{width:100%;height:100%;object-fit:cover;display:block}
-.ntfw{color:var(--tx);font-size:.95rem}
+/* Two lines at most, and the heads of them line up because the whole block
+   is one column. A notice that ran to six lines pushed the rows either side
+   of it out of step. */
+.ntfw{color:var(--tx);font-size:.95rem;line-height:1.4;
+      display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;
+      overflow:hidden;min-height:2.8em}
+/* The time, inside the sentence rather than off the end of the row.
+   「Tommy_hirorin and チーデリ liked your post · 1週間」 */
+.ntfwh{color:var(--txm)}
 .ntfp{color:var(--txm);font-size:.88rem;
       overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* A post kept to yourself, beside the time. */
