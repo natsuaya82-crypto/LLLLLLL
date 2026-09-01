@@ -387,6 +387,83 @@ const R = await pg.evaluate(() => {
   if (LANGS[langId].uid !== A) no('12: 通ったのに uid が端末に残っていない');
   say('12: 持ち主なら通り、uid が残るので次からは訊かない');
 
+  /* ---- 13-14. 自分の言語が、サーバから降りてくる ------------------------
+     「前のアカウント消えたんだが？」── 消えてはいなくて、戻る道が一本も
+     ありませんでした。netLangSync() は **開いている** 言語しか見ず、それを
+     LANGS[langId].sid（端末のもの）から見つけるので、端末に項目の無い言語は
+     どうやっても届きませんでした。
+
+     docs/DATA_SAFETY.md 第2則 ── 無いものを埋めて、止まる。ここで押さえるのは
+     その「止まる」ほうです。埋めるだけなら簡単で、危ないのは勝つほうなので。 */
+  start();
+  netOut(); arrive(A);
+  /* 端末には一つ、A の言語がある（sid つき）。サーバはそれと、もう一つ返す。 */
+  LANGS[langId] = { name: 'いまの言語', mine: true, sid: 'here-already', uid: A };
+  langStore();
+  const keepId = langId;
+  const keepWords = localStorage.getItem(langKeyOf(keepId, 'words'));
+  netGet = (path, ok) => {
+    if (path.indexOf('/rest/v1/language?select=id,name') === 0)
+      return ok([{ id: 'here-already', name: '上書きされてはいけない' },
+                 { id: 'far-lang',      name: 'むこうの言語' }]);
+    if (path.indexOf('/rest/v1/slice') === 0)
+      return ok([{ kind: 'words', body: '[{"hw":"むこうの単語"}]', no: 3 },
+                 { kind: 'lang',  body: 'むこうの言語', no: 3 }]);
+    return ok([]);
+  };
+  let made = 0;
+  netLangsDown((n) => { made = n; });
+  netGet = realGet;
+
+  if (made !== 1) no('13: 降ろした数が 1 でない — ' + made + '（既にある言語まで作った？）');
+  if (langId !== keepId) no('13: 開いている言語が動いた — 立っていた場所が変わる');
+  if (LANGS[keepId].name !== 'いまの言語')
+    no('13: 既にある言語の名前が上書きされた — ' + JSON.stringify(LANGS[keepId].name));
+  if (localStorage.getItem(langKeyOf(keepId, 'words')) !== keepWords)
+    no('13: 既にある言語の単語が上書きされた ── これが「勝つ」ほう');
+  say('13: 既にある言語には一切触らない（名前も、単語も、開いている場所も）');
+
+  let far = '';
+  for (const k in LANGS) if (LANGS[k] && LANGS[k].sid === 'far-lang') far = k;
+  if (!far) no('14: サーバにあった言語が端末に作られなかった');
+  else {
+    if (LANGS[far].uid !== A) no('14: 降ろした言語に uid が付いていない');
+    if (!LANGS[far].mine) no('14: 降ろした言語が自分のものになっていない');
+    if (localStorage.getItem(langKeyOf(far, 'words')) !== '[{"hw":"むこうの単語"}]')
+      no('14: 降ろした言語の単語が入っていない');
+    if (localStorage.getItem(langKeyOf(far, 'lang')) !== 'むこうの言語')
+      no('14: 降ろした言語の名前スライスが入っていない');
+  }
+  say('14: 端末に無い自分の言語は、スライスごと降りてくる');
+
+  /* 15. そして、降ろす先に既にスライスがあったら書かない。
+     `langMint()` は時計から id を作るので、**LANGS には無いのにスライスだけ
+     残っている id** ── storage が半分だけ消えた端末、索引を失った言語 ── に
+     ぶつかりうる。そこへ書けば、それは誰かの言語を消したことになります。
+     滅多に無い形なので、id を握って直接押さえます。 */
+  start();
+  netOut(); arrive(A);
+  const ORPH = 'Lorphan';
+  localStorage.setItem(langKeyOf(ORPH, 'words'), '[{"hw":"残っていた単語"}]');
+  const realMint = langMint;
+  langMint = () => { LANGS[ORPH] = { name: '', mine: true }; return ORPH; };
+  netGet = (path, ok) => {
+    if (path.indexOf('/rest/v1/language?select=id,name') === 0)
+      return ok([{ id: 'far-2', name: 'むこうの言語' }]);
+    if (path.indexOf('/rest/v1/slice') === 0)
+      return ok([{ kind: 'words', body: '[{"hw":"降りてきた単語"}]', no: 9 },
+                 { kind: 'lang',  body: 'むこうの言語', no: 9 }]);
+    return ok([]);
+  };
+  netLangsDown(() => {});
+  netGet = realGet; langMint = realMint;
+
+  if (localStorage.getItem(langKeyOf(ORPH, 'words')) !== '[{"hw":"残っていた単語"}]')
+    no('15: 端末に既にあったスライスが降りてきたもので上書きされた ── 「勝つ」ほう');
+  if (localStorage.getItem(langKeyOf(ORPH, 'lang')) !== 'むこうの言語')
+    no('15: 無かったスライスが埋められていない ── 埋めて止まる、の埋めるほう');
+  say('15: 降ろす先に既にあるスライスは書かない。無いものだけ埋める');
+
   return out;
 });
 

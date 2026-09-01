@@ -650,6 +650,85 @@ function netSlicePut(sid, kind, body, no, ok, bad){
   x.send(JSON.stringify({language:sid, kind:kind, body:String(body||''),
                          no:(no||0)+1, at:(new Date()).toISOString()}));
 }
+/* EVERY LANGUAGE THIS ACCOUNT HAS, BROUGHT DOWN TO THE PHONE.
+   -------------------------------------------------------------------------
+   「前のアカウント消えたんだが？」 OWNER 2026-08-31 -- and nothing had been
+   deleted. There was simply no way back to it.
+
+   netLangSync() below syncs the language that is OPEN, and it finds it
+   through `LANGS[langId].sid`, which is on the PHONE. So everything the
+   server holds for an account that this phone has not got an entry for was
+   unreachable: the only GET of `/rest/v1/language` anywhere in www/ was
+   netLangNames(), which asks by id for the timeline. Signing in on a second
+   phone, or on a phone that had been somebody else's, showed whatever that
+   phone was already carrying and nothing of yours. 「全部アカウントごとで
+   しょ」「基本は全部サーバー管理」
+
+   IT FILLS IN WHAT IS MISSING AND STOPS -- docs/DATA_SAFETY.md rule 2, the
+   one that matters, and the reason a restore is written this way rather than
+   the obvious way: **the way a copy destroys somebody's work is by winning.**
+   So:
+
+     a language already here (its `sid` is on an entry)  -> not touched at all
+     a slice already on the phone                        -> not touched at all
+     anything else                                       -> written
+
+   Nothing is removed, nothing is overwritten, and the open language does not
+   change -- langMint() makes an entry without moving langId, so somebody is
+   left standing exactly where they were.
+
+   The ceiling is not asked and must not be: langCount() gates ADDING one, and
+   docs/PAID_FEATURES.md is explicit that somebody holding more than their
+   plan allows keeps every one of them. A language that is already yours
+   arriving on your own phone is not somebody making a new one.
+
+   Fired and not waited for, like everything else here. A phone with no signal
+   is a phone somebody is still writing a language on. */
+function netLangsDown(then){
+  var done=then || function(){}, here={}, id;
+  if(!netSignedIn()){ done(0); return; }
+  for(id in LANGS)
+    if(Object.prototype.hasOwnProperty.call(LANGS, id) && LANGS[id] && LANGS[id].sid)
+      here[String(LANGS[id].sid)]=1;
+  netGet('/rest/v1/language?select=id,name&owner=eq.'+encodeURIComponent(SESS.uid),
+    function(rows){
+      var i=0, made=0;
+      function step(){
+        var row, nid;
+        if(i>=(rows||[]).length){
+          if(made){ langStore(); render(); }
+          done(made); return;
+        }
+        row=rows[i]; i++;
+        if(!row || !row.id || here[String(row.id)]){ step(); return; }
+        /* The entry first, so a sync that fails halfway leaves a language
+           that is HERE and empty rather than slices under an id nothing
+           names. Empty and broken are different states -- docs/DATA_SAFETY.md
+           rule 3 -- and an empty language is a legitimate one. */
+        nid=langMint();
+        LANGS[nid].sid=String(row.id);
+        LANGS[nid].uid=String(SESS.uid||'');
+        LANGS[nid].name=String(row.name||'');
+        made++;
+        langStore();
+        netSlices(row.id, function(there){
+          var k, key;
+          for(k in there){
+            if(!Object.prototype.hasOwnProperty.call(there, k)) continue;
+            if(!there[k] || there[k].body==='') continue;
+            key=langKeyOf(nid, k);
+            /* Missing, and only missing. */
+            try{
+              if(localStorage.getItem(key)===null)
+                localStorage.setItem(key, there[k].body);
+            }catch(e){}
+          }
+          step();
+        }, function(){ step(); });
+      }
+      step();
+    }, function(){ done(0); });
+}
 /* The open language and its copy, put together. Read, merge, write back
    whatever moved -- in that order, so a phone that has been offline for a
    week arrives holding the week rather than replacing it.

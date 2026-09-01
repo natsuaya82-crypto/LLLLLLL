@@ -56,6 +56,13 @@ swMount();
    this comes back or not. */
 function bootSession(){
   render();
+  /* And the languages this ACCOUNT has that this phone has not got at all.
+     It fills in what is missing and stops, so a phone that is simply working
+     finds nothing to do. Before the sync below because that one is about the
+     language that is OPEN, and this is about the ones that are not here --
+     which, until it existed, were unreachable from a second phone.
+     「前のアカウント消えたんだが？」 */
+  netLangsDown();
   /* And the language, which belongs to this account and exists twice. Read,
      merged and written back -- both ways, so a phone that has been offline
      for a week arrives holding the week rather than replacing it.
