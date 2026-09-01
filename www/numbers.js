@@ -108,6 +108,22 @@ function numTopUp(){
    rather than by a sentence explaining it. */
 function numOver(l){ return numIsDigit(l) && l.val>=numBase(); }
 function numIsDigit(l){ return !!(l && typeof l.val==='number'); }
+/* Digits and nothing else: what somebody wrote when they meant a NUMBER
+   rather than a name -- typed into the box on a letter's page, or written
+   over a box on a sheet. -1 is "that is a name".
+
+   It is deliberately NOT "a value this language can write". `12` in base ten
+   is digits and is not one sign, and the two callers want different answers
+   about exactly that: the box on the letter page can say so out loud
+   (numSetVal's t('num.big')), and a sheet has twenty boxes and nobody to say
+   it to, so it asks numInBase() as well and lets `12` be an ordinary name. */
+function numTyped(s){
+  var v=String(s==null? '' : s).replace(/^\s+|\s+$/g, '');
+  return /^[0-9]+$/.test(v)? parseInt(v, 10) : -1;
+}
+/* A value this base writes with ONE sign: 0 to base-1, which is what a base
+   IS. Anything as big as the base is two signs and has no single one. */
+function numInBase(v){ return typeof v==='number' && v>=0 && v<numBase(); }
 /* In the order they count in, which is the only order a digit has. */
 function numDigits(){
   return LETTERS.filter(numIsDigit).sort(function(a, b){ return a.val-b.val; });
