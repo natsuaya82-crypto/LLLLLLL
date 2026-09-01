@@ -1420,12 +1420,37 @@ function notRow(n){
     '<span class="pwhen">'+esc(postWhen(n.at))+'</span>'+
     '</div>';
 }
+/* WAITING FOR AN ANSWER IS NOT THE SAME AS THERE BEING NOTHING, and this
+   screen said both with one sentence. 「通知とか表示されるのに1秒くらいの空白
+   の時間があるのうざい」 OWNER 2026-08-28, build #106.
+
+   `NOTES_HAVE` starts null and means "nobody has asked yet". It was read as
+   `(NOTES_HAVE||[])`, so a screen with the request still in the air drew
+   「まだ何もありません」 -- a statement of fact, about a question nobody has
+   answered -- and then the notices appeared under it a second later. That is
+   the flash the owner is looking at.
+
+   CLAUDE.md § Data: 「"Empty" and "broken" are different states and must not
+   share a branch.」 Three states here, not two: not asked (draw nothing),
+   answered and empty (say so), answered with notices (draw them).
+
+   snsAnsHTML() in this same file has had it right since it was written --
+   `if(!r) return ''` -- so this is the search's shape, not a new one.
+
+   **THE SECOND OF BLANK IS NOT REMOVED BY THIS, AND CANNOT BE FROM HERE.**
+   The feed draws instantly because `lingua.posts` is a copy on the handset
+   (measured: 4 rows on the first frame). The notices have no copy at all --
+   there is no `lingua.notices` -- so there is nothing to draw first. Giving
+   them one is new stored data, which is `docs/DATA_MODEL.md`, and this
+   session does not own that file. It is in the report. */
 function vNotif(){
   if(!netSignedIn()) return snsLocked('notif');
   notPull();
-  var ns=(NOTES_HAVE||[]).filter(function(n){ return !meBlocks(n.hd); });
+  var got=NOTES_HAVE;
+  var ns=(got||[]).filter(function(n){ return !meBlocks(n.hd); });
   return '<div class="view">'+rootTop('notif')+
     '<div class="body">'+
-    (ns.length? ns.map(notRow).join('') : snsNone())+
+    (ns.length? ns.map(notRow).join('')
+              : (got? snsNone() : ''))+
     '</div></div>';
 }
