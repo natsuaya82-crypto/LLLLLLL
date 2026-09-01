@@ -105,10 +105,27 @@ has the rest. 「最初からオンライン前提で作れ」 → `docs/FEATURE
 **Shape.** Four things are banned outright: a row of round chips you scroll
 sideways (if there are more than a few, it is a **list**); the thing being
 chosen and the thing being changed on one screen (choosing is a screen,
-changing is the screen you arrive at); a sheet that slides up over where you
-were instead of a page you went to; and explaining. The keyboard chapter had
-all four at once. 「丸パッチ無限横並び、同じページに情報量詰め込み、ページ遷移型に
-せず下からひょいって出すやつ、無駄に説明をするやつ、この辺禁止」
+changing is the screen you arrive at); a sheet that slides up **in place of a
+screen you would otherwise have gone to**; and explaining. The keyboard
+chapter had all four at once. 「丸パッチ無限横並び、同じページに情報量詰め込み、
+ページ遷移型にせず下からひょいって出すやつ、無駄に説明をするやつ、この辺禁止」
+
+**Narrowed on 2026-09-01, and only this far: the SYSTEM'S OWN action sheet,
+for deleting or changing one thing, is allowed.** 「アイコンをタップした時に
+iPhone標準の写真を選ぶか、削除するか出てくるやつでいいだろ」 OWNER, and asked
+directly whether that narrows this rule, 「1はイエス」. What was banned and
+stays banned is a sheet standing in for a SCREEN — a page's worth of controls
+hoisted up from the bottom because somebody did not want to build the page.
+What is allowed is the two- or three-line thing iOS itself puts up to ask
+which of a few things to do to the object under the finger, and **only iOS's
+own**: 「システム標準（iOS/Android）を最優先。独自実装は『標準では実現できない
+場合のみ』」 — a sheet drawn in HTML to look like one is the banned kind
+wearing the allowed kind's name. It needs a `UIAlertController` on the native
+side, which means it is not something `www/` can decide to have.
+
+That is the whole of the narrowing. 「削除・変更はアクションシート」 is about
+deleting and changing; choosing is still a screen, and the sentence above still
+holds everywhere else.
 
 **And a fifth: NO ROUNDED BOX.** 「角丸やめろ」 Nothing new gets a corner
 radius, a border, or a filled panel — not a button, not a banner, not a
