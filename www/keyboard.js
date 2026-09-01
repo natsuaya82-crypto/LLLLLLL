@@ -2260,6 +2260,19 @@ function vKb(){
     return '<div class="view">'+navTop('', helpQ('kb'))+'<div class="body">'+
       kbHTML(null, true)+
       kbSysHTML()+
+<<<<<<< HEAD
+=======
+      /* The way to a second keyboard, in the place the paid list keeps it and
+         wearing the same +. Pressing it on this plan opens what it would
+         give rather than the chooser -- which is where the Upgrade that used
+         to sit at the foot of this screen went. 「アップグレードボタンそこ
+         じゃなくて、キーボードを足そうとするとポップ出るようにしてよ」
+         OWNER 2026-08-28. A button at the foot is a price with nothing
+         asked for; the same words arriving when somebody reaches for the
+         thing are an answer. */
+      '<div class="kblist"><button class="kbadd"' + DO('kbNew') + '>'+ICON_ADD+
+        '<span>'+esc(t('kb.new'))+'</span></button></div>'+
+>>>>>>> origin/claude/help
       '</div></div>';
   /* The keyboard, and the row of the ones there are above it. There is no
      "nothing built yet" face any more: kbBoards() answers with the one
@@ -3061,6 +3074,7 @@ function kbToolHTML(){
 /* Making another is choosing a pattern again, on a screen of its own rather
    than a row that pushes the keyboard off the page. */
 function kbNew(){
+<<<<<<< HEAD
   /* WHERE THE UPGRADE IS OFFERED. 「追加するときに出てくるようにして欲しい」
      OWNER 2026-09-01. Building a keyboard is what can('kb') buys, so this is
      the moment to say so -- and the sheet of five patterns is not opened
@@ -3068,8 +3082,23 @@ function kbNew(){
      screen taken away twice. Same shape as letters.js, wsys.js and
      phases.js, which is the app's own way of answering this. */
   if(!can('kb')){ goPlans(); return; }
+=======
+  /* The one road to a keyboard of your own, so it is the one place that
+     answers somebody who cannot take it yet. */
+  /* The five arrangements, drawn, and every one of them a way to the plans
+     page. A sentence saying an upgrade is needed is a price with nothing
+     behind it; the flick, the chart and the rest ARE what is being bought.
+     「フリックとか他のキーボードの写真を載せて自由自在っていうのアピール
+     しろよ」 OWNER 2026-08-28. */
+  if(!can('kb')){ openForm('kbup', t('kb.new'),
+    '<div class="note">'+esc(t('kb.up.d'))+'</div>'+
+    kbPatsHTML('goPlans')+
+    '<button class="btn ghost" style="width:100%;margin-top:12px"' + DO('goPlans') + '>'+
+      t('kb.up.go')+'</button>'); return; }
+>>>>>>> origin/claude/help
   openForm('kbnew', t('kb.new'), kbPatsHTML('kbAdd'), function(){ geTiles(); });
 }
+FORM_OPEN.kbup=function(){ kbNew(); };
 FORM_OPEN.kbnew=function(){ kbNew(); };
 /* The pattern of a keyboard that already exists. It could only be chosen when
    the keyboard was made, so somebody who wanted flick after building a QWERTY
@@ -3194,19 +3223,16 @@ function kbStepHTML(n, title, body){
     '<div class="kbstept">'+esc(title)+'</div>'+body+'</div>';
 }
 HELP.kb=function(){
+  /* Free: why the keys do nothing, and the way out, and that is the whole of
+     what this ? says on that plan. 「無料プランのキーボードは編集ができません。
+     ／自作キーボードを作りたい場合はアップグレードしてください。／アップ
+     グレードする。」 OWNER 2026-08-28. */
+  if(!can('kb')) return {t:t('kb.sys.h'), h:
+    '<div class="note">'+esc(t('kb.free.no'))+'</div>'+
+    '<div class="note">'+esc(t('kb.free.up'))+'</div>'+
+    '<button class="btn ghost" style="width:100%;margin:12px 0 4px"' + DO('goPlans') + '>'+
+      t('kb.up.go')+'</button>'};
   return {t:t('kb.sys.h'), h:
-    /* One step is one tap, and one tap is one photograph. It was two steps
-       with both photographs stacked under the second -- so the step reading
-       "turn on Full Access" carried a picture of a DIFFERENT page, the one
-       you have to go through to reach it, and neither picture said which of
-       its rows was the one to press.
-
-       Step 1 carries the path and no button. It is the only one of the four
-       that has to be walked to, because Apple gives no public door to that
-       page -- a path and a button printed together were directions to two
-       different screens. 「端末の設定を開くボタンあるのになんで設定→一般
-       みたいな順序で説明すんの？」 The button is on step 3, which is the page
-       it actually lands on. */
     kbStepHTML(1, t('kb.step1'), '<div class="mini">'+t('kb.step1.d')+'</div>'+
       kbShot('kb-list.jpg'))+
     kbStepHTML(2, t('kb.step2'), kbShot('kb-add.jpg'))+

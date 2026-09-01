@@ -1018,7 +1018,12 @@ function vGlyph(){
        bar, which is what .body's own padding is already about. */
     '<div class="body" style="padding-bottom:calc(env(safe-area-inset-bottom,0) + var(--tabh) + 24px)">'+
     '<div class="gcanvwrap"><canvas id="gcanv" class="gcanv"></canvas></div>'+
+    /* The ? belongs to the band, not to the bar: what it explains is the five
+       marks above it. 「帯の下にしよう」 OWNER 2026-08-28.
+       Here and not in geRail(), because geRail() is also the onboarding's
+       first step and that step is being walked, not read. */
     geRail(st, pts)+
+    '<div style="display:flex">'+helpQ('glyph')+'</div>'+
     '<div class="ghintwrap"><canvas id="ghint" class="ghint"></canvas></div>'+
     '</div></div>';
 }
@@ -2234,6 +2239,32 @@ function geRail(st, pts){
   '</div>';
 }
 
+/* What the five marks under the square are, and the two fingers -- behind the
+   `?` in the bar rather than as a caption under each one. Captions under the
+   rail were taken off it on purpose; this is where the words went.
+
+   The mark itself is drawn beside its name, because the name on its own is
+   the half a person already has: what they are looking at is the shape. */
+function geHelpIcon(n){
+  return '<svg viewBox="0 0 24 24" width="21" height="21" fill="none" '+
+    'stroke="currentColor" stroke-width="1.25" stroke-linecap="round" '+
+    'stroke-linejoin="round" aria-hidden="true" '+
+    'style="vertical-align:-5px;margin-right:9px">'+GICON[n]+'</svg>';
+}
+function geHelpRow(n, name, desc){
+  return '<div class="sec">'+geHelpIcon(n)+esc(name)+'</div>'+
+    '<div class="note">'+esc(desc)+'</div>';
+}
+HELP.glyph=function(){
+  return {t:t('glyph.help.t'), h:
+    '<div class="note">'+esc(t('glyph.help.draw'))+'</div>'+
+    '<div class="note">'+esc(t('glyph.help.zoom'))+'</div>'+
+    geHelpRow('undo',   t('glyph.undo'),   t('glyph.undo.d'))+
+    geHelpRow('redo',   t('glyph.redo'),   t('glyph.redo.d'))+
+    geHelpRow('fill',   t('glyph.fill'),   t('glyph.fill.d'))+
+    geHelpRow('circle', t('glyph.circle'), t('glyph.circle.d'))+
+    geHelpRow('clear',  t('glyph.clear'),  t('glyph.clear.d'))};
+};
 function geTools(){
   /* querySelectorAll and not querySelector, though there is one rail again.
      For a day there were two and this answered only the first of them, so
