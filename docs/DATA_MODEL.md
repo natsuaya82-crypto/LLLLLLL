@@ -116,6 +116,42 @@ this phone is missing and never writes over what is here** — § 2 of
 `docs/DATA_SAFETY.md`, and the reason is the one that file gives: the way a
 copy destroys somebody's work is by winning.
 
+`lingua.notices` (`NOTES_HAVE`) is the third of these and the newest —
+**2026-09-01**. It is the notices the RPC last answered with, and it exists for
+one reason: the notices screen had no copy at all, so it was blank for about a
+second every time it was opened while the feed beside it drew instantly off
+`lingua.posts`. 「通知とか表示されるのに1秒くらいの空白の時間があるのうざい
+からそれ無くして欲しい」 OWNER 2026-08-28.
+
+**It is a copy and never a record.** `notices()` in `supabase/schema.sql` is
+computed from `react`, `post` and `follow` every time it is asked; nothing is
+stored server-side that this could be the only surviving version of, so an
+answer simply REPLACES what is here rather than filling in what is missing.
+That is the opposite of the draft rule above and it is not an exception to it:
+a draft is something a person MADE, and a notice is something that happened to
+them. There is nothing here to destroy by winning.
+
+**It is filed under the account**, `lingua.notices.<uid>`, the way `lingua.me`
+is parked by `meParkKey()`. Two accounts on one handset must not read each
+other's notices, and a notice names who did what to whom.
+
+**Nothing prunes it and nothing ages it out**, which is the same sentence
+`lingua.posts` and `lingua.drafts` carry: it is replaced whole by the next
+answer and by nothing else. It is removed by `lsWipeNS()` with everything else
+under `lingua.` when an account goes — no list to add it to, which is why that
+function counts `localStorage` instead of walking a list.
+
+`lingua.set` carries **`notAt`** beside it, and it is not the same kind of
+thing: it is **when the notices screen was last opened**, as a number of
+milliseconds, and it is what makes a notice unread. 「最後に通知の画面を開いた
+時刻より新しいものを未読とする」 OWNER 2026-09-01 — the count on the bell is
+how many of `NOTES_HAVE` are newer than it. It is in `SET` and not beside the
+copy because it is a fact about the PERSON and not about the notices: it
+survives the copy being replaced, and it is the one number the bell reads.
+**The server holds no read marker** — `notices()` returns eight columns and
+none of them says read — so this is the whole of what "unread" means here, by
+the owner's decision rather than for want of a column.
+
 What is IN a draft's `body` is what the composer had in its hands, pictures and
 recording as base64 — **not** files in the media bucket. That is not a
 shortcut. `post-media` is public (`media_read` is `using (bucket_id =
