@@ -652,6 +652,62 @@ const R = await pg.evaluate(() => {
     no('22: 非公開の言語が開いていることになっている — slice_read が断る扉を出す');
   say('22: 非公開の言語は、開いていないと言う');
 
+  /* ---- 23. いいね・リポスト・返信の数が、読み戻ってくる ----------------
+     「当たり前だけどsnsとして機能してない」OWNER 2026-09-01
+
+     netMark() は react に行を入れて消していましたが、react を読む GET は
+     アプリのどこにも一本もありませんでした。押した端末の中だけで数が
+     増え、他の端末は何も見ず、押した端末も忘れたら終わりでした。
+     feed_hot() は並べるために数えていて、その数を捨てていました。 */
+  start();
+  netOut(); arrive(A);
+  let feedPath = '';
+  netGet = (path, ok) => {
+    if (path.indexOf('/rest/v1/follow?select=followed') === 0)
+      return ok([{ followed: B }]);
+    if (path.indexOf('/rest/v1/post_seen') === 0) feedPath = path;
+    if (path.indexOf('/rest/v1/post_seen') === 0)
+      return ok([{ id: 'p1', author: B, created_at: '2026-08-30T00:00:00Z',
+                   body: { ln: 'むこうの投稿' }, likes: 7, boosts: 2,
+                   replies: 3, i_like: true, i_boost: false }]);
+    return ok([]);
+  };
+  let feed = null;
+  netFeed('fo', (rows) => { feed = rows; }, () => {});
+  netGet = realGet;
+
+  if (feedPath.indexOf('likes') < 0) no('23: タイムラインを数抜きで訊いている');
+  if (feedPath.indexOf('i_like') < 0) no('23: 自分がしたかを訊いていない');
+  if (!feed || !feed.length) no('23: 投稿が返ってこなかった');
+  else {
+    const p1 = feed[0];
+    if (p1.nlike !== 7)  no('23: いいねの数が載らない — ' + p1.nlike);
+    if (p1.nboost !== 2) no('23: リポストの数が載らない — ' + p1.nboost);
+    if (p1.nreply !== 3) no('23: 返信の数が載らない — ' + p1.nreply);
+    if (p1.ilike !== true)   no('23: 自分がいいねしたことが載らない');
+    if (p1.iboost !== false) no('23: 自分がリポストしていないことが載らない');
+  }
+  say('23: いいね・リポスト・返信の数と、自分がしたかが読み戻る');
+
+  /* そして「言われていない」と「0」は別。古い行、数を持たない一覧から来た
+     投稿が「0 いいね」を名乗ると、それは言われていないことを言っています。 */
+  start();
+  netOut(); arrive(A);
+  netGet = (path, ok) => {
+    if (path.indexOf('/rest/v1/follow?select=followed') === 0)
+      return ok([{ followed: B }]);
+    if (path.indexOf('/rest/v1/post_seen') === 0)
+      return ok([{ id: 'p2', author: B, created_at: '2026-08-30T00:00:00Z',
+                   body: { ln: '数の無い行' } }]);
+    return ok([]);
+  };
+  let feed2 = null;
+  netFeed('fo', (rows) => { feed2 = rows; }, () => {});
+  netGet = realGet;
+  if (feed2 && feed2.length && feed2[0].nlike !== undefined)
+    no('23: サーバが言っていないのに数を名乗っている — ' + feed2[0].nlike);
+  say('23: 言われていない数は、0 ではなく無い');
+
   return out;
 });
 

@@ -756,7 +756,43 @@ create or replace view post_seen as
          p.hidden_at,
          (a.banned_at is not null) as author_out,
          case when p.hidden_at is null or p.author = auth.uid() or is_staff()
-              then p.body else '{}'::jsonb end as body
+              then p.body else '{}'::jsonb end as body,
+         -- WHAT OTHER PEOPLE DID TO IT.
+         --
+         -- 「当たり前だけどsnsとして機能してない」 OWNER 2026-09-01. Liking
+         -- and boosting were WRITTEN -- netMark() in www/net.js posts a row
+         -- into `react` and deletes it again -- and there was **no GET of
+         -- /rest/v1/react anywhere in the app**. So the number went up on the
+         -- phone that pressed it and nowhere else, and opening the timeline
+         -- again showed nothing: every count was whatever this phone
+         -- happened to remember.
+         --
+         -- feed_hot() below was already counting these to ORDER by them and
+         -- throwing the numbers away, which is the whole shape of the bug --
+         -- the data was there, the query was there, and nobody asked for the
+         -- answer.
+         --
+         -- Counted here rather than by the phone because a phone can only
+         -- count the reactions it was handed, and it is handed none.
+         (select count(*) from react r
+           where r.post = p.id and r.kind = 'like')  as likes,
+         (select count(*) from react r
+           where r.post = p.id and r.kind = 'boost') as boosts,
+         -- A reply is a post, so this is the same question asked of the same
+         -- table. Taken-down replies are not counted: a count that includes
+         -- what nobody can open is a number with nothing behind it.
+         (select count(*) from post q
+           where q.reply_to = p.id and q.hidden_at is null) as replies,
+         -- AND WHETHER THIS READER IS ONE OF THEM, which is a different
+         -- question from how many and cannot be worked out from the count.
+         -- Signed out, auth.uid() is null and both are false -- correct:
+         -- somebody with no account has not liked anything.
+         exists (select 1 from react r
+                  where r.post = p.id and r.kind = 'like'
+                    and r.actor = auth.uid()) as i_like,
+         exists (select 1 from react r
+                  where r.post = p.id and r.kind = 'boost'
+                    and r.actor = auth.uid()) as i_boost
     from post p left join profile a on a.id = p.author;
 grant select on post_seen to anon, authenticated;
 
@@ -1231,13 +1267,25 @@ returns numeric language sql stable as $$
     from profile p where p.id = who
 $$;
 
+-- Dropped by name first, because the return type gains columns below and
+-- `create or replace function` refuses to change one. This file is pasted
+-- over a database that already has the old shape.
+drop function if exists feed_hot(int, int);
 create or replace function feed_hot(lim int default 50, off int default 0)
 returns table (id uuid, author uuid, language uuid, prompt bigint,
                reply_to uuid, created_at timestamptz, hidden_at timestamptz,
-               author_out boolean, body jsonb)
+               author_out boolean, body jsonb,
+               -- The same five post_seen grew, in the same order. The comment
+               -- further up says this function is 「Read as post_seen reads,
+               -- column for column」 and netRow() in www/net.js is why: one
+               -- function on the phone turns a row from EITHER list into a
+               -- post, so a column added to one is a column added to both.
+               likes bigint, boosts bigint, replies bigint,
+               i_like boolean, i_boost boolean)
 language sql stable as $$
   select v.id, v.author, v.language, v.prompt, v.reply_to, v.created_at,
-         v.hidden_at, v.author_out, v.body
+         v.hidden_at, v.author_out, v.body,
+         v.likes, v.boosts, v.replies, v.i_like, v.i_boost
     from post_seen v
     left join lateral (
       select coalesce(sum(case r.kind when 'like'  then 1

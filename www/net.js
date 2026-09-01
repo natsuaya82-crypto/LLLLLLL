@@ -978,6 +978,33 @@ function netRow(r){
      leaving it on that account's own page. */
   if(r.author_out) p.out=true;
   p.mine=!!(SESS && SESS.uid && r.author===SESS.uid);
+  /* WHAT OTHER PEOPLE DID TO IT, which is the half that never came back.
+     「当たり前だけどsnsとして機能してない」 OWNER 2026-09-01.
+
+     netMark() has posted into `react` and deleted out of it since there were
+     reactions, and there was NO GET OF /rest/v1/react ANYWHERE. So a like
+     went up on the phone that pressed it and nowhere else: another phone
+     opening the same timeline saw nothing, and the phone that pressed it saw
+     its own number only until it forgot. feed_hot() in supabase/schema.sql
+     was already counting these to ORDER by them and throwing the numbers
+     away, which is the whole shape of it -- the data, the query and the
+     answer all existed and nobody asked.
+
+     They are on `post_seen` now, so BOTH lists carry them and this one
+     function puts them on a post whichever list it came from.
+
+     `n` and `i` and not one number each: how many is a fact about the post,
+     and whether YOU are one of them is a fact about the reader, and a phone
+     that worked the second out of the first would be guessing. Absent rather
+     than zero where the server did not say -- an old row, a list that has
+     not got them -- because `0 likes` and `nobody has said` are different
+     things and a post claiming the first is a post saying something it was
+     never told. */
+  if(r.likes!==undefined && r.likes!==null)     p.nlike=Number(r.likes)||0;
+  if(r.boosts!==undefined && r.boosts!==null)   p.nboost=Number(r.boosts)||0;
+  if(r.replies!==undefined && r.replies!==null) p.nreply=Number(r.replies)||0;
+  if(r.i_like!==undefined)  p.ilike=!!r.i_like;
+  if(r.i_boost!==undefined) p.iboost=!!r.i_boost;
   return p;
 }
 function netFeed(which, ok, bad, more){
@@ -992,6 +1019,9 @@ function netFeed(which, ok, bad, more){
      somebody who has not decided yet is not asked to decide. The FOLLOWED one
      cannot: there is nobody to have followed anybody. */
   var sel='/rest/v1/post_seen?select=id,author,created_at,reply_to,body,hidden_at,author_out'+
+          /* And what other people did to it. Written since there were
+             reactions and read back by nobody -- see netRow(). */
+          ',likes,boosts,replies,i_like,i_boost'+
           '&order=created_at.desc&limit='+NET_PAGE;
   /* `more` is where to carry on from, and it is a different thing on the two
      sides because the two lists are in different orders.

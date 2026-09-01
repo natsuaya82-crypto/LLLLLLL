@@ -447,6 +447,36 @@ const CASES = [
   ['B takes B\u2019s own boost back',          'ok',     B, 0,
     `delete from react where actor='${B}' and kind='boost'`],
 
+  /* --- and the count comes BACK, which is the half that was missing -------
+     「当たり前だけどsnsとして機能してない」OWNER 2026-09-01. Liking was
+     written and there was no GET of /rest/v1/react anywhere in the app, so a
+     count went up on the phone that pressed it and nowhere else.
+
+     post_seen carries it now. The state here is exactly one like, by B, and
+     no boost -- B put one on two lines up and took it back one line up. */
+  ['the like is counted for anybody reading',  'ok',     A, 0,
+    `select 1 from post_seen where id='${P}' and likes = 1`],
+  ['and for somebody with no account',        'ok',     B, 1,
+    `select 1 from post_seen where id='${P}' and likes = 1`],
+  ['the boost that was taken back is not',    'ok',     A, 0,
+    `select 1 from post_seen where id='${P}' and boosts = 0`],
+  /* Whether the READER is one of them, which the count cannot answer. */
+  ['B is told that B liked it',               'ok',     B, 0,
+    `select 1 from post_seen where id='${P}' and i_like`],
+  ['A is told that A did not',                'ok',     A, 0,
+    `select 1 from post_seen where id='${P}' and not i_like`],
+  /* NOT PROBED HERE, and said out loud so a green run is not read as more
+     than it is: a request with NO SESSION AT ALL. `chk()` takes `sub` as a
+     uuid and every "no account" case in this file is an ANONYMOUS session --
+     `is_anonymous` true, `sub` still set -- so auth.uid() is never null in
+     any of them. `i_like` is `actor = auth.uid()`, which for a null uid is
+     false for every row, but that is read off the SQL rather than watched
+     happening. docs/BACKLOG.md. */
+  /* And it does not become a way to read who. A count is public on a
+     timeline; the list of names behind it is not this view's to hand out. */
+  ['B cannot read the likes off another\u2019s', 'denied', B, 0,
+    `select 1 from react where post='${P}' and actor='${A}'`],
+
   /* --- a reply points at what it answers, and only its author writes it --- */
   ['B answers A\u2019s post',                  'ok',     B, 0,
     `insert into post(author,body,reply_to) values ('${B}','{}'::jsonb,'${P}')`],
