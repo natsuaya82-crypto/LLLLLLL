@@ -14,7 +14,7 @@ A conlang-building app. Plain HTML/CSS/JS under `www/`, wrapped by Capacitor for
 > says the two that are easiest to get backwards: the timeline **is** on the
 > server now — `post`, `react`, `follow`, `profile` and the notices RPC, with
 > `localStorage` as the copy that survives a bad network — and CI runs three of
-> these twenty-eight checks, so a green tick on a push is not the gate. This
+> these thirty checks, so a green tick on a push is not the gate. This
 > paragraph said the opposite of the first of those for a week after it stopped
 > being true, which is the whole reason that file says how to re-check rather
 > than what to believe: `grep -n "rest/v1" www/net.js`.
@@ -316,7 +316,7 @@ backlog entry is not permission, and neither is the absence of one.
 ```
 npm test        # tools/gate.mjs -- eight with no browser in a row (assets, es5,
                 # grammar-engine, dead, import, sides, face, box, ~2s), then the
-                # other twenty four at a time. NOT run by a session -- rule 2.
+                # other twenty-two four at a time. NOT run by a session -- rule 2.
                 # The count is FAST.length + SLOW.length in tools/gate.mjs and
                 # nowhere else; every number in this file is a copy of it.
 ```
@@ -326,10 +326,10 @@ Individual: `npm run assets` / `npm run es5` / `npm run dead` / `npm run migrate
 `npm run act` /
 `npm run conv` / `npm run card` / `npm run word` / `npm run post` / `npm run backup` /
 `npm run fill` / `npm run round` / `npm run base` / `npm run kb` / `npm run plan` /
-`npm run world` / `npm run ask` / `npm run press`.
+`npm run world` / `npm run ask` / `npm run page` / `npm run press`.
 `tools/gate.mjs` is what `npm test` runs. The eight that need no browser go first, one
 after another, in about two seconds — a missing script tag or an arrow function fails
-there and nothing heavy is started at all — and the twenty that each start a headless
+there and nothing heavy is started at all — and the twenty-two that each start a headless
 Chromium then go **four at a time**. Sequentially they were ten minutes. Each check's
 output is printed whole and in list order, so a counter that moved is still visible.
 
@@ -405,9 +405,9 @@ only ever one person in a test. So `rls-check` is a second person — it applies
 somebody with no account, to do all 34 things the file says cannot be done.
 Adding a policy means adding the line somebody would use against it.
 
-## The twenty rules the gate enforces
+## The twenty-one rules the gate enforces
 
-Twenty is how many rules are written below. **The gate is twenty-eight checks,
+Twenty-one is how many rules are written below. **The gate is thirty checks,
 and the two are not the same number and must not be made to match** — count the
 rules here, and count `FAST` and `SLOW` in `tools/gate.mjs` for the other. One
 rule can take three checks and one check can hold two rules.
@@ -1351,6 +1351,71 @@ Its first version stayed green with the second bug put back, because it called
 asking about whatever screen the check happened to be standing on. **A screen
 is a route AND its argument**, which this file says twice already, and the
 check now stands on the route.
+
+### 21. One route is drawn by one function
+
+**§ One place, not fifteen finally has something holding it.** That section
+ends with the sentence this rule is: *"A comment saying 'this is the one place'
+is worth nothing on its own... Either a check holds the claim, or do not make
+it."* Nothing held it, and on 2026-09-01 it was broken with every one of the
+twenty-nine checks green.
+
+`wldPage()` in `www/home.js` is the language's page — ABOUT THIS LANGUAGE, with
+Overview / Phonology / Letters / Lexicon / Grammar / Keyboard down it — and its
+own comment is the rule written out: *"There is no separate editor screen any
+more. There were two screens with two layouts for one thing... One function
+draws both now, so a section cannot appear in one and not the other."* Then
+somebody else's published language needed drawing, and what was written was
+`wldSeenHTML()`: a **second page on the same route**, under a different name,
+showing a different set of sections, reached by giving `about` an argument.
+
+Nothing throws. It is not a copy of `wldPage` — **a three-line sliding window
+over every line of `www/` finds thirty-five repeated windows with it in and
+thirty-five with it out, which is the measurement that says text similarity is
+the wrong instrument.** The second page is not a copy, it is a rival. The owner
+found it by standing a phone next to the article and reading the two.
+
+`page-check` watches the real call. Every global function is wrapped, each
+route's view is called for each of its faces, and the **drawer** is the
+innermost wrapped function whose return value IS the string the view returned —
+`(inline)` where the view built the page itself. A route with two drawers is
+two pages. Nothing here reads `vAbout`'s source or restates its branch: a check
+that recomputes the thing under test is a copy of it, and a copy always agrees.
+
+**The faces are asked of the page, and that is the half that matters.** The
+reason twenty-nine checks were green is not that they were weak — it is that
+**no walk had ever handed `about` an argument.** `argsOf` in `i18n-check` and
+`walkArg` in `act-check` are lists somebody has to remember to add a route to,
+and this is the one bug in `docs/DATA_SAFETY.md`'s family: *a list of keys,
+written by hand, that nobody remembered to add to.* So `page-check` harvests
+every `data-do="go"` carrying a two-element argument out of what it has already
+rendered — the doors the app itself offers — and then gives every route two
+arguments nothing knows as well, **because a second page reached only from a
+door that has not been built yet is still a second page.** `wldSeenHTML`
+shipped before the row on a profile became pressable; a check that waited for
+the door would have waited a commit. It was the probe that caught it, both at
+`3230182` and at the branch tip.
+
+`viewGone()` is left out by name: *"the thing you came back for is gone"* is a
+route **declining to draw**, not a face of it, and every route taking an id
+answers with it for an id that is not there. The name is held — if `viewGone`
+stops drawing anything anywhere, this fails, because an exemption matching
+nothing is what `box-check` says a stale baseline line becomes: permission.
+
+**What it does not hold, said out loud so silence is not read as approval.** A
+second page written INLINE, inside the view function, reports `(inline)` on
+both faces and passes; what is held is a second page **with a name**, which is
+the shape this was written after. Two routes sharing one drawer is not asked
+about and is not a fault — `wldPage` draws `about` and `world` on purpose, the
+reading face and the writing one. And byte equality between a route's faces was
+measured and rejected: six of thirty-seven routes use their argument to filter
+or to name somebody, so an unknown argument legitimately changes `profile`,
+`letters`, `kb`, `words`, `gram` and `notes`, and a baseline of six there would
+rot into permission.
+
+Three reds were watched before any of it was believed: the second page at
+`3230182`, the same at the branch tip with the fixture's own doors seeded, and
+the exemption's rot claim with `viewGone` renamed out from under it.
 
 ## What the free plan is
 

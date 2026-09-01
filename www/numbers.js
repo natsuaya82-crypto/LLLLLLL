@@ -108,6 +108,23 @@ function numTopUp(){
    rather than by a sentence explaining it. */
 function numOver(l){ return numIsDigit(l) && l.val>=numBase(); }
 function numIsDigit(l){ return !!(l && typeof l.val==='number'); }
+/* Digits and nothing else: what somebody wrote when they meant a NUMBER
+   rather than a name -- typed into the box on a letter's page, or written
+   over a box on a sheet. -1 is "that is a name".
+
+   It is deliberately NOT "a value this language can write", because the two
+   callers want different answers about `12` in base ten. The letter page asks
+   only this one: anything a person meant as a number is refused there and the
+   app goes to the digits room, whether or not this base could write it. The
+   sheet asks numInBase() as well -- a box it cannot file as a digit still has
+   a drawing on it that must not be thrown away, so it becomes a letter. */
+function numTyped(s){
+  var v=String(s==null? '' : s).replace(/^\s+|\s+$/g, '');
+  return /^[0-9]+$/.test(v)? parseInt(v, 10) : -1;
+}
+/* A value this base writes with ONE sign: 0 to base-1, which is what a base
+   IS. Anything as big as the base is two signs and has no single one. */
+function numInBase(v){ return typeof v==='number' && v>=0 && v<numBase(); }
 /* In the order they count in, which is the only order a digit has. */
 function numDigits(){
   return LETTERS.filter(numIsDigit).sort(function(a, b){ return a.val-b.val; });
@@ -117,22 +134,18 @@ function numByVal(v){
   for(i=0;i<LETTERS.length;i++) if(LETTERS[i].val===v) return LETTERS[i];
   return null;
 }
-/* Giving a letter a value. It stops reading a sound, because a sign is one
-   thing: the same rule that keeps a mark from also being a letter. A value
-   another digit already has is refused rather than silently moved, exactly as
-   a reading another letter already has is. */
-function numSetVal(id, v){
-  var l=ltById(id), other;
-  if(!l) return;
-  if(v<0){ delete l.val; saveLetters(); installScriptFont(); render(); return; }
-  /* A quantity as big as the base is two digits, which is what a base IS, so
-     there is no single sign for it. */
-  if(v>=numBase()){ toast(t('num.big', numLabel(numBase()-1))); return; }
-  other=numByVal(v);
-  if(other && other.id!==id){ toast(t('lt.dup', numLabel(v))); return; }
-  l.val=v; l.snd=[];
-  saveLetters(); installScriptFont(); render();
-}
+/* There is no "give this letter a value" any more, and that is the point.
+   numSetVal() lived here with ltSetRoman() as its only caller, so the one
+   thing it could actually do was turn an ordinary letter into a digit from
+   the letters room -- a letter leaving the room somebody made it in.
+   「文字か数字か分けてるのに文字に数字が入るの意味わからないだろ」
+   OWNER 2026-09-01.
+
+   A value is not a thing a person types. It is what the BASE gives: numTopUp()
+   makes one slot per value, and the + in the digits room takes the smallest
+   value nothing has (numFree()). That is the whole of how a digit comes to be
+   worth what it is worth, and it is why nothing here has to guard against two
+   sevens -- no road can ask for one. */
 /* A value is written the way everybody reads a number, in the ten they came
    with -- the point of the base is what the language does with it, not making
    somebody count in twelve to find the button. */
@@ -198,10 +211,13 @@ function numFace(k){
   var v=parseInt(k, 10), l;
   if(isNaN(v)) return '';
   l=numByVal(v);
-  if(!l || !ltHasShape(l)) return '';
-  return (l.st && l.st.length)
-    ? '<canvas class="tc numsm" data-l="'+esc(l.id)+'"></canvas>'
-    : '<span class="bch numsm">'+esc(l.ch)+'</span>';
+  if(!l) return '';
+  /* Same as numSignHTML: the picture may be `sh` or `st`, and inkGeo() is the
+     one place that knows. ltHasShape() does not -- it is older than the sheet
+     -- so it is not what is asked here. */
+  if(inkGeo(l)) return '<canvas class="tc numsm" data-l="'+esc(l.id)+'"></canvas>';
+  if(l.ch) return '<span class="bch numsm">'+esc(l.ch)+'</span>';
+  return '';
 }
 /* And the other way round: a digit's word, on the digit, with the way to go
    and make it. The sign and the word are one thing seen from two chapters. */
@@ -239,7 +255,10 @@ function numWordRow(l){
    and not one cell. */
 function numSignHTML(v){
   var l=numByVal(v);
-  if(l && l.st && l.st.length)
+  /* inkGeo() and not `st`: a digit drawn on a SHEET carries its picture as
+     `sh` (www/sheet.js), and asking for strokes here put a roman 7 on the
+     clock beside somebody's own six. */
+  if(l && inkGeo(l))
     return '<canvas class="tcln" data-l="'+esc(l.id)+'"></canvas>';
   if(l && l.ch) return '<span class="numrm">'+esc(l.ch)+'</span>';
   return '<span class="numrm">'+esc(v.toString(36))+'</span>';
@@ -443,7 +462,6 @@ function numWidHTML(){
    width its own ink asks for, which is what makes this a line. */
 function numWidMount(){
   inkLine('canvas.tcln', function(c){
-    var l=ltById(c.getAttribute('data-l'));
-    return (l && l.st && l.st.length)? l.st : null;
+    return inkGeo(ltById(c.getAttribute('data-l')));
   });
 }

@@ -36,7 +36,8 @@
     "draft": "node tools/draft-check.mjs",
     "world": "node tools/world-check.mjs",
     "ask": "node tools/ask-check.mjs",
-    "acct": "node tools/acct-check.mjs"
+    "acct": "node tools/acct-check.mjs",
+    "page": "node tools/page-check.mjs"
   },
   "keywords": [],
   "author": "",

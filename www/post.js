@@ -817,8 +817,16 @@ function postTake(ps){
   }
   for(i=0;i<(ps||[]).length;i++){
     p=ps[i];
-    if(!p || !p.id || have[p.id]) continue;
     if(POST_GONE[p.id] || (p.sid && POST_GONE[p.sid])) continue;
+    if(!p || !p.id) continue;
+    /* ALREADY HERE IS NOT NOTHING TO DO, and that was the hole. This skipped
+       a post it already had, so the numbers on it were whatever they were the
+       first time it arrived -- frozen for the life of the copy. A phone that
+       had read a timeline once would never see another like on any post in
+       it, however many times it pulled. 「当たり前だけどsnsとして機能して
+       ない」 OWNER 2026-09-01: post_seen carries the counts now
+       (claude/acct2), and they have to be able to LAND. */
+    if(have[p.id]){ if(postFresh(p)) n++; continue; }
     have[p.id]=1;
     POSTS.push(p);
     n++;
@@ -826,6 +834,50 @@ function postTake(ps){
   if(n) savePosts();
   return n;
 }
+/* What the server is allowed to change under a post this phone already holds,
+   and it is only ever these five.
+
+   NOT what the author wrote. The line, the meaning, the ink, the photographs
+   and the voice are frozen onto a post when it is written (rule 8) and a
+   later answer must not move them -- that is docs/DATA_SAFETY.md, and it is
+   the difference between a copy catching up and a copy winning.
+
+   These five are the server's own arithmetic: it counts `react` rows and it
+   knows whether one of them is yours. 「SNSは全部サーバー」. `undefined` is
+   not an answer -- netRow() leaves the field off where the server said
+   nothing rather than sending a 0 -- so a row that did not carry them leaves
+   what is here alone. */
+function postFresh(p){
+  var q=postById(p.id) || (p.sid? postById(p.sid) : null), moved=false;
+  if(!q) return false;
+  function put(k){
+    if(p[k]===undefined || q[k]===p[k]) return;
+    q[k]=p[k]; moved=true;
+  }
+  put('nlike'); put('nboost'); put('nreply'); put('ilike'); put('iboost');
+  /* And whether it has been taken down or its author frozen, which are the
+     other two facts about a post that are not the author's to write. */
+  put('down'); put('out');
+  return moved;
+}
+/* HOW MANY, AND WHETHER YOU ARE ONE OF THEM.
+   -------------------------------------------------------------------------
+   Two answers to each question and one of them is the record. The server
+   counts (`post_seen` carries `likes`/`boosts`/`replies` and
+   `i_like`/`i_boost` since claude/acct2's 8fab549); the phone keeps `li`/`bo`
+   /`re` and `lime`/`bome` so a press shows at once and so a post written with
+   no signal has something to draw at all.
+
+   The server's answer wins where there IS one, and `undefined` is what "there
+   is not" looks like -- a post from before these existed, or one this phone
+   wrote and has not sent. Reading `0` as "no answer" would be the bug the
+   net.js comment warns about from the other side: a post with genuinely no
+   likes would fall back to a stale local number for ever. */
+function postNLike(p){ return (p && p.nlike!==undefined)? p.nlike : ((p && p.li)||0); }
+function postNBoost(p){ return (p && p.nboost!==undefined)? p.nboost : ((p && p.bo)||0); }
+function postNReply(p){ return (p && p.nreply!==undefined)? p.nreply : ((p && p.re)||0); }
+function postILike(p){ return (p && p.ilike!==undefined)? !!p.ilike : !!(p && p.lime); }
+function postIBoost(p){ return (p && p.iboost!==undefined)? !!p.iboost : !!(p && p.bome); }
 /* Where the server keeps it. Written when a push comes back and read for two
    things: whether this post has gone up at all, and what to point a reply at.
 
@@ -2745,9 +2797,9 @@ function postRow(p){
          because the current shape has no use for it is the one thing
          docs/DATA_SAFETY.md forbids outright. */
       '<div class="pacts">'+
-        postAct('postReply', p.id, ICON_REPLY, (p.re||0), false)+
-        postAct('postBoost', p.id, ICON_BOOST, (p.bo||0), !!p.bome)+
-        postAct('postLike',  p.id, ICON_HEART, (p.li||0), !!p.lime)+
+        postAct('postReply', p.id, ICON_REPLY, postNReply(p), false)+
+        postAct('postBoost', p.id, ICON_BOOST, postNBoost(p), postIBoost(p))+
+        postAct('postLike',  p.id, ICON_HEART, postNLike(p),  postILike(p))+
         /* On every post, not only your own. The comment that used to be here
            said a card is drawn out of a dictionary and a set of letters, so it
            could only be made of a post whose language is here -- and that
@@ -2767,8 +2819,17 @@ function postRow(p){
 function postLike(id){
   var p=postById(id);
   if(!p) return;
-  p.lime=!p.lime;
-  p.li=Math.max(0, (p.li||0)+(p.lime? 1 : -1));
+  /* Off what is ON THE SCREEN, which is the server's number where there is
+     one. Toggling the local copy alone made the thumb argue with the figure
+     above it: pressing a post showing the server's 12 set `li` to 1. */
+  var on=!postILike(p);
+  p.lime=on;
+  p.li=Math.max(0, postNLike(p)+(on? 1 : -1));
+  /* Both copies move together, so the number changes under the thumb rather
+     than on the next pull. The next answer overwrites them, and it is the
+     record -- this is the moment in between. */
+  if(p.nlike!==undefined) p.nlike=p.li;
+  p.ilike=on;
   savePosts(); render();
   /* Whether it is liked, not what the count is: a count is the server's to
      add up, and two phones sending counts is how a number goes backwards. */
@@ -2777,8 +2838,11 @@ function postLike(id){
 function postBoost(id){
   var p=postById(id);
   if(!p) return;
-  p.bome=!p.bome;
-  p.bo=Math.max(0, (p.bo||0)+(p.bome? 1 : -1));
+  var on=!postIBoost(p);
+  p.bome=on;
+  p.bo=Math.max(0, postNBoost(p)+(on? 1 : -1));
+  if(p.nboost!==undefined) p.nboost=p.bo;
+  p.iboost=on;
   savePosts(); render();
   netMark(id, 'boost', !!p.bome, function(){}, function(){});
 }

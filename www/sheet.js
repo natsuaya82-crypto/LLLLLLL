@@ -1404,10 +1404,32 @@ function shBoxShape(scan, i, RES){
 }
 /* And the moment a drawing becomes a letter.
 
-   It ADDS. Box `7` becomes a NEW letter called `7` -- nothing already in the
-   alphabet is overwritten, renamed or touched, whatever it is called. Two
+   It ADDS. Box `ka` becomes a NEW letter called `ka` -- nothing already in
+   the alphabet is overwritten, renamed or touched, whatever it is called. Two
    letters called the same thing is what Pro is for, and it is the decided
    behaviour: 「a,a,a は三枠」.
+
+   A NUMBER is the one thing that is not a name, and that is not an exception
+   to the sentence above -- it is the same sentence about a different kind of
+   sign. 「用紙を入れて数字なら数字に振り分けて」 OWNER 2026-09-01. A digit is
+   a letter carrying a VALUE instead of a reading (www/numbers.js), and a
+   value is what the BASE gives: one slot per value, made by numTopUp(). There
+   is one seven and no road asks for a second, so `7,7,7` cannot be three
+   boxes. A box called `7` IS the digit seven, and the slot that already holds
+   seven is the only place it can go.
+
+   What counts as a number is the language's own base and nothing else --
+   0 to base-1, which is what one sign can write. `25` in base ten is two
+   signs, so it is a name like any other and arrives as a letter called `25`;
+   in base twenty it is the digit twenty-five. numTyped() and numInBase() are
+   where that is said, and the box on a letter's page asks the same two.
+
+   And it goes into that slot only while nothing is DRAWN on it -- the slot
+   numTopUp() made and nobody has touched. A digit somebody has already drawn
+   on is theirs: it is left exactly as it is, and the box arrives as an
+   ordinary letter beside it. That is ltFreeSlot()'s answer to the same
+   question and the duplicate the alphabet shows in red. Overwriting a drawing
+   to make room for another is the one thing this may never do.
 
    `via` goes on here and is never worked out again afterwards. Absent means
    make, so not one letter that exists today is touched and there is no
@@ -1417,11 +1439,25 @@ function shBoxShape(scan, i, RES){
    will not stay true the moment anything else can produce one, which is
    exactly why the letter says so itself. */
 function shTakeIn(){
-  var s = shState(), n = 0, i, g;
+  var s = shState(), n = 0, i, g, v, d;
   if(!s.got) return;
   for(i = 0; i < s.got.length; i++){
     g = s.got[i];
     if(!g.sh.length) continue;
+    v = numTyped(g.nm);
+    if(numInBase(v)){
+      d = numByVal(v);
+      /* Nothing holds this value yet, so the box IS that digit. No name goes
+         on it: a digit says what it is WORTH, and ltName() reads that off the
+         value rather than off a label. */
+      if(!d){ ltNew({val:v, sh:g.sh, via:'write'}); n++; continue; }
+      /* The slot is there and nothing is drawn on it. inkGeo() is the one
+         place that knows a letter's shape may be `sh` as well as `st`, and a
+         borrowed character is a shape too. */
+      if(!inkGeo(d) && !d.ch){ d.sh = g.sh; d.via = 'write'; saveLetters(); n++; continue; }
+      /* Otherwise that digit is somebody's work, and this falls through to a
+         letter beside it rather than over it. */
+    }
     ltNew({nm:g.nm, sh:g.sh, via:'write'});
     n++;
   }

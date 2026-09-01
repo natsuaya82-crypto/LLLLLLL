@@ -349,10 +349,11 @@ function snsPull(){
    the answer is out.
 
    THIS FILE MAKES IT AND TURNS IT; IT DOES NOT DRAW IT. What it looks like is
-   `www/index.html`, which is another session's -- so what is put in the page
-   is an empty `div.pullspin`, and an empty div with no rule behind it is zero
-   pixels tall and marks nothing. This can land before the stylesheet does and
-   change no screen.
+   `.pullrule` in `www/index.html` -- an 18px line in `--goldln`, hung off the
+   bottom of `.navtop`. **The name has to be the stylesheet's**, which is the
+   whole of what went wrong the first time: this file invented `pullspin`,
+   nothing drew it, and an empty div wearing a class no rule matches is zero
+   pixels tall.
 
    It turns ONCE by the time it would fire. `PULL_GO` is the distance that
    asks, so a full turn is the mark saying "this far" -- the number is read
@@ -370,24 +371,47 @@ function snsPull(){
 var PULL_R=0.5, PULL_GO=64, PULL_MAX=96;
 var PULL_ON={feed:1, explore:1, notif:1};
 var pullY=-1, pullEl=null, pullAt=0;
-/* The mark that turns in the gap. Put in beside `.body` rather than inside
-   it, because `.body` is the thing sliding down and a mark carried on it
-   would sit still relative to the gap it is supposed to be in.
+/* The mark that turns in the gap.
 
-   `on` is the second half: while a finger is on it, this file turns it; once
+   IT WAS BUILT UNDER A NAME NOTHING DRAWS, AND THAT IS WHY IT NEVER SHOWED
+   ON THE PHONE. The two halves landed in two commits on 2026-08-28 -- the
+   stylesheet in 6d29719, this file in e27c758 -- and they never agreed on
+   three things:
+
+     what it is called   this file made `pullspin`; index.html draws
+                         `.pullrule`
+     what turning is     this file put `on` on it; the animation is on
+                         `.pullrule.go`
+     where it goes       this file put it in `.view` before `.body`;
+                         `.pullrule` is `position:absolute; top:100%` and
+                         that is measured from `.navtop`, which is the only
+                         positioned thing over the gap (`position:sticky`)
+
+   Any one of the three is an invisible mark and not one of them throws: an
+   empty `div` wearing a class no rule matches is zero pixels tall, so the
+   pull worked, the timeline was asked again, every check was green and the
+   owner saw nothing turn. 「引っ張っても更新のグルグル出ない」 OWNER, build
+   #106. The stylesheet is what the owner approved, so the names here are
+   moved to it rather than the other way.
+
+   It goes INSIDE `.navtop` -- 6d29719 said so in its own message -- and not
+   beside `.body`: `.body` is the thing sliding down under the finger, so a
+   mark carried on it would sit still relative to the gap it is supposed to
+   be in. The bar does not move, and the gap opens underneath it.
+
+   `go` is the second half: while a finger is on it, this file turns it; once
    let go and asking, the class goes on and the stylesheet turns it, because
    an animation that runs on its own is CSS's and a rotation that answers a
    thumb is not. */
 var PULL_SPIN=null;
 function pullSpinOn(){
-  var v, b;
+  var bar;
   if(PULL_SPIN && document.contains(PULL_SPIN)) return PULL_SPIN;
-  v=document.querySelector('#app .view');
-  b=document.querySelector('#app .view > .body');
-  if(!v || !b) return null;
+  bar=document.querySelector('#app .view > .navtop');
+  if(!bar) return null;
   PULL_SPIN=document.createElement('div');
-  PULL_SPIN.className='pullspin';
-  v.insertBefore(PULL_SPIN, b);
+  PULL_SPIN.className='pullrule';
+  bar.appendChild(PULL_SPIN);
   return PULL_SPIN;
 }
 /* Taken out when the answer lands, when the pull is let go short, and when
@@ -455,7 +479,10 @@ function pullLet(ask){
   if(!ask){ pullSpinOff(); return; }
   /* Let go far enough: it stops answering the finger and starts turning on
      its own, which is the stylesheet's animation and this file's class. */
-  if(PULL_SPIN){ PULL_SPIN.className='pullspin on'; PULL_SPIN.style.transform=''; }
+  /* The inline transform goes with it: it is what answered the thumb, and
+     the animation on `.pullrule.go` sets transform too -- an inline one wins
+     over a stylesheet's keyframes and the mark would sit still. */
+  if(PULL_SPIN){ PULL_SPIN.className='pullrule go'; PULL_SPIN.style.transform=''; }
   if(r==='notif'){ notPull(); return; }
   if(!r){ pullSpinOff(); return; }
   /* A pull is somebody saying "ask again", and what the feed is showing
@@ -976,6 +1003,15 @@ function snsGo(){
 }
 /* A person, as a row: the face, the name and the handle, the language they
    write, and the one thing you came here to do about them.
+
+   `full` is the follows list and nothing else -- it adds the 「フォローされて
+   います」 label and the line about themselves, which is the shape the owner
+   named 「フォロー中の見た目これにしろよ」. The search row is left exactly as
+   it was: 「ui変更は俺が頼んだの以外は勝手な判断でやるなよ？」
+
+   Two arguments now, so it may never be handed bare to `map` -- rule 8's
+   own worked example is `postRow` growing a second argument and every row
+   after the first being given its index. `sides-check` holds it.
    「⭕️ @〇〇 lingua マーク　フォローする」
 
    Two controls and not one, so the row is a container: pressing the person
@@ -985,12 +1021,24 @@ function snsGo(){
 
    Your own row has neither: you cannot follow yourself, and the chevron is
    not needed to say where your own name goes. */
-function snsWhoRow(p){
-  var h=String(p.hd||''), on=meFollows(h);
+function snsWhoRow(p, full){
+  var h=String(p.hd||''), on=meFollows(h), back=full && meFollowers().indexOf(h)>=0;
   var inner='<span class="pav">'+postFace(p)+'</span>'+
     '<span class="whb">'+
       '<span class="pname">'+esc(postWho(p))+'</span>'+
-      '<span class="phandle">@'+esc(h)+'</span>'+
+      '<span class="whh">'+
+        '<span class="phandle">@'+esc(h)+'</span>'+
+        /* 「フォローされています」の小さい札。相手が自分を追っているか
+           だけの話なので meFollowers() で答えが出る -- サーバーへの問いは
+           増えない。角丸でも枠でもない小さな字にしてある: 規則18 は
+           「新しいものに角丸・枠・塗りを付けない」で、リーダーが名指しで
+           許したのは右のボタンひとつだけ。X の見本では灰色の丸い札です。 */
+        (back? '<span class="whyou">'+esc(t('me.follows.you'))+'</span>' : '')+
+      '</span>'+
+      /* 一行の自己紹介。**いまは誰の分も空になります** -- `profile` に
+         `bio` の列が無く（netWho() のコメントがそう書いている）、投稿も
+         bio を運んでいない。列が出来た日にこの行が埋まる。 */
+      (full && p.bio? '<span class="pbio">'+esc(p.bio)+'</span>' : '')+
     '</span>'+
     (p.lname? '<span class="plangtag">'+esc(p.lname)+'</span>' : '');
   return '<div class="whrow">'+
@@ -1305,6 +1353,86 @@ function vExplore(){
    in the same four fields everything else describes a person with, and which
    post it was about. */
 var NOTES_HAVE=null, notPulling=false;
+/* THE COPY ON THE HANDSET, and it is the answer to the second of blank.
+   「通知とか表示されるのに1秒くらいの空白の時間があるのうざいからそれ無くして
+   欲しい」 OWNER 2026-08-28.
+
+   The feed draws instantly because `lingua.posts` is a copy; the notices had
+   none at all, so the screen was empty for as long as the request was in the
+   air. This is that copy: drawn first, replaced when the answer lands.
+
+   FILED UNDER THE ACCOUNT, the way `lingua.me` is parked by meParkKey(). Two
+   accounts on one handset must not read each other's notices, and a notice
+   names who did what to whom.
+
+   IT REPLACES RATHER THAN FILLS IN, which is the opposite of what draftsPull()
+   does and is not an exception to it: `notices()` is computed on the server
+   from `react`, `post` and `follow` every time it is asked, so nothing here can
+   ever be the only surviving copy of anything. A draft is something a person
+   MADE; a notice is something that happened to them. `docs/DATA_MODEL.md`. */
+var LS_NOTES='lingua.notices';
+function notKey(){
+  var u=(typeof SESS==='object' && SESS && SESS.uid)? String(SESS.uid) : '';
+  return u? (LS_NOTES+'.'+u) : '';
+}
+/* Read once, when the screen first asks. `NOTES_HAVE` stays null until then,
+   which is still "nobody has asked" -- and a phone with no copy yet is that
+   too, so the two agree without a third flag. */
+var notRead=false;
+function notWake(){
+  var k=notKey(), raw=null, got=null;
+  if(notRead || !k) return;
+  notRead=true;
+  try{ raw=localStorage.getItem(k); }catch(e){ raw=null; }
+  if(!raw) return;
+  try{ got=JSON.parse(raw); }catch(e){ got=null; }
+  if(got && got.length) NOTES_HAVE=got;
+}
+function notKeep(){
+  var k=notKey();
+  if(!k || !NOTES_HAVE) return;
+  try{ localStorage.setItem(k, JSON.stringify(NOTES_HAVE)); }catch(e){}
+}
+/* WHAT MAKES A NOTICE UNREAD, and it is the owner's answer rather than the
+   server's. 「最後に通知の画面を開いた時刻より新しいものを未読とする」 OWNER
+   2026-09-01, X と Instagram と同じ形.
+
+   THE SERVER HOLDS NO READ MARKER. `notices()` in supabase/schema.sql returns
+   eight columns -- kind, at, hd, who, av, post, n, more -- and not one of them
+   says read; there is no `read_at`, no `last_seen` and no table for one. So
+   this is the whole of what unread means here, and it is a decision and not a
+   workaround for a missing column: 「サーバーの既読の表は要りません」.
+
+   `SET.notAt` is the number, in `lingua.set` because it is a fact about the
+   PERSON and not about the notices -- it survives the copy being replaced.
+   `docs/DATA_MODEL.md`. */
+function notUnread(){
+  var i, n=0, at=Number(SET.notAt||0), ns=NOTES_HAVE||[];
+  for(i=0;i<ns.length;i++) if(Number(ns[i].at||0)>at) n++;
+  return n;
+}
+/* Opening the screen is the reading. Written down only when something was
+   actually unread: this runs on every render of the notices, and save() walks
+   the language's slices, so writing a timestamp on each of them would be a
+   dictionary written out to say a bell went quiet.
+
+   Not writing costs nothing that matters -- a phone killed before the write
+   shows the mark again, which is the side that never hides a notice. */
+function notSeen(){
+  var had=notUnread();
+  SET.notAt=Date.now();
+  if(had) save();
+}
+/* Asked once a session, from the tab bar, so the count is right on the screen
+   somebody is actually standing on. Same shape as meFollowPull()'s FO_ASKED
+   and snsSavedPull(): a screen that draws every render must not ask every
+   render. Opening the notices asks again on its own through notPull(). */
+var NOT_ASKED=false;
+function notAsk(){
+  if(NOT_ASKED || !netSignedIn()) return;
+  NOT_ASKED=true;
+  notPull();
+}
 function notPull(){
   if(notPulling) return;
   notPulling=true;
@@ -1315,6 +1443,7 @@ function notPull(){
     pullSpinOff();
     if(!ns) return;
     NOTES_HAVE=ns;
+    notKeep();
     render();
   }, function(){ notPulling=false; pullSpinOff(); });
 }
@@ -1358,26 +1487,149 @@ function notFace(n){
    not hold, so the press is put on rather than the row pretending. Nothing
    moves on the screen either way: no class, no mark, no arrow.
    「ui変更は俺が頼んだの以外は勝手な判断でやるなよ？」 */
+/* WHO A NOTICE IS FROM, when it is from more than one person.
+   「同じ投稿のいいねはXみたいにまとめる」「フォローも同じでいい ── 〇〇さん
+   他3人にフォローされました」 OWNER 2026-08-28, docs/FEATURE_RULES.md.
+
+   THE GROUPING IS ALREADY DONE, AND IT IS DONE ON THE SERVER, which is what
+   that decision says. `notices()` in supabase/schema.sql groups by (kind,
+   post), counts them into `n`, and hands back up to four of the people as
+   `few` -- the first becomes the row's `hd`/`who`/`av` and the rest arrive as
+   `more`. **www/sns.js has been throwing `n` and `more` away since the day
+   they were added**, so fifty likes on one post drew as one person's name and
+   the other forty-nine were not mentioned. Nothing threw: the row was correct
+   about the person it named.
+
+   The count is the SERVER's -- `n` -- and not the length of `more`, which is
+   capped at four. Saying 「他3人」 off a capped list would be the app quietly
+   deciding that fifty is three. */
+function notWho(n){
+  var few=n.more||[], k=Number(n.n||1);
+  if(k<=1 || !few.length) return postWho(n);
+  /* Two people are both named. Instagram and X both do this and it is what
+     the owner's own picture shows. */
+  if(k===2) return t('notif.two', postWho(n), postWho(few[0]));
+  /* More than two: the first, and how many others. `tn` because English says
+     「1 other」 and 「3 others」 and Russian counts differently again. */
+  return tn('notif.many', k-1, postWho(n));
+}
+/* Their faces, up to three. Each is its own door, the way the single one
+   always was -- pressing a face opens that person and pressing the row opens
+   the post. */
+function notFaces(n){
+  var few=n.more||[], out=notFace(n), i, o;
+  /* TWO, overlapping. 「プロフィール画像は丸くて、重なって並ぶ」 OWNER
+     2026-09-01, which is what the picture has. It drew three side by side,
+     and on a 320 that is 128px of the row spent on faces -- the sentence had
+     46px left and wrapped to six lines, so no two rows in the list were the
+     same height. Two is the picture's number and it is also what gives the
+     sentence its width back. */
+  for(i=0;i<few.length && i<1;i++){
+    o=few[i];
+    out+=postAvHTML({hd:o.hd, who:o.who, av:o.av, id:'n:'+String(o.hd||'')});
+  }
+  return out;
+}
+/* WHERE A NOTICE GOES, and it is the KIND that decides rather than whether
+   there happens to be a post on it.
+
+   It was `n.id? postOpen : nothing`, so a FOLLOW -- which carries no post,
+   because following somebody is not about one -- had no door at all. One row
+   in the list did nothing when pressed, and nothing said so.
+
+   A follow goes to the person. Where it is a group 「Veth と他3人があなたを
+   フォローしました」 that is the one in front, `n.hd`, which is the one the
+   sentence is named after -- the same person the first circle draws.
+
+   Everything else goes to the post it is about. A recommendation is about a
+   post too, so it goes there like the rest. What is left with nowhere to go
+   is a notice carrying neither, and that gets no door rather than a door
+   onto nothing. */
+function notGo(n){
+  var k=String(n.kind||''), h=String(n.hd||'');
+  if(k==='follow') return h? DO('go', ["profile", h]) : '';
+  if(n.id) return DO('postOpen', [String(n.id)]);
+  return h? DO('go', ["profile", h]) : '';
+}
 function notRow(n){
-  var k=String(n.kind||''), p=postById(n.id), ic=
+  var k=String(n.kind||''), p=postById(n.id), pics=p? postPics(p) : [], ic=
     k==='like'? ICON_HEART : k==='boost'? ICON_BOOST :
     k==='reply'? ICON_REPLY : k==='follow'? ICON_ADD : ICON_LINE;
-  return '<div class="ntf"'+(n.id? DO('postOpen', [String(n.id)]) : '')+'>'+
-    '<span class="ntfi '+esc(k)+'">'+ic+'</span>'+
-    notFace(n)+
+  return '<div class="ntf"'+notGo(n)+'>'+
+    /* THE KIND, NAMESPACED. It was `class="ntfi '+k+'"`, so a notice about a
+       recommendation wore `pick` -- and `.pick` is a tab strip somewhere else
+       in the stylesheet, with `margin:10px 0 4px` and a border under it. The
+       mark on that one row was being pushed down and given a rule of its own
+       by a class it had never heard of. Nothing threw; it was 3px, and it is
+       the row the owner pointed at.
+
+       `like` `boost` `reply` `follow` `other` collide with nothing today,
+       which is luck rather than a reason: a bare word out of the data, used
+       as a class name, is a collision waiting for whoever next adds a rule.
+       All five are prefixed, so the answer does not depend on what the
+       stylesheet happens to contain. */
+    '<span class="ntfi nk'+esc(k)+'">'+ic+'</span>'+
+    '<span class="ntffs">'+notFaces(n)+'</span>'+
     '<span class="ntfb">'+
-      '<span class="ntfw">'+esc(t('notif.'+(k||'other'), postWho(n)))+'</span>'+
-      (p? '<span class="ntfp">'+esc(p.mn || p.ln || '')+'</span>' : '')+
+      /* The time is IN the sentence -- 「A と B がいいねしました · 1週間」 --
+         rather than off the right-hand end of the row. 「文字の位置違うやん」
+         OWNER 2026-09-01: the picture reads as one line of words, and a
+         column of times against the right edge was taking 32px out of the
+         middle of it on a phone that had none to spare. */
+      '<span class="ntfw">'+esc(t('notif.'+(k||'other'), notWho(n)))+
+        '<span class="ntfwh"> \u00b7 '+esc(postWhen(n.at))+'</span></span>'+
+      /* ALWAYS, empty where there is no post. A follow is about a person and
+         has no post under it, and a row that simply left the line out was a
+         row whose block of words was 43px tall where its neighbours' were 68
+         -- so the mark, the faces and the photograph centred against a
+         different middle and every one of them sat a few pixels off. The
+         line is reserved instead: one shape for every row, and nothing in it
+         to read when there is nothing. */
+      '<span class="ntfp">'+esc(p? (p.mn || p.ln || '') : '')+'</span>'+
     '</span>'+
-    '<span class="pwhen">'+esc(postWhen(n.at))+'</span>'+
+    /* The post itself, small, on the right -- which is the owner's picture and
+       is also the only thing on the row that says WHICH post without reading
+       it. Only where this phone has the post: a notice is about something you
+       wrote, so it is in `lingua.posts`, and a notice whose post is not here
+       shows the time alone rather than a gap. */
+    (pics.length? '<span class="ntfpic"><img src="'+esc(pics[0])+'" alt=""></span>'
+                : '')+
     '</div>';
 }
+/* WAITING FOR AN ANSWER IS NOT THE SAME AS THERE BEING NOTHING, and this
+   screen said both with one sentence. 「通知とか表示されるのに1秒くらいの空白
+   の時間があるのうざい」 OWNER 2026-08-28, build #106.
+
+   `NOTES_HAVE` starts null and means "nobody has asked yet". It was read as
+   `(NOTES_HAVE||[])`, so a screen with the request still in the air drew
+   「まだ何もありません」 -- a statement of fact, about a question nobody has
+   answered -- and then the notices appeared under it a second later. That is
+   the flash the owner is looking at.
+
+   CLAUDE.md § Data: 「"Empty" and "broken" are different states and must not
+   share a branch.」 Three states here, not two: not asked (draw nothing),
+   answered and empty (say so), answered with notices (draw them).
+
+   snsAnsHTML() in this same file has had it right since it was written --
+   `if(!r) return ''` -- so this is the search's shape, not a new one.
+
+   The second of blank is gone with `lingua.notices` above: notWake() puts
+   last time's notices on the screen in the first frame, and the answer
+   replaces them when it lands. The three states are still three -- a phone
+   that has never had an answer has no copy either, so it draws nothing rather
+   than saying there is nothing. */
 function vNotif(){
   if(!netSignedIn()) return snsLocked('notif');
+  /* The copy first, so there is something on the screen before the request
+     goes out; then the request. */
+  notWake();
+  notSeen();
   notPull();
-  var ns=(NOTES_HAVE||[]).filter(function(n){ return !meBlocks(n.hd); });
+  var got=NOTES_HAVE;
+  var ns=(got||[]).filter(function(n){ return !meBlocks(n.hd); });
   return '<div class="view">'+rootTop('notif')+
     '<div class="body">'+
-    (ns.length? ns.map(notRow).join('') : snsNone())+
+    (ns.length? ns.map(notRow).join('')
+              : (got? snsNone() : ''))+
     '</div></div>';
 }

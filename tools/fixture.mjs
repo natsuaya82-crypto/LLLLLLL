@@ -233,11 +233,40 @@ export function seed(){
             offers it would never be drawn. */
          fm:[{id:'fr1', pos:'n', fm:'pl', at:'end', drop:0, when:'',
               add:[{l:'l1', u:'k'}]}]};
+  /* SOMETHING UNREAD, so the number on the bell is a state the walk reaches.
+     `press` reported `.tabn` as styled and worn by nothing -- which is that
+     check's own words for "a class only worn in a state nothing here gets
+     into", and its own advice is to seed it rather than to freeze it into
+     tools/css-baseline.txt.
+
+     One notice, newer than `SET.notAt` (which no fixture sets, so it is 0).
+     tabBar() draws the figure on every render, so this is worn on every
+     screen -- and a person with an unread notice is the ordinary state of a
+     timeline, not a corner of it. */
+  /* AND THE WATERMARK BACK TO NOTHING. Opening the notices is what marks them
+     read -- notSeen() writes `SET.notAt` -- and the walks render every screen
+     in one page, so the first render of `notif` was making every render after
+     it a phone with nothing unread. The bell then appeared on two screens and
+     never again, which is a fixture that changes under the walk rather than
+     one that seeds a state. Reset here, where every other field of SET is. */
+  SET.notAt = 0;
+  /* And nobody else's language answered for. `wldSeenPull()` writes both, and
+     they are a session's memory of what came back rather than anything stored
+     -- so a face that seeds one must not leave it standing for every render
+     after it. Reset where the rest of the state is. */
+  WLD_HAVE = {}; WLD_ASKED = {}; WLDS_HAVE = {}; WLDS_ASKED = {};
   /* Where you are standing is the app's to say, not this file's. viewReset()
      in www/shell.js is the one list of what a screen forgets when you leave
      it; a copy here would be a second list to keep in step, and the first
      version of this was exactly that -- two of the fifteen. */
   viewReset();
+  /* AFTER viewReset(), and that is the whole of why it was not working.
+     viewReset() nulls NOTES_HAVE -- 「the notices, asked again」 -- so a seed
+     written above it was wiped by the last line of this function every time.
+     The bell was measured at 0 on every screen and the state simply never
+     existed. Anything here that viewReset() forgets has to be set after it. */
+  NOTES_HAVE = [{kind:'like', at:Date.now()-60000, hd:'iri', who:'Iri',
+                 av:{ch:'\u0416'}, id:'p1', n:1, more:[]}];
 }
 
 /* The steps of the onboarding that have a second face: the writing systems to
@@ -738,12 +767,97 @@ export function halfDone(){
         const h = vDrafts(); NAV=[{r:'feed'}]; return h; }],
     /* Notices, which arrive and so are never there on a phone with nobody
        else on it. */
+    /* WHAT `notices()` ACTUALLY HANDS BACK, which is not what this said.
+       supabase/schema.sql groups by (kind, post): every row carries `n`, how
+       many there were, and `more`, up to three of the other people. Every
+       notice here was written before those two existed, so all five were
+       n=1 with nobody else on them -- and a screen drawn from them showed
+       five ungrouped rows however well the grouping worked.
+
+       That is the fixture standing in front of the thing it is supposed to
+       show. Three of the five carry a group now: two people on one post,
+       twelve on another, and four follows -- which is 「〇〇さん他3人にフォロー
+       されました」, the shape the owner asked for.
+
+       `who` and `av` are filled in on all of them for the same reason. Two
+       rows had `who:''` and `av:null`, so postFace() fell through to `?` --
+       and `notices()` answers with `p0.display` and `p0.av`, which a person
+       who has set neither would leave empty, but veth has a name and a face
+       everywhere else in this fixture. A face that is `?` because the fixture
+       forgot is a face nobody can tell from one that is `?` because the app
+       is broken.
+
+       NOT here, deliberately: 「A が2件の投稿にいいね」 -- the same person
+       across several posts. `notices()` groups by (kind, post), so two likes
+       by one person on two posts are two rows and there is no shape this
+       fixture could take that would make them one. Putting it in would be
+       seeding a state the app cannot produce -- the wdMode mistake CLAUDE.md
+       records, where six faces were walked in a state that no longer existed.
+       It is a supabase/schema.sql change and it is in the report. */
+    /* THE TIMELINE BEING PULLED DOWN. `press` reported `.pullrule` unworn for
+       the same reason it reported `.tabn`: the mark is put in by a finger
+       dragging the page, and a walk has no finger. It is `pullSpinOn()` that
+       is called here rather than the markup being written out -- a copy of
+       what is under test agrees with it by construction, which is the mistake
+       conv-check was written after. */
+    ['the timeline, pulled down', () => {
+        const app = document.getElementById('app'), was = app.innerHTML;
+        window.route = 'feed'; NAV = [{ r:'feed' }];
+        app.innerHTML = vFeed();
+        pullSpinOn();
+        const h = app.innerHTML;
+        PULL_SPIN = null; app.innerHTML = was;
+        return h; }],
+    /* SOMEBODY ELSE'S LANGUAGE, answered for. The page draws nothing until
+       `language_seen` comes back, which is right on a phone and means a blank
+       photograph on a bench with no server -- so the answer is put in by hand,
+       in the shape netLangSeen() returns.
+
+       The numbers are the SERVER's count. `slice_read` still opens no
+       dictionary to anybody, so there is no word list here to seed and none
+       is drawn. */
+    /* SOMEBODY ELSE'S LANGUAGE, as the same wiki page. 「このwikiのような感じに
+       するんじゃないの？」 OWNER 2026-09-01 -- so what is seeded is what the
+       SERVER hands over: the row language_seen answers with, and the five
+       slices slice_read opens on a published language. The page is then the
+       real wldPage(), drawn from those and from nothing of this phone's.
+
+       The `wld` slice is the article itself -- the two the book always has
+       and one the person wrote. No `words` and no `gram` slice, because
+       slice_read opens neither to anybody and seeding one would be a fixture
+       showing a state the server cannot produce. */
+    ['somebody else\u2019s language', () => {
+        WLD_HAVE['L1'] = { id:'L1', name:'Vethi', license:'',
+                           pub:'2026-08-20T00:00:00Z', nwords:412, nletters:38 };
+        WLD_ASKED['L1'] = 1;
+        WLDS_HAVE['L1'] = {
+          wld: { body: JSON.stringify({
+                   where:'A valley under the north ridge',
+                   who:'The people who winter there',
+                   arts:[{ id:'A1', t:'Seasons', b:'Four, and the fifth is the thaw.' }],
+                   secs:{} }), no:1 },
+          letters: { body: JSON.stringify([
+                   { id:'v1', nm:'ka', snd:['k'], st:[{ pts:[[112,112],[688,112],[400,688]] }] },
+                   { id:'v2', nm:'to', snd:['t'], st:[{ pts:[[112,688],[400,112],[688,688]] }] },
+                   { id:'v3', nm:'ri', snd:['r'], st:[{ pts:[[300,150],[300,650]] }] }]), no:1 },
+          snd: { body: JSON.stringify(['k','t','r','a','i']), no:1 } };
+        WLDS_ASKED['L1'] = 1;
+        window.route='about'; NAV=[{ r:'about', a:'L1' }];
+        return vAbout(); }],
     ['notices', () => { NOTES_HAVE = [
-        {kind:'like', at:Date.now()-60000, hd:'iri', who:'Iri', av:{ch:'Ж'}, id:'p1'},
-        {kind:'reply', at:Date.now()-120000, hd:'iri', who:'Iri', av:null, id:'p1'},
-        {kind:'boost', at:Date.now()-180000, hd:'veth', who:'', av:null, id:'p1'},
-        {kind:'follow', at:Date.now()-240000, hd:'veth', who:'', av:null, id:''},
-        {kind:'pick', at:Date.now()-300000, hd:'', who:'', av:null, id:'p2'}];
+        {kind:'like', at:Date.now()-60000, hd:'iri', who:'Iri', av:{ch:'Ж'}, id:'p1',
+         n:2, more:[{hd:'veth', who:'Veth', av:{ch:'V'}}]},
+        {kind:'reply', at:Date.now()-120000, hd:'iri', who:'Iri', av:null, id:'p1',
+         n:1, more:[]},
+        {kind:'boost', at:Date.now()-180000, hd:'veth', who:'Veth', av:{ch:'V'}, id:'p1',
+         n:12, more:[{hd:'iri', who:'Iri', av:{ch:'Ж'}},
+                     {hd:'kai', who:'Kai', av:null},
+                     {hd:'mor', who:'Mor', av:null}]},
+        {kind:'follow', at:Date.now()-240000, hd:'veth', who:'Veth', av:{ch:'V'}, id:'',
+         n:4, more:[{hd:'iri', who:'Iri', av:{ch:'Ж'}},
+                    {hd:'kai', who:'Kai', av:null}]},
+        {kind:'pick', at:Date.now()-300000, hd:'', who:'', av:null, id:'p2',
+         n:1, more:[]}];
         window.route='notif'; NAV=[{r:'notif'}];
         const h = vNotif(); NOTES_HAVE = null; return h; }],
     /* The search, with something in it. An empty field draws no results at
@@ -1382,12 +1496,6 @@ export function halfDone(){
     ['a face already chosen', () => {
         ME.pic = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
         openMe(); const h = vForm(); ME.pic = ''; return h; }],
-    /* And the screen that face goes to when it is touched again. Taking the
-       picture off lives HERE now and nowhere else, so a walk that only ever
-       opened the profile called meDropPic an entry no screen names. */
-    ['the picture, touched again', () => {
-        ME.pic = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-        openMePic(); const h = vForm(); ME.pic = ''; return h; }],
     ['searching the notes', () => { ntFind = true; ntQ = 'a';
                                     window.route='notes'; NAV=[{r:'notes'}];
                                     return vNotes(); }],

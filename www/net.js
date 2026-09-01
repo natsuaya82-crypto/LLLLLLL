@@ -742,6 +742,39 @@ function netLangPublic(on){
             SESS.at, function(){}, function(){});
   }, function(){});
 }
+/* SOMEBODY ELSE'S LANGUAGE, ASKED ABOUT.
+   「言語の詳細は？」 OWNER 2026-09-01. `language_seen` in supabase/schema.sql
+   answers with a published language or one of your own, and with nothing at
+   all for anybody else's private one -- so the refusal is the view's and this
+   file does not decide who may see what.
+
+   `nwords` and `nletters` are counted ON THE SERVER and are numbers. **The
+   dictionary does not move** -- `slice_read` keeps `words` shut to everybody
+   exactly as before 「言語ページ公開と単語や文字のdl可能は別だし」 -- so what
+   crosses here is how many, and never which.
+
+   NO ROW IS NOT AN EMPTY LANGUAGE. It is one that is not published, or one
+   that is not there; `ok(null)` says so, and the screen says nothing rather
+   than drawing a language with no words in it.
+
+   Written to `docs/scope/claude-acct2-lang.md` by claude/acct2 and put in
+   here with the screen that calls it, because dead-check refuses a function
+   nobody names. */
+function netLangSeen(lid, ok, bad){
+  var id=String(lid||'');
+  if(!id){ bad(null, 0, 'lang \u2212'); return; }
+  netGet('/rest/v1/language_seen?select=id,name,license,published_at,nwords,nletters'+
+         '&limit=1&id=eq.'+encodeURIComponent(id),
+    function(d){
+      var r;
+      if(!d || !d.length){ ok(null); return; }
+      r=d[0]||{};
+      ok({ id:String(r.id||''), name:String(r.name||''),
+           license:String(r.license||''),
+           pub:r.published_at? String(r.published_at) : '',
+           nwords:Number(r.nwords)||0, nletters:Number(r.nletters)||0 });
+    }, bad);
+}
 /* Every slice of one language, as {kind: {body, no}}. */
 function netSlices(sid, ok, bad){
   netGet('/rest/v1/slice?select=kind,body,no&language=eq.'+encodeURIComponent(sid),
