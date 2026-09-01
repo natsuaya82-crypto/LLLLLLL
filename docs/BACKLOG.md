@@ -7,28 +7,6 @@ refactor, a feature and a rename never arrive in the same diff.
 
 The order is the order to do them in.
 
-## プロフィール画像を外す道が、いま一つもありません ── オーナーが「一旦」外しました
-
-**2026-09-01。バグではなく、決定です。**「削除はいいって一旦」OWNER。
-
-画像はタップで写真を選ぶところが直接開きます。**上書きはできますが、外すことは
-できません。**外す行は #104 の前は画像の下に在ってオーナーに断られ
-（「なんでアイコンの下に画像消すみたいな垢文字でんの？」）、そのあとの
-「変える／外す を選ぶ画面」も断られました（「変更するとかのページに飛ばないで」）。
-
-**戻ってくる形は決まっています** ── 同じ日にオーナーが決めた、タップで
-iPhone 標準のアクションシート（写真を選ぶ／削除）です。一度書いて、この
-ビルドには入れないことになったので戻しました。**書いたものは `375bc39` に
-残っています**（`ios/App/App/LinguaShare.swift` の `ask` ＝ `UIAlertController`、
-`www/me.js` の `mePicAsk`/`mePicPick`、`act-map` の一行、`me.pic.pick` /
-`me.pic.del` / `me.pic.no` の十言語）。**作り直す必要はありません。**
-
-そのとき分かっていたことを二つ:
-- `UIAlertController` はこのリポジトリに他に一つもありません。`LinguaShare` の
-  `sheet` は紙のほう（PDF を Documents に書く）で、画面のシートではありません
-- `LinguaShare.swift` は既に `project.pbxproj` の Sources に在るので、
-  メソッドを足すだけなら新しいファイルは要らず、`assets-check` は緑のまま
-
 ## 作文画面の箱は、iPhone 14 で 44px ぶん狭いまま ── 直していません
 
 **2026-08-27 に測って見つけました。直していません。**

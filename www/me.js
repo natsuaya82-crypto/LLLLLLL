@@ -272,6 +272,70 @@ function mePicKeep(url){
   im.onerror=function(){ toast(t('me.pic.bad')); };
   im.src=url;
 }
+/* ---- 画像をタップしたとき -----------------------------------------------
+   「長押しで消えるってわかんないだろ普通に。アイコンをタップした時に
+     iPhone標準の写真を選ぶか、削除するか出てくるやつでいいだろ」
+   OWNER 2026-09-01。
+
+   THE SYSTEM'S OWN SHEET, and only the system's. 「システム標準を最優先。
+   独自実装は『標準では実現できない場合のみ』」 -- so this asks
+   LinguaShare.ask(), which puts up a UIAlertController, and there is no
+   HTML anywhere in this file pretending to be one. A sheet drawn here to
+   look like that one is the thing CLAUDE.md § Shape bans wearing the name of
+   the thing it allows.
+
+   ONE LEVEL OF MODAL. 「モーダルは最大1階層」 -- so the picture is chosen
+   through the native picker (pickPhoto, PHPicker) rather than by clicking a
+   file input, which would put iOS's OWN 「写真を選ぶ / 撮る / ファイル」 sheet
+   on top of this one and make it two.
+
+   The file input is still here for a phone with no native side under it --
+   the browser the checks run in. It is not a second way of asking: it is the
+   same one road in, mePicKeep(), reached from the only door that exists
+   there. */
+function mePicAsk(){
+  var p=sharePlug();
+  /* No native side: the ordinary file input, which is what this screen was
+     before there was a sheet to put up. */
+  if(!p){ mePicFile(); return; }
+  p('LinguaShare', 'ask', {
+    options:[t('me.pic.pick'), t('me.pic.del')],
+    /* The second one is red. It is the one that takes something away. */
+    destroy:1,
+    cancel:t('me.pic.no')
+  }).then(function(r){
+    var i=(r && typeof r.i==='number')? r.i : -1;
+    if(i===0) mePicPick();
+    else if(i===1) meDropPic();
+    /* -1 is somebody changing their mind, and nothing is said about it. */
+  })['catch'](function(){ mePicFile(); });
+}
+/* The phone's own library. Same call the composer makes (pwPickLib), same
+   answer: `b64` is the picture, without the data URL on the front, and
+   mePicKeep() is the one road in for a picture however it arrived.
+
+   ME_PIC*2 across, not ME_PIC: mePicKeep() cuts the middle square out before
+   it squeezes, so a picture arriving already at 128 would lose half its
+   width to the crop and be scaled back up. */
+function mePicPick(){
+  var p=sharePlug();
+  if(!p){ mePicFile(); return; }
+  p('LinguaShare', 'pickPhoto', {max:ME_PIC*2, limit:1}).then(function(r){
+    var b=(r && r.b64)? String(r.b64) : '';
+    /* An empty answer is somebody backing out of the picker. */
+    if(!b) return;
+    mePicKeep('data:image/jpeg;base64,'+b);
+  })['catch'](function(){ toast(t('me.pic.bad')); });
+}
+/* The way in where there is no native side. The input is in the page with no
+   size, so this is the only thing that ever opens it. */
+function mePicFile(){
+  var el=document.getElementById('me-pic');
+  if(el) el.click();
+}
+/* Taking it off. Not a button any more -- it is the red row of the sheet --
+   so it is not in www/act-map.js: nothing on a screen names it. */
+function meDropPic(){ ME.pic=''; saveMe(); openMe(); }
 /* ---- ID を断る ----------------------------------------------------------
    「IDは2文字以上で登録してくださいと / このIDはもう使われていますと
      みたいに断る文章と実際に断ってほしい」OWNER, 2026-08-25
@@ -714,6 +778,12 @@ function openMe(){
 
        欄そのものは `lnField()`（www/shell.js の一箇所）。`<input>` は
        折り返せないので、書いた字が横に消えていた。 */
+    /* 画像がまだ無いときは、触ったらそのまま写真を選ぶところが開く ──
+       外すものが無いので訊くことが無い。「操作は1タップで完結」。
+       画像が在るときだけ、iPhone 標準のアクションシートが出る。
+
+       ここより下の元の註（#104 の「変更する」の画面をやめた話）はそのまま
+       効いています ── 文字の行も、そこへ飛ぶ画面も、戻っていません。 */
     /* 触ったら写真を選ぶところが直接開く。それだけです。
        「ちがう。写真をタップしたら変えたいのよ。104の前のやつは写真を変更
          するの文字が出てきてたやんそれをやめろって言ってるのよ」
@@ -730,11 +800,21 @@ function openMe(){
        でんの？」）、選ぶ画面のほうも今日断られた。二つとも断られたので、
        どこに置くかは決めごと ── 私は決めません。報告に書いてあります。 */
     '<div class="picrow">'+
-      '<label class="pav" style="position:relative;width:96px;height:96px">'+
-        postFace({who:meName(), lname:langName, av:postAvatar()})+
-        '<input type="file" id="me-pic" accept="image/*" '+
-          'style="position:absolute;left:0;top:0;width:100%;height:100%;opacity:0"' +
-          CH('meSetPic') + '></label>'+
+      (ME.pic
+        ? '<button class="pav pavb" style="width:96px;height:96px;margin:0"' +
+            DO('mePicAsk') + '>'+
+            postFace({who:meName(), lname:langName, av:postAvatar()})+'</button>'
+        : '<label class="pav" style="position:relative;width:96px;height:96px">'+
+            postFace({who:meName(), lname:langName, av:postAvatar()})+
+            '<input type="file" id="me-pic" accept="image/*" '+
+              'style="position:absolute;left:0;top:0;width:100%;height:100%;opacity:0"' +
+              CH('meSetPic') + '></label>')+
+      /* The way in with no native side under the page. No size and no place
+         in the row -- mePicFile() is the only thing that opens it. */
+      (ME.pic
+        ? '<input type="file" id="me-pic" accept="image/*" '+
+            'style="display:none"' + CH('meSetPic') + '>'
+        : '')+
     '</div>'+
     '<div class="field at" style="gap:14px;margin-bottom:20px">'+
       '<span style="flex:0 0 auto;white-space:nowrap;min-width:4.5em">'+esc(t('me.name'))+'</span>'+

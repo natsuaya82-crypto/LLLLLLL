@@ -32,6 +32,7 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
     CAPPluginMethod(name: "voice", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "dropVoice", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "pickPhoto", returnType: CAPPluginReturnPromise),
+    CAPPluginMethod(name: "ask", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "audio", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "settings", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "sheet", returnType: CAPPluginReturnPromise),
@@ -629,6 +630,67 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
       call.resolve()
     } catch {
       call.reject(error.localizedDescription)
+    }
+  }
+
+  /// The system's own action sheet, for choosing what to do to one thing.
+  ///
+  /// 「アイコンをタップした時にiPhone標準の写真を選ぶか、削除するか出てくる
+  /// やつでいいだろ」 OWNER 2026-09-01, and the standard it is part of:
+  /// 「システム標準（iOS/Android）を最優先。独自実装は『標準では実現できない
+  /// 場合のみ』」. A sheet drawn in HTML to look like this one is the thing
+  /// CLAUDE.md § Shape bans wearing the name of the thing it allows — so the
+  /// only way to have it is here, and that is why this exists.
+  ///
+  /// It DECIDES NOTHING, which is this class's whole rule. The words, their
+  /// order, which one is destructive and what happens after are the web
+  /// side's; ten interface languages live there and none of them lives here.
+  /// What comes back is the index that was pressed.
+  ///
+  /// CANCELLED IS AN ANSWER AND NOT A REJECTION — `i: -1`. Somebody changing
+  /// their mind must not put a message on their screen, which is the shape
+  /// pickPhoto's empty answer already takes.
+  @objc func ask(_ call: CAPPluginCall) {
+    // Decoded one element at a time rather than cast as [String]. What
+    // getArray() answers with has been [Any] and [JSValue] in different
+    // Capacitor versions, and `as? [String]` compiles against one of those
+    // and not reliably the other; `as? String` on an element is valid against
+    // both. This file cannot be compiled on the machine it was written on --
+    // Xcode is a Mac -- so the shape that cannot be wrong is the one to use.
+    var opts: [String] = []
+    for v in (call.getArray("options") ?? []) {
+      if let one = v as? String { opts.append(one) }
+    }
+    let cancel = call.getString("cancel") ?? "Cancel"
+    // Which one is red. -1 is "none of them", so a sheet with nothing
+    // destructive on it needs to say nothing.
+    let destroy = call.getInt("destroy") ?? -1
+    guard !opts.isEmpty else { call.reject("nothing to choose from"); return }
+    DispatchQueue.main.async {
+      guard let host = self.bridge?.viewController else {
+        call.reject("no view controller"); return
+      }
+      let ac = UIAlertController(title: call.getString("title"), message: nil,
+                                 preferredStyle: .actionSheet)
+      for (i, o) in opts.enumerated() {
+        ac.addAction(UIAlertAction(title: o,
+                                   style: i == destroy ? .destructive : .default,
+                                   handler: { _ in call.resolve(["i": i]) }))
+      }
+      ac.addAction(UIAlertAction(title: cancel, style: .cancel,
+                                 handler: { _ in call.resolve(["i": -1]) }))
+      // An iPad has nowhere to hang a sheet from, and presenting one with no
+      // source does not fail — it crashes. The middle of the host view is the
+      // honest anchor: where the finger was is the web side's to know and it
+      // is not sent, so an arrow pointing anywhere would be pointing at
+      // something that is not there.
+      if let pop = ac.popoverPresentationController {
+        pop.sourceView = host.view
+        pop.sourceRect = CGRect(x: host.view.bounds.midX,
+                                y: host.view.bounds.midY, width: 0, height: 0)
+        pop.permittedArrowDirections = []
+      }
+      host.present(ac, animated: true)
     }
   }
 
