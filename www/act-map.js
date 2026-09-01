@@ -176,9 +176,11 @@ act('ntSearch', ntSearch);
 act('openOwnPhase', openOwnPhase);
 act('openPick', openPick);
 act('openMe', openMe);
+/* 画像を触ったとき ── iPhone 標準のアクションシート。写真を選ぶ／削除の
+   どちらになるかはシートが答えるので、名前はここ一つ。 */
+act('mePicAsk', mePicAsk);
 act('meFollow', meFollow);
 act('meBlock', meBlock);
-act('meDropPic', meDropPic);
 act('openPost', openPost);
 act('openReport', openReport);
 act('reportGo', reportGo);

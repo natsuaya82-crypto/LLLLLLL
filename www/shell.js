@@ -56,7 +56,13 @@ function viewReset(){
                                           which of the two it is about */
   snsSort='new';                       /* and newest or most answered */
   snsFil=null;                         /* and the word the feed is filtered to */
-  NOTES_HAVE=null;                     /* the notices, asked again */
+  /* The notices, asked again -- and the copy on the handset read again with
+     them. notWake() only looks once a session, so nulling this without
+     clearing that left the screen with no notices AND no way back to the ones
+     it had already been given: switching language blanked the notices until
+     the server answered, which is the second of blank coming back by another
+     road. */
+  NOTES_HAVE=null; notRead=false;
   BKLIST=null;                         /* what is on the disk, asked again */
 }
 
@@ -471,6 +477,26 @@ function pageName(r, a){
     var st=(typeof stBy==='function')? stBy(a) : null;
     if(st) return stTitle(st);
   }
+  /* THE TWO LISTS BEHIND THE TWO NUMBERS ARE ONE SCREEN, so the name is the
+     argument's and not the route's -- the same shape `set`, `ltset` and
+     `letter` above already take.
+
+     It said **Build**. `PAGES.follows` carries no `k`, so it fell to the last
+     line of this function, which is `t('tab.build')` -- the fallback for a
+     route nobody named, printed as the heading of a list of people.
+     （リーダーの見立ては「上の言語の名前が出ている」でしたが、出ていたのは
+     この行の `tab.build` です。）
+
+     Both keys are already written in all ten languages: they are the words
+     under the two numbers on a profile, which is where this screen is
+     reached from. Nothing new is added. */
+  if(r==='follows') return t(a==='ers'? 'me.followers' : 'me.following');
+  /* Somebody else's language names itself, the way a letter and a stage above
+     do. Its own name until the answer lands, and the screen's name until then. */
+  if(r==='about' && a){
+    var wl=(typeof wldSeen==='function')? wldSeen(a) : null;
+    return (wl && wl.name)? wl.name : t('wld.about');
+  }
   var p=PAGES[r];
   return (p && p.k)? t(p.k) : t('tab.build');
 }
@@ -651,7 +677,18 @@ function rootTop(r, right){
    in both places, and `tab.find` was doing duty for two different screens. */
 var TABS=['feed', 'explore', 'notif', 'build', 'profile'];
 function tabBar(){
-  var cur=here().r, i, r, out='';
+  var cur=here().r, i, r, n, out='';
+  /* THE NUMBER ON THE BELL. 「最後に通知の画面を開いた時刻より新しいものを
+     未読とする」「下のタブのベルに数字を出す」 OWNER 2026-09-01.
+
+     The copy is woken and the answer asked for HERE rather than on the
+     notices screen, because a count that only becomes true once you have
+     opened the tab is a count nobody ever sees: opening the tab is what
+     makes it zero. notAsk() is once a session, notWake() reads the copy on
+     the handset, so the bell is right on the first frame of whatever screen
+     the app opened on. www/sns.js owns all three. */
+  notWake();
+  notAsk();
   for(i=0;i<TABS.length;i++){
     r=TABS[i];
     /* The mark and nothing else. 「下タブにホームとかつけるのやめない？」
@@ -660,7 +697,15 @@ function tabBar(){
        by otherwise, and pageName() stays the one place that names a tab. */
     out+='<button class="tab'+(cur===r?' on':'')+'"' + DO('goTab', [r]) +
       (r==='profile'? ' data-hold="1"' : '')+
-      ' aria-label="'+esc(pageName(r))+'">'+TAB_ICON[r]+'</button>';
+      ' aria-label="'+esc(pageName(r))+'">'+TAB_ICON[r]+
+      /* A NUMBER AND NOT A DISC. Rule 18 -- nothing new gets a corner radius,
+         a border or a filled panel -- and the owner asked for 数字, not for a
+         red circle. If the filled circle every other timeline wears is what
+         is wanted, it is two lines in tools/box-baseline.txt and one word
+         from the owner; it is not mine to add. */
+      ((r==='notif' && (n=notUnread())>0)
+        ? '<span class="tabn">'+esc(String(n))+'</span>' : '')+
+      '</button>';
   }
   return '<div class="tabbar">'+out+'</div>';
 }
@@ -956,7 +1001,20 @@ function tabPaint(){
      opens the making side. 「制作ボタン押してキーボードの画面開いてとかないよ？」
      Everything before the walk -- drawing, the alphabet, the name -- is a
      screen of the onboarding's own and still has no bar. */
-  var sig = (appIs()==='app' && !one) ? (here().r+'|'+uiLang()) : '';
+  /* THE COUNT IS PART OF WHAT THE BAR IS. The signature is what decides
+     whether the bar is worth building again, and it was the route and the
+     language -- so the bell's figure was drawn once per screen and never
+     moved. A notice arriving while somebody sat on the timeline called
+     render(), the route had not changed, and the bar was skipped: the number
+     appeared the next time they went somewhere else, not when the notice
+     came.
+
+     `press` is what found it -- it reported `.tabn` as worn by nothing, which
+     was true for a reason that had nothing to do with the fixture: within one
+     page the bar for a route is built once, and if the count was 0 at that
+     moment there was no road back to any other number. */
+  var sig = (appIs()==='app' && !one)
+    ? (here().r+'|'+uiLang()+'|'+notUnread()) : '';
   if(host.getAttribute('data-sig')===sig) return;
   host.setAttribute('data-sig', sig);
   host.innerHTML = sig ? tabBar() : '';

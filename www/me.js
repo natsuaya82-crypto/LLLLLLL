@@ -272,6 +272,69 @@ function mePicKeep(url){
   im.onerror=function(){ toast(t('me.pic.bad')); };
   im.src=url;
 }
+/* ---- 画像をタップしたとき -----------------------------------------------
+   「長押しで消えるってわかんないだろ普通に。アイコンをタップした時に
+     iPhone標準の写真を選ぶか、削除するか出てくるやつでいいだろ」
+   OWNER 2026-09-01。
+
+   THE SYSTEM'S OWN SHEET, and only the system's. 「システム標準を最優先。
+   独自実装は『標準では実現できない場合のみ』」 -- so this asks
+   LinguaShare.ask(), which puts up a UIAlertController, and there is no
+   HTML anywhere in this file pretending to be one. A sheet drawn here to
+   look like that one is the thing CLAUDE.md § Shape bans wearing the name of
+   the thing it allows.
+
+   ONE LEVEL OF MODAL. 「モーダルは最大1階層」 -- so the picture is chosen
+   through the native picker (pickPhoto, PHPicker) rather than by clicking a
+   file input, which would put iOS's OWN 「写真を選ぶ / 撮る / ファイル」 sheet
+   on top of this one and make it two.
+
+   The file input is still here for a phone with no native side under it --
+   the browser the checks run in. It is not a second way of asking: it is the
+   same one road in, mePicKeep(), reached from the only door that exists
+   there. */
+function mePicAsk(){
+  var p=sharePlug();
+  /* No native side: the ordinary file input, which is what this screen was
+     before there was a sheet to put up. */
+  if(!p){ mePicFile(); return; }
+  p('LinguaShare', 'ask', {
+    options:[t('me.pic.pick'), t('me.pic.del')],
+    /* The second one is red. It is the one that takes something away. */
+    destroy:1,
+    cancel:t('me.pic.no')
+  }).then(function(r){
+    var i=(r && typeof r.i==='number')? r.i : -1;
+    if(i===0) mePicPick();
+    else if(i===1) meDropPic();
+    /* -1 is somebody changing their mind, and nothing is said about it. */
+  })['catch'](function(){ mePicFile(); });
+}
+/* The phone's own library. Same call the composer makes (pwPickLib), same
+   answer: `b64` is the picture, without the data URL on the front, and
+   mePicKeep() is the one road in for a picture however it arrived.
+
+   ME_PIC*2 across, not ME_PIC: mePicKeep() cuts the middle square out before
+   it squeezes, so a picture arriving already at 128 would lose half its
+   width to the crop and be scaled back up. */
+function mePicPick(){
+  var p=sharePlug();
+  if(!p){ mePicFile(); return; }
+  p('LinguaShare', 'pickPhoto', {max:ME_PIC*2, limit:1}).then(function(r){
+    var b=(r && r.b64)? String(r.b64) : '';
+    /* An empty answer is somebody backing out of the picker. */
+    if(!b) return;
+    mePicKeep('data:image/jpeg;base64,'+b);
+  })['catch'](function(){ toast(t('me.pic.bad')); });
+}
+/* The way in where there is no native side. The input is in the page with no
+   size, so this is the only thing that ever opens it. */
+function mePicFile(){
+  var el=document.getElementById('me-pic');
+  if(el) el.click();
+}
+/* Taking it off. Not a button any more -- it is the red row of the sheet --
+   so it is not in www/act-map.js: nothing on a screen names it. */
 function meDropPic(){ ME.pic=''; saveMe(); openMe(); }
 /* ---- ID を断る ----------------------------------------------------------
    「IDは2文字以上で登録してくださいと / このIDはもう使われていますと
@@ -438,15 +501,57 @@ function whoOf(h){
                the one face on a page is only why it did not show yet. A page
                about somebody else is the last place to key anything as mine. */
             id:'w:'+h,
-            /* Neither is on `profile` at all -- see netWho(). Absent rather
-               than zero: a profile that fills them in with a 0 is a profile
-               saying something it was never told. */
-            bio:'', fo:0, fr:0, out:!!got.out};
+            /* WHAT THEY WROTE ABOUT THEMSELVES, passed through rather than
+               blanked. 「自己紹介を見せないって選択肢を俺はいつ与えた？」
+               OWNER 2026-09-01 -- it is a thing a person wrote and it is
+               shown.
+
+               It was `bio:''` outright, which is not the same as absent: the
+               day netWho() starts answering with one, a hard-coded '' here
+               would throw it away and the screen would go on looking exactly
+               as wrong. `claude/acct2` is adding the column and the read; the
+               drawing is already here, on both screens that show a person
+               (whoCard below and snsWhoRow in www/sns.js), and both already
+               draw nothing when there is nothing. So this needs no second
+               change when the column lands.
+
+               The two counts stay 0 and stay a lie waiting to be told: no
+               request in www/net.js asks for anybody's follow counts but your
+               own -- every `follow` query there is keyed on SESS.uid. That is
+               net.js's and is in the report. */
+            /* THE ADDRESS OF THEIR LANGUAGE, and whether its page is open.
+               `claude/acct2`'s ccf439d made netWho() answer with both --
+               `lid` is the `language` row's id, which is what netSlices()
+               needs, and `lpub` is whether `published_at` is set. Without the
+               first there is nowhere for a door to go; without the second the
+               app would offer one that `slice_read` refuses.
+
+               Passed through with `||''` and `!!` so this reads the same on a
+               phone whose net.js does not answer with them yet: no address,
+               no door, and the name stays a plain row exactly as it is now. */
+            lid:got.lid||'', lpub:!!got.lpub,
+            /* HOW MANY THEY FOLLOW AND HOW MANY FOLLOW THEM, passed through
+               rather than nailed to 0. Both were `0` here because no request
+               in www/net.js had ever asked for anybody's but your own --
+               every `follow` query was keyed on SESS.uid, which is why the
+               two numbers on somebody else's page were not wrong numbers but
+               numbers nobody had ever taken. `claude/acct2`'s eb68639 reads
+               them off `profile_seen` and netWho() answers with them.
+
+               Undefined where the server said nothing, which is not 0 and is
+               the same distinction postNLike() makes in www/post.js. */
+            bio:got.bio||'', fo:got.fo, fr:got.fr, out:!!got.out};
   /* And until it answers, the copy: a post of theirs, if this phone has one.
      Better than an empty page for the moment the request is out, and it is
      where the whole page came from before there was anywhere else. */
   for(i=0;i<POSTS.length;i++){
     p=POSTS[i];
+    /* No `lid` on this road even though a post carries `lang`: that is the
+       id of the language the POST was written in, which is the same language
+       only until somebody makes a second one. A door built on it would open
+       the wrong article for anybody who has two, and 「持っている人には出て、
+       持っていない人には出ない」 is the half-working screen CLAUDE.md bans.
+       The address comes from netWho() or not at all. */
     if(String(p.hd||'')===h)
       /* `id` is the FACE'S key here and not the post's -- the same reason as
          above. Taking p.id would file this person's face under one of their
@@ -644,11 +749,38 @@ function whoCard(h){
 
        What reopens it is one line here, the day slice_read lets a published
        language be read and there is something to put on the page. */
-    (p.lname? '<div class="wldrow">'+
-        '<span class="wldnm">'+esc(p.lname)+'</span></div>' : '')+
+    /* AND THE DOOR IS OPEN AGAIN, where the language is published. The note
+       above says what closes it -- there was nothing to fetch. There is now:
+       `language_seen` answers for a published language, `netWho()` carries its
+       address as `lid` and whether it is open as `lpub`, and vAbout() draws it
+       from that and from nothing of this phone's.
+
+       Still a plain row where `lpub` is false: an unpublished language is one
+       `language_seen` and `slice_read` both refuse, so a door would open on a
+       refusal. 「そもそも非公開ならプロフィールから飛べないんだって」
+
+       `.wldrow` was written as a button and has said `background:none;
+       border:0; font-family:inherit; text-align:left` since then, so the two
+       faces are one rule and the row does not move when it becomes pressable. */
+    (p.lname
+      ? ((p.lpub && p.lid)
+          ? '<button class="wldrow"' + DO('go', ["about", String(p.lid)]) + '>'+
+              '<span class="wldnm">'+esc(p.lname)+'</span></button>'
+          : '<div class="wldrow">'+
+              '<span class="wldnm">'+esc(p.lname)+'</span></div>')
+      : '')+
     /* The counts, in the same place and the same shape as your own. They come
-       off the person -- FOLLOW_SEAM -- and a person who arrived on a post
-       carries none, so they read zero until somebody arrives carrying them.
+       off the person -- FOLLOW_SEAM -- and they are the SERVER's now:
+       `profile_seen` counts the `follow` rows both ways and netWho() answers
+       with them (claude/acct2's eb68639). Before that nothing had ever asked
+       for anybody's but your own, so these two were a pair of zeroes with no
+       road to any other number.
+
+       Still `||0` on the way to the screen, and that is the one place it is
+       right: whoOf() keeps undefined so that "not answered" and "nobody" stay
+       apart in the data, and a profile has to print SOMETHING under the word
+       Followers. A person who arrived on a post rather than from netWho()
+       carries neither and reads zero until the answer lands.
        Not pressable: the two lists behind your own are yours. */
     '<div class="pfstats">'+
       '<span class="pfst"><b>'+esc(String(p.fo||0))+'</b> '+esc(t('me.following'))+'</span>'+
@@ -688,10 +820,8 @@ function openMe(){
      face is the thing they came to change, and it used to be at the bottom
      under three text fields.
 
-     画像を外す行はここに無い。**触った顔が、選ぶ画面に行く。** ──
-     「あとアイコン設定したあとなんでアイコンの下に画像消すみたいな垢文字
-       でんの？ もっかいがぞうさわって画像変えるか消すかでしょ？」
-     OWNER 2026-08-28。openMePic() がその画面。 */
+     画像を外す行はここに無い。**触ったらカメラロールが直接開く。** ──
+     「写真をタップしたら変えたいのよ」 OWNER 2026-08-28。 */
   openForm('me:', pageName('profile'),
     /* The face is the label, and the input lives inside it -- so the thing
        somebody reaches for is the thing that opens the camera roll, in one
@@ -717,19 +847,43 @@ function openMe(){
 
        欄そのものは `lnField()`（www/shell.js の一箇所）。`<input>` は
        折り返せないので、書いた字が横に消えていた。 */
-    /* 顔がまだ無いうちは、触ったらそのままカメラロールが開く ── 外すものが
-       無い画面に行かせても、行がひとつしかない。顔が在るときだけ選ぶ画面に
-       行く。触ったら必ずカメラロールが開くのをやめたのはそこだけ。 */
+    /* 画像がまだ無いときは、触ったらそのまま写真を選ぶところが開く ──
+       外すものが無いので訊くことが無い。「操作は1タップで完結」。
+       画像が在るときだけ、iPhone 標準のアクションシートが出る。
+
+       ここより下の元の註（#104 の「変更する」の画面をやめた話）はそのまま
+       効いています ── 文字の行も、そこへ飛ぶ画面も、戻っていません。 */
+    /* 触ったら写真を選ぶところが直接開く。それだけです。
+       「ちがう。写真をタップしたら変えたいのよ。104の前のやつは写真を変更
+         するの文字が出てきてたやんそれをやめろって言ってるのよ」
+       「プロフィールの写真変更画面はタップしたら変更して、変更するとかの
+         ページに飛ばないで。」 OWNER 2026-08-28。
+
+       画像が在るときだけ「変える／外す を選ぶ画面」へ行く形でした。文字の
+       行も、その画面も、無くなります ── 在るときと無いときで触った先が
+       違うこと自体が、この画面が説明を挟んでいたということなので、分岐ごと
+       落としました。
+
+       **外す道はこれで一つも無くなります。**外す行は #104 の前に顔の下に
+       在ってオーナーに断られ（「なんでアイコンの下に画像消すみたいな垢文字
+       でんの？」）、選ぶ画面のほうも今日断られた。二つとも断られたので、
+       どこに置くかは決めごと ── 私は決めません。報告に書いてあります。 */
     '<div class="picrow">'+
       (ME.pic
-        ? '<button class="pav pavb" style="position:relative;width:96px;height:96px;margin:0"' +
-            DO('go', ["form", "mepic:"]) + '>'+
+        ? '<button class="pav pavb" style="width:96px;height:96px;margin:0"' +
+            DO('mePicAsk') + '>'+
             postFace({who:meName(), lname:langName, av:postAvatar()})+'</button>'
         : '<label class="pav" style="position:relative;width:96px;height:96px">'+
             postFace({who:meName(), lname:langName, av:postAvatar()})+
             '<input type="file" id="me-pic" accept="image/*" '+
               'style="position:absolute;left:0;top:0;width:100%;height:100%;opacity:0"' +
               CH('meSetPic') + '></label>')+
+      /* The way in with no native side under the page. No size and no place
+         in the row -- mePicFile() is the only thing that opens it. */
+      (ME.pic
+        ? '<input type="file" id="me-pic" accept="image/*" '+
+            'style="display:none"' + CH('meSetPic') + '>'
+        : '')+
     '</div>'+
     '<div class="field at" style="gap:14px;margin-bottom:20px">'+
       '<span style="flex:0 0 auto;white-space:nowrap;min-width:4.5em">'+esc(t('me.name'))+'</span>'+
@@ -767,39 +921,15 @@ function openMe(){
         ' maxlength="'+ME_MAX.loc+'"' + IN('meSetLoc'), ME.loc||'')+'</div>');
 }
 FORM_OPEN.me=function(){ openMe(); };
-/* 顔をもう一度触ったとき ── 変えるか、外すか。
-
-   「もっかいがぞうさわって画像変えるか消すかでしょ？」OWNER 2026-08-28。
-   選ぶのは画面で、変えるのは着いた先。下からひょいと出るものではないし、
-   選ぶ二つが顔と同じ画面に並ぶものでもない ── 赤い行が顔の下に居たのは
-   その形だった。
-
-   新しい経路は要らない。`form` は既に経路で、`FORM_OPEN` にひとつ名前を
-   足せば戻るボタンで帰ってきたときも建て直る。だから www/shell.js の
-   PAGES にも www/route-map.js にも触っていない。
-
-   変える行はファイル選びを重ねた `<label>` ── 顔がそうだったのと同じ手で、
-   押した所がそのまま入力になる。二つとも `.set` を着るので、行の高さは
-   タグではなくクラスが決める。
-
-   選んだ後も外した後も `openMe()` に戻る。`go()` は既に通った所へ戻るのを
-   戻ると読むので、プロフィールが二枚積まれることはない。 */
-function openMePic(){
-  /* 顔が無ければ外すものが無い。開き直しで消えた場合はプロフィールへ。 */
-  if(!ME.pic){ openMe(); return; }
-  openForm('mepic:', t('me.pic'),
-    '<label class="set" style="position:relative">'+
-      '<span class="sl">'+esc(t('me.pic.change'))+'</span>'+
-      '<input type="file" id="me-pic" accept="image/*" '+
-        'style="position:absolute;left:0;top:0;width:100%;height:100%;opacity:0"' +
-        CH('meSetPic') + '></label>'+
-    '<button class="set"' + DO('meDropPic') + '>'+
-      '<span class="sl bad">'+esc(t('me.pic.drop'))+'</span></button>');
-}
-FORM_OPEN.mepic=function(){ openMePic(); };
 /* The two lists behind the two numbers. One screen, and which one it is is the
    route's argument -- they differ in the list and in what to say when it is
-   empty, and in nothing else. */
+   empty, and in nothing else.
+
+   IT WAS A HANDLE AND A DEAD END. Every row drew `@name` with no face and no
+   name on it, and the only thing pressing one did was `go('find')` -- the
+   search screen, empty, about nobody. 「フォロー中からユーザー飛びたいのに
+   飛べないけど？」 OWNER. The row is snsWhoRow() now, which has opened a
+   person's page since the day it was written. */
 function vFollows(){
   /* Both lists are asked for here, because this screen is the only place
      either is shown in full and the two numbers that lead to it are drawn on
@@ -810,8 +940,22 @@ function vFollows(){
   return '<div class="view">'+navTop()+'<div class="body">'+
     (list.length
       ? list.map(function(h){
-          return '<button class="ntrow"' + DO('go', ["find"]) + '>'+
-            '<span class="nth">@'+esc(String(h))+'</span></button>';
+          /* Who this handle IS. The list is handles and nothing else, so
+             every row was `@name` and no face, no name and nothing to press.
+             whoPull() asks the server once per handle and renders again when
+             it answers; whoOf() hands back the copy in the meantime. */
+          var p;
+          h=String(h);
+          whoPull(h);
+          p=whoOf(h);
+          /* Your own row would otherwise offer to follow yourself. It cannot
+             happen through either list today and costs one comparison. */
+          p.mine=(h===meHandle());
+          /* THE SAME ROW AS THE SEARCH'S, and one function draws it. The two
+             lists show the same thing -- a person -- and drawing them twice
+             is how they drift apart. `true` is the follows list's half: the
+             label and the line about themselves. */
+          return snsWhoRow(p, true);
         }).join('')
       : '<div class="note">'+esc(t(ers? 'me.followers.none' : 'me.following.none'))+'</div>')+
     '</div></div>';
