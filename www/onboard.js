@@ -684,11 +684,31 @@ function obReady(p, go){
   if(GOOGLE_IOS_ID) o.google={ iOSClientId:GOOGLE_IOS_ID };
   p.initialize(o).then(function(){ OB_SL=true; go(); })['catch'](obShrug);
 }
-/* No nonce is asked for or sent. Apple only puts one in the token when the
-   request carried one, and Supabase only checks one when the token has one,
-   so the two agree by both staying quiet. Sending one would mean hashing it
-   the way Apple hashes it and handing the raw one to Supabase, which is three
-   places to get wrong for a token that never leaves the phone's own request. */
+/* THE NONCE, and it is Google's alone.
+   「Passed nonce and nonce in id_token should either both exist or not」 --
+   the sentence on the owner's phone, pressing Google, on build #106.
+
+   This file asked for no nonce and net.js sent none, and that was a whole
+   answer for as long as it was true on both sides: Supabase refuses when one
+   side has one and the other does not, so two absences agree. **Apple still
+   goes through, and that is the proof it agreed.**
+
+   Something put a nonce claim on the GOOGLE token anyway.
+   `docs/scope/claude-nonce.md` went looking and did not find it: not in
+   @capgo/capacitor-social-login at any version the lockfile allows, not in
+   GoogleSignIn-iOS, not in any Swift here, and `git log -S nonce -- www/` is
+   empty. So the cause is still unknown.
+
+   The fix does not need it. Holding the nonce OURSELVES makes the claim ours
+   whoever else was reaching for it: `sha256(P)` goes to Google, Google puts
+   it on the token, and Supabase hashes the `P` net.js sends and gets the
+   same. Both sides exist and they match -- which is the other way of
+   satisfying the same condition Apple satisfies by staying quiet.
+
+   APPLE IS NOT TOUCHED. `nn` is null outside `who==='google'`, so the Apple
+   call is the same call it was, with the same `''`. Adding one to a road
+   that works, to fix a road that does not, would be this exact bug pointed
+   the other way. */
 function obSocial(who, opts){
   obNative('SocialLogin', function(p){
     /* Busy is set HERE and not by the two callers, because obNative() answers
@@ -696,13 +716,18 @@ function obSocial(who, opts){
        and a spinner started before that check is a spinner nothing stops. */
     OBM.busy=true; render();
     obReady(p, function(){
+      /* Made once, here, so the two halves cannot come from two draws: the
+         hash handed to the provider and the raw sent to Supabase are one
+         pair or the sign-in is exactly the failure it is meant to fix. */
+      var nn=(who==='google')? netNonce() : null;
+      if(nn) opts.nonce=nn.hash;
       p.login({ provider:who, options:opts }).then(function(r){
         var tok=r && r.result && r.result.idToken;
         /* A sign-in that came back without a token is not a session and must
            not be treated as one. It is also not an error anybody can act on,
            so it closes the way closing the sheet does. */
         if(!tok){ obShrug(); return; }
-        netIdToken(who, tok, '', obIn, obNo);
+        netIdToken(who, tok, nn? nn.raw : '', obIn, obNo);
       })['catch'](obShrug);
     });
   });

@@ -15,6 +15,76 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### Google のサインインが通るようになりました（はずです ── 実機未確認）
+
+オーナーの端末、Google を押して、ビルド #106 に出ていたもの:
+
+```
+Passed nonce and nonce in id_token should either both exist or not
+```
+
+**Supabase は provider で分岐しません**（`internal/api/token_oidc.go:294-306`）。
+**送られた nonce を SHA-256 して `id_token` の `nonce` クレームと比べ**、片側
+だけ在るときは断ります。欲しい形は普通の OIDC の形で、Apple も Google も同じ:
+
+```
+    P = 生の乱数
+    provider へ渡すのは   sha256(P)
+    Supabase へ送るのは   P
+```
+
+**このアプリは両側とも送っていませんでした。**それはそれで揃っています ──
+**Apple がいま通っているのがその証明です。**ところが Google のトークンにだけ、
+誰かが nonce クレームを付けていました。
+
+**まず確かめたこと（`docs/scope/claude-nonce.md` の §0）:** 受け取った
+`www/onboard.js` が Google に nonce を渡していないか ──
+**渡していませんでした**（`grep -n nonce www/onboard.js` はコメント一行だけ）。
+なので §3-A ではなく **§3-B** です。
+
+**原因は今も分かっていません。** `claude/nonce` が全部落として読んでいます ──
+`@capgo/capacitor-social-login` はロックが許すどの版にも自分で nonce を作る道が
+無く、`GoogleSignIn-iOS` も足さず、`ios/App/` の Swift にも無く、
+`git log -S nonce -- www/` は空。
+
+**B が効くのは、原因が分からなくてもです。**こちらが nonce を握れば、誰が
+付けていようと**中身はこちらのものになり、両側が揃います** ── Apple が黙って
+揃えているのと同じ条件を、反対側から満たします。
+
+**足したもの:**
+- `netSha256()` / `netNonce()`（`www/net.js`）── `netUUID()` の下
+- `obSocial()`（`www/onboard.js`）に三行。**`who==='google'` の中だけ**
+
+**Apple は一行も変わっていません。** `nn` は Google の外では null なので、
+Apple の呼び出しは今までと同じ `''` を送ります。**通っている道に片側だけ足すのは、
+この不具合そのものを逆向きにやることです。**
+
+**`crypto.subtle` を使っていません。** Promise を返すので `obSocial()` の中が
+もう一段ネストし、しかも secure context でしか在りません ──
+`capacitor://localhost` は仕様上そうなるはずですが、**このアプリは
+`crypto.subtle` を一度も使ったことがなく、実機の証拠がゼロです**。乱数のほうは
+`netUUID()`（`crypto.getRandomValues`）を呼ぶだけなので、**乱数の作り方は一箇所の
+まま**です。
+
+**渡された SHA-256 の実装に一つ欠陥があったので直しました。** BMP の外
+（絵文字など）を**四バイトではなく三バイト二つ**として符号化していて、他のどの
+SHA-256 とも違う答えを出していました。今日これに当たるものはありません
+（`netNonce()` が食わせるのは UUID ＝ 十六進とハイフン）── **だからこそ、
+気づかれずにそこに在り続けたはずのものです。**
+
+**保存の変化:** ありません。移行なし、削除なし。
+
+**検査:** `acct-check` に 26。**赤を三通り見ました** ── nonce を送らない
+（2 件）、**Apple にも送る**（2 件）、**hash と raw を逆にする**（1 件）。
+SHA-256 は node の `crypto` と **6010 件**（絵文字 2000 件を含む）一致、
+NIST の公表値とも一致。
+
+**⚠ 実機未確認です。** ここに iPhone は無く、通ったかどうかは押してみるまで
+分かりません。**外れた場合に画面に何が出るかは `docs/scope/claude-nonce.md` §7**
+── `netIdWhy()` が「どちら側に nonce が在るか」を丸かっこで足します。
+`(nonce id_token:n sent:y)` が出たら、渡し方が効いていないということです。
+
+
 ### SNS として動くようになりました ── 読み戻す問いを全部作りました
 
 **オーナー 2026-09-01**（原文）:

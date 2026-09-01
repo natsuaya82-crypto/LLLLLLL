@@ -1740,6 +1740,110 @@ function netUUID(){
   }
   return h;
 }
+/* ---- the nonce, which both sides have to agree about --------------------
+   「Passed nonce and nonce in id_token should either both exist or not」 --
+   the sentence on the owner's phone, pressing Google, on build #106.
+
+   Supabase does NOT branch on the provider (`internal/api/token_oidc.go`
+   294-306). It hashes whatever nonce it was SENT and compares that against
+   the `nonce` claim on the id_token, and it refuses outright when one side
+   has one and the other does not. The shape it wants is the ordinary OIDC
+   one, and it is the same for Apple and for Google:
+
+       P = a fresh random string
+       to the provider goes    sha256(P)
+       to Supabase goes        P
+
+   This app sent neither, and `www/onboard.js` asked for neither -- so on
+   this code the two are both absent, which is the other half of the
+   condition and is why Apple goes through. Something on the way put a nonce
+   claim on the Google token anyway. `docs/scope/claude-nonce.md` searched
+   for it and did not find it: not in the plugin at any version in range, not
+   in GoogleSignIn-iOS, not in any Swift here, and `git log -S nonce -- www/`
+   is empty.
+
+   SO THE FIX DOES NOT DEPEND ON FINDING IT. Holding the nonce ourselves
+   makes the claim ours whoever was putting one there: we hand `sha256(P)` to
+   Google, Google puts it on the token, and Supabase hashes the `P` we send
+   and gets the same thing. Both sides exist and they match.
+
+   Written out rather than `crypto.subtle.digest()`, and the reason is not
+   taste. That call returns a Promise -- banned three lines up by rule 1 and,
+   worse, it would put another level of nesting inside obSocial() -- and it
+   exists only in a secure context, which `capacitor://localhost` is supposed
+   to be and which nothing here has ever tested: `grep -rn "subtle" www/` is
+   empty, so this app has no evidence at all that it works on a phone. The
+   randomness is a different matter and is NOT rewritten: netUUID() above
+   already uses crypto.getRandomValues with a fallback, so netNonce() calls
+   it and there stays one place that knows how a random string is made. */
+function netRotr(x, n){ return (x>>>n)|(x<<(32-n)); }
+function netSha256(str){
+  var K=[
+    0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
+    0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
+    0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
+    0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
+    0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
+    0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
+    0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
+    0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
+  var H=[0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
+  var b=[], w=[], i, j, c, d, n, hi, lo, s0, s1, t1, t2, a, bb, cc, dd, e, f, g, h, out='';
+  for(i=0;i<str.length;i++){
+    c=str.charCodeAt(i);
+    /* A code point above the BMP arrives as two halves and has to be put back
+       together before it is encoded: UTF-8 says four bytes for one character,
+       and hashing the two halves as three bytes each gives an answer that
+       agrees with no other SHA-256 anywhere. Nothing here feeds it one today
+       -- netNonce() hashes a UUID, which is hex and dashes -- and that is
+       exactly why it would have sat here being wrong. */
+    if(c>=0xd800 && c<0xdc00 && i+1<str.length){
+      d=str.charCodeAt(i+1);
+      if(d>=0xdc00 && d<0xe000){ c=0x10000+((c-0xd800)<<10)+(d-0xdc00); i++; }
+    }
+    if(c<0x80) b.push(c);
+    else if(c<0x800) b.push(0xc0|(c>>6), 0x80|(c&63));
+    else if(c<0x10000) b.push(0xe0|(c>>12), 0x80|((c>>6)&63), 0x80|(c&63));
+    else b.push(0xf0|(c>>18), 0x80|((c>>12)&63), 0x80|((c>>6)&63), 0x80|(c&63));
+  }
+  n=b.length;
+  b.push(0x80);
+  while(b.length%64!==56) b.push(0);
+  hi=Math.floor(n/536870912); lo=(n<<3)>>>0;
+  b.push((hi>>>24)&255,(hi>>>16)&255,(hi>>>8)&255,hi&255);
+  b.push((lo>>>24)&255,(lo>>>16)&255,(lo>>>8)&255,lo&255);
+  for(i=0;i<b.length;i+=64){
+    for(j=0;j<16;j++)
+      w[j]=(b[i+j*4]<<24)|(b[i+j*4+1]<<16)|(b[i+j*4+2]<<8)|b[i+j*4+3];
+    for(j=16;j<64;j++){
+      s0=netRotr(w[j-15],7)^netRotr(w[j-15],18)^(w[j-15]>>>3);
+      s1=netRotr(w[j-2],17)^netRotr(w[j-2],19)^(w[j-2]>>>10);
+      w[j]=(w[j-16]+s0+w[j-7]+s1)|0;
+    }
+    a=H[0];bb=H[1];cc=H[2];dd=H[3];e=H[4];f=H[5];g=H[6];h=H[7];
+    for(j=0;j<64;j++){
+      s1=netRotr(e,6)^netRotr(e,11)^netRotr(e,25);
+      t1=(h+s1+((e&f)^(~e&g))+K[j]+w[j])|0;
+      s0=netRotr(a,2)^netRotr(a,13)^netRotr(a,22);
+      t2=(s0+((a&bb)^(a&cc)^(bb&cc)))|0;
+      h=g;g=f;f=e;e=(dd+t1)|0;dd=cc;cc=bb;bb=a;a=(t1+t2)|0;
+    }
+    H[0]=(H[0]+a)|0;H[1]=(H[1]+bb)|0;H[2]=(H[2]+cc)|0;H[3]=(H[3]+dd)|0;
+    H[4]=(H[4]+e)|0;H[5]=(H[5]+f)|0;H[6]=(H[6]+g)|0;H[7]=(H[7]+h)|0;
+  }
+  for(i=0;i<8;i++){
+    c=H[i]>>>0;
+    for(j=28;j>=0;j-=4) out+=((c>>>j)&15).toString(16);
+  }
+  return out;
+}
+/* The pair, made together so the two can never be about different strings:
+   `hash` is what the provider is asked to put on the token, `raw` is what
+   Supabase is sent. */
+function netNonce(){
+  var p=netUUID();
+  return { raw:p, hash:netSha256(p) };
+}
 /* A data URL, taken apart. Everything the phone holds a picture as is one of
    these; what goes on the wire is the bytes. */
 function netData(u){

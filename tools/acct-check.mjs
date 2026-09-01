@@ -795,6 +795,74 @@ const R = await pg.evaluate(() => {
     no('25: 本人が書いた投稿に by が付いている — ' + JSON.stringify(feed4[0].by));
   say('25: 本人が書いた投稿には、回した人が付かない');
 
+  /* ---- 26. Google の nonce ── 両側揃うか、両側無いか --------------------
+     「Passed nonce and nonce in id_token should either both exist or not」
+     オーナーの端末、Google を押して、ビルド #106。
+
+     Supabase は provider で分岐せず（token_oidc.go:294-306）、**送られた
+     nonce を SHA-256 して id_token の nonce クレームと比べ**、片側だけ在る
+     ときは断ります。このアプリは両側とも送っていなかったので、それはそれで
+     揃っていました ── **Apple がいま通っているのがその証明です。**
+     Google のトークンにだけ、誰かが nonce クレームを付けていました。
+
+     こちらが握れば、誰が付けていようと中身はこちらのものになります。
+     ここで押さえるのは、その**二つが一つの組であること**です ── 別々に
+     引かれたら、直したはずの不具合そのものになります。 */
+  const realSha = netSha256;
+  start();
+  netOut();
+  const seen = { apple:null, google:null };
+  const fakePlugin = {
+    initialize: (o) => ({ then: (f) => { f(); return { catch: () => {} }; } }),
+    login: (arg) => {
+      seen[arg.provider] = { opts: arg.options };
+      return { then: (f) => { f({ result: { idToken: 'h.e.s' } });
+                              return { catch: () => {} }; } };
+    }
+  };
+  window.Capacitor = { Plugins: { SocialLogin: fakePlugin } };
+  OB_SL = false;
+  const realId = netIdToken;
+  netIdToken = (provider, token, nonce) => { seen[provider].sent = nonce; };
+
+  obSignInGoogle();
+  obSignInApple();
+  netIdToken = realId;
+  delete window.Capacitor;
+
+  /* Google: 両側在って、送るのは生、渡すのはその sha256。 */
+  const G = seen.google;
+  if (!G) no('26: Google の login が呼ばれていない');
+  else {
+    if (!G.opts || !G.opts.nonce) no('26: Google に nonce を渡していない');
+    if (!G.sent) no('26: Supabase に nonce を送っていない ── 片側だけになる');
+    if (G.opts && G.sent && G.opts.nonce !== realSha(G.sent))
+      no('26: 渡した hash が、送った raw の sha256 ではない ── 二つが別の組');
+  }
+  say('26: Google は両側に nonce があり、渡す hash は送る raw の sha256');
+
+  /* Apple: 一行も変わっていない。片側だけ足すのがこの不具合そのものなので、
+     いま通っている道に足していないことを押さえます。 */
+  const AP = seen.apple;
+  if (!AP) no('26: Apple の login が呼ばれていない');
+  else {
+    if (AP.opts && AP.opts.nonce) no('26: Apple に nonce を渡している ── いま通っている道を壊す');
+    if (AP.sent) no('26: Apple の nonce を Supabase に送っている ── 片側だけになる');
+  }
+  say('26: Apple は両側とも無いまま ── 通っている道は触っていない');
+
+  /* そして毎回ちがう。使い回した nonce は nonce ではありません。 */
+  const n1 = netNonce(), n2 = netNonce();
+  if (n1.raw === n2.raw) no('26: nonce が使い回されている');
+  if (n1.hash !== realSha(n1.raw)) no('26: netNonce() の二つが組になっていない');
+  if (!/^[0-9a-f]{64}$/.test(n1.hash)) no('26: hash が sha256 の形をしていない — ' + n1.hash);
+  /* NIST の公表値。書き出した SHA-256 が SHA-256 であること。 */
+  if (realSha('') !== 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855')
+    no('26: sha256("") が NIST の値と違う');
+  if (realSha('abc') !== 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad')
+    no('26: sha256("abc") が NIST の値と違う');
+  say('26: nonce は毎回ちがい、SHA-256 は NIST の値と一致する');
+
   return out;
 });
 
