@@ -1100,7 +1100,8 @@ defLang('es', (function(){
       "cal.d.4" : "Miércoles",
       "cal.d.5" : "Jueves",
       "cal.d.6" : "Viernes",
-      "cal.d.7" : "Sábado"
+      "cal.d.7" : "Sábado",
+      "plan.renew" : "Se renueva automáticamente hasta que la canceles."
     }
   };
 })());

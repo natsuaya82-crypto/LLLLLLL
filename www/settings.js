@@ -693,6 +693,53 @@ function planPrice(p, free){
   }
   return '<div class="plterms">'+term(false)+term(true)+'</div>';
 }
+/* ---- what Apple asks for beside a price --------------------------------
+   App Store Review Guideline 3.1.2. A subscription may not be offered without,
+   next to what it costs: how long a term is and what it costs, a sentence
+   saying it renews by itself until somebody stops it, and working links to the
+   terms and the privacy policy. Without those the build is refused, and it is
+   refused at review rather than at build -- so nothing here would ever have
+   gone red on its own.
+
+   **This is the one exception to 「アプリ内に説明書くの禁止」 and it is not a
+   crack in it.** It is here because Apple requires it, so it is the minimum
+   that satisfies the guideline and not one word more: it does not say what a
+   plan is good for, what somebody would get, or why a year is better than a
+   month. The five lines on each page already say what is bought.
+
+   THE TERM AND THE PRICE ARE NOT REPEATED HERE, and that is the disclosure
+   rather than a gap in it. They are on the two buttons above -- `plan.per.mo`
+   / `plan.per.yr` beside what the App Store charges in that country -- and
+   Apple asks that they be disclosed next to the offer, not that they be
+   printed twice. A second copy would be a second number to keep in step with
+   Apple's, and www/store.js is at length about why there is only ever one.
+
+   THE LINKS ARE docRows(), which is DOC_TERMS and DOC_PRIVACY -- the two
+   published pages the account room already links to. No new URL: one copy of
+   a contract, so the version somebody agreed to is the version that is up.
+   There is no third document -- 「出さない。」 OWNER 2026-08-26 about the
+   特定商取引法 notice, because the App Store's seller is Apple.
+
+   NO BOX AND NO NEW CLASS. `.docs` is already in the stylesheet and is
+   already what this is -- small, centred, muted, at the foot, about the
+   documents -- so the sentence and the two links it belongs with are the
+   same class at the same size, and www/index.html does not have to change
+   for any of it to be right.
+
+   `.docs` and NOT `.plfoot2` wrapping a `.note`, which is what this was
+   first. Those are two classes that would have put two SIBLINGS of one class
+   on one screen at two type sizes -- .86rem for the sentence and .8rem for
+   the Cancel button under it -- which is the fault `press` holds and CLAUDE.md
+   states as 「Rows in one list are one height」. Reusing the class the two
+   links already wear cannot have that fault: there is one size because there
+   is one class.
+
+   It is not a box either way, and that is not taken on trust: term-check
+   reads the computed border and corner off the real elements, so a rule added
+   against `.docs` in another branch fails here rather than shipping. */
+function planTerms(){
+  return '<div class="docs">'+esc(t('plan.renew'))+'</div>'+docRows();
+}
 function vPlans(){
   /* The one place that asks. It answers a moment later and redraws, so the
      typed prices are what is on screen for that moment and the App Store's
@@ -715,6 +762,12 @@ function vPlans(){
        asked for in a room they came to for one thing. */
     '<div class="plkb">'+kbShotHTML(kbOf().lay)+'</div>'+
     '<div class="plrail">'+PLANS.map(planPage).join('')+'</div>'+
+    /* And directly under the prices, because that is where the guideline puts
+       it: 「next to the price」. Above Restore and Cancel rather than at the
+       foot of the screen -- a person deciding whether to press a price has
+       read what is between the price and their thumb, and not what is below
+       two buttons they are not going to press. */
+    planTerms()+
     /* Apple wants somewhere to press for both, and neither is a purchase:
        restoring reads what this Apple ID already holds, and cancelling is
        Apple's own sheet.

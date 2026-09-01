@@ -1057,7 +1057,24 @@ defLang('en', (function(){
       "cal.d.4" : "Wednesday",
       "cal.d.5" : "Thursday",
       "cal.d.6" : "Friday",
-      "cal.d.7" : "Saturday"
+      "cal.d.7" : "Saturday",
+      /* What Apple asks for beside a price, and the whole of it.
+         App Store Review Guideline 3.1.2: a subscription may not be offered
+         without a sentence saying it renews by itself until somebody stops
+         it. The term and what it costs are already on the two buttons
+         (plan.per.mo / plan.per.yr) and the links are set.terms and
+         set.privacy, so this is the one part that had nowhere to live.
+
+         It is the ONE exception to 「アプリ内に説明書くの禁止」 and it is
+         not a crack in it: Apple refuses the build without it. So it says
+         that and nothing else -- not what a plan opens, not why a year is
+         better than a month. Those are the five lines on each page.
+
+         No {0}: the price is not in this sentence and must not be put in
+         it. What somebody is charged comes from the App Store in their own
+         currency (storeCost() in www/store.js), and a price built into a
+         translated sentence is a price ten files have to agree about. */
+      "plan.renew" : "Renews automatically until you cancel."
     }
   };
 })());
