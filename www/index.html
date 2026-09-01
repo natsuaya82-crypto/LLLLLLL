@@ -1128,6 +1128,19 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
 .view.fit .body{flex:1;min-height:0;display:flex;flex-direction:column;
    padding-bottom:calc(53px + max(0px, calc(env(safe-area-inset-bottom,0px) - var(--vvkb,0px))));
    overflow:hidden}
+/* ⑩ 「なんか空白がきもい」 OWNER 2026-08-28、実機ビルド #106、写真つき。
+   バーの下から、プロフィール画像と一行目の行までが空いていました。`.body` の
+   上の余白 10px と、`.pwtop` と一行目の下の 6px ずつ ── 合わせて 22px が、
+   バーと、書き始める場所のあいだに積んであった余白です。ここだけ詰めます。
+
+   測った（キーボードは下りた状態、`.navtop` は 60px）:
+     402x874  行の上端 70 -> 60   一行目と意味のあいだ 16 -> 12
+     320x568  行の上端 70 -> 60   一行目と意味のあいだ 16 -> 12
+   意味の欄の 10px は動かしていません ── 2026-08-26 に測って決めた数で、
+   返信画面の 104px の内訳がその 10 を数えています。 */
+.view.fit .body{padding-top:0}
+.view.fit .pwtop{margin-bottom:2px}
+.view.fit .pwfield .lnin{margin-bottom:2px}
 /* Everything you are writing, and it is the part that scrolls -- so the line
    can be as long as it likes and the photographs under it move down with it,
    the way they do on Twitter. 「文字が増えたら画像が下にいく仕様にして」
