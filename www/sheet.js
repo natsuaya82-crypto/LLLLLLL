@@ -861,11 +861,15 @@ function shNames(s){
 function shPages(n){ return n > 0 ? Math.ceil(n / shPerPage()) : 0; }
 
 /* ---- the room ---------------------------------------------------------- */
-/* All three pages of this chapter carry the same `?`, because there is one
-   thing to know and it is the ORDER -- type, save, print and write, scan and
-   install. A person who does not know it is as lost on the reading page as on
-   the writing one. 「説明は嫌いだけどわからないと困るから？ボタンは右上に
-   追加して」 OWNER 2026-08-25.
+/* The `?` is on THIS page and on neither of the other two.
+
+   One thing is behind it and it is the ORDER -- type, save, print and write,
+   scan and install -- so it belongs where the chapter starts, which is the
+   only place somebody has not yet chosen which end they are at. On the making
+   page and the reading page it was the same four steps a second and a third
+   time, opened from a mark that looked like it had something else to say.
+   「sheet のページに謎に同じこと書いてる？ある。それぞれのページには
+   いらない。」 OWNER 2026-09-01, build 107, on a device.
 
    It is behind the mark and NOT on the screen: 「アプリ内に説明書くの禁止」,
    and the `?` in the bar is where a genuinely needed explanation goes -- which
@@ -911,7 +915,7 @@ function shRoomHTML(){
 
 /* ---- making one -------------------------------------------------------- */
 function openWrOut(){
-  openForm('wrout:', t('wr.make'), shOutHTML(), shPvDraw, shQ());
+  openForm('wrout:', t('wr.make'), shOutHTML(), shPvDraw);
 }
 /* The count under the field is a count. It says how many boxes twenty names
    make and how many sheets that is, which is the one thing a person cannot
@@ -1194,7 +1198,7 @@ function shFileName(){
 
 /* ---- reading one back -------------------------------------------------- */
 function openWrIn(){
-  openForm('wrin:', t('wr.read'), shInHTML(), shInMount, shQ());
+  openForm('wrin:', t('wr.read'), shInHTML(), shInMount);
 }
 /* Before a file: the one control. After one: what came off it, a row per box.
    No picture of what was read, and that is on purpose rather than missing --
