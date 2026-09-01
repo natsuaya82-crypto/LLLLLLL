@@ -1304,6 +1304,12 @@ function pwSendWith(ln, pics, vo){
             ln:ln, ink:postInkTyped(PWRAW), dir:scriptDir(),
             mn:String(PW.mn||'').trim() || postGlossLine(gl),
             pr:PW.pr||0,
+            /* AND THE PROMPT ITSELF, in all ten, frozen here. www/sns.js
+               § daySays has the whole of why: a reader on another day, or on
+               a phone that never asked for today's prompt, has no way to work
+               this out, and it is the app's own sentence rather than the
+               writer's words. Only where there IS one. */
+            prs:(PW.pr? daySays() : null) || undefined,
             ui:uiLang(), li:0, bo:0, re:0};
   /* If the letters made the files too big for what is left, the PHOTOGRAPHS
      are what is refused -- never the post, and nothing already written is
@@ -1548,7 +1554,14 @@ function postSay(p){
      server holds it in all ten languages -- so an answer to today's prompt is
      said in the language of whoever is reading it. www/sns.js § dayMap has
      the whole of why, and why it is today's only. */
-  if(p.pr){ d=dayMap(p.pr); if(d && d[u]) return String(d[u]); }
+  /* The prompt, in the reader's own language. What the post CARRIES first --
+     it was frozen on at the moment it was written and is right on any day --
+     and today's row second, which is what a post written before this change
+     has instead. */
+  if(p.pr){
+    if(p.prs && typeof p.prs==='object' && p.prs[u]) return String(p.prs[u]);
+    d=dayMap(p.pr); if(d && d[u]) return String(d[u]);
+  }
   if(p.tr && typeof p.tr==='object' && p.tr[u]) return String(p.tr[u]);
   return String(p.mn||'');
 }

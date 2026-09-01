@@ -65,6 +65,23 @@ function storeBuy(id){
   np('LinguaStore', 'buy', { id: String(id||'') })
     .then(function(r){
       var how = (r && r.how) ? String(r.how) : '';
+      var got = (r && r.plan) ? String(r.plan) : '';
+      /* A PURCHASE NEVER LOWERS THE PLAN. The phone side reads the plan off
+         the signed transaction now (ios/App/App/LinguaStore.swift § buy), so
+         a `bought` that still says `free` is not a person who owns nothing --
+         it is an answer that has not caught up, or one that arrived wrong.
+         Writing it down would take away what was just paid for and put the
+         lapse popup up on top of it. 「今課金したのに（仮）フリーになりました
+         って出たんだけど…消費者が一番ブチギレる」 OWNER 2026-09-01.
+
+         So the answer is refused rather than believed, and nothing is
+         written: the next launch reads the Keychain, and Restore is the
+         button for right now. `storeTook` is left exactly as it is -- it is
+         also restore's and manage's, where coming back free is the truth. */
+      if(how === 'bought' && (!got || got === 'free')){
+        toast(t('store.fail'));
+        return;
+      }
       storeTook(r);
       if(how === 'bought') toast(t('toast.plan.other', plan()));
       else if(how === 'pending') toast(t('store.pending'));

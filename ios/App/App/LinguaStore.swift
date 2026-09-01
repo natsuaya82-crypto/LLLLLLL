@@ -238,7 +238,27 @@ public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
             call.reject("could not be verified"); return
           }
           await t.finish()
-          let plan = await writeDown()
+          /// THE TRANSACTION ITSELF IS THE ANSWER, and not only the list.
+          ///
+          /// `currentEntitlements` is what a plan IS at any other moment, and
+          /// it is right everywhere except here: StoreKit does not promise
+          /// that a purchase finished a millisecond ago is already in that
+          /// list, and when it is not, `entitledPlan()` answers `free` -- so
+          /// the app wrote `free` down the instant somebody paid, said 「無料に
+          /// なりました」 and put the lapse popup up. Money taken, plan gone.
+          /// 「今課金したのに（仮）フリーになりましたって出たんだけど…プロに
+          /// ならなかった」 OWNER 2026-09-01, on a real phone.
+          ///
+          /// This is not trusting the request: `verified()` above refuses
+          /// anything Apple has not signed, and `planOf` maps the signed
+          /// transaction's own productID. `best()` keeps whichever is higher,
+          /// so a list that HAS caught up is still used and an older, better
+          /// entitlement is never written down over.
+          var plan = await writeDown()
+          if let bought = Self.planOf(t.productID) {
+            let both = Self.best(plan, bought)
+            if both != plan { plan = both; LinguaPlanPlugin.set(plan) }
+          }
           call.resolve(["how": "bought", "plan": plan])
         case .userCancelled:
           call.resolve(["how": "cancelled", "plan": await standing()])

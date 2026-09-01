@@ -537,8 +537,15 @@ canvas.pkc{width:34px;height:34px;display:block}
 
    And it stops for somebody who has asked for less movement, which `kbwob`
    two rules down has done since it was written. */
-.pullrule{position:absolute;left:0;right:0;top:100%;margin:26px auto 0;
-          width:18px;height:1px;background:var(--goldln)}
+/* THE APP'S OWN MARK. It was an 18px line in `--goldln` -- a thing that
+   turns and is not anything. The four-pointed star is what this app is,
+   already: 「lingua のマークのダイヤを使って欲しいな回転でもいいけど。せっかく
+   マークあるし」OWNER 2026-09-01. www/sns.js puts ICON_PLUS in it; the colour
+   is here, as every colour in this app is, and `currentColor` carries it. */
+.pullrule{position:absolute;left:0;right:0;top:100%;margin:22px auto 0;
+          width:22px;height:22px;color:var(--gold);
+          display:flex;align-items:center;justify-content:center}
+.pullrule svg{width:22px;height:22px;display:block}
 .pullrule.go{animation:pullsp .9s linear infinite}
 @keyframes pullsp{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.pullrule.go{animation:none}}

@@ -411,6 +411,15 @@ function pullSpinOn(){
   if(!bar) return null;
   PULL_SPIN=document.createElement('div');
   PULL_SPIN.className='pullrule';
+  /* THE APP'S OWN MARK, turning. 「プルトゥーリフレッシュあるやん？lingua の
+     マークのダイヤを使って欲しいな回転でもいいけど。せっかくマークあるし」
+     OWNER 2026-09-01. It was an 18px LINE, which is a thing that turns and is
+     not anything -- and the four-pointed star is already what this app is:
+     the badge beside a name, the avatar on the cover, the + on the timeline.
+     ICON_PLUS and not a fifth drawing of it, and no colour written here --
+     `currentColor` takes what `.pullrule` says, the way every other mark in
+     this app does. */
+  PULL_SPIN.innerHTML=ICON_PLUS;
   bar.appendChild(PULL_SPIN);
   return PULL_SPIN;
 }
@@ -748,6 +757,20 @@ function daySay(){
 function dayMap(id){
   if(!id || !DAY || String(DAY.id)!==String(id)) return null;
   return DAY.says || null;
+}
+/* THE WHOLE SENTENCE, IN ALL TEN, TO PUT ON A POST AS IT IS WRITTEN.
+   「お題はどの言語でも見れる、これが大事。誰が投稿しても自分の表示言語で出て
+   くる。それが交流につながる」 OWNER 2026-09-01.
+
+   dayMap() above can only answer for TODAY -- `DAY` is one row -- so a post
+   read tomorrow, or on a phone that has not asked for the prompt, fell back
+   to the words the writer's app happened to say. That is the same shape as
+   every other thing a reader needs and cannot work out: it goes ON the post
+   at the moment it is made (`post.ink` is the worked example, CLAUDE.md
+   § the past). Ten short strings, once, and every reader on every day has it
+   without asking the server anything. */
+function daySays(){
+  return (DAY && DAY.says && typeof DAY.says==='object')? DAY.says : null;
 }
 /* Which day this sentence is FOR, drawn. 「日付ないし」
 
