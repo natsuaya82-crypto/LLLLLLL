@@ -109,3 +109,54 @@ an account's uuid travelling to places that read a handle」）。
 
   supabase/schema.sql  列。**渡されていない**
   www/net.js           netWho() の select と、書くほう。**渡されていない**
+
+---
+
+## 2026-09-01、リーダーが渡してくれた分で動いたもの
+
+⑥（未読をベルに数字で）・⑫の残り（`lingua.notices` の写し）・⑪の後始末
+（行けなくなった画面を三ファイル同時に削除）・CLAUDE.md の Shape の規則。
+`docs/DATA_MODEL.md` `docs/CHANGELOG.md` `www/act-map.js` `tools/fixture.mjs`
+`CLAUDE.md` を使いました。
+
+## H. ⑪ の本体 ── アクションシートにはネイティブが要ります
+
+**オーナー決定 2026-09-01:**「アイコンをタップした時にiPhone標準の写真を選ぶか、
+削除するか出てくるやつでいいだろ」。基準の1番「システム標準を最優先。独自実装は
+標準では実現できない場合のみ」。
+
+**調べました。ネイティブ側にアクションシートは在りません。**
+
+  `UIAlertController`   `ios/` 全体で **0 件**
+  `LinguaShare` の      write registerFont keep kept dropKept dropAll
+  16 のメソッド          keepVoice voice dropVoice pickPhoto audio settings
+                        sheet shareFile renderPdf
+  そのうち `sheet`      **紙のほうです** ── PDF を Documents に書く。
+                        画面のシートではありません
+  `pickPhoto`           在ります。PHPicker を出すので「写真を選ぶ」は既に
+                        ネイティブで出せます。**「削除」の選択肢が無い**
+
+なので要るのは一つだけです:
+
+```
+LinguaSharePlugin に  CAPPluginMethod(name: "ask", returnType: CAPPluginReturnPromise)
+  UIAlertController(preferredStyle: .actionSheet) を出して、
+  押された選択肢の index を resolve する
+  （iPad のために popoverPresentationController の設定が要ります）
+www/me.js から  Capacitor.nativePromise('LinguaShare','ask',{...})
+  ── 呼ぶ形は www/share.js と www/store.js が既に持っています
+```
+
+  `ios/App/App/LinguaShare.swift`      **渡されていない**
+  `ios/App/App/App.xcodeproj`          Sources に足す話（規則9の裏側）
+  実機ビルド                            Mac と Xcode が要る。Linux では出せない
+
+**HTML でシートを描いて似せるのはしません。**CLAUDE.md を今日直したとおり、
+それは禁止されている側が許された側の名前を着ているだけです。
+
+**それまでの間、外す道は一つもありません。**別の画像を選べば上書きはできます。
+
+## I. オーナーの十の基準の置き場所
+
+`docs/CHANGELOG.md` に原文で記録しました。**`docs/FEATURE_RULES.md` §
+Owner decision log にも要ります** ── そのファイルは渡されていません。
