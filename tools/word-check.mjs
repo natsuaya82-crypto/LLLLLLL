@@ -100,8 +100,12 @@ const R = await pg.evaluate(() => {
   start();
   openWord('tira');
   openEdit('tira');
-  window.confirm = function(){ return true; };
+  /* The question is the app's own popup now, not the system's -- 「標準は
+     使わねえって言ってるだろこれも禁止や」 OWNER 2026-09-01. Stubbing
+     window.confirm answered a question nobody asks any more, so the delete
+     never happened and this read the screen it was standing on before. */
   delWord();
+  if (popOn()) popYes();
   out.said.push('a word deleted from its own page leaves you on ' +
                 JSON.stringify(here()));
   if (here().r === 'form' && String(here().a).indexOf('tira') >= 0)

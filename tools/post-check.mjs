@@ -245,11 +245,13 @@ const R = await pg.evaluate(async () => {
      docs/CHANGELOG.md says exactly one file, named by the post being
      deleted, and nothing else touched. Both halves are asked. */
   const other = POSTS.filter(x => x.vo && x !== v).map(x => x.vo.f);
-  const wasConfirm = window.confirm;
-  window.confirm = () => true;
+  /* The question is the app's own popup now, not the system's -- 「標準は使わ
+     ねえって言ってるだろこれも禁止や」 OWNER 2026-09-01. Stubbing
+     window.confirm answered a question nobody asks any more, so nothing was
+     deleted and every claim under this read a post that is still there. */
   said.length = 0;
   postDel(v ? v.id : '');
-  window.confirm = wasConfirm;
+  if (popOn()) popYes();
 
   const dropped = said.filter(x => x.m === 'dropVoice').map(x => x.a.name);
   if (v && v.vo) {
@@ -273,9 +275,8 @@ const R = await pg.evaluate(async () => {
   const plain = POSTS.filter(x => !x.vo)[0];
   said.length = 0;
   if (plain) {
-    window.confirm = () => true;
     postDel(plain.id);
-    window.confirm = wasConfirm;
+    if (popOn()) popYes();
     if (said.some(x => x.m === 'dropVoice'))
       fails.push('deleting a post that never had a voice still asked the phone ' +
                  'to drop one');
@@ -294,17 +295,14 @@ const R = await pg.evaluate(async () => {
     fails.push('a reply did not count on the post it answered, so nothing ' +
                'below this is a test of taking it back');
   const reply = POSTS.filter(x => x.to === host.id).pop();
-  const wasConfirm2 = window.confirm;
-  window.confirm = () => true;
   postDel(reply ? reply.id : '');
-  window.confirm = wasConfirm2;
+  if (popOn()) popYes();
   if (((host.re) || 0) !== wasRe)
     fails.push('the post says ' + host.re + ' replies and its reply was ' +
                'deleted. A count of something that is gone points at nothing, ' +
                'and there is no way to press it and find out');
   /* And it must not go under: a count that was already wrong is not put right
      by being made negative. */
-  window.confirm = () => true;
   host.re = 0;
   PW = pwBlank(); PW.to = host.id; PW.ln = 'mos';
   pwSend();
@@ -312,7 +310,7 @@ const R = await pg.evaluate(async () => {
   const r2 = POSTS.filter(x => x.to === host.id).pop();
   host.re = 0;
   postDel(r2 ? r2.id : '');
-  window.confirm = wasConfirm2;
+  if (popOn()) popYes();
   if (((host.re) || 0) < 0)
     fails.push('deleting a reply took a count below zero');
 
@@ -370,10 +368,8 @@ const R = await pg.evaluate(async () => {
     /* And it is READ off the reply, not off the post it answers -- which is
        the whole difference. Deleting the parent must not take the line with
        it: this is the same statement the ink makes, one field along. */
-    const wasConfirm3 = window.confirm;
-    window.confirm = () => true;
     postDel(par.id);
-    window.confirm = wasConfirm3;
+    if (popOn()) popYes();
     if (postToWho(rep) !== 'iri')
       fails.push('the reply stopped saying who it answers the moment that post ' +
                  'was gone, which is exactly the reader who needed it said');

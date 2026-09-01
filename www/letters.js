@@ -763,14 +763,24 @@ function ltSetRoman(id, sp){
      NAME, and a digit has no name -- its value is the whole of what it is,
      and the keyboard finds it by that. */
   if(ltIsBase(l)) return id;
-  /* And the plan, which the SCREEN used to hold and no longer does. The name
-     field was drawn only where can('letters') was true; on 2026-09-01 every
-     plan started seeing one screen, so the field is drawn for everybody and
-     the rule has to live where it cannot be walked around. It bites exactly
-     one person: somebody who added letters on a paid plan and has come back
-     down to free. Their letters are all still there -- nothing is ever taken
-     away, docs/PAID_FEATURES.md -- and renaming one is a thing paid buys. */
-  if(upStop(can('letters'))) return id;
+  /* AND NO PLAN DOOR HERE, which is worth saying out loud because one was put
+     here on 2026-09-01 and taken out the same day. 「無料で作ってる範囲の名前
+     変更は無しでしょ。有料は追加できるというだけで」 is about the twenty-eight
+     SLOTS, and the line directly above -- `if(ltIsBase(l)) return id` -- is
+     that rule, entire.
+
+     What a door here broke, measured by base-check: a shape drawn on free and
+     then called `a` moves INTO the slot already called `a` (CLAUDE.md rule 6
+     names this road, and the onboarding IS it -- 「aが自作文字に変わる瞬間み
+     たいなの見せたい」). With the door in front, the alphabet grew by one
+     instead, 44 -> 45, and the QWERTY's `a` went on pointing at the empty
+     slot. And naming a second shape `b` where `b` is drawn on stopped
+     happening at all, so the duplicate the alphabet shows in red was one
+     letter, not two.
+
+     Nothing is walked around by leaving it out: what free cannot do is ADD a
+     letter, and every road that makes one asks already -- newLetter(),
+     ltCopy(), shTakeIn(), the import. This function names one that exists. */
   var read=ltReadName(sp), units=read.units, seen=read.seen, i;
   /* A clash is shown, not refused. Refusing meant the box silently kept its
      old value and a toast said why, which is a correction somebody has to
@@ -848,9 +858,13 @@ function ltSetRoman(id, sp){
    A slot somebody HAS drawn on is not this: it comes back null, both letters
    stay, and the alphabet shows the duplicate in red. Overwriting a drawing to
    make room for another is the one thing this may never do. */
-function ltFreeSlot(l){
+/* `nm` is the name being CONSIDERED, which is not always the one on the letter
+   yet: the plan gate above asks this before `l.ab` is written, so that a
+   refusal leaves the letter exactly as it was. With no second argument it
+   reads the letter, which is what the call at the end of ltSetRoman does. */
+function ltFreeSlot(l, nm0){
   if(can('letters')) return null;
-  var nm=String(l.ab||'').toLowerCase(), i, s;
+  var nm=String((nm0===undefined? (l&&l.ab) : nm0)||'').toLowerCase(), i, s;
   if(!nm) return null;
   for(i=0;i<LETTERS.length;i++){
     s=LETTERS[i];

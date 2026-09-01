@@ -101,10 +101,12 @@ const r = await pg.evaluate(({ s }) => {
       .filter(function (b){ return b.getAttribute('data-a') === JSON.stringify(['flick']); })[0];
     out.roadFlick = !!el;
     if (!el) return;
-    /* the confirm the change asks -- answered yes, the way a finger does */
-    var was = window.confirm; window.confirm = function (){ return true; };
+    /* the question the change asks -- answered yes, the way a finger does.
+       It is the app's own popup now, not window.confirm 「標準は使わねえって
+       言ってるだろこれも禁止や」 OWNER 2026-09-01, so a stub answered nothing
+       and the pattern never changed. */
     el.click();
-    window.confirm = was;
+    if (popOn()) popYes();
     out.roadPat = KB.kbs[0].pat;
     /* 1x10 became 2.5x4: the widths were never the broken part and stay
        measured here, so a fix to the road cannot quietly cost them */

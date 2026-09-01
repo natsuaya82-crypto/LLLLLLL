@@ -1086,6 +1086,21 @@ function pwHTML(){
          so the row that adds them is not there rather than there and
          refusing. */
       (PW.ed? '' : pwStripHTML())+
+      /* THE REST OF THE COLUMN, and it is where you are writing. The two
+         fields are as tall as what is in them and everything left over fell
+         under them doing nothing -- a screen with its words packed into the
+         top and a hand's worth of empty glass under them, that a thumb could
+         land on all day without the caret moving.
+         「下のスペースあるのに詰まってるよね？これはなんで？わざと？」 OWNER
+         2026-09-01.
+
+         Nothing MOVES: the fields keep the heights they were measured at (the
+         104 floor, the two fields of a reply, the row of pictures directly
+         under the meaning). What was empty is now the same field, one step
+         further down -- pressing it puts the caret at the end of the line,
+         which is what pressing under the last line of anything you are
+         writing does. */
+      '<div class="pwrest"' + DO('pwFocusLn') + '></div>'+
       '</div></div>'+
     '</div>'+
     /* The bar. It is the last thing in the form and the only thing that does
@@ -1104,6 +1119,16 @@ function pwHTML(){
    render() -- come back from the card and the line you were typing is gone.
    So the string is kept in step too, without redrawing anything. */
 function pwFresh(){ if(FORM && FORM.key==='post:') FORM.html=pwHTML(); }
+/* The empty part of the column, pressed. The caret goes to the END of what is
+   there rather than to the start: pressing under the last line of something
+   you are writing is asking to go on writing it. */
+function pwFocusLn(){
+  var e=document.getElementById('pw-ln');
+  if(!e) return;
+  e.focus();
+  if(e.setSelectionRange && typeof e.value==='string')
+    e.setSelectionRange(e.value.length, e.value.length);
+}
 /* ---- the keyboard is up the whole time this screen is ------------------
    OWNER 2026-08-25「投稿開いたらキーボードが自動で出て下ろせないが正解」.
 

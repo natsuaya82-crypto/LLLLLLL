@@ -57,9 +57,20 @@ const r = await pg.evaluate(({s}) => {
   out.slotBack = !!numByVal(13);
   out.noDouble = numDigits().filter(function(l){ return l.val === 13; }).length;
 
-  /* free has no row to press */
+  /* FREE SEES THE SAME ROW, and the press is where the plan is answered.
+     「無料でもplusでもproでも同じ画面なのよ。でも無料から文字を足すところは
+     課金のポップが出ないといけない」 OWNER 2026-09-01 -- so this used to ask
+     that free had NO row, which is the screen being taken away rather than
+     the door standing in it. What is asked now is the row plus what pressing
+     it does: the popup, and the base exactly where it was. */
   SET.plan = 'free';
   out.freeRow = numBaseRows();
+  var wasBase = numBase();
+  numStepBase(1);
+  out.freeAsked = popOn();
+  out.freeBase = numBase();
+  out.freeWas = wasBase;
+  popOff();
   SET.plan = 'pro';
 
   /* ---- a slot's name does not change, on any plan ------------------------
@@ -252,7 +263,10 @@ say(r.blankGone, 'the empty slot nobody touched is gone');
 say(r.red === 3, 'three digits are above the base and the room paints them red (' + r.red + ')');
 say(r.slotBack, 'raising it again makes the empty slot over');
 say(r.noDouble === 1, 'and makes exactly one of it (' + r.noDouble + ')');
-say(r.freeRow === '', 'free counts in ten and has no row to press');
+say(r.freeRow !== '', 'free sees the same row as everybody else');
+say(r.freeAsked, 'and pressing it puts the upgrade up rather than doing nothing');
+say(r.freeBase === r.freeWas, 'and the base is where it was until somebody pays (' +
+    r.freeWas + ' -> ' + r.freeBase + ')');
 
 /* 「無料で作ってる範囲の名前変更は無しでしょ。有料は追加できるというだけで」
    Decision log, 2026-08-22. The free QWERTY finds its keys BY NAME, so a

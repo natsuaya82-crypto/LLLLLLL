@@ -843,6 +843,16 @@ export function halfDone(){
         const h = vFeed(); delete p.pv; return h; }],
     ['a post about to be kept to yourself', () => { PW = pwBlank(); PW.pv = true;
         openPost(); const h = vForm(); PW = pwBlank(); return h; }],
+    /* REPLYING, which nothing here had ever rendered. Every composer face was
+       a new post, so the one thing a reply draws that a post does not -- the
+       post being answered, above the two fields -- was walked by nothing, in
+       any check. It is where the owner found both of 2026-09-01's composer
+       faults. `pwHead()` is above the line in post.js on purpose (the head is
+       somebody else's post), which makes it exactly the shape rule 8 is about:
+       nothing in the gate was looking at it. */
+    ['the composer, replying to somebody', () => {
+        PW = pwBlank(); PW.to = 'p1'; openPost('reply');
+        const h = vForm(); PW = pwBlank(); return h; }],
     /* Drafts, which are only drawn once there are some. */
     ['the composer with drafts saved', () => {
         DRAFTS = [{at:Date.now(), ln:'kano', mn:'a mountain', to:'', pics:[], vo:null, pv:false},

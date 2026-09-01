@@ -555,7 +555,13 @@ const free = await pg.evaluate(() => {
   };
   SH = { names:'', got:[{nm:'a', sh:ring}, {nm:'zz', sh:ring}], why:'', from:'x.pdf' };
   shTakeIn();
+  /* The refusal is the app's own popup now, not a system dialog 「標準は使わ
+     ねえって言ってるだろこれも禁止や」 OWNER 2026-09-01, so the plans screen
+     is where its YES goes rather than where the press itself lands. Without
+     this the check was reading the screen it was already standing on. */
   out.after = LETTERS.length;
+  out.wentAsked = popOn();
+  if (popOn()) popYes();
   out.wentToPlans = here().r === 'plans';
   /* nothing a person made is touched by a plan, either */
   SET.plan = was;
@@ -1027,8 +1033,9 @@ say(free.after === free.before && free.same,
     'and the take itself is refused, so a free alphabet does not grow: ' +
     free.before + ' letters before and ' + free.after + ' after, and every ' +
     'one of them byte for byte what it was');
+say(free.wentAsked, 'and pressing it asks rather than doing nothing');
 say(free.wentToPlans,
-    'and pressing it goes to the plans screen rather than doing nothing');
+    'and yes goes to the plans screen');
 say(sign.canvas && !sign.roman && sign.pixels > 0,
     'and a digit that came in on a sheet is drawn with the sign somebody drew ' +
     'for it, not a roman one: ' + sign.pixels + ' pixels of ink on the clock');

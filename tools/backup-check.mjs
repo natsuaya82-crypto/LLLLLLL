@@ -516,7 +516,6 @@ const wiped = await pg.evaluate(async () => {
     }
     return out;
   };
-  window.confirm = () => true;
   let dropped = '';
   window.Capacitor = { nativePromise: (plug, method) => {
     if (method === 'dropAll') dropped = 'dropAll';
