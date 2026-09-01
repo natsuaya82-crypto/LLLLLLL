@@ -211,24 +211,36 @@ reading a state that never arrives:
   only. The ceiling counting `mine` is right and stays; the sentence about why
   was describing a thing that is not there. Corrected 2026-08-25.
 
-**What a read-only language will have to answer, and has not:**
+**What a read-only language answers. Three of these four were open until
+2026-09-01; the owner closed them and the answers are here rather than in a
+log somebody has to find.**
 
 1. **Where the slices live.** A downloaded language is `lingua.<id>.<slice>`
    like any other, or it is not a language at all — `langKeyOf(id, slice)` is
    the only thing that knows how a language is filed and a second answer is
    the bug `CLAUDE.md` names twice (the keyboard, the world).
-2. **Whether `SLICES` covers it.** Being in `SLICES` is what makes a slice
-   real: `bkPack()` walks it and `wipeAll` walks it. A downloaded language
-   inside `SLICES` goes into **somebody's backup file**, which may be right
-   (it is on their phone) or wrong (it is not theirs to hand out). **Not
-   decided.**
-3. **What a partial download is.** 「単語文字文法キーボードそれぞれ」 — so a
-   language may arrive with `words` and no `letters`. Today "no slice" and
-   "an empty slice" are already separate states (`bkSound()`, `BK_SHAPE`), and
-   a third — "this slice was never offered" — is not.
-4. **Whether the ceiling counts it.** `langCount()` counts `mine` and the
-   owner counts them separately 「自分の言語+DL言語1個」, so it must not start
-   counting them together. The two numbers themselves are **open**.
+2. **It does not go into the backup file.** OWNER 2026-09-01, asked whether a
+   downloaded language is in the person's own backup: 「入らん」. `SLICES` is
+   unchanged — it is the list of what a language is MADE of, and that is the
+   same list for every language — but **`bkPack()` skips a language that is
+   not `mine`.** It is not theirs to hand out, and it is not lost by being
+   skipped: it came from somewhere and can be taken again. `wipeAll` is the
+   other way and does not change: `lsWipeNS()` counts `localStorage` and
+   removes everything under `lingua.`, so a downloaded language goes with the
+   account like everything else.
+3. **A partial language is a normal state, not an error.** OWNER 2026-09-01:
+   「いや一つづつdlでいいよ。」 — the download section opens onto 単語 / 文字 /
+   キーボード with a ↓ on each, and they are taken **one at a time**. So a
+   language with `words` and no `letters` is what the app looks like halfway
+   through, and it has to draw. "No slice" and "an empty slice" are already
+   separate states (`bkSound()`, `BK_SHAPE`); **a downloaded language uses the
+   first** — the slice is absent until its ↓ is pressed. No third state is
+   invented: "never offered" is the publisher's ↓ not being there to press.
+4. **The ceiling counts it separately.** OWNER 2026-09-01: 「別に数える」.
+   `langCount()` counting `mine` only is right and stays right; a downloaded
+   language is never added to that number. **The two numbers themselves are
+   still open** — how many of each a plan buys has not been decided, and
+   nothing here may invent one.
 
 **5. It is outside sync, and that is not a flag — it is the whole point.**
 Everything else about a language goes to the server and comes back merged

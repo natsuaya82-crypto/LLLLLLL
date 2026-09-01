@@ -31,40 +31,83 @@ answers it is in §3 and takes a second.
 
 ---
 
-## 0-a. 2026-08-28 夕方 ── ビルド #104 / #105 / #106 まで
+## 0-a. 2026-09-01 ── いまの状況
 
-**master は `414aafa`。三本のビルドが TestFlight に出ています。**どれもゲート
-28本が緑の形で、`npm run rls` も緑（197件）。
+**master は `523c3af`。ビルド #107 が TestFlight に出ています。**
 
-| ビルド | 中身 |
-|---|---|
-| #104 | プロフィール画像を触ると変える／外すを選ぶ画面へ・返信画面（相手の投稿を上に固定、Replying to は無し）・新品の言語に音が入らない・`⋯` が出る・升は触ったら選択・人の検索が返る・人のプロフィール・フォロー0・通知の行にプロフィール画像・右上の絞り込みの字 |
-| #105 | 通知の行を押したら飛ぶ・フォロワーの数・引っ張って更新の回るもの・公開した言語の記事は他人が読める（守り） |
-| #106 | ＋ 公開スイッチが `published_at` をサーバーへ書く |
+**#107 に ② は入っていません。**取り込む前に出したビルドなので。
 
-**実機で見た人はまだ誰も居ません。**全部 CODE CONFIRMED だけです。
+**実機で見ているのはオーナーだけです。**ここに書いてあるものは、断りが無ければ
+CODE CONFIRMED だけです。**検査の緑は証拠になりません** ── 俺は実機で確認した話を
+してるからな（OWNER 2026-09-01）。
 
-**サーバーへの当てが残っています。**`supabase/schema.sql` が変わったので、
-オーナーがダッシュボードで当てるまで公開は効きません。当て方は
-`docs/scope/claude-other.md`。
+### 走っているセッションは三つ。ほかは畳んであります
 
-**この日に見つかった、検査が緑のまま通していたもの三つ** ── 同じ形が
-また起きるので書いておきます:
+| 枝 | 先行 | 押し済み | いま |
+|---|---|---|---|
+| `claude/scan` | +15 | 用紙・フォント・②説明の二重・取り込み前の確認・`wldSeenHTML` 削除・④・無料プランで用紙から文字が増える穴 | **⑫ ダウンロード** |
+| `claude/words2` | +11 | ⑤並べ替え・⑥セーブ右上/デリート最下・⑦一括削除 | **⑬ 長押し** |
+| `claude/lingua8` | +12 | ⑧@lingua 自動フォロー・⑨他人の投稿の `⋯`・⑩語順 | 済み。セッションは畳んだ |
 
-- **人の検索が誰にも何も返していなかった。** `netFindWho()` の embed が
-  外部キーを歩く書き方で、2026-08-22 に `language.owner` が
-  `auth.users(id)` へ張り替えられた時に道が消え、PostgREST は 400 を返す。
-  **その問いを通す検査が一本も無かった** ── 検査は答えを手で置いていた。
-  いまは組み立てた URL を `sides-check` が見ます
-- **フォロワーの数は一度も数えられていなかった。** `ME.fr` を書く行が
-  www/ に一本も無く、`follow` への問いは全部「自分がフォローしている側」
-  だった。間違った数ではなく、空でなくなる道が無い数
-- **通知の行に押す先が一つも付いていなかった。** `notRow()` はただの
-  `<div>`。押しても何も起きない
-- **返信画面の「意味が隠れていないか」を、箱と比べていた。** 箱ごと画面の
-  外に出ていれば緑になる。オーナーが実機で踏んだそのバグを検査が通していた
+**三本とも master に取り込んでいません。**取り込むのもゲート30本を回すのも
+リーダーです（サブリーダーが居ないので）。
 
-**やり方が変わりました（OWNER 2026-08-28）:**
+### ⑫ ダウンロード ── 決まったこと
+
+画面はこの形で確定です。**他の節と同じ折りたたみ**で、`›` を押すと開きます。
+
+```
+› Overview
+› Phonology
+› Letters
+› Keyboard
+› Seasons
+› ダウンロード
+    単語      ↓
+    文字      ↓
+    文法      ↓
+    キーボード ↓
+```
+
+四つです（OWNER 2026-09-01 文法もいれて）。並べるのは `wldSecs()` の `dl:1` で、
+そこが唯一の一覧です。`›` の位置も統一します ── いまは Letters と Keyboard に
+左の `›`（`abshf`）と右の `›`（`abshg`）が両方あり、一行に押す所が三つあります。
+
+**そして、これは画面の仕事ではありません。**ダウンロードそのものが
+**一度も作られていません**。読む側（`netSlices()`、`www/net.js:579`）は在って、
+着地する側が無い。`LANGS[id].mine` は `www/core.js` の三箇所すべてが `true` を
+書いていて、**このアプリで `false` になったことが一度もありません。**
+いつまでもfalseだったとかやめてね（OWNER 2026-09-01）。
+
+四つの未決は 2026-09-01 に全部答えが出て、`docs/FEATURE_RULES.md` の決定ログと
+`docs/DATA_MODEL.md` §「A language that is only read」に入れてあります。
+
+### ⑬ 長押し ── 原因は測ってある
+
+`www/shell.js:756` の `touchmove` に閾値がありません。実測:
+
+```
+  親指が完全に静止   → langs（動く）
+  一画素動いた       → feed（死ぬ）
+```
+
+実機の親指は必ず一画素動くので、**実機では一度も成立していません。**
+`touchcancel`（757行）でも死にます ── iOS が `<button>` の長押しで callout を
+始めるため。`www/sns.js:368` にも同じ形があります。
+**SVG は原因ではありません**（`SVGElement` は `getAttribute` を持つ。測定済み）。
+
+`tools/press.mjs` の長押し検査は**これを測っていません** ── 460ms 待ってから
+動かす「持ち運び」の身振りなので、バグが入ったままでも緑になります。
+
+### 残っているオーナーの仕事
+
+- **`supabase/schema.sql` がまだ当たっていません。**当たるまで、通知のまとめ・
+  フォロー数／フォロワー数・他人の言語ページは動きません。**ダッシュボードは
+  オーナーだけ**で、ここからは絶対に当てません。
+- **#108 はまだ出しません。**全部揃ってから、その場で許可を取ります。
+  **前にもらった許可を次の回に使い回さない。**
+
+### やり方（OWNER 2026-08-28 / 09-01）
 
 ```
 言われたこと確認して本当に治すべきかどう治すかをこっちに投げて承認されたら進む
@@ -73,13 +116,20 @@ answers it is in §3 and takes a second.
 ui変更は俺が頼んだの以外は勝手な判断でやるなよ？
 もうほぼ見た目は完成してるのよ。
 ```
+```
+これ終わったらもう新機能出すのやめて、、全部バグ確認に入る
+```
+```
+古いのは必ず消してね。
+```
 
-**見た目はもう出来上がっています。**頼まれていない画面の変更は禁止。
-直す前に「事実・直すべきか・どう直すか」をオーナーに投げ、承認されてから
-書きます。
+**見た目はもう出来上がっています。**頼まれていない画面の変更は禁止。直す前に
+事実・直すべきか・どう直すかをオーナーに投げ、承認されてから書きます。
 
-**言葉について、もう一つ:** 顔、という言い方をしない。**プロフィール画像**。
-オーナーに二度言われました。
+**言葉:** でんわ と書かない（端末 か iPhone）。プロフィール画像を 顔 と呼ばない。
+スクショを 絵 と呼ばない。**オーナーが言っていない言葉に鉤括弧を付けない。**
+
+---
 
 ---
 
@@ -127,27 +177,19 @@ ui変更は俺が頼んだの以外は勝手な判断でやるなよ？
 （`claude/ob3` の並び直しと、SNS の段を本物のタイムラインにした分）が、
 **その先はオーナーのものです。**
 
-**取り込まれていない枝が二つあります。**どちらもリーダーが書いたもので、
-**役割が決まる前の作業**です。取り込むかどうかはサブリーダーが決めます。
-
-- `claude/pdf` ── 上の用紙の直し ＋ CHANGELOG。**実機ビルドでの確認が要る**
-- `claude/kb5` ── 上のキーボード二つ ＋ `kb-check` に主張三本
-  （バグを戻して三本とも赤を見てある）
-
-**セッションへの連絡手段が落ちています。**2026-08-28、リーダーのセッションから
-`claude-code-remote` の MCP が消え、`create_trigger` も `SendMessage` も届かず、
-`ListAgents` が空になりました。**この状態のリーダーは配れません。**次に開く人は
-まずそこを確かめてください。
-
 ---
 
 ## 1. `master` is the app again. Keep it that way.
 
-`master` is at `5721421` (2026-08-26), and the whole gate is green on it --
-**26 checks, all of them**, and `buttons pressed: 10723  (229/229 distinct
-names)`. A fresh clone is the current app, and nothing needs checking out.
-(This paragraph's own commit sits one on top of `5721421`; a file cannot name
-the commit it is part of.)
+`master` is at `523c3af` (2026-09-01) and a fresh clone is the current app.
+The gate is **31 checks** — count `FAST` and `SLOW` in `tools/gate.mjs`, which
+is the only place the number lives.
+
+**It has NOT been run on this `master`.** That is a statement about today, not
+a worry: three branches are out and the gate is run once, by whoever
+integrates, after integrating. Do not write "the gate is green" here again
+unless you watched it. A sentence in this file claiming a green nobody saw is
+the failure this file exists to prevent.
 
 **Four branches went in on 2026-08-26** -- `translate` `wiki` `draft` `me2` --
 on top of the six that went in the day before. Do not read that as the whole
@@ -425,12 +467,21 @@ The buttons went from "not in this build" to a real plugin —
 - **Apple: done.** `com.apple.developer.applesignin` is in
   `ios/App/App/App.entitlements`, and the owner reports the App ID capability
   and the regenerated profile done (2026-08-27).
-- **Google: done, both halves.** `GOOGLE_IOS_ID` in `www/net.js` and the
-  reversed scheme in `Info.plist`'s `CFBundleURLTypes` are the same client id
-  (2026-08-27), and the owner reports the Supabase provider enabled
-  (`supabase/setup.md` § 4, 2026-08-27). Neither value is a secret: the id
-  names the app and proves nothing. What is left is a phone — whether the
-  sheet comes back with a session.
+- **Google: done, and DEVICE CONFIRMED 2026-09-01.** The owner pressed it on
+  build #107: 何も出ません押したら普通にログインされるけど？ The sheet opens and
+  comes back with a session. `GOOGLE_IOS_ID` in `www/net.js` and the reversed
+  scheme in `Info.plist`'s `CFBundleURLTypes` are the same client id, the
+  Supabase provider is on, and neither value is a secret: the id names the app
+  and proves nothing.
+
+  **The nonce question is closed, and the answer is: send none.** It was open
+  because `www/onboard.js`'s comment argues it from APPLE's behaviour, and
+  nobody had checked that Google's SDK behaves the same. It does —
+  `@capgo/capacitor-social-login` 8.4.4 only puts a nonce in the request when
+  it is handed one, so with `netIdToken(who, tok, '', …)` both sides stay
+  quiet and Supabase's 「Passed nonce and nonce in id_token should either both
+  exist or not」 never fires. `netIdWhy()` stays: it costs nothing and it is
+  the only thing that could name the side if this ever comes back.
 
 **What this file cannot see.** App Store Connect, the Apple developer site,
 Google Cloud and the Supabase dashboard are outside the repository. Where a
@@ -561,12 +612,12 @@ instructions:**
 
 ## 5. The gate, and what CI does not run
 
-`npm test` is **twenty-six** checks and is the specification. `CLAUDE.md` → "The
-nineteen rules the gate enforces" -- **and those two numbers are not the same
-kind of thing.** Nineteen is how many RULES are written down; twenty-six is how
+`npm test` is **thirty-one** checks and is the specification. `CLAUDE.md` → "The
+twenty-one rules the gate enforces" -- **and those two numbers are not the same
+kind of thing.** Twenty-one is how many RULES are written down; thirty is how
 many CHECKS run. They have never been equal and making them equal would be
 wrong. `tools/gate.mjs` runs the eight that need no
-browser first, in about two seconds, then the eighteen browser ones four at a
+browser first, in about two seconds, then the twenty-three browser ones four at a
 time. Run one after another they were ten minutes in this container.
 
 **It is run once before pushing**, not once per commit — the owner's rule, and
@@ -690,7 +741,7 @@ written down because otherwise the next person repeats the digging:**
   engine's first three files, the plan rename and StoreKit, the dead-CSS sweep,
   and the sheet's spike. `press` reads **10486 buttons, 217/217 names, 4 styled
   and unworn against a baseline of 4**.
-- **The gate is 26 checks**: eight with no browser (`grammar-engine-check`
+- **The gate was 26 checks that day** (it is 30 now — `tools/gate.mjs`): eight with no browser (`grammar-engine-check`
   joined them) and eighteen with one (`plan-check`, `sheet-check`,
   `shape-check`, `gramlang-check` and `draft-check` joined them). It read 24
   here, then 25, then 26, all on 2026-08-25 -- `4f8b681` wired
@@ -912,8 +963,19 @@ Two of them were about capabilities that had been deleted.
     in: Restore (**Apple requires it**), Plus's own card, and Cancel opening
     Apple's own sheet rather than setting a flag. What the screen still lacks
     is **the subscription text Apple requires beside a price** — that it
-    renews until cancelled, and links to Terms and to the privacy policy —
-    which needs two URLs that do not exist yet. `docs/BACKLOG.md`.
+    renews until cancelled, with the term and the price, and links to Terms
+    and to the privacy policy. **The two pages exist and are live**, checked
+    2026-09-01 in `natsuaya82-crypto/tokine2` on `main`: `lingua/terms.html`
+    (140 lines, dated 2026-08-28, and § 12 Governing law — Japanese law,
+    Tokyo District Court — is written, so the clause that once blocked it is
+    not open) and `lingua/privacy.html` (141 lines). The app already points
+    at them: `DOC_TERMS` / `DOC_PRIVACY` in `www/settings.js:52-53`. Vercel
+    serves the repo root with `cleanUrls: true`, so `/lingua/terms.html`
+    redirects to `/lingua/terms` — a redirect a browser follows, not a 404.
+
+    **What is missing is the sentence in the app.** Not one of the ten
+    `www/i18n/*.js` carries an auto-renew disclosure; `set.terms` and
+    `set.privacy` are the link labels and nothing else. `claude/pay` has it.
 17a. **Sandbox testing**, once the products exist: buy, then `restore` after
     deleting and reinstalling, then a renewal arriving while the app is shut,
     and — new since the middle tier — **a Plus receipt reading as Plus and not
@@ -984,8 +1046,8 @@ Two of them were about capabilities that had been deleted.
     disabled provider answers `/auth/v1/token?grant_type=id_token` with 400,
     `obNo` runs, and the person stays on the door. So `supabase/setup.md` §4-1
     is done. **§4-2 and §4-3 — Google — are done too** (the owner,
-    2026-08-27), and `GOOGLE_IOS_ID` is filled in. What is left about Google is
-    a phone: whether the sheet comes back with a session.
+    2026-08-27), and Google sign-in is **DEVICE CONFIRMED** on build #107
+    (the owner, 2026-09-01). Nothing about Google is outstanding.
 
     **What could NOT be settled here.** `status` 0 had three roads into one
     sentence — the request went and nothing came back, the request was never

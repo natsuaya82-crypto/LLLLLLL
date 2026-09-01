@@ -14,7 +14,7 @@ A conlang-building app. Plain HTML/CSS/JS under `www/`, wrapped by Capacitor for
 > says the two that are easiest to get backwards: the timeline **is** on the
 > server now — `post`, `react`, `follow`, `profile` and the notices RPC, with
 > `localStorage` as the copy that survives a bad network — and CI runs three of
-> these thirty checks, so a green tick on a push is not the gate. This
+> these thirty-one checks, so a green tick on a push is not the gate. This
 > paragraph said the opposite of the first of those for a week after it stopped
 > being true, which is the whole reason that file says how to re-check rather
 > than what to believe: `grep -n "rest/v1" www/net.js`.
@@ -316,7 +316,7 @@ backlog entry is not permission, and neither is the absence of one.
 ```
 npm test        # tools/gate.mjs -- eight with no browser in a row (assets, es5,
                 # grammar-engine, dead, import, sides, face, box, ~2s), then the
-                # other twenty-two four at a time. NOT run by a session -- rule 2.
+                # other twenty-three four at a time. NOT run by a session -- rule 2.
                 # The count is FAST.length + SLOW.length in tools/gate.mjs and
                 # nowhere else; every number in this file is a copy of it.
 ```
@@ -407,7 +407,7 @@ Adding a policy means adding the line somebody would use against it.
 
 ## The twenty-one rules the gate enforces
 
-Twenty-one is how many rules are written below. **The gate is thirty checks,
+Twenty-one is how many rules are written below. **The gate is thirty-one checks,
 and the two are not the same number and must not be made to match** — count the
 rules here, and count `FAST` and `SLOW` in `tools/gate.mjs` for the other. One
 rule can take three checks and one check can hold two rules.

@@ -3,7 +3,7 @@
 ## The gate
 
 ```
-npm test        # thirty checks
+npm test        # thirty-one checks
 ```
 
 `tools/gate.mjs` runs them, and the two numbers below are `FAST` and `SLOW` in
@@ -55,7 +55,7 @@ twice. Sixteen minutes multiplied by three sessions is that, three times over,
 and the third run is not more true than the first.
 
 `tools/pre-commit` runs the ones that need no browser plus i18n when a screen
-file changed. **It is not the gate.** CI runs three of the thirty, so a
+file changed. **It is not the gate.** CI runs three of the thirty-three, so a
 green tick on a push is not the gate either.
 
 | check | holds |
