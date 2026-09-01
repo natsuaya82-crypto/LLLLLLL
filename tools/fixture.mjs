@@ -535,6 +535,9 @@ export function halfDone(){
     ['a grammar stage somebody added', () => {
         SET.plan = 'pro';
         STG.extra = (STG.extra||[]).concat([{id:'ownfix', slots:[], t:'own'}]);
+        /* The PAGE of the stage, not the list: the delete is on the page and
+           `p.own` is what draws it. */
+        window.route='gram'; NAV=[{r:'gram', a:'ownfix'}];
         const h = vGram();
         STG.extra.pop(); SET.plan = 'free'; return h; }],
     ['the digits, where the base is set', () => { SET.plan = 'pro';
