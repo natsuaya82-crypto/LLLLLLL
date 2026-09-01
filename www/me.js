@@ -530,7 +530,17 @@ function whoOf(h){
                phone whose net.js does not answer with them yet: no address,
                no door, and the name stays a plain row exactly as it is now. */
             lid:got.lid||'', lpub:!!got.lpub,
-            bio:got.bio||'', fo:0, fr:0, out:!!got.out};
+            /* HOW MANY THEY FOLLOW AND HOW MANY FOLLOW THEM, passed through
+               rather than nailed to 0. Both were `0` here because no request
+               in www/net.js had ever asked for anybody's but your own --
+               every `follow` query was keyed on SESS.uid, which is why the
+               two numbers on somebody else's page were not wrong numbers but
+               numbers nobody had ever taken. `claude/acct2`'s eb68639 reads
+               them off `profile_seen` and netWho() answers with them.
+
+               Undefined where the server said nothing, which is not 0 and is
+               the same distinction postNLike() makes in www/post.js. */
+            bio:got.bio||'', fo:got.fo, fr:got.fr, out:!!got.out};
   /* And until it answers, the copy: a post of theirs, if this phone has one.
      Better than an empty page for the moment the request is out, and it is
      where the whole page came from before there was anywhere else. */
@@ -742,8 +752,17 @@ function whoCard(h){
     (p.lname? '<div class="wldrow">'+
         '<span class="wldnm">'+esc(p.lname)+'</span></div>' : '')+
     /* The counts, in the same place and the same shape as your own. They come
-       off the person -- FOLLOW_SEAM -- and a person who arrived on a post
-       carries none, so they read zero until somebody arrives carrying them.
+       off the person -- FOLLOW_SEAM -- and they are the SERVER's now:
+       `profile_seen` counts the `follow` rows both ways and netWho() answers
+       with them (claude/acct2's eb68639). Before that nothing had ever asked
+       for anybody's but your own, so these two were a pair of zeroes with no
+       road to any other number.
+
+       Still `||0` on the way to the screen, and that is the one place it is
+       right: whoOf() keeps undefined so that "not answered" and "nobody" stay
+       apart in the data, and a profile has to print SOMETHING under the word
+       Followers. A person who arrived on a post rather than from netWho()
+       carries neither and reads zero until the answer lands.
        Not pressable: the two lists behind your own are yours. */
     '<div class="pfstats">'+
       '<span class="pfst"><b>'+esc(String(p.fo||0))+'</b> '+esc(t('me.following'))+'</span>'+
