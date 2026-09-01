@@ -72,3 +72,40 @@
 ### E. 人の自己紹介（① から出たもの）
 
 `profile` に `bio` の列がありません。`supabase/schema.sql`。
+
+### F. 人のページの Following / Followers が 0（リーダー 2026-09-01）
+
+**一度も取られていない数です。**フォロワーの件（#106）と同じ形で、あれは
+**自分の分**でした。
+
+`www/net.js` の `follow` への問いは三本あって、**三本とも `SESS.uid`**:
+
+  netFollowed()   `follower=eq.<自分>`
+  netFollowing()  `follower=eq.<自分>`
+  netFollowers()  `followed=eq.<自分>`
+
+**他人の数を取る道は一本もありません。**`whoOf()` が `fo:0, fr:0` を返すのは
+そのためで、間違った数ではなく、誰も数えたことのない数です。
+
+`follow_read` は `using (true)` なので取れはします。要るのは相手の uuid で、
+`netWho()` は意図して返していません（コメント: 「an `id` added to it would be
+an account's uuid travelling to places that read a handle」）。
+
+  www/net.js  **渡されていない。**ここでしか足せません
+
+### G. 自己紹介の一行 ── サーバーに列がありません（確かめました）
+
+リーダーから「fixture の見本に無いだけかもしれない」。**違います。**
+
+`supabase/schema.sql` の `profile` は
+`id, handle, display, created_at, av, staff, admin, banned_at, banned_why`
+の九列で、**bio という語はファイル全体に 0 件**です。書く側も
+`netAvSync()` が `av` を PATCH するだけで、`ME.bio` は端末から出ません。
+
+なので**フォロー中の一覧でも人のページでも、他人の自己紹介は構造的に空**です。
+人のページで @ハンドルの下に出ている「Vethi」は `whoCard()` が描く
+`p.lname`（言語の名前）で、自己紹介ではありません ── **言語の名前の場所は
+一つも触っていません。**
+
+  supabase/schema.sql  列。**渡されていない**
+  www/net.js           netWho() の select と、書くほう。**渡されていない**
