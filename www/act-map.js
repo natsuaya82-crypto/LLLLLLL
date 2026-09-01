@@ -243,6 +243,7 @@ act('openLtView', openLtView);
 act('nextLtSort', nextLtSort);
 act('setLtFil', setLtFil);
 act('wordsSetSort', wordsSetSort);
+act('openSort', openSort);
 act('setTheme', setTheme);
 act('setAuto', setAuto);
 act('setUi', setUi);

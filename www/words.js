@@ -13,6 +13,41 @@
    choice of order, every sense on the entry rather than the first, and where
    a word came from written on it rather than implied by an indent. */
 var q='', wFil='*', wSort='a';
+/* The orders the list can be in, in the order they are offered.
+   「単語だけど並べ替えをもっと充実させたい。最新とかいらんし、グループごととか、
+   アルファベットとか。」OWNER 2026-09-01（ビルド #107、実機）
+
+   It was a BUTTON THAT FLIPPED, and two is the only number a flip can hold --
+   so "richer" is not a third label on that button, it is the same shape the
+   part of speech beside it already has: a list you go to, ticked, and back.
+   `openSort` is `openFil` with a different list in it and nothing new was
+   invented for either.
+
+   Newest first is gone 「最新とかいらん」. Nothing is lost by it: `at` is still
+   on every word, `word.made` still says it on the word's own page, and a
+   dictionary is a thing you look a word up in rather than a feed.
+
+   A GROUP is a part of speech. That is what the app itself classes a word by
+   -- `POS` is the list, every word carries one, `migratePos()` gives one to a
+   word that arrived without, and `wFilters()` is the same thirteen. `tags` is
+   what a person writes and most words have none; a family is what a word came
+   from and most words have none. */
+function wSorts(){
+  return [{k:'a', lab:t('words.sort.a')}, {k:'pos', lab:t('words.sort.pos')}];
+}
+/* Which order it is in, as a word. */
+function wSortLab(){
+  var ss=wSorts(), i;
+  for(i=0;i<ss.length;i++) if(ss[i].k===wSort) return ss[i].lab;
+  return ss[0].lab;
+}
+/* What heading a word sits under -- the one place, so the order and the
+   headings above it cannot disagree about where a word goes. Every order
+   groups now: the letter it starts with, or the kind of word it is. */
+function wGroupLab(w){
+  if(wSort==='pos') return posLabel(w.pos);
+  return String(w.hw).charAt(0).toUpperCase();
+}
 function wFilters(){
   var out=[{k:POS_ALL, lab:posLabel(POS_ALL)}], i;
   for(i=0;i<POS.length;i++) out.push({k:POS[i], lab:posLabel(POS[i])});
@@ -53,9 +88,27 @@ function wordsList(){
   if(wFil==='nomn') items=items.filter(function(w){ return !wMns(w).length; });
   else if(wFil!==POS_ALL) items=items.filter(function(w){ return w.pos===wFil; });
   if(qq) items=items.filter(function(w){ return srcKey(w).indexOf(qq)>=0; });
-  if(wSort==='new') items.sort(function(a,b){ return (b.at||0)-(a.at||0); });
-  else items.sort(function(a,b){ return String(a.hw).localeCompare(String(b.hw)); });
+  /* Alphabetically within a group as well as without one, so a part of
+     speech holding two hundred words is still a list a word can be found in.
+     A word whose part of speech is not one the app knows sorts after the
+     thirteen rather than before them -- indexOf answers -1, and -1 sorting
+     first would put the one word nobody classed at the head of the whole
+     dictionary. */
+  items.sort(function(a,b){
+    var d;
+    if(wSort==='pos'){
+      d=wPosAt(a.pos)-wPosAt(b.pos);
+      if(d) return d;
+    }
+    return String(a.hw).localeCompare(String(b.hw));
+  });
   return items;
+}
+/* Where a part of speech comes in the app's own order, and after all of them
+   when it is not one of them. */
+function wPosAt(k){
+  var i=POS.indexOf(String(k||''));
+  return (i<0)? POS.length : i;
 }
 /* Every word is a row of its own. A derived word used to be indented under
    its parent in alphabetical order and listed flat in every other, which is
@@ -71,11 +124,10 @@ function wordsBodyHTML(items){
   if(!items.length)
     return '<div class="empty"><div class="eb">'+
       ((q||wFil!==POS_ALL)? t('words.nomatch') : t('words.empty'))+'</div></div>';
-  if(wSort!=='a') return items.map(entryOneHTML).join('');
-  var out='', cur='';
+  var out='', cur=null;
   items.forEach(function(w){
-    var L=String(w.hw).charAt(0).toUpperCase();
-    if(L!==cur){ cur=L; out+='<div class="gl">'+esc(cur)+'</div>'; }
+    var g=wGroupLab(w);
+    if(g!==cur){ cur=g; out+='<div class="gl">'+esc(cur)+'</div>'; }
     out+=entryHTML(w);
   });
   return out;
@@ -90,8 +142,8 @@ function entryOneHTML(w){ return entryHTML(w); }
    top of the screen. 「allの横に⇆並べ替えつけて〇パッチは廃止」
    Play all is gone: a word says itself on its own row now. */
 function wSortRow(){
-  return '<button class="wsrt"' + DO('wordsSetSort') + '>'+ICON_SORT+
-    esc(t(wSort==='a'? 'words.sort.a' : 'words.sort.new'))+'</button>';
+  return '<button class="wsrt"' + DO('openSort') + '>'+ICON_SORT+
+    esc(wSortLab())+'</button>';
 }
 /* The words that are not on the list, said where they are missing from.
 
@@ -199,7 +251,22 @@ function wordsSetFil(k){
   /* Chosen on a sheet, so the sheet goes and the list is what you land on. */
   if(here().r==='form') back(); else render();
 }
-function wordsSetSort(){ wSort=(wSort==='a')?'new':'a'; render(); }
+/* The orders, on a page. The same list, the same rows and the same tick as
+   the part of speech beside it -- see openFil above; the only difference is
+   what is in it. */
+function openSort(){
+  openForm('wsort', t('sort.title'), wSorts().map(function(s){
+    return '<button class="set"' + DO('wordsSetSort', [s.k]) + '>'+
+      '<span class="sl'+(wSort===s.k? ' on':'')+'">'+esc(s.lab)+'</span>'+
+      (wSort===s.k? '<span class="sv">'+ICON_TICK+'</span>' : '')+'</button>';
+  }).join(''));
+}
+FORM_OPEN.wsort=function(){ openSort(); };
+function wordsSetSort(k){
+  wSort=k;
+  /* Chosen on a page, so the page goes and the list is what you land on. */
+  if(here().r==='form') back(); else render();
+}
 /* One entry. The word says itself when you touch it; the chevron at its edge
    opens it. Listening is what you do dozens of times on this screen and
    editing is what you do once.
