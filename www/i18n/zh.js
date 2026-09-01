@@ -396,6 +396,7 @@ defLang('zh', (function(){
       'wld.art.t.ph'              : "标题",
       'wld.art.b.ph'              : "写下这门语言和它的世界。",
       'wld.shown'             : "公开",
+      'wld.dl.get'            : "下载",
       'wld.dl.can'            : "可下载",
       'wld.empty'             : "这里还什么都没有。",
       "wld.where"    : "在哪里说",

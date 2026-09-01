@@ -1201,6 +1201,89 @@ function wldSecs(w){
   return out;
 }
 function wldSecNm(sec){ return sec.k? t(sec.k) : sec.nm; }
+/* The same section with no way THROUGH it. `wldSecs()` stays the one list;
+   this is one field of one row answered differently for a reader, and it is a
+   copy rather than a delete so the list itself is never edited under anybody. */
+function wldSecNoGo(sec){
+  var o={}, k;
+  for(k in sec) if(Object.prototype.hasOwnProperty.call(sec, k) && k!=='go') o[k]=sec[k];
+  return o;
+}
+/* WHICH SLICE A SECTION IS, and only for the ones a reader can actually be
+   given. `slice_read` in supabase/schema.sql opens exactly five kinds on a
+   published language -- wld, script, snd, letters, kb -- and refuses the
+   dictionary and the grammar to everybody but their owner:
+   「言語ページ公開と単語や文字のdl可能は別だし」.
+
+   So `words` and `gram` are absent here, and that is not this file being shy:
+   a ↓ drawn over them would be a button that CANNOT land, which is the whole
+   shape of what the owner met. The switch on the writing face still offers
+   all four, because that is a thing to say about your own language; what a
+   reader is offered is the intersection of what its owner allowed and what
+   the server will hand over.
+
+   One place. `wldSecs()` says what the sections are and this says which of
+   them is a slice; a second list anywhere would be a ↓ that draws and does
+   nothing the day one of the five moves. */
+var WLD_DL_KIND={letters:'letters', kb:'kb'};
+function wldDlKind(r){
+  return Object.prototype.hasOwnProperty.call(WLD_DL_KIND, r)? WLD_DL_KIND[r] : '';
+}
+/* One chapter of somebody else's language, and the way to take it. The name
+   is the section's own -- 「文字」「キーボード」 -- because that is what it is;
+   nothing here invents a word for downloading. */
+function wldGetRow(sec, lid){
+  /* NO PLAN IS ASKED, and that is read off docs/FEATURES.md § 4 rather than
+     left out: 「Downloading a keyboard or an alphabet is free; downloading a
+     dictionary is Plus.」 The dictionary is the paid half and it cannot be
+     taken by anybody today -- `slice_read` in supabase/schema.sql refuses
+     `words` to everybody but its owner -- so the only two chapters this row
+     can ever be about are the two that decision calls free.
+     `CAN.dl` and its rung go in with the first `can('dl')`, which is the day
+     the dictionary can be taken at all (docs/FEATURES.md). */
+  return '<button class="set"' + DO('wldGet', [String(lid||''), sec.r]) + '>'+
+    '<span class="sl">'+esc(wldSecNm(sec))+'</span>'+
+    '<span class="sv">'+ICON_DL+'</span></button>';
+}
+/* TAKING IT. The one road, and the end of it is localStorage.
+   ------------------------------------------------------------------
+   Everything before this had been built at least once: the switch that says a
+   chapter may be taken, the mark that says so on the article, the 「読んでいる」
+   list waiting for a row. What had never been built is this -- so
+   `LANGS[id].mine` had never been false and the list was always empty.
+   「ダウンロードボタン押しても言語追加されないけど？」 OWNER 2026-09-01.
+   「いつまでもfalseだったとかやめてね。」
+
+   It ADDS and does nothing else. Nothing of the person's own is read, written,
+   renamed or counted differently -- docs/FEATURES.md § 4 and the decision log
+   both say a download is never merged into what somebody made.
+
+   The slices are already here: wldSlicesPull() fetched them to draw the page,
+   so this asks that map rather than the network. A second request would be a
+   second answer to 「what is in their language」, and the two could disagree
+   in the second between the page being drawn and the button being pressed. */
+function wldGet(lid, r){
+  var id=String(lid||''), kind=wldDlKind(r), m=WLDS_HAVE[id], seen=wldSeen(id), o, put;
+  if(!id || !kind) return;
+  /* Nothing to take is not a failure to report: the page is drawn from the
+     same map, so a row can only be on screen when the answers are in. */
+  if(!m) return;
+  o=m[kind];
+  if(!o || !o.body) return;
+  /* The index row FIRST, so a slice can never be in storage under a language
+     the index does not know -- that is a set of keys nothing can find, which
+     is the leftovers bug langKeyOf() exists to prevent. */
+  langSeenAdd(id, seen? seen.name : '');
+  put=o.body;
+  try{ localStorage.setItem(langKeyOf(id, kind), put); }catch(e){ return; }
+  /* And the language's own name where a language keeps it, so the one in the
+     index and the one in the language cannot drift. `lang` is a slice like
+     any other and langRead() is what reads it. */
+  if(seen && seen.name){
+    try{ localStorage.setItem(langKeyOf(id, 'lang'), seen.name); }catch(e){}
+  }
+  render();
+}
 /* A heading that folds, and it is the only kind this page has now. It used to
    sit beside `.abts`, an <h2> -- a button and an h2 as siblings in one list
    are two heights, which is what press measures. `6dc9e0e` took the sections
@@ -1303,7 +1386,7 @@ function vAbout(){
      the slices are what the page is made of. */
   wldSeenPull(a);
   wldSlicesPull(a);
-  return wldPage(false, wldSeenOf(a));
+  return wldPage(false, wldSeenOf(a), a);
 }
 /* Named for the world and not for the view. The checks find a screen by its
    NAME -- a global that is `v` plus a capital -- so a helper named that way is
@@ -1440,7 +1523,7 @@ function wldOpen(){
     kblay:   function(){ return kbOf().lay; }
   };
 }
-function wldPage(ed, L){
+function wldPage(ed, L, lid){
   var w, mine, drawn, body='', dls='', done, i;
   L=L||wldOpen();
   /* NOT HERE YET, and that is a face of this page rather than a page of its
@@ -1516,10 +1599,24 @@ function wldPage(ed, L){
     /* And what MAY be taken away says so, where it is --
        「DL許可が出てるものはDLマークつけないと」 OWNER 2026-08-25. It is on the
        article and not on the editor: the switch is the answer on the writing
-       face, and this is what that answer looks like to somebody reading. */
-    if(!ed && sec.dl && wldSecDl(sec.r, w))
+       face, and this is what that answer looks like to somebody reading.
+
+       ON YOUR OWN ARTICLE ONLY. This mark is the answer to 「may other people
+       take this?」, which is a thing to know about your own language and
+       nothing at all on somebody else's -- there, the answer is not a mark,
+       it is the ↓ you press, and it is collected into its own section at the
+       foot with the others. It was a `<span>` on both faces, carrying no
+       action, which is what the owner pressed:
+       「ダウンロードボタン押しても言語追加されないけど？」 OWNER 2026-09-01. */
+    if(!ed && mine && sec.dl && wldSecDl(sec.r, w))
       extra='<span class="abdlm" aria-label="'+esc(t('wld.dl.can'))+'">'+
         ICON_DL+'</span>';
+    /* And on somebody else's, the row that actually takes it. Held back to
+       the foot the same way the editor's four switches are, and for the same
+       reason: they are one question asked about chapters that live elsewhere,
+       not sections of the article. */
+    if(!ed && !mine && sec.dl && wldSecDl(sec.r, w) && wldDlKind(sec.r))
+      dls+=wldGetRow(sec, lid);
     /* Held back rather than drawn here: the four go at the FOOT of the
        screen, under everything somebody writes -- 「dlのやつは一番下にして」
        「上の概要とセクションに混ざらないようにして」 OWNER 2026-08-25. Standing
@@ -1671,7 +1768,15 @@ function wldPage(ed, L){
        does not keep -- but it IS on the writing one, because that is where it
        gets its name. */
     if(sec.blank && !ed) return;
-    body+=abHead(sec, !!inner, extra)+((!inner || abShut(sec.r))? '' : inner);
+    /* ONE `›` TO A ROW. `sec.go` is the way into this phone's own chapter --
+       the letters, the dictionary, the keyboard -- and on somebody else's
+       article it is rule 8 written as a button: pressing the `›` beside THEIR
+       Letters opened MINE. So the row that folds is the only thing to press
+       there, which is also what the owner drew: 「›の位置を統一する」, one mark
+       on the left of each row rather than one on each side.
+       On your own article both are yours and both stay. */
+    body+=abHead((!ed && !mine && sec.go)? wldSecNoGo(sec) : sec,
+                 !!inner, extra)+((!inner || abShut(sec.r))? '' : inner);
   });
   /* And the way to put another section in, at the end of the ones there are,
      which is where a new section of an article goes. */
@@ -1685,6 +1790,14 @@ function wldPage(ed, L){
      over them, which is what a heading is for. What it means in full is
      behind the `?` in the bar. */
   if(ed && dls) body+='<div class="sec">'+esc(t('wld.dl.can'))+'</div>'+dls;
+  /* And on somebody else's article, the same place holds the ones you may
+     TAKE -- a section that folds like every other section on this page, with
+     one row per chapter. Not a different shape, not a different colour: it is
+     a heading with things under it, which is what the rest of the page is. */
+  if(!ed && dls){
+    var dlsec={r:'wlddl', k:'wld.dl.get'};
+    body+=abHead(dlsec, true, '')+(abShut(dlsec.r)? '' : dls);
+  }
   if(!body) body='<div class="note">'+esc(t('wld.empty'))+'</div>';
   return '<div class="view">'+
     /* Edit is only on your own. 「Edit は出ません（他人のものなので）」 */
@@ -1719,6 +1832,16 @@ function langRow(id){
      so renaming a language and looking at this list before anything saved
      showed the old name here and the new one everywhere else. */
   var nm = isOpen? langName : l.name;
+  /* A language that is only READ is a row and not a button. langOpen()
+     refuses it -- opening is what writes, and 「dl言語は編集はできない」
+     (OWNER 2026-09-01) -- so a button here would be a door that answers
+     nothing, which is the shape the ↓ itself was until today. It is drawn,
+     because it is on this phone and somebody took it; it is not pressable,
+     because there is nowhere to go yet. */
+  if(!isOpen && l.mine===false)
+    return '<div class="set lrow">'+
+      '<span class="sl">'+esc(nm||t('langs.untitled'))+'</span>'+
+      '<span class="lchk"></span></div>';
   return '<button class="set lrow'+(isOpen?' on':'')+'"' + DO('langOpen', [id]) +
     (isOpen? ' aria-label="'+esc(t('langs.open'))+'"' : '') + '>'+
     '<span class="sl">'+esc(nm||t('langs.untitled'))+'</span>'+

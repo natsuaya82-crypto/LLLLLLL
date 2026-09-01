@@ -351,3 +351,5 @@ actKey('stAddEx', stAddEx);
 actKey('takeOwn', takeOwn);
 actKey('wdAddEx', wdAddEx);
 actKey('wdAddMn', wdAddMn);
+
+act('wldGet', wldGet);

@@ -43,6 +43,10 @@ await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
 const r = await pg.evaluate(async ({ s, sid }) => {
   eval('(' + s + ')()');
   SET.done = true;
+  /* On the FREE plan, deliberately. docs/FEATURES.md § 4: 「Downloading a
+     keyboard or an alphabet is free」, and the two chapters the server opens
+     to a reader are exactly those two. If a rung is ever put on this row, this
+     line is what turns red. */
 
   /* ---- the network, and ONLY the network ------------------------------
      What the server really answers with is what supabase/schema.sql's
@@ -51,7 +55,11 @@ const r = await pg.evaluate(async ({ s, sid }) => {
      everybody but the owner. Answering here with more than the server would
      is how a check passes and a phone does not. */
   var THEIRS = {
-    wld:     { body: JSON.stringify({ ov:[{k:'', v:'a language somebody else wrote'}] }), no: 3 },
+    /* `dl:true` is the publisher having turned the switch on -- wldDl() reads
+       it and 「absent means no」, so a language that has not said yes offers
+       nothing and that is correct. */
+    wld:     { body: JSON.stringify({ dl:true,
+                 ov:[{k:'', v:'a language somebody else wrote'}] }), no: 3 },
     script:  { body: JSON.stringify({ dir:'ltr' }), no: 1 },
     snd:     { body: JSON.stringify(['a','k','n']), no: 2 },
     letters: { body: JSON.stringify([{ id:'x1', st:[{pts:[[100,100],[700,700]]}],
@@ -126,15 +134,32 @@ const r = await pg.evaluate(async ({ s, sid }) => {
   try { langOpen(sid); opened = (langId === sid); } catch (e) {}
   out.opens = opened;
   if (opened){
-    out.packWhileOpen = bkPack();
     out.packWhileOpenHasTheirs =
-      JSON.stringify(out.packWhileOpen).indexOf(THEIRS.letters.body) >= 0;
+      JSON.stringify(bkPack()).indexOf(THEIRS.letters.body) >= 0;
+    /* and the thing that actually hands a file over. bkPack() is arithmetic on
+       whatever is open and says nothing about whose it is; bkPush() is the one
+       that writes, so it is the one asked. */
+    var wrote = [];
+    BK.dirty = true; BK.how = '';
+    var oldPlug = window.sharePlug;
+    window.sharePlug = function(){ return function(a, b, o){ wrote.push(b); 
+      return { then:function(){ return { 'catch':function(){} }; } }; }; };
+    bkPush();
+    window.sharePlug = oldPlug;
+    out.pushRefused = wrote.length === 0;
+    out.pushHow = BK.how;
     langOpen(was);
   }
   /* The sync, with every road out of it OPEN. netLangRow() is stubbed too --
      without it the request simply fails and the claim below is green for the
      wrong reason: nothing was refused, the network merely was not there. */
   netLangRow = function(ok){ ok(sid); };
+  /* AND IT IS STILL THEIRS. This is the one that matters: opening a language
+     is what WRITES -- ltStart() tops a free alphabet up to a-z and saves it --
+     so before langOpen() refused, looking at a downloaded language replaced
+     its letters with this person's twenty-eight slots and nobody typed a
+     thing. Asked after the attempt above, whichever way it went. */
+  out.stillTheirs = localStorage.getItem(langKeyOf(sid, 'letters')) === THEIRS.letters.body;
   out.syncRefused = await new Promise(function(f){
     var wasId = langId;
     LANGS[sid] = LANGS[sid] || { name:'Shango', mine:false };
@@ -187,9 +212,16 @@ say(r.mineUntouched === '' && r.stillOpen,
     (r.mineUntouched ? ' (`' + r.mineUntouched + '` changed)' : ''));
 say(!r.packHasTheirs && r.packIsMine,
     'their language is not in this person’s backup — 「入らん」');
-say(!r.opens || r.packWhileOpenHasTheirs === false,
-    'and not even when it is the language being looked at' +
-    (r.opens ? '' : ' (it cannot be opened yet, which is the same answer)'));
+console.log('    [opens=' + r.opens + ' packWhileOpenHasTheirs=' +
+            r.packWhileOpenHasTheirs + ' pushRefused=' + r.pushRefused + ']');
+say(!r.opens || r.pushRefused === true,
+    'and nothing WRITES it out even when it is the language being looked at — ' +
+    'bkPack() packs whatever is open, so what is asked is the writer: ' +
+    (r.opens ? 'bkPush refused it (' + r.pushHow + ')'
+             : 'it cannot be opened, which is the same answer'));
+say(r.stillTheirs,
+    'and what landed is still theirs after all of that — byte for byte the ' +
+    'body the server sent, not this phone’s alphabet written over it');
 say(r.syncRefused,
     'and netLangSync() will not run on it — syMerge adds both sides, and one ' +
     'pass would put something into a language somebody else wrote' +

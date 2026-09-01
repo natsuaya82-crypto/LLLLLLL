@@ -187,6 +187,52 @@ function langMint(){
   LANGS[id]={ name:'', mine:true };
   return id;
 }
+/* A LANGUAGE THAT IS ONLY READ, in the index and nowhere else yet.
+   ------------------------------------------------------------------
+   The third place that writes to LANGS, and the first that has ever written
+   `mine` false. The other two -- langMigrate() above and langMint() -- write
+   true, which is why docs/DATA_MODEL.md said this state 「does not exist」:
+   the switch that says a chapter may be taken away has been built more than
+   once and the taking never was.
+   「ダウンロードボタン押しても言語追加されないけど？」 OWNER 2026-09-01.
+
+   ITS ID IS THE SERVER'S. Every other language is minted here and has no id
+   anywhere else; this one already has one, and using it is what makes a
+   second download of the same language ARRIVE IN THE SAME PLACE rather than
+   making a second copy. That matters because a download is one chapter at a
+   time -- 「いや一つづつdlでいいよ」 OWNER 2026-09-01 -- so the letters today
+   and the keyboard tomorrow have to land in one language.
+
+   `sid` is put on for the same reason it is put on a language of the
+   person's own: it is the server's name for this thing. Nothing ever sends
+   this one up -- netLangSync() refuses a language that is not yours -- so it
+   is there to say where it came from.
+
+   The NAME is only filled in if there is not one already: the row is made
+   the first time a chapter is taken and a later download must not rename a
+   language somebody is reading. */
+function langSeenAdd(sid, name){
+  var id=String(sid||'');
+  if(!id) return '';
+  if(!LANGS[id]) LANGS[id]={ name:String(name||''), mine:false, sid:id };
+  else if(name && !LANGS[id].name) LANGS[id].name=String(name);
+  langStore();
+  return id;
+}
+/* Whether a language is this person's OWN, asked of the index and answered
+   for anything the index does not know as yes.
+
+   Unknown is yes on purpose. Every language this app has ever made is in the
+   index with `mine:true`, and the one thing that must never happen is a
+   person's own language being treated as somebody else's -- that would take
+   it out of their backup and out of sync, quietly, which is data loss wearing
+   the shape of a plan check. The other way round is a copy of a published
+   language not being backed up, which is what the owner asked for anyway
+   (「入らん」). So the doubt falls toward yours. */
+function langMine(id){
+  var L=LANGS[String(id||'')];
+  return !L || L.mine!==false;
+}
 /* Nothing here at all: a first run, or a first run after the migration found
    nothing to move. The person gets one empty language of their own. */
 function langFirst(){
@@ -304,6 +350,17 @@ planMigrate();
    words end up saved under the language being switched to. */
 function langOpen(id){
   if(!LANGS[id] || id===langId) return;
+  /* AND IT DOES NOT REFUSE A LANGUAGE THAT IS ONLY READ, though the first
+     version of this did. `tools/migrate-check.mjs` holds CLAUDE.md's rule 6 --
+     「a language somebody already has still opens」 -- with a fixture whose
+     second language is written `mine:false`, and a refusal here turned that
+     check red on the one thing it says may never be shipped red.
+
+     So what a downloaded language is protected by is not a locked door here.
+     It is the WRITERS: ltStart() does not top one up, bkPush() does not put
+     one in a backup file, netLangSync() does not sync one, and the row in the
+     language list is not a button. Each of those is at the place that does
+     the thing. docs/DATA_MODEL.md § A language that is only read. */
   save(); saveLetters(); saveNotes(); saveStg(); saveSnd(); saveKb(); saveWld();
   langId=id; langStore();
   langRead(); ltRead(); ntRead(); stRead(); sndRead(); ltStart(); kbRead(); migrateKbFree(); wldRead(); migratePostInk();

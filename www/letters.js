@@ -510,6 +510,15 @@ function ltCopy(id){
 }
 function ltStart(){
   if(can('letters')) return;
+  /* AND NOT INTO A LANGUAGE THAT IS ONLY READ. The twenty-eight slots are
+     what the free plan gives somebody to draw their own alphabet on; a
+     language taken off somebody else's page already has the letters they
+     drew, and topping it up would write this phone's a-z over them -- through
+     saveLetters(), the moment it was opened, with nobody typing anything.
+     Measured before this line existed: the letters slice stopped being byte
+     for byte what the server sent.
+     「dl言語はへんしゅうはできないってなんかいもいわせんなよ」 OWNER 2026-09-01. */
+  if(!langMine(langId)) return;
   var have={}, made=0, i, c, l, read;
   for(i=0;i<LETTERS.length;i++) have[String(ltName(LETTERS[i])||'').toLowerCase()]=1;
   for(i=0;i<LT_START.length;i++){

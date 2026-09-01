@@ -505,6 +505,45 @@ export function halfDone(){
        const h=vLtset('num');
        LETTERS = LETTERS.filter(l => l.val !== 11); STG.base=was; SET.plan='free';
        return h; }],
+    /* SOMEBODY ELSE'S LANGUAGE PAGE, with the answers in. Both are needed and
+       they are two requests: `language_seen` says the language is published
+       and gives its name, and the slices are what the page is made of. No
+       check has a network, so without this the reader's face of `about` is
+       the empty shell it draws while the answers are out -- and the ↓ that
+       takes a chapter is never rendered, which act-check reports, correctly,
+       as an entry no screen names.
+
+       The slices are the five `slice_read` in supabase/schema.sql opens to a
+       reader of a published language, and NOT the dictionary or the grammar,
+       which it refuses to everybody but their owner. `dl:true` in `wld` is
+       that language's owner having said its chapters may be taken. */
+    ['somebody else\u2019s language page', () => {
+       const lid = 'seen-lang-1';
+       WLD_HAVE[lid] = { id:lid, name:'Shango', license:'', pub:'2026-08-01',
+                         nwords:12, nletters:5 };
+       WLDS_HAVE[lid] = {
+         wld:     { body: JSON.stringify({ dl:true, where:'the northern valleys',
+                      ov:[{k:'', v:'a language somebody else wrote'}] }), no:3 },
+         script:  { body: JSON.stringify({ dir:'ltr' }), no:1 },
+         snd:     { body: JSON.stringify(['a','k','n']), no:2 },
+         letters: { body: JSON.stringify([{ id:'sx1',
+                      st:[{pts:[[100,100],[700,700]]}], ch:'', nm:'q', snd:[] }]), no:5 },
+         kb:      { body: JSON.stringify({ boards:[] }), no:1 }
+       };
+       window.route='about'; NAV=[{ r:'about', a:lid }];
+       const h=vAbout();
+       return h; }],
+    /* and the same page with its download section OPEN, which is where the ↓
+       itself is -- ABOPEN records what is open, so the arriving state is
+       everything closed and a walk that never toggles never sees inside one. */
+    ['somebody else\u2019s language page, downloads open', () => {
+       const lid = 'seen-lang-1';
+       const was = ABOPEN.wlddl;
+       ABOPEN.wlddl = true;
+       window.route='about'; NAV=[{ r:'about', a:lid }];
+       const h=vAbout();
+       ABOPEN.wlddl = was;
+       return h; }],
     ['the reading of a word', () => { SET.plan = 'pro'; openEdit('kano');
                                       window.route='spell'; NAV=[{r:'spell'}];
                                       const h=vSpell(); SET.plan='free'; return h; }],

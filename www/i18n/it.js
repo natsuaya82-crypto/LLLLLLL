@@ -388,6 +388,7 @@ defLang('it', (function(){
       'wld.art.t.ph'              : "Titolo",
       'wld.art.b.ph'              : "Scrivi sulla lingua e sul suo mondo.",
       'wld.shown'             : "Pubblica",
+      'wld.dl.get'            : "Scarica",
       'wld.dl.can'            : "Scaricabile",
       'wld.empty'             : "Qui non c’è ancora niente.",
       "wld.where"    : "Dove si parla",

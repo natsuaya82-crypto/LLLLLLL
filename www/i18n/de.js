@@ -376,6 +376,7 @@ defLang('de', (function(){
       'wld.art.t.ph'              : "Titel",
       'wld.art.b.ph'              : "Schreibe über die Sprache und ihre Welt.",
       'wld.shown'             : "Öffentlich",
+      'wld.dl.get'            : "Herunterladen",
       'wld.dl.can'            : "Herunterladbar",
       'wld.empty'             : "Hier ist noch nichts.",
       "wld.where"    : "Wo sie gesprochen wird",

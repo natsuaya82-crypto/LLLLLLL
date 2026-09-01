@@ -614,6 +614,17 @@ var NET_SYNCING=false;
 function netLangSync(then){
   var done=then || function(){};
   if(NET_SYNCING || !netSignedIn() || !langId){ done(false); return; }
+  /* AND NEVER ON A LANGUAGE THAT IS NOT YOURS. syMerge() ADDS BOTH SIDES, so
+     one pass over a downloaded language puts something into it --
+     「トキポナに文字足したらトキポナじゃないです」 OWNER 2026-08-25 -- and the
+     write half would be this phone trying to edit somebody else's rows.
+
+     It holds HERE, at the one door, and not by each of the four call sites
+     remembering to ask: the one that forgets is the one that ruins a copy of
+     a language its reader cannot repair. It also has nothing to do: nothing
+     on the phone can change a language that is only read, so the two copies
+     cannot differ. docs/DATA_MODEL.md § A language that is only read. */
+  if(!langMine(langId)){ done(false); return; }
   NET_SYNCING=true;
   function stop(moved){ NET_SYNCING=false; done(!!moved); }
   netLangRow(function(sid){
