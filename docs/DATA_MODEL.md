@@ -88,8 +88,10 @@ the onboarding was unfinished with nothing left saying otherwise. Cleared by
 `obReturn()`; it is a pending move, not a preference, and it is the one thing
 in `SET` that is meant to be short-lived. `lingua.me` (`ME`) is the person — the copy of their `profile` row.
 `lingua.sess` (`SESS`) is the session — the token pair only; **a password is
-never held, stored or logged.** `lingua.posts` (`POSTS`) is the timeline, and
-`lingua.drafts` (`DRAFTS`) is what was written and not sent — the composer,
+never held, stored or logged.** `lingua.posts` (`POSTS`) is **the copy of** the
+timeline and `lingua.drafts` (`DRAFTS`) **the copy of** what was written and not
+sent — both live on the server, and both are read here so that the app works
+with no signal. A draft is the composer,
 kept: the line, the meaning, whom it answers, the pictures with their letters
 still placed on them, the recording, and whether it was going to be private.
 Every one of them carries an `id`, minted on this phone by `netUUID()`, which
@@ -344,9 +346,12 @@ drawn as text, never re-cut locally.
 
 ### A photograph, and why there is a ceiling
 
-`pic` is stored as a data URL in `lingua.posts`, which shares one
-`localStorage` allowance with **every slice of the language**. So the size of
-a photograph is a data-safety question before it is a picture-quality one:
+The bytes go to the server with the post — `netUpPics()` into the `post-media`
+bucket, the paths onto `body.pu` and the small copies onto `body.pt`. **The
+copy this phone keeps is a data URL in `lingua.posts`**, which shares one
+`localStorage` allowance with **every slice of the language**, and that is
+where the ceiling comes from: the size of a photograph is a data-safety
+question before it is a picture-quality one.
 
 ```
   a whole free language                     about 25 KB
