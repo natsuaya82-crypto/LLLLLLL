@@ -56,7 +56,13 @@ function viewReset(){
                                           which of the two it is about */
   snsSort='new';                       /* and newest or most answered */
   snsFil=null;                         /* and the word the feed is filtered to */
-  NOTES_HAVE=null;                     /* the notices, asked again */
+  /* The notices, asked again -- and the copy on the handset read again with
+     them. notWake() only looks once a session, so nulling this without
+     clearing that left the screen with no notices AND no way back to the ones
+     it had already been given: switching language blanked the notices until
+     the server answered, which is the second of blank coming back by another
+     road. */
+  NOTES_HAVE=null; notRead=false;
   BKLIST=null;                         /* what is on the disk, asked again */
 }
 

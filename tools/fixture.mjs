@@ -243,8 +243,6 @@ export function seed(){
      tabBar() draws the figure on every render, so this is worn on every
      screen -- and a person with an unread notice is the ordinary state of a
      timeline, not a corner of it. */
-  NOTES_HAVE = [{kind:'like', at:Date.now()-60000, hd:'iri', who:'Iri',
-                 av:{ch:'\u0416'}, id:'p1', n:1, more:[]}];
   /* AND THE WATERMARK BACK TO NOTHING. Opening the notices is what marks them
      read -- notSeen() writes `SET.notAt` -- and the walks render every screen
      in one page, so the first render of `notif` was making every render after
@@ -252,11 +250,23 @@ export function seed(){
      never again, which is a fixture that changes under the walk rather than
      one that seeds a state. Reset here, where every other field of SET is. */
   SET.notAt = 0;
+  /* And nobody else's language answered for. `wldSeenPull()` writes both, and
+     they are a session's memory of what came back rather than anything stored
+     -- so a face that seeds one must not leave it standing for every render
+     after it. Reset where the rest of the state is. */
+  WLD_HAVE = {}; WLD_ASKED = {};
   /* Where you are standing is the app's to say, not this file's. viewReset()
      in www/shell.js is the one list of what a screen forgets when you leave
      it; a copy here would be a second list to keep in step, and the first
      version of this was exactly that -- two of the fifteen. */
   viewReset();
+  /* AFTER viewReset(), and that is the whole of why it was not working.
+     viewReset() nulls NOTES_HAVE -- 「the notices, asked again」 -- so a seed
+     written above it was wiped by the last line of this function every time.
+     The bell was measured at 0 on every screen and the state simply never
+     existed. Anything here that viewReset() forgets has to be set after it. */
+  NOTES_HAVE = [{kind:'like', at:Date.now()-60000, hd:'iri', who:'Iri',
+                 av:{ch:'\u0416'}, id:'p1', n:1, more:[]}];
 }
 
 /* The steps of the onboarding that have a second face: the writing systems to
@@ -798,6 +808,20 @@ export function halfDone(){
         const h = app.innerHTML;
         PULL_SPIN = null; app.innerHTML = was;
         return h; }],
+    /* SOMEBODY ELSE'S LANGUAGE, answered for. The page draws nothing until
+       `language_seen` comes back, which is right on a phone and means a blank
+       photograph on a bench with no server -- so the answer is put in by hand,
+       in the shape netLangSeen() returns.
+
+       The numbers are the SERVER's count. `slice_read` still opens no
+       dictionary to anybody, so there is no word list here to seed and none
+       is drawn. */
+    ['somebody else\u2019s language', () => {
+        WLD_HAVE['L1'] = { id:'L1', name:'Vethi', license:'',
+                           pub:'2026-08-20T00:00:00Z', nwords:412, nletters:38 };
+        WLD_ASKED['L1'] = 1;
+        window.route='about'; NAV=[{ r:'about', a:'L1' }];
+        return vAbout(); }],
     ['notices', () => { NOTES_HAVE = [
         {kind:'like', at:Date.now()-60000, hd:'iri', who:'Iri', av:{ch:'Ж'}, id:'p1',
          n:2, more:[{hd:'veth', who:'Veth', av:{ch:'V'}}]},
