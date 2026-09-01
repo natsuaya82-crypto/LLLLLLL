@@ -863,6 +863,71 @@ const R = await pg.evaluate(() => {
     no('26: sha256("abc") が NIST の値と違う');
   say('26: nonce は毎回ちがい、SHA-256 は NIST の値と一致する');
 
+  /* ---- 27. 入り直したその場で、自分の言語が降りてくる ------------------
+     boot.js も netLangsDown() を呼びますが、それは**起動時**です。人が
+     サインインするのは起動のあとなので、扉を抜けた画面には**その端末が
+     持っている言語**が出たまま、アプリを閉じて開き直すまで自分のものは
+     一つも出ませんでした。 */
+  start();
+  netOut();
+  let camedown = 0;
+  const realDown = netLangsDown;
+  netLangsDown = () => { camedown++; };
+  const realProf = netMyProfile;
+  netMyProfile = (ok2) => ok2({ handle: 'lingua2', display: 'Lingua' });
+  arrive(A);
+  obIn();
+  netMyProfile = realProf; netLangsDown = realDown;
+  if (!camedown) no('27: 入り直しても、アカウントの言語を降ろしに行かない');
+  say('27: 入り直したその場で、アカウントの言語が降りてくる');
+
+  /* ---- 28. サインアウトは、provider にも伝わる ------------------------
+     「あと違うアカウントでログインしてんのに前のやつ出てくるんだけど？」
+     OWNER 2026-08-31 ── 言語はその半分（端末のものなので、net.js が持ち主を
+     訊くようにしました）。これがもう半分です。
+
+     netOut() が外すのは Lingua のトークン二つだけで、**social provider 自身の
+     セッションはプラグインのもので、生き残ります。**だから次に Google を
+     押すと、誰にも何も訊かずに同じアカウントが返ってきて、
+     「サインアウトして別のアカウントで入る」という道が存在しませんでした。
+     www/ 全体で SocialLogin は obSocial() の一箇所だけに現れ、logout は
+     どこからも呼ばれていませんでした。 */
+  start();
+  const told = [];
+  window.Capacitor = { Plugins: { SocialLogin: {
+    logout: (arg) => { told.push(arg && arg.provider); return { catch: () => {} }; }
+  } } };
+  OB_SL = true;
+  setSignOut();
+  delete window.Capacitor;
+  if (told.indexOf('google') < 0) no('28: サインアウトが Google に伝わっていない');
+  if (told.indexOf('apple') < 0) no('28: サインアウトが Apple に伝わっていない');
+  if (OB_SL) no('28: 次の押下で configure し直さない ── 忘れろと言った相手を信じている');
+  if (netSignedIn()) no('28: そもそもサインアウトできていない');
+  say('28: サインアウトは provider にも伝わる（両方）');
+
+  /* そして、伝えられなくてもサインアウトは止まりません。人は出ていくところで、
+     プラグインが無いことも、logout が無いことも、拒まれることも、
+     引き止める理由にはなりません。 */
+  start();
+  window.Capacitor = { Plugins: { SocialLogin: {
+    logout: () => { throw new Error('nope'); }
+  } } };
+  let threw = false;
+  try { setSignOut(); } catch (e) { threw = true; }
+  delete window.Capacitor;
+  if (threw) no('28: provider が拒んだらサインアウトが落ちる');
+  if (netSignedIn()) no('28: provider が拒んだらサインアウトできない');
+
+  start();
+  window.Capacitor = { Plugins: {} };          /* プラグインが無いビルド */
+  let threw2 = false;
+  try { setSignOut(); } catch (e) { threw2 = true; }
+  delete window.Capacitor;
+  if (threw2) no('28: プラグインが無いとサインアウトが落ちる');
+  if (netSignedIn()) no('28: プラグインが無いとサインアウトできない');
+  say('28: 伝えられなくても、サインアウトは止まらない');
+
   return out;
 });
 

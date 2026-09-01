@@ -740,6 +740,42 @@ function obSignInGoogle(){
   if(!GOOGLE_IOS_ID){ toast(t('net.nonative')); return; }
   obSocial('google', {});
 }
+/* AND SIGNING OUT OF THE PROVIDER, which nothing ever did.
+   「あと違うアカウントでログインしてんのに前のやつ出てくるんだけど？」
+   OWNER 2026-08-31 -- and the languages were half of that (they are the
+   phone's, and www/net.js now asks whose they are). This is the other half.
+
+   netOut() takes away Lingua's two tokens and nothing else. The SOCIAL
+   provider's own session is the plugin's, it survives, and `p.login()` on
+   the next press can hand back the same account without asking anybody
+   anything -- so 「sign out, then sign in as somebody else」 was a road that
+   did not exist. `SocialLogin` appeared exactly once in all of www/, in
+   obSocial() above, and `logout` was never called from anywhere.
+
+   Every guard here is because this runs while somebody is LEAVING: no
+   plugin, no such method, a rejected promise, a provider that was never
+   used. None of them is a reason to keep somebody signed in, so none of them
+   is reported and none of them stops the sign-out -- setSignOut() has
+   already taken the tokens away by the time this is reached. It is told to
+   forget; whether it manages to is not the person's problem.
+
+   obNative() is NOT used: it says 「not in this build」 out loud, which is
+   right when somebody pressed a sign-in button and wrong when they pressed
+   sign out. */
+function obSignOutSocial(){
+  var P=window.Capacitor && Capacitor.Plugins, p=P && P.SocialLogin, i, who;
+  if(!p || typeof p.logout!=='function') return;
+  who=['apple', 'google'];
+  for(i=0;i<who.length;i++){
+    try{
+      var r=p.logout({ provider:who[i] });
+      if(r && typeof r['catch']==='function') r['catch'](function(){});
+    }catch(e){}
+  }
+  /* So the next press configures again rather than trusting a plugin that has
+     just been told to forget who it was. */
+  OB_SL=false;
+}
 /* Closing the sheet is not a failure and is not told about. */
 function obShrug(){ OBM.busy=false; render(); }
 /* Through the door, by whichever of the four ways. What is on the far side
@@ -761,6 +797,20 @@ function obIn(){
     if(p){
       ME.name=String(p.display||''); ME.handle=String(p.handle||''); saveMe();
       OBM.mode='in';
+      /* AND THE LANGUAGES THIS ACCOUNT ALREADY HAS. A profile row means this
+         account has been used, so there may be languages on the server that
+         this phone has never seen -- a second phone, or one that was somebody
+         else's. 「前のアカウント消えたんだが？」 OWNER 2026-08-31: nothing was
+         deleted, there was no way back to it.
+
+         boot.js asks this too, but only at a launch, and the launch that
+         matters already happened -- signing in here would otherwise show the
+         phone's own languages until the app was closed and opened again.
+
+         It is www/net.js's and decides everything itself: nothing without a
+         session, it FILLS IN what is missing and never overwrites, and it is
+         safe to call twice. So this is a call and not a condition. */
+      if(typeof netLangsDown==='function') netLangsDown();
       /* An account that already has a profile belongs to somebody who has
          been here. Sending them into the onboarding is sending them to
          draw an alphabet they already have. */

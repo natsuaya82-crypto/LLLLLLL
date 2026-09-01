@@ -757,7 +757,19 @@ function setPlan(id, yearly){
 /* Signing out leaves everything where it is: the languages are on the phone
    and the account is on the server, and coming back finds both. Only the pair
    of tokens goes. */
-function setSignOut(){ netOut(); toast(t('set.signout.done')); render(); }
+function setSignOut(){
+  netOut();
+  /* And the provider is told too. Lingua's tokens are not the only session
+     there is: the social plugin keeps its own, and it survived this -- so the
+     next press of Google handed back the same account without asking, and
+     「sign out and sign in as somebody else」 was a road that did not exist.
+     www/onboard.js has the whole of why; it answers for everything that can
+     go wrong here by going on regardless, because the tokens are already
+     gone by this line. */
+  obSignOutSocial();
+  toast(t('set.signout.done'));
+  render();
+}
 /* The mail door, reached from settings rather than from the door itself. It is
    the same screen -- there is one way to sign in with an address and it is
    written once -- so this only says which face of it to open and puts the app
