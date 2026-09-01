@@ -770,10 +770,10 @@ function tabBar(){
    is a RADIUS -- squared on both sides rather than Math.hypot, which
    es5-check forbids and which this does not need.
 
-   **10 is provisional and is not this file's to decide.** How far a thumb may
-   wander and still be holding is a threshold, and docs/FEATURE_RULES.md
-   § Deciding says a threshold is the owner's. It is here so the gesture works
-   at all; the number needs their word. */
+   **HOLD_SLOP is 10px, and that is the owner's, decided 2026-09-01.** The
+   other number put to them was 16: wider survives a shakier thumb, and pays
+   for it in scrolls that turn into a language switch. Ten was chosen. It is
+   not this file's to move. */
 var HOLD_MS=500, HOLD_SLOP=10, holdT=null, HELD=false, holdX=0, holdY=0;
 /* Where the finger is, from a touch or from a mouse. A touchend carries its
    point in `changedTouches`, because by then it is no longer touching. */
