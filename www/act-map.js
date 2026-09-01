@@ -220,7 +220,6 @@ act('pwTool', pwToolSet);
 act('pwCutDo', pwCutDo);
 act('pwCutAll', pwCutAll);
 act('pwSend', pwSend);
-act('pwFocusLn', pwFocusLn);
 act('draftKeep', draftKeep);
 act('draftOpen', draftOpen);
 act('draftDrop', draftDrop);

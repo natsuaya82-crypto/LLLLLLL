@@ -1229,12 +1229,12 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
 .view.fit .pwqs{flex:0 1 auto;min-height:0}
 .view.fit .pwtop{flex:1 1 auto;min-height:0}
 .view.fit .pwfield{flex:1 1 auto;display:flex;flex-direction:column;min-width:0}
-/* What is left of the column under the two fields and the row of pictures.
-   It is not a spacer -- it is the field, one step further down: pressing it
-   puts the caret at the end of the line (pwFocusLn). No colour, no border,
-   nothing drawn; it is the glass a thumb lands on.
-   「下のスペースあるのに詰まってるよね？」OWNER 2026-09-01. */
-.pwrest{flex:1 1 auto;min-height:0}
+/* THE LINE TAKES THE SPACE. 「返信元／返信スペース／キーボード。ここのスペース
+   空きすぎだからもっと広く使え」OWNER 2026-09-01 -- the field is the middle
+   band of the screen and it is as tall as that band, scrolling inside itself
+   rather than growing. The meaning and the row of pictures keep their own
+   heights under it. */
+.view.fit .pwfield .lnin.fitin{flex:1 1 auto;min-height:44px;overflow:auto}
 /* As tall as its text -- lnFit says how tall; this only stops it widening
    past the column it is in. */
 .view.fit .pwfield .lnin{max-width:100%;min-height:44px}
