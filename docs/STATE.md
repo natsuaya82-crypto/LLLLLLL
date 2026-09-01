@@ -467,12 +467,21 @@ The buttons went from "not in this build" to a real plugin —
 - **Apple: done.** `com.apple.developer.applesignin` is in
   `ios/App/App/App.entitlements`, and the owner reports the App ID capability
   and the regenerated profile done (2026-08-27).
-- **Google: done, both halves.** `GOOGLE_IOS_ID` in `www/net.js` and the
-  reversed scheme in `Info.plist`'s `CFBundleURLTypes` are the same client id
-  (2026-08-27), and the owner reports the Supabase provider enabled
-  (`supabase/setup.md` § 4, 2026-08-27). Neither value is a secret: the id
-  names the app and proves nothing. What is left is a phone — whether the
-  sheet comes back with a session.
+- **Google: done, and DEVICE CONFIRMED 2026-09-01.** The owner pressed it on
+  build #107: 何も出ません押したら普通にログインされるけど？ The sheet opens and
+  comes back with a session. `GOOGLE_IOS_ID` in `www/net.js` and the reversed
+  scheme in `Info.plist`'s `CFBundleURLTypes` are the same client id, the
+  Supabase provider is on, and neither value is a secret: the id names the app
+  and proves nothing.
+
+  **The nonce question is closed, and the answer is: send none.** It was open
+  because `www/onboard.js`'s comment argues it from APPLE's behaviour, and
+  nobody had checked that Google's SDK behaves the same. It does —
+  `@capgo/capacitor-social-login` 8.4.4 only puts a nonce in the request when
+  it is handed one, so with `netIdToken(who, tok, '', …)` both sides stay
+  quiet and Supabase's 「Passed nonce and nonce in id_token should either both
+  exist or not」 never fires. `netIdWhy()` stays: it costs nothing and it is
+  the only thing that could name the side if this ever comes back.
 
 **What this file cannot see.** App Store Connect, the Apple developer site,
 Google Cloud and the Supabase dashboard are outside the repository. Where a
@@ -1026,8 +1035,8 @@ Two of them were about capabilities that had been deleted.
     disabled provider answers `/auth/v1/token?grant_type=id_token` with 400,
     `obNo` runs, and the person stays on the door. So `supabase/setup.md` §4-1
     is done. **§4-2 and §4-3 — Google — are done too** (the owner,
-    2026-08-27), and `GOOGLE_IOS_ID` is filled in. What is left about Google is
-    a phone: whether the sheet comes back with a session.
+    2026-08-27), and Google sign-in is **DEVICE CONFIRMED** on build #107
+    (the owner, 2026-09-01). Nothing about Google is outstanding.
 
     **What could NOT be settled here.** `status` 0 had three roads into one
     sentence — the request went and nothing came back, the request was never
