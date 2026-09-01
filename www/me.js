@@ -427,17 +427,12 @@ function meCard(){
        the thing this whole app is about.
        「フォローと自己紹介の間に」「linguaパッチの代わり」 */
     wldRow()+
-    /* The way in, and it is on the profile because that is where somebody is
-       looking at the thing they would be buying: the badge goes beside the
-       name three lines up. It was at the bottom of a room inside the settings
-       -- 「今の画面課金させる感が全くないしどこからする？って探さないといけない」
-       -- and something you have to hunt for is something nobody buys.
-       It is not there once it has been bought. */
-    (plan()==='free'
-      ? '<button class="upsell"' + DO('goPlans') + '>'+
-          '<span class="upsm">'+MARK_PLUS+'</span>'+
-          '<span class="upst">'+esc(t('up.badge'))+'</span>'+ICON_GO+'</button>'
-      : '')+
+    /* There is no way in on the profile any more. 「get a バッチ消していいよ。
+       なんか品がないそこに並ぶと」 OWNER 2026-09-01. It sat between what
+       somebody says about themselves and how many people read them, which is
+       a row of facts about the person -- an advertisement standing in that
+       line is what the owner is looking at. The plans are still reached from
+       the settings; nothing about what a plan does has changed. */
     /* FOLLOW_SEAM: the two numbers are asked for rather than read, so the day
        they come from somewhere else they come from somewhere else HERE and
        nowhere else. */

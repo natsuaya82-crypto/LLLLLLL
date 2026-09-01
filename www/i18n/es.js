@@ -317,7 +317,6 @@ defLang('es', (function(){
       "script.own.ph"             : "Pega o escribe un carácter",
       "script.set"                : "Usar",
       "up.cta"                    : "Mejorar",
-      'up.badge'            : "Consigue una insignia",
       "ws.arabic"                 : "Árabe",
       "ws.armenian"               : "Armenio",
       "ws.cyrillic"               : "Cirílico",

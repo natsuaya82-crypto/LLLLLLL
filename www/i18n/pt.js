@@ -364,7 +364,6 @@ defLang('pt', (function(){
       "script.own.ph"             : "Cole ou digite um caractere",
       "script.set"                : "Usar",
       "up.cta"                    : "Fazer upgrade",
-      'up.badge'            : "Ter um distintivo",
       "ws.arabic"                 : "Árabe",
       "ws.armenian"               : "Armênio",
       "ws.cyrillic"               : "Cirílico",

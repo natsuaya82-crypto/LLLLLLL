@@ -357,7 +357,6 @@ defLang('it', (function(){
       "script.own.ph"             : "Incolla o scrivi un carattere",
       "script.set"                : "Usa",
       "up.cta"                    : "Passa a Plus",
-      'up.badge'            : "Ottieni un distintivo",
       "ws.arabic"                 : "Arabo",
       "ws.armenian"               : "Armeno",
       "ws.cyrillic"               : "Cirillico",

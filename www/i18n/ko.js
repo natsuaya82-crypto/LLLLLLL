@@ -536,7 +536,6 @@ defLang('ko', (function(){
       "script.own.ph"             : "글자를 붙여넣거나 입력",
       "script.set"                : "적용",
       "up.cta"                    : "업그레이드",
-      'up.badge'            : "배지 받기",
       "ws.arabic"                 : "아랍 문자",
       "ws.armenian"               : "아르메니아 문자",
       "ws.cyrillic"               : "키릴 문자",
