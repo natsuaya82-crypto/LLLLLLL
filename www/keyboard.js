@@ -542,6 +542,11 @@ function kbHasFlick(){
    the one under somebody's thumb away from them mid-sentence. */
 function kbAdd(pat){
   if(KB_PATS.indexOf(pat)<0) return;
+  /* Asked here as well as on the door. kbNew() is a door and a door is a
+     look; the act that WRITES a keyboard has to refuse on its own, the way
+     kbEdit() refuses board 0 for all thirty mutators rather than trusting the
+     buttons to be down. */
+  if(!can('kb')){ goPlans(); return; }
   /* Storage holds only the ones the person built. The free QWERTY is board 0
      and is not among them, so the first one made here is the SECOND board. */
   if(!KB) KB={kbs:[], at:0};
@@ -2228,14 +2233,24 @@ function vKb(){
      がわからんて」
 
      So free gets the steps, the state, and the keyboard itself with nothing
-     to press. Upgrade stays, at the foot, saying the one true thing. */
+     to press.
+
+     AND NO UPGRADE. 「upgradeはそこにはいらんくね。追加するときに出てくるよう
+     にして欲しい」 OWNER 2026-09-01. It stood at the foot of this screen saying
+     the one true thing, and the one true thing is about ADDING a keyboard --
+     so it belongs where somebody adds one, not under a keyboard they already
+     have. Under the keyboard it reads as a price on the thing above it, which
+     is the free QWERTY and is not for sale.
+
+     kbNew() and kbAdd() ask instead, which is where the app already asks
+     every other question of this shape -- ltKind() on a letter, wsysSet() on
+     a writing system, phGo() on a grammar stage all send somebody to the
+     plans screen at the moment the act is pressed rather than standing a
+     button beside it. */
   if(!can('kb'))
     return '<div class="view">'+navTop('', helpQ('kb'))+'<div class="body">'+
       kbHTML(null, true)+
       kbSysHTML()+
-      /* the same, on the free plan's face of this screen */
-      '<button class="btn ghost" style="width:100%;margin-top:12px"' + DO('goPlans') + '>'+
-        t('up.cta')+'</button>'+
       '</div></div>';
   /* The keyboard, and the row of the ones there are above it. There is no
      "nothing built yet" face any more: kbBoards() answers with the one
@@ -3037,6 +3052,13 @@ function kbToolHTML(){
 /* Making another is choosing a pattern again, on a screen of its own rather
    than a row that pushes the keyboard off the page. */
 function kbNew(){
+  /* WHERE THE UPGRADE IS OFFERED. 「追加するときに出てくるようにして欲しい」
+     OWNER 2026-09-01. Building a keyboard is what can('kb') buys, so this is
+     the moment to say so -- and the sheet of five patterns is not opened
+     first: an offer behind a chooser somebody cannot choose from is the
+     screen taken away twice. Same shape as letters.js, wsys.js and
+     phases.js, which is the app's own way of answering this. */
+  if(!can('kb')){ goPlans(); return; }
   openForm('kbnew', t('kb.new'), kbPatsHTML('kbAdd'), function(){ geTiles(); });
 }
 FORM_OPEN.kbnew=function(){ kbNew(); };

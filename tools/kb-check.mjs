@@ -1658,6 +1658,10 @@ const r = await pg.evaluate(({ s }) => {
      claim about the wrong screen. */
   (function (){
     var wasPlan = SET.plan, wasKB = KB, wasShow = kbShow, wasNav = NAV,
+        /* render() reads the ROUTE global, not NAV -- the two are set together
+           by go() and putting only one of them back leaves the next block
+           drawing a screen the trail does not name. */
+        wasRoute = route,
         keep = LETTERS.slice(), i;
     SET.plan = 'free'; KB = null; kbShow = 0; kbLay = 0;
     function face(){
@@ -1685,7 +1689,27 @@ const r = await pg.evaluate(({ s }) => {
 
     LETTERS.length = 0;
     for (i = 0; i < keep.length; i++) LETTERS.push(keep[i]);
-    SET.plan = wasPlan; KB = wasKB; kbShow = wasShow; NAV = wasNav;
+
+    /* ---- and the upgrade is offered where a keyboard is ADDED ------------
+       「upgradeはそこにはいらんくね。追加するときに出てくるようにして欲しい」
+       OWNER 2026-09-01. It stood at the foot of the free screen, under a
+       keyboard that is not for sale. What it is about is building ANOTHER
+       one, so it is asked on the road that builds one -- and asked twice,
+       because kbNew() is a door and kbAdd() is the act that writes. */
+    out.freeNoUpsell = vKb().indexOf('goPlans') < 0;
+
+    NAV = [{ r: 'kb' }];
+    kbNew();
+    out.freeNewToPlans = here().r === 'plans';
+
+    NAV = [{ r: 'kb' }];
+    KB = null;
+    kbAdd('qwerty');
+    out.freeAddToPlans = here().r === 'plans';
+    out.freeAddWroteNothing = KB === null;
+
+    SET.plan = wasPlan; KB = wasKB; kbShow = wasShow;
+    NAV = wasNav; route = wasRoute; KBH = null; kbSel = null;
   }());
 
   fresh();
@@ -3089,6 +3113,12 @@ say(r.freeBareRows === r.freeRows && r.freeBareKeys === r.freeKeys,
     + r.freeBareRows + ' rows, ' + r.freeBareKeys + ' keys) -- a letter that is'
     + ' missing leaves its key wearing the roman character rather than taking'
     + ' the key away with it');
+say(r.freeNoUpsell, 'and no Upgrade stands under it -- the keyboard there is not for sale');
+say(r.freeNewToPlans,
+    'the upgrade is offered where a keyboard is ADDED: the door goes to the plans screen');
+say(r.freeAddToPlans && r.freeAddWroteNothing,
+    'and so does the act that writes one, which writes nothing on the way ['
+    + [r.freeAddToPlans, r.freeAddWroteNothing].join(' ') + ']');
 
 if (bad.length){ console.error('\nkb-check: ' + bad.length + ' FAILED'); process.exit(1); }
 console.log('\nkb: pressing a row number or a column letter SELECTS it and lights it up;\n' +
