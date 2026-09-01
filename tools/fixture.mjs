@@ -233,6 +233,18 @@ export function seed(){
             offers it would never be drawn. */
          fm:[{id:'fr1', pos:'n', fm:'pl', at:'end', drop:0, when:'',
               add:[{l:'l1', u:'k'}]}]};
+  /* SOMETHING UNREAD, so the number on the bell is a state the walk reaches.
+     `press` reported `.tabn` as styled and worn by nothing -- which is that
+     check's own words for "a class only worn in a state nothing here gets
+     into", and its own advice is to seed it rather than to freeze it into
+     tools/css-baseline.txt.
+
+     One notice, newer than `SET.notAt` (which no fixture sets, so it is 0).
+     tabBar() draws the figure on every render, so this is worn on every
+     screen -- and a person with an unread notice is the ordinary state of a
+     timeline, not a corner of it. */
+  NOTES_HAVE = [{kind:'like', at:Date.now()-60000, hd:'iri', who:'Iri',
+                 av:{ch:'\u0416'}, id:'p1', n:1, more:[]}];
   /* Where you are standing is the app's to say, not this file's. viewReset()
      in www/shell.js is the one list of what a screen forgets when you leave
      it; a copy here would be a second list to keep in step, and the first
@@ -765,6 +777,20 @@ export function halfDone(){
        seeding a state the app cannot produce -- the wdMode mistake CLAUDE.md
        records, where six faces were walked in a state that no longer existed.
        It is a supabase/schema.sql change and it is in the report. */
+    /* THE TIMELINE BEING PULLED DOWN. `press` reported `.pullrule` unworn for
+       the same reason it reported `.tabn`: the mark is put in by a finger
+       dragging the page, and a walk has no finger. It is `pullSpinOn()` that
+       is called here rather than the markup being written out -- a copy of
+       what is under test agrees with it by construction, which is the mistake
+       conv-check was written after. */
+    ['the timeline, pulled down', () => {
+        const app = document.getElementById('app'), was = app.innerHTML;
+        window.route = 'feed'; NAV = [{ r:'feed' }];
+        app.innerHTML = vFeed();
+        pullSpinOn();
+        const h = app.innerHTML;
+        PULL_SPIN = null; app.innerHTML = was;
+        return h; }],
     ['notices', () => { NOTES_HAVE = [
         {kind:'like', at:Date.now()-60000, hd:'iri', who:'Iri', av:{ch:'Ж'}, id:'p1',
          n:2, more:[{hd:'veth', who:'Veth', av:{ch:'V'}}]},
