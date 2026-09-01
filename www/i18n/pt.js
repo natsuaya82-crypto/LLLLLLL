@@ -1147,7 +1147,8 @@ defLang('pt', (function(){
       "cal.d.4" : "Quarta-feira",
       "cal.d.5" : "Quinta-feira",
       "cal.d.6" : "Sexta-feira",
-      "cal.d.7" : "Sábado"
+      "cal.d.7" : "Sábado",
+      "plan.renew" : "Renova automaticamente até você cancelar."
     }
   };
 })());

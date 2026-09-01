@@ -1129,7 +1129,8 @@ defLang('de', (function(){
       "cal.d.4" : "Mittwoch",
       "cal.d.5" : "Donnerstag",
       "cal.d.6" : "Freitag",
-      "cal.d.7" : "Samstag"
+      "cal.d.7" : "Samstag",
+      "plan.renew" : "Verlängert sich automatisch, bis du kündigst."
     }
   };
 })());

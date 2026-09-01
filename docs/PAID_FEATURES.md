@@ -367,6 +367,61 @@ answer is the one that costs somebody their language. The first means *try
 again later, free plan for now, touch nothing*. The third is a new install.
 The fourth is what a restore is for.
 
+## What has to be on the screen a price is on
+
+**App Store Review Guideline 3.1.2.** An auto-renewing subscription may not be
+offered without, next to what it costs:
+
+```
+  the length of a term, and what that term costs
+  a sentence saying it renews by itself until somebody cancels
+  working links to the terms of use and the privacy policy
+```
+
+None of that has a failure anything here can see on its own. The screen
+renders, every check is green, it works on a phone — and the build is refused,
+by a person, days later, with the whole release behind it. Until 2026-09-01
+nothing in `www/i18n` said a word about renewal in any of the ten languages;
+what was there was `set.terms` and `set.privacy`, which are two link captions
+in the account room.
+
+Where each of the three lives, and none of them is new:
+
+| | where it comes from |
+|---|---|
+| the term and its price | the two `.btn.plterm` buttons — `plan.per.mo` / `plan.per.yr` beside `storeCost()`, which is what the App Store charges in that person's currency |
+| the renewal sentence | `plan.renew`, ten languages, drawn by `planTerms()` in `www/settings.js` directly under the price rail |
+| the two links | `docRows()` — `DOC_TERMS` and `DOC_PRIVACY`, the same two published pages the account room links to |
+
+**The price is not repeated in the sentence and `plan.renew` carries no `{0}`.**
+What somebody is charged is Apple's fact and arrives as `displayPrice`; a price
+built into a translated string is a number ten files would have to go on
+agreeing about. `www/store.js` is at length about why there is only ever one.
+
+**There is no third document.** 「出さない。」 OWNER 2026-08-26, about the
+特定商取引法 notice: the App Store's seller is Apple, so the purchase contract
+and the refunds are Apple's, and App Store Connect asks only for the privacy
+policy URL. Nothing here may invent a URL either — the two constants are the
+published pages, and one copy of a contract is the whole point of them.
+
+**This is the one exception to 「アプリ内に説明書くの禁止」 and it is not a
+crack in it.** It is written because Apple refuses the build without it, so it
+is the minimum the guideline asks for and not one word more: it does not say
+what a plan is good for, what somebody would get, or why a year beats a month.
+The five lines on each plan page already say what is bought.
+
+`tools/term-check.mjs` — `npm run term` — is what holds all of it, and it holds
+the exception too: the strings allowed to appear in the disclosure are that one
+sentence and the two link captions, so a line added there fails rather than
+ships. It reads the real DOM of the real screen — where the block sits relative
+to the prices and the buttons, what the anchors would actually **open** (the
+resolved href, not the attribute: a relative path resolves to `file://` on a
+phone and is a broken link to a reviewer), and the **computed** border and
+corner, so a rule added against these classes in `www/index.html` fails here
+even though `box-check` reads the stylesheet and this branch does not hold it.
+
+Six failures were watched before any of it was believed.
+
 ## Adding a paid feature
 
 Answer all ten before the code:
