@@ -1439,7 +1439,7 @@ function netLangNames(ids, done){
     if(id && !seen[id]){ seen[id]=1; want.push(id); }
   }
   if(!want.length){ done({}); return; }
-  netGet('/rest/v1/language?select=owner,name&order=created_at.asc'+
+  netGet('/rest/v1/language?select=id,owner,name,published_at&order=created_at.asc'+
          '&owner=in.('+want.join(',')+')',
     function(d){
       var by={}, j, r, o;
@@ -1449,7 +1449,20 @@ function netLangNames(ids, done){
         /* The first row for an owner wins, and the order above is what makes
            "first" mean the oldest rather than whichever the server reached
            for. */
-        if(o && !(o in by)) by[o]=String(r.name||'');
+        if(o && !(o in by))
+          /* THREE THINGS AND NOT ONE STRING. It answered `{owner: name}`, and
+             a name is the one thing about somebody else's language that
+             cannot be acted on: you cannot open a page from it, and you
+             cannot tell a language whose page is public from one whose is
+             not. Both of those are `language` columns that were simply not
+             asked for -- `id` and `published_at` -- so the page a reader
+             would go to had no address and no door.
+
+             `pub` is a boolean here rather than the timestamp, because what
+             a reader needs is whether the door is open; WHEN it opened is the
+             column's and stays there. */
+          by[o]={ name:String(r.name||''), id:String(r.id||''),
+                  pub:!!r.published_at };
       }
       done(by);
     }, function(){ done({}); });
@@ -1498,8 +1511,15 @@ function netWho(handle, ok, bad){
               answered about the writer there. */
            out:!!r.banned_at};
       netLangNames([r.id], function(by){
-        var id=String(r.id||'');
-        if(id && by[id]) who.lname=by[id];
+        var id=String(r.id||''), L=id? by[id] : null;
+        if(L){
+          who.lname=L.name;
+          /* The address of their language and whether its page is open. A
+             page a reader can go to needs both: without `lid` there is
+             nowhere to go, and without `lpub` the app would offer a door
+             that `slice_read` refuses. */
+          who.lid=L.id; who.lpub=L.pub;
+        }
         ok(who);
       });
     }, bad);
@@ -1537,10 +1557,11 @@ function netFindWho(q, ok, bad, more){
       }
       if(!out.length){ ok(out); return; }
       netLangNames(ids, function(by){
-        var j, id;
+        var j, id, L;
         for(j=0;j<out.length;j++){
           id=ids[j];
-          if(id && by[id]) out[j].lname=by[id];
+          L=id? by[id] : null;
+          if(L){ out[j].lname=L.name; out[j].lid=L.id; out[j].lpub=L.pub; }
         }
         ok(out);
       });

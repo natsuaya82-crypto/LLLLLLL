@@ -603,6 +603,55 @@ const R = await pg.evaluate(() => {
     no('21: 上げるついでに端末のものを消した');
   say('21: 端末に無ければアカウントのを取り、端末にあれば上げる（両方向）');
 
+  /* ---- 22. 人の言語に、住所と、扉が開いているかが付く ------------------
+     「当たり前だけどsnsとして機能してない」OWNER 2026-09-01
+
+     netLangNames() は `{持ち主: 名前}` を返していました。名前は、他人の言語に
+     ついて**唯一なにも出来ないもの**です ── そこからページへ行けないし、
+     公開されている言語とされていない言語の区別も付きません。どちらも
+     `language` の列（`id` と `published_at`）で、訊いていなかっただけです。 */
+  start();
+  netOut(); arrive(A);
+  let langPath = '';
+  netGet = (path, ok) => {
+    langPath = path;
+    if (path.indexOf('/rest/v1/profile?select=id,handle,display,av') === 0)
+      return ok([{ id: B, handle: 'iri', display: 'Iri', av: null, bio: '' }]);
+    if (path.indexOf('/rest/v1/language') === 0)
+      return ok([{ id: 'lang-id-1', owner: B, name: 'むこうの言語',
+                   published_at: '2026-08-30T00:00:00Z' }]);
+    return ok([]);
+  };
+  let w2 = null;
+  netWho('iri', (w) => { w2 = w; }, () => {});
+  netGet = realGet;
+  if (langPath.indexOf('published_at') < 0)
+    no('22: 言語を published_at 抜きで訊いている — ' + langPath);
+  if (!w2) no('22: 人が返ってこなかった');
+  else {
+    if (w2.lname !== 'むこうの言語') no('22: 言語の名前が壊れた — ' + JSON.stringify(w2.lname));
+    if (w2.lid !== 'lang-id-1') no('22: 言語の住所が付いていない — 行き先が無い');
+    if (w2.lpub !== true) no('22: 扉が開いている印が付いていない');
+  }
+  say('22: 人の言語に、名前と住所と、扉が開いているかが付く');
+
+  /* そして公開されていない言語は、開いていないと言う。 */
+  start();
+  netOut(); arrive(A);
+  netGet = (path, ok) => {
+    if (path.indexOf('/rest/v1/profile?select=id,handle,display,av') === 0)
+      return ok([{ id: B, handle: 'iri', display: 'Iri', av: null, bio: '' }]);
+    if (path.indexOf('/rest/v1/language') === 0)
+      return ok([{ id: 'lang-id-2', owner: B, name: '非公開', published_at: null }]);
+    return ok([]);
+  };
+  let w3 = null;
+  netWho('iri', (w) => { w3 = w; }, () => {});
+  netGet = realGet;
+  if (w3 && w3.lpub !== false)
+    no('22: 非公開の言語が開いていることになっている — slice_read が断る扉を出す');
+  say('22: 非公開の言語は、開いていないと言う');
+
   return out;
 });
 
