@@ -240,6 +240,42 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected docs: 無し
 - Implementation status: `claude/words2` `3ba0503`。取り込み待ち
 
+### iOS 標準のダイアログもシートも使わない ── 五つ目の禁止
+- Date: 2026-09-01
+- Area: 何かを訊く・伝えるときの形
+- Decision:
+
+  ```
+  標準は使わねえって言ってんだろこれも禁止や
+  禁止事項入れろ
+  ```
+
+  ```
+  正直自前のpopがいいんだけどな。
+  iPhoneのやつ使ってるsnsないしな
+  ```
+
+  **`confirm()` `alert()` `prompt()` と `UIAlertController` を使わない。**
+  そして**下から出るシートも使わない**（既に禁止、CLAUDE.md § Shape の三つ目）。
+
+  この二つが同時に禁止なので、**残るのは画面の中に重なる自前のものだけ**です。
+
+- Reason: SNS でシステム標準のダイアログを使っているものが無い。
+- Affected features: いま `confirm()` を使っている全部 ──
+  単語の上限（`capStop()`）、アカウント削除（`wipeAll()`）、
+  文字の削除（`ltDelete()`）、有料の門（`upStop()`）ほか。
+  **数はコードから数えること。**
+- Affected data: 無し
+- Affected docs: `CLAUDE.md` § Shape。2026-09-01 の
+  「システム標準（iOS/Android）を最優先。独自実装は『標準では実現できない
+  場合のみ』」と、その日にアクションシートを許した narrowing を**取り消す**
+- Implementation status: **未実装。**形が決まっていない ── 中身をどう描くかは
+  オーナーが決めること（角丸・枠・背景をどうするか）
+
+**リーダーへ: 勝手に進めない。**この決定は、形が決まる前に三度作って三度
+外した後に出ている（遷移する画面 → 下から出るシート → 標準のダイアログ）。
+**訊いてから作る。**
+
 ### オーナーが機能追加をしようとしていたら、リーダーが確認する
 - Date: 2026-09-01
 - Area: リリースまでのあいだ、頼まれたものの扱い

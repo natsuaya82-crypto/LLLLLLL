@@ -128,20 +128,29 @@ screen you would otherwise have gone to**; and explaining. The keyboard
 chapter had all four at once. 「丸パッチ無限横並び、同じページに情報量詰め込み、
 ページ遷移型にせず下からひょいって出すやつ、無駄に説明をするやつ、この辺禁止」
 
-**Narrowed on 2026-09-01, and only this far: the SYSTEM'S OWN action sheet,
-for deleting or changing one thing, is allowed.** 「長押しで消えるってわかん
-ないだろ普通に。アイコンをタップした時にiPhone標準の写真を選ぶか、削除するか
-出てくるやつでいいだろ」 OWNER, and asked directly whether that narrows this
-rule, 「1はイエス」. What was banned and stays banned is a sheet standing in for
-a SCREEN — a page's worth of controls hoisted up from the bottom because
-somebody did not want to build the page. What is allowed is the two- or
-three-line thing iOS itself puts up to ask which of a few things to do to the
-object under the finger, and **only iOS's own**: 「システム標準（iOS/Android）を
-最優先。独自実装は『標準では実現できない場合のみ』」 — a sheet drawn in HTML to
-look like one is the banned kind wearing the allowed kind's name. It needs a
-`UIAlertController` on the native side, so it is not something `www/` can
-decide to have. 「削除・変更はアクションシート」 is about deleting and changing;
-choosing is still a screen, and the sentence above still holds everywhere else.
+**A FIFTH, and it takes back the narrowing of earlier the same day: THE
+SYSTEM'S OWN DIALOG IS BANNED TOO.** 「標準は使わねえって言ってるだろこれも
+禁止や」「禁止事項入れろ」 OWNER 2026-09-01. `confirm()`, `alert()`,
+`prompt()` and `UIAlertController` — none of them. The reason is one line:
+「iPhoneのやつ使ってるsnsないしな」.
+
+Earlier that day the same rule had been narrowed the other way, to let iOS's
+own action sheet do a delete; that narrowing is gone. **Do not read the
+paragraph above as leaving a door open**: a sheet from the bottom is banned by
+the four, the system's dialog is banned by this, and a sheet drawn in HTML to
+look like the system's was already named as the banned kind wearing the
+allowed kind's name. What is left is a thing of this app's own, drawn inside
+the screen, not sliding up from anywhere.
+
+**It is not built, and its shape is the owner's.** Three were made and three
+were thrown away in one afternoon — a page you travel to (`openForm`, which is
+`go('form', …)`), the app's own bottom sheet (`#sbg`/`#sheet`, banned by the
+four), and `confirm()` (banned by this). **Ask before making a fourth.**
+
+`confirm()` is still in the code in several places, the word ceiling
+(`capStop()`) and account deletion among them. Count them rather than trusting
+this sentence: `grep -rn "confirm(" www/*.js`. They are on the list to replace
+and nothing may be added to it.
 
 **And the owner has since given ten criteria that every screen is held to**
 (OWNER DECISION 2026-09-01) — system standard first, the patterns every SNS
