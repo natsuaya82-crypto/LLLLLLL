@@ -67,12 +67,14 @@ function snsLocked(r){
    why `netFeed` takes which one it is being asked for: on a server "everything"
    and "the people I follow" are two queries with two answers, and a phone that
    asked for everything and then threw most of it away would be downloading a
-   timeline to hide it. Until there is a server the answer to both is what is
-   already here, and `snsMine()` is the sieve — which is the seam being filled
-   in, not the design.
+   timeline to hide it. THE SERVER IS HERE, so the answer to "the people I
+   follow" is the one it sent -- `FO_HAVE` below -- and not a sieve run over
+   everything this phone happens to be holding.
 
-   Following is by HANDLE, off the post, the way everything on the reading side
-   is: `p.hd` is who wrote it, frozen when it was written. Your own are in it,
+   The sieve is still written, and it is now the COPY: what the tab falls back
+   to in the moment before the first answer arrives. Following is by HANDLE
+   there, off the post, the way everything on the reading side is -- `p.hd` is
+   who wrote it, frozen when it was written. Your own are in it either way,
    because a timeline of people you follow that leaves you out is a timeline
    you cannot see yourself having spoken in.
 
@@ -87,7 +89,41 @@ function snsLocked(r){
    queries with two answers -- so what went is the ROW, not the question. It
    is answered in the corner of the bar now, which is the block below. */
 var snsTab='rec';
-function snsMine(p){ return !!p.mine || meFollows(p.hd); }
+/* WHICH POSTS THE FOLLOWED TIMELINE IS, BY ID -- the server's answer, kept.
+   `null` until one has arrived, which is not the same as none.
+
+   netFeed('fo') asks the server for posts by the people this account follows,
+   and the server answers off the `follow` table. What came back was then put
+   through meFollows() a second time -- and meFollows() reads ME.fo, which is
+   written by meFollow() when somebody presses Follow ON THIS PHONE and is
+   filled from the server by nothing at all.
+
+   So the same account on a second phone follows the same people and has an
+   empty ME.fo: every post the server correctly sent arrived and was thrown
+   away by the sieve, and the tab read 0 with the answer to its own question
+   already in its hands. The owner has an SE2 and a 17, which is exactly the
+   two phones that makes it.
+
+   A LIST THE SERVER SELECTED MUST NOT BE SELECTED AGAIN HERE. Filtering an
+   answer with a weaker copy of the question can only take correct rows out.
+   ME.fo stays as the copy -- it is what the Follow button reads, and it is
+   what this falls back to before any answer has come -- but where the two
+   disagree the server is the record. The same shape as the kept searches
+   further down this file: 「SNSは全部サーバー」.
+
+   Filling ME.fo from the server is the other half and is NOT here: it is a
+   read in www/net.js and a write in www/me.js, and both belong to other
+   sessions. Until it lands the Follow button on a second phone still says
+   Follow for somebody already followed. That is one wrong word on a button;
+   this was the whole timeline. */
+var FO_HAVE=null;
+/* Your own are in it, and that has not moved -- 「a timeline of people you
+   follow that leaves you out is a timeline you cannot see yourself having
+   spoken in」. The server does not send them: netFeed('fo') asks for
+   `author=in.(the followed)` and you do not follow yourself. */
+function snsMine(p){
+  return !!p.mine || (FO_HAVE? !!FO_HAVE[p.id] : meFollows(p.hd));
+}
 function snsList(){
   var all=postAll();
   return (snsTab==='fo')? all.filter(snsMine) : all;
@@ -186,7 +222,7 @@ function snsFilTop(){
      refuse one. It is the person's own text and not an interface string, so
      it does not go through t() -- the same as a word in the dictionary or
      the body of a post. */
-  return '<button class="navq"' + DO('go', ['filter']) + '>'+
+  return '<button class="navq navfil"' + DO('go', ['filter']) + '>'+
     esc(snsFil? snsFil.q : t(snsFilKey(snsFilNow())))+'</button>';
 }
 function vFilter(){
@@ -252,17 +288,40 @@ function snsSetFil(k){
 var snsPulling=false;
 function snsPull(){
   if(snsPulling) return;
+  /* WHICH timeline was asked for, held while the answer is out. snsTab moves
+     when somebody switches tabs, and switching tabs is exactly when a pull is
+     in the air -- so reading it again in the callback is how the followed
+     timeline's answer gets written down as the recommended one's. */
+  var which=snsTab;
   snsPulling=true;
-  netFeed(snsTab, function(ps){
+  netFeed(which, function(ps){
+    var have, i;
     snsPulling=false;
     /* And what this phone has that the server has not. It goes off the back
        of a pull rather than on a timer: the moment somebody is looking at a
        timeline is the moment the network is known to be working. */
     postCatchUp();
-    if(!ps || !ps.length) return;
-    postTake(ps);
-    render();
-  }, function(){ snsPulling=false; });
+    /* The followed timeline, as the server answered it. `null` is "could not
+       ask" and is not an answer -- writing it down as one would empty the tab
+       on every phone that went through a tunnel. An empty ARRAY is an answer
+       and is written down: following nobody is a real 0 and has to be able to
+       replace a list from before somebody unfollowed everyone. */
+    if(which==='fo' && ps){
+      have={};
+      for(i=0;i<ps.length;i++) if(ps[i] && ps[i].id) have[ps[i].id]=1;
+      FO_HAVE=have;
+    }
+    if(ps && ps.length) postTake(ps);
+    /* Drawn again even when nothing came back, which it was not before: the
+       answer itself is now something the screen shows -- an empty one is what
+       turns the tab into snsNoneFo() rather than leaving the list from before
+       it was asked. */
+    /* The mark stops turning when the asking is over, whatever came back. A
+       render takes it out by itself; the road where `ps` is null does not
+       render, and that is the one this line is for. */
+    pullSpinOff();
+    if(ps) render();
+  }, function(){ snsPulling=false; pullSpinOff(); });
 }
 /* ---- pulling a timeline down to ask again --------------------------------
    「プルトゥーリフレッシュも入れて欲しい」 OWNER 2026-08-28.
@@ -283,6 +342,22 @@ function snsPull(){
    having come loose. The bar does not move: it is outside `.body`, so what
    slides is the timeline and what stays is where you are.
 
+   AND SOMETHING TURNS IN THE GAP. 「引っ張って更新に、回るものを出す」 OWNER
+   2026-08-28, said twice. The page moving says a gesture is happening; it
+   does not say the app went and asked. So a mark sits in the gap the pull
+   opens, turning with the finger on the way down and turning by itself while
+   the answer is out.
+
+   THIS FILE MAKES IT AND TURNS IT; IT DOES NOT DRAW IT. What it looks like is
+   `www/index.html`, which is another session's -- so what is put in the page
+   is an empty `div.pullspin`, and an empty div with no rule behind it is zero
+   pixels tall and marks nothing. This can land before the stylesheet does and
+   change no screen.
+
+   It turns ONCE by the time it would fire. `PULL_GO` is the distance that
+   asks, so a full turn is the mark saying "this far" -- the number is read
+   off that rather than chosen, and moving one moves the other.
+
    Already asking is not asked twice. `snsPulling` and `notPulling` have held
    that since the two pulls were written -- a person flicking between tabs
    would otherwise have four asks in the air -- so this hands the pull to
@@ -295,6 +370,35 @@ function snsPull(){
 var PULL_R=0.5, PULL_GO=64, PULL_MAX=96;
 var PULL_ON={feed:1, explore:1, notif:1};
 var pullY=-1, pullEl=null, pullAt=0;
+/* The mark that turns in the gap. Put in beside `.body` rather than inside
+   it, because `.body` is the thing sliding down and a mark carried on it
+   would sit still relative to the gap it is supposed to be in.
+
+   `on` is the second half: while a finger is on it, this file turns it; once
+   let go and asking, the class goes on and the stylesheet turns it, because
+   an animation that runs on its own is CSS's and a rotation that answers a
+   thumb is not. */
+var PULL_SPIN=null;
+function pullSpinOn(){
+  var v, b;
+  if(PULL_SPIN && document.contains(PULL_SPIN)) return PULL_SPIN;
+  v=document.querySelector('#app .view');
+  b=document.querySelector('#app .view > .body');
+  if(!v || !b) return null;
+  PULL_SPIN=document.createElement('div');
+  PULL_SPIN.className='pullspin';
+  v.insertBefore(PULL_SPIN, b);
+  return PULL_SPIN;
+}
+/* Taken out when the answer lands, when the pull is let go short, and when
+   the asking failed. A render takes it out on its own -- it rebuilds `#app`
+   -- but the road where nothing came back does not render, and a mark left
+   turning over a timeline nobody is waiting for is worse than none. */
+function pullSpinOff(){
+  if(PULL_SPIN && PULL_SPIN.parentNode)
+    PULL_SPIN.parentNode.removeChild(PULL_SPIN);
+  PULL_SPIN=null;
+}
 /* Which timeline is under the finger, or '' for a screen this is not about.
    Signed out there is nothing to ask for: the three screens are the door. */
 function pullWhere(){
@@ -328,6 +432,12 @@ function pullMove(e){
   if(e.cancelable) e.preventDefault();
   pullAt=Math.min(PULL_MAX, dy*PULL_R);
   pullEl.style.transform='translateY('+pullAt+'px)';
+  /* One full turn by the distance that asks. Only `transform` is set from
+     here: what the mark IS -- its size, its line, its place in the gap -- is
+     the stylesheet's, and a shape set from JavaScript would be in no
+     stylesheet for anything to hold. */
+  var sp=pullSpinOn();
+  if(sp) sp.style.transform='rotate('+(360*pullAt/PULL_GO)+'deg)';
 }
 function pullEnd(){ pullLet(pullAt>=PULL_GO); }
 /* Let go: the body goes back where it was, and far enough down it asks.
@@ -341,9 +451,13 @@ function pullLet(ask){
     el.style.transform='';
     setTimeout(function(){ if(el.style) el.style.transition=''; }, 300);
   }
-  if(!ask) return;
+  /* Let go short: the gap closes and the mark goes with it. */
+  if(!ask){ pullSpinOff(); return; }
+  /* Let go far enough: it stops answering the finger and starts turning on
+     its own, which is the stylesheet's animation and this file's class. */
+  if(PULL_SPIN){ PULL_SPIN.className='pullspin on'; PULL_SPIN.style.transform=''; }
   if(r==='notif'){ notPull(); return; }
-  if(!r) return;
+  if(!r){ pullSpinOff(); return; }
   /* A pull is somebody saying "ask again", and what the feed is showing
      while a word is on is the answer to that word -- so that is what gets
      asked again. It is said HERE and not inside snsFilFind()'s own guard,
@@ -442,6 +556,12 @@ function snsMoreCheck(){
      if(ps.length < NET_PAGE) snsMoreEnd=true; a short answer IS the end
      if(ps.length){ postTake(ps); render(); }
 
+   AND ON THE FOLLOWED TAB, THE NEW IDS GO INTO `FO_HAVE` -- added to it, not
+   written over it, because a second page is the rest of one answer and not a
+   new one. That tab draws what the server selected; a page whose posts were
+   taken in without being added to the set would arrive on the phone and not
+   on the screen, which is the bug FO_HAVE exists to close, one page down.
+
    The middle two are the ones that cannot be collapsed. A phone in a tunnel
    answering `null` must not set the end, or the timeline stops for the rest
    of the session; and a short answer is the only thing that may set it, or
@@ -465,6 +585,11 @@ window.addEventListener('scroll', snsMoreCheck, false);
 var APPEAL='mailto:Lingua@tokinets.com?subject=Lingua';
 function vFeed(){
   if(!netSignedIn()) return snsLocked('feed');
+  /* Who this account follows, once a session. The followed timeline falls
+     back to it before the server's own answer lands, and every Follow button
+     on every screen reads it. Same shape as the three below: it returns
+     immediately once it has an answer. */
+  meFollowPull();
   snsPull();
   /* Beside the feed's own pull and for the same reason: the moment somebody
      is looking at a timeline is the moment the network is known to be
@@ -1125,6 +1250,9 @@ function snsAnsHTML(q, r){
 function snsHitsHTML(){ return snsAnsHTML(snsQ, snsHits); }
 function vExplore(){
   if(!netSignedIn()) return snsLocked('explore');
+  /* The rows this screen draws carry Follow, and it has to say which state it
+     is in. */
+  meFollowPull();
   /* And the screen the star is on, because whether it is filled is the same
      question the filter asks. */
   snsSavedPull();
@@ -1182,17 +1310,61 @@ function notPull(){
   notPulling=true;
   netNotices(function(ns){
     notPulling=false;
+    /* Beside snsPull()'s, and for the same reason: the road where nothing
+       came back does not render, so the mark has to be taken out by name. */
+    pullSpinOff();
     if(!ns) return;
     NOTES_HAVE=ns;
     render();
-  }, function(){ notPulling=false; });
+  }, function(){ notPulling=false; pullSpinOff(); });
 }
+/* The face, and the way to whoever wears it. 「行に顔、顔を押すとその人の
+   ページ」 OWNER -- which is the same sentence the timeline already answered
+   with postAvHTML(): 「人のツイートのアイコン押したらその人のホーム画面に
+   飛ぶようにしてよ」. One builder and not a second one, so a notice's face is
+   a door for the same reason a post's is, and stops being one in the same
+   place if that ever changes.
+
+   A notice describes a person with the four fields everything else does --
+   netNotices() says so where it reads them -- so what is handed over is those
+   four and nothing invented.
+
+   THE `id` IS THE FACE'S KEY, NOT A POST'S. postFace() caches a drawn face
+   under `id`, and a notice's own `id` is the post it is ABOUT: two people who
+   liked the same post would share one key and both wear whichever face was
+   written last, and a follow -- which has no post at all -- would fall to
+   'me' and wear mine. It is keyed by the handle, which is who the face is OF.
+
+   Nobody in it, no face. A 'pick' is a post worth reading and not somebody
+   doing something, so it carries no handle; drawing the empty circle there
+   would put a '?' on the one row that never had a person in it. */
+function notFace(n){
+  var h=String(n.hd||'');
+  if(!h) return '';
+  return postAvHTML({hd:h, who:n.who, av:n.av, id:'n:'+h});
+}
+/* A notice is a way to the thing it is about. 「通知で飛べないよ」 OWNER
+   2026-08-28 -- the row was a plain <div> with nothing on it to press, so
+   every notice was a sentence you could read and not follow.
+
+   THE SAME SHAPE A POST'S ROW HAS: the row carries the press and the face
+   inside it carries its own, so pressing the row opens the post and pressing
+   the face opens the person. postRow() has been that since a post opened onto
+   its thread, and act.js hands a press to the nearest name above it, which is
+   what lets the two live in one row.
+
+   Only where there IS a post. A follow carries none -- somebody followed you,
+   there is nothing to open -- and postOpen() refuses an id this phone does
+   not hold, so the press is put on rather than the row pretending. Nothing
+   moves on the screen either way: no class, no mark, no arrow.
+   「ui変更は俺が頼んだの以外は勝手な判断でやるなよ？」 */
 function notRow(n){
   var k=String(n.kind||''), p=postById(n.id), ic=
     k==='like'? ICON_HEART : k==='boost'? ICON_BOOST :
     k==='reply'? ICON_REPLY : k==='follow'? ICON_ADD : ICON_LINE;
-  return '<div class="ntf">'+
+  return '<div class="ntf"'+(n.id? DO('postOpen', [String(n.id)]) : '')+'>'+
     '<span class="ntfi '+esc(k)+'">'+ic+'</span>'+
+    notFace(n)+
     '<span class="ntfb">'+
       '<span class="ntfw">'+esc(t('notif.'+(k||'other'), postWho(n)))+'</span>'+
       (p? '<span class="ntfp">'+esc(p.mn || p.ln || '')+'</span>' : '')+

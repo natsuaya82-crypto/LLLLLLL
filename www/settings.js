@@ -470,7 +470,7 @@ function wipeLangs(){
      This is langOpen()'s own line less migratePostInk(), which cuts ink onto
      posts out of the alphabet they were written in -- there is no alphabet
      here now, and the posts are not going anywhere. */
-  langRead(); ltRead(); ntRead(); stRead(); sndRead(); sndStart(); ltStart();
+  langRead(); ltRead(); ntRead(); stRead(); sndRead(); ltStart();
   kbRead(); migrateKbFree(); wldRead();
   SFONT={built:false, sig:null};
   var css=document.getElementById('sfontcss');
@@ -525,7 +525,7 @@ function wipeHere(){
   lsWipeNS();
   LANGS={}; langId='';
   langFirst();
-  langRead(); ltRead(); ntRead(); stRead(); sndRead(); sndStart();
+  langRead(); ltRead(); ntRead(); stRead(); sndRead();
   /* Whom this phone belonged to, what it was carrying, and what had been
      written and not sent. All three are the person's and none of them is a
      slice, which is why none of them was going anywhere before today. The

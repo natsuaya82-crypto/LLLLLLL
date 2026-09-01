@@ -437,11 +437,45 @@ function netAvSync(){
           function(){ ME.avSent=now; saveMe(); },
           function(){});
 }
+/* ---- which side of the nonce ------------------------------------------
+   Supabase refuses this call when the id_token carries a nonce claim and the
+   request does not, or the other way round. Its own words, from the OIDC
+   entrance (internal/api/token_oidc.go): 「Passed nonce and nonce in id_token
+   should either both exist or not.」 -- and that sentence names neither side,
+   so from a phone there is no way to see WHICH of the two is true. It is the
+   one thing somebody looking at the screen needs and the only thing the
+   sentence leaves out.
+
+   So the two sides go on the end of what the server said. It is a STATE and
+   not a sentence and it is not translated, for the same reason netWhy()'s
+   mark is not: a status code is not translated either. `y` is "has one", `n`
+   is "has none", `?` is a token that could not be read.
+
+   **The nonce itself is never shown.** It is half of a credential, and what
+   is being asked here is whether one is THERE, not what it is.
+
+   Only when the server's own words are about the nonce. Every other failure
+   of every other call reads exactly as it did before -- this is a state put
+   on one sentence, not a mark added to all of them.
+
+   Nothing is invented: the server's words are kept whole and this goes after
+   them. netClaims() is the one place a JWT is read and this is not a second. */
+function netIdWhy(d, token, nonce){
+  var said, c;
+  if(!d) return d;
+  said=(d.msg || d.message || d.error_description || d.error) || '';
+  if(!/nonce/i.test(said)) return d;
+  c=netClaims(token);
+  d.msg=said+' (nonce id_token:'+(c? (c.nonce? 'y' : 'n') : '?')+
+        ' sent:'+(nonce? 'y' : 'n')+')';
+  return d;
+}
 function netIdToken(provider, token, nonce, ok, bad){
   var b={ provider:provider, id_token:token };
   if(nonce) b.nonce=nonce;
   netPost('/auth/v1/token?grant_type=id_token', b, null,
-          function(d){ if(netTook(d)) ok(d); else bad(d, 0, 'token ≠'); }, bad);
+          function(d){ if(netTook(d)) ok(d); else bad(d, 0, 'token ≠'); },
+          function(d, s, m){ bad(netIdWhy(d, token, nonce), s, m); });
 }
 
 /* ---- a language, which belongs to the account --------------------------
@@ -474,6 +508,38 @@ function netLangRow(ok, bad){
       L.sid=sid; langStore();
       ok(sid);
     }, bad);
+}
+/* WHETHER THIS LANGUAGE'S PAGE MAY BE READ BY ANYBODY ELSE.
+   -------------------------------------------------------------------------
+   「この言語については公開したら公開、非公開にしたら非公開だけどそれ以外に
+     あんのか？」 OWNER 2026-08-28.
+
+   `language.published_at` is what `slice_read` in supabase/schema.sql opens
+   the article on, and until now **nothing in www/ ever wrote it** -- the
+   column was read by one policy, indexed, and set by nobody, so no language
+   had ever been published and the switch on the About page was a fact this
+   phone kept to itself.
+
+   The switch is the one the owner already operates -- setWldHide() in
+   www/home.js, the 「一番上のトグル」 on the article's writing face. There is
+   one question and so there is one flag; this is that flag reaching the
+   server.
+
+   A time and not a boolean, because that is the column: it is `published_at`,
+   and when it was published is worth more than that it was. Turning the
+   switch back writes null and the door shuts -- nothing is destroyed, and the
+   page comes back exactly as it was left.
+
+   Fired and not waited on, like netFollow(): the switch has already moved on
+   the screen. netLangSync() sends it again on the next launch, which is what
+   makes a request that never arrived correct itself. */
+function netLangPublic(on){
+  if(!netSignedIn()) return;
+  netLangRow(function(sid){
+    netSend('PATCH', '/rest/v1/language?id=eq.'+encodeURIComponent(sid),
+            {published_at: on? new Date().toISOString() : null},
+            SESS.at, function(){}, function(){});
+  }, function(){});
 }
 /* Every slice of one language, as {kind: {body, no}}. */
 function netSlices(sid, ok, bad){
@@ -530,6 +596,17 @@ function netLangSync(then){
             langRead(); ltRead(); ntRead(); stRead(); sndRead(); kbRead(); wldRead();
             render();
           }
+          /* And the one fact about this language that is a COLUMN rather than
+             a slice: whether its page may be read by anybody else. Sent here,
+             once a launch, after the slices have been merged -- so it is the
+             switch as it stands after the sync rather than before it.
+
+             This is what makes a failed toggle correct itself. setWldHide()
+             sends it on the press and does not wait; if that request never
+             arrived, the phone would say private while the server went on
+             saying published, and THAT direction is a leak rather than a
+             nuisance. One small write on the next launch closes it. */
+          netLangPublic(!wldHidden());
           stop(moved); return;
         }
         kind=SLICES[i]; i++;
@@ -704,6 +781,70 @@ function netFeed(which, ok, bad, more){
          what "you follow nobody" looks like, and snsNoneFo() says so. */
       if(!ids.length){ ok([]); return; }
       pull('&author=in.('+ids.join(',')+')');
+    }, bad);
+}
+/* WHO THIS ACCOUNT FOLLOWS, as handles.
+   -------------------------------------------------------------------------
+   netFollow() has told the server about every press since follows existed,
+   and nothing ever read the list back. So `ME.fo` in www/me.js was written
+   only by a press ON THIS PHONE: the same account on a second phone followed
+   the same people and knew none of it -- every Follow button said Follow, and
+   the followed timeline filtered the server's own answer away to nothing.
+   That last part is fixed at the sieve (www/sns.js); this is the list itself.
+
+   BY HANDLE, because a handle is what one person knows another by and what
+   ME.fo has always held. The uuid is turned back here, where the request
+   already is, rather than by every screen that draws a button.
+
+   `followed(handle)` names the COLUMN and not the table on purpose: `follow`
+   has two foreign keys into `profile` -- follower and followed -- so asking
+   for `profile(handle)` is ambiguous and asking for the column is not.
+
+   Reading a follow needs no account (`follow_read` is `using (true)`): who
+   follows whom is public, the way it is in every timeline. Signed out there
+   is nobody to have followed anybody, and the answer is `null` -- could not
+   ask -- rather than an empty list. */
+function netFollowing(ok, bad){
+  if(!netSignedIn()){ ok(null); return; }
+  netGet('/rest/v1/follow?select=followed(handle)&follower=eq.'+
+         encodeURIComponent(SESS.uid),
+    function(d){
+      var out=[], i, r;
+      for(i=0;i<(d||[]).length;i++){
+        r=(d[i] && d[i].followed) || null;
+        if(r && r.handle) out.push(String(r.handle));
+      }
+      ok(out);
+    }, bad);
+}
+/* AND THE OTHER DIRECTION, WHICH NOTHING HAD EVER ASKED.
+   -------------------------------------------------------------------------
+   「フォローされてもフォロワー1って増えないのはなぜ？」 OWNER 2026-08-28.
+
+   Because nobody was counting. `ME.fr` in www/me.js is READ by meFollowers()
+   and filled in from localStorage by meFrom(), and **no line in www/ has ever
+   written it** -- so the number under a profile was the length of a list that
+   started empty and stayed empty. Every `follow` request in this file asked
+   `follower=eq.<me>` ("who I follow"); not one asked the reverse.
+
+   It is the same row read the other way round, and the same policy allows it:
+   `follow_read` is `using (true)`, because who follows whom is public the way
+   it is in every timeline.
+
+   `follower(handle)` names the COLUMN and not the table, for netFollowing()'s
+   reason: `follow` has two foreign keys into `profile` and asking for
+   `profile(handle)` is ambiguous. */
+function netFollowers(ok, bad){
+  if(!netSignedIn()){ ok(null); return; }
+  netGet('/rest/v1/follow?select=follower(handle)&followed=eq.'+
+         encodeURIComponent(SESS.uid),
+    function(d){
+      var out=[], i, r;
+      for(i=0;i<(d||[]).length;i++){
+        r=(d[i] && d[i].follower) || null;
+        if(r && r.handle) out.push(String(r.handle));
+      }
+      ok(out);
     }, bad);
 }
 /* ---- keeping somebody away from you ------------------------------------
@@ -975,10 +1116,110 @@ function netStore(ok, bad){
 function netLike(q){
   return encodeURIComponent('*'+String(q||'').replace(/[*,()]/g, ' ')+'*');
 }
-/* People. The language's NAME comes with them where there is one: the embed
-   reads `language`, whose policy answers with what has been published and
-   with your own, so an unpublished language is nobody's business and simply
-   does not arrive. 「lingua マーク」 */
+/* The names of the languages these accounts have, by owner -- the second half
+   of looking people up.
+   -------------------------------------------------------------------------
+   TWO REQUESTS AND NOT A JOIN, for the same reason netFeed() asks for the
+   follow list separately: there is no foreign key for PostgREST to travel.
+
+   It USED to be a join. netFindWho() asked for `language(name)` as an embed,
+   and on 2026-08-19 that worked, because `language.owner` was
+   `references profile(id)` and an embed is a foreign key being walked. On
+   2026-08-22 the column was repointed to `auth.users(id)` so that an
+   anonymous account with no profile row could own a language -- which is
+   right, and which quietly took the embed's road away. Both tables point at
+   `auth.users` now and neither points at the other, and PostgREST does not
+   join two tables through a third they happen to share. It answers PGRST200
+   and the WHOLE request fails: not "somebody with no language", but nobody at
+   all, for every search anybody made. 「新しいアカウントが検索に出てこない」
+   was that, seen from the one account the owner was looking for.
+
+   `profile.id` and `language.owner` are still the same uuid -- both are the
+   account -- so the second question can be asked by hand. That is all this is.
+
+   THE NAME IS DECORATION AND THE PEOPLE ARE THE ANSWER, so a failure here
+   comes back as no names rather than as no people. A search that lost every
+   result because a tag beside a handle could not be fetched would be this
+   same bug in a smaller costume.
+
+   Which one, when somebody has several: the OLDEST, and it is ordered so that
+   it is the same one twice. netFindWho() argues that for its own paging --
+   「it just has to be the SAME answer twice」 -- and an unordered pick would
+   give a person a different tag every time somebody searched. It is not a
+   decision about which language represents somebody; nothing has asked that
+   yet, and the embed did not answer it either.
+
+   Unpublished languages do not arrive and are not meant to: `language_read`
+   in supabase/schema.sql is `published_at is not null or owner = auth.uid()`,
+   so this asks with the same policy the embed asked with. 「lingua マーク」 */
+function netLangNames(ids, done){
+  var want=[], seen={}, i, id;
+  for(i=0;i<(ids||[]).length;i++){
+    id=String(ids[i]||'');
+    if(id && !seen[id]){ seen[id]=1; want.push(id); }
+  }
+  if(!want.length){ done({}); return; }
+  netGet('/rest/v1/language?select=owner,name&order=created_at.asc'+
+         '&owner=in.('+want.join(',')+')',
+    function(d){
+      var by={}, j, r, o;
+      for(j=0;j<(d||[]).length;j++){
+        r=d[j]||{};
+        o=String(r.owner||'');
+        /* The first row for an owner wins, and the order above is what makes
+           "first" mean the oldest rather than whichever the server reached
+           for. */
+        if(o && !(o in by)) by[o]=String(r.name||'');
+      }
+      done(by);
+    }, function(){ done({}); });
+}
+/* ONE person, by the name one person knows another by.
+   -------------------------------------------------------------------------
+   Everything a profile page draws about somebody else used to come off a POST
+   of theirs -- whoOf() in www/me.js walks POSTS looking for one. That is the
+   right place for a post's name and face, and the wrong place for a page
+   about a person: somebody found in the search has never written anything
+   this phone is holding, so the page drew the empty shape and postFace() fell
+   through to '?'. 「人のプロフィールが？」
+
+   What arrives here is what the person looks like NOW, which is what a page
+   about them should say -- supabase/schema.sql makes exactly that distinction
+   over `profile.av`: a post freezes its own face when it is written (rule 8)
+   and this one does not.
+
+   NOBODY IS AN ANSWER. A handle with no row is `null` and not an error: the
+   search can hand over a name that has since been deleted, and a page saying
+   so is not the same as a page that could not ask.
+
+   No bio and no counts, and that is not an omission here: there is no `bio`
+   column and no follower count on `profile` at all -- what somebody writes
+   about themselves lives on their own phone (www/me.js). whoCard() already
+   draws neither rather than drawing a zero. */
+function netWho(handle, ok, bad){
+  var h=String(handle||'');
+  if(!h){ bad(null, 0); return; }
+  netGet('/rest/v1/profile?select=id,handle,display,av,banned_at'+
+         '&limit=1&handle=eq.'+encodeURIComponent(h),
+    function(d){
+      var r, who;
+      if(!d || !d.length){ ok(null); return; }
+      r=d[0]||{};
+      who={who:String(r.display||''), hd:String(r.handle||''),
+           av:r.av||null, lname:'',
+           /* Frozen. Off `banned_at`, which is the same fact `author_out`
+              carries onto a post -- one column, asked of the person here and
+              answered about the writer there. */
+           out:!!r.banned_at};
+      netLangNames([r.id], function(by){
+        var id=String(r.id||'');
+        if(id && by[id]) who.lname=by[id];
+        ok(who);
+      });
+    }, bad);
+}
+/* People. The language's name is asked for separately and pasted on --
+   netLangNames() above says why it cannot be an embed any more. */
 function netFindWho(q, ok, bad, more){
   var like=netLike(q);
   /* Ordered by handle, which it was not until there was a second page to
@@ -991,21 +1232,32 @@ function netFindWho(q, ok, bad, more){
      People have no `created_at` worth sorting by here: a search is not a
      timeline, and whoever matched first alphabetically is as good an answer
      as whoever signed up first -- it just has to be the SAME answer twice. */
-  netGet('/rest/v1/profile?select=id,handle,display,av,language(name)'+
+  netGet('/rest/v1/profile?select=id,handle,display,av'+
          '&or=(handle.ilike.'+like+',display.ilike.'+like+')'+
          '&order=handle.asc'+
          (more? '&handle=gt.'+encodeURIComponent(String(more)) : '')+
          '&limit='+NET_PAGE,
     function(d){
-      var out=[], i, r, ls;
+      var out=[], ids=[], i, r;
       for(i=0;i<(d||[]).length;i++){
         r=d[i]||{};
-        ls=r.language||[];
         out.push({who:String(r.display||''), hd:String(r.handle||''),
-                  av:r.av||null, lname:(ls.length? String(ls[0].name||'') : ''),
+                  av:r.av||null, lname:'',
                   mine:!!(SESS && SESS.uid && r.id===SESS.uid)});
+        /* Beside the answer rather than on it: the shape a person comes back
+           in is what every screen already draws, and an `id` added to it
+           would be an account's uuid travelling to places that read a handle. */
+        ids.push(String(r.id||''));
       }
-      ok(out);
+      if(!out.length){ ok(out); return; }
+      netLangNames(ids, function(by){
+        var j, id;
+        for(j=0;j<out.length;j++){
+          id=ids[j];
+          if(id && by[id]) out[j].lname=by[id];
+        }
+        ok(out);
+      });
     }, bad);
 }
 /* Posts, matched on the line as it is spelled, on what it means, and on the

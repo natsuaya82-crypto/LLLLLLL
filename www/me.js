@@ -395,18 +395,129 @@ function meCard(){
    No bio and no counts: neither is on a post, and inventing them out of
    nothing is how a profile starts lying. They arrive with the person when
    there is a server, and they arrive HERE. */
-function whoOf(h){
-  var i, p;
+/* THE PEOPLE THIS PHONE HAS ASKED ABOUT, by handle -- the server's answer,
+   kept for as long as the app is open.
+
+   Everything on a person's page used to come off a POST of theirs, and a
+   person found in the search has written nothing this phone is holding: the
+   loop below fell out of its end, postFace() got a person with no name and
+   drew '?' out of it, and the page was a question mark with a Follow button.
+   「人のプロフィールが？」
+
+   WHO_ASKED is separate from WHO_HAVE because "asked, and there is nobody by
+   that name" is an answer and has to stop the asking. Only a request that
+   could not be MADE clears it, so a phone that went through a tunnel tries
+   again and a handle that has been deleted is asked about once. */
+var WHO_HAVE={}, WHO_ASKED={};
+/* Asked for by the page that draws them, the way the timeline and the notices
+   ask for theirs. Never for your own: that is ME, it is on this phone, and a
+   request for it would be the app asking somebody else who you are. */
+function whoPull(h){
   h=String(h||'');
+  if(!h || h===meHandle() || WHO_ASKED[h]) return;
+  WHO_ASKED[h]=1;
+  netWho(h, function(p){
+    /* Nobody by that name. It stays asked -- there is nothing to ask again. */
+    if(!p) return;
+    WHO_HAVE[h]=p;
+    render();
+  }, function(){ WHO_ASKED[h]=0; });
+}
+function whoOf(h){
+  var i, p, got;
+  h=String(h||'');
+  /* THE SERVER IS THE RECORD. What it sent is what the person looks like NOW,
+     which is the right answer for a page about them; a post's copy is frozen
+     at the moment it was written (rule 8) and is right for the post. */
+  got=WHO_HAVE[h];
+  if(got)
+    return {who:got.who||'', hd:h, av:got.av, lname:got.lname||'',
+            /* THE FACE'S KEY, and it is the person. postFace() caches a drawn
+               face under `id` and falls back to 'me' when there is none -- so
+               a person wearing letters they drew was filed under MY key, and
+               the one face on a page is only why it did not show yet. A page
+               about somebody else is the last place to key anything as mine. */
+            id:'w:'+h,
+            /* Neither is on `profile` at all -- see netWho(). Absent rather
+               than zero: a profile that fills them in with a 0 is a profile
+               saying something it was never told. */
+            bio:'', fo:0, fr:0, out:!!got.out};
+  /* And until it answers, the copy: a post of theirs, if this phone has one.
+     Better than an empty page for the moment the request is out, and it is
+     where the whole page came from before there was anywhere else. */
   for(i=0;i<POSTS.length;i++){
     p=POSTS[i];
     if(String(p.hd||'')===h)
-      return {who:p.who||'', hd:h, av:p.av, lname:p.lname||'',
+      /* `id` is the FACE'S key here and not the post's -- the same reason as
+         above. Taking p.id would file this person's face under one of their
+         posts, which is a key that means something else. */
+      return {who:p.who||'', hd:h, av:p.av, lname:p.lname||'', id:'w:'+h,
               bio:p.bio||'', fo:p.fo||0, fr:p.fr||0, out:!!p.out};
   }
   return {who:'', hd:h, av:null, lname:'', bio:'', fo:0, fr:0, out:false};
 }
 function meFollows(h){ return meFollowing().indexOf(String(h||''))>=0; }
+/* AND WHERE THAT LIST COMES FROM WHEN IT IS NOT THIS PHONE THAT MADE IT.
+   -------------------------------------------------------------------------
+   ME.fo was written by meFollow() and by nothing else -- a press on THIS
+   handset -- while netFollow() had been telling the server about every press
+   since follows existed. Nothing ever read it back. So the same account on a
+   second phone followed the same people and knew none of it.
+
+   The owner has an SE2 and a 17, which is exactly the two phones that makes
+   it: every Follow button said Follow for somebody already followed, and the
+   followed timeline threw the server's own answer away against an empty list.
+
+   Once a session, and the copy is replaced rather than merged: an unfollow
+   made on the other phone is a row that is GONE, and there is no way to tell
+   a missing row from one this phone has not heard of yet by merging. The
+   server is the record -- 「SNSは全部サーバー」 -- and this is the copy
+   catching up with it.
+
+   Only a request that could not be MADE is asked again. `null` is that;
+   an empty list is an answer and means this account follows nobody. */
+var FO_ASKED=false;
+function meFollowPull(){
+  var was;
+  if(FO_ASKED || !netSignedIn()) return;
+  FO_ASKED=true;
+  was=meFollowing().join(',');
+  netFollowing(function(hs){
+    if(!hs) return;
+    /* Somebody pressed Follow while this was in the air. That press is newer
+       than this answer and netFollow() has already carried it to the server,
+       so writing the older list over it would take it off the screen and
+       leave the server holding the right one. */
+    if(meFollowing().join(',')!==was) return;
+    ME.fo=hs;
+    saveMe();
+    render();
+  }, function(){ FO_ASKED=false; });
+}
+/* AND WHO FOLLOWS YOU, which nothing had ever asked for.
+   -------------------------------------------------------------------------
+   「フォローされてもフォロワー1って増えないのはなぜ？」 OWNER 2026-08-28.
+
+   `ME.fr` was read by meFollowers() and filled in from localStorage by
+   meFrom() -- and written by NOTHING. The number under a profile was the
+   length of a list that started empty and had no way to stop being empty, so
+   it was not a wrong count: it was a count nobody had ever taken.
+
+   No press can move this one, which is the difference from the list above:
+   being followed is something somebody ELSE does, so there is no local change
+   to protect and the answer is simply written down. Asked once a session,
+   and only a request that could not be MADE is asked again. */
+var FR_ASKED=false;
+function meFollowerPull(){
+  if(FR_ASKED || !netSignedIn()) return;
+  FR_ASKED=true;
+  netFollowers(function(hs){
+    if(!hs) return;
+    ME.fr=hs;
+    saveMe();
+    render();
+  }, function(){ FR_ASKED=false; });
+}
 /* Who you have blocked, as handles, beside who you follow -- both are the
    account's and neither is a language's. The uuids the timeline needs are the
    server's answer (netBlocked); this is what a screen asks so a button can
@@ -510,8 +621,31 @@ function whoCard(h){
       : '')+
     '</div>'+
     (p.bio? '<div class="pbio">'+esc(p.bio)+'</div>' : '')+
-    (p.lname? '<button class="wldrow"' + DO('go', ["about"]) + '>'+
-        '<span class="wldnm">'+esc(p.lname)+'</span>'+ICON_GO+'</button>' : '')+
+    /* THE NAME, AND NOT A WAY THROUGH.
+       「この言語についてで人のをタップしても自分のが出る」 OWNER.
+
+       It was a button, and it called go("about") without saying WHOSE. The
+       page it opens -- vAbout() -> wldPage() in www/home.js -- draws world(),
+       LETTERS and langName: the OPEN language, every one of them. So pressing
+       somebody else's language name showed them mine, with their name at the
+       head of it. Rule 8 exactly, on the one screen a language is read on.
+
+       IT CANNOT BE MADE TRUE YET, AND NOT FOR WANT OF THE CALL. The article
+       is a `wld` slice, and `slice_read` in supabase/schema.sql is
+       `l.owner = auth.uid()` -- ANOTHER PERSON'S LANGUAGE IS NOT READABLE AT
+       ALL, published or not. There is nothing to fetch and so nothing to
+       draw, and a door that opens on nothing is what this already was.
+
+       So the door closes and the name stays: the language a person writes is
+       a fact of their profile, which is what 「lingua マーク」 asked for. The
+       same shape wldRow() takes when a language is private --
+       「そもそも非公開ならプロフィールから飛べないんだって」 -- a row, no arrow,
+       nothing to press.
+
+       What reopens it is one line here, the day slice_read lets a published
+       language be read and there is something to put on the page. */
+    (p.lname? '<div class="wldrow">'+
+        '<span class="wldnm">'+esc(p.lname)+'</span></div>' : '')+
     /* The counts, in the same place and the same shape as your own. They come
        off the person -- FOLLOW_SEAM -- and a person who arrived on a post
        carries none, so they read zero until somebody arrives carrying them.
@@ -554,9 +688,10 @@ function openMe(){
      face is the thing they came to change, and it used to be at the bottom
      under three text fields.
 
-     The drop-the-picture row keeps `border-bottom:none` now that it is no
-     longer the last row. The line it would otherwise draw is a border, and
-     borders are not added here. */
+     画像を外す行はここに無い。**触った顔が、選ぶ画面に行く。** ──
+     「あとアイコン設定したあとなんでアイコンの下に画像消すみたいな垢文字
+       でんの？ もっかいがぞうさわって画像変えるか消すかでしょ？」
+     OWNER 2026-08-28。openMePic() がその画面。 */
   openForm('me:', pageName('profile'),
     /* The face is the label, and the input lives inside it -- so the thing
        somebody reaches for is the thing that opens the camera roll, in one
@@ -582,15 +717,20 @@ function openMe(){
 
        欄そのものは `lnField()`（www/shell.js の一箇所）。`<input>` は
        折り返せないので、書いた字が横に消えていた。 */
+    /* 顔がまだ無いうちは、触ったらそのままカメラロールが開く ── 外すものが
+       無い画面に行かせても、行がひとつしかない。顔が在るときだけ選ぶ画面に
+       行く。触ったら必ずカメラロールが開くのをやめたのはそこだけ。 */
     '<div class="picrow">'+
-      '<label class="pav" style="position:relative;width:96px;height:96px">'+
-        postFace({who:meName(), lname:langName, av:postAvatar()})+
-        '<input type="file" id="me-pic" accept="image/*" '+
-          'style="position:absolute;left:0;top:0;width:100%;height:100%;opacity:0"' +
-          CH('meSetPic') + '></label>'+
+      (ME.pic
+        ? '<button class="pav pavb" style="position:relative;width:96px;height:96px;margin:0"' +
+            DO('go', ["form", "mepic:"]) + '>'+
+            postFace({who:meName(), lname:langName, av:postAvatar()})+'</button>'
+        : '<label class="pav" style="position:relative;width:96px;height:96px">'+
+            postFace({who:meName(), lname:langName, av:postAvatar()})+
+            '<input type="file" id="me-pic" accept="image/*" '+
+              'style="position:absolute;left:0;top:0;width:100%;height:100%;opacity:0"' +
+              CH('meSetPic') + '></label>')+
     '</div>'+
-    (ME.pic? '<button class="set" style="border-bottom:none"' + DO('meDropPic') + '>'+
-       '<span class="sl bad">'+esc(t('me.pic.drop'))+'</span></button>' : '')+
     '<div class="field at" style="gap:14px;margin-bottom:20px">'+
       '<span style="flex:0 0 auto;white-space:nowrap;min-width:4.5em">'+esc(t('me.name'))+'</span>'+
       lnField('me-nm', langName||'',
@@ -627,10 +767,45 @@ function openMe(){
         ' maxlength="'+ME_MAX.loc+'"' + IN('meSetLoc'), ME.loc||'')+'</div>');
 }
 FORM_OPEN.me=function(){ openMe(); };
+/* 顔をもう一度触ったとき ── 変えるか、外すか。
+
+   「もっかいがぞうさわって画像変えるか消すかでしょ？」OWNER 2026-08-28。
+   選ぶのは画面で、変えるのは着いた先。下からひょいと出るものではないし、
+   選ぶ二つが顔と同じ画面に並ぶものでもない ── 赤い行が顔の下に居たのは
+   その形だった。
+
+   新しい経路は要らない。`form` は既に経路で、`FORM_OPEN` にひとつ名前を
+   足せば戻るボタンで帰ってきたときも建て直る。だから www/shell.js の
+   PAGES にも www/route-map.js にも触っていない。
+
+   変える行はファイル選びを重ねた `<label>` ── 顔がそうだったのと同じ手で、
+   押した所がそのまま入力になる。二つとも `.set` を着るので、行の高さは
+   タグではなくクラスが決める。
+
+   選んだ後も外した後も `openMe()` に戻る。`go()` は既に通った所へ戻るのを
+   戻ると読むので、プロフィールが二枚積まれることはない。 */
+function openMePic(){
+  /* 顔が無ければ外すものが無い。開き直しで消えた場合はプロフィールへ。 */
+  if(!ME.pic){ openMe(); return; }
+  openForm('mepic:', t('me.pic'),
+    '<label class="set" style="position:relative">'+
+      '<span class="sl">'+esc(t('me.pic.change'))+'</span>'+
+      '<input type="file" id="me-pic" accept="image/*" '+
+        'style="position:absolute;left:0;top:0;width:100%;height:100%;opacity:0"' +
+        CH('meSetPic') + '></label>'+
+    '<button class="set"' + DO('meDropPic') + '>'+
+      '<span class="sl bad">'+esc(t('me.pic.drop'))+'</span></button>');
+}
+FORM_OPEN.mepic=function(){ openMePic(); };
 /* The two lists behind the two numbers. One screen, and which one it is is the
    route's argument -- they differ in the list and in what to say when it is
    empty, and in nothing else. */
 function vFollows(){
+  /* Both lists are asked for here, because this screen is the only place
+     either is shown in full and the two numbers that lead to it are drawn on
+     a page that may never have been opened this session. */
+  meFollowPull();
+  meFollowerPull();
   var ers=(here().a==='ers'), list=ers? meFollowers() : meFollowing();
   return '<div class="view">'+navTop()+'<div class="body">'+
     (list.length

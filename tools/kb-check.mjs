@@ -40,7 +40,15 @@ const r = await pg.evaluate(({ s }) => {
      before it left behind. */
   function fresh(){
     KB = null; kbShow = 0; kbAdd('qwerty'); kbLay = 0;
-    window.route = 'kb'; NAV = [{ r: 'kb', a: String(kbShow) }];
+    /* and NOT `NAV = [{r:'kb', a:String(kbShow)}]`. Which keyboard you are on
+       is carried by the ROUTE, so writing it here is the check standing on a
+       screen the app never put anybody on: kbAdd() landed on the chapter's
+       own page, which is the LIST, and every claim below was made about a
+       page nothing reached. The ⋯ is drawn on a board's page and the list
+       carries the ? instead, so the road that changes a keyboard's
+       arrangement had no first step and 251 green claims said nothing about
+       it. kbAdd() lands on the board it made; if it stops, everything here
+       goes red at once, which is the point. */
     render();
   }
   /* what a row is, as a string, so two of them can be compared */
@@ -54,6 +62,64 @@ const r = await pg.evaluate(({ s }) => {
     return n;
   }
   function widths(){ return kbLayer().rows.map(units); }
+
+
+  /* ---- the road that changes a keyboard's ARRANGEMENT --------------------
+     ⋯ then kbRepat() then kbSetPat(), walked through the buttons on the page
+     rather than called.
+
+     All three names are in act-map.js, so act-check and dead-check are green
+     on them whatever happens here, and press prints a name it never pressed
+     without failing on it. That left the whole road able to go missing under
+     a full gate: nothing was wrong with any of the three -- kbSetPat('flick')
+     turned a row of ten into four keys of 2.5 and sent the 2.5 to the phone
+     the entire time -- and the ⋯ was on no screen a finger could reach,
+     because making a keyboard landed on the chooser it was chosen from.
+
+     So what is asked here is reachability, one step at a time, and each step
+     is asked of the DOM. A claim that called kbMore() would have been green
+     on the day this was broken. */
+  (function (){
+    var el;
+    KB = null; kbShow = 0; kbLay = 0;
+    /* Nothing is being held. The ⋯ is Done while a key is wobbling, which is
+       a state a claim above leaves behind, and it is not this road. */
+    kbWob = false; kbSel = null;
+    /* the one act: choose a pattern for a new keyboard */
+    kbAdd('qwerty');
+    out.roadOnBoard = String(here().a);
+    out.roadDots = !!document.querySelector('[data-do="kbMore"]');
+    if (!out.roadDots) return;
+    el = document.querySelector('[data-do="kbMore"]');
+    el.click();
+    out.roadRepat = !!document.querySelector('[data-do="kbRepat"]');
+    if (!out.roadRepat) return;
+    document.querySelector('[data-do="kbRepat"]').click();
+    out.roadPats = [].slice.call(document.querySelectorAll('[data-do="kbSetPat"]'))
+      .map(function (b){ return JSON.parse(b.getAttribute('data-a'))[0]; });
+    el = [].slice.call(document.querySelectorAll('[data-do="kbSetPat"]'))
+      .filter(function (b){ return b.getAttribute('data-a') === JSON.stringify(['flick']); })[0];
+    out.roadFlick = !!el;
+    if (!el) return;
+    /* the confirm the change asks -- answered yes, the way a finger does */
+    var was = window.confirm; window.confirm = function (){ return true; };
+    el.click();
+    window.confirm = was;
+    out.roadPat = KB.kbs[0].pat;
+    /* 1x10 became 2.5x4: the widths were never the broken part and stay
+       measured here, so a fix to the road cannot quietly cost them */
+    out.roadRow = kbLayer().rows[0].map(function (k){ return (k.w || 1); }).join(',');
+    /* and it comes back to the keyboard it just changed, not to the chooser */
+    out.roadBack = String(here().a);
+    out.roadDots2 = !!document.querySelector('[data-do="kbMore"]');
+    KB = null; kbShow = 0; kbLay = 0;
+  }());
+  /* Nothing below can be asked on a screen that is not there. The sheet, the
+     row numbers, the column letters and the buttons over them are all on a
+     BOARD's page, so a broken landing is not one more red line among 251 --
+     it is the check unable to start, and it says so here rather than throwing
+     on the first row it goes to read. */
+  if (!out.roadDots) return out;
 
   /* ---- 0. the board arrives as the sheet it is meant to be ------------- */
   fresh();
@@ -724,9 +790,15 @@ const r = await pg.evaluate(({ s }) => {
      counted in with the empty ones. */
   out.cellNoneFull =
     document.querySelectorAll('.kb.kbsheet .kbk.cell:not([data-k])').length === 0;
-  out.gapFrames = document.querySelectorAll('.kb.kbsheet .kbk.gap.cell').length;
+  /* A gap is drawn as the frames it COVERS, so it wears no class of its own
+     any more -- the two answers the sheet had came from telling them apart,
+     and a look that says "this one is different" is the fault. The first
+     frame over a gap names the key it stands for, which is what a carry
+     reads the row back out of, so `[data-k]` is what a written-down frame is
+     and everything else on the sheet with no key in it is slack. */
+  out.gapFrames = document.querySelectorAll('.kb.kbsheet .kbk.cell[data-k]').length;
   (function (){
-    var g = document.querySelector('.kb.kbsheet .kbk.gap.cell'), st;
+    var g = document.querySelector('.kb.kbsheet .kbk.cell[data-k]'), st;
     st = g && getComputedStyle(g);
     out.gapDashed = !!st && st.borderTopStyle === 'dashed' &&
       st.borderTopColor !== 'rgba(0, 0, 0, 0)' && st.borderTopWidth !== '0px';
@@ -747,12 +819,99 @@ const r = await pg.evaluate(({ s }) => {
   var c0 = document.querySelector('.kb.kbsheet .kbrow .kbk.cell:not([data-k])');
   var c0span = c0 ? spanEl(c0) : 0;
   out.cellHalf = c0span === 1;
+  /* PRESSING IT SELECTS IT. 「全部のます触ったら選択で」 OWNER 2026-08-28 --
+     and the key goes in from the button over the sheet, the way the bin and
+     the three alignments have always worked. This used to press the frame and
+     read the key straight out of the row, which is the habit the owner
+     replaced: two frames drawn the same, one adding and one selecting. */
   if (c0) c0.click();
+  standKb();
+  out.cellSel = !!(KBH && KBH.k === 'f' && KBH.r === 0);
+  /* Asked of the PAGE and not of the class, the same as the key claim above:
+     what this is about is that it LOOKS different from the frame beside it.
+     Asked of the class it was a false green -- a frame wore `pick` and was
+     painted exactly like its neighbour, because a chosen key is painted from
+     an inline style and there is no `.kbk.pick` rule to inherit. */
+  out.cellLit = (function (){
+    var on = document.querySelector('.kb.kbsheet .kbk.cell.pick'),
+        off = document.querySelectorAll('.kb.kbsheet .kbk.cell:not(.pick)')[0];
+    return !!on && !!off &&
+      getComputedStyle(on).backgroundColor !== getComputedStyle(off).backgroundColor;
+  }());
+  /* and what the band offers for it is the one button that fills it */
+  out.cellTool = [].slice.call(document.querySelectorAll('.kbtool [data-do]'))
+    .filter(function (b){ return !b.disabled; })
+    .map(function (b){ return b.getAttribute('data-do'); }).join(' ');
+  out.cellPut = (function (){
+    /* the one in the BAND, not a frame on the sheet: the band's carries no
+       arguments, because a button over the sheet acts on what is selected */
+    var b = document.querySelector('.kbtool [data-do="kbCellAdd"]');
+    if (b) b.click();
+    return !!b;
+  }());
   standKb();
   out.cellAdded = kbLayer().rows[0].length === keysWas + 1;
   out.cellAddedW = out.cellAdded && kbUsed(kbLayer().rows[0]) === usedWas + c0span;
   out.cellSpan = c0span;
   out.cellBack = (kbUndo(), kbLayer().rows[0].length === keysWas);
+
+  /* ---- the leftover an alignment leaves is FRAMES, one to a cell ---------
+     「中心に寄せたら半キーが二つできるけど寄せたら1つになるの」 OWNER
+     2026-08-28, and 「全部のます触ったら選択で」 the same day. A row of three
+     keys on a sheet of ten leaves seven columns at each end when it is
+     centred, and CLAUDE.md § 19 counts those as three frames and a half --
+     every one of them a key you can press.
+
+     It was drawn as ONE dashed key three and a half wide. Nothing threw and
+     the total was right; what was wrong is that "the width of that frame"
+     could then only mean three and a half keys, and the sheet said the
+     leftover was one thing where the owner had counted four.
+
+     And what goes in takes only that frame's room: a gap is room the row
+     already holds, so the row's total does not move and what is left stays a
+     gap on either side. */
+  (function (){
+    var rw, fs, was, wasKeys;
+    fresh(); kbShow = 1; kbLay = 0;
+    kbLayer().rows[0] = [kbKey('lt', 'a'), kbKey('lt', 'b'), kbKey('lt', 'c')];
+    saveKb(); standKb();
+    KBH = { k: 'r', i: 0 }; kbAlign('c'); standKb();
+    out.alGaps = kbLayer().rows[0].filter(function (k){ return k.k === 'gap'; }).length;
+    rw = sheetRows()[0];
+    fs = [].slice.call(rw.querySelectorAll('[data-do="kbCellAdd"]'));
+    out.alFrames = fs.map(function (e){ return spanOf(e); }).join(',');
+    /* the first frame of a written-down gap names the key it stands for, so a
+       carry can read the row back off the page */
+    out.alNamed = fs.filter(function (e){ return e.getAttribute('data-k') !== null; }).length;
+    if (!fs.length) return;
+    was = kbUsed(kbLayer().rows[0]);
+    wasKeys = kbLayer().rows[0].length;
+    fs[0].click(); standKb();
+    out.alSel = !!(KBH && KBH.k === 'f' && KBH.r === 0 && KBH.at === 0 && KBH.span === 2);
+    out.alLit = (function (){
+      var on = document.querySelector('.kb.kbsheet .kbk.cell.pick'),
+          off = document.querySelectorAll('.kb.kbsheet .kbk.cell:not(.pick)')[0];
+      return !!on && !!off &&
+        getComputedStyle(on).backgroundColor !== getComputedStyle(off).backgroundColor;
+    }());
+    /* and it is still drawn as the gap it stands for -- the class it wore
+       before any of this, so nothing about how it looks at rest moved */
+    out.alGapCls = !!document.querySelector('.kb.kbsheet .kbk.gap.cell');
+    /* and the bin is DOWN on a frame -- there is nothing in it to take */
+    out.alBin = [].slice.call(document.querySelectorAll('.kbtool [data-do="kbCut"]'))
+      .every(function (b){ return b.disabled; });
+    (document.querySelector('.kbtool [data-do="kbCellAdd"]') || { click: function (){} }).click();
+    standKb();
+    out.alSame = kbUsed(kbLayer().rows[0]) === was;
+    out.alKey = kbLayer().rows[0].filter(function (k){
+      return k.k === 'lt' && k.v === '' && (k.w || 1) === 1;
+    }).length === 1;
+    out.alRest = kbLayer().rows[0].map(function (k){
+      return k.k + ':' + (k.w || 1);
+    }).join(' ');
+    out.alBack = (kbUndo(), kbLayer().rows[0].length === wasKeys &&
+                  kbUsed(kbLayer().rows[0]) === was);
+  }());
 
   /* pressing a key selects it, and pressing it again leaves it selected --
      「同じとこ触ると選択解除されるからわかりにくい」 OWNER 2026-08-27. It used
@@ -2067,9 +2226,10 @@ const r = await pg.evaluate(({ s }) => {
   kbLayer().rows[1].splice(0, 1);
   saveKb(); standKb();
   out.holeShort = noHole('short by a half and by a whole');
-  /* the half frame is a button, and pressing it puts in HALF A KEY */
+  /* the half frame is a button; pressing it SELECTS it, and the band puts in
+     HALF A KEY -- 「全部のます触ったら選択で」 OWNER 2026-08-28 */
   (function (){
-    var rw = sheetRows()[0], el = null, i, was;
+    var rw = sheetRows()[0], el = null, i, was, put;
     for (i = 0; i < rw.children.length; i++)
       if (rw.children[i].getAttribute('data-do') === 'kbCellAdd' &&
           spanOf(rw.children[i]) === 1){ el = rw.children[i]; break; }
@@ -2077,6 +2237,10 @@ const r = await pg.evaluate(({ s }) => {
     if (!el) return;
     was = kbUsed(kbLayer().rows[0]);
     el.click(); standKb();
+    out.halfFrameSel = !!(KBH && KBH.k === 'f' && KBH.span === 1);
+    put = document.querySelector('.kbtool [data-do="kbCellAdd"]');
+    if (put) put.click();
+    standKb();
     out.halfFrameAdds = kbUsed(kbLayer().rows[0]) === was + 1;
     out.halfFrameKey = kbLayer().rows[0].filter(function (k){
       return k.k === 'lt' && (k.w || 1) === 0.5;
@@ -2244,7 +2408,14 @@ const r = await pg.evaluate(({ s }) => {
     rw = sheetRows()[last];
     el = rw && rw.querySelector('[data-do="kbCellAdd"]');
     out.seqAddCell = !!el;
+    /* two presses now, and they are two different controls: the frame is
+       chosen on the sheet, and the key goes in from the band over it.
+       「全部のます触ったら選択で」「キーを入れるのは帯のボタン」 */
     if (el) el.click();
+    standKb();
+    out.seqCellSel = !!(KBH && KBH.k === 'f');
+    tapDo('kbCellAdd');
+    standKb();
     n = kbLayer().rows[last].length;
     out.seqAddGrew = n >= 2;
     chooseKey(last, 0); tapKey(last, 1);
@@ -2284,6 +2455,7 @@ const r = await pg.evaluate(({ s }) => {
     out.seqLiftHole = noHole('after a hold');
   }());
   out.seqSeen = seen.join(' | ');
+
 
   return out;
 }, { s: seed.toString() });
@@ -2362,6 +2534,25 @@ const bad = [];
 function say(ok, line){ console.log('  ' + (ok ? '' : 'FAILED  ') + line); if (!ok) bad.push(line); }
 
 console.log('what is selected, what acts on it, and the step back\n');
+say(r.roadOnBoard === '1',
+    'choosing a pattern lands on the keyboard it made, not on the chooser (route '
+    + r.roadOnBoard + ')');
+say(r.roadDots, 'and the \u22ef is on that screen');
+say(r.roadRepat, 'and it opens the way to change the arrangement');
+say(r.roadFlick && (r.roadPats || []).length === 5,
+    'which offers all five patterns [' + (r.roadPats || []).join(' ') + ']');
+say(r.roadPat === 'flick', 'and choosing one changes the keyboard (' + r.roadPat + ')');
+say(r.roadRow === '2.5,2.5,2.5,2.5',
+    'to four keys of two and a half columns, which is what goes to the phone ('
+    + r.roadRow + ')');
+say(r.roadBack === '1' && r.roadDots2,
+    'and it comes back to that keyboard with the \u22ef still on it (route '
+    + r.roadBack + ')');
+if (!r.roadDots){
+  console.error('\nkb-check: the ' + '\u22ef' + ' is on no screen the app lands on, so nothing'
+    + ' below it could be asked. ' + bad.length + ' FAILED');
+  process.exit(1);
+}
 say(r.rows > 3, 'the board has ' + r.rows + ' rows to work on');
 say(r.cols === 20, 'the sheet is ' + r.cols + ' columns wide, which is ten keys -- a column is half a key');
 say(r.halves, 'and one row is inset by half a key, which is what the columns count in');
@@ -2557,10 +2748,25 @@ say(r.gapFrames > 0 && r.gapDashed,
 say(r.gapRoPlain, 'and it is nothing at all on the board that goes to the phone');
 say(r.cellShown && r.cellIsButton, 'cut a column out and the empty frames are buttons');
 say(r.cellHalf, 'nine keys on a sheet of ten leave half a frame at each end');
+say(r.cellSel && r.cellLit, 'pressing one SELECTS it and lights it -- it does not put a key in');
+say(r.cellPut && r.cellTool === 'kbUndo kbCellAdd',
+    'and the band over the sheet offers the one button that fills it [' + r.cellTool + ']');
 say(r.cellAdded && r.cellAddedW,
-    'pressing one puts a key exactly the width of the frame it was ('
+    'which puts in a key exactly the width of the frame it was ('
     + (r.cellSpan / 2) + ' of a key)');
 say(r.cellBack, 'and the step back takes it away again');
+say(r.alGaps === 2 && r.alFrames === '2,2,2,1,2,2,2,1',
+    'a row of three centred on a sheet of ten leaves three frames and a half at'
+    + ' each end, not one frame of three and a half [' + r.alFrames + ']');
+say(r.alNamed === 2, 'and the first frame of each names the gap it stands for,'
+    + ' so a carry reads the row back whole (' + r.alNamed + ')');
+say(r.alSel && r.alLit, 'pressing one of them SELECTS it and lights it, the same as any other frame');
+say(r.alGapCls, 'and at rest it is drawn exactly as the gap it stands for was');
+say(r.alBin, 'and the bin is down on it -- there is nothing in it to take');
+say(r.alSame && r.alKey,
+    'and the band puts one key in it, the row staying exactly as wide ['
+    + r.alRest + ']');
+say(r.alBack, 'and the step back puts the gap back');
 say(r.keySel && r.keyLit, 'pressing a key selects it and lights it, one at a time');
 say(r.keyStands, 'and pressing it again leaves it selected -- no toggle');
 say(r.joined && r.joinedW,
@@ -2766,8 +2972,8 @@ say(r.wobKeys > 0 && r.wobPressable === r.wobKeys,
 say(r.holeFresh, 'every frame of a board as built is a key or a dotted key');
 say(r.holeShort,
     'and of one short by half a key and of one short by a whole key -- no blank');
-say(r.halfFrameFound && r.halfFrameAdds && r.halfFrameKey,
-    'the half frame is a button, and pressing it puts in half a key');
+say(r.halfFrameFound && r.halfFrameSel && r.halfFrameAdds && r.halfFrameKey,
+    'the half frame is a button; pressing it selects it and the band puts in half a key');
 say(r.holeAfterHalf, 'and the sheet is still whole after it went in');
 say(r.holeAlL && r.holeAlC && r.holeAlR,
     'none of the three alignments leaves a blank on a row carrying half a key');
@@ -2797,9 +3003,12 @@ say(r.seqAlRow && r.seqAl && r.seqAlStill,
 say(r.seqAlHole && r.seqAlFrames,
     'and every frame on the sheet after all three still answers a finger');
 say(r.seqAlKey, 'and a key on that row can be chosen');
-say(r.seqAddA && r.seqAddCell && r.seqAddGrew && r.seqTwo && r.seqJoin && r.seqJoined,
-    'add a row, put a key in beside the one there, choose both, join them [' +
-    [r.seqAddA, r.seqAddCell, r.seqAddGrew, r.seqTwo, r.seqJoin, r.seqJoined, r.seqN].join(' ') + ']');
+say(r.seqAddA && r.seqAddCell && r.seqCellSel && r.seqAddGrew && r.seqTwo &&
+    r.seqJoin && r.seqJoined,
+    'add a row, choose the frame beside the key there and fill it from the band,' +
+    ' choose both, join them [' +
+    [r.seqAddA, r.seqAddCell, r.seqCellSel, r.seqAddGrew, r.seqTwo, r.seqJoin,
+     r.seqJoined, r.seqN].join(' ') + ']');
 say(r.seqUndo && r.seqRedo, 'and the step back and the step forward both land [' +
     [r.seqUndo, r.seqRedo].join(' ') + ']');
 say(r.seqAfterStep, 'and a row can still be chosen after them');
@@ -2809,6 +3018,7 @@ say(r.seqLiftFound && r.seqLiftSel,
     'hold a key up and put it down, and a key can be chosen the ordinary way');
 say(r.seqLiftHole, 'and the sheet is still frames after it');
 console.log('    frames, hole by hole: ' + r.seqSeen);
+
 
 if (bad.length){ console.error('\nkb-check: ' + bad.length + ' FAILED'); process.exit(1); }
 console.log('\nkb: pressing a row number or a column letter SELECTS it and lights it up;\n' +

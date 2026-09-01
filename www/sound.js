@@ -185,16 +185,6 @@ function migrateSnd(){
   delete SET.snd;
   saveSnd(); save();
 }
-/* A language has sounds from the moment it exists: a drawn letter takes the
-   next one nothing reads yet, so a language with none is one where every
-   letter reads nothing. Called when the app starts and when a different
-   language is opened, which are the two moments a language can turn out to
-   have none. Never overwrites. */
-function sndStart(){
-  if(SND.length) return;
-  SND=asOrder(asSounds('plain', 12));
-  saveSnd();
-}
 /* The chart is also how a letter is told what it reads, and that is a
    different thing to do with the same button, so the name it says is passed
    in rather than assumed. Nothing else about the chart changes. */
@@ -589,9 +579,9 @@ function sndDrop(sym){
    this is the second half of somebody else's press, and the caller is already
    on its way to say what happened and to redraw.
 
-   DELETE REVIEW is in docs/CHANGELOG.md. The one thing it leaves open and
-   this comment will not restate: SND can now reach zero, and sndStart() fills
-   a zero-length SND with twelve plain sounds at the next launch. */
+   DELETE REVIEW is in docs/CHANGELOG.md. SND can reach zero here, and zero is
+   where it stays: an empty inventory is what a language with nothing said
+   about it has, and nothing fills one in. */
 function sndDropLoose(syms){
   var went=false, i, k;
   if(!syms || !syms.length) return;

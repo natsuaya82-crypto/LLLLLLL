@@ -364,6 +364,18 @@ function pfTabs(){
 }
 function vProfile(){
   var list=pfList();
+  /* Who this page is about, asked for when it is somebody else -- the same
+     shape vFeed() and vNotif() ask for theirs. Everything drawn below used to
+     come off a post of theirs, so a person with nothing on this phone was a
+     '?' with a Follow button. whoPull() asks once per handle and does nothing
+     at all on your own page. */
+  if(!pfMine()) whoPull(pfWho());
+  /* And whether you follow them, which is the one thing on somebody else's
+     card that is about YOU. On your own page it is the count under the name. */
+  meFollowPull();
+  /* And the count beside it, which is the other direction and had nobody
+     asking for it at all. 「フォローされてもフォロワー1って増えない」 */
+  if(pfMine()) meFollowerPull();
   return '<div class="view">'+
     /* The gear is yours and only yours: somebody else's page is arrived at
        from the search, so it gets a way back instead. */
@@ -805,7 +817,18 @@ function wldHidden(){ return !!world().hide; }
    flag is `hide`, so absent is public -- which is the default the owner chose,
    and a default that is the absence of a field is one no migration can get
    wrong. */
-function setWldHide(v){ world().hide=!!v; saveWld(); render(); }
+/* The switch, and the one thing about a language that is not a slice.
+   `hide` is this phone's copy; `language.published_at` on the server is what
+   actually decides whether anybody else may read the page (slice_read in
+   supabase/schema.sql). Both move together or the two disagree, and the
+   direction that disagrees badly is the server still saying published after
+   somebody has turned it off here. */
+function setWldHide(v){
+  world().hide=!!v;
+  saveWld();
+  netLangPublic(!v);
+  render();
+}
 /* Whether anybody may take the letters and the words away and use them.
    A different question from whether the page can be OPENED: somebody can
    read a language without being handed it. 「言語ページ公開と単語や文字の

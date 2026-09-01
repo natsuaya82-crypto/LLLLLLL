@@ -2,73 +2,28 @@
    Loaded by www/index.html as a plain script, in the order listed there.
    ES5 only: this runs in an old WKWebView. tools/es5-check.mjs enforces it.
 
-   Everything in this app used to begin with a blank. Which of a hundred and
-   eleven symbols does your language use. Which sounds is the word for "I"
-   made of. Those are questions somebody who has already made a language can
-   answer, and nobody else, so the app was only usable by people who did not
-   need it.
+   Everything in this app used to begin with a blank. Which sounds is the word
+   for "I" made of. That is a question somebody who has already made a language
+   can answer, and nobody else, so the app was only usable by people who did
+   not need it.
 
    Nothing here decides anything. It puts something in front of you that you
    can hear, and you say yes, or ask for another, or do it yourself. That is
    the only division of labour that works: the app does the part that is
    arithmetic, the person does the part that is taste.
 
-   AI_SEAM: when the hosted model is wired up it replaces the two generators
-   below and nothing else. The screens ask for a proposal and get a list back;
+   There was a second generator here, asSounds(), which proposed a whole sound
+   inventory out of five regions of the chart. Nothing asked it for a proposal:
+   its one caller was sndStart(), which put twelve of them straight into a new
+   language without anybody saying yes. A proposal nobody can refuse is not a
+   proposal, and what a language sounds like is not the app's to say -- see
+   CLAUDE.md § What the free plan is. Sounds arrive one at a time now, on the
+   letter somebody names, which is the only way they ever really arrived.
+
+   AI_SEAM: when the hosted model is wired up it replaces the generator below
+   and nothing else. The screens ask for a proposal and get a list back;
    where the list came from is not their business. Until then the list comes
    from here, which means it works with no network and costs nothing. */
-
-/* ---- the character a language can have -------------------------------
-   Not a style, a sound inventory. Each of these is a real region of the
-   chart: which places and manners the language uses at all. The names are
-   translated; the symbols are not, because a symbol is the same everywhere. */
-var AS_CHARS=[
-  {id:'soft',   c:['m','n','l','r','w','j','p','t','k','s','h'],
-                v:['a','i','u','e','o']},
-  {id:'hard',   c:['p','t','k','q','ʔ','tʃ','ʃ','x','ts','r'],
-                v:['a','i','u']},
-  {id:'flowing',c:['l','r','m','n','v','z','ʒ','j','w','ð','b','ɡ'],
-                v:['a','e','i','o','u']},
-  {id:'breathy',c:['h','f','θ','s','ʃ','x','ɸ','ħ','t','k'],
-                v:['a','ə','i','u','ɛ']},
-  {id:'plain',  c:['p','t','k','m','n','ŋ','s','l','w','h'],
-                v:['a','i','u','e','o']}
-];
-function asChar(id){
-  var i;
-  for(i=0;i<AS_CHARS.length;i++) if(AS_CHARS[i].id===id) return AS_CHARS[i];
-  return AS_CHARS[0];
-}
-/* A symbol that is not on the chart cannot be proposed: the voice is built
-   from the chart's own features, so a sound outside it could not be said. */
-function asReal(list){
-  var all=ipaAll(), out=[], i;
-  for(i=0;i<list.length;i++) if(all.indexOf(list[i])>=0) out.push(list[i]);
-  return out;
-}
-/* An inventory, proposed. Consonants and vowels are drawn separately so the
-   result is always sayable -- a language of nothing but consonants is not a
-   proposal, it is a bug. Asking again gives a different one. */
-function asSounds(id, n){
-  var ch=asChar(id), cs=asReal(ch.c), vs=asReal(ch.v), out=[], i, k;
-  n = n || 12;
-  var wantV = Math.max(3, Math.round(n*0.35)), wantC = Math.max(4, n-wantV);
-  var pool=cs.slice();
-  for(i=0;i<wantC && pool.length;i++){
-    k=Math.floor(Math.random()*pool.length);
-    out.push(pool[k]); pool.splice(k,1);
-  }
-  pool=vs.slice();
-  for(i=0;i<wantV && pool.length;i++){
-    k=Math.floor(Math.random()*pool.length);
-    out.push(pool[k]); pool.splice(k,1);
-  }
-  /* the order they are shown in is the order of the chart, not the order they
-     happened to be drawn in */
-  var all=ipaAll();
-  out.sort(function(a,b){ return all.indexOf(a)-all.indexOf(b); });
-  return out;
-}
 
 /* ---- words, proposed --------------------------------------------------
    Built out of the sounds this language already has, in the shapes it
