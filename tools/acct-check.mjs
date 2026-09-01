@@ -311,7 +311,10 @@ const R = await pg.evaluate(() => {
   const unwire = () => { netPost = realPost; netGet = realGet; };
   const askRow = () => {
     let got = '', refused = false;
-    netLangRow((sid) => { got = sid; }, () => { refused = true; });
+    /* netLangRow() takes the id now: it used to ask about whichever language
+       was OPEN, which is why a second language never reached the server.
+       This claim is about the open one, so it passes langId and says so. */
+    netLangRow(langId, (sid) => { got = sid; }, () => { refused = true; });
     return { got, refused };
   };
 
