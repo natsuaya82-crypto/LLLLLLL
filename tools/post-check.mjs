@@ -314,6 +314,47 @@ const R = await pg.evaluate(async () => {
   if (((host.re) || 0) < 0)
     fails.push('deleting a reply took a count below zero');
 
+  /* ---- 8b. today's prompt is read in the READER's language -----------
+     「今日のお題だけ、毎回その人の表示言語になるようにできないの？…今日のお題
+     だけは全員見れるようにしたい」 OWNER 2026-09-01.
+
+     An answer to the day's sentence carries the prompt's id and the words as
+     the WRITER's app said them -- so a Japanese writer's answer read 日本語 on
+     an English phone, which is the one sentence on the timeline that is not
+     the person's own writing and does not have to. The prompt is the app's
+     own text and the server holds all ten. Only today's, because DAY is one
+     row; anything older falls back to what the post carries, which is what it
+     always showed. */
+  DAY = { id: 'pr1', text: 'the sea', says: { en: 'the sea', ja: '海' } };
+  const prPost = { id: 'p_pr', mine: false, hd: 'aya', who: 'Aya',
+                   ln: 'kano', mn: '海', pr: 'pr1' };
+  const wasLang = SET.lang;
+  SET.lang = 'en'; const prEn = postSay(prPost);
+  SET.lang = 'ja'; const prJa = postSay(prPost);
+  /* and a post that answers no prompt is the writer's words, in every
+     language -- the freeze is not loosened by this */
+  const plainPost = { id: 'p_pl', mine: false, hd: 'aya', mn: '海' };
+  SET.lang = 'en'; const plEn = postSay(plainPost);
+  /* and an answer to a prompt this phone does not have falls back */
+  const oldPr = { id: 'p_old', mine: false, hd: 'aya', mn: '海', pr: 'pr0' };
+  SET.lang = 'en'; const oldEn = postSay(oldPr);
+  SET.lang = wasLang; DAY = null;
+  if (prEn !== 'the sea')
+    fails.push('an answer to today\'s prompt read on an English phone said ' +
+               JSON.stringify(prEn) + '. The prompt is the app\'s own sentence ' +
+               'and the server holds all ten of it; the one sentence on a post ' +
+               'that is not the writer\'s own writing is this one');
+  if (prJa !== '海')
+    fails.push('the same post on a Japanese phone said ' + JSON.stringify(prJa));
+  if (plEn !== '海')
+    fails.push('a post that answers NO prompt was rewritten too (' +
+               JSON.stringify(plEn) + '). Everything a post carries is frozen ' +
+               'and this is the one exception, not a door');
+  if (oldEn !== '海')
+    fails.push('an answer to a prompt this phone does not have came out ' +
+               JSON.stringify(oldEn) + ' rather than falling back to what the ' +
+               'post carries');
+
   /* ---- 9. a post does not have to have a line ----------------------- */
   /* 「文字無しでもポストできるようにできない？」 A photograph with somebody's
      own letters drawn onto it is most of what this app is for, and it could

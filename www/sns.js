@@ -731,6 +731,24 @@ function daySay(){
   var m=(DAY && DAY.says) || {};
   return String(m[uiLang()] || (DAY && DAY.text) || '');
 }
+/* THE SAME SENTENCE, FOR SOMEBODY ELSE'S POST. 「今日のお題だけ、毎回その人の
+   表示言語になるようにできないの？…今日のお題だけは全員見れるようにしたい」
+   OWNER 2026-09-01.
+
+   An answer to the day's sentence carries the PROMPT'S ID (`post.pr`, a
+   column with a key behind it) and the words as the writer's app said them.
+   The words are frozen, correctly -- everything on a post is. But this one
+   sentence is not the person's own writing: it is the app's, and the server
+   holds it in all ten languages, so a Japanese reader was reading a Japanese
+   writer's Japanese and an English reader was reading the same Japanese.
+
+   Only TODAY'S, because today's is the one this phone has: `DAY` is one row.
+   Anything older falls back to what the post carries, which is what it always
+   showed. Nothing is stored differently and nothing is thrown away. */
+function dayMap(id){
+  if(!id || !DAY || String(DAY.id)!==String(id)) return null;
+  return DAY.says || null;
+}
 /* Which day this sentence is FOR, drawn. 「日付ないし」
 
    `on_day` has been on the row since the column existed and no screen has

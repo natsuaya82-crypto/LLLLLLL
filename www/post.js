@@ -1543,7 +1543,12 @@ function postTr(mn, from, done){
    nobody can read is not a post. */
 function postSay(p){
   if(!p) return '';
-  var u=uiLang();
+  var u=uiLang(), d;
+  /* The day's sentence is the app's own words, not the writer's, and the
+     server holds it in all ten languages -- so an answer to today's prompt is
+     said in the language of whoever is reading it. www/sns.js § dayMap has
+     the whole of why, and why it is today's only. */
+  if(p.pr){ d=dayMap(p.pr); if(d && d[u]) return String(d[u]); }
   if(p.tr && typeof p.tr==='object' && p.tr[u]) return String(p.tr[u]);
   return String(p.mn||'');
 }
