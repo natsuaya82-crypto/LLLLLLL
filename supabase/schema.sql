@@ -1343,6 +1343,76 @@ language sql stable as $$
 $$;
 grant execute on function feed_hot(int, int) to anon, authenticated;
 
+-- THE PEOPLE YOU FOLLOW, AND WHAT THEY PASSED ON.
+--
+-- 「当たり前だけどsnsとして機能してない」 OWNER 2026-09-01.
+--
+-- The followed timeline was `author=in.(the people you follow)` -- posts they
+-- WROTE, and nothing else. A boost is a row in `react`, not a post, so
+-- **boosting did nothing to anybody's timeline**: the row went in, the count
+-- (once post_seen carried one) went up, and the post it pointed at was seen
+-- by nobody who was not already going to see it. That is not a boost; it is a
+-- private bookmark with a number on it.
+--
+-- Two questions in one because they are one list: what they wrote, and what
+-- they passed on, in the order the reader's day happened.
+--
+--   `by`      who passed it on, or null when they wrote it. A reader has to
+--             be told which of the two this is -- 「Aさんがリポスト」 is the
+--             whole difference between a post and a boost on a timeline, and
+--             a row that did not say would be the app deciding it did not
+--             matter
+--   `at_key`  what to sort and page by: WHEN IT REACHED YOU. For a boost that
+--             is when it was boosted, not when it was written -- a five year
+--             old post passed on this morning belongs at this morning, and
+--             sorting by created_at would file it in a place nobody will ever
+--             scroll to
+--
+-- `distinct on (id)` because following both the author and somebody who
+-- boosted them is ordinary, and the same post twice in one screen is not two
+-- pieces of news. The most recent arrival wins, which is what the reader is
+-- being told about.
+--
+-- Hidden posts are left out on BOTH sides. A boost of something taken down is
+-- not a way back to it.
+create or replace function feed_fo(lim int default 50,
+                                   before timestamptz default null)
+returns table (id uuid, author uuid, language uuid, prompt bigint,
+               reply_to uuid, created_at timestamptz, hidden_at timestamptz,
+               author_out boolean, body jsonb,
+               likes bigint, boosts bigint, replies bigint,
+               i_like boolean, i_boost boolean,
+               by uuid, at_key timestamptz)
+language sql stable as $$
+  select z.id, z.author, z.language, z.prompt, z.reply_to, z.created_at,
+         z.hidden_at, z.author_out, z.body,
+         z.likes, z.boosts, z.replies, z.i_like, z.i_boost,
+         z.by, z.at_key
+    from (
+      select distinct on (q.id) q.*
+        from (
+          select v.*, null::uuid as by, v.created_at as at_key
+            from post_seen v
+           where v.hidden_at is null
+             and v.author in (select f.followed from follow f
+                               where f.follower = auth.uid())
+             and (before is null or v.created_at < before)
+          union all
+          select v.*, r.actor as by, r.created_at as at_key
+            from react r join post_seen v on v.id = r.post
+           where r.kind = 'boost'
+             and v.hidden_at is null
+             and r.actor in (select f.followed from follow f
+                              where f.follower = auth.uid())
+             and (before is null or r.created_at < before)
+        ) q
+       order by q.id, q.at_key desc
+    ) z
+   order by z.at_key desc
+   limit lim
+$$;
+grant execute on function feed_fo(int, timestamptz) to anon, authenticated;
+
 -- ---------------------------------------------------------------------------
 -- Leaving
 --

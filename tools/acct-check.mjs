@@ -661,23 +661,21 @@ const R = await pg.evaluate(() => {
      feed_hot() は並べるために数えていて、その数を捨てていました。 */
   start();
   netOut(); arrive(A);
-  let feedPath = '';
-  netGet = (path, ok) => {
-    if (path.indexOf('/rest/v1/follow?select=followed') === 0)
-      return ok([{ followed: B }]);
-    if (path.indexOf('/rest/v1/post_seen') === 0) feedPath = path;
-    if (path.indexOf('/rest/v1/post_seen') === 0)
-      return ok([{ id: 'p1', author: B, created_at: '2026-08-30T00:00:00Z',
-                   body: { ln: 'むこうの投稿' }, likes: 7, boosts: 2,
-                   replies: 3, i_like: true, i_boost: false }]);
-    return ok([]);
+  const realSend2 = netSend;
+  let feedCall = '';
+  netGet = (path, ok) => ok([]);
+  netSend = (method, path, body, tok, ok2) => {
+    feedCall = path;
+    ok2([{ id: 'p1', author: B, created_at: '2026-08-30T00:00:00Z',
+           body: { ln: 'むこうの投稿' }, likes: 7, boosts: 2,
+           replies: 3, i_like: true, i_boost: false }]);
   };
   let feed = null;
   netFeed('fo', (rows) => { feed = rows; }, () => {});
-  netGet = realGet;
+  netGet = realGet; netSend = realSend2;
 
-  if (feedPath.indexOf('likes') < 0) no('23: タイムラインを数抜きで訊いている');
-  if (feedPath.indexOf('i_like') < 0) no('23: 自分がしたかを訊いていない');
+  if (feedCall.indexOf('feed_fo') < 0)
+    no('23: フォロー中を feed_fo に訊いていない — ' + feedCall);
   if (!feed || !feed.length) no('23: 投稿が返ってこなかった');
   else {
     const p1 = feed[0];
@@ -693,17 +691,14 @@ const R = await pg.evaluate(() => {
      投稿が「0 いいね」を名乗ると、それは言われていないことを言っています。 */
   start();
   netOut(); arrive(A);
-  netGet = (path, ok) => {
-    if (path.indexOf('/rest/v1/follow?select=followed') === 0)
-      return ok([{ followed: B }]);
-    if (path.indexOf('/rest/v1/post_seen') === 0)
-      return ok([{ id: 'p2', author: B, created_at: '2026-08-30T00:00:00Z',
-                   body: { ln: '数の無い行' } }]);
-    return ok([]);
+  netGet = (path, ok) => ok([]);
+  netSend = (method, path, body, tok, ok2) => {
+    ok2([{ id: 'p2', author: B, created_at: '2026-08-30T00:00:00Z',
+           body: { ln: '数の無い行' } }]);
   };
   let feed2 = null;
   netFeed('fo', (rows) => { feed2 = rows; }, () => {});
-  netGet = realGet;
+  netGet = realGet; netSend = realSend2;
   if (feed2 && feed2.length && feed2[0].nlike !== undefined)
     no('23: サーバが言っていないのに数を名乗っている — ' + feed2[0].nlike);
   say('23: 言われていない数は、0 ではなく無い');
@@ -752,6 +747,53 @@ const R = await pg.evaluate(() => {
   if (w5 && w5.fo !== undefined)
     no('24: サーバが言っていないのにフォロー数を名乗っている — ' + w5.fo);
   say('24: 言われていないフォロー数は、0 ではなく無い');
+
+  /* ---- 25. 人がリポストしたものが、タイムラインに出る ------------------
+     リポストは react の行で、投稿ではありません。フォロー中のタイムラインは
+     `author = フォローしている人`だったので、**リポストは誰のタイムラインにも
+     何もしていませんでした** ── 行は入り、数は増え、指している投稿は、
+     もともと見る人以外の誰にも届かない。それはリポストではありません。 */
+  start();
+  netOut(); arrive(A);
+  let sentBody = null, sentPath = '';
+  netGet = (path, ok) => ok([]);
+  netSend = (method, path, body, tok, ok2) => {
+    sentPath = path; sentBody = body;
+    ok2([{ id: 'p9', author: 'someone-else', created_at: '2021-01-01T00:00:00Z',
+           body: { ln: '五年前の投稿' }, likes: 0, boosts: 1, replies: 0,
+           i_like: false, i_boost: false,
+           by: B, at_key: '2026-09-01T06:00:00Z' }]);
+  };
+  let feed3 = null;
+  netFeed('fo', (rows) => { feed3 = rows; }, () => {});
+  netGet = realGet; netSend = realSend2;
+
+  if (sentPath.indexOf('feed_fo') < 0) no('25: feed_fo を呼んでいない');
+  if (!feed3 || !feed3.length) no('25: 投稿が返ってこなかった');
+  else {
+    const p9 = feed3[0];
+    if (p9.by !== B) no('25: 誰がリポストしたかが載らない — ' + p9.by);
+    if (!p9.arrived) no('25: 届いた時刻が載らない');
+    if (p9.arrived <= p9.at)
+      no('25: 五年前の投稿が、書かれた時刻で並ぶ ── 誰もそこまでスクロールしない');
+  }
+  say('25: 人がリポストしたものが、届いた時刻で、誰が回したか付きで出る');
+
+  /* そして自分で書いた投稿には by が付きません ── 「誰も回していない」と
+     「この一覧はその問いに答えない」は別で、null を名乗ると発明になります。 */
+  start();
+  netOut(); arrive(A);
+  netGet = (path, ok) => ok([]);
+  netSend = (method, path, body, tok, ok2) => {
+    ok2([{ id: 'p10', author: B, created_at: '2026-09-01T00:00:00Z',
+           body: { ln: '本人が書いた' }, by: null }]);
+  };
+  let feed4 = null;
+  netFeed('fo', (rows) => { feed4 = rows; }, () => {});
+  netGet = realGet; netSend = realSend2;
+  if (feed4 && feed4.length && feed4[0].by !== undefined)
+    no('25: 本人が書いた投稿に by が付いている — ' + JSON.stringify(feed4[0].by));
+  say('25: 本人が書いた投稿には、回した人が付かない');
 
   return out;
 });

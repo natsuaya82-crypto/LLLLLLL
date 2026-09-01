@@ -1005,6 +1005,13 @@ function netRow(r){
   if(r.replies!==undefined && r.replies!==null) p.nreply=Number(r.replies)||0;
   if(r.i_like!==undefined)  p.ilike=!!r.i_like;
   if(r.i_boost!==undefined) p.iboost=!!r.i_boost;
+  /* WHO PASSED IT ON, and when it reached you. Only feed_fo() says either --
+     a post from any other list has no `by` and is not a boost, which is why
+     this is absent rather than null: 「nobody passed this on」 and 「this list
+     does not answer that question」 are different, and a row claiming the
+     first when it means the second is the app inventing a fact. */
+  if(r.by) p.by=String(r.by);
+  if(r.at_key) p.arrived=Date.parse(r.at_key) || p.at;
   return p;
 }
 function netFeed(which, ok, bad, more){
@@ -1080,17 +1087,40 @@ function netFeed(which, ok, bad, more){
     return;
   }
   if(!netSignedIn()){ ok(null); return; }
-  /* Two requests and not a join, because there is no foreign key from a post
-     to a follow and PostgREST will not invent one. The follow list is small
-     -- it is people, not posts -- and it is asked for first. */
-  netGet('/rest/v1/follow?select=followed&follower=eq.'+encodeURIComponent(SESS.uid),
+  /* WHAT THEY WROTE AND WHAT THEY PASSED ON, which is one list and is now one
+     question -- feed_fo() in supabase/schema.sql.
+
+     It was `author=in.(the people you follow)`: posts they WROTE and nothing
+     else. A boost is a row in `react` and not a post, so **boosting did
+     nothing to anybody's timeline** -- the row went in, the number went up,
+     and the post it pointed at reached nobody who was not already going to
+     see it. That is not a boost.
+
+     The follow list is no longer asked for here: the server has it and
+     auth.uid() is who this is, so a phone that fetched its own follow list in
+     order to hand it back to the same server was a round trip saying nothing.
+
+     `more` is still a keyset and is now `at_key` -- WHEN IT REACHED YOU,
+     which is the boost's time for a boost. Sorting a passed-on post by when
+     it was written would file a five year old thing where nobody will scroll. */
+  netSend('POST', '/rest/v1/rpc/feed_fo',
+          {lim:NET_PAGE, before:more? String(more) : null}, SESS.at,
     function(d){
-      var ids=[], i;
-      for(i=0;i<(d||[]).length;i++) if(d[i] && d[i].followed) ids.push(d[i].followed);
-      /* Following nobody is an answer, not a failure: an empty timeline is
-         what "you follow nobody" looks like, and snsNoneFo() says so. */
-      if(!ids.length){ ok([]); return; }
-      pull('&author=in.('+ids.join(',')+')');
+      /* Blocked accounts come out here rather than in the question, the same
+         way feed_hot()'s do: one place that knows what a block does to a
+         list. A boost BY somebody blocked goes too, not only a post by them
+         -- being passed something on by somebody you blocked is still hearing
+         from them. */
+      netBlocked(function(bl){
+        var out=[], i, skip={}, r;
+        for(i=0;i<bl.length;i++) skip[bl[i]]=1;
+        for(i=0;i<(d||[]).length;i++){
+          r=d[i]||{};
+          if(skip[r.author] || (r.by && skip[r.by])) continue;
+          out.push(netRow(r));
+        }
+        ok(out);
+      });
     }, bad);
 }
 /* WHO THIS ACCOUNT FOLLOWS, as handles.

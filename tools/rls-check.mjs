@@ -447,6 +447,44 @@ const CASES = [
   ['B takes B\u2019s own boost back',          'ok',     B, 0,
     `delete from react where actor='${B}' and kind='boost'`],
 
+  /* --- what the people you follow passed on ------------------------------
+     A boost was a row in `react` and did nothing to anybody's timeline: the
+     followed feed was `author = the people you follow` and a boost is not a
+     post. feed_fo() is the two questions as one list.
+
+     A follows B here; B has boosted A's post P further up (and taken it back
+     one line later, so it is put on again for this). */
+  ['A follows B for the timeline',            'ok',     A, 0,
+    `insert into follow(follower,followed) values ('${A}','${B}')`],
+  ['B boosts A\u2019s post',                  'ok',     B, 0,
+    `insert into react(post,actor,kind) values ('${P}','${B}','boost')`],
+  ['what B passed on reaches A',              'ok',     A, 0,
+    `select 1 from feed_fo(50, null) where id='${P}'`],
+  ['and it says who passed it on',            'ok',     A, 0,
+    `select 1 from feed_fo(50, null) where id='${P}' and by='${B}'`],
+  /* Dated by the BOOST and not by the post -- a five year old thing passed on
+     this morning belongs at this morning. Asserted as equality against the
+     react row, because everything in this file runs in ONE transaction and
+     now() is transaction time: the post and the boost share a timestamp here,
+     so a check written as `at_key > the post's created_at` cannot tell the
+     two apart and was green for the wrong reason. What is held is that
+     at_key IS the boost's row. */
+  ['and it is dated by the passing on',       'ok',     A, 0,
+    `select 1 from feed_fo(50, null) f
+       where f.id='${P}' and f.at_key = (select r.created_at from react r
+                                          where r.post='${P}' and r.actor='${B}'
+                                            and r.kind='boost')`],
+  /* Somebody who follows nobody is handed nobody's timeline, which is what an
+     empty following feed IS. */
+  ['C follows nobody and gets nothing',       'denied', C, 0,
+    `select 1 from feed_fo(50, null)`],
+  ['B takes the boost back',                  'ok',     B, 0,
+    `delete from react where post='${P}' and actor='${B}' and kind='boost'`],
+  ['and it stops reaching A',                 'denied', A, 0,
+    `select 1 from feed_fo(50, null) where id='${P}' and by='${B}'`],
+  ['A unfollows B again',                     'ok',     A, 0,
+    `delete from follow where follower='${A}' and followed='${B}'`],
+
   /* --- and the two numbers a profile is made of --------------------------
      They were 0 on every page for everybody: `follow` was read back only
      about YOURSELF. profile_seen counts them beside the row.
