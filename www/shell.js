@@ -1093,40 +1093,25 @@ function swtHTML(on){
 }
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 var tt;
-/* ---- OVER the screen, not instead of it -------------------------------
-   「正直自前のpopがいいんだけどな。iPhoneのやつ使ってるsnsないしな」
-   「画面の上に重なる本当のポップ」 OWNER 2026-09-01.
+/* ---- the ceiling, said where it is met ---------------------------------
+   「+を押したらそのまま課金のポップが出るだけでしょ？」 OWNER 2026-09-01.
 
-   The first try was openForm(), and openForm() is `go('form', key)` -- a page
-   you travel to. That is not a popup and the owner said so. This one does not
-   navigate: the screen underneath stays exactly where it was, and dismissing
-   it leaves somebody standing where they pressed.
+   THIS IS iOS's OWN DIALOG AND NOT A SHEET. Two goes at it were wrong and
+   both are worth writing down, because the second looked right:
 
-   NO NEW CSS AND NO NEW CLASS. `#sbg` and `#sheet` are already in
-   www/index.html and already in the stylesheet -- the app's own sheet, left
-   behind when the forms became screens. Rule 18 is about what is ADDED; this
-   adds nothing, it fills what is there. A sheet is only banned when it stands
-   in for a SCREEN you would otherwise have gone to (CLAUDE.md § Shape), and
-   the plans screen is still a screen: this is the question before it.
+     openForm('up', …)   is `go('form', key)` -- a page you travel to.
+                         「それはポップじゃなくてページ遷移やろ」
+     #sbg / #sheet       is the app's own sheet, and it slides up from the
+                         bottom, which is the third of the four shapes the
+                         owner banned outright: 「ページ遷移型にせず下から
+                         ひょいって出すやつ」. Reusing markup that was already
+                         there did not make it a different shape.
 
-   One line and one button, which is what is left when a box is not allowed. */
-function upSheet(){
-  var bg=document.getElementById('sbg'), sh=document.getElementById('sheet');
-  if(!bg || !sh) return;
-  sh.innerHTML='<h3>'+esc(t('up.cta'))+'</h3>'+
-    '<div class="note">'+esc(t('up.need'))+'</div>'+
-    '<button class="btn ghost" style="width:100%;margin:14px 0 4px"' +
-      DO('goPlans') + '>'+esc(t('up.cta'))+'</button>';
-  bg.classList.add('on'); sh.classList.add('on');
-}
-/* Taken down by: the scrim, the plans button, and any navigation. The last is
-   why it is called from render() -- a popup that survives the screen under it
-   changing is a popup nobody can get rid of. */
-function upSheetOff(){
-  var bg=document.getElementById('sbg'), sh=document.getElementById('sheet');
-  if(bg) bg.classList.remove('on');
-  if(sh) sh.classList.remove('on');
-}
+   So it is confirm(), which is what capStop() has always used for the word
+   ceiling, and it is the same argument: the plans screen is one tap away and
+   this has to be answerable with "no"; iOS draws it, so it is not a shape
+   this app chose; and nobody is moved off the screen they are standing on
+   unless they say yes. 「システム標準（iOS/Android）を最優先」 */
 function toast(m){
   var el=document.getElementById('toast'); el.textContent=m; el.classList.add('on');
   clearTimeout(tt); tt=setTimeout(function(){el.classList.remove('on');},1900);

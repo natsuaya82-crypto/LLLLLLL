@@ -222,10 +222,6 @@ function formMount(){ if(FORM && FORM.mount) FORM.mount(); }
 /* Kept because a dozen save buttons call it. Closing a form is leaving a page. */
 function closeSheet(e){
   if(e && e.target && e.target.id!=='sbg') return;
-  /* The upgrade popup rides on this same scrim, and it is not a route: taking
-     it down is all there is to do. Pressing the dark is the "no". */
-  var bg=document.getElementById('sbg');
-  if(bg && bg.className.indexOf('on')>=0){ upSheetOff(); return; }
   if(here().r==='form') back();
 }
 function pkSwitch(id){

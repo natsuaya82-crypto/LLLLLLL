@@ -945,9 +945,6 @@ function capStop(add){
    one line of text and one `.btn.ghost`, which is what CLAUDE.md § 18 leaves
    when a box is not allowed. Pressing the back arrow is the "no".
 
-   upSheet() is www/shell.js's -- the shell is where a thing that sits OVER a
-   screen belongs, and this file holds no DOM.
-
    IT TAKES THE ANSWER AND NOT THE NAME. `can()` may only be given a literal
    (CLAUDE.md § 5, and dead-check refuses anything else) -- a capability read
    from a variable cannot be held by any check and a wrong one reads as free
@@ -955,7 +952,7 @@ function capStop(add){
    name stays where a check can see it. */
 function upStop(ok){
   if(ok) return false;
-  upSheet();
+  if(confirm(t('up.need')+'\n\n'+t('up.cta'))) go('plans');
   return true;
 }
 
