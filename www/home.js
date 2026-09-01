@@ -1298,7 +1298,12 @@ function wldSeen(lid){ return WLD_HAVE[String(lid||'')] || null; }
    「言語ページ公開と単語や文字のdl可能は別だし」 */
 function vAbout(){
   var a=String(here().a||'');
-  return a? wldSeenHTML(a) : wldPage(false);
+  if(!a) return wldPage(false);
+  /* Both: the row says the language is published and gives it its name, and
+     the slices are what the page is made of. */
+  wldSeenPull(a);
+  wldSlicesPull(a);
+  return wldPage(false, wldSeenOf(a));
 }
 /* Named for the world and not for the view. The checks find a screen by its
    NAME -- a global that is `v` plus a capital -- so a helper named that way is
@@ -1342,19 +1347,30 @@ function wldSliceOf(m, kind, fb){
   try{ v=JSON.parse(o.body); }catch(e){ return fb; }
   return (v===null || v===undefined)? fb : v;
 }
-/* SOMEBODY ELSE'S LANGUAGE AS A BUNDLE, answering the same six questions
+/* SOMEBODY ELSE'S LANGUAGE AS A BUNDLE, answering the same seven questions
    wldOpen() answers -- so the SAME page draws it. 「このwikiのような感じに
    するんじゃないの？」 OWNER 2026-09-01: not a second screen, this one.
 
-   Not one of the six reaches the open language. `ws` answers with nothing,
+   It always answers. It used to be NULL while the two answers were out, and
+   whoever asked then had to draw the waiting page itself -- which is how this
+   route came to have two functions drawing it. `here` is the seventh question
+   and it is the whole of that: your own language is always here, somebody
+   else's is here once its slices are, and the one page decides what a page
+   that is not here yet looks like.
+
+   Not one of the seven reaches the open language. `ws` answers with nothing,
    because the writing system is `SET.wsys` -- the PERSON's settings, not the
    language's -- so it is on no server and there is nothing to say; the field
    is left off rather than filled in with mine. The keyboard is the same shape
    of gap and is in wldPage()'s own comment. */
 function wldSeenOf(lid){
   var m=WLDS_HAVE[String(lid||'')], seen=wldSeen(lid);
-  if(!m) return null;
   return {
+    /* Nothing while the answers are out, and nothing when the answer was no --
+       an unpublished language is one language_seen and slice_read both refuse,
+       and a page saying a language is empty would be saying something it was
+       never told. */
+    here:    function(){ return !!m; },
     w:       function(){ return wldSliceOf(m, 'wld', {}); },
     letters: function(){ return wldSliceOf(m, 'letters', []); },
     name:    function(){ return seen? seen.name : ''; },
@@ -1370,20 +1386,6 @@ function wldSeenOf(lid){
     kbname:  function(){ return ''; },
     kblay:   function(){ return null; }
   };
-}
-function wldSeenHTML(lid){
-  var L;
-  /* Both: the row says the language is published and gives it its name, and
-     the slices are what the page is made of. */
-  wldSeenPull(lid);
-  wldSlicesPull(lid);
-  L=wldSeenOf(lid);
-  /* Nothing while the answers are out, and nothing when the answer was no --
-     an unpublished language is one language_seen and slice_read both refuse,
-     and a page saying a language is empty would be saying something it was
-     never told. */
-  if(!L) return '<div class="view">'+navTop('')+'<div class="body"></div></div>';
-  return wldPage(false, L);
 }
 function vWorld(){
   /* The note becomes a row of the overview the first time this is opened.
@@ -1402,8 +1404,8 @@ function vWorld(){
    the top and MY language underneath, which is why the door was closed
    (「この言語についてで人のをタップしても自分のが出る」 OWNER).
 
-   Six questions, so a reader's copy can answer them from what came off the
-   server instead. **Functions and not values**, because three of the six are
+   Seven questions, so a reader's copy can answer them from what came off the
+   server instead. **Functions and not values**, because three of the seven are
    only asked inside branches -- the writing system on two faces, the keyboard
    in its own section -- and turning those into eager reads would ask the
    keyboard about every article that has no keyboard section on it. Lazy keeps
@@ -1417,6 +1419,8 @@ function vWorld(){
    render byte-for-byte identically before and after. */
 function wldOpen(){
   return {
+    /* Always. The one in front of you needs nothing off a network. */
+    here:    function(){ return true; },
     w:       function(){ return world(); },
     letters: function(){ return LETTERS; },
     name:    function(){ return langName; },
@@ -1437,9 +1441,18 @@ function wldOpen(){
   };
 }
 function wldPage(ed, L){
+  var w, mine, drawn, body='', dls='', done, i;
   L=L||wldOpen();
-  var w=L.w(), mine=L.mine(), drawn=L.letters().filter(ltHasShape),
-      body='', dls='', done, i;
+  /* NOT HERE YET, and that is a face of this page rather than a page of its
+     own. Somebody else's article arrives in two answers off the network, and
+     this is what stands while they are out -- or when the answer was no.
+
+     It is drawn HERE and by nothing else, and that is rule 21: this route had
+     a second function on it for exactly this line, because the caller was
+     handed a null bundle and had to decide what a page with no language on it
+     looked like. Nobody decides that but the page. */
+  if(!L.here()) return '<div class="view">'+navTop('')+'<div class="body"></div></div>';
+  w=L.w(); mine=L.mine(); drawn=L.letters().filter(ltHasShape);
   /* The article names its subject: the bar says which SCREEN this is, and the
      page has to say what the article is ABOUT. The name of a language is not
      written here -- it is the language's own, and it is set where a language
