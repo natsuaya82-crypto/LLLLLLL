@@ -110,3 +110,4 @@
 .vodot | border-radius
 .whfo | border
 .whfo | border-radius
+.pop | border-radius
