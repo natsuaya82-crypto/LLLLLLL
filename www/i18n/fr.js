@@ -410,6 +410,7 @@ defLang('fr', (function(){
       "script.set"                : "Choisir",
       "up.cta"                    : "Passer à Plus",
       "up.need"                   : "Ceci fait partie d'une formule payante.",
+      "pop.no"                  : "Fermer",
       "ws.arabic"                 : "Arabe",
       "ws.armenian"               : "Arménien",
       "ws.cyrillic"               : "Cyrillique",

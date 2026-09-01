@@ -278,6 +278,7 @@ defLang('ja', (function(){
       "script.set"                : "これにする",
       "up.cta"                    : "アップグレード",
       "up.need"                   : "これは有料プランの機能です。",
+      "pop.no"                  : "閉じる",
       "ws.arabic"                 : "アラビア文字",
       "ws.armenian"               : "アルメニア文字",
       "ws.cyrillic"               : "キリル文字",

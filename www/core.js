@@ -697,7 +697,7 @@ function langCount(){
 function langStop(){
   if(langCount()<langCap()) return false;
   if(langCap()<PRO_LANGS){
-    if(confirm(t('langs.full', langCap())+'\n\n'+t('up.cta'))) go('plans');
+    popAsk(t('langs.full', langCap()), function(){ go('plans'); });
   }
   else alert(t('langs.full', langCap()));
   return true;
@@ -907,7 +907,7 @@ function capOK(add){
    A new key here would have been one sentence in English and nine holes. */
 function capStop(add){
   if(capOK(add)) return false;
-  if(confirm(t('toast.cap', wordCap())+'\n\n'+t('up.cta'))) go('plans');
+  popAsk(t('toast.cap', wordCap()), function(){ go('plans'); });
   return true;
 }
 /* THE SAME THING FOR A CAPABILITY, AND IT IS WHY EVERY PLAN SEES ONE SCREEN.
@@ -952,7 +952,7 @@ function capStop(add){
    name stays where a check can see it. */
 function upStop(ok){
   if(ok) return false;
-  if(confirm(t('up.need')+'\n\n'+t('up.cta'))) go('plans');
+  popAsk(t('up.need'), function(){ go('plans'); });
   return true;
 }
 

@@ -322,6 +322,7 @@ defLang('es', (function(){
       "script.set"                : "Usar",
       "up.cta"                    : "Mejorar",
       "up.need"                   : "Esto está en un plan de pago.",
+      "pop.no"                  : "Cerrar",
       "ws.arabic"                 : "Árabe",
       "ws.armenian"               : "Armenio",
       "ws.cyrillic"               : "Cirílico",

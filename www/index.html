@@ -2694,6 +2694,27 @@ a.set{text-decoration:none}
 .btn.ghost:active{opacity:.55}
 .sbg{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:.24s}
 .sbg.on{opacity:1;pointer-events:auto}
+/* THE POPUP, and it is the app's own. 「正直自前のpopがいいんだけどな。
+   iPhoneのやつ使ってるsnsないしな」「ポップは角丸でいいから」 OWNER 2026-09-01.
+
+   Three shapes were made and thrown away in one afternoon before this one:
+   a page you travel to (openForm, which is go('form', …)), the bottom sheet
+   (.sheet below -- banned by 「ページ遷移型にせず下からひょいって出すやつ」),
+   and iOS's own confirm() (banned by 「標準は使わねえって言ってるだろこれも
+   禁止や」). What is left is this: in the middle of the screen, over the
+   scrim, not sliding up from anywhere.
+
+   The corner is here because the owner put it here, in those words, and that
+   is the whole of the exception -- it goes in tools/box-baseline.txt as one
+   line and buys nothing else a radius. */
+.pop{position:fixed;left:30px;right:30px;top:50%;transform:translateY(-50%) scale(.96);
+     z-index:41;max-width:330px;margin:0 auto;padding:28px 24px;text-align:center;
+     background:var(--pane);border-radius:16px;opacity:0;pointer-events:none;
+     transition:.18s cubic-bezier(.2,.8,.2,1)}
+.pop.on{opacity:1;transform:translateY(-50%) scale(1);pointer-events:auto}
+.pop .popm{font-size:1.05rem;line-height:1.65;color:var(--tx)}
+.pop .btn{display:block;width:100%;margin-top:20px;font-size:1.05rem}
+.pop .btn.popno{margin-top:2px;color:var(--txm)}
 .sheet{position:fixed;left:0;right:0;bottom:0;z-index:41;max-width:480px;margin:0 auto;background:var(--pane);
        border-top:1px solid var(--line);border-radius:22px 22px 0 0;
        padding:8px 22px calc(env(safe-area-inset-bottom,0) + 20px);transform:translateY(101%);
@@ -3326,6 +3347,7 @@ textarea.ntbody.grow{min-height:0;height:auto;overflow:hidden;resize:none}
 
 <div class="sbg" id="sbg" onclick="closeSheet(event)">
   <div class="sheet" id="sheet" onclick="event.stopPropagation()"></div>
+  <div class="pop" id="pop" onclick="event.stopPropagation()"></div>
 </div>
 <div class="toast" id="toast"></div>
 <script>

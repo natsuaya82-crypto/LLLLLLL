@@ -365,6 +365,7 @@ defLang('ru', (function(){
       "script.set"                : "Взять",
       "up.cta"                    : "Перейти на Plus",
       "up.need"                   : "Это доступно на платном тарифе.",
+      "pop.no"                  : "Закрыть",
       "ws.arabic"                 : "Арабское",
       "ws.armenian"               : "Армянское",
       "ws.cyrillic"               : "Кириллица",

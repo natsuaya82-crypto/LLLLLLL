@@ -573,7 +573,7 @@ function kbAdd(pat){
      Pro never sees it: kbCap() is Infinity there, so kbRoomKb() cannot be
      false, and there is no plan above to be offered. */
   if(!kbRoomKb()){
-    if(confirm(t('kb.full', kbCap())+'\n\n'+t('up.cta'))) go('plans');
+    popAsk(t('kb.full', kbCap()), function(){ go('plans'); });
     return;
   }
   KB.kbs.push({nm:'', pat:pat, lay:kbBlank(kbPatLay(pat))});

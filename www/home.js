@@ -222,6 +222,9 @@ function formMount(){ if(FORM && FORM.mount) FORM.mount(); }
 /* Kept because a dozen save buttons call it. Closing a form is leaving a page. */
 function closeSheet(e){
   if(e && e.target && e.target.id!=='sbg') return;
+  /* The popup rides on this same scrim and is not a route: taking it down is
+     all there is to do. Pressing the dark is the "no". */
+  if(popOn()){ popOff(); return; }
   if(here().r==='form') back();
 }
 function pkSwitch(id){

@@ -91,6 +91,8 @@ act('go', go);
 act('goIn', goIn);
 act('openHelp', openHelp);
 act('goPlans', goPlans);
+act('popYes', popYes);
+act('popOff', popOff);
 act('goTab', goTab);
 act('kbAddLay', kbAddLay);
 act('kbDropLay', kbDropLay);

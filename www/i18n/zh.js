@@ -370,6 +370,7 @@ defLang('zh', (function(){
       "script.set"                : "使用",
       "up.cta"                    : "升级",
       "up.need"                   : "这是付费方案的功能。",
+      "pop.no"                  : "关闭",
       "ws.arabic"                 : "阿拉伯字母",
       "ws.armenian"               : "亚美尼亚字母",
       "ws.cyrillic"               : "西里尔字母",

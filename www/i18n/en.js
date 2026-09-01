@@ -262,6 +262,7 @@ defLang('en', (function(){
       "script.set"                : "Use",
       "up.cta"                    : "Upgrade",
       "up.need"                   : "This is on a paid plan.",
+      "pop.no"                  : "Close",
       "ws.arabic"                 : "Arabic",
       "ws.armenian"               : "Armenian",
       "ws.cyrillic"               : "Cyrillic",

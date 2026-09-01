@@ -236,10 +236,23 @@ function stAll(){
   }
   for(i=0;i<STAGES_IF.length;i++)
     if(stUsed(STAGES_IF[i].id)) out.push(STAGES_IF[i]);
-  for(i=0;i<STG.extra.length;i++) out.push({id:STG.extra[i].id, slots:STG.extra[i].slots||[],
-                                           pos:'x', feats:[], own:STG.extra[i]});
+  /* The stages somebody added, and only while the plan that added them is
+     paid for. 「課金で追加した機能は無料になったら全部隠れる」 OWNER
+     2026-09-01 -- the same as the words past a hundred and the letters past
+     the free alphabet: hidden, never removed. STG.extra is untouched, it is
+     in storage, in the backup and on the server, and paying again brings
+     every one of them straight back.
+
+     The stages the book always has are not this: they are what a free grammar
+     IS, and they stay. */
+  if(can('gram'))
+    for(i=0;i<STG.extra.length;i++) out.push({id:STG.extra[i].id, slots:STG.extra[i].slots||[],
+                                             pos:'x', feats:[], own:STG.extra[i]});
   return out;
 }
+/* How many are not on screen. The foot of the list says so, the same way the
+   dictionary and the alphabet do. */
+function stHidden(){ return can('gram')? 0 : (STG.extra? STG.extra.length : 0); }
 /* Every argument the `gram` route takes -- the stages, and the chapters of
    the chapter that is being rebuilt. Both walks ask THIS rather than keeping
    a list of their own: tools/act-check.mjs's walkArg and tools/i18n-check.mjs's
@@ -517,6 +530,12 @@ function stRow(p, n){
    形容詞, 場所 are each a chapter of both groups, invisible while one list
    was hidden inside the other. Which group a row is in is the whole of what
    tells them apart, so it has to be on the screen. */
+function stHidHTML(){
+  var n=stHidden();
+  if(!n) return '';
+  return '<button class="capwarn" style="margin:14px 0 0"' + DO('goPlans') + '>'+
+    t('cap.hid', n)+'<span class="capgo">'+t('up.cta')+ICON_GO+'</span></button>';
+}
 function stListHTML(){
   var g=g2Chaps(), a=stAll(), i, n=0, grow='', srow='';
   for(i=0;i<g.length;i++) grow+=g2ChapRow(g[i], ++n);
@@ -531,6 +550,7 @@ function stListHTML(){
     '<div class="stlist">'+grow+'</div>'+
     '<div class="sec">'+esc(t('stg.grp.chap'))+'</div>'+
     '<div class="stlist">'+srow+'</div>'+
+    stHidHTML()+
     /* The fifteen are free and are the whole of the chapter there. They ask
        for forty-six words between them, which is most of what a free
        dictionary is for; a stage of your own is the sixteenth and past that

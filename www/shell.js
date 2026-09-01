@@ -1093,6 +1093,53 @@ function swtHTML(on){
 }
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 var tt;
+/* ---- THE POPUP, and there is one -------------------------------------
+   「正直自前のpopがいいんだけどな。iPhoneのやつ使ってるsnsないしな」
+   「ポップは角丸でいいから」 OWNER 2026-09-01.
+
+   Everything the app asks or says over a screen comes through here: the paid
+   doors and the "are you sure" before something goes. One shape, one place,
+   and the caller supplies the words -- 「ポップの見た目決めてその中の文字だけ
+   入れ替えればすぐできるでしょ」.
+
+   Three shapes were made and thrown away before this one, and they are worth
+   naming so a fourth is not invented: openForm() is `go('form', key)`, a page
+   you travel to; #sheet slides up from the bottom, which is the third of the
+   four shapes banned outright; confirm() is iOS's own, banned on 2026-09-01.
+   This one sits in the middle of the screen, over the scrim, and does not
+   navigate -- the screen underneath is still there when it goes.
+
+   `yes` is what happens if they say yes. There is no callback for no: no is
+   the popup going away and nothing having happened, which is what no means. */
+var POP_YES=null;
+function popAsk(msg, yes, yesWord, noWord){
+  var el=document.getElementById('pop'), bg=document.getElementById('sbg');
+  if(!el || !bg){ /* no DOM to draw on: do nothing rather than act unasked */
+    return; }
+  POP_YES=yes||null;
+  el.innerHTML='<div class="popm">'+esc(msg)+'</div>'+
+    '<button class="btn ghost"' + DO('popYes') + '>'+esc(yesWord||t('up.cta'))+'</button>'+
+    '<button class="btn ghost popno"' + DO('popOff') + '>'+esc(noWord||t('pop.no'))+'</button>';
+  bg.classList.add('on'); el.classList.add('on');
+}
+function popYes(){
+  var f=POP_YES;
+  popOff();
+  if(f) f();
+}
+/* Taken down by the yes, by the no, by the scrim, and by any navigation --
+   the last from render(), because a popup that outlives the screen under it
+   is one nobody can get rid of. */
+function popOff(){
+  var el=document.getElementById('pop'), bg=document.getElementById('sbg');
+  if(el) el.classList.remove('on');
+  if(bg) bg.classList.remove('on');
+  POP_YES=null;
+}
+function popOn(){
+  var el=document.getElementById('pop');
+  return !!(el && el.className.indexOf('on')>=0);
+}
 /* ---- the ceiling, said where it is met ---------------------------------
    「+を押したらそのまま課金のポップが出るだけでしょ？」 OWNER 2026-09-01.
 

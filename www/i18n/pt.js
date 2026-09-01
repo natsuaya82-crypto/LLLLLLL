@@ -369,6 +369,7 @@ defLang('pt', (function(){
       "script.set"                : "Usar",
       "up.cta"                    : "Fazer upgrade",
       "up.need"                   : "Isto está num plano pago.",
+      "pop.no"                  : "Fechar",
       "ws.arabic"                 : "Árabe",
       "ws.armenian"               : "Armênio",
       "ws.cyrillic"               : "Cirílico",

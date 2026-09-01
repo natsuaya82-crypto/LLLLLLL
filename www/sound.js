@@ -617,13 +617,43 @@ function ltKindOf(l){
   if(ltIsMark(l)) return 'mark';
   return 'alpha';
 }
+/* WHAT IS ON SCREEN, WHICH IS NOT ALWAYS WHAT IS THERE.
+   「課金で追加した機能は無料になったら全部隠れる」
+   「文字も最初にa-z 0-9 !?を1234ってナンバリングして足したやつ38個目以降を
+     全部非表示にするやり方にすれば全然ミスらない」 OWNER 2026-09-01.
+
+   The same shape as wordsSeen() in www/words.js: the free allotment is what
+   shows, everything added past it is hidden, and NOTHING IS REMOVED -- the
+   letters are all still in LETTERS, still in storage, still on the server,
+   and paying again brings them straight back.
+
+   No new number is stored. ltIsBase() already answers "is this one of the
+   free plan's own slots" -- a–z, `!`, `?`, and a digit per value of the base
+   -- and that IS the 1..38 the owner is counting. A number written beside it
+   would be a second answer to the same question, and the two would drift.
+
+   ltById(), the font, the keyboard and the spelling all go on seeing every
+   letter, exactly as findWord() goes on seeing every word: what somebody
+   already wrote does not change because a plan ended. */
+function ltHidHTML(){
+  var n=ltHidden();
+  if(!n) return '';
+  return '<button class="capwarn" style="margin:14px 0 0"' + DO('goPlans') + '>'+
+    t('cap.hid', n)+'<span class="capgo">'+t('up.cta')+ICON_GO+'</span></button>';
+}
+function ltSeen(){
+  if(can('letters')) return LETTERS;
+  return LETTERS.filter(ltIsBase);
+}
+function ltHidden(){ return LETTERS.length-ltSeen().length; }
 function ltOfKind(k){
   /* Digits and marks keep their own list functions because each has an order
      of its own -- a digit's is its value. The alphabet is everything else,
      and says so by asking ltKindOf rather than restating the two tests. */
-  if(k==='num') return numDigits();
-  if(k==='mark') return ltMarks();
-  return ltOrder(LETTERS.filter(function(l){ return ltKindOf(l)==='alpha'; }));
+  var seen=ltSeen();
+  if(k==='num') return numDigits().filter(function(l){ return seen.indexOf(l)>=0; });
+  if(k==='mark') return ltMarks().filter(function(l){ return seen.indexOf(l)>=0; });
+  return ltOrder(seen.filter(function(l){ return ltKindOf(l)==='alpha'; }));
 }
 function ltKindRow(k){
   return '<button class="trow"' + DO('go', ["ltset", k]) + '>'+
@@ -841,6 +871,13 @@ function vLtset(){
        second place saying the same thing about the same letters. */
     (k==='num'? numBaseRows() : '')+
     '<div id="lt-list">'+cells()+'</div>'+
+    /* How many are not on screen, at the foot of the room they are missing
+       from. Same as wordsHidHTML() in www/words.js and for the same reason:
+       an alphabet that is suddenly shorter with nothing saying why is the app
+       telling somebody their work is gone. It is not gone -- every letter is
+       in LETTERS, in storage, in the backup and on the server -- and paying
+       again brings it straight back. */
+    ltHidHTML()+
     ((k==='alpha' && loose.length)
       ? '<div class="mini" style="margin-top:10px">'+tn('lt.loose', loose.length)+'</div>' : '')+
 

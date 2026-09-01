@@ -2247,7 +2247,7 @@ function postEdit(id){
      the owner settled is this sentence and not a rule about tiers. If `edit`
      ever moves off plus, this string moves with it. */
   if(!can('edit')){
-    if(confirm(t('post.editplan')+'\n\n'+t('up.cta'))) go('plans');
+    popAsk(t('post.editplan'), function(){ go('plans'); });
     return;
   }
   PW=pwBlank();

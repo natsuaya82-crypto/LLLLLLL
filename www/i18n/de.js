@@ -350,6 +350,7 @@ defLang('de', (function(){
       "script.set"                : "Setzen",
       "up.cta"                    : "Upgraden",
       "up.need"                   : "Das gehört zu einem kostenpflichtigen Tarif.",
+      "pop.no"                  : "Schließen",
       "ws.arabic"                 : "Arabisch",
       "ws.armenian"               : "Armenisch",
       "ws.cyrillic"               : "Kyrillisch",
