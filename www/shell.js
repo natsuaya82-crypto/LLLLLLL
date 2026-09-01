@@ -33,6 +33,18 @@ var app=document.getElementById('app');
 function viewReset(){
   q=''; wFil='*'; wSort='a';           /* the word list */
   wSel=null;                           /* and whether it is one you choose from */
+  /* And what a bulk delete could put back. It is dropped in viewLeft() too,
+     and the two are NOT one rule written twice -- they are two different
+     things that must not happen. There it is "the undo is about the list in
+     front of you". Here it is that a copy of THIS language's words, at the
+     positions they were at, may not be alive while ANOTHER language is open:
+     langOpen() reads a different dictionary into WORDS, and an undo pressed
+     after that would splice one language's words into another and save() them
+     there. That road is shut today only because the language list is not
+     reachable from the dictionary, so walking to it drops the undo on the way
+     -- an accident of where the screens are, not a rule, and not what
+     「データ消えるのだけはありえない」 may rest on. */
+  wUndo=null;
   fq=''; fpick=null;                   /* the find screen */
   abVow='';                            /* the abugida editor */
   ltSort='own'; ltFil='all'; ltQ='';   /* the alphabet's order, filter and search */
