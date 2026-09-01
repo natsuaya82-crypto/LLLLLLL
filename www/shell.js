@@ -989,7 +989,20 @@ function tabPaint(){
      opens the making side. 「制作ボタン押してキーボードの画面開いてとかないよ？」
      Everything before the walk -- drawing, the alphabet, the name -- is a
      screen of the onboarding's own and still has no bar. */
-  var sig = (appIs()==='app' && !one) ? (here().r+'|'+uiLang()) : '';
+  /* THE COUNT IS PART OF WHAT THE BAR IS. The signature is what decides
+     whether the bar is worth building again, and it was the route and the
+     language -- so the bell's figure was drawn once per screen and never
+     moved. A notice arriving while somebody sat on the timeline called
+     render(), the route had not changed, and the bar was skipped: the number
+     appeared the next time they went somewhere else, not when the notice
+     came.
+
+     `press` is what found it -- it reported `.tabn` as worn by nothing, which
+     was true for a reason that had nothing to do with the fixture: within one
+     page the bar for a route is built once, and if the count was 0 at that
+     moment there was no road back to any other number. */
+  var sig = (appIs()==='app' && !one)
+    ? (here().r+'|'+uiLang()+'|'+notUnread()) : '';
   if(host.getAttribute('data-sig')===sig) return;
   host.setAttribute('data-sig', sig);
   host.innerHTML = sig ? tabBar() : '';
