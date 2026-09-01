@@ -1265,13 +1265,51 @@ function vWorld(){
   wldNoteMigrate();
   return wldPage(true);
 }
-function wldPage(ed){
-  var w=world(), drawn=LETTERS.filter(ltHasShape), body='', dls='', done, i, kbs, kbat;
+/* THE LANGUAGE THIS PAGE IS ABOUT, as a bundle of questions rather than as
+   the open language.
+
+   `wldPage()` opened by reading `world()`, `LETTERS`, `langName`, `wsys()`
+   and the applied keyboard -- every one of them a global meaning "the one in
+   front of me". That is right for your own article and is rule 8's worked
+   example for anybody else's: a door to somebody's language page drew THEM at
+   the top and MY language underneath, which is why the door was closed
+   (「この言語についてで人のをタップしても自分のが出る」 OWNER).
+
+   Six questions, so a reader's copy can answer them from what came off the
+   server instead. **Functions and not values**, because three of the six are
+   only asked inside branches -- the writing system on two faces, the keyboard
+   in its own section -- and turning those into eager reads would ask the
+   keyboard about every article that has no keyboard section on it. Lazy keeps
+   the call order exactly as it was.
+
+   This is the prepared half. Nothing yet builds one of these from anybody
+   else's language: the address arrives with `netWho()`'s `lid` and the slices
+   come back through `netSlices()`, and until a reader's bundle is built and a
+   route shows it, `wldOpen()` is the only one there is and the page is
+   unchanged. Held to that: the four faces of this page (en/ja x free/pro)
+   render byte-for-byte identically before and after. */
+function wldOpen(){
+  return {
+    w:       function(){ return world(); },
+    letters: function(){ return LETTERS; },
+    name:    function(){ return langName; },
+    ws:      function(){ return wsys(); },
+    /* The applied board's name and its layout. `kbOf()` answers with the free
+       QWERTY when nothing is built, which is why it is one question here and
+       not two. */
+    kbname:  function(){ var k=kbBoards(); return kbName(kbApplied(k.length)); },
+    kblay:   function(){ return kbOf().lay; }
+  };
+}
+function wldPage(ed, L){
+  L=L||wldOpen();
+  var w=L.w(), drawn=L.letters().filter(ltHasShape), body='', dls='', done, i;
   /* The article names its subject: the bar says which SCREEN this is, and the
      page has to say what the article is ABOUT. The name of a language is not
      written here -- it is the language's own, and it is set where a language
      is set -- so it stays a heading in both faces. */
-  if(langName) body+='<h1 class="abth">'+esc(langName)+'</h1>';
+  var lnm=L.name();
+  if(lnm) body+='<h1 class="abth">'+esc(lnm)+'</h1>';
   /* Whether the page exists for anybody else at all. Only while writing:
      a state with no way to change it does not belong on the reading face. */
   if(ed) body+='<button class="set"' + DO('setWldHide', [!wldHidden()]) + '>'+
@@ -1366,7 +1404,7 @@ function wldPage(ed){
           '<div class="field">'+
           lnField('wld-who', t('wld.who.ph'), IN('wldSet', ["who"]), w.who||'')+
           '</div>'+
-          abField(t('ws.kind'), t('ws.k.'+wsys()))+
+          abField(t('ws.kind'), t('ws.k.'+L.ws()))+
           abField(t('dir.title'), t('dir.'+scriptDir()))+
           '<div class="ovlist" data-wdrag="ovs">'+
           wldOvs().map(function(row){
@@ -1401,7 +1439,7 @@ function wldPage(ed){
       } else {
         if(w.where) inner+=abField(t('wld.where'), w.where);
         if(w.who) inner+=abField(t('wld.who'), w.who);
-        inner+=abField(t('ws.kind'), t('ws.k.'+wsys()));
+        inner+=abField(t('ws.kind'), t('ws.k.'+L.ws()));
         inner+=abField(t('dir.title'), t('dir.'+scriptDir()));
         if(!w.ovnote && w.note) inner+='<div class="abfv">'+esc(w.note)+'</div>';
         wldOvs().forEach(function(row){
@@ -1442,9 +1480,8 @@ function wldPage(ed){
          letters rather than a diagram of them, which is what it was written
          for: 「リアルなキーボードを縮小して見せれないの？」. Nothing in it is
          pressable, here or where it came from. */
-      kbs=kbBoards(); kbat=kbApplied(kbs.length);
-      inner+='<div class="abtl abtline">'+esc(kbName(kbat))+'</div>'+
-        '<div class="abkb">'+kbShotHTML(kbOf().lay)+'</div>';
+      inner+='<div class="abtl abtline">'+esc(L.kbname())+'</div>'+
+        '<div class="abkb">'+kbShotHTML(L.kblay())+'</div>';
     } else if(sec.nm!==undefined){
       /* A section somebody wrote, and it is a SECTION on both faces --
          「追加したセクションも概要と同じ文字サイズだし▼で隠せるようにして編集でも」
