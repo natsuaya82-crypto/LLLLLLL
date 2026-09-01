@@ -213,3 +213,56 @@ Owner decision log にも要ります** ── そのファイルは渡されて
 **渡されていないので止まっているもの:** ①の自己紹介の列（`schema.sql`）／
 人のページの Following・Followers（`www/net.js`）／十の基準の
 `docs/FEATURE_RULES.md` への記録（CHANGELOG には原文で入れてあります）。
+
+
+---
+
+## K. ⑭ リポスト ── 壊れていません。**一度も読み戻していない**だけです
+
+**測りました**（2026-09-01、402x874。三つのタイムラインと投稿のスレッドを
+描かせて、アプリが出した問い合わせを全部拾いました）:
+
+```
+POST /rest/v1/rpc/notices
+GET  /rest/v1/follow?select=followed(handle)&follower=eq.<自分>
+POST /rest/v1/rpc/feed_hot
+GET  /rest/v1/prompt?...
+GET  /rest/v1/saved_search?...
+```
+
+**`react` への問い合わせは 0 件です。**`www/net.js` に `react` が出てくるのは
+`netMark()` の中だけで、**POST と DELETE、つまり書く側だけ**です。読む行が
+一本もありません。
+
+そして投稿がサーバーから来るとき何を持っているか（`netRow()` に本物の行を
+渡して確かめました）:
+
+```
+at, hd, id, ln, mine, mn, sid, who
+```
+
+**`li` も `bo` も `lime` も `bome` もありません。**`post_seen` の select 自体に
+反応の数が入っていません。
+
+`postBoost()` は `p.bo` を +1 して `p.bome` を立て、`netMark()` でサーバーに
+行を書きます（測定: bo 0→1、bome false→true）。**出て行く側は正しい。**
+
+**つまり、こうなります:**
+
+- 自分が押した分は、この端末の中でだけ増える
+- **人がリポストした分は永久に返ってこない** ── 数はサーバーから来る投稿では
+  必ず 0 から始まる
+- **二台目では「まだリポストしていない」に見える**（オーナーは SE2 と 17）。
+  `react` の主キーは (post, actor, kind) なので二重には入りませんが、
+  ボタンの状態が嘘になります
+- いいねも**まったく同じ**です
+
+**`supabase/schema.sql` はこれを想定して書かれています。**`react` の上の
+コメントが「**A COUNT IS NOT STORED. The number under a post is
+`select count(*)`**」と言い、そのための索引
+`react_post_idx on react(post, kind)` まで在って、**その問いを誰も出して
+いません。**
+
+  www/net.js  数を数える問いと、自分が押したかどうかの問い。**渡されていない**
+
+2026-08-28 の三つ（人の検索・人のプロフィール・フォロワーの数）と同じ形です。
