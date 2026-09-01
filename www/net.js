@@ -1522,7 +1522,9 @@ function netLangNames(ids, done){
 function netWho(handle, ok, bad){
   var h=String(handle||'');
   if(!h){ bad(null, 0); return; }
-  netGet('/rest/v1/profile?select=id,handle,display,av,bio,banned_at'+
+  /* `profile_seen` and not `profile`: it is the same row with the two numbers
+     a page is made of counted beside it -- see supabase/schema.sql. */
+  netGet('/rest/v1/profile_seen?select=id,handle,display,av,bio,banned_at,fo,fr'+
          '&limit=1&handle=eq.'+encodeURIComponent(h),
     function(d){
       var r, who;
@@ -1536,6 +1538,13 @@ function netWho(handle, ok, bad){
               a page about somebody else drew an empty one however much they
               had written. */
            bio:String(r.bio||''),
+           /* How many they follow and how many follow them. Both were 0 on
+              every page for everybody: `follow` was read back only about
+              YOURSELF, so somebody else's two numbers had nowhere to come
+              from. Absent rather than zero when the server did not say --
+              「0 followers」 and 「nobody has said」 are different things. */
+           fo:(r.fo===undefined || r.fo===null)? undefined : (Number(r.fo)||0),
+           fr:(r.fr===undefined || r.fr===null)? undefined : (Number(r.fr)||0),
            /* Frozen. Off `banned_at`, which is the same fact `author_out`
               carries onto a post -- one column, asked of the person here and
               answered about the writer there. */

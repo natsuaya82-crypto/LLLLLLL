@@ -447,6 +447,31 @@ const CASES = [
   ['B takes B\u2019s own boost back',          'ok',     B, 0,
     `delete from react where actor='${B}' and kind='boost'`],
 
+  /* --- and the two numbers a profile is made of --------------------------
+     They were 0 on every page for everybody: `follow` was read back only
+     about YOURSELF. profile_seen counts them beside the row.
+
+     The state is made here rather than borrowed: A and B are written in at
+     the top of this file and were given no follows, and every follow made
+     further up is taken away again by the cases that test unfollowing. */
+  ['nobody follows F yet',                    'ok',     A, 0,
+    `select 1 from profile_seen where id='${F}' and fr = 0 and fo = 0`],
+  ['A follows F',                             'ok',     A, 0,
+    `insert into follow(follower,followed) values ('${A}','${F}')`],
+  ['and F\u2019s page says one follows them', 'ok',     A, 0,
+    `select 1 from profile_seen where id='${F}' and fr = 1`],
+  ['and somebody with no account sees it',    'ok',     B, 1,
+    `select 1 from profile_seen where id='${F}' and fr = 1`],
+  ['F is still following nobody',             'ok',     A, 0,
+    `select 1 from profile_seen where id='${F}' and fo = 0`],
+  ['A unfollows F',                           'ok',     A, 0,
+    `delete from follow where follower='${A}' and followed='${F}'`],
+  ['and the number goes back',                'ok',     A, 0,
+    `select 1 from profile_seen where id='${F}' and fr = 0`],
+  /* And it is not a second way at what profile keeps back. */
+  ['profile_seen hands out no staff flag',    'denied', B, 0,
+    `select 1 from profile_seen where id='${E}' and staff`],
+
   /* --- and the count comes BACK, which is the half that was missing -------
      「当たり前だけどsnsとして機能してない」OWNER 2026-09-01. Liking was
      written and there was no GET of /rest/v1/react anywhere in the app, so a

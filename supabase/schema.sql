@@ -751,6 +751,33 @@ create policy publication_make on publication for insert with check (
 -- author it sees. A frozen account's posts come off the timeline and stay
 -- readable on the account's own page; the app decides which, and this is
 -- what it decides with.
+-- WHO SOMEBODY IS, WITH THE TWO NUMBERS A PROFILE IS MADE OF.
+--
+-- 「当たり前だけどsnsとして機能してない」 OWNER 2026-09-01. A person's page
+-- showed 0 followers and 0 following for everybody, always -- www/me.js says
+-- so in a comment: 「Neither is on `profile` at all -- see netWho()」. It was
+-- true. `follow` was written by netFollow() and read back only about
+-- YOURSELF (netFollowing/netFollowers ask `follower=eq.me` / `followed=eq.me`),
+-- so the two numbers on somebody else's page had nowhere to come from.
+--
+-- A VIEW rather than two more requests from the phone, and rather than
+-- letting the phone download somebody's followers to count the rows: a count
+-- is one number and shipping a list to produce it is how a popular account
+-- becomes a slow page.
+--
+-- It exposes nothing new. `follow_read` is `using (true)` -- who follows whom
+-- is public, which is what a follower list IS -- and every column named here
+-- is already world-readable through `profile_read`, also `using (true)`. What
+-- it does NOT carry is `staff`, `admin` and `banned_why`: they are on
+-- `profile` and readable there, and there is no reason for a view about a
+-- person's page to be the thing that hands them out.
+create or replace view profile_seen as
+  select p.id, p.handle, p.display, p.av, p.bio, p.banned_at,
+         (select count(*) from follow f where f.follower = p.id) as fo,
+         (select count(*) from follow f where f.followed = p.id) as fr
+    from profile p;
+grant select on profile_seen to anon, authenticated;
+
 create or replace view post_seen as
   select p.id, p.author, p.language, p.prompt, p.reply_to, p.created_at,
          p.hidden_at,

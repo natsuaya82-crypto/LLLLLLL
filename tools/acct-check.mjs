@@ -556,7 +556,7 @@ const R = await pg.evaluate(() => {
   let asked = '';
   netGet = (path, ok) => {
     asked += path + '\n';
-    if (path.indexOf('/rest/v1/profile?select=id,handle,display,av') === 0)
+    if (path.indexOf('/rest/v1/profile_seen') === 0)
       return ok([{ id: B, handle: 'iri', display: 'Iri',
                    av: null, bio: 'むこうの人が書いた一行' }]);
     return ok([]);
@@ -614,8 +614,8 @@ const R = await pg.evaluate(() => {
   netOut(); arrive(A);
   let langPath = '';
   netGet = (path, ok) => {
-    langPath = path;
-    if (path.indexOf('/rest/v1/profile?select=id,handle,display,av') === 0)
+    if (path.indexOf('/rest/v1/language') === 0) langPath = path;
+    if (path.indexOf('/rest/v1/profile_seen') === 0)
       return ok([{ id: B, handle: 'iri', display: 'Iri', av: null, bio: '' }]);
     if (path.indexOf('/rest/v1/language') === 0)
       return ok([{ id: 'lang-id-1', owner: B, name: 'むこうの言語',
@@ -639,7 +639,7 @@ const R = await pg.evaluate(() => {
   start();
   netOut(); arrive(A);
   netGet = (path, ok) => {
-    if (path.indexOf('/rest/v1/profile?select=id,handle,display,av') === 0)
+    if (path.indexOf('/rest/v1/profile_seen') === 0)
       return ok([{ id: B, handle: 'iri', display: 'Iri', av: null, bio: '' }]);
     if (path.indexOf('/rest/v1/language') === 0)
       return ok([{ id: 'lang-id-2', owner: B, name: '非公開', published_at: null }]);
@@ -707,6 +707,51 @@ const R = await pg.evaluate(() => {
   if (feed2 && feed2.length && feed2[0].nlike !== undefined)
     no('23: サーバが言っていないのに数を名乗っている — ' + feed2[0].nlike);
   say('23: 言われていない数は、0 ではなく無い');
+
+  /* ---- 24. 人のページのフォロー数・フォロワー数 -------------------------
+     どちらも、誰のページでも、いつも 0 でした。www/me.js のコメントが
+     そう書いています ──「Neither is on `profile` at all -- see netWho()」。
+     本当でした: follow は netFollow() が書き、読み戻すのは**自分について
+     だけ**（follower=eq.自分 / followed=eq.自分）だったので、他人の二つの
+     数には出どころがありませんでした。 */
+  start();
+  netOut(); arrive(A);
+  let whoPath = '';
+  netGet = (path, ok) => {
+    if (path.indexOf('/rest/v1/profile_seen') === 0) {
+      whoPath = path;
+      return ok([{ id: B, handle: 'iri', display: 'Iri', av: null,
+                   bio: '一行', fo: 12, fr: 34 }]);
+    }
+    return ok([]);
+  };
+  let w4 = null;
+  netWho('iri', (w) => { w4 = w; }, () => {});
+  netGet = realGet;
+  if (!whoPath) no('24: profile_seen を訊いていない — 数の出どころが無い');
+  if (whoPath.indexOf('fo') < 0 || whoPath.indexOf('fr') < 0)
+    no('24: 二つの数を訊いていない — ' + whoPath);
+  if (!w4) no('24: 人が返ってこなかった');
+  else {
+    if (w4.fo !== 12) no('24: フォロー数が載らない — ' + w4.fo);
+    if (w4.fr !== 34) no('24: フォロワー数が載らない — ' + w4.fr);
+  }
+  say('24: 人のページに、フォロー数とフォロワー数が載る');
+
+  /* そしてここでも、言われていないことは 0 ではありません。 */
+  start();
+  netOut(); arrive(A);
+  netGet = (path, ok) => {
+    if (path.indexOf('/rest/v1/profile_seen') === 0)
+      return ok([{ id: B, handle: 'iri', display: 'Iri', av: null, bio: '' }]);
+    return ok([]);
+  };
+  let w5 = null;
+  netWho('iri', (w) => { w5 = w; }, () => {});
+  netGet = realGet;
+  if (w5 && w5.fo !== undefined)
+    no('24: サーバが言っていないのにフォロー数を名乗っている — ' + w5.fo);
+  say('24: 言われていないフォロー数は、0 ではなく無い');
 
   return out;
 });
