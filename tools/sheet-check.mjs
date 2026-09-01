@@ -387,23 +387,64 @@ const took = await pg.evaluate(({ before }) => {
   };
 }, { before: shot.before });
 
-/* ---- 3b. and the two it may never do -----------------------------------
-   A digit somebody has ALREADY drawn on is theirs: the sheet does not draw
-   over it. And a NAME the alphabet already has is still a new letter, which
-   is 「a,a,a は三枠」 -- the sentence the number road is not an
-   exception to. Both are handed in through the real shTakeIn(), on the state
-   the take above left behind: digit seven is drawn on now. */
+/* ---- 3b. a second sheet, over work that is already there ----------------
+   A digit somebody has ALREADY drawn on is theirs and is NOT drawn over. What
+   the box becomes instead was a letter named `7`, on the alphabet, and that is
+   the bug the owner met at build 107: 「1なのにアルファベットのページに追加
+   されるのはなに？数字と記号はそれぞれのページあるんだからちゃんと振り分けられる
+   ようにして。」 OWNER 2026-09-01, on a device.
+
+   The answer is neither drawing over it nor turning it away:
+   「別に課金なんだから追加しろよなんで？」 OWNER 2026-09-01. **It is ADDED**
+   -- a second digit of that value, standing beside the first. Nothing anybody
+   drew is overwritten and nothing anybody drew is thrown away.
+
+   The thing that makes "added" mean anything is that the new one can be found,
+   so it is asked for the whole of that: it is a DIGIT (so the digits page is
+   where it is, and the alphabet is not), it is on that page, it is drawn
+   there, and it can be deleted -- a letter nothing can reach and nothing can
+   remove would be worse than the letter that went to the wrong page.
+
+   And a NAME the alphabet already has is still a new letter, which is
+   「a,a,a は三枠」 -- the sentence the number road is not an exception to.
+   Both are handed in through the real shTakeIn(), on the state the take above
+   left behind: digit seven is drawn on now. */
 const again = await pg.evaluate(() => {
   var d = numByVal(7), was = JSON.stringify(d.sh), before = LETTERS.length;
   var ring = [[[100, 100], [700, 100], [700, 700]]];
   SH = { names: '', got: [{ nm: '7', sh: ring }, { nm: 'a', sh: ring }], why: '', from: '' };
   shTakeIn();
-  var made = LETTERS.slice(before);
+  var made = LETTERS.slice(before), extra = null, i;
+  /* the seven that was NOT there before -- by id, because both answer to 7 */
+  for (i = 0; i < made.length; i++) if (made[i].val === 7) extra = made[i];
+  var onPage = extra ? ltOfKind('num').filter(function(l){ return l.id === extra.id; }).length : 0;
+  var alpha = extra ? ltOfKind('alpha').filter(function(l){ return l.id === extra.id; }).length : 0;
+  var drawnThere = !!(extra && inkGeo(extra) && ltInk(extra, '').indexOf('<canvas') === 0);
+  /* and it can be taken off again. Done last, and put straight back, so the
+     rest of this file walks the state it was written against. */
+  var goneAfterDel = null;
+  if (extra){
+    ltDel(extra.id);
+    goneAfterDel = LETTERS.filter(function(l){ return l.id === extra.id; }).length === 0;
+    LETTERS.push(extra);
+    saveLetters();
+  }
   return {
     kept: JSON.stringify(numByVal(7).sh) === was,
-    stillOne: numDigits().filter(function(l){ return l.val === 7; }).length,
+    /* TWO of them now, and that is the point: nothing was drawn over */
+    sevens: numDigits().filter(function(l){ return l.val === 7; }).length,
     made: made.length,
     names: made.map(function(l){ return ltName(l); }),
+    /* the box named `7` is a DIGIT and carries no label; `a` is a letter */
+    extraIsDigit: !!(extra && numIsDigit(extra)),
+    extraKind: extra ? ltKindOf(extra) : '',
+    extraNamed: !!(extra && extra.nm),
+    extraVia: (extra && extra.via) || '',
+    extraSh: !!(extra && extra.sh && extra.sh.length),
+    onDigitsPage: onPage,
+    onAlphabet: alpha,
+    drawnThere: drawnThere,
+    goneAfterDel: goneAfterDel,
     noVal: made.filter(function(l){ return typeof l.val !== 'number'; }).length,
     /* the `a` already in the alphabet is untouched, drawing and all */
     aStill: LETTERS.filter(function(l){ return ltName(l) === 'a'; }).length
@@ -830,13 +871,25 @@ say(took.made === 1 && took.bigIsName === 1 && took.names.join(',') === '25',
     took.names.join(', '));
 say(took.stored === shot.before + 1,
     'and they are in storage, not only in memory: ' + took.stored + ' letters filed');
-say(again.kept && again.stillOne === 1,
+say(again.kept,
     'a digit somebody has ALREADY drawn on is not drawn over: seven kept its ' +
-    'own picture and there is still one of it');
-say(again.made === 2 && again.names.join(',') === '7,a' && again.noVal === 2,
-    'the box beside it becomes a letter instead, and a box whose NAME the ' +
-    'alphabet already has is a new letter too — 「a,a,a は三枠」: brought in ' +
-    again.names.join(', '));
+    'own picture');
+say(again.sevens === 2 && again.extraIsDigit && again.extraSh &&
+    !again.extraNamed && again.extraVia === 'write',
+    'and the box is ADDED beside it rather than turned away or made a letter: ' +
+    again.sevens + ' digits worth seven, the new one carrying the sheet’s ' +
+    'picture and no label');
+say(again.extraKind === 'num' && again.onDigitsPage === 1 && again.onAlphabet === 0,
+    'and it is on the DIGITS page and not on the alphabet: kind `' +
+    again.extraKind + '`, ' + again.onDigitsPage + ' on the digits, ' +
+    again.onAlphabet + ' on the alphabet');
+say(again.drawnThere,
+    'and it is drawn there rather than being a letter nothing can see');
+say(again.goneAfterDel === true,
+    'and it can be taken off again, so nothing was added that cannot be removed');
+say(again.made === 2 && again.names.join(',') === '7,a' && again.noVal === 1,
+    'a box whose NAME the alphabet already has is still a new letter — ' +
+    '「a,a,a は三枠」: brought in ' + again.names.join(', '));
 say(again.aStill === 2,
     'so the `a` that was already there is still there, beside the new one (' +
     again.aStill + ')');

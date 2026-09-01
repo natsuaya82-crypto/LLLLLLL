@@ -1506,8 +1506,24 @@ function shTakeIn(){
          place that knows a letter's shape may be `sh` as well as `st`, and a
          borrowed character is a shape too. */
       if(!inkGeo(d) && !d.ch){ d.sh = g.sh; d.via = 'write'; saveLetters(); n++; continue; }
-      /* Otherwise that digit is somebody's work, and this falls through to a
-         letter beside it rather than over it. */
+      /* And that digit is already somebody's work. It is not drawn over, and
+         the box is not thrown away either: a SECOND digit of that value is
+         added beside it. 「別に課金なんだから追加しろよなんで？」 OWNER
+         2026-09-01, asked of a build where the box became a letter called `7`
+         on the alphabet instead. 「数字と記号はそれぞれのページあるんだから
+         ちゃんと振り分けられるようにして。」
+
+         A value is not unique any more, and that is the whole change. What
+         holds it up is that nothing is hidden by it: numDigits() answers with
+         both, so both stand on the digits page in value order, each drawn
+         with its own picture, each pressable and each removable. What
+         numByVal() answers -- the sign on the clock, the date, the calendar --
+         is the FIRST, which is the one that was already there: a second sheet
+         does not silently change what a number looks like everywhere else.
+         Deleting the one you do not want is what chooses between them. */
+      ltNew({val:v, sh:g.sh, via:'write'});
+      n++;
+      continue;
     }
     ltNew({nm:g.nm, sh:g.sh, via:'write'});
     n++;
