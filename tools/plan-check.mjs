@@ -238,19 +238,35 @@ const r = await pg.evaluate(({ s }) => {
      names the ceiling rather than being `up.cta` on its own, which is what
      it was for a day and is the one thing that made it unlike the other
      three. */
-  var askedEd = '', realConfirmEd = window.confirm;
+  /* ---- THE QUESTION IS THE APP'S OWN POPUP, NOT THE SYSTEM'S -------------
+     `confirm()` is banned -- 「標準は使わねえって言ってるだろこれも禁止や」
+     OWNER 2026-09-01 -- and every door below now puts up popAsk(). This check
+     went on stubbing window.confirm, so it read nothing and reported the
+     sentence as missing on three doors that were saying it perfectly well.
+
+     askPop(fn) runs the door and answers with the sentence the popup put on
+     the screen; yesPop(fn) runs it and presses the yes. Nothing is stubbed:
+     the popup is the app's own element and reading it is reading the screen. */
+  function popSaid(){
+    var e=document.querySelector('#pop .popm');
+    return e? String(e.textContent||'') : '';
+  }
+  function askPop(fn){
+    popOff(); fn();
+    var m=popSaid(); popOff(); return m;
+  }
+  function yesPop(fn){
+    popOff(); fn();
+    if(popOn()) popYes();
+  }
   go('feed');
   PW = pwBlank();
-  window.confirm = function(m){ askedEd = String(m); return false; };
-  postEdit('p_plan');
+  out.editFreeAsked = askPop(function(){ postEdit('p_plan'); });
   out.editFreeNoPW = !PW.ed;
   out.editFreeSaidNo = here().r !== 'plans';
-  out.editFreeAsked = askedEd;
   /* said yes: the plans screen, and still no composer behind it */
-  window.confirm = function(){ return true; };
-  postEdit('p_plan');
+  yesPop(function(){ postEdit('p_plan'); });
   out.editFreeWent = here().r === 'plans' && !PW.ed;
-  window.confirm = realConfirmEd;
   /* and the post itself is untouched by having been refused */
   out.editFreeKept = postById('p_plan') && postById('p_plan').ln === 'kano mos' &&
                      postById('p_plan').ed === 12345;
@@ -382,7 +398,6 @@ const r = await pg.evaluate(({ s }) => {
      toast and stopped, which is a sentence about a plan with no way to the
      thing it is about. capStop() was already the right shape; this is the
      other one. */
-  var askedKb = '', wentKb = '', realConfirm2 = window.confirm;
   SET.plan = 'plus'; save();
   KB = { kbs: [], at: 0 };
   while (kbRoomKb()) KB.kbs.push({ nm:'', pat:'qwerty', lay: kbFixed().lay });
@@ -391,15 +406,11 @@ const r = await pg.evaluate(({ s }) => {
   var kbWas = kbBoards().length;
   /* said no: nobody is moved, and no keyboard is made */
   go('kb');
-  window.confirm = function(m){ askedKb = String(m); return false; };
-  kbAdd('qwerty');
+  out.kbAsked = askPop(function(){ kbAdd('qwerty'); });
   out.kbSaidNo = kbBoards().length === kbWas && here().r === 'kb';
-  out.kbAsked = askedKb;
   /* said yes: the plans screen, which is the thing the sentence is about */
-  window.confirm = function(){ return true; };
-  kbAdd('qwerty');
+  yesPop(function(){ kbAdd('qwerty'); });
   out.kbSaidYes = here().r === 'plans' && kbBoards().length === kbWas;
-  window.confirm = realConfirm2;
   KB = null; saveKb();
   SET.plan = 'free'; save();
 
@@ -434,24 +445,20 @@ const r = await pg.evaluate(({ s }) => {
      wear now. 「全部確認して飛ぶ」 OWNER DECISION 2026-08-25. */
   var wentTo = '', saidIt = '', realAlert = window.alert;
   window.alert = function(m){ saidIt = String(m); };
-  var askedLang = '', realConfirm3 = window.confirm;
   var wasCount = langCount(), wasLang = langId;
   /* said no: nobody is moved and nothing is made */
   go('langs');
-  window.confirm = function(m){ askedLang = String(m); return false; };
-  langNew();
+  var askedLang = askPop(function(){ langNew(); });
   out.freeAsked = askedLang;
   out.freeSaidNo = langCount() === wasCount && langId === wasLang && here().r === 'langs';
   /* the sentence has to read at ONE, which is what the free ceiling is --
      "1 languages" was what the first version of this string said */
   out.freeAskedNoPlural = (askedLang || '').indexOf('1 languages') === -1;
   /* said yes: the plans screen, still without making one */
-  window.confirm = function(){ return true; };
-  langNew();
+  yesPop(function(){ langNew(); });
   out.freeMadeNone = langCount() === wasCount && langId === wasLang;
   out.freeWent = here().r === 'plans';
   out.freeSaidNothing = saidIt === '';
-  window.confirm = realConfirm3;
 
   /* Pressed on pro, where there is room: it is made AND opened, which is what
      the account switcher does. */
@@ -488,11 +495,9 @@ const r = await pg.evaluate(({ s }) => {
 
   /* The fourth is the only thing refused. */
   saidIt = '';
-  window.confirm = function(){ return true; };
-  langNew();
+  yesPop(function(){ langNew(); });
   out.fourthRefused = langCount() === 3;
   out.fourthWent = here().r === 'plans';
-  window.confirm = realConfirm3;
   /* and the three are the same three, still, AFTER the refusal -- which is
      where a version that prunes down to the ceiling would do it. Asked by id
      and in bytes rather than by counting: a count of three is also what you

@@ -196,7 +196,7 @@ defLang('fr', (function(){
     read   : mkApprox(word_fr, syl_fr),
     str    : {
       "cap.warn"                  : "{0} mots restants en Gratuit",
-      "cap.hid"                   : "{0} de plus",
+      "cap.hid"                   : "{0} masqués",
       "cap.lapse.h"               : "Votre forfait a pris fin",
       "cap.lapse.d"               : "Retour au Gratuit : le dictionnaire affiche 100 mots. <b>Rien n’a été supprimé.</b> Tout est encore là, et dans votre sauvegarde.",
       "cap.lapse.ok"              : "Fermer",
@@ -755,8 +755,6 @@ defLang('fr', (function(){
       "words.sort.pos"   : "Par nature du mot",
       "words.sel"        : "Sélectionner",
       "words.sel.done"   : "OK",
-      "words.sel.all"    : "Tout sélectionner",
-      "words.sel.none"   : "Tout désélectionner",
       "words.sel.row"    : "Choisir ce mot",
       "words.sel.del"    : "Supprimer",
       "confirm.delmany"  : "Supprimer {0} mots ?",

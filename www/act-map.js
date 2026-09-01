@@ -247,8 +247,6 @@ act('openSort', openSort);
 act('wSelOn', wSelOn);
 act('wSelOff', wSelOff);
 act('wSelTap', wSelTap);
-act('wSelAll', wSelAll);
-act('wSelNone', wSelNone);
 act('wSelDel', wSelDel);
 act('wSelUndo', wSelUndo);
 act('setTheme', setTheme);

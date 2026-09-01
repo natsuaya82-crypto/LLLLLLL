@@ -866,6 +866,105 @@ const HELDR = await pg.evaluate(async () => {
   return { out: out, seen: seen };
 });
 
+/* ---- THE POPUP, WHICH IS THE ONE THING NOT INSIDE #app -------------------
+   Everything above puts a screen into `#app` and presses what is in it, and
+   the tab bar is pressed by putting its own HTML there too -- which proves
+   the NAME resolves and says nothing about whether the real element is
+   anywhere a listener can hear it.
+
+   The popup is the case that showed the gap. `popAsk()` draws two buttons
+   into `#pop`, which lives inside `#sbg` -- and boot.js wired `#app` and
+   `#tabs` and nothing else, so 閉じる was a button with a registered name,
+   a real function behind it, and no listener between the two. Nothing threw
+   and every check was green. 「ポップの閉じるとかボタン押しても閉じれない
+   よ」 OWNER 2026-09-01.
+
+   So this presses it WHERE IT IS: a real click on the real element, with the
+   app's own wiring in between. */
+const POPR = await pg.evaluate(async () => {
+  const out = [], seen = [];
+  /* A HOLD THAT SUCCEEDED EATS THE NEXT CLICK, on purpose -- www/shell.js's
+     holdEat: the press that ends a long press is not also delivered. The
+     block above this one ends on a hold that worked, so without this the
+     first click here is swallowed and the popup is reported as dead when it
+     is not. It cost one false red. Put down here rather than in the app: it
+     is the check standing where a thumb would have lifted. */
+  if (typeof HELD !== 'undefined') HELD = false;
+  if (typeof SLDN !== 'undefined') SLDN = 0;
+  const click = (el) => el.dispatchEvent(
+    new MouseEvent('click', { bubbles: true, cancelable: true }));
+  const btn = (name) => document.querySelector('#pop [data-do="' + name + '"]');
+  window.__seed(); SET.done = true; SET.plan = 'free';
+  go('feed'); render();
+
+  let said = 0;
+  popAsk('press-check', () => { said++; });
+  if (!popOn()) out.push('popAsk() did not put the popup up at all.');
+  const no = btn('popOff');
+  if (!no) out.push('the popup has no 閉じる button carrying a name.');
+  else {
+    click(no);
+    if (popOn()) out.push('the popup was up, its 閉じる was clicked where it ' +
+      'actually stands, and it is STILL up. The name resolves and the ' +
+      'function exists -- what is missing is a listener above the element. ' +
+      'boot.js wires #app, #tabs and #sbg; #pop is inside the third.');
+    else seen.push('閉じる closed the popup');
+  }
+  popOff();
+
+  popAsk('press-check', () => { said++; });
+  const yes = btn('popYes');
+  if (!yes) out.push('the popup has no yes button carrying a name.');
+  else {
+    click(yes);
+    if (popOn()) out.push('the popup stayed up after its yes was pressed.');
+    if (said !== 1) out.push('the popup\'s yes did not run what was handed ' +
+      'to popAsk() -- said=' + said + ', and a popup whose answer goes ' +
+      'nowhere is a question nobody hears.');
+    else seen.push('yes ran what popAsk() was given, once, and closed');
+  }
+  popOff();
+
+  /* ---- AND THE THUMB SLID DOWN THE MARKS -----------------------------
+     The button it replaced acted on rows nobody could see; this acts on the
+     rows a thumb crossed. 「全て選択ってボタン出さないで欲しい…その代わり
+     スライドで下ビューで選択できるようにしたい」 OWNER 2026-09-01.
+
+     Real touch events, on the real marks, through the app's own wiring --
+     the same reason the popup above is pressed where it stands. The splash
+     is taken off first: it covers the page until the app has drawn, and
+     elementFromPoint answers with IT rather than with the row underneath. */
+  const sp = document.getElementById('splash');
+  if (sp && sp.parentNode) sp.parentNode.removeChild(sp);
+  window.__seed(); SET.done = true; SET.plan = 'pro';
+  window.route = 'words'; NAV = [{ r: 'words' }];
+  wSel = {}; render();
+  const marks = [].slice.call(document.querySelectorAll('#app .ltck[data-sel]'));
+  if (marks.length < 3) out.push('the dictionary being chosen from has ' +
+    marks.length + ' marks carrying data-sel — a thumb has nothing to slide ' +
+    'down, and the select-all button it replaced is gone.');
+  else {
+    const mid = (el) => { const b = el.getBoundingClientRect();
+                          return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; };
+    const T = (el, type, p) => { const t = new Touch({ identifier: 1, target: el,
+        clientX: p.x, clientY: p.y });
+      el.dispatchEvent(new TouchEvent(type, { bubbles: true, cancelable: true,
+        touches: type === 'touchend' ? [] : [t], changedTouches: [t] })); };
+    const p0 = mid(marks[0]), p1 = mid(marks[1]);
+    T(marks[0], 'touchstart', p0);
+    T(marks[0], 'touchmove', p1);
+    T(marks[0], 'touchend', p1);
+    const n = Object.keys(wSel).length;
+    if (n < 2) out.push('a thumb put on the first mark and slid onto the ' +
+      'second chose ' + n + ' rows. The mark is where the slide lives -- the ' +
+      'row itself must still scroll -- so a slide that chooses nothing is the ' +
+      'gesture missing, and there is no other way to choose a run of rows.');
+    else seen.push('a thumb slid down two marks chose ' + n + ' rows');
+  }
+  wSel = null;
+  return { out: out, seen: seen };
+});
+
 await br.close();
 srv.close();
 
@@ -925,6 +1024,7 @@ if (fs.existsSync(CSS_BASE)) {
 }
 const HELD = HELDR.out;
 HELD.forEach(m => fails.push('held: ' + m));
+POPR.out.forEach(m => fails.push('popup: ' + m));
 R.threw.forEach(m => fails.push('threw: ' + m));
 R.blank.forEach(m => fails.push('blank: ' + m));
 R.mute.forEach(m => fails.push('looks pressable and is not — ' + m));
@@ -983,6 +1083,8 @@ console.log('held long enough for the timer: ' +
             (HELDR.seen.length ? HELDR.seen.length + ' data-hold, every one of them answered'
                                : 'NONE — see the failures'));
 if (process.env.HOLD_AT) HELDR.seen.forEach(m => console.log('  ' + m));
+console.log('the popup, pressed where it stands: ' +
+            (POPR.out.length ? POPR.out.length + ' FOUND' : POPR.seen.join('; ')));
 console.log('buttons pressed: ' + R.pressed +
             '  (' + R.names.length + '/' + (R.names.length + R.never.length) + ' distinct names)');
 /* Printed, not silently tolerated. A name nothing here presses is a button

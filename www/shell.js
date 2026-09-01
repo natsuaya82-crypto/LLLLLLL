@@ -678,8 +678,15 @@ function lnFit(e){
    on the timeline, and the two had already drifted apart in what they put in
    the corner. Both bars live here now, so which one a screen wears is one
    decision made in one place. */
-function rootTop(r, right){
-  return '<div class="navtop"><span class="navt">'+esc(pageName(r))+'</span>'+
+/* `mid` stands IN PLACE OF the name, and the search is the one screen that
+   uses it: the field's own placeholder is the word 「さがす」, so a title over
+   it is that word twice and the field was pushed a bar's height down the page
+   for it. 「検索画面の検索ボックス下すぎない？」OWNER 2026-09-01. The bar is
+   still the one bar -- what goes in the corner and what the bar IS are
+   decided here and nowhere else. */
+function rootTop(r, right, mid){
+  return '<div class="navtop">'+
+    (mid || '<span class="navt">'+esc(pageName(r))+'</span>')+
     (right||'')+'</div>';
 }
 /* The bar is on every screen. It used to be on five of them -- "a tab bar
@@ -816,6 +823,65 @@ document.addEventListener('touchcancel', holdClear, false);
 document.addEventListener('mousedown',   holdStart, false);
 document.addEventListener('mouseup',     holdClear, false);
 document.addEventListener('click',       holdEat,   true);
+/* ---- sliding down a list that is being chosen from ----------------------
+   「全て選択ってボタン出さないで欲しい。なくていいよ。その代わりスライドで下
+   ビューで選択できるようにしたい」 OWNER 2026-09-01.
+
+   The button it replaces acted on rows nobody could see -- a filter and a
+   sort decide which rows "all" means, and the answer changed under it. A
+   thumb slid down a run of rows means exactly the rows it crossed.
+
+   WHAT IT SLIDES ON is the mark at the front of the row, and that is the
+   whole of why the mark moved there. A list being chosen from is still a
+   list you have to get to the bottom of, so a drag anywhere else on it must
+   still scroll; the marks are a 44px column that is not for scrolling, and
+   a finger put down there is not going anywhere else.
+
+   It runs the row's OWN name -- the same `data-do` its tap carries -- so
+   there is no second table, no second answer to what a row does, and
+   nothing new registered. Each row is run at most once per slide, so a
+   thumb that wavers does not turn a row on and off again. */
+var SLD=null, SLDN=0;
+function slideRow(x, y){
+  var el=document.elementFromPoint(x, y);
+  while(el && el!==document && el.getAttribute && !el.getAttribute('data-sel'))
+    el=el.parentNode;
+  return (el && el.getAttribute && el.getAttribute('data-sel'))? el : null;
+}
+function slideStart(e){
+  var p=holdAt(e), el=slideRow(p.x, p.y);
+  SLD=el? [el] : null; SLDN=0;
+}
+/* The row the finger STARTED on is run here rather than left to the click,
+   because a touch that moved is a touch iOS may not turn into one. It is in
+   `SLD` from the start, so this runs it once and the loop below skips it. */
+function slideMove(e){
+  var p, el;
+  if(!SLD) return;
+  p=holdAt(e); el=slideRow(p.x, p.y);
+  if(!el) return;
+  if(SLD.length===1 && SLD[0]===el){
+    if(SLDN) return;
+    SLDN=1; actDo(el); return;
+  }
+  if(SLD.indexOf(el)>=0) return;
+  if(!SLDN){ SLDN=1; actDo(SLD[0]); }
+  SLD.push(el); actDo(el);
+  /* The list must not scroll under a thumb that is choosing rows. */
+  if(e.cancelable) e.preventDefault();
+}
+function slideEnd(){ SLD=null; }
+/* And the click that follows a slide is eaten: the row under the finger when
+   it lifted has already been run by the slide. */
+function slideEat(e){
+  if(!SLDN) return;
+  SLDN=0; e.stopPropagation(); e.preventDefault();
+}
+document.addEventListener('touchstart',  slideStart, false);
+document.addEventListener('touchmove',   slideMove,  {passive:false});
+document.addEventListener('touchend',    slideEnd,   false);
+document.addEventListener('touchcancel', slideEnd,   false);
+document.addEventListener('click',       slideEat,   true);
 
 /* ---- how much of the screen the page can actually see ------------------
    The software keyboard does not shrink `100dvh`. It slides OVER the page, so
@@ -882,6 +948,25 @@ function vvFit(){
   /* A phone that turned, or a window somebody dragged, is a different screen
      and the old smallest means nothing on it. */
   if(window.innerHeight!==vvWas){ vvWas=window.innerHeight; vvMin=0; vvKbMax=0; }
+  /* AND WHAT THIS PHONE'S KEYBOARD WAS LAST TIME. 「返信の画面固定してるはず
+     なのに鬼動くけど？」 OWNER 2026-09-01.
+
+     The paragraph above says the first keyboard of a launch still rises with
+     the layout, because how tall a keyboard this phone has is not knowable
+     before one has been up. It is knowable: it was measured on this phone,
+     the last time one was up, and a keyboard does not change size between two
+     launches of the same app. So the measurement is kept -- in SET, which is
+     the settings and one of the three things that are the phone's
+     (CLAUDE.md), and NEVER in a language.
+
+     Kept against the height of the screen it was measured on, and read back
+     only when that matches: a phone that turned, or the app in a window
+     somebody dragged, is a different screen and last night's number means
+     nothing on it. That is the same test the line above already makes. */
+  if(!vvMin && SET.vvkb && SET.vvkb.on===window.innerHeight){
+    if(SET.vvkb.min) vvMin=SET.vvkb.min;
+    if(SET.vvkb.kb) vvKbMax=SET.vvkb.kb;
+  }
   if(!vvMin) vvMin=Math.round(window.innerHeight*0.55);
   if(h<vvMin) vvMin=h;
   d.setProperty('--vvmin', vvMin+'px');
@@ -944,9 +1029,18 @@ function vvFit(){
      the keyboard for as long as iOS held the page up. */
   var off=(v? v.offsetTop : 0);
   var kb=Math.max(0, window.innerHeight - h);
-  if(kb>vvKbMax) vvKbMax=kb;
+  if(kb>vvKbMax){ vvKbMax=kb; vvKeep(); }
   d.setProperty('--vvkb', Math.max(0,(vvTyping()? vvKbMax : kb) - off)+'px');
   d.setProperty('--tabgap', up? '10px' : 'calc(var(--tabh) + 10px)');
+}
+/* Written when the number GROWS and not on every event: this runs on every
+   resize and scroll of the visual viewport, which is many a second while a
+   keyboard is moving. Two numbers and the screen they were measured on. */
+function vvKeep(){
+  var was=SET.vvkb;
+  if(was && was.on===window.innerHeight && was.kb===vvKbMax && was.min===vvMin) return;
+  SET.vvkb={on:window.innerHeight, kb:vvKbMax, min:vvMin};
+  save();
 }
 function vvMount(){
   vvFit();

@@ -784,6 +784,18 @@ var ICON_GEAR='<svg class="ic" viewBox="0 0 24 24" width="21" height="21" fill="
 var ICON_TICK='<svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" '+
   'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
   '<path d="M4.5 12.5 9.5 17.5 19.5 6.5"/></svg>';
+/* CHOSEN. A ring with the middle filled -- ◉ -- and it stands at the FRONT of
+   a row rather than a tick at the end. 「選択た時ケツにチェックじゃなくて前に
+   ◉が入るようにして欲しい」 OWNER 2026-09-01. The ring is drawn on every row
+   while a list is being chosen from, so the column is there to slide a thumb
+   down; the middle is what says this one is in. */
+var ICON_RING='<svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" '+
+  'stroke="currentColor" stroke-width="1.5" aria-hidden="true">'+
+  '<circle cx="12" cy="12" r="9"/></svg>';
+var ICON_DOT='<svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" '+
+  'stroke="currentColor" stroke-width="1.5" aria-hidden="true">'+
+  '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.6" fill="currentColor" '+
+  'stroke="none"/></svg>';
 var ICON_LENS='<svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" '+
   'stroke-width="1.6" stroke-linecap="round" aria-hidden="true">'+
   '<circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l4.5 4.5"/></svg>';
@@ -909,20 +921,18 @@ var ICON_MIC='<svg class="ic" viewBox="0 0 24 24" width="20" height="20" fill="n
    app's own mark -- ICON_PLUS above, the avatar on the cover -- so the badge
    is that star rather than a tick borrowed from a bird.
 
-   Two of them, and they have to be told apart at fourteen pixels beside a
-   name: Plus is the star drawn, Studio is the star filled. Outline and solid
-   is the one difference that survives being small, which a change of colour
-   does not.
+   ONE mark, filled, and it is gold: it says the person is on Pro.
+   「企業バッジ一旦廃止して、青バッジをそのまま金にして欲しい。プロプラン」
+   OWNER 2026-09-01. There were two -- blue for somebody who pays, gold for an
+   official account -- and the official one had nowhere on the server to come
+   from, so a rule nothing ever wore sat in the stylesheet beside the one that
+   did.
 
-   No colour is written here. `currentColor` means the class beside the name
-   says which gold it is, and every colour in this app is a token in
-   index.html -- act-check refuses one written into markup and is right to. */
-/* FILLED, not drawn. OWNER 2026-08-25「塗りつぶしできる？」and then
-   「金の塗りを公式に青の塗りをユーザーにしよう」. At 15px a 1.7px outline is
-   mostly the hole in the middle: the colour is what the mark is FOR now, and an
-   outline at that size shows almost none of it. Measured by looking -- the two
-   were rendered side by side at 15px and at 44px, in both themes, before this
-   changed. The path is the same one; only fill and stroke swapped. */
+   FILLED and not drawn: at 15px a 1.7px outline is mostly the hole in the
+   middle, and the colour is what the mark is for.
+
+   No colour is written here. `currentColor` means index.html says which gold
+   it is -- act-check refuses a colour written into markup and is right to. */
 var MARK_PLUS='<svg class="bdg" viewBox="0 0 24 24" width="15" height="15" '+
   'fill="currentColor" stroke="none" aria-hidden="true">'+
   '<path d="M12 3.4c.9 4.6 4.1 7.8 8.6 8.6-4.5.9-7.7 4.1-8.6 8.6-.9-4.5-4.1-7.7-8.6-8.6 4.5-.8 7.7-4 8.6-8.6Z"/></svg>';

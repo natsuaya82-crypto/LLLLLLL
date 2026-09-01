@@ -849,7 +849,15 @@ function vLtset(){
        no letter says yet. One page for the pair, rather than a chapter for
        each end of it. Only on the alphabet, and only where nothing is
        narrowing the page to something else. */
-    var free=(pick && ltFil==='all' && !ltQ)? sndLoose() : [];
+    /* AND NOT ON THE FREE PLAN. A cell here is an offer to draw a letter for
+       a sound that has none -- pressing one makes a letter -- and making one
+       is what free does not buy. So a language that came back down to free
+       showed its own alphabet with a row of empty cells after it, one per
+       sound whose letter the free plan hides, each asking to be drawn again.
+       「無料に戻ったけど…それ以外の文字が普通にいるってこと」 OWNER
+       2026-09-01. can('snd') is the same door the sound chart behind a letter
+       is already behind; nothing is deleted and paying brings the offer back. */
+    var free=(pick && can('snd') && ltFil==='all' && !ltQ)? sndLoose() : [];
     if(!list.length && !free.length) return '<div class="note">'+t('lt.none')+'</div>';
     return '<div class="ltgrid'+(ltWob? ' held':'')+'" id="'+gid+'" data-k="'+esc(k)+'">'+
       list.map(function(l){ return ltCell(l, ''); }).join('')+
@@ -858,6 +866,12 @@ function vLtset(){
   }
   ltReList=cells;
   return '<div class="view">'+
+    /* NO SELECT MODE HERE, and that is the owner's. The dictionary has one --
+       marks down the front of the rows, Delete at the far end of the bar --
+       and this screen was given the same before 「文字って長押しでマイナス
+       ボタンあるよね？やっぱいらんかもその◉」 OWNER 2026-09-01. A held cell
+       already carries the mark that takes it away; a second way to delete a
+       letter, drawn differently, is two answers to one question. */
     navTop('',
            ltWob
              ? '<button class="navq navdone"' + DO('ltWobEnd') + '>'+esc(t('kb.done'))+'</button>'

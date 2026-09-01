@@ -87,6 +87,11 @@ function actRun(table, el, attr, extra, argAttr){
   return true;
 }
 
+/* Running a row's own name from somewhere that is not a press -- the thumb
+   slid down a list of marks (www/shell.js § sliding down a list). It is
+   deliberately the SAME name the row's tap carries: a row that is chosen two
+   ways is still a row that does one thing. */
+function actDo(el){ return el? actRun(ACT, el, 'data-do') : false; }
 /* One listener for the whole app. A screen is replaced wholesale on every
    render, so nothing can be bound to the elements themselves: they are thrown
    away several times a second. This sits above them and outlives them. */

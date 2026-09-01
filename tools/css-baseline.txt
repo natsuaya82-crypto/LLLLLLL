@@ -6,4 +6,3 @@
 kbghost
 lift
 moving
-studio

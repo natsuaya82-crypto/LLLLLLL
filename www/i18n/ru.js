@@ -153,7 +153,7 @@ defLang('ru', (function(){
     read   : mkApprox(word_ru, syl_ru),
     str    : {
       "cap.warn"                  : "На бесплатном тарифе осталось слов: {0}",
-      "cap.hid"                   : "ещё {0}",
+      "cap.hid"                   : "скрыто {0}",
       "cap.lapse.h"               : "Ваш план закончился",
       "cap.lapse.d"               : "Снова бесплатный план: словарь показывает 100 слов. <b>Ничего не удалено.</b> Всё на месте и в резервной копии.",
       "cap.lapse.ok"              : "Закрыть",
@@ -718,8 +718,6 @@ defLang('ru', (function(){
       "words.sort.pos"    : "По части речи",
       "words.sel"         : "Выбрать",
       "words.sel.done"    : "Готово",
-      "words.sel.all"     : "Выбрать все",
-      "words.sel.none"    : "Снять выбор",
       "words.sel.row"     : "Выбрать это слово",
       "words.sel.del"     : "Удалить",
       "confirm.delmany"   : "Удалить слов: {0}?",

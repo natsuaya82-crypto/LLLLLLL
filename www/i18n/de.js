@@ -136,7 +136,7 @@ defLang('de', (function(){
     read   : mkApprox(word_de, syl_de),
     str    : {
       "cap.warn"                  : "Noch {0} Wörter in Gratis",
-      "cap.hid"                   : "{0} weitere",
+      "cap.hid"                   : "{0} ausgeblendet",
       "cap.lapse.h"               : "Dein Tarif ist beendet",
       "cap.lapse.d"               : "Zurück auf Gratis: das Wörterbuch zeigt 100 Wörter. <b>Es wurde nichts gelöscht.</b> Es ist alles noch da, und in deiner Sicherung.",
       "cap.lapse.ok"              : "Schließen",
@@ -695,8 +695,6 @@ defLang('de', (function(){
       "words.sort.pos"   : "Nach Wortart",
       "words.sel"        : "Auswählen",
       "words.sel.done"   : "Fertig",
-      "words.sel.all"    : "Alle auswählen",
-      "words.sel.none"   : "Auswahl aufheben",
       "words.sel.row"    : "Dieses Wort wählen",
       "words.sel.del"    : "Löschen",
       "confirm.delmany"  : "{0} Wörter löschen?",

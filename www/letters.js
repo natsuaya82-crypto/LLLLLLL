@@ -140,7 +140,13 @@ function ltLoose(){
      anyway. A mark known by its NAME has no reading, so without this line the
      count under the alphabet -- its one caller -- would be counting letters
      that are on the marks page and not on it. */
-  return LETTERS.filter(function(l){
+  /* AND ONLY WHAT IS ON SCREEN. It walked all of LETTERS, so a language that
+     came back down to free counted the letters the free plan hides -- the
+     alphabet showed twenty-eight and the line under it said 「読みのない文字
+     4」 about four nobody could see. 「無料に戻ったけど…それ以外の文字が
+     普通にいるってこと」 OWNER 2026-09-01. ltSeen() is the one place that
+     answers what is shown; nothing is deleted and paying brings them back. */
+  return ltSeen().filter(function(l){
     return !ltUnits(l).length && !numIsDigit(l) && !ltIsMark(l); });
 }
 

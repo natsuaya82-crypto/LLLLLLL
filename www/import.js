@@ -739,7 +739,7 @@ function impSenses(mn){
    own sounds, which is the commonest thing anybody imports: a list of what
    the words are for, with no words yet. */
 function impPut(rows){
-  var added=[], was=[], lts=[], wasL=[], full=false, mute=0, i, r, seq, hw, w, l, u, guard;
+  var added=[], was=[], lts=[], wasL=[], full=false, mute=0, i, r, seq, hw, w, l, u, guard, v, d;
   for(i=0;i<rows.length;i++){
     r=rows[i];
     /* A letter, not a word -- because the person said the file is an
@@ -749,6 +749,30 @@ function impPut(rows){
     if(IMP.into==='l'){
       if(!r.ch) continue;
       u=impLtrSnd(r);
+      /* A ROW WHOSE NAME IS A NUMBER IS A DIGIT, and it was becoming a letter
+         called `1` on the alphabet. 「まだ1でここ入るけど？ pdfで取り込んだ時
+         もちゃんと分けてくれよ」 OWNER 2026-09-01. The sheet has read it this
+         way since 「数字と記号はそれぞれのページあるんだからちゃんと振り分け
+         られるようにして」 -- shTakeIn() in www/sheet.js -- and this road, the
+         one a file comes in on, never asked. The three answers are the sheet's
+         three and for the same reasons: nothing holds that value, so this IS
+         that digit; the slot is there with nothing on it, so the picture goes
+         onto it; it is already somebody's work, so a SECOND digit of that
+         value goes in beside it rather than over it. */
+      v=numTyped(r.nm || r.ch);
+      if(numInBase(v)){
+        d=numByVal(v);
+        if(!d){ lts.push(ltNew({val:v, ch:r.ch, snd:u}).id); if(u.length) impGrow(u); continue; }
+        if(!inkGeo(d) && !d.ch){
+          wasL.push({id:d.id, l:JSON.parse(JSON.stringify(d))});
+          d.ch=r.ch;
+          if(u.length){ impGrow(u); d.snd=u; d.chose=1; }
+          saveLetters();
+          continue;
+        }
+        lts.push(ltNew({val:v, ch:r.ch, snd:u}).id); if(u.length) impGrow(u);
+        continue;
+      }
       l=impLtrBy(r.ch);
       if(l){
         if(IMP.dup!=='over') continue;

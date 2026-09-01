@@ -50,7 +50,7 @@ defLang('en', (function(){
     read   : mkApprox(word_en, syl_en),
     str    : {
       "cap.warn"                  : "{0} words left on Free",
-      "cap.hid"                   : "{0} more",
+      "cap.hid"                   : "{0} hidden",
       "cap.lapse.h"               : "Your plan has ended",
       "cap.lapse.d"               : "Back to Free: the dictionary lists 100 words. <b>Nothing has been deleted.</b> It is all still here, and in your backup.",
       "cap.lapse.ok"              : "Close",
@@ -614,8 +614,6 @@ defLang('en', (function(){
       'words.sort.pos'  : 'By part of speech',
       'words.sel'       : 'Select',
       'words.sel.done'  : 'Done',
-      'words.sel.all'   : 'Select all',
-      'words.sel.none'  : 'Deselect all',
       'words.sel.row'   : 'Choose this word',
       'words.sel.del'   : 'Delete',
       'confirm.delmany' : 'Delete {0} words?',

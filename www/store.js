@@ -144,18 +144,37 @@ function storeRow(id){
    screen is drawn with what www/i18n has, and the real prices replace them a
    moment later. A plans screen that is blank until Apple answers is a plans
    screen that is blank on a bad train. */
+/* ASKED AGAIN IF THE ANSWER WAS NOTHING, and that is the fix to a price that
+   was wrong on a phone. 「これ出るけど、画面表示は4.99ドルなんだよね。ここを
+   価格＝にできないの？表示価格と、appleの表示価格」 OWNER 2026-09-01, with
+   the App Store's own sheet saying 月額¥800 over a screen saying $4.99.
+
+   The ask was latched before it was made and never unlatched, so ONE failure
+   was permanent: a phone whose App Store account is not signed in yet -- which
+   is every sandbox tester before their first purchase -- got a rejection on
+   the first opening of the plans screen and then showed the typed price for
+   the rest of the launch, however many times the screen was opened and
+   whatever happened at Apple in between. Nothing threw and nothing said so:
+   the fallback is a real price in the United States, so the screen looks
+   right everywhere it is wrong.
+
+   So the latch means "an answer is on its way OR one has arrived": a
+   rejection, and an answer with nothing in it, put it back down. Opening the
+   plans screen is what asks, so the retry costs one call per visit and never
+   loops -- nothing here renders unless something came back. */
 function storeAsk(){
   var np=storePlug();
   if(!np || STORE_ASK) return;
   STORE_ASK=true;
   np('LinguaStore', 'products', {})
     .then(function(r){
-      var l=(r && r.products) || [], m={}, i;
-      for(i=0;i<l.length;i++) if(l[i] && l[i].id) m[String(l[i].id)]=l[i];
+      var l=(r && r.products) || [], m={}, i, n=0;
+      for(i=0;i<l.length;i++) if(l[i] && l[i].id){ m[String(l[i].id)]=l[i]; n++; }
+      if(!n){ STORE_ASK=false; STORE_P=STORE_P||{}; return; }
       STORE_P=m;
       render();
     })
-    ['catch'](function(){ STORE_P={}; });
+    ['catch'](function(){ STORE_ASK=false; if(!STORE_P) STORE_P={}; });
 }
 /* What one term of one plan costs. Empty when the App Store has not answered,
    which is every browser and every product not yet made -- the caller falls

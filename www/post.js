@@ -920,7 +920,7 @@ function postCatchUp(){
   }
 }
 /* ---- the badge, and the one thing on a post that is NOT frozen ----------
-   「plusとstudioでそれぞれTwitterの青バッチみたいなやつつけたい」
+   One gold star beside a name, and it says the person is on Pro.
 
    Everything else a post carries is past tense on purpose: the name, the
    handle, the face, the language's name, the shapes. Renaming yourself does
@@ -947,7 +947,7 @@ function postCatchUp(){
    Pro row whoever is reading it. A post asks "does the person holding this
    phone have it", which is a capability and goes through can(). */
 function badgeMark(){
-  return '<span class="bdgw plus" aria-hidden="true">'+MARK_PLUS+'</span>';
+  return '<span class="bdgw" aria-hidden="true">'+MARK_PLUS+'</span>';
 }
 function planBadge(id){
   if(id==='pro') return badgeMark();
@@ -957,8 +957,8 @@ function postBadge(p){
   if(!p || !p.mine) return '';
   /* can('badge') and not plan(). It answered the same thing on the day this
      changed and will not the first time the mark moves a rung -- which is
-     the whole of why CAN exists. 「バッチはplusから」 OWNER DECISION
-     2026-08-23; the rung is in core.js and nowhere else. */
+     the whole of why CAN exists. The rung is `badge` in core.js and nowhere
+     else, and it is Pro. */
   return can('badge')? badgeMark() : '';
 }
 /* There was a preview under the field: the line you were typing, drawn again

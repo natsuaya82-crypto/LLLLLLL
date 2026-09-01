@@ -64,7 +64,7 @@ defLang('ja', (function(){
     read   : mkApprox(word_ja, syl_ja),
     str    : {
       "cap.warn"                  : "無料プランの残り {0}語",
-      "cap.hid"                   : "あと {0}語",
+      "cap.hid"                   : "非表示 {0}",
       "cap.lapse.h"               : "プランが終了しました",
       "cap.lapse.d"               : "無料プランに戻りました。辞書の表示は100語までですが、<b>データは全て残っています。</b>バックアップにも入っています。",
       "cap.lapse.ok"              : "閉じる",
@@ -623,8 +623,6 @@ defLang('ja', (function(){
       'words.sort.pos'  : '品詞ごと',
       'words.sel'       : '選択',
       'words.sel.done'  : '完了',
-      'words.sel.all'   : '全て選択',
-      'words.sel.none'  : '選択を解除',
       'words.sel.row'   : 'この単語を選ぶ',
       'words.sel.del'   : '削除',
       'confirm.delmany' : '{0} 語を消しますか？',

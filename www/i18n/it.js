@@ -148,7 +148,7 @@ defLang('it', (function(){
     read   : mkApprox(word_it, syl_it),
     str    : {
       "cap.warn"                  : "Restano {0} parole nel piano Gratis",
-      "cap.hid"                   : "altre {0}",
+      "cap.hid"                   : "{0} nascosti",
       "cap.lapse.h"               : "Il tuo piano è finito",
       "cap.lapse.d"               : "Torni a Gratis: il dizionario elenca 100 parole. <b>Non è stato cancellato nulla.</b> C’è ancora tutto, e nel tuo backup.",
       "cap.lapse.ok"              : "Chiudi",
@@ -707,8 +707,6 @@ defLang('it', (function(){
       "words.sort.pos"   : "Per parte del discorso",
       "words.sel"        : "Seleziona",
       "words.sel.done"   : "Fine",
-      "words.sel.all"    : "Seleziona tutto",
-      "words.sel.none"   : "Deseleziona tutto",
       "words.sel.row"    : "Scegli questa parola",
       "words.sel.del"    : "Elimina",
       "confirm.delmany"  : "Eliminare {0} parole?",

@@ -1307,9 +1307,20 @@ function vExplore(){
   /* Asked once when the screen is built, so coming back to a query already
      typed shows its answer rather than an empty page. */
   if(snsQ.trim() && !snsHits) snsFind(snsQ, snsGot);
-  return '<div class="view">'+rootTop('explore', snsSortTop())+
+  return '<div class="view">'+
+    /* IN THE BAR, where the search on a timeline is. It sat under the bar,
+       below a title that said the same word as its own placeholder, so the
+       one thing this screen is for started a bar and two margins down the
+       page. 「検索画面の検索ボックス下すぎない？」OWNER 2026-09-01.
+       What filters the answer stays in the corner it was in --
+       「絞りはそこでいいけど」. */
+    rootTop('explore', snsSortTop(), snsFieldHTML())+
     '<div class="body">'+
-    '<div class="search"><span class="lens">'+ICON_LENS+'</span>'+
+    '<div id="sns-hits">'+snsHitsHTML()+'</div>'+
+    '</div></div>';
+}
+function snsFieldHTML(){
+  return '<div class="search"><span class="lens">'+ICON_LENS+'</span>'+
       /* `enterkeyhint` is what makes the phone's own return key say Search,
          and pressing it is what asks for posts. 「ツイートの検索は検索ボタン
          押したら出てくる」 */
@@ -1333,9 +1344,7 @@ function vExplore(){
         : '')+
       '<button class="sx" id="sns-x"' + DO('snsClearQ') + (snsQ?'':' hidden')+
         ' aria-label="'+esc(t('words.clear'))+'">'+ICON_CROSS+'</button>'+
-    '</div>'+
-    '<div id="sns-hits">'+snsHitsHTML()+'</div>'+
-    '</div></div>';
+    '</div>';
 }
 /* ---- who read you, who answered, who followed --------------------------
    「いいね、返信、リポスト、フォロー、おすすめのツイートとか？」
@@ -1578,14 +1587,15 @@ function notRow(n){
          middle of it on a phone that had none to spare. */
       '<span class="ntfw">'+esc(t('notif.'+(k||'other'), notWho(n)))+
         '<span class="ntfwh"> \u00b7 '+esc(postWhen(n.at))+'</span></span>'+
-      /* ALWAYS, empty where there is no post. A follow is about a person and
-         has no post under it, and a row that simply left the line out was a
-         row whose block of words was 43px tall where its neighbours' were 68
-         -- so the mark, the faces and the photograph centred against a
-         different middle and every one of them sat a few pixels off. The
-         line is reserved instead: one shape for every row, and nothing in it
-         to read when there is nothing. */
-      '<span class="ntfp">'+esc(p? (p.mn || p.ln || '') : '')+'</span>'+
+      /* Only where there is something to read. It was always drawn, empty
+         where there is no post, so that every row came out the same height --
+         and what that made is a row of one sentence with a blank line under
+         it. 「通知なんか真ん中に文字ないせいできもい。文字増えたら2列にすれば
+         よくない？」OWNER 2026-09-01. A row is one line where there is one
+         line and two where there is a post under it; the face holds the
+         height either way. */
+      ((p && (p.mn || p.ln))
+        ? '<span class="ntfp">'+esc(p.mn || p.ln)+'</span>' : '')+
     '</span>'+
     /* The post itself, small, on the right -- which is the owner's picture and
        is also the only thing on the row that says WHICH post without reading

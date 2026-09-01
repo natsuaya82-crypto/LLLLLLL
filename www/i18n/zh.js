@@ -156,7 +156,7 @@ defLang('zh', (function(){
     read   : mkApprox(word_zh, syl_zh),
     str    : {
       "cap.warn"                  : "免费版还可再添加 {0} 个词",
-      "cap.hid"                   : "还有 {0}",
+      "cap.hid"                   : "已隐藏 {0}",
       "cap.lapse.h"               : "你的订阅已结束",
       "cap.lapse.d"               : "回到免费版：词典列出 100 个词。<b>什么都没有删除。</b>全都还在，备份里也有。",
       "cap.lapse.ok"              : "关闭",
@@ -712,8 +712,6 @@ defLang('zh', (function(){
       "words.sort.pos"   : "按词性",
       "words.sel"        : "选择",
       "words.sel.done"   : "完成",
-      "words.sel.all"    : "全选",
-      "words.sel.none"   : "取消全选",
       "words.sel.row"    : "选择这个词",
       "words.sel.del"    : "删除",
       "confirm.delmany"  : "删除 {0} 个词？",

@@ -20,11 +20,6 @@ html[data-theme="dark"]{
   --line:rgba(255,255,255,.09); --line2:rgba(255,255,255,.05);
   --tx:#ece9e3; --txs:#a9a6b3; --txm:#6f6c7a;
   --gold:#c9a86a; --goldsf:rgba(201,168,106,.10); --goldln:rgba(201,168,106,.34);
-  /* The mark beside a name. Blue and FILLED is the person who pays; gold and
-     filled is an official account, and that one has nowhere to come from yet.
-     OWNER 2026-08-25「金の塗りを公式に青の塗りをユーザーにしよう」
-     Not --sat, which is Saturday on the calendar: one colour, one meaning. */
-  --verif:#5aa9f0;
   --bad:#d9705c;
   /* A calendar is not just numbers: the week has a red end and a blue one.
      Not --bad, which means an error and would say the wrong thing about a
@@ -49,7 +44,6 @@ html[data-theme="light"]{
   --line:rgba(26,23,18,.12); --line2:rgba(26,23,18,.06);
   --tx:#1b1814; --txs:#5c574e; --txm:#8e887c;
   --gold:#8a6a22; --goldsf:rgba(138,106,34,.07); --goldln:rgba(138,106,34,.30);
-  --verif:#1d6fd0;
   --bad:#c9553f;
   --sun:#c9553f; --sat:#3b6ea5;
   --fill:#2f8f4e;
@@ -636,13 +630,19 @@ canvas.pkc{width:34px;height:34px;display:block}
    and the second one set no `display`, so it inherited `flex` from this one
    and every word on the page stayed in a column beside the face. */
 .meedit{flex:0 0 auto;min-height:44px;padding:0 18px;border-radius:999px;
-        border:1px solid var(--line);background:none;color:var(--tx);
+        border:1px solid var(--gold);background:var(--gold);color:var(--onGold);
         font-family:inherit;font-size:.88rem}
-.meedit:active{border-color:var(--goldln);color:var(--gold)}
-/* Following somebody, and the same button once you do. Filled while you are
-   not -- it is the thing to press -- and an outline once you are, because
-   then it is a state and the press is the undo. */
-.meedit.on{background:var(--gold);color:var(--onGold);border-color:var(--gold)}
+.meedit:active{opacity:.85}
+/* Following somebody, and the same button once you do. FILLED while you are
+   not -- it is the thing to press -- and the ground's own colour once you
+   are, because then it is a state and the press is the undo.
+   「フォロー中は背景と同色、フォローが白とか背景と別の色」OWNER 2026-09-01.
+
+   It was the other way round, with this comment already saying which way it
+   should be: the rule was written and the two selectors were swapped, so
+   Following was the loud one. Nothing throws -- it is two colours -- and it
+   is on every row of the follows list. */
+.meedit.on{background:none;color:var(--tx);border-color:var(--line)}
 .phandle{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 /* The ... and the menu that hangs off it. The wrapper is what the menu is
    positioned against, so nothing is measured or placed by hand -- it moves
@@ -885,6 +885,11 @@ canvas.pkc{width:34px;height:34px;display:block}
        padding:0 6px;border:0;background:none;
        color:var(--gold);font-family:inherit;font-size:.92rem;font-weight:700}
 .navdo:active{opacity:.75}
+/* THE DELETE, at the far end of the bar, while a list is being chosen from.
+   The one colour in this app that means a thing goes. No box round it: the
+   word is the button. 「右上に選択したら削除できるみたいな感じに」OWNER
+   2026-09-01. */
+.navdo.navdel{color:var(--bad)}
 .pwtop{display:flex;gap:12px;margin-bottom:6px}
 .pwfield{flex:1 1 auto;min-width:0}
 .pwfield input, .pwfield textarea{width:100%;background:none;border:0;color:var(--tx);
@@ -941,6 +946,15 @@ canvas.pkc{width:34px;height:34px;display:block}
 .pwring.bad .pwrt{stroke:var(--bad)}
 .pwring .pwleft{margin-top:0}
 .pwring.bad .pwleft{color:var(--bad)}
+/* THE TWO FIELDS OF THE COMPOSER ARE FIELDS, and they are underlined because
+   that is what a field is in this app -- 「かくまるみたいなのでくくるのやめて
+   欲しい。基本下線だけ」. They were borderless, so the meaning was a line of
+   grey words under a line of grey words and read as a caption rather than as
+   somewhere to type: 「なんで翻訳する用の入力欄消したの？」 OWNER 2026-09-01,
+   asked of a screen where it was there the whole time, 12px under the line.
+   One SIDE, which is the shape the owner asked for and not a box. */
+.pwfield .lnin{border-bottom:1px solid var(--line)}
+.pwfield .lnin:focus-within{border-bottom-color:var(--goldln)}
 .pwmn{margin-top:10px;font-size:1.02rem !important;color:var(--txs) !important}
 /* Over the feed, above the bar, under the thumb already holding the phone. */
 .fab{position:fixed;right:20px;bottom:calc(var(--tabh) + 20px);
@@ -1354,6 +1368,14 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
    the same. Shown, not refused. */
 .field input.dup,.field .lnin.dup{color:var(--bad);border-color:var(--bad)}
 .ltck{flex:0 0 auto;width:40px;text-align:center;color:var(--gold)}
+/* THE MARK AT THE FRONT OF A ROW BEING CHOSEN, and the handle a thumb slides
+   down. 44 on both sides because it is pressed, and quiet until the row is in
+   -- an unchosen ring in gold reads as twenty things already chosen.
+   「選択た時ケツにチェックじゃなくて前に◉が入るように」OWNER 2026-09-01. */
+.ltck[data-sel]{width:44px;min-height:44px;display:inline-flex;align-items:center;
+      justify-content:center;color:var(--txm)}
+.ltck[data-sel].on{color:var(--gold)}
+
 .phk.on{border-color:var(--goldln);background:var(--goldsf);color:var(--gold)}
 .spbig{display:flex;align-items:center;justify-content:center;height:96px;font-size:2.4rem;
        margin-bottom:14px;color:var(--tx)}
@@ -1485,6 +1507,11 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
    pixels of padding above and below a 44px input, which made a 66px bar
    across the top of two screens. 「検索バー縦長すぎる」 */
 .search{display:flex;align-items:center;gap:9px;background:none;border:0;border-bottom:1px solid var(--line);border-radius:0;padding:0 2px;margin:8px 0 2px}
+/* THE SEARCH SCREEN'S FIELD IS THE BAR. `.navtop` lays its children out on a
+   baseline, which is right for a word and wrong for a 44pt field, so this one
+   centres itself and takes the room the title is not using.
+   「検索画面の検索ボックス下すぎない？」OWNER 2026-09-01. */
+.navtop .search{flex:1 1 auto;min-width:0;align-self:center;margin:0}
 .search input{flex:1;min-height:44px;background:none;border:none;color:var(--tx);font-family:inherit;font-size:.92rem;outline:none}
 /* A search box is a field that WRAPS now, which means it is a textarea --
    an <input> is one row that scrolls sideways forever and there is no CSS
@@ -1798,13 +1825,14 @@ a.set{text-decoration:none}
 .whgo{flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:12px;
       padding:12px 2px;border:0;background:none;color:var(--tx);
       text-align:left;font-family:inherit}
-/* Outline, and filled with nothing until it is on -- Follow is the thing to
-   press and Following is a state, which is the same shape the profile's own
-   button already uses. */
+/* FILLED until it is on -- Follow is the thing to press, Following is a
+   state and wears the ground's own colour. The same shape the profile's own
+   button uses, and the two were swapped together.
+   「フォロー中は背景と同色、フォローが白とか背景と別の色」OWNER 2026-09-01. */
 .whfo{flex:0 0 auto;min-height:44px;padding:0 14px;border-radius:999px;
-      border:1px solid var(--goldln);background:none;color:var(--gold);
+      border:1px solid var(--gold);background:var(--gold);color:var(--onGold);
       font-family:inherit;font-size:.86rem;white-space:nowrap}
-.whfo.on{background:var(--goldsf);color:var(--txm);border-color:var(--line)}
+.whfo.on{background:none;color:var(--tx);border-color:var(--line)}
 .whrow .pav{width:40px;height:40px;flex:0 0 auto}
 .whb{flex:1 1 auto;min-width:0;display:flex;flex-direction:column}
 .whb .pname,.whb .phandle{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -1898,10 +1926,9 @@ a.set{text-decoration:none}
 .pwq .phandle{font-size:.78rem}
 .pwq .pline{font-size:.88rem}
 .pwq .pmn{margin-top:1px;font-size:.78rem;color:var(--txm)}
-/* What money buys that anybody can see, beside a name. Plus is the star
-   drawn, Studio is the star filled -- outline against solid, which is the one
-   difference that survives being fifteen pixels wide.
-   「plusとstudioでそれぞれTwitterの青バッチみたいなやつつけたい」 */
+/* What money buys that anybody can see, beside a name. One mark, in gold,
+   and it says Pro. 「plusとstudioでそれぞれTwitterの青バッチみたいなやつ
+   つけたい」was two of them; there is one. */
 .bdgw{flex:0 0 auto;display:inline-flex;align-items:center;margin-left:1px;
       vertical-align:-2px}
 /* The colour goes on the MARK, not on the wrapper, because the mark appears in
@@ -1911,8 +1938,13 @@ a.set{text-decoration:none}
    three rules agreeing, and the third is the one that gets missed -- it is the
    only one nobody sees until they are about to pay. `.bdg` is the svg's own
    class and travels with it. */
-.bdg{color:var(--verif)}
-.bdgw.studio{color:var(--gold)}
+/* GOLD, and there is one mark. It was blue for the person who pays and gold
+   for an official account -- and the official one had nowhere to come from,
+   so what shipped was a blue mark and a rule nothing ever wore.
+   「企業バッジ一旦廃止して、青バッジをそのまま金にして欲しい。プロプラン」
+   OWNER 2026-09-01. `--verif` went with it: a token nothing reads is the next
+   person's wrong answer. */
+.bdg{color:var(--gold)}
 .bdgw svg{display:block}
 .pname .bdgw{margin-left:5px}
 /* The language, as a row of its own between what somebody says about
@@ -2530,14 +2562,15 @@ a.set{text-decoration:none}
    the two below: two faces instead of three, overlapped, and the time moved
    off the end of the row into the sentence.
 
-   93 is the tallest a row can be and is therefore the floor for all of them:
-   two lines of the sentence (`.ntfw` reserves them whether or not they are
-   used), the post's own line under it, and this padding. Measured on both of
-   the owner's phones -- 402x874 and 320x568 -- and the five faces of the
-   notices come out 93 on each. A FOLLOW is the one with no post line, so
-   without the floor it sat 5px short of the four around it. */
+   NO FLOOR. It was 93 -- the tallest a row can be, made the height of all of
+   them -- so a notice of one line sat in the middle of 93px with nothing
+   above or below it. 「通知なんか真ん中に文字ないせいできもい。文字増えたら
+   2列にすればよくない？」OWNER 2026-09-01. A row is as tall as what is in it
+   now: one line where the sentence is one line, two where it wraps or where
+   the post under it has something to say. The face is 44 and the padding 24,
+   so nothing is ever shorter than 68. */
 .ntf{display:flex;align-items:center;gap:10px;margin:0 -24px;padding:12px 16px;
-     min-height:93px;border-bottom:1px solid var(--line)}
+     border-bottom:1px solid var(--line)}
 /* The mark, and every kind of notice hangs it in the same place. The five
    drawings are not all the same height -- the heart is 17, the follow 14, the
    recommendation 15 -- so with nothing to centre them against, the row for a
@@ -2610,10 +2643,7 @@ a.set{text-decoration:none}
    It RESERVED both lines for a while, to make every row the same height. That
    is the wrong way round and it showed: a one-line notice then had a line of
    nothing between its sentence and the post under it, so the short rows were
-   the ones that looked broken. The floor on `.ntf` does that job without it --
-   the tallest a row can be is two lines and the post's line, which comes to
-   less than 93, so every row lands on 93 and a short one is simply centred in
-   it. */
+   the ones that looked broken. Two is the ceiling and nothing is reserved. */
 .ntfw{color:var(--tx);font-size:.95rem;line-height:1.4;
       display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;
       overflow:hidden}
@@ -2624,10 +2654,10 @@ a.set{text-decoration:none}
    between them and a row ended 「… liked this ·」 with `1m` alone underneath,
    which reads as a sentence that lost its end. */
 .ntfwh{color:var(--txm);white-space:nowrap}
-/* Reserved whether or not there is anything in it -- see notRow(). Without a
-   settled height an empty one is 0 and the row it is on centres everything
-   else against a different middle. */
-.ntfp{color:var(--txm);font-size:.88rem;min-height:1.4em;
+/* There when there is something to read and absent when there is not -- see
+   notRow(). It was reserved empty to hold every row to one height, and an
+   empty line under a one-line sentence is what the owner was looking at. */
+.ntfp{color:var(--txm);font-size:.88rem;
       overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* A post kept to yourself, beside the time. */
 .ppv{display:inline-flex;align-items:center;color:var(--txm)}

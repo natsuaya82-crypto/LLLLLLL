@@ -155,7 +155,7 @@ defLang('pt', (function(){
     read   : mkApprox(word_pt, syl_pt),
     str    : {
       "cap.warn"                  : "Restam {0} palavras no Grátis",
-      "cap.hid"                   : "mais {0}",
+      "cap.hid"                   : "{0} ocultos",
       "cap.lapse.h"               : "O seu plano terminou",
       "cap.lapse.d"               : "De volta ao Grátis: o dicionário mostra 100 palavras. <b>Nada foi apagado.</b> Está tudo aqui, e na sua cópia de segurança.",
       "cap.lapse.ok"              : "Fechar",
@@ -714,8 +714,6 @@ defLang('pt', (function(){
       "words.sort.pos"   : "Por classe gramatical",
       "words.sel"        : "Selecionar",
       "words.sel.done"   : "Concluir",
-      "words.sel.all"    : "Selecionar tudo",
-      "words.sel.none"   : "Desmarcar tudo",
       "words.sel.row"    : "Escolher esta palavra",
       "words.sel.del"    : "Eliminar",
       "confirm.delmany"  : "Eliminar {0} palavras?",

@@ -109,6 +109,14 @@ netResume(bootSession, function(){});
 actWire(document.getElementById('app'));
 /* and one above the tab bar, which is beside the screen rather than in it */
 actWire(document.getElementById('tabs'));
+/* AND ONE ABOVE THE SCRIM, which is where the popup is. It is the third
+   thing on the page that is outside `#app`, and it was the one nothing was
+   listening to: `popAsk()`'s two buttons carry names like every other button
+   in the app, and no listener could hear them, so pressing 閉じる did
+   nothing at all. 「ポップの閉じるとかボタン押しても閉じれないよ」 OWNER
+   2026-09-01. Nothing threw and press-check was green -- it presses what is
+   inside `#app`, and this is the one button that is not. */
+actWire(document.getElementById('sbg'));
 /* and how much of the screen the phone's keyboard is covering, so a field
    pinned to the bottom is above it rather than behind it */
 vpKbWire();

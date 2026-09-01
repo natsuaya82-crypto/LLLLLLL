@@ -77,26 +77,15 @@ function wSelList(){
 }
 function wSelOn(){ wSel={}; wUndo=null; render(); }
 function wSelOff(){ wSel=null; render(); }
-/* The whole screen, not the list. Ticking the first row is what turns the two
-   buttons at the foot from down to up, and what turns "select all" into
-   "deselect all" -- and both of those are OUTSIDE `#w-list`, which is all
-   `wordsPaint()` redraws. Repainting only the list left the delete dimmed with
-   twenty words ticked. */
+/* The whole screen, not the list. Choosing the first row is what turns the far
+   end of the bar from Done into Delete -- and that is OUTSIDE `#w-list`, which
+   is all `wordsPaint()` redraws. Repainting only the list left the bar saying
+   Done with twenty words chosen. */
 function wSelTap(hw){
   if(!wSel) return;
   if(wSel[hw]) delete wSel[hw]; else wSel[hw]=1;
   render();
 }
-/* Everything on the list as it is filtered and searched right now, which is
-   what somebody looking at it means by "all of them". */
-function wSelAll(){
-  var items=wordsList(), i;
-  if(!wSel) return;
-  wSel={};
-  for(i=0;i<items.length;i++) wSel[items[i].hw]=1;
-  render();
-}
-function wSelNone(){ if(wSel){ wSel={}; render(); } }
 function wFilters(){
   var out=[{k:POS_ALL, lab:posLabel(POS_ALL)}], i;
   for(i=0;i<POS.length;i++) out.push({k:POS[i], lab:posLabel(POS[i])});
@@ -221,8 +210,25 @@ function vWords(){
        and neither is placed by hand: `.navq` and `.navdo` both carry
        margin-left:auto, so the first takes the free space and the second
        lands against it. */
+    /* WHILE CHOOSING, THE FAR END OF THE BAR IS THE DELETE.
+       「右上に選択したら削除できるみたいな感じに」 OWNER 2026-09-01. It is
+       one control and it always says the thing there is to do: nothing chosen
+       yet, so it says Done and leaves; something chosen, so it deletes it. It
+       was at the foot of the screen in a bar of its own, which is a second
+       bar for one button. */
     navTop('', wSel
-      ? '<button class="navdo"' + DO('wSelOff') + '>'+esc(t('words.sel.done'))+'</button>'
+      ? ((wSelList().length
+            ? '<button class="navdo navdel"' + DO('wSelDel') + '>'+
+                esc(t('words.sel.del'))+'</button>'
+            : '')+
+         /* AND THE WAY OUT, ALWAYS. Delete replaced it for a moment and that
+            left a screen you could only leave by deleting something or by
+            going back a page. 「それって完了消したの？」OWNER 2026-09-01.
+            Two controls, and neither is placed by hand: both carry
+            margin-left:auto, so the first takes the free space and the
+            second lands against it -- Done at the far end, where an iPhone
+            puts it. */
+         '<button class="navdo"' + DO('wSelOff') + '>'+esc(t('words.sel.done'))+'</button>')
       : '<button class="navdo"' + DO('wSelOn') + '>'+esc(t('words.sel'))+'</button>')+
     '<div class="chead">'+
     /* THE SAME FIELD AS EVERYWHERE ELSE, and it was an <input>.
@@ -253,9 +259,13 @@ function vWords(){
     '<div class="wfilrow">'+
       '<button class="wfil"' + DO('openFil') + '>'+
         '<span class="wfilv">'+esc(wFilLab())+'</span>'+ICON_GO+'</button>'+
+      /* SELECT ALL / DESELECT ALL IS GONE. 「全て選択ってボタン出さないで
+         欲しい。なくていいよ。その代わりスライドで下ビューで選択できるように
+         したい」 OWNER 2026-09-01 -- a button that acts on rows you cannot
+         see, next to a filter and a sort that decide which rows those are, is
+         a button whose meaning changes under it. The thumb slid down the
+         marks is what chooses a run of them now. */
       wSortRow()+
-      (wSel? '<button class="wsrt"' + DO(wSelList().length? 'wSelNone' : 'wSelAll') + '>'+
-        esc(wSelList().length? t('words.sel.none') : t('words.sel.all'))+'</button>' : '')+
     '</div>'+
     '</div><div class="body" id="w-list">'+wordsBodyHTML(items)+wordsUndoHTML()+wordsHidHTML()+'</div>'+
     /* A round + under the thumb, not a bar across the foot. The bar was as
@@ -268,15 +278,12 @@ function vWords(){
        the foot the app already has (`.barfix`, worn by www/sheet.js and
        www/sound.js). Both are down until something is chosen: a button that
        does nothing is a button that is broken. */
-    (wSel
-      ? '<div class="barfix">'+
-          /* Delete and nothing else. 「複数選択のedit今実装しないでいいや
-             deleteだけにしよう。」OWNER 2026-09-01 -- so the page that wrote
-             one part of speech over everything chosen is not in the app, and
-             neither is the button that opened it. */
-          '<button class="btn ghost"' + DO('wSelDel') + (wSelList().length? '' : ' disabled')+'>'+
-            esc(t('words.sel.del'))+'</button>'+
-        '</div>'
+    /* Delete and nothing else. 「複数選択のedit今実装しないでいいやdeleteだけ
+       にしよう。」OWNER 2026-09-01 -- so the page that wrote one part of
+       speech over everything chosen is not in the app, and neither is the
+       button that opened it. It is in the BAR now and not in a strip across
+       the foot; while choosing, the round + is simply not there. */
+    (wSel? ''
       : '<button class="fab"' + DO('openAdd') + ' aria-label="'+esc(t('home.write'))+'">'+
           ICON_ADD2+'</button>')+
     '</div>';
@@ -444,14 +451,28 @@ function entryHTML(w){
      puts a tick on and takes it off, and it does not open the word. Nothing
      is drawn beside it either -- a play button under a thumb that is picking
      rows is a word said by mistake, twenty times. */
+  /* THE MARK IS AT THE FRONT, and it is a ring with the middle filled once
+     the row is in. 「選択た時ケツにチェックじゃなくて前に◉が入るようにして
+     欲しい」 OWNER 2026-09-01. It was a tick off the right-hand end, which
+     is where iOS puts a setting's answer and not where a list says what is
+     chosen -- and a column of ticks that is empty until something is chosen
+     reads as nothing at all until you have already worked out how the screen
+     works.
+
+     `data-sel` is what makes the column a HANDLE: a thumb put on it and slid
+     down chooses every row it crosses (www/shell.js § sliding down a list).
+     Everywhere else on the row still scrolls, because a list being chosen
+     from is still a list you have to get to the bottom of. */
   if(wSel) return '<div class="entry">'+
+    '<span class="ltck'+(wSel[w.hw]? ' on':'')+'" data-sel="1"'+DO('wSelTap', [w.hw])+
+      ' role="button" aria-label="'+esc(t('words.sel.row'))+'">'+
+      (wSel[w.hw]? ICON_DOT : ICON_RING)+'</span>'+
     '<button class="ebody"' + DO('wSelTap', [w.hw]) + ' aria-label="'+esc(t('words.sel.row'))+'">'+
     '<div class="hwrow"><span class="hw">'+esc(wOut(w.hw))+'</span>'+
     '<span class="rd">'+esc(phIpa(wPh(w)))+'</span>'+
     '<span class="pos">'+esc(posLabel(w.pos))+'</span></div>'+
     '<div class="mn">'+mn+'</div>'+
     '</button>'+
-    '<span class="ltck">'+(wSel[w.hw]? ICON_TICK : '')+'</span>'+
     '</div>';
   return '<div class="entry">'+
     /* The row opens the word, and it is the whole row. It used to say the word

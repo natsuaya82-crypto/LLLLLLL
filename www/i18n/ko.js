@@ -327,7 +327,7 @@ defLang('ko', (function(){
     read   : mkApprox(word_ko, syl_ko),
     str    : {
       "cap.warn"                  : "무료 플랜에서 {0}개 더 가능",
-      "cap.hid"                   : "{0}개 더",
+      "cap.hid"                   : "숨김 {0}",
       "cap.lapse.h"               : "플랜이 끝났습니다",
       "cap.lapse.d"               : "무료 플랜으로 돌아갑니다. 사전은 100개까지 보여 줍니다. <b>지워진 것은 없습니다.</b> 전부 그대로 있고 백업에도 있습니다.",
       "cap.lapse.ok"              : "닫기",
@@ -883,8 +883,6 @@ defLang('ko', (function(){
       "words.sort.pos"   : "품사별",
       "words.sel"        : "선택",
       "words.sel.done"   : "완료",
-      "words.sel.all"    : "전체 선택",
-      "words.sel.none"   : "선택 해제",
       "words.sel.row"    : "이 단어 선택",
       "words.sel.del"    : "삭제",
       "confirm.delmany"  : "{0}개 단어를 삭제할까요?",
