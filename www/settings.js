@@ -770,12 +770,6 @@ function vPlans(){
        asked for in a room they came to for one thing. */
     '<div class="plkb">'+kbShotHTML(kbOf().lay)+'</div>'+
     '<div class="plrail">'+PLANS.map(planPage).join('')+'</div>'+
-    /* And directly under the prices, because that is where the guideline puts
-       it: 「next to the price」. Above Restore and Cancel rather than at the
-       foot of the screen -- a person deciding whether to press a price has
-       read what is between the price and their thumb, and not what is below
-       two buttons they are not going to press. */
-    planTerms()+
     /* Apple wants somewhere to press for both, and neither is a purchase:
        restoring reads what this Apple ID already holds, and cancelling is
        Apple's own sheet.
@@ -783,7 +777,20 @@ function vPlans(){
          サブスクリプションを解除するをその下に小さめに入れよう」 */
     '<div class="plfoot"><button class="btn ghost" style="width:100%"' +
       DO('storeRestore') + '>'+esc(t('plan.restore'))+'</button></div>'+
-    '<div class="plfoot2"><button class="btn ghost" style="width:100%"' +
+    /* AT THE FOOT, AND UNDER THE BAR OF TABS. 「一番下に置いて欲しい。
+       サブスクリプションを解除するは下タブの裏に隠すように入れてよ」 OWNER
+       2026-09-01. It was directly under the prices, on the argument that the
+       guideline says 「next to the price」 -- and what Apple asks is that the
+       terms and the privacy policy are ON the screen that offers the
+       subscription, which this is. Nothing is removed and nothing stops
+       working: both links are still here, still on the paywall, still the two
+       published pages.
+
+       The row that CANCELS goes last, below them, in the strip the bar of
+       tabs stands on -- somebody looking for it scrolls to it and nobody else
+       meets it on the way to a price. */
+    planTerms()+
+    '<div class="plfoot2 plunder"><button class="btn ghost" style="width:100%"' +
       DO('storeManage') + '>'+esc(t('plan.cancel'))+'</button></div>'+
   '</div>';
 }

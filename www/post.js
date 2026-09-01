@@ -1063,16 +1063,8 @@ function pwHTML(){
          can stretch -- and it was, so a photograph sat under the fold and the
          line never grew. The page scrolls now, so the field is as tall as
          what is in it and everything under it moves down. */
-      /* `fitin` -- THE FIELD IS AS TALL AS THE SPACE, not as tall as its
-         text. 「返信元／返信スペース／キーボード。ここのスペース空きすぎだから
-         もっと広く使え」 OWNER 2026-09-01. It grew with what was typed, so a
-         reply with one word in it was one line of text with a hand's worth of
-         empty glass under it, and the screen the person is actually using was
-         the smallest thing on it. A field the layout gives its height to
-         scrolls inside itself, which is what every composer does -- shell.js
-         § lnFit leaves a `fitin` field alone. */
       lnField('pw-ln', t('post.ln.ph'), ' maxlength="'+POST_MAX+'"'+IN('pwSetLn'),
-        PW.ln, 'fitin '+dirClass(scriptDir())+(myFontOn()? ' tfont' : ''))+
+        PW.ln, dirClass(scriptDir())+(myFontOn()? ' tfont' : ''))+
       /* The meaning sits in the same column as the line, in the same
          borderless field, because it is the second half of the same act. */
       /* Read-only when it is the day's sentence. Not disabled: a disabled
@@ -1094,6 +1086,21 @@ function pwHTML(){
          so the row that adds them is not there rather than there and
          refusing. */
       (PW.ed? '' : pwStripHTML())+
+      /* THE REST OF THE COLUMN, and it is where you are writing. The two
+         fields are as tall as what is in them and everything left over fell
+         under them doing nothing -- a screen with its words packed into the
+         top and a hand's worth of empty glass under them, that a thumb could
+         land on all day without the caret moving.
+         「下のスペースあるのに詰まってるよね？これはなんで？わざと？」 OWNER
+         2026-09-01.
+
+         Nothing MOVES: the fields keep the heights they were measured at (the
+         104 floor, the two fields of a reply, the row of pictures directly
+         under the meaning). What was empty is now the same field, one step
+         further down -- pressing it puts the caret at the end of the line,
+         which is what pressing under the last line of anything you are
+         writing does. */
+      '<div class="pwrest"' + DO('pwFocusLn') + '></div>'+
       '</div></div>'+
     '</div>'+
     /* The bar. It is the last thing in the form and the only thing that does
@@ -1112,6 +1119,16 @@ function pwHTML(){
    render() -- come back from the card and the line you were typing is gone.
    So the string is kept in step too, without redrawing anything. */
 function pwFresh(){ if(FORM && FORM.key==='post:') FORM.html=pwHTML(); }
+/* The empty part of the column, pressed. The caret goes to the END of what is
+   there rather than to the start: pressing under the last line of something
+   you are writing is asking to go on writing it. */
+function pwFocusLn(){
+  var e=document.getElementById('pw-ln');
+  if(!e) return;
+  e.focus();
+  if(e.setSelectionRange && typeof e.value==='string')
+    e.setSelectionRange(e.value.length, e.value.length);
+}
 /* ---- the keyboard is up the whole time this screen is ------------------
    OWNER 2026-08-25「投稿開いたらキーボードが自動で出て下ろせないが正解」.
 

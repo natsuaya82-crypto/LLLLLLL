@@ -66,11 +66,22 @@ const r = await pg.evaluate(({ s }) => {
   var v = open('en');
   var rail = v.querySelector('.plrail');
   var restore = v.querySelector('.plfoot');
+  /* The LAST thing on the page: cancelling, which the owner asked be put at
+     the foot 「サブスクリプションを解除するは下タブの裏に隠すように入れてよ」
+     OWNER 2026-09-01. The window this check reads is everything between the
+     prices and that -- the sentence and the two links moved down inside it
+     the same day 「一番下に置いて欲しい」, and what Apple asks is that they
+     are ON the screen that offers the subscription, which they are. */
+  var end = v.querySelector('.plunder');
   out.hasRail = !!rail;
   out.hasRestore = !!restore;
+  out.hasEnd = !!end;
 
-  /* ---- 1. it is between the prices and the Restore button --------------- */
-  var mid = (rail && restore) ? between(v, rail, restore) : null;
+  /* ---- 1. it is under the prices, on the screen that offers them --------
+     The window is between RESTORE and the cancel row, which is exactly where
+     the sentence and the two links now live -- so "nothing else is in here"
+     below stays a claim about them and does not start counting a button. */
+  var mid = (restore && end) ? between(v, restore, end) : null;
   out.midCount = mid ? mid.length : -1;
   out.midText = mid ? text({ textContent: mid.map(function(e){
     return e.children.length ? '' : (e.textContent || '');
@@ -80,6 +91,9 @@ const r = await pg.evaluate(({ s }) => {
   var note = v.querySelector('.plrail ~ .docs');
   out.noteText = note ? text(note) : '';
   out.noteBeforeRestore = !!(note && mid && mid.indexOf(note) >= 0);
+  /* and the cancel row is after it, which is the owner's order */
+  out.cancelLast = !!(note && end &&
+    (note.compareDocumentPosition(end) & Node.DOCUMENT_POSITION_FOLLOWING));
 
   /* ---- 3. and so is what a term is and what it costs --------------------
      Not re-derived: the two spans the term buttons draw, read off the page. */
@@ -137,12 +151,16 @@ function say(ok, line){ console.log('  ' + (ok ? '' : 'FAILED  ') + line); if (!
 
 console.log('\nthe disclosure Apple asks for, beside the price (Guideline 3.1.2)\n');
 
-say(r.hasRail && r.hasRestore, 'the plans screen has its prices and its Restore button');
+say(r.hasRail && r.hasRestore && r.hasEnd,
+    'the plans screen has its prices, its Restore button and its cancel row');
 
-/* The guideline's own words are 「next to the price」, so where it is IS the
-   claim. Between the rail and Restore, in document order, on the real page. */
+/* What Apple asks is that it is on the screen that offers the subscription.
+   Between the prices and the last thing on the page, in document order, on
+   the real page. 「一番下に置いて欲しい」 OWNER 2026-09-01 moved it below
+   Restore; it is still under the prices and still on this screen. */
 say(r.noteBeforeRestore,
-    'the renewal sentence is between the prices and the buttons under them');
+    'the renewal sentence is under the prices, on the screen that offers them');
+say(r.cancelLast, 'and cancelling is after it, at the foot of the page');
 say(r.noteText.length > 0, 'and it says something: "' + r.noteText + '"');
 say(/automatically/i.test(r.noteText) && /cancel/i.test(r.noteText),
     'which is that it renews by itself until somebody cancels');
