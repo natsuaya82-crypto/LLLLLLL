@@ -11,13 +11,13 @@ A conlang-building app. Plain HTML/CSS/JS under `www/`, wrapped by Capacitor for
 > two `git rev-list` lines to run before deciding anything is missing —
 > `master` once sat 144 commits behind, and a session that cloned it reported
 > the system keyboard as unbuilt, correctly, about an app a week old. It also
-> says the two that are easiest to get backwards: the timeline **is** on the
-> server now — `post`, `react`, `follow`, `profile` and the notices RPC, with
-> `localStorage` as the copy that survives a bad network — and CI runs three of
-> these twenty-eight checks, so a green tick on a push is not the gate. This
-> paragraph said the opposite of the first of those for a week after it stopped
-> being true, which is the whole reason that file says how to re-check rather
-> than what to believe: `grep -n "rest/v1" www/net.js`.
+> says the two that are easiest to get backwards: **the server holds both
+> halves** — the timeline and the language, `post` `react` `follow` `profile`
+> `draft` `language` `slice` and the notices RPC, with `localStorage` as the
+> copy that survives a bad network — and CI runs three of these twenty-eight
+> checks, so a green tick on a push is not the gate. Ask the repository rather
+> than this line, which is what that file exists to say:
+> `grep -o "rest/v1/[a-z_]*" www/net.js | sort | uniq -c`.
 
 ## The rules that come before the code
 
@@ -46,15 +46,26 @@ and "the no data" — a failed check means fewer buttons, never fewer words.
 hundred words after it ends, the list is a hundred, and not one byte of any
 slice moved. → `docs/PAID_FEATURES.md`
 
-**Online.** **Everything the timeline is made of lives on the server** —
-posts, photographs, the voice, **drafts**, the handle, the display name, the
-profile picture, reactions, follows, blocks and reports. 「SNSは全部サーバー」,
-and it has been said more than once because the code keeps being read as the
-spec: drafts are a flat key on the phone and a voice is a file in Documents,
-and **both of those are old code, not a decision**. The phone keeps the copy
-that works with no signal; it is never where a thing lives. What is NOT the
-timeline's — a language's backup file, an exported sheet, the settings — is
-the phone's and stays there.
+**Online.** **The server is where things live, and that is both halves of
+the app.** Everything the timeline is made of — posts, photographs, the voice,
+**drafts**, the handle, the display name, the profile picture, reactions,
+follows, blocks and reports 「SNSは全部サーバー」 — **and the language itself**,
+every slice of it, the keyboard among them, because a keyboard is part of a
+language. The phone keeps the copy that works with no signal; **it is never
+where a thing lives.**
+
+**Three things are the phone's, and that is the whole list**: a language's
+backup file, an exported sheet, and the settings.
+「そもそも端末に保存するもんはないぞほとんど」 OWNER 2026-09-01. Anything else
+written down as the phone's is old, and old writing is what gets read and
+believed — that is the sentence that has already sent a wrong answer to the
+owner once.
+
+**The plan is the ACCOUNT's** 「課金とアカウントとキーボードはアカウントに
+結びつく」 OWNER 2026-09-01. It follows the person to whatever phone they sign
+in on, so a line that puts it inside the settings is old however it is phrased
+— and the keyboard in that same sentence is the language's, which is the
+server, not a fourth thing on the phone.
 
 Anything that needs the server is built assuming the server is
 there. A screen that half-works without one is not a step on the way to being
@@ -603,11 +614,13 @@ anybody noticed.
 
 ### 6. A language somebody already has still opens
 
-Storage is per language. Eleven slices — words, lines, name, script, letters,
-notes, phases, talk, sounds, keyboard, world — live under `lingua.<id>.<slice>`;
-`lingua.langs` says which languages are here and whose; `lingua.set` is the
-person's settings and belongs to no language. `langKey('words')` is the only
-thing that knows how a language is filed.
+Storage is per language. **The record is the `slice` rows on the server**;
+`lingua.<id>.<slice>` is the copy that runs with no signal, and `netLangSync()`
+puts the two together at launch. `SLICES` in `core.js` is the list of them —
+**count them off that and not off a line here**, which has said eleven and has
+said twelve. `lingua.langs` says which languages are here and whose;
+`lingua.set` is the person's settings and belongs to no language.
+`langKey('words')` is the only thing that knows how a language is filed.
 
 `SLICES` in `core.js` is that list, and being *in* it is what makes a slice
 **backed up**: `bkPack()` walks it, so a slice outside it is in no backup.
@@ -1572,14 +1585,14 @@ the string and the function — and `act-check` fails on either half alone.
 | `www/post.js` | a post, and the line the two sides do not cross (ch 19) |
 | `www/me.js` | who you are: the face, the name, the handle, the line about yourself (ch 20) |
 | `www/backup.js` | the copy that survives the app — a language as one file in Documents (ch 24) |
-| `www/rec.js` | the voice on a post — thirty seconds. A file in Documents today, and **that is the code being old**: 「SNSは全部サーバー」, so a voice belongs on the server with the post it is part of. Not moved yet — `docs/BACKLOG.md` (ch 25) |
+| `www/rec.js` | the voice on a post — thirty seconds. It goes up with the post 「SNSは全部サーバー」: `netUpVoice()` (`www/net.js`) puts it in the `post-media` bucket and writes the path to `body.vu`, and `voRemote()` is how one name tells a path on the server from a file this phone recorded (ch 25) |
 | `www/net.js` | the one window onto the server, and the only place a secret could be (ch 21) |
 | `www/ipa.js`, `reading.js` | spelling → IPA, IPA → per-language respelling |
 | `www/phases.js`, `letters.js`, `wsys.js` | phonology, alphabet, writing system |
 | `www/otf5.js`, `glyph.js` | on-device OTF font writer and glyph rendering |
 | `www/assist.js`, `grammar.js` | what the app proposes: sounds, letters, words. Local arithmetic, on every plan |
 | `www/voice.js`, `notes.js` | speech, notes |
-| `docs/STATE.md` | where the project stands: which branch is the app, what is built, what only looks built (the timeline is on the phone; the `post`/`follow`/`quote` tables are written and unused), what only a person with a dashboard login can do, and what CI does not run. The one file to hand somebody who has never seen this repo |
+| `docs/STATE.md` | where the project stands: which branch is the app, what is built, what only looks built, what only a person with a dashboard login can do, and what CI does not run. The one file to hand somebody who has never seen this repo |
 | `supabase/schema.sql` | what the server holds and who may touch it — held by `npm run rls` |
 | `supabase/setup.md` | every click in the Supabase dashboard, in the order they have to happen, and what to look at afterwards to know it worked |
 | `supabase/mail.md` | how the confirmation mail gets sent. Dashboard fields and DNS records, so there is nowhere else it can live |
