@@ -501,10 +501,25 @@ function whoOf(h){
                the one face on a page is only why it did not show yet. A page
                about somebody else is the last place to key anything as mine. */
             id:'w:'+h,
-            /* Neither is on `profile` at all -- see netWho(). Absent rather
-               than zero: a profile that fills them in with a 0 is a profile
-               saying something it was never told. */
-            bio:'', fo:0, fr:0, out:!!got.out};
+            /* WHAT THEY WROTE ABOUT THEMSELVES, passed through rather than
+               blanked. 「自己紹介を見せないって選択肢を俺はいつ与えた？」
+               OWNER 2026-09-01 -- it is a thing a person wrote and it is
+               shown.
+
+               It was `bio:''` outright, which is not the same as absent: the
+               day netWho() starts answering with one, a hard-coded '' here
+               would throw it away and the screen would go on looking exactly
+               as wrong. `claude/acct2` is adding the column and the read; the
+               drawing is already here, on both screens that show a person
+               (whoCard below and snsWhoRow in www/sns.js), and both already
+               draw nothing when there is nothing. So this needs no second
+               change when the column lands.
+
+               The two counts stay 0 and stay a lie waiting to be told: no
+               request in www/net.js asks for anybody's follow counts but your
+               own -- every `follow` query there is keyed on SESS.uid. That is
+               net.js's and is in the report. */
+            bio:got.bio||'', fo:0, fr:0, out:!!got.out};
   /* And until it answers, the copy: a post of theirs, if this phone has one.
      Better than an empty page for the moment the request is out, and it is
      where the whole page came from before there was anywhere else. */
