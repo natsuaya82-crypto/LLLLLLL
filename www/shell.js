@@ -32,6 +32,7 @@ var app=document.getElementById('app');
    afterwards, which is not a rule anybody has to remember. */
 function viewReset(){
   q=''; wFil='*'; wSort='a';           /* the word list */
+  wSel=null;                           /* and whether it is one you choose from */
   fq=''; fpick=null;                   /* the find screen */
   abVow='';                            /* the abugida editor */
   ltSort='own'; ltFil='all'; ltQ='';   /* the alphabet's order, filter and search */
@@ -96,6 +97,17 @@ function viewReset(){
 var ABPAGES={about:1, world:1};
 function viewLeft(from, to){
   if(ABPAGES[from] && !ABPAGES[to]) ABOPEN={};
+  /* What a bulk delete can put back (`wUndo`, www/words.js) holds words as
+     they were AT THE POSITIONS THEY WERE IN, so pressing it after standing
+     somewhere else would write those over whatever has happened since --
+     which is a restore winning, and docs/DATA_SAFETY.md § 2 is that it must
+     not. It lasts exactly as long as you are looking at the list it is about.
+
+     The choice itself is not here and that is deliberate: editing what was
+     chosen is a page you GO to, so dropping the selection on the way off this
+     screen would empty it on the way to the thing it is for. `viewReset()`
+     drops that one. */
+  if(from==='words') wUndo=null;
 }
 
 /* ---- how much of the screen the phone's own keyboard is covering ------

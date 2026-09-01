@@ -48,6 +48,50 @@ function wGroupLab(w){
   if(wSort==='pos') return posLabel(w.pos);
   return String(w.hw).charAt(0).toUpperCase();
 }
+/* ---- choosing rows, and doing one thing to all of them -----------------
+   「選択ボタン押して一括削除とか一括編集できるようにしたい。」
+   OWNER 2026-09-01（ビルド #107、実機）
+
+   `wSel` is null when the list is an ordinary list and a map of headwords
+   when it is a list you are choosing from. Null and empty are different
+   states: an empty map is "selecting, nothing chosen yet", and a map is
+   never read for its size to answer whether choosing is on.
+
+   Neither this nor the undo below is the language's -- nothing here is
+   written to `localStorage`, nothing is in `SLICES`, and nothing is in the
+   backup. They are forgotten in two different places and that is not an
+   oversight: `wSel` is in `viewReset()` beside the search and the order,
+   because it is where you are standing in a LANGUAGE, and going to the page
+   that edits what was chosen must not throw the choice away. `wUndo` is in
+   `viewLeft()`, which is walking off the screen, because it holds words as
+   they were at the positions they were in. */
+var wSel=null;
+/* What a bulk delete can put back, held only while you are standing on the
+   list it happened on. */
+var wUndo=null;
+function wSelList(){
+  var out=[], k;
+  if(!wSel) return out;
+  for(k in wSel) if(wSel.hasOwnProperty(k) && wSel[k]) out.push(k);
+  return out;
+}
+function wSelOn(){ wSel={}; wUndo=null; render(); }
+function wSelOff(){ wSel=null; render(); }
+function wSelTap(hw){
+  if(!wSel) return;
+  if(wSel[hw]) delete wSel[hw]; else wSel[hw]=1;
+  wordsPaint();
+}
+/* Everything on the list as it is filtered and searched right now, which is
+   what somebody looking at it means by "all of them". */
+function wSelAll(){
+  var items=wordsList(), i;
+  if(!wSel) return;
+  wSel={};
+  for(i=0;i<items.length;i++) wSel[items[i].hw]=1;
+  render();
+}
+function wSelNone(){ if(wSel){ wSel={}; render(); } }
 function wFilters(){
   var out=[{k:POS_ALL, lab:posLabel(POS_ALL)}], i;
   for(i=0;i<POS.length;i++) out.push({k:POS[i], lab:posLabel(POS[i])});
@@ -171,7 +215,15 @@ function vWords(){
        moved to this bar, and the rules moved into the grammar page's chapters
        -- and neither saw that the last row had gone with the other's. A ⋯
        that opens nothing is a button that used to work. */
-    navTop('', askBtn(t('ask.word.ask'), null))+
+    /* Choosing is what the far end of the bar is for -- 「その場で終わらせる
+       もの」 -- and it is where an iPhone puts Select. Two controls sit there
+       and neither is placed by hand: `.navq` and `.navdo` both carry
+       margin-left:auto, so the first takes the free space and the second
+       lands against it. */
+    navTop('', wSel
+      ? '<button class="navdo"' + DO('wSelOff') + '>'+esc(t('words.sel.done'))+'</button>'
+      : askBtn(t('ask.word.ask'), null)+
+        '<button class="navdo"' + DO('wSelOn') + '>'+esc(t('words.sel'))+'</button>')+
     '<div class="chead">'+
     /* THE SAME FIELD AS EVERYWHERE ELSE, and it was an <input>.
        「全部改行して画面内に文字が収まるようにして欲しい」 OWNER 2026-08-27,
@@ -194,26 +246,45 @@ function vWords(){
        the time, and adding a thirteenth made it worse.
        「品詞スロットも横に並べるのじゃなくてタップしたら品詞を開いて選べるタイプ
        にして」 It says which one is on and opens the list. */
+    /* The same row, saying the same two things, plus the one thing that only
+       exists while you are choosing. The filter and the order stay up: what
+       somebody is about to select twenty of is nearly always what they have
+       just narrowed the list down to. */
     '<div class="wfilrow">'+
       '<button class="wfil"' + DO('openFil') + '>'+
         '<span class="wfilv">'+esc(wFilLab())+'</span>'+ICON_GO+'</button>'+
       wSortRow()+
+      (wSel? '<button class="wsrt"' + DO(wSelList().length? 'wSelNone' : 'wSelAll') + '>'+
+        esc(wSelList().length? t('words.sel.none') : t('words.sel.all'))+'</button>' : '')+
     '</div>'+
-    '</div><div class="body" id="w-list">'+wordsBodyHTML(items)+wordsHidHTML()+'</div>'+
+    '</div><div class="body" id="w-list">'+wordsBodyHTML(items)+wordsUndoHTML()+wordsHidHTML()+'</div>'+
     /* A round + under the thumb, not a bar across the foot. The bar was as
        wide as the screen and sat on top of the last two words in the list --
        and the timeline has had this exact button since it was written, in
        this exact place, for this exact reason. Same class, same corner.
        Nothing new was invented for it. */
-    '<button class="fab"' + DO('openAdd') + ' aria-label="'+esc(t('home.write'))+'">'+
-      ICON_ADD2+'</button></div>';
+    /* While choosing, the round + is not what the thumb is for. What is under
+       it is the two things being done to what was chosen, in the bar across
+       the foot the app already has (`.barfix`, worn by www/sheet.js and
+       www/sound.js). Both are down until something is chosen: a button that
+       does nothing is a button that is broken. */
+    (wSel
+      ? '<div class="barfix">'+
+          '<button class="btn ghost"' + DO('wSelEdit') + (wSelList().length? '' : ' disabled')+'>'+
+            esc(t('words.sel.edit'))+'</button>'+
+          '<button class="btn ghost"' + DO('wSelDel') + (wSelList().length? '' : ' disabled')+'>'+
+            esc(t('words.sel.del'))+'</button>'+
+        '</div>'
+      : '<button class="fab"' + DO('openAdd') + ' aria-label="'+esc(t('home.write'))+'">'+
+          ICON_ADD2+'</button>')+
+    '</div>';
 }
 /* Typing redraws the list and the count and nothing else, because redrawing
    the screen would take the keyboard's focus off the box being typed into. */
 function wordsPaint(){
   var el=document.getElementById('w-list'); if(!el) return;
   var items=wordsList();
-  el.innerHTML=wordsBodyHTML(items)+wordsHidHTML();
+  el.innerHTML=wordsBodyHTML(items)+wordsUndoHTML()+wordsHidHTML();
   var x=document.getElementById('w-x'); if(x){ if(q) x.removeAttribute('hidden'); else x.setAttribute('hidden',''); }
 }
 /* The box is as tall as what is in it, and only render() does that on its
@@ -267,6 +338,139 @@ function wordsSetSort(k){
   /* Chosen on a page, so the page goes and the list is what you land on. */
   if(here().r==='form') back(); else render();
 }
+/* ---- doing it, and being able to not have done it ----------------------
+   「重要な操作は取り消せること」 -- the owner's, and the DELETE REVIEW for this
+   is in docs/CHANGELOG.md. Deleting twenty words at once is the most
+   dangerous thing this app can do, so it is asked AND it can be put back:
+   not one or the other. The keyboard's bin gets away with only the step back
+   because it takes one row and the step back is exactly one row
+   (CLAUDE.md § 19); this takes as many as were ticked.
+
+   What is kept is what WAS THERE, copied whole and before anything is cut --
+   the words with the positions they were at, every word left standing that
+   pointed at one of them, and the lines. Remembering what you meant to change
+   is how an undo puts back a state the app was never in.
+
+   Position matters and is not tidiness: WORDS' order is the order a free
+   language's hundred are counted off in (`wordsSeen`), so putting a word back
+   at the end would move somebody else's word off the list. */
+function wRelHit(x, k, set){
+  var a=x[k]||[], i;
+  for(i=0;i<a.length;i++) if(set[a[i]]) return true;
+  return false;
+}
+function wKeepDel(hws){
+  var set={}, keep={kind:'del', n:hws.length, w:[], other:[],
+                    lines:JSON.parse(JSON.stringify(LINES))}, i;
+  for(i=0;i<hws.length;i++) set[hws[i]]=1;
+  WORDS.forEach(function(x, ix){
+    if(set[x.hw]){ keep.w.push({at:ix, w:JSON.parse(JSON.stringify(x))}); return; }
+    if((x.from && set[x.from]) || wRelHit(x,'syn',set) || wRelHit(x,'ant',set))
+      keep.other.push({hw:String(x.hw), w:JSON.parse(JSON.stringify(x))});
+  });
+  return keep;
+}
+function wSelDel(){
+  var hws=wSelList(), keep, i;
+  if(!hws.length) return;
+  if(!confirm(t('confirm.delmany', hws.length))) return;
+  keep=wKeepDel(hws);
+  for(i=0;i<hws.length;i++) wDrop(hws[i]);
+  save();
+  /* The trail names words, and every one of these is gone from it -- the same
+     two screens `delWord` drops for the one word it takes. */
+  for(i=0;i<hws.length;i++){ navDrop('edit:'+hws[i]); navDrop('word:'+hws[i]); }
+  wUndo=keep; wSel=null;
+  render();
+}
+/* ---- what a bulk EDIT can put back -------------------------------------
+   Setting one part of speech over twenty words throws away twenty answers,
+   which is the same shape of loss as deleting them, so it is put back the
+   same way and by the same row. */
+function wKeepSet(hws){
+  var keep={kind:'set', n:hws.length, w:[]}, i, w;
+  for(i=0;i<hws.length;i++){
+    w=findWord(hws[i]);
+    if(w) keep.w.push({hw:String(w.hw), w:JSON.parse(JSON.stringify(w))});
+  }
+  return keep;
+}
+/* Both of the two, through one function, because "write this field on every
+   word that is ticked" is one act and the field is which one.
+   `up` is stamped for the same reason `wdPutExtras` stamps it: here is every
+   time a word changes. An empty register is NO register, not an empty one --
+   the same rule the sheet holds. */
+function wSelSet(k, v){
+  var hws=wSelList(), keep, i, w;
+  if(!hws.length) return;
+  keep=wKeepSet(hws);
+  for(i=0;i<hws.length;i++){
+    w=findWord(hws[i]); if(!w) continue;
+    if(k==='pos') w.pos=v;
+    else if(v) w.reg=v; else delete w.reg;
+    w.up=Date.now();
+  }
+  save();
+  wUndo=keep; wSel=null;
+  if(here().r==='form') back(); else render();
+}
+function wSelPos(k){ wSelSet('pos', k); }
+function wSelReg(r){ wSelSet('reg', r); }
+/* The two things that can be written over several words at once, on one page,
+   the same rows the sheet's own two pickers are made of (`wdOneHTML`). Nothing
+   is ticked: the words that were chosen do not agree about any of it, which is
+   the reason for being here.
+
+   Nothing else is on it. A meaning, a reading and a spelling are what makes
+   one word that word, so there is no value to put on twenty of them; a tag is
+   something you ADD to a word rather than something a word IS, and adding is a
+   different verb from this page's. */
+function wSelEdit(){
+  if(!wSelList().length) return;
+  openForm('wsel', t('words.sel.edit'),
+    '<div class="sec">'+esc(t('f.pos'))+'</div>'+
+    POS.map(function(k){ return wdOneHTML(posLabel(k), false, 'wSelPos', k); }).join('')+
+    '<div class="sec">'+esc(t('word.reg'))+'</div>'+
+    REG.map(function(r){ return wdOneHTML(regLabel(r)||t('word.none'), false, 'wSelReg', r); }).join(''));
+}
+FORM_OPEN.wsel=function(){ wSelEdit(); };
+/* Putting it back. The words that were taken out go in at the index they came
+   out of, in the order they were in, so each splice lands where it was; the
+   words that were only pointed AT are written back whole, which is what
+   `impUndo` does with what an import overwrote. */
+function wSelUndo(){
+  var u=wUndo, i, k;
+  if(!u) return;
+  for(i=0;i<u.w.length;i++){
+    if(u.kind==='del'){ WORDS.splice(u.w[i].at, 0, u.w[i].w); continue; }
+    k=WORDS.indexOf(findWord(u.w[i].hw));
+    if(k>=0) WORDS[k]=u.w[i].w;
+  }
+  if(u.kind==='del'){
+    for(i=0;i<u.other.length;i++){
+      k=WORDS.indexOf(findWord(u.other[i].hw));
+      if(k>=0) WORDS[k]=u.other[i].w;
+    }
+    LINES=u.lines;
+  }
+  save();
+  wUndo=null;
+  render();
+  toast(t('words.sel.back', u.n));
+}
+/* What just happened, at the foot of the list it happened to, with the way to
+   make it not have happened. `impUndo`'s row, in the place this one's is
+   missing from -- and it lasts exactly as long as you are looking at the list,
+   because it holds words as they were at the positions they were in and
+   writing those over whatever came later is a restore WINNING
+   (docs/DATA_SAFETY.md § 2). viewLeft() in www/shell.js drops it. */
+function wordsUndoHTML(){
+  if(!wUndo) return '';
+  return '<div class="wsub2" style="margin-top:18px">'+
+      esc(t(wUndo.kind==='del'? 'words.sel.gone' : 'words.sel.set', wUndo.n))+'</div>'+
+    '<button class="set" style="border-bottom:none"' + DO('wSelUndo') + '>'+
+      '<span class="sl">'+esc(t('imp.undo'))+'</span></button>';
+}
 /* One entry. The word says itself when you touch it; the chevron at its edge
    opens it. Listening is what you do dozens of times on this screen and
    editing is what you do once.
@@ -285,6 +489,19 @@ function entryHTML(w){
   else if(mns.length===1) mn=esc(mns[0]);
   else mn=mns.map(function(m,i){
     return '<span class="sn">'+(i+1)+'</span>'+esc(m); }).join(' ');
+  /* While the list is one you are choosing from, the row IS the choice: it
+     puts a tick on and takes it off, and it does not open the word. Nothing
+     is drawn beside it either -- a play button under a thumb that is picking
+     rows is a word said by mistake, twenty times. */
+  if(wSel) return '<div class="entry">'+
+    '<button class="ebody"' + DO('wSelTap', [w.hw]) + ' aria-label="'+esc(t('words.sel.row'))+'">'+
+    '<div class="hwrow"><span class="hw">'+esc(wOut(w.hw))+'</span>'+
+    '<span class="rd">'+esc(phIpa(wPh(w)))+'</span>'+
+    '<span class="pos">'+esc(posLabel(w.pos))+'</span></div>'+
+    '<div class="mn">'+mn+'</div>'+
+    '</button>'+
+    '<span class="ltck">'+(wSel[w.hw]? ICON_TICK : '')+'</span>'+
+    '</div>';
   return '<div class="entry">'+
     /* The row opens the word, and it is the whole row. It used to say the word
        aloud, and the only way into the word itself was a chevron at the right
