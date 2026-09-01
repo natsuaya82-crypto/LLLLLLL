@@ -6,6 +6,14 @@ And, more importantly, what it may never touch.
 
 **A plan decides what a person may DO. It decides nothing about what exists.**
 
+**And a plan belongs to the ACCOUNT** 「課金とアカウントとキーボードはアカウント
+に結びつく」 OWNER 2026-09-01. Not to a phone, and **not to the settings** — it
+follows the person to whatever phone they sign in on, the way everything else
+of theirs does. `SET.plan` is where the value sits in the code today; that is
+the gap between the decision and the code, and `docs/STATE.md` § 3 item 4 is
+where it is written down. Nothing in this file describes a plan that lives on a
+device.
+
 Forbidden, without exception:
 
 ```
@@ -66,7 +74,7 @@ Plus < Pro` needs nobody told which is which.
 | `snd` choose the sound, not the letter's own | — | yes | yes |
 | words | 100 | 1000 | no ceiling |
 | `kb` a keyboard of your own | 1, the fixed QWERTY | **1 + 3 = 4** | no ceiling |
-| languages on this phone | **1** | **1** | **3** |
+| languages on the account | **1** | **1** | **3** |
 | `dl` a language taken from the official assets | — | **yes** | yes |
 | how many DL'd languages | — | 1 | 2 | 
 | `edit` editing a post you have sent | — | **yes** | yes |

@@ -67,24 +67,24 @@ Marked separately, because they are not the same question:
 
 | Feature | Status | Free | Paid | Data | Owner decision |
 |---|---|---|---|---|---|
-| Writing a post | shipped | yes | — | `lingua.posts`, ink frozen on write | decided |
+| Writing a post | shipped | yes | — | the `post` row on the server, ink frozen on write; `lingua.posts` is the copy that works with no signal | decided |
 | One language, on every plan | shipped | yes | — | `lingua.langs` | decided — there is no way to make a second anywhere in the app, so it is not a price. `LANG_MAX` used to say so in `core.js` and fed a line of text on the language list; the line went with the ban on explaining things on a screen, and the constant went with it. Languages somebody else wrote are not counted: reading one is not making one |
-| Timeline, on this phone | shipped, **not device confirmed** | yes | — | `lingua.posts` | decided — **an account is required to read it and to post**. 「なんでログインしてないアカウントで投稿できんの？」 The making side needed none; **2026-08-26 ended that** — 「言語はアカウントないと作れないです」. It works offline and goes up on the next connection; it does not work without an account |
+| Timeline | shipped, **not device confirmed** | yes | — | `post` rows on the server; `lingua.posts` is the copy that works with no signal | decided — **an account is required to read it and to post**. 「なんでログインしてないアカウントで投稿できんの？」 The making side needed none; **2026-08-26 ended that** — 「言語はアカウントないと作れないです」. It works offline and goes up on the next connection; it does not work without an account |
 | Timeline split — For you / Following | shipped, **not device confirmed** | yes | — | none new; `ME.fo` is the follow list already | decided — 「フォロー中とおススメみたいに分けたい」. For you is everything, Following is `ME.fo` plus your own, matched on the post's frozen `hd` |
 | A post carries its own shapes (`ink`) | shipped | yes | — | on the post | decided |
 | Replying, and the thread of a conversation | shipped, **not device confirmed** | yes | — | `post.to` (the id, already there), `post.toh` **new** — the handle it answers, frozen on write | decided — replies stay in the timeline carrying 「@xx への返信」; a post opens onto its thread; the indent stops at three |
 | A card — one line as a picture | shipped | yes | — | none | decided |
 | A card of a post is drawn from the post | shipped | yes | — | none | decided |
 | Accounts — sign up, in, out, verify, reset | shipped | yes | — | `lingua.sess` (tokens only) | decided |
-| Profile — face, name, handle, bio, **and your posts** | shipped | yes | — | `lingua.me` | decided |
+| Profile — face, name, handle, bio, **and your posts** | shipped | yes | — | the `profile` row on the server; `lingua.me` is the copy | decided |
 | Pin a post to your profile | shipped | yes | — | `post.pin`, one at a time | decided |
 | Share a post — the card | shipped | yes | — | none | decided |
-| Cloud storage of a language | **shipped**, **not device confirmed** | **yes** | same | every slice, as `slice` rows | decided — **everybody, on every plan** 「クラウドは全員で」 (2026-08-22), re-confirmed 2026-08-26 「基本は全部サーバー管理」. This row said `no` / `yes, deferred` / 「deferred until Supabase $25 is worth paying」 and contradicted § 2 below, which had said **everybody** since 08-22. The money did not go away — see `docs/PAID_FEATURES.md` — it stopped being a reason to defer |
+| Cloud storage of a language | **shipped**, **not device confirmed** | **yes** | same | every slice, as `slice` rows | decided — **everybody, on every plan** 「クラウドは全員で」 (2026-08-22), re-confirmed 2026-08-26 「基本は全部サーバー管理」. The money is still a real question — see `docs/PAID_FEATURES.md` — it is not a reason to defer |
 | A photograph on a post | shipped | **yes** | yes | `post.pic`, frozen on the post, 900px q0.72, `POST_BYTES` ceiling | decided |
 | How big a photograph is shown, and opening one | shipped, **not device confirmed** | yes | yes | none — display only; `--picpct` in index.html, route `photo` | decided — one box for every photograph (a third of the screen's width, square), filled with `cover` so the picture is never stretched and the edges are off it, tap opens the whole thing 「xと同じって言ってるやんずっと」 |
 | How hard a photograph is squeezed to store | shipped | 900px long edge, q0.72 | same | `POST_PIC`, `POST_PICQ`; ratio untouched | **open** — 「画質が下がるのはありえない」 against one photograph being 87 KB of the same localStorage the language lives in |
 | Drawn letters placed on that image | shipped | **yes** | yes | none new — baked into `post.pic` when it is sent | decided |
-| Your voice on a post — 30 seconds | shipped, **not device confirmed** | **yes** | yes | `post.vo = {f, ms}`; the bytes are a file in `Documents/Voices/`, never in `localStorage` | decided — 「30秒くらい」「ファイルに出す」「録音まで作る」 |
+| Your voice on a post — 30 seconds | shipped, **not device confirmed** | **yes** | yes | the bytes go up with the post — `netUpVoice()` into the `post-media` bucket, path on `body.vu`. `post.vo = {f, ms}` names the local file this phone recorded; never in `localStorage` | decided — 「30秒くらい」「ファイルに出す」「録音まで作る」 |
 | Editing your own post | shipped | yes | — | overwrites `ln`, `ink`, `mn`, `tr` on that post; `post.ed` is new | decided — the line and the meaning only 「文と意味だけ」, and it says `Edited` |
 | Which way a language is written | shipped | **reading, always** | `dir`: choosing one | `SCRIPT.dir` in the `script` slice; frozen on the post as `post.dir` | decided |
 | A calendar of your own | shipped | **month and weekday names** | `gram`: choosing how many of each | `STG.months`, `STG.week`; the names are words with `slot` on them | decided — names and numerals only, no arithmetic of anybody's own (`www/cal.js`) |
@@ -498,11 +498,8 @@ until there was a deletion to fire it, which meant deleting your own account
 withdrew every report you had ever made — somebody else's record, cleared by
 your leaving. It is `on delete set null` now, and `npm run rls` holds it.
 
-**~~The language on the phone is not touched.~~ That sentence is stale, and so
-was the note that replaced it here on 2026-08-26.** 「アカウント消したら全部
-消えるに決まってる」 asks for one act that takes everything — and **it already
-exists.** `wipeAll()` (`www/settings.js`, the button 「データを消去」) does all
-of it and has for some time:
+**One act takes everything** 「アカウント消したら全部消えるに決まってる」, and
+it exists: `wipeAll()` (`www/settings.js`, the button 「データを消去」).
 
 ```
   wipeAll()   confirm once, with iOS's own dialog
@@ -514,20 +511,17 @@ of it and has for some time:
                              saves above, because a save writes a fresh one out
 ```
 
-**The order is already the safe one, and it is the opposite of what this file
-briefly recommended.** The server is told FIRST and the phone is emptied
-**whatever it answers** — the reason is written on the function: 「somebody who
-asked to be deleted must be deleted, and a phone that kept its languages
-because the network was bad would be the button lying in the direction that
-cannot be corrected later」. Doing the phone last on the theory that it is the
-copy that survives a bad network gets it exactly backwards: it leaves an
-account nobody can reach and nothing to reach it from.
+**The order is the safe one.** The server is told FIRST and the device is
+emptied **whatever it answers** — the reason is written on the function:
+「somebody who asked to be deleted must be deleted, and a phone that kept its
+languages because the network was bad would be the button lying in the
+direction that cannot be corrected later」. Doing the device last on the theory
+that it is the copy that survives a bad network gets it exactly backwards: it
+leaves an account nobody can reach and nothing to reach it from.
 
-So what 2026-08-26 changed here is **not the behaviour — it is which sentence
-in this file is true.** § 8 said the phone copy stays and that erasing it is a
-different button. The button is not different; it is the same one, and it says
-so in its own confirm text 「すべて消去します。アカウントと、サーバー上の投稿・
-写真・録音。この端末の言語・文字・設定。バックアップファイルも。」
+**There is one button and it says what it takes** 「すべて消去します。アカウント
+と、サーバー上の投稿・写真・録音。この端末の言語・文字・設定。バックアップ
+ファイルも。」
 
 Still true and worth keeping: **this is not a `DATA_SAFETY.md` exception.**
 That rule forbids the APP deciding to remove somebody's work — it names four
@@ -601,18 +595,15 @@ What is **already there** and should not be rebuilt:
 
 - **a language and its slices already travel to the server and back.**
   `netLangRow()` / `netSlices()` / `netSlicePut()` / `netLangSync()` in
-  `www/net.js`, called from `boot.js:68`. Whatever `docs/STATE.md` § 3 item 3
-  still says, this half is written.
+  `www/net.js`, called from `boot.js`. This half is written.
 - **`bkPack()`** already turns a whole language into one file
   (`www/backup.js`). An official asset is that shape.
 - **the language list already has the empty half DL fills.** `vLangs()` in
   `www/home.js` draws 「自分の」 and 「読んでいる」, and the second one is
   **always** the empty note, because nothing anywhere writes `mine:false`.
 
-**The making side is on this list now, and it was not.** This said 「A language
-is made on this phone with or without an account, and that does not change」.
-It changed, on 2026-08-26: 「基本は全部サーバー管理 言語周りだけバックアップに
-file使う」「言語はアカウントないと作れないです」「古い記載消してくれうざい」.
+**The making side is on this list too.** 「基本は全部サーバー管理 言語周りだけ
+バックアップにfile使う」「言語はアカウントないと作れないです」 OWNER 2026-08-26.
 
 What that means here, item by item, and most of it is **already built**:
 
@@ -633,8 +624,10 @@ What that means here, item by item, and most of it is **already built**:
 - **deleting the account takes it with them.** 「アカウント消したら残るわけが
   ないあほだろ」 Already true on the server: `account_delete()` cascades
   through the profile, the languages, the posts, the follows and the blocks
-  (§ 8 above). The copy on the phone is deliberately not touched — § 8 says so
-  and it has not been re-decided.
+  (§ 8 above), **and the device copy goes with it**: `wipeAll()` calls
+  `netDropMe()` and then `wipeHere()`, which removes every `lingua.<id>.<slice>`
+  key and the backup files in Documents. One button, and it names all three
+  (§ 8 above).
 - **a language cannot be made without an account.** **NOT built**, and it is
   not a small change: the first language is minted at the top of
   `www/core.js`, which `www/index.html` loads at line 2749 — before `net.js`
@@ -688,12 +681,10 @@ skips it: 「あとで」 / 「Later」, in all ten languages, straight to
 `obFinish()`. Press it and the walk is over with no account, and every making
 action afterwards correctly asks for one — which is what being blocked is.
 
-**And the comment directly above that button is the rotten sentence itself**
-(lines 714–721): 「What they have made by then is on the phone and stays there:
-a language is made on this phone, with or without an account.」 The button is
-not a bug against that rule — **it is that rule, implemented.** 2026-08-26
-overturned the rule, so the button goes with it. That is the fix, and it is a
-deletion rather than a change.
+**The button was not a bug against the rule — it was the old rule,
+implemented**, and the comment above it said so. 2026-08-26 replaced that rule,
+so the button goes with it. That is the fix, and it is a deletion rather than a
+change.
 
 **Done — the owner said 直して, 2026-08-26.** The button is gone, and with it
 `obLastStep()` (its only caller), `act('obFinish', …)` (no screen names it now)

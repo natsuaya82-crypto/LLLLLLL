@@ -54,38 +54,41 @@ front of you is one you may not edit. Nothing of it exists yet:
 | thing | the truth is | read by |
 |---|---|---|
 | a language's words, letters, script, keyboard, world | **the `slice` rows on the server**, with `localStorage` under `lingua.<id>.<slice>` as the working copy that runs with no signal (OWNER DECISION 2026-08-26) | globals loaded at boot and on `langOpen()`; `netLangSync()` puts the two together |
-| which languages exist, which is open | `lingua.langs`, `lingua.cur` | `LANGS`, `langId` |
+| the timeline — a post, its photographs, its voice, reactions, follows, blocks, reports | **the server**, with `lingua.posts` as the copy that survives a bad network 「SNSは全部サーバー」 | `POSTS` (`www/post.js`) |
+| what was written and not sent | **the `draft` rows on the server**, with `lingua.drafts` as the copy | `DRAFTS` (`www/post.js`) |
+| the person — the handle, the display name, the profile picture | **the `profile` row on the server**, with `lingua.me` as the copy | `ME` (`www/me.js`) |
+| which languages exist, which is open | `lingua.langs`, `lingua.cur` — the phone's index of the copies it is holding. `LANGS[id].sid` is the language's row on the server, and an entry with no `sid` has never been up | `LANGS`, `langId` |
 | the person's settings | `lingua.set` | `SET` |
-| the person's session | `lingua.sess` | `SESS` (`www/net.js`) |
-| the person's profile | `lingua.me` | `ME` (`www/me.js`) |
-| the timeline | `lingua.posts` | `POSTS` (`www/post.js`) |
+| the person's session | `lingua.sess` — the token pair only | `SESS` (`www/net.js`) |
 | a copy that survives the app — **the backup**, now that the server is the record 「言語周りだけバックアップにfile使う」 | `Documents/Languages/<name>.json` on the device | `bkPack()` / `bkTake()` (`www/backup.js`) |
 | what the server holds and who may touch it | `supabase/schema.sql` | nothing on the phone decides this |
 
-**That was true and is not.** This paragraph said 「Nothing a person makes is
-on a server today. The timeline is `localStorage`. The `post` / `follow` /
-`quote` tables in `schema.sql` are written and unused.」 Two of those three are
-now wrong, and this file is exactly the kind that goes on being believed after
-it stops being true — so the way to read it is the way `docs/STATE.md` § 1 says:
-re-check rather than trust.
+**Three rows of that table are the device's, and there are no others**: the
+settings, the session, and the backup file — plus what an export writes out,
+which leaves the app rather than living in it.
+「そもそも端末に保存するもんはないぞほとんど」 OWNER 2026-09-01. Every other
+`lingua.*` key is a working copy of something the server holds, and a document
+that says otherwise is out of date rather than describing a second home.
+
+**And the plan is the account's** 「課金とアカウントとキーボードはアカウントに
+結びつく」 OWNER 2026-09-01 — it is not one of the settings, however it is
+filed today, and the keyboard beside it in that sentence is the language's.
+
+This is the kind of file that goes on being believed after it stops being
+true, so re-check rather than trust:
 
 ```
-grep -n "rest/v1" www/net.js          # what the app actually asks the server for
+grep -o "rest/v1/[a-z_]*" www/net.js | sort | uniq -c | sort -rn
 ```
 
-What that answers today: `profile`, `post`, `follow`, `block`, `report`, the
-notices RPC — **and `language` and `slice`**. A language and every one of its
-slices go up and come back: `netLangRow()` makes the `language` row and keeps
-its id on `LANGS[id].sid`, `netSlices()` reads them, `netSlicePut()` upserts
-one, `netLangSync()` puts the two copies together through `www/sync.js`, and
+What that answers today: `profile`, `post`, `follow`, `block`, `report`,
+`draft`, `saved_search`, `post_seen`, `react`, `prompt`, the RPCs — **and
+`language` and `slice`**. A language and every one of its slices go up and come
+back: `netLangRow()` makes the `language` row and keeps its id on
+`LANGS[id].sid`, `netSlices()` reads them, `netSlicePut()` upserts one,
+`netLangSync()` puts the two copies together through `www/sync.js`, and
 **`boot.js` calls it on launch**. `quote` and `publication` really are still
 unused.
-
-**This paragraph said the wrong one was the copy, and it was written yesterday.**
-It said 「`localStorage` stays the truth … the making side works with no account
-and no signal, and what the server holds is the copy」. OWNER DECISION
-2026-08-26 turned both halves over: 「基本は全部サーバー管理 言語周りだけ
-バックアップにfile使う」「言語はアカウントないと作れないです」.
 
 So, the order:
 
@@ -134,12 +137,22 @@ for real.
       ↓
   a global (WORDS, LETTERS, KB, WLD, …)
       ↓  save() / saveLetters() / saveKb() / saveWld() / …
-  localStorage,  lingua.<id>.<slice>
+  localStorage,  lingua.<id>.<slice>        ← the working copy, never the home
+      ↓  netLangSync() at launch, through syMerge() (www/sync.js)
+  the `slice` rows on the server            ← the record
+      ↓  and back down the same way, both sides added and neither made to win
+
+  and beside that, off to one side:
+
+  localStorage
       ↓  bkTouch() marks it, bkPack() walks SLICES
   one JSON file in Documents  ←→  iOS device backup, Files app
       ↓  bkRestore() on launch, fills in ONLY what is missing
   back into localStorage
 ```
+
+The file is not a step on the way to the server and does not sit between the
+two: it is what is left when neither of the others is there. See rule 11.
 
 and, once, in the other direction:
 
