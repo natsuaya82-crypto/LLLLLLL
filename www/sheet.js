@@ -1223,8 +1223,7 @@ function openWrIn(){
    shInMount() hands it the box's rings. */
 function shInHTML(){
   var s = shState(), out = '', i, g, n;
-  out = '<label class="btn ghost shfile">'+esc(t('wr.in'))+
-    '<input type="file" id="wr-file" accept="application/pdf,.pdf"></label>';
+  out = shInFileHTML();
   if(s.why) return out + '<div class="note">'+esc(s.why)+'</div>';
   if(!s.got) return out;
   out += '<div class="mini" style="margin-top:14px">'+esc(s.from)+'</div>';
@@ -1271,6 +1270,34 @@ function shTakeCount(got){
   var n = 0, i;
   for(i = 0; i < got.length; i++) if(got[i].sh.length) n++;
   return n;
+}
+/* THE ONE CONTROL, and whether this plan has it.
+
+   The sheet is a paid chapter -- docs/PAID_FEATURES.md: 「letters written on
+   paper and brought back in」 -- and the free plan is one sentence,
+   「your own shapes for a-z and 0-9」, with nothing on it that adds a letter,
+   deletes one or renames one. That is what lets kbFixed() be a QWERTY wearing
+   the drawn letters: the names are a-z, `!` and `?` and cannot change. A sheet
+   that adds `zz` to a free alphabet takes that away, and this file asked no
+   plan at all.
+
+   The door is DRAWN rather than missing, and pressing it goes to the plans
+   screen: 「だいたい無料で使えないやつは表示させていいよ。課金させる動線を
+   減らしたくない」「無料はタップすると課金ページに飛ばされる」 OWNER
+   2026-08-25. Same shape and same words as impFileHTML() in www/import.js,
+   which is the other file control in this app; it is not shared with it
+   because the two say different things on the button.
+
+   `can('file')` -- 「a list brought in as a file rather than a paste」, and a
+   sheet handed back is a file brought in. docs/PAID_FEATURES.md also names a
+   capability `write` at the same rung for this chapter and `CAN` does not
+   have one; www/core.js is not this session's file. */
+function shInFileHTML(){
+  if(!can('file'))
+    return '<button class="btn ghost"' + DO('go', ["plans"]) + '>'+esc(t('wr.in'))+
+      '<span class="capgo">'+t('up.cta')+ICON_GO+'</span></button>';
+  return '<label class="btn ghost shfile">'+esc(t('wr.in'))+
+    '<input type="file" id="wr-file" accept="application/pdf,.pdf"></label>';
 }
 /* The file input is the one control in the app that cannot go through the
    action tables -- they hand a listener the element's value, and a file
@@ -1492,6 +1519,15 @@ function shBoxShape(scan, i, RES){
 function shTakeIn(){
   var s = shState(), n = 0, i, g, v, d;
   if(!s.got) return;
+  /* And the refusal stands HERE as well as on the screen, because a button is
+     not the only way in -- the action tables reach this by name. It is the
+     same one line ltCopy() and ltSetRoman() already carry, and it is a door:
+     「全部確認して課金画面に飛ぶようにして」 OWNER 2026-08-25.
+     Nothing is deleted and nothing is moved. A free language that already has
+     letters from a sheet keeps every one of them -- a plan decides what may
+     be DONE, and docs/PAID_FEATURES.md's first rule is that it decides
+     nothing about what exists. */
+  if(!can('file')){ go('plans'); return; }
   for(i = 0; i < s.got.length; i++){
     g = s.got[i];
     if(!g.sh.length) continue;

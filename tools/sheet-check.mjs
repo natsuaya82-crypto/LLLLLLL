@@ -53,6 +53,15 @@ const build = ({ names, s, DPI, deg, blur, grain, lit, damage }) => {
   if (typeof shBlank === 'undefined') return null;
   eval('(' + s + ')()');
   SET.done = true;
+  /* THE SHEET IS A PAID CHAPTER, so everything below is walked as somebody
+     who has it. docs/PAID_FEATURES.md: 「letters written on paper and brought
+     back in」 is Pro, and the free plan is 「your own shapes for a-z and
+     0-9」 with nothing on it adding, deleting or renaming a letter -- which is
+     what lets kbFixed() be a QWERTY wearing those names. Set after seed(), so
+     ltStart() has already laid down the free thirty-eight and this is a
+     language that HAS them rather than one that never got them.
+     The free plan gets its own section at the foot of this file. */
+  SET.plan = 'pro';
 
   /* ---- the page IS the file --------------------------------------------
      This used to draw the page itself, out of shBoxAt/shMarks/shCellAt --
@@ -515,6 +524,47 @@ const boxes = await pg.evaluate(async () => {
   return { before: before, after: after };
 });
 
+/* ---- 3b-iii. and none of it happens on the free plan --------------------
+   The free plan is one sentence -- 「your own shapes for a-z and 0-9」 -- and
+   nothing on it adds a letter, deletes one or renames one. That is not a
+   restriction bolted on: kbFixed() is a QWERTY with the drawn letters
+   substituted in, and it can be that only because the letters are exactly
+   a-z, `!`, `?` and a digit per value, with names that cannot change.
+
+   www/sheet.js asked no plan at all, so a free sheet added letters -- `zz`
+   among them, which the free keyboard has no key for. Measured: 39 letters
+   before, 42 after.
+
+   A closed door is DRAWN and goes to the plans screen -- 「無料はタップすると
+   課金ページに飛ばされる」 OWNER 2026-08-25 -- so what is asked for is the
+   door, not its absence. And the take itself is refused where the rule is and
+   not only on the screen, because a button is not the only way in. */
+const free = await pg.evaluate(() => {
+  var was = SET.plan, ring = [[[150,150],[650,150],[650,650],[150,650]]];
+  var lts = JSON.stringify(LETTERS);
+  SET.plan = 'free';
+  SH = shBlank();
+  openWrIn();
+  render();
+  var body = document.getElementById('form-body');
+  var out = {
+    input: !!document.getElementById('wr-file'),
+    door: body ? /data-do="go"[^>]*plans/.test(body.innerHTML) : false,
+    /* and the take, driven straight past the screen */
+    before: LETTERS.length
+  };
+  SH = { names:'', got:[{nm:'a', sh:ring}, {nm:'zz', sh:ring}], why:'', from:'x.pdf' };
+  shTakeIn();
+  out.after = LETTERS.length;
+  out.wentToPlans = here().r === 'plans';
+  /* nothing a person made is touched by a plan, either */
+  SET.plan = was;
+  out.same = JSON.stringify(LETTERS) === lts;
+  LETTERS = JSON.parse(lts); saveLetters();
+  render();
+  return out;
+});
+
 /* ---- 3c. and a digit that came in on a sheet is DRAWN ------------------
    A digit's picture reaches the clock, the date and the calendar through
    numSignHTML(), which asked for `st` -- and a sheet's picture is `sh`. So a
@@ -968,6 +1018,17 @@ say(boxes.before.join(',') === boxes.after.join(','),
     'a box named with a WORD does not turn the roman alphabet into dashed ' +
     'placeholder boxes: m o u t i inked ' + boxes.before.join('/') +
     ' before the sheet and ' + boxes.after.join('/') + ' after');
+say(!free.input && free.door,
+    'on the free plan the sheet does not offer a file: it offers the door to ' +
+    'the plans screen, drawn and pressable (' +
+    (free.input ? 'a file input is still there' : 'no file input') + ', ' +
+    (free.door ? 'the door is drawn' : 'NO DOOR') + ')');
+say(free.after === free.before && free.same,
+    'and the take itself is refused, so a free alphabet does not grow: ' +
+    free.before + ' letters before and ' + free.after + ' after, and every ' +
+    'one of them byte for byte what it was');
+say(free.wentToPlans,
+    'and pressing it goes to the plans screen rather than doing nothing');
 say(sign.canvas && !sign.roman && sign.pixels > 0,
     'and a digit that came in on a sheet is drawn with the sign somebody drew ' +
     'for it, not a roman one: ' + sign.pixels + ' pixels of ink on the clock');
