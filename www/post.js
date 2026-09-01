@@ -2875,9 +2875,22 @@ function postCard(id){
    somewhere with a menu hanging off a post you have not looked at yet is the
    filter bug in a smaller costume. */
 var PMENU='';
+/* AND IT OPENS ON ANYBODY'S POST. It read `!p.mine` and went home, so the ...
+   was drawn on every post -- the row that draws it says so in as many words,
+   「On every post, not only your own」 -- and did nothing at all on the ones
+   it mattered on. 「投稿の人の...タップしてもなにも出ないけど？」 OWNER,
+   build 107.
+
+   Nothing was missing on the other side of it: postMenuHTML() has had the
+   other menu since it was written and `if(!p.mine)` is its first line. Block
+   and Report were both there, in ten languages, reachable by nothing at all.
+   The door was the whole of the fault.
+
+   `!p` stays: a menu open on a post this phone does not have is a menu
+   hanging off nothing, and postMenuHTML() would be asked about `undefined`. */
 function postMore(id){
   var p=postById(id);
-  if(!p || !p.mine) return;
+  if(!p) return;
   PMENU=(PMENU===id)? '' : id;
   render();
 }
