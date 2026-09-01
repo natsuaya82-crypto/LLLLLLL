@@ -257,7 +257,6 @@ defLang('en', (function(){
       "script.own.ph"             : "Paste or type a character",
       "script.set"                : "Use",
       "up.cta"                    : "Upgrade",
-      'up.badge'            : "Get a badge",
       "ws.arabic"                 : "Arabic",
       "ws.armenian"               : "Armenian",
       "ws.cyrillic"               : "Cyrillic",

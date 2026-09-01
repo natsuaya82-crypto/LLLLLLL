@@ -360,7 +360,6 @@ defLang('ru', (function(){
       "script.own.ph"             : "Вставьте или введите знак",
       "script.set"                : "Взять",
       "up.cta"                    : "Перейти на Plus",
-      'up.badge'            : "Получить значок",
       "ws.arabic"                 : "Арабское",
       "ws.armenian"               : "Армянское",
       "ws.cyrillic"               : "Кириллица",

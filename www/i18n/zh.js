@@ -365,7 +365,6 @@ defLang('zh', (function(){
       "script.own.ph"             : "粘贴或输入一个字",
       "script.set"                : "使用",
       "up.cta"                    : "升级",
-      'up.badge'            : "获得徽章",
       "ws.arabic"                 : "阿拉伯字母",
       "ws.armenian"               : "亚美尼亚字母",
       "ws.cyrillic"               : "西里尔字母",
