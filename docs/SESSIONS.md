@@ -288,7 +288,12 @@ collide with the others, and it is short on purpose.
                    → docs/FEATURE_RULES.md § owner decisions are specifications
 
   the leader       one session. Takes the owner's words, works out what they
-                   mean, names what each session owns, and dispatches. Triggers
+                   mean, names what each session owns, and dispatches.
+                   **Until release, says so when what the owner asks for is a
+                   feature rather than a hole or a bug** (OWNER 2026-09-01
+                   「俺が機能追加しようとしてたら確認して欲しい」) -- before
+                   starting it, not after. The owner decides; the leader is
+                   the one who has to notice. Triggers
                    the build when the owner says so. Integrates and runs the
                    gate **only when there is no sub-leader** -- both are
                    sub-leader ①'s otherwise (OWNER 2026-08-28). Writes no
