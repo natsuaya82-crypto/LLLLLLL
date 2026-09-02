@@ -400,7 +400,6 @@ canvas.pkc{width:34px;height:34px;display:block}
 .kbtb.on{color:var(--gold);background:var(--goldsf)}
 .kbtb.bad{color:var(--bad)}
 .kbtb.bad[disabled]{color:var(--txm)}
-.kbadd{display:flex;gap:8px;margin-top:12px}
 /* THE KEY, on the sheet that edits it: the middle is what it types and the
    four edges are what it flicks to, which is where they are on the key
    itself. A form of five labelled rows said the same five things and showed
@@ -2238,7 +2237,12 @@ a.set{text-decoration:none}
      overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lgrow.on .lgn{font-weight:700}
 .lgck{flex:0 0 auto;width:28px;text-align:center;color:var(--gold)}
-.ntrow.ntrowq{display:flex;align-items:center;gap:12px}
+.ntrow.ntrowq{display:flex;flex-direction:row;align-items:center;gap:12px}
+/* `flex-direction` and not only `display`: .ntrow is a COLUMN (a heading over
+   a line of the note), and this pair of classes was overriding the display and
+   the alignment while leaving the direction alone -- so the ◉ sat ABOVE the
+   note instead of in front of it, and the row it is in front of came out 35px
+   wide. press measures 44pt on both sides and that is how it was found. */
 .ntrowb{flex:1 1 auto;min-width:0;min-height:44px;display:flex;flex-direction:column;
         justify-content:center;
         border:0;background:none;color:inherit;font-family:inherit;
@@ -2251,9 +2255,6 @@ a.set{text-decoration:none}
         text-overflow:ellipsis;white-space:nowrap}
 .kblist .kbrow .kbon{flex:0 0 auto}
 .kblist .kbrow svg.go{flex:0 0 auto;color:var(--txm)}
-.kbadd{display:flex;align-items:center;gap:10px;width:100%;min-height:56px;
-       padding:10px 2px;border:0;background:none;color:var(--gold);
-       font-family:inherit;font-size:.92rem;text-align:left}
 /* The keyboard itself, shrunk: the real keys with the real letters on them,
    so what is being chosen between is what will be typed on. The glyphs are
    canvases and scale down with the box; `overflow:hidden` on the key is what

@@ -1700,15 +1700,24 @@ const r = await pg.evaluate(({ s }) => {
        because kbNew() is a door and kbAdd() is the act that writes. */
     out.freeNoUpsell = vKb().indexOf('goPlans') < 0;
 
+    /* The ceiling is met with the app's OWN popup now, not confirm() --
+       「標準は使わねえって言ってるだろこれも禁止や」 OWNER 2026-09-01 -- so the
+       plans screen is one press away rather than immediate. Pressing the yes
+       is the person answering it, and nothing is stubbed: popYes() runs what
+       upStop() handed popAsk(). Without this both claims read the screen from
+       before the answer and fail on a door that is working. */
     NAV = [{ r: 'kb' }];
     kbNew();
+    if (popOn()) popYes();
     out.freeNewToPlans = here().r === 'plans';
 
     NAV = [{ r: 'kb' }];
     KB = null;
     kbAdd('qwerty');
+    if (popOn()) popYes();
     out.freeAddToPlans = here().r === 'plans';
     out.freeAddWroteNothing = KB === null;
+    popOff();
 
     SET.plan = wasPlan; KB = wasKB; kbShow = wasShow;
     NAV = wasNav; route = wasRoute; KBH = null; kbSel = null;
@@ -2126,6 +2135,20 @@ const r = await pg.evaluate(({ s }) => {
     out.ltSplits = (out.ltDrawn + out.ltBlank === out.ltAll) &&
                    out.ltDrawn > 0 && out.ltBlank > 0;
     ltFil = 'all'; ltSort = 'own';
+    /* AND SOMEBODY HAS TO HAVE ORDERED IT, or `own` is not an order at all.
+       `own` returns the list as the caller built it, which falls through
+       ltOrdCmp to the alphabet when no letter carries `ord` -- and this
+       fixture's alphabet is a to z MADE in that order, so `own` and `new`
+       came out identical and the claim below was comparing a list with itself.
+       The comment that used to stand here said `new` was 「genuinely a
+       different order on this alphabet」; it stopped being true when ltStart()
+       began laying the slots down in LT_START order, and nothing said so.
+
+       So one letter is MOVED first, through the app's own ltMove(), which is
+       what putting a letter somewhere means. Now `own` starts with it and
+       `new` does not, and the two orders differ because an order exists. */
+    var alph = ltOrder(ltOfKind('alpha'));
+    if (alph.length > 1) ltMove('alpha', alph[alph.length - 1].id, 0);
     var own = names(kbLtGrid(0, 0, -1));
     /* `new` and not `abc`, and the reason is worth keeping: this fixture's
        alphabet IS a to z, so sorting it alphabetically is the order it was
@@ -2136,6 +2159,8 @@ const r = await pg.evaluate(({ s }) => {
     ltSort = 'new';
     var other = names(kbLtGrid(0, 0, -1));
     out.ltSame = own.length === other.length;
+    out.ltOwnHead = own.slice(0, 8).join(' ');
+    out.ltNewHead = other.slice(0, 8).join(' ');
     /* the ORDER moved and not the membership: the same letters, re-ordered */
     out.ltSorted = own.join(' ') !== other.join(' ') &&
       own.slice().sort().join(' ') === other.slice().sort().join(' ');
@@ -2790,7 +2815,8 @@ say(r.ltRow, 'the letters offered for a key carry the alphabet\'s own row of ' +
 say(r.ltSplits, 'and the filter narrows them: ' + r.ltAll + ' letters, ' +
     r.ltDrawn + ' drawn and ' + r.ltBlank + ' not, which is all of them twice over');
 say(r.ltSame && r.ltSorted,
-    'and the order moves the same letters rather than a different set');
+    'and the order moves the same letters rather than a different set [own: ' +
+    r.ltOwnHead + ' | new: ' + r.ltNewHead + ']');
 say(r.ltSheet, 'and the sheet that holds only the alphabet answers the same list');
 say(r.qBox, 'the letters are searched too, from a box that is always on the screen');
 say(r.qByName > 0 && r.qByName < r.qAll,

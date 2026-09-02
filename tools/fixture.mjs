@@ -1580,6 +1580,19 @@ export function halfDone(){
                                        return vLetter(); }],
     ['a mark, opened',          () => { window.route='letter'; NAV=[{r:'letter', a:'l4'}];
                                        return vLetter(); }],
+    /* TWO LETTERS FOR ONE SOUND, which is c and k and is allowed --
+       「全部入力で被ったら赤字」. The field goes red and the line under it says
+       which letter already reads it. Nothing else here reaches that state:
+       every letter in this alphabet reads its own sound, so `.ltdup` was
+       styled and worn by nothing and press said so. */
+    ['a letter whose sound another letter already reads', () => {
+        const a = ltById('l1'), b = ltById('l2');
+        const was = b ? JSON.parse(JSON.stringify(b.snd || [])) : null;
+        if (a && b) b.snd = (a.snd || []).slice();
+        window.route='letter'; NAV=[{r:'letter', a:'l2'}];
+        const h = vLetter();
+        if (b && was) b.snd = was;
+        return h; }],
     /* A digit: a letter with a value instead of a reading. The row of values
        is on every letter, but only one of them is on. */
     ['a digit, opened',         () => { window.route='letter'; NAV=[{r:'letter', a:'l5'}];

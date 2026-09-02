@@ -339,22 +339,27 @@ const R = await pg.evaluate(async () => {
   PROMPTS['prOLD'] = { en: 'the wind', ja: '風' };
   const prPost = { id: 'p_pr', mine: false, hd: 'aya', who: 'Aya',
                    ln: 'kano', mn: '海', pr: 'pr1' };
-  const wasLang = SET.lang;
-  SET.lang = 'en'; const prEn = postSay(prPost);
-  SET.lang = 'ja'; const prJa = postSay(prPost);
+  /* THE INTERFACE LANGUAGE IS `SET.ui`, and this said `SET.lang` -- which
+     uiLang() has never read. postSay() asks uiLang(), so every one of these
+     was measured on English whatever was set, and the English claims passed
+     for that reason while the Japanese ones failed. A check that turns a knob
+     the code does not read is measuring nothing. */
+  const wasLang = SET.ui;
+  SET.ui = 'en'; const prEn = postSay(prPost);
+  SET.ui = 'ja'; const prJa = postSay(prPost);
   /* and a post that answers no prompt is the writer's words, in every
      language -- the freeze is not loosened by this */
   const plainPost = { id: 'p_pl', mine: false, hd: 'aya', mn: '海' };
-  SET.lang = 'en'; const plEn = postSay(plainPost);
+  SET.ui = 'en'; const plEn = postSay(plainPost);
   /* AND AN ANSWER TO AN OLDER DAY, which is the half that makes this true
      for a timeline rather than for one morning. */
   const oldDay = { id: 'p_c', mine: false, hd: 'aya', mn: '海', pr: 'prOLD' };
-  SET.lang = 'en'; const cEn = postSay(oldDay);
-  SET.lang = 'ja'; const cJa = postSay(oldDay);
+  SET.ui = 'en'; const cEn = postSay(oldDay);
+  SET.ui = 'ja'; const cJa = postSay(oldDay);
   /* and one nothing has been handed at all falls back to the post's words */
   const oldPr = { id: 'p_old', mine: false, hd: 'aya', mn: '海', pr: 'pr0' };
-  SET.lang = 'en'; const oldEn = postSay(oldPr);
-  SET.lang = wasLang; DAY = null;
+  SET.ui = 'en'; const oldEn = postSay(oldPr);
+  SET.ui = wasLang; DAY = null;
   if (prEn !== 'the sea')
     fails.push('an answer to today\'s prompt read on an English phone said ' +
                JSON.stringify(prEn) + '. The prompt is the app\'s own sentence ' +
