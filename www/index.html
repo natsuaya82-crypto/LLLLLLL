@@ -2221,6 +2221,23 @@ a.set{text-decoration:none}
    button any more. 「キーボードも選択削除したいから」OWNER 2026-09-01. */
 .kblist .kbrow.kbrowq{cursor:default}
 /* The same, on the notebook. */
+/* ---------- switching language ----------
+   The account switcher's shape, and it is a SCREEN 「言語切り替えは設定の言語
+   じゃなくて、ちゃんとした画面作ってくれよ。インスタのアカウント切り替えみたい
+   なイメージ」OWNER 2026-09-01. A tile, a name, and the tick on the one you
+   are in. No corner of its own: the tile is `.pav`, the circle every face in
+   this app already wears. */
+.lgrow{display:flex;align-items:center;gap:14px;width:100%;min-height:68px;
+       padding:10px 2px;border:0;border-bottom:1px solid var(--line);
+       background:none;color:var(--tx);font-family:inherit;text-align:left}
+.lgrow:active{opacity:.6}
+.lgav{width:48px;height:48px;font-family:var(--face-caps);font-size:1.15rem;
+      color:var(--txs)}
+.lgadd{color:var(--gold)}
+.lgn{flex:1 1 auto;min-width:0;font-size:1.02rem;
+     overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lgrow.on .lgn{font-weight:700}
+.lgck{flex:0 0 auto;width:28px;text-align:center;color:var(--gold)}
 .ntrow.ntrowq{display:flex;align-items:center;gap:12px}
 .ntrowb{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;
         border:0;background:none;color:inherit;font-family:inherit;

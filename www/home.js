@@ -1858,14 +1858,29 @@ function langRow(id){
      nothing, which is the shape the ↓ itself was until today. It is drawn,
      because it is on this phone and somebody took it; it is not pressable,
      because there is nowhere to go yet. */
+  /* THE SHAPE IS THE ACCOUNT SWITCHER'S, not a settings row. 「言語切り替えは
+     設定の言語じゃなくて、ちゃんとした画面作ってくれよ。インスタのアカウント
+     切り替えみたいなイメージ」 OWNER 2026-09-01 -- it was already a screen of
+     its own (this route, reached by holding the profile tab), and it read as a
+     list of settings: a small label and a tick. A row is a tile, a name and
+     the tick now, at the size a thing you PRESS is.
+
+     The tile is the language's first letter in the app's own face. Not its own
+     letters: those live under `langKeyOf(id,'letters')` and only the OPEN
+     language's are loaded, so one row would be drawn in somebody's alphabet
+     and the rest in roman -- which is one row looking like the answer and the
+     others looking broken. `.pav` is the circle every face in this app already
+     wears, so no new corner is drawn (規則18). */
+  var mk=String(nm||t('langs.untitled')).charAt(0);
   if(!isOpen && l.mine===false)
-    return '<div class="set lrow">'+
-      '<span class="sl">'+esc(nm||t('langs.untitled'))+'</span>'+
-      '<span class="lchk"></span></div>';
-  return '<button class="set lrow'+(isOpen?' on':'')+'"' + DO('langOpen', [id]) +
+    return '<div class="lgrow">'+
+      '<span class="pav lgav">'+esc(mk)+'</span>'+
+      '<span class="lgn">'+esc(nm||t('langs.untitled'))+'</span></div>';
+  return '<button class="lgrow'+(isOpen?' on':'')+'"' + DO('langOpen', [id]) +
     (isOpen? ' aria-label="'+esc(t('langs.open'))+'"' : '') + '>'+
-    '<span class="sl">'+esc(nm||t('langs.untitled'))+'</span>'+
-    '<span class="lchk">'+(isOpen?ICON_TICK:'')+'</span></button>';
+    '<span class="pav lgav">'+esc(mk)+'</span>'+
+    '<span class="lgn">'+esc(nm||t('langs.untitled'))+'</span>'+
+    '<span class="lgck">'+(isOpen?ICON_TICK:'')+'</span></button>';
 }
 /* The way to make another one, at the foot of the list -- where "add an
    account" sits in the app this is modelled on. 「アカウントが変わるイメージ。
@@ -1889,10 +1904,13 @@ function langRow(id){
    A row and not a button of its own shape: it is the last row of a list, and
    rows in one list are one height. Same tag, same class, same two spans as
    langRow() above, which is what makes that true rather than nearly true. */
+/* The way to make another one, in the same shape as the rows above it -- a
+   tile with a + in it and the words beside it, which is where 「アカウントを
+   追加」 sits in the app this is modelled on. */
 function langAddRow(){
-  return '<button class="set lrow"' + DO('langNew') + '>'+
-    '<span class="sl">'+esc(t('langs.new'))+'</span>'+
-    '<span class="lchk"></span></button>';
+  return '<button class="lgrow"' + DO('langNew') + '>'+
+    '<span class="pav lgav lgadd">'+ICON_ADD+'</span>'+
+    '<span class="lgn">'+esc(t('langs.new'))+'</span></button>';
 }
 function vLangs(){
   var ids=Object.keys(LANGS), mine=[], reading=[], other=0, i, id;
