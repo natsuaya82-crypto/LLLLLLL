@@ -695,9 +695,20 @@ function langCap(){
    An entry with NO `uid` counts for whoever is asking, which is the STRICTER
    of the two answers, and the direction is chosen rather than fallen into:
    the loose one is what the owner named, and a count that is too strict only
-   ever refuses a NEW language. **It never hides one, never removes one, and
-   never shortens a list.** docs/PAID_FEATURES.md -- a ceiling is about
-   adding and about nothing else. */
+   ever refuses a NEW language. **It never REMOVES one.**
+
+   A ceiling now shortens the LIST as well: 「減った時は隠すだけね」「だって
+   単語でも文法でも同じようにやったじゃん」OWNER 2026-09-02, which replaces
+   「never hides one, never shortens a list」 that stood here. It is
+   wordsSeen()'s shape and always was for words -- the dictionary has listed
+   the first hundred on the free plan since it had a free plan -- and
+   langsSeen() in www/home.js is the same function for languages, with the
+   open one always on it. NOTHING IS DELETED by any of it: `LANGS` is
+   untouched, not one key under `lingua.` goes, the backup is the same file,
+   and paying again lists every one of them exactly as they were. `dl-check`
+   holds all of that. docs/DATA_SAFETY.md § a shorter list is not a deletion
+   is what says it has to be SAID, and the count at the foot of the list is
+   where it is said. */
 /* WHOSE ACCOUNT a language is, and nothing else. Two questions used to be
    one function and they are not the same question: `mine` is about this
    PHONE -- a language you are making rather than one you are reading -- and
@@ -753,6 +764,50 @@ function langCount(){
    has more than this -- a plan that ended, a number that moved -- keeps every
    one of them, sees every one of them and backs every one of them up. Only
    the next one is refused. */
+/* ---- and how many you may have DOWNLOADED, which is a second number ------
+   「dlはしかもplusは1つproは3つ DL言語とmake言語でそれぞれ別の最大値ね？」
+   OWNER 2026-09-02.
+
+   TWO CEILINGS AND NOT ONE. A language somebody else made is not one this
+   person made, and langCount() above says so already -- it counts `mine`, so
+   a download has never touched the ceiling on making. This is the other side
+   of that sentence: downloads have a ceiling of their own, and filling it
+   leaves the making one exactly where it was.
+
+   Free is ZERO, which is the same decision said a second way: 「plusからです」.
+   Whether a download may happen AT ALL is `can('dl')`; this is how many. Both
+   land together on purpose -- a door opened with no number behind it hands
+   Plus whatever the code happened to allow, which is neither number the owner
+   said, and that has happened here once already (the keyboard's).
+
+   Nothing here removes, hides or counts down anything. Somebody who already
+   has more than this -- a plan that ended, a number that moved -- keeps every
+   one of them and reads every one of them. Only the next one is refused. */
+var PLUS_DL=1, PRO_DL=3;
+function dlCap(){
+  if(has('pro')) return PRO_DL;
+  return has('plus')? PLUS_DL : 0;
+}
+/* The languages this person is READING: in the index, not theirs, and on this
+   account. langAcct() is the making side's question and this is its opposite
+   half -- `mine` false rather than true, with the same account test, so
+   signing in as somebody else does not hand you their downloads either. */
+function dlCount(){
+  var n=0, id;
+  for(id in LANGS)
+    if(Object.prototype.hasOwnProperty.call(LANGS, id) &&
+       LANGS[id] && !LANGS[id].mine && langOwned(id)) n++;
+  return n;
+}
+/* The ceiling on downloads, met. langStop()'s shape exactly, and the same
+   sentence: 「全部確認して飛ぶ」. Somebody already holding the biggest ceiling
+   there is gets one line and no dialog, because there is nothing to fly to. */
+function dlStop(){
+  if(dlCount()<dlCap()) return false;
+  if(dlCap()<PRO_DL) popAsk(t('langs.full', dlCap()), function(){ go('plans'); });
+  else alert(t('langs.full', dlCap()));
+  return true;
+}
 function langStop(){
   if(langCount()<langCap()) return false;
   if(langCap()<PRO_LANGS){
@@ -891,6 +946,11 @@ var CAN={
      three the old KB_MAX gave out, which is neither number the owner said.
      「1,1+3.無制限って言わなかったっけ？」 */
   kb:      'plus',
+  /* Taking a chapter of somebody else's language. 「plusからです」OWNER
+     2026-09-02, which replaces 「Downloading a keyboard or an alphabet is
+     free」 (docs/FEATURES.md § 4, 2026-08-19). How many is dlCap() above, and
+     the two landed together -- see the comment there for why. */
+  dl:      'plus',
   snd:     'plus',   /* choosing a sound, rather than taking the letter's own */
   /* Editing a post you have already sent. 「ツイートの編集も課金から」
      「課金からはベーシックからってことね プラスならプラスっていうから」

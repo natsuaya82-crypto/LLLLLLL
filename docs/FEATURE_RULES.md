@@ -218,6 +218,40 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### ダウンロードは Plus から。上限は make と別で、Plus 1・Pro 3
+- Date: 2026-09-02
+- Area: 人の言語をダウンロードする（⑫）、`CAN.dl` と `dlCap()`（`www/core.js`）
+- Decision:
+
+  ```
+  plusからです
+  dlはしかもplusは1つproは3つ DL言語とmake言語でそれぞれ別の最大値
+  言語足そうとしたり、dlしようとすると無料からアプデのポップ、
+  plusで1個から2個に増やそうとするとアプデのポップ
+  ```
+
+  ダウンロードできるのは **Plus から**。持てる数は **Plus 1、Pro 3**。
+  自分で作る言語の上限（Free 1・Plus 1・Pro 3）とは **別の数** で、
+  互いに影響しない。上限に当たったら課金のポップが出る。
+
+- Reason: オーナーが実機で、無料のままダウンロードした言語を使えることに
+  気づいた。
+- Affected features: ⑫。`CAN.dl` は 2026-08-19 の
+  「キーボードと文字の DL は無料、辞書は Plus」を **置き換える**
+  （docs/FEATURES.md § 4）
+- Affected data: 何も消えない。**上限を超えた分は一覧から隠れる**
+  ── 「減った時は隠すだけね」「だって単語でも文法でも同じようにやったじゃん」。
+  単語が無料で先頭百語だけ並べるのと同じ形（`wordsSeen()` → `langsSeen()`）で、
+  **開いている言語は必ず一覧に残る**（「開いてるものを残すでいいよ」）。
+  `LANGS` も `lingua.` の鍵も一つも動かず、払い直せば全部元どおり並ぶ。
+  これは `www/core.js` に書いてあった「never hides one, never shortens a
+  list」を置き換える
+- Affected docs: この項目、docs/FEATURES.md § 4
+- Implementation status: IMPLEMENTED。`dl-check` が持つ
+  （無料は不可・Plus は 1・Pro は 3・二つの数が互いを見ない）。赤を見た。
+  隠す側も `dl-check` が持つ（Pro で三つ、無料で一つ、開いているものが残る、
+  鍵が一つも消えない、払い直すと戻る）。赤を見た
+
 ### 言語の記事は「人にどう見えるか」──自分のページで分岐しない
 - Date: 2026-09-02
 - Area: この言語について（`wldPage()` の読む面、`www/home.js`）

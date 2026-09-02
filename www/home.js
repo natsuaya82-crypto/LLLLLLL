@@ -1274,6 +1274,17 @@ function wldGet(lid, r){
   var id=String(lid||''), kinds=wldDlKind(r), m=WLDS_HAVE[id], seen=wldSeen(id),
       got=[], i, o;
   if(!id || !kinds || !kinds.length) return;
+  /* WHETHER, AND THEN HOW MANY. 「plusからです」「plusは1つproは3つ」OWNER
+     2026-09-02. Both asked here, in the one place a download happens, and in
+     that order: the plan is the door and the ceiling is the room. Neither
+     asks anything of a language already taken -- a plan that ends leaves
+     every downloaded language where it is, readable, which is the head of
+     docs/PAID_FEATURES.md.
+
+     A chapter of a language ALREADY taken does not meet the ceiling again:
+     it is not another language, it is more of one that is already counted. */
+  if(upStop(can('dl'))) return;
+  if(!LANGS[id] && dlStop()) return;
   /* Nothing to take is not a failure to report: the page is drawn from the
      same map, so a row can only be on screen when the answers are in. */
   if(!m) return;
@@ -1988,6 +1999,28 @@ function langAddRow(){
     '<span class="pav lgav lgadd">'+ICON_ADD+'</span>'+
     '<span class="lgn">'+esc(t('langs.new'))+'</span></button>';
 }
+/* WHICH LANGUAGES ARE LISTED, and it is wordsSeen()'s shape exactly.
+   「だって単語でも文法でも同じようにやったじゃん」OWNER 2026-09-02.
+
+   The first `cap` of them, in the order they are stored. `LANGS` is not
+   touched and neither is one byte under `lingua.` -- nothing is deleted,
+   nothing is renamed, nothing is counted down. Paying again lists every one
+   of them exactly as they were, which is the whole reason this cuts the LIST
+   and not the data. docs/DATA_SAFETY.md § a shorter list is not a deletion.
+
+   THE OPEN ONE IS ALWAYS ON IT ── 「開いてるものを残すでいいよ」OWNER
+   2026-09-02. A switcher that does not contain the language you are standing
+   in is a switcher you cannot switch away from, and the language you are
+   working in is the last one to take off the screen. It goes in place of the
+   last of the first `cap`, so the count is the count either way. */
+function langsSeen(ids, cap){
+  var out;
+  if(ids.length<=cap) return ids;
+  out=ids.slice(0, cap);
+  if(langId && ids.indexOf(langId)>=0 && out.indexOf(langId)<0 && out.length)
+    out[out.length-1]=langId;
+  return out;
+}
 function vLangs(){
   var ids=Object.keys(LANGS), mine=[], reading=[], other=0, i, id;
   for(i=0;i<ids.length;i++){
@@ -2004,8 +2037,14 @@ function vLangs(){
        says whose a language is. */
     if(langAcct(id)) mine.push(id); else other++;
   }
+  /* The ceiling, met on the way OUT. Both lists are cut the same way and by
+     their own number: making and reading are two ceilings that never see each
+     other (`langCap()` and `dlCap()`, www/core.js). */
+  var mineSeen=langsSeen(mine, langCap()), readSeen=langsSeen(reading, dlCap());
+  other += mine.length-mineSeen.length;
+  var readHid = reading.length-readSeen.length;
   var body='<div class="sec">'+esc(t('langs.mine'))+'</div>'+
-    mine.map(function(id){ return langRow(id); }).join('')+
+    mineSeen.map(function(id){ return langRow(id); }).join('')+
     /* AND HOW MANY ARE NOT ON IT, every time.
        `docs/DATA_SAFETY.md` § a shorter list is not a deletion: somebody
        opening this to find a language gone has no way to tell which of the
@@ -2018,8 +2057,9 @@ function vLangs(){
     /* .empty is the full-screen one: 54px of padding and a serif heading,
        which is right for a screen with nothing on it and far too loud for a
        section of a screen that has something on it. */
-    (reading.length? reading.map(function(id){ return langRow(id); }).join('')
-                    : '<div class="note">'+esc(t('langs.none'))+'</div>');
+    (readSeen.length? readSeen.map(function(id){ return langRow(id); }).join('')
+                    : '<div class="note">'+esc(t('langs.none'))+'</div>')+
+    (readHid? '<div class="note">'+esc(t('cap.hid', readHid))+'</div>' : '');
   return '<div class="view">'+navTop('')+'<div class="body">'+body+'</div></div>';
 }
 

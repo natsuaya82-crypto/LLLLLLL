@@ -43,10 +43,13 @@ await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
 const r = await pg.evaluate(async ({ s, sid }) => {
   eval('(' + s + ')()');
   SET.done = true;
-  /* On the FREE plan, deliberately. docs/FEATURES.md § 4: 「Downloading a
-     keyboard or an alphabet is free」, and the two chapters the server opens
-     to a reader are exactly those two. If a rung is ever put on this row, this
-     line is what turns red. */
+  /* ON PLUS, WHICH IS THE RUNG. 「plusからです」OWNER 2026-09-02, replacing
+     「Downloading a keyboard or an alphabet is free」(docs/FEATURES.md § 4,
+     2026-08-19). This line used to say `free`, deliberately, and its own
+     comment said it was what would turn red the day a rung was put on the
+     row. It did. What free and pro do about it is asked further down, in
+     claims of their own. */
+  SET.plan = 'plus'; save();
 
   /* ---- the network, and ONLY the network ------------------------------
      What the server really answers with is what supabase/schema.sql's
@@ -246,6 +249,68 @@ const r = await pg.evaluate(async ({ s, sid }) => {
     netLangSync(function(){ end(); });
     setTimeout(end, 400);
   });
+  /* ---- the plan, and the two ceilings ---------------------------------
+     「plusからです」「dlはしかもplusは1つproは3つ DL言語とmake言語でそれぞれ
+     別の最大値ね？」OWNER 2026-09-02.
+
+     Asked of the app rather than restated here: dlCap() is the number and
+     can('dl') is the door, and both are read out of core.js. What is claimed
+     is the shape -- free cannot, plus is one, pro is three, and the two
+     ceilings never touch each other. */
+  out.caps = {};
+  var langsWas = JSON.parse(JSON.stringify(LANGS));
+  ['free','plus','pro'].forEach(function(pl){
+    SET.plan = pl;
+    out.caps[pl] = { door: can('dl'), cap: dlCap() };
+  });
+  /* And the two counts are counting different things, with a download and a
+     made language both in the index at once. */
+  SET.plan = 'pro';
+  out.madeCount = langCount();
+  out.dlCount   = dlCount();
+  out.dlIsNotMade = langCount() === Object.keys(LANGS).filter(function(k){
+    return LANGS[k] && LANGS[k].mine; }).length;
+  LANGS = langsWas;
+
+  /* ---- and a ceiling met from ABOVE hides, and takes nothing away -------
+     「減った時は隠すだけね」「だって単語でも文法でも同じようにやったじゃん」
+     OWNER 2026-09-02. wordsSeen()'s shape: the list is cut, the data is not.
+     「開いてるものを残すでいいよ」 -- and the language you are standing in is
+     always on the list, or the switcher cannot switch away from it. */
+  var wasId = langId, wasPlan = SET.plan;
+  SET.plan = 'pro'; save();
+  var b1 = langMint(), b2 = langMint();
+  ['zc1','zc2','zc3'].forEach(function(z){ LANGS[z] = { name:z, mine:false, sid:z }; });
+  langStore();
+  langId = b2;                                  /* the SECOND one is open */
+  /* Every key that was there, by NAME. Not the count: an ordinary save() adds
+     keys -- the language that is open writes its slices -- and a count would
+     read that as a change. What is claimed is that none GOES. */
+  var keysWas = Object.keys(localStorage).filter(function(k){
+    return k.indexOf('lingua.') === 0; });
+  var langsWere = Object.keys(LANGS).length;
+  function ownListed(){
+    var ids = Object.keys(LANGS).filter(function(k){ return LANGS[k] && LANGS[k].mine; });
+    return langsSeen(ids, langCap());
+  }
+  function readListed(){
+    var ids = Object.keys(LANGS).filter(function(k){ return LANGS[k] && !LANGS[k].mine; });
+    return langsSeen(ids, dlCap());
+  }
+  out.capPro  = { own: ownListed().length, read: readListed().length };
+  SET.plan = 'free'; save();
+  out.capFree = { own: ownListed().length, read: readListed().length,
+                  openOnIt: ownListed().indexOf(b2) >= 0 };
+  var gone = keysWas.filter(function(k){ return localStorage.getItem(k) === null; });
+  out.capNow = { langs: Object.keys(LANGS).length, langsWere: langsWere, gone: gone };
+  out.capKept = out.capNow.langs === langsWere && gone.length === 0;
+  SET.plan = 'pro'; save();
+  out.capBack = { own: ownListed().length, read: readListed().length };
+  langId = wasId; LANGS = langsWas; langStore();
+  SET.plan = wasPlan;
+
+  SET.plan = 'plus'; save();
+
   return out;
 }, { s: seed.toString(), sid: SID });
 
@@ -307,6 +372,31 @@ say(r.syncRefused,
     ((r.syncPut || r.syncMoved)
       ? ' (it put `' + (r.syncPut || '—') + '` and moved `' + (r.syncMoved || '—') + '`)'
       : ''));
+
+say(r.caps && r.caps.free.door === false && r.caps.free.cap === 0,
+    'the free plan cannot download at all — 「plusからです」');
+say(r.caps && r.caps.plus.door === true && r.caps.plus.cap === 1,
+    'plus may, and may hold one (' + (r.caps ? r.caps.plus.cap : '?') + ')');
+say(r.caps && r.caps.pro.door === true && r.caps.pro.cap === 3,
+    'pro may, and may hold three (' + (r.caps ? r.caps.pro.cap : '?') + ')');
+say(r.dlIsNotMade && r.madeCount === 1 && r.dlCount === 1,
+    'and the two ceilings are two numbers — with a made language and a ' +
+    'downloaded one both in the index, making counts ' + r.madeCount +
+    ' and reading counts ' + r.dlCount + ', neither seeing the other');
+
+say(r.capPro && r.capPro.own === 3 && r.capPro.read === 3,
+    'on pro all of them are listed — three made, three read');
+say(r.capFree && r.capFree.own === 1 && r.capFree.read === 0,
+    'and a plan that ENDS cuts the list to the ceiling (' +
+    (r.capFree ? r.capFree.own + ' made, ' + r.capFree.read + ' read' : '?') + ')');
+say(r.capFree && r.capFree.openOnIt,
+    'with the language you are standing in still on it — 「開いてるものを残す」');
+say(r.capKept,
+    'and nothing was taken away: LANGS is the same length and not one of the ' +
+    'keys under `lingua.` went' +
+    ((r.capNow && r.capNow.gone.length) ? ' (gone: ' + r.capNow.gone.join(' ') + ')' : ''));
+say(r.capBack && r.capBack.own === 3 && r.capBack.read === 3,
+    'paying again lists every one of them, exactly as they were');
 
 await br.close();
 if (bad.length){

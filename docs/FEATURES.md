@@ -344,9 +344,14 @@ searching.
 
 ### 4. Publishing and downloading — a keyboard, an alphabet, a dictionary
 
-Decided 2026-08-19 and **not started**. The author decides what is public, per
-thing. Downloading a keyboard or an alphabet is **free**; downloading a
-dictionary is **Plus**. Making and publishing stays Plus. A downloaded
+Decided 2026-08-19. The author decides what is public, per thing.
+
+**DOWNLOADING IS PLUS, AND THE CEILING IS PLUS 1 / PRO 3** ── 「plusからです」
+「dlはしかもplusは1つproは3つ DL言語とmake言語でそれぞれ別の最大値」OWNER
+2026-09-02. That replaces 「Downloading a keyboard or an alphabet is free;
+downloading a dictionary is Plus」, which is what this line said until then and
+is why a free plan could use a downloaded language on a real phone. `CAN.dl`
+and `dlCap()` in `www/core.js` are the two places; `dl-check` holds both. Making and publishing stays Plus. A downloaded
 keyboard goes on its own shelf, up to three, beside the three somebody built.
 A downloaded dictionary is a language you can READ and is never merged into
 your own — `FREE_LIMIT` counts your own words and nothing else.
