@@ -65,8 +65,23 @@ function bootSession(){
   /* And what this ACCOUNT has paid for, which used to be a fact about the
      phone. The higher of the two rungs wins -- netPlanSync() has the whole
      of why. Before the languages, because the plan is what says how many of
-     them there may be. 「課金とアカウントとキーボードはアカウントに結びつく」 */
-  netPlanSync();
+     them there may be. 「課金とアカウントとキーボードはアカウントに結びつく」
+
+     THROUGH netPlanBoot(), AND THAT IS AN ORDER RATHER THAN A RENAME. What
+     this phone is holding and has not managed to send goes up first, and the
+     two copies are read together inside that send's ANSWER.
+
+     It was netPlanSync() on its own, and the line above it -- capLapse(), at
+     the foot of this file -- was firing the send that says a plan ENDED into
+     the same moment. netResume() is asynchronous and has not come back when
+     capLapse() runs; this function is what netResume() calls when it does.
+     So the send and the read raced, the read won, and the account answered
+     with the plan Apple had already ended. The higher rung then won for the
+     wrong reason and wrote itself back into the Keychain, where the next
+     launch read it: a cancellation undone, permanently, on the phone of
+     somebody who had paid. 「プランは絶対におかしくしちゃいけないんだって」
+     OWNER 2026-09-02. */
+  netPlanBoot();
   netLangsDown();
   /* And the language, which belongs to this account and exists twice. Read,
      merged and written back -- both ways, so a phone that has been offline
