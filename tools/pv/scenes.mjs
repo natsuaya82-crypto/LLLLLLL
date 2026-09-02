@@ -186,7 +186,7 @@ export function SCENES(F){
      the finger lands, and how long the flight in takes. */
   const HOLD = 0.55, TAPAT = 0.62, FLY0 = 0.8, FLY = 0.7;
 
-  return [
+  const WIDECUT = [
   /* ====================== I. A LETTER, AND THE REST ==================== */
 
   /* A letter, tap by tap. The first second has no words on it: what has to
@@ -568,4 +568,256 @@ export function SCENES(F){
     } },
 
   ];
+
+  /* =====================================================================
+     9:16 IS A DIFFERENT FILM, not the same one stood on its end.
+     「同じのダメだよー」
+
+     A phone held in a hand is watched with a thumb over the bottom of it,
+     muted, for about a second before somebody decides. So: thirty seconds
+     rather than sixty, the app edge to edge with no frame round it at all,
+     the words big and short in the bottom third, and the HOOK FIRST -- the
+     timeline, three alphabets at once, before anything has been explained.
+     The wide cut is a story that starts at the beginning; this one starts
+     at the strangest thing in the app and works backwards.
+     ===================================================================== */
+  const FULL = W / 390;                    /* the app, exactly frame-wide */
+  const eye = (ay, dy) => look(195, ay, FULL, W / 2, dy === undefined ? H * 0.5 : dy);
+  const shot = 2;                          /* every shot is two bars */
+  const sc = bars(shot);
+  /* One short line, in the bottom third, with nothing under it. */
+  const line = (stage, t, head) => {
+    const gone = 1 - ramp(t, sc - 0.45, sc - 0.1);
+    return stage.set({ type: {
+      key: 'v-' + head, kicker: '', head: head ? [head] : [], sub: '',
+      top: 0, ko: 0, ky: 0,
+      lo: [Math.min(ramp(t, 0.22, 0.7), gone)],
+      ly: [mix(96, 0, ramp5(t, 0.22, 1.0))],
+      so: 0, sy: 0
+    }});
+  };
+
+  const TALLCUT = [
+  /* THE HOOK: a timeline nobody can read, and three people writing in it. */
+  { name: 'hook', secs: sc,
+    enter: async (stage) => {
+      await stage.set({ card: { o: 0 }, wash: 0, tap: noTap, wall: { o: 0 } });
+      await stage.app(function(){
+        window.__pvMine = langId;
+        go('feed'); render(); window.scrollTo(0, 260);
+      });
+    },
+    at: async (stage, k, t) => {
+      await scroll(stage, Math.round(mix(260, 1500, io(clamp(k / 0.94, 0, 1)))));
+      await stage.set({ phone: { x: eye(422).x, y: eye(422).y, s: FULL,
+                                 shell: 0, radius: 0, blur: 0, o: ramp(t, 0, 0.4) } });
+      line(stage, t, 'Nobody here shares an alphabet.');
+    } },
+
+  /* Where they come from: a finger. */
+  { name: 'draw', secs: sc,
+    enter: async (stage) => {
+      await stage.app(function(lt){
+        var l = null, i;
+        for (i = 0; i < LETTERS.length; i++)
+          if (String(ltName(LETTERS[i]) || '') === lt) l = LETTERS[i];
+        window.__pvLt = l.id;
+        window.__pvSt = JSON.parse(JSON.stringify(l.st));
+        l.st = [];
+        editLetter(l.id);
+        GE.st = []; GE.si = -1; GE.pi = -1; GE.seal = false;
+        render();
+        var c = document.getElementById('gcanv'), b = c.getBoundingClientRect();
+        var taps = [], j, st = window.__pvSt, pts;
+        for (i = 0; i < st.length; i++){
+          pts = st[i].pts;
+          for (j = 0; j < pts.length; j++){
+            if (pts.length > 6 && j % 4 && j !== pts.length - 1) continue;
+            taps.push({ x: b.left + geTo(b.width, pts[j][0], 0),
+                        y: b.top + geTo(b.height, pts[j][1], 1), i: i, j: j });
+          }
+        }
+        window.__pvTaps = taps;
+      }, LT);
+      stage.taps = await stage.app(function(){ return window.__pvTaps; });
+      stage.at = await box(stage, '#gcanv');
+    },
+    at: async (stage, k, t) => {
+      const T0 = 0.35, GAP = 0.34;
+      let placed = 0;
+      for (let i = 0; i < stage.taps.length; i++) if (t >= T0 + i * GAP) placed = i + 1;
+      const upto = placed ? stage.taps[placed - 1] : null;
+      await stage.app(function(u){
+        var st = window.__pvSt, next = [], i, j, pts;
+        for (i = 0; i < st.length; i++){
+          if (!u || i > u.i) break;
+          pts = [];
+          for (j = 0; j < st[i].pts.length; j++){
+            if (i === u.i && j > u.j) break;
+            pts.push(st[i].pts[j]);
+          }
+          if (pts.length) next.push({ pts: pts });
+        }
+        GE.st = next; GE.si = next.length - 1;
+        GE.pi = next.length ? next[next.length - 1].pts.length - 1 : -1;
+        geDraw();
+      }, upto);
+      const i = placed - 1;
+      const p = eye(stage.at.y, H * 0.44);
+      await stage.set({
+        phone: { x: p.x, y: p.y, s: FULL * mix(1, 1.06, k), shell: 0, radius: 0, blur: 0 },
+        tap: thumb(i >= 0 ? stage.taps[i] : null, i >= 0 ? t - (T0 + i * GAP) : 99) });
+      line(stage, t, 'Every letter is drawn.');
+    } },
+
+  { name: 'alpha', secs: sc,
+    enter: async (stage) => {
+      await stage.set({ tap: noTap });
+      await stage.app(function(){
+        var l = ltById(window.__pvLt);
+        l.st = window.__pvSt;
+        saveLetters(); installScriptFont(); installTypeFont();
+        go('ltset', 'all'); render(); window.scrollTo(0, 0);
+      });
+    },
+    at: async (stage, k, t) => {
+      await scroll(stage, Math.round(mix(60, 760, io(clamp(k / 0.92, 0, 1)))));
+      const p = eye(400, H * 0.44);
+      await stage.set({ phone: { x: p.x, y: p.y, s: FULL, shell: 0, radius: 0, blur: 0 } });
+      line(stage, t, 'Yours as well.');
+    } },
+
+  { name: 'keys', secs: sc,
+    enter: async (stage) => {
+      await stage.app(function(){ go('kb'); render(); window.scrollTo(0, 0); });
+      stage.at = await box(stage, '.kb');
+    },
+    at: async (stage, k, t) => {
+      const p = eye(stage.at.y, H * 0.42);
+      await stage.set({ phone: { x: p.x, y: p.y, s: FULL * mix(1, 1.05, k),
+                                 shell: 0, radius: 0, blur: 0 } });
+      line(stage, t, 'On every key.');
+    } },
+
+  { name: 'write', secs: sc,
+    enter: async (stage) => {
+      await stage.app(function(){ window.__pvSent = 0; window.scrollTo(0, 0); openPost('new'); render(); });
+    },
+    at: async (stage, k, t) => {
+      let tap = noTap;
+      if (t < 1.9){
+        await stage.app(function(k){
+          var full = 'venar kel', lts = ltPuaOrder(), s = '', i, j;
+          for (i = 0; i < full.length; i++){
+            var ch = full.charAt(i);
+            if (ch === ' '){ s += ' '; continue; }
+            for (j = 0; j < lts.length; j++)
+              if (String(ltName(lts[j]) || '') === ch){ s += ltPua(j); break; }
+          }
+          var n = Math.round((k < 0 ? 0 : k > 1 ? 1 : k) * s.length);
+          PW.ln = s.slice(0, n);
+          PW.mn = n >= s.length ? 'stone, in the evening' : '';
+          pwFresh(); render();
+        }, (t - 0.15) / 1.5);
+      } else {
+        const at = await stage.app(function(){
+          var b = document.getElementById('pw-go');
+          if (!b) return null;
+          var r = b.getBoundingClientRect();
+          return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+        });
+        tap = thumb(at, t - 1.9, 1);
+        if (t >= 2.25) await stage.app(function(){
+          if (window.__pvSent) return;
+          window.__pvSent = 1; pwSend(); window.scrollTo(0, 0);
+        });
+      }
+      const p = eye(t < 2.6 ? 260 : 330, H * 0.40);
+      await stage.set({ phone: { x: p.x, y: p.y, s: FULL, shell: 0, radius: 0, blur: 0 },
+                        tap: tap });
+      line(stage, t, 'Write in it.');
+    } },
+
+  { name: 'seen', secs: sc,
+    enter: async (stage) => {
+      await stage.app(function(){
+        ABOPEN.wlddl = true; go('about', 'seen-vethi'); render(); window.scrollTo(0, 250);
+      });
+      stage.at = await stage.app(function(){
+        var b = document.querySelector('[data-do="wldGet"]');
+        if (!b) return null;
+        var r = b.getBoundingClientRect();
+        return { x: r.right - 22, y: r.top + r.height / 2 };
+      });
+    },
+    at: async (stage, k, t) => {
+      let tap = noTap;
+      if (t >= 1.5){
+        tap = thumb(stage.at, t - 1.5, 1);
+        if (t >= 1.85) await stage.app(function(){
+          if (window.__pvGot) return;
+          window.__pvGot = 1; wldGet('seen-vethi', 'letters');
+        });
+      }
+      const p = eye(420, H * 0.44);
+      await stage.set({ phone: { x: p.x, y: p.y, s: FULL, shell: 0, radius: 0, blur: 0 },
+                        tap: tap });
+      line(stage, t, 'Take somebody else\u2019s.');
+    } },
+
+  { name: 'theirs', secs: sc,
+    enter: async (stage) => {
+      await stage.app(function(){
+        langOpen('seen-vethi'); SET.myfont = true;
+        installScriptFont(); installTypeFont();
+        go('ltset', 'all'); render(); window.scrollTo(0, 40);
+      });
+    },
+    at: async (stage, k, t) => {
+      await scroll(stage, Math.round(mix(40, 380, io(clamp(k / 0.9, 0, 1)))));
+      const p = eye(400, H * 0.44);
+      await stage.set({ phone: { x: p.x, y: p.y, s: FULL, shell: 0, radius: 0, blur: 0 } });
+      line(stage, t, 'Read it on your phone.');
+    } },
+
+  { name: 'range', secs: sc,
+    enter: async (stage) => {
+      await stage.app(function(){ langOpen(window.__pvMine); go('build'); render(); window.scrollTo(0, 0); });
+    },
+    at: async (stage, k, t) => {
+      await stage.app(function(k){
+        var langs = ['en','ja','ko','zh','es','fr','de','pt','it','ru'];
+        var i = Math.min(langs.length - 1, Math.floor(k * langs.length));
+        var want = k > 0.5 ? 'light' : 'dark';
+        var move = false;
+        if (SET.ui !== langs[i]){ SET.ui = langs[i]; move = true; }
+        if (SET.theme !== want){ SET.theme = want; applyTheme(); move = true; }
+        if (move) render();
+      }, k);
+      const p = eye(330, H * 0.42);
+      await stage.set({ phone: { x: p.x, y: p.y, s: FULL, shell: 0, radius: 0, blur: 0 } });
+      line(stage, t, 'Ten languages. Light and dark.');
+    } },
+
+  { name: 'end', secs: sc,
+    enter: async (stage) => {
+      await stage.app(function(){
+        SET.ui = 'en'; SET.theme = 'dark'; applyTheme(); go('feed'); render(); window.scrollTo(0, 0);
+      });
+    },
+    at: async (stage, k, t) => {
+      const p = eye(330, H * 0.44);
+      await noWords(stage);
+      await stage.set({
+        phone: { x: p.x, y: p.y, s: FULL * mix(1, 1.05, out(k)), shell: 0, radius: 0,
+                 blur: 0, o: 1 - ramp(t, 0.1, 0.8) },
+        card: { o: ramp(t, 0.5, 1.2), tag: 'Build a language. Write in it.',
+                foot: 'Lingua for iPhone',
+                mark: mix(1.14, 1, out(clamp((t - 0.5) / 1.2, 0, 1))),
+                rule: Math.round(mix(0, 260, ramp(t, 0.9, 2.2))) }
+      });
+    } },
+  ];
+
+  return F.portrait ? TALLCUT : WIDECUT;
 }
