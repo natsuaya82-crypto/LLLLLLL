@@ -417,15 +417,35 @@ const r = await pg.evaluate(({ s }) => {
      top. In a browser there is no Keychain and the file is all there is.
      Both directions, because keeping it in neither is the failure that put
      Plus back to free at the next launch on a real phone. */
-  SET.plan = 'pro';
-  var wasNative = PLAN_NATIVE;
+  /* AND WHOSE PURCHASE IT IS goes exactly the same way, for a stronger
+     reason. `SET.planUid` names the account that bought the plan, and an
+     owner written in a file that goes into a PC backup is an owner anybody
+     with a cable can put their own name in -- which is not a way to raise
+     your own plan, it is a way to take somebody else's. */
+  SET.plan = 'pro'; SET.planUid = 'a-uid';
+  var wasNative = PLAN_NATIVE, kept, dropped, dk;
   PLAN_NATIVE = false;
-  out.diskHasPlan = Object.prototype.hasOwnProperty.call(setOnDisk(), 'plan');
+  kept = setOnDisk();
+  out.diskHasPlan = Object.prototype.hasOwnProperty.call(kept, 'plan');
+  out.diskHasUid = Object.prototype.hasOwnProperty.call(kept, 'planUid');
   PLAN_NATIVE = true;
-  out.nativeHidesPlan = !Object.prototype.hasOwnProperty.call(setOnDisk(), 'plan');
-  /* and nothing else is dropped along with it */
-  out.diskKeepsRest = Object.keys(setOnDisk()).length ===
-                      Object.keys(SET).length - 1;
+  kept = setOnDisk();
+  out.nativeHidesPlan = !Object.prototype.hasOwnProperty.call(kept, 'plan');
+  out.nativeHidesUid = !Object.prototype.hasOwnProperty.call(kept, 'planUid');
+  /* AND NOTHING ELSE IS DROPPED ALONG WITH THEM, said by NAMING the two
+     rather than by counting to two. This was `length === length - 1`, and a
+     count is a lying proxy for the sentence it stands in for: it says 「one
+     went」 and goes on saying it when the one that went is the wrong one.
+     backup-check made the same correction about slices for the same reason.
+     Adding a third field to this list is a deliberate change to what a
+     handset keeps, and it belongs in a diff of this line. */
+  dropped = [];
+  for (dk in SET)
+    if (Object.prototype.hasOwnProperty.call(SET, dk) &&
+        !Object.prototype.hasOwnProperty.call(kept, dk)) dropped.push(dk);
+  dropped.sort();
+  out.diskDropped = dropped.join(' ');
+  out.diskKeepsRest = out.diskDropped === 'plan planUid';
   PLAN_NATIVE = wasNative;
 
   /* ---- 7. the day a plan ends is said once, and says nothing else ------
@@ -1192,7 +1212,14 @@ say(r.bkHasSlices, 'and every slice core.js knows about is in it (' + r.bkFreeKe
 
 say(r.diskHasPlan, 'in a browser the plan is in the settings file');
 say(r.nativeHidesPlan, 'on a phone it is not -- the Keychain is holding it');
-say(r.diskKeepsRest, 'and nothing else is dropped with it');
+say(r.diskHasUid, 'and in a browser, so is the account that bought it');
+say(r.nativeHidesUid,
+    'on a phone that is in the Keychain too -- an owner in an editable file ' +
+    'is an owner anybody with a cable can forge, and forging it takes ' +
+    'somebody else\'s subscription');
+say(r.diskKeepsRest,
+    'and those two are the whole of what a handset drops, named rather than ' +
+    'counted (' + r.diskDropped + ')');
 
 say(r.lapseQuietFirst, 'the first launch of all records the plan and says nothing');
 say(r.lapseSaid, 'a plan ending is said out loud');

@@ -1345,6 +1345,147 @@ const R = await pg.evaluate(() => {
   SET.plan = 'free'; SET.planWas = 'free'; save();
   say('36: ＋ はアカウントを訊く ── 断らずに扉へ送る。サインインしていれば通る');
 
+
+  /* ---- 37-42. 段は買ったアカウントのもの --------------------------------
+     「1アドレス1アカウント」「これは絶対課金もアカウントごと言語もそう」
+     「Xは違うアカウントだと課金も引き継がれない」 OWNER 2026-09-02。
+
+     16-18 番は段がアカウントに **紐づく** ことを持っています。ここが持つのは
+     その裏 ── 同じ端末で別のアカウントに入った人は、その端末で買った購読を
+     **引き継がない**。段は Apple ID のものでも端末のものでもありません。
+
+     起きていたのはこれです:
+
+       A（Pro）がサインアウト → B がサインイン
+       端末の SET.plan はまだ pro（Keychain は誰のものでもない）
+       次の起動 → netPlanSync：B の行は空 → best='pro' → netPlanUp('pro')
+       → B のアカウントに Pro が付く
+
+     `SET.planUid` が持ち主で、実機では Keychain が本体です（そこは Swift なので
+     この容器では走りません ── `ios/App/App/LinguaPlan.swift`）。ブラウザには
+     Keychain が無いので、注入されてくる値は下で手で置いています。段そのものが
+     ブラウザでは設定に残るのと同じ扱いです。 */
+
+  /* 37. 別の人が買ったものは引き継がない。 */
+  start();
+  SET.plan = 'pro'; SET.planWas = 'pro'; SET.planUid = A; save();
+  netOut();
+  arrive(B);
+  if (plan() !== 'free')
+    no('37: 別のアカウントが、この端末で買われた段を引き継いだ — ' + plan());
+  if (SET.planUid !== B)
+    no('37: 段の持ち主が入った人になっていない — ' + JSON.stringify(SET.planUid));
+  say('37: 別のアカウントは、この端末で買われた購読を引き継がない');
+
+  /* 38. **そして B のサーバーの行に pro が書かれない。**これが実害の出る
+     ところです ── 37 で画面が free でも、送るほうが pro なら B のアカウントに
+     Pro が付いたまま残ります。 */
+  start();
+  SET.plan = 'pro'; SET.planWas = 'pro'; SET.planUid = A; save();
+  netOut();
+  const sent38 = [];
+  const realUp38 = netPlanUp;
+  netPlanUp = (id) => { sent38.push(id); };
+  arrive(B);
+  netGet = (path, ok) => {
+    if (path.indexOf('/rest/v1/plan') === 0) return ok([]);   /* B の行は無い */
+    return ok([]);
+  };
+  netPlanSync(() => {});
+  netGet = realGet; netPlanUp = realUp38;
+  if (sent38.indexOf('pro') >= 0)
+    no('38: B のアカウントに pro を送った — 送ったもの ' + JSON.stringify(sent38));
+  say('38: B のアカウントに、A が買った段は送られない');
+
+  /* 39. **買った人のものは取り上げない。**Keychain には書き戻さないので、A の
+     段と名前はそこに残り、A が戻ってきた起動で読み直されます。ブラウザには
+     Keychain が無いので、注入されてくる二つを手で置いて同じ状態を作ります。 */
+  start();
+  netOut();
+  SET.plan = 'pro'; SET.planWas = 'pro'; SET.planUid = A; save();  /* 注入された二つ */
+  arrive(A);
+  if (plan() !== 'pro') no('39: 買った本人から段を取り上げた — ' + plan());
+  if (SET.planWas !== 'pro') no('39: 買った本人の planWas が動いた — ' + SET.planWas);
+  say('39: 買った本人の段は、そのまま返ってくる');
+
+  /* 40. **持ち主がまだ書かれていない端末は、何も動かさない。**空の
+     `SET.planUid` はこの章より前の端末で、そこにある段が誰のものかは
+     **決まっていません**（docs/scope/claude-planacct.md）。動かさないほうが
+     今日と同じ振る舞いなので、名前を書き留めるだけです。 */
+  start();
+  netOut();
+  SET.plan = 'pro'; SET.planWas = 'pro'; SET.planUid = ''; save();
+  arrive(A);
+  if (plan() !== 'pro')
+    no('40: 持ち主の書かれていない端末で段が動いた — ' + plan());
+  if (SET.planUid !== A)
+    no('40: 持ち主を書き留めていない — ' + JSON.stringify(SET.planUid));
+  say('40: 持ち主の書かれていない端末は、名前を書き留めるだけで段は動かさない');
+
+  /* 41. **planWas も一緒に下りる。**飾りではありません。下りないと起動時の
+     capLapse() が pro → free を「解約された」と読み、①別人の段を基準にした
+     シートを出し、②`netPlanUp('free')` を **B のサーバーの行** に書きます。
+     ここは capLapse() を本当に呼んで、何も送られないことを見ます。 */
+  start();
+  SET.plan = 'pro'; SET.planWas = 'pro'; SET.planUid = A; save();
+  netOut();
+  arrive(B);
+  const sent41 = [];
+  const realUp41 = netPlanUp;
+  netPlanUp = (id) => { sent41.push(id); };
+  capLapse();
+  netPlanUp = realUp41;
+  if (sent41.length)
+    no('41: B のアカウントに、B のものではない解約が送られた — ' +
+       JSON.stringify(sent41));
+  say('41: planWas も一緒に下りるので、別人の解約は送られない');
+
+  /* 42. **起動して憶えているセッションを読んだ瞬間にも訊く。**netTook() だけでは
+     遅すぎます ── netResume() は非同期で、www/boot.js の末尾の capLapse() は
+     同期で、その下を先に走ります。netRead() は www/net.js が読み込まれた瞬間で、
+     www/boot.js より三つ前です。 */
+  start();
+  netOut();
+  SET.plan = 'pro'; SET.planWas = 'pro'; SET.planUid = A; save();
+  localStorage.setItem('lingua.sess', JSON.stringify(
+    { at: 'not a jwt', rt: 'a refresh token', uid: B }));
+  netRead();
+  if (plan() !== 'free')
+    no('42: 憶えているセッションを読んだだけでは照合していない — ' + plan());
+  if (SET.planWas !== 'free')
+    no('42: netRead() の道で planWas が下りていない — ' + SET.planWas);
+  netOut();
+  say('42: 起動して憶えているセッションを読んだ瞬間にも訊く（capLapse より先）');
+
+  /* 43. **Keychain へ送る文に uid が乗るのは、セッションがあるときだけ。**
+     持ち主が変わるのは段が変わるときだけ、という一文が planKeep() です。
+     誰もいない起動（www/core.js の二箇所）で '' を送ると、毎回持ち主が
+     消えます ── この章が止めようとしているものが、そのために作った扉から
+     入ってきます。ここは Swift ではなく **送る文** を見ています。 */
+  start();
+  const realCap43 = window.Capacitor;
+  const msgs43 = [];
+  window.Capacitor = { nativePromise: (p, m, a) => {
+    msgs43.push({ p: p, m: m, a: a });
+    return { 'catch': () => {} };
+  } };
+  netOut();
+  planKeep('pro');                       /* 誰もいない */
+  arrive(A);
+  planKeep('pro');                       /* A がいる */
+  window.Capacitor = realCap43;
+  if (msgs43.length !== 2)
+    no('43: Keychain へ送っていない — ' + msgs43.length + '通');
+  if (msgs43[0] && msgs43[0].a && 'uid' in msgs43[0].a)
+    no('43: 誰もいないのに uid を送った — 既にある持ち主が消える — ' +
+       JSON.stringify(msgs43[0].a));
+  if (!msgs43[1] || !msgs43[1].a || msgs43[1].a.uid !== A)
+    no('43: サインインしているのに買った人を書いていない — ' +
+       JSON.stringify(msgs43[1] && msgs43[1].a));
+  if (msgs43[1] && msgs43[1].a && msgs43[1].a.plan !== 'pro')
+    no('43: 段そのものが送られていない — ' + JSON.stringify(msgs43[1].a));
+  say('43: Keychain へは段と一緒に買った人が乗る ── 誰もいなければ乗らない');
+
   return out;
 });
 
