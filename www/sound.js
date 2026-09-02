@@ -959,7 +959,9 @@ function ltCell(l, press){
     '<span class="ltcf">'+ltInk(l, '<span class="nol">'+ICON_PEN+'</span>')+'</span>'+
     '<span class="ltcn">'+esc(nm||'\u00b7')+'</span>'+
     '<span class="ltcr">'+esc(rd.length? phIpa(rd) : '')+'</span>'+
-    (wob
+    /* ltCanDelete() and not `wob` alone: the first thirty-eight cannot be
+       deleted at all, so they carry no mark. 「39以降は消せるんだよね？」 */
+    (wob && ltCanDelete(l)
       ? '<span class="ltx"' + DO('ltDelete', [l.id]) + ' role="button" '+
         'aria-label="'+esc(t('glyph.del'))+'">'+ICON_MINUS+'</span>'
       : '')+
@@ -1139,8 +1141,12 @@ function vLetter(){
        letter called something else when this one may not be renamed -- and
        the + on the alphabet makes one, so this was a second door into the
        same room, so the function went with the button. */
-    '<button class="set" style="margin-top:14px;border-bottom:none"' + DO('ltDelete', [lid]) + '>'+
-      '<span class="sl bad">'+t('glyph.del')+'</span></button>'+
+    /* The same question the ⊖ asks, asked once (ltCanDelete, www/letters.js):
+       one of the first thirty-eight has no delete anywhere. */
+    (ltCanDelete(ltById(lid))
+      ? '<button class="set" style="margin-top:14px;border-bottom:none"' + DO('ltDelete', [lid]) + '>'+
+        '<span class="sl bad">'+t('glyph.del')+'</span></button>'
+      : '')+
     '</div>'+
     '</div>';
 }

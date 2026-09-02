@@ -295,6 +295,53 @@ const r = await pg.evaluate(({s}) => {
   out.addedGone = !LETTERS.filter(function(l){ return String(l.ab || '') === 'qx'; }).length;
 
   SET.plan = 'free';
+  /* ---- the first thirty-eight carry no ⊖, and every ⊖ works -------------
+     「a-z 0-9 !?に1からナンバリングしてそれ以降に追加されるのは消す」
+     「次に文字追加したら39になるよね？39以降は消せるんだよね？」OWNER
+     2026-09-02, after 「長押しの後から-の3個目以降に普通に反応しなくなる」 on
+     a phone: the mark was drawn on all thirty-eight and pressing it opened a
+     question whose yes did not move the screen by one pixel. Nothing threw.
+     The letters somebody has drawn come first in an alphabet, so it looked
+     like the mark worked twice and then died.
+
+     Two claims and they are one rule: no mark on the thirty-eight, and every
+     mark that IS drawn takes the letter away. */
+  SET.plan = 'pro';
+  goTab('build'); go('ltset', LT_KINDS[0]); ltWob = true; render();
+  /* WHICH LETTERS THE MARKS NAME. Read off the marks themselves rather than
+     off the cells: a cell in this state carries no id at all (it does not
+     open, so it has no DO), and the ⊖ is the only thing on it that names the
+     letter it is about. */
+  function markIds(){
+    return Array.prototype.slice.call(document.querySelectorAll('#app .ltx'))
+      .map(function(x){ return (x.getAttribute('data-a') || '').replace(/[\[\]"]/g, ''); })
+      .filter(Boolean);
+  }
+  var ids0 = markIds();
+  var baseSeen = LETTERS.filter(ltIsBase).length;
+  var baseMarks = ids0.filter(function(id){ var l = ltById(id); return l && ltIsBase(l); }).length;
+  /* and one added letter, which is the thirty-ninth */
+  var addedId = ltNew({ nm: 'zz9' }).id;
+  saveLetters(); render();
+  var addedMarked = markIds().indexOf(addedId) >= 0;
+
+  var mv = 0, dd = 0, tr = 0, popless = 0;
+  while (tr < 40) {
+    var marks = document.querySelectorAll('#app .ltx');
+    if (!marks.length) break;
+    tr++;
+    var was = document.getElementById('app').innerHTML;
+    marks[0].dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    var y = null;
+    Array.prototype.slice.call(document.querySelectorAll('#pop button'))
+      .forEach(function(b){ if (b.getAttribute('data-do') === 'popYes') y = b; });
+    if (!y) { popless++; break; }
+    y.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    if (document.getElementById('app').innerHTML === was) dd++; else mv++;
+  }
+  out.wob = { pressed: tr, moved: mv, dead: dd, popless: popless,
+              baseSeen: baseSeen, baseMarks: baseMarks, addedMarked: addedMarked };
+
   return out;
 }, { s: seed.toString() });
 await br.close();
@@ -414,6 +461,17 @@ say(r.rmBig.kind === 'alpha' && r.rmBig.name === '25',
 say(r.rmPlain.kind === 'alpha' && r.rmPlain.name === 'zz' && r.rmPlain.at !== 'ltset:num',
     'and an ordinary name is still just a name, going nowhere (' +
     r.rmPlain.name + ' at ' + r.rmPlain.at + ')');
+
+say(r.wob && r.wob.baseMarks === 0,
+    'not one of the first thirty-eight carries a ⊖ — they are numbered 1 to ' +
+    '38 and the numbering does not move (' +
+    (r.wob ? r.wob.baseMarks + ' of ' + r.wob.baseSeen : '?') + ')');
+say(r.wob && r.wob.addedMarked,
+    'the thirty-ninth, the first letter somebody adds, carries one');
+say(r.wob && r.wob.pressed > 0 && r.wob.popless === 0 &&
+    r.wob.dead === 0 && r.wob.moved === r.wob.pressed,
+    'and every ⊖ that is drawn takes its letter away (' +
+    (r.wob ? r.wob.moved + ' of ' + r.wob.pressed : '?') + ')');
 
 if (bad.length) { console.error('\nbase: ' + bad.length + ' failed'); process.exit(1); }
 console.log('\nbase: slots arrive when asked, and nothing drawn is ever taken away.');

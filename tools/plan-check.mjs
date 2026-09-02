@@ -586,7 +586,8 @@ const r = await pg.evaluate(({ s }) => {
   /* the LIST is asked for and read after, the same order section 1 uses: the
      way this fails is a list that trims the thing it is listing */
   var lhtml = vLangs();
-  out.freeStillShowsAll = threeIds.every(function(x){ return lhtml.indexOf(x) !== -1; });
+  out.freeShowsCap = threeIds.filter(function(x){ return lhtml.indexOf(x) !== -1; }).length;
+  out.freeShowsOpen = lhtml.indexOf(langId) !== -1;
   out.freeStillHolds2 = langCount() === 3;
   out.threeKeptBytes = same(bytesThree, bytes());
   /* and the backup of the open one is written the same as it ever was */
@@ -780,13 +781,13 @@ say(r.unknownCan, 'and any plan that is no rung of the ladder buys nothing -- ga
 say(r.unknownWords, 'and the words are all still there while it does');
 say(!r.unknownThrew, 'and nothing about it throws (' + (r.unknownThrew || 'nothing') + ')');
 
-say(r.canCount === 11, 'CAN names ' + r.canCount + ' capabilities');
+say(r.canCount === 12, 'CAN names ' + r.canCount + ' capabilities');
 say(r.freeAll, 'every one of them is closed on free');
 say(r.paidAll, 'and open on plus');
 say(r.canTypo, 'and a name that is not in the table throws rather than reading as free');
 
 say(r.rungs.free === '', 'free opens nothing (' + (r.rungs.free || 'nothing') + ')');
-say(r.rungs.plus === 'edit kb letters snd wsys',
+say(r.rungs.plus === 'dl edit kb letters snd wsys',
     'plus opens a keyboard, its own letters, its own sounds, a writing system ' +
     'and editing a post it has sent (' + r.rungs.plus + ')');
 say(r.rungs.pro.split(' ').length === r.canCount,
@@ -852,8 +853,15 @@ say(r.proEmpty, 'and it arrives empty rather than carrying the last one\'s words
 
 say(r.threeMade && r.freeStillHolds && r.freeStillHasAll,
     'somebody with three keeps three when the plan ends');
-say(r.freeStillShowsAll && r.freeStillHolds2,
-    'and the list draws all three of them -- the ceiling hides nothing');
+/* THE LIST NOW SHOWS THE CEILING'S WORTH, and the language you are standing
+   in is one of them. 「減った時は隠すだけね」「開いてるものを残すでいいよ」
+   「だって単語でも文法でも同じようにやったじゃん」OWNER 2026-09-02, which
+   replaces 「the ceiling hides nothing」 that stood here. Nothing is deleted
+   by it -- the claim above still says all three are HELD -- and dl-check
+   holds the rest of the shape (paying again lists them all, no key goes). */
+say(r.freeShowsCap === 1 && r.freeShowsOpen && r.freeStillHolds2,
+    'and the list draws the ceiling\'s worth of them, the open one among them ' +
+    '(' + r.freeShowsCap + ' of 3 drawn), while all three are still held');
 say(r.threeKeptBytes, 'and not one byte of any slice moved');
 say(r.fourthRefused && r.fourthWent, 'only the fourth is refused, and it goes to the plans screen');
 say(r.fourthKeptAll && r.fourthKeptBytes,

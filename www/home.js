@@ -1341,17 +1341,19 @@ function abSounds(list){
   if(rest.length) out+=abField(t('ipa.other'), rest.join('  '));
   return out? '<div class="abfx">'+out+'</div>' : '';
 }
-function abHead(sec, folds, extra){
-  var nm=wldSecNm(sec);
-  /* The marker is drawn only when there is something under it to fold. A
-     section whose whole content is the chapter it points at has nothing to
-     open, and a marker over nothing is the page claiming an act it cannot
-     perform. The heading is then the name and the way through, which is what
-     that section is. */
+/* EVERY HEADING ON THIS PAGE FOLDS, and that is why there is no second kind.
+   There used to be one: a section whose whole content was the chapter it
+   points at had nothing to open, so it was drawn as a plain row with no
+   marker (`.abshp`). The only two were the dictionary and the grammar, and
+   they are not sections of the article any more -- 「見れないならいらなく
+   ね？」OWNER 2026-09-02 -- and the reading face now drops anything with
+   nothing under it before it gets here. `press` found the class worn by
+   nothing on any screen, before or after any press, which is what says the
+   branch had stopped happening rather than merely stopped being noticed. */
+function abHead(sec, extra){
   return '<div class="abshd'+(abShut(sec.r)? ' shut':'')+'">'+
-    (folds? '<button class="abshf"' + DO('abToggle', [sec.r]) + '>'+
-      ICON_FOLD+'<span class="abshl">'+esc(nm)+'</span></button>'
-     : '<div class="abshf abshp"><span class="abshl">'+esc(nm)+'</span></div>')+
+    '<button class="abshf"' + DO('abToggle', [sec.r]) + '>'+
+      ICON_FOLD+'<span class="abshl">'+esc(wldSecNm(sec))+'</span></button>'+
     (extra||'')+
     (sec.go? '<button class="abshg"' + DO('go', [sec.go]) + '>'+ICON_GO+'</button>' : '')+
     '</div>';
@@ -1870,8 +1872,8 @@ function wldPage(ed, L, lid){
        keyboard. It is not lost: those chapters are the contents page, which
        is where you go to a chapter. What the article is for is reading, and
        the mark on the left is what opens what there is to read. */
-    body+=abHead((!ed && sec.go)? wldSecNoGo(sec) : sec,
-                 !!inner, extra)+((!inner || abShut(sec.r))? '' : inner);
+    body+=abHead((!ed && sec.go)? wldSecNoGo(sec) : sec, extra)+
+          ((!inner || abShut(sec.r))? '' : inner);
   });
   /* And the way to put another section in, at the end of the ones there are,
      which is where a new section of an article goes. */
@@ -1891,7 +1893,7 @@ function wldPage(ed, L, lid){
      a heading with things under it, which is what the rest of the page is. */
   if(!ed && dls){
     var dlsec={r:'wlddl', k:'wld.dl.get'};
-    body+=abHead(dlsec, true, '')+(abShut(dlsec.r)? '' : dls);
+    body+=abHead(dlsec, '')+(abShut(dlsec.r)? '' : dls);
   }
   if(!body) body='<div class="note">'+esc(t('wld.empty'))+'</div>';
   return '<div class="view">'+

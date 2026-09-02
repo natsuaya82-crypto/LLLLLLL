@@ -483,6 +483,22 @@ function ltIsBase(l){
   var ab=String(l.ab||'').toLowerCase();
   return ab.length===1 && LT_START.indexOf(ab)>=0;
 }
+/* WHETHER A LETTER CAN BE DELETED AT ALL, and it is the whole rule.
+   「a-z 0-9 !?に1からナンバリングしてそれ以降に追加されるのは消す」
+   「次に文字追加したら39になるよね？39以降は消せるんだよね？」OWNER 2026-09-02.
+
+   The first thirty-eight are a-z, 0-9 and ! ?, numbered 1 to 38, and they are
+   not deletable. The thirty-ninth is the first letter somebody adds, and from
+   there they go whole. That is the numbering staying still, which is what the
+   QWERTY needs: kbFixed() finds its keys BY NAME, so a row taken away is a key
+   answering to nothing.
+
+   ONE place, asked by the mark on a held cell and by the button on the
+   letter's own page. A second answer is how the two come to disagree about
+   the same press -- and this was two answers for a day: the mark was drawn on
+   all thirty-eight and pressing it opened a question whose yes did nothing.
+   「長押しの後から-の3個目以降に普通に反応しなくなる」 */
+function ltCanDelete(l){ return !!l && !ltIsBase(l); }
 function ltStart(){
   if(can('letters')) return;
   /* AND NOT INTO A LANGUAGE THAT IS ONLY READ. The twenty-eight slots are

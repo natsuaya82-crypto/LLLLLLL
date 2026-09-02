@@ -70,6 +70,7 @@ act('impScan', impScan);
 act('impSetDup', impSetDup);
 act('impSetInto', impSetInto);
 act('impAgain', impAgain);
+act('impOK', impOK);
 act('impUndo', impUndo);
 act('editGlyph', editGlyph);
 act('editLetter', editLetter);
