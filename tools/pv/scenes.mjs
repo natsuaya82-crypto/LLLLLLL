@@ -67,8 +67,12 @@ export function SCENES(F){
   const BAR = F.bar || 1.690;
   const bars = (n) => Math.round(BAR * n * 1000) / 1000;
 
-  const ANCHOR = wide ? { x: W * 0.745, y: H * 0.50 } : { x: W * 0.50, y: H * 0.60 };
-  const SCALE  = wide ? 2.4 : 2.5;
+  /* 16:9 puts the app down one side with the words beside it. 9:16 is the
+     same shape as the phone, so the app IS the frame and the words sit over
+     the top of it -- and the two scales are much closer together, because
+     there is no room to fly in from a long way out. */
+  const ANCHOR = wide ? { x: W * 0.745, y: H * 0.50 } : { x: W * 0.50, y: H * 0.615 };
+  const SCALE  = wide ? 2.4 : 2.42;
 
   /* An app point (ax, ay) lands on the stage anchor at scale s. #stagePhone
      is 390x844 with its transform origin in the middle, which is where the
@@ -94,7 +98,7 @@ export function SCENES(F){
      the device is off the frame and the app is all there is. The frame is
      blurred while it is moving, which is what makes it read as a camera
      rather than as a jump. */
-  const WIDE = () => look(195, 422, wide ? 0.95 : 1.12);
+  const WIDE = () => look(195, 422, wide ? 0.95 : 1.60);
   const dive = (target, s, k) => {
     const w = WIDE(), c = look(target.x, target.y, s);
     const e = io(clamp(k, 0, 1));
@@ -118,7 +122,7 @@ export function SCENES(F){
     return { x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width, h: r.height };
   }, sel);
 
-  const TYPETOP = wide ? 0 : -640;
+  const TYPETOP = wide ? 0 : -655;
 
   /* THE WORDS, a line at a time. The kicker first, then each line of the head
      wiped up from under its own edge, then the sentence -- and all of it out
@@ -498,15 +502,15 @@ export function SCENES(F){
       await stage.set({ phone: { x: 0, y: 0, s: 1, o: 0 } });
     },
     at: async (stage, k, t) => {
-      const cols = F.portrait ? 2 : 3, rows = 3;
+      const cols = 3, rows = 3;
       const ts = [];
       for (let i = 0; i < 9; i++){
         const cx = i % cols, cy = Math.floor(i / cols);
-        const gx = (F.portrait ? 470 : 500), gy = 560;
+        const gx = (F.portrait ? 348 : 500), gy = (F.portrait ? 430 : 560);
         const x = W / 2 - 195 + (cx - (cols - 1) / 2) * gx;
         const y = H / 2 - 422 + (cy - (rows - 1) / 2) * gy;
         const a = 0.10 + (cx + cy) * 0.09;
-        ts.push({ x: x, y: y, s: 0.62,
+        ts.push({ x: x, y: y, s: F.portrait ? 0.44 : 0.62,
                   o: Math.min(ramp(t, a, a + 0.45), 1 - ramp(t, sc_wall - 0.6, sc_wall - 0.2)) });
       }
       await stage.set({ wall: {
