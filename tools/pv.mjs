@@ -125,7 +125,7 @@ const MYFACE = { st: PV_CURVE['o'] };
    the one place that knows what a whole app-state looks like, and the film's
    own language is laid over it. */
 await app.evaluate('window.__seed = ' + seed.toString());
-await app.evaluate(({ s, st, wds, snd, other, seen, feed, myFace }) => {
+await app.evaluate(({ s, st, wds, snd, other, seen, feed, myFace, SCR }) => {
   eval('(' + s + ')()');
   SET.done = true; SET.theme = 'dark'; SET.ui = 'en';
   /* FREE. Not because the film is being modest -- because the free plan is
@@ -258,6 +258,17 @@ await app.evaluate(({ s, st, wds, snd, other, seen, feed, myFace }) => {
   POSTS.sort(function(a, b){ return b.at - a.at; });
   ME.av = myFace;
 
+  /* WHOSE LANGUAGE THE FILM GOES AND GETS. The door into somebody else's
+     language is the row on their profile, and that row is drawn exactly when
+     the server has answered that they have published one (www/me.js) -- so
+     the film seeds the answer rather than inventing a door. WHO_ASKED stops
+     it being asked for over a network no check and no film has. */
+  WHO_HAVE['iri'] = { who:'Iri', hd:'iri', av:{ st: SCR.block['k'] },
+                      lname: seen.name, lid: seen.id, lpub: true,
+                      bio:'Building a language for the islands.',
+                      fo: 41, fr: 68 };
+  WHO_ASKED['iri'] = 1;
+
   SET.myfont = true;
   if (typeof applyTheme === 'function') applyTheme();
   if (typeof installScriptFont === 'function') installScriptFont();
@@ -267,7 +278,8 @@ await app.evaluate(({ s, st, wds, snd, other, seen, feed, myFace }) => {
   if (typeof installTypeFont === 'function') installTypeFont();
   if (typeof render === 'function') render();
 }, { s: seed.toString(), st: PV_STROKES, wds: PV_WORDS, snd: PV_SND,
-     other: PV_OTHER, seen: PV_SEEN, feed: FEED, myFace: MYFACE });
+     other: PV_OTHER, seen: PV_SEEN, feed: FEED, myFace: MYFACE,
+     SCR: { curve: PV_CURVE, wedge: PV_WEDGE, block: PV_BLOCK } });
 console.log('  letters drawn: ' + await app.evaluate(() => window.__pvDrawn));
 await pg.waitForTimeout(400);
 
@@ -301,9 +313,15 @@ const stage = {
       q('stagePhone').style.transform =
         'translate(' + p.x + 'px,' + p.y + 'px) scale(' + p.s + ')';
       q('stagePhone').style.opacity = p.o === undefined ? 1 : p.o;
-      /* Past this the device frame is out of the picture anyway; what would
-         be left of it is two vertical edges and no top, so it goes. */
-      q('stagePhone').className = p.s > 1.4 ? 'zoom' : '';
+      /* A fast move is blurred. It is the one thing that makes a camera move
+         read as a camera move rather than as a jump, and it costs one filter.
+         The radius and the device frame go as the picture passes into the
+         screen. */
+      q('stagePhone').style.filter = p.blur ? 'blur(' + p.blur.toFixed(2) + 'px)' : 'none';
+      const sh = p.shell === undefined ? (p.s > 1.4 ? 0 : 1) : p.shell;
+      q('shell').style.opacity = sh;
+      const rad = p.radius === undefined ? (p.s > 1.4 ? 0 : 46) : p.radius;
+      q('screen').style.borderRadius = rad + 'px';
     }
     if (o.type){
       const T = o.type, head = q('head');

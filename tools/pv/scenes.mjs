@@ -87,6 +87,30 @@ export function SCENES(F){
     return pose;
   };
 
+  /* THE CAMERA IS OUTSIDE THE PHONE, AND FLIES INTO THE SCREEN.
+     「タップしてその画面にブーンって全体が移動してまたiPhoneが出てくる」
+     A shot that begins wide shows the whole device -- shell, corners and all
+     -- something is tapped, and the picture goes in through the screen until
+     the device is off the frame and the app is all there is. The frame is
+     blurred while it is moving, which is what makes it read as a camera
+     rather than as a jump. */
+  const WIDE = () => look(195, 422, wide ? 0.95 : 1.12);
+  const dive = (target, s, k) => {
+    const w = WIDE(), c = look(target.x, target.y, s);
+    const e = io(clamp(k, 0, 1));
+    return { x: mix(w.x, c.x, e), y: mix(w.y, c.y, e), s: mix(w.s, c.s, e),
+             shell: 1 - clamp(k / 0.42, 0, 1),
+             radius: mix(46, 0, clamp(k / 0.5, 0, 1)),
+             blur: 7 * Math.pow(Math.sin(Math.PI * clamp(k, 0, 1)), 1.5) };
+  };
+  /* Where something on the screen IS, asked of the page. */
+  const hit = (stage, sel) => stage.app(function(sel){
+    var e = document.querySelector(sel);
+    if (!e) return null;
+    var r = e.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  }, sel);
+
   const box = (stage, sel) => stage.app(function(sel){
     var e = document.querySelector(sel);
     if (!e) return null;
@@ -132,32 +156,40 @@ export function SCENES(F){
   /* A thumb, where something on the screen is. Inside the phone, so it is
      scaled with everything else -- a fifth of its own size at 2.4x is a
      fingertip rather than a saucer. */
-  const thumb = (at, since) => at ? { x: at.x, y: at.y,
+  /* The disc is inside the phone, so it is scaled with everything else: what
+     is a fingertip at 2.4x is a speck at 0.95x. `m` is how much bigger it has
+     to be drawn while the camera is still outside. */
+  const thumb = (at, since, m) => at ? { x: at.x, y: at.y,
       o: Math.max(0, 1 - since / 0.5) * 0.95,
-      s: mix(0.22, 0.62, clamp(since / 0.5, 0, 1)) } : noTap;
+      s: mix(0.22, 0.62, clamp(since / 0.5, 0, 1)) * (m || 1) } : noTap;
 
-  const LT = 'c', TAP0 = 0.7, TAPGAP = 0.55;
+  const LT = 'c', TAP0 = 0.55, TAPGAP = 0.5;
   const sc_draw = bars(4);
   const sc_alphabet = bars(2);
-  const sc_keyboard = bars(2);
+  const sc_keyboard = bars(3);
   const sc_write = bars(3);
   const sc_feed = bars(4);
-  const sc_thread = bars(2);
   const sc_card = bars(2);
-  const sc_seen = bars(2);
+  const sc_seen = bars(3);
   const sc_download = bars(2);
   const sc_theirs = bars(2);
   const sc_font = bars(2);
   const sc_wall = bars(2);
   const sc_range = bars(2);
   const sc_end = bars(3);
-
+  /* A shot that starts outside the phone: how long it is held wide, when
+     the finger lands, and how long the flight in takes. */
+  const HOLD = 0.55, TAPAT = 0.62, FLY0 = 0.8, FLY = 0.7;
 
   return [
   /* ====================== I. A LETTER, AND THE REST ==================== */
 
   /* A letter, tap by tap. The first second has no words on it: what has to
      be understood first is that a person is drawing. */
+  /* THE FILM OPENS OUTSIDE THE PHONE. The whole device is in the frame, on
+     the alphabet, with one slot still empty. A finger lands on it, and the
+     picture goes in through the screen and does not come back out for two
+     shots. */
   { name: 'draw', secs: sc_draw,
     enter: async (stage) => {
       await stage.set({ card: { o: 0 }, wash: 0, tap: noTap, wall: { o: 0 } });
@@ -169,61 +201,82 @@ export function SCENES(F){
           if (String(ltName(LETTERS[i]) || '') === lt) l = LETTERS[i];
         window.__pvLt = l.id;
         window.__pvSt = JSON.parse(JSON.stringify(l.st));
-        l.st = [];
-        editLetter(l.id);
-        GE.st = []; GE.si = -1; GE.pi = -1; GE.seal = false;
-        render();
-        /* Where each tap lands ON THE SCREEN, asked of the editor's own
-           mapping rather than worked out again here -- geTo is what puts a
-           point where the finger left it, so the dot and the point cannot
-           come apart. A curve is one stroke of many points; the film taps
-           out the ends and the corners of it, which is what a finger does. */
-        var c = document.getElementById('gcanv'), b = c.getBoundingClientRect();
-        var taps = [], j, st = window.__pvSt, pts;
-        for (i = 0; i < st.length; i++){
-          pts = st[i].pts;
-          for (j = 0; j < pts.length; j++){
-            if (pts.length > 6 && j % 4 && j !== pts.length - 1) continue;
-            taps.push({ x: b.left + geTo(b.width, pts[j][0], 0),
-                        y: b.top + geTo(b.height, pts[j][1], 1), i: i, j: j });
-          }
-        }
-        window.__pvTaps = taps;
+        l.st = [];                          /* the slot the film draws into */
+        saveLetters();
+        go('ltset', 'all'); render(); window.scrollTo(0, 0);
       }, LT);
-      stage.taps = await stage.app(function(){ return window.__pvTaps; });
-      stage.at = await box(stage, '#gcanv');
+      /* the tile of that letter, on the grid, where the finger will land */
+      stage.tile = await stage.app(function(id){
+        var b = document.querySelector('[data-do="editLetter"][data-a*="' + id + '"]');
+        if (!b) return null;
+        var r = b.getBoundingClientRect();
+        return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+      }, await stage.app(function(){ return window.__pvLt; }));
+      stage.taps = null;
     },
     at: async (stage, k, t) => {
-      let placed = 0;
-      for (let i = 0; i < stage.taps.length; i++) if (t >= TAP0 + i * TAPGAP) placed = i + 1;
-      const upto = placed ? stage.taps[placed - 1] : null;
-      await stage.app(function(u){
-        var st = window.__pvSt, next = [], i, j, pts;
-        for (i = 0; i < st.length; i++){
-          if (!u || i > u.i) break;
-          pts = [];
-          for (j = 0; j < st[i].pts.length; j++){
-            if (i === u.i && j > u.j) break;
-            pts.push(st[i].pts[j]);
-          }
-          if (pts.length) next.push({ pts: pts });
+      let tap = noTap;
+      if (t < FLY0){
+        /* outside: the whole phone, and a finger on the empty slot */
+        tap = thumb(stage.tile, t - TAPAT, 2.6);
+        await stage.set({ phone: Object.assign(dive(stage.tile || { x:195, y:422 }, SCALE, 0),
+                                               { o: ramp(t, 0, 0.5) }) });
+      } else {
+        if (!stage.taps){
+          /* the tap OPENS it, and the camera goes in after it */
+          await stage.app(function(){
+            editLetter(window.__pvLt);
+            GE.st = []; GE.si = -1; GE.pi = -1; GE.seal = false;
+            render();
+            var c = document.getElementById('gcanv'), b = c.getBoundingClientRect();
+            var taps = [], i, j, st = window.__pvSt, pts;
+            for (i = 0; i < st.length; i++){
+              pts = st[i].pts;
+              for (j = 0; j < pts.length; j++){
+                if (pts.length > 6 && j % 4 && j !== pts.length - 1) continue;
+                taps.push({ x: b.left + geTo(b.width, pts[j][0], 0),
+                            y: b.top + geTo(b.height, pts[j][1], 1), i: i, j: j });
+              }
+            }
+            window.__pvTaps = taps;
+          });
+          stage.taps = await stage.app(function(){ return window.__pvTaps; });
+          stage.at = await box(stage, '#gcanv');
         }
-        GE.st = next;
-        GE.si = next.length - 1;
-        GE.pi = next.length ? next[next.length - 1].pts.length - 1 : -1;
-        geDraw();
-      }, upto);
-      const i = placed - 1;
-      const pose = look(stage.at.x, stage.at.y, mix(SCALE * 1.02, SCALE * 1.14, k));
-      pose.o = ramp(t, 0, 0.6);
-      await stage.set({ phone: pose,
-        tap: thumb(i >= 0 ? stage.taps[i] : null, i >= 0 ? t - (TAP0 + i * TAPGAP) : 99) });
-      words(stage, t, sc_draw, { key:'draw', in: 1.3, kicker: 'Lingua',
+        const since = t - FLY0;
+        const T0 = FLY + 0.25;
+        let placed = 0;
+        for (let i = 0; i < stage.taps.length; i++)
+          if (since >= T0 + i * TAPGAP) placed = i + 1;
+        const upto = placed ? stage.taps[placed - 1] : null;
+        await stage.app(function(u){
+          var st = window.__pvSt, next = [], i, j, pts;
+          for (i = 0; i < st.length; i++){
+            if (!u || i > u.i) break;
+            pts = [];
+            for (j = 0; j < st[i].pts.length; j++){
+              if (i === u.i && j > u.j) break;
+              pts.push(st[i].pts[j]);
+            }
+            if (pts.length) next.push({ pts: pts });
+          }
+          GE.st = next;
+          GE.si = next.length - 1;
+          GE.pi = next.length ? next[next.length - 1].pts.length - 1 : -1;
+          geDraw();
+        }, upto);
+        const i = placed - 1;
+        tap = thumb(i >= 0 ? stage.taps[i] : null, i >= 0 ? since - (T0 + i * TAPGAP) : 99);
+        const pose = dive(stage.at, SCALE * mix(1.02, 1.12, clamp((since - FLY) / 4, 0, 1)),
+                          clamp(since / FLY, 0, 1));
+        await stage.set({ phone: pose });
+      }
+      await stage.set({ tap: tap });
+      words(stage, t, sc_draw, { key:'draw', in: 1.9, kicker: 'Lingua',
         head: ['Invent a <em>language</em>.'],
         sub: 'It begins with one letter, drawn with a finger.' });
     } },
 
-  /* The alphabet it belongs to. */
   { name: 'alphabet', secs: sc_alphabet,
     enter: async (stage) => {
       await stage.set({ tap: noTap });
@@ -243,22 +296,34 @@ export function SCENES(F){
     } },
 
   /* A QWERTY wearing them. */
+  /* AND THE PHONE IS BACK. Out of the screen, onto the contents page, a
+     finger on the chapter, and in again. */
   { name: 'keyboard', secs: sc_keyboard,
     enter: async (stage) => {
-      await nav(stage, 'kb');
-      stage.at = await box(stage, '.kb');
+      await stage.app(function(){ go('build'); render(); window.scrollTo(0, 0); });
+      stage.tile = await hit(stage, '[data-do="go"][data-a*="kb"]');
+      stage.at = null;
     },
     at: async (stage, k, t) => {
-      await stage.set({ phone: arrive(
-        look(stage.at.x, stage.at.y, mix(SCALE * 0.96, SCALE * 1.05, k)), t) });
-      words(stage, t, sc_keyboard, { key:'kb', kicker: 'The keyboard',
+      let tap = noTap;
+      if (t < FLY0){
+        tap = thumb(stage.tile, t - TAPAT, 2.6);
+        await stage.set({ phone: dive(stage.tile || { x:195, y:422 }, SCALE, 0) });
+      } else {
+        if (!stage.at){
+          await stage.app(function(){ go('kb'); render(); window.scrollTo(0, 0); });
+          stage.at = await box(stage, '.kb');
+        }
+        const since = t - FLY0;
+        await stage.set({ phone: dive(stage.at,
+          SCALE * mix(0.96, 1.03, clamp((since - FLY) / 3, 0, 1)), clamp(since / FLY, 0, 1)) });
+      }
+      await stage.set({ tap: tap });
+      words(stage, t, sc_keyboard, { key:'kb', in: 1.6, kicker: 'The keyboard',
         head: ['And a keyboard', 'of your own letters.'],
         sub: 'The same alphabet, on every key of the phone.' });
     } },
 
-  /* ======================= II. SAYING SOMETHING ======================== */
-
-  /* Typed in the letters somebody drew, and sent. */
   { name: 'write', secs: sc_write,
     enter: async (stage) => {
       await stage.app(function(){ window.__pvSent = 0; window.scrollTo(0, 0); openPost('new'); render(); });
@@ -318,18 +383,6 @@ export function SCENES(F){
         sub: 'Every line carries its own letters, so a phone that has never seen that alphabet can still read it.' });
     } },
 
-  /* Two of them, answering each other. */
-  { name: 'thread', secs: sc_thread,
-    enter: async (stage) => { await nav(stage, 'thread', 'p2'); },
-    at: async (stage, k, t) => {
-      await scroll(stage, Math.round(mix(0, 460, io(clamp((k - 0.10) / 0.85, 0, 1)))));
-      await stage.set({ phone: arrive(look(195, 380, SCALE * 0.98), t) });
-      words(stage, t, sc_thread, { key:'thread', kicker: 'A conversation',
-        head: ['Two scripts,', 'one thread.'],
-        sub: 'Answered in a language the other person does not have.' });
-    } },
-
-  /* A line of it, as a picture that leaves the phone. */
   { name: 'card', secs: sc_card,
     enter: async (stage) => {
       await stage.app(function(){ cardOpen('p', 'p1'); render(); window.scrollTo(0, 0); });
@@ -346,19 +399,35 @@ export function SCENES(F){
 
   /* ========================= III. SOMEBODY ELSE'S ====================== */
 
+  /* OUT AGAIN, onto somebody else's profile, and in through the row that
+     names their language. It is the app's own door: a profile carries that
+     row exactly when the person has published (www/me.js). */
   { name: 'seen', secs: sc_seen,
     enter: async (stage) => {
-      await stage.app(function(){ go('about', 'seen-vethi'); render(); window.scrollTo(0, 0); });
+      await stage.app(function(){ go('profile', 'iri'); render(); window.scrollTo(0, 0); });
+      stage.tile = await hit(stage, '.wldrow');
+      stage.at = null;
     },
     at: async (stage, k, t) => {
-      await scroll(stage, Math.round(mix(0, 200, io(clamp((k - 0.12) / 0.82, 0, 1)))));
-      await stage.set({ phone: arrive(look(195, 340, SCALE * 0.96), t) });
-      words(stage, t, sc_seen, { key:'seen', kicker: 'Somebody else\u2019s',
+      let tap = noTap;
+      if (t < FLY0){
+        tap = thumb(stage.tile, t - TAPAT, 2.6);
+        await stage.set({ phone: dive(stage.tile || { x:195, y:422 }, SCALE, 0) });
+      } else {
+        if (!stage.at){
+          await stage.app(function(){ go('about', 'seen-vethi'); render(); window.scrollTo(0, 0); });
+          stage.at = { x: 195, y: 340 };
+        }
+        const since = t - FLY0;
+        await scroll(stage, Math.round(mix(0, 190, io(clamp((since - FLY) / 2.2, 0, 1)))));
+        await stage.set({ phone: dive(stage.at, SCALE * 0.96, clamp(since / FLY, 0, 1)) });
+      }
+      await stage.set({ tap: tap });
+      words(stage, t, sc_seen, { key:'seen', in: 1.6, kicker: 'Somebody else\u2019s',
         head: ['Other people', 'publish theirs.'],
         sub: 'A whole language of somebody else\u2019s, written up as a page.' });
     } },
 
-  /* Taken -- with the real button, which really adds it. */
   { name: 'download', secs: sc_download,
     enter: async (stage) => {
       await stage.app(function(){
@@ -471,24 +540,27 @@ export function SCENES(F){
     } },
 
   /* The name. */
+  /* AND OUT, all the way, until the phone is a phone again. */
   { name: 'end', secs: sc_end,
     enter: async (stage) => {
       await stage.app(function(){
-        SET.ui = 'en'; SET.theme = 'dark'; applyTheme(); go('feed'); render();
-        window.scrollTo(0, 0);
+        SET.ui = 'en'; SET.theme = 'dark'; applyTheme();
+        langOpen(window.__pvMine); go('feed'); render(); window.scrollTo(0, 0);
       });
     },
     at: async (stage, k, t) => {
-      const pose = look(195, 300, mix(SCALE, SCALE * 1.06, out(k)));
-      pose.o = 1 - ramp(t, 0.05, 0.85);
+      const back = 1 - clamp(t / 0.9, 0, 1);          /* 1 = inside, 0 = wide */
+      const pose = dive({ x: 195, y: 300 }, SCALE, back);
+      pose.o = 1 - ramp(t, 1.5, 2.3);
       await noWords(stage);
       await stage.set({
         phone: pose,
-        card: { o: ramp(t, 0.45, 1.3), tag: 'Build a language. Write in it.',
+        card: { o: ramp(t, 1.7, 2.6), tag: 'Build a language. Write in it.',
                 foot: 'Lingua for iPhone',
-                mark: mix(1.14, 1, out(clamp((t - 0.45) / 1.4, 0, 1))),
-                rule: Math.round(mix(0, 280, ramp(t, 0.9, 2.3))) }
+                mark: mix(1.14, 1, out(clamp((t - 1.7) / 1.4, 0, 1))),
+                rule: Math.round(mix(0, 280, ramp(t, 2.2, 3.4))) }
       });
     } },
+
   ];
 }

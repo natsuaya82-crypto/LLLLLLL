@@ -45,12 +45,13 @@ body.tall{width:1080px;height:1920px}
              inset 0 0 0 1px rgba(255,255,255,.05)}
 #screen{position:absolute;inset:0;border-radius:46px;overflow:hidden;background:#0a0a0e}
 #ph{width:390px;height:844px;border:0;display:block}
-/* Zoomed in, the device frame is off the top and the bottom of the picture
-   and only its two sides would be left -- a frame with no frame. So the shell
-   goes, and the screen is a slab with its own shadow. */
-#stagePhone.zoom #shell{opacity:0}
-#stagePhone.zoom #screen{border-radius:0;
-  box-shadow:0 0 140px rgba(0,0,0,.65), 0 0 0 1px rgba(201,168,106,.10)}
+/* The camera starts OUTSIDE the phone and flies into the screen, so the
+   device frame is not a state -- it is something that fades out as the
+   picture goes in past it. Both are set from the film, frame by frame.
+   Zoomed in, the shell would be off the top and the bottom of the picture
+   and only its two sides would be left, which reads as a frame with no
+   frame. */
+#screen{box-shadow:0 0 140px rgba(0,0,0,.55)}
 /* A thumb: not a photograph of a hand, a soft disc where the press lands. */
 #tap{position:absolute;width:76px;height:76px;margin:-38px 0 0 -38px;border-radius:50%;
   background:radial-gradient(circle,rgba(255,255,255,.32),rgba(255,255,255,.10) 55%,transparent 70%);
