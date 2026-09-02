@@ -1068,7 +1068,7 @@ defLang('es', (function(){
       "card.title"        : "Tarjeta",
       "card.save"         : "Compartir",
       "card.shape"         : "Forma",
-      "card.saved"        : "Guardada",
+      "card.nofile"       : "La aplicación no llega al almacén de archivos.",
       "imp.next"          : "Siguiente",
       "imp.role.hw"       : "Grafía",
       "imp.role.mn"       : "Significado",

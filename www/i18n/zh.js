@@ -1113,7 +1113,7 @@ defLang('zh', (function(){
       "card.title"        : "卡片",
       "card.save"         : "分享",
       "card.shape"         : "尺寸",
-      "card.saved"        : "已保存",
+      "card.nofile"       : "应用没有连到文件存放处。",
       "imp.next"          : "下一步",
       "imp.role.hw"       : "拼写",
       "imp.role.mn"       : "意思",
