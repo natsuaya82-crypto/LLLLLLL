@@ -243,6 +243,7 @@ defLang('en', (function(){
       "ob.mail.to.forgot" : "Forgot your password?",
       "ob.signin.or" : "or",
       "ob.bar.up" : "Create an account",
+      "ob.docs" : "By continuing you agree to the following.",
       "ob.bar.in" : "Sign in instead",
       "ob.who.h" : "Your name and ID",
       "ob.who.nm.ph" : "Name",

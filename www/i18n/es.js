@@ -303,6 +303,7 @@ defLang('es', (function(){
       "ob.mail.to.forgot" : "¿Olvidaste tu contraseña?",
       "ob.signin.or" : "o",
       "ob.bar.up" : "Crear una cuenta",
+      "ob.docs" : "Al continuar, aceptas lo siguiente.",
       "ob.bar.in" : "Iniciar sesión",
       "ob.who.h" : "Tu nombre y tu ID",
       "ob.who.nm.ph" : "Nombre",

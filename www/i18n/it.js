@@ -343,6 +343,7 @@ defLang('it', (function(){
       "ob.mail.to.forgot" : "Password dimenticata?",
       "ob.signin.or" : "o",
       "ob.bar.up" : "Crea un account",
+      "ob.docs" : "Continuando, accetti quanto segue.",
       "ob.bar.in" : "Accedi",
       "ob.who.h" : "Il tuo nome e il tuo ID",
       "ob.who.nm.ph" : "Nome",
