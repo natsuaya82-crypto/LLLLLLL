@@ -924,6 +924,7 @@ defLang('fr', (function(){
       "store.wait" : "Interrogation de l'App Store…",
       "store.pending" : "En attente d'approbation. Vous serez prévenu.",
       "store.fail" : "Impossible de joindre l'App Store",
+      "store.nosale" : "Rien n'est encore en vente",
       "toast.plan.free"  : "Retour à la formule Free",
       "toast.plan.other" : "{0} est actif",
       "add.title"        : "Nouveau mot",

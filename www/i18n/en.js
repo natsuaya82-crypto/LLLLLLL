@@ -790,6 +790,7 @@ defLang('en', (function(){
       "store.wait" : "Asking the App Store…",
       "store.pending" : "Waiting to be approved. You will be told when it is.",
       "store.fail" : "The App Store could not be reached",
+      "store.nosale" : "Nothing is on sale yet",
       'toast.plan.free' : "Back on the free plan",
       'toast.plan.other': "{0} is on",
       /* the write / edit sheets */

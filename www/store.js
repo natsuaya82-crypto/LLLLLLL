@@ -79,6 +79,13 @@ function storeBuy(id){
     .then(function(r){
       var how = (r && r.how) ? String(r.how) : '';
       var got = (r && r.plan) ? String(r.plan) : '';
+      /* WHAT WAS PRESSED, which is not what is HELD.
+         `r.plan` is the best of everything this Apple ID holds, and that is
+         what a plan IS -- see storeTook(). `r.bought` is the plan the signed
+         transaction was for. LinguaStore.swift § buy answers both because
+         they are two different facts, and the sentence after a purchase wants
+         the second one. */
+      var paid = (r && r.bought) ? String(r.bought) : '';
       /* A PURCHASE NEVER LOWERS THE PLAN. The phone side reads the plan off
          the signed transaction now (ios/App/App/LinguaStore.swift § buy), so
          a `bought` that still says `free` is not a person who owns nothing --
@@ -96,7 +103,27 @@ function storeBuy(id){
         return;
       }
       storeTook(r);
-      if(how === 'bought') toast(t('toast.plan.other', planName(plan())));
+      /* AND THE SENTENCE NAMES WHAT WAS BOUGHT, not the top rung held.
+         「plus で課金しても pro になりましたって出る」 OWNER 2026-09-02, on a
+         real phone. This read `planName(plan())`, and plan() after storeTook()
+         is planBest(the answer, what was already on) -- the BEST of the two,
+         which is the right rule for a plan and the wrong thing to say to
+         somebody who has just pressed Plus.
+
+         The rung itself is untouched: storeTook() still takes the better of
+         the two and nothing here lowers anything. What changes is the words.
+
+         The two come apart whenever a better entitlement is already live, and
+         today that is not a corner -- Plus and Pro are in two subscription
+         groups in App Store Connect, so both run and both are charged.
+         docs/apple.md § 4 says one group; that is App Store Connect work and
+         cannot be done in the app. It is in docs/STATE.md § オーナーの側に
+         残っているもの.
+
+         `got` and never plan() for the fallback: a phone carrying a native
+         side older than this answers no `bought` at all, and the ANSWER is
+         still closer to what was pressed than the best rung on the account. */
+      if(how === 'bought') toast(t('toast.plan.other', planName(paid || got)));
       else if(how === 'pending') toast(t('store.pending'));
     })
     ['catch'](function(){ toast(t('store.fail')); });
@@ -178,6 +205,20 @@ function storeId(planId, yearly){
    -- an empty map when there is nothing on sale yet, which is today. */
 var STORE_P=null;    /* product id -> what the App Store said about it */
 var STORE_ASK=false; /* asked already this session */
+/* WHAT THE LAST ASK CAME BACK AS, because the screen has to say it.
+   '' is nothing to say -- either the prices are Apple's, or the ask is still
+   out and the typed ones stand for the moment. 'fail' and 'none' are the two
+   states the plans screen draws under the prices; see storeSay(). */
+var STORE_BAD='';
+/* Which ask is the current one. Two can be in flight at once now that a bound
+   exists -- one that ran out of time, and the one the next visit started --
+   and an older one answering after a newer one began is not an answer to
+   anything. */
+var STORE_N=0;
+/* How long the App Store is given. 12 is what LinguaStore.syncWithin() gives
+   AppStore.sync(); this is twice it, because a price list is not a sign-in
+   sheet and there is nothing for a person to be waiting in front of. */
+var STORE_WAIT=25000;
 
 function storeRow(id){
   return (STORE_P && STORE_P[String(id)]) || null;
@@ -204,23 +245,92 @@ function storeRow(id){
    rejection, and an answer with nothing in it, put it back down. Opening the
    plans screen is what asks, so the retry costs one call per visit and never
    loops -- nothing here renders unless something came back. */
+/* AND THE ASK HAS AN END, however Apple's side behaves.
+
+   「サンドボックスだと 15000 円なのに画面はどの言語でも 99.99 ドル」 OWNER
+   2026-09-02, on a real phone. **Any language** is the whole of the diagnosis:
+   `$99.99` is typed into all ten www/i18n files, so what was on the screen was
+   the fallback rather than a translation gone wrong -- the App Store's answer
+   never reached the screen at all.
+
+   The latch was raised BEFORE the call and lowered by the two ways it can
+   come back. A promise that does neither -- never resolves, never rejects --
+   leaves it raised for the rest of the launch, and every later opening of the
+   plans screen returns on the first line without asking. The typed price then
+   stands for good, and nothing anywhere throws.
+
+   The same shape was met once already, on Restore
+   「購入を復元押しても問い合わせ中しか出ないよ」 OWNER 2026-09-02 -- and was answered
+   with a bound on both ends (`syncWithin` in LinguaStore.swift, `STRT` here).
+   This is the same answer on the one road that did not have it.
+
+   A LATE ANSWER IS STILL TAKEN. The bound exists so the screen stops waiting,
+   not so a price that arrives at the thirtieth second is thrown away: `got`
+   and the timer are two different things, and whichever of them happens first
+   does not silence the other. What DOES silence an ask is a newer one --
+   STORE_N. */
 function storeAsk(){
-  var np=storePlug();
+  var np=storePlug(), n, got=false;
   if(!np || STORE_ASK) return;
   STORE_ASK=true;
+  STORE_N++; n=STORE_N;
+  setTimeout(function(){
+    if(got || n!==STORE_N || !STORE_ASK) return;
+    storeFell('fail');
+  }, STORE_WAIT);
   np('LinguaStore', 'products', {})
     .then(function(r){
-      var l=(r && r.products) || [], m={}, i, n=0;
-      for(i=0;i<l.length;i++) if(l[i] && l[i].id){ m[String(l[i].id)]=l[i]; n++; }
-      if(!n){ STORE_ASK=false; STORE_P=STORE_P||{}; toast(t('store.none')); return; }
-      STORE_P=m;
-      render();
+      var l=(r && r.products) || [], m={}, i, c=0;
+      for(i=0;i<l.length;i++) if(l[i] && l[i].id){ m[String(l[i].id)]=l[i]; c++; }
+      if(got || n!==STORE_N) return;
+      got=true;
+      if(!c){ storeFell('none'); return; }
+      /* Raised again, and not merely left where it was: the bound may have
+         lowered it already, and 「an answer is on its way OR one has arrived」
+         is what this latch means. An arrival that left it down would be a
+         fresh call to Apple on the next visit for prices already held. */
+      STORE_P=m; STORE_BAD=''; STORE_ASK=true;
+      storeDrew();
     })
-    /* AND IT SAYS SO. A price list that quietly shows the typed dollars when
-       the App Store did not answer is a screen that is wrong in every country
-       but one and says nothing 「しかもまだ4.99って出るけど？」 OWNER
-       2026-09-01. An error is a state, not an explanation. */
-    ['catch'](function(){ STORE_ASK=false; if(!STORE_P) STORE_P={}; toast(t('store.fail')); });
+    ['catch'](function(){
+      if(got || n!==STORE_N) return;
+      got=true;
+      storeFell('fail');
+    });
+}
+/* The ask did not end in prices, and the screen says which of the two ways.
+
+   IT SAYS SO WHERE THE PRICE IS, and not in a toast. A toast is 1.9 seconds
+   (toast() in www/shell.js) and then the screen is a price list with typed
+   dollars on it and nothing anywhere saying they are not Apple's -- which is
+   the state the owner was looking at. 「しかもまだ4.99って出るけど？」 OWNER
+   2026-09-01. An error is a state, not an explanation, and a state belongs on
+   the screen it is about for as long as it is true -- CLAUDE.md § Explaining.
+
+   THE REDRAW COMES BEFORE THE LATCH GOES DOWN, and that is not a tidy-up.
+   vPlans() is what asks, so a render with the latch already down asks again
+   inside itself -- and a failure that redraws is then a failure that retries,
+   every STORE_WAIT, for as long as somebody stands on this screen. Drawing
+   first and unlatching after keeps the promise the ask was written with: one
+   call per VISIT, and never a loop. */
+function storeFell(w){
+  if(!STORE_P) STORE_P={};
+  STORE_BAD=w;
+  storeDrew();
+  STORE_ASK=false;
+}
+/* Only the screen that is showing prices. The bound fires on a timer, and a
+   timer that repaints whatever somebody happens to be standing on is a timer
+   that takes the keyboard off them mid-word. */
+function storeDrew(){ if(route==='plans') render(); }
+/* What the plans screen puts under the prices, or nothing at all.
+   Empty while the ask is out: the typed prices are right in a browser and in
+   the United States, and a screen that accuses itself for a moment on every
+   visit is worse than one that is quiet until there is something to say. */
+function storeSay(){
+  if(STORE_BAD==='fail') return t('store.fail');
+  if(STORE_BAD==='none') return t('store.nosale');
+  return '';
 }
 /* What one term of one plan costs. Empty when the App Store has not answered,
    which is every browser and every product not yet made -- the caller falls

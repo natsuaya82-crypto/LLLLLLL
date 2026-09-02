@@ -332,12 +332,34 @@ public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
           /// transaction's own productID. `best()` keeps whichever is higher,
           /// so a list that HAS caught up is still used and an older, better
           /// entitlement is never written down over.
+          let paid = Self.planOf(t.productID)
           var plan = await writeDown()
-          if let bought = Self.planOf(t.productID) {
+          if let bought = paid {
             let both = Self.best(plan, bought)
             if both != plan { plan = both; LinguaPlanPlugin.set(plan) }
           }
-          call.resolve(["how": "bought", "plan": plan])
+          /// AND WHAT WAS BOUGHT IS ANSWERED SEPARATELY FROM WHAT IS HELD.
+          ///
+          /// 「plus で課金しても pro になりましたって出る」 OWNER 2026-09-02,
+          /// on a real phone. `plan` above is the BEST of everything this
+          /// Apple ID holds, which is what a plan IS and is right -- and it is
+          /// the wrong thing to name in the sentence after a purchase, because
+          /// somebody who just pressed Plus is told they bought Pro.
+          ///
+          /// The two come apart whenever a better entitlement is already
+          /// live, and today that is not a corner: Plus and Pro are in two
+          /// subscription groups in App Store Connect, so both run at once and
+          /// both are charged. docs/apple.md § 4 says one group. That is the
+          /// owner's to fix in the dashboard and cannot be fixed here; what
+          /// CAN be fixed here is the app telling somebody they bought a
+          /// thing they did not press.
+          ///
+          /// It is the signed transaction's own productID and not the request
+          /// -- `verified()` above refused anything Apple has not signed --
+          /// so it is what was PAID FOR rather than what was asked for.
+          /// Empty for a product this app does not sell, which `buy` has
+          /// already refused at the top, so it cannot be reached from here.
+          call.resolve(["how": "bought", "plan": plan, "bought": paid ?? ""])
         case .userCancelled:
           call.resolve(["how": "cancelled", "plan": await standing()])
         case .pending:

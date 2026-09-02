@@ -877,6 +877,7 @@ defLang('it', (function(){
       "store.wait" : "Richiesta all'App Store…",
       "store.pending" : "In attesa di approvazione. Ti avviseremo.",
       "store.fail" : "Impossibile raggiungere l'App Store",
+      "store.nosale" : "Non c'è ancora nulla in vendita",
       "toast.plan.free"  : "Di nuovo sul piano Free",
       "toast.plan.other" : "{0} attivo",
       "add.title"        : "Parola nuova",

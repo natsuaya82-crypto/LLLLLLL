@@ -883,6 +883,7 @@ defLang('pt', (function(){
       "store.wait" : "Consultando a App Store…",
       "store.pending" : "Aguardando aprovação. Avisaremos você.",
       "store.fail" : "Não foi possível conectar à App Store",
+      "store.nosale" : "Ainda não há nada à venda",
       "toast.plan.free"  : "De volta ao plano Free",
       "toast.plan.other" : "{0} ativado",
       "add.title"        : "Palavra nova",
