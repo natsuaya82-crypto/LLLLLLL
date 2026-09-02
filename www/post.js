@@ -2675,7 +2675,24 @@ function postFocus(){
    thumb -- so reply, like, boost, share and the ... all still do their own
    thing and the rest of the row is the way in. */
 function postOpen(id){
-  if(postById(id)) go('thread', id);
+  if(postById(id)){ go('thread', id); return; }
+  /* NOT HERE YET IS NOT NOTHING. A notice carries only the id of the post it
+     is about, so a notice about somebody else's reply points at a post this
+     phone has never pulled -- and this used to check, find nothing, and
+     return. Every such row was a press that did nothing at all.
+     「通知タップしても反応が悪い」 OWNER 2026-09-02.
+
+     It goes to the thread either way: vThread() draws viewGone() for a post
+     that is not here, which is the honest screen while the answer is out and
+     the right one for good if the post has really gone. The answer, when it
+     comes, puts the post in through postTake() -- the same road the timeline
+     uses -- and the render that follows draws the thread. */
+  go('thread', id);
+  netPostById(id, function(p){
+    if(!p) return;
+    postTake([p]);
+    render();
+  }, function(){});
 }
 /* The face, and the way to whoever wears it.
    「タイムライン検索含めて人のツイートのアイコン押したらその人のホーム画面に

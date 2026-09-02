@@ -1881,6 +1881,21 @@ function netFindWho(q, ok, bad, more){
    name of the language it is written in. Not on the shapes: a shape is not
    something anybody can type. `body` is jsonb and `->>` is how PostgREST is
    asked for one of its fields as text. */
+/* ONE POST, BY ITS SERVER ID. A notice carries the id of the post it is about
+   and nothing else -- `notices()` in supabase/schema.sql sends `post`, not the
+   post -- so a notice about somebody else's reply pointed at a post this phone
+   had never pulled. postOpen() checked and, finding nothing, did nothing:
+   pressing the row was silence. 「通知タップしても反応が悪い」 OWNER 2026-09-02.
+
+   `post_seen` and netRow() are the same view and the same reader the timeline
+   and the search already use, so what comes back is a post like any other and
+   nothing here decides what one looks like. Reading needs no account --
+   `post_read` in schema.sql is `using (true)`. */
+function netPostById(id, ok, bad){
+  netGet('/rest/v1/post_seen?select=id,author,created_at,reply_to,body,hidden_at,author_out'+
+         '&id=eq.'+encodeURIComponent(String(id||''))+'&limit=1',
+    function(d){ ok((d && d.length)? netRow(d[0]) : null); }, bad);
+}
 function netFindPosts(q, ok, bad, more){
   var like=netLike(q);
   /* `more` is the `at` of the last post already held. Keyset and not an

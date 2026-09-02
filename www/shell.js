@@ -1060,8 +1060,14 @@ function vvMount(){
    this is a second way to the same thing, not a replacement.
    「全部戻るボタンじゃなくて携帯の右からスライドして戻るのも追加してほしい。両方」
 
-   From the RIGHT edge, dragged left. Which edge is the phone's own habit and
-   not ours to argue with, and the one that was asked for is this one.
+   FROM EITHER EDGE. The right edge, dragged left, is what was asked for on
+   2026-08-27 -- 「携帯の右からスライドして戻るのも追加してほしい。両方」 -- and
+   it was the only one, so the LEFT edge, which is where iOS puts its own back
+   gesture and where a thumb goes without being told, did nothing.
+   「画面の左側スワイプで全部戻れるようになってないんだけどなんで？」 OWNER
+   2026-09-02. Both now: from the left, dragged right; from the right, dragged
+   left. One is the phone's habit and one is the owner's, and neither costs the
+   other anything.
 
    Three things it must not do. It must not fire on a drawing: the glyph
    editor is a canvas that goes to the edge of the screen and a stroke ending
@@ -1073,7 +1079,7 @@ function vvMount(){
    pointer* and not touch*: this app is one webview and pointer events are
    what it has. Passive, because it never prevents the default -- a gesture
    that cancels a scroll it has decided against is worse than no gesture. */
-var swX=0, swY=0, swOn=false;
+var swX=0, swY=0, swOn=false, swWay=0;
 function swStart(e){
   swOn=false;
   if(!e.isPrimary) return;
@@ -1084,14 +1090,20 @@ function swStart(e){
     if(n==='CANVAS' || n==='INPUT' || n==='TEXTAREA') return;
     t=t.parentNode;
   }
-  if(e.clientX < window.innerWidth-30) return;
+  /* Which edge it started at, and therefore which way it has to go. A thumb's
+     width, the same 30 on both, because it is the same thumb. */
+  if(e.clientX <= 30) swWay=1;
+  else if(e.clientX >= window.innerWidth-30) swWay=-1;
+  else return;
   swX=e.clientX; swY=e.clientY; swOn=true;
 }
 function swEnd(e){
   if(!swOn) return;
   swOn=false;
   var dx=e.clientX-swX, dy=e.clientY-swY;
-  if(dx > -70) return;
+  /* Far enough, and the way this edge goes. A drag the wrong way from an edge
+     is not a slow back gesture, it is something else. */
+  if(dx*swWay < 70) return;
   if(Math.abs(dy) > Math.abs(dx)*0.6) return;
   back();
 }

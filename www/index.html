@@ -2652,8 +2652,17 @@ a.set{text-decoration:none}
    now: one line where the sentence is one line, two where it wraps or where
    the post under it has something to say. The face is 44 and the padding 24,
    so nothing is ever shorter than 68. */
+/* A ROW THAT IS PRESSED, and it is a <div> carrying an action name rather
+   than a <button> -- it holds faces and two lines of its own. What a <button>
+   gives it for nothing is the thing it was missing: WebKit only treats an
+   element as tappable when it looks like one, so a plain div misses taps and
+   shows nothing on the ones it catches. 「通知タップしても反応が悪い」 OWNER
+   2026-09-02. `cursor` is what WebKit reads; the rest is the press being
+   seen. */
 .ntf{display:flex;align-items:center;gap:10px;margin:0 -24px;padding:12px 16px;
-     border-bottom:1px solid var(--line)}
+     border-bottom:1px solid var(--line);cursor:pointer;
+     -webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+.ntf:active{background:var(--goldsf)}
 /* The mark, and every kind of notice hangs it in the same place. The five
    drawings are not all the same height -- the heart is 17, the follow 14, the
    recommendation 15 -- so with nothing to centre them against, the row for a
