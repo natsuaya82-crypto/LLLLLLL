@@ -1478,11 +1478,10 @@ function wldSliceOf(m, kind, fb){
    else's is here once its slices are, and the one page decides what a page
    that is not here yet looks like.
 
-   Not one of the seven reaches the open language. `ws` answers with nothing,
+   Not one of the eight reaches the open language. `ws` answers with nothing,
    because the writing system is `SET.wsys` -- the PERSON's settings, not the
    language's -- so it is on no server and there is nothing to say; the field
-   is left off rather than filled in with mine. The keyboard is the same shape
-   of gap and is in wldPage()'s own comment. */
+   is left off rather than filled in with mine. */
 function wldSeenOf(lid){
   var m=WLDS_HAVE[String(lid||'')], seen=wldSeen(lid);
   return {
@@ -1502,9 +1501,7 @@ function wldSeenOf(lid){
                var d=(wldSliceOf(m, 'script', {}) || {}).dir;
                return (DIRS.indexOf(d)>=0)? d : 'ltr';
              },
-    mine:    function(){ return false; },
-    kbname:  function(){ return ''; },
-    kblay:   function(){ return null; }
+    mine:    function(){ return false; }
   };
 }
 function vWorld(){
@@ -1517,19 +1514,18 @@ function vWorld(){
 /* THE LANGUAGE THIS PAGE IS ABOUT, as a bundle of questions rather than as
    the open language.
 
-   `wldPage()` opened by reading `world()`, `LETTERS`, `langName`, `wsys()`
-   and the applied keyboard -- every one of them a global meaning "the one in
-   front of me". That is right for your own article and is rule 8's worked
+   `wldPage()` opened by reading `world()`, `LETTERS`, `langName` and
+   `wsys()` -- every one of them a global meaning "the one in front of me". That is right for your own article and is rule 8's worked
    example for anybody else's: a door to somebody's language page drew THEM at
    the top and MY language underneath, which is why the door was closed
    (「この言語についてで人のをタップしても自分のが出る」 OWNER).
 
-   Seven questions, so a reader's copy can answer them from what came off the
-   server instead. **Functions and not values**, because three of the seven are
-   only asked inside branches -- the writing system on two faces, the keyboard
-   in its own section -- and turning those into eager reads would ask the
-   keyboard about every article that has no keyboard section on it. Lazy keeps
-   the call order exactly as it was.
+   Eight questions -- count them off the two bundles below, not off this line
+   -- so a reader's copy can answer them from what came off the server
+   instead. **Functions and not values**, because some are only asked inside
+   branches (the writing system on two faces), and an eager read would ask
+   about every article that has no such section on it. Lazy keeps the call
+   order exactly as it was.
 
    This is the prepared half. Nothing yet builds one of these from anybody
    else's language: the address arrives with `netWho()`'s `lid` and the slices
@@ -1546,18 +1542,13 @@ function wldOpen(){
     name:    function(){ return langName; },
     ws:      function(){ return wsys(); },
     /* The sounds the language is made of, and whether this article is YOURS --
-       the Edit button, the keyboard's picture and the pressable letter cells
-       are the three things that are only true of your own. */
+       the Edit button and the pressable letter cells are the two things that
+       are only true of your own. */
     snd:     function(){ return addedSnd(); },
     /* Which way it is written. `scriptDir()` reads SCRIPT -- the open
        language's -- and it is in the `script` slice for anybody else's. */
     dir:     function(){ return scriptDir(); },
-    mine:    function(){ return true; },
-    /* The applied board's name and its layout. `kbOf()` answers with the free
-       QWERTY when nothing is built, which is why it is one question here and
-       not two. */
-    kbname:  function(){ var k=kbBoards(); return kbName(kbApplied(k.length)); },
-    kblay:   function(){ return kbOf().lay; }
+    mine:    function(){ return true; }
   };
 }
 function wldPage(ed, L, lid){
@@ -1832,11 +1823,14 @@ function wldPage(ed, L, lid){
     if(sec.blank && !ed) return;
     /* AND THE SAME SENTENCE ABOUT SOMEBODY ELSE'S PAGE, said once instead of
        four times. 「それって人の言語見る画面だよね？見れないならいらなくね？」
-       「キーボードがめん開かないならそこに書く必要なくね？」 OWNER 2026-09-02,
-       looking at キーボード on a stranger's article: a heading, no picture
-       under it, and nothing to press -- kbShotHTML() goes through kbFace(),
-       which reads the OPEN language's letters, so drawing it there would be
-       rule 8 and their keyboard would arrive wearing my alphabet.
+       OWNER 2026-09-02. A heading with nothing under it and nothing to press
+       is a promise the page does not keep, so on a stranger's article it is
+       not drawn at all.
+
+       The keyboard no longer reaches this line -- it returns above, with the
+       dictionary and the grammar 「キーボードの枠自体消していいよ」. What is
+       left for this to catch is a chapter that HAS a face and happens to be
+       empty: no sounds named, no letters drawn.
 
        The ↓ is not lost by this. It was collected into `dls` above, and the
        foot of the page is where it goes -- so a chapter that can be TAKEN and
@@ -1855,9 +1849,9 @@ function wldPage(ed, L, lid){
        -- which is the thing the owner said they did not want, said about a
        row rather than about whose row it is.
 
-       `sec.go` is the way into this phone's own chapter -- the letters, the
-       keyboard. It is not lost: those chapters are the contents page, which
-       is where you go to a chapter. What the article is for is reading, and
+       `sec.go` is the way into this phone's own chapter -- the letters. It is
+       not lost: that chapter is on the contents page, which is where you go
+       to a chapter. What the article is for is reading, and
        the mark on the left is what opens what there is to read. */
     body+=abHead((!ed && sec.go)? wldSecNoGo(sec) : sec, extra)+
           ((!inner || abShut(sec.r))? '' : inner);
