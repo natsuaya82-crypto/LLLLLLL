@@ -2550,8 +2550,17 @@ throw しない**。`post(id)` を参照する表も三つあり（`quote` `reac
 **What is true now:** 鍵は作られず、作る予定も無い。だから数字は空欄のまま。
 何も throw せず、何も壊れない ── 管理画面に 0 が並ぶだけ。
 
-**Why it is not done here:** 二つの道があり、どちらもオーナーの決めごと。
-① 消す（管理画面から売上の欄ごと外す）。② RevenueCat に付け替える
-（RevenueCat の API を叩く関数に差し替え、画面はそのまま）。
-どちらを選ぶかで消す量が変わるので、勝手には決めない。
-`supabase/setup.md` § 10 は「やらないでください」と書き直してある。
+**消す道は無い。**2026-08-26 の決定「アプリの中で見たい」「画面を開いたとき
+に毎回」は今日置き換えられていない。今日置き換わったのは**出どころ**だけ
+──「App Store Connect のキーは要らない」。**管理画面の売上の欄は残る。**
+
+この項を最初に書いたとき、私は「消すか付け替えるか」の二択として書いた。
+それは決定を書き換えたもので、間違い。オーナーに指摘された（2026-09-02）。
+`CLAUDE.md` § Deciding ──「An owner decision is a specification, not an
+instruction for today... do not reinterpret it into a more reasonable rule」。
+
+**決まっていないのは、空欄をどう埋めるか。**RevenueCat の API を叩く関数に
+差し替えるのが素直だが、RevenueCat をどこまで入れたのか（購入の道まで置き
+換わっているのか、売上の集計だけか）をオーナーに訊いていない。そこが分かる
+まで手を付けない。`supabase/setup.md` § 10 は「やらないでください」と
+書き直してある。
