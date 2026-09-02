@@ -1199,6 +1199,42 @@ const R = await pg.evaluate(() => {
     no('33: A が戻ったのに、B のために作った言語のほうが開いた（' + langId + '）');
   say('33: 開いている言語はサインインした人のもの ── 前の人のは消えず、戻れば返る');
 
+  /* ---- 34. ＋ で作った言語にも、そのアカウントの印が付く ----------------
+     「1アドレス1アカウント」「これは絶対課金もアカウントごと言語もそう」
+     OWNER 2026-09-02。言語はアカウントのものです。
+
+     `langMint()` を呼ぶ場所は四つあって、印を押していたのは二つだけでした
+     ── `langForAcct()`（別のアカウントが入ってきたとき）と
+     `netLangsDown()`（サーバーから降りてきたとき）。**言語一覧の＋は
+     押していませんでした。**
+
+     印はそれまで `netLangRow()` が上げ切った時に初めて付いていたので、
+     **圏外で作った言語と、送信が落ちた言語は印無しのまま**残ります。そして
+     印の無い言語は次の 35 番のとおり誰のものでもないので、＋ で作った言語が
+     次にサインインした人から見えなくなる ── 作った本人からも。
+
+     これは langFirst()（オンボーディング）とは違います。あちらは口座が
+     できる前なので押す印がありません。ここには押す印があります。 */
+  start();
+  SET.plan = 'pro'; SET.planWas = 'pro'; save();
+  const keepL34 = LANGS, keepId34 = langId, keepNm34 = langName;
+  LANGS = { 'La': { name: '自分の', mine: true, uid: A } };
+  langId = 'La'; langName = '自分の';
+  langNew();
+  const made34 = langId;
+  if (made34 === 'La') no('34: ＋ を押したのに新しい言語が開いていない');
+  else if (String((LANGS[made34] || {}).uid || '') !== A)
+    no('34: ＋ で作った言語に、押した人の印が無い（uid=' +
+       JSON.stringify((LANGS[made34] || {}).uid) + '）');
+  /* そして印が付いたぶん、その言語はちゃんとその人のものとして数えられる。
+     印の無い言語は 35 番で「誰のものでもない」になるので、この二つは
+     同じ一つの穴の両側です。 */
+  else if (!langAcct(made34))
+    no('34: ＋ で作った言語が、作った人自身の一覧に出ない');
+  LANGS = keepL34; langId = keepId34; langName = keepNm34;
+  SET.plan = 'free'; SET.planWas = 'free'; save();
+  say('34: ＋ で作った言語は、押した人のアカウントのもの');
+
   return out;
 });
 

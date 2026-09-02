@@ -453,10 +453,27 @@ function langOpen(id){
    one is answered.
 
    langOpen() does the rest and is untouched: it writes out the language being
-   left, switches, reads the new one in and calls viewReset(). */
+   left, switches, reads the new one in and calls viewReset().
+
+   AND IT IS STAMPED WITH WHOEVER IS PRESSING IT. 「1アドレス1アカウント」
+   「これは絶対課金もアカウントごと言語もそう」 OWNER 2026-09-02: a language
+   is the ACCOUNT's, so the account it is for goes on at the moment it is
+   made. langForAcct() below does the same three lines for the same reason.
+
+   Without them the stamp arrived only when netLangRow() had finished putting
+   the language up, so a language made in a tunnel -- or one whose upload
+   failed -- stayed account-less, and langOwned() reads an account-less
+   language as belonging to NOBODY once the onboarding is over. The person who
+   made it would not find it in their own list.
+
+   langFirst() above is the one caller that stamps nothing, and that is not
+   this hole: it runs before there is an account to name. The door is where
+   what it made gets its account. */
 function langNew(){
   if(langStop()) return;
   var id=langMint();
+  if(typeof SESS!=='undefined' && SESS && SESS.uid)
+    LANGS[id].uid=String(SESS.uid);
   langStore();
   langOpen(id);
 }
