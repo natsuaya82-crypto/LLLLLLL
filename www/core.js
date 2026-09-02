@@ -515,6 +515,16 @@ function tn(k,n){
    something the app cannot do is the app lying to somebody who is about to
    pay -- cloud storage is a Plus feature in docs/FEATURES.md, is not built,
    and is therefore not on this list. */
+/* What a plan is CALLED, for a sentence about it. `plan()` answers an id --
+   `plus`, `pro` -- and an id is a name in a table, not a word to show
+   somebody: the toast after a purchase said 「pro になりました」.
+   The id where there is no such plan, which cannot happen and is not worth
+   a second sentence. */
+function planName(id){
+  var i, k=String(id||'');
+  for(i=0;i<PLANS.length;i++) if(PLANS[i].id===k) return PLANS[i].name;
+  return k;
+}
 var PLANS=[
   {id:'free', name:'Free', mo:'plan.price.free', yr:'plan.price.free', off:'',
    lines:['plan.free.1','plan.free.2','plan.free.3','plan.free.4']},

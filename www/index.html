@@ -1793,12 +1793,14 @@ a.set{text-decoration:none}
    going under it: a button the bar is sitting on is a button that cannot be
    pressed, and cancelling has to work. */
 .plunder{padding-top:34px}
-/* And this page's own foot, so the row that cancels ends UNDER the bar of
-   tabs rather than 90px clear of it: 「だから隠せって。スクロールできるように
-   すればいいの」 OWNER 2026-09-01. The page still scrolls to it -- it stops
-   against the bar's top edge, which is as hidden as a thing can be and still
-   be pressable. */
-.view.plans .body{padding-bottom:calc(var(--tabh) + 6px)}
+/* AND IT HAS TO BE REACHABLE. This page had its foot cut to `--tabh + 6px`
+   so the cancel row would end under the bar of tabs -- and what that made is
+   a row nobody can press: the page has nothing left to scroll, so the bar
+   sits on top of it for good. 「これスクロールできないから解除できない」
+   OWNER 2026-09-01, on a phone. The row is still the last thing on the page
+   and still takes scrolling to reach; it now stops clear of the bar, which
+   is the difference between out of the way and gone. */
+.view.plans .body{padding-bottom:calc(var(--tabh) + 96px)}
 
 /* ---------- locked behind a paid plan ---------- */
 .lock{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:none;

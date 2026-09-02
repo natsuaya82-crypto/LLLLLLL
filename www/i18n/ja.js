@@ -779,7 +779,7 @@ defLang('ja', (function(){
       "store.pending" : "承認待ちです。決まったらお知らせします。",
       "store.fail" : "App Store につながりませんでした",
       'toast.plan.free' : '無料プランにもどしました',
-      'toast.plan.other': '（仮）{0} にしました',
+      'toast.plan.other': '{0} になりました',
       'add.title'       : '単語の作成',
       'f.spelling'      : 'つづり',
       'f.listen'        : '再生',

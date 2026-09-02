@@ -868,7 +868,7 @@ defLang('zh', (function(){
       "store.pending" : "等待批准，批准后会通知你。",
       "store.fail" : "无法连接 App Store",
       "toast.plan.free"  : "已回到免费方案",
-      "toast.plan.other" : "（模拟）已切换到 {0}",
+      "toast.plan.other" : "已切换到 {0}",
       "add.title"        : "新的词",
       "f.spelling"       : "拼写",
       "f.listen"         : "播放",

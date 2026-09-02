@@ -777,7 +777,7 @@ defLang('en', (function(){
       "store.pending" : "Waiting to be approved. You will be told when it is.",
       "store.fail" : "The App Store could not be reached",
       'toast.plan.free' : "Back on the free plan",
-      'toast.plan.other': "(mock) switched to {0}",
+      'toast.plan.other': "{0} is on",
       /* the write / edit sheets */
       'add.title'       : "New word",
       'f.spelling'      : "Spelling",

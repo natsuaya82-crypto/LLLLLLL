@@ -83,7 +83,7 @@ function storeBuy(id){
         return;
       }
       storeTook(r);
-      if(how === 'bought') toast(t('toast.plan.other', plan()));
+      if(how === 'bought') toast(t('toast.plan.other', planName(plan())));
       else if(how === 'pending') toast(t('store.pending'));
     })
     ['catch'](function(){ toast(t('store.fail')); });
@@ -105,7 +105,7 @@ function storeRestore(){
   np('LinguaStore', 'restore', {})
     .then(function(r){
       var p=storeTook(r);
-      toast(p==='free'? t('store.none') : t('toast.plan.other', p));
+      toast(p==='free'? t('store.none') : t('toast.plan.other', planName(p)));
     })
     ['catch'](function(){ toast(t('store.fail')); });
 }
@@ -187,11 +187,15 @@ function storeAsk(){
     .then(function(r){
       var l=(r && r.products) || [], m={}, i, n=0;
       for(i=0;i<l.length;i++) if(l[i] && l[i].id){ m[String(l[i].id)]=l[i]; n++; }
-      if(!n){ STORE_ASK=false; STORE_P=STORE_P||{}; return; }
+      if(!n){ STORE_ASK=false; STORE_P=STORE_P||{}; toast(t('store.none')); return; }
       STORE_P=m;
       render();
     })
-    ['catch'](function(){ STORE_ASK=false; if(!STORE_P) STORE_P={}; });
+    /* AND IT SAYS SO. A price list that quietly shows the typed dollars when
+       the App Store did not answer is a screen that is wrong in every country
+       but one and says nothing 「しかもまだ4.99って出るけど？」 OWNER
+       2026-09-01. An error is a state, not an explanation. */
+    ['catch'](function(){ STORE_ASK=false; if(!STORE_P) STORE_P={}; toast(t('store.fail')); });
 }
 /* What one term of one plan costs. Empty when the App Store has not answered,
    which is every browser and every product not yet made -- the caller falls

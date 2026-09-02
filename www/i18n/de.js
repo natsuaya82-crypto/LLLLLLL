@@ -852,7 +852,7 @@ defLang('de', (function(){
       "store.pending" : "Warten auf Freigabe. Du wirst benachrichtigt.",
       "store.fail" : "Der App Store war nicht erreichbar",
       "toast.plan.free"  : "Zurück im Tarif Free",
-      "toast.plan.other" : "(Test) gewechselt zu {0}",
+      "toast.plan.other" : "Tarif {0} aktiv",
       "add.title"        : "Neues Wort",
       "f.spelling"       : "Schreibweise",
       "f.listen"         : "Abspielen",

@@ -668,8 +668,14 @@ function planPage(p){
    plan are two different things to buy. */
 var PLPICK=null;
 function plPick(id, yr){
+  /* AND THE RAIL STAYS WHERE IT WAS. Choosing repaints the screen, and the
+     row of plans is a thing you have scrolled sideways -- so pressing a price
+     on Plus put you back on Free, every time. 「4.99ってボタン押したら毎回
+     左に戻されるの何？流石にそのプランで止まれや」 OWNER 2026-09-01. */
+  var r=document.querySelector('.plrail'), x=r? r.scrollLeft : -1;
   PLPICK={id:String(id), yr:!!yr};
   render();
+  if(x>0){ r=document.querySelector('.plrail'); if(r) r.scrollLeft=x; }
 }
 function plPicked(id, yr){ return !!(PLPICK && PLPICK.id===id && PLPICK.yr===!!yr); }
 /* And the press that actually buys. Down until something is chosen: a button

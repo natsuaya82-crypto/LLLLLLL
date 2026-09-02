@@ -911,7 +911,7 @@ defLang('fr', (function(){
       "store.pending" : "En attente d'approbation. Vous serez prévenu.",
       "store.fail" : "Impossible de joindre l'App Store",
       "toast.plan.free"  : "Retour à la formule Free",
-      "toast.plan.other" : "(simulation) passé à {0}",
+      "toast.plan.other" : "{0} est actif",
       "add.title"        : "Nouveau mot",
       "f.spelling"       : "Graphie",
       "f.listen"         : "Écouter",

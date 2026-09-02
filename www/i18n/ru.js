@@ -877,7 +877,7 @@ defLang('ru', (function(){
       "store.pending" : "Ожидает подтверждения. Мы сообщим.",
       "store.fail" : "Не удалось связаться с App Store",
       "toast.plan.free"   : "Снова на бесплатном тарифе",
-      "toast.plan.other"  : "(тест) переключено на {0}",
+      "toast.plan.other"  : "Тариф {0} подключён",
       "add.title"         : "Новое слово",
       "f.spelling"        : "Написание",
       "f.listen"          : "Прослушать",

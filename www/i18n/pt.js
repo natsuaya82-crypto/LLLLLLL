@@ -870,7 +870,7 @@ defLang('pt', (function(){
       "store.pending" : "Aguardando aprovação. Avisaremos você.",
       "store.fail" : "Não foi possível conectar à App Store",
       "toast.plan.free"  : "De volta ao plano Free",
-      "toast.plan.other" : "(simulação) mudou para {0}",
+      "toast.plan.other" : "{0} ativado",
       "add.title"        : "Palavra nova",
       "f.spelling"       : "Grafia",
       "f.listen"         : "Reproduzir",
