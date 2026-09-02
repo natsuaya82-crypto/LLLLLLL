@@ -1036,6 +1036,7 @@ defLang('ko', (function(){
       "plan.off" : "{0}% 할인",
       "plan.buy" : "구독하기",
       "plan.restore" : "구매 복원",
+      "plan.already" : "이 계정은 이미 {0}입니다.",
       "plan.cancel" : "구독 해지",
       "store.none" : "복원할 구매가 없습니다",
       "plan.price.free"  : "$0",

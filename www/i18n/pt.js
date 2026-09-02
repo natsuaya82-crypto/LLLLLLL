@@ -868,6 +868,7 @@ defLang('pt', (function(){
       "plan.off" : "{0}% de desconto",
       "plan.buy" : "Assinar",
       "plan.restore" : "Restaurar compras",
+      "plan.already" : "Esta conta já tem {0}.",
       "plan.cancel" : "Cancelar a assinatura",
       "store.none" : "Não há nada a restaurar",
       "plan.price.free"  : "$0",

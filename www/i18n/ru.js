@@ -875,6 +875,7 @@ defLang('ru', (function(){
       "plan.off" : "-{0}%",
       "plan.buy" : "Оформить подписку",
       "plan.restore" : "Восстановить покупки",
+      "plan.already" : "На этом аккаунте уже подключён {0}.",
       "plan.cancel" : "Отменить подписку",
       "store.none" : "Восстанавливать нечего",
       "plan.price.free"   : "$0",

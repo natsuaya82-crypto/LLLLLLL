@@ -679,9 +679,29 @@ function plPick(id, yr){
 }
 function plPicked(id, yr){ return !!(PLPICK && PLPICK.id===id && PLPICK.yr===!!yr); }
 /* And the press that actually buys. Down until something is chosen: a button
-   that does nothing is a button that is broken. */
+   that does nothing is a button that is broken.
+
+   IT WILL NOT BUY WHAT IS ALREADY HELD. 「二重課金はさせないようにしろよ」
+   OWNER 2026-09-01, after buying Plus on a phone that already had Pro and
+   being charged for both. Two subscriptions in two App Store groups can be
+   held at once -- docs/apple.md § サブスクリプショングループ says to put them
+   in ONE group, where Apple itself makes the second an upgrade -- and this is
+   the app not relying on that being got right: the plan in force, and
+   anything at or below it on the ladder, is not something to buy again. What
+   it is instead is a change to a subscription that exists, and that is
+   Apple's own sheet (storeManage) 「サブスクリプションは、サブスクライブに
+   使用したプラットフォームを通じて管理してください」. */
 function plBuy(){
+  var now, i, j;
   if(!PLPICK) return;
+  now=plan();
+  i=PLAN_ORDER.indexOf(now);
+  j=PLAN_ORDER.indexOf(PLPICK.id);
+  if(now!=='free' && j>=0 && i>=0 && j<=i){
+    popAsk(t('plan.already', planName(now)), function(){ storeManage(); },
+      t('plan.cancel'));
+    return;
+  }
   setPlan(PLPICK.id, PLPICK.yr);
 }
 function planPrice(p, free){

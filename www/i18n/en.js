@@ -775,6 +775,7 @@ defLang('en', (function(){
       "plan.off" : "{0}% off",
       "plan.buy" : "Subscribe",
       "plan.restore" : "Restore purchases",
+      "plan.already" : "{0} is already on this account.",
       "plan.cancel" : "Cancel subscription",
       "store.none" : "Nothing to restore",
       'plan.price.free' : "$0",

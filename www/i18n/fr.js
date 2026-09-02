@@ -909,6 +909,7 @@ defLang('fr', (function(){
       "plan.off" : "-{0}%",
       "plan.buy" : "S’abonner",
       "plan.restore" : "Restaurer les achats",
+      "plan.already" : "Ce compte a déjà {0}.",
       "plan.cancel" : "Résilier l'abonnement",
       "store.none" : "Rien à restaurer",
       "plan.price.free"  : "0 $",

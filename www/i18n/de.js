@@ -850,6 +850,7 @@ defLang('de', (function(){
       "plan.off" : "{0}% günstiger",
       "plan.buy" : "Abonnieren",
       "plan.restore" : "Käufe wiederherstellen",
+      "plan.already" : "Dieses Konto hat bereits {0}.",
       "plan.cancel" : "Abo kündigen",
       "store.none" : "Nichts wiederherzustellen",
       "plan.price.free"  : "0 $",

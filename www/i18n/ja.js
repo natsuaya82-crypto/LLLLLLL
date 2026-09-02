@@ -777,6 +777,7 @@ defLang('ja', (function(){
       "plan.off" : "{0}％お得",
       "plan.buy" : "サブスクライブする",
       "plan.restore" : "購入を復元",
+      "plan.already" : "このアカウントは既に {0} です。",
       "plan.cancel" : "サブスクリプションを解除する",
       "store.none" : "復元するものはありません",
       'plan.price.free' : '$0',

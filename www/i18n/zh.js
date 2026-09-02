@@ -866,6 +866,7 @@ defLang('zh', (function(){
       "plan.off" : "省 {0}%",
       "plan.buy" : "订阅",
       "plan.restore" : "恢复购买",
+      "plan.already" : "此账号已是 {0}。",
       "plan.cancel" : "取消订阅",
       "store.none" : "没有可恢复的购买",
       "plan.price.free"  : "$0",
