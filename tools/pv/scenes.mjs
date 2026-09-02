@@ -856,42 +856,53 @@ export function SCENES(F){
      dark-mode values, which is the one place the film has to say a number
      iOS would have said.
      ===================================================================== */
-  const KBUP = 151;   /* the board's foot, on the bottom edge of the frame */
-  const KBH0 = 330;   /* how far it has to travel to be off the screen */
+  /* THE KEYBOARD IS THE PHONE'S OWN, PHOTOGRAPHED, wearing this language's
+     letters. tools/pv/kbswap.mjs makes it: the owner's screenshot of the real
+     Lingua keyboard with the letters taken off and these ones put on, key by
+     key, at rects worked out from the layout the app hands over and the
+     arithmetic in KeyBoardView.layoutSubviews. So the backdrop, the gaps,
+     ⌫ and ⏎ and the space bar, the globe and the microphone are a phone, and
+     the letters on the keys are this film's language.
+
+     It is placed where iOS places it and nothing else about it is touched.
+     The one thing the film draws is the key going down under the finger, and
+     that is a `screen` blend so the letter on the key stays white -- on the
+     phone the highlight is BEHIND the glyph, and a wash over the top would
+     dim the one thing the shot is about. rgb(38,38,40) screened onto the key
+     lands on 62, which is `systemFill` over `secondarySystemBackground`:
+     what KeyView.hold() gives. */
+  const KBIM = F.kbreal;                    /* px, and where every letter is */
+  const KBSC = KBIM ? 390 / KBIM.w : 1;     /* the picture, at phone width */
+  const KBH = KBIM ? KBIM.h * KBSC : 0;
+  const KBFOOT = 693;                       /* the bottom edge of the frame */
+  const KBTOP = KBFOOT - KBH;
+  const kbBox = (i) => {                    /* a key, in the app's points */
+    const k = KBIM.keys[i];
+    return { x: k.x * KBSC, y: KBTOP + k.y * KBSC, w: k.w * KBSC, h: k.h * KBSC };
+  };
+  const kbMid = (i) => { const b = kbBox(i); return { x: b.x + b.w / 2, y: b.y + b.h / 2 }; };
+
   const kbOn = (stage) => stage.app(function(o){
     var d = document.getElementById('pvkb');
     if (!d){ d = document.createElement('div'); d.id = 'pvkb'; document.body.appendChild(d); }
-    d.style.cssText = 'position:fixed;left:0;right:0;bottom:' + o.up + 'px;z-index:60;' +
-      'background:var(--bg);padding:' + o.gap + 'px ' + o.gap + 'px ' + (o.gap + 6) +
-      'px;will-change:transform';
+    d.style.cssText = 'position:fixed;left:0;right:0;top:' + o.top + 'px;z-index:60;' +
+      'line-height:0;will-change:transform';
     d.innerHTML =
-      '<style>' +
-      '#pvkb .kb{margin:0;gap:' + o.gap + 'px;--kh:' + o.row + 'px;--kbrg:' + o.gap + 'px}' +
-      '#pvkb .kbrow{gap:' + o.gap + 'px}' +
-      '#pvkb .kbk{border:0;border-radius:' + o.radius + 'px;background:#1c1c1e}' +
-      '#pvkb .kbk.fn{background:rgba(118,118,128,.24)}' +
-      '#pvkb .kbk.gap{background:none}' +
-      '</style>' + kbHTML(null, true);
-    /* the line, and the KEY each of its letters is on */
-    var full = 'venar kel', lts = ltPuaOrder(), s = '', els = [], keys = [], i, j, L, e, r;
-    var wide = null, ws = 0, fns = d.querySelectorAll('.kbk.fn');
-    for (i = 0; i < fns.length; i++){          /* the widest function key is the space bar */
-      r = fns[i].getBoundingClientRect();
-      if (r.width > ws){ ws = r.width; wide = fns[i]; }
-    }
+      '<img src="/pv/kbreal.png" style="display:block;width:390px">' +
+      '<div id="pvkbdn" style="position:absolute;border-radius:' + o.radius + 'px;' +
+      'background:rgb(38,38,40);mix-blend-mode:screen;opacity:0"></div>';
+    /* the line, in the code points the keyboard puts in, and the order of the
+       keys it comes off */
+    var full = 'venar kel', lts = ltPuaOrder(), s = '', seq = [], i, j;
     for (i = 0; i < full.length; i++){
-      var ch = full.charAt(i);
-      L = null;
+      var ch = full.charAt(i), id = null;
       if (ch === ' ') s += ' ';
       else for (j = 0; j < lts.length; j++)
-        if (String(ltName(lts[j]) || '') === ch){ s += ltPua(j); L = lts[j]; break; }
-      e = L ? d.querySelector('.kbk[data-lt="' + L.id + '"]') : wide;
-      r = e ? e.getBoundingClientRect() : null;
-      els.push(e || null);
-      keys.push(r ? { x: r.left + r.width / 2, y: r.top + r.height / 2 } : null);
+        if (String(ltName(lts[j]) || '') === ch){ s += ltPua(j); id = lts[j].id; break; }
+      seq.push(id);
     }
-    window.__pvS = s; window.__pvKeys = keys; window.__pvEls = els;
-  }, { up: KBUP, gap: F.kbm.gap, row: F.kbm.row, radius: F.kbm.radius });
+    window.__pvS = s; window.__pvSeq = seq;
+  }, { top: KBTOP, radius: (KBIM ? 15 * KBSC : 5) });
   const kbOff = (stage) => stage.app(function(){
     var d = document.getElementById('pvkb');
     if (d) d.parentNode.removeChild(d);
@@ -904,25 +915,23 @@ export function SCENES(F){
     d.style.transform = 'translateY(' + o.up.toFixed(1) + 'px)';
     var s = window.__pvS.slice(0, o.n);
     if (PW.ln !== s){ PW.ln = s; pwFresh(); render(); }
-    var els = window.__pvEls, i, e;
-    for (i = 0; i < els.length; i++){
-      e = els[i];
-      if (!e) continue;
-      /* `systemFill` in the dark, which is what KeyBoardView.hold() puts on
-         a key under a finger. Not gold and not smaller: the extension does
-         neither, and a press the phone does not do is the one thing in this
-         shot that would read as a mock-up. */
-      if (i === o.down) e.style.background = 'rgba(120,120,128,.36)';
-      else if (e.style.background){ e.style.background = ''; e.style.transform = ''; }
-    }
+    var e = document.getElementById('pvkbdn');
+    if (!e) return;
+    if (o.box){
+      e.style.opacity = 1;
+      e.style.left = o.box.x + 'px'; e.style.top = (o.box.y - o.top) + 'px';
+      e.style.width = o.box.w + 'px'; e.style.height = o.box.h + 'px';
+    } else e.style.opacity = 0;
   }, o);
   /* The window is the app's top 693 points -- 1920 tall at frame-wide -- so
-     the board's foot lands on the frame's bottom edge and the field is at the
-     top of the picture, which is where both of them are on a phone. */
+     the keyboard's foot lands on the frame's bottom edge and the field is at
+     the top of the picture, which is where both of them are on a phone. */
   const deck = () => eye(346, H * 0.5);
   /* A letter every four tenths of a second: slower than somebody typing,
      because every one of them has to be read. */
   const T0 = 1.05, GAP = 0.42, NCH = 9, DOWN = 0.15;
+  /* which key of the picture each letter of the line comes off */
+  const kbIdx = (id) => { for (let i = 0; i < KBIM.keys.length; i++) if (KBIM.keys[i].lt === id) return i; return -1; };
 
   const TYPECUT = [
   { name: 'keys', secs: sc,
@@ -943,21 +952,24 @@ export function SCENES(F){
       await stage.set({ fade: 0 });
       await stage.app(function(){ window.__pvSent = 0; window.scrollTo(0, 0); openPost('new'); render(); });
       await kbOn(stage);
-      stage.keys = await stage.app(function(){ return window.__pvKeys; });
+      const seq = await stage.app(function(){ return window.__pvSeq; });
+      stage.seq = seq.map(kbIdx);
     },
     at: async (stage, k, t) => {
       /* it comes UP, the way a keyboard does */
-      const up = mix(KBH0, 0, out(clamp(t / 0.55, 0, 1)));
+      const up = mix(KBH, 0, out(clamp(t / 0.55, 0, 1)));
       let n = 0;
       for (let i = 0; i < NCH; i++) if (t >= T0 + i * GAP) n = i + 1;
       const i = n - 1;
       const since = i >= 0 ? t - (T0 + i * GAP) : 99;
-      await kbAt(stage, { up: up, n: n, down: since < DOWN ? i : -1 });
+      const ki = i >= 0 ? stage.seq[i] : -1;
+      await kbAt(stage, { up: up, n: n, top: KBTOP,
+                          box: (ki >= 0 && since < DOWN) ? kbBox(ki) : null });
       const p = deck();
       await stage.set({ phone: { x: p.x, y: p.y, s: FULL, shell: 0, radius: 0, blur: 0,
                                  o: ramp(t, 0, 0.3) },
-                        tap: thumb(i >= 0 ? stage.keys[i] : null, since, 1.5) });
-      line(stage, t, 'Every key is a letter you drew.', bars(4), 780);
+                        tap: thumb(ki >= 0 ? kbMid(ki) : null, since, 1.5) });
+      line(stage, t, 'Every key is a letter you drew.', bars(4), 860);
     } },
 
   /* AND WHAT IT SAYS -- WHICH THE APP FILLS IN ITSELF. `pwMn()` is the app's
@@ -970,7 +982,7 @@ export function SCENES(F){
       const p = deck();
       await stage.set({ phone: { x: p.x, y: p.y, s: FULL, shell: 0, radius: 0, blur: 0 },
                         tap: noTap });
-      line(stage, t, 'Your own dictionary reads it back.', sc, 780);
+      line(stage, t, 'Your own dictionary reads it back.', sc, 860);
     } },
 
   { name: 'sent', secs: sc,

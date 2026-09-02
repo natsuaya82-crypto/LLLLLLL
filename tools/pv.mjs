@@ -36,6 +36,7 @@ import { fileURLToPath } from 'url';
 import { chromium, LAUNCH } from './browser.mjs';
 import { seedFilm } from './pv/seed.mjs';
 import { SCENES, WALL_ROUTES } from './pv/scenes.mjs';
+import { main as kbswap } from './pv/kbswap.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(HERE, '..');
@@ -78,7 +79,11 @@ const srv = http.createServer((q, r) => {
      the home screen, and two copies of it is one that goes stale.
      The stage itself lives in tools/, not in www/ -- www/ is what ships to a
      phone and assets-check holds every file in it to being in index.html. */
-  const f = u === '/pv/icon.png'
+  /* the real keyboard, wearing this language's letters. Made by
+     tools/pv/kbswap.mjs, which writes it into pv/ rather than into the
+     source tree. */
+  const f = u === '/pv/kbreal.png' ? path.join(ROOT, 'pv', 'kbreal.png')
+          : u === '/pv/icon.png'
           ? path.join(ROOT, 'ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png')
           : u.indexOf('/pv/') === 0 ? path.join(HERE, u.slice(1))
           : path.join(WWW, u === '/' ? 'index.html' : u);
@@ -259,8 +264,21 @@ const KBM = {
                                  /rowPerWidth:\s*CGFloat\s*=\s*([\d.]+)/) * 10) / 10
 };
 
+/* The typing film stands the real keyboard at the foot of the screen, with
+   this language's letters swapped onto it. Made once and kept; delete
+   pv/kbreal.png to have it made again. */
+let KBREAL = null;
+if (cut === 'type'){
+  const png = path.join(OUT, 'kbreal.png'), js = path.join(OUT, 'kbreal.json');
+  if (!fs.existsSync(png) || !fs.existsSync(js)){
+    console.log('  the keyboard, with this language on it:');
+    await kbswap();
+  }
+  KBREAL = JSON.parse(fs.readFileSync(js, 'utf8'));
+}
+
 /* ---- the film ------------------------------------------------------------ */
-const film = SCENES({ W, H, portrait, bar: BAR, vo: VO, cut, kbm: KBM });
+const film = SCENES({ W, H, portrait, bar: BAR, vo: VO, cut, kbm: KBM, kbreal: KBREAL });
 const list = only ? film.filter((s) => s.name === only) : film;
 if (!list.length){ console.error('no scene called ' + only); process.exit(2); }
 
