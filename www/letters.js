@@ -471,10 +471,12 @@ var LT_START='abcdefghijklmnopqrstuvwxyz!?';
    renamed a letter, drew on it, and let the plan lapse would find a blank
    where their letter used to be, and nothing anywhere saying why.
 
-   Refusing the rename is the whole fix, and it costs nothing: a letter that
-   is to be called something else is a DIFFERENT letter, and the way to have
-   one is ltCopy(). 「無料で作ったやつを改名できなければ良くない？コピーできる
-   ようにして分けるとかは？」 */
+   Refusing the rename is the whole fix: a letter that is to be called
+   something else is a DIFFERENT letter, and the way to have one is to make
+   one — which on free is the door, not this function.
+   「無料で作ったやつを改名できなければ良くない？コピーできるようにして分ける
+   とかは？」 The 複製する row that answered that quote went on 2026-09-01
+   (「後複製するボタンいらんやろ」) and ltCopy() went with it. */
 function ltIsBase(l){
   if(!l) return false;
   if(numIsDigit(l)) return true;
@@ -752,7 +754,7 @@ function ltSetRoman(id, sp){
 
      Nothing is walked around by leaving it out: what free cannot do is ADD a
      letter, and every road that makes one asks already -- newLetter(),
-     ltCopy(), shTakeIn(), the import. This function names one that exists. */
+     shTakeIn(), the import. This function names one that exists. */
   var read=ltReadName(sp), units=read.units, seen=read.seen, i;
   /* A clash is shown, not refused. Refusing meant the box silently kept its
      old value and a toast said why, which is a correction somebody has to

@@ -3192,14 +3192,12 @@ function kbSetPat(pat){
      OWNER 2026-09-01 -- confirm() は使わない。はいの側がこの下。 */
   popAsk(t('kb.pat.q'), function(){ kbSetPatGo(pat); }, t('pop.yes'));
 }
+/* The yes side of the one ask above. It looks the board up again rather than
+   closing over it: the ask is a screen the person stands in front of, and the
+   board can have gone by the time they answer. */
 function kbSetPatGo(pat){
+  var x=KB.kbs[kbShow-1];
   if(!x) return;
-  if(x.pat===pat){ back(); return; }
-  /* 確認は自前のポップで。「標準は使わねえって言ってるだろこれも禁止や」
-     OWNER 2026-09-01 -- confirm() は使わない。はいの側がこの下。 */
-  popAsk(t('kb.pat.q'), function(){ kbSetPatGoGo(pat); }, t('pop.yes'));
-}
-function kbSetPatGoGo(pat){
   x.pat=pat; x.lay=kbBlank(kbPatLay(pat));
   kbLay=0; kbSel=null;
   saveKb();

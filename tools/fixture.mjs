@@ -863,6 +863,21 @@ export function halfDone(){
                   {at:Date.now()-90000, ln:'', mn:'', to:'', pics:[], vo:null, pv:true}];
         window.route='drafts'; NAV=[{r:'feed'},{r:'drafts'}];
         const h = vDrafts(); DRAFTS = []; NAV=[{r:'feed'}]; return h; }],
+    /* And the same list being chosen from -- 選択 at the far end of the bar, a
+       ◉ at the front of each row, 削除 beside 完了. The same shape the notes
+       and the keyboards have: 「後下書きのポップも他のと合わせて欲しい」. */
+    ['the drafts, choosing, with nothing chosen yet', () => {
+        DRAFTS = [{at:Date.now(), ln:'kano', mn:'a mountain', to:'', pics:[], vo:null, pv:false},
+                  {at:Date.now()-90000, ln:'', mn:'', to:'', pics:[], vo:null, pv:true}];
+        window.route='drafts'; NAV=[{r:'feed'},{r:'drafts'}];
+        DFSEL = {};
+        const h = vDrafts(); DFSEL = null; DRAFTS = []; NAV=[{r:'feed'}]; return h; }],
+    ['the drafts, choosing, with one chosen', () => {
+        DRAFTS = [{at:Date.now(), ln:'kano', mn:'a mountain', to:'', pics:[], vo:null, pv:false},
+                  {at:Date.now()-90000, ln:'', mn:'', to:'', pics:[], vo:null, pv:true}];
+        window.route='drafts'; NAV=[{r:'feed'},{r:'drafts'}];
+        DFSEL = { 0:1 };
+        const h = vDrafts(); DFSEL = null; DRAFTS = []; NAV=[{r:'feed'}]; return h; }],
     ['the drafts page with none', () => {
         window.route='drafts'; NAV=[{r:'feed'},{r:'drafts'}];
         const h = vDrafts(); NAV=[{r:'feed'}]; return h; }],

@@ -221,32 +221,46 @@ const r = await pg.evaluate(({s}) => {
     return { kind: ltKindOf(got), name: ltName(got), was: was,
              at: here().r + ':' + (here().a || '') };
   }
+  /* The slot worth 1 is the one this names, and it has to be the EMPTY slot
+     ltStart() made -- the fixture has drawn on its digits, and a digit somebody
+     drew on is the case two claims below. So the ink comes off first: what is
+     under test here is a letter arriving at a value nobody has drawn. */
+  var slot1 = numByVal(1);
+  if (slot1) { delete slot1.st; delete slot1.sh; slot1.ch = ''; }
+  var slot1id = slot1 ? slot1.id : '';
   var digitsBefore = numDigits().length;
   out.rmTaken   = names('1');            /* the digit worth 1 already exists */
+  out.rmSlotGone = !ltById(slot1id);
   out.rmKeeps   = names('1', function(l){ l.ab = 'q'; });
   out.rmBig     = names('25');           /* base ten writes no such digit */
   out.rmPlain   = names('zz');           /* the control: an ordinary name */
   out.rmNoDigit = numDigits().length === digitsBefore;
+  out.rmDigitDelta = numDigits().length - digitsBefore;
 
-  /* a value nothing holds: the letters room may not make that digit either */
+  /* a value nothing holds: the digit is MADE, and the count goes up by one */
   numSetBase(14);
   var freeSlot = numByVal(12); if (freeSlot) ltDel(freeSlot.id);
   var digitsFree = numDigits().length;
   out.rmFree = names('12');
-  out.rmFreeNoDigit = numDigits().length === digitsFree;
+  out.rmFreeGrew = numDigits().length - digitsFree;
   numSetBase(10);
 
-  /* copying a digit gave an ALPHA letter: a value is unique, so the copy
-     could never have been a digit */
-  var cBefore = LETTERS.length;
-  ltCopy(numByVal(7).id);
-  out.rmCopyGrew = LETTERS.length - cBefore;
-  out.rmCopyKind = (LETTERS.length > cBefore) ? ltKindOf(LETTERS[LETTERS.length - 1]) : 'none';
-  /* and an ordinary letter still copies, or the guard above took the feature */
-  var okLetter = ltNew({}); okLetter.ab = 'w';
-  var c2 = LETTERS.length;
-  ltCopy(okLetter.id);
-  out.rmCopyStillWorks = LETTERS.length > c2;
+  /* The other half of the DELETE REVIEW written over ltToDigit(): the row that
+     may go is the EMPTY slot the app made for that value, and nothing else. A
+     digit somebody has DRAWN on is left exactly where it is, so what arrives is
+     a SECOND digit of that value. 「別に課金なんだから追加しろよなんで？」 */
+  var drawn = numByVal(3);
+  if (drawn) drawn.st = [{ pts: [[o + 3 * D, o + 3 * D], [o + 9 * D, o + 9 * D]] }];
+  var threes = LETTERS.filter(function(l){ return l.val === 3; }).length;
+  out.rmDrawn = names('3');
+  out.rmDrawnKept = !!(drawn && ltById(drawn.id) &&
+                       ltById(drawn.id).st && ltById(drawn.id).st.length === 1);
+  out.rmDrawnTwo = LETTERS.filter(function(l){ return l.val === 3; }).length - threes;
+
+  /* There was a third road onto this rule — ltCopy(), the 複製する row on a
+     letter's page — and two claims here held it. The row went on 2026-09-01
+     (「後複製するボタンいらんやろ」), and the function with it, so the claims
+     went too rather than being kept alive against a road nobody can take. */
   SET.plan = 'free';
   return out;
 }, { s: seed.toString() });
@@ -322,31 +336,38 @@ say(r.mvTwo === 2, 'which is the duplicate the alphabet shows in red (' + r.mvTw
 say(r.mvPaidSame, 'and on a plan that adds letters nothing moves at all');
 
 /* the three rooms, and the roads that used to cross between them */
-say(r.rmTaken.kind === 'alpha' && !r.rmTaken.name && r.rmNoDigit,
-    'a number is not a letter\'s name: typing `1` on a letter leaves it a ' +
-    'letter with no name, and makes no digit (' + r.rmTaken.kind + '/' +
-    (r.rmTaken.name || 'unnamed') + ')');
+/* 「まだ数字が普通にアルファベットのとこ入るし」 OWNER 2026-09-01, on a phone,
+   looking at 名前なし sitting in the alphabet. Earlier the same day this road
+   REFUSED the name and walked to the digits room, which left the letter behind
+   in the room it was supposed to leave; these claims are the moved side of
+   that, and the refusing side is superseded. */
+say(r.rmTaken.kind === 'num' && r.rmNoDigit,
+    'a number typed on a letter MOVES it: the letter becomes that digit, and ' +
+    'the empty slot the app had made for the value goes with it, so the count ' +
+    'does not move (' + r.rmTaken.kind + ', ' + r.rmDigitDelta + ')');
+say(r.rmSlotGone,
+    'and the empty slot the app had made for that value is the row that goes ' +
+    '-- no drawing, no borrowed character, never touched by anybody');
 say(r.rmTaken.at === 'ltset:num',
-    'and the app goes to the room where digits are made rather than saying ' +
-    'nothing (' + r.rmTaken.at + ')');
-say(r.rmKeeps.name === 'q',
-    'a letter that already had a name keeps it — nothing anybody made is ' +
-    'written over (' + r.rmKeeps.name + ')');
-say(r.rmFree.kind === 'alpha' && r.rmFreeNoDigit,
-    'and not even when the value is FREE: the letters room does not make a ' +
-    'digit, whichever values are spare (' + r.rmFree.kind + ')');
+    'and it lands in the room where digits are, not the one it left (' +
+    r.rmTaken.at + ')');
+say(r.rmKeeps.kind === 'num' && r.rmKeeps.name !== 'q',
+    'a letter that had a name goes too -- typing a number over `q` is the ' +
+    'rename somebody asked for (' + r.rmKeeps.kind + '/' +
+    (r.rmKeeps.name || 'unnamed') + ')');
+say(r.rmFree.kind === 'num' && r.rmFreeGrew === 1,
+    'and when the value is FREE the digit is MADE, one of it (' +
+    r.rmFree.kind + ', +' + r.rmFreeGrew + ')');
+say(r.rmDrawnKept && r.rmDrawnTwo === 1,
+    'but a digit somebody DREW on is never the row that goes: it keeps its ' +
+    'strokes and the letter arrives beside it, two of that value (' +
+    (r.rmDrawnKept ? 'kept' : 'LOST') + ', +' + r.rmDrawnTwo + ')');
 say(r.rmBig.kind === 'alpha' && r.rmBig.name === '25',
     'a number no base of this language can write is an ordinary name, on ' +
     'this road as on a sheet — one rule, both roads (' + r.rmBig.name + ')');
 say(r.rmPlain.kind === 'alpha' && r.rmPlain.name === 'zz' && r.rmPlain.at !== 'ltset:num',
     'and an ordinary name is still just a name, going nowhere (' +
     r.rmPlain.name + ' at ' + r.rmPlain.at + ')');
-say(r.rmCopyGrew === 0 && r.rmCopyKind === 'none',
-    'a digit is not copied into the alphabet: a value is unique, so the copy ' +
-    'could only ever have been a letter (' + r.rmCopyKind + ')');
-say(r.rmCopyStillWorks,
-    'and an ordinary letter still copies — the guard took the crossing, not ' +
-    'the feature');
 
 if (bad.length) { console.error('\nbase: ' + bad.length + ' failed'); process.exit(1); }
 console.log('\nbase: slots arrive when asked, and nothing drawn is ever taken away.');

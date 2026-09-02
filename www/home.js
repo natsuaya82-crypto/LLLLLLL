@@ -1212,25 +1212,30 @@ function wldSecNoGo(sec){
   for(k in sec) if(Object.prototype.hasOwnProperty.call(sec, k) && k!=='go') o[k]=sec[k];
   return o;
 }
-/* WHICH SLICE A SECTION IS, and only for the ones a reader can actually be
-   given. `slice_read` in supabase/schema.sql opens exactly five kinds on a
-   published language -- wld, script, snd, letters, kb -- and refuses the
-   dictionary and the grammar to everybody but their owner:
-   「言語ページ公開と単語や文字のdl可能は別だし」.
+/* WHICH SLICES A SECTION IS, and a section can be more than one of them.
 
-   So `words` and `gram` are absent here, and that is not this file being shy:
-   a ↓ drawn over them would be a button that CANNOT land, which is the whole
-   shape of what the owner met. The switch on the writing face still offers
-   all four, because that is a thing to say about your own language; what a
-   reader is offered is the intersection of what its owner allowed and what
-   the server will hand over.
+   All four -- 「あとdlは単語文字文法キーボード全部のはずだよね？」 OWNER
+   2026-09-02. It was two for a week (letters and kb) because `slice_read` in
+   supabase/schema.sql opened only five kinds on a published language and
+   refused the dictionary and the grammar to everybody but their owner, so a ↓
+   over either would have been a button that cannot land. That policy takes
+   the section's own switch into account now -- `slice_dl()` in the same file --
+   which is the shape 「言語ページ公開と単語や文字のdl可能は別だし」 asks for:
+   publishing a page and handing a chapter over are two answers, and a reader
+   is offered the intersection of them.
 
-   One place. `wldSecs()` says what the sections are and this says which of
-   them is a slice; a second list anywhere would be a ↓ that draws and does
-   nothing the day one of the five moves. */
-var WLD_DL_KIND={letters:'letters', kb:'kb'};
+   THE GRAMMAR IS TWO SLICES. `phases` is the stages somebody built and `gram2`
+   is the rules under them, and a grammar arriving with one and not the other
+   is half a chapter. That is why this is a list per section rather than a
+   name: one section, whatever it is made of.
+
+   One place. `wldSecs()` says what the sections are and this says which slices
+   each one is; a second list anywhere would be a ↓ that draws and does nothing
+   the day one of them moves. */
+var WLD_DL_KIND={letters:['letters'], words:['words'], gram:['phases','gram2'],
+                 kb:['kb']};
 function wldDlKind(r){
-  return Object.prototype.hasOwnProperty.call(WLD_DL_KIND, r)? WLD_DL_KIND[r] : '';
+  return Object.prototype.hasOwnProperty.call(WLD_DL_KIND, r)? WLD_DL_KIND[r] : null;
 }
 /* One chapter of somebody else's language, and the way to take it. The name
    is the section's own -- 「文字」「キーボード」 -- because that is what it is;
@@ -1266,19 +1271,30 @@ function wldGetRow(sec, lid){
    second answer to 「what is in their language」, and the two could disagree
    in the second between the page being drawn and the button being pressed. */
 function wldGet(lid, r){
-  var id=String(lid||''), kind=wldDlKind(r), m=WLDS_HAVE[id], seen=wldSeen(id), o, put;
-  if(!id || !kind) return;
+  var id=String(lid||''), kinds=wldDlKind(r), m=WLDS_HAVE[id], seen=wldSeen(id),
+      got=[], i, o;
+  if(!id || !kinds || !kinds.length) return;
   /* Nothing to take is not a failure to report: the page is drawn from the
      same map, so a row can only be on screen when the answers are in. */
   if(!m) return;
-  o=m[kind];
-  if(!o || !o.body) return;
+  /* EVERY SLICE THE SECTION IS, OR NONE OF THEM. The grammar is `phases` and
+     `gram2`, and half a chapter written down is worse than none: it would sit
+     in the index looking like a grammar somebody could open. So they are
+     gathered first and written after. A slice the owner never wrote is not a
+     missing half -- it is a language with nothing of that kind in it -- so an
+     empty body is skipped rather than refusing the lot. */
+  for(i=0;i<kinds.length;i++){
+    o=m[kinds[i]];
+    if(o && o.body) got.push([kinds[i], o.body]);
+  }
+  if(!got.length) return;
   /* The index row FIRST, so a slice can never be in storage under a language
      the index does not know -- that is a set of keys nothing can find, which
      is the leftovers bug langKeyOf() exists to prevent. */
   langSeenAdd(id, seen? seen.name : '');
-  put=o.body;
-  try{ localStorage.setItem(langKeyOf(id, kind), put); }catch(e){ return; }
+  try{
+    for(i=0;i<got.length;i++) localStorage.setItem(langKeyOf(id, got[i][0]), got[i][1]);
+  }catch(e){ return; }
   /* And the language's own name where a language keeps it, so the one in the
      index and the one in the language cannot drift. `lang` is a slice like
      any other and langRead() is what reads it. */
@@ -1788,6 +1804,21 @@ function wldPage(ed, L, lid){
        does not keep -- but it IS on the writing one, because that is where it
        gets its name. */
     if(sec.blank && !ed) return;
+    /* AND THE SAME SENTENCE ABOUT SOMEBODY ELSE'S PAGE, said once instead of
+       four times. 「それって人の言語見る画面だよね？見れないならいらなくね？」
+       「キーボードがめん開かないならそこに書く必要なくね？」 OWNER 2026-09-02,
+       looking at キーボード on a stranger's article: a heading, no picture
+       under it, and nothing to press -- kbShotHTML() goes through kbFace(),
+       which reads the OPEN language's letters, so drawing it there would be
+       rule 8 and their keyboard would arrive wearing my alphabet.
+
+       The ↓ is not lost by this. It was collected into `dls` above, and the
+       foot of the page is where it goes -- so a chapter that can be TAKEN and
+       not READ is a row at the bottom, which is what it is.
+
+       On your own article a heading with nothing under it still stands: it is
+       the way IN to a chapter that is yours, and the `›` beside it works. */
+    if(!ed && !mine && !inner) return;
     /* ONE `›` TO A ROW. `sec.go` is the way into this phone's own chapter --
        the letters, the dictionary, the keyboard -- and on somebody else's
        article it is rule 8 written as a button: pressing the `›` beside THEIR

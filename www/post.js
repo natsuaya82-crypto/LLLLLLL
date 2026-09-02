@@ -407,13 +407,6 @@ function draftOpen(i){
   PW.did=d.id||'';
   openPost();
 }
-function draftDrop(i){
-  i=parseInt(i, 10)||0;
-  if(!DRAFTS[i]) return;
-  /* 確認は自前のポップで。「標準は使わねえって言ってるだろこれも禁止や」
-     OWNER 2026-09-01 -- confirm() は使わない。はいの側がこの下。 */
-  popAsk(t('post.draft.del.q'), function(){ draftDropGo(i); }, t('pop.yes'));
-}
 function draftDropGo(i){
   var d=DRAFTS[i];
   DRAFTS.splice(i, 1);
@@ -482,24 +475,82 @@ function draftsPullOnce(){
    at the foot of the screen you are writing on is a list under the thing it
    is about, and the two are read as one screen -- so the drafts are somewhere
    you go, and the composer carries only the way there. */
+/* ---- choosing several drafts, and taking them away ----------------------
+   「後下書きのポップも他のと合わせて欲しい」 OWNER 2026-09-02. This screen was
+   the last one still carrying a MINUS on every row -- the shape the owner took
+   off the letters (「やっぱりいらんかもその◉」) and replaced on the keyboards and
+   the notes with 選択 / 削除 / 完了 in the bar. Same shape here, and it is
+   ntSelOn/Off/List/Tap/Del in www/notes.js with drafts in it: one habit on
+   every list that can lose several rows at once.
+
+   `DFSEL` is where you are standing on this screen and not a thing about the
+   drafts, so viewReset() in www/shell.js drops it. */
+var DFSEL=null;
+function dfSelOn(){ DFSEL={}; render(); }
+function dfSelOff(){ DFSEL=null; render(); }
+function dfSelList(){
+  var out=[], k;
+  if(!DFSEL) return out;
+  for(k in DFSEL) if(DFSEL.hasOwnProperty(k) && DFSEL[k]) out.push(Number(k));
+  return out;
+}
+function dfSelTap(i){
+  if(!DFSEL) return;
+  if(DFSEL[i]) delete DFSEL[i]; else DFSEL[i]=1;
+  render();
+}
+function dfSelDel(){
+  var n=dfSelList().length;
+  if(!n) return;
+  popAsk(tn('post.draft.sel.ask', n), function(){ dfSelDelGo(); }, t('pop.yes'));
+}
+/* Highest index first, so removing one does not move the next one under the
+   knife. And through draftDropGo(), which is the one place a draft goes -- it
+   is what tells the server. */
+function dfSelDelGo(){
+  var ids=dfSelList().sort(function(a, b){ return b-a; }), i;
+  DFSEL=null;
+  for(i=0;i<ids.length;i++) draftDropGo(ids[i]);
+  render();
+}
 function vDrafts(){
-  var out='', i, d;
+  var out='', i, d, on;
   /* Asked for when they are looked at. There is no call in bootSession()
      (www/boot.js) because that file is not this session's -- it is in the
      report as the one thing left. */
   draftsPullOnce();
   for(i=DRAFTS.length-1;i>=0;i--){
     d=DRAFTS[i];
+    on=!!(DFSEL && DFSEL[i]);
+    if(DFSEL){
+      out+='<div class="dfrow">'+
+        '<span class="ltck'+(on? ' on':'')+'" data-sel="1"'+DO('dfSelTap', [i])+
+          ' role="button" aria-label="'+esc(t('post.draft.sel.row'))+'">'+
+          (on? ICON_DOT : ICON_RING)+'</span>'+
+        '<button class="dfb"' + DO('dfSelTap', [i]) + '>'+
+          (d.pv? '<span class="ppv">'+ICON_LOCK+'</span>' : '')+
+          '<span class="dfl">'+esc(d.ln || d.mn || t('post.draft.empty'))+'</span>'+
+          '<span class="dfw">'+esc(postWhen(d.at))+'</span></button></div>';
+      continue;
+    }
     out+='<div class="dfrow">'+
       '<button class="dfb"' + DO('draftOpen', [i]) + '>'+
         (d.pv? '<span class="ppv">'+ICON_LOCK+'</span>' : '')+
         '<span class="dfl">'+esc(d.ln || d.mn || t('post.draft.empty'))+'</span>'+
         '<span class="dfw">'+esc(postWhen(d.at))+'</span></button>'+
-      '<button class="dfx"' + DO('draftDrop', [i]) + ' aria-label="'+
-        esc(t('post.draft.del'))+'">'+ICON_MINUS+'</button>'+
       '</div>';
   }
-  return '<div class="view">'+navTop()+'<div class="body">'+
+  return '<div class="view">'+
+    navTop('', DFSEL
+      ? ((dfSelList().length
+            ? '<button class="navdo navdel"' + DO('dfSelDel') + '>'+
+                esc(t('post.draft.sel.del'))+'</button>'
+            : '')+
+         '<button class="navdo"' + DO('dfSelOff') + '>'+esc(t('post.draft.sel.done'))+'</button>')
+      : (DRAFTS.length
+          ? '<button class="navdo"' + DO('dfSelOn') + '>'+esc(t('post.draft.sel'))+'</button>'
+          : ''))+
+    '<div class="body">'+
     (out || '<div class="note">'+esc(t('post.draft.none'))+'</div>')+
     '</div></div>';
 }
