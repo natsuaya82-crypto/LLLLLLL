@@ -3,6 +3,7 @@
 
    Run it:  node tools/pv.mjs                  16:9,  1920x1080
             node tools/pv.mjs --portrait       9:16,  1080x1920
+            node tools/pv.mjs --portrait --w 886 --h 1920    another size
             node tools/pv.mjs --scene draw     one scene, for looking at
             node tools/pv.mjs --stills         no encode; one frame per second
 
@@ -61,8 +62,11 @@ const BAR = Number(val('--bar', '1.690'));
    type says another and a third line explains both is three things to read
    at once. The headline stays: it is what the eye lands on. */
 const VO = has('--vo');
-const W = portrait ? 1080 : 1920;
-const H = portrait ? 1920 : 1080;
+/* The App Store takes a preview at the size it asks for and refuses anything
+   else, and the number it asks for depends on the device family and changes.
+   So the frame is an argument: --w 886 --h 1920. */
+const W = Number(val('--w', portrait ? '1080' : '1920'));
+const H = Number(val('--h', portrait ? '1920' : '1080'));
 
 /* ---- the little web server the app is served from ------------------------ */
 const srv = http.createServer((q, r) => {
@@ -403,7 +407,9 @@ if (stills){ fs.rmSync(dir, { recursive: true, force: true }); fs.mkdirSync(dir,
 const ff = stills ? null : findFfmpeg();
 if (!stills && !ff){ console.error('no ffmpeg. PV_FFMPEG=/path/to/ffmpeg'); process.exit(2); }
 const shape = portrait ? '9x16' : '16x9';
-const out = path.join(OUT, 'lingua-' + shape + (VO ? '-vo' : '') + (ff && ff.mp4 ? '.mp4' : '.webm'));
+const size = (W === (portrait ? 1080 : 1920) && H === (portrait ? 1920 : 1080))
+           ? '' : '-' + W + 'x' + H;
+const out = path.join(OUT, 'lingua-' + shape + size + (VO ? '-vo' : '') + (ff && ff.mp4 ? '.mp4' : '.webm'));
 let enc = null;
 if (ff){
   /* A silent audio track goes on it. There is no sound in the film, and a

@@ -583,11 +583,14 @@ export function SCENES(F){
      ===================================================================== */
   const FULL = W / 390;                    /* the app, exactly frame-wide */
   const eye = (ay, dy) => look(195, ay, FULL, W / 2, dy === undefined ? H * 0.5 : dy);
-  const shot = 2;                          /* every shot is two bars */
-  const sc = bars(shot);
+  /* Two bars a shot, except the alphabet, which is a glance rather than a
+     beat -- and one bar is what makes the whole thing fit inside the thirty
+     seconds an App Store preview is allowed. Seventeen bars is 28.7s. */
+  const sc = bars(2), scq = bars(1);
   /* One short line, in the bottom third, with nothing under it. */
-  const line = (stage, t, head) => {
-    const gone = 1 - ramp(t, sc - 0.45, sc - 0.1);
+  const line = (stage, t, head, len) => {
+    const L = len === undefined ? sc : len;
+    const gone = 1 - ramp(t, L - 0.45, L - 0.1);
     return stage.set({ type: {
       key: 'v-' + head, kicker: '', head: head ? [head] : [], sub: '',
       top: 0, ko: 0, ky: 0,
@@ -670,7 +673,7 @@ export function SCENES(F){
       line(stage, t, 'Every letter is drawn.');
     } },
 
-  { name: 'alpha', secs: sc,
+  { name: 'alpha', secs: scq,
     enter: async (stage) => {
       await stage.set({ tap: noTap });
       await stage.app(function(){
@@ -684,7 +687,7 @@ export function SCENES(F){
       await scroll(stage, Math.round(mix(60, 760, io(clamp(k / 0.92, 0, 1)))));
       const p = eye(400, H * 0.44);
       await stage.set({ phone: { x: p.x, y: p.y, s: FULL, shell: 0, radius: 0, blur: 0 } });
-      line(stage, t, 'Yours as well.');
+      line(stage, t, 'Yours as well.', scq);
     } },
 
   { name: 'keys', secs: sc,
