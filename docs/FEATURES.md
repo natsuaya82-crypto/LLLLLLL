@@ -376,10 +376,19 @@ and nothing reads it.
 One a day, and `post.prompt` already points at it. The table exists and
 nothing reads it.
 
-### 8. Sales and analytics, inside the app — **implemented** (2026-08-26)
+### 8. Sales and analytics — **RevenueCat で見る** (2026-09-02)
 
-**OWNER DECISION 2026-08-26.**「売り上げもアナリティクスも見れるようにしたい」
-「アプリの中で見たい」「画面を開いたときに毎回」。
+**OWNER DECISION 2026-09-02.**「revenue cut入れたから、App Storeコネクトキー
+いらんわ」「RevenueCatで見るって話してるんだけど」。
+
+**①契約者数と売上 ②ダウンロード数 ③解約と継続は、アプリの中では見ません。**
+RevenueCat の画面で見ます。App Store Connect のキーは作りません。
+
+**④アプリの中の数（アカウント数・投稿数・言語数）だけは管理画面に残ります。**
+Apple とは無関係で、`admin_counts()` が Supabase を数えているだけだからです。
+
+下の記述は 2026-08-26 のもので、①②③については置き換えられています。
+コードはまだ残っており、鍵が無いので数字は空欄です ── `docs/BACKLOG.md`。
 
 Four things, all four now on the admin screen — which is where they went
 because the row at the foot of settings this was going to hang off stopped
