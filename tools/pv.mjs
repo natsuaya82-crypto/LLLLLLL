@@ -56,6 +56,11 @@ const only = val('--scene', '');
    whole number of these (tools/pv/scenes.mjs), so no cut lands between two
    beats. Measured off the track, not guessed: 142 bpm is 1.690s. */
 const BAR = Number(val('--bar', '1.690'));
+/* --vo: the cut for a version with a voice on it. The small sentence under
+   each headline comes off, because a voice saying one thing while a line of
+   type says another and a third line explains both is three things to read
+   at once. The headline stays: it is what the eye lands on. */
+const VO = has('--vo');
 const W = portrait ? 1080 : 1920;
 const H = portrait ? 1920 : 1080;
 
@@ -385,7 +390,7 @@ const stage = {
 };
 
 /* ---- the film ------------------------------------------------------------ */
-const film = SCENES({ W, H, portrait, bar: BAR });
+const film = SCENES({ W, H, portrait, bar: BAR, vo: VO });
 const list = only ? film.filter((s) => s.name === only) : film;
 if (!list.length){ console.error('no scene called ' + only); process.exit(2); }
 
@@ -398,7 +403,7 @@ if (stills){ fs.rmSync(dir, { recursive: true, force: true }); fs.mkdirSync(dir,
 const ff = stills ? null : findFfmpeg();
 if (!stills && !ff){ console.error('no ffmpeg. PV_FFMPEG=/path/to/ffmpeg'); process.exit(2); }
 const shape = portrait ? '9x16' : '16x9';
-const out = path.join(OUT, 'lingua-' + shape + (ff && ff.mp4 ? '.mp4' : '.webm'));
+const out = path.join(OUT, 'lingua-' + shape + (VO ? '-vo' : '') + (ff && ff.mp4 ? '.mp4' : '.webm'));
 let enc = null;
 if (ff){
   /* A silent audio track goes on it. There is no sound in the film, and a

@@ -136,8 +136,9 @@ export function SCENES(F){
     }
     const sa = inAt + 0.16 + lines.length * 0.11;
     return stage.set({ type: {
-      key: c.key, kicker: c.kicker || '', head: lines, sub: c.sub || '',
+      key: (c.key || '') + (F.vo ? '-v' : ''), kicker: c.kicker || '', head: lines,
       top: c.top === undefined ? TYPETOP : c.top,
+      sub: F.vo ? '' : (c.sub || ''),
       ko: Math.min(ramp(t, inAt, inAt + 0.4), gone),
       ky: mix(14, 0, rampO(t, inAt, inAt + 0.7)),
       lo: lo, ly: ly,
