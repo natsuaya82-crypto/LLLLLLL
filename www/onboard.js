@@ -1215,6 +1215,36 @@ function obFormHTML(up){
        CLAUDE.md. The rule went, so it went, and nothing replaced it --
        OB_IN is the last step and signing in is how it ends. The chevron
        still goes back a step. */
+    /* THE ONE LINE APPLE ASKS FOR, and it is on the face where an account is
+       made and nowhere else. Guideline 1.2: an app people write in has to say
+       what somebody is agreeing to before they are in, and the two documents
+       were only on the plans screen -- which somebody who never pays never
+       opens. 「続けるとの説明は ok」 OWNER 2026-09-02.
+
+       NO CHECKBOX. The consent is the press, which is what 「続ける」 already
+       says on the two buttons above it.
+
+       THE SAME SHAPE AS planTerms(), down to the class: a sentence in `.docs`
+       and then docRows(). That is not a coincidence to be tidied later -- it
+       is the answer that screen already worked out, written up at length over
+       planTerms() in www/settings.js: `.docs` is already small, centred, muted
+       and at the foot, so the sentence and the links it belongs with are one
+       class at one size, and www/index.html does not change. A `.note` over
+       them would be .86rem over .78rem, which is 「Rows in one list are one
+       height」.
+
+       THE LINKS ARE docRows() AND NOT A SECOND PAIR OF ANCHORS. One copy of a
+       contract, so the version somebody agreed to is the version that is up.
+       The URLs stay DOC_TERMS / DOC_PRIVACY in www/settings.js and are not
+       named here.
+
+       The sign-in face does not have it, which is what was asked for
+       (登録画面だけ). Worth knowing rather than assuming: Apple and Google can
+       make an account from the sign-in face too, because Supabase's id_token
+       grant makes one when the identity is new -- the comment on those two
+       buttons above says so. Whether the line belongs there as well is the
+       owner's, not this session's. */
+    (up? '<div class="docs">'+esc(t('ob.docs'))+'</div>'+docRows() : '')+
     '</div>'+
     '<div class="obbar"><button' + DO('obMailGo', [up? "in" : "up"]) + '>'+
       t(up? 'ob.bar.in' : 'ob.bar.up')+'</button></div>';

@@ -346,6 +346,7 @@ defLang('ru', (function(){
       "ob.mail.to.forgot" : "Забыли пароль?",
       "ob.signin.or" : "или",
       "ob.bar.up" : "Создать аккаунт",
+      "ob.docs" : "Продолжая, вы принимаете следующее.",
       "ob.bar.in" : "Войти",
       "ob.who.h" : "Ваше имя и ID",
       "ob.who.nm.ph" : "Имя",

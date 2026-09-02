@@ -259,6 +259,7 @@ defLang('ja', (function(){
       "ob.mail.to.forgot" : "パスワードをお忘れですか？",
       "ob.signin.or" : "または",
       "ob.bar.up" : "アカウント登録はこちら",
+      "ob.docs" : "続けると、以下に同意したことになります。",
       "ob.bar.in" : "ログインはこちら",
       "ob.who.h" : "ユーザー名とID",
       "ob.who.nm.ph" : "ユーザー名",

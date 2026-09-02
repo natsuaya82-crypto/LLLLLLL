@@ -123,7 +123,17 @@ async function boot(pre, drive) {
                  2026-09-02 -- a password on the making face is what made that
                  face a SIGNUP, and a signup always makes a new user, so an
                  address that had come in with Google got a second account. */
-              pw: html.indexOf('ob-pw') >= 0
+              pw: html.indexOf('ob-pw') >= 0,
+              /* AND THE ONE LINE APPLE ASKS FOR (guideline 1.2). Three
+                 separate things, because a sentence with no links and two
+                 links with no sentence both look like this feature from a
+                 distance and neither is it. The URLs are read off the app's
+                 own DOC_TERMS / DOC_PRIVACY rather than written out here --
+                 a check that restates the value under test is a copy of it,
+                 and a copy always agrees. */
+              said: html.indexOf(esc(t('ob.docs'))) >= 0,
+              terms: html.indexOf(DOC_TERMS) >= 0,
+              privacy: html.indexOf(DOC_PRIVACY) >= 0
             };
           } catch (e) { out[m ? 'up' : 'in'] = { err: String(e && e.message) }; }
         }
@@ -227,7 +237,34 @@ const SESS = JSON.stringify({ at: 'not a jwt', rt: 'a refresh token',
        'and a signup makes a SECOND account for an address that came in with Google');
   if (f.in && !f.in.pw)
     no('the sign-in face lost its password field');
+  /* AND THE ACCOUNT-MAKING FACE SAYS WHAT SOMEBODY IS AGREEING TO.
+     「続けるとの説明は ok」 OWNER 2026-09-02. App Review guideline 1.2 asks an
+     app people write in to say it before somebody is in, and the two
+     documents were on the plans screen alone -- which somebody who never pays
+     never opens. No checkbox: the consent is the press, and the two buttons
+     over it already say 「続ける」.
+
+     Three claims and not one, because two of the three ways this breaks leave
+     something on the screen that looks like the feature. A sentence whose
+     links were dropped is a promise with nothing behind it; two links with no
+     sentence is a pair of documents nobody said they were agreeing to; and a
+     link built from a hand-typed URL rather than DOC_TERMS is the second copy
+     of a contract that www/settings.js is at length about. */
+  if (f.up && !f.up.said)
+    no('the account-making face does not say what continuing agrees to (App Review 1.2)');
+  if (f.up && !f.up.terms) no('the account-making face does not link the terms');
+  if (f.up && !f.up.privacy) no('the account-making face does not link the privacy policy');
+  /* THE SIGN-IN FACE DOES NOT HAVE IT, and that is the decision rather than
+     an oversight: 登録画面だけ. Worth knowing if this ever fails on purpose --
+     Apple and Google can make an account from the sign-in face too, because
+     the id_token grant makes one when the identity is new. Whether the line
+     belongs there as well is the owner's; changing this line is how that
+     decision lands, not deleting it. */
+  if (f.in && (f.in.said || f.in.terms || f.in.privacy))
+    no('the sign-in face carries the agreement line — it was asked for on the ' +
+       'account-making face only, and moving it is the owner\'s');
   say('the door: Apple and Google on both faces, and the mail is what they differ by');
+  say('the account-making face: what continuing agrees to, said once, with both documents linked');
 }
 
 /* ---- 2c. and every face of it has the way back off it -------------------

@@ -522,6 +522,7 @@ defLang('ko', (function(){
       "ob.mail.to.forgot" : "비밀번호를 잊으셨나요?",
       "ob.signin.or" : "또는",
       "ob.bar.up" : "계정 만들기",
+      "ob.docs" : "계속하면 아래 내용에 동의하는 것이 됩니다.",
       "ob.bar.in" : "로그인",
       "ob.who.h" : "이름과 ID",
       "ob.who.nm.ph" : "이름",
