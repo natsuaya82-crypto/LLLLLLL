@@ -98,16 +98,28 @@ function storeBuy(id){
 
    In a browser there is nothing to read, and it says so rather than saying
    nothing: a button that answers with silence reads as broken. */
+/* AND IT ALWAYS ENDS IN A SENTENCE. 「購入を復元押しても問い合わせ中しか
+   出ないよ」OWNER 2026-09-02: the wait was said and nothing was ever said
+   after it, because the answer never came back. The phone side is bounded now
+   (ios/App/App/LinguaStore.swift § syncWithin), and this is the other end of
+   the same statement -- whatever happens on the far side of that call, the
+   button says how it went. `said` is what makes the two ends one answer
+   rather than two: whichever arrives first speaks, and the other is silent. */
+var STRT=null;
 function storeRestore(){
   var np=storePlug();
   if(!np){ toast(t('store.none')); return; }
+  var said=false;
+  function say(m){ if(said) return; said=true; clearTimeout(STRT); toast(m); }
   toast(t('store.wait'));
+  clearTimeout(STRT);
+  STRT=setTimeout(function(){ say(t('store.fail')); }, 25000);
   np('LinguaStore', 'restore', {})
     .then(function(r){
       var p=storeTook(r);
-      toast(p==='free'? t('store.none') : t('toast.plan.other', planName(p)));
+      say(p==='free'? t('store.none') : t('toast.plan.other', planName(p)));
     })
-    ['catch'](function(){ toast(t('store.fail')); });
+    ['catch'](function(){ say(t('store.fail')); });
 }
 /* Cancelling. Apple's own sheet and nothing of ours: an app that draws its
    own cancel screen is an app that will be wrong about a subscription bought

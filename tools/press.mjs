@@ -1008,6 +1008,127 @@ const POPR = await pg.evaluate(async () => {
   return { out: out, seen: seen };
 });
 
+/* ---- nothing is trapped under the bar of tabs ----------------------------
+
+   The bar is `position:fixed` at the foot, so the last thing on a page sits
+   UNDER it unless the page has a foot of its own to scroll past. Where it has
+   none, the row down there cannot be pressed at all -- not hard to press,
+   impossible: the page has nothing left to scroll, so the bar stays on top of
+   it for good.
+
+   That shipped twice on the plans screen, the second time with a fix in the
+   commit that never applied: `.view.plans .body` is a selector matching
+   nothing, because vPlans() has no `.body` in it. The number in it was moved,
+   measured by nobody, and reported as done.
+   「後スクロールできないから解約ボタン押せない」OWNER 2026-09-02.
+
+   So it is measured rather than reasoned about, on every route, at the top of
+   the page: how far down the lowest thing you can press reaches into the bar,
+   against how far the page can scroll. Anything positive on the first and
+   short on the second is a control nobody can reach. */
+const BARR = await pg.evaluate(async () => {
+  const out = [], seen = [];
+  const rs = Object.keys(PAGES);
+  for (let i = 0; i < rs.length; i++) {
+    const r = rs[i];
+    window.__seed(); SET.done = true; SET.plan = 'pro';
+    goTab(r);
+    await new Promise((f) => setTimeout(f, 0));
+    /* `.tabbar` and not `#tabs`: the host is a zero-height div at the end of
+       the document and the bar inside it is what is fixed to the foot. */
+    const bar = document.querySelector('#tabs .tabbar');
+    const b = bar ? bar.getBoundingClientRect() : null;
+    if (!b || !b.height) continue;      /* a screen that carries no bar */
+    const sc = document.scrollingElement;
+    const room = sc.scrollHeight - sc.clientHeight;
+    let low = 0, who = '';
+    const els = document.querySelectorAll(
+      '#app button, #app a, #app input, #app select, #app textarea');
+    for (let j = 0; j < els.length; j++) {
+      const q = els[j].getBoundingClientRect();
+      if (!q.width || !q.height) continue;
+      if (q.bottom > low) { low = q.bottom; who = els[j].className || els[j].nodeName; }
+    }
+    seen.push(r);
+    const need = Math.ceil(low - b.top);
+    if (need > 0 && room < need)
+      out.push(r + ': "' + who + '" ends ' + need + 'px into the bar of tabs, ' +
+        'and the page has ' + room + 'px of scroll — it can never be pressed');
+  }
+  return { out: out, seen: seen };
+});
+
+/* ---- the way back, dragged from the edge ---------------------------------
+
+   「左からスワイプして戻るやつもできないし」OWNER 2026-09-02, and it was not
+   a poor gesture -- it never ran once. A thumb going sideways belongs to the
+   browser until something says otherwise: it takes the touch, sends
+   `pointercancel`, and swMove() never sees a second move. One line of CSS
+   decides it (`#app{touch-action:pan-y}`) and nothing was holding that line.
+
+   Clicks cannot show this. It needs a real touch, so this is the one place
+   here that goes through the browser's own touch pipeline. */
+const SWR = await (async () => {
+  const out = [], seen = [];
+  const cdp = await pg.context().newCDPSession(pg);
+  await cdp.send('Emulation.setTouchEmulationEnabled',
+                 { enabled: true, maxTouchPoints: 1 });
+  const T = (type, x, y) => cdp.send('Input.dispatchTouchEvent',
+    { type: type, touchPoints: type === 'touchEnd' ? [] : [{ x: x, y: y }] });
+  const y = 430;
+  async function pull(fromX, toX) {
+    await T('touchStart', fromX, y);
+    let mid = null;
+    const step = fromX < toX ? 24 : -24;
+    for (let x = fromX + step; step > 0 ? x <= toX : x >= toX; x += step) {
+      await T('touchMove', x, y);
+      await pg.waitForTimeout(16);
+      if (mid === null && Math.abs(x - fromX) > 60)
+        mid = await pg.evaluate(() =>
+          document.documentElement.classList.contains('swon'));
+    }
+    await T('touchEnd', toX, y);
+    await pg.waitForTimeout(420);
+    return { live: !!mid, at: await pg.evaluate(() => here().r) };
+  }
+  const stand = (js) => pg.evaluate(js);
+
+  /* 1. from the left edge, with the screen behind kept by render() */
+  await stand(`window.__seed(); SET.done = true; SET.plan = 'pro';
+               goTab('build'); go('words');`);
+  let g = await pull(6, 318);
+  if (g.at !== 'build')
+    out.push('dragged in from the left edge on words and it did not go back (' +
+      g.at + '). The browser takes a sideways thumb unless touch-action says ' +
+      'otherwise — www/index.html § #app.');
+  else if (!g.live)
+    out.push('it went back, but the screen behind was never drawn: .swon was ' +
+      'not on the document while the thumb was down.');
+  else seen.push('from the left edge: words -> ' + g.at + ', with the screen behind it');
+
+  /* 2. the same with nothing kept to show. A missing picture used to kill the
+        gesture outright -- swMove set swOn=false and swEnd returns on that,
+        so the plain go-back below it could never run. */
+  await stand(`window.__seed(); SET.done = true; goTab('build'); NAVBK = null;`);
+  g = await pull(6, 318);
+  if (g.at === 'build')
+    out.push('with no screen kept to show, the gesture did nothing at all. ' +
+      'No picture is not no gesture — it only drops the drawing.');
+  else seen.push('with nothing kept to draw: still went back, to ' + g.at);
+
+  /* 3. and a thumb that starts in the MIDDLE is not this. A gesture that
+        fires anywhere is a page you cannot scroll sideways. */
+  await stand(`window.__seed(); SET.done = true; goTab('build'); go('words');`);
+  g = await pull(200, 380);
+  if (g.at !== 'words')
+    out.push('a drag starting in the middle of the screen went back. The ' +
+      'gesture is the edge and nothing else.');
+  else seen.push('a thumb starting in the middle is not the gesture');
+
+  await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: false });
+  return { out: out, seen: seen };
+})();
+
 await br.close();
 srv.close();
 
@@ -1067,6 +1188,8 @@ if (fs.existsSync(CSS_BASE)) {
 }
 const HELD = HELDR.out;
 HELD.forEach(m => fails.push('held: ' + m));
+BARR.out.forEach(m => fails.push('under the bar of tabs: ' + m));
+SWR.out.forEach(m => fails.push('the way back: ' + m));
 POPR.out.forEach(m => fails.push('popup: ' + m));
 R.threw.forEach(m => fails.push('threw: ' + m));
 R.blank.forEach(m => fails.push('blank: ' + m));
@@ -1126,6 +1249,11 @@ console.log('held long enough for the timer: ' +
             (HELDR.seen.length ? HELDR.seen.length + ' data-hold, every one of them answered'
                                : 'NONE — see the failures'));
 if (process.env.HOLD_AT) HELDR.seen.forEach(m => console.log('  ' + m));
+console.log('nothing trapped under the bar of tabs: ' +
+            (BARR.out.length ? BARR.out.length + ' FOUND'
+                             : BARR.seen.length + ' screens that carry one'));
+console.log('the way back, dragged from the edge: ' +
+            (SWR.out.length ? SWR.out.length + ' FOUND' : SWR.seen.join('; ')));
 console.log('the popup, pressed where it stands: ' +
             (POPR.out.length ? POPR.out.length + ' FOUND' : POPR.seen.join('; ')));
 console.log('buttons pressed: ' + R.pressed +

@@ -118,7 +118,28 @@ input,textarea,[contenteditable],.mn,.rd{
 /* manipulation keeps scroll and pinch but drops the double-tap-to-zoom that
    was eating every second tap. */
 button,select,a,.trow,.entry,.set,.obsrow,.obchb,.obescb{touch-action:manipulation}
-#app{max-width:480px;margin:0 auto;min-height:100dvh;position:relative}
+/* `touch-action:pan-y` is what makes the back gesture possible at all, and
+   without it the gesture was not merely poor -- it never ran once.
+   「左からスワイプして戻るやつもできないし」OWNER 2026-09-02.
+
+   A thumb going sideways is the browser's until something says otherwise: it
+   takes the touch, sends `pointercancel`, and swMove() never sees a second
+   move. Measured, at the left edge of a real screen, before and after:
+
+     as it ships          the page is taken away entirely, swon never true
+     touch-action:pan-y   swon true, the screen behind fills, #app moves 250px,
+                          and letting go lands on the previous route
+
+   `pan-y` and not `none`: the page still scrolls up and down, which is most
+   of what a thumb does here. Sideways scrolling inside the page is not lost
+   either -- a rail with its own overflow keeps its own axis, measured on the
+   plans rail (0 -> 508 either way). `user-scalable=no` is already on the
+   viewport, so no pinch is being given up.
+
+   This is not a place to write a number. It is the one line that decides who
+   owns a sideways thumb, and www/shell.js § swStart is the other half. */
+#app{max-width:480px;margin:0 auto;min-height:100dvh;position:relative;
+     touch-action:pan-y}
 /* The screen behind, while one is being dragged off it. Hidden until a thumb
    is on the left edge; it sits under #app and comes in from the left as the
    current screen goes right, which is what iOS does. `pointer-events:none`
@@ -658,10 +679,6 @@ canvas.pkc{width:34px;height:34px;display:block}
         border:1px solid var(--gold);background:var(--gold);color:var(--onGold);
         font-family:inherit;font-size:.88rem}
 .meedit:active{opacity:.85}
-/* The row Follow stands on, under the name and the ... rather than beside
-   them. Right, because that is where the ... is and where the thumb already
-   went. www/me.js § whoCard says why it left the name row. */
-.mefol{display:flex;justify-content:flex-end;margin-top:6px}
 /* Following somebody, and the same button once you do. FILLED while you are
    not -- it is the thing to press -- and the ground's own colour once you
    are, because then it is a state and the press is the undo.
@@ -1830,14 +1847,20 @@ a.set{text-decoration:none}
    going under it: a button the bar is sitting on is a button that cannot be
    pressed, and cancelling has to work. */
 .plunder{padding-top:34px}
-/* AND IT HAS TO BE REACHABLE. This page had its foot cut to `--tabh + 6px`
-   so the cancel row would end under the bar of tabs -- and what that made is
-   a row nobody can press: the page has nothing left to scroll, so the bar
-   sits on top of it for good. 「これスクロールできないから解除できない」
-   OWNER 2026-09-01, on a phone. The row is still the last thing on the page
-   and still takes scrolling to reach; it now stops clear of the bar, which
-   is the difference between out of the way and gone. */
-.view.plans .body{padding-bottom:calc(var(--tabh) + 96px)}
+/* AND IT HAS TO BE REACHABLE. Without a foot, this page ends where its last
+   row ends, the bar of tabs sits on top of that row, and there is nothing
+   left to scroll -- so the row that cancels cannot be pressed at all.
+   「これスクロールできないから解除できない」OWNER 2026-09-01, and again
+   「後スクロールできないから解約ボタン押せない」2026-09-02, both on a phone.
+
+   `.view.plans` AND NOT `.view.plans .body`, which is what stood here for two
+   days and matched nothing: vPlans() builds navTop and its own rows and has
+   no `.body` in it at all. The first fix moved the NUMBER in a rule that was
+   never applied, measured nothing, and was reported as done. Measured now:
+   scrollHeight 844 == clientHeight 844, cancel button at 789-835, under the
+   bar. Held by `press`, which walks every route and fails on anything left
+   under the bar with no way to scroll to it. */
+.view.plans{padding-bottom:calc(var(--tabh) + 96px)}
 
 /* ---------- locked behind a paid plan ---------- */
 .lock{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:none;
@@ -2151,8 +2174,15 @@ a.set{text-decoration:none}
               display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;
               overflow:hidden}
 /* Who follows whom, inside the block about the person rather than in a strip
-   of its own under it. */
-.pfstats{display:flex;align-items:center;gap:20px}
+   of its own under it.
+
+   `position:relative` because the ... stands at the right end of this row on
+   somebody else's card, and the box it opens hangs off it. It used to hang
+   off `.metop`, which is where the ... used to be.
+   「フォロワーとかの横の一番右に...で」OWNER 2026-09-02. */
+.pfstats{display:flex;align-items:center;gap:20px;position:relative}
+/* Pushed to the end of the row, past whatever the two counts came to. */
+.pfstats .pmore{margin-left:auto}
 .pfst{min-height:44px;padding:0;background:none;border:0;font-family:inherit;
       font-size:.86rem;color:var(--txm);white-space:nowrap;
       display:inline-flex;align-items:center;gap:5px}

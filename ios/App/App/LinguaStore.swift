@@ -307,21 +307,55 @@ public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
     }
   }
 
+  /// AppStore.sync(), with a bound on how long it may take.
+  ///
+  /// It puts up Apple's own sign-in sheet, and a sheet that is dismissed
+  /// rather than answered can leave the call suspended with nothing to
+  /// resolve. The button then says 「問い合わせ中」and never says anything
+  /// else, which is what a person sees:
+  /// 「購入を復元押しても問い合わせ中しか出ないよ」OWNER 2026-09-02.
+  ///
+  /// The answer does not depend on it. What this Apple ID holds is
+  /// `Transaction.currentEntitlements`; sync() only refreshes it, and is
+  /// worth waiting a while for and not for ever.
+  ///
+  /// Returns whether it actually came back, because that decides something
+  /// else -- see restore().
+  private static func syncWithin(_ seconds: UInt64) async -> Bool {
+    return await withTaskGroup(of: Bool.self, returning: Bool.self) { group in
+      group.addTask {
+        do { try await AppStore.sync() } catch { return false }
+        return true
+      }
+      group.addTask {
+        try? await Task.sleep(nanoseconds: seconds * 1_000_000_000)
+        return false
+      }
+      var first = false
+      if let r = await group.next() { first = r }
+      group.cancelAll()
+      return first
+    }
+  }
+
   /// The Restore button, and the only thing that calls AppStore.sync().
   ///
   /// It asks for an App Store password, which is why it is a button somebody
   /// presses and not something done on launch. A sync that fails is not
   /// necessarily a person with nothing: the entitlements already on the
   /// device are still worth reading, so the answer is given either way.
+  ///
+  /// AND ONLY A SYNC THAT CAME BACK MAY LOWER THE PLAN. `mayLower: true` was
+  /// passed whatever happened, so a sync that threw or never returned -- no
+  /// network, a dismissed sheet -- handed an empty entitlement list straight
+  /// to the Keychain as `free`. That is the same sentence this file already
+  /// carries twice: 「空」and 「読めていない」may not share a branch, and the
+  /// plan is what it is about. 「プランは絶対におかしくしちゃいけないんだって」
   @objc func restore(_ call: CAPPluginCall) {
     Task {
-      var said = ""
-      do { try await AppStore.sync() }
-      catch { said = error.localizedDescription }
-      let plan = await writeDown(mayLower: true)
-      var out: [String: Any] = ["plan": plan]
-      if !said.isEmpty { out["trouble"] = said }
-      call.resolve(out)
+      let synced = await Self.syncWithin(12)
+      let plan = await writeDown(mayLower: synced)
+      call.resolve(["plan": plan, "synced": synced])
     }
   }
 

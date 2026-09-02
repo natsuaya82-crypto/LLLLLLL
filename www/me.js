@@ -742,36 +742,20 @@ function whoCard(h){
       '<div class="pname">'+esc(postWho(p))+'</div>'+
       '<div class="mehr"><span class="phandle">@'+esc(h)+'</span></div>'+
     '</div>'+
-    /* The two things you can do about a PERSON rather than about one line
-       they wrote. They were on a post's ... and nowhere else, so blocking
-       somebody meant finding something of theirs to block them from, and
-       reporting an account that had said the same thing forty times meant
-       picking one of the forty. 「ブロックも通報はその人の画面でもよろしい」
+    /* FOLLOW, IN THE SLOT ON THE NAME ROW -- the same slot your own card
+       puts Edit in, because it is the same thing: the one action this page
+       is about. 「フォローの位置キモいな...のとこにフォロー」OWNER
+       2026-09-02.
 
-       The same menu as a post's, in the same shape and closed the same way --
-       WMENU beside PMENU, because a page holds one person and a timeline
-       holds many posts, and one of them needs an id. */
-    '<button class="pmore"' + DO('whoMore', [String(h)]) + ' aria-label="'+
-      esc(t('post.more'))+'">'+ICON_DOTS+'</button>'+
-    (WMENU
-      ? '<span class="pmenu" data-pm="1">'+
-        '<button class="pmi"' + DO('meBlock', [String(h)]) + '>'+ICON_BLOCK+
-          '<span>'+esc(t(meBlocks(h)? 'post.unblock' : 'post.block'))+'</span></button>'+
-        '<button class="pmi bad"' + DO('openReport', ["", String(h)]) + '>'+ICON_FLAG+
-          '<span>'+esc(t('post.report'))+'</span></button>'+
-        '</span>'
-      : '')+
-    '</div>'+
-    /* FOLLOW ON ITS OWN LINE, under the ... rather than beside the name.
-       「ここ窮屈だからフォローは右端...はその上とかその下みたいにできない？」
-       OWNER 2026-09-02. The name, the handle, the pill and the ... were four
-       things across one line on a phone, and the name is the one that gave
-       way -- it is the only one of the four that can be cut short. Off that
-       line there is room for a name again, and the two controls stand one
-       above the other at the right, where the thumb already went. */
-    '<div class="mefol"><button class="meedit'+(on?' on':'')+'"' +
+       It was beside the name with the ... next to it, four things across one
+       phone-width line, and the name was the one that gave way. Then it went
+       to a line of its own under the ..., which put the thing you came here
+       to press below a menu you did not. Now the row reads the same way on
+       both cards, and the ... is off it entirely -- see the counts below. */
+    '<button class="meedit'+(on?' on':'')+'"' +
       DO('meFollow', [String(h)]) + '>'+
-      esc(t(on? 'me.unfollow' : 'me.follow'))+'</button></div>'+
+      esc(t(on? 'me.unfollow' : 'me.follow'))+'</button>'+
+    '</div>'+
     (p.bio? '<div class="pbio">'+esc(p.bio)+'</div>' : '')+
     /* THE NAME, AND NOT A WAY THROUGH.
        「この言語についてで人のをタップしても自分のが出る」 OWNER.
@@ -829,9 +813,32 @@ function whoCard(h){
        Followers. A person who arrived on a post rather than from netWho()
        carries neither and reads zero until the answer lands.
        Not pressable: the two lists behind your own are yours. */
+    /* AND THE ... AT THE RIGHT END OF THIS ROW.
+       「フォロワーとかの横の一番右に...で」OWNER 2026-09-02.
+
+       The two things it holds -- block and report -- are about a PERSON
+       rather than about one line they wrote, and this row is the row of
+       facts about that person. They were on a post's ... and nowhere else,
+       so blocking somebody meant finding something of theirs to block them
+       from. 「ブロックも通報はその人の画面でもよろしい」
+
+       The same menu as a post's, in the same shape and closed the same way --
+       WMENU beside PMENU, because a page holds one person and a timeline
+       holds many posts, and one of them needs an id. `.pfstats` carries the
+       `position:relative` the box hangs off now; it was `.metop`. */
     '<div class="pfstats">'+
       '<span class="pfst"><b>'+esc(String(p.fo||0))+'</b> '+esc(t('me.following'))+'</span>'+
       '<span class="pfst"><b>'+esc(String(p.fr||0))+'</b> '+esc(t('me.followers'))+'</span>'+
+      '<button class="pmore"' + DO('whoMore', [String(h)]) + ' aria-label="'+
+        esc(t('post.more'))+'">'+ICON_DOTS+'</button>'+
+      (WMENU
+        ? '<span class="pmenu" data-pm="1">'+
+          '<button class="pmi"' + DO('meBlock', [String(h)]) + '>'+ICON_BLOCK+
+            '<span>'+esc(t(meBlocks(h)? 'post.unblock' : 'post.block'))+'</span></button>'+
+          '<button class="pmi bad"' + DO('openReport', ["", String(h)]) + '>'+ICON_FLAG+
+            '<span>'+esc(t('post.report'))+'</span></button>'+
+          '</span>'
+        : '')+
     '</div>'+
     '</div>';
 }
