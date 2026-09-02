@@ -1287,13 +1287,20 @@ spec asks for them」と書いている ── **人が押した削除は automa
   **オーナーが言っていないのに鍵括弧が付いていた**。CLAUDE.md の
   「オーナーが言っていないものを「」で囲まないこと」が破られていて、それを
   読んだ私が今日そのまま信じ、オーナーに二度言わせた。
-- Affected features: `docs/FEATURES.md` § 8。①契約者数と売上 ②ダウンロード数
-  ③解約と継続 は RevenueCat 側で見る。**④アプリの中の数（アカウント数・投稿数・
-  言語数）は Apple とは無関係なので、管理画面に残る。**
+- **数字は一つも残さない。**「lingua内ではみないって言ってるだろ」 OWNER
+  2026-09-02。①契約者数と売上 ②ダウンロード数 ③解約と継続 だけでなく、
+  ④登録ユーザー数も管理画面から消えた ── その一言は Lingua の中で見るかどうか
+  であって、Apple から来た数字かどうかではない。
+- Affected features: `docs/FEATURES.md` § 8。管理画面に残るのは**通報とスタッフ**
+  だけ。それは分析ではなく、運営そのものの作業。
 - Affected data: 減らない。Apple の数字を置く表は元々作られていない。
-- Affected code: `supabase/functions/appstore/`、`www/net.js` の売上まわり、
-  `www/mod.js` の管理画面の売上の欄。**まだ消していない** ── 消す範囲が
-  ①②③だけで ④ は残る、という切り分けの確認待ち。`docs/BACKLOG.md`。
+  `admin_counts()` はサーバーに残り、通報の件数だけが読まれる。
+- **Implemented 2026-09-02.** 消したもの ── `www/mod.js` の五ページと六行
+  （`adminOpen` `adminGotTop` `adminMonthTop` `adminPlanTop` `adminView`
+  `adminGoTo` `adminAt` `adminAsc` `adminNow` `adminPurse` `adminPlans`
+  `adminPct` `adminMD` `adminMon` `adminOne` `adminWhenRow` `adminDays`
+  `adminMonths`、`ADMIN_ASC`）、`www/net.js` の `netStore()`、
+  `supabase/functions/appstore/`、`act-map` の `adminGoTo`、十言語 × 11 の文言。
 - Affected docs: `supabase/setup.md` § 10、`docs/FEATURES.md` § 8、
   `docs/BACKLOG.md`、`docs/apple.md`
 

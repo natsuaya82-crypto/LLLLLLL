@@ -2538,34 +2538,3 @@ throw しない**。`post(id)` を参照する表も三つあり（`quote` `reac
        二度目に言い出すと、二つの検査が同じ鍵について食い違う
 ```
 
-## App Store Connect の売上を読む道が、宙に浮いている
-
-**Found:** 2026-09-02。OWNER「revenue cat 入れたから、App Store Connect キー
-いらんわ」。
-
-**What is there:** `supabase/functions/appstore/`（Apple の salesReports を
-叩く関数）、`www/net.js` の売上まわり、`www/mod.js` の管理画面の数字、
-`supabase/setup.md` § 10 の手順、`docs/reports/sales-2026-08-26.md`。
-
-**What is true now:** 鍵は作られず、作る予定も無い。だから数字は空欄のまま。
-何も throw せず、何も壊れない ── 管理画面に 0 が並ぶだけ。
-
-**消す方向で決まっている。**「RevenueCatで見るって話してるんだけど」 OWNER
-2026-09-02。売上とアナリティクスはアプリの中では見ない。だから ①契約者数と
-売上 ②ダウンロード数 ③解約と継続 の欄と、それを取ってくる道は要らない。
-
-**残るのは ④「アプリの中の数」だけ**（アカウント数・投稿数・言語数）。あれは
-`admin_counts()` が Supabase を数えているもので、Apple も RevenueCat も
-関係ない。
-
-**Why it is not done here:** 消す範囲が管理画面の中で ①②③ と ④ に分かれて
-いて、その切り分けをオーナーに確認していない。画面ごと消すのではなく、欄を
-三つ落として一つ残す形になる。確認が取れたら消す ── 一つのコミットで、
-`supabase/functions/appstore/`、`www/net.js` の売上まわり、`www/mod.js` の
-三つの欄、`supabase/setup.md` § 10 の手順、`docs/reports/sales-2026-08-26.md`。
-
-**この項を最初に書いたときは二択として書き、次に「消す道は無い」と書いた。
-どちらも間違い。**一度目は決定を広げ、二度目は repo に書いてあった
-「アプリの中で見たい」という鍵括弧を信じた ── オーナーはそんなことは言って
-いない。`CLAUDE.md`「オーナーが言っていないものを「」で囲まないこと」が、
-書いた側でも読んだ側でも同じ事故を起こす、という実例。

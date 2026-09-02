@@ -381,14 +381,16 @@ nothing reads it.
 **OWNER DECISION 2026-09-02.**「revenue cut入れたから、App Storeコネクトキー
 いらんわ」「RevenueCatで見るって話してるんだけど」。
 
-**①契約者数と売上 ②ダウンロード数 ③解約と継続は、アプリの中では見ません。**
+**「lingua内ではみないって言ってるだろ」。数字は一つも残っていません。**
+①契約者数と売上 ②ダウンロード数 ③解約と継続 ④登録ユーザー数、全部です。
 RevenueCat の画面で見ます。App Store Connect のキーは作りません。
 
-**④アプリの中の数（アカウント数・投稿数・言語数）だけは管理画面に残ります。**
-Apple とは無関係で、`admin_counts()` が Supabase を数えているだけだからです。
+**管理画面に残っているのは通報とスタッフだけです。**それは分析ではなく、
+運営そのものの作業だからです。
 
-下の記述は 2026-08-26 のもので、①②③については置き換えられています。
-コードはまだ残っており、鍵が無いので数字は空欄です ── `docs/BACKLOG.md`。
+コードは 2026-09-02 に消しました ── `supabase/functions/appstore/`、
+`www/net.js` の `netStore()`、`www/mod.js` の五ページ。下の記述は 2026-08-26
+のもので、**もう作られていません。**
 
 Four things, all four now on the admin screen — which is where they went
 because the row at the foot of settings this was going to hang off stopped

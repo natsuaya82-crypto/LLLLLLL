@@ -164,9 +164,6 @@ function vMod(){
    the lock is only there where there is something to unlock it with. */
 var ADMIN_OK=false, ADMIN_PW='', ADMIN_BUSY=false, ADMIN_ERR='', ADMINN=null;
 var ADMINS=null, ADMIN_H='';
-/* And what App Store Connect said, which is the same sentence as ADMINN one
-   line up: null until it has been asked, and never {} standing in for it. */
-var ADMIN_ASC=null;
 
 function adminLocked(){ return !ADMIN_OK && netHow()==='email'; }
 /* Going there and reading are one press, for the same reason goMod() is. */
@@ -244,23 +241,13 @@ function adminLoad(){
    of modOut() one chapter up, and deliberately: ejecting somebody is done TO
    them and cannot be taken back by typing their name again. This can, by the
    same person, on the same screen, in one press. */
-/* Apple, last. It is the slowest thing on the screen by a long way -- the
-   function signs a token and then asks App Store Connect for up to three
-   gzipped reports -- and everything above it is already up, so it is asked
-   after the rest rather than in front of it.
-
-   「画面を開いたときに毎回」OWNER 2026-08-26, so it is in adminLoad() and not
-   behind a button of its own. Nothing is cached: Apple's day is yesterday's
-   and does not move while somebody is looking at it, but neither does asking
-   twice cost anything anybody can see.
-
-   A refusal leaves ADMIN_ASC null, which is blanks, and does not become
-   ADMIN_ERR: the four numbers above and the reports below arrived, and one
-   red line across a screen that is nine tenths right is a screen somebody
-   stops reading. Same argument as netStaffList's empty list one line up. */
+/* Apple used to be asked here, last, because it was the slowest thing on the
+   screen. It is not asked at all now -- 「lingua内ではみないって言ってるだろ」
+   OWNER 2026-09-02 -- so what is left is the reports, which is what this
+   screen is for. */
 function adminAsk(){
-  netStore(function(d){ ADMIN_ASC=d; ADMIN_BUSY=false; modLoad(); },
-           function(){ ADMIN_ASC=null; ADMIN_BUSY=false; modLoad(); });
+  ADMIN_BUSY=false;
+  modLoad();
 }
 function adminStaffSet(k, v){ if(k==='h'){ ADMIN_H=String(v||''); lnGrow('admin-h'); } }
 function adminStaffAdd(){
@@ -297,227 +284,33 @@ function adminRow(k, n, go){
   return go? '<button class="set"' + DO(go) + '>'+body+'</button>'
            : '<div class="set">'+body+'</div>';
 }
-/* ---- what Apple counted, and the line it makes ---------------------------
-   「登録ユーザー数とそれぞれのプランの課金数、それで合計の売り上げ」
-   「特に売り上げはどのプランかが大事やろ」「あとは継続率」
-   「もっと日毎の折れ線グラフとかさ」 OWNER 2026-08-26.
+/* ---- what Apple counted -- GONE 2026-09-02 -------------------------------
+   「lingua内ではみないって言ってるだろ」「RevenueCatで見るって話してるんだけど」
+   OWNER. The takings, the months, the plans, the retention and the downloads
+   were five pages hanging off this screen, all of them fed by
+   supabase/functions/appstore/. They are read in RevenueCat now, so none of it
+   is here: not the pages, not the rows that opened them, not the request.
 
-   supabase/functions/appstore/ is what fetches it and
-   docs/reports/sales-2026-08-26.md is what was confirmed at Apple first.
-
-   THE TAKINGS ARE ONE ROW PER CURRENCY AND ARE NEVER ADDED UP. Apple pays per
-   storefront in that storefront's currency, and turning EUR into JPY needs an
-   exchange rate, which is not in this app. www/store.js and LinguaStore.swift
-   both carry the sentence this comes from: "Building '$' + a number is how an
-   app ends up showing dollars to somebody being charged yen." One currency is
-   one row, which is what a total looks like when there is only one -- so
-   「合計の売り上げ」 is answered, and answered without inventing a rate.
-
-   A PLAN IS NAMED BY APPLE and not by this app: `Subscription Name` is what
-   the product is called in App Store Connect, so a plan added there appears
-   here the day it sells one, and nothing in www/ has to be told about it.
-   It is not put through t() for the same reason a handle is not.
-
-   THE DAY is a row because Apple's data is next-day: there is no such thing as
-   today's takings, and a number here with no date on it is yesterday's being
-   read as today's. */
-function adminAsc(){ return ADMIN_ASC || {}; }
-function adminNow(){ return adminAsc().now || {}; }
-/* Two rows and they are two different facts, both asked for by name
-   「両方を別の行で出す」OWNER 2026-08-26: what came out of somebody's pocket,
-   and what arrives here after Apple's commission and the local tax.
-
-   Each is one row per currency, and one currency is ONE row -- which is what
-   a total looks like when everything was sold in one place, so 「合計の売り上げ」
-   is answered without an exchange rate being invented. Apple sets the price of
-   every storefront off one base price, so ¥800 and $4.99 are the same product;
-   what Apple does NOT publish in these reports is what ¥800 of Japanese
-   takings and $4.99 of American takings come to together, and neither does
-   this app. docs/reports/sales-2026-08-26.md § 10 has the way to collapse them
-   when it is wanted -- Apple's own price table, not a rate. */
-function adminPurse(k, key){
-  var m=adminNow()[k] || [];
-  if(!m.length) return adminRow(key, null);
-  return m.map(function(row){
-    return adminRow(key, row.cur+' '+row.total);
-  }).join('');
-}
-
-/* Every plan Apple knows about, in its own name, with how many are paying for
-   it. Nothing before the first answer: a made-up row here would be a plan
-   that does not exist. */
-function adminPlans(){
-  var p=adminNow().plans || [], i, out='';
-  for(i=0;i<p.length;i++)
-    out+='<div class="set"><span class="sl">'+esc(p[i].name)+'</span>'+
-         '<span class="sv">'+esc(String(p[i].live))+'</span></div>';
-  return out;
-}
-/* A rate is a rate and reads as one. Null is a day on which nothing renewed
-   and nothing cancelled, which is not 0% -- 0% is everybody leaving. */
-function adminPct(v){
-  return (typeof v==='number')? (Math.round(v*100)+'%') : null;
-}
-
-/* ---- the days and the months --------------------------------------------
-   「棒グラフいらないから、日毎の売り上げと月毎の売り上げに分けて。
-     8/1 まるまる、8月 〇〇 みたいに」OWNER 2026-08-26.
-
-   There was a chart here. It is gone -- both of them are, and the drawing
-   code with them: a line that nobody asked to keep is dead code, and git
-   remembers it. What is here instead is what the owner drew: a date on the
-   left, a number on the right, one row each, in the row every other list in
-   this app is made of.
-
-   Newest first. A list of days is read from today backwards -- the row
-   somebody came to see is the top one, not the one thirty scrolls down.
-
-   A day Apple never readied is not in the series at all: the Edge Function
-   drops it, for the reason adminRow() gives above. So a gap in the list is a
-   day with no report, and it is missing rather than zero. */
-function adminMD(d){
-  var p=String(d||'').split('-');
-  return (p.length===3)? (+p[1])+'/'+(+p[2]) : '';
-}
-/* 2026-08 -> 8月 / August, in the interface language. The phone knows the
-   twelve names and this app does not have to: postWhen() in www/post.js
-   already dates every post this way, with the same fallback for a browser
-   that refuses. No year -- twelve months back cannot hold the same month
-   twice, so the name alone says which. */
-function adminMon(m){
-  var p=String(m||'').split('-'), d;
-  if(p.length!==2) return '';
-  d=new Date(+p[0], +p[1]-1, 1);
-  try{ return d.toLocaleDateString(uiLang(), {month:'long'}); }
-  catch(e){ return p[0]+'-'+p[1]; }
-}
-/* One purse as one row's value: `JPY 6955`, or the biggest of several when a
-   day sold in more than one country. The others are not lost -- the plan page
-   carries every currency -- but a list of thirty days cannot be three lists.
-   Nothing is added across currencies here either. */
-function adminOne(m){
-  var i, best=-1, out=null;
-  for(i=0;i<(m||[]).length;i++) if(m[i].total>best){ best=m[i].total; out=m[i].cur+' '+m[i].total; }
-  return out;
-}
-/* A row whose LABEL is a date. adminRow() takes a key and calls t() on it,
-   which a date is not, so this is the other kind of row -- same class, same
-   height, same shape, and that is what makes it one list with the rest. */
-function adminWhenRow(when, v){
-  return '<div class="set"><span class="sl">'+esc(when)+'</span>'+
-    '<span class="sv">'+esc((v===0 || v)? String(v) : '')+'</span></div>';
-}
-function adminDays(){
-  var ser=adminAsc().series || [], i, out='';
-  for(i=ser.length-1;i>=0;i--)
-    out+=adminWhenRow(adminMD(ser[i].day), adminOne(ser[i].got));
-  return out;
-}
-function adminMonths(){
-  var ms=adminAsc().months || [], i, out='';
-  for(i=ms.length-1;i>=0;i--)
-    out+=adminWhenRow(adminMon(ms[i].month), adminOne(ms[i].got));
-  return out;
-}
-
-/* ---- one number, one page -----------------------------------------------
-   「項目ごとで分けて別ページにして」「なんで同じページに入れんだよ」
-   OWNER 2026-08-26, twice. The first answer was six more rows on the one
-   page, which is what was being complained about.
-
-   It is the `admin` route with an ARGUMENT, the way `set` is six rooms on one
-   route -- because a new route means a PAGES entry in www/shell.js, and four
-   other branches are in that file today (docs/SESSIONS.md rule: one session
-   at a time owns a file). Nothing here touches it.
-
-   ONE THING IS STILL MISSING AND IT IS NOT MINE TO ADD: pageName() in
-   shell.js decides what the bar says, and with no branch for these it says
-   「管理」 on every one of them. The branch is three lines and is written out
-   in docs/reports/sales-2026-08-26.md § 11 for whoever owns that file.
-
-   The reports and the staff list stay on the front page. Not taste: their
-   buttons exist ONLY where they are drawn, and tools/act-check.mjs walks a
-   route with no argument, so a staff button moved onto a page it can only
-   reach with one would be reported as a name no screen says -- correctly.
-   Adding `walkArg('admin', ...)` there is the other half of the same patch. */
-function adminGoTo(k){ go('admin', k); }
-function adminAt(){ var h=here(); return String((h && h.a)||''); }
-/* A row that opens one of them. The number on it is that page's headline, so
-   the front page is still a page of numbers and not a menu of words. */
-function adminOpen(k, n, to){
-  return '<button class="set"' + DO('adminGoTo', [to]) + '>'+
-    '<span class="sl">'+esc(t(k))+'</span>'+
-    '<span class="sv">'+esc((n===0 || n)? String(n) : '')+ICON_GO+'</span></button>';
-}
-/* What the takings row says before you open it: the newest day's proceeds in
-   the currency there is most of, with the code beside it. Blank until an
-   answer -- adminRow() says why that is not a nought. */
-function adminGotTop(){ return adminOne(adminNow().got); }
-/* The month we are in, which is the last row of the months list. */
-function adminMonthTop(){
-  var ms=adminAsc().months || [];
-  return ms.length? adminOne(ms[ms.length-1].got) : null;
-}
-/* How many are paying for something, across every plan. */
-function adminPlanTop(){
-  var p=adminNow().plans || [], i, n=0;
-  if(!p.length) return null;
-  for(i=0;i<p.length;i++) n+=p[i].live;
-  return n;
-}
-function adminView(){
-  var a=adminAt(), now=adminNow(), asc=adminAsc(), body;
-  if(a==='days'){
-    /* 「8/1 まるまる」 -- one day, one number, newest first. */
-    body=adminDays();
-  } else if(a==='months'){
-    /* 「8月 〇〇」. The month we are in is on the top of this list and is
-       still running; Apple has no report for it, so the Edge Function adds it
-       up out of the days. */
-    body=adminMonths();
-  } else if(a==='plans'){
-    /* 「特に売り上げはどのプランかが大事やろ」 -- and this is where every
-       currency is, which the two lists above cannot carry a row each of. */
-    body=adminPurse('paid', 'admin.paid')+
-      adminPurse('got', 'admin.got')+
-      adminPlans()+
-      adminRow('admin.day', asc.day || '');
-  } else if(a==='keep'){
-    body=adminRow('admin.keep', adminPct(now.keep))+
-      adminRow('admin.renew', (now.renew===0 || now.renew)? now.renew : null)+
-      adminRow('admin.cancel', (now.cancel===0 || now.cancel)? now.cancel : null)+
-      adminRow('admin.day', asc.day || '');
-  } else if(a==='dl'){
-    body=adminRow('admin.dl', now.downloads)+
-      adminRow('admin.day', asc.day || '');
-  } else {
-    body=null;
-  }
-  return body;
-}
+   `docs/FEATURE_RULES.md` carries the decision and marks the 2026-08-26 one
+   superseded. git remembers the code. */
 function vAdmin(){
   if(adminLocked()) return adminDoor();
-  var inner=adminView();
-  if(inner!==null)
-    return '<div class="view">'+navTop('')+'<div class="body">'+inner+'</div></div>';
+  /* THE NUMBERS ARE NOT HERE ANY MORE.
+     「lingua内ではみないって言ってるだろ」「RevenueCatで見るって話してるんだけど」
+     OWNER 2026-09-02. Sales and analytics are read in RevenueCat, so this
+     screen carries none of them -- not the takings, not the downloads, not the
+     retention, and not the account count either: the sentence is about Lingua,
+     not about which of them came from Apple.
 
-  /* The front page. Every number here is a way IN to the page about it, so
-     this is still a page of numbers rather than a menu of words -- what each
-     row carries is that page's headline. 「登録ユーザー数とそれぞれのプランの
-     課金数、それで合計の売り上げ」「あとは継続率」 OWNER 2026-08-26.
+     The 2026-08-26 decision that put them here is superseded
+     (`docs/FEATURE_RULES.md`). What is left is the thing this screen is for
+     that nothing else does: the reports, and who answers them.
 
-     投稿 and 言語 came off in the same breath -- 「投稿数とかはいいのよ」.
-     Nothing was deleted to do it: admin_counts() in supabase/schema.sql still
-     counts both and still sends them, so either is one row back. */
-  var n=ADMINN||{}, rows=MODS||[], now=adminNow();
+     admin_counts() in supabase/schema.sql still counts and still sends; only
+     the reports count is read off it now. Nothing was deleted on the server. */
+  var n=ADMINN||{}, rows=MODS||[];
   return '<div class="view">'+navTop('')+'<div class="body">'+
     (ADMIN_ERR? '<div class="mnone bad">'+esc(ADMIN_ERR)+'</div>' : '')+
-    adminRow('admin.people', n.people)+
-    adminOpen('admin.days', adminGotTop(), 'days')+
-    adminOpen('admin.months', adminMonthTop(), 'months')+
-    adminOpen('admin.plans', adminPlanTop(), 'plans')+
-    adminOpen('admin.keep', adminPct(now.keep), 'keep')+
-    adminOpen('admin.dl', now.downloads, 'dl')+
     adminRow('admin.reports', n.reports, 'goMod')+
     /* Who answers them, and the field that adds one. Both stay here: their
        buttons exist only where they are drawn, and act-check walks this route

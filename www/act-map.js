@@ -52,7 +52,6 @@ act('adminGo', adminGo);
    what opening the page does. adminLoad() itself is still what goAdmin() and
    adminGo() call; it is no longer a thing anybody presses.
    The reports screen keeps its own, which is modLoad below. */
-act('adminGoTo', adminGoTo);
 act('adminStaffAdd', adminStaffAdd);
 act('adminStaffDrop', adminStaffDrop);
 act('modLoad', modLoad);
