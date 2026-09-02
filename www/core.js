@@ -938,6 +938,21 @@ function setOnDisk(){
   if(PLAN_NATIVE) delete out.plan;
   return out;
 }
+/* The settings, written on their own.
+
+   save() is the LANGUAGE and the settings in one call, and it declines
+   entirely when the language on screen is somebody else's -- langLocked() is
+   its first line, and that is right: nothing may be written into a language
+   this phone is only reading. It is wrong for a field that is nobody's
+   language. SET.planPend is what the SERVER has not been told about the plan,
+   and losing it because somebody happened to be reading a published language
+   when their subscription ended is losing the only record there is.
+
+   planMigrate() above already writes this key straight, for its own reason,
+   so this is that line with a name on it rather than a new road. */
+function setKeep(){
+  try{ localStorage.setItem(LS_S, JSON.stringify(setOnDisk())); }catch(e){}
+}
 /* Written down when somebody has just changed it, and not waited for. What
    this session uses is the value in memory; a Keychain that refused the write
    is a phone that answers with the old plan at the next launch, and the old

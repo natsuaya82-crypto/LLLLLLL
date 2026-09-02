@@ -677,17 +677,78 @@ function netIdToken(provider, token, nonce, ok, bad){
    of code -- docs/scope/claude-acct2.md holds the three ways and the reason
    none of them is written yet. Nothing here should be read as more than
    「the plan lives on the account now」. */
-function netPlanUp(id){
-  if(!netSignedIn()) return;
+/* AND IT ANSWERS. Both handlers were empty functions, and that is the other
+   half of how a cancelled subscription came back:
+
+     解約 → Transaction.updates → Keychain 'free'
+     次の起動 → capLapse() が free を送る（誰も答えを聞いていない）
+             → netPlanSync() が古い pro を読む → 端末も Keychain も pro に戻る
+
+   Nobody was listening, so nobody could know the send had not arrived, so the
+   read that came after it was answered with the plan Apple had already ended
+   -- and the higher rung then won for the wrong reason. 「プランは絶対に
+   おかしくしちゃいけないんだって」 OWNER 2026-09-02.
+
+   SET.planPend IS THE ANSWER NOBODY HEARD, kept. It is written BEFORE the
+   send and cleared when the send lands, rather than the other way round: an
+   app that is shut between the two has still changed plan, and a record
+   written only on failure is no record at all for a launch that never got an
+   answer to fail on. One plan, never a queue -- what is unsent is a fact
+   about this phone's plan NOW, and a second one replaces the first.
+
+   Written with setKeep() and not save(): save() declines when the language on
+   screen is somebody else's, and this is not anybody's language.
+
+   The 401 half of this repairs itself since a6ebf1d -- this rides netSend(),
+   which renews the token and goes again. What planPend carries is the launch
+   opened with no signal at all, and the launch that was closed before the
+   answer came back. Neither of those is refused; nothing arrives. */
+function netPlanUp(id, then){
+  var done=then || function(){}, p=String(id||'free');
+  if(SET.planPend!==p){ SET.planPend=p; setKeep(); }
+  if(!netSignedIn()){ done(false); return; }
   /* Through netSend() like everything else. It used to open its own
      XMLHttpRequest, which differed from netSend() by one header and by being
      outside the token renewal -- so on a launch, where this is sent before
      the refresh has come back, the 401 went to an empty function and the plan
-     never moved. That is half of how a cancelled plan came back: see
-     bootSession() and SET.planPend. */
+     never moved. */
   netSend('POST', '/rest/v1/plan',
-          {id:SESS.uid, plan:String(id||'free'), at:(new Date()).toISOString()},
-          SESS.at, function(){}, function(){}, true);
+          {id:SESS.uid, plan:p, at:(new Date()).toISOString()},
+          SESS.at,
+          function(){
+            /* Cleared only if it is still THIS plan that is waiting. A plan
+               that moved again while this was in the air is a newer fact and
+               is not this send's to answer for. */
+            if(SET.planPend===p){ SET.planPend=''; setKeep(); }
+            done(true);
+          },
+          function(){ done(false); }, true);
+}
+/* THE LAUNCH, IN ORDER. What this phone is holding goes up FIRST, and the two
+   copies are read together INSIDE ITS ANSWER -- not beside it.
+
+   www/boot.js is where the order went wrong and it is not a mistake anybody
+   made in one place: netResume() is asynchronous and has not come back, while
+   capLapse() is synchronous and runs under it. So the send that says a plan
+   ENDED and the read that takes the HIGHER of two rungs were racing, and the
+   read won. Every launch. The read never lowers anything by design, so the
+   only road down was that send, and it was the one being overtaken.
+
+   Nothing here weakens 「高いほうを採る」. That rule protects somebody who
+   bought on another phone or bought while this one was offline, and it is
+   untouched: what changed is that the account is no longer asked a question
+   this phone already knows a newer answer to.
+
+   A pend that no longer matches the plan this phone holds is DROPPED rather
+   than sent. At that point it is not a send that was missed; it is a record
+   that something else -- a purchase, a restore, Apple's own answer -- has
+   since said otherwise, and sending it would put the plan back to a word
+   nobody is on any more. */
+function netPlanBoot(then){
+  var pend=SET.planPend;
+  if(pend && pend!==plan()){ SET.planPend=''; setKeep(); pend=''; }
+  if(!pend){ netPlanSync(then); return; }
+  netPlanUp(pend, function(){ netPlanSync(then); });
 }
 /* The two copies, read together. THE HIGHER RUNG WINS, and that is
    LinguaStore.swift's best() rather than a new rule -- somebody can hold a
