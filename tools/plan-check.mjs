@@ -499,9 +499,26 @@ const r = await pg.evaluate(({ s }) => {
      other one. */
   SET.plan = 'plus'; save();
   KB = { kbs: [], at: 0 };
-  while (kbRoomKb()) KB.kbs.push({ nm:'', pat:'qwerty', lay: kbFixed().lay });
+  /* BOUNDED, and the bound is not tidiness -- it is the difference between a
+     check that FAILS and a check that says nothing at all.
+
+     `kbRoomKb()` is the app answering, and an app that stops answering `false`
+     turns this line into a loop that fills the renderer until the browser
+     kills it. That is what it did: `npm run plan` ran for two minutes and
+     forty-six seconds and ended in `Target crashed` naming line 33 -- an
+     evaluate five hundred lines long -- with no claim, no counter and no
+     name in it. Every one of the eighty claims below was silent, including
+     the ones that were fine.
+
+     So it stops at a number no ceiling in this file comes near, and the two
+     claims underneath are what report it. A check that hangs says less than
+     a check that goes red. */
+  var kbSpin = 0;
+  while (kbRoomKb() && kbSpin++ < 60) KB.kbs.push({ nm:'', pat:'qwerty', lay: kbFixed().lay });
   saveKb();
+  out.kbSpun = kbSpin;
   out.kbAtCeiling = !kbRoomKb();
+  out.kbPoolCount = kbCount();
   var kbWas = kbBoards().length;
   /* said no: nobody is moved, and no keyboard is made */
   go('kb');
@@ -750,6 +767,165 @@ for (const c of [
   KEY.push(await kp.evaluate((n) => ({ n: n, plan: plan(), wrote: window.__wrote.slice() }), c.n));
   await kp.close();
 }
+/* ---- the cancellation that came back, and the ORDER that brought it back --
+   「プランは絶対におかしくしちゃいけないんだって」 OWNER 2026-09-02.
+
+   A subscription was cancelled, Apple said so through Transaction.updates,
+   the Keychain was written `free` -- and the next launch put the paid plan
+   back, on the device and in the Keychain, for good.
+
+   Nothing above could see it, because nothing above is a LAUNCH. Every claim
+   in this file drives the app after boot has finished; this one is about what
+   boot does and in what order, and the order is the whole fault:
+
+     www/boot.js  netResume()  is asynchronous and has not come back
+                  capLapse()   is synchronous and runs here, sending `free`
+                  bootSession() then reads the server, which still says `pro`,
+                  takes the higher rung, and writes `pro` back down
+
+   WHAT IS STUBBED IS XMLHttpRequest, and only that -- the same shape
+   tools/token-check.mjs uses, for the same reason: netSend()'s renewal, the
+   queue and the three conditions all have to run for real, and a check that
+   stubbed netSend() would be asking its own answer back. It goes in through
+   addInitScript rather than after the page has loaded, because what is being
+   measured happened before the first frame.
+
+   The server is a `plan` row that REMEMBERS: a POST moves it, a GET answers
+   with whatever it holds. That is the whole of why the bug exists -- the read
+   and the write are the same row and the app did them in the wrong order --
+   and a stub that answered a constant would agree with either order.
+
+   Three reds were watched before any of this was believed, with the fault
+   still in the code: the plan came back `pro`, the Keychain was written
+   `pro`, and the row on the server stayed `pro`. */
+const BOOTWIRE = `
+  (function(){
+    function srv(v){
+      if(v !== undefined) localStorage.setItem('__srv', String(v));
+      return localStorage.getItem('__srv') || 'free';
+    }
+    window.__srv = srv;
+    window.__read = undefined;
+    window.__X = { sent:[] };
+    function FakeX(){ this.h={}; this.readyState=0; this.status=0; this.responseText=''; }
+    FakeX.prototype.open = function(m,u){ this.m=m; this.u=u; };
+    FakeX.prototype.setRequestHeader = function(k,v){ this.h[k]=v; };
+    FakeX.prototype.send = function(b){
+      var self=this;
+      var rec={ m:this.m, u:this.u, tok:String(this.h['Authorization']||''), body:b };
+      window.__X.sent.push(rec);
+      setTimeout(function(){
+        /* no signal at all: onerror, which is status 0 and no retry */
+        if(localStorage.getItem('__off')==='1'){ if(self.onerror) self.onerror(); return; }
+        var st=200, out='[]', p=null;
+        if(rec.u.indexOf('grant_type=refresh_token')>=0){
+          out=JSON.stringify({ access_token:'FRESH', refresh_token:'RT', user:{id:'me'} });
+        } else if(rec.tok==='Bearer OLD'){
+          /* the hour ran out while the app was shut */
+          st=401; out='null';
+        } else if(rec.u.indexOf('/rest/v1/plan')>=0){
+          if(rec.m==='POST'){
+            try{ p=JSON.parse(rec.body||'null'); }catch(e){}
+            if(p && p.plan) srv(p.plan);
+          } else {
+            /* WHAT THE READ WAS ANSWERED WITH, kept: that is the ordering
+               itself. A launch that reads the account before it has sent
+               what it is holding is answered with the plan Apple has already
+               ended, and the higher rung then wins for the wrong reason. */
+            out=JSON.stringify([{ plan:srv() }]);
+            if(window.__read===undefined) window.__read=srv();
+          }
+        }
+        self.readyState=4; self.status=st; self.responseText=out;
+        if(self.onreadystatechange) self.onreadystatechange();
+      },0);
+    };
+    window.XMLHttpRequest=FakeX;
+    window.__wrote=[];
+    /* A REAL thenable, and that is not a detail: www/boot.js opens with
+       bkRestore(), which is p('LinguaShare','kept',{}) with a .then on it.
+       A stub carrying only a catch throws TypeError on the FIRST line of
+       www/boot.js and
+       every line under it -- netResume among them -- never runs. The page
+       then looks exactly like a phone with no session, which is the one
+       state this section must not accidentally be measuring. */
+    function NP(){
+      return { then:function(f){ try{ if(f) f(null); }catch(e){} return NP(); },
+               'catch':function(){ return NP(); } };
+    }
+    window.Capacitor={ nativePromise:function(pl,m,a){
+      if(pl==='LinguaPlan' && m==='write') window.__wrote.push(a && a.plan);
+      return NP();
+    } };
+  })();
+`;
+
+/* One launch: a phone whose Keychain says `had`, whose settings last saw
+   `was`, and whose account row on the server says `srv`. The token in hand is
+   an hour old, which is what a launch the next morning IS -- and which is the
+   state the fault needs, because it is what puts the plan's own write behind
+   the refresh. */
+async function boot(page, seed){
+  await page.addInitScript(BOOTWIRE);
+  await page.addInitScript((s) => {
+    window.__plan = s.had;
+    window.__planok = 1;
+    if (!localStorage.getItem('lingua.set')) {
+      localStorage.setItem('lingua.set', JSON.stringify(
+        { plan:s.had, planWas:s.was, planV:2, done:true }));
+      localStorage.setItem('lingua.sess', JSON.stringify(
+        { at:'OLD', rt:'r', uid:'me', anon:false }));
+      localStorage.setItem('__srv', s.srv);
+      if (s.off) localStorage.setItem('__off', '1');
+    }
+  }, seed);
+  await page.goto('file://' + path.join(dir, '..', 'www', 'index.html'));
+  await page.waitForFunction(() => typeof window.plan === 'function');
+  await page.waitForTimeout(700);
+  return page.evaluate(() => ({
+    plan: plan(),
+    pend: SET.planPend || '',
+    was: SET.planWas || '',
+    srv: window.__srv(),
+    read: window.__read === undefined ? '' : window.__read,
+    wrote: window.__wrote.slice(),
+    gets: window.__X.sent.filter(function(r){
+      return r.m === 'GET' && r.u.indexOf('/rest/v1/plan') >= 0; }).length,
+    posts: window.__X.sent.filter(function(r){
+      return r.m === 'POST' && r.u.indexOf('/rest/v1/plan') >= 0; }).length
+  }));
+}
+
+const p1 = await br.newPage({ viewport:{ width:390, height:844 } });
+const LAPSE = await boot(p1, { had:'free', was:'pro', srv:'pro' });
+await p1.close();
+
+/* The same launch with no signal at all, and then the launch after it. The
+   401 half repairs itself now that netPlanUp() is on netSend(); this half
+   cannot, because nothing was refused -- nothing arrived. It is the launch
+   somebody opens in a tunnel, and the only thing that can carry the
+   cancellation to the next one is the phone remembering it. */
+const p2 = await br.newPage({ viewport:{ width:390, height:844 } });
+const OFF = await boot(p2, { had:'free', was:'pro', srv:'pro', off:true });
+await p2.evaluate(() => localStorage.removeItem('__off'));
+await p2.reload();
+await p2.waitForFunction(() => typeof window.plan === 'function');
+await p2.waitForTimeout(700);
+const BACK = await p2.evaluate(() => ({
+  plan: plan(), pend: SET.planPend || '', srv: window.__srv(),
+  wrote: window.__wrote.slice()
+}));
+await p2.close();
+
+/* And the other direction, which is the one that must NOT change: a plan
+   bought on another phone still arrives here. This is netPlanSync()'s whole
+   reason and the rule the fix above may not touch -- 「段が二つ見えたときの
+   答えは上の段」. Nothing is pending on this phone, so the launch is the
+   launch it always was. */
+const p3 = await br.newPage({ viewport:{ width:390, height:844 } });
+const UP = await boot(p3, { had:'free', was:'free', srv:'pro' });
+await p3.close();
+
 await br.close();
 
 const bad = [];
@@ -832,6 +1008,10 @@ say(r.upPlan === 'pro', 'and going UP still goes through (' + r.upPlan + ')');
 say(r.bdgRowPro !== '' && r.bdgRowFree === '',
     'the price list still marks the Pro row, read on free -- a plan carrying it is not the same question');
 
+say(r.kbSpun < 60,
+    'the keyboard pool can be FILLED at all — a ceiling that never arrives is ' +
+    'a loop, and a loop here is a renderer the browser kills with nothing said ' +
+    '(' + r.kbSpun + ' pushed, pool counts ' + r.kbPoolCount + ')');
 say(r.kbAtCeiling, 'plus fills up at four keyboards');
 say(r.kbSaidNo, 'and the fourth-and-one asks rather than telling -- no is no, and nobody is moved');
 say(/4/.test(r.kbAsked || ''), 'the sentence says the number (' + (r.kbAsked || 'nothing') + ')');
@@ -1093,6 +1273,41 @@ say(keeps >= 3 && guarded >= 2,
     'branch that fills an empty Keychain and planMigrate() (' + guarded +
     ' of ' + keeps + ' planKeep sites, the third being setPlan, which is ' +
     'somebody pressing something)');
+
+/* ---- and the launch after a cancellation -------------------------------- */
+say(LAPSE.plan === 'free',
+    'a cancellation survives the next launch — the plan is still free after ' +
+    'boot has read the account (' + LAPSE.plan + ')');
+say(LAPSE.wrote.indexOf('pro') < 0,
+    'and the Keychain is never written back UP by a launch — that is what ' +
+    'made it permanent (wrote ' + JSON.stringify(LAPSE.wrote) + ')');
+say(LAPSE.read === 'free' && LAPSE.srv === 'free',
+    'and the account is READ only after what this phone is holding has been ' +
+    'SENT — the read is answered `free`, not the plan Apple already ended ' +
+    '(read ' + (LAPSE.read || 'never read') + ', row ends ' + LAPSE.srv + ')');
+say(LAPSE.pend === '',
+    'nothing is left waiting once it has landed (' +
+    (LAPSE.pend || 'nothing') + ')');
+
+say(OFF.plan === 'free' && OFF.srv === 'pro',
+    'a launch with no signal changes nothing on the server and still ends on ' +
+    'free (' + OFF.plan + ', row ' + OFF.srv + ')');
+say(OFF.pend === 'free',
+    'and the phone remembers what it could not send — the one thing that can ' +
+    'carry it to the next launch (' + (OFF.pend || 'nothing') + ')');
+say(BACK.srv === 'free' && BACK.plan === 'free',
+    'the launch after it sends that, and the row moves (' + BACK.srv + ')');
+say(BACK.wrote.indexOf('pro') < 0 && BACK.pend === '',
+    'and nothing writes the old plan back down onto the phone (wrote ' +
+    JSON.stringify(BACK.wrote) + ')');
+
+say(UP.plan === 'pro',
+    'while a plan bought on ANOTHER phone still arrives on this one — the ' +
+    'higher rung is untouched (' + UP.plan + ')');
+say(UP.gets === 1,
+    'and a phone with nothing waiting reads the account once, as it always ' +
+    'did (' + UP.gets + ')');
+
 
 if (bad.length) { console.error('\nplan: ' + bad.length + ' failed'); process.exit(1); }
 console.log('\nplan: money decides what may be DONE and nothing about what exists --\n' +
