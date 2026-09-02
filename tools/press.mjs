@@ -711,6 +711,33 @@ const R = await pg.evaluate(async () => {
     back(); render();
   } catch (e) {}
 
+  /* AND THE TWO STATES A GESTURE PUTS THE PAGE IN, which no press reaches:
+     a timeline with no answer yet, and a screen being dragged off the one
+     behind it. Both are the check saying 「add the seed」 -- the classes are
+     worn by states, not by screens, and a walk that only presses never
+     stands in either. */
+  try {
+    window.__seed(); SET.done = true;
+    POSTS = []; SNS_GOT = {}; snsTab = 'fo';
+    window.route = 'feed'; NAV = [{ r:'feed' }];
+    render(); collectClasses();
+  } catch (e) {}
+  try {
+    window.__seed(); SET.done = true;
+    /* Two screens deep, so there is one to come back to, and render() has
+       kept the one being left -- swPrev() answers with it. */
+    go('feed'); render(); go('notes'); render();
+    swStart({ isPrimary:true, target:document.body, clientX:8, clientY:400 });
+    swMove({ clientX:60, clientY:402, cancelable:true, preventDefault:function(){} });
+    collectClasses();
+    swMove({ clientX:220, clientY:404, cancelable:true, preventDefault:function(){} });
+    swEnd({ clientX:320, clientY:406 });
+    /* `swgo` is put on for the travel and taken off when it lands; caught
+       here, before the timer clears it. */
+    collectClasses();
+    swClear();
+  } catch (e) {}
+
   out.classes = Object.keys(seenClass).sort();
   return out;
 });
