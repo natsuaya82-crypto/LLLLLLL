@@ -344,6 +344,7 @@ defLang('zh', (function(){
       "ob.mail.again" : "重新发送",
       "ob.mail.sent" : "已发送",
       "ob.mail.h.reset" : "设置新密码",
+      "ob.mail.h.setpw" : "设置密码",
       "ob.mail.newpw.ph" : "新密码",
       "ob.mail.reset" : "确定",
       "ob.mail.wait" : "处理中…",

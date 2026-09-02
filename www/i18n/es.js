@@ -296,6 +296,7 @@ defLang('es', (function(){
       "ob.mail.again" : "Enviar de nuevo",
       "ob.mail.sent" : "Enviado.",
       "ob.mail.h.reset" : "Elige una nueva contraseña",
+      "ob.mail.h.setpw" : "Elige una contraseña",
       "ob.mail.newpw.ph" : "Nueva contraseña",
       "ob.mail.reset" : "Guardar",
       "ob.mail.wait" : "Trabajando…",

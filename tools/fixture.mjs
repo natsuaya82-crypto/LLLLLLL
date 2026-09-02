@@ -368,7 +368,15 @@ export function obStates(){
     /* And what a code the server accepted opens onto. Reached from nowhere
        else: obResetGo() is the only thing that sets this mode. */
     ['choosing a new password',  () => { SET.obback = { r: 'set', a: 'acct' };
-                                         OBM.mode = 'newpw';
+                                         OBM.mode = 'newpw'; OBM.fresh = false;
+                                         OBM.em = 'a@b.c'; OBM.code = ''; OBM.pw = '';
+                                         OBM.busy = false; return vOb(); }],
+    /* And the same screen on the other road: an account being MADE. Six
+       digits proved the address, and this is the first password rather than a
+       replacement -- 「普通に6桁のコード打ってからパスワード要求だろ」 OWNER
+       2026-09-02. The heading is what differs, so both faces are walked. */
+    ['choosing a password, new account', () => { SET.obback = { r: 'set', a: 'acct' };
+                                         OBM.mode = 'newpw'; OBM.fresh = true;
                                          OBM.em = 'a@b.c'; OBM.code = ''; OBM.pw = '';
                                          OBM.busy = false; return vOb(); }],
     ['having forgotten the password',  () => { SET.obback = { r: 'set', a: 'acct' };

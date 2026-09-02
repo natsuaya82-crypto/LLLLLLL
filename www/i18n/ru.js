@@ -339,6 +339,7 @@ defLang('ru', (function(){
       "ob.mail.again" : "Отправить ещё раз",
       "ob.mail.sent" : "Отправлено.",
       "ob.mail.h.reset" : "Новый пароль",
+      "ob.mail.h.setpw" : "Придумайте пароль",
       "ob.mail.newpw.ph" : "Новый пароль",
       "ob.mail.reset" : "Сохранить",
       "ob.mail.wait" : "Идёт…",
