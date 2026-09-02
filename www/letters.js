@@ -924,6 +924,32 @@ function ltDeleteGo(id){
   /* The name is read BEFORE the letter goes, because the line that says what
      was deleted needs it and there is nothing to read it off afterwards. */
   var l=ltById(id), nm=l? (ltName(l)||t('lt.untitled')) : '';
+  /* A SLOT IS EMPTIED, NOT REMOVED. 「無料のa-zが普通に削除できるの何？削除して
+     もいいけど枠は消えないでくれよ」 OWNER 2026-09-02.
+
+     The thirty-eight are what the free plan IS -- a to z, ! ? and a digit per
+     value of the base -- and the QWERTY finds its keys BY NAME (kbFixed() in
+     www/keyboard.js builds from LETTERS every time it is drawn). Take the row
+     away and the key that answers to it is a key answering to nothing. On free
+     ltDelete() refuses outright; on a paid plan it did not, and the row went.
+
+     So what a delete does to one of them is take the DRAWING off and leave the
+     slot: it goes back to being the empty `a` it started as, ready to be drawn
+     again. ltIsBase() is the one place that says which letters those are, and
+     it already answers for the digits too -- a digit is its value, and a value
+     the base can write is a slot the same way.
+
+     Nothing else changes: the name stays, the reading stays, and sndDropLoose
+     is not called because the letter has not left. */
+  if(l && ltIsBase(l)){
+    delete l.st; delete l.sh; delete l.ch;
+    saveLetters();
+    if(GE && GE.lid===id) GE=null;
+    save(); installScriptFont();
+    if(here().r==='letter') back(); else render();
+    toast(t('glyph.deleted', nm));
+    return;
+  }
   ltDel(id);
   if(GE && GE.lid===id) GE=null;
   save(); installScriptFont();

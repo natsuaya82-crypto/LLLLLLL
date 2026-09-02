@@ -261,6 +261,39 @@ const r = await pg.evaluate(({s}) => {
      letter's page — and two claims here held it. The row went on 2026-09-01
      (「後複製するボタンいらんやろ」), and the function with it, so the claims
      went too rather than being kept alive against a road nobody can take. */
+  /* ---- a slot is emptied, never removed --------------------------------
+     「aって入ってた枠が残るの無料枠は。追加分しか枠ごと消せない」
+     「1〜38は消えないようにしてるんでしょ？ナンバリングもおかしくなるよ！」
+     OWNER 2026-09-02.
+
+     On free ltDelete() refuses outright. On a PAID plan it did not, and the
+     row went -- so `a` could be deleted out of the alphabet, the QWERTY's `a`
+     key was left answering to nothing (kbFixed() finds keys BY NAME), and
+     every number after it moved up one.
+
+     What a delete does to one of the thirty-eight is take the DRAWING off.
+     A letter somebody ADDED is a different thing and goes whole. */
+  SET.plan = 'pro';
+  var aLt = LETTERS.filter(function(l){ return String(l.ab || '') === 'a'; })[0];
+  if (aLt) aLt.st = [{ pts: [[o + 3 * D, o + 3 * D], [o + 9 * D, o + 9 * D]] }];
+  /* `qx` and not `zz`: rmPlain above already made a letter called zz, so a
+     check for 「it is gone」 would find that one and read as a failure. */
+  var addedLt = ltNew({}); addedLt.ab = 'qx';
+  addedLt.st = [{ pts: [[o, o], [o + D, o + D]] }];
+  saveLetters();
+  out.slotBefore = LETTERS.length;
+  out.orderBefore = ltOrder(ltOfKind('alpha')).map(ltName).join(' ');
+  ltDeleteGo(aLt.id);
+  var aAfter = LETTERS.filter(function(l){ return String(l.ab || '') === 'a'; })[0];
+  out.slotStays = !!aAfter;
+  out.slotEmpty = !!(aAfter && !inkGeo(aAfter));
+  out.slotNamed = aAfter ? ltName(aAfter) : '';
+  out.slotCount = LETTERS.length;
+  out.orderAfter = ltOrder(ltOfKind('alpha')).map(ltName).join(' ');
+  ltDeleteGo(addedLt.id);
+  out.addedCount = LETTERS.length;
+  out.addedGone = !LETTERS.filter(function(l){ return String(l.ab || '') === 'qx'; }).length;
+
   SET.plan = 'free';
   return out;
 }, { s: seed.toString() });
@@ -362,6 +395,19 @@ say(r.rmDrawnKept && r.rmDrawnTwo === 1,
     'but a digit somebody DREW on is never the row that goes: it keeps its ' +
     'strokes and the letter arrives beside it, two of that value (' +
     (r.rmDrawnKept ? 'kept' : 'LOST') + ', +' + r.rmDrawnTwo + ')');
+say(r.slotStays && r.slotEmpty && r.slotNamed === 'a',
+    'deleting one of the thirty-eight takes the DRAWING off and leaves the ' +
+    'slot — 「aって入ってた枠が残る」 (' +
+    (r.slotStays ? 'still there' : 'GONE') + ', ' +
+    (r.slotEmpty ? 'empty' : 'STILL DRAWN') + ', called ' +
+    (r.slotNamed || 'nothing') + ')');
+say(r.slotCount === r.slotBefore && r.orderAfter === r.orderBefore,
+    'so nothing is renumbered — 「ナンバリングもおかしくなるよ」: the alphabet ' +
+    'is the same length and in the same order (' + r.slotBefore + ' -> ' +
+    r.slotCount + ')');
+say(r.addedGone && r.addedCount === r.slotCount - 1,
+    'and a letter somebody ADDED goes whole, which is the only kind that may ' +
+    '(' + r.slotCount + ' -> ' + r.addedCount + ')');
 say(r.rmBig.kind === 'alpha' && r.rmBig.name === '25',
     'a number no base of this language can write is an ordinary name, on ' +
     'this road as on a sheet — one rule, both roads (' + r.rmBig.name + ')');

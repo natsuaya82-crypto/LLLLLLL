@@ -785,7 +785,21 @@ function tabBar(){
    other number put to them was 16: wider survives a shakier thumb, and pays
    for it in scrolls that turn into a language switch. Ten was chosen. It is
    not this file's to move. */
-var HOLD_MS=500, HOLD_SLOP=10, holdT=null, HELD=false, holdX=0, holdY=0;
+/* HELD_MS is how long the swallowed click has to arrive in.
+   「言語切り替えする時も2回タップしないと変わらない」 OWNER 2026-09-02.
+
+   HELD was a flag with no lifetime: set when the hold fired, and cleared by
+   the next click ANYWHERE. On a phone that click often never comes -- iOS does
+   not always send one after a long press, and the page has changed under the
+   finger by then -- so the flag stood, and the next tap the person made, on
+   the screen the hold had just opened, was eaten instead. Two taps to switch a
+   language, every time, and the first one silently did nothing.
+
+   It is closed twice, because either alone leaves a case: a window, so a flag
+   nobody claimed goes stale on its own, and a new touch, because starting
+   another gesture is proof the last one is over. */
+var HOLD_MS=500, HOLD_SLOP=10, holdT=null, HELD=false, holdX=0, holdY=0, heldAt=0,
+    HELD_MS=700;
 /* Where the finger is, from a touch or from a mouse. A touchend carries its
    point in `changedTouches`, because by then it is no longer touching. */
 function holdAt(e){
@@ -795,12 +809,16 @@ function holdAt(e){
 }
 function holdStart(e){
   var el=e.target, p;
+  /* A NEW GESTURE ENDS THE LAST ONE. Before the early return below, because a
+     touch that lands on something with no `data-hold` is still a touch, and it
+     is still proof that the hold before it is done with. */
+  HELD=false;
   while(el && el!==document && el.getAttribute && !el.getAttribute('data-hold')) el=el.parentNode;
   if(!el || !el.getAttribute || !el.getAttribute('data-hold')) return;
   holdClear();
   p=holdAt(e); holdX=p.x; holdY=p.y;
   holdT=setTimeout(function(){
-    holdT=null; HELD=true;
+    holdT=null; HELD=true; heldAt=Date.now();
     goTab('profile'); go('langs');
   }, HOLD_MS);
 }
@@ -816,7 +834,12 @@ function holdMove(e){
 function holdClear(){ if(holdT){ clearTimeout(holdT); holdT=null; } }
 function holdEat(e){
   if(!HELD) return;
-  HELD=false; e.stopPropagation(); e.preventDefault();
+  HELD=false;
+  /* Only the click the hold itself produced, which arrives at once. Anything
+     later is somebody pressing something, and a press is not this gesture's
+     to swallow. */
+  if(Date.now()-heldAt > HELD_MS) return;
+  e.stopPropagation(); e.preventDefault();
 }
 /* Capture, and on `document`: act.js listens on the app root in the bubble
    phase, so capture here is the only place that runs before it. */

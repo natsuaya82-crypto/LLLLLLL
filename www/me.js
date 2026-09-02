@@ -675,9 +675,28 @@ function meFollow(h){
   i=fo.indexOf(h);
   if(i>=0) fo.splice(i, 1); else fo.push(h);
   ME.fo=fo;
+  /* AND THEIR COUNT MOVES WITH THE BUTTON. 「フォローしたのにその人のフォロワー
+     にすぐ出ないよ？」 OWNER 2026-09-02. The button changed on the press, the
+     way a like does -- and the number under it did not, because it comes off
+     `profile_seen` and nothing asks again until the page is opened afresh.
+     One press, two things on screen, and only one of them moved.
+
+     The same shape as postNLike() in www/post.js: the count this phone shows
+     is what it knows, moved by what this person just did, and the server's own
+     answer replaces it whole the next time netWho() lands. Undefined stays
+     undefined -- a number nobody has taken is not a 0 to add to. */
+  meFollowCount(h, i<0? 1 : -1);
   saveMe();
   render();
   netFollow(h, i<0, function(){}, function(){});
+}
+/* Their follower count, moved by one. The copy only -- nothing is stored: it
+   is replaced whole by the server's next answer, which is the one that
+   counts. */
+function meFollowCount(h, d){
+  var p=WHO_HAVE[String(h||'')];
+  if(!p || typeof p.fr!=='number') return;
+  p.fr=Math.max(0, p.fr+d);
 }
 /* The same card as your own, in the same order, with Follow where Edit is.
    「他人のプロフィールは基本自分が見えてるのと同じ感じ」
