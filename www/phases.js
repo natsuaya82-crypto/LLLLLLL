@@ -177,6 +177,11 @@ var STAGES=[
   {id:'conj',  slots:['and','or','but','because','if','then'], pos:'conj', feats:[]},
   {id:'polite',slots:[], pos:'x',  feats:[]},
   {id:'where', slots:['in','on','under','to','from','with'], pos:'part', feats:['adp']},
+  /* Particles. It sat in a list of its own, off the chapter until somebody
+     pressed a row at the foot -- 「助詞は最初から出せ」 OWNER 2026-09-01, so
+     it is a stage like the rest. A language with no particles leaves it empty,
+     which is what an unanswered stage already is everywhere else. */
+  {id:'part',  slots:['subj','obj','rec'], pos:'part', feats:[]},
   {id:'when',  slots:['now','before','after','today','tomorrow','yesterday'], pos:'x', feats:[]},
   /* The calendar, and its slots come from two numbers the way counting's come
      from the base. www/cal.js says why there is no arithmetic of anybody's
@@ -210,14 +215,6 @@ var STAGES=[
    Where a thing IS and where it goes are the 場所 stage's adpositions and
    already have somewhere to live -- two places saying the same thing is the
    one shape this repository is most often bitten by. */
-var STAGES_IF=[
-  {id:'part',  slots:['subj','obj','rec'], pos:'part', feats:[]}
-];
-function stUsed(id){
-  return !!(stTouched(id) || (STG.notes && STG.notes[id]) ||
-            (STG.rules && STG.rules[id]) ||
-            (STG.ex && STG.ex[id] && STG.ex[id].length));
-}
 /* A copy with its slots filled in, and a copy is the point: STAGES is one
    array shared by every call, so a stage edited in place stays edited. */
 function stWith(p, slots){
@@ -234,8 +231,6 @@ function stAll(){
     else if(STAGES[i].id==='wday')  out.push(stWith(STAGES[i], calWeekSlots()));
     else out.push(STAGES[i]);
   }
-  for(i=0;i<STAGES_IF.length;i++)
-    if(stUsed(STAGES_IF[i].id)) out.push(STAGES_IF[i]);
   /* The stages somebody added, and only while the plan that added them is
      paid for. 「課金で追加した機能は無料になったら全部隠れる」 OWNER
      2026-09-01 -- the same as the words past a hundred and the letters past
@@ -411,7 +406,6 @@ FORM_OPEN.own=function(){ openOwnPhase(); };
    reads, so the stage is on the list from here on and this button is not --
    and the mark is in STG.set, which is the language's and is already in the
    backup. Nothing is added to what is stored. */
-function stAddPart(){ stMarkSet('part'); go('gram', 'part'); }
 function stAddOwn(){
   /* The screen only offers this on a paid plan; a form is a route and a route
      can be arrived at from anywhere. */
@@ -574,13 +568,10 @@ function stListHTML(){
        and the notebook add with. Drawn on every plan: openOwnPhase() answers
        on the press with the popup.
 
-       The particles row is not an add of the same kind -- it turns on one of
-       the book's own stages rather than making a new one -- so it stays a row
-       and only the + that MAKES something becomes the circle. */
-    (stUsed('part')
-      ? ''
-      : '<button class="btn ghost" style="width:100%;margin-top:14px"' + DO('stAddPart') + '>'+
-          ICON_ADD+t('stg.part.t')+'</button>')+
+       The particles row that used to sit beside it is gone: 「文法ページに◉+
+       あるのに下までいくと助詞+って二重になってる。◉＋だけにして、助詞は最初
+       から出せ」 OWNER 2026-09-01. It turned on a stage the book already knows,
+       which is now on the list from the start (STAGES above). */
     '<button class="fab"' + DO('openOwnPhase') + ' aria-label="'+esc(t('stg.own.add.btn'))+'">'+
       ICON_ADD+'</button>';
 }

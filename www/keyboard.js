@@ -2211,7 +2211,68 @@ function kbHTML(sel, ro){
    the screen the editor was already filling, so the thing you were choosing
    and the thing you were changing were both on the page at once and neither
    had room. 「キーボード一覧→編集の形のほうがいい。上にあるとすんごい見にくい」 */
+/* ---- choosing several keyboards, and taking them away -------------------
+   「キーボードも選択削除したいから、？の位置を キーボード 選択 にしたい。
+   選択削除できるように。追加は◉+にしてね」 OWNER 2026-09-01 -- the same
+   shape the dictionary has: Select at the far end of the bar, a ◉ at the
+   front of each row, Delete beside Done, and the round + to add.
+
+   `KBSEL` is null when the list is an ordinary list and a map of indexes when
+   it is being chosen from -- where you are standing on this screen, so
+   viewReset() drops it. Board 0 is the free QWERTY: it is not in storage and
+   cannot go, so it gets no mark. */
+var KBSEL=null;
+function kbSelOn(){ KBSEL={}; render(); }
+function kbSelOff(){ KBSEL=null; render(); }
+function kbSelList(){
+  var out=[], k;
+  if(!KBSEL) return out;
+  for(k in KBSEL) if(KBSEL.hasOwnProperty(k) && KBSEL[k]) out.push(Number(k));
+  return out;
+}
+function kbSelTap(i){
+  if(!KBSEL) return;
+  if(kbIsFree(i)) return;
+  if(KBSEL[i]) delete KBSEL[i]; else KBSEL[i]=1;
+  render();
+}
+function kbSelDel(){
+  var n=kbSelList().length;
+  if(!n) return;
+  popAsk(tn('kb.rm.n', n), function(){ kbSelDelGo(); }, t('pop.yes'));
+}
+/* Highest index first, so removing one does not move the next one under the
+   knife -- the same reason a list is walked backwards anywhere else. */
+function kbSelDelGo(){
+  var ids=kbSelList().sort(function(a, b){ return b-a; }), i;
+  for(i=0;i<ids.length;i++){
+    if(kbIsFree(ids[i])) continue;
+    KB.kbs.splice(ids[i]-1, 1);
+  }
+  KBSEL=null;
+  var b=kbBoards();
+  KB.at=kbClamp(KB.at, b.length);
+  kbShow=kbClamp(kbShow, b.length);
+  kbLay=0; kbSel=null;
+  kbForget();
+  saveKb();
+  kbGo();
+}
 function kbRowHTML(x, i, at){
+  var sel=!!KBSEL, on=!!(sel && KBSEL[i]);
+  if(sel && kbIsFree(i))
+    return '<div class="kbrow kbrowq">'+
+      '<span class="ltck" data-sel="0"></span>'+
+      '<span class="kbrowk">'+kbShotHTML(x.lay)+'</span>'+
+      '<span class="kbrown">'+esc(kbName(i))+'</span></div>';
+  if(sel)
+    return '<div class="kbrow kbrowq">'+
+      '<span class="ltck'+(on? ' on':'')+'" data-sel="1"'+DO('kbSelTap', [i])+
+        ' role="button" aria-label="'+esc(t('kb.sel.row'))+'">'+
+        (on? ICON_DOT : ICON_RING)+'</span>'+
+      '<button class="kbrowb"' + DO('kbSelTap', [i]) + '>'+
+        '<span class="kbrowk">'+kbShotHTML(x.lay)+'</span>'+
+        '<span class="kbrown">'+esc(kbName(i))+'</span></button></div>';
   return '<button class="kbrow"' + DO('kbGoBoard', [i]) + '>'+
     '<span class="kbrowk">'+kbShotHTML(x.lay)+'</span>'+
     '<span class="kbrown">'+esc(kbName(i))+'</span>'+
@@ -2222,11 +2283,14 @@ function kbListHTML(){
   var bs=kbBoards(), at=kbApplied(bs.length);
   return '<div class="kblist">'+
     bs.map(function(x, i){ return kbRowHTML(x, i, at); }).join('')+
-    (kbRoomKb()
-      ? '<button class="kbadd"' + DO('kbNew') + '>'+ICON_ADD+
-        '<span>'+esc(t('kb.new'))+'</span></button>'
-      : '')+
-    '</div>';
+    '</div>'+
+    /* THE SAME ROUND + AS EVERYWHERE ELSE 「追加は◉+にしてね」 -- the
+       dictionary, the alphabet, the composer and the notebook all add with
+       it. While choosing, the thumb is for the marks and it is not there. */
+    ((!KBSEL && kbRoomKb())
+      ? '<button class="fab"' + DO('kbNew') + ' aria-label="'+esc(t('kb.new'))+'">'+
+          ICON_ADD2+'</button>'
+      : '');
 }
 function vKb(){
   /* The free plan has a keyboard. It was shown a wall.
@@ -2266,17 +2330,14 @@ function vKb(){
     return '<div class="view">'+navTop('', helpQ('kb'))+'<div class="body">'+
       kbHTML(null, true)+
       kbSysHTML()+
-      /* The way to a second keyboard, in the place the paid list keeps it and
-         wearing the same +. Pressing it on this plan opens what it would
-         give rather than the chooser -- which is where the Upgrade that used
-         to sit at the foot of this screen went. 「アップグレードボタンそこ
-         じゃなくて、キーボードを足そうとするとポップ出るようにしてよ」
-         OWNER 2026-08-28. A button at the foot is a price with nothing
-         asked for; the same words arriving when somebody reaches for the
-         thing are an answer. */
-      '<div class="kblist"><button class="kbadd"' + DO('kbNew') + '>'+ICON_ADD+
-        '<span>'+esc(t('kb.new'))+'</span></button></div>'+
-      '</div></div>';
+      '</div>'+
+      /* The way to a second keyboard, wearing the same round + the paid list
+         uses. Pressing it on this plan opens what it would give rather than
+         the chooser 「アップグレードボタンそこじゃなくて、キーボードを足そうと
+         するとポップ出るようにしてよ」 OWNER 2026-08-28. */
+      '<button class="fab"' + DO('kbNew') + ' aria-label="'+esc(t('kb.new'))+'">'+
+        ICON_ADD2+'</button>'+
+      '</div>';
   /* The keyboard, and the row of the ones there are above it. There is no
      "nothing built yet" face any more: kbBoards() answers with the one
      already on the phone, so the first thing on this screen is always a
@@ -2287,7 +2348,17 @@ function vKb(){
      changing on are two screens. */
   var bs=kbBoards(), a=here().a;
   if(a===null || a===undefined || a==='')
-    return '<div class="view">'+navTop('', helpQ('kb'))+'<div class="body">'+
+    /* SELECT AT THE FAR END OF THE BAR, where the ? was 「？の位置を
+       キーボード 選択 にしたい」 OWNER 2026-09-01. The ? is not lost: it is
+       the free plan's screen that needs it, and that screen still has it. */
+    return '<div class="view">'+navTop('', KBSEL
+        ? ((kbSelList().length
+              ? '<button class="navdo navdel"' + DO('kbSelDel') + '>'+
+                  esc(t('kb.sel.del'))+'</button>'
+              : '')+
+           '<button class="navdo"' + DO('kbSelOff') + '>'+esc(t('kb.sel.done'))+'</button>')
+        : '<button class="navdo"' + DO('kbSelOn') + '>'+esc(t('kb.sel'))+'</button>')+
+      '<div class="body">'+
       kbListHTML()+
       kbSysHTML()+
       '</div></div>';

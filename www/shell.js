@@ -50,6 +50,8 @@ function viewReset(){
   ltSort='own'; ltFil='all'; ltQ='';   /* the alphabet's order, filter and search */
   ltWob=false;                         /* and whether its letters are wobbling */
   PLPICK=null;                         /* and which term of which plan is chosen */
+  KBSEL=null;                          /* and which keyboards are being chosen */
+  NTSEL=null;                          /* and which notes are */
   ipaQ=''; ipaOpen={mine:1};           /* the IPA page: its search, and what is open */
   GE=null;                             /* the glyph editor */
   kbLay=0; kbSel=null; kbSlotFor=null; /* the keyboard being built */

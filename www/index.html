@@ -1365,9 +1365,14 @@ html.fitlock, html.fitlock body{height:100%;overflow:hidden;overscroll-behavior:
    a gutter on every side, so there is somewhere for it to hang. Six points
    out, and the grid is given the same six at the top so the first row's marks
    do not sit on the row above them. */
+/* THE MARK IS 22 AND WHAT YOU PRESS IS 44. The circle is unchanged -- what
+   grows is an invisible square around it, so the drawing stays where it was
+   and a thumb has something to land on. 「文字の長押ししてマイナスなんだけど
+   全然押せないんだけどマイナスボタン」 OWNER 2026-09-01. */
 .ltx{position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:999px;
      background:var(--tx);color:var(--bg);display:flex;align-items:center;
      justify-content:center;z-index:4}
+.ltx::after{content:"";position:absolute;top:-11px;left:-11px;width:44px;height:44px}
 .ltx svg{width:13px;height:13px}
 /* A clash, said where it happens. Two letters reading the same unit is not an
    error -- the font takes the first and the second is simply never drawn --
@@ -1781,7 +1786,13 @@ a.set{text-decoration:none}
    「プランタップして下のサブスクライブするみたいなボタン押してやっと課金いける
    みたいにしたい」OWNER 2026-09-01. */
 .plgo{padding:26px 24px 0;text-align:center}
-.plbuy{font-size:1.02rem}
+/* DOWN UNTIL A TERM IS CHOSEN, AND LIT ONCE ONE IS. 「サブスクライブするボタン
+   は、プラン選んだら光らせろよ」OWNER 2026-09-01 -- it was the same gold either
+   way, dimmed by `:disabled`, which reads as a button that is simply pale. */
+.plbuy{font-size:1.06rem;font-weight:700;color:var(--txm);
+       transition:color .15s ease,text-shadow .15s ease}
+.plbuy:not(:disabled){color:var(--gold);text-shadow:0 0 18px var(--goldln)}
+.plbuy:disabled{opacity:1}
 /* The term that is chosen. The box is already there -- it is the one pair the
    owner allowed 「11は、角丸でいいから囲わないとボタンを押してるかわからん」 --
    so being chosen is the box FILLED, and nothing new is drawn. */
@@ -2205,6 +2216,18 @@ a.set{text-decoration:none}
 .kblist .kbrow{display:flex;align-items:center;gap:12px;width:100%;min-height:64px;
        padding:10px 2px;border:0;border-bottom:1px solid var(--line);
        background:none;color:var(--tx);font-family:inherit;text-align:left}
+/* While the list is being chosen from, the row is a container: the mark and
+   the row's own face are two things to press, so the row itself is not a
+   button any more. 「キーボードも選択削除したいから」OWNER 2026-09-01. */
+.kblist .kbrow.kbrowq{cursor:default}
+/* The same, on the notebook. */
+.ntrow.ntrowq{display:flex;align-items:center;gap:12px}
+.ntrowb{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;
+        border:0;background:none;color:inherit;font-family:inherit;
+        text-align:left;padding:0}
+.kbrowb{flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:12px;
+        border:0;background:none;color:inherit;font-family:inherit;
+        text-align:left;padding:0}
 .kbrowk{flex:0 0 96px;width:96px}
 .kbrown{flex:1 1 auto;min-width:0;font-size:.95rem;overflow:hidden;
         text-overflow:ellipsis;white-space:nowrap}
@@ -3341,7 +3364,12 @@ html[data-script="on"] .gsw{font-family:var(--face-script);letter-spacing:0}
 .ntrow:active{transform:scale(.995)}
 .ntrow .nth{font-size:.95rem;color:var(--tx)}
 .ntrow .ntb{font-size:.88rem;color:var(--txm);line-height:1.6}
-.ntbody{min-height:180px;line-height:1.8}
+/* AS TALL AS WHAT IS LEFT OF THE SCREEN. It was 180px -- a box in the middle
+   of an empty page, which is not what a notebook is 「本文の範囲狭すぎ。画面
+   全部+スクロールもできるようにしろ。メモの役割としてゴミやんけ」 OWNER
+   2026-09-01. It scrolls inside itself past that, so a long note is a long
+   note rather than a page that grows under the thumb. */
+.ntbody{min-height:52vh;line-height:1.8;overflow:auto}
 /* A textarea outside a .field had no styling of its own, so a rule written
    straight onto a page came out as a white box on a dark screen. */
 textarea.ntbody{width:100%;background:none;border:0;border-bottom:1px solid var(--line);border-radius:0;

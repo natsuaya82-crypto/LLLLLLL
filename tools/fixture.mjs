@@ -1206,37 +1206,21 @@ export function halfDone(){
         g2Lift = 'order:0';
         const h = vGram(); g2Lift = ''; return h; }],
     /* ---- the 助詞 stage, both faces ------------------------------------
-       It is in STAGES_IF -- off the list until a language says it has one,
-       because English has none and opening the chapter with it would be the
-       app asserting something about somebody's language. So it is on NO
-       screen until something says yes, and neither of these two faces is
-       reachable from the state everything else is walked in.
-
-       The first is the stage EMPTY, which is what somebody sees the moment
-       they press the door at the foot of the list: three slots and nothing in
-       them. The second has the particle made, because a slot with a word in
-       it draws a different row -- the spelling and its sound instead of
-       「作る」 -- and that row is most of what this chapter IS.
-
-       Both put the mark back. stMarkSet() writes STG.set and saves, so a face
-       that left it set would put the stage on the list for every face walked
-       after it, and the door would be gone from the list face above. */
+       It is a stage like every other one now 「助詞は最初から出せ」 OWNER
+       2026-09-01, so no mark has to be set to reach it. The first is the
+       stage EMPTY -- three slots and nothing in them. The second has the
+       particle made, because a slot with a word in it draws a different row
+       -- the spelling and its sound instead of 「作る」 -- and that row is
+       most of what this chapter IS. */
     ['the particle stage, empty', () => {
-        const was = !!STG.set.part;
-        stMarkSet('part');
         window.route = 'gram'; NAV = [{ r:'gram', a:'part' }];
-        const h = vGram();
-        if (!was) { delete STG.set.part; saveStg(); }
-        return h; }],
+        return vGram(); }],
     ['the particle stage, with a mark made', () => {
-        const was = !!STG.set.part;
-        stMarkSet('part');
         WORDS.push({ hw:'ga', ph:['g','a'], mn:'subject mark',
                      mns:['subject mark'], pos:'part', slot:'part.subj', at:5 });
         window.route = 'gram'; NAV = [{ r:'gram', a:'part' }];
         const h = vGram();
         WORDS.pop();
-        if (!was) { delete STG.set.part; saveStg(); }
         return h; }],
     /* And the list with the door on it, which is the only place the way in
        exists. Everything else walks with the stage off the list, so this is
@@ -1531,6 +1515,23 @@ export function halfDone(){
        only door to them now. The chapter itself no longer has an empty face:
        the first keyboard is the one already on the phone, so what the screen
        opens with is a keyboard rather than a chooser for one. */
+    /* The list of keyboards, being chosen from -- Select at the far end of the
+       bar, a ◉ at the front of each row, Delete beside Done. Board 0 is the
+       free QWERTY and gets no mark: it is not in storage and cannot go. */
+    ['the keyboards, choosing, with nothing chosen yet', () => {
+        SET.plan = 'pro'; KB = null; kbShow = 0;
+        kbAdd('abc'); kbAdd('qwerty');
+        window.route = 'kb'; NAV = [{ r:'kb' }];
+        KBSEL = {};
+        const h = vKb();
+        KBSEL = null; KB = null; kbShow = 0; SET.plan = 'free'; return h; }],
+    ['the keyboards, choosing, with two chosen', () => {
+        SET.plan = 'pro'; KB = null; kbShow = 0;
+        kbAdd('abc'); kbAdd('qwerty');
+        window.route = 'kb'; NAV = [{ r:'kb' }];
+        KBSEL = { 1:1, 2:1 };
+        const h = vKb();
+        KBSEL = null; KB = null; kbShow = 0; SET.plan = 'free'; return h; }],
     ['choosing another keyboard', () => {
         SET.plan = 'pro'; KB = null; kbShow = 0;
         kbAdd('abc'); kbNew();
@@ -1594,6 +1595,16 @@ export function halfDone(){
     ['a face already chosen', () => {
         ME.pic = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
         openMe(); const h = vForm(); ME.pic = ''; return h; }],
+    /* The notebook, being chosen from -- Select at the far end of the bar,
+       a ◉ at the front of each row, Delete beside Done. */
+    ['the notes, choosing, with nothing chosen yet', () => {
+        window.route = 'notes'; NAV = [{ r:'notes' }];
+        NTSEL = {};
+        const h = vNotes(); NTSEL = null; return h; }],
+    ['the notes, choosing, with one chosen', () => {
+        window.route = 'notes'; NAV = [{ r:'notes' }];
+        NTSEL = { 0:1 };
+        const h = vNotes(); NTSEL = null; return h; }],
     ['searching the notes', () => { ntFind = true; ntQ = 'a';
                                     window.route='notes'; NAV=[{r:'notes'}];
                                     return vNotes(); }],

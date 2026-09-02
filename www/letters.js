@@ -481,39 +481,6 @@ function ltIsBase(l){
   var ab=String(l.ab||'').toLowerCase();
   return ab.length===1 && LT_START.indexOf(ab)>=0;
 }
-/* A letter of one's own, made from one that is not. Everything drawn on it
-   comes across -- the strokes or the character it borrows, what it reads and
-   the note -- and the name does not, because a name is the one thing the copy
-   exists to be able to change. It goes in beside the one it came from, which
-   is where somebody looking at that one expects it. */
-function ltCopy(id){
-  var l=ltById(id), n, i;
-  /* Two refusals that were one line and are not one thing. A letter that is not
-     there is nothing to copy and there is nowhere to send anybody; a plan that
-     does not buy letters is a door, and 「全部確認して課金画面に飛ぶようにして」
-     OWNER 2026-08-25. Same one line ltDelete() already had. */
-  if(!l) return;
-  if(upStop(can('letters'))) return;
-  /* A digit cannot be copied, and the copy would not be a digit: a value is
-     unique (there is one seven), so what came out was an ALPHA letter made
-     from the digits room -- the two rooms mixing in the one direction nothing
-     was watching. The name is what a copy exists to be able to change and a
-     digit has no name, so there is nothing here to do.
-     The button is still on a digit's page (www/sound.js § vLetter, which is
-     not this session's file); this is the refusal standing where the rule is
-     rather than where the screen is, the same as ltSetRoman above. */
-  if(numIsDigit(l)) return;
-  n=ltNew({});
-  if(l.st && l.st.length) n.st=JSON.parse(JSON.stringify(l.st));
-  if(l.ch) n.ch=l.ch;
-  if(l.snd && l.snd.length) n.snd=l.snd.slice();
-  if(l.nt) n.nt=l.nt;
-  if(l.chose) n.chose=l.chose;
-  for(i=0;i<LETTERS.length;i++) if(LETTERS[i].id===n.id){ LETTERS.splice(i, 1); break; }
-  for(i=0;i<LETTERS.length;i++) if(LETTERS[i].id===id){ LETTERS.splice(i+1, 0, n); break; }
-  saveLetters(); installScriptFont();
-  go('letter', n.id);
-}
 function ltStart(){
   if(can('letters')) return;
   /* AND NOT INTO A LANGUAGE THAT IS ONLY READ. The twenty-eight slots are
@@ -749,16 +716,21 @@ function ltSetRoman(id, sp){
      road could do from here was turn an ordinary letter INTO a digit, which
      is the bug rather than the feature.
 
-     So it is refused, and the app GOES to the room where digits are made
-     rather than saying nothing: the same shape as a paid door going to the
-     plans screen 「全部確認して課金画面に飛ぶようにして」. Nothing is
-     written, so a letter that already had a name keeps it.
+     IT USED TO REFUSE AND WALK AWAY -- go('ltset','num') and nothing
+     written -- which left the letter sitting in the alphabet with no name at
+     all. 「まだ数字が普通にアルファベットのとこ入るし」 OWNER 2026-09-01,
+     on a phone, looking at 名前なし in the alphabet: the app had gone to the
+     right room and left the letter in the wrong one.
+
+     So it MOVES. The letter becomes that digit -- it is what somebody meant
+     by typing a number on it -- and the digits room is where it lands.
+     ltToDigit() below is the whole of it.
 
      numInBase() and not numTyped() alone, so that this road and the sheet's
      agree about the same string: `25` in base ten is a number no digit can
      hold, so it is an ordinary name on both. One rule, both roads -- the two
      answering differently would be this same fault wearing another coat. */
-  if(numInBase(numTyped(sp))){ go('ltset', 'num'); return id; }
+  if(numInBase(numTyped(sp))) return ltToDigit(id, numTyped(sp));
   /* And now the refusal. A digit reaching this line is one being given a
      NAME, and a digit has no name -- its value is the whole of what it is,
      and the keyboard finds it by that. */
@@ -836,6 +808,36 @@ function ltSetRoman(id, sp){
   }
   saveLetters(); installScriptFont(); render();
   return id;
+}
+/* A letter somebody has typed a NUMBER on. It is a digit, and the digits room
+   is where it belongs -- 「数字と記号はそれぞれのページあるんだからちゃんと
+   振り分けられるようにして」.
+
+   The value is the whole of what a digit is, so the roman name and the reading
+   come off: `ltName()` reads a digit's label off its value, and a digit that
+   still answered to `1` as a name would be found by the free keyboard as a
+   letter.
+
+   DELETE REVIEW. One row can go, and only one: the EMPTY slot `ltStart()`
+   made for that value -- no drawing, no borrowed character, made by the app
+   and never touched by anybody. That is the same row, for the same reason,
+   that ltFreeSlot() removes when a drawn shape is named `a`. A digit somebody
+   HAS drawn on is left exactly where it is and this becomes a second digit of
+   that value, which is what the sheet already does 「別に課金なんだから追加
+   しろよなんで？」 OWNER 2026-09-01. */
+function ltToDigit(id, v){
+  var l=ltById(id), d;
+  if(!l) return id;
+  d=numByVal(v);
+  if(d && d.id!==l.id && !inkGeo(d) && !d.ch) ltDel(d.id);
+  delete l.ab;
+  l.val=v;
+  l.snd=[];
+  l.chose=0;
+  saveLetters();
+  installScriptFont();
+  go('ltset', 'num');
+  return l.id;
 }
 /* Which slot a newly named shape belongs in, on a plan that cannot add
    letters -- and nothing at all on one that can.
