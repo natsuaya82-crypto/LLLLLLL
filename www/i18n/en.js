@@ -746,7 +746,7 @@ defLang('en', (function(){
       'set.pw.go'        : 'Change password',
       'set.pw.done'        : 'Password changed',
       'net.needpw'        : 'Fill both.',
-      'confirm.wipe'    : "Erase everything? Your account and every post, photograph and recording on it go from the server; every language, letter and setting goes from this phone; the backup files go with them. Nothing can be brought back.",
+      'confirm.wipe'    : "Erase everything? Your account and every post, photograph and recording on it go from the server; every language, letter and setting goes from this phone; the backup files go with them. Nothing can be brought back. Cancel your subscription before deleting your account.",
       'confirm.wipe.langs' : "Erase the data on this phone? Every language on it goes -- the words, the letters, the writing system, the keyboard, the notes. The backup files go too. The recordings and the exported sheets stay. Your account stays, and so do your posts and your settings. Nothing on this phone can be brought back.",
       /* languages */
       'langs.title'     : "Languages",

@@ -794,7 +794,7 @@ defLang('es', (function(){
       "set.pw.go"         : "Cambiar",
       "set.pw.done"         : "Contraseña cambiada",
       "net.needpw"         : "Rellena ambos.",
-      "confirm.wipe"     : "¿Borrar todo? Tu cuenta y cada publicación, foto y grabación se eliminan del servidor; los idiomas, las letras y los ajustes se eliminan de este teléfono, junto con las copias de seguridad. No se puede deshacer.",
+      "confirm.wipe"     : "¿Borrar todo? Tu cuenta y cada publicación, foto y grabación se eliminan del servidor; los idiomas, las letras y los ajustes se eliminan de este teléfono, junto con las copias de seguridad. No se puede deshacer. Cancela tu suscripción antes de eliminar tu cuenta.",
       "confirm.wipe.langs": "¿Borrar los datos de este teléfono? Se van todos los idiomas que hay en él: las palabras, las letras, el sistema de escritura, el teclado y las notas. Las copias de seguridad también se van. Las grabaciones y las hojas exportadas se quedan. Tu cuenta se queda, y también tus publicaciones y tus ajustes. Nada de este teléfono se puede recuperar.",
       "langs.title"      : "Idiomas",
       "langs.mine"       : "Tus idiomas",
