@@ -4,6 +4,7 @@
    Run it:  node tools/pv.mjs                  16:9,  1920x1080
             node tools/pv.mjs --portrait       9:16,  1080x1920
             node tools/pv.mjs --portrait --w 886 --h 1920    another size
+            node tools/pv.mjs --cut type       the typing film, 9:16, 18.6s
             node tools/pv.mjs --scene draw     one scene, for looking at
             node tools/pv.mjs --stills         no encode; one frame per second
 
@@ -48,7 +49,10 @@ const MIME = { '.html':'text/html', '.js':'text/javascript', '.css':'text/css',
 const argv = process.argv.slice(2);
 const has = (f) => argv.indexOf(f) >= 0;
 const val = (f, d) => { const i = argv.indexOf(f); return i >= 0 ? argv[i+1] : d; };
-const portrait = has('--portrait');
+/* --cut type: the third film, about typing. Portrait, because it is for the
+   same place the vertical one goes. */
+const cut = val('--cut', '');
+const portrait = has('--portrait') || cut === 'type';
 const stills = has('--stills');
 const only = val('--scene', '');
 /* The length of one bar of the track the film is cut to. Every shot is a
@@ -171,6 +175,13 @@ const stage = {
         q('sub').innerHTML = T.sub || '';
       }
       q('type').style.transform = 'translateY(calc(-50% + ' + (T.top || 0) + 'px))';
+      /* 9:16 pins the words to the bottom of the frame, which is where a
+         caption goes -- except in the one shot with a keyboard standing
+         there. `lift` raises them off the floor for that shot and for no
+         other; in 16:9 the words are beside the phone and there is no floor
+         to lift them off. */
+      if (document.body.classList.contains('tall'))
+        q('type').style.bottom = (150 + (T.lift || 0)) + 'px';
       q('kicker').style.opacity = T.ko;
       q('kicker').style.transform = 'translateY(' + T.ky + 'px)';
       const ln = head.querySelectorAll('.ln i');
@@ -205,6 +216,11 @@ const stage = {
         q('mark').style.transform = 'scale(' + o.card.mark + ')';
     }
     if (o.wash !== undefined) q('wash').style.opacity = o.wash;
+    /* The ground the words stand on, in 9:16. It darkens the bottom half of
+       the frame, which is exactly where a keyboard stands -- so the shot
+       with one in it turns the fade off and puts the words higher up
+       instead. */
+    if (o.fade !== undefined) q('topfade').style.opacity = o.fade;
     if (o.tap){
       q('tap').style.opacity = o.tap.o;
       q('tap').style.left = o.tap.x + 'px';
@@ -220,7 +236,7 @@ const stage = {
 };
 
 /* ---- the film ------------------------------------------------------------ */
-const film = SCENES({ W, H, portrait, bar: BAR, vo: VO });
+const film = SCENES({ W, H, portrait, bar: BAR, vo: VO, cut });
 const list = only ? film.filter((s) => s.name === only) : film;
 if (!list.length){ console.error('no scene called ' + only); process.exit(2); }
 
@@ -235,7 +251,8 @@ if (!stills && !ff){ console.error('no ffmpeg. PV_FFMPEG=/path/to/ffmpeg'); proc
 const shape = portrait ? '9x16' : '16x9';
 const size = (W === (portrait ? 1080 : 1920) && H === (portrait ? 1920 : 1080))
            ? '' : '-' + W + 'x' + H;
-const out = path.join(OUT, 'lingua-' + shape + size + (VO ? '-vo' : '') + (ff && ff.mp4 ? '.mp4' : '.webm'));
+const out = path.join(OUT, 'lingua-' + (cut ? cut + '-' : '') + shape + size +
+                      (VO ? '-vo' : '') + (ff && ff.mp4 ? '.mp4' : '.webm'));
 let enc = null;
 if (ff){
   /* A silent audio track goes on it. There is no sound in the film, and a

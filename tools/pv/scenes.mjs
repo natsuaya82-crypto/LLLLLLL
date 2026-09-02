@@ -588,12 +588,12 @@ export function SCENES(F){
      seconds an App Store preview is allowed. Seventeen bars is 28.7s. */
   const sc = bars(2), scq = bars(1);
   /* One short line, in the bottom third, with nothing under it. */
-  const line = (stage, t, head, len) => {
+  const line = (stage, t, head, len, lift) => {
     const L = len === undefined ? sc : len;
     const gone = 1 - ramp(t, L - 0.45, L - 0.1);
     return stage.set({ type: {
       key: 'v-' + head, kicker: '', head: head ? [head] : [], sub: '',
-      top: 0, ko: 0, ky: 0,
+      top: 0, lift: lift || 0, ko: 0, ky: 0,
       lo: [Math.min(ramp(t, 0.22, 0.7), gone)],
       ly: [mix(96, 0, ramp5(t, 0.22, 1.0))],
       so: 0, sy: 0
@@ -822,5 +822,165 @@ export function SCENES(F){
     } },
   ];
 
-  return F.portrait ? TALLCUT : WIDECUT;
+  /* =====================================================================
+     THE TYPING FILM. 「キーボードで入力してるのを動画にしたいね」
+     「キーボードがちゃんと動いてるように見せたいのよ」
+
+     THE BOARD IS THE APP'S OWN, NOT A DRAWING OF ONE. `kbHTML(null, true)`
+     is the same call the keyboard screen makes -- same layout, same drawn
+     letters, same key widths, the QWERTY's inset third row and all -- so
+     nothing about the keyboard is written down twice and a key that moves
+     in the app moves here on the next run.
+
+     WHAT THE FILM DOES IS PUT IT WHERE iOS PUTS IT. On a phone the board
+     under the field is drawn by iOS from ios/App/LinguaKeyboard, and no
+     browser can show an iOS keyboard extension, so the one composite in
+     this film is the board standing at the foot of the screen. Everything
+     else is the app running.
+
+     AND IT IS WORKING, not miming. A key puts a private use code point in
+     the field -- one per drawn letter, which is the only thing on a phone
+     that tells this alphabet's `a` from the system QWERTY's -- and the
+     letter that lands is the letter of the key the thumb is on, found
+     through the `data-lt` every read-only letter key carries. The key goes
+     down under the finger and comes back up, the way a key does.
+     ===================================================================== */
+  const KBUP = 151;   /* the board's foot, on the bottom edge of the frame */
+  const KBH0 = 330;   /* how far it has to travel to be off the screen */
+  const kbOn = (stage) => stage.app(function(up){
+    var d = document.getElementById('pvkb');
+    if (!d){ d = document.createElement('div'); d.id = 'pvkb'; document.body.appendChild(d); }
+    d.style.cssText = 'position:fixed;left:0;right:0;bottom:' + up + 'px;z-index:60;' +
+      'background:var(--bg);padding:12px 20px 14px;will-change:transform';
+    d.innerHTML = kbHTML(null, true);
+    /* the line, and the KEY each of its letters is on */
+    var full = 'venar kel', lts = ltPuaOrder(), s = '', els = [], keys = [], i, j, L, e, r;
+    var wide = null, ws = 0, fns = d.querySelectorAll('.kbk.fn');
+    for (i = 0; i < fns.length; i++){          /* the widest function key is the space bar */
+      r = fns[i].getBoundingClientRect();
+      if (r.width > ws){ ws = r.width; wide = fns[i]; }
+    }
+    for (i = 0; i < full.length; i++){
+      var ch = full.charAt(i);
+      L = null;
+      if (ch === ' ') s += ' ';
+      else for (j = 0; j < lts.length; j++)
+        if (String(ltName(lts[j]) || '') === ch){ s += ltPua(j); L = lts[j]; break; }
+      e = L ? d.querySelector('.kbk[data-lt="' + L.id + '"]') : wide;
+      r = e ? e.getBoundingClientRect() : null;
+      els.push(e || null);
+      keys.push(r ? { x: r.left + r.width / 2, y: r.top + r.height / 2 } : null);
+    }
+    window.__pvS = s; window.__pvKeys = keys; window.__pvEls = els;
+  }, KBUP);
+  const kbOff = (stage) => stage.app(function(){
+    var d = document.getElementById('pvkb');
+    if (d) d.parentNode.removeChild(d);
+  });
+  /* One call a frame: how far up the board has come, how much of the line is
+     in, and which key is down. Together, because they are one act. */
+  const kbAt = (stage, o) => stage.app(function(o){
+    var d = document.getElementById('pvkb');
+    if (!d) return;
+    d.style.transform = 'translateY(' + o.up.toFixed(1) + 'px)';
+    var s = window.__pvS.slice(0, o.n);
+    if (PW.ln !== s){ PW.ln = s; pwFresh(); render(); }
+    var els = window.__pvEls, i, e;
+    for (i = 0; i < els.length; i++){
+      e = els[i];
+      if (!e) continue;
+      if (i === o.down){ e.style.background = 'rgba(201,168,106,.42)'; e.style.transform = 'scale(.92)'; }
+      else if (e.style.background){ e.style.background = ''; e.style.transform = ''; }
+    }
+  }, o);
+  /* The window is the app's top 693 points -- 1920 tall at frame-wide -- so
+     the board's foot lands on the frame's bottom edge and the field is at the
+     top of the picture, which is where both of them are on a phone. */
+  const deck = () => eye(346, H * 0.5);
+  /* A letter every four tenths of a second: slower than somebody typing,
+     because every one of them has to be read. */
+  const T0 = 1.05, GAP = 0.42, NCH = 9, DOWN = 0.15;
+
+  const TYPECUT = [
+  { name: 'keys', secs: sc,
+    enter: async (stage) => {
+      await stage.set({ card: { o: 0 }, wash: 0, tap: noTap, wall: { o: 0 }, fade: 1 });
+      await stage.app(function(){ window.__pvMine = langId; go('kb'); render(); window.scrollTo(0, 0); });
+      stage.at = await box(stage, '.kb');
+    },
+    at: async (stage, k, t) => {
+      const p = eye(stage.at.y, H * 0.42);
+      await stage.set({ phone: { x: p.x, y: p.y, s: FULL * mix(1, 1.07, out(k)),
+                                 shell: 0, radius: 0, blur: 0, o: ramp(t, 0, 0.35) } });
+      line(stage, t, 'A keyboard of your own letters.');
+    } },
+
+  { name: 'type', secs: bars(4),
+    enter: async (stage) => {
+      await stage.set({ fade: 0 });
+      await stage.app(function(){ window.__pvSent = 0; window.scrollTo(0, 0); openPost('new'); render(); });
+      await kbOn(stage);
+      stage.keys = await stage.app(function(){ return window.__pvKeys; });
+    },
+    at: async (stage, k, t) => {
+      /* it comes UP, the way a keyboard does */
+      const up = mix(KBH0, 0, out(clamp(t / 0.55, 0, 1)));
+      let n = 0;
+      for (let i = 0; i < NCH; i++) if (t >= T0 + i * GAP) n = i + 1;
+      const i = n - 1;
+      const since = i >= 0 ? t - (T0 + i * GAP) : 99;
+      await kbAt(stage, { up: up, n: n, down: since < DOWN ? i : -1 });
+      const p = deck();
+      await stage.set({ phone: { x: p.x, y: p.y, s: FULL, shell: 0, radius: 0, blur: 0,
+                                 o: ramp(t, 0, 0.3) },
+                        tap: thumb(i >= 0 ? stage.keys[i] : null, since, 1.5) });
+      line(stage, t, 'Every key is a letter you drew.', bars(4), 780);
+    } },
+
+  /* AND WHAT IT SAYS -- WHICH THE APP FILLS IN ITSELF. `pwMn()` is the app's
+     own answer to what a line means, read word by word out of the person's
+     dictionary: `venar kel` comes back `evening stone` because those are the
+     two words they wrote. Nothing here types it; the shot holds while the
+     app does. */
+  { name: 'mean', secs: sc,
+    at: async (stage, k, t) => {
+      const p = deck();
+      await stage.set({ phone: { x: p.x, y: p.y, s: FULL, shell: 0, radius: 0, blur: 0 },
+                        tap: noTap });
+      line(stage, t, 'Your own dictionary reads it back.', sc, 780);
+    } },
+
+  { name: 'sent', secs: sc,
+    enter: async (stage) => { await kbOff(stage); await stage.set({ tap: noTap, fade: 1 }); },
+    at: async (stage, k, t) => {
+      let tap = noTap;
+      const at = await hit(stage, '#pw-go');
+      if (t < 1.1) tap = thumb(at, t - 0.35, 1);
+      if (t >= 0.75) await stage.app(function(){
+        if (window.__pvSent) return;
+        window.__pvSent = 1; pwSend(); window.scrollTo(0, 0);
+      });
+      const p = eye(300, H * 0.42);
+      await stage.set({ phone: { x: p.x, y: p.y, s: FULL * mix(1, 1.04, out(clamp((t - 1.1) / 2, 0, 1))),
+                                 shell: 0, radius: 0, blur: 0 },
+                        tap: tap });
+      line(stage, t, 'Say it in your own alphabet.');
+    } },
+
+  { name: 'end', secs: sc,
+    at: async (stage, k, t) => {
+      const p = eye(330, H * 0.44);
+      await noWords(stage);
+      await stage.set({
+        phone: { x: p.x, y: p.y, s: FULL * mix(1, 1.05, out(k)), shell: 0, radius: 0,
+                 blur: 0, o: 1 - ramp(t, 0.1, 0.8) },
+        card: { o: ramp(t, 0.5, 1.2), tag: 'Build a language. Write in it.',
+                foot: 'Lingua for iPhone',
+                mark: mix(1.14, 1, out(clamp((t - 0.5) / 1.2, 0, 1))),
+                rule: Math.round(mix(0, 260, ramp(t, 0.9, 2.2))) }
+      });
+    } },
+  ];
+
+  return F.cut === 'type' ? TYPECUT : F.portrait ? TALLCUT : WIDECUT;
 }
