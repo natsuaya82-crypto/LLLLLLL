@@ -269,7 +269,35 @@ function bkTake(file){
   langId=d.id;
   if(typeof d.n==='number' && d.n>bkNo()) bkNoSet(d.n);
   langId=prev;
-  if(!LANGS[d.id]){ LANGS[d.id]={name:String(d.name||''), mine:true}; put++; }
+  /* AND THE ROW IT MAKES CARRIES WHOEVER IS SIGNED IN. 「1アドレス1アカウント」
+     「これは絶対課金もアカウントごと言語もそう」 OWNER 2026-09-02: a language
+     is the ACCOUNT's, so the account goes on at the moment the row is made --
+     langNew() in www/core.js does the same three lines, and this is the road
+     back in rather than the road that makes one.
+
+     Without them a restored language belongs to NOBODY on every phone that
+     has finished the onboarding: langOwned() reads a row with no `uid` as
+     the walk's and answers false once SET.done is true, so what came back out
+     of the file was in the index, in `lingua.<id>.*`, whole and with not one
+     word missing -- and in no list and in no langCount(). The backup is what
+     is left when the server and this phone's storage are both gone, so it is
+     the last place that may hand somebody's language to nobody.
+
+     Signed out, nothing is stamped, exactly as langFirst() stamps nothing:
+     there is no account to name yet, and an empty string is a fourth kind of
+     owner. The row stays as it always was and the door is where it gets one.
+
+     Only the row this call MAKES. A language already in the index is not
+     touched here at all -- not its name, not its stamp -- because a restore
+     fills in what is missing and stops (docs/DATA_SAFETY.md § 2), and
+     stamping a row that is already there would be this phone deciding whose
+     somebody else's language is. */
+  if(!LANGS[d.id]){
+    LANGS[d.id]={name:String(d.name||''), mine:true};
+    if(typeof SESS!=='undefined' && SESS && SESS.uid)
+      LANGS[d.id].uid=String(SESS.uid);
+    put++;
+  }
   return put;
 }
 /* One language, as its generations, newest first. The first that reads back

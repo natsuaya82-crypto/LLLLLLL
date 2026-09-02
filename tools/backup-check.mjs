@@ -101,7 +101,8 @@ const R = await pg.evaluate(() => {
   const missing = SLICES.filter(k => localStorage.getItem(langKey(k)) !== null &&
                                      typeof packed.slice[k] !== 'string');
   const before = { words: WORDS.length, letters: LETTERS.length,
-                   slices: Object.keys(packed.slice).length };
+                   slices: Object.keys(packed.slice).length,
+                   count: langCount(), done: SET.done, me: String(SESS.uid || '') };
   /* Named, not counted. A count says eleven and goes on saying eleven when
      the eleventh is the wrong one. */
   ['kb', 'wld'].forEach(k => {
@@ -188,6 +189,66 @@ const R = await pg.evaluate(() => {
     fails.push('letters did not come back: ' + before.letters + ' -> ' + back.letters);
   if (!back.known)
     fails.push('the language came back but the index does not know it exists');
+
+  /* ---- and comes back as SOMEBODY'S -------------------------------- */
+  /* The index knowing a language exists and a person having it are two
+     different facts, and for four days only the first was held. A row with no
+     `uid` belongs to NOBODY once the onboarding is over -- langOwned() answers
+     `!SET.done` for one -- so a restored language sat in the index, in
+     `lingua.<id>.*`, whole, with every word and every letter in it, and
+     appeared in no list and in no count. Nothing threw. This is the file that
+     is left when the server and this phone's storage are both gone, so it is
+     the last place that may hand somebody's language to nobody.
+
+     Asked three ways because they fail apart: the stamp itself, the question
+     every list asks, and the number the ceiling is counted with. A stamp of
+     the wrong account would pass the first two of those if they were asked
+     loosely, which is why the first names the account rather than asking
+     whether there is one. */
+  if (!before.done)
+    fails.push('this fixture has not finished the onboarding, so nothing below ' +
+               'is a test of anything: an unstamped language is the walk\'s and ' +
+               'langOwned() says yes to it');
+  if (String((LANGS[id] || {}).uid || '') !== before.me)
+    fails.push('the language came back without the account on it (' +
+               String((LANGS[id] || {}).uid || '(none)') + ' rather than ' +
+               before.me + '), so it belongs to nobody: it is in the index and ' +
+               'in storage, whole, and in no list');
+  if (!langOwned(id))
+    fails.push('the language came back and langOwned() says it is not this ' +
+               'account\'s, so no screen will show it');
+  if (langCount() !== before.count)
+    fails.push('languages counted ' + before.count + ' before the wipe and ' +
+               langCount() + ' after the restore, so a restored language does ' +
+               'not count against the ceiling and cannot be seen');
+
+  /* ---- signed out, nothing is stamped ------------------------------- */
+  /* The other half of the same three lines, and it is not decoration: an
+     empty string written into `uid` is a FOURTH kind of owner -- not the
+     account, not the walk's -- and langOwned() would compare it against a
+     real one and answer no for good. Signed out there is no account to name,
+     so the row is made exactly as it always was and the door is where it gets
+     one. langFirst() in www/core.js stamps nothing for the same reason.
+
+     A different id, because the language above is in the index now and a
+     restore that finds one there does not touch it. */
+  const outPack = JSON.parse(file);
+  outPack.id = id + 'OUT';
+  const wasSess = SESS;
+  SESS = null;
+  bkTake(JSON.stringify(outPack));
+  SESS = wasSess;
+  if (!LANGS[outPack.id])
+    fails.push('signed out, the file did not come back at all. A backup is not ' +
+               'a paid feature and it is not an account feature either');
+  else if ('uid' in LANGS[outPack.id])
+    fails.push('signed out, the restored language was stamped ' +
+               JSON.stringify(LANGS[outPack.id].uid) + '. There is no account to ' +
+               'name, and an empty owner is a fourth kind of owner rather than none');
+  delete LANGS[outPack.id];
+  SLICES.forEach(k => localStorage.removeItem(langKeyOf(outPack.id, k)));
+  langStore();
+  langId = id; langStore(); langRead(); ltRead();
 
   /* ---- and does not win against what is already there --------------- */
   WORDS = [{ hw: 'ONLYCOPY', mn: 'the good one', mns: ['the good one'], pos: 'n', at: 1 }];
