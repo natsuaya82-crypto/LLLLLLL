@@ -80,6 +80,21 @@ struct Key: Decodable {
   /// and it is a count of rows.
   let h: Int?
 
+  /// A key the extension makes for itself, rather than one the app sent.
+  ///
+  /// There is exactly one: the globe on the board that could not be read.
+  /// Everything else on a keyboard is the person's and arrives in the file --
+  /// this side has never seen their alphabet and must not invent one.
+  ///
+  /// Adding this takes away the memberwise init the compiler was making, and
+  /// nothing used it: a Key is built by the decoder. init(from:) is untouched.
+  init(k: String) {
+    self.k = k
+    self.w = 1
+    self.to = nil; self.t = nil; self.nm = nil; self.st = nil; self.ch = nil
+    self.f = nil;  self.aw = nil; self.dx = nil; self.h = nil
+  }
+
   var width: CGFloat { CGFloat(w ?? 1) }
   var tall: CGFloat { CGFloat(max(1, h ?? 1)) }
   var face: Face { Face(t: t, st: st, ch: ch, aw: aw, dx: dx) }
@@ -126,9 +141,16 @@ struct Board: Decodable {
 enum Shared {
   static let group = "group.com.tokinets.lingua"
 
-  /// Nil for every reason equally: no full access, nothing written yet, a
-  /// file from a version that does not exist. The caller has one thing to
-  /// say either way, so there is nothing to tell apart.
+  /// Nil for every reason equally: nothing written yet, a file from a version
+  /// that does not exist, a file that will not decode. The caller has one
+  /// thing to say either way, so there is nothing to tell apart.
+  ///
+  /// READING is all this does, and that is what lets the keyboard work with
+  /// Full Access off -- Apple's "Configuring open access for a custom
+  /// keyboard" says the default sandbox "prevents writing to the containing
+  /// app's shared group containers (reading is permitted)". The writing is
+  /// ios/App/App/LinguaShare.swift's, in the app, where it is allowed.
+  /// Nothing may be written from this side.
   static func board() -> Board? {
     guard let dir = FileManager.default
       .containerURL(forSecurityApplicationGroupIdentifier: group) else { return nil }
@@ -139,19 +161,25 @@ enum Shared {
   }
 }
 
-/// The extension's own two sentences.
+/// The extension's own sentence. There is one.
 ///
-/// They are a SECOND place for strings, and www/i18n is the first. That is
-/// not a mistake to fix later: the first of these is shown when the keyboard
-/// cannot read the App Group at all, which is exactly when it cannot read
-/// anything the app wrote, translations included. So it has to carry its own.
+/// It is a SECOND place for a string, and www/i18n is the first. That is not
+/// a mistake to fix later: it is shown when the keyboard cannot read the App
+/// Group at all, which is exactly when it cannot read anything the app wrote,
+/// translations included. So it has to carry its own.
 ///
-/// Nothing checks these against www/i18n/*.js. tools/i18n-check.mjs reads
-/// www/ and this is Swift. Two sentences was judged cheaper than a check
-/// that would have to build an iOS target to run — but do not add a third
-/// without deciding that again.
+/// Nothing checks it against www/i18n/*.js. tools/i18n-check.mjs reads www/
+/// and this is Swift. One sentence was judged cheaper than a check that would
+/// have to build an iOS target to run — but do not add a second without
+/// deciding that again.
+///
+/// There WERE two. The other one told somebody to go and turn Full Access on,
+/// and it was the whole of what the keyboard drew for anybody who had not.
+/// Reading the App Group never needed that switch (Shared.board() above), so
+/// the sentence was naming a cause that was not the cause. Where the switch
+/// genuinely is worth explaining is the app -- the `?` in the keyboard
+/// chapter, www/keyboard.js -- and not on the keyboard itself.
 enum Say {
-  static func full() -> String { pick(fullAccess) }
   static func draw() -> String { pick(nothingYet) }
 
   private static func pick(_ t: [String: String]) -> String {
@@ -161,19 +189,6 @@ enum Say {
     }
     return t["en"]!
   }
-
-  private static let fullAccess = [
-    "en": "Settings → General → Keyboard → Keyboards → Lingua → Allow Full Access",
-    "ja": "設定 → 一般 → キーボード → キーボード → Lingua → フルアクセスを許可",
-    "es": "Ajustes → General → Teclado → Teclados → Lingua → Permitir acceso completo",
-    "pt": "Ajustes → Geral → Teclado → Teclados → Lingua → Permitir acesso total",
-    "fr": "Réglages → Général → Clavier → Claviers → Lingua → Autoriser l'accès complet",
-    "de": "Einstellungen → Allgemein → Tastatur → Tastaturen → Lingua → Vollzugriff erlauben",
-    "it": "Impostazioni → Generali → Tastiera → Tastiere → Lingua → Consenti accesso completo",
-    "ru": "Настройки → Основные → Клавиатура → Клавиатуры → Lingua → Полный доступ",
-    "zh": "设置 → 通用 → 键盘 → 键盘 → Lingua → 允许完全访问",
-    "ko": "설정 → 일반 → 키보드 → 키보드 → Lingua → 전체 접근 허용",
-  ]
 
   private static let nothingYet = [
     "en": "Draw some letters in Lingua first.",
