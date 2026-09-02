@@ -32,6 +32,7 @@
 import Foundation
 import Capacitor
 import StoreKit
+import Security
 
 @objc(LinguaStorePlugin)
 public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
@@ -105,7 +106,7 @@ public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
            Not finishing is the classic StoreKit bug: everything works, and
            the same transaction arrives at every launch forever. */
         await t.finish()
-        _ = await self?.writeDown()
+        _ = await self?.writeDown(mayLower: true)
       }
     }
   }
@@ -146,10 +147,41 @@ public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
   /// Ask the App Store, then write the answer where the next launch will find
   /// it. Returns what it wrote so a call can answer with the same thing.
   @discardableResult
-  private func writeDown() async -> String {
-    let plan = await Self.entitledPlan()
-    LinguaPlanPlugin.set(plan)
-    return plan
+  /// NEVER DOWN, unless Apple was actually asked.
+  ///
+  /// 「プランは絶対におかしくしちゃいけないんだって」 OWNER 2026-09-02, after a
+  /// paid plan came back free on its own.
+  ///
+  /// `entitledPlan()` answers `free` for two different things: 「this person
+  /// has nothing」 and 「the entitlement list gave me nothing」. An empty
+  /// `Transaction.currentEntitlements` is a real state on a launch before the
+  /// receipt is there, on a phone signed out of the App Store, and on one that
+  /// cannot reach it. Writing that down replaces a paid plan with `free` in
+  /// the one place the plan LIVES -- and nothing afterwards can tell that it
+  /// was ever anything else. Same shape as LinguaPlan.readPlan(), and the same
+  /// sentence off CLAUDE.md's first page: 「空」 and 「読めていない」 may not
+  /// share a branch.
+  ///
+  /// So a LOWER answer is only written where Apple positively said so:
+  ///   - `Transaction.updates`, which is Apple delivering a change
+  ///   - `restore`, after `AppStore.sync()`, which the person asked for
+  ///   - `manage`, after Apple's own sheet, where they may have cancelled
+  /// Everything else may raise the plan and may not lower it. A lapse that
+  /// this misses is written the moment one of those three happens, and being
+  /// a day generous is not the failure this is about.
+  @discardableResult
+  private func writeDown(mayLower: Bool = false) async -> String {
+    let seen = await Self.entitledPlan()
+    if !mayLower {
+      let (held, st) = LinguaPlanPlugin.readPlan()
+      /* Only a Keychain that ANSWERED is worth comparing against. A read that
+         failed says nothing about what is there, so it does not get a vote. */
+      if st == errSecSuccess, !held.isEmpty, Self.best(seen, held) != seen {
+        return held
+      }
+    }
+    LinguaPlanPlugin.set(seen)
+    return seen
   }
 
   /// The plan as it stands, without writing anything: the three outcomes of
@@ -287,7 +319,7 @@ public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
       var said = ""
       do { try await AppStore.sync() }
       catch { said = error.localizedDescription }
-      let plan = await writeDown()
+      let plan = await writeDown(mayLower: true)
       var out: [String: Any] = ["plan": plan]
       if !said.isEmpty { out["trouble"] = said }
       call.resolve(out)
@@ -312,7 +344,7 @@ public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
       }
       do {
         try await AppStore.showManageSubscriptions(in: scene)
-        call.resolve(["plan": await self.writeDown()])
+        call.resolve(["plan": await self.writeDown(mayLower: true)])
       } catch {
         call.reject("manage: \(error.localizedDescription)")
       }
