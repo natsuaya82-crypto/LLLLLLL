@@ -134,7 +134,7 @@ function migrateKbFree(){
   KB.kbs=kbs; KB.at=at; KB.v=2;
   saveKb();
 }
-function saveKb(){ kbVFix(); kbWayOff(); kbNoted(); bkTouch(); try{ localStorage.setItem(langKey('kb'), JSON.stringify(KB)); }catch(e){} }
+function saveKb(){ if(langLocked()) return; kbVFix(); kbWayOff(); kbNoted(); bkTouch(); try{ localStorage.setItem(langKey('kb'), JSON.stringify(KB)); }catch(e){} }
 
 /* The four directions a finger can leave a key by, in the order they are
    stored. Written once because the editor, the renderer and the flick all
@@ -996,7 +996,17 @@ function kbMark(key){
   var t=kbTyped(key.v);
   return t? '<span class="kbrm">'+esc(t)+'</span>' : '';
 }
-function kbFace(key){
+/* One letter out of a language that is NOT the open one.
+   `src` is {lts: their letters, lay: their layout} and is how a keyboard gets
+   drawn on somebody else's article. Everything below reaches for the open
+   language otherwise -- ltById() and kbOf() both -- which is rule 8, and is
+   why that picture used to be drawn for your own language only. */
+function kbSrcLt(src, id){
+  var a=(src && src.lts)? src.lts : [], i;
+  for(i=0;i<a.length;i++) if(a[i] && a[i].id===id) return a[i];
+  return null;
+}
+function kbFace(key, src){
   if(!key) return '';
   if(key.k==='del') return ICON_BACK;
   /* 「改行もいるだろ」 A keyboard that cannot start a new line is a keyboard
@@ -1011,9 +1021,9 @@ function kbFace(key){
   /* Nothing at all, and it is not a mistake: kbGap() is the half key that
      insets a row so the columns line up. */
   if(key.k==='gap') return '';
-  if(key.k==='lay') return kbLayFace(parseInt(key.v, 10)||0);
+  if(key.k==='lay') return kbLayFace(parseInt(key.v, 10)||0, src);
   if(key.k==='rom') return '<span class="kbl">'+esc(key.v)+'</span>';
-  var l=ltById(key.v);
+  var l=src? kbSrcLt(src, key.v) : ltById(key.v);
   if(!l) return '<span class="kbl">·</span>';
   /* midink: on a key the shape stands in the middle of the square rather
      than where it was drawn in the lattice. A key is a square somebody hits
@@ -1032,18 +1042,21 @@ function kbLayName(i){ return String(i+1); }
    a face would be a name in ten languages for something the person made and
    already named. The number is the fallback, for a layer somebody built with
    no letter on it at all. */
-function kbLayLetter(i){
-  var b=kbOf(), lay=b.lay[i], ri, ki, k;
+function kbLayLetter(i, src){
+  var b=(src && src.lay)? {lay:src.lay} : kbOf(), lay=b.lay[i], ri, ki, k;
   if(!lay) return null;
   for(ri=0;ri<lay.rows.length;ri++)
     for(ki=0;ki<lay.rows[ri].length;ki++){
       k=lay.rows[ri][ki];
-      if(k.k==='lt' && k.v && ltById(k.v)) return ltById(k.v);
+      if(k.k==='lt' && k.v){
+        var lt=src? kbSrcLt(src, k.v) : ltById(k.v);
+        if(lt) return lt;
+      }
     }
   return null;
 }
-function kbLayFace(i){
-  var l=kbLayLetter(i);
+function kbLayFace(i, src){
+  var l=kbLayLetter(i, src);
   return l? ltInk(l, '<span class="kbl">'+esc(ltName(l)||kbLayName(i))+'</span>', 'midink')
           : '<span class="kbl">'+esc(kbLayName(i))+'</span>';
 }
@@ -2211,7 +2224,68 @@ function kbHTML(sel, ro){
    the screen the editor was already filling, so the thing you were choosing
    and the thing you were changing were both on the page at once and neither
    had room. 「キーボード一覧→編集の形のほうがいい。上にあるとすんごい見にくい」 */
+/* ---- choosing several keyboards, and taking them away -------------------
+   「キーボードも選択削除したいから、？の位置を キーボード 選択 にしたい。
+   選択削除できるように。追加は◉+にしてね」 OWNER 2026-09-01 -- the same
+   shape the dictionary has: Select at the far end of the bar, a ◉ at the
+   front of each row, Delete beside Done, and the round + to add.
+
+   `KBSEL` is null when the list is an ordinary list and a map of indexes when
+   it is being chosen from -- where you are standing on this screen, so
+   viewReset() drops it. Board 0 is the free QWERTY: it is not in storage and
+   cannot go, so it gets no mark. */
+var KBSEL=null;
+function kbSelOn(){ KBSEL={}; render(); }
+function kbSelOff(){ KBSEL=null; render(); }
+function kbSelList(){
+  var out=[], k;
+  if(!KBSEL) return out;
+  for(k in KBSEL) if(KBSEL.hasOwnProperty(k) && KBSEL[k]) out.push(Number(k));
+  return out;
+}
+function kbSelTap(i){
+  if(!KBSEL) return;
+  if(kbIsFree(i)) return;
+  if(KBSEL[i]) delete KBSEL[i]; else KBSEL[i]=1;
+  render();
+}
+function kbSelDel(){
+  var n=kbSelList().length;
+  if(!n) return;
+  popAsk(tn('kb.rm.n', n), function(){ kbSelDelGo(); }, t('pop.yes'));
+}
+/* Highest index first, so removing one does not move the next one under the
+   knife -- the same reason a list is walked backwards anywhere else. */
+function kbSelDelGo(){
+  var ids=kbSelList().sort(function(a, b){ return b-a; }), i;
+  for(i=0;i<ids.length;i++){
+    if(kbIsFree(ids[i])) continue;
+    KB.kbs.splice(ids[i]-1, 1);
+  }
+  KBSEL=null;
+  var b=kbBoards();
+  KB.at=kbClamp(KB.at, b.length);
+  kbShow=kbClamp(kbShow, b.length);
+  kbLay=0; kbSel=null;
+  kbForget();
+  saveKb();
+  kbGo();
+}
 function kbRowHTML(x, i, at){
+  var sel=!!KBSEL, on=!!(sel && KBSEL[i]);
+  if(sel && kbIsFree(i))
+    return '<div class="kbrow kbrowq">'+
+      '<span class="ltck" data-sel="0"></span>'+
+      '<span class="kbrowk">'+kbShotHTML(x.lay)+'</span>'+
+      '<span class="kbrown">'+esc(kbName(i))+'</span></div>';
+  if(sel)
+    return '<div class="kbrow kbrowq">'+
+      '<span class="ltck'+(on? ' on':'')+'" data-sel="1"'+DO('kbSelTap', [i])+
+        ' role="button" aria-label="'+esc(t('kb.sel.row'))+'">'+
+        (on? ICON_DOT : ICON_RING)+'</span>'+
+      '<button class="kbrowb"' + DO('kbSelTap', [i]) + '>'+
+        '<span class="kbrowk">'+kbShotHTML(x.lay)+'</span>'+
+        '<span class="kbrown">'+esc(kbName(i))+'</span></button></div>';
   return '<button class="kbrow"' + DO('kbGoBoard', [i]) + '>'+
     '<span class="kbrowk">'+kbShotHTML(x.lay)+'</span>'+
     '<span class="kbrown">'+esc(kbName(i))+'</span>'+
@@ -2222,11 +2296,17 @@ function kbListHTML(){
   var bs=kbBoards(), at=kbApplied(bs.length);
   return '<div class="kblist">'+
     bs.map(function(x, i){ return kbRowHTML(x, i, at); }).join('')+
-    (kbRoomKb()
-      ? '<button class="kbadd"' + DO('kbNew') + '>'+ICON_ADD+
-        '<span>'+esc(t('kb.new'))+'</span></button>'
-      : '')+
-    '</div>';
+    '</div>'+
+    /* THE SAME ROUND + AS EVERYWHERE ELSE 「追加は◉+にしてね」 -- the
+       dictionary, the alphabet, the composer and the notebook all add with
+       it. While choosing, the thumb is for the marks and it is not there. */
+    /* And not at all in somebody else's language. langLocked() (www/core.js)
+       -- 「編集不可でそのアカウントに切り替えたらダウンロードした人の言語が
+       使える」 OWNER 2026-09-02. */
+    ((!KBSEL && !langLocked() && kbRoomKb())
+      ? '<button class="fab"' + DO('kbNew') + ' aria-label="'+esc(t('kb.new'))+'">'+
+          ICON_ADD2+'</button>'
+      : '');
 }
 function vKb(){
   /* The free plan has a keyboard. It was shown a wall.
@@ -2266,17 +2346,15 @@ function vKb(){
     return '<div class="view">'+navTop('', helpQ('kb'))+'<div class="body">'+
       kbHTML(null, true)+
       kbSysHTML()+
-      /* The way to a second keyboard, in the place the paid list keeps it and
-         wearing the same +. Pressing it on this plan opens what it would
-         give rather than the chooser -- which is where the Upgrade that used
-         to sit at the foot of this screen went. 「アップグレードボタンそこ
-         じゃなくて、キーボードを足そうとするとポップ出るようにしてよ」
-         OWNER 2026-08-28. A button at the foot is a price with nothing
-         asked for; the same words arriving when somebody reaches for the
-         thing are an answer. */
-      '<div class="kblist"><button class="kbadd"' + DO('kbNew') + '>'+ICON_ADD+
-        '<span>'+esc(t('kb.new'))+'</span></button></div>'+
-      '</div></div>';
+      '</div>'+
+      /* The way to a second keyboard, wearing the same round + the paid list
+         uses. Pressing it on this plan opens what it would give rather than
+         the chooser 「アップグレードボタンそこじゃなくて、キーボードを足そうと
+         するとポップ出るようにしてよ」 OWNER 2026-08-28. */
+      (langLocked()? ''
+        : '<button class="fab"' + DO('kbNew') + ' aria-label="'+esc(t('kb.new'))+'">'+
+            ICON_ADD2+'</button>')+
+      '</div>';
   /* The keyboard, and the row of the ones there are above it. There is no
      "nothing built yet" face any more: kbBoards() answers with the one
      already on the phone, so the first thing on this screen is always a
@@ -2287,7 +2365,18 @@ function vKb(){
      changing on are two screens. */
   var bs=kbBoards(), a=here().a;
   if(a===null || a===undefined || a==='')
-    return '<div class="view">'+navTop('', helpQ('kb'))+'<div class="body">'+
+    /* SELECT AT THE FAR END OF THE BAR, where the ? was 「？の位置を
+       キーボード 選択 にしたい」 OWNER 2026-09-01. The ? is not lost: it is
+       the free plan's screen that needs it, and that screen still has it. */
+    return '<div class="view">'+navTop('', KBSEL
+        ? ((kbSelList().length
+              ? '<button class="navdo navdel"' + DO('kbSelDel') + '>'+
+                  esc(t('kb.sel.del'))+'</button>'
+              : '')+
+           '<button class="navdo"' + DO('kbSelOff') + '>'+esc(t('kb.sel.done'))+'</button>')
+        : (langLocked()? ''
+            : '<button class="navdo"' + DO('kbSelOn') + '>'+esc(t('kb.sel'))+'</button>'))+
+      '<div class="body">'+
       kbListHTML()+
       kbSysHTML()+
       '</div></div>';
@@ -2422,14 +2511,14 @@ function kbMiniHTML(lay){
    first, because that is the one a keyboard opens on.
 
    It is a picture and nothing in it is pressable: the tile is the button. */
-function kbShotHTML(lay){
+function kbShotHTML(lay, src){
   var rows=(lay && lay[0] && lay[0].rows)? lay[0].rows : [], out='', i, j, k;
   for(i=0;i<rows.length;i++){
     out+='<span class="kbsr">';
     for(j=0;j<rows[i].length;j++){
       k=rows[i][j];
       out+='<span class="kbsk'+(k.k==='lt'? '' : ' fn')+(k.k==='gap'? ' gap':'')+
-        '" style="flex:'+(k.w||1)+'">'+kbFace(k)+'</span>';
+        '" style="flex:'+(k.w||1)+'">'+kbFace(k, src)+'</span>';
     }
     out+='</span>';
   }
@@ -3121,14 +3210,12 @@ function kbSetPat(pat){
      OWNER 2026-09-01 -- confirm() は使わない。はいの側がこの下。 */
   popAsk(t('kb.pat.q'), function(){ kbSetPatGo(pat); }, t('pop.yes'));
 }
+/* The yes side of the one ask above. It looks the board up again rather than
+   closing over it: the ask is a screen the person stands in front of, and the
+   board can have gone by the time they answer. */
 function kbSetPatGo(pat){
+  var x=KB.kbs[kbShow-1];
   if(!x) return;
-  if(x.pat===pat){ back(); return; }
-  /* 確認は自前のポップで。「標準は使わねえって言ってるだろこれも禁止や」
-     OWNER 2026-09-01 -- confirm() は使わない。はいの側がこの下。 */
-  popAsk(t('kb.pat.q'), function(){ kbSetPatGoGo(pat); }, t('pop.yes'));
-}
-function kbSetPatGoGo(pat){
   x.pat=pat; x.lay=kbBlank(kbPatLay(pat));
   kbLay=0; kbSel=null;
   saveKb();

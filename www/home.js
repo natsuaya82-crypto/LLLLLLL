@@ -684,7 +684,7 @@ function migrateWorld(){
   if(got) saveWld();
   save();
 }
-function saveWld(){ bkTouch(); try{ localStorage.setItem(langKey('wld'), JSON.stringify(WLD)); }catch(e){} }
+function saveWld(){ if(langLocked()) return; bkTouch(); try{ localStorage.setItem(langKey('wld'), JSON.stringify(WLD)); }catch(e){} }
 function world(){ return WLD; }
 /* 用途 -- the five 「物語 / 種族 / 土地 / 実際に話す / 試す」 -- came off both
    screens: 「編集画面の謎のその5択なに？いらんやろ」 OWNER 2026-08-25. What each
@@ -906,7 +906,12 @@ function setWldSecDl(r, v){ wldSecSet(r, 'dl', v); }
 /* The row on the profile, in place of the small tag that used to sit beside
    the handle. 「linguaパッチの代わり。Lingua > みたいになってて」 */
 function wldRow(){
-  if(!langName) return '';
+  /* A LANGUAGE WITH NO NAME YET STILL HAS A ROW, and it says so.
+     「未設定って出てくればいいよ。プロフィールにね。」OWNER 2026-09-02.
+     It returned nothing at all, so a language nobody had named had no row on
+     the profile and therefore no way in to its article from here -- and the
+     article was the one screen that would have let them name it. */
+  var lnm=langName || t('langs.untitled');
   /* And while it is private it is not a way through at all --
      「そもそも非公開ならプロフィールから飛べないんだって」 OWNER 2026-08-25. It was
      a button either way, with a badge beside the name saying so, which is the
@@ -917,10 +922,10 @@ function wldRow(){
      The way back is the same switch in the settings (www/settings.js), which
      is where it has always also been, so nothing is shut away by this. */
   if(wldHidden()) return '<div class="wldrow">'+
-    '<span class="wldnm">'+esc(langName)+'</span>'+
+    '<span class="wldnm">'+esc(lnm)+'</span>'+
     '<span class="wldoff">'+esc(t('wld.hidden'))+'</span></div>';
   return '<button class="wldrow"' + DO('go', ["about"]) + '>'+
-    '<span class="wldnm">'+esc(langName)+'</span>'+
+    '<span class="wldnm">'+esc(lnm)+'</span>'+
     ICON_GO+'</button>';
 }
 /* ---- a section of the article opens and shuts -------------------------
@@ -1212,25 +1217,30 @@ function wldSecNoGo(sec){
   for(k in sec) if(Object.prototype.hasOwnProperty.call(sec, k) && k!=='go') o[k]=sec[k];
   return o;
 }
-/* WHICH SLICE A SECTION IS, and only for the ones a reader can actually be
-   given. `slice_read` in supabase/schema.sql opens exactly five kinds on a
-   published language -- wld, script, snd, letters, kb -- and refuses the
-   dictionary and the grammar to everybody but their owner:
-   「言語ページ公開と単語や文字のdl可能は別だし」.
+/* WHICH SLICES A SECTION IS, and a section can be more than one of them.
 
-   So `words` and `gram` are absent here, and that is not this file being shy:
-   a ↓ drawn over them would be a button that CANNOT land, which is the whole
-   shape of what the owner met. The switch on the writing face still offers
-   all four, because that is a thing to say about your own language; what a
-   reader is offered is the intersection of what its owner allowed and what
-   the server will hand over.
+   All four -- 「あとdlは単語文字文法キーボード全部のはずだよね？」 OWNER
+   2026-09-02. It was two for a week (letters and kb) because `slice_read` in
+   supabase/schema.sql opened only five kinds on a published language and
+   refused the dictionary and the grammar to everybody but their owner, so a ↓
+   over either would have been a button that cannot land. That policy takes
+   the section's own switch into account now -- `slice_dl()` in the same file --
+   which is the shape 「言語ページ公開と単語や文字のdl可能は別だし」 asks for:
+   publishing a page and handing a chapter over are two answers, and a reader
+   is offered the intersection of them.
 
-   One place. `wldSecs()` says what the sections are and this says which of
-   them is a slice; a second list anywhere would be a ↓ that draws and does
-   nothing the day one of the five moves. */
-var WLD_DL_KIND={letters:'letters', kb:'kb'};
+   THE GRAMMAR IS TWO SLICES. `phases` is the stages somebody built and `gram2`
+   is the rules under them, and a grammar arriving with one and not the other
+   is half a chapter. That is why this is a list per section rather than a
+   name: one section, whatever it is made of.
+
+   One place. `wldSecs()` says what the sections are and this says which slices
+   each one is; a second list anywhere would be a ↓ that draws and does nothing
+   the day one of them moves. */
+var WLD_DL_KIND={letters:['letters'], words:['words'], gram:['phases','gram2'],
+                 kb:['kb']};
 function wldDlKind(r){
-  return Object.prototype.hasOwnProperty.call(WLD_DL_KIND, r)? WLD_DL_KIND[r] : '';
+  return Object.prototype.hasOwnProperty.call(WLD_DL_KIND, r)? WLD_DL_KIND[r] : null;
 }
 /* One chapter of somebody else's language, and the way to take it. The name
    is the section's own -- 「文字」「キーボード」 -- because that is what it is;
@@ -1266,19 +1276,41 @@ function wldGetRow(sec, lid){
    second answer to 「what is in their language」, and the two could disagree
    in the second between the page being drawn and the button being pressed. */
 function wldGet(lid, r){
-  var id=String(lid||''), kind=wldDlKind(r), m=WLDS_HAVE[id], seen=wldSeen(id), o, put;
-  if(!id || !kind) return;
+  var id=String(lid||''), kinds=wldDlKind(r), m=WLDS_HAVE[id], seen=wldSeen(id),
+      got=[], i, o;
+  if(!id || !kinds || !kinds.length) return;
+  /* WHETHER, AND THEN HOW MANY. 「plusからです」「plusは1つproは3つ」OWNER
+     2026-09-02. Both asked here, in the one place a download happens, and in
+     that order: the plan is the door and the ceiling is the room. Neither
+     asks anything of a language already taken -- a plan that ends leaves
+     every downloaded language where it is, readable, which is the head of
+     docs/PAID_FEATURES.md.
+
+     A chapter of a language ALREADY taken does not meet the ceiling again:
+     it is not another language, it is more of one that is already counted. */
+  if(upStop(can('dl'))) return;
+  if(!LANGS[id] && dlStop()) return;
   /* Nothing to take is not a failure to report: the page is drawn from the
      same map, so a row can only be on screen when the answers are in. */
   if(!m) return;
-  o=m[kind];
-  if(!o || !o.body) return;
+  /* EVERY SLICE THE SECTION IS, OR NONE OF THEM. The grammar is `phases` and
+     `gram2`, and half a chapter written down is worse than none: it would sit
+     in the index looking like a grammar somebody could open. So they are
+     gathered first and written after. A slice the owner never wrote is not a
+     missing half -- it is a language with nothing of that kind in it -- so an
+     empty body is skipped rather than refusing the lot. */
+  for(i=0;i<kinds.length;i++){
+    o=m[kinds[i]];
+    if(o && o.body) got.push([kinds[i], o.body]);
+  }
+  if(!got.length) return;
   /* The index row FIRST, so a slice can never be in storage under a language
      the index does not know -- that is a set of keys nothing can find, which
      is the leftovers bug langKeyOf() exists to prevent. */
   langSeenAdd(id, seen? seen.name : '');
-  put=o.body;
-  try{ localStorage.setItem(langKeyOf(id, kind), put); }catch(e){ return; }
+  try{
+    for(i=0;i<got.length;i++) localStorage.setItem(langKeyOf(id, got[i][0]), got[i][1]);
+  }catch(e){ return; }
   /* And the language's own name where a language keeps it, so the one in the
      index and the one in the language cannot drift. `lang` is a slice like
      any other and langRead() is what reads it. */
@@ -1314,17 +1346,19 @@ function abSounds(list){
   if(rest.length) out+=abField(t('ipa.other'), rest.join('  '));
   return out? '<div class="abfx">'+out+'</div>' : '';
 }
-function abHead(sec, folds, extra){
-  var nm=wldSecNm(sec);
-  /* The marker is drawn only when there is something under it to fold. A
-     section whose whole content is the chapter it points at has nothing to
-     open, and a marker over nothing is the page claiming an act it cannot
-     perform. The heading is then the name and the way through, which is what
-     that section is. */
+/* EVERY HEADING ON THIS PAGE FOLDS, and that is why there is no second kind.
+   There used to be one: a section whose whole content was the chapter it
+   points at had nothing to open, so it was drawn as a plain row with no
+   marker (`.abshp`). The only two were the dictionary and the grammar, and
+   they are not sections of the article any more -- 「見れないならいらなく
+   ね？」OWNER 2026-09-02 -- and the reading face now drops anything with
+   nothing under it before it gets here. `press` found the class worn by
+   nothing on any screen, before or after any press, which is what says the
+   branch had stopped happening rather than merely stopped being noticed. */
+function abHead(sec, extra){
   return '<div class="abshd'+(abShut(sec.r)? ' shut':'')+'">'+
-    (folds? '<button class="abshf"' + DO('abToggle', [sec.r]) + '>'+
-      ICON_FOLD+'<span class="abshl">'+esc(nm)+'</span></button>'
-     : '<div class="abshf abshp"><span class="abshl">'+esc(nm)+'</span></div>')+
+    '<button class="abshf"' + DO('abToggle', [sec.r]) + '>'+
+      ICON_FOLD+'<span class="abshl">'+esc(wldSecNm(sec))+'</span></button>'+
     (extra||'')+
     (sec.go? '<button class="abshg"' + DO('go', [sec.go]) + '>'+ICON_GO+'</button>' : '')+
     '</div>';
@@ -1537,14 +1571,22 @@ function wldPage(ed, L, lid){
      a second function on it for exactly this line, because the caller was
      handed a null bundle and had to decide what a page with no language on it
      looked like. Nobody decides that but the page. */
-  if(!L.here()) return '<div class="view">'+navTop('')+'<div class="body"></div></div>';
+  /* AND IT SAYS IT IS WAITING RATHER THAN SHOWING NOTHING.
+     「一瞬消えたりが嫌だからローディングで誤魔化してほしい」OWNER 2026-09-02.
+     An empty body and a page with nothing on it look identical, and this is
+     the first of the two while the answer is out. snsWaitHTML() is the mark
+     the timeline already turns while it waits -- one place, one sentence. */
+  if(!L.here()) return '<div class="view">'+navTop('')+
+    '<div class="body">'+snsWaitHTML()+'</div></div>';
   w=L.w(); mine=L.mine(); drawn=L.letters().filter(ltHasShape);
   /* The article names its subject: the bar says which SCREEN this is, and the
      page has to say what the article is ABOUT. The name of a language is not
      written here -- it is the language's own, and it is set where a language
      is set -- so it stays a heading in both faces. */
-  var lnm=L.name();
-  if(lnm) body+='<h1 class="abth">'+esc(lnm)+'</h1>';
+  /* The article always has its heading, named or not: 「言語名なくても
+     wikiページは出してほしい」OWNER 2026-09-02. Without one the page had no
+     title and, with nothing written under it either, came out blank. */
+  body+='<h1 class="abth">'+esc(L.name() || t('langs.untitled'))+'</h1>';
   /* Whether the page exists for anybody else at all. Only while writing:
      a state with no way to change it does not belong on the reading face. */
   if(ed) body+='<button class="set"' + DO('setWldHide', [!wldHidden()]) + '>'+
@@ -1571,7 +1613,7 @@ function wldPage(ed, L, lid){
      keep their own answers, and every word is where it was: turning the
      switch back on brings the whole page back exactly as it was left. */
   if(wldHidden(w)) return '<div class="view">'+
-    navTop('', (!ed && mine)? '<button class="navdo"' + DO('go', ["world"]) + '>'+
+    navTop('', (!ed && mine && !langLocked())? '<button class="navdo"' + DO('go', ["world"]) + '>'+
       esc(t('wld.edit'))+'</button>' : '')+
     '<div class="body">'+body+'</div></div>';
   wldSecs(w).forEach(function(sec){
@@ -1598,18 +1640,6 @@ function wldPage(ed, L, lid){
        heading and an arrow into this phone's own chapters, which is a way
        through that means nothing to anybody but their owner. What is left to
        READ is the overview, the sounds, the letters and the keyboard. */
-    /* AND ONLY IF IT CAN ACTUALLY BE TAKEN. The dictionary and the grammar are
-       not READ on the article -- 「単語と文法とはdl専用だから見れなくていいのよ？
-       音と文字とキーボードだけ」 OWNER 2026-08-25 -- so the only reason to draw
-       a heading for one is that there is a ↓ under it. `slice_read` in
-       supabase/schema.sql opens five kinds to a reader and neither of those two
-       is among them, so a publisher who has said 「take my dictionary」 was
-       giving this page a heading with nothing under it, nothing to press, and
-       no way through: a section that says a chapter is there and cannot show
-       it or hand it over. wldDlKind() is the one place that says which
-       sections the server will actually give up. */
-    if(!ed && (sec.r==='words' || sec.r==='gram') &&
-       !(wldSecDl(sec.r, w) && wldDlKind(sec.r))) return;
     /* And what MAY be taken away says so, where it is --
        「DL許可が出てるものはDLマークつけないと」 OWNER 2026-08-25. It is on the
        article and not on the editor: the switch is the answer on the writing
@@ -1622,19 +1652,27 @@ function wldPage(ed, L, lid){
        foot with the others. It was a `<span>` on both faces, carrying no
        action, which is what the owner pressed:
        「ダウンロードボタン押しても言語追加されないけど？」 OWNER 2026-09-01. */
-    /* `role="img"` and not nothing. This is a MARK -- it says a section may be
-       taken away -- and it is not a control: pressing it does nothing and it
-       has no `DO()`. An aria-label with no role is somebody saying what a
-       CONTROL is called, which is the fault `press` is written to catch and
-       which this line was the worked example of. A picture that carries
-       meaning is named as a picture. */
-    if(!ed && mine && sec.dl && wldSecDl(sec.r, w))
-      extra='<span class="abdlm" role="img" aria-label="'+esc(t('wld.dl.can'))+'">'+
-        ICON_DL+'</span>';
-    /* And on somebody else's, the row that actually takes it. Held back to
-       the foot the same way the editor's four switches are, and for the same
-       reason: they are one question asked about chapters that live elsewhere,
-       not sections of the article. */
+    /* THE ↓ MARK IS OFF THE ROWS, and that is what makes the two articles
+       one article. 「自分のページでも人のページでも見た目は一緒にしてよ
+       なんで変える必要あんの？」 OWNER 2026-09-02.
+
+       It was drawn on your own rows and not on anybody else's, so the same
+       page carried a mark on four rows or on none depending on whose it was.
+       This SUPERSEDES 「DL許可が出てるものはDLマークつけないと」 OWNER
+       2026-08-25 for the reading face, and nothing it was for is lost: on
+       somebody else's article the ↓ is the row at the foot that actually
+       takes the chapter, and on your own, whether other people may take one
+       is the four switches on the writing face -- 「文字とか単語とかはここで
+       編集しないからこれしか出ない」. */
+    /* The row that actually takes it, and ONLY on somebody else's article.
+       「自分のページに↓はいらん　それだけの違いでしょ」OWNER 2026-09-02.
+
+       The article is one page and it reads the same either way -- the
+       headings, what opens, the letters, the keyboard. The ↓ is not part of
+       that: it is somebody TAKING the chapter, and what is already yours
+       cannot be taken. It was drawn on both for a day, on the argument that
+       the page should be exactly what a reader sees; the owner's answer is
+       that this one row is the difference and there is no other. */
     if(!ed && !mine && sec.dl && wldSecDl(sec.r, w) && wldDlKind(sec.r))
       dls+=wldGetRow(sec, lid);
     /* Held back rather than drawn here: the four go at the FOOT of the
@@ -1644,6 +1682,28 @@ function wldPage(ed, L, lid){
        article that happen to carry a switch, and they are not sections at
        all: they are one question asked about four chapters that live
        elsewhere. */
+    /* NOT A HEADING ON THE ARTICLE AT ALL, ON EITHER PAGE.
+       「単語と文法とはdl専用だから見れなくていいのよ？　音と文字とキーボード
+       だけ」 OWNER 2026-08-25, and 「見れないならいらなくね？」 2026-09-02.
+
+       A dictionary and a grammar are handed over rather than looked at, so
+       there is nothing to fold open under either heading -- and that is what
+       they were: a row with no `›` marker beside the four that have one, in a
+       list where every other row opens. 「これ治ってないやんけ」 OWNER
+       2026-09-02, on their OWN article, where the two still stood because a
+       ↓ mark had been reason enough to draw a heading.
+
+       It is not, and the mark is not lost: on somebody else's article the ↓
+       is a row at the foot with the others (`dls` below), where the owner put
+       it -- 「dlのやつは一番下にして」「上の概要とセクションに混ざらないように
+       して」. On your own, whether other people may take a chapter is answered
+       on the WRITING face, which is the four switches and is the whole of
+       what that face shows for them: 「文字とか単語とかはここで編集しないから
+       これしか出ない」.
+
+       What is left to READ is the overview, the sounds, the letters and the
+       keyboard. */
+    if(!ed && (sec.r==='words' || sec.r==='gram')) return;
     if(ed && sec.dl){ dls+=wldSecRows(sec); return; }
     if(sec.r==='wldov'){
       if(ed){
@@ -1728,9 +1788,13 @@ function wldPage(ed, L, lid){
          would be marked up against MY language. Rule 8. abLtCell() below is
          the reader's, and it goes through ltInk() and ltName(), which are
          where a letter's face and a letter's name live for everybody. */
+      /* abLtCell() on both, and that is the same sentence as the keyboard
+         above. ltCell() asks ltTaken() and numOver(), which read LETTERS and
+         the open language's base, so it can only ever be right about your
+         own -- and it is a DIFFERENT CELL, which is a page that changes shape
+         depending on whose it is. 「見た目は一緒にしてよ」 */
       if(drawn.length) inner+='<div class="ltgrid abtlt">'+
-        ltOrder(drawn).map(function(l){
-          return mine? ltCell(l, ' ') : abLtCell(l); }).join('')+'</div>';
+        ltOrder(drawn).map(abLtCell).join('')+'</div>';
     } else if(sec.r==='kb'){
       /* The keyboard this person actually BUILT, drawn small --
          「キーボードもちゃんとその人が作ってるモックの画像出すように」
@@ -1753,15 +1817,19 @@ function wldPage(ed, L, lid){
          letters rather than a diagram of them, which is what it was written
          for: 「リアルなキーボードを縮小して見せれないの？」. Nothing in it is
          pressable, here or where it came from. */
-      /* THE PICTURE IS ONLY DRAWN FOR YOUR OWN, and that is a hole rather
-         than a decision. `kbShotHTML()` goes through `kbFace()`, which asks
-         `ltById()` -- the open language's letters -- so somebody else's
-         keyboard would be drawn wearing MY alphabet, which is rule 8 and is
-         the fault the card had. `kbFace()` is www/keyboard.js and this session
-         does not own it; the heading stays and what is under it waits for
-         that file. It is in the report. */
-      if(mine) inner+='<div class="abtl abtline">'+esc(L.kbname())+'</div>'+
-        '<div class="abkb">'+kbShotHTML(L.kblay())+'</div>';
+      /* IN THEIR LETTERS, AND SO ON EITHER PAGE.
+         「自分のページでも人のページでも見た目は一緒にしてよ」OWNER
+         2026-09-02.
+
+         It was drawn for your own language only, because `kbFace()` asks
+         `ltById()` -- the OPEN language -- so somebody else's keyboard would
+         have arrived wearing my alphabet, which is rule 8 and is the fault
+         the card had. That was a hole rather than a decision, and it is
+         closed in the file it belonged to: kbFace() and kbShotHTML() take
+         the letters and the layout to read them out of, and `L` is what has
+         them for whichever language this page is about. */
+      inner+='<div class="abtl abtline">'+esc(L.kbname())+'</div>'+
+        '<div class="abkb">'+kbShotHTML(L.kblay(), {lts:L.letters(), lay:L.kblay()})+'</div>';
     } else if(sec.nm!==undefined){
       /* A section somebody wrote, and it is a SECTION on both faces --
          「追加したセクションも概要と同じ文字サイズだし▼で隠せるようにして編集でも」
@@ -1788,15 +1856,37 @@ function wldPage(ed, L, lid){
        does not keep -- but it IS on the writing one, because that is where it
        gets its name. */
     if(sec.blank && !ed) return;
-    /* ONE `›` TO A ROW. `sec.go` is the way into this phone's own chapter --
-       the letters, the dictionary, the keyboard -- and on somebody else's
-       article it is rule 8 written as a button: pressing the `›` beside THEIR
-       Letters opened MINE. So the row that folds is the only thing to press
-       there, which is also what the owner drew: 「›の位置を統一する」, one mark
-       on the left of each row rather than one on each side.
-       On your own article both are yours and both stay. */
-    body+=abHead((!ed && !mine && sec.go)? wldSecNoGo(sec) : sec,
-                 !!inner, extra)+((!inner || abShut(sec.r))? '' : inner);
+    /* AND THE SAME SENTENCE ABOUT SOMEBODY ELSE'S PAGE, said once instead of
+       four times. 「それって人の言語見る画面だよね？見れないならいらなくね？」
+       「キーボードがめん開かないならそこに書く必要なくね？」 OWNER 2026-09-02,
+       looking at キーボード on a stranger's article: a heading, no picture
+       under it, and nothing to press -- kbShotHTML() goes through kbFace(),
+       which reads the OPEN language's letters, so drawing it there would be
+       rule 8 and their keyboard would arrive wearing my alphabet.
+
+       The ↓ is not lost by this. It was collected into `dls` above, and the
+       foot of the page is where it goes -- so a chapter that can be TAKEN and
+       not READ is a row at the bottom, which is what it is.
+
+       On your own article a heading with nothing under it still stands: it is
+       the way IN to a chapter that is yours, and the `›` beside it works. */
+    if(!ed && !inner) return;
+    /* ONE `›` TO A ROW, AND ON YOUR OWN ARTICLE TOO.
+       「›の位置を統一する」, and again 「＞＞が二つあるのが嫌だって話前にした
+       よね？」 OWNER 2026-09-02.
+
+       This was applied to somebody else's article only, on the argument that
+       on your own both arrows are yours and both work. They are, and it is
+       still two of the same mark on one row pointing at two different things
+       -- which is the thing the owner said they did not want, said about a
+       row rather than about whose row it is.
+
+       `sec.go` is the way into this phone's own chapter -- the letters, the
+       keyboard. It is not lost: those chapters are the contents page, which
+       is where you go to a chapter. What the article is for is reading, and
+       the mark on the left is what opens what there is to read. */
+    body+=abHead((!ed && sec.go)? wldSecNoGo(sec) : sec, extra)+
+          ((!inner || abShut(sec.r))? '' : inner);
   });
   /* And the way to put another section in, at the end of the ones there are,
      which is where a new section of an article goes. */
@@ -1816,12 +1906,16 @@ function wldPage(ed, L, lid){
      a heading with things under it, which is what the rest of the page is. */
   if(!ed && dls){
     var dlsec={r:'wlddl', k:'wld.dl.get'};
-    body+=abHead(dlsec, true, '')+(abShut(dlsec.r)? '' : dls);
+    body+=abHead(dlsec, '')+(abShut(dlsec.r)? '' : dls);
   }
   if(!body) body='<div class="note">'+esc(t('wld.empty'))+'</div>';
   return '<div class="view">'+
-    /* Edit is only on your own. 「Edit は出ません（他人のものなので）」 */
-    navTop('', (!ed && mine)? '<button class="navdo"' + DO('go', ["world"]) + '>'+
+    /* Edit is only on your own. 「Edit は出ません（他人のものなので）」 -- and
+       `mine` here is whose ARTICLE this is, which is a different question from
+       whether the OPEN language may be changed: a downloaded language opened
+       from the switcher draws its own article with mine true. langLocked()
+       answers the second. */
+    navTop('', (!ed && mine && !langLocked())? '<button class="navdo"' + DO('go', ["world"]) + '>'+
       esc(t('wld.edit'))+'</button>' : '')+
     '<div class="body">'+body+'</div></div>';
 }
@@ -1858,14 +1952,37 @@ function langRow(id){
      nothing, which is the shape the ↓ itself was until today. It is drawn,
      because it is on this phone and somebody took it; it is not pressable,
      because there is nowhere to go yet. */
-  if(!isOpen && l.mine===false)
-    return '<div class="set lrow">'+
-      '<span class="sl">'+esc(nm||t('langs.untitled'))+'</span>'+
-      '<span class="lchk"></span></div>';
-  return '<button class="set lrow'+(isOpen?' on':'')+'"' + DO('langOpen', [id]) +
+  /* THE SHAPE IS THE ACCOUNT SWITCHER'S, not a settings row. 「言語切り替えは
+     設定の言語じゃなくて、ちゃんとした画面作ってくれよ。インスタのアカウント
+     切り替えみたいなイメージ」 OWNER 2026-09-01 -- it was already a screen of
+     its own (this route, reached by holding the profile tab), and it read as a
+     list of settings: a small label and a tick. A row is a tile, a name and
+     the tick now, at the size a thing you PRESS is.
+
+     The tile is the language's first letter in the app's own face. Not its own
+     letters: those live under `langKeyOf(id,'letters')` and only the OPEN
+     language's are loaded, so one row would be drawn in somebody's alphabet
+     and the rest in roman -- which is one row looking like the answer and the
+     others looking broken. `.pav` is the circle every face in this app already
+     wears, so no new corner is drawn (規則18). */
+  var mk=String(nm||t('langs.untitled')).charAt(0);
+  /* A DOWNLOADED LANGUAGE IS A LANGUAGE YOU SWITCH TO, and it was a dead row
+     until 2026-09-02. 「ダウンロード言語にしようよ。編集不可でそのアカウントに
+     切り替えたらダウンロードした人の言語が使える」 OWNER -- so the row is a
+     button like any other and langOpen() takes it, which it has always been
+     willing to do.
+
+     What makes it safe is not this row. It is langLocked() in core.js, asked
+     by every one of the seven savers, so nothing anywhere can write to a
+     language that is not yours -- however it was reached. langOpen()'s own
+     comment named the writers as the protection from the day it was written
+     and only three of them were asking; opening this door is what finished
+     that sentence. */
+  return '<button class="lgrow'+(isOpen?' on':'')+'"' + DO('langOpen', [id]) +
     (isOpen? ' aria-label="'+esc(t('langs.open'))+'"' : '') + '>'+
-    '<span class="sl">'+esc(nm||t('langs.untitled'))+'</span>'+
-    '<span class="lchk">'+(isOpen?ICON_TICK:'')+'</span></button>';
+    '<span class="pav lgav">'+esc(mk)+'</span>'+
+    '<span class="lgn">'+esc(nm||t('langs.untitled'))+'</span>'+
+    '<span class="lgck">'+(isOpen?ICON_TICK:'')+'</span></button>';
 }
 /* The way to make another one, at the foot of the list -- where "add an
    account" sits in the app this is modelled on. 「アカウントが変わるイメージ。
@@ -1889,10 +2006,35 @@ function langRow(id){
    A row and not a button of its own shape: it is the last row of a list, and
    rows in one list are one height. Same tag, same class, same two spans as
    langRow() above, which is what makes that true rather than nearly true. */
+/* The way to make another one, in the same shape as the rows above it -- a
+   tile with a + in it and the words beside it, which is where 「アカウントを
+   追加」 sits in the app this is modelled on. */
 function langAddRow(){
-  return '<button class="set lrow"' + DO('langNew') + '>'+
-    '<span class="sl">'+esc(t('langs.new'))+'</span>'+
-    '<span class="lchk"></span></button>';
+  return '<button class="lgrow"' + DO('langNew') + '>'+
+    '<span class="pav lgav lgadd">'+ICON_ADD+'</span>'+
+    '<span class="lgn">'+esc(t('langs.new'))+'</span></button>';
+}
+/* WHICH LANGUAGES ARE LISTED, and it is wordsSeen()'s shape exactly.
+   「だって単語でも文法でも同じようにやったじゃん」OWNER 2026-09-02.
+
+   The first `cap` of them, in the order they are stored. `LANGS` is not
+   touched and neither is one byte under `lingua.` -- nothing is deleted,
+   nothing is renamed, nothing is counted down. Paying again lists every one
+   of them exactly as they were, which is the whole reason this cuts the LIST
+   and not the data. docs/DATA_SAFETY.md § a shorter list is not a deletion.
+
+   THE OPEN ONE IS ALWAYS ON IT ── 「開いてるものを残すでいいよ」OWNER
+   2026-09-02. A switcher that does not contain the language you are standing
+   in is a switcher you cannot switch away from, and the language you are
+   working in is the last one to take off the screen. It goes in place of the
+   last of the first `cap`, so the count is the count either way. */
+function langsSeen(ids, cap){
+  var out;
+  if(ids.length<=cap) return ids;
+  out=ids.slice(0, cap);
+  if(langId && ids.indexOf(langId)>=0 && out.indexOf(langId)<0 && out.length)
+    out[out.length-1]=langId;
+  return out;
 }
 function vLangs(){
   var ids=Object.keys(LANGS), mine=[], reading=[], other=0, i, id;
@@ -1910,8 +2052,14 @@ function vLangs(){
        says whose a language is. */
     if(langAcct(id)) mine.push(id); else other++;
   }
+  /* The ceiling, met on the way OUT. Both lists are cut the same way and by
+     their own number: making and reading are two ceilings that never see each
+     other (`langCap()` and `dlCap()`, www/core.js). */
+  var mineSeen=langsSeen(mine, langCap()), readSeen=langsSeen(reading, dlCap());
+  other += mine.length-mineSeen.length;
+  var readHid = reading.length-readSeen.length;
   var body='<div class="sec">'+esc(t('langs.mine'))+'</div>'+
-    mine.map(function(id){ return langRow(id); }).join('')+
+    mineSeen.map(function(id){ return langRow(id); }).join('')+
     /* AND HOW MANY ARE NOT ON IT, every time.
        `docs/DATA_SAFETY.md` § a shorter list is not a deletion: somebody
        opening this to find a language gone has no way to tell which of the
@@ -1924,8 +2072,9 @@ function vLangs(){
     /* .empty is the full-screen one: 54px of padding and a serif heading,
        which is right for a screen with nothing on it and far too loud for a
        section of a screen that has something on it. */
-    (reading.length? reading.map(function(id){ return langRow(id); }).join('')
-                    : '<div class="note">'+esc(t('langs.none'))+'</div>');
+    (readSeen.length? readSeen.map(function(id){ return langRow(id); }).join('')
+                    : '<div class="note">'+esc(t('langs.none'))+'</div>')+
+    (readHid? '<div class="note">'+esc(t('cap.hid', readHid))+'</div>' : '');
   return '<div class="view">'+navTop('')+'<div class="body">'+body+'</div></div>';
 }
 

@@ -221,33 +221,142 @@ const r = await pg.evaluate(({s}) => {
     return { kind: ltKindOf(got), name: ltName(got), was: was,
              at: here().r + ':' + (here().a || '') };
   }
+  /* The slot worth 1 is the one this names, and it has to be the EMPTY slot
+     ltStart() made -- the fixture has drawn on its digits, and a digit somebody
+     drew on is the case two claims below. So the ink comes off first: what is
+     under test here is a letter arriving at a value nobody has drawn. */
+  var slot1 = numByVal(1);
+  if (slot1) { delete slot1.st; delete slot1.sh; slot1.ch = ''; }
+  var slot1id = slot1 ? slot1.id : '';
   var digitsBefore = numDigits().length;
   out.rmTaken   = names('1');            /* the digit worth 1 already exists */
+  out.rmSlotGone = !ltById(slot1id);
   out.rmKeeps   = names('1', function(l){ l.ab = 'q'; });
   out.rmBig     = names('25');           /* base ten writes no such digit */
   out.rmPlain   = names('zz');           /* the control: an ordinary name */
   out.rmNoDigit = numDigits().length === digitsBefore;
+  out.rmDigitDelta = numDigits().length - digitsBefore;
 
-  /* a value nothing holds: the letters room may not make that digit either */
+  /* a value nothing holds: the digit is MADE, and the count goes up by one */
   numSetBase(14);
   var freeSlot = numByVal(12); if (freeSlot) ltDel(freeSlot.id);
   var digitsFree = numDigits().length;
   out.rmFree = names('12');
-  out.rmFreeNoDigit = numDigits().length === digitsFree;
+  out.rmFreeGrew = numDigits().length - digitsFree;
   numSetBase(10);
 
-  /* copying a digit gave an ALPHA letter: a value is unique, so the copy
-     could never have been a digit */
-  var cBefore = LETTERS.length;
-  ltCopy(numByVal(7).id);
-  out.rmCopyGrew = LETTERS.length - cBefore;
-  out.rmCopyKind = (LETTERS.length > cBefore) ? ltKindOf(LETTERS[LETTERS.length - 1]) : 'none';
-  /* and an ordinary letter still copies, or the guard above took the feature */
-  var okLetter = ltNew({}); okLetter.ab = 'w';
-  var c2 = LETTERS.length;
-  ltCopy(okLetter.id);
-  out.rmCopyStillWorks = LETTERS.length > c2;
+  /* The other half of the DELETE REVIEW written over ltToDigit(): the row that
+     may go is the EMPTY slot the app made for that value, and nothing else. A
+     digit somebody has DRAWN on is left exactly where it is, so what arrives is
+     a SECOND digit of that value. 「別に課金なんだから追加しろよなんで？」 */
+  var drawn = numByVal(3);
+  if (drawn) drawn.st = [{ pts: [[o + 3 * D, o + 3 * D], [o + 9 * D, o + 9 * D]] }];
+  var threes = LETTERS.filter(function(l){ return l.val === 3; }).length;
+  out.rmDrawn = names('3');
+  out.rmDrawnKept = !!(drawn && ltById(drawn.id) &&
+                       ltById(drawn.id).st && ltById(drawn.id).st.length === 1);
+  out.rmDrawnTwo = LETTERS.filter(function(l){ return l.val === 3; }).length - threes;
+
+  /* There was a third road onto this rule — ltCopy(), the 複製する row on a
+     letter's page — and two claims here held it. The row went on 2026-09-01
+     (「後複製するボタンいらんやろ」), and the function with it, so the claims
+     went too rather than being kept alive against a road nobody can take. */
+  /* ---- a slot is emptied, never removed --------------------------------
+     「aって入ってた枠が残るの無料枠は。追加分しか枠ごと消せない」
+     「1〜38は消えないようにしてるんでしょ？ナンバリングもおかしくなるよ！」
+     OWNER 2026-09-02.
+
+     On free ltDelete() refuses outright. On a PAID plan it did not, and the
+     row went -- so `a` could be deleted out of the alphabet, the QWERTY's `a`
+     key was left answering to nothing (kbFixed() finds keys BY NAME), and
+     every number after it moved up one.
+
+     What a delete does to one of the thirty-eight is take the DRAWING off.
+     A letter somebody ADDED is a different thing and goes whole. */
+  SET.plan = 'pro';
+  var aLt = LETTERS.filter(function(l){ return String(l.ab || '') === 'a'; })[0];
+  if (aLt) aLt.st = [{ pts: [[o + 3 * D, o + 3 * D], [o + 9 * D, o + 9 * D]] }];
+  /* `qx` and not `zz`: rmPlain above already made a letter called zz, so a
+     check for 「it is gone」 would find that one and read as a failure. */
+  var addedLt = ltNew({}); addedLt.ab = 'qx';
+  addedLt.st = [{ pts: [[o, o], [o + D, o + D]] }];
+  saveLetters();
+  out.slotBefore = LETTERS.length;
+  out.orderBefore = ltOrder(ltOfKind('alpha')).map(ltName).join(' ');
+  ltDeleteGo(aLt.id);
+  var aAfter = LETTERS.filter(function(l){ return String(l.ab || '') === 'a'; })[0];
+  out.slotStays = !!aAfter;
+  out.slotEmpty = !!(aAfter && !inkGeo(aAfter));
+  out.slotNamed = aAfter ? ltName(aAfter) : '';
+  out.slotCount = LETTERS.length;
+  out.orderAfter = ltOrder(ltOfKind('alpha')).map(ltName).join(' ');
+  ltDeleteGo(addedLt.id);
+  out.addedCount = LETTERS.length;
+  out.addedGone = !LETTERS.filter(function(l){ return String(l.ab || '') === 'qx'; }).length;
+
   SET.plan = 'free';
+  /* ---- the first thirty-eight carry no ⊖, and every ⊖ works -------------
+     「a-z 0-9 !?に1からナンバリングしてそれ以降に追加されるのは消す」
+     「次に文字追加したら39になるよね？39以降は消せるんだよね？」OWNER
+     2026-09-02, after 「長押しの後から-の3個目以降に普通に反応しなくなる」 on
+     a phone: the mark was drawn on all thirty-eight and pressing it opened a
+     question whose yes did not move the screen by one pixel. Nothing threw.
+     The letters somebody has drawn come first in an alphabet, so it looked
+     like the mark worked twice and then died.
+
+     Two claims and they are one rule: no mark on the thirty-eight, and every
+     mark that IS drawn takes the letter away. */
+  /* EVERY PAGE THE ALPHABET IS SPLIT ACROSS, and not just the letters.
+     「それはページが分かれていてもだよ？」OWNER 2026-09-02: a-z is one page,
+     0-9 another, ! ? another, and the numbering runs 1 to 38 across all of
+     them. ltCanDelete() asks the LETTER and not the page, so this walks every
+     kind rather than trusting that. */
+  SET.plan = 'pro';
+  var baseSeen = 0, baseMarks = 0, kindsWalked = [];
+  LT_KINDS.forEach(function(k){
+    goTab('build'); go('ltset', k); ltWob = true; render();
+    kindsWalked.push(k);
+    Array.prototype.slice.call(document.querySelectorAll('#app .ltx'))
+      .forEach(function(x){
+        var id = (x.getAttribute('data-a') || '').replace(/[\[\]"]/g, '');
+        var l = ltById(id);
+        if (l && ltIsBase(l)) baseMarks++;
+      });
+  });
+  baseSeen = LETTERS.filter(ltIsBase).length;
+  goTab('build'); go('ltset', LT_KINDS[0]); ltWob = true; render();
+  /* WHICH LETTERS THE MARKS NAME. Read off the marks themselves rather than
+     off the cells: a cell in this state carries no id at all (it does not
+     open, so it has no DO), and the ⊖ is the only thing on it that names the
+     letter it is about. */
+  function markIds(){
+    return Array.prototype.slice.call(document.querySelectorAll('#app .ltx'))
+      .map(function(x){ return (x.getAttribute('data-a') || '').replace(/[\[\]"]/g, ''); })
+      .filter(Boolean);
+  }
+  /* and one added letter, which is the thirty-ninth */
+  var addedId = ltNew({ nm: 'zz9' }).id;
+  saveLetters(); render();
+  var addedMarked = markIds().indexOf(addedId) >= 0;
+
+  var mv = 0, dd = 0, tr = 0, popless = 0;
+  while (tr < 40) {
+    var marks = document.querySelectorAll('#app .ltx');
+    if (!marks.length) break;
+    tr++;
+    var was = document.getElementById('app').innerHTML;
+    marks[0].dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    var y = null;
+    Array.prototype.slice.call(document.querySelectorAll('#pop button'))
+      .forEach(function(b){ if (b.getAttribute('data-do') === 'popYes') y = b; });
+    if (!y) { popless++; break; }
+    y.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    if (document.getElementById('app').innerHTML === was) dd++; else mv++;
+  }
+  out.wob = { pressed: tr, moved: mv, dead: dd, popless: popless,
+              baseSeen: baseSeen, baseMarks: baseMarks, addedMarked: addedMarked,
+              kinds: kindsWalked };
+
   return out;
 }, { s: seed.toString() });
 await br.close();
@@ -322,31 +431,64 @@ say(r.mvTwo === 2, 'which is the duplicate the alphabet shows in red (' + r.mvTw
 say(r.mvPaidSame, 'and on a plan that adds letters nothing moves at all');
 
 /* the three rooms, and the roads that used to cross between them */
-say(r.rmTaken.kind === 'alpha' && !r.rmTaken.name && r.rmNoDigit,
-    'a number is not a letter\'s name: typing `1` on a letter leaves it a ' +
-    'letter with no name, and makes no digit (' + r.rmTaken.kind + '/' +
-    (r.rmTaken.name || 'unnamed') + ')');
+/* 「まだ数字が普通にアルファベットのとこ入るし」 OWNER 2026-09-01, on a phone,
+   looking at 名前なし sitting in the alphabet. Earlier the same day this road
+   REFUSED the name and walked to the digits room, which left the letter behind
+   in the room it was supposed to leave; these claims are the moved side of
+   that, and the refusing side is superseded. */
+say(r.rmTaken.kind === 'num' && r.rmNoDigit,
+    'a number typed on a letter MOVES it: the letter becomes that digit, and ' +
+    'the empty slot the app had made for the value goes with it, so the count ' +
+    'does not move (' + r.rmTaken.kind + ', ' + r.rmDigitDelta + ')');
+say(r.rmSlotGone,
+    'and the empty slot the app had made for that value is the row that goes ' +
+    '-- no drawing, no borrowed character, never touched by anybody');
 say(r.rmTaken.at === 'ltset:num',
-    'and the app goes to the room where digits are made rather than saying ' +
-    'nothing (' + r.rmTaken.at + ')');
-say(r.rmKeeps.name === 'q',
-    'a letter that already had a name keeps it — nothing anybody made is ' +
-    'written over (' + r.rmKeeps.name + ')');
-say(r.rmFree.kind === 'alpha' && r.rmFreeNoDigit,
-    'and not even when the value is FREE: the letters room does not make a ' +
-    'digit, whichever values are spare (' + r.rmFree.kind + ')');
+    'and it lands in the room where digits are, not the one it left (' +
+    r.rmTaken.at + ')');
+say(r.rmKeeps.kind === 'num' && r.rmKeeps.name !== 'q',
+    'a letter that had a name goes too -- typing a number over `q` is the ' +
+    'rename somebody asked for (' + r.rmKeeps.kind + '/' +
+    (r.rmKeeps.name || 'unnamed') + ')');
+say(r.rmFree.kind === 'num' && r.rmFreeGrew === 1,
+    'and when the value is FREE the digit is MADE, one of it (' +
+    r.rmFree.kind + ', +' + r.rmFreeGrew + ')');
+say(r.rmDrawnKept && r.rmDrawnTwo === 1,
+    'but a digit somebody DREW on is never the row that goes: it keeps its ' +
+    'strokes and the letter arrives beside it, two of that value (' +
+    (r.rmDrawnKept ? 'kept' : 'LOST') + ', +' + r.rmDrawnTwo + ')');
+say(r.slotStays && r.slotEmpty && r.slotNamed === 'a',
+    'deleting one of the thirty-eight takes the DRAWING off and leaves the ' +
+    'slot — 「aって入ってた枠が残る」 (' +
+    (r.slotStays ? 'still there' : 'GONE') + ', ' +
+    (r.slotEmpty ? 'empty' : 'STILL DRAWN') + ', called ' +
+    (r.slotNamed || 'nothing') + ')');
+say(r.slotCount === r.slotBefore && r.orderAfter === r.orderBefore,
+    'so nothing is renumbered — 「ナンバリングもおかしくなるよ」: the alphabet ' +
+    'is the same length and in the same order (' + r.slotBefore + ' -> ' +
+    r.slotCount + ')');
+say(r.addedGone && r.addedCount === r.slotCount - 1,
+    'and a letter somebody ADDED goes whole, which is the only kind that may ' +
+    '(' + r.slotCount + ' -> ' + r.addedCount + ')');
 say(r.rmBig.kind === 'alpha' && r.rmBig.name === '25',
     'a number no base of this language can write is an ordinary name, on ' +
     'this road as on a sheet — one rule, both roads (' + r.rmBig.name + ')');
 say(r.rmPlain.kind === 'alpha' && r.rmPlain.name === 'zz' && r.rmPlain.at !== 'ltset:num',
     'and an ordinary name is still just a name, going nowhere (' +
     r.rmPlain.name + ' at ' + r.rmPlain.at + ')');
-say(r.rmCopyGrew === 0 && r.rmCopyKind === 'none',
-    'a digit is not copied into the alphabet: a value is unique, so the copy ' +
-    'could only ever have been a letter (' + r.rmCopyKind + ')');
-say(r.rmCopyStillWorks,
-    'and an ordinary letter still copies — the guard took the crossing, not ' +
-    'the feature');
+
+say(r.wob && r.wob.baseMarks === 0,
+    'not one of the first thirty-eight carries a ⊖ — on any of the pages the ' +
+    'alphabet is split across, because the numbering runs 1 to 38 through ' +
+    'all of them (' +
+    (r.wob ? r.wob.baseMarks + ' of ' + r.wob.baseSeen + ', pages: ' +
+             r.wob.kinds.join(' ') : '?') + ')');
+say(r.wob && r.wob.addedMarked,
+    'the thirty-ninth, the first letter somebody adds, carries one');
+say(r.wob && r.wob.pressed > 0 && r.wob.popless === 0 &&
+    r.wob.dead === 0 && r.wob.moved === r.wob.pressed,
+    'and every ⊖ that is drawn takes its letter away (' +
+    (r.wob ? r.wob.moved + ' of ' + r.wob.pressed : '?') + ')');
 
 if (bad.length) { console.error('\nbase: ' + bad.length + ' failed'); process.exit(1); }
 console.log('\nbase: slots arrive when asked, and nothing drawn is ever taken away.');

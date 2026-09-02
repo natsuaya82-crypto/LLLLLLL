@@ -675,9 +675,28 @@ function meFollow(h){
   i=fo.indexOf(h);
   if(i>=0) fo.splice(i, 1); else fo.push(h);
   ME.fo=fo;
+  /* AND THEIR COUNT MOVES WITH THE BUTTON. 「フォローしたのにその人のフォロワー
+     にすぐ出ないよ？」 OWNER 2026-09-02. The button changed on the press, the
+     way a like does -- and the number under it did not, because it comes off
+     `profile_seen` and nothing asks again until the page is opened afresh.
+     One press, two things on screen, and only one of them moved.
+
+     The same shape as postNLike() in www/post.js: the count this phone shows
+     is what it knows, moved by what this person just did, and the server's own
+     answer replaces it whole the next time netWho() lands. Undefined stays
+     undefined -- a number nobody has taken is not a 0 to add to. */
+  meFollowCount(h, i<0? 1 : -1);
   saveMe();
   render();
   netFollow(h, i<0, function(){}, function(){});
+}
+/* Their follower count, moved by one. The copy only -- nothing is stored: it
+   is replaced whole by the server's next answer, which is the one that
+   counts. */
+function meFollowCount(h, d){
+  var p=WHO_HAVE[String(h||'')];
+  if(!p || typeof p.fr!=='number') return;
+  p.fr=Math.max(0, p.fr+d);
 }
 /* The same card as your own, in the same order, with Follow where Edit is.
    「他人のプロフィールは基本自分が見えてるのと同じ感じ」
@@ -723,27 +742,19 @@ function whoCard(h){
       '<div class="pname">'+esc(postWho(p))+'</div>'+
       '<div class="mehr"><span class="phandle">@'+esc(h)+'</span></div>'+
     '</div>'+
-    '<button class="meedit'+(on?' on':'')+'"' + DO('meFollow', [String(h)]) + '>'+
-      esc(t(on? 'me.unfollow' : 'me.follow'))+'</button>'+
-    /* The two things you can do about a PERSON rather than about one line
-       they wrote. They were on a post's ... and nowhere else, so blocking
-       somebody meant finding something of theirs to block them from, and
-       reporting an account that had said the same thing forty times meant
-       picking one of the forty. 「ブロックも通報はその人の画面でもよろしい」
+    /* FOLLOW, IN THE SLOT ON THE NAME ROW -- the same slot your own card
+       puts Edit in, because it is the same thing: the one action this page
+       is about. 「フォローの位置キモいな...のとこにフォロー」OWNER
+       2026-09-02.
 
-       The same menu as a post's, in the same shape and closed the same way --
-       WMENU beside PMENU, because a page holds one person and a timeline
-       holds many posts, and one of them needs an id. */
-    '<button class="pmore"' + DO('whoMore', [String(h)]) + ' aria-label="'+
-      esc(t('post.more'))+'">'+ICON_DOTS+'</button>'+
-    (WMENU
-      ? '<span class="pmenu" data-pm="1">'+
-        '<button class="pmi"' + DO('meBlock', [String(h)]) + '>'+ICON_BLOCK+
-          '<span>'+esc(t(meBlocks(h)? 'post.unblock' : 'post.block'))+'</span></button>'+
-        '<button class="pmi bad"' + DO('openReport', ["", String(h)]) + '>'+ICON_FLAG+
-          '<span>'+esc(t('post.report'))+'</span></button>'+
-        '</span>'
-      : '')+
+       It was beside the name with the ... next to it, four things across one
+       phone-width line, and the name was the one that gave way. Then it went
+       to a line of its own under the ..., which put the thing you came here
+       to press below a menu you did not. Now the row reads the same way on
+       both cards, and the ... is off it entirely -- see the counts below. */
+    '<button class="meedit'+(on?' on':'')+'"' +
+      DO('meFollow', [String(h)]) + '>'+
+      esc(t(on? 'me.unfollow' : 'me.follow'))+'</button>'+
     '</div>'+
     (p.bio? '<div class="pbio">'+esc(p.bio)+'</div>' : '')+
     /* THE NAME, AND NOT A WAY THROUGH.
@@ -802,9 +813,32 @@ function whoCard(h){
        Followers. A person who arrived on a post rather than from netWho()
        carries neither and reads zero until the answer lands.
        Not pressable: the two lists behind your own are yours. */
+    /* AND THE ... AT THE RIGHT END OF THIS ROW.
+       「フォロワーとかの横の一番右に...で」OWNER 2026-09-02.
+
+       The two things it holds -- block and report -- are about a PERSON
+       rather than about one line they wrote, and this row is the row of
+       facts about that person. They were on a post's ... and nowhere else,
+       so blocking somebody meant finding something of theirs to block them
+       from. 「ブロックも通報はその人の画面でもよろしい」
+
+       The same menu as a post's, in the same shape and closed the same way --
+       WMENU beside PMENU, because a page holds one person and a timeline
+       holds many posts, and one of them needs an id. `.pfstats` carries the
+       `position:relative` the box hangs off now; it was `.metop`. */
     '<div class="pfstats">'+
       '<span class="pfst"><b>'+esc(String(p.fo||0))+'</b> '+esc(t('me.following'))+'</span>'+
       '<span class="pfst"><b>'+esc(String(p.fr||0))+'</b> '+esc(t('me.followers'))+'</span>'+
+      '<button class="pmore"' + DO('whoMore', [String(h)]) + ' aria-label="'+
+        esc(t('post.more'))+'">'+ICON_DOTS+'</button>'+
+      (WMENU
+        ? '<span class="pmenu" data-pm="1">'+
+          '<button class="pmi"' + DO('meBlock', [String(h)]) + '>'+ICON_BLOCK+
+            '<span>'+esc(t(meBlocks(h)? 'post.unblock' : 'post.block'))+'</span></button>'+
+          '<button class="pmi bad"' + DO('openReport', ["", String(h)]) + '>'+ICON_FLAG+
+            '<span>'+esc(t('post.report'))+'</span></button>'+
+          '</span>'
+        : '')+
     '</div>'+
     '</div>';
 }

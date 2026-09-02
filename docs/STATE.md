@@ -31,9 +31,9 @@ answers it is in §3 and takes a second.
 
 ---
 
-## 0-a. 2026-09-01 夕 ── いまの状況
+## 0-a. 2026-09-02 未明 ── いまの状況
 
-**`origin/master` は `e488f4f`。ローカルの `master` は古いので見ないこと**
+**`origin/master` は `7f3aec4`。ローカルの `master` は古いので見ないこと**
 （`git fetch --all --prune` してから `git log --oneline -1 origin/master`）。
 
 **実機で見ているのはオーナーだけです。**ここに書いてあるものは、断りが無ければ
@@ -62,6 +62,38 @@ CODE CONFIRMED だけ。**検査の緑は証拠になりません。**
 - **料金が $4.99 のまま出ることがありました** ── App Store への問い合わせは
   一度きりで、落ちても二度と聞き直さない。
 
+### そのあと（同じ日の夜から未明にかけて）
+
+**まだ実機で見られていません。**次のビルドで確かめるものです。
+
+- **二重課金の扉。**Plus を持っている人が Pro ではなく Plus をもう一度買える
+  状態でした。`plBuy()` が `PLAN_ORDER` で今のプランと比べ、同じか下なら
+  買わせずに App Store の管理画面へ送ります。プランは**選ぶ→サブスクライブ
+  する**の二段になりました（`PLPICK`）。`plan-check` が持っています。
+- **買ったのにプランが落ちる。**StoreKit 側で、購入直後に
+  `Transaction.currentEntitlements` がまだ新しい権利を返さないことがある。
+  `LinguaStore.swift` が買ったプランと突き合わせて良い方を採ります。
+- **数字で名づけた文字がアルファベットに残る。**`ltToDigit()` が一箇所。
+- **キーボードとメモに選択削除。**右上に 選択／削除／完了、追加は ◉+。
+- **言語の切り替えがアカウント切り替えの形に。**プロフィールタブ長押しで開く
+  一枚の画面（`langs`）。
+- **規則22 ── 端末だけに置いたものは無い。**`tools/store-check.mjs`。
+  `localStorage.setItem` のキーは全部、サーバーへの道を持つか、端末のものだと
+  理由付きで書いてあるかのどちらか。28 キー、21 が道つき、7 が端末のもの。
+  **ゲートは 34 本になりました。**
+- **何も止めない規則は、止めないと書く。**「アプリ内に説明を書かない」は機械で
+  持てないことを測って確かめ、CLAUDE.md § Explaining に「これは人が読んで守る
+  規則」と明記しました。
+
+**まだ分かっていない一つ:** 料金がなぜ $4.99 のまま出るのか。App Store の答えが
+画面に届いていません。推測をやめて、**問い合わせが落ちたのか空で返ったのかを
+アプリが言う**ようにしてあります（`store.fail` / `store.none`）。次のビルドで
+二つのうちどちらかに絞れます。
+
+**もう一つ、ダッシュボード側:** Plus と Pro が別のサブスクリプショングループに
+作られています。`docs/apple.md` は最初から一つのグループと書いています。
+アプリ側は二度目の購入を断るようにしましたが、グループを一つにするのが本筋です。
+
 ### 検査について、今日分かったこと
 
 **`plan-check` が赤のまま master に入っていました。**朝、三つの扉を
@@ -70,11 +102,37 @@ CODE CONFIRMED だけ。**検査の緑は証拠になりません。**
 回さずに取り込んだのが理由です。**ゲートは取り込んだ者が一度回す** ──
 `CLAUDE.md` のこの行は、今日それを守らなかったことで一度証明されました。
 
-### オーナーの側に残っているもの（今日ずっと残っています）
+### オーナーの側に残っているもの ── 2026-09-02 現在
 
-1. **`supabase/schema.sql` をダッシュボードに当てる。**当たるまで、プラン表・
-   `netLangsDown`・通知のまとめ・フォロワー数は動きません。
-2. **サンドボックスで購入・復元・更新を試す。**一度も試されていません。
+**確実に残っているもの。**私にはできない作業です。
+
+1. **`supabase/schema.sql` をダッシュボードに流す。**手順は
+   `supabase/setup.md` § 2。当たるまで動かないもの：プラン表、`netLangsDown`、
+   通知のまとめ、フォロワー数、**そして 2026-09-02 に足した単語と文法の DL**
+   （`slice_dl()` と広げた `slice_read`）。流すまで、人の言語のページで単語と
+   文法の ↓ を押しても何も落ちてきません。何も壊れません。
+2. **Plus と Pro を一つのサブスクリプショングループにまとめる。**
+   App Store Connect → Lingua → 収益化 → サブスクリプション。いまは別グループに
+   なっていて、Plus の人が Pro を買うと**二本走ります**（Plus は止まらず、両方
+   課金される）。同じグループなら Apple が格上げとして扱い、Plus の残りを日割り
+   で返し、Pro がその日から始まります。`docs/apple.md` § 4 は最初から一つの
+   グループと書いています。アプリ側は同じか下のプランの二度目の購入を断ります
+   が、グループの件はアプリでは直せません。
+3. **次のビルドで、料金が $4.99 と出る原因を見る。**アプリが画面で言うように
+   してあります ── 問い合わせが「落ちた」のか「空で返った」のか。そのどちらかが
+   出れば原因が二つに絞れます。**まだどのビルドにも入っていません**（最後に出た
+   のは #106 で、この作業は全部その後）。
+
+**私からは見えないので、確認してほしいもの。**済んでいるなら消してください。
+
+4. ウィジェットのプロビジョニングプロファイル（`Lingua Widget Distribution`、
+   `com.tokinets.lingua.widget`）── `docs/apple.md` § 4。無いと署名が通りません。
+5. Supabase の Apple / Google サインインが ON か ── `supabase/setup.md` § 4。
+6. メールの送信設定と DNS ── `supabase/mail.md`。
+7. 通報を読む人（スタッフ）と、**自分に admin を付けること** ──
+   `supabase/setup.md` § 5。運営専用ページは設定画面の見出しを7回叩くと開くが、
+   `NET_ADMIN` が false だと無反応で、それはサーバーが答える。
+8. 請求の上限 ── `supabase/setup.md` § 6。
 
 ## 0. 2026-08-28 に分かったこと ── 調べ直さないために
 
@@ -83,7 +141,7 @@ CODE CONFIRMED だけ。**検査の緑は証拠になりません。**
 原因かが書いてあります。
 
 **役割が変わりました。**取り込むのは**サブリーダー①**（OWNER「取り込むのは
-サブリね？」）。そのままゲート28本もそこで回します。**リーダーは配ってビルドを
+サブリね？」）。そのままゲート34本もそこで回します。**リーダーは配ってビルドを
 引くだけで、取り込まず、ゲートを回さず、コードを書きません**（OWNER「君が作業
 するんじゃなよね？」）。`docs/SESSIONS.md` と `CLAUDE.md` は直してあります。
 
@@ -124,8 +182,8 @@ CODE CONFIRMED だけ。**検査の緑は証拠になりません。**
 
 ## 1. `master` is the app again. Keep it that way.
 
-`master` is at `523c3af` (2026-09-01) and a fresh clone is the current app.
-The gate is **33 checks** — count `FAST` and `SLOW` in `tools/gate.mjs`, which
+`master` is at `7f3aec4` (2026-09-02) and a fresh clone is the current app.
+The gate is **34 checks** — count `FAST` and `SLOW` in `tools/gate.mjs`, which
 is the only place the number lives.
 
 **It has NOT been run on this `master`.** That is a statement about today, not
@@ -561,7 +619,7 @@ instructions:**
 
 ## 5. The gate, and what CI does not run
 
-`npm test` is **thirty-three** checks and is the specification. `CLAUDE.md` → "The
+`npm test` is **thirty-four** checks and is the specification. `CLAUDE.md` → "The
 twenty-one rules the gate enforces" -- **and those two numbers are not the same
 kind of thing.** Twenty-one is how many RULES are written down; thirty is how
 many CHECKS run. They have never been equal and making them equal would be

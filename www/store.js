@@ -39,9 +39,22 @@ function storeOn(){ return !!storePlug(); }
    The plan is taken from the ANSWER and never assumed from what was asked
    for: a purchase that ends up pending, or a receipt that will not verify,
    comes back saying free, and believing the request instead of the reply is
-   how an app gives away a tier nobody paid for. */
+   how an app gives away a tier nobody paid for.
+
+   AND IT ONLY EVER GOES UP FROM HERE. 「復元するものはありませんって出るけどさ、
+   さっきまでプロだったんだけど消えたってこと？」OWNER 2026-09-02, having
+   pressed Restore while paying. The answer said `free` -- an empty
+   entitlement list, which on TestFlight and in the sandbox is routine for an
+   account that IS paying -- and this line wrote it over their plan.
+
+   The phone side is fixed too (ios/App/App/LinguaStore.swift: only
+   `Transaction.updates` may lower), and this is the second door on the same
+   room. A plan ending arrives as a Keychain the next launch reads, which is
+   Apple having SAID so; nothing a button did will take a tier away.
+   「プランは絶対におかしくしちゃいけないんだって」 */
 function storeTook(r){
   var p = (r && r.plan) ? String(r.plan) : 'free';
+  p = planBest(p, plan());
   SET.plan = p;
   save();
   /* The same sentence a plan ending has always said, said by the same
@@ -83,7 +96,7 @@ function storeBuy(id){
         return;
       }
       storeTook(r);
-      if(how === 'bought') toast(t('toast.plan.other', plan()));
+      if(how === 'bought') toast(t('toast.plan.other', planName(plan())));
       else if(how === 'pending') toast(t('store.pending'));
     })
     ['catch'](function(){ toast(t('store.fail')); });
@@ -98,16 +111,28 @@ function storeBuy(id){
 
    In a browser there is nothing to read, and it says so rather than saying
    nothing: a button that answers with silence reads as broken. */
+/* AND IT ALWAYS ENDS IN A SENTENCE. 「購入を復元押しても問い合わせ中しか
+   出ないよ」OWNER 2026-09-02: the wait was said and nothing was ever said
+   after it, because the answer never came back. The phone side is bounded now
+   (ios/App/App/LinguaStore.swift § syncWithin), and this is the other end of
+   the same statement -- whatever happens on the far side of that call, the
+   button says how it went. `said` is what makes the two ends one answer
+   rather than two: whichever arrives first speaks, and the other is silent. */
+var STRT=null;
 function storeRestore(){
   var np=storePlug();
   if(!np){ toast(t('store.none')); return; }
+  var said=false;
+  function say(m){ if(said) return; said=true; clearTimeout(STRT); toast(m); }
   toast(t('store.wait'));
+  clearTimeout(STRT);
+  STRT=setTimeout(function(){ say(t('store.fail')); }, 25000);
   np('LinguaStore', 'restore', {})
     .then(function(r){
       var p=storeTook(r);
-      toast(p==='free'? t('store.none') : t('toast.plan.other', p));
+      say(p==='free'? t('store.none') : t('toast.plan.other', planName(p)));
     })
-    ['catch'](function(){ toast(t('store.fail')); });
+    ['catch'](function(){ say(t('store.fail')); });
 }
 /* Cancelling. Apple's own sheet and nothing of ours: an app that draws its
    own cancel screen is an app that will be wrong about a subscription bought
@@ -187,11 +212,15 @@ function storeAsk(){
     .then(function(r){
       var l=(r && r.products) || [], m={}, i, n=0;
       for(i=0;i<l.length;i++) if(l[i] && l[i].id){ m[String(l[i].id)]=l[i]; n++; }
-      if(!n){ STORE_ASK=false; STORE_P=STORE_P||{}; return; }
+      if(!n){ STORE_ASK=false; STORE_P=STORE_P||{}; toast(t('store.none')); return; }
       STORE_P=m;
       render();
     })
-    ['catch'](function(){ STORE_ASK=false; if(!STORE_P) STORE_P={}; });
+    /* AND IT SAYS SO. A price list that quietly shows the typed dollars when
+       the App Store did not answer is a screen that is wrong in every country
+       but one and says nothing 「しかもまだ4.99って出るけど？」 OWNER
+       2026-09-01. An error is a state, not an explanation. */
+    ['catch'](function(){ STORE_ASK=false; if(!STORE_P) STORE_P={}; toast(t('store.fail')); });
 }
 /* What one term of one plan costs. Empty when the App Store has not answered,
    which is every browser and every product not yet made -- the caller falls

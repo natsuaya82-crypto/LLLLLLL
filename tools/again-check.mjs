@@ -339,6 +339,56 @@ say(safe.shrankKept && safe.shrankSaid,
     (safe.shrankKept ? 'the phone kept its four words' : 'THE PHONE LOST WORDS') +
     ', ' + (safe.shrankSaid ? 'and it was recorded' : 'and nothing said so'));
 
+/* ---- waiting is not empty, and a refusal is not an answer ----------------
+   Two sentences the timeline used to say before the server had said anything.
+
+   「snsで一瞬何も出ないとかあり得んやろ」「後お題も出てこない1秒待つけど」
+   OWNER 2026-09-02. A phone with no local copy drew 「まだ何も無い」 while the
+   first answer was still out -- a statement about the SERVER made before it
+   answered -- and the day's sentence asked once, so a first ask that failed
+   was the last one for that session.
+
+   Nothing here is stubbed but the two answers themselves: what is under test
+   is what the screen says while it has none, and what happens after a
+   refusal. */
+const W = await pg.evaluate(async () => {
+  function wait(ms){ return new Promise(function (r){ setTimeout(r, ms); }); }
+  const out = {};
+  /* Past the door, or render() draws the onboarding and never reaches the
+     timeline at all -- which is what this measured the first time. */
+  SET.done = true;
+  POSTS = []; SNS_GOT = {}; snsTab = 'fo';
+  window.route = 'feed'; NAV = [{ r:'feed' }]; render();
+  out.markTurns = !!document.querySelector('#app .snswait .pullrule');
+  out.saidNoneWaiting = document.querySelector('#app .empty .eb') !== null;
+  /* An answer that came back EMPTY is still an answer, and now it may say so. */
+  SNS_GOT['fo'] = 1; render();
+  out.saysNoneAfter = document.querySelector('#app .empty .eb') !== null;
+  out.markGone = !document.querySelector('#app .snswait');
+  /* And the day's sentence, refused twice. */
+  let asks = 0;
+  window.netDay = function (ok){
+    asks++;
+    ok(asks < 3 ? null
+                : { id:'p1', on_day:'2026-09-02', text:'the sea', says:{ en:'the sea' } });
+  };
+  DAY = null; dayPulling = false; dayWait = 20;
+  dayPull();
+  await wait(500);
+  out.asks = asks;
+  out.gotDay = !!(DAY && DAY.text);
+  return out;
+});
+say(W.markTurns && !W.saidNoneWaiting,
+    'a timeline with no answer yet turns the app own mark and claims nothing ' +
+    'about what is on the server (' + (W.markTurns ? 'mark' : 'NO MARK') + ', ' +
+    (W.saidNoneWaiting ? 'AND SAID EMPTY' : 'said nothing') + ')');
+say(W.saysNoneAfter && W.markGone,
+    'and an answer that came back empty is when it says so, with the mark gone');
+say(W.asks === 3 && W.gotDay,
+    'the day sentence asks again after a refusal instead of giving up for the ' +
+    'session (' + W.asks + ' asks, ' + (W.gotDay ? 'got it' : 'NEVER GOT IT') + ')');
+
 await br.close();
 if (bad.length){
   console.log('\nagain: ' + bad.length + ' problem' + (bad.length > 1 ? 's' : '') + '.\n');

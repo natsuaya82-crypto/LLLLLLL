@@ -2637,6 +2637,18 @@ function render(){
        nothing and does nothing. */
     geTiles();
     return; }
+  /* THE LANGUAGES OF WHOEVER JUST SIGNED IN ARE STILL COMING DOWN.
+     「前の人の言語が出るくらいならローディング入れればいいやん」OWNER
+     2026-09-02. Everything below this line is drawn out of WORDS, LETTERS and
+     SCRIPT -- the language that is OPEN -- and for the moment between a
+     sign-in and the answer arriving, the open one is whoever used this phone
+     before. langForAcct() in www/core.js says when that is true; this is the
+     screen it is true on. The same mark the timeline turns while it waits,
+     because it is the same sentence and there is one place to draw it. */
+  if(LANG_WAIT){
+    app.setAttribute('data-fresh', '0');
+    app.innerHTML='<div class="view"><div class="body">'+snsWaitHTML()+'</div></div>';
+    return; }
   /* a word written since the font was built can need a letter it does not have */
   if(SFONT.sig!==null && SFONT.sig!==scriptSig()) installScriptFont();
   /* and the system keyboard, which is a second program and holds its own copy
@@ -2669,6 +2681,17 @@ function render(){
   if(!same) geLeft(RENDERED, route);
   if(!same) viewLeft(RENDERED, route);
   var y = same ? (window.scrollY || window.pageYOffset || 0) : 0;
+  /* THE SCREEN BEING LEFT, KEPT. Not to redraw it -- to show it behind the
+     current one while a thumb drags that one off, which is what iOS does and
+     what was asked for: 「iPhone標準みたいに左側になんかふわってやつ出てきて
+     ほしい」 OWNER 2026-09-02.
+
+     Kept rather than rebuilt, and that is the whole reason it is here rather
+     than in the gesture: building a view again RUNS it. vNotif() marks the
+     notices read, three screens pull from the network, and a swipe that was
+     abandoned would have done all of it. What is stashed is the page as it
+     was actually left. www/shell.js § swStart is what shows it. */
+  if(!same) navKeep(RENDERED, app.innerHTML);
   RENDERED=route;
   /* the entrance animation belongs to arriving, not to redrawing */
   app.setAttribute('data-fresh', same ? '0' : '1');

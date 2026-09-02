@@ -218,6 +218,73 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### ダウンロードは Plus から。上限は make と別で、Plus 1・Pro 3
+- Date: 2026-09-02
+- Area: 人の言語をダウンロードする（⑫）、`CAN.dl` と `dlCap()`（`www/core.js`）
+- Decision:
+
+  ```
+  plusからです
+  dlはしかもplusは1つproは3つ DL言語とmake言語でそれぞれ別の最大値
+  言語足そうとしたり、dlしようとすると無料からアプデのポップ、
+  plusで1個から2個に増やそうとするとアプデのポップ
+  ```
+
+  ダウンロードできるのは **Plus から**。持てる数は **Plus 1、Pro 3**。
+  自分で作る言語の上限（Free 1・Plus 1・Pro 3）とは **別の数** で、
+  互いに影響しない。上限に当たったら課金のポップが出る。
+
+- Reason: オーナーが実機で、無料のままダウンロードした言語を使えることに
+  気づいた。
+- Affected features: ⑫。`CAN.dl` は 2026-08-19 の
+  「キーボードと文字の DL は無料、辞書は Plus」を **置き換える**
+  （docs/FEATURES.md § 4）
+- Affected data: 何も消えない。**上限を超えた分は一覧から隠れる**
+  ── 「減った時は隠すだけね」「だって単語でも文法でも同じようにやったじゃん」。
+  単語が無料で先頭百語だけ並べるのと同じ形（`wordsSeen()` → `langsSeen()`）で、
+  **開いている言語は必ず一覧に残る**（「開いてるものを残すでいいよ」）。
+  `LANGS` も `lingua.` の鍵も一つも動かず、払い直せば全部元どおり並ぶ。
+  これは `www/core.js` に書いてあった「never hides one, never shortens a
+  list」を置き換える
+- Affected docs: この項目、docs/FEATURES.md § 4
+- Implementation status: IMPLEMENTED。`dl-check` が持つ
+  （無料は不可・Plus は 1・Pro は 3・二つの数が互いを見ない）。赤を見た。
+  隠す側も `dl-check` が持つ（Pro で三つ、無料で一つ、開いているものが残る、
+  鍵が一つも消えない、払い直すと戻る）。赤を見た
+
+### 言語の記事は「人にどう見えるか」──自分のページで分岐しない
+- Date: 2026-09-02
+- Area: この言語について（`wldPage()` の読む面、`www/home.js`）
+- Decision:
+
+  ```
+  自分のページだろうが人のページだろうが人にどう見えるか
+  ```
+
+  記事の読む面は **読み手が見る画面** であり、それが誰の言語かで描き分けない。
+  見出し、開くかどうか、文字の升、キーボードの絵、＞ の数 ── どれも同じ。
+  「自分だから余分に出す」も「自分だから別の部品を使う」も無い。
+
+  そして **一行に ＞ は一つ**。左の、開くための一つだけ。
+
+- Reason: 「＞＞が二つあるのが嫌だって話前にしたよね？」「自分のページでも人の
+  ページでも見た目は一緒にしてよ　なんで変える必要あんの？」「自分のページ
+  だろうが人のページだろうが人にどう見えるかだろ」 OWNER 2026-09-02。
+  記事は公開するものなので、自分で見る意味は「読み手にどう映るか」を見ること。
+  分岐があると、自分の画面で確かめたことが読み手の画面について何も言わない。
+- Affected features: ⑫ 言語の記事
+- Affected data: 無し。描き方だけ
+- Affected docs: この項目。2026-08-25 の「DL許可が出てるものはDLマークつけないと」
+  は **読む面については置き換えられた** ── 行の ↓ 印は無くなり、人の記事では
+  足元の取る行が、自分の記事では編集面の四つのスイッチがその答え
+- Implementation status: IMPLEMENTED（`2442a66`）。
+  **残っている差は二つあり、どちらも「見た目」ではなく「できること」です**:
+  ① 右上の「編集」── 記事を書き換える入口で、記事そのものではない。
+  ② 足元の ↓ の行 ── 章を **取る** ボタンで、自分の言語には取るものが無い
+  （`WLDS_HAVE` に何も無いので押しても何も起きない）。ここを同じにするなら
+  「自分の記事でも ↓ の行を出す」ことになり、押したとき何をするのかは
+  決まっていません。**オーナーの判断待ち**
+
 ### 長押しのしきい値は 10px
 - Date: 2026-09-01
 - Area: プロフィールの長押しで言語を切り替える（⑬）
@@ -1275,14 +1342,65 @@ spec asks for them」と書いている ── **人が押した削除は automa
   **要るのは Lingua 用に書き下ろした二本。** App Store Connect のプライバシー
   ポリシー URL は必須なので、これができるまで審査に出せない。サイトの仕事。
 
-### 売上とアナリティクスを、アプリの中で見る
+### 運営ページのパスワードは、Apple/Google サインインでは出ない。そのままにする
+- Date: 2026-09-02
+- Area: `www/mod.js` `adminLocked()`
+- Decision: **そのままにする。塞がない。**「どうせ俺しか使わんからいいよこのまま
+  で」 OWNER 2026-09-02。
+- What it is: `adminLocked()` は `netHow()==='email'` のときだけ true。つまり
+  メールでサインインした人にはパスワードの画面が出るが、Apple / Google では
+  出ず、7 回タップでそのまま開く。照合するパスワードが存在しないため。
+  そのパスワード自体もアカウントのパスワードで、専用のものではない
+  （`adminGo()` が `netSignIn(netMail(), …)` を投げ直しているだけ）。
+- **穴ではない。**本当の壁は二つとも別にある ── `profile.admin` が立って
+  いなければ 7 回叩いても無反応（サーバーが答える）、そして通報もスタッフ
+  一覧も `is_staff()`/`is_admin()`（`supabase/schema.sql`）を通る。端末が嘘を
+  ついても何も渡されない。このパスワードは「サインイン済みの端末を人に渡した
+  ときの画面ロック程度」のもので、コードのコメントにもそう書いてある。
+- Affected data: なし。Affected code: なし（変更しない、という決定）。
+- **後から読んだ人へ:** これは見落としではありません。報告して、そのままにすると
+  決まりました。生体認証などで塞ぐ話をするなら、まずオーナーに訊いてください。
+
+### 売上とアナリティクスは RevenueCat で見る
+- Date: 2026-09-02
+- Area: 数字を見る画面／App Store Connect の API／管理画面の売上の欄
+- Decision: **売上とアナリティクスは RevenueCat で見る。アプリの中では見ない。**
+  「revenue cut入れたから、App Storeコネクトキーいらんわ」「RevenueCatで見るって
+  話してるんだけど」 OWNER 2026-09-02。
+- **2026-08-26 の決定「売上とアナリティクスを、アプリの中で見る」を置き換える。**
+  下のその項は superseded。オーナーの言葉は「アプリの中で見るなんて一言も
+  言ってないけど」。つまり下の Reason 行にある 〈アプリの中で見たい〉 は、
+  **オーナーが言っていないのに鍵括弧が付いていた**。CLAUDE.md の
+  「オーナーが言っていないものを「」で囲まないこと」が破られていて、それを
+  読んだ私が今日そのまま信じ、オーナーに二度言わせた。
+- **数字は一つも残さない。**「lingua内ではみないって言ってるだろ」 OWNER
+  2026-09-02。①契約者数と売上 ②ダウンロード数 ③解約と継続 だけでなく、
+  ④登録ユーザー数も管理画面から消えた ── その一言は Lingua の中で見るかどうか
+  であって、Apple から来た数字かどうかではない。
+- Affected features: `docs/FEATURES.md` § 8。管理画面に残るのは**通報とスタッフ**
+  だけ。それは分析ではなく、運営そのものの作業。
+- Affected data: 減らない。Apple の数字を置く表は元々作られていない。
+  `admin_counts()` はサーバーに残り、通報の件数だけが読まれる。
+- **Implemented 2026-09-02.** 消したもの ── `www/mod.js` の五ページと六行
+  （`adminOpen` `adminGotTop` `adminMonthTop` `adminPlanTop` `adminView`
+  `adminGoTo` `adminAt` `adminAsc` `adminNow` `adminPurse` `adminPlans`
+  `adminPct` `adminMD` `adminMon` `adminOne` `adminWhenRow` `adminDays`
+  `adminMonths`、`ADMIN_ASC`）、`www/net.js` の `netStore()`、
+  `supabase/functions/appstore/`、`act-map` の `adminGoTo`、十言語 × 11 の文言。
+- Affected docs: `supabase/setup.md` § 10、`docs/FEATURES.md` § 8、
+  `docs/BACKLOG.md`、`docs/apple.md`
+
+### 売上とアナリティクスを、アプリの中で見る ── **superseded 2026-09-02**
 - Date: 2026-08-26
 - Area: 数字を見る画面（新しい章）／App Store Connect の API／Supabase
 - Decision: **アプリの中に、staff だけ見える一枚を作る。** 出すのは四つ ──
   ①契約者数と売上 ②ダウンロード数 ③解約と継続率 ④アプリの中の数
   （アカウント数・投稿数・言語数）。**数字は画面を開いたときに毎回取る。**
-- Reason:「売り上げもアナリティクスも見れるようにしたい」「アプリの中で見たい」
-  「画面を開いたときに毎回」。鍵の置き場所は Supabase の Secrets で、
+- Reason:「売り上げもアナリティクスも見れるようにしたい」。
+  **〈アプリの中で見たい〉〈画面を開いたときに毎回〉は鍵括弧を外した** ──
+  オーナーは 2026-09-02 に「アプリの中で見るなんて一言も言ってないけど」と
+  言っている。書いた者の地の文に括弧が付いていたもの。鍵の置き場所は
+  Supabase の Secrets で、
   GitHub ではない ──「（GitHub ではない）」。理由はオーナーの言葉ではなく
   コードが言っている: アプリは Supabase と直接しゃべっていて間にうちのサーバーが
   無いので、**アプリが持つものは全部公開されている**（www/net.js の SB_KEY の
@@ -2810,6 +2928,13 @@ be this app deciding whose calendar it is」。それは**週や月の長さを�
   `kb.locked` — and `LANG_MAX`, whose only reader was one of them.
 - Affected data: none.
 - Affected docs: `CLAUDE.md`, `docs/FEATURES.md`
+- **Held by: nobody but a person.** Measured 2026-09-01. `.note` is worn 39
+  times and most of those are the empty states, counts, states and errors this
+  decision explicitly allows, so a check on the class would fail the app for
+  obeying it; and a `.d`/`.eg` key is not an explanation either, a third of
+  them being `aria-label`s. What is left is the sentence, and no check reads a
+  sentence. Written here so that silence is not read as a check — CLAUDE.md
+  § Explaining says the same in the rule itself.
 - Implementation status: implemented. **`cap.lapse.d` is left in and is the
   one thing to settle**: it is the line that says a dictionary dropping back
   to a hundred words has had NOTHING deleted. Taking it out would leave the

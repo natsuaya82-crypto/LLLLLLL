@@ -50,6 +50,9 @@ function viewReset(){
   ltSort='own'; ltFil='all'; ltQ='';   /* the alphabet's order, filter and search */
   ltWob=false;                         /* and whether its letters are wobbling */
   PLPICK=null;                         /* and which term of which plan is chosen */
+  KBSEL=null;                          /* and which keyboards are being chosen */
+  NTSEL=null;                          /* and which notes are */
+  DFSEL=null;                          /* and which drafts are */
   ipaQ=''; ipaOpen={mine:1};           /* the IPA page: its search, and what is open */
   GE=null;                             /* the glyph editor */
   kbLay=0; kbSel=null; kbSlotFor=null; /* the keyboard being built */
@@ -782,7 +785,21 @@ function tabBar(){
    other number put to them was 16: wider survives a shakier thumb, and pays
    for it in scrolls that turn into a language switch. Ten was chosen. It is
    not this file's to move. */
-var HOLD_MS=500, HOLD_SLOP=10, holdT=null, HELD=false, holdX=0, holdY=0;
+/* HELD_MS is how long the swallowed click has to arrive in.
+   「言語切り替えする時も2回タップしないと変わらない」 OWNER 2026-09-02.
+
+   HELD was a flag with no lifetime: set when the hold fired, and cleared by
+   the next click ANYWHERE. On a phone that click often never comes -- iOS does
+   not always send one after a long press, and the page has changed under the
+   finger by then -- so the flag stood, and the next tap the person made, on
+   the screen the hold had just opened, was eaten instead. Two taps to switch a
+   language, every time, and the first one silently did nothing.
+
+   It is closed twice, because either alone leaves a case: a window, so a flag
+   nobody claimed goes stale on its own, and a new touch, because starting
+   another gesture is proof the last one is over. */
+var HOLD_MS=500, HOLD_SLOP=10, holdT=null, HELD=false, holdX=0, holdY=0, heldAt=0,
+    HELD_MS=700;
 /* Where the finger is, from a touch or from a mouse. A touchend carries its
    point in `changedTouches`, because by then it is no longer touching. */
 function holdAt(e){
@@ -792,12 +809,16 @@ function holdAt(e){
 }
 function holdStart(e){
   var el=e.target, p;
+  /* A NEW GESTURE ENDS THE LAST ONE. Before the early return below, because a
+     touch that lands on something with no `data-hold` is still a touch, and it
+     is still proof that the hold before it is done with. */
+  HELD=false;
   while(el && el!==document && el.getAttribute && !el.getAttribute('data-hold')) el=el.parentNode;
   if(!el || !el.getAttribute || !el.getAttribute('data-hold')) return;
   holdClear();
   p=holdAt(e); holdX=p.x; holdY=p.y;
   holdT=setTimeout(function(){
-    holdT=null; HELD=true;
+    holdT=null; HELD=true; heldAt=Date.now();
     goTab('profile'); go('langs');
   }, HOLD_MS);
 }
@@ -813,7 +834,12 @@ function holdMove(e){
 function holdClear(){ if(holdT){ clearTimeout(holdT); holdT=null; } }
 function holdEat(e){
   if(!HELD) return;
-  HELD=false; e.stopPropagation(); e.preventDefault();
+  HELD=false;
+  /* Only the click the hold itself produced, which arrives at once. Anything
+     later is somebody pressing something, and a press is not this gesture's
+     to swallow. */
+  if(Date.now()-heldAt > HELD_MS) return;
+  e.stopPropagation(); e.preventDefault();
 }
 /* Capture, and on `document`: act.js listens on the app root in the bubble
    phase, so capture here is the only place that runs before it. */
@@ -1057,8 +1083,14 @@ function vvMount(){
    this is a second way to the same thing, not a replacement.
    「全部戻るボタンじゃなくて携帯の右からスライドして戻るのも追加してほしい。両方」
 
-   From the RIGHT edge, dragged left. Which edge is the phone's own habit and
-   not ours to argue with, and the one that was asked for is this one.
+   FROM EITHER EDGE. The right edge, dragged left, is what was asked for on
+   2026-08-27 -- 「携帯の右からスライドして戻るのも追加してほしい。両方」 -- and
+   it was the only one, so the LEFT edge, which is where iOS puts its own back
+   gesture and where a thumb goes without being told, did nothing.
+   「画面の左側スワイプで全部戻れるようになってないんだけどなんで？」 OWNER
+   2026-09-02. Both now: from the left, dragged right; from the right, dragged
+   left. One is the phone's habit and one is the owner's, and neither costs the
+   other anything.
 
    Three things it must not do. It must not fire on a drawing: the glyph
    editor is a canvas that goes to the edge of the screen and a stroke ending
@@ -1070,7 +1102,7 @@ function vvMount(){
    pointer* and not touch*: this app is one webview and pointer events are
    what it has. Passive, because it never prevents the default -- a gesture
    that cancels a scroll it has decided against is worse than no gesture. */
-var swX=0, swY=0, swOn=false;
+var swX=0, swY=0, swOn=false, swWay=0;
 function swStart(e){
   swOn=false;
   if(!e.isPrimary) return;
@@ -1081,16 +1113,106 @@ function swStart(e){
     if(n==='CANVAS' || n==='INPUT' || n==='TEXTAREA') return;
     t=t.parentNode;
   }
-  if(e.clientX < window.innerWidth-30) return;
-  swX=e.clientX; swY=e.clientY; swOn=true;
+  /* Which edge it started at, and therefore which way it has to go. A thumb's
+     width, the same 30 on both, because it is the same thumb. */
+  if(e.clientX <= 30) swWay=1;
+  else if(e.clientX >= window.innerWidth-30) swWay=-1;
+  else return;
+  swX=e.clientX; swY=e.clientY; swOn=true; swPic=true;
+}
+/* ---- the screen behind, while one is being dragged off it ---------------
+   「iPhone標準みたいに左側になんかふわってやつ出てきてほしい」 OWNER
+   2026-09-02, after the left edge started working at all.
+
+   THE SCREEN YOU CAME FROM, KEPT BY render(). Two of them and not one: which
+   screen it was, and its HTML as it was left. A pair, because the picture is
+   only worth showing when the route it belongs to is the one `back()` would
+   take you to -- otherwise it is a screen from somewhere else entirely,
+   sliding in under a gesture that will not land there. */
+var NAVBK=null;
+function navKeep(r, html){ NAVBK=(r && html)? {r:String(r), html:html} : null; }
+/* Where back() would go. NAV's last entry is where you are. */
+function navBackTo(){ return (NAV.length>1)? String(NAV[NAV.length-2].r||'') : ''; }
+/* The screen under the one being dragged, or nothing.
+
+   Nothing is REBUILT here and that is the point: calling a view again runs it
+   -- vNotif() marks the notices read, three screens pull -- so an abandoned
+   swipe would have done all of it. render() keeps what it replaces. */
+function swPrev(){
+  var to=navBackTo();
+  return (NAVBK && to && NAVBK.r===to)? NAVBK.html : '';
+}
+function swLayer(){ return document.getElementById('swprev'); }
+/* Following the thumb. `pointermove` and not touchmove, and never passive
+   while the gesture is live: once it IS a back gesture, the page must not
+   scroll under it. Until then it is nothing and the page is left alone --
+   which is why swLive is a second flag and not the same one as swOn. */
+var swLive=false, swW=1, swPic=true;
+function swMove(e){
+  if(!swOn) return;
+  var dx=e.clientX-swX, dy=e.clientY-swY, p;
+  if(!swLive){
+    /* Not yet mine. It becomes a back gesture when it has gone far enough the
+       right way AND is mostly sideways; a thumb heading down the page is the
+       page scrolling and this never sees it again. */
+    if(Math.abs(dy) > Math.abs(dx)){ swOn=false; return; }
+    if(dx*swWay < 12) return;
+    /* NO PICTURE IS NOT NO GESTURE. This said `swOn=false` when there was
+       nothing kept to show -- and swEnd() returns on `!swOn`, so the plain
+       gesture below it, the one that goes back without animating, could
+       never run again. Adding the picture took the gesture away wherever the
+       picture was missing: the first screen of a tab, and the screen after
+       any tab switch. It only drops the drawing. */
+    if(!swPic) return;
+    p=swPrev();
+    if(!p){ swPic=false; return; }
+    swLive=true;
+    swW=window.innerWidth||1;
+    var el=swLayer();
+    if(el) el.innerHTML=p;
+    document.documentElement.classList.remove('swgo');
+    document.documentElement.classList.add('swon');
+  }
+  if(e.cancelable) e.preventDefault();
+  swDraw(Math.max(0, Math.min(swW, dx*swWay)));
+}
+/* One place that says where the two screens stand for a given travel. The
+   one behind comes in from a third of the way out, which is the depth iOS
+   gives it -- it is behind, so it moves less. */
+function swDraw(d){
+  var app=document.getElementById('app'), el=swLayer(), a=d*swWay;
+  if(app) app.style.transform='translateX('+a+'px)';
+  if(el) el.style.transform='translateX('+((d-swW)/3*swWay)+'px)';
+}
+function swClear(){
+  var app=document.getElementById('app'), el=swLayer();
+  document.documentElement.classList.remove('swon');
+  document.documentElement.classList.remove('swgo');
+  if(app) app.style.transform='';
+  if(el){ el.style.transform=''; el.innerHTML=''; }
 }
 function swEnd(e){
   if(!swOn) return;
   swOn=false;
-  var dx=e.clientX-swX, dy=e.clientY-swY;
-  if(dx > -70) return;
-  if(Math.abs(dy) > Math.abs(dx)*0.6) return;
-  back();
+  var dx=e.clientX-swX, dy=e.clientY-swY, d=dx*swWay;
+  if(!swLive){
+    /* No picture to drag -- the screen behind was not kept, or this is the
+       first screen. The gesture still works, it simply does not animate. */
+    if(d < 70) return;
+    if(Math.abs(dy) > Math.abs(dx)*0.6) return;
+    back();
+    return;
+  }
+  swLive=false;
+  /* Past a third of the way is going. Under it springs back. Either way it
+     travels rather than jumping -- `swgo` is what puts the transition on. */
+  var go=(d > swW/3);
+  document.documentElement.classList.add('swgo');
+  swDraw(go? swW : 0);
+  setTimeout(function(){
+    swClear();
+    if(go) back();
+  }, 230);
 }
 /* ---- putting the keyboard down -----------------------------------------
    「投稿画面は下させるな、投稿画面以外は絶対下させろって話」 OWNER 2026-08-27.
@@ -1133,7 +1255,16 @@ function kbLetGo(e){
 function swMount(){
   document.addEventListener('pointerdown', kbLetGo, {passive:true});
   document.addEventListener('pointerdown', swStart, {passive:true});
+  /* NOT passive: once this is a back gesture it stops the page scrolling
+     under it, which is the one thing a passive listener may not do. */
+  document.addEventListener('pointermove', swMove, {passive:false});
   document.addEventListener('pointerup', swEnd, {passive:true});
+  /* A thumb that leaves the glass mid-drag, or a call arriving. Without this
+     the screen stays where the finger left it. */
+  document.addEventListener('pointercancel', function(){
+    if(!swOn && !swLive) return;
+    swOn=false; swLive=false; swClear();
+  }, {passive:true});
   document.addEventListener('pointercancel', function(){ swOn=false; }, {passive:true});
 }
 /* And the bar is put on the page here, once, into an element beside #app that

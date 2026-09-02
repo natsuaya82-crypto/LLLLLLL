@@ -32,6 +32,7 @@
 import Foundation
 import Capacitor
 import StoreKit
+import Security
 
 @objc(LinguaStorePlugin)
 public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
@@ -105,7 +106,7 @@ public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
            Not finishing is the classic StoreKit bug: everything works, and
            the same transaction arrives at every launch forever. */
         await t.finish()
-        _ = await self?.writeDown()
+        _ = await self?.writeDown(mayLower: true)
       }
     }
   }
@@ -145,11 +146,50 @@ public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
 
   /// Ask the App Store, then write the answer where the next launch will find
   /// it. Returns what it wrote so a call can answer with the same thing.
+  /// NEVER DOWN, unless Apple was actually asked.
+  ///
+  /// 「プランは絶対におかしくしちゃいけないんだって」 OWNER 2026-09-02, after a
+  /// paid plan came back free on its own.
+  ///
+  /// `entitledPlan()` answers `free` for two different things: 「this person
+  /// has nothing」 and 「the entitlement list gave me nothing」. An empty
+  /// `Transaction.currentEntitlements` is a real state on a launch before the
+  /// receipt is there, on a phone signed out of the App Store, and on one that
+  /// cannot reach it. Writing that down replaces a paid plan with `free` in
+  /// the one place the plan LIVES -- and nothing afterwards can tell that it
+  /// was ever anything else. Same shape as LinguaPlan.readPlan(), and the same
+  /// sentence off CLAUDE.md's first page: 「空」 and 「読めていない」 may not
+  /// share a branch.
+  ///
+  /// ONE ROAD MAY LOWER IT, and it is `Transaction.updates` -- Apple pushing
+  /// a change at us, which is the only moment anything has actually SAID that
+  /// this person's subscription ended.
+  ///
+  /// `restore` and `manage` were on this list for a morning and are off it.
+  /// Both end in reading `currentEntitlements`, and an empty list there is
+  /// not a person who owns nothing: on TestFlight and in the sandbox it is
+  /// routinely empty for an account that is paying, and a `sync()` that
+  /// SUCCEEDS does not change that. It cost the owner their plan on the
+  /// build that had it: 「復元するものはありませんって出るけどさ、さっきまで
+  /// プロだったんだけど消えたってこと？」OWNER 2026-09-02.
+  ///
+  /// Restore means 「give me back what I bought」. Finding nothing is not an
+  /// instruction to take something away. A cancellation still lands, from
+  /// the updates listener, which is Apple saying it rather than this app
+  /// inferring it from a silence.
   @discardableResult
-  private func writeDown() async -> String {
-    let plan = await Self.entitledPlan()
-    LinguaPlanPlugin.set(plan)
-    return plan
+  private func writeDown(mayLower: Bool = false) async -> String {
+    let seen = await Self.entitledPlan()
+    if !mayLower {
+      let (held, st) = LinguaPlanPlugin.readPlan()
+      /* Only a Keychain that ANSWERED is worth comparing against. A read that
+         failed says nothing about what is there, so it does not get a vote. */
+      if st == errSecSuccess, !held.isEmpty, Self.best(seen, held) != seen {
+        return held
+      }
+    }
+    LinguaPlanPlugin.set(seen)
+    return seen
   }
 
   /// The plan as it stands, without writing anything: the three outcomes of
@@ -276,21 +316,53 @@ public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
     }
   }
 
+  /// AppStore.sync(), with a bound on how long it may take.
+  ///
+  /// It puts up Apple's own sign-in sheet, and a sheet that is dismissed
+  /// rather than answered can leave the call suspended with nothing to
+  /// resolve. The button then says 「問い合わせ中」and never says anything
+  /// else, which is what a person sees:
+  /// 「購入を復元押しても問い合わせ中しか出ないよ」OWNER 2026-09-02.
+  ///
+  /// The answer does not depend on it. What this Apple ID holds is
+  /// `Transaction.currentEntitlements`; sync() only refreshes it, and is
+  /// worth waiting a while for and not for ever.
+  ///
+  /// Returns whether it actually came back, because that decides something
+  /// else -- see restore().
+  private static func syncWithin(_ seconds: UInt64) async -> Bool {
+    return await withTaskGroup(of: Bool.self, returning: Bool.self) { group in
+      group.addTask {
+        do { try await AppStore.sync() } catch { return false }
+        return true
+      }
+      group.addTask {
+        try? await Task.sleep(nanoseconds: seconds * 1_000_000_000)
+        return false
+      }
+      var first = false
+      if let r = await group.next() { first = r }
+      group.cancelAll()
+      return first
+    }
+  }
+
   /// The Restore button, and the only thing that calls AppStore.sync().
   ///
   /// It asks for an App Store password, which is why it is a button somebody
   /// presses and not something done on launch. A sync that fails is not
   /// necessarily a person with nothing: the entitlements already on the
   /// device are still worth reading, so the answer is given either way.
+  ///
+  /// AND IT NEVER LOWERS THE PLAN. Not even when the sync came back: an
+  /// empty entitlement list is 「Apple told me nothing」 as often as it is
+  /// 「this person owns nothing」, and restore is the button for getting a
+  /// plan BACK. See writeDown() above for the day that cost.
   @objc func restore(_ call: CAPPluginCall) {
     Task {
-      var said = ""
-      do { try await AppStore.sync() }
-      catch { said = error.localizedDescription }
-      let plan = await writeDown()
-      var out: [String: Any] = ["plan": plan]
-      if !said.isEmpty { out["trouble"] = said }
-      call.resolve(out)
+      let synced = await Self.syncWithin(12)
+      let plan = await writeDown(mayLower: false)
+      call.resolve(["plan": plan, "synced": synced])
     }
   }
 
@@ -312,7 +384,11 @@ public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
       }
       do {
         try await AppStore.showManageSubscriptions(in: scene)
-        call.resolve(["plan": await self.writeDown()])
+        /* Coming back from Apple's sheet does not lower it either. Somebody
+           may have cancelled in there, and that arrives as a Transaction
+           update -- which is Apple saying so. Reading an empty entitlement
+           list a second later is this app guessing. */
+        call.resolve(["plan": await self.writeDown(mayLower: false)])
       } catch {
         call.reject("manage: \(error.localizedDescription)")
       }

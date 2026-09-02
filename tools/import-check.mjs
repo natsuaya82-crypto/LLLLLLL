@@ -281,6 +281,10 @@ function read(sample){
 const LTREG = 'var localStorage={getItem:function(){return null;},setItem:function(){}};\n' +
               'function langKey(k){ return String(k); }\n' +
               'function bkTouch(){}\n' +
+              /* Whether the open language may be written to -- www/core.js, and
+                 there is no open language here. False is 「it is yours」, which
+                 is what every other harness in this file assumes. */
+              'function langLocked(){ return false; }\n' +
               'var LETTERS=[];\n';
 let LT;
 try {

@@ -255,6 +255,27 @@ function langMine(id){
   var L=LANGS[String(id||'')];
   return !L || L.mine!==false;
 }
+/* AND THE OPEN LANGUAGE, ASKED BY EVERY WRITER OF ONE. True means the caller
+   must stop -- upStop()'s shape, and for the same reason: a rule that lives in
+   one place and is ASKED at each road that could break it.
+
+   「dl言語はへんしゅうはできないってなんかいもいわせんなよ」 OWNER 2026-09-01,
+   and 「編集不可でそのアカウントに切り替えたらダウンロードした人の言語が使える」
+   OWNER 2026-09-02 -- a downloaded language is one you switch to and USE, and
+   nothing in it is yours to change.
+
+   langOpen()'s own comment has said since it was written that what protects a
+   downloaded language is not a locked door but the WRITERS, and it named four.
+   Three of those asked (ltStart, bkPush, netLangSync); the fourth was 「the row
+   in the language list is not a button」, which is not a writer at all -- it is
+   the door being shut. So SEVEN savers wrote somebody else's language without
+   asking anything, and the only reason nothing was lost is that there was no
+   way in. Opening the door is what made this line necessary.
+
+   It asks the OPEN language and takes no argument on purpose: every one of
+   those savers writes langKey(), which is the open language and nothing else.
+   A saver given an id would be a second question. */
+function langLocked(){ return !langMine(langId); }
 /* Nothing here at all: a first run, or a first run after the migration found
    nothing to move. The person gets one empty language of their own. */
 function langFirst(){
@@ -307,13 +328,35 @@ try{
    In a browser, and in every check under tools/, there is no native side and
    the settings hold the plan exactly as they always did. */
 var PLAN_NATIVE=(typeof window.__plan==='string');
+/* Whether the Keychain ANSWERED, as against what it said. See the note under
+   the branch below: this is what keeps a read that failed from being written
+   down as `free`. A build with no native side, and every check under tools/,
+   has no such thing and is not in this branch at all. */
+var PLAN_READ_OK=(window.__planok!==0 && window.__planok!=='0');
 if(PLAN_NATIVE){
   /* Empty means the Keychain has never been written -- a fresh install, or
      one that predates this and still has the plan in its settings. Both are
      answered the same way: take whatever is there and put it where it now
-     belongs, once. */
+     belongs, once.
+
+     AND EMPTY IS NOT THE ONLY WAY TO GET NOTHING. A read that FAILED came
+     back as the same empty string, and this line answered it by writing
+     `free` into the Keychain -- over a plan somebody had paid for, in the one
+     place the plan lives. 「アップデートしたら勝手に無料プランになったんだけど？」
+     OWNER 2026-09-02. CLAUDE.md's first page says it: 「Empty」 and 「broken」
+     are different states and must not share a branch.
+
+     `window.__planok` is the native side saying which it was --
+     ios/App/App/LinguaPlan.swift § readPlan(). 0 is a read that failed, and
+     the answer to that is to write NOTHING and leave what is there. The plan
+     on screen falls back to the copy in the settings, which is the last one
+     this phone knew; the Keychain keeps whatever it has.
+
+     PLAN_READ_OK is the one place that answers it. Two roads write the plan
+     down at boot -- this one and planMigrate() below -- and both have to ask,
+     or the guard is on one door of two. */
   if(window.__plan) SET.plan=window.__plan;
-  else planKeep(SET.plan||'free');
+  else if(PLAN_READ_OK) planKeep(SET.plan||'free');
   /* Whatever copy is still in the file goes out with the next save, which
      setOnDisk() below is what makes true. Taking it out here as well was
      written first and did nothing: the save that boot does anyway put it
@@ -363,7 +406,12 @@ function planMigrate(){
      ever meant to move one word. Found by migrate-check, which is the only
      check that reloads the page with an old file under it. */
   try{ localStorage.setItem(LS_S, JSON.stringify(setOnDisk())); }catch(e){}
-  if(PLAN_NATIVE) planKeep(SET.plan);
+  /* PLAN_READ_OK for the same reason the branch above asks it: on a launch
+     that could not read the Keychain, `SET.plan` is the settings' copy, and
+     writing that down would put a stale word over whatever the Keychain
+     actually holds. The migration is not urgent -- it runs on the next launch
+     that can read. */
+  if(PLAN_NATIVE && PLAN_READ_OK) planKeep(SET.plan);
 }
 planMigrate();
 
@@ -414,6 +462,7 @@ function langNew(){
 }
 
 function save(){
+  if(langLocked()) return;   /* somebody else's language: nothing is written to it */
   bkTouch();
   try{
     localStorage.setItem(langKey('words'),JSON.stringify(WORDS));
@@ -515,6 +564,16 @@ function tn(k,n){
    something the app cannot do is the app lying to somebody who is about to
    pay -- cloud storage is a Plus feature in docs/FEATURES.md, is not built,
    and is therefore not on this list. */
+/* What a plan is CALLED, for a sentence about it. `plan()` answers an id --
+   `plus`, `pro` -- and an id is a name in a table, not a word to show
+   somebody: the toast after a purchase said 「pro になりました」.
+   The id where there is no such plan, which cannot happen and is not worth
+   a second sentence. */
+function planName(id){
+  var i, k=String(id||'');
+  for(i=0;i<PLANS.length;i++) if(PLANS[i].id===k) return PLANS[i].name;
+  return k;
+}
 var PLANS=[
   {id:'free', name:'Free', mo:'plan.price.free', yr:'plan.price.free', off:'',
    lines:['plan.free.1','plan.free.2','plan.free.3','plan.free.4']},
@@ -636,9 +695,20 @@ function langCap(){
    An entry with NO `uid` counts for whoever is asking, which is the STRICTER
    of the two answers, and the direction is chosen rather than fallen into:
    the loose one is what the owner named, and a count that is too strict only
-   ever refuses a NEW language. **It never hides one, never removes one, and
-   never shortens a list.** docs/PAID_FEATURES.md -- a ceiling is about
-   adding and about nothing else. */
+   ever refuses a NEW language. **It never REMOVES one.**
+
+   A ceiling now shortens the LIST as well: 「減った時は隠すだけね」「だって
+   単語でも文法でも同じようにやったじゃん」OWNER 2026-09-02, which replaces
+   「never hides one, never shortens a list」 that stood here. It is
+   wordsSeen()'s shape and always was for words -- the dictionary has listed
+   the first hundred on the free plan since it had a free plan -- and
+   langsSeen() in www/home.js is the same function for languages, with the
+   open one always on it. NOTHING IS DELETED by any of it: `LANGS` is
+   untouched, not one key under `lingua.` goes, the backup is the same file,
+   and paying again lists every one of them exactly as they were. `dl-check`
+   holds all of that. docs/DATA_SAFETY.md § a shorter list is not a deletion
+   is what says it has to be SAID, and the count at the foot of the list is
+   where it is said. */
 /* WHOSE ACCOUNT a language is, and nothing else. Two questions used to be
    one function and they are not the same question: `mine` is about this
    PHONE -- a language you are making rather than one you are reading -- and
@@ -694,6 +764,103 @@ function langCount(){
    has more than this -- a plan that ended, a number that moved -- keeps every
    one of them, sees every one of them and backs every one of them up. Only
    the next one is refused. */
+/* ---- and how many you may have DOWNLOADED, which is a second number ------
+   「dlはしかもplusは1つproは3つ DL言語とmake言語でそれぞれ別の最大値ね？」
+   OWNER 2026-09-02.
+
+   TWO CEILINGS AND NOT ONE. A language somebody else made is not one this
+   person made, and langCount() above says so already -- it counts `mine`, so
+   a download has never touched the ceiling on making. This is the other side
+   of that sentence: downloads have a ceiling of their own, and filling it
+   leaves the making one exactly where it was.
+
+   Free is ZERO, which is the same decision said a second way: 「plusからです」.
+   Whether a download may happen AT ALL is `can('dl')`; this is how many. Both
+   land together on purpose -- a door opened with no number behind it hands
+   Plus whatever the code happened to allow, which is neither number the owner
+   said, and that has happened here once already (the keyboard's).
+
+   Nothing here removes, hides or counts down anything. Somebody who already
+   has more than this -- a plan that ended, a number that moved -- keeps every
+   one of them and reads every one of them. Only the next one is refused. */
+var PLUS_DL=1, PRO_DL=3;
+function dlCap(){
+  if(has('pro')) return PRO_DL;
+  return has('plus')? PLUS_DL : 0;
+}
+/* The languages this person is READING: in the index, not theirs, and on this
+   account. langAcct() is the making side's question and this is its opposite
+   half -- `mine` false rather than true, with the same account test, so
+   signing in as somebody else does not hand you their downloads either. */
+function dlCount(){
+  var n=0, id;
+  for(id in LANGS)
+    if(Object.prototype.hasOwnProperty.call(LANGS, id) &&
+       LANGS[id] && !LANGS[id].mine && langOwned(id)) n++;
+  return n;
+}
+/* The ceiling on downloads, met. langStop()'s shape exactly, and the same
+   sentence: 「全部確認して飛ぶ」. Somebody already holding the biggest ceiling
+   there is gets one line and no dialog, because there is nothing to fly to. */
+function dlStop(){
+  if(dlCount()<dlCap()) return false;
+  if(dlCap()<PRO_DL) popAsk(t('langs.full', dlCap()), function(){ go('plans'); });
+  else alert(t('langs.full', dlCap()));
+  return true;
+}
+/* THE OPEN LANGUAGE BELONGS TO WHOEVER IS SIGNED IN.
+   「ログアウトして違うアカウントでログインしても前のアカウント残ってるんだけど
+   なんで？」「アカウントが違うんだから、そもそも残るのがおかしいだろって」
+   OWNER 2026-09-02.
+
+   Signing in swapped everything that is asked BY account and nothing that is
+   held in a variable. `meFor()` parked the name, the face and the handle;
+   `langAcct()` took the other account's languages off the list; `langId` was
+   never touched. So somebody signed in as themselves and was standing in a
+   language belonging to whoever used the phone before -- the dictionary, the
+   letters and the keyboard on screen were that person's, while the switcher
+   said 「N 件表示していません」 about them. Nothing threw.
+
+   `mayMint` is the difference between the two moments this is asked. At the
+   sign-in it is false: this account's languages may still be on their way
+   down (netLangBack), and minting one there would leave an empty language
+   beside the three that arrive a second later. When the fetch has finished it
+   is true, and a phone with nothing of this account's on it gets a fresh
+   language -- which is what a new account on a new phone gets anyway.
+
+   It never deletes and never renames. The other account's language stays in
+   the index, in storage, in its backup, and comes back the moment they sign
+   in again -- which is `langAcct()`'s whole shape (docs/DATA_SAFETY.md). */
+/* WHILE THIS ACCOUNT'S LANGUAGES ARE STILL COMING DOWN.
+   「前の人の言語が出るくらいならローディング入れればいいやん」OWNER
+   2026-09-02, and it is the right answer to the hole I left: the alternative
+   was minting a language on the spot, which leaves an empty one beside the
+   three that arrive a second later. Nothing is made and nothing of the
+   previous account is shown -- the screen says it is waiting, and render()
+   is what draws that (www/glyph.js). */
+var LANG_WAIT=false;
+function langForAcct(mayMint){
+  var id;
+  if(langAcct(langId)){ LANG_WAIT=false; return false; }
+  for(id in LANGS)
+    if(Object.prototype.hasOwnProperty.call(LANGS, id) && langAcct(id)){
+      LANG_WAIT=false; langOpen(id); return true;
+    }
+  if(!mayMint){ LANG_WAIT=true; return true; }
+  LANG_WAIT=false;
+  /* AND IT IS STAMPED WITH WHOEVER IT IS FOR. langMint() leaves `uid` off,
+     and langOwned() reads an entry with no uid as belonging to whoever is
+     asking -- which is right for a language somebody MADE (it is theirs, and
+     the looseness only ever refuses a new one) and wrong for this one: a
+     language minted for B because the phone held nothing of theirs would be
+     the first thing A finds when A signs back in, ahead of A's own. */
+  var nid=langMint();
+  if(typeof SESS!=='undefined' && SESS && SESS.uid)
+    LANGS[nid].uid=String(SESS.uid);
+  langStore();
+  langOpen(nid);
+  return true;
+}
 function langStop(){
   if(langCount()<langCap()) return false;
   if(langCap()<PRO_LANGS){
@@ -832,6 +999,11 @@ var CAN={
      three the old KB_MAX gave out, which is neither number the owner said.
      「1,1+3.無制限って言わなかったっけ？」 */
   kb:      'plus',
+  /* Taking a chapter of somebody else's language. 「plusからです」OWNER
+     2026-09-02, which replaces 「Downloading a keyboard or an alphabet is
+     free」 (docs/FEATURES.md § 4, 2026-08-19). How many is dlCap() above, and
+     the two landed together -- see the comment there for why. */
+  dl:      'plus',
   snd:     'plus',   /* choosing a sound, rather than taking the letter's own */
   /* Editing a post you have already sent. 「ツイートの編集も課金から」
      「課金からはベーシックからってことね プラスならプラスっていうから」

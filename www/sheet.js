@@ -1524,7 +1524,7 @@ function shTakeIn(){
   if(!s.got) return;
   /* And the refusal stands HERE as well as on the screen, because a button is
      not the only way in -- the action tables reach this by name. It is the
-     same one line ltCopy() and ltSetRoman() already carry, and it is a door:
+     same one line newLetter() already carries, and it is a door:
      「全部確認して課金画面に飛ぶようにして」 OWNER 2026-08-25.
      Nothing is deleted and nothing is moved. A free language that already has
      letters from a sheet keeps every one of them -- a plan decides what may

@@ -36,7 +36,7 @@ function ltRead(){
   try{ var lt=JSON.parse(localStorage.getItem(langKey('letters'))||'null'); if(lt && lt.length) LETTERS=lt; }catch(e){}
 }
 ltRead();
-function saveLetters(){ bkTouch(); try{ localStorage.setItem(langKey('letters'), JSON.stringify(LETTERS)); }catch(e){} }
+function saveLetters(){ if(langLocked()) return; bkTouch(); try{ localStorage.setItem(langKey('letters'), JSON.stringify(LETTERS)); }catch(e){} }
 
 /* ---- moving the old shape of things over ------------------------------
    Everything drawn before this ran was stored under its sound, which is
@@ -471,49 +471,34 @@ var LT_START='abcdefghijklmnopqrstuvwxyz!?';
    renamed a letter, drew on it, and let the plan lapse would find a blank
    where their letter used to be, and nothing anywhere saying why.
 
-   Refusing the rename is the whole fix, and it costs nothing: a letter that
-   is to be called something else is a DIFFERENT letter, and the way to have
-   one is ltCopy(). 「無料で作ったやつを改名できなければ良くない？コピーできる
-   ようにして分けるとかは？」 */
+   Refusing the rename is the whole fix: a letter that is to be called
+   something else is a DIFFERENT letter, and the way to have one is to make
+   one — which on free is the door, not this function.
+   「無料で作ったやつを改名できなければ良くない？コピーできるようにして分ける
+   とかは？」 The 複製する row that answered that quote went on 2026-09-01
+   (「後複製するボタンいらんやろ」) and ltCopy() went with it. */
 function ltIsBase(l){
   if(!l) return false;
   if(numIsDigit(l)) return true;
   var ab=String(l.ab||'').toLowerCase();
   return ab.length===1 && LT_START.indexOf(ab)>=0;
 }
-/* A letter of one's own, made from one that is not. Everything drawn on it
-   comes across -- the strokes or the character it borrows, what it reads and
-   the note -- and the name does not, because a name is the one thing the copy
-   exists to be able to change. It goes in beside the one it came from, which
-   is where somebody looking at that one expects it. */
-function ltCopy(id){
-  var l=ltById(id), n, i;
-  /* Two refusals that were one line and are not one thing. A letter that is not
-     there is nothing to copy and there is nowhere to send anybody; a plan that
-     does not buy letters is a door, and 「全部確認して課金画面に飛ぶようにして」
-     OWNER 2026-08-25. Same one line ltDelete() already had. */
-  if(!l) return;
-  if(upStop(can('letters'))) return;
-  /* A digit cannot be copied, and the copy would not be a digit: a value is
-     unique (there is one seven), so what came out was an ALPHA letter made
-     from the digits room -- the two rooms mixing in the one direction nothing
-     was watching. The name is what a copy exists to be able to change and a
-     digit has no name, so there is nothing here to do.
-     The button is still on a digit's page (www/sound.js § vLetter, which is
-     not this session's file); this is the refusal standing where the rule is
-     rather than where the screen is, the same as ltSetRoman above. */
-  if(numIsDigit(l)) return;
-  n=ltNew({});
-  if(l.st && l.st.length) n.st=JSON.parse(JSON.stringify(l.st));
-  if(l.ch) n.ch=l.ch;
-  if(l.snd && l.snd.length) n.snd=l.snd.slice();
-  if(l.nt) n.nt=l.nt;
-  if(l.chose) n.chose=l.chose;
-  for(i=0;i<LETTERS.length;i++) if(LETTERS[i].id===n.id){ LETTERS.splice(i, 1); break; }
-  for(i=0;i<LETTERS.length;i++) if(LETTERS[i].id===id){ LETTERS.splice(i+1, 0, n); break; }
-  saveLetters(); installScriptFont();
-  go('letter', n.id);
-}
+/* WHETHER A LETTER CAN BE DELETED AT ALL, and it is the whole rule.
+   「a-z 0-9 !?に1からナンバリングしてそれ以降に追加されるのは消す」
+   「次に文字追加したら39になるよね？39以降は消せるんだよね？」OWNER 2026-09-02.
+
+   The first thirty-eight are a-z, 0-9 and ! ?, numbered 1 to 38, and they are
+   not deletable. The thirty-ninth is the first letter somebody adds, and from
+   there they go whole. That is the numbering staying still, which is what the
+   QWERTY needs: kbFixed() finds its keys BY NAME, so a row taken away is a key
+   answering to nothing.
+
+   ONE place, asked by the mark on a held cell and by the button on the
+   letter's own page. A second answer is how the two come to disagree about
+   the same press -- and this was two answers for a day: the mark was drawn on
+   all thirty-eight and pressing it opened a question whose yes did nothing.
+   「長押しの後から-の3個目以降に普通に反応しなくなる」 */
+function ltCanDelete(l){ return !!l && !ltIsBase(l); }
 function ltStart(){
   if(can('letters')) return;
   /* AND NOT INTO A LANGUAGE THAT IS ONLY READ. The twenty-eight slots are
@@ -749,16 +734,21 @@ function ltSetRoman(id, sp){
      road could do from here was turn an ordinary letter INTO a digit, which
      is the bug rather than the feature.
 
-     So it is refused, and the app GOES to the room where digits are made
-     rather than saying nothing: the same shape as a paid door going to the
-     plans screen 「全部確認して課金画面に飛ぶようにして」. Nothing is
-     written, so a letter that already had a name keeps it.
+     IT USED TO REFUSE AND WALK AWAY -- go('ltset','num') and nothing
+     written -- which left the letter sitting in the alphabet with no name at
+     all. 「まだ数字が普通にアルファベットのとこ入るし」 OWNER 2026-09-01,
+     on a phone, looking at 名前なし in the alphabet: the app had gone to the
+     right room and left the letter in the wrong one.
+
+     So it MOVES. The letter becomes that digit -- it is what somebody meant
+     by typing a number on it -- and the digits room is where it lands.
+     ltToDigit() below is the whole of it.
 
      numInBase() and not numTyped() alone, so that this road and the sheet's
      agree about the same string: `25` in base ten is a number no digit can
      hold, so it is an ordinary name on both. One rule, both roads -- the two
      answering differently would be this same fault wearing another coat. */
-  if(numInBase(numTyped(sp))){ go('ltset', 'num'); return id; }
+  if(numInBase(numTyped(sp))) return ltToDigit(id, numTyped(sp));
   /* And now the refusal. A digit reaching this line is one being given a
      NAME, and a digit has no name -- its value is the whole of what it is,
      and the keyboard finds it by that. */
@@ -780,7 +770,7 @@ function ltSetRoman(id, sp){
 
      Nothing is walked around by leaving it out: what free cannot do is ADD a
      letter, and every road that makes one asks already -- newLetter(),
-     ltCopy(), shTakeIn(), the import. This function names one that exists. */
+     shTakeIn(), the import. This function names one that exists. */
   var read=ltReadName(sp), units=read.units, seen=read.seen, i;
   /* A clash is shown, not refused. Refusing meant the box silently kept its
      old value and a toast said why, which is a correction somebody has to
@@ -836,6 +826,36 @@ function ltSetRoman(id, sp){
   }
   saveLetters(); installScriptFont(); render();
   return id;
+}
+/* A letter somebody has typed a NUMBER on. It is a digit, and the digits room
+   is where it belongs -- 「数字と記号はそれぞれのページあるんだからちゃんと
+   振り分けられるようにして」.
+
+   The value is the whole of what a digit is, so the roman name and the reading
+   come off: `ltName()` reads a digit's label off its value, and a digit that
+   still answered to `1` as a name would be found by the free keyboard as a
+   letter.
+
+   DELETE REVIEW. One row can go, and only one: the EMPTY slot `ltStart()`
+   made for that value -- no drawing, no borrowed character, made by the app
+   and never touched by anybody. That is the same row, for the same reason,
+   that ltFreeSlot() removes when a drawn shape is named `a`. A digit somebody
+   HAS drawn on is left exactly where it is and this becomes a second digit of
+   that value, which is what the sheet already does 「別に課金なんだから追加
+   しろよなんで？」 OWNER 2026-09-01. */
+function ltToDigit(id, v){
+  var l=ltById(id), d;
+  if(!l) return id;
+  d=numByVal(v);
+  if(d && d.id!==l.id && !inkGeo(d) && !d.ch) ltDel(d.id);
+  delete l.ab;
+  l.val=v;
+  l.snd=[];
+  l.chose=0;
+  saveLetters();
+  installScriptFont();
+  go('ltset', 'num');
+  return l.id;
 }
 /* Which slot a newly named shape belongs in, on a plan that cannot add
    letters -- and nothing at all on one that can.
@@ -920,6 +940,32 @@ function ltDeleteGo(id){
   /* The name is read BEFORE the letter goes, because the line that says what
      was deleted needs it and there is nothing to read it off afterwards. */
   var l=ltById(id), nm=l? (ltName(l)||t('lt.untitled')) : '';
+  /* A SLOT IS EMPTIED, NOT REMOVED. 「無料のa-zが普通に削除できるの何？削除して
+     もいいけど枠は消えないでくれよ」 OWNER 2026-09-02.
+
+     The thirty-eight are what the free plan IS -- a to z, ! ? and a digit per
+     value of the base -- and the QWERTY finds its keys BY NAME (kbFixed() in
+     www/keyboard.js builds from LETTERS every time it is drawn). Take the row
+     away and the key that answers to it is a key answering to nothing. On free
+     ltDelete() refuses outright; on a paid plan it did not, and the row went.
+
+     So what a delete does to one of them is take the DRAWING off and leave the
+     slot: it goes back to being the empty `a` it started as, ready to be drawn
+     again. ltIsBase() is the one place that says which letters those are, and
+     it already answers for the digits too -- a digit is its value, and a value
+     the base can write is a slot the same way.
+
+     Nothing else changes: the name stays, the reading stays, and sndDropLoose
+     is not called because the letter has not left. */
+  if(l && ltIsBase(l)){
+    delete l.st; delete l.sh; delete l.ch;
+    saveLetters();
+    if(GE && GE.lid===id) GE=null;
+    save(); installScriptFont();
+    if(here().r==='letter') back(); else render();
+    toast(t('glyph.deleted', nm));
+    return;
+  }
   ltDel(id);
   if(GE && GE.lid===id) GE=null;
   save(); installScriptFont();

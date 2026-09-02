@@ -206,7 +206,7 @@ function sndRead(){
        if(s && s.length) SND=s; }catch(e){}
 }
 sndRead();
-function saveSnd(){ bkTouch(); try{ localStorage.setItem(langKey('snd'), JSON.stringify(SND)); }catch(e){} }
+function saveSnd(){ if(langLocked()) return; bkTouch(); try{ localStorage.setItem(langKey('snd'), JSON.stringify(SND)); }catch(e){} }
 /* The one sound inventory anything reads. 35 places say addedSnd() meaning
    "the sounds of the language in front of me", and they still do. */
 function addedSnd(){ return SND; }
@@ -912,8 +912,9 @@ function vLtset(){
        newLetter(), which puts the upgrade popup up. Drawing it only for those
        who already have it is the app hiding what it sells from the person it
        is selling to. */
-    '<button class="fab"' + DO('newLetter', [k]) + ' aria-label="'+esc(t('lt.new'))+'">'+
-      ICON_ADD+'</button>'+
+    (langLocked()? '' :
+     '<button class="fab"' + DO('newLetter', [k]) + ' aria-label="'+esc(t('lt.new'))+'">'+
+      ICON_ADD+'</button>')+
     /* And what these signs look like off the phone's home screen, which is
        the one place a language goes without anybody typing. numbers.js says
        why it is here and not a chapter of its own: there is nothing to make
@@ -958,7 +959,9 @@ function ltCell(l, press){
     '<span class="ltcf">'+ltInk(l, '<span class="nol">'+ICON_PEN+'</span>')+'</span>'+
     '<span class="ltcn">'+esc(nm||'\u00b7')+'</span>'+
     '<span class="ltcr">'+esc(rd.length? phIpa(rd) : '')+'</span>'+
-    (wob
+    /* ltCanDelete() and not `wob` alone: the first thirty-eight cannot be
+       deleted at all, so they carry no mark. 「39以降は消せるんだよね？」 */
+    (wob && ltCanDelete(l)
       ? '<span class="ltx"' + DO('ltDelete', [l.id]) + ' role="button" '+
         'aria-label="'+esc(t('glyph.del'))+'">'+ICON_MINUS+'</span>'
       : '')+
@@ -1075,7 +1078,17 @@ function ltAbField(l, id){
 function vLetter(){
   var lid=here().a, l=ltById(lid);
   if(!l) return viewGone();
-  return '<div class="view">'+navTop('')+'<div class="body">'+
+  return '<div class="view">'+
+    /* SAVE IS AT THE FAR END OF THE BAR. 「文字の保存ボタンは右上にしてくれ」
+       OWNER 2026-09-01 -- it was in a strip across the foot, which is a second
+       bar for one button and is under the thumb only after scrolling past the
+       sound, the borrowed character and the delete. It saves the NAME, so on
+       the free plan, where there is no name to type, there is nothing for it
+       to do and it is not there. The drawing has its own Save where it is
+       drawn. */
+    navTop('', can('letters')
+      ? '<button class="navdo"' + DO('ltSave', [lid]) + '>'+esc(t('glyph.save'))+'</button>'
+      : '')+'<div class="body">'+
     /* The letter itself, first and big. A page about one letter that does not
        show it is a page of three buttons about nothing, and "draw it again"
        on a screen with nothing on it says nothing. A letter with no shape yet
@@ -1093,7 +1106,7 @@ function vLetter(){
     /* The name, and not on a letter every language starts with: the free
        keyboard finds its keys by name, so renaming one takes the key away.
        ltIsBase() in letters.js is the one place that says which those are,
-       and ltCopy below is what somebody wanting a differently-named letter
+       and the + on the alphabet is what somebody wanting a differently-named letter
        does instead. */
     (!ltIsBase(l)
       ? '<div class="sec">'+t('lt.ab.h')+'</div>'+ltAbField(l, lid)
@@ -1124,24 +1137,16 @@ function vLetter(){
         '<button class="gbx"' + DO('ltDropChar', [lid]) + '>'+t('ch.clear')+'</button></div>'
       : '<button class="btn ghost" style="width:100%;margin-top:8px"' + DO('openPick', [lid]) + '>'+
         t('glyph.borrow')+'</button>')+
-    /* Making one of one's own from this one -- the way to have a letter
-       called something else when this one may not be renamed, and the way to
-       have two letters of one shape at all. */
-    '<button class="set" style="margin-top:14px"' + DO('ltCopy', [lid]) + '>'+
-      '<span class="sl">'+t('lt.copy')+'</span>'+ICON_GO+'</button>'+
-    '<button class="set" style="border-bottom:none"' + DO('ltDelete', [lid]) + '>'+
-      '<span class="sl bad">'+t('glyph.del')+'</span></button>'+
-    '</div>'+
-    /* At the foot of the screen, on top of the tab bar, where the drawing
-       screen's Save already is -- and in reach without scrolling past the
-       sound, the borrowed character and the way to delete the letter.
-
-       It saves the name, so on the free plan, where there is no name to
-       type, there is nothing for it to do. The drawing has its own Save on
-       the screen it is drawn on. */
-    (can('letters')
-      ? '<div class="barfix"><button class="btn"' + DO('ltSave', [lid]) + '>'+
-          t('glyph.save')+'</button></div>'
+    /* 「複製するボタンいらんやろ」 OWNER 2026-09-01. It was the way to have a
+       letter called something else when this one may not be renamed -- and
+       the + on the alphabet makes one, so this was a second door into the
+       same room, so the function went with the button. */
+    /* The same question the ⊖ asks, asked once (ltCanDelete, www/letters.js):
+       one of the first thirty-eight has no delete anywhere. */
+    (ltCanDelete(ltById(lid))
+      ? '<button class="set" style="margin-top:14px;border-bottom:none"' + DO('ltDelete', [lid]) + '>'+
+        '<span class="sl bad">'+t('glyph.del')+'</span></button>'
       : '')+
+    '</div>'+
     '</div>';
 }

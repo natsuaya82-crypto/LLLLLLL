@@ -21,6 +21,7 @@
 import { seed } from './fixture.mjs';
 import { fileURLToPath } from 'url';
 import path from 'path';
+import fs from 'fs';
 import { chromium, LAUNCH } from './browser.mjs';
 const dir = path.dirname(fileURLToPath(import.meta.url));
 
@@ -69,6 +70,46 @@ const r = await pg.evaluate(({ s }) => {
   out.freeCap = wordCap();
   /* and not one byte of the language moved when the plan did */
   out.freeKeptBytes = same(wasBytes, bytes());
+
+  /* ---- and the same sentence about the LETTERS and the GRAMMAR ---------
+     「課金で追加した機能は無料になったら全部隠れる」 OWNER 2026-09-01. Words
+     have been held here since the ceiling existed; the letters past the free
+     alphabet and the stages somebody added were WRITING only -- CLAUDE.md
+     says it, docs/PAID_FEATURES.md says it, and nothing stopped it. What the
+     owner found on a phone was exactly that: a language back on free with its
+     extra letters still standing in the alphabet.
+
+     Held for real: made on the paid plan, counted on free, and counted again
+     in LETTERS/STG so that hidden is hidden and never removed. */
+  SET.plan = 'pro'; save();
+  var ltWas = LETTERS.length, extraLt = ltNew({ nm:'zzq' });
+  var stWas = (STG.extra ? STG.extra.length : 0);
+  STG.extra.push({ id:'own_plan_check', title:'a stage of my own',
+                   slots:['s1'], labels:{ s1:'one' }, what:'' });
+  saveStg();
+  var seenHas = function(id){
+    var a = ltSeen(), i;
+    for (i = 0; i < a.length; i++) if (a[i].id === id) return true;
+    return false;
+  };
+  var stageHas = function(id){
+    var a = stAll(), i;
+    for (i = 0; i < a.length; i++) if (a[i].id === id) return true;
+    return false;
+  };
+  out.ltPaidSeen = seenHas(extraLt.id);
+  out.stPaidSeen = stageHas('own_plan_check');
+  SET.plan = 'free'; save();
+  out.ltFreeSeen = seenHas(extraLt.id);
+  out.stFreeSeen = stageHas('own_plan_check');
+  out.ltFreeHeld = !!ltById(extraLt.id);
+  out.stFreeHeld = (STG.extra ? STG.extra.length : 0) - stWas;
+  out.ltGrew = LETTERS.length - ltWas;
+  /* put back: everything after this walks the fixture's own language */
+  LETTERS = LETTERS.filter(function(l){ return l.id !== extraLt.id; });
+  saveLetters();
+  if (STG.extra) STG.extra = STG.extra.slice(0, stWas);
+  saveStg();
 
   /* ---- 2. the ceiling refuses, and refuses in one place ---------------- */
   out.capOKfree = capOK(1);              /* 500 words on free: no room */
@@ -292,6 +333,50 @@ const r = await pg.evaluate(({ s }) => {
   out.bdgRowPro = planBadge('pro');
   out.bdgRowFree = planBadge('free');
 
+  /* ---- 6b. money is not taken twice for the same thing ------------------
+     「二重課金はさせないようにしろよ」 OWNER 2026-09-01, after buying Plus on
+     a phone that already had Pro and being charged for both.
+
+     Two App Store subscriptions in two groups can be held at once, and
+     docs/apple.md says to put them in ONE group -- where Apple itself makes
+     the second an upgrade. That sentence is WRITING, and writing does not
+     stop anything: it was right in the file the whole time and the purchase
+     went through anyway. The app refuses instead, and this is what holds the
+     refusal.
+
+     Pressing a plan at or below the one in force is not a purchase; it is a
+     change to a subscription that exists, and that is Apple's own sheet. So
+     the two things asked are: nothing is bought, and the plan does not
+     move. */
+  var boughtId = '';
+  var realBuy = window.storeBuy;
+  window.storeBuy = function(id){ boughtId = String(id||''); return true; };
+  SET.plan = 'pro'; save();
+  PLPICK = { id:'plus', yr:false };
+  plBuy();
+  out.dblBought = boughtId;
+  out.dblPlan = plan();
+  out.dblAsked = popOn();
+  popOff();
+  /* and the same plan again, monthly on a phone that has it */
+  boughtId = '';
+  PLPICK = { id:'pro', yr:true };
+  plBuy();
+  out.dblSameBought = boughtId;
+  popOff();
+  /* AND GOING UP STILL GOES THROUGH -- the guard is about what is held, not
+     a wall in front of the shop. In a browser there is no App Store, so
+     setPlan() writes the plan itself (storeOn() is false); what is asked is
+     therefore the plan, which is the same thing the phone ends up with. */
+  boughtId = '';
+  SET.plan = 'plus'; save();
+  PLPICK = { id:'pro', yr:false };
+  plBuy();
+  out.upPlan = plan();
+  window.storeBuy = realBuy;
+  PLPICK = null;
+  SET.plan = 'free'; save();
+
   POSTS = POSTS.filter(function(x){ return x.id !== 'p_plan'; });
   savePosts();
   SET.plan = 'free'; save();
@@ -390,6 +475,20 @@ const r = await pg.evaluate(({ s }) => {
   out.tookNoKeychain = kept === 0;
   out.tookTakesAnswer = plan() === 'plus';
   window.planKeep = realKeep;
+
+  /* AND IT ONLY GOES UP. An answer of `free` arriving while a paid plan is on
+     is not a person who owns nothing -- currentEntitlements comes back empty
+     for an account that IS paying, routinely, on TestFlight and in the
+     sandbox. The owner pressed Restore, was told there was nothing to
+     restore, and lost Pro:「復元するものはありませんって出るけどさ、さっきまで
+     プロだったんだけど消えたってこと？」OWNER 2026-09-02. */
+  SET.plan = 'pro'; save();
+  storeTook({ plan: 'free' });
+  out.tookNoDrop = plan();
+  SET.plan = 'free'; save();
+  storeTook({ plan: 'pro' });
+  out.tookStillRaises = plan();
+
   SET.plan = 'free'; save();
 
   /* ---- 7b. a ceiling met is a way to the plans screen, not a dead end ---
@@ -487,7 +586,8 @@ const r = await pg.evaluate(({ s }) => {
   /* the LIST is asked for and read after, the same order section 1 uses: the
      way this fails is a list that trims the thing it is listing */
   var lhtml = vLangs();
-  out.freeStillShowsAll = threeIds.every(function(x){ return lhtml.indexOf(x) !== -1; });
+  out.freeShowsCap = threeIds.filter(function(x){ return lhtml.indexOf(x) !== -1; }).length;
+  out.freeShowsOpen = lhtml.indexOf(langId) !== -1;
   out.freeStillHolds2 = langCount() === 3;
   out.threeKeptBytes = same(bytesThree, bytes());
   /* and the backup of the open one is written the same as it ever was */
@@ -613,6 +713,43 @@ const st = await pg.evaluate(async () => {
   STORE_P = null; STORE_ASK = false;
   return out;
 });
+/* ---- the Keychain, and the difference between empty and unreadable -------
+   The plan LIVES in the Keychain on a phone -- ios/App/App/LinguaPlan.swift --
+   and www/core.js reads it out of `window.__plan`, injected before any script
+   of ours runs. Nothing after boot can put it back: this is the one read, and
+   what it decides is written straight back down.
+
+   `read()` used to answer the empty string for BOTH 「there is nothing there」
+   and 「that failed」, and core.js answered empty by writing `free` INTO the
+   Keychain. So one unreadable launch turned a paid plan into a free one, for
+   good. 「アップデートしたら勝手に無料プランになったんだけど？」 OWNER
+   2026-09-02.
+
+   A fresh PAGE for each case, and the values put in with addInitScript --
+   the same moment the native side injects them, because core.js runs this
+   branch once as it loads and there is no second chance to set it up. */
+const KEY = [];
+for (const c of [
+  { n: 'unreadable', plan: '', ok: 0,  had: 'pro' },
+  { n: 'empty',      plan: '', ok: 1,  had: 'pro' },
+  { n: 'holds pro',  plan: 'pro', ok: 1, had: 'free' }
+]) {
+  const kp = await br.newPage({ viewport: { width: 390, height: 844 } });
+  await kp.addInitScript(({ plan, ok, had }) => {
+    window.__plan = plan;
+    window.__planok = ok;
+    window.__wrote = [];
+    window.Capacitor = { nativePromise: function (p, m, a) {
+      if (p === 'LinguaPlan') window.__wrote.push(a && a.plan);
+      return { 'catch': function () { return { 'catch': function () {} }; } };
+    } };
+    try { localStorage.setItem('lingua.set', JSON.stringify({ plan: had, done: true })); } catch (e) {}
+  }, c);
+  await kp.goto('file://' + path.join(dir, '..', 'www', 'index.html'));
+  await kp.waitForFunction(() => typeof window.plan === 'function');
+  KEY.push(await kp.evaluate((n) => ({ n: n, plan: plan(), wrote: window.__wrote.slice() }), c.n));
+  await kp.close();
+}
 await br.close();
 
 const bad = [];
@@ -624,6 +761,13 @@ say(r.freeHeld === 500,
     'the plan ending keeps all 500 (' + r.freeHeld + ')');
 say(r.freeShown === r.freeCap,
     'and lists ' + r.freeCap + ' of them (' + r.freeShown + ')');
+say(r.ltGrew === 1 && r.ltPaidSeen && !r.ltFreeSeen,
+    'a letter added on the paid plan is on the alphabet, and hidden on free');
+say(r.ltFreeHeld, 'and it is still in LETTERS -- hidden, never removed');
+say(r.stPaidSeen && !r.stFreeSeen,
+    'a grammar stage added on the paid plan is on the list, and hidden on free');
+say(r.stFreeHeld === 1, 'and it is still in STG.extra -- hidden, never removed');
+
 say(r.freeKeptBytes,
     'not one byte of any slice moved when the plan did');
 
@@ -637,13 +781,13 @@ say(r.unknownCan, 'and any plan that is no rung of the ladder buys nothing -- ga
 say(r.unknownWords, 'and the words are all still there while it does');
 say(!r.unknownThrew, 'and nothing about it throws (' + (r.unknownThrew || 'nothing') + ')');
 
-say(r.canCount === 11, 'CAN names ' + r.canCount + ' capabilities');
+say(r.canCount === 12, 'CAN names ' + r.canCount + ' capabilities');
 say(r.freeAll, 'every one of them is closed on free');
 say(r.paidAll, 'and open on plus');
 say(r.canTypo, 'and a name that is not in the table throws rather than reading as free');
 
 say(r.rungs.free === '', 'free opens nothing (' + (r.rungs.free || 'nothing') + ')');
-say(r.rungs.plus === 'edit kb letters snd wsys',
+say(r.rungs.plus === 'dl edit kb letters snd wsys',
     'plus opens a keyboard, its own letters, its own sounds, a writing system ' +
     'and editing a post it has sent (' + r.rungs.plus + ')');
 say(r.rungs.pro.split(' ').length === r.canCount,
@@ -677,6 +821,14 @@ say(r.editPlusOpens, 'on plus it opens, carrying the post it was pressed on');
 say(r.bdgFree === '' && r.bdgMid === '', 'no mark beside the name on free or plus');
 say(r.bdgTop !== '', 'and one on pro (' + (r.bdgTop ? 'drawn' : 'nothing') + ')');
 say(r.bdgTheirs === '', 'never on somebody else\'s post, whatever plan this phone is on');
+say(r.dblBought === '' && r.dblPlan === 'pro',
+    'a plan BELOW the one in force is not bought again (' +
+    (r.dblBought || 'nothing asked for') + ', still ' + r.dblPlan + ')');
+say(r.dblAsked, 'and it says so rather than doing nothing');
+say(r.dblSameBought === '', 'nor is the plan already in force (' +
+    (r.dblSameBought || 'nothing asked for') + ')');
+say(r.upPlan === 'pro', 'and going UP still goes through (' + r.upPlan + ')');
+
 say(r.bdgRowPro !== '' && r.bdgRowFree === '',
     'the price list still marks the Pro row, read on free -- a plan carrying it is not the same question');
 
@@ -701,8 +853,15 @@ say(r.proEmpty, 'and it arrives empty rather than carrying the last one\'s words
 
 say(r.threeMade && r.freeStillHolds && r.freeStillHasAll,
     'somebody with three keeps three when the plan ends');
-say(r.freeStillShowsAll && r.freeStillHolds2,
-    'and the list draws all three of them -- the ceiling hides nothing');
+/* THE LIST NOW SHOWS THE CEILING'S WORTH, and the language you are standing
+   in is one of them. 「減った時は隠すだけね」「開いてるものを残すでいいよ」
+   「だって単語でも文法でも同じようにやったじゃん」OWNER 2026-09-02, which
+   replaces 「the ceiling hides nothing」 that stood here. Nothing is deleted
+   by it -- the claim above still says all three are HELD -- and dl-check
+   holds the rest of the shape (paying again lists them all, no key goes). */
+say(r.freeShowsCap === 1 && r.freeShowsOpen && r.freeStillHolds2,
+    'and the list draws the ceiling\'s worth of them, the open one among them ' +
+    '(' + r.freeShowsCap + ' of 3 drawn), while all three are still held');
 say(r.threeKeptBytes, 'and not one byte of any slice moved');
 say(r.fourthRefused && r.fourthWent, 'only the fourth is refused, and it goes to the plans screen');
 say(r.fourthKeptAll && r.fourthKeptBytes,
@@ -744,6 +903,11 @@ say(r.ids === 'com.tokinets.lingua.plus.monthly com.tokinets.lingua.plus.yearly 
     'the four product ids are the four LinguaStore.swift sells (' + r.ids + ')');
 say(r.tookNoKeychain, 'what comes back from a purchase is not written to the Keychain twice');
 say(r.tookTakesAnswer, 'and the plan is taken from the ANSWER, not from what was asked for');
+say(r.tookNoDrop === 'pro',
+    'and the app side never lowers it — an answer of `free` arriving on a ' +
+    'paid plan leaves the plan alone (' + r.tookNoDrop + ')');
+say(r.tookStillRaises === 'pro',
+    'while an answer ABOVE what is held is still taken (' + r.tookStillRaises + ')');
 
 say(st.asked && st.twice, 'the App Store is asked once and remembered');
 say(st.before.indexOf('$4.99') !== -1,
@@ -789,6 +953,116 @@ say(st.noYearOff === '33',
    one place that comparison is a lie rather than merely a wrong number. */
 say(st.before.indexOf('pwas') === -1,
     'and before Apple has answered at all, nothing is struck through -- there is no typed one');
+
+const K = {}; KEY.forEach(function (r) { K[r.n] = r; });
+say(K['unreadable'].wrote.length === 0,
+    'a Keychain read that FAILED writes nothing back — a paid plan is not ' +
+    'overwritten by a launch that could not see it (wrote ' +
+    JSON.stringify(K['unreadable'].wrote) + ')');
+say(K['unreadable'].plan === 'pro',
+    'and the screen falls back to the copy in the settings, which is the last ' +
+    'plan this phone knew (' + K['unreadable'].plan + ')');
+/* What is asked is WHAT was written, not how many times. Two roads write the
+   plan down at boot -- the branch that fills an empty Keychain, and
+   planMigrate() -- and on this seed both run and both write the same `pro`.
+   Counting them said 1 and got 2, which is the check being about the wrong
+   thing: nothing here cares how many times the right word is written, and
+   everything here cares that `free` is never one of them. */
+say(K['empty'].wrote.length > 0 &&
+    K['empty'].wrote.every(function (w) { return w === 'pro'; }),
+    'a Keychain that genuinely holds NOTHING still takes what the old settings ' +
+    'had, and every write is that — the migration road is untouched (' +
+    JSON.stringify(K['empty'].wrote) + ')');
+say(K['holds pro'].plan === 'pro',
+    'and a Keychain that holds a plan is the one that decides, over the ' +
+    'settings (' + K['holds pro'].plan + ')');
+
+/* ---- the plan may not go DOWN on an answer that never came ---------------
+   「プランは絶対におかしくしちゃいけないんだって」 OWNER 2026-09-02.
+
+   The Keychain half is above and is driven for real. This half is the App
+   Store's, and it is READ rather than run: Swift does not compile on a Linux
+   runner and `npm test` reads no `.swift` at all -- which is exactly why the
+   rule was, for one commit, held by nobody but somebody reading it. That is
+   the third kind of rule CLAUDE.md forbids: written as if something stopped
+   it, when nothing did.
+
+   What a reading CAN hold is the shape, and the shape is the whole rule.
+   `entitledPlan()` answers `free` for 「has nothing」 and for 「the list gave
+   me nothing」 alike, so `writeDown()` may only lower the plan where Apple
+   positively said so. Three roads may: the `Transaction.updates` listener,
+   `restore` (after AppStore.sync), and `manage` (after Apple's own sheet).
+   Every other caller may raise it and may not lower it.
+
+   Read off the SOURCE and not written down here: the allowed three are named,
+   and every other call site is found rather than listed, so a fourth road
+   added tomorrow fails here on the day it is added. */
+const IOS = path.join(dir, '..', 'ios', 'App', 'App');
+const STORE = fs.readFileSync(path.join(IOS, 'LinguaStore.swift'), 'utf8');
+const KEYC = fs.readFileSync(path.join(IOS, 'LinguaPlan.swift'), 'utf8');
+/* Which Swift function a line is inside: the nearest `func` above it. */
+function funcAt(src, idx){
+  const head = src.slice(0, idx);
+  const m = head.match(/func\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(/g);
+  if (!m) return '';
+  const last = m[m.length - 1];
+  return /func\s+([A-Za-z_][A-Za-z0-9_]*)/.exec(last)[1];
+}
+/* ONE road, and it is Apple pushing a change at us. `restore` and `manage`
+   were on this list for a morning: both end in reading currentEntitlements,
+   and an empty list there is 「Apple told me nothing」 as often as it is
+   「this person owns nothing」 -- routinely so on TestFlight and in the
+   sandbox, for an account that is paying. It cost the owner their plan on
+   the build that had it. 「復元するものはありませんって出るけどさ、さっきまで
+   プロだったんだけど消えたってこと？」OWNER 2026-09-02. */
+const MAY_LOWER = ['load'];
+const calls = [];
+{
+  const re = /writeDown\s*\(([^)]*)\)/g;
+  let m;
+  while ((m = re.exec(STORE))){
+    /* Its own declaration is not a call, and neither is the line inside it
+       that names it. funcAt() answers the nearest `func` ABOVE, so a mention
+       inside writeDown itself comes back as `writeDown` -- and `entitledPlan`
+       turned up in this list because the declaration line matched before the
+       skip did. Both are the function talking about itself. */
+    const f = funcAt(STORE, m.index);
+    if (f === 'writeDown' || f === 'entitledPlan') continue;
+    calls.push({ inside: f, lower: /mayLower\s*:\s*true/.test(m[1]) });
+  }
+}
+const lowered = calls.filter(c => c.lower).map(c => c.inside).sort();
+const raised  = calls.filter(c => !c.lower).map(c => c.inside).sort();
+say(calls.length >= 4,
+    'every road that writes the plan down is found in LinguaStore.swift (' +
+    calls.length + ')');
+say(lowered.every(f => MAY_LOWER.indexOf(f) >= 0),
+    'and only the one road where Apple positively said so may LOWER it — the ' +
+    'Transaction.updates listener, and nothing else (' + JSON.stringify(lowered) + ')');
+say(raised.length > 0 && raised.every(f => MAY_LOWER.indexOf(f) < 0),
+    'while every other road may raise it and may not lower it (' +
+    JSON.stringify(raised) + ')');
+say(/if\s*!mayLower/.test(STORE) && /best\(seen,\s*held\)\s*!=\s*seen/.test(STORE),
+    'and the guard is a comparison with what the Keychain HOLDS, not a flag ' +
+    'on its own');
+say(/st\s*==\s*errSecSuccess/.test(STORE),
+    'and only a Keychain that ANSWERED gets a vote — a read that failed says ' +
+    'nothing about what is there');
+/* And the Keychain's own half, which the browser above cannot see either:
+   the value and the status are two facts, and the injection carries both. */
+say(/func readPlan\(\)\s*->\s*\(String,\s*OSStatus\)/.test(KEYC),
+    'LinguaPlan.readPlan() answers the plan AND whether the Keychain answered');
+say(/window\.__planok=/.test(KEYC) && /errSecItemNotFound/.test(KEYC),
+    'and the injection carries that, with 「there is nothing there」 counted ' +
+    'as an answer and everything else as a failure');
+const CORE = fs.readFileSync(path.join(dir, '..', 'www', 'core.js'), 'utf8');
+const keeps = (CORE.match(/planKeep\(/g) || []).length;
+const guarded = (CORE.match(/PLAN_READ_OK\)?\s*(&&\s*)?[^\n]*planKeep\(/g) || []).length;
+say(keeps >= 3 && guarded >= 2,
+    'and both roads that write the plan at BOOT ask PLAN_READ_OK first — the ' +
+    'branch that fills an empty Keychain and planMigrate() (' + guarded +
+    ' of ' + keeps + ' planKeep sites, the third being setPlan, which is ' +
+    'somebody pressing something)');
 
 if (bad.length) { console.error('\nplan: ' + bad.length + ' failed'); process.exit(1); }
 console.log('\nplan: money decides what may be DONE and nothing about what exists --\n' +

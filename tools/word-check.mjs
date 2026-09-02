@@ -172,6 +172,42 @@ const R = await pg.evaluate(() => {
   if (!wEdit || !wEdit.mns.length)
     out.fails.push('reopening the add sheet threw away the meanings');
 
+  /* ---- an import that is over is over ------------------------------------
+     「取り込んだあとにアルファベットページに飛ばなくていいから戻る押しても
+       前のページに染み付いてるせいで全然戻れない」OWNER 2026-09-02.
+
+     `IMP.done` decides which face the import screen draws, and it used to
+     stand for the rest of the session: 完了 was `back()` and forgot nothing,
+     so opening 取り込み again showed the LAST import's result, with 完了 on
+     it, and 完了 goes back. From the alphabet that is a loop -- import, the
+     old result, back, import, the old result -- with no way in to the import
+     screen and no way out that felt like going back. Nothing threw and every
+     press did what it says, which is why this is a SEQUENCE and not a press.
+
+     Only 完了 forgets. Leaving by the arrow keeps it, because 元に戻す is on
+     that face and is the one press that makes an import not have happened. */
+  start();
+  goTab('build'); go('letters');
+  openImport();
+  impTake('character,name\n\u03a8,psi\n\u03a9,omega');
+  IMP.into = 'l'; IMP.roles = impMove(IMP.roles, 'l');
+  doImport();
+  const impWas = !!(IMP.done);
+  const okBtn = (screen(), document.querySelector('#app [data-do="impOK"]'));
+  if (okBtn) okBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+  const impAt = here().r + (here().a ? ':' + here().a : '');
+  openImport();
+  const impFresh = !IMP.done;
+  out.said.push('the import screen forgets that it finished: ' +
+    (impWas ? '' : 'NEVER SAID IT DID — ') +
+    '完了 landed on ' + impAt + ', opening it again is ' +
+    (impFresh ? 'the start' : 'THE OLD RESULT'));
+  if (!impWas) out.fails.push('the import never reported a result to forget');
+  if (!okBtn) out.fails.push('the done screen has no 完了 to press');
+  if (!impFresh)
+    out.fails.push('opening the import again shows the last result — 完了 ' +
+      'goes back, so that is a loop with no way in and no way out');
+
   return out;
 });
 

@@ -39,9 +39,10 @@
     "ask": "node tools/ask-check.mjs",
     "acct": "node tools/acct-check.mjs",
     "dl": "node tools/dl-check.mjs",
-  "again": "node tools/again-check.mjs",
-  "page": "node tools/page-check.mjs",
-    "open": "node tools/open-check.mjs"
+    "again": "node tools/again-check.mjs",
+    "page": "node tools/page-check.mjs",
+    "open": "node tools/open-check.mjs",
+    "store": "node tools/store-check.mjs"
   },
   "keywords": [],
   "author": "",

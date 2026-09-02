@@ -284,7 +284,16 @@ function netTook(d){
      has everything does one request and writes nothing.
      Guarded to once per account per launch inside netLangBack(), because a
      token refresh comes through here too. */
-  if(typeof netLangBack==='function') netLangBack();
+  /* AND THE LANGUAGE ON SCREEN. `meFor()` above swapped who the phone says
+     it is; this swaps what it is showing. Twice, and the two are different
+     moments -- see langForAcct() in www/core.js. Now, without minting,
+     because this account's languages may be on their way down; and again
+     when they have arrived or failed to, where a phone holding nothing of
+     theirs gets a fresh language. */
+  langForAcct(false);
+  if(typeof netLangBack==='function') netLangBack(function(){
+    if(langForAcct(true)) render();
+  });
   return true;
 }
 /* There used to be netAnon() here, and boot.js called it before the first
@@ -1680,37 +1689,6 @@ function netCounts(ok, bad){
   netSend('POST', '/rest/v1/rpc/admin_counts', {}, SESS.at,
           function(d){ ok(d || {}); }, bad);
 }
-/* What App Store Connect says: the takings, the downloads and the
-   subscriptions. 「売り上げもアナリティクスも見れるようにしたい」
-   「アプリの中で見たい」「画面を開いたときに毎回」OWNER 2026-08-26.
-
-   An Edge Function and not a table, because Apple answers this one
-   synchronously -- `GET /v1/salesReports` hands back the report in the body,
-   so there is nothing to keep a copy of. What is stored anywhere is nothing;
-   what arrives is what Apple counted yesterday.
-   docs/reports/sales-2026-08-26.md has what was confirmed at Apple and where.
-
-   /functions/v1/ and not /rest/v1/, which is why this says netSend() with the
-   path written out rather than going through one of the rpc helpers above:
-   the same host, a different half of it. netSend() puts SB_KEY in `apikey`
-   and the session in `Authorization`, which is exactly what the function
-   reads -- it asks is_admin() with the token it was handed, so the door is
-   the server's here as well.
-
-   The key is Apple's and lives in the function's environment. Nothing about
-   it is in this file, and there is nowhere in this app it could be: SB_KEY's
-   comment at the top says why -- everything the phone holds is public.
-
-   A refusal is a refusal like any other and goes to `bad`. What is NOT an
-   error is the function answering `{ready:false}`: that is the owner not
-   having put the keys in yet, which is where this starts on the first day,
-   and `ok` gets it. The screen shows blanks either way; what it must not do
-   is show a red line to somebody who has not done anything wrong. */
-function netStore(ok, bad){
-  if(!netSignedIn()){ bad(null, 0); return; }
-  netSend('POST', '/functions/v1/appstore', {}, SESS.at,
-          function(d){ ok(d || {}); }, bad);
-}
 /* ---- searching, which is the server's ----------------------------------
    A search over what is on THIS phone is a search of the people you already
    know and the posts you already have, which is the one search nobody needs.
@@ -1912,6 +1890,21 @@ function netFindWho(q, ok, bad, more){
    name of the language it is written in. Not on the shapes: a shape is not
    something anybody can type. `body` is jsonb and `->>` is how PostgREST is
    asked for one of its fields as text. */
+/* ONE POST, BY ITS SERVER ID. A notice carries the id of the post it is about
+   and nothing else -- `notices()` in supabase/schema.sql sends `post`, not the
+   post -- so a notice about somebody else's reply pointed at a post this phone
+   had never pulled. postOpen() checked and, finding nothing, did nothing:
+   pressing the row was silence. 「通知タップしても反応が悪い」 OWNER 2026-09-02.
+
+   `post_seen` and netRow() are the same view and the same reader the timeline
+   and the search already use, so what comes back is a post like any other and
+   nothing here decides what one looks like. Reading needs no account --
+   `post_read` in schema.sql is `using (true)`. */
+function netPostById(id, ok, bad){
+  netGet('/rest/v1/post_seen?select=id,author,created_at,reply_to,body,hidden_at,author_out'+
+         '&id=eq.'+encodeURIComponent(String(id||''))+'&limit=1',
+    function(d){ ok((d && d.length)? netRow(d[0]) : null); }, bad);
+}
 function netFindPosts(q, ok, bad, more){
   var like=netLike(q);
   /* `more` is the `at` of the last post already held. Keyset and not an

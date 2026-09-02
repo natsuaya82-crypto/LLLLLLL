@@ -118,7 +118,41 @@ input,textarea,[contenteditable],.mn,.rd{
 /* manipulation keeps scroll and pinch but drops the double-tap-to-zoom that
    was eating every second tap. */
 button,select,a,.trow,.entry,.set,.obsrow,.obchb,.obescb{touch-action:manipulation}
-#app{max-width:480px;margin:0 auto;min-height:100dvh;position:relative}
+/* `touch-action:pan-y` is what makes the back gesture possible at all, and
+   without it the gesture was not merely poor -- it never ran once.
+   「左からスワイプして戻るやつもできないし」OWNER 2026-09-02.
+
+   A thumb going sideways is the browser's until something says otherwise: it
+   takes the touch, sends `pointercancel`, and swMove() never sees a second
+   move. Measured, at the left edge of a real screen, before and after:
+
+     as it ships          the page is taken away entirely, swon never true
+     touch-action:pan-y   swon true, the screen behind fills, #app moves 250px,
+                          and letting go lands on the previous route
+
+   `pan-y` and not `none`: the page still scrolls up and down, which is most
+   of what a thumb does here. Sideways scrolling inside the page is not lost
+   either -- a rail with its own overflow keeps its own axis, measured on the
+   plans rail (0 -> 508 either way). `user-scalable=no` is already on the
+   viewport, so no pinch is being given up.
+
+   This is not a place to write a number. It is the one line that decides who
+   owns a sideways thumb, and www/shell.js § swStart is the other half. */
+#app{max-width:480px;margin:0 auto;min-height:100dvh;position:relative;
+     touch-action:pan-y}
+/* The screen behind, while one is being dragged off it. Hidden until a thumb
+   is on the left edge; it sits under #app and comes in from the left as the
+   current screen goes right, which is what iOS does. `pointer-events:none`
+   because it is a picture of a screen and not a screen -- nothing on it is
+   pressable, and a press that landed on it would run a name from a page you
+   are only looking at. */
+#swprev{display:none;position:fixed;inset:0;max-width:480px;margin:0 auto;
+        overflow:hidden;background:var(--bg);z-index:1;will-change:transform}
+html.swon #swprev{display:block}
+html.swon #app{position:relative;z-index:2;background:var(--bg);
+               box-shadow:-12px 0 28px rgba(0,0,0,.18);will-change:transform}
+/* The release: whichever way it goes, it goes there rather than jumping. */
+html.swgo #swprev, html.swgo #app{transition:transform .22s ease-out}
 /* A screen slides in when you arrive at it. It must NOT slide in again every
    time something on it is tapped -- but every tap redraws the whole view, so
    it did: choose a writing system and the entire screen jumped twelve pixels
@@ -400,7 +434,6 @@ canvas.pkc{width:34px;height:34px;display:block}
 .kbtb.on{color:var(--gold);background:var(--goldsf)}
 .kbtb.bad{color:var(--bad)}
 .kbtb.bad[disabled]{color:var(--txm)}
-.kbadd{display:flex;gap:8px;margin-top:12px}
 /* THE KEY, on the sheet that edits it: the middle is what it types and the
    four edges are what it flicks to, which is where they are on the key
    itself. A form of five labelled rows said the same five things and showed
@@ -547,6 +580,12 @@ canvas.pkc{width:34px;height:34px;display:block}
           display:flex;align-items:center;justify-content:center}
 .pullrule svg{width:22px;height:22px;display:block}
 .pullrule.go{animation:pullsp .9s linear infinite}
+/* The same mark, standing in the BODY rather than hanging off the bar --
+   what a timeline shows while its first answer is still out. `.pullrule` is
+   placed against the bar it belongs to; here it has a place of its own.
+   www/sns.js § snsWaitHTML. */
+.snswait{padding:48px 0}
+.snswait .pullrule{position:static;margin:0 auto}
 @keyframes pullsp{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.pullrule.go{animation:none}}
 .chead{padding:0 24px 6px}
@@ -843,6 +882,10 @@ canvas.pkc{width:34px;height:34px;display:block}
 .numwbig{line-height:1;white-space:nowrap;color:var(--tx)}
 .numrm{display:inline-block;font-size:.62em;line-height:1}
 .numwhow{margin-top:2px}
+/* What was handed to the widgets, said where the digits are made. A STATE --
+   how many signs went and what the native side answered -- not a sentence
+   about the app. www/numbers.js § numWidOut() says why it is here. */
+.numwout{margin-top:6px;color:var(--txs)}
 /* The month, as it comes out on a home screen. Seven columns, because a week
    has seven days wherever this is read; the count is handed in as --numcols
    so the grid and numCalHTML() cannot disagree about it. */
@@ -1365,9 +1408,14 @@ html.fitlock, html.fitlock body{height:100%;overflow:hidden;overscroll-behavior:
    a gutter on every side, so there is somewhere for it to hang. Six points
    out, and the grid is given the same six at the top so the first row's marks
    do not sit on the row above them. */
+/* THE MARK IS 22 AND WHAT YOU PRESS IS 44. The circle is unchanged -- what
+   grows is an invisible square around it, so the drawing stays where it was
+   and a thumb has something to land on. 「文字の長押ししてマイナスなんだけど
+   全然押せないんだけどマイナスボタン」 OWNER 2026-09-01. */
 .ltx{position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:999px;
      background:var(--tx);color:var(--bg);display:flex;align-items:center;
      justify-content:center;z-index:4}
+.ltx::after{content:"";position:absolute;top:-11px;left:-11px;width:44px;height:44px}
 .ltx svg{width:13px;height:13px}
 /* A clash, said where it happens. Two letters reading the same unit is not an
    error -- the font takes the first and the second is simply never drawn --
@@ -1781,7 +1829,13 @@ a.set{text-decoration:none}
    「プランタップして下のサブスクライブするみたいなボタン押してやっと課金いける
    みたいにしたい」OWNER 2026-09-01. */
 .plgo{padding:26px 24px 0;text-align:center}
-.plbuy{font-size:1.02rem}
+/* DOWN UNTIL A TERM IS CHOSEN, AND LIT ONCE ONE IS. 「サブスクライブするボタン
+   は、プラン選んだら光らせろよ」OWNER 2026-09-01 -- it was the same gold either
+   way, dimmed by `:disabled`, which reads as a button that is simply pale. */
+.plbuy{font-size:1.06rem;font-weight:700;color:var(--txm);
+       transition:color .15s ease,text-shadow .15s ease}
+.plbuy:not(:disabled){color:var(--gold);text-shadow:0 0 18px var(--goldln)}
+.plbuy:disabled{opacity:1}
 /* The term that is chosen. The box is already there -- it is the one pair the
    owner allowed 「11は、角丸でいいから囲わないとボタンを押してるかわからん」 --
    so being chosen is the box FILLED, and nothing new is drawn. */
@@ -1793,12 +1847,20 @@ a.set{text-decoration:none}
    going under it: a button the bar is sitting on is a button that cannot be
    pressed, and cancelling has to work. */
 .plunder{padding-top:34px}
-/* And this page's own foot, so the row that cancels ends UNDER the bar of
-   tabs rather than 90px clear of it: 「だから隠せって。スクロールできるように
-   すればいいの」 OWNER 2026-09-01. The page still scrolls to it -- it stops
-   against the bar's top edge, which is as hidden as a thing can be and still
-   be pressable. */
-.view.plans .body{padding-bottom:calc(var(--tabh) + 6px)}
+/* AND IT HAS TO BE REACHABLE. Without a foot, this page ends where its last
+   row ends, the bar of tabs sits on top of that row, and there is nothing
+   left to scroll -- so the row that cancels cannot be pressed at all.
+   「これスクロールできないから解除できない」OWNER 2026-09-01, and again
+   「後スクロールできないから解約ボタン押せない」2026-09-02, both on a phone.
+
+   `.view.plans` AND NOT `.view.plans .body`, which is what stood here for two
+   days and matched nothing: vPlans() builds navTop and its own rows and has
+   no `.body` in it at all. The first fix moved the NUMBER in a rule that was
+   never applied, measured nothing, and was reported as done. Measured now:
+   scrollHeight 844 == clientHeight 844, cancel button at 789-835, under the
+   bar. Held by `press`, which walks every route and fails on anything left
+   under the bar with no way to scroll to it. */
+.view.plans{padding-bottom:calc(var(--tabh) + 96px)}
 
 /* ---------- locked behind a paid plan ---------- */
 .lock{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:none;
@@ -2060,10 +2122,6 @@ a.set{text-decoration:none}
        color:var(--tx)}
 .abshl{flex:1 1 auto;font-size:1.22rem;line-height:1.35}
 .abmk{flex:0 0 auto;color:var(--txm)}
-/* The same heading with nothing to fold: one height with the button one,
-   which is what keeps two neighbouring headings the same row. */
-.abshp{font-family:var(--face-ui);font-size:1.22rem;font-weight:600;line-height:1.35;
-       color:var(--tx)}
 /* The second question is asked OF the row above it, so it is set in from the
    left and quieter. Eight rows all reading 「DL可」 down a flat list said
    nothing about which section each belonged to. */
@@ -2112,8 +2170,15 @@ a.set{text-decoration:none}
               display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;
               overflow:hidden}
 /* Who follows whom, inside the block about the person rather than in a strip
-   of its own under it. */
-.pfstats{display:flex;align-items:center;gap:20px}
+   of its own under it.
+
+   `position:relative` because the ... stands at the right end of this row on
+   somebody else's card, and the box it opens hangs off it. It used to hang
+   off `.metop`, which is where the ... used to be.
+   「フォロワーとかの横の一番右に...で」OWNER 2026-09-02. */
+.pfstats{display:flex;align-items:center;gap:20px;position:relative}
+/* Pushed to the end of the row, past whatever the two counts came to. */
+.pfstats .pmore{margin-left:auto}
 .pfst{min-height:44px;padding:0;background:none;border:0;font-family:inherit;
       font-size:.86rem;color:var(--txm);white-space:nowrap;
       display:inline-flex;align-items:center;gap:5px}
@@ -2203,14 +2268,46 @@ a.set{text-decoration:none}
 .kblist .kbrow{display:flex;align-items:center;gap:12px;width:100%;min-height:64px;
        padding:10px 2px;border:0;border-bottom:1px solid var(--line);
        background:none;color:var(--tx);font-family:inherit;text-align:left}
+/* While the list is being chosen from, the row is a container: the mark and
+   the row's own face are two things to press, so the row itself is not a
+   button any more. 「キーボードも選択削除したいから」OWNER 2026-09-01. */
+.kblist .kbrow.kbrowq{cursor:default}
+/* The same, on the notebook. */
+/* ---------- switching language ----------
+   The account switcher's shape, and it is a SCREEN 「言語切り替えは設定の言語
+   じゃなくて、ちゃんとした画面作ってくれよ。インスタのアカウント切り替えみたい
+   なイメージ」OWNER 2026-09-01. A tile, a name, and the tick on the one you
+   are in. No corner of its own: the tile is `.pav`, the circle every face in
+   this app already wears. */
+.lgrow{display:flex;align-items:center;gap:14px;width:100%;min-height:68px;
+       padding:10px 2px;border:0;border-bottom:1px solid var(--line);
+       background:none;color:var(--tx);font-family:inherit;text-align:left}
+.lgrow:active{opacity:.6}
+.lgav{width:48px;height:48px;font-family:var(--face-caps);font-size:1.15rem;
+      color:var(--txs)}
+.lgadd{color:var(--gold)}
+.lgn{flex:1 1 auto;min-width:0;font-size:1.02rem;
+     overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lgrow.on .lgn{font-weight:700}
+.lgck{flex:0 0 auto;width:28px;text-align:center;color:var(--gold)}
+.ntrow.ntrowq{display:flex;flex-direction:row;align-items:center;gap:12px}
+/* `flex-direction` and not only `display`: .ntrow is a COLUMN (a heading over
+   a line of the note), and this pair of classes was overriding the display and
+   the alignment while leaving the direction alone -- so the ◉ sat ABOVE the
+   note instead of in front of it, and the row it is in front of came out 35px
+   wide. press measures 44pt on both sides and that is how it was found. */
+.ntrowb{flex:1 1 auto;min-width:0;min-height:44px;display:flex;flex-direction:column;
+        justify-content:center;
+        border:0;background:none;color:inherit;font-family:inherit;
+        text-align:left;padding:0}
+.kbrowb{flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:12px;
+        border:0;background:none;color:inherit;font-family:inherit;
+        text-align:left;padding:0}
 .kbrowk{flex:0 0 96px;width:96px}
 .kbrown{flex:1 1 auto;min-width:0;font-size:.95rem;overflow:hidden;
         text-overflow:ellipsis;white-space:nowrap}
 .kblist .kbrow .kbon{flex:0 0 auto}
 .kblist .kbrow svg.go{flex:0 0 auto;color:var(--txm)}
-.kbadd{display:flex;align-items:center;gap:10px;width:100%;min-height:56px;
-       padding:10px 2px;border:0;background:none;color:var(--gold);
-       font-family:inherit;font-size:.92rem;text-align:left}
 /* The keyboard itself, shrunk: the real keys with the real letters on them,
    so what is being chosen between is what will be typed on. The glyphs are
    canvases and scale down with the box; `overflow:hidden` on the key is what
@@ -2223,10 +2320,6 @@ a.set{text-decoration:none}
 /* The same keyboard on the article, at a size somebody can look at rather
    than pick out of a list. No corner and no border: it is the keys that are
    drawn, and the block around them is nothing. */
-/* The mark on a section anybody may take away. Beside the heading, where the
-   way through sits on the sections that have one -- not a badge and not a
-   panel: the arrow, in the muted colour every mark on this page is. */
-.abdlm{flex:0 0 auto;display:flex;align-items:center;color:var(--txm)}
 .abkb{width:100%;margin-top:6px}
 .abkb .kbshot2{height:132px;gap:3px}
 .abkb .kbsr{gap:3px}
@@ -2604,8 +2697,17 @@ a.set{text-decoration:none}
    now: one line where the sentence is one line, two where it wraps or where
    the post under it has something to say. The face is 44 and the padding 24,
    so nothing is ever shorter than 68. */
+/* A ROW THAT IS PRESSED, and it is a <div> carrying an action name rather
+   than a <button> -- it holds faces and two lines of its own. What a <button>
+   gives it for nothing is the thing it was missing: WebKit only treats an
+   element as tappable when it looks like one, so a plain div misses taps and
+   shows nothing on the ones it catches. 「通知タップしても反応が悪い」 OWNER
+   2026-09-02. `cursor` is what WebKit reads; the rest is the press being
+   seen. */
 .ntf{display:flex;align-items:center;gap:10px;margin:0 -24px;padding:12px 16px;
-     border-bottom:1px solid var(--line)}
+     border-bottom:1px solid var(--line);cursor:pointer;
+     -webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+.ntf:active{background:var(--goldsf)}
 /* The mark, and every kind of notice hangs it in the same place. The five
    drawings are not all the same height -- the heart is 17, the follow 14, the
    recommendation 15 -- so with nothing to centre them against, the row for a
@@ -2707,9 +2809,6 @@ a.set{text-decoration:none}
      font-family:inherit;text-align:left}
 .dfl{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dfw{flex:0 0 auto;font-size:.82rem;color:var(--txm)}
-.dfx{flex:0 0 auto;width:44px;height:44px;padding:0;border:0;background:none;
-     color:var(--txs);display:inline-flex;align-items:center;justify-content:center}
-.dfx:active{color:var(--bad)}
 /* A post that was put right says so, beside the time. */
 .ped{color:var(--txs);font-size:.8rem}
 /* Beside it, and the one mark in this row that is not grey. Same size and same
@@ -3333,13 +3432,27 @@ html[data-script="on"] .gsw{font-family:var(--face-script);letter-spacing:0}
 
 /* ---------- notes ----------
    A notebook page: a heading and the first line of what is under it. */
-.ntlist{display:flex;flex-direction:column;gap:10px}
-.ntrow{display:flex;flex-direction:column;gap:4px;width:100%;text-align:left;padding:14px 16px;
-  border:1px solid var(--line);border-radius:12px;background:var(--pane);color:inherit;font:inherit;cursor:pointer}
+/* NO BOX. 「角丸やめろ」「文字書いて四角で囲ったみたいなボタン全部やめてくれ。
+   ダサすぎる」 -- this was four sides and a corner round every note, which is
+   the shape the rule names. What is left is a line under each row, which is
+   what index.html's own sentence over the field rules asks for
+   「かくまるみたいなのでくくるのやめて欲しい。基本下線だけ」, and the gap goes
+   with the box: rows in one list sit against each other. */
+.ntlist{display:flex;flex-direction:column}
+.ntrow{display:flex;flex-direction:column;gap:4px;width:100%;text-align:left;padding:14px 2px;
+  border:0;border-bottom:1px solid var(--line);background:none;color:inherit;font:inherit;cursor:pointer}
 .ntrow:active{transform:scale(.995)}
-.ntrow .nth{font-size:.95rem;color:var(--tx)}
+/* The title is the row: what a note IS. 「題名の方が少し文字でかくしてほしい」
+   OWNER 2026-09-02 -- it sat at .95 with the line under it at .88, which is
+   not enough between them to read as a heading and its line. */
+.ntrow .nth{font-size:1.06rem;color:var(--tx)}
 .ntrow .ntb{font-size:.88rem;color:var(--txm);line-height:1.6}
-.ntbody{min-height:180px;line-height:1.8}
+/* AS TALL AS WHAT IS LEFT OF THE SCREEN. It was 180px -- a box in the middle
+   of an empty page, which is not what a notebook is 「本文の範囲狭すぎ。画面
+   全部+スクロールもできるようにしろ。メモの役割としてゴミやんけ」 OWNER
+   2026-09-01. It scrolls inside itself past that, so a long note is a long
+   note rather than a page that grows under the thumb. */
+.ntbody{min-height:52vh;line-height:1.8;overflow:auto}
 /* A textarea outside a .field had no styling of its own, so a rule written
    straight onto a page came out as a white box on a dark screen. */
 textarea.ntbody{width:100%;background:none;border:0;border-bottom:1px solid var(--line);border-radius:0;
@@ -3400,6 +3513,19 @@ textarea.ntbody.grow{min-height:0;height:auto;overflow:hidden;resize:none}
      than let in. This holds for a moment and goes. -->
 <div id="splash"><div class="splbrand">LIN<span class="st">G</span>UA</div>
 <div class="splrule"></div></div>
+<!-- The screen you came FROM, held still while a thumb drags the current one
+     off it, the way iOS does. Asked for on 2026-09-02; what was said is
+     written over swStart() in www/shell.js, which is what shows this.
+     It is not rebuilt: render() keeps the HTML of the screen it is replacing,
+     so what stands here is the page as it was left -- no pulls, no read marks,
+     nothing run twice.
+     NO APOSTROPHE IN HERE. tools/dead-check.mjs strips JavaScript comments and
+     strings from index.html and does not know an HTML comment from anything
+     else, so one apostrophe opens a string that swallows the rest of the
+     file --
+     window.splashDone below it stops being defined as far as the check can
+     see. It said so, correctly, about a comment. -->
+<div id="swprev" aria-hidden="true"></div>
 <div id="app"></div>
 <!-- The tab bar lives out here, beside the screen rather than inside it.
      render() replaces #app whole on every navigation, so a bar written into

@@ -670,11 +670,16 @@ create policy language_drop on language for delete
 -- what vAbout() draws, and drawing them for somebody else is the whole of
 -- what publishing a language page is.
 --
--- THE DICTIONARY AND THE GRAMMAR DO NOT OPEN. 「言語ページ公開と単語や文字の
--- dl可能は別だし」 OWNER -- being allowed to READ somebody's page and being
--- handed the months of work behind it are two questions, and publishing the
--- page answers only the first. `words`, `phases`, `gram2`, `lines`, `notes`,
--- `talk` and `lang` are nobody else's at any setting.
+-- AND THE DICTIONARY AND THE GRAMMAR OPEN ON A SECOND ANSWER, never on this
+-- one. 「言語ページ公開と単語や文字のdl可能は別だし」 OWNER -- being allowed to
+-- READ somebody's page and being handed the months of work behind it are two
+-- questions, and publishing the page answers only the first. The second is the
+-- owner's own DL switch, section by section, and `slice_dl()` below is where
+-- this file reads it. 「あとdlは単語文字文法キーボード全部のはずだよね？」 OWNER
+-- 2026-09-02: all four sections can be handed over, and the grammar is `phases`
+-- and `gram2` because a grammar is both.
+--
+-- `lines`, `notes`, `talk` and `lang` are nobody else's at any setting.
 --
 -- `published_at` is what the About page's own switch writes -- setWldHide()
 -- in www/home.js through netLangPublic() in www/net.js. Turning the switch
@@ -684,14 +689,55 @@ create policy language_drop on language for delete
 -- Writing is unchanged and is the owner's alone. Publishing is a page being
 -- readable, never a way in.
 alter table slice enable row level security;
+
+-- Whether the OWNER of a language has said that one section of it may be taken
+-- away. 「言語ページ公開と単語や文字のdl可能は別だし」 -- publishing a page and
+-- handing a chapter over are two answers, and this is the second one.
+--
+-- The answer lives in the `wld` slice, which is the article: `secs.<section>.dl`
+-- when somebody has answered for that section, and the page-wide `dl` when
+-- nobody has. That is wldSecDl() in www/home.js written out again, and the two
+-- have to agree -- a reader offered a ↓ the server then refuses is the shape
+-- 「ダウンロードボタン押しても言語追加されないけど？」 named.
+--
+-- Unreadable, absent or anything this does not understand is FALSE. A section
+-- nobody can prove was opened stays shut: the failure of a policy is somebody
+-- else's dictionary going out, so it fails towards refusing.
+create or replace function slice_dl(lang uuid, sec text) returns boolean
+language plpgsql stable as $$
+declare w jsonb; o jsonb;
+begin
+  select s.body::jsonb into w from slice s
+   where s.language = lang and s.kind = 'wld';
+  if w is null then return false; end if;
+  o = w -> 'secs' -> sec;
+  if o is not null and o ? 'dl' then return (o -> 'dl') = 'true'::jsonb; end if;
+  return (w -> 'dl') = 'true'::jsonb;
+exception when others then
+  return false;
+end $$;
+
 drop policy if exists slice_read on slice;
 create policy slice_read on slice for select
   using (
     exists (select 1 from language l
              where l.id = language and l.owner = auth.uid())
+    -- What the ARTICLE is drawn from. Open on a published language, because
+    -- the page cannot be read otherwise.
     or (kind in ('wld', 'script', 'snd', 'letters', 'kb')
         and exists (select 1 from language l
                      where l.id = language and l.published_at is not null))
+    -- And what may be TAKEN: 「あとdlは単語文字文法キーボード全部のはずだよね？」
+    -- OWNER 2026-09-02. The dictionary and the grammar were refused to everybody
+    -- but their owner, so two of the four ↓ could never have landed. They are
+    -- open now on a published language AND only where its owner's own switch
+    -- says so -- WLD_DL_KIND in www/home.js is the other half of this list, and
+    -- the grammar is two slices because a grammar is.
+    or (kind in ('words', 'phases', 'gram2')
+        and exists (select 1 from language l
+                     where l.id = language and l.published_at is not null)
+        and slice_dl(language,
+                     case kind when 'words' then 'words' else 'gram' end))
   );
 drop policy if exists slice_make on slice;
 create policy slice_make on slice for insert
@@ -779,9 +825,12 @@ create policy publication_make on publication for insert with check (
 -- it and nothing to know about it.
 --
 -- The article, the writing system, the sounds, the letters and the keyboard
--- are already open on a published language: `slice_read` says so. What is
--- NOT open, and stays shut, is the DICTIONARY -- 「言語ページ公開と単語や
--- 文字のdl可能は別だし」. `words` is nobody else's at any setting.
+-- are open on a published language, because the page is drawn from them:
+-- `slice_read` says so. The DICTIONARY and the GRAMMAR are open only where
+-- their owner's own switch says a reader may take them -- `slice_dl()` above,
+-- which is 「言語ページ公開と単語や文字のdl可能は別だし」 written as a policy.
+-- Reading this count needs neither: it is a number about the language, the way
+-- a page count is a number about a book.
 --
 -- So the count is computed HERE and the words never move. `nwords` is a
 -- number about the language the way a page count is a number about a book;

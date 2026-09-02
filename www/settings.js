@@ -668,14 +668,40 @@ function planPage(p){
    plan are two different things to buy. */
 var PLPICK=null;
 function plPick(id, yr){
+  /* AND THE RAIL STAYS WHERE IT WAS. Choosing repaints the screen, and the
+     row of plans is a thing you have scrolled sideways -- so pressing a price
+     on Plus put you back on Free, every time. 「4.99ってボタン押したら毎回
+     左に戻されるの何？流石にそのプランで止まれや」 OWNER 2026-09-01. */
+  var r=document.querySelector('.plrail'), x=r? r.scrollLeft : -1;
   PLPICK={id:String(id), yr:!!yr};
   render();
+  if(x>0){ r=document.querySelector('.plrail'); if(r) r.scrollLeft=x; }
 }
 function plPicked(id, yr){ return !!(PLPICK && PLPICK.id===id && PLPICK.yr===!!yr); }
 /* And the press that actually buys. Down until something is chosen: a button
-   that does nothing is a button that is broken. */
+   that does nothing is a button that is broken.
+
+   IT WILL NOT BUY WHAT IS ALREADY HELD. 「二重課金はさせないようにしろよ」
+   OWNER 2026-09-01, after buying Plus on a phone that already had Pro and
+   being charged for both. Two subscriptions in two App Store groups can be
+   held at once -- docs/apple.md § サブスクリプショングループ says to put them
+   in ONE group, where Apple itself makes the second an upgrade -- and this is
+   the app not relying on that being got right: the plan in force, and
+   anything at or below it on the ladder, is not something to buy again. What
+   it is instead is a change to a subscription that exists, and that is
+   Apple's own sheet (storeManage) 「サブスクリプションは、サブスクライブに
+   使用したプラットフォームを通じて管理してください」. */
 function plBuy(){
+  var now, i, j;
   if(!PLPICK) return;
+  now=plan();
+  i=PLAN_ORDER.indexOf(now);
+  j=PLAN_ORDER.indexOf(PLPICK.id);
+  if(now!=='free' && j>=0 && i>=0 && j<=i){
+    popAsk(t('plan.already', planName(now)), function(){ storeManage(); },
+      t('plan.cancel'));
+    return;
+  }
   setPlan(PLPICK.id, PLPICK.yr);
 }
 function planPrice(p, free){
@@ -841,7 +867,19 @@ function setPlan(id, yearly){
 /* Signing out leaves everything where it is: the languages are on the phone
    and the account is on the server, and coming back finds both. Only the pair
    of tokens goes. */
+/* 「ログアウト、アカウント消去、言語消去はログアウトしますか？みたいなポップ
+   つけてほしい」OWNER 2026-09-02. The other two already ask -- wipeAll() and
+   the language wipe both open one, and both say it cannot be undone. This one
+   went the moment it was pressed.
+
+   It does NOT say 「戻りません」. Signing out leaves every language on the
+   phone and the account on the server, and signing back in finds both; a
+   sentence saying otherwise would be the app frightening somebody about a
+   thing that costs nothing. The two that DO destroy something say so. */
 function setSignOut(){
+  popAsk(t('set.signout.ask'), function(){ setSignOutGo(); }, t('set.signout'));
+}
+function setSignOutGo(){
   netOut();
   /* And the provider is told too. Lingua's tokens are not the only session
      there is: the social plugin keeps its own, and it survived this -- so the

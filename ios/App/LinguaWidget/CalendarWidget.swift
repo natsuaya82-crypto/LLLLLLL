@@ -12,10 +12,10 @@
 //  「言語内で週の概念作ろうが、ウィジェットに表示するなら世界の概念でやるだろ」
 //
 //  What the language does is NAME them, and write the numbers in its own
-//  digits. A month with no word made for it is the phone's name for that
-//  month; a day with no word is the phone's name for that day -- Monday, 月 --
-//  and not a number, because a number for a weekday is not something anybody
-//  says. 「ない分の言葉は monday とかで代用しよう」
+//  digits. A month with no word made for it is drawn as its NUMBER, in
+//  somebody's own digits; a day with no word is Sun/Mon/Tue, in English on
+//  every phone, and not a number, because a number for a weekday is not
+//  something anybody says. 「ない分の言葉は monday とかで代用しよう」
 
 import WidgetKit
 import SwiftUI
@@ -61,17 +61,27 @@ func dayTint(_ i: Int) -> Color {
 
 /// What a column is called.
 ///
-/// The word somebody made, else the phone's own short name for that day.
-/// There is always a phone name to fall back to, because the week here is the
-/// world's seven and the phone has seven names for it.
+/// The word somebody made, else Sun/Mon/Tue -- in English, on every phone.
+/// There is always a stand-in, because the week here is the world's seven.
 /// 「ない分の言葉はmondayとかで代用しよう」
 func weekdayHead(_ i: Int, _ num: Numerals?) -> Named? {
   if let n = num?.dayName(i) { return n }
   /* shortWeekdaySymbols and NOT veryShort: very short is one letter, and one
      letter in English is S M T W T F S -- two pairs that say nothing apart
      from each other. A stand-in is there to be READ, so it is Sun and Mon.
-     Both lists start at Sunday, and so does the count. */
-  let syms = Calendar.current.shortWeekdaySymbols
+     Both lists start at Sunday, and so does the count.
+
+     AND A FIXED ENGLISH LOCALE, not the phone's. This was Calendar.current,
+     which follows the DEVICE -- so on a Japanese phone the stand-in came out
+     日 月 火 水 木 金 土. 「ウェジットもなんか日本語になってるけど」 OWNER
+     2026-09-02, on their own phone. The word asked for was Monday
+     ── 「ない分の言葉はmondayとかで代用しよう」 ── and a stand-in is the widget
+     saying "no word has been made for this day yet", which it has to say the
+     same way on every phone. Somebody's own word, when there is one, is drawn
+     above this line and is untouched. */
+  var cal = Calendar(identifier: .gregorian)
+  cal.locale = Locale(identifier: "en_US_POSIX")
+  let syms = cal.shortWeekdaySymbols
   guard syms.count == 7, i >= 1, i <= 7 else { return nil }
   return Named(r: syms[i - 1], all: false)
 }

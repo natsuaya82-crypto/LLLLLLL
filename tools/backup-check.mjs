@@ -504,8 +504,10 @@ const gone = await pg.evaluate(async () => {
 
 /* The whole button, not the function underneath it: wipeAll() asks, tells the
    server, empties the phone and drops the files, and a claim about lsWipeNS()
-   alone would be green with any of those four unwired. confirm() is answered
-   yes, which is the person pressing through the one question there is. */
+   alone would be green with any of those four unwired. The one question there
+   is gets its yes pressed -- the app's own popup, not confirm(), which went on
+   2026-09-01 (「標準は使わねえって言ってるだろこれも禁止や」). Nothing is
+   stubbed: pressing the popup is pressing the screen. */
 const wiped = await pg.evaluate(async () => {
   const fails = [];
   const ours = () => {
@@ -536,6 +538,9 @@ const wiped = await pg.evaluate(async () => {
      delay -- a fixed wait that is one tick short is a check that passes on a
      fast machine and fails on a slow one. */
   wipeAll();
+  if (typeof popOn === 'function' && popOn()) popYes();
+  else fails.push('wipeAll() put no popup up. 「全部消えんだよ」 is one question, ' +
+                  'and it is asked with the app\u2019s own popup');
   for (let i = 0; i < 200 && localStorage.getItem('lingua.me'); i++) {
     await new Promise(r => setTimeout(r, 10));
   }

@@ -309,12 +309,18 @@ const R = await pg.evaluate(() => {
     netGet  = (path, ok, bad) => { getted.push(path); ok([]); };
   };
   const unwire = () => { netPost = realPost; netGet = realGet; };
-  const askRow = () => {
+  const askRow = (id) => {
     let got = '', refused = false;
     /* netLangRow() takes the id now: it used to ask about whichever language
        was OPEN, which is why a second language never reached the server.
-       This claim is about the open one, so it passes langId and says so. */
-    netLangRow(langId, (sid) => { got = sid; }, () => { refused = true; });
+
+       AND THE ID IS NAMED, not read off `langId`. Signing in re-points the
+       open language at the arriving account's own (langForAcct, www/core.js),
+       so 「the open one」 is no longer the language these claims are about --
+       they are about the one the PREVIOUS account left behind, which is
+       exactly the language that must not go up. Passing langId here asked
+       about B's own new language and got the answer for it. */
+    netLangRow(id || langId, (sid) => { got = sid; }, () => { refused = true; });
     return { got, refused };
   };
 
@@ -322,9 +328,10 @@ const R = await pg.evaluate(() => {
   start();
   wire(); posted = []; getted = [];
   LANGS[langId] = { name: 'A の言語', mine: true, sid: 'A-lang', uid: A };
+  const id9 = langId;
   langStore();
   netOut(); arrive(B);
-  let r9 = askRow();
+  let r9 = askRow(id9);
   unwire();
   if (!r9.refused) no('9: B が A の言語の行を受け取った — sid=' + JSON.stringify(r9.got));
   if (posted.length)
@@ -338,9 +345,10 @@ const R = await pg.evaluate(() => {
   start();
   wire(); posted = []; getted = [];
   LANGS[langId] = { name: 'A の言語', mine: true, uid: A };
+  const id10 = langId;
   langStore();
   netOut(); arrive(B);
-  let r10 = askRow();
+  let r10 = askRow(id10);
   unwire();
   if (posted.length)
     no('10: A の言語が B のアカウントに作られた — owner=' +
@@ -895,13 +903,25 @@ const R = await pg.evaluate(() => {
      「サインアウトして別のアカウントで入る」という道が存在しませんでした。
      www/ 全体で SocialLogin は obSocial() の一箇所だけに現れ、logout は
      どこからも呼ばれていませんでした。 */
+  /* 押す道を通します。setSignOut() はポップを開くだけになりました ──
+     「ログアウトしますか？みたいなポップつけてほしい」OWNER 2026-09-02 ──
+     ので、はいを押すところまでが「サインアウトする」です。ここを
+     setSignOutGo() の直呼びにすると、ポップが壊れても緑のままになります。 */
+  const signOutNow = () => {
+    setSignOut();
+    let yes = null;
+    Array.prototype.slice.call(document.querySelectorAll('#pop button'))
+      .forEach((b) => { if (b.getAttribute('data-do') === 'popYes') yes = b; });
+    if (!yes) { no('28: ログアウトの問いが出ない'); return; }
+    yes.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+  };
   start();
   const told = [];
   window.Capacitor = { Plugins: { SocialLogin: {
     logout: (arg) => { told.push(arg && arg.provider); return { catch: () => {} }; }
   } } };
   OB_SL = true;
-  setSignOut();
+  signOutNow();
   delete window.Capacitor;
   if (told.indexOf('google') < 0) no('28: サインアウトが Google に伝わっていない');
   if (told.indexOf('apple') < 0) no('28: サインアウトが Apple に伝わっていない');
@@ -917,7 +937,7 @@ const R = await pg.evaluate(() => {
     logout: () => { throw new Error('nope'); }
   } } };
   let threw = false;
-  try { setSignOut(); } catch (e) { threw = true; }
+  try { signOutNow(); } catch (e) { threw = true; }
   delete window.Capacitor;
   if (threw) no('28: provider が拒んだらサインアウトが落ちる');
   if (netSignedIn()) no('28: provider が拒んだらサインアウトできない');
@@ -925,7 +945,7 @@ const R = await pg.evaluate(() => {
   start();
   window.Capacitor = { Plugins: {} };          /* プラグインが無いビルド */
   let threw2 = false;
-  try { setSignOut(); } catch (e) { threw2 = true; }
+  try { signOutNow(); } catch (e) { threw2 = true; }
   delete window.Capacitor;
   if (threw2) no('28: プラグインが無いとサインアウトが落ちる');
   if (netSignedIn()) no('28: プラグインが無いとサインアウトできない');
@@ -1024,6 +1044,35 @@ const R = await pg.evaluate(() => {
   netGet = realGet;
   say('30: フォロー中／フォロワーは、人のぶんも訊ける（自分のぶんは今までどおり）');
 
+  /* ---- 30b. 押した瞬間に、その人のフォロワーが動く ----------------------
+     「フォローしたのにその人のフォロワーにすぐ出ないよ？」OWNER 2026-09-02。
+
+     ボタンは押した瞬間に変わる（いいねと同じで、サーバーは待たない）。その
+     下の数字は変わらなかった ── あれは `profile_seen` の `fr` で、netWho()
+     が持ってきたきりだから。一度の押下で、同じことについての二つが画面に
+     あって、片方だけ動いていた。
+
+     数えていない数は 0 ではない。誰も取っていない数に 1 を足すと、取った
+     ことになる ── whoOf() が undefined を undefined のまま残すのと同じ話。 */
+  const realFollow = netFollow;
+  netFollow = () => {};
+  WHO_HAVE['iri'] = { who:'Iri', hd:'iri', av:null, lname:'Vethi', bio:'',
+                      fo:0, fr:3, out:false };
+  ME.fo = [];
+  meFollow('iri');
+  if (WHO_HAVE['iri'].fr !== 4)
+    no('30b: フォローしても、その人のフォロワーが動かない — ' + WHO_HAVE['iri'].fr);
+  meFollow('iri');
+  if (WHO_HAVE['iri'].fr !== 3)
+    no('30b: 外しても戻らない — ' + WHO_HAVE['iri'].fr);
+  WHO_HAVE['nemo'] = { who:'N', hd:'nemo', av:null, lname:'', bio:'',
+                       fo:undefined, fr:undefined, out:false };
+  meFollow('nemo');
+  if (WHO_HAVE['nemo'].fr !== undefined)
+    no('30b: 誰も数えていない数に足した — ' + WHO_HAVE['nemo'].fr);
+  netFollow = realFollow;
+  say('30b: 押した瞬間にその人のフォロワーも動く（数えていない数は数えないまま）');
+
   /* ---- 31. キーボードのプールも、そのアカウントのぶん -------------------
      「じゃないとアカウント変えたら無限に言語作れるやん」OWNER 2026-09-01。
      langCount() と同じ穴が kbCount() にもありました ── LANGS は端末のもので
@@ -1100,6 +1149,55 @@ const R = await pg.evaluate(() => {
   /* そして何も消えていない: LANGS には三つとも在る。 */
   if (!LANGS || Object.keys({La:1,Lb:1,Lc:1}).length !== 3) no('32: 内部で数が変わった');
   say('32: 言語の一覧はそのアカウントのぶんだけ ── 消さず、隠した件数を言う');
+
+  /* ---- 33. アカウントが違えば、開いている言語も違う --------------------
+     「ログアウトして違うアカウントでログインしても前のアカウント残ってるん
+     だけどなんで？」「アカウントが違うんだから、そもそも残るのがおかしい
+     だろって」OWNER 2026-09-02.
+
+     サインインは、アカウントで引くもの（名前・顔・ハンドル・一覧）を全部
+     入れ替えていて、変数に入っている `langId` だけ触っていなかった。だから
+     自分でサインインしたのに、画面に出ている辞書も文字もキーボードも前の人の
+     ものだった ── 一覧には「N 件表示していません」と出ているのに。何も throw
+     しない。
+
+     消さないことも一緒に見る: 前のアカウントの言語も、その単語も、その場に
+     残っていて、戻れば戻る。 */
+  netOut();
+  LANGS = { 'La': { name: 'A の言語', mine: true, uid: A },
+            'Lb': { name: 'B の言語', mine: true, uid: B } };
+  langId = 'La'; langName = 'A の言語';
+  try { localStorage.setItem(langKeyOf('La', 'words'),
+    JSON.stringify([{ hw: 'aaa', ph: ['a'], mn: 'A のことば', mns: ['A のことば'], pos: 'n' }])); } catch (e) {}
+  arrive(B);
+  langForAcct(true);
+  if (langId === 'La') no('33: B でサインインしたのに A の言語が開いたまま');
+  if (!langAcct(langId)) no('33: 開いた言語が B のものではない（' + langId + '）');
+  if (!LANGS.La) no('33: A の言語が索引から消えた');
+  if (!localStorage.getItem(langKeyOf('La', 'words')))
+    no('33: A の単語が消えた ── 隠すのであって消すのではない');
+  /* そして A に戻ると、A の言語がそのまま返る。 */
+  netOut(); arrive(A);
+  langForAcct(true);
+  if (langId !== 'La') no('33: A に戻ったのに A の言語が開かない（' + langId + '）');
+  /* そして B がこの端末に一つも持っていない場合。作られる新しい言語には
+     そのアカウントの印が要ります ── langMint() は印を付けず、印の無い言語は
+     「訊いた人のもの」と読まれるので（langOwned）、A が戻ったときに A 自身の
+     言語より先にそれが見つかります。 */
+  netOut();
+  LANGS = { 'La': { name: 'A の言語', mine: true, uid: A } };
+  langId = 'La'; langName = 'A の言語';
+  arrive(B);
+  langForAcct(true);
+  const madeForB = langId;
+  if (madeForB === 'La') no('33: 何も持っていない B に A の言語が開いたまま');
+  if (!LANGS[madeForB] || String(LANGS[madeForB].uid || '') !== B)
+    no('33: B のために作った言語に B の印が無い（uid=' +
+       JSON.stringify(LANGS[madeForB] && LANGS[madeForB].uid) + '）');
+  netOut(); arrive(A); langForAcct(true);
+  if (langId !== 'La')
+    no('33: A が戻ったのに、B のために作った言語のほうが開いた（' + langId + '）');
+  say('33: 開いている言語はサインインした人のもの ── 前の人のは消えず、戻れば返る');
 
   return out;
 });

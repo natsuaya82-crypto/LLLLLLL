@@ -681,11 +681,28 @@ function impDoneHTML(){
        one at a time. It is said because the alternative was saying nothing,
        and saying nothing is what made a list arrive as nothing at all. */
     (d.mute? '<div class="note">'+esc(tn('imp.mute', d.mute))+'</div>' : '')+
-    '<button class="btn" style="width:100%;margin-top:16px"' + DO('back') + '>'+
+    '<button class="btn" style="width:100%;margin-top:16px"' + DO('impOK') + '>'+
       esc(t('imp.ok'))+'</button>'+
     '<button class="set" style="margin-top:10px;border-bottom:none"' + DO('impUndo') + '>'+
       '<span class="sl bad">'+esc(t('imp.undo'))+'</span></button>';
 }
+/* 完了. THE IMPORT IS OVER, so the screen forgets that it happened.
+   「取り込んだあとにアルファベットページに飛ばなくていいから戻る押しても
+     前のページに染み付いてるせいで全然戻れない」OWNER 2026-09-02.
+
+   This was `back()` and nothing else, and `IMP.done` stayed set for the rest
+   of the session -- impHTML() draws the done face whenever it is, so opening
+   取り込み again showed the LAST import's result, with 完了 on it, and 完了
+   goes back. From the alphabet that is a loop with no way out of it and no
+   way in to the import screen: import -> the old result -> back -> import ->
+   the old result. Nothing threw and every press did what it says.
+
+   Only HERE, and not on the way off the screen by the arrow. `impUndo()` is
+   on this face and is the one press that makes an import not have happened
+   (docs/DATA_SAFETY.md); forgetting on a plain back would take that away
+   from somebody who left to go and look at what arrived. 完了 is the press
+   that says it is finished. */
+function impOK(){ IMP=impBlank(); back(); }
 /* Putting two thousand words into the only copy of something somebody spent
    years on is not a thing anybody should have to be brave about. Every word
    this added is remembered by its spelling, and every word it overwrote is

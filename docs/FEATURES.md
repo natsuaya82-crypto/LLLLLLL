@@ -344,9 +344,14 @@ searching.
 
 ### 4. Publishing and downloading — a keyboard, an alphabet, a dictionary
 
-Decided 2026-08-19 and **not started**. The author decides what is public, per
-thing. Downloading a keyboard or an alphabet is **free**; downloading a
-dictionary is **Plus**. Making and publishing stays Plus. A downloaded
+Decided 2026-08-19. The author decides what is public, per thing.
+
+**DOWNLOADING IS PLUS, AND THE CEILING IS PLUS 1 / PRO 3** ── 「plusからです」
+「dlはしかもplusは1つproは3つ DL言語とmake言語でそれぞれ別の最大値」OWNER
+2026-09-02. That replaces 「Downloading a keyboard or an alphabet is free;
+downloading a dictionary is Plus」, which is what this line said until then and
+is why a free plan could use a downloaded language on a real phone. `CAN.dl`
+and `dlCap()` in `www/core.js` are the two places; `dl-check` holds both. Making and publishing stays Plus. A downloaded
 keyboard goes on its own shelf, up to three, beside the three somebody built.
 A downloaded dictionary is a language you can READ and is never merged into
 your own — `FREE_LIMIT` counts your own words and nothing else.
@@ -376,10 +381,21 @@ and nothing reads it.
 One a day, and `post.prompt` already points at it. The table exists and
 nothing reads it.
 
-### 8. Sales and analytics, inside the app — **implemented** (2026-08-26)
+### 8. Sales and analytics — **RevenueCat で見る** (2026-09-02)
 
-**OWNER DECISION 2026-08-26.**「売り上げもアナリティクスも見れるようにしたい」
-「アプリの中で見たい」「画面を開いたときに毎回」。
+**OWNER DECISION 2026-09-02.**「revenue cut入れたから、App Storeコネクトキー
+いらんわ」「RevenueCatで見るって話してるんだけど」。
+
+**「lingua内ではみないって言ってるだろ」。数字は一つも残っていません。**
+①契約者数と売上 ②ダウンロード数 ③解約と継続 ④登録ユーザー数、全部です。
+RevenueCat の画面で見ます。App Store Connect のキーは作りません。
+
+**管理画面に残っているのは通報とスタッフだけです。**それは分析ではなく、
+運営そのものの作業だからです。
+
+コードは 2026-09-02 に消しました ── `supabase/functions/appstore/`、
+`www/net.js` の `netStore()`、`www/mod.js` の五ページ。下の記述は 2026-08-26
+のもので、**もう作られていません。**
 
 Four things, all four now on the admin screen — which is where they went
 because the row at the foot of settings this was going to hang off stopped
