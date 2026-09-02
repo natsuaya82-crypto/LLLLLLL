@@ -475,6 +475,20 @@ const r = await pg.evaluate(({ s }) => {
   out.tookNoKeychain = kept === 0;
   out.tookTakesAnswer = plan() === 'plus';
   window.planKeep = realKeep;
+
+  /* AND IT ONLY GOES UP. An answer of `free` arriving while a paid plan is on
+     is not a person who owns nothing -- currentEntitlements comes back empty
+     for an account that IS paying, routinely, on TestFlight and in the
+     sandbox. The owner pressed Restore, was told there was nothing to
+     restore, and lost Pro:「復元するものはありませんって出るけどさ、さっきまで
+     プロだったんだけど消えたってこと？」OWNER 2026-09-02. */
+  SET.plan = 'pro'; save();
+  storeTook({ plan: 'free' });
+  out.tookNoDrop = plan();
+  SET.plan = 'free'; save();
+  storeTook({ plan: 'pro' });
+  out.tookStillRaises = plan();
+
   SET.plan = 'free'; save();
 
   /* ---- 7b. a ceiling met is a way to the plans screen, not a dead end ---
@@ -881,6 +895,11 @@ say(r.ids === 'com.tokinets.lingua.plus.monthly com.tokinets.lingua.plus.yearly 
     'the four product ids are the four LinguaStore.swift sells (' + r.ids + ')');
 say(r.tookNoKeychain, 'what comes back from a purchase is not written to the Keychain twice');
 say(r.tookTakesAnswer, 'and the plan is taken from the ANSWER, not from what was asked for');
+say(r.tookNoDrop === 'pro',
+    'and the app side never lowers it — an answer of `free` arriving on a ' +
+    'paid plan leaves the plan alone (' + r.tookNoDrop + ')');
+say(r.tookStillRaises === 'pro',
+    'while an answer ABOVE what is held is still taken (' + r.tookStillRaises + ')');
 
 say(st.asked && st.twice, 'the App Store is asked once and remembered');
 say(st.before.indexOf('$4.99') !== -1,
@@ -981,7 +1000,14 @@ function funcAt(src, idx){
   const last = m[m.length - 1];
   return /func\s+([A-Za-z_][A-Za-z0-9_]*)/.exec(last)[1];
 }
-const MAY_LOWER = ['load', 'restore', 'manage'];
+/* ONE road, and it is Apple pushing a change at us. `restore` and `manage`
+   were on this list for a morning: both end in reading currentEntitlements,
+   and an empty list there is 「Apple told me nothing」 as often as it is
+   「this person owns nothing」 -- routinely so on TestFlight and in the
+   sandbox, for an account that is paying. It cost the owner their plan on
+   the build that had it. 「復元するものはありませんって出るけどさ、さっきまで
+   プロだったんだけど消えたってこと？」OWNER 2026-09-02. */
+const MAY_LOWER = ['load'];
 const calls = [];
 {
   const re = /writeDown\s*\(([^)]*)\)/g;
@@ -1003,8 +1029,8 @@ say(calls.length >= 4,
     'every road that writes the plan down is found in LinguaStore.swift (' +
     calls.length + ')');
 say(lowered.every(f => MAY_LOWER.indexOf(f) >= 0),
-    'and only the three where Apple positively answered may LOWER it — the ' +
-    'updates listener, restore, and manage (' + JSON.stringify(lowered) + ')');
+    'and only the one road where Apple positively said so may LOWER it — the ' +
+    'Transaction.updates listener, and nothing else (' + JSON.stringify(lowered) + ')');
 say(raised.length > 0 && raised.every(f => MAY_LOWER.indexOf(f) < 0),
     'while every other road may raise it and may not lower it (' +
     JSON.stringify(raised) + ')');

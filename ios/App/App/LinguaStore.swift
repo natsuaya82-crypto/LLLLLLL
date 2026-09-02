@@ -161,13 +161,22 @@ public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
   /// sentence off CLAUDE.md's first page: 「空」 and 「読めていない」 may not
   /// share a branch.
   ///
-  /// So a LOWER answer is only written where Apple positively said so:
-  ///   - `Transaction.updates`, which is Apple delivering a change
-  ///   - `restore`, after `AppStore.sync()`, which the person asked for
-  ///   - `manage`, after Apple's own sheet, where they may have cancelled
-  /// Everything else may raise the plan and may not lower it. A lapse that
-  /// this misses is written the moment one of those three happens, and being
-  /// a day generous is not the failure this is about.
+  /// ONE ROAD MAY LOWER IT, and it is `Transaction.updates` -- Apple pushing
+  /// a change at us, which is the only moment anything has actually SAID that
+  /// this person's subscription ended.
+  ///
+  /// `restore` and `manage` were on this list for a morning and are off it.
+  /// Both end in reading `currentEntitlements`, and an empty list there is
+  /// not a person who owns nothing: on TestFlight and in the sandbox it is
+  /// routinely empty for an account that is paying, and a `sync()` that
+  /// SUCCEEDS does not change that. It cost the owner their plan on the
+  /// build that had it: 「復元するものはありませんって出るけどさ、さっきまで
+  /// プロだったんだけど消えたってこと？」OWNER 2026-09-02.
+  ///
+  /// Restore means 「give me back what I bought」. Finding nothing is not an
+  /// instruction to take something away. A cancellation still lands, from
+  /// the updates listener, which is Apple saying it rather than this app
+  /// inferring it from a silence.
   @discardableResult
   private func writeDown(mayLower: Bool = false) async -> String {
     let seen = await Self.entitledPlan()
@@ -345,16 +354,14 @@ public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
   /// necessarily a person with nothing: the entitlements already on the
   /// device are still worth reading, so the answer is given either way.
   ///
-  /// AND ONLY A SYNC THAT CAME BACK MAY LOWER THE PLAN. `mayLower: true` was
-  /// passed whatever happened, so a sync that threw or never returned -- no
-  /// network, a dismissed sheet -- handed an empty entitlement list straight
-  /// to the Keychain as `free`. That is the same sentence this file already
-  /// carries twice: 「空」and 「読めていない」may not share a branch, and the
-  /// plan is what it is about. 「プランは絶対におかしくしちゃいけないんだって」
+  /// AND IT NEVER LOWERS THE PLAN. Not even when the sync came back: an
+  /// empty entitlement list is 「Apple told me nothing」 as often as it is
+  /// 「this person owns nothing」, and restore is the button for getting a
+  /// plan BACK. See writeDown() above for the day that cost.
   @objc func restore(_ call: CAPPluginCall) {
     Task {
       let synced = await Self.syncWithin(12)
-      let plan = await writeDown(mayLower: synced)
+      let plan = await writeDown(mayLower: false)
       call.resolve(["plan": plan, "synced": synced])
     }
   }
@@ -377,7 +384,11 @@ public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
       }
       do {
         try await AppStore.showManageSubscriptions(in: scene)
-        call.resolve(["plan": await self.writeDown(mayLower: true)])
+        /* Coming back from Apple's sheet does not lower it either. Somebody
+           may have cancelled in there, and that arrives as a Transaction
+           update -- which is Apple saying so. Reading an empty entitlement
+           list a second later is this app guessing. */
+        call.resolve(["plan": await self.writeDown(mayLower: false)])
       } catch {
         call.reject("manage: \(error.localizedDescription)")
       }

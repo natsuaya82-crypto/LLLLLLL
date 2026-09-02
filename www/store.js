@@ -39,9 +39,22 @@ function storeOn(){ return !!storePlug(); }
    The plan is taken from the ANSWER and never assumed from what was asked
    for: a purchase that ends up pending, or a receipt that will not verify,
    comes back saying free, and believing the request instead of the reply is
-   how an app gives away a tier nobody paid for. */
+   how an app gives away a tier nobody paid for.
+
+   AND IT ONLY EVER GOES UP FROM HERE. 「復元するものはありませんって出るけどさ、
+   さっきまでプロだったんだけど消えたってこと？」OWNER 2026-09-02, having
+   pressed Restore while paying. The answer said `free` -- an empty
+   entitlement list, which on TestFlight and in the sandbox is routine for an
+   account that IS paying -- and this line wrote it over their plan.
+
+   The phone side is fixed too (ios/App/App/LinguaStore.swift: only
+   `Transaction.updates` may lower), and this is the second door on the same
+   room. A plan ending arrives as a Keychain the next launch reads, which is
+   Apple having SAID so; nothing a button did will take a tier away.
+   「プランは絶対におかしくしちゃいけないんだって」 */
 function storeTook(r){
   var p = (r && r.plan) ? String(r.plan) : 'free';
+  p = planBest(p, plan());
   SET.plan = p;
   save();
   /* The same sentence a plan ending has always said, said by the same
