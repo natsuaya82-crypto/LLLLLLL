@@ -532,6 +532,7 @@ defLang('ko', (function(){
       "net.offline" : "연결할 수 없습니다.",
       "net.failed" : "되지 않았습니다.",
       "net.badlogin" : "주소나 비밀번호가 다릅니다.",
+      "net.session" : "다시 로그인해 주세요.",
       "net.taken" : "그 주소에는 이미 계정이 있습니다.",
       "net.weak" : "비밀번호가 너무 짧습니다.",
       "net.toomany" : "시도가 너무 많습니다. 잠시 기다리세요.",

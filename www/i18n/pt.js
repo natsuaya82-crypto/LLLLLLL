@@ -360,6 +360,7 @@ defLang('pt', (function(){
       "net.offline" : "Sem conexão.",
       "net.failed" : "Não funcionou.",
       "net.badlogin" : "E-mail ou senha incorretos.",
+      "net.session" : "Entre novamente.",
       "net.taken" : "Esse e-mail já tem uma conta.",
       "net.weak" : "Essa senha é muito curta.",
       "net.toomany" : "Muitas tentativas. Espere um pouco.",

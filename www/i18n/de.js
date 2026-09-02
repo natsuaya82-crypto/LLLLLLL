@@ -341,6 +341,7 @@ defLang('de', (function(){
       "net.offline" : "Keine Verbindung.",
       "net.failed" : "Das hat nicht geklappt.",
       "net.badlogin" : "Adresse oder Passwort falsch.",
+      "net.session" : "Bitte erneut anmelden.",
       "net.taken" : "Diese Adresse hat schon ein Konto.",
       "net.weak" : "Dieses Passwort ist zu kurz.",
       "net.toomany" : "Zu viele Versuche. Kurz warten.",

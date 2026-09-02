@@ -269,6 +269,7 @@ defLang('ja', (function(){
       "net.offline" : "接続できません",
       "net.failed" : "うまくいきませんでした",
       "net.badlogin" : "アドレスかパスワードが違います",
+      "net.session" : "サインインし直してください",
       "net.taken" : "そのアドレスは登録済みです",
       "net.weak" : "パスワードが短すぎます",
       "net.toomany" : "回数が多すぎます。少し待ってください",

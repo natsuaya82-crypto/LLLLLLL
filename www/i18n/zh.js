@@ -361,6 +361,7 @@ defLang('zh', (function(){
       "net.offline" : "无法连接。",
       "net.failed" : "没有成功。",
       "net.badlogin" : "邮箱或密码不对。",
+      "net.session" : "请重新登录。",
       "net.taken" : "该邮箱已有账户。",
       "net.weak" : "密码太短。",
       "net.toomany" : "尝试次数过多，请稍候。",

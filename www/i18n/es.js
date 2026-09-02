@@ -313,6 +313,7 @@ defLang('es', (function(){
       "net.offline" : "Sin conexión.",
       "net.failed" : "No funcionó.",
       "net.badlogin" : "Correo o contraseña incorrectos.",
+      "net.session" : "Vuelve a iniciar sesión.",
       "net.taken" : "Ese correo ya tiene una cuenta.",
       "net.weak" : "Esa contraseña es muy corta.",
       "net.toomany" : "Demasiados intentos. Espera un poco.",

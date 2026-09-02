@@ -353,6 +353,7 @@ defLang('it', (function(){
       "net.offline" : "Nessuna connessione.",
       "net.failed" : "Non ha funzionato.",
       "net.badlogin" : "Indirizzo o password errati.",
+      "net.session" : "Accedi di nuovo.",
       "net.taken" : "Quell’indirizzo ha già un account.",
       "net.weak" : "Quella password è troppo corta.",
       "net.toomany" : "Troppi tentativi. Aspetta un poco.",

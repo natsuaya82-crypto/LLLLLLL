@@ -253,6 +253,7 @@ defLang('en', (function(){
       "net.offline" : "No connection.",
       "net.failed" : "That did not work.",
       "net.badlogin" : "Wrong address or password.",
+      "net.session" : "Sign in again.",
       "net.taken" : "That address already has an account.",
       "net.weak" : "That password is too short.",
       "net.toomany" : "Too many tries. Wait a little.",

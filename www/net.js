@@ -307,7 +307,23 @@ function netWhy(d, status, mark){
   var m=(d && (d.msg || d.message || d.error_description || d.error)) || '';
   if(status===400 && /invalid login/i.test(m)) return t('net.badlogin');
   if(status===400 && /already registered/i.test(m)) return t('net.taken');
-  if(status===403 || status===401) return t('net.badlogin');
+  /* 401 and 403 were one sentence, and it was the login screen's -- wrong
+     address or password -- said to somebody who has typed neither. They are
+     two different things and neither of them is a typo.
+
+     401 is the session. Every request sent with this person's own token
+     refreshes and goes again on a 401 (netSend1 above), so what reaches here
+     is a 401 the refresh could not mend -- signed out on another device, the
+     account deleted, the account frozen. There is nothing to correct; there
+     is only signing in again, and that is what it says now.
+
+     403 is permission, and it is not about the session at all: a row policy
+     in schema.sql refusing a write that the token is perfectly good for.
+     Telling somebody their password is wrong for that is the same fault one
+     line down. It falls to the general sentence rather than to a new one --
+     a wording of its own is the owner's and has not been asked for. */
+  if(status===401) return t('net.session');
+  if(status===403) return t('net.failed');
   if(status===422 && /password/i.test(m)) return t('net.weak');
   if(status===429) return t('net.toomany');
   /* profile.handle is unique in the schema, so this is the server settling a
