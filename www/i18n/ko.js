@@ -1051,6 +1051,7 @@ defLang('ko', (function(){
       "store.wait" : "App Store에 문의 중…",
       "store.pending" : "승인을 기다리는 중입니다. 결정되면 알려드립니다.",
       "store.fail" : "App Store에 연결하지 못했습니다",
+      "store.nosale" : "아직 판매 중인 항목이 없습니다",
       "toast.plan.free"  : "무료 요금제로 돌아왔어요",
       "toast.plan.other" : "{0} 요금제가 되었어요",
       "add.title"        : "새 단어",

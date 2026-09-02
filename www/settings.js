@@ -814,7 +814,25 @@ function vPlans(){
     /* THE PRESS THAT BUYS, and it is the only one. A price above chooses a
        term; this hands it to the App Store. 「プランタップして下のサブスク
        ライブするみたいなボタン押してやっと課金いけるみたいにしたい」 */
-    '<div class="plgo"><button class="btn plbuy"' + DO('plBuy') +
+    /* AND WHEN THE PRICES ARE NOT APPLE'S, THE SCREEN SAYS SO, HERE.
+       「サンドボックスだと 15000 円なのに画面はどの言語でも 99.99 ドル」 OWNER
+       2026-09-02. What was on the screen was the typed fallback out of
+       www/i18n -- right in a browser, right in the United States, wrong in the
+       other 174 storefronts -- and the only thing that had ever said so was a
+       toast that had gone 1.9 seconds later.
+
+       Between the prices and the press that buys, because that is where
+       somebody deciding whether to pay is looking, and it is one line for the
+       screen rather than one per plan: the ask is one ask for all three.
+
+       It is a state and not an explanation (CLAUDE.md § Explaining): it says
+       what happened, not what to do about it, and it is empty while the ask
+       is still out. No new class and no rounded box -- `.note` is what a state
+       is drawn in on twenty other screens, and it is inside the .plgo that is
+       already here rather than a second one of its own. */
+    '<div class="plgo">'+
+      (storeSay()? '<div class="note">'+esc(storeSay())+'</div>' : '')+
+      '<button class="btn plbuy"' + DO('plBuy') +
       (PLPICK? '' : ' disabled')+' style="width:100%">'+
       esc(t('plan.buy'))+'</button></div>'+
     '<div class="plfoot"><button class="btn ghost" style="width:100%"' +

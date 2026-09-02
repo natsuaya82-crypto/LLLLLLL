@@ -713,6 +713,76 @@ const st = await pg.evaluate(async () => {
   STORE_P = null; STORE_ASK = false;
   return out;
 });
+
+/* ---- and the ask ENDS, whatever the far side does ----------------------
+   「サンドボックスだと 15000 円なのに画面はどの言語でも 99.99 ドル」 OWNER
+   2026-09-02, on a real phone. **Any language** is the diagnosis: `$99.99` is
+   typed into all ten www/i18n files, so the screen was showing the fallback
+   and not a translation gone wrong -- Apple's answer never arrived.
+
+   The latch goes up BEFORE the call and comes down on each of the two ways a
+   promise ends. A promise that ends neither way leaves it up for the rest of
+   the launch, and every later opening of the plans screen returns on the
+   first line without asking. Nothing throws; the screen is simply wrong, in
+   every storefront but one, for as long as the app is open.
+
+   So the fake App Store here never answers at all. STORE_WAIT is lowered for
+   the test and read off the source below for what it really is -- waiting the
+   real 25 seconds in the gate would buy nothing the assertion does not.  */
+const nul = await pg.evaluate(async () => {
+  var out = {}, calls = 0, hold = route, wait = STORE_WAIT, give = null;
+  route = 'plans';
+  STORE_WAIT = 20;
+  window.Capacitor = { nativePromise: function (plug, m) {
+    if (m !== 'products') return Promise.reject(new Error('not this one'));
+    calls++;
+    return new Promise(function (res) { give = res; });
+  } };
+
+  /* ---- A. it never answers ------------------------------------------- */
+  STORE_P = null; STORE_ASK = false; STORE_BAD = '';
+  out.waiting = vPlans();                    /* asks, and draws meanwhile */
+  out.asked = calls;                         /* 1 */
+  out.quiet = vPlans().indexOf(t('store.fail')) === -1;
+  out.stillOne = calls;                      /* still 1 -- one ask per visit */
+  await new Promise(function (r) { setTimeout(r, 120); });
+  out.said = STORE_BAD;                      /* 'fail' */
+  /* The redraw the failure itself triggers may not be the retry: vPlans() is
+     what asks, so unlatching before drawing turns a failure into a call every
+     STORE_WAIT for as long as somebody stands here. */
+  out.noLoop = calls;                        /* still 1 */
+  out.down = STORE_ASK;                      /* false -- the NEXT visit asks */
+  out.screen = vPlans();                     /* and that visit is this one */
+  out.again = calls;                         /* 2 */
+
+  /* ---- B. it answers late, and the answer is still taken -------------- */
+  STORE_P = null; STORE_ASK = false; STORE_BAD = ''; calls = 0; give = null;
+  vPlans();
+  await new Promise(function (r) { setTimeout(r, 120); });
+  out.lateSaid = STORE_BAD;                  /* 'fail' -- it ran out of time */
+  give({ products: [
+    { id: 'com.tokinets.lingua.plus.monthly', price: '\u00a5750', amount: 750 }
+  ] });
+  await new Promise(function (r) { setTimeout(r, 0); });
+  out.lateTook = storeCost('plus', false);   /* the late answer is not thrown away */
+  out.lateClear = STORE_BAD;                 /* '' -- and the state goes with it */
+  out.lateScreen = vPlans();
+  out.lateCalls = calls;                     /* 1 -- prices are held, nothing re-asked */
+
+  /* ---- C. it answers, with nothing on sale ---------------------------- */
+  STORE_P = null; STORE_ASK = false; STORE_BAD = ''; calls = 0; give = null;
+  vPlans();
+  give({ products: [] });
+  await new Promise(function (r) { setTimeout(r, 0); });
+  out.noneSaid = STORE_BAD;                  /* 'none', and not 'fail' */
+  out.noneScreen = vPlans();
+
+  out.fail = t('store.fail'); out.nosale = t('store.nosale');
+  STORE_WAIT = wait; route = hold;
+  delete window.Capacitor;
+  STORE_P = null; STORE_ASK = false; STORE_BAD = '';
+  return out;
+});
 /* ---- the Keychain, and the difference between empty and unreadable -------
    The plan LIVES in the Keychain on a phone -- ios/App/App/LinguaPlan.swift --
    and www/core.js reads it out of `window.__plan`, injected before any script
@@ -954,6 +1024,39 @@ say(st.noYearOff === '33',
 say(st.before.indexOf('pwas') === -1,
     'and before Apple has answered at all, nothing is struck through -- there is no typed one');
 
+/* ---- the ask ends, and the screen says how ------------------------------
+   Every line here was green with the bug in place, because nothing about a
+   promise that never settles throws, renders wrong, or takes a second longer
+   than a promise that does.                                              */
+say(nul.asked === 1 && nul.stillOne === 1,
+    'the App Store is asked once a visit while the answer is still out (' +
+    nul.stillOne + ')');
+say(nul.quiet,
+    'and the screen says nothing while it is out -- the typed prices are ' +
+    'right in a browser and in one storefront, and a screen that accuses ' +
+    'itself for a moment on every visit is worse than a quiet one');
+say(nul.said === 'fail',
+    'an ask that never comes back ENDS all the same (' + nul.said + ')');
+say(nul.screen.indexOf(nul.fail) !== -1,
+    'and the screen says so where the price is, not in a toast that is gone ' +
+    '1.9 seconds later');
+say(nul.screen.indexOf('$99.99') !== -1,
+    'with the typed price still shown -- what is wrong is said, not hidden');
+say(nul.noLoop === 1,
+    'the redraw that says it is not itself the retry (' + nul.noLoop + ' calls)');
+say(nul.down === false && nul.again === 2,
+    'and the NEXT visit asks again — one failure is not permanent (' +
+    nul.again + ')');
+say(nul.lateSaid === 'fail' && nul.lateTook === '\u00a5750' && nul.lateClear === '',
+    'an answer that arrives after the bound is still taken, and takes the ' +
+    'state with it (' + nul.lateTook + ')');
+say(nul.lateScreen.indexOf(nul.fail) === -1 && nul.lateCalls === 1,
+    'and nothing is asked a second time for prices already held (' +
+    nul.lateCalls + ')');
+say(nul.noneSaid === 'none' && nul.noneScreen.indexOf(nul.nosale) !== -1,
+    'an App Store with nothing on sale is a different sentence from one that ' +
+    'could not be reached — which of the two is what the owner needs to see');
+
 const K = {}; KEY.forEach(function (r) { K[r.n] = r; });
 say(K['unreadable'].wrote.length === 0,
     'a Keychain read that FAILED writes nothing back — a paid plan is not ' +
@@ -1085,6 +1188,12 @@ say(/func readPlan\(\)\s*->\s*\(String,\s*OSStatus\)/.test(KEYC),
 say(/window\.__planok=/.test(KEYC) && /errSecItemNotFound/.test(KEYC),
     'and the injection carries that, with 「there is nothing there」 counted ' +
     'as an answer and everything else as a failure');
+/* The bound the test lowered. Read rather than waited on: 25 seconds in the
+   gate would prove the same thing and cost 25 seconds. */
+const WWWSTORE = fs.readFileSync(path.join(dir, '..', 'www', 'store.js'), 'utf8');
+say(/var STORE_WAIT=25000;/.test(WWWSTORE),
+    'and the bound on a real phone is 25 seconds, not the 20ms this check used');
+
 const CORE = fs.readFileSync(path.join(dir, '..', 'www', 'core.js'), 'utf8');
 const keeps = (CORE.match(/planKeep\(/g) || []).length;
 const guarded = (CORE.match(/PLAN_READ_OK\)?\s*(&&\s*)?[^\n]*planKeep\(/g) || []).length;
