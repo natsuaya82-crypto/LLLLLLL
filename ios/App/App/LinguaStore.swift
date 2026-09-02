@@ -146,7 +146,6 @@ public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
 
   /// Ask the App Store, then write the answer where the next launch will find
   /// it. Returns what it wrote so a call can answer with the same thing.
-  @discardableResult
   /// NEVER DOWN, unless Apple was actually asked.
   ///
   /// 「プランは絶対におかしくしちゃいけないんだって」 OWNER 2026-09-02, after a
