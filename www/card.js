@@ -982,31 +982,83 @@ function cardMount(){
 
 /* ---- getting it off the phone -------------------------------------------
    The share sheet is the one that matters: it is what puts the card on
-   somebody else's timeline, which is the only reason this screen exists. A
-   webview too old for sharing a file falls back to a download, which is what
-   a desktop browser does anyway. */
+   somebody else's timeline, which is the only reason this screen exists.
+
+   It used to try three things in a row -- navigator.share, then `<a
+   download>`, then say it had saved -- and on the phone it is the THIRD that
+   runs, every time, alone. WKWebView has no navigator.share and a `blob:`
+   download does nothing there and throws nothing either, so the first two
+   fell through in silence and the toast at the bottom fired unconditionally.
+   **Nothing was written, nothing was shared, and the app said Saved.** That is
+   App Store guideline 2.1 and it is the reason this road was rebuilt.
+
+   www/wordsheet.js's CSV shipped exactly the same mechanism and
+   www/sheet.js's PDF is what replaced it: the native side writes the file and
+   iOS's own UIActivityViewController hands it over. This is that road, and it
+   is the same one -- LinguaShare.sheet() files the bytes under
+   Documents/Sheets and answers with the name it filed them under, and
+   shareFile() puts that file into the share sheet.
+
+   Two things about it are load-bearing.
+
+   The call is Capacitor.nativePromise and NOT Capacitor.Plugins. This app has
+   no bundler and never loads @capacitor/core, so Capacitor.Plugins is
+   undefined and reading a plugin off it is a silent no-op -- the exact shape
+   of the bug above, in a different place. docs/keyboard-extension.md says so
+   and it cost four builds to learn. sharePlug() is the one place that asks.
+
+   And the proof is the NAME the phone answers with, not that it answered.
+   A sheet is never overwritten, so the second of a name is `<name> 2.png`,
+   and the file to hand over is the one just written rather than the one
+   written last week. No bridge, a rejection, or an answer with no name in it
+   all mean the same thing to a person -- it is not there -- so they say the
+   same sentence.
+
+   Nothing is said when it works. shareFile() resolves the moment the share
+   sheet is UP, and what somebody then chooses -- save, send, cancel -- is not
+   answered and must not be guessed at: LinguaShare.swift says so where it
+   resolves. A toast reading Saved over a sheet the person is about to cancel
+   is the same lie this road was rebuilt to stop telling, only quieter. The
+   sheet standing open is the answer. www/sheet.js says nothing here either,
+   for this reason. */
 function cardSave(){
-  var c=document.getElementById('cardc');
+  var c=document.getElementById('cardc'), p=sharePlug(), b64;
   if(!c) return;
-  /* Named after what is ON the card, which for a post is the language it was
-     written in and not the one you happen to have open. */
-  var name=(cardSrc().hd || 'lingua')+'.png';
-  if(c.toBlob){ c.toBlob(function(b){ cardDeliver(b, name); }, 'image/png'); return; }
-  cardDeliver(null, name);
+  if(!p){ toast(t('card.nofile')); return; }
+  /* toDataURL and not toBlob: what has to go over the bridge is base64, and
+     the data URL is already base64 with a header on it. A blob would be read
+     back into one of these to be sent. */
+  b64 = cardBytes(c);
+  if(!b64){ toast(t('card.nofile')); return; }
+  p('LinguaShare', 'sheet', {name:cardFileName(), ext:'png', b64:b64})
+    .then(function(r){
+      if(!(r && r.file)){ toast(t('card.nofile')); return; }
+      return p('LinguaShare', 'shareFile', {file: String(r.file)});
+    })
+    ['catch'](function(){ toast(t('card.nofile')); });
 }
-function cardDeliver(blob, name){
-  var c=document.getElementById('cardc'), f, url, a;
-  if(blob && navigator.share && window.File){
-    f=new File([blob], name, {type:'image/png'});
-    if(!navigator.canShare || navigator.canShare({files:[f]})){
-      try{ navigator.share({files:[f]})['catch'](function(){}); return; }catch(e){}
-    }
-  }
-  url = blob? URL.createObjectURL(blob) : (c? c.toDataURL('image/png') : '');
-  if(!url) return;
-  a=document.createElement('a'); a.href=url; a.download=name; a.click();
-  if(blob) URL.revokeObjectURL(url);
-  toast(t('card.saved'));
+/* The canvas as base64, or '' if it will not give it up. A canvas holding a
+   picture from another origin is tainted and toDataURL throws on it; nothing
+   here draws one today, and it is caught because a throw would land outside
+   the promise and the button would do nothing at all. */
+function cardBytes(c){
+  var url, i;
+  try{ url=c.toDataURL('image/png'); }catch(e){ return ''; }
+  i=String(url).indexOf(',');
+  return i<0? '' : String(url).slice(i+1);
+}
+/* A name a person will recognise in the Files app, cut down the way
+   shFileName() cuts one: this is pasted into a file name on the phone, and
+   the handle it comes from arrives on somebody else's post.
+
+   Named after what is ON the card, which for a post is the language it was
+   written in and not the one you happen to have open. No extension -- the
+   native side puts that on, because it is the native side that knows which
+   of `<name>.png` and `<name> 2.png` it actually filed. */
+function cardFileName(){
+  var n=String(cardSrc().hd || '').replace(/[^\w \-]/g, '').replace(/\s+/g, ' ');
+  n=n.replace(/^ +| +$/g, '');
+  return n? n.slice(0, 40) : 'lingua';
 }
 
 /* ==== below this line a card of a post renders from the post ==============
