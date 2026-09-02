@@ -159,7 +159,6 @@ const FIELDS = {
   saved:    { to: 'netSearchSave' },
 
   /* --- and the phone's own, each for its own reason --------------------- */
-  uidWas:   { phone: 'who this phone belonged to LAST — the account langForAcct() saw most recently. A fact about this handset and about no account: what it answers is 「has anybody else been on this phone」, which is why www/core.js reads it rather than stamping a guess onto somebody\'s language' },
   savedUp:  { phone: 'whether this phone has sent its starred searches up ONCE. A mark about the road above, not a thing travelling on it' },
   planWas:  { phone: 'the plan this phone last SAW, which is the only thing capLapse() has to compare against. Not what anybody paid -- a fact about this launch and the one before it' },
   planV:    { phone: 'which of the two worlds the plan WORD was written in, before the 2026-08-23 rename. Absent means 「written before it」, and that is the only signal there is' },
