@@ -658,6 +658,10 @@ canvas.pkc{width:34px;height:34px;display:block}
         border:1px solid var(--gold);background:var(--gold);color:var(--onGold);
         font-family:inherit;font-size:.88rem}
 .meedit:active{opacity:.85}
+/* The row Follow stands on, under the name and the ... rather than beside
+   them. Right, because that is where the ... is and where the thumb already
+   went. www/me.js § whoCard says why it left the name row. */
+.mefol{display:flex;justify-content:flex-end;margin-top:6px}
 /* Following somebody, and the same button once you do. FILLED while you are
    not -- it is the thing to press -- and the ground's own colour once you
    are, because then it is a state and the press is the undo.

@@ -1024,6 +1024,35 @@ const R = await pg.evaluate(() => {
   netGet = realGet;
   say('30: フォロー中／フォロワーは、人のぶんも訊ける（自分のぶんは今までどおり）');
 
+  /* ---- 30b. 押した瞬間に、その人のフォロワーが動く ----------------------
+     「フォローしたのにその人のフォロワーにすぐ出ないよ？」OWNER 2026-09-02。
+
+     ボタンは押した瞬間に変わる（いいねと同じで、サーバーは待たない）。その
+     下の数字は変わらなかった ── あれは `profile_seen` の `fr` で、netWho()
+     が持ってきたきりだから。一度の押下で、同じことについての二つが画面に
+     あって、片方だけ動いていた。
+
+     数えていない数は 0 ではない。誰も取っていない数に 1 を足すと、取った
+     ことになる ── whoOf() が undefined を undefined のまま残すのと同じ話。 */
+  const realFollow = netFollow;
+  netFollow = () => {};
+  WHO_HAVE['iri'] = { who:'Iri', hd:'iri', av:null, lname:'Vethi', bio:'',
+                      fo:0, fr:3, out:false };
+  ME.fo = [];
+  meFollow('iri');
+  if (WHO_HAVE['iri'].fr !== 4)
+    no('30b: フォローしても、その人のフォロワーが動かない — ' + WHO_HAVE['iri'].fr);
+  meFollow('iri');
+  if (WHO_HAVE['iri'].fr !== 3)
+    no('30b: 外しても戻らない — ' + WHO_HAVE['iri'].fr);
+  WHO_HAVE['nemo'] = { who:'N', hd:'nemo', av:null, lname:'', bio:'',
+                       fo:undefined, fr:undefined, out:false };
+  meFollow('nemo');
+  if (WHO_HAVE['nemo'].fr !== undefined)
+    no('30b: 誰も数えていない数に足した — ' + WHO_HAVE['nemo'].fr);
+  netFollow = realFollow;
+  say('30b: 押した瞬間にその人のフォロワーも動く（数えていない数は数えないまま）');
+
   /* ---- 31. キーボードのプールも、そのアカウントのぶん -------------------
      「じゃないとアカウント変えたら無限に言語作れるやん」OWNER 2026-09-01。
      langCount() と同じ穴が kbCount() にもありました ── LANGS は端末のもので

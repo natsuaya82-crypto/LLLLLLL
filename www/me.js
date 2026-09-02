@@ -742,8 +742,6 @@ function whoCard(h){
       '<div class="pname">'+esc(postWho(p))+'</div>'+
       '<div class="mehr"><span class="phandle">@'+esc(h)+'</span></div>'+
     '</div>'+
-    '<button class="meedit'+(on?' on':'')+'"' + DO('meFollow', [String(h)]) + '>'+
-      esc(t(on? 'me.unfollow' : 'me.follow'))+'</button>'+
     /* The two things you can do about a PERSON rather than about one line
        they wrote. They were on a post's ... and nowhere else, so blocking
        somebody meant finding something of theirs to block them from, and
@@ -764,6 +762,16 @@ function whoCard(h){
         '</span>'
       : '')+
     '</div>'+
+    /* FOLLOW ON ITS OWN LINE, under the ... rather than beside the name.
+       「ここ窮屈だからフォローは右端...はその上とかその下みたいにできない？」
+       OWNER 2026-09-02. The name, the handle, the pill and the ... were four
+       things across one line on a phone, and the name is the one that gave
+       way -- it is the only one of the four that can be cut short. Off that
+       line there is room for a name again, and the two controls stand one
+       above the other at the right, where the thumb already went. */
+    '<div class="mefol"><button class="meedit'+(on?' on':'')+'"' +
+      DO('meFollow', [String(h)]) + '>'+
+      esc(t(on? 'me.unfollow' : 'me.follow'))+'</button></div>'+
     (p.bio? '<div class="pbio">'+esc(p.bio)+'</div>' : '')+
     /* THE NAME, AND NOT A WAY THROUGH.
        「この言語についてで人のをタップしても自分のが出る」 OWNER.
