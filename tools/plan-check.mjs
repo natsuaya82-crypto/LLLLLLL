@@ -292,6 +292,50 @@ const r = await pg.evaluate(({ s }) => {
   out.bdgRowPro = planBadge('pro');
   out.bdgRowFree = planBadge('free');
 
+  /* ---- 6b. money is not taken twice for the same thing ------------------
+     「二重課金はさせないようにしろよ」 OWNER 2026-09-01, after buying Plus on
+     a phone that already had Pro and being charged for both.
+
+     Two App Store subscriptions in two groups can be held at once, and
+     docs/apple.md says to put them in ONE group -- where Apple itself makes
+     the second an upgrade. That sentence is WRITING, and writing does not
+     stop anything: it was right in the file the whole time and the purchase
+     went through anyway. The app refuses instead, and this is what holds the
+     refusal.
+
+     Pressing a plan at or below the one in force is not a purchase; it is a
+     change to a subscription that exists, and that is Apple's own sheet. So
+     the two things asked are: nothing is bought, and the plan does not
+     move. */
+  var boughtId = '';
+  var realBuy = window.storeBuy;
+  window.storeBuy = function(id){ boughtId = String(id||''); return true; };
+  SET.plan = 'pro'; save();
+  PLPICK = { id:'plus', yr:false };
+  plBuy();
+  out.dblBought = boughtId;
+  out.dblPlan = plan();
+  out.dblAsked = popOn();
+  popOff();
+  /* and the same plan again, monthly on a phone that has it */
+  boughtId = '';
+  PLPICK = { id:'pro', yr:true };
+  plBuy();
+  out.dblSameBought = boughtId;
+  popOff();
+  /* AND GOING UP STILL GOES THROUGH -- the guard is about what is held, not
+     a wall in front of the shop. In a browser there is no App Store, so
+     setPlan() writes the plan itself (storeOn() is false); what is asked is
+     therefore the plan, which is the same thing the phone ends up with. */
+  boughtId = '';
+  SET.plan = 'plus'; save();
+  PLPICK = { id:'pro', yr:false };
+  plBuy();
+  out.upPlan = plan();
+  window.storeBuy = realBuy;
+  PLPICK = null;
+  SET.plan = 'free'; save();
+
   POSTS = POSTS.filter(function(x){ return x.id !== 'p_plan'; });
   savePosts();
   SET.plan = 'free'; save();
@@ -677,6 +721,14 @@ say(r.editPlusOpens, 'on plus it opens, carrying the post it was pressed on');
 say(r.bdgFree === '' && r.bdgMid === '', 'no mark beside the name on free or plus');
 say(r.bdgTop !== '', 'and one on pro (' + (r.bdgTop ? 'drawn' : 'nothing') + ')');
 say(r.bdgTheirs === '', 'never on somebody else\'s post, whatever plan this phone is on');
+say(r.dblBought === '' && r.dblPlan === 'pro',
+    'a plan BELOW the one in force is not bought again (' +
+    (r.dblBought || 'nothing asked for') + ', still ' + r.dblPlan + ')');
+say(r.dblAsked, 'and it says so rather than doing nothing');
+say(r.dblSameBought === '', 'nor is the plan already in force (' +
+    (r.dblSameBought || 'nothing asked for') + ')');
+say(r.upPlan === 'pro', 'and going UP still goes through (' + r.upPlan + ')');
+
 say(r.bdgRowPro !== '' && r.bdgRowFree === '',
     'the price list still marks the Pro row, read on free -- a plan carrying it is not the same question');
 
