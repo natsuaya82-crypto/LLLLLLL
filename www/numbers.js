@@ -460,7 +460,27 @@ function numWidHTML(){
        which is one step short AND names a button iOS does not have on that
        screen: the + adds a widget once you are already editing. A手順 that
        does not work is worse than none, because somebody follows it. */
-    '<div class="mini numwhow">'+esc(t('num.wid.how'))+'</div>';
+    '<div class="mini numwhow">'+esc(t('num.wid.how'))+'</div>'+
+    numWidOut();
+}
+/* WHAT WAS ACTUALLY HANDED OVER, said on the screen.
+   「そもそもウェジット追加のボタンすら消えてるけど？」「なんで元々できてたやつが
+   消えんの？」 OWNER 2026-09-02, with three Lingua widgets on the home screen
+   drawing roman numerals. Every road on this side measured correct -- the
+   payload is built, ten digits with their strokes in it, and handed to the
+   bridge -- so what cannot be seen from here is whether it LANDED.
+
+   This is the same medicine docs/keyboard-extension.md records: three builds
+   were spent guessing at the keyboard's hand-over, and one line on the screen
+   answered it on the next one. 「Build the status line first.」
+
+   A STATE and not an explanation: how many signs went, and what the native
+   side said back. www/share.js § SHARE.how is where the answer is kept. */
+function numWidOut(){
+  var n=0, k, dg;
+  try{ dg=shareWidget().dg||{}; }catch(e){ dg={}; }
+  for(k in dg) if(dg.hasOwnProperty(k)) n++;
+  return '<div class="mini numwout">'+esc(n+' · '+(SHARE.how||'-'))+'</div>';
 }
 /* The canvases, once the HTML they are in exists. inkLine gives each one the
    width its own ink asks for, which is what makes this a line. */
