@@ -730,10 +730,13 @@ const R = await pg.evaluate(async () => {
     swStart({ isPrimary:true, target:document.body, clientX:8, clientY:400 });
     swMove({ clientX:60, clientY:402, cancelable:true, preventDefault:function(){} });
     collectClasses();
-    swMove({ clientX:220, clientY:404, cancelable:true, preventDefault:function(){} });
-    swEnd({ clientX:320, clientY:406 });
-    /* `swgo` is put on for the travel and taken off when it lands; caught
-       here, before the timer clears it. */
+    /* LET GO SHORT, on purpose. A completed gesture calls back() from a timer
+       230ms later -- and that timer fires in the middle of whatever this file
+       measures next, which is the alphabet being held and carried. It did:
+       「held and carried and it did not move」, on a screen that had been
+       navigated out from under the drag. Short still puts `swgo` on for the
+       spring back, which is the class this is here to wear. */
+    swEnd({ clientX:70, clientY:404 });
     collectClasses();
     swClear();
   } catch (e) {}
