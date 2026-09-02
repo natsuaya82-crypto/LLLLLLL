@@ -598,7 +598,11 @@ function obAtDoor(){
 function obDoorBack(){
   var m=OBM.mode;
   if(m==='code') return 'up';
-  if(m==='reset' || m==='newpw') return 'forgot';
+  if(m==='reset') return 'forgot';
+  /* Nothing behind the password. Both roads reach it with a session already
+     in hand -- the digits were spent to get one -- so the screens behind it
+     ask for an address that has been proved and an account that exists. */
+  if(m==='newpw') return '';
   if(m==='forgot' || m==='up') return 'in';
   return '';
 }
@@ -1024,10 +1028,19 @@ function obMailUp(){
     OBM.busy=false; OBM.pw=''; obMailGo('code');
   }, obNo);
 }
+/* THE DIGITS FIRST, THE PASSWORD AFTER. 「普通に6桁のコード打ってから
+   パスワード要求だろ」 OWNER 2026-09-02.
+
+   The address is proved by the six digits and the password is chosen once it
+   is -- which is the same two screens the reset road already had, in the same
+   order, for the same reason. What comes back from the digits is a session,
+   and obNewPwGo() is what spends it. */
 function obMailCode(){
   if(OBM.busy) return;
   OBM.busy=true; OBM.msg=''; render();
-  netVerify(OBM.em, OBM.code, obIn, obNo);
+  netVerify(OBM.em, OBM.code, function(){
+    OBM.busy=false; OBM.code=''; OBM.pw=''; obMailGo('newpw');
+  }, obNo);
 }
 /* THE SAME SIX DIGITS, SENT AGAIN. A mail that did not arrive is the ordinary
    thing that happens on this screen -- it is in a spam folder, or the address
