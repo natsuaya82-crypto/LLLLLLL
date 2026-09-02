@@ -233,6 +233,8 @@ defLang('en', (function(){
       "ob.mail.up" : "Create account",
       "ob.mail.verify" : "Confirm",
       "ob.mail.send" : "Send the code",
+      "ob.mail.again" : "Send it again",
+      "ob.mail.sent" : "Sent.",
       "ob.mail.h.reset" : "Choose a new password",
       "ob.mail.newpw.ph" : "New password",
       "ob.mail.reset" : "Set it",

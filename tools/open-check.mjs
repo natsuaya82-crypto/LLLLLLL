@@ -117,12 +117,42 @@ async function boot(pre, drive) {
                  「already have one / make one」 toggle at the foot of both
                  faces, so the name alone is true of either. DO() escapes the
                  quotes, so the word is what there is to look for. */
-              forgot: html.indexOf('forgot') >= 0
+              forgot: html.indexOf('forgot') >= 0,
+              /* AND WHETHER IT ASKS FOR A PASSWORD. Only signing in does.
+                 「メアドだけ、アカウント作成で」「1アドレス1アカウント」 OWNER
+                 2026-09-02 -- a password on the making face is what made that
+                 face a SIGNUP, and a signup always makes a new user, so an
+                 address that had come in with Google got a second account. */
+              pw: html.indexOf('ob-pw') >= 0
             };
           } catch (e) { out[m ? 'up' : 'in'] = { err: String(e && e.message) }; }
         }
         return out;
       })(),
+      /* THE WAY BACK OFF EACH FACE OF THE DOOR. Every face except the one
+         the door opens on was travelled to from another, and signed out there
+         was no chevron on any of them -- obCanBack() answered false for the
+         whole door. A person who mistyped their address stood on the
+         six-digit screen with no way off it and no way to have the mail sent
+         again. 『後追加でメールを確認のボタンに再送信ボタンと戻るボタンが
+         ない』 OWNER 2026-09-02. */
+      back: (function(){
+        var out = {}, ms = ['in', 'up', 'code', 'forgot', 'reset', 'newpw'], i, m, html;
+        for (i = 0; i < ms.length; i++) {
+          m = ms[i];
+          try {
+            OBM.mode = m;
+            html = (typeof obDoorHTML === 'function') ? obDoorHTML() : '';
+            out[m] = { chev: !!obCanBack(), to: obDoorBack(),
+                       again: html.indexOf('obMailAgain') >= 0 };
+          } catch (e) { out[m] = { err: String(e && e.message) }; }
+        }
+        return out;
+      })(),
+      /* And where the chevron actually LANDS, pressed for real through the
+         one listener, because obDoorBack() saying 'up' and obBack() going
+         there are two statements. */
+      landed: (typeof window.__landed === 'undefined') ? null : window.__landed,
       /* The walk's grey, cut around the one lit thing. obPane() in
          www/onboard.js is what draws it; render() adds it last, after the
          app's own screen is on the page, because the hole is MEASURED. */
@@ -192,7 +222,52 @@ const SESS = JSON.stringify({ at: 'not a jwt', rt: 'a refresh token',
   if (f.in && !f.in.forgot) no('the sign-in face lost the forgotten-password way out');
   if (f.up && f.up.forgot)
     no('the account-making face offers a forgotten password — there is nothing yet to have forgotten');
+  if (f.up && f.up.pw)
+    no('the account-making face asks for a password — that makes it a signup, ' +
+       'and a signup makes a SECOND account for an address that came in with Google');
+  if (f.in && !f.in.pw)
+    no('the sign-in face lost its password field');
   say('the door: Apple and Google on both faces, and the mail is what they differ by');
+}
+
+/* ---- 2c. and every face of it has the way back off it -------------------
+   『後追加でメールを確認のボタンに再送信ボタンと戻るボタンがない』 OWNER
+   2026-09-02. Signed out, appIs() answers 'door' and obCanBack() answered
+   false for the whole of it -- the six digits included, which is three
+   presses in from the face the door opens on. */
+{
+  const r = await boot({ 'lingua.set': JSON.stringify({ done: true }) },
+                       () => { OBM.mode = 'code'; render();
+                               var b = document.querySelector('.obback');
+                               if (b) b.click();
+                               window.__landed = OBM.mode; });
+  const b = r.back || {};
+  const BEHIND = { up: 'in', code: 'up', forgot: 'in', reset: 'forgot', newpw: 'forgot' };
+  /* The face the door OPENS on is the one with nothing behind it: signed out,
+     the app IS this screen -- 「他の画面に行かせるな。ログアウトの時は。」 */
+  if (b.in && b.in.chev)
+    no('signed out, the face the door opens on has a chevron — that is a way ' +
+       'into an onboarding somebody finished months ago');
+  Object.keys(BEHIND).forEach((k) => {
+    const f = b[k] || {};
+    if (f.err) return no('the door face "' + k + '" threw: ' + f.err);
+    if (!f.chev) no('signed out, the door face "' + k + '" has no way back off it');
+    if (f.to !== BEHIND[k])
+      no('the door face "' + k + '" says ' + JSON.stringify(f.to) +
+         ' is behind it, wanted ' + JSON.stringify(BEHIND[k]));
+  });
+  /* A mail that did not arrive is the ordinary thing that happens on these
+     two, and the only answer used to be killing the app. */
+  if (b.code && !b.code.again) no('the six digits of a new account cannot be sent again');
+  if (b.reset && !b.reset.again) no('the six digits of a reset cannot be sent again');
+  if (b.newpw && b.newpw.again)
+    no('the new-password screen offers to send a code again — the code that ' +
+       'got there has been spent');
+  if (r.landed !== 'up')
+    no('the chevron on the six digits, pressed for real, landed on ' +
+       JSON.stringify(r.landed) + ', wanted "up"');
+  say('the door, signed out: every face has the face behind it, the chevron ' +
+      'lands on it (' + r.landed + '), and the six digits can be sent again');
 }
 
 /* ---- 3. finished, and signed in ---------------------------------------- */

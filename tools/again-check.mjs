@@ -86,15 +86,11 @@ const SERVER = `
     }
     return setTimeout(function(){ bad(null, 404, 'no route ' + method + ' ' + p); }, 0);
   };
-  /* netSlicePut() opens its own XMLHttpRequest rather than going through
-     netSend(), so it is a SECOND transport and the stub above cannot see it.
-     Routed into the same two arrays here rather than left out -- what is
-     stubbed is still only the network. */
-  netSlicePut = function(sid, kind, body, no, ok, bad){
-    netSend('POST', '/rest/v1/slice',
-            { language:sid, kind:kind, body:String(body || ''), no:(no || 0) + 1 },
-            '', function(){ ok(); }, function(){ bad(null, 0); });
-  };
+  /* netSlicePut() used to open its own XMLHttpRequest, so it was a SECOND
+     transport this stub could not see and had to be replaced here as well.
+     On 2026-09-02 it moved onto netSend() -- it differed by one header and by
+     being outside the token renewal -- so the stub above is now the only
+     transport again, and nothing extra is needed. */
 `;
 
 /* ---- 1. two languages, one of them not open ----------------------------- */

@@ -249,6 +249,8 @@ defLang('ja', (function(){
       "ob.mail.up" : "アカウントを作る",
       "ob.mail.verify" : "確認",
       "ob.mail.send" : "送る",
+      "ob.mail.again" : "再送信",
+      "ob.mail.sent" : "送りました",
       "ob.mail.h.reset" : "新しいパスワード",
       "ob.mail.newpw.ph" : "新しいパスワード",
       "ob.mail.reset" : "決定",

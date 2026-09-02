@@ -378,7 +378,25 @@ export function obStates(){
        it, so nothing else in this file or in shot.mjs ever renders it. */
     ['saying who you are',       () => { SET.obback = { r: 'set', a: 'acct' };
                                          OBM.mode = 'who';
-                                         OBM.busy = false; return vOb(); }]
+                                         OBM.busy = false; return vOb(); }],
+    /* THE SAME SIX DIGITS WITH NOWHERE TO GO BACK TO, and this is the state
+       the owner was standing in: signed out, creating an account, the mail
+       has been sent. Every face above it carries SET.obback -- a door opened
+       FROM somewhere, which is the road out of Settings -- and obPending()
+       being true is what put the chevron on all of them. Signed out there is
+       no obback, appIs() answers 'door' rather than 'ob', and obCanBack() used
+       to answer false for the whole door: no way back off the screen, and no
+       way to have the mail sent again.
+       『後追加でメールを確認のボタンに再送信ボタンと戻るボタンがない』 OWNER
+       2026-09-02.
+
+       LAST in this list on purpose. It is the only face that takes the session
+       away, and the entries here deliberately do not tidy up after themselves
+       (see the note above), so anything after it would be walked signed out. */
+    ['the six digits, signed out', () => { SET.obback = null; SET.done = true;
+                                         SESS = null; netSave();
+                                         OBM.mode = 'code'; OBM.busy = false;
+                                         OBM.em = 'a@b.c'; return vOb(); }]
   ];
 }
 

@@ -145,6 +145,7 @@ act('obMailIn', obMailIn);
 act('obMailUp', obMailUp);
 act('obMailCode', obMailCode);
 act('obMailForgot', obMailForgot);
+act('obMailAgain', obMailAgain);
 act('obResetGo', obResetGo);
 act('obNewPwGo', obNewPwGo);
 act('obWhoGo', obWhoGo);

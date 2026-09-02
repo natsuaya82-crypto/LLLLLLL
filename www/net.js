@@ -50,14 +50,12 @@
    the door now, before anything can be made.
 
    This used to end "and attaching one later keeps the same uid rather than
-   starting again." That was never true here: netSignUp() below posts to
-   /auth/v1/signup with no session token on it, which asks Supabase for a NEW
-   user rather than for an identity on the one already signed in. Nothing was
-   ever lost by it -- the app has never been released and no anonymous account
-   has existed outside a test build -- and there is nothing left to fix now
-   that none is made. It is written down rather than deleted because the
-   sentence was a description of a mechanism nobody had built, and those are
-   the ones that get built on.
+   starting again." That was never true while the mail door posted to
+   /auth/v1/signup, which asks Supabase for a NEW user rather than for a way
+   into the one that is already there. It is netMailOtp() below now
+   -- 「1アドレス1アカウント」 OWNER 2026-09-02 -- so an address that has an
+   account lands on it whichever road it comes by. Nothing was ever lost by
+   the old shape: the app has never been released.
    ========================================================================= */
 
 /* =========================================================================
@@ -147,11 +145,70 @@ function netMail(){
   return (c && String(c.email||'')) || '';
 }
 
+/* ---- the token, kept alive ----------------------------------------------
+   THE ACCESS TOKEN LASTS AN HOUR AND THE APP DOES NOT CLOSE.
+
+   netResume() is called from one place -- boot.js, on the launch -- and for
+   as long as that was the only place, an app left open for an hour went on
+   sending a dead token to everything. Nothing threw. Every write answered
+   401 and every 401 went where that write's `bad` went, which for a slice
+   (`netSlicePut`), a plan (`netPlanUp`) and a draft was nowhere at all. So a
+   person who opened Lingua in the morning and saved a word in the afternoon
+   saved it to the phone and to nothing else, and was told it had gone up.
+   「保存押せば起動されないの？」 OWNER 2026-09-02 -- no, it did not: saving
+   sends the token that is in hand and there was nothing that ever replaced it.
+
+   So a 401 refreshes and goes again. Three conditions, and each one is what
+   keeps this from becoming its own kind of fault:
+
+   ONLY THE SESSION'S OWN TOKEN. A request sent with the publishable key, or
+   with a token a caller chose deliberately, is not this person's session
+   expiring -- it is a refusal that means what it says. `mine` is decided at
+   SEND time, because SESS.at may be replaced by another request's refresh
+   while this one is in the air.
+
+   ONCE. A second 401 after a successful refresh is the server refusing the
+   person, not the clock, and going round again would be a loop that never
+   reaches the `bad` somebody is waiting on.
+
+   ONE REFRESH AT A TIME. Twenty slices go up together on a launch; twenty
+   refreshes would spend the refresh token twenty times over and nineteen of
+   them would race. The first one refreshes, the rest wait in RFQ and are all
+   told the same answer. ES5, so this is an array and callbacks rather than a
+   Promise. */
+var RFQ=null;
+function netFresh(then){
+  if(!netSignedIn()){ then(false); return; }
+  if(RFQ){ RFQ[RFQ.length]=then; return; }
+  RFQ=[then];
+  netResume(function(){ netFreshDone(true); },
+            function(){ netFreshDone(false); });
+}
+function netFreshDone(got){
+  var q=RFQ, i;
+  /* Emptied BEFORE anybody is told, so a callback that sends again starts a
+     new refresh rather than joining one that has already finished. */
+  RFQ=null;
+  for(i=0;i<q.length;i++) q[i](got);
+}
+
 /* ---- the wire ----------------------------------------------------------
    XHR rather than fetch: this has to run on a WKWebView old enough that the
    rest of the file is ES5, and a Promise is banned three lines up. Both
-   callbacks are always called, so nothing is left waiting on a spinner. */
-function netSend(method, path, body, tok, ok, bad){
+   callbacks are always called, so nothing is left waiting on a spinner.
+
+   `up` asks for an upsert (`resolution=merge-duplicates`): the phone does not
+   have to know whether this row has ever been up. It is a header rather than
+   a second function because two hand-rolled XHRs down this file were exactly
+   netSend() plus that one line, and both of them were therefore outside the
+   refresh above -- which is where the fault lived. */
+function netSend(method, path, body, tok, ok, bad, up){
+  netSend1(method, path, body, tok, ok, bad, up, true);
+}
+function netSend1(method, path, body, tok, ok, bad, up, may){
+  /* Whether this went out as the person, asked now rather than when the
+     answer comes back. */
+  var mine=!!(tok && SESS && tok===SESS.at);
   var x=new XMLHttpRequest();
   x.open(method, SB_URL+path, true);
   x.setRequestHeader('apikey', SB_KEY);
@@ -169,13 +226,33 @@ function netSend(method, path, body, tok, ok, bad){
      a draft the server has never seen turns into an insert -- and a write
      that changed nothing must never read as a write that worked. */
   if((method==='POST' || method==='PATCH') && path.indexOf('/rest/v1/')===0)
-    x.setRequestHeader('Prefer', 'return=representation');
+    x.setRequestHeader('Prefer',
+      'return=representation'+(up? ', resolution=merge-duplicates' : ''));
+  else if(up) x.setRequestHeader('Prefer', 'resolution=merge-duplicates');
   x.onreadystatechange=function(){
     if(x.readyState!==4) return;
     var d=null;
     try{ d=JSON.parse(x.responseText||'null'); }catch(e){}
-    if(x.status>=200 && x.status<300) ok(d);
-    else bad(d, x.status, netTag(path)+' '+x.status);
+    if(x.status>=200 && x.status<300){ ok(d); return; }
+    /* An hour has gone by with the app open. Everything about this request is
+       still right except the token on it, so it goes again with a live one.
+       netFresh() answers false for a refresh token the server no longer
+       accepts -- and netResume() has already signed the phone out by then, so
+       what reaches `bad` is a 401 on a session that has really ended. */
+    if(x.status===401 && may && mine){
+      if(netSignedIn() && SESS.at!==tok){
+        /* Somebody else's refresh landed while this was in the air. There is
+           nothing to ask for; go again with what is already in hand. */
+        netSend1(method, path, body, SESS.at, ok, bad, up, false);
+        return;
+      }
+      netFresh(function(got){
+        if(!got){ bad(d, 401, netTag(path)+' 401'); return; }
+        netSend1(method, path, body, SESS.at, ok, bad, up, false);
+      });
+      return;
+    }
+    bad(d, x.status, netTag(path)+' '+x.status);
   };
   x.onerror=function(){ bad(null, 0, netTag(path)+' 0'); };
   x.send(body? JSON.stringify(body) : null);
@@ -343,8 +420,32 @@ function netResume(ok, bad){
             bad(d, s);
           });
 }
-function netSignUp(email, pass, ok, bad){
-  netPost('/auth/v1/signup', {email:email, password:pass}, null, ok, bad);
+/* SIX DIGITS TO AN ADDRESS, AND THE ADDRESS IS THE ACCOUNT.
+   -------------------------------------------------------------------------
+   「1アドレス1アカウント」「Googleでも同じアカウントならメアドで入っても同じ
+   アカウントでログインさせればいいやろ」 OWNER 2026-09-02.
+
+   This replaces /auth/v1/signup on the account-making face. The two are not
+   two ways of doing one thing:
+
+     signup  makes a NEW user. Always. Supabase has no switch that says 「and
+             if this address already has an account, use that one」, so
+             somebody who came in with Google and later typed the same address
+             here got a second account, six digits and all -- which the owner
+             found by doing it.
+     otp     looks the address up. There already, and this signs them into it;
+             not there, and `create_user` makes it. One road, one account,
+             whichever way they first came in.
+
+   OAuth to OAuth was never the broken direction: Supabase links a Google and
+   an Apple identity carrying the same VERIFIED address by itself. The mail
+   road was the one that could not, and this is it.
+
+   It is also what the owner asked for on the same day in a different sentence
+   -- 「メアドだけ、アカウント作成で」 -- and the two turn out to be one
+   change: with no password to set, there is nothing for signup to be for. */
+function netMailOtp(email, ok, bad){
+  netPost('/auth/v1/otp', {email:email, create_user:true}, null, ok, bad);
 }
 function netSignIn(email, pass, ok, bad){
   netPost('/auth/v1/token?grant_type=password',
@@ -355,8 +456,11 @@ function netSignIn(email, pass, ok, bad){
    there is nowhere for it to land: this is a Capacitor app with no web page
    behind it, so the default confirmation URL opens nothing on the tester's
    phone. A code goes back to the screen that asked for it. */
+/* `email` rather than `signup`, because the digits come out of netMailOtp()
+   now and not out of a signup. It is the type that covers both, so a code
+   already in somebody's mail from the old road still works. */
 function netVerify(email, code, ok, bad){
-  netPost('/auth/v1/verify', {type:'signup', email:email, token:code}, null,
+  netPost('/auth/v1/verify', {type:'email', email:email, token:code}, null,
           function(d){ if(netTook(d)) ok(d); else bad(d, 0, 'token ≠'); }, bad);
 }
 function netRecover(email, ok, bad){
@@ -574,20 +678,16 @@ function netIdToken(provider, token, nonce, ok, bad){
    none of them is written yet. Nothing here should be read as more than
    「the plan lives on the account now」. */
 function netPlanUp(id){
-  var x;
   if(!netSignedIn()) return;
-  x=new XMLHttpRequest();
-  x.open('POST', SB_URL+'/rest/v1/plan', true);
-  x.setRequestHeader('apikey', SB_KEY);
-  x.setRequestHeader('Content-Type', 'application/json');
-  x.setRequestHeader('Authorization', 'Bearer '+SESS.at);
-  /* The same upsert netSlicePut() uses, and for the same reason: the phone
-     does not have to know whether this account has ever had a row. */
-  x.setRequestHeader('Prefer', 'resolution=merge-duplicates');
-  x.onreadystatechange=function(){};
-  x.onerror=function(){};
-  x.send(JSON.stringify({id:SESS.uid, plan:String(id||'free'),
-                         at:(new Date()).toISOString()}));
+  /* Through netSend() like everything else. It used to open its own
+     XMLHttpRequest, which differed from netSend() by one header and by being
+     outside the token renewal -- so on a launch, where this is sent before
+     the refresh has come back, the 401 went to an empty function and the plan
+     never moved. That is half of how a cancelled plan came back: see
+     bootSession() and SET.planPend. */
+  netSend('POST', '/rest/v1/plan',
+          {id:SESS.uid, plan:String(id||'free'), at:(new Date()).toISOString()},
+          SESS.at, function(){}, function(){}, true);
 }
 /* The two copies, read together. THE HIGHER RUNG WINS, and that is
    LinguaStore.swift's best() rather than a new rule -- somebody can hold a
@@ -914,20 +1014,15 @@ function netSlices(sid, ok, bad){
    insert into a table with a two-column primary key an upsert -- the phone
    does not have to know whether this slice has ever been up. */
 function netSlicePut(sid, kind, body, no, ok, bad){
-  var x=new XMLHttpRequest();
-  x.open('POST', SB_URL+'/rest/v1/slice', true);
-  x.setRequestHeader('apikey', SB_KEY);
-  x.setRequestHeader('Content-Type', 'application/json');
-  x.setRequestHeader('Authorization', 'Bearer '+SESS.at);
-  x.setRequestHeader('Prefer', 'resolution=merge-duplicates');
-  x.onreadystatechange=function(){
-    if(x.readyState!==4) return;
-    if(x.status>=200 && x.status<300) ok();
-    else bad(null, x.status);
-  };
-  x.onerror=function(){ bad(null, 0); };
-  x.send(JSON.stringify({language:sid, kind:kind, body:String(body||''),
-                         no:(no||0)+1, at:(new Date()).toISOString()}));
+  /* Through netSend(), for the reason netPlanUp() gives just above: this is
+     the write a person's work actually goes up in, and it was the one outside
+     the token renewal. 「保存押せば起動されないの？」 -- it did not, and this
+     is the line that answers it. */
+  netSend('POST', '/rest/v1/slice',
+          {language:sid, kind:kind, body:String(body||''),
+           no:(no||0)+1, at:(new Date()).toISOString()},
+          SESS && SESS.at, function(){ ok(); },
+          function(d, st){ bad(null, st||0); }, true);
 }
 /* EVERY LANGUAGE THIS ACCOUNT HAS, BROUGHT DOWN TO THE PHONE.
    -------------------------------------------------------------------------

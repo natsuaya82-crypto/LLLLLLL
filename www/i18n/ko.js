@@ -512,6 +512,8 @@ defLang('ko', (function(){
       "ob.mail.up" : "계정 만들기",
       "ob.mail.verify" : "확인",
       "ob.mail.send" : "보내기",
+      "ob.mail.again" : "다시 보내기",
+      "ob.mail.sent" : "보냈습니다",
       "ob.mail.h.reset" : "새 비밀번호",
       "ob.mail.newpw.ph" : "새 비밀번호",
       "ob.mail.reset" : "설정",
