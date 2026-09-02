@@ -1638,11 +1638,20 @@ function wldPage(ed, L, lid){
        takes the chapter, and on your own, whether other people may take one
        is the four switches on the writing face -- 「文字とか単語とかはここで
        編集しないからこれしか出ない」. */
-    /* The row that actually takes it. Held back to the foot the same way the
-       editor's four switches are, and for the same reason: they are one
-       question asked about chapters that live elsewhere, not sections of the
-       article. */
-    if(!ed && !mine && sec.dl && wldSecDl(sec.r, w) && wldDlKind(sec.r))
+    /* The row that actually takes it, ON ANYBODY'S ARTICLE.
+       「ここはwikiのページなんだけど、自分の言語のwikiを紹介するんだよね？
+       この言語を他の人に読んでもらうためのページなんだけど」OWNER 2026-09-02.
+
+       That is what settles it. The article is not 「my page」 and 「their
+       page」 -- it is ONE page, the one a reader opens, and the only reason
+       to look at your own is to see what a reader sees. A section that
+       appears for them and not for you makes the page you checked a
+       different page from the page they get.
+
+       `lid` is empty on your own language, and `wldGet()` refuses an empty
+       id, so the row is there and takes nothing: what is already yours
+       cannot be taken again. */
+    if(!ed && sec.dl && wldSecDl(sec.r, w) && wldDlKind(sec.r))
       dls+=wldGetRow(sec, lid);
     /* Held back rather than drawn here: the four go at the FOOT of the
        screen, under everything somebody writes -- 「dlのやつは一番下にして」
