@@ -996,7 +996,17 @@ function kbMark(key){
   var t=kbTyped(key.v);
   return t? '<span class="kbrm">'+esc(t)+'</span>' : '';
 }
-function kbFace(key){
+/* One letter out of a language that is NOT the open one.
+   `src` is {lts: their letters, lay: their layout} and is how a keyboard gets
+   drawn on somebody else's article. Everything below reaches for the open
+   language otherwise -- ltById() and kbOf() both -- which is rule 8, and is
+   why that picture used to be drawn for your own language only. */
+function kbSrcLt(src, id){
+  var a=(src && src.lts)? src.lts : [], i;
+  for(i=0;i<a.length;i++) if(a[i] && a[i].id===id) return a[i];
+  return null;
+}
+function kbFace(key, src){
   if(!key) return '';
   if(key.k==='del') return ICON_BACK;
   /* 「改行もいるだろ」 A keyboard that cannot start a new line is a keyboard
@@ -1011,9 +1021,9 @@ function kbFace(key){
   /* Nothing at all, and it is not a mistake: kbGap() is the half key that
      insets a row so the columns line up. */
   if(key.k==='gap') return '';
-  if(key.k==='lay') return kbLayFace(parseInt(key.v, 10)||0);
+  if(key.k==='lay') return kbLayFace(parseInt(key.v, 10)||0, src);
   if(key.k==='rom') return '<span class="kbl">'+esc(key.v)+'</span>';
-  var l=ltById(key.v);
+  var l=src? kbSrcLt(src, key.v) : ltById(key.v);
   if(!l) return '<span class="kbl">·</span>';
   /* midink: on a key the shape stands in the middle of the square rather
      than where it was drawn in the lattice. A key is a square somebody hits
@@ -1032,18 +1042,21 @@ function kbLayName(i){ return String(i+1); }
    a face would be a name in ten languages for something the person made and
    already named. The number is the fallback, for a layer somebody built with
    no letter on it at all. */
-function kbLayLetter(i){
-  var b=kbOf(), lay=b.lay[i], ri, ki, k;
+function kbLayLetter(i, src){
+  var b=(src && src.lay)? {lay:src.lay} : kbOf(), lay=b.lay[i], ri, ki, k;
   if(!lay) return null;
   for(ri=0;ri<lay.rows.length;ri++)
     for(ki=0;ki<lay.rows[ri].length;ki++){
       k=lay.rows[ri][ki];
-      if(k.k==='lt' && k.v && ltById(k.v)) return ltById(k.v);
+      if(k.k==='lt' && k.v){
+        var lt=src? kbSrcLt(src, k.v) : ltById(k.v);
+        if(lt) return lt;
+      }
     }
   return null;
 }
-function kbLayFace(i){
-  var l=kbLayLetter(i);
+function kbLayFace(i, src){
+  var l=kbLayLetter(i, src);
   return l? ltInk(l, '<span class="kbl">'+esc(ltName(l)||kbLayName(i))+'</span>', 'midink')
           : '<span class="kbl">'+esc(kbLayName(i))+'</span>';
 }
@@ -2498,14 +2511,14 @@ function kbMiniHTML(lay){
    first, because that is the one a keyboard opens on.
 
    It is a picture and nothing in it is pressable: the tile is the button. */
-function kbShotHTML(lay){
+function kbShotHTML(lay, src){
   var rows=(lay && lay[0] && lay[0].rows)? lay[0].rows : [], out='', i, j, k;
   for(i=0;i<rows.length;i++){
     out+='<span class="kbsr">';
     for(j=0;j<rows[i].length;j++){
       k=rows[i][j];
       out+='<span class="kbsk'+(k.k==='lt'? '' : ' fn')+(k.k==='gap'? ' gap':'')+
-        '" style="flex:'+(k.w||1)+'">'+kbFace(k)+'</span>';
+        '" style="flex:'+(k.w||1)+'">'+kbFace(k, src)+'</span>';
     }
     out+='</span>';
   }

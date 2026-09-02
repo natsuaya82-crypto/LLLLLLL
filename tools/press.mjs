@@ -180,9 +180,12 @@ const R = await pg.evaluate(async () => {
      up is not a control that fails -- it is a `<span>`.
 
      「ダウンロードボタン押しても言語追加されない」 was the one that named it.
-     `abdlm` in www/home.js is an icon and an `aria-label` in a `<span>`, with
-     no `DO()` on it, so the mark saying a section may be taken away looked
-     exactly like the mark that takes it away.
+     `abdlm` in www/home.js was an icon and an `aria-label` in a `<span>`,
+     with no `DO()` on it, so the mark saying a section may be taken away
+     looked exactly like the mark that takes it away. That class is gone now
+     -- the article draws the same rows on anybody's page and the ↓ is the
+     row at the foot that takes the chapter -- and the measurement below is
+     kept as it was made, on the day it named that fault.
 
      WHAT "LOOKS PRESSABLE" IS WAS MEASURED, not chosen. Three candidates were
      run over every screen this file walks, and the counts decided it:

@@ -1626,19 +1626,22 @@ function wldPage(ed, L, lid){
        foot with the others. It was a `<span>` on both faces, carrying no
        action, which is what the owner pressed:
        「ダウンロードボタン押しても言語追加されないけど？」 OWNER 2026-09-01. */
-    /* `role="img"` and not nothing. This is a MARK -- it says a section may be
-       taken away -- and it is not a control: pressing it does nothing and it
-       has no `DO()`. An aria-label with no role is somebody saying what a
-       CONTROL is called, which is the fault `press` is written to catch and
-       which this line was the worked example of. A picture that carries
-       meaning is named as a picture. */
-    if(!ed && mine && sec.dl && wldSecDl(sec.r, w))
-      extra='<span class="abdlm" role="img" aria-label="'+esc(t('wld.dl.can'))+'">'+
-        ICON_DL+'</span>';
-    /* And on somebody else's, the row that actually takes it. Held back to
-       the foot the same way the editor's four switches are, and for the same
-       reason: they are one question asked about chapters that live elsewhere,
-       not sections of the article. */
+    /* THE ↓ MARK IS OFF THE ROWS, and that is what makes the two articles
+       one article. 「自分のページでも人のページでも見た目は一緒にしてよ
+       なんで変える必要あんの？」 OWNER 2026-09-02.
+
+       It was drawn on your own rows and not on anybody else's, so the same
+       page carried a mark on four rows or on none depending on whose it was.
+       This SUPERSEDES 「DL許可が出てるものはDLマークつけないと」 OWNER
+       2026-08-25 for the reading face, and nothing it was for is lost: on
+       somebody else's article the ↓ is the row at the foot that actually
+       takes the chapter, and on your own, whether other people may take one
+       is the four switches on the writing face -- 「文字とか単語とかはここで
+       編集しないからこれしか出ない」. */
+    /* The row that actually takes it. Held back to the foot the same way the
+       editor's four switches are, and for the same reason: they are one
+       question asked about chapters that live elsewhere, not sections of the
+       article. */
     if(!ed && !mine && sec.dl && wldSecDl(sec.r, w) && wldDlKind(sec.r))
       dls+=wldGetRow(sec, lid);
     /* Held back rather than drawn here: the four go at the FOOT of the
@@ -1754,9 +1757,13 @@ function wldPage(ed, L, lid){
          would be marked up against MY language. Rule 8. abLtCell() below is
          the reader's, and it goes through ltInk() and ltName(), which are
          where a letter's face and a letter's name live for everybody. */
+      /* abLtCell() on both, and that is the same sentence as the keyboard
+         above. ltCell() asks ltTaken() and numOver(), which read LETTERS and
+         the open language's base, so it can only ever be right about your
+         own -- and it is a DIFFERENT CELL, which is a page that changes shape
+         depending on whose it is. 「見た目は一緒にしてよ」 */
       if(drawn.length) inner+='<div class="ltgrid abtlt">'+
-        ltOrder(drawn).map(function(l){
-          return mine? ltCell(l, ' ') : abLtCell(l); }).join('')+'</div>';
+        ltOrder(drawn).map(abLtCell).join('')+'</div>';
     } else if(sec.r==='kb'){
       /* The keyboard this person actually BUILT, drawn small --
          「キーボードもちゃんとその人が作ってるモックの画像出すように」
@@ -1779,15 +1786,19 @@ function wldPage(ed, L, lid){
          letters rather than a diagram of them, which is what it was written
          for: 「リアルなキーボードを縮小して見せれないの？」. Nothing in it is
          pressable, here or where it came from. */
-      /* THE PICTURE IS ONLY DRAWN FOR YOUR OWN, and that is a hole rather
-         than a decision. `kbShotHTML()` goes through `kbFace()`, which asks
-         `ltById()` -- the open language's letters -- so somebody else's
-         keyboard would be drawn wearing MY alphabet, which is rule 8 and is
-         the fault the card had. `kbFace()` is www/keyboard.js and this session
-         does not own it; the heading stays and what is under it waits for
-         that file. It is in the report. */
-      if(mine) inner+='<div class="abtl abtline">'+esc(L.kbname())+'</div>'+
-        '<div class="abkb">'+kbShotHTML(L.kblay())+'</div>';
+      /* IN THEIR LETTERS, AND SO ON EITHER PAGE.
+         「自分のページでも人のページでも見た目は一緒にしてよ」OWNER
+         2026-09-02.
+
+         It was drawn for your own language only, because `kbFace()` asks
+         `ltById()` -- the OPEN language -- so somebody else's keyboard would
+         have arrived wearing my alphabet, which is rule 8 and is the fault
+         the card had. That was a hole rather than a decision, and it is
+         closed in the file it belonged to: kbFace() and kbShotHTML() take
+         the letters and the layout to read them out of, and `L` is what has
+         them for whichever language this page is about. */
+      inner+='<div class="abtl abtline">'+esc(L.kbname())+'</div>'+
+        '<div class="abkb">'+kbShotHTML(L.kblay(), {lts:L.letters(), lay:L.kblay()})+'</div>';
     } else if(sec.nm!==undefined){
       /* A section somebody wrote, and it is a SECTION on both faces --
          「追加したセクションも概要と同じ文字サイズだし▼で隠せるようにして編集でも」
@@ -1828,15 +1839,22 @@ function wldPage(ed, L, lid){
 
        On your own article a heading with nothing under it still stands: it is
        the way IN to a chapter that is yours, and the `›` beside it works. */
-    if(!ed && !mine && !inner) return;
-    /* ONE `›` TO A ROW. `sec.go` is the way into this phone's own chapter --
-       the letters, the dictionary, the keyboard -- and on somebody else's
-       article it is rule 8 written as a button: pressing the `›` beside THEIR
-       Letters opened MINE. So the row that folds is the only thing to press
-       there, which is also what the owner drew: 「›の位置を統一する」, one mark
-       on the left of each row rather than one on each side.
-       On your own article both are yours and both stay. */
-    body+=abHead((!ed && !mine && sec.go)? wldSecNoGo(sec) : sec,
+    if(!ed && !inner) return;
+    /* ONE `›` TO A ROW, AND ON YOUR OWN ARTICLE TOO.
+       「›の位置を統一する」, and again 「＞＞が二つあるのが嫌だって話前にした
+       よね？」 OWNER 2026-09-02.
+
+       This was applied to somebody else's article only, on the argument that
+       on your own both arrows are yours and both work. They are, and it is
+       still two of the same mark on one row pointing at two different things
+       -- which is the thing the owner said they did not want, said about a
+       row rather than about whose row it is.
+
+       `sec.go` is the way into this phone's own chapter -- the letters, the
+       keyboard. It is not lost: those chapters are the contents page, which
+       is where you go to a chapter. What the article is for is reading, and
+       the mark on the left is what opens what there is to read. */
+    body+=abHead((!ed && sec.go)? wldSecNoGo(sec) : sec,
                  !!inner, extra)+((!inner || abShut(sec.r))? '' : inner);
   });
   /* And the way to put another section in, at the end of the ones there are,
