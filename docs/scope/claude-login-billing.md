@@ -129,3 +129,96 @@ LinguaPlanPlugin.set(seen)      // ← 読めなかったときもここへ落�
 - 価格は `displayPrice`、割引率は二つの `amount` から。取り消し線に打った値はない
 - `plan` の RLS は自分の行だけ
 - 課金画面と扉の文言は十言語すべてに揃っている
+
+---
+
+# 追記 2026-09-02 ── 原則「1アドレス1アカウント」に照らして
+
+## オーナー決定 2026-09-02（これが仕様。今日の言葉で、前のものに優先する）
+
+  「1アドレス1アカウント」
+  「これは絶対課金もアカウントごと言語もそう」
+  「GoogleとかAppleのログインはあくまでもメアドより楽な手段を増やして
+    あげるための手段の話であるのよ」
+
+Google / Apple / メールは、同じアドレスなら同じアカウントへの三つの入口。
+実測済み：Google で登録したアドレスと同じアドレスでメール登録すると、
+六桁が届いて別垢が立つ。
+
+## A. 「1アドレス1アカウント」に反しているところ
+
+**A-1【サーバー側】新規登録は必ず新しい uid を作る。**`netSignUp()`
+（`www/net.js:346`）はセッションを載せずに `/auth/v1/signup` を叩く。
+`supabase/schema.sql:547` に同じ形の注意書きが既にある。`www/` では直せない。
+場所は三つ ── Supabase の identity 自動リンク設定 / `auth.users` のトリガ /
+登録前の Edge Function。どれもオーナーの決めごと。
+
+**A-2【`www/` で直せる。原則そのものが欠けている場所】パスワードを足す道が、
+メールで入った人にしか無い。**`www/settings.js:270` が row を
+`netHow()==='email'` で出し分けている。Google / Apple で入った人には
+「このアカウントにパスワードを足す」画面が無い。だからその人がメールでも
+入りたくなったら扉の新規登録しか道がなく、それが A-1 で別垢になる。
+**アプリが人を別垢へ誘導している。**`netSetPass()`（`net.js:383`）は
+セッションだけで通り、パスワード再設定の道が既にこれを使っている。
+`setPwGo()`（`settings.js:106`）は今 `netSignIn()` で古いものを確かめてから
+書くので、そこは分岐が要る。セッションだけで書かせてよいかは判断が要る。
+
+**A-3【原則では覆えない】**Apple の「メールを非公開」はアプリごとのリレー
+アドレスを配る。同じ人の gmail とは別のアドレスなので、原則どおり別垢になる。
+
+## B. 「課金もアカウントごと」に反しているところ
+
+**B-1 段が端末に付いている。**`ios/App/App/LinguaPlan.swift` の Keychain 項目
+は service と account が固定で、どのアカウントが買ったかを持たない。
+`www/core.js:358` で `window.__plan` がそのまま `SET.plan` に入る ── 誰が
+サインインしているか分かる前。
+
+**B-2 アカウントが変わっても `SET.plan` を戻す場所が無い。**書き手は五つ
+（`core.js:358` `core.js:397` `net.js:621` `settings.js:862` `store.js:58`）、
+戻す場所はゼロ。`netTook()`（`net.js:245`）も `netOut()`（`net.js:322`）も
+段に触らない。A（Pro）が出て B が入ると、次の起動で `netPlanSync` が B の
+空の行に pro を書く。`SET.planWas` も残るので、B が別人の段を基準にした
+「プランが終わりました」を見ることがある。
+
+**B-3 段は上がるだけで下がらない。**`netPlanSync()`（`net.js:607`、
+書き戻しは 613-626）は `planBest` で高いほうを採り、`planKeep` で Keychain
+まで書き戻す。
+
+**B-4〜B-7** は上の 1〜5 と同じ（トークン更新、解約の取り消し、Keychain の
+読み取り失敗、レシート検証なし）。
+
+## C. 「言語もアカウントごと」に反しているところ
+
+**C-1 uid の無い言語は、訊いた人のものになる。**`langOwned()`
+（`www/core.js:720-727`）の 725 行 ── `if(!L.uid) return true;`。
+`netLangRow()`（`net.js:710-736`）の四つ目の状態も同じで、コメント自身が
+「THE FOURTH IS THE ONE THE OWNER HAS TO DECIDE」と書いている。
+**今日の原則で決まった** ── 拾ってよいのはオンボーディングの扉だけ。
+直すコミットでそのコメント段落も書き換えること。
+
+**C-2 ＋ で言語を作ると uid が押されない。**`langMint()` を呼ぶ四箇所のうち
+押しているのは二つだけ。`core.js:282 langFirst()` 押さない（オンボーディング、
+正しい）／`core.js:457 langNew()` 押さない（**ここが穴**）／
+`core.js:842 langForAcct()` 押す（857-859）／`net.js:987 netLangsDown()` 押す。
+uid は `netLangRow()` が上げ切ったとき（`net.js:733`）に初めて付くので、
+圏外で作った言語と送信が落ちた言語は uid 無しのまま残り、C-1 に落ちる。
+直しは一行。
+
+**C-3 ＋ はアカウントを訊かない。**`langNew()` の前に立っているのは
+`langStop()`（言語数の上限）だけ。`makeNeed()` / `obNeed()`
+（`onboard.js:926,949`）は文字・単語・文法・メモの四つに掛かっていて、
+言語を作ることには掛かっていない。CLAUDE.md は「making a language
+「言語はアカウントないと作れないです」」と書いているが、止めているものは無い。
+
+## 直す順
+
+  1. C-2 / C-3   www/core.js。一行 + gate 一つ。いちばん小さくて漏れている
+  2. B-5(旧1)    www/net.js のみ。入ると B-4(旧2) が半分直る
+  3. B-4(旧2)    www/net.js  www/core.js  www/boot.js
+                 + tools/store-check.mjs に道（規則22）+ CHANGELOG が先
+  4. B-6(旧4)    ios/App/App/LinguaStore.swift  tools/plan-check.mjs
+  5. A-2         www/settings.js  www/onboard.js  www/i18n/*.js ×10
+  6. B-1 / B-2   LinguaPlan.swift  LinguaStore.swift  core.js  net.js
+  7. A-1         Supabase 側
+
+www/index.html は一行も要らない。www/net.js を A-2 以外のほぼ全部が欲しがる。
