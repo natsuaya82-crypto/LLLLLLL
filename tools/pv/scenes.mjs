@@ -59,6 +59,14 @@ export function SCENES(F){
   const wide = !F.portrait;
   const W = F.W, H = F.H;
 
+  /* CUT ON THE BAR. Every shot is a whole number of bars of the track the
+     film is cut to, so a cut never lands between two beats -- which is the
+     difference between a film with music under it and a film cut to music.
+     The length of a bar is measured off the track itself (tools/pv.mjs
+     --bar) and nothing here restates it. */
+  const BAR = F.bar || 1.690;
+  const bars = (n) => Math.round(BAR * n * 1000) / 1000;
+
   const ANCHOR = wide ? { x: W * 0.745, y: H * 0.50 } : { x: W * 0.50, y: H * 0.60 };
   const SCALE  = wide ? 2.4 : 2.5;
 
@@ -128,14 +136,29 @@ export function SCENES(F){
       o: Math.max(0, 1 - since / 0.5) * 0.95,
       s: mix(0.22, 0.62, clamp(since / 0.5, 0, 1)) } : noTap;
 
-  const LT = 'z', TAP0 = 0.8, TAPGAP = 0.38;
+  const LT = 'c', TAP0 = 0.7, TAPGAP = 0.55;
+  const sc_draw = bars(4);
+  const sc_alphabet = bars(2);
+  const sc_keyboard = bars(2);
+  const sc_write = bars(3);
+  const sc_feed = bars(4);
+  const sc_thread = bars(2);
+  const sc_card = bars(2);
+  const sc_seen = bars(2);
+  const sc_download = bars(2);
+  const sc_theirs = bars(2);
+  const sc_font = bars(2);
+  const sc_wall = bars(2);
+  const sc_range = bars(2);
+  const sc_end = bars(3);
+
 
   return [
   /* ====================== I. A LETTER, AND THE REST ==================== */
 
   /* A letter, tap by tap. The first second has no words on it: what has to
      be understood first is that a person is drawing. */
-  { name: 'draw', secs: 5,
+  { name: 'draw', secs: sc_draw,
     enter: async (stage) => {
       await stage.set({ card: { o: 0 }, wash: 0, tap: noTap, wall: { o: 0 } });
       await noWords(stage);
@@ -191,17 +214,17 @@ export function SCENES(F){
         geDraw();
       }, upto);
       const i = placed - 1;
-      const pose = look(stage.at.x, stage.at.y, mix(SCALE * 1.02, SCALE * 1.14, rampO(t, 0, 5)));
+      const pose = look(stage.at.x, stage.at.y, mix(SCALE * 1.02, SCALE * 1.14, k));
       pose.o = ramp(t, 0, 0.6);
       await stage.set({ phone: pose,
         tap: thumb(i >= 0 ? stage.taps[i] : null, i >= 0 ? t - (TAP0 + i * TAPGAP) : 99) });
-      words(stage, t, 5, { key:'draw', in: 1.3, kicker: 'Lingua',
+      words(stage, t, sc_draw, { key:'draw', in: 1.3, kicker: 'Lingua',
         head: ['Invent a <em>language</em>.'],
         sub: 'It begins with one letter, drawn with a finger.' });
     } },
 
   /* The alphabet it belongs to. */
-  { name: 'alphabet', secs: 4,
+  { name: 'alphabet', secs: sc_alphabet,
     enter: async (stage) => {
       await stage.set({ tap: noTap });
       await stage.app(function(){
@@ -212,23 +235,23 @@ export function SCENES(F){
       });
     },
     at: async (stage, k, t) => {
-      await scroll(stage, Math.round(mix(60, 980, io(clamp((t - 0.3) / 3.5, 0, 1)))));
+      await scroll(stage, Math.round(mix(60, 980, io(clamp((k - 0.06) / 0.88, 0, 1)))));
       await stage.set({ phone: arrive(look(195, 430, SCALE * 0.92), t) });
-      words(stage, t, 4, { key:'alpha', kicker: 'The alphabet',
+      words(stage, t, sc_alphabet, { key:'alpha', kicker: 'The alphabet',
         head: ['An alphabet', 'nobody else has.'],
         sub: 'Every letter in it is one you drew.' });
     } },
 
   /* A QWERTY wearing them. */
-  { name: 'keyboard', secs: 4,
+  { name: 'keyboard', secs: sc_keyboard,
     enter: async (stage) => {
       await nav(stage, 'kb');
       stage.at = await box(stage, '.kb');
     },
     at: async (stage, k, t) => {
       await stage.set({ phone: arrive(
-        look(stage.at.x, stage.at.y, mix(SCALE * 0.96, SCALE * 1.05, rampO(t, 0, 4))), t) });
-      words(stage, t, 4, { key:'kb', kicker: 'The keyboard',
+        look(stage.at.x, stage.at.y, mix(SCALE * 0.96, SCALE * 1.05, k)), t) });
+      words(stage, t, sc_keyboard, { key:'kb', kicker: 'The keyboard',
         head: ['And a keyboard', 'of your own letters.'],
         sub: 'The same alphabet, on every key of the phone.' });
     } },
@@ -236,7 +259,7 @@ export function SCENES(F){
   /* ======================= II. SAYING SOMETHING ======================== */
 
   /* Typed in the letters somebody drew, and sent. */
-  { name: 'write', secs: 5.5,
+  { name: 'write', secs: sc_write,
     enter: async (stage) => {
       await stage.app(function(){ window.__pvSent = 0; window.scrollTo(0, 0); openPost('new'); render(); });
     },
@@ -278,36 +301,36 @@ export function SCENES(F){
         });
       }
       await stage.set({ phone: arrive(look(195, 210, SCALE), t), tap: tap });
-      words(stage, t, 5.5, { key:'write', kicker: 'Write in it',
+      words(stage, t, sc_write, { key:'write', kicker: 'Write in it',
         head: ['Then say', 'something in it.'],
         sub: 'The keyboard puts your own letters into the line.' });
     } },
 
   /* THE TIMELINE, and it is the centre of the film: four people, three
      alphabets, none of which this phone could have drawn on its own. */
-  { name: 'feed', secs: 8,
+  { name: 'feed', secs: sc_feed,
     enter: async (stage) => { await nav(stage, 'feed'); },
     at: async (stage, k, t) => {
-      await scroll(stage, Math.round(mix(0, 1750, io(clamp((t - 0.4) / 7.2, 0, 1)))));
+      await scroll(stage, Math.round(mix(0, 1750, io(clamp((k - 0.05) / 0.92, 0, 1)))));
       await stage.set({ phone: arrive(look(195, 420, SCALE * 0.98), t) });
-      words(stage, t, 8, { key:'feed', kicker: 'The timeline',
+      words(stage, t, sc_feed, { key:'feed', kicker: 'The timeline',
         head: ['Everyone here', 'writes in their own.'],
         sub: 'Every line carries its own letters, so a phone that has never seen that alphabet can still read it.' });
     } },
 
   /* Two of them, answering each other. */
-  { name: 'thread', secs: 3.5,
+  { name: 'thread', secs: sc_thread,
     enter: async (stage) => { await nav(stage, 'thread', 'p2'); },
     at: async (stage, k, t) => {
-      await scroll(stage, Math.round(mix(0, 460, io(clamp((t - 0.4) / 2.9, 0, 1)))));
+      await scroll(stage, Math.round(mix(0, 460, io(clamp((k - 0.10) / 0.85, 0, 1)))));
       await stage.set({ phone: arrive(look(195, 380, SCALE * 0.98), t) });
-      words(stage, t, 3.5, { key:'thread', kicker: 'A conversation',
+      words(stage, t, sc_thread, { key:'thread', kicker: 'A conversation',
         head: ['Two scripts,', 'one thread.'],
         sub: 'Answered in a language the other person does not have.' });
     } },
 
   /* A line of it, as a picture that leaves the phone. */
-  { name: 'card', secs: 3.5,
+  { name: 'card', secs: sc_card,
     enter: async (stage) => {
       await stage.app(function(){ cardOpen('p', 'p1'); render(); window.scrollTo(0, 0); });
       stage.at = await box(stage, '.cardwrap, canvas');
@@ -315,28 +338,28 @@ export function SCENES(F){
     at: async (stage, k, t) => {
       const c = stage.at || { x: 195, y: 300 };
       await stage.set({ phone: arrive(
-        look(c.x, c.y, mix(SCALE * 1.0, SCALE * 1.08, rampO(t, 0, 3.5))), t) });
-      words(stage, t, 3.5, { key:'card', kicker: 'A card',
+        look(c.x, c.y, mix(SCALE * 1.0, SCALE * 1.08, k)), t) });
+      words(stage, t, sc_card, { key:'card', kicker: 'A card',
         head: ['And a picture', 'of what you wrote.'],
         sub: 'Ready to leave the phone, in your letters.' });
     } },
 
   /* ========================= III. SOMEBODY ELSE'S ====================== */
 
-  { name: 'seen', secs: 4,
+  { name: 'seen', secs: sc_seen,
     enter: async (stage) => {
       await stage.app(function(){ go('about', 'seen-vethi'); render(); window.scrollTo(0, 0); });
     },
     at: async (stage, k, t) => {
-      await scroll(stage, Math.round(mix(0, 200, io(clamp((t - 0.5) / 3.0, 0, 1)))));
+      await scroll(stage, Math.round(mix(0, 200, io(clamp((k - 0.12) / 0.82, 0, 1)))));
       await stage.set({ phone: arrive(look(195, 340, SCALE * 0.96), t) });
-      words(stage, t, 4, { key:'seen', kicker: 'Somebody else\u2019s',
+      words(stage, t, sc_seen, { key:'seen', kicker: 'Somebody else\u2019s',
         head: ['Other people', 'publish theirs.'],
         sub: 'A whole language of somebody else\u2019s, written up as a page.' });
     } },
 
   /* Taken -- with the real button, which really adds it. */
-  { name: 'download', secs: 3,
+  { name: 'download', secs: sc_download,
     enter: async (stage) => {
       await stage.app(function(){
         ABOPEN.wlddl = true; go('about', 'seen-vethi'); render();
@@ -360,13 +383,13 @@ export function SCENES(F){
         });
       }
       await stage.set({ phone: arrive(look(195, 430, SCALE), t), tap: tap });
-      words(stage, t, 3, { key:'dl', kicker: 'Take it',
+      words(stage, t, sc_download, { key:'dl', kicker: 'Take it',
         head: ['Their alphabet,', 'on your phone.'],
         sub: 'One tap, and nothing of yours is touched.' });
     } },
 
   /* And read in their letters, which are not built like yours. */
-  { name: 'theirs', secs: 4,
+  { name: 'theirs', secs: sc_theirs,
     enter: async (stage) => {
       await stage.app(function(){
         langOpen('seen-vethi');
@@ -376,9 +399,9 @@ export function SCENES(F){
       });
     },
     at: async (stage, k, t) => {
-      await scroll(stage, Math.round(mix(40, 460, io(clamp((t - 0.4) / 3.2, 0, 1)))));
+      await scroll(stage, Math.round(mix(40, 460, io(clamp((k - 0.10) / 0.85, 0, 1)))));
       await stage.set({ phone: arrive(look(195, 430, SCALE * 0.92), t) });
-      words(stage, t, 4, { key:'theirs', kicker: 'And read it',
+      words(stage, t, sc_theirs, { key:'theirs', kicker: 'And read it',
         head: ['Built nothing', 'like your own.'],
         sub: 'Their letters, opened on your phone.' });
     } },
@@ -386,20 +409,20 @@ export function SCENES(F){
   /* ============================ IV. THE REST =========================== */
 
   /* The dictionary, set in the letters. */
-  { name: 'font', secs: 3.5,
+  { name: 'font', secs: sc_font,
     enter: async (stage) => {
       await stage.app(function(){ langOpen(window.__pvMine); go('words'); render(); window.scrollTo(0, 0); });
     },
     at: async (stage, k, t) => {
-      await scroll(stage, Math.round(mix(190, 1100, io(clamp((t - 0.3) / 3.0, 0, 1)))));
+      await scroll(stage, Math.round(mix(190, 1100, io(clamp((k - 0.08) / 0.88, 0, 1)))));
       await stage.set({ phone: arrive(look(195, 430, SCALE), t) });
-      words(stage, t, 3.5, { key:'font', kicker: 'The lexicon',
+      words(stage, t, sc_font, { key:'font', kicker: 'The lexicon',
         head: ['Your letters', 'become a <em>font</em>.'],
         sub: 'Every word you keep is written in them.' });
     } },
 
   /* Everything else there is, at a glance. */
-  { name: 'wall', secs: 3,
+  { name: 'wall', secs: sc_wall,
     enter: async (stage) => {
       await stage.app(function(){ go('build'); render(); });
       await stage.set({ phone: { x: 0, y: 0, s: 1, o: 0 } });
@@ -414,19 +437,19 @@ export function SCENES(F){
         const y = H / 2 - 422 + (cy - (rows - 1) / 2) * gy;
         const a = 0.10 + (cx + cy) * 0.09;
         ts.push({ x: x, y: y, s: 0.62,
-                  o: Math.min(ramp(t, a, a + 0.45), 1 - ramp(t, 2.55, 2.95)) });
+                  o: Math.min(ramp(t, a, a + 0.45), 1 - ramp(t, sc_wall - 0.6, sc_wall - 0.2)) });
       }
       await stage.set({ wall: {
-        o: 1, s: mix(1.0, 1.14, rampO(t, 0, 3)),
-        x: mix(60, -60, rampO(t, 0, 3)), y: mix(60, -70, rampO(t, 0, 3)),
+        o: 1, s: mix(1.0, 1.14, k),
+        x: mix(60, -60, k), y: mix(60, -70, k),
         tiles: ts } });
-      words(stage, t, 3, { key:'wall', in: 0.4, kicker: 'All of it',
+      words(stage, t, sc_wall, { key:'wall', in: 0.4, kicker: 'All of it',
         head: ['Phonology. Grammar.', 'Notes. Numbers.'],
         sub: 'A book with chapters, not a screen with buttons.' });
     } },
 
   /* Ten interface languages, and both themes. */
-  { name: 'range', secs: 3,
+  { name: 'range', secs: sc_range,
     enter: async (stage) => {
       await stage.set({ wall: { o: 0 } });
       await nav(stage, 'build');
@@ -442,13 +465,13 @@ export function SCENES(F){
         if (move) render();
       }, k);
       await stage.set({ phone: arrive(look(195, 300, SCALE * 0.95), t) });
-      words(stage, t, 3, { key:'range', kicker: 'Wherever you are',
+      words(stage, t, sc_range, { key:'range', kicker: 'Wherever you are',
         head: ['Ten languages.', 'Light and dark.'],
         sub: 'The app speaks yours while you build one of your own.' });
     } },
 
   /* The name. */
-  { name: 'end', secs: 4,
+  { name: 'end', secs: sc_end,
     enter: async (stage) => {
       await stage.app(function(){
         SET.ui = 'en'; SET.theme = 'dark'; applyTheme(); go('feed'); render();

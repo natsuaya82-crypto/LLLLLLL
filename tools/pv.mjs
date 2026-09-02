@@ -52,6 +52,10 @@ const val = (f, d) => { const i = argv.indexOf(f); return i >= 0 ? argv[i+1] : d
 const portrait = has('--portrait');
 const stills = has('--stills');
 const only = val('--scene', '');
+/* The length of one bar of the track the film is cut to. Every shot is a
+   whole number of these (tools/pv/scenes.mjs), so no cut lands between two
+   beats. Measured off the track, not guessed: 142 bpm is 1.690s. */
+const BAR = Number(val('--bar', '1.690'));
 const W = portrait ? 1080 : 1920;
 const H = portrait ? 1920 : 1080;
 
@@ -363,7 +367,7 @@ const stage = {
 };
 
 /* ---- the film ------------------------------------------------------------ */
-const film = SCENES({ W, H, portrait });
+const film = SCENES({ W, H, portrait, bar: BAR });
 const list = only ? film.filter((s) => s.name === only) : film;
 if (!list.length){ console.error('no scene called ' + only); process.exit(2); }
 
@@ -395,12 +399,17 @@ const feed = (buf) => new Promise((res) => {
   if (enc.stdin.write(buf)) res(); else enc.stdin.once('drain', res);
 });
 
-let n = 0;
+let n = 0, clock = 0;
 const t0 = Date.now();
 for (const sc of list){
-  process.stdout.write('  ' + sc.name + ' (' + sc.secs + 's) ');
+  process.stdout.write('  ' + sc.name + ' (' + sc.secs.toFixed(2) + 's) ');
   if (sc.enter) await sc.enter(stage);
-  const frames = Math.round(sc.secs * FPS);
+  /* Frame counts are taken from where the shot ENDS on the clock, not from
+     its own length: rounding each shot on its own would drift, and half a
+     frame of drift fourteen times is half a beat by the end. */
+  const f0 = Math.round(clock * FPS);
+  clock += sc.secs;
+  const frames = Math.round(clock * FPS) - f0;
   for (let i = 0; i < frames; i++){
     const k = i / frames;                 /* 0..1 through this scene */
     if (sc.at) await sc.at(stage, k, i / FPS);
