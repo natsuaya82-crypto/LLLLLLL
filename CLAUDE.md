@@ -14,7 +14,7 @@ A conlang-building app. Plain HTML/CSS/JS under `www/`, wrapped by Capacitor for
 > says the two that are easiest to get backwards: the timeline **is** on the
 > server now — `post`, `react`, `follow`, `profile` and the notices RPC, with
 > `localStorage` as the copy that survives a bad network — and CI runs three of
-> these thirty-three checks, so a green tick on a push is not the gate. This
+> these thirty-four checks, so a green tick on a push is not the gate. This
 > paragraph said the opposite of the first of those for a week after it stopped
 > being true, which is the whole reason that file says how to re-check rather
 > than what to believe: `grep -n "rest/v1" www/net.js`.
@@ -365,20 +365,20 @@ backlog entry is not permission, and neither is the absence of one.
 ## The gate
 
 ```
-npm test        # tools/gate.mjs -- eight with no browser in a row (assets, es5,
-                # grammar-engine, dead, import, sides, face, box, ~2s), then the
-                # other twenty-five four at a time. NOT run by a session -- rule 2.
+npm test        # tools/gate.mjs -- nine with no browser in a row (assets, es5,
+                # grammar-engine, dead, import, sides, face, box, store, ~2s), then
+                # the other twenty-five four at a time. NOT run by a session -- rule 2.
                 # The count is FAST.length + SLOW.length in tools/gate.mjs and
                 # nowhere else; every number in this file is a copy of it.
 ```
 
-Individual: `npm run assets` / `npm run es5` / `npm run dead` / `npm run migrate` /
+Individual: `npm run assets` / `npm run es5` / `npm run dead` / `npm run migrate` / `npm run store` /
 `npm run i18n` / `npm run import` / `npm run sides` / `npm run face` / `npm run box` /
 `npm run act` /
 `npm run conv` / `npm run card` / `npm run word` / `npm run post` / `npm run backup` /
 `npm run fill` / `npm run round` / `npm run base` / `npm run kb` / `npm run plan` /
 `npm run world` / `npm run ask` / `npm run page` / `npm run press`.
-`tools/gate.mjs` is what `npm test` runs. The eight that need no browser go first, one
+`tools/gate.mjs` is what `npm test` runs. The nine that need no browser go first, one
 after another, in about two seconds — a missing script tag or an arrow function fails
 there and nothing heavy is started at all — and the twenty-two that each start a headless
 Chromium then go **four at a time**. Sequentially they were ten minutes. Each check's
@@ -387,7 +387,7 @@ output is printed whole and in list order, so a counter that moved is still visi
 **Three rules about running it, and they are the owner's.** *Once before pushing, not
 once per commit* — make the whole batch, gate it once, push; a session that gates five
 commits separately has spent half an hour proving the same thing five times.
-「全部やって完成！じゃあ全部のチェックを回す」 *While working, run the fast eight —
+「全部やって完成！じゃあ全部のチェックを回す」 *While working, run the fast nine —
 they are two seconds and they catch what blanks a device.* *Watching a check fail is
 one run, not a suite* — put the bug back, run the one check that holds it, watch it
 go red, take the bug out.
@@ -456,9 +456,9 @@ only ever one person in a test. So `rls-check` is a second person — it applies
 somebody with no account, to do all 34 things the file says cannot be done.
 Adding a policy means adding the line somebody would use against it.
 
-## The twenty-one rules the gate enforces
+## The twenty-two rules the gate enforces
 
-Twenty-one is how many rules are written below. **The gate is thirty-three checks,
+Twenty-two is how many rules are written below. **The gate is thirty-four checks,
 and the two are not the same number and must not be made to match** — count the
 rules here, and count `FAST` and `SLOW` in `tools/gate.mjs` for the other. One
 rule can take three checks and one check can hold two rules.
@@ -1404,6 +1404,33 @@ Its first version stayed green with the second bug put back, because it called
 asking about whatever screen the check happened to be standing on. **A screen
 is a route AND its argument**, which this file says twice already, and the
 check now stands on the route.
+
+### 22. Nothing is kept on this phone alone
+
+**The app is online, and that is a decision about data rather than about
+screens** ── 「オンラインにしないとデータの改竄し放題だから」. The server is
+where things live; `localStorage` is the copy that runs with no signal. Three
+things are the phone's own and that is the whole list: a language's backup
+file, an exported sheet, and the settings.
+
+**That was writing only, and writing does not stop anything.** The timeline
+was local for a week with every check green, and the languages were local for
+as long again after that; both were found by a person holding a phone.
+「書いていて止めないの本当に何？」 OWNER 2026-09-01.
+
+`store-check` names every key the app writes into `localStorage` — by FILE and
+by the expression, because `k` is a loop variable in two files about two
+different things — and each one is either **on a road to the server**, with the
+function in `www/net.js` that takes it there (and that function has to exist),
+or **the phone's own with a sentence saying why**. Twenty-one have a road,
+seven are the phone's.
+
+**A new key fails until somebody writes down which of the two it is.** That is
+all it holds: whether the road is WALKED is `acct-check` and `again-check`, and
+whether it comes back is theirs too. This one refuses a place to keep somebody's
+work that nobody said how to get off the phone. It fails the other way as well —
+a road named for a key nothing writes any more is a line that outlived what it
+described, which is what `box-check` says a stale baseline becomes.
 
 ### 21. One route is drawn by one function
 
