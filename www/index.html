@@ -3374,9 +3374,15 @@ html[data-script="on"] .gsw{font-family:var(--face-script);letter-spacing:0}
 
 /* ---------- notes ----------
    A notebook page: a heading and the first line of what is under it. */
-.ntlist{display:flex;flex-direction:column;gap:10px}
-.ntrow{display:flex;flex-direction:column;gap:4px;width:100%;text-align:left;padding:14px 16px;
-  border:1px solid var(--line);border-radius:12px;background:var(--pane);color:inherit;font:inherit;cursor:pointer}
+/* NO BOX. 「角丸やめろ」「文字書いて四角で囲ったみたいなボタン全部やめてくれ。
+   ダサすぎる」 -- this was four sides and a corner round every note, which is
+   the shape the rule names. What is left is a line under each row, which is
+   what index.html's own sentence over the field rules asks for
+   「かくまるみたいなのでくくるのやめて欲しい。基本下線だけ」, and the gap goes
+   with the box: rows in one list sit against each other. */
+.ntlist{display:flex;flex-direction:column}
+.ntrow{display:flex;flex-direction:column;gap:4px;width:100%;text-align:left;padding:14px 2px;
+  border:0;border-bottom:1px solid var(--line);background:none;color:inherit;font:inherit;cursor:pointer}
 .ntrow:active{transform:scale(.995)}
 .ntrow .nth{font-size:.95rem;color:var(--tx)}
 .ntrow .ntb{font-size:.88rem;color:var(--txm);line-height:1.6}
