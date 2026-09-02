@@ -99,6 +99,30 @@ async function boot(pre, drive) {
       ob: has('.ob'),
       door: has('[data-do="obSignInApple"]') || has('[data-do="obMailGo"]'),
       draw: has('#gcanv'),
+      /* THE TWO FACES OF THE DOOR, and what is on each. Apple and Google are
+         on BOTH now -- 「作成画面でもアップルもGoogleもおいとけば」OWNER
+         2026-09-02 -- because the id_token grant makes the account when the
+         identity is new, so 「サインイン」 was creating one without saying so
+         and there was no other way in for somebody with only an Apple ID. */
+      faces: (function(){
+        var out = {}, m;
+        for (m = 0; m < 2; m++) {
+          try {
+            OBM.mode = m ? 'up' : 'in';
+            var html = (typeof obFormHTML === 'function') ? obFormHTML(!!m) : '';
+            out[m ? 'up' : 'in'] = {
+              apple: html.indexOf('obSignInApple') >= 0,
+              google: html.indexOf('obSignInGoogle') >= 0,
+              /* the ARGUMENT and not the name: obMailGo also carries the
+                 「already have one / make one」 toggle at the foot of both
+                 faces, so the name alone is true of either. DO() escapes the
+                 quotes, so the word is what there is to look for. */
+              forgot: html.indexOf('forgot') >= 0
+            };
+          } catch (e) { out[m ? 'up' : 'in'] = { err: String(e && e.message) }; }
+        }
+        return out;
+      })(),
       /* The walk's grey, cut around the one lit thing. obPane() in
          www/onboard.js is what draws it; render() adds it last, after the
          app's own screen is on the page, because the hole is MEASURED. */
@@ -140,6 +164,35 @@ const SESS = JSON.stringify({ at: 'not a jwt', rt: 'a refresh token',
   /* 「ログアウトした時はログイン画面から動かさない」 -- the door, and the
      onboarding's own screens are not behind it. */
   if (r.draw) no('finished then signed out: the drawing step is on the screen, not the door');
+}
+
+/* ---- 2b. and both faces of the door carry Apple and Google -------------
+   「アップルとかログインで入れちゃうから、アカウント新規作成じゃなくて
+   アカウントがないならないですって出ないと」「続けるにすればいいんじゃない？
+   同じようにしよう」「作成画面でもアップルもGoogleもおいとけばこれで解決？」
+   OWNER 2026-09-02.
+
+   Supabase's id_token grant makes the account when the identity is new, and
+   there is no switch that says 「sign in only」. So a button that says
+   「サインイン」 and stands on the sign-in face alone was lying twice: it
+   created accounts silently, and it was the only road in for somebody who has
+   only an Apple ID. Every app answers this the same way -- one button on both
+   faces, saying 「続ける」, because which of the two it will be is not known
+   until it is pressed. Email is what the faces differ by: a password is the
+   one thing that can be WRONG. */
+{
+  const r = await boot({ 'lingua.set': JSON.stringify({ done: true }) });
+  const f = r.faces || {};
+  ['in', 'up'].forEach((k) => {
+    const face = f[k] || {};
+    if (face.err) no('the door face "' + k + '" threw: ' + face.err);
+    if (!face.apple) no('the door face "' + k + '" has no Apple button');
+    if (!face.google) no('the door face "' + k + '" has no Google button');
+  });
+  if (f.in && !f.in.forgot) no('the sign-in face lost the forgotten-password way out');
+  if (f.up && f.up.forgot)
+    no('the account-making face offers a forgotten password — there is nothing yet to have forgotten');
+  say('the door: Apple and Google on both faces, and the mail is what they differ by');
 }
 
 /* ---- 3. finished, and signed in ---------------------------------------- */
