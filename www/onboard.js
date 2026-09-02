@@ -624,6 +624,15 @@ function obCanBack(){
      obDoorBack() is the difference: it answers '' for exactly that face. */
   if(obAtDoor()){
     if(obDoorBack()) return true;
+    /* AND OUT OF THE PASSWORD SCREEN INTO THE APP. 「サインインしたらアプリに
+       移動してください」 OWNER 2026-09-02. Both roads reach it with a session
+       already in hand -- the six digits were spent to get one -- so the person
+       standing here is signed in, and a screen of one field and one button
+       that goes nowhere is a person locked OUT of an app they are already
+       inside. It is what netSetPass() failing leaves behind.
+       The password is still asked for; this is the way past a screen that
+       cannot finish, not a way around being asked. */
+    if(OBM.mode==='newpw') return netSignedIn();
     /* and out of the door itself, only where there is somewhere it was
        opened FROM */
     return !!obPending() && OBM.mode!=='who';
@@ -645,6 +654,11 @@ function obBack(){
   if(obAtDoor()){
     var m=obDoorBack();
     if(m){ obMailGo(m); return; }
+    /* Signed in already, so this is the app rather than a step of the walk.
+       obIn() is the one road in and decides everything itself -- the profile,
+       the languages, and whether this is a return to Settings or the end of
+       the onboarding. */
+    if(OBM.mode==='newpw' && netSignedIn()){ obIn(); return; }
     if(obPending()){ obReturn(); return; }
     return;
   }
