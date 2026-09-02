@@ -63,7 +63,30 @@ final class KeyboardViewController: UIInputViewController,
     body?.removeFromSuperview(); body = nil
     bar?.removeFromSuperview();  bar = nil
 
-    guard hasFullAccess else { return show(Say.full()) }
+    /* There is no full-access gate here, and that is deliberate.
+
+       There was one, and it returned before reading anything -- so a person
+       who had not turned Full Access on got a keyboard with NOT ONE KEY on
+       it, which is most people, because Full Access is a switch somebody has
+       to go and find. App Store Review 4.4.1 says a keyboard must "[r]emain
+       functional without full network access and without requiring full
+       access"; this was the shape that guideline is written against.
+
+       Reading the App Group does not need it. Apple's own current page,
+       "Configuring open access for a custom keyboard", says the default
+       sandbox "prevents writing to the containing app's shared group
+       containers (reading is permitted)", and lists among the capabilities of
+       a keyboard WITHOUT open access: "read-only access to the containing
+       app's shared containers". Shared.board() only reads, and the app writes
+       it from the other side, where writing is allowed.
+
+       (The iOS 8 App Extension Programming Guide says "cannot share a
+       container with its containing app". That page is archived and the
+       sentence above supersedes it. It is named here because it is what the
+       gate was built on, and it will be found again.)
+
+       DEVICE UNCONFIRMED. There is no Swift on a Linux runner and no check in
+       this repository can open a keyboard. */
     guard let b = Shared.board() else { return show(Say.draw()) }
     board = b
     if compose == nil, let c = b.conv { compose = Compose(conv: c, ink: b.ink ?? []) }
@@ -90,14 +113,60 @@ final class KeyboardViewController: UIInputViewController,
     paintBar()
   }
 
+  /// Something to say, and a way OFF this keyboard.
+  ///
+  /// The sentence used to be the whole screen, and a keyboard with no keys is
+  /// one somebody cannot get out of. App Store Review 4.4.1: a keyboard must
+  /// "[p]rovide a method for progressing to the next keyboard" -- and § 11 of
+  /// docs/keyboard-extension.md has said 「🌐 キーは必須」 since before this
+  /// file was written. It was on every board the app sends and on neither of
+  /// the two boards this file draws itself.
+  ///
+  /// The globe is the ONLY key here, and that is not something left undone.
+  /// What the person's own letters look like is in the file that could not be
+  /// read; a row of roman keys in their place would be this app putting
+  /// somebody else's alphabet on their keyboard.
+  ///
+  /// needsInputModeSwitchKey for the same reason build() drops the globe: a
+  /// phone that does not want one has its own way off, and Apple hides it
+  /// rather than have it do nothing.
   private func show(_ text: String) {
+    let wrap = UIView()
     let l = UILabel()
     l.text = text
     l.textColor = .secondaryLabel
     l.font = .systemFont(ofSize: 15)
     l.numberOfLines = 0
     l.textAlignment = .center
-    place(l, rows: 2, bar: false, box: 800)
+    l.translatesAutoresizingMaskIntoConstraints = false
+    wrap.addSubview(l)
+
+    guard needsInputModeSwitchKey else {
+      NSLayoutConstraint.activate([
+        l.leadingAnchor.constraint(equalTo: wrap.leadingAnchor, constant: 16),
+        l.trailingAnchor.constraint(equalTo: wrap.trailingAnchor, constant: -16),
+        l.centerYAnchor.constraint(equalTo: wrap.centerYAnchor),
+      ])
+      place(wrap, rows: 2, bar: false, box: 800)
+      return
+    }
+
+    let kb = KeyBoardView(lay: Layer(rows: [[Key(k: "next")]]),
+                          box: 800, drop: [], mark: false)
+    kb.delegate = self
+    kb.translatesAutoresizingMaskIntoConstraints = false
+    wrap.addSubview(kb)
+    NSLayoutConstraint.activate([
+      l.leadingAnchor.constraint(equalTo: wrap.leadingAnchor, constant: 16),
+      l.trailingAnchor.constraint(equalTo: wrap.trailingAnchor, constant: -16),
+      l.topAnchor.constraint(equalTo: wrap.topAnchor),
+      l.bottomAnchor.constraint(equalTo: kb.topAnchor),
+      kb.centerXAnchor.constraint(equalTo: wrap.centerXAnchor),
+      kb.widthAnchor.constraint(equalTo: wrap.widthAnchor, multiplier: 0.34),
+      kb.bottomAnchor.constraint(equalTo: wrap.bottomAnchor),
+      kb.heightAnchor.constraint(equalToConstant: rowHeight),
+    ])
+    place(wrap, rows: 3, bar: false, box: 800)
   }
 
   /// The system gives an input view no height of its own, so it has to be
