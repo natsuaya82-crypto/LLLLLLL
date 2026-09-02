@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Lingua store shot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Cormorant+Garamond:ital,wght@0,300;0,500;1,300;1,500&family=Noto+Sans+JP:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* ---------------------------------------------------------------------------
+   The board an App Store picture is made on: the words at the top, the phone
+   under them, running off the bottom edge. Same black, same gold, same two
+   faces as the film -- the product page and the trailer have to look like one
+   thing rather than two jobs.
+   --------------------------------------------------------------------------- */
+:root{
+  --bg:#0a0a0e; --tx:#ece9e3; --txs:#a9a6b3; --gold:#c9a86a;
+  --caps:'Cinzel',Georgia,serif;
+  --ital:'Cormorant Garamond',Georgia,serif;
+  --ui:-apple-system,BlinkMacSystemFont,system-ui,'Noto Sans JP',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{overflow:hidden;background:var(--bg);color:var(--tx)}
+body{font-family:var(--ui);-webkit-font-smoothing:antialiased}
+/* the ground: one soft pool of light behind the phone */
+#ground{position:absolute;inset:0;background:
+  radial-gradient(90% 46% at 50% 42%, rgba(201,168,106,.085), transparent 68%),
+  var(--bg)}
+/* the phone. The frame is a picture of a phone, so it has the corners a
+   phone has -- rule 18 is about www/index.html, which is the app. */
+#phone{position:absolute;left:0;top:0;width:390px;height:844px;transform-origin:0 0}
+#shell{position:absolute;inset:-13px;border-radius:57px;
+  background:linear-gradient(160deg,#2f2c25,#141419 44%,#26231d);
+  box-shadow:0 34px 90px rgba(0,0,0,.7), 0 0 0 1.2px rgba(201,168,106,.30),
+             inset 0 0 0 1px rgba(255,255,255,.06)}
+#screen{position:absolute;inset:0;border-radius:46px;overflow:hidden;background:#0a0a0e}
+#ph{width:390px;height:844px;border:0;display:block}
+#cap{position:absolute;left:0;right:0;top:0;text-align:center}
+#kick{font-family:var(--caps);letter-spacing:.34em;color:var(--gold);
+  text-transform:uppercase}
+#head{font-family:var(--ital);font-weight:300;line-height:1.06}
+#head em{font-style:italic;color:var(--gold)}
+</style>
+</head>
+<body>
+<div id="ground"></div>
+<div id="phone"><div id="shell"></div><div id="screen"><iframe id="ph" src="/" scrolling="no"></iframe></div></div>
+<div id="cap"><div id="kick"></div><div id="head"></div></div>
+</body>
+</html>
