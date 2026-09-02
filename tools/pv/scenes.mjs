@@ -842,17 +842,36 @@ export function SCENES(F){
      the field -- one per drawn letter, which is the only thing on a phone
      that tells this alphabet's `a` from the system QWERTY's -- and the
      letter that lands is the letter of the key the thumb is on, found
-     through the `data-lt` every read-only letter key carries. The key goes
-     down under the finger and comes back up, the way a key does.
+     through the `data-lt` every read-only letter key carries.
+
+     AND IT MEASURES WHAT THE PHONE'S MEASURES. The app's board is its own
+     drawing -- index.html says so over `--kh`, "not what goes to the phone"
+     -- so the film puts the EXTENSION's numbers on it: the key's corner, the
+     3pt between keys, and a row that is 0.1385 of the phone's short side.
+     All three are read out of the Swift by tools/pv.mjs (`kbm`) rather than
+     written down here, because one number in two languages is the thing that
+     drifts. The colours are the two the extension asks UIKit for by name --
+     a letter key `secondarySystemBackground`, everything else
+     `tertiarySystemFill`, and `systemFill` while a key is held -- in their
+     dark-mode values, which is the one place the film has to say a number
+     iOS would have said.
      ===================================================================== */
   const KBUP = 151;   /* the board's foot, on the bottom edge of the frame */
   const KBH0 = 330;   /* how far it has to travel to be off the screen */
-  const kbOn = (stage) => stage.app(function(up){
+  const kbOn = (stage) => stage.app(function(o){
     var d = document.getElementById('pvkb');
     if (!d){ d = document.createElement('div'); d.id = 'pvkb'; document.body.appendChild(d); }
-    d.style.cssText = 'position:fixed;left:0;right:0;bottom:' + up + 'px;z-index:60;' +
-      'background:var(--bg);padding:12px 20px 14px;will-change:transform';
-    d.innerHTML = kbHTML(null, true);
+    d.style.cssText = 'position:fixed;left:0;right:0;bottom:' + o.up + 'px;z-index:60;' +
+      'background:var(--bg);padding:' + o.gap + 'px ' + o.gap + 'px ' + (o.gap + 6) +
+      'px;will-change:transform';
+    d.innerHTML =
+      '<style>' +
+      '#pvkb .kb{margin:0;gap:' + o.gap + 'px;--kh:' + o.row + 'px;--kbrg:' + o.gap + 'px}' +
+      '#pvkb .kbrow{gap:' + o.gap + 'px}' +
+      '#pvkb .kbk{border:0;border-radius:' + o.radius + 'px;background:#1c1c1e}' +
+      '#pvkb .kbk.fn{background:rgba(118,118,128,.24)}' +
+      '#pvkb .kbk.gap{background:none}' +
+      '</style>' + kbHTML(null, true);
     /* the line, and the KEY each of its letters is on */
     var full = 'venar kel', lts = ltPuaOrder(), s = '', els = [], keys = [], i, j, L, e, r;
     var wide = null, ws = 0, fns = d.querySelectorAll('.kbk.fn');
@@ -872,7 +891,7 @@ export function SCENES(F){
       keys.push(r ? { x: r.left + r.width / 2, y: r.top + r.height / 2 } : null);
     }
     window.__pvS = s; window.__pvKeys = keys; window.__pvEls = els;
-  }, KBUP);
+  }, { up: KBUP, gap: F.kbm.gap, row: F.kbm.row, radius: F.kbm.radius });
   const kbOff = (stage) => stage.app(function(){
     var d = document.getElementById('pvkb');
     if (d) d.parentNode.removeChild(d);
@@ -889,7 +908,11 @@ export function SCENES(F){
     for (i = 0; i < els.length; i++){
       e = els[i];
       if (!e) continue;
-      if (i === o.down){ e.style.background = 'rgba(201,168,106,.42)'; e.style.transform = 'scale(.92)'; }
+      /* `systemFill` in the dark, which is what KeyBoardView.hold() puts on
+         a key under a finger. Not gold and not smaller: the extension does
+         neither, and a press the phone does not do is the one thing in this
+         shot that would read as a mock-up. */
+      if (i === o.down) e.style.background = 'rgba(120,120,128,.36)';
       else if (e.style.background){ e.style.background = ''; e.style.transform = ''; }
     }
   }, o);

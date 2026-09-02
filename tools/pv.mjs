@@ -235,8 +235,32 @@ const stage = {
         JSON.stringify(arg === undefined ? null : arg) + ')'),
 };
 
+/* ---- what the keyboard on the phone actually measures ---------------------
+   The typing film stands a keyboard at the foot of the screen, and the one
+   on the phone is drawn by iOS from ios/App/LinguaKeyboard -- so its numbers
+   are READ OUT OF THE SWIFT rather than guessed at here. Same reason
+   tools/kb-check.mjs reads three of its own out of KeyboardViewController:
+   one number in two languages is the thing that drifts.
+
+   The app's own board is deliberately not these numbers -- index.html says
+   so over `--kh`: "this screen's own drawing of a key and is not what goes
+   to the phone". The film wants the phone's. */
+const swiftNum = (f, re) => {
+  const src = fs.readFileSync(path.join(ROOT, 'ios/App/LinguaKeyboard', f), 'utf8');
+  const m = src.match(re);
+  if (!m) throw new Error('not in ' + f + ': ' + re);
+  return Number(m[1]);
+};
+const KBM = {
+  radius: swiftNum('KeyBoardView.swift', /layer\.cornerRadius\s*=\s*([\d.]+)/),
+  gap:    swiftNum('KeyBoardView.swift', /let gap:\s*CGFloat\s*=\s*([\d.]+)/),
+  /* a row is a share of the phone's SHORT side, which is 390 here */
+  row: Math.round(390 * swiftNum('KeyboardViewController.swift',
+                                 /rowPerWidth:\s*CGFloat\s*=\s*([\d.]+)/) * 10) / 10
+};
+
 /* ---- the film ------------------------------------------------------------ */
-const film = SCENES({ W, H, portrait, bar: BAR, vo: VO, cut });
+const film = SCENES({ W, H, portrait, bar: BAR, vo: VO, cut, kbm: KBM });
 const list = only ? film.filter((s) => s.name === only) : film;
 if (!list.length){ console.error('no scene called ' + only); process.exit(2); }
 
