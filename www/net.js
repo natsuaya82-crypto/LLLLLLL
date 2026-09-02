@@ -50,14 +50,12 @@
    the door now, before anything can be made.
 
    This used to end "and attaching one later keeps the same uid rather than
-   starting again." That was never true here: netSignUp() below posts to
-   /auth/v1/signup with no session token on it, which asks Supabase for a NEW
-   user rather than for an identity on the one already signed in. Nothing was
-   ever lost by it -- the app has never been released and no anonymous account
-   has existed outside a test build -- and there is nothing left to fix now
-   that none is made. It is written down rather than deleted because the
-   sentence was a description of a mechanism nobody had built, and those are
-   the ones that get built on.
+   starting again." That was never true while the mail door posted to
+   /auth/v1/signup, which asks Supabase for a NEW user rather than for a way
+   into the one that is already there. It is netMailOtp() below now
+   -- 「1アドレス1アカウント」 OWNER 2026-09-02 -- so an address that has an
+   account lands on it whichever road it comes by. Nothing was ever lost by
+   the old shape: the app has never been released.
    ========================================================================= */
 
 /* =========================================================================
@@ -422,16 +420,32 @@ function netResume(ok, bad){
             bad(d, s);
           });
 }
-function netSignUp(email, pass, ok, bad){
-  netPost('/auth/v1/signup', {email:email, password:pass}, null, ok, bad);
-}
-/* The same six digits, sent again. Supabase's own endpoint rather than
-   calling signup twice: signup with a password that is now empty (obMailUp()
-   clears it the moment the code screen opens) is a different request, and one
-   that can answer 「already registered」 to the person who is standing there
-   waiting for the mail it would have sent. */
-function netResend(email, ok, bad){
-  netPost('/auth/v1/resend', {type:'signup', email:email}, null, ok, bad);
+/* SIX DIGITS TO AN ADDRESS, AND THE ADDRESS IS THE ACCOUNT.
+   -------------------------------------------------------------------------
+   「1アドレス1アカウント」「Googleでも同じアカウントならメアドで入っても同じ
+   アカウントでログインさせればいいやろ」 OWNER 2026-09-02.
+
+   This replaces /auth/v1/signup on the account-making face. The two are not
+   two ways of doing one thing:
+
+     signup  makes a NEW user. Always. Supabase has no switch that says 「and
+             if this address already has an account, use that one」, so
+             somebody who came in with Google and later typed the same address
+             here got a second account, six digits and all -- which the owner
+             found by doing it.
+     otp     looks the address up. There already, and this signs them into it;
+             not there, and `create_user` makes it. One road, one account,
+             whichever way they first came in.
+
+   OAuth to OAuth was never the broken direction: Supabase links a Google and
+   an Apple identity carrying the same VERIFIED address by itself. The mail
+   road was the one that could not, and this is it.
+
+   It is also what the owner asked for on the same day in a different sentence
+   -- 「メアドだけ、アカウント作成で」 -- and the two turn out to be one
+   change: with no password to set, there is nothing for signup to be for. */
+function netMailOtp(email, ok, bad){
+  netPost('/auth/v1/otp', {email:email, create_user:true}, null, ok, bad);
 }
 function netSignIn(email, pass, ok, bad){
   netPost('/auth/v1/token?grant_type=password',
@@ -442,8 +456,11 @@ function netSignIn(email, pass, ok, bad){
    there is nowhere for it to land: this is a Capacitor app with no web page
    behind it, so the default confirmation URL opens nothing on the tester's
    phone. A code goes back to the screen that asked for it. */
+/* `email` rather than `signup`, because the digits come out of netMailOtp()
+   now and not out of a signup. It is the type that covers both, so a code
+   already in somebody's mail from the old road still works. */
 function netVerify(email, code, ok, bad){
-  netPost('/auth/v1/verify', {type:'signup', email:email, token:code}, null,
+  netPost('/auth/v1/verify', {type:'email', email:email, token:code}, null,
           function(d){ if(netTook(d)) ok(d); else bad(d, 0, 'token ≠'); }, bad);
 }
 function netRecover(email, ok, bad){

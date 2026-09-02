@@ -1001,14 +1001,26 @@ function obMailIn(){
   OBM.busy=true; OBM.msg=''; render();
   netSignIn(OBM.em, OBM.pw, obIn, obNo);
 }
+/* THE ADDRESS IS THE ACCOUNT. 「1アドレス1アカウント」「Googleでも同じアカウント
+   ならメアドで入っても同じアカウントでログインさせればいいやろ」 OWNER
+   2026-09-02.
+
+   This asked Supabase for a NEW user and got one every time -- so somebody who
+   had come in with Google and later typed the same address here ended up with
+   two accounts, two languages and two of whatever they had paid for. It asks
+   for six digits to that address now: already an account, and this is a way
+   into it; not one, and it is made. www/net.js § netMailOtp() has the rest.
+
+   No password, which is the same day's 「メアドだけ、アカウント作成で」 and
+   not a second decision: the digits are what proves the address, and a
+   password is something to add later from Settings if it is wanted at all. */
 function obMailUp(){
   if(OBM.busy || !obMailAsk()) return;
   OBM.busy=true; OBM.msg=''; render();
-  netSignUp(OBM.em, OBM.pw, function(){
-    /* Confirmation is on, so this did not sign anybody in: it sent six digits
-       to an address that may have a typo in it. The typo is the whole reason
-       confirmation is on -- an address nobody can read is an account nobody
-       can recover, months later, when the password is what they forgot. */
+  netMailOtp(OBM.em, function(){
+    /* Nobody is signed in yet: six digits went to an address that may have a
+       typo in it. The typo is the whole reason the digits exist -- an address
+       nobody can read is an account nobody can get back into. */
     OBM.busy=false; OBM.pw=''; obMailGo('code');
   }, obNo);
 }
@@ -1033,7 +1045,7 @@ function obMailAgain(){
   OBM.busy=true; OBM.msg=''; render();
   function done(){ OBM.busy=false; OBM.msg=t('ob.mail.sent'); render(); }
   if(OBM.mode==='reset') netRecover(OBM.em, done, obNo);
-  else netResend(OBM.em, done, obNo);
+  else netMailOtp(OBM.em, done, obNo);
 }
 /* Asking for a reset used to END here: the request went, the screen said
    "sent", and there was nowhere to go with what arrived. The mail carried a
@@ -1116,8 +1128,15 @@ function obFormHTML(up){
   return '<div class="mid obform">'+
     obCrestHTML()+
     obMailField('ob-em', 'em', 'email', 'username', 'ob.mail.em.ph')+
-    obMailField('ob-pw', 'pw', 'password',
-                (up? 'new-password' : 'current-password'), 'ob.mail.pw.ph')+
+    /* THE ADDRESS AND NOTHING ELSE, on the face where an account is made.
+       「メアドだけ、アカウント作成で」 OWNER 2026-09-02. Six digits go to it
+       and the digits are what proves it; there is nothing for a password to
+       do here, and asking for one is what made this face a SIGNUP -- which is
+       the request that cannot land on an account somebody already has.
+       Signing in still has one, because that is the face where somebody who
+       set a password uses it. */
+    (up? '' : obMailField('ob-pw', 'pw', 'password',
+                          'current-password', 'ob.mail.pw.ph'))+
     (OBM.msg? '<div class="obmsg">'+esc(OBM.msg)+'</div>' : '')+
     '<button class="btn"' + DO(up? 'obMailUp' : 'obMailIn') + (OBM.busy? ' disabled':'') + '>'+
       t(OBM.busy? 'ob.mail.wait' : (up? 'ob.mail.up' : 'ob.mail.in'))+'</button>'+
