@@ -187,6 +187,18 @@ public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
       if st == errSecSuccess, !held.isEmpty, Self.best(seen, held) != seen {
         return held
       }
+      /* AND A READ THAT FAILED IS NOT WRITTEN OVER EITHER. Not getting a vote
+         was only half of it: every other status fell straight through to the
+         write below, and `seen` is `free` whenever the entitlement list gave
+         nothing -- so a launch that could not open the Keychain put `free` on
+         top of the plan it had just failed to read, in the one place the plan
+         LIVES. `errSecItemNotFound` is 「there is nothing there」 and IS an
+         answer, which is the line LinguaPlan.inject() already draws; every
+         other status is 「could not read」 and nothing is written for it.
+         Returning `seen` is safe on its own -- www/store.js puts it through
+         planBest() against what is already on the screen, so it can raise
+         what is shown and never lower it. */
+      if st != errSecSuccess && st != errSecItemNotFound { return seen }
     }
     LinguaPlanPlugin.set(seen)
     return seen

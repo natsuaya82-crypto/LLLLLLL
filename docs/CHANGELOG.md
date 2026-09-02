@@ -15,6 +15,31 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-02 読めなかった Keychain は、もう上書きされません
+
+**`writeDown()` が、Keychain を読めなかったときにも書いていました。**守りは
+「読めた」（`errSecSuccess`）ときにしか効かず、それ以外の状態は比較を素通りして
+そのまま書き込みへ落ちていました。書く値は `seen` ──
+`Transaction.currentEntitlements` が何も返さなければ `free` です。**払っている
+人の段が、それを読めなかった起動に上書きされる**形でした。
+
+`errSecSuccess` でも `errSecItemNotFound` でもないときは、**何も書きません。**
+`errSecItemNotFound` は「そこに何も無い」で、これは答えです。
+`LinguaPlan.inject()` が既に引いている線と同じ線を、こちら側にも引きました。
+
+**保存されているものは一バイトも動きません。**Keychain への書き込みが一つ
+減るだけで、単語にも文字にも触っていません。返り値は `seen` のままですが、
+`www/store.js` の `storeTook()` が `planBest()` を通すので、画面の段はこれで
+下がりません。
+
+**通るのは前景の道だけ**（`current` / `restore` / `manage` / `buy`）。確率は
+低い代わりに、当たると Keychain ── プランが住んでいる場所 ── が書き換わります。
+
+**実機未確認。Swift は Linux でコンパイルできず、`npm test` は `.swift` を一行
+も読みません。**`plan-check` に足した主張はソースを読む正規表現で、文字列がある
+ことしか言っていません ── 落ちたときに何が起きるかは測っていません。
+
+
 ### 2026-09-01 実機からの指摘、まとめて
 
 **ポップのボタンが一つも効いていませんでした。**`#pop` は `#sbg` の中にあり、

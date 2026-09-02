@@ -1048,6 +1048,13 @@ say(/if\s*!mayLower/.test(STORE) && /best\(seen,\s*held\)\s*!=\s*seen/.test(STOR
 say(/st\s*==\s*errSecSuccess/.test(STORE),
     'and only a Keychain that ANSWERED gets a vote — a read that failed says ' +
     'nothing about what is there');
+/* Not getting a vote was only half of it. The other half fell through to the
+   write, and what it wrote was `free` whenever the entitlement list gave
+   nothing. Read, not run: this only says the line is in the source. */
+say(/st\s*!=\s*errSecSuccess\s*&&\s*st\s*!=\s*errSecItemNotFound/.test(STORE),
+    'and a read that FAILED is not written over either — the same line ' +
+    'LinguaPlan.inject() draws, with 「there is nothing there」 the one other ' +
+    'status that counts as an answer');
 /* And the Keychain's own half, which the browser above cannot see either:
    the value and the status are two facts, and the injection carries both. */
 say(/func readPlan\(\)\s*->\s*\(String,\s*OSStatus\)/.test(KEYC),
