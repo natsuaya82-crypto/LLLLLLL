@@ -226,7 +226,10 @@ const r = await pg.evaluate(async ({ s, sid }) => {
   out.stillTheirs = localStorage.getItem(langKeyOf(sid, 'letters')) === THEIRS.letters.body;
   out.syncRefused = await new Promise(function(f){
     var wasId = langId;
-    LANGS[sid] = LANGS[sid] || { name:'Shango', mine:false };
+    /* uid, the way langSeenAdd() puts one on: a language with no stamp
+       belongs to nobody once SET.done is true, so dlCount() would not see it
+       and the ceiling this claim is about would never be reached. */
+    LANGS[sid] = LANGS[sid] || { name:'Shango', mine:false, uid:'u' };
     langId = sid;
     var ran = [], oldPut = netSlicePut, k, snap = {};
     for (k = 0; k < SLICES.length; k++)
@@ -280,7 +283,8 @@ const r = await pg.evaluate(async ({ s, sid }) => {
   var wasId = langId, wasPlan = SET.plan;
   SET.plan = 'pro'; save();
   var b1 = langMint(), b2 = langMint();
-  ['zc1','zc2','zc3'].forEach(function(z){ LANGS[z] = { name:z, mine:false, sid:z }; });
+  ['zc1','zc2','zc3'].forEach(function(z){
+    LANGS[z] = { name:z, mine:false, sid:z, uid:'u' }; });
   langStore();
   langId = b2;                                  /* the SECOND one is open */
   /* Every key that was there, by NAME. Not the count: an ordinary save() adds

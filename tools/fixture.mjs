@@ -72,6 +72,19 @@ export function seed(){
      faces that set it is what keeps shot.mjs's render() from photographing
      the screen a face tidied back to. */
   DAY = null;
+  /* AND THE LANGUAGE THIS FIXTURE IS STANDING IN BELONGS TO THAT SESSION.
+     core.js mints the first language at load, before net.js exists, so it
+     carries no `uid` -- and on a real phone netLangRow() puts one on the
+     first time it goes up. Nothing here goes up, so without this line the
+     walks run inside a language that belongs to NOBODY: langOwned() answers
+     false once SET.done is true, langCount() goes to 0, and every screen
+     above a language disappears. That is what made act, plan and dl go red
+     together on 2026-09-02, and it was read as the rule being wrong rather
+     than as the fixture being a phone that had never once synced. */
+  for (var __k in LANGS)
+    if (Object.prototype.hasOwnProperty.call(LANGS, __k) && !LANGS[__k].uid)
+      LANGS[__k].uid = 'u';
+  langStore();
   /* anon:false is the half that matters. There is a session from the first
      launch now whether or not anybody has said who they are, so a fixture
      that only set `rt` would be walking the app as somebody with no name --

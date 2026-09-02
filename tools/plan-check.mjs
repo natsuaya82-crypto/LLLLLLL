@@ -226,7 +226,11 @@ const r = await pg.evaluate(({ s }) => {
   saveKb();
   out.kbHere = kbCount();                        /* 1, in the open language */
   out.kbRoomHere = kbRoomKb();                   /* 1 + 1 < 4 -> yes */
-  LANGS['l_other'] = { nm: 'Other' };
+  /* uid, for the reason tools/fixture.mjs stamps its own: a language with
+     no uid belongs to nobody once SET.done is true (langOwned), so an
+     unstamped one seeded here is not in this person's ceiling at all --
+     which is the thing this claim is about. */
+  LANGS['l_other'] = { nm: 'Other', uid: 'u' };
   localStorage.setItem(langKeyOf('l_other', 'kb'), JSON.stringify(
     { kbs: [{ nm:'', pat:'qwerty', lay: kbFixed().lay },
             { nm:'', pat:'qwerty', lay: kbFixed().lay }], at: 0 }));

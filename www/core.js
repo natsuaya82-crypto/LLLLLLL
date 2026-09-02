@@ -233,11 +233,20 @@ function langMint(){
    The NAME is only filled in if there is not one already: the row is made
    the first time a chapter is taken and a later download must not rename a
    language somebody is reading. */
+/* AND IT CARRIES WHOEVER TOOK IT. A downloaded language is somebody else's
+   language sitting in YOUR index -- `mine` false -- and dlCount() asks
+   langOwned() to know whose index it is sitting in. Without the stamp it
+   belongs to nobody, so it counts against no ceiling: a free plan could take
+   as many chapters as it liked and the number at the foot of the list would
+   go on saying nought. langNew() puts the same three lines on a language
+   somebody MAKES; this is the reading side of it. */
 function langSeenAdd(sid, name){
   var id=String(sid||'');
   if(!id) return '';
   if(!LANGS[id]) LANGS[id]={ name:String(name||''), mine:false, sid:id };
   else if(name && !LANGS[id].name) LANGS[id].name=String(name);
+  if(!LANGS[id].uid && typeof SESS!=='undefined' && SESS && SESS.uid)
+    LANGS[id].uid=String(SESS.uid);
   langStore();
   return id;
 }
@@ -781,32 +790,24 @@ function langOwned(id){
   if(!L) return false;
   me=(typeof SESS!=='undefined' && SESS && SESS.uid)? String(SESS.uid) : '';
   if(!me) return true;
-  /* AN UNSTAMPED LANGUAGE, and the two ways of being wrong about it are not
-     the same size.
+  /* AN UNSTAMPED LANGUAGE IS PICKED UP AT THE ONBOARDING DOOR AND NOWHERE
+     ELSE, and that is 2026-09-02's decision rather than a reading of it.
 
-     Reading it as 「whoever is asking」 hands A's work to B: a language A made
-     on this phone and never once put up became B's the moment B signed in.
-     That is what 2e628f5 closed.
+     It was loosened for a few hours on the evening of the 2nd, to 「this
+     person's unless another account has been on this phone」, because the
+     gate went red in three places when the strict rule landed. That was the
+     FIXTURE's language having no stamp, not a real phone -- and the loose
+     version is wrong where it matters: with two accounts on one phone,
+     SET.uidWas is whoever arrived LAST, so an unstamped language A made
+     became B's the moment B signed in. That is the sentence the decision
+     forbids, arriving by another road. acct-check 19 and 35 said so.
 
-     Reading it as 「nobody's」 loses it in the other direction, and that one
-     lands on EVERY phone rather than on a phone two people share: the stamp
-     only started going on today, so every language made before that and
-     never uploaded -- a phone that has been in a tunnel, an upload that
-     failed -- would vanish from the list of the person who made it. The gate
-     said so out loud: with the fixture's one language unstamped, langCount()
-     went to 0 and act, plan and dl all went red at once.
-
-     So the question is not 「is it stamped」 but 「has anybody ELSE been on
-     this phone」. SET.uidWas is the last account langForAcct() saw. Never one
-     -- or the same one -- and an unstamped language is this person's, which
-     is every phone that has only ever had one account on it. A different one,
-     and it is not offered: it stays in the index, in storage and in the
-     backup, and www/home.js counts it among the ones it is not showing.
-
-     Nothing is written onto the language, deliberately. Stamping it here
-     would make a guess permanent; leaving it means A signing back in gets
-     everything back, because SET.uidWas moves with whoever is here. */
-  if(!L.uid) return !SET.done || !SET.uidWas || String(SET.uidWas)===me;
+     What protects a real phone is not this line: it is that the stamp goes on
+     at every place a language is MADE, so an unstamped one is a legacy state
+     rather than an ordinary one. langNew() does it, langForAcct() does it,
+     netLangsDown() does it. langFirst() cannot -- there is no account yet --
+     and the door is where what it made gets one. */
+  if(!L.uid) return !SET.done;
   return String(L.uid)===me;
 }
 function langAcct(id){
@@ -925,12 +926,6 @@ function dlStop(){
 var LANG_WAIT=false;
 function langForAcct(mayMint){
   var id;
-  /* WHO THIS PHONE BELONGED TO LAST, recorded here because this is the one
-     place a session arriving is turned into a language on the screen.
-     langOwned() reads it: see there for why an unstamped language needs it. */
-  if(typeof SESS!=='undefined' && SESS && SESS.uid && SET.uidWas!==String(SESS.uid)){
-    SET.uidWas=String(SESS.uid); save();
-  }
   if(langAcct(langId)){ LANG_WAIT=false; return false; }
   for(id in LANGS)
     if(Object.prototype.hasOwnProperty.call(LANGS, id) && langAcct(id)){
