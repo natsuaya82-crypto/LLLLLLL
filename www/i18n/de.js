@@ -321,6 +321,8 @@ defLang('de', (function(){
       "ob.mail.up" : "Konto erstellen",
       "ob.mail.verify" : "Bestätigen",
       "ob.mail.send" : "Senden",
+      "ob.mail.again" : "Erneut senden",
+      "ob.mail.sent" : "Gesendet.",
       "ob.mail.h.reset" : "Neues Passwort wählen",
       "ob.mail.newpw.ph" : "Neues Passwort",
       "ob.mail.reset" : "Speichern",

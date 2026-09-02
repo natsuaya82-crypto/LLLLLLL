@@ -333,6 +333,8 @@ defLang('it', (function(){
       "ob.mail.up" : "Crea account",
       "ob.mail.verify" : "Conferma",
       "ob.mail.send" : "Invia",
+      "ob.mail.again" : "Invia di nuovo",
+      "ob.mail.sent" : "Inviato.",
       "ob.mail.h.reset" : "Scegli una nuova password",
       "ob.mail.newpw.ph" : "Nuova password",
       "ob.mail.reset" : "Salva",

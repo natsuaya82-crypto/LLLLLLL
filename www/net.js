@@ -147,11 +147,70 @@ function netMail(){
   return (c && String(c.email||'')) || '';
 }
 
+/* ---- the token, kept alive ----------------------------------------------
+   THE ACCESS TOKEN LASTS AN HOUR AND THE APP DOES NOT CLOSE.
+
+   netResume() is called from one place -- boot.js, on the launch -- and for
+   as long as that was the only place, an app left open for an hour went on
+   sending a dead token to everything. Nothing threw. Every write answered
+   401 and every 401 went where that write's `bad` went, which for a slice
+   (`netSlicePut`), a plan (`netPlanUp`) and a draft was nowhere at all. So a
+   person who opened Lingua in the morning and saved a word in the afternoon
+   saved it to the phone and to nothing else, and was told it had gone up.
+   「保存押せば起動されないの？」 OWNER 2026-09-02 -- no, it did not: saving
+   sends the token that is in hand and there was nothing that ever replaced it.
+
+   So a 401 refreshes and goes again. Three conditions, and each one is what
+   keeps this from becoming its own kind of fault:
+
+   ONLY THE SESSION'S OWN TOKEN. A request sent with the publishable key, or
+   with a token a caller chose deliberately, is not this person's session
+   expiring -- it is a refusal that means what it says. `mine` is decided at
+   SEND time, because SESS.at may be replaced by another request's refresh
+   while this one is in the air.
+
+   ONCE. A second 401 after a successful refresh is the server refusing the
+   person, not the clock, and going round again would be a loop that never
+   reaches the `bad` somebody is waiting on.
+
+   ONE REFRESH AT A TIME. Twenty slices go up together on a launch; twenty
+   refreshes would spend the refresh token twenty times over and nineteen of
+   them would race. The first one refreshes, the rest wait in RFQ and are all
+   told the same answer. ES5, so this is an array and callbacks rather than a
+   Promise. */
+var RFQ=null;
+function netFresh(then){
+  if(!netSignedIn()){ then(false); return; }
+  if(RFQ){ RFQ[RFQ.length]=then; return; }
+  RFQ=[then];
+  netResume(function(){ netFreshDone(true); },
+            function(){ netFreshDone(false); });
+}
+function netFreshDone(got){
+  var q=RFQ, i;
+  /* Emptied BEFORE anybody is told, so a callback that sends again starts a
+     new refresh rather than joining one that has already finished. */
+  RFQ=null;
+  for(i=0;i<q.length;i++) q[i](got);
+}
+
 /* ---- the wire ----------------------------------------------------------
    XHR rather than fetch: this has to run on a WKWebView old enough that the
    rest of the file is ES5, and a Promise is banned three lines up. Both
-   callbacks are always called, so nothing is left waiting on a spinner. */
-function netSend(method, path, body, tok, ok, bad){
+   callbacks are always called, so nothing is left waiting on a spinner.
+
+   `up` asks for an upsert (`resolution=merge-duplicates`): the phone does not
+   have to know whether this row has ever been up. It is a header rather than
+   a second function because two hand-rolled XHRs down this file were exactly
+   netSend() plus that one line, and both of them were therefore outside the
+   refresh above -- which is where the fault lived. */
+function netSend(method, path, body, tok, ok, bad, up){
+  netSend1(method, path, body, tok, ok, bad, up, true);
+}
+function netSend1(method, path, body, tok, ok, bad, up, may){
+  /* Whether this went out as the person, asked now rather than when the
+     answer comes back. */
+  var mine=!!(tok && SESS && tok===SESS.at);
   var x=new XMLHttpRequest();
   x.open(method, SB_URL+path, true);
   x.setRequestHeader('apikey', SB_KEY);
@@ -169,13 +228,33 @@ function netSend(method, path, body, tok, ok, bad){
      a draft the server has never seen turns into an insert -- and a write
      that changed nothing must never read as a write that worked. */
   if((method==='POST' || method==='PATCH') && path.indexOf('/rest/v1/')===0)
-    x.setRequestHeader('Prefer', 'return=representation');
+    x.setRequestHeader('Prefer',
+      'return=representation'+(up? ', resolution=merge-duplicates' : ''));
+  else if(up) x.setRequestHeader('Prefer', 'resolution=merge-duplicates');
   x.onreadystatechange=function(){
     if(x.readyState!==4) return;
     var d=null;
     try{ d=JSON.parse(x.responseText||'null'); }catch(e){}
-    if(x.status>=200 && x.status<300) ok(d);
-    else bad(d, x.status, netTag(path)+' '+x.status);
+    if(x.status>=200 && x.status<300){ ok(d); return; }
+    /* An hour has gone by with the app open. Everything about this request is
+       still right except the token on it, so it goes again with a live one.
+       netFresh() answers false for a refresh token the server no longer
+       accepts -- and netResume() has already signed the phone out by then, so
+       what reaches `bad` is a 401 on a session that has really ended. */
+    if(x.status===401 && may && mine){
+      if(netSignedIn() && SESS.at!==tok){
+        /* Somebody else's refresh landed while this was in the air. There is
+           nothing to ask for; go again with what is already in hand. */
+        netSend1(method, path, body, SESS.at, ok, bad, up, false);
+        return;
+      }
+      netFresh(function(got){
+        if(!got){ bad(d, 401, netTag(path)+' 401'); return; }
+        netSend1(method, path, body, SESS.at, ok, bad, up, false);
+      });
+      return;
+    }
+    bad(d, x.status, netTag(path)+' '+x.status);
   };
   x.onerror=function(){ bad(null, 0, netTag(path)+' 0'); };
   x.send(body? JSON.stringify(body) : null);
@@ -345,6 +424,14 @@ function netResume(ok, bad){
 }
 function netSignUp(email, pass, ok, bad){
   netPost('/auth/v1/signup', {email:email, password:pass}, null, ok, bad);
+}
+/* The same six digits, sent again. Supabase's own endpoint rather than
+   calling signup twice: signup with a password that is now empty (obMailUp()
+   clears it the moment the code screen opens) is a different request, and one
+   that can answer 「already registered」 to the person who is standing there
+   waiting for the mail it would have sent. */
+function netResend(email, ok, bad){
+  netPost('/auth/v1/resend', {type:'signup', email:email}, null, ok, bad);
 }
 function netSignIn(email, pass, ok, bad){
   netPost('/auth/v1/token?grant_type=password',
@@ -574,20 +661,16 @@ function netIdToken(provider, token, nonce, ok, bad){
    none of them is written yet. Nothing here should be read as more than
    「the plan lives on the account now」. */
 function netPlanUp(id){
-  var x;
   if(!netSignedIn()) return;
-  x=new XMLHttpRequest();
-  x.open('POST', SB_URL+'/rest/v1/plan', true);
-  x.setRequestHeader('apikey', SB_KEY);
-  x.setRequestHeader('Content-Type', 'application/json');
-  x.setRequestHeader('Authorization', 'Bearer '+SESS.at);
-  /* The same upsert netSlicePut() uses, and for the same reason: the phone
-     does not have to know whether this account has ever had a row. */
-  x.setRequestHeader('Prefer', 'resolution=merge-duplicates');
-  x.onreadystatechange=function(){};
-  x.onerror=function(){};
-  x.send(JSON.stringify({id:SESS.uid, plan:String(id||'free'),
-                         at:(new Date()).toISOString()}));
+  /* Through netSend() like everything else. It used to open its own
+     XMLHttpRequest, which differed from netSend() by one header and by being
+     outside the token renewal -- so on a launch, where this is sent before
+     the refresh has come back, the 401 went to an empty function and the plan
+     never moved. That is half of how a cancelled plan came back: see
+     bootSession() and SET.planPend. */
+  netSend('POST', '/rest/v1/plan',
+          {id:SESS.uid, plan:String(id||'free'), at:(new Date()).toISOString()},
+          SESS.at, function(){}, function(){}, true);
 }
 /* The two copies, read together. THE HIGHER RUNG WINS, and that is
    LinguaStore.swift's best() rather than a new rule -- somebody can hold a
@@ -914,20 +997,15 @@ function netSlices(sid, ok, bad){
    insert into a table with a two-column primary key an upsert -- the phone
    does not have to know whether this slice has ever been up. */
 function netSlicePut(sid, kind, body, no, ok, bad){
-  var x=new XMLHttpRequest();
-  x.open('POST', SB_URL+'/rest/v1/slice', true);
-  x.setRequestHeader('apikey', SB_KEY);
-  x.setRequestHeader('Content-Type', 'application/json');
-  x.setRequestHeader('Authorization', 'Bearer '+SESS.at);
-  x.setRequestHeader('Prefer', 'resolution=merge-duplicates');
-  x.onreadystatechange=function(){
-    if(x.readyState!==4) return;
-    if(x.status>=200 && x.status<300) ok();
-    else bad(null, x.status);
-  };
-  x.onerror=function(){ bad(null, 0); };
-  x.send(JSON.stringify({language:sid, kind:kind, body:String(body||''),
-                         no:(no||0)+1, at:(new Date()).toISOString()}));
+  /* Through netSend(), for the reason netPlanUp() gives just above: this is
+     the write a person's work actually goes up in, and it was the one outside
+     the token renewal. 「保存押せば起動されないの？」 -- it did not, and this
+     is the line that answers it. */
+  netSend('POST', '/rest/v1/slice',
+          {language:sid, kind:kind, body:String(body||''),
+           no:(no||0)+1, at:(new Date()).toISOString()},
+          SESS && SESS.at, function(){ ok(); },
+          function(d, st){ bad(null, st||0); }, true);
 }
 /* EVERY LANGUAGE THIS ACCOUNT HAS, BROUGHT DOWN TO THE PHONE.
    -------------------------------------------------------------------------

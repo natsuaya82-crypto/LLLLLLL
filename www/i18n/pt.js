@@ -340,6 +340,8 @@ defLang('pt', (function(){
       "ob.mail.up" : "Criar conta",
       "ob.mail.verify" : "Confirmar",
       "ob.mail.send" : "Enviar",
+      "ob.mail.again" : "Enviar de novo",
+      "ob.mail.sent" : "Enviado.",
       "ob.mail.h.reset" : "Escolha uma nova senha",
       "ob.mail.newpw.ph" : "Nova senha",
       "ob.mail.reset" : "Guardar",

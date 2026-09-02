@@ -247,7 +247,33 @@ taints.delete('render');
    said once. */
 taints.delete('uiLang');
 taints.delete('t');
-const READER = new Set(['render', 'uiLang', 't']);
+/* AND THE WIRE, for the same reason as render(): it reaches everything and
+   says nothing.
+
+   netSend() is how anything in this app reaches the server. On 2026-09-02 it
+   learned to renew an expired access token and go again -- because until then
+   the token was refreshed once, at launch, and an app left open for an hour
+   wrote to nothing. A refresh token the server no longer accepts means the
+   session has ended, which signs the phone out, which is meFor(), which is
+   ME. So from that day the wire was tainted, and the reading side is made of
+   nothing but calls to the wire: postSay() -> dayMap() -> the server.
+
+   Asking the server for something is not reaching the open language. What
+   comes back is somebody else's row, and that is the whole reason the reading
+   side exists. The line this file holds is about what a post is DRAWN from,
+   and the wire draws nothing.
+
+   Four names rather than one because the retry needed three helpers; if a
+   fifth is added it goes here, and if netSend() ever builds a post this
+   exemption is the thing to argue with. Everything the wire is used FOR is
+   still measured -- netTook(), netOut() and netResume() are tainted and stay
+   tainted, because a session arriving really does open a language. */
+taints.delete('netSend');
+taints.delete('netSend1');
+taints.delete('netFresh');
+taints.delete('netFreshDone');
+const READER = new Set(['render', 'uiLang', 't',
+                        'netSend', 'netSend1', 'netFresh', 'netFreshDone']);
 for (let moved = true; moved;) {
   moved = false;
   for (const [name, body] of Object.entries(bodies)) {

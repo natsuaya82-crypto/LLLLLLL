@@ -336,6 +336,8 @@ defLang('ru', (function(){
       "ob.mail.up" : "Создать аккаунт",
       "ob.mail.verify" : "Подтвердить",
       "ob.mail.send" : "Отправить",
+      "ob.mail.again" : "Отправить ещё раз",
+      "ob.mail.sent" : "Отправлено.",
       "ob.mail.h.reset" : "Новый пароль",
       "ob.mail.newpw.ph" : "Новый пароль",
       "ob.mail.reset" : "Сохранить",

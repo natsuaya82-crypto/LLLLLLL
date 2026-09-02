@@ -583,18 +583,47 @@ var OB_CHEVR='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke
 function obGo(n){ ob.step=n; GE=null; render(); window.scrollTo(0,0); }
 /* There is no way back out of 'who': the account exists by then, and the
    screen behind it would offer to sign in as somebody else. */
+/* WHETHER THE DOOR IS WHAT IS ON THE SCREEN, asked in one place because
+   three asked it and two of them got it wrong. vOb() had the sentence; the
+   chevron and what the chevron DOES each had their own, and neither of theirs
+   knew about the door's inner faces. */
+function obAtDoor(){
+  return appIs()==='door' || !!obPending() || ob.step===OB_IN;
+}
+/* And which face of the door has another face behind it. Every one of them
+   was travelled to from another: the digits from the sign-up form, the reset
+   from the address it was sent to, the new password from that same address.
+   Only the face the door OPENS on has nothing behind it, and 'who' is the one
+   where going back would offer to sign in as somebody else. */
+function obDoorBack(){
+  var m=OBM.mode;
+  if(m==='code') return 'up';
+  if(m==='reset' || m==='newpw') return 'forgot';
+  if(m==='forgot' || m==='up') return 'in';
+  return '';
+}
 function obCanBack(){
   /* At the door there is always somewhere to be out to -- it is never the
      app any more, it is somewhere you were sent from. Except once the
      account exists: the screen behind 'who' would offer to sign in as
      somebody else. */
-  if(obPending()) return OBM.mode!=='who';
-  /* And nothing at all is behind a door somebody was not sent to. Signed out,
-     the app IS this screen -- 「他の画面に行かせるな。ログアウトの時は。」 --
-     so the chevron would be a way into an onboarding they finished months ago.
-     ob.step is still sitting wherever it ended, which is what made the test
-     below say yes. */
-  if(appIs()==='door') return false;
+  /* THE DOOR'S OWN FACES FIRST, and this is the half that was missing:
+     『後追加でメールを確認のボタンに再送信ボタンと戻るボタンがない』 OWNER
+     2026-09-02. Signed out, appIs() is 'door' and the line below answered
+     false for the whole of it -- including the six-digit screen, which is
+     three presses in from the face the door opens on. A person who mistyped
+     their address was standing on a screen with no way off it.
+
+     What that line was right about is the OUTERMOST face: signed out, the app
+     IS this screen -- 「他の画面に行かせるな。ログアウトの時は。」 -- so a
+     chevron there would be a way into an onboarding they finished months ago.
+     obDoorBack() is the difference: it answers '' for exactly that face. */
+  if(obAtDoor()){
+    if(obDoorBack()) return true;
+    /* and out of the door itself, only where there is somewhere it was
+       opened FROM */
+    return !!obPending() && OBM.mode!=='who';
+  }
   /* Nothing is behind the first step. */
   return ob.step>OB_DRAW || ob.mode==='borrow';
 }
@@ -604,17 +633,16 @@ function obBack(){
      code back to the account it was sent for, out of anything else back to
      signing in, and out of signing in to wherever the door was opened
      from. */
-  if(obPending()){
-    if(OBM.mode==='code'){ obMailGo('up'); return; }
-    /* Out of the reset back to the address it was sent to, so a mistyped
-       address is one press from being retyped rather than two. */
-    if(OBM.mode==='reset'){ obMailGo('forgot'); return; }
-    /* Out of the password back to the address, and not back to the digits:
-       the code that got here has been spent, so the way to try again is a
-       new one. */
-    if(OBM.mode==='newpw'){ obMailGo('forgot'); return; }
-    if(OBM.mode==='in'){ obReturn(); return; }
-    obMailGo('in'); return;
+  /* Inside the door, obDoorBack() is the one place that says what is behind
+     each face -- out of the reset back to the address it was sent to, so a
+     mistyped address is one press from being retyped rather than two; out of
+     the new password back to the address and NOT back to the digits, because
+     the code that got here has been spent. */
+  if(obAtDoor()){
+    var m=obDoorBack();
+    if(m){ obMailGo(m); return; }
+    if(obPending()){ obReturn(); return; }
+    return;
   }
   if(ob.step===OB_DRAW && ob.mode==='borrow'){
     if(ob.pick){ ob.pick=''; render(); return; }      /* out of one script, back to the fifteen */
@@ -989,6 +1017,24 @@ function obMailCode(){
   OBM.busy=true; OBM.msg=''; render();
   netVerify(OBM.em, OBM.code, obIn, obNo);
 }
+/* THE SAME SIX DIGITS, SENT AGAIN. A mail that did not arrive is the ordinary
+   thing that happens on this screen -- it is in a spam folder, or the address
+   has a typo in it -- and until now the only answer to either was to kill the
+   app. 『後追加でメールを確認のボタンに再送信ボタンと戻るボタンがない』 OWNER
+   2026-09-02.
+
+   Two faces ask for six digits and they come out of two different mails, so
+   which one to send again is read off the face rather than remembered: the
+   sign-up code is Supabase's resend, the reset code is asking for the reset
+   again. `ob.mail.sent` afterwards is a STATE and not an explanation
+   (CLAUDE.md) -- without it, pressing this does nothing anybody can see. */
+function obMailAgain(){
+  if(OBM.busy || !obMailAsk()) return;
+  OBM.busy=true; OBM.msg=''; render();
+  function done(){ OBM.busy=false; OBM.msg=t('ob.mail.sent'); render(); }
+  if(OBM.mode==='reset') netRecover(OBM.em, done, obNo);
+  else netResend(OBM.em, done, obNo);
+}
 /* Asking for a reset used to END here: the request went, the screen said
    "sent", and there was nowhere to go with what arrived. The mail carried a
    link, because that is what Supabase's Reset Password template says, and a
@@ -1226,6 +1272,8 @@ function obAskHTML(code){
     (OBM.msg? '<div class="obmsg">'+esc(OBM.msg)+'</div>' : '')+
     '<button class="btn"' + DO(code? 'obMailCode' : 'obMailForgot') + (OBM.busy? ' disabled':'') + '>'+
       t(OBM.busy? 'ob.mail.wait' : (code? 'ob.mail.verify' : 'ob.mail.send'))+'</button>'+
+    (code? '<button class="obskip"' + DO('obMailAgain') + (OBM.busy? ' disabled':'') + '>'+
+             t('ob.mail.again')+'</button>' : '')+
     '</div>';
 }
 /* The reset, in two steps: the six digits, and then the new password.
@@ -1253,6 +1301,8 @@ function obResetHTML(){
     (OBM.msg? '<div class="obmsg">'+esc(OBM.msg)+'</div>' : '')+
     '<button class="btn"' + DO('obResetGo') + (OBM.busy? ' disabled':'') + '>'+
       t(OBM.busy? 'ob.mail.wait' : 'ob.mail.verify')+'</button>'+
+    '<button class="obskip"' + DO('obMailAgain') + (OBM.busy? ' disabled':'') + '>'+
+      t('ob.mail.again')+'</button>'+
     '</div>';
 }
 /* And the second step, reached only by a code the server accepted. */
