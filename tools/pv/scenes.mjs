@@ -10,10 +10,23 @@
    every name inside one is one of the app's own globals. That is the rule
    tools/fixture.mjs is written under, for the same reason.
 
-   Sixty seconds, eight scenes:
+   THE WHOLE PHONE IS NEVER IN THE PICTURE, and that is the film's one
+   structural decision. A 390-point screen shown whole inside a 1080-tall
+   frame puts the app's 16px type at about 20px for somebody watching from a
+   sofa: legible in a screenshot, not legible in a film.
+   「携帯の画面にされると見えません」 So the camera is INSIDE the screen -- the
+   app is scaled between 2.2 and 2.6 and framed on the one thing the scene is
+   about, which puts that same type at 40 to 48px. What is lost is the
+   device, and the device was never the product.
+
+   Where to point is asked of the PAGE -- a selector, and the element's own
+   box -- rather than written out as coordinates here, so a screen that moves
+   is still framed correctly the next time the film is run.
+
+   Fifty-nine seconds, eight scenes:
 
      draw       6   a letter, tap by tap, on the real editor
-     alphabet   8   the thirty-eight it belongs to
+     alphabet   8   the letters it belongs to
      font       8   the lexicon, set in them
      word       7   one word, and what the app knows about it
      keyboard   8   a QWERTY wearing the drawn letters
@@ -37,35 +50,43 @@ export function SCENES(F){
   const wide = !F.portrait;
   const W = F.W, H = F.H;
 
-  /* Where the phone stands. In 16:9 it is to one side with the words beside
-     it; in 9:16 it is the whole frame and the words go above. A scale is
-     never so large that 844 points of phone leave the top of the frame --
-     that is the one mistake this list exists to prevent. */
-  const POSE = wide ? {
-    side:   { cx: W*0.668, cy: H*0.50, s: 1.00 },
-    middle: { cx: W*0.500, cy: H*0.50, s: 1.08 },
-    close:  { cx: W*0.640, cy: H*0.50, s: 1.14 },
-  } : {
-    side:   { cx: W*0.50, cy: H*0.585, s: 1.24 },
-    middle: { cx: W*0.50, cy: H*0.560, s: 1.30 },
-    close:  { cx: W*0.50, cy: H*0.575, s: 1.44 },
-  };
-  const at = (p, o) => ({ x: p.cx - 195, y: p.cy - 422, s: p.s, o: o === undefined ? 1 : o });
-  const tween = (a, b, k, o) => ({ x: mix(a.cx, b.cx, k) - 195, y: mix(a.cy, b.cy, k) - 422,
-                                   s: mix(a.s, b.s, k), o: o === undefined ? 1 : o });
-  /* An offset from the middle of the frame, not a distance from the top. */
-  const TYPETOP = wide ? 0 : -520;
+  /* Where the middle of what we are looking at lands on the stage. In 16:9
+     the app is a slab down the right with the words beside it; in 9:16 it is
+     the picture, and the words sit over the top of it. */
+  const ANCHOR = wide ? { x: W * 0.745, y: H * 0.50 } : { x: W * 0.50, y: H * 0.60 };
+  const SCALE  = wide ? 2.4 : 2.5;
+
+  /* An app point (ax, ay) lands on the stage anchor at scale s. #stagePhone
+     is 390x844 with its transform origin in the middle, which is where the
+     195 and the 422 come from. */
+  const look = (ax, ay, s, dx, dy) => ({
+    x: (dx === undefined ? ANCHOR.x : dx) - 195 - (ax - 195) * s,
+    y: (dy === undefined ? ANCHOR.y : dy) - 422 - (ay - 422) * s,
+    s: s
+  });
+
+  /* The box of something on the screen, asked of the page. */
+  const box = (stage, sel) => stage.app(function(sel){
+    var e = document.querySelector(sel);
+    if (!e) return null;
+    var r = e.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width, h: r.height };
+  }, sel);
+
+  const TYPETOP = wide ? 0 : -640;
 
   /* The words rise a little as they arrive and are gone before the next
      scene's are wanted. One shape for all eight, so nothing in the film
      announces itself differently from anything else. */
-  const words = (stage, t, secs, c) => stage.set({ type: {
-    o: Math.min(ramp(t, c.in === undefined ? 0.4 : c.in, (c.in === undefined ? 0.4 : c.in) + 0.8),
-                1 - ramp(t, secs - 0.7, secs - 0.1)),
-    y: mix(24, 0, rampO(t, c.in === undefined ? 0.4 : c.in, (c.in === undefined ? 0.4 : c.in) + 1.1)),
-    top: c.top === undefined ? TYPETOP : c.top,
-    kicker: c.kicker || '', head: c.head || '', sub: c.sub || ''
-  }});
+  const words = (stage, t, secs, c) => {
+    const inAt = c.in === undefined ? 0.4 : c.in;
+    return stage.set({ type: {
+      o: Math.min(ramp(t, inAt, inAt + 0.8), 1 - ramp(t, secs - 0.7, secs - 0.1)),
+      y: mix(24, 0, rampO(t, inAt, inAt + 1.1)),
+      top: c.top === undefined ? TYPETOP : c.top,
+      kicker: c.kicker || '', head: c.head || '', sub: c.sub || ''
+    }});
+  };
 
   const nav = (stage, r, a) => stage.app(function(arg){
     go(arg.r, arg.a === null ? undefined : arg.a); render(); window.scrollTo(0, 0);
@@ -107,10 +128,10 @@ export function SCENES(F){
         window.__pvTaps = taps;
       }, LT);
       stage.taps = await stage.app(function(){ return window.__pvTaps; });
+      stage.at = await box(stage, '#gcanv');
     },
     at: async (stage, k, t) => {
       const n = stage.taps.length;
-      /* how many points are down at this instant */
       let placed = 0;
       for (let i = 0; i < n; i++) if (t >= TAP0 + i * TAPGAP) placed = i + 1;
       await stage.app(function(upto){
@@ -128,14 +149,19 @@ export function SCENES(F){
         GE.pi = next.length ? next[next.length - 1].pts.length - 1 : -1;
         geDraw();
       }, placed);
-      /* the finger: a disc that swells and fades where the tap just landed */
+      /* The canvas fills the frame and creeps closer while it is drawn on. */
+      const s = mix(SCALE * 1.04, SCALE * 1.14, rampO(t, 0, 6));
       const i = placed - 1;
       const since = i >= 0 ? t - (TAP0 + i * TAPGAP) : 99;
       const p = i >= 0 ? stage.taps[i] : { x: -99, y: -99 };
+      const pose = look(stage.at.x, stage.at.y, s);
+      pose.o = ramp(t, 0, 0.5);
       await stage.set({
-        phone: at(POSE.close, ramp(t, 0, 0.5)),
+        phone: pose,
+        /* the dot is inside the phone, so it is scaled with everything else:
+           a sixth of its own size at 2.5x is a fingertip and not a saucer */
         tap: { x: p.x, y: p.y, o: Math.max(0, 1 - since / 0.5) * 0.95,
-               s: mix(0.6, 1.7, clamp(since / 0.5, 0, 1)) }
+               s: mix(0.22, 0.62, clamp(since / 0.5, 0, 1)) }
       });
       words(stage, t, 6, { in: 1.5, kicker: 'Lingua',
         head: 'Invent a <em>language</em>.',
@@ -143,7 +169,7 @@ export function SCENES(F){
     } },
 
   /* =====================================================================
-     2. The alphabet it belongs to.
+     2. The letters it belongs to.
      ===================================================================== */
   { name: 'alphabet', secs: 8,
     enter: async (stage) => {
@@ -151,29 +177,29 @@ export function SCENES(F){
       await stage.app(function(){
         var l = ltById(window.__pvLt);
         l.st = window.__pvSt;                /* the letter, put back whole */
-        saveLetters(); installScriptFont();
+        saveLetters(); installScriptFont(); installTypeFont();
         go('ltset', 'all'); render(); window.scrollTo(0, 0);
       });
     },
     at: async (stage, k, t) => {
-      await scroll(stage, Math.round(mix(0, 700, io(clamp((t - 1.5) / 5.4, 0, 1)))));
-      await stage.set({ phone: tween(POSE.close, POSE.side, ramp(t, 0, 1.2)) });
+      await scroll(stage, Math.round(mix(60, 900, io(clamp((t - 0.9) / 6.2, 0, 1)))));
+      await stage.set({ phone: look(195, 430, SCALE * 0.92) });
       words(stage, t, 8, { kicker: 'The alphabet',
-        head: 'Thirty-eight<br>of your own.',
-        sub: 'a to z, the two marks, and numerals that count in fives.' });
+        head: 'An alphabet<br>nobody else has.',
+        sub: 'Every letter in it is one you drew.' });
     } },
 
   /* =====================================================================
-     3. The letters become a font, and everything is written in it.
+     3. The letters become a font, and the app is written in it.
      ===================================================================== */
   { name: 'font', secs: 8,
     enter: async (stage) => { await nav(stage, 'words'); },
     at: async (stage, k, t) => {
-      await scroll(stage, Math.round(mix(0, 1000, io(clamp((t - 1.4) / 5.8, 0, 1)))));
-      await stage.set({ phone: at(POSE.side) });
+      await scroll(stage, Math.round(mix(190, 1100, io(clamp((t - 0.9) / 6.4, 0, 1)))));
+      await stage.set({ phone: look(195, 430, SCALE) });
       words(stage, t, 8, { kicker: 'The lexicon',
-        head: 'They become<br>a <em>font</em>.',
-        sub: 'Every word you keep is set in the letters you drew.' });
+        head: 'Your letters<br>become a <em>font</em>.',
+        sub: 'Every word you keep is written in them.' });
     } },
 
   /* =====================================================================
@@ -182,23 +208,27 @@ export function SCENES(F){
   { name: 'word', secs: 7,
     enter: async (stage) => { await nav(stage, 'form', 'word:kano'); },
     at: async (stage, k, t) => {
-      await scroll(stage, Math.round(mix(0, 460, io(clamp((t - 1.5) / 4.6, 0, 1)))));
-      await stage.set({ phone: at(POSE.side) });
+      await scroll(stage, Math.round(mix(0, 430, io(clamp((t - 1.0) / 5.0, 0, 1)))));
+      await stage.set({ phone: look(195, 400, SCALE) });
       words(stage, t, 7, { kicker: 'One word',
-        head: 'Sound, sense,<br>and where it came from.',
-        sub: 'A dictionary that knows how your words are built.' });
+        head: 'A dictionary that<br>knows your words.',
+        sub: 'What it sounds like, what it means, where it came from.' });
     } },
 
   /* =====================================================================
      5. The keyboard: a QWERTY with the drawn letters on the keys.
      ===================================================================== */
   { name: 'keyboard', secs: 8,
-    enter: async (stage) => { await nav(stage, 'kb'); },
+    enter: async (stage) => {
+      await nav(stage, 'kb');
+      stage.at = await box(stage, '.kb');
+    },
     at: async (stage, k, t) => {
-      await stage.set({ phone: tween(POSE.side, POSE.close, ramp(t, 0.5, 3.4)) });
+      const s = mix(SCALE * 0.96, SCALE * 1.04, rampO(t, 0, 8));
+      await stage.set({ phone: look(stage.at.x, stage.at.y, s) });
       words(stage, t, 8, { kicker: 'The keyboard',
-        head: 'And a keyboard<br>to write it with.',
-        sub: 'Your letters on every key — on the phone itself.' });
+        head: 'And a keyboard<br>of your own letters.',
+        sub: 'The same alphabet, on every key.' });
     } },
 
   /* =====================================================================
@@ -210,8 +240,9 @@ export function SCENES(F){
     },
     at: async (stage, k, t) => {
       let tap = { o: 0, x: -99, y: -99 };
+      let focus = 430;
       if (t < 3.4){
-        await scroll(stage, Math.round(mix(0, 760, io(clamp((t - 0.7) / 2.7, 0, 1)))));
+        await scroll(stage, Math.round(mix(120, 860, io(clamp((t - 0.6) / 2.8, 0, 1)))));
       } else if (t < 3.7){
         await stage.app(function(){ window.scrollTo(0, 0); openPost('new'); render(); });
       } else if (t < 7.2){
@@ -219,9 +250,9 @@ export function SCENES(F){
           /* What the Lingua keyboard puts in a field is a private use code
              point per drawn letter -- that is the only thing on a phone that
              tells this alphabet's `a` from the system QWERTY's. Typing the
-             roman here would have shown roman, which is not what somebody
-             holding the phone sees. ltPuaOrder() is the app's own answer to
-             which letter is which code point; nothing is worked out twice. */
+             roman here would show roman, which is not what somebody holding
+             the phone sees. ltPuaOrder() is the app's own answer to which
+             letter is which code point; nothing is worked out twice. */
           var full = 'kano mos tir', lts = ltPuaOrder(), s = '', i, j;
           for (i = 0; i < full.length; i++){
             var ch = full.charAt(i);
@@ -234,8 +265,9 @@ export function SCENES(F){
           PW.mn = n >= s.length ? 'a tall mountain is seen' : '';
           pwFresh(); render();
         }, (t - 3.9) / 2.6);
+        focus = 200;                       /* the line being written */
       } else if (t < 7.9){
-        /* the thumb on the button that finishes it, and then the post itself */
+        focus = 200;
         const at = await stage.app(function(){
           var b = document.getElementById('pw-go');
           if (!b) return null;
@@ -243,18 +275,20 @@ export function SCENES(F){
           return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
         });
         if (at) tap = { x: at.x, y: at.y, o: Math.max(0, 1 - (t - 7.2) / 0.5) * 0.95,
-                        s: mix(0.6, 1.6, clamp((t - 7.2) / 0.5, 0, 1)) };
+                        s: mix(0.22, 0.62, clamp((t - 7.2) / 0.5, 0, 1)) };
         if (t >= 7.55) await stage.app(function(){
           if (window.__pvSent) return;
           window.__pvSent = 1;
           pwSend();
           window.scrollTo(0, 0);
         });
+      } else {
+        focus = 300;                       /* the post that was just made */
       }
-      await stage.set({ phone: tween(POSE.close, POSE.side, ramp(t, 0, 1.1)), tap: tap });
+      await stage.set({ phone: look(195, focus, SCALE), tap: tap });
       words(stage, t, 12, { kicker: 'The timeline',
         head: 'Then say<br>something in it.',
-        sub: 'Every post here is written in somebody\u2019s own language.' });
+        sub: 'Every post here is in somebody’s own language.' });
     } },
 
   /* =====================================================================
@@ -272,9 +306,9 @@ export function SCENES(F){
         if (SET.theme !== want){ SET.theme = want; applyTheme(); move = true; }
         if (move) render();
       }, k);
-      await stage.set({ phone: at(POSE.side) });
+      await stage.set({ phone: look(195, 300, SCALE * 0.95) });
       words(stage, t, 6, { kicker: 'Wherever you are',
-        head: 'Ten languages.<br>Two themes.',
+        head: 'Ten languages.<br>Light and dark.',
         sub: 'The app speaks yours while you build one of your own.' });
     } },
 
@@ -285,13 +319,14 @@ export function SCENES(F){
     enter: async (stage) => {
       await stage.app(function(){
         SET.ui = 'en'; SET.theme = 'dark'; applyTheme(); go('feed'); render();
+        window.scrollTo(0, 0);
       });
     },
     at: async (stage, k, t) => {
+      const pose = look(195, 300, mix(SCALE, SCALE * 1.05, out(k)));
+      pose.o = 1 - ramp(t, 0.05, 0.9);
       await stage.set({
-        phone: { x: POSE.side.cx - 195, y: POSE.side.cy - 422,
-                 s: mix(POSE.side.s, POSE.side.s * 0.94, out(k)),
-                 o: 1 - ramp(t, 0.05, 0.9) },
+        phone: pose,
         type: { o: 0 },
         card: { o: ramp(t, 0.45, 1.3), tag: 'Build a language. Write in it.',
                 foot: 'Lingua for iPhone',

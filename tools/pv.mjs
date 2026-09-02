@@ -143,6 +143,15 @@ await app.evaluate(({ s, st, wds, snd }) => {
     k = (typeof numIsDigit === 'function' && numIsDigit(l)) ? '#' + l.val
                                                            : String(ltName(l) || '');
     if (!st[k]) continue;
+    /* ltIsBase() -- which is what the free plan counts its own thirty-eight
+       slots by -- reads `ab`, the roman character the letter was made from,
+       and the check fixture's letters have none: they were written out by
+       hand rather than made by ltStart(). Three of them were therefore over
+       the free allotment and the alphabet carried a "3 hidden / Upgrade"
+       banner in the middle of the film. Giving them the character they are
+       already named after is what makes them the ordinary a-z they look
+       like. */
+    if (!l.ab && !numIsDigit(l)) l.ab = k;
     l.st = JSON.parse(JSON.stringify(st[k]));
     /* a letter that was borrowing a character has its own shape now */
     if (l.ch) l.ch = '';
@@ -156,7 +165,7 @@ await app.evaluate(({ s, st, wds, snd }) => {
      day it runs and is not what somebody's language looks like a month
      later -- and the app says so on screen, in red, which in a film reads as
      an error rather than as a thing to get round to. */
-  var say = { c:['t\u0283'], q:['q'], x:['\u0283'], y:['j'] };
+  var say = { c:['t\u0283'], q:['q'], x:['\u0283'], y:['y'] };
   for (i = 0; i < LETTERS.length; i++){
     k = String(ltName(LETTERS[i]) || '');
     if (say[k]) LETTERS[i].snd = say[k];
@@ -206,12 +215,12 @@ await app.evaluate(({ s, st, wds, snd }) => {
       delete p.ink;
       /* her face is a letter of her own alphabet, which is what a face on
          this timeline is */
-      p.av = { st: JSON.parse(JSON.stringify(st['a'])) };
+      p.av = { st: JSON.parse(JSON.stringify(st['o'])) };
       if (p.pic) p.pic = pic();
     }
   }
   if (typeof migratePostInk === 'function') migratePostInk();
-  ME.av = { st: JSON.parse(JSON.stringify(st['a'])) };
+  ME.av = { st: JSON.parse(JSON.stringify(st['o'])) };
 
   SET.myfont = true;
   if (typeof applyTheme === 'function') applyTheme();
@@ -235,6 +244,9 @@ const stage = {
         'translate(' + p.x + 'px,' + p.y + 'px) scale(' + p.s + ')' +
         (p.rot ? ' rotate(' + p.rot + 'deg)' : '');
       q('stagePhone').style.opacity = p.o === undefined ? 1 : p.o;
+      /* Past this the device frame is out of the picture anyway; what is
+         left of it would be two vertical edges and no top, so it goes. */
+      q('stagePhone').className = p.s > 1.4 ? 'zoom' : '';
     }
     if (o.type){
       const y = o.type.y === undefined ? 0 : o.type.y;

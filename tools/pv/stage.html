@@ -43,6 +43,12 @@ body{font-family:var(--ui);-webkit-font-smoothing:antialiased}
   box-shadow:0 60px 140px rgba(0,0,0,.72), 0 0 0 1px rgba(201,168,106,.16),
              inset 0 0 0 1px rgba(255,255,255,.05)}
 #screen{position:absolute;inset:0;border-radius:46px;overflow:hidden;background:#0a0a0e}
+/* Zoomed in, the device frame is off the top and the bottom of the picture
+   and only its two sides would be left -- which reads as a frame with no
+   frame. So the shell goes, and the screen is a slab with its own shadow. */
+#stagePhone.zoom #shell{opacity:0}
+#stagePhone.zoom #screen{border-radius:0;
+  box-shadow:0 0 140px rgba(0,0,0,.65), 0 0 0 1px rgba(201,168,106,.10)}
 #ph{width:390px;height:844px;border:0;display:block}
 /* A thumb. Not a photograph of a hand -- a soft disc where the press lands,
    which is what a viewer reads as "somebody touched that". */
