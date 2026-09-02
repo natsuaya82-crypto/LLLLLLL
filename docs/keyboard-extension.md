@@ -304,19 +304,34 @@ LinguaScript.otf   その言語のフォント（フォントのシステム登�
 
 ### KeyboardViewController
 
-**三つの状態**を持ち、自分がどれにいるかだけを言います。空のキーボードには
+**二つの状態**を持ち、自分がどれにいるかだけを言います。空のキーボードには
 絶対になりません。
+
+**フルアクセスは訊きません。**訊く門が在って、それが読む前に返っていました
+── フルアクセスをオンにしていない人（＝ほとんどの人）に、**キーが一枚も無い
+板**を出していたということです。審査 4.4.1 は逐語で
+*"Remain functional without full network access and without requiring full
+access"*。あれはこの規約が名指ししている形そのものでした。
+
+**App Group を読むのにフルアクセスは要りません。**Apple の現行ページ
+"Configuring open access for a custom keyboard"（UIKit）が二度そう書いて
+います ── 既定のサンドボックスは
+*"prevents writing to the containing app's shared group containers
+(reading is permitted)"*、そしてフルアクセス**無し**の能力一覧に
+*"read-only access to the containing app's shared containers"*。
+`Shared.board()` は読むだけで、書くのは本体側の `LinguaShare.swift` です。
+
+古い iOS 8 の App Extension Programming Guide は
+*"cannot share a container with its containing app"* と書いています。
+**あれは archive で、上の文が置き換えています。**門はあの一文の上に建って
+いました。名前を出しておくのは、また見つかるからです。
 
 ```
 UIInputViewController を継承
 
 build()（毎回、全部作り直す。層の切替もこれ一本）
-  hasFullAccess が false
-    → Say.full()「設定 → 一般 → キーボード → キーボード → Lingua →
-       フルアクセスを許可」を1行出す
-
-  hasFullAccess は true だが Shared.board() が nil
-  （App Group が読めない／keyboard.json が無い／lay が空）
+  Shared.board() が nil
+  （keyboard.json が無い／lay が空／読めない）
     → Say.draw()「先に Lingua で文字を描いてください」を1行出す
 
   board が読めた
@@ -464,8 +479,19 @@ build()（毎回、全部作り直す。層の切替もこれ一本）
 - `CFBundleDisplayName` が **設定と 🌐 に出る名前**です
 - `PrimaryLanguage = mul`（多言語）。作った言語が何語かは Apple の一覧に
   無いので、これが正直な答えです
-- `RequestsOpenAccess = true` が**フルアクセス**。これが無いと App Group を
-  読めず、あなたの文字を取り出せません
+- `RequestsOpenAccess = true` が**フルアクセス**。**拡張はこれを一つも
+  使っていません** ── `UserDefaults` もネットワークもペーストボードも
+  `openURL` もカスタムフォントも無く、App Group は**読むだけ**で、読むのは
+  フルアクセス無しで通ります（上の KeyboardViewController の節）。
+  **`false` に落とせるはずですが、まだ落としていません。**理由は二つ、
+  どちらも実機と他のセッションのもの:
+  ① Linux では Swift が動かず、フルアクセス無しで実際に読めることを
+     ここでは確かめられない。落として文書が間違っていたら、看板機能が
+     全員で死に、しかも人が回復する道が消えます
+  ② `www/` のオンボーディングが「フルアクセスを許可」を手順に持っています
+     （`kb.step4`、`www/home.js`、`www/keyboard.js`）。落とすなら同じ着地で
+     その手順も消えないと、存在しないスイッチを押せと書いた画面が出ます。
+     `www/` は別のセッションのものです
 
 ### 両方の entitlements
 

@@ -63,7 +63,30 @@ final class KeyboardViewController: UIInputViewController,
     body?.removeFromSuperview(); body = nil
     bar?.removeFromSuperview();  bar = nil
 
-    guard hasFullAccess else { return show(Say.full()) }
+    /* There is no full-access gate here, and that is deliberate.
+
+       There was one, and it returned before reading anything -- so a person
+       who had not turned Full Access on got a keyboard with NOT ONE KEY on
+       it, which is most people, because Full Access is a switch somebody has
+       to go and find. App Store Review 4.4.1 says a keyboard must "[r]emain
+       functional without full network access and without requiring full
+       access"; this was the shape that guideline is written against.
+
+       Reading the App Group does not need it. Apple's own current page,
+       "Configuring open access for a custom keyboard", says the default
+       sandbox "prevents writing to the containing app's shared group
+       containers (reading is permitted)", and lists among the capabilities of
+       a keyboard WITHOUT open access: "read-only access to the containing
+       app's shared containers". Shared.board() only reads, and the app writes
+       it from the other side, where writing is allowed.
+
+       (The iOS 8 App Extension Programming Guide says "cannot share a
+       container with its containing app". That page is archived and the
+       sentence above supersedes it. It is named here because it is what the
+       gate was built on, and it will be found again.)
+
+       DEVICE UNCONFIRMED. There is no Swift on a Linux runner and no check in
+       this repository can open a keyboard. */
     guard let b = Shared.board() else { return show(Say.draw()) }
     board = b
     if compose == nil, let c = b.conv { compose = Compose(conv: c, ink: b.ink ?? []) }

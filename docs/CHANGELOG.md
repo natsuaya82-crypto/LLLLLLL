@@ -15,6 +15,50 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-02 キーボードが、フルアクセス無しでも文字を出す
+
+**フルアクセスをオンにしていない人の端末で、Lingua キーボードはキーを一つも
+描いていませんでした。**`KeyboardViewController.build()` の先頭が
+`guard hasFullAccess else { return show(Say.full()) }` で、**何も読む前に**
+返っていたためです。出ていたのは「設定 → 一般 → キーボード → キーボード →
+Lingua → フルアクセスを許可」の一行だけ。フルアクセスは人が自分で設定へ行って
+入れるスイッチなので、大半の人はこの板を見ていたことになります。
+
+**App Group を読むのにフルアクセスは要りません。**Apple の現行ページ
+"Configuring open access for a custom keyboard"（UIKit）が二度そう書いて
+います ── 既定のサンドボックスは *"prevents writing to the containing app's
+shared group containers (reading is permitted)"*、フルアクセス**無し**の
+能力一覧に *"read-only access to the containing app's shared containers"*。
+`Shared.board()` は App Group のファイルを**読むだけ**で、書くのは本体側の
+`LinguaShare.swift` です。門が建っていたのは iOS 8 の archive ページの
+*"cannot share a container with its containing app"* の上でした。
+
+**審査 4.4.1 が名指ししている形です。**逐語で *"Remain functional without
+full network access and without requiring full access"*。
+
+拡張はフルアクセスの要る API を一つも使っていません ── `UserDefaults` も
+ネットワークもペーストボードも `openURL` もカスタムフォントも無し。
+import は `Foundation` `UIKit` `CoreGraphics` の三つだけです。
+
+**変えたもの。**門を外しました。状態は三つから二つになります ── board が
+読めれば描く、読めなければ「先に Lingua で文字を描いてください」。
+`Say.full()` は消しました：フルアクセスは原因ではなかったので、あの一行は
+原因でないものを原因として名指ししていました。スイッチの説明が要るのは
+アプリの `?`（`www/keyboard.js`）のほうで、キーボードの上ではありません。
+
+**`RequestsOpenAccess` は `true` のままです。**落とせるはずですが落として
+いません ── ① Linux に Swift は無く、フルアクセス無しで実際に読めることを
+ここでは確かめられない。文書が間違っていた場合、落とすと看板機能が全員で
+死に、人が回復する道も消えます。② `www/` のオンボーディングが「フルアクセス
+を許可」を手順に持っており（`kb.step4`）、`www/` は別のセッションのものです。
+
+**保存されるものは何も変わりません。**`keyboard.json` の形も、書き方も、
+読み方も同じです。
+
+**DEVICE UNCONFIRMED。**Linux では確かめられません。実機でフルアクセスを
+**オフ**にして Lingua キーボードを開き、自作の字が並ぶことを見るまでは、
+これは文書に基づく推論です。
+
 ### 2026-09-02 買った直後の一言が、押したものではなく一番上の段を言う
 
 「plus で課金しても pro になりましたって出る」OWNER 2026-09-02、実機。
