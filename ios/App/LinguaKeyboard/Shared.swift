@@ -80,6 +80,21 @@ struct Key: Decodable {
   /// and it is a count of rows.
   let h: Int?
 
+  /// A key the extension makes for itself, rather than one the app sent.
+  ///
+  /// There is exactly one: the globe on the board that could not be read.
+  /// Everything else on a keyboard is the person's and arrives in the file --
+  /// this side has never seen their alphabet and must not invent one.
+  ///
+  /// Adding this takes away the memberwise init the compiler was making, and
+  /// nothing used it: a Key is built by the decoder. init(from:) is untouched.
+  init(k: String) {
+    self.k = k
+    self.w = 1
+    self.to = nil; self.t = nil; self.nm = nil; self.st = nil; self.ch = nil
+    self.f = nil;  self.aw = nil; self.dx = nil; self.h = nil
+  }
+
   var width: CGFloat { CGFloat(w ?? 1) }
   var tall: CGFloat { CGFloat(max(1, h ?? 1)) }
   var face: Face { Face(t: t, st: st, ch: ch, aw: aw, dx: dx) }

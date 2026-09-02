@@ -332,7 +332,9 @@ UIInputViewController を継承
 build()（毎回、全部作り直す。層の切替もこれ一本）
   Shared.board() が nil
   （keyboard.json が無い／lay が空／読めない）
-    → Say.draw()「先に Lingua で文字を描いてください」を1行出す
+    → Say.draw()「先に Lingua で文字を描いてください」の1行と、🌐 キー1つ
+       （needsInputModeSwitchKey が false の端末では 🌐 は出さない ──
+        その端末には自前の出口がある）
 
   board が読めた
     → KeyBoardView を貼る。board.conv があれば Compose を作り、
@@ -589,8 +591,9 @@ Archive は `-scheme App` のままで大丈夫です。Embed App Extensions の
   JSON を読んで描くだけにします
 - **webview は使えません。** アプリ内キーボードのコードは流用できず、
   Swift で書き直しです。だから `keyboard.json` の形を先に決めます
-- **フルアクセスがオフのまま**の人が必ずいます。空の板ではなく、
-  何をすればいいか書いた板を出します
+- **キーが一枚も無い板を出さないこと。**読めるものだけで描き、読めないものが
+  あればそこだけ諦めます。読めるものが何も無い時でも 🌐 は出します ──
+  それが無い板は、人が抜け出せない板です（§ 11）
 - **文字を消した / 言語を切り替えた**あと、拡張が古い JSON を持っています。
   本体が書き出したら即反映されるよう、拡張は起動のたびに読み直します
 - **`npx cap sync ios` は拡張に触りません**（Podfile も変わりません）。
@@ -601,9 +604,17 @@ Archive は `-scheme App` のままで大丈夫です。Embed App Extensions の
 
 ## 11. 審査
 
-- **🌐 キーは必須。** これが無い他社製キーボードは通りません
-- フルアクセスを取る理由を聞かれます。「利用者が自分で描いた文字の形を
-  読むため。入力内容はどこにも送らない」
+- **🌐 キーは必須。** これが無い他社製キーボードは通りません。逐語で
+  *"Provide a method for progressing to the next keyboard"*（4.4.1）。
+  **アプリが送る板には最初から在り、この拡張が自分で描く板には無かった** ──
+  読めなかった時の板です。いまは在ります（`show()`）
+- **フルアクセス無しで動くこと。**同じ 4.4.1、逐語で *"Remain functional
+  without full network access and without requiring full access"*。
+  門は外しました（KeyboardViewController の節）
+- フルアクセスを取る理由を聞かれます。**取らずに済むなら聞かれません** ──
+  `RequestsOpenAccess` を落とす条件は plist の節に書いてあります。
+  true のまま出すなら答えは「利用者が自分で描いた文字の形を読むため。
+  入力内容はどこにも送らない」
 - プライバシーポリシーにその1文を書いておきます
 
 ---
