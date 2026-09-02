@@ -106,12 +106,35 @@ public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
            Not finishing is the classic StoreKit bug: everything works, and
            the same transaction arrives at every launch forever. */
         await t.finish()
-        _ = await self?.writeDown(mayLower: true)
+        /* WHAT ARRIVED is what decides whether the plan may go DOWN, and a
+           renewal is not an ending. Every transaction used to re-read the
+           entitlement list with permission to lower -- and that list answers
+           `free` for 「it gave me nothing」 as readily as for 「owns nothing」,
+           so a RENEWAL landing beside a list that had not caught up took the
+           plan away on the day the person was charged for it. Apple says an
+           ending on the transaction itself; this asks that instead. */
+        _ = await self?.writeDown(mayLower: Self.ended(t))
       }
     }
   }
 
   deinit { watch?.cancel() }
+
+  /// Whether THIS transaction is Apple saying the subscription ended: revoked
+  /// -- a refund -- or an expiry already behind us.
+  ///
+  /// A renewal carries an expiry in the FUTURE, and is the opposite of an
+  /// ending. An upgrade is the other one that reads like an ending and is not:
+  /// the superseded transaction is retired with a date in the past at the
+  /// moment a BETTER one is handed out, so reading it as an ending is how a
+  /// plan goes down on the day it went up. `isUpgraded` is Apple saying which
+  /// of the two this is.
+  private static func ended(_ t: Transaction) -> Bool {
+    if t.revocationDate != nil { return true }
+    if t.isUpgraded { return false }
+    if let e = t.expirationDate { return e <= Date() }
+    return false
+  }
 
   /// `.unverified` is not "probably fine". It is the one signal that the
   /// signature did not check out on this device, and the answer to it is no.
@@ -163,7 +186,10 @@ public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
   ///
   /// ONE ROAD MAY LOWER IT, and it is `Transaction.updates` -- Apple pushing
   /// a change at us, which is the only moment anything has actually SAID that
-  /// this person's subscription ended.
+  /// this person's subscription ended. AND NOT EVERY PUSH: what arrives there
+  /// is a renewal as often as it is an ending, and `ended()` above is which of
+  /// the two THIS transaction is. A renewal that re-read the entitlement list
+  /// with permission to lower was the same bug one road further out.
   ///
   /// `restore` and `manage` were on this list for a morning and are off it.
   /// Both end in reading `currentEntitlements`, and an empty list there is
