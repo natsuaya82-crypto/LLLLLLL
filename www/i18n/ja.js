@@ -742,7 +742,7 @@ defLang('ja', (function(){
       'set.csv.in'      : 'リストの取り込み',
       'set.lock.csv.t'  : 'CSVの取り込み',
       'set.lock.csv.d'  : "表計算でまとめて作った単語を取り込む",
-      'set.wipe'        : 'データを消去',
+      'set.wipe'        : 'アカウントを削除',
       'set.wipe.langs' : '端末のデータを消す',
       'set.pw'        : 'パスワードを変更',
       'set.pw.old'        : '現在のパスワード',

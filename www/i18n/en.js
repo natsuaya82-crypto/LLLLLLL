@@ -738,7 +738,7 @@ defLang('en', (function(){
       'set.csv.in'      : "Import from CSV",
       'set.lock.csv.t'  : "CSV import",
       'set.lock.csv.d'  : "Pour in a batch you built in a spreadsheet",
-      'set.wipe'        : 'Erase everything',
+      'set.wipe'        : 'Delete account',
       'set.wipe.langs' : 'Erase the data on this phone',
       'set.pw'        : 'Change password',
       'set.pw.old'        : 'Current password',

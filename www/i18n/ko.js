@@ -1001,7 +1001,7 @@ defLang('ko', (function(){
       "set.csv.in"       : "CSV에서 가져오기",
       "set.lock.csv.t"   : "CSV 가져오기",
       "set.lock.csv.d"   : "스프레드시트에서 만들어 둔 묶음을 한꺼번에 부어 넣어요",
-      "set.wipe"         : "모든 데이터 삭제",
+      "set.wipe"         : "계정 삭제",
       "set.wipe.langs"   : "이 기기의 데이터 삭제",
       "set.pw"         : "비밀번호 변경",
       "set.pw.old"         : "현재 비밀번호",

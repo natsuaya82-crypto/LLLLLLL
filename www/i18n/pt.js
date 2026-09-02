@@ -833,7 +833,7 @@ defLang('pt', (function(){
       "set.csv.in"       : "Importar de CSV",
       "set.lock.csv.t"   : "Importação CSV",
       "set.lock.csv.d"   : "Despeje um lote que você montou numa planilha",
-      "set.wipe"         : "Apagar tudo",
+      "set.wipe"         : "Excluir conta",
       "set.wipe.langs"    : "Apagar os dados deste telefone",
       "set.pw"         : "Alterar palavra-passe",
       "set.pw.old"         : "Palavra-passe atual",

@@ -831,7 +831,7 @@ defLang('zh', (function(){
       "set.csv.in"       : "从 CSV 导入",
       "set.lock.csv.t"   : "CSV 导入",
       "set.lock.csv.d"   : "把你在表格里做好的一批词倒进来",
-      "set.wipe"         : "清除全部数据",
+      "set.wipe"         : "删除账号",
       "set.wipe.langs"   : "清除本机数据",
       "set.pw"         : "修改密码",
       "set.pw.old"         : "当前密码",

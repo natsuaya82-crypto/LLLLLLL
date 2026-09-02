@@ -840,7 +840,7 @@ defLang('ru', (function(){
       "set.csv.in"        : "Импорт из CSV",
       "set.lock.csv.t"    : "Импорт CSV",
       "set.lock.csv.d"    : "Влейте партию, собранную в таблице",
-      "set.wipe"          : "Удалить всё",
+      "set.wipe"          : "Удалить аккаунт",
       "set.wipe.langs"     : "Удалить данные с этого телефона",
       "set.pw"          : "Сменить пароль",
       "set.pw.old"          : "Текущий пароль",

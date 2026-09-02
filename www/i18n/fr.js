@@ -874,7 +874,7 @@ defLang('fr', (function(){
       "set.csv.in"       : "Importer depuis un CSV",
       "set.lock.csv.t"   : "Import CSV",
       "set.lock.csv.d"   : "Versez d’un coup un lot préparé dans un tableur",
-      "set.wipe"         : "Tout effacer",
+      "set.wipe"         : "Supprimer le compte",
       "set.wipe.langs"    : "Effacer les données de ce téléphone",
       "set.pw"         : "Changer le mot de passe",
       "set.pw.old"         : "Mot de passe actuel",

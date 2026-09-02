@@ -786,7 +786,7 @@ defLang('es', (function(){
       "set.csv.in"       : "Importar desde CSV",
       "set.lock.csv.t"   : "Importar CSV",
       "set.lock.csv.d"   : "Vuelca un lote que hayas armado en una hoja de cálculo",
-      "set.wipe"         : "Borrar todo",
+      "set.wipe"         : "Eliminar cuenta",
       "set.wipe.langs"    : "Borrar los datos de este teléfono",
       "set.pw"         : "Cambiar contraseña",
       "set.pw.old"         : "Contraseña actual",

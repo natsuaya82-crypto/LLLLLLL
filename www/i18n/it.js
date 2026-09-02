@@ -827,7 +827,7 @@ defLang('it', (function(){
       "set.csv.in"       : "Importa da CSV",
       "set.lock.csv.t"   : "Importazione CSV",
       "set.lock.csv.d"   : "Riversa un blocco costruito in un foglio di calcolo",
-      "set.wipe"         : "Cancella tutto",
+      "set.wipe"         : "Elimina account",
       "set.wipe.langs"    : "Cancella i dati di questo telefono",
       "set.pw"         : "Cambia password",
       "set.pw.old"         : "Password attuale",
