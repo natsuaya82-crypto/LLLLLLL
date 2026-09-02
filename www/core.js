@@ -328,13 +328,35 @@ try{
    In a browser, and in every check under tools/, there is no native side and
    the settings hold the plan exactly as they always did. */
 var PLAN_NATIVE=(typeof window.__plan==='string');
+/* Whether the Keychain ANSWERED, as against what it said. See the note under
+   the branch below: this is what keeps a read that failed from being written
+   down as `free`. A build with no native side, and every check under tools/,
+   has no such thing and is not in this branch at all. */
+var PLAN_READ_OK=(window.__planok!==0 && window.__planok!=='0');
 if(PLAN_NATIVE){
   /* Empty means the Keychain has never been written -- a fresh install, or
      one that predates this and still has the plan in its settings. Both are
      answered the same way: take whatever is there and put it where it now
-     belongs, once. */
+     belongs, once.
+
+     AND EMPTY IS NOT THE ONLY WAY TO GET NOTHING. A read that FAILED came
+     back as the same empty string, and this line answered it by writing
+     `free` into the Keychain -- over a plan somebody had paid for, in the one
+     place the plan lives. 「アップデートしたら勝手に無料プランになったんだけど？」
+     OWNER 2026-09-02. CLAUDE.md's first page says it: 「Empty」 and 「broken」
+     are different states and must not share a branch.
+
+     `window.__planok` is the native side saying which it was --
+     ios/App/App/LinguaPlan.swift § readPlan(). 0 is a read that failed, and
+     the answer to that is to write NOTHING and leave what is there. The plan
+     on screen falls back to the copy in the settings, which is the last one
+     this phone knew; the Keychain keeps whatever it has.
+
+     PLAN_READ_OK is the one place that answers it. Two roads write the plan
+     down at boot -- this one and planMigrate() below -- and both have to ask,
+     or the guard is on one door of two. */
   if(window.__plan) SET.plan=window.__plan;
-  else planKeep(SET.plan||'free');
+  else if(PLAN_READ_OK) planKeep(SET.plan||'free');
   /* Whatever copy is still in the file goes out with the next save, which
      setOnDisk() below is what makes true. Taking it out here as well was
      written first and did nothing: the save that boot does anyway put it
@@ -384,7 +406,12 @@ function planMigrate(){
      ever meant to move one word. Found by migrate-check, which is the only
      check that reloads the page with an old file under it. */
   try{ localStorage.setItem(LS_S, JSON.stringify(setOnDisk())); }catch(e){}
-  if(PLAN_NATIVE) planKeep(SET.plan);
+  /* PLAN_READ_OK for the same reason the branch above asks it: on a launch
+     that could not read the Keychain, `SET.plan` is the settings' copy, and
+     writing that down would put a stale word over whatever the Keychain
+     actually holds. The migration is not urgent -- it runs on the next launch
+     that can read. */
+  if(PLAN_NATIVE && PLAN_READ_OK) planKeep(SET.plan);
 }
 planMigrate();
 

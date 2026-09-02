@@ -2669,6 +2669,17 @@ function render(){
   if(!same) geLeft(RENDERED, route);
   if(!same) viewLeft(RENDERED, route);
   var y = same ? (window.scrollY || window.pageYOffset || 0) : 0;
+  /* THE SCREEN BEING LEFT, KEPT. Not to redraw it -- to show it behind the
+     current one while a thumb drags that one off, which is what iOS does and
+     what was asked for: 「iPhone標準みたいに左側になんかふわってやつ出てきて
+     ほしい」 OWNER 2026-09-02.
+
+     Kept rather than rebuilt, and that is the whole reason it is here rather
+     than in the gesture: building a view again RUNS it. vNotif() marks the
+     notices read, three screens pull from the network, and a swipe that was
+     abandoned would have done all of it. What is stashed is the page as it
+     was actually left. www/shell.js § swStart is what shows it. */
+  if(!same) navKeep(RENDERED, app.innerHTML);
   RENDERED=route;
   /* the entrance animation belongs to arriving, not to redrawing */
   app.setAttribute('data-fresh', same ? '0' : '1');

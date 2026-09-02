@@ -697,6 +697,43 @@ const st = await pg.evaluate(async () => {
   STORE_P = null; STORE_ASK = false;
   return out;
 });
+/* ---- the Keychain, and the difference between empty and unreadable -------
+   The plan LIVES in the Keychain on a phone -- ios/App/App/LinguaPlan.swift --
+   and www/core.js reads it out of `window.__plan`, injected before any script
+   of ours runs. Nothing after boot can put it back: this is the one read, and
+   what it decides is written straight back down.
+
+   `read()` used to answer the empty string for BOTH 「there is nothing there」
+   and 「that failed」, and core.js answered empty by writing `free` INTO the
+   Keychain. So one unreadable launch turned a paid plan into a free one, for
+   good. 「アップデートしたら勝手に無料プランになったんだけど？」 OWNER
+   2026-09-02.
+
+   A fresh PAGE for each case, and the values put in with addInitScript --
+   the same moment the native side injects them, because core.js runs this
+   branch once as it loads and there is no second chance to set it up. */
+const KEY = [];
+for (const c of [
+  { n: 'unreadable', plan: '', ok: 0,  had: 'pro' },
+  { n: 'empty',      plan: '', ok: 1,  had: 'pro' },
+  { n: 'holds pro',  plan: 'pro', ok: 1, had: 'free' }
+]) {
+  const kp = await br.newPage({ viewport: { width: 390, height: 844 } });
+  await kp.addInitScript(({ plan, ok, had }) => {
+    window.__plan = plan;
+    window.__planok = ok;
+    window.__wrote = [];
+    window.Capacitor = { nativePromise: function (p, m, a) {
+      if (p === 'LinguaPlan') window.__wrote.push(a && a.plan);
+      return { 'catch': function () { return { 'catch': function () {} }; } };
+    } };
+    try { localStorage.setItem('lingua.set', JSON.stringify({ plan: had, done: true })); } catch (e) {}
+  }, c);
+  await kp.goto('file://' + path.join(dir, '..', 'www', 'index.html'));
+  await kp.waitForFunction(() => typeof window.plan === 'function');
+  KEY.push(await kp.evaluate((n) => ({ n: n, plan: plan(), wrote: window.__wrote.slice() }), c.n));
+  await kp.close();
+}
 await br.close();
 
 const bad = [];
@@ -888,6 +925,29 @@ say(st.noYearOff === '33',
    one place that comparison is a lie rather than merely a wrong number. */
 say(st.before.indexOf('pwas') === -1,
     'and before Apple has answered at all, nothing is struck through -- there is no typed one');
+
+const K = {}; KEY.forEach(function (r) { K[r.n] = r; });
+say(K['unreadable'].wrote.length === 0,
+    'a Keychain read that FAILED writes nothing back — a paid plan is not ' +
+    'overwritten by a launch that could not see it (wrote ' +
+    JSON.stringify(K['unreadable'].wrote) + ')');
+say(K['unreadable'].plan === 'pro',
+    'and the screen falls back to the copy in the settings, which is the last ' +
+    'plan this phone knew (' + K['unreadable'].plan + ')');
+/* What is asked is WHAT was written, not how many times. Two roads write the
+   plan down at boot -- the branch that fills an empty Keychain, and
+   planMigrate() -- and on this seed both run and both write the same `pro`.
+   Counting them said 1 and got 2, which is the check being about the wrong
+   thing: nothing here cares how many times the right word is written, and
+   everything here cares that `free` is never one of them. */
+say(K['empty'].wrote.length > 0 &&
+    K['empty'].wrote.every(function (w) { return w === 'pro'; }),
+    'a Keychain that genuinely holds NOTHING still takes what the old settings ' +
+    'had, and every write is that — the migration road is untouched (' +
+    JSON.stringify(K['empty'].wrote) + ')');
+say(K['holds pro'].plan === 'pro',
+    'and a Keychain that holds a plan is the one that decides, over the ' +
+    'settings (' + K['holds pro'].plan + ')');
 
 if (bad.length) { console.error('\nplan: ' + bad.length + ' failed'); process.exit(1); }
 console.log('\nplan: money decides what may be DONE and nothing about what exists --\n' +

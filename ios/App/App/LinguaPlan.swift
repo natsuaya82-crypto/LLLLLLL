@@ -48,18 +48,31 @@ public class LinguaPlanPlugin: CAPPlugin, CAPBridgedPlugin {
      kSecAttrAccount as String: account]
   }
 
-  /// Empty when there is nothing there, which is what a fresh install and an
-  /// install that predates this file both look like. www/core.js tells them
-  /// apart from a plan it can read out of the old settings.
-  static func read() -> String {
+  /// The plan, AND whether the Keychain actually answered.
+  ///
+  /// These are two different facts and they used to share one empty string.
+  /// `errSecItemNotFound` is 「there is nothing there」 -- a fresh install, or
+  /// one that predates this file -- and www/core.js answers it by writing what
+  /// the old settings held, which on a phone that never paid is `free`.
+  /// Anything ELSE is 「could not read」: the item exists and this call did not
+  /// get it. `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly` says exactly
+  /// when that happens, and a launch can be earlier than that.
+  ///
+  /// With one string for both, a failed READ became a WRITE of `free` over
+  /// somebody's paid plan, and the Keychain is where the plan LIVES -- so it
+  /// was gone. 「アップデートしたら勝手に無料プランになったんだけど？」 OWNER
+  /// 2026-09-02. CLAUDE.md's first page: 「Empty」 and 「broken」 are different
+  /// states and must not share a branch.
+  static func readPlan() -> (String, OSStatus) {
     var q = query()
     q[kSecReturnData as String] = true
     q[kSecMatchLimit as String] = kSecMatchLimitOne
     var item: CFTypeRef?
-    guard SecItemCopyMatching(q as CFDictionary, &item) == errSecSuccess,
+    let st = SecItemCopyMatching(q as CFDictionary, &item)
+    guard st == errSecSuccess,
           let data = item as? Data,
-          let s = String(data: data, encoding: .utf8) else { return "" }
-    return s
+          let s = String(data: data, encoding: .utf8) else { return ("", st) }
+    return (s, st)
   }
 
   /// A plan is a short lowercase word and nothing else. This is not about
@@ -75,7 +88,13 @@ public class LinguaPlanPlugin: CAPPlugin, CAPBridgedPlugin {
   /// web view has loaded anything.
   static func inject(into webView: WKWebView?) {
     guard let ucc = webView?.configuration.userContentController else { return }
-    let js = "window.__plan=\"" + clean(read()) + "\";"
+    let (plan, st) = readPlan()
+    /* Whether the Keychain ANSWERED. Found, or genuinely empty, are both an
+       answer; anything else is a read that failed and www/core.js must not
+       write over what it cannot see. */
+    let answered = (st == errSecSuccess || st == errSecItemNotFound)
+    let js = "window.__plan=\"" + clean(plan) + "\";" +
+             "window.__planok=" + (answered ? "1" : "0") + ";"
     ucc.addUserScript(WKUserScript(source: js,
                                    injectionTime: .atDocumentStart,
                                    forMainFrameOnly: true))

@@ -1097,15 +1097,92 @@ function swStart(e){
   else return;
   swX=e.clientX; swY=e.clientY; swOn=true;
 }
+/* ---- the screen behind, while one is being dragged off it ---------------
+   「iPhone標準みたいに左側になんかふわってやつ出てきてほしい」 OWNER
+   2026-09-02, after the left edge started working at all.
+
+   THE SCREEN YOU CAME FROM, KEPT BY render(). Two of them and not one: which
+   screen it was, and its HTML as it was left. A pair, because the picture is
+   only worth showing when the route it belongs to is the one `back()` would
+   take you to -- otherwise it is a screen from somewhere else entirely,
+   sliding in under a gesture that will not land there. */
+var NAVBK=null;
+function navKeep(r, html){ NAVBK=(r && html)? {r:String(r), html:html} : null; }
+/* Where back() would go. NAV's last entry is where you are. */
+function navBackTo(){ return (NAV.length>1)? String(NAV[NAV.length-2].r||'') : ''; }
+/* The screen under the one being dragged, or nothing.
+
+   Nothing is REBUILT here and that is the point: calling a view again runs it
+   -- vNotif() marks the notices read, three screens pull -- so an abandoned
+   swipe would have done all of it. render() keeps what it replaces. */
+function swPrev(){
+  var to=navBackTo();
+  return (NAVBK && to && NAVBK.r===to)? NAVBK.html : '';
+}
+function swLayer(){ return document.getElementById('swprev'); }
+/* Following the thumb. `pointermove` and not touchmove, and never passive
+   while the gesture is live: once it IS a back gesture, the page must not
+   scroll under it. Until then it is nothing and the page is left alone --
+   which is why swLive is a second flag and not the same one as swOn. */
+var swLive=false, swW=1;
+function swMove(e){
+  if(!swOn) return;
+  var dx=e.clientX-swX, dy=e.clientY-swY, p;
+  if(!swLive){
+    /* Not yet mine. It becomes a back gesture when it has gone far enough the
+       right way AND is mostly sideways; a thumb heading down the page is the
+       page scrolling and this never sees it again. */
+    if(Math.abs(dy) > Math.abs(dx)){ swOn=false; return; }
+    if(dx*swWay < 12) return;
+    p=swPrev();
+    if(!p){ swOn=false; return; }
+    swLive=true;
+    swW=window.innerWidth||1;
+    var el=swLayer();
+    if(el) el.innerHTML=p;
+    document.documentElement.classList.remove('swgo');
+    document.documentElement.classList.add('swon');
+  }
+  if(e.cancelable) e.preventDefault();
+  swDraw(Math.max(0, Math.min(swW, dx*swWay)));
+}
+/* One place that says where the two screens stand for a given travel. The
+   one behind comes in from a third of the way out, which is the depth iOS
+   gives it -- it is behind, so it moves less. */
+function swDraw(d){
+  var app=document.getElementById('app'), el=swLayer(), a=d*swWay;
+  if(app) app.style.transform='translateX('+a+'px)';
+  if(el) el.style.transform='translateX('+((d-swW)/3*swWay)+'px)';
+}
+function swClear(){
+  var app=document.getElementById('app'), el=swLayer();
+  document.documentElement.classList.remove('swon');
+  document.documentElement.classList.remove('swgo');
+  if(app) app.style.transform='';
+  if(el){ el.style.transform=''; el.innerHTML=''; }
+}
 function swEnd(e){
   if(!swOn) return;
   swOn=false;
-  var dx=e.clientX-swX, dy=e.clientY-swY;
-  /* Far enough, and the way this edge goes. A drag the wrong way from an edge
-     is not a slow back gesture, it is something else. */
-  if(dx*swWay < 70) return;
-  if(Math.abs(dy) > Math.abs(dx)*0.6) return;
-  back();
+  var dx=e.clientX-swX, dy=e.clientY-swY, d=dx*swWay;
+  if(!swLive){
+    /* No picture to drag -- the screen behind was not kept, or this is the
+       first screen. The gesture still works, it simply does not animate. */
+    if(d < 70) return;
+    if(Math.abs(dy) > Math.abs(dx)*0.6) return;
+    back();
+    return;
+  }
+  swLive=false;
+  /* Past a third of the way is going. Under it springs back. Either way it
+     travels rather than jumping -- `swgo` is what puts the transition on. */
+  var go=(d > swW/3);
+  document.documentElement.classList.add('swgo');
+  swDraw(go? swW : 0);
+  setTimeout(function(){
+    swClear();
+    if(go) back();
+  }, 230);
 }
 /* ---- putting the keyboard down -----------------------------------------
    「投稿画面は下させるな、投稿画面以外は絶対下させろって話」 OWNER 2026-08-27.
@@ -1148,7 +1225,16 @@ function kbLetGo(e){
 function swMount(){
   document.addEventListener('pointerdown', kbLetGo, {passive:true});
   document.addEventListener('pointerdown', swStart, {passive:true});
+  /* NOT passive: once this is a back gesture it stops the page scrolling
+     under it, which is the one thing a passive listener may not do. */
+  document.addEventListener('pointermove', swMove, {passive:false});
   document.addEventListener('pointerup', swEnd, {passive:true});
+  /* A thumb that leaves the glass mid-drag, or a call arriving. Without this
+     the screen stays where the finger left it. */
+  document.addEventListener('pointercancel', function(){
+    if(!swOn && !swLive) return;
+    swOn=false; swLive=false; swClear();
+  }, {passive:true});
   document.addEventListener('pointercancel', function(){ swOn=false; }, {passive:true});
 }
 /* And the bar is put on the page here, once, into an element beside #app that

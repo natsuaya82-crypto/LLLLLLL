@@ -119,6 +119,19 @@ input,textarea,[contenteditable],.mn,.rd{
    was eating every second tap. */
 button,select,a,.trow,.entry,.set,.obsrow,.obchb,.obescb{touch-action:manipulation}
 #app{max-width:480px;margin:0 auto;min-height:100dvh;position:relative}
+/* The screen behind, while one is being dragged off it. Hidden until a thumb
+   is on the left edge; it sits under #app and comes in from the left as the
+   current screen goes right, which is what iOS does. `pointer-events:none`
+   because it is a picture of a screen and not a screen -- nothing on it is
+   pressable, and a press that landed on it would run a name from a page you
+   are only looking at. */
+#swprev{display:none;position:fixed;inset:0;max-width:480px;margin:0 auto;
+        overflow:hidden;background:var(--bg);z-index:1;will-change:transform}
+html.swon #swprev{display:block}
+html.swon #app{position:relative;z-index:2;background:var(--bg);
+               box-shadow:-12px 0 28px rgba(0,0,0,.18);will-change:transform}
+/* The release: whichever way it goes, it goes there rather than jumping. */
+html.swgo #swprev, html.swgo #app{transition:transform .22s ease-out}
 /* A screen slides in when you arrive at it. It must NOT slide in again every
    time something on it is tapped -- but every tap redraws the whole view, so
    it did: choose a writing system and the entire screen jumped twelve pixels
@@ -3468,6 +3481,19 @@ textarea.ntbody.grow{min-height:0;height:auto;overflow:hidden;resize:none}
      than let in. This holds for a moment and goes. -->
 <div id="splash"><div class="splbrand">LIN<span class="st">G</span>UA</div>
 <div class="splrule"></div></div>
+<!-- The screen you came FROM, held still while a thumb drags the current one
+     off it, the way iOS does. Asked for on 2026-09-02; what was said is
+     written over swStart() in www/shell.js, which is what shows this.
+     It is not rebuilt: render() keeps the HTML of the screen it is replacing,
+     so what stands here is the page as it was left -- no pulls, no read marks,
+     nothing run twice.
+     NO APOSTROPHE IN HERE. tools/dead-check.mjs strips JavaScript comments and
+     strings from index.html and does not know an HTML comment from anything
+     else, so one apostrophe opens a string that swallows the rest of the
+     file --
+     window.splashDone below it stops being defined as far as the check can
+     see. It said so, correctly, about a comment. -->
+<div id="swprev" aria-hidden="true"></div>
 <div id="app"></div>
 <!-- The tab bar lives out here, beside the screen rather than inside it.
      render() replaces #app whole on every navigation, so a bar written into
