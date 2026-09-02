@@ -2810,6 +2810,13 @@ be this app deciding whose calendar it is」。それは**週や月の長さを�
   `kb.locked` — and `LANG_MAX`, whose only reader was one of them.
 - Affected data: none.
 - Affected docs: `CLAUDE.md`, `docs/FEATURES.md`
+- **Held by: nobody but a person.** Measured 2026-09-01. `.note` is worn 39
+  times and most of those are the empty states, counts, states and errors this
+  decision explicitly allows, so a check on the class would fail the app for
+  obeying it; and a `.d`/`.eg` key is not an explanation either, a third of
+  them being `aria-label`s. What is left is the sentence, and no check reads a
+  sentence. Written here so that silence is not read as a check — CLAUDE.md
+  § Explaining says the same in the rule itself.
 - Implementation status: implemented. **`cap.lapse.d` is left in and is the
   one thing to settle**: it is the line that says a dictionary dropping back
   to a hundred words has had NOTHING deleted. Taking it out would leave the

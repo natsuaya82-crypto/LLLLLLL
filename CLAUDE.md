@@ -188,6 +188,17 @@ a setting means. An empty state, a count, a state, an error — none of those is
 an explanation. Where one is genuinely needed it goes behind the `?` in the
 bar, which is what the `?` is for. 「アプリ内に説明書くの禁止」
 
+**NOTHING HOLDS THIS ONE, AND THAT IS SAID HERE SO SILENCE IS NOT READ AS A
+CHECK.** It was measured on 2026-09-01 and every mechanical form of it is a
+lying proxy. `.note` is worn 39 times and most of them are what this rule
+ALLOWS — an empty state, a count, a state, an error — so a check on the class
+would fail the app for obeying the rule. A `.d` or `.eg` key is not an
+explanation either: a third of them are `aria-label`s, which nobody sees and
+every screen needs. What is left is the sentence itself, and no check can read
+a sentence. So this is **a rule a person holds by reading the screen**, the
+owner's eye is what has caught every breach of it so far, and a session may not
+write 「the check is green」 about it.
+
 **Narrowed on 2026-08-22, and only this far.** 「必要な説明は書いてね。みて
 わからないのが一番ダメ。最低限ね」 Where the app has TAKEN SOMETHING AWAY and
 the screen would otherwise be a state with no cause and no way out, the
@@ -245,6 +256,16 @@ front of it, because it will be read anyway. 「歴史とかいいから消せ�
 `docs/CHANGELOG.md` is the one exception and is never rewritten — it records
 what was true on a day. Everywhere else, including this file, only sentences
 about now. → `docs/FEATURE_RULES.md`
+
+**And a rule that nothing STOPS says so, in its own line.** 「書いていて
+止めないの本当に何？」 OWNER 2026-09-01. Writing is for a person; it stops
+nobody. So the convention here is: **a rule held by a check NAMES the check,
+and a rule that names none is held by a person reading the screen.** Neither
+kind is optional — what is forbidden is the third kind, a rule written as if
+something were stopping it when nothing is, because that is the one a session
+reads as 「the gate would have caught me」. When a rule cannot be held
+mechanically, say that in the rule instead of leaving it bare. Explaining is
+the worked example above.
 
 **"Rule" is the wrong word for what has to be fixed, and the wrong word let a
 whole file rot.** What goes stale is anything WRITTEN DOWN — a rule, a
