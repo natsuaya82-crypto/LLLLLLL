@@ -1614,18 +1614,6 @@ function wldPage(ed, L, lid){
        heading and an arrow into this phone's own chapters, which is a way
        through that means nothing to anybody but their owner. What is left to
        READ is the overview, the sounds, the letters and the keyboard. */
-    /* AND ONLY IF IT CAN ACTUALLY BE TAKEN. The dictionary and the grammar are
-       not READ on the article -- 「単語と文法とはdl専用だから見れなくていいのよ？
-       音と文字とキーボードだけ」 OWNER 2026-08-25 -- so the only reason to draw
-       a heading for one is that there is a ↓ under it. `slice_read` in
-       supabase/schema.sql opens five kinds to a reader and neither of those two
-       is among them, so a publisher who has said 「take my dictionary」 was
-       giving this page a heading with nothing under it, nothing to press, and
-       no way through: a section that says a chapter is there and cannot show
-       it or hand it over. wldDlKind() is the one place that says which
-       sections the server will actually give up. */
-    if(!ed && (sec.r==='words' || sec.r==='gram') &&
-       !(wldSecDl(sec.r, w) && wldDlKind(sec.r))) return;
     /* And what MAY be taken away says so, where it is --
        「DL許可が出てるものはDLマークつけないと」 OWNER 2026-08-25. It is on the
        article and not on the editor: the switch is the answer on the writing
@@ -1660,6 +1648,28 @@ function wldPage(ed, L, lid){
        article that happen to carry a switch, and they are not sections at
        all: they are one question asked about four chapters that live
        elsewhere. */
+    /* NOT A HEADING ON THE ARTICLE AT ALL, ON EITHER PAGE.
+       「単語と文法とはdl専用だから見れなくていいのよ？　音と文字とキーボード
+       だけ」 OWNER 2026-08-25, and 「見れないならいらなくね？」 2026-09-02.
+
+       A dictionary and a grammar are handed over rather than looked at, so
+       there is nothing to fold open under either heading -- and that is what
+       they were: a row with no `›` marker beside the four that have one, in a
+       list where every other row opens. 「これ治ってないやんけ」 OWNER
+       2026-09-02, on their OWN article, where the two still stood because a
+       ↓ mark had been reason enough to draw a heading.
+
+       It is not, and the mark is not lost: on somebody else's article the ↓
+       is a row at the foot with the others (`dls` below), where the owner put
+       it -- 「dlのやつは一番下にして」「上の概要とセクションに混ざらないように
+       して」. On your own, whether other people may take a chapter is answered
+       on the WRITING face, which is the four switches and is the whole of
+       what that face shows for them: 「文字とか単語とかはここで編集しないから
+       これしか出ない」.
+
+       What is left to READ is the overview, the sounds, the letters and the
+       keyboard. */
+    if(!ed && (sec.r==='words' || sec.r==='gram')) return;
     if(ed && sec.dl){ dls+=wldSecRows(sec); return; }
     if(sec.r==='wldov'){
       if(ed){
