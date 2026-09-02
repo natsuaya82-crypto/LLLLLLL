@@ -324,6 +324,7 @@ defLang('de', (function(){
       "ob.mail.again" : "Erneut senden",
       "ob.mail.sent" : "Gesendet.",
       "ob.mail.h.reset" : "Neues Passwort wählen",
+      "ob.mail.h.setpw" : "Passwort festlegen",
       "ob.mail.newpw.ph" : "Neues Passwort",
       "ob.mail.reset" : "Speichern",
       "ob.mail.wait" : "Läuft…",

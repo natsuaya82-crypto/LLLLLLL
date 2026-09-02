@@ -384,6 +384,7 @@ defLang('fr', (function(){
       "ob.mail.again" : "Renvoyer",
       "ob.mail.sent" : "Envoyé.",
       "ob.mail.h.reset" : "Choisissez un nouveau mot de passe",
+      "ob.mail.h.setpw" : "Choisissez un mot de passe",
       "ob.mail.newpw.ph" : "Nouveau mot de passe",
       "ob.mail.reset" : "Valider",
       "ob.mail.wait" : "En cours…",

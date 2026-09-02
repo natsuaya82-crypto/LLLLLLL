@@ -336,6 +336,7 @@ defLang('it', (function(){
       "ob.mail.again" : "Invia di nuovo",
       "ob.mail.sent" : "Inviato.",
       "ob.mail.h.reset" : "Scegli una nuova password",
+      "ob.mail.h.setpw" : "Scegli una password",
       "ob.mail.newpw.ph" : "Nuova password",
       "ob.mail.reset" : "Salva",
       "ob.mail.wait" : "In corso…",

@@ -990,9 +990,14 @@ say(K['holds pro'].plan === 'pro',
    What a reading CAN hold is the shape, and the shape is the whole rule.
    `entitledPlan()` answers `free` for 「has nothing」 and for 「the list gave
    me nothing」 alike, so `writeDown()` may only lower the plan where Apple
-   positively said so. Three roads may: the `Transaction.updates` listener,
-   `restore` (after AppStore.sync), and `manage` (after Apple's own sheet).
-   Every other caller may raise it and may not lower it.
+   positively said so. ONE road may: the `Transaction.updates` listener. Every
+   other caller may raise it and may not lower it.
+
+   And not even that road lowers it on everything that arrives. A renewal
+   arrives there too, and re-reading the entitlement list with permission to
+   lower took the plan away on the day it was paid for. So no call site passes
+   a bare `true` at all: the listener asks what ARRIVED -- revoked, or an
+   expiry behind us -- and hands that answer in.
 
    Read off the SOURCE and not written down here: the allowed three are named,
    and every other call site is found rather than listed, so a fourth road
@@ -1028,7 +1033,13 @@ const calls = [];
        skip did. Both are the function talking about itself. */
     const f = funcAt(STORE, m.index);
     if (f === 'writeDown' || f === 'entitledPlan') continue;
-    calls.push({ inside: f, lower: /mayLower\s*:\s*true/.test(m[1]) });
+    /* Three states and not two. `mayLower:` absent or `false` is a road that
+       never lowers; a bare `true` lowers whatever arrived; anything else is a
+       road that lowers only when what it hands in says so. */
+    const arg = m[1];
+    calls.push({ inside: f,
+                 lower: /mayLower\s*:/.test(arg) && !/mayLower\s*:\s*false/.test(arg),
+                 always: /mayLower\s*:\s*true/.test(arg) });
   }
 }
 const lowered = calls.filter(c => c.lower).map(c => c.inside).sort();
@@ -1042,12 +1053,31 @@ say(lowered.every(f => MAY_LOWER.indexOf(f) >= 0),
 say(raised.length > 0 && raised.every(f => MAY_LOWER.indexOf(f) < 0),
     'while every other road may raise it and may not lower it (' +
     JSON.stringify(raised) + ')');
+const always = calls.filter(c => c.always).map(c => c.inside).sort();
+say(always.length === 0,
+    'and not even that road lowers it on EVERYTHING that arrives — no call ' +
+    'site passes a bare `true`, because a renewal arrives at the listener too ' +
+    '(' + JSON.stringify(always) + ')');
+say(/writeDown\(mayLower:\s*Self\.ended\(t\)\)/.test(STORE) &&
+    /func ended\(_ t: Transaction\)\s*->\s*Bool/.test(STORE) &&
+    /revocationDate/.test(STORE) && /expirationDate/.test(STORE) &&
+    /isUpgraded/.test(STORE),
+    'it asks what ARRIVED instead — revoked, or an expiry behind us, and an ' +
+    'upgrade is neither (READ off the source: no Swift on this runner, so ' +
+    'what it DOES on a real receipt is not measured here)');
 say(/if\s*!mayLower/.test(STORE) && /best\(seen,\s*held\)\s*!=\s*seen/.test(STORE),
     'and the guard is a comparison with what the Keychain HOLDS, not a flag ' +
     'on its own');
 say(/st\s*==\s*errSecSuccess/.test(STORE),
     'and only a Keychain that ANSWERED gets a vote — a read that failed says ' +
     'nothing about what is there');
+/* Not getting a vote was only half of it. The other half fell through to the
+   write, and what it wrote was `free` whenever the entitlement list gave
+   nothing. Read, not run: this only says the line is in the source. */
+say(/st\s*!=\s*errSecSuccess\s*&&\s*st\s*!=\s*errSecItemNotFound/.test(STORE),
+    'and a read that FAILED is not written over either — the same line ' +
+    'LinguaPlan.inject() draws, with 「there is nothing there」 the one other ' +
+    'status that counts as an answer');
 /* And the Keychain's own half, which the browser above cannot see either:
    the value and the status are two facts, and the injection carries both. */
 say(/func readPlan\(\)\s*->\s*\(String,\s*OSStatus\)/.test(KEYC),

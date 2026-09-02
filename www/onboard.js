@@ -598,7 +598,11 @@ function obAtDoor(){
 function obDoorBack(){
   var m=OBM.mode;
   if(m==='code') return 'up';
-  if(m==='reset' || m==='newpw') return 'forgot';
+  if(m==='reset') return 'forgot';
+  /* Nothing behind the password. Both roads reach it with a session already
+     in hand -- the digits were spent to get one -- so the screens behind it
+     ask for an address that has been proved and an account that exists. */
+  if(m==='newpw') return '';
   if(m==='forgot' || m==='up') return 'in';
   return '';
 }
@@ -903,7 +907,12 @@ function obNo(d, s, m){
    Filling the field in the first place is the operating system's job: the
    autocomplete words below are what make iOS offer the Keychain, and they are
    the reason there is nothing here that stores an address either. */
-var OBM={ mode:'in', em:'', pw:'', code:'', nm:'', hd:'', busy:false, msg:'' };
+/* `fresh` is which of the two roads reached the password screen: an account
+   being made, or one whose password is being replaced. Both end on the same
+   screen and it is the same act -- write a password with the session the six
+   digits produced -- but 「新しいパスワード」 over somebody's FIRST one is a
+   heading about a thing that does not exist. */
+var OBM={ mode:'in', em:'', pw:'', code:'', nm:'', hd:'', busy:false, msg:'', fresh:false };
 /* Where to go when the account screen is done, for somebody who did not
    arrive here by starting the app.
 
@@ -1024,10 +1033,19 @@ function obMailUp(){
     OBM.busy=false; OBM.pw=''; obMailGo('code');
   }, obNo);
 }
+/* THE DIGITS FIRST, THE PASSWORD AFTER. 「普通に6桁のコード打ってから
+   パスワード要求だろ」 OWNER 2026-09-02.
+
+   The address is proved by the six digits and the password is chosen once it
+   is -- which is the same two screens the reset road already had, in the same
+   order, for the same reason. What comes back from the digits is a session,
+   and obNewPwGo() is what spends it. */
 function obMailCode(){
   if(OBM.busy) return;
   OBM.busy=true; OBM.msg=''; render();
-  netVerify(OBM.em, OBM.code, obIn, obNo);
+  netVerify(OBM.em, OBM.code, function(){
+    OBM.busy=false; OBM.code=''; OBM.pw=''; OBM.fresh=true; obMailGo('newpw');
+  }, obNo);
 }
 /* THE SAME SIX DIGITS, SENT AGAIN. A mail that did not arrive is the ordinary
    thing that happens on this screen -- it is in a spam folder, or the address
@@ -1076,7 +1094,7 @@ function obResetGo(){
      asking the question. What comes back is a session, and the next screen is
      what spends it. */
   netRecoverCode(OBM.em, OBM.code, function(){
-    OBM.busy=false; OBM.code=''; OBM.pw=''; obMailGo('newpw');
+    OBM.busy=false; OBM.code=''; OBM.pw=''; OBM.fresh=false; obMailGo('newpw');
   }, obNo);
 }
 /* Somebody holding a session changing their own password. Nothing here asks
@@ -1327,8 +1345,9 @@ function obResetHTML(){
 /* And the second step, reached only by a code the server accepted. */
 function obNewPwHTML(){
   return '<div class="mid obform">'+
-    '<h2 class="obh">'+t('ob.mail.h.reset')+'</h2>'+
-    obMailField('ob-pw', 'pw', 'password', 'new-password', 'ob.mail.newpw.ph')+
+    '<h2 class="obh">'+t(OBM.fresh? 'ob.mail.h.setpw' : 'ob.mail.h.reset')+'</h2>'+
+    obMailField('ob-pw', 'pw', 'password', 'new-password',
+                OBM.fresh? 'ob.mail.pw.ph' : 'ob.mail.newpw.ph')+
     (OBM.msg? '<div class="obmsg">'+esc(OBM.msg)+'</div>' : '')+
     '<button class="btn"' + DO('obNewPwGo') + (OBM.busy? ' disabled':'') + '>'+
       t(OBM.busy? 'ob.mail.wait' : 'ob.mail.reset')+'</button>'+

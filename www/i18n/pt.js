@@ -343,6 +343,7 @@ defLang('pt', (function(){
       "ob.mail.again" : "Enviar de novo",
       "ob.mail.sent" : "Enviado.",
       "ob.mail.h.reset" : "Escolha uma nova senha",
+      "ob.mail.h.setpw" : "Escolha uma senha",
       "ob.mail.newpw.ph" : "Nova senha",
       "ob.mail.reset" : "Guardar",
       "ob.mail.wait" : "Trabalhando…",

@@ -453,10 +453,43 @@ function langOpen(id){
    one is answered.
 
    langOpen() does the rest and is untouched: it writes out the language being
-   left, switches, reads the new one in and calls viewReset(). */
+   left, switches, reads the new one in and calls viewReset().
+
+   AND IT IS STAMPED WITH WHOEVER IS PRESSING IT. 「1アドレス1アカウント」
+   「これは絶対課金もアカウントごと言語もそう」 OWNER 2026-09-02: a language
+   is the ACCOUNT's, so the account it is for goes on at the moment it is
+   made. langForAcct() below does the same three lines for the same reason.
+
+   Without them the stamp arrived only when netLangRow() had finished putting
+   the language up, so a language made in a tunnel -- or one whose upload
+   failed -- stayed account-less, and langOwned() reads an account-less
+   language as belonging to NOBODY once the onboarding is over. The person who
+   made it would not find it in their own list.
+
+   langFirst() above is the one caller that stamps nothing, and that is not
+   this hole: it runs before there is an account to name. The door is where
+   what it made gets its account.
+
+   AND THE ACCOUNT IS ASKED FOR BEFORE ANY OF IT. 「言語はアカウントないと
+   作れないです」「ログインした人しか書けないけど」 has been in CLAUDE.md
+   since 2026-08-26 with nothing standing in front of this button: the only
+   thing here was the ceiling. makeNeed() (www/onboard.js) is the question the
+   other four makers already ask -- a letter, a word, a grammar stage, a note
+   -- and making a language is the fifth. It is asked FIRST, before the
+   ceiling: what a ceiling is depends on the plan, and the plan is the
+   account's.
+
+   It answers true through the whole of the onboarding, where the walk makes
+   a language before there is an account to make it for and the door is the
+   step after. So this is one call and not a condition -- that file already
+   holds which of the two moments this is, and re-stating it here would be
+   the same sentence in two places. */
 function langNew(){
+  if(!makeNeed()) return;
   if(langStop()) return;
   var id=langMint();
+  if(typeof SESS!=='undefined' && SESS && SESS.uid)
+    LANGS[id].uid=String(SESS.uid);
   langStore();
   langOpen(id);
 }
@@ -716,13 +749,39 @@ function langCap(){
    folding `mine` into it silently stopped counting a language that had never
    been given one. plan-check caught it: 「two more in ANOTHER language fill
    the plan up」 went green-to-red because the fixture's other language is
-   `{nm:'Other'}` and says nothing about `mine`. */
+   `{nm:'Other'}` and says nothing about `mine`.
+
+   AND A LANGUAGE WITH NO `uid` IS PICKED UP AT THE ONBOARDING DOOR AND
+   NOWHERE ELSE. 「1アドレス1アカウント」「これは絶対課金もアカウントごと
+   言語もそう」 OWNER 2026-09-02. It used to be read as belonging to whoever
+   was asking, and that handed the last person's work to the next one: a
+   language A made on this phone and never once put up became B's the moment
+   B signed in -- the dictionary, the letters and the keyboard in it, listed
+   as B's own, with nothing thrown.
+
+   The onboarding is the one place something is made before there is an
+   account to make it for, and the door is on the way out of it: obFinish()
+   calls netLangSync() the moment somebody is through, which is where the
+   account goes on. So the walk is the only moment a session may adopt what
+   it finds, and `SET.done` is what tells the walk from the app -- the same
+   question makeNeed() asks in www/onboard.js, in the same words, for the
+   same reason.
+
+   Everywhere else an unstamped language is NOBODY's. It is not deleted, not
+   hidden from its own storage, not taken out of the backup file and not
+   emptied: it stays in the index and in `lingua.<id>.*` exactly as it was,
+   and the list at www/home.js counts it among the ones it is not showing.
+   What changes is only that it is not offered to a person who did not make
+   it. Languages made from 2026-09-02 all carry their account, so what this
+   can reach is the ones already sitting on a phone that have never been up
+   -- and handing those to the wrong person is the failure this exists to
+   stop. `tools/acct-check.mjs` case 35 holds both halves. */
 function langOwned(id){
   var L=LANGS[id], me;
   if(!L) return false;
   me=(typeof SESS!=='undefined' && SESS && SESS.uid)? String(SESS.uid) : '';
   if(!me) return true;
-  if(!L.uid) return true;
+  if(!L.uid) return !SET.done;
   return String(L.uid)===me;
 }
 function langAcct(id){

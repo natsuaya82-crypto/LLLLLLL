@@ -242,7 +242,7 @@ const SESS = JSON.stringify({ at: 'not a jwt', rt: 'a refresh token',
                                if (b) b.click();
                                window.__landed = OBM.mode; });
   const b = r.back || {};
-  const BEHIND = { up: 'in', code: 'up', forgot: 'in', reset: 'forgot', newpw: 'forgot' };
+  const BEHIND = { up: 'in', code: 'up', forgot: 'in', reset: 'forgot' };
   /* The face the door OPENS on is the one with nothing behind it: signed out,
      the app IS this screen -- 「他の画面に行かせるな。ログアウトの時は。」 */
   if (b.in && b.in.chev)
@@ -263,6 +263,11 @@ const SESS = JSON.stringify({ at: 'not a jwt', rt: 'a refresh token',
   if (b.newpw && b.newpw.again)
     no('the new-password screen offers to send a code again — the code that ' +
        'got there has been spent');
+  /* Both roads reach the password with a session in hand: the digits were
+     spent to get one. What is behind it asks for an address already proved. */
+  if (b.newpw && (b.newpw.chev || b.newpw.to))
+    no('the password screen has a way back — both roads reach it signed in, ' +
+       'so what is behind it is an address that has already been proved');
   if (r.landed !== 'up')
     no('the chevron on the six digits, pressed for real, landed on ' +
        JSON.stringify(r.landed) + ', wanted "up"');

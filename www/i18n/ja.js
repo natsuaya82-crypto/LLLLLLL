@@ -252,6 +252,7 @@ defLang('ja', (function(){
       "ob.mail.again" : "再送信",
       "ob.mail.sent" : "送りました",
       "ob.mail.h.reset" : "新しいパスワード",
+      "ob.mail.h.setpw" : "パスワードを決める",
       "ob.mail.newpw.ph" : "新しいパスワード",
       "ob.mail.reset" : "決定",
       "ob.mail.wait" : "送信中…",
