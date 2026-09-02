@@ -306,7 +306,24 @@ const r = await pg.evaluate(({s}) => {
 
      Two claims and they are one rule: no mark on the thirty-eight, and every
      mark that IS drawn takes the letter away. */
+  /* EVERY PAGE THE ALPHABET IS SPLIT ACROSS, and not just the letters.
+     「それはページが分かれていてもだよ？」OWNER 2026-09-02: a-z is one page,
+     0-9 another, ! ? another, and the numbering runs 1 to 38 across all of
+     them. ltCanDelete() asks the LETTER and not the page, so this walks every
+     kind rather than trusting that. */
   SET.plan = 'pro';
+  var baseSeen = 0, baseMarks = 0, kindsWalked = [];
+  LT_KINDS.forEach(function(k){
+    goTab('build'); go('ltset', k); ltWob = true; render();
+    kindsWalked.push(k);
+    Array.prototype.slice.call(document.querySelectorAll('#app .ltx'))
+      .forEach(function(x){
+        var id = (x.getAttribute('data-a') || '').replace(/[\[\]"]/g, '');
+        var l = ltById(id);
+        if (l && ltIsBase(l)) baseMarks++;
+      });
+  });
+  baseSeen = LETTERS.filter(ltIsBase).length;
   goTab('build'); go('ltset', LT_KINDS[0]); ltWob = true; render();
   /* WHICH LETTERS THE MARKS NAME. Read off the marks themselves rather than
      off the cells: a cell in this state carries no id at all (it does not
@@ -317,9 +334,6 @@ const r = await pg.evaluate(({s}) => {
       .map(function(x){ return (x.getAttribute('data-a') || '').replace(/[\[\]"]/g, ''); })
       .filter(Boolean);
   }
-  var ids0 = markIds();
-  var baseSeen = LETTERS.filter(ltIsBase).length;
-  var baseMarks = ids0.filter(function(id){ var l = ltById(id); return l && ltIsBase(l); }).length;
   /* and one added letter, which is the thirty-ninth */
   var addedId = ltNew({ nm: 'zz9' }).id;
   saveLetters(); render();
@@ -340,7 +354,8 @@ const r = await pg.evaluate(({s}) => {
     if (document.getElementById('app').innerHTML === was) dd++; else mv++;
   }
   out.wob = { pressed: tr, moved: mv, dead: dd, popless: popless,
-              baseSeen: baseSeen, baseMarks: baseMarks, addedMarked: addedMarked };
+              baseSeen: baseSeen, baseMarks: baseMarks, addedMarked: addedMarked,
+              kinds: kindsWalked };
 
   return out;
 }, { s: seed.toString() });
@@ -463,9 +478,11 @@ say(r.rmPlain.kind === 'alpha' && r.rmPlain.name === 'zz' && r.rmPlain.at !== 'l
     r.rmPlain.name + ' at ' + r.rmPlain.at + ')');
 
 say(r.wob && r.wob.baseMarks === 0,
-    'not one of the first thirty-eight carries a ⊖ — they are numbered 1 to ' +
-    '38 and the numbering does not move (' +
-    (r.wob ? r.wob.baseMarks + ' of ' + r.wob.baseSeen : '?') + ')');
+    'not one of the first thirty-eight carries a ⊖ — on any of the pages the ' +
+    'alphabet is split across, because the numbering runs 1 to 38 through ' +
+    'all of them (' +
+    (r.wob ? r.wob.baseMarks + ' of ' + r.wob.baseSeen + ', pages: ' +
+             r.wob.kinds.join(' ') : '?') + ')');
 say(r.wob && r.wob.addedMarked,
     'the thirty-ninth, the first letter somebody adds, carries one');
 say(r.wob && r.wob.pressed > 0 && r.wob.popless === 0 &&

@@ -367,6 +367,7 @@ defLang('zh', (function(){
       "net.nonative" : "此版本暂不可用。",
       "set.account.on" : "已登录",
       "set.signout" : "退出登录",
+      "set.signout.ask" : "要退出登录吗？",
       "set.signin.done" : "已登录",
       "set.signout.done" : "已退出",
       "ob.tagline"                : "为你的语言添上新的色彩。",

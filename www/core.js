@@ -808,6 +808,59 @@ function dlStop(){
   else alert(t('langs.full', dlCap()));
   return true;
 }
+/* THE OPEN LANGUAGE BELONGS TO WHOEVER IS SIGNED IN.
+   「ログアウトして違うアカウントでログインしても前のアカウント残ってるんだけど
+   なんで？」「アカウントが違うんだから、そもそも残るのがおかしいだろって」
+   OWNER 2026-09-02.
+
+   Signing in swapped everything that is asked BY account and nothing that is
+   held in a variable. `meFor()` parked the name, the face and the handle;
+   `langAcct()` took the other account's languages off the list; `langId` was
+   never touched. So somebody signed in as themselves and was standing in a
+   language belonging to whoever used the phone before -- the dictionary, the
+   letters and the keyboard on screen were that person's, while the switcher
+   said 「N 件表示していません」 about them. Nothing threw.
+
+   `mayMint` is the difference between the two moments this is asked. At the
+   sign-in it is false: this account's languages may still be on their way
+   down (netLangBack), and minting one there would leave an empty language
+   beside the three that arrive a second later. When the fetch has finished it
+   is true, and a phone with nothing of this account's on it gets a fresh
+   language -- which is what a new account on a new phone gets anyway.
+
+   It never deletes and never renames. The other account's language stays in
+   the index, in storage, in its backup, and comes back the moment they sign
+   in again -- which is `langAcct()`'s whole shape (docs/DATA_SAFETY.md). */
+/* WHILE THIS ACCOUNT'S LANGUAGES ARE STILL COMING DOWN.
+   「前の人の言語が出るくらいならローディング入れればいいやん」OWNER
+   2026-09-02, and it is the right answer to the hole I left: the alternative
+   was minting a language on the spot, which leaves an empty one beside the
+   three that arrive a second later. Nothing is made and nothing of the
+   previous account is shown -- the screen says it is waiting, and render()
+   is what draws that (www/glyph.js). */
+var LANG_WAIT=false;
+function langForAcct(mayMint){
+  var id;
+  if(langAcct(langId)){ LANG_WAIT=false; return false; }
+  for(id in LANGS)
+    if(Object.prototype.hasOwnProperty.call(LANGS, id) && langAcct(id)){
+      LANG_WAIT=false; langOpen(id); return true;
+    }
+  if(!mayMint){ LANG_WAIT=true; return true; }
+  LANG_WAIT=false;
+  /* AND IT IS STAMPED WITH WHOEVER IT IS FOR. langMint() leaves `uid` off,
+     and langOwned() reads an entry with no uid as belonging to whoever is
+     asking -- which is right for a language somebody MADE (it is theirs, and
+     the looseness only ever refuses a new one) and wrong for this one: a
+     language minted for B because the phone held nothing of theirs would be
+     the first thing A finds when A signs back in, ahead of A's own. */
+  var nid=langMint();
+  if(typeof SESS!=='undefined' && SESS && SESS.uid)
+    LANGS[nid].uid=String(SESS.uid);
+  langStore();
+  langOpen(nid);
+  return true;
+}
 function langStop(){
   if(langCount()<langCap()) return false;
   if(langCap()<PRO_LANGS){

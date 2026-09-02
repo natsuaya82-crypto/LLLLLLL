@@ -407,6 +407,7 @@ defLang('fr', (function(){
       "net.nonative" : "Indisponible dans cette version.",
       "set.account.on" : "Connecté",
       "set.signout" : "Se déconnecter",
+      "set.signout.ask" : "Se déconnecter ?",
       "set.signin.done" : "Connecté",
       "set.signout.done" : "Déconnecté",
       "ob.tagline"                : "Donnez de nouvelles couleurs à vos mots.",

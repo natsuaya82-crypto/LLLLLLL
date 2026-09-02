@@ -906,7 +906,12 @@ function setWldSecDl(r, v){ wldSecSet(r, 'dl', v); }
 /* The row on the profile, in place of the small tag that used to sit beside
    the handle. 「linguaパッチの代わり。Lingua > みたいになってて」 */
 function wldRow(){
-  if(!langName) return '';
+  /* A LANGUAGE WITH NO NAME YET STILL HAS A ROW, and it says so.
+     「未設定って出てくればいいよ。プロフィールにね。」OWNER 2026-09-02.
+     It returned nothing at all, so a language nobody had named had no row on
+     the profile and therefore no way in to its article from here -- and the
+     article was the one screen that would have let them name it. */
+  var lnm=langName || t('langs.untitled');
   /* And while it is private it is not a way through at all --
      「そもそも非公開ならプロフィールから飛べないんだって」 OWNER 2026-08-25. It was
      a button either way, with a badge beside the name saying so, which is the
@@ -917,10 +922,10 @@ function wldRow(){
      The way back is the same switch in the settings (www/settings.js), which
      is where it has always also been, so nothing is shut away by this. */
   if(wldHidden()) return '<div class="wldrow">'+
-    '<span class="wldnm">'+esc(langName)+'</span>'+
+    '<span class="wldnm">'+esc(lnm)+'</span>'+
     '<span class="wldoff">'+esc(t('wld.hidden'))+'</span></div>';
   return '<button class="wldrow"' + DO('go', ["about"]) + '>'+
-    '<span class="wldnm">'+esc(langName)+'</span>'+
+    '<span class="wldnm">'+esc(lnm)+'</span>'+
     ICON_GO+'</button>';
 }
 /* ---- a section of the article opens and shuts -------------------------
@@ -1566,14 +1571,22 @@ function wldPage(ed, L, lid){
      a second function on it for exactly this line, because the caller was
      handed a null bundle and had to decide what a page with no language on it
      looked like. Nobody decides that but the page. */
-  if(!L.here()) return '<div class="view">'+navTop('')+'<div class="body"></div></div>';
+  /* AND IT SAYS IT IS WAITING RATHER THAN SHOWING NOTHING.
+     「一瞬消えたりが嫌だからローディングで誤魔化してほしい」OWNER 2026-09-02.
+     An empty body and a page with nothing on it look identical, and this is
+     the first of the two while the answer is out. snsWaitHTML() is the mark
+     the timeline already turns while it waits -- one place, one sentence. */
+  if(!L.here()) return '<div class="view">'+navTop('')+
+    '<div class="body">'+snsWaitHTML()+'</div></div>';
   w=L.w(); mine=L.mine(); drawn=L.letters().filter(ltHasShape);
   /* The article names its subject: the bar says which SCREEN this is, and the
      page has to say what the article is ABOUT. The name of a language is not
      written here -- it is the language's own, and it is set where a language
      is set -- so it stays a heading in both faces. */
-  var lnm=L.name();
-  if(lnm) body+='<h1 class="abth">'+esc(lnm)+'</h1>';
+  /* The article always has its heading, named or not: 「言語名なくても
+     wikiページは出してほしい」OWNER 2026-09-02. Without one the page had no
+     title and, with nothing written under it either, came out blank. */
+  body+='<h1 class="abth">'+esc(L.name() || t('langs.untitled'))+'</h1>';
   /* Whether the page exists for anybody else at all. Only while writing:
      a state with no way to change it does not belong on the reading face. */
   if(ed) body+='<button class="set"' + DO('setWldHide', [!wldHidden()]) + '>'+

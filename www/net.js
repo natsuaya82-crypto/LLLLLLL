@@ -284,7 +284,16 @@ function netTook(d){
      has everything does one request and writes nothing.
      Guarded to once per account per launch inside netLangBack(), because a
      token refresh comes through here too. */
-  if(typeof netLangBack==='function') netLangBack();
+  /* AND THE LANGUAGE ON SCREEN. `meFor()` above swapped who the phone says
+     it is; this swaps what it is showing. Twice, and the two are different
+     moments -- see langForAcct() in www/core.js. Now, without minting,
+     because this account's languages may be on their way down; and again
+     when they have arrived or failed to, where a phone holding nothing of
+     theirs gets a fresh language. */
+  langForAcct(false);
+  if(typeof netLangBack==='function') netLangBack(function(){
+    if(langForAcct(true)) render();
+  });
   return true;
 }
 /* There used to be netAnon() here, and boot.js called it before the first

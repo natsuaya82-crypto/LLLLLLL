@@ -1730,7 +1730,11 @@ function vNotif(){
   var ns=(got||[]).filter(function(n){ return !meBlocks(n.hd); });
   return '<div class="view">'+rootTop('notif')+
     '<div class="body">'+
+    /* 「まだ何も無い」は答えが来てから。来るまでは待っている印を回す ──
+       何も描かないのと、何も無いのは別の状態で、どちらも同じ空白に見える。
+       「一瞬消えたりが嫌だからローディングで誤魔化してほしい」OWNER
+       2026-09-02。タイムラインが待つときと同じ印です。 */
     (ns.length? ns.map(notRow).join('')
-              : (got? snsNone() : ''))+
+              : (got? snsNone() : snsWaitHTML()))+
     '</div></div>';
 }

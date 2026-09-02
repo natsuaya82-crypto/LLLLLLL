@@ -2637,6 +2637,18 @@ function render(){
        nothing and does nothing. */
     geTiles();
     return; }
+  /* THE LANGUAGES OF WHOEVER JUST SIGNED IN ARE STILL COMING DOWN.
+     「前の人の言語が出るくらいならローディング入れればいいやん」OWNER
+     2026-09-02. Everything below this line is drawn out of WORDS, LETTERS and
+     SCRIPT -- the language that is OPEN -- and for the moment between a
+     sign-in and the answer arriving, the open one is whoever used this phone
+     before. langForAcct() in www/core.js says when that is true; this is the
+     screen it is true on. The same mark the timeline turns while it waits,
+     because it is the same sentence and there is one place to draw it. */
+  if(LANG_WAIT){
+    app.setAttribute('data-fresh', '0');
+    app.innerHTML='<div class="view"><div class="body">'+snsWaitHTML()+'</div></div>';
+    return; }
   /* a word written since the font was built can need a letter it does not have */
   if(SFONT.sig!==null && SFONT.sig!==scriptSig()) installScriptFont();
   /* and the system keyboard, which is a second program and holds its own copy

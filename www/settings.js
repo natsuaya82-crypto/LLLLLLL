@@ -867,7 +867,19 @@ function setPlan(id, yearly){
 /* Signing out leaves everything where it is: the languages are on the phone
    and the account is on the server, and coming back finds both. Only the pair
    of tokens goes. */
+/* 「ログアウト、アカウント消去、言語消去はログアウトしますか？みたいなポップ
+   つけてほしい」OWNER 2026-09-02. The other two already ask -- wipeAll() and
+   the language wipe both open one, and both say it cannot be undone. This one
+   went the moment it was pressed.
+
+   It does NOT say 「戻りません」. Signing out leaves every language on the
+   phone and the account on the server, and signing back in finds both; a
+   sentence saying otherwise would be the app frightening somebody about a
+   thing that costs nothing. The two that DO destroy something say so. */
 function setSignOut(){
+  popAsk(t('set.signout.ask'), function(){ setSignOutGo(); }, t('set.signout'));
+}
+function setSignOutGo(){
   netOut();
   /* And the provider is told too. Lingua's tokens are not the only session
      there is: the social plugin keeps its own, and it survived this -- so the

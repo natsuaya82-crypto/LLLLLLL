@@ -538,6 +538,7 @@ defLang('ko', (function(){
       "net.nonative" : "이 빌드에서는 사용할 수 없습니다.",
       "set.account.on" : "로그인됨",
       "set.signout" : "로그아웃",
+      "set.signout.ask" : "로그아웃할까요?",
       "set.signin.done" : "로그인되었습니다",
       "set.signout.done" : "로그아웃했습니다",
       "ob.tagline"                : "당신의 언어에 새로운 빛깔을.",

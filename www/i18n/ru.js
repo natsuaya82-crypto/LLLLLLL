@@ -362,6 +362,7 @@ defLang('ru', (function(){
       "net.nonative" : "Недоступно в этой сборке.",
       "set.account.on" : "Выполнен вход",
       "set.signout" : "Выйти",
+      "set.signout.ask" : "Выйти?",
       "set.signin.done" : "Вы вошли",
       "set.signout.done" : "Вы вышли",
       "ob.tagline"                : "Придайте новые краски вашим словам.",
