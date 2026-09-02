@@ -218,6 +218,33 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### 課金はメールアドレスのアカウントに紐づく。端末が同じでも引き継がない
+- Date: 2026-09-02
+- Area: プラン（`SET.plan`、Keychain、`netPlanSync()`）とアカウントの関係
+- Decision:
+
+  ```
+  メアドごとにアカウントも言語も課金状況も紐づくんだから、残ってるのがおかしい
+  Xは違うアカウントだと課金も引き継がれない
+  ```
+
+  同じ iPhone で別のアカウントにサインインした人は、**その端末で買った購読を
+  引き継がない**。段はアカウントのもので、Apple ID のものではない。
+
+- Reason: 言語とアカウントが結びついているのと同じ話。A（Pro）がサインアウト
+  して B がサインインすると、端末の `SET.plan` が pro のまま残り、次の起動で
+  `netPlanSync()` が B のアカウントに Pro を書き込む。一つの Apple ID から
+  いくつでもアカウントに Pro を配れる。「アカウント変えたら無限に言語作れる
+  やん」（2026-09-01）で段をアカウントへ移した、その口が別の場所で開いている。
+- Affected features: 課金全体。CLAUDE.md の「プランはアカウントのもの」を
+  **置き換えるのではなく、その一文どおりに実装する**もの。規則の書き換えは要らない。
+- Affected data: Keychain に、段と一緒に「買ったアカウントの uid」が入る。
+  uid が合わないセッションは、サーバーの答えが来るまで free から始める。
+- Affected docs: `docs/PAID_FEATURES.md`、`docs/scope/claude-login-billing.md`
+- Implementation status: **未実装。** `claude/login-billing-code-review-ovfsxa`
+  のもの。実装は 1（トークンの更新）と 2（解約が起動で戻る）のあと。
+  それまでは、いま有る動きのまま ── 引き継いでしまう。
+
 ### ダウンロードは Plus から。上限は make と別で、Plus 1・Pro 3
 - Date: 2026-09-02
 - Area: 人の言語をダウンロードする（⑫）、`CAN.dl` と `dlCap()`（`www/core.js`）

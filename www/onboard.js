@@ -1075,11 +1075,30 @@ function obFormHTML(up){
     (OBM.msg? '<div class="obmsg">'+esc(OBM.msg)+'</div>' : '')+
     '<button class="btn"' + DO(up? 'obMailUp' : 'obMailIn') + (OBM.busy? ' disabled':'') + '>'+
       t(OBM.busy? 'ob.mail.wait' : (up? 'ob.mail.up' : 'ob.mail.in'))+'</button>'+
-    (up? ''
-       : '<button class="obskip"' + DO('obMailGo', ["forgot"]) + '>'+t('ob.mail.to.forgot')+'</button>'+
-         '<div class="obor"><span>'+t('ob.signin.or')+'</span></div>'+
-         '<button class="btn signin apple"' + DO('obSignInApple') + '>'+MARK_APPLE+'<span>'+t('ob.signin.apple')+'</span></button>'+
-         '<button class="btn signin google"' + DO('obSignInGoogle') + '>'+MARK_GOOGLE+'<span>'+t('ob.signin.google')+'</span></button>')+
+    /* Forgotten passwords are the sign-in face's alone: there is nothing to
+       have forgotten on the face where an account is being made. */
+    (up? '' : '<button class="obskip"' + DO('obMailGo', ["forgot"]) + '>'+
+         t('ob.mail.to.forgot')+'</button>')+
+    /* APPLE AND GOOGLE ARE ON BOTH FACES, and that is what every app does.
+       「続けるにすればいいんじゃない？同じようにしよう。Appleで続ける
+       Googleで続ける。メアドだけ、アカウント作成で。作成画面でもアップルも
+       Googleもおいとけばこれで解決？」OWNER 2026-09-02.
+
+       They were on the sign-in face only, and Supabase's id_token grant makes
+       the account when the identity is new -- so pressing 「サインイン」 with
+       an Apple ID this app had never seen created one without saying so, and
+       there was no other way for somebody with only an Apple ID to get in.
+       「アップルとかログインで入れちゃうから」
+
+       The buttons already SAY 「続ける」 in all ten languages, which is the
+       word every app uses for exactly this reason: which of the two it turns
+       out to be is not known until it is pressed. What was wrong was the face
+       it stood on. Email is the one thing the two faces differ by, because a
+       password is the one thing that can be WRONG -- 「そんなアカウントは
+       ありません」 is a sentence only the mail road can say. */
+    '<div class="obor"><span>'+t('ob.signin.or')+'</span></div>'+
+    '<button class="btn signin apple"' + DO('obSignInApple') + '>'+MARK_APPLE+'<span>'+t('ob.signin.apple')+'</span></button>'+
+    '<button class="btn signin google"' + DO('obSignInGoogle') + '>'+MARK_GOOGLE+'<span>'+t('ob.signin.google')+'</span></button>'+
     /* There WAS a way out of here without signing in: 「あとで」, shown when
        this door was the onboarding's last step, straight to obFinish().
        「サインインしなかったときは門で止まるよ！」 OWNER DECISION 2026-08-23 --
