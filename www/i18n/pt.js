@@ -1115,7 +1115,6 @@ defLang('pt', (function(){
       "card.title"        : "Cartão",
       "card.save"         : "Partilhar",
       "card.shape"         : "Formato",
-      "card.saved"        : "Guardado",
       "card.nofile"       : "A aplicação não chega ao armazenamento de ficheiros.",
       "imp.next"          : "Seguinte",
       "imp.role.hw"       : "Grafia",

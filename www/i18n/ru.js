@@ -1122,7 +1122,6 @@ defLang('ru', (function(){
       "card.title"        : "Карточка",
       "card.save"         : "Поделиться",
       "card.shape"         : "Формат",
-      "card.saved"        : "Сохранено",
       "card.nofile"       : "Приложение не достаёт до хранилища файлов.",
       "imp.next"          : "Далее",
       "imp.role.hw"       : "Написание",

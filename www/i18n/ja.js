@@ -1024,7 +1024,6 @@ defLang('ja', (function(){
       'card.title'      : 'カード',
       'card.save'       : '共有',
       'card.shape'       : 'かたち',
-      'card.saved'      : '保存',
       'card.nofile'     : 'ファイルの保存先に届いていません。',
       'imp.next'          : '次へ',
       'imp.role.hw'       : 'つづり',
