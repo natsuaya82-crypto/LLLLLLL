@@ -218,6 +218,47 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### 印の無い言語を拾うのは、オンボーディングの扉だけ
+- Date: 2026-09-02
+- Area: 言語とアカウントの結びつき（`langOwned()` www/core.js、
+  `netLangRow()` www/net.js の四つ目の状態）
+- Decision:
+
+  ```
+  1アドレス1アカウント
+  これは絶対課金もアカウントごと言語もそう
+  ```
+
+  言語はアカウントのものです。だから **`uid` の無い言語を「訊いた人のもの」と
+  読んでよいのは、オンボーディングの扉だけ。**オンボーディングは口座ができる
+  前に物を作る唯一の場所で、`obFinish()` が扉を出た瞬間にそれを上げます。
+  それ以外の場所で印の無い言語を拾うのは、前の人のものを次の人に渡すこと。
+
+- Reason: `netLangRow()` のコメントが自分で「THE FOURTH IS THE ONE THE OWNER
+  HAS TO DECIDE」と書いて残していた四つ目の状態が、これです。A がこの端末で
+  作って一度も上げていない言語が、B がサインインした瞬間に B のものになって
+  いました ── 辞書も文字もキーボードも、B の一覧に B の言語として。何も
+  throw しません。
+- Affected features: 言語一覧（`vLangs`）、言語の上限（`langCount`）、
+  キーボードのプール（`kbCount`）、DL の数（`dlCount`）、
+  サーバーへの送信（`netLangRow`）
+- Affected data: **保存するものは減りません。**印の無い言語は索引にも
+  `lingua.<id>.*` にもバックアップにもそのまま残ります。変わるのは、それを
+  作っていない人に差し出さなくなることだけ。そして 2026-09-02 から作られる
+  言語には全部 `uid` が付くので、これが届く範囲は「今すでに端末にあって、
+  一度も上がっていない言語」に限られ、増えません。
+- Affected docs: `docs/DATA_MODEL.md`、`docs/DATA_SAFETY.md`、
+  `www/core.js` の `langOwned()` のコメント（同じコミットで書き換え済み）
+- Implementation status: **core.js 側は実装済み**（`langOwned()`、
+  `acct-check` 35 番）。`www/net.js` の `netLangRow()` 四つ目の状態は
+  リーダーのもので、**まだ拾います。**
+
+  未決が一つ、リーダーとオーナーへ: net.js の四つ目も閉じると、**今すでに
+  端末にあって一度も上がっていない言語は、作った本人にも二度と戻りません。**
+  いまはそれが唯一の帰り道です（`langMineIds()` は `langMine()` で歩くので
+  印の無い言語も `netLangSync()` に乗り、`netLangRow()` が印を押す）。
+  閉じるなら、その前に「本人が一度だけ引き取る」道が要るかどうかが決めごと。
+
 ### 課金はメールアドレスのアカウントに紐づく。端末が同じでも引き継がない
 - Date: 2026-09-02
 - Area: プラン（`SET.plan`、Keychain、`netPlanSync()`）とアカウントの関係

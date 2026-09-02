@@ -379,14 +379,19 @@ const R = await pg.evaluate(() => {
   wire(); posted = []; getted = [];
   LANGS[langId] = { name: '前からある言語', mine: true, sid: 'old-lang' };
   langStore();
+  /* 名指しします ── `langId` ではなく。印の無い言語は 35 番のとおり次に入った
+     人のものにならないので、B が入った瞬間 langForAcct() が B のために別の
+     言語を開きます。`askRow()` を素で呼ぶと、その B の新しい言語について
+     訊くことになる ── 9 番と 10 番が前から名指ししているのと同じ理由です。 */
+  const id12 = langId;
   netOut(); arrive(B);
   netGet = (path, ok) => { getted.push(path); ok([]); };     /* 持ち主ではない */
-  let r12 = askRow();
+  let r12 = askRow(id12);
   unwire();
   if (!getted.length) no('12: uid が無いのにサーバへ訊かなかった');
   if (!r12.refused) no('12: サーバが行を返さないのに通した');
   if (posted.length) no('12: 断ったあとで行を作りに行った');
-  if (LANGS[langId].uid) no('12: 持ち主でないのに uid を書いた');
+  if (LANGS[id12].uid) no('12: 持ち主でないのに uid を書いた');
   say('12: uid の無い言語は、サーバが持ち主を答える（他人なら断る）');
 
   /* そして持ち主なら通り、そのとき uid が端末に残る ── 次からは訊かない。 */
@@ -394,13 +399,14 @@ const R = await pg.evaluate(() => {
   wire(); posted = []; getted = [];
   LANGS[langId] = { name: '前からある言語', mine: true, sid: 'old-lang' };
   langStore();
+  const id12b = langId;
   netOut(); arrive(A);
   netGet = (path, ok) => { getted.push(path); ok([{ id: 'old-lang' }]); };
-  let r12b = askRow();
+  let r12b = askRow(id12b);
   unwire();
   if (r12b.refused) no('12: 持ち主が自分の言語を断られた');
   if (r12b.got !== 'old-lang') no('12: 持ち主に sid が渡らなかった');
-  if (LANGS[langId].uid !== A) no('12: 通ったのに uid が端末に残っていない');
+  if (LANGS[id12b].uid !== A) no('12: 通ったのに uid が端末に残っていない');
   say('12: 持ち主なら通り、uid が残るので次からは訊かない');
 
   /* ---- 13-14. 自分の言語が、サーバから降りてくる ------------------------
@@ -547,11 +553,17 @@ const R = await pg.evaluate(() => {
   const asA = langCount();
   netOut(); arrive(B);
   const asB = langCount();
-  if (asA !== 3) no('19: A から見た数が 3 でない（A の2つ＋持ち主なし1つ）— ' + asA);
-  if (asB !== 2) no('19: B から見た数が 2 でない（B の1つ＋持ち主なし1つ）— ' + asB);
+  /* 印の無い `Ld` は、どちらの数にも入りません。2026-09-02 の決定
+     「拾ってよいのはオンボーディングの扉だけ」で、印の無い言語は誰のものでも
+     なくなりました（35 番）。ここは前は「持ち主なしは厳しいほうへ」と書いて
+     あって、両方の数に入れていました ── その二つは同時に立ちません。数に
+     入れて一覧から外すと、**一つも見えていない人が「上限です」で止められる**
+     ことになり、それは原因も出口も無い画面です。 */
+  if (asA !== 2) no('19: A から見た数が 2 でない（A の2つだけ）— ' + asA);
+  if (asB !== 1) no('19: B から見た数が 1 でない（B の1つだけ）— ' + asB);
   if (asA === asB && asA === 4)
     no('19: 端末にある全部を数えている ── 他人の言語で上限が埋まる');
-  say('19: 言語の数は、そのアカウントのものを数える（持ち主なしは厳しいほうへ）');
+  say('19: 言語の数は、そのアカウントのものを数える（印の無いものは誰の数にも入らない）');
 
   /* ---- 20-21. 自己紹介はアカウントのもので、出すもの -------------------
      「自己紹介を見せないって選択肢を俺はいつ与えた？」OWNER 2026-09-01
@@ -1234,6 +1246,61 @@ const R = await pg.evaluate(() => {
   LANGS = keepL34; langId = keepId34; langName = keepNm34;
   SET.plan = 'free'; SET.planWas = 'free'; save();
   say('34: ＋ で作った言語は、押した人のアカウントのもの');
+
+  /* ---- 35. 印の無い言語を拾うのは、オンボーディングの扉だけ -------------
+     「1アドレス1アカウント」「これは絶対課金もアカウントごと言語もそう」
+     OWNER 2026-09-02。
+
+     `langOwned()` は印の無い言語を「訊いた人のもの」と答えていました。
+     だから **A がこの端末で作って一度も上げていない言語が、B がサインイン
+     した瞬間に B のものになります。**辞書も文字もキーボードも、B の一覧に
+     B の言語として並ぶ。何も throw しません。
+
+     **決まりました。拾ってよいのはオンボーディングの扉だけです。**
+     オンボーディングは口座ができる前に物を作る唯一の場所で、`obFinish()` が
+     扉を出た瞬間に上げます（`SET.done` がその二つを分ける ── `makeNeed()` が
+     前から同じ問いを同じ形で立てています）。それ以外で印の無い言語を拾うのは、
+     前の人のものを次の人に渡すことです。
+
+     消しません。印の無い言語は索引に残り、保存に残り、バックアップに残り、
+     単語も一つも減りません ── ここで押さえるのはその両方です
+     （`docs/DATA_SAFETY.md`「短い一覧は削除ではない」）。 */
+  start();
+  const keepL35 = LANGS, keepId35 = langId, keepNm35 = langName;
+  const w35 = [{ hw: 'aaa', ph: ['a'], mn: 'A のことば', mns: ['A のことば'], pos: 'n' }];
+  LANGS = { 'Lu': { name: 'A が圏外で作った', mine: true } };   /* 印が無い */
+  langId = 'Lu'; langName = 'A が圏外で作った';
+  try { localStorage.setItem(langKeyOf('Lu', 'words'), JSON.stringify(w35)); } catch (e) {}
+
+  /* 誰も入っていないうち ── オンボーディングの歩きの途中。まだ訊く相手が
+     いないので、作ったものはその場の人のもの。 */
+  netOut();
+  if (!langOwned('Lu')) no('35: 誰もサインインしていないのに、作ったものが自分のでない');
+
+  /* 扉。サインインは済んだが obFinish() はまだ ── ここは拾う。 */
+  arrive(B); SET.done = false;
+  if (!langOwned('Lu')) no('35: オンボーディングの扉で、歩きが作ったものが拾われない');
+
+  /* 扉を出たあと、別のアカウントが入ってくる ── ここは拾わない。 */
+  SET.done = true;
+  if (langOwned('Lu')) no('35: 印の無い言語が、次に入った人のものになっている');
+  if (langAcct('Lu')) no('35: 印の無い言語が、次に入った人の一覧に出る');
+  if (vLangs().indexOf('A が圏外で作った') >= 0)
+    no('35: 印の無い言語が、次に入った人の言語一覧に並んでいる');
+
+  /* そして何も消えていない。 */
+  if (!LANGS.Lu) no('35: 印の無い言語が索引から消えた');
+  if (!localStorage.getItem(langKeyOf('Lu', 'words')))
+    no('35: 印の無い言語の単語が消えた ── 隠すのであって消すのではない');
+
+  /* 印のある言語は今までどおり。持ち主には見え、他人には見えない。 */
+  LANGS['Lb'] = { name: 'B の言語', mine: true, uid: B };
+  if (!langOwned('Lb')) no('35: 自分の印が付いた言語が自分のものでない');
+  netOut(); arrive(A);
+  if (langOwned('Lb')) no('35: 他人の印が付いた言語が自分のものになっている');
+
+  LANGS = keepL35; langId = keepId35; langName = keepNm35;
+  say('35: 印の無い言語を拾うのはオンボーディングの扉だけ ── 消さず、そこに残る');
 
   return out;
 });
