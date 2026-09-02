@@ -2537,3 +2537,21 @@ throw しない**。`post(id)` を参照する表も三つあり（`quote` `reac
        「built from a prefix」133 個がそれ。dead-check が同じことを
        二度目に言い出すと、二つの検査が同じ鍵について食い違う
 ```
+
+## App Store Connect の売上を読む道が、宙に浮いている
+
+**Found:** 2026-09-02。OWNER「revenue cat 入れたから、App Store Connect キー
+いらんわ」。
+
+**What is there:** `supabase/functions/appstore/`（Apple の salesReports を
+叩く関数）、`www/net.js` の売上まわり、`www/mod.js` の管理画面の数字、
+`supabase/setup.md` § 10 の手順、`docs/reports/sales-2026-08-26.md`。
+
+**What is true now:** 鍵は作られず、作る予定も無い。だから数字は空欄のまま。
+何も throw せず、何も壊れない ── 管理画面に 0 が並ぶだけ。
+
+**Why it is not done here:** 二つの道があり、どちらもオーナーの決めごと。
+① 消す（管理画面から売上の欄ごと外す）。② RevenueCat に付け替える
+（RevenueCat の API を叩く関数に差し替え、画面はそのまま）。
+どちらを選ぶかで消す量が変わるので、勝手には決めない。
+`supabase/setup.md` § 10 は「やらないでください」と書き直してある。
