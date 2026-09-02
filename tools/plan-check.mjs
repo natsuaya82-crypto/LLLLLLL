@@ -70,6 +70,46 @@ const r = await pg.evaluate(({ s }) => {
   /* and not one byte of the language moved when the plan did */
   out.freeKeptBytes = same(wasBytes, bytes());
 
+  /* ---- and the same sentence about the LETTERS and the GRAMMAR ---------
+     「課金で追加した機能は無料になったら全部隠れる」 OWNER 2026-09-01. Words
+     have been held here since the ceiling existed; the letters past the free
+     alphabet and the stages somebody added were WRITING only -- CLAUDE.md
+     says it, docs/PAID_FEATURES.md says it, and nothing stopped it. What the
+     owner found on a phone was exactly that: a language back on free with its
+     extra letters still standing in the alphabet.
+
+     Held for real: made on the paid plan, counted on free, and counted again
+     in LETTERS/STG so that hidden is hidden and never removed. */
+  SET.plan = 'pro'; save();
+  var ltWas = LETTERS.length, extraLt = ltNew({ nm:'zzq' });
+  var stWas = (STG.extra ? STG.extra.length : 0);
+  STG.extra.push({ id:'own_plan_check', title:'a stage of my own',
+                   slots:['s1'], labels:{ s1:'one' }, what:'' });
+  saveStg();
+  var seenHas = function(id){
+    var a = ltSeen(), i;
+    for (i = 0; i < a.length; i++) if (a[i].id === id) return true;
+    return false;
+  };
+  var stageHas = function(id){
+    var a = stAll(), i;
+    for (i = 0; i < a.length; i++) if (a[i].id === id) return true;
+    return false;
+  };
+  out.ltPaidSeen = seenHas(extraLt.id);
+  out.stPaidSeen = stageHas('own_plan_check');
+  SET.plan = 'free'; save();
+  out.ltFreeSeen = seenHas(extraLt.id);
+  out.stFreeSeen = stageHas('own_plan_check');
+  out.ltFreeHeld = !!ltById(extraLt.id);
+  out.stFreeHeld = (STG.extra ? STG.extra.length : 0) - stWas;
+  out.ltGrew = LETTERS.length - ltWas;
+  /* put back: everything after this walks the fixture's own language */
+  LETTERS = LETTERS.filter(function(l){ return l.id !== extraLt.id; });
+  saveLetters();
+  if (STG.extra) STG.extra = STG.extra.slice(0, stWas);
+  saveStg();
+
   /* ---- 2. the ceiling refuses, and refuses in one place ---------------- */
   out.capOKfree = capOK(1);              /* 500 words on free: no room */
   SET.plan = 'pro'; save();
@@ -668,6 +708,13 @@ say(r.freeHeld === 500,
     'the plan ending keeps all 500 (' + r.freeHeld + ')');
 say(r.freeShown === r.freeCap,
     'and lists ' + r.freeCap + ' of them (' + r.freeShown + ')');
+say(r.ltGrew === 1 && r.ltPaidSeen && !r.ltFreeSeen,
+    'a letter added on the paid plan is on the alphabet, and hidden on free');
+say(r.ltFreeHeld, 'and it is still in LETTERS -- hidden, never removed');
+say(r.stPaidSeen && !r.stFreeSeen,
+    'a grammar stage added on the paid plan is on the list, and hidden on free');
+say(r.stFreeHeld === 1, 'and it is still in STG.extra -- hidden, never removed');
+
 say(r.freeKeptBytes,
     'not one byte of any slice moved when the plan did');
 
