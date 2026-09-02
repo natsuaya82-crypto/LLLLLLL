@@ -306,9 +306,30 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
     return dir
   }
 
+  /// `ext` is the file's kind and defaults to `pdf`, which is what a sheet is
+  /// and what every caller before the card was. Passing nothing writes a PDF,
+  /// byte for byte as before -- www/sheet.js does not pass it and must not
+  /// have to.
+  ///
+  /// The card (chapter 15) is a PNG and is the reason this is a parameter at
+  /// all. It shares this road rather than getting one of its own because
+  /// shareFile() hands over a file BY NAME out of this one folder: a second
+  /// folder would be a second fence to keep right, and the fence is the part
+  /// that matters.
+  ///
+  /// Letters and digits only, and ASCII ones. It arrives from the web side,
+  /// it is pasted into a file name, and `..` in a file name is the whole of
+  /// that class of bug -- so this asks what it MAY be rather than trying to
+  /// name what it may not.
   @objc func sheet(_ call: CAPPluginCall) {
     let name = (call.getString("name") ?? "sheet")
+    let ext = (call.getString("ext") ?? "pdf")
     let b64 = call.getString("b64") ?? ""
+    guard !ext.isEmpty, ext.count <= 8,
+          ext.allSatisfy({ $0.isASCII && ($0.isLetter || $0.isNumber) }) else {
+      call.reject("not a file extension")
+      return
+    }
     guard let bytes = Data(base64Encoded: b64), !bytes.isEmpty else {
       call.reject("nothing to write")
       return
@@ -316,10 +337,10 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
     do {
       let dir = try sheets()
       let fm = FileManager.default
-      var url = dir.appendingPathComponent("\(name).pdf")
+      var url = dir.appendingPathComponent("\(name).\(ext)")
       var n = 2
       while fm.fileExists(atPath: url.path) {
-        url = dir.appendingPathComponent("\(name) \(n).pdf")
+        url = dir.appendingPathComponent("\(name) \(n).\(ext)")
         n += 1
         if n > 999 { call.reject("too many sheets of that name"); return }
       }

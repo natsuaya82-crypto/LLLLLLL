@@ -398,11 +398,20 @@ export function obStates(){
        『後追加でメールを確認のボタンに再送信ボタンと戻るボタンがない』 OWNER
        2026-09-02.
 
-       LAST in this list on purpose. It is the only face that takes the session
-       away, and the entries here deliberately do not tidy up after themselves
-       (see the note above), so anything after it would be walked signed out. */
-    ['the six digits, signed out', () => { SET.obback = null; SET.done = true;
-                                         SESS = null; netSave();
+       IT DOES NOT TAKE THE SESSION AWAY, and the first version did. The
+       entries here deliberately do not tidy up after themselves, so a face
+       that set SESS to null left every walk AFTER it signed out: act-check
+       went from 260/260 buttons to 246/261, and the fourteen it could no
+       longer reach were the composer, the profile editor and the voice --
+       every screen that answers with the door when nobody is signed in.
+
+       ob.step === OB_IN is the same state for the question this face is here
+       to ask. obAtDoor() is 「appIs() is the door, OR the door was opened from
+       somewhere, OR this is the walk's last step」, and the middle one is what
+       every face above has. What the real signed-out phone does is held by
+       tools/open-check.mjs § 2c, which boots one. */
+    ['the six digits, no way back to', () => { SET.obback = null; SET.done = true;
+                                         ob.step = OB_IN;
                                          OBM.mode = 'code'; OBM.busy = false;
                                          OBM.em = 'a@b.c'; return vOb(); }]
   ];

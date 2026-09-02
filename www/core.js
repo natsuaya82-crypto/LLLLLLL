@@ -781,7 +781,32 @@ function langOwned(id){
   if(!L) return false;
   me=(typeof SESS!=='undefined' && SESS && SESS.uid)? String(SESS.uid) : '';
   if(!me) return true;
-  if(!L.uid) return !SET.done;
+  /* AN UNSTAMPED LANGUAGE, and the two ways of being wrong about it are not
+     the same size.
+
+     Reading it as 「whoever is asking」 hands A's work to B: a language A made
+     on this phone and never once put up became B's the moment B signed in.
+     That is what 2e628f5 closed.
+
+     Reading it as 「nobody's」 loses it in the other direction, and that one
+     lands on EVERY phone rather than on a phone two people share: the stamp
+     only started going on today, so every language made before that and
+     never uploaded -- a phone that has been in a tunnel, an upload that
+     failed -- would vanish from the list of the person who made it. The gate
+     said so out loud: with the fixture's one language unstamped, langCount()
+     went to 0 and act, plan and dl all went red at once.
+
+     So the question is not 「is it stamped」 but 「has anybody ELSE been on
+     this phone」. SET.uidWas is the last account langForAcct() saw. Never one
+     -- or the same one -- and an unstamped language is this person's, which
+     is every phone that has only ever had one account on it. A different one,
+     and it is not offered: it stays in the index, in storage and in the
+     backup, and www/home.js counts it among the ones it is not showing.
+
+     Nothing is written onto the language, deliberately. Stamping it here
+     would make a guess permanent; leaving it means A signing back in gets
+     everything back, because SET.uidWas moves with whoever is here. */
+  if(!L.uid) return !SET.done || !SET.uidWas || String(SET.uidWas)===me;
   return String(L.uid)===me;
 }
 function langAcct(id){
@@ -900,6 +925,12 @@ function dlStop(){
 var LANG_WAIT=false;
 function langForAcct(mayMint){
   var id;
+  /* WHO THIS PHONE BELONGED TO LAST, recorded here because this is the one
+     place a session arriving is turned into a language on the screen.
+     langOwned() reads it: see there for why an unstamped language needs it. */
+  if(typeof SESS!=='undefined' && SESS && SESS.uid && SET.uidWas!==String(SESS.uid)){
+    SET.uidWas=String(SESS.uid); save();
+  }
   if(langAcct(langId)){ LANG_WAIT=false; return false; }
   for(id in LANGS)
     if(Object.prototype.hasOwnProperty.call(LANGS, id) && langAcct(id)){
