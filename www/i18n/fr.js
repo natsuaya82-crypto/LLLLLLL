@@ -1157,6 +1157,7 @@ defLang('fr', (function(){
       "card.save"         : "Partager",
       "card.shape"         : "Format",
       "card.saved"        : "Enregistrée",
+      "card.nofile"       : "L’application n’atteint pas le stockage de fichiers.",
       "imp.next"          : "Suivant",
       "imp.role.hw"       : "Graphie",
       "imp.role.mn"       : "Sens",

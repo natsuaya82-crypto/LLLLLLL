@@ -1284,6 +1284,7 @@ defLang('ko', (function(){
       "card.save"         : "공유",
       "card.shape"         : "모양",
       "card.saved"        : "저장됨",
+      "card.nofile"       : "앱이 파일 보관함에 닿지 않습니다.",
       "imp.next"          : "다음",
       "imp.role.hw"       : "철자",
       "imp.role.mn"       : "뜻",

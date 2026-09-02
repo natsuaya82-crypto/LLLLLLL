@@ -1123,6 +1123,7 @@ defLang('ru', (function(){
       "card.save"         : "Поделиться",
       "card.shape"         : "Формат",
       "card.saved"        : "Сохранено",
+      "card.nofile"       : "Приложение не достаёт до хранилища файлов.",
       "imp.next"          : "Далее",
       "imp.role.hw"       : "Написание",
       "imp.role.mn"       : "Значение",

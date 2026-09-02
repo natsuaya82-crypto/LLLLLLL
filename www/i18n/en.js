@@ -1024,6 +1024,7 @@ defLang('en', (function(){
       'card.save'       : 'Share',
       'card.shape'       : 'Shape',
       'card.saved'      : 'Saved',
+      'card.nofile'     : 'The app cannot reach the file store.',
       'imp.next'          : 'Next',
       'imp.role.hw'       : 'Spelling',
       'imp.role.mn'       : 'Meaning',
