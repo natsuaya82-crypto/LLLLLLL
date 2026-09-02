@@ -65,6 +65,14 @@ const BAR = Number(val('--bar', '1.690'));
    type says another and a third line explains both is three things to read
    at once. The headline stays: it is what the eye lands on. */
 const VO = has('--vo');
+/* --music <file> --at <seconds>: the track under the film, from that point
+   in it. The film is CUT to the bar (tools/pv/scenes.mjs), so where in the
+   track it starts is what decides whether the cuts land on the beat --
+   `--at` is measured off the track, not guessed. It is faded up over the
+   first beat and down over the last two, and levelled to -15 LUFS, which is
+   under a voice and over nothing. */
+const MUSIC = val('--music', '');
+const MUSIC_AT = Number(val('--at', '0'));
 /* The App Store takes a preview at the size it asks for and refuses anything
    else, and the number it asks for depends on the device family and changes.
    So the frame is an argument: --w 886 --h 1920. */
@@ -297,11 +305,18 @@ const out = path.join(OUT, 'lingua-' + (cut ? cut + '-' : '') + shape + size +
                       (VO ? '-vo' : '') + (ff && ff.mp4 ? '.mp4' : '.webm'));
 let enc = null;
 if (ff){
-  /* A silent audio track goes on it. There is no sound in the film, and a
-     file with no audio stream at all is refused or re-encoded by several of
-     the places this will be uploaded to. */
-  const args = ['-y', '-f', 'image2pipe', '-framerate', String(FPS), '-i', '-',
-                '-f', 'lavfi', '-i', 'anullsrc=r=48000:cl=stereo', '-shortest']
+  /* A silent audio track goes on it when there is no music. There is then no
+     sound in the film, and a file with no audio stream at all is refused or
+     re-encoded by several of the places this will be uploaded to. */
+  const secs = film.reduce((a, sc) => a + sc.secs, 0);
+  const A = MUSIC
+    ? ['-ss', String(MUSIC_AT), '-t', String(secs + 1), '-i', MUSIC,
+       '-af', 'afade=t=in:st=0:d=' + (BAR / 2).toFixed(3) +
+              ',afade=t=out:st=' + (secs - BAR * 2).toFixed(3) + ':d=' + (BAR * 2).toFixed(3) +
+              ',loudnorm=I=-15:TP=-1.5:LRA=11,aresample=48000']
+    : ['-f', 'lavfi', '-i', 'anullsrc=r=48000:cl=stereo'];
+  const args = ['-y', '-f', 'image2pipe', '-framerate', String(FPS), '-i', '-']
+    .concat(A, ['-shortest', '-ar', '48000'])
     .concat(ff.mp4
       ? ['-c:v', 'libx264', '-preset', 'slow', '-crf', '17', '-pix_fmt', 'yuv420p',
          '-c:a', 'aac', '-b:a', '128k', '-movflags', '+faststart', out]
