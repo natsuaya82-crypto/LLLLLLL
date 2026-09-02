@@ -565,6 +565,59 @@ want('q is k', AZ.q, 'k');
 want('x is k', AZ.x, 'k');
 want('y is j', AZ.y, 'j');
 
+/* ---- 8. the migrated language belongs to the account this phone is on ---
+   `langMigrate()` runs inside core.js's own load, seventeen script tags before
+   www/net.js, so there is no session for it to stamp the language with -- and
+   a language with no `uid` belongs to NOBODY once SET.done is true, which
+   every phone reaching the migration has. It would be in no list and in no
+   count with every word of it still in storage, which is the shape that reads
+   as 「my language is gone」.
+
+   It leaves `mig` on the row instead, and netRead() spends it. What is asked
+   here is the whole of that: the account is on, the mark is off (so it happens
+   once), and the language is the person's -- counted, and listed. */
+await pg.evaluate((old) => {
+  localStorage.clear();
+  Object.keys(old).forEach((k) => localStorage.setItem(k, old[k]));
+  localStorage.setItem('lingua.sess', JSON.stringify(
+    { at: 'not a jwt', rt: 'a refresh token', uid: 'acct-1', anon: false }));
+}, OLD);
+await pg.reload();
+await settle();
+const m8 = await pg.evaluate(() => ({
+  uid:    (LANGS[langId] || {}).uid,
+  mig:    (LANGS[langId] || {}).mig,
+  owned:  langOwned(langId),
+  count:  langCount(),
+  done:   !!SET.done,
+  words:  WORDS.length,
+  /* off the STORED index rather than the global, because what has to survive
+     the next launch is what was written down */
+  stored: (function(){ try{ var L=JSON.parse(localStorage.getItem('lingua.langs')||'{}');
+                            return (L[langId]||{}).uid; }catch(e){ return 'unreadable'; } })()
+}));
+want('a migrated language carries the account the phone was signed in as', m8.uid, 'acct-1');
+want('and the mark that asked for it is spent, so it happens once', m8.mig, undefined);
+want('and it is written down, not only in memory', m8.stored, 'acct-1');
+want('so it belongs to the person', m8.owned, true);
+want('and it is in their count', m8.count, 1);
+want('with the words still in it', m8.words, 2);
+want('on a phone that has finished the onboarding', m8.done, true);
+
+/* And a phone with nobody on it leaves the mark alone rather than guessing.
+   The next launch that has a session is what spends it. */
+await pg.evaluate((old) => {
+  localStorage.clear();
+  Object.keys(old).forEach((k) => localStorage.setItem(k, old[k]));
+}, OLD);
+await pg.reload();
+await settle();
+const m8b = await pg.evaluate(() => ({
+  uid: (LANGS[langId] || {}).uid, mig: (LANGS[langId] || {}).mig
+}));
+want('signed out, nothing is stamped', m8b.uid, undefined);
+want('and the mark waits for a session rather than being spent on nobody', m8b.mig, true);
+
 await br.close();
 srv.close();
 

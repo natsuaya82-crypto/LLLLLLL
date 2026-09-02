@@ -181,10 +181,45 @@ function langMigrate(){
     if(v!==null) localStorage.setItem(langKey(k), v);
   }
   langId=prev;
-  LANGS[id]={ name: localStorage.getItem('lingua.lang')||'', mine:true };
+  /* `mig` is the mark that says WHO to ask later. This function runs while
+     core.js is still loading -- www/index.html has core.js at 3578 and net.js
+     at 3595 -- so `SESS` is not merely empty here, it is not declared. There
+     is nothing to stamp with.
+
+     And the stamp matters: a language with no `uid` belongs to nobody once
+     SET.done is true (langOwned), and a phone reaching this line has finished
+     the onboarding by definition -- the old flat keys are what it made before
+     there were several languages. Left unstamped it would be in no list and
+     in no count, with every word of it still in storage. That is the shape of
+     the fault, and it is the one that reads as 「my language is gone」.
+
+     So it is recorded rather than guessed at, and netRead() in www/net.js
+     puts the account on it the moment there is one to put -- eighteen lines
+     later, in the one place that knows what a session is. `mig` comes off
+     with it, so this happens once.
+
+     NOT langForAcct()'s adoption: this is not 「whoever is asking」. It is
+     one language, made on THIS phone, in a format that predates accounts,
+     handed to the account this phone was already signed in as. */
+  LANGS[id]={ name: localStorage.getItem('lingua.lang')||'', mine:true, mig:true };
   langId=id;
   langStore();
   return true;
+}
+/* The mark above, spent. Called from netRead() with the session in hand --
+   www/net.js is the one place that knows where a session is kept, and this is
+   the one place that knows what `mig` means. */
+function langMigStamp(uid){
+  var id, did=false;
+  if(!uid) return false;
+  for(id in LANGS)
+    if(Object.prototype.hasOwnProperty.call(LANGS, id) && LANGS[id] && LANGS[id].mig){
+      if(!LANGS[id].uid) LANGS[id].uid=String(uid);
+      delete LANGS[id].mig;
+      did=true;
+    }
+  if(did) langStore();
+  return did;
 }
 function langStore(){
   try{

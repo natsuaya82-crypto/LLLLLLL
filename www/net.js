@@ -90,6 +90,15 @@ function netRead(){
     var s=JSON.parse(localStorage.getItem(LS_SESS)||'null');
     if(s && s.rt) SESS=s;
   }catch(e){}
+  /* AND A LANGUAGE THAT WAS MIGRATED A MOMENT AGO GETS ITS ACCOUNT HERE.
+     langMigrate() runs inside core.js's own load, seventeen script tags
+     before this one, so there is no session for it to stamp with -- it leaves
+     `mig` on the row instead and this is the first line of the app that can
+     spend it. www/core.js § langMigStamp() has the whole of why.
+
+     Guarded on the function rather than assumed: core.js is loaded first by
+     index.html, but this file is also read by checks that stand it up alone. */
+  if(SESS && SESS.uid && typeof langMigStamp==='function') langMigStamp(SESS.uid);
 }
 netRead();
 function netSave(){
