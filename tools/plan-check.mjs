@@ -21,6 +21,7 @@
 import { seed } from './fixture.mjs';
 import { fileURLToPath } from 'url';
 import path from 'path';
+import fs from 'fs';
 import { chromium, LAUNCH } from './browser.mjs';
 const dir = path.dirname(fileURLToPath(import.meta.url));
 
@@ -948,6 +949,86 @@ say(K['empty'].wrote.length > 0 &&
 say(K['holds pro'].plan === 'pro',
     'and a Keychain that holds a plan is the one that decides, over the ' +
     'settings (' + K['holds pro'].plan + ')');
+
+/* ---- the plan may not go DOWN on an answer that never came ---------------
+   「プランは絶対におかしくしちゃいけないんだって」 OWNER 2026-09-02.
+
+   The Keychain half is above and is driven for real. This half is the App
+   Store's, and it is READ rather than run: Swift does not compile on a Linux
+   runner and `npm test` reads no `.swift` at all -- which is exactly why the
+   rule was, for one commit, held by nobody but somebody reading it. That is
+   the third kind of rule CLAUDE.md forbids: written as if something stopped
+   it, when nothing did.
+
+   What a reading CAN hold is the shape, and the shape is the whole rule.
+   `entitledPlan()` answers `free` for 「has nothing」 and for 「the list gave
+   me nothing」 alike, so `writeDown()` may only lower the plan where Apple
+   positively said so. Three roads may: the `Transaction.updates` listener,
+   `restore` (after AppStore.sync), and `manage` (after Apple's own sheet).
+   Every other caller may raise it and may not lower it.
+
+   Read off the SOURCE and not written down here: the allowed three are named,
+   and every other call site is found rather than listed, so a fourth road
+   added tomorrow fails here on the day it is added. */
+const IOS = path.join(dir, '..', 'ios', 'App', 'App');
+const STORE = fs.readFileSync(path.join(IOS, 'LinguaStore.swift'), 'utf8');
+const KEYC = fs.readFileSync(path.join(IOS, 'LinguaPlan.swift'), 'utf8');
+/* Which Swift function a line is inside: the nearest `func` above it. */
+function funcAt(src, idx){
+  const head = src.slice(0, idx);
+  const m = head.match(/func\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(/g);
+  if (!m) return '';
+  const last = m[m.length - 1];
+  return /func\s+([A-Za-z_][A-Za-z0-9_]*)/.exec(last)[1];
+}
+const MAY_LOWER = ['load', 'restore', 'manage'];
+const calls = [];
+{
+  const re = /writeDown\s*\(([^)]*)\)/g;
+  let m;
+  while ((m = re.exec(STORE))){
+    /* Its own declaration is not a call, and neither is the line inside it
+       that names it. funcAt() answers the nearest `func` ABOVE, so a mention
+       inside writeDown itself comes back as `writeDown` -- and `entitledPlan`
+       turned up in this list because the declaration line matched before the
+       skip did. Both are the function talking about itself. */
+    const f = funcAt(STORE, m.index);
+    if (f === 'writeDown' || f === 'entitledPlan') continue;
+    calls.push({ inside: f, lower: /mayLower\s*:\s*true/.test(m[1]) });
+  }
+}
+const lowered = calls.filter(c => c.lower).map(c => c.inside).sort();
+const raised  = calls.filter(c => !c.lower).map(c => c.inside).sort();
+say(calls.length >= 4,
+    'every road that writes the plan down is found in LinguaStore.swift (' +
+    calls.length + ')');
+say(lowered.every(f => MAY_LOWER.indexOf(f) >= 0),
+    'and only the three where Apple positively answered may LOWER it — the ' +
+    'updates listener, restore, and manage (' + JSON.stringify(lowered) + ')');
+say(raised.length > 0 && raised.every(f => MAY_LOWER.indexOf(f) < 0),
+    'while every other road may raise it and may not lower it (' +
+    JSON.stringify(raised) + ')');
+say(/if\s*!mayLower/.test(STORE) && /best\(seen,\s*held\)\s*!=\s*seen/.test(STORE),
+    'and the guard is a comparison with what the Keychain HOLDS, not a flag ' +
+    'on its own');
+say(/st\s*==\s*errSecSuccess/.test(STORE),
+    'and only a Keychain that ANSWERED gets a vote — a read that failed says ' +
+    'nothing about what is there');
+/* And the Keychain's own half, which the browser above cannot see either:
+   the value and the status are two facts, and the injection carries both. */
+say(/func readPlan\(\)\s*->\s*\(String,\s*OSStatus\)/.test(KEYC),
+    'LinguaPlan.readPlan() answers the plan AND whether the Keychain answered');
+say(/window\.__planok=/.test(KEYC) && /errSecItemNotFound/.test(KEYC),
+    'and the injection carries that, with 「there is nothing there」 counted ' +
+    'as an answer and everything else as a failure');
+const CORE = fs.readFileSync(path.join(dir, '..', 'www', 'core.js'), 'utf8');
+const keeps = (CORE.match(/planKeep\(/g) || []).length;
+const guarded = (CORE.match(/PLAN_READ_OK\)?\s*(&&\s*)?[^\n]*planKeep\(/g) || []).length;
+say(keeps >= 3 && guarded >= 2,
+    'and both roads that write the plan at BOOT ask PLAN_READ_OK first — the ' +
+    'branch that fills an empty Keychain and planMigrate() (' + guarded +
+    ' of ' + keeps + ' planKeep sites, the third being setPlan, which is ' +
+    'somebody pressing something)');
 
 if (bad.length) { console.error('\nplan: ' + bad.length + ' failed'); process.exit(1); }
 console.log('\nplan: money decides what may be DONE and nothing about what exists --\n' +

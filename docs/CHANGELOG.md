@@ -13636,3 +13636,24 @@ Keychain の読み取りを直した後、**同じ形が StoreKit 側にもあ�
 ので、そう明記してある。
 
 保存するものの変更なし。消えていたものが消えなくなる。
+
+### StoreKit 側の規則を、検査に持たせた
+
+「何言ってんの？読むことだけって」 OWNER 2026-09-02。
+
+一つ前で「StoreKit 側は人が読むだけ」と書いた。それは CLAUDE.md が名指しで禁じ
+ている三番目の規則 ── 何も止めていないのに止まるかのように書いたもの ── で、
+しかもお金の上でそれをやった。
+
+**Swift は実行できないが、読むことはできる。**`sides-check` が `post.js` を、
+`assets-check` が `project.pbxproj` を読むのと同じ。`plan-check` が
+`LinguaStore.swift` の `writeDown()` の呼び出しを全部見つけ、下げていい三つ
+（`load` `restore` `manage`）以外が `mayLower: true` を渡していたら落ちる。
+三つの名前だけが書いてあり、他の道は探しているので、四つ目が足されればその日に
+落ちる。`LinguaPlan.swift` の `readPlan()` が値と状態の二つを返すこと、注入が
+両方を運ぶことも読む。`core.js` の起動時の二本が `PLAN_READ_OK` を訊くことも。
+
+赤を見た ── `current` に下げる権利を渡すと名指しで落ち、`PLAN_READ_OK` を外すと
+0 of 3 で落ちる。
+
+`docs/PAID_FEATURES.md` の「誰も持っていない」を消した。
