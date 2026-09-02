@@ -24,6 +24,24 @@ function snsNone(){
 function snsNoneFo(){
   return '<div class="empty"><div class="eb">'+esc(t('sns.none.fo'))+'</div></div>';
 }
+/* ---- waiting is not empty ------------------------------------------------
+   「snsで一瞬何も出ないとかあり得んやろ」 OWNER 2026-09-02.
+
+   A timeline with no local copy drew 「まだ何も無い」 while the first answer
+   was still out. That sentence is a STATEMENT ABOUT THE SERVER, made before
+   the server had said anything -- the same fault as CLAUDE.md's first page,
+   「空」 and 「読めていない」 sharing one branch, and here it is the first
+   thing a new account ever sees.
+
+   `SNS_GOT` is the difference: set when an answer arrives, empty or not. Until
+   then this is what stands -- the app's own mark, turning, which is already
+   what a pull shows (`pullSpinOn`) and is therefore not a second thing to
+   learn. `.pullrule` is positioned against the bar it hangs from, so the one
+   in the body is given a place of its own. */
+var SNS_GOT={};
+function snsWaitHTML(){
+  return '<div class="empty snswait"><div class="pullrule go">'+ICON_PLUS+'</div></div>';
+}
 /* ---- the timeline is online -------------------------------------------
    A post has a writer. So the timeline is the one part of this app that has
    to know who you are -- reading it and writing to it both -- and it did not
@@ -311,6 +329,10 @@ function snsPull(){
       for(i=0;i<ps.length;i++) if(ps[i] && ps[i].id) have[ps[i].id]=1;
       FO_HAVE=have;
     }
+    /* An ANSWER, empty or not -- which is a different fact from whether it
+       had anything in it, and the one the body asks before it says 「まだ何も
+       無い」. `null` is 「could not ask」 and is not an answer. */
+    if(ps) SNS_GOT[which]=1;
     if(ps && ps.length) postTake(ps);
     /* Drawn again even when nothing came back, which it was not before: the
        answer itself is now something the screen shows -- an empty one is what
@@ -688,7 +710,10 @@ function vFeed(){
          started; nothing HERE, with posts on the other tab, is a person who
          has not followed anybody yet, and telling them "nothing has been
          written" would be the app being wrong about its own contents. */
-      : (snsTab==='fo'? snsNoneFo() : snsNone()))+
+      : SNS_GOT[snsTab]
+      ? (snsTab==='fo'? snsNoneFo() : snsNone())
+      /* Nothing has come back yet, so nothing is said about what is there. */
+      : snsWaitHTML())+
     '</div>'+
     snsFab()+
     '</div>';
@@ -722,16 +747,36 @@ function vFeed(){
    there is no sentence -- offline, or a day the writer missed -- it is that
    row again, unchanged. A screen that half-works is a bug; a screen that
    goes back to what it was is not. */
-var DAY=null, dayPulling=false;
+/* ---- the day's sentence, asked until it answers --------------------------
+   ONE ANSWER A SESSION is right and 「one attempt a session」 was not. This
+   ran from the feed being built, and the feed is built when somebody arrives
+   at it -- so a first ask that came back with nothing was the last one, and
+   the row stayed the plain composer until the person navigated away and back.
+   Sitting on the timeline waiting did nothing at all. 「後お題も出てこない
+   1秒待つけど」 OWNER 2026-09-02.
+
+   So a failed ask asks again, on its own, and stops the moment it has one.
+   It backs off -- a second, then two, then four, to half a minute -- because
+   a phone in a tunnel is not a phone that will answer sooner if asked harder,
+   and this is a sentence rather than the timeline: nothing waits on it. */
+var DAY=null, dayPulling=false, dayWait=1000, DAY_MAX=32000;
 function dayPull(){
   if(dayPulling || DAY) return;
   dayPulling=true;
   netDay(function(p){
     dayPulling=false;
-    if(!p) return;
+    if(!p){ dayAgain(); return; }
     DAY=p;
     render();
   });
+}
+/* Asked again later, and only while nobody has an answer. The timer is not
+   kept: a second dayPull() before it fires returns on `dayPulling` or on
+   `DAY`, so the worst this can do is ask twice. */
+function dayAgain(){
+  if(DAY) return;
+  setTimeout(function(){ dayPull(); }, dayWait);
+  dayWait = (dayWait*2 > DAY_MAX)? DAY_MAX : dayWait*2;
 }
 /* In the person's own language, and the English one under it. A Japanese
    speaker reading an English prompt is doing two translations and only the

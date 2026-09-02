@@ -559,6 +559,12 @@ canvas.pkc{width:34px;height:34px;display:block}
           display:flex;align-items:center;justify-content:center}
 .pullrule svg{width:22px;height:22px;display:block}
 .pullrule.go{animation:pullsp .9s linear infinite}
+/* The same mark, standing in the BODY rather than hanging off the bar --
+   what a timeline shows while its first answer is still out. `.pullrule` is
+   placed against the bar it belongs to; here it has a place of its own.
+   www/sns.js § snsWaitHTML. */
+.snswait{padding:48px 0}
+.snswait .pullrule{position:static;margin:0 auto}
 @keyframes pullsp{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.pullrule.go{animation:none}}
 .chead{padding:0 24px 6px}
