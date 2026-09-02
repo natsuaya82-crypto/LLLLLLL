@@ -112,6 +112,17 @@ const up = await pg.evaluate(async ({ s, srv }) => {
   WORDS = [{ hw:'sula', ph:['s','u','l','a'], mn:'star', mns:['star'], pos:'n', at:1 }];
   save();
   langOpen(was);
+  /* AND BOTH OF THEM BELONG TO THE ACCOUNT THAT IS SIGNED IN HERE. A language
+     with no `uid` belongs to nobody once SET.done is true (langOwned), so it
+     is in no list, in no count, and -- what this file is about -- in nothing
+     langMineIds() hands to netLangSync(). The fixture stamps its own with the
+     uid IT signs in as; this check signs in as somebody else two dozen lines
+     up, and langMint() is the bare mint rather than langNew(), which is what
+     stamps on the real road. Both of those are why this is here rather than
+     in the fixture. */
+  for (var __i in LANGS)
+    if (Object.prototype.hasOwnProperty.call(LANGS, __i)) LANGS[__i].uid = SESS.uid;
+  langStore();
   /* and a language that is only READ, which must never go up */
   langSeenAdd('theirs-1', 'Shango');
   localStorage.setItem(langKeyOf('theirs-1', 'letters'), '[{"id":"x"}]');
