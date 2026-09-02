@@ -79,6 +79,13 @@ function storeBuy(id){
     .then(function(r){
       var how = (r && r.how) ? String(r.how) : '';
       var got = (r && r.plan) ? String(r.plan) : '';
+      /* WHAT WAS PRESSED, which is not what is HELD.
+         `r.plan` is the best of everything this Apple ID holds, and that is
+         what a plan IS -- see storeTook(). `r.bought` is the plan the signed
+         transaction was for. LinguaStore.swift § buy answers both because
+         they are two different facts, and the sentence after a purchase wants
+         the second one. */
+      var paid = (r && r.bought) ? String(r.bought) : '';
       /* A PURCHASE NEVER LOWERS THE PLAN. The phone side reads the plan off
          the signed transaction now (ios/App/App/LinguaStore.swift § buy), so
          a `bought` that still says `free` is not a person who owns nothing --
@@ -96,7 +103,27 @@ function storeBuy(id){
         return;
       }
       storeTook(r);
-      if(how === 'bought') toast(t('toast.plan.other', planName(plan())));
+      /* AND THE SENTENCE NAMES WHAT WAS BOUGHT, not the top rung held.
+         「plus で課金しても pro になりましたって出る」 OWNER 2026-09-02, on a
+         real phone. This read `planName(plan())`, and plan() after storeTook()
+         is planBest(the answer, what was already on) -- the BEST of the two,
+         which is the right rule for a plan and the wrong thing to say to
+         somebody who has just pressed Plus.
+
+         The rung itself is untouched: storeTook() still takes the better of
+         the two and nothing here lowers anything. What changes is the words.
+
+         The two come apart whenever a better entitlement is already live, and
+         today that is not a corner -- Plus and Pro are in two subscription
+         groups in App Store Connect, so both run and both are charged.
+         docs/apple.md § 4 says one group; that is App Store Connect work and
+         cannot be done in the app. It is in docs/STATE.md § オーナーの側に
+         残っているもの.
+
+         `got` and never plan() for the fallback: a phone carrying a native
+         side older than this answers no `bought` at all, and the ANSWER is
+         still closer to what was pressed than the best rung on the account. */
+      if(how === 'bought') toast(t('toast.plan.other', planName(paid || got)));
       else if(how === 'pending') toast(t('store.pending'));
     })
     ['catch'](function(){ toast(t('store.fail')); });

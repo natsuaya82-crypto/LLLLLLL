@@ -783,6 +783,57 @@ const nul = await pg.evaluate(async () => {
   STORE_P = null; STORE_ASK = false; STORE_BAD = '';
   return out;
 });
+
+/* ---- and the sentence after a purchase names what was PRESSED -----------
+   「plus で課金しても pro になりましたって出る」 OWNER 2026-09-02, on a real
+   phone. `r.plan` is the best of everything this Apple ID holds -- which is
+   what a plan IS, and is the wrong thing to say to somebody who just pressed
+   Plus. LinguaStore.swift answers the signed transaction's own plan beside it
+   now, and that is the one the words use.
+
+   The two come apart whenever a better entitlement is already live, and that
+   is the state a phone is actually in today: Plus and Pro sit in two
+   subscription groups in App Store Connect, so both run at once and both are
+   charged. The dashboard half is the owner's (docs/apple.md § 4); this is the
+   app not lying about it in the meantime.
+
+   THE RUNG ITSELF IS NOT TOUCHED and is asserted here as well, because
+   「say the lower one」 is one careless line away from 「write the lower one
+   down」, which is the bug this whole file exists after.                  */
+const buy = await pg.evaluate(async () => {
+  var out = {}, said = [], realToast = window.toast, answer = null;
+  window.toast = function (m) { said.push(m); };
+  window.Capacitor = { nativePromise: function (plug, m) {
+    if (m !== 'buy') return Promise.reject(new Error('not this one'));
+    return Promise.resolve(answer);
+  } };
+  async function press(a, had) {
+    answer = a; said = [];
+    SET.plan = had; save();
+    storeBuy('com.tokinets.lingua.plus.monthly');
+    await new Promise(function (r) { setTimeout(r, 0); });
+    return { last: said[said.length - 1], rung: plan() };
+  }
+
+  /* Plus was pressed; Pro is already live in the other group. */
+  var a = await press({ how: 'bought', plan: 'pro', bought: 'plus' }, 'free');
+  out.saidPlus = a.last; out.rungPro = a.rung;
+  /* The plain case, where the two agree and nothing about this is visible. */
+  var b = await press({ how: 'bought', plan: 'plus', bought: 'plus' }, 'free');
+  out.plainSaid = b.last; out.plainRung = b.rung;
+  /* A phone carrying a native side older than this answers no `bought`. The
+     ANSWER is still nearer what was pressed than the best rung on the
+     account, which is what plan() would have been. */
+  var c = await press({ how: 'bought', plan: 'plus' }, 'pro');
+  out.oldSaid = c.last; out.oldRung = c.rung;
+
+  out.plus = t('toast.plan.other', 'Plus');
+  out.pro  = t('toast.plan.other', 'Pro');
+  window.toast = realToast;
+  delete window.Capacitor;
+  SET.plan = 'free'; save();
+  return out;
+});
 /* ---- the Keychain, and the difference between empty and unreadable -------
    The plan LIVES in the Keychain on a phone -- ios/App/App/LinguaPlan.swift --
    and www/core.js reads it out of `window.__plan`, injected before any script
@@ -1057,6 +1108,19 @@ say(nul.noneSaid === 'none' && nul.noneScreen.indexOf(nul.nosale) !== -1,
     'an App Store with nothing on sale is a different sentence from one that ' +
     'could not be reached — which of the two is what the owner needs to see');
 
+say(buy.saidPlus === buy.plus,
+    'the sentence after a purchase names what was PRESSED, not the top rung ' +
+    'held (' + buy.saidPlus + ')');
+say(buy.rungPro === 'pro',
+    'while the rung itself is still the better of the two — the words changed ' +
+    'and the plan did not (' + buy.rungPro + ')');
+say(buy.plainSaid === buy.plus && buy.plainRung === 'plus',
+    'and where the two agree, nothing about this is visible (' +
+    buy.plainSaid + ')');
+say(buy.oldSaid === buy.plus && buy.oldRung === 'pro',
+    'a phone whose native side answers no `bought` falls back to the ANSWER ' +
+    'and never to the rung on the account (' + buy.oldSaid + ')');
+
 const K = {}; KEY.forEach(function (r) { K[r.n] = r; });
 say(K['unreadable'].wrote.length === 0,
     'a Keychain read that FAILED writes nothing back — a paid plan is not ' +
@@ -1193,6 +1257,12 @@ say(/window\.__planok=/.test(KEYC) && /errSecItemNotFound/.test(KEYC),
 const WWWSTORE = fs.readFileSync(path.join(dir, '..', 'www', 'store.js'), 'utf8');
 say(/var STORE_WAIT=25000;/.test(WWWSTORE),
     'and the bound on a real phone is 25 seconds, not the 20ms this check used');
+
+/* The other end of it, and READ rather than run: no Swift on this runner. */
+say(/let paid = Self\.planOf\(t\.productID\)/.test(STORE) &&
+    /"bought": paid \?\? ""/.test(STORE),
+    'and LinguaStore.swift answers what was bought beside what is held — off ' +
+    'the SIGNED transaction\'s own productID, not off the request');
 
 const CORE = fs.readFileSync(path.join(dir, '..', 'www', 'core.js'), 'utf8');
 const keeps = (CORE.match(/planKeep\(/g) || []).length;
