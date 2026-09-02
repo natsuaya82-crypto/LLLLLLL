@@ -4,36 +4,38 @@
    Run it:  node tools/pv.mjs                  16:9,  1920x1080
             node tools/pv.mjs --portrait       9:16,  1080x1920
             node tools/pv.mjs --scene draw     one scene, for looking at
-            node tools/pv.mjs --stills         no encode; one png per second
+            node tools/pv.mjs --stills         no encode; one frame per second
 
    NOT a gate, and nothing under www/ knows this file exists. It is a camera
-   pointed at the app: the phone in the middle of the frame is an iframe of
+   pointed at the app: the screen in the middle of the frame is an iframe of
    the real index.html, running its own code, at a real phone's size. Nothing
    is a mock-up and nothing is drawn twice -- if a screen changes, the film
    changes with it the next time this is run.
 
    HOW IT IS SHOT. Not screen capture: a frame at a time. For each of the
-   1800 frames the film is made of, the state of the app and of the words
-   beside it is computed for that instant, then the whole 1920x1080 stage is
+   1800 frames the film is made of, the state of the app and of everything
+   around it is computed for that instant, and then the whole stage is
    photographed. So the motion is exact, it is the same every run, and every
    frame is a real screenshot at full resolution rather than a video codec's
-   guess at one. It costs about a minute of wall clock per minute of film.
+   guess at one. It costs about two minutes of wall clock for a minute of
+   film.
 
-   ffmpeg: the one bundled with playwright can only write VP8/webm, so an
-   mp4 needs a real one. PV_FFMPEG=/path/to/ffmpeg, or `npm i ffmpeg-static`
-   in a scratch directory and point at that. Without either it writes webm
-   and says so.
+   ffmpeg: the one bundled with playwright can only write VP8/webm, so an mp4
+   needs a real one. PV_FFMPEG=/path/to/ffmpeg, or `npm i ffmpeg-static` in a
+   scratch directory and point at that. Without either it writes webm and
+   says so.
    --------------------------------------------------------------------------- */
 import http from 'http';
 import fs from 'fs';
 import path from 'path';
-import { execFileSync, spawn } from 'child_process';
+import { spawn } from 'child_process';
 import { createRequire } from 'module';
 import { fileURLToPath } from 'url';
 import { seed } from './fixture.mjs';
 import { chromium, LAUNCH } from './browser.mjs';
-import { PV_STROKES, PV_WORDS, PV_SND } from './pv/lang.mjs';
-import { SCENES } from './pv/scenes.mjs';
+import { PV_STROKES, PV_WORDS, PV_SND, PV_OTHER, PV_SEEN, PV_FEED,
+         PV_CURVE, PV_WEDGE, PV_BLOCK, inkFor } from './pv/lang.mjs';
+import { SCENES, WALL_ROUTES } from './pv/scenes.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(HERE, '..');
@@ -56,12 +58,11 @@ const H = portrait ? 1920 : 1080;
 /* ---- the little web server the app is served from ------------------------ */
 const srv = http.createServer((q, r) => {
   const u = q.url.split('?')[0];
-  /* The stage lives in tools/, not in www/ -- www/ is what ships to a phone
-     and assets-check holds every file in it to being in index.html. Same
-     origin, so the film can reach into the app's own globals. */
   /* The app's own icon, read out of the iOS target rather than copied into
      the repo a second time: the mark on the last card has to be the mark on
-     the home screen, and two copies of it is one that goes stale. */
+     the home screen, and two copies of it is one that goes stale.
+     The stage itself lives in tools/, not in www/ -- www/ is what ships to a
+     phone and assets-check holds every file in it to being in index.html. */
   const f = u === '/pv/icon.png'
           ? path.join(ROOT, 'ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png')
           : u.indexOf('/pv/') === 0 ? path.join(HERE, u.slice(1))
@@ -73,7 +74,6 @@ const srv = http.createServer((q, r) => {
   r.end(body);
 }).listen(PORT);
 
-/* ---- ffmpeg -------------------------------------------------------------- */
 function findFfmpeg(){
   if (process.env.PV_FFMPEG && fs.existsSync(process.env.PV_FFMPEG))
     return { bin: process.env.PV_FFMPEG, mp4: true };
@@ -94,6 +94,7 @@ const br = await chromium.launch(LAUNCH);
 const pg = await br.newPage({ viewport: { width: W, height: H },
                               deviceScaleFactor: 1 });
 await pg.goto(`http://localhost:${PORT}/pv/stage.html`);
+if (portrait) await pg.evaluate(() => document.body.className = 'tall');
 const ifr = await pg.$('#ph');
 const app = await ifr.contentFrame();
 await app.waitForSelector('#splash', { state: 'detached', timeout: 20000 });
@@ -102,14 +103,25 @@ await app.waitForSelector('#splash', { state: 'detached', timeout: 20000 });
 await pg.evaluate(() => document.fonts.ready);
 await app.evaluate(() => document.fonts.ready);
 
+/* The three scripts, and the posts written in them. Built HERE rather than
+   in the page: inkFor() is the same shape www/post.js's inkOfCut() makes, and
+   what a post carries is what a server would have sent -- glyphs and a
+   sequence, with nothing on the phone needed to draw them. */
+const SCRIPTS = { curve: PV_CURVE, wedge: PV_WEDGE, block: PV_BLOCK };
+const FEED = PV_FEED.map((p) => Object.assign({}, p, {
+  ink: inkFor(SCRIPTS[p.script], p.ln),
+  av: { st: SCRIPTS[p.script][p.face] }
+}));
+const MYFACE = { st: PV_CURVE['o'] };
+
 /* The app is filled with one made-up language, the same one every run --
    tools/pv/lang.mjs. It is not tools/fixture.mjs's: that one is three letters
    and a triangle, which is right for a check and is not a language anybody
-   would want to see. The fixture is run FIRST all the same, because it is the
-   one place that knows what a whole app-state looks like, and then the film's
+   would want to look at. The fixture is run FIRST all the same, because it is
+   the one place that knows what a whole app-state looks like, and the film's
    own language is laid over it. */
 await app.evaluate('window.__seed = ' + seed.toString());
-await app.evaluate(({ s, st, wds, snd }) => {
+await app.evaluate(({ s, st, wds, snd, other, seen, feed, myFace }) => {
   eval('(' + s + ')()');
   SET.done = true; SET.theme = 'dark'; SET.ui = 'en';
   /* FREE. Not because the film is being modest -- because the free plan is
@@ -120,8 +132,8 @@ await app.evaluate(({ s, st, wds, snd }) => {
   SND = snd;
 
   /* A word was made on a day. tools/fixture.mjs numbers them 1..20 because a
-     check only ever asks which came first; a film shows the date on the
-     screen, and 1970-01-01 is what a 1 means. */
+     check only ever asks which came first; a film shows the date on screen,
+     and 1970-01-01 is what a 1 means. */
   var day = 86400000, now = Date.now(), i, w;
   WORDS = wds;
   for (i = 0; i < WORDS.length; i++){
@@ -133,28 +145,24 @@ await app.evaluate(({ s, st, wds, snd }) => {
   /* The letters are the app's OWN -- ltStart() made them, on the free plan,
      the way a phone does -- and what the film adds is the drawing on each.
      Replacing LETTERS wholesale would be the film inventing a shape of data
-     the app never makes. What IS dropped is the check fixture's own three
+     the app never makes. What IS dropped is the check fixture's own
      placeholder letters: a chevron that reads nothing and a borrowed Greek
-     character are stage dressing from a different job, and the film is a
-     photograph of somebody's finished alphabet. */
+     character are stage dressing from a different job. */
   var l, k, kept = [], n = 0;
   for (i = 0; i < LETTERS.length; i++){
     l = LETTERS[i];
     k = (typeof numIsDigit === 'function' && numIsDigit(l)) ? '#' + l.val
                                                            : String(ltName(l) || '');
     if (!st[k]) continue;
-    /* ltIsBase() -- which is what the free plan counts its own thirty-eight
-       slots by -- reads `ab`, the roman character the letter was made from,
-       and the check fixture's letters have none: they were written out by
-       hand rather than made by ltStart(). Three of them were therefore over
-       the free allotment and the alphabet carried a "3 hidden / Upgrade"
-       banner in the middle of the film. Giving them the character they are
-       already named after is what makes them the ordinary a-z they look
-       like. */
+    /* ltIsBase() -- which is how the free plan counts its own thirty-eight
+       slots -- reads `ab`, the roman character the letter was made from, and
+       the fixture's letters have none: they were written out by hand rather
+       than made by ltStart(). Three of them were therefore over the free
+       allotment, and the alphabet carried a "3 hidden / Upgrade" banner in
+       the middle of the film. */
     if (!l.ab && !numIsDigit(l)) l.ab = k;
     l.st = JSON.parse(JSON.stringify(st[k]));
-    /* a letter that was borrowing a character has its own shape now */
-    if (l.ch) l.ch = '';
+    if (l.ch) l.ch = '';         /* a letter that was borrowing a character */
     kept.push(l); n++;
   }
   LETTERS = kept;
@@ -165,7 +173,7 @@ await app.evaluate(({ s, st, wds, snd }) => {
      day it runs and is not what somebody's language looks like a month
      later -- and the app says so on screen, in red, which in a film reads as
      an error rather than as a thing to get round to. */
-  var say = { c:['t\u0283'], q:['q'], x:['\u0283'], y:['y'] };
+  var say = { c:['tʃ'], q:['q'], x:['ʃ'], y:['y'] };
   for (i = 0; i < LETTERS.length; i++){
     k = String(ltName(LETTERS[i]) || '');
     if (say[k]) LETTERS[i].snd = say[k];
@@ -173,32 +181,50 @@ await app.evaluate(({ s, st, wds, snd }) => {
 
   saveLetters(); save();
 
+  /* SOMEBODY ELSE'S LANGUAGE, as the server would answer it: what it is
+     called, what it says about itself, and the chapters its owner has said
+     may be taken. The shape is supabase/schema.sql's `slice_read` -- the five
+     a reader of a published language is allowed, and not the dictionary,
+     which it refuses to everybody but its owner. Their alphabet is built the
+     other way round from this phone's, which is the whole reason the film
+     goes and gets it. */
+  WLD_HAVE[seen.id] = { id: seen.id, name: seen.name, license: '',
+                        pub: '2026-08-14', nwords: 61, nletters: other.length };
+  WLDS_HAVE[seen.id] = {
+    wld:     { body: JSON.stringify({ dl:true, where: seen.where,
+                 ov:[{ k:'', v: seen.note }] }), no:3 },
+    script:  { body: JSON.stringify({ dir:'ltr' }), no:1 },
+    snd:     { body: JSON.stringify(['a','e','i','o','u','k','n','r','s','t']), no:10 },
+    letters: { body: JSON.stringify(other), no: other.length },
+    kb:      { body: JSON.stringify({ boards:[] }), no:1 }
+  };
+
   /* A photograph on a post. The fixture's is three grey rectangles, which is
      the right picture for "is there an image here" and the wrong one for a
-     film. Drawn rather than pasted in as base64, at the size and quality a
-     real post carries. */
-  function pic(){
+     film. Drawn rather than pasted in as kilobytes of base64. */
+  function pic(v){
     var c = document.createElement('canvas'), w = 1200, h = 800;
     c.width = w; c.height = h;
     var x = c.getContext('2d'), g = x.createLinearGradient(0, 0, 0, h);
-    g.addColorStop(0, '#1b2740'); g.addColorStop(0.55, '#4a4258');
-    g.addColorStop(0.78, '#9c7a55'); g.addColorStop(1, '#d8a86a');
+    var sky = v === 2 ? ['#20303a', '#3c5560', '#7d8f86', '#c3c6a8']
+                      : ['#1b2740', '#4a4258', '#9c7a55', '#d8a86a'];
+    g.addColorStop(0, sky[0]); g.addColorStop(0.55, sky[1]);
+    g.addColorStop(0.78, sky[2]); g.addColorStop(1, sky[3]);
     x.fillStyle = g; x.fillRect(0, 0, w, h);
     x.fillStyle = 'rgba(255,238,205,.85)';
     x.beginPath(); x.arc(w*0.72, h*0.60, 26, 0, 7); x.fill();
-    var far = ['#2c3347', '#232a3c', '#191e2c'], j;
+    var far = v === 2 ? ['#33463f', '#26362f', '#1a2620'] : ['#2c3347', '#232a3c', '#191e2c'], j;
     for (j = 0; j < 3; j++){
       x.fillStyle = far[j];
       x.beginPath();
       x.moveTo(-40, h);
       var px = -40, py = h * (0.70 + j * 0.07);
-      var seed = 7 + j * 13;
+      var sd = (v === 2 ? 31 : 7) + j * 13;
       while (px < w + 40){
-        var up = ((seed = (seed * 1103515245 + 12345) & 0x7fffffff) % 1000) / 1000;
-        var run = 90 + up * 150;
-        py += (up - 0.45) * (j ? 70 : 130);
+        var upv = ((sd = (sd * 1103515245 + 12345) & 0x7fffffff) % 1000) / 1000;
+        py += (upv - 0.45) * (j ? 70 : 130);
         py = Math.max(h * (0.30 + j * 0.12), Math.min(h * (0.80 + j * 0.05), py));
-        px += run;
+        px += 90 + upv * 150;
         x.lineTo(px, py);
       }
       x.lineTo(w + 40, h); x.closePath(); x.fill();
@@ -206,21 +232,27 @@ await app.evaluate(({ s, st, wds, snd }) => {
     return c.toDataURL('image/jpeg', typeof POST_PICQ === 'number' ? POST_PICQ : 0.72);
   }
 
-  /* and the timeline cut into these letters, because a post carries its ink
-     and this phone's ink was cut before there was anything to cut */
-  var p;
-  for (i = 0; i < POSTS.length; i++){
-    p = POSTS[i];
-    if (p.mine){
-      delete p.ink;
-      /* her face is a letter of her own alphabet, which is what a face on
-         this timeline is */
-      p.av = { st: JSON.parse(JSON.stringify(st['o'])) };
-      if (p.pic) p.pic = pic();
-    }
-  }
-  if (typeof migratePostInk === 'function') migratePostInk();
-  ME.av = { st: JSON.parse(JSON.stringify(st['o'])) };
+  /* THE TIMELINE, and it is the film's centre. Four people, three scripts,
+     one conversation 「いろんな言語が飛び交ってる感じにしたい」. Every line
+     arrives with its own SHAPES on it -- which is the only reason a phone
+     that has never seen the Wedge alphabet can draw a sentence written in
+     it. www/post.js's line, and docs rule 8.
+
+     The pictures and the faces are here too: a face is a letter of that
+     person's own alphabet, and two of the posts carry a photograph. */
+  POSTS = feed.map(function(p, i){
+    var o = { id: 'p' + (i + 1), at: now - p.ago * 60000,
+              lang: p.mine ? langId : ('lang-' + p.hd), lname: p.lname,
+              ln: p.ln, who: p.who, hd: p.hd, mine: !!p.mine,
+              av: p.av, ink: p.ink, mn: p.mn, ui: 'en', re: p.re || 0 };
+    if (p.dir) o.dir = p.dir;
+    if (p.to) { o.to = p.to; o.toh = p.toh; }
+    if (p.vo) o.vo = { f: 'v1.m4a', ms: 7000 };
+    if (p.pic) o.pic = pic(p.pic);
+    return o;
+  });
+  POSTS.sort(function(a, b){ return b.at - a.at; });
+  ME.av = myFace;
 
   SET.myfont = true;
   if (typeof applyTheme === 'function') applyTheme();
@@ -230,9 +262,31 @@ await app.evaluate(({ s, st, wds, snd }) => {
      would show roman where a phone shows the letters somebody drew. */
   if (typeof installTypeFont === 'function') installTypeFont();
   if (typeof render === 'function') render();
-}, { s: seed.toString(), st: PV_STROKES, wds: PV_WORDS, snd: PV_SND });
+}, { s: seed.toString(), st: PV_STROKES, wds: PV_WORDS, snd: PV_SND,
+     other: PV_OTHER, seen: PV_SEEN, feed: FEED, myFace: MYFACE });
 console.log('  letters drawn: ' + await app.evaluate(() => window.__pvDrawn));
 await pg.waitForTimeout(400);
+
+/* ---- the wall -----------------------------------------------------------
+   Nine screens of the app, photographed once, here, and moved as pictures
+   afterwards. One iframe cannot be in nine places at once. */
+const tiles = [];
+for (const r of WALL_ROUTES){
+  await app.evaluate(function(arg){
+    go(arg.r, arg.a === null ? undefined : arg.a); render();
+    window.scrollTo(0, arg.y || 0);
+  }, { r: r.r, a: r.a === undefined ? null : r.a, y: r.y || 0 });
+  await pg.waitForTimeout(180);
+  const buf = await ifr.screenshot({ type: 'jpeg', quality: 88 });
+  tiles.push('data:image/jpeg;base64,' + buf.toString('base64'));
+}
+await pg.evaluate((srcs) => {
+  const w = document.getElementById('wall');
+  w.innerHTML = srcs.map(function(s){
+    return '<div class="tile"><img src="' + s + '"></div>';
+  }).join('');
+}, tiles);
+console.log('  wall: ' + tiles.length + ' screens');
 
 /* ---- the stage's own handles --------------------------------------------- */
 const stage = {
@@ -241,28 +295,57 @@ const stage = {
     if (o.phone){
       const p = o.phone;
       q('stagePhone').style.transform =
-        'translate(' + p.x + 'px,' + p.y + 'px) scale(' + p.s + ')' +
-        (p.rot ? ' rotate(' + p.rot + 'deg)' : '');
+        'translate(' + p.x + 'px,' + p.y + 'px) scale(' + p.s + ')';
       q('stagePhone').style.opacity = p.o === undefined ? 1 : p.o;
-      /* Past this the device frame is out of the picture anyway; what is
-         left of it would be two vertical edges and no top, so it goes. */
+      /* Past this the device frame is out of the picture anyway; what would
+         be left of it is two vertical edges and no top, so it goes. */
       q('stagePhone').className = p.s > 1.4 ? 'zoom' : '';
     }
     if (o.type){
-      const y = o.type.y === undefined ? 0 : o.type.y;
-      q('type').style.opacity = o.type.o;
-      q('type').style.transform =
-        'translateY(calc(-50% + ' + (y + (o.type.top || 0)) + 'px))';
-      if (o.type.kicker !== undefined) q('kicker').textContent = o.type.kicker;
-      if (o.type.head !== undefined) q('head').innerHTML = o.type.head;
-      if (o.type.sub !== undefined) q('sub').innerHTML = o.type.sub;
+      const T = o.type, head = q('head');
+      /* The text is rebuilt only when it CHANGES. Thirty times a second it
+         would throw away the elements whose transforms are the animation. */
+      if (T.key !== undefined && head.dataset.k !== T.key){
+        head.dataset.k = T.key;
+        head.innerHTML = (T.head || []).map(function(s){
+          return '<span class="ln"><i>' + s + '</i></span>';
+        }).join('');
+        q('kicker').textContent = T.kicker || '';
+        q('sub').innerHTML = T.sub || '';
+      }
+      q('type').style.transform = 'translateY(calc(-50% + ' + (T.top || 0) + 'px))';
+      q('kicker').style.opacity = T.ko;
+      q('kicker').style.transform = 'translateY(' + T.ky + 'px)';
+      const ln = head.querySelectorAll('.ln i');
+      for (let i = 0; i < ln.length; i++){
+        ln[i].style.opacity = T.lo[i] === undefined ? T.lo[T.lo.length-1] : T.lo[i];
+        ln[i].style.transform = 'translateY(' + (T.ly[i] === undefined ? 0 : T.ly[i]) + 'px)';
+      }
+      q('sub').style.opacity = T.so;
+      q('sub').style.transform = 'translateY(' + T.sy + 'px)';
+    }
+    if (o.wall){
+      const w = o.wall, el = document.getElementById('wall');
+      el.style.opacity = w.o;
+      el.style.transform = 'translate(' + (w.x || 0) + 'px,' + (w.y || 0) + 'px) scale(' + (w.s || 1) + ')';
+      if (w.tiles){
+        const ts = el.querySelectorAll('.tile');
+        for (let i = 0; i < ts.length; i++){
+          const t = w.tiles[i];
+          if (!t){ ts[i].style.opacity = 0; continue; }
+          ts[i].style.opacity = t.o;
+          ts[i].style.transform =
+            'translate(' + t.x + 'px,' + t.y + 'px) scale(' + (t.s || 1) + ')';
+        }
+      }
     }
     if (o.card){
       q('card').style.opacity = o.card.o;
       if (o.card.tag !== undefined) q('tag').textContent = o.card.tag;
       if (o.card.foot !== undefined) q('foot').textContent = o.card.foot;
       if (o.card.rule !== undefined) q('rule').style.width = o.card.rule + 'px';
-      if (o.card.word !== undefined) q('word').style.opacity = o.card.word;
+      if (o.card.mark !== undefined)
+        q('mark').style.transform = 'scale(' + o.card.mark + ')';
     }
     if (o.wash !== undefined) q('wash').style.opacity = o.wash;
     if (o.tap){
@@ -275,7 +358,8 @@ const stage = {
   /* Anything that has to happen inside the app itself. The function is sent
      as source, so it closes over nothing here -- every name in it is one of
      the app's own globals. */
-  app: (fn, arg) => app.evaluate('(' + fn.toString() + ')(' + JSON.stringify(arg === undefined ? null : arg) + ')'),
+  app: (fn, arg) => app.evaluate('(' + fn.toString() + ')(' +
+        JSON.stringify(arg === undefined ? null : arg) + ')'),
 };
 
 /* ---- the film ------------------------------------------------------------ */
@@ -288,7 +372,7 @@ fs.mkdirSync(OUT, { recursive: true });
 if (stills){ fs.rmSync(dir, { recursive: true, force: true }); fs.mkdirSync(dir, { recursive: true }); }
 
 /* Straight into ffmpeg. 1800 frames of 1920x1080 is most of a gigabyte on
-   disk and every byte of it is written once and read once. */
+   disk and every byte of it would be written once and read once. */
 const ff = stills ? null : findFfmpeg();
 if (!stills && !ff){ console.error('no ffmpeg. PV_FFMPEG=/path/to/ffmpeg'); process.exit(2); }
 const shape = portrait ? '9x16' : '16x9';
@@ -322,7 +406,8 @@ for (const sc of list){
     if (sc.at) await sc.at(stage, k, i / FPS);
     const buf = await pg.screenshot({ type: 'jpeg', quality: 95 });
     if (stills){
-      if (i % FPS === 0) fs.writeFileSync(path.join(dir, sc.name + '-' + String(Math.round(i/FPS)) + '.jpg'), buf);
+      if (i % FPS === 0)
+        fs.writeFileSync(path.join(dir, sc.name + '-' + String(Math.round(i/FPS)) + '.jpg'), buf);
     } else {
       await feed(buf);
     }
@@ -331,8 +416,7 @@ for (const sc of list){
   }
   process.stdout.write('\n');
 }
-const secs = ((Date.now() - t0) / 1000).toFixed(0);
-console.log(n + ' frames in ' + secs + 's');
+console.log(n + ' frames in ' + ((Date.now() - t0) / 1000).toFixed(0) + 's');
 
 await br.close();
 srv.close();
