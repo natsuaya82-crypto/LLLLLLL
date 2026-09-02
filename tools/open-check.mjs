@@ -263,16 +263,39 @@ const SESS = JSON.stringify({ at: 'not a jwt', rt: 'a refresh token',
   if (b.newpw && b.newpw.again)
     no('the new-password screen offers to send a code again — the code that ' +
        'got there has been spent');
-  /* Both roads reach the password with a session in hand: the digits were
-     spent to get one. What is behind it asks for an address already proved. */
+  /* Nothing BEHIND the password: both roads reach it with a session in hand,
+     so the screens behind it ask for an address already proved. Signed out
+     -- which this boot is -- there is no way off it at all, and that is
+     right: without a session there is no app to be let into. The other half,
+     signed in, is claim 3b below. */
   if (b.newpw && (b.newpw.chev || b.newpw.to))
-    no('the password screen has a way back — both roads reach it signed in, ' +
-       'so what is behind it is an address that has already been proved');
+    no('the password screen, reached with NO session, has a way back — what ' +
+       'is behind it is an address that has already been proved');
   if (r.landed !== 'up')
     no('the chevron on the six digits, pressed for real, landed on ' +
        JSON.stringify(r.landed) + ', wanted "up"');
   say('the door, signed out: every face has the face behind it, the chevron ' +
       'lands on it (' + r.landed + '), and the six digits can be sent again');
+}
+
+/* ---- 3b. and signed in, the password screen lets you into the app -------
+   「サインインしたらアプリに移動してください」 OWNER 2026-09-02. The six
+   digits were spent to get a session, so somebody standing on the password
+   screen is already signed in. One field and one button that goes nowhere is
+   a person locked OUT of an app they are inside -- which is what netSetPass()
+   failing leaves behind. */
+{
+  const r = await boot({ 'lingua.set': JSON.stringify({ done: true }), 'lingua.sess': SESS },
+                       /* ob.step === OB_IN is the walk's last step, which is
+                          what obAtDoor() answers to with a session in hand and
+                          no obback: signed in and done, appIs() is the app. */
+                       () => { SET.done = false; SET.obback = null; ob.step = OB_IN;
+                               OBM.mode = 'newpw'; OBM.fresh = true; render(); });
+  const f = (r.back || {}).newpw || {};
+  if (!f.chev)
+    no('signed in, the password screen has no way off it — netSetPass() ' +
+       'failing leaves somebody locked out of an app they are already inside');
+  say('the password screen, signed in: there is a way into the app (' + f.chev + ')');
 }
 
 /* ---- 3. finished, and signed in ---------------------------------------- */

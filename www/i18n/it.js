@@ -1110,7 +1110,7 @@ defLang('it', (function(){
       "card.title"        : "Scheda",
       "card.save"         : "Condividi",
       "card.shape"         : "Formato",
-      "card.saved"        : "Salvata",
+      "card.nofile"       : "L’app non raggiunge l’archivio dei file.",
       "imp.next"          : "Avanti",
       "imp.role.hw"       : "Grafia",
       "imp.role.mn"       : "Significato",

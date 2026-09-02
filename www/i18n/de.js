@@ -1098,7 +1098,7 @@ defLang('de', (function(){
       "card.title"        : "Karte",
       "card.save"         : "Teilen",
       "card.shape"         : "Format",
-      "card.saved"        : "Gespeichert",
+      "card.nofile"       : "Die App erreicht den Dateispeicher nicht.",
       "imp.next"          : "Weiter",
       "imp.role.hw"       : "Schreibung",
       "imp.role.mn"       : "Bedeutung",
