@@ -3384,7 +3384,10 @@ html[data-script="on"] .gsw{font-family:var(--face-script);letter-spacing:0}
 .ntrow{display:flex;flex-direction:column;gap:4px;width:100%;text-align:left;padding:14px 2px;
   border:0;border-bottom:1px solid var(--line);background:none;color:inherit;font:inherit;cursor:pointer}
 .ntrow:active{transform:scale(.995)}
-.ntrow .nth{font-size:.95rem;color:var(--tx)}
+/* The title is the row: what a note IS. 「題名の方が少し文字でかくしてほしい」
+   OWNER 2026-09-02 -- it sat at .95 with the line under it at .88, which is
+   not enough between them to read as a heading and its line. */
+.ntrow .nth{font-size:1.06rem;color:var(--tx)}
 .ntrow .ntb{font-size:.88rem;color:var(--txm);line-height:1.6}
 /* AS TALL AS WHAT IS LEFT OF THE SCREEN. It was 180px -- a box in the middle
    of an empty page, which is not what a notebook is 「本文の範囲狭すぎ。画面
