@@ -117,7 +117,13 @@ async function boot(pre, drive) {
                  「already have one / make one」 toggle at the foot of both
                  faces, so the name alone is true of either. DO() escapes the
                  quotes, so the word is what there is to look for. */
-              forgot: html.indexOf('forgot') >= 0
+              forgot: html.indexOf('forgot') >= 0,
+              /* AND WHETHER IT ASKS FOR A PASSWORD. Only signing in does.
+                 「メアドだけ、アカウント作成で」「1アドレス1アカウント」 OWNER
+                 2026-09-02 -- a password on the making face is what made that
+                 face a SIGNUP, and a signup always makes a new user, so an
+                 address that had come in with Google got a second account. */
+              pw: html.indexOf('ob-pw') >= 0
             };
           } catch (e) { out[m ? 'up' : 'in'] = { err: String(e && e.message) }; }
         }
@@ -216,6 +222,11 @@ const SESS = JSON.stringify({ at: 'not a jwt', rt: 'a refresh token',
   if (f.in && !f.in.forgot) no('the sign-in face lost the forgotten-password way out');
   if (f.up && f.up.forgot)
     no('the account-making face offers a forgotten password — there is nothing yet to have forgotten');
+  if (f.up && f.up.pw)
+    no('the account-making face asks for a password — that makes it a signup, ' +
+       'and a signup makes a SECOND account for an address that came in with Google');
+  if (f.in && !f.in.pw)
+    no('the sign-in face lost its password field');
   say('the door: Apple and Google on both faces, and the mail is what they differ by');
 }
 
