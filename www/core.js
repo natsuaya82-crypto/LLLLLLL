@@ -468,8 +468,24 @@ function langOpen(id){
 
    langFirst() above is the one caller that stamps nothing, and that is not
    this hole: it runs before there is an account to name. The door is where
-   what it made gets its account. */
+   what it made gets its account.
+
+   AND THE ACCOUNT IS ASKED FOR BEFORE ANY OF IT. 「言語はアカウントないと
+   作れないです」「ログインした人しか書けないけど」 has been in CLAUDE.md
+   since 2026-08-26 with nothing standing in front of this button: the only
+   thing here was the ceiling. makeNeed() (www/onboard.js) is the question the
+   other four makers already ask -- a letter, a word, a grammar stage, a note
+   -- and making a language is the fifth. It is asked FIRST, before the
+   ceiling: what a ceiling is depends on the plan, and the plan is the
+   account's.
+
+   It answers true through the whole of the onboarding, where the walk makes
+   a language before there is an account to make it for and the door is the
+   step after. So this is one call and not a condition -- that file already
+   holds which of the two moments this is, and re-stating it here would be
+   the same sentence in two places. */
 function langNew(){
+  if(!makeNeed()) return;
   if(langStop()) return;
   var id=langMint();
   if(typeof SESS!=='undefined' && SESS && SESS.uid)

@@ -1302,6 +1302,49 @@ const R = await pg.evaluate(() => {
   LANGS = keepL35; langId = keepId35; langName = keepNm35;
   say('35: 印の無い言語を拾うのはオンボーディングの扉だけ ── 消さず、そこに残る');
 
+  /* ---- 36. ＋ はアカウントを訊く ----------------------------------------
+     「言語はアカウントないと作れないです」「ログインした人しか書けないけど」
+     ── CLAUDE.md にずっと書いてあって、止めているものがありませんでした。
+
+     `langNew()` の前に立っていたのは `langStop()`（言語数の上限）だけです。
+     `makeNeed()` は文字・単語・文法・メモの四つに掛かっていて、**言語を作る
+     ことには掛かっていませんでした。**だからサインアウトした人が＋を押せて、
+     出来た言語には印が無く（34番）、次に入った人のものになる（35番）。
+
+     上限で止まることが多いので目立ちませんでした ── 無料は言語一つなので。
+     段が端末に付いているぶん、Pro の端末では素通りします。だからここは
+     **Pro で、上限に余裕がある状態**で訊きます。止めているのが上限では
+     ないことを見るためです。
+
+     `makeNeed()` はオンボーディングの最中は素通りします（`SET.done`）。
+     歩きは口座ができる前で、そこで訊くのはサインインする理由ができる前に
+     訊くことなので ── 扉は歩きの最後です。 */
+  start();
+  SET.plan = 'pro'; SET.planWas = 'pro'; save();
+  const keepL36 = LANGS, keepId36 = langId, keepNm36 = langName;
+  LANGS = { 'La': { name: '自分の', mine: true, uid: A } };
+  langId = 'La'; langName = '自分の';
+  netOut();                                   /* サインアウトした人 */
+  if (langStop()) no('36: 上限のほうで止まっている ── この検査が測りたいものではない');
+  const before36 = Object.keys(LANGS).length;
+  langNew();
+  if (Object.keys(LANGS).length !== before36)
+    no('36: サインアウトしているのに ＋ で言語ができた');
+  if (langId !== 'La') no('36: サインアウトしているのに ＋ で言語が切り替わった');
+  /* 断るだけではなく、扉へ送ること。断って何も起きない＋は、原因も出口も
+     無い画面です。`obDoor()` が `SET.done` を下ろして戻り先を憶えます。 */
+  if (SET.done) no('36: ＋ が断っただけで、扉を開いていない');
+  if (!SET.obback) no('36: 扉から戻る先を憶えていない');
+  SET.done = true; SET.obback = null; save();
+  /* そしてサインインしていれば、＋ は今までどおり通る（34番の裏返し）。 */
+  arrive(A);
+  langNew();
+  if (Object.keys(LANGS).length !== before36 + 1)
+    no('36: サインインしているのに ＋ で言語ができない');
+  LANGS = keepL36; langId = keepId36; langName = keepNm36;
+  SET.plan = 'free'; SET.planWas = 'free'; save();
+  say('36: ＋ はアカウントを訊く ── 断らずに扉へ送る。サインインしていれば通る');
+
   return out;
 });
 
