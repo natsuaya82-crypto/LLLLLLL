@@ -255,6 +255,27 @@ function langMine(id){
   var L=LANGS[String(id||'')];
   return !L || L.mine!==false;
 }
+/* AND THE OPEN LANGUAGE, ASKED BY EVERY WRITER OF ONE. True means the caller
+   must stop -- upStop()'s shape, and for the same reason: a rule that lives in
+   one place and is ASKED at each road that could break it.
+
+   「dl言語はへんしゅうはできないってなんかいもいわせんなよ」 OWNER 2026-09-01,
+   and 「編集不可でそのアカウントに切り替えたらダウンロードした人の言語が使える」
+   OWNER 2026-09-02 -- a downloaded language is one you switch to and USE, and
+   nothing in it is yours to change.
+
+   langOpen()'s own comment has said since it was written that what protects a
+   downloaded language is not a locked door but the WRITERS, and it named four.
+   Three of those asked (ltStart, bkPush, netLangSync); the fourth was 「the row
+   in the language list is not a button」, which is not a writer at all -- it is
+   the door being shut. So SEVEN savers wrote somebody else's language without
+   asking anything, and the only reason nothing was lost is that there was no
+   way in. Opening the door is what made this line necessary.
+
+   It asks the OPEN language and takes no argument on purpose: every one of
+   those savers writes langKey(), which is the open language and nothing else.
+   A saver given an id would be a second question. */
+function langLocked(){ return !langMine(langId); }
 /* Nothing here at all: a first run, or a first run after the migration found
    nothing to move. The person gets one empty language of their own. */
 function langFirst(){
@@ -414,6 +435,7 @@ function langNew(){
 }
 
 function save(){
+  if(langLocked()) return;   /* somebody else's language: nothing is written to it */
   bkTouch();
   try{
     localStorage.setItem(langKey('words'),JSON.stringify(WORDS));

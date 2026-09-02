@@ -19,7 +19,7 @@ function ntRead(){
   try{ var nt=JSON.parse(localStorage.getItem(langKey('notes'))||'[]'); if(Array.isArray(nt)) NOTES=nt; }catch(e){}
 }
 ntRead();
-function saveNotes(){ bkTouch(); try{ localStorage.setItem(langKey('notes'), JSON.stringify(NOTES)); }catch(e){} }
+function saveNotes(){ if(langLocked()) return; bkTouch(); try{ localStorage.setItem(langKey('notes'), JSON.stringify(NOTES)); }catch(e){} }
 
 /* The first line of a note stands in for a title when there is none, the way
    a paper notebook does. Cut short, because a row is a row. */
@@ -58,14 +58,22 @@ function openNote(i){
       lnField('nt-t', t('notes.t.ph'), '', n.t||'')+'</div>'+
     '<div class="field"><label>'+t('notes.b')+'</label>'+
       '<textarea id="nt-b" class="ntbody" placeholder="'+esc(t('notes.b.ph'))+'">'+esc(n.b||'')+'</textarea></div>'+
-    (k>=0? '<button class="set" style="margin-top:10px;border-bottom:none"' + DO('delNote') + '>'+
-      '<span class="sl bad">'+t('notes.del')+'</span></button>' : ''),
+    /* AND NOTHING TO PRESS IN SOMEBODY ELSE'S LANGUAGE. A note opened from a
+       row is opened to READ there -- langLocked() (www/core.js) -- so the
+       delete goes with the save below, and what is left is the note. The
+       fields are not marked readonly: there is nothing to press, so nothing
+       typed into them goes anywhere, and a field that refuses the cursor is a
+       second way of saying what an absent Save already says. */
+    (k>=0 && !langLocked()
+      ? '<button class="set" style="margin-top:10px;border-bottom:none"' + DO('delNote') + '>'+
+        '<span class="sl bad">'+t('notes.del')+'</span></button>' : ''),
     null,
     /* SAVE AT THE FAR END OF THE BAR 「メモも保存は右上」 OWNER 2026-09-01.
        It was a full-width button under the body, which put it below whatever
        had been written -- so on a note of any length it was off the screen,
        and the field it saves had to be scrolled past to reach it. */
-    '<button class="navdo"' + DO('saveNote') + '>'+esc(t('notes.save'))+'</button>');
+    langLocked()? '' :
+      '<button class="navdo"' + DO('saveNote') + '>'+esc(t('notes.save'))+'</button>');
 }
 FORM_OPEN.note=function(i){ openNote(parseInt(i,10)); };
 function saveNote(){
@@ -174,7 +182,8 @@ function vNotes(){
          '<button class="navdo"' + DO('ntSelOff') + '>'+esc(t('notes.sel.done'))+'</button>')
       : ('<button class="iconb'+(ntFind?' on':'')+'"' + DO('ntSearch') + ' aria-label="'+
           esc(t('notes.search'))+'">'+ICON_LENS+'</button>'+
-         '<button class="navdo"' + DO('ntSelOn') + '>'+esc(t('notes.sel'))+'</button>'))+
+         (langLocked()? ''
+           : '<button class="navdo"' + DO('ntSelOn') + '>'+esc(t('notes.sel'))+'</button>')))+
     '<div class="body">'+
     (ntFind
       ? '<div class="search"><span class="lens">'+ICON_LENS+'</span>'+
@@ -200,7 +209,8 @@ function vNotes(){
        already there and this was the odd one out, a full-width bar across the
        foot. 「なんでここだけ右下＋になってないの？」 */
     (NTSEL? ''
-      : '<button class="fab"' + DO('openNote') + ' aria-label="'+esc(t('notes.new'))+'">'+
-          ICON_ADD+'</button>')+
+      : (langLocked()? '' :
+         '<button class="fab"' + DO('openNote') + ' aria-label="'+esc(t('notes.new'))+'">'+
+          ICON_ADD+'</button>'))+
     '</div>';
 }

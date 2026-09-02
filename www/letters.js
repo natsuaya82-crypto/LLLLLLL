@@ -36,7 +36,7 @@ function ltRead(){
   try{ var lt=JSON.parse(localStorage.getItem(langKey('letters'))||'null'); if(lt && lt.length) LETTERS=lt; }catch(e){}
 }
 ltRead();
-function saveLetters(){ bkTouch(); try{ localStorage.setItem(langKey('letters'), JSON.stringify(LETTERS)); }catch(e){} }
+function saveLetters(){ if(langLocked()) return; bkTouch(); try{ localStorage.setItem(langKey('letters'), JSON.stringify(LETTERS)); }catch(e){} }
 
 /* ---- moving the old shape of things over ------------------------------
    Everything drawn before this ran was stored under its sound, which is

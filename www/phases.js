@@ -130,7 +130,7 @@ function migrateGramLang(){
 }
 migrateGramLang();
 stRead();
-function saveStg(){ bkTouch(); try{ localStorage.setItem(langKey('phases'), JSON.stringify(STG)); }catch(e){} }
+function saveStg(){ if(langLocked()) return; bkTouch(); try{ localStorage.setItem(langKey('phases'), JSON.stringify(STG)); }catch(e){} }
 
 /* The stages, in the order they open each other up. `slots` are the words the
    stage cannot do without; `feats` are the decisions from www/grammar.js it
@@ -572,8 +572,9 @@ function stListHTML(){
        あるのに下までいくと助詞+って二重になってる。◉＋だけにして、助詞は最初
        から出せ」 OWNER 2026-09-01. It turned on a stage the book already knows,
        which is now on the list from the start (STAGES above). */
-    '<button class="fab"' + DO('openOwnPhase') + ' aria-label="'+esc(t('stg.own.add.btn'))+'">'+
-      ICON_ADD+'</button>';
+    (langLocked()? '' :
+     '<button class="fab"' + DO('openOwnPhase') + ' aria-label="'+esc(t('stg.own.add.btn'))+'">'+
+      ICON_ADD+'</button>');
 }
 
 function stSlotRow(p, k){

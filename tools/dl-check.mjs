@@ -148,6 +148,63 @@ const r = await pg.evaluate(async ({ s, sid }) => {
     window.sharePlug = oldPlug;
     out.pushRefused = wrote.length === 0;
     out.pushHow = BK.how;
+
+    /* ---- AND NOTHING IN IT MAY BE CHANGED --------------------------------
+       「編集不可でそのアカウントに切り替えたらダウンロードした人の言語が使える」
+       OWNER 2026-09-02. Until that day this language could not be opened at
+       all, so the seven savers were never asked anything -- langOpen()'s own
+       comment named the WRITERS as the protection and only three of them were
+       asking. Opening the door is what made the other seven necessary, and
+       this is the claim that holds them.
+
+       Every global is moved first, so a saver that writes would write
+       something VISIBLY different. Asked of storage, because in memory the
+       change is real -- that is the whole shape of the fault this guards: the
+       screen shows the new word, and it is gone on the next launch. */
+    var keysBefore = {}, kk, ki;
+    for (ki = 0; ki < localStorage.length; ki++){
+      kk = localStorage.key(ki);
+      if (kk && kk.indexOf('lingua.') === 0) keysBefore[kk] = localStorage.getItem(kk);
+    }
+    WORDS.push({ hw:'zzz', mn:'sneaked in' });
+    LETTERS.push(ltNew({ ab:'zz' }));
+    NOTES.push({ t:'sneaked in', b:'' });
+    STG.order = 'sneaked in';
+    SND.push('zz');
+    KB = KB || {}; KB.kbs = (KB.kbs || []).concat([{ pat:'qwerty', lay:[] }]);
+    WLD = WLD || {}; WLD.where = 'sneaked in';
+    save(); saveLetters(); saveNotes(); saveStg(); saveSnd(); saveKb(); saveWld();
+    out.wroteAnyway = [];
+    for (ki = 0; ki < localStorage.length; ki++){
+      kk = localStorage.key(ki);
+      if (kk && kk.indexOf('lingua.') === 0 &&
+          localStorage.getItem(kk) !== keysBefore[kk]) out.wroteAnyway.push(kk);
+    }
+    out.savers = 7;
+
+    /* And the ways IN are not drawn either. A refusal at the storage door on
+       its own is worse than no door: the screen would say it worked. */
+    /* The MAKE affordance is the round + and it is `.fab` on every one of
+       these screens, which is what is asked -- not the name behind it. The
+       first version of this asked for `openNote` and found it on every note
+       ROW: opening a note to read it is that same name with an index, so the
+       claim was failing on the screen doing the right thing. A check that
+       names a road rather than the thing on screen answers a different
+       question than the one it prints. */
+    var picks = ['wSelOn', 'kbSelOn', 'ntSelOn'];
+    out.doorsUp = [];
+    ['words', 'ltset', 'gram', 'kb', 'notes', 'about'].forEach(function(r){
+      try {
+        window.route = r; NAV = [{ r:r }];
+        render();
+        if (document.querySelector('#app .fab')) out.doorsUp.push(r + ':+');
+        picks.forEach(function(d){
+          if (document.querySelector('#app [data-do="' + d + '"]'))
+            out.doorsUp.push(r + ':' + d);
+        });
+      } catch (e) { out.doorsUp.push(r + ': threw ' + (e && e.message)); }
+    });
+
     langOpen(was);
   }
   /* The sync, with every road out of it OPEN. netLangRow() is stubbed too --
@@ -197,10 +254,17 @@ say(r.foldFound, 'the article carries a DOWNLOAD section that folds like every o
 say(r.offered.length > 0,
     'and it offers a ↓ per chapter its owner allowed AND the server opens: ' +
     (r.offered.join(' ') || 'none'));
-say(r.offered.every(a => String(a).indexOf('words') < 0 && String(a).indexOf('gram') < 0),
-    'and offers none for the dictionary or the grammar — supabase/schema.sql’s ' +
-    '`slice_read` refuses those to everybody but the owner, so a ↓ there could ' +
-    'never land');
+/* ALL FOUR. 「あとdlは単語文字文法キーボード全部のはずだよね？」 OWNER
+   2026-09-02. This said the opposite until that day, and it was right then:
+   `slice_read` in supabase/schema.sql refused the dictionary and the grammar
+   to everybody but their owner, so a ↓ over either could never land. It reads
+   the owner's own per-section DL switch now (`slice_dl()` in the same file),
+   which is the second answer 「言語ページ公開と単語や文字のdl可能は別だし」 asks
+   for, so the four sections are the four sections. */
+say(['letters', 'words', 'gram', 'kb'].every(function(k){
+      return r.offered.some(function(a){ return String(a).indexOf(k) >= 0; }); }),
+    'and it is all four chapters — letters, the dictionary, the grammar and ' +
+    'the keyboard — not the two the server used to open');
 say(r.pressed, 'the ↓ for the letters is a real button and was pressed');
 say(!!r.landed && r.landed === r.wanted,
     'and the slice is in storage under langKeyOf(their id, "letters"): ' +
@@ -223,6 +287,17 @@ say(!r.opens || r.pushRefused === true,
     'bkPack() packs whatever is open, so what is asked is the writer: ' +
     (r.opens ? 'bkPush refused it (' + r.pushHow + ')'
              : 'it cannot be opened, which is the same answer'));
+say(r.opens, 'a downloaded language is one you SWITCH TO — the row in the ' +
+    'switcher is a button and langOpen() takes it');
+say(!r.opens || (r.wroteAnyway && r.wroteAnyway.length === 0),
+    'and with it open, all ' + (r.savers || 7) + ' savers refuse: every global ' +
+    'moved, every saver called, and not one byte under `lingua.` changed' +
+    ((r.wroteAnyway && r.wroteAnyway.length)
+      ? ' (' + r.wroteAnyway.join(' ') + ' were written)' : ''));
+say(!r.opens || (r.doorsUp && r.doorsUp.length === 0),
+    'and no way in is drawn on any of its screens — a refusal at the storage ' +
+    'door alone would show the word and lose it' +
+    ((r.doorsUp && r.doorsUp.length) ? ' (' + r.doorsUp.join(' ') + ')' : ''));
 say(r.stillTheirs,
     'and what landed is still theirs after all of that — byte for byte the ' +
     'body the server sent, not this phone’s alphabet written over it');

@@ -684,7 +684,7 @@ function migrateWorld(){
   if(got) saveWld();
   save();
 }
-function saveWld(){ bkTouch(); try{ localStorage.setItem(langKey('wld'), JSON.stringify(WLD)); }catch(e){} }
+function saveWld(){ if(langLocked()) return; bkTouch(); try{ localStorage.setItem(langKey('wld'), JSON.stringify(WLD)); }catch(e){} }
 function world(){ return WLD; }
 /* 用途 -- the five 「物語 / 種族 / 土地 / 実際に話す / 試す」 -- came off both
    screens: 「編集画面の謎のその5択なに？いらんやろ」 OWNER 2026-08-25. What each
@@ -1587,7 +1587,7 @@ function wldPage(ed, L, lid){
      keep their own answers, and every word is where it was: turning the
      switch back on brings the whole page back exactly as it was left. */
   if(wldHidden(w)) return '<div class="view">'+
-    navTop('', (!ed && mine)? '<button class="navdo"' + DO('go', ["world"]) + '>'+
+    navTop('', (!ed && mine && !langLocked())? '<button class="navdo"' + DO('go', ["world"]) + '>'+
       esc(t('wld.edit'))+'</button>' : '')+
     '<div class="body">'+body+'</div></div>';
   wldSecs(w).forEach(function(sec){
@@ -1851,8 +1851,12 @@ function wldPage(ed, L, lid){
   }
   if(!body) body='<div class="note">'+esc(t('wld.empty'))+'</div>';
   return '<div class="view">'+
-    /* Edit is only on your own. 「Edit は出ません（他人のものなので）」 */
-    navTop('', (!ed && mine)? '<button class="navdo"' + DO('go', ["world"]) + '>'+
+    /* Edit is only on your own. 「Edit は出ません（他人のものなので）」 -- and
+       `mine` here is whose ARTICLE this is, which is a different question from
+       whether the OPEN language may be changed: a downloaded language opened
+       from the switcher draws its own article with mine true. langLocked()
+       answers the second. */
+    navTop('', (!ed && mine && !langLocked())? '<button class="navdo"' + DO('go', ["world"]) + '>'+
       esc(t('wld.edit'))+'</button>' : '')+
     '<div class="body">'+body+'</div></div>';
 }
@@ -1903,10 +1907,18 @@ function langRow(id){
      others looking broken. `.pav` is the circle every face in this app already
      wears, so no new corner is drawn (規則18). */
   var mk=String(nm||t('langs.untitled')).charAt(0);
-  if(!isOpen && l.mine===false)
-    return '<div class="lgrow">'+
-      '<span class="pav lgav">'+esc(mk)+'</span>'+
-      '<span class="lgn">'+esc(nm||t('langs.untitled'))+'</span></div>';
+  /* A DOWNLOADED LANGUAGE IS A LANGUAGE YOU SWITCH TO, and it was a dead row
+     until 2026-09-02. 「ダウンロード言語にしようよ。編集不可でそのアカウントに
+     切り替えたらダウンロードした人の言語が使える」 OWNER -- so the row is a
+     button like any other and langOpen() takes it, which it has always been
+     willing to do.
+
+     What makes it safe is not this row. It is langLocked() in core.js, asked
+     by every one of the seven savers, so nothing anywhere can write to a
+     language that is not yours -- however it was reached. langOpen()'s own
+     comment named the writers as the protection from the day it was written
+     and only three of them were asking; opening this door is what finished
+     that sentence. */
   return '<button class="lgrow'+(isOpen?' on':'')+'"' + DO('langOpen', [id]) +
     (isOpen? ' aria-label="'+esc(t('langs.open'))+'"' : '') + '>'+
     '<span class="pav lgav">'+esc(mk)+'</span>'+

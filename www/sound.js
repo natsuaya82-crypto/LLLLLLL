@@ -206,7 +206,7 @@ function sndRead(){
        if(s && s.length) SND=s; }catch(e){}
 }
 sndRead();
-function saveSnd(){ bkTouch(); try{ localStorage.setItem(langKey('snd'), JSON.stringify(SND)); }catch(e){} }
+function saveSnd(){ if(langLocked()) return; bkTouch(); try{ localStorage.setItem(langKey('snd'), JSON.stringify(SND)); }catch(e){} }
 /* The one sound inventory anything reads. 35 places say addedSnd() meaning
    "the sounds of the language in front of me", and they still do. */
 function addedSnd(){ return SND; }
@@ -912,8 +912,9 @@ function vLtset(){
        newLetter(), which puts the upgrade popup up. Drawing it only for those
        who already have it is the app hiding what it sells from the person it
        is selling to. */
-    '<button class="fab"' + DO('newLetter', [k]) + ' aria-label="'+esc(t('lt.new'))+'">'+
-      ICON_ADD+'</button>'+
+    (langLocked()? '' :
+     '<button class="fab"' + DO('newLetter', [k]) + ' aria-label="'+esc(t('lt.new'))+'">'+
+      ICON_ADD+'</button>')+
     /* And what these signs look like off the phone's home screen, which is
        the one place a language goes without anybody typing. numbers.js says
        why it is here and not a chapter of its own: there is nothing to make

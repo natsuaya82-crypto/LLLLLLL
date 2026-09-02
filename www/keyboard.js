@@ -134,7 +134,7 @@ function migrateKbFree(){
   KB.kbs=kbs; KB.at=at; KB.v=2;
   saveKb();
 }
-function saveKb(){ kbVFix(); kbWayOff(); kbNoted(); bkTouch(); try{ localStorage.setItem(langKey('kb'), JSON.stringify(KB)); }catch(e){} }
+function saveKb(){ if(langLocked()) return; kbVFix(); kbWayOff(); kbNoted(); bkTouch(); try{ localStorage.setItem(langKey('kb'), JSON.stringify(KB)); }catch(e){} }
 
 /* The four directions a finger can leave a key by, in the order they are
    stored. Written once because the editor, the renderer and the flick all
@@ -2287,7 +2287,10 @@ function kbListHTML(){
     /* THE SAME ROUND + AS EVERYWHERE ELSE 「追加は◉+にしてね」 -- the
        dictionary, the alphabet, the composer and the notebook all add with
        it. While choosing, the thumb is for the marks and it is not there. */
-    ((!KBSEL && kbRoomKb())
+    /* And not at all in somebody else's language. langLocked() (www/core.js)
+       -- 「編集不可でそのアカウントに切り替えたらダウンロードした人の言語が
+       使える」 OWNER 2026-09-02. */
+    ((!KBSEL && !langLocked() && kbRoomKb())
       ? '<button class="fab"' + DO('kbNew') + ' aria-label="'+esc(t('kb.new'))+'">'+
           ICON_ADD2+'</button>'
       : '');
@@ -2335,8 +2338,9 @@ function vKb(){
          uses. Pressing it on this plan opens what it would give rather than
          the chooser 「アップグレードボタンそこじゃなくて、キーボードを足そうと
          するとポップ出るようにしてよ」 OWNER 2026-08-28. */
-      '<button class="fab"' + DO('kbNew') + ' aria-label="'+esc(t('kb.new'))+'">'+
-        ICON_ADD2+'</button>'+
+      (langLocked()? ''
+        : '<button class="fab"' + DO('kbNew') + ' aria-label="'+esc(t('kb.new'))+'">'+
+            ICON_ADD2+'</button>')+
       '</div>';
   /* The keyboard, and the row of the ones there are above it. There is no
      "nothing built yet" face any more: kbBoards() answers with the one
@@ -2357,7 +2361,8 @@ function vKb(){
                   esc(t('kb.sel.del'))+'</button>'
               : '')+
            '<button class="navdo"' + DO('kbSelOff') + '>'+esc(t('kb.sel.done'))+'</button>')
-        : '<button class="navdo"' + DO('kbSelOn') + '>'+esc(t('kb.sel'))+'</button>')+
+        : (langLocked()? ''
+            : '<button class="navdo"' + DO('kbSelOn') + '>'+esc(t('kb.sel'))+'</button>'))+
       '<div class="body">'+
       kbListHTML()+
       kbSysHTML()+

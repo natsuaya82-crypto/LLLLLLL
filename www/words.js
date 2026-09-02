@@ -229,7 +229,8 @@ function vWords(){
             second lands against it -- Done at the far end, where an iPhone
             puts it. */
          '<button class="navdo"' + DO('wSelOff') + '>'+esc(t('words.sel.done'))+'</button>')
-      : '<button class="navdo"' + DO('wSelOn') + '>'+esc(t('words.sel'))+'</button>')+
+      : (langLocked()? ''
+          : '<button class="navdo"' + DO('wSelOn') + '>'+esc(t('words.sel'))+'</button>'))+
     '<div class="chead">'+
     /* THE SAME FIELD AS EVERYWHERE ELSE, and it was an <input>.
        「全部改行して画面内に文字が収まるようにして欲しい」 OWNER 2026-08-27,
@@ -283,7 +284,14 @@ function vWords(){
        speech over everything chosen is not in the app, and neither is the
        button that opened it. It is in the BAR now and not in a strip across
        the foot; while choosing, the round + is simply not there. */
-    (wSel? ''
+    /* AND NOTHING TO MAKE ONE WITH IN SOMEBODY ELSE'S DICTIONARY.
+       「編集不可でそのアカウントに切り替えたらダウンロードした人の言語が使える」
+       OWNER 2026-09-02. langLocked() (www/core.js) is the one place that says
+       so and the savers already refuse -- but a refusal at the storage door
+       alone is worse than no door: the word appears in the list, the screen
+       says it worked, and it is gone on the next launch. So the way in is not
+       drawn either. */
+    (wSel || langLocked()? ''
       : '<button class="fab"' + DO('openAdd') + ' aria-label="'+esc(t('home.write'))+'">'+
           ICON_ADD2+'</button>')+
     '</div>';
