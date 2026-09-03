@@ -659,8 +659,42 @@ const regSeen = {}, regTwice = [];
   }
 }
 
+/* The same statement, asked of index.html's OWN markup.
+   ------------------------------------------------------------------
+   The scan above reads what a screen RETURNED. index.html's shell is not
+   returned by anything -- it is the page the screens are put into -- so the
+   two on the sheet's backdrop were outside every walk, and CLAUDE.md said
+   `act-check` fails on one "anywhere" while nothing had ever looked there.
+
+   Named, not counted, and the names have to keep matching: an exemption
+   that matches nothing is permission for the next one, which is what
+   box-check says a stale baseline line becomes. */
+const SHELL_OK = [
+  '<div class="sbg" id="sbg" onclick="closeSheet(event)">',
+  '<div class="sheet" id="sheet" onclick="event.stopPropagation()"></div>',
+];
+const shellSrc = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8')
+  .replace(/<!--[\s\S]*?-->/g, '')
+  .replace(/\/\*[\s\S]*?\*\//g, '');
+const shellBad = [];
+const shellRe = /^.*\son(?:click|input|change|keydown|pointerdown|touchstart|submit|focus|blur)\s*=.*$/gim;
+let sm;
+while ((sm = shellRe.exec(shellSrc))) {
+  const line = sm[0].trim();
+  if (SHELL_OK.indexOf(line) < 0)
+    shellBad.push('index.html: ' + line.slice(0, 120));
+}
+for (const ok of SHELL_OK) {
+  if (shellSrc.indexOf(ok) < 0)
+    shellBad.push('the exemption `' + ok.slice(0, 60) + '...` matches nothing in ' +
+                  'index.html any more. Take the line out of SHELL_OK -- an ' +
+                  'exemption matching nothing is permission for the next one.');
+}
+
 const fails = [];
-const say = (label, list) => { if (list.length) fails.push([label, list]); };
+let CLAIMS = 0;
+const say = (label, list) => { CLAIMS++; if (list.length) fails.push([label, list]); };
+say('JavaScript inside index.html’s own markup', shellBad);
 say('a name registered twice in act-map.js', regTwice);
 say('a name with nothing behind it', R.missing);
 say('an entry no screen ever names', R.dead);
@@ -688,4 +722,6 @@ if (fails.length) {
   }
   process.exit(1);
 }
-console.log('\nall seven checks pass: every name resolves, everything that resolves is named,\nno name is written down twice, signed out there is one screen and no way past it,\nand appIs() answers all three of its states -- including the new phone that has\nnever been signed in, which is the onboarding and not the door.');
+/* The claims are counted off the say() calls rather than written out: this
+   line said "all seven checks pass" while there were ten of them. */
+console.log('\nall ' + CLAIMS + ' checks pass: every name resolves, everything that resolves is named,\nno name is written down twice, no JavaScript sits in any markup including\nindex.html’s own shell, signed out there is one screen and no way past it,\nand appIs() answers all three of its states -- including the new phone that has\nnever been signed in, which is the onboarding and not the door.');

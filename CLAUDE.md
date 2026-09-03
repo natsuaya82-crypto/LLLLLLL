@@ -565,6 +565,14 @@ screen named twice).
 
 A button carries a **name**, never code. Never write `onclick="..."` or any other
 `on*=` attribute — `act-check` fails on one anywhere, so the class cannot come back.
+"Anywhere" was two statements short of true for a while: it read what a screen
+RETURNED, and `index.html`'s own shell is not returned by anything, so the two on
+the sheet's backdrop (`#sbg` and `#sheet`) sat outside every walk with the rule
+saying they could not. The shell is read now, and those two are named in
+`SHELL_OK` in `act-check` — **named, and the names have to keep matching**, so an
+exemption left standing over markup that has changed fails the same as a new one.
+They are the only two, they are the static shell rather than a screen, and
+nothing new joins them.
 
 ```js
 '<button' + DO('tkAdd', [w.hw]) + '>'      // -> data-do="tkAdd" data-a="[...]"
