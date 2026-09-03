@@ -218,6 +218,37 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### @ は14日に一度しか変えられない
+- Date: 2026-09-03
+- Area: プロフィールの @（handle）
+- Decision:
+
+  ```
+  ユーザーネームは14日に1度しか変更できないようにしたい
+  ```
+
+  **一度変えたら、次に変えられるのは14日後。**
+- Reason: オーナーの言葉のまま上に。仕組みの側で分かっていること ── @ は
+  人が人を呼ぶ名前で、他の人の投稿の中に凍って残る（`post.toh`、規則13）。
+  取り替えが速いと、返信先の名前が誰を指しているか分からなくなる。
+- Affected features: プロフィール編集（`meSetHandle()`、`www/me.js`）と、
+  **`supabase/schema.sql` の `profile_rename()`**
+- Affected data: **増える。**「最後に @ を変えた時刻」。`profile` に一列
+- Affected docs: この項、docs/DATA_MODEL.md、docs/CHANGELOG.md
+
+  **どこで止めるか。サーバーです。**「the app is a suggestion and the row
+  level security in `schema.sql` is the whole of the security」 ── 画面だけで
+  止めると、`/rest/v1/profile` を直に叩けば何度でも変えられる。
+  `profile_rename()` が既に handle の UPDATE を見ている（lingua への／からの
+  改名を断る）ので、**そこに入れる。二つ目のトリガーを作らない。**
+  画面の側は、止まっていることと次にいつ変えられるかを出す ── 2026-08-22 の
+  narrowing（アプリが取り去った状態には、原因と出口を最低限だけ書く）。
+
+  **最初に @ を決めるのは「変更」ではない。**アカウントを作った直後、まだ
+  一度も変えていない人が14日待たされるのは、この決定の言っていることでは
+  ない。
+- Implementation status: **未実装。**`claude/me3` に渡した（2026-09-03）
+
 ### キーの画面 ── 選んだら確定ボタン、もう一度触れば解除、戻れば選択は消える
 - Date: 2026-09-03
 - Area: キーボードのキーに何を入れるかを選ぶ画面
