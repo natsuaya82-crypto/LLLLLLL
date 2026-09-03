@@ -910,12 +910,6 @@ function openMe(){
 
        欄そのものは `lnField()`（www/shell.js の一箇所）。`<input>` は
        折り返せないので、書いた字が横に消えていた。 */
-    /* 画像がまだ無いときは、触ったらそのまま写真を選ぶところが開く ──
-       外すものが無いので訊くことが無い。「操作は1タップで完結」。
-       画像が在るときだけ、iPhone 標準のアクションシートが出る。
-
-       ここより下の元の註（#104 の「変更する」の画面をやめた話）はそのまま
-       効いています ── 文字の行も、そこへ飛ぶ画面も、戻っていません。 */
     /* 触ったら写真を選ぶところが直接開く。それだけです。
        「ちがう。写真をタップしたら変えたいのよ。104の前のやつは写真を変更
          するの文字が出てきてたやんそれをやめろって言ってるのよ」
@@ -930,23 +924,27 @@ function openMe(){
        **外す道はこれで一つも無くなります。**外す行は #104 の前に顔の下に
        在ってオーナーに断られ（「なんでアイコンの下に画像消すみたいな垢文字
        でんの？」）、選ぶ画面のほうも今日断られた。二つとも断られたので、
-       どこに置くかは決めごと ── 私は決めません。報告に書いてあります。 */
+       どこに置くかは決めごと ── 私は決めません。報告に書いてあります。
+
+       **顔が在るか無いかで触った先が変わりません。**変わっていた形が
+       「後プロフィールファイルから選択なくして欲しい」「画像ね」
+       OWNER 2026-09-03 の原因です ── 顔がまだ無い人は `<label>` の下の
+       file input を直に踏んでいて、それは iOS 自身の「写真を選ぶ／撮る／
+       ファイル」を出します。**写真だけを出す道は `mePicAsk()` の一本**
+       （PHPicker）なので、両方ともそこを通します。
+
+       下の file input は二本目の道ではありません。`mePicAsk()` の註が
+       元からそう書いています ── **ネイティブが無い端末（検査のブラウザ）
+       のための、同じ一本道の入口**で、`mePicFile()` だけが開けます。
+       だから踏めない場所に置くだけで、消しません。 */
     '<div class="picrow">'+
-      (ME.pic
-        ? '<button class="pav pavb" style="width:96px;height:96px;margin:0"' +
-            DO('mePicAsk') + '>'+
-            postFace({who:meName(), lname:langName, av:postAvatar()})+'</button>'
-        : '<label class="pav" style="position:relative;width:96px;height:96px">'+
-            postFace({who:meName(), lname:langName, av:postAvatar()})+
-            '<input type="file" id="me-pic" accept="image/*" '+
-              'style="position:absolute;left:0;top:0;width:100%;height:100%;opacity:0"' +
-              CH('meSetPic') + '></label>')+
+      '<button class="pav pavb" style="width:96px;height:96px;margin:0"' +
+        DO('mePicAsk') + '>'+
+        postFace({who:meName(), lname:langName, av:postAvatar()})+'</button>'+
       /* The way in with no native side under the page. No size and no place
          in the row -- mePicFile() is the only thing that opens it. */
-      (ME.pic
-        ? '<input type="file" id="me-pic" accept="image/*" '+
-            'style="display:none"' + CH('meSetPic') + '>'
-        : '')+
+      '<input type="file" id="me-pic" accept="image/*" '+
+        'style="display:none"' + CH('meSetPic') + '>'+
     '</div>'+
     '<div class="field at" style="gap:14px;margin-bottom:20px">'+
       '<span style="flex:0 0 auto;white-space:nowrap;min-width:4.5em">'+esc(t('me.name'))+'</span>'+
