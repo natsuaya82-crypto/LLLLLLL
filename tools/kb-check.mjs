@@ -1754,10 +1754,19 @@ const r = await pg.evaluate(({ s }) => {
        it, and the page it lands on has nothing on the sheet to press. Pressed
        through the row on the page rather than by calling kbGoBoard(), because
        what is being asked is where a finger arrives. */
-    lrows[0].click();
-    out.freeFirstLands = here().r === 'kb' && String(here().a) === '0';
+    /* Guarded, because a check that THROWS says less than one that goes red --
+       CLAUDE.md's argument for tools/gate.mjs being a runner rather than an
+       && chain, one level down. Putting the free plan's own face back above
+       the list left no rows here, and `lrows[0].click()` took the whole file
+       with it: one uncaught TypeError, no claim, no counter, and 299 claims
+       that never ran. The three below say false instead. */
+    out.freeFirstPressed = lrows.length > 0;
+    if (out.freeFirstPressed) lrows[0].click();
+    out.freeFirstLands = out.freeFirstPressed &&
+                         here().r === 'kb' && String(here().a) === '0';
     out.freeFirstSheet = document.querySelectorAll('#kb .kbrow').length;
-    out.freeFirstNoEdit = document.querySelectorAll('#kb [data-do]').length === 0;
+    out.freeFirstNoEdit = out.freeFirstPressed &&
+                          document.querySelectorAll('#kb [data-do]').length === 0;
 
     /* ---- and the upgrade is offered where a keyboard is ADDED ------------
        「upgradeはそこにはいらんくね。追加するときに出てくるようにして欲しい」
@@ -3413,8 +3422,10 @@ say(r.freeNoEditor, 'the free plan has no keyboard editor');
 say(r.freeRows === 5 && r.freeKeys === 43,
     'and it has a keyboard all the same -- the QWERTY, drawn (' +
     r.freeRows + ' rows, ' + r.freeKeys + ' keys)');
-say(r.freeNothingToPress, 'with nothing on it to press');
-say(r.freeBareRows === r.freeRows && r.freeBareKeys === r.freeKeys,
+say(r.freeRows > 0 && r.freeNothingToPress,
+    'with nothing on it to press');
+say(r.freeBareRows > 0 && r.freeBareRows === r.freeRows &&
+    r.freeBareKeys === r.freeKeys,
     'and a language whose letters are not there yet still has every key of it ('
     + r.freeBareRows + ' rows, ' + r.freeBareKeys + ' keys) -- a letter that is'
     + ' missing leaves its key wearing the roman character rather than taking'
@@ -3438,10 +3449,11 @@ say(r.freeListNoSheet,
 say(r.freeListFirstKeys > 0,
     'the first of them is the QWERTY itself, drawn (' + r.freeListFirstKeys +
     ' keys in its preview)');
-say(r.freeFirstLands && r.freeFirstSheet === 5 && r.freeFirstNoEdit,
+say(r.freeFirstPressed && r.freeFirstLands && r.freeFirstSheet === 5 &&
+    r.freeFirstNoEdit,
     'and pressing it lands on that board with nothing on the sheet to press --'
-    + ' no editor [' + [r.freeFirstLands, r.freeFirstSheet, r.freeFirstNoEdit].join(' ')
-    + ']');
+    + ' no editor [' + [r.freeFirstPressed, r.freeFirstLands, r.freeFirstSheet,
+    r.freeFirstNoEdit].join(' ') + ']');
 say(r.freeFrameCount === r.freeSlots - 1 && r.freeFrameEmpty && r.freeFrameDoor,
     'every row after it is an empty frame naming the one door, kbNew (' +
     r.freeFrameCount + ' frames, empty ' + r.freeFrameEmpty + ', one name ' +
