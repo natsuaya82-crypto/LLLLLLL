@@ -218,6 +218,48 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### DM は作らない。メッセージは別のアプリになる
+- Date: 2026-09-03
+- Area: SNS の側
+- Decision:
+
+  ```
+  6は今はいいかな。
+  linguaを媒体としたメッセージ専門アプリを作りたいと思ってるから、
+  ディスコードみたいな。それでDMはなしにしたいかなあ掲示板とかは今後あるかも。
+  ```
+
+  **この app に DM は作らない。**Lingua で書くメッセージは、別に立てる
+  Discord のようなアプリの仕事にする。**掲示板は今後あるかもしれない**が、
+  今は決まっていない。
+- Reason: オーナーの言葉のまま上に。リーダーが「普通の SNS にあってこの app に
+  無いもの」として六つ挙げ、そのうちの一つに対する答え。
+- Affected features: 無し。**作らないという決定なので、実装するものが無い**
+- Affected data: 無し
+- Affected docs: この項、docs/FEATURES.md、docs/BACKLOG.md
+- Implementation status: **実装するものが無い。**この項が全部
+
+### 写真の代替テキストは作らない
+- Date: 2026-09-03
+- Area: 投稿の写真
+- Decision:
+
+  ```
+  代替テキストはいらんかなー。見えない人はあんまり人工言語作らんやろ
+  ```
+
+  **写真に説明文を付ける欄は作らない。**`alt=""` のままにする。
+- Reason: オーナーの言葉のまま上に。リーダーが「普通の SNS にあってこの app に
+  無いもの」として挙げ、オーナーが要らないと決めた。
+- Affected features: 無し
+- Affected data: 無し
+- Affected docs: この項、docs/FEATURES.md、docs/BACKLOG.md
+- Implementation status: **実装するものが無い。**
+
+  **一つだけ、決めた人が知っておくこと。**Apple の審査でアクセシビリティを
+  見られる場合がある ── 落ちる保証も落ちない保証も無い。落ちたらそのときに
+  作る、が今の姿。
+
 ### 平キーの道を消す。アプリは今の形だけを知っている
 - Date: 2026-09-03
 - Area: 保存の形式、起動時の移行
