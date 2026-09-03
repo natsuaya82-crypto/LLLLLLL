@@ -47,17 +47,17 @@ Marked separately, because they are not the same question:
 | Notebook | shipped | yes | — | slice `notes` | decided |
 | Numbers — a digit is a letter with a value | shipped | yes | — | slice `letters` | decided |
 | What the language is for (the world) | shipped | yes | — | slice `wld` | decided |
-| **AI に相談 — ChatGPT を本文入りで開く** | in progress | yes — アプリは生成せず鍵も持たない。開く先はその人のアカウント | — | none stored by this; reads `SET.askTo`, and nothing writes it | **partial** — 相手は ChatGPT だけ・ボタンは常に「AIに相談」は decided (2026-08-28)。**本文の文面と候補の数は open** — `docs/reports/ask-2026-08-27.md` §4 |
+| **AI に相談 — ChatGPT を本文入りで開く** | **planned — 一行も入っていません**。`SET.askTo` も `ask*` の関数も `ask.*` の文字列も `www/` に無く、`package.json` の `npm run ask` が指す `tools/ask-check.mjs` も存在しません | yes — アプリは生成せず鍵も持たない。開く先はその人のアカウント | — | none | **partial** — 相手は ChatGPT だけ・ボタンは常に「AIに相談」は decided (2026-08-28)。**本文の文面と候補の数は open** — `docs/reports/ask-2026-08-27.md` §4 |
 | Keyboard layout built in the app | shipped | fixed QWERTY, nothing to set | `kb`: your own | slice `kb` | decided |
 | Keyboard: flick, four directions per key | shipped | — | `kb` | slice `kb` | decided |
 | Keyboard: any letter on any key, any position, rows and layers | shipped | — | `kb` | slice `kb` | decided |
 | Font built on the device (OTF) | shipped | yes | — | none (derived) | decided |
 | Import a word list | shipped | paste | `file`: a file | slice `words` | decided |
-| **write — letters brought in on a sheet** | **in progress** — the road is in (`www/sheet.js`, ch 26, `npm run sheet`); **the plan gate and the drawing are not** | — | **Pro**: the whole road, and the gate is NOT in the code yet | slice `letters`: `lt.sh` and `lt.via` **new** | partial |
+| **write — letters brought in on a sheet** | **in progress** — the road is in (`www/sheet.js`, ch 26, `npm run sheet`) and **so is the plan gate**; the drawing is not | — | **Pro**, and it is `file` that says so — `shInFileHTML()` and `shTakeIn()` both ask `can('file')`, which is Pro. There is no `write` capability and there is not going to be one | slice `letters`: `lt.sh` and `lt.via` | partial |
 | Export CSV | shipped | — | `data` | none | decided |
 | Backup to Documents | shipped | **yes, on every plan** | — | the file | decided |
 | Restore from Documents | shipped | **yes, on every plan** | — | fills in what is missing | decided |
-| One language per person | shipped | 1 | 1 | `LANG_MAX` | decided |
+| How many languages of your own | shipped | 1 | Plus 1, Pro 3 | `LANGS`; `langCap()` / `langCount()` / `langStop()` in `www/core.js` | decided — 「言語数はプラスは1、プロは3」 2026-08-25. A ceiling now shortens the LIST as well (`langsSeen()`), and the open language is always on it |
 | Word suggestions | **lifted** | — | — | none | the chips and their daily three went out with Studio; `makeWord()` in `www/reading.js` stays and is used everywhere else |
 | The conversation — the last chapter | **lifted** | — | — | slice `talk` kept | out until the hosted model is in. See the note on `PLANS` in `www/core.js` |
 | Forms made by a rule | shipped | yes | yes | `STG.fm` | decided — a rule offers, it does not declare. Nothing is made until asked, and what comes out is an ordinary word |
@@ -68,7 +68,7 @@ Marked separately, because they are not the same question:
 | Feature | Status | Free | Paid | Data | Owner decision |
 |---|---|---|---|---|---|
 | Writing a post | shipped | yes | — | the `post` row on the server, ink frozen on write; `lingua.posts` is the copy that works with no signal | decided |
-| One language, on every plan | shipped | yes | — | `lingua.langs` | decided — there is no way to make a second anywhere in the app, so it is not a price. `LANG_MAX` used to say so in `core.js` and fed a line of text on the language list; the line went with the ban on explaining things on a screen, and the constant went with it. Languages somebody else wrote are not counted: reading one is not making one |
+| Making a second language | shipped | — | Pro | `lingua.langs` | decided — the door is on the language list in Settings (`langNew`, `www/home.js`), not on the profile 「せっていからでいいよ」. `langCount()` counts languages that are `mine` AND on this account, so reading somebody else's is not making one and signing in as somebody else does not inherit their count |
 | Timeline | shipped, **not device confirmed** | yes | — | `post` rows on the server; `lingua.posts` is the copy that works with no signal | decided — **an account is required to read it and to post**. 「なんでログインしてないアカウントで投稿できんの？」 The making side needed none; **2026-08-26 ended that** — 「言語はアカウントないと作れないです」. It works offline and goes up on the next connection; it does not work without an account |
 | Timeline split — For you / Following | shipped, **not device confirmed** | yes | — | none new; `ME.fo` is the follow list already | decided — 「フォロー中とおススメみたいに分けたい」. For you is everything, Following is `ME.fo` plus your own, matched on the post's frozen `hd` |
 | A post carries its own shapes (`ink`) | shipped | yes | — | on the post | decided |
@@ -96,10 +96,10 @@ Marked separately, because they are not the same question:
 | Notices | shipped, **not device confirmed** | yes | — | — | done — `netNotices`, an RPC in `schema.sql` |
 | Following | shipped, **not device confirmed** | yes | — | `follow` rows, `ME.fo` | done — `netFollow`, and Follow is on a person's row in the search |
 | Quoting | **planned** | ? | ? | `quote` rows | **open** — the table exists in `schema.sql` and nothing reads it |
-| **DL — a chapter of somebody else's published language** | **shipped 2026-09-01**, **not device confirmed** — the ↓ on their article page lands the slice in storage and puts a `mine:false` row in `LANGS`, which this app had never written | no | letters and the keyboard are free (§ 4); the dictionary is Plus and cannot be taken by anybody yet — `slice_read` refuses `words` and `gram2` to everybody but their owner, so `CAN.dl` still has nothing to ask it and is still not in the table | `LANGS[<their id>] = {name, mine:false, sid}` and `lingua.<their id>.<slice>`; **nothing of yours is touched** — it is not backed up (`bkPush` refuses it), not synced (`netLangSync` refuses it) and not topped up (`ltStart` refuses it) | decided — **it cannot be edited** 「dl言語はへんしゅうはできないってなんかいもいわせんなよ」 OWNER 2026-09-01; **it is not in your backup** 「入らん」; **one chapter at a time** 「いや一つづつdlでいいよ」; **counted separately** 「別に数える」 — `langCount()` counts `mine` and is untouched |
+| **DL — a chapter of somebody else's published language** | **shipped 2026-09-01**, **not device confirmed** — the ↓ on their article page lands the slice in storage and puts a `mine:false` row in `LANGS`, which this app had never written | no | **Plus**, every chapter of it — `CAN.dl` (2026-09-02). The dictionary still cannot be taken from anybody: `slice_read` refuses `words` and `gram2` to everybody but their owner | `LANGS[<their id>] = {name, mine:false, sid}` and `lingua.<their id>.<slice>`; **nothing of yours is touched** — it is not backed up (`bkPush` refuses it), not synced (`netLangSync` refuses it) and not topped up (`ltStart` refuses it) | decided — **it cannot be edited** 「dl言語はへんしゅうはできないってなんかいもいわせんなよ」 OWNER 2026-09-01; **it is not in your backup** 「入らん」; **one chapter at a time** 「いや一つづつdlでいいよ」; **counted separately** 「別に数える」 — `langCount()` counts `mine` and is untouched |
 | **A language comes back on a new phone** | **shipped 2026-09-01**, **not device confirmed** — `netLangSync()` now sends every language a person made, not only the one that is open, and `netTook()` pulls their `language` rows back and fills in the slices this phone does not have | yes | — | nothing new is stored; the local id of a language that came back **is its `sid`**, so a second phone cannot make a second copy | decided — 「基本は全部サーバー管理」「アカウント消したら残るわけがない」 OWNER 2026-08-26. It **fills in what is missing and stops**: a language or a slice already on the phone is untouched, and a server that does not answer changes nothing |
 | Reading a downloaded language | **not built** — the slices are in storage and there is no way in yet. `langOpen()` reaches it, but every screen it fills writes back through `save*()`, so the row in the language list is drawn and is not a button | — | — | already stored | the next piece of work |
-| How many DL'd languages a plan holds | **planned** — **the two numbers are OPEN** 「別に数える」 OWNER 2026-09-01 settled that they are counted apart and did not settle the numbers. Nothing in the code holds a count. Do not write one | — | — | none | not decided |
+| How many DL'd languages a plan holds | **shipped 2026-09-02**, **not device confirmed** | 0 | Plus 1, Pro 3 | none new — `dlCount()` counts the index rows whose `mine` is false | decided — 「dlはしかもplusは1つproは3つ DL言語とmake言語でそれぞれ別の最大値」 OWNER 2026-09-02. `dlCap()` is the number and `dlStop()` is the refusal, both in `www/core.js`; `dl-check` holds them. Two ceilings that cannot see each other: filling this one leaves `langCap()` where it was |
 | Switching language by holding the profile | **shipped**, not device confirmed | — | — | none | decided 2026-08-27 — the 08-25 conflict was put to the owner and came back 「インスタと同じようにしたから出てくる。で切り替えタップしたらその言語にいく」. Holding the profile tab opens the existing `langs` page (`vLangs()`); **the list stays in Settings too** 「せっていからでいいよ」, so it is a short way in and not a second copy. No account changes: `langOpen()` never touches `lingua.me` or `lingua.sess` |
 
 ### Notes on the open rows
@@ -217,7 +217,8 @@ Layer 3 itself is dictionary lookup: it costs nothing and runs offline.
 
 **It has no limit and no capability.** It used to be "three a day on free",
 and both halves are gone: `AI_FREE_DAILY` went out with Studio, `tr` is not
-one of the nine names in `CAN`, and `TR_FREE_DAILY` has no declaration
+one of the names in `CAN` — count them off that table, not off a line here —
+and `TR_FREE_DAILY` has no declaration
 anywhere in `www/`. The three were the AI's price wearing layer three's
 clothes, and there is no AI 「1日3回は亡くなりましたaiいれないから」. The
 only ceiling free has left is `FREE_LIMIT`, and that is words.
@@ -247,7 +248,7 @@ vertically-written language is. It is a compromise and it is written down in
 |---|---|---|---|---|---|
 | System keyboard extension (iOS) | shipped | yes | — | App Group | decided |
 | Hand-over app → keyboard | shipped | yes | — | App Group | decided |
-| Purchases (StoreKit) | **planned** | — | — | Keychain | **open** — no code exists; the plan is set by hand |
+| Purchases (StoreKit) | **shipped**, **not device confirmed** — `ios/App/App/LinguaStore.swift` (`products` / `buy` / `restore` / `current` / `manage`, `.unverified` refused, `Transaction.updates` watched), `www/store.js` the one window onto it, `setPlan()` in `www/settings.js` its only caller, `PLAN_BUY` true | — | the four products of `docs/apple.md` § 4 | Keychain (`LinguaPlan.swift`), and the plan only ever goes UP except on the three roads § プランは絶対におかしくしてはいけない names | decided — **what is NOT built is the server half**: no plan column, no receipt verification, so `CAN` is which buttons to show and is not a security check. § 1 below |
 | Android | **planned** | — | — | — | **open** — one repo with `android/` beside `ios/`, nothing started |
 
 ## What is left to do online
@@ -269,28 +270,33 @@ anonymous one through and comes out with it. `claude/admin` has that half.
 
 ### 1. The plan, on the server — the one with money on it
 
-The plan is in the Keychain now — `ios/App/App/LinguaPlan.swift`, read before
-the web view loads and injected as `window.__plan` — because `localStorage` is
-a file inside the app and that file is in the backup a phone makes onto a PC,
-where free tools and no jailbreak turn `free` into `plus`. That door is shut.
-The one behind it is not: on a jailbroken phone the app's own JavaScript can be
-edited and the question never gets asked. **So anybody determined enough can
-still set themselves to Plus**, and the server would not know: `schema.sql` has
-no plan column and no plan check; `is_member()` asks whether somebody is signed
-in and nothing else.
+**Two of the four are built.** The plan is in the Keychain on the phone —
+`ios/App/App/LinguaPlan.swift`, read before the web view loads and injected as
+`window.__plan` — because `localStorage` is a file inside the app and that file
+is in the backup a phone makes onto a PC, where free tools and no jailbreak turn
+`free` into `plus`. **And it is on the ACCOUNT**: `plan (id, plan, at)` in
+`supabase/schema.sql` with its three policies, written by `netPlanUp()` and read
+by `netPlanSync()`, which takes the HIGHER of the two rungs (`planBest()`) so a
+purchase made on another phone arrives on this one. `acct-check` walks it.
 
-Today that costs nothing but the sale — everything a plan opens runs on the
-phone (`assist.js`, `grammar.js`, `reading.js` make no network call), and there
-is no cloud storage. **The day money is taken that stops being true**, so:
+**What is NOT built is the checking half**, and it is the half with the money
+on it. Nothing verifies a receipt: the row says what the phone told it, and on
+a jailbroken phone the app's own JavaScript can be edited and the question never
+gets asked. **So anybody determined enough can still set themselves to Pro**,
+and the server will write it down. So:
 
-1. the StoreKit receipt is verified **server-side**, not by the app
-2. the plan lives on the account, in `profile` or beside it
-3. anything that costs us money is refused **by the server**
+1. ~~the plan lives on the account~~ — **done**, the `plan` table
+2. ~~anything that costs us money is refused by the server~~ — **nothing costs
+   us money per plan yet**; everything a plan opens runs on the phone
+   (`assist.js`, `grammar.js`, `reading.js` make no network call)
+3. the StoreKit receipt is verified **server-side**, not by the app — **open**,
+   and it is what stands between here and taking money
 4. `CAN` stays what it is: which buttons to show. It is not a security check
    and must never be relied on as one
 
-Decided so far: the four products and their prices (2026-08-14), and that
-StoreKit is not to be written yet.
+Decided: the four products and their prices (2026-08-14, `docs/apple.md` § 4),
+and that the plan follows the ACCOUNT 「課金とアカウントとキーボードはアカウント
+に結びつく」 OWNER 2026-09-01.
 
 ### 2. Cloud storage of a language — **everybody**, not Plus
 
@@ -337,10 +343,13 @@ What is genuinely still open here:
 
 ### 3. Publishing a language — `language`, `publication`
 
-Both tables exist with row level security written and held by `npm run rls`,
-and **nothing in the app reads or writes either**. The profile has a language
-page with a public/private switch and it is local. This is what makes the
-switch mean anything, and what puts a language name on somebody found by
+Both tables exist with row level security written and held by `npm run rls`.
+**`language` is read and written** — `netLangRow()`, `netLangsDown()` and the
+rest of `netLangSync()` — so a language travels to the account and back.
+**`publication` is still touched by nothing**, which is the half this section
+is about: the record of what was published, and when. This is what makes the
+public/private switch on the language page mean anything to anybody but the
+person holding the phone, and what puts a language name on somebody found by
 searching.
 
 ### 4. Publishing and downloading — a keyboard, an alphabet, a dictionary
@@ -377,10 +386,12 @@ dictionary **is never merged into your own**, decided twice, six days apart.
 A word of somebody else's post taken into your own language. The table exists
 and nothing reads it.
 
-### 6. The day's sentence — `prompt`
+### 6. The day's sentence — `prompt` — **read** (2026-09)
 
-One a day, and `post.prompt` already points at it. The table exists and
-nothing reads it.
+One a day, and `post.prompt` already points at it. `www/net.js` reads both the
+newest row and one by id; `supabase/functions/daily-prompt/` is what writes
+them. What has NOT been settled is the editorial half — who writes the
+sentences, how far ahead, and what happens on a day with no row.
 
 ### 8. Sales and analytics — **RevenueCat で見る** (2026-09-02)
 
@@ -394,61 +405,11 @@ RevenueCat の画面で見ます。App Store Connect のキーは作りません
 **管理画面に残っているのは通報とスタッフだけです。**それは分析ではなく、
 運営そのものの作業だからです。
 
-コードは 2026-09-02 に消しました ── `supabase/functions/appstore/`、
-`www/net.js` の `netStore()`、`www/mod.js` の五ページ。下の記述は 2026-08-26
-のもので、**もう作られていません。**
-
-Four things, all four now on the admin screen — which is where they went
-because the row at the foot of settings this was going to hang off stopped
-existing on the same day (「設定の通報ボタン消せ」OWNER 2026-08-26), and the
-owner's own words for that screen were 「通報の確認とかアナリティクスとか売り上げ
-とか含めて全部見れる新ページ」.
-
-```
-  ① 契約者数と売上          App Store Connect   -- supabase/functions/appstore/
-  ② ダウンロード数           App Store Connect   -- the same one request
-  ③ 解約と継続             App Store Connect   -- the same three reports
-  ④ アプリの中の数           Supabase            -- admin_counts()
-```
-
-| | |
-|---|---|
-| Plan | not a plan — **`admin` only**, and `admin` is set by hand in the dashboard |
-| Data | **none.** No table was added and `schema.sql` did not move |
-| Decided | the four things, the screen, and that it refreshes on every open |
-| Not decided | what a number is called, what period it covers, how the takings of several currencies should read, whether a continuation RATE is wanted and against what |
-
-**It is `is_admin()` and not `is_staff()`.** § 8 said staff when it was
-written, and then the screen these numbers sit on turned out to be the admin
-one — 「＠linguaのアカウントだけ管理者ページには入れる」. The function asks the
-same `is_admin()` `admin_counts()` asks, with the caller's own token.
-
-**No table.** The plan said "a table for what Apple returns (undesigned)".
-There is nothing to design: `GET /v1/salesReports` is synchronous and hands the
-report back in the body, so there is nothing to keep a copy of between opens.
-
-**"Every open" was checked at Apple before anything was built**, which is what
-the previous version of this section demanded by name. It holds — for the
-takings, the downloads and the subscriptions, one synchronous request each.
-What it does NOT mean is fresh: Apple's data is **next-day, in Pacific time**,
-so there is no such thing as today's takings and every number on the screen
-carries the day it is for. The App Store **Analytics** reports really are the
-"ask for a report to be made, then come back for it" shape — POST a request,
-then walk reports → instances → segments, with a download URL that lives five
-minutes — and nothing here uses them, because everything ①②③ need is in the
-sales reports. `docs/reports/sales-2026-08-26.md` § 1 has every source.
-
-**Two numbers are deliberately not produced, and both are the owner's.**
-The takings are **one row per currency and are never added up** — Apple pays
-per storefront in that storefront's currency and an exchange rate is not in
-this repo (`www/store.js`: "Building '$' + a number is how an app ends up
-showing dollars to somebody being charged yen"). And there is **no continuation
-rate**: neither report has such a column, and producing one means choosing a
-denominator and a period.
-
-**A fourth key is required**, which § 10 of `supabase/setup.md` did not know
-when it was written: `filter[vendorNumber]` is mandatory on every sales report
-and no endpoint will tell you yours. It is now `ASC_VENDOR_NUMBER` there.
+コードは 2026-09-02 に消えています ── `supabase/functions/appstore/` は無く、
+`www/net.js` に `netStore()` は無く、`www/mod.js` の五ページも無い。
+`supabase/setup.md` の `ASC_VENDOR_NUMBER` も、それを読むものが無くなった
+ので要りません。**RevenueCat の枝は `claude/rc`** で、公開キー待ちのまま
+取り込まれていません。
 
 ### 7. Taking a post down — **done** (2026-08-21)
 
@@ -519,7 +480,7 @@ your leaving. It is `on delete set null` now, and `npm run rls` holds it.
 it exists: `wipeAll()` (`www/settings.js`, the button 「データを消去」).
 
 ```
-  wipeAll()   confirm once, with iOS's own dialog
+  wipeAll()   ask once, with popAsk() — the app's own, not iOS's
       ↓       netDropMe()  — the server: Storage bytes first, then account_delete()
   wipeHere()  every lingua.<id>.<slice> key removed (not overwritten)
               SET back to defaults, keeping theme, ui and plan
@@ -544,12 +505,14 @@ Still true and worth keeping: **this is not a `DATA_SAFETY.md` exception.**
 That rule forbids the APP deciding to remove somebody's work — it names four
 reasons, and 「the person asked」 is not one of them.
 
-**What is missing is the middle button: 「言語を削除」.** One language, not all
-of them (OWNER DECISION 2026-08-26). There is no such path anywhere —
-`act-map.js` binds `langOpen` and `langNew` and nothing else. See the decision
-log for the five things to settle before writing it; the sharp one is that
-deleting a language on the phone alone brings it **back** on the next
-`netLangSync()`, because `syMerge` adds both sides.
+**And the middle button is in: 「言語を削除」.** One language, not all of them
+(OWNER DECISION 2026-08-26, restated 2026-09-03 「この言語を削除で言語の制作の
+ものは全部なくなる」). `wipeLangs()` asks with `popAsk()` and names the
+language; `wipeLangsGo()` walks `SLICES` for that one id through `langKeyOf()`,
+drops its backup and its row on the server, and touches nothing else. It is
+down in a language this phone is only reading (`langLocked()`). The sharp part
+is why the server goes first: deleting on the phone alone brings the language
+**back** on the next `netLangSync()`, because `syMerge` adds both sides.
 
 ### 9. Push notifications
 
@@ -557,67 +520,60 @@ Nothing exists. The notices tab is pulled when it is looked at.
 
 ### 10. DL — the official assets, and a language you can only read
 
-**OWNER DECISION 2026-08-25, and nothing is built.** Zero lines. The decision is
-in `docs/FEATURE_RULES.md` with the owner's words unabridged; this is only the
-part that says what has to exist.
+**OWNER DECISION 2026-08-25, and the road is built.** The decision is in
+`docs/FEATURE_RULES.md` with the owner's words unabridged; this is the part
+that says what the code does and what is still not answered.
 
 What it is, in the owner's framing: 「例えばトキポナ使いたい人がすぐに使えるように
 するための公式アセットを準備するってイメージ」. Not a marketplace of other people's
 languages — that is § 4, and it is a different decision from a different week.
 
-Decided:
+Decided, and in:
 
-- it is **Plus**「DLはplusから」 — `CAN.dl`, which is **not in `CAN` yet**
+- it is **Plus** 「plusからです」 — `CAN.dl` in `www/core.js`, asked by
+  `upStop(can('dl'))` in `www/home.js`
+- **how many**: Free 0, Plus 1, Pro 3 — `dlCap()`, a ceiling of its own that
+  `langCap()` cannot see. `dlStop()` is the refusal, and somebody already on
+  the top rung gets a sentence rather than a dialog, because there is nothing
+  to fly to
 - the thing you get **does not join your language. You switch to it.**
+  `langSeenAdd()` puts a `mine:false` row in `LANGS`
 - it **cannot be edited**, and the reason is not tidiness:
-  「トキポナに文字足したらトキポナじゃないです」
+  「トキポナに文字足したらトキポナじゃないです」. `ltStart()`, `bkPush()` and
+  `netLangSync()` each refuse a language that is not `mine`
 - **単語 / 文字 / 文法 / キーボード** are four separate unlocks and four separate
-  downloads. Not one switch
+  downloads — `wldSecDl()`, per chapter, not one switch
 - taken from **the language's overview page on Home**, where public/private
   already is 「dlは公開非公開があるから、ホームの言語の概要ページに作った」
 - **anybody may use an official asset — inside Lingua only**
   「公式が提供してるアセットなんだからみんな使えるよ。でもlingua内ね？」
 - **one account**, however many languages 「でもアカウントは一つだからね？」
+- over the ceiling, the list is **cut and nothing is deleted** —
+  `langsSeen()` with `dlCap()`, `wordsSeen()`'s shape 「減った時は隠すだけね」
 
 Open, and not to be guessed:
 
-- **how many** a plan holds. The owner's line ends in 「は？」
 - whether you can **write a post** in a language you downloaded
 - whether **一部だけ** DL した言語（例えば単語だけ）はその一部だけの言語として
   一覧に並ぶのか
-- whether the official assets ship **inside the app** or come **from the server**.
-  This decides whether any of this can start today
-- 長押し vs. the Settings list — see the conflict in the decision log
+- whether the official assets ship **inside the app** or come **from the server**
 
-What is missing to build it, checked against the code rather than remembered:
+What is still missing, checked against the code rather than remembered:
 
-1. **`CAN.dl`.** Not there. It cannot be added alone: `dead-check` refuses a
-   capability nothing asks for, and the only place that would ask is a screen
-   this branch does not own. `docs/PAID_FEATURES.md` § Not built yet already
-   says the general form of this — 「a function nothing calls is a function
-   `dead-check` deletes」.
-2. **A language that is read-only.** There is no such state.
-   `docs/DATA_MODEL.md` § A language that is only read.
-3. **The server may not hand a slice to anybody but its owner.** This is the
-   real block and it is deliberate: `slice_read` in `supabase/schema.sql` is
-   `l.owner = auth.uid()` **even for a published language**, and the comment
-   above it says why — 「publishing is a copy somebody is given and not a door
-   into the phone」. Official assets are not somebody's phone, so they may not
-   need this loosened at all; **that is a question, not a gap to close.**
-4. **A long press.** There is a worked one — `kbDown`/`kbLift` in
-   `www/keyboard.js`, 380 ms, 「iPhoneのホーム画面と同じ挙動」. Copy it; do not
-   invent a second answer to what a hold is.
-
-What is **already there** and should not be rebuilt:
-
-- **a language and its slices already travel to the server and back.**
-  `netLangRow()` / `netSlices()` / `netSlicePut()` / `netLangSync()` in
-  `www/net.js`, called from `boot.js`. This half is written.
-- **`bkPack()`** already turns a whole language into one file
-  (`www/backup.js`). An official asset is that shape.
-- **the language list already has the empty half DL fills.** `vLangs()` in
-  `www/home.js` draws 「自分の」 and 「読んでいる」, and the second one is
-  **always** the empty note, because nothing anywhere writes `mine:false`.
+1. **A language that is read-only is a refusal, not a state.**
+   `langLocked()` is asked by the saves; there is no read-only MODE, so a
+   screen written tomorrow has to remember to ask. `docs/DATA_MODEL.md`
+   § A language that is only read.
+2. **Reading one.** `langOpen()` reaches a downloaded language and every
+   screen it fills writes back through `save*()`, so the row in the list is
+   drawn and is not a button. That is the next piece of work.
+3. **The server may not hand a slice to anybody but its owner.** Deliberate:
+   `slice_read` in `supabase/schema.sql` is `l.owner = auth.uid()` **even for
+   a published language**, and the comment above it says why — 「publishing is
+   a copy somebody is given and not a door into the phone」. So `words` and
+   `gram2` cannot be downloaded from anybody today. Official assets are not
+   somebody's phone, so they may not need this loosened at all; **that is a
+   question, not a gap to close.**
 
 **The making side is on this list too.** 「基本は全部サーバー管理 言語周りだけ
 バックアップにfile使う」「言語はアカウントないと作れないです」 OWNER 2026-08-26.
@@ -780,15 +736,17 @@ called `7` becomes a new letter called `7` and does not land on the digit
 already in the alphabet — 「a,a,a は三枠」 — and the check holds that `a`, `7`
 and `2` are all still there afterwards.
 
-**Three things were NOT in. One of them is now; the other two are not, and
-neither is a decision this session made:**
+**Two of the three things that were NOT in are in. The remaining one is the
+drawing:**
 
-- **The plan gate.** The road is Pro (OWNER DECISION 2026-08-23) and the gate
-  is one line — `write: 'pro'` in `CAN` — in `www/core.js`, which was not this
-  session's to change and which `claude/save` was editing the same day. The
-  door is therefore ungated in the code today. Deciding to gate it on some
-  other capability instead would have been this session deciding the free/paid
-  line, which is the owner's.
+- **The plan gate is in, and it is `can('file')`.** The road is Pro (OWNER
+  DECISION 2026-08-23) and `file` sits at `pro` in `CAN`, so asking it puts
+  chapter 26 exactly where the decision put it. `shInFileHTML()` draws the door
+  and sends a press to the plans screen; `shTakeIn()` refuses again, because
+  the action tables reach it by name and a button is not the only way in.
+  **There is no `write` capability** — 「a list brought in as a file rather
+  than a paste」 is what a sheet handed back is, and a second name at the same
+  rung would be two answers to one question.
 - **The drawing.** Nothing renders `sh` yet, so an imported letter shows
   **blank** — the data is there, the face is not. That is `www/glyph.js`, and
   it is the other half of the seam above.
@@ -803,9 +761,9 @@ pencil. The sheet that came back was written with a pen that gives a solid
 black edge. `tools/sheet-check.mjs` stands somebody's hand in with the app's
 own glyph contours, which is honest about what it is not.
 
-**OWNER DECISION 2026-08-23.** **Pro** only -- the top tier, which is the one
-`claude/save` is renaming from Plus as this is written. The app hands out a PDF,
-somebody draws on it, and hands it back; what they drew becomes letters.
+**OWNER DECISION 2026-08-23.** **Pro** only, and `can('file')` is what says so.
+The app hands out a PDF, somebody draws on it, and hands it back; what they
+drew becomes letters.
 
 **There are two ways a letter gets made, and they have names.**
 「今の点線をなぞるのは make、書いて入れるのは write っていう違いがある」
@@ -1068,10 +1026,8 @@ Different on one point, and for a reason:
 
 Open, and not to be guessed at:
 
-- The price, and nothing else on this list.
 - Whether the letters that come in are the same 28 slots (when what was drawn
   IS a-z) or a series of their own.
-- The price, and which plan.
 
 Not yet known, and it decides how much of this is buildable:
 

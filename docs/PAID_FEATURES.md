@@ -72,19 +72,18 @@ a–z と `!` `?` と基数ぶんの数字、キーボードは固定 QWERTY、�
 上位にある: 五百の単語は有料でなくなった後も五百のまま、どのスライスも
 一バイトも動いていない。
 
-### 揃っていなかったもの（2026-09-01 に測った）
+### 形は一つに揃っています
 
-一箇所ずつ別の日に書かれて、四通りに割れていた:
+一箇所ずつ別の日に書かれて四通りに割れていたのを、2026-09-01 に揃えました。
+どれも赤くならなかったのは、一つずつは正しく動くからです。一つの画面で並べて
+見た人が居なかっただけでした。
 
 ```
-  ① 全部見えて増やせない      文字・文法・音     ← 直す
-  ② 先頭だけ見えて増やせない   単語              ← これが正しい形
-  ③ 効き目が止まる            書記・向き        ← 見た目なので隠すも何もない
-  ④ 一覧から消える            キーボード        ← これも正しい形
+  先頭だけ見える  単語・文字・段・言語・DL言語   隠すだけ。消さない
+  効き目が止まる  書記・向き                    見た目なので隠すも何もない
 ```
 
-**①を②④に揃える。**どれも赤くならなかったのは、一つずつは正しく動くから。
-一つの画面で並べて見た人が居なかっただけ。
+**どれが何で切るかは § When a plan ends の表**にあります。
 
 And, more importantly, what it may never touch.
 
@@ -95,10 +94,14 @@ And, more importantly, what it may never touch.
 **And a plan belongs to the ACCOUNT** 「課金とアカウントとキーボードはアカウント
 に結びつく」 OWNER 2026-09-01. Not to a phone, and **not to the settings** — it
 follows the person to whatever phone they sign in on, the way everything else
-of theirs does. `SET.plan` is where the value sits in the code today; that is
-the gap between the decision and the code, and `docs/STATE.md` § 3 item 4 is
-where it is written down. Nothing in this file describes a plan that lives on a
-device.
+of theirs does. **That is built**: the `plan` table in `supabase/schema.sql`,
+sent by `netPlanUp()` and read back by `netPlanSync()`, which takes the higher
+of the two rungs. `SET.plan` is still the value the app asks, and it is the
+copy that works with no signal — the same shape as every other slice.
+
+What is **not** built is anybody checking the receipt. The row holds what the
+phone said, so it is where the plan LIVES and is not proof of what was bought;
+`docs/FEATURES.md` § 1 is the list.
 
 Forbidden, without exception:
 
@@ -158,13 +161,18 @@ Plus < Pro` needs nobody told which is which.
 | `letters` add / name / delete | — | yes | yes |
 | `wsys` a writing system that is not an alphabet | — | yes | yes |
 | `snd` choose the sound, not the letter's own | — | yes | yes |
-| words | 100 | 1000 | no ceiling |
 | `kb` a keyboard of your own | 1, the fixed QWERTY | **1 + 3 = 4** | no ceiling |
-| languages on the account | **1** | **1** | **3** |
-| `dl` a language taken from the official assets | — | **yes** | yes |
-| how many DL'd languages | — | 1 | 2 | 
+| `dl` a chapter of somebody else's language | — | **yes** | yes |
 | `edit` editing a post you have sent | — | **yes** | yes |
-| `gram` `dir` `data` `file` `write` `badge` | — | — | yes |
+| words | 100 | 1000 | no ceiling — `words` |
+| languages on the account | **1** | **1** | **3** |
+| how many DL'd languages | **0** | **1** | **3** |
+| `gram` `dir` `data` `file` `badge` | — | — | yes |
+
+Six of those ten rows are a DOOR, which is a name in `CAN`, and four are a
+NUMBER, which is a function beside `wordCap()`. The four numbers are the ones
+this file has had wrong most often, so they are written once, machine-read,
+in § The four numbers below.
 
 **The words ceiling is a number, not a door.** `wordCap()` is the one place
 that says it — `Infinity` on Pro, a thousand on Plus, `FREE_LIMIT` below
@@ -173,10 +181,16 @@ ceiling at all". Everything that shows or enforces the ceiling asks
 `wordCap()`: the dictionary, the banner on the cover, the count in settings,
 `capOK()` and `capStop()`.
 
-**The middle rung is decided and is not on sale.** Plus's price is in no
-language file and no subscription for it exists in App Store Connect, so the
-plans screen sells Free and Pro. What is here is the rung: the day a receipt
-says `plus`, every door above is already the right way round.
+**The middle rung is on sale.** Its two prices are in all ten `www/i18n`
+files (`plan.price.plus`, `plan.price.plus.yr`), its two products are named in
+`docs/apple.md` § 4 and in `LinguaStore.plans`, and `PLANS` in `www/core.js`
+carries the card. The plans screen sells all three rungs.
+
+What is typed in `www/i18n` is the FALLBACK and only the fallback: `storeCost()`
+returns what the App Store answered and `planPrice()` falls back to `t()` only
+when it answered nothing — a browser, a screenshot, or a product not yet made
+in App Store Connect. When that happens the screen says so, in `storeSay()`,
+between the prices and the button that buys.
 
 **`kb` is Plus's, and its number landed in the same commit** — 2026-08-23.
 「1,1+3.無制限って言わなかったっけ？」 Free 1, Plus 1 + 3 = 4, Pro no ceiling,
@@ -184,38 +198,32 @@ and **counted as a pool across languages** rather than per language: three
 languages were nine keyboards while `KB_MAX` was three per language, on a plan
 that sells three.
 
-**`dl` is Plus's, and its numbers landed 2026-08-27.** 「DLはplusから」 was
-always flat and is what the row above says. The count was the owner's next
-line and it ended in a question 「proは自分の言語3個+DL言語3個**は？**」 — that
-question has now been answered, and **not with the number it guessed**:
+**`dl` is Plus's, and its numbers are the owner's of 2026-09-02.**
 
 ```
-DL言語は plus 1個 pro 2個。これは自作言語とはまた別   OWNER 2026-08-27
+plusからです
+dlはしかもplusは1つproは3つ DL言語とmake言語でそれぞれ別の最大値
+                                                     OWNER 2026-09-02
 ```
 
-**Free does not download at all**, and that was never open — it falls out of
-「DLはplusから」, which is this row. Asked again on 2026-08-27 the owner said
-so in the plainest terms: 「無料はdlさせるなんか話した？　公式アセットのdlは
-plusからっていう決定事項あんのになんで聞いてくんの？」 **It was decided; the
-asking was the mistake.** Free 0, Plus 1, Pro 2.
+**Free 0, Plus 1, Pro 3.** `dlCap()` in `www/core.js` is the number and
+`can('dl')` is the door; `dlCount()` counts the languages whose `mine` is
+false and `dlStop()` is the refusal. `dl-check` holds all four.
 
-Note Pro is **2 and not the 3 the question floated** — the 「は？」 was a real
-question and it came back with a different number. This is exactly why a
-「は？」 is not written into `core.js` as a constant while it is still a
-question.
+That decision REPLACES 2026-08-27's 「DL言語は plus 1個 pro 2個」, which this
+file carried until today and which said Pro 2. It also replaces 2026-08-19's
+「キーボードと文字の DL は無料、辞書は Plus」 (`docs/FEATURES.md` § 4) — the
+one that let a free plan use a downloaded language on a real phone.
 
-What the two numbers already tell us, though, is the shape, and the shape is
-not in question: **a DL'd language is counted SEPARATELY from your own.**
-「自分の言語+DL言語1個」 is two numbers, not one. `langCount()` counts `mine`
-and must go on counting only `mine`; whatever counts downloads is a second
-function beside it, not a change to it. That also means the free plan is
-untouched: Free has one language and no `dl`, exactly as today.
+**A DL'd language is counted SEPARATELY from your own**, which is what
+「それぞれ別の最大値」 says. Two ceilings and not one: `langCount()` counts
+`mine` and has never seen a download, `dlCount()` counts `mine` false and has
+never seen a language somebody made. Filling one leaves the other where it was.
 
-**`CAN.dl` is not in `CAN` yet, and that is not an oversight.** `dead-check`
-refuses a capability nothing asks for, the only screen that would ask
-(`www/home.js`'s overview page) is not written, and § Not built yet below
-already says what happens to code written ahead of its caller. It goes in with
-its first `can('dl')`, the way `kb` went in with `kbCap()`.
+`CAN.dl` and `dlCap()` landed together on 2026-09-02, which is the rule `kb`
+set: a door opened with no number behind it hands Plus whatever the code
+happened to allow, and that is neither number the owner said. The caller is
+`www/home.js` — `upStop(can('dl'))` and `dlStop()` in front of the download.
 
 **Nothing here may take a language away.** The rule at the head of this file
 covers a downloaded language the same as any other: a plan that lapses means
@@ -347,48 +355,94 @@ a `can()` given anything but a literal, and a `has()` anywhere else.
 
 | capability | level | what it opens |
 |---|---|---|
-| `words` | plus | a dictionary past `FREE_LIMIT` (100) |
-| `data` | plus | CSV out, and the cloud |
-| `file` | plus | a list brought in as a file rather than a paste |
 | `letters` | plus | adding, naming and deleting a letter |
 | `wsys` | plus | a writing system that is not an alphabet |
 | `kb` | plus | a keyboard of your own instead of the fixed QWERTY |
+| `dl` | plus | taking a chapter of somebody else's language. How many is `dlCap()` |
 | `snd` | plus | choosing a sound, rather than taking the letter's own |
-| `gram` | plus | a grammar stage of your own, past the fifteen |
-| `dir` | plus | choosing which way the language is written. **Reading one is free** |
 | `edit` | plus | editing a post you have already sent |
-| `write` | pro | the sheet — letters written on paper and brought back in (ch 26) |
+| `words` | pro | no ceiling on the dictionary at all. The ceiling itself is `wordCap()` |
+| `data` | pro | CSV out |
+| `file` | pro | a list brought in as a file rather than a paste, **and the sheet** (ch 26) |
 | `badge` | pro | the mark beside your name |
+| `gram` | pro | a grammar stage of your own, past the fifteen |
+| `dir` | pro | choosing which way the language is written. **Reading one is free** |
+
+**Twelve, and that is a number to read off `CAN` rather than off this line.**
+`npm run dead` prints what it counted on every run — "what money buys: N
+capabilities in CAN" — and `tools/paid-check.mjs` (`node tools/paid-check.mjs`)
+fails if this table and `CAN` stop agreeing on a name or a level. This table
+said `plus` for six of the twelve and named a thirteenth, `write`, that has
+never existed; that is what the check exists to stop happening again.
+
+`words` is the one that reads backwards, and it is right: `can('words')` means
+**no ceiling at all**, so it is Pro. Plus's thousand is a NUMBER and lives in
+`wordCap()`, which asks `can('words')` once and `has('plus')` after it.
+
+`file` is the sheet's gate as well as the paste's — `shInFileHTML()` and
+`shTakeIn()` in `www/sheet.js` both ask it. That puts chapter 26 on Pro, which
+is OWNER DECISION 2026-08-23, and it is why there is no separate `write`.
 
 `dir` is the one that gates half a thing, and the half it does not gate is the
 important one. A language can run left→right, right→left, or down the page
 with its columns going either way; a post carries the direction it was
 written in, and **every plan is shown it**. A free account that could not read
 a right-to-left post would be reading a lie about somebody else's language,
-which is the card bug in another costume. What Plus buys is choosing one.
+which is the card bug in another costume. What Pro buys is choosing one.
 Nothing anywhere asks `can('dir')` before drawing — it is asked in
 `setScriptDir()` and on the screen that offers the choice, and nowhere else.
+
+## The four numbers
+
+Four of the rows in the ladder table are a ceiling rather than a door, and each
+is a function beside `wordCap()` in `www/core.js`. The constants are written
+out once, here, and `tools/paid-check.mjs` reads them out of `core.js` and
+fails when this block and that file disagree.
+
+```
+FREE_LIMIT   100     the free dictionary
+PLUS_LIMIT   1000    Plus's dictionary. Pro has none -- that is can('words')
+FREE_KB      1       the fixed QWERTY, counted as one
+PLUS_KB      4       1 + 3. Pro has none
+FREE_LANGS   1       languages of your own. Plus is the same number
+PRO_LANGS    3
+PLUS_DL      1       languages downloaded, which is a second ceiling
+PRO_DL       3
+```
+
+`kbCount()` in `www/keyboard.js`, `langCount()` and `dlCount()` in `core.js`
+are what those are compared against, and all three count **across languages**:
+the ceiling is on the person, not on each language.
 
 ## When a plan ends
 
 **The app goes back to the shape the free plan has. Nothing a person made is
 deleted.** Those are two halves of one sentence and neither may be dropped.
 
-| | on free again |
-|---|---|
-| the dictionary | **lists the first 100 words**, in the order they were made |
-| the writing system | an alphabet |
-| the keyboard | the fixed QWERTY, in the app and on the phone |
-| the direction | left→right |
-| a stage of your own | stays on the list; cannot be added to or deleted |
-| CSV, file import, unmetered layer 3 | gone, as they always were on free |
+| | on free again | what shortens it |
+|---|---|---|
+| the dictionary | **lists the first 100 words**, in the order they were made | `wordsSeen()`, `www/words.js` |
+| the alphabet | **lists the free thirty-eight** — a–z, `!`, `?`, a digit per value of the base | `ltSeen()`, `www/sound.js` |
+| a stage of your own | **is not on the list**; the fifteen are | `stHidden()`, `www/phases.js` |
+| languages of your own | **lists the first one**, and the open one is always on it | `langsSeen()`, `www/home.js` |
+| languages downloaded | **lists none** | `langsSeen()` with `dlCap()` |
+| the writing system | an alphabet | `wsys()`, `www/wsys.js` |
+| the keyboard | the fixed QWERTY, in the app and on the phone | `kbOf()`, `www/keyboard.js` |
+| the direction | left→right | `setScriptDir()`, `www/wsys.js` |
+| CSV, file import, the sheet, the badge | gone, as they always were on free | `can()` on the press |
 
-Every word, every letter, every keyboard layout, every stage and every
-conversation is still in storage, still packed by `bkPack()`, still in the file
-in Documents, and still there in full the moment the plan comes back. The app
-reads the **whole** dictionary for itself — a post, a gloss, a spelling, an
-example — and only the list on the dictionary screen is short.
-`wordsSeen()` in `www/words.js` is the one place that shortens it.
+**The first five rows are one shape and it is `wordsSeen()`'s.** 「減った時は
+隠すだけね」「だって単語でも文法でも同じようにやったじゃん」 OWNER 2026-09-02.
+The list is cut; nothing else is. There was a day when the alphabet, the
+stages and the sounds showed everything and merely refused to grow, while the
+words and the keyboards dropped out of the list — four screens with two
+answers to one question, each correct on its own. They are the one answer now.
+
+Every word, every letter, every keyboard layout, every stage, every language
+and every conversation is still in storage, still packed by `bkPack()`, still
+in the file in Documents, and still there in full the moment the plan comes
+back. The app reads the **whole** dictionary for itself — a post, a gloss, a
+spelling, an example — and only the list on the dictionary screen is short.
 
 Because "shorter list" and "my work is gone" look identical from the outside,
 the app says the difference out loud, twice:
@@ -407,29 +461,24 @@ is built once. A plan that kept working after the money stopped would be paid
 for a month and then never again. 「a にしたら最初の1ヶ月で作りきったらそのあと
 課金されねえだろ」
 
-Two plans: `free` and `plus`. Studio comes back with the hosted model. `LANG_MAX` is 1 on every plan and is not
-a price — there is no way to make a second language anywhere in the app, so a
-plan promising more would be promising a button that does not exist.
-
-There used to be a third plan and it sold the hosted model — the conversation,
-and word suggestions with no daily limit. There is no hosted model: `AI_SEAM`
-in `www/glyph.js` marks where one would join and nothing joins it. A tier whose
-headline is a thing the app cannot do is the app lying to somebody who is about
-to pay, so Studio is out until the seam has something behind it, and what it
-opened went with it.
-
-**Plus is the tools for building a language yourself** — unlimited words and
-letters, the writing systems, the keyboard, CSV, a post read in your own words
-— and every one of them runs on this phone for nothing.
+There used to be a fourth plan, Studio, and it sold the hosted model — the
+conversation, and word suggestions with no daily limit. There is no hosted
+model: `AI_SEAM` in `www/glyph.js` marks where one would join and nothing joins
+it. A tier whose headline is a thing the app cannot do is the app lying to
+somebody who is about to pay, so Studio is out until the seam has something
+behind it, and what it opened went with it.
 
 ```
-  free    draw your own letters. 100 words
-  plus    build it yourself. No ceiling
+  free    draw your own letters. 100 words. One language
+  plus    build it yourself. 1000 words. Four keyboards. One download
+  pro     no ceiling on the words or the keyboards. Three languages,
+          three downloads, the grammar, the direction, the file roads
 ```
 
-Plus is not given fewer than Free of anything — "I paid and it got smaller"
-reads as a bug
-whatever the reason.
+Neither paid rung is given fewer than the one below it of anything — "I paid
+and it got smaller" reads as a bug whatever the reason. That is `has()` being a
+ladder rather than three equals signs, and `plan-check` holds it: Pro meets
+Plus's rung, Plus does not meet Pro's, and free meets neither.
 
 ## What the free plan is
 
@@ -527,7 +576,7 @@ Answer all ten before the code:
  4  what happens when the plan check FAILS
  5  what happens offline
  6  what happens when a purchase cannot be restored
- 7  is this StoreKit, or the hand-set SET.plan we have today?
+ 7  what does it do when the App Store answers late, or not at all?
  8  what existing users see the day it ships
  9  is a migration needed?
 10  after a subscription ends, what is kept?               (all of it)
@@ -555,9 +604,17 @@ is true and is not what you meant.
 
 ## What holds all of this
 
-`tools/plan-check.mjs` — `npm run plan`. Twenty-five claims, and the sentence
-they are all about is the one at the head of this file: **a plan decides what
-may be DONE and nothing about what exists.**
+`tools/plan-check.mjs` — `npm run plan`. **Count the `say(` lines there rather
+than trusting a number here**, which has been stale once already; it is over a
+hundred and fifty. The sentence they are all about is the one at the head of
+this file: **a plan decides what may be DONE and nothing about what exists.**
+
+`tools/paid-check.mjs` is the second one, and it needs no browser. It holds
+this FILE against `www/core.js`: the capability table above names exactly the
+capabilities `CAN` has, at exactly the levels `CAN` gives them, and § The four
+numbers carries exactly the constants `core.js` declares. Everything in this
+file is a claim about the code, and until that check existed nothing held one
+of them — six levels and one whole capability had been wrong here for a week.
 
 `dead-check` already holds the SHAPE of the table — every capability in `CAN`
 asked for by name, every `can()` naming one that exists, `has()` core.js's
@@ -576,34 +633,39 @@ Six of those were watched failing, with three real bugs put back: a list that
 trims the thing it is listing, a slice quietly left out of a free plan's
 backup, and the ceiling putting somebody on a price list mid-word.
 
-## Not built yet
+## What the App Store is wired to
 
-**`CAN.dl` — decided, and deliberately not added.** OWNER DECISION 2026-08-25
-(`docs/FEATURE_RULES.md`) puts downloading a language on Plus. The entry is not
-in `CAN`, because `dead-check` is right: `CAN.dl` with no `can('dl')` anywhere
-fails, and the screen that would ask is in another branch's hands. Adding it
-alone would mean weakening the check to keep it green, and the check is the
-only thing that makes this table true. It lands with its caller.
+**Both halves are in.** `ios/App/App/LinguaStore.swift` has `products`, `buy`,
+`restore`, `current` and `manage`, refuses an `.unverified` transaction,
+finishes what it consumes and watches `Transaction.updates` for a renewal that
+arrives while the app is shut; it writes the answer through
+`LinguaPlanPlugin.set()`. **`www/store.js` is the one window onto it** — the
+way `net.js` is the one window onto the server — and `setPlan()` in
+`www/settings.js` is `storeBuy()`'s only caller. `PLAN_BUY` is `true`.
 
-**The StoreKit code exists and nothing in `www/` calls it.**
-`ios/App/App/LinguaStore.swift` has `products`, `buy`, `restore`, `current` and
-`manage`, refuses an `.unverified` transaction, finishes what it consumes and
-watches `Transaction.updates` for a renewal that arrives while the app is shut.
-It writes the answer through `LinguaPlanPlugin.set()`.
+**In a browser there is no App Store**, so `storeOn()` is false and the plans
+screen goes on setting the plan by hand there. That is how every check walks
+it, how every screenshot is taken, and how a tier is tried on.
 
-What is missing is the wiring: **`www/store.js`, and the plans screen calling
-it**. The plan is still set by hand there — pressing a card is `setPlan(id)`
-and nothing asks the App Store anything. It is deliberately not written yet
-(「storekitってコードは書いていいよ繋げる作業は後でやる」), and writing it
-early would have been worse than not: a function nothing calls is a function
-`dead-check` deletes.
+The four subscriptions are configured in App Store Connect and are described in
+`docs/apple.md` § 4.
 
-The two subscriptions are configured in App Store Connect and are described in
-`docs/apple.md`.
-
-Where it is kept is settled, though: the Keychain, not the settings file. See
+Where the plan is kept is the Keychain, not the settings file. See
 `ios/App/App/LinguaPlan.swift` for what that closes and what it leaves open, and
 case 6 of `tools/migrate-check.mjs` for the two things it has to keep meaning.
+
+## Not built yet
+
+**The receipt is not verified anywhere.** The plan reaches the account — the
+`plan` table — but what it carries is what the phone said, and a jailbroken
+phone can say anything. Nothing asks Apple. `CAN` is which buttons to show;
+**it is not a security check and must never be relied on as one.**
+`docs/FEATURES.md` § 1 has what is left.
+
+**The plans screen does not say what plan is running, or until when.** The buy
+button is correctly not drawn for the rung in force or one below it
+(`plHave()`, 2026-09-03), and what should stand where it was has not been
+written. `claude/plannow` has it.
 
 When receipts do arrive, the rule above is the first thing to hold: a receipt
 that fails to validate, a network that is down, a sandbox that answers wrong —

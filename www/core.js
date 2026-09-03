@@ -1228,11 +1228,13 @@ function planFor(uid){
    every plan above it. 「ベーシックは自分の文字と自分のキーボード、プラスは
    全部と広告なし」 -- OWNER DECISION, 2026-08-23, docs/FEATURE_RULES.md.
 
-   The middle rung is DECIDED and is not on sale: the plans screen sells Free
-   and Pro, because Plus's price is in no language file yet and no
-   subscription for it exists in App Store Connect. What is here is the rung
-   -- so the day a receipt says `plus`, every door in the table below is
-   already the right way round.
+   All three rungs are on the plans screen and all three are on sale: PLANS
+   below carries the card, `plan.price.plus` and `plan.price.plus.yr` are in
+   all ten language files, and the two Plus products are in docs/apple.md § 4
+   beside the two Pro ones. What www/i18n says is the FALLBACK -- storeCost()
+   is what the App Store charges, and the typed number only reaches a screen
+   in a browser, in a screenshot, or for a product not yet made, which is a
+   state storeSay() puts on the screen in words.
 
    The names were Basic and Plus until 2026-08-23. 「ベーシック、プラスって
    名前どう思う？なんかどっちが上かわかりにくくない？」 -- Basic reads as the
@@ -1268,13 +1270,15 @@ function has(level){ /* level: 'plus' | 'pro' */
   return got>=want;
 }
 /* What money buys, one capability at a time, and the only place that says so.
-   Eleven names, each the level it needs.
+   Each name carries the level it needs.
 
-   It said ten. A count written into a comment goes stale the next time the
-   list below it grows, so do not trust this one either -- `npm run dead`
-   prints the number it actually counted on every run ("what money buys: N
-   capabilities in CAN"), and that is where this eleven came from rather than
-   from counting by eye.
+   NO COUNT IS WRITTEN HERE, and that is deliberate rather than lazy. This
+   line said ten, then eleven, and was twelve both times somebody read it --
+   a number in a comment goes stale the next time the list below it grows,
+   and a stale count is believed. `npm run dead` prints the number it actually
+   counted on every run ("what money buys: N capabilities in CAN"), and
+   tools/paid-check.mjs holds this table against the one in
+   docs/PAID_FEATURES.md, name by name and level by level.
 
    has('plus') used to be asked directly, in twenty-three places across nine
    files, and every one of them looked identical to every other. They were not
@@ -1294,8 +1298,10 @@ function has(level){ /* level: 'plus' | 'pro' */
    held: no capability nothing asks for, no name that is no capability.
 
    'words' is metered rather than shut, and what it names is the ceiling being
-   LIFTED: free counts to a hundred, basic to a thousand, and only plus has no
-   number at all. wordCap() below is the number and asks this once. */
+   LIFTED: free counts to a hundred, PLUS to a thousand, and only PRO has no
+   number at all -- which is why it sits at 'pro' below and reads backwards to
+   anybody expecting a door. wordCap() above is the number and asks this once.
+   (It said "basic" and "plus", which were the names until 2026-08-23.) */
 var CAN={
   words:   'pro',    /* no ceiling on the dictionary at all -- see wordCap() */
   /* CSV out. It said "CSV out, and the cloud", and the cloud half was never

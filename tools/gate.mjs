@@ -3,18 +3,22 @@
 
    Run it:   npm test
 
-   Thirty-one checks, and twenty-three of them start a headless browser and walk
-   the app -- most over a port of their own; `shape-check` opens `index.html`
-   off the disk instead, which is why it needs no port. Run one after another
-   that is ten minutes, and ten minutes is long enough that a check stops being run
+   **Count the checks off FAST and SLOW below and nowhere else.** A number
+   written into this comment said thirty-one while the two lists held
+   thirty-five, and the same number is copied into CLAUDE.md, which is how a
+   stale count spreads. Most of them start a headless browser and walk the app
+   -- most over a port of their own; `shape-check` opens `index.html` off the
+   disk instead, which is why it needs no port. Run one after another that is
+   ten minutes, and ten minutes is long enough that a check stops being run
    after every change and starts being run at the end — which is the one way
    a gate fails: not by being wrong, by being skipped.
 
    So the ones that need no browser go first, all of them, in about two
-   seconds. A missing script tag or an arrow function fails there and nothing
-   heavy is started at all. Then the browser ones go WIDE, four at a time,
-   because each is a separate process holding its own port and its own
-   Chromium and they have nothing to say to each other.
+   seconds. A missing script tag, an arrow function, or a price list that has
+   drifted from `CAN` fails there and nothing heavy is started at all. Then the
+   browser ones go WIDE, four at a time, because each is a separate process
+   holding its own port and its own Chromium and they have nothing to say to
+   each other.
 
    Four and not sixteen: a headless Chromium is a real browser and this runs
    on whatever is to hand. More than the machine has cores turns a parallel
@@ -32,7 +36,7 @@ import os from 'os';
 /* No browser: two seconds for all of them, and a failure here means nothing
    heavy was started for nothing. */
 const FAST = ['assets-check', 'es5-check', 'grammar-engine-check', 'dead-check', 'import-check', 'sides-check',
-              'face-check', 'box-check', 'store-check'];
+              'face-check', 'box-check', 'store-check', 'paid-check'];
 /* A browser each. The order is the order they are PRINTED in; which one runs
    when is up to the pool. */
 const SLOW = ['migrate-check', 'i18n-check', 'act-check', 'conv-check', 'card-check',
