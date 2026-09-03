@@ -264,14 +264,28 @@ function vSet(){
        buttons that did nothing whatever the answer was. */
     body=(netSignedIn()
       ? setWhoRow()+
-        /* Only an account that HAS a password. Apple and Google keep theirs;
-           there is nothing on our side to change, and a row that opened a
-           screen saying so would be the app explaining itself. */
-        (netHow()==='email'
-          ? '<button class="set"' + DO('go', ["set", "pw"]) + '>'+
-            '<span class="sl">'+t('set.pw')+'</span>'+
-            '<span class="sv">'+ICON_GO+'</span></button>'
-          : '')+
+        /* EVERY ACCOUNT, BECAUSE THIS IS WHERE A PASSWORD IS PUT ON ONE.
+           「設定からつけれるように。」 OWNER 2026-09-03, said about exactly the
+           accounts this row used to hide from.
+
+           It asked netHow()==='email', under a sentence saying Apple and
+           Google have nothing here to change. They have: 「AppleやGoogleは
+           パスワードを入力してないから、もしアカウントがあっても、メアドで
+           ログインはできない」 -- so an account that came in by Apple or Google
+           cannot use the mail door at all until somebody gives it a password,
+           and the row that gives it one was the row they could not see. The
+           way in is the one already behind this row -- setPwForgot(), the
+           address and the code and the new password -- which needs no old
+           password because there is none. Nothing new is built: what changes
+           is that the room can be reached.
+
+           The field inside still says 「現在のパスワード」 to somebody who has
+           none, and the row is still called 「変更」 rather than 「決める」.
+           Both are words and words are the owner's; www/i18n/ is not this
+           session's. It is in the report. */
+        '<button class="set"' + DO('go', ["set", "pw"]) + '>'+
+        '<span class="sl">'+t('set.pw')+'</span>'+
+        '<span class="sv">'+ICON_GO+'</span></button>'+
         '<button class="set"' + DO('setSignOut') + '>'+
         '<span class="sl bad">'+t('set.signout')+'</span></button>'
       : '<button class="set signin apple"' + DO('obSignInApple') + '><span class="sl">'+MARK_APPLE+
@@ -498,12 +512,11 @@ function wipeLangsGo(){
      This is langOpen()'s own line less migratePostInk(), which cuts ink onto
      posts out of the alphabet they were written in -- there is no alphabet
      here now, and the posts are not going anywhere. */
-  langRead(); ltRead(); ntRead(); stRead(); sndRead(); ltStart();
-  kbRead(); migrateKbFree(); wldRead();
+  langLoad(); ltStart(); migrateKbFree();
   SFONT={built:false, sig:null};
   var css=document.getElementById('sfontcss');
   if(css && css.parentNode) css.parentNode.removeChild(css);
-  save(); saveLetters(); saveNotes(); saveStg(); saveSnd();
+  langSaveAll();
   /* and where you were standing was in a language that is not there.
      langOpen()'s own two lines: the last one leaves you on the cover of the
      language you are in now, which is the only way this row can be seen to
@@ -535,11 +548,37 @@ function wipeAll(){
    where it could. `bad` is handed (data, status, message) by netSend(), so it
    is wrapped rather than passed bare -- a status object arriving where a uid
    is expected is exactly this bug wearing another hat. */
+/* AND IT IS NOT DONE UNTIL THE SERVER HAS DONE IT.
+   「そもそもこのアプリはオンラインが基本なんだからね？SNSなんだから、削除し
+   切ってないと消えない。」「アカウント削除した場合は制作やSNS含め全てが消える。
+   なにも残ってない。」 OWNER 2026-09-03.
+
+   Both arms called wipeHere(). So pressing this with no signal emptied the
+   phone -- the languages, the words, the letters, the posts, the backup files
+   -- and left the account standing on the server with everything still on it.
+   The person was shown a deleted account they still had, and the copy that had
+   never gone up was the one thing that was really gone. The server is the
+   record (docs/DATA_SAFETY.md), so the copy goes AFTER the record does and
+   never instead of it.
+
+   Nothing is asked about the session here. netDropMe() refuses without one and
+   says so, which is the same answer in the one place that can give it.
+
+   The mark goes on before the ask, not after the refusal: a phone that is
+   closed while the request is in the air has to come back knowing this was
+   asked for. www/boot.js § bootSession() is what reads it. */
 function wipeAllGo(){
   var uid=(typeof SESS!=='undefined' && SESS && SESS.uid)? String(SESS.uid) : '';
-  if(netSignedIn())
-    netDropMe(function(){ wipeHere(uid); }, function(){ wipeHere(uid); });
-  else wipeHere(uid);
+  netEnding();
+  netDropMe(function(){ wipeHere(uid); }, wipeStopped);
+}
+/* It did not go. Nothing on this phone has been touched and the account is
+   still there, which is what the sentence says -- netWhy() is the app's one
+   place for what a refusal was, and 「削除し切ってないと消えない」 is the
+   state, not an error to hide. It is picked up again at the next launch. */
+function wipeStopped(d, s, m){
+  toast(netWhy(d, s, m));
+  render();
 }
 function wipeHere(uid){
   /* Everything under this app's name, counted rather than listed.
@@ -583,7 +622,14 @@ function wipeHere(uid){
   var wipeIds=lsWipeAcct(wipeUid);
   langId='';
   langFirst();
-  langRead(); ltRead(); ntRead(); stRead(); sndRead();
+  /* AND ALL TEN, NOT FIVE. This named five of them by hand, so `KB` and `WLD`
+     came through holding the deleted account's keyboard and their land -- and
+     langFirst() a line above has just minted a new language, so the saves at
+     the foot of this function wrote both of them into it. Written to disk
+     under the next language, not merely left in memory.
+     「アカウント削除で残るものねえ」 OWNER 2026-08-27.
+     LANG_IO in www/core.js is the one list now. */
+  langLoad();
   /* Whom this phone belonged to, what it was carrying, and what had been
      written and not sent. All three are the person's and none of them is a
      slice, which is why none of them was going anywhere before today. The
@@ -635,7 +681,7 @@ function wipeHere(uid){
   SFONT={built:false, sig:null};
   var css=document.getElementById('sfontcss');
   if(css && css.parentNode) css.parentNode.removeChild(css);
-  save(); saveLetters(); saveNotes(); saveStg(); saveSnd();
+  langSaveAll();
   /* And the copies in Documents, which are the ones that outlive the app.
      Last, and after the save above rather than before it: a save writes a
      fresh backup out, so dropping the files first would leave one behind. */
@@ -1101,7 +1147,11 @@ function setSignOutGo(){
      gone by this line. */
   obSignOutSocial();
   toast(t('set.signout.done'));
-  render();
+  /* No render() here. A session ending draws in netOut() above, which is the
+     one place a session ends -- this was the copy that made it look as though
+     each caller was responsible for the screen, and the two callers that are
+     not people (a launch with a dead token, a 401 the refresh could not mend)
+     had no such line and left the last account on the screen. */
 }
 /* The mail door, reached from settings rather than from the door itself. It is
    the same screen -- there is one way to sign in with an address and it is

@@ -49,6 +49,27 @@ the file, so a slice has one shape and not three that could drift.
 once — backup, wipe, and what goes up — and a slice added outside the list is
 missing from all three.
 
+**And a fourth: which global holds it while a screen is drawing.** `LANG_IO` in
+`www/core.js` is the one place that says, for each slice, the function that
+reads it in and the function that writes it out — or, for the two that have no
+global, why they have none (`talk` is a closed chapter and `gram2` is read by
+language id on demand). `langLoad()` and `langSaveAll()` walk `SLICES` through
+it, and every road that swaps the open language now takes them: opening one,
+deleting one, deleting an account, a restore, and the sync.
+
+It was written out by hand in **eight** places before 2026-09-03 — five reads
+and three writes — and no two of them agreed. The keyboard and the world were
+added to `SLICES` and to `www/core.js`'s copy, and to none of
+`www/settings.js`'s three, so **deleting an account read five of the ten back**:
+`KB` and `WLD` kept the deleted person's keyboard and their land, `wipeHere()`
+minted a fresh language a few lines later, and the next save wrote both of them
+into it. On disk, under the next language, with every check green. It is the
+third time 「a list of keys, written by hand, that nobody remembered to add
+to」 has been the answer here (CLAUDE.md rule 6), and `tools/acct-check.mjs`
+§ 54 is what asks `LANG_IO` whether it still answers for every slice in
+`SLICES`. **Adding a slice means adding its line there and nothing else
+anywhere.**
+
 **And all of it goes when the account does.** OWNER DECISION 2026-08-26 —
 「アカウント消したら全部消えるに決まってる」. Not the server rows only: the
 `slice` rows, the `language` row, the bytes in Storage, **and every
@@ -106,8 +127,19 @@ moment. It was a variable, and a reload between the two left a phone claiming
 the onboarding was unfinished with nothing left saying otherwise. Cleared by
 `obReturn()`; it is a pending move, not a preference, and it is the one thing
 in `SET` that is meant to be short-lived. `lingua.me` (`ME`) is the person — the copy of their `profile` row.
-`lingua.sess` (`SESS`) is the session — the token pair only; **a password is
-never held, stored or logged.** `lingua.posts` (`POSTS`) is **the copy of** the
+`lingua.sess` (`SESS`) is the session — the token pair, and one mark; **a
+password is never held, stored or logged.** The mark is `end`, written by
+`netEnding()` in `www/net.js` when somebody presses 「アカウントを削除」 and
+gone when the session is. It says **this account has been asked to be deleted
+and the server has not confirmed it yet** — 「削除し切ってないと消えない」 OWNER
+2026-09-03. Nothing on the phone is removed while it is set: the record is the
+server, so the copy goes after the row does and never instead of it, and a
+press that lost its signal is picked up by `bootSession()` (`www/boot.js`) at
+the next launch. It is a field of the session rather than a key of its own for
+the reason the session is the one key that is nobody's belongings: the mark is
+worth nothing without the token that says whose account it is, and a key beside
+the session could outlive the account it names and be read against the next
+one. `lingua.posts` (`POSTS`) is **the copy of** the
 timeline and `lingua.drafts` (`DRAFTS`) **the copy of** what was written and not
 sent — both live on the server, and both are read here so that the app works
 with no signal. A draft is the composer,
@@ -228,14 +260,19 @@ The decision is in `docs/FEATURE_RULES.md` and the branch is `claude/flat`.
 it** — a description of a road nobody walks is the thing this file is being
 audited for.
 
-**Three things under `lingua.` are NOT taken.** They are named so that nobody
+**Two things under `lingua.` are NOT taken.** They are named so that nobody
 reads the list above as complete:
 
 ```
   lingua.notices.<uid>   the notices copy      www/sns.js  notKey()
-  lingua.set.<uid>       the parked settings   www/core.js setParkKey()
   lingua.<id>.bkn        the save counter      www/backup.js bkNoSet()
 ```
+
+`lingua.set.<uid>` — the parked settings — was on this list and is not on it
+any more: it is not `lsWipeAcct()`'s, but `wipeHere()` in `www/settings.js`
+removes it one line before it calls `setFor('')`, so it does go with the
+account. The list said otherwise and was read as the whole answer, which is
+what this file is being audited for.
 
 Two written rules pull opposite ways here and **nothing in this file decides
 between them**: 「アカウント削除で残るものねえ」 (OWNER 2026-08-27) says

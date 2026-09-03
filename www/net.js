@@ -353,7 +353,7 @@ function netTook(d){
      file can produce, and it produced it here rather than anywhere else
      because this is the only place SESS is ever written. A reply that is not
      a session is not a session: it is refused here, once, and every road in
-     -- the mail door, the six digits, Apple and Google -- reports it the way
+     -- the mail door, the code, Apple and Google -- reports it the way
      it already reports a reply with no access token at all. */
   if(!d || !d.access_token || !d.refresh_token) return false;
   SESS={ at:d.access_token, rt:d.refresh_token,
@@ -446,7 +446,56 @@ function netOut(){
   /* And the timeline this phone was holding goes with the name. Parked under
      the account that had it, not thrown away. */
   if(typeof postFor==='function') postFor('');
+  /* AND THE SCREEN, HERE, BECAUSE THIS IS WHERE A SESSION ENDS.
+     「2端末で同じアカウントにログインしてても、片方が消したら、もう片方も確実に
+     消えるように。ログアウトさせて、新しいアカウント作ったら、もうひと端末も
+     勝手にろぐいんされていたから。」 OWNER 2026-09-03.
+
+     Deleting an account on one phone kills the refresh token the other one is
+     holding, netResume() answers that by calling this -- and the other phone
+     went on showing the account's app, because nothing here drew and the
+     failing half of netResume() in www/boot.js is an empty function. The
+     session was gone and the screen said otherwise, which is what the owner
+     was looking at.
+
+     It used to be 「every road into this function draws afterwards」, and that
+     was true of the two roads a person takes and of neither of the two the
+     server takes -- the launch that finds a dead token, and the 401 that the
+     refresh could not mend, both of which end in a `bad` that does nothing.
+     A rule kept by four callers remembering is not one mechanism, so the draw
+     is here: signing out draws BECAUSE the session ended, whichever of the
+     four ended it. setSignOutGo() in www/settings.js had the only other copy
+     and it is gone.
+
+     netTook() on the way in is deliberately not the mirror of this: arriving
+     is followed by a screen that is chosen -- obIn() picks it -- and leaving
+     is not, because there is only one thing to show somebody who is not
+     signed in. */
+  render();
 }
+/* AN ACCOUNT ON ITS WAY OUT, WRITTEN ON THE SESSION.
+   「そもそもこのアプリはオンラインが基本なんだからね？SNSなんだから、削除し
+   切ってないと消えない。」 OWNER 2026-09-03.
+
+   Deleting an account is one thing that happens in two places -- the server's
+   row and this phone's copy -- and the server is the record, so the copy goes
+   only after the row has. When the row cannot be reached the deletion has not
+   happened, and the phone has to remember that it was asked for so the next
+   launch can finish it. www/settings.js § wipeAllGo() is the press and
+   www/boot.js § bootSession() is the launch.
+
+   It is a field of `lingua.sess` rather than a key of its own, and that is
+   the whole answer to 「which account is this」 (CLAUDE.md rule 22): the mark
+   is about the account this phone is signed in as, it is worth nothing
+   without the token that proves who that is, and it goes when the token does.
+   A key beside the session would be a mark that could outlive the account it
+   names and be read against the next one. */
+function netEnding(){
+  if(!SESS) return false;
+  SESS.end=1; netSave();
+  return true;
+}
+function netEnded(){ return !!(SESS && SESS.end); }
 /* The token in hand lasts an hour. This is what makes the next launch silent:
    nothing is typed, nothing is remembered by the person, and the thing on the
    phone that does it can be taken away from the server's side. */
@@ -474,7 +523,7 @@ function netResume(ok, bad){
      signup  makes a NEW user. Always. Supabase has no switch that says 「and
              if this address already has an account, use that one」, so
              somebody who came in with Google and later typed the same address
-             here got a second account, six digits and all -- which the owner
+             here got a second account, a code and all -- which the owner
              found by doing it.
      otp     looks the address up. There already, and this signs them into it;
              not there, and `create_user` makes it. One road, one account,
@@ -494,7 +543,7 @@ function netResume(ok, bad){
    whichever it is, so that nobody can stand outside and ask which addresses
    are registered. So the door could not tell, and both screens walked on: the
    making face made a second way into an account that already existed, and the
-   reset face sent somebody to wait for six digits that were never sent.
+   reset face sent somebody to wait for a code that was never sent.
 
    supabase/schema.sql § email_taken() is what answers, and the comment there
    says what it costs. Signed out, so the publishable key is what carries it. */
@@ -510,10 +559,18 @@ function netSignIn(email, pass, ok, bad){
           {email:email, password:pass}, null,
           function(d){ if(netTook(d)) ok(d); else bad(d, 0, 'token ≠'); }, bad);
 }
-/* The six digits out of the mail. A link would have to land somewhere, and
+/* The code out of the mail. A link would have to land somewhere, and
    there is nowhere for it to land: this is a Capacitor app with no web page
    behind it, so the default confirmation URL opens nothing on the tester's
-   phone. A code goes back to the screen that asked for it. */
+   phone. A code goes back to the screen that asked for it.
+
+   HOW MANY DIGITS IS NOT ASKED HERE AND IS NOT ASKED ANYWHERE IN www/.
+   「8桁で60秒再送信」 OWNER 2026-09-03. Whatever was typed goes up as it was
+   typed, and Supabase's own OTP Length setting is what decides -- one place,
+   and the app follows it without being told. Counting here as well would be
+   the same question answered twice, and the day the setting moved the app
+   would be the half that refused. supabase/setup.md § 桁数は 8 is the
+   setting; www/onboard.js holds the sixty seconds, which IS the app's. */
 /* `email` rather than `signup`, because the digits come out of netMailOtp()
    now and not out of a signup. It is the type that covers both, so a code
    already in somebody's mail from the old road still works. */
@@ -524,7 +581,7 @@ function netVerify(email, code, ok, bad){
 function netRecover(email, ok, bad){
   netPost('/auth/v1/recover', {email:email}, null, ok, bad);
 }
-/* The six digits out of the reset mail, and then the new password.
+/* The code out of the reset mail, and then the new password.
    Two calls and not one, because Supabase has no "here is a code and a new
    password" endpoint: the code buys a SESSION, and a signed-in person is
    allowed to change their own password. So the second call is the ordinary
@@ -1354,7 +1411,7 @@ function netLangSync1(id, done){
                ONLY for the open one: the globals are 「the language in front
                of me」, and filling them from another language is that language
                appearing on the screen somebody is standing on. */
-            langRead(); ltRead(); ntRead(); stRead(); sndRead(); kbRead(); wldRead();
+            langLoad();
             render();
           }
           /* And the one fact about this language that is a COLUMN rather than
@@ -2766,7 +2823,13 @@ function netDropFiles(p, done){
    docs/DATA_SAFETY.md says that in general terms. Erasing the phone is the
    other button, and it says which it is. */
 function netDropMe(ok, bad){
-  if(!netSignedIn()){ ok(); return; }
+  /* No session is not 「done」. It said `ok()` here, so a press with nothing to
+     prove who was being deleted reported success and the caller went on to
+     empty the phone -- an account nobody asked the server about, and the only
+     copy of it gone. The token is what says whose account this is; without one
+     there is nothing to delete and nothing to claim. The mark is the same
+     shape as netSetPass()'s a few hundred lines up. */
+  if(!netSignedIn()){ bad(null, 0, 'drop −'); return; }
   netGet('/rest/v1/post?select=body&author=eq.'+encodeURIComponent(SESS.uid),
     function(d){ netDropMine(netMyFiles(d), function(){ netEndMe(ok, bad); }); },
     /* The listing failed, and the account still goes. Somebody who asked to

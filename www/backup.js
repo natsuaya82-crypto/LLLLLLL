@@ -396,7 +396,7 @@ function bkRestore(then){
           for(var id in LANGS){ if(Object.prototype.hasOwnProperty.call(LANGS, id)){ langId=id; break; } }
           langStore();
         }
-        langRead(); ltRead(); ntRead(); stRead(); sndRead(); kbRead(); wldRead();
+        langLoad();
         /* Something came back, so write it out again as soon as anything is
            drawn. If it came from a spare, the unreadable newest file is
            still the newest file, and one good save puts a readable one in

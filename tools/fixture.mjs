@@ -368,13 +368,13 @@ export function obStates(){
        different screens. */
     ['making an account',        () => { SET.obback = { r: 'set', a: 'acct' };
                                          OBM.mode = 'up'; return vOb(); }],
-    ['the six digits out of the mail', () => { SET.obback = { r: 'set', a: 'acct' };
+    ['the code out of the mail', () => { SET.obback = { r: 'set', a: 'acct' };
                                          OBM.mode = 'code';
                                          OBM.em = 'a@b.c'; return vOb(); }],
     /* Asking for a reset lands on the digits. It used to end at a line saying
        "sent"; then it was the digits and the password on one screen; it is two
        screens now, and both are here because both are screens. */
-    ['the six digits of a reset', () => { SET.obback = { r: 'set', a: 'acct' };
+    ['the code of a reset', () => { SET.obback = { r: 'set', a: 'acct' };
                                          OBM.mode = 'reset';
                                          OBM.em = 'a@b.c'; OBM.code = ''; OBM.pw = '';
                                          OBM.busy = false; return vOb(); }],
@@ -423,7 +423,7 @@ export function obStates(){
        somewhere, OR this is the walk's last step」, and the middle one is what
        every face above has. What the real signed-out phone does is held by
        tools/open-check.mjs § 2c, which boots one. */
-    ['the six digits, no way back to', () => { SET.obback = null; SET.done = true;
+    ['the code, no way back to', () => { SET.obback = null; SET.done = true;
                                          ob.step = OB_IN;
                                          OBM.mode = 'code'; OBM.busy = false;
                                          OBM.em = 'a@b.c'; return vOb(); }]

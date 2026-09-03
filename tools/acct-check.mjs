@@ -100,7 +100,7 @@ await pg.goto(`http://127.0.0.1:${PORT}/`);
 await pg.waitForTimeout(300);
 await pg.evaluate('window.__seed = ' + seed.toString());
 
-const R = await pg.evaluate(() => {
+const R = await pg.evaluate(async () => {
   const out = { fails: [], said: [] };
   const A = '11111111-1111-4111-8111-111111111111';   /* the person who was here */
   const B = '22222222-2222-4222-8222-222222222222';   /* the person who arrives */
@@ -1715,6 +1715,270 @@ const R = await pg.evaluate(() => {
   if (SET.plan !== 'free') no('46: 消したアカウントの段が残っている');
   say('46: アカウント削除は、そのアカウントの言語・単語・投稿・段・バックアップだけ ── '
     + '別のアカウントのものは一つも動かず、端末の設えも残る');
+
+  /* ---- 47-49. 消し切るまで消えていない、そして消えた側は本当に出される ----
+     OWNER 2026-09-03:
+       「アカウント削除した場合は制作やSNS含め全てが消える。なにも残ってない。」
+       「そもそもこのアプリはオンラインが基本なんだからね？SNSなんだから、
+         削除し切ってないと消えない。」
+       「2端末で同じアカウントにログインしてても、片方が消したら、もう片方も
+         確実に消えるように。ログアウトさせて、新しいアカウント作ったら、
+         もうひと端末も勝手にろぐいんされていたから。」
+
+     46 番は「消したとき、消えるものが正しい」を押さえていて、**消えたかどうか
+     を一度も訊いていません。** wipeHere() を直に呼んでいるからです。実際の
+     ボタンは wipeAllGo() で、そこはサーバに訊きに行きます ── そして訊いた
+     答えがどうであれ、成功の側と失敗の側の両方が wipeHere() を呼んでいました。
+     だから電波の無いところで押すと、アカウントはサーバに残ったまま、端末の
+     ほうだけが空になります。**サーバが記録なので、これは作ったものが消える
+     向きの取り違えです。**
+
+     49 番は別の端末の側です。account_delete() が auth.users の行を消すと、
+     もう一方の端末が持っている refresh token は死にます。netResume() はそれを
+     受けて netOut() し、セッションは確かに消えます ── **が、画面は描き直され
+     ません。** boot.js の netResume() の失敗側は空の関数で、netOut() 自身は
+     何も描かない。だから前のアカウントのアプリがそのまま映り続けます。
+
+     ここで測るのは「描き直したか」ではなく **「画面が、今描いたらこうなる、
+     というものになっているか」** です。render() を呼んだ結果と突き合わせます。 */
+  /* バックアップのファイルは 46 番のもので、ここの話ではありません。ネイティブ
+     の橋に触りに行かせないよう、46 番と同じように差し替えておきます。 */
+  const rDrop49 = bkDropFor;
+  bkDropFor = function(){};
+  const rSend49 = netSend, rGet49 = netGet, rPost49 = netPost;
+  const unwire49 = () => { netSend = rSend49; netGet = rGet49; netPost = rPost49; };
+  /* サーバを一つの関数に。answer(path) が数字を返し、0 は「届かなかった」。 */
+  const srv49 = (answer) => {
+    netSend = (method, p, body, tok, ok, bad) => {
+      const st = answer(p);
+      setTimeout(() => { st >= 200 && st < 300 ? ok(null) : bad(null, st, 'x'); }, 0);
+    };
+    netGet = (p, ok, bad) => netSend('GET', p, null, null, ok, bad);
+    netPost = (p, body, tok, ok, bad) => netSend('POST', p, body, tok, ok, bad);
+  };
+  const settle49 = () => new Promise(r => setTimeout(r, 30));
+
+  const D = '44444444-4444-4444-8444-444444444444';
+  const seedD49 = () => {
+    start();
+    netOut(); arrive(D);
+    LANGS.Ld47 = { name: 'D の言語', mine: true, uid: D };
+    langId = 'Ld47'; langStore();
+    try{ localStorage.setItem(langKeyOf('Ld47','words'), '[{"hw":"d"}]'); }catch(e){}
+  };
+
+  /* 47. サーバが答えないとき、端末は空にならない。 */
+  seedD49();
+  srv49(() => 0);
+  wipeAllGo();
+  await settle49();
+  unwire49();
+  if (!LANGS.Ld47)
+    no('47: **サーバが消していないのに端末の言語が消えた** ── 記録はサーバで、'
+     + 'これは作ったものが消える向きの取り違えです');
+  if (!localStorage.getItem(langKeyOf('Ld47','words')))
+    no('47: **サーバが消していないのに端末の単語が消えた**');
+  if (!netSignedIn())
+    no('47: 消えていないのにログアウトした ── アカウントはまだそこにあります');
+  if (!netEnded())
+    no('47: 途中で切れた削除の印が付いていない ── 次に開いたとき続きから消せない');
+  say('47: サーバが消し切っていないあいだは、端末のものは一つも消えない');
+
+  /* 48. そして次に開いたとき、続きから消える。
+     47 番がそのまま続きです ── サインインしたまま、言語もそこにあり、印だけが
+     付いている。それが「次に開いたとき」の状態で、www/boot.js の bootSession()
+     が読むのはこの印です。押した時と同じ wipeAllGo() を呼ぶので、二度目のための
+     二本目の道はありません。 */
+  srv49(() => 200);
+  wipeAllGo();
+  await settle49();
+  await settle49();
+  unwire49();
+  if (LANGS.Ld47) no('48: 続きの削除で、その言語が消えていない');
+  if (localStorage.getItem(langKeyOf('Ld47','words')))
+    no('48: 続きの削除で、その単語が消えていない');
+  if (netSignedIn()) no('48: 消え切ったのにセッションが残っている');
+  say('48: 途中で切れた削除は、次に開いたときサーバが答えて消し切られる');
+
+  /* 49. 消された側の端末は、画面ごと出される。 */
+  start();
+  netOut(); arrive(D);
+  /* 名前と @ が要ります。appIs() は「アカウントに名前が無ければまだ扉」と答える
+     ので（www/shell.js）、名前を入れないとサインイン中も画面が扉のままで、この
+     あとの引き比べが**扉と扉**になります。最初に書いたときそれで、印を外しても
+     緑のままでした ── 検査が何も測っていませんでした。 */
+  ME.name = 'D'; ME.handle = 'dee'; saveMe();
+  render();
+  const signedInScreen = document.getElementById('app').innerHTML;
+  srv49(() => 400);
+  await new Promise(r => netResume(r, r));
+  await settle49();
+  unwire49();
+  const held = document.getElementById('app').innerHTML;
+  if (netSignedIn()) no('49: セッションが終わったのに残っている');
+  if (held === signedInScreen)
+    no('49: **画面が前のアカウントのまま** ── セッションは終わったのに描き直されて'
+     + 'いないので、消されたはずの端末がログインしたままに見えます');
+  /* そして、映っているものが「今描いたらこうなる」ものであること。 */
+  render();
+  if (held !== document.getElementById('app').innerHTML)
+    no('49: 画面が、今の状態を描いたものになっていない');
+  say('49: セッションが終わった端末は、その場で画面ごと出される');
+
+  /* 50. サインアウトしているときに削除を押しても、何も消えない。
+     「アカウントを削除」の行はサインインしていてもいなくても出ます。セッション
+     が無ければ「誰を消すのか」を証すものが無く、消せるアカウントもありません。
+     それでも押せば端末だけが空になっていました ── uid が空文字で lsWipeAcct()
+     に入るので、**印の付いていない言語**、つまりオンボーディングで作ってまだ
+     一度も上がっていないものが、そこで消えていました。 */
+  start();
+  netOut();
+  LANGS.Lx50 = { name: '印の無い言語', mine: true };
+  langId = 'Lx50'; langStore();
+  try{ localStorage.setItem(langKeyOf('Lx50','words'), '[{"hw":"x"}]'); }catch(e){}
+  srv49(() => 200);
+  wipeAllGo();
+  await settle49();
+  unwire49();
+  if (!LANGS.Lx50)
+    no('50: **サインアウト中に削除を押したら、印の無い言語が消えた** ── '
+     + 'サーバには何も頼んでいません');
+  if (!localStorage.getItem(langKeyOf('Lx50','words')))
+    no('50: **サインアウト中に削除を押したら、印の無い言語の単語が消えた**');
+  say('50: サインアウト中に削除を押しても、頼む相手がいないので何も消えない');
+  bkDropFor = rDrop49;
+
+  /* ---- 51-52. 扉。六十秒と、コードの画面が一枚であること ----------------
+     「8桁で60秒再送信」 OWNER 2026-09-03。
+
+     52 のほうが根っこです。**コードを打つ画面は二枚ありました** ── 登録の道が
+     着く一枚と、再設定の道が着く一枚。見出しも、下の一行も、欄も、確認も、
+     再送信も同じで、押したときに呼ぶものだけが違いました。だから六十秒を
+     足すと、片方にだけ入って、入らなかったほうは誰も見ません。扉が一日で
+     四回形を変えて、そのたびに前の道が残った、その残りです。 */
+  start(); SET.done = true;
+  obDoor('set', 'acct');
+
+  /* 51. 送った直後は断り、残りが出て、六十秒経てば押せる。
+     順は本物どおり ── コードが出て行ってから画面に来ます（obMailUpGo /
+     obMailForgotGo / obMailAgain の三つとも obAgainSent() の次が描画です）。 */
+  OBM.em = 'a@example.com';
+  obAgainSent();
+  obMailGo('code');
+  let btn = document.getElementById('ob-again');
+  if (!btn) no('51: コードの画面に再送信のボタンが無い');
+  else {
+    if (!btn.hasAttribute('disabled'))
+      no('51: 送った直後なのに再送信が押せる ── 六十秒が効いていない');
+    if (!/[0-9]/.test(btn.textContent || ''))
+      no('51: 残りの秒が出ていない ── 押せない理由が画面のどこにも無い');
+  }
+  /* 押しても出て行かないこと。描き方ではなく、断るところで断っているか。 */
+  {
+    const rSend51 = netSend;
+    let went = 0;
+    netSend = function(){ went++; };
+    obMailAgain();
+    netSend = rSend51;
+    if (went) no('51: 六十秒のあいだに押したら、本当に送りに行った');
+  }
+  /* 六十秒後。 */
+  obAgainAt = (new Date()).getTime() - (OB_AGAIN_S + 1) * 1000;
+  if (obAgainLeft()) no('51: 六十秒経っても残りが 0 にならない');
+  obMailGo('code');
+  btn = document.getElementById('ob-again');
+  if (btn && btn.hasAttribute('disabled'))
+    no('51: 六十秒経ったのに再送信がまだ押せない');
+  obAgainTicOff(); obAgainAt = 0;
+  say('51: コードを送ってから六十秒は送り直せず、残りの秒が画面に出る');
+
+  /* 52. 二つの道が、同じ一枚に来る。押したときに呼ぶものだけが違う。 */
+  {
+    /* 扉の入口から訊きます。obCodeHTML() を二回呼んで引き比べても、一つの関数を
+       自分と比べるだけで**絶対に赤くなりません** ── 押さえたいのは「二つの道が
+       そこに来ているか」で、それを知っているのは obDoorHTML() です。 */
+    const was = OBM.mode;
+    OBM.mode = 'code';  const up = obDoorHTML();
+    OBM.mode = 'reset'; const rs = obDoorHTML();
+    OBM.mode = was;
+    if (up.split('obMailCode').join('X') !== rs.split('obResetGo').join('X'))
+      no('52: **コードの画面がまた二枚になっている** ── 押したときに呼ぶもの以外が'
+       + '違います。片方だけに入った直しは、もう片方では誰も見ません');
+    if (up.indexOf('ob-again') < 0 || rs.indexOf('ob-again') < 0)
+      no('52: どちらかの道に再送信のボタンが無い');
+  }
+  say('52: コードを打つ画面は一枚 ── 登録の道も再設定の道も、そこに来る');
+
+  SET.done = true; SET.obback = null;
+
+  /* ---- 53. 消したアカウントのキーボードと世界が、次の言語に書き込まれる ----
+     「アカウント削除で残るものねえって言ってんだろ何回言わせんだよ全部消えんだよ。」
+     OWNER 2026-08-27。「アカウント削除した場合は制作やSNS含め全てが消える。
+     なにも残ってない。」 OWNER 2026-09-03。
+
+     言語が持つものは SLICES に 12 並んでいます。そのうち大域に載るのは 10 で、
+     それを読み直す並びが**五箇所に手で書いて**ありました。数は 5 / 7 / 9 / 10 で
+     全部ちがい、**アカウント削除だけが 5 でした。**
+
+     だから消したあと `KB` と `WLD` がメモリに残り、wipeHere() が新しい言語を
+     一つ作って保存を呼ぶので、**消した人のキーボードと土地が、次の言語の鍵に
+     書き込まれます。**メモリに残るだけではありません。ディスクに落ちます。
+
+     CLAUDE.md 規則6 が名指ししている形です ──「a list of keys, written by hand,
+     that nobody remembered to add to」。キーボードと世界は後から足されたスライス
+     で、足した人は core.js の並びには入れ、settings.js の三箇所には入れなかった。 */
+  start();
+  const U53 = '66666666-6666-4666-8666-666666666666';
+  netOut(); arrive(U53);
+  LANGS[langId] = LANGS[langId] || { name: '消される言語', mine: true };
+  LANGS[langId].uid = U53; LANGS[langId].mine = true; langStore();
+  KB = kbBoardsOf({ kbs:[{ nm:'消される人のキーボード', pat:'qwerty',
+                           lay:[{ rows:[['a']] }] }], at:0 });
+  saveKb();
+  WLD = { where:'消される人の土地', who:'消される人' };
+  saveWld();
+  const rDrop53 = bkDropFor; bkDropFor = function(){};
+  wipeHere(U53);
+  bkDropFor = rDrop53;
+  if (KB && KB.kbs && KB.kbs.length)
+    no('53: **消したアカウントのキーボードがメモリに残っている** ── 次の保存で'
+     + '新しい言語に書き込まれます');
+  if (WLD && WLD.where)
+    no('53: **消したアカウントの世界（土地・人）がメモリに残っている**');
+  saveKb(); saveWld();
+  let k53 = null, w53 = null;
+  try{ k53 = localStorage.getItem(langKey('kb')); }catch(e){}
+  try{ w53 = localStorage.getItem(langKey('wld')); }catch(e){}
+  if (k53 && k53.indexOf('消される人') >= 0)
+    no('53: **消したアカウントのキーボードが、次の言語に書き込まれた**');
+  if (w53 && w53.indexOf('消される人') >= 0)
+    no('53: **消したアカウントの土地が、次の言語に書き込まれた**');
+  say('53: アカウントを消したら、キーボードも世界も残らず、次の言語にも移らない');
+
+  /* ---- 54. 言語のものを読み書きする一覧は一つで、SLICES と合っている ------
+     53 が起きた形そのものを押さえます。手書きの一覧が八つある限り、次に
+     スライスが一つ足されたとき、また同じことが起きます ── 過去に二回。
+     キーボードはバックアップに入っておらず、世界は設定の中に居ました。
+
+     `LANG_IO` が唯一の一覧で、ここが訊くのは「SLICES に一つ残らず答えているか」
+     です。答えは読む関数・書く関数のどちらか、または「大域に写しを持たない」と
+     いう一言。**黙って抜けているものが無いこと**が全部です。 */
+  {
+    let miss = [];
+    for (let i = 0; i < SLICES.length; i++)
+      if (!LANG_IO[SLICES[i]]) miss.push(SLICES[i]);
+    if (miss.length)
+      no('54: LANG_IO が答えていないスライスがある ── ' + miss.join(' ') +
+         '。足したなら、読む関数・書く関数か、大域に持たない理由を一行で書く');
+    let extra = [];
+    for (const k of Object.keys(LANG_IO))
+      if (SLICES.indexOf(k) < 0) extra.push(k);
+    if (extra.length)
+      no('54: LANG_IO に SLICES に無いものがある ── ' + extra.join(' ') +
+         '。無くなったスライスの説明が残っています');
+  }
+  say('54: 言語のものを読み書きする一覧は一つで、SLICES の ' + SLICES.length +
+      ' 個に一つ残らず答えている');
 
   return out;
 });

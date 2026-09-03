@@ -614,7 +614,7 @@ function obCanBack(){
   /* THE DOOR'S OWN FACES FIRST, and this is the half that was missing:
      『後追加でメールを確認のボタンに再送信ボタンと戻るボタンがない』 OWNER
      2026-09-02. Signed out, appIs() is 'door' and the line below answered
-     false for the whole of it -- including the six-digit screen, which is
+     false for the whole of it -- including the code screen, which is
      three presses in from the face the door opens on. A person who mistyped
      their address was standing on a screen with no way off it.
 
@@ -626,7 +626,7 @@ function obCanBack(){
     if(obDoorBack()) return true;
     /* AND OUT OF THE PASSWORD SCREEN INTO THE APP. 「サインインしたらアプリに
        移動してください」 OWNER 2026-09-02. Both roads reach it with a session
-       already in hand -- the six digits were spent to get one -- so the person
+       already in hand -- the code was spent to get one -- so the person
        standing here is signed in, and a screen of one field and one button
        that goes nowhere is a person locked OUT of an app they are already
        inside. It is what netSetPass() failing leaves behind.
@@ -926,7 +926,7 @@ function obIn(){
 }
 /* The third argument is which kind of failure it was, and it only ever comes
    from net.js. Everything that reports through here gets it for free -- the
-   two social doors, the mail door, the six digits, the handle, the profile --
+   two social doors, the mail door, the code, the handle, the profile --
    which is the whole of the reason it is one function. */
 function obNo(d, s, m){
   OBM.busy=false; OBM.msg=netWhy(d, s, m); render();
@@ -948,6 +948,47 @@ function obNo(d, s, m){
    digits produced -- but 「新しいパスワード」 over somebody's FIRST one is a
    heading about a thing that does not exist. */
 var OBM={ mode:'in', em:'', pw:'', code:'', nm:'', hd:'', busy:false, msg:'', fresh:false };
+
+/* ---- 送ってから六十秒 --------------------------------------------------
+   「8桁で60秒再送信」 OWNER 2026-09-03. 桁数のほうはアプリの持ち物ではなく
+   Supabase の設定です（supabase/setup.md § 桁数は 8）。ここにあるのは秒のほう
+   だけで、それがこの二つの分かれ目です ── アプリが数えるのは秒で、桁ではない。
+
+   セッションの中だけの数です。localStorage には書きません: 書けば「この端末が
+   いつ送ったか」という、どのアカウントのものでもない鍵が一つ増えます
+   （CLAUDE.md 規則22）。アプリを落とせば数え直しになり、そのときはサーバの
+   側が断ります。 */
+var OB_AGAIN_S=60;
+var obAgainAt=0, obAgainTic=null;
+/* 残りの秒。送っていなければ 0 で、0 は「もう送れる」。 */
+function obAgainLeft(){
+  var l;
+  if(!obAgainAt) return 0;
+  l=OB_AGAIN_S-Math.floor(((new Date()).getTime()-obAgainAt)/1000);
+  return (l>0)? l : 0;
+}
+/* コードが一通出て行った。最初の一通も、送り直しも、ここを通ります ── 六十秒は
+   「送り直してから」ではなく「送ってから」なので、数え始めるのは一箇所です。 */
+function obAgainSent(){ obAgainAt=(new Date()).getTime(); obAgainTicOn(); }
+function obAgainTicOn(){
+  obAgainTicOff();
+  if(!obAgainLeft()) return;
+  obAgainTic=setInterval(obAgainTick, 250);
+}
+function obAgainTicOff(){
+  if(obAgainTic){ clearInterval(obAgainTic); obAgainTic=null; }
+}
+/* 一つの要素に数を書くだけで、render() は呼びません。同じ画面に打ちかけの欄が
+   あり、一秒ごとに描き直せば毎秒そこから離れて誰も打てなくなります。
+   画面が変わってボタンが無くなったら、そこで自分を止めます。 */
+function obAgainTick(){
+  var b=document.getElementById('ob-again'), n=obAgainLeft();
+  if(!b){ obAgainTicOff(); return; }
+  if(n){ b.innerHTML=t('ob.mail.again')+' '+n; return; }
+  obAgainTicOff();
+  b.removeAttribute('disabled');
+  b.innerHTML=t('ob.mail.again');
+}
 /* Where to go when the account screen is done, for somebody who did not
    arrive here by starting the app.
 
@@ -1034,7 +1075,12 @@ function obReturn(){
   go(b.r, b.a);
   return true;
 }
-function obMailGo(m){ OBM.mode=m; OBM.msg=''; render(); window.scrollTo(0,0); }
+/* コードの画面に立ったときだけ数が動きます。離れれば止まる ── obAgainTick() は
+   ボタンが無くなったら自分を止めますが、離れた瞬間に止めるのはここです。 */
+function obMailGo(m){
+  OBM.mode=m; OBM.msg=''; render(); window.scrollTo(0,0);
+  if(m==='code' || m==='reset') obAgainTicOn(); else obAgainTicOff();
+}
 function obMailSet(k, v){ OBM[k]=String(v||''); }
 function obMailAsk(){
   if(!OBM.em || OBM.em.indexOf('@')<0){ OBM.msg=t('net.needmail'); render(); return false; }
@@ -1052,7 +1098,7 @@ function obMailIn(){
    This asked Supabase for a NEW user and got one every time -- so somebody who
    had come in with Google and later typed the same address here ended up with
    two accounts, two languages and two of whatever they had paid for. It asks
-   for six digits to that address now: already an account, and this is a way
+   for a code to that address now: already an account, and this is a way
    into it; not one, and it is made. www/net.js § netMailOtp() has the rest.
 
    No password, which is the same day's 「メアドだけ、アカウント作成で」 and
@@ -1077,16 +1123,16 @@ function obMailUp(){
    refusing on a network fault would be the app locking its own door. */
 function obMailUpGo(){
   netMailOtp(OBM.em, function(){
-    /* Nobody is signed in yet: six digits went to an address that may have a
-       typo in it. The typo is the whole reason the digits exist -- an address
+    /* Nobody is signed in yet: a code went to an address that may have a
+       typo in it. The typo is the whole reason the code exists -- an address
        nobody can read is an account nobody can get back into. */
-    OBM.busy=false; OBM.pw=''; obMailGo('code');
+    OBM.busy=false; OBM.pw=''; obAgainSent(); obMailGo('code');
   }, obNo);
 }
 /* THE DIGITS FIRST, THE PASSWORD AFTER. 「普通に6桁のコード打ってから
    パスワード要求だろ」 OWNER 2026-09-02.
 
-   The address is proved by the six digits and the password is chosen once it
+   The address is proved by the code and the password is chosen once it
    is -- which is the same two screens the reset road already had, in the same
    order, for the same reason. What comes back from the digits is a session,
    and obNewPwGo() is what spends it. */
@@ -1103,15 +1149,20 @@ function obMailCode(){
    app. 『後追加でメールを確認のボタンに再送信ボタンと戻るボタンがない』 OWNER
    2026-09-02.
 
-   Two faces ask for six digits and they come out of two different mails, so
+   One face, and two mails behind it -- the sign-up code and the reset code, so
    which one to send again is read off the face rather than remembered: the
    sign-up code is Supabase's resend, the reset code is asking for the reset
    again. `ob.mail.sent` afterwards is a STATE and not an explanation
    (CLAUDE.md) -- without it, pressing this does nothing anybody can see. */
 function obMailAgain(){
+  /* 六十秒。ボタンは押せない形で描かれていますが、断るのはここです ── 描き方は
+     見た目で、決まりではありません。一箇所で数えて、一箇所で断ります。 */
+  if(obAgainLeft()) return;
   if(OBM.busy || !obMailAsk()) return;
   OBM.busy=true; OBM.msg=''; render();
-  function done(){ OBM.busy=false; OBM.msg=t('ob.mail.sent'); render(); }
+  function done(){
+    OBM.busy=false; OBM.msg=t('ob.mail.sent'); obAgainSent(); render();
+  }
   if(OBM.mode==='reset') netRecover(OBM.em, done, obNo);
   else netMailOtp(OBM.em, done, obNo);
 }
@@ -1119,13 +1170,13 @@ function obMailAgain(){
    "sent", and there was nowhere to go with what arrived. The mail carried a
    link, because that is what Supabase's Reset Password template says, and a
    link has nowhere to land in a Capacitor app -- the same wall the signup
-   mail hit and was answered with six digits. So this goes on to the screen
+   mail hit and was answered with a code. So this goes on to the screen
    that takes them. */
 function obMailForgot(){
   if(OBM.busy || !obMailAsk()) return;
   OBM.busy=true; OBM.msg=''; render();
   /* The other half of the same question. /auth/v1/recover answers 200 for an
-     address it has never seen, so this screen used to walk on to six digits
+     address it has never seen, so this screen used to walk on to a code
      that were never going to arrive -- a state with no cause and no way out,
      which is the one place www/CLAUDE.md says a sentence is written. */
   netMailTaken(OBM.em, function(taken){
@@ -1135,7 +1186,7 @@ function obMailForgot(){
 }
 function obMailForgotGo(){
   netRecover(OBM.em, function(){
-    OBM.busy=false; OBM.code=''; OBM.pw=''; obMailGo('reset');
+    OBM.busy=false; OBM.code=''; OBM.pw=''; obAgainSent(); obMailGo('reset');
   }, obNo);
 }
 /* The code, and the password to put in place of the forgotten one. Two calls
@@ -1386,50 +1437,61 @@ function obWhoGo(){
   }, obNo);
 }
 
-/* The two faces that ask for one thing: the six digits, and the address to
-   send a reset to. Neither is a place to arrive at, so neither carries the
-   bar -- the chevron is the way out of both. */
-function obAskHTML(code){
-  return '<div class="mid obform">'+
-    '<h2 class="obh">'+t(code? 'ob.mail.h.code' : 'ob.mail.h.forgot')+'</h2>'+
-    (code
-      ? '<p class="obsub">'+esc(t('ob.mail.code.sub', OBM.em))+'</p>'+
-        obMailField('ob-code', 'code', 'text', 'one-time-code', 'ob.mail.code.ph')
-      : obMailField('ob-em', 'em', 'email', 'username', 'ob.mail.em.ph'))+
-    (OBM.msg? '<div class="obmsg">'+esc(OBM.msg)+'</div>' : '')+
-    '<button class="btn"' + DO(code? 'obMailCode' : 'obMailForgot') + (OBM.busy? ' disabled':'') + '>'+
-      t(OBM.busy? 'ob.mail.wait' : (code? 'ob.mail.verify' : 'ob.mail.send'))+'</button>'+
-    (code? '<button class="obskip"' + DO('obMailAgain') + (OBM.busy? ' disabled':'') + '>'+
-             t('ob.mail.again')+'</button>' : '')+
-    '</div>';
-}
-/* The reset, in two steps: the six digits, and then the new password.
+/* THE CODE SCREEN, AND THERE IS ONE OF IT.
 
-   It was one screen, and the reason written here was that the code and the
-   password arrive in the same minute out of the same mail, so a code typed on
-   one screen and a password on the next is a second place for the code to
-   expire in. **That is no longer true and it is no longer the shape.**
-   「6桁の数字打って正しかったらパスワード入力するようにして」 OWNER 2026-08-26.
+   There were two, and they were the same screen: the same heading, the same
+   line under it, the same field, the same 確認, the same 再送信 -- and the
+   only difference was which function the button called. `obAskHTML(true)` was
+   the one the sign-up road reached and `obResetHTML()` was the one the reset
+   road reached. Nothing said they had to agree, so the sixty seconds would
+   have gone into one of them and not the other, and the one that was missed
+   is the one nobody looks at.
+   「付け足して直さない」「古い記載は消してルール書き換えてくれ」 OWNER
+   2026-09-03. The old one is deleted rather than left standing.
 
-   The old reason does not come back with the second screen, because the code
-   is spent on the FIRST one: obResetGo() verifies it against Supabase and
-   what comes back is a session. The password screen is somebody holding a
-   session changing their own password, which has no code in it and nothing
-   left to expire.
-
-   Two headings and two buttons, and every word of both was already written --
-   `ob.mail.h.code` over the digits and `ob.mail.h.reset` over the password.
-   The one screen had been wearing the second heading over both. */
-function obResetHTML(){
+   What differs travels as the name of the button's action, which is the one
+   thing that was ever different. `obAskHTML(false)` -- the address to send a
+   reset to -- was never the same screen and is its own function below. */
+function obCodeHTML(go){
   return '<div class="mid obform">'+
     '<h2 class="obh">'+t('ob.mail.h.code')+'</h2>'+
     '<p class="obsub">'+esc(t('ob.mail.code.sub', OBM.em))+'</p>'+
     obMailField('ob-code', 'code', 'text', 'one-time-code', 'ob.mail.code.ph')+
     (OBM.msg? '<div class="obmsg">'+esc(OBM.msg)+'</div>' : '')+
-    '<button class="btn"' + DO('obResetGo') + (OBM.busy? ' disabled':'') + '>'+
+    '<button class="btn"' + DO(go) + (OBM.busy? ' disabled':'') + '>'+
       t(OBM.busy? 'ob.mail.wait' : 'ob.mail.verify')+'</button>'+
-    '<button class="obskip"' + DO('obMailAgain') + (OBM.busy? ' disabled':'') + '>'+
-      t('ob.mail.again')+'</button>'+
+    obAgainHTML()+
+    '</div>';
+}
+/* SIXTY SECONDS BEFORE IT CAN BE SENT AGAIN. 「8桁で60秒再送信」 OWNER
+   2026-09-03.
+
+   The number is drawn HERE so that a render in the middle of the minute --
+   pressing 確認 on a wrong code is one -- puts the button back the way it
+   was rather than offering a resend the server would refuse. What ticks it
+   down is obAgainTick() below, which writes into this one element and does
+   NOT render: the field is on the same screen, and a render a second would
+   take the caret out of it and nobody could type. www/rec.js § voTick() is
+   the same shape for the same reason -- it is the app's way of drawing a
+   number that moves while a screen stands still.
+
+   The count is a STATE, not an explanation (CLAUDE.md § Explaining): without
+   it the button is simply dead and nothing says why or for how long. It is
+   a numeral, so there is nothing in it to translate. */
+function obAgainHTML(){
+  var n=obAgainLeft();
+  return '<button class="obskip" id="ob-again"' + DO('obMailAgain') +
+    ((OBM.busy || n)? ' disabled':'') + '>'+
+    t('ob.mail.again') + (n? ' '+n : '') + '</button>';
+}
+/* The address a reset is sent to. Not a code screen and never was. */
+function obForgotHTML(){
+  return '<div class="mid obform">'+
+    '<h2 class="obh">'+t('ob.mail.h.forgot')+'</h2>'+
+    obMailField('ob-em', 'em', 'email', 'username', 'ob.mail.em.ph')+
+    (OBM.msg? '<div class="obmsg">'+esc(OBM.msg)+'</div>' : '')+
+    '<button class="btn"' + DO('obMailForgot') + (OBM.busy? ' disabled':'') + '>'+
+      t(OBM.busy? 'ob.mail.wait' : 'ob.mail.send')+'</button>'+
     '</div>';
 }
 /* And the second step, reached only by a code the server accepted. */
@@ -1447,9 +1509,12 @@ function obNewPwHTML(){
 function obDoorHTML(){
   var m=OBM.mode;
   if(m==='who') return obWhoHTML();
-  if(m==='reset') return obResetHTML();
   if(m==='newpw') return obNewPwHTML();
-  if(m==='code' || m==='forgot') return obAskHTML(m==='code');
+  /* One code screen, two roads into it. 登録の側は obMailCode()、再設定の側は
+     obResetGo() ── 違うのはそれだけで、それだけを渡します。 */
+  if(m==='code') return obCodeHTML('obMailCode');
+  if(m==='reset') return obCodeHTML('obResetGo');
+  if(m==='forgot') return obForgotHTML();
   return obFormHTML(m==='up');
 }
 
