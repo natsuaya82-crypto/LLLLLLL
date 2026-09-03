@@ -2998,18 +2998,35 @@ be this app deciding whose calendar it is」。それは**週や月の長さを�
 
 ### Decision
 - Date: 2026-08-22
+- **SUPERSEDED、二つの半分がそれぞれ別の日に。**この項は「SNS だけ止める」と
+  「三タブを閉じる」の二つを言っていて、**どちらも取り消されています**。
+  - **タブは閉じません。**「3タブを閉じる必要もないし。ホームに出ればいいやん」
+    ── 凍結は `vFeed` の中身がその一枚に変わることで、タブは開いたままです。
+  - **制作側も止まります。** OWNER DECISION 2026-08-26 ── 凍結アカウントが
+    自分の言語を編集してよいかを直接訊いた答えは、してはいけない、でした。
+    言語は人に渡るもの（DL できて、誰でも開けるページに載る）になったので、
+    「他人には関係ない」がもう言えません。
 - Area: What being frozen stops
-- Decision: **The SNS side only.** No posting, replying, reacting, following or
-  reporting, and the three sns tabs close. Making a language goes on working.
-- Reason: 「制作は好きにやらせればいいし、sns止められても作りたいやつは作るでしょ」.
-  Locking the making side takes away offline work, is walked around with flight
-  mode, and misses the point: what hurts is losing the account. Restricting
-  what may be carried OUT was refused for the same reason — a backup that opens
-  on one phone only is a language lost with the phone.
-- Affected features: `is_member()`, the sns tabs, the composer.
-- Affected data: none.
+- Decision: 止まるのは **SNS と、言語がサーバーへ上がる分**。投稿・返信・反応・
+  フォロー・通報と、`slice` の書き込み。**三つのタブは開いたままで**、凍結は
+  ホームに出ます。端末の中にあるものは読めて、開けて、バックアップも取れます
+  ── `account_delete()` だけは `is_member()` を訊きません。出口に鍵は掛けない。
+- Reason: 凍結は解けるので、何も壊さない。そして帳を下ろす場所は一つでいい ──
+  `is_member()` が `supabase/schema.sql` の全書き込みポリシーの中にあり、
+  画面が何を言おうが言うまいが、閉まる扉はそれで閉まります。タブを閉じるのは
+  同じことを二か所でやることでした。
+- Affected features: `is_member()`（`supabase/schema.sql`）、`NET_BANNED` と
+  `vFeed`（`www/sns.js`）、コンポーザー。
+- Affected data: none. `profile.banned_at` / `banned_why` だけ。
 - Affected docs: `FEATURES.md`, `supabase/setup.md`.
-- Implementation status: partly — writes are stopped, the tabs are not.
+- Implementation status: **入っています。**`www/sns.js` の `vFeed` が
+  `NET_BANNED` のときホームを一枚に替え、`www/net.js` が `banned_at` を読み、
+  書き込みは全部 `is_member()` が止めます。タブは開いたままです。
+- **一つ決まっていません。**端末の中だけの編集を止めるかどうか。2026-08-26 の
+  決定は要約（`supabase/schema.sql`）としてしか残っておらず原文がありません。
+  いまは端末では編集でき、上がる分だけが止まります。**これが決定どおりなのか、
+  RLS が localStorage に届かなかった結果なのかは、書かれたものからは読めません。**
+  訊くべき一文は「凍結中、端末の中だけの編集も止めますか？」です。
 
 ### Decision
 - Date: 2026-08-19
@@ -3040,18 +3057,20 @@ be this app deciding whose calendar it is」。それは**週や月の長さを�
 
 ### Decision
 - Date: 2026-08-19
+- **SUPERSEDED（2 と 4 番）→ 「ダウンロードは Plus から。上限は make と別で、
+  Plus 1・Pro 3」（2026-09-02、この log の上のほう）。**無料は一つも落とせません
+  ── 「plusからです」。数は言語ごとで Plus 1・Pro 3 で、自分で作る数とは
+  別に数えます。1・3・5・6 番はそのまま生きています。
 - Area: Publishing and downloading — a keyboard, an alphabet, a dictionary
 - Decision:
   1. **The author decides.** Public or private, per thing, for all three: the
      keyboard, the letters, the words. Nothing is downloadable unless its
      author said so.
-  2. **Downloading a KEYBOARD or an ALPHABET is free.** Downloading a
-     DICTIONARY is **Plus**. 「freeは文字とキーボードのみ」「最悪知ってる人は
-     それで会話できるし、本気で知りたい人は課金するっしょ」
+  2. 取ることそのものが **Plus から**。`can('dl')` が扉で、`dlCap()` が数です。
   3. **Making and publishing stays Plus**, as it is now. Free still cannot
      build a keyboard or add a letter, and that does not change.
-  4. **A downloaded keyboard goes on its own shelf, up to three**, beside the
-     three somebody built. It does not take one of their slots.
+  4. 落としたものは自分の数を食いません ── `langCount()` は `mine` を数え、
+     `dlCount()` はその反対側を数えます。二つの上限は互いを見ません。
   5. **A downloaded dictionary is a separate possession and is never merged
      into your own language.** It is a language you can READ. `FREE_LIMIT`
      counts your own words, so five thousand of somebody else's do not touch
@@ -3069,10 +3088,13 @@ be this app deciding whose calendar it is」。それは**週や月の長さを�
      keyboard and this is somebody else's alphabet, and the two do not mix.
      「dl自体が複製なんだからそのままで良くね？でも人の言語だから当てられる文字は
      dlした人の言語だけ」
-- Implementation status: **not started.** The payload half already exists:
-  `shareKbd()` produces a keyboard with the shapes cut onto its keys, needing
-  no alphabet and no dictionary on the other side, which is exactly what a
-  download has to be.
+- Implementation status: **取る側は入りました。**`can('dl')`（`www/core.js` の
+  `CAN`）と `dlCap()`（Plus 1・Pro 3、無料は 0）、`dlCount()`、`dlStop()`。
+  押すと本当に着地することを `tools/dl-check.mjs` が持ちます ── 記事の見た目
+  ではなく storage を訊きます（`LANGS[id].mine` が false、`bkPack()` は運ばない、
+  `netLangSync()` は走らない）。「ダウンロードボタン押しても言語追加されない
+  けど？」OWNER 2026-09-01 が、その検査が書かれた理由です。
+  6 番（落としたキーボードに当てられる文字は落とした人のもの）はまだです。
 
 ### Decision
 - Date: 2026-08-19
@@ -3154,57 +3176,63 @@ be this app deciding whose calendar it is」。それは**週や月の長さを�
 
 ### Decision
 - Date: 2026-08-14
+- **SUPERSEDED、二つの側から。**段の名前と値段は「What the tiers are called」
+  （2026-08-23、Free / Plus / Pro）が読み替えました ── **Studio はありません**。
+  StoreKit を入れない話は「課金もタップしたら勝手になるけど？」OWNER 2026-08-31
+  が取り消しました。下は書き換えた後の姿です。
 - Area: Money — the four subscription products, their ids and their prices
 - Decision:
-  1. Two plans, **Plus** and **Studio**, each sold **monthly and yearly**.
-  2. The product ids are, and these can never be changed once the products
-     exist in App Store Connect:
+  1. 売る段は **Plus** と **Pro** の二つ、それぞれ**月と年**。
+  2. 商品 ID。**商品が App Store Connect にできたら、二度と変えられません**:
 
      | | monthly | yearly |
      |---|---|---|
      | Plus | `com.tokinets.lingua.plus.monthly` | `com.tokinets.lingua.plus.yearly` |
-     | Studio | `com.tokinets.lingua.studio.monthly` | `com.tokinets.lingua.studio.yearly` |
+     | Pro | `com.tokinets.lingua.pro.monthly` | `com.tokinets.lingua.pro.yearly` |
 
-     Studio's two are **not created yet** — see the status line at the foot of
-     this decision. The ids stay written down because they can never change
-     once they exist, and the day Studio ships it has to use these.
+     `plus.*` は改名の前は上の段の ID でした。いまは**中の段**を指します
+     ── 誰も何も買っていない日に動いたので、動かして構いませんでした。
 
-  3. Prices, in US dollars. Every other country is Apple's automatic
-     conversion unless somebody sets it by hand:
+  3. 値段（USD）。ほかの国は Apple の自動換算です:
 
      | | monthly | yearly |
      |---|---|---|
-     | Plus | 9.99 | 99.99 |
-     | Studio | 19.99 | 199.99 |
+     | Plus | 4.99 | 49.99 |
+     | Pro | 9.99 | 99.99 |
 
-  4. All four sit in **one subscription group** named `Lingua`, Plus at level
-     1 and Studio at level 2 — so somebody can move between them and cannot
-     hold both at once.
-- Reason: 「年額　plus 99.99 / studio 199.99」. The monthly pair and the group
-  were settled earlier and are written in `docs/apple.md`.
+  4. 四つとも `Lingua` という**一つのサブスクリプショングループ**に入れます。
+     **Pro がレベル 1（上）、Plus がレベル 2（下）** ── 同じグループなら上げ
+     下げでき、二つ同時には持てません。
+- Reason: 段のはしごが一行で読めること。`docs/apple.md` に、Apple のサイトで
+  どこを押すかまで書いてあります。
 - Affected features: the plans screen, everything `CAN` gates
-- Affected data: none yet. **`SET.plan` is a flag in `localStorage` and stays
-  one until receipts are verified server-side** — see the note below.
+- Affected data: none. `SET.plan` は端末の写しで、**答えは Apple のもの** ──
+  `storeTook()` は要求ではなく返事から段を取ります。
 - Affected docs: `docs/apple.md`, `docs/PAID_FEATURES.md`, `docs/FEATURES.md`
-- Implementation status: **the products are the owner's to create in App Store
-  Connect. There is no StoreKit code in the app, and it is not to be written
-  yet** — 「今まだプラスとかは俺が自由に行き来して確認したいからstorekit入れない
-  で欲しいかも」. The plans screen stays a switch anybody can press, so a paid
-  face can be walked without buying anything. Nothing can be bought however
-  the products are configured, and that is the current intent.
+- Implementation status: **StoreKit は入っています。**
+  `ios/App/App/LinguaStore.swift` が StoreKit 2 でこの四つを扱い、
+  `www/store.js` がその一つの窓、`www/settings.js` の `PLAN_BUY` は **true**
+  です。実機では `storeBuy()` を通らなければ段は動きません。**false に戻さない
+  こと** ── ビルド #106 が false のまま実機に出て、段のカードを押しただけで
+  Pro が付きました。ブラウザには App Store が無いので `storeOn()` が false に
+  なり、そこでは今までどおり手で切り替わります（検査とスクリーンショットは
+  それで歩きます）。商品を作るのはオーナーの手です。
 
 ### Decision
 - Date: 2026-08-13
+- **SUPERSEDED（3 番だけ）→ 「The composer」（2026-08-13、この log の下のほう）。**
+  写真を足す＋は無くなり、**カメラ・ライブラリ・マイクの三つのボタン**が
+  キーボードの上の帯に並びます ── 「投稿の時にphotoボタンやめて。📷 ライブラリ
+  マイクボタンにして」。1・2・4 番はそのままです。
 - Area: Posts — how many photographs, and how they are shown
 - Decision:
   1. A post can carry **up to four** photographs.
   2. They **slide sideways**; the picture area scrolls and nothing else does.
-  3. On the composer the **＋ sits beside them, centred**, and goes when there
-     are four.
+  3. 写真を足すボタンは**キーボードの上の帯**にあり、四枚で消えます。
+     「写真と音声とかのボタンはTwitterと同じようにキーボード上に固定して」
   4. Each picture has its own letters placed on it, and each is baked
      separately when the post is sent.
 - Reason: 「画像は4枚まで載せられる。画像だけ横スライドできる感じ」
-  「+が真ん中に来ると最高」
 - Affected features: composer, timeline
 - Affected data: **new** — `post.pics`, an array of data URLs. `post.pic` is
   **not removed and not rewritten**: posts that carry one keep it, and every
@@ -3216,11 +3244,15 @@ be this app deciding whose calendar it is」。それは**週や月の長さを�
 
 ### Decision
 - Date: 2026-08-13
+- **SUPERSEDED（＋の位置だけ）→ 「The composer」（2026-08-13、この log の
+  下のほう）。**足すボタンは写真の横ではなく、キーボードの上の帯にカメラ・
+  ライブラリ・マイクの三つとして並びます。赤いマイナスと、押すと編集が開く
+  ことは、そのままです。
 - Area: Posts — the photograph on the composer
 - Decision: no buttons under it. A **red minus at the picture's top corner**
-  removes it, a **＋ beside it** adds one, and **pressing the picture opens the
-  editor** — cropping, letters, whatever the editor grows.
-- Reason: 「右上に赤い⚪︎に-で消すで画像横に+ボタンでadd」「編集ボタンはいらん。
+  removes it, and **pressing the picture opens the editor** — cropping,
+  letters, whatever the editor grows.
+- Reason: 「右上に赤い⚪︎に-で消す」「編集ボタンはいらん。
   画像タップして画像編集切り抜きとか文字入れとかできるように」
 - Affected features: composer
 - Affected data: none
@@ -3231,6 +3263,11 @@ be this app deciding whose calendar it is」。それは**週や月の長さを�
 
 ### Decision
 - Date: 2026-08-13
+- **SUPERSEDED（3 番だけ）。**「課金で追加した機能は無料になったら全部隠れる」
+  OWNER 2026-09-01 ── 自作のステージは一覧に**残りません、隠れます**。語の
+  百より先、無料のアルファベットより先の文字と、同じ扱いです。**消えるのでは
+  なく隠れる**ので、`STG.extra` は storage にもバックアップにもサーバーにも
+  そのまま在り、払えば全部そのまま戻ります。ほかの四つはそのままです。
 - Area: **What happens when a plan ends** — every capability at once
 - Decision: **the app goes back to the shape the free plan has, and nothing a
   person made is deleted.**
@@ -3242,8 +3279,9 @@ be this app deciding whose calendar it is」。それは**週や月の長さを�
   2. The writing goes back to an alphabet, the keyboard to the fixed QWERTY,
      the direction to left→right. All three were already true of `wsys` and
      `kb`; `dir` joins them.
-  3. A stage of somebody's own stays on the list and can no longer be added to
-     or deleted.
+  3. 自作のステージは**一覧から隠れます**。本にもともとある章は「無料の文法が
+     何であるか」そのものなので残ります。`stAll()` が `can('gram')` の中でしか
+     `STG.extra` を並べず、`stHidden()` がその数を足元に出します。
   4. **The day it happens the app says so, once**, in a sheet: nothing has
      been deleted, it is all in the backup, and it all comes back on
      resubscribing. `capLapse()` in `core.js` decides when; `openCapLapse()`
@@ -3317,28 +3355,28 @@ be this app deciding whose calendar it is」。それは**週や月の長さを�
 
 ### Decision
 - Date: 2026-08-12
+- **SUPERSEDED（2・3・4 番）。1 番だけが生きています。**
+  - 2 番の赤い字 → 「語釈は二段。赤い字は無い。お題のページと同じ形」
+    （2026-08-28、この log の上のほう）。「やっぱり、タイムラインも投稿も
+    2段で。赤文字消して。」
+  - 3・4 番 → **第三層そのものが無くなりました。**「なら自分の言語でどう言うか
+    翻訳いらなくない？元々ai前提やったし」。経緯は
+    `docs/CHANGELOG.md` § 「自分の言語で読む」は無くなった — OWNER DECISION。
 - Area: A post shown three ways — the four details
 - Decision:
   1. The natural-language layer is translated **when the post is written**,
      using **the reader's own device AI, borrowed** — not a service of ours.
      No key of ours, no server of ours, no cost per post. The translation is
      attached at the moment of posting and travels with the post.
-  2. A word the reader's dictionary has no word for stays in the natural
-     language and is shown **in red**, so the gap is obvious.
-  3. Layer 3 is Plus. Free gets three a day.
-  4. The natural language is always on screen. Layer 3 appears on a button.
 - Reason: 「翻訳はユーザーのaiを拝借します。投稿するタイミングでai翻訳がつくので」
-  「まずオフラインで起動できないやろSNSは」「1日3回やろ」
-  「自然言語のまま残して赤文字とかにする。この単語ないのがわかりやすいように」
-  「非人工言語は常に表示。自分の言語への変換はボタンで出現」
-- Affected features: composer, timeline, post, dictionary
+  「まずオフラインで起動できないやろSNSは」
+- Affected features: composer, timeline, post
 - Affected data: **new, frozen on the post** — `post.tr`, a translation per
   language code
-- Affected docs: FEATURES.md, DATA_MODEL.md, PAID_FEATURES.md
-- Implementation status: the seam and layer 3 are being built now. The
-  translator behind the seam is not, and is not blocking: posting works with
-  the seam returning nothing, exactly as `AI_SEAM` already works for the
-  generators.
+- Affected docs: FEATURES.md, DATA_MODEL.md
+- Implementation status: **縫い目だけがあります。**`postTr()`（`www/post.js`）は
+  `done(null)` を返し、`tr` は付かず、読む人は書いた人が打った自然言語を見ます
+  ── 動くべき姿であって、穴ではありません。`AI_SEAM` と同じ形です。
 
 #### And the standing instruction that goes with it
 
@@ -3353,46 +3391,56 @@ for.
 
 ### Decision
 - Date: 2026-08-12
+- **SUPERSEDED、全部。**三層という枠組みそのものが無くなりました。
+  「なら自分の言語でどう言うか翻訳いらなくない？元々ai前提やったし」。
+  経緯は `docs/CHANGELOG.md` § 「自分の言語で読む」は無くなった — OWNER
+  DECISION。**投稿は二層です。**
 - Area: A post shown three ways
-- Decision: A post can be shown as (1) the writer's own drawn letters, (2) what
-  it means in a natural language, and (3) that same thing rendered into the
-  READER's own conlang. "Unlimited translation" on the Plus list means this.
-- Reason: 「相手の自作文字の投稿／英語など非人工言語／自分の人工言語へ変換した翻訳
-  ／この3つが出せたらおもろいやん」
-- Affected features: timeline, post, dictionary
-- Affected data: layers 1 and 2 are already frozen on the post (`ink`, `mn`).
-  **Layer 3 must NOT be frozen** — it is the reader's own language read now,
-  and it is supposed to improve as their dictionary grows
+- Decision: 投稿は**二層**で見えます ── (1) 書いた人が描いた文字、(2) それが
+  読む人の言語で何と言っているか。**第三層（それを読む人の人工言語に置き直す）は
+  作られ、外されました。**
+- Reason: 語を入れ替えるのは翻訳ではありません。`Mama seja luna` が文になって
+  いるかは、その言語がコピュラを持つか、所有をどう示すか、主題に何を付けるかで
+  決まり、その答えを持っている場所がアプリのどこにもありません ──
+  「単語を並べるだけじゃ文法はできないのよわかる？」。文法ページの自由文のメモを
+  読めるのは AI だけで、AI は入れません ── 「AI入れないって言ってるでしょ？」
+- Affected features: timeline, post
+- Affected data: 二層とも投稿に凍らせてあります（`ink`, `mn`）。
+  **前の版で `SET.trDate` と `SET.trN` を書いた端末では、その二つがまだ
+  `SET` に残っています** ── いまのコードはどちらも書かず、読まず、そして
+  **消しにも行きません**。人の設定にある二つの数で、このアプリは要らなく
+  なったものを削除しません（`www/post.js` § Layer three ... is gone）。
 - Affected docs: FEATURES.md, DATA_MODEL.md
-- Implementation status: 1 and 2 are built. 3 is not. Four things are still
-  open: what layer 2 shows when the writer's language is not the reader's; what
-  happens to a word the reader has no word for; whether layer 3 is free or
-  Plus; and how the three are presented.
-- Note: this does not overturn the decision at the head of `www/post.js` (no
-  machine reads an invented language on the author's behalf). Layer 3 runs the
-  other way, from a sentence the author confirmed into the reader's own words.
+- Implementation status: 二層とも入っています。第三層は外れています。
+- Note: this does not overturn the decision at the head of `www/post.js` — no
+  machine reads an invented language on the author's behalf.
 
 ### Decision
 - Date: 2026-08-12
+- **SUPERSEDED、三か所。**この項の「Plus」は改名前の名前で、いまの **Pro** です
+  （「What the tiers are called」2026-08-23）。中身も二つ動きました ──
+  **クラウドは全員のもの**になり（「What a thing belongs to」2026-08-22
+  「クラウドは全員で」）、**翻訳は売り物ではなくなりました**（第三層が外れた
+  ので、`docs/CHANGELOG.md` § 「自分の言語で読む」は無くなった）。
+  はしごが二段から三段に割れたので、**この一覧の半分はいま中の段（Plus）です。**
+  段ごとの答えは一箇所、`www/core.js` の `CAN` にあります。
 - Area: Plus — what it contains
-- Decision: Plus is: unlimited words; unlimited letters of your own; the
-  writing systems that are not an alphabet; choosing a sound; grammar stages
-  of your own; CSV in and out; keyboard customisation, including flick and
-  putting any letter on any key in any position; everything Free has; cloud
-  storage (deferred, see the entry below); vertical and right-to-left posts;
-  and unlimited translation (definition still open — see FEATURES.md).
+- Decision: はしごなので、上の段は下の段を全部含みます。**足す分だけ**を書くと:
+  - **Plus**（中の段）── 文字の追加・改名・削除、音を選ぶ、アルファベット以外の
+    書記体系、語 1000、キーボード四つ、投稿の編集、人の言語を取ること。
+  - **Pro**（上の段）── Plus の全部に足して、語に上限なし、キーボードに上限
+    なし、自分の文法のステージ、言語の向き、CSV の出し入れ、ファイルで持ち込む、
+    名前の横の印。
 - Reason: the owner's list, given in full.
-- Affected features: every `plus` row in FEATURES.md
+- Affected features: every paid row in FEATURES.md
 - Affected data: none by itself
 - Affected docs: FEATURES.md, PAID_FEATURES.md
-- Implementation status (2026-08-21): `words` `letters` `wsys` `snd` `gram`
-  `data` `file` `kb` are implemented, and flick and free placement are already
-  in the keyboard editor. Vertical / RTL is built — `dir` in `CAN`, and a post
-  carries the direction it was written in. Translation is built as layer three
-  and is **free and unmetered**: `tr` was never added to `CAN`, and
-  `TR_FREE_DAILY` was never declared. Decision 2026-08-12 § 3 above said
-  "Layer 3 is Plus, free gets three a day"; that was the AI's price, and the
-  AI is not going in 「1日3回は亡くなりましたaiいれないから」 (2026-08-22).
+- Implementation status: **段の扉は全部入っています。**`CAN` の全部と、数で答える
+  三つ（`wordCap()` `kbCap()` `dlCap()`）。フリックとキーの自由配置もキーボードの
+  編集画面にあります。いくつ扉があるかはここに書きません ── 書けば次に増えた日に
+  古くなるので、`npm run dead` が毎回数えて出します。
+  **クラウドはどの段にも属しません** ── `netLangSync()` は段を訊きません。
+  **翻訳は `CAN` に一度も入らず**、`TR_FREE_DAILY` も宣言されませんでした。
 
 ### Decision
 - Date: 2026-08-12
@@ -3412,17 +3460,26 @@ for.
 
 ### Decision
 - Date: 2026-08-12
+- **SUPERSEDED → 「What a thing belongs to」（2026-08-22、この log の上のほう）。**
+  **クラウドは全員のもので、売り物ではありません** ── 「クラウドは全員で」、
+  そして「基本は全部サーバー管理」（2026-08-26）。保留でもありません。
 - Area: Cloud storage
-- Decision: Cloud storage is a Plus feature, deferred. It will be built once
-  there are enough users to justify the $25/month Supabase tier.
-- Reason: the owner's, on cost.
-- Affected features: cloud sync
-- Affected data: none yet. When built: every slice, and a conflict-resolution
-  rule which is the owner's to decide, not a tool's
-- Affected docs: FEATURES.md (planned), PAID_FEATURES.md
-- Implementation status: not started. **The plans screen and the settings
-  screen currently present it as available**, which is a promise the app
-  cannot keep — awaiting a decision on how to word it until then.
+- Decision: **サーバーがものの在り処で、それはどの段でも同じです。**言語が在る
+  ことは誰かが「する」ことではないので、段が決めることではありません
+  （`docs/PAID_FEATURES.md` の頭）。端末が持つのは、信号が無くても動くための写し。
+- Reason: 段は**何をしてよいか**を決めるもので、**何が在るか**は決めません。
+  値段の側も合っています ── 言語は 5.4 KB に詰まり、大きいもので 1 MB ほど。
+  その大きさの段を食うのはタイムラインの写真で、それは容量ではなく帯域です。
+- Affected features: `netLangSync()`（`www/net.js`）、`SLICES`、`slice` の
+  ポリシー（`supabase/schema.sql`）
+- Affected data: 全スライス。競合の解き方はオーナーが決めることで、道具が
+  決めることではありません
+- Affected docs: FEATURES.md, PAID_FEATURES.md
+- Implementation status: **入っています。**`netLangSync()` は段を訊きません。
+  **段の画面にも設定画面にもクラウドの行はありません** ── 設定にあった
+  「Cloud sync ── On」は、Plus の人にだけ、何もしていない状態でそう言って
+  いました。行そのものが消えています（`www/settings.js`）。`CAN.data` は
+  残っていますが、それが指すのは CSV だけです。**これをまた扉に戻さないこと。**
 
 ### Decision
 - Date: 2026-08-12
@@ -3438,8 +3495,11 @@ for.
   travel exactly as `ink` does
 - Affected docs: FEATURES.md, DATA_MODEL.md, DATA_SAFETY.md (posts grow by the
   size of an image), CHANGELOG.md
-- Implementation status: not started. Free or Plus is not yet decided; storage
-  (data URL on the post vs. a file) is not yet decided.
+- Implementation status: **入っています。**開いていた二つは、どちらも後の決定が
+  答えました ── **どの段でも無料**（「Posts — letters on an image」2026-08-13
+  「画像と自作文字貼るのは無料 投稿に貼るに決まってるでしょ」）、**data URL で
+  投稿に載せ、文字は焼き込む**（同）。枚数は四枚まで（「Posts — how many
+  photographs」2026-08-13）。焼き込みは `post-check` が画素で数えて持ちます。
 
 ### Decision
 - Date: 2026-08-12
