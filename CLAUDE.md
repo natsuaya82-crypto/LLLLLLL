@@ -1152,10 +1152,14 @@ things:
 2. **Both directions on the variables**, as `act-map`'s names are held: no
    `var(--face-x)` that `:root` does not declare, and no face declared that no
    rule wears. A face nothing wears is one that was replaced and left behind.
-3. **No family is named in `www/*.js` at all** — with one exception, which is
-   the font the person drew: JavaScript builds it, so JavaScript has to name it.
-   `SFONT_FAMILY` in `glyph.js` must be exactly the family in `--face-script`.
-   When those two disagree nothing throws: the font builds, the `@font-face`
+3. **No family is named in `www/*.js` at all** — except the ones JavaScript
+   BUILDS, because a font built on the phone has to be named by whatever built
+   it. There are two and `face-check` prints them: `LinguaScript`, the font the
+   person drew (`SFONT_FAMILY` in `glyph.js`, which must be exactly the family
+   in `--face-script`), and `LinguaType`, the private-use face rule 10 is
+   about, which must be the family in `--face-type`. This said "one exception"
+   after the second one landed. When a built family and its variable disagree
+   nothing throws: the font builds, the `@font-face`
    installs, and every `.sfont` element quietly falls back to roman.
 4. **A canvas font asks the page.** A canvas has no inheritance, so a literal
    there is the one kind of face the stylesheet cannot reach. `cssVar(n, fb)`
