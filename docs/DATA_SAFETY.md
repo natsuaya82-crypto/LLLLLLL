@@ -125,13 +125,18 @@ file, and none of them is optional:
     voDrop       www/rec.js    the recording is taken off in the composer
   ```
 
-  The second was decided on 2026-09-03 — 「声は投稿上で再生できるよね？下書き
-  消した時にはいらなくない？」 — and the DELETE REVIEWs are in
-  `docs/CHANGELOG.md`. In all three the file's name comes off the thing being
-  deleted and from nowhere else. **Nothing walks that folder**, nothing removes
-  a file because nothing points at it, and nothing tidies up on launch. The
-  post is removed first and the file second — a file that cannot be removed
-  must not leave the post standing.
+  In all three the file's name comes off the thing being deleted and from
+  nowhere else. **Nothing walks that folder**, nothing removes a file because
+  nothing points at it, and nothing tidies up on launch. The post is removed
+  first and the file second — a file that cannot be removed must not leave the
+  post standing.
+
+  **Only the first has its DELETE REVIEW written.** `postDelGo`'s is in
+  `docs/CHANGELOG.md` under 「投稿消した声も消していいよ」. The other two
+  arrived on 2026-09-03 with the owner's decision quoted
+  （「声は投稿上で再生できるよね？下書き消した時にはいらなくない？」）and no
+  block — so the decision is made and the record required by the DELETE REVIEW
+  below is missing. Written here rather than left to be noticed again.
 
 **A posted voice is on the server**: `netUpVoice()` puts it in the `post-media`
 bucket with the post it belongs to. The file this phone recorded stays in

@@ -35,9 +35,9 @@ said twelve.
 `lingua.<id>.bkn`, the save counter (`bkNo()` / `bkNoSet()` in
 `www/backup.js`). It is not in `SLICES` on purpose — it is a fact about the
 FILE and not part of the language — so it is in no backup and goes up nowhere,
-and `tools/store-check.mjs` names it as the phone's own. It is also outside
-both deletes above, which is a leftover rather than a decision: see
-`docs/BACKLOG.md`.
+and `tools/store-check.mjs` names it as the phone's own. Being outside `SLICES`
+also puts it outside both deletes above; **whether it should be** is with the
+owner (`docs/scope/aud-data.md` § オーナーに訊くこと).
 
 **And now a third reader walks it: the server.** OWNER DECISION 2026-08-26 —
 「基本は全部サーバー管理 言語周りだけバックアップにfile使う」. Each slice is one
@@ -160,9 +160,9 @@ other's notices, and a notice names who did what to whom.
 `lingua.posts` and `lingua.drafts` carry: it is replaced whole by the next
 answer and by nothing else. **`lsWipeAcct()` does NOT take it** — that function
 names three parked prefixes and this is not one of them — so an account
-deleted on this handset leaves behind the list of who did what to it. It is a
-leftover and it is in `docs/BACKLOG.md`; it is written here rather than in a
-sentence claiming it goes.
+deleted on this handset leaves behind the list of who did what to it. Whether
+it should be taken is with the owner (`docs/scope/aud-data.md`
+§ オーナーに訊くこと, Q1); what is written here is what the code does.
 
 `lingua.set` carries **`notAt`** beside it, and it is not the same kind of
 thing: it is **when the notices screen was last opened**, as a number of
@@ -228,9 +228,8 @@ The decision is in `docs/FEATURE_RULES.md` and the branch is `claude/flat`.
 it** — a description of a road nobody walks is the thing this file is being
 audited for.
 
-**Three things under `lingua.` are NOT taken, and each is a leftover rather
-than a decision.** They are named so that nobody reads the list above as
-complete:
+**Three things under `lingua.` are NOT taken.** They are named so that nobody
+reads the list above as complete:
 
 ```
   lingua.notices.<uid>   the notices copy      www/sns.js  notKey()
@@ -238,11 +237,13 @@ complete:
   lingua.<id>.bkn        the save counter      www/backup.js bkNoSet()
 ```
 
-None of them is somebody's work — a notice is computed on the server, the
-parked settings came from `plan` and `saved_search`, and `bkn` is one number.
-But 「アカウント削除で残るものねえ」 does not have three exceptions in it, and
-`lingua.<id>.bkn` also survives 「この言語を削除」, which was told to take
-everything. `docs/BACKLOG.md`.
+Two written rules pull opposite ways here and **nothing in this file decides
+between them**: 「アカウント削除で残るものねえ」 (OWNER 2026-08-27) says
+everything of that account's goes, and `docs/DATA_SAFETY.md` § 4 says nothing
+is removed without a written spec asking for it. `lingua.<id>.bkn` is the same
+question a second time, under 「この言語を削除で言語の制作のものは全部なくなる」
+(OWNER 2026-09-03). **It is with the owner** —
+`docs/scope/aud-data.md` § オーナーに訊くこと, Q1 to Q3.
 
 ## The index of languages, and what is actually in it
 
@@ -257,8 +258,8 @@ which one every global on the making side means.
 | `uid` | `netLangRow()`, `langSeenAdd()`, `bkTake()`, `langMigStamp()` | the ACCOUNT the language belongs to. 「違うアカウントでログインしてんのに前のやつ出てくるんだけど？」 OWNER 2026-08-31 — `LANGS` is the handset's index and survives signing out, so an entry with nothing saying whose it was became whoever signed in next. **An entry with no `uid` has never been through a door**, which is a real state: the onboarding makes a language before there is an account |
 | `mig` | `langMigrate()` (`www/core.js`), removed by `langMigStamp()` | the mark that this entry came out of the eight flat keys and is still waiting for an account to be stamped on it. `langMigrate()` runs while `core.js` is loading, before `SESS` is even declared, so there is nothing to stamp with at the moment it is made and `netRead()` does it eighteen lines later |
 
-**Five keys.** It said `{ name, mine }` and it said three; count them off the
-writers above and off `www/core.js`, not off a sentence here.
+**Count them off the writers above and off `www/core.js`, not off a number
+written here.**
 
 ## A language that is only read
 
@@ -577,9 +578,10 @@ settings still shared by whoever signs in on this handset. `recent_search`
 cascades off `profile` and so off `auth.users`, so `account_delete()` takes the
 rows; the phone's COPY is reached by nothing — `lsWipeAcct()` takes
 `lingua.me.*`, `lingua.posts.*` and `lingua.drafts.*` by uid and does not touch
-the settings key. That is the shared-settings entry in `docs/BACKLOG.md` — but
-a history is the most revealing thing in there, so it is named here rather than
-left to a list.
+the settings key. **Whether `recent` joins `SET_ACCT` is with the owner**
+(`docs/scope/aud-data.md` § オーナーに訊くこと, Q4). It is named here rather
+than left to a list because a history is the most revealing thing a settings
+key can hold.
 
 ## What money is allowed to touch
 
