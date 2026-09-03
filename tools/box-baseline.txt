@@ -13,6 +13,8 @@
 .btn.google | border
 .btn.plterm | border
 .btn.plterm | border-radius
+.btn.plbuy | border
+.btn.plbuy | border-radius
 .btn.signin | border-radius
 .capwarn | border
 .capwarn | border-radius

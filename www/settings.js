@@ -944,7 +944,7 @@ function vPlans(){
     '<div class="plgo">'+
       (storeSay()? '<div class="note">'+esc(storeSay())+'</div>' : '')+
       (plHave()? '' :
-        '<button class="btn plbuy"' + DO('plBuy') +
+        '<button class="btn plbuy'+(PLPICK? ' on' : '')+'"' + DO('plBuy') +
         (PLPICK? '' : ' disabled')+' style="width:100%">'+
         esc(t('plan.buy'))+'</button>')+'</div>'+
     '<div class="plfoot"><button class="btn ghost" style="width:100%"' +
