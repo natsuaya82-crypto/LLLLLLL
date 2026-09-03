@@ -97,6 +97,8 @@ const H3b= 'a0000000-0000-4000-8000-0000000000f6';  /* nothing, and newer than H
    what they write, so B tries every way to it that there is. */
 const SV = 'c0000000-0000-4000-8000-0000000000c1';  /* A\u2019s starred search */
 const SV2= 'c0000000-0000-4000-8000-0000000000c2';  /* the one B tries to plant */
+const RC = 'c0000000-0000-4000-8000-0000000000d1';  /* A’s search history */
+const RC2= 'c0000000-0000-4000-8000-0000000000d2';  /* the one B tries to plant */
 const LD = 'd0000000-0000-4000-8000-00000000000d';  /* the language it makes anyway */
 const LB = 'b0000000-0000-4000-8000-00000000000b';  /* and the frozen account's */
 
@@ -985,6 +987,43 @@ const CASES = [
   ['and an empty one is not a search',        'denied', A, 0,
     `insert into saved_search(author,q) values ('${A}','')`],
 
+  /* --- and what somebody merely TYPED, which is the weakest and the worst --
+     A star is a word a person chose to keep; a history is every word they
+     tried. It is the more revealing of the two and it is written without
+     anybody deciding to write it, so the read is the attempt that matters:
+     `using (true)` here would publish the list of names somebody has been
+     looking up, and nothing would throw.
+
+     Four attempts and then the two the table's own shape makes, exactly as
+     the star above -- they are separate tables and a policy proved on one
+     says nothing about the other. */
+  ['A searches for something',                'ok',     A, 0,
+    `insert into recent_search(id,author,q) values ('${RC}','${A}','kano')`],
+  ['and reads their own history',             'ok',     A, 0,
+    `select 1 from recent_search where id='${RC}'`],
+  ['B cannot read what A has typed',          'denied', B, 0,
+    `select 1 from recent_search where id='${RC}'`],
+  ['B cannot change it',                      'denied', B, 0,
+    `update recent_search set q='x' where id='${RC}'`],
+  ['B cannot delete it',                      'denied', B, 0,
+    `delete from recent_search where id='${RC}'`],
+  ['nor can somebody with no account read one', 'denied', D, 1,
+    `select 1 from recent_search where id='${RC}'`],
+  ['B cannot put a search onto A',            'denied', B, 0,
+    `insert into recent_search(id,author,q) values ('${RC2}','${A}','kano')`],
+  ['B searches for something of their own',   'ok',     B, 0,
+    `insert into recent_search(id,author,q) values ('${RC2}','${B}','tir')`],
+  ['nor hand it to A',                        'denied', B, 0,
+    `update recent_search set author='${A}' where id='${RC2}'`],
+  /* Typing the same words again is the SAME search moving to the top, not a
+     second line of it. Without this the list of five would fill with one
+     word. */
+  ['typing the same words twice is one row',  'denied', A, 0,
+    `insert into recent_search(author,q) values ('${A}','kano')`],
+  /* And an empty history row is not a search anybody made. */
+  ['and an empty one is not a search',        'denied', A, 0,
+    `insert into recent_search(author,q) values ('${A}','')`],
+
   /* --- a draft, which is the one thing here that is nobody else's ---------
      Every other table in this file is either already public or on its way to
      being public, and their select policies say so. `draft` is what somebody
@@ -1424,7 +1463,7 @@ const SHAPE = [
      named after. Asked of the catalog, where it holds whatever the read says. */
   ['what is nobody else\u2019s says so in all four policies', `
      select count(*) from (select 1 from (values
-       ('draft'),('saved_search')) t(tbl)
+       ('draft'),('saved_search'),('recent_search')) t(tbl)
        cross join (values ('SELECT'),('INSERT'),('UPDATE'),('DELETE')) v(cmd)
        where not exists (select 1 from pg_policies p
                           where p.tablename=t.tbl and p.cmd=v.cmd

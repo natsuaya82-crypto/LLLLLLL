@@ -1864,12 +1864,45 @@ function netStaffDrop(handle, ok, bad){
   netSend('POST', '/rest/v1/rpc/staff_drop', {h:netHandleOf(handle)},
           SESS.at, function(){ ok(); }, bad);
 }
+/* THE `@` A PERSON TYPES, AND IT HAS TWO SPELLINGS ON A PHONE.
+   -------------------------------------------------------------------------
+   `@` is how somebody says "this is a person" out loud. It is not part of
+   what a handle IS -- `profile.handle` in supabase/schema.sql is
+   `^[a-z0-9_]{2,24}$`, so no handle has ever held one -- and it comes off
+   before anything is asked of the server.
+
+   It used to ask whether the first character was U+0040, and that is the
+   wrong question rather than half of the right one. The `@` on a Japanese
+   keyboard is U+FF20, the full-width one, and it is what the owner types:
+   `＠aya` went out as `handle.ilike.*＠aya*`, which `^[a-z0-9_]{2,24}$` can
+   never match, so the answer was nobody -- on the same field, with the same
+   complaint, that the half-width one was fixed for on 2026-08-25.
+   「@で検索しても出てこない」 OWNER 2026-09-03.
+
+   Off the FRONT only. An `@` in the middle of what somebody typed is a
+   character they typed.
+
+   THIS IS THE ONE PLACE, and it is one because netHandleOf() below and
+   snsFind() in www/sns.js had each written the rule out for itself -- the
+   shape CLAUDE.md § One place, not fifteen is about, where a comment claims
+   to be the one place and a second copy is living somewhere else. Mending
+   only the copy here would have left the search still reading the front of a
+   query its own way. */
+function netAtOff(s){
+  return String(s||'').replace(/^[@＠]+/, '');
+}
 /* One place, because both of the above and the screen that lists them would
    each have written it out. A handle is lower case in the schema's own check
    constraint, so typing one with a capital in it is a person typing a name
-   rather than a person getting it wrong. */
+   rather than a person getting it wrong.
+
+   Lower case and no spaces are what a HANDLE is, which is a different
+   sentence from what the `@` is -- so they stay here and the `@` is
+   netAtOff()'s. The search is why the two are apart rather than one call:
+   netFindWho() matches `display` as well, and a display name is somebody's
+   spaces and somebody's capitals.  */
 function netHandleOf(s){
-  return String(s||'').replace(/^@+/, '').toLowerCase().replace(/\s+/g, '');
+  return netAtOff(s).toLowerCase().replace(/\s+/g, '');
 }
 /* Who answers the reports today. profile_read is `using (true)`, so this
    needs no policy of its own -- what it lists is public, and what it is FOR
@@ -2233,6 +2266,58 @@ function netSearchDrop(q, ok, bad){
   var w=String(q||'').replace(/^\s+|\s+$/g, '');
   if(!netSignedIn() || !w){ ok && ok(); return; }
   netSend('DELETE', '/rest/v1/saved_search?author=eq.'+
+          encodeURIComponent(SESS.uid)+'&q=eq.'+encodeURIComponent(w),
+          null, SESS.at, function(){ ok && ok(); }, bad || function(){});
+}
+/* ---- and what somebody merely typed -------------------------------------
+
+   「検索した履歴もユーザーはいらんから5個くらい検索履歴出るようにしたい」
+   「1件づつ消せるでいいよ」 OWNER 2026-09-03.
+
+   A DIFFERENT TABLE FROM THE STAR ABOVE, and the three functions here are a
+   different set from the three there on purpose. A star is a word somebody
+   CHOSE; a recent is a word they TYPED. `supabase/schema.sql` says why they
+   are never one row -- and the same sentence applies to the road: giving
+   `saved_search` a 「this one is history」 column would make one mechanism of
+   two things, and un-starring a word would take the history with it.
+
+   Ordered by `at` and not `created_at`, because typing the same words again
+   MOVES the row rather than making a second one. `at` is when it was last
+   searched for, which is the thing the list is in the order of. */
+function netRecent(ok, bad){
+  if(!netSignedIn()){ ok([]); return; }
+  netGet('/rest/v1/recent_search?select=id,q,at&order=at.desc'+
+         '&limit='+NET_PAGE,
+    function(d){
+      var out=[], i, r;
+      for(i=0;i<(d||[]).length;i++){
+        r=d[i]||{};
+        out.push({id:r.id||'', q:String(r.q||''), at:Date.parse(r.at)||0});
+      }
+      ok(out);
+    }, bad || function(){});
+}
+/* DROP AND THEN INSERT, which is how the same words typed again come back to
+   the top. `unique (author, q)` refuses a second row, so an insert alone
+   would fail and the word would keep whatever place it had -- and a PATCH
+   alone would do nothing at all for a word that is not there yet. One road
+   answers both, and the drop of a row that does not exist is a no-op rather
+   than an error.
+
+   The words are the name of the row, exactly as the star's are, so nothing
+   here has to ask what an id was first. */
+function netRecentAdd(q, ok, bad){
+  var w=String(q||'').replace(/^\s+|\s+$/g, '');
+  if(!netSignedIn() || !w){ ok && ok(); return; }
+  netRecentDrop(w, function(){
+    netSend('POST', '/rest/v1/recent_search', {author:SESS.uid, q:w}, SESS.at,
+            function(){ ok && ok(); }, bad || function(){});
+  }, bad || function(){});
+}
+function netRecentDrop(q, ok, bad){
+  var w=String(q||'').replace(/^\s+|\s+$/g, '');
+  if(!netSignedIn() || !w){ ok && ok(); return; }
+  netSend('DELETE', '/rest/v1/recent_search?author=eq.'+
           encodeURIComponent(SESS.uid)+'&q=eq.'+encodeURIComponent(w),
           null, SESS.at, function(){ ok && ok(); }, bad || function(){});
 }

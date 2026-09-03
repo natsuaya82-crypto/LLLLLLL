@@ -420,6 +420,38 @@ create table if not exists saved_search (
 create index if not exists saved_search_author_idx
   on saved_search(author, created_at desc);
 
+-- WHAT SOMEBODY TYPED, as against what they starred.
+--
+-- 「検索した履歴もユーザーはいらんから5個くらい検索履歴出るようにしたい」
+-- 「1件づつ消せるでいいよ」 OWNER 2026-09-03.
+--
+-- A TABLE OF ITS OWN AND NOT A COLUMN ON `saved_search`, and the reason is
+-- that they are two different things a person did. A star is a word somebody
+-- CHOSE to keep; a recent is a word they merely TYPED. Marking one row
+-- 「this is a star, this is a history」 makes them one mechanism, and the
+-- first thing that breaks is un-starring a word taking the history with it --
+-- or the history's own five-item ceiling quietly deleting somebody's star.
+-- They are never the same row.
+--
+-- `unique (author, q)` so typing the same words again is the SAME search
+-- rather than a second line of it. What moves is `at`, which is why that
+-- column is `at` and not `created_at`: it is when this was last searched
+-- for, and it is what the list is ordered by.
+--
+-- Five is the whole of what this feature IS -- 「直近5件」 -- so the sixth
+-- pushing the oldest off is the decision rather than a cleanup invented here.
+-- The PHONE drops the one that fell off, by its words, the way it drops a
+-- star. Nothing in this file deletes on its own and there is no trigger.
+create table if not exists recent_search (
+  id     uuid primary key default gen_random_uuid(),
+  author uuid not null references profile(id) on delete cascade,
+  q      text not null check (q <> '' and length(q) <= 200),
+  at     timestamptz not null default now(),
+  unique (author, q)
+);
+create index if not exists recent_search_author_idx
+  on recent_search(author, at desc);
+
 -- WHAT THIS ACCOUNT HAS PAID FOR.
 --
 -- 「課金とアカウントとキーボードはアカウントに結びつく。
@@ -598,6 +630,7 @@ alter table block       enable row level security;
 alter table report      enable row level security;
 alter table draft       enable row level security;
 alter table saved_search enable row level security;
+alter table recent_search enable row level security;
 alter table plan        enable row level security;
 
 -- One question, and until 2026-08-26 there were two.
@@ -1041,6 +1074,21 @@ create policy saved_edit on saved_search for update using (is_member() and autho
                                                   with check (author = auth.uid());
 drop policy if exists saved_drop on saved_search;
 create policy saved_drop on saved_search for delete using (is_member() and author = auth.uid());
+
+-- recent_search: the same four sentences, and the read is the one that
+-- matters. What somebody has been LOOKING FOR is not what they published --
+-- `profile_read` is `using (true)` and this must never be, or a history is a
+-- list of every name a person typed, readable by anybody holding the
+-- publishable key. Nothing would throw and every screen would be right.
+drop policy if exists recent_read on recent_search;
+create policy recent_read on recent_search for select using (is_member() and author = auth.uid());
+drop policy if exists recent_make on recent_search;
+create policy recent_make on recent_search for insert with check (is_member() and author = auth.uid());
+drop policy if exists recent_edit on recent_search;
+create policy recent_edit on recent_search for update using (is_member() and author = auth.uid())
+                                                   with check (author = auth.uid());
+drop policy if exists recent_drop on recent_search;
+create policy recent_drop on recent_search for delete using (is_member() and author = auth.uid());
 
 -- plan: yours to read, yours to write, and nobody else's to do either.
 --

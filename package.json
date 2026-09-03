@@ -41,6 +41,7 @@
     "dl": "node tools/dl-check.mjs",
     "again": "node tools/again-check.mjs",
     "page": "node tools/page-check.mjs",
+    "find": "node tools/find-check.mjs",
     "open": "node tools/open-check.mjs",
     "store": "node tools/store-check.mjs"
   },
