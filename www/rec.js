@@ -146,8 +146,28 @@ function voTick(){
   if(e) e.innerHTML=esc(voLen(voRecMs()));
 }
 function voRecMs(){ return RECAT? ((new Date()).getTime()-RECAT) : 0; }
-/* What came back. It is held in memory, as text, until the post is sent --
-   nothing is written to the disk by a composer somebody may still close. */
+/* What came back, WRITTEN TO THE DISK HERE and named from here on.
+   -------------------------------------------------------------------------
+   「声は Documents のファイル、`localStorage` には入れない」 ── the decision
+   of 2026-08-30, and it was broken by the drafts. This used to hold the
+   recording in memory as base64 until the post was SENT, which is right for a
+   post and wrong for the other road out of the composer: draftKeep() wrote
+   `PW.vo` straight into `lingua.drafts`, so thirty seconds of audio went into
+   localStorage and up to the server inside the draft's body. draftsSave()
+   swallows its exception, so a phone that hit the storage limit stopped
+   saving drafts SILENTLY -- somebody writes, presses keep, and the draft is
+   not there.
+
+   So the file is written the moment the recording ends, and `PW.vo` is
+   `{f, ms}` from then on -- the same thing a post carries and the same thing
+   a draft carries. There is one road for a voice now instead of two, and no
+   base64 is held anywhere after this function returns. pwSend() no longer
+   writes a file (there is nothing left to write) and voPlayPW() is gone --
+   the composer plays with voPlay(), which is what plays every other voice.
+
+   A write that fails says so HERE rather than at the send. Nothing is kept:
+   a recording that is not on the disk is not a recording, and 「保存した
+   つもり」 is the fault this whole change is about. */
 function voTook(mime){
   var bits=RECBITS, ms=Math.min(voRecMs(), VO_MS), b, r;
   RECBITS=null; RECAT=0;
@@ -159,16 +179,22 @@ function voTook(mime){
   r=new FileReader();
   r.onload=function(){
     var s=String(r.result||''), i=s.indexOf(',');
-    PW.vo={b64:(i>=0? s.slice(i+1) : ''), mime:mime||'audio/mp4', ms:ms};
-    openPost();
+    voKeep({b64:(i>=0? s.slice(i+1) : ''), mime:mime||'audio/mp4', ms:ms},
+      function(vo){
+        if(!vo){ toast(t('post.vo.lost')); voPaint(); return; }
+        PW.vo=vo;
+        openPost();
+      });
   };
   r.onerror=function(){ toast(t('post.vo.bad')); };
   r.readAsDataURL(b);
 }
-/* Taking it off the post being written. Nothing is on the disk yet, so this
-   removes a recording and never a file. */
+/* Taking it off the post being written, and the file goes with it. It is
+   written the moment it is recorded now, so this removes both or the disk
+   fills up with recordings nobody kept. */
 function voDrop(){
   voPlayOff();
+  if(PW && PW.vo && PW.vo.f) voDropFile(PW.vo.f);
   if(PW) delete PW.vo;
   openPost();
 }
@@ -193,7 +219,7 @@ function pwVoRowHTML(){
       '<span class="vot" id="pw-vo-t">'+esc(voLen(voRecMs()))+'</span></button>';
   }
   if(PW && PW.vo){
-    return '<button class="pwab"' + DO('voPlayPW') + ' aria-label="'+
+    return '<button class="pwab"' + DO('voPlay', [String(PW.vo.f||'')]) + ' aria-label="'+
         esc(t('post.vo.play'))+'">'+ICON_SPK+
         '<span class="vot">'+esc(voLen(PW.vo.ms))+'</span></button>'+
       '<button class="pwvox"' + DO('voDrop') + ' aria-label="'+
@@ -284,19 +310,6 @@ function voPlay(f){
     voPaintRows();
     try{ a.play(); }catch(e){ voPlayOff(); }
   });
-}
-/* The one being written, which is not on the disk yet and is played out of
-   what is in hand. */
-function voPlayPW(){
-  var vo=PW && PW.vo, a;
-  if(!vo || !vo.b64) return;
-  if(VOAT==='pw'){ voPlayOff(); return; }
-  a=voAudio();
-  a.src='data:'+(vo.mime||'audio/mp4')+';base64,'+vo.b64;
-  a.onended=function(){ voPlayOff(); };
-  VOAT='pw';
-  voPaintRows();
-  try{ a.play(); }catch(e){ voPlayOff(); }
 }
 /* Which button says "playing" is a thing about the screen and not about any
    post, so a rebuild of the whole timeline for it would be the wrong size of

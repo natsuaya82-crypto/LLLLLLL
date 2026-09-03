@@ -175,7 +175,7 @@ function setSummary(id, p){
   if(id==='look')  return t('theme.'+(SET.theme||'system'));
   if(id==='ui')    return LANG[uiLang()].label;
   if(id==='lang')  return langName||'—';
-  if(id==='acct')  return t(netMember()? 'set.account.on' : 'set.account.guest');
+  if(id==='acct')  return t(netSignedIn()? 'set.account.on' : 'set.account.guest');
   if(id==='data')  return can('data')? 'CSV' : 'Free';
   return '';
 }
@@ -262,7 +262,7 @@ function vSet(){
   } else if(id==='acct'){
     /* Signed in or not, and the way in or out. It said "guest" and offered two
        buttons that did nothing whatever the answer was. */
-    body=(netMember()
+    body=(netSignedIn()
       ? setWhoRow()+
         /* Only an account that HAS a password. Apple and Google keep theirs;
            there is nothing on our side to change, and a row that opened a
@@ -421,11 +421,9 @@ function setUi(l){ SET.ui=l; save(); render(); }
                            recoverable FROM, and whether they should go is
                            not something the owner has said
 
-   So the keys are NAMED rather than counted -- the opposite of lsWipeNS(),
-   deliberately, and it is the one place in this file where naming them is
-   right. lsWipeNS() counts because "everything under lingua." is what it
-   means, and a key added tomorrow belongs in it. Here a key added tomorrow
-   belongs in it only if it is a LANGUAGE's, and the list of what a language
+   So the keys are NAMED rather than counted, deliberately. A key added
+   tomorrow belongs in this list only if it is a LANGUAGE's, and the list of
+   what a language
    is made of already exists and is already kept in step: SLICES, which
    bkPack() walks to write a backup. A count here would take the drafts and
    the timeline's copy with it on the day somebody adds a key, silently.
@@ -439,24 +437,63 @@ function setUi(l){ SET.ui=l; save(); render(); }
    id. langFirst() mints a new one for the same reason wipeHere() does --
    with the old id kept, ltStart() rebuilds twenty-eight letters under it and
    the language is back. */
+/* THIS LANGUAGE, AND EVERYTHING MADE IN IT.
+   「この言語を削除で言語の制作のものは全部なくなるってずっと言ってんだろ」
+   OWNER 2026-09-03. The middle of the three rows the owner has asked for and
+   the only three there are: sign out, delete this language, delete the
+   account.
+
+   IT USED TO BE 「端末のデータを消す」 AND TOOK EVERY LANGUAGE ON THE PHONE,
+   whoever they belonged to. Nobody asked for that row: 2026-08-26 had already
+   made the deleting rows ONE 「アカウント消したら全部消えるに決まってる」, and
+   `79a8f12` put a second one back two days later, reading an owner's sentence
+   about what account deletion takes as an instruction to build a row. It ran
+   for a week with no permission and nothing holding it, and it is the same
+   shape that destroyed the owner's language on 2026-09-03: one account
+   pressing something and another account's work going.
+
+   One language. The open one -- this room is the open language's, which is
+   where its name is changed two rows up. The DELETE REVIEW is in
+   docs/CHANGELOG.md and names every key. */
 function wipeLangs(){
+  /* Nothing to press in a language this phone is only reading. langLocked()
+     is the same question the save on every other screen asks. */
+  if(langLocked()) return;
   /* 確認は自前のポップで。「標準は使わねえって言ってるだろこれも禁止や」
-     OWNER 2026-09-01 -- confirm() は使わない。はいの側がこの下。 */
-  popAsk(t('confirm.wipe.langs'), function(){ wipeLangsGo(); }, t('pop.yes'));
+     OWNER 2026-09-01 -- confirm() は使わない。はいの側がこの下。
+     The name is in the sentence: 「この言語」 with no name is a question
+     somebody answers about whichever one they think they are in. */
+  popAsk(t('confirm.wipe.langs', langName||t('lang.untitled')),
+         function(){ wipeLangsGo(); }, t('pop.yes'));
 }
 function wipeLangsGo(){
-  var ids=[], id, i, j;
-  for(id in LANGS) if(Object.prototype.hasOwnProperty.call(LANGS, id)) ids.push(id);
+  var id=langId, j;
+  if(!id || langLocked()) return;
+  /* THE SERVER FIRST AND NOT WAITED ON. A language lives there; the phone
+     holds the copy. Its answer changes nothing here -- the language is going
+     off this phone either way, and a row left behind on a bad network is
+     picked up by nothing (netLangsDown fills in what is MISSING, and this id
+     will not be in the index to be filled). Asking after the local keys were
+     gone would be asking about a language this phone can no longer name. */
+  netLangDrop(id);
   try{
-    for(i=0;i<ids.length;i++)
-      for(j=0;j<SLICES.length;j++)
-        localStorage.removeItem(langKeyOf(ids[i], SLICES[j]));
-    /* and the index of them. lingua.cur is left where it is: langFirst()
-       below writes it, so removing it here would be the same key twice. */
-    localStorage.removeItem(LS_LANGS);
+    for(j=0;j<SLICES.length;j++) localStorage.removeItem(langKeyOf(id, SLICES[j]));
   }catch(e){}
-  LANGS={}; langId='';
-  langFirst();
+  /* Its row, and nothing else's. langStore() writes the index back out. */
+  delete LANGS[id];
+  langId='';
+  langStore();
+  /* AND THE BACKUP OF THAT ONE. bkDropFor() takes a list of ids and works out
+     each file's name by standing it in front of langId -- so it is called
+     while the row still says what the language was called. It is above the
+     delete for that reason and nowhere else. */
+  bkDropFor([id]);
+  /* Where you are standing now. langForAcct(true) is the one place that
+     answers 「which language is this account's to be in」 -- it opens one they
+     already have, and mints one stamped with them when they have none. A
+     phone that has just deleted its only language gets a new empty one, which
+     is what a first run is. */
+  langForAcct(true);
   /* Every global a language owns, put back to what an empty one looks like.
      This is langOpen()'s own line less migratePostInk(), which cuts ink onto
      posts out of the alphabet they were written in -- there is no alphabet
@@ -467,27 +504,12 @@ function wipeLangsGo(){
   var css=document.getElementById('sfontcss');
   if(css && css.parentNode) css.parentNode.removeChild(css);
   save(); saveLetters(); saveNotes(); saveStg(); saveSnd();
-  /* And the backup files, which are the languages on this phone too --
-     「全部消えるって」OWNER 2026-08-28. The languages ALONE: bkDropKept() and
-     not bkDropAll(), because the recordings and the exported sheets sit in
-     Documents beside them and nobody has said those go when somebody tidies
-     this phone's languages. Which native call that is is backup.js's to know
-     and not this file's.
-
-     Last, and after the saves above rather than before them, which is the
-     reason written over the same call in wipeAll(): a save marks the language
-     dirty and the next render writes a fresh backup out, so dropping the
-     files first would leave one behind.
-
-     What this costs is written down in docs/CHANGELOG.md and is not softened
-     here: the backup was one of the two ways back, and now there is one. */
-  bkDropKept();
   /* and where you were standing was in a language that is not there.
      langOpen()'s own two lines: the last one leaves you on the cover of the
-     empty language, which is the only way this row can be seen to have done
-     anything -- rendering the settings room again draws a screen that looks
-     exactly as it did before it was pressed. GE goes with them: the glyph
-     editor holds one letter, and that letter is not there either. */
+     language you are in now, which is the only way this row can be seen to
+     have done anything -- rendering the settings room again draws a screen
+     that looks exactly as it did before it was pressed. GE goes with them:
+     the glyph editor holds one letter, and that letter is not there either. */
   GE=null;
   viewReset();
   goTab('profile');
@@ -528,7 +550,8 @@ function wipeHere(uid){
      the drafts, the posts, the person's name and face, the index of languages
      and the eight flat keys from before there could be more than one all sat
      through it. Every one of them was the same bug: a list of keys, written by
-     hand, that nobody remembered to add to. lsWipeNS() in core.js has no list.
+     hand, that nobody remembered to add to. lsWipeAcct() in core.js counts the
+     namespace instead, and takes only what carries this account's stamp.
 
      Then a first run, out of the same functions a first run uses. langFirst()
      mints a NEW id, so not one key of the language that was here can be

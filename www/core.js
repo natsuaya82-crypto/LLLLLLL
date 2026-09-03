@@ -90,31 +90,14 @@ function lsWipeAcct(uid){
   langStore();
   return ids;
 }
-function lsWipeNS(){
-  var doomed=[], i, k;
-  try{
-    for(i=0;i<localStorage.length;i++){
-      k=localStorage.key(i);
-      if(k && k.indexOf('lingua.')===0) doomed.push(k);
-    }
-    for(i=0;i<doomed.length;i++) localStorage.removeItem(doomed[i]);
-  }catch(e){}
-  return doomed.length;
-}
-/* 「言語を消すでも言語系は全部消す」OWNER 2026-08-27 describes a DIFFERENT act,
-   and there is nothing here to hold it: **this app has no way to delete one
-   language.** vLangs() (www/home.js) lists them and adds one; no screen
-   removes one, and nothing anywhere calls for it. A function written for it
-   today would be a function nothing reaches. When that button is built it
-   walks SLICES for one id via langKeyOf() -- and it is not lsWipeNS(), which
-   is the whole namespace and belongs to the account going, not a language.
+/* The slices a language is filed under. One list, because reading a language,
+   writing one out, and DELETING one all have to name every slice.
 
-   The eleven slices a language is filed under. One list, because reading a
-   language and writing one out both have to name every slice.
-
-   It used to empty one too. That is `langWipe()` above now, and the whole of
-   what a wipe of the WHOLE app is is `lsWipeNS()` -- being in this list has
-   nothing to do with being deleted any more, only with being backed up.
+   「この言語を削除で言語の制作のものは全部なくなる」 OWNER 2026-09-03 --
+   wipeLangsGo() in www/settings.js walks this list for one id through
+   langKeyOf(), and a slice that is not in it is a slice that survives a
+   delete the person was told took everything. It is the same list bkPack()
+   walks, so a slice missing here is missing from the backup too.
 
    Two were missing from it and had been for as long as they existed, which
    is the whole reason the list is a list. The KEYBOARD is the language's --

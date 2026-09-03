@@ -36,7 +36,7 @@
    So "signed in" is two questions here and they are not the same one:
 
      netSignedIn()   there is a session. Anonymous counts.
-     netMember()     the session has somebody's name on it.
+     netSignedIn()     the session has somebody's name on it.
 
    The second is this phone's copy of is_member() in supabase/schema.sql,
    which has refused an anonymous token since the day it was written -- so
@@ -136,14 +136,6 @@ function netClaims(at){
   try{ c=JSON.parse(atob(p)); }catch(e){ return null; }
   return (c && typeof c==='object')? c : null;
 }
-function netAnonTok(at){
-  var c=netClaims(at);
-  return !!(c && c.is_anonymous);
-}
-/* A session with somebody's name on it. Everything other people would see
-   asks this and not netSignedIn(): a post, a like, a boost, a follow, a
-   block, a report. */
-function netMember(){ return !!(SESS && SESS.rt && !SESS.anon); }
 /* Which of the three doors somebody came in by, and the address they came in
    with. Both are on the token, which is the only place they are: nothing in
    `profile` holds an address, on purpose -- profile is what other people see
@@ -380,7 +372,7 @@ function netTook(d){
             already stored when this key arrived has no `anon` on it at all,
             which reads as false -- correct, because every account that
             existed before anonymous sign-in did was a real one. */
-         anon:netAnonTok(d.access_token) };
+         anon:false };
   netSave();
   /* And who the phone belongs to now. lingua.me is a separate key from
      lingua.sess and used to survive this entirely, so the account that
@@ -441,17 +433,18 @@ function netTook(d){
    that used to ask has_account() ask is_member() now, so a session with no
    name on it is refused by the server whatever this file does.
 
-   netAnonTok() below and SESS.anon stay, and netSignedIn() and netMember()
-   stay two functions. Not for anybody's sake -- there is nobody: the app has
-   never been released, so there is no phone anywhere holding an anonymous
-   session. 「リリースしてないんだからアカウンとないでしょ」 -- OWNER 2026-08-26.
+   AND THE TWO QUESTIONS ARE ONE NOW. 「二種類になる意味も分からないけど」 --
+   the decision said 「一本になる」 and the phone kept two: netSignedIn() and a
+   netMember() that also asked whether the token was anonymous. With no
+   anonymous accounts the second half could never be true, so it was a true
+   question with nothing left to answer it yes, asked in twenty-eight places.
 
-   They stay because collapsing them is a rename, and it is a rename across
-   sns.js, post.js, settings.js and me.js, which this session does not own. A
-   rename does not ride along with a feature (CLAUDE.md); it is its own task,
-   and it is in the report as one. The claim itself is still real on the
-   server -- is_member() in schema.sql reads is_anonymous off the token -- so
-   what is here is a true question with nothing left to answer it yes. */
+   netMember() and netAnonTok() are deleted and every caller asks
+   netSignedIn(). `SESS.anon` is written `false` and read by nothing here --
+   it stays in the stored session because a phone holding one from before
+   today would otherwise come back with a field missing, and because the
+   server is still what decides: is_member() in supabase/schema.sql reads
+   `is_anonymous` off the token, whatever this file believes. */
 function netOut(){
   SESS=null; netSave();
   /* Signed out is nobody's phone, so the name comes off the screen the same
@@ -602,7 +595,7 @@ function netHandleFree(h, ok, bad){
    yet update it. That is docs/BACKLOG.md's, not a silent gap -- a notice with
    no face draws no face and nothing throws. */
 function netMakeProfile(h, name, ok, bad){
-  if(!netMember()){ bad(null, 0, 'mkprofile −'); return; }
+  if(!netSignedIn()){ bad(null, 0, 'mkprofile −'); return; }
   var av=postAvatar();
   netPost('/rest/v1/profile',
           {id:SESS.uid, handle:h, display:name, av:av,
@@ -666,7 +659,7 @@ function netMakeProfile(h, name, ok, bad){
 
    Fired and not waited for. Nothing on screen depends on it. */
 function netBioSync(){
-  if(!netMember() || !SESS || !SESS.uid) return;
+  if(!netSignedIn() || !SESS || !SESS.uid) return;
   netGet('/rest/v1/profile?select=bio&limit=1&id=eq.'+encodeURIComponent(SESS.uid),
     function(d){
       var there=(d && d.length)? String((d[0] && d[0].bio) || '') : '',
@@ -682,7 +675,7 @@ function netBioSync(){
     }, function(){});
 }
 function netAvSync(){
-  if(!netMember() || !SESS || !SESS.uid) return;
+  if(!netSignedIn() || !SESS || !SESS.uid) return;
   var av=postAvatar(), now=JSON.stringify(av||null);
   if(now===ME.avSent) return;
   netSend('PATCH', '/rest/v1/profile?id=eq.'+encodeURIComponent(SESS.uid),
@@ -968,6 +961,36 @@ function netLangRow(id, ok, bad){
       L.sid=sid; L.uid=me; langStore();
       ok(sid);
     }, bad);
+}
+/* AND THE ONE THING THAT TAKES A LANGUAGE OFF THE SERVER.
+   -------------------------------------------------------------------------
+   「この言語を削除で言語の制作のものは全部なくなるってずっと言ってんだろ」
+   OWNER 2026-09-03.
+
+   A language LIVES on the server (CLAUDE.md § Online). Deleting only the copy
+   on the phone is not deleting it: the next netLangsDown() brings it back,
+   and 「gone, then back」 is not gone.
+
+   `language_drop` in supabase/schema.sql is `owner = auth.uid()`, so a
+   language somebody else wrote cannot be reached from here whatever this
+   phone sends. The slices go with it -- every table naming `language` says
+   `on delete cascade` -- so this one row is the whole of it.
+
+   A language that has never been up has no `sid`, and there is nothing on the
+   server to take away: that is `ok()` and not a failure. The caller has
+   already removed the phone's copy either way, which is the order that
+   matters -- a delete that stops halfway must not leave the language showing.
+
+   The name is not read and the row is not looked up first. Which language is
+   going was decided by the person pressing; asking the server to confirm it
+   would be a second answer to a question that has one. */
+function netLangDrop(id, ok, bad){
+  var L=LANGS[String(id||'')], sid;
+  ok=ok||function(){}; bad=bad||function(){};
+  sid=(L && L.sid)? String(L.sid) : '';
+  if(!netSignedIn() || !sid){ ok(); return; }
+  netSend('DELETE', '/rest/v1/language?id=eq.'+encodeURIComponent(sid),
+          null, SESS.at, function(){ ok(); }, bad);
 }
 /* WHETHER THIS LANGUAGE'S PAGE MAY BE READ BY ANYBODY ELSE.
    -------------------------------------------------------------------------
@@ -1707,7 +1730,7 @@ function netFollowers(ok, bad, handle){
    By handle, because a handle is what one person knows another by; the uuid
    is looked up here exactly as netFollow() does. */
 function netBlock(handle, on, ok, bad){
-  if(!netMember() || !handle){ ok(); return; }
+  if(!netSignedIn() || !handle){ ok(); return; }
   netGet('/rest/v1/profile?select=id&limit=1&handle=eq.'+encodeURIComponent(handle),
     function(d){
       var who=(d && d.length)? d[0].id : '';
@@ -1743,7 +1766,7 @@ function netBlocked(ok){
    refused by the check constraint, which is the right way round: the list of
    reasons is the server's. */
 function netReport(what, why, note, ok, bad){
-  if(!netMember()){ bad(null, 0); return; }
+  if(!netSignedIn()){ bad(null, 0); return; }
   var row={actor:SESS.uid, why:String(why||'other')};
   if(note) row.note=String(note);
   if(what && what.post){ row.post=what.post; }
@@ -2187,7 +2210,7 @@ function netFindPosts(q, ok, bad, more){
    and not an id. The phone has the words in its hand; asking what their id
    was first would be a request to find out something it already knows. */
 function netSearchSaved(ok, bad){
-  if(!netMember()){ ok([]); return; }
+  if(!netSignedIn()){ ok([]); return; }
   netGet('/rest/v1/saved_search?select=id,q,created_at&order=created_at.desc'+
          '&limit='+NET_PAGE,
     function(d){
@@ -2202,13 +2225,13 @@ function netSearchSaved(ok, bad){
 }
 function netSearchSave(q, ok, bad){
   var w=String(q||'').replace(/^\s+|\s+$/g, '');
-  if(!netMember() || !w){ ok && ok(); return; }
+  if(!netSignedIn() || !w){ ok && ok(); return; }
   netSend('POST', '/rest/v1/saved_search', {author:SESS.uid, q:w}, SESS.at,
           function(){ ok && ok(); }, bad || function(){});
 }
 function netSearchDrop(q, ok, bad){
   var w=String(q||'').replace(/^\s+|\s+$/g, '');
-  if(!netMember() || !w){ ok && ok(); return; }
+  if(!netSignedIn() || !w){ ok && ok(); return; }
   netSend('DELETE', '/rest/v1/saved_search?author=eq.'+
           encodeURIComponent(SESS.uid)+'&q=eq.'+encodeURIComponent(w),
           null, SESS.at, function(){ ok && ok(); }, bad || function(){});
@@ -2381,7 +2404,7 @@ function netBytes(b64){
    rather than as a picture. */
 function netUp(path, b64, mime, ok, bad){
   var x, a=netBytes(b64);
-  if(!netMember() || !a){ bad(null, 0); return; }
+  if(!netSignedIn() || !a){ bad(null, 0); return; }
   x=new XMLHttpRequest();
   x.open('POST', SB_URL+'/storage/v1/object/post-media/'+path, true);
   x.setRequestHeader('apikey', SB_KEY);
@@ -2478,7 +2501,7 @@ function netDay(ok){
 }
 function netPush(post, ok, bad){
   var row, pid, up;
-  if(!netMember() || !post){ bad(null, 0); return; }
+  if(!netSignedIn() || !post){ bad(null, 0); return; }
   pid=netUUID();
   row={id:pid, author:SESS.uid, body:netBody(post)};
   /* Which day's sentence this answers, if it answers one. It is a column and
@@ -2547,7 +2570,7 @@ function netUpVoice(uid, pid, post, ok){
    The id is the phone's -- netUUID(), the way netPush() names a post -- so a
    draft written with no signal already has the name it will go up under. */
 function netDraftUp(d, ok, bad){
-  if(!netMember() || !d || !d.id){ bad && bad(null, 0); return; }
+  if(!netSignedIn() || !d || !d.id){ bad && bad(null, 0); return; }
   var row={id:d.id, author:SESS.uid, body:netDraftBody(d)};
   /* The update first and the insert only if it matched nothing. The other
      order is an insert that fails on the primary key every time after the
@@ -2574,7 +2597,7 @@ function netDraftBody(d){
    app asks for and not what makes it safe -- the server would hand over
    nothing else if this asked for everything. */
 function netDrafts(ok, bad){
-  if(!netMember()){ bad && bad(null, 0); return; }
+  if(!netSignedIn()){ bad && bad(null, 0); return; }
   netGet('/rest/v1/draft?select=id,body,updated_at&order=updated_at.desc',
          function(d){ ok(d || []); }, bad || function(){});
 }
@@ -2583,7 +2606,7 @@ function netDrafts(ok, bad){
    post is up, never before: a delete that ran first would be somebody's
    writing gone on the day the post itself would not go. */
 function netDraftDrop(id, ok, bad){
-  if(!netMember() || !id){ bad && bad(null, 0); return; }
+  if(!netSignedIn() || !id){ bad && bad(null, 0); return; }
   netSend('DELETE', '/rest/v1/draft?id=eq.'+encodeURIComponent(id), null,
           SESS.at, function(){ ok && ok(); }, bad || function(){});
 }
@@ -2596,7 +2619,7 @@ function netDraftDrop(id, ok, bad){
    never heard of it, and that is not an error worth showing anybody. */
 function netMark(id, kind, on, ok, bad){
   var p=postById(id), sid=p && p.sid;
-  if(!netMember() || !sid || (kind!=='like' && kind!=='boost')){ ok(); return; }
+  if(!netSignedIn() || !sid || (kind!=='like' && kind!=='boost')){ ok(); return; }
   if(on){
     netSend('POST', '/rest/v1/react', {post:sid, actor:SESS.uid, kind:kind},
             SESS.at, function(){ ok(); }, bad);
@@ -2623,7 +2646,7 @@ function netMark(id, kind, on, ok, bad){
    same branch as "I cannot find this post". */
 function netDrop(p, ok, bad){
   var sid=p && p.sid;
-  if(!netMember() || !sid){ ok(); return; }
+  if(!netSignedIn() || !sid){ ok(); return; }
   netDropFiles(p, function(){
     netSend('DELETE', '/rest/v1/post?id=eq.'+encodeURIComponent(sid),
             null, SESS.at, function(){ ok(); }, bad);
@@ -2719,7 +2742,7 @@ function netEndMe(ok, bad){
    A handle and not an id, because a handle is what one person knows another
    by. The id is looked up here, once, in the one place that has to. */
 function netFollow(handle, on, ok, bad){
-  if(!netMember() || !handle){ ok(); return; }
+  if(!netSignedIn() || !handle){ ok(); return; }
   netGet('/rest/v1/profile?select=id&limit=1&handle=eq.'+encodeURIComponent(handle),
     function(d){
       var who=(d && d.length)? d[0].id : '';

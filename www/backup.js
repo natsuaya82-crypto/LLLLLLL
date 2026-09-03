@@ -324,22 +324,22 @@ function bkTakeGen(gens){
    make that button a lie, because they are the copy that survives the app
    itself.
 
-   `dropSome` and not `dropAll`, and that is 2026-09-03. `dropAll` empties the
-   whole directory, so deleting a second account carried off the FIRST
-   account's backups -- the only copy of a language that had never gone up.
-   This names the languages going and takes their generations and nothing
-   else. 「別アカウントでログインしてそれのアカウント削除したら、俺の元の
-   アカウントが消えてんだよ」
+   IT NAMES THE LANGUAGES GOING, and that is 2026-09-03. There used to be a
+   call that emptied the whole directory, so deleting a second account carried
+   off the FIRST account's backups -- the only copy of a language that had
+   never gone up. 「別アカウントでログインしてそれのアカウント削除したら、俺の
+   元のアカウントが消えてんだよ」 It is deleted, on this side and in Swift, so
+   there is no longer anything here that can be asked for 「all of them」.
 
    **AND THE RECORDINGS AND THE EXPORTED SHEETS ARE NO LONGER TAKEN, WHICH IS
-   A GAP AND IS WRITTEN DOWN RATHER THAN LEFT.** `dropAll` emptied those two
-   folders too, and 「アカウント削除で残るものねえ」 OWNER 2026-08-27 covers
-   them: a recording still there is that sentence being untrue somewhere the
-   person can look. They carry no account and no language in their names, so
-   there is no way from here to take one account's and leave another's --
-   and taking all of them is the fault above wearing a different folder.
-   Not taking them leaves files a person can delete in the Files app; taking
-   them destroys somebody else's. docs/BACKLOG.md holds it.
+   A GAP AND IS WRITTEN DOWN RATHER THAN LEFT.** The call that went carried
+   those two folders too, and 「アカウント削除で残るものねえ」 OWNER 2026-08-27
+   covers them: a recording still there is that sentence being untrue
+   somewhere the person can look. They carry no account and no language in
+   their names, so there is no way from here to take one account's and leave
+   another's -- and taking all of them is the fault above wearing a different
+   folder. Not taking them leaves files a person can delete in the Files app;
+   taking them destroys somebody else's. docs/BACKLOG.md holds it.
 
    No native side means nothing to remove, which is a browser and every check
    under tools/. */
@@ -363,29 +363,6 @@ function bkDropFor(ids, then){
   }
   langId=was; langName=wasNm;
   p('LinguaShare', 'dropSome', {names:names})
-    .then(function(){ if(then) then(); })
-    ['catch'](function(){ if(then) then(); });
-}
-/* The language backups alone, and nothing else in Documents.
-   「全部消えるって」OWNER 2026-08-28 -- said about 「端末のデータを消す」, which
-   is the languages on this phone. The backup files are the languages on this
-   phone: they are the copy that outlives the app, they sit where the Files app
-   shows them, and leaving them there is that row being untrue somewhere a
-   person can look.
-
-   `dropKept` and not `dropSome`: this one is every backup on the phone at
-   once, which is what 「バックアップを全部消す」 asks for, where the one above
-   takes the generations of named languages. `dropKept` is the Swift side's own
-   line: `.json` under Languages/, generations included, and it does not touch
-   Documents itself.
-
-   Two callers now, and they are the two rows that take something away. Neither
-   of them knows which native call it is making -- that sentence is written
-   once, here, twice. */
-function bkDropKept(then){
-  var p=sharePlug();
-  if(!p){ if(then) then(); return; }
-  p('LinguaShare', 'dropKept', {})
     .then(function(){ if(then) then(); })
     ['catch'](function(){ if(then) then(); });
 }
