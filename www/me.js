@@ -812,7 +812,14 @@ function whoCard(h){
        apart in the data, and a profile has to print SOMETHING under the word
        Followers. A person who arrived on a post rather than from netWho()
        carries neither and reads zero until the answer lands.
-       Not pressable: the two lists behind your own are yours. */
+       AND THEY ARE PRESSABLE. 「フォロワーとかタップしても見れないし」
+       OWNER 2026-09-03. They were two `<span>`s under a comment saying the
+       two lists behind them were yours -- which was true of the SCREEN and
+       not of the question: `netFollowing()` and `netFollowers()` have taken
+       an optional handle since claude/acct2 wrote them, and the comment over
+       them says in as many words that the screen which would pass it is this
+       file's. Nobody had passed it. So the number said how many and there was
+       nowhere to go, which is a fact printed as a button-shaped dead end. */
     /* AND THE ... AT THE RIGHT END OF THIS ROW.
        「フォロワーとかの横の一番右に...で」OWNER 2026-09-02.
 
@@ -827,8 +834,10 @@ function whoCard(h){
        holds many posts, and one of them needs an id. `.pfstats` carries the
        `position:relative` the box hangs off now; it was `.metop`. */
     '<div class="pfstats">'+
-      '<span class="pfst"><b>'+esc(String(p.fo||0))+'</b> '+esc(t('me.following'))+'</span>'+
-      '<span class="pfst"><b>'+esc(String(p.fr||0))+'</b> '+esc(t('me.followers'))+'</span>'+
+      '<button class="pfst"' + DO('go', ["follows", 'ing:'+String(h)]) + '><b>'+
+        esc(String(p.fo||0))+'</b> '+esc(t('me.following'))+'</button>'+
+      '<button class="pfst"' + DO('go', ["follows", 'ers:'+String(h)]) + '><b>'+
+        esc(String(p.fr||0))+'</b> '+esc(t('me.followers'))+'</button>'+
       '<button class="pmore"' + DO('whoMore', [String(h)]) + ' aria-label="'+
         esc(t('post.more'))+'">'+ICON_DOTS+'</button>'+
       (WMENU
@@ -984,15 +993,72 @@ FORM_OPEN.me=function(){ openMe(); };
    search screen, empty, about nobody. 「フォロー中からユーザー飛びたいのに
    飛べないけど？」 OWNER. The row is snsWhoRow() now, which has opened a
    person's page since the day it was written. */
+/* ---- somebody else's two lists ------------------------------------------
+   Your own are ME.fo and ME.fr -- on this phone, written by meFollowPull()
+   and meFollowerPull(), and shown the moment the screen opens because the
+   copy is already here. Nobody else's is, so theirs is asked for and kept
+   the way WHO_HAVE keeps a person: once per handle, per direction, for as
+   long as the app is open.
+
+   Not merged into ME.fo/ME.fr and not written to storage. Those two are the
+   ACCOUNT's, ME is what saveMe() sends to the server as who you are, and a
+   list of whoever you happened to look at would be this app telling the
+   server you follow them.
+
+   `netFollowing()` and `netFollowers()` take the handle as an optional last
+   argument, and `follow_read` in supabase/schema.sql is `using (true)` --
+   who follows whom is public the way it is in every timeline -- so this
+   needs no account. */
+var FOL_HAVE={}, FOL_ASKED={};
+function folKey(ers, h){ return (ers? 'ers:' : 'ing:') + String(h||''); }
+function folPull(ers, h){
+  var k=folKey(ers, h);
+  h=String(h||'');
+  if(!h || FOL_ASKED[k]) return;
+  FOL_ASKED[k]=1;
+  (ers? netFollowers : netFollowing)(function(hs){
+    /* Nobody by that name. It stays asked -- there is nothing to ask again,
+       which is whoPull()'s rule and the same reason. */
+    if(!hs) return;
+    FOL_HAVE[k]=hs;
+    render();
+  }, function(){ FOL_ASKED[k]=0; }, h);
+}
+function folGot(ers, h){ return !!FOL_HAVE[folKey(ers, h)]; }
+function folOf(ers, h){ return FOL_HAVE[folKey(ers, h)] || []; }
 function vFollows(){
-  /* Both lists are asked for here, because this screen is the only place
-     either is shown in full and the two numbers that lead to it are drawn on
-     a page that may never have been opened this session. */
-  meFollowPull();
-  meFollowerPull();
-  var ers=(here().a==='ers'), list=ers? meFollowers() : meFollowing();
+  /* WHOSE, and it is the argument's second half. 「フォロワーとかタップしても
+     見れないし」 OWNER 2026-09-03. `ing` and `ers` alone are yours; `ing:<handle>`
+     and `ers:<handle>` are somebody's -- the same colon `relate` and `gram`
+     already split an argument on, because a screen is a route and at most one
+     argument (www/shell.js). */
+  var a=String(here().a||''), c=a.indexOf(':');
+  var ers=(a.slice(0, c<0? a.length : c)==='ers');
+  var who=(c<0)? '' : a.slice(c+1);
+  var mine=(!who || who===meHandle());
+  var list, got;
+  if(mine){
+    /* Both lists are asked for here, because this screen is the only place
+       either is shown in full and the two numbers that lead to it are drawn
+       on a page that may never have been opened this session. */
+    meFollowPull();
+    meFollowerPull();
+    list=ers? meFollowers() : meFollowing();
+    /* Yours is on this phone, so there is always an answer to draw. */
+    got=true;
+  }
+  else {
+    folPull(ers, who);
+    list=folOf(ers, who);
+    got=folGot(ers, who);
+  }
   return '<div class="view">'+navTop()+'<div class="body">'+
-    (list.length
+    /* WAITING IS NOT EMPTY. 「snsで一瞬何も出ないとかあり得んやろ」 OWNER
+       2026-09-02 -- and 「まだ誰もいない」 said before the server has answered
+       is a statement about the server made before it spoke. One place draws
+       it (www/sns.js). */
+    (!got? snsWaitHTML()
+      : list.length
       ? list.map(function(h){
           /* Who this handle IS. The list is handles and nothing else, so
              every row was `@name` and no face, no name and nothing to press.
@@ -1002,8 +1068,10 @@ function vFollows(){
           h=String(h);
           whoPull(h);
           p=whoOf(h);
-          /* Your own row would otherwise offer to follow yourself. It cannot
-             happen through either list today and costs one comparison. */
+          /* Your own row would otherwise offer to follow yourself, and on
+             somebody else's list that is not a spare comparison: you are in
+             their followers if you follow them, which is the ordinary case
+             for a page you reached by following somebody. */
           p.mine=(h===meHandle());
           /* THE SAME ROW AS THE SEARCH'S, and one function draws it. The two
              lists show the same thing -- a person -- and drawing them twice

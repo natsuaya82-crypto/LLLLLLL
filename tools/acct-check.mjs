@@ -1082,6 +1082,67 @@ const R = await pg.evaluate(() => {
   netFollow = realFollow;
   say('30b: 押した瞬間にその人のフォロワーも動く（数えていない数は数えないまま）');
 
+  /* ---- 30c. その画面が、人のぶんを出す ----------------------------------
+     「フォロワーとかタップしても見れないし」OWNER 2026-09-03。
+
+     30 はサーバーへの道を持っています ── `netFollowing()` と
+     `netFollowers()` はハンドルを最後の引数に取り、その道を書いた
+     セッションは「これを渡す画面は www/me.js のもので、うちの領域では
+     ない」と自分のコメントに書いて置いていきました。**誰も渡して
+     いませんでした。**だから人のページの二つの数は「何人か」だけを言う
+     `<span>` で、押せず、行き先も無かった。
+
+     ここで押さえるのは三つです。画面が人のぶんを訊くこと、出したものが
+     **自分の** `ME.fo` / `ME.fr` を一行も書き換えないこと（あれは
+     アカウントのもので、saveMe() がサーバーへ「あなたは誰か」として
+     送るもの）、そして答えが来る前に「まだ誰もいない」と言わないこと。 */
+  start();
+  netOut(); arrive(A);
+  ME.fo = ['kai']; ME.fr = ['veth']; saveMe();
+  const foSeen = [];
+  netGet = (path, ok) => {
+    foSeen.push(path);
+    if (path.indexOf('/rest/v1/profile?select=id') === 0)
+      return ok([{ id: B }]);
+    if (path.indexOf('/rest/v1/follow?select=follower(handle)') === 0)
+      return ok([{ follower: { handle: 'noor' } }, { follower: { handle: 'sela' } }]);
+    if (path.indexOf('/rest/v1/follow?select=followed(handle)') === 0)
+      return ok([{ followed: { handle: 'tavi' } }]);
+    return ok([]);
+  };
+
+  /* 人のフォロワー。 */
+  NAV = [{ r: 'follows', a: 'ers:iri' }];
+  let seenHtml = vFollows();
+  if (foSeen.join('\n').indexOf('handle=eq.iri') < 0)
+    no('30c: 画面が、その人のハンドルで訊いていない');
+  if (seenHtml.indexOf('noor') < 0 || seenHtml.indexOf('sela') < 0)
+    no('30c: その人のフォロワーが画面に出ない');
+  if (seenHtml.indexOf('veth') >= 0)
+    no('30c: 人の画面に自分のフォロワーが出ている');
+  if ((ME.fo || []).join(',') !== 'kai' || (ME.fr || []).join(',') !== 'veth')
+    no('30c: 人の一覧が自分の一覧を書き換えた ── ' +
+       JSON.stringify([ME.fo, ME.fr]));
+
+  /* 人のフォロー中 ── 同じ画面、引数のもう半分。 */
+  NAV = [{ r: 'follows', a: 'ing:iri' }];
+  seenHtml = vFollows();
+  if (seenHtml.indexOf('tavi') < 0) no('30c: その人のフォロー中が出ない');
+  if (seenHtml.indexOf('kai') >= 0)
+    no('30c: 人の画面に自分のフォロー中が出ている');
+
+  /* 引数にハンドルが無ければ自分のぶん ── 今までどおり。 */
+  NAV = [{ r: 'follows', a: 'ing' }];
+  if (vFollows().indexOf('kai') < 0) no('30c: 自分のフォロー中が出なくなった');
+
+  /* 答えが来る前は「まだ誰もいない」と言わない。 */
+  netGet = () => {};
+  NAV = [{ r: 'follows', a: 'ers:zoya' }];
+  const waiting = vFollows();
+  if (waiting.indexOf(t('me.followers.none')) >= 0)
+    no('30c: 答えが来る前に「まだ誰もいない」と言っている');
+  say('30c: 人のフォロー中／フォロワーの一覧が画面に出る ── 自分のぶんは一行も動かない');
+
   /* ---- 31. キーボードのプールも、そのアカウントのぶん -------------------
      「じゃないとアカウント変えたら無限に言語作れるやん」OWNER 2026-09-01。
      langCount() と同じ穴が kbCount() にもありました ── LANGS は端末のもので

@@ -518,7 +518,8 @@ function pageName(r, a){
      Both keys are already written in all ten languages: they are the words
      under the two numbers on a profile, which is where this screen is
      reached from. Nothing new is added. */
-  if(r==='follows') return t(a==='ers'? 'me.followers' : 'me.following');
+  if(r==='follows')
+    return t(String(a||'').split(':')[0]==='ers'? 'me.followers' : 'me.following');
   /* Somebody else's language names itself, the way a letter and a stage above
      do. Its own name until the answer lands, and the screen's name until then. */
   if(r==='about' && a){

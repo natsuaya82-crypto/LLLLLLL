@@ -425,6 +425,14 @@ const R = await pg.evaluate(() => {
     r === 'thread' ? [null].concat(postAll().map(x => x.id)) :
     r === 'photo' ? [null].concat(postAll().filter(x => postPics(x).length).map(x => x.id + ':0')) :
     r === 'wldart' ? [null].concat(wldArts().map(x => x.id)) :
+    /* The two lists behind the two numbers, and whose they are. `null` is
+       yours; a handle after the colon is somebody else's, which draws
+       different rows and, for its first moment, the waiting face -- a face
+       with no answer in it yet is still a screen with words on it. */
+    r === 'follows' ? [null, 'ing', 'ers',
+                       'ing:' + (meFollowing()[0] || 'iri'),
+                       'ers:' + (meFollowing()[0] || 'iri'),
+                       'ers:nobody-at-all'] :
     [null];
   /* The sheets are opened, not routed. openWord needs a headword; the rest
      take nothing. */
