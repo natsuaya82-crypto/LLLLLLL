@@ -44,6 +44,7 @@ const INDEX = join(WWW, 'index.html')
 
 const problems = []
 let swiftCount = 0
+let privCount = 0
 const note = (m) => problems.push(m)
 
 // ---------------------------------------------------------------- git index
@@ -271,6 +272,44 @@ if (existsSync(PBX)) {
     }
   }
   if (!problems.length) swiftCount = swift.length
+
+  // -------------------------------------------- the one Apple asks for by email
+  // A privacy manifest is a RESOURCE, not a source file, so it goes in the
+  // Resources phase and the rule above cannot see it. Both halves are asked,
+  // because each fails on its own:
+  //
+  //   THERE IS ONE. Without it the upload SUCCEEDS, the workflow goes green,
+  //   and an hour later Apple sends ITMS-91053 -- the same shape as build 86's
+  //   ITMS-90158, and the only class of failure that never arrives as a red
+  //   tick. It is needed because @capgo/capacitor-social-login is compiled in,
+  //   its AppleProvider.swift uses UserDefaults.standard, and that pod ships
+  //   no manifest of its own for the declaration to live in.
+  //
+  //   AND IT IS IN THE PHASE. A file on disk, tracked by git, and in no
+  //   target's Resources phase is not in the app -- and nothing says so. That
+  //   is exactly what happened to Compose.swift on the Sources side.
+  const priv = []
+  const walkPriv = (dir) => {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      if (e.name === 'Pods' || e.name === 'public' || e.name === 'build') continue
+      const f = join(dir, e.name)
+      if (e.isDirectory()) walkPriv(f)
+      else if (e.name.endsWith('.xcprivacy')) priv.push(e.name)
+    }
+  }
+  walkPriv(IOS)
+  if (!priv.length) {
+    problems.push('there is no .xcprivacy anywhere under ios/App/. The app links a pod that uses UserDefaults and ships no manifest of its own, so the declaration has to be the app\u2019s: Apple refuses the delivery by EMAIL (ITMS-91053) after the upload has already gone green.')
+  }
+  const ra = all.indexOf('/* Begin PBXResourcesBuildPhase section */')
+  const rb = all.indexOf('/* End PBXResourcesBuildPhase section */')
+  const res = (ra >= 0 && rb > ra) ? all.slice(ra, rb) : ''
+  for (const f of priv) {
+    if (res.indexOf(`${f} in Resources`) === -1) {
+      problems.push(`${f} is not in any target\u2019s Resources phase \u2014 it is on disk and not in the app, and nothing about the build will say so.`)
+    }
+  }
+  if (!problems.length) privCount = priv.length
 }
 
 // -------------------------------------------------- a placeholder nobody fills
@@ -405,6 +444,7 @@ if (problems.length) {
 
 console.log(`assets: ${referenced.length} files loaded by index.html, all present and tracked.`)
 if (swiftCount) console.log(`swift: ${swiftCount} files under ios/App/, every one of them in the project's Sources phase.`)
+if (privCount) console.log(`privacy: ${privCount} manifest${privCount === 1 ? '' : 's'} under ios/App/, every one of them in a Resources phase.`)
 console.log(`placeholders: ${holes} under ios/App/, every one of them substituted by the deploy workflow.`)
 console.log(`the bridge: ${natives} native methods, every one of them named by www/.`)
 console.log(`load order: core.js -> ${LANGS.length} languages -> ... -> otf5.js -> glyph.js -> act-map.js -> boot.js (last)`)

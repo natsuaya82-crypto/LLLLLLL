@@ -902,6 +902,18 @@ under `ios/App/` must be in `App.xcodeproj`'s Sources build phase, because Xcode
 compiles what the project file lists and nothing else — a file on disk, tracked by
 git, imported by name, and simply absent from that phase is invisible to the
 compiler, and the error it produces names the missing *type*, not the missing file.
+**And that the app carries a privacy manifest, and that it is in the Resources
+phase.** `ios/App/App/PrivacyInfo.xcprivacy` is the same statement one wall
+further over: a `.swift` has to be in Sources and a resource has to be in
+Resources, and a file on disk in neither is not in the app. It is needed
+because `@capgo/capacitor-social-login` is compiled in, its `AppleProvider`
+keeps the signed-in name in `UserDefaults`, and **that pod ships no manifest of
+its own** — Capacitor's two do, which is what makes the gap easy to miss. Both
+halves are asked, because each fails alone: that one EXISTS, and that it is in
+a phase. Without it the upload succeeds, the workflow goes green, and Apple
+refuses the delivery **by email** an hour later (`ITMS-91053`), which is the
+same class as `ITMS-90158` below and the reason both live in this rule.
+
 **And that a placeholder has somebody who fills it.** `__APPLE_TEAM_ID__` sits
 in `project.pbxproj` on purpose — the deploy workflow substitutes it, so the
 team id is never in the repo. `__GOOGLE_REVERSED_CLIENT_ID__` sat in

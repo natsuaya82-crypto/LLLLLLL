@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- What this app reaches for that Apple asks about, and what it does not do.
+
+     WITHOUT THIS FILE THE DELIVERY IS REFUSED, AND NOT BY A RED TICK. The
+     upload succeeds, the workflow goes green, and an hour later an email
+     arrives (ITMS-91053, "Missing API declaration"). That is the same shape as
+     build 86, which went green and came back as ITMS-90158 for a placeholder
+     URL scheme — the one class of failure nothing in this repository can see.
+
+     WHY IT IS NEEDED HERE, since none of our own Swift reaches for anything:
+     @capgo/capacitor-social-login is compiled into the binary and its
+     AppleProvider.swift keeps the signed-in name in UserDefaults.standard.
+     That pod ships NO PrivacyInfo.xcprivacy of its own — Capacitor's two pods
+     do, which is what makes the gap easy to miss — so the declaration has
+     nowhere else to live and has to be the app's own.
+
+       find node_modules/@capgo/capacitor-social-login -iname '*.xcprivacy'   0
+       find node_modules/@capacitor/ios              -iname '*.xcprivacy'   2
+
+     CA92.1 is Apple's reason for "access info from same app, per documentation"
+     — a preference this app itself wrote and this app itself reads. It is the
+     right reason for a login SDK remembering who signed in.
+
+     NSPrivacyCollectedDataTypes IS DELIBERATELY ABSENT, and absent is not the
+     same as empty. An empty array is a claim that this app collects nothing,
+     which is untrue: it holds an address, a handle, a name, photographs, a
+     voice and what somebody wrote. Where that is answered is App Store
+     Connect's privacy questionnaire, which is the account owner's and cannot
+     be reached from this repository (docs/STATE.md § 4). Adding a half-filled
+     list here would be a second copy of those answers, free to drift from the
+     ones Apple actually shows. If a future build ships a framework of its own,
+     that framework carries its own manifest and this note stops applying.
+
+     A FILE ON DISK IS NOT A FILE IN THE APP. It has to be in the App target's
+     Resources build phase, the same way a .swift has to be in Sources —
+     Compose.swift was committed, pushed, left out of the Sources phase, and
+     the build failed naming a missing TYPE rather than a missing file.
+     `assets-check` holds both halves now. -->
+<plist version="1.0">
+<dict>
+	<key>NSPrivacyTracking</key>
+	<false/>
+	<key>NSPrivacyTrackingDomains</key>
+	<array/>
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>CA92.1</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>

@@ -15,6 +15,39 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-03 Apple に出す「覗いているものの一覧表」を入れた
+
+**画面は何も変わりません。**これが無いと配信が断られます。しかも赤い印では
+なく、アップロードは成功してワークフローも緑になり、一時間後にメールで来ます
+（`ITMS-91053`）。build 86 が `ITMS-90158` で戻ってきたのと同じ形で、この
+リポジトリからは決して見えない種類の失敗です。
+
+**なぜ要るのか。**私たちの Swift は一つも該当しません。
+`@capgo/capacitor-social-login` がバイナリに入り、その `AppleProvider.swift` が
+サインインした人の名前を `UserDefaults` に憶えます。そして**その pod は自分の
+一覧表を持っていません** ── Capacitor 自身の pod は二枚持っているので、
+そこだけ見ると足りているように見えます。
+
+```
+find node_modules/@capgo/capacitor-social-login -iname '*.xcprivacy'   0 件
+find node_modules/@capacitor/ios                -iname '*.xcprivacy'   2 件
+```
+
+- 新しいファイル: `ios/App/App/PrivacyInfo.xcprivacy`。
+  `NSPrivacyTracking` は `false`、追跡先は空、
+  `NSPrivacyAccessedAPICategoryUserDefaults` を理由 `CA92.1` で宣言
+- `project.pbxproj`: App ターゲットの **Resources** に登録しました。
+  ディスクにあって登録されていないと、アプリに入りません（`Compose.swift` と同じ罠）
+- **`NSPrivacyCollectedDataTypes` は書いていません。**空の配列は「何も集めて
+  いない」という主張になり、それは嘘です。何を集めるかを答える場所は
+  App Store Connect の質問票で、そこはこのリポジトリから触れません。
+  半分だけここに書くと、Apple が実際に表示する答えと黙って食い違います。
+  **オーナーの持ち物です**（`docs/STATE.md` § 4）
+- 検査: `assets-check` に二件（一枚あること、Resources に入っていること）。
+  両方とも赤を見ました
+- 保存するもの・移行・削除・プラン: 全部無関係
+
+
 ### 2026-09-03 読み込みの途中で、まだ無いものを呼べなくなった
 
 **画面には何も出ません。**`shell.js` の `migratePos()` が `save()` を呼び、
