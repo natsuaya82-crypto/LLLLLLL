@@ -218,6 +218,41 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### 平キーの道を消す。アプリは今の形だけを知っている
+- Date: 2026-09-03
+- Area: 保存の形式、起動時の移行
+- Decision:
+
+  ```
+  もうデータ無くしていいまっさらな状態で完成させるから
+  もうまっさら昔のいらない。今の状態の話平キーなんかいらない
+  今の情報のコードに書き換えて
+  ```
+
+  **言語が一つしか持てなかった頃の鍵（`lingua.words` など八つ）を、アプリは
+  もう読まない。**そこから写す道ごと消す。条件を足すのではなく、そのコードを
+  消して今の形だけにする。
+
+  消すもの:
+  - `langMigrate()`（`www/core.js`）── 平キーを読んで写す
+  - `LS_FLAT`（`www/core.js`）── 八つの鍵の表
+  - `langMigStamp()` と `mig` の印 ── 写した言語にアカウントを押すためだけのもの
+  - `lsWipeAcct()` の平キー削除 ── 消すものが無くなる
+  - `tools/migrate-check.mjs` の平キーについての主張
+- Reason: オーナーの言葉のまま上に。**リリース前で、平キーを持つ端末は
+  オーナーの検証用の端末だけ。**そのデータは要らないと本人が決めた。
+  残せば、読まれない道を検査が守り続けることになる。
+- Affected features: 起動（`www/core.js` の頭）、`netRead()`（`www/net.js`）
+- Affected data: **消える道であって、消すデータではない。**
+
+  **これは「移行は写して、読んだものを消さない」（docs/DATA_SAFETY.md）の
+  例外ではない。**移行そのものを無くすので、写す元も写す先も無い。平キーを
+  持つ端末では、その八つの鍵が **`localStorage` に残ったまま、誰にも読まれ
+  なくなる** ── アプリが消すのではない。
+- Affected docs: この項、docs/DATA_MODEL.md、docs/DATA_SAFETY.md、
+  docs/CHANGELOG.md、CLAUDE.md 規則6
+- Implementation status: **未実装。**`claude/flat` に渡した（2026-09-03）
+
 ### 古い規則は残さない。全部いまの規則。食い違いはオーナーに訊く
 - Date: 2026-09-03
 - Area: 書かれたもの全部 ── CLAUDE.md と docs/ のすべて
