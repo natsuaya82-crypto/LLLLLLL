@@ -15,8 +15,11 @@ what is in the repo is what runs on the phone, in WKWebView, on whatever iPhone
 the user already owns. That is why `www/**` is ES5 and why `tools/es5-check.mjs`
 exists.
 
-Capacitor wraps it for iOS. `ios/App/` is the native side: the share bridge and
-the system keyboard extension.
+Capacitor wraps it for iOS. `ios/App/` is the native side: the bridge
+(`App/LinguaShare.swift` — the backup file, the voice files, the sheet an
+export writes), the plan in the Keychain (`App/LinguaStore.swift`,
+`App/LinguaPlan.swift`), the system keyboard extension (`LinguaKeyboard/`) and
+the home-screen widget (`LinguaWidget/`).
 
 ## The two sides
 
@@ -39,15 +42,16 @@ and `www/card.js` each have a line across them; below it, a post renders from
 the post. `tools/sides-check.mjs` holds both. See `CLAUDE.md` rules 8 and 12,
 and `docs/DATA_MODEL.md` for which fields travel on a post.
 
-**DL — the third thing, decided and not built.** A downloaded official asset is
-a language on the reading side that is filed like one on the making side: it
-sits in `LANGS` and under `lingua.<id>.<slice>`, and it is **switched to**
-rather than merged in (OWNER DECISION 2026-08-25, `docs/FEATURE_RULES.md`).
-That makes it the first language this app has ever held that its user did not
-write, and every global above is still 「the one in front of me」 — so the line
-`sides-check` holds does not move, it just gets a case where the language in
-front of you is one you may not edit. Nothing of it exists yet:
-`docs/DATA_MODEL.md` § a language that is only read says what has to.
+**DL — the third thing, and it is built.** A downloaded official asset is a
+language on the reading side that is filed like one on the making side: it sits
+in `LANGS` with `mine:false` and under `lingua.<id>.<slice>`, and it is
+**switched to** rather than merged in (OWNER DECISION 2026-08-25,
+`docs/FEATURE_RULES.md`). It is the first language this app holds that its user
+did not write, and every global above is still 「the one in front of me」 — so
+the line `sides-check` holds does not move, it just has a case where the
+language in front of you is one you may not edit. What stops the edit is not a
+locked door but `langLocked()` (`www/core.js`), asked at every saver.
+`docs/DATA_MODEL.md` § a language that is only read is the whole of it.
 
 ## Where the truth lives
 
@@ -58,21 +62,30 @@ front of you is one you may not edit. Nothing of it exists yet:
 | what was written and not sent | **the `draft` rows on the server**, with `lingua.drafts` as the copy | `DRAFTS` (`www/post.js`) |
 | the person — the handle, the display name, the profile picture | **the `profile` row on the server**, with `lingua.me` as the copy | `ME` (`www/me.js`) |
 | which languages exist, which is open | `lingua.langs`, `lingua.cur` — the phone's index of the copies it is holding. `LANGS[id].sid` is the language's row on the server, and an entry with no `sid` has never been up | `LANGS`, `langId` |
-| the person's settings | `lingua.set` | `SET` |
+| the person's settings | `lingua.set`, with the six in `SET_ACCT` parked under `lingua.set.<uid>` by `setFor()` when somebody else signs in | `SET` |
 | the person's session | `lingua.sess` — the token pair only | `SESS` (`www/net.js`) |
-| a copy that survives the app — **the backup**, now that the server is the record 「言語周りだけバックアップにfile使う」 | `Documents/Languages/<name>.json` on the device | `bkPack()` / `bkTake()` (`www/backup.js`) |
+| a copy that survives the app — **the backup**, now that the server is the record 「言語周りだけバックアップにfile使う」 | `Documents/Languages/<name>.json`. It is that account's language in a form a person can hold, which is why deleting an account drops the files of **its** languages (`bkDropFor()`) and no others | `bkPack()` / `bkTake()` (`www/backup.js`) |
 | what the server holds and who may touch it | `supabase/schema.sql` | nothing on the phone decides this |
 
-**Three rows of that table are the device's, and there are no others**: the
-settings, the session, and the backup file — plus what an export writes out,
-which leaves the app rather than living in it.
-「そもそも端末に保存するもんはないぞほとんど」 OWNER 2026-09-01. Every other
-`lingua.*` key is a working copy of something the server holds, and a document
-that says otherwise is out of date rather than describing a second home.
+**No row of that table is the device's.** 「端末ごとにやることなんてねえよ」
+「アカウントごとってずっと言ってるよな？」 OWNER 2026-09-03. Every `lingua.*`
+key is a working copy of something an account owns, filed under the account it
+belongs to — the settings among them (`SET_ACCT` and `setParkKey()` in
+`www/core.js`), and the backup file and an exported sheet are that account's
+language in a form a person can hold. When something new is stored the question
+is not 「is this the phone's」, because there is no answer to that: it is
+**「which account is this」**, and a thing that cannot answer it must not be
+written down. `CLAUDE.md` § Online.
+
+The one exception is `lingua.sess`, and it is not an exception in the way it
+looks: it is not a thing somebody has, it is **which account this phone is**.
 
 **And the plan is the account's** 「課金とアカウントとキーボードはアカウントに
-結びつく」 OWNER 2026-09-01 — it is not one of the settings, however it is
-filed today, and the keyboard beside it in that sentence is the language's.
+結びつく」 OWNER 2026-09-01 — `SET.plan` is where the value sits on this handset
+while it travels, and `SET_ACCT` is what stops it being handed to whoever signs
+in next. The real copy on a phone is in the Keychain
+(`ios/App/App/LinguaPlan.swift`). The keyboard beside it in that sentence is
+the language's.
 
 This is the kind of file that goes on being believed after it stops being
 true, so re-check rather than trust:
@@ -81,14 +94,15 @@ true, so re-check rather than trust:
 grep -o "rest/v1/[a-z_]*" www/net.js | sort | uniq -c | sort -rn
 ```
 
-What that answers today: `profile`, `post`, `follow`, `block`, `report`,
-`draft`, `saved_search`, `post_seen`, `react`, `prompt`, the RPCs — **and
-`language` and `slice`**. A language and every one of its slices go up and come
-back: `netLangRow()` makes the `language` row and keeps its id on
-`LANGS[id].sid`, `netSlices()` reads them, `netSlicePut()` upserts one,
-`netLangSync()` puts the two copies together through `www/sync.js`, and
-**`boot.js` calls it on launch**. `quote` and `publication` really are still
-unused.
+Read what it prints rather than the list somebody wrote down after running it
+once. What it answered today: `profile`, `post`, `follow`, `block`, `report`,
+`draft`, `saved_search`, `recent_search`, `post_seen`, `profile_seen`,
+`language_seen`, `react`, `prompt`, `plan`, the RPCs — **and `language` and
+`slice`**. A language and every one of its slices go up and come back:
+`netLangRow()` makes the `language` row and keeps its id on `LANGS[id].sid`,
+`netSlices()` reads them, `netSlicePut()` upserts one, `netLangSync()` puts the
+two copies together through `www/sync.js`, and **`boot.js` calls it on
+launch**. `quote` and `publication` really are still unused.
 
 So, the order:
 

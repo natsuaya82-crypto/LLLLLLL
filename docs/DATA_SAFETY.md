@@ -115,14 +115,28 @@ file, and none of them is optional:
 - **A name is never written over.** `keepVoice` refuses a file that already
   exists rather than replacing it. Every recording is given a fresh name, so a
   collision is a bug, and the answer to a bug is not to overwrite a voice.
-- **Deleting a post deletes its voice, and nothing else ever does.**
-  「投稿消した声も消していいよ」 is the written spec this rule asks for, and the
-  DELETE REVIEW is in `docs/CHANGELOG.md`. It is a user action behind a
-  confirm: the file's name comes off the post being deleted and from nowhere
-  else. Nothing walks that folder, nothing removes a file because nothing
-  points at it, and nothing tidies up on launch. The post is removed first and
-  the file second — a file that cannot be removed must not leave the post
-  standing.
+- **A voice file is removed by three things and by nothing else, and every one
+  of them is somebody taking that recording away by hand.** `voDropFile()` in
+  `www/rec.js` is the only road to `dropVoice`, and it has three callers:
+
+  ```
+    postDelGo    www/post.js   the post it was on is deleted   「投稿消した声も消していいよ」
+    draftDropGo  www/post.js   the draft it was on is thrown away
+    voDrop       www/rec.js    the recording is taken off in the composer
+  ```
+
+  In all three the file's name comes off the thing being deleted and from
+  nowhere else. **Nothing walks that folder**, nothing removes a file because
+  nothing points at it, and nothing tidies up on launch. The post is removed
+  first and the file second — a file that cannot be removed must not leave the
+  post standing.
+
+  **Only the first has its DELETE REVIEW written.** `postDelGo`'s is in
+  `docs/CHANGELOG.md` under 「投稿消した声も消していいよ」. The other two
+  arrived on 2026-09-03 with the owner's decision quoted
+  （「声は投稿上で再生できるよね？下書き消した時にはいらなくない？」）and no
+  block — so the decision is made and the record required by the DELETE REVIEW
+  below is missing. Written here rather than left to be noticed again.
 
 **A posted voice is on the server**: `netUpVoice()` puts it in the `post-media`
 bucket with the post it belongs to. The file this phone recorded stays in
@@ -140,7 +154,9 @@ every argument forever and nobody finds out why their work keeps going
 backwards. A counter cannot be wrong about which of two writes came second,
 because the second one made it.
 
-`bkTake()` reads it, and nothing else does. **The sync does not** — a `slice`
+Two things read it: `bkTake()`, which keeps the higher of the file's number and
+this phone's so the next save cannot look older than a restore, and `bkSay()`,
+which is the save number on the settings screen. **The sync does not** — a `slice`
 row carries its own `no`, raised by the server on every write, and `syMerge()`
 adds both sides rather than choosing between them, so nothing anywhere decides
 which copy is newer. That is the same argument as the paragraph above, reached
@@ -166,10 +182,26 @@ DELETE REVIEW
 **Automatic deletion, pruning and cleanup are forbidden unless a written spec
 asks for them.** Not "obviously stale", not "orphaned", not "over quota".
 
-Today the app deletes in exactly these places, all of them a user pressing a
-button and being asked to confirm: `delWord`, `ltDelete`, `delNote`, `postDel`,
-`wipeAll`. `keep()` rotating a generation out is the sixth and is the price of
-rule 1.
+**Where the app deletes is not written here.** It was, and the list said five
+while the app deleted in twenty-one places, because nothing asked the code
+whether it was still true. A list of deletions that is wrong is worse than no
+list: it is read as 「these are all of them」 by the next person deciding
+whether a DELETE REVIEW is needed.
+
+`tools/del-check.mjs` (`npm run del`) is where it lives now, and it is asked of
+`www/act-map.js` every run. Every button whose name reads like a deletion has
+to say three things there — what it takes out of storage, whether the person is
+asked first, and, **when something is taken and nobody is asked, why that is
+right**. A new one is red until somebody answers. So is a confirm that quietly
+went away, and so is a line describing a button no screen carries any more.
+
+Two deletions are outside that table on purpose, because neither is a button:
+
+- `keep()` rotating a generation out (`ios/App/App/LinguaShare.swift`) is the
+  price of rule 1 — a save costs the third-oldest file
+- `lsWipeAcct()` taking the eight flat keys (`www/core.js`) happens under
+  `wipeAll`, which is in the table, and is written out in
+  `docs/DATA_MODEL.md` § what an account deletion actually takes
 
 ## Changing anything that saves
 
@@ -206,7 +238,10 @@ every screenshot is right, and `npm test` is green, because there is only ever
 one person in a test.
 
 `npm run rls` is a second person. It applies `schema.sql` unchanged to an empty
-PostgreSQL and tries, as B and as somebody with no account, to do all 34 things
-the file says cannot be done. **Adding a policy means adding the line somebody
+PostgreSQL and tries, as B and as somebody with no account, every attempt in
+its own `CASES` list — the file says cannot be done. **The number is not
+written here**, because a number copied into prose is a number that rots: the
+tool prints `CASES.length` and `SHAPE.length` when it passes, and that is where
+to read it. **Adding a policy means adding the line somebody
 would use against it.** Run it whenever `schema.sql` changes — that is the only
 time it can start failing.
