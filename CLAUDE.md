@@ -11,20 +11,14 @@ A conlang-building app. Plain HTML/CSS/JS under `www/`, wrapped by Capacitor for
 > two `git rev-list` lines to run before deciding anything is missing —
 > `master` once sat 144 commits behind, and a session that cloned it reported
 > the system keyboard as unbuilt, correctly, about an app a week old. It also
-> says the two that are easiest to get backwards: the timeline **is** on the
-> server now — `post`, `react`, `follow`, `profile` and the notices RPC, with
-> `localStorage` as the copy that survives a bad network — and CI runs three of
-> these thirty-four checks, so a green tick on a push is not the gate. This
-> paragraph said the opposite of the first of those for a week after it stopped
-> being true, which is the whole reason that file says how to re-check rather
-> than what to believe: `grep -n "rest/v1" www/net.js`.
 > says the two that are easiest to get backwards: **the server holds both
 > halves** — the timeline and the language, `post` `react` `follow` `profile`
 > `draft` `language` `slice` and the notices RPC, with `localStorage` as the
-> copy that survives a bad network — and CI runs three of these twenty-eight
-> checks, so a green tick on a push is not the gate. Ask the repository rather
-> than this line, which is what that file exists to say:
-> `grep -o "rest/v1/[a-z_]*" www/net.js | sort | uniq -c`.
+> copy that survives a bad network — and CI runs three of these checks
+> (`assets`, `es5`, `i18n`), so a green tick on a push is not the gate. Ask the
+> repository rather than this line, which is what that file exists to say:
+> `grep -o "rest/v1/[a-z_]*" www/net.js | sort | uniq -c`, and `npm test`'s
+> last line for how many checks there are.
 
 ## The rules that come before the code
 
@@ -199,8 +193,8 @@ row class rather than letting the tag decide -- a `<button>` takes the
 browser's 13.3px/normal and an `<a>` takes the body's, and the same row came
 out 49px as one and 57px as the other. No `margin-top` on a row to make a
 group either: that is one row taller than its neighbours. **`press` holds the
-first half** -- siblings of one class rendering at two type sizes -- and 1484
-lists are measured on every run. The `margin-top` half is prose still.
+first half** -- siblings of one class rendering at two type sizes -- and it
+prints how many lists it measured on every run. The `margin-top` half is prose still.
 → `docs/FEATURE_RULES.md`
 
 **Explaining.** No explanatory text in the app. A screen shows what it is and
@@ -429,22 +423,22 @@ backlog entry is not permission, and neither is the absence of one.
 ## The gate
 
 ```
-npm test        # tools/gate.mjs -- nine with no browser in a row (assets, es5,
-                # grammar-engine, dead, import, sides, face, box, store, ~2s), then
-                # the other twenty-five four at a time. NOT run by a session -- rule 2.
-                # The count is FAST.length + SLOW.length in tools/gate.mjs and
-                # nowhere else; every number in this file is a copy of it.
+npm test        # tools/gate.mjs -- the FAST ones with no browser in a row
+                # (assets, es5, grammar-engine, dead, import, sides, face, box,
+                # store, ~2s), then the SLOW ones four at a time. NOT run by a
+                # session -- rule 2. How many there are is FAST.length +
+                # SLOW.length in tools/gate.mjs, and the run PRINTS it on its
+                # last line: read it off there, not off any sentence here.
 ```
 
-Individual: `npm run assets` / `npm run es5` / `npm run dead` / `npm run migrate` / `npm run store` /
-`npm run i18n` / `npm run import` / `npm run sides` / `npm run face` / `npm run box` /
-`npm run act` /
-`npm run conv` / `npm run card` / `npm run word` / `npm run post` / `npm run backup` /
-`npm run fill` / `npm run round` / `npm run base` / `npm run kb` / `npm run plan` /
-`npm run world` / `npm run ask` / `npm run page` / `npm run press`.
-`tools/gate.mjs` is what `npm test` runs. The nine that need no browser go first, one
+Individual: every check in `FAST` and `SLOW` has an `npm run` alias in
+`package.json`, and that file is the list — `node -e "console.log(Object.keys(require('./package.json').scripts).join(' '))"`.
+Do not restate them here: the last version of this line named twenty-five of
+the thirty-five, and one of the names it gave (`npm run ask`) points at a
+`tools/ask-check.mjs` that does not exist.
+`tools/gate.mjs` is what `npm test` runs. The ones that need no browser go first, one
 after another, in about two seconds — a missing script tag or an arrow function fails
-there and nothing heavy is started at all — and the twenty-two that each start a headless
+there and nothing heavy is started at all — and the ones that each start a headless
 Chromium then go **four at a time**. Sequentially they were ten minutes. Each check's
 output is printed whole and in list order, so a counter that moved is still visible.
 
@@ -517,15 +511,18 @@ the whole of the security. A policy that is too wide breaks nothing: nothing
 throws, every screenshot is right, and `npm test` is green, because there is
 only ever one person in a test. So `rls-check` is a second person — it applies
 `schema.sql` unchanged to an empty database and then tries, as B and as
-somebody with no account, to do all 34 things the file says cannot be done.
+somebody with no account, to do every one of the things the file says cannot be
+done -- `CASES` in `tools/rls-check.mjs` is that list and the run prints how
+many it tried; it was 34 when this line was written and it is not 34 now.
 Adding a policy means adding the line somebody would use against it.
 
 ## The twenty-two rules the gate enforces
 
-Twenty-two is how many rules are written below. **The gate is thirty-four checks,
-and the two are not the same number and must not be made to match** — count the
-rules here, and count `FAST` and `SLOW` in `tools/gate.mjs` for the other. One
-rule can take three checks and one check can hold two rules.
+Twenty-two is how many rules are written below. **The gate is a different number
+and the two must not be made to match** — count the rules here, and read the
+gate's own last line for the other (it prints `FAST.length + SLOW.length`). One
+rule can take three checks and one check can hold two rules. This sentence used
+to carry the gate's number as well, and it was wrong twice.
 
 ### 1. `www/**/*.js` must be ES5
 
@@ -614,8 +611,9 @@ appears in no `.js` file at all. `dead-check` asks this of every function and
 nothing had ever asked it of a selector — and a grep cannot, because a class is
 worn from a string built by concatenation, from `classList.add`, and from
 `index.html`'s own markup. So the PAGE is asked, from here, after every build
-AND after every press: a render-only walk never reaches `.on`. 202 were styled
-and worn by nothing, frozen in `tools/css-baseline.txt` as a ratchet.
+AND after every press: a render-only walk never reaches `.on`. The ones styled
+and worn by nothing are frozen in `tools/css-baseline.txt` as a ratchet — read
+the file for how many are left, not this line.
 **It says "nothing here wore it", not "it is dead"** — a class worn only in a
 state the walk never reaches is on that list too, and clearing a line by adding
 the seed is the better fix. A person reads it; the list is not a licence to
@@ -630,7 +628,7 @@ instead, and watching it fail showed the tag was never the cause. A different
 tag is a thing that is often true when the cause is present, which is what a
 proxy is, and a check built on one gives the right answer for the wrong reason
 until the day it does not. What it asks now is the sentence the rule itself
-writes down. 1484 lists measured, none of them two heights.
+writes down. `press` prints how many lists it measured; read it off the run.
 
 A name can resolve to a function that throws the moment it runs — `act-check`
 calls that button fine. Both fixtures and the half-done screen list live in
@@ -643,7 +641,8 @@ of them.
 under. `www/route-map.js` says what it *shows* — `page('build', vBuild)`, the
 function itself, never its name, exactly as `act-map.js` does. `render()` looks
 it up; it used to be a chain of conditions, a second copy of `PAGES` that
-nothing could check against the first. There are 30 routes.
+nothing could check against the first. `act-check` prints `routes reached: n/n`
+on every run; count them off `PAGES` or off that line and not off this one.
 
 Adding a screen means a `PAGES` entry and a `page(...)` line. `act-check`
 proves both directions: a route with no view silently became the home screen
@@ -689,11 +688,12 @@ above to be about. It catches a typo the same way: `wSrot='a'` would make a
 second global and leave the sort where it was.
 
 **And what money buys, which is the same sentence a third time.** `CAN` in
-`core.js` names every capability a plan opens — `words` `data` `file`
-`letters` `wsys` `kb` `snd` `edit` `badge` `gram` `dir` — and `can('kb')` is the
-only way to ask. **Count them off `CAN` and not off this line**: it listed `tr`,
-which is not a capability and never was, and it was missing `edit` and `badge`,
-which are. `npm run dead` prints the number it actually counted on every run
+`core.js` names every capability a plan opens, and `can('kb')` is the
+only way to ask. **This line does not list them, because every version of it
+that did went stale**: it once listed `tr`, which is not a capability and never
+was; then it was missing `edit` and `badge`, which are; and after that was
+fixed it went on missing `dl` while `dl-check` and a whole rung of the plans
+page ran on it. Read `CAN`. `npm run dead` prints the number it actually counted on every run
 ("what money buys: N capabilities in CAN"), which is the thing to read.
 `has()` names a *plan* and is `core.js`'s alone. `dead-check` refuses a
 capability nothing asks for (a price with nothing behind it), a `can('x')` in
@@ -931,15 +931,15 @@ is a copy of it, and a copy always agrees.** `LinguaFont.build` is wrapped
 instead — the same reason `card-check` wraps `cardInk()` rather than asking
 `cardSrc()`, and the same shape as the fault rule 12 was written after.
 
-**Decided and not in yet, so read this as the decision and not as the code:**
-the mapping is worked out in four places — `installTypeFont()`, `puaRoman()`,
-`postCutTyped()` and `shareFace()` — each writing `ltOrder(LETTERS.filter(has
-strokes))` out again. It becomes `ltPuaOrder()` in `glyph.js`, beside `ltPua()`,
-and those four ask it. When it lands, its name goes in `sides-check`'s forbidden
-list beside `LETTERS` itself — it reads the making side, and **a function that
-reads the making side is a way to reach the making side; giving it a new name is
-not a way to stop being one.** Landing it without that line open the hole in the
-same commit that closes the duplication.
+**And the order is worked out in ONE place.** It used to be worked out in four
+— `installTypeFont()`, `puaRoman()`, `postCutTyped()` and `shareFace()` each
+writing `ltOrder(LETTERS.filter(has strokes))` out again. It is `ltPuaOrder()`
+in `glyph.js` now, beside `ltPua()`, and those four ask it: `puaRoman()` and
+`installTypeFont()` in `glyph.js`, `postCutTyped()` in `post.js`, `shareFace()`
+in `share.js`. Its name is in `sides-check`'s forbidden list beside `LETTERS`
+itself, which is the half that had to land in the same commit — it reads the
+making side, and **a function that reads the making side is a way to reach the
+making side; giving it a new name is not a way to stop being one.**
 
 ### 11. A language is never lost
 
@@ -973,7 +973,7 @@ the one that matters: the way a backup destroys somebody's work is by
 The check wipes every slice the way iOS reclaiming storage would, reads the
 file back, and asks for the same words, the same letters and the language in
 the index again; then it restores an *older* file over a live language and
-demands that nothing moves. It also walks `SLICES`, so a tenth slice added to
+demands that nothing moves. It also walks `SLICES`, so a slice added to
 `core.js` and forgotten in `bkPack()` fails here rather than being quietly
 left out of every backup until somebody needs it.
 
@@ -1172,8 +1172,9 @@ not hold a rule.** This file says so about everything else: *either a check
 holds the claim, or do not make it.* Nothing held this one, and it is the rule
 that has been broken most.
 
-It is **not** "no corner in this stylesheet". There are 240 corners and borders
-in `index.html` and `.btn` is on about thirty older screens; deleting all of it
+It is **not** "no corner in this stylesheet". `tools/box-baseline.txt` is every
+corner and border that was already there, and `box-check` prints the count on
+every run; `.btn` is on about thirty older screens. Deleting all of it
 is a redesign, not a check. The rule as written is about what is **added**.
 
 So `tools/box-baseline.txt` is what the stylesheet looked like the day the rule
@@ -1476,47 +1477,6 @@ asking about whatever screen the check happened to be standing on. **A screen
 is a route AND its argument**, which this file says twice already, and the
 check now stands on the route.
 
-### 22. Nothing is kept on this phone alone, and nothing on it is nobody's
-
-**The app is online, and that is a decision about data rather than about
-screens** ── 「オンラインにしないとデータの改竄し放題だから」. The server is
-where things live; `localStorage` is the copy that runs with no signal.
-
-**And every key of that copy belongs to an ACCOUNT.**
-「端末ごとにやることなんてねえよ」 OWNER 2026-09-03. This section used to end
-with a list of three things that were 「the phone's own」 -- a backup file, an
-exported sheet, and the settings -- and that list is gone, along with the
-category. A thing that answers 「the phone's」 is a thing that survives one
-account and is handed to the next one, and on 2026-09-03 that is exactly what
-happened: deleting one account emptied the whole namespace and took another
-account's language with it.
-
-`lingua.sess` is the only key that is not somebody's belongings, and it is not
-an exception: it is **which account this phone is**.
-
-**That was writing only, and writing does not stop anything.** The timeline
-was local for a week with every check green, and the languages were local for
-as long again after that; both were found by a person holding a phone.
-「書いていて止めないの本当に何？」 OWNER 2026-09-01.
-
-`store-check` names every key the app writes into `localStorage` — by FILE and
-by the expression, because `k` is a loop variable in two files about two
-different things — and each one is either **on a road to the server**, with the
-function in `www/net.js` that takes it there (and that function has to exist),
-or **the phone's own with a sentence saying why**.
-
-**That second half is what has to shrink to nothing**, and every entry left in
-it is a thing waiting to be handed to the wrong person. It is not shrunk yet:
-the plan, the saved searches and the notice marker are all sitting in one
-settings key shared by whoever signs in. `docs/BACKLOG.md` carries it.
-
-**A new key fails until somebody writes down which of the two it is.** That is
-all it holds: whether the road is WALKED is `acct-check` and `again-check`, and
-whether it comes back is theirs too. This one refuses a place to keep somebody's
-work that nobody said how to get off the phone. It fails the other way as well —
-a road named for a key nothing writes any more is a line that outlived what it
-described, which is what `box-check` says a stale baseline becomes.
-
 ### 21. One route is drawn by one function
 
 **§ One place, not fifteen finally has something holding it.** That section
@@ -1581,6 +1541,53 @@ rot into permission.
 Three reds were watched before any of it was believed: the second page at
 `3230182`, the same at the branch tip with the fixture's own doors seeded, and
 the exemption's rot claim with `viewGone` renamed out from under it.
+
+### 22. Nothing is kept on this phone alone, and nothing on it is nobody's
+
+**The app is online, and that is a decision about data rather than about
+screens** ── 「オンラインにしないとデータの改竄し放題だから」. The server is
+where things live; `localStorage` is the copy that runs with no signal.
+
+**And every key of that copy belongs to an ACCOUNT.**
+「端末ごとにやることなんてねえよ」 OWNER 2026-09-03. This section used to end
+with a list of three things that were 「the phone's own」 -- a backup file, an
+exported sheet, and the settings -- and that list is gone, along with the
+category. A thing that answers 「the phone's」 is a thing that survives one
+account and is handed to the next one, and on 2026-09-03 that is exactly what
+happened: deleting one account emptied the whole namespace and took another
+account's language with it.
+
+`lingua.sess` is the only key that is not somebody's belongings, and it is not
+an exception: it is **which account this phone is**.
+
+**That was writing only, and writing does not stop anything.** The timeline
+was local for a week with every check green, and the languages were local for
+as long again after that; both were found by a person holding a phone.
+「書いていて止めないの本当に何？」 OWNER 2026-09-01.
+
+`store-check` names every key the app writes into `localStorage` — by FILE and
+by the expression, because `k` is a loop variable in two files about two
+different things — and each one is either **on a road to the server**, with the
+function in `www/net.js` that takes it there (and that function has to exist),
+or **the phone's own with a sentence saying why**.
+
+**That second half is what has to shrink to nothing**, and every entry left in
+it is a thing waiting to be handed to the wrong person. The three that used to
+be named here have gone: the plan, the saved searches and the notice marker sat
+in one settings key shared by whoever signed in, and `SET_ACCT` in `core.js` is
+now the list of the fields that are a PERSON's — `plan` `planWas` `planPend`
+`saved` `savedUp` `notAt` — with `setFor(uid)` parking them under
+`lingua.set.<uid>` on the way out and bringing that account's own back on the
+way in. What is left in the second half is the theme and how this handset is
+set up. `docs/BACKLOG.md` carries whatever is still there; read
+`store-check`'s own last two lines for the count rather than a sentence here.
+
+**A new key fails until somebody writes down which of the two it is.** That is
+all it holds: whether the road is WALKED is `acct-check` and `again-check`, and
+whether it comes back is theirs too. This one refuses a place to keep somebody's
+work that nobody said how to get off the phone. It fails the other way as well —
+a road named for a key nothing writes any more is a line that outlived what it
+described, which is what `box-check` says a stale baseline becomes.
 
 ## What the free plan is
 
@@ -1682,7 +1689,7 @@ it.**
 A later audit found twelve more. Six by reading the seam between the two sides:
 the root bar (`rootTop()` — the contents page and the timeline each hand-rolled
 it and had already drifted in what goes in the corner), the gloss row
-(`postGlossHTML()`), what the meaning defaults to (`pwMn()`), what to call an
+(`postGloss()` with `postGlossLine()`), what the meaning defaults to (`pwMn()`), what to call an
 author (`postWho()`), "nothing here yet" (`snsNone()`), and "the thing you came
 back for is gone" (`viewGone()`, five screens in four files).
 
@@ -1803,6 +1810,11 @@ the string and the function — and `act-check` fails on either half alone.
 | `www/me.js` | who you are: the face, the name, the handle, the line about yourself (ch 20) |
 | `www/backup.js` | the copy that survives the app — a language as one file in Documents (ch 24) |
 | `www/rec.js` | the voice on a post — thirty seconds. It goes up with the post 「SNSは全部サーバー」: `netUpVoice()` (`www/net.js`) puts it in the `post-media` bucket and writes the path to `body.vu`, and `voRemote()` is how one name tells a path on the server from a file this phone recorded (ch 25) |
+| `www/sheet.js` | the sheet somebody writes a word on paper on, and the number printed on it that says which one (ch 26) |
+| `www/store.js` | the App Store: what `LinguaStore.swift` is asked and what comes back (ch 26) |
+| `www/sync.js` | putting a language and the copy on this phone back together (ch 26) |
+| `www/mod.js` | the other side of a report — what somebody with the flag sees |
+| `www/cal.js` | the calendar: a month is a word (ch 27) |
 | `www/net.js` | the one window onto the server, and the only place a secret could be (ch 21) |
 | `www/ipa.js`, `reading.js` | spelling → IPA, IPA → per-language respelling |
 | `www/phases.js`, `letters.js`, `wsys.js` | phonology, alphabet, writing system |
@@ -1831,11 +1843,14 @@ argument-taking screen once per argument — `walkArg` in `act-check`, `argsOf` 
 walked the day it is added. Do not narrow either one back to the argument-less face:
 a screen the mirror never renders is a screen where a hard-coded string sits forever.
 
-Both checks print their coverage (`screens walked: 366`, `screens the mirror
-rendered: 275`) because nothing else in a green run would show it shrinking.
-`press` prints `buttons pressed: 12410  (240/240 distinct names)` for the same
-reason — and it is what a
-change that is meant to alter nothing has to leave untouched. The count has
+Both checks print their coverage (`screens walked:` from `act-check`, `screens
+the mirror rendered:` from `i18n-check`) because nothing else in a green run
+would show it shrinking. `press` prints `buttons pressed: n  (m/m distinct
+names)` for the same reason — and it is what a
+change that is meant to alter nothing has to leave untouched. **The numbers are
+read off those three runs and are deliberately not copied here**: every time
+they were, they rotted, and a stale coverage number is read as a floor that has
+been held when it is a floor that has moved. The count has
 moved four times, and each move is a change somebody made on purpose: it
 jumped from 2952 to 5172 the day the free plan got its twenty-eight letters,
 because every screen holding a keyboard went from a handful of keys to a
@@ -1953,11 +1968,16 @@ be a change somebody made on purpose.
 
 ## Working on this repo
 
-- The book is numbered: chapter 0 opens `core.js`, chapter 25 closes `rec.js`, and
-  a `/* ==== n. title ==== */` banner opens each. One chapter per file — a file that
-  grew to hold five was split along those banners, not along anything new. The
-  numbering has gaps where a chapter was closed; it is a shelf, not a count.
-- `www/glyph.js` is 104 KB (the font writer and the drawing surface). Grep for
+- The book is numbered: chapter 0 opens `core.js` and the highest in the tree is
+  27 (`cal.js`), each file saying its own number in its opening comment. One
+  chapter per file — a file that grew to hold five was split along those banners,
+  not along anything new. The numbering has gaps where a chapter was closed; it is
+  a shelf, not a count. **Three files say 26** (`sheet.js`, `store.js`,
+  `sync.js`), which is the shelf saying two of them are in the wrong place;
+  which one keeps the number is the owner's and `docs/BACKLOG.md` carries it.
+  Read the file's own first line for its number rather than a range here.
+- `www/glyph.js` is the largest file in `www/` after `index.html` (the font
+  writer and the drawing surface). Grep for
   the function and read that range rather than the whole file.
 - After a change, run the ONE check that holds it (`npm run base`, `npm run card`) --
   seconds. Not `npm test`: six minutes, and it is the leader's run.
