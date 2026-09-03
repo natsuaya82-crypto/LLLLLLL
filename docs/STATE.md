@@ -19,28 +19,34 @@ The rest of `docs/` is the working detail behind the rules at the head of
 | `CHANGELOG.md` | what a person would notice, and every change to stored data |
 | `BACKLOG.md` | found and deliberately not done, and why |
 
-Everything below was checked against the repository on **2026-08-11**, §3 and
-§5 again on **2026-08-19**, the whole file again on **2026-08-21**, §1, §4b
-and §7 on **2026-08-25**, §4b, §6 and §7 once more later that same day after
-build #91 went to a real phone, **§1 and §3 again on 2026-08-26**, and **§0 is
-2026-08-28's own reading** — not remembered. Where a claim can go stale, it
-says how to re-check it — and §3 is the proof that it does: it went on saying
-the timeline was not on the server for a week after it was, **and then said
-the languages were not, for as long again.** Both are. The command that
-answers it is in §3 and takes a second.
+**Every section below was read against the code on 2026-09-03.** Where a claim
+can go stale, it says the command that re-checks it — read the command, not the
+sentence. §3 is why: it went on saying the timeline was not on the server for a
+week after it was, and then said the languages were not, for as long again.
+Both were.
+
+**This file is the leader's, and the leader writes it.** It went for months
+with three places telling a session to read it and nowhere telling anyone to
+write it, and what that cost is in `CLAUDE.md`: a stale sentence here was read
+out to the owner as 「your finished work is not done」. A stale RULE is
+doubted. A stale statement of FACT is simply believed.
 
 ---
 
-## 0-a. 2026-09-02 夜 ── いまの状況
+## 0-a. 2026-09-03 ── いまの状況
 
-**`origin/master` は `e5a10cc`。ローカルの `master` は古いかもしれません**
-（`git fetch --all --prune` してから `git log --oneline -1 origin/master`）。
+**sha はここに書きません。**一日で古くなるからです。訊く一行:
+
+```
+git fetch --all --prune && git log --oneline -1 origin/master
+```
 
 **実機で見ているのはオーナーだけです。**ここに書いてあるものは、断りが無ければ
 CODE CONFIRMED だけ。**検査の緑は証拠になりません。**
 
-**出ているビルドは #122（`b4be1db`）。**その後に三つ入っているので、下の一覧の
-うち最後の三行は #122 に入っていません。
+**出ているビルドの番号もここには書きません。**ワークフローの run number が
+唯一の出所で、それは GitHub Actions の履歴にしかなく、このリポジトリからは
+読めません（§6）。
 
 ### 今日の決定 ── 一日で三つ、どれも仕様
 
@@ -63,7 +69,7 @@ Google と同じアドレスを打って二つ目のアカウントを立てて�
 
 **今は iPhone だけ。**そのあと iPad、Android。
 
-### 今日入ったもの（#122 まで）
+### 2026-09-02 に入ったもの
 
 - **一時間たっても保存が届く。**`netResume()` は起動の一回だけで、アクセス
   トークンは一時間で切れる。開いたままのアプリはサーバーへの書き込みが全部
@@ -85,7 +91,46 @@ Google と同じアドレスを打って二つ目のアカウントを立てて�
   家族の購入も同じ口に届くので、権利一覧が追いつく前に払ったばかりの人の段が
   消えていました。`isUpgraded` は除きます（格上げは失効日が過去になる）。
 
-### #122 のあとに入ったもの ── まだどのビルドにも無い
+### 2026-09-03 に入ったもの
+
+**ビルドに乗ったかは Actions の履歴を見ること。**このリポジトリからは読めません。
+
+- **`shell.js` が読み込みの途中で止まる欠陥。**`migratePos()` は `save()` を
+  呼び、`save()` は `www/backup.js` の `bkTouch()` で始まり、`backup.js` は
+  `shell.js` より**後**に読まれます。だから古い品詞ラベルを一つでも持っている
+  端末では、`shell.js` がその行で投げて**その下の定義が全部消えました。**
+  画面には何も出ません。呼ぶ場所を `www/boot.js` へ移しました ── boot.js は
+  最後に読まれ、移行を走らせるためだけにあります。定義は `shell.js` のままです。
+- **アカウント削除が平キー八つも消す。**`LS_FLAT` は言語に id が無かった頃の
+  八つ（`lingua.words` `lines` `lang` `script` `letters` `notes` `phases`
+  `talk`）で、`langMigrate()` がそこから言語へ写し、`lsWipeAcct()` が
+  アカウントと一緒に持っていきます。**一箇所に書いて二つが読む**ので、
+  片方だけ足すことができません。
+- **全角 ＠ で人が検索できる。**`netHandleOf()` が落とすのは `/^[@＠]+/` で、
+  U+FF20 も落ちます。日本語キーボードが出すのは全角のほうで、
+  `handle.ilike.*＠aya*` は `^[a-z0-9_]{2,24}$` に絶対当たりませんでした。
+  **同じ苦情が二度来て初めて検査が付きました** ── `tools/find-check.mjs`。
+- **検索の履歴 五件。**`SNS_RECENT=5`、サーバーの `recent_search` が記録で
+  `SET.recent` が写し。**入る道は `snsGo()` の一本だけ**で、🔍 を押した時だけ
+  入ります ── `snsSetQ()` は一文字ごとに走るので、そこから書くと
+  「a」「ay」「aya」が三件になります。一件ずつ消せます（`snsDropRecent()`）。
+  ★（`saved_search`）とは別のテーブルで、混ぜてはいけません。
+- **一行の欄で Enter が効かない。**`www/act.js` の一箇所だけが言います。
+  markup には `on*=` を書かないので（規則 3）、Enter は前からこのアプリのもの
+  でした。
+- **戻るスワイプは、後ろに画面があるときだけ。**`navBackTo()` が `NAV` の
+  最後から二つ目を答え、`swPrev()` はそれと `NAVBK` が指す画面が一致したときだけ
+  絵を返します。タブを押すと `NAV` は捨てられるので、タブの画面には後ろが
+  ありません。
+- **`lsWipeNS()` と `netMember()` が消えました。**前者は `lingua.` で始まる
+  キーを全部持っていく関数で、**別アカウントの言語まで消していました。**
+  後者は §3 に書いてある通りです。
+- **`admin` は `handle = 'lingua'` で決まります。**`ADMIN_HANDLE` が
+  `www/net.js` に、`is_admin()` が `supabase/schema.sql` に。
+  `profile.admin` の列は落としていませんが、誰が上かを決めるのは handle です。
+- **おすすめの刻みは 4 時間・太平洋時間**（`supabase/schema.sql`、
+  `now() at time zone 'America/Los_Angeles'` を4時間で切り下げる）。
+
 
 - **パスワードの画面からアプリに入れる**（`db40b2e`）。六桁はセッションを取る
   ために使われるので、そこに立つ人は既にサインイン済み。`netSetPass()` が
@@ -100,28 +145,46 @@ Google と同じアドレスを打って二つ目のアカウントを立てて�
   返事が来ないと印が立ったままで二度と訊き直さなかったから。買った直後の一言は
   「押したもの」を言います（`r.bought`）。持っている一番上の段ではありません。
 
-### 走っているセッション
+### 走っているセッション ── 2026-09-03
 
-`claude/review1`（審査の五点）、`claude/kbfull`（キーボードの Full Access）、
-`claude/lapse`（解約が次の起動で取り消される）。**どれも未取り込み。**
+`claude/door`（Google の扉）、`claude/plannow`（プランの期限）、
+`claude/keysel`（キーの確定）、`claude/me3`（画像と @ の14日）、
+`claude/rc`（RevenueCat、公開キー待ち）。**この五つが未取り込み。**
+保存のポップは決定だけあって未着手です（決定ログ `9bbd83d3`）。
 
-**枝が取り込まれているかは
-`git merge-base --is-ancestor <枝> origin/master` で訊くこと。**名前から推測
-しないこと。
+**この五行は一日で古くなります。**枝が取り込まれているかは名前から推測せず、
+訊くこと:
+
+```
+git merge-base --is-ancestor origin/<枝> origin/master && echo IN || echo NOT
+```
 
 ### まだ直っていないと分かっているもの
 
-- **解約が次の起動で取り消される。**`boot.js` の `netResume` は非同期、
-  `capLapse` は同期。`capLapse → netPlanUp` が期限切れのトークンで投げ、
-  そのあと `netPlanSync` が古い行を読んで戻す。`claude/lapse` が持っています。
-- **アカウントを変えても端末の段が残る。**`SET.plan` を書く場所は五つ、戻す
-  場所はゼロ。`LinguaPlan.swift` に `uid` の字が一つも無い。**担当なし。**
-- **オフラインで作った言語が、バックアップからの復元と旧形式からの移行では
-  印を押されない**（`bkRestore()` と `langMigrate()`）。**担当なし。**
-- **端末はレシート無しで自分の行に `pro` を書ける。**`schema.sql` の RLS が
-  閉じられるのは「他人の段を読み書きできない」まで。決めごと。
+**この節は 2026-09-03 に読み直しました。**四つのうち三つは直っていたので
+消しました ── 解約が次の起動で取り消される件（`claude/lapse` 取り込み済み。
+`netPlanUp()` が `netSend()` に乗り、両方のハンドラが答えを聞き、
+`SET.planPend` が送信の前に書かれる）、アカウントを変えても段が残る件
+（`core.js` の `setFor()` と `SET_ACCT` の六つ。`LinguaPlan.swift` は uid を
+持っています）、復元と移行で印が押されない件（`backup.js` が
+`LANGS[d.id].uid` を書き、`langMigrate()` は `mig` を通して
+`langMigStamp()` が押す）。**直ったものをここに残すと、次の人が同じ穴を
+二度掘ります。**
 
-### オーナーの側に残っているもの ── 2026-09-02 現在
+残っているのは一つだけです:
+
+- **端末はレシート無しで自分の行に `pro` を書ける。**`schema.sql` の RLS が
+  閉じられるのは「他人の段を読み書きできない」まで。`www/net.js` の
+  `netPlanUp()` の上のコメントが同じことを書いています。**決めごと** ──
+  閉じるには Apple のレシートを端末でないものが検証する必要があり、
+  それは一行のコードではなく決定です（`docs/scope/claude-acct2.md`）。
+
+### オーナーの側に残っているもの ── 2026-09-03 現在
+
+**下の六つは一つもこのリポジトリから見えません。**Supabase と App Store
+Connect と DNS のダッシュボードの話なので、**済んだかどうかはオーナーに
+訊くしかありません。**ここに「済み」と書けるのは、オーナーがそう言った日と
+一緒だけです。
 
 1. **`supabase/schema.sql` をダッシュボードに流す**（`supabase/setup.md` § 2）。
    流すまで、人の言語のページで単語と文法の ↓ を押しても何も落ちてきません。
@@ -143,29 +206,23 @@ Google と同じアドレスを打って二つ目のアカウントを立てて�
 6. ウィジェットのプロビジョニングプロファイル、Apple / Google サインインが ON か、
    スタッフと admin、請求の上限 ── `docs/apple.md` § 4、`supabase/setup.md` § 4 § 5 § 6。
 
-## 0. 2026-08-28 に分かったこと ── 調べ直さないために
+## 0. ずっと効いている決めごと
 
-**この節は答えです。**下の七つは実際にコードを読み、走らせて確かめたものです。
-同じことをもう一度調べないでください。**直っているとは書いていません** ── どこが
-原因かが書いてあります。
+**役割。**取り込むのは**サブリーダー①**（OWNER「取り込むのはサブリね？」）。
+そのままゲートもそこで回します。**リーダーは配ってビルドを引くだけで、
+取り込まず、ゲートを回さず、コードを書きません**（OWNER「君が作業するんじゃ
+なよね？」）。`docs/SESSIONS.md` と `CLAUDE.md` が本体です。
 
-**役割が変わりました。**取り込むのは**サブリーダー①**（OWNER「取り込むのは
-サブリね？」）。そのままゲート34本もそこで回します。**リーダーは配ってビルドを
-引くだけで、取り込まず、ゲートを回さず、コードを書きません**（OWNER「君が作業
-するんじゃなよね？」）。`docs/SESSIONS.md` と `CLAUDE.md` は直してあります。
+**2026-08-28 にここに七つの表がありました。消しました。**七つのうち六つは
+その後に直っていて、直ったものが「分かったこと」として残っていると、次の人が
+同じ穴を二度掘ります。何が直ったかは `docs/CHANGELOG.md` にあります ──
+この文書は今どこに立っているかを書く場所で、履歴の場所ではありません。
 
-今日の決定は `docs/FEATURE_RULES.md` § Owner decision log の上から三つ
-（規約の三つ／消す行は三本／取り込むのはサブリーダー）。
+残っている一つだけ、まだ直っていないので書いておきます:
 
 | 何 | 分かったこと | どこ |
 |---|---|---|
-| パスワードを変更 | **忘れた人の出口がこの画面に無い。**忘れた道（メール→コード→新しいもの）は扉にだけある | `settings.js` `id==='pw'` / `onboard.js` `obMailForgot` |
-| 消す行 | **三本あるべきで、二本しか無い。**無いのは「端末のデータを消す」＝端末の言語データが全部消えて SNS は消えない。`set.wipe` は全部消す方 | `settings.js` `id==='acct'` |
-| 読みの表示 | IPA／カタカナ／両方の三択。**部屋ごと消すと決まった** | `settings.js` `id==='read'` |
-| 自作文字の用紙 | **`LinguaPdf.page()` がページを等倍のまま描いている。**`page.draw(with:to:)` は文脈に合わせて拡大しない。印は 14px、`shScan()` が受けるのは 18.3〜73.2px → 四つとも捨てられる。上下反転も同じ箇所。**読み取り側は正常**（往復 0〜18°で二十個一致、印のずれ 0px） | `ios/App/App/LinguaPdf.swift` |
-| キーボード | ① 長押しで入る揺れの状態が全キーから `kbTapKey` を外す ── 理由だった ⊖ は既に削除済みで、外すほうだけ残っていた。② 余りが一列＝キー半分のとき空きマスとして描かれるが `kbCellAdd` はキー一つ分を要求するので絶対に入らない | `keyboard.js:1933` / `kbCellHTML` |
-| 文法ページ | **誰も動かしていない。**`feature/grammar-engine`（`claude/grammar2` を含む）が master より **364進み・281遅れ**、140ファイル。`index.html` `act-map.js` `core.js` `glyph.js` i18n×10 に触る | `origin/feature/grammar-engine` |
-| 絞り込みの⭐️ | `snsPickSaved()` が `goTab('explore')` で**検索タブへ飛ぶ**。決定は「その言葉で検索し直す（飛ばすのではない）」 | `sns.js` `snsPickSaved` |
+| 今日のお題の日付 | `netDay()` が `order=on_day.desc&limit=1` と訊いていて、**今日を訊いていない。**古い行が一つあれば、それが永久に「今日」として出ます。`on_day` はどこにも描かれません | `www/net.js` `netDay()` |
 
 **オーナーは iPhone SE2 と iPhone 17 で実機確認しています。**OWNER 2026-08-28
 「iPhone se2と17で作業してる」。**一番狭い端末と一番広い端末の両方**なので、
@@ -191,9 +248,14 @@ Google と同じアドレスを打って二つ目のアカウントを立てて�
 
 ## 1. `master` is the app again. Keep it that way.
 
-`master` is at `7f3aec4` (2026-09-02) and a fresh clone is the current app.
-The gate is **34 checks** — count `FAST` and `SLOW` in `tools/gate.mjs`, which
-is the only place the number lives.
+A fresh clone of `master` is the current app. **No sha is written here** — it
+is a fact with a shelf life of about a day, and this line has carried a stale
+one three times.
+
+The gate is **35 checks** — nine that need no browser and twenty-six that do.
+Count `FAST` and `SLOW` in `tools/gate.mjs`, which is the only place the
+number lives; the count went 34 → 35 on 2026-09-03 when `tools/find-check.mjs`
+went in.
 
 **It has NOT been run on this `master`.** That is a statement about today, not
 a worry: three branches are out and the gate is run once, by whoever
@@ -362,8 +424,8 @@ grep -n "rest/v1" www/net.js          # what the app actually asks the server fo
 ```
 
 Today that is `profile`, `post`, `react`, `follow`, `block`, `report`,
-`draft`, `saved_search`, `post_seen`, `prompt`, `language`, `slice` and the
-RPCs. `netPush()` sends a post — its photographs and its voice with it, through
+`draft`, `saved_search`, `recent_search`, `post_seen`, `profile_seen`,
+`language_seen`, `prompt`, `language`, `slice`, `plan` and the RPCs. `netPush()` sends a post — its photographs and its voice with it, through
 `netUpPics()` and `netUpVoice()` into the `post-media` bucket — `netFeed()`
 reads the two timelines, `netNotices()` reads the notices, `netDraftUp()` sends
 a draft, `netLangSync()` sends and merges the language, and `postCatchUp()`
@@ -375,12 +437,17 @@ copy and not a home**: the phone keeps what works with no signal.
 app's own door when there is no session.
 
 **There is one kind of account and there are no anonymous ones**
-「匿名アカウントはねえよ」. `netSignedIn()` asks whether there is a session at
-all and `netMember()` asks whether it carries somebody's name; nothing asks a
-third question about what kind of account it is. There is no `netAnon()` — the
-comment where it stood (`net.js:268`) says so — and `supabase/schema.sql`
-**drops** `has_account()` (`drop function if exists has_account()`), so every
-policy that used to ask it asks `is_member()` now.
+「匿名アカウントはねえよ」. **There is one question and it is `netSignedIn()`.**
+`netMember()` was the second one — a session that also carries a name — and with
+no anonymous accounts it could never answer no, so it was a true question with
+nothing left to ask. It and `netAnonTok()` are **deleted**, and every one of the
+twenty-eight callers asks `netSignedIn()`. Do not put either back; the comment
+above `netOut()` in `www/net.js` says why at length.
+
+There is no `netAnon()` either — the comment where it stood says so — and
+`supabase/schema.sql` **drops** `has_account()`
+(`drop function if exists has_account()`), so every policy that used to ask it
+asks `is_member()` now.
 
 **OWNER DECISION 2026-08-26**, and it settles what the paragraph above was
 groping at:
@@ -405,13 +472,14 @@ it:**
 grep -o "rest/v1/[a-z_]*" www/net.js | sort | uniq -c | sort -rn
 ```
 
-On 2026-09-01 that answers: `profile` 11, `rpc` 10, `follow` 5, `draft` 4,
-`saved_search` 3, `report` 3, `post` 3, `language` 3, `block` 3, `slice` 2,
-`react` 2, `post_seen` 2, `prompt` 1 — and the ten `rpc` are `account_ban`
-`account_delete` `account_unban` `admin_counts` `feed_hot` `notices`
-`post_hide` `post_show` `staff_add` `staff_drop`. `netLangSync()` is fired by
-`boot.js` at launch, and `syMerge()` (`www/sync.js` ch 26) is what puts two
-copies together by adding both.
+On 2026-09-03 that answers: `profile` 13, `rpc` 12, `language` 8, `follow` 4,
+`draft` 4, `saved_search` 3, `report` 3, `recent_search` 3, `react` 3,
+`post_seen` 3, `post` 3, `block` 3, `slice` 2, `prompt` 2, `plan` 2,
+`profile_seen` 1, `language_seen` 1 — and the twelve `rpc` are `account_ban`
+`account_delete` `account_unban` `admin_counts` `email_taken` `feed_fo`
+`feed_hot` `notices` `post_hide` `post_show` `staff_add` `staff_drop`.
+`netLangSync()` is fired by `boot.js` at launch, and `syMerge()`
+(`www/sync.js` ch 26) is what puts two copies together by adding both.
 
 **Still unused: `quote` and `publication`. Those two, and nothing else.**
 
@@ -432,9 +500,9 @@ timeline and the language both.** The entries at the head of
 Order, and where it stands:
 
 1. **One kind of account — done.** There are no anonymous ones
-   「匿名アカウントはねえよ」. `netSignedIn()` is a session, `netMember()` is a
-   session with a name, and `obNeed()` asks the second at the six things other
-   people would see — a post, a like, a boost, a report, a follow, a block.
+   「匿名アカウントはねえよ」. `netSignedIn()` is the one question, and
+   `obNeed()` asks it at the six things other people would see — a post, a
+   like, a boost, a report, a follow, a block.
    The door is the LAST step of the onboarding and there is no way past it.
    Held by `open-check` and by `migrate-check` case 7.
 2. **`is_member()` is the one question — done.** `has_account()` is dropped in
@@ -448,21 +516,28 @@ Order, and where it stands:
    a slice, `netSlices()` reads them back, and `netLangSync()` — fired from
    `boot.js` at launch — puts the two copies together through `syMerge()`,
    which adds both sides and lets neither win by being newer.
-4. **The plan.** OWNER 2026-09-01: 「課金とアカウントとキーボードはアカウントに
-   結びつく」 — the plan is the account's, so it belongs on `profile` and
-   follows the person to whatever phone they sign in on. **Not there yet**:
-   `profile` has no plan column, `www/net.js` never sends one, and the value
-   is `SET.plan` on the device, set by hand. This is the gap between the
-   decision and the code, and it is item 7's other half.
+4. **The plan — on the account, done.** OWNER 2026-09-01: 「課金とアカウントと
+   キーボードはアカウントに結びつく」. It is **its own table and not a column on
+   `profile`** — `plan` in `supabase/schema.sql`, one row per uid.
+   `netPlanUp()` posts it, `netPlanSync()` reads both copies back and takes the
+   higher rung, and `SET.planPend` holds what a launch with no signal could not
+   send. On the device `setFor()` parks the six per-account settings under the
+   uid that had them, so signing in as somebody else does not inherit a plan.
+
+   **What is still missing is the receipt.** The phone writes its own row, so
+   anybody who can reach this database can set their own plan. Closing that
+   needs Apple's receipt checked by something that is not the phone, which is a
+   decision rather than a line of code — `docs/scope/claude-acct2.md` holds the
+   three ways and why none is written.
 5. The rest of moderation — **the tombstone in a thread (`postTomb()`), the
    notices (`vNotif`) and the frozen state are in.** What is left is the ⋯
    menu on a profile.
 6. Terms and privacy, under `/home/user/tokine2`, linked from Settings and not
    from the onboarding. Not started.
-7. What a purchase OPENS. StoreKit itself is **written** ── `ios/App/App/LinguaStore.swift`,
+7. What a purchase OPENS. StoreKit is **written** ── `ios/App/App/LinguaStore.swift`,
    `www/store.js`, and `setPlan` in `www/settings.js` is `storeBuy`'s one caller.
-   What is not done is the other half: a purchase has to reach the server and
-   set the plan on `profile` (item 4).
+   The plan now reaches the server too (item 4). **What is not done is the
+   receipt**: nothing but the phone says the purchase happened.
 
 **Everything still to do that needs the server is one list**, in
 `docs/FEATURES.md` → "What is left to do online": the plan (the one with money
@@ -628,13 +703,16 @@ instructions:**
 
 ## 5. The gate, and what CI does not run
 
-`npm test` is **thirty-four** checks and is the specification. `CLAUDE.md` → "The
-twenty-one rules the gate enforces" -- **and those two numbers are not the same
-kind of thing.** Twenty-one is how many RULES are written down; thirty is how
-many CHECKS run. They have never been equal and making them equal would be
-wrong. `tools/gate.mjs` runs the eight that need no
-browser first, in about two seconds, then the twenty-five browser ones four at a
-time. Run one after another they were ten minutes in this container.
+`npm test` is **thirty-five** checks and is the specification. `CLAUDE.md` →
+"The rules the gate enforces" -- **and those two numbers are not the same kind
+of thing.** One counts RULES that are written down; this one counts CHECKS that
+run. They have never been equal and making them equal would be wrong: one rule
+can take three checks and one check can hold two rules.
+
+`tools/gate.mjs` runs the **nine** that need no browser first, in about two
+seconds, then the **twenty-six** browser ones four at a time (`WIDE` is
+`min(4, cpus)`). Run one after another they were about ten minutes in this
+container, which is a figure nobody has re-measured since the count grew.
 
 **It is run once before pushing**, not once per commit — the owner's rule, and
 `docs/TESTING.md` has all three. While working, run the one check that holds
@@ -642,10 +720,18 @@ what you are changing, by name, plus the six fast ones.
 
 **GitHub Actions runs three of them** — `assets`, `es5`, `i18n`
 (`.github/workflows/i18n.yml`). A green tick on a push does not mean the gate
-passed. `dead`, `migrate`, `import`, `sides`, `act`, `conv`, `card`, `word`,
-`post`, `backup`, `fill`, `round`, `face`, `base` and `press` — fifteen of the
-eighteen — run only where somebody runs them, which means locally, which
-means you.
+passed. **The other thirty-two run only where somebody runs them**, which means
+locally, which means you.
+
+The names are deliberately not listed here. A list of thirty-two check names is
+a list that goes stale the next time one is added, and this file has been wrong
+about that list twice. The command:
+
+```
+node -e "const s=require('fs').readFileSync('tools/gate.mjs','utf8');
+  for(const m of s.matchAll(/const (FAST|SLOW) = \[([^\]]*)\]/g))
+    console.log(m[1], m[2].split(',').length)"
+```
 
 `fill` and `round` were missing from that list and from `CLAUDE.md`, and it was
 not only a list. Both loaded playwright as `import { chromium } from
@@ -675,10 +761,14 @@ that matters more than it looks: the `build-*` tag is a trigger and a record,
 never the source of the number. A `workflow_dispatch` run gets a build number
 exactly the same way.
 
-**The latest is #91** — 2026-08-25, green, `workflow_dispatch` on `master` at
-`9330140`, all fourteen steps, uploaded to App Store Connect. #90 was also a
-`workflow_dispatch`; the tag has not been the trigger in practice for some
-time.
+**Which build is the latest is not written here, and cannot be.** The number is
+the workflow's run number and it lives in the Actions tab — outside this
+repository and unreadable from a session. Every line in this file that named one
+went stale within days, and at one point three different numbers sat in three
+sections at once. Ask, or open the Actions tab.
+
+The tag has not been the trigger in practice for some time; `workflow_dispatch`
+is what gets used.
 
 **A green tick is not a delivery.** The workflow passes
 `wait-for-processing: false`, so it goes green the moment the bytes are
@@ -700,19 +790,17 @@ a Linux session.
 
 ---
 
-## 7. What is next, as of 2026-08-25
+## 7. What is next
 
 Ordered by what blocks shipping. Anything not on this
 list has either been done or was never agreed to — check `git log` before
 assuming a thing is waiting for you.
 
-### The device round of 2026-08-25, and four things dug out of the code
+### Dug out of the code, and still open
 
-Build #91 went to TestFlight and the owner spent an hour on a real phone. What
-came back is about twenty-five items and they are being worked by the six
-sessions named in §4b. Most of them are plain and need no note here. **Four
-were run to ground before any session was told to look, and those four are
-written down because otherwise the next person repeats the digging:**
+**Two of the four that used to sit here are fixed and have been deleted** — the
+self-drawn sheet's PDF (`LinguaPdf` scales the page now) and the rounded
+underline (`.wldrow` is declared once). The two that are still open:
 
 - **「今日のお題」is not a bug in the day feature.** The mechanism is entirely
   intact — `dayRow()` puts it at the top of the feed, `openPost('day')` carries
@@ -725,15 +813,14 @@ written down because otherwise the next person repeats the digging:**
   `netDay()` asks `order=on_day.desc&limit=1` and **never asks for today**, so
   one stale row would be served as "today" forever; and `on_day` is rendered
   nowhere, which is what 「日付ないし」 means.
-- **The 通報 row in account settings is not the reporting affordance.** It is
-  the door to `www/mod.js` — the *other* side, where a report is read and a
-  post is taken down — and it is behind `profile.staff`, set by hand in the
-  dashboard and by nothing in this app. Its own header says why it exists:
-  *"we act on reports within 24 hours" is something Apple asks about*. The
-  owner has asked for it to come off the settings list. **That leaves `mod.js`
-  with no door**, so a DELETE REVIEW is owed before anything is removed, and
-  the thing being weighed is App Review 1.2 against a row the owner finds
-  meaningless. Reports themselves keep landing in the table either way.
+- **The 通報 row came off account settings, and `mod.js` kept a door.**
+  「設定の通報ボタン消せ」OWNER 2026-08-26. The row was the *other* side — where
+  a report is read and a post is taken down — and it was also the one thing on
+  that page telling whoever held the phone that there is a staff at all. It is
+  gone; the way in is now the seven presses on the heading that open `vAdmin()`,
+  which draws the same queue with the same `modRow()`. Reports keep landing in
+  the table either way. **Nothing here is outstanding** — it is written down
+  because "the row was deleted" and "moderation was deleted" are one grep apart.
 - **A PDF that was traced on a screen still cannot be read.** The scanned kind
   works and has since `claude/sheet` landed. `sheet.js` sorts an arriving file
   into four kinds and `'drawn'` — ink drawn rather than photographed — is on
@@ -741,73 +828,38 @@ written down because otherwise the next person repeats the digging:**
   phone has one (PDFKit, native) while this file does not."* So
   「上からなぞった文字のみ利用できる」 is a native-Swift job nobody holds, not
   a rename. Said here because the file's surface makes it look done.
-- **The rounded underline on the profile's language row had a cause, and it
-  was a duplicate selector.** `.wldrow` is declared twice in `index.html`: the
-  old cover version with `border:1px solid` + `border-radius:10px`, and the
-  current one with `border:0; border-bottom:1px solid`. The second overrides
-  `border` and **never mentions `border-radius`**, so a 10px radius stays and
-  bends a bottom-only line up at both ends. Rule 18's baseline was listing both
-  halves of the dead rule, which is how it survived. **A duplicate declaration
-  is invisible to every check in the gate** — the same blind spot `act-map.js`
-  had before duplicate names were checked for.
 
-### Landed on 2026-08-25
+**And the lesson the underline left, which outlives the bug:** `.wldrow` was
+declared twice, and the second declaration overrode `border` while never
+mentioning `border-radius`, so a 10px radius survived on a bottom-only line.
+**A duplicate declaration is invisible to every check in the gate** — the same
+blind spot `act-map.js` had before duplicate names were checked for.
 
-- **Four branches integrated**, and the gate is green on `master`: the grammar
-  engine's first three files, the plan rename and StoreKit, the dead-CSS sweep,
-  and the sheet's spike. `press` reads **10486 buttons, 217/217 names, 4 styled
-  and unworn against a baseline of 4**.
-- **The gate was 26 checks that day** (it is 30 now — `tools/gate.mjs`): eight with no browser (`grammar-engine-check`
-  joined them) and eighteen with one (`plan-check`, `sheet-check`,
-  `shape-check`, `gramlang-check` and `draft-check` joined them). It read 24
-  here, then 25, then 26, all on 2026-08-25 -- `4f8b681` wired
-  `gramlang-check` in and `claude/draft` wired `draft-check` in, each on its
-  own branch, and each time this file was a day behind. Every one was caught
-  the same way: by counting `FAST` and `SLOW` in `tools/gate.mjs` rather than
-  believing a sentence. **`CLAUDE.md`'s "nineteen rules" is NOT this number
-  and must not be made to match it** -- nineteen is how many rules are
-  written down, and there are nineteen. This bullet said "not the nineteen
-  CLAUDE.md still says" and that sentence was itself the mistake.
-- **`shape-check` was written, merged, and left out of the gate.** It was on
-  `master` with an `npm run shape` script from the day `claude/inkshape` was
-  integrated, and its name was in no list in `tools/gate.mjs`, so `npm test`
-  never ran it. Nothing was red; the check was simply silent, which is the
-  failure this repository is most often bitten by. Wired in on 2026-08-25
-  (`integrate2`, `db0aacb`); green standalone, 17 assertions, about 30
-  seconds. It takes no port — it opens `www/index.html` over `file://` where
-  the other fifteen browser checks each serve `www/` on one of their own — so
-  it cannot collide in the pool. (That sentence said "the other fifteen
-  browser checks"; it is seventeen now. The number is `SLOW.length` in
-  `tools/gate.mjs`.) **The lesson is the general one and is not
-  about this check**: a check enters the gate in the same commit that adds it,
-  or it does not enter at all.
-- **A branch was dropped rather than merged.**
-  `claude/detailed-tasks-execution-ak61z2` had four commits on a base **456
-  behind**, and `master` had already done all four by another road — the
-  keyboard count, the QWERTY start, and both halves of the timeline's sign-in.
-  Merging it would have re-opened settled decisions. Worth keeping as the
-  worked example of what a stale base costs: every one of the four conflicts in
-  that day's integration came from a branch that had fallen behind, and none
-  from two sessions genuinely wanting the same line.
-- **The one that nearly shipped silently.** `press` failed on ten classes
-  "nothing wears" — all of them the flick keyboard's, and all of them very much
-  worn by `www/keyboard.js`. The plan rename had moved `can('kb')` to `pro`
-  while a fixture seed from another branch still said `plus`, so the walk could
-  not buy a keyboard, could not open the flick editor, and reported the classes
-  it never reached as dead. The fix is to reach the state, never to delete the
-  rule or widen the baseline.
+### 二つの規則、ゲートについて
+
+**A check enters the gate in the same commit that adds it, or it does not enter
+at all.** `shape-check` was written, merged, and left out for days: an
+`npm run shape` script existed, its name was in no list in `tools/gate.mjs`, and
+`npm test` never ran it. Nothing was red. **A silent check is the failure this
+repository is bitten by most often**, and `tools/token-check.mjs` is sitting in
+exactly that state today — in `tools/`, in no list, and named in §0-a as though
+it were holding something.
+
+**Count `FAST` and `SLOW`; never believe a sentence about the number.** This
+file has said 24, 25, 26, 30 and 34 and every one of them was right on the day
+it was written. `CLAUDE.md`'s count of RULES is a different number from this
+count of CHECKS and **must not be made to match it**.
 
 ### Open, and the owner's
 
-- ~~**How many keyboards a plan buys.**~~ Settled 2026-08-25, and there had
-  never been a conflict — `docs/BACKLOG.md` had read one table's *languages*
-  column as a second answer about *keyboards*. Free 1 language and the fixed
-  QWERTY; Plus 1 language and 4 keyboards pooled; Pro 3 languages and no
-  ceiling. **Not implemented**: `CAN.kb` is still `'pro'`, so Plus has zero
-  today, `KB_MAX` is still a per-language 3, `edit` and `badge` are still
-  outside `CAN`, and the language ceiling does not exist at all. The last of
-  those takes something away that anybody has today, so it hides and never
-  deletes.
+- ~~**How many keyboards a plan buys.**~~ Settled 2026-08-25 and **implemented**.
+  Free 1 language and the fixed QWERTY; Plus 1 language and 4 keyboards pooled;
+  Pro 3 languages and no ceiling. In the code: `CAN.kb` is `'plus'` (the DOOR),
+  `kbCap()` is the NUMBER — `FREE_KB=1`, `PLUS_KB=4`, `Infinity` on pro — and it
+  is a pool **across languages**, counted by `kbCount()`. `KB_MAX` is gone;
+  a number that is three facts is a function. The language ceiling is
+  `langCap()` — `FREE_LANGS=1`, `PRO_LANGS=3`, and Plus is deliberately the same
+  as free. `edit` and `badge` are both in `CAN` now.
 - ~~**The price of Pro.**~~ Decided — the four products and their prices are in
   `docs/apple.md` § 4 and written into `ios/App/App/LinguaStore.swift`. What is
   left is not a decision, it is **entering them in App Store Connect**, which is
@@ -854,36 +906,14 @@ written down because otherwise the next person repeats the digging:**
 5. **Signing in from Settings** was fixed but has not been opened on a phone.
    `obBackTo`/`obReturn` in `www/onboard.js`.
 
-### Corrected on 2026-08-22, with what was measured
-
-Each of these was a claim this file made that the code no longer supported.
-Two of them were about capabilities that had been deleted.
-
-- **The gate was fourteen checks and could not finish.** §5 above.
-- **Two claims in § 7 that the code no longer supported** — items 6 and 7,
-  struck through in place rather than deleted, with what was measured on each.
-- **The counts.** All three were right when written at `cd712dd` and none had
-  been touched in the seventy-four commits since.
-
 ### Found and left alone, deliberately
 
-6. ~~**A letter of a hidden kind is counted and unreachable.**~~ Not
-   reproducible — this said the Letters header showed `5 / 30` while the rooms
-   inside came to 29. `LT_KINDS` is unconditional and `ltKindOf()` answers
-   `num`, `mark` or `alpha` for every letter, so the rooms sum to
-   `LETTERS.length` on any plan. Measured 2026-08-22: a fresh free language is
-   `0 / 38`, rooms 26 + 2 + 10; one that paid and stopped is `0 / 40`, rooms
-   27 + 2 + 11. `5 / 30` is not a total this plan can produce — a–z, `!?` and
-   the digits is 38.
-7. ~~**`ai` lifts at Plus, `sug` only at Studio, and they are the same
-   ceiling.**~~ Moot — neither capability exists. `CAN` is ten names and
-   neither is among them; `AI_FREE_DAILY`, `sugLeft` and `aiSpend` have no
-   declaration anywhere in `www/`. It also contradicted item 4 above, which
-   says the suggestion ceiling went out with Studio. The same claim was still
-   live in `docs/FEATURE_RULES.md` § "What to report" and in two comments in
-   `www/core.js`; all three are gone.
-8. ~~**`press` never reaches `kbReset`.**~~ Done — measured 2026-08-22,
-   **213 of 213** distinct names pressed, `kbReset` among them.
+**Three struck-through items were deleted from here on 2026-09-03.** They were
+claims this file had made and then disproved — a letter counted and unreachable,
+`ai`/`sug` ceilings that never existed, `press` not reaching `kbReset` — and a
+disproved claim kept on the page is a claim the next reader has to disprove
+again. What survives is the one that is still open:
+
 9. **`tools/verify-script.mjs` runs again** — three breakages, not one:
    `gstep`→`geStep`, `scriptDrawn` gone since `9226dd6`, and every click was
    landing on `#splash` because it waited 250 ms where every other check waits
@@ -1010,28 +1040,15 @@ Two of them were about capabilities that had been deleted.
     a private use code point now, `sharePua()` in `share.js`, on both plans —
     `shareFace()` for a keyboard somebody built and `kbFix()`'s override for
     the free QWERTY, which were one feature working on one plan and not the
-    other, split by nothing. Held by `conv-check`'s **eighth** claim, per
-    letter and not as a count. Nothing stored changes; the private use area
+    other, split by nothing. Held by `conv-check`, per
+    letter and not as a count. It makes **nine** claims now and prints the
+    number in its own last line; do not carry an ordinal in prose. Nothing stored changes; the private use area
     exists in the input field and inside the extension and nowhere else.
     **Decided, not a defect:** used in Messages this keyboard sends tofu —
     `967333c`, 「Lingua キーボードは Lingua の中で使うもの」.
     **`DEVICE CONFIRMED` — no.** Whether the extension actually inserts
     U+E000 upward, and whether what it inserts is drawn in `LinguaType`,
     cannot be checked anywhere in this repo. That is item 20's phone.
-
-22. **Five renames, and one of them was the entry being wrong.**
-    `postsRead`→`postRead`, `wSetFil`/`wSetSort`→`words*`, `gh*`→`geHint*`
-    (with `GH*`→`GE_HINT*`), `note*`→`nt*` and `noteRead`→`ntRead`.
-    `savePosts` and `saveMe` were listed in the backlog beside them and are
-    **deliberately not renamed**: `save*` is a family of exactly ten, every one
-    naming what it saves, and CLAUDE.md's own prefix list already carries
-    `open*`, which is twenty functions and a verb rather than a chapter. A verb
-    family was never the thing the rule is against; one chapter under two names
-    is. Decision log, 2026-08-22. Behaviour unchanged, and the argument for
-    that is that no number moved: `buttons pressed 8683 (214/214)`,
-    `screens walked 366`, `mirror 275`, `routes 36/36` — all four the same
-    either side. `dead` went 1208 → 1209 functions, which is `sharePua` from
-    item 21 and not a rename.
 
 ### Found while writing the StoreKit code, 2026-08-22
 
@@ -1140,7 +1157,11 @@ Two of them were about capabilities that had been deleted.
 2. Read `CLAUDE.md` end to end. It is the specification, not an overview, and
    every rule in it is a bug that already shipped once.
 3. Run `npm test` before touching anything, so you know what green looks like
-   here. It prints counts — `screens walked: 366`, `screens the mirror
-   rendered: 275`, `buttons pressed: 8683` — and a change meant to alter
-   nothing has to leave them where they are. All three measured 2026-08-22.
+   here. It prints counts — screens walked, screens the mirror rendered,
+   buttons pressed — and a change meant to alter nothing has to leave them
+   where they are. **The three numbers are not written here on purpose:** they
+   were last measured on 2026-08-22, dozens of branches have gone in since, and
+   nobody has re-measured. Take the numbers from your own first run and compare
+   your second run against those. A stale number in this file is worse than no
+   number, because it turns a correct run into a false alarm.
 4. If what you are about to do is in §3, you are starting it, not continuing it.
