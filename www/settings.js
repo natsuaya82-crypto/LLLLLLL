@@ -763,14 +763,26 @@ function plPicked(id, yr){ return !!(PLPICK && PLPICK.id===id && PLPICK.yr===!!y
    it is instead is a change to a subscription that exists, and that is
    Apple's own sheet (storeManage) 「サブスクリプションは、サブスクライブに
    使用したプラットフォームを通じて管理してください」. */
-function plBuy(){
-  var now, i, j;
-  if(!PLPICK) return;
-  now=plan();
-  i=PLAN_ORDER.indexOf(now);
+/* Whether what is picked is already paid for -- the plan in force, or one
+   below it on the ladder. plBuy()'s own test, asked before the button is
+   drawn instead of after it is pressed. Nothing picked is not 「held」: the
+   button is drawn disabled then, which is what it has always been. */
+function plHave(){
+  var i, j;
+  if(!PLPICK) return false;
+  if(plan()==='free') return false;
+  i=PLAN_ORDER.indexOf(plan());
   j=PLAN_ORDER.indexOf(PLPICK.id);
-  if(now!=='free' && j>=0 && i>=0 && j<=i){
-    popAsk(t('plan.already', planName(now)), function(){ storeManage(); },
+  return j>=0 && i>=0 && j<=i;
+}
+function plBuy(){
+  if(!PLPICK) return;
+  /* plHave() and not the comparison written out again: the button above is
+     drawn from it and this is the same question. Two copies is the one thing
+     this repo has been bitten by most -- the day one of them changes, the
+     other goes on answering the old way and nothing says so. */
+  if(plHave()){
+    popAsk(t('plan.already', planName(plan())), function(){ storeManage(); },
       t('plan.cancel'));
     return;
   }
@@ -861,6 +873,22 @@ function vPlans(){
      typed prices are what is on screen for that moment and the App Store's
      are what is on screen after it. */
   storeAsk();
+  /* AND WHAT THIS APPLE ID ALREADY HOLDS, which nothing had ever asked --
+     the screen drew the plan out of the copy in the Keychain, and a copy that
+     is behind shows somebody on Pro a live 「buy Plus」 button.
+     「そもそもプロの人が買えるのが意味わからないだろ」 OWNER 2026-09-03.
+
+     THE SCREEN WAITS FOR IT. 「ローディングすればそんなの起きないだろ」 OWNER
+     2026-09-03 -- the same answer given about a language arriving after a
+     sign-in, and the same mark. Nothing is drawn from the stale copy, so
+     there is no moment in which the stale copy decides anything.
+
+     In a browser there is no App Store to ask, so storeHeld() is true from
+     the first line and this screen is exactly what it was. */
+  storeCurAsk();
+  if(!storeHeld())
+    return '<div class="view plans">'+navTop('')+
+      '<div class="body">'+snsWaitHTML()+'</div></div>';
   return '<div class="view plans">'+
     navTop('')+
     /* The picture, and it is this phone's own keyboard wearing the letters
@@ -902,11 +930,23 @@ function vPlans(){
        is still out. No new class and no rounded box -- `.note` is what a state
        is drawn in on twenty other screens, and it is inside the .plgo that is
        already here rather than a second one of its own. */
+    /* AND THE BUTTON IS NOT THERE FOR SOMETHING ALREADY PAID FOR.
+       「そもそもプロなら課金自体ボタン押させないでいいでしょ」 OWNER
+       2026-09-03. plBuy() has refused the press since 2026-09-02; a button
+       that exists in order to say no is a button. What is left on this screen
+       for somebody on the top rung is the two rows below -- restore, and
+       Apple's own sheet, which is where a subscription is changed.
+
+       This is not 「a button that is not there」 in the sense of 2026-08-25
+       (「そのプランでできることできないことで UI 自体に変更がない方が
+       良くない？」): that is about a locked feature elsewhere, whose press is
+       the way TO this screen. Here there is nowhere to send anybody. */
     '<div class="plgo">'+
       (storeSay()? '<div class="note">'+esc(storeSay())+'</div>' : '')+
-      '<button class="btn plbuy"' + DO('plBuy') +
-      (PLPICK? '' : ' disabled')+' style="width:100%">'+
-      esc(t('plan.buy'))+'</button></div>'+
+      (plHave()? '' :
+        '<button class="btn plbuy"' + DO('plBuy') +
+        (PLPICK? '' : ' disabled')+' style="width:100%">'+
+        esc(t('plan.buy'))+'</button>')+'</div>'+
     '<div class="plfoot"><button class="btn ghost" style="width:100%"' +
       DO('storeRestore') + '>'+esc(t('plan.restore'))+'</button></div>'+
     /* AT THE FOOT, AND UNDER THE BAR OF TABS. 「一番下に置いて欲しい。
