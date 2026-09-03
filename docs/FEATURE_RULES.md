@@ -218,6 +218,36 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### 買う画面には、そのプランが売っているものを全部書く
+- Date: 2026-09-03
+- Area: プランのカードの行（`PLANS` の `lines`、`www/core.js` と `www/i18n`）
+- Decision:
+
+  ```
+  何で入ってないの？
+  ```
+
+  Pro の行に **「言語を三つ」と「ダウンロード三つ」**、Plus の行に
+  **「ダウンロード一つ」**。`langCap()` と `dlCap()` が売っている数が、
+  買う画面のどこにも書かれていなかった。
+
+  **説明文にしない。名前で書く。**「アプリ内に説明書くの禁止」はそのまま。
+- Reason: 上限は値段の一部で、書いていなければ売っていないのと同じ。
+  Pro は言語 3 個と DL 3 個、Plus は DL 1 個を持つのに、五行のどれもそれを
+  言っていなかった。監査 C（`docs/scope/aud-pay.md`）が見つけた。
+- Affected features: `PLANS`（`www/core.js`）に三行。`plan.plus.6`
+  `plan.pro.6` `plan.pro.7` を十言語ぶん（`www/i18n/*.js`）。
+  **Plus の自作言語は Free と同じ 1 なので、Plus 側に言語の行は無い** ──
+  無料と同じ数を有料のカードに書くと、買うと増えるように読める。
+- Affected data: 無し。画面の文字だけ
+- Affected docs: `docs/PAID_FEATURES.md`、`docs/CHANGELOG.md`
+- Implementation status: **入っている**（2026-09-03、`claude/aud-pay`）。
+  `npm run i18n` が持つ ── 十言語のどれかで鍵が欠けると、`keys:` と
+  `the walk: fell back to English` の二行で落ちる（`ko` から
+  `plan.pro.7` を抜いて赤を見た）。
+  `planMark()`（`www/settings.js`）に三つの絵は無く、既定の ✓ が付く。
+  あの表は `claude/plannow` のもので、絵を選ぶのはそちら。
+
 ### DM は作らない。メッセージは別のアプリになる
 - Date: 2026-09-03
 - Area: SNS の側
