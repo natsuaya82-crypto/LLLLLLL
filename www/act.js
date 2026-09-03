@@ -150,11 +150,37 @@ function actWire(root){
   root.addEventListener('focusout', function(){
     if(typeof pwKbGuard==='function') pwKbGuard();
   }, false);
+  /* Enter, and the two things it means here.
+
+     A `.lnin` is ONE LINE. www/shell.js § lnField() builds it as a
+     `<textarea rows="1">` rather than an `<input>` for two reasons that have
+     nothing to do with line breaks -- a line of a made language is set
+     vertically on some languages, and it has to grow to the height of the
+     letters somebody drew -- and a textarea takes Enter, so every field of
+     that shape grew a line each time it was pressed. The name, the @ and the
+     ID on the profile screen were photographed doing it.
+     「必要ないところで開業できるのやめて欲しい」 OWNER 2026-09-03 (開業 = 改行).
+
+     So Enter opens no line in one, and this is the one place that says so:
+     the markup carries no `on*=` (rule 3), so the app's Enter has always
+     arrived here and nowhere else. Asked of the class rather than of a list
+     of ids, so a field lnField() builds tomorrow is one line tomorrow.
+
+     The line about yourself is really several lines and keeps its breaks:
+     `me-bio` is a bare textarea that never went through lnField(), so it
+     wears no `.lnin` and this never sees it.
+
+     PASTE IS NOT THIS. A break arriving in one of these fields on a paste is
+     probably not wanted either, but what the owner said was Enter, and a
+     second rule about a second road is a second thing to answer for.
+
+     The rest is what it always was: a field carrying a name runs it, and a
+     press that runs a name never also does what Enter would have done. */
   root.addEventListener('keydown', function(e){
     if(e.key!=='Enter' && e.keyCode!==13) return;
-    var el=actOf(e.target, 'data-kd');
-    if(!el) return;
-    e.preventDefault();
-    actRun(ACT_KEY, el, 'data-kd');
+    var one=(e.target && String(e.target.className||'').indexOf('lnin')>=0),
+        el=actOf(e.target, 'data-kd');
+    if(one || el) e.preventDefault();
+    if(el) actRun(ACT_KEY, el, 'data-kd');
   }, false);
 }
