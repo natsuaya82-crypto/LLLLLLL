@@ -378,17 +378,7 @@ function draftsRead(){
 function draftsSave(){
   try{ localStorage.setItem(LS_DRAFTS, JSON.stringify(DRAFTS)); }catch(e){}
 }
-/* AND ONCE AT LOAD, for the reason www/me.js gives at the foot of meFor():
-   two keys are read by two files that do not know about each other. net.js
-   reads lingua.sess when it loads and this file reads lingua.posts when it
-   loads, and nothing between them compared the two -- a phone signed in as
-   one account while holding another's posts stayed that way until the next
-   sign-in, which on a fresh account is never.
 
-   net.js is loaded before this file (www/index.html: 3585 and 3611), so SESS
-   is here to be asked. Signed out, this parks what the phone was holding,
-   which is what netOut() does for the same reason. */
-postFor(SESS && SESS.uid);
 /* Every draft has a name. The ones written before there was a server to put
    them on do not, so they are GIVEN one here and written back.
 
@@ -414,6 +404,23 @@ function draftById(id){
   return null;
 }
 draftsRead();
+/* AND ONCE AT LOAD, for the reason www/me.js gives at the foot of meFor():
+   two keys are read by two files that do not know about each other. net.js
+   reads lingua.sess when it loads and this file reads lingua.posts when it
+   loads, and nothing between them compared the two -- a phone signed in as
+   one account while holding another's posts stayed that way until the next
+   sign-in, which on a fresh account is never.
+
+   AFTER draftsRead(), and that is not tidiness. This was two lines higher for
+   an hour and it WROTE THE DRAFTS AWAY: postFor() ends by saving both, and
+   before this line DRAFTS is still the empty array it was declared as -- so
+   the save put `[]` over lingua.drafts on the first launch after the update.
+   Nothing that reads a key may run before the key is read.
+
+   net.js is loaded before this file (www/index.html: 3585 and 3611), so SESS
+   is here to be asked. Signed out, this parks what the phone was holding,
+   which is what netOut() does for the same reason. */
+postFor(SESS && SESS.uid);
 draftsName();
 /* Saved as it stands: the line, the meaning, whom it answers, the pictures
    with their letters still placed on them, the recording, and whether it was

@@ -836,24 +836,36 @@ function langOwned(id){
   if(!L) return false;
   me=(typeof SESS!=='undefined' && SESS && SESS.uid)? String(SESS.uid) : '';
   if(!me) return true;
-  /* AN UNSTAMPED LANGUAGE IS PICKED UP AT THE ONBOARDING DOOR AND NOWHERE
-     ELSE, and that is 2026-09-02's decision rather than a reading of it.
+  /* AN UNSTAMPED LANGUAGE BELONGS TO THIS PERSON UNLESS SOMEBODY ELSE HAS
+     BEEN ON THIS PHONE.
 
-     It was loosened for a few hours on the evening of the 2nd, to 「this
-     person's unless another account has been on this phone」, because the
-     gate went red in three places when the strict rule landed. That was the
-     FIXTURE's language having no stamp, not a real phone -- and the loose
-     version is wrong where it matters: with two accounts on one phone,
-     SET.uidWas is whoever arrived LAST, so an unstamped language A made
-     became B's the moment B signed in. That is the sentence the decision
-     forbids, arriving by another road. acct-check 19 and 35 said so.
+     This was the strict reading for one build -- 「unstamped is nobody's once
+     SET.done is true」 -- and on 2026-09-03 the owner signed into their own
+     account and their language was gone. 「しかも俺のアカウントログインしたら
+     消えてんだけど？何で？」 Nothing had been deleted: every word and every
+     letter was still in `lingua.<id>.*`. It was not being offered to the
+     person who made it.
 
-     What protects a real phone is not this line: it is that the stamp goes on
-     at every place a language is MADE, so an unstamped one is a legacy state
-     rather than an ordinary one. langNew() does it, langForAcct() does it,
-     netLangsDown() does it. langFirst() cannot -- there is no account yet --
-     and the door is where what it made gets one. */
-  if(!L.uid) return !SET.done;
+     The stamp only started going on on 2026-09-02. Every language made before
+     that carries none unless it happened to go up through netLangRow(), so
+     the strict reading is not a rule about two people sharing a phone -- it
+     is a rule that hides most of what exists today from the people who made
+     it. **Losing somebody's work outweighs the case it was closing**, and
+     docs/DATA_SAFETY.md is that sentence.
+
+     SET.uidWas is the last account langForAcct() saw. Never one, or the same
+     one, and an unstamped language is this person's -- which is every phone
+     that has only ever had one account on it. A different one, and it is not
+     offered: it stays in the index, in storage and in the backup, and the
+     list counts it among the ones it is not showing.
+
+     SET.uidWas is written ONCE, the first time any account arrives, and never
+     again -- see langForAcct(). That is what makes it safe: it names the
+     account whose account-less work this phone is holding, and a second
+     account is simply not it. Recording the last one instead would hand
+     everything to whoever signed in most recently, which is the fault this
+     exists to stop. */
+  if(!L.uid) return !SET.done || !SET.uidWas || String(SET.uidWas)===me;
   return String(L.uid)===me;
 }
 function langAcct(id){
@@ -972,6 +984,37 @@ function dlStop(){
 var LANG_WAIT=false;
 function langForAcct(mayMint){
   var id;
+  /* WHO THIS PHONE BELONGED TO LAST, and -- the first time anybody arrives on
+     a phone that has never had an account -- the stamp on what is already
+     here. langOwned() above has the whole of why.
+
+     Stamping is what makes this safe to be lenient about: after it, an
+     unstamped language is not a state a second account can ever meet. The
+     first arrival is the onboarding door for a phone that predates the stamp,
+     which is the one moment the decision allows something account-less to be
+     picked up. */
+  if(typeof SESS!=='undefined' && SESS && SESS.uid){
+    /* THE FIRST ACCOUNT THIS PHONE EVER HAD, and it is never overwritten.
+
+       langOwned() reads it to answer 「may this person be offered a language
+       with no account on it」. What is unstamped was made before the stamp
+       existed or before a session did, and on a phone that has only ever had
+       one account that is unambiguously theirs -- which is every phone that
+       upgrades into this, because the stamp only started going on 2026-09-02.
+
+       WRITTEN ONCE is the whole of it. Recording the LAST one instead was the
+       first shape of this and it is wrong in the one case it exists for: it
+       answers 「whoever just arrived」, so the second account on a phone was
+       handed the first one's work. Written once, the second account is simply
+       not the one it names.
+
+       And nothing is written onto a language. Stamping the unstamped at this
+       moment was the other shape tried, and acct-check 12 refused it in one
+       line: it writes an owner onto something nobody has established the
+       owner of. A read that can be revisited is not the same as a write that
+       cannot. */
+    if(!SET.uidWas){ SET.uidWas=String(SESS.uid); save(); }
+  }
   if(langAcct(langId)){ LANG_WAIT=false; return false; }
   for(id in LANGS)
     if(Object.prototype.hasOwnProperty.call(LANGS, id) && langAcct(id)){

@@ -1409,8 +1409,17 @@ const calls = [];
        inside writeDown itself comes back as `writeDown` -- and `entitledPlan`
        turned up in this list because the declaration line matched before the
        skip did. Both are the function talking about itself. */
+    /* THE DECLARATION IS NOT A CALL. funcAt() answers the nearest `func`
+       ABOVE, so `private func writeDown(...)` itself comes back as whatever
+       function happens to sit above it -- which was `entitledPlan` when this
+       list was written and became `entitledSeen` the day one was split out of
+       the other. Naming the neighbour was always the wrong test: what has to
+       be skipped is the line that DECLARES it, whoever it is under. */
+    if (/^\s*(private\s+|static\s+)*func\s*$/.test(
+          STORE.slice(Math.max(0, m.index - 40), m.index).split('\n').pop() + ' ')
+        || /func\s+$/.test(STORE.slice(Math.max(0, m.index - 20), m.index))) continue;
     const f = funcAt(STORE, m.index);
-    if (f === 'writeDown' || f === 'entitledPlan') continue;
+    if (f === 'writeDown') continue;
     /* Three states and not two. `mayLower:` absent or `false` is a road that
        never lowers; a bare `true` lowers whatever arrived; anything else is a
        road that lowers only when what it hands in says so. */

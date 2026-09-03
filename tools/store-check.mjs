@@ -151,6 +151,11 @@ for (const k of Object.keys(ROADS))
    settings as one of the three -- so most of these say so. The point of the
    table is the ones that DO NOT, and the ones whose sentence names a gap. */
 const FIELDS = {
+  /* この端末に最後に来たアカウント。langOwned() が「印の無い言語をこの人に
+     出してよいか」を答えるのに読む ── 訊いているのは「この端末に他の人が
+     来たか」で、端末についての事実であってアカウントについてのものではない。
+     上げる意味が無い: アカウントは自分がどの端末に入ったかを既に知っている。 */
+  uidWas: { phone: 'who this phone belonged to last. A fact about this handset and about no account: what it answers is 「has anybody else been on this phone」, which is what langOwned() needs before it offers an unstamped language to whoever is asking' },
   /* what somebody pays. It is the ACCOUNT's -- 「課金とアカウントとキーボードは
      アカウントに結びつく」 -- and `SET.plan` is where the value sits on this
      phone while it travels. */

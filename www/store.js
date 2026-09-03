@@ -146,6 +146,14 @@ function storeBuy(id){
    button says how it went. `said` is what makes the two ends one answer
    rather than two: whichever arrives first speaks, and the other is silent. */
 var STRT=null;
+/* The three numbers Apple's walk came back with, in the smallest form that
+   still tells them apart. Not a sentence: this is a state, and what somebody
+   does with it is send the photograph. */
+function storeWhyNone(r){
+  var saw=(r && r.saw)|0, un=(r && r.unverified)|0, uk=(r && r.unknown)|0;
+  var sy=!!(r && r.synced);
+  return ' ('+saw+'/'+un+'/'+uk+(sy? '' : ' ×')+')';
+}
 function storeRestore(){
   var np=storePlug();
   if(!np){ toast(t('store.none')); return; }
@@ -157,7 +165,14 @@ function storeRestore(){
   np('LinguaStore', 'restore', {})
     .then(function(r){
       var p=storeTook(r);
-      say(p==='free'? t('store.none') : t('toast.plan.other', planName(p)));
+      if(p!=='free'){ say(t('toast.plan.other', planName(p))); return; }
+      /* AND WHICH 「nothing」 IT IS. 「これ出るのに、復元できるものはありません
+         って出るけど？」 OWNER 2026-09-03, with Apple's sheet on screen saying
+         the subscription is live. Three different faults say this sentence
+         and one of them is 「you really own nothing」. ios/App/App/
+         LinguaStore.swift § entitledSeen() counts them; this puts the count
+         where a person can photograph it. An error is a state. */
+      say(t('store.none') + storeWhyNone(r));
     })
     ['catch'](function(){ say(t('store.fail')); });
 }

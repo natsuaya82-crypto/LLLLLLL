@@ -157,14 +157,35 @@ public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
   /// WHICH, and the day the middle tier goes on sale a Bool would read every
   /// Plus receipt as Pro -- every door open, for five dollars.
   static func entitledPlan() async -> String {
+    return await entitledSeen().plan
+  }
+
+  /// The same walk, and what it SAW on the way.
+  ///
+  /// 「これ出るのに、復元できるものはありませんって出るけど？」 OWNER
+  /// 2026-09-03, with Apple's own sheet on screen saying Lingua Plus renews on
+  /// the 4th for ¥800. The app answered 「there is nothing to restore」.
+  ///
+  /// Three things can produce that answer and they are different faults:
+  /// the list came back EMPTY (the sync had not landed), every entry failed
+  /// VERIFICATION (`verified()` returns nil and the entry is skipped in
+  /// silence), or an entry verified and carried a product id this app does
+  /// not sell. From the outside all three are the same sentence, and this is
+  /// the one place that can tell them apart. It is counted rather than
+  /// guessed at, for the same reason the price screen says whether the App
+  /// Store answered: an error is a state, and a state is what a person on a
+  /// phone can photograph.
+  static func entitledSeen() async -> (plan: String, saw: Int, unverified: Int, unknown: Int) {
     var out = "free"
+    var saw = 0, unver = 0, unknown = 0
     for await result in Transaction.currentEntitlements {
-      guard let t = verified(result) else { continue }
+      saw += 1
+      guard let t = verified(result) else { unver += 1; continue }
       if t.revocationDate != nil { continue }
-      guard let p = planOf(t.productID) else { continue }
+      guard let p = planOf(t.productID) else { unknown += 1; continue }
       out = best(out, p)
     }
-    return out
+    return (out, saw, unver, unknown)
   }
 
   /// Ask the App Store, then write the answer where the next launch will find
@@ -421,8 +442,14 @@ public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
   @objc func restore(_ call: CAPPluginCall) {
     Task {
       let synced = await Self.syncWithin(12)
+      let seen = await Self.entitledSeen()
       let plan = await writeDown(mayLower: false)
-      call.resolve(["plan": plan, "synced": synced])
+      /* What the walk saw, so that 「there is nothing to restore」 on a phone
+         Apple says is subscribed can be told apart from the same words on a
+         phone that really owns nothing. See entitledSeen(). */
+      call.resolve(["plan": plan, "synced": synced,
+                    "saw": seen.saw, "unverified": seen.unverified,
+                    "unknown": seen.unknown])
     }
   }
 
