@@ -36,6 +36,10 @@
         said about the app rather than about one screen, and it is the one that
         catches a screen half converted
     13  an @ the server refuses does not leave the screen; one it allows does
+    14  a bottom tab is not an answer. Walking off a screen with something typed
+        on it and coming back finds it still there, still unsaved, with the
+        Save still in the bar -- nothing is thrown away without somebody
+        having said so
 
    Run: node tools/keep-check.mjs                                        */
 import { seed } from './fixture.mjs';
@@ -329,6 +333,24 @@ const more = await pg.evaluate(() => {
   out.bothShapes = fired;
   out.fieldsMissing = missing.filter(function(x){ return x; });
 
+  /* ---- 14. a bottom tab throws nothing away -----------------------------
+     A tab is not one of the three places a buffer is let go (a save, a No,
+     viewReset). So this is not "the question is asked on a tab press too" --
+     it is that there is nothing to ask about: what was typed is still in the
+     field when you come back to it. */
+  viewReset();
+  goTab('profile'); openMe();
+  var e5 = document.querySelector('#me-nm');
+  e5.value = 'Wandered'; e5.dispatchEvent(new Event('input', { bubbles: true }));
+  goTab('build'); go('words');
+  out.tabAskedOff = popOn();
+  popOff();
+  goTab('profile'); openMe();
+  var e6 = document.querySelector('#me-nm');
+  out.tabKept = e6 ? String(e6.value || '') : '';
+  out.tabBtn = !!document.querySelector('.navtop [data-do="keepPress"]');
+  out.tabStored = String(ME.name || '');
+
   /* ---- 13. an @ the server refuses stays on the screen -------------------
      netHandleFree() is what the profile asks. Answered no here, which is what
      a handle somebody else already has looks like from this phone -- and from
@@ -376,6 +398,10 @@ if(more.fieldsMissing.length) fails.push('fields not on their screens: ' + more.
 if(more.bothShapes.length) fails.push('typing still wrote through: ' + more.bothShapes.join(', '));
 if(!more.refusedHere) fails.push('a refused @ went back anyway');
 if(more.refusedHandle === 'takenname') fails.push('a refused @ was written down');
+if(more.tabAskedOff) fails.push('a bottom tab put the question up');
+if(more.tabKept !== 'Wandered') fails.push('a bottom tab threw away what was typed: ' + JSON.stringify(more.tabKept));
+if(!more.tabBtn) fails.push('coming back to a screen with typing on it had no Save in the bar');
+if(more.tabStored === 'Wandered') fails.push('a bottom tab saved what was typed');
 if(!more.freeLeft) fails.push('an @ the server allowed did not go back');
 if(more.freeHandle !== 'freename') fails.push('an @ the server allowed was not written down');
 
@@ -390,6 +416,8 @@ console.log('the keyboard: ' + more.kbSavesWhileTyping + ' writes while typing, 
 console.log('viewReset(): lets what was typed go');
 console.log('one shape only: ' + more.bothShapes.length + " of the app's nine save functions " +
             'fired while somebody was typing');
+console.log('a bottom tab: threw nothing away and asked nothing -- ' +
+            'what was typed was still in the field on the way back');
 console.log('the @: refused stays put (' + more.refusedHandle + '), allowed goes (' +
             more.freeHandle + ')');
 
