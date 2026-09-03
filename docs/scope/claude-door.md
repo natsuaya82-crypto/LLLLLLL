@@ -144,3 +144,99 @@ OWNER 2026-08-31 ── 前のアカウントが出てくるのは、この復�
 いません**（`origin/claude/pr-video-recording-x1yrsm` に一件ありますが
 master を取り込んだだけの映像用の枝です）。`gate.mjs` も `package.json` も
 一行も変えないので、`claude/find` と衝突しません。
+
+---
+
+## 見た赤 ── 五通り。コードを直す前に、検査が落ちるのを一度ずつ見ました
+
+`open-check` は `master` の状態で緑です（先に確かめました）。そこへ § 5 を
+足すと、**直す前のコードで落ちます**。落ちたときに出るのは、オーナーが画面で
+見ているのと同じ文です。
+
+```
+A  forcePrompt を外す（＝直す前のいま）
+     the door: google, a phone that has signed in before -- one side has a nonce
+     and the other does not ... (nonce id_token:n sent:y)
+
+B  nonce を送るのをやめる（＝リーダーの案の一つ目、106 に戻す）
+     the door: google, a phone that has NEVER signed in before -- one side has a
+     nonce and the other does not ... (nonce id_token:y sent:n)
+
+C  Apple にも nonce を渡す
+     the door: Apple is handed a nonce -- the road that works is being changed
+     the door: Apple's nonce is sent to Supabase -- one side only
+
+D  hash と raw を入れ替える
+     the door: both sides have a nonce and they are not the same one.
+     That is 「Nonces mismatch」
+
+E  トークンが返らなくてもセッションを作りに行く
+     the door: the sheet came back with no token and the app asked Supabase for
+     a session anyway
+     the door: the sheet came back with nothing and the spinner is still turning
+```
+
+**B が、この仕事でいちばん読む価値のある赤です。**「送るのをやめて 106 に
+戻す」は、**前に入ったことのある端末では通り、初めての端末では 106 のまま**
+です ── 出る文字まで 106 と同じ `(nonce id_token:y sent:n)` です。
+リーダーが恐れていた「同じ失敗に戻る恐れ」は、恐れではなく確実です。
+
+**自分の検査の欠陥を一つ見つけて直しました。**返り値の key を `door` と
+名付けたところ、同じオブジェクトリテラルに既に在った `door`（「扉が画面に
+出ているか」）を静かに上書きして、**§ 2 が、§ 2 とは何の関係もない理由で
+落ちました**。`hand` に改名してあります。`master` で一度回して緑を見ていな
+ければ、自分の足した節のせいだと気づかないところでした。
+
+## Apple ── CODE CONFIRMED、いまも通ります
+
+**実機はオーナーしか持っていないので、言えるのはここまでです。**
+
+- `obSignInApple()` → `obSocial('apple', {scopes:[…]})`。`obSocial()` の
+  `nn` は `who==='google'` の外では `null` なので、**`opts.nonce` も
+  `opts.forcePrompt` も設定されません**。`netIdToken(who, tok, '')` で
+  Supabase へも送りません
+- `AppleProvider.swift:201` の `login()` は**道が一本**です。復元にあたるものが
+  無く、必ず `performRequests()` します
+- `request.nonce` は `payload["nonce"]` が在るときだけ入ります（`:213`）。
+  Apple の `ASAuthorizationAppleIDProvider` は**自分では nonce を作りません**
+  ── Google 側で 106 の犯人だった AppAuth は、ここには居ません
+  （`ASAuthorization` は Apple 自身のフレームワークです）
+- したがって **id_token にも要求にも nonce は無く、両側とも無い**。
+  Supabase の `tokenHasNonce != paramsHasNonce` は偽になり、通ります
+
+`open-check` § 5d がこれを押さえます。**C の赤**（Apple にも渡す）が、
+壊れたときに落ちることの証拠です。
+
+ひとつ書き留めておきます（不具合ではありません）: `AppleProvider.swift:207` は
+`payload["scopes"] as? [ASAuthorization.Scope]` で読みますが、アプリが渡すのは
+`['name','email']` という文字列なので、この cast は失敗して既定の
+`[.fullName, .email]` に落ちます。**結果は同じ**なので直していません。
+
+## `ios/App/App/` ── 変えるものはありませんでした
+
+持ち物として見ましたが、サインインに触る Swift はここにありません
+（`grep -rl "SocialLogin\|GIDSignIn\|AppleID\|nonce" ios/App/App/` は空）。
+`Info.plist` の逆順クライアント ID は `www/net.js` の `GOOGLE_IOS_ID` と
+同じ客体で、`App.entitlements` の `com.apple.developer.applesignin` も
+在ります。**一行も変えていません。**
+
+## 画面に出して確かめる道 ── もう在ります。二つ目は作りませんでした
+
+リーダーの三つ目の指示は「送った nonce の hash と、返ってきた id_token の
+nonce 主張を扉の画面に出す」でした。**それは `netIdWhy()` が既にやっていて、
+今回の原因を決めたのはその一行です** ── `(nonce id_token:n sent:y)` が
+`docs/scope/claude-nonce.md` § 7 の表のどの行かを言っていました。
+
+`netIdWhy()` は `www/net.js` にあり、その中の `netClaims()` は「JWT を読む
+一箇所」だと自分のコメントで宣言しています。`www/onboard.js` に二つ目を
+書けば、**同じ問いに二箇所が答える形**になります ── CLAUDE.md が名指しで
+禁じているものです。そして値そのもの（hash）は資格情報の片割れなので、
+画面に出すものではありません。
+
+**なので作りませんでした。**直った／外れたは、同じ一行が言います:
+
+| 画面 | 意味 |
+|---|---|
+| 何も出ずに入れる | 通りました |
+| `(nonce id_token:n sent:y)` のまま | `forcePrompt` が効いていない |
+| `(nonce id_token:y sent:y)` ＋ Nonces mismatch | 載ったのがこちらの nonce ではない |
