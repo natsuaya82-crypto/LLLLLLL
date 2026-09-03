@@ -1934,7 +1934,14 @@ a.set{text-decoration:none}
    where you are. The row is the container and the rule underneath is its. */
 .whrow{display:flex;align-items:center;gap:10px;width:100%;
        border-bottom:1px solid var(--line)}
+/* 44pt, and the floor is here rather than on the row that needed it. A person's
+   row has a 40px face in it and came to 64 without ever asking; the search
+   history is one line of words and came to 39 -- the padding is the same, so
+   what differed was only what happened to be inside. A floor on the class is
+   the sentence 「anything a thumb hits is 44」 said once, and it moves nothing
+   that already clears it. `press` measures both sides of every button. */
 .whgo{flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:12px;
+      min-height:44px;
       padding:12px 2px;border:0;background:none;color:var(--tx);
       text-align:left;font-family:inherit}
 /* FILLED until it is on -- Follow is the thing to press, Following is a
