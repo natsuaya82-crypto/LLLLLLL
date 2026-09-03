@@ -632,6 +632,22 @@ export function halfDone(){
        const h=vAbout();
        ABOPEN.wlddl = was;
        return h; }],
+    /* AND THE SAME PAGE WITH ITS ALPHABET OPEN, which is the only face that
+       draws somebody else's LETTERS at all -- every section arrives shut, so
+       neither face above had ever rendered one. That is why 「人のwikiページ
+       開いても文字表示されない」 (OWNER 2026-09-03) was green everywhere: a
+       cell nothing renders is a cell nothing can find empty.
+
+       Seeds the language itself, for the reason written over the face above:
+       press() re-seeds before every one of these. */
+    ['somebody else\u2019s language page, letters open', () => {
+       const lid = __seenLang();
+       const was = ABOPEN.letters;
+       ABOPEN.letters = true;
+       window.route='about'; NAV=[{ r:'about', a:lid }];
+       const h=vAbout();
+       ABOPEN.letters = was;
+       return h; }],
     ['the reading of a word', () => { SET.plan = 'pro'; openEdit('kano');
                                       window.route='spell'; NAV=[{r:'spell'}];
                                       const h=vSpell(); SET.plan='free'; return h; }],
