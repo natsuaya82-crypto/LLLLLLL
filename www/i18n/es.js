@@ -425,6 +425,8 @@ defLang('es', (function(){
       "sort.buzz"       : "Destacado",
       "sns.save"        : "Guardar esta palabra",
       "sns.saved"       : "Guardados",
+      "sns.recent"      : "Recientes",
+      "sns.recent.drop" : "Quitar",
       'sns.search'            : "Buscar — @ para personas",
       'sns.nohit'             : "No se encontró nada",
       'notif.like'            : "A {0} le gustó",

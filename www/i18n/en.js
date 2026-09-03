@@ -368,6 +368,8 @@ defLang('en', (function(){
       'sort.buzz'       : "Top",
       'sns.save'        : "Keep this word",
       'sns.saved'       : "Kept",
+      'sns.recent'      : "Recent",
+      'sns.recent.drop' : "Remove",
       'sns.search'            : "Search — @ for people",
       'sns.nohit'             : "Nothing found",
       'notif.like'            : "{0} liked this",

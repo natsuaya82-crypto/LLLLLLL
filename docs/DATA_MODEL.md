@@ -434,6 +434,56 @@ mirror image of `ink`, and correct for the same reason. `trUnits()` in
 `post.js` is above the line and touches `mn`/`tr` and never `ln` or `ink`;
 `sides-check` holds that with a named exception rather than by silence.
 
+## What somebody looks for — two lists, never one
+
+「検索した履歴もユーザーはいらんから5個くらい検索履歴出るようにしたい」
+「1件づつ消せるでいいよ」 OWNER 2026-09-03.
+
+Two tables, and the reason they are two is the whole entry.
+
+| | the star | the history |
+|---|---|---|
+| what it is | a word somebody **chose** to keep | a word they **typed** |
+| server | `saved_search` (author, q) unique | `recent_search` (author, q) unique |
+| ordered by | `created_at` | `at`, which MOVES when the words are typed again |
+| on the phone | `SET.saved` | `SET.recent` |
+| how many | as many as somebody stars | **five**, newest first |
+| where it is drawn | the timeline's filter | under an **empty** search field |
+| taken off by | pressing the star again | the ✕ on that one row |
+
+**One row with a 「which kind is this」 column on it is the thing that must
+not be built.** It reads as tidier and it is one mechanism doing two jobs:
+the history's ceiling of five would silently delete somebody's star, and
+un-starring a word would take the history with it. They are separate tables,
+separate functions in `www/net.js` (`netSearchSave`/`netSearchDrop` against
+`netRecent`/`netRecentAdd`/`netRecentDrop`), and separate keys on the phone.
+`find-check` holds it: dropping a history row leaves the star standing.
+
+**Five is what the feature IS, so the sixth pushing the oldest off is the
+decision and not a cleanup.** 「直近5件」. Nothing on the server deletes on
+its own — there is no trigger — the phone drops the one that fell off by its
+words, the way it drops a star.
+
+**A word is written down when 🔍 is pressed, and by nothing else.**
+「検索は🔍押したらって言ってるやん」 OWNER 2026-09-03. `snsGo()` is the only
+caller of `snsRecentAdd()`. Recording inside `snsSetQ()` would leave
+「a」「ay」「aya」 standing as three searches, because it runs on every letter,
+and the search was the one press rather than the three letters; recording when
+an answer lands is the same mistake at a later moment, because an answer lands
+per letter too. It agrees with what this screen already said —
+「ツイートの検索は検索ボタン押したら出てくる。それまでは人」 (2026-08-26) — so
+🔍 is the place that already means 「searched」. Opening a person off the answer
+was built as a second road into it and the decision took it out.
+
+**What is not per-account yet, said plainly.** `SET.recent` rides in
+`lingua.set`, the one settings key shared by whoever signs in — the same place
+`SET.saved` and `SET.plan` sit. `recent_search` cascades off `profile` and so
+off `auth.users`, so `account_delete()` takes the rows; the phone's COPY is
+not taken by `lsWipeAcct()`, which reaches `lingua.me.*`, `lingua.posts.*` and
+`lingua.drafts.*` by uid and not the settings key. That is the shared-settings
+entry in `docs/BACKLOG.md` and it is not new here — but a history is the most
+revealing of the three, so it is named.
+
 ## What money is allowed to touch
 
 Nothing in this file. The plan decides what a person may *do*; it decides

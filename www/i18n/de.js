@@ -453,6 +453,8 @@ defLang('de', (function(){
       "sort.buzz"       : "Top",
       "sns.save"        : "Dieses Wort behalten",
       "sns.saved"       : "Behalten",
+      "sns.recent"      : "Zuletzt",
+      "sns.recent.drop" : "Entfernen",
       'sns.search'            : "Suchen — @ für Leute",
       'sns.nohit'             : "Nichts gefunden",
       'notif.like'            : "{0} gefällt das",

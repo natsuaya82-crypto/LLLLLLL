@@ -465,6 +465,8 @@ defLang('it', (function(){
       "sort.buzz"       : "In evidenza",
       "sns.save"        : "Salva questa parola",
       "sns.saved"       : "Salvati",
+      "sns.recent"      : "Recenti",
+      "sns.recent.drop" : "Rimuovi",
       'sns.search'            : "Cerca — @ per le persone",
       'sns.nohit'             : "Non trovato",
       'notif.like'            : "A {0} piace",

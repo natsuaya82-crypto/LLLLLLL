@@ -1074,6 +1074,16 @@ export function halfDone(){
         snsHits = { q:'zzzzzz', who:[], posts:[] };
         window.route='explore'; NAV=[{r:'explore'}];
         const h = vExplore(); snsQ = ''; snsHits = null; return h; }],
+    /* The words this account has typed, which are only ever drawn under an
+       EMPTY field -- every other face of this screen has a query in it, so
+       without this one the history's two buttons are walked by nothing and
+       act-check reports them as entries no screen names, which is true and is
+       not what anybody meant. */
+    ['the searches already made', () => { snsQ = ''; snsMode = 'who';
+        const was = SET.recent;
+        SET.recent = ['kano', 'ir', 'tolven'];
+        window.route='explore'; NAV=[{r:'explore'}];
+        const h = vExplore(); SET.recent = was; return h; }],
     /* And a search that could not be made at all, which is a different answer
        from one that found nothing and must not look like it. */
     ['a search that could not be asked', () => { snsQ = 'iri'; snsMode = 'who';
