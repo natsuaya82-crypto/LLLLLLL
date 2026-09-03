@@ -225,9 +225,14 @@ node tools/google-id.mjs 123456-abcdefg.apps.googleusercontent.com
 | スタッフ | 通報を読む。投稿を下ろす。アカウントを止める。管理画面には**入れない** |
 
 **アプリの中に「自分をスタッフにする」画面はありません**（`schema.sql` の末尾で、
-アプリがログインに使うロールから `staff` と `admin` の列の更新権限を取り上げて
-います。足せるのは `staff_add()` という関数だけで、その関数は中で「訊いているのは
+アプリがログインに使うロールから `staff` の列の更新権限を取り上げています。
+足せるのは `staff_add()` という関数だけで、その関数は中で「訊いているのは
 権限者か」を確かめます）。
+
+**権限者は @ で決まります**（2026-09-03）。`is_admin()` が `handle = 'lingua'`
+かどうかを訊くだけで、立てたり外したりする欄はありません。`lingua` に改名する
+ことも、`lingua` から改名することもできません（`profile_rename()`）。
+`profile.admin` という欄は残っていますが、**もう誰も読みませんし、誰も書きません。**
 
 ### 5-3. 管理画面の入り方
 
@@ -244,6 +249,8 @@ node tools/google-id.mjs 123456-abcdefg.apps.googleusercontent.com
 
 アプリを閉じると、また訊かれます。**Apple や Google でサインインしている
 アカウントには訊きません** ── 入れ直すパスワードが存在しないからです。
+**つまりその二つの道で入った場合、七回タップだけで管理画面が開きます。**
+どうするかは決まっていません（`docs/BACKLOG.md`）。
 
 **7回タップもパスワードも、守っているのは画面だけです。**
 データを守っているのは `is_admin()` と `is_staff()` で、**サーバが**毎回訊いて
@@ -545,7 +552,7 @@ npx supabase functions deploy appstore
 | `{"ready":true,"sales":{...},"subs":{...},"events":{...}}` | 通っています |
 | `{"ready":false,"missing":["ASC_VENDOR_NUMBER"]}` | **10-2 のその名前がまだ入っていません** |
 | `{"ready":false,"error":"ASC_PRIVATE_KEY: ..."}` | `.p8` の貼り付けが途中で切れています。`-----BEGIN` から `-----END PRIVATE KEY-----` まで丸ごと |
-| `{"error":"not admin"}`（403） | そのアカウントは `profile.admin` ではありません |
+| `{"error":"not admin"}`（403） | そのアカウントの @ が `lingua` ではありません |
 | `{"ready":false,"error":"...401..."}` | 鍵は入っているが Apple が断っています。Key ID と Issuer ID の組み合わせ違い |
 | `"sales":null` | **Apple にまだその日のレポートが無い**（下） |
 

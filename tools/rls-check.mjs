@@ -151,12 +151,23 @@ const CASES = [
     `insert into profile(id,handle) values ('${E}','lingua')`],
   ['and answers reports without being made staff', 'ok', E, 0,
     `select 1 from profile where id='${E}' and staff`],
+  /* THE @ AND NOT A COLUMN. 「@で決めたんじゃないの？」 OWNER 2026-09-03 --
+     is_admin() reads the handle now, so this asks the function rather than a
+     flag beside it. */
   ['and is the one above that',               'ok',     E, 0,
-    `select 1 from profile where id='${E}' and admin`],
+    `select 1 where is_admin()`],
   ['B is neither',                            'denied', B, 0,
-    `select 1 from profile where id='${B}' and (staff or admin)`],
-  ['B cannot become the one above staff',     'denied', B, 0,
-    `update profile set admin=true where id='${B}'`],
+    `select 1 from profile where id='${B}' and staff`],
+  ['nor does B answer the question',          'denied', B, 0,
+    `select 1 where is_admin()`],
+  /* AND B CANNOT TAKE THE NAME. `handle` is in the UPDATE grant -- renaming
+     yourself is what that grant is for -- so with the @ deciding, the rename
+     is the road, and profile_rename() is what closes it. Uniqueness alone
+     would only hold while the row is there. */
+  ['B cannot rename itself to the one above staff', 'denied', B, 0,
+    `update profile set handle='lingua' where id='${B}'`],
+  ['and is still not it',                     'denied', B, 0,
+    `select 1 where is_admin()`],
   /* --- nor on the way in, which is a different statement -----------------
      The two lines above are UPDATEs, and revoking UPDATE on a column says
      nothing about INSERT: they are separate grants. It only matters where the
@@ -656,7 +667,14 @@ const CASES = [
   ['the one above staff cannot be taken off it', 'ok', E, 0,
     `select staff_drop('lingua')`],
   ['and is still both after trying',          'ok',     E, 0,
-    `select 1 from profile where handle='lingua' and staff and admin`],
+    `select 1 from profile where handle='lingua' and staff`],
+  ['and still answers the question',          'ok',     E, 0,
+    `select 1 where is_admin()`],
+  /* NOR CAN THE ONE ABOVE STAFF GIVE THE NAME AWAY. An owner who renamed
+     themselves would be an owner with no screen left to fix it from, and the
+     name would be free for whoever asked next. */
+  ['the one above staff cannot rename itself', 'denied', E, 0,
+    `update profile set handle='ayaa' where id='${E}'`],
   ['B cannot make B staff',                   'denied', B, 0,
     `update profile set staff=true where id='${B}'`],
   ['B cannot make A staff either',            'denied', B, 0,
@@ -1175,14 +1193,17 @@ const SHAPE = [
   ['and the one above staff cannot be unmade', `
      select count(*) from (select 1 where
        (select count(*) from pg_proc where proname='staff_drop'
-          and prosrc like '%where handle = h and not admin%') <> 1) q`, '0'],
+          and prosrc like '%where handle = h and h <> ''lingua''%') <> 1) q`, '0'],
   /* Said the same way `staff` is said, one line down in this list: a column
      nobody signs in as may write is the only reason the functions above are
      the only road to it. */
+  /* THE NAME IS THE FLAG NOW, and the name IS writable -- that is what the
+     profile screen's rename is. So what holds it is the trigger, asked for by
+     name here the way staff_drop's clause is above. */
   ['nor is the one above staff something an account gives itself', `
      select count(*) from (select 1 where
-       has_column_privilege('authenticated','profile','admin','UPDATE')
-       or has_column_privilege('anon','profile','admin','UPDATE')) q`, '0'],
+       (select count(*) from pg_trigger where tgname='profile_rename'
+          and not tgisinternal) <> 1) q`, '0'],
   /* The first one is written down here rather than remembered by a person.
      Both halves: the trigger for a row that arrives later, and something in
      the file that catches a row already there. */

@@ -1778,6 +1778,11 @@ function netReport(what, why, note, ok, bad){
    already settled by the server. Every door it opens is bolted on that side
    too, so a phone that lied about this would get a screen and no data. */
 var NET_STAFF=false, NET_ADMIN=false, NET_BANNED='';
+/* The one account above staff, by name. The same word supabase/schema.sql
+   says in is_admin() and profile_first(), and the same one www/onboard.js
+   follows every new account to (OB_LINGUA) -- it is the account's NAME, so it
+   is written out rather than asked for. */
+var ADMIN_HANDLE='lingua';
 /* Asked once, at launch, and remembered. A screen that asked every time it
    was drawn would put a request behind every render. */
 /* One request, because it is one row and the app wants three things off it:
@@ -1788,12 +1793,27 @@ var NET_STAFF=false, NET_ADMIN=false, NET_BANNED='';
 function netStaff(ok){
   ok=ok||function(){};
   if(!netSignedIn()){ NET_STAFF=false; NET_ADMIN=false; NET_BANNED=''; ok(false); return; }
-  netGet('/rest/v1/profile?select=staff,admin,banned_at,banned_why&limit=1&id=eq.'+
+  netGet('/rest/v1/profile?select=staff,handle,banned_at,banned_why&limit=1&id=eq.'+
          encodeURIComponent(SESS.uid),
     function(d){
       var r=(d && d.length)? d[0] : null;
       NET_STAFF=!!(r && r.staff);
-      NET_ADMIN=!!(r && r.admin);
+      /* THE ONE ABOVE STAFF IS THE @ AND NOT A COLUMN.
+         「＠linguaのアカウントだけ管理者ページには入れる」 OWNER 2026-08-26,
+         「@で決めたんじゃないの？」 OWNER 2026-09-03.
+
+         It read a `admin` column, which a trigger set at the instant a row
+         with the handle `lingua` was inserted -- so it followed the @ once and
+         was a separate fact afterwards. is_admin() in supabase/schema.sql asks
+         the handle now and this is the same question asked from here, off the
+         row this account already fetches. Nothing to set, nothing to forge:
+         `handle` is unique and is not in the UPDATE grant.
+
+         The curtain and the wall are still two things. This decides whether
+         seven taps open anything; admin_counts(), staff_add() and staff_drop()
+         each ask is_admin() on the server, and that is what actually stops
+         somebody sending their own requests. */
+      NET_ADMIN=!!(r && String(r.handle||'')===ADMIN_HANDLE);
       /* The reason if there is one, and a space if there is not, so that the
          string is true-y whenever the account is banned and the screens can
          ask one question instead of two. */

@@ -117,6 +117,13 @@ alter table profile add column if not exists staff boolean not null default fals
 -- rewriting it, and rewriting the sentence that IS the security of the
 -- moderation side in order to add a row above it is the wrong trade. If a
 -- third tier is ever wanted, that is the day.
+--
+-- NOTHING READS THIS COLUMN ANY MORE, and nothing writes it. The one above
+-- staff is the HANDLE -- 「@で決めたんじゃないの？」 OWNER 2026-09-03, and
+-- is_admin() below is where that is said. It is not dropped: somebody's row
+-- holds it, and this file does not delete data (docs/DATA_SAFETY.md). The
+-- line stays so that a database that has never had the column still matches
+-- one that has.
 alter table profile add column if not exists admin boolean not null default false;
 
 -- And whoever has been ejected. A timestamp rather than a boolean beside a
@@ -618,10 +625,27 @@ language sql stable as $$
   select exists (select 1 from profile where id = auth.uid() and staff)
 $$;
 
--- And the one account above that. Same shape, same reading, one column over.
+-- And the one account above that. IT IS THE @ AND NOT A COLUMN.
+--
+-- 「＠linguaのアカウントだけ管理者ページには入れる」 OWNER 2026-08-26, and
+-- 「@で決めたんじゃないの？」 OWNER 2026-09-03 -- asked because this did not
+-- do it. It read `profile.admin`, a column that a trigger set at the moment a
+-- row with the handle `lingua` was inserted. So it followed the @ for one
+-- instant and was a separate fact from then on: a flag that exists is a flag
+-- that can be written, and every defence of it was a grant somewhere else
+-- that had to stay correct.
+--
+-- The handle IS the account's name and it is unique, so there is nothing to
+-- set and nothing to forge. Two people cannot both be `lingua`, and somebody
+-- who renames themselves to it cannot: the UPDATE grant below does not carry
+-- `handle`.
+--
+-- `profile.admin` is not dropped. It is somebody's stored row and this file
+-- does not delete data (docs/DATA_SAFETY.md); nothing reads it any more and
+-- nothing writes it.
 create or replace function is_admin() returns boolean
 language sql stable as $$
-  select exists (select 1 from profile where id = auth.uid() and admin)
+  select exists (select 1 from profile where id = auth.uid() and handle = 'lingua')
 $$;
 
 -- profile: everyone reads, you write yourself into existence and edit yourself
@@ -1422,7 +1446,7 @@ returns numeric language sql immutable as $$ select 4::numeric $$;
 -- wrong.
 --
 -- The column, when it comes: `paid boolean not null default false`, shut the
--- way `staff` and `admin` are -- kept out of the `grant insert (...)` and
+-- way `staff` is -- kept out of the `grant insert (...)` and
 -- `grant update (...)` lines at the foot of this file, so nobody can arrive
 -- holding it or write it onto themselves -- and set by the server receiving
 -- Apple's signed notice. Nothing on a phone ever writes it.
@@ -1744,9 +1768,10 @@ grant execute on function admin_counts() to authenticated;
 create or replace function profile_first() returns trigger
 language plpgsql set search_path = public as $$
 begin
+  -- `staff` only. Who is above staff is the handle itself now (is_admin()
+  -- above), so there is no flag to raise for it.
   if new.handle = 'lingua' then
     new.staff := true;
-    new.admin := true;
   end if;
   return new;
 end $$;
@@ -1754,7 +1779,35 @@ drop trigger if exists profile_first on profile;
 create trigger profile_first before insert on profile
   for each row execute function profile_first();
 
-update profile set staff = true, admin = true where handle = 'lingua';
+-- AND THE NAME CANNOT BE MOVED ONTO OR OFF THE ONE ABOVE STAFF.
+--
+-- is_admin() asks the handle, and `handle` IS in the UPDATE grant below --
+-- somebody renames themselves on the profile screen, which is what that grant
+-- is for. Uniqueness stops a second `lingua` while the first exists, and that
+-- is the whole of what stopped it: the row going away for a moment, or the
+-- owner renaming themselves, would leave the name free to be taken by whoever
+-- asked next. A unique index is a rule about two rows, not about who may be
+-- called what.
+--
+-- Both directions, and the second is the one that costs something to get
+-- wrong: an owner who renames themselves is an owner with no screen left to
+-- fix it from -- staff_drop() carries the same sentence three functions down.
+create or replace function profile_rename() returns trigger
+language plpgsql set search_path = public as $$
+begin
+  if new.handle = 'lingua' and old.handle <> 'lingua' then
+    raise exception 'handle reserved';
+  end if;
+  if old.handle = 'lingua' and new.handle <> 'lingua' then
+    raise exception 'handle reserved';
+  end if;
+  return new;
+end $$;
+drop trigger if exists profile_rename on profile;
+create trigger profile_rename before update of handle on profile
+  for each row execute function profile_rename();
+
+update profile set staff = true where handle = 'lingua';
 
 -- ---------------------------------------------------------------------------
 -- Making somebody staff, and unmaking them
@@ -1778,17 +1831,16 @@ end $$;
 revoke all on function staff_add(text) from public;
 grant execute on function staff_add(text) to authenticated;
 
--- `and not admin` is the whole of "the one above staff cannot be taken off
--- it". It is the one failure here that cannot be undone from inside the app:
--- an owner who is no longer the owner has no screen left to fix it from.
--- account_ban() carries the same guard for the same reason, and it costs
--- three words.
+-- `and handle <> 'lingua'` is the whole of "the one above staff cannot be
+-- taken off it". It is the one failure here that cannot be undone from inside
+-- the app: an owner who is no longer the owner has no screen left to fix it
+-- from. It was `and not admin` and is the @ now, for is_admin()'s reason.
 create or replace function staff_drop(h text)
 returns void
 language plpgsql security definer set search_path = public as $$
 begin
   if not is_admin() then raise exception 'not admin'; end if;
-  update profile set staff = false where handle = h and not admin;
+  update profile set staff = false where handle = h and h <> 'lingua';
 end $$;
 revoke all on function staff_drop(text) from public;
 grant execute on function staff_drop(text) to authenticated;
@@ -1865,19 +1917,21 @@ grant  update (handle, display, av, bio) on profile to anon, authenticated;
 -- and that was the whole of it for as long as the row already existed when
 -- somebody reached for it. A profile does not: `profile_make` is how an
 -- account writes ITSELF into existence, so the first write of the row is an
--- INSERT the account controls, and `insert into profile(id,handle,admin)
+-- INSERT the account controls, and `insert into profile(id,handle,staff)
 -- values (me,'x',true)` was one extra field in exactly the same way. Column
 -- privileges for INSERT are a separate grant from the ones for UPDATE, so
--- revoking UPDATE said nothing about it: `is_admin()` reads `profile.admin`,
--- and anybody who had not made their profile yet could arrive holding it,
--- which opens admin_counts(), staff_add(), staff_drop(), post_hide(),
+-- revoking UPDATE said nothing about it: anybody who had not made their
+-- profile yet could arrive holding staff, which opens post_hide(),
 -- account_ban() and the report queue behind them.
 --
--- The five named are what netMakeProfile() in www/net.js sends. staff, admin,
+-- The five named are what netMakeProfile() in www/net.js sends. staff,
 -- banned_at and banned_why are the server's, and the only thing that writes
--- them is profile_first() -- a BEFORE trigger, which assigns to NEW rather
+-- staff is profile_first() -- a BEFORE trigger, which assigns to NEW rather
 -- than naming a column in the statement, so it is not what this grant is
--- about and @lingua still arrives holding both flags.
+-- about and @lingua still arrives holding it.
+--
+-- `handle` IS in the UPDATE grant, and with is_admin() reading the handle
+-- that is the road somebody would take. profile_rename() closes it.
 revoke insert on profile from anon, authenticated;
 grant  insert (id, handle, display, av, bio) on profile to anon, authenticated;
 
