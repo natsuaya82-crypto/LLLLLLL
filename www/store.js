@@ -86,22 +86,6 @@ function storeBuy(id){
          they are two different facts, and the sentence after a purchase wants
          the second one. */
       var paid = (r && r.bought) ? String(r.bought) : '';
-      /* ALREADY HELD, AND NOTHING WAS BOUGHT.
-         「そもそもプロの人が買えるのが意味わからないだろ」 OWNER 2026-09-03.
-         plBuy() in www/settings.js asks this before the sheet opens and asks
-         plan(), which is the copy in the Keychain -- behind on a reinstall, on
-         a phone whose Keychain would not read, and on a subscription bought
-         somewhere else. LinguaStore.swift § buy asks Apple itself at the
-         press. The same sentence plBuy() says, said from the other end.
-
-         Not an error: a downgrade is moved rather than forbidden, and Apple's
-         own sheet is where a subscription is changed without being charged
-         twice. */
-      if(how === 'held'){
-        popAsk(t('plan.already', planName(got || plan())),
-               function(){ storeManage(); }, t('plan.cancel'));
-        return;
-      }
       /* A PURCHASE NEVER LOWERS THE PLAN. The phone side reads the plan off
          the signed transaction now (ios/App/App/LinguaStore.swift § buy), so
          a `bought` that still says `free` is not a person who owns nothing --
