@@ -1322,7 +1322,17 @@ spec asks for them」と書いている ── **人が押した削除は automa
 - Affected features: おすすめのタイムライン、検索の並べ替え
 - Affected data: `profile` に契約の列が要る（今は無い）
 - Affected docs: この項、`docs/FEATURES.md`
-- Implementation status: 未着手（`claude/draft` が土台を作っている）
+- Implementation status: **入っている。**`feed_hot()`（`supabase/schema.sql`）が
+  おすすめと検索の「話題」の両方を答える ── オーナーが同じものだと言ったので、
+  関数は一つで二つではない。重みはいいね 1・リポスト 3・返信 5、窓は 48 時間、
+  同じ点なら新しい方が上。青パッチの倍率は **4** で、`feed_paid_weight()` が
+  一行で持つ ── X が 2023 年に公開した、フォローしていない人に見せるときの数。
+  「倍率をオーナーに訊かない」はそのとおりにした。
+
+  **掛ける先はまだ無い。**`profile` に契約の列が無く、`feed_weight()` は
+  `to_jsonb(p) ->> 'paid'` で訊いている ── 列が無ければ NULL、できた日から
+  黙って効き始める。その列は Apple の署名付き通知をサーバーで受けて立てるもので、
+  端末からは書けないよう塞ぐ（`staff` と同じ形）。**それが唯一の残り。**
 
 #### 今できないところ
 
@@ -1383,7 +1393,9 @@ spec asks for them」と書いている ── **人が押した削除は automa
 - Affected features: 通知
 - Affected data: `notices()` の返す形
 - Affected docs: この項
-- Implementation status: 未着手（`claude/draft`）
+- Implementation status: **入っている。**`notices()`（`supabase/schema.sql`）の
+  `ev` にフォローが `post` を持たない行として入り、`(kind, post)` でまとめる
+  `g` がそれを一行にする ── いいねと同じ仕組みで、二つ目の仕組みは作っていない。
 
 ### ビルドはオーナーが言うまで押さない。ゲートは実機確認の最中に
 - Date: 2026-08-28
@@ -1488,28 +1500,46 @@ spec asks for them」と書いている ── **人が押した削除は automa
   `'ob'` を返していたので、`appIs()` を訊く検査では捕まらなかった。
   **ゲートには未接続**（`package.json` / `tools/gate.mjs` はリーダーのもの）。
 
-### 規約とプライバシーは設定の中だけ。特定商取引法の表記は出さない
+### 特定商取引法の表記は出さない ── 場所の半分は **superseded 2026-09-01 / 09-02**
 - Date: 2026-08-26
 - Area: 規約・プライバシーポリシー・特定商取引法に基づく表記
-- Decision: **特商法の表記は出さない**（「出さない。」）。**ログアウト中に
-  規約とプライバシーが読めなくてよい**（「ログアウト中は見れなくていいでしょ？
-  ログインしたら設定から見れるし」）。読める道は**設定 → アカウントの一番下、
-  一箇所だけ**。
+- Decision: **特商法の表記は出さない**（「出さない。」）。これは今も効いている。
+
+  **場所についての半分は置き換えられた。**この日オーナーが言ったのは
+  「ログアウト中は見れなくていいでしょ？ログインしたら設定から見れるし」で、
+  その言葉は記録として残す。そこから書かれた規則 ──〈読める道は設定 →
+  アカウントの一番下、一箇所だけ〉── は、二つの決定が置き換えた:
+
+  - 「設定のアカウントの利用規約とプライバシーポリシー消しといて。課金の方に
+    あるからいらん」**OWNER 2026-09-01** ── アカウント室から消え、プラン画面へ
+  - 「続けるとの説明は ok」**OWNER 2026-09-02** ── 登録画面の面にも出す。
+    つまり**サインアウト中でも読める**
+
+  **今そうであること:** 読める道は**プラン画面**（`planTerms()`）と
+  **登録画面の面**（`www/onboard.js`）の二つ。**アカウント室には無い。**
+  三本目の文書は無い。
 - Reason: オーナーの言葉のまま上に。仕組みの側で分かっていること ── App Store
   の課金は販売者が Apple（日本では iTunes K.K.）で、購入契約の相手も返金の窓口も
   Apple なので、App Store Connect は特商法のページを訊いてこない。必須で訊くのは
   プライバシーポリシー URL だけ。
 - Affected features: `docRows()`（www/settings.js）。**二本のままで、三本目は
-  作らない。** ログアウト中に扉しか出ないのは 2026-08-26 の「ログアウトしたら
-  普通にログイン画面だけ出せばいいやろ」のとおりで、**これは退行ではなく仕様**。
+  作らない** ── これは変わっていない。呼ぶ場所が二度動いただけで、文書は二つの
+  ままである。`planTerms()`（www/settings.js）と www/onboard.js の登録の面が
+  呼ぶ。`docRows()` 自体は一つで、URL も `DOC_TERMS` / `DOC_PRIVACY` の一組。
 - Affected data: **無し。** 保存するものは増えも減りもしない。
 - Affected docs: docs/BACKLOG.md（§3 と §4 をこの決定に合わせる）、docs/apple.md
-- Implementation status: **コードの変更は要らない。今の姿がこの決定。**
-  残っているのは repo の外で、そちらは片付いていない ── `natsuaya82-crypto/tokine2`
+- Implementation status: **特商法の半分は入っている**（三本目の文書はどこにも
+  無い）。**場所の半分は上のとおり置き換えられ、コードは新しい方に従っている。**
+  この項が〈一箇所だけ〉と言い続けていたのを 2026-09-03 の監査が見つけた ──
+  コードは正しく、古かったのはこの文だった。
+
+  残っているのは repo の外で、**そちらは 2026-08-26 以降たしかめていない** ──
+  `natsuaya82-crypto/tokine2`
   （Vercel で tokinets.com）を読んだ結果:
   **`lingua/` の中は `index.html` 一つだけで、`terms.html` も `privacy.html` も
-  無い。** アプリの二本のリンクは今日 404。直下には二本あるが **どちらも別アプリの
-  もの**（`terms.html` は「利用規約 | JPEL Manager」、`privacy.html` は
+  無い。** アプリの二本のリンクは 2026-08-26 の時点で 404。直下には二本あるが
+  **どちらも別アプリのもの**（`terms.html` は「利用規約 | JPEL Manager」、
+  `privacy.html` は
   「本アプリには『JPEL Manager』が含まれます」と書き、メールを求めない・端末内
   にのみ保存・AdMob 広告あり、と Lingua と真逆を宣言している）。**流用は不可** ──
   審査に落ちるより先に、事実と違う申告になる。
@@ -2001,7 +2031,15 @@ works offline; the next launch asks again」。**初回起動＋圏外**は、
   `docs/DATA_MODEL.md` § 読み取り専用の言語。
 - Affected docs: `docs/FEATURES.md`、`docs/DATA_MODEL.md`、`docs/PAID_FEATURES.md`、
   `docs/ARCHITECTURE.md`、`docs/STATE.md` § 3。
-- Implementation status: **OWNER DECISION** — 決定済み、未実装。0 行入っていない。
+- Implementation status: **入っている。**`can('dl')` は plus（`CAN.dl`、
+  `www/core.js`）、数は `dlCap()` が 0 / 1 / 3 で答え、`dlCount()` が
+  `mine` の false を数える ── 作る天井（`langCap()`）とは別の天井で、互いに
+  見えない。取ってきた言語は `langSeenAdd()` が `mine:false` で index に入れ、
+  `vLangs()` が「読んでいる」の節に並べる。解放は章ごと（`wldSecDl()`、
+  `www/home.js`）で、一つのスイッチではない。
+
+  **数は 2026-09-02 の決定が決めた** ──「plusからです」。この項が
+  〈`は？` で終わっているので決めない〉と書いた二つは、そちらで閉じている。
 
 #### この決定がぶつかるもの二つ。ここで解決しない。
 
@@ -2055,19 +2093,21 @@ and is never merged into your own」と言っている。**入らない、は二
 - Affected data: 何も増えない。スロットの**ラベル**だけで、作られる単語も
   その並びも変わらない
 - Affected docs: `www/cal.js` の `calSlots()` のコメント、`docs/CHANGELOG.md`
-- Implementation status: **未着手**。`www/cal.js` は `claude/yoo-kwdg28` の
-  持ち物
+- Implementation status: **入っている。**`calMonthSlots()` と `calWeekSlots()`
+  （`www/cal.js`）が `cal.m.1`…`cal.m.12` と `cal.d.1`…`cal.d.7` を引き、
+  十言語ぶんの 19 個が入っている。英語は January…December と
+  Sunday…Saturday で、**曜日は日曜から**
 
-**この決定は、`cal.js` に書かれている理由と食い違う。** `calSlots()` の上に
-こうある ── 「A month called "3" ... is the only honest label: the app does
-not know what anybody's third month is for, and putting "March" there would
-be this app deciding whose calendar it is」。それは**週や月の長さを言語が
-決められた頃**の理由で、同じファイルの頭がその設計を取り消している
-(「THE STRUCTURE IS THE WORLD'S」)。取り消され忘れたコメント。
+**`cal.js` に食い違うコメントが残っていたが、実装と一緒に直った。**
+「A month called "3" ... is the only honest label」と書かれていたのは、
+**週や月の長さを言語が決められた頃**の理由で、同じファイルの頭がその設計を
+既に取り消していた(「THE STRUCTURE IS THE WORLD'S」)。今は
+`calMonthSlots()` の上が、その古い理由と、なぜ取り消されたかを書いている。
 
 **十二ヶ月＋七曜 = 19 個の文言 × 十言語 = 190。** `Intl` で機械的に出す道も
-あるが、i18n-check の鏡は「t() を通っていない平文」で落ちるので、キーで
-持つことになる。
+あるが、i18n-check の鏡は「t() を通っていない平文」で落ちる ── そして
+`t(pre+i)` のように接頭辞を引数で渡す形も、検査が読めない鍵になって落ちる。
+だから十九本が二組、手で書き出してある。
 
 ### Decision
 - Date: 2026-08-23
@@ -2523,8 +2563,12 @@ be this app deciding whose calendar it is」。それは**週や月の長さを�
 - Implementation status: **the keyboards are built** (2026-08-23,
   `claude/save`): `kbCap()` in `www/core.js`, `kbCount()` / `kbRoomKb()` in
   `www/keyboard.js`, `CAN.kb` at `plus`, `KB_MAX` gone. Held by `plan-check`.
-  **The language ceiling, `can('edit')` and `can('badge')` are not built** --
-  `postEdit()` and `planBadge()` are still open.
+  **The language ceiling, `can('edit')` and `can('badge')` are all built now** --
+  `langCap()` beside `kbCap()` in `www/core.js` (1 / 1 / 3, with `langStop()`
+  as the refusal), `CAN.edit` at `plus` with `postEdit()` asking `can('edit')`,
+  and `CAN.badge` at `pro` with `postBadge()` asking `can('badge')` instead of
+  reading `plan()`. `CAN` is twelve rather than the eleven counted above:
+  `dl` was added on 2026-09-02 and `noads` has not arrived.
 
   **Not a loophole, decided:** the language count is what is on THIS PHONE —
   `lingua.langs` carries no owner, `netOut()` clears only the session, and
