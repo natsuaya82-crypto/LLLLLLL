@@ -187,7 +187,16 @@ for (const spec of shots) {
           window.__seed();
           var html = HALF[n][1]();
           render();
-          if (html) document.getElementById('app').innerHTML = html;
+          if (html) {
+            document.getElementById('app').innerHTML = html;
+            /* AND THE CANVASES ARE FILLED AGAIN. render() fills them, then
+               the line above throws that page away and puts the face's own
+               in its place -- so every canvas in every one of these pictures
+               was an empty square, the letter missing from the one place
+               somebody looks. renderMount() is render()'s own tail
+               (www/glyph.js), called rather than copied. */
+            renderMount();
+          }
           return null;
         } catch (e) { return String(e && e.message || e); }
       }, Number(hd[1]))
