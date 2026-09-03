@@ -218,6 +218,89 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### 無料でも有料と同じ数の枠が並ぶ。二つ目以降は押すとプランへ
+- Date: 2026-09-03
+- Area: キーボードの章（`www/keyboard.js`、⑨）
+- Decision:
+
+  ```
+  キーボードの画面無料だと何で1個なの？
+  一覧が並ばないの？無料も有料も同じ画面っちうルールは？
+  ```
+
+  そしてリーダーの二択に対して:
+
+  ```
+  有料と同じ数の枠が並び、二つ目以降は押すとプランへ
+  ```
+
+  **無料でも、有料と同じ数の枠が一覧に並びます。**一つ目は今までどおり
+  ── 無料の board 0 は QWERTY そのもので、編集はできません。**二つ目以降の
+  枠を押すと、プランの画面へ行きます。**説明文は書きません ── 枠が在って、
+  押すとプランへ行く、それだけです。
+
+- Reason: **2026-09-01 の「無料でもplusでもproでも同じ画面なのよ」に反していた
+  状態です。**`HELP.kb` のコメント自身がその決定を引用しているのに、
+  `vKb()` は無料で一覧の手前から返っていて、無料の画面には行が一つも
+  ありませんでした。オーナーが実機で見つけました。
+
+  枠が並ぶことと、押すとプランへ行くことは一つの文です。2026-08-25 の
+  「そのプランでできることできないことで UI 自体に変更がない方が良くない？」
+  「課金させる動線を減らしたくない」がその形で、`langStop()` と `kbAdd()` の
+  上限が既に同じ形です。
+- Affected features: ⑨ キーボード（`docs/FEATURES.md`）
+- Affected data: **無し。**`KB` の中身は増えません ── 枠は画面が見せるもので、
+  言語が持つものではありません。無料の `kbBoards()` は `[kbFree()]` を答え、
+  `kbFree()` は storage に無く `kbFixed()` から毎回組まれます。
+  `kb-check` が「無料の board が増えていないこと」を持っています
+- Affected docs: この項目、`docs/CHANGELOG.md`、`docs/keyboard.md`
+- Implementation status: **IMPLEMENTED（この項目と同じコミット）。**
+  `kbBoards()` の無料の枝、`kbSlots()`、`kbFrameHTML()`、`vKb()`。
+  `tools/kb-check.mjs` に **8 本**足しました（`say(` の行は 289 → 299 で、
+  残り 2 本は手順のボタンの項です）。全部赤を見ています。既に在った無料の章の
+  6 本は、board 0 の頁に立たせ直しました ── 一覧に立つと `#kb` が無いので、
+  そのままなら「無料のキーボードが消えた」と読める赤になります。
+  **DEVICE CONFIRMED ではありません。**
+
+  **枠の数について、オーナーに確かめる一行があります。**「有料と同じ数」の
+  有料の上限は `kbCap()` で、無料 1・Plus 4・**Pro は `Infinity`**
+  （「1,1+3.無制限って言わなかったっけ？」）。Pro の数は並べられないので、
+  **有料の有限の上限 `PLUS_KB`（4）**を読んでいます ── Plus の一覧が持てる
+  行数がちょうど 4 なので、「有料と同じ数」はそこです。違うなら
+  `kbSlots()` の一行です。**`kbCap()` の数は触っていません。**
+
+### 設定へ飛ぶボタンを、手順 1 にも置く
+- Date: 2026-09-03
+- Area: `HELP.kb` ── キーボードを iOS で入れる四つの手順（`www/keyboard.js`）
+- Decision:
+
+  ```
+  後これも、この画面まで飛ぶリンクあったはずなのに無くなった？
+  ```
+
+  リーダーが「手順 3 の中に在ります」と答えたのに対して:
+
+  ```
+  １にもほしくない？
+  ```
+
+  **手順 1 にも、手順 3 と同じ「設定を開く」のボタンを置きます。**同じ
+  `kbSettings()` を呼び、文言も同じ `kb.sys.go` です。
+- Reason: 手順 1 が、設定へ行けと初めて言っている場所です。ボタンは三つ先に
+  しか無く、オーナーは「無くなった？」と読みました。
+- Affected features: ⑨ キーボード
+- Affected data: 無し
+- Affected docs: この項目、`docs/CHANGELOG.md`、`docs/keyboard.md`
+- Implementation status: **IMPLEMENTED（この項目と同じコミット）。**
+  `kbSettings()` は一箇所のままで、二つ目は作っていません。新しい鍵も
+  作っていません。`kb-check` が「手順 1 と手順 3 の両方に在る」ことと
+  「両方が同じ一つの関数を呼ぶ」ことを別々に持っています。
+
+  **開くのは Settings → Lingua です**（`openSettingsURLString` が Apple の
+  唯一の公開の戸 ── `ios/App/App/LinguaShare.swift` がそう書いています）。
+  手順 1 の行そのもの（Settings → General → Keyboard → Keyboards）には
+  公開の URL がありません。**DEVICE CONFIRMED ではありません。**
+
 ### DM は作らない。メッセージは別のアプリになる
 - Date: 2026-09-03
 - Area: SNS の側

@@ -1666,8 +1666,18 @@ const r = await pg.evaluate(({ s }) => {
         wasRoute = route,
         keep = LETTERS.slice(), i;
     SET.plan = 'free'; KB = null; kbShow = 0; kbLay = 0;
-    function face(){
-      NAV = [{ r: 'kb' }];
+    /* ON THE BOARD'S OWN PAGE, and that argument is the whole of what moved.
+       The six claims below were written when the free plan had a face of its
+       own -- one keyboard, no list -- so {r:'kb'} with nothing after it drew
+       the QWERTY and `#kb` was on the first screen. The chapter's own page is
+       the LIST on both plans now 「無料も有料も同じ画面っちうルールは？」
+       OWNER 2026-09-03, so a claim that wants the keyboard has to name the
+       board it is on. Left as it was, every one of them counted `#kb` on a
+       screen that has none and read 0 -- which is a check going red about
+       the screen moving rather than about the keyboard, and would have said
+       the free keyboard was gone again. */
+    function face(a){
+      NAV = a === undefined ? [{ r: 'kb' }] : [{ r: 'kb', a: a }];
       document.getElementById('app').innerHTML = vKb();
       return {
         rows: document.querySelectorAll('#kb .kbrow').length,
@@ -1678,27 +1688,109 @@ const r = await pg.evaluate(({ s }) => {
       };
     }
     out.freeNoEditor = !can('kb');
-    var withLt = face();
+    var withLt = face('0');
     out.freeRows = withLt.rows;
     out.freeKeys = withLt.keys;
     out.freeNothingToPress = withLt.press === 0;
 
     /* the same language with its letters not there yet */
     LETTERS.length = 0;
-    var bare = face();
+    var bare = face('0');
     out.freeBareRows = bare.rows;
     out.freeBareKeys = bare.keys;
 
     LETTERS.length = 0;
     for (i = 0; i < keep.length; i++) LETTERS.push(keep[i]);
 
+    /* ---- AND THE CHAPTER IS A LIST ON THIS PLAN TOO ---------------------
+       「キーボードの画面無料だと何で1個なの？一覧が並ばないの？無料も有料も
+       同じ画面っちうルールは？」 OWNER 2026-09-03, and the answer:
+       「有料と同じ数の枠が並び、二つ目以降は押すとプランへ」.
+
+       Nothing here could go red before it, and that is the shape this file
+       keeps failing in: every claim above stands on the KEYBOARD -- the rows,
+       the keys, that nothing answers a finger -- and the screen it is on was
+       never asked about. The free plan had one board and no list for as long
+       as it had a list to not have, with 251 claims green.
+
+       The number is read off `PLUS_KB` rather than written down, because
+       kbSlots() reads it too and two copies of a number is the thing that
+       drifts. Pro's ceiling is Infinity, so the paid number that can be drawn
+       as frames is Plus's, and it is exactly how many rows a Plus list holds. */
+    out.freeSlots = PLUS_KB;
+    NAV = [{ r: 'kb' }]; route = 'kb';
+    document.getElementById('app').innerHTML = vKb();
+    var lrows = [].slice.call(document.querySelectorAll('.kblist .kbrow'));
+    out.freeListRows = lrows.length;
+    /* A LIST and not a keyboard. The board is a page of its own, so the sheet
+       is not on this screen at all -- which is what the claims above had to
+       be moved onto {r:'kb','0'} for. */
+    out.freeListNoSheet = document.querySelectorAll('#kb').length === 0;
+    /* the first row IS the QWERTY: its preview carries the real keys */
+    out.freeListFirstKeys = lrows.length ? lrows[0].querySelectorAll('.kbsk').length : -1;
+    /* and every row after it is a frame: nothing in the box, and it names the
+       ONE door -- kbNew, which is what the + names on the paid list and what
+       upStop() answers on this one. A second mechanism would show up here as
+       a data-do that is not kbNew. */
+    out.freeFrameCount = 0; out.freeFrameEmpty = true; out.freeFrameDoor = true;
+    /* AND A THUMB'S WORTH OF SCREEN, measured rather than assumed. A row with
+       nothing in it is exactly the row that collapses: the preview box is what
+       gives a real row its height, and today a search-history row came out
+       39px and turned the gate red. 44pt on both sides -- 基準8, and the row
+       is full width, so the height is the half that can go. */
+    out.freeFrameLow = 0;
+    for (i = 1; i < lrows.length; i++){
+      out.freeFrameCount++;
+      if (lrows[i].querySelectorAll('.kbsk').length !== 0) out.freeFrameEmpty = false;
+      if (lrows[i].getAttribute('data-do') !== 'kbNew') out.freeFrameDoor = false;
+      var fb = lrows[i].getBoundingClientRect();
+      if (fb.height < 44 || fb.width < 44)
+        out.freeFrameLow = Math.round(Math.min(fb.height, fb.width));
+    }
+    out.freeFrameH = lrows.length > 1
+      ? Math.round(lrows[1].getBoundingClientRect().height) : 0;
+    /* THE FIRST ONE IS THE KEYBOARD AND PRESSING IT IS NOT THE EDITOR.
+       「一つ目は今までどおり」 -- board 0 is the free QWERTY, kbEdit() refuses
+       it, and the page it lands on has nothing on the sheet to press. Pressed
+       through the row on the page rather than by calling kbGoBoard(), because
+       what is being asked is where a finger arrives. */
+    lrows[0].click();
+    out.freeFirstLands = here().r === 'kb' && String(here().a) === '0';
+    out.freeFirstSheet = document.querySelectorAll('#kb .kbrow').length;
+    out.freeFirstNoEdit = document.querySelectorAll('#kb [data-do]').length === 0;
+
     /* ---- and the upgrade is offered where a keyboard is ADDED ------------
        「upgradeはそこにはいらんくね。追加するときに出てくるようにして欲しい」
        OWNER 2026-09-01. It stood at the foot of the free screen, under a
        keyboard that is not for sale. What it is about is building ANOTHER
        one, so it is asked on the road that builds one -- and asked twice,
-       because kbNew() is a door and kbAdd() is the act that writes. */
+       because kbNew() is a door and kbAdd() is the act that writes.
+
+       Asked of BOTH faces now. It used to be asked of whichever screen the
+       block above happened to have left standing, which was one of the two. */
+    NAV = [{ r: 'kb' }];
     out.freeNoUpsell = vKb().indexOf('goPlans') < 0;
+    NAV = [{ r: 'kb', a: '0' }];
+    out.freeNoUpsell = out.freeNoUpsell && vKb().indexOf('goPlans') < 0;
+
+    /* ---- THE SECOND FRAME GOES TO THE PLANS SCREEN ----------------------
+       「二つ目以降は押すとプランへ」 OWNER 2026-09-03, pressed as a finger
+       presses it: the second row of the list on the page. popYes() is the
+       person answering upStop()'s question -- nothing is stubbed. */
+    NAV = [{ r: 'kb' }]; route = 'kb'; KB = null;
+    document.getElementById('app').innerHTML = vKb();
+    var frames = [].slice.call(document.querySelectorAll('.kblist .kbrow'));
+    out.freeFramePressed = frames.length > 1;
+    if (out.freeFramePressed) frames[1].click();
+    out.freeFrameAsked = popOn();
+    if (popOn()) popYes();
+    out.freeFrameToPlans = here().r === 'plans';
+    /* AND NO BOARD WAS MADE. The frames are what the screen shows, not what
+       the language holds: a frame that wrote a board would be the free plan
+       quietly owning four keyboards. */
+    out.freeFrameWroteNothing = KB === null && kbStored().length === 0;
+    out.freeBoardsStillOne = kbBoards().length === 1;
+    popOff();
 
     /* The ceiling is met with the app's OWN popup now, not confirm() --
        「標準は使わねえって言ってるだろこれも禁止や」 OWNER 2026-09-01 -- so the
@@ -1718,6 +1810,26 @@ const r = await pg.evaluate(({ s }) => {
     out.freeAddToPlans = here().r === 'plans';
     out.freeAddWroteNothing = KB === null;
     popOff();
+
+    /* ---- THE WAY INTO SETTINGS IS ON THE FIRST STEP AND ON THE THIRD -----
+       「後これも、この画面まで飛ぶリンクあったはずなのに無くなった？」then
+       「１にもほしくない？」 OWNER 2026-09-03. It was on step 3 only.
+
+       Asked of the RENDERED sheet and per step, not as a count: two buttons
+       both sitting in step 3 is the same number and is not the answer. And
+       ONE name -- a second function called from step 1 would read identically
+       from the outside, so what is asked is that both buttons say kbSettings. */
+    var hs = document.createElement('div');
+    hs.innerHTML = HELP.kb().h;
+    var steps = [].slice.call(hs.querySelectorAll('.kbstep'));
+    out.helpSteps = steps.length;
+    out.helpGoNames = [].slice.call(hs.querySelectorAll('.kbstep [data-do]'))
+      .map(function (b){ return b.getAttribute('data-do'); })
+      .filter(function (n){ return n !== 'goPlans'; })
+      .join(' ');
+    out.helpGoIn = steps.map(function (s){
+      return s.querySelectorAll('[data-do="kbSettings"]').length;
+    }).join(',');
 
     SET.plan = wasPlan; KB = wasKB; kbShow = wasShow;
     NAV = wasNav; route = wasRoute; KBH = null; kbSel = null;
@@ -3313,6 +3425,47 @@ say(r.freeNewToPlans,
 say(r.freeAddToPlans && r.freeAddWroteNothing,
     'and so does the act that writes one, which writes nothing on the way ['
     + [r.freeAddToPlans, r.freeAddWroteNothing].join(' ') + ']');
+
+/* ---- and the chapter is a LIST on the free plan too ---------------------
+   「キーボードの画面無料だと何で1個なの？一覧が並ばないの？無料も有料も同じ
+   画面っちうルールは？」→「有料と同じ数の枠が並び、二つ目以降は押すとプランへ」
+   OWNER 2026-09-03 */
+say(r.freeListRows === r.freeSlots,
+    'the free plan gets the same number of slots the paid one does (' +
+    r.freeListRows + ' rows, PLUS_KB is ' + r.freeSlots + ')');
+say(r.freeListNoSheet,
+    'and the chapter it arrives on is that list, not a keyboard');
+say(r.freeListFirstKeys > 0,
+    'the first of them is the QWERTY itself, drawn (' + r.freeListFirstKeys +
+    ' keys in its preview)');
+say(r.freeFirstLands && r.freeFirstSheet === 5 && r.freeFirstNoEdit,
+    'and pressing it lands on that board with nothing on the sheet to press --'
+    + ' no editor [' + [r.freeFirstLands, r.freeFirstSheet, r.freeFirstNoEdit].join(' ')
+    + ']');
+say(r.freeFrameCount === r.freeSlots - 1 && r.freeFrameEmpty && r.freeFrameDoor,
+    'every row after it is an empty frame naming the one door, kbNew (' +
+    r.freeFrameCount + ' frames, empty ' + r.freeFrameEmpty + ', one name ' +
+    r.freeFrameDoor + ')');
+say(r.freeFrameLow === 0,
+    'and a frame is a thumb\u0027s worth of screen with nothing in it (' +
+    r.freeFrameH + 'px tall' +
+    (r.freeFrameLow ? ', one measured ' + r.freeFrameLow + 'px' : '') + ')');
+say(r.freeFramePressed && r.freeFrameAsked && r.freeFrameToPlans,
+    'pressing the second frame asks, and the yes is the plans screen [' +
+    [r.freeFramePressed, r.freeFrameAsked, r.freeFrameToPlans].join(' ') + ']');
+say(r.freeFrameWroteNothing && r.freeBoardsStillOne,
+    'AND THE LANGUAGE STILL HOLDS ONE BOARD -- the frames are what the screen'
+    + ' shows, not what KB has [' +
+    [r.freeFrameWroteNothing, r.freeBoardsStillOne].join(' ') + ']');
+
+/* ---- and the way into Settings is on the first step as well as the third -
+   「１にもほしくない？」 OWNER 2026-09-03 */
+say(r.helpGoIn === '1,0,1,0',
+    'the button into Settings is on step 1 AND on step 3, and on neither of'
+    + ' the other two (steps carrying it: ' + r.helpGoIn + ' of ' + r.helpSteps + ')');
+say(r.helpGoNames === 'kbSettings kbSettings',
+    'and both of them call the one function rather than a second of its own ('
+    + r.helpGoNames + ')');
 
 if (bad.length){ console.error('\nkb-check: ' + bad.length + ' FAILED'); process.exit(1); }
 console.log('\nkb: pressing a row number or a column letter SELECTS it and lights it up;\n' +

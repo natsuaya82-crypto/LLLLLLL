@@ -891,11 +891,40 @@ function kbFree(){ return {nm:'', pat:'qwerty', lay:kbFixed().lay}; }
    キーボードなくなるやろ」
 
    So board 0 is the one thing on this screen that is the same on both plans,
-   and coming back down to free changes nothing at all. */
+   and coming back down to free changes nothing at all.
+
+   AND THE FREE PLAN HAS IT TOO, which is what makes this screen one screen.
+   「キーボードの画面無料だと何で1個なの？一覧が並ばないの？無料も有料も同じ
+   画面っちうルールは？」 OWNER 2026-09-03. It answered [] on free, so there
+   were no rows to draw and the chapter had a keyboard where a list belongs --
+   against 「無料でもplusでもproでも同じ画面なのよ」 OWNER 2026-09-01, which
+   HELP.kb's own comment quotes.
+
+   `kbStored()` is NOT concatenated on free, and that is not tidiness: it is
+   what `kbOf()`'s own `!can('kb')` guard is for. Somebody who built three
+   keyboards on Plus and let the plan lapse types on the free QWERTY again --
+   「plusから無料に戻った時にキーボードなくなるやろ」 -- so listing those three
+   here would put a board on the screen that the phone is not typing on, one
+   press from an editor this plan does not have. They are still in storage and
+   nothing is deleted; they come back with the plan. */
 function kbBoards(){
-  if(!can('kb')) return [];
+  if(!can('kb')) return [kbFree()];
   return [kbFree()].concat(kbStored());
 }
+/* How many ROWS the list draws, which is a different question from how many
+   keyboards there are: on the free plan the rest are frames, and pressing one
+   is the way to the plans screen.
+   「有料と同じ数の枠が並び、二つ目以降は押すとプランへ」 OWNER 2026-09-03.
+
+   `PLUS_KB` and not `kbCap()`: the number wanted here is the PAID one on every
+   plan, and `kbCap()` answers 1 on free -- which is the state the owner was
+   asking about. Pro's ceiling is Infinity, so it is not a number of frames
+   either; PLUS_KB is the paid ceiling that can be drawn, and it is exactly how
+   many rows a Plus list holds (kbRoomKb() stops at 1 + 3).
+
+   Paid draws the keyboards there are and adds with the +. Frames there would
+   be a second door to the chooser the + already opens. */
+function kbSlots(){ return can('kb')? kbBoards().length : PLUS_KB; }
 /* Board 0 and no other. Everything that writes asks this first. */
 function kbIsFree(i){ return (parseInt(i, 10)||0)===0; }
 function kbClamp(i, n){ return Math.max(0, Math.min(parseInt(i, 10)||0, n-1)); }
@@ -2292,10 +2321,32 @@ function kbRowHTML(x, i, at){
     (i===at? '<span class="kbon">'+ICON_TICK+'</span>' : '')+
     ICON_GO+'</button>';
 }
+/* A slot with nothing in it: the same row, wearing the same class, with the
+   preview box empty and the name it would be called by.
+   「有料と同じ数の枠が並び、二つ目以降は押すとプランへ」 OWNER 2026-09-03.
+
+   It names `kbNew`, which is the door every other + in this app already goes
+   through -- upStop(can('kb')) sends somebody to the plans screen on this
+   plan and opens the chooser on the paid one. There is no second mechanism
+   here and no sentence explaining what a paid plan would give: the frame is
+   there and pressing it goes to the plans screen, which is the whole of it.
+
+   `t('kb.n', i+1)` is the name kbNameHTML() already puts in the field as its
+   placeholder, so nothing new is written down. No border and no corner -- an
+   empty `.kbrowk` holds the 96px the preview would have taken, and the row's
+   own min-height is what makes it a thumb's worth of screen. */
+function kbFrameHTML(i){
+  return '<button class="kbrow"' + DO('kbNew') + '>'+
+    '<span class="kbrowk"></span>'+
+    '<span class="kbrown">'+esc(t('kb.n', i+1))+'</span>'+
+    ICON_GO+'</button>';
+}
 function kbListHTML(){
-  var bs=kbBoards(), at=kbApplied(bs.length);
+  var bs=kbBoards(), at=kbApplied(bs.length), rows=[], i, n=kbSlots();
+  for(i=0;i<n;i++)
+    rows.push(i<bs.length? kbRowHTML(bs[i], i, at) : kbFrameHTML(i));
   return '<div class="kblist">'+
-    bs.map(function(x, i){ return kbRowHTML(x, i, at); }).join('')+
+    rows.join('')+
     '</div>'+
     /* THE SAME ROUND + AS EVERYWHERE ELSE 「追加は◉+にしてね」 -- the
        dictionary, the alphabet, the composer and the notebook all add with
@@ -2341,20 +2392,20 @@ function vKb(){
      every other question of this shape -- ltKind() on a letter, wsysSet() on
      a writing system, phGo() on a grammar stage all send somebody to the
      plans screen at the moment the act is pressed rather than standing a
-     button beside it. */
-  if(!can('kb'))
-    return '<div class="view">'+navTop('', helpQ('kb'))+'<div class="body">'+
-      kbHTML(null, true)+
-      kbSysHTML()+
-      '</div>'+
-      /* The way to a second keyboard, wearing the same round + the paid list
-         uses. Pressing it on this plan opens what it would give rather than
-         the chooser 「アップグレードボタンそこじゃなくて、キーボードを足そうと
-         するとポップ出るようにしてよ」 OWNER 2026-08-28. */
-      (langLocked()? ''
-        : '<button class="fab"' + DO('kbNew') + ' aria-label="'+esc(t('kb.new'))+'">'+
-            ICON_ADD2+'</button>')+
-      '</div>';
+     button beside it.
+
+     AND THE FREE PLAN'S OWN FACE IS GONE, which is the whole of this change.
+     「キーボードの画面無料だと何で1個なの？一覧が並ばないの？無料も有料も同じ
+     画面っちうルールは？」 OWNER 2026-09-03. It returned here, above the
+     list, so free never saw a list at all: one keyboard, no rows, and the
+     rule 「無料でもplusでもproでも同じ画面なのよ」 broken on the screen whose
+     own help sheet quotes it. There is one road down this function now and
+     both plans walk it -- the list, and one keyboard's page under it. What
+     the free plan has instead of the + is the FRAMES, which are rows of the
+     same list (kbFrameHTML above), so the door is one door.
+
+     The round + is not lost either: kbListHTML() draws it while kbRoomKb() is
+     true, which is never on this plan -- 1 + 0 is not less than 1. */
   /* The keyboard, and the row of the ones there are above it. There is no
      "nothing built yet" face any more: kbBoards() answers with the one
      already on the phone, so the first thing on this screen is always a
@@ -2366,16 +2417,22 @@ function vKb(){
   var bs=kbBoards(), a=here().a;
   if(a===null || a===undefined || a==='')
     /* SELECT AT THE FAR END OF THE BAR, where the ? was 「？の位置を
-       キーボード 選択 にしたい」 OWNER 2026-09-01. The ? is not lost: it is
-       the free plan's screen that needs it, and that screen still has it. */
+       キーボード 選択 にしたい」 OWNER 2026-09-01.
+
+       And the ? where there is nothing to select. The free plan's one board
+       is board 0, which kbSelTap() refuses and which cannot be deleted, so
+       Select there is a word that puts marks on nothing. What that plan needs
+       in the corner is the steps -- how to switch the keyboard on in iOS --
+       and this is the screen it arrives on. */
     return '<div class="view">'+navTop('', KBSEL
         ? ((kbSelList().length
               ? '<button class="navdo navdel"' + DO('kbSelDel') + '>'+
                   esc(t('kb.sel.del'))+'</button>'
               : '')+
            '<button class="navdo"' + DO('kbSelOff') + '>'+esc(t('kb.sel.done'))+'</button>')
-        : (langLocked()? ''
-            : '<button class="navdo"' + DO('kbSelOn') + '>'+esc(t('kb.sel'))+'</button>'))+
+        : (!can('kb')? helpQ('kb')
+            : (langLocked()? ''
+                : '<button class="navdo"' + DO('kbSelOn') + '>'+esc(t('kb.sel'))+'</button>')))+
       '<div class="body">'+
       kbListHTML()+
       kbSysHTML()+
@@ -2424,7 +2481,12 @@ function vKb(){
 function kbMoreQ(){
   if(kbWob)
     return '<button class="navq navdone"' + DO('kbWobEnd') + '>'+esc(t('kb.done'))+'</button>';
-  if(kbIsFree(kbShow)) return '';
+  /* The ? in its place. There is nothing behind the ⋯ on board 0 -- so the
+     corner was empty, and on the free plan that was the corner the steps used
+     to be in: its one screen carried helpQ('kb') until this board became a
+     page of its own. The board is the same board on both plans, so the corner
+     is the same corner. 「無料でもplusでもproでも同じ画面なのよ」 */
+  if(kbIsFree(kbShow)) return helpQ('kb');
   return '<button class="navq"' + DO('kbMore') + ' aria-label="'+esc(t('kb.more'))+'">'+
     ICON_DOTS+'</button>';
 }
@@ -3321,7 +3383,21 @@ HELP.kb=function(){
      2026-08-28 is answered, and 「無料でもplusでもproでも同じ画面なのよ」
      OWNER 2026-09-01 decides which way round the two go. */
   return {t:t('kb.sys.h'), h:
+    /* AND THE WAY INTO SETTINGS IS ON THE FIRST STEP TOO.
+       「後これも、この画面まで飛ぶリンクあったはずなのに無くなった？」then
+       「１にもほしくない？」 OWNER 2026-09-03. It was on step 3 only, which is
+       three steps in -- and step 1 is where somebody is being sent to
+       Settings for the first time.
+
+       The SAME kbSettings(), the same t('kb.sys.go'): one function and one
+       string named from two places. What it opens is Settings → Lingua
+       (openSettingsURLString is Apple's only public door -- LinguaShare.swift
+       says so), which is not step 1's own row; Settings → General → Keyboard
+       has no public URL. So this is the door into Settings, and the path
+       under it is what says where to walk from there. */
     kbStepHTML(1, t('kb.step1'), '<div class="mini">'+t('kb.step1.d')+'</div>'+
+      '<button class="btn" style="width:100%;margin-top:10px"' + DO('kbSettings') + '>'+
+        esc(t('kb.sys.go'))+'</button>'+
       kbShot('kb-list.jpg'))+
     kbStepHTML(2, t('kb.step2'), kbShot('kb-add.jpg'))+
     kbStepHTML(3, t('kb.step3'),
