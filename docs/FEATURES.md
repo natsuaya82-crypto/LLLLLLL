@@ -279,16 +279,19 @@ is in the backup a phone makes onto a PC, where free tools and no jailbreak turn
 by `netPlanSync()`, which takes the HIGHER of the two rungs (`planBest()`) so a
 purchase made on another phone arrives on this one. `acct-check` walks it.
 
-**What is NOT built is the checking half**, and it is the half with the money
-on it. Nothing verifies a receipt: the row says what the phone told it, and on
-a jailbroken phone the app's own JavaScript can be edited and the question never
-gets asked. **So anybody determined enough can still set themselves to Pro**,
-and the server will write it down. So:
+**What decides the plan today is the PHONE, and that is what is being fixed.**
+Nothing verifies a receipt. `netPlanUp()` sends whatever `SET.plan` says and the
+row takes it; `is_member()` asks only whether somebody is signed in. On a
+jailbroken phone the app's own JavaScript can be edited, so anybody determined
+enough sets themselves to Pro and the server writes it down.
 
-1. the StoreKit receipt is verified **server-side**, not by the app. **This is
-   the one that is open**, and it is what stands between here and taking money
-2. `CAN` stays what it is: which buttons to show. It is not a security check
-   and must never be relied on as one
+**「だから端末でやるわけねえだろ」 OWNER 2026-09-03.** The shape it goes to:
+the server asks Apple, and the row is what Apple answered rather than what the
+phone claimed. That work is another session's; what this section is for is that
+nobody reads the `plan` table as proof of anything until it lands.
+
+`CAN` stays what it is either way: which buttons to show. **It is not a security
+check and must never be relied on as one.**
 
 Nothing costs us money per plan yet — everything a plan opens runs on the phone
 (`assist.js`, `grammar.js`, `reading.js` make no network call) — so there is

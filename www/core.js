@@ -631,14 +631,23 @@ var PLANS=[
      does nothing until the product is made. What is NOT allowed is the other
      way round -- a product on sale that the app does not name. */
   {id:'plus', name:'Plus', mo:'plan.price.plus', yr:'plan.price.plus.yr', off:'17',
-   lines:['plan.plus.1','plan.plus.2','plan.plus.3','plan.plus.4','plan.plus.5']},
-  /* Pro opens with "everything in Plus, and:" rather than repeating the five
-     lines above it. Three pages that each list everything are three pages
-     somebody has to compare word by word; the ladder is the thing being sold
-     and it should be readable by scrolling. */
+   lines:['plan.plus.1','plan.plus.2','plan.plus.3','plan.plus.4','plan.plus.5',
+          'plan.plus.6']},
+  /* Pro opens with "everything in Plus, and:" rather than repeating the lines
+     above it. Three pages that each list everything are three pages somebody
+     has to compare word by word; the ladder is the thing being sold and it
+     should be readable by scrolling.
+
+     THE CEILINGS ARE ON THE CARDS, and that is 「何で入ってないの？」 OWNER
+     2026-09-03. langCap() and dlCap() sell three languages and three
+     downloads on Pro, and one download on Plus, and not one of those numbers
+     was anywhere on the screen a person pays from -- so the app was charging
+     for something it never said it had. Each is a NAME and not a sentence
+     (「アプリ内に説明書くの禁止」): plan.pro.6 / plan.pro.7 / plan.plus.6.
+     Plus's own languages are Free's one, so there is no line for them. */
   {id:'pro',  name:'Pro',  mo:'plan.price.pro', yr:'plan.price.pro.yr', off:'17',
    lines:['plan.pro.1','plan.pro.2','plan.pro.3','plan.pro.4','plan.pro.5',
-          'plan.badge']},
+          'plan.pro.6','plan.pro.7','plan.badge']},
 ];
 /* Studio is not here. What it sold was the hosted model -- the conversation
    and the suggestions -- and the model is the last thing going in. A tier
@@ -709,15 +718,7 @@ function langCap(){
 }
 /* And what it is compared against: the languages that are THIS PERSON'S.
 
-   `mine` and not the length of LANGS, and the reason is about what is COMING
-   rather than what is here. This comment used to say LANGS "also holds every
-   language being read from somebody else", and it does not: the places that
-   write to LANGS -- langMint() above, bkRestore() in backup.js -- every one
-   of them writes `mine:true`, and nothing anywhere
-   writes it false. There is no language in this app that is not the person's
-   own, and there never has been. vLangs() draws a 「読んでいる」 list that is
-   always the empty note, for the same reason.
-   `mine` and not the length of LANGS, because LANGS holds both kinds now:
+   `mine` and not the length of LANGS, because LANGS holds both kinds:
    langSeenAdd() above writes `mine:false` for a language taken off somebody
    else's page, and vLangs() (www/home.js) draws the two lists that answers.
 

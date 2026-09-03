@@ -11,23 +11,11 @@
    capabilities it counted instead of leaving the number in prose.
 
    The SLOW ones each start a headless browser and walk the app -- most over
-   a port of their own; `shape-check` opens `index.html`
-   off the disk instead, which is why it needs no port. Run one after another
-   Thirty-five checks, and twenty-six of them start a headless browser and walk
-   the app -- most over a port of their own; `shape-check` opens `index.html`
-   off the disk instead, which is why it needs no port. The two numbers here
-   are FAST.length and SLOW.length below; if this comment and those lists
-   disagree, the lists are right. Run one after another
-   that is ten minutes, and ten minutes is long enough that a check stops being run
-   **Count the checks off FAST and SLOW below and nowhere else.** A number
-   written into this comment said thirty-one while the two lists held
-   thirty-five, and the same number is copied into CLAUDE.md, which is how a
-   stale count spreads. Most of them start a headless browser and walk the app
-   -- most over a port of their own; `shape-check` opens `index.html` off the
-   disk instead, which is why it needs no port. Run one after another that is
-   ten minutes, and ten minutes is long enough that a check stops being run
-   after every change and starts being run at the end — which is the one way
-   a gate fails: not by being wrong, by being skipped.
+   a port of their own; `shape-check` opens `index.html` off the disk instead,
+   which is why it needs no port. Run one after another that is ten minutes,
+   and ten minutes is long enough that a check stops being run after every
+   change and starts being run at the end — which is the one way a gate fails:
+   not by being wrong, by being skipped.
 
    So the ones that need no browser go first, all of them, in about two
    seconds. A missing script tag, an arrow function, or a price list that has

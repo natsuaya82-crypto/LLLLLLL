@@ -407,7 +407,14 @@ PRO_DL       3
 
 `kbCount()` in `www/keyboard.js`, `langCount()` and `dlCount()` in `core.js`
 are what those are compared against, and all three count **across languages**:
-the ceiling is on the person, not on each language.
+the ceiling is on the ACCOUNT, not on each language and not on a phone —
+「は？端末の話なんかしてねえだろ」 OWNER 2026-09-03. `langOwned()` is where
+the account is asked.
+
+**And the ceilings are on the plans screen**, because a number that is sold and
+never said is a number nobody is buying: `plan.pro.6` `plan.pro.7`
+`plan.plus.6` carry the three of them, as names rather than sentences. Free's
+hundred words and Plus's thousand were already there.
 
 ## When a plan ends
 

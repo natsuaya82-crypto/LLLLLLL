@@ -300,6 +300,34 @@ the reasoning — a reason can be re-derived, a decision cannot.
   唯一の公開の戸 ── `ios/App/App/LinguaShare.swift` がそう書いています）。
   手順 1 の行そのもの（Settings → General → Keyboard → Keyboards）には
   公開の URL がありません。**DEVICE CONFIRMED ではありません。**
+### 買う画面には、そのプランが売っているものを全部書く
+- Date: 2026-09-03
+- Area: プランのカードの行（`PLANS` の `lines`、`www/core.js` と `www/i18n`）
+- Decision:
+
+  ```
+  何で入ってないの？
+  ```
+
+  Pro の行に **「言語を三つ」と「ダウンロード三つ」**、Plus の行に
+  **「ダウンロード一つ」**。`langCap()` と `dlCap()` が売っている数が、
+  買う画面のどこにも書かれていなかった。
+
+  **説明文にしない。名前で書く。**「アプリ内に説明書くの禁止」はそのまま。
+- Reason: 上限は値段の一部で、書いていなければ売っていないのと同じ。
+  Pro は言語 3 個と DL 3 個、Plus は DL 1 個を持つのに、五行のどれもそれを
+  言っていなかった。監査 C（`docs/scope/aud-pay.md` の 49）が見つけた。
+- Affected features: `PLANS`（`www/core.js`）に三行。`plan.plus.6`
+  `plan.pro.6` `plan.pro.7` を十言語ぶん（`www/i18n/*.js`）。
+  Plus の自作言語は Free と同じ 1 なので、Plus 側に言語の行は無い。
+- Affected data: 無し。画面の文字だけ
+- Affected docs: `docs/PAID_FEATURES.md`、`docs/CHANGELOG.md`
+- Implementation status: **入っている**（2026-09-03、`claude/aud-pay`）。
+  `npm run i18n` が持つ ── 十言語のどれかで鍵が欠けると、`keys:` と
+  `the walk: fell back to English` の二行で落ちる（`ko` から
+  `plan.pro.7` を抜いて赤を見た）。
+  `planMark()`（`www/settings.js`）に三つの絵は無く、既定の ✓ が付く。
+  あの表は `claude/plannow` のもので、絵を選ぶのはそちら。
 
 ### DM は作らない。メッセージは別のアプリになる
 - Date: 2026-09-03
@@ -1002,13 +1030,16 @@ the reasoning — a reason can be re-derived, a decision cannot.
      オーナーに四度目を言わせた。** 訊く前に grep する。
   2. **DL した言語は、その人のバックアップファイルに入らない。**
      `SLICES` に含めない。`bkPack()` は歩かない。
-  3. **単語・文字・キーボードは一つずつ DL できる。** 2026-08-25 の
-     「四つはそれぞれ別々に取る」がそのまま生きる。節を開いた中の ↓ は三つ。
-     だから言語は**部分的に届く** ── 単語が入っていて文字が入っていない状態が
-     正規の状態としてある。
+  3. **章は一つずつ取る。数えるのは言語。** 単語・文字・文法・キーボードは
+     それぞれ別の ↓ で取るので、言語は**部分的に届く** ── 単語が入っていて
+     文字が入っていない状態が正規の状態としてある。**上限が数えるのは、その
+     章の数ではなく言語の数です** ──「DLしたらDL言語がアカウントに出てくる
+     だろ？それはなにをダウンロードしてもその言語からDLしてんだから1個だろ」
+     OWNER 2026-09-03。トキポナの四章を全部取っても **1**。`dlCount()` が
+     index の行を数えているのがその形。
   4. **言語数の上限は、自分で作った言語と別に数える。**
-     `langCount()` が `mine` だけ数えているのは正しい。二つの数そのものは
-     まだ決まっていない。
+     `langCount()` が `mine` だけ数えているのは正しい。数は 2026-09-02 の
+     決定 ── Plus 1・Pro 3（`dlCap()`）。
 
 - Reason: 1 は「トキポナに文字足したらトキポナじゃない」。2 と 4 は
   他人のものが自分の持ち物として数えられない・配られないため。3 は原文のまま。
@@ -2552,12 +2583,12 @@ and is never merged into your own」と言っている。**入らない、は二
   検査に落ちても、その人が作ったものは一つも消えないし一つも隠れない。変わる
   のは扉の見せ方だけで、絶対規則の後半はそのまま絶対のままである。
 
-  **`capStop()` は含まない、と読んでいる。** あの関数には「go('plans') を
-  やめた」理由が書き残してある ── 単語を打っている途中の人から画面を取り上げ
-  て料金表に置くことになったから。あれは *計っている天井* に途中で当たる話で、
-  ここで決まったのは *最初から閉じている扉* を押す話。押した人は「これが欲し
-  い」と言っているのであって、途中で取り上げられてはいない。**この読みが違う
-  なら `capStop()` も直す。オーナーに聞くこと。**
+  **`capStop()` は含まない。**「5はいあってる」 OWNER 2026-09-03。あの関数に
+  は「go('plans') をやめた」理由が書き残してある ── 単語を打っている途中の人
+  から画面を取り上げて料金表に置くことになったから。あれは *計っている天井* に
+  途中で当たる話で、ここで決まったのは *最初から閉じている扉* を押す話。押した
+  人は「これが欲しい」と言っているのであって、途中で取り上げられてはいない。
+  **天井はポップで訊いてから飛ぶ。扉は押したら飛ぶ。**
 - Affected features: 段で閉じているものを描いているすべての画面。今回入るのは
   `postEdit()`（投稿の編集、`www/post.js`）と、言語をもう一つ作る扉
   （`www/home.js`）の二つ。
@@ -2921,9 +2952,11 @@ and is never merged into your own」と言っている。**入らない、は二
     directly instead of going through `can()`, which is the one thing `CAN`
     exists to stop.
 
-  So `CAN` is **eleven** when this lands, and twelve when the ad arrives:
-  `words` `kb` `letters` `wsys` `snd` `edit` (basic) · `gram` `dir` `data`
-  `file` `badge` (plus) · `noads` (with the ad).
+  So this lands with `words` `kb` `letters` `wsys` `snd` `edit` on the middle
+  rung and `gram` `dir` `data` `file` `badge` on the top one. **How many `CAN`
+  holds is read off `CAN`** — `npm run dead` prints it — because a number
+  written here is a prediction, and both of the predictions this line used to
+  carry were wrong within the fortnight.
 - Reason: the numbers were arrived at by asking what a keyboard actually IS
   in this app rather than by picking a number. **A keyboard is layers** — ABC
   and あいう are two faces of ONE board, and 「qwertyでも数字で切り替えたり
@@ -2954,16 +2987,15 @@ and is never merged into your own」と言っている。**入らない、は二
   `langCap()` beside `kbCap()` in `www/core.js` (1 / 1 / 3, with `langStop()`
   as the refusal), `CAN.edit` at `plus` with `postEdit()` asking `can('edit')`,
   and `CAN.badge` at `pro` with `postBadge()` asking `can('badge')` instead of
-  reading `plan()`. `CAN` is twelve rather than the eleven counted above:
-  `dl` was added on 2026-09-02 and `noads` has not arrived.
+  reading `plan()`. `dl` was added on 2026-09-02. **広告は今やりません**
+  ──「6いまはいい」 OWNER 2026-09-03 ── ので `noads` は `CAN` に入れません。
 
-  **Not a loophole, decided:** the language count is what is on THIS PHONE —
-  `lingua.langs` carries no owner, `netOut()` clears only the session, and
-  `netLangSync()` syncs the open language rather than fetching a list. So
-  signing in as somebody else neither adds a language nor resets the count,
-  and the only way to clear it is to delete everything, which is not a way
-  round a ceiling. Sharing an account to get more is a terms matter, not a
-  thing the code should chase. 「普通に共有は規約違反でしょ」
+  **数えるのはアカウントです。**「は？端末の話なんかしてねえだろ」「だから端末で
+  やるわけねえだろ」 OWNER 2026-09-03。この app に「端末ごと」という単位は
+  ありません（`CLAUDE.md` § Online）。`langCount()` は `langAcct()` を通し、
+  `langOwned()` が `SESS.uid` と言語の `uid` を突き合わせます。
+  アカウントを共有して数を増やすのは規約の話で、コードが追うものではない
+  ── 「普通に共有は規約違反でしょ」。
 
 ### Decision
 - Date: 2026-08-23
@@ -3070,12 +3102,10 @@ and is never merged into your own」と言っている。**入らない、は二
   | `file` a list brought in as a file | — | — | yes |
   | `noads` | — | — | **yes** |
 
-  **`noads` is in that table and is NOT in `CAN` yet, deliberately.**
-  `dead-check` refuses a capability nothing asks for — a line in a price list
-  nothing charges — and nothing can ask `can('noads')` until there is an ad to
-  not show. So the plan tiers land with **nine**, and `noads` goes in in the
-  same commit as the ad. The table says what will be true; it is not a list of
-  what to type today. (Found by the session that was about to type it.)
+  **`noads` は `CAN` に入れません。**「6いまはいい」 OWNER 2026-09-03 ──
+  広告は今やらないので、消すものがありません。`dead-check` は誰も訊かない
+  能力を拒みます（何も課金していない値段表の一行）。**広告をやると決まった日に、
+  その実装と同じコミットで入ります。**それまでこの行は一つも足しません。
 
   **`words` and `kb` are the two that stop being yes/no.** Everything else in
   that table is a door; those two are a number, and the number is the plan's.
