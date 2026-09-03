@@ -404,11 +404,49 @@ const SESS = JSON.stringify({ at: 'not a jwt', rt: 'a refresh token',
 
 /* ---- 3. finished, and signed in ---------------------------------------- */
 {
-  const r = await boot({ 'lingua.set': JSON.stringify({ done: true }), 'lingua.sess': SESS });
+  /* WITH A NAME ON THE ACCOUNT, and that is not decoration. A person who has
+     finished and signed in has a handle: obIn() writes it the moment the
+     profile row answers, and saveMe() keeps it. A session with no handle
+     beside it is a phone that has never seen this account named -- which is
+     § 3b below and is the door, not the app. This seed used to leave it out,
+     so what it was really booting was that state while asking about this
+     one. */
+  const r = await boot({ 'lingua.set': JSON.stringify({ done: true }),
+                         'lingua.sess': SESS,
+                         'lingua.me': JSON.stringify({ name: 'Aya', handle: 'aya' }) });
   say('signed in: appIs()=' + r.is + '  screen=' + JSON.stringify(r.text));
   if (!r.inS) no('finished and signed in: the fixture session did not take');
   if (r.is !== 'app') no('finished and signed in: appIs() said ' + r.is + ', wanted app');
   if (r.ob) no('finished and signed in: the onboarding or the door is on the screen, not the app');
+}
+
+/* ---- 3b. signed in, and the account has no name yet --------------------- */
+{
+  /* 「アカウントがないならGoogleで続けてもidと@は先に決めないでどうすんの？」
+     OWNER 2026-09-03, on a real phone.
+
+     Apple, Google and the mail all end at obIn() (www/onboard.js), which asks
+     the server whether this account has a profile row and, finding none, puts
+     up the screen that asks for a name and a handle. On a phone where
+     SET.done is true that screen was never DRAWN: appIs() answered 'app' the
+     moment there was a session, so the app opened over it. The account then
+     had no row on the server at all -- nobody could find, follow or answer
+     them -- and meHandle() invented an @ out of the language's name.
+
+     It is most phones (anyone who has been through the walk) and it is every
+     phone that has just deleted an account: that lands on the door by
+     leaving SET.done true. */
+  const r = await boot({ 'lingua.set': JSON.stringify({ done: true }), 'lingua.sess': SESS });
+  say('signed in with no name yet: appIs()=' + r.is +
+      '  screen=' + JSON.stringify(r.text));
+  if (!r.inS) no('no-name: the fixture session did not take');
+  if (r.is !== 'door')
+    no('an account with no name is inside the app: appIs() said ' + r.is +
+       ', wanted door. Signing in is not the door\'s last step -- being ' +
+       'NAMED is. 「idと@は先に決めないでどうすんの？」');
+  if (!r.ob)
+    no('an account with no name is shown the app rather than the screen that ' +
+       'asks for the name and the handle');
 }
 
 /* ---- 4. the walk through the app, which IS the app --------------------- */

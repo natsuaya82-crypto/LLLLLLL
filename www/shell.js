@@ -409,6 +409,30 @@ function appIs(){
   if(obTourOn()) return 'app';
   if(!SET.done) return 'ob';
   if(typeof netSignedIn!=='function' || !netSignedIn()) return 'door';
+  /* AND AN ACCOUNT WITH NO NAME IS STILL AT THE DOOR.
+     「アカウントがないならGoogleで続けてもidと@は先に決めないでどうすんの？」
+     OWNER 2026-09-03, on a real phone.
+
+     Signing in was the whole test, and it is the wrong one. Apple, Google and
+     the mail all end at obIn() (www/onboard.js), which asks the server
+     whether this account has a profile row and, when it has none, puts up the
+     screen that asks for a name and a handle. That screen was never drawn on
+     a phone where SET.done is true: this line answered 'app' the moment there
+     was a session, so the walk went straight past it. The account then had no
+     row on the server at all -- not a bad handle, no row -- so nobody could
+     find, follow or answer them, and meHandle() invented something out of the
+     language's name to draw in the @.
+
+     It is a phone that has been through the onboarding, which is most of
+     them, and it is every phone that has just deleted an account: that lands
+     on the door by leaving SET.done true (www/settings.js § wipeHere).
+
+     `ME.handle` and not OBM.mode: ME is kept per account (meFor() in
+     www/me.js), so an empty handle means THIS ACCOUNT has not been named on
+     this phone -- which is what the door's last step is for. A person coming
+     back, or arriving on a second phone, has it: obIn() writes it from the
+     row the moment the answer lands, and it is in storage from then on. */
+  if(typeof ME!=='undefined' && ME && !ME.handle) return 'door';
   return 'app';
 }
 
