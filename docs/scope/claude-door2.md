@@ -65,7 +65,7 @@
 |---|---|---|---|---|
 |×| **A1 アカウントの無いアドレス** | Supabase が 400 `Invalid login credentials` → `net.badlogin`「メールアドレスかパスワードが間違っています」 | **アカウントが無いことをそう言う。**そのアドレスに登録の道を出すか、少なくとも「パスワードが違う」とは別の文 | **これが本題。**「アカウントがないならそうやって出るわけねえだろ」 |
 |○| A2 パスワードが違う | 同じ 400 → `net.badlogin` | パスワードが違うと言う | 文としては合っている。ただし A1 と**同じ文**なので、どちらか分からない |
-|×| **A3 パスワードを一度も決めていないアカウント** | 同じ 400 → `net.badlogin` | 「このアドレスは Apple / Google で作られています」など、**合言葉が無い**ことを言う | **必ず起きる道です。**Apple / Google で作った人にはパスワードが無い。さらに `newpw` の面は chevron で飛ばせる（G4）ので、メールで作った人にも無いことがある |
+|○| **A3 パスワードを一度も決めていないアカウント** | 同じ 400 → `net.badlogin` | **これでよい。**Google / Apple で作った人は Google / Apple のボタンを押して入ります ── 「同じアカウントのログインの下が違うだけで同じアカウント」「GoogleとAppleは送らないで入れるんじゃないの？」OWNER 2026-09-03 | **無し。この行は私の読み違いでした** ── 2026-09-03、オーナーに三度正されて取り消し。あとからパスワードでも入りたくなった人は「パスワードをお忘れですか」で決められて、その道は既に在ります |
 |×| **A4 確認の済んでいないアカウント** | 400 `email_not_confirmed` → `netWhy()` のどの枝にも当たらず、**サーバーの英語がそのまま画面に出る**（`Email not confirmed`） | 確認が済んでいないと、その人の言語で言う | 十言語の app に英語の一文が出る |
 |×| **A5 パスワード欄が空のまま押す** | `obMailAsk()` は @ しか見ない。**空のままサーバーへ送る** → 400 → `net.badlogin` | 画面で止めて「パスワードを入れてください」 | 一往復ぶん待たされて、しかも間違った文が返る |
 |×| **A6 アドレスの形が違う（`a@` など）** | `indexOf('@')<0` だけなので通る → 400 `Unable to validate email address: invalid format` → **英語の生文** | 画面で止める | A4 と同じ穴 |
@@ -149,7 +149,7 @@
 |○| G2 空 | `net.needpass`「新しいパスワードを入れてください」 | 同じ | 無し |
 |○| G3 短すぎる | 422 → `net.weak`「パスワードが短すぎます」 | 同じ（長さはサーバーが決める） | 無し |
 |○| G4' `netSetPass` が落ちた → chevron でアプリへ | 「サインインしたらアプリに移動してください」の実装 | 同じ | 無し |
-|?| **G4 chevron で決めずに飛ばせる** | 六桁を使った時点で署名は立っているので、chevron を押せばアプリに入れる。**パスワードの無いアカウントができる** → A3 に直結 | ここで飛ばせること自体は普通（Apple / Google の人も持っていない）。**その人が次にメールで入ろうとしたとき何と出るか**が問題 | §3 の問い2 と一つの問い |
+|○| **G4 chevron で決めずに飛ばせる** | 六桁を使った時点で署名は立っているので、chevron でアプリに入れる。パスワードの無いアカウントができる | **これでよい。**Apple / Google の人も持っていません。あとで「パスワードをお忘れですか」から決められます | **無し（A3 と同じ取り消し）** |
 |?| G5 見せる／隠すの目 | 無い | ほぼ全部の app に在る | §3 の問い6。**画面の形が変わる**ので決めない |
 
 ### H. 名前と @（`who`）── `obWhoGo()` `www/onboard.js:1337`
@@ -165,178 +165,233 @@
 
 ---
 
-## 3. オーナーに訊くこと
+## 3. オーナーの答え ── 七つ、確定（2026-09-03）
 
-**文言はオーナーのものなので、下は案です。**新しい鍵が要るものは十言語ぶん
-並べました。**「訊かない」と決まった鍵は作りません。**
+**リーダーが §2 の一覧をそのままオーナーに出し、七つとも答えが返りました。**
+以下、**オーナーの言葉のまま**引いて、この枝が何をするかを書きます。
 
-### 問い1 ── 入る面で「アカウントがありません」と出してよいか
-
-作る面（「このアカウントは登録されています」赤文字、2026-09-03）と
-再設定の面（`ob.mail.none`）は、**アカウントが在る／無いを外に言う**と
-決まっています。**入る面も同じでよいですか。**
-
-- **はい** なら、`obMailIn()` が `netSignIn()` の前に `netMailTaken()` を
-  訊きます（作る面・再設定の面と同じ形）。**新しい鍵は要りません** ──
-  既に在る `ob.mail.none`「このアドレスのアカウントはありません」を使えます
-- **いいえ**（入る面だけは伏せる）なら、今のまま `net.badlogin` です。
-  そのときは A3（パスワードの無いアカウント）と A4（未確認）も伏せることに
-  なるので、**そこも一緒に決めてください**
-
-> 補足しておきます。作る面と再設定の面で既に言っているので、**入る面だけ
-> 伏せても、同じアドレスを作る面に打てば分かります。**伏せることで守れる
-> ものは、いま既に守れていません。
-
-### 問い2 ── パスワードの無いアカウントに、何と出すか
-
-Apple / Google で作った人にはパスワードがありません。六桁のあと
-`newpw` の面を chevron で飛ばした人にもありません。その人が**メールと
-パスワードで入ろうとしたとき**、今は「メールアドレスかパスワードが
-間違っています」と出ます。
-
-案（新しい鍵 `net.nopass`）:
+### 答え1 ── はい。入る面でも言う
 
 ```
-  en  This address has no password.
-  ja  このアドレスにパスワードはありません。
-  es  Esta dirección no tiene contraseña.
-  pt  Este endereço não tem senha.
-  fr  Cette adresse n'a pas de mot de passe.
-  de  Diese Adresse hat kein Passwort.
-  it  Questo indirizzo non ha una password.
-  ru  У этого адреса нет пароля.
-  zh  此邮箱没有密码。
-  ko  이 주소에는 비밀번호가 없습니다.
+1はい。アカウントは登録されていません。
 ```
 
-**「Apple で続けてください」とは書きません**（CLAUDE.md § Explaining ──
-何が起きたかは言ってよく、どうすればいいか教えるのは禁止）。この一文が
-出た人は、同じ画面の下にある Apple と Google のボタンを見ます。
+`obMailIn()` が `netSignIn()` の前に `netMailTaken()` を訊きます ── 作る面
+（`obMailUp`）と再設定の面（`obMailForgot`）と**同じ形**です。
 
-**この文を出すには問い1 が「はい」である必要があります**（アカウントが在る
-ことが分かって初めて、パスワードが無いと言える）。
+**鍵は増やしません。**既に在る `ob.mail.none` の中身を、オーナーの言葉に
+合わせて十言語ぶん直します。**日本語は既にそのままでした**
+（「このアカウントは登録されていません」）。英語は `That account is not
+registered.`、残り八つも「登録されていない」の言い方に揃えます。
 
-### 問い3 ── 六桁が違うときと、期限が切れたとき
-
-いま**両方とも英語の生文**が出ます（`Token has expired or is invalid`）。
-Supabase は `error_code` で二つを分けているので、**分けて出せます。**
-
-案（新しい鍵 `net.badcode` / `net.oldcode`）:
+### 答え2 ── 取り消し。**何も作りません**
 
 ```
-  en  That code is not right.            /  That code has expired.
-  ja  コードが違います。                  /  コードの期限が切れました。
-  es  El código no es correcto.          /  El código ha caducado.
-  pt  Esse código não está certo.        /  Esse código expirou.
-  fr  Ce code n'est pas le bon.          /  Ce code a expiré.
-  de  Dieser Code stimmt nicht.          /  Dieser Code ist abgelaufen.
-  it  Questo codice non è corretto.      /  Questo codice è scaduto.
-  ru  Неверный код.                      /  Срок действия кода истёк.
-  zh  验证码不正确。                       /  验证码已过期。
-  ko  코드가 올바르지 않습니다.             /  코드의 유효 기간이 지났습니다.
+〇〇@gmail.com というアカウントがあるなら、メアドでもGoogleでも、
+同じアカウントのログインの下が違うだけで同じアカウント
+6桁は何で送るの？ GoogleとAppleは送らないで入れるんじゃないの？
 ```
 
-**一つにまとめる**（両方「コードが違います」）でもよければ、そう言って
-ください。鍵が一つ減ります。
+**私の読み違いでした。**一つのアカウントに入口が二つあるだけで、Google と
+Apple はボタンを押せばそのまま入ります（今もそう動いています）。Google で
+作った人は Google のボタンを押すので、「パスワードがありません」という文を
+出す場面はありません。あとからパスワードでも入りたくなったら「パスワードを
+お忘れですか」で決められて、**その道は既に在ります。**
 
-### 問い4 ── 確認の済んでいないアドレスと、形の違うアドレス
+- `net.nopass` は**作りません**
+- 六桁を送る道も**作りません**
+- §2 の A3 と G4 の行は **× から ○ に直しました**（上の表）
 
-どちらも今は**英語の生文**が画面に出ます。
+### 答え3 ── 分ける
 
 ```
+3分ける
+```
+
+「コードが違います」と「コードの期限が切れました」を別の文にします。
+Supabase は `error_code` で二つを分けているので（`otp_expired`）、分けられます。
+
+**この枝では実装できません。§5 の 🔒 を見てください。**
+
+### 答え4 ── 十言語で入れる
+
+```
+4は10言語
+```
+
+`net.notconfirmed` `net.badmail` `net.needpass.in` の三つ。
+**そのうち二つ（`net.badmail` `net.needpass.in`）はこの枝が入れます** ──
+どちらも扉が**送る前に自分で止める**ものなので、`www/onboard.js` の中で
+済みます。`net.notconfirmed` はサーバーの答えを文にするものなので §5 の 🔒 です。
+
+### 答え5 ── 秒数を出す【画面の形が変わる。許可が出た】
+
+```
+5 秒数出して
+```
+
+「もう一度送る」が数字を持って止まり、数え終わると押せるようになります。
+**`code` の面と `reset` の面の両方**に入れます。
+
+**秒数をどこから取るか ── サーバーの言葉から取ります。私は数字を決めません。**
+Supabase が断るときの本文が秒数を持っています:
+
+```
+{"code":429,"error_code":"over_email_send_rate_limit",
+ "msg":"For security purposes, you can only request this after 54 seconds."}
+```
+
+`bad(d, s, m)` の `d` がこれなので、扉が `d.msg` から読めます。**Supabase は
+この間隔をほかのどこにも出していません**（`/auth/v1/settings` にもありません）。
+なので:
+
+```
+  一度目の送信       サーバーがまだ何も言っていない → ボタンは押せる（今と同じ）
+  429 が返った       本文の秒数を憶えて、その秒だけボタンが止まって数える
+  二度目からの送信   憶えた秒だけ止まって数える
+```
+
+**憶えるのはセッションの間だけで、保存はしません**（`OBM` の中）。
+数字を app が持たないので、Supabase の設定が変われば app も一緒に変わります。
+
+### 答え6 ── 入れる
+
+```
+6 入れます
+```
+
+パスワードを見せる目。**入る面と、新しいパスワードの面の両方**に。
+
+**この枝では実装できません。§5 の 🔒 を見てください** ── `www/index.html`
+の CSS が一行要り、この枝はそれを持っていません。
+
+### 答え7 ── 出す
+
+```
+7 認証に失敗しましたみたいな。
+```
+
+Apple / Google のボタンで裏の `initialize()` が落ちたとき、今は**何も出ません**
+（`obReady()` の `['catch'](obShrug)`）。出します。
+**シートを閉じたときには出しません** ── 設定の失敗と、人がやめたのは別です。
+
+新しい鍵 `net.authfail`。**オーナーの言葉が日本語です。**十言語:
+
+```
+  ja  認証に失敗しました              en  Sign-in failed.
+  es  No se pudo iniciar sesión.     pt  Falha ao entrar.
+  fr  La connexion a échoué.         de  Anmeldung fehlgeschlagen.
+  it  Accesso non riuscito.          ru  Не удалось войти.
+  zh  登录失败。                       ko  로그인에 실패했습니다.
+```
+
+### 答え5 の文言（`ob.mail.again.wait`、`{0}` に秒）
+
+```
+  ja  あと{0}秒                      en  Send it again in {0}s
+  es  Reenviar en {0} s              pt  Reenviar em {0} s
+  fr  Renvoyer dans {0} s            de  Erneut senden in {0} s
+  it  Rinvia tra {0} s               ru  Отправить снова через {0} с
+  zh  {0} 秒后可重发                   ko  {0}초 후 다시 보내기
+```
+
+### 答え3 と 答え4 の文言（🔒 net.js 待ち。**ここに置いておきます**）
+
+```
+  net.badcode
+  ja  コードが違います                 en  That code is not right.
+  es  El código no es correcto.      pt  Esse código não está certo.
+  fr  Ce code n'est pas le bon.      de  Dieser Code stimmt nicht.
+  it  Questo codice non è corretto.  ru  Неверный код.
+  zh  验证码不正确。                    ko  코드가 올바르지 않습니다.
+
+  net.oldcode
+  ja  コードの期限が切れました          en  That code has expired.
+  es  El código ha caducado.         pt  Esse código expirou.
+  fr  Ce code a expiré.              de  Dieser Code ist abgelaufen.
+  it  Questo codice è scaduto.       ru  Срок действия кода истёк.
+  zh  验证码已过期。                    ko  코드의 유효 기간이 지났습니다.
+
   net.notconfirmed
-  en  This address is not confirmed.      ja  このアドレスは確認されていません。
-  es  Esta dirección no está confirmada.  pt  Este endereço não foi confirmado.
-  fr  Cette adresse n'est pas confirmée.  de  Diese Adresse ist nicht bestätigt.
-  it  Questo indirizzo non è confermato.  ru  Адрес не подтверждён.
-  zh  此邮箱尚未验证。                      ko  이 주소는 확인되지 않았습니다.
-
-  net.badmail
-  en  That is not an address.             ja  アドレスの形が違います。
-  es  Eso no es una dirección.            pt  Isso não é um endereço.
-  fr  Ce n'est pas une adresse.           de  Das ist keine Adresse.
-  it  Non è un indirizzo.                 ru  Это не адрес.
-  zh  这不是一个邮箱地址。                   ko  주소 형식이 올바르지 않습니다.
-
-  net.needpass.in（入る面で、パスワード欄が空のまま押したとき。
-                  既に在る net.needpass は「新しいパスワードを」なので使えません）
-  en  Type your password.                 ja  パスワードを入れてください。
-  es  Escribe tu contraseña.              pt  Digite sua senha.
-  fr  Entrez votre mot de passe.          de  Gib dein Passwort ein.
-  it  Scrivi la tua password.             ru  Введите пароль.
-  zh  请输入密码。                          ko  비밀번호를 입력하세요.
+  ja  このアドレスは確認されていません   en  This address is not confirmed.
+  es  Esta dirección no está confirmada.   pt  Este endereço não foi confirmado.
+  fr  Cette adresse n'est pas confirmée.   de  Diese Adresse ist nicht bestätigt.
+  it  Questo indirizzo non è confermato.   ru  Адрес не подтверждён.
+  zh  此邮箱尚未验证。                  ko  이 주소는 확인되지 않았습니다.
 ```
 
-### 問い5 ── 六桁をもう一度送るとき、何秒待たせるか【画面の形が変わります】
+**この三つの鍵をこの枝で `www/i18n/` に入れることはできません。**
+`tools/i18n-check.mjs:750` が「英語が鍵を定義していて、どの画面もそれを
+訊かない」を落とします ── **訊く一箇所が `netWhy()`（`www/net.js`）**で、
+この枝はそこを持っていません。鍵だけ入れればゲートが赤になり、
+使う側だけ入れれば鍵がありません。**同じコミットに入る必要があるので、
+net.js を持つ枝が入れてください。**文言は上にあります。
 
-いまボタンはいつでも押せます。60秒以内に押すと Supabase が断って
-「回数が多すぎます。少し待ってください」と出ます ── **何秒なのかは
-出ません。**普通の app は**ボタンが数字を持って止まり**、数え終わると
-押せるようになります（基準2）。
+## 4. リーダーへ ── `www/net.js` に要る直し、一行で
 
-- 秒数はサーバーの設定と揃える必要があります（Supabase の既定は60秒）
-- **ボタンの見た目が変わる**ので、`ui変更は俺が頼んだの以外は勝手な判断で
-  やるなよ？` に当たります。**やりません。**やってよいか訊いてください
-- やる場合の文案（`ob.mail.again.wait`、`{0}` に秒）:
-  `en Send it again in {0}s` / `ja あと{0}秒`
+**`netWhy()` はサーバーの `error_code` を見ず、`status===0` に文が一つしか
+ないので、扉の英語の生文六本と「繋がっているのに接続できません」は全部そこです。**
 
-### 問い6 ── パスワードを見せる目【画面の形が変わります】
+分解（`claude/flat` が net.js を持っているので、私は触っていません）:
 
-ほぼ全部の app にあります（基準2）。**いまありません。**画面に一つ増えるので
-訊きます。**入れてよいですか。**
-
-### 問い7 ── 設定の失敗を黙っているのを直してよいか
-
-Apple / Google のボタンを押して、プラグインの `initialize()` が落ちると
-**何も出ません**（`obReady()` の `['catch'](obShrug)`）。人からは
-「押したのに何も起きない」に見えます。`obNative()` の上のコメント自身が
-「設定の失敗と、シートを閉じたのは別のこと」と書いているのに、受けが同じです。
-
-既に在る `net.failed`「うまくいきませんでした」を出すだけなので**新しい鍵は
-要りません**が、**今まで黙っていた所が喋る**ので訊きます。
+| | 何 | どこ | 要る直し |
+|---|---|---|---|
+| 1 | `error_code` を見ていない。`email_not_confirmed` `otp_expired` `validation_failed` `email_exists` はどの枝にも当たらず、最後の `return m` で**英語がそのまま画面に出る** | `www/net.js:319` `netWhy()` | 枝を三つ。文言は §3 の 🔒 の下に十言語で置きました |
+| 2 | `status===0` が三つの原因を一つの文にしている。`netTook()` が断った 200（`'token ≠'`）にも「接続できません」と言う ── **繋がっているとき** | 同 `netWhy()` の頭 | net.js のコメント自身が「三つの原因と三つの出口」と書いていて、**文は一つしかありません** |
+| 3 | 答え1 の実装 | **net.js は何も要りません** | 既に在る `netMailTaken()` を扉がもう一箇所から呼ぶだけ |
 
 ---
 
-## 4. リーダーへ ── `www/net.js` に要る直し（読むだけなので触っていません）
+## 5. この枝がやること / やれないこと
 
-**`netWhy()`（`www/net.js:319`）が、扉の差の半分の出どころです。**
-上の × のうち、A4・A8・B5・C7・D2・D3・F3 は全部ここに落ちます。
-
-1. **`netWhy()` は Supabase の `error_code` を見ていません。**
-   `d.msg` の英語を正規表現で拾っているだけなので、`email_not_confirmed`
-   `otp_expired` `validation_failed` `email_exists` はどれも枝に当たらず、
-   **最後の `return m || t('net.failed')` で英語がそのまま画面に出ます。**
-   十言語の app に英語の一文が出る道が、扉だけで六本あります。
-
-2. **`status === 0` が三つを一つの文にしています。**
-   `netWhy()` の頭 `if(!status) return t('net.offline')` は、
-   `netTook()` が断った 200（`'token ≠'`）にも「接続できません」と言います。
-   **繋がっているときに「接続できません」と出ます。**net.js のコメント自身が
-   「三つの原因と三つの出口」と書いていて、**文は一つしかありません。**
-
-3. 問い1 が「はい」になったら、`netMailTaken()` の呼びが扉で三箇所に
-   なります。net.js 側は何も要りません（既に在る関数をもう一箇所から呼ぶだけ）。
-
-**どれも `claude/find` か、net.js を持っている枝の仕事です。**順番を決めて
-ください。
-
----
-
-## 5. この枝が、決めごと無しで直すもの
-
-上の × のうち、**文言も画面の形も決めごとも要らないもの**だけを直します。
-残りは §3 の答えを待ちます。
+### 入れるもの（`www/onboard.js` と `tools/open-check.mjs`、十言語の鍵）
 
 ```
-  C6  Apple / Google の二度押し             門が無い。入る面のメールには在る
-  D4  作るほうの六桁が空のまま送られる       再設定のほうには門が在る
-  A12 送っている間に帯とソーシャルが押せる   主ボタンだけが disabled
-  H6  取得が落ちると「名前と @」に置き去り   取れていないのに名前を訊く
-  C8  設定の失敗を黙っている                → §3 問い7 の答え待ち
+  答え1  入る面が netSignIn() の前に netMailTaken() を訊く      + ob.mail.none を十言語で直す
+  答え4  net.badmail      形の違うアドレスを送る前に止める        （扉が自分で止める）
+  答え4  net.needpass.in  パスワード欄が空のまま送るのを止める     （同じ）
+  答え5  ob.mail.again.wait  code と reset の両面で秒を数える     秒はサーバーの本文から
+  答え7  net.authfail     initialize() が落ちたら言う。閉じたときは言わない
+
+  C6   Apple / Google の二度押しに門が無い        入る面のメールには在る
+  D4   作るほうの六桁が空のまま送られる            再設定のほうには門が在る
+  A12  送っている間に帯とソーシャルが押せる         主ボタンだけが disabled
+  H6   取得が落ちると「名前と @」に置き去りにされる  取れていないのに名前を訊く
 ```
 
 **全部、`tools/open-check.mjs` に主張を足して、バグを入れて赤を見てから
-直します。**
+入れます。**
+
+### 🔒 やれないもの ── **持っていないファイルが要ります**
+
+**答え3 と、答え4 の `net.notconfirmed`**
+: 選ぶ一行が `netWhy()`（`www/net.js`）です。`claude/flat` が持っています。
+  **鍵だけ先に入れることもできません** ── `tools/i18n-check.mjs:750` が
+  「英語が鍵を定義していて、どの画面も訊かない」を落とすので、
+  **鍵と使う側は同じコミットに入る必要があります。**文言は §3 に十言語で
+  置いたので、net.js を持つ枝がそのまま使えます。
+
+**答え6 ── パスワードを見せる目**
+: CSS が一行要ります。**`www/index.html` をこの枝は持っていません**
+  （`docs/SESSIONS.md`「持っていないなら CSS を一行も足さない」）。
+  誰が持っているか教えてください。
+
+  読んで確かめたこと: 既に在る class では出せません。`.field.at`
+  （`www/index.html:2916`）は `display:flex` で、**先に置いた子が左**に来る
+  ので、入力を先・目を後ろにすれば右に出ます。ただし
+  `.field.at>span` は色と字の大きさだけで、**押せる面が 44pt になりません**
+  （基準8。今日、検索履歴の行が 39px でゲートが赤になったのと同じ）。
+  `<button>` を素で置くと枠と地色が付いて `box-check` が落ちます。
+  **要るのは一つの規則だけです**:
+
+  ```css
+  .field.at>.obeye{min-width:44px;min-height:44px;display:flex;
+    align-items:center;justify-content:center;background:none;border:0;
+    padding:0;color:var(--txm)}
+  ```
+
+  `www/onboard.js` の側（目の SVG、`aria-label` を `t()` に通す、
+  `type` の入れ替え）は、その一行が入り次第すぐ入れられます。
 
 ---
 
@@ -354,8 +409,14 @@ Apple / Google のボタンを押して、プラグインの `initialize()` が�
 ```
 
 `netMailTaken()` は 2026-09-03 に作られ、**その日のうちに二つの面が使い、
-三つ目の面は誰にも思い出されませんでした。**同じ形の穴が、上の × の
+三つ目の面は誰にも思い出されませんでした。**同じ形の穴が、§2 の × の
 ほとんどです ── 六桁の面が二つあって片方にしか空の門が無い（D4）のも、
 `disabled` が主ボタンにしか無い（A12）のも、同じ理由です。
 
 **面ごとに直す限り、名指しされていない面は必ず残ります。**
+
+そして**この報告そのものが一度その失敗をしました**: 答え2 で私は
+「パスワードの無いアカウント」という差を書きましたが、そんな差はありません
+── Google で作った人は Google のボタンを押します。**面を数えるだけでは
+足りず、人がどの入口から来るかを数える必要がありました。**
+オーナーに三度正されて取り消しました。
