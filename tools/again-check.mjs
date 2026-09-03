@@ -403,6 +403,70 @@ say(W.asks === 3 && W.gotDay,
     'the day sentence asks again after a refusal instead of giving up for the ' +
     'session (' + W.asks + ' asks, ' + (W.gotDay ? 'got it' : 'NEVER GOT IT') + ')');
 
+/* ---- and the three screens beside the timeline -------------------------
+   「なんか全体的に前のが残ってたりするからちゃんとローディングさせられないの？」
+   OWNER 2026-09-03.
+
+   The timeline was made honest above and the screens either side of it were
+   not: each of them drew NOTHING AT ALL where the answer was still out, and
+   nothing at all is what those same screens draw when the answer came back
+   with none in it. So 「空」 and 「まだ来ていない」 shared a branch on three
+   more screens -- CLAUDE.md § Data, the same sentence the timeline needed.
+
+   A phone that has never held this account's lists is in the second state
+   EVERY time it signs in, which is why it is the state a new phone always
+   sees and the one nothing was measuring.
+
+   `netSend` is not stubbed here: what is under test is what the screen says
+   while it has no answer, so the answer is simply withheld -- the flags the
+   screens read (`snsHits`, `snsSavedGot`, `snsRecentGot`) are the answer
+   arriving, and setting them by hand is the answer landing. Nothing else is
+   replaced. */
+const V = await pg.evaluate(() => {
+  const out = {};
+  function markOn(){ return !!document.querySelector('#app .snswait .pullrule'); }
+  function noteOn(){ return !!document.querySelector('#app .note'); }
+  SET.done = true;
+  ME.name = 'Aya'; ME.handle = 'aya'; saveMe();
+
+  /* THE SEARCH, with a word typed and the answer still out. */
+  window.route = 'explore'; NAV = [{ r:'explore' }];
+  snsQ = 'sea'; snsHits = null; render();
+  out.findTurns = markOn();
+  out.findSaidNone = noteOn();
+  /* And the answer, come back with nobody and nothing in it. */
+  snsHits = { q:'sea', who:[], posts:[] }; render();
+  out.findSaysNone = noteOn();
+  out.findMarkGone = !markOn();
+
+  /* THE WORDS THIS ACCOUNT HAS TYPED, under an empty field. */
+  snsQ = ''; snsHits = null; SET.recent = []; snsRecentGot = false; render();
+  out.recentTurns = markOn();
+  snsRecentGot = true; render();
+  out.recentMarkGone = !markOn();
+
+  /* THE WORDS IT HAS KEPT, on the screen that lists them. */
+  window.route = 'filter'; NAV = [{ r:'filter' }];
+  SET.saved = []; snsSavedGot = false; render();
+  out.savedTurns = markOn();
+  snsSavedGot = true; render();
+  out.savedMarkGone = !markOn();
+  return out;
+});
+say(V.findTurns && !V.findSaidNone,
+    'a search with its answer still out turns the mark and does not say ' +
+    'nothing was found (' + (V.findTurns ? 'mark' : 'NO MARK') + ', ' +
+    (V.findSaidNone ? 'AND SAID NOTHING FOUND' : 'said nothing') + ')');
+say(V.findSaysNone && V.findMarkGone,
+    'and an answer that really came back empty is when it says so, mark gone');
+say(V.recentTurns && V.recentMarkGone,
+    'the words this account has typed turn the mark until the list has come ' +
+    'back, and stop when it has (' + (V.recentTurns ? 'mark' : 'NO MARK') + ', ' +
+    (V.recentMarkGone ? 'then gone' : 'AND KEPT TURNING') + ')');
+say(V.savedTurns && V.savedMarkGone,
+    'and so do the words it has kept (' + (V.savedTurns ? 'mark' : 'NO MARK') +
+    ', ' + (V.savedMarkGone ? 'then gone' : 'AND KEPT TURNING') + ')');
+
 await br.close();
 if (bad.length){
   console.log('\nagain: ' + bad.length + ' problem' + (bad.length > 1 ? 's' : '') + '.\n');

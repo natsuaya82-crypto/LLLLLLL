@@ -183,7 +183,7 @@ function snsFilKey(k){ return (k==='fo')? 'feed.fo' : 'feed.rec'; }
    `null` is no word. Otherwise `{q: <the word>, r: <the answer, or null>}`,
    and the three states of `r` are three and never share a branch:
 
-     r === null   not answered yet     -- nothing is drawn, nothing is claimed
+     r === null   not answered yet     -- the mark turns, nothing is claimed
      r.bad        could not ask        -- the reason, netWhy()'s
      r.posts      an answer            -- the rows, or `sns.nohit` if none
 
@@ -274,7 +274,13 @@ function vFilter(){
             '<span class="sv">'+((snsFil && snsFil.q===q)? ICON_TICK : '')+
             '</span></button>';
         }).join('')
-      : '')+
+      /* Nothing at all when none are kept -- and the mark, turning, before the
+         answer that says whether any are. A phone that has never held this
+         account's list drew the same empty space for 「keeps none」 and for
+         「has not been told yet」, and the second is the one a new phone is in
+         every time. netSignedIn() is snsSavedPull()'s own condition for
+         asking: no question, no mark. */
+      : (netSignedIn() && !snsSavedGot)? snsWaitHTML() : '')+
     '</div></div>';
 }
 /* Chosen, and then you are back on the thing it is about. The same shape as
@@ -701,7 +707,7 @@ function vFeed(){
         '</div>'
       /* A word chosen from the filter. The same rows the search draws,
          because it is the same answer to the same question -- and the three
-         states of it are three: nothing at all while it is still in the air
+         states of it are three: the mark turning while it is still in the air
          (no claim is made), the reason when it could not be asked, and
          `sns.nohit` only when an answer really came back empty. */
       : snsFil
@@ -1438,7 +1444,12 @@ function snsPickRecent(q){
    `.pmore` is the small trailing control a post's row already wears. */
 function snsRecentHTML(){
   var a=snsRecent();
-  if(!a.length) return '';
+  /* An empty list and a list that has not come back are two different facts.
+     This phone's copy is drawn the moment there is one; before the first
+     answer there is nothing to draw and nothing to claim, so the mark turns.
+     netSignedIn() because snsRecentPull() does not ask without somebody to
+     ask for -- a mark turning on a question nobody is asking is a lie. */
+  if(!a.length) return (netSignedIn() && !snsRecentGot)? snsWaitHTML() : '';
   return '<div class="sec">'+esc(t('sns.recent'))+'</div>'+
     a.map(function(q){
       return '<div class="whrow">'+
@@ -1507,7 +1518,13 @@ function snsSetSort(k){
    out of both, and a second copy is a second place to remember that. */
 function snsAnsHTML(q, r){
   var out='', i, ps;
-  if(!String(q||'').trim() || !r) return '';
+  if(!String(q||'').trim()) return '';
+  /* NOT ASKED BACK YET, and that is the third state -- it shared a branch with
+     「no word」 and both came out as nothing at all. Nothing at all is what a
+     screen with no question on it looks like, so a question with no answer
+     looked exactly like never having asked. `snsWaitHTML()` is the mark the
+     timeline already turns beside this one; there is no second one. */
+  if(!r) return snsWaitHTML();
   /* Could not ask, which is not the same as found nothing. */
   if(r.bad) return '<div class="note">'+esc(r.bad)+'</div>';
   /* And out of the search too, on both sides: a person you have blocked is
