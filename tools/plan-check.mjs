@@ -1391,14 +1391,18 @@ function funcAt(src, idx){
   const last = m[m.length - 1];
   return /func\s+([A-Za-z_][A-Za-z0-9_]*)/.exec(last)[1];
 }
-/* ONE road, and it is Apple pushing a change at us. `restore` and `manage`
-   were on this list for a morning: both end in reading currentEntitlements,
-   and an empty list there is 「Apple told me nothing」 as often as it is
-   「this person owns nothing」 -- routinely so on TestFlight and in the
-   sandbox, for an account that is paying. It cost the owner their plan on
+/* ONE road, and it is RevenueCat pushing a change at us -- the
+   `PurchasesDelegate` method, which is what `Transaction.updates` was before
+   the store layer moved onto the SDK (docs/FEATURE_RULES.md 2026-08-25).
+   The road changed its name; the rule did not.
+
+   `restore` and `manage` were on this list for a morning: both end in reading
+   the entitlements, and an empty set there is 「it told me nothing」 as often
+   as it is 「this person owns nothing」 -- routinely so on TestFlight and in
+   the sandbox, for an account that is paying. It cost the owner their plan on
    the build that had it. 「復元するものはありませんって出るけどさ、さっきまで
    プロだったんだけど消えたってこと？」OWNER 2026-09-02. */
-const MAY_LOWER = ['load'];
+const MAY_LOWER = ['purchases'];
 const calls = [];
 {
   const re = /writeDown\s*\(([^)]*)\)/g;
@@ -1445,13 +1449,54 @@ say(always.length === 0,
     'and not even that road lowers it on EVERYTHING that arrives — no call ' +
     'site passes a bare `true`, because a renewal arrives at the listener too ' +
     '(' + JSON.stringify(always) + ')');
-say(/writeDown\(mayLower:\s*Self\.ended\(t\)\)/.test(STORE) &&
-    /func ended\(_ t: Transaction\)\s*->\s*Bool/.test(STORE) &&
-    /revocationDate/.test(STORE) && /expirationDate/.test(STORE) &&
-    /isUpgraded/.test(STORE),
-    'it asks what ARRIVED instead — revoked, or an expiry behind us, and an ' +
-    'upgrade is neither (READ off the source: no Swift on this runner, so ' +
-    'what it DOES on a real receipt is not measured here)');
+say(/writeDown\(mayLower:\s*Self\.ended\(customerInfo\)\)/.test(STORE) &&
+    /func ended\(_ info: CustomerInfo\)\s*->\s*Bool/.test(STORE),
+    'it asks what ARRIVED instead — the customer info the delegate was ' +
+    'handed, and not a fresh walk of the entitlements (READ off the source: ' +
+    'no Swift on this runner, so what it DOES on a real receipt is not ' +
+    'measured here)');
+/* AND WHAT MAKES IT AN ENDING IS A POSITIVE STATEMENT, which is the whole of
+   the rule and is now the whole of the function. Three lines have to be there
+   together: the entitlement is one this app sells, it is NOT active, and it
+   carries an expiry already behind us. A refund arrives the same way -- the
+   entitlement goes inactive with a date in the past -- which is why the
+   StoreKit-era `revocationDate` has no separate line any more.
+
+   An empty set falls out of the loop and answers false. That is the sentence
+   the plan-check exists for: 「持っていない」 and 「分からない」 may not share
+   a branch, and emptiness is the second one. */
+say(/guard order\.contains\(name\) else \{ continue \}/.test(STORE) &&
+    /if ent\.isActive \{ continue \}/.test(STORE) &&
+    /if let e = ent\.expirationDate, e <= Date\(\) \{ return true \}/.test(STORE),
+    'and an ending is a POSITIVE statement — present, not active, and an ' +
+    'expiry behind us — so an entitlement set that came back EMPTY is not an ' +
+    'ending and cannot lower anything');
+/* An upgrade reads like an ending and is not: buying Pro over Plus retires
+   `plus` with a date in the past at the moment `pro` is handed out, so the
+   loop above answers true for it. It is safe because of what `ended` IS --
+   permission, not the value written. writeDown() re-reads what is live and
+   gets `pro`, so the write that follows is a raise. `isUpgraded` was the
+   StoreKit answer to this and there is no such flag here, so the safety has
+   to come from the shape instead, and the shape is asserted rather than
+   trusted: `ended` may not itself write anything. */
+const ENDED_BODY = (function(){
+  const at = STORE.search(/static func ended\(/);
+  if (at < 0) return null;
+  /* To the closing brace of the function, counted rather than matched: a
+     regex that stops at the first `}` stops inside the loop. */
+  const open = STORE.indexOf('{', at);
+  let depth = 0;
+  for (let i = open; i < STORE.length; i++){
+    if (STORE[i] === '{') depth++;
+    else if (STORE[i] === '}'){ depth--; if (!depth) return STORE.slice(open, i + 1); }
+  }
+  return null;
+})();
+say(ENDED_BODY !== null && ENDED_BODY.indexOf('LinguaPlanPlugin.set') < 0 &&
+    ENDED_BODY.indexOf('writeDown') < 0,
+    'and it only ever grants PERMISSION to lower — it writes nothing itself, ' +
+    'so what lands is always the entitlements as they stand and an upgrade ' +
+    'retiring the lower rung ends as a raise');
 say(/if\s*!mayLower/.test(STORE) && /best\(seen,\s*held\)\s*!=\s*seen/.test(STORE),
     'and the guard is a comparison with what the Keychain HOLDS, not a flag ' +
     'on its own');
@@ -1479,10 +1524,10 @@ say(/var STORE_WAIT=25000;/.test(WWWSTORE),
     'and the bound on a real phone is 25 seconds, not the 20ms this check used');
 
 /* The other end of it, and READ rather than run: no Swift on this runner. */
-say(/let paid = Self\.planOf\(t\.productID\)/.test(STORE) &&
+say(/let paid = result\.transaction\.flatMap \{ Self\.planOf\(\$0\.productIdentifier\) \}/.test(STORE) &&
     /"bought": paid \?\? ""/.test(STORE),
     'and LinguaStore.swift answers what was bought beside what is held — off ' +
-    'the SIGNED transaction\'s own productID, not off the request');
+    'the transaction RevenueCat verified against Apple, not off the request');
 
 const CORE = fs.readFileSync(path.join(dir, '..', 'www', 'core.js'), 'utf8');
 const keeps = (CORE.match(/planKeep\(/g) || []).length;

@@ -1,25 +1,50 @@
 //  LinguaStore.swift
-//  What the App Store says about this person's subscription.
+//  What the App Store says about this person's subscription, asked through
+//  RevenueCat.
 //
-//  StoreKit 2, and no receipt validation of our own. The deployment target is
-//  iOS 15.0 and StoreKit 2 is exactly iOS 15, so there is no fallback path to
-//  write and no `if #available` to get wrong. `Transaction.currentEntitlements`
-//  is signed by Apple and checked on the device before it is handed over;
-//  everything below refuses `.unverified` outright rather than "warning and
-//  carrying on", because carrying on is what makes a check decorative.
+//  RevenueCat and not StoreKit directly -- docs/FEATURE_RULES.md 2026-08-25
+//  (Shipaton 2026: the entry rule is that the RevenueCat SDK powers at least
+//  one in-app purchase) and 2026-09-02 (「RevenueCatで見るって話してるんだけど」
+//  OWNER: sales and subscribers are read in RevenueCat's dashboard, and a
+//  purchase that never reaches RevenueCat is a purchase that appears in no
+//  dashboard at all).
 //
-//  This file does NOT decide what a plan is worth or when it lapses. It
-//  answers one question -- is there a live Plus entitlement right now -- and
-//  writes the answer where LinguaPlan.swift already keeps it. The rules about
-//  what a lapsed plan may and may not remove are in docs/DATA_SAFETY.md and
-//  live in www/, where they have always been.
+//  THE RULE THIS FILE IS BUILT AROUND HAS NOT MOVED, and it is the reason the
+//  swap is written this way rather than the short way:
+//
+//      「プランは絶対におかしくしちゃいけないんだって」 OWNER 2026-09-02
+//
+//  「持っていない」 and 「分からない」 may not share a branch. An empty
+//  entitlement set is 「RevenueCat told me nothing」 as readily as it is
+//  「this person owns nothing」, and writing the second one down replaces a
+//  paid plan with `free` in the one place the plan LIVES. ONE road may lower
+//  the plan: RevenueCat pushing a change at us, and only when what arrived
+//  positively SAYS an entitlement ended. Every other road may raise it and
+//  may not lower it. tools/plan-check.mjs reads this file and fails if a
+//  fourth road is added.
+//
+//  What the swap changed and what it did not:
+//
+//    The five methods, their names, their arguments and the shape of every
+//    answer are the same. www/store.js is untouched by this file changing --
+//    products / buy / restore / current / manage, and the same keys back.
+//
+//    The four product ids are the same four, and they are still the list this
+//    app sells. RevenueCat is asked for them by id rather than through an
+//    Offering, because the ids are what `planOf` maps and what plan-check
+//    counts; an Offering is a dashboard arrangement and would put the mapping
+//    somewhere no check in this repository can read.
+//
+//    Cancelling still opens Apple's own sheet. RevenueCat can show one too,
+//    and an app that draws or proxies its own is an app that will be wrong
+//    about a subscription bought on another device.
 //
 //  Two things it deliberately does not do:
 //
-//    It does not sync on launch. `AppStore.sync()` makes iOS ask for a
+//    It does not sync on launch. `restorePurchases()` makes iOS ask for a
 //    password, and doing that to somebody who just opened an app they have
-//    already paid for is how "Restore" became a button on every paid app
-//    rather than something done automatically. `restore` is that button.
+//    already paid for is how "Restore" became a button rather than something
+//    done automatically. `restore` is that button.
 //
 //    It does not tell the web view. There is no @capacitor/core in this app
 //    -- www/share.js says why, at length -- so there is no addListener on the
@@ -31,11 +56,12 @@
 
 import Foundation
 import Capacitor
+import RevenueCat
 import StoreKit
 import Security
 
 @objc(LinguaStorePlugin)
-public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
+public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin, PurchasesDelegate {
   public let identifier = "LinguaStorePlugin"
   public let jsName = "LinguaStore"
   public let pluginMethods: [CAPPluginMethod] = [
@@ -46,22 +72,42 @@ public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
     CAPPluginMethod(name: "manage", returnType: CAPPluginReturnPromise),
   ]
 
+  /// RevenueCat's PUBLIC SDK key for this app -- the one that begins `appl_`,
+  /// from Project settings → API keys.
+  ///
+  /// In the source, and that is deliberate. It is public in exactly the way
+  /// `SB_KEY` in www/net.js is public: it names the app and proves nothing,
+  /// every copy of the app on every phone carries it, and RevenueCat's own
+  /// installation page puts it in the source. The key that must never be here
+  /// is the SECRET one (`sk_`), which is a server's and is not in this
+  /// repository at all.
+  ///
+  /// EMPTY IS A REAL ANSWER and not a placeholder to be substituted: it means
+  /// nobody has made the RevenueCat app yet. Nothing here pretends otherwise
+  /// -- see `ready` below, which is what an empty key turns off.
+  static let apiKey = ""
+
+  /// Whether there is a RevenueCat to ask.
+  ///
+  /// `Purchases.shared` TRAPS if `configure` was never called -- it is a
+  /// fatalError inside the SDK, not an optional -- so every road below asks
+  /// this first. An app whose store layer crashes because a dashboard is not
+  /// set up yet is worse than one whose plans screen is quiet, and today the
+  /// key above is empty, which is every build until the owner has made the
+  /// app in RevenueCat.
+  static var ready: Bool { !apiKey.isEmpty && Purchases.isConfigured }
+
   /// Every product, and the plan it buys. The only place either is written
   /// down.
   ///
   /// It was a set of ids that all meant the paid tier, with a note saying
   /// that the day a second tier existed this would become a map. That day is
-  /// 2026-08-23: the middle rung is decided -- `docs/FEATURE_RULES.md`, $4.99
-  /// and $49.99, and it buys letters, one keyboard, a thousand words, a
-  /// writing system and the choice of a sound. The tiers are Free, Plus and
-  /// Pro; they were Free, Basic and Plus until the same day, because Basic
-  /// reads as the name of a free tier.
+  /// 2026-08-23: the tiers are Free, Plus and Pro (docs/FEATURE_RULES.md).
   ///
   /// A product id cannot be changed once it exists (`docs/apple.md` § 4), and
-  /// none of Basic's exist yet. Asking for one that does not is not an error:
-  /// StoreKit simply does not return it, which is how this file finds out
-  /// what is really on sale rather than being told. The same was true of the
-  /// yearly Plus id for a fortnight.
+  /// asking for one that has not been made is not an error: neither the App
+  /// Store nor RevenueCat returns it, which is how this file finds out what
+  /// is really on sale rather than being told.
   static let plans: [(id: String, plan: String)] = [
     ("com.tokinets.lingua.plus.monthly", "plus"),
     ("com.tokinets.lingua.plus.yearly",  "plus"),
@@ -74,6 +120,11 @@ public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
   /// `www/core.js` is. Two copies of an order is how two sides of a bridge
   /// come to disagree about which plan is better, so if one of them ever
   /// gains a rung the other is not optional.
+  ///
+  /// It is ALSO the list of RevenueCat entitlement identifiers, minus `free`,
+  /// which is not a thing anybody buys: the dashboard has `plus` and `pro`
+  /// spelled exactly like this. A capital letter there and a paid person gets
+  /// nothing, so the spelling is one fact in one place.
   static let order = ["free", "plus", "pro"]
 
   /// Which plan a product buys, or nothing for an id this app does not sell.
@@ -81,8 +132,8 @@ public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
     return plans.first { $0.id == productID }?.plan
   }
 
-  /// The better of two plans. Somebody can hold both -- an old Basic that has
-  /// not run out beside a new Plus, or two subscriptions in different groups
+  /// The better of two plans. Somebody can hold both -- an old Plus that has
+  /// not run out beside a new Pro, or two subscriptions in different groups
   /// -- and the answer to that is the higher rung, never the last one read.
   static func best(_ a: String, _ b: String) -> String {
     let ia = order.firstIndex(of: a) ?? 0
@@ -90,72 +141,66 @@ public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
     return ia >= ib ? a : b
   }
 
-  /// The listener for transactions that arrive with nobody in the app: a
-  /// renewal, a refund, a purchase made on another device, a family member's
-  /// share. Apple's own guidance is to start this at launch and to keep it
-  /// for the life of the process, because a transaction delivered while
-  /// nothing is listening is delivered again at the next launch and the
-  /// intervening days are days the app was wrong about.
-  private var watch: Task<Void, Never>?
-
+  /// Configure the SDK, and start listening.
+  ///
+  /// Here and not in AppDelegate: this plugin is loaded by the Capacitor
+  /// bridge at launch, it is the one thing in the app that talks to the
+  /// store, and a `configure` sitting in another file is a `configure` that
+  /// gets moved by somebody who does not know this file depends on it.
+  ///
+  /// The delegate is the road RevenueCat pushes changes down -- a renewal, a
+  /// refund, a purchase made on another device, a family member's share, a
+  /// cancellation that took effect while the app was shut. It is the
+  /// replacement for StoreKit's `Transaction.updates`, and it is the ONE road
+  /// that may lower the plan.
   override public func load() {
-    watch = Task.detached { [weak self] in
-      for await result in Transaction.updates {
-        guard let t = Self.verified(result) else { continue }
-        /* finish() is what tells the App Store to stop redelivering this.
-           Not finishing is the classic StoreKit bug: everything works, and
-           the same transaction arrives at every launch forever. */
-        await t.finish()
-        /* WHAT ARRIVED is what decides whether the plan may go DOWN, and a
-           renewal is not an ending. Every transaction used to re-read the
-           entitlement list with permission to lower -- and that list answers
-           `free` for 「it gave me nothing」 as readily as for 「owns nothing」,
-           so a RENEWAL landing beside a list that had not caught up took the
-           plan away on the day the person was charged for it. Apple says an
-           ending on the transaction itself; this asks that instead. */
-        _ = await self?.writeDown(mayLower: Self.ended(t))
-      }
-    }
+    guard !Self.apiKey.isEmpty else { return }
+    Purchases.configure(withAPIKey: Self.apiKey)
+    Purchases.shared.delegate = self
   }
 
-  deinit { watch?.cancel() }
-
-  /// Whether THIS transaction is Apple saying the subscription ended: revoked
-  /// -- a refund -- or an expiry already behind us.
+  /// RevenueCat saying something changed.
   ///
-  /// A renewal carries an expiry in the FUTURE, and is the opposite of an
-  /// ending. An upgrade is the other one that reads like an ending and is not:
-  /// the superseded transaction is retired with a date in the past at the
-  /// moment a BETTER one is handed out, so reading it as an ending is how a
-  /// plan goes down on the day it went up. `isUpgraded` is Apple saying which
-  /// of the two this is.
-  private static func ended(_ t: Transaction) -> Bool {
-    if t.revocationDate != nil { return true }
-    if t.isUpgraded { return false }
-    if let e = t.expirationDate { return e <= Date() }
+  /// WHAT ARRIVED is what decides whether the plan may go DOWN, and a renewal
+  /// is not an ending. The StoreKit version of this file re-read the whole
+  /// entitlement list with permission to lower on every update -- and that
+  /// list answers 「it gave me nothing」 as readily as 「owns nothing」, so a
+  /// RENEWAL landing beside a list that had not caught up took the plan away
+  /// on the day the person was charged for it. `ended()` below asks what this
+  /// customer info actually SAYS instead.
+  public func purchases(_ purchases: Purchases, receivedUpdated customerInfo: CustomerInfo) {
+    Task { _ = await self.writeDown(mayLower: Self.ended(customerInfo)) }
+  }
+
+  /// Whether THIS customer info is RevenueCat saying an entitlement ENDED.
+  ///
+  /// The distinction the whole file turns on, in one function. An entitlement
+  /// this app sells has to be PRESENT and finished -- in `entitlements.all`,
+  /// not active, and either revoked or carrying an expiry already behind us.
+  ///
+  /// AN EMPTY SET IS NOT AN ENDING. `all` is empty on a launch before
+  /// RevenueCat has ever answered, on a phone signed out of the App Store,
+  /// and on one that cannot reach anything. Reading emptiness as 「it ended」
+  /// is the exact shape of the bug that cost the owner their plan twice, and
+  /// it is why this asks for a positive statement rather than for a silence.
+  ///
+  /// An upgrade reads like an ending and is not: buying Pro over Plus retires
+  /// `plus` with a date in the past at the moment `pro` is handed out. It is
+  /// safe here for a reason worth writing down rather than relying on --
+  /// `writeDown` re-reads what is live and gets `pro`, so the write that
+  /// follows is a raise. `ended` only ever grants PERMISSION to lower; what
+  /// is actually written is always the entitlements as they stand.
+  static func ended(_ info: CustomerInfo) -> Bool {
+    for (name, ent) in info.entitlements.all {
+      guard order.contains(name) else { continue }
+      if ent.isActive { continue }
+      if let e = ent.expirationDate, e <= Date() { return true }
+    }
     return false
   }
 
-  /// `.unverified` is not "probably fine". It is the one signal that the
-  /// signature did not check out on this device, and the answer to it is no.
-  private static func verified<T>(_ r: VerificationResult<T>) -> T? {
-    switch r {
-    case .verified(let v): return v
-    case .unverified: return nil
-    }
-  }
-
   /// What is live right now: the highest plan among the entitlements this
-  /// device holds, or "free" when there are none.
-  ///
-  /// `currentEntitlements` already leaves out what has expired and what was
-  /// refunded, so there is no date arithmetic here. `revocationDate` is
-  /// checked anyway: a refund can be reflected in the transaction before it
-  /// is reflected in the list, and the free side is the side to be wrong on.
-  ///
-  /// It answered a Bool while there was one tier to sell. A Bool cannot say
-  /// WHICH, and the day the middle tier goes on sale a Bool would read every
-  /// Plus receipt as Pro -- every door open, for five dollars.
+  /// person holds, or "free" when there are none.
   static func entitledPlan() async -> String {
     return await entitledSeen().plan
   }
@@ -166,64 +211,65 @@ public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
   /// 2026-09-03, with Apple's own sheet on screen saying Lingua Plus renews on
   /// the 4th for ¥800. The app answered 「there is nothing to restore」.
   ///
-  /// Three things can produce that answer and they are different faults:
-  /// the list came back EMPTY (the sync had not landed), every entry failed
-  /// VERIFICATION (`verified()` returns nil and the entry is skipped in
-  /// silence), or an entry verified and carried a product id this app does
-  /// not sell. From the outside all three are the same sentence, and this is
-  /// the one place that can tell them apart. It is counted rather than
-  /// guessed at, for the same reason the price screen says whether the App
-  /// Store answered: an error is a state, and a state is what a person on a
-  /// phone can photograph.
+  /// Three things produce that answer and they are different faults: nothing
+  /// came back at all, something came back and none of it is live, or
+  /// something is live under a name this app does not sell (a dashboard
+  /// entitlement spelled `Pro` when the ladder says `pro` is exactly this,
+  /// and it is silent everywhere else). From the outside all three are the
+  /// same sentence, and this is the one place that can tell them apart. It is
+  /// counted rather than guessed at: an error is a state, and a state is what
+  /// a person on a phone can photograph.
+  ///
+  /// The three counts keep the meaning www/store.js prints them with
+  /// (`storeWhyNone`), across the swap: `saw` is how much came back at all,
+  /// `unverified` is how much of it is not live, `unknown` is how much is live
+  /// under a name the ladder has never heard of.
   static func entitledSeen() async -> (plan: String, saw: Int, unverified: Int, unknown: Int) {
+    guard ready else { return ("free", 0, 0, 0) }
+    guard let info = try? await Purchases.shared.customerInfo() else {
+      return ("free", 0, 0, 0)
+    }
     var out = "free"
     var saw = 0, unver = 0, unknown = 0
-    for await result in Transaction.currentEntitlements {
+    for (name, ent) in info.entitlements.all {
       saw += 1
-      guard let t = verified(result) else { unver += 1; continue }
-      if t.revocationDate != nil { continue }
-      guard let p = planOf(t.productID) else { unknown += 1; continue }
-      out = best(out, p)
+      guard ent.isActive else { unver += 1; continue }
+      guard order.contains(name), name != "free" else { unknown += 1; continue }
+      out = best(out, name)
     }
     return (out, saw, unver, unknown)
   }
 
-  /// Ask the App Store, then write the answer where the next launch will find
+  /// Ask RevenueCat, then write the answer where the next launch will find
   /// it. Returns what it wrote so a call can answer with the same thing.
-  /// NEVER DOWN, unless Apple was actually asked.
+  /// NEVER DOWN, unless RevenueCat was actually asked and positively said so.
   ///
   /// 「プランは絶対におかしくしちゃいけないんだって」 OWNER 2026-09-02, after a
   /// paid plan came back free on its own.
   ///
   /// `entitledPlan()` answers `free` for two different things: 「this person
-  /// has nothing」 and 「the entitlement list gave me nothing」. An empty
-  /// `Transaction.currentEntitlements` is a real state on a launch before the
-  /// receipt is there, on a phone signed out of the App Store, and on one that
-  /// cannot reach it. Writing that down replaces a paid plan with `free` in
-  /// the one place the plan LIVES -- and nothing afterwards can tell that it
-  /// was ever anything else. Same shape as LinguaPlan.readPlan(), and the same
-  /// sentence off CLAUDE.md's first page: 「空」 and 「読めていない」 may not
-  /// share a branch.
+  /// has nothing」 and 「the entitlement set gave me nothing」. Writing the
+  /// second down replaces a paid plan with `free` in the one place the plan
+  /// LIVES -- and nothing afterwards can tell that it was ever anything else.
+  /// Same shape as LinguaPlan.readPlan(), and the same sentence off CLAUDE.md's
+  /// first page: 「空」 and 「読めていない」 may not share a branch.
   ///
-  /// ONE ROAD MAY LOWER IT, and it is `Transaction.updates` -- Apple pushing
+  /// ONE ROAD MAY LOWER IT, and it is the delegate above -- RevenueCat pushing
   /// a change at us, which is the only moment anything has actually SAID that
   /// this person's subscription ended. AND NOT EVERY PUSH: what arrives there
-  /// is a renewal as often as it is an ending, and `ended()` above is which of
-  /// the two THIS transaction is. A renewal that re-read the entitlement list
-  /// with permission to lower was the same bug one road further out.
+  /// is a renewal as often as it is an ending, and `ended()` is which of the
+  /// two THIS one is.
   ///
   /// `restore` and `manage` were on this list for a morning and are off it.
-  /// Both end in reading `currentEntitlements`, and an empty list there is
-  /// not a person who owns nothing: on TestFlight and in the sandbox it is
-  /// routinely empty for an account that is paying, and a `sync()` that
-  /// SUCCEEDS does not change that. It cost the owner their plan on the
-  /// build that had it: 「復元するものはありませんって出るけどさ、さっきまで
-  /// プロだったんだけど消えたってこと？」OWNER 2026-09-02.
+  /// Both end in reading the entitlements, and an empty set there is not a
+  /// person who owns nothing: on TestFlight and in the sandbox it is routinely
+  /// empty for an account that is paying, and a restore that SUCCEEDS does not
+  /// change that. It cost the owner their plan on the build that had it:
+  /// 「復元するものはありませんって出るけどさ、さっきまでプロだったんだけど
+  /// 消えたってこと？」OWNER 2026-09-02.
   ///
   /// Restore means 「give me back what I bought」. Finding nothing is not an
-  /// instruction to take something away. A cancellation still lands, from
-  /// the updates listener, which is Apple saying it rather than this app
-  /// inferring it from a silence.
+  /// instruction to take something away.
   @discardableResult
   private func writeDown(mayLower: Bool = false) async -> String {
     let seen = await Self.entitledPlan()
@@ -236,7 +282,7 @@ public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
       }
       /* AND A READ THAT FAILED IS NOT WRITTEN OVER EITHER. Not getting a vote
          was only half of it: every other status fell straight through to the
-         write below, and `seen` is `free` whenever the entitlement list gave
+         write below, and `seen` is `free` whenever the entitlements gave
          nothing -- so a launch that could not open the Keychain put `free` on
          top of the plan it had just failed to read, in the one place the plan
          LIVES. `errSecItemNotFound` is 「there is nothing there」 and IS an
@@ -258,59 +304,65 @@ public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
     return await Self.entitledPlan()
   }
 
-  /// What is for sale, with prices as the App Store gives them.
+  /// What is for sale, with prices as the store gives them.
   ///
-  /// `displayPrice` and not a number: it is already in the person's currency,
-  /// already formatted the way their region formats money, and already the
-  /// string Apple requires be shown. Building "$" + a number is how an app
-  /// ends up showing dollars to somebody being charged yen.
+  /// `localizedPriceString` and not a number: it is already in the person's
+  /// currency, already formatted the way their region formats money, and
+  /// already the string Apple requires be shown. Building "$" + a number is
+  /// how an app ends up showing dollars to somebody being charged yen.
+  /// 「4はドル。でもさっき価格登録してきたけど日本円は800円とかになってたよ」
+  ///
+  /// Asked by id and not through an Offering. The four ids are what this app
+  /// sells, `planOf` maps them, and plan-check counts them; an Offering is an
+  /// arrangement in a dashboard, and a product that fell out of one would go
+  /// quiet here with nothing in this repository able to say why.
   @objc func products(_ call: CAPPluginCall) {
+    guard Self.ready else { call.resolve(["products": []]); return }
     Task {
-      do {
-        let found = try await Product.products(for: Self.ids)
-        let out: [[String: Any]] = found.map { p in
-          var row: [String: Any] = [
-            "id": p.id,
-            "name": p.displayName,
-            "text": p.description,
-            "price": p.displayPrice,
-            /* The same money as a number, and it is here for exactly one
-               sum: how much less a year is than twelve months. That figure
-               differs by country -- Apple rounds each storefront its own way,
-               so a year that is 17% off in one is 15% off in another -- and
-               working it out from `price` would be arithmetic on a formatted
-               string in whatever currency. It is never shown; only a string
-               the App Store formatted is ever put on a screen. */
-            "amount": NSDecimalNumber(decimal: p.price).doubleValue,
-            /* Twelve of this one, formatted by the App Store's own formatter.
-               It is what a year is struck through with on the plans page:
-               「49.99は取り消し線＋17%OFF」OWNER 2026-08-26.
+      let found = await Purchases.shared.products(Self.ids)
+      let out: [[String: Any]] = found.map { p in
+        var row: [String: Any] = [
+          "id": p.productIdentifier,
+          "name": p.localizedTitle,
+          "text": p.localizedDescription,
+          "price": p.localizedPriceString,
+          /* The same money as a number, and it is here for exactly one sum:
+             how much less a year is than twelve months. That figure differs
+             by country -- each storefront is rounded its own way, so a year
+             that is 17% off in one is 15% off in another -- and working it
+             out from `price` would be arithmetic on a formatted string in
+             whatever currency. It is never shown; only a string the store
+             formatted is ever put on a screen. */
+          "amount": NSDecimalNumber(decimal: p.price).doubleValue,
+        ]
+        /* Twelve of this one, formatted by the store's own formatter. It is
+           what a year is struck through with on the plans page:
+           「49.99は取り消し線＋17%OFF」OWNER 2026-08-26.
 
-               The sum is done here and not in www for the same reason
-               `amount` is never shown -- www has the number but not the
-               currency and not the region's way of writing money, so twelve
-               times ¥750 could only be built there as "¥" and a number.
-               「4はドル。でもさっき価格登録してきたけど日本円は800円とかに
-               なってたよ」 Apple formats it or nobody does.
+           The sum is done here and not in www for the same reason `amount` is
+           never shown -- www has the number but not the currency and not the
+           region's way of writing money, so twelve times ¥750 could only be
+           built there as "¥" and a number.
 
-               On every product, not only the monthly one: what a term is
-               worth twelve of is a fact about that term, and it is the
-               monthly row www reads this off. */
-            "year": (p.price * 12).formatted(p.priceFormatStyle),
-          ]
-          /* A subscription's period is what tells the two apart on screen,
-             and it is the App Store's answer rather than ours -- a product
-             renamed "yearly" that is configured monthly should read monthly. */
-          if let s = p.subscription {
-            row["unit"] = String(describing: s.subscriptionPeriod.unit).lowercased()
-            row["count"] = s.subscriptionPeriod.value
-          }
-          return row
+           Nothing is put in `year` when the formatter is missing. www reads
+           this as the empty string and shows no struck-through price at all,
+           which is the answer OWNER 2026-08-26 gave for the fallback: 何も
+           出さない. A dollar sign shown to somebody being charged yen is a
+           lie; nothing shown is not. */
+        if let f = p.priceFormatter,
+           let y = f.string(from: NSDecimalNumber(decimal: p.price * 12)) {
+          row["year"] = y
         }
-        call.resolve(["products": out])
-      } catch {
-        call.reject("products: \(error.localizedDescription)")
+        /* A subscription's period is what tells the two apart on screen, and
+           it is the store's answer rather than ours -- a product renamed
+           "yearly" that is configured monthly should read monthly. */
+        if let s = p.subscriptionPeriod {
+          row["unit"] = String(describing: s.unit).lowercased()
+          row["count"] = s.value
+        }
+        return row
       }
+      call.resolve(["products": out])
     }
   }
 
@@ -325,79 +377,68 @@ public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
     guard let id = call.getString("id"), Self.ids.contains(id) else {
       call.reject("no such product"); return
     }
+    guard Self.ready else { call.reject("no store"); return }
     Task {
+      guard let product = await Purchases.shared.products([id]).first else {
+        call.reject("no such product"); return
+      }
       do {
-        guard let product = try await Product.products(for: [id]).first else {
-          call.reject("no such product"); return
-        }
-        let result = try await product.purchase()
-        switch result {
-        case .success(let v):
-          guard let t = Self.verified(v) else {
-            call.reject("could not be verified"); return
-          }
-          await t.finish()
-          /// THE TRANSACTION ITSELF IS THE ANSWER, and not only the list.
-          ///
-          /// `currentEntitlements` is what a plan IS at any other moment, and
-          /// it is right everywhere except here: StoreKit does not promise
-          /// that a purchase finished a millisecond ago is already in that
-          /// list, and when it is not, `entitledPlan()` answers `free` -- so
-          /// the app wrote `free` down the instant somebody paid, said 「無料に
-          /// なりました」 and put the lapse popup up. Money taken, plan gone.
-          /// 「今課金したのに（仮）フリーになりましたって出たんだけど…プロに
-          /// ならなかった」 OWNER 2026-09-01, on a real phone.
-          ///
-          /// This is not trusting the request: `verified()` above refuses
-          /// anything Apple has not signed, and `planOf` maps the signed
-          /// transaction's own productID. `best()` keeps whichever is higher,
-          /// so a list that HAS caught up is still used and an older, better
-          /// entitlement is never written down over.
-          let paid = Self.planOf(t.productID)
-          var plan = await writeDown()
-          if let bought = paid {
-            let both = Self.best(plan, bought)
-            if both != plan { plan = both; LinguaPlanPlugin.set(plan) }
-          }
-          /// AND WHAT WAS BOUGHT IS ANSWERED SEPARATELY FROM WHAT IS HELD.
-          ///
-          /// 「plus で課金しても pro になりましたって出る」 OWNER 2026-09-02,
-          /// on a real phone. `plan` above is the BEST of everything this
-          /// Apple ID holds, which is what a plan IS and is right -- and it is
-          /// the wrong thing to name in the sentence after a purchase, because
-          /// somebody who just pressed Plus is told they bought Pro.
-          ///
-          /// The two come apart whenever a better entitlement is already
-          /// live, and today that is not a corner: Plus and Pro are in two
-          /// subscription groups in App Store Connect, so both run at once and
-          /// both are charged. docs/apple.md § 4 says one group. That is the
-          /// owner's to fix in the dashboard and cannot be fixed here; what
-          /// CAN be fixed here is the app telling somebody they bought a
-          /// thing they did not press.
-          ///
-          /// It is the signed transaction's own productID and not the request
-          /// -- `verified()` above refused anything Apple has not signed --
-          /// so it is what was PAID FOR rather than what was asked for.
-          /// Empty for a product this app does not sell, which `buy` has
-          /// already refused at the top, so it cannot be reached from here.
-          call.resolve(["how": "bought", "plan": plan, "bought": paid ?? ""])
-        case .userCancelled:
+        let result = try await Purchases.shared.purchase(product: product)
+        if result.userCancelled {
           call.resolve(["how": "cancelled", "plan": await standing()])
-        case .pending:
-          /* Ask To Buy, or a bank that wants a second step. There is nothing
-             to wait for here: it arrives at Transaction.updates whenever it
-             arrives, which may be after the app has been closed. */
-          call.resolve(["how": "pending", "plan": await standing()])
-        @unknown default:
-          call.resolve(["how": "unknown", "plan": await standing()])
+          return
         }
+        /// THE TRANSACTION ITSELF IS THE ANSWER, and not only the entitlements.
+        ///
+        /// The entitlement set is what a plan IS at any other moment, and it
+        /// is right everywhere except here: nothing promises that a purchase
+        /// finished a millisecond ago is already reflected in it, and when it
+        /// is not, `entitledPlan()` answers `free` -- so the app wrote `free`
+        /// down the instant somebody paid, said 「無料になりました」 and put
+        /// the lapse popup up. Money taken, plan gone. 「今課金したのに（仮）
+        /// フリーになりましたって出たんだけど…プロにならなかった」 OWNER
+        /// 2026-09-01, on a real phone.
+        ///
+        /// This is not trusting the request: it is the productIdentifier off
+        /// the transaction RevenueCat handed back for a purchase it verified
+        /// against Apple, and `best()` keeps whichever is higher, so an older
+        /// and better entitlement is never written down over.
+        let paid = result.transaction.flatMap { Self.planOf($0.productIdentifier) }
+        var plan = await writeDown()
+        if let bought = paid {
+          let both = Self.best(plan, bought)
+          if both != plan { plan = both; LinguaPlanPlugin.set(plan) }
+        }
+        /// AND WHAT WAS BOUGHT IS ANSWERED SEPARATELY FROM WHAT IS HELD.
+        ///
+        /// 「plus で課金しても pro になりましたって出る」 OWNER 2026-09-02, on
+        /// a real phone. `plan` above is the BEST of everything this person
+        /// holds, which is what a plan IS and is right -- and it is the wrong
+        /// thing to name in the sentence after a purchase, because somebody
+        /// who just pressed Plus is told they bought Pro.
+        ///
+        /// The two come apart whenever a better entitlement is already live,
+        /// and today that is not a corner: Plus and Pro are in two
+        /// subscription groups in App Store Connect, so both run at once and
+        /// both are charged. docs/apple.md § 4 says one group. That is the
+        /// owner's to fix in the dashboard and cannot be fixed here.
+        call.resolve(["how": "bought", "plan": plan, "bought": paid ?? ""])
       } catch {
+        /* Ask To Buy, or a bank that wants a second step. There is nothing to
+           wait for here: it arrives at the delegate whenever it arrives, which
+           may be after the app has been closed. RevenueCat reports it as an
+           error code rather than as an outcome, so it is caught rather than
+           switched on. */
+        if let e = error as? RevenueCat.ErrorCode, e == .paymentPendingError {
+          call.resolve(["how": "pending", "plan": await standing()])
+          return
+        }
         call.reject("buy: \(error.localizedDescription)")
       }
     }
   }
 
-  /// AppStore.sync(), with a bound on how long it may take.
+  /// `restorePurchases()`, with a bound on how long it may take.
   ///
   /// It puts up Apple's own sign-in sheet, and a sheet that is dismissed
   /// rather than answered can leave the call suspended with nothing to
@@ -405,16 +446,17 @@ public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
   /// else, which is what a person sees:
   /// 「購入を復元押しても問い合わせ中しか出ないよ」OWNER 2026-09-02.
   ///
-  /// The answer does not depend on it. What this Apple ID holds is
-  /// `Transaction.currentEntitlements`; sync() only refreshes it, and is
-  /// worth waiting a while for and not for ever.
+  /// The answer does not depend on it. What this person holds is the
+  /// entitlement set; restoring only refreshes it, and is worth waiting a
+  /// while for and not for ever.
   ///
   /// Returns whether it actually came back, because that decides something
   /// else -- see restore().
   private static func syncWithin(_ seconds: UInt64) async -> Bool {
+    guard ready else { return false }
     return await withTaskGroup(of: Bool.self, returning: Bool.self) { group in
       group.addTask {
-        do { try await AppStore.sync() } catch { return false }
+        do { _ = try await Purchases.shared.restorePurchases() } catch { return false }
         return true
       }
       group.addTask {
@@ -428,17 +470,17 @@ public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
     }
   }
 
-  /// The Restore button, and the only thing that calls AppStore.sync().
+  /// The Restore button, and the only thing that calls `restorePurchases()`.
   ///
   /// It asks for an App Store password, which is why it is a button somebody
-  /// presses and not something done on launch. A sync that fails is not
-  /// necessarily a person with nothing: the entitlements already on the
-  /// device are still worth reading, so the answer is given either way.
+  /// presses and not something done on launch. A restore that fails is not
+  /// necessarily a person with nothing: the entitlements already known are
+  /// still worth reading, so the answer is given either way.
   ///
-  /// AND IT NEVER LOWERS THE PLAN. Not even when the sync came back: an
-  /// empty entitlement list is 「Apple told me nothing」 as often as it is
-  /// 「this person owns nothing」, and restore is the button for getting a
-  /// plan BACK. See writeDown() above for the day that cost.
+  /// AND IT NEVER LOWERS THE PLAN. Not even when the restore came back: an
+  /// empty entitlement set is 「it told me nothing」 as often as it is 「this
+  /// person owns nothing」, and restore is the button for getting a plan BACK.
+  /// See writeDown() above for the day that cost.
   @objc func restore(_ call: CAPPluginCall) {
     Task {
       let synced = await Self.syncWithin(12)
@@ -453,9 +495,9 @@ public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
     }
   }
 
-  /// What the App Store says right now. Also writes it down: a session that
-  /// asks is a session that can be told, and the Keychain is how the next
-  /// launch is told.
+  /// What the store says right now. Also writes it down: a session that asks
+  /// is a session that can be told, and the Keychain is how the next launch
+  /// is told.
   @objc func current(_ call: CAPPluginCall) {
     Task { call.resolve(["plan": await writeDown()]) }
   }
@@ -464,6 +506,10 @@ public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
   /// Apple's sheet and none of it is ours to draw. An app that builds its own
   /// cancel screen is an app that will be wrong about a subscription bought
   /// on a different device.
+  ///
+  /// StoreKit's own call and not RevenueCat's wrapper around it: this is the
+  /// one road that never needed a dashboard to work, and it should go on
+  /// working on a build whose RevenueCat app has not been made yet.
   @objc func manage(_ call: CAPPluginCall) {
     Task { @MainActor in
       guard let scene = self.bridge?.viewController?.view?.window?.windowScene else {
@@ -472,9 +518,9 @@ public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
       do {
         try await AppStore.showManageSubscriptions(in: scene)
         /* Coming back from Apple's sheet does not lower it either. Somebody
-           may have cancelled in there, and that arrives as a Transaction
-           update -- which is Apple saying so. Reading an empty entitlement
-           list a second later is this app guessing. */
+           may have cancelled in there, and that arrives at the delegate --
+           which is RevenueCat saying so. Reading an empty entitlement set a
+           second later is this app guessing. */
         call.resolve(["plan": await self.writeDown(mayLower: false)])
       } catch {
         call.reject("manage: \(error.localizedDescription)")
