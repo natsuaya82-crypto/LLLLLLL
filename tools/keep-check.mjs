@@ -7,6 +7,20 @@
        入力内容を保存しますか？はいいいえ／ではいなら保存　いいえならそのまま
        戻るにしない？保存ボタン必要なとこ全部」
 
+   AND THE SAME DAY, WHAT THE BUTTON ITSELF DOES (docs/FEATURE_RULES.md
+   § 決定ボタンのルール):
+
+     「なにもない時は薄い灰色、何か打ったら金にする」
+     「これが決定ボタンのルール」
+
+   This file asked the first shape of that: 「変えていなければ出ない」, the
+   button coming and going. **That was replaced.** The button stands there from
+   the moment the screen does and the COLOUR is what moves -- so what is asked
+   below is BOTH: that it is there at all three moments, and that it is grey,
+   gold, grey. Presence alone would pass an app whose button never lit, which
+   is the fault the decision was made about 「保存ボタンが光らないから押せるのか
+   わからない」; colour alone would pass one where the button had gone.
+
    Eight screens take typing. Nothing this holds can throw: a field that writes
    the language on the keystroke renders perfectly, a Save standing there
    whether or not anything moved looks right in every screenshot, and a back
@@ -16,8 +30,10 @@
    SEVEN CLAIMS, ASKED OF EVERY ONE OF THE EIGHT:
 
      1  typing writes NOTHING -- localStorage is byte-identical afterwards
-     2  a screen nobody has touched has no Save in the bar
-     3  one keystroke puts it there, and nothing was rendered to do it
+     2  a screen with fields has a Save in the bar from the moment it opens,
+        and with nothing changed it is PALE GREY
+     3  one keystroke turns that same Save GOLD, and nothing was rendered to
+        do it -- the button is still there, it changed colour where it stood
      4  back() off an untouched screen leaves, and asks nothing
      5  back() off a changed screen ASKS, and does not leave
      6  No leaves, and localStorage is byte-identical to before the typing
@@ -25,8 +41,8 @@
 
    AND SIX ABOUT THE MECHANISM ITSELF:
 
-     8  typing and then rubbing out again is not a change: no button, no
-        question. 「変えていない画面では何も訊かない」
+     8  typing and then rubbing out again is not a change: the Save goes back
+        to PALE GREY and nothing is asked. 「変えていない画面では何も訊かない」
      9  the left-edge swipe ends in back(), so it asks the same question
     10  typing a keyboard's name stacks no step to go back through, and one
         save is one write -- kbNoted() reads the LAYOUT, and a name is not in
@@ -38,8 +54,8 @@
     13  an @ the server refuses does not leave the screen; one it allows does
     14  a bottom tab is not an answer. Walking off a screen with something typed
         on it and coming back finds it still there, still unsaved, with the
-        Save still in the bar -- nothing is thrown away without somebody
-        having said so
+        Save still in the bar AND STILL GOLD -- nothing is thrown away without
+        somebody having said so
 
    Run: node tools/keep-check.mjs                                        */
 import { seed } from './fixture.mjs';
@@ -83,6 +99,14 @@ const r = await pg.evaluate(({ s }) => {
     return e ? String(e.value || '') : null;
   }
   function saveBtn(){ return document.querySelector('.navtop [data-do="keepPress"]'); }
+  /* WHETHER IT IS LIT. `navon` is the gold and www/shell.js § navDo is the one
+     place that puts it on, so this asks the page for the class rather than
+     reading a colour back -- a computed colour is the stylesheet's answer and
+     would make this a check on `--gold` instead of on the state. */
+  function saveOn(){
+    var b = saveBtn();
+    return !!b && b.classList.contains('navon');
+  }
   function clickSel(sel){
     var e = document.querySelector(sel);
     if(!e) return false;
@@ -159,8 +183,10 @@ const r = await pg.evaluate(({ s }) => {
     var was = valOf(sc.sel);
     if(was === null){ fail(sc.n + ': no field ' + sc.sel + ' on ' + key); out.screens.push(res); continue; }
 
-    /* 2 and 4 -- untouched: no button, and back() simply leaves */
-    res.btnBefore = !!saveBtn();
+    /* 2 and 4 -- untouched: the button is there and grey, and back() simply
+       leaves */
+    res.thereBefore = !!saveBtn();
+    res.goldBefore = saveOn();
     back();
     res.leftClean = (whereAmI() !== key);
     res.askedClean = popOn();
@@ -170,12 +196,14 @@ const r = await pg.evaluate(({ s }) => {
     sc.go();
     var before = all();
     type(sc.sel, sc.v);
-    res.btnAfter = !!saveBtn();
+    res.thereAfter = !!saveBtn();
+    res.goldAfter = saveOn();
     res.wroteWhileTyping = (all() !== before);
 
     /* 8 -- and putting it back the way it was is not a change */
     type(sc.sel, was);
-    res.btnBackToNothing = !!saveBtn();
+    res.thereBack = !!saveBtn();
+    res.goldBackToNothing = saveOn();
     back();
     res.askedAfterUndo = popOn();
     popOff();
@@ -202,12 +230,15 @@ const r = await pg.evaluate(({ s }) => {
     res.yesStored = (sc.read() === sc.v);
     res.yesOnDisk = (all().indexOf(sc.v) >= 0);
 
-    if(res.btnBefore) fail(sc.n + ': a Save in the bar with nothing changed');
+    if(!res.thereBefore) fail(sc.n + ': no Save in the bar on a screen that takes typing');
+    if(res.goldBefore) fail(sc.n + ': a GOLD Save with nothing changed');
     if(!res.leftClean) fail(sc.n + ': back() off an untouched screen did not leave');
     if(res.askedClean) fail(sc.n + ': asked about a screen nobody had touched');
     if(res.wroteWhileTyping) fail(sc.n + ': typing wrote to the phone');
-    if(!res.btnAfter) fail(sc.n + ': no Save in the bar after a keystroke');
-    if(res.btnBackToNothing) fail(sc.n + ': a Save after typing and putting it back');
+    if(!res.thereAfter) fail(sc.n + ': the Save left the bar when something was typed');
+    if(!res.goldAfter) fail(sc.n + ': the Save did not go gold on a keystroke');
+    if(!res.thereBack) fail(sc.n + ': the Save left the bar when the typing was put back');
+    if(res.goldBackToNothing) fail(sc.n + ': a GOLD Save after typing and putting it back');
     if(res.askedAfterUndo) fail(sc.n + ': asked after typing and putting it back');
     if(!res.asked) fail(sc.n + ': back() off a changed screen asked nothing');
     if(!res.stayed) fail(sc.n + ': back() left while the question was up');
@@ -348,7 +379,11 @@ const more = await pg.evaluate(() => {
   goTab('profile'); openMe();
   var e6 = document.querySelector('#me-nm');
   out.tabKept = e6 ? String(e6.value || '') : '';
-  out.tabBtn = !!document.querySelector('.navtop [data-do="keepPress"]');
+  /* Written out rather than through saveBtn()/saveOn(): this is a second
+     pg.evaluate and those two live in the first one's scope. */
+  var tabB = document.querySelector('.navtop [data-do="keepPress"]');
+  out.tabBtn = !!tabB;
+  out.tabGold = !!tabB && tabB.classList.contains('navon');
   out.tabStored = String(ME.name || '');
 
   /* ---- 13. an @ the server refuses stays on the screen -------------------
@@ -401,6 +436,7 @@ if(more.refusedHandle === 'takenname') fails.push('a refused @ was written down'
 if(more.tabAskedOff) fails.push('a bottom tab put the question up');
 if(more.tabKept !== 'Wandered') fails.push('a bottom tab threw away what was typed: ' + JSON.stringify(more.tabKept));
 if(!more.tabBtn) fails.push('coming back to a screen with typing on it had no Save in the bar');
+if(!more.tabGold) fails.push('coming back to a screen with typing on it, the Save was not gold');
 if(more.tabStored === 'Wandered') fails.push('a bottom tab saved what was typed');
 if(!more.freeLeft) fails.push('an @ the server allowed did not go back');
 if(more.freeHandle !== 'freename') fails.push('an @ the server allowed was not written down');
@@ -409,7 +445,8 @@ r.screens.forEach((s) => {
   console.log('  ' + s.n + ' (' + s.key + ')');
 });
 console.log('the screens that take typing: ' + r.screens.length + ' walked, and on each of them ' +
-            'typing wrote nothing, the Save appeared, back asked, No kept nothing, Yes wrote it');
+            'the Save stood there grey, typing wrote nothing and turned it gold, putting the typing ' +
+            'back turned it grey again, back asked, No kept nothing, Yes wrote it');
 console.log('the left-edge swipe: same question, same road (back())');
 console.log('the keyboard: ' + more.kbSavesWhileTyping + ' writes while typing, ' +
             more.kbStepsWhileTyping + ' steps stacked, ' + more.kbSavesOnSave + ' write on save');
