@@ -3889,7 +3889,14 @@ for.
   label somebody writes is kept as typed and never translated. The whole family
   is shown from every word in it, not only from the parent. Every label we
   supply carries a small circled `?` beside the word itself, and it says one
-  line and one example as a pop rather than opening a page.
+  line and one example rather than opening a page.
+
+  **「ポップとして」の一語は superseded 2026-09-01。**この日の決定が、この
+  app の三つを名前で分けた ── 問いは `popAsk()`、言い切りは `toast()`、
+  打ち込みは `openForm()`、そして四つ目は作らない。？が出すのは一行の
+  言い切りなので `toast()` です（`fmSay()`、`www/wordsheet.js`）。
+  2026-08-20 の対比は「ページを開くのではなく」であって、そちらは今も
+  そのとおり。
 - Reason: 「tirorがウォッチャーになるのって何系の派生？」「活用と派生も好きに保存
   できたらいいよね」「保存した瞬間そっちの単語でも活用とか見れる」「これ全部横に？
   つけてどういう役割なのかたとえば英語とか言語で説明できるようにして」「⭕️？にして
