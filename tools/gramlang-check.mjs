@@ -100,7 +100,7 @@ const LA_PHASES = { done: { greet: true }, notes: { neg: 'a note' },
 
    In storage rather than on the globals, because this file reloads the page
    between claims and a session in memory does not survive that. `rt` is what
-   netSignedIn() reads and `anon:false` is what netMember() reads; the token is
+   netSignedIn() reads; `anon:false` is what an old phone may not carry. The token is
    the same shape tools/fixture.mjs builds. */
 const SESSION = JSON.stringify({
   at: 'h.' + Buffer.from(JSON.stringify({ sub:'u', email:'aya@example.com',

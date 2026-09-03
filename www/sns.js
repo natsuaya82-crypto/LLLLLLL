@@ -1185,7 +1185,7 @@ function snsSameWords(a, b){
    an answer. Without that, writing the answer down calls render(), which
    draws the screen, which asks again.
 
-   `netMember()` is asked HERE and not left to net.js. netSearchSaved()
+   `netSignedIn()` is asked HERE and not left to net.js. netSearchSaved()
    answers `ok([])` when there is no member -- an empty list that means
    "nobody asked", not "this person keeps nothing" -- and writing that over
    the copy would erase somebody's list on a launch that had not signed in
@@ -1237,7 +1237,7 @@ function snsSavedPush(add, done){
 }
 function snsSavedPull(){
   if(snsSavedAsk || snsSavedGot) return;
-  if(!netMember()) return;
+  if(!netSignedIn()) return;
   snsSavedAsk=true;
   netSearchSaved(function(rows){
     snsSavedAsk=false; snsSavedGot=true;

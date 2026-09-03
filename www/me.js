@@ -375,7 +375,7 @@ function meHandleSee(){
   var h=ME.handle;
   if(h===ME_HD0) return;                           /* 変えていない */
   if(h.length<2 || h.length>24){ meHandleNo(t('net.badhandle')); return; }
-  if(typeof netMember!=='function' || !netMember()) return;   /* 訊く先が無い */
+  if(typeof netSignedIn!=='function' || !netSignedIn()) return;   /* 訊く先が無い */
   netHandleFree(h, function(free){
     if(!free) meHandleNo(t('net.handle.taken'));
   }, function(){});                                /* 訊けなかった: 断らない */

@@ -175,7 +175,7 @@ function setSummary(id, p){
   if(id==='look')  return t('theme.'+(SET.theme||'system'));
   if(id==='ui')    return LANG[uiLang()].label;
   if(id==='lang')  return langName||'—';
-  if(id==='acct')  return t(netMember()? 'set.account.on' : 'set.account.guest');
+  if(id==='acct')  return t(netSignedIn()? 'set.account.on' : 'set.account.guest');
   if(id==='data')  return can('data')? 'CSV' : 'Free';
   return '';
 }
@@ -262,7 +262,7 @@ function vSet(){
   } else if(id==='acct'){
     /* Signed in or not, and the way in or out. It said "guest" and offered two
        buttons that did nothing whatever the answer was. */
-    body=(netMember()
+    body=(netSignedIn()
       ? setWhoRow()+
         /* Only an account that HAS a password. Apple and Google keep theirs;
            there is nothing on our side to change, and a row that opened a

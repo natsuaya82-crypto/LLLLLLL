@@ -265,7 +265,7 @@ const R = await pg.evaluate(() => {
      SESS is written in exactly one place -- netTook() -- so what a session
      is, is whatever that function accepts. It accepted a reply carrying an
      access token and NO refresh token, and then three things that all read
-     `rt` disagreed with it: netSignedIn() said no, netMember() said no, and
+     `rt` disagreed with it: netSignedIn() said no, and
      netRead() dropped the stored session at the next launch. The app had
      already said 「ログインしました」 and gone to fetch the profile.
 

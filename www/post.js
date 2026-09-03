@@ -513,7 +513,7 @@ function draftDropGo(i){
    written in a tunnel is on this phone and nowhere else, and the phone is not
    where it lives. */
 function draftsPull(){
-  if(!netMember()) return;
+  if(!netSignedIn()) return;
   netDrafts(function(rows){
     var i, k, r, b, d, seen={}, got=0;
     for(i=0;i<(rows||[]).length;i++){
