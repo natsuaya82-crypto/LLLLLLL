@@ -218,6 +218,32 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### 買うボタンを消したところには、今のプランと期限を出す
+- Date: 2026-09-03
+- Area: プランの画面
+- Decision:
+
+  ```
+  消すなら同じ場所に現在このプランです〇〇/〇〇までみたいな感じにしないと
+  わからんやろ
+  ```
+
+  今のプランと同じか、それより下の段が選ばれているとき、買うボタンは出ない
+  （2026-09-03 の「そもそもプロなら課金自体ボタン押させないでいいでしょ」）。
+  **その空いた場所に、今そのプランであることと、いつまでかを出す。**
+  ボタンが消えるだけで何も出ないと、押すものが無い理由が画面から読めない。
+- Reason: オーナーの言葉のまま上に。**説明文の禁止には当たらない** ── これは
+  「アプリが何かを取り去った状態に、原因と出口が無い」場合に最低限の一文を
+  書く、という 2026-08-22 の narrowing そのもの。凍結の画面と同じ形。
+- Affected features: プランの画面（`vPlans`、`www/settings.js`）
+- Affected data: **増える。**契約の期限。今は端末のどこにも無い ──
+  `LinguaStore.swift` の `current` は `["plan": ...]` しか返していない。
+  StoreKit の契約が持っているので、ネイティブ側から出すところから
+- Affected docs: この項、docs/CHANGELOG.md、docs/DATA_MODEL.md
+- Implementation status: **未実装。**`claude/plannow` に渡した（2026-09-03）。
+  **`claude/rc` が同じ `LinguaStore.swift` を RevenueCat へ書き換えている** ──
+  あちらは公開キー待ちで止まっているので、master が先に進み、rc が取り込む
+
 ### 検索の履歴は直近5件。人の丸い列は作らない。一件ずつ消せる
 - Date: 2026-09-03
 - Area: 検索の画面
