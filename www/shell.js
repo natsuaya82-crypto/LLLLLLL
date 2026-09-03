@@ -369,9 +369,7 @@ var route='profile';
    This used to ask about the session FIRST, and it cost the app its own front
    door. A new phone is not signed in, so it was answered 'door' on line one
    and never reached line two -- **the onboarding could not be got to at all,
-   on a phone that had never been used.** Deleting the account did not bring
-   it back either: wipeHere() puts SET.done to false and then calls netOut(),
-   so it landed in the same place. 「アカウント削除で新品に戻る」 did not.
+   on a phone that had never been used.**
 
    What was missing is that NOT SIGNED IN IS TWO DIFFERENT PEOPLE, and only
    one of them belongs at the door:
@@ -518,7 +516,8 @@ function pageName(r, a){
      Both keys are already written in all ten languages: they are the words
      under the two numbers on a profile, which is where this screen is
      reached from. Nothing new is added. */
-  if(r==='follows') return t(a==='ers'? 'me.followers' : 'me.following');
+  if(r==='follows')
+    return t(String(a||'').split(':')[0]==='ers'? 'me.followers' : 'me.following');
   /* Somebody else's language names itself, the way a letter and a stage above
      do. Its own name until the answer lands, and the screen's name until then. */
   if(r==='about' && a){

@@ -378,6 +378,30 @@ const r = await pg.evaluate(({ s }) => {
   plBuy();
   out.upPlan = plan();
   window.storeBuy = realBuy;
+
+  /* AND THE BUTTON IS NOT THERE AT ALL FOR SOMETHING ALREADY PAID FOR.
+     「そもそもプロなら課金自体ボタン押させないでいいでしょ」 OWNER 2026-09-03.
+     Refusing the press was half of it: a button that exists in order to say
+     no is still a button. What is left for somebody on the top rung is
+     restore and Apple's own sheet, which are the two rows under it. */
+  window.route = 'plans'; NAV = [{ r:'plans' }];
+  SET.plan = 'pro'; save();
+  PLPICK = { id:'plus', yr:false };
+  out.buyOnHeld = vPlans().indexOf('plbuy') !== -1;
+  PLPICK = { id:'pro', yr:false };
+  out.buyOnSame = vPlans().indexOf('plbuy') !== -1;
+  SET.plan = 'plus'; save();
+  PLPICK = { id:'pro', yr:false };
+  out.buyOnUp = vPlans().indexOf('plbuy') !== -1;
+  SET.plan = 'free'; save();
+  PLPICK = { id:'plus', yr:false };
+  out.buyOnFree = vPlans().indexOf('plbuy') !== -1;
+  /* and the two rows that are not a purchase are still there for them */
+  SET.plan = 'pro'; save();
+  var held = vPlans();
+  out.heldRestore = held.indexOf('storeRestore') !== -1;
+  out.heldManage  = held.indexOf('storeManage') !== -1;
+
   PLPICK = null;
   SET.plan = 'free'; save();
 
@@ -678,6 +702,10 @@ const r = await pg.evaluate(({ s }) => {
 const st = await pg.evaluate(async () => {
   var out = {};
   window.Capacitor = { nativePromise: function(plug, m){
+    /* What this Apple ID holds, which the screen now waits for before it
+       draws anything (2026-09-03). Answered `free` so the rest of this block
+       is about prices, which is what it is about. */
+    if (m === 'current') return Promise.resolve({ plan: 'free' });
     if (m !== 'products') return Promise.reject(new Error('not this one'));
     return Promise.resolve({ products: [
       /* `year` is twelve of the monthly one, formatted by the App Store and
@@ -698,8 +726,10 @@ const st = await pg.evaluate(async () => {
     ] });
   } };
   STORE_P = null; STORE_ASK = false;
+  STORE_CUR = false; STORE_GOT = false;
 
-  out.before = vPlans();                       /* asks, and draws meanwhile */
+  out.before = vPlans();                       /* asks, and waits meanwhile */
+  await new Promise(function(r){ setTimeout(r, 0); });
   await new Promise(function(r){ setTimeout(r, 0); });
   out.asked = STORE_ASK && STORE_P !== null;
   var again = vPlans();
@@ -1149,6 +1179,15 @@ say(r.dblAsked, 'and it says so rather than doing nothing');
 say(r.dblSameBought === '', 'nor is the plan already in force (' +
     (r.dblSameBought || 'nothing asked for') + ')');
 say(r.upPlan === 'pro', 'and going UP still goes through (' + r.upPlan + ')');
+say(!r.buyOnHeld && !r.buyOnSame,
+    'and the button is not drawn at all for a rung already paid for ' +
+    '(below: ' + (r.buyOnHeld ? 'drawn' : 'gone') +
+    ', same: ' + (r.buyOnSame ? 'drawn' : 'gone') + ')');
+say(r.buyOnUp && r.buyOnFree,
+    'while going UP, and buying anything on free, still has one (' +
+    (r.buyOnUp ? 'up' : 'no up') + ', ' + (r.buyOnFree ? 'free' : 'no free') + ')');
+say(r.heldRestore && r.heldManage,
+    'and somebody on the top rung still has restore and Apple\'s own sheet');
 
 say(r.bdgRowPro !== '' && r.bdgRowFree === '',
     'the price list still marks the Pro row, read on free -- a plan carrying it is not the same question');
@@ -1242,8 +1281,18 @@ say(r.tookStillRaises === 'pro',
     'while an answer ABOVE what is held is still taken (' + r.tookStillRaises + ')');
 
 say(st.asked && st.twice, 'the App Store is asked once and remembered');
-say(st.before.indexOf('$4.99') !== -1,
-    'the screen is drawn before it answers, out of www/i18n');
+/* THE SCREEN WAITS INSTEAD OF DRAWING A PRICE LIST IT WILL CORRECT.
+   「ローディングすればそんなの起きないだろ」 OWNER 2026-09-03.
+
+   It used to draw immediately with the typed prices out of www/i18n and
+   redraw when Apple answered, and that claim was here. It is gone with the
+   thing it described: the screen has to ask Apple what this Apple ID HOLDS
+   before it can draw the plan at all -- a copy that is behind shows somebody
+   on Pro a live 「buy Plus」 button -- and both answers come from the same
+   round trip. So there is one wait and then the real screen, rather than a
+   moment of dollars nobody is being charged. */
+say(st.before.indexOf('$4.99') === -1,
+    'the screen waits rather than drawing prices out of www/i18n first');
 say(st.after.indexOf('\u00a5750') !== -1 && st.after.indexOf('$4.99') === -1,
     'and redrawn with what Apple charges in that country, not what we typed');
 say(st.plusMo === '\u00a5750' && st.plusYr === '\u00a56,000',

@@ -1373,7 +1373,7 @@ html.fitlock, html.fitlock body{height:100%;overflow:hidden;overscroll-behavior:
 .ltsay .phkd{pointer-events:none}
 .ltc:active{border-color:var(--goldln)}
 .ltcf{height:38px;display:flex;align-items:center;justify-content:center}
-.ltc canvas.tc{width:38px;height:38px;display:block}
+.ltc canvas.tc,.ltc canvas.tcx{width:38px;height:38px;display:block}
 .ltc .bch{font-size:1.6rem;line-height:1}
 .ltc .nol{color:var(--txm);display:inline-flex}
 .ltcn{display:block;font-family:var(--face-caps);font-size:.95rem;color:var(--txs);
@@ -1801,6 +1801,21 @@ a.set{text-decoration:none}
    one class cannot beat two. */
 .btn.plterm{border:1px solid var(--line);border-radius:12px;padding:10px 6px}
 .btn.plterm:active{border-color:var(--gold)}
+/* AND THE ONE THAT BUYS, for the same reason and by the same decision.
+   「購入のボタンも角丸でいいから、プラン選択した後に金に光るようにして欲しい。
+   じゃないとボタン押すのかどうかわからん」OWNER 2026-09-03.
+
+   It was `.btn` alone -- border:none, background:none -- so the last thing on
+   this page was a line of text that gave no sign it could be pressed. The
+   term buttons above are the pattern and this is the same sentence about the
+   press after them: chosen, then bought.
+
+   `.on` is the term buttons' own word for 「this is the one chosen」, worn
+   here the moment a plan is picked. Rule 18 and tools/box-baseline.txt hold
+   this to these two places; nothing else may take it as permission. */
+.btn.plbuy{border:1px solid var(--line);border-radius:12px;padding:13px 12px}
+.btn.plbuy.on{border-color:var(--gold);background:var(--goldsf);color:var(--gold)}
+.btn.plbuy:active{opacity:.82}
 /* 「4.99/月は一列にしろ」OWNER 2026-08-26. The amount and the term were two
    blocks, so every price stood two lines high and the term read as a caption
    under it rather than as part of the price. The saving stays on its own
@@ -2146,7 +2161,7 @@ a.set{text-decoration:none}
 .abtlt{grid-template-columns:repeat(auto-fill,minmax(50px,1fr));gap:8px;margin-top:12px}
 .abtlt .ltc{min-height:58px;padding:6px 2px 5px;gap:3px}
 .abtlt .ltcf{height:26px}
-.abtlt .ltc canvas.tc{width:26px;height:26px}
+.abtlt .ltc canvas.tc,.abtlt .ltc canvas.tcx{width:26px;height:26px}
 .abtlt .ltcn{font-size:.72rem}
 .abtlt .ltcr{display:none}
 /* What this language is for: five rows, not five panels. One line for the

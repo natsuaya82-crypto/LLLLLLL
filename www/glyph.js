@@ -2697,6 +2697,22 @@ function render(){
   app.setAttribute('data-fresh', same ? '0' : '1');
   app.innerHTML=v;
   window.scrollTo(0, y);
+  renderMount();
+}
+/* EVERYTHING THAT HAS TO HAPPEN AFTER THE HTML IS ON THE PAGE, in one place.
+   A canvas has to be filled and sized once it exists, a line field has to be
+   made as tall as what is in it, and a thing that can be held has to be
+   found: none of that can be said in markup, so all of it runs here.
+
+   It is a function rather than the tail of render() because render() is not
+   the only thing that puts HTML in `#app`. tools/shot.mjs photographs a face
+   of tools/fixture.mjs by calling render() and THEN replacing `#app` with the
+   html the face returned -- so every one of these had run against the page
+   that was there a moment before, and every canvas in every one of those
+   pictures was blank. Nothing threw; the letter was simply not in the
+   photograph, which is the one place a person looks. */
+function renderMount(){
+  var app=document.getElementById('app');
   /* the canvases have to be filled after the HTML exists, and sized in device
      pixels, which is something no markup can say */
   if(route==='glyph'){ geMount(); geHintMount(); }
@@ -2707,6 +2723,9 @@ function render(){
      instead, which is the same fix the onboarding's canvas got above: they
      find nothing and do nothing on a screen that has none. */
   geTiles(); phkMount(); postFaces(); postLines(); pwHoldMount(); numWidMount();
+  /* and somebody else's alphabet, whose letters are not in LETTERS to be
+     looked up -- www/home.js hands the shapes over instead */
+  abInkMount();
   /* and a line field is made as tall as what is in it, which no markup can
      say -- the same reason the canvases are sized here */
   lnGrowAll();

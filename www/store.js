@@ -113,12 +113,15 @@ function storeBuy(id){
          The rung itself is untouched: storeTook() still takes the better of
          the two and nothing here lowers anything. What changes is the words.
 
-         The two come apart whenever a better entitlement is already live, and
-         today that is not a corner -- Plus and Pro are in two subscription
-         groups in App Store Connect, so both run and both are charged.
-         docs/apple.md § 4 says one group; that is App Store Connect work and
-         cannot be done in the app. It is in docs/STATE.md § オーナーの側に
-         残っているもの.
+         The two come apart whenever a better entitlement is already live,
+         and one subscription group does not close that -- it is the ordinary
+         shape of a DOWNGRADE. Plus and Pro are in one group with the levels
+         split (OWNER 2026-09-03: 「グループ1個でレベルも分かれてた」), so
+         pressing Plus while Pro is running is Apple deferring the change to
+         the end of the paid period: the person keeps Pro until then, which
+         is what they paid for and what `currentEntitlements` says. The plan
+         on the screen is Pro and is right. The sentence after the press is
+         about the press.
 
          `got` and never plan() for the fallback: a phone carrying a native
          side older than this answers no `bought` at all, and the ANSWER is
@@ -284,6 +287,36 @@ function storeRow(id){
    and the timer are two different things, and whichever of them happens first
    does not silence the other. What DOES silence an ask is a newer one --
    STORE_N. */
+/* WHAT THIS APPLE ID ACTUALLY HOLDS, asked once when the plans screen opens.
+   「ローディングすればそんなの起きないだろ」 OWNER 2026-09-03.
+
+   Nothing called `current` before, so the screen drew the plan out of the
+   copy in the Keychain -- written the last time anything answered. On a phone
+   where that copy is behind, somebody on Pro was shown a live 「buy Plus」
+   button and Apple took the press as a downgrade.
+   「そもそもプロの人が買えるのが意味わからないだろ」 OWNER 2026-09-03.
+
+   Asking is not enough on its own: the answer is a moment later, and drawing
+   from the stale copy in that moment is the same bug in a smaller window.
+   So the screen WAITS -- the same answer the owner gave about a language
+   arriving after a sign-in, and the same mark drawn for it.
+
+   One call per visit, the latch storeAsk() already uses. `storeTook()` writes
+   what came back, which is where the plan is taken from every other road. */
+var STORE_CUR=false;   /* asked this visit */
+var STORE_GOT=false;   /* and the answer is in */
+function storeHeld(){ return !storeOn() || STORE_GOT; }
+function storeCurAsk(){
+  var np=storePlug();
+  if(!np || STORE_CUR) return;
+  STORE_CUR=true;
+  np('LinguaStore', 'current', {})
+    .then(function(r){ STORE_GOT=true; storeTook(r); storeDrew(); })
+    /* An answer that never came is not 「this person owns nothing」. The
+       screen stops waiting and draws what the phone holds, which is what it
+       drew before any of this. */
+    ['catch'](function(){ STORE_GOT=true; storeDrew(); });
+}
 function storeAsk(){
   var np=storePlug(), n, got=false;
   if(!np || STORE_ASK) return;

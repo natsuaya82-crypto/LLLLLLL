@@ -324,19 +324,45 @@ function bkTakeGen(gens){
    make that button a lie, because they are the copy that survives the app
    itself.
 
-   `dropAll` and not `dropKept`: the backups were the only folder being
-   emptied, and the recordings and the PDF sheets sat in Documents beside them
-   where the Files app shows them. 「アカウント削除で残るものねえ」OWNER
-   2026-08-27 -- a recording still there is that sentence being untrue
-   somewhere the person can look. `dropKept` is still the backups alone and is
-   still what a language being replaced would use.
+   `dropSome` and not `dropAll`, and that is 2026-09-03. `dropAll` empties the
+   whole directory, so deleting a second account carried off the FIRST
+   account's backups -- the only copy of a language that had never gone up.
+   This names the languages going and takes their generations and nothing
+   else. 「別アカウントでログインしてそれのアカウント削除したら、俺の元の
+   アカウントが消えてんだよ」
+
+   **AND THE RECORDINGS AND THE EXPORTED SHEETS ARE NO LONGER TAKEN, WHICH IS
+   A GAP AND IS WRITTEN DOWN RATHER THAN LEFT.** `dropAll` emptied those two
+   folders too, and 「アカウント削除で残るものねえ」 OWNER 2026-08-27 covers
+   them: a recording still there is that sentence being untrue somewhere the
+   person can look. They carry no account and no language in their names, so
+   there is no way from here to take one account's and leave another's --
+   and taking all of them is the fault above wearing a different folder.
+   Not taking them leaves files a person can delete in the Files app; taking
+   them destroys somebody else's. docs/BACKLOG.md holds it.
 
    No native side means nothing to remove, which is a browser and every check
    under tools/. */
-function bkDropAll(then){
-  var p=sharePlug();
-  if(!p){ if(then) then(); return; }
-  p('LinguaShare', 'dropAll', {})
+/* The backups of the languages named, and nobody else's.
+   「別アカウントでログインしてそれのアカウント削除したら、俺の元のアカウントが
+   消えてんだよ」 OWNER 2026-09-03. bkDropAll() below empties the directory,
+   and account deletion called it -- so a second account leaving took the
+   first account's backup files with it, and the phone was the only other copy
+   of a language that had never gone up. */
+function bkDropFor(ids, then){
+  var p=sharePlug(), names=[], i, was=langId, wasNm=langName;
+  if(!p || !ids || !ids.length){ if(then) then(); return; }
+  for(i=0;i<ids.length;i++){
+    /* bkName() reads the OPEN language, so each one is stood in front of it
+       for the length of one call. It is the one place a file's name is
+       decided, and working the name out again here is how the two come
+       apart. */
+    langId=ids[i];
+    langName=(LANGS[ids[i]] && LANGS[ids[i]].name) || '';
+    names.push(bkName());
+  }
+  langId=was; langName=wasNm;
+  p('LinguaShare', 'dropSome', {names:names})
     .then(function(){ if(then) then(); })
     ['catch'](function(){ if(then) then(); });
 }
@@ -347,13 +373,11 @@ function bkDropAll(then){
    shows them, and leaving them there is that row being untrue somewhere a
    person can look.
 
-   `dropKept` and not `dropAll`, and the difference is the whole reason this
-   function exists rather than the one above being reused. `dropAll` empties
-   all three folders -- the recordings and the exported sheets with the
-   backups -- and that is the ACCOUNT going. Nobody has said a recording goes
-   when somebody tidies this phone's languages, so it does not. `dropKept` is
-   the Swift side's own line: `.json` under Languages/, generations included,
-   and it does not touch Documents itself.
+   `dropKept` and not `dropSome`: this one is every backup on the phone at
+   once, which is what 「バックアップを全部消す」 asks for, where the one above
+   takes the generations of named languages. `dropKept` is the Swift side's own
+   line: `.json` under Languages/, generations included, and it does not touch
+   Documents itself.
 
    Two callers now, and they are the two rows that take something away. Neither
    of them knows which native call it is making -- that sentence is written

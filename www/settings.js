@@ -497,11 +497,29 @@ function wipeAll(){
      OWNER 2026-09-01 -- confirm() は使わない。はいの側がこの下。 */
   popAsk(t('confirm.wipe'), function(){ wipeAllGo(); }, t('pop.yes'));
 }
+/* WHOSE ACCOUNT IS GOING IS DECIDED HERE, AT THE PRESS, and carried down.
+   netEndMe() in www/net.js calls netOut() the moment the server says the row
+   is gone -- correctly, the token proves who is being deleted and it is spent
+   -- and only then calls this back. So wipeHere() read SESS a moment after
+   there was no SESS, took '' for the uid, and removed NOTHING AT ALL: the
+   account went on the server and every byte of it stayed on the phone. The
+   opposite failure to 2026-09-03's, out of the same line, and it only
+   happened on the road where the server SAID YES.
+
+   Not a `netOut()` moved to the other side of the callback: what is wanted
+   is who was signed in when the button was pressed, and reading it here says
+   that in the one place that knows it. The two arms both get it, so the road
+   where the server could not be reached wipes the same account as the road
+   where it could. `bad` is handed (data, status, message) by netSend(), so it
+   is wrapped rather than passed bare -- a status object arriving where a uid
+   is expected is exactly this bug wearing another hat. */
 function wipeAllGo(){
-  if(netSignedIn()) netDropMe(wipeHere, wipeHere);
-  else wipeHere();
+  var uid=(typeof SESS!=='undefined' && SESS && SESS.uid)? String(SESS.uid) : '';
+  if(netSignedIn())
+    netDropMe(function(){ wipeHere(uid); }, function(){ wipeHere(uid); });
+  else wipeHere(uid);
 }
-function wipeHere(){
+function wipeHere(uid){
   /* Everything under this app's name, counted rather than listed.
      「アカウント削除で残るものねえって言ってんだろ何回言わせんだよ全部消えんだよ。」
      OWNER 2026-08-27.
@@ -517,8 +535,30 @@ function wipeHere(){
      written back by the saves below -- keeping the old id was how
      lingua.langs surviving turned into the old language's letters being
      rebuilt under it. */
-  lsWipeNS();
-  LANGS={}; langId='';
+  /* ONE ACCOUNT'S THINGS. NOT THE PHONE'S.
+     「別アカウントでログインしてそれのアカウント削除したら、俺の元のアカウントが
+     消えてんだよ」 OWNER 2026-09-03 -- and it did, because this emptied the
+     whole `lingua.` namespace and the whole backup directory. The server was
+     right: account_delete() removes the row of whoever is signed in and
+     nothing else. The phone destroyed the rest, including the only copy of a
+     language that had never gone up.
+
+     「アカウント削除で残るものねえ」 was said on 2026-08-27 about a phone that
+     held one account, and there was no other reading of it then. There is
+     now, and it is the only one: **everything belongs to an account**
+     (CLAUDE.md § Online, 2026-09-03), so deleting an account deletes that
+     account's things and touches nothing else. Nothing of theirs is left --
+     which is what the sentence asked for -- and nothing of anybody else's
+     goes with it.
+
+     There is no second branch. A phone that has only ever had one account
+     loses everything anyway, because everything on it is that account's.
+     Writing 「and if nobody else is here, wipe the lot」 was a first draft and
+     it is two behaviours where the rule has one. */
+  var wipeUid=String(uid||
+    ((typeof SESS!=='undefined' && SESS && SESS.uid)? SESS.uid : ''));
+  var wipeIds=lsWipeAcct(wipeUid);
+  langId='';
   langFirst();
   langRead(); ltRead(); ntRead(); stRead(); sndRead();
   /* Whom this phone belonged to, what it was carrying, and what had been
@@ -537,7 +577,19 @@ function wipeHere(){
      cancelling a subscription, and Apple has not been told anything. Money
      decides what may be DONE and nothing about what exists -- here nothing
      exists either way, so it protects nothing and costs nothing. */
-  SET=setDefaults();
+  /* The fields of SET that were this account's, gone with it -- the plan, the
+     searches they starred, how far down their notices they had read. setFor()
+     in www/core.js is the list and the one place it is written down. The
+     theme and the interface language are how this handset is set up and are
+     not anybody's belongings, so they stay.
+
+     '' rather than a uid: nobody is signed in a line below, and this is the
+     same call netOut() makes. */
+  try{ localStorage.removeItem(setParkKey(wipeUid)); }catch(e){}
+  setFor('');
+  SET.plan='free'; SET.planWas='free';
+  delete SET.planUid; delete SET.planPend; delete SET.saved;
+  delete SET.savedUp; delete SET.notAt;
   /* AND IT OPENS ON THE DOOR, not on the walk. 「アカウント削除した後
      オンボーディングから始まるのはなぜ？」 OWNER 2026-09-03.
 
@@ -564,7 +616,12 @@ function wipeHere(){
   /* And the copies in Documents, which are the ones that outlive the app.
      Last, and after the save above rather than before it: a save writes a
      fresh backup out, so dropping the files first would leave one behind. */
-  bkDropAll();
+  /* AND THE BACKUP FILES OF THOSE LANGUAGES, AND NO OTHERS. bkDropAll()
+     empties the directory, and it is the other half of what took the owner's
+     language on 2026-09-03: a second account leaving carried off the first
+     one's files. It is still there for a language being deleted on its own;
+     nothing here calls it. */
+  bkDropFor(wipeIds);
   /* and where you were standing is nowhere now */
   viewReset();
   ob={step:0, name:'', mode:'draw', pick:'', strokes:null, ch:'', lid:''};
@@ -706,14 +763,26 @@ function plPicked(id, yr){ return !!(PLPICK && PLPICK.id===id && PLPICK.yr===!!y
    it is instead is a change to a subscription that exists, and that is
    Apple's own sheet (storeManage) 「サブスクリプションは、サブスクライブに
    使用したプラットフォームを通じて管理してください」. */
-function plBuy(){
-  var now, i, j;
-  if(!PLPICK) return;
-  now=plan();
-  i=PLAN_ORDER.indexOf(now);
+/* Whether what is picked is already paid for -- the plan in force, or one
+   below it on the ladder. plBuy()'s own test, asked before the button is
+   drawn instead of after it is pressed. Nothing picked is not 「held」: the
+   button is drawn disabled then, which is what it has always been. */
+function plHave(){
+  var i, j;
+  if(!PLPICK) return false;
+  if(plan()==='free') return false;
+  i=PLAN_ORDER.indexOf(plan());
   j=PLAN_ORDER.indexOf(PLPICK.id);
-  if(now!=='free' && j>=0 && i>=0 && j<=i){
-    popAsk(t('plan.already', planName(now)), function(){ storeManage(); },
+  return j>=0 && i>=0 && j<=i;
+}
+function plBuy(){
+  if(!PLPICK) return;
+  /* plHave() and not the comparison written out again: the button above is
+     drawn from it and this is the same question. Two copies is the one thing
+     this repo has been bitten by most -- the day one of them changes, the
+     other goes on answering the old way and nothing says so. */
+  if(plHave()){
+    popAsk(t('plan.already', planName(plan())), function(){ storeManage(); },
       t('plan.cancel'));
     return;
   }
@@ -804,6 +873,22 @@ function vPlans(){
      typed prices are what is on screen for that moment and the App Store's
      are what is on screen after it. */
   storeAsk();
+  /* AND WHAT THIS APPLE ID ALREADY HOLDS, which nothing had ever asked --
+     the screen drew the plan out of the copy in the Keychain, and a copy that
+     is behind shows somebody on Pro a live 「buy Plus」 button.
+     「そもそもプロの人が買えるのが意味わからないだろ」 OWNER 2026-09-03.
+
+     THE SCREEN WAITS FOR IT. 「ローディングすればそんなの起きないだろ」 OWNER
+     2026-09-03 -- the same answer given about a language arriving after a
+     sign-in, and the same mark. Nothing is drawn from the stale copy, so
+     there is no moment in which the stale copy decides anything.
+
+     In a browser there is no App Store to ask, so storeHeld() is true from
+     the first line and this screen is exactly what it was. */
+  storeCurAsk();
+  if(!storeHeld())
+    return '<div class="view plans">'+navTop('')+
+      '<div class="body">'+snsWaitHTML()+'</div></div>';
   return '<div class="view plans">'+
     navTop('')+
     /* The picture, and it is this phone's own keyboard wearing the letters
@@ -845,11 +930,23 @@ function vPlans(){
        is still out. No new class and no rounded box -- `.note` is what a state
        is drawn in on twenty other screens, and it is inside the .plgo that is
        already here rather than a second one of its own. */
+    /* AND THE BUTTON IS NOT THERE FOR SOMETHING ALREADY PAID FOR.
+       「そもそもプロなら課金自体ボタン押させないでいいでしょ」 OWNER
+       2026-09-03. plBuy() has refused the press since 2026-09-02; a button
+       that exists in order to say no is a button. What is left on this screen
+       for somebody on the top rung is the two rows below -- restore, and
+       Apple's own sheet, which is where a subscription is changed.
+
+       This is not 「a button that is not there」 in the sense of 2026-08-25
+       (「そのプランでできることできないことで UI 自体に変更がない方が
+       良くない？」): that is about a locked feature elsewhere, whose press is
+       the way TO this screen. Here there is nowhere to send anybody. */
     '<div class="plgo">'+
       (storeSay()? '<div class="note">'+esc(storeSay())+'</div>' : '')+
-      '<button class="btn plbuy"' + DO('plBuy') +
-      (PLPICK? '' : ' disabled')+' style="width:100%">'+
-      esc(t('plan.buy'))+'</button></div>'+
+      (plHave()? '' :
+        '<button class="btn plbuy'+(PLPICK? ' on' : '')+'"' + DO('plBuy') +
+        (PLPICK? '' : ' disabled')+' style="width:100%">'+
+        esc(t('plan.buy'))+'</button>')+'</div>'+
     '<div class="plfoot"><button class="btn ghost" style="width:100%"' +
       DO('storeRestore') + '>'+esc(t('plan.restore'))+'</button></div>'+
     /* AT THE FOOT, AND UNDER THE BAR OF TABS. 「一番下に置いて欲しい。

@@ -52,6 +52,44 @@ var LS_LANGS='lingua.langs', LS_CUR='lingua.cur', LS_S='lingua.set';
 
    Two passes, because removeItem() renumbers the keys under localStorage.key()
    and a single loop skips every second one. */
+/* ONE ACCOUNT'S THINGS, and nothing else's.
+   「別アカウントでログインしてそれのアカウント削除したら、俺の元のアカウントが
+   消えてんだよ」 OWNER 2026-09-03.
+
+   Deleting an account emptied the whole `lingua.` namespace and the whole
+   backup directory, and that was RIGHT when it was written on 2026-08-27,
+   when a phone held one account and 「アカウント削除で残るものねえ」 had no
+   other reading. Then everything became the ACCOUNT's -- the plan, the
+   languages, the posts, the settings -- and nothing went back to read the one
+   function that erases. The app's meaning moved and the deletion's did not.
+
+   Returns the language ids it took,
+   so the caller can drop those backups and no others. */
+function lsWipeAcct(uid){
+  var me=String(uid||''), ids=[], doomed=[], id, i, k, j;
+  for(id in LANGS)
+    if(Object.prototype.hasOwnProperty.call(LANGS, id) && LANGS[id] &&
+       String(LANGS[id].uid||'')===me) ids.push(id);
+  for(i=0;i<ids.length;i++){
+    for(j=0;j<SLICES.length;j++) doomed.push(langKeyOf(ids[i], SLICES[j]));
+    delete LANGS[ids[i]];
+  }
+  /* and every other key this account put its name on */
+  try{
+    for(i=0;i<localStorage.length;i++){
+      k=localStorage.key(i);
+      if(!k) continue;
+      if((k.indexOf('lingua.me.')===0 || k.indexOf('lingua.posts.')===0 ||
+          k.indexOf('lingua.drafts.')===0) && k.slice(k.lastIndexOf('.')+1)===me)
+        doomed.push(k);
+    }
+  }catch(e){}
+  /* the live copies, which are this account's while it is signed in */
+  doomed.push('lingua.me'); doomed.push('lingua.posts'); doomed.push('lingua.drafts');
+  try{ for(i=0;i<doomed.length;i++) localStorage.removeItem(doomed[i]); }catch(e){}
+  langStore();
+  return ids;
+}
 function lsWipeNS(){
   var doomed=[], i, k;
   try{
@@ -836,36 +874,26 @@ function langOwned(id){
   if(!L) return false;
   me=(typeof SESS!=='undefined' && SESS && SESS.uid)? String(SESS.uid) : '';
   if(!me) return true;
-  /* AN UNSTAMPED LANGUAGE BELONGS TO THIS PERSON UNLESS SOMEBODY ELSE HAS
-     BEEN ON THIS PHONE.
+  /* A LANGUAGE BELONGS TO THE ACCOUNT ITS STAMP NAMES, and every language has
+     one. 「アカウントごとに言語情報も違うんだって」 OWNER 2026-09-03.
 
-     This was the strict reading for one build -- 「unstamped is nobody's once
-     SET.done is true」 -- and on 2026-09-03 the owner signed into their own
-     account and their language was gone. 「しかも俺のアカウントログインしたら
-     消えてんだけど？何で？」 Nothing had been deleted: every word and every
-     letter was still in `lingua.<id>.*`. It was not being offered to the
-     person who made it.
+     Every road that makes a language stamps it --
+     langNew(), langForAcct(), langSeenAdd(), netLangsDown(), bkRestore(), and
+     langMigrate() through `mig`. langFirst() is the one that cannot, because
+     it runs before there is an account, and the door stamps what the walk
+     made on the way out.
 
-     The stamp only started going on on 2026-09-02. Every language made before
-     that carries none unless it happened to go up through netLangRow(), so
-     the strict reading is not a rule about two people sharing a phone -- it
-     is a rule that hides most of what exists today from the people who made
-     it. **Losing somebody's work outweighs the case it was closing**, and
-     docs/DATA_SAFETY.md is that sentence.
+     So the only unstamped language is one being made in the walk right now,
+     and `SET.done` is what says so -- the same question makeNeed() asks in
+     www/onboard.js. Nothing here remembers the phone: 「端末ごとにやること
+     なんてねえよ」 OWNER 2026-09-03, and a phone-shaped answer here is what
+     put one person's language in another person's list.
 
-     SET.uidWas is the last account langForAcct() saw. Never one, or the same
-     one, and an unstamped language is this person's -- which is every phone
-     that has only ever had one account on it. A different one, and it is not
-     offered: it stays in the index, in storage and in the backup, and the
-     list counts it among the ones it is not showing.
-
-     SET.uidWas is written ONCE, the first time any account arrives, and never
-     again -- see langForAcct(). That is what makes it safe: it names the
-     account whose account-less work this phone is holding, and a second
-     account is simply not it. Recording the last one instead would hand
-     everything to whoever signed in most recently, which is the fault this
-     exists to stop. */
-  if(!L.uid) return !SET.done || !SET.uidWas || String(SET.uidWas)===me;
+     An unstamped language after the door is not this person's, and it is not
+     deleted either -- it stays in the index, in
+     storage and in the backup, and www/home.js counts it among the ones it is
+     not showing. */
+  if(!L.uid) return !SET.done;
   return String(L.uid)===me;
 }
 function langAcct(id){
@@ -984,37 +1012,6 @@ function dlStop(){
 var LANG_WAIT=false;
 function langForAcct(mayMint){
   var id;
-  /* WHO THIS PHONE BELONGED TO LAST, and -- the first time anybody arrives on
-     a phone that has never had an account -- the stamp on what is already
-     here. langOwned() above has the whole of why.
-
-     Stamping is what makes this safe to be lenient about: after it, an
-     unstamped language is not a state a second account can ever meet. The
-     first arrival is the onboarding door for a phone that predates the stamp,
-     which is the one moment the decision allows something account-less to be
-     picked up. */
-  if(typeof SESS!=='undefined' && SESS && SESS.uid){
-    /* THE FIRST ACCOUNT THIS PHONE EVER HAD, and it is never overwritten.
-
-       langOwned() reads it to answer 「may this person be offered a language
-       with no account on it」. What is unstamped was made before the stamp
-       existed or before a session did, and on a phone that has only ever had
-       one account that is unambiguously theirs -- which is every phone that
-       upgrades into this, because the stamp only started going on 2026-09-02.
-
-       WRITTEN ONCE is the whole of it. Recording the LAST one instead was the
-       first shape of this and it is wrong in the one case it exists for: it
-       answers 「whoever just arrived」, so the second account on a phone was
-       handed the first one's work. Written once, the second account is simply
-       not the one it names.
-
-       And nothing is written onto a language. Stamping the unstamped at this
-       moment was the other shape tried, and acct-check 12 refused it in one
-       line: it writes an owner onto something nobody has established the
-       owner of. A read that can be revisited is not the same as a write that
-       cannot. */
-    if(!SET.uidWas){ SET.uidWas=String(SESS.uid); save(); }
-  }
   if(langAcct(langId)){ LANG_WAIT=false; return false; }
   for(id in LANGS)
     if(Object.prototype.hasOwnProperty.call(LANGS, id) && langAcct(id)){
@@ -1023,11 +1020,12 @@ function langForAcct(mayMint){
   if(!mayMint){ LANG_WAIT=true; return true; }
   LANG_WAIT=false;
   /* AND IT IS STAMPED WITH WHOEVER IT IS FOR. langMint() leaves `uid` off,
-     and langOwned() reads an entry with no uid as belonging to whoever is
-     asking -- which is right for a language somebody MADE (it is theirs, and
-     the looseness only ever refuses a new one) and wrong for this one: a
-     language minted for B because the phone held nothing of theirs would be
-     the first thing A finds when A signs back in, ahead of A's own. */
+     because it is also the onboarding's road and there is nobody to name
+     there yet. Here there is: this language is being made because the phone
+     held nothing of this account's, so it is that account's from the moment
+     it exists. Unstamped it would be nobody's the instant `SET.done` is
+     true -- the person would watch the language they were just given
+     disappear. */
   var nid=langMint();
   if(typeof SESS!=='undefined' && SESS && SESS.uid)
     LANGS[nid].uid=String(SESS.uid);
@@ -1168,13 +1166,52 @@ function planKeep(id){
    www/backup.js exists. It is also the right call on its own terms -- save()
    declines while the language on screen is somebody else's, and none of these
    three fields is anybody's language. */
-function planFor(uid){
-  var me=String(uid||''), was=String(SET.planUid||'');
-  if(!me || was===me) return false;
+/* THE FIELDS OF `SET` THAT ARE AN ACCOUNT'S AND NOT THIS HANDSET'S.
+   「端末ごとにやることなんてねえよ」「アカウントごとってずっと言ってるよな？」
+   OWNER 2026-09-03.
+
+   The theme and the interface language are how this phone is set up. These
+   six are what a PERSON has: what they pay, what the plan was last time so a
+   lapse can be noticed, a plan the server has not been told about yet, the
+   searches they starred, whether those have gone up, and how far down their
+   notices they have read. Signing in as somebody else and finding any of them
+   is finding somebody else's belongings. */
+var SET_ACCT=['plan','planWas','planPend','saved','savedUp','notAt'];
+function setParkKey(uid){ return LS_S + '.' + String(uid||''); }
+/* Parked, not cleared -- the same shape as meFor() and postFor(). Signing
+   back in brings them all to the screen again. */
+function setFor(uid){
+  var me=String(uid||''), was=String(SET.planUid||''), park, got=null, i, d;
+  if(was===me) return false;
+  if(was){
+    d={};
+    for(i=0;i<SET_ACCT.length;i++) d[SET_ACCT[i]]=SET[SET_ACCT[i]];
+    try{ localStorage.setItem(setParkKey(was), JSON.stringify(d)); }catch(e){}
+  }
+  if(me){
+    try{ park=localStorage.getItem(setParkKey(me)); }catch(e){ park=null; }
+    if(park){ try{ got=JSON.parse(park); }catch(e){ got=null; } }
+  }
+  /* Nobody was written down: what is here is this person's, the way meFor()
+     adopts an unclaimed copy. Only on the way IN. */
+  if(was){
+    for(i=0;i<SET_ACCT.length;i++){
+      if(got && got[SET_ACCT[i]]!==undefined) SET[SET_ACCT[i]]=got[SET_ACCT[i]];
+      /* Absent and not undefined: a field this account has never written is a
+         field it does not have, and setDefaults() answers for it everywhere
+         else. `plan` is named because free is a value and not an absence. */
+      else if(SET_ACCT[i]==='plan') SET.plan='free';
+      else if(SET_ACCT[i]==='planWas') SET.planWas='free';
+      else delete SET[SET_ACCT[i]];
+    }
+  }
   SET.planUid=me;
-  if(was){ SET.plan='free'; SET.planWas='free'; }
   setKeep();
   return !!was;
+}
+function planFor(uid){
+  if(!String(uid||'')) return false;
+  return setFor(uid);
 }
 /* The plans, cheapest first. The ORDER is what makes a ladder a ladder, and
    it is written down once: a level is met by the plan that names it and by

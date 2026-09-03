@@ -252,6 +252,20 @@ const R = await pg.evaluate(() => {
      to it tomorrow is walked tomorrow. */
   walkArg('photo', vPhoto, postAll().filter(x => postPics(x).length).map(x => x.id + ':0'), 'vPhoto');
 
+  /* THE TWO LISTS BEHIND THE TWO NUMBERS, and whose they are is the second
+     half of the argument. `ing` and `ers` alone are yours; `ing:<handle>` and
+     `ers:<handle>` are somebody's -- a different screen, because the rows come
+     from somewhere else and the waiting face is a face of its own. The
+     handles are the fixture's, so a person seeded tomorrow is walked
+     tomorrow, and one nobody has is walked as well: an answer that has not
+     landed is the face this screen is on for its first moment.
+     「フォロワーとかタップしても見れないし」 OWNER 2026-09-03. */
+  walkArg('follows', vFollows,
+          ['ing', 'ers'].concat(
+            meFollowing().concat(['nobody-at-all']).reduce(
+              (o, h) => o.concat(['ing:' + h, 'ers:' + h]), [])),
+          'vFollows');
+
   /* the forms, which are pages reached by opening rather than by routing */
   const forms = [
     ['openWord',      () => openWord('kano')],

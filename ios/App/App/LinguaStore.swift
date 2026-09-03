@@ -368,12 +368,13 @@ public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
           /// somebody who just pressed Plus is told they bought Pro.
           ///
           /// The two come apart whenever a better entitlement is already
-          /// live, and today that is not a corner: Plus and Pro are in two
-          /// subscription groups in App Store Connect, so both run at once and
-          /// both are charged. docs/apple.md § 4 says one group. That is the
-          /// owner's to fix in the dashboard and cannot be fixed here; what
-          /// CAN be fixed here is the app telling somebody they bought a
-          /// thing they did not press.
+          /// live, and one subscription group does not close that -- it is
+          /// what a DOWNGRADE is. Plus and Pro are in one group with the
+          /// levels split (OWNER 2026-09-03), so pressing Plus while Pro is
+          /// running has Apple defer the change to the end of the paid
+          /// period: `currentEntitlements` goes on saying Pro, correctly,
+          /// until then. `plan` is therefore Pro and is right; `bought` is
+          /// Plus and is what the person pressed.
           ///
           /// It is the signed transaction's own productID and not the request
           /// -- `verified()` above refused anything Apple has not signed --

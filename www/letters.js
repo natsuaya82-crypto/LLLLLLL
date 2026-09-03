@@ -105,9 +105,28 @@ function ltHasShape(l){ return !!(inkGeo(l) || (l && l.ch)); }
    through inkOf(), which does -- so the two halves of one question were
    giving different answers: the cell was not drawn because this said there
    was nothing, and the thing that would have drawn it knew there was. */
-function ltInk(l, none, cls){
-  if(inkGeo(l))
+/* `at` IS FOR A LETTER THAT IS NOT THE OPEN LANGUAGE'S, and it is a number:
+   where the letter stands in the list the caller is drawing. A `.tc` canvas
+   is filled by geTiles(), which asks inkOf() -> ltById() -> LETTERS -- the
+   open language -- so a canvas naming somebody else's letter id found either
+   nothing (a blank square) or, if the ids happened to collide, MY letter
+   wearing their name. 「人のwikiページ開いても文字表示されない」 OWNER
+   2026-09-03. It was the first: their alphabet was a grid of empty cells with
+   the names under them.
+
+   So the reader's canvas is not looked up at all. It is `.tcx`, and what it
+   is a picture of is the CALLER's to say -- the same sentence inkCanvases()
+   is written under, and the same shape a post's face (`.tcp`) and a sheet's
+   ring (`.shink`) already take. Rule 12: a letter is drawn from the letter.
+
+   The three decisions above it -- drawn, or a borrowed character, or nothing
+   -- stay here, because that is what this function is the one place for. */
+function ltInk(l, none, cls, at){
+  if(inkGeo(l)){
+    if(typeof at==='number')
+      return '<canvas class="tcx'+(cls? ' '+cls : '')+'" data-i="'+at+'"></canvas>';
     return '<canvas class="tc'+(cls? ' '+cls : '')+'" data-l="'+esc(l.id)+'"></canvas>';
+  }
   if(l && l.ch) return '<span class="bch">'+esc(l.ch)+'</span>';
   return none||'';
 }
