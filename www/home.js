@@ -1246,14 +1246,14 @@ function wldDlKind(r){
    is the section's own -- 「文字」「キーボード」 -- because that is what it is;
    nothing here invents a word for downloading. */
 function wldGetRow(sec, lid){
-  /* NO PLAN IS ASKED, and that is read off docs/FEATURES.md § 4 rather than
-     left out: 「Downloading a keyboard or an alphabet is free; downloading a
-     dictionary is Plus.」 The dictionary is the paid half and it cannot be
-     taken by anybody today -- `slice_read` in supabase/schema.sql refuses
-     `words` to everybody but its owner -- so the only two chapters this row
-     can ever be about are the two that decision calls free.
-     `CAN.dl` and its rung go in with the first `can('dl')`, which is the day
-     the dictionary can be taken at all (docs/FEATURES.md). */
+  /* NO PLAN IS ASKED HERE, because the press asks. wldGet() puts
+     upStop(can('dl')) and dlStop() in front of the download -- the door and
+     the ceiling -- so asking again while drawing the row would be the same
+     question in two places.
+
+     It used to say the row needed no plan because downloading letters and a
+     keyboard was free; that was 2026-08-19 and 「plusからです」 OWNER
+     2026-09-02 replaced it. `CAN.dl` is `plus` and has been since. */
   return '<button class="set"' + DO('wldGet', [String(lid||''), sec.r]) + '>'+
     '<span class="sl">'+esc(wldSecNm(sec))+'</span>'+
     '<span class="sv">'+ICON_DL+'</span></button>';

@@ -145,29 +145,34 @@ screen you would otherwise have gone to**; and explaining. The keyboard
 chapter had all four at once. 「丸パッチ無限横並び、同じページに情報量詰め込み、
 ページ遷移型にせず下からひょいって出すやつ、無駄に説明をするやつ、この辺禁止」
 
-**A FIFTH, and it takes back the narrowing of earlier the same day: THE
-SYSTEM'S OWN DIALOG IS BANNED TOO.** 「標準は使わねえって言ってるだろこれも
-禁止や」「禁止事項入れろ」 OWNER 2026-09-01. `confirm()`, `alert()`,
-`prompt()` and `UIAlertController` — none of them. The reason is one line:
-「iPhoneのやつ使ってるsnsないしな」.
+**A FIFTH: THE SYSTEM'S OWN DIALOG IS BANNED — WITH ONE THING IT IS FOR.**
+「標準は使わねえって言ってるだろこれも禁止や」「禁止事項入れろ」 OWNER
+2026-09-01. `confirm()`, `alert()` and `prompt()` — none of them, anywhere.
+The reason is one line: 「iPhoneのやつ使ってるsnsないしな」.
 
-Earlier that day the same rule had been narrowed the other way, to let iOS's
-own action sheet do a delete; that narrowing is gone. **Do not read the
-paragraph above as leaving a door open**: a sheet from the bottom is banned by
-the four, the system's dialog is banned by this, and a sheet drawn in HTML to
-look like the system's was already named as the banned kind wearing the
-allowed kind's name. What is left is a thing of this app's own, drawn inside
-the screen, not sliding up from anywhere.
+**The one thing it is for is the two or three lines that ask whether to change
+or remove the thing under your finger, and it is iOS's own.**
+「アイコンをタップした時にiPhone標準の写真を選ぶか、削除するか出てくるやつで
+いいだろ」 OWNER 2026-09-01, and 「タップしたらios標準出して」 again on
+2026-09-03 when this was put to them a second time. The profile picture is
+that, and it is the only one. `UIAlertController` is how it is drawn, so it
+lives in `ios/` and cannot be reached from `www/`.
 
-**It is not built, and its shape is the owner's.** Three were made and three
-were thrown away in one afternoon — a page you travel to (`openForm`, which is
-`go('form', …)`), the app's own bottom sheet (`#sbg`/`#sheet`, banned by the
-four), and `confirm()` (banned by this). **Ask before making a fourth.**
+**A sheet that stands in for a SCREEN is still banned** — a screen's worth of
+work lifted from the bottom because nobody wanted to make a page. And **a
+sheet drawn in HTML to look like the system's is the banned kind wearing the
+allowed kind's name**, which is closed.
 
-`confirm()` is still in the code in several places, the word ceiling
-(`capStop()`) and account deletion among them. Count them rather than trusting
-this sentence: `grep -rn "confirm(" www/*.js`. They are on the list to replace
-and nothing may be added to it.
+Everything else asks in a thing of this app's own, drawn inside the screen:
+`popAsk()` for a question, `toast()` for a statement, `openForm()` for
+something to type into. **Ask before making a fourth** — three were made and
+three were thrown away in one afternoon (a page you travel to, the app's own
+bottom sheet, and `confirm()`).
+
+`tools/es5-check.mjs` holds the `www/` half: `confirm(`, `alert(` and
+`prompt(` anywhere under `www/` fail it. It was prose alone for two days, and
+in those two days the language's name was renamed with `prompt()` and two
+ceilings spoke with `alert()`.
 
 **And the owner has since given ten criteria that every screen is held to**
 (OWNER DECISION 2026-09-01) — system standard first, the patterns every SNS
@@ -732,21 +737,28 @@ somebody built simply was not in the file. `backup-check` now names both
 rather than counting slices — a count says eleven and goes on saying eleven
 when the eleventh is the wrong one.
 
-**Being in it has nothing to do with being deleted, and that is new on
-2026-08-27.** `wipeAll` used to walk `SLICES` too, and every key added after
-that line was written stayed behind — the drafts, the posts, the person's
-name and face, the index of languages, the flat keys from before there could
-be more than one. One bug, seven times: **a list of keys, written by hand,
-that nobody remembered to add to.** 「アカウント削除で残るものねえって言ってん
-だろ何回言わせんだよ全部消えんだよ。」 So `lsWipeNS()` counts `localStorage`
-instead and removes everything under `lingua.` — no list, and a key added
-tomorrow is gone the day it is added. The prefix includes the dot, because
-`lingua` and `linguaX` in the same storage are somebody else's.
+**Deleting an account counts the namespace rather than walking a list.**
+`wipeAll` used to walk `SLICES`, and every key added after that line was
+written stayed behind — the drafts, the posts, the person's name and face,
+the index of languages, the flat keys from before there could be more than
+one. One bug, seven times: **a list of keys, written by hand, that nobody
+remembered to add to.** So `lsWipeAcct(uid)` counts `localStorage` instead —
+no list, and a key added tomorrow is taken the day it is added. The prefix
+includes the dot, because `lingua` and `linguaX` in the same storage are
+somebody else's.
 
-**There is no way to delete one language**, and that is a fact about today
-rather than a rule: no screen offers it. When one is built it walks `SLICES`
-for one id through `langKeyOf()` — and it is emphatically not `lsWipeNS()`,
-which is the whole namespace and belongs to the account going.
+**And it takes THAT ACCOUNT's and no other's.** It walks the index for the
+languages carrying that stamp and takes the copies parked under that uid.
+The call that took the whole namespace whoever was holding the phone is
+deleted: it is what emptied the owner's languages on 2026-09-03 when a second
+account was deleted, and a function that can still be called is a function
+somebody calls.
+
+**One language is deleted by the middle of the three rows** — sign out,
+delete this language, delete the account. `wipeLangsGo()` in `www/settings.js`
+walks `SLICES` for one id through `langKeyOf()`, drops that language's backup
+and its row on the server, and touches nothing else. 「この言語を削除で言語の
+制作のものは全部なくなる」 OWNER 2026-09-03.
 
 The globals do not change. `WORDS` is the open language's dictionary, because
 the app shows one language at a time and 290-odd places say `WORDS` meaning

@@ -1270,17 +1270,28 @@ const SHAPE = [
      the six, and nothing below the hour is left on it. */
   ['the list turns on a four-hour tick', `
      select count(*) from (select 1 where
-       extract(hour from (feed_slot() at time zone 'UTC'))::int % 4 <> 0
+       extract(hour from (feed_slot() at time zone 'America/Los_Angeles'))::int % 4 <> 0
        or extract(minute from feed_slot())::int <> 0
        or extract(second from feed_slot())::numeric <> 0) q`, '0'],
-  /* And it names no zone. 「時間もお題のページに合わせるってこと」 OWNER, and
-     what that page decided was not a zone but the absence of one -- www/sns.js
-     over dayWhen(): a timezone rule copied a second time is a second one to
-     get wrong. A zone named in here would go wrong twice a year on its own,
-     inside a function nobody opens, and change what the app recommends. */
-  ['and names no timezone to get wrong', `
-     select count(*) from pg_proc
-      where proname in ('feed_slot','feed_hot') and prosrc like '%time zone%'`, '0'],
+  /* AND IT TURNS WHERE THE DAY TURNS. 「3はアメリカ時間ね」「時間もお題の
+     ページに合わせるってこと」 OWNER 2026-08-28 -- two sentences pointing at
+     one place. supabase/functions/daily-prompt/index.ts picks `on_day` with
+     `timeZone: 'America/Los_Angeles'`, so that is where the day turns and
+     this is what 「合わせる」 names.
+
+     It was UTC, under a claim here saying a zone must NOT be named -- read
+     off the phone doing no arithmetic, which is a different statement from
+     where the boundary is. The two are the same zone or the list turns
+     beside the day rather than with it. */
+  ['and turns in the zone the day turns in', `
+     select count(*) from (select 1 where
+       (select count(*) from pg_proc where proname = 'feed_slot'
+          and prosrc like '%America/Los_Angeles%') <> 1) q`, '0'],
+  ['and names no other zone', `
+     select count(*) from (
+       select regexp_matches(prosrc, 'time zone ''([^'']+)''', 'g') as z
+         from pg_proc where proname in ('feed_slot','feed_hot')) m
+      where m.z[1] <> 'America/Los_Angeles'`, '0'],
   /* And it is the tick that has HAPPENED. One in the future is a window that
      has not opened, and every post would be older than it. */
   ['and on the one that has already come', `
