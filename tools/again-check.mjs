@@ -362,8 +362,15 @@ const W = await pg.evaluate(async () => {
   function wait(ms){ return new Promise(function (r){ setTimeout(r, ms); }); }
   const out = {};
   /* Past the door, or render() draws the onboarding and never reaches the
-     timeline at all -- which is what this measured the first time. */
+     timeline at all -- which is what this measured the first time.
+
+     AND THE ACCOUNT HAS A NAME. appIs() answers 'door' for a session whose
+     account has never been named (www/shell.js, 2026-09-03) -- that is the
+     last step of the door and it is why a new Google account can no longer
+     walk straight into the app. A phone with a timeline on it is past that,
+     so this one is too. */
   SET.done = true;
+  ME.name = 'Aya'; ME.handle = 'aya'; saveMe();
   POSTS = []; SNS_GOT = {}; snsTab = 'fo';
   window.route = 'feed'; NAV = [{ r:'feed' }]; render();
   out.markTurns = !!document.querySelector('#app .snswait .pullrule');

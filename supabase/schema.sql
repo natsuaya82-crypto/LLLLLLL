@@ -1385,30 +1385,28 @@ grant execute on function notices(int) to authenticated;
 -- ない。」 OWNER 2026-08-28 -- so this answers the most recent of those six
 -- hours and never anything in between.
 --
--- IN UTC, and that is 「時間もお題のページに合わせるってこと」 OWNER. The
--- day's sentence is the page that already had to answer this, and the answer
--- written there is not a zone -- it is that there is no zone arithmetic at
--- all. netDay() asks for the NEWEST row rather than today's, and www/sns.js
--- says why over dayWhen(): "the app does not work out what day it is in
--- California, because that is a timezone rule and a second copy of one is a
--- second one to get wrong. That decision is kept." `prompt.on_day` is a date
--- and the screen draws it in UTC for the same reason.
+-- IN AMERICAN TIME, and the zone is the day's sentence's own.
+-- 「3はアメリカ時間ね」「時間もお題のページに合わせるってこと」 OWNER
+-- 2026-08-28 -- two sentences that point at the same place.
 --
--- So this does not name a zone either. A named zone here would be exactly the
--- second copy that page refused, and it would be a copy that goes wrong twice
--- a year on its own, in a function nobody looks at, changing what the whole
--- app recommends.
+-- IT WAS UTC, and that followed NEITHER of them. The argument written here
+-- was that the day's page does no zone arithmetic, because netDay() asks for
+-- the newest row rather than today's. That is true of the PHONE and it is not
+-- where the boundary is decided: supabase/functions/daily-prompt/index.ts
+-- picks `on_day` with `timeZone: 'America/Los_Angeles'`, and the cron that
+-- runs it is set in Pacific (supabase/setup.md). So the day already turns in
+-- California, and the list was turning in UTC beside it -- 0 4 8 12 16 20 in
+-- American local time only while the offset happens to be a multiple of four.
 --
--- WHAT THIS COSTS, said out loud because it is a real cost and not nothing:
--- the six hours are 0 4 8 12 16 20 UTC, so they are those hours in American
--- local time only while the offset is a whole multiple of four -- true on
--- US Eastern in summer and US Pacific in winter, and four hours out of six
--- otherwise. Two owner sentences pull against each other here and this one
--- follows the later of the two. It is in the report.
+-- Naming the zone here is not a second copy of a timezone rule: it is the
+-- same one, read from the same place the day is read from. The phone still
+-- does no arithmetic at all.
 create or replace function feed_slot()
 returns timestamptz language sql stable as $$
-  select date_trunc('hour', now())
-         - make_interval(hours => (extract(hour from now())::int % 4))
+  select (date_trunc('hour', now() at time zone 'America/Los_Angeles')
+          - make_interval(hours =>
+              (extract(hour from now() at time zone 'America/Los_Angeles')::int % 4)))
+         at time zone 'America/Los_Angeles'
 $$;
 
 -- What a blue mark is worth. FOUR.

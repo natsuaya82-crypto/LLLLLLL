@@ -546,12 +546,27 @@ const gone = await pg.evaluate(async () => {
 
   const hadDrafts = DRAFTS.length;
 
-  /* 1. the namespace itself, asked of the function that does it */
-  lsWipeNS();
-  if (ours().length)
-    fails.push('lsWipeNS() left ' + ours().length + ' key' +
-               (ours().length === 1 ? '' : 's') + ' under `lingua.`: ' +
-               ours().slice(0, 6).join(' '));
+  /* 1. one account's keys, asked of the function that does it.
+
+        It was lsWipeNS(), which took every key beginning `lingua.` whoever
+        was holding the phone -- and that is the call that destroyed the
+        owner's language on 2026-09-03 when a second account was deleted. It
+        is gone. lsWipeAcct(uid) is the only one left, and what it takes is
+        the languages carrying that account's stamp plus that account's own
+        me/posts/drafts. */
+  LANGS = { 'Lmine':  { name: 'mine',   mine: true, uid: 'u' },
+            'Ltheirs':{ name: 'theirs', mine: true, uid: 'other' } };
+  langStore();
+  try {
+    localStorage.setItem(langKeyOf('Lmine', 'words'), '[{"hw":"a"}]');
+    localStorage.setItem(langKeyOf('Ltheirs', 'words'), '[{"hw":"b"}]');
+  } catch (e) {}
+  lsWipeAcct('u');
+  if (localStorage.getItem(langKeyOf('Lmine', 'words')))
+    fails.push('lsWipeAcct() left this account\u2019s language behind');
+  if (!localStorage.getItem(langKeyOf('Ltheirs', 'words')))
+    fails.push('lsWipeAcct() took ANOTHER account\u2019s language ' +
+               '\u2014 that is the 2026-09-03 fault');
 
   /* 3. and it did not reach past the dot. Asked here because the wipe has
         just run; this is the same act as 1 seen from the other side. */
@@ -564,13 +579,13 @@ const gone = await pg.evaluate(async () => {
 });
 
 /* The whole button, not the function underneath it: wipeAll() asks, tells the
-   server, empties the phone and drops the files, and a claim about lsWipeNS()
-   alone would be green with any of those four unwired. The one question there
+   server, empties the phone and drops the files, and a claim about
+   lsWipeAcct() alone would be green with any of those four unwired. The one question there
    is gets its yes pressed -- the app's own popup, not confirm(), which went on
    2026-09-01 (「標準は使わねえって言ってるだろこれも禁止や」). Nothing is
    stubbed: pressing the popup is pressing the screen. */
 /* SEEDED AGAIN FIRST, and that is not tidiness. The block above empties the
-   whole namespace with lsWipeNS() and leaves this page signed out, with a
+   account's keys with lsWipeAcct() and leaves this page signed out, with a
    language whose index row is gone and whose slices are not. Pressing the
    delete-account button in THAT state asks about an act nobody can perform:
    there is no account row on the settings screen when nobody is signed in.
@@ -580,7 +595,7 @@ const gone = await pg.evaluate(async () => {
    OWNER 2026-09-03 -- so the state the button is pressed in has to be the
    state a person presses it in: signed in, holding their own language.
 
-   A RELAUNCH and not seed() alone: lsWipeNS() took `lingua.langs` with the
+   A RELAUNCH and not seed() alone: the block above took `lingua.langs` with the
    rest, so the page is standing in a language that is in no index -- seed()
    stamps what is in LANGS and LANGS is empty. Reloading is what a phone does
    between one of these and the next anyway. */

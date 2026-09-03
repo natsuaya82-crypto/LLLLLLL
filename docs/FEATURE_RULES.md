@@ -492,12 +492,21 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected data: 無し
 - Affected docs: `CLAUDE.md` § Shape。2026-09-01 の
   「システム標準（iOS/Android）を最優先。独自実装は『標準では実現できない
-  場合のみ』」と、その日にアクションシートを許した narrowing を**取り消す**
-- Implementation status: **未実装。**形が決まっていない ── 中身をどう描くかは
-  オーナーが決めること（角丸・枠・背景をどうするか）
+  場合のみ』」を**取り消す**
+- **アクションシートの narrowing は取り消していません。**この項は一度それも
+  取り消したものとして書かれていましたが、**2026-09-03 にオーナーが同じことを
+  もう一度言いました**:「タップしたらios標準出して」。指の下にある一つのものを
+  変えるか消すかを訊く、iOS 自身の二〜三行 ── プロフィール画像がそれで、
+  それだけです。`www/mod.js` ではなく `ios/` の `UIAlertController`。
+- Implementation status: **入りました（2026-09-03）。**`www/` から
+  `confirm()` `alert()` `prompt()` は消えていて、`tools/es5-check.mjs` が
+  止めます。言語の名前は `openForm()`、上限の言い切りは `toast()`、
+  問いは `popAsk()`。プロフィール画像だけが iOS 標準のまま。
 
 **リーダーへ: 勝手に進めない。**この決定は、形が決まる前に三度作って三度
 外した後に出ている（遷移する画面 → 下から出るシート → 標準のダイアログ）。
+2026-09-03 にリーダーがプロフィール画像の形を訊いて、答えは「iOS 標準のまま」
+でした。**四つ目を作る話ではありませんでした。**
 **訊いてから作る。**
 
 ### オーナーが機能追加をしようとしていたら、リーダーが確認する
@@ -1345,7 +1354,16 @@ spec asks for them」と書いている ── **人が押した削除は automa
 - Affected features: おすすめのタイムライン、検索の「話題」
 - Affected data: 無し
 - Affected docs: この項
-- Implementation status: 未着手（`claude/draft`）
+- Implementation status: **入りました（2026-09-03）。**`feed_slot()`
+  (`supabase/schema.sql`) が `America/Los_Angeles` で刻みます ── お題の
+  `on_day` を決めている `supabase/functions/daily-prompt/index.ts` と同じ
+  時間帯です。`rls-check` の三本が持ちます（刻みが四時間、その時間帯である
+  こと、ほかの時間帯を名乗らないこと）。
+
+  **2026-08-28 から 2026-09-03 まで UTC でした。**「zone を名乗らないのが
+  お題のページの答え」という読みで書かれていて、それは端末が計算しないと
+  いう話で、境目がどこで決まるかとは別の話でした。0 4 8 12 16 20 が
+  アメリカ時間になるのは、時差がちょうど四の倍数のときだけです。
 
 #### これが置き換えたもの
 

@@ -319,6 +319,42 @@ if (existsSync(IOS)) {
 
 // ------------------------------------------------------------------- verdict
 
+// AND EVERY NATIVE METHOD IS ONE THE APP ACTUALLY CALLS.
+//
+// dead-check asks this of every function in www/ and nothing had ever asked it
+// of the other side of the bridge. Three were sitting in LinguaShare.swift on
+// 2026-09-03 that no line of www/ names -- `dropKept` and `dropAll`, both left
+// behind when deleting stopped taking the whole phone, and `registerFont`.
+//
+// A native method nobody calls is worse than a dead JavaScript function: it is
+// compiled, it is in the plugin's table, and it does the thing it was written
+// to do the moment anybody names it -- and two of these three EMPTY DIRECTORIES.
+// 「古いものは消す新しいものにする」 OWNER 2026-09-03.
+//
+// The bridge is one shape and only one: Capacitor.nativePromise('Plugin',
+// 'method', …) -- www/ has no bundler, so `Capacitor.Plugins` is undefined and
+// there is no second way to reach these (docs/keyboard-extension.md). So the
+// method name appears in www/ as a quoted string, and that is what is counted.
+const NATIVE = /CAPPluginMethod\(name:\s*"([A-Za-z0-9_]+)"/g
+const wwwSrc = referenced
+  .filter((r) => r.endsWith('.js'))
+  .map((r) => { try { return readFileSync(join(WWW, r), 'utf8') } catch (e) { return '' } })
+  .join('\n')
+let nm, natives = 0
+for (const e of readdirSync(join(IOS, "App"), { withFileTypes: true })) {
+  if (!e.isFile() || !e.name.endsWith('.swift')) continue
+  const sw = readFileSync(join(IOS, "App", e.name), "utf8")
+  NATIVE.lastIndex = 0
+  while ((nm = NATIVE.exec(sw))) {
+    natives++
+    const q = nm[1]
+    if (wwwSrc.indexOf(`'${q}'`) < 0 && wwwSrc.indexOf(`"${q}"`) < 0)
+      note(`ios/App/App/${e.name}: the native method \`${q}\` is in the plugin's ` +
+           `table and no line of www/ names it. Delete it -- git remembers, and ` +
+           `a method that is still compiled is one anybody can call.`)
+  }
+}
+
 if (problems.length) {
   console.error('')
   for (const p of problems) console.error(`  ${p}`)
@@ -330,4 +366,5 @@ if (problems.length) {
 console.log(`assets: ${referenced.length} files loaded by index.html, all present and tracked.`)
 if (swiftCount) console.log(`swift: ${swiftCount} files under ios/App/, every one of them in the project's Sources phase.`)
 console.log(`placeholders: ${holes} under ios/App/, every one of them substituted by the deploy workflow.`)
+console.log(`the bridge: ${natives} native methods, every one of them named by www/.`)
 console.log(`load order: core.js -> ${LANGS.length} languages -> ... -> otf5.js -> glyph.js (last)`)

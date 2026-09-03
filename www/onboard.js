@@ -970,13 +970,13 @@ function obDoor(r, a){
 /* And the question every one of them is asking. Anything other people would
    see needs somebody's name on it -- a post, a like, a boost, a follow, a
    block, a report -- and there is a session without one from the first
-   launch, so this is netMember() and not netSignedIn().
+   launch, so this is netSignedIn() and not netSignedIn().
 
    Where you are standing is where the door sends you back to, so a like
    pressed halfway down a thread does not land you on the timeline. */
 function obNeed(){
   var h;
-  if(netMember()) return true;
+  if(netSignedIn()) return true;
   h=here();
   obDoor(h && h.r, h && h.a);
   return false;
@@ -1172,7 +1172,7 @@ function obCrestHTML(){
 
    It said the app makes an account by itself at first launch, so "continue
    without an account" would be offering what everybody already has. **It does
-   not.** netAnon() gets a token whose JWT carries `is_anonymous`: netMember()
+   not.** netAnon() gets a token whose JWT carries `is_anonymous`: netSignedIn()
    reads false off it and so does is_member() in supabase/schema.sql. It is a
    uid to hang a language on, which is what 2026-08-22 asked for and all it
    asked for. It is not somebody, and it is not an account. 「匿名アカウントは
