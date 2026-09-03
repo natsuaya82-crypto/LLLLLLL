@@ -263,6 +263,27 @@ options and what the code does today, and stop. Do not read a spec off the
 code: the code is what happened, not what was wanted.
 → `docs/FEATURE_RULES.md`
 
+**Answer before you move, and move only on what was asked.** 「手を動かす前に
+答えを言えよ」「勝手な判断すんなよ」「許可してないことやるなって言ってるだろ」
+OWNER. Say in one line what you are about to do, and wait. Nothing that was not
+asked for — not a button, not a screen, not a tidy-up, not an integration.
+A thing you thought would help, that nobody asked for, is a thing somebody has
+to find and undo.
+
+**A cause is FOUND, not guessed.** 「憶測で判断するな」「原因を確かめずに治す
+って治すって言葉の意味と真逆ですけど？」 OWNER 2026-09-03. Reading the code and
+naming a likely line is a guess, however confident the sentence sounds. Press it,
+measure it, or say plainly that you have not. **A fix for a cause nobody
+confirmed is a swing in the dark**, and three days went that way: the search
+fault was named twice from reading and was wrong twice; the Settings button had
+three causes listed and was never once pressed.
+
+**What was fixed is SHOWN.** 「スクショで見るのは俺の方なんだから直したところは
+俺に見せろ」 OWNER 2026-09-03. The owner is the one holding the phone. Take the
+screenshot and put it in front of them; do not look at it yourself and call that
+confirmed. And **never write 「直りました」 about something that has not been
+pressed** — say what was checked and what was not, separately.
+
 **Saying what you are doing, while you are doing it.** Work is reported as it
 happens, not at the end. Before a step that takes more than a moment -- a
 check, a measurement, a build, a file being rewritten -- say in one line what
@@ -449,15 +470,21 @@ they are two seconds and they catch what blanks a device.* *Watching a check fai
 one run, not a suite* — put the bug back, run the one check that holds it, watch it
 go red, take the bug out.
 
-**The build comes first and the gate comes after it** 「先に確認したいから、
-全部取り込んだら君がビルド出して、ゲートはビルド出してから確認でいいよ」OWNER
-2026-08-28. **The sub-leader integrates and runs the gate — the leader does both
-when there is no sub-leader — and the leader triggers the build.** The build
-goes out on what was taken in, and THEN the whole gate runs — because the thing that finds the bugs nothing here can find is a person
-holding a phone, and making them wait sixteen minutes for a green that has
-never once changed what the build contains is sixteen minutes of nobody
-looking at the app. If the gate then goes red, that is a fix and another
-build; that has cost less than the waiting did.
+**EVERYTHING IS FIXED FIRST, THEN THE GATE, AND THE BUILD LAST.**
+「いや全部直してからビルドは見るんだって」「バグるならいらん」 OWNER
+2026-09-03. **One item left undone is a reason not to build.** A build number
+that goes up, a notification that arrives, and a phone picked up to find the
+same fault still there is the owner saying the same sentence twice — which is
+what this rule exists to stop.
+
+**And what is NOT done is said BEFORE the build, not after it.** 「お前が伝えた
+中にまだ終わってねえことがあったなんか言われてねえだろ」 OWNER 2026-09-03. A
+「出して」 answers what the owner was told; it is not permission to leave the
+rest behind. Say what is outstanding, then let them decide.
+
+**The sub-leader integrates and runs the gate — the leader does both when there
+is no sub-leader — and the leader triggers the build, once everything is done
+and the gate is green.**
 
 **And then push, without running it green.** 「ゲートが緑になる確認は…まとめて。
 個人個人でやる必要ある？」 OWNER 2026-08-27. **Red is work and green is
