@@ -306,12 +306,59 @@ function storeRow(id){
 var STORE_CUR=false;   /* asked this visit */
 var STORE_GOT=false;   /* and the answer is in */
 function storeHeld(){ return !storeOn() || STORE_GOT; }
+/* AND WHEN THE PLAN IN FORCE RUNS TO. 「消すなら同じ場所に現在このプランです
+   〇〇/〇〇までみたいな感じにしないとわからんやろ」 OWNER 2026-09-03.
+
+   IT IS NOT SAVED, and that is not an oversight to be tidied up later. Two
+   reasons and either one is enough:
+
+   The expiry is the Apple ID's, and `localStorage` is the account's --
+   CLAUDE.md 「NOTHING IS THE PHONE'S. EVERYTHING IS THE ACCOUNT'S.」 A date
+   written into SET could not answer 「which account is this」, which is the
+   question a thing has to answer before it is written down. `SET.plan`
+   already cannot, and that is a known fault (docs/STATE.md: 「アカウントを
+   変えても端末の段が残る」); a second one beside it is a second thing to
+   unpick.
+
+   And a date that outlives the plan it belongs to is the worst thing this
+   line could say. Nothing here is worth carrying across launches: `current`
+   is asked every time the plans screen is opened, and until it answers there
+   is no date -- which is a state the screen already draws.
+
+   KEPT WITH THE PLAN IT BELONGS TO, and that is the whole of the safety.
+   Somebody on Plus can buy Pro from this screen: the plan then moves and the
+   date does not, and a date printed beside a plan it was never about is a
+   lie the screen has no way to notice. Holding the two together makes the
+   mismatch answerable -- see storeUntil(). */
+var STORE_UNTIL=null;  /* {plan:'plus', at:<ms>} -- or null, 「not known」 */
+/* What `current` came back with, put where the screen reads it.
+   Only `current` carries a date: restore and manage answer no `until` at all,
+   and reading their answers here would clear a date that is still true. */
+function storeUntilTook(r){
+  var p=(r && r.plan) ? String(r.plan) : '';
+  var at=(r && typeof r.until==='number') ? r.until : 0;
+  STORE_UNTIL=(p && at>0) ? { plan:p, at:at } : null;
+}
+/* When the plan in force runs to, or 0 for 「not known」.
+
+   `plan()` and not the plan that was answered: storeTook() puts the answer
+   through planBest() against what is already on, so the plan on the screen
+   can be HIGHER than the one this date is about. It is 0 then, which is the
+   honest answer -- 「not known」 and 「there is no end」 are different states
+   and CLAUDE.md says they may not share a branch. */
+function storeUntil(){
+  if(!STORE_UNTIL || STORE_UNTIL.plan!==plan()) return 0;
+  return STORE_UNTIL.at;
+}
 function storeCurAsk(){
   var np=storePlug();
   if(!np || STORE_CUR) return;
   STORE_CUR=true;
   np('LinguaStore', 'current', {})
-    .then(function(r){ STORE_GOT=true; storeTook(r); storeDrew(); })
+    /* The date is taken BEFORE storeTook(), which renders: a screen drawn
+       between the two would be a screen drawn with the plan already moved
+       and the date still absent. */
+    .then(function(r){ STORE_GOT=true; storeUntilTook(r); storeTook(r); storeDrew(); })
     /* An answer that never came is not 「this person owns nothing」. The
        screen stops waiting and draws what the phone holds, which is what it
        drew before any of this. */
