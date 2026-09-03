@@ -1075,14 +1075,26 @@ function snsFind(q, done){
      netLike() wraps it as *%40aya* and the answer was always nobody.
      「検索で @ を打っても誰も出てこない」
 
+     netAtOff() in www/net.js is the one place that says what that `@` IS, and
+     it says it in both of the spellings a phone can give it. This line used to
+     write the rule out again as `/^@+/`, which sees only the half-width one --
+     so `＠aya` off a Japanese keyboard went to the server whole and the same
+     complaint came back nine days later, on the same field.
+     「@で検索しても出てこない」 OWNER 2026-09-03.
+
      Only off the front, and only for a person: `@` in the middle of a name is
      a character somebody typed, and a search over posts is a search over text
-     where `@` means itself.
+     where `@` means itself -- netLike() is shared with netFindPosts() and
+     drops nothing, deliberately.
+
+     netAtOff() and not netHandleOf(): that one also squashes spaces, which is
+     what a HANDLE is and is wrong here, because netFindWho() matches `display`
+     too and a display name has somebody's spaces in it.
 
      `q` on the ANSWER stays as it was typed. snsGot() throws away a late
      answer by comparing it with what is in the field, and the field has the
      @ in it. */
-  var name=q.replace(/^@+/, '');
+  var name=netAtOff(q);
   if(!name){ done({q:q, who:[], posts:[]}); return; }
   netFindWho(name, function(ws){ done({q:q, who:ws, posts:[]}); }, no);
 }

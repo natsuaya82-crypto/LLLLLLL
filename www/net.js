@@ -1864,12 +1864,45 @@ function netStaffDrop(handle, ok, bad){
   netSend('POST', '/rest/v1/rpc/staff_drop', {h:netHandleOf(handle)},
           SESS.at, function(){ ok(); }, bad);
 }
+/* THE `@` A PERSON TYPES, AND IT HAS TWO SPELLINGS ON A PHONE.
+   -------------------------------------------------------------------------
+   `@` is how somebody says "this is a person" out loud. It is not part of
+   what a handle IS -- `profile.handle` in supabase/schema.sql is
+   `^[a-z0-9_]{2,24}$`, so no handle has ever held one -- and it comes off
+   before anything is asked of the server.
+
+   It used to ask whether the first character was U+0040, and that is the
+   wrong question rather than half of the right one. The `@` on a Japanese
+   keyboard is U+FF20, the full-width one, and it is what the owner types:
+   `＠aya` went out as `handle.ilike.*＠aya*`, which `^[a-z0-9_]{2,24}$` can
+   never match, so the answer was nobody -- on the same field, with the same
+   complaint, that the half-width one was fixed for on 2026-08-25.
+   「@で検索しても出てこない」 OWNER 2026-09-03.
+
+   Off the FRONT only. An `@` in the middle of what somebody typed is a
+   character they typed.
+
+   THIS IS THE ONE PLACE, and it is one because netHandleOf() below and
+   snsFind() in www/sns.js had each written the rule out for itself -- the
+   shape CLAUDE.md § One place, not fifteen is about, where a comment claims
+   to be the one place and a second copy is living somewhere else. Mending
+   only the copy here would have left the search still reading the front of a
+   query its own way. */
+function netAtOff(s){
+  return String(s||'').replace(/^[@＠]+/, '');
+}
 /* One place, because both of the above and the screen that lists them would
    each have written it out. A handle is lower case in the schema's own check
    constraint, so typing one with a capital in it is a person typing a name
-   rather than a person getting it wrong. */
+   rather than a person getting it wrong.
+
+   Lower case and no spaces are what a HANDLE is, which is a different
+   sentence from what the `@` is -- so they stay here and the `@` is
+   netAtOff()'s. The search is why the two are apart rather than one call:
+   netFindWho() matches `display` as well, and a display name is somebody's
+   spaces and somebody's capitals.  */
 function netHandleOf(s){
-  return String(s||'').replace(/^@+/, '').toLowerCase().replace(/\s+/g, '');
+  return netAtOff(s).toLowerCase().replace(/\s+/g, '');
 }
 /* Who answers the reports today. profile_read is `using (true)`, so this
    needs no policy of its own -- what it lists is public, and what it is FOR
