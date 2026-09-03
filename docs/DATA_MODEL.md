@@ -219,6 +219,15 @@ account's dictionary in an older spelling, so they go with it. They carry no
 uid, and that is the whole reason this is written down rather than left to the
 prefix test above.
 
+**All of that is on its way out.** OWNER 2026-09-03: 「今の状態の話平キーなんか
+いらない」 — the road is being deleted, not conditioned: `langMigrate()`,
+`LS_FLAT`, `langMigStamp()` and the `mig` mark with them, and this line of
+`lsWipeAcct()` goes when they do because there is nothing left for it to take.
+The decision is in `docs/FEATURE_RULES.md` and the branch is `claude/flat`.
+**Delete this paragraph and the `mig` row above in the same commit that lands
+it** — a description of a road nobody walks is the thing this file is being
+audited for.
+
 **Three things under `lingua.` are NOT taken, and each is a leftover rather
 than a decision.** They are named so that nobody reads the list above as
 complete:

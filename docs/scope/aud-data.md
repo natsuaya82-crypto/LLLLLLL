@@ -292,8 +292,9 @@
     コメントがそれを理由として書いています）
     判定: **規則が守られていない**
     やったこと: **直せない。**`docs/CHANGELOG.md` は書き換えない約束です。
-    リーダーの判断で入ったもので、オーナーには報告済みと聞いています ──
-    **DELETE REVIEW の七項目を書く場所が要ります**
+    リーダーの判断で入ったもので、オーナーには報告済みと聞いています。
+    **ただし `bc1a3945`（master、2026-09-03 11:40）でこの削除ごと
+    無くなります** ── 「平キーの道を消す」。書く場所は要らなくなります
 
 27. `docs/DATA_MODEL.md:73` 「`BK_SHAPE` in `www/backup.js` carries those
     shapes; `bkSound()` uses it to tell a slice from wreckage.」
@@ -323,6 +324,23 @@
     やったこと: 直した（`setDefaults()` の literal を読ませ、
     四つに文を書いた。**先に四つを入れずに赤を見ました**）
 
+## 書いている間に master が二つ進みました
+
+- `9cc255d0` **古い規則は残さない。食い違いはオーナーに訊く**
+  （2026-09-03）── この監査の土台です。置き換えられた規則は消す。
+  **食い違いはセッションもリーダーも決めず、オーナーに訊く。**
+  だから 7・8・9・26 は「直さない」ではなく「訊いてください」です
+- `bc1a3945` **平キーの道を消す**（2026-09-03、実装は `claude/flat`）──
+  「今の状態の話平キーなんかいらない」。`langMigrate()` `LS_FLAT`
+  `langMigStamp()` と `mig` の印、そして **`lsWipeAcct()` の平キー削除**が
+  丸ごと消えます
+
+  **26 番はこれで消えます。**DELETE REVIEW を書くべき削除そのものが
+  無くなるので、書く場所は要らなくなります。
+  **6 番と 10 番はこれで古くなります** ── `docs/DATA_MODEL.md` に足した
+  平キーの段落と `mig` の行は、`claude/flat` が入る同じコミットで
+  消してください。そう書いてあります
+
 ## 直せなかったもの、他の枝が持っているもの
 
 - **26**（`docs/CHANGELOG.md` の DELETE REVIEW）── 書き換えない約束
@@ -332,3 +350,15 @@
   `www/index.html` `www/act.js` `www/net.js` `www/onboard.js` `www/store.js`
   `supabase/schema.sql` と ios の Swift は**読んだだけ**で、
   一行も触っていません
+
+## 足した検査
+
+| | 何を押さえるか | 赤を見たか |
+|---|---|---|
+| `tools/del-check.mjs`（新、`npm run del`、gate の速い側） | `act-map.js` の削除に読めるボタン全部に「何を取るか・訊くか・訊かないならなぜか」を答えさせる | **三通り** ── 未記載のボタン、`popAsk` を外した `delNote`、`why` を消した `sndDrop` |
+| `tools/backup-check.mjs` に一行 | `SLICES` の全部が `BK_SHAPE` にある | **見た** ── `gram2` を抜いて赤 |
+| `tools/store-check.mjs` に一段 | `setDefaults()` が配る欄も FIELDS に名前が要る | **二通り** ── 新しい欄を足して赤、`setDefaults` を隠して赤 |
+
+回した速い九本＋二本は全部緑です（`assets` `es5` `grammar-engine` `dead`
+`import` `sides` `face` `box` `store` `del` `backup`）。
+**全ゲートは回していません。**
