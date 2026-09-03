@@ -37,23 +37,27 @@ if git diff --cached --name-only | grep -q '^www/'; then
   }
 fi
 
-# The three that need no browser, so they cost about a second and a half between
-# them. sides-check is here rather than only in `npm test` because what it
+# EVERY check that needs no browser, so they cost about two seconds between
+# them. sides-check is among them rather than only in `npm test` because what it
 # catches -- the making side reaching into the timeline -- is invisible while
 # every post is yours, which is to say invisible to whoever is committing.
+#
+# The list is READ OUT OF gate.mjs rather than written here. It used to be
+# written here, and it drifted the way every hand-kept list in this repo has:
+# the comment said "the three", the line under it said "the fast five", it ran
+# five, and FAST held nine -- so grammar-engine-check and store-check were in
+# the gate and not in the hook, and CLAUDE.md said this hook runs "the ones
+# that need no browser". Adding one to FAST adds it here the same day now.
 if git diff --cached --name-only | grep -q '^www/'; then
-  echo 'dead + import + sides + face + box: the fast five...'
-  node tools/dead-check.mjs >/dev/null && node tools/import-check.mjs >/dev/null \
-    && node tools/sides-check.mjs >/dev/null && node tools/face-check.mjs >/dev/null \
-    && node tools/box-check.mjs >/dev/null || {
-    echo ''
-    node tools/dead-check.mjs >/dev/null || node tools/dead-check.mjs
-    node tools/import-check.mjs >/dev/null || node tools/import-check.mjs
-    node tools/sides-check.mjs >/dev/null || node tools/sides-check.mjs
-    node tools/face-check.mjs >/dev/null || node tools/face-check.mjs
-    node tools/box-check.mjs >/dev/null || node tools/box-check.mjs
-    exit 1
-  }
+  FAST=$(node -e "var s=require('fs').readFileSync('tools/gate.mjs','utf8');var m=s.match(/const FAST = \[([\s\S]*?)\];/)[1].match(/'[^']+'/g);console.log(m.map(function(x){return x.slice(1,-1)}).join(' '))") || exit 1
+  echo "the fast ones, no browser: $FAST"
+  for c in $FAST; do
+    node "tools/$c.mjs" >/dev/null || {
+      echo ''
+      node "tools/$c.mjs"
+      exit 1
+    }
+  done
 fi
 
 # The screen files are the ones that can carry untranslated text; the ten

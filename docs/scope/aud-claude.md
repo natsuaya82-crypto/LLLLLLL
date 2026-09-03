@@ -590,6 +590,63 @@ www/settings.js:663  ❌ 古い。「It is the app's own sheet rather than the
 | :651 | `vOb` は route-map に無い | `route-map.js:32` に「vOb is not here」 | 合っている |
 | :1195 | JS から角丸ゼロ | `box-check`: `set from www/*.js: 0` | 合っている |
 
+
+### 31. CLAUDE.md:489「`tools/pre-commit` runs the ones that need no browser」── 九本中七本でした
+
+> `tools/pre-commit` runs the ones that need no browser plus i18n when a screen
+> file changed.
+
+**実際:** フックが回していたのは **七本**。`grammar-engine-check` と
+`store-check` が**ゲートに在ってフックに無い**状態でした。
+
+そしてフック自身が、一つのブロックの中で三つの数を言っていました ──
+コメントが「The **three** that need no browser」、その下の `echo` が
+「the fast **five**」、実際に走るのが**五本**、`FAST` は**九本**。
+
+**確かめ方:** `grep -oE "tools/[a-z0-9-]+\.mjs" tools/pre-commit` と
+`gate.mjs` の `FAST` を突き合わせました。
+
+**やったこと: 直した。**規則のほうが仕様なので、**コードを規則に合わせました。**
+手で書いた一覧を消して、**`gate.mjs` の `FAST` を読んで回す**形に書き換え
+ました。`FAST` に一本足せば、その日からフックにも入ります。
+
+これは条件を足したのではなく、**一覧そのものを消した**書き換えです ──
+「a list of keys, written by hand, that nobody remembered to add to」は
+このリポジトリが何度も踏んでいる形で、`docs/DATA_SAFETY.md` の家族です。
+
+**赤を見ました。**新しく入った二本が、本当にフックの中で走って止めることを
+一本ずつ確かめています（それぞれを一時的に `process.exit(1)` にして、
+フックが赤で止まるのを見て、戻しました）。
+
+```
+--- hook with store-check forced red:
+PROBE: store-check ran from the hook          hook exit: 1
+--- hook with grammar-engine-check forced red:
+PROBE: grammar-engine-check ran from the hook  hook exit: 1
+```
+
+素の木では緑で、`echo` が九本を名乗ります。
+
+```
+the fast ones, no browser: assets-check es5-check grammar-engine-check
+dead-check import-check sides-check face-check box-check store-check
+```
+
+### 32. ゲートの所要時間が三つ書いてあります ── 確かめていません
+
+| CLAUDE.md | 書いてある |
+|---|---|
+| :442 | 「Sequentially they were **ten minutes**」（逐次の話なので、これは別のことを言っている） |
+| :458 | 「making them wait **sixteen minutes** for a green」 |
+| :2002 | 「Not `npm test`: **six minutes**」 |
+
+**:458 と :2002 は同じもの（`npm test` 一回）について言っていて、食い違って
+います。**
+
+**やったこと: 直していない。確かめてもいません。**測るにはゲートを全部
+回す必要があり、**回すなと言われています。**リーダーが最後に一度回すとき、
+時計を見れば分かります。**どちらかは消してください。**
+
 ---
 
 ## 直していないもの、と理由
@@ -820,6 +877,7 @@ tools/gate.mjs            本数を毎回印字
 tools/assets-check.mjs    load order の文＋新しい主張二つ
 tools/act-check.mjs       index.html のシェルも読む＋主張の数を数える
 tools/conv-check.mjs      七・八・九と三つ言っていた数を消した
+tools/pre-commit          手書きの一覧をやめて gate.mjs の FAST を読む
 package.json              死んだ "ask" を削除
 www/core.js               capStop()/upStop() の注記
 docs/scope/aud-claude.md  これ
