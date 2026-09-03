@@ -151,7 +151,7 @@ Q6. `talk`（会話）の slice は、**画面も global も無いまま**、
    `docs/DATA_MODEL.md:230` 「`lsWipeAcct()` counts `localStorage` and removes
    everything under `lingua.`」
    実際: **三つとも 2026-09-03 で終わった姿です。**`lsWipeAcct(uid)`
-   （`www/core.js:68-107`）が取るのは (a) そのアカウントの印が付いた言語の
+   （`www/core.js:68-109`）が取るのは (a) そのアカウントの印が付いた言語の
    `SLICES`、(b) `lingua.me.<uid>` `lingua.posts.<uid>` `lingua.drafts.<uid>`、
    (c) いま載っている `lingua.me` `lingua.posts` `lingua.drafts`、
    (d) `LS_FLAT` の八つ。**`lingua.` を丸ごとではありません。**
@@ -161,7 +161,7 @@ Q6. `talk`（会話）の slice は、**画面も global も無いまま**、
    やったこと: 直した（482 行の言い方に三箇所を揃えた）
 
 6. `docs/DATA_MODEL.md` 全体 ── **`LS_FLAT`（平キー八つ）の行がありません**
-   実際: `www/core.js:104-105` が `LS_FLAT` の八つ
+   実際: `www/core.js:104` が `LS_FLAT` の八つ
    （`lingua.words` `lingua.lines` `lingua.lang` `lingua.script`
    `lingua.letters` `lingua.notes` `lingua.phases` `lingua.talk`）を
    `doomed` に積みます。DATA_MODEL は `langMigrate()` が**写す**ことは
@@ -171,7 +171,7 @@ Q6. `talk`（会話）の slice は、**画面も global も無いまま**、
    やったこと: 直した（節を足した）
 
 7. `docs/DATA_MODEL.md:142` 「It is removed by `lsWipeAcct()`」（`lingua.notices.<uid>`）
-   実際: **取られません。**`www/core.js:80-88` が前方一致で見るのは
+   実際: **取られません。**`www/core.js:82-88` が前方一致で見るのは
    `lingua.me.` `lingua.posts.` `lingua.drafts.` の三つだけで、
    `lingua.notices.` は入っていません。鍵は
    `notKey()`（`www/sns.js:1618`）が `lingua.notices.<uid>` で書きます
@@ -181,8 +181,8 @@ Q6. `talk`（会話）の slice は、**画面も global も無いまま**、
    「取られる」と書いてあったので、**いま取られているものだけを書く形に
    書き換え**、この穴を穴として名指ししました
 
-8. `www/core.js:80-88` ── `lingua.set.<uid>`（`setParkKey()`）も取られません
-   実際: `setParkKey()`（`www/core.js:1190`）が `lingua.set.<uid>` に
+8. `www/core.js:82-88` ── `lingua.set.<uid>`（`setParkKey()`）も取られません
+   実際: `setParkKey()`（`www/core.js:1183`）が `lingua.set.<uid>` に
    `SET_ACCT` の六つ（`plan` `planWas` `planPend` `saved` `savedUp` `notAt`）
    を預けます。`lsWipeAcct()` の前方一致に入っていないので、
    **消したアカウントの段と保存した検索と既読位置が端末に残ります**。
@@ -193,7 +193,7 @@ Q6. `talk`（会話）の slice は、**画面も global も無いまま**、
 
 9. `docs/DATA_MODEL.md:25` 「Twelve slices, filed under `lingua.<id>.<slice>`」
    実際: `lingua.<id>.` の下には **slice ではない鍵がもう一つ**あります ──
-   `lingua.<id>.bkn`（`www/backup.js:118` `bkNoSet()`、`tools/store-check.mjs:85`
+   `lingua.<id>.bkn`（`www/backup.js:135` `bkNoSet()`、`tools/store-check.mjs` の ROADS
    が名指ししている）。`SLICES` に無いので、
    `lsWipeAcct()` の `SLICES` 歩き（`core.js:74`）も
    `wipeLangsGo()` の `SLICES` 歩き（`settings.js:480`）も**素通りします**。
@@ -210,7 +210,7 @@ Q6. `talk`（会話）の slice は、**画面も global も無いまま**、
     `uid` は `netLangRow()`（`www/net.js:1242`）と `langSeenAdd()`
     （`www/core.js:326`）と `bkTake()`（`www/backup.js:298`）が書き、
     `mig` は `langMigrate()`（`www/core.js:247`）が置いて
-    `langMigStamp()`（`www/core.js:257`）が外します。
+    `langMigStamp()`（`www/core.js:256`）が外します。
     `core.js:131-155` のコメントは四つまで数えています
     判定: **記述が古い**
     やったこと: 直した
@@ -225,19 +225,19 @@ Q6. `talk`（会話）の slice は、**画面も global も無いまま**、
       書き手は七箇所です（`core.js:247` `core.js:287` `core.js:324`
       `core.js:1040` `backup.js:296` `net.js:1111` `net.js:1241`）
     - 「`vLangs()` … The second list is **always** the empty note」（209 行）
-      ── `www/home.js:2071-2095` は `dlCap()` で切った本物の一覧を描きます
+      ── `www/home.js:2071-2098` は `dlCap()` で切った本物の一覧を描きます
     - 「**The two numbers themselves are still open**」（244 行）──
-      決まっています。`var PLUS_DL=1, PRO_DL=3;`（`www/core.js:962`）、
-      `dlCap()` `dlCount()` `dlStop()`（963-988）
-    - 取る道は `www/home.js:1279-1320`。章ごとに `localStorage.setItem`
-      （1311 行）── 「一つづつ dl」のとおりです
+      決まっています。`var PLUS_DL=1, PRO_DL=3;`（`www/core.js:955`）、
+      `dlCap()` `dlCount()` `dlStop()`（956-981）
+    - 取る道は `www/home.js:1278-1319`。章ごとに `localStorage.setItem`
+      （1311 行、`langKeyOf(id, …)`）── 「一つづつ dl」のとおりです
     判定: **記述が古い**（節ごと）
     やったこと: 直した（節を書き換え。「無い」を「在る」に）
 
 12. `docs/DATA_MODEL.md:227` 「**`bkPack()` skips a language that is not
     `mine`.**」
-    実際: `bkPack()`（`www/backup.js:124-133`）に `mine` の判定はありません。
-    断るのは `bkPush()`（`www/backup.js:157`）の
+    実際: `bkPack()`（`www/backup.js:138-147`）に `mine` の判定はありません。
+    断るのは `bkPush()`（`www/backup.js:171`）の
     `if(!langMine(langId)){ BK.dirty=false; … return; }` です。
     **振る舞いは書いてあるとおり**（DL 言語はファイルに入らない）で、
     名指しした関数が違います
@@ -246,8 +246,8 @@ Q6. `talk`（会話）の slice は、**画面も global も無いまま**、
 
 13. `docs/DATA_MODEL.md:331` 「`{ id, at, lang, lname, ln, who, hd, mine, av,
     mn, ui, dir, ink?, tr?, pics?, pic?, pin?, vo?, ed?, to?, toh? }`」
-    実際: `www/post.js:1432-1438` が作る post には
-    **`pr` `li` `bo` `re` も載り**、`postSid()`（`www/post.js:1025`）が
+    実際: `www/post.js:1430-1436` が作る post には
+    **`pr` `li` `bo` `re` も載り**、`postSid()`（`www/post.js:1023`）が
     `sid` を、`pwSend()`（`www/post.js` `mine.pv=1`）が `pv` を足します。
     `pv` は **下の表に説明があるのに、上の形に入っていません**
     判定: **記述が古い**
@@ -258,14 +258,14 @@ Q6. `talk`（会話）の slice は、**画面も global も無いまま**、
     `SET.plan` sit.」
     実際: `SET.saved` と `SET.plan` は**もう共有ではありません**。
     `var SET_ACCT=['plan','planWas','planPend','saved','savedUp','notAt'];`
-    （`www/core.js:1189`）を `setFor(uid)`（1193-1223）が
+    （`www/core.js:1182`）を `setFor(uid)`（1193-1223）が
     `lingua.set.<uid>` へ預けます。**共有なのは `recent` だけ**です
     判定: **記述が古い**（穴そのものは残っている。狭くなった）
     やったこと: 直した（`recent` だけが残っていると書き直した）
 
 15. `docs/DATA_SAFETY.md:143` 「`bkTake()` reads it, and nothing else does.」
     （`bkNo()` のこと）
-    実際: `bkSay()`（`www/backup.js:230`）も読みます ──
+    実際: `bkSay()`（`www/backup.js:244`）も読みます ──
     `if(BK.how==='kept') return t('bk.no', bkNo());`。読み手は二つです
     判定: **記述が古い**
     やったこと: 直した
@@ -296,8 +296,8 @@ Q6. `talk`（会話）の slice は、**画面も global も無いまま**、
 18. `docs/DATA_SAFETY.md:209` 「tries … to do all 34 things the file says
     cannot be done」
     実際: `tools/rls-check.mjs` の `CASES` は **272 件**、`SHAPE` が別に
-    あります（`tools/rls-check.mjs:141` から `1490` 行の `CASES.map`）。
-    ツール自身は `CASES.length` を刷ります（1589 行）
+    あります（`tools/rls-check.mjs` の `CASES`）。
+    ツール自身は `CASES.length` を刷ります（`CASES.length` を刷る最後の行）
     判定: **記述が古い**
     やったこと: 直した（数を文に埋めず、ツールが刷ると書いた。
     同じ腐り方をもう一度しないため）
@@ -316,9 +316,9 @@ Q6. `talk`（会話）の slice は、**画面も global も無いまま**、
     `master` の `9cc255d0` が今日名指しで禁じたもの）
     やったこと: 直した
 
-20. `tools/store-check.mjs:7` 「Three things are the phone's own and that is
+20. `tools/store-check.mjs` の冒頭 「Three things are the phone's own and that is
     the whole list: a language's backup file, an exported sheet, and the
-    settings.」（同 34・81・155 行にも同じ区分）
+    settings.」（ROADS と FIELDS の注記にも同じ区分）
     実際: 19 と同じ、消された規則です
     判定: **規則が守られていない**
     やったこと: 直した（ツールの振る舞いは変えていません。文だけ）
@@ -338,7 +338,8 @@ Q6. `talk`（会話）の slice は、**画面も global も無いまま**、
     判定: **記述が古い**
     やったこと: 直した
 
-23. `www/core.js:794-812`（`langCount()` の上のコメント）
+23. `www/core.js`（`langCount()` の上のコメント。直す前は 794-812 行、
+    いまは書き換え済み）
     「the three places that write to LANGS … every one of them writes
     `mine:true`, and nothing anywhere writes it false … `vLangs()` draws a
     「読んでいる」 list that is always the empty note」
@@ -347,21 +348,21 @@ Q6. `talk`（会話）の slice は、**画面も global も無いまま**、
     判定: **記述が古い**
     やったこと: 直した（`www/core.js` はどの枝も持っていません）
 
-24. `www/backup.js:99` 「The slices are SLICES in core.js, so a **tenth** one
+24. `www/backup.js:105` 「The slices are SLICES in core.js, so a **tenth** one
     added there is written out the day it is added.」
     実際: 12 です（`www/core.js:130`）
     判定: **記述が古い**
     やったこと: 直した
 
-25. `www/backup.js:113` 「Nothing reads it yet.」（`bkNo()` のこと）
-    実際: `bkTake()`（`www/backup.js:270`）と `bkSay()`（230）が読みます
+25. `www/backup.js:127` 「Nothing reads it yet.」（`bkNo()` のこと）
+    実際: `bkTake()`（`www/backup.js:284`）と `bkSay()`（230）が読みます
     判定: **記述が古い**
     やったこと: 直した
 
 26. `docs/DATA_SAFETY.md:149-166` § DELETE REVIEW 「Anything that removes data
     … gets this written down **before** the code, in `docs/CHANGELOG.md`」
     実際: 今日 `lsWipeAcct()` に入った **`LS_FLAT` の八つの削除**
-    （`www/core.js:88-105`）に、**DELETE REVIEW がありません。**
+    （`www/core.js:88-104`）に、**DELETE REVIEW がありません。**
     `docs/CHANGELOG.md` の 2026-09-03「端末のものは無い。全部アカウントのもの」
     （280-317 行）が `lsWipeAcct()` の取るものを列挙していて、
     平キーは入っていません。同じ項が
@@ -376,7 +377,7 @@ Q6. `talk`（会話）の slice は、**画面も global も無いまま**、
 
 27. `docs/DATA_MODEL.md:73` 「`BK_SHAPE` in `www/backup.js` carries those
     shapes; `bkSound()` uses it to tell a slice from wreckage.」
-    実際: `BK_SHAPE`（`www/backup.js:62-64`）は **11 個**、`SLICES` は 12 個。
+    実際: `BK_SHAPE`（`www/backup.js:68-73`）は **11 個**、`SLICES` は 12 個。
     **`gram2` がありません。**`bkSound('gram2', v)` は `want` が
     `undefined` のまま最後の行に落ち、`'[object Array]'` でなければ真 ──
     つまり「object」と**偶然**同じ答えになります。宣言ではなく落ち方です。
@@ -387,13 +388,13 @@ Q6. `talk`（会話）の slice は、**画面も global も無いまま**、
     `tools/backup-check.mjs` に「`SLICES` の全部が `BK_SHAPE` にある」を
     足した。**先に `gram2` を抜いて赤を見ました**）
 
-28. `tools/store-check.mjs:150-215` § FIELDS
+28. `tools/store-check.mjs` § FIELDS § FIELDS
     「a field added to `SET` is a new place to keep something … a field
     written and not named here is red」
     実際: **`setDefaults()` が配る欄は見えていません。**
     FIELDS は `SET.<name> =` の代入だけを数えます（`re` は
-    `/SET\.([A-Za-z0-9_]+)\s*(?:=[^=]|\+\+|--)/`、`tools/store-check.mjs:222`）。
-    `setDefaults()`（`www/core.js:167-170`）は
+    `/SET\.([A-Za-z0-9_]+)\s*(?:=[^=]|\+\+|--)/`、`tools/store-check.mjs` の fields 収集）。
+    `setDefaults()`（`www/core.js:163-166`）は
     `order` `read` `voice` `script` を返し、この四つは
     **どの保存でも `lingua.set` に書き出されるのに FIELDS に名前がありません**。
     store-check がまさに防ぐと言っている形（「一つの文が中身まで覆っている」）
@@ -409,7 +410,7 @@ Q6. `talk`（会話）の slice は、**画面も global も無いまま**、
     `voDropFile()` を呼ぶようになりました。オーナーの言葉は引いてあります
     （「声は投稿上で再生できるよね？下書き消した時にはいらなくない？」）が、
     **七項目の DELETE REVIEW の塊がありません。**`postDelGo()` の分は
-    `docs/CHANGELOG.md:13599` にちゃんとあります
+    `docs/CHANGELOG.md` の「投稿消した声も消していいよ」の項 にちゃんとあります
     判定: **規則が守られていない**（決定は在る。記録が無い）
     やったこと: **直せない。**`docs/CHANGELOG.md` は書き換えない約束です。
     `docs/DATA_SAFETY.md` の側に「一つ目だけ書かれている」と明記しました。
