@@ -9,7 +9,9 @@
 - **Goal:** 「Google で続ける」が通らない。`(nonce id_token:n sent:y)` ──
   こちらは nonce を送っているのに、Google の id_token にその主張が入っていない。
   原因を**動かして**突き止め、扉がネイティブへ何を渡しているかを見る検査を置く。
-- **Owns (may change):** `www/onboard.js` / `ios/App/App/**.swift` /
+- **Owns (may change):** `www/onboard.js` / `ios/App/App/**.swift`
+  （**`LinguaStore.swift` を除く** ── リーダーが 2026-09-03 10:42 に外しました。
+  `claude/plannow` がいま書き換えています。読むだけ） /
   `tools/open-check.mjs` / `docs/scope/claude-door.md` / `docs/CHANGELOG.md`
 - **Does NOT own:** それ以外すべて。とくに `www/net.js`（`netNonce()`
   `netSha256()` `netIdWhy()` `netIdToken()` は読むだけ）、`www/sns.js`、
@@ -213,6 +215,12 @@ E  トークンが返らなくてもセッションを作りに行く
 `[.fullName, .email]` に落ちます。**結果は同じ**なので直していません。
 
 ## `ios/App/App/` ── 変えるものはありませんでした
+
+**`LinguaStore.swift` は持ち物から外れました**（リーダー、2026-09-03 10:42、
+`claude/plannow` が書き換え中のため）。**もともと一行も触っていません。**
+`git diff --name-only origin/master...HEAD -- ios/` は空です ── この枝は
+`ios/` の下のどのファイルにも触れていません。狭められて失うものはありません。
+
 
 持ち物として見ましたが、サインインに触る Swift はここにありません
 （`grep -rl "SocialLogin\|GIDSignIn\|AppleID\|nonce" ios/App/App/` は空）。
