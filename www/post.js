@@ -427,7 +427,7 @@ draftsName();
    going to be private. Not baked -- a draft is not a post, and baking is what
    sending does. */
 function draftKeep(){
-  if(!PW.ln && !pwPics().length && !(PW.vo && PW.vo.b64)){ toast(t('post.none')); return; }
+  if(!PW.ln && !pwPics().length && !(PW.vo && PW.vo.f)){ toast(t('post.none')); return; }
   /* The name it already had, if this is one that was opened again. Reusing it
      is what stops a draft opened and put back becoming two rows -- one on the
      server nobody can reach and one in front of them. */
@@ -460,7 +460,13 @@ function draftOpen(i){
   PW=pwBlank();
   PW.ln=d.ln||''; PW.mn=d.mn||''; PW.to=d.to||''; PW.pr=d.pr||0;
   PW.pics=d.pics||[]; PW.pv=!!d.pv;
-  if(d.vo) PW.vo=d.vo;
+  /* A draft written before the voice became a file carries the recording
+     itself (`b64`). It is put on the disk now and the draft's copy is
+     replaced by the name -- one shape from here on, and nothing downstream
+     has to ask which kind it was given. A draft from today is already
+     `{f, ms}` and goes straight across. */
+  if(d.vo && d.vo.b64) voKeep(d.vo, function(vo){ if(vo){ PW.vo=vo; openPost(); } });
+  else if(d.vo) PW.vo=d.vo;
   /* The name it goes back under. Set after pwBlank() above, which does not
      know about it.
 
@@ -481,6 +487,14 @@ function draftDropGo(i){
      a confirm, naming the one row it was given -- nothing here walks the
      table asking what is stale (docs/DATA_SAFETY.md § DELETE REVIEW). */
   if(d && d.id) netDraftDrop(d.id);
+  /* AND THE RECORDING THAT WAS ONLY THIS DRAFT'S.
+     「声は投稿上で再生できるよね？下書き消した時にはいらなくない？」 OWNER
+     2026-09-03. The file is written when the recording ends (www/rec.js §
+     voTook), so a draft thrown away without being posted is the one road that
+     leaves a file nothing points at. postDelGo() says the same sentence about
+     a post and this is it about a draft: the ONE file this draft named, and
+     nothing else. */
+  if(d && d.vo && d.vo.f) voDropFile(d.vo.f);
   render();
 }
 /* ---- the server's copy, come home --------------------------------------
@@ -1366,7 +1380,7 @@ function pwHas(ln){
     p=postById(PW.ed);
     return !!(p && (postPics(p).length || postVoAt(p)));
   }
-  return !!(pwPics().length || (PW.vo && PW.vo.b64));
+  return !!(pwPics().length || (PW.vo && PW.vo.f));
 }
 /* The letters placed on the photograph are drawn INTO it first, and after
    that there is a picture and nothing else. It is the one thing here that
@@ -1400,12 +1414,12 @@ function pwSend(){
      no bridge, no room, a refusal -- the post goes without one and says so,
      rather than being refused itself. What somebody typed is not lost
      because a microphone was. */
-  pwBake(function(pics){
-    voKeep(PW.vo, function(vo){
-      if(PW.vo && !vo) toast(t('post.vo.lost'));
-      pwSendWith(ln, pics, vo);
-    });
-  });
+  /* The voice is already a file: www/rec.js writes it the moment the
+     recording ends, so `PW.vo` is `{f, ms}` and there is nothing to write
+     here. It used to be written at this line, which left the OTHER road out
+     of the composer -- keeping a draft -- carrying thirty seconds of base64
+     into localStorage. */
+  pwBake(function(pics){ pwSendWith(ln, pics, PW.vo||null); });
 }
 function pwSendWith(ln, pics, vo){
   /* Only to fall back on: the words run together, for somebody who typed a

@@ -210,20 +210,39 @@ const R = await pg.evaluate(async () => {
     return Promise.resolve({});
   } };
 
+  /* THE WHOLE ROAD, FROM THE RECORDING ENDING.
+     The file is written when the recorder stops now, not when the post is
+     sent (www/rec.js § voTook). That is what took the base64 out of the
+     drafts: the composer never holds bytes, so neither road out of it can
+     carry any. So this drives the recorder rather than seeding what the
+     composer would have been holding -- seeding it would be a check asking
+     about a state the app cannot be in. */
   PW = pwBlank();
   PW.ln = 'kano';
-  PW.vo = { b64: 'AAECAwQF', mime: 'audio/mp4', ms: 7200 };
+  RECBITS = [new Blob([new Uint8Array([0, 1, 2, 3, 4, 5])], { type: 'audio/mp4' })];
+  RECAT = (new Date()).getTime() - 7200;
+  voTook('audio/mp4');
+  await new Promise(r => setTimeout(r, 300));
+
+  const kept = said.filter(x => x.m === 'keepVoice');
+  if (kept.length !== 1)
+    fails.push('the recording ending asked the phone to keep a voice ' +
+               kept.length + ' times, and once is what it should be');
+  if (!PW.vo || !PW.vo.f)
+    fails.push('the composer is holding no voice FILE after the recording ' +
+               'ended, so nothing points at what was just written');
+  if (PW.vo && PW.vo.b64 !== undefined)
+    fails.push('the composer is still holding the BYTES. That is what put ' +
+               'thirty seconds of audio into lingua.drafts');
+  if (kept[0] && PW.vo && PW.vo.f !== kept[0].a.name)
+    fails.push('the composer names a file that was not the one written');
+
   pwSend();
   await new Promise(r => setTimeout(r, 300));
   const v = POSTS[POSTS.length - 1];
 
-  const kept = said.filter(x => x.m === 'keepVoice');
-  if (kept.length !== 1)
-    fails.push('sending a post with a recording on it asked the phone to keep a ' +
-               'voice ' + kept.length + ' times, and once is what it should be');
-  if (kept[0] && kept[0].a.b64 !== 'AAECAwQF')
-    fails.push('the bytes that went to the file are not the bytes that were ' +
-               'recorded');
+  if (said.filter(x => x.m === 'keepVoice').length !== 1)
+    fails.push('sending wrote the file a SECOND time -- one recording, one file');
   if (!v || !v.vo || !v.vo.f)
     fails.push('the post carries no voice at all, so the recording went to a ' +
                'file and nothing points at it');
@@ -232,9 +251,9 @@ const R = await pg.evaluate(async () => {
       fails.push('the post names ' + JSON.stringify(v.vo.f) + ' and the file that ' +
                  'was written is ' + JSON.stringify(kept[0].a.name) + '. A name ' +
                  'pointing at nothing is a post claiming a voice it does not have');
-    if (v.vo.ms !== 7200)
+    if (!(v.vo.ms > 7000 && v.vo.ms <= 7400))
       fails.push('the post says the recording is ' + v.vo.ms + 'ms and it is 7200');
-    if (v.vo.b64 !== undefined || String(JSON.stringify(v)).indexOf('AAECAwQF') >= 0)
+    if (v.vo.b64 !== undefined || String(JSON.stringify(v)).indexOf('AAEC') >= 0)
       fails.push('the BYTES of the recording are on the post, which is 240 KB of ' +
                  'audio in the localStorage the whole language lives in. The post ' +
                  'carries a name; the bytes are a file');
@@ -404,7 +423,9 @@ const R = await pg.evaluate(async () => {
 
   const wasN2 = POSTS.length;
   PW = pwBlank();
-  PW.vo = { b64: 'AAECAwQF', mime: 'audio/mp4', ms: 3000 };
+  /* `{f, ms}` and not bytes: the recorder writes the file and the composer
+     only ever holds its name (www/rec.js § voTook). */
+  PW.vo = { f: 'v-alone.m4a', ms: 3000 };
   pwSend();
   await new Promise(r => setTimeout(r, 300));
   if (POSTS.length !== wasN2 + 1)
@@ -1496,6 +1517,62 @@ const R = await pg.evaluate(async () => {
     if (dsent.length && !dsent.some(r => r.method === 'POST'))
       fails.push('the draft was never inserted -- the update matched no row ' +
                  'and nothing followed it, so the draft exists nowhere but here');
+
+    /* AND NO RECORDING IS IN THE DRAFT, ANYWHERE.
+       「声は Documents のファイル、localStorage には入れない」 ── the decision
+       of 2026-08-30. It held for a post and not for a draft: the recording
+       was kept in memory as base64 until the post was SENT, so draftKeep()
+       wrote thirty seconds of audio into `lingua.drafts` and netDraftUp()
+       sent the same bytes to the server inside the draft's body.
+
+       draftsSave() swallows its exception, so a phone that hit the storage
+       limit stopped saving drafts with nothing on the screen to say so --
+       somebody presses keep and the draft is not there.
+
+       www/rec.js writes the file the moment the recording ends now, so what
+       a draft carries is `{f, ms}` and nothing else. This asks the two places
+       the bytes used to reach: the key on the phone, and what went up. */
+    PW = pwBlank(); PW.ln = 'kano';
+    PW.vo = { f: 'v-draft-1.m4a', ms: 7000 };
+    dsent = [];
+    draftKeep();
+    const rawD = localStorage.getItem('lingua.drafts') || '';
+    if (/b64/.test(rawD))
+      fails.push('a draft carries the recording itself into localStorage ' +
+                 '(`b64` is in lingua.drafts). Thirty seconds of audio, in a ' +
+                 'key whose save swallows its own failure');
+    if (rawD.indexOf('v-draft-1.m4a') < 0)
+      fails.push('a draft does not carry the voice FILE at all, so the ' +
+                 'recording is lost when the draft is opened again');
+    if (JSON.stringify(dsent).indexOf('b64') >= 0)
+      fails.push('the recording itself went up inside the draft body');
+    /* AND THROWING THE DRAFT AWAY TAKES ITS RECORDING WITH IT.
+       「声は投稿上で再生できるよね？下書き消した時にはいらなくない？」 OWNER
+       2026-09-03. The file is written when the recording ends, so a draft
+       discarded without being posted is the one road that would leave a file
+       nothing points at. The ONE file it named, and nothing else. */
+    said.length = 0;
+    files['v-draft-1.m4a'] = 'AAEC';
+    files['v-someone-else.m4a'] = 'ZZZZ';
+    /* The road the screen takes: choose it, press the bin, say yes.
+       dfSelDelGo() goes through draftDropGo(), which is the one place a
+       draft goes. A check that called a function nobody names would be
+       asking about a road the app does not have -- the first version of
+       this named `draftDrop`, which does not exist, and passed. */
+    DFSEL = {}; DFSEL[DRAFTS.length - 1] = 1;
+    dfSelDel();
+    if (popOn()) popYes();
+    else fails.push('throwing drafts away asked nothing -- the popup is what ' +
+                    'stands in front of a delete');
+    await new Promise(r => setTimeout(r, 200));
+    if (files['v-draft-1.m4a'] !== undefined)
+      fails.push('a draft was thrown away and its recording is still on the ' +
+                 'disk, pointed at by nothing');
+    if (files['v-someone-else.m4a'] === undefined)
+      fails.push('throwing a draft away took a recording that was not its own');
+    delete files['v-someone-else.m4a'];
+    DFSEL = null;
+    if (DRAFTS.length) { DRAFTS.pop(); draftsSave(); }
 
     /* opening one does NOT throw the server's copy away, and putting it back
        goes back over the SAME row rather than leaving one behind */
