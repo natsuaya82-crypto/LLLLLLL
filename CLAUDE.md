@@ -769,8 +769,8 @@ and its row on the server, and touches nothing else. 「この言語を削除で
 制作のものは全部なくなる」 OWNER 2026-09-03.
 
 The globals do not change. `WORDS` is the open language's dictionary, because
-the app shows one language at a time and 290-odd places say `WORDS` meaning
-"the one in front of me".
+the app shows one language at a time and a hundred-odd places say `WORDS`
+meaning "the one in front of me".
 
 Migration from the eight flat keys **copies**; it never removes what it read.
 It runs once, on a phone, against the only copy of something somebody spent
@@ -1763,7 +1763,8 @@ never seen.
 
 The language itself is the other way round and deliberately so: `WORDS`,
 `LETTERS`, `SCRIPT`, `STG` are single globals meaning "the one in front of
-me", read from 290 places, filed under `langKey()`. One thing seen from many
+me", named in three hundred-odd places between them, filed under `langKey()`.
+One thing seen from many
 places is not the same as one rule written out many times.
 
 Holding the one place is not enough if it can lose. `.sfont` said, correctly and
@@ -1783,7 +1784,7 @@ turns it on — with it off there is no `.sfont` at all, and roman is correct.)
 ## Names
 
 A function's prefix says which part of the app it belongs to, and it must be
-telling the truth. The prefix is how 500-odd globals in one namespace stay
+telling the truth. The prefix is how two thousand-odd globals in one namespace stay
 findable — `st*` grammar stages, `ob*` onboarding, `ge*` the glyph editor,
 `lt*` letters, `wd*` the word sheet, `fmr*` the rules a form is made by, `add*` the new-word sheet,
 `wld*` the world, `w*` word data, `words*` the word list, `nt*` the notebook,
