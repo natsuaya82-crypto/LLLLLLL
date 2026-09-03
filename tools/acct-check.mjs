@@ -1848,6 +1848,69 @@ const R = await pg.evaluate(async () => {
   say('50: サインアウト中に削除を押しても、頼む相手がいないので何も消えない');
   bkDropFor = rDrop49;
 
+  /* ---- 51-52. 扉。六十秒と、コードの画面が一枚であること ----------------
+     「8桁で60秒再送信」 OWNER 2026-09-03。
+
+     52 のほうが根っこです。**コードを打つ画面は二枚ありました** ── 登録の道が
+     着く一枚と、再設定の道が着く一枚。見出しも、下の一行も、欄も、確認も、
+     再送信も同じで、押したときに呼ぶものだけが違いました。だから六十秒を
+     足すと、片方にだけ入って、入らなかったほうは誰も見ません。扉が一日で
+     四回形を変えて、そのたびに前の道が残った、その残りです。 */
+  start(); SET.done = true;
+  obDoor('set', 'acct');
+
+  /* 51. 送った直後は断り、残りが出て、六十秒経てば押せる。
+     順は本物どおり ── コードが出て行ってから画面に来ます（obMailUpGo /
+     obMailForgotGo / obMailAgain の三つとも obAgainSent() の次が描画です）。 */
+  OBM.em = 'a@example.com';
+  obAgainSent();
+  obMailGo('code');
+  let btn = document.getElementById('ob-again');
+  if (!btn) no('51: コードの画面に再送信のボタンが無い');
+  else {
+    if (!btn.hasAttribute('disabled'))
+      no('51: 送った直後なのに再送信が押せる ── 六十秒が効いていない');
+    if (!/[0-9]/.test(btn.textContent || ''))
+      no('51: 残りの秒が出ていない ── 押せない理由が画面のどこにも無い');
+  }
+  /* 押しても出て行かないこと。描き方ではなく、断るところで断っているか。 */
+  {
+    const rSend51 = netSend;
+    let went = 0;
+    netSend = function(){ went++; };
+    obMailAgain();
+    netSend = rSend51;
+    if (went) no('51: 六十秒のあいだに押したら、本当に送りに行った');
+  }
+  /* 六十秒後。 */
+  obAgainAt = (new Date()).getTime() - (OB_AGAIN_S + 1) * 1000;
+  if (obAgainLeft()) no('51: 六十秒経っても残りが 0 にならない');
+  obMailGo('code');
+  btn = document.getElementById('ob-again');
+  if (btn && btn.hasAttribute('disabled'))
+    no('51: 六十秒経ったのに再送信がまだ押せない');
+  obAgainTicOff(); obAgainAt = 0;
+  say('51: コードを送ってから六十秒は送り直せず、残りの秒が画面に出る');
+
+  /* 52. 二つの道が、同じ一枚に来る。押したときに呼ぶものだけが違う。 */
+  {
+    /* 扉の入口から訊きます。obCodeHTML() を二回呼んで引き比べても、一つの関数を
+       自分と比べるだけで**絶対に赤くなりません** ── 押さえたいのは「二つの道が
+       そこに来ているか」で、それを知っているのは obDoorHTML() です。 */
+    const was = OBM.mode;
+    OBM.mode = 'code';  const up = obDoorHTML();
+    OBM.mode = 'reset'; const rs = obDoorHTML();
+    OBM.mode = was;
+    if (up.split('obMailCode').join('X') !== rs.split('obResetGo').join('X'))
+      no('52: **コードの画面がまた二枚になっている** ── 押したときに呼ぶもの以外が'
+       + '違います。片方だけに入った直しは、もう片方では誰も見ません');
+    if (up.indexOf('ob-again') < 0 || rs.indexOf('ob-again') < 0)
+      no('52: どちらかの道に再送信のボタンが無い');
+  }
+  say('52: コードを打つ画面は一枚 ── 登録の道も再設定の道も、そこに来る');
+
+  SET.done = true; SET.obback = null;
+
   return out;
 });
 
