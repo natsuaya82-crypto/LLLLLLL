@@ -718,15 +718,7 @@ function langCap(){
 }
 /* And what it is compared against: the languages that are THIS PERSON'S.
 
-   `mine` and not the length of LANGS, and the reason is about what is COMING
-   rather than what is here. This comment used to say LANGS "also holds every
-   language being read from somebody else", and it does not: the places that
-   write to LANGS -- langMint() above, bkRestore() in backup.js -- every one
-   of them writes `mine:true`, and nothing anywhere
-   writes it false. There is no language in this app that is not the person's
-   own, and there never has been. vLangs() draws a 「読んでいる」 list that is
-   always the empty note, for the same reason.
-   `mine` and not the length of LANGS, because LANGS holds both kinds now:
+   `mine` and not the length of LANGS, because LANGS holds both kinds:
    langSeenAdd() above writes `mine:false` for a language taken off somebody
    else's page, and vLangs() (www/home.js) draws the two lists that answers.
 
