@@ -30,6 +30,8 @@ bkTouch();
 /* old shapes of stored things, brought forward */
 migratePh();
 migrateMn();
+/* and a part of speech saved as its label rather than its key */
+migratePos();
 migrateLetters();
 migrateMarks();
 migrateSndName();

@@ -108,8 +108,15 @@ const SESSION = JSON.stringify({
         .replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'') + '.s',
   rt: 'r', uid: 'u', anon: false });
 
+/* AND A NAME, which is the other half of being signed in. appIs() sends a
+   phone whose ME has no handle to the door as well as one with no session --
+   a Google account arrives with a session and no @ yet, and that is the door.
+   Without this line every screen in this file renders the door, `.segs .seg`
+   matches nothing, and the claims read the app for what the seed did. */
 const OLD = {
   'lingua.sess': SESSION,
+  'lingua.me': JSON.stringify({ name: 'Aya', handle: 'aya', bio: '', pic: '',
+                                link: '', loc: '', avSent: '' }),
   'lingua.langs': JSON.stringify({ LA: { name: 'Vaska', mine: true },
                                    LB: { name: 'Tosk', mine: true } }),
   'lingua.cur': 'LA',

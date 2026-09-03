@@ -607,8 +607,15 @@ const r = await pg.evaluate(({ s }) => {
   /* Pressed on free, where the one language you have IS the ceiling. It asks
      first and flies on yes -- capStop()'s shape, which all three ceilings
      wear now. 「全部確認して飛ぶ」 OWNER DECISION 2026-08-25. */
-  var wentTo = '', saidIt = '', realAlert = window.alert;
-  window.alert = function(m){ saidIt = String(m); };
+  var wentTo = '';
+  /* THE TOAST AND NOT `alert`. This hooked window.alert, and window.alert is
+     banned under www/ -- 「標準は使わねえって言ってるだろこれも禁止や」 OWNER
+     2026-09-01, held by tools/es5-check.mjs. So the sentence this claim is
+     about moved to toast(), the hook caught nothing, and the claim read the
+     app as saying nothing. The toast is an element with the words in it;
+     tools/sheet-check.mjs reads it the same way. */
+  function toastSays(){ var e = document.getElementById('toast'); return e ? String(e.textContent || '') : ''; }
+  function toastClear(){ var e = document.getElementById('toast'); if (e) e.textContent = ''; }
   var wasCount = langCount(), wasLang = langId;
   /* said no: nobody is moved and nothing is made */
   go('langs');
@@ -618,11 +625,15 @@ const r = await pg.evaluate(({ s }) => {
   /* the sentence has to read at ONE, which is what the free ceiling is --
      "1 languages" was what the first version of this string said */
   out.freeAskedNoPlural = (askedLang || '').indexOf('1 languages') === -1;
-  /* said yes: the plans screen, still without making one */
+  /* said yes: the plans screen, still without making one.
+     The toast is emptied FIRST. It is one element that lives for the whole
+     run, so what is in it is whatever was last said, by any step above --
+     reading it without clearing asks 「has anything ever been said」. */
+  toastClear();
   yesPop(function(){ langNew(); });
   out.freeMadeNone = langCount() === wasCount && langId === wasLang;
   out.freeWent = here().r === 'plans';
-  out.freeSaidNothing = saidIt === '';
+  out.freeSaidNothing = toastSays() === '';
 
   /* Pressed on pro, where there is room: it is made AND opened, which is what
      the account switcher does. */
@@ -659,7 +670,7 @@ const r = await pg.evaluate(({ s }) => {
   out.threeBackup = bkPack().slices ? true : !!bkPack();
 
   /* The fourth is the only thing refused. */
-  saidIt = '';
+  toastClear();
   yesPop(function(){ langNew(); });
   out.fourthRefused = langCount() === 3;
   out.fourthWent = here().r === 'plans';
@@ -675,12 +686,11 @@ const r = await pg.evaluate(({ s }) => {
      2026-08-22 narrowing and the only place in this feature that has words. */
   SET.plan = 'pro'; save();
   go('langs');
-  saidIt = '';
+  toastClear();
   langNew();
   out.topRefused = langCount() === 3;
-  out.topSaid = saidIt;
+  out.topSaid = toastSays();
   out.topStayed = here().r === 'langs';
-  window.alert = realAlert;
 
   return out;
 }, { s: seed.toString() });

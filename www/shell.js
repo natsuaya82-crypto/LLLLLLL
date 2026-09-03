@@ -1479,12 +1479,21 @@ function posKey(s){
   return k||'n';
 }
 /* Quietly upgrade a dictionary saved in the older shape, where the label
-   itself was stored. Opening the app once is enough; nobody sees anything. */
-(function migratePos(){
+   itself was stored. Opening the app once is enough; nobody sees anything.
+
+   CALLED FROM www/boot.js, with every other migration, and NOT here. It ran
+   as an IIFE at this file's load, and `save()` opens with `bkTouch()`, which
+   lives in www/backup.js -- loaded AFTER this file. So on any phone with one
+   old label in its dictionary, shell.js threw at this line and stopped:
+   everything below it was never defined. Nothing on the screen said so.
+   www/core.js § planMigrate() carries the same hazard written out, and
+   boot.js is the answer to it -- it is loaded last, and running the
+   migrations is what it is for. */
+function migratePos(){
   var moved=0;
   WORDS.forEach(function(w){
     if(POS.indexOf(w.pos)>=0) return;
     w.pos=posKey(w.pos); moved++;
   });
   if(moved) save();
-})();
+}

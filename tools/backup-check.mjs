@@ -70,7 +70,7 @@ await new Promise(r => srv.listen(PORT, r));
 const br = await chromium.launch(LAUNCH);
 const pg = await br.newPage();
 const pageErrors = [];
-pg.on('pageerror', e => pageErrors.push(e.message));
+pg.on('pageerror', e => pageErrors.push(e.message + '\n' + (e.stack||'')));
 await pg.goto(`http://127.0.0.1:${PORT}/`);
 await pg.waitForTimeout(300);
 await pg.evaluate(seed);

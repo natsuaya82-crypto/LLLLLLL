@@ -1572,7 +1572,11 @@ const R = await pg.evaluate(async () => {
       fails.push('throwing a draft away took a recording that was not its own');
     delete files['v-someone-else.m4a'];
     DFSEL = null;
-    if (DRAFTS.length) { DRAFTS.pop(); draftsSave(); }
+    /* NOTHING IS POPPED HERE. There was a `DRAFTS.pop()` on this line, and it
+       threw away the very draft the three claims below open, so `draftOpen()`
+       was handed -1, returned at its first line, and two claims reported the
+       app for what this check had just done. What dfSelDel() removed above is
+       the recording's draft; what is left is the one kept at the top. */
 
     /* opening one does NOT throw the server's copy away, and putting it back
        goes back over the SAME row rather than leaving one behind */

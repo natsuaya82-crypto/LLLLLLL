@@ -86,6 +86,23 @@ function lsWipeAcct(uid){
   }catch(e){}
   /* the live copies, which are this account's while it is signed in */
   doomed.push('lingua.me'); doomed.push('lingua.posts'); doomed.push('lingua.drafts');
+  /* AND THE EIGHT FLAT KEYS. langMigrate() copies them into a language on the
+     first launch of a build that has ids -- `lingua.cur` did not exist in the
+     one that wrote them, so langId is empty and that migration always runs --
+     and netRead() then stamps that language with the account this phone is.
+     What is left behind is a second copy of that dictionary answering to
+     nobody, and langMigrate() reads it again the moment the index has no
+     current language: delete the account, and the next person to sign in on
+     this phone is handed the first person's words as their own language.
+     That is 2026-09-03 exactly, and it is why there is no such thing here as
+     a key that is nobody's.
+
+     A DELETION, and it is on the road a person pressed: 「アカウントを削除」
+     takes that account's everything, and these eight are that account's
+     dictionary in an older spelling. It is not pruning and nothing here runs
+     on its own -- lsWipeAcct() is reached from one button. */
+  for(k in LS_FLAT)
+    if(Object.prototype.hasOwnProperty.call(LS_FLAT, k)) doomed.push(LS_FLAT[k]);
   try{ for(i=0;i<doomed.length;i++) localStorage.removeItem(doomed[i]); }catch(e){}
   langStore();
   return ids;
@@ -188,10 +205,15 @@ try{ langId=localStorage.getItem(LS_CUR)||''; }catch(e){}
    are left exactly where they are: this runs once, on a phone, against the
    only copy of something somebody spent months on. Copying costs a few
    hundred kilobytes and cannot lose anything. Moving could. */
+/* The eight keys a single-language build wrote, before a language had an id.
+   Two things read this and they are the two ends of one life: langMigrate()
+   copies them into a language, and lsWipeAcct() takes them with the account
+   they were handed to. Written out once so those two cannot drift apart. */
+var LS_FLAT={ words:'lingua.words', lines:'lingua.lines', lang:'lingua.lang',
+              script:'lingua.script', letters:'lingua.letters',
+              notes:'lingua.notes', phases:'lingua.phases', talk:'lingua.talk' };
 function langMigrate(){
-  var FLAT={ words:'lingua.words', lines:'lingua.lines', lang:'lingua.lang',
-             script:'lingua.script', letters:'lingua.letters',
-             notes:'lingua.notes', phases:'lingua.phases', talk:'lingua.talk' };
+  var FLAT=LS_FLAT;
   var had=false, k;
   for(k in FLAT) if(localStorage.getItem(FLAT[k])!==null) had=true;
   if(!had) return false;
