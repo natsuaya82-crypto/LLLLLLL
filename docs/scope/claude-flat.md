@@ -108,6 +108,25 @@ store-check 自身がそれを赤にする:
 `tools/store-check.mjs` は他のどのセッションも持っていない（`claude/swipe` が
 持つのは `tools/press.mjs`）。**持っていないファイルに触るので、報告に明記する。**
 
+### 見つけた二件目 ── `tools/backup-check.mjs`（**持っていないファイル**）
+
+`tools/backup-check.mjs` が「アカウント削除で平キー（`lingua.words`）が
+**消えること**」を主張していた。これは指示4（`lsWipeAcct()` の平キー削除を
+外す）と**正反対**なので、外した瞬間に赤になる。実際に赤を見た:
+
+> `a flat key from before there could be more than one language survived`
+
+**主張を消すのではなく、逆向きにした** ── 平キーが**残る**ことを主張する。
+`langMigrate()` が在った頃は、アカウント削除後に残る平キーが「誰のものでもない
+生きた辞書」で、次にサインインした人がそれを自分の言語として渡される危険が
+あった（消す理由はそれだった）。**読む道ごと消えた今、その危険は無い。**
+残るのは `docs/DATA_SAFETY.md` の素の規則だけ ── 読まなくなったものを
+アプリは消さない。逆向きにした主張も、`lsWipeAcct()` に削除を戻して
+赤を見てから信じた。
+
+`tools/backup-check.mjs` も他のどのセッションも持っていない。
+**二つとも持っていないファイルなので、報告に明記する。**
+
 ## リーダーへ ── 指示と repo が食い違っている一点
 
 指示は「`tools/migrate-check.mjs` 全体を消さないでください。**上の十二個を
