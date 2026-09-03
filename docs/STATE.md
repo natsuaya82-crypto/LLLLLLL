@@ -61,7 +61,7 @@ Google と同じアドレスを打って二つ目のアカウントを立てて�
 パスワード要求だろ」。作成の面はアドレスだけを訊きます。パスワードは六桁が
 通ったあと、再設定と同じ画面で決めます（見出しだけ道で分かれる ── `OBM.fresh`）。
 
-**課金は端末が同じでも引き継ぎません**（決定ログ `d47a578`）。**未実装です。**
+**課金は同じ iPhone でも引き継ぎません**（決定ログ `d47a578`）。**未実装です。**
 
 **今は iPhone だけ。**そのあと iPad、Android。
 
@@ -81,7 +81,7 @@ Google と同じアドレスを打って二つ目のアカウントを立てて�
   `langNew()`、`langForAcct()`、`langSeenAdd()`、`netLangsDown()`、
   `bkRestore()`、そして `langMigrate()` は `mig` を通して。印の無い言語を
   自分のものと答えるのはオンボーディングの歩きの途中（`SET.done` が偽）だけで、
-  扉を出た `obFinish()` がそこで印を付けます。端末を憶える仕掛けはありません。
+  扉を出た `obFinish()` がそこで印を付けます。どの iPhone かを憶える仕掛けはありません。
 - **Keychain。**読めなかった Keychain に段を書きません。`Transaction.updates` は
   届いた取引が終わり（返金・過ぎた失効日）を言った時だけ下げます ── 更新も
   家族の購入も同じ口に届くので、権利一覧が追いつく前に払ったばかりの人の段が
@@ -94,7 +94,7 @@ Google と同じアドレスを打って二つ目のアカウントを立てて�
 - **`shell.js` が読み込みの途中で止まる欠陥。**`migratePos()` は `save()` を
   呼び、`save()` は `www/backup.js` の `bkTouch()` で始まり、`backup.js` は
   `shell.js` より**後**に読まれます。だから古い品詞ラベルを一つでも持っている
-  端末では、`shell.js` がその行で投げて**その下の定義が全部消えました。**
+  iPhone では、`shell.js` がその行で投げて**その下の定義が全部消えました。**
   画面には何も出ません。呼ぶ場所を `www/boot.js` へ移しました ── boot.js は
   最後に読まれ、移行を走らせるためだけにあります。定義は `shell.js` のままです。
 - **アカウント削除が平キー八つも消す。**`LS_FLAT` は言語に id が無かった頃の
@@ -155,10 +155,10 @@ git merge-base --is-ancestor origin/<枝> origin/master && echo IN || echo NOT
 
 ### まだ直っていないと分かっているもの
 
-- **端末はレシート無しで自分の行に `pro` を書ける。**`schema.sql` の RLS が
+- **アプリはレシート無しで自分の行に `pro` を書ける。**`schema.sql` の RLS が
   閉じられるのは「他人の段を読み書きできない」まで。`www/net.js` の
   `netPlanUp()` の上のコメントが同じことを書いています。**決めごと** ──
-  閉じるには Apple のレシートを端末でないものが検証する必要があり、
+  閉じるには Apple のレシートを iPhone でないものが検証する必要があり、
   それは一行のコードではなく決定です（`docs/scope/claude-acct2.md`）。
 
 ### オーナーの側に残っているもの ── 2026-09-03 現在
@@ -196,24 +196,22 @@ Connect と DNS のダッシュボードの話なので、**済んだかどう�
 | 今日のお題の日付 | `netDay()` が `order=on_day.desc&limit=1` と訊いていて、**今日を訊いていない。**古い行が一つあれば、それが永久に「今日」として出ます。`on_day` はどこにも描かれません | `www/net.js` `netDay()` |
 
 **オーナーは iPhone SE2 と iPhone 17 で実機確認しています。**OWNER 2026-08-28
-「iPhone se2と17で作業してる」。**一番狭い端末と一番広い端末の両方**なので、
+「iPhone se2と17で作業してる」。**一番狭い iPhone と一番広い iPhone の両方**なので、
 画面の話はその二つで成り立つかを考えること ── `press` が測っているのは 402pt の
 一台だけで、SE2 の 320pt はそこに入っていません。
 
-**でんわ、という語を使わないこと。端末、または iPhone。**OWNER 2026-08-28、
-二度言われた。二度目は「使うなって言ってんだから使うな」。報告でも、コメントでも、
-画面の文字でも、docs でも。**リポジトリ全体で 0 件にしてある。増やさないこと。**
+**でんわ、という語を使わないこと。iPhone と書く。**二度言われた。二度目は
+「使うなって言ってんだから使うな」。報告でも、コメントでも、画面の文字でも、docs でも。
+**リポジトリ全体で 0 件にしてある。増やさないこと。**
+
+**そして「端末ごと」という単位も使わないこと。**「端末という単位は使わない。全部
+アカウントごと」OWNER 2026-09-03。持ち物は全部アカウントのもので、iPhone は窓です。
+一台を指して言う必要があるときだけ iPhone と書く。
 
 **そして、オーナーが言っていないものを「」で囲まないこと。**一度目のとき、その語を
 7行だけ残した ── 理由は「オーナーの原文だから」だった。**そんな発言は無かった。**
 私たちが書いた地の文に括弧を付けていただけで、オーナーに「言ってねえよ」と言われた。
 **括弧の中はオーナーが実際に言った言葉だけ。**それ以外は地の文で書く。
-
-**オンボーディングはオーナーが直しています。誰も触らないこと。**
-「オンボーディングはこっちで直してるからいじらないで」OWNER 2026-08-28。
-`www/onboard.js` は誰にも渡しません。`master` の `fb2dab6` までは入っています
-（`claude/ob3` の並び直しと、SNS の段を本物のタイムラインにした分）が、
-**その先はオーナーのものです。**
 
 ---
 
@@ -222,7 +220,7 @@ Connect と DNS のダッシュボードの話なので、**済んだかどう�
 A fresh clone of `master` is the current app. **No sha is written here** — a sha
 has a shelf life of about a day.
 
-The gate is **35 checks** — nine that need no browser and twenty-six that do.
+The gate is **39 checks** — twelve that need no browser and twenty-seven that do.
 Count `FAST` and `SLOW` in `tools/gate.mjs`, which is the only place the number
 lives.
 
@@ -578,14 +576,14 @@ life as a branch name.
 
 ## 5. The gate, and what CI does not run
 
-`npm test` is **thirty-five** checks and is the specification. `CLAUDE.md` →
+`npm test` is **thirty-nine** checks and is the specification. `CLAUDE.md` →
 "The rules the gate enforces" -- **and those two numbers are not the same kind
 of thing.** One counts RULES that are written down; this one counts CHECKS that
 run. They have never been equal and making them equal would be wrong: one rule
 can take three checks and one check can hold two rules.
 
-`tools/gate.mjs` runs the **nine** that need no browser first, in about two
-seconds, then the **twenty-six** browser ones four at a time (`WIDE` is
+`tools/gate.mjs` runs the **twelve** that need no browser first, in about two
+seconds, then the **twenty-seven** browser ones four at a time (`WIDE` is
 `min(4, cpus)`). Run one after another they were about ten minutes in this
 container, which is a figure nobody has re-measured since the count grew.
 
@@ -705,8 +703,6 @@ Declare a class once.
 **A check enters the gate in the same commit that adds it, or it does not enter
 at all.** A check in `tools/` and in no list is silent, not green, and a silent
 check is the failure this repository is bitten by most often.
-**`tools/token-check.mjs` is in exactly that state right now** — it has an
-`npm run token` name and is in neither `FAST` nor `SLOW`.
 
 **Count `FAST` and `SLOW`; never believe a sentence about the number.**
 `CLAUDE.md`'s count of RULES is a different number from this count of CHECKS and
