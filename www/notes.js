@@ -81,8 +81,8 @@ function openNote(i){
 FORM_OPEN.note=function(i){ openNote(parseInt(i,10)); };
 /* ---- what is typed on a note, before it is a note -----------------------
    SAVE AT THE FAR END OF THE BAR 「メモも保存は右上」 OWNER 2026-09-01, and
-   since 2026-09-03 it is navTop()'s own and is there only when something has
-   been changed. The fields carry names now: they used to be read off the page
+   since 2026-09-03 it is navTop()'s own: it stands there from the moment the
+   note is open and is grey until something is changed. The fields carry names now: they used to be read off the page
    when Save was pressed, which worked exactly as long as Save was the only way
    off the screen -- and the back arrow was the other way, and it threw what
    was typed away without a word.
@@ -208,14 +208,13 @@ function vNotes(){
   return '<div class="view">'+
     navTop('', NTSEL
       ? ((ntSelList().length
-            ? '<button class="navdo navdel"' + DO('ntSelDel') + '>'+
-                esc(t('notes.sel.del'))+'</button>'
+            ? navDel(t('notes.sel.del'), 'ntSelDel')
             : '')+
-         '<button class="navdo"' + DO('ntSelOff') + '>'+esc(t('notes.sel.done'))+'</button>')
+         navDo(t('notes.sel.done'), 'ntSelOff', null, true))
       : ('<button class="iconb'+(ntFind?' on':'')+'"' + DO('ntSearch') + ' aria-label="'+
           esc(t('notes.search'))+'">'+ICON_LENS+'</button>'+
          (langLocked()? ''
-           : '<button class="navdo"' + DO('ntSelOn') + '>'+esc(t('notes.sel'))+'</button>')))+
+           : navDo(t('notes.sel'), 'ntSelOn', null, true))))+
     '<div class="body">'+
     (ntFind
       ? '<div class="search"><span class="lens">'+ICON_LENS+'</span>'+

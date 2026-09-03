@@ -2446,13 +2446,12 @@ function vKb(){
        and this is the screen it arrives on. */
     return '<div class="view">'+navTop('', KBSEL
         ? ((kbSelList().length
-              ? '<button class="navdo navdel"' + DO('kbSelDel') + '>'+
-                  esc(t('kb.sel.del'))+'</button>'
+              ? navDel(t('kb.sel.del'), 'kbSelDel')
               : '')+
-           '<button class="navdo"' + DO('kbSelOff') + '>'+esc(t('kb.sel.done'))+'</button>')
+           navDo(t('kb.sel.done'), 'kbSelOff', null, true))
         : (!can('kb')? helpQ('kb')
             : (langLocked()? ''
-                : '<button class="navdo"' + DO('kbSelOn') + '>'+esc(t('kb.sel'))+'</button>')))+
+                : navDo(t('kb.sel'), 'kbSelOn', null, true))))+
       '<div class="body">'+
       kbListHTML()+
       kbSysHTML()+
@@ -2503,7 +2502,10 @@ function vKb(){
    キーボードはいじれないから、防げる。」 */
 function kbMoreQ(){
   if(kbWob)
-    return '<button class="navq navdone"' + DO('kbWobEnd') + '>'+esc(t('kb.done'))+'</button>';
+    /* The same button as every other Done in this bar, and it used to be
+       spelled `navq navdone` -- a second name for one thing, a sixteenth of
+       a rem smaller and in the other face. www/shell.js § navDo. */
+    return navDo(t('kb.done'), 'kbWobEnd', null, true);
   /* The ? in its place. There is nothing behind the ⋯ on board 0 -- so the
      corner was empty, and on the free plan that was the corner the steps used
      to be in: its one screen carried helpQ('kb') until this board became a
@@ -3916,8 +3918,7 @@ function kbLtOnInk(ri, ki, dir, lid){
 /* The confirm, in the bar, top right, where openForm() puts one. Nothing is
    chosen -> there is no button, which is 「何も選んでいなければ出ない」. */
 function kbLtPutBtn(){
-  return kbLtPick? '<button class="navdo"' + DO('kbLtPut') + '>'+
-    esc(t('kb.lt.ok'))+'</button>' : '';
+  return kbLtPick? navDo(t('kb.lt.ok'), 'kbLtPut', null, true) : '';
 }
 /* A cell pressed. It is chosen, or -- if it is the one already chosen -- it
    is put down again. 「もう一度同じ場所触れたら解除」 */

@@ -564,6 +564,14 @@ function newGE(lid, label){
      stroke instead of picking up the last one you drew last time. Only what
      is drawn in this sitting, before the finger comes up, can be grabbed. */
   return { lid:lid, r:r, st:JSON.parse(JSON.stringify(src)),
+           /* WHAT IT OPENED WITH. The button in the corner is grey until this
+              stops being true of what is on the paper -- 「なにもない時は薄い
+              灰色、何か打ったら金にする」 OWNER 2026-09-03, www/shell.js
+              § navDo. It is what it OPENED with and not whether anything is
+              drawn now, because a letter opened and rubbed out has something
+              to write down and nothing on the paper. Same question KEEP asks
+              of a field, asked of strokes. */
+           was:JSON.stringify(geInk(src)),
            si:src.length?src.length-1:-1, pi:-1, undo:[], redo:[], pre:null,
            drag:false, hit:false, again:false, moved:false, fresh:false,
            free:false, round:false, fill:false, flat:null, flatBy:'',
@@ -1019,14 +1027,18 @@ function vGlyph(){
      navTop's `right` is the slot for exactly this -- "one control pinned to
      the far end of the bar, the place every phone puts the thing that
      finishes what you are doing" -- and it already carries the ? on four
-     screens and the AI mark on one. `navsave` is beside `navq` so that the
-     bar keeps working with the CSS that is there today; the rule that makes
-     it read as the primary action rather than as a muted mark is one line and
-     it is `www/index.html`'s, which is not this session's to write. It is
-     measured in the commit body. */
+     screens and the AI mark on one.
+
+     It wore `navq navsave` for two days and `.navsave` was in no stylesheet,
+     so this Save was a muted mark whatever anybody drew -- 「保存ボタンが
+     光らないから押せるのかわからない」「くすんだ色から変更したら金になって
+     押せるんじゃないの？」 OWNER 2026-09-03. That was not a missing line: it
+     was this button written out by hand in a third spelling, so there was a
+     third place for the rule to be absent from. It is built by www/shell.js
+     § navDo now, with every other button in this corner, and the two states
+     are that function's. */
   return '<div class="view">'+
-    navTop('', '<button class="navq navsave"' + DO('geSave') + '>'+
-                 esc(t('glyph.save'))+'</button>')+
+    navTop('', navDo(t('glyph.save'), 'geSave', null, geDirty()))+
     /* Nothing is pinned over the foot of this screen any more, so the room
        that was left for it is not left. What is under the page is the tab
        bar, which is what .body's own padding is already about. */
@@ -1405,8 +1417,19 @@ function geClear(){ geMark(); GE.st=[]; GE.si=-1; GE.pi=-1; GE.seal=false;
 /* Putting the drawing where the letter keeps it, and nothing else -- no
    toast, no going anywhere, no saying the sound. Both ways out of this screen
    need this half and only one of them needs the rest. */
+/* The strokes as they would be written down. The empty one geCur() opens and
+   nobody drew on is not part of the letter, and both the save and the button
+   that offers it have to mean the same thing by "the letter" or the corner
+   lights for a stroke that is never kept. */
+function geInk(st){
+  return (st||[]).filter(function(s){ return s.pts.length>0; });
+}
+/* Anything different from what the letter opened with. */
+function geDirty(){
+  return !!GE && JSON.stringify(geInk(GE.st))!==GE.was;
+}
 function geKeep(){
-  var keep=GE.st.filter(function(s){ return s.pts.length>0; });
+  var keep=geInk(GE.st);
   ltSetStrokes(GE.lid, keep);
   /* Drawing a letter is asking for your own writing. Only onboarding ever set
      this, so every letter drawn in the letters chapter went into a font that
@@ -2280,6 +2303,12 @@ HELP.glyph=function(){
     geHelpRow('clear',  t('glyph.clear'),  t('glyph.clear.d'))};
 };
 function geTools(){
+  /* The Save in the bar is a control too, so it is brought up to date here
+     with the rest of them: undo, redo and the bin already say whether they
+     have anything behind them. Drawing does not redraw this screen -- the
+     canvas is painted, not rendered -- so this is the road. geHist() and
+     geClear() call render() and are answered there. */
+  navDoPaint('geSave', geDirty());
   /* querySelectorAll and not querySelector, though there is one rail again.
      For a day there were two and this answered only the first of them, so
      fill, round and clear stayed frozen at whatever they were when the
@@ -2748,4 +2777,12 @@ function renderMount(){
     obTourAt();
     app.insertAdjacentHTML('beforeend', obTourHTML());
   }
+  /* AND THE SAVE IN THE CORNER, LAST, because whether a screen HAS fields is
+     answered by the screen and not all of them answer before the bar is
+     built: vGram registers its buffer inside stDetailHTML(), which is
+     concatenated after navTop(), so the first render of a stage had no buffer
+     to ask about and no button. Painted here it is right whatever order a
+     screen chose. It is the same function that BUILDS it -- www/shell.js
+     § keepBtnHTML -- so the two cannot disagree. */
+  keepBtnPaint();
 }

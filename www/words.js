@@ -216,10 +216,14 @@ function vWords(){
        yet, so it says Done and leaves; something chosen, so it deletes it. It
        was at the foot of the screen in a bar of its own, which is a second
        bar for one button. */
+    /* All three through www/shell.js § navDo, which is the one place the
+       button in this corner is built. They are lit: a mode to go into and a
+       mode to come out of are always something to do, and 「なにもない時は
+       薄い灰色」 is about a button with nothing behind it, which none of
+       these ever is. */
     navTop('', wSel
       ? ((wSelList().length
-            ? '<button class="navdo navdel"' + DO('wSelDel') + '>'+
-                esc(t('words.sel.del'))+'</button>'
+            ? navDel(t('words.sel.del'), 'wSelDel')
             : '')+
          /* AND THE WAY OUT, ALWAYS. Delete replaced it for a moment and that
             left a screen you could only leave by deleting something or by
@@ -228,9 +232,9 @@ function vWords(){
             margin-left:auto, so the first takes the free space and the
             second lands against it -- Done at the far end, where an iPhone
             puts it. */
-         '<button class="navdo"' + DO('wSelOff') + '>'+esc(t('words.sel.done'))+'</button>')
+         navDo(t('words.sel.done'), 'wSelOff', null, true))
       : (langLocked()? ''
-          : '<button class="navdo"' + DO('wSelOn') + '>'+esc(t('words.sel'))+'</button>'))+
+          : navDo(t('words.sel'), 'wSelOn', null, true)))+
     '<div class="chead">'+
     /* THE SAME FIELD AS EVERYWHERE ELSE, and it was an <input>.
        「全部改行して画面内に文字が収まるようにして欲しい」 OWNER 2026-08-27,

@@ -429,33 +429,92 @@ function keepPaint(){
   s=formArg(h.a); f=FORM_OPEN[s.kind];
   if(f) try{ f(s.rest); }catch(e){}
 }
-/* The button in the corner of the bar. It writes and stays -- leaving is what
-   the arrow beside it is for, and after a save there is nothing left to ask
-   about, so the button goes. That IS the answer to "did it save": the thing
-   that appeared when you changed something is gone again. */
-/* The button, in one place, so the bar that is BUILT and the bar that is
-   PAINTED cannot end up with two different buttons in that corner. It goes
-   last, after whatever else the screen has put there -- the ? on the keyboard
-   is the only screen where both are up at once.
+/* ---- THE BUTTON IN THE CORNER THAT DECIDES -----------------------------
+   「なにもない時は薄い灰色、何か打ったら金にする」「これが決定ボタンのルール」
+   OWNER 2026-09-03.
 
-   AND IT IS PAINTED RATHER THAN RENDERED. Typing does not redraw these
-   screens and must not: a field being typed into loses the keyboard the
-   moment the page under it is replaced, which is why every one of these
-   setters calls lnGrow() instead of render(). So the one thing on the screen
-   that has to change while somebody types is put there by hand, the same way
-   a line field is made taller by hand. */
+   ONE BUTTON, BUILT HERE AND NOWHERE ELSE. It was written out by hand in
+   three spellings and they were three answers to one question: `navdo`
+   written out by hand twenty times (four of them the red delete below),
+   `navq navdone` on the keyboard and on the alphabet, and `navq navsave` on
+   the screen a letter is drawn on -- and that third spelling had no rule in
+   www/index.html at all, so the Save there was grey whatever anybody drew. 「何か入力したら金になってるボタンとなってないボタンが
+   あるのよ」「同じボタンは共有して使用すればいいのに直書きで書いてるだろ
+   だからこう言うことが起きてる」 OWNER 2026-09-03. The owner is right about
+   the cause: one button written three times is three buttons, and the one
+   nobody remembered is the one that broke.
+
+   TWO STATES AND NO THIRD. `on` false is the pale grey, `on` true is the
+   gold. Nothing else moves between them -- no corner, no border, no fill
+   (CLAUDE.md § 18), 「文字の色だけ」.
+
+   WHAT `on` MEANS IS THE SCREEN'S TO ANSWER, and it has to be, because only
+   the screen knows what it would be writing down: strokes on the letter, a
+   line in the composer, a field different from the one it opened with. What
+   is held here is that there are two states and where the colour comes from.
+
+   `opts` is for the one button that is more than a word: the composer's,
+   which carries an id for its long-press timer, a lock when the post is
+   private, and the ground that goes under it. Its COLOUR is still these two
+   states and it no longer names one of its own. */
+function navDo(label, name, args, on, opts){
+  var o=opts||{};
+  return '<button class="navdo'+(on? ' navon' : '')+(o.cls? ' '+o.cls : '')+'"'+
+         (o.id? ' id="'+o.id+'"' : '')+DO(name, args)+'>'+
+         (o.mark||'')+esc(label)+'</button>';
+}
+/* THE DELETE, at the far end of the same bar while a list is being chosen
+   from. It is NOT the decide button and not a third state of it: 「右上に選択
+   したら削除できるみたいな感じに」 OWNER 2026-09-01, and it is the one colour
+   in this app that means a thing goes. It shares the box because it stands in
+   the same corner and a thumb is the same size either way. */
+function navDel(label, name, args){
+  return '<button class="navdo navdel"'+DO(name, args)+'>'+esc(label)+'</button>';
+}
+/* AND REPAINTED WHERE IT STANDS. Typing does not redraw these screens and must
+   not: a field being typed into loses the keyboard the moment the page under
+   it is replaced, which is why every one of these setters calls lnGrow()
+   instead of render(). So the one thing on the screen that has to change while
+   somebody types is put there by hand, the same way a line field is made
+   taller by hand. It is asked by the action's own name, because a screen that
+   is choosing from a list has two buttons in that corner and only one of them
+   is this one. */
+function navDoPaint(name, on){
+  var b=document.querySelector('.navtop [data-do="'+name+'"]');
+  if(!b) return;
+  /* The state class and nothing else. Written as a whole className this took
+     the composer's `pv` off with it -- the ground under a private post is not
+     a state of the button and is not this function's to remove. */
+  if(on) b.classList.add('navon'); else b.classList.remove('navon');
+}
+/* The save in the corner of the bar. It writes and stays -- leaving is what
+   the arrow beside it is for.
+
+   IT IS THERE FROM THE MOMENT THE SCREEN IS, and grey until something is
+   changed. It used to APPEAR on the first keystroke and go again after a
+   save, and that is the rule the decision above replaces: a button that is
+   not there says nothing about whether it could be pressed, which is
+   「保存ボタンが光らないから押せるのかわからない」 asked of the other end of
+   the same problem. A screen that has registered no buffer has no fields and
+   still gets nothing.
+
+   Built and painted through one function, so the bar that is BUILT and the
+   bar that is PAINTED cannot end up with two different buttons in that
+   corner. It goes last, after whatever else the screen has put there -- the ?
+   on the keyboard is the only screen where both are up at once. */
 function keepBtnHTML(){
-  return keepDirty(keepKey())
-    ? '<button class="navdo"' + DO('keepPress') + '>'+esc(t('keep.save'))+'</button>'
-    : '';
+  var k=keepKey();
+  return KEEP[k]? navDo(t('keep.save'), 'keepPress', null, keepDirty(k)) : '';
 }
 function keepBtnPaint(){
   var bar=document.querySelector('.navtop'), b, want;
   if(!bar) return;
   b=bar.querySelector('[data-do="keepPress"]');
   want=keepBtnHTML();
-  if(want && !b) bar.insertAdjacentHTML('beforeend', want);
-  else if(!want && b) b.parentNode.removeChild(b);
+  /* Taken out and put back rather than edited in place: what goes there is
+     keepBtnHTML()'s answer and nothing here restates any part of it. */
+  if(b) b.parentNode.removeChild(b);
+  if(want) bar.insertAdjacentHTML('beforeend', want);
 }
 function keepPress(){
   var k=keepKey();
@@ -793,15 +852,16 @@ function navTop(count, right){
     '<span class="navt"' + (h.r==='settings'? DO('adminTap') : '') + '>'+
       esc(pageName(h.r, h.a))+'</span>'+
     (count? '<span class="navc">'+count+'</span>' : '')+
-    /* SAVE, AND ONLY WHEN THERE IS SOMETHING TO SAVE. 「何か変えたら、右上に
-       保存のボタンが出る」 OWNER 2026-09-03 -- a button that is always there
-       says nothing about whether anything has been written down, and a screen
-       that has not been touched should not offer to save it.
+    /* SAVE, ON EVERY SCREEN THAT HAS FIELDS, GREY UNTIL SOMETHING IS
+       CHANGED. 「なにもない時は薄い灰色、何か打ったら金にする」「これが決定
+       ボタンのルール」 OWNER 2026-09-03 -- so whether it can be pressed is
+       said by its colour, and a screen that has not been touched says so
+       rather than saying nothing at all.
 
        It is here rather than in the nine screens for the same reason the
        question is in back(): one place, so the day a tenth screen takes
        typing it is already in the bar. A screen that has NOT registered a
-       buffer has nothing dirty and gets nothing. */
+       buffer has no fields and gets nothing. */
     (right||'')+
     keepBtnHTML()+
     '</div>'+

@@ -261,6 +261,12 @@ function pwSidePaint(){
   var e=document.getElementById('pw-side');
   if(e) e.innerHTML=pwSideHTML();
 }
+/* What pwSend() would refuse, asked before it is pressed -- the same question,
+   off the same function, so the colour and the press cannot say two different
+   things. A post with no line, no photograph and no voice is not a post.
+   「なにもない時は薄い灰色、何か打ったら金にする」 OWNER 2026-09-03,
+   www/shell.js § navDo. */
+function pwOn(){ return pwHas(puaRoman(String(PW.ln||'')).trim()); }
 /* The thing that finishes it goes in the top bar, filled, where every phone
    puts it -- not at the foot of a screen you have to scroll to. */
 function openPost(from){
@@ -337,12 +343,14 @@ function openPost(from){
        presses -- so this is the one control in the app with a timer on it,
        and it is here rather than in act.js because it is one button and not a
        kind of button. */
-    '<button class="navdo'+(pwPriv()? ' pv':'')+'" id="pw-go"' + DO('pwSend') + '>'+
-      (pwPriv()? ICON_LOCK : '')+
-      /* The lock says which it is. "Post to yourself" as a WORD pushed the
-         screen's own name off the top of it, and a mark beside a verb is what
-         a bar that narrow has room for. */
-      esc(t(PW.ed? 'post.save' : 'post.send'))+'</button>', true);
+    /* The lock says which it is. "Post to yourself" as a WORD pushed the
+       screen's own name off the top of it, and a mark beside a verb is what
+       a bar that narrow has room for. The ground and the lock say WHICH post
+       this is; whether there IS one to send is the colour, and the colour is
+       www/shell.js § navDo's two states. */
+    navDo(t(PW.ed? 'post.save' : 'post.send'), 'pwSend', null, pwOn(),
+          {id:'pw-go', cls:(pwPriv()? 'pv' : ''), mark:(pwPriv()? ICON_LOCK : '')}),
+    true);
 }
 /* The timer, wired after the screen is drawn. Holding turns the post private
    or public again; letting go early does nothing, and the press that follows
@@ -623,12 +631,11 @@ function vDrafts(){
   return '<div class="view">'+
     navTop('', DFSEL
       ? ((dfSelList().length
-            ? '<button class="navdo navdel"' + DO('dfSelDel') + '>'+
-                esc(t('post.draft.sel.del'))+'</button>'
+            ? navDel(t('post.draft.sel.del'), 'dfSelDel')
             : '')+
-         '<button class="navdo"' + DO('dfSelOff') + '>'+esc(t('post.draft.sel.done'))+'</button>')
+         navDo(t('post.draft.sel.done'), 'dfSelOff', null, true))
       : (DRAFTS.length
-          ? '<button class="navdo"' + DO('dfSelOn') + '>'+esc(t('post.draft.sel'))+'</button>'
+          ? navDo(t('post.draft.sel'), 'dfSelOn', null, true)
           : ''))+
     '<div class="body">'+
     (out || '<div class="note">'+esc(t('post.draft.none'))+'</div>')+
@@ -1304,6 +1311,11 @@ function pwSetLn(v){
   lnGrow('pw-ln');
   pwLeftPaint();
   pwSidePaint();
+  /* And the button in the corner, for the same reason the counter beside the
+     field is patched by hand: this screen is not redrawn while somebody is
+     typing into it. A photograph and a voice both come back through
+     openPost(), which rebuilds the bar, so they need nothing here. */
+  navDoPaint('pwSend', pwOn());
   pwFresh();
 }
 /* How long a post may be. There was no answer at all: the field was one row
