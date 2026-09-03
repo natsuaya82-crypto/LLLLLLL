@@ -403,7 +403,12 @@ the reasoning — a reason can be re-derived, a decision cannot.
   `LinguaStore.swift` の `current` は `["plan": ...]` しか返していない。
   StoreKit の契約が持っているので、ネイティブ側から出すところから
 - Affected docs: この項、docs/CHANGELOG.md、docs/DATA_MODEL.md
-- Implementation status: **未実装。**`claude/plannow` に渡した（2026-09-03）。
+- Implementation status: **実装済み（CODE CONFIRMED）。**`claude/plannow`
+  （2026-09-03）。`LinguaStore.current` が `Transaction.expirationDate` から
+  `until` を返し、`www/store.js` の `STORE_UNTIL` が**答えた段と一緒に**
+  セッションの間だけ持ち、`plNow()` が `.plgo` の中に一行を出す。
+  **保存するものは増えていない。**`plan-check` に九本。
+  **Swift はこの環境でコンパイルできないので DEVICE CONFIRMED ではない。**
   **`claude/rc` が同じ `LinguaStore.swift` を RevenueCat へ書き換えている** ──
   あちらは公開キー待ちで止まっているので、master が先に進み、rc が取り込む
 
