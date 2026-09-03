@@ -387,8 +387,10 @@ function snsPull(){
    them and they refuse it, rather than a third place keeping a third flag.
 
    It does NOT fight the profile tab's hold in www/shell.js. That one arms on
-   an element carrying `data-hold` and disarms on any touchmove, which is
-   exactly right: a pull is not a hold. And preventDefault stops the browser
+   an element carrying `data-hold` and disarms once the thumb has moved more
+   than HOLD_SLOP (10px), which is exactly right: a pull is not a hold. It
+   disarmed on ANY touchmove until 2026-09-01, and that is why no long press
+   ever completed on a real phone -- a finger never holds perfectly still. And preventDefault stops the browser
    bouncing the page, not the other listeners -- they are still called. */
 var PULL_R=0.5, PULL_GO=64, PULL_MAX=96;
 var PULL_ON={feed:1, explore:1, notif:1};
