@@ -67,7 +67,6 @@ const ROADS = {
   "sound.js:langKey('snd')":    { to: 'netSlicePut' },
   "keyboard.js:langKey('kb')":  { to: 'netSlicePut' },
   "home.js:langKey('wld')":     { to: 'netSlicePut' },
-  'core.js:langKey(k)':         { to: 'netSlicePut' },
   'backup.js:langKey(k)':       { to: 'netSlicePut' },
   'home.js:langKeyOf(id':       { to: 'netSlicePut' },
   'net.js:langKeyOf(id':        { to: 'netSlicePut' },

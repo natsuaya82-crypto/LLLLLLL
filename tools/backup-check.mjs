@@ -534,7 +534,10 @@ const gone = await pg.evaluate(async () => {
   draftsSave();
   POSTS = [{ id: 'p1', ln: 'kano', at: 1 }];
   savePosts();
-  localStorage.setItem('lingua.words', '[{"hw":"old"}]');   /* the flat keys from before */
+  /* A flat key from before a language had an id. The app does not read these
+     any more -- 「今の状態の話平キーなんかいらない」 OWNER 2026-09-03 -- and
+     deleting the account must not erase it either. See below. */
+  localStorage.setItem('lingua.words', '[{"hw":"old"}]');
   SET.theme = 'dark'; SET.ui = 'ja'; save();
 
   /* A neighbour in the same storage. NOT ours: no dot after the name, and a
@@ -679,8 +682,25 @@ const wiped = await pg.evaluate(async () => {
     fails.push('`lingua.drafts` was written back out after wipeAll()');
   if (localStorage.getItem('lingua.me'))
     fails.push('`lingua.me` was written back out after wipeAll()');
-  if (localStorage.getItem('lingua.words'))
-    fails.push('a flat key from before there could be more than one language survived');
+  /* AND THE FLAT KEY IS STILL THERE, which is the opposite of what this asked
+     until 2026-09-03 and is the same decision read the right way round.
+     `langMigrate()` used to copy those eight into a language, so a copy left
+     behind after a wipe was a live second dictionary answering to nobody --
+     the next person to sign in on this phone would have been handed the first
+     person's words. That road is DELETED now, so the danger is gone with it:
+     nothing reads `lingua.words`, and an unread key is not somebody's
+     belongings for lsWipeAcct() to take.
+
+     What is left is docs/DATA_SAFETY.md's plain rule. The owner said those
+     keys are not WANTED; they did not say to erase them, and this app does
+     not delete what it merely stopped reading. A phone that has them keeps
+     them. tools/migrate-check.mjs § 8 holds the same sentence on the launch
+     road; this holds it on the account-deletion road, which is the one place
+     that erases on purpose and so the one place it could be got wrong. */
+  if (!localStorage.getItem('lingua.words'))
+    fails.push('deleting the account ERASED a flat key. The app stopped reading ' +
+      'those eight; it does not delete them (docs/DATA_SAFETY.md, and the ' +
+      'decision of 2026-09-03 is a road being removed, not data)');
   /* THE ACCOUNT'S FIELDS GO AND THE HANDSET'S SETUP STAYS, and that replaced
      「残るものねえ」 -- read on 2026-08-27 about a phone that held one account,
      when there was no other reading of it. There is now, and it is the only
