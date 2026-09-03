@@ -30,7 +30,7 @@ const pg = await br.newPage({ viewport: { width: 390, height: 844 } });
 await pg.goto('file://' + path.join(dir, '..', 'www', 'index.html'));
 await pg.waitForSelector('#splash', { state: 'detached', timeout: 10000 });
 
-const r = await pg.evaluate(({ s }) => {
+const r = await pg.evaluate(async ({ s }) => {
   eval('(' + s + ')()');
   SET.done = true;
   var out = {};
@@ -341,12 +341,13 @@ const r = await pg.evaluate(({ s }) => {
      「二重課金はさせないようにしろよ」 OWNER 2026-09-01, after buying Plus on
      a phone that already had Pro and being charged for both.
 
-     Two App Store subscriptions in two groups can be held at once, and
-     docs/apple.md says to put them in ONE group -- where Apple itself makes
-     the second an upgrade. That sentence is WRITING, and writing does not
-     stop anything: it was right in the file the whole time and the purchase
-     went through anyway. The app refuses instead, and this is what holds the
-     refusal.
+     ONE GROUP DOES NOT CLOSE THIS, and that is 2026-09-03: 「グループ1個で
+     レベルも分かれてたけど治ってないよ？」. In one group, pressing a lower
+     rung is a DOWNGRADE -- Apple defers it to the end of the paid period and
+     charges again from there, and the person meanwhile still has what they
+     had. That is a change to a subscription, which belongs on Apple's own
+     sheet, not a thing to sell somebody.
+     「そもそもプロの人が買えるのが意味わからないだろ」 OWNER 2026-09-03.
 
      Pressing a plan at or below the one in force is not a purchase; it is a
      change to a subscription that exists, and that is Apple's own sheet. So
@@ -379,6 +380,42 @@ const r = await pg.evaluate(({ s }) => {
   out.upPlan = plan();
   window.storeBuy = realBuy;
   PLPICK = null;
+  SET.plan = 'free'; save();
+
+  /* ---- 6c. and the same refusal when the phone is the one that knows -----
+     「そもそもプロの人が買えるのが意味わからないだろ」 OWNER 2026-09-03.
+
+     6b asks plan(), which is the copy in the Keychain -- written the last
+     time anything answered. It is behind on exactly the phones where this
+     matters: a reinstall before the entitlements land, a Keychain that would
+     not read, a subscription bought on another device. There the button is
+     live and Plus is pressed while Pro is running.
+
+     So LinguaStore.swift § buy asks Apple itself at the press and answers
+     `how: "held"` without buying anything. What is held HERE is the other end
+     of it: that answer must open Apple's management sheet and must not move
+     the plan or say anybody bought anything. The Swift half cannot be checked
+     on a Linux runner -- there is no StoreKit -- so this holds the road from
+     the answer onwards, and the answer itself is a build. */
+  var heldSaid = [], heldAsked = null;
+  var realToast6c = window.toast;
+  window.toast = function(m){ heldSaid.push(String(m)); };
+  window.Capacitor = { nativePromise: function(pl, m){
+    if(m === 'buy') return Promise.resolve({ how:'held', plan:'pro', bought:'' });
+    if(m === 'manage'){ heldAsked = 'manage'; return Promise.resolve({}); }
+    return Promise.resolve({});
+  } };
+  SET.plan = 'free'; save();          /* the copy is behind: it says free */
+  storeBuy('com.tokinets.lingua.plus.monthly');
+  await new Promise(function(r){ setTimeout(r, 30); });
+  out.heldPlan = plan();
+  out.heldPop = popOn();
+  out.heldSaid = heldSaid.slice();
+  if(popOn()) popYes();              /* the yes is 「manage」 */
+  await new Promise(function(r){ setTimeout(r, 30); });
+  out.heldWent = heldAsked;
+  window.toast = realToast6c;
+  delete window.Capacitor;
   SET.plan = 'free'; save();
 
   POSTS = POSTS.filter(function(x){ return x.id !== 'p_plan'; });
@@ -1149,6 +1186,16 @@ say(r.dblAsked, 'and it says so rather than doing nothing');
 say(r.dblSameBought === '', 'nor is the plan already in force (' +
     (r.dblSameBought || 'nothing asked for') + ')');
 say(r.upPlan === 'pro', 'and going UP still goes through (' + r.upPlan + ')');
+say(r.heldPlan === 'free',
+    'the phone answering 「you already hold this」 does not move the plan (' +
+    r.heldPlan + ')');
+say(r.heldPop, 'and it says so rather than doing nothing');
+say(!(r.heldSaid || []).some(function (m) { return /Plus|プラス/.test(m); }),
+    'and nobody is told they bought anything (' +
+    ((r.heldSaid || []).join(' / ') || 'nothing said') + ')');
+say(r.heldWent === 'manage',
+    'and the yes goes to Apple\'s own sheet, which is where a subscription ' +
+    'is changed (' + (r.heldWent || 'nowhere') + ')');
 
 say(r.bdgRowPro !== '' && r.bdgRowFree === '',
     'the price list still marks the Pro row, read on free -- a plan carrying it is not the same question');

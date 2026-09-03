@@ -330,6 +330,34 @@ public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
         guard let product = try await Product.products(for: [id]).first else {
           call.reject("no such product"); return
         }
+        /// AND SOMEBODY WHO ALREADY HOLDS THIS RUNG IS NOT SOLD IT AGAIN.
+        ///
+        /// 「そもそもプロの人が買えるのが意味わからないだろ」 OWNER 2026-09-03.
+        ///
+        /// `plBuy()` in www/settings.js has asked this since 2026-09-02 and it
+        /// asks `plan()` -- the copy in the Keychain, written the last time
+        /// anything answered. That copy is behind on exactly the phones where
+        /// this matters: a reinstall before the entitlements land, a Keychain
+        /// that could not be read, a subscription bought on another device.
+        /// The button is live, Plus is pressed, and Apple takes it as a
+        /// downgrade of a Pro that the app did not know was running.
+        ///
+        /// So it is asked again HERE, of the only thing that actually knows.
+        /// Same rule, same ladder, no second answer to 「what may be bought」 --
+        /// what is different is who is asked. Held nothing, or something
+        /// lower, and the purchase goes ahead: this refuses only a rung
+        /// already paid for.
+        ///
+        /// A downgrade is not forbidden, it is moved: `how: "held"` sends the
+        /// person to Apple's own management sheet, which is where changing a
+        /// subscription belongs and the only place it can be done without
+        /// being charged twice.
+        let want = Self.planOf(id) ?? "free"
+        let held = await Self.entitledPlan()
+        if held != "free", Self.best(held, want) == held {
+          call.resolve(["how": "held", "plan": held, "bought": ""])
+          return
+        }
         let result = try await product.purchase()
         switch result {
         case .success(let v):
