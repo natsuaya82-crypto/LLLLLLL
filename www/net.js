@@ -353,7 +353,7 @@ function netTook(d){
      file can produce, and it produced it here rather than anywhere else
      because this is the only place SESS is ever written. A reply that is not
      a session is not a session: it is refused here, once, and every road in
-     -- the mail door, the six digits, Apple and Google -- reports it the way
+     -- the mail door, the code, Apple and Google -- reports it the way
      it already reports a reply with no access token at all. */
   if(!d || !d.access_token || !d.refresh_token) return false;
   SESS={ at:d.access_token, rt:d.refresh_token,
@@ -523,7 +523,7 @@ function netResume(ok, bad){
      signup  makes a NEW user. Always. Supabase has no switch that says 「and
              if this address already has an account, use that one」, so
              somebody who came in with Google and later typed the same address
-             here got a second account, six digits and all -- which the owner
+             here got a second account, a code and all -- which the owner
              found by doing it.
      otp     looks the address up. There already, and this signs them into it;
              not there, and `create_user` makes it. One road, one account,
@@ -543,7 +543,7 @@ function netResume(ok, bad){
    whichever it is, so that nobody can stand outside and ask which addresses
    are registered. So the door could not tell, and both screens walked on: the
    making face made a second way into an account that already existed, and the
-   reset face sent somebody to wait for six digits that were never sent.
+   reset face sent somebody to wait for a code that was never sent.
 
    supabase/schema.sql § email_taken() is what answers, and the comment there
    says what it costs. Signed out, so the publishable key is what carries it. */
@@ -559,10 +559,18 @@ function netSignIn(email, pass, ok, bad){
           {email:email, password:pass}, null,
           function(d){ if(netTook(d)) ok(d); else bad(d, 0, 'token ≠'); }, bad);
 }
-/* The six digits out of the mail. A link would have to land somewhere, and
+/* The code out of the mail. A link would have to land somewhere, and
    there is nowhere for it to land: this is a Capacitor app with no web page
    behind it, so the default confirmation URL opens nothing on the tester's
-   phone. A code goes back to the screen that asked for it. */
+   phone. A code goes back to the screen that asked for it.
+
+   HOW MANY DIGITS IS NOT ASKED HERE AND IS NOT ASKED ANYWHERE IN www/.
+   「8桁で60秒再送信」 OWNER 2026-09-03. Whatever was typed goes up as it was
+   typed, and Supabase's own OTP Length setting is what decides -- one place,
+   and the app follows it without being told. Counting here as well would be
+   the same question answered twice, and the day the setting moved the app
+   would be the half that refused. supabase/setup.md § 桁数は 8 is the
+   setting; www/onboard.js holds the sixty seconds, which IS the app's. */
 /* `email` rather than `signup`, because the digits come out of netMailOtp()
    now and not out of a signup. It is the type that covers both, so a code
    already in somebody's mail from the old road still works. */
@@ -573,7 +581,7 @@ function netVerify(email, code, ok, bad){
 function netRecover(email, ok, bad){
   netPost('/auth/v1/recover', {email:email}, null, ok, bad);
 }
-/* The six digits out of the reset mail, and then the new password.
+/* The code out of the reset mail, and then the new password.
    Two calls and not one, because Supabase has no "here is a code and a new
    password" endpoint: the code buys a SESSION, and a signed-in person is
    allowed to change their own password. So the second call is the ordinary

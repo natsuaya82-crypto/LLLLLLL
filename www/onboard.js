@@ -614,7 +614,7 @@ function obCanBack(){
   /* THE DOOR'S OWN FACES FIRST, and this is the half that was missing:
      『後追加でメールを確認のボタンに再送信ボタンと戻るボタンがない』 OWNER
      2026-09-02. Signed out, appIs() is 'door' and the line below answered
-     false for the whole of it -- including the six-digit screen, which is
+     false for the whole of it -- including the code screen, which is
      three presses in from the face the door opens on. A person who mistyped
      their address was standing on a screen with no way off it.
 
@@ -626,7 +626,7 @@ function obCanBack(){
     if(obDoorBack()) return true;
     /* AND OUT OF THE PASSWORD SCREEN INTO THE APP. 「サインインしたらアプリに
        移動してください」 OWNER 2026-09-02. Both roads reach it with a session
-       already in hand -- the six digits were spent to get one -- so the person
+       already in hand -- the code was spent to get one -- so the person
        standing here is signed in, and a screen of one field and one button
        that goes nowhere is a person locked OUT of an app they are already
        inside. It is what netSetPass() failing leaves behind.
@@ -926,7 +926,7 @@ function obIn(){
 }
 /* The third argument is which kind of failure it was, and it only ever comes
    from net.js. Everything that reports through here gets it for free -- the
-   two social doors, the mail door, the six digits, the handle, the profile --
+   two social doors, the mail door, the code, the handle, the profile --
    which is the whole of the reason it is one function. */
 function obNo(d, s, m){
   OBM.busy=false; OBM.msg=netWhy(d, s, m); render();
@@ -1098,7 +1098,7 @@ function obMailIn(){
    This asked Supabase for a NEW user and got one every time -- so somebody who
    had come in with Google and later typed the same address here ended up with
    two accounts, two languages and two of whatever they had paid for. It asks
-   for six digits to that address now: already an account, and this is a way
+   for a code to that address now: already an account, and this is a way
    into it; not one, and it is made. www/net.js § netMailOtp() has the rest.
 
    No password, which is the same day's 「メアドだけ、アカウント作成で」 and
@@ -1132,7 +1132,7 @@ function obMailUpGo(){
 /* THE DIGITS FIRST, THE PASSWORD AFTER. 「普通に6桁のコード打ってから
    パスワード要求だろ」 OWNER 2026-09-02.
 
-   The address is proved by the six digits and the password is chosen once it
+   The address is proved by the code and the password is chosen once it
    is -- which is the same two screens the reset road already had, in the same
    order, for the same reason. What comes back from the digits is a session,
    and obNewPwGo() is what spends it. */
@@ -1149,7 +1149,7 @@ function obMailCode(){
    app. 『後追加でメールを確認のボタンに再送信ボタンと戻るボタンがない』 OWNER
    2026-09-02.
 
-   Two faces ask for six digits and they come out of two different mails, so
+   One face, and two mails behind it -- the sign-up code and the reset code, so
    which one to send again is read off the face rather than remembered: the
    sign-up code is Supabase's resend, the reset code is asking for the reset
    again. `ob.mail.sent` afterwards is a STATE and not an explanation
@@ -1170,13 +1170,13 @@ function obMailAgain(){
    "sent", and there was nowhere to go with what arrived. The mail carried a
    link, because that is what Supabase's Reset Password template says, and a
    link has nowhere to land in a Capacitor app -- the same wall the signup
-   mail hit and was answered with six digits. So this goes on to the screen
+   mail hit and was answered with a code. So this goes on to the screen
    that takes them. */
 function obMailForgot(){
   if(OBM.busy || !obMailAsk()) return;
   OBM.busy=true; OBM.msg=''; render();
   /* The other half of the same question. /auth/v1/recover answers 200 for an
-     address it has never seen, so this screen used to walk on to six digits
+     address it has never seen, so this screen used to walk on to a code
      that were never going to arrive -- a state with no cause and no way out,
      which is the one place www/CLAUDE.md says a sentence is written. */
   netMailTaken(OBM.em, function(taken){

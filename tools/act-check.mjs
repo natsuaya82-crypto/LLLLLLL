@@ -484,8 +484,8 @@ const R = await pg.evaluate(() => {
     OBM.mode = 'reset'; OBM.em = 'a@b.c'; OBM.code = '000000'; OBM.pw = ''; OBM.msg = '';
     OBM.busy = false; render();
     const step1 = seen();
-    if (!step1.code) out.doors.push('the reset does not start on the six digits');
-    if (step1.pw)    out.doors.push('the six digits arrive with a password field beside them');
+    if (!step1.code) out.doors.push('the reset does not start on the code');
+    if (step1.pw)    out.doors.push('the code arrives with a password field beside it');
 
     /* a code the server refuses */
     wire(400, { msg: 'Token has expired or is invalid' });
