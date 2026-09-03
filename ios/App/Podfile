@@ -16,7 +16,23 @@ end
 
 target 'App' do
   capacitor_pods
-  # Add your Pods here
+
+  # RevenueCat. The store layer talks to it instead of to StoreKit directly
+  # -- docs/FEATURE_RULES.md 2026-08-25 (Shipaton 2026) and 2026-09-02
+  # (sales and analytics are read in RevenueCat's dashboard, not in the app).
+  #
+  # 5.x is the StoreKit 2 line, which is what this app already is: the
+  # deployment target above is iOS 15 and ios/App/App/LinguaStore.swift has
+  # never had a StoreKit 1 path. `~> 5.0` is RevenueCat's own documented
+  # dependency rule (up to the next major), so a 6.0 with a different API
+  # cannot arrive on a `pod install` nobody asked to be a migration.
+  #
+  # CocoaPods and not Swift Package Manager, which is what RevenueCat
+  # recommends first: this project already resolves Capacitor through
+  # CocoaPods, CI runs `pod install` (.github/workflows/ios-deploy.yml) and
+  # builds App.xcworkspace, so a pod is a line here and a package is a change
+  # to project.pbxproj, which other branches are also editing.
+  pod 'RevenueCat', '~> 5.0'
 end
 
 post_install do |installer|
