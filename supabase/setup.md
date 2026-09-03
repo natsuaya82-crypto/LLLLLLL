@@ -114,12 +114,30 @@ RLS を最初から有効にしているので、この2行はホストされた
 あって、三つ目が既定のままリンクを送っていました ──「メアド登録しようとしたら
 サインインリンク来たけど6桁のコードじゃないの？」OWNER 2026-09-03。
 
-貼るものは三つとも同じ形です:
+**貼るものは英語です。**「bで」OWNER 2026-09-03 ── 英語だけ／英語と日本語を
+並べる／本当に十言語、の三択で英語だけを選んだ。Supabase はひな形を種類ごとに
+一つしか持たず、読む人の言語で切り替える仕組みがない。**アプリは十言語、メールは
+一言語なので、その一つは英語。**十言語にするなら Send Email Hook でこちらが
+メールを組むことになり、それは `docs/BACKLOG.md`。
+
+Confirm signup と Magic Link（5 と 7）:
+
+    Subject   Your Lingua verification code
 
 ```html
-<p>Lingua のパスワード再設定コードです。</p>
+<p>Your Lingua verification code:</p>
 <p style="font-size:28px;letter-spacing:4px"><b>{{ .Token }}</b></p>
-<p>アプリに戻って入力してください。</p>
+<p>Enter it in the app.</p>
+```
+
+Reset Password（6）:
+
+    Subject   Reset your Lingua password
+
+```html
+<p>Your Lingua password reset code:</p>
+<p style="font-size:28px;letter-spacing:4px"><b>{{ .Token }}</b></p>
+<p>Enter it in the app.</p>
 ```
 
 **飛ばすとコードが一生届きません。** Capacitor アプリなのでリンクの着地先が

@@ -82,6 +82,15 @@ in the dashboard, and changing one does nothing to the others.** They are listed
 above the other on the same screen, which is exactly why one of them gets done
 and the other does not.
 
+**AND ALL THREE ARE IN ENGLISH.** 「bで」 OWNER 2026-09-03, asked which of
+English only / English beside Japanese / a real ten-language mail. Supabase
+holds one template per kind and cannot pick by the reader's language, so ten
+was never on offer without building the mail here (its Send Email Hook, and the
+app telling the server which language this person reads). **The app has ten
+interface languages and the mail has one, so the one is English.** The digits
+are the message; the three lines round them are English. Ten is
+`docs/BACKLOG.md`, not this file.
+
 That is not a hypothetical. `supabase/setup.md` § 3 ended at the signup one for
 weeks and the reset one lived only in the prose below, and what happened was
 what the shape of the list predicted: the signup code arrived as six digits,
@@ -90,15 +99,17 @@ asked. 「6桁の数字がそもそも届かない。リンクでくるのをや
 2026-08-26. **A step that is not in the list people follow is a step nobody
 takes.** Both are numbered in setup.md now.
 
-### 1 of 2 — Confirm signup
+### 1 of 3 — Confirm signup
 
 `Authentication → Emails → Templates → Confirm signup`. Replace
 `{{ .ConfirmationURL }}` with `{{ .Token }}`:
 
+    Subject   Your Lingua verification code
+
 ```html
-<p>Lingua の確認コードです。</p>
+<p>Your Lingua verification code:</p>
 <p style="font-size:28px;letter-spacing:4px"><b>{{ .Token }}</b></p>
-<p>アプリに戻って入力してください。</p>
+<p>Enter it in the app.</p>
 ```
 
 **A link has nowhere to land.** This is a Capacitor app with no web page behind
@@ -110,7 +121,7 @@ is on a server nobody here can read.
 
 `Authentication → Providers → Email → Confirm email` on.
 
-### 2 of 2 — Reset Password
+### 2 of 3 — Reset Password
 
 **Same wall, same answer.** The link in the default template opens nothing on
 the phone, so the app takes six digits and sets the new password itself. It is
@@ -120,10 +131,12 @@ new password (`obResetGo` and `obNewPwGo` in `www/onboard.js`).
 `Authentication → Emails → Templates → Reset Password`. Replace
 `{{ .ConfirmationURL }}` with `{{ .Token }}`:
 
+    Subject   Reset your Lingua password
+
 ```html
-<p>Lingua のパスワード再設定コードです。</p>
+<p>Your Lingua password reset code:</p>
 <p style="font-size:28px;letter-spacing:4px"><b>{{ .Token }}</b></p>
-<p>アプリに戻って入力してください。</p>
+<p>Enter it in the app.</p>
 ```
 
 Until this is changed the mail carries a link and the screen behind it has
@@ -152,10 +165,12 @@ one road further on.
 `Authentication → Emails → Templates → Magic Link`. Replace
 `{{ .ConfirmationURL }}` with `{{ .Token }}`:
 
+    Subject   Your Lingua verification code
+
 ```html
-<p>Lingua のログインコードです。</p>
+<p>Your Lingua verification code:</p>
 <p style="font-size:28px;letter-spacing:4px"><b>{{ .Token }}</b></p>
-<p>アプリに戻って入力してください。</p>
+<p>Enter it in the app.</p>
 ```
 
 `netVerify` posts it with `type: email`, which is the type that covers both
