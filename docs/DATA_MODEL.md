@@ -444,3 +444,24 @@ nothing about what exists, what is saved, or what comes back.
 person to whatever phone they sign in on. `SET.plan` is where the value sits
 today and that is the code, not the model — `docs/STATE.md` § 3 item 4 has the
 gap. See `docs/PAID_FEATURES.md`.
+
+**And when the plan runs to is NOT stored, deliberately.** 2026-09-03: the
+plans screen draws no buy button for a rung already paid for, so the place it
+left says which plan is on and until when — 「消すなら同じ場所に現在この
+プランです〇〇/〇〇までみたいな感じにしないとわからんやろ」 OWNER 2026-09-03.
+The date comes from `Transaction.expirationDate` through `LinguaStore.current`
+and stops at `STORE_UNTIL` in `www/store.js`, which is a variable and not a
+key: it is gone when the app is closed and asked for again the next time the
+screen is opened.
+
+Two reasons, and either one is enough. **It could not answer 「which account
+is this」**, which is the question at the head of `CLAUDE.md` that a thing has
+to answer before it is written down — an expiry belongs to the Apple ID that
+paid, and `localStorage` is the account's. `SET.plan` already cannot answer it
+and that is a known fault (`docs/STATE.md`); a second one beside it is a second
+thing to unpick. **And a date that outlives the plan it was answered for is
+the one thing this line must never do**: it is held WITH that plan, so a plan
+that moves takes the date with it rather than leaving a date beside a plan it
+was never about. 「not known」 and 「there is no end」 are different states and
+do not share a branch, which is the same sentence this file makes about 「空」
+and 「読めていない」 everywhere else.

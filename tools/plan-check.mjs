@@ -865,6 +865,106 @@ const nul = await pg.evaluate(async () => {
   return out;
 });
 
+/* ---- and the place the buy button left is not empty ---------------------
+   「消すなら同じ場所に現在このプランです〇〇/〇〇までみたいな感じにしないと
+   わからんやろ」 OWNER 2026-09-03, after seeing it on a real phone:
+   「購入するボタンなんでなくなってんの？」
+
+   The button going was the decision of the same day and is held above
+   (buyOnHeld / buyOnSame). What NOTHING held is that something stands in its
+   place, and a screen where the only thing that ever changes is an absence
+   is a screen no check can tell apart from a screen that has broken.
+
+   The date is StoreKit's, so it needs a fake App Store: in a browser there is
+   nothing to ask and there is never a date, which is exactly the state the
+   last two claims here are about. `current` is the one call that carries it --
+   restore and manage answer no `until` at all.                            */
+const nowl = await pg.evaluate(async () => {
+  var out = {}, hold = route, at = Date.UTC(2026, 9, 4, 12, 0, 0), give = null;
+  route = 'plans'; NAV = [{ r: 'plans' }];
+  out.lang = uiLang();
+  function tick(){ return new Promise(function (r) { setTimeout(r, 0); }); }
+  function reset(){
+    STORE_CUR = false; STORE_GOT = false; STORE_UNTIL = null;
+    STORE_P = null; STORE_ASK = false; STORE_BAD = '';
+  }
+  function apple(ans){
+    window.Capacitor = { nativePromise: function (plug, m) {
+      if (m === 'current') return ans();
+      if (m === 'products') return Promise.resolve({ products: [] });
+      return Promise.reject(new Error('not this one'));
+    } };
+  }
+
+  /* ---- A. Apple has answered, with a date ----------------------------- */
+  apple(function () { return Promise.resolve({ plan: 'pro', until: at }); });
+  reset();
+  SET.plan = 'free'; save();
+  PLPICK = { id: 'pro', yr: false };
+  /* Before the answer lands the screen is the waiting mark, and there is no
+     date on it. 「期限が分からない」 is not 「期限が無い」 and it is certainly
+     not a date drawn early. */
+  out.waiting = vPlans();
+  out.waitHeld = storeHeld();                  /* false -- still asking */
+  await tick(); await tick();
+  out.plan = plan();                           /* 'pro' -- current answered */
+  out.at = storeUntil();                       /* the date, and it is that plan's */
+  var page = vPlans();
+  out.gone = page.indexOf('plbuy') === -1;
+  out.line = page.indexOf(t('plan.now', planName('pro'), '10/04/2026')) !== -1;
+  out.dated = page.indexOf('10/04/2026') !== -1;
+
+  /* ---- B. and it names the plan IN FORCE, not the one being looked at --
+     plHave() is true for the plan in force and every rung BELOW it, so
+     somebody on Pro who taps Plus's price stands here too. A line reading
+     「this is your plan」 with nothing named would be a sentence about Plus. */
+  PLPICK = { id: 'plus', yr: false };
+  var low = vPlans();
+  out.lowGone = low.indexOf('plbuy') === -1;
+  out.lowNames = low.indexOf(t('plan.now', planName('pro'), '10/04/2026')) !== -1;
+  /* the exact line that WOULD be drawn if it named the rung being looked at,
+     built from the same i18n table rather than from a fragment of English */
+  out.lowNotPlus = low.indexOf(t('plan.now', planName('plus'), '10/04/2026')) === -1;
+
+  /* ---- C. the rung above still has its button ------------------------- */
+  SET.plan = 'plus'; save();
+  PLPICK = { id: 'pro', yr: false };
+  var up = vPlans();
+  out.upBuy = up.indexOf('plbuy') !== -1;
+  out.upNoLine = up.indexOf('10/04/2026') === -1;
+
+  /* ---- D. Apple answered and gave no date ----------------------------- */
+  apple(function () { return Promise.resolve({ plan: 'pro' }); });
+  reset();
+  SET.plan = 'free'; save();
+  PLPICK = { id: 'pro', yr: false };
+  vPlans();
+  await tick(); await tick();
+  var none = vPlans();
+  out.noneAt = storeUntil();                   /* 0 -- not known */
+  out.noneGone = none.indexOf('plbuy') === -1;
+  out.noneLine = none.indexOf(t('plan.now.only', planName('pro'))) !== -1;
+  out.noneNoDigits = !/\d{2}\/\d{2}\/\d{4}/.test(none);
+
+  /* ---- E. and a date never outlives the plan it was about -------------
+     Somebody on Plus buys Pro from this screen: the plan moves and the date
+     does not. A date kept on its own would be printed beside a plan it was
+     never about, and nothing on the screen could tell. */
+  STORE_UNTIL = { plan: 'plus', at: at };
+  SET.plan = 'plus'; save();
+  out.mineAt = storeUntil();                   /* the date -- it is Plus's */
+  SET.plan = 'pro'; save();
+  out.movedAt = storeUntil();                  /* 0 -- it is not Pro's */
+  PLPICK = { id: 'pro', yr: false };
+  out.movedNoDate = vPlans().indexOf('10/04/2026') === -1;
+
+  delete window.Capacitor;
+  reset();
+  PLPICK = null; SET.plan = 'free'; save();
+  route = hold; NAV = [{ r: hold }];
+  return out;
+});
+
 /* ---- and the sentence after a purchase names what was PRESSED -----------
    「plus で課金しても pro になりましたって出る」 OWNER 2026-09-02, on a real
    phone. `r.plan` is the best of everything this Apple ID holds -- which is
@@ -1537,6 +1637,26 @@ const WWWSTORE = fs.readFileSync(path.join(dir, '..', 'www', 'store.js'), 'utf8'
 say(/var STORE_WAIT=25000;/.test(WWWSTORE),
     'and the bound on a real phone is 25 seconds, not the 20ms this check used');
 
+/* ---- and where the date comes from, READ rather than run ----------------
+   The browser above holds everything on this side of the bridge: the line,
+   the plan it names, the date on it, and the two states with no date. What
+   it cannot hold is that the phone ever SENDS one -- there is no Swift on
+   this runner, so this is CODE CONFIRMED and no further. Three sentences,
+   and each is a place the date could be taken from the wrong transaction. */
+say(/let plan = await writeDown\(\)/.test(STORE) &&
+    /if let e = await Self\.untilOf\(plan\)/.test(STORE) &&
+    /out\["until"\] = e\.timeIntervalSince1970 \* 1000/.test(STORE),
+    'LinguaStore.current answers the date of the plan writeDown() ANSWERED — ' +
+    'not of the best entitlement it saw, which is a different plan whenever ' +
+    'the Keychain held the higher one');
+say(/func untilOf\(_ plan: String\) async -> Date\? \{[\s\S]{0,200}?if plan == "free" \{ return nil \}[\s\S]{0,200}?entitledSeen\(\)\.until\[plan\]/.test(STORE),
+    'and untilOf() is the one place that answers it — `free` has no end, and ' +
+    'a plan with no entitlement on this device has no date to give');
+say(/guard let p = planOf\(t\.productID\) else \{ unknown \+= 1; continue \}\s*\n\s*out = best\(out, p\)\s*\n\s*if let e = t\.expirationDate/.test(STORE),
+    'and the date is filled in from inside the same walk, after verified(), ' +
+    'after revocationDate and after planOf — a transaction Apple has not ' +
+    'signed carries no date either');
+
 /* The other end of it, and READ rather than run: no Swift on this runner. */
 say(/let paid = Self\.planOf\(t\.productID\)/.test(STORE) &&
     /"bought": paid \?\? ""/.test(STORE),
@@ -1585,6 +1705,34 @@ say(UP.plan === 'pro',
 say(UP.gets === 1,
     'and a phone with nothing waiting reads the account once, as it always ' +
     'did (' + UP.gets + ')');
+
+/* ---- the place the buy button left ------------------------------------- */
+say(nowl.lang === 'en',
+    'the walk is reading English, so the date below is that order ' +
+    '(' + nowl.lang + ')');
+say(!nowl.waitHeld && nowl.waiting.indexOf('10/04/2026') === -1,
+    'no date is drawn before the App Store has answered — 「not known」 is ' +
+    'not a date and not an absence of one');
+say(nowl.plan === 'pro' && nowl.at > 0,
+    'the answer carries when the plan runs to (' + nowl.plan + ', ' +
+    (nowl.at || 'no date') + ')');
+say(nowl.gone && nowl.line,
+    'and where the buy button was there is a line saying which plan is on ' +
+    'and until when (' + (nowl.gone ? 'no button' : 'button') + ', ' +
+    (nowl.line ? 'line' : 'nothing') + ')');
+say(nowl.dated, 'the line carries the date itself (10/04/2026)');
+say(nowl.lowGone && nowl.lowNames && nowl.lowNotPlus,
+    'and picking a rung BELOW the one in force names the one in force — the ' +
+    'line is about what is held, not about what was tapped');
+say(nowl.upBuy && nowl.upNoLine,
+    'the rung above still has its button, and no line (' +
+    (nowl.upBuy ? 'button' : 'no button') + ')');
+say(nowl.noneAt === 0 && nowl.noneGone && nowl.noneLine && nowl.noneNoDigits,
+    'an answer with no date says the plan and stops — 「期限が分からない」 and ' +
+    '「期限が無い」 are not the same branch');
+say(nowl.mineAt > 0 && nowl.movedAt === 0 && nowl.movedNoDate,
+    'and a date belongs to the plan it was answered for: the plan moving ' +
+    'takes it away rather than leaving it beside a plan it was never about');
 
 
 if (bad.length) { console.error('\nplan: ' + bad.length + ' failed'); process.exit(1); }
