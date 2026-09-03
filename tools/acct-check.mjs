@@ -1486,6 +1486,58 @@ const R = await pg.evaluate(() => {
     no('43: 段そのものが送られていない — ' + JSON.stringify(msgs43[1].a));
   say('43: Keychain へは段と一緒に買った人が乗る ── 誰もいなければ乗らない');
 
+  /* ---- 44. 投稿と下書きもアカウントのもの -------------------------------
+     「アカウント新規作成してんのにまた前のアカウント残ってんだけど」 OWNER
+     2026-09-03。新しいアカウントの自分のページが、前のアカウントの投稿で
+     埋まっていた写真つき。
+
+     `lingua.posts` は端末に一つの鍵で、`pfList()` は `p.mine`（投稿した時に
+     サインインしていた人が書いた印）で自分のページを拾う。だから二人目が
+     一人目の印を自分のものとして読む。サーバーは正しい ── 間違っていたのは
+     「電波が無くても動くための写し」に持ち主が書いていないこと。
+
+     www/me.js § meFor() が同じ欠陥を直しており、これはその答えを残り二つの
+     鍵に当てたもの。**消さずに預ける** ── 入り直せば返る。 */
+  /* この主張だけ別の二人を使う ── A と B は上の主張で何度も出入りしていて、
+     その時に fixture の四つが預けられている。持ち込みたいのは「まだ何も
+     預けていない二人」で、それは新しい uid のことです。 */
+  start();
+  netOut(); arrive('p44a');
+  POSTS = [{ id:'pa', mine:true, tx:'A', at:1 }];
+  DRAFTS = [{ id:'da', ln:'A' }];
+  savePosts(); draftsSave();
+  arrive('p44b');
+  if (POSTS.length) no('44: 新しいアカウントに前の人の投稿が残っている — ' + POSTS.length);
+  if (DRAFTS.length) no('44: 新しいアカウントに前の人の下書きが残っている — ' + DRAFTS.length);
+  POSTS = [{ id:'pb', mine:true, tx:'B', at:2 }]; savePosts();
+  arrive('p44a');
+  if (POSTS.map(function(p){ return p.id; }).join(',') !== 'pa')
+    no('44: A が入り直しても自分の投稿が返ってこない');
+  if (DRAFTS.map(function(d){ return d.id; }).join(',') !== 'da')
+    no('44: A の下書きが返ってこない');
+  arrive('p44b');
+  if (POSTS.map(function(p){ return p.id; }).join(',') !== 'pb')
+    no('44: B が入り直しても自分の投稿が返ってこない');
+  if (Object.keys(localStorage).filter(function(k){
+        return k.indexOf('lingua.posts.') === 0; }).length < 2)
+    no('44: 預けが残っていない ── 消すのではなく預ける');
+  say('44: 投稿と下書きはアカウントのもの ── 二人目に一人目のは見えず、両方とも入り直せば返る');
+
+  /* ---- 45. 赤い印は名前が重なった時だけ ---------------------------------
+     「何で音で決めんの？文字の名前で決めろよ」 OWNER 2026-09-03。
+     読みで見ていたので、ローマ字の既定が c k q x を全部 /k/ にするぶん、
+     新品の言語が最初から三つ赤くなっていた。 */
+  start();
+  ltStart();
+  if (LETTERS.filter(function(l){ return !!ltTaken(l); }).length)
+    no('45: 新品のアルファベットに赤い印が付いている ── 誰も何もしていない');
+  var l45a = LETTERS[0], l45b = LETTERS[1], was45 = l45b.nm;
+  l45b.nm = ltName(l45a);
+  if (LETTERS.filter(function(l){ return !!ltTaken(l); }).length !== 2)
+    no('45: 名前が重なっても赤くならない');
+  l45b.nm = was45;
+  say('45: 赤い印は名前が重なった時だけ ── 音が同じでも印は付かない');
+
   return out;
 });
 

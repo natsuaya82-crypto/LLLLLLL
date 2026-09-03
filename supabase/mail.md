@@ -75,10 +75,10 @@ stays red is a host field written the wrong way, not a wait.
 `Authentication → Rate Limits` → emails → 30/hour. Custom SMTP does not lift
 Supabase's own limit; it is a separate number and it is low by default.
 
-## The templates, which are not optional — and there are TWO
+## The templates, which are not optional — and there are THREE
 
-**Confirm signup and Reset Password are two separate templates in the
-dashboard, and changing one does nothing to the other.** They are listed one
+**Confirm signup, Magic Link and Reset Password are three separate templates
+in the dashboard, and changing one does nothing to the others.** They are listed one
 above the other on the same screen, which is exactly why one of them gets done
 and the other does not.
 
@@ -132,6 +132,39 @@ nothing to be given — `netRecoverCode` in `www/net.js` posts the token to
 with the session that comes back. The template is the other half of that pair,
 and there is no check that can hold the two together, because one of them is on
 a server nobody here can read.
+
+### 3 of 3 — Magic Link
+
+**This is the one the door uses now, and it was missed for exactly the reason
+the heading above this section warns about.** 「メアド登録しようとしたらサイン
+インリンク来たけど6桁のコードじゃないの？何でリンクがくんの？」 OWNER
+2026-09-03.
+
+On 2026-09-02 the mail door stopped posting to `/auth/v1/signup` and started
+posting to `/auth/v1/otp` — 「1アドレス1アカウント」, because signup asks for a
+NEW user every time and otp lands on the account that is already there. The
+app is right and the mail was still a link: **otp does not send the Confirm
+signup template.** It sends `Magic Link`, which was sitting at its default.
+
+Two templates were fixed and a third was in use. Same shape as the fault above,
+one road further on.
+
+`Authentication → Emails → Templates → Magic Link`. Replace
+`{{ .ConfirmationURL }}` with `{{ .Token }}`:
+
+```html
+<p>Lingua のログインコードです。</p>
+<p style="font-size:28px;letter-spacing:4px"><b>{{ .Token }}</b></p>
+<p>アプリに戻って入力してください。</p>
+```
+
+`netVerify` posts it with `type: email`, which is the type that covers both
+this and Confirm signup — so a code already sitting in somebody's mail from the
+old road still works.
+
+**Confirm signup stays as it is.** Supabase sends it instead of this one when
+the address has never been seen and confirmation is on, so both are live and
+both have to carry the digits.
 
 ### Which one is which, from the mailbox
 

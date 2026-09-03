@@ -368,20 +368,30 @@ function ltUp(e){
    that already clashed: an import, or a phone from before the refusal. Saying
    so in red and letting it be set anyway was pointing at a mess rather than
    not making one. */
+/* WHETHER ANOTHER LETTER IS ALREADY CALLED THIS.
+   「何で音で決めんの？文字の名前で決めろよ」 OWNER 2026-09-03.
+
+   It asked the READING, and two letters reading one sound is the ordinary
+   state of an alphabet rather than a fault: the roman defaults give c, k, q
+   and x all /k/, so a language on its first launch opened with three of its
+   own letters marked red for something nobody had done. The owner's original
+   sentence was about the field this mark is ON -- 「全部入力で被ったら赤字」,
+   said of the box that answers 「文字を書く、その文字をアルファベットで表すと
+   何になるか」 -- and that box holds a NAME.
+
+   Two letters with one name is the thing that cannot stand: the name is how
+   the free keyboard finds a letter (kbFixed builds from LETTERS by name), how
+   a spelling is read back, and what an import matches on. Two letters reading
+   one sound breaks nothing.
+
+   Empty is not a clash. A language being built is full of letters nobody has
+   named yet, and marking all of them would mark the whole alphabet. */
 function ltTaken(l){
-  var u=ltUnits(l), i, first;
-  for(i=0;i<u.length;i++){
-    first=ltMain(u[i]);
-    if(first && first.id!==l.id) return u[i];
-  }
-  return '';
-}
-/* The first of these units that some OTHER letter already reads. */
-function ltClash(id, units){
-  var i, held;
-  for(i=0;i<units.length;i++){
-    held=ltFor(units[i]);
-    if(held.length && held[0].id!==id) return units[i];
+  var nm=String((l && ltName(l))||'').toLowerCase(), i, o;
+  if(!nm) return '';
+  for(i=0;i<LETTERS.length;i++){
+    o=LETTERS[i];
+    if(o && o.id!==l.id && String(ltName(o)||'').toLowerCase()===nm) return nm;
   }
   return '';
 }
@@ -582,11 +592,12 @@ function ltRoman(l){
    abugida writes ka as one, and nothing above Z exists. It is typed.
    「abcみたいにボタン並べるのはありえない。全部入力で被ったら赤字」
 
-   Two letters reading the same thing is allowed and shown, not refused: c and
-   k in English are two letters and one sound, and a language being built is
-   allowed to be halfway through. ltDupOf is what turns the field red. */
+   Two letters reading the same thing is allowed and NOT marked: c and k in
+   English are two letters and one sound. What is marked is two letters with
+   the same NAME -- ltTaken() above has the whole of why, and this is the same
+   question asked from the letter's own page rather than from its cell. */
 function ltDupOf(l){
-  return l? ltClash(l.id, ltUnits(l)) : '';
+  return l? ltTaken(l) : '';
 }
 /* Correcting what a letter reads -- the only time anybody says anything about
    a sound, because the letter was given one when it was drawn. Emptying the

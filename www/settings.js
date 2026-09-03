@@ -538,6 +538,21 @@ function wipeHere(){
      decides what may be DONE and nothing about what exists -- here nothing
      exists either way, so it protects nothing and costs nothing. */
   SET=setDefaults();
+  /* AND IT OPENS ON THE DOOR, not on the walk. 「アカウント削除した後
+     オンボーディングから始まるのはなぜ？」 OWNER 2026-09-03.
+
+     setDefaults() answers `done` false, which is what a phone out of the box
+     says, and appIs() reads that as 「this is the onboarding」. It is not: the
+     person is standing here, they have just deleted an account, and what they
+     are going to do next is sign in as somebody else. Asking them to draw an
+     alphabet first is asking them to make a language with no account to make
+     it for -- 「言語はアカウントないと作れないです」 -- which the door is the
+     answer to.
+
+     A phone with nothing on it still opens on the walk; that is a different
+     phone and tools/open-check.mjs § 1 holds it. This is the one that has
+     been through it. */
+  SET.done=true;
   netOut();
   /* and the twenty-eight slots, for a language that is empty now and on a
      plan that adds no letters of its own */

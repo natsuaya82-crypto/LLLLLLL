@@ -85,6 +85,12 @@ const ROADS = {
   'net.js:LS_SESS':  { phone: 'the tokens. They are what talks to the server; they cannot be kept on it' },
   "backup.js:langKey('bkn')": { phone: 'which generation the backup FILE is on. The file is the phone\'s by decision (CLAUDE.md § Online)' },
   'me.js:meParkKey(had)': { phone: 'another account\'s `me`, parked while this one is signed in. It came from `profile` and goes back there' },
+  /* The same shape as meParkKey, one file over and for the same fault: a new
+     account\'s own page was showing the last one\'s timeline, because the copy
+     kept for working with no signal had no owner on it. Parked and not
+     deleted -- what is in it came from `post` and `draft` and goes back there
+     the moment that account signs in again. */
+  'post.js:postParkKey(had': { phone: 'another account\'s posts and drafts, parked while this one is signed in. They came from `post` and `draft` and go back there' },
   /* The notices are the server's own answer (`notices()` in schema.sql) --
      nothing here writes one, and the copy is what the screen draws in the
      first frame. netNotices() is the road, downward. */

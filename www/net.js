@@ -392,6 +392,13 @@ function netTook(d){
      that knows what a session is made of -- the same reason `anon` is
      decided here. */
   meFor(SESS.uid);
+  /* AND THE POSTS AND THE DRAFTS, for the same reason and by the same road.
+     「アカウント新規作成してんのにまた前のアカウント残ってんだけど」 OWNER
+     2026-09-03: a new account's own page was full of the last one's timeline,
+     because `lingua.posts` is one key for the phone and `pfList()` picks your
+     page out of it by a `mine` flag written by whoever was signed in then.
+     www/post.js § postFor() parks and reads back; nothing is deleted. */
+  if(typeof postFor==='function') postFor(SESS.uid);
   /* AND WHAT THIS ACCOUNT PAID FOR, which is not what the PHONE paid for.
      「Xは違うアカウントだと課金も引き継がれない」 OWNER 2026-09-02. Here for
      the same reason meFor() is here: this is the one place that knows a
@@ -452,6 +459,9 @@ function netOut(){
      back, and wipeAll() has already blanked ME by the time it reaches here,
      so nothing is written back out over a deleted account. */
   meFor('');
+  /* And the timeline this phone was holding goes with the name. Parked under
+     the account that had it, not thrown away. */
+  if(typeof postFor==='function') postFor('');
 }
 /* The token in hand lasts an hour. This is what makes the next launch silent:
    nothing is typed, nothing is remembered by the person, and the thing on the

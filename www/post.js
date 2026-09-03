@@ -58,6 +58,54 @@ function savePosts(){
   try{ localStorage.setItem(LS_POSTS, JSON.stringify(POSTS)); return true; }
   catch(e){ toast(t('post.full')); return false; }
 }
+/* ---- and these belong to an ACCOUNT, not to the phone --------------------
+   「アカウント新規作成してんのにまた前のアカウント残ってんだけど」 OWNER
+   2026-09-03, with a photograph of a brand new account whose 投稿 tab was
+   full of the last one's timeline.
+
+   `lingua.posts` and `lingua.drafts` are one key each, and `pfList()` picks
+   your own page out of them by `p.mine` -- a flag written when the post was
+   made, by whoever was signed in THEN. So the second account read the first
+   one's `mine` as its own. Nothing was wrong with the server: the timeline
+   comes down correctly. What was wrong is that a copy kept for working with
+   no signal had no owner on it.
+
+   www/me.js § meFor() had this exact fault in 2026-08-27 and this is its
+   answer, applied to the other two keys: the copy is PARKED under the account
+   that was holding it and the new account's park is read back. Nothing is
+   deleted -- signing back in brings everything to the screen again, which is
+   the whole of why parking rather than clearing.
+
+   An UNCLAIMED copy is adopted, the way meFor() adopts one: a phone that has
+   been posting since before this line existed carries posts with no owner,
+   and they are the person who is signing in. Only on the way IN -- signing
+   out of an unclaimed copy leaves it where it is. */
+var POSTS_UID='';
+function postParkKey(uid, k){ return 'lingua.' + k + '.' + String(uid||''); }
+function postFor(uid){
+  var want=String(uid||''), had=POSTS_UID, park, got;
+  if(want===had) return;
+  if(had){
+    try{
+      localStorage.setItem(postParkKey(had, 'posts'), JSON.stringify(POSTS));
+      localStorage.setItem(postParkKey(had, 'drafts'), JSON.stringify(DRAFTS));
+    }catch(e){}
+  }
+  /* Nobody has held these yet and there is something in them: they are the
+     account that is arriving. */
+  if(!had && want && (POSTS.length || DRAFTS.length)){
+    POSTS_UID=want; savePosts(); draftsSave(); return;
+  }
+  POSTS=[]; DRAFTS=[];
+  if(want){
+    try{ park=localStorage.getItem(postParkKey(want, 'posts')); }catch(e){ park=null; }
+    if(park){ try{ got=JSON.parse(park); if(got && got.length) POSTS=got; }catch(e){} }
+    try{ park=localStorage.getItem(postParkKey(want, 'drafts')); }catch(e){ park=null; }
+    if(park){ try{ got=JSON.parse(park); if(got && got.length) DRAFTS=got; }catch(e){} }
+  }
+  POSTS_UID=want;
+  savePosts(); draftsSave();
+}
 /* Newest first, which is the only order a timeline has. */
 /* Whoever you have blocked is not in any list. 「ブロックは何も見えなくなる」
    netFeed() leaves them out on the SERVER, which is the only way a block is a
@@ -330,6 +378,17 @@ function draftsRead(){
 function draftsSave(){
   try{ localStorage.setItem(LS_DRAFTS, JSON.stringify(DRAFTS)); }catch(e){}
 }
+/* AND ONCE AT LOAD, for the reason www/me.js gives at the foot of meFor():
+   two keys are read by two files that do not know about each other. net.js
+   reads lingua.sess when it loads and this file reads lingua.posts when it
+   loads, and nothing between them compared the two -- a phone signed in as
+   one account while holding another's posts stayed that way until the next
+   sign-in, which on a fresh account is never.
+
+   net.js is loaded before this file (www/index.html: 3585 and 3611), so SESS
+   is here to be asked. Signed out, this parks what the phone was holding,
+   which is what netOut() does for the same reason. */
+postFor(SESS && SESS.uid);
 /* Every draft has a name. The ones written before there was a server to put
    them on do not, so they are GIVEN one here and written back.
 
