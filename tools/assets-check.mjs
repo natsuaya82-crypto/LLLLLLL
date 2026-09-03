@@ -27,8 +27,12 @@
 //      KB of a program nothing runs — were being carried onto every phone.
 //   3. The load order still holds. core.js defines defLang() so it precedes
 //      the ten languages; otf5.js defines LinguaFont so it precedes glyph.js;
-//      glyph.js ends with installScriptFont() and render(), so the app starts
-//      on its last two lines and it goes last.
+//      act-map.js names glyph.js's functions directly so it follows glyph.js;
+//      and boot.js STARTS the app, so boot.js goes last. That last one is
+//      what this file has always enforced -- the line below it used to say
+//      glyph.js goes last, which stopped being true when boot.js was split
+//      out, and the check went on testing boot.js while its own comment and
+//      its own final line said something else.
 
 import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
@@ -355,6 +359,42 @@ for (const e of readdirSync(join(IOS, "App"), { withFileTypes: true })) {
   }
 }
 
+/* ---------------------------------------------------- the checks are wired up
+   Same statement as the two above, one wall further out: a name that points
+   at a file which is not there. `npm run ask` named tools/ask-check.mjs for
+   the whole of the time between the AI chapter being taken out (b800697,
+   which deleted the file) and this line -- and CLAUDE.md listed it among the
+   checks a session may run, so the one thing that would have caught it was
+   somebody typing it. Nothing throws until then: `npm run ask` fails with
+   MODULE_NOT_FOUND, which reads exactly like a broken machine.
+
+   Both directions, because both have already happened: a script naming a
+   tool that is gone, and a tool in the gate that has no way to be run on its
+   own -- which is what CLAUDE.md tells a session to do after a change. */
+const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'))
+const scripts = pkg.scripts || {}
+let wired = 0
+for (const [name, cmd] of Object.entries(scripts)) {
+  const m = /tools\/([\w.-]+\.mjs)/.exec(cmd)
+  if (!m) continue
+  wired++
+  if (!existsSync(join(ROOT, 'tools', m[1])))
+    note(`package.json: \`npm run ${name}\` runs tools/${m[1]}, which is not there. ` +
+         `Take the script out -- git remembers, and a name pointing at nothing ` +
+         `is read as a check somebody could run.`)
+}
+const gateSrc = readFileSync(join(ROOT, 'tools', 'gate.mjs'), 'utf8')
+const gateNames = [...gateSrc.matchAll(/const (?:FAST|SLOW) = \[([\s\S]*?)\]/g)]
+  .flatMap((g) => [...g[1].matchAll(/'([\w.-]+)'/g)].map((x) => x[1]))
+for (const n of gateNames) {
+  if (!existsSync(join(ROOT, 'tools', n + '.mjs')))
+    note(`tools/gate.mjs runs \`${n}\`, and tools/${n}.mjs is not there.`)
+  else if (!Object.values(scripts).some((c) => c.indexOf('tools/' + n + '.mjs') >= 0))
+    note(`tools/${n}.mjs is in the gate and no npm script runs it on its own. ` +
+         `CLAUDE.md tells a session to run the ONE check that holds a change; ` +
+         `this one has no name to run it by.`)
+}
+
 if (problems.length) {
   console.error('')
   for (const p of problems) console.error(`  ${p}`)
@@ -367,4 +407,4 @@ console.log(`assets: ${referenced.length} files loaded by index.html, all presen
 if (swiftCount) console.log(`swift: ${swiftCount} files under ios/App/, every one of them in the project's Sources phase.`)
 console.log(`placeholders: ${holes} under ios/App/, every one of them substituted by the deploy workflow.`)
 console.log(`the bridge: ${natives} native methods, every one of them named by www/.`)
-console.log(`load order: core.js -> ${LANGS.length} languages -> ... -> otf5.js -> glyph.js (last)`)
+console.log(`load order: core.js -> ${LANGS.length} languages -> ... -> otf5.js -> glyph.js -> act-map.js -> boot.js (last)`)

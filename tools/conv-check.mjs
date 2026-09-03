@@ -35,7 +35,11 @@
 
    CLAUDE.md's own rule is the reason this file exists: "A comment saying
    'this is the one place' is worth nothing on its own... Either a check holds
-   the claim, or do not make it." Nothing held these seven. This does.
+   the claim, or do not make it." Nothing held those. This does.
+
+   HOW MANY there are is not restated in this comment: it said seven in three
+   places and eight in a fourth while the run's own last line enumerated nine.
+   That line is the list -- read it, and add to it when a claim is added.
 
    How: boot the real app in a headless browser, seed it the same fixture
    act-check.mjs and press.mjs use, set the paid plan, and for every writing
@@ -50,7 +54,7 @@
        figures in the doc were measured on 5000 words and are not reproduced
        here; only the shape of the table is
 
-   Exit code is 0 only when all seven hold, for every writing system.
+   Exit code is 0 only when every one of them holds, for every writing system.
    --------------------------------------------------------------------------- */
 import http from 'http';
 import fs from 'fs';
@@ -252,7 +256,7 @@ const R = await pg.evaluate(() => {
       /* Nothing to offer is a legitimate answer -- shareConv() returns null
          on purpose so the keyboard shows no bar rather than an empty one --
          but the fixture seeds words, sounds and drawn letters precisely so
-         this never has to be the answer. If it is, none of the seven claims
+         this never has to be the answer. If it is, none of the claims
          below has anything to be checked against. */
       fails.push(w + ': shareKbd().conv came back null -- the fixture' +
         ' draws letters and has words, so there was nothing to offer a' +
@@ -398,7 +402,7 @@ const R = await pg.evaluate(() => {
      somebody went to the writing-system screen and said "syllabary". It is
      not the only case: wsys() falls through to wsGuess() when SET.wsys is
      unset, and wsGuess() reads 'syll' off one letter that happens to write
-     two sounds. So the eight claims above were all being made about the road
+     two sounds. So the claims above were all being made about the road
      the app takes when it is TOLD, and the road it takes when it GUESSES had
      never been walked at all -- which is how a keyboard somebody built one
      face of went to the phone with a roman QWERTY behind it.

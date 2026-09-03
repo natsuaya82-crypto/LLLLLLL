@@ -1302,9 +1302,12 @@ function capOK(add){
    places that has to say so in words -- but it can say so without moving
    anybody.
 
-   confirm() and not a box of our own: the plans screen is one tap away and
-   this has to be answerable with "no". It is the same dialog wipeAll() asks
-   with, it is drawn by iOS, and it is therefore not a shape this app chose.
+   popAsk() and not iOS's own box: `confirm()` was banned outright on
+   2026-09-01 (CLAUDE.md § Shape), and this comment described it as the right
+   answer for long enough that the ban had to be read past to believe the
+   code. popAsk() draws inside the screen, the plans screen is one tap away,
+   and this has to be answerable with "no" -- which is what pressing outside
+   it is. It is the same thing wipeAll() asks with.
 
    Two strings that already exist, in all ten languages, rather than an
    eleventh: the sentence the toast said, and the word on the upgrade button.
@@ -1327,8 +1330,8 @@ function capStop(add){
    different screen rather than the same screen with a door on it.
 
    So: the fullest face is always drawn, and the ceiling is met on the PRESS.
-   Same shape as capStop() above and for the same reasons -- confirm() rather
-   than a box of our own, because the plans screen is one tap away and this
+   Same shape as capStop() above and for the same reasons -- popAsk() rather
+   than iOS's own box, because the plans screen is one tap away and this
    has to be answerable with "no"; and nobody is moved off the screen they
    are standing on unless they say yes.
 
@@ -1338,16 +1341,15 @@ function capStop(add){
    moment they press is that this is on a paid plan and where to go, which is
    two facts and not a paragraph about letters.
 
-   THE APP'S OWN SHEET AND NOT iOS's DIALOG. 「正直自前のpopがいいんだけどな。
-   iPhoneのやつ使ってるsnsないしな」 OWNER 2026-09-01. openForm() is a SCREEN
-   (`go('form', key)`), not a thing that slides up in place of one, so it is
-   not the shape CLAUDE.md § Shape forbids -- and the keyboard's + already
-   opens exactly this, so the other doors are being brought to it rather than
-   a second thing being invented.
+   THE APP'S OWN, AND NOT iOS's DIALOG. 「正直自前のpopがいいんだけどな。
+   iPhoneのやつ使ってるsnsないしな」 OWNER 2026-09-01. It is popAsk(), which
+   is one of the three shapes CLAUDE.md § Shape leaves standing -- popAsk()
+   for a question, toast() for a statement, openForm() for something to type
+   into. This comment described openForm() for a while and the code has never
+   called it; the question here is a yes/no and openForm() is for typing.
 
-   No corner, no border, no panel: the title is the form's own and the body is
-   one line of text and one `.btn.ghost`, which is what CLAUDE.md § 18 leaves
-   when a box is not allowed. Pressing the back arrow is the "no".
+   No corner, no border, no panel, which is what CLAUDE.md § 18 leaves when a
+   box is not allowed. Pressing outside it is the "no".
 
    IT TAKES THE ANSWER AND NOT THE NAME. `can()` may only be given a literal
    (CLAUDE.md § 5, and dead-check refuses anything else) -- a capability read

@@ -3,8 +3,15 @@
 
    Run it:   npm test
 
-   Thirty-one checks, and twenty-three of them start a headless browser and walk
-   the app -- most over a port of their own; `shape-check` opens `index.html`
+   FAST and SLOW below are the whole list, and this comment does not restate
+   how many there are: the two numbers written here said thirty-one and
+   twenty-three while the lists held thirty-five and twenty-six, and every
+   number in CLAUDE.md is a copy of this file's. So the run PRINTS them on
+   its last line, green or red -- the same reason `dead-check` prints the
+   capabilities it counted instead of leaving the number in prose.
+
+   The SLOW ones each start a headless browser and walk the app -- most over
+   a port of their own; `shape-check` opens `index.html`
    off the disk instead, which is why it needs no port. Run one after another
    that is ten minutes, and ten minutes is long enough that a check stops being run
    after every change and starts being run at the end — which is the one way
@@ -105,6 +112,11 @@ for (const n of SLOW){
   show(r);
   if (r.code !== 0) bad++;
 }
+/* The count, on every run and not only on a failing one. A green run that
+   says nothing about how many checks it was is a green run nobody can read
+   the number off, and every number in CLAUDE.md is a copy of this one. */
+console.log('\ngate: ' + (FAST.length + SLOW.length) + ' checks -- ' +
+            FAST.length + ' with no browser, ' + SLOW.length + ' walking the app.');
 if (bad){
   console.error('\n' + bad + ' of ' + (FAST.length + SLOW.length) + ' checks failed.');
   process.exit(1);
