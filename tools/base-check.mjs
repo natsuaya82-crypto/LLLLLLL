@@ -216,8 +216,12 @@ const r = await pg.evaluate(({s}) => {
     go('home', '');
     var l = ltNew({}); if (prep) prep(l);
     var was = ltName(l);
-    ltDraftName(l.id, nm);
-    var id = ltSave(l.id, true), got = ltById(id) || l;
+    /* ltSave() takes what was typed rather than reading a draft of this
+       file's own. www/shell.js § KEEP, 2026-09-03: a letter's page keeps what
+       is in its two boxes under the SCREEN, so there is no global to park a
+       name in on the way. What is under test is unchanged -- this is the same
+       act said in the shape the app now has. */
+    var id = ltSave(l.id, { ab: nm }), got = ltById(id) || l;
     return { kind: ltKindOf(got), name: ltName(got), was: was,
              at: here().r + ':' + (here().a || '') };
   }
