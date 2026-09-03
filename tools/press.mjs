@@ -1129,7 +1129,6 @@ const SWR = await (async () => {
       'on drew a screen behind it. There is none to draw.');
   else seen.push('the screen a tab puts you on: nothing happens');
 
-
   /* 3. and a thumb that starts in the MIDDLE is not this. A gesture that
         fires anywhere is a page you cannot scroll sideways. */
   await stand(`window.__seed(); SET.done = true; goTab('build'); go('words');`);
@@ -1140,6 +1139,80 @@ const SWR = await (async () => {
   else seen.push('a thumb starting in the middle is not the gesture');
 
   await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: false });
+  return { out: out, seen: seen };
+})();
+
+/* ---- Enter, in a field that is one line ----------------------------------
+
+   「必要ないところで開業できるのやめて欲しい」 OWNER 2026-09-03
+   (開業 = 改行), about the name, the @ and the ID on the profile screen
+   growing downwards a line at a time.
+
+   www/shell.js § lnField() builds a `<textarea rows="1">` and not an
+   `<input>` — a line of a made language wraps, is set vertically on some
+   languages, and grows to the height of what was drawn. A textarea takes
+   Enter, so every field of that shape took a line break.
+
+   The line about yourself is the other half and has to stay: `me-bio` is a
+   bare textarea that never went through lnField(), so it wears no `.lnin`
+   and keeps its breaks. Both are asked here, because a fix that took the
+   break out of everything would be green on the first alone.
+
+   A real keypress through the browser: the app's Enter is one delegated
+   listener in www/act.js, and dispatching a synthetic event would be this
+   check answering its own question. */
+const KDR = await (async () => {
+  const out = [], seen = [];
+  const stand = (js) => pg.evaluate(js);
+  /* Type into the middle of two characters and press Enter. The middle
+     matters: at the end of a value a browser can drop a trailing break, so
+     the one place a line is certain to show is between them. */
+  async function enter(id) {
+    const there = await pg.evaluate((i) => {
+      const e = document.getElementById(i);
+      if (!e) return false;
+      e.value = 'ab';
+      e.focus();
+      e.setSelectionRange(1, 1);
+      return true;
+    }, id);
+    if (!there) return null;
+    await pg.keyboard.press('Enter');
+    return await pg.evaluate((i) => document.getElementById(i).value, id);
+  }
+  function ask(id, what, breaks) {
+    const v = what;
+    if (v === null) {
+      out.push('there is no field #' + id + ' on the screen this check ' +
+        'stands on, so nothing was asked about Enter in it.');
+      return;
+    }
+    const got = v.indexOf('\n') >= 0;
+    if (got === breaks) {
+      seen.push(id + (breaks ? ': Enter still opens a line' : ': Enter opens no line'));
+      return;
+    }
+    out.push(breaks
+      ? 'Enter did not open a line in #' + id + '. The line about yourself is ' +
+        'really several lines and keeps its breaks.'
+      : 'Enter opened a line in #' + id + '. A field lnField() built is ONE ' +
+        'line — 「必要ないところで開業できるのやめて欲しい」 OWNER 2026-09-03.');
+  }
+
+  /* The screen the owner photographed: the name and the @ are lnField()'s,
+     and the line about yourself is not. */
+  await stand(`window.__seed(); SET.done = true; SET.plan = 'pro';
+               openMe(); render();`);
+  ask('me-nm',  await enter('me-nm'),  false);
+  ask('me-hd',  await enter('me-hd'),  false);
+  ask('me-bio', await enter('me-bio'), true);
+
+  /* And a second screen, because what is being held is the SHAPE lnField()
+     makes and not this one page. The search box is the same field. */
+  await stand(`window.__seed(); SET.done = true; SET.plan = 'pro';
+               go('find'); render();`);
+  ask('f-q', await enter('f-q'), false);
+
   return { out: out, seen: seen };
 })();
 
@@ -1204,6 +1277,7 @@ const HELD = HELDR.out;
 HELD.forEach(m => fails.push('held: ' + m));
 BARR.out.forEach(m => fails.push('under the bar of tabs: ' + m));
 SWR.out.forEach(m => fails.push('the way back: ' + m));
+KDR.out.forEach(m => fails.push('Enter in one line: ' + m));
 POPR.out.forEach(m => fails.push('popup: ' + m));
 R.threw.forEach(m => fails.push('threw: ' + m));
 R.blank.forEach(m => fails.push('blank: ' + m));
@@ -1268,6 +1342,8 @@ console.log('nothing trapped under the bar of tabs: ' +
                              : BARR.seen.length + ' screens that carry one'));
 console.log('the way back, dragged from the edge: ' +
             (SWR.out.length ? SWR.out.length + ' FOUND' : SWR.seen.join('; ')));
+console.log('Enter in a field that is one line: ' +
+            (KDR.out.length ? KDR.out.length + ' FOUND' : KDR.seen.join('; ')));
 console.log('the popup, pressed where it stands: ' +
             (POPR.out.length ? POPR.out.length + ' FOUND' : POPR.seen.join('; ')));
 console.log('buttons pressed: ' + R.pressed +
