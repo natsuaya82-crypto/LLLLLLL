@@ -1928,9 +1928,41 @@ HELP.pub=function(){
     '<div class="sec">'+esc(t('wld.dl'))+'</div>'+
     '<div class="note">'+t('wld.dl.d')+'</div>'};
 };
+/* THE LANGUAGE'S NAME, TYPED ON A SCREEN OF THIS APP'S OWN.
+   「標準は使わねえって言ってるだろこれも禁止や」「禁止事項入れろ」 OWNER
+   2026-09-01 -- `confirm()`, `alert()`, `prompt()` and UIAlertController, none
+   of them. 「iPhoneのやつ使ってるsnsないしな」
+
+   This was `prompt()`, which is iOS's own box: the one shape the app is
+   forbidden to use, on the row that renames the thing the whole app is about.
+   It stayed because nothing stops a rule that is only written down
+   (`tools/es5-check.mjs` stops this one now).
+
+   openForm() and not a fourth shape. Every other place in this app where
+   somebody types something is a form -- the word, the note, the profile, the
+   slot -- and one field is what this needs. The save is at the far end of the
+   bar, where every other form's is 「メモも保存は右上」.
+
+   A language somebody is only READING is not renamed: langLocked() is what
+   says so everywhere else, and it is what takes the Save off a note. */
 function editName(){
-  var v=prompt(t('home.name.prompt'), langName);
-  if(v!==null && v.trim()){ langName=v.trim(); save(); render(); }
+  openForm('name', t('set.name'),
+    '<div class="field"><label>'+t('set.name')+'</label>'+
+      lnField('ln-nm', t('home.name.prompt'), '', langName||'')+'</div>',
+    null,
+    langLocked()? '' :
+      '<button class="navdo"' + DO('saveName') + '>'+esc(t('notes.save'))+'</button>');
+}
+FORM_OPEN.name=function(){ editName(); };
+function saveName(){
+  var a=document.getElementById('ln-nm');
+  if(!a) return;
+  var v=String(a.value||'').replace(/^\s+|\s+$/g, '');
+  /* An empty box is not a rename. It used to be `v.trim()` guarding the same
+     thing, and a language with no name at all is what the box would have
+     written. */
+  if(!v){ closeSheet({target:{id:'sbg'}}); return; }
+  langName=v; save(); closeSheet({target:{id:'sbg'}}); render();
 }
 
 /* =========================================================================

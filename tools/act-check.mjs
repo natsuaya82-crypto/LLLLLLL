@@ -272,6 +272,10 @@ const R = await pg.evaluate(() => {
     ['openAdd',       () => openAdd()],
     ['openAdd child', () => openAdd('kano')],
     ['openNote',      () => openNote(0)],
+    /* The language's name. It was iOS's own prompt() until 2026-09-03 --
+       banned since 2026-09-01 and nothing stopped it -- so this form is new
+       and the walk had never had a reason to open it. */
+    ['editName',      () => editName()],
     ['openNote new',  () => openNote(-1)],
     ['openSlot',      () => openSlot('greet','yes')],
     ['openOwnPhase',  () => openOwnPhase()],

@@ -114,6 +114,30 @@ const RULES = [
   [/\?\?/, 'nullish coalescing'],
 ];
 
+/* AND THE THREE THE APP MAY NOT USE AT ALL, which is not an ES5 question --
+   it is the fifth ban at the head of CLAUDE.md.
+   「標準は使わねえって言ってるだろこれも禁止や」「禁止事項入れろ」 OWNER
+   2026-09-01. 「iPhoneのやつ使ってるsnsないしな」
+
+   It lived only in prose for two days, and prose stops nothing: `alert()` was
+   still what a ceiling said on the top plan, and `prompt()` was what renamed
+   the language -- iOS's own box, on the row for the thing this whole app is
+   about. Both were found by reading, on 2026-09-03, not by anything failing.
+
+   `popAsk()` in www/shell.js is the app's own and is what a question is asked
+   with; a statement is `toast()`; something to type into is `openForm()`.
+   Those three are the whole of what is allowed, and nothing here needs a
+   fourth (CLAUDE.md: ask before making one).
+
+   It rides in this file because this is the one fast pass over every www/*.js
+   with the comments already stripped, and a second file to add to the gate is
+   a second thing to remember. The sentence it fails with is its own. */
+const BANNED_UI = [
+  [/(^|[^\w.$])confirm\s*\(/, 'confirm()'],
+  [/(^|[^\w.$])alert\s*\(/,   'alert()'],
+  [/(^|[^\w.$])prompt\s*\(/,  'prompt()'],
+];
+
 const files = jsFiles(WWW);
 
 /* Does it parse at all, before asking whether it is ES5.
@@ -148,10 +172,19 @@ if (broke) {
   process.exit(1);
 }
 
-let bad = 0;
+let bad = 0, ios = 0;
 for (const f of files) {
   const src = fs.readFileSync(f, 'utf8');
   stripped(src).split('\n').forEach((line, i) => {
+    for (const [re, what] of BANNED_UI) {
+      if (re.test(line)) {
+        ios++;
+        console.error(path.relative(path.join(HERE, '..'), f) + ':' + (i + 1) +
+          '  ' + what + ' — iOS\'s own dialog, banned 2026-09-01\n      ' +
+          src.split('\n')[i].trim().slice(0, 90));
+        break;
+      }
+    }
     for (const [re, what] of RULES) {
       if (re.test(line)) {
         bad++;
@@ -164,6 +197,14 @@ for (const f of files) {
 }
 
 const kb = (n) => (n / 1024).toFixed(1) + ' KB';
+if (ios) {
+  console.error('\n' + ios + ' place' + (ios === 1 ? '' : 's') + ' using a ' +
+    'dialog of the system\'s. 「標準は使わねえって言ってるだろこれも禁止や」 ' +
+    'OWNER 2026-09-01.');
+  console.error('A question is popAsk(), a statement is toast(), something to ' +
+    'type into is openForm(). Ask before making a fourth.');
+  process.exit(1);
+}
 if (bad) {
   console.error('\n' + bad + ' place' + (bad === 1 ? '' : 's') + ' where the app is not ES5.');
   console.error('Every one of them is a blank screen on an old iPhone. Rewrite, do not silence.');

@@ -75,6 +75,7 @@ act('impUndo', impUndo);
 act('editGlyph', editGlyph);
 act('editLetter', editLetter);
 act('editName', editName);
+act('saveName', saveName);
 act('fPick', fPick);
 act('geCircle', geCircle);
 act('geFill', geFill);
