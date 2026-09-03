@@ -163,6 +163,13 @@ async function boot(pre, drive) {
          one listener, because obDoorBack() saying 'up' and obBack() going
          there are two statements. */
       landed: (typeof window.__landed === 'undefined') ? null : window.__landed,
+      /* what § 5's drive left behind: every argument the door handed the
+         native plugin, and what Supabase would have said about it. It is
+         `hand` and not `door` because `door` above is already this object's
+         word for 「is the door on the screen」, and a second key of that name
+         in the same literal silently overwrites the first -- which it did,
+         and § 2 went red for a reason that had nothing to do with § 2. */
+      hand: (typeof window.__door === 'undefined') ? null : window.__door,
       /* what § 2d's drive left behind, carried out in one piece */
       probe: (typeof window.__upTaken === 'undefined') ? null : {
         upTaken: window.__upTaken, upFree: window.__upFree,
@@ -478,6 +485,185 @@ const SESS = JSON.stringify({ at: 'not a jwt', rt: 'a refresh token',
      it. "Not the door" is also true of the app with no overlay on it, which
      would be the onboarding having quietly ended. */
   if (!r.dim) no('the walk: nothing is dimmed -- the app is on screen with no walk over it');
+}
+
+/* ---- 5. WHAT THE DOOR HANDS THE NATIVE PLUGIN -------------------------- */
+{
+  /* Everything above this line reads the SCREEN. Nothing read the argument.
+
+     `obSocial()` is where this app stops being HTML and becomes a call into
+     somebody else's Swift, and the whole of what it says is one object:
+     `p.login({ provider, options })`. Every check in the gate was green while
+     that object was wrong, twice, in opposite directions, and the owner found
+     both of them by pressing the button:
+
+       build 106   the id_token carried a nonce and the app sent none
+       today       the app sends one and the id_token carries none
+
+     Supabase refuses BOTH with one sentence (`internal/api/token_oidc.go`):
+     it hashes what was sent, compares it to the token's `nonce` claim, and
+     rejects **one side existing without the other** before it ever gets to
+     comparing them. So the thing to hold is not "a nonce is passed" -- that
+     was already held, in `acct-check` 26, and it was green through today's
+     fault. It is Supabase's own condition, on the token that actually came
+     back.
+
+     THE PLUGIN HAS TWO ROADS AND ONLY ONE OF THEM READS THE NONCE. That is
+     the fault, and it is why passing one was not enough --
+     `GoogleProvider.swift:81` in `@capgo/capacitor-social-login` 8.4.4:
+
+       if hasPreviousSignIn() && !forceAuthCode && mode != .OFFLINE {
+           restorePreviousSignIn { ... refreshTokensIfNeeded ... }   // no nonce
+       } else {
+           login()                                                   // the nonce
+       }
+
+     `restorePreviousSignInWithCompletion:` has no nonce argument at all
+     (`GIDSignIn.h:124`); only the interactive
+     `signInWithPresentingViewController:hint:additionalScopes:nonce:` does
+     (`:218`). And when the interactive one is called with none, **AppAuth
+     invents one** -- `OIDAuthorizationRequest.m:182` passes
+     `nonce:[[self class] generateState]` for any request built without one.
+     That is who put the claim on build 106's token, and it is a layer below
+     everything `docs/scope/claude-nonce.md` searched.
+
+     So the fake plugin below has both roads, and AppAuth's habit on the
+     interactive one. It is a FIXTURE of code that is not in this repository
+     and cannot be a copy of the code under test: what is under test is
+     `obSocial()`, which is this app's. A fake with one road cannot fail, and
+     that is exactly how a green check missed this.
+
+     The phone that matters most is the one that has signed in BEFORE, because
+     that is every phone after the first press -- and it is the road the
+     owner's phone has been on since build 107. */
+  const r = await boot({ 'lingua.set': JSON.stringify({ done: true }) }, () => {
+    var out = { runs: [] };
+    /* A JWT the app's own netClaims() can read. Header and signature are not
+       looked at by anybody here, and a nonce that is absent is ABSENT rather
+       than empty -- 「one side exists」 is the whole question. */
+    function b64u(o){
+      return btoa(JSON.stringify(o)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }
+    function mkJwt(nonce){
+      var c = { sub: 'x' };
+      if (nonce) c.nonce = nonce;
+      return 'h.' + b64u(c) + '.s';
+    }
+    /* GoogleProvider.swift:81, written out. `prev` is hasPreviousSignIn(). */
+    function plugin(prev, giveToken){
+      return {
+        initialize: function(){ return { then: function(f){ f(); return { 'catch': function(){} }; } }; },
+        login: function(arg){
+          var o = arg.options || {}, claim = null;
+          if (arg.provider === 'google') {
+            if (prev && !o.forcePrompt) claim = null;      /* restore: never reads o.nonce */
+            else claim = o.nonce || 'appauth-' + Math.random();  /* interactive, and AppAuth fills a gap */
+          } else if (o.nonce) claim = o.nonce;             /* Apple's own sheet takes what it is given */
+          out.runs.push({ provider: arg.provider, prev: prev, opts: o, claim: claim });
+          return { then: function(f){
+            f({ result: { idToken: giveToken ? mkJwt(claim) : null } });
+            return { 'catch': function(){} };
+          } };
+        },
+        logout: function(){ return { then: function(f){ f(); return { 'catch': function(){} }; } }; }
+      };
+    }
+    /* Supabase's own words, on what actually came back. */
+    var realId = netIdToken;
+    netIdToken = function(provider, token, nonce){
+      var run = out.runs[out.runs.length - 1], c = netClaims(token), tn = c ? c.nonce : null;
+      run.sent = nonce || '';
+      run.tokenNonce = tn || '';
+      run.oneSided = (!!tn) !== (!!nonce);
+      run.mismatch = (!!tn && !!nonce) && tn !== netSha256(nonce);
+      run.madeSession = true;
+    };
+    function press(prev, who, giveToken){
+      OB_SL = false;                       /* configure again, as a fresh launch would */
+      window.Capacitor = { Plugins: { SocialLogin: plugin(prev, giveToken) } };
+      if (who === 'google') obSignInGoogle(); else obSignInApple();
+      delete window.Capacitor;
+    }
+    press(true,  'google', true);   /* a phone that has signed in before -- the owner's */
+    press(false, 'google', true);   /* a phone that never has */
+    press(true,  'apple',  true);
+    press(false, 'apple',  true);
+    press(false, 'google', false);  /* the sheet came back with nothing */
+    netIdToken = realId;
+    out.busy = !!OBM.busy;
+    out.sha = { raw: 'abc', hash: netSha256('abc') };
+    window.__door = out;
+  });
+
+  const D = r.hand;
+  if (!D) no('the door: obSocial() never reached the plugin at all');
+  else {
+    const runs = D.runs;
+    if (runs.length !== 5) no('the door: pressed 5 times, the plugin saw ' + runs.length);
+    say('the door: ' + runs.map(x => x.provider + (x.prev ? '/again' : '/first') +
+        ' nonce:' + (x.opts.nonce ? 'y' : 'n') + ' force:' + (x.opts.forcePrompt ? 'y' : 'n') +
+        ' token:' + (x.tokenNonce ? 'y' : x.claim === null ? 'n' : 'y') +
+        ' sent:' + (x.sent ? 'y' : 'n')).join('  |  '));
+
+    /* (a) SUPABASE'S CONDITION, on every road. This is the check. The other
+           four are how it is arrived at; this is the sentence on the screen. */
+    for (const x of runs) {
+      if (!x.madeSession) continue;
+      if (x.oneSided)
+        no('the door: ' + x.provider + ', a phone that has ' + (x.prev ? '' : 'never ') +
+           'signed in before -- one side has a nonce and the other does not. ' +
+           'That is 「Passed nonce and nonce in id_token should either both exist or not」: ' +
+           '(nonce id_token:' + (x.tokenNonce ? 'y' : 'n') + ' sent:' + (x.sent ? 'y' : 'n') + ')');
+      if (x.mismatch)
+        no('the door: ' + x.provider + ', a phone that has ' + (x.prev ? '' : 'never ') +
+           'signed in before -- both sides have a nonce and they are not the same one. ' +
+           'That is 「Nonces mismatch」, and it means the claim on the token is somebody else\'s');
+    }
+    say('the door: both sides of the nonce agree on every road, on a phone that has ' +
+        'signed in before and on one that never has');
+
+    /* (b) The pair is ONE pair. `netNonce()` makes them together; two draws
+           would be this same fault made by hand. */
+    const g = runs.filter(x => x.provider === 'google');
+    for (const x of g) {
+      if (!x.opts.nonce) no('the door: Google is handed no nonce');
+      /* only of a press that got a token back: the one that did not is § 5e's,
+         and 「nothing was sent」 is the right answer there rather than a fault. */
+      else if (x.madeSession && !x.sent)
+        no('the door: Google\'s nonce is not sent to Supabase -- one side only');
+      else if (x.opts.nonce !== D.sha.hash && x.opts.nonce.length !== 64)
+        no('the door: what Google was handed is not a sha256 -- ' + x.opts.nonce);
+    }
+    if (D.sha.hash !== 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad')
+      no('the door: netSha256("abc") is not the published SHA-256 value -- ' + D.sha.hash);
+
+    /* (c) AND THE ROAD IS THE ONE THAT READS IT. A nonce handed to the road
+           that never looks at it is a nonce that was not handed over, and it
+           is indistinguishable from success everywhere except on a phone. */
+    if (g.some(x => !x.opts.forcePrompt))
+      no('the door: Google is not asked for the interactive road (forcePrompt), so a ' +
+         'phone that has signed in before takes restorePreviousSignIn() -- which has no ' +
+         'nonce argument. The nonce is passed and never read: (nonce id_token:n sent:y)');
+    say('the door: Google takes the road that reads the nonce, on every phone');
+
+    /* (d) APPLE IS NOT TOUCHED. It goes through today because both sides are
+           quiet, and adding one side to a road that works is this bug pointed
+           the other way. 「Apple は一行も変わっていない」 */
+    for (const x of runs.filter(x => x.provider === 'apple')) {
+      if (x.opts.nonce) no('the door: Apple is handed a nonce -- the road that works is being changed');
+      if (x.sent) no('the door: Apple\'s nonce is sent to Supabase -- one side only');
+      if (x.opts.forcePrompt) no('the door: Apple is asked for forcePrompt -- that is Google\'s road');
+    }
+    say('the door: Apple hands over no nonce and sends none -- both sides quiet, as they are today');
+
+    /* (e) NOTHING BACK IS NOT A SESSION. The sheet can be closed, and a
+           closed sheet answers with no token. */
+    const empty = runs[runs.length - 1];
+    if (empty && empty.madeSession)
+      no('the door: the sheet came back with no token and the app asked Supabase for a session anyway');
+    if (D.busy) no('the door: the sheet came back with nothing and the spinner is still turning');
+    say('the door: nothing back is not a session, and the spinner stops');
+  }
 }
 
 await br.close();
