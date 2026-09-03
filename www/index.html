@@ -931,9 +931,22 @@ canvas.pkc{width:34px;height:34px;display:block}
    the rule at the head of CLAUDE.md has said all along: 「文字書いて四角で
    囲ったみたいなボタン全部やめてくれ」. A filled rectangle is that shape with
    the corners squared off, not a different shape. */
+/* THE BUTTON THAT DECIDES, AND ITS TWO STATES.
+   「なにもない時は薄い灰色、何か打ったら金にする」「これが決定ボタンのルール」
+   OWNER 2026-09-03.
+
+   The resting state is the pale grey and it is what `.navdo` alone is, so a
+   decide button written tomorrow is grey until somebody says what lights it.
+   Gold is `.navon`, and www/shell.js § navDo is the one place that puts it
+   on -- there is no second road to this colour.
+
+   Nothing else moves between the two: no corner, no border, no fill
+   (CLAUDE.md § 18). 「文字の色だけ」. The word is the button and the colour
+   is the whole of what it says. */
 .navdo{margin-left:auto;align-self:center;flex:0 0 auto;min-height:44px;min-width:44px;
        padding:0 6px;border:0;background:none;
-       color:var(--gold);font-family:inherit;font-size:.92rem;font-weight:700}
+       color:var(--txm);font-family:inherit;font-size:.92rem;font-weight:700}
+.navdo.navon{color:var(--gold)}
 .navdo:active{opacity:.75}
 /* THE DELETE, at the far end of the bar, while a list is being chosen from.
    The one colour in this app that means a thing goes. No box round it: the
@@ -2245,7 +2258,6 @@ a.set{text-decoration:none}
    -- the other being the key's own page, which is still there. What takes
    things away on a sheet is the edge: the row's number and the column's
    letter. 「マイナスボタンもなくそう」 */
-.navdone{font-family:inherit;font-size:.9rem;color:var(--gold);padding:0 6px}
 @media (prefers-reduced-motion:reduce){.kbk.wob{animation:none}}
 /* Three widths to put on the keyboard: press one, then press where it goes.
    The tile IS the width -- a row of the numbers 1 2 3 says how wide in a unit
@@ -2810,9 +2822,13 @@ a.set{text-decoration:none}
       overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* A post kept to yourself, beside the time. */
 .ppv{display:inline-flex;align-items:center;color:var(--txm)}
-/* The button that sends, while what it sends is private. */
+/* The button that sends, while what it sends is private. The lock and the
+   ground it sits on say WHICH post this is; what says whether there is a post
+   to send is the colour, and that is .navdo's own two states -- so nothing
+   here names a colour. It used to say `color:var(--tx)`, which is a third
+   state of the decide button and beat both of the two. */
 .navdo.pv{display:inline-flex;align-items:center;gap:6px;
-          background:var(--sf);color:var(--tx)}
+          background:var(--sf)}
 /* Saving a draft, and the ones already saved, at the foot of the composer. */
 .dfrow{display:flex;align-items:center;gap:6px;
        border-bottom:1px solid var(--line)}

@@ -1708,8 +1708,8 @@ function wldPage(ed, L, lid){
      keep their own answers, and every word is where it was: turning the
      switch back on brings the whole page back exactly as it was left. */
   if(wldHidden(w)) return '<div class="view">'+
-    navTop('', (!ed && mine && !langLocked())? '<button class="navdo"' + DO('go', ["world"]) + '>'+
-      esc(t('wld.edit'))+'</button>' : '')+
+    navTop('', (!ed && mine && !langLocked())?
+      navDo(t('wld.edit'), 'go', ["world"], true) : '')+
     '<div class="body">'+body+'</div></div>';
   wldSecs(w).forEach(function(sec){
     var inner='', extra='';
@@ -1998,8 +1998,8 @@ function wldPage(ed, L, lid){
        whether the OPEN language may be changed: a downloaded language opened
        from the switcher draws its own article with mine true. langLocked()
        answers the second. */
-    navTop('', (!ed && mine && !langLocked())? '<button class="navdo"' + DO('go', ["world"]) + '>'+
-      esc(t('wld.edit'))+'</button>' : '')+
+    navTop('', (!ed && mine && !langLocked())?
+      navDo(t('wld.edit'), 'go', ["world"], true) : '')+
     '<div class="body">'+body+'</div></div>';
 }
 /* What making this language public means, behind the `?` in the bar rather
@@ -2033,8 +2033,15 @@ function editName(){
     '<div class="field"><label>'+t('set.name')+'</label>'+
       lnField('ln-nm', t('home.name.prompt'), '', langName||'')+'</div>',
     null,
-    langLocked()? '' :
-      '<button class="navdo"' + DO('saveName') + '>'+esc(t('notes.save'))+'</button>');
+    /* THE ONE DECIDE BUTTON THAT IS STILL LIT WHATEVER IS IN THE BOX, and it
+       is said here rather than left to be found. www/shell.js § navDo wants
+       the screen's own answer to 「何か打ったか」, and this box has nobody
+       listening to it: `ln-nm` carries no IN(), so what was typed is read off
+       the page when Save is pressed and nothing runs in between. Giving it
+       one means a name in www/act-map.js, which the session that wrote this
+       does not own. Until then it says true, which is what it has always
+       done. */
+    langLocked()? '' : navDo(t('notes.save'), 'saveName', null, true));
 }
 FORM_OPEN.name=function(){ editName(); };
 function saveName(){

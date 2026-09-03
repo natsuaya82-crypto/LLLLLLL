@@ -872,9 +872,12 @@ function vLtset(){
        ボタンあるよね？やっぱいらんかもその◉」 OWNER 2026-09-01. A held cell
        already carries the mark that takes it away; a second way to delete a
        letter, drawn differently, is two answers to one question. */
+    /* The same Done as the keyboard's, through the one place that builds it.
+       Both wore `navq navdone`, which was this button spelled a second way.
+       www/shell.js § navDo. */
     navTop('',
            ltWob
-             ? '<button class="navq navdone"' + DO('ltWobEnd') + '>'+esc(t('kb.done'))+'</button>'
+             ? navDo(t('kb.done'), 'ltWobEnd', null, true)
              : '')+
     '<div class="body">'+
     (pick? ltViewRow() : '')+
@@ -1087,11 +1090,12 @@ function vLetter(){
        bar for one button and is under the thumb only after scrolling past the
        sound, the borrowed character and the delete.
 
-       It is navTop()'s own now and not this screen's, and it is there only
-       when something on the page has been changed -- OWNER 2026-09-03,
-       www/shell.js § KEEP. A Save that is always standing there says nothing
-       about whether anything has been written down. The drawing has its own
-       Save where it is drawn. */
+       It is navTop()'s own now and not this screen's: it stands there from
+       the moment the page does and is grey until something on it has been
+       changed -- 「なにもない時は薄い灰色、何か打ったら金にする」 OWNER
+       2026-09-03, www/shell.js § navDo. Whether it can be pressed is said by
+       its colour. The drawing has its own Save where it is drawn, and it is
+       the same button. */
     navTop('')+'<div class="body">'+
     /* The letter itself, first and big. A page about one letter that does not
        show it is a page of three buttons about nothing, and "draw it again"

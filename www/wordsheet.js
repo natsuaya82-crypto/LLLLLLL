@@ -499,6 +499,10 @@ function wdKidsHTML(){
 function wdPaint(){
   var b=document.getElementById('wd-body'); if(!b) return;
   b.innerHTML=wdFormHTML(); phkMount(); geTiles();
+  /* The sheet is repainted and the bar is not, so the button in the corner is
+     brought with it -- letters go onto the spelling here and nowhere else.
+     www/shell.js § navDo. */
+  navDoPaint('addOne', wdAddOn());
 }
 /* ---- four things an entry carries, beyond what it means -----------------
    A dictionary is not a list of meanings. Which of two words for the same
@@ -1220,8 +1224,16 @@ function wdFormHTML(){
    (no spelling, a spelling somebody already has), so it is a press and not the
    button www/shell.js § KEEP draws. The sheet that CHANGES a word has no
    button of its own any more -- see wdKeepOn(). */
+/* What addOne() would refuse, asked before it is pressed. The button says the
+   same thing the press says: a sheet with no spelling on it has no word to
+   add. 「なにもない時は薄い灰色、何か打ったら金にする」 OWNER 2026-09-03,
+   www/shell.js § navDo. */
+function wdAddOn(){
+  var sp=(wEdit && wEdit.sp) || [];
+  return !!(sp.length && spWord(sp));
+}
 function wdSaveBtn(){
-  return '<button class="navdo"' + DO('addOne') + '>'+esc(t('add.btn'))+'</button>';
+  return navDo(t('add.btn'), 'addOne', null, wdAddOn());
 }
 /* ---- the word sheet, and what "changed" means on it ---------------------
    OWNER DECISION 2026-09-03 -- www/shell.js § KEEP. This sheet already had the
@@ -1426,7 +1438,7 @@ function openWord(hw){
   openHw=w.hw; addW=null; wEdit=null;
   openForm('word:'+w.hw, wOut(w.hw), '<div id="wd-view">'+wdViewHTML()+'</div>',
            function(){ geTiles(); },
-           '<button class="navdo"' + DO('openEdit', [w.hw]) + '>'+t('word.edit')+'</button>');
+           navDo(t('word.edit'), 'openEdit', [w.hw], true));
 }
 /* The same sheet a new word is written on, opened on one that exists. */
 function openEdit(hw){
