@@ -333,6 +333,29 @@ function bkTakeGen(gens){
 
    No native side means nothing to remove, which is a browser and every check
    under tools/. */
+/* The backups of the languages named, and nobody else's.
+   「別アカウントでログインしてそれのアカウント削除したら、俺の元のアカウントが
+   消えてんだよ」 OWNER 2026-09-03. bkDropAll() below empties the directory,
+   and account deletion called it -- so a second account leaving took the
+   first account's backup files with it, and the phone was the only other copy
+   of a language that had never gone up. */
+function bkDropFor(ids, then){
+  var p=sharePlug(), names=[], i, was=langId, wasNm=langName;
+  if(!p || !ids || !ids.length){ if(then) then(); return; }
+  for(i=0;i<ids.length;i++){
+    /* bkName() reads the OPEN language, so each one is stood in front of it
+       for the length of one call. It is the one place a file's name is
+       decided, and working the name out again here is how the two come
+       apart. */
+    langId=ids[i];
+    langName=(LANGS[ids[i]] && LANGS[ids[i]].name) || '';
+    names.push(bkName());
+  }
+  langId=was; langName=wasNm;
+  p('LinguaShare', 'dropSome', {names:names})
+    .then(function(){ if(then) then(); })
+    ['catch'](function(){ if(then) then(); });
+}
 function bkDropAll(then){
   var p=sharePlug();
   if(!p){ if(then) then(); return; }

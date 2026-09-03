@@ -28,6 +28,7 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
     CAPPluginMethod(name: "kept", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "dropKept", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "dropAll", returnType: CAPPluginReturnPromise),
+    CAPPluginMethod(name: "dropSome", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "keepVoice", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "voice", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "dropVoice", returnType: CAPPluginReturnPromise),
@@ -236,6 +237,34 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
   /// Only OUR three directories, and only their contents. Documents itself is
   /// the person's folder and may hold things they put there; the same
   /// argument `dropKept` makes about staying inside Languages/.
+  /// The generations of ONE language's backup, and nobody else's.
+  ///
+  /// 「別アカウントでログインしてそれのアカウント削除したら、俺の元のアカウントが
+  /// 消えてんだよ」 OWNER 2026-09-03. dropAll() below empties the whole
+  /// directory, and deleting an account called it -- so a second account
+  /// leaving took the first account's backups with it. The server was right;
+  /// the phone destroyed the only other copy.
+  ///
+  /// `keep()` files a language as `<name> <id>.json`, `.1.json`, `.2.json`,
+  /// so a base name is one language and every generation of it.
+  @objc func dropSome(_ call: CAPPluginCall) {
+    let names = call.getArray("names", String.self) ?? []
+    var gone = 0
+    guard let dir = try? languages() else { call.resolve(["gone": 0]); return }
+    let fm = FileManager.default
+    guard let have = try? fm.contentsOfDirectory(atPath: dir.path) else {
+      call.resolve(["gone": 0]); return
+    }
+    for base in names {
+      for n in have where n == "\(base).json"
+                       || (n.hasPrefix("\(base).") && n.hasSuffix(".json")) {
+        try? fm.removeItem(at: dir.appendingPathComponent(n))
+        gone += 1
+      }
+    }
+    call.resolve(["gone": gone])
+  }
+
   @objc func dropAll(_ call: CAPPluginCall) {
     var gone = 0
     for dir in [try? languages(), try? voices(), try? sheets()] {

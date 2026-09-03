@@ -517,8 +517,31 @@ function wipeHere(){
      written back by the saves below -- keeping the old id was how
      lingua.langs surviving turned into the old language's letters being
      rebuilt under it. */
-  lsWipeNS();
-  LANGS={}; langId='';
+  /* ONE ACCOUNT'S THINGS, WHERE ANOTHER ACCOUNT HAS THINGS HERE TOO.
+     「別アカウントでログインしてそれのアカウント削除したら、俺の元のアカウントが
+     消えてんだよ」 OWNER 2026-09-03. The server was right -- account_delete()
+     removes the row of whoever is signed in and nothing else. The PHONE was
+     not: this emptied the whole namespace and the whole backup directory, so
+     a second account leaving took the first account's language with it, and
+     on a language that had never gone up the phone was the only copy left.
+
+     「アカウント削除で残るものねえ」 was 2026-08-27, when a phone held one
+     account and there was no other reading of it. The plan, the languages and
+     the posts became the ACCOUNT's after that, and this function was not read
+     again. It still meant 「the phone」.
+
+     Both readings are kept and lsOthers() picks: a phone with nobody else on
+     it is wiped exactly as before -- that is the sentence the owner said, and
+     it is still true of the phone it was said about. */
+  var wipeUid=(typeof SESS!=='undefined' && SESS && SESS.uid)? String(SESS.uid) : '';
+  var wipeIds=null;
+  if(wipeUid && lsOthers(wipeUid)){
+    wipeIds=lsWipeAcct(wipeUid);
+  }else{
+    lsWipeNS();
+    LANGS={};
+  }
+  langId='';
   langFirst();
   langRead(); ltRead(); ntRead(); stRead(); sndRead();
   /* Whom this phone belonged to, what it was carrying, and what had been
@@ -537,7 +560,18 @@ function wipeHere(){
      cancelling a subscription, and Apple has not been told anything. Money
      decides what may be DONE and nothing about what exists -- here nothing
      exists either way, so it protects nothing and costs nothing. */
-  SET=setDefaults();
+  /* The settings are the PHONE's -- the theme, the interface language -- so
+     they go back to new only when this account was the only one here. With
+     somebody else's things still on the phone, taking their theme away is
+     this deletion reaching past the account it is about. What DOES go either
+     way is the three fields that name an account. */
+  if(wipeIds){
+    SET.plan='free'; SET.planWas='free';
+    delete SET.planUid; delete SET.planPend;
+    if(String(SET.uidWas||'')===wipeUid) delete SET.uidWas;
+  }else{
+    SET=setDefaults();
+  }
   /* AND IT OPENS ON THE DOOR, not on the walk. 「アカウント削除した後
      オンボーディングから始まるのはなぜ？」 OWNER 2026-09-03.
 
@@ -564,7 +598,12 @@ function wipeHere(){
   /* And the copies in Documents, which are the ones that outlive the app.
      Last, and after the save above rather than before it: a save writes a
      fresh backup out, so dropping the files first would leave one behind. */
-  bkDropAll();
+  /* AND THE BACKUP FILES OF THOSE LANGUAGES, and no others. bkDropAll()
+     empties the directory, which is right for a phone this account was the
+     only one on and is the other half of what took the owner's language on
+     2026-09-03. */
+  if(wipeIds) bkDropFor(wipeIds);
+  else bkDropAll();
   /* and where you were standing is nowhere now */
   viewReset();
   ob={step:0, name:'', mode:'draw', pick:'', strokes:null, ch:'', lid:''};

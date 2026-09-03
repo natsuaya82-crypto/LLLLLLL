@@ -52,6 +52,62 @@ var LS_LANGS='lingua.langs', LS_CUR='lingua.cur', LS_S='lingua.set';
 
    Two passes, because removeItem() renumbers the keys under localStorage.key()
    and a single loop skips every second one. */
+/* WHOSE THINGS ARE ON THIS PHONE BESIDES THE ONE SIGNED IN.
+   「別アカウントでログインしてそれのアカウント削除したら、俺の元のアカウントが
+   消えてんだよ」 OWNER 2026-09-03.
+
+   Deleting an account emptied the whole `lingua.` namespace and the whole
+   backup directory, and that was RIGHT when it was written: 2026-08-27, when
+   a phone held one account and 「アカウント削除で残るものねえ」 meant the
+   phone. Then the plan, the languages and the posts each became the
+   ACCOUNT's, and nothing went back to read the one function that erases.
+   The app's meaning moved and the deletion's did not.
+
+   This answers the question that decides which of the two deletions to do:
+   is there anything here that belongs to somebody else. A language with
+   another account's stamp, a parked `me`, a parked timeline. */
+function lsOthers(uid){
+  var me=String(uid||''), id, i, k, out=0;
+  for(id in LANGS)
+    if(Object.prototype.hasOwnProperty.call(LANGS, id) && LANGS[id] &&
+       LANGS[id].uid && String(LANGS[id].uid)!==me) out++;
+  try{
+    for(i=0;i<localStorage.length;i++){
+      k=localStorage.key(i);
+      if(!k) continue;
+      if((k.indexOf('lingua.me.')===0 || k.indexOf('lingua.posts.')===0 ||
+          k.indexOf('lingua.drafts.')===0) && k.slice(k.lastIndexOf('.')+1)!==me) out++;
+    }
+  }catch(e){}
+  return out;
+}
+/* One account's things, and nothing else's. Returns the language ids it took,
+   so the caller can drop those backups and no others. */
+function lsWipeAcct(uid){
+  var me=String(uid||''), ids=[], doomed=[], id, i, k, j;
+  for(id in LANGS)
+    if(Object.prototype.hasOwnProperty.call(LANGS, id) && LANGS[id] &&
+       String(LANGS[id].uid||'')===me) ids.push(id);
+  for(i=0;i<ids.length;i++){
+    for(j=0;j<SLICES.length;j++) doomed.push(langKeyOf(ids[i], SLICES[j]));
+    delete LANGS[ids[i]];
+  }
+  /* and every other key this account put its name on */
+  try{
+    for(i=0;i<localStorage.length;i++){
+      k=localStorage.key(i);
+      if(!k) continue;
+      if((k.indexOf('lingua.me.')===0 || k.indexOf('lingua.posts.')===0 ||
+          k.indexOf('lingua.drafts.')===0) && k.slice(k.lastIndexOf('.')+1)===me)
+        doomed.push(k);
+    }
+  }catch(e){}
+  /* the live copies, which are this account's while it is signed in */
+  doomed.push('lingua.me'); doomed.push('lingua.posts'); doomed.push('lingua.drafts');
+  try{ for(i=0;i<doomed.length;i++) localStorage.removeItem(doomed[i]); }catch(e){}
+  langStore();
+  return ids;
+}
 function lsWipeNS(){
   var doomed=[], i, k;
   try{
