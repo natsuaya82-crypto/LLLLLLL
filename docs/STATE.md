@@ -147,13 +147,14 @@ Google と同じアドレスを打って二つ目のアカウントを立てて�
 
 ### 走っているセッション ── 2026-09-03
 
-`claude/door`（Google の扉）、`claude/plannow`（プランの期限）、
-`claude/keysel`（キーの確定）、`claude/me3`（画像と @ の14日）、
-`claude/rc`（RevenueCat、公開キー待ち）。**この五つが未取り込み。**
+`claude/door`（Google の扉）と `claude/rc`（RevenueCat、公開キー待ち）が
+未取り込み。`claude/plannow`（プランの期限）、`claude/keysel`（キーの確定）、
+`claude/me3`（画像と @ の14日）は 2026-09-03 のうちに入りました ──
+**この三行はこの文書を書いている数時間のあいだに変わりました。**
 保存のポップは決定だけあって未着手です（決定ログ `9bbd83d3`）。
 
-**この五行は一日で古くなります。**枝が取り込まれているかは名前から推測せず、
-訊くこと:
+**だからこの段落を信じないでください。**枝が取り込まれているかは名前からも
+この行からも推測せず、訊くこと:
 
 ```
 git merge-base --is-ancestor origin/<枝> origin/master && echo IN || echo NOT
