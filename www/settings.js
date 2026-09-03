@@ -798,6 +798,57 @@ function plHave(){
   j=PLAN_ORDER.indexOf(PLPICK.id);
   return j>=0 && i>=0 && j<=i;
 }
+/* ---- and what stands where that button was -----------------------------
+   「消すなら同じ場所に現在このプランです〇〇/〇〇までみたいな感じにしないと
+   わからんやろ」 OWNER 2026-09-03, after seeing the empty place on a real
+   phone: 「購入するボタンなんでなくなってんの？」
+
+   THIS IS NOT THE BAN ON EXPLAINING. It is the 2026-08-22 narrowing of it --
+   the app has TAKEN SOMETHING AWAY and the screen would otherwise be a state
+   with no cause and no way out -- and it is the minimum that narrowing
+   allows: the plan, and when it runs to. Not what the plan is good for, not
+   what to press instead. The two rows under it are the way out and were
+   always there.
+
+   THE PLAN IS NAMED, and that is truth rather than a word more than the
+   minimum. plHave() is true for the plan in force AND every rung below it,
+   so somebody on Pro who taps Plus's price is standing here too --
+   「現在このプランです」 with nothing named would be a sentence about Plus,
+   which is not what they have. What is drawn is plan(), which is what is in
+   force whichever card was tapped.
+
+   NO NEW CLASS AND NO BOX. `.note` is what a state is drawn in on twenty
+   other screens, it is already inside this same .plgo for what the App Store
+   said about the prices, and two siblings of one class are one height --
+   which is the fault `press` holds. */
+function plNow(){
+  var at=storeUntil();
+  return '<div class="note">'+esc(at?
+    t('plan.now', planName(plan()), plDate(at)) :
+    t('plan.now.only', planName(plan())))+'</div>';
+}
+/* A date, written the way the interface language writes one.
+
+   THROUGH t(), because the ORDER is not the same in ten languages: the year
+   leads in Japanese and Chinese, the day in German and Russian, the month in
+   English. `plan.date` is that order and nothing else -- three numbers and
+   the separator between them -- so a language that wants 年月日 says so in
+   its own file rather than here.
+
+   NOT toLocaleDateString, which is in WKWebView and would have been the
+   short way. i18n-check renders every screen in a pseudo-language of
+   accented look-alikes, and handing that tag to toLocaleDateString is a
+   RangeError -- a screen that throws in the one walk that reads every string
+   on it. The App Store's own formatter is what formats MONEY (www/store.js),
+   and that is a different question: money carries a currency this app does
+   not know and a date does not.
+
+   Padded to two digits by hand: padStart is ES2015 and tools/es5-check.mjs
+   fails on it. */
+function plDate(ms){
+  var d=new Date(ms), m=d.getMonth()+1, day=d.getDate();
+  return t('plan.date', d.getFullYear(), (m<10?'0':'')+m, (day<10?'0':'')+day);
+}
 function plBuy(){
   if(!PLPICK) return;
   /* plHave() and not the comparison written out again: the button above is
@@ -956,9 +1007,16 @@ function vPlans(){
     /* AND THE BUTTON IS NOT THERE FOR SOMETHING ALREADY PAID FOR.
        「そもそもプロなら課金自体ボタン押させないでいいでしょ」 OWNER
        2026-09-03. plBuy() has refused the press since 2026-09-02; a button
-       that exists in order to say no is a button. What is left on this screen
-       for somebody on the top rung is the two rows below -- restore, and
-       Apple's own sheet, which is where a subscription is changed.
+       that exists in order to say no is a button. The way out for somebody on
+       the top rung is the two rows below -- restore, and Apple's own sheet,
+       which is where a subscription is changed.
+
+       AND THE PLACE IT LEFT IS NOT EMPTY. 「消すなら同じ場所に現在このプラン
+       です〇〇/〇〇までみたいな感じにしないとわからんやろ」 OWNER 2026-09-03.
+       A button that simply goes reads as an app that has broken rather than
+       as one that has nothing to sell you: 「購入するボタンなんでなくなって
+       んの？」 plNow() is the one line that stands there -- see it for why
+       naming the plan is the truthful shape and not a word too many.
 
        This is not 「a button that is not there」 in the sense of 2026-08-25
        (「そのプランでできることできないことで UI 自体に変更がない方が
@@ -966,7 +1024,7 @@ function vPlans(){
        the way TO this screen. Here there is nowhere to send anybody. */
     '<div class="plgo">'+
       (storeSay()? '<div class="note">'+esc(storeSay())+'</div>' : '')+
-      (plHave()? '' :
+      (plHave()? plNow() :
         '<button class="btn plbuy'+(PLPICK? ' on' : '')+'"' + DO('plBuy') +
         (PLPICK? '' : ' disabled')+' style="width:100%">'+
         esc(t('plan.buy'))+'</button>')+'</div>'+

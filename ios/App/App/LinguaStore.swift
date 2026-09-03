@@ -175,17 +175,62 @@ public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
   /// guessed at, for the same reason the price screen says whether the App
   /// Store answered: an error is a state, and a state is what a person on a
   /// phone can photograph.
-  static func entitledSeen() async -> (plan: String, saw: Int, unverified: Int, unknown: Int) {
+  ///
+  /// AND WHEN EACH PLAN RUNS TO, which is the same walk answering one more
+  /// question about the same transactions. It is here rather than in a walk
+  /// of its own because the entry that grants a plan and the entry that
+  /// carries its expiry are the SAME entry: a second walk with its own copy
+  /// of `verified()` and `planOf()` would be a second answer to 「which
+  /// entitlements count」, and the day one of them changed the other would go
+  /// on answering the old way.
+  ///
+  /// Keyed by PLAN and not by product id: what the screen has is the plan in
+  /// force, and the monthly and the yearly product of one plan are one plan.
+  /// The LATER of two dates when both terms of a plan are somehow live --
+  /// what is being answered is 「how long may this person use it」.
+  ///
+  /// A transaction with no `expirationDate` puts nothing in the map, and that
+  /// is the honest answer rather than a hole: everything this app sells is an
+  /// auto-renewing subscription and always carries one, so an entry without
+  /// it is something this file has never seen. 「no date known」 is a state
+  /// www/store.js draws; a date invented for it would not be.
+  ///
+  /// A CANCELLED subscription is in here exactly like a live one, and that is
+  /// the point. Somebody who has turned auto-renew off still has what they
+  /// paid for until the date on the transaction, `currentEntitlements` still
+  /// lists it, and that date is 「いつまで使えるか」. There is nothing else to
+  /// build for it.
+  static func entitledSeen() async
+      -> (plan: String, saw: Int, unverified: Int, unknown: Int, until: [String: Date]) {
     var out = "free"
     var saw = 0, unver = 0, unknown = 0
+    var until: [String: Date] = [:]
     for await result in Transaction.currentEntitlements {
       saw += 1
       guard let t = verified(result) else { unver += 1; continue }
       if t.revocationDate != nil { continue }
       guard let p = planOf(t.productID) else { unknown += 1; continue }
       out = best(out, p)
+      if let e = t.expirationDate, e > (until[p] ?? Date.distantPast) { until[p] = e }
     }
-    return (out, saw, unver, unknown)
+    return (out, saw, unver, unknown, until)
+  }
+
+  /// When the plan in force runs to, or nothing.
+  ///
+  /// NOTHING IS 「NOT KNOWN」 AND NEVER 「NO END」. The two are different
+  /// states and www/store.js draws them differently -- CLAUDE.md's own
+  /// sentence about 「空」 and 「読めていない」, on a date instead of a plan.
+  /// It is nothing in three cases and all three are 「not known」:
+  ///
+  ///   `free`, which is not a subscription and has no end;
+  ///   a plan whose entitlement is not on this device -- which is exactly
+  ///   what `writeDown()` answering the Keychain's `held` means, and reading
+  ///   `seen`'s date for it would print the date of the OTHER subscription;
+  ///   an entitlement carrying no `expirationDate` at all.
+  static func untilOf(_ plan: String) async -> Date? {
+    if plan == "free" { return nil }
+    return await entitledSeen().until[plan]
   }
 
   /// Ask the App Store, then write the answer where the next launch will find
@@ -457,8 +502,34 @@ public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
   /// What the App Store says right now. Also writes it down: a session that
   /// asks is a session that can be told, and the Keychain is how the next
   /// launch is told.
+  ///
+  /// AND WHEN IT RUNS TO. 「消すなら同じ場所に現在このプランです〇〇/〇〇まで
+  /// みたいな感じにしないとわからんやろ」 OWNER 2026-09-03. The plans screen
+  /// draws no buy button for a rung already paid for, and a place that goes
+  /// empty says nothing about why there is nothing to press. The date was in
+  /// no answer this file gave; StoreKit has had it all along.
+  ///
+  /// `until` is the plan `writeDown()` ANSWERED, asked separately rather than
+  /// taken out of the same walk, because `writeDown()`'s answer is not always
+  /// what the entitlement list said: it returns the Keychain's `held`
+  /// whenever that is higher, and the date belonging to that plan is then not
+  /// on this device. `untilOf()` is what draws that line, and it is one line
+  /// in one place. What this costs is a second read of
+  /// `currentEntitlements`, which is signed data already on the device.
+  ///
+  /// Milliseconds since 1970, because the other end is JavaScript and
+  /// `new Date(ms)` is the one construction that needs no parsing and no
+  /// locale. The field is simply ABSENT when there is no date to give --
+  /// www/store.js reads its absence as 「not known」, which is what it is.
   @objc func current(_ call: CAPPluginCall) {
-    Task { call.resolve(["plan": await writeDown()]) }
+    Task {
+      let plan = await writeDown()
+      var out: [String: Any] = ["plan": plan]
+      if let e = await Self.untilOf(plan) {
+        out["until"] = e.timeIntervalSince1970 * 1000
+      }
+      call.resolve(out)
+    }
   }
 
   /// Cancelling, changing the tier, seeing the next charge -- all of it is

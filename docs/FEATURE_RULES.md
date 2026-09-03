@@ -218,6 +218,72 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### 平キーの道を消す。アプリは今の形だけを知っている
+- Date: 2026-09-03
+- Area: 保存の形式、起動時の移行
+- Decision:
+
+  ```
+  もうデータ無くしていいまっさらな状態で完成させるから
+  もうまっさら昔のいらない。今の状態の話平キーなんかいらない
+  今の情報のコードに書き換えて
+  ```
+
+  **言語が一つしか持てなかった頃の鍵（`lingua.words` など八つ）を、アプリは
+  もう読まない。**そこから写す道ごと消す。条件を足すのではなく、そのコードを
+  消して今の形だけにする。
+
+  消すもの:
+  - `langMigrate()`（`www/core.js`）── 平キーを読んで写す
+  - `LS_FLAT`（`www/core.js`）── 八つの鍵の表
+  - `langMigStamp()` と `mig` の印 ── 写した言語にアカウントを押すためだけのもの
+  - `lsWipeAcct()` の平キー削除 ── 消すものが無くなる
+  - `tools/migrate-check.mjs` の平キーについての主張
+- Reason: オーナーの言葉のまま上に。**リリース前で、平キーを持つ端末は
+  オーナーの検証用の端末だけ。**そのデータは要らないと本人が決めた。
+  残せば、読まれない道を検査が守り続けることになる。
+- Affected features: 起動（`www/core.js` の頭）、`netRead()`（`www/net.js`）
+- Affected data: **消える道であって、消すデータではない。**
+
+  **これは「移行は写して、読んだものを消さない」（docs/DATA_SAFETY.md）の
+  例外ではない。**移行そのものを無くすので、写す元も写す先も無い。平キーを
+  持つ端末では、その八つの鍵が **`localStorage` に残ったまま、誰にも読まれ
+  なくなる** ── アプリが消すのではない。
+- Affected docs: この項、docs/DATA_MODEL.md、docs/DATA_SAFETY.md、
+  docs/CHANGELOG.md、CLAUDE.md 規則6
+- Implementation status: **未実装。**`claude/flat` に渡した（2026-09-03）
+
+### 古い規則は残さない。全部いまの規則。食い違いはオーナーに訊く
+- Date: 2026-09-03
+- Area: 書かれたもの全部 ── CLAUDE.md と docs/ のすべて
+- Decision:
+
+  ```
+  それで前よりバグ増えてるんだから前のルールは消せ全部今のルール。
+  食い違いがあるなら俺に確認をしろ。
+  ```
+
+  1. **置き換えられた規則は消す。**「これは歴史です」と前置きして残さない。
+     印を付けて本文を残すのも残したことになる。**消す。**
+  2. **残っているのは、いま効いている規則だけ。**読んだ人がそのまま従って
+     正しくなる状態にする。
+  3. **食い違いを見つけたら、セッションもリーダーも決めない。オーナーに訊く。**
+     どちらが正しそうか、という判断も含めて訊く。
+- Reason: オーナーの言葉のまま上に。**理由は測られている** ── 2026-09-03、
+  リーダーが置き換えられた 2026-08-28 の「ビルドが先、ゲートが後」を
+  CLAUDE.md から読み上げ、その日の決定（「全部直してからビルドは見る」）と
+  逆のことをオーナーに言った。**古い規則は変だと思われて疑われるが、残って
+  いれば読まれる。**同じ日に、古い事実の記述（`netLike()` が `@` を落として
+  いない）を読んで原因を二度誤り、間違った指示を担当に出した。
+- Affected features: 無し。書かれたものだけ
+- Affected data: 無し
+- Affected docs: `CLAUDE.md`、`docs/` のすべて。**`docs/CHANGELOG.md` だけは
+  例外で、書き換えない** ── その日に本当だったことの記録なので
+- Implementation status: **2026-09-03 の監査 A〜D に渡した。**
+  `claude/aud-claude` `claude/aud-data` `claude/aud-pay` `claude/aud-state`
+
+  **この項自身が、この規則の対象です。**置き換えられた日には消してください。
+
 ### 保存していないまま画面を出ようとしたら、この app のポップで訊く
 - Date: 2026-09-03
 - Area: 保存ボタンのある画面すべて
@@ -313,7 +379,12 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected data: **無し。**選択は画面の状態で、`viewReset()`（`www/shell.js`）
   が忘れる場所。**言語にも `KB` にも何も足さない**
 - Affected docs: この項、docs/CHANGELOG.md、docs/keyboard.md
-- Implementation status: **未実装。**`claude/keysel` に渡した（2026-09-03）
+- Implementation status: **実装済み（`claude/keysel`、2026-09-03）。**
+  `kbLtGrid()` の押しは選択を憶えるだけになり、書き込む道は `kbLtPut()` 一本。
+  紫は `kbPickPaint()`（新しい色も class も足していない）。選択は
+  `www/keyboard.js` の `kbLtPick` 一つで、画面を開くたびに空になり
+  `viewReset()` も落とす ── **保存するものは増えていない。**
+  `tools/kb-check.mjs` に 15 の主張。**CODE CONFIRMED、DEVICE 未確認。**
 
 ### 買うボタンを消したところには、今のプランと期限を出す
 - Date: 2026-09-03
@@ -337,7 +408,12 @@ the reasoning — a reason can be re-derived, a decision cannot.
   `LinguaStore.swift` の `current` は `["plan": ...]` しか返していない。
   StoreKit の契約が持っているので、ネイティブ側から出すところから
 - Affected docs: この項、docs/CHANGELOG.md、docs/DATA_MODEL.md
-- Implementation status: **未実装。**`claude/plannow` に渡した（2026-09-03）。
+- Implementation status: **実装済み（CODE CONFIRMED）。**`claude/plannow`
+  （2026-09-03）。`LinguaStore.current` が `Transaction.expirationDate` から
+  `until` を返し、`www/store.js` の `STORE_UNTIL` が**答えた段と一緒に**
+  セッションの間だけ持ち、`plNow()` が `.plgo` の中に一行を出す。
+  **保存するものは増えていない。**`plan-check` に九本。
+  **Swift はこの環境でコンパイルできないので DEVICE CONFIRMED ではない。**
   **`claude/rc` が同じ `LinguaStore.swift` を RevenueCat へ書き換えている** ──
   あちらは公開キー待ちで止まっているので、master が先に進み、rc が取り込む
 
