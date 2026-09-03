@@ -207,6 +207,8 @@ act('snsSetFil', snsSetFil);
 act('snsSetSort', snsSetSort);
 act('snsSaveQ', snsSaveQ);
 act('snsPickSaved', snsPickSaved);
+act('snsPickRecent', snsPickRecent);
+act('snsDropRecent', snsDropRecent);
 act('postOpen', postOpen);
 act('postPic', postPic);
 act('postReply', postReply);

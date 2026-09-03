@@ -168,6 +168,10 @@ const FIELDS = {
   /* the searches somebody starred. The server is the record and this is the
      copy the screen draws in the first frame -- www/sns.js says so. */
   saved:    { to: 'netSearchSave' },
+  /* and the words somebody merely TYPED, which is a different table and a
+     different road -- www/sns.js says why the two are never one. Five of
+     them, newest first, the copy the list draws in the first frame. */
+  recent:   { to: 'netRecentAdd' },
 
   /* --- and the phone's own, each for its own reason --------------------- */
   savedUp:  { phone: 'whether this phone has sent its starred searches up ONCE. A mark about the road above, not a thing travelling on it' },

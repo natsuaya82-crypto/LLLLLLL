@@ -471,6 +471,8 @@ defLang('pt', (function(){
       "sort.buzz"       : "Destaques",
       "sns.save"        : "Guardar esta palavra",
       "sns.saved"       : "Guardados",
+      "sns.recent"      : "Recentes",
+      "sns.recent.drop" : "Remover",
       'sns.search'            : "Procurar — @ para pessoas",
       'sns.nohit'             : "Nada encontrado",
       'notif.like'            : "{0} gostou",
