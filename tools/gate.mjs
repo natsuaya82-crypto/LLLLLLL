@@ -3,9 +3,11 @@
 
    Run it:   npm test
 
-   Thirty-one checks, and twenty-three of them start a headless browser and walk
+   Thirty-five checks, and twenty-six of them start a headless browser and walk
    the app -- most over a port of their own; `shape-check` opens `index.html`
-   off the disk instead, which is why it needs no port. Run one after another
+   off the disk instead, which is why it needs no port. The two numbers here
+   are FAST.length and SLOW.length below; if this comment and those lists
+   disagree, the lists are right. Run one after another
    that is ten minutes, and ten minutes is long enough that a check stops being run
    after every change and starts being run at the end — which is the one way
    a gate fails: not by being wrong, by being skipped.
@@ -56,9 +58,9 @@ function run(name){
 function show(r){
   if (r.out) process.stdout.write(r.out);
   if (r.err) process.stderr.write(r.err);
-  /* Say which one, because eleven are running at once now and a check that
-     died before printing anything leaves a stack trace nowhere near its own
-     heading. */
+  /* Say which one, because several are running at once (WIDE, below: at most
+     four) and a check that died before printing anything leaves a stack trace
+     nowhere near its own heading. */
   if (r.code !== 0) console.error('\n' + r.name + ' FAILED (exit ' + r.code + ')');
 }
 
