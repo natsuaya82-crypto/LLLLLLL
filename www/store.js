@@ -113,12 +113,15 @@ function storeBuy(id){
          The rung itself is untouched: storeTook() still takes the better of
          the two and nothing here lowers anything. What changes is the words.
 
-         The two come apart whenever a better entitlement is already live, and
-         today that is not a corner -- Plus and Pro are in two subscription
-         groups in App Store Connect, so both run and both are charged.
-         docs/apple.md § 4 says one group; that is App Store Connect work and
-         cannot be done in the app. It is in docs/STATE.md § オーナーの側に
-         残っているもの.
+         The two come apart whenever a better entitlement is already live,
+         and one subscription group does not close that -- it is the ordinary
+         shape of a DOWNGRADE. Plus and Pro are in one group with the levels
+         split (OWNER 2026-09-03: 「グループ1個でレベルも分かれてた」), so
+         pressing Plus while Pro is running is Apple deferring the change to
+         the end of the paid period: the person keeps Pro until then, which
+         is what they paid for and what `currentEntitlements` says. The plan
+         on the screen is Pro and is right. The sentence after the press is
+         about the press.
 
          `got` and never plan() for the fallback: a phone carrying a native
          side older than this answers no `bought` at all, and the ANSWER is
