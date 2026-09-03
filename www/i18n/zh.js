@@ -472,6 +472,8 @@ defLang('zh', (function(){
       "sort.buzz"       : "热门",
       "sns.save"        : "保存这个词",
       "sns.saved"       : "已保存",
+      "sns.recent"      : "最近搜索",
+      "sns.recent.drop" : "移除",
       'sns.search'            : "搜索 — @ 找人",
       'sns.nohit'             : "没有找到",
       'notif.like'            : "{0} 点了赞",

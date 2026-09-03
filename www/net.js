@@ -2269,6 +2269,58 @@ function netSearchDrop(q, ok, bad){
           encodeURIComponent(SESS.uid)+'&q=eq.'+encodeURIComponent(w),
           null, SESS.at, function(){ ok && ok(); }, bad || function(){});
 }
+/* ---- and what somebody merely typed -------------------------------------
+
+   「検索した履歴もユーザーはいらんから5個くらい検索履歴出るようにしたい」
+   「1件づつ消せるでいいよ」 OWNER 2026-09-03.
+
+   A DIFFERENT TABLE FROM THE STAR ABOVE, and the three functions here are a
+   different set from the three there on purpose. A star is a word somebody
+   CHOSE; a recent is a word they TYPED. `supabase/schema.sql` says why they
+   are never one row -- and the same sentence applies to the road: giving
+   `saved_search` a 「this one is history」 column would make one mechanism of
+   two things, and un-starring a word would take the history with it.
+
+   Ordered by `at` and not `created_at`, because typing the same words again
+   MOVES the row rather than making a second one. `at` is when it was last
+   searched for, which is the thing the list is in the order of. */
+function netRecent(ok, bad){
+  if(!netSignedIn()){ ok([]); return; }
+  netGet('/rest/v1/recent_search?select=id,q,at&order=at.desc'+
+         '&limit='+NET_PAGE,
+    function(d){
+      var out=[], i, r;
+      for(i=0;i<(d||[]).length;i++){
+        r=d[i]||{};
+        out.push({id:r.id||'', q:String(r.q||''), at:Date.parse(r.at)||0});
+      }
+      ok(out);
+    }, bad || function(){});
+}
+/* DROP AND THEN INSERT, which is how the same words typed again come back to
+   the top. `unique (author, q)` refuses a second row, so an insert alone
+   would fail and the word would keep whatever place it had -- and a PATCH
+   alone would do nothing at all for a word that is not there yet. One road
+   answers both, and the drop of a row that does not exist is a no-op rather
+   than an error.
+
+   The words are the name of the row, exactly as the star's are, so nothing
+   here has to ask what an id was first. */
+function netRecentAdd(q, ok, bad){
+  var w=String(q||'').replace(/^\s+|\s+$/g, '');
+  if(!netSignedIn() || !w){ ok && ok(); return; }
+  netRecentDrop(w, function(){
+    netSend('POST', '/rest/v1/recent_search', {author:SESS.uid, q:w}, SESS.at,
+            function(){ ok && ok(); }, bad || function(){});
+  }, bad || function(){});
+}
+function netRecentDrop(q, ok, bad){
+  var w=String(q||'').replace(/^\s+|\s+$/g, '');
+  if(!netSignedIn() || !w){ ok && ok(); return; }
+  netSend('DELETE', '/rest/v1/recent_search?author=eq.'+
+          encodeURIComponent(SESS.uid)+'&q=eq.'+encodeURIComponent(w),
+          null, SESS.at, function(){ ok && ok(); }, bad || function(){});
+}
 /* ---- the bytes ---------------------------------------------------------
    A photograph is not a field of a post. It is half a megabyte, and a
    timeline of fifty posts carrying their own pictures is forty megabytes

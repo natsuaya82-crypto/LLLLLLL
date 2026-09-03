@@ -1103,6 +1103,7 @@ function snsFind(q, done){
 function snsGo(){
   if(!snsQ.trim()) return;
   snsMode='posts'; snsHits=null;
+  snsRecentAdd(snsQ);
   snsFind(snsQ, snsGot);
   render();
 }
@@ -1146,10 +1147,18 @@ function snsWhoRow(p, full){
       (full && p.bio? '<span class="pbio">'+esc(p.bio)+'</span>' : '')+
     '</span>'+
     (p.lname? '<span class="plangtag">'+esc(p.lname)+'</span>' : '');
+  /* AND THIS IS WHERE A SEARCH BECOMES ONE SOMEBODY MADE. Reaching a person
+     off the answer is the person saying 「that word found who I wanted」 --
+     which is the only thing on this screen that tells a finished search from
+     the four prefixes typed on the way to it. snsRecentAdd() says the rest.
+
+     Only in the SEARCH's rows: `full` is the follows list, where a row is
+     somebody you already have and no word was typed to reach it. */
+  var keep=full? '' : AFTER('snsRecentKeep');
   return '<div class="whrow">'+
     (p.mine
-      ? '<button class="whgo"' + DO('goTab', ["profile"]) + '>'+inner+'</button>'
-      : '<button class="whgo"' + DO('go', ["profile", h]) + '>'+inner+'</button>')+
+      ? '<button class="whgo"' + DO('goTab', ["profile"]) + keep + '>'+inner+'</button>'
+      : '<button class="whgo"' + DO('go', ["profile", h]) + keep + '>'+inner+'</button>')+
     (p.mine? ''
       : '<button class="whfo'+(on? ' on' : '')+'"' + DO('meFollow', [h]) + '>'+
           esc(t(on? 'me.unfollow' : 'me.follow'))+'</button>')+
@@ -1328,6 +1337,125 @@ function snsPickSaved(q){
   snsFil={q:k, r:null};
   back();
 }
+/* ---- the words somebody TYPED ------------------------------------------
+
+   「検索した履歴もユーザーはいらんから5個くらい検索履歴出るようにしたい」
+   「1件づつ消せるでいいよ」 OWNER 2026-09-03.
+
+   NOT THE STAR ABOVE, and the two must not become one. A star is a word
+   somebody CHOSE to keep and it lives on the filter; a recent is a word they
+   merely typed and it lives under the empty search field. `saved_search` and
+   `recent_search` are two tables for that reason -- one row with a 「which
+   kind is this」 column on it would mean the history's own ceiling of five
+   silently deleting somebody's star, and un-starring a word taking the
+   history with it.
+
+   The owner's screenshot had a row of round faces over the words. That row is
+   not built: 「人の丸い列は作らない」 and CLAUDE.md § Shape forbids a row of
+   round chips you scroll sideways by name. This is a LIST, down the screen.
+
+   THE SERVER IS THE RECORD AND `SET.recent` IS THE COPY, the same sentence
+   the star makes. There is no `recentUp` flag beside `SET.savedUp`, and that
+   is not an omission: the star existed on phones before it existed on the
+   server, so it had a copy to hand over once. A history has never been
+   anywhere else, so the server's answer is simply the answer. */
+var SNS_RECENT=5;
+var snsRecentAsk=false, snsRecentGot=false;
+function snsRecent(){
+  var a=SET.recent;
+  return (a && a.length)? a : [];
+}
+function snsRecentPull(){
+  if(snsRecentAsk || snsRecentGot) return;
+  if(!netSignedIn()) return;
+  snsRecentAsk=true;
+  netRecent(function(rows){
+    snsRecentAsk=false; snsRecentGot=true;
+    var got=[], i;
+    for(i=0;i<(rows||[]).length && got.length<SNS_RECENT;i++)
+      if(rows[i] && rows[i].q) got.push(String(rows[i].q));
+    if(snsSameWords(got, snsRecent())) return;
+    SET.recent=got; save(); render();
+  }, function(){ snsRecentAsk=false; });
+}
+/* THE ONE PLACE A WORD ENTERS THE HISTORY, and what counts as 「searched」 is
+   the whole of the question. `snsSetQ()` runs on every letter, so anything
+   written from there leaves 「a」「ay」「aya」 standing as three searches --
+   and so does writing it when an ANSWER lands, because an answer lands per
+   letter too. A timer that waited for typing to stop would be a second
+   mechanism deciding the same thing.
+
+   So it is neither: a word is recorded when the person REACHES FOR THE
+   ANSWER. Pressing 🔍 is that (snsGo), and so is opening somebody off the
+   list of people (snsWhoRow). Every prefix on the way dies without being
+   reached for, which is exactly what tells it from the word somebody meant.
+
+   Newest first, and the same words again MOVE rather than making a second
+   line -- `unique (author, q)` on the server says the same thing. The sixth
+   pushes the fifth off, which is a delete and is inside the decision:
+   「直近5件」 is what the feature IS. The one that fell off is dropped from
+   the server by its words.
+
+   The copy is written and the screen does not wait for the server, the same
+   way the star does not: a history that only appeared once the network came
+   back would be a screen that forgets on a train. */
+function snsRecentAdd(q){
+  var k=String(q||'').trim(), a=snsRecent(), out=[k], i, off;
+  if(!k) return;
+  for(i=0;i<a.length;i++) if(a[i]!==k) out.push(a[i]);
+  off=out.slice(SNS_RECENT);
+  out=out.slice(0, SNS_RECENT);
+  if(snsSameWords(out, a)) return;
+  netRecentAdd(k, function(){}, function(){});
+  for(i=0;i<off.length;i++) netRecentDrop(off[i], function(){}, function(){});
+  SET.recent=out;
+  save();
+}
+/* Pressed off a person's row, where the argument is not the word -- the
+   answer is on the screen and `snsQ` is what found it. */
+function snsRecentKeep(){ snsRecentAdd(snsQ); }
+/* One word off, and only that one. There is no button that takes them all:
+   「1件づつ消せるでいいよ」. */
+function snsDropRecent(q){
+  var k=String(q||'').trim(), a=snsRecent(), out=[], i;
+  if(!k) return;
+  for(i=0;i<a.length;i++) if(a[i]!==k) out.push(a[i]);
+  if(snsSameWords(out, a)) return;
+  netRecentDrop(k, function(){}, function(){});
+  SET.recent=out;
+  save();
+  render();
+}
+/* Pressed: that word goes into the field and is searched for again. It is
+   put through snsSetQ() rather than set here, because that is the one place
+   that says what typing into this field does -- writing it out again would
+   be a second copy of it, and the first thing to drift would be `snsMode`. */
+function snsPickRecent(q){
+  var k=String(q||'').trim();
+  if(!k) return;
+  snsSetQ(k);
+  render();
+}
+/* The list, under an EMPTY field. With something typed, the answer is what
+   the screen is about and the history would be sitting on top of it.
+
+   The heading is a NAME and not a sentence about what the list is
+   (CLAUDE.md § Explaining), the same shape as 「保存した検索」 above it. No
+   corner, no border, no panel: `.whrow` is a row with a hairline under it and
+   `.pmore` is the small trailing control a post's row already wears. */
+function snsRecentHTML(){
+  var a=snsRecent();
+  if(!a.length) return '';
+  return '<div class="sec">'+esc(t('sns.recent'))+'</div>'+
+    a.map(function(q){
+      return '<div class="whrow">'+
+        '<button class="whgo"' + DO('snsPickRecent', [q]) + '>'+
+          '<span class="sl">'+esc(q)+'</span></button>'+
+        '<button class="pmore"' + DO('snsDropRecent', [q]) + ' aria-label="'+
+          esc(t('sns.recent.drop'))+'">'+ICON_CROSS+'</button>'+
+      '</div>';
+    }).join('');
+}
 /* ---- newest, or what people answered ------------------------------------
    「最新／話題」 OWNER 2026-08-28.
 
@@ -1400,7 +1528,14 @@ function snsAnsHTML(q, r){
     if(!postBlocked(ps[i])) out+=postRow(ps[i]);
   return out || '<div class="note">'+esc(t('sns.nohit'))+'</div>';
 }
-function snsHitsHTML(){ return snsAnsHTML(snsQ, snsHits); }
+/* What sits under the field: the answer where there is a word, and the words
+   this account has typed where there is not. One or the other and never both
+   -- a history under a live answer is a second list on a screen that is
+   already about one thing. */
+function snsHitsHTML(){
+  if(!snsQ.trim()) return snsRecentHTML();
+  return snsAnsHTML(snsQ, snsHits);
+}
 function vExplore(){
   if(!netSignedIn()) return snsLocked('explore');
   /* The rows this screen draws carry Follow, and it has to say which state it
@@ -1409,6 +1544,8 @@ function vExplore(){
   /* And the screen the star is on, because whether it is filled is the same
      question the filter asks. */
   snsSavedPull();
+  /* And the words this account has typed, which is this screen's own list. */
+  snsRecentPull();
   /* Asked once when the screen is built, so coming back to a query already
      typed shows its answer rather than an empty page. */
   if(snsQ.trim() && !snsHits) snsFind(snsQ, snsGot);

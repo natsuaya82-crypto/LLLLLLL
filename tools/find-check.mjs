@@ -154,6 +154,111 @@ const lang = await typed('@aya', 'lang400');
 say(lang.rows === 1,
     '言語の名前が訊けなくても人は出る (飾りで待たない, rows=' + lang.rows + ')');
 
+/* ---- 7. 打った言葉を憶える ----------------------------------------------
+   「検索した履歴もユーザーはいらんから5個くらい検索履歴出るようにしたい」
+   「1件づつ消せるでいいよ」 OWNER 2026-09-03.
+
+   一文字ごとに走る `snsSetQ()` の中で書けば「a」「ay」「aya」が三件残ります。
+   だから記録は**人が答えに手を伸ばした瞬間**だけ ── 🔍 を押す（`snsGo`）か、
+   人の行を開く（`snsWhoRow` の AFTER）。途中の接頭辞はどれも触られずに死ぬので、
+   それが「打ち終わった言葉」との違いになります。 */
+async function hist(){
+  return await pg.evaluate(() => {
+    var e = document.getElementById('sns-hits');
+    return { words: SET.recent ? SET.recent.slice() : [],
+             rows: e ? e.querySelectorAll('.whrow').length : -1,
+             chips: e ? e.querySelectorAll('.chip,.chips,.pav').length : -1,
+             sent: window.__ASK.filter(function(p){
+               return p.indexOf('/rest/v1/recent_search') === 0; }) };
+  });
+}
+/* 画面を空にして立て直す ── 履歴は空の検索欄の下にだけ出る。 */
+async function blank(){
+  await pg.evaluate(() => {
+    window.__MODE='ok'; window.__ASK=[];
+    SET.recent = []; snsRecentGot = true; snsQ = ''; snsHits = null;
+    snsMode = 'who'; go('explore');
+  });
+  await pg.waitForTimeout(80);
+}
+
+await blank();
+/* 一文字ずつ打っただけでは増えない。 */
+for (const q of ['a', 'ay', 'aya']) await pg.evaluate((q) => snsSetQ(q), q);
+await pg.waitForTimeout(300);
+let h = await hist();
+say(h.words.length === 0, '一文字ごとには増えない (打っただけ: ' + JSON.stringify(h.words) + ')');
+
+/* 🔍 を押すと、その言葉が一件だけ入る。 */
+await pg.evaluate(() => { window.__ASK = []; snsGo(); });
+await pg.waitForTimeout(300);
+h = await hist();
+say(h.words.length === 1 && h.words[0] === 'aya',
+    '🔍 を押すと打ち終わった言葉が一件入る (' + JSON.stringify(h.words) + ')');
+say(h.sent.length > 0, 'サーバーへ行く (' + (h.sent[0] || '(何も出ていない)') + ')');
+
+/* 六件目で一番古いものが落ち、五件のまま。 */
+await pg.evaluate(() => {
+  SET.recent = []; snsQ = '';
+  ['w1','w2','w3','w4','w5'].forEach(function(w){ snsQ = w; snsGo(); });
+});
+await pg.waitForTimeout(300);
+await pg.evaluate(() => { window.__ASK = []; snsQ = 'w6'; snsGo(); });
+await pg.waitForTimeout(300);
+h = await hist();
+say(h.words.length === 5 && h.words[0] === 'w6' && h.words.indexOf('w1') === -1,
+    '六件目で一番古いものが落ちて五件のまま (' + JSON.stringify(h.words) + ')');
+say(h.sent.join('|').indexOf('w1') !== -1,
+    '落ちた一件はサーバーからも消える');
+
+/* 同じ言葉を二度打っても二行にならず、一番上へ動く。 */
+await pg.evaluate(() => { snsQ = 'w3'; snsGo(); });
+await pg.waitForTimeout(300);
+h = await hist();
+say(h.words.length === 5 && h.words[0] === 'w3' &&
+    h.words.join(',').split('w3').length === 2,
+    '同じ言葉は二行にならず一番上へ動く (' + JSON.stringify(h.words) + ')');
+
+/* 空の検索欄の下に縦の一覧で出る。丸い横並びは無い。 */
+await pg.evaluate(() => { snsQ = ''; snsHits = null; render(); });
+await pg.waitForTimeout(120);
+h = await hist();
+say(h.rows === 5, '空の検索欄の下に五行 (rows=' + h.rows + ')');
+say(h.chips === 0, '丸い横並びは無い (人のアイコンの列: ' + h.chips + ')');
+const vert = await pg.evaluate(() => {
+  var r = document.querySelectorAll('#sns-hits .whrow');
+  if (r.length < 2) return false;
+  var a = r[0].getBoundingClientRect(), b = r[1].getBoundingClientRect();
+  return b.top >= a.bottom - 1 && Math.abs(a.left - b.left) < 1;
+});
+say(vert, '行は縦に積まれている (横並びではない)');
+
+/* 一件消すと、その一件だけが消えて他は残る。 */
+await pg.evaluate(() => { window.__ASK = []; snsDropRecent('w4'); });
+await pg.waitForTimeout(300);
+h = await hist();
+say(h.words.length === 4 && h.words.indexOf('w4') === -1,
+    '一件消すとその一件だけ消える (' + JSON.stringify(h.words) + ')');
+say(h.sent.join('|').indexOf('w4') !== -1, '消したことがサーバーへ行く');
+
+/* 検索欄に文字が入っているときは履歴が出ない。 */
+await pg.evaluate(() => { snsQ = 'aya'; snsHits = { q:'aya', who:[], posts:[] }; render(); });
+await pg.waitForTimeout(120);
+const shown = await pg.evaluate(() => {
+  var e = document.getElementById('sns-hits');
+  return e ? e.innerHTML.indexOf('snsPickRecent') !== -1 : true;
+});
+say(!shown, '文字が入っているときは履歴を出さない');
+
+/* そして星（`SET.saved`）は別物で、履歴に触られない。 */
+const star = await pg.evaluate(() => {
+  SET.saved = ['hoshi']; SET.recent = ['rireki']; snsQ = '';
+  snsDropRecent('rireki');
+  return { saved: SET.saved.slice(), recent: SET.recent.slice() };
+});
+say(star.saved.length === 1 && star.saved[0] === 'hoshi' && star.recent.length === 0,
+    '履歴を消しても星は残る (星と履歴は別の仕組み)');
+
 await br.close();
-console.log(bad.length ? '\nfind: FAILED ' + bad.length : '\nfind: 人の検索は打った通りに届き、答えは画面に出る');
+console.log(bad.length ? '\nfind: FAILED ' + bad.length : '\nfind: 人の検索は打った通りに届き、答えは画面に出て、打った言葉が五件残る');
 process.exit(bad.length ? 1 : 0);

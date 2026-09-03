@@ -512,6 +512,8 @@ defLang('fr', (function(){
       "sort.buzz"       : "Populaires",
       "sns.save"        : "Garder ce mot",
       "sns.saved"       : "Gardés",
+      "sns.recent"      : "Récents",
+      "sns.recent.drop" : "Retirer",
       'sns.search'            : "Chercher — @ pour les gens",
       'sns.nohit'             : "Rien trouvé",
       'notif.like'            : "{0} a aimé",

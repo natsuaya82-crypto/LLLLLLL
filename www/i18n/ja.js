@@ -380,6 +380,8 @@ defLang('ja', (function(){
       'sort.buzz'       : "話題",
       'sns.save'        : "この言葉を保存",
       'sns.saved'       : "保存した検索",
+      'sns.recent'      : "最近の検索",
+      'sns.recent.drop' : "消す",
       'sns.search'            : "さがす　@で人",
       'sns.nohit'             : "見つかりません",
       'notif.like'            : "{0} がいいね",

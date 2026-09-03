@@ -467,6 +467,8 @@ defLang('ru', (function(){
       "sort.buzz"       : "Популярное",
       "sns.save"        : "Сохранить это слово",
       "sns.saved"       : "Сохранённые",
+      "sns.recent"      : "Недавние",
+      "sns.recent.drop" : "Убрать",
       'sns.search'            : "Поиск — @ для людей",
       'sns.nohit'             : "Ничего не найдено",
       'notif.like'            : "{0} оценил это",
