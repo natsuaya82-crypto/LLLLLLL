@@ -61,18 +61,35 @@ every slice of it, the keyboard among them, because a keyboard is part of a
 language. The phone keeps the copy that works with no signal; **it is never
 where a thing lives.**
 
-**Three things are the phone's, and that is the whole list**: a language's
-backup file, an exported sheet, and the settings.
-「そもそも端末に保存するもんはないぞほとんど」 OWNER 2026-09-01. Anything else
-written down as the phone's is old, and old writing is what gets read and
-believed — that is the sentence that has already sent a wrong answer to the
-owner once.
+**NOTHING IS THE PHONE'S. EVERYTHING IS THE ACCOUNT'S.**
+「端末ごとにやることなんてねえよ」「アカウントごとってずっと言ってるよな？」
+「アカウントごとに言語情報も違うんだって」 OWNER 2026-09-03.
 
-**The plan is the ACCOUNT's** 「課金とアカウントとキーボードはアカウントに
-結びつく」 OWNER 2026-09-01. It follows the person to whatever phone they sign
-in on, so a line that puts it inside the settings is old however it is phrased
-— and the keyboard in that same sentence is the language's, which is the
-server, not a fourth thing on the phone.
+Every single thing a person has belongs to the account they signed in as: the
+language and every slice of it, the posts, the drafts, the profile, the plan,
+the saved searches, how far down the notices they have read, and **the
+settings**. The phone holds a copy so the app works with no signal, and that
+copy is filed under the account it belongs to. **A phone is a window, not an
+owner.**
+
+**This replaced a list.** Until 2026-09-03 this said 「three things are the
+phone's — a backup file, an exported sheet, and the settings」, and that
+sentence cost the owner their language. It is how a phone came to hold things
+that named nobody: a language made before the stamp existed, a plan with no
+account on it, a settings key shared by everyone who ever signed in. Then
+deleting one account emptied the phone and took another account's work with
+it, and the only copy was the one the phone had destroyed.
+
+**So there is no such category and no such list.** A backup file and an
+exported sheet are that account's language in a form a person can hold. The
+settings are that account's settings. When something new is stored, the
+question is not 「is this the phone's」 — there is no answer to that — it is
+**「which account is this」**, and a thing that cannot answer it is a thing
+that must not be written down.
+
+The one exception is the session itself, and it is not an exception in the way
+it looks: `lingua.sess` is not a thing somebody has, it is **which account
+this phone is**. Nothing else on the phone gets to be nobody's.
 
 Anything that needs the server is built assuming the server is
 there. A screen that half-works without one is not a step on the way to being
@@ -1426,13 +1443,23 @@ asking about whatever screen the check happened to be standing on. **A screen
 is a route AND its argument**, which this file says twice already, and the
 check now stands on the route.
 
-### 22. Nothing is kept on this phone alone
+### 22. Nothing is kept on this phone alone, and nothing on it is nobody's
 
 **The app is online, and that is a decision about data rather than about
 screens** ── 「オンラインにしないとデータの改竄し放題だから」. The server is
-where things live; `localStorage` is the copy that runs with no signal. Three
-things are the phone's own and that is the whole list: a language's backup
-file, an exported sheet, and the settings.
+where things live; `localStorage` is the copy that runs with no signal.
+
+**And every key of that copy belongs to an ACCOUNT.**
+「端末ごとにやることなんてねえよ」 OWNER 2026-09-03. This section used to end
+with a list of three things that were 「the phone's own」 -- a backup file, an
+exported sheet, and the settings -- and that list is gone, along with the
+category. A thing that answers 「the phone's」 is a thing that survives one
+account and is handed to the next one, and on 2026-09-03 that is exactly what
+happened: deleting one account emptied the whole namespace and took another
+account's language with it.
+
+`lingua.sess` is the only key that is not somebody's belongings, and it is not
+an exception: it is **which account this phone is**.
 
 **That was writing only, and writing does not stop anything.** The timeline
 was local for a week with every check green, and the languages were local for
@@ -1443,8 +1470,12 @@ as long again after that; both were found by a person holding a phone.
 by the expression, because `k` is a loop variable in two files about two
 different things — and each one is either **on a road to the server**, with the
 function in `www/net.js` that takes it there (and that function has to exist),
-or **the phone's own with a sentence saying why**. Twenty-one have a road,
-seven are the phone's.
+or **the phone's own with a sentence saying why**.
+
+**That second half is what has to shrink to nothing**, and every entry left in
+it is a thing waiting to be handed to the wrong person. It is not shrunk yet:
+the plan, the saved searches and the notice marker are all sitting in one
+settings key shared by whoever signs in. `docs/BACKLOG.md` carries it.
 
 **A new key fails until somebody writes down which of the two it is.** That is
 all it holds: whether the road is WALKED is `acct-check` and `again-check`, and
