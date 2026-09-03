@@ -116,6 +116,7 @@ variables → Actions で:
 |---|---|
 | `PROVISIONING_PROFILE_BASE64` | **本体用（1-4 で作り直した方）に差し替え** |
 | `KEYBOARD_PROVISIONING_PROFILE_BASE64` | 拡張用（新規） |
+| `WIDGET_PROVISIONING_PROFILE_BASE64` | ウィジェット用（`Lingua Widget Distribution`、`docs/apple.md` 2b）。**拡張とは別の話ですが、同じワークフローが三枚とも要求します** ── 空だとビルドがそこで止まります |
 
 変換:
 ```
@@ -159,16 +160,20 @@ www/
 アプリ内キーボードが消えた後で足されました — バーと溜まりは、変換のある
 書き方でもアルファベットでも同じ機械が動くので、1ファイルです（§14参照）。
 
-**この2つと、それに合わせた `KeyboardViewController.swift`／`Shared.swift`
-の変更分は、#41 より後に足されたコードで、まだ一度もコンパイルされて
-いません。** #41 でコンパイルが通って TestFlight に上がったのは、この2ファイル
-が無かった時点の拡張です。今リポジトリにある拡張のコードそのもの
-（変換を含む今の6ファイル一式）は、#41 以降ビルドが一度も回っていないので、
-**まとめて通るかどうかはまだ分かっていません。**（§12参照）
+**6つとも `project.pbxproj` の Sources ビルドフェーズに入っています**
+（`assets-check` がそれを見ています）。ビルドが実際に回ったか、通ったかは
+**GitHub Actions の履歴にしかなく、このリポジトリからは読めません。**
+「#41 以降ビルドが回っていない」と書いてあったのは 2026-08 の話で、
+その後ビルド番号は三桁になっています。**ここに書けるのは
+「Sources に入っている」までで、「コンパイルが通った」は Actions を見た人しか
+言えません。**（§12参照）
 
-アプリ内キーボード（`www/keyboard.js` の `kbField`/`kbUp`/`kbFlick` ほか）は
-**もう無い**。「アプリ内キーボードいらないでしょ。アップル拡張だけ。」で
-削除済みで、キーボードが打てる場所はこの拡張だけです。
+**アプリの中で「打つ」板はもうありません。**「アプリ内キーボードいらないでしょ。
+アップル拡張だけ。」で削除済みで、キーボードが打てる場所はこの拡張だけです。
+
+**`www/keyboard.js` そのものは残っています** ── 3800行あって、それは
+キーボードを**組む**エディタです。名前で「もう無い」と書くと次の人がその名前を
+消しに来るので、名前は挙げません。消えたのは打つ側、残っているのは組む側です。
 
 拡張は **Capacitor も CocoaPods も使いません**（純粋な Swift）。
 なので `Podfile` は変わらず、`npx cap sync ios` も拡張のターゲットを
@@ -293,14 +298,14 @@ LinguaScript.otf   その言語のフォント（フォントのシステム登�
 
 ## 6. 拡張の中身（Swift）— 書いてあるものを読んだ結果
 
-**状態が2つに分かれています。** #41 でコンパイルが通って TestFlight に
-上がったのは、`KeyboardViewController`・`KeyBoardView`・`GlyphView`・`Shared`
-が変換をまだ知らなかった時点のコードです。そのあとに足された変換
-（`Compose`・`CandidateBar`、そして `KeyboardViewController`/`Shared` の
-変換対応の追加分）は、**まだ一度もコンパイルされていません。** 以下は
-今リポジトリにあるコードそのものの説明で、どちらの状態のコードかは
-その場で書きます。実機で打てているのは変換の入っていない方で、変換の
-入った方は**まだ一度も動いていません。**
+**以下は今リポジトリにあるコードそのものの説明です。**
+
+**実機で打てているのは変換の入っていない板です。**変換
+（`Compose`・`CandidateBar`、および `KeyboardViewController`/`Shared` の
+変換対応分）は #41 のあとに足された分で、**実機で動かした人はまだいません。**
+コンパイルが通るかどうかは Actions の履歴の話で、ここからは読めません
+（§3・§12）。**「実機で打てた」と「ビルドが通った」と「コードがある」は
+三つの別の主張です。**この文書はコードがあることしか言えません。
 
 ### KeyboardViewController
 
@@ -354,9 +359,9 @@ build()（毎回、全部作り直す。層の切替もこれ一本）
 文字を挿しません。
 
 **ここから下（`typed`/`back`/`settle`/`drop`/`commit`、`CandidateBarDelegate`、
-`compose`/`bar` フィールド）は変換のために足された分で、#41 には無く、
-まだコンパイルされていません。** #41 で通ったのは `lt`/`sp`/`del`/`next`/`lay`
-を素直に `insertText`/`deleteBackward` に渡すだけの、もっと単純な版です。
+`compose`/`bar` フィールド）は変換のために足された分で、実機で通した人は
+まだいません。**実機で打てたのは `lt`/`sp`/`del`/`next`/`lay` を素直に
+`insertText`/`deleteBackward` に渡すだけの、もっと単純な版です。
 
 - `lt` / `rom`（フリック含む）→ `typed(_:)` → `Compose` があれば
   `push()`。`holdsText`（= ローマ字面）でなければ**押した瞬間に挿す**。
@@ -389,12 +394,12 @@ build()（毎回、全部作り直す。層の切替もこれ一本）
 - 押している間のハイライト（`KeyView.hold()`）。フリック中の方向プレビューは
   **まだありません**
 
-`lay` キーが行き先の層の頭文字を自分の顔にする分（第2面のため）は #41 の
-あとに足された小さな変更で、これもまだコンパイルされていません。
+`lay` キーが行き先の層の頭文字を自分の顔にする分（第2面のため）も #41 の
+あとの追加で、実機では見られていません。
 
 ### Compose
 
-**新規ファイル。まだコンパイルされていません。**「打っているが、まだ
+**書いてあります。実機ではまだ誰も動かしていません。**「打っているが、まだ
 文書に確定していないもの」を持ちます。§14 の変換とアルファベットの
 綴り候補は、同じ機械の2つの見え方で、だから1ファイルです。
 
@@ -409,7 +414,7 @@ build()（毎回、全部作り直す。層の切替もこれ一本）
 
 ### CandidateBar
 
-**新規ファイル。まだコンパイルされていません。** キーの上の1本のバー。
+**書いてあります。実機ではまだ誰も動かしていません。** キーの上の1本のバー。
 **中身は Compose が決め、バー自身は何も判断しません。** 左に固定で今の溜まり、
 右にスクロールする候補（`CandidateCell`、各候補は正方形のグリフを横に
 並べたもの）。候補をタップで `didPick` を発火します。
@@ -509,21 +514,11 @@ build()（毎回、全部作り直す。層の切替もこれ一本）
 
 ## 8. CI の変更（`.github/workflows/ios-deploy.yml`）
 
-**Install Provisioning Profile** を2枚に:
+**Install Provisioning Profiles** ── 拡張のぶんで2枚になり、その後
+ウィジェットが入って **3枚**になりました。今のワークフローは三つとも空でないことを
+確かめてから進みます（一つでも空なら、そこで `::error::` を出して止まります）。
 
-```yaml
-- name: Install Provisioning Profiles
-  env:
-    PROFILE_BASE64: ${{ secrets.PROVISIONING_PROFILE_BASE64 }}
-    KB_PROFILE_BASE64: ${{ secrets.KEYBOARD_PROVISIONING_PROFILE_BASE64 }}
-  run: |
-    mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-    echo "$PROFILE_BASE64"    | base64 --decode > app.mobileprovision
-    echo "$KB_PROFILE_BASE64" | base64 --decode > kb.mobileprovision
-    cp app.mobileprovision kb.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/
-```
-
-**ExportOptions.plist** に2つ目を:
+**ExportOptions.plist** も 3つ:
 
 ```xml
 <key>provisioningProfiles</key>
@@ -532,8 +527,13 @@ build()（毎回、全部作り直す。層の切替もこれ一本）
   <string>Lingua Distribution</string>
   <key>com.tokinets.lingua.keyboard</key>
   <string>Lingua Keyboard Distribution</string>
+  <key>com.tokinets.lingua.widget</key>
+  <string>Lingua Widget Distribution</string>
 </dict>
 ```
+
+**本当の中身は `.github/workflows/ios-deploy.yml` です。**ここに写した
+YAML は、写した日の形でしかありません。
 
 Archive は `-scheme App` のままで大丈夫です。Embed App Extensions の
 ビルドフェーズが入っていれば、拡張も一緒に入ります。
@@ -546,6 +546,50 @@ Archive は `-scheme App` のままで大丈夫です。Embed App Extensions の
 
 書いてあるのは `ios/App/App/LinguaShare.swift` です。Capacitor プラグイン
 1枚で、メソッドは2つしかありません。
+
+### 呼び方 ── `Capacitor.nativePromise` であって `registerPlugin` ではない
+
+**ここを間違えると4ビルド溶けます。実際に溶けました。**
+`docs/STATE.md` はこの節を指しているので、ここに書いておきます。
+
+```js
+Capacitor.nativePromise('LinguaShare', 'write', {json: …, font: …})
+```
+
+**`Capacitor.Plugins.LinguaShare` でもなく、`Capacitor.registerPlugin` でも
+ありません。**両方試して両方だめで、理由は同じ一つです ── その二つを
+`window.Capacitor` に載せるのは `@capacitor/core` という npm パッケージで、
+それは bundler のあるアプリが import するものです。**このアプリに bundler は
+ありません。**`www/index.html` は素の `<script src>` を並べているだけで、
+`@capacitor/core` を一度も読み込んでいません。
+
+だから `window.Capacitor` に入っているのは、**ネイティブのブリッジが自分で
+注ぐ分だけ**です:
+
+```
+  toNative  nativePromise  nativeCallback  isPluginAvailable
+```
+
+プラグインを名前で登録する道も、名前で引く道も、ここにはありません。
+`nativePromise` **が**そのブリッジで、訊き方はそれで全部です ──
+プラグイン名、メソッド名、引数。ふつうの Promise として解決・拒否します。
+
+**`isPluginAvailable` は使えません。**中で `cap.Plugins` を読むので、
+`@capacitor/core` が無いこの環境ではどのプラグインにも `false` を返します。
+ネイティブ側が在るかどうかは、**呼んでみて返りを見る**しかありません ──
+`www/share.js` の `sharePlug()` がその一行です:
+
+```js
+function sharePlug(){
+  return (window.Capacitor && Capacitor.nativePromise)? Capacitor.nativePromise : null;
+}
+```
+
+**同じ穴が `LinguaPlan` でも開きました。**`planKeep()` が
+`Capacitor.Plugins` に訊いていて、書き込みが毎回 early return していた ──
+実機で Plus が次の起動に free で戻り、ブラウザでは `PLAN_NATIVE` が false
+なので検査は全部緑でした。`nativePromise` に直してあります。
+**ネイティブを呼ぶ新しい道を書くときは、必ずこの形にしてください。**
 
 | | |
 |---|---|
@@ -621,7 +665,7 @@ Archive は `-scheme App` のままで大丈夫です。Embed App Extensions の
 
 ## 12. 順番と、どこであなたを待つか
 
-`A` `B` `C` `D` `E` `F` `G` `I` は済みました。ビルドは3回回っています:
+`A` から `J` まで全部済んでいます。拡張が入るまでの三回:
 
 | # | 中身 | 結果 |
 |---|---|---|
@@ -629,7 +673,9 @@ Archive は `-scheme App` のままで大丈夫です。Embed App Extensions の
 | #40 | 拡張を初めて足したビルド | **失敗。** 拡張が Swift のコンパイルで止まった |
 | #41 | #40 のコンパイルエラーを直したもの | **成功。拡張が埋め込まれて** TestFlight に上がっている |
 
-`A` から `J` まで全部済んでいます。`J`（実機でフルアクセスを与えて打つ）も
+**その後の本数はここには書きません。**ビルド番号はワークフローの run number で、
+GitHub Actions の履歴にしかなく、このリポジトリからは読めません。
+上の表は「拡張が初めて入るまで」の記録で、今の状態ではありません。`J`（実機でフルアクセスを与えて打つ）も
 確認され、キーに自作の字が並んで入力できています。
 
 | | 値 |
@@ -684,14 +730,12 @@ I（#41）で拡張は初めてコンパイルを通り、`.appex` として本�
 TestFlight に上がりました。ここまでで確かめられたのはアーカイブが通ることまでです。
 
 J で実機に入れ、フルアクセスを与えて開きました。**キーに自作の字が並び、打てます。**
-数字の段も自分の数字で出ています。ここから先で実機でしか見られないものは、
-§14 の変換まわりのように、まだ書いていないか書いたばかりのところです。
+数字の段も自分の数字で出ています。
 
-**しかも #41 が通したのは、変換を知らない時点のコードです。** §14 の変換
+**それが確かめられたのは、変換を知らない時点の板です。** §14 の変換
 （`Compose`・`CandidateBar`、`KeyboardViewController`/`Shared` の変換対応
-部分）は #41 のあとに足されたもので、**まだコンパイルすらされていません。**
-（§3・§6参照）候補が正しく出るかも `space` で確定するかも以前に、この分を
-含めた拡張全体がもう一度コンパイルを通るかどうかが、まだ確かめられていません。
+部分）は #41 のあとに足されたもので、**実機で開いた人はまだいません。**
+候補が正しく出るかも `space` で確定するかも、誰も見ていません。（§3・§6参照）
 
 キーボードが Messages や設定の一覧に出るかどうかは `J` です。
 
@@ -737,9 +781,12 @@ QWERTY は覚えている人にとっての配置であって、キーボード�
 `assets-check` もこの見た目については何も言いません。確認はビルド後の
 実機で。
 
-## 14. 変換（ピンイン式）— 設計
+## 14. 変換（ピンイン式）— 設計と、書いたもの
 
-**まだ作っていません。**これは決めたことの記録です。
+**両側とも書いてあります。**Swift 側は `ios/App/LinguaKeyboard/Compose.swift` と
+`CandidateBar.swift`。JSON 側は `www/share.js` ── `ink` を組む所と、
+`{how: wsys(), max: max, map: map}` を返す所。
+**実機で動かした人はまだいません。**以下は決めたことと、その通りに書いたものです。
 
 ### なぜ要るのか、どの言語に要るのか
 
