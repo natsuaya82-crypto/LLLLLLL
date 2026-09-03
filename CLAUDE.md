@@ -904,7 +904,12 @@ do not make it." Nothing held these seven, so `tools/conv-check.mjs` does: it bo
 the real app, seeds the fixture `act-check` and `press` share, sets the paid plan,
 and for every writing system `WSYS` lists — asked of the page, not written out in
 the check, so a sixth kind is walked the day it is added — calls the real
-`shareKbd()` and checks all seven against what came back.
+`shareKbd()` and checks them against what came back. **It holds more than those
+seven now and its own last line is the list** — the seven the prose made, the
+eighth below, and a ninth that came out of splitting one of them: the roman layer
+appears where the person CHOSE a writing system and never where `wsGuess()` merely
+guessed one, which is a road that had never been walked. Read that line rather than
+a number here; three different numbers were written down inside the check itself.
 
 It already found one. `shareTable()`'s own comment claimed a shape was reserved
 only once a key could reach it; the code asked for the ink slot *first*, so a blank
@@ -1310,8 +1315,9 @@ removed where it should have been narrowed to two, an undo that puts back the
 state *after* the change rather than the one before — every one of those is a
 keyboard that still renders, still installs, and is not the one somebody built.
 
-`tools/kb-check.mjs` holds two hundred and fifty-one things — count the `say(`
-lines there rather than trusting this number, which has been stale twice: the row
+`tools/kb-check.mjs` holds these — count the `say(`
+lines there rather than trusting any number here, which went stale three times
+before the number was taken out altogether: the row
 that goes is the one pressed
 and every other row is untouched and in order; a column comes out of every row,
 one key's worth from each; **a key wider than the column is NARROWED and not

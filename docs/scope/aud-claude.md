@@ -262,9 +262,10 @@ has said twelve」と正しく書いています（数を言っていない）�
 ただしこの行は自分で逃げ道を書いています ──「count the `say(` lines there
 rather than trusting this number, which has been stale twice」。**三度目でした。**
 
-**やったこと: 直していません。**その行は既に「この数を信じるな」と書いており、
-数え方も書いてあります。消すか 277 に直すかはリーダーの好みだと思うので、
-**判断を預けます。**（他の数と違って、読み方が併記されているので害が小さい）
+**やったこと: 直した。**当初は「読み方が併記されているので害が小さい」として
+リーダーに預けるつもりでしたが、作業中に master へ入った 2026-09-03 の決定
+「古い規則は残さない。全部いまの規則」が「置き換えられたものは**消す**」と
+言っているので、**数そのものを消しました。**残したのは数え方だけです。
 
 ### 13. `buttons pressed` と `screens walked`
 
@@ -472,9 +473,15 @@ www/sync.js:1    /* Lingua — putting a language and its copy back together (ch
 
 **やったこと: 文は直した。番号は直していない。**「chapter 0 から 27 まで、
 各ファイルが自分の番号を名乗る」に書き換え、**三つが 26 を名乗っていることを
-書きました。**どれが 26 を保つかは「wording / 誰かが頼っている振る舞いの変更」に
-当たると読んで、§ Deciding のとおり**決めていません。**
+書きました。**どれが 26 を保つかは決めていません。
 （`www/store.js` は `claude/plannow` のものでもあります）
+
+**これはオーナーへの質問です。**作業中に master へ入った 2026-09-03 の決定が
+「食い違いを見つけたら、セッションもリーダーも決めない。オーナーに訊く」と
+言っているので、リーダー預かりではなく**オーナーへの一行**として置きます。
+
+> 「章 26 を `sheet.js`・`store.js`・`sync.js` の三つが名乗っています。
+> どれが 26 で、あとの二つは何番ですか」
 
 ### 22. CLAUDE.md:1960 「`www/glyph.js` is 104 KB」
 
@@ -597,17 +604,25 @@ www/wsys.js     setScriptDir
 STOPS says so, in its own line」の対象だと思いますが、**規則の書き換えは
 オーナーの言葉が絡むので手を入れていません。**
 
-### 27. `tools/conv-check.mjs` が「seven」と「eight」の両方を言っている
+### 27. `tools/conv-check.mjs` が一つのファイルの中で三つの数を言っていた
 
-`:38`「Nothing held these seven. This does.」`:53`「Exit code is 0 only when
-all seven hold」に対し、`:401`「the eight claims above」。
+`:38`「Nothing held these **seven**」`:53`「Exit code is 0 only when all
+**seven** hold」`:255`「none of the **seven** claims below」に対し、
+`:401`「the **eight** claims above」、そして `:463`（run が実際に印字する行）
+「all **nine** claims hold」。
 
-CLAUDE.md:881-924 は「seven claims」＋「**And an eighth**」と書いていて、
-**八つが正しい**ように読めます。
+**確かめ方: 実際に回しました**（`node tools/conv-check.mjs`、緑）。
+:463 の行は主張を一つずつ数え上げています。数えると九つで、**印字している
+九が正しい**です。九つ目は、七つのうち一つを割ったもの ── 「roman の面は、
+人が writing system を**選んだ**ときに出て、`wsGuess()` が**推測した**だけの
+ときには出ない」。歩かれたことの無かった道です。
 
-**やったこと: 直していない。**`conv-check.mjs` は私のものですが、
-**八つ目が本当に exit code に効いているかを読み切っていません。**
-数だけ直すと嘘が増えるので、**確かめていないものとして残します。**
+**やったこと: 直した。**`conv-check.mjs` の中の三つの数を消して、
+「数え上げているのは run の最後の行だ」に。CLAUDE.md 規則10 も八つ目で
+止まっていたので、九つ目を書き足しました。
+
+（当初これは「確かめていない」に置いていました。上の 12 番と同じ理由で
+確かめに行っています。）
 
 ### 28. `www/glyph.js` の `'LinguaType'` が二度、素の文字列で書かれている
 
@@ -634,6 +649,58 @@ refactor なので、26 と同じ理由でリーダーに預けます。
 
 ---
 
+---
+
+## 作業中に master が動きました（`562767d` → `bc1a394`）
+
+取り込んでいます（報告の前に、と規則にあるので）。入ったのは
+`docs/FEATURE_RULES.md` の決定二件だけです。**両方ともこの監査に効きます。**
+
+### この監査の根拠が、決定として明文化されました
+
+> ### 古い規則は残さない。全部いまの規則。食い違いはオーナーに訊く
+> 1. **置き換えられた規則は消す。**「これは歴史です」と前置きして残さない。
+>    印を付けて本文を残すのも残したことになる。**消す。**
+> 3. **食い違いを見つけたら、セッションもリーダーも決めない。オーナーに訊く。**
+>
+> Implementation status: **2026-09-03 の監査 A〜D に渡した。**
+> `claude/aud-claude` `claude/aud-data` `claude/aud-pay` `claude/aud-state`
+
+**3 に合わせて、預け先を変えました。**上の 12・21・27 は最初「リーダーに
+預ける」と書いていましたが、12 と 27 は自分で確かめて直し、**21（章 26 が
+三つ）はオーナーへの質問**にしました。
+
+### `claude/flat` が `www/core.js` を持ちます ── 私も触っています
+
+> ### 平キーの道を消す。アプリは今の形だけを知っている
+> 消すもの: `langMigrate()`（`www/core.js`）、`LS_FLAT`（`www/core.js`）、
+> `langMigStamp()` と `mig` の印、`lsWipeAcct()` の平キー削除、
+> `tools/migrate-check.mjs` の平キーについての主張
+> Affected docs: ... **CLAUDE.md 規則6**
+> Implementation status: **未実装。**`claude/flat` に渡した（2026-09-03）
+
+**リーダーの依頼文の「六つの枝」の一覧に `claude/flat` は入っていません。**
+私が `www/core.js` を触ったのは `capStop()` と `upStop()` の**注記だけ**で、
+`langMigrate()` にも `LS_FLAT` にも `lsWipeAcct()` にも触っていないので、
+**衝突しないはずです。**`git fetch --prune` の時点で `claude/flat` はまだ
+枝として在りません（`claude/aud-data` と `claude/aud-pay` は在ります）。
+**リーダーに知らせておきます。**
+
+### CLAUDE.md 規則6 の平キーの段は、私は消していません
+
+決定の Affected docs が `CLAUDE.md 規則6` を名指ししていますが、
+**Implementation status が「未実装」です。**いま規則6 のこの段
+
+> Migration from the eight flat keys **copies**; it never removes what it read.
+> It runs once, on a phone, against the only copy of something somebody spent
+> months on. `migrate-check` seeds the old keys and asks what came through ...
+
+を消すと、**まだ在るコード（`langMigrate()`）を説明する文が無くなります。**
+それは同じ病気の逆向きです。CLAUDE.md が「a change lands with every sentence
+it falsifies」と書いている通り、**文はコードと同じコミットで落ちるべき**なので、
+`claude/flat` の仕事に付けて残しました。**私の判断です。違うならリーダーが
+戻してください。**
+
 ## やったこと・回したもの
 
 **回した検査**
@@ -645,6 +712,7 @@ refactor なので、26 と同じ理由でリーダーに預けます。
   **赤一件。上の 2 番。私の変更より前から在ります**（触ったのは CLAUDE.md、
   gate.mjs、assets-check.mjs、act-check.mjs、package.json、core.js のコメントだけ）。
 - `i18n-check`（約3分）── `screens the mirror rendered` を確かめるため。緑。
+- `conv-check`（約1分）── 27 番の数を確かめるため。緑（`all nine claims hold`）。
 
 **ゲート全部は回していません。**`npm run rls` も回していません（PostgreSQL）。
 
@@ -666,6 +734,7 @@ CLAUDE.md                 直した（古い文は消した。「歴史です」
 tools/gate.mjs            本数を毎回印字
 tools/assets-check.mjs    load order の文＋新しい主張二つ
 tools/act-check.mjs       index.html のシェルも読む＋主張の数を数える
+tools/conv-check.mjs      七・八・九と三つ言っていた数を消した
 package.json              死んだ "ask" を削除
 www/core.js               capStop()/upStop() の注記
 docs/scope/aud-claude.md  これ
