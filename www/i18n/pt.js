@@ -227,6 +227,7 @@ defLang('pt', (function(){
       "kb.new" : "Adicionar um teclado",
       "kb.n" : "Teclado {0}",
       "kb.done" : "Concluído",
+      "kb.lt.ok" : "Confirmar",
       "kb.rm" : "Excluir este teclado",
       "kb.sel" : "Selecionar",
       "kb.sel.done" : "Concluir",

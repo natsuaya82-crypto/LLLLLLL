@@ -220,6 +220,7 @@ defLang('it', (function(){
       "kb.new" : "Aggiungi una tastiera",
       "kb.n" : "Tastiera {0}",
       "kb.done" : "Fine",
+      "kb.lt.ok" : "Conferma",
       "kb.rm" : "Elimina questa tastiera",
       "kb.sel" : "Seleziona",
       "kb.sel.done" : "Fine",

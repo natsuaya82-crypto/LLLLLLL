@@ -56,6 +56,8 @@ function viewReset(){
   ipaQ=''; ipaOpen={mine:1};           /* the IPA page: its search, and what is open */
   GE=null;                             /* the glyph editor */
   kbLay=0; kbSel=null; kbSlotFor=null; /* the keyboard being built */
+  kbLtPick=null;                       /* and which letter is chosen for a key,
+                                          not yet confirmed (www/keyboard.js) */
   kbShow=0;                            /* and which of the three is on screen */
   ltDraft=null;                        /* a letter's name, typed and unsaved */
   IMP=impBlank();                      /* a list being read in */

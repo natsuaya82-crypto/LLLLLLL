@@ -2120,7 +2120,7 @@ const r = await pg.evaluate(({ s }) => {
     var wasS = ltSort, wasF = ltFil;
     function cells(h){ return (String(h).match(/class="ltc"/g) || []).length; }
     function names(h){
-      var m = String(h).match(/class="ltcn">([^<]*)</g) || [];
+      var m = String(h).match(/class="ltcn"[^>]*>([^<]*)</g) || [];
       return m.map(function (x){ return x.replace(/.*>/, ''); });
     }
     ltSort = 'own'; ltFil = 'all';
@@ -2209,7 +2209,7 @@ const r = await pg.evaluate(({ s }) => {
       out.qBySound = cells(kbLtGrid(0, 0, -1));
       /* the trailing `<` of the match goes too -- keeping it made every name
          miss, and the claim went red on the check rather than on the app */
-      out.qSoundNames = (String(kbLtGrid(0, 0, -1)).match(/class="ltcn">([^<]*)</g) || [])
+      out.qSoundNames = (String(kbLtGrid(0, 0, -1)).match(/class="ltcn"[^>]*>([^<]*)</g) || [])
         .map(function (x){ return x.replace(/.*>/, '').replace(/<$/, ''); });
       out.qSoundIsIt = out.qSoundNames.indexOf(String(ltName(odd))) >= 0;
     }
@@ -2562,6 +2562,140 @@ const r = await pg.evaluate(({ s }) => {
     out.seqLiftHole = noHole('after a hold');
   }());
   out.seqSeen = seen.join(' | ');
+
+  /* ---- the alphabet is CHOSEN from, and the bar's confirm is what writes --
+     「ここに右上に選択したら適用ボタンが確定ボタン欲しい。終わって戻ったら選択が
+     解除されてる状態にして欲しい。後選択してる紫はもう一度同じ場所触れたら解除
+     して欲しい」 OWNER 2026-09-03.
+
+     Three sentences and one shape, so what is asked here is the shape: the
+     press REMEMBERS and one road writes. The dangerous half is the one that
+     cannot throw -- a confirm added BESIDE a press that still writes looks
+     right on the screen, saves the same letter, and is two mechanisms
+     deciding one field. So the claim that matters is the negative one:
+     choosing moves not one byte of KB, and not one byte of what is stored.
+
+     Read off the PAGE and driven through the real buttons, because what is
+     under test is what a finger reaches -- the bar's button is either there
+     or it is not, and only the screen can say. */
+  (function (){
+    SET.plan = 'pro';
+    function bar(){ return [].slice.call(document.querySelectorAll('.navtop .navdo')); }
+    function backBtn(){ return document.querySelector('.navtop .back'); }
+    function cellsOn(){ return [].slice.call(document.querySelectorAll('#lt-list .ltc')); }
+    /* the purple, read off the element rather than out of kbLtPick */
+    function purple(){
+      return cellsOn().filter(function (el){
+        return /--pur/.test(el.getAttribute('style') || '');
+      });
+    }
+    function bytes(){ return JSON.stringify(KB); }
+    /* Every press below goes through this. A bug put back takes a button off
+       the screen, and a check that then threw would report nothing at all --
+       one crash instead of the one claim that is about that button. */
+    function tap(el){ if (el) el.click(); return !!el; }
+    function stored(){ try { return localStorage.getItem(langKey('kb')); } catch (e){ return null; } }
+    function openKey(){ fresh(); kbShow = 1; kbLay = 0; standKb(); kbPick(0, 0); }
+
+    /* ---- nothing chosen: no confirm ---------------------------------- */
+    openKey();
+    out.ltpGrid = cellsOn().length;
+    out.ltpNoBtn = bar().length === 0;
+    out.ltpNoPurple = purple().length === 0;
+
+    /* ---- one chosen: the confirm is there, and it is purple ----------- */
+    var was = bytes(), wasStored = stored(), wasU = KBU.u.length;
+    /* a letter that is NOT already on this key, or "it changed" is unprovable */
+    var lid = '', i, cs = cellsOn();
+    for (i = 0; i < cs.length; i++){
+      var a = JSON.parse(cs[i].getAttribute('data-a') || '[]');
+      if (String(a[3]) !== String(kbAt(0, 0).v)){ lid = String(a[3]); tap(cs[i]); break; }
+    }
+    out.ltpPicked = !!lid;
+    out.ltpBtn = bar().length === 1;
+    out.ltpPurpleOne = purple().length === 1;
+    /* and it can be SEEN: the chosen cell is not painted what its neighbours
+       are. A class that no rule reaches is a selection nobody can see, which
+       is the fault kbPickPaint() was written after. */
+    (function (){
+      var on = purple()[0], off = cellsOn().filter(function (el){ return el !== on; })[0];
+      out.ltpSeen = !!on && !!off &&
+        getComputedStyle(on).backgroundColor !== getComputedStyle(off).backgroundColor;
+    }());
+
+    /* ---- AND NOT ONE BYTE HAS MOVED ---------------------------------- */
+    out.ltpNoWrite = bytes() === was;
+    out.ltpNoStore = stored() === wasStored;
+    out.ltpNoStep = KBU.u.length === wasU;
+    out.ltpKeyKept = String(kbAt(0, 0).v) !== lid;
+
+    /* ---- the confirm writes it, once ---------------------------------- */
+    out.ltpConfirmed = tap(bar()[0]);
+    out.ltpPut = String(kbAt(0, 0).v) === lid;
+    out.ltpPutWrote = bytes() !== was && stored() !== wasStored;
+    out.ltpPutOneStep = KBU.u.length === wasU + 1;
+    /* and the choice is spent: the button is gone with it */
+    out.ltpBtnGone = bar().length === 0 && purple().length === 0;
+
+    /* ---- one step back puts it back ----------------------------------- */
+    kbUndo();
+    out.ltpUndone = String(kbAt(0, 0).v) !== lid && bytes() === was;
+
+    /* ---- the same one again puts it down ------------------------------ */
+    openKey();
+    tap(cellsOn()[0]);
+    var onceOn = bar().length === 1 && purple().length === 1;
+    tap(cellsOn()[0]);                          /* the SAME cell, re-queried */
+    out.ltpOff = onceOn && bar().length === 0 && purple().length === 0;
+    /* and a DIFFERENT one moves the choice rather than putting it down --
+       the toggle written as "any press clears" passes the claim above */
+    tap(cellsOn()[0]);
+    tap(cellsOn()[1]);
+    out.ltpMoved = bar().length === 1 && purple().length === 1 &&
+                   purple()[0] === cellsOn()[1];
+
+    /* ---- leave with something chosen, and it is not there on the way back
+       「終わって戻ったら選択が解除されてる状態にして欲しい」 The way out is
+       the arrow, and the way back in is pressing the key again -- both
+       through the page, because a check that called kbPick() twice would be
+       asking a function whether it forgets rather than asking the screen. */
+    openKey();
+    var before = bytes(), storedBefore = stored();
+    tap(cellsOn()[0]);
+    var leftWith = bar().length === 1;
+    tap(backBtn());
+    /* and back IN by the road the sheet offers: pressing a key SELECTS it and
+       the button over the sheet opens it -- 「全部のます触ったら選択で」 */
+    tapKey(0, 0); tapDo('kbOpenSel');
+    out.ltpReopened = cellsOn().length > 0;
+    out.ltpForgot = leftWith && bar().length === 0 && purple().length === 0;
+    /* measured from before the letter was ever touched, so it is red for a
+       write on the press, a write on the way out, and a write on the way back
+       in alike -- 「確定を押していないものは、押していない」 */
+    out.ltpBackNoWrite = bytes() === before && stored() === storedBefore;
+
+    /* ---- choosing does not move you to another screen -------------------
+       There are two screens with this grid on them -- the key's own, and the
+       sheet for one corner -- and the sheet leaves a note saying which slot it
+       was opened for. THAT NOTE IS NOT TAKEN BACK DOWN when the sheet is left
+       by the arrow, so a moment later it says where you WERE. Walk it: open
+       the key, open the big square, come back, and choose on the key's own
+       grid. Anything reading the note there believes it is on the sheet -- and
+       repainting "the sheet" is a `go()`, so a finger that pressed a letter
+       arrives on a screen it never asked for. It cannot throw and every claim
+       above is green on it, because every claim above opens the key and stops.
+
+       This is the whole reason kbLtWhere() asks the ROUTE. */
+    openKey();
+    out.ltpSqOpened = tap(document.querySelector('.kbedit .kbec'));
+    out.ltpSqSheet = formArg(here().a).kind === 'kbslot';
+    tap(backBtn());
+    out.ltpSqBack = formArg(here().a).kind === 'kbkey';
+    tap(cellsOn()[0]);
+    out.ltpSqOnKey = formArg(here().a).kind === 'kbkey' && bar().length === 1;
+    tap(bar()[0]);
+    out.ltpSqStayed = formArg(here().a).kind === 'kbkey' && cellsOn().length > 0;
+  }());
 
 
   return out;
@@ -3127,6 +3261,38 @@ say(r.seqLiftFound && r.seqLiftSel,
 say(r.seqLiftHole, 'and the sheet is still frames after it');
 console.log('    frames, hole by hole: ' + r.seqSeen);
 
+
+/* ---- the alphabet is chosen from, and the bar's confirm is what writes ---
+   「ここに右上に選択したら適用ボタンが確定ボタン欲しい。終わって戻ったら選択が
+   解除されてる状態にして欲しい。後選択してる紫はもう一度同じ場所触れたら解除して
+   欲しい」 OWNER 2026-09-03 */
+say(r.ltpGrid > 0, 'the key opens with the alphabet under it (' + r.ltpGrid + ' letters)');
+say(r.ltpNoBtn && r.ltpNoPurple,
+    'and with nothing chosen there is no confirm in the bar');
+say(r.ltpPicked && r.ltpBtn && r.ltpPurpleOne,
+    'choose a letter and the confirm appears, on the one letter chosen');
+say(r.ltpSeen, 'and the purple on it is a colour, not a class nothing reaches');
+say(r.ltpNoWrite && r.ltpNoStore && r.ltpKeyKept,
+    'AND NOT ONE BYTE OF KB HAS MOVED -- not in memory and not in storage ['
+    + [r.ltpNoWrite, r.ltpNoStore, r.ltpKeyKept].join(' ') + ']');
+say(r.ltpNoStep, 'and nothing has been piled onto the step back either');
+say(r.ltpConfirmed && r.ltpPut && r.ltpPutWrote, 'the confirm is what writes it ['
+    + [r.ltpConfirmed, r.ltpPut, r.ltpPutWrote].join(' ') + ']');
+say(r.ltpPutOneStep, 'and it is ONE step back, not one per letter touched');
+say(r.ltpUndone, 'which one step back takes off again');
+say(r.ltpBtnGone, 'and the choice is spent: the confirm goes with it');
+say(r.ltpOff, 'touching the chosen one again puts it down, and the confirm goes');
+say(r.ltpMoved, 'while touching a DIFFERENT one moves the choice rather than clearing it');
+say(r.ltpBackNoWrite,
+    'go back without confirming and nothing was written -- what is not confirmed is not');
+say(r.ltpSqOpened && r.ltpSqSheet && r.ltpSqBack && r.ltpSqOnKey && r.ltpSqStayed,
+    'and choosing on the key\u0027s own grid keeps you on the key -- even after the'
+    + ' sheet for its square has been opened and left behind [' +
+    [r.ltpSqOpened, r.ltpSqSheet, r.ltpSqBack, r.ltpSqOnKey, r.ltpSqStayed].join(' ')
+    + ']');
+say(r.ltpReopened && r.ltpForgot,
+    'and opening the key again, nothing is chosen [' +
+    [r.ltpReopened, r.ltpForgot].join(' ') + ']');
 
 /* ---- the free plan's one keyboard: no editor, and it must be SEEN -------
    「無料のキーボードはqwartyに書いた文字が置き換わるだけなのにキーボード自体

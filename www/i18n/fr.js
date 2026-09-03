@@ -268,6 +268,7 @@ defLang('fr', (function(){
       "kb.new" : "Ajouter un clavier",
       "kb.n" : "Clavier {0}",
       "kb.done" : "OK",
+      "kb.lt.ok" : "Valider",
       "kb.rm" : "Supprimer ce clavier",
       "kb.sel" : "Sélectionner",
       "kb.sel.done" : "OK",

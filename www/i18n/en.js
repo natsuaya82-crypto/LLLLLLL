@@ -122,6 +122,7 @@ defLang('en', (function(){
       "kb.new" : "Another keyboard",
       "kb.n" : "Keyboard {0}",
       "kb.done" : "Done",
+      "kb.lt.ok" : "Confirm",
       "kb.rm" : "Delete this keyboard",
       "kb.sel" : "Select",
       "kb.sel.done" : "Done",

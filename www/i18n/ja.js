@@ -136,6 +136,7 @@ defLang('ja', (function(){
       "kb.new" : "キーボードを追加",
       "kb.n" : "キーボード{0}",
       "kb.done" : "完了",
+      "kb.lt.ok" : "確定",
       "kb.rm" : "このキーボードを消す",
       "kb.sel" : "選択",
       "kb.sel.done" : "完了",
