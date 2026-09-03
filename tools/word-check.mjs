@@ -81,7 +81,12 @@ const R = await pg.evaluate(() => {
   openEdit('tira');
   wEdit.sp = wEdit.sp.concat([JSON.parse(JSON.stringify(wEdit.sp[wEdit.sp.length - 1]))]);
   wdSync();
-  saveWord();
+  /* Writing it down and walking off it are two acts since 2026-09-03 -- Save
+     writes and stays, and the arrow is what leaves (www/shell.js § KEEP). What
+     is under test is the same and is the second half: the trail followed the
+     rename, so the page behind the sheet is the word under its NEW name. */
+  wdWrite();
+  back();
   const named = WORDS.filter(w => w.from === 'tir' && w.hw !== 'tiran' &&
                                   w.hw !== 'tiror' && w.hw !== 'tirok')[0];
   const now = named ? named.hw : '(the word is gone)';

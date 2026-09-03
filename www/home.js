@@ -692,7 +692,57 @@ function world(){ return WLD; }
    which is the thing the app is not allowed to do at all.
    `WLD.use` itself is not touched and not migrated: what somebody chose is
    still in their file, and nothing here deletes it. */
-function wldSet(k, v){ world()[k]=String(v||''); saveWld(); }
+/* ---- what is typed on the article, before it is on the language ---------
+   OWNER DECISION 2026-09-03, www/shell.js § KEEP. Every field on the editing
+   face used to write the language on the keystroke -- where it is, who lives
+   there, every row of the overview and the body of every section. So a
+   paragraph half typed was the article, and there was no moment at which
+   somebody had finished writing it.
+
+   ONE BUFFER FOR THE WHOLE FACE, because it is one screen: the four fixed
+   fields, the rows and the sections are all on it and the Save in the bar is
+   about all of them. A field's name in the buffer carries what it is about --
+   `where`, `ov.<id>.k`, `art.<id>.b` -- so a row added or taken away does not
+   disturb the others.
+
+   The ＋ that makes a row and the − that takes one away are NOT typing and are
+   not in here: they are pressed, and a press acts. What is buffered is what is
+   typed into a box. */
+function wldKeyOv(id, f){ return 'ov.'+String(id)+'.'+f; }
+function wldKeyArt(id){ return 'art.'+String(id)+'.b'; }
+function wldKeepOn(){
+  var w, was;
+  /* Not in somebody else's language: saveWld() refuses one. */
+  if(langLocked()) return;
+  w=world(); was={where:String(w.where||''), who:String(w.who||'')};
+  wldOvs().forEach(function(row){
+    if(!row) return;
+    was[wldKeyOv(row.id, 'k')]=String(row.k||'');
+    was[wldKeyOv(row.id, 'v')]=String(row.v||'');
+  });
+  wldArts().forEach(function(one){
+    if(!one) return;
+    was[wldKeyArt(one.id)]=String(one.b||'');
+  });
+  keepOn(keepKeyOf('world', ''), was, wldKeepSave);
+}
+function wldKeepSave(v, done){
+  var f, m;
+  for(f in v){
+    if(!v.hasOwnProperty(f)) continue;
+    if(f==='where' || f==='who'){ world()[f]=String(v[f]); continue; }
+    m=/^ov\.(.+)\.([kv])$/.exec(f);
+    if(m){ wldOvPut(m[1], m[2], String(v[f])); continue; }
+    m=/^art\.(.+)\.b$/.exec(f);
+    if(m) wldArtPut(m[1], 'b', String(v[f]));
+  }
+  saveWld();
+  done(true);
+}
+/* What a field on this face shows: what has been typed, or what the language
+   holds. */
+function wldTyped(f){ return keepVal(keepKeyOf('world', ''), f); }
+function wldSet(k, v){ keepSet(k, String(v||'')); }
 
 /* ---- the sections somebody writes -------------------------------------
    「wikiを作るんだからね？わかってる？編集もwikiを作るの。それでなにを載せ
@@ -745,14 +795,35 @@ function wldArtAdd(){
   world().arts=a; saveWld();
   go('wldart', one.id);
 }
-/* Written into the section that is open. `wldSet` is the same shape for the
-   four fixed fields; this is that for one of these. */
-function wldArtSet(id, k, v){
+/* Written into the section that is open. This is the one place a section's
+   own fields are put on the language; the buffers above and below hand it
+   what somebody typed. A section that has been deleted since is not found and
+   nothing is written -- there is nothing left to write it on. */
+function wldArtPut(id, k, v){
   var one=wldArtBy(id);
   if(!one) return;
   one[k]=String(v||'');
-  saveWld();
 }
+/* The body of a section, typed on the article's own editing face. The section's
+   PAGE (vWldArt) has its own buffer -- it is a different screen, with a title
+   on it as well. */
+function wldArtSet(id, v){ keepSet(wldKeyArt(id), String(v||'')); }
+/* ---- one section, on its own page --------------------------------------
+   Two fields and one buffer, filed under the page. www/shell.js § KEEP. */
+function wldArtKeepOn(one){
+  if(langLocked()) return;
+  keepOn(keepKeyOf('wldart', one.id),
+         {t:String(one.t||''), b:String(one.b||'')},
+         function(v, done){
+           if(v.hasOwnProperty('t')) wldArtPut(one.id, 't', v.t);
+           if(v.hasOwnProperty('b')) wldArtPut(one.id, 'b', v.b);
+           saveWld();
+           done(true);
+         });
+}
+function wldArtOne(id, f){ return keepVal(keepKeyOf('wldart', id), f); }
+function wldArtT(v){ keepSet('t', String(v||'')); }
+function wldArtB(v){ keepSet('b', String(v||'')); }
 wldRead();
 /* The editor of the article, and it is laid out AS the article --
    「編集画面と表示画面全然あってないのはなに？どうやって表示させんの？編集画面で
@@ -779,11 +850,14 @@ function vWldArt(){
      reads here().a the same way (vThread, vFm, vSet). */
   var one=wldArtBy(String(here().a||''));
   if(!one) return viewGone();
+  /* Both fields are typed into a buffer, so it has to exist before they are
+     drawn out of it. */
+  wldArtKeepOn(one);
   return '<div class="view">'+navTop('')+'<div class="body">'+
-    '<div class="field"><input id="wldart-t" value="'+esc(one.t||'')+'" '+
-      'placeholder="'+esc(t('wld.art.t.ph'))+'"' + IN('wldArtSet', [one.id, "t"]) + '></div>'+
+    '<div class="field"><input id="wldart-t" value="'+esc(wldArtOne(one.id, 't'))+'" '+
+      'placeholder="'+esc(t('wld.art.t.ph'))+'"' + IN('wldArtT') + '></div>'+
     '<textarea class="ntbody" style="min-height:260px" placeholder="'+esc(t('wld.art.b.ph'))+'" '+
-      '' + CH('wldArtSet', [one.id, "b"]) + '>'+esc(one.b||'')+'</textarea>'+
+      '' + IN('wldArtB') + '>'+esc(wldArtOne(one.id, 'b'))+'</textarea>'+
     /* The two answers are NOT here. They are in the section itself, on the
        article -- 「その中にトグル入れてくれる？」 -- and one thing is set in one
        place. This page is where the words are written; what may be seen of
@@ -995,10 +1069,13 @@ function wldOvAdd(){
   a.push({id:wldOvMint(), k:'', v:''});
   world().ovs=a; saveWld(); render();
 }
-function wldOvSet(id, f, v){
+/* One field of one row, put on the language. The buffer above hands it what
+   was typed; a row deleted since is not found and nothing is written. */
+function wldOvPut(id, f, v){
   var a=wldOvs(), i;
-  for(i=0;i<a.length;i++) if(a[i] && a[i].id===id){ a[i][f]=String(v||''); saveWld(); return; }
+  for(i=0;i<a.length;i++) if(a[i] && a[i].id===id){ a[i][f]=String(v||''); return; }
 }
+function wldOvSet(id, f, v){ keepSet(wldKeyOv(id, f), String(v||'')); }
 /* DELETE REVIEW is in docs/CHANGELOG.md with this change. What goes is one
    row of this list and nothing else: no other slice is touched, the four
    fixed facts are not rows and cannot be reached from here, and `note` --
@@ -1533,6 +1610,9 @@ function vWorld(){
      It cannot be done at load: saveWld() touches the backup and backup.js is
      loaded after this file, which is why migrateWorld() runs from boot.js. */
   wldNoteMigrate();
+  /* Every box on this face is typed into one buffer, so it has to exist before
+     any of them is drawn out of it. */
+  wldKeepOn();
   return wldPage(true);
 }
 /* THE LANGUAGE THIS PAGE IS ABOUT, as a bundle of questions rather than as
@@ -1748,11 +1828,11 @@ function wldPage(ed, L, lid){
              nothing else in the app points at them, so the id is new and
              carries nothing. */
           '<div class="field">'+
-          lnField('wld-where', t('wld.where.ph'), IN('wldSet', ["where"]), w.where||'')+
+          lnField('wld-where', t('wld.where.ph'), IN('wldSet', ["where"]), wldTyped('where'))+
           '</div>'+
           '<div class="abfk">'+esc(t('wld.who'))+'</div>'+
           '<div class="field">'+
-          lnField('wld-who', t('wld.who.ph'), IN('wldSet', ["who"]), w.who||'')+
+          lnField('wld-who', t('wld.who.ph'), IN('wldSet', ["who"]), wldTyped('who'))+
           '</div>'+
           (L.ws()? abField(t('ws.kind'), t('ws.k.'+L.ws())) : '')+
           abField(t('dir.title'), t('dir.'+L.dir()))+
@@ -1770,7 +1850,8 @@ function wldPage(ed, L, lid){
                    rule under it. */
                 /* One per row, so the id carries the row's own. */
                 '<div class="field ovk">'+
-                  lnField('wld-ov-'+row.id, '', IN('wldOvSet', [row.id, "k"]), row.k||'')+
+                  lnField('wld-ov-'+row.id, '', IN('wldOvSet', [row.id, "k"]),
+                          wldTyped(wldKeyOv(row.id, 'k')))+
                 '</div>'+
                 /* 「消したかったらマイナスボタン」 OWNER 2026-08-25. It was a
                    cross, which is what CLOSES a thing; the pair the owner
@@ -1779,9 +1860,10 @@ function wldPage(ed, L, lid){
                 '<button class="ovx"' + DO('wldOvDel', [row.id]) + ' aria-label="'+
                   esc(t('wld.ov.del'))+'">'+ICON_MINUS+'</button>'+
               '</div>'+
-              '<textarea class="ntbody grow" rows="'+wldRows(row.v, 1)+'" '+
+              '<textarea class="ntbody grow" rows="'+wldRows(wldTyped(wldKeyOv(row.id, 'v')), 1)+'" '+
                 'placeholder="'+esc(t('wld.ov.v.ph'))+'"'+
-                CH('wldOvSet', [row.id, "v"]) + '>'+esc(row.v||'')+'</textarea>'+
+                IN('wldOvSet', [row.id, "v"]) + '>'+
+                esc(wldTyped(wldKeyOv(row.id, 'v')))+'</textarea>'+
               '</div>';
           }).join('')+'</div>';
         extra='<button class="abshg"' + DO('wldOvAdd') + ' aria-label="'+
@@ -1841,9 +1923,10 @@ function wldPage(ed, L, lid){
          are, on the section's own page -- 「そこだけの画面だから下にも上にも
          いかないその中で完結」 -- which the ＞ leads to and which ＋ opens on the
          day a section is made. */
-      if(ed) inner+='<textarea class="ntbody grow" rows="'+wldRows(sec.b, 3)+'" '+
-        'placeholder="'+esc(t('wld.art.b.ph'))+'"' + CH('wldArtSet', [sec.r, "b"]) + '>'+
-        esc(sec.b||'')+'</textarea>';
+      if(ed) inner+='<textarea class="ntbody grow" rows="'+
+        wldRows(wldTyped(wldKeyArt(sec.r)), 3)+'" '+
+        'placeholder="'+esc(t('wld.art.b.ph'))+'"' + IN('wldArtSet', [sec.r]) + '>'+
+        esc(wldTyped(wldKeyArt(sec.r)))+'</textarea>';
       else if(sec.b) inner+='<div class="abtl">'+esc(sec.b)+'</div>';
       if(ed) extra='<button class="abshg"' + DO('go', ["wldart", sec.r]) + '>'+
         ICON_GO+'</button>';

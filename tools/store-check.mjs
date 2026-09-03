@@ -3,11 +3,19 @@
    「最初からオンライン前提で作れ」「SNSは全部サーバー」「基本は全部サーバー管理」
 
    The app is online. The server is where things live, and `localStorage` is
-   the copy that runs with no signal -- CLAUDE.md § Online. Three things are
-   the phone's own and that is the whole list: a language's backup file, an
-   exported sheet, and the settings.
+   the copy that runs with no signal -- CLAUDE.md § Online. **NOTHING IS THE
+   PHONE'S. EVERYTHING IS THE ACCOUNT'S** (OWNER 2026-09-03): the backup file
+   and an exported sheet are that account's language in a form a person can
+   hold, and the settings are that account's settings. The question a new key
+   has to answer is not 「is this the phone's」 -- there is no answer to that --
+   it is 「which account is this」.
 
-   THAT SENTENCE WAS WRITING ONLY, and writing does not stop anything. The
+   So `phone` below does not mean 「nobody's」. It means the key is not a copy
+   of a row on the server, and the sentence beside it has to say which account
+   it belongs to or why the question does not arise (`lingua.sess` is the only
+   one where it does not: it IS which account this phone is).
+
+   WRITING ALONE STOPS NOTHING. The
    timeline was local for a week with every check green, and the languages
    were local for as long again after that, and both were found by a person
    holding a phone rather than by anything here. 「書いていて止めないの本当に
@@ -34,7 +42,11 @@
    says 「one of the three things that are the phone's」.
 
    That is the same shape as every fault this file exists for: a sentence
-   that covers a thing, read as covering everything inside it.
+   that covers a thing, read as covering everything inside it. **It has one
+   more layer under it**, and that is why `setDefaults()` is read below: a
+   field does not have to be assigned anywhere to be written to disk. One
+   returned from that literal is in `lingua.set` on the first save this app
+   ever makes, and the `SET.x =` search never sees it.
    「書いていて止めないの本当に何？」 OWNER 2026-09-01.
 
    So FIELDS below is ROADS one level in, and it is asked the same two ways:
@@ -67,7 +79,6 @@ const ROADS = {
   "sound.js:langKey('snd')":    { to: 'netSlicePut' },
   "keyboard.js:langKey('kb')":  { to: 'netSlicePut' },
   "home.js:langKey('wld')":     { to: 'netSlicePut' },
-  'core.js:langKey(k)':         { to: 'netSlicePut' },
   'backup.js:langKey(k)':       { to: 'netSlicePut' },
   'home.js:langKeyOf(id':       { to: 'netSlicePut' },
   'net.js:langKeyOf(id':        { to: 'netSlicePut' },
@@ -79,11 +90,11 @@ const ROADS = {
      handle and the display name are written when the account is made */
   'me.js:LS_ME':       { to: 'netAvSync' },
   /* and the four that are the phone's, each for its own reason */
-  'core.js:LS_S':    { phone: 'the settings -- one of the three things that are the phone\'s' },
+  'core.js:LS_S':    { phone: 'the settings. The six in SET_ACCT are the account\'s and are parked under `lingua.set.<uid>` by setFor(); what is left is how this handset is set up -- the theme, the interface language -- and follows the handset because there is nothing else for it to follow' },
   'core.js:LS_LANGS':{ phone: 'the index of which languages are on THIS phone; what they ARE is `language` on the server, and netLangsDown() writes this from it' },
   'core.js:LS_CUR':  { phone: 'which language is open -- where somebody is standing, not what they made' },
   'net.js:LS_SESS':  { phone: 'the tokens. They are what talks to the server; they cannot be kept on it' },
-  "backup.js:langKey('bkn')": { phone: 'which generation the backup FILE is on. The file is the phone\'s by decision (CLAUDE.md § Online)' },
+  "backup.js:langKey('bkn')": { phone: 'which generation the backup FILE is on. It is a fact about the file rather than part of the language, which is why it is not in SLICES -- and why nothing takes it when the language goes (docs/DATA_MODEL.md)' },
   /* もう一つの預け。meParkKey / postParkKey と同じ形で、SET のうち
      アカウントのものだけ ── 段、その前の段、まだ送れていない段、保存した検索、
      それを一度上げたか、通知をどこまで読んだか。テーマや表示言語はこの端末の
@@ -152,9 +163,10 @@ for (const k of Object.keys(ROADS))
    answers as ROADS: `to` is the function in www/net.js that takes it up, and
    `phone` is a sentence saying why it is this handset's own.
 
-   `lingua.set` is the phone's by decision -- CLAUDE.md § Online names the
-   settings as one of the three -- so most of these say so. The point of the
-   table is the ones that DO NOT, and the ones whose sentence names a gap. */
+   `to` is a road and `phone` is a reason. The reason has to name an account or
+   say why the question does not arise -- 「the settings」 is not a reason any
+   more, because the settings are an account's too (CLAUDE.md § Online,
+   2026-09-03). The point of the table is the ones whose sentence names a gap. */
 const FIELDS = {
   /* what somebody pays. It is the ACCOUNT's -- 「課金とアカウントとキーボードは
      アカウントに結びつく」 -- and `SET.plan` is where the value sits on this
@@ -208,7 +220,18 @@ const FIELDS = {
      part of a language. It is here because that is where the code keeps it
      today, and it is written down so the gap is visible rather than covered
      by 「the settings」. */
-  wsys:     { phone: 'the writing system. www/home.js names this as a GAP: it belongs to the language and is in the settings, so it is on no server and a published language cannot show one' }
+  wsys:     { phone: 'the writing system. www/home.js names this as a GAP: it belongs to the language and is in the settings, so it is on no server and a published language cannot show one' },
+
+  /* --- and the four `setDefaults()` mints that nothing assigns ----------
+     Every one of these is written to `lingua.set` on the first save of a
+     fresh install, and every one is a shape from before the thing that
+     replaced it. They are named rather than removed: taking a key out of
+     setDefaults() is a change to what is stored, and www/ still reads two of
+     them to migrate what is already on somebody's phone. */
+  order:    { phone: 'the word order, from before a stage had one. phases.js copies it INTO the language\'s `phases` slice and leaves it standing (docs/DATA_SAFETY.md § 2), so this is the source of a migration rather than a setting anything reads' },
+  script:   { phone: 'roman -> a borrowed character, from before LETTERS existed. letters.js migrateLetters() reads it to build the letters that were only ever characters, and leaves it standing. `false` is what a phone that never had one holds' },
+  read:     { phone: 'NAMED AS A GAP. Nothing in www/ reads it — it is minted by setDefaults() on every fresh install and read by nobody. It is here so the key is not invisible; whether it goes is a deletion and needs the DELETE REVIEW in docs/DATA_SAFETY.md' },
+  voice:    { phone: 'NAMED AS A GAP. The same as `read`: minted by setDefaults(), read by nothing in www/. Written down rather than quietly removed' }
 };
 /* The settings being READ BACK from the file is not a write of anybody's
    work, and it is the one computed one there is. Named by its expression the
@@ -234,6 +257,33 @@ for (const f of files) {
   }
   const rc = /SET\[[^\]]+\]\s*=\s*[^=][^;\n]*/g;
   while ((m = rc.exec(src))) computed.push(f + ':' + m[0].replace(/\s+/g, ''));
+}
+
+/* AND THE ONES NOTHING ASSIGNS. `setDefaults()` in www/core.js is what a
+   person's settings ARE before they touch anything, and every key in its
+   literal is written to `lingua.set` by the first save this app makes --
+   without any `SET.x =` anywhere for the search above to find. So a field can
+   be on every handset, in every export and in every backup, and be invisible
+   to a table whose whole job is that nothing is kept unnamed. `SET.plan` is
+   the worked example one level up; these are the same fault one level further
+   in, and `order` `read` `voice` `script` sat there. */
+{
+  const core = fs.readFileSync(path.join(WWW, 'core.js'), 'utf8');
+  const m = /function setDefaults\(\)\s*\{\s*return\s*\{([\s\S]*?)\};/.exec(core);
+  if (!m)
+    bad.push('www/core.js has no `function setDefaults(){ return { … }; }` for ' +
+      'tools/store-check.mjs to read. It is what a settings key is before ' +
+      'anybody touches it, so every name in it is a place something is kept — ' +
+      'if it moved, point this at where it moved to.');
+  else {
+    const re = /(^|[,{\s])([A-Za-z0-9_]+)\s*:/g;
+    let d;
+    while ((d = re.exec(m[1]))) {
+      const k = d[2];
+      if (!fields.has(k)) fields.set(k, []);
+      fields.get(k).push('core.js:setDefaults()');
+    }
+  }
 }
 for (const c of computed)
   if (!SET_LOADER[c])

@@ -10,10 +10,9 @@
       Everything in here is something the person wrote themselves.
       There is no starter dictionary, on purpose.
 
-      A language used to be the only thing there was, so it was stored under
-      eight flat keys -- lingua.words, lingua.letters and so on. You can make
-      one language and read any number of other people's, so those eight keys
-      belong to a language rather than to the app, and they carry its id:
+      You can make one language and read any number of other people's, so a
+      language's keys belong to the language rather than to the app, and they
+      carry its id:
 
         lingua.<id>.words          the dictionary of that language
         lingua.<id>.letters        its alphabet
@@ -37,9 +36,8 @@ var LS_LANGS='lingua.langs', LS_CUR='lingua.cur', LS_S='lingua.set';
    OWNER 2026-08-27 -- and the reason it had to be said again is one bug, not
    several. wipeAll() used to name the keys it removed, so every key added
    after it was written stayed behind: the drafts, the posts, the person's
-   name and face, the index of languages, and the eight flat keys from before
-   there could be more than one. Nothing threw. Somebody deleted their account
-   and the app still greeted them by name.
+   name and face, and the index of languages. Nothing threw. Somebody deleted
+   their account and the app still greeted them by name.
 
    So the keys are COUNTED rather than named. A key added tomorrow is gone the
    day it is added, and there is nothing to keep in step. `SLICES` below is no
@@ -86,23 +84,6 @@ function lsWipeAcct(uid){
   }catch(e){}
   /* the live copies, which are this account's while it is signed in */
   doomed.push('lingua.me'); doomed.push('lingua.posts'); doomed.push('lingua.drafts');
-  /* AND THE EIGHT FLAT KEYS. langMigrate() copies them into a language on the
-     first launch of a build that has ids -- `lingua.cur` did not exist in the
-     one that wrote them, so langId is empty and that migration always runs --
-     and netRead() then stamps that language with the account this phone is.
-     What is left behind is a second copy of that dictionary answering to
-     nobody, and langMigrate() reads it again the moment the index has no
-     current language: delete the account, and the next person to sign in on
-     this phone is handed the first person's words as their own language.
-     That is 2026-09-03 exactly, and it is why there is no such thing here as
-     a key that is nobody's.
-
-     A DELETION, and it is on the road a person pressed: 「アカウントを削除」
-     takes that account's everything, and these eight are that account's
-     dictionary in an older spelling. It is not pruning and nothing here runs
-     on its own -- lsWipeAcct() is reached from one button. */
-  for(k in LS_FLAT)
-    if(Object.prototype.hasOwnProperty.call(LS_FLAT, k)) doomed.push(LS_FLAT[k]);
   try{ for(i=0;i<doomed.length;i++) localStorage.removeItem(doomed[i]); }catch(e){}
   langStore();
   return ids;
@@ -200,70 +181,6 @@ try{
 }catch(e){}
 try{ langId=localStorage.getItem(LS_CUR)||''; }catch(e){}
 
-/* A language made before this app could hold more than one is sitting under
-   the eight flat keys. It becomes the person's own language, and its old keys
-   are left exactly where they are: this runs once, on a phone, against the
-   only copy of something somebody spent months on. Copying costs a few
-   hundred kilobytes and cannot lose anything. Moving could. */
-/* The eight keys a single-language build wrote, before a language had an id.
-   Two things read this and they are the two ends of one life: langMigrate()
-   copies them into a language, and lsWipeAcct() takes them with the account
-   they were handed to. Written out once so those two cannot drift apart. */
-var LS_FLAT={ words:'lingua.words', lines:'lingua.lines', lang:'lingua.lang',
-              script:'lingua.script', letters:'lingua.letters',
-              notes:'lingua.notes', phases:'lingua.phases', talk:'lingua.talk' };
-function langMigrate(){
-  var FLAT=LS_FLAT;
-  var had=false, k;
-  for(k in FLAT) if(localStorage.getItem(FLAT[k])!==null) had=true;
-  if(!had) return false;
-  var id='L'+(new Date()).getTime().toString(36);
-  var prev=langId; langId=id;
-  for(k in FLAT){
-    var v=localStorage.getItem(FLAT[k]);
-    if(v!==null) localStorage.setItem(langKey(k), v);
-  }
-  langId=prev;
-  /* `mig` is the mark that says WHO to ask later. This function runs while
-     core.js is still loading -- www/index.html has core.js at 3578 and net.js
-     at 3595 -- so `SESS` is not merely empty here, it is not declared. There
-     is nothing to stamp with.
-
-     And the stamp matters: a language with no `uid` belongs to nobody once
-     SET.done is true (langOwned), and a phone reaching this line has finished
-     the onboarding by definition -- the old flat keys are what it made before
-     there were several languages. Left unstamped it would be in no list and
-     in no count, with every word of it still in storage. That is the shape of
-     the fault, and it is the one that reads as 「my language is gone」.
-
-     So it is recorded rather than guessed at, and netRead() in www/net.js
-     puts the account on it the moment there is one to put -- eighteen lines
-     later, in the one place that knows what a session is. `mig` comes off
-     with it, so this happens once.
-
-     NOT langForAcct()'s adoption: this is not 「whoever is asking」. It is
-     one language, made on THIS phone, in a format that predates accounts,
-     handed to the account this phone was already signed in as. */
-  LANGS[id]={ name: localStorage.getItem('lingua.lang')||'', mine:true, mig:true };
-  langId=id;
-  langStore();
-  return true;
-}
-/* The mark above, spent. Called from netRead() with the session in hand --
-   www/net.js is the one place that knows where a session is kept, and this is
-   the one place that knows what `mig` means. */
-function langMigStamp(uid){
-  var id, did=false;
-  if(!uid) return false;
-  for(id in LANGS)
-    if(Object.prototype.hasOwnProperty.call(LANGS, id) && LANGS[id] && LANGS[id].mig){
-      if(!LANGS[id].uid) LANGS[id].uid=String(uid);
-      delete LANGS[id].mig;
-      did=true;
-    }
-  if(did) langStore();
-  return did;
-}
 function langStore(){
   try{
     localStorage.setItem(LS_LANGS, JSON.stringify(LANGS));
@@ -290,8 +207,8 @@ function langMint(){
 /* A LANGUAGE THAT IS ONLY READ, in the index and nowhere else yet.
    ------------------------------------------------------------------
    The third place that writes to LANGS, and the first that has ever written
-   `mine` false. The other two -- langMigrate() above and langMint() -- write
-   true, which is why docs/DATA_MODEL.md said this state 「does not exist」:
+   `mine` false. langMint() above writes true, which is why
+   docs/DATA_MODEL.md said this state 「does not exist」:
    the switch that says a chapter may be taken away has been built more than
    once and the taking never was.
    「ダウンロードボタン押しても言語追加されないけど？」 OWNER 2026-09-01.
@@ -363,14 +280,14 @@ function langMine(id){
    those savers writes langKey(), which is the open language and nothing else.
    A saver given an id would be a second question. */
 function langLocked(){ return !langMine(langId); }
-/* Nothing here at all: a first run, or a first run after the migration found
-   nothing to move. The person gets one empty language of their own. */
+/* Nothing here at all: a first run. The person gets one empty language of
+   their own. */
 function langFirst(){
   langId=langMint();
   langStore();
 }
 try{
-  if(!langId || !LANGS[langId]){ if(!langMigrate()) langFirst(); }
+  if(!langId || !LANGS[langId]) langFirst();
 }catch(e){ langFirst(); }
 
 /* Read the open language into the globals the screens use.
@@ -794,23 +711,24 @@ function langCap(){
 
    `mine` and not the length of LANGS, and the reason is about what is COMING
    rather than what is here. This comment used to say LANGS "also holds every
-   language being read from somebody else", and it does not: the three places
-   that write to LANGS -- langMigrate() and langMint() above, bkRestore() in
-   backup.js -- every one of them writes `mine:true`, and nothing anywhere
+   language being read from somebody else", and it does not: the places that
+   write to LANGS -- langMint() above, bkRestore() in backup.js -- every one
+   of them writes `mine:true`, and nothing anywhere
    writes it false. There is no language in this app that is not the person's
    own, and there never has been. vLangs() draws a 「読んでいる」 list that is
    always the empty note, for the same reason.
+   `mine` and not the length of LANGS, because LANGS holds both kinds now:
+   langSeenAdd() above writes `mine:false` for a language taken off somebody
+   else's page, and vLangs() (www/home.js) draws the two lists that answers.
 
-   Counting `mine` is still right, and is right for the reason the old comment
-   was reaching for: a language somebody else made is not one this person
-   made, and a ceiling that filled up because you looked at somebody's work
-   would be a punishment for using the app. That is also the shape the owner
-   counted the downloads in -- 「自分の言語+DL言語1個」, two numbers and not one
-   (OWNER DECISION 2026-08-25, docs/FEATURE_RULES.md). Whatever counts those is
-   a second function beside this one; this one goes on counting `mine`.
+   A language somebody else made is not one this person made, and a ceiling
+   that filled up because you looked at somebody's work would be a punishment
+   for using the app. So they are TWO NUMBERS and not one --
+   「自分の言語+DL言語1個」 (OWNER DECISION 2026-08-25, docs/FEATURE_RULES.md),
+   「別に数える」 (OWNER 2026-09-01). dlCount() against dlCap() is the other
+   one, below; this one counts `mine`.
 
-   docs/DATA_MODEL.md § a language that is only read says what would have to
-   exist first. */
+   docs/DATA_MODEL.md § a language that is only read. */
 /* Whether a language counts towards the ceiling of the account that is here
    NOW. 「じゃないとアカウント変えたら無限に言語作れるやん」 OWNER 2026-09-01.
 
@@ -883,10 +801,9 @@ function langOwned(id){
      one. 「アカウントごとに言語情報も違うんだって」 OWNER 2026-09-03.
 
      Every road that makes a language stamps it --
-     langNew(), langForAcct(), langSeenAdd(), netLangsDown(), bkRestore(), and
-     langMigrate() through `mig`. langFirst() is the one that cannot, because
-     it runs before there is an account, and the door stamps what the walk
-     made on the way out.
+     langNew(), langForAcct(), langSeenAdd(), netLangsDown() and bkRestore().
+     langFirst() is the one that cannot, because it runs before there is an
+     account, and the door stamps what the walk made on the way out.
 
      So the only unstamped language is one being made in the walk right now,
      and `SET.done` is what says so -- the same question makeNeed() asks in
@@ -1228,11 +1145,13 @@ function planFor(uid){
    every plan above it. 「ベーシックは自分の文字と自分のキーボード、プラスは
    全部と広告なし」 -- OWNER DECISION, 2026-08-23, docs/FEATURE_RULES.md.
 
-   The middle rung is DECIDED and is not on sale: the plans screen sells Free
-   and Pro, because Plus's price is in no language file yet and no
-   subscription for it exists in App Store Connect. What is here is the rung
-   -- so the day a receipt says `plus`, every door in the table below is
-   already the right way round.
+   All three rungs are on the plans screen and all three are on sale: PLANS
+   below carries the card, `plan.price.plus` and `plan.price.plus.yr` are in
+   all ten language files, and the two Plus products are in docs/apple.md § 4
+   beside the two Pro ones. What www/i18n says is the FALLBACK -- storeCost()
+   is what the App Store charges, and the typed number only reaches a screen
+   in a browser, in a screenshot, or for a product not yet made, which is a
+   state storeSay() puts on the screen in words.
 
    The names were Basic and Plus until 2026-08-23. 「ベーシック、プラスって
    名前どう思う？なんかどっちが上かわかりにくくない？」 -- Basic reads as the
@@ -1268,13 +1187,15 @@ function has(level){ /* level: 'plus' | 'pro' */
   return got>=want;
 }
 /* What money buys, one capability at a time, and the only place that says so.
-   Eleven names, each the level it needs.
+   Each name carries the level it needs.
 
-   It said ten. A count written into a comment goes stale the next time the
-   list below it grows, so do not trust this one either -- `npm run dead`
-   prints the number it actually counted on every run ("what money buys: N
-   capabilities in CAN"), and that is where this eleven came from rather than
-   from counting by eye.
+   NO COUNT IS WRITTEN HERE, and that is deliberate rather than lazy. This
+   line said ten, then eleven, and was twelve both times somebody read it --
+   a number in a comment goes stale the next time the list below it grows,
+   and a stale count is believed. `npm run dead` prints the number it actually
+   counted on every run ("what money buys: N capabilities in CAN"), and
+   tools/paid-check.mjs holds this table against the one in
+   docs/PAID_FEATURES.md, name by name and level by level.
 
    has('plus') used to be asked directly, in twenty-three places across nine
    files, and every one of them looked identical to every other. They were not
@@ -1294,8 +1215,9 @@ function has(level){ /* level: 'plus' | 'pro' */
    held: no capability nothing asks for, no name that is no capability.
 
    'words' is metered rather than shut, and what it names is the ceiling being
-   LIFTED: free counts to a hundred, basic to a thousand, and only plus has no
-   number at all. wordCap() below is the number and asks this once. */
+   LIFTED: free counts to a hundred, PLUS to a thousand, and only PRO has no
+   number at all -- which is why it sits at 'pro' below and reads backwards to
+   anybody expecting a door. wordCap() above is the number and asks this once. */
 var CAN={
   words:   'pro',    /* no ceiling on the dictionary at all -- see wordCap() */
   /* CSV out. It said "CSV out, and the cloud", and the cloud half was never
@@ -1386,9 +1308,12 @@ function capOK(add){
    places that has to say so in words -- but it can say so without moving
    anybody.
 
-   confirm() and not a box of our own: the plans screen is one tap away and
-   this has to be answerable with "no". It is the same dialog wipeAll() asks
-   with, it is drawn by iOS, and it is therefore not a shape this app chose.
+   popAsk() and not iOS's own box: `confirm()` was banned outright on
+   2026-09-01 (CLAUDE.md § Shape), and this comment described it as the right
+   answer for long enough that the ban had to be read past to believe the
+   code. popAsk() draws inside the screen, the plans screen is one tap away,
+   and this has to be answerable with "no" -- which is what pressing outside
+   it is. It is the same thing wipeAll() asks with.
 
    Two strings that already exist, in all ten languages, rather than an
    eleventh: the sentence the toast said, and the word on the upgrade button.
@@ -1411,8 +1336,8 @@ function capStop(add){
    different screen rather than the same screen with a door on it.
 
    So: the fullest face is always drawn, and the ceiling is met on the PRESS.
-   Same shape as capStop() above and for the same reasons -- confirm() rather
-   than a box of our own, because the plans screen is one tap away and this
+   Same shape as capStop() above and for the same reasons -- popAsk() rather
+   than iOS's own box, because the plans screen is one tap away and this
    has to be answerable with "no"; and nobody is moved off the screen they
    are standing on unless they say yes.
 
@@ -1422,16 +1347,15 @@ function capStop(add){
    moment they press is that this is on a paid plan and where to go, which is
    two facts and not a paragraph about letters.
 
-   THE APP'S OWN SHEET AND NOT iOS's DIALOG. 「正直自前のpopがいいんだけどな。
-   iPhoneのやつ使ってるsnsないしな」 OWNER 2026-09-01. openForm() is a SCREEN
-   (`go('form', key)`), not a thing that slides up in place of one, so it is
-   not the shape CLAUDE.md § Shape forbids -- and the keyboard's + already
-   opens exactly this, so the other doors are being brought to it rather than
-   a second thing being invented.
+   THE APP'S OWN, AND NOT iOS's DIALOG. 「正直自前のpopがいいんだけどな。
+   iPhoneのやつ使ってるsnsないしな」 OWNER 2026-09-01. It is popAsk(), which
+   is one of the three shapes CLAUDE.md § Shape leaves standing -- popAsk()
+   for a question, toast() for a statement, openForm() for something to type
+   into. This comment described openForm() for a while and the code has never
+   called it; the question here is a yes/no and openForm() is for typing.
 
-   No corner, no border, no panel: the title is the form's own and the body is
-   one line of text and one `.btn.ghost`, which is what CLAUDE.md § 18 leaves
-   when a box is not allowed. Pressing the back arrow is the "no".
+   No corner, no border, no panel, which is what CLAUDE.md § 18 leaves when a
+   box is not allowed. Pressing outside it is the "no".
 
    IT TAKES THE ANSWER AND NOT THE NAME. `can()` may only be given a literal
    (CLAUDE.md § 5, and dead-check refuses anything else) -- a capability read

@@ -943,10 +943,15 @@ const POPR = await pg.evaluate(async () => {
   window.__seed(); SET.done = true; SET.plan = 'free';
   go('feed'); render();
 
-  let said = 0;
+  let said = 0, meant = 0;
   popAsk('press-check', () => { said++; });
   if (!popOn()) out.push('popAsk() did not put the popup up at all.');
-  const no = btn('popOff');
+  /* `popNo` and not `popOff`. The no side became an answer on 2026-09-03 --
+     「いいえならそのまま戻る」 -- so the BUTTON runs popNo(), which does what
+     the caller asked of a no and then takes the popup down, while popOff()
+     stays what the ✕ and the scrim reach: the question going unanswered.
+     Pressing the button is the answer, so that is what is pressed here. */
+  const no = btn('popNo');
   if (!no) out.push('the popup has no 閉じる button carrying a name.');
   else {
     click(no);
@@ -955,6 +960,23 @@ const POPR = await pg.evaluate(async () => {
       'function exists -- what is missing is a listener above the element. ' +
       'boot.js wires #app, #tabs and #sbg; #pop is inside the third.');
     else seen.push('閉じる closed the popup');
+  }
+  popOff();
+
+  /* AND A NO THAT WAS GIVEN SOMETHING TO DO DOES IT. A popup asking whether
+     to save what was typed has two answers and both act (www/shell.js § KEEP),
+     so a no wired to nothing is half that question going nowhere -- which is
+     what the yes below has been held to since it was written. */
+  popAsk('press-check', () => { said++; }, '', '', () => { meant++; });
+  const no2 = btn('popNo');
+  if (!no2) out.push('the popup has no 閉じる button carrying a name.');
+  else {
+    click(no2);
+    if (popOn()) out.push('the popup stayed up after its no was pressed.');
+    if (meant !== 1) out.push('the popup\'s no did not run what was handed ' +
+      'to popAsk() -- meant=' + meant + ', and a no that goes nowhere is ' +
+      'half the question nobody hears.');
+    else seen.push('no ran what popAsk() was given, once, and closed');
   }
   popOff();
 

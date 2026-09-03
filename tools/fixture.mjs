@@ -1797,9 +1797,9 @@ export function halfDone(){
         const p = stAll().filter(x => !x.slots.length && !x.feats.length)[0]
                   || stAll()[0];
         const was = stRules(p.id);
-        stSetRules(p.id, 'a name is a word that stands for a thing');
+        stKeepSave(p.id, { rules: 'a name is a word that stands for a thing' });
         window.route = 'gram'; NAV = [{ r:'gram' }];
-        const h = vGram(); stSetRules(p.id, was); return h; }],
+        const h = vGram(); stKeepSave(p.id, { rules: was }); return h; }],
     /* The article, with a finished stage in it. `.abtline` is worn by the
        name of every stage that has been answered -- www/home.js:1123 -- and
        the fixture finishes none of them, so that line is on no screen and
@@ -1814,9 +1814,9 @@ export function halfDone(){
         const p = stAll().filter(x => !x.slots.length && !x.feats.length)[0]
                   || stAll()[0];
         const was = stRules(p.id);
-        stSetRules(p.id, 'a name is a word that stands for a thing');
+        stKeepSave(p.id, { rules: 'a name is a word that stands for a thing' });
         window.route = 'about'; NAV = [{ r:'about' }];
-        const h = vAbout(); stSetRules(p.id, was); return h; }],
+        const h = vAbout(); stKeepSave(p.id, { rules: was }); return h; }],
     /* A character another letter has already taken. The picker dims it rather
        than hiding it, because which letter has it is worth seeing -- and
        chTaken() is empty in a language that has borrowed nothing, so the dim

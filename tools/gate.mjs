@@ -3,18 +3,38 @@
 
    Run it:   npm test
 
-   Thirty-one checks, and twenty-three of them start a headless browser and walk
-   the app -- most over a port of their own; `shape-check` opens `index.html`
+   FAST and SLOW below are the whole list, and this comment does not restate
+   how many there are: the two numbers written here said thirty-one and
+   twenty-three while the lists held thirty-five and twenty-six, and every
+   number in CLAUDE.md is a copy of this file's. So the run PRINTS them on
+   its last line, green or red -- the same reason `dead-check` prints the
+   capabilities it counted instead of leaving the number in prose.
+
+   The SLOW ones each start a headless browser and walk the app -- most over
+   a port of their own; `shape-check` opens `index.html`
    off the disk instead, which is why it needs no port. Run one after another
+   Thirty-five checks, and twenty-six of them start a headless browser and walk
+   the app -- most over a port of their own; `shape-check` opens `index.html`
+   off the disk instead, which is why it needs no port. The two numbers here
+   are FAST.length and SLOW.length below; if this comment and those lists
+   disagree, the lists are right. Run one after another
    that is ten minutes, and ten minutes is long enough that a check stops being run
+   **Count the checks off FAST and SLOW below and nowhere else.** A number
+   written into this comment said thirty-one while the two lists held
+   thirty-five, and the same number is copied into CLAUDE.md, which is how a
+   stale count spreads. Most of them start a headless browser and walk the app
+   -- most over a port of their own; `shape-check` opens `index.html` off the
+   disk instead, which is why it needs no port. Run one after another that is
+   ten minutes, and ten minutes is long enough that a check stops being run
    after every change and starts being run at the end — which is the one way
    a gate fails: not by being wrong, by being skipped.
 
    So the ones that need no browser go first, all of them, in about two
-   seconds. A missing script tag or an arrow function fails there and nothing
-   heavy is started at all. Then the browser ones go WIDE, four at a time,
-   because each is a separate process holding its own port and its own
-   Chromium and they have nothing to say to each other.
+   seconds. A missing script tag, an arrow function, or a price list that has
+   drifted from `CAN` fails there and nothing heavy is started at all. Then the
+   browser ones go WIDE, four at a time, because each is a separate process
+   holding its own port and its own Chromium and they have nothing to say to
+   each other.
 
    Four and not sixteen: a headless Chromium is a real browser and this runs
    on whatever is to hand. More than the machine has cores turns a parallel
@@ -32,7 +52,8 @@ import os from 'os';
 /* No browser: two seconds for all of them, and a failure here means nothing
    heavy was started for nothing. */
 const FAST = ['assets-check', 'es5-check', 'grammar-engine-check', 'dead-check', 'import-check', 'sides-check',
-              'face-check', 'box-check', 'store-check'];
+              'face-check', 'box-check', 'store-check', 'del-check', 'paid-check',
+              'token-check'];
 /* A browser each. The order is the order they are PRINTED in; which one runs
    when is up to the pool. */
 const SLOW = ['migrate-check', 'i18n-check', 'act-check', 'conv-check', 'card-check',
@@ -40,7 +61,7 @@ const SLOW = ['migrate-check', 'i18n-check', 'act-check', 'conv-check', 'card-ch
               'base-check', 'kb-check', 'plan-check', 'term-check', 'sheet-check',
               'shape-check', 'draft-check', 'gramlang-check', 'world-check', 
               'acct-check', 'page-check', 'dl-check', 'again-check', 'open-check',
-              'find-check', 'press'];
+              'find-check', 'keep-check', 'press'];
 const WIDE = Math.max(1, Math.min(4, (os.cpus() || []).length || 4));
 
 function run(name){
@@ -56,9 +77,9 @@ function run(name){
 function show(r){
   if (r.out) process.stdout.write(r.out);
   if (r.err) process.stderr.write(r.err);
-  /* Say which one, because eleven are running at once now and a check that
-     died before printing anything leaves a stack trace nowhere near its own
-     heading. */
+  /* Say which one, because several are running at once (WIDE, below: at most
+     four) and a check that died before printing anything leaves a stack trace
+     nowhere near its own heading. */
   if (r.code !== 0) console.error('\n' + r.name + ' FAILED (exit ' + r.code + ')');
 }
 
@@ -105,6 +126,11 @@ for (const n of SLOW){
   show(r);
   if (r.code !== 0) bad++;
 }
+/* The count, on every run and not only on a failing one. A green run that
+   says nothing about how many checks it was is a green run nobody can read
+   the number off, and every number in CLAUDE.md is a copy of this one. */
+console.log('\ngate: ' + (FAST.length + SLOW.length) + ' checks -- ' +
+            FAST.length + ' with no browser, ' + SLOW.length + ' walking the app.');
 if (bad){
   console.error('\n' + bad + ' of ' + (FAST.length + SLOW.length) + ' checks failed.');
   process.exit(1);

@@ -48,6 +48,14 @@ function openNote(i){
   var k=(typeof i==='number' && NOTES[i]) ? i : -1;
   ntAt=k;
   var n = k>=0 ? NOTES[k] : {t:'',b:''};
+  /* **打った内容はここに憶える。**書くのは右上の保存だけ ── www/shell.js
+     § KEEP、OWNER DECISION 2026-09-03。それまでは欄をそのまま読んで保存して
+     いたので、保存を押さずに出ると打った文字は黙って消えていた。
+
+     人の言語では登録しない。「押すものが無いのだから、打ったものはどこへも
+     行かない」というのがこの画面の元からの一文で、buffer を持たせるとその
+     一文が嘘になる ── 保存のボタンが出てしまう。 */
+  if(!langLocked()) ntKeepOn(k, n);
   openForm('note:'+k, (k>=0? t('notes.edit') : t('notes.new')),
     /* THE SAME FIELD AS EVERYWHERE ELSE, and it was an <input>.
        「全部改行して画面内に文字が収まるようにして欲しい」 OWNER 2026-08-27.
@@ -55,9 +63,10 @@ function openNote(i){
        wrap. This field carries no name of its own -- it is read when the form
        is saved -- so what makes it grow is the line in www/act.js. */
     '<div class="field"><label>'+t('notes.t')+'</label>'+
-      lnField('nt-t', t('notes.t.ph'), '', n.t||'')+'</div>'+
+      lnField('nt-t', t('notes.t.ph'), IN('ntSetT'), ntTyped(k, 't'))+'</div>'+
     '<div class="field"><label>'+t('notes.b')+'</label>'+
-      '<textarea id="nt-b" class="ntbody" placeholder="'+esc(t('notes.b.ph'))+'">'+esc(n.b||'')+'</textarea></div>'+
+      '<textarea id="nt-b" class="ntbody" placeholder="'+esc(t('notes.b.ph'))+'"'+
+      IN('ntSetB') + '>'+esc(ntTyped(k, 'b'))+'</textarea></div>'+
     /* AND NOTHING TO PRESS IN SOMEBODY ELSE'S LANGUAGE. A note opened from a
        row is opened to READ there -- langLocked() (www/core.js) -- so the
        delete goes with the save below, and what is left is the note. The
@@ -67,23 +76,46 @@ function openNote(i){
     (k>=0 && !langLocked()
       ? '<button class="set" style="margin-top:10px;border-bottom:none"' + DO('delNote') + '>'+
         '<span class="sl bad">'+t('notes.del')+'</span></button>' : ''),
-    null,
-    /* SAVE AT THE FAR END OF THE BAR 「メモも保存は右上」 OWNER 2026-09-01.
-       It was a full-width button under the body, which put it below whatever
-       had been written -- so on a note of any length it was off the screen,
-       and the field it saves had to be scrolled past to reach it. */
-    langLocked()? '' :
-      '<button class="navdo"' + DO('saveNote') + '>'+esc(t('notes.save'))+'</button>');
+    null);
 }
 FORM_OPEN.note=function(i){ openNote(parseInt(i,10)); };
-function saveNote(){
-  var a=document.getElementById('nt-t'), b=document.getElementById('nt-b');
-  if(!a||!b) return;
-  var ti=String(a.value||'').trim(), bo=String(b.value||'').trim();
-  if(!ti && !bo){ closeSheet({target:{id:'sbg'}}); return; }
+/* ---- what is typed on a note, before it is a note -----------------------
+   SAVE AT THE FAR END OF THE BAR 「メモも保存は右上」 OWNER 2026-09-01, and
+   since 2026-09-03 it is navTop()'s own and is there only when something has
+   been changed. The fields carry names now: they used to be read off the page
+   when Save was pressed, which worked exactly as long as Save was the only way
+   off the screen -- and the back arrow was the other way, and it threw what
+   was typed away without a word.
+
+   The buffer is filed under the form, so the note being edited and the note
+   being made are two of them and cannot be confused for each other. */
+function ntKeepOn(k, n){
+  keepOn(keepKeyOf('form', 'note:'+k),
+         {t:String(n.t||''), b:String(n.b||'')},
+         function(v, done){ saveNote(v); done(true); });
+}
+function ntTyped(k, f){ return keepVal(keepKeyOf('form', 'note:'+k), f); }
+function ntSetT(v){ keepSet('t', String(v||'')); }
+function ntSetB(v){ keepSet('b', String(v||'')); }
+/* Writing it down, and STAYING on it -- leaving is what the arrow beside the
+   button is for, and after a save there is nothing left to ask about, so the
+   button goes. That is the answer to "did it save".
+
+   A note being MADE becomes a note being edited the moment it is written down,
+   which is what `ntAt` is: without that line a second press would push a second
+   copy of the same note. */
+function saveNote(v){
+  var ti=String(v.hasOwnProperty('t')? v.t : ntKept('t')).trim(),
+      bo=String(v.hasOwnProperty('b')? v.b : ntKept('b')).trim();
+  if(!ti && !bo) return;
   if(ntAt>=0 && NOTES[ntAt]){ NOTES[ntAt].t=ti; NOTES[ntAt].b=bo; NOTES[ntAt].ed=Date.now(); }
-  else NOTES.push({t:ti, b:bo, at:Date.now()});
-  saveNotes(); closeSheet({target:{id:'sbg'}}); render(); toast(t('toast.note.kept'));
+  else { NOTES.push({t:ti, b:bo, at:Date.now()}); ntAt=NOTES.length-1; }
+  saveNotes(); toast(t('toast.note.kept'));
+}
+/* What the note holds now, for the half of the pair somebody did not touch. */
+function ntKept(f){
+  var n=(ntAt>=0 && NOTES[ntAt])? NOTES[ntAt] : null;
+  return n? String(n[f]||'') : '';
 }
 function delNote(){
   if(ntAt<0 || !NOTES[ntAt]) return;

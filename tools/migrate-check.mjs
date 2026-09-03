@@ -5,30 +5,26 @@
 
    Every other check in this repo opens the app in an empty browser, which is
    the one kind of phone that does not exist: nobody installs this and has
-   nothing. The people who matter most have a language they have been building
-   for months, stored the way the shipped version stored it — eight flat keys,
-   lingua.words through lingua.talk.
+   nothing. So this one seeds storage first, then loads the app, and asks what
+   the app made of what it found.
 
-   Storage moved under a language id so that one person can hold their own
-   language and read other people's. That move runs exactly once, on a phone,
-   against the only copy. No browser run and no CI runner would show it going
-   wrong, because a fresh profile has nothing to move: the check would pass on
-   a migration that silently dropped every letter somebody had drawn.
-
-   So this seeds the old keys first, then loads the app, and asks what came
-   through.
+   THE EIGHT FLAT KEYS ARE NOT READ ANY MORE. A language made before this app
+   could hold more than one sat under lingua.words through lingua.talk, and
+   there used to be a road that copied them into a language on the first
+   launch. 「もうまっさら昔のいらない。今の状態の話平キーなんかいらない」
+   OWNER 2026-09-03 — that road is DELETED, not switched off. What this check
+   holds about them now is case 8, and it is a different sentence in three
+   parts: nothing is read, nothing is copied, and NOTHING IS DELETED. A phone
+   carrying those eight keeps them exactly where they are; the app simply
+   never looks at them again. The road went; the data did not.
 
    What it checks
-     1. an old install     all eight slices arrive in the globals the screens
-                           read, the person's settings survive, and the new
-                           index lists one language, theirs
-     2. the old keys stay  the migration copies. It never removes what it read,
-                           because a few hundred kilobytes is nothing next to
-                           the one copy of something somebody spent months on
-     3. running it twice   a second load migrates nothing further and does not
-                           make a second language. This is what happens every
-                           time they open the app after the update
-     4. a fresh install    nothing to migrate, so one empty language of their
+     8. the flat keys      a phone carrying all eight comes up with one EMPTY
+                           language of its own — not Vaska and not half of
+                           Vaska — nothing is filed under the new id, no row
+                           waits for an account, and all eight keys are still
+                           there byte for byte, signed in or out
+     4. a fresh install    nothing to read, so one empty language of their
                            own, not zero and not a broken half-language
      6. the plan moved     it leaves the settings file for the Keychain, and
                            the file stops deciding. This is the one case where
@@ -51,7 +47,7 @@
                            next time A is saved. Nothing on screen would look
                            wrong at any point
 
-   Exit code is 0 only when all seven hold.
+   Exit code is 0 only when all six hold.
    --------------------------------------------------------------------------- */
 import http from 'http';
 import fs from 'fs';
@@ -96,15 +92,9 @@ const OLD = {
    the glyphs, and "1 letter" came out true whether the letters had been
    migrated or silently reconstructed. An id cannot be arrived at twice. */
 const REPORT = () => ({
-  words: WORDS.length, word0: WORDS[0] && WORDS[0].hw, gloss0: WORDS[0] && WORDS[0].gl,
-  name: langName, lines: LINES.length, line0: LINES[0] && LINES[0].a,
+  words: WORDS.length, word0: WORDS[0] && WORDS[0].hw,
+  name: langName, lines: LINES.length,
   letters: LETTERS.length, letterIds: LETTERS.map(function(x){ return x.id; }).join(','),
-  /* Which of the free plan's twenty-eight slots nothing answers to. Empty is
-     the answer on every language a free phone can be holding. */
-  gaps: LT_START.split('').filter(function(c){
-          return !LETTERS.filter(function(l){
-            return String(ltName(l)||'').toLowerCase() === c; }).length;
-        }).join(''),
   notes: NOTES.length, note0: NOTES[0] && NOTES[0].t,
   /* Read out of the storage rather than off a global. The conversation's
      screen was lifted out with Studio -- see the note on PLANS in
@@ -116,16 +106,13 @@ const REPORT = () => ({
   talk0: (function(){ try{ var a=JSON.parse(localStorage.getItem(langKey('talk'))||'[]');
                            return a[0] && a[0].q; }catch(e){ return undefined; } })(),
   sound: !!STG.done.sound,
-  snd: addedSnd().join(','), sndInSet: SET.snd === undefined,
-  sndFiled: localStorage.getItem('lingua.' + langId + '.snd') !== null,
+  snd: addedSnd().join(','),
   script: Object.keys(SCRIPT.g).join(','),
   theme: SET.theme, done: SET.done, plan: SET.plan,
   langs: Object.keys(LANGS).length, id: langId,
   mine: !!(LANGS[langId] && LANGS[langId].mine),
   indexName: LANGS[langId] && LANGS[langId].name,
-  cur: localStorage.getItem('lingua.cur'),
-  oldKept: localStorage.getItem('lingua.words') !== null,
-  filed: localStorage.getItem('lingua.' + langId + '.words') !== null
+  cur: localStorage.getItem('lingua.cur')
 });
 
 const fails = [];
@@ -244,56 +231,6 @@ await pg.addInitScript(() => {
   window.XMLHttpRequest = Fake;
 });
 await pg.goto(`http://localhost:${PORT}/`);
-
-/* ---- 1 and 2: an old install ------------------------------------------- */
-await pg.evaluate((old) => {
-  localStorage.clear();
-  Object.keys(old).forEach((k) => localStorage.setItem(k, old[k]));
-}, OLD);
-await pg.reload();
-const a = await pg.evaluate(REPORT);
-
-want('words carried over', a.words, 2);
-want('and they are the words that were there', a.word0, 'tuf');
-want('with their meanings', a.gloss0, 'hello');
-want('the language kept its name', a.name, 'Vaska');
-want('lines carried over', a.lines, 1);
-want('and it is the line that was there', a.line0, 'tuf ark');
-keeps('the letters that were drawn carried over, not ones rebuilt from the glyphs',
-      a.letterIds, 'lA,lB,lC');
-/* And the free plan's twenty-eight slots were filled in around them rather
-   than instead of them. */
-want('and the alphabet was filled out around them', a.gaps, '');
-want('notes carried over', a.notes, 1);
-want('and it is what they wrote', a.note0, 'a note');
-want('talk carried over', a.talk, 1);
-want('and it is what was said', a.talk0, 'hi');
-want('the stage they had finished is still finished', a.sound, true);
-want('the drawn script carried over', a.script, 't');
-want('their theme survived', a.theme, 'dark');
-want('their onboarding is still done', a.done, true);
-want('their plan survived', a.plan, 'free');
-/* The sounds were the person's, in lingua.set, and are the language's now.
-   They arrive, they are filed under the language, and nothing reads them off
-   the settings any more. */
-want('their sounds carried over', a.snd, 'k,t,a');
-want('and are filed under the language', a.sndFiled, true);
-want('and are off the settings', a.sndInSet, true);
-want('one language is listed', a.langs, 1);
-want('and it is theirs', a.mine, true);
-want('the index knows what it is called', a.indexName, 'Vaska');
-want('it is filed under its id', a.filed, true);
-want('the old keys were left alone', a.oldKept, true);
-
-/* ---- 3: the same phone, opened again ------------------------------------ */
-await pg.reload();
-const b = await pg.evaluate(REPORT);
-want('still one language on the second load', b.langs, 1);
-want('still the same language', b.id, a.id);
-want('still their words', b.words, 2);
-keeps('still their letters', b.letterIds, 'lA,lB,lC');
-want('still their name', b.name, 'Vaska');
-want('still their sounds', b.snd, 'k,t,a');
 
 /* ---- 4: a phone that never had this app --------------------------------- */
 await pg.evaluate(() => localStorage.clear());
@@ -568,17 +505,82 @@ want('q is k', AZ.q, 'k');
 want('x is k', AZ.x, 'k');
 want('y is j', AZ.y, 'j');
 
-/* ---- 8. the migrated language belongs to the account this phone is on ---
-   `langMigrate()` runs inside core.js's own load, seventeen script tags before
-   www/net.js, so there is no session for it to stamp the language with -- and
-   a language with no `uid` belongs to NOBODY once SET.done is true, which
-   every phone reaching the migration has. It would be in no list and in no
-   count with every word of it still in storage, which is the shape that reads
-   as 「my language is gone」.
+/* ---- 8: a phone with the eight flat keys on it, and nothing happens ------
+   A language made before this app could hold more than one sat under eight
+   flat keys -- lingua.words through lingua.talk. **The app does not read
+   them.** 「もうまっさら昔のいらない。今の状態の話平キーなんかいらない」
+   OWNER 2026-09-03: the road that copied them into a language is deleted
+   rather than switched off, so there is nothing here to return false.
 
-   It leaves `mig` on the row instead, and netRead() spends it. What is asked
-   here is the whole of that: the account is on, the mark is off (so it happens
-   once), and the language is the person's -- counted, and listed. */
+   What is asserted is three separate things, and the third is the one that
+   is easy to get backwards:
+
+     1. nothing is READ -- the phone comes up with one EMPTY language of its
+        own, the way any other phone with no language does. Not Vaska, not a
+        half of Vaska
+     2. nothing is COPIED -- no slice is filed under the new language's id,
+        and the index does not grow a second row
+     3. nothing is DELETED -- all eight keys are still there, byte for byte.
+        This is a deletion of a ROAD and not of anybody's data. The owner said
+        the flat keys are not wanted; they did not say to erase them, and
+        docs/DATA_SAFETY.md is why the difference is written down. A phone
+        that has them keeps them; they are simply never read again.
+
+   The signed-in half is asked as well, because the account stamp is where
+   the old road ended: with a session on the phone there is still nothing to
+   stamp, so the language that is minted is the ordinary unstamped first one
+   and no row anywhere carries a `mig` mark. */
+const flatSeen = async () => pg.evaluate((old) => {
+  const eight = Object.keys(old).filter((k) => k !== 'lingua.set');
+  return {
+    langs:   Object.keys(LANGS).length,
+    words:   WORDS.length,
+    name:    langName,
+    notes:   NOTES.length,
+    script:  Object.keys(SCRIPT.g).join(','),
+    indexName: LANGS[langId] && LANGS[langId].name,
+    /* The new language writes its own EMPTY slices on the first launch, the
+       way any first run does, so "is there a key under this id" is the wrong
+       question and was the first thing this check got wrong. What is asked is
+       whether any of the OLD language is in them: its headword, its line, its
+       note, and the ids of the three letters somebody drew. `letters` is the
+       one that could pass by accident -- ltStart() fills a free alphabet out
+       to thirty-eight slots, so the slice is far from empty; what may not be
+       in it is lA, lB, lC. */
+    carried: Object.keys(localStorage).filter(function(k){
+               return k.indexOf('lingua.' + langId + '.') === 0 &&
+                      /tuf|ark|a note|Vaska|"lA"|"lB"|"lC"/.test(
+                        String(localStorage.getItem(k))); }).join(' '),
+    /* and no row is waiting to be stamped by a road that no longer exists */
+    marks:   Object.keys(LANGS).filter((id) => LANGS[id] && LANGS[id].mig).length,
+    /* all eight, exactly as they were put down */
+    kept:    eight.filter((k) => localStorage.getItem(k) === old[k]).length,
+    eight:   eight.length,
+    gone:    eight.filter((k) => localStorage.getItem(k) === null).join(' ')
+  };
+}, OLD);
+
+/* signed out */
+await pg.evaluate((old) => {
+  localStorage.clear();
+  Object.keys(old).forEach((k) => localStorage.setItem(k, old[k]));
+}, OLD);
+await pg.reload();
+await settle();
+const f1 = await flatSeen();
+want('a phone carrying the eight flat keys gets one language', f1.langs, 1);
+want('and it is EMPTY -- the flat keys were not read', f1.words, 0);
+want('it is not the old language by name', f1.name, '');
+want('nor in the index', f1.indexName, '');
+want('nothing of the notes came across', f1.notes, 0);
+want('nor the drawn script', f1.script, '');
+want('and not one word of the old language is under its id', f1.carried, '');
+want('no language is waiting for an account it will never be given', f1.marks, 0);
+/* THE DELETION THAT DOES NOT HAPPEN. The road is gone; the data is not. */
+want('all eight flat keys are still on the phone', f1.kept, f1.eight);
+want('and not one of them was removed', f1.gone, '');
+
+/* and signed in, which is where the old road put the account on */
 await pg.evaluate((old) => {
   localStorage.clear();
   Object.keys(old).forEach((k) => localStorage.setItem(k, old[k]));
@@ -587,39 +589,11 @@ await pg.evaluate((old) => {
 }, OLD);
 await pg.reload();
 await settle();
-const m8 = await pg.evaluate(() => ({
-  uid:    (LANGS[langId] || {}).uid,
-  mig:    (LANGS[langId] || {}).mig,
-  owned:  langOwned(langId),
-  count:  langCount(),
-  done:   !!SET.done,
-  words:  WORDS.length,
-  /* off the STORED index rather than the global, because what has to survive
-     the next launch is what was written down */
-  stored: (function(){ try{ var L=JSON.parse(localStorage.getItem('lingua.langs')||'{}');
-                            return (L[langId]||{}).uid; }catch(e){ return 'unreadable'; } })()
-}));
-want('a migrated language carries the account the phone was signed in as', m8.uid, 'acct-1');
-want('and the mark that asked for it is spent, so it happens once', m8.mig, undefined);
-want('and it is written down, not only in memory', m8.stored, 'acct-1');
-want('so it belongs to the person', m8.owned, true);
-want('and it is in their count', m8.count, 1);
-want('with the words still in it', m8.words, 2);
-want('on a phone that has finished the onboarding', m8.done, true);
-
-/* And a phone with nobody on it leaves the mark alone rather than guessing.
-   The next launch that has a session is what spends it. */
-await pg.evaluate((old) => {
-  localStorage.clear();
-  Object.keys(old).forEach((k) => localStorage.setItem(k, old[k]));
-}, OLD);
-await pg.reload();
-await settle();
-const m8b = await pg.evaluate(() => ({
-  uid: (LANGS[langId] || {}).uid, mig: (LANGS[langId] || {}).mig
-}));
-want('signed out, nothing is stamped', m8b.uid, undefined);
-want('and the mark waits for a session rather than being spent on nobody', m8b.mig, true);
+const f2 = await flatSeen();
+want('signed in, the flat keys are still not read', f2.words, 0);
+want('and still not copied', f2.carried, '');
+want('and no mark is left for anybody to spend', f2.marks, 0);
+want('and the eight are still all there', f2.kept, f2.eight);
 
 await br.close();
 srv.close();
@@ -631,8 +605,10 @@ if (fails.length) {
                 'recoverable afterwards, so none of it may be shipped red.');
   process.exit(1);
 }
-console.log('migration: an old install opens with everything in it, twice over, ' +
-            'and a new one starts with a language of its own.\n' +
+console.log('migration: a new install starts with a language of its own, and a phone ' +
+            'carrying\n           the eight flat keys does too — they are not read, not ' +
+            'copied, and\n           not removed. The road is gone; the data is left ' +
+            'where it is.\n' +
             '           A plan already bought moves itself out of the settings file ' +
             'and into\n           the Keychain, and the file stops being listened to.\n' +
             '           No account is made on a launch, a refused token is ' +

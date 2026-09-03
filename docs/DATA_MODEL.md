@@ -24,9 +24,20 @@ is the procedure.
 
 Twelve slices, filed under `lingua.<id>.<slice>`. `SLICES` in `www/core.js` is
 the list, and **being in that list is what makes a slice real**: `bkPack()`
-walks it, so a slice outside it is in no backup; `wipeAll` walks it, so a slice
-outside it survives a wipe into the next language. Two were outside it once —
-the keyboard and the world — and neither could throw.
+walks it, so a slice outside it is in no backup; `wipeLangsGo()` walks it for
+one id and `lsWipeAcct()` walks it for every language an account has, so a
+slice outside it survives both deletes into the next language. Two were outside
+it once — the keyboard and the world — and neither could throw. **Count them
+off `SLICES` itself and not off this sentence**, which has said eleven and has
+said twelve.
+
+**One key under `lingua.<id>.` is not a slice**, and it is the only one:
+`lingua.<id>.bkn`, the save counter (`bkNo()` / `bkNoSet()` in
+`www/backup.js`). It is not in `SLICES` on purpose — it is a fact about the
+FILE and not part of the language — so it is in no backup and goes up nowhere,
+and `tools/store-check.mjs` names it as the phone's own. Being outside `SLICES`
+also puts it outside both deletes above; **whether it should be** is with the
+owner (`docs/scope/aud-data.md` § オーナーに訊くこと).
 
 **And now a third reader walks it: the server.** OWNER DECISION 2026-08-26 —
 「基本は全部サーバー管理 言語周りだけバックアップにfile使う」. Each slice is one
@@ -41,11 +52,19 @@ missing from all three.
 **And all of it goes when the account does.** OWNER DECISION 2026-08-26 —
 「アカウント消したら全部消えるに決まってる」. Not the server rows only: the
 `slice` rows, the `language` row, the bytes in Storage, **and every
-`lingua.<id>.<slice>` key on the phone**, plus `lingua.langs` and `lingua.cur`
-that index them. This is the one place in this file where data is removed on
+`lingua.<id>.<slice>` key on the phone**, and the language's row out of
+`lingua.langs`. This is the one place in this file where data is removed on
 purpose, and it is allowed for the one reason `docs/DATA_SAFETY.md` does not
-forbid: **the person asked.** It is not built — `netDropMe()` reaches the server
-only, and `wipeAll()` is a separate button (`docs/FEATURES.md` § 8).
+forbid: **the person asked.**
+
+**It is built, and it takes THAT ACCOUNT and nothing else.** 2026-09-03 taught
+the difference the hard way — deleting a second account emptied the whole
+`lingua.` namespace and took the first account's only copy of a language with
+it. `wipeAll()` (`www/settings.js`) is the button; `wipeAllGo()` reads who is
+signed in AT THE PRESS, hands that uid down both arms of `netDropMe()`, and
+`wipeHere(uid)` calls `lsWipeAcct(uid)` (`www/core.js`) and `bkDropFor(ids)`
+(`www/backup.js`). What comes off the phone is listed under **what an account
+deletion actually takes**, below.
 
 Which of the copies is believed when they differ: **neither.** `sync.js` adds
 both sides and lets neither win by being newer 「そりゃあ両方足すだろ」. The
@@ -62,7 +81,7 @@ break.
 | `letters` | `LETTERS` | the alphabet | array |
 | `notes` | `NOTES` | the notebook | array |
 | `phases` | `STG` | grammar stages, `fm` — the rules a form is made by (`docs/FEATURES.md`) — and the calendar's two numbers, `months` and `week` (`www/cal.js`) | object |
-| `talk` | `TALK` | the conversation. **Its screen is lifted** — see the note on `PLANS` in `www/core.js` — so nothing in the app reads or writes this today. The slice stays in `SLICES`, `bkPack()` still copies it out of storage, and a restore still puts it back: a screen going away is not a reason for somebody's conversation to be deleted | array |
+| `talk` | — | the conversation. **Its screen and its global are both gone** — there is no `TALK` in `www/`, and nothing in the app reads or writes this. The slice stays in `SLICES`, `bkPack()` still copies the text out of storage under its own name, and a restore still puts it back: a screen going away is not a reason for somebody's conversation to be deleted | array |
 | `snd` | `SND` | the sound inventory | array |
 | `kb` | `KB` | the keyboards this language's owner **built**, and which one is applied. The free QWERTY is not among them: it is board 0, rebuilt from `kbFixed()` every time it is asked for, so it cannot go stale and cannot be edited. `v:2` says `migrateKbFree()` has taken the old copy of it out of the array | object |
 | `gram2` | — | the grammar engine's v2 model (`www/grammar-engine/`). **`gModel()` in `www/grammar.js` reads it**; nothing writes it yet, so every language today falls to `fromLegacy()` and answers exactly as before. What it holds when it is written is **everything except the dictionary and the rules that name words** — `words` is rebuilt from `WORDS` on every read and `grammarRules` from the stages, because both point AT the dictionary and a stored copy would part company with it the first time somebody renamed a word. `adapter.save` still has no caller. It is in `SLICES` from the day the key existed rather than the day the first caller does, which is the whole lesson of the keyboard and the world: a slice joins the list BEFORE anything writes to it, or the first thing written is the thing that is not in the backup. It sits **beside** `phases` and does not replace it — a migration copies and never removes | object |
@@ -139,9 +158,11 @@ other's notices, and a notice names who did what to whom.
 
 **Nothing prunes it and nothing ages it out**, which is the same sentence
 `lingua.posts` and `lingua.drafts` carry: it is replaced whole by the next
-answer and by nothing else. It is removed by `lsWipeAcct()` with everything else
-under `lingua.` when an account goes — no list to add it to, which is why that
-function counts `localStorage` instead of walking a list.
+answer and by nothing else. **`lsWipeAcct()` does NOT take it** — that function
+names three parked prefixes and this is not one of them — so an account
+deleted on this handset leaves behind the list of who did what to it. Whether
+it should be taken is with the owner (`docs/scope/aud-data.md`
+§ オーナーに訊くこと, Q1); what is written here is what the code does.
 
 `lingua.set` carries **`notAt`** beside it, and it is not the same kind of
 thing: it is **when the notices screen was last opened**, as a number of
@@ -166,10 +187,63 @@ The bytes go up when the post does, and not before.
 A draft carries no `ink`: ink is cut onto a post as it is sent (rule 13), and a
 draft has not been sent.
 
-**Deleting the account takes both sides.** `lsWipeAcct()` removes every key
-beginning `lingua.`, counted rather than listed, so `lingua.drafts` goes with
-it; `draft.author` is `references profile(id) on delete cascade`, so
-`account_delete()` takes the rows. 「アカウント削除で残るものねえ」
+**Deleting the account takes both sides.** `draft.author` is `references
+profile(id) on delete cascade`, so `account_delete()` takes the rows;
+`lsWipeAcct()` takes `lingua.drafts` and `lingua.drafts.<uid>` on the phone.
+「アカウント削除で残るものねえ」
+
+### What an account deletion actually takes, off the phone
+
+`lsWipeAcct(uid)` in `www/core.js`, and it is **that account's and nothing
+else's**. It is written out here because it is the one function in the app that
+destroys, and because until 2026-09-03 it took the whole `lingua.` namespace
+and that is how one person's deletion erased another person's language.
+
+```
+  every SLICES key of every language whose LANGS entry carries this uid
+  that language's row out of LANGS
+  lingua.me.<uid>      lingua.posts.<uid>      lingua.drafts.<uid>
+  lingua.me            lingua.posts            lingua.drafts     (the live ones)
+  the eight LS_FLAT keys
+```
+
+**The eight flat keys** are `lingua.words` `lingua.lines` `lingua.lang`
+`lingua.script` `lingua.letters` `lingua.notes` `lingua.phases`
+`lingua.talk` — the dictionary a single-language build wrote before a language
+had an id. `langMigrate()` **copies** out of them and never removes
+(`docs/DATA_SAFETY.md` § 2), so after the migration they are a second copy of
+that account's dictionary answering to nobody — and `langMigrate()` reads them
+again the moment the index has no current language, which handed the next
+person to sign in on this handset the first person's words. They are that
+account's dictionary in an older spelling, so they go with it. They carry no
+uid, and that is the whole reason this is written down rather than left to the
+prefix test above.
+
+**All of that is on its way out.** OWNER 2026-09-03: 「今の状態の話平キーなんか
+いらない」 — the road is being deleted, not conditioned: `langMigrate()`,
+`LS_FLAT`, `langMigStamp()` and the `mig` mark with them, and this line of
+`lsWipeAcct()` goes when they do because there is nothing left for it to take.
+The decision is in `docs/FEATURE_RULES.md` and the branch is `claude/flat`.
+**Delete this paragraph and the `mig` row above in the same commit that lands
+it** — a description of a road nobody walks is the thing this file is being
+audited for.
+
+**Three things under `lingua.` are NOT taken.** They are named so that nobody
+reads the list above as complete:
+
+```
+  lingua.notices.<uid>   the notices copy      www/sns.js  notKey()
+  lingua.set.<uid>       the parked settings   www/core.js setParkKey()
+  lingua.<id>.bkn        the save counter      www/backup.js bkNoSet()
+```
+
+Two written rules pull opposite ways here and **nothing in this file decides
+between them**: 「アカウント削除で残るものねえ」 (OWNER 2026-08-27) says
+everything of that account's goes, and `docs/DATA_SAFETY.md` § 4 says nothing
+is removed without a written spec asking for it. `lingua.<id>.bkn` is the same
+question a second time, under 「この言語を削除で言語の制作のものは全部なくなる」
+(OWNER 2026-09-03). **It is with the owner** —
+`docs/scope/aud-data.md` § オーナーに訊くこと, Q1 to Q3.
 
 ## The index of languages, and what is actually in it
 
@@ -179,43 +253,29 @@ which one every global on the making side means.
 | key | written by | what it is |
 |---|---|---|
 | `name` | `langMigrate()`, `langMint()`, `bkRestore()`, and `save()` on the open one | a copy of the language's name, so a row can be drawn without opening the language to find out what it is called. For the OPEN language `langName` is the live answer and this is the copy made at the last save |
-| `mine` | the same three places | **`true`, always, on every entry that has ever existed.** See below |
-| `sid` | `netLangRow()` (`www/net.js`) | the server's id for this language, the same way a post carries one. **A language with no `sid` has never been up.** Added after the entry is made, and `langStore()`d on the spot |
+| `mine` | `langMigrate()`, `langMint()`, `bkRestore()`, `netLangsDown()` write **true**; `langSeenAdd()` (`www/core.js`) writes **false** | whether this is a language you are MAKING or one you are only READING. It is about this handset and **not** about an account — `uid` is that, one row down, and the two words both sound like ownership |
+| `sid` | `netLangRow()` (`www/net.js`) | the server's id for this language, the same way a post carries one. **A language with no `sid` has never been up.** Added after the entry is made, and `langStore()`d on the spot. A downloaded language is filed UNDER its `sid`, so a second download of it lands in the same place |
+| `uid` | `netLangRow()`, `langSeenAdd()`, `bkTake()`, `langMigStamp()` | the ACCOUNT the language belongs to. 「違うアカウントでログインしてんのに前のやつ出てくるんだけど？」 OWNER 2026-08-31 — `LANGS` is the handset's index and survives signing out, so an entry with nothing saying whose it was became whoever signed in next. **An entry with no `uid` has never been through a door**, which is a real state: the onboarding makes a language before there is an account |
+| `mig` | `langMigrate()` (`www/core.js`), removed by `langMigStamp()` | the mark that this entry came out of the eight flat keys and is still waiting for an account to be stamped on it. `langMigrate()` runs while `core.js` is loading, before `SESS` is even declared, so there is nothing to stamp with at the moment it is made and `netRead()` does it eighteen lines later |
 
-`core.js` said `{ name, mine }` **and nothing more** above `LANGS` for as long as
-`sid` has existed. It is three keys. Corrected 2026-08-25.
+**Count them off the writers above and off `www/core.js`, not off a number
+written here.**
 
-## A language that is only read — **this state does not exist**
+## A language that is only read
 
-Written down because it has been **decided** and is **not built**, and the gap
-between those two is where a next session invents something.
+**It exists.** `LANGS[id].mine` is what says a language is not yours, and
+`langSeenAdd()` (`www/core.js`) is what writes it false — the index row for a
+language taken off somebody else's page, filed under that language's `sid` so
+a second download of it lands in the same place and does not make a second
+copy. 「ダウンロードボタン押しても言語追加されないけど？」「いつまでもfalseだった
+とかやめてね。」 OWNER 2026-09-01 is the sentence that closed the gap.
 
-`LANGS[id].mine` is the only thing that would say a language is not yours, and
-**nothing has ever written it false.** Three places write to `LANGS` —
-`www/core.js:115` (the migration), `www/core.js:140` (`langMint()`), and
-`www/backup.js:264` (a restore putting back a language the index lost) — and
-all three write `mine:true`. So:
+`wldGet()` (`www/home.js`) is the one road in: it writes the index row FIRST,
+so a slice can never sit in storage under a language the index does not know,
+and then writes the slices it was asked for with `langKeyOf(id, kind)`.
 
-```
-  a language that cannot be edited     does not exist
-  a language somebody else made        does not exist
-  LANGS entries where mine is false    have never existed
-```
-
-Two things in the app are already written as though they did, and both are
-reading a state that never arrives:
-
-- **`vLangs()` in `www/home.js`** splits `LANGS` into 「自分の」 and 「読んでいる」.
-  The second list is **always** the empty note. It is not broken — it is the
-  slot DL was going to fill, drawn early.
-- **the comment above `langCount()`** said `LANGS` "also holds every language
-  being read from somebody else", to explain why the ceiling counts `mine`
-  only. The ceiling counting `mine` is right and stays; the sentence about why
-  was describing a thing that is not there. Corrected 2026-08-25.
-
-**What a read-only language answers. Three of these four were open until
-2026-09-01; the owner closed them and the answers are here rather than in a
-log somebody has to find.**
+**What a read-only language answers.** The owner closed these on 2026-09-01 and
+2026-09-02, and the answers are here rather than in a log somebody has to find.
 
 1. **Where the slices live.** A downloaded language is `lingua.<id>.<slice>`
    like any other, or it is not a language at all — `langKeyOf(id, slice)` is
@@ -224,12 +284,12 @@ log somebody has to find.**
 2. **It does not go into the backup file.** OWNER 2026-09-01, asked whether a
    downloaded language is in the person's own backup: 「入らん」. `SLICES` is
    unchanged — it is the list of what a language is MADE of, and that is the
-   same list for every language — but **`bkPack()` skips a language that is
-   not `mine`.** It is not theirs to hand out, and it is not lost by being
-   skipped: it came from somewhere and can be taken again. `wipeAll` is the
-   other way and does not change: `lsWipeAcct()` counts `localStorage` and
-   removes everything under `lingua.`, so a downloaded language goes with the
-   account like everything else.
+   same list for every language — and `bkPack()` has no test in it either.
+   **`bkPush()` is where it is refused** (`www/backup.js`), on `langMine()`,
+   with `BK.dirty` cleared so every later save does not come back to be
+   refused again. Nothing is deleted and nothing is moved: it is the FILE that
+   does not carry it, and it is not lost by being skipped, because it came
+   from somewhere and can be taken again.
 3. **A partial language is a normal state, not an error.** OWNER 2026-09-01:
    「いや一つづつdlでいいよ。」 — the download section opens onto 単語 / 文字 /
    キーボード with a ↓ on each, and they are taken **one at a time**. So a
@@ -238,23 +298,47 @@ log somebody has to find.**
    separate states (`bkSound()`, `BK_SHAPE`); **a downloaded language uses the
    first** — the slice is absent until its ↓ is pressed. No third state is
    invented: "never offered" is the publisher's ↓ not being there to press.
-4. **The ceiling counts it separately.** OWNER 2026-09-01: 「別に数える」.
-   `langCount()` counting `mine` only is right and stays right; a downloaded
-   language is never added to that number. **The two numbers themselves are
-   still open** — how many of each a plan buys has not been decided, and
-   nothing here may invent one.
+   A section that is more than one slice is gathered and written together —
+   the grammar is `phases` **and** `gram2`, and half a chapter in the index
+   would look like a grammar somebody could open.
+4. **The ceiling counts it separately, and both numbers are decided.**
+   OWNER 2026-09-01: 「別に数える」; OWNER 2026-09-02:
+   「plusからです」「plusは1つproは3つ」.
+
+   ```
+     langCap()  FREE_LANGS 1   PRO_LANGS 3     languages you MAKE   `mine` true
+     dlCap()    PLUS_DL    1   PRO_DL     3    languages you READ   `mine` false
+   ```
+
+   `langCount()` counts `mine` and `dlCount()` counts not-`mine`, both with the
+   same account test, so signing in as somebody else hands you neither their
+   languages nor their downloads. Free is nought downloads: the plan is the
+   door and the ceiling is the room, asked in that order in `wldGet()`.
+   **Neither ceiling removes, hides or counts down anything** — somebody who
+   already has more than the number keeps and reads every one of them, and only
+   the next one is refused.
 
 **5. It is outside sync, and that is not a flag — it is the whole point.**
 Everything else about a language goes to the server and comes back merged
 (2026-08-26, above), and `syMerge` **adds both sides**. Run a downloaded
 トキポナ through that once and something has been added to it, at which point
 「トキポナに文字足したらトキポナじゃないです」 (OWNER DECISION 2026-08-25). So
-「基本は全部サーバー管理」 has exactly one exception and this is it. It must
-hold by construction — a read-only language that `netLangSync()` simply never
-reaches — and **not** by a `mine` test remembered at each of the four call
-sites, because the one that forgets is the one that ruins somebody's copy of a
-language they did not write and cannot repair. It also does not need syncing:
-nothing on the phone can change it, so the two copies cannot differ.
+「基本は全部サーバー管理」 has exactly one exception and this is it, and it holds
+by construction: `langMineIds()` (`www/net.js`) is what `netLangSync()` walks,
+and a language that is not `mine` is not in the list at all. There is no `mine`
+test inside the sync to be forgotten.
+
+**And it opens.** `langOpen()` does **not** refuse one —
+「編集不可でそのアカウントに切り替えたらダウンロードした人の言語が使える」 OWNER
+2026-09-02, and `tools/migrate-check.mjs` holds `CLAUDE.md`'s rule 6 with a
+fixture whose second language is `mine:false`. What protects it is not a locked
+door but the WRITERS, and there are more of them than the four this file used
+to name: `langLocked()` (`www/core.js`) is the one question, asked at
+`save()`, `saveLetters()`, `saveNotes()`, `saveStg()`, `saveSnd()`, `saveKb()`,
+`saveWld()` and at `ltStart()`, which does not top one up
+（「dl言語はへんしゅうはできないってなんかいもいわせんなよ」 OWNER 2026-09-01）.
+A rule that lives in one place and is asked at each road that could break it —
+`upStop()`'s shape.
 
 **What is already settled, and settled twice.** A downloaded language is
 **never merged into the person's own** — `docs/FEATURES.md` § 4 (2026-08-19)
@@ -329,8 +413,17 @@ The one piece of **frozen** data in the app.
 
 ```js
 { id, at, lang, lname, ln, who, hd, mine, av, mn, ui, dir,
-  ink?, tr?, pics?, pic?, pin?, vo?, ed?, to?, toh? }
+  li, bo, re, pr,
+  ink?, tr?, pics?, pic?, pin?, pv?, vo?, ed?, to?, toh?, sid? }
 ```
+
+`li`, `bo` and `re` are the counts — likes, boosts, replies — and they are the
+one part of a post that is **not** frozen: `postNLike()` and its two neighbours
+in `www/post.js` prefer `nlike`/`nboost`/`nreply` when the server has answered
+and fall back to these. `pr` is the id of the prompt this was written to, if it
+was written to one; the words of the prompt are not on the post. `sid` is the
+post's row on the server, put on by `postSid()` after it goes up — a post with
+no `sid` has never been up, the same sentence `LANGS[id].sid` carries.
 
 Everything a reader needs is on it, because the reader does not have the
 writer's language:
@@ -475,14 +568,20 @@ per letter too. It agrees with what this screen already said —
 🔍 is the place that already means 「searched」. Opening a person off the answer
 was built as a second road into it and the decision took it out.
 
-**What is not per-account yet, said plainly.** `SET.recent` rides in
-`lingua.set`, the one settings key shared by whoever signs in — the same place
-`SET.saved` and `SET.plan` sit. `recent_search` cascades off `profile` and so
-off `auth.users`, so `account_delete()` takes the rows; the phone's COPY is
-not taken by `lsWipeAcct()`, which reaches `lingua.me.*`, `lingua.posts.*` and
-`lingua.drafts.*` by uid and not the settings key. That is the shared-settings
-entry in `docs/BACKLOG.md` and it is not new here — but a history is the most
-revealing of the three, so it is named.
+**What is not per-account yet, said plainly, and it is now one field rather
+than three.** `SET.plan` and `SET.saved` moved: `SET_ACCT` in `www/core.js`
+names six — `plan`, `planWas`, `planPend`, `saved`, `savedUp`, `notAt` — and
+`setFor(uid)` parks them under `lingua.set.<uid>` when somebody signs out and
+reads the next person's back in, the same shape as `meFor()` and `postFor()`.
+**`recent` is not in that list**, so the history is the one field of the
+settings still shared by whoever signs in on this handset. `recent_search`
+cascades off `profile` and so off `auth.users`, so `account_delete()` takes the
+rows; the phone's COPY is reached by nothing — `lsWipeAcct()` takes
+`lingua.me.*`, `lingua.posts.*` and `lingua.drafts.*` by uid and does not touch
+the settings key. **Whether `recent` joins `SET_ACCT` is with the owner**
+(`docs/scope/aud-data.md` § オーナーに訊くこと, Q4). It is named here rather
+than left to a list because a history is the most revealing thing a settings
+key can hold.
 
 ## The @, and when it may move
 

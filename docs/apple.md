@@ -14,7 +14,8 @@ GitHub の Secret `APPLE_TEAM_ID`。
 CI（`.github/workflows/ios-deploy.yml`, `macos-latest`）が毎回やること:
 
 - `npx cap sync ios`（`www/` を iOS に入れる）
-- ビルド番号を GitHub の run 番号で上書き（今回のビルドは **38**）
+- ビルド番号を GitHub の run 番号で上書き（**番号はここに書きません** ──
+  run ごとに増えるので、Actions の run 番号がそのままビルド番号です）
 - 配布証明書とプロビジョニングを Secret から入れる
 - Archive → Export → App Store Connect へアップロード
 
@@ -27,10 +28,10 @@ CI（`.github/workflows/ios-deploy.yml`, `macos-latest`）が毎回やること:
 
 ---
 
-## 1. 今回のビルド（#38）を TestFlight で配る
+## 1. 上がったビルドを TestFlight で配る
 
 1. **App Store Connect** → マイ App → Lingua → **TestFlight**
-2. ビルド 38 が出るまで待つ。アップロード完了から **10〜30 分**。
+2. その run 番号のビルドが出るまで待つ。アップロード完了から **10〜30 分**。
    「処理中」のまま 1 時間を超えたら失敗しているので言ってください。
 3. 輸出コンプライアンスの質問は出ません。`Info.plist` に
    `ITSAppUsesNonExemptEncryption = false` を入れてあります（HTTPS しか
@@ -94,8 +95,12 @@ error: Provisioning profile "Lingua Distribution" doesn't include
 
 ## 2b. ウィジェットのプロファイル（#83 で新しく必要になった）
 
-ホーム画面のウィジェット（`LinguaWidget`）が追加されました。**専用の App ID
-とプロファイルが要ります。** これが無いと Archive はこう落ちます:
+ホーム画面のウィジェット（`LinguaWidget`）が追加されました。中身は
+`ios/App/LinguaWidget/` ── 時計・日付・カレンダーで、どれも自作文字の数字で
+描きます。読むのは App Group の `widget.json` だけで、アプリには何も訊きません。
+
+**専用の App ID とプロファイルが要ります。** これが無いと Archive はこう
+落ちます:
 
 ```
 error: No profile for team '***' matching 'Lingua Widget Distribution' found
@@ -235,26 +240,6 @@ App Store Connect → Lingua → **収益化** → **サブスクリプション
 アップグレード・ダウングレードできます**。あとで Studio を出すときも同じ
 グループに入れてください。別グループにすると両方同時に契約できてしまいます。
 
-### ウィジェットのプロビジョニングプロファイル
-
-キーボードと同じことが、ウィジェットにもう一つ要ります。
-
-| | |
-|---|---|
-| バンドル ID | `com.tokinets.lingua.widget` |
-| プロファイル名 | `Lingua Widget Distribution` |
-| App Group | `group.com.tokinets.lingua`（キーボードと同じもの） |
-
-Identifiers に `com.tokinets.lingua.widget` を作り、App Groups を有効にして
-上のグループを選び、配布用プロファイルを `Lingua Widget Distribution` の名前で
-作ります。**これが無いと署名が通らず、ビルドが止まります。**
-
-拡張の中身は `ios/App/LinguaWidget/`。ホーム画面に置く時計と日付で、
-どちらも自作文字の数字で描きます。読むのは App Group の `widget.json` だけで、
-アプリには何も訊きません。
-
----
-
 ### 商品 4 つ（2 段 × 月・年）
 
 段は Plus と Pro の 2 つです（決定: `docs/FEATURE_RULES.md` 2026-08-23）。
@@ -354,44 +339,52 @@ App Store Connect → Lingua → **App Store** タブ:
 - **アカウント削除**: アプリ内に削除の導線が要ります。設定 →
   アカウント設定に入っています
 - **サインイン方法**: Apple 以外のサインイン（メール）を出すなら、
-  「Sign in with Apple」も要ります。**今はメールだけなので、ここは
-  審査で止まる可能性があります。**
+  「Sign in with Apple」も要ります。**両方入っています** ──
+  `obSignInApple()`（`www/onboard.js`）が扉に並んでおり、
+  `ios/App/App/App.entitlements` が `com.apple.developer.applesignin` を
+  宣言しています。プロファイル側は 2 節が済んでいることが条件です
 
 ---
 
-## 6. 先に言っておくこと — 課金はまだ「押しても買えません」
+## 6. 買う道はつながっています。足りないのはサーバー側です
 
-**Swift 側はあります。繋がっていません。**
-`ios/App/App/LinguaStore.swift` に `products` / `buy` / `restore` / `current` /
-`manage` があり、署名が通らない取引は拒み、消費した取引は finish し、
-アプリを閉じている間に届く更新も `Transaction.updates` で見ています。
-プラグインは使っていません（このアプリは `@capacitor/core` を読み込まないので、
-使えません。`www/share.js` の長い注を参照）。
+**両側とも在ります。** `ios/App/App/LinguaStore.swift` に `products` / `buy` /
+`restore` / `current` / `manage` があり、署名が通らない取引は拒み、消費した
+取引は finish し、アプリを閉じている間に届く更新も `Transaction.updates` で
+見ています。プラグインは使っていません（このアプリは `@capacitor/core` を
+読み込まないので、使えません。`www/share.js` の長い注を参照）。
+`www/` 側は `www/store.js` 一枚で、`setPlan()`（`www/settings.js`）が
+`storeBuy()` の唯一の呼び出し元、`PLAN_BUY` は `true` です。
 
-**足りないのはサーバー側です。** いまの「プラン」画面のボタンは `storeBuy()` を
-通りますが、決まるのは `SET.plan` ── **端末の中の値**であって、誰でも書き換え
-られます。**プランはアカウントのもの**（OWNER 2026-09-01「課金とアカウントと
-キーボードはアカウントに結びつく」）なので、行き先は `profile` の列です。
+画面のほうも揃っています ── 三段のカード、月と年の二つのボタン、購入、
+購入を復元、サブスクリプションの管理、そして Guideline 3.1.2 の開示
+（自動更新の一文と、規約とプライバシーの二つのリンク。`npm run term`）。
+**Plus の値段の文字列は十言語ぜんぶに入っています**（`plan.price.plus` /
+`plan.price.plus.yr`）。
+
+**実機では一度も走っていません。**ブラウザには App Store が無いので
+`storeOn()` が false になり、検査もスクリーンショットもそちらを歩きます。
+
+**足りないのはレシートの検証です。** **プランがアカウントに乗るところまでは
+出来ています** ── `supabase/schema.sql` の `plan` テーブルに `netPlanUp()` が
+書き、`netPlanSync()` が読み戻して**高いほうの段**を採ります（OWNER
+2026-09-01「課金とアカウントとキーボードはアカウントに結びつく」）。
+**が、その行に載るのは端末が言ったことです。**誰も Apple に訊いていないので、
+改造した端末は自分を Pro だと言えます。
 
 なので:
 
 - **TestFlight で配って中身を見てもらうのは、今のままで問題ありません。**
-- **App Store の審査に出すのは、まだです。** 有料の機能を出しておいて
-  App 内課金を通していないアプリは、Guideline 3.1.1 で確実に落ちます。
+- **App Store の審査に出すのは、4 節の商品を作ってからです。** 商品が無い
+  あいだ StoreKit は何も返さず、画面は打ち込みの値段に落ちます。有料の機能を
+  出しておいて App 内課金を通していないアプリは Guideline 3.1.1 で落ちます。
 
-残っている作業:
+残っている作業は一つだけです:
 
-1. **`www/store.js`** ── **在ります。**`Capacitor.nativePromise('LinguaStore', …)`
-   を叩く一枚で、`setPlan()`（`www/settings.js`）が `storeBuy()` の唯一の
-   呼び出し元です。実機では走っていません
-2. **プラン画面のボタンを「購入」に変える**。Plus（真ん中）のカードと値段の
-   文字列も要ります（`www/i18n/*.js`。Pro のは入っていて、Plus のはまだ無い）
-3. **レシート検証**。ここが本番で、端末の中のフラグを信じてはいけません。
-   `SET.plan` は誰でも書き換えられるので、サーバー（Supabase）側で
-   Apple に問い合わせて、そのアカウントが本当に払っているかを持つ必要が
-   あります。`supabase/schema.sql` に列と RLS が要ります
-4. **「購入を復元」ボタン** ── **在ります。**`storeRestore()` を
-   `www/settings.js` のプラン画面が呼びます。実機では走っていません
+1. **レシート検証。**ここが本番で、端末の中のフラグを信じてはいけません。
+   サーバー（Supabase）側で Apple に問い合わせて、そのアカウントが本当に
+   払っているかを持つ必要があります。`supabase/schema.sql` に列と RLS が
+   要ります。`docs/FEATURES.md` § 1。
 
 **そちらでやることは 4 節（商品 4 つ）です。** 作った商品から順に
 アプリに出てくるので、Plus を先に作っても問題ありません。

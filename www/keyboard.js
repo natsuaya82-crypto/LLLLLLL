@@ -681,18 +681,38 @@ function kbName(i){
   x=b[kbClamp(i, b.length)];
   return x.nm || t('kb.n', i+1);
 }
-/* Renaming one. Board 0 is the free QWERTY, is not in storage and has nothing
-   to write a name on -- kbEdit() says so and this obeys it. */
-function kbSetNm(v){
+/* Renaming one, and it is TYPED before it is written. Board 0 is the free
+   QWERTY, is not in storage and has nothing to write a name on -- kbEdit()
+   says so and this obeys it.
+
+   OWNER DECISION 2026-09-03 -- www/shell.js § KEEP. It used to call saveKb()
+   on every keystroke, and saveKb() is what every change to a keyboard ends in:
+   it fixes the layout, pushes the board to the system keyboard, touches the
+   backup and takes a reading for the step-back. None of that is a name being
+   typed. The step-back itself was never wrong here -- kbNoted() compares
+   JSON.stringify(b.lay) and a name is not in the layout, so no keystroke ever
+   stacked a step -- and now the save happens once, so one save is one write.
+
+   `kbKeepOn()` is what registers the buffer, and it is called from the editor
+   face in vKb() rather than from here: a name is typed on a screen, and the
+   screen is what knows which board is in front of somebody. */
+function kbKeepOn(){
   var b=kbEdit();
-  if(!b) return;
-  b.nm=String(v||'').slice(0, 24);
-  saveKb();
+  /* Not in somebody else's language: saveKb() refuses one (langLocked, in
+     www/core.js), so a buffer here would put a Save in the bar that could not
+     write. */
+  if(!b || langLocked()) return;
+  keepOn(keepKey(), {nm:String(b.nm||'')}, kbKeepSave);
 }
+function kbKeepSave(v, done){
+  var b=kbEdit();
+  if(b && v.hasOwnProperty('nm')){ b.nm=String(v.nm).slice(0, 24); saveKb(); }
+  done(true);
+}
+function kbSetNm(v){ keepSet('nm', String(v||'').slice(0, 24)); }
 function kbNameHTML(i){
   if(kbIsFree(i)) return '';
-  var b=kbBoards()[kbClamp(i, kbBoards().length)];
-  return '<input class="lnin kbnm" value="'+esc((b && b.nm)||'')+'" '+
+  return '<input class="lnin kbnm" value="'+esc(keepVal(keepKey(), 'nm'))+'" '+
     'placeholder="'+esc(t('kb.n', i+1))+'" maxlength="24" autocomplete="off"'+
     IN('kbSetNm') + ' aria-label="'+esc(t('kb.n', i+1))+'">';
 }
@@ -2450,6 +2470,9 @@ function vKb(){
       kbSysHTML()+
       kbApplyHTML()+
       '</div></div>';
+  /* The name on this board is typed into a buffer, so the buffer has to exist
+     before the field is drawn out of it. www/shell.js § KEEP. */
+  kbKeepOn();
   return '<div class="view">'+navTop('', kbMoreQ())+'<div class="body">'+
     kbNameHTML(now)+
     kbToolHTML()+
