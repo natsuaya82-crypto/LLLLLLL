@@ -379,7 +379,12 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected data: **無し。**選択は画面の状態で、`viewReset()`（`www/shell.js`）
   が忘れる場所。**言語にも `KB` にも何も足さない**
 - Affected docs: この項、docs/CHANGELOG.md、docs/keyboard.md
-- Implementation status: **未実装。**`claude/keysel` に渡した（2026-09-03）
+- Implementation status: **実装済み（`claude/keysel`、2026-09-03）。**
+  `kbLtGrid()` の押しは選択を憶えるだけになり、書き込む道は `kbLtPut()` 一本。
+  紫は `kbPickPaint()`（新しい色も class も足していない）。選択は
+  `www/keyboard.js` の `kbLtPick` 一つで、画面を開くたびに空になり
+  `viewReset()` も落とす ── **保存するものは増えていない。**
+  `tools/kb-check.mjs` に 15 の主張。**CODE CONFIRMED、DEVICE 未確認。**
 
 ### 買うボタンを消したところには、今のプランと期限を出す
 - Date: 2026-09-03
@@ -403,7 +408,12 @@ the reasoning — a reason can be re-derived, a decision cannot.
   `LinguaStore.swift` の `current` は `["plan": ...]` しか返していない。
   StoreKit の契約が持っているので、ネイティブ側から出すところから
 - Affected docs: この項、docs/CHANGELOG.md、docs/DATA_MODEL.md
-- Implementation status: **未実装。**`claude/plannow` に渡した（2026-09-03）。
+- Implementation status: **実装済み（CODE CONFIRMED）。**`claude/plannow`
+  （2026-09-03）。`LinguaStore.current` が `Transaction.expirationDate` から
+  `until` を返し、`www/store.js` の `STORE_UNTIL` が**答えた段と一緒に**
+  セッションの間だけ持ち、`plNow()` が `.plgo` の中に一行を出す。
+  **保存するものは増えていない。**`plan-check` に九本。
+  **Swift はこの環境でコンパイルできないので DEVICE CONFIRMED ではない。**
   **`claude/rc` が同じ `LinguaStore.swift` を RevenueCat へ書き換えている** ──
   あちらは公開キー待ちで止まっているので、master が先に進み、rc が取り込む
 

@@ -66,6 +66,14 @@ const P3='c0000000-0000-4000-8000-0000000000b3';
 const G1='a0000000-0000-4000-8000-0000000000a1';   /* tries to arrive holding admin */
 const G2='a0000000-0000-4000-8000-0000000000a2';   /* tries to arrive holding staff */
 const G3='a0000000-0000-4000-8000-0000000000a3';   /* tries to arrive already banned */
+/* Three about the fortnight the @ may not be changed twice inside.
+   One each, and none of them reused from above, because what is being asked
+   of them is a HISTORY -- when this account last renamed itself -- and an
+   account that has been renamed by an earlier case is carrying an answer the
+   case below did not set. */
+const N1 = 'a0000000-0000-4000-8000-0000000000e1';  /* has never renamed */
+const N2 = 'a0000000-0000-4000-8000-0000000000e2';  /* renamed fifteen days ago */
+const N3 = 'a0000000-0000-4000-8000-0000000000e3';  /* renamed thirteen days ago */
 /* And somebody who starts AFTER that one exists, which is the only way to
    watch what a new account is given. A and B are made before it on purpose:
    they are everybody who was already here, and nothing is written onto them. */
@@ -170,6 +178,63 @@ const CASES = [
     `update profile set handle='lingua' where id='${B}'`],
   ['and is still not it',                     'denied', B, 0,
     `select 1 where is_admin()`],
+  /* --- AND NOT TWICE IN A FORTNIGHT -------------------------------------
+     「ユーザーネームは14日に1度しか変更できないようにしたい」 OWNER 2026-09-03.
+     The @ is what people call each other by and it freezes into other
+     people's posts, so a name that can be swapped every morning is a reply
+     addressed to nobody.
+
+     Asked here rather than on a screen because the screen is not where it is
+     decided: `handle` is in the UPDATE grant, so PATCH /rest/v1/profile is a
+     request anybody can make with the app closed. Four attempts, and three of
+     them are ways of getting this wrong quietly.
+
+     THE FIRST ONE IS NOT A CHANGE. `handle_at` is null on every row that
+     existed before the column did and on every account made since -- picking
+     the @ when the account is made is not changing it -- so a rule that
+     treated null as "long ago, and no" would be the rule "nobody may ever be
+     called anything else", and every account in the database would already
+     be under it. N1 makes its own profile through the same policy everybody
+     else does, so what is being read here is what a real account starts
+     holding, not something seeded. */
+  ['somebody who has never renamed writes themselves in', 'ok', N1, 0,
+    `insert into profile(id,handle) values ('${N1}','onceo')`],
+  ['and the first rename goes through',       'ok',     N1, 0,
+    `update profile set handle='oncen' where id='${N1}'`],
+  /* And the second, a moment later, does not. Everything above lands in one
+     transaction sharing one now(), so "a moment later" is exact rather than
+     approximately soon. */
+  ['but the second one does not',             'denied', N1, 0,
+    `update profile set handle='oncex' where id='${N1}'`],
+  /* And it did not half-happen. A BEFORE trigger that raised after writing
+     would leave the row renamed and the person refused, which reads as a
+     refusal from outside and is the opposite of one. */
+  ['and the name did not move',               'ok',     N1, 0,
+    `select 1 from profile where id='${N1}' and handle='oncen'`],
+  /* And the account can SEE when it was, which is the half the screen needs.
+     The column is the server's to write and everybody's to read -- a field
+     that greys out with nothing to read off it cannot say when it opens
+     again, and that sentence is what the narrowing of 2026-08-22 asks for
+     wherever the app has taken something away. */
+  ['and can read when that was',              'ok',     N1, 0,
+    `select 1 from profile where id='${N1}' and handle_at is not null`],
+  /* Both sides of the line, because a comparison written the wrong way round
+     passes every test that only ever asks one side of it. Thirteen days is
+     inside the fortnight and fifteen is past it; these two are seeded with
+     the ages, for the reason written where they are seeded. */
+  ['thirteen days is not long enough',        'denied', N3, 0,
+    `update profile set handle='threen' where id='${N3}'`],
+  /* AND BEING PAST IT BUYS NOTHING ELSE. The fortnight is a second sentence
+     in the trigger that already held the reserved name, and the thing to be
+     afraid of when a function grows a second sentence is that it becomes the
+     only one. N2 is fifteen days clear, so the fortnight lets this through
+     and the reserved name is the only thing left that can refuse it. Asked
+     BEFORE the rename below, because afterwards N2 is inside the fortnight
+     and would be refused for the other reason -- which reads identically. */
+  ['and being clear of it does not buy the reserved name', 'denied', N2, 0,
+    `update profile set handle='lingua' where id='${N2}'`],
+  ['fifteen days is long enough',             'ok',     N2, 0,
+    `update profile set handle='twon' where id='${N2}'`],
   /* --- nor on the way in, which is a different statement -----------------
      The two lines above are UPDATEs, and revoking UPDATE on a column says
      nothing about INSERT: they are separate grants. It only matters where the
@@ -1246,6 +1311,23 @@ const SHAPE = [
   /* The first one is written down here rather than remembered by a person.
      Both halves: the trigger for a row that arrives later, and something in
      the file that catches a row already there. */
+  /* And nobody says when they last renamed themselves. The fortnight above is
+     worth exactly what this line is worth: an account that could write
+     handle_at could write that it was a month ago, and the rule would hold
+     against nobody who did not want it to hold. Asked of the catalog rather
+     than by trying it, because an attempt would be refused by the grant and by
+     the policy at once and only one of those is the claim.
+
+     WRITING, and not reading. SELECT on this column stays and is wanted: the
+     profile screen has to be able to say when the @ can next be moved, and a
+     state the app cannot see is a field that greys out with nothing to read
+     off it. What is asked here is the two that would let somebody choose the
+     answer. */
+  ['nobody writes down when they last renamed', `
+     select count(*) from information_schema.column_privileges
+      where table_schema='public' and table_name='profile'
+        and column_name='handle_at' and grantee in ('anon','authenticated')
+        and privilege_type in ('INSERT','UPDATE')`, '0'],
   ['the first one is in the file and not in somebody’s memory', `
      select count(*) from (select 1 where
        (select count(*) from pg_trigger where tgname='profile_first'
@@ -1507,13 +1589,25 @@ const sql = [
      through a policy, in the order a real account would do it -- a profile
      before a language, a language before a post -- because a row put here by
      the owner of the table would be a row no policy ever had to allow. */
-  `insert into auth.users(id) values (${q(A)}),(${q(B)}),(${q(C)}),(${q(D)}),(${q(E)}),(${q(F)}),(${q(G1)}),(${q(G2)}),(${q(G3)}),(${q(G4)});`,
+  `insert into auth.users(id) values (${q(A)}),(${q(B)}),(${q(C)}),(${q(D)}),(${q(E)}),(${q(F)}),(${q(G1)}),(${q(G2)}),(${q(G3)}),(${q(G4)}),(${q(N1)}),(${q(N2)}),(${q(N3)});`,
   /* And one row that IS put here by the owner of the table, which the
      paragraph above says nothing else is. That is the claim being tested: no
      policy in schema.sql makes anybody staff, and the column is revoked from
      every role the app signs in as, so there is no other way to arrive at one.
      A staff account that could be made through a policy would be the bug. */
   `insert into profile(id,handle,staff) values (${q(C)},'mod',true);`,
+  /* And two accounts with an age on them, put here by the owner of the table
+     for the same reason the three posts below are: `handle_at` is deliberately
+     left out of BOTH grants on profile, so no account anywhere may say when it
+     last renamed itself -- which is the point of the column and is asked as a
+     claim in SHAPE. There is therefore no account that could make these two,
+     and everything above lands in one transaction sharing one now(), so an age
+     has to be put on from outside or there are no ages at all.
+     Nothing here opens a door: they are two ordinary profiles, and the third
+     account of the three makes its own through the policy like everybody. */
+  `insert into profile(id,handle,handle_at) values
+     (${q(N2)}, 'twoo',   now() - interval '15 days'),
+     (${q(N3)}, 'threeo', now() - interval '13 days');`,
   run,
   /* Three posts of different ages, written HERE by the owner of the table and
      not by anybody a policy lets write. That is not a shortcut around a
