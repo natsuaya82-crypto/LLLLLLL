@@ -1354,7 +1354,16 @@ spec asks for them」と書いている ── **人が押した削除は automa
 - Affected features: おすすめのタイムライン、検索の「話題」
 - Affected data: 無し
 - Affected docs: この項
-- Implementation status: 未着手（`claude/draft`）
+- Implementation status: **入りました（2026-09-03）。**`feed_slot()`
+  (`supabase/schema.sql`) が `America/Los_Angeles` で刻みます ── お題の
+  `on_day` を決めている `supabase/functions/daily-prompt/index.ts` と同じ
+  時間帯です。`rls-check` の三本が持ちます（刻みが四時間、その時間帯である
+  こと、ほかの時間帯を名乗らないこと）。
+
+  **2026-08-28 から 2026-09-03 まで UTC でした。**「zone を名乗らないのが
+  お題のページの答え」という読みで書かれていて、それは端末が計算しないと
+  いう話で、境目がどこで決まるかとは別の話でした。0 4 8 12 16 20 が
+  アメリカ時間になるのは、時差がちょうど四の倍数のときだけです。
 
 #### これが置き換えたもの
 
