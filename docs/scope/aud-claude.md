@@ -537,15 +537,35 @@ DIALOG」** とも言っていて、**一つの関数の上に二つの答えが
 **やったこと: 直した（`2dc3395`）。**両方の段を書き換えました（条件を足すのでは
 なく、間違っている文を消して）。
 
-**同じ家族で、直していないもの**（枝が持っているので）:
+**同じ家族で、直していないもの**（枝が持っているので）。
+**`master` が `c8dbded` まで進み `keysel` `plannow` `me3` が取り込まれた後に、
+もう一度当て直しました。**
+
+**`www/shell.js` は二つの段が逆のことを言っています。**
 
 ```
-www/settings.js:663  「It is the app's own sheet rather than the browser's alert()」
-                     中身は openForm()。シートではなく遷移する画面   ← claude/plannow
-www/shell.js:1386    confirm() を説明している段                      ← claude/swipe / keysel
+www/shell.js:1388  ✅ 正しい。popAsk() の上。「confirm() is iOS's own,
+                      banned on 2026-09-01」と、捨てた三つの形を並べている
+www/shell.js:1437  ❌ 古い。toast() の上に置かれたまま。
+                      「So it is confirm(), which is what capStop() has always
+                       used for the word ceiling ... iOS draws it, so it is not
+                       a shape this app chose」
 ```
 
-朝の監査（`docs/scope/audit-1.md`）も同じ二つを挙げています。**まだ在ります。**
+**一つのファイルの中で、禁止された形が片方で「禁止」、片方で「これでよい」と
+説明されています。**しかも 1437 の段は `popAsk()` の話なのに `toast()` の上に
+座っています。**私が `www/core.js` で直したのと同じ文です**（25 番）── core.js
+の二箇所は直りましたが、shell.js のこの一つが残っています。
+
+```
+www/settings.js:663  ❌ 古い。「It is the app's own sheet rather than the
+                        browser's alert()」。中身は openForm() で、
+                        shell.js:1388 自身が openForm() を「a page you travel
+                        to」＝シートではないと定義している    ← claude/plannow
+```
+
+朝の監査（`docs/scope/audit-1.md`）も同じ二つを挙げています。**`plannow` と
+`keysel` が取り込まれた後も、二つとも在ります。**
 
 ---
 
@@ -684,7 +704,7 @@ refactor なので、26 と同じ理由でリーダーに預けます。
 | 1 | `on*=` 二つ（除外に名前で置いた。変換は未） | `www/index.html:3543-3544` | `claude/swipe` |
 | 2 | `.whgo` が 39pt で press が赤 | `www/index.html:1937` / `www/sns.js:1445` | `swipe` / `find` |
 | 25 | 「the app's own sheet rather than alert()」中身は `openForm()` | `www/settings.js:663` | `claude/plannow` |
-| 25 | `confirm()` を説明している段 | `www/shell.js:1386` | `swipe` / `keysel` |
+| 25 | `confirm()` を「これでよい」と説明している段（同じファイルの :1388 は正しい） | `www/shell.js:1437` | `swipe` / `keysel` |
 | 14 | `CASES` は 272 件（文は直した、検査は触らず） | `tools/rls-check.mjs` | `claude/me3` |
 | 21 | 章 26 が三つ（`store.js` を含む） | `www/store.js:1` | `claude/plannow` |
 
@@ -692,7 +712,7 @@ refactor なので、26 と同じ理由でリーダーに預けます。
 
 ---
 
-## 作業中に master が動きました（`562767d` → `bc1a394`）
+## 作業中に master が二度動きました（`562767d` → `bc1a394` → `c8dbded`）
 
 取り込んでいます（報告の前に、と規則にあるので）。入ったのは
 `docs/FEATURE_RULES.md` の決定二件だけです。**両方ともこの監査に効きます。**
@@ -741,6 +761,30 @@ refactor なので、26 と同じ理由でリーダーに預けます。
 it falsifies」と書いている通り、**文はコードと同じコミットで落ちるべき**なので、
 `claude/flat` の仕事に付けて残しました。**私の判断です。違うならリーダーが
 戻してください。**
+
+### 二度目（`c8dbded`）── `keysel` `plannow` `me3` が取り込まれました
+
+取り込んでいます。CLAUDE.md に衝突はありませんでした。速い九本、緑のまま。
+
+**枝が持っていて直せなかったものを、全部当て直しました。**取り込まれた後も
+**四つとも在ります。**
+
+| # | もの | 取り込み後 |
+|---|---|---|
+| 1 | `www/index.html:3544-3545` の `on*=` 二つ | **在る**（私の `SHELL_OK` はまだ当たっているので `act-check` は緑） |
+| 2 | `.whgo` に `min-height` 無し（`www/index.html:1937`） | **在る。press はまだ赤のはず** |
+| 25 | `www/settings.js:663` の「app's own sheet」 | **在る**（`plannow` 取り込み後も） |
+| 25 | `www/shell.js:1437` の「So it is confirm()」 | **在る**（`keysel` 取り込み後も） |
+
+**一つ、朝の監査から進んでいたものがあります。**`www/shell.js:1388` の
+`popAsk()` の上の段は**直っています** ── 捨てた三つの形を並べて
+「confirm() is iOS's own, banned on 2026-09-01」と書いています。
+**同じファイルの :1437 が直っていないだけです。**
+
+**`claude/keysel` は `www/keyboard.js` を 146 行動かしています。**規則19 の
+キーボードの記述はその前に読んだものなので、**取り込み後のキーボードには
+当て直していません。**規則19 を持つのは `kb-check` で、私は回していません
+（SLOW、リーダーの最後の一度に入ります）。**確かめていない、と書いておきます。**
 
 ## やったこと・回したもの
 
