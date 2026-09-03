@@ -100,7 +100,7 @@ await pg.goto(`http://127.0.0.1:${PORT}/`);
 await pg.waitForTimeout(300);
 await pg.evaluate('window.__seed = ' + seed.toString());
 
-const R = await pg.evaluate(() => {
+const R = await pg.evaluate(async () => {
   const out = { fails: [], said: [] };
   const A = '11111111-1111-4111-8111-111111111111';   /* the person who was here */
   const B = '22222222-2222-4222-8222-222222222222';   /* the person who arrives */
@@ -1715,6 +1715,138 @@ const R = await pg.evaluate(() => {
   if (SET.plan !== 'free') no('46: 消したアカウントの段が残っている');
   say('46: アカウント削除は、そのアカウントの言語・単語・投稿・段・バックアップだけ ── '
     + '別のアカウントのものは一つも動かず、端末の設えも残る');
+
+  /* ---- 47-49. 消し切るまで消えていない、そして消えた側は本当に出される ----
+     OWNER 2026-09-03:
+       「アカウント削除した場合は制作やSNS含め全てが消える。なにも残ってない。」
+       「そもそもこのアプリはオンラインが基本なんだからね？SNSなんだから、
+         削除し切ってないと消えない。」
+       「2端末で同じアカウントにログインしてても、片方が消したら、もう片方も
+         確実に消えるように。ログアウトさせて、新しいアカウント作ったら、
+         もうひと端末も勝手にろぐいんされていたから。」
+
+     46 番は「消したとき、消えるものが正しい」を押さえていて、**消えたかどうか
+     を一度も訊いていません。** wipeHere() を直に呼んでいるからです。実際の
+     ボタンは wipeAllGo() で、そこはサーバに訊きに行きます ── そして訊いた
+     答えがどうであれ、成功の側と失敗の側の両方が wipeHere() を呼んでいました。
+     だから電波の無いところで押すと、アカウントはサーバに残ったまま、端末の
+     ほうだけが空になります。**サーバが記録なので、これは作ったものが消える
+     向きの取り違えです。**
+
+     49 番は別の端末の側です。account_delete() が auth.users の行を消すと、
+     もう一方の端末が持っている refresh token は死にます。netResume() はそれを
+     受けて netOut() し、セッションは確かに消えます ── **が、画面は描き直され
+     ません。** boot.js の netResume() の失敗側は空の関数で、netOut() 自身は
+     何も描かない。だから前のアカウントのアプリがそのまま映り続けます。
+
+     ここで測るのは「描き直したか」ではなく **「画面が、今描いたらこうなる、
+     というものになっているか」** です。render() を呼んだ結果と突き合わせます。 */
+  /* バックアップのファイルは 46 番のもので、ここの話ではありません。ネイティブ
+     の橋に触りに行かせないよう、46 番と同じように差し替えておきます。 */
+  const rDrop49 = bkDropFor;
+  bkDropFor = function(){};
+  const rSend49 = netSend, rGet49 = netGet, rPost49 = netPost;
+  const unwire49 = () => { netSend = rSend49; netGet = rGet49; netPost = rPost49; };
+  /* サーバを一つの関数に。answer(path) が数字を返し、0 は「届かなかった」。 */
+  const srv49 = (answer) => {
+    netSend = (method, p, body, tok, ok, bad) => {
+      const st = answer(p);
+      setTimeout(() => { st >= 200 && st < 300 ? ok(null) : bad(null, st, 'x'); }, 0);
+    };
+    netGet = (p, ok, bad) => netSend('GET', p, null, null, ok, bad);
+    netPost = (p, body, tok, ok, bad) => netSend('POST', p, body, tok, ok, bad);
+  };
+  const settle49 = () => new Promise(r => setTimeout(r, 30));
+
+  const D = '44444444-4444-4444-8444-444444444444';
+  const seedD49 = () => {
+    start();
+    netOut(); arrive(D);
+    LANGS.Ld47 = { name: 'D の言語', mine: true, uid: D };
+    langId = 'Ld47'; langStore();
+    try{ localStorage.setItem(langKeyOf('Ld47','words'), '[{"hw":"d"}]'); }catch(e){}
+  };
+
+  /* 47. サーバが答えないとき、端末は空にならない。 */
+  seedD49();
+  srv49(() => 0);
+  wipeAllGo();
+  await settle49();
+  unwire49();
+  if (!LANGS.Ld47)
+    no('47: **サーバが消していないのに端末の言語が消えた** ── 記録はサーバで、'
+     + 'これは作ったものが消える向きの取り違えです');
+  if (!localStorage.getItem(langKeyOf('Ld47','words')))
+    no('47: **サーバが消していないのに端末の単語が消えた**');
+  if (!netSignedIn())
+    no('47: 消えていないのにログアウトした ── アカウントはまだそこにあります');
+  if (!netEnded())
+    no('47: 途中で切れた削除の印が付いていない ── 次に開いたとき続きから消せない');
+  say('47: サーバが消し切っていないあいだは、端末のものは一つも消えない');
+
+  /* 48. そして次に開いたとき、続きから消える。
+     47 番がそのまま続きです ── サインインしたまま、言語もそこにあり、印だけが
+     付いている。それが「次に開いたとき」の状態で、www/boot.js の bootSession()
+     が読むのはこの印です。押した時と同じ wipeAllGo() を呼ぶので、二度目のための
+     二本目の道はありません。 */
+  srv49(() => 200);
+  wipeAllGo();
+  await settle49();
+  await settle49();
+  unwire49();
+  if (LANGS.Ld47) no('48: 続きの削除で、その言語が消えていない');
+  if (localStorage.getItem(langKeyOf('Ld47','words')))
+    no('48: 続きの削除で、その単語が消えていない');
+  if (netSignedIn()) no('48: 消え切ったのにセッションが残っている');
+  say('48: 途中で切れた削除は、次に開いたときサーバが答えて消し切られる');
+
+  /* 49. 消された側の端末は、画面ごと出される。 */
+  start();
+  netOut(); arrive(D);
+  /* 名前と @ が要ります。appIs() は「アカウントに名前が無ければまだ扉」と答える
+     ので（www/shell.js）、名前を入れないとサインイン中も画面が扉のままで、この
+     あとの引き比べが**扉と扉**になります。最初に書いたときそれで、印を外しても
+     緑のままでした ── 検査が何も測っていませんでした。 */
+  ME.name = 'D'; ME.handle = 'dee'; saveMe();
+  render();
+  const signedInScreen = document.getElementById('app').innerHTML;
+  srv49(() => 400);
+  await new Promise(r => netResume(r, r));
+  await settle49();
+  unwire49();
+  const held = document.getElementById('app').innerHTML;
+  if (netSignedIn()) no('49: セッションが終わったのに残っている');
+  if (held === signedInScreen)
+    no('49: **画面が前のアカウントのまま** ── セッションは終わったのに描き直されて'
+     + 'いないので、消されたはずの端末がログインしたままに見えます');
+  /* そして、映っているものが「今描いたらこうなる」ものであること。 */
+  render();
+  if (held !== document.getElementById('app').innerHTML)
+    no('49: 画面が、今の状態を描いたものになっていない');
+  say('49: セッションが終わった端末は、その場で画面ごと出される');
+
+  /* 50. サインアウトしているときに削除を押しても、何も消えない。
+     「アカウントを削除」の行はサインインしていてもいなくても出ます。セッション
+     が無ければ「誰を消すのか」を証すものが無く、消せるアカウントもありません。
+     それでも押せば端末だけが空になっていました ── uid が空文字で lsWipeAcct()
+     に入るので、**印の付いていない言語**、つまりオンボーディングで作ってまだ
+     一度も上がっていないものが、そこで消えていました。 */
+  start();
+  netOut();
+  LANGS.Lx50 = { name: '印の無い言語', mine: true };
+  langId = 'Lx50'; langStore();
+  try{ localStorage.setItem(langKeyOf('Lx50','words'), '[{"hw":"x"}]'); }catch(e){}
+  srv49(() => 200);
+  wipeAllGo();
+  await settle49();
+  unwire49();
+  if (!LANGS.Lx50)
+    no('50: **サインアウト中に削除を押したら、印の無い言語が消えた** ── '
+     + 'サーバには何も頼んでいません');
+  if (!localStorage.getItem(langKeyOf('Lx50','words')))
+    no('50: **サインアウト中に削除を押したら、印の無い言語の単語が消えた**');
+  say('50: サインアウト中に削除を押しても、頼む相手がいないので何も消えない');
+  bkDropFor = rDrop49;
 
   return out;
 });

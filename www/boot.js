@@ -58,6 +58,21 @@ swMount();
    this comes back or not. */
 function bootSession(){
   render();
+  /* AND A DELETION THAT WAS ASKED FOR AND DID NOT FINISH.
+     「そもそもこのアプリはオンラインが基本なんだからね？SNSなんだから、削除し
+     切ってないと消えない。」 OWNER 2026-09-03.
+
+     The press is in www/settings.js and it writes the mark on the session
+     before it asks the server, so a phone that lost its signal in the middle
+     -- or was closed -- comes back still signed in, with everything still on
+     it, and finishes here. It is the same call the button makes, so there is
+     one road and not a second one for the second try.
+
+     FIRST, and before the plan or the languages: everything below this line
+     asks the server for things that belong to an account that is on its way
+     out. It is not asked again -- popAsk() answered when it was pressed, and
+     asking twice would be the app doubting somebody who already said yes. */
+  if(netEnded()){ wipeAllGo(); return; }
   /* And the languages this ACCOUNT has that this phone has not got at all.
      It fills in what is missing and stops, so a phone that is simply working
      finds nothing to do. Before the sync below because that one is about the

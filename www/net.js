@@ -446,7 +446,56 @@ function netOut(){
   /* And the timeline this phone was holding goes with the name. Parked under
      the account that had it, not thrown away. */
   if(typeof postFor==='function') postFor('');
+  /* AND THE SCREEN, HERE, BECAUSE THIS IS WHERE A SESSION ENDS.
+     「2端末で同じアカウントにログインしてても、片方が消したら、もう片方も確実に
+     消えるように。ログアウトさせて、新しいアカウント作ったら、もうひと端末も
+     勝手にろぐいんされていたから。」 OWNER 2026-09-03.
+
+     Deleting an account on one phone kills the refresh token the other one is
+     holding, netResume() answers that by calling this -- and the other phone
+     went on showing the account's app, because nothing here drew and the
+     failing half of netResume() in www/boot.js is an empty function. The
+     session was gone and the screen said otherwise, which is what the owner
+     was looking at.
+
+     It used to be 「every road into this function draws afterwards」, and that
+     was true of the two roads a person takes and of neither of the two the
+     server takes -- the launch that finds a dead token, and the 401 that the
+     refresh could not mend, both of which end in a `bad` that does nothing.
+     A rule kept by four callers remembering is not one mechanism, so the draw
+     is here: signing out draws BECAUSE the session ended, whichever of the
+     four ended it. setSignOutGo() in www/settings.js had the only other copy
+     and it is gone.
+
+     netTook() on the way in is deliberately not the mirror of this: arriving
+     is followed by a screen that is chosen -- obIn() picks it -- and leaving
+     is not, because there is only one thing to show somebody who is not
+     signed in. */
+  render();
 }
+/* AN ACCOUNT ON ITS WAY OUT, WRITTEN ON THE SESSION.
+   「そもそもこのアプリはオンラインが基本なんだからね？SNSなんだから、削除し
+   切ってないと消えない。」 OWNER 2026-09-03.
+
+   Deleting an account is one thing that happens in two places -- the server's
+   row and this phone's copy -- and the server is the record, so the copy goes
+   only after the row has. When the row cannot be reached the deletion has not
+   happened, and the phone has to remember that it was asked for so the next
+   launch can finish it. www/settings.js § wipeAllGo() is the press and
+   www/boot.js § bootSession() is the launch.
+
+   It is a field of `lingua.sess` rather than a key of its own, and that is
+   the whole answer to 「which account is this」 (CLAUDE.md rule 22): the mark
+   is about the account this phone is signed in as, it is worth nothing
+   without the token that proves who that is, and it goes when the token does.
+   A key beside the session would be a mark that could outlive the account it
+   names and be read against the next one. */
+function netEnding(){
+  if(!SESS) return false;
+  SESS.end=1; netSave();
+  return true;
+}
+function netEnded(){ return !!(SESS && SESS.end); }
 /* The token in hand lasts an hour. This is what makes the next launch silent:
    nothing is typed, nothing is remembered by the person, and the thing on the
    phone that does it can be taken away from the server's side. */
@@ -2766,7 +2815,13 @@ function netDropFiles(p, done){
    docs/DATA_SAFETY.md says that in general terms. Erasing the phone is the
    other button, and it says which it is. */
 function netDropMe(ok, bad){
-  if(!netSignedIn()){ ok(); return; }
+  /* No session is not 「done」. It said `ok()` here, so a press with nothing to
+     prove who was being deleted reported success and the caller went on to
+     empty the phone -- an account nobody asked the server about, and the only
+     copy of it gone. The token is what says whose account this is; without one
+     there is nothing to delete and nothing to claim. The mark is the same
+     shape as netSetPass()'s a few hundred lines up. */
+  if(!netSignedIn()){ bad(null, 0, 'drop −'); return; }
   netGet('/rest/v1/post?select=body&author=eq.'+encodeURIComponent(SESS.uid),
     function(d){ netDropMine(netMyFiles(d), function(){ netEndMe(ok, bad); }); },
     /* The listing failed, and the account still goes. Somebody who asked to
