@@ -342,6 +342,8 @@ defLang('pt', (function(){
       "ob.mail.send" : "Enviar",
       "ob.mail.again" : "Enviar de novo",
       "ob.mail.sent" : "Enviado.",
+      "ob.mail.taken" : "Este endereço já tem uma conta.",
+      "ob.mail.none" : "Nenhuma conta com este endereço.",
       "ob.mail.h.reset" : "Escolha uma nova senha",
       "ob.mail.h.setpw" : "Escolha uma senha",
       "ob.mail.newpw.ph" : "Nova senha",

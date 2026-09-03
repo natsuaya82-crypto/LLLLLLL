@@ -503,6 +503,21 @@ function netResume(ok, bad){
    It is also what the owner asked for on the same day in a different sentence
    -- 「メアドだけ、アカウント作成で」 -- and the two turn out to be one
    change: with no password to set, there is nothing for signup to be for. */
+/* WHETHER AN ADDRESS ALREADY HAS AN ACCOUNT.
+   「アカウントのあるアドレスで新規作成はいらんやろ」 OWNER 2026-09-03.
+
+   Neither /auth/v1/otp nor /auth/v1/recover will say -- both answer 200
+   whichever it is, so that nobody can stand outside and ask which addresses
+   are registered. So the door could not tell, and both screens walked on: the
+   making face made a second way into an account that already existed, and the
+   reset face sent somebody to wait for six digits that were never sent.
+
+   supabase/schema.sql § email_taken() is what answers, and the comment there
+   says what it costs. Signed out, so the publishable key is what carries it. */
+function netMailTaken(email, ok, bad){
+  netSend('POST', '/rest/v1/rpc/email_taken', {p:String(email||'')}, '',
+          function(d){ ok(d===true || d==='true'); }, bad);
+}
 function netMailOtp(email, ok, bad){
   netPost('/auth/v1/otp', {email:email, create_user:true}, null, ok, bad);
 }

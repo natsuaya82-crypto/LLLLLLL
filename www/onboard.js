@@ -1040,6 +1040,21 @@ function obMailIn(){
 function obMailUp(){
   if(OBM.busy || !obMailAsk()) return;
   OBM.busy=true; OBM.msg=''; render();
+  /* THE ADDRESS IS ASKED ABOUT FIRST, and a taken one is refused here.
+     「アカウントのあるアドレスで新規作成はいらんやろ。このアカウントは登録
+     されていますの赤文字で。アカウントを作るページなんだけど？」 OWNER
+     2026-09-03. It used to send the digits and land the person in the account
+     they already had, which is one account either way and is not what the
+     screen says it is doing. */
+  netMailTaken(OBM.em, function(taken){
+    if(taken){ OBM.busy=false; OBM.msg=t('ob.mail.taken'); render(); return; }
+    obMailUpGo();
+  }, function(){ obMailUpGo(); });
+}
+/* And what it does once the address is not taken. Split out so that a server
+   that will not answer the question still lets somebody make an account --
+   refusing on a network fault would be the app locking its own door. */
+function obMailUpGo(){
   netMailOtp(OBM.em, function(){
     /* Nobody is signed in yet: six digits went to an address that may have a
        typo in it. The typo is the whole reason the digits exist -- an address
@@ -1088,6 +1103,16 @@ function obMailAgain(){
 function obMailForgot(){
   if(OBM.busy || !obMailAsk()) return;
   OBM.busy=true; OBM.msg=''; render();
+  /* The other half of the same question. /auth/v1/recover answers 200 for an
+     address it has never seen, so this screen used to walk on to six digits
+     that were never going to arrive -- a state with no cause and no way out,
+     which is the one place www/CLAUDE.md says a sentence is written. */
+  netMailTaken(OBM.em, function(taken){
+    if(!taken){ OBM.busy=false; OBM.msg=t('ob.mail.none'); render(); return; }
+    obMailForgotGo();
+  }, function(){ obMailForgotGo(); });
+}
+function obMailForgotGo(){
   netRecover(OBM.em, function(){
     OBM.busy=false; OBM.code=''; OBM.pw=''; obMailGo('reset');
   }, obNo);

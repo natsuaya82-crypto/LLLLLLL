@@ -323,6 +323,8 @@ defLang('de', (function(){
       "ob.mail.send" : "Senden",
       "ob.mail.again" : "Erneut senden",
       "ob.mail.sent" : "Gesendet.",
+      "ob.mail.taken" : "Diese Adresse hat bereits ein Konto.",
+      "ob.mail.none" : "Kein Konto für diese Adresse.",
       "ob.mail.h.reset" : "Neues Passwort wählen",
       "ob.mail.h.setpw" : "Passwort festlegen",
       "ob.mail.newpw.ph" : "Neues Passwort",

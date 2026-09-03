@@ -251,6 +251,8 @@ defLang('ja', (function(){
       "ob.mail.send" : "送る",
       "ob.mail.again" : "再送信",
       "ob.mail.sent" : "送りました",
+      "ob.mail.taken" : "このアカウントは登録されています",
+      "ob.mail.none" : "このアカウントは登録されていません",
       "ob.mail.h.reset" : "新しいパスワード",
       "ob.mail.h.setpw" : "パスワードを決める",
       "ob.mail.newpw.ph" : "新しいパスワード",

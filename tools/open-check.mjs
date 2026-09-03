@@ -163,6 +163,11 @@ async function boot(pre, drive) {
          one listener, because obDoorBack() saying 'up' and obBack() going
          there are two statements. */
       landed: (typeof window.__landed === 'undefined') ? null : window.__landed,
+      /* what § 2d's drive left behind, carried out in one piece */
+      probe: (typeof window.__upTaken === 'undefined') ? null : {
+        upTaken: window.__upTaken, upFree: window.__upFree,
+        fgNone: window.__fgNone, fgOk: window.__fgOk
+      },
       /* The walk's grey, cut around the one lit thing. obPane() in
          www/onboard.js is what draws it; render() adds it last, after the
          app's own screen is on the page, because the hole is MEASURED. */
@@ -313,6 +318,68 @@ const SESS = JSON.stringify({ at: 'not a jwt', rt: 'a refresh token',
        JSON.stringify(r.landed) + ', wanted "up"');
   say('the door, signed out: every face has the face behind it, the chevron ' +
       'lands on it (' + r.landed + '), and the six digits can be sent again');
+}
+
+/* ---- 2d. the door asks whether the address is already an account --------
+   「アカウントのあるアドレスで新規作成はいらんやろ。このアカウントは登録されて
+   いますの赤文字で。アカウントを作るページなんだけど？」 OWNER 2026-09-03, and
+   the other half the same minute: a reset asked for an address with no account
+   walked on to a screen waiting for six digits nobody was going to send.
+
+   Neither Supabase endpoint will say which it is -- both answer 200 either way
+   -- so the answer comes from supabase/schema.sql § email_taken(). What is
+   held here is that the two screens ASK before they send, and that each stops
+   on the answer that is wrong for it. The wire is stubbed at netMailTaken(),
+   which is the one place the question is asked. */
+{
+  const r = await boot({ 'lingua.set': JSON.stringify({ done: true }) },
+    async () => {
+      window.__asked = [];
+      window.__sent = [];
+      netMailTaken = function(em, ok){ window.__asked.push(em); ok(window.__taken); };
+      netMailOtp = function(em, ok){ window.__sent.push('otp:' + em); ok({}); };
+      netRecover = function(em, ok){ window.__sent.push('recover:' + em); ok({}); };
+      OBM.em = 'a@b.c';
+      /* making an account with an address that has one: refused, and nothing
+         is sent */
+      window.__taken = true;
+      OBM.mode = 'up'; OBM.busy = false; OBM.msg = '';
+      obMailUp();
+      window.__upTaken = { msg: OBM.msg, mode: OBM.mode, sent: window.__sent.length };
+      /* and with one that does not: it goes */
+      window.__taken = false;
+      OBM.busy = false; OBM.msg = '';
+      obMailUp();
+      window.__upFree = { mode: OBM.mode, sent: window.__sent.join(',') };
+      /* a reset for an address with no account: refused */
+      window.__sent = [];
+      window.__taken = false;
+      OBM.mode = 'forgot'; OBM.busy = false; OBM.msg = '';
+      obMailForgot();
+      window.__fgNone = { msg: OBM.msg, mode: OBM.mode, sent: window.__sent.length };
+      /* and for one that has: it goes */
+      window.__taken = true;
+      OBM.busy = false; OBM.msg = '';
+      obMailForgot();
+      window.__fgOk = { mode: OBM.mode, sent: window.__sent.join(',') };
+    });
+  const g = await (async () => r)();
+  const st = await (async () => null)();
+  const q = r.probe || {};
+  if (!q.upTaken) no('2d: the probe did not run');
+  else {
+    if (!q.upTaken.msg) no('2d: making an account with a taken address says nothing');
+    if (q.upTaken.mode !== 'up') no('2d: a taken address still walked on to the digits');
+    if (q.upTaken.sent !== 0) no('2d: a taken address still had a code sent to it');
+    if (q.upFree.mode !== 'code') no('2d: a free address did not reach the digits');
+    if (q.upFree.sent.indexOf('otp:') < 0) no('2d: a free address had no code sent');
+    if (!q.fgNone.msg) no('2d: a reset for an unknown address says nothing');
+    if (q.fgNone.mode !== 'forgot') no('2d: a reset for an unknown address walked on');
+    if (q.fgNone.sent !== 0) no('2d: a reset for an unknown address still sent one');
+    if (q.fgOk.mode !== 'reset') no('2d: a reset for a real address did not reach the digits');
+    say('the door asks first: a taken address cannot make a second account, and ' +
+        'a reset is not offered for an address that has none');
+  }
 }
 
 /* ---- 3b. and signed in, the password screen lets you into the app -------

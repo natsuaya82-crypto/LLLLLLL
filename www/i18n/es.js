@@ -295,6 +295,8 @@ defLang('es', (function(){
       "ob.mail.send" : "Enviar",
       "ob.mail.again" : "Enviar de nuevo",
       "ob.mail.sent" : "Enviado.",
+      "ob.mail.taken" : "Esta dirección ya tiene una cuenta.",
+      "ob.mail.none" : "No hay ninguna cuenta con esta dirección.",
       "ob.mail.h.reset" : "Elige una nueva contraseña",
       "ob.mail.h.setpw" : "Elige una contraseña",
       "ob.mail.newpw.ph" : "Nueva contraseña",

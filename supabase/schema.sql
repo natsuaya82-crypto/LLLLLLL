@@ -1577,6 +1577,41 @@ revoke all on function account_delete() from public;
 grant execute on function account_delete() to authenticated;
 
 -- ---------------------------------------------------------------------------
+-- Whether an address already has an account
+--
+-- 「アカウントのあるアドレスで新規作成はいらんやろ。このアカウントは登録されて
+-- いますの赤文字で。アカウントを作るページなんだけど？」 OWNER 2026-09-03,
+-- and the other half the same minute: a reset asked for an address that has no
+-- account walks on to a screen waiting for six digits that will never be sent.
+--
+-- SUPABASE WILL NOT ANSWER THIS AND THAT IS ON PURPOSE. /auth/v1/otp and
+-- /auth/v1/recover both answer 200 whether or not the address is known, so
+-- that nobody can stand outside and ask which addresses are registered. So the
+-- door had no way to tell, and both screens walked on regardless.
+--
+-- This is that answer, deliberately: **the owner has decided the two screens
+-- say which it is, and saying so is telling anybody who asks.** It is the
+-- ordinary trade every app with a 「that address is taken」 message has made.
+-- What is bounded is how much it tells: a boolean, one address at a time,
+-- and no way to list. The rate limit on `emails` does not cover it, so if
+-- this ever needs slowing down it is a limit of its own.
+--
+-- `security definer` because auth.users is not readable by anon, and `stable`
+-- because it writes nothing. Lower-cased and trimmed on both sides: Supabase
+-- stores the address as typed, and 「A@b.c」 and 「a@b.c」 are one account.
+-- ---------------------------------------------------------------------------
+create or replace function email_taken(p text)
+returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from auth.users
+     where lower(email) = lower(btrim(p))
+  );
+$$;
+revoke all on function email_taken(text) from public;
+grant execute on function email_taken(text) to anon, authenticated;
+
+-- ---------------------------------------------------------------------------
 -- Answering a report
 --
 -- Two functions rather than an update policy, because a policy that let staff

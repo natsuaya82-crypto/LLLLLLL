@@ -235,6 +235,8 @@ defLang('en', (function(){
       "ob.mail.send" : "Send the code",
       "ob.mail.again" : "Send it again",
       "ob.mail.sent" : "Sent.",
+      "ob.mail.taken" : "This address already has an account.",
+      "ob.mail.none" : "No account for this address.",
       "ob.mail.h.reset" : "Choose a new password",
       "ob.mail.h.setpw" : "Choose a password",
       "ob.mail.newpw.ph" : "New password",

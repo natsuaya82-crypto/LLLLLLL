@@ -343,6 +343,8 @@ defLang('zh', (function(){
       "ob.mail.send" : "发送",
       "ob.mail.again" : "重新发送",
       "ob.mail.sent" : "已发送",
+      "ob.mail.taken" : "该邮箱已注册。",
+      "ob.mail.none" : "该邮箱没有账号。",
       "ob.mail.h.reset" : "设置新密码",
       "ob.mail.h.setpw" : "设置密码",
       "ob.mail.newpw.ph" : "新密码",

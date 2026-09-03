@@ -383,6 +383,8 @@ defLang('fr', (function(){
       "ob.mail.send" : "Envoyer",
       "ob.mail.again" : "Renvoyer",
       "ob.mail.sent" : "Envoyé.",
+      "ob.mail.taken" : "Cette adresse a déjà un compte.",
+      "ob.mail.none" : "Aucun compte pour cette adresse.",
       "ob.mail.h.reset" : "Choisissez un nouveau mot de passe",
       "ob.mail.h.setpw" : "Choisissez un mot de passe",
       "ob.mail.newpw.ph" : "Nouveau mot de passe",

@@ -542,20 +542,29 @@ const R = await pg.evaluate(() => {
           out.doors.push('appIs() ' + who + ': ' + want + ' のはずが ' + got);
       });
 
-      /* And the one the owner actually pressed: deleting the account puts the
-         phone back to new, so the onboarding is what comes next. wipeHere()
-         is walked rather than imitated -- it is the thing that has to be
-         right, and it takes SET.done away and THEN signs out, which is the
-         order that used to land on the door. confirm() is answered yes for
-         the length of it, and the language it rebuilds is the fixture's. */
+      /* And the one the owner actually pressed: deleting the account lands on
+         THE DOOR. 「アカウント削除した後オンボーディングから始まるのはなぜ？」
+         OWNER 2026-09-03.
+
+         It used to land on the onboarding, because setDefaults() answers
+         `done` false and that is what a phone out of the box says. This one
+         is not out of the box: the person is standing here and what they do
+         next is sign in as somebody else, and asking them to draw an alphabet
+         first is asking for a language with no account to make it for.
+         A phone that really has nothing on it still opens on the walk --
+         tools/open-check.mjs § 1 boots one and holds it.
+
+         wipeHere() is walked rather than imitated: it is the thing that has to
+         be right. confirm() is answered yes for the length of it, and the
+         language it rebuilds is the fixture's. */
       const wasConfirm = window.confirm;
       window.confirm = () => true;
       let wiped;
       try { wipeHere(); wiped = appIs(); }
       catch (e) { wiped = 'threw: ' + e.message; }
       window.confirm = wasConfirm;
-      if (wiped !== 'ob')
-        out.doors.push('アカウント削除のあと: ob のはずが ' + wiped);
+      if (wiped !== 'door')
+        out.doors.push('アカウント削除のあと: door のはずが ' + wiped);
     }
 
     SESS = wasS; window.route = wasR; NAV = wasN; SET.done = wasDone;
