@@ -1150,6 +1150,39 @@ create policy react_drop on react for delete using (is_member() and actor = auth
 drop policy if exists prompt_read on prompt;
 create policy prompt_read on prompt for select using (true);
 
+-- TODAY'S, and the phone does no arithmetic to ask for it.
+-- 「今日のお題はちゃんと今日を聞いてください」 OWNER 2026-09-03.
+--
+-- It used to be a plain read of the table ordered by on_day, newest first, one
+-- row -- and the argument written over netDay() in www/net.js was that this
+-- avoids a second copy of a timezone rule. It does, and it answers a different
+-- question: NEWEST is not TODAY. With one row in the table and no writer since,
+-- that row is served as 「今日のお題」 for ever, and the composer pins an answer
+-- to it. Nothing throws and the screen is right; it is simply the wrong day.
+--
+-- The zone is named here for the same reason feed_slot() names it, in the same
+-- words: it is not a second copy, it is the same rule read from the same place
+-- the day is written from (supabase/functions/daily-prompt/index.ts picks
+-- `on_day` with timeZone America/Los_Angeles). THE PHONE STILL DOES NONE OF IT
+-- -- that is what the old comment was protecting and it is protected here.
+--
+-- Nothing when the writer missed the day. An empty answer is what dayPull()
+-- already handles: no row means the top of the timeline is the plain write-row
+-- it has always been, which is the degrade docs/STATE.md § 3 describes.
+-- Yesterday's sentence under today's heading is not a smaller failure than
+-- none; it is the same failure with nothing to notice it by.
+--
+-- `stable` and not `security definer`: prompt_read above is `using (true)`, so
+-- there is nothing here a caller could not read for themselves. It exists to
+-- put the date arithmetic on the side of the wire that knows what day it is.
+create or replace function day_prompt()
+returns setof prompt language sql stable as $$
+  select * from prompt
+   where on_day = (now() at time zone 'America/Los_Angeles')::date
+   limit 1
+$$;
+grant execute on function day_prompt() to anon, authenticated;
+
 -- block: YOURS and nobody else's, in every direction. Not `using (true)` like
 -- every other read here: who has blocked whom is the one thing on this server
 -- that is nobody's business but the person who did it. A policy that let the
@@ -1462,9 +1495,9 @@ grant execute on function notices(int) to authenticated;
 -- 2026-08-28 -- two sentences that point at the same place.
 --
 -- IT WAS UTC, and that followed NEITHER of them. The argument written here
--- was that the day's page does no zone arithmetic, because netDay() asks for
--- the newest row rather than today's. That is true of the PHONE and it is not
--- where the boundary is decided: supabase/functions/daily-prompt/index.ts
+-- was that the day's page does no zone arithmetic, because netDay() asked the
+-- table for the newest row rather than today's. That was true of the PHONE and
+-- it is not where the boundary is decided: supabase/functions/daily-prompt/index.ts
 -- picks `on_day` with `timeZone: 'America/Los_Angeles'`, and the cron that
 -- runs it is set in Pacific (supabase/setup.md). So the day already turns in
 -- California, and the list was turning in UTC beside it -- 0 4 8 12 16 20 in
@@ -1472,7 +1505,8 @@ grant execute on function notices(int) to authenticated;
 --
 -- Naming the zone here is not a second copy of a timezone rule: it is the
 -- same one, read from the same place the day is read from. The phone still
--- does no arithmetic at all.
+-- does no arithmetic at all -- day_prompt() above names the zone for the same
+-- reason and the phone asks it rather than working a date out.
 create or replace function feed_slot()
 returns timestamptz language sql stable as $$
   select (date_trunc('hour', now() at time zone 'America/Los_Angeles')

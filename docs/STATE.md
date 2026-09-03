@@ -193,7 +193,7 @@ Connect と DNS のダッシュボードの話なので、**済んだかどう�
 
 | 何 | 分かったこと | どこ |
 |---|---|---|
-| 今日のお題の日付 | `netDay()` が `order=on_day.desc&limit=1` と訊いていて、**今日を訊いていない。**古い行が一つあれば、それが永久に「今日」として出ます。`on_day` はどこにも描かれません | `www/net.js` `netDay()` |
+| 今日のお題の日付 | `on_day` がどこにも描かれません。**今日を訊いていない方は直りました**（`day_prompt()`、2026-09-03） | `www/sns.js` `dayRow()` |
 
 **オーナーは iPhone SE2 と iPhone 17 で実機確認しています。**OWNER 2026-08-28
 「iPhone se2と17で作業してる」。**一番狭い端末と一番広い端末の両方**なので、
@@ -222,7 +222,7 @@ Connect と DNS のダッシュボードの話なので、**済んだかどう�
 A fresh clone of `master` is the current app. **No sha is written here** — a sha
 has a shelf life of about a day.
 
-The gate is **35 checks** — nine that need no browser and twenty-six that do.
+The gate is **39 checks** — twelve that need no browser and twenty-seven that do.
 Count `FAST` and `SLOW` in `tools/gate.mjs`, which is the only place the number
 lives.
 
@@ -381,12 +381,13 @@ it:**
 grep -o "rest/v1/[a-z_]*" www/net.js | sort | uniq -c | sort -rn
 ```
 
-On 2026-09-03 that answers: `profile` 13, `rpc` 12, `language` 8, `follow` 4,
+On 2026-09-03 that answers: `rpc` 13, `profile` 13, `language` 8, `follow` 4,
 `draft` 4, `saved_search` 3, `report` 3, `recent_search` 3, `react` 3,
-`post_seen` 3, `post` 3, `block` 3, `slice` 2, `prompt` 2, `plan` 2,
-`profile_seen` 1, `language_seen` 1 — and the twelve `rpc` are `account_ban`
-`account_delete` `account_unban` `admin_counts` `email_taken` `feed_fo`
-`feed_hot` `notices` `post_hide` `post_show` `staff_add` `staff_drop`.
+`post_seen` 3, `post` 3, `block` 3, `slice` 2, `plan` 2, `prompt` 1,
+`profile_seen` 1, `language_seen` 1 — and the thirteen `rpc` are `account_ban`
+`account_delete` `account_unban` `admin_counts` `day_prompt` `email_taken`
+`feed_fo` `feed_hot` `notices` `post_hide` `post_show` `staff_add`
+`staff_drop`.
 `netLangSync()` is fired by `boot.js` at launch, and `syMerge()`
 (`www/sync.js` ch 26) is what puts two copies together by adding both.
 
@@ -578,14 +579,14 @@ life as a branch name.
 
 ## 5. The gate, and what CI does not run
 
-`npm test` is **thirty-five** checks and is the specification. `CLAUDE.md` →
+`npm test` is **thirty-nine** checks and is the specification. `CLAUDE.md` →
 "The rules the gate enforces" -- **and those two numbers are not the same kind
 of thing.** One counts RULES that are written down; this one counts CHECKS that
 run. They have never been equal and making them equal would be wrong: one rule
 can take three checks and one check can hold two rules.
 
-`tools/gate.mjs` runs the **nine** that need no browser first, in about two
-seconds, then the **twenty-six** browser ones four at a time (`WIDE` is
+`tools/gate.mjs` runs the **twelve** that need no browser first, in about two
+seconds, then the **twenty-seven** browser ones four at a time (`WIDE` is
 `min(4, cpus)`). Run one after another they were about ten minutes in this
 container, which is a figure nobody has re-measured since the count grew.
 
@@ -595,10 +596,10 @@ what you are changing, by name, plus the six fast ones.
 
 **GitHub Actions runs three of them** — `assets`, `es5`, `i18n`
 (`.github/workflows/i18n.yml`). A green tick on a push does not mean the gate
-passed. **The other thirty-two run only where somebody runs them**, which means
+passed. **The other thirty-six run only where somebody runs them**, which means
 locally, which means you.
 
-The names are deliberately not listed here. A list of thirty-two check names is
+The names are deliberately not listed here. A list of thirty-six check names is
 a list that goes stale the next time one is added, and this file has been wrong
 about that list twice. The command:
 
@@ -675,10 +676,13 @@ assuming a thing is waiting for you.
   only come from the service role*, and `prompt` has `on_day date not null
   unique` — **somebody puts one in from the dashboard, one per day**, and
   nobody has. That part is the owner's, like the rest of §7's Supabase work.
-  **But two real bugs sit beside it**, and both are the client's:
-  `netDay()` asks `order=on_day.desc&limit=1` and **never asks for today**, so
-  one stale row would be served as "today" forever; and `on_day` is rendered
-  nowhere, which is what 「日付ないし」 means.
+  **One real bug sat beside it and is fixed** (2026-09-03): `netDay()` asked
+  `order=on_day.desc&limit=1` and never asked for today, so one stale row would
+  have been served as "today" for ever. It asks `day_prompt()` now, which does
+  the date arithmetic in the zone the row is written in; the phone still does
+  none of it. `rls-check` holds it with three claims and two of them were
+  watched going red. **What is still open is that `on_day` is rendered
+  nowhere**, which is what 「日付ないし」 means.
 - **The 通報 row came off account settings, and `mod.js` kept a door.**
   「設定の通報ボタン消せ」OWNER 2026-08-26. The row was the *other* side — where
   a report is read and a post is taken down — and it was also the one thing on
@@ -705,8 +709,9 @@ Declare a class once.
 **A check enters the gate in the same commit that adds it, or it does not enter
 at all.** A check in `tools/` and in no list is silent, not green, and a silent
 check is the failure this repository is bitten by most often.
-**`tools/token-check.mjs` is in exactly that state right now** — it has an
-`npm run token` name and is in neither `FAST` nor `SLOW`.
+**`tools/token-check.mjs` was in exactly that state and is not any more** —
+it is in `FAST`. Counted 2026-09-03; every `tools/*-check.mjs` is in the gate
+except `rls-check`, which is out on purpose (it stands up a PostgreSQL).
 
 **Count `FAST` and `SLOW`; never believe a sentence about the number.**
 `CLAUDE.md`'s count of RULES is a different number from this count of CHECKS and

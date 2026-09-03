@@ -2552,11 +2552,23 @@ function netExt(mime){
    as somebody else's. A push that fails leaves no `sid`, and a post with no
    `sid` is one that has not gone up yet, which is the whole of the retry. */
 /* ---- the day's sentence ------------------------------------------------
-   One row, the newest there is. Not "today's": the app does not work out what
-   day it is in California -- the function that writes the row does that, and
-   asking the server for the newest one is the same answer with no second copy
-   of a timezone rule to get wrong. A day the writer missed shows yesterday's
-   sentence, which is what is true.
+   TODAY'S ROW. 「今日のお題はちゃんと今日を聞いてください」 OWNER 2026-09-03.
+
+   The phone does not work out what day it is in California, and that has not
+   changed: day_prompt() in supabase/schema.sql does the arithmetic, in the
+   zone the day is WRITTEN in (supabase/functions/daily-prompt/index.ts), the
+   same way feed_slot() does beside it. There is no timezone in this file.
+
+   It used to ask the table for the newest row instead. That is a different
+   question and it was answered wrongly for as long as nobody wrote a row: one
+   stale sentence stood as 「今日のお題」 for ever, the composer pinned an
+   answer to it, and nothing anywhere threw.
+
+   NOTHING when the writer missed the day, and that is the answer rather than a
+   hole. dayPull() already takes null: the top of the timeline goes back to the
+   plain write-row, which is the degrade docs/STATE.md § 3 describes. Yesterday
+   under today's heading is not a smaller failure, it is the same one with
+   nothing to notice it by.
 
    `says` is the ten languages and `text` is the English one under it, so a row
    written before the column existed still shows something. schema.sql § asked. */
@@ -2571,7 +2583,7 @@ function netPrompt(id, ok){
     function(){ ok(null); });
 }
 function netDay(ok){
-  netGet('/rest/v1/prompt?select=id,on_day,text,says&order=on_day.desc&limit=1',
+  netSend('POST', '/rest/v1/rpc/day_prompt', {}, (SESS && SESS.at) || '',
     function(d){ ok(d && d.length? d[0] : null); },
     function(){ ok(null); });
 }

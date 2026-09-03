@@ -1411,13 +1411,43 @@ const SHAPE = [
   ['and names no other zone', `
      select count(*) from (
        select regexp_matches(prosrc, 'time zone ''([^'']+)''', 'g') as z
-         from pg_proc where proname in ('feed_slot','feed_hot')) m
+         from pg_proc where proname in ('feed_slot','feed_hot','day_prompt')) m
       where m.z[1] <> 'America/Los_Angeles'`, '0'],
   /* And it is the tick that has HAPPENED. One in the future is a window that
      has not opened, and every post would be older than it. */
   ['and on the one that has already come', `
      select count(*) from (select 1 where feed_slot() > now()
                                        or feed_slot() <= now() - interval '4 hours') q`, '0'],
+
+  /* 今日のお題 ── TODAY'S, and nothing when the writer missed the day.
+     「今日のお題はちゃんと今日を聞いてください」 OWNER 2026-09-03.
+
+     netDay() used to read the table ordered by on_day, newest first, one row.
+     With one stale row and no writer since, that row was 「今日のお題」 for
+     ever, and the composer pinned an answer to it. Nothing threw and the
+     screen was right; it was the wrong day.
+
+     THE TABLE HERE HOLDS ONE ROW AND IT IS NOT TODAY'S (seeded above), which
+     is what makes the first claim sharp: asked newest-first it answers one,
+     asked for today it answers none. The claim is written as an equality
+     rather than as `= 0` so it stays true the day somebody seeds today's row
+     as well -- what it says is that the function's answer IS the table's
+     answer for today, whatever that is, and never a fallback to something
+     else. A `= 0` would go green on an empty table and on a broken join. */
+  ['the day\u2019s sentence is the row for TODAY and no other', `
+     select count(*) from (select 1 where
+       (select count(*) from day_prompt())
+       <> (select count(*) from prompt
+            where on_day = (now() at time zone 'America/Los_Angeles')::date)) q`, '0'],
+  ['and never a day that is not today', `
+     select count(*) from day_prompt() d
+      where d.on_day <> (now() at time zone 'America/Los_Angeles')::date`, '0'],
+  /* And that the row above really is in the table, so the two claims are not
+     green because there is nothing to be wrong about. */
+  ['and the stale day it must not answer with is there', `
+     select count(*) from (select 1 where
+       (select count(*) from prompt
+         where on_day < (now() at time zone 'America/Los_Angeles')::date) <> 1) q`, '0'],
   /* 5 beats 3 beats 1. An answer is somebody writing a sentence under you, a
      repost is a tap, a like is a smaller tap, and the order says which was
      more. Read as an ORDER out of what feed_hot() actually returns: asking
@@ -1632,6 +1662,11 @@ const sql = [
      (${q(H3)}, ${q(F)}, 'like',  feed_slot() - interval '25 minutes');`,
   `insert into post(author,body,reply_to,created_at) values
      (${q(F)}, '{}'::jsonb, ${q(H2)}, feed_slot() - interval '25 minutes');`,
+  /* A day's sentence from a month ago and nothing since -- the state the
+     server is in right now, and the one netDay() used to serve as 「今日」.
+     SHAPE's three claims about day_prompt() are asked against it. */
+  `insert into prompt(on_day,text) values
+     ((now() at time zone 'America/Los_Angeles')::date - 30, 'stale');`,
   `\\pset format unaligned`,
   `\\pset tuples_only on`,
   /* chr(9) rather than a backslash-t: PostgreSQL string literals are standard
