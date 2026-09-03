@@ -274,10 +274,10 @@ rather than trusting this number, which has been stale twice」。**三度目で
 
 | CLAUDE.md | 書いてある | 実際 |
 |---|---|---|
-| :1836 | `buttons pressed: 12410  (240/240 distinct names)` | **`12799  (262/263 distinct names)`** |
+| :1836 | `buttons pressed: 12410  (240/240 distinct names)` | **`12799  (262/263)`、取り込み後 `12899  (263/264)`** |
 | :1834 | `screens walked: 366` | **489** |
 | :1834 | `screens the mirror rendered: 275` | **363** |
-| :203, :633 | 「1484 lists are measured」 | **2721** |
+| :203, :633 | 「1484 lists are measured」 | **2721**、取り込み後 **2732** |
 | :617 | 「**202** were styled and worn by nothing」 | **3**（`tools/css-baseline.txt` は 3 行: `kbghost` `lift` `moving`） |
 | :1175 | 「There are **240** corners and borders in `index.html`」 | **109**（`box-check` が `corners and borders in index.html: 109 (baseline 109)` と印字。`tools/box-baseline.txt` も 109 行） |
 
@@ -829,9 +829,26 @@ it falsifies」と書いている通り、**文はコードと同じコミット
 | # | もの | 取り込み後 |
 |---|---|---|
 | 1 | `www/index.html:3544-3545` の `on*=` 二つ | **在る**（私の `SHELL_OK` はまだ当たっているので `act-check` は緑） |
-| 2 | `.whgo` に `min-height` 無し（`www/index.html:1937`） | **在る。press はまだ赤のはず** |
+| 2 | `.whgo` に `min-height` 無し（`www/index.html:1937`） | **在る。press を回し直して、同じ一件で赤を確認** |
 | 25 | `www/settings.js:663` の「app's own sheet」 | **在る**（`plannow` 取り込み後も） |
 | 25 | `www/shell.js:1437` の「So it is confirm()」 | **在る**（`keysel` 取り込み後も） |
+
+**取り込み後にもう一度 `press` を回しました**（約 15 分。`keysel` が
+`www/keyboard.js` を 146 行動かしているので、憶測で「はず」と書かずに測り
+ました）。**同じ一件で赤のままです。**
+
+```
+buttons pressed: 12899  (263/264 distinct names)
+rows in one list are one height: 2732 lists measured
+screens built: 799
+classes worn: 610, styled and unworn: 3 (baseline 3)
+
+FAILED (1):
+  too small to hit: the searches already made (paid): whgo 312x39 -- under 44
+```
+
+数も動いています（取り込み前は 12799 / 262・263、2721、796）。
+**CLAUDE.md に書き写さなかったのはこのためです** ── 半日で四回動きました。
 
 **一つ、朝の監査から進んでいたものがあります。**`www/shell.js:1388` の
 `popAsk()` の上の段は**直っています** ── 捨てた三つの形を並べて
