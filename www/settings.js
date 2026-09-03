@@ -497,11 +497,29 @@ function wipeAll(){
      OWNER 2026-09-01 -- confirm() は使わない。はいの側がこの下。 */
   popAsk(t('confirm.wipe'), function(){ wipeAllGo(); }, t('pop.yes'));
 }
+/* WHOSE ACCOUNT IS GOING IS DECIDED HERE, AT THE PRESS, and carried down.
+   netEndMe() in www/net.js calls netOut() the moment the server says the row
+   is gone -- correctly, the token proves who is being deleted and it is spent
+   -- and only then calls this back. So wipeHere() read SESS a moment after
+   there was no SESS, took '' for the uid, and removed NOTHING AT ALL: the
+   account went on the server and every byte of it stayed on the phone. The
+   opposite failure to 2026-09-03's, out of the same line, and it only
+   happened on the road where the server SAID YES.
+
+   Not a `netOut()` moved to the other side of the callback: what is wanted
+   is who was signed in when the button was pressed, and reading it here says
+   that in the one place that knows it. The two arms both get it, so the road
+   where the server could not be reached wipes the same account as the road
+   where it could. `bad` is handed (data, status, message) by netSend(), so it
+   is wrapped rather than passed bare -- a status object arriving where a uid
+   is expected is exactly this bug wearing another hat. */
 function wipeAllGo(){
-  if(netSignedIn()) netDropMe(wipeHere, wipeHere);
-  else wipeHere();
+  var uid=(typeof SESS!=='undefined' && SESS && SESS.uid)? String(SESS.uid) : '';
+  if(netSignedIn())
+    netDropMe(function(){ wipeHere(uid); }, function(){ wipeHere(uid); });
+  else wipeHere(uid);
 }
-function wipeHere(){
+function wipeHere(uid){
   /* Everything under this app's name, counted rather than listed.
      「アカウント削除で残るものねえって言ってんだろ何回言わせんだよ全部消えんだよ。」
      OWNER 2026-08-27.
@@ -537,7 +555,8 @@ function wipeHere(){
      loses everything anyway, because everything on it is that account's.
      Writing 「and if nobody else is here, wipe the lot」 was a first draft and
      it is two behaviours where the rule has one. */
-  var wipeUid=(typeof SESS!=='undefined' && SESS && SESS.uid)? String(SESS.uid) : '';
+  var wipeUid=String(uid||
+    ((typeof SESS!=='undefined' && SESS && SESS.uid)? SESS.uid : ''));
   var wipeIds=lsWipeAcct(wipeUid);
   langId='';
   langFirst();

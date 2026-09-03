@@ -569,6 +569,24 @@ const gone = await pg.evaluate(async () => {
    is gets its yes pressed -- the app's own popup, not confirm(), which went on
    2026-09-01 (「標準は使わねえって言ってるだろこれも禁止や」). Nothing is
    stubbed: pressing the popup is pressing the screen. */
+/* SEEDED AGAIN FIRST, and that is not tidiness. The block above empties the
+   whole namespace with lsWipeNS() and leaves this page signed out, with a
+   language whose index row is gone and whose slices are not. Pressing the
+   delete-account button in THAT state asks about an act nobody can perform:
+   there is no account row on the settings screen when nobody is signed in.
+
+   It used to pass anyway, because the button emptied the phone whoever was
+   standing there. It does not any more -- 「アカウントごとってずっと言ってるよな？」
+   OWNER 2026-09-03 -- so the state the button is pressed in has to be the
+   state a person presses it in: signed in, holding their own language.
+
+   A RELAUNCH and not seed() alone: lsWipeNS() took `lingua.langs` with the
+   rest, so the page is standing in a language that is in no index -- seed()
+   stamps what is in LANGS and LANGS is empty. Reloading is what a phone does
+   between one of these and the next anyway. */
+await pg.goto(`http://127.0.0.1:${PORT}/`);
+await pg.waitForTimeout(300);
+await pg.evaluate(seed);
 const wiped = await pg.evaluate(async () => {
   const fails = [];
   const ours = () => {
@@ -579,14 +597,37 @@ const wiped = await pg.evaluate(async () => {
     }
     return out;
   };
-  let dropped = '';
-  window.Capacitor = { nativePromise: (plug, method) => {
-    if (method === 'dropAll') dropped = 'dropAll';
+  /* THE ROAD WHERE THE SERVER SAYS YES, and it is the only one the bug is on.
+     Left to the real network these calls fail, netEndMe() takes its `bad`
+     arm, and the session is still in hand when the phone is emptied -- so a
+     check that does not stub anything watches the one road that works and
+     calls the button held.
+
+     On the road that matters netEndMe() calls netOut() the instant the row is
+     gone (the token is what proves who is being deleted, and it is spent),
+     and only then calls back. Whoever reads SESS after that reads nobody. */
+  const realGet = netGet, realSend = netSend;
+  netGet = (path, ok) => ok([]);
+  netSend = (method, path, body, tok, ok) => ok({});
+
+  let dropped = '', droppedNames = null;
+  window.Capacitor = { nativePromise: (plug, method, arg) => {
+    if (method === 'dropAll' || method === 'dropSome') {
+      dropped = method;
+      droppedNames = (arg && arg.names) || null;
+    }
     if (method === 'kept') return Promise.resolve({ langs: [] });
     return Promise.resolve({});
   } };
 
   const old = langId;
+  /* Both sides of the sentence, put there on purpose. The three above the
+     line are this ACCOUNT's and have to go with it; the two below are how
+     this HANDSET is set up and have to still be here afterwards. Blank ones
+     would let either half pass by accident. */
+  SET.plan = 'pro'; SET.saved = ['mountain']; SET.notAt = 99;
+  SET.theme = 'dark'; SET.ui = 'ja';
+  setKeep();
   ME = { name: 'Ola', handle: 'ola', bio: 'hi', pic: '', link: '', loc: '', avSent: '' };
   saveMe();
   DRAFTS = [{ at: 1, ln: 'kano mos', mn: '', to: '', pr: 0, pics: [], vo: null, pv: false }];
@@ -625,18 +666,53 @@ const wiped = await pg.evaluate(async () => {
     fails.push('`lingua.me` was written back out after wipeAll()');
   if (localStorage.getItem('lingua.words'))
     fails.push('a flat key from before there could be more than one language survived');
-  if (SET.theme !== 'system' || SET.ui !== '')
-    fails.push('a setting was carried over. 「残るものねえ」 is the whole sentence');
+  /* THE ACCOUNT'S FIELDS GO AND THE HANDSET'S SETUP STAYS, and that replaced
+     「残るものねえ」 -- read on 2026-08-27 about a phone that held one account,
+     when there was no other reading of it. There is now, and it is the only
+     one: 「端末ごとにやることなんてねえよ」「アカウントごとってずっと言ってる
+     よな？」 OWNER 2026-09-03, after deleting a second account emptied the
+     whole namespace and took the owner's only copy of a language with it.
+
+     So the plan, the searches they starred and how far down their notices
+     they had read are gone with the account -- setFor() in www/core.js is
+     that list and the one place it is written -- and the theme and the
+     interface language are how this handset is set up rather than anybody's
+     belongings, so they are still here. Asking for them to be blanked is
+     asking the app to reset a phone because somebody left it. */
+  if (SET.plan !== 'free' || SET.saved !== undefined || SET.notAt !== undefined)
+    fails.push('a field of the account\u2019s settings survived the account: ' +
+               JSON.stringify([SET.plan, SET.saved, SET.notAt]));
+  if (SET.theme !== 'dark' || SET.ui !== 'ja')
+    fails.push('the handset\u2019s own setup was wiped with the account ' +
+               '(theme ' + SET.theme + ', ui ' + JSON.stringify(SET.ui) + '). ' +
+               'The theme and the interface language are how this phone is ' +
+               'set up, not the belongings of whoever just left it');
 
   /* 2. the files in Documents, which are the copies that outlive the app.
         The stub records the call rather than the deletion -- there is no
         Swift on a Linux runner -- so what is held here is that the button
         asks for all three folders and not for the backups alone. */
-  if (dropped !== 'dropAll')
-    fails.push('wipeAll() did not ask the native side to empty Documents ' +
-               '(got ' + (dropped || 'nothing') + '). The recordings and the ' +
-               'sheets sit beside the backups where the Files app shows them');
+  /* 2. the files in Documents, which are the copies that outlive the app.
+        The stub records the call rather than the deletion -- there is no
+        Swift on a Linux runner -- so what is held here is WHICH call and
+        WHICH names.
 
+        dropSome and not dropAll, and that is 2026-09-03. dropAll emptied the
+        whole directory, which is every account's backups and not this one's
+        -- the road that destroyed the owner's language. The names are the
+        languages that were just taken, asked for one by one. */
+  if (dropped !== 'dropSome')
+    fails.push('wipeAll() asked the native side for `' + (dropped || 'nothing') +
+               '`. It has to be dropSome: dropAll empties Documents, which is ' +
+               'every account\u2019s backups and not the one going ' +
+               '(2026-09-03 -- 「別アカウントでログインしてそれのアカウント削除' +
+               'したら、俺の元のアカウントが消えてんだよ」)');
+  else if (!droppedNames || !droppedNames.length)
+    fails.push('wipeAll() asked for dropSome with no names, which drops ' +
+               'nothing at all — the backup of the language that just went is ' +
+               'still in Documents');
+
+  netGet = realGet; netSend = realSend;
   return { fails };
 });
 
