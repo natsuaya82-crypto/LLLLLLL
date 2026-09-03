@@ -732,29 +732,50 @@ function obReady(p, go){
 }
 /* THE NONCE, and it is Google's alone.
    「Passed nonce and nonce in id_token should either both exist or not」 --
-   the sentence on the owner's phone, pressing Google, on build #106.
+   the sentence on the owner's phone, pressing Google. Supabase hashes what
+   was sent and compares it to the token's `nonce` claim, and refuses ONE
+   SIDE existing without the other before it ever compares them.
 
-   This file asked for no nonce and net.js sent none, and that was a whole
-   answer for as long as it was true on both sides: Supabase refuses when one
-   side has one and the other does not, so two absences agree. **Apple still
-   goes through, and that is the proof it agreed.**
+   THE PLUGIN'S GOOGLE ROAD IS TWO ROADS AND ONLY ONE OF THEM READS THE
+   NONCE. `GoogleProvider.swift:81` in @capgo/capacitor-social-login 8.4.4:
 
-   Something put a nonce claim on the GOOGLE token anyway.
-   `docs/scope/claude-nonce.md` went looking and did not find it: not in
-   @capgo/capacitor-social-login at any version the lockfile allows, not in
-   GoogleSignIn-iOS, not in any Swift here, and `git log -S nonce -- www/` is
-   empty. So the cause is still unknown.
+     if hasPreviousSignIn() && !forceAuthCode && mode != .OFFLINE {
+         restorePreviousSignIn { ... refreshTokensIfNeeded ... }
+     } else {
+         login()          // the only place payload["nonce"] is read
+     }
 
-   The fix does not need it. Holding the nonce OURSELVES makes the claim ours
-   whoever else was reaching for it: `sha256(P)` goes to Google, Google puts
-   it on the token, and Supabase hashes the `P` net.js sends and gets the
-   same. Both sides exist and they match -- which is the other way of
-   satisfying the same condition Apple satisfies by staying quiet.
+   `restorePreviousSignInWithCompletion:` takes no nonce at all (GIDSignIn.h
+   :124); only the interactive signIn(...nonce:) does (:218). So a phone that
+   has signed in with Google before -- which is every phone after the first
+   press -- handed its nonce to a road that never looks at it, and the token
+   came back with no claim on it: `(nonce id_token:n sent:y)`.
 
-   APPLE IS NOT TOUCHED. `nn` is null outside `who==='google'`, so the Apple
-   call is the same call it was, with the same `''`. Adding one to a road
-   that works, to fix a road that does not, would be this exact bug pointed
-   the other way. */
+   `forcePrompt` is what closes that: it sets `forceAuthCode`, the condition
+   goes false, and the interactive road runs. It is set HERE, beside the
+   nonce, because the two are one statement -- a nonce handed to the road
+   that cannot read it is a nonce that was not handed over, and the two of
+   them apart is how this was wrong for two days with a check green over it.
+
+   AND IT IS WHAT THE OWNER ASKED FOR. 「あと違うアカウントでログインしてんのに
+   前のやつ出てくるんだけど？」 OWNER 2026-08-31 -- the previous account
+   coming back IS that restore road. Asking which account is the fix to both.
+
+   WHERE THE CLAIM ON BUILD 106's TOKEN CAME FROM, since it is written down
+   as unknown in three places: AppAuth, one layer under GoogleSignIn.
+   `OIDAuthorizationRequest.m:182` builds any request made without a nonce as
+   `nonce:[[self class] generateState]` -- it invents one. That is why the
+   token had a claim while nothing in this repository, the plugin or
+   GoogleSignIn ever asked for one. It also means the road below can never be
+   left with no nonce on it, whichever way this is written.
+
+   APPLE IS NOT TOUCHED. `nn` is null outside `who==='google'`, so Apple is
+   handed neither a nonce nor a forcePrompt and sends the same `''`. Apple's
+   provider has one road (`AppleProvider.swift:201` always performs the
+   request) and sets `request.nonce` only from the payload, and Apple's own
+   framework invents nothing -- so both sides stay quiet, which is the other
+   way of satisfying the same condition. Adding one side to a road that works
+   would be this exact bug pointed the other way. */
 function obSocial(who, opts){
   obNative('SocialLogin', function(p){
     /* Busy is set HERE and not by the two callers, because obNative() answers
@@ -766,7 +787,7 @@ function obSocial(who, opts){
          hash handed to the provider and the raw sent to Supabase are one
          pair or the sign-in is exactly the failure it is meant to fix. */
       var nn=(who==='google')? netNonce() : null;
-      if(nn) opts.nonce=nn.hash;
+      if(nn){ opts.nonce=nn.hash; opts.forcePrompt=true; }
       p.login({ provider:who, options:opts }).then(function(r){
         var tok=r && r.result && r.result.idToken;
         /* A sign-in that came back without a token is not a session and must
