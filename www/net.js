@@ -99,6 +99,19 @@ function netRead(){
      Guarded on the function rather than assumed: core.js is loaded first by
      index.html, but this file is also read by checks that stand it up alone. */
   if(SESS && SESS.uid && typeof langMigStamp==='function') langMigStamp(SESS.uid);
+  /* AND WHOSE PURCHASE THE PLAN ON THIS PHONE IS. planFor() in www/core.js
+     has the whole of why; what this line is, is the FIRST of the two moments
+     a uid is known, and it is the earlier and more urgent one.
+
+     The plan is already in SET by now -- window.__plan is injected ahead of
+     core.js -- and capLapse() at the foot of www/boot.js is going to compare
+     it against the last plan this phone saw, synchronously, long before
+     netResume() comes back. So a launch by somebody who is not the buyer has
+     to be answered HERE, at the moment the stored session is read, or
+     capLapse() sends the previous account's cancellation to this one's row.
+     www/net.js loads before www/boot.js, which is what makes this early
+     enough. */
+  planFor(SESS && SESS.uid);
 }
 netRead();
 function netSave(){
@@ -379,6 +392,17 @@ function netTook(d){
      that knows what a session is made of -- the same reason `anon` is
      decided here. */
   meFor(SESS.uid);
+  /* AND WHAT THIS ACCOUNT PAID FOR, which is not what the PHONE paid for.
+     「Xは違うアカウントだと課金も引き継がれない」 OWNER 2026-09-02. Here for
+     the same reason meFor() is here: this is the one place that knows a
+     session arrived, and netRead() above is the other moment a uid becomes
+     known. planFor() in www/core.js says what the three answers are.
+
+     No render() of its own, the same as meFor(): every road into this
+     function draws afterwards -- obIn() on the way in, bootSession() on a
+     refresh -- and netPlanSync(), a moment later, renders when the account's
+     answer moves the plan again. */
+  planFor(SESS.uid);
   /* AND THE LANGUAGES THIS ACCOUNT MADE, onto a phone that may never have
      seen them. Here rather than at the five call sites for the same reason
      `anon` and meFor() are here: this is the one place that knows a session

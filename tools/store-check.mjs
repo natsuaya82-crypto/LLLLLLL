@@ -162,6 +162,19 @@ const FIELDS = {
   savedUp:  { phone: 'whether this phone has sent its starred searches up ONCE. A mark about the road above, not a thing travelling on it' },
   planWas:  { phone: 'the plan this phone last SAW, which is the only thing capLapse() has to compare against. Not what anybody paid -- a fact about this launch and the one before it' },
   planV:    { phone: 'which of the two worlds the plan WORD was written in, before the 2026-08-23 rename. Absent means 「written before it」, and that is the only signal there is' },
+  /* WHOSE the plan above is. It goes NOWHERE, and that is the answer rather
+     than a gap: the account already knows what it pays -- that is the `plan`
+     row this table sends `SET.plan` to -- so sending this up would be telling
+     an account its own name. What it answers is the question only a HANDSET
+     can be asked: 「is the plan sitting on me the one that was bought by the
+     person signed in now?」 On a phone the real copy is in the Keychain
+     (ios/App/App/LinguaPlan.swift) and setOnDisk() keeps this out of the
+     settings file entirely, for the reason it keeps the plan out -- an owner
+     written in a file that goes into a PC backup is an owner anybody with a
+     cable can forge, and forging it takes somebody else's subscription rather
+     than raising your own. In a browser, and in every check under tools/,
+     there is no Keychain and it stays here, exactly as the plan does. */
+  planUid:  { phone: 'the account that bought the plan this phone is holding. A mark about WHOSE the copy above is, not a second place the plan lives — and the one thing here that a handset can be asked and an account cannot' },
   notAt:    { phone: 'how far down the notices somebody has read. THE SERVER HOLDS NO READ MARKER and that is a decision — 「サーバーの既読の表は要りません」, www/sns.js' },
   done:     { phone: 'whether the walk has been finished on this install. It is what tells the onboarding from the app' },
   obback:   { phone: 'where to come back to after the door, held between two screens of one journey' },

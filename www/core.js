@@ -123,7 +123,7 @@ var WORDS=[], LINES=[], langName='', SET=setDefaults();
    wiped -- and the second copy was written out by hand and did not have the
    same keys in it. */
 function setDefaults(){
-  return {theme:'system', plan:'free', done:false, order:'SOV', read:'both',
+  return {theme:'system', plan:'free', planUid:'', done:false, order:'SOV', read:'both',
           voice:'', ui:'', script:false};
 }
 /* The writing system. `g` maps a romanisation to the strokes drawn for it;
@@ -401,6 +401,17 @@ if(PLAN_NATIVE){
      or the guard is on one door of two. */
   if(window.__plan) SET.plan=window.__plan;
   else if(PLAN_READ_OK) planKeep(SET.plan||'free');
+  /* AND WHOSE IT IS, out of the same read. `window.__planuid` is the account
+     that bought what `window.__plan` holds -- ios/App/App/LinguaPlan.swift --
+     and it is seeded here for the same reason the plan is: planFor() is asked
+     the moment net.js knows who is signed in, and that is one script tag
+     later. An empty one is a phone that has never written an owner down, and
+     planFor() answers that by changing nothing.
+
+     Only when the Keychain ANSWERED. A read that failed says nothing about
+     who owns this, and taking silence for 「nobody」 is how a plan gets handed
+     to whoever signs in next. */
+  if(PLAN_READ_OK) SET.planUid=String(window.__planuid||'');
   /* Whatever copy is still in the file goes out with the next save, which
      setOnDisk() below is what makes true. Taking it out here as well was
      written first and did nothing: the save that boot does anyway put it
@@ -997,6 +1008,14 @@ function setOnDisk(){
   var out={}, k;
   for(k in SET) if(Object.prototype.hasOwnProperty.call(SET,k)) out[k]=SET[k];
   if(PLAN_NATIVE) delete out.plan;
+  /* AND WHO OWNS IT, for the same reason and it is the stronger one. The
+     settings file is in the backup a phone makes onto a PC, so an owner
+     written there is an owner anybody with a cable can put their own name in
+     -- which is not a way to raise your own plan, it is a way to take
+     somebody else's. On a phone the Keychain is the only copy; in a browser
+     and in every check under tools/ there is no Keychain and this stays in
+     the settings, exactly as the plan does. */
+  if(PLAN_NATIVE) delete out.planUid;
   return out;
 }
 /* The settings, written on their own.
@@ -1037,10 +1056,82 @@ function setKeep(){
    passed.
 
    Not waited for, as before: what this session uses is the value in memory. */
+/* AND WHOSE IT IS GOES WITH IT, when there is somebody to name. 「1アドレス
+   1アカウント」「これは絶対課金もアカウントごと言語もそう」 OWNER 2026-09-02.
+
+   Here rather than at the four call sites because this is the one place a
+   plan is written down on a phone -- the plans screen, a receipt, the boot
+   migration, and the account's own answer coming back all end here -- so the
+   owner is recorded wherever the plan moves and nowhere else.
+
+   With no session the uid is left OUT of the message rather than sent empty,
+   and LinguaPlan.swift then leaves the owner it already has alone. The two
+   callers with nobody signed in are both at boot, and neither of them knows
+   anything about an account: writing '' there would erase the owner on every
+   launch, which is the failure this whole chapter is about arriving through
+   the door built to stop it. */
 function planKeep(id){
-  var np=window.Capacitor && Capacitor.nativePromise;
+  var np=window.Capacitor && Capacitor.nativePromise,
+      me=(typeof SESS!=='undefined' && SESS && SESS.uid)? String(SESS.uid) : '',
+      msg={plan:String(id||'free')};
+  if(me) msg.uid=me;
   if(!np) return;
-  try{ np('LinguaPlan', 'write', {plan:String(id||'free')})['catch'](function(){}); }catch(e){}
+  try{ np('LinguaPlan', 'write', msg)['catch'](function(){}); }catch(e){}
+}
+/* WHOSE PURCHASE THE PLAN ON THIS PHONE IS, asked the moment there is an
+   account to ask about. 「Xは違うアカウントだと課金も引き継がれない」 OWNER
+   2026-09-02.
+
+   The plan arrives before the account does and it has to: window.__plan is a
+   script injected ahead of this file, because what a free plan looks like is
+   decided on the first frame, and there is no session at that point -- net.js
+   is four script tags later. So the two are put together HERE instead, from
+   www/net.js, at the two moments a uid becomes known: netRead(), which is the
+   session this phone was already holding, and netTook(), which is one
+   arriving. meFor() and langForAcct() are in netTook() for the same reason.
+
+   Three answers, and the middle one is the one to read twice.
+
+   THE SAME PERSON -- nothing to do. This is every ordinary launch and every
+   token refresh.
+
+   NOBODY WRITTEN DOWN YET -- record the name and MOVE NOTHING. An empty
+   SET.planUid is a phone from before the Keychain held an owner, and what
+   that plan is today is what this app has always said it is: the plan of
+   whoever is on this handset. Writing that answer down changes nobody's plan
+   and takes nothing from anybody; it only means tomorrow's question has an
+   answer. **What to do with an unstamped PAID phone is not settled and is
+   not decided here** -- docs/scope/claude-planacct.md lays out the two
+   directions and what each costs. This is the direction that changes nothing,
+   which is the one a session may take on its own. CLAUDE.md § Deciding.
+
+   SOMEBODY ELSE BOUGHT IT -- start from free and let the account answer.
+   netPlanSync() reads this account's own row a moment later and raises it to
+   whatever they hold. Nothing is taken away from the person who DID buy it:
+   the Keychain is not written here, so their plan and their name are still in
+   it, and the launch they come back on reads them out again.
+
+   SET.planWas MOVES WITH IT, and that is load-bearing rather than tidy.
+   capLapse() runs at the foot of www/boot.js, synchronously, and compares the
+   plan against the last one this phone saw. Left where it was, it would read
+   pro -> free as 「the subscription ended」 and do the two things that answer
+   is for: show the sheet that says so, against a plan this person never had,
+   and send `free` to THEIR row on the server -- writing somebody else's
+   cancellation onto an account that never bought anything. Moved together,
+   there is nothing for it to notice.
+
+   setKeep() and not save(): save() opens with bkTouch(), and netRead() runs
+   at the moment www/net.js loads, which is three script tags before
+   www/backup.js exists. It is also the right call on its own terms -- save()
+   declines while the language on screen is somebody else's, and none of these
+   three fields is anybody's language. */
+function planFor(uid){
+  var me=String(uid||''), was=String(SET.planUid||'');
+  if(!me || was===me) return false;
+  SET.planUid=me;
+  if(was){ SET.plan='free'; SET.planWas='free'; }
+  setKeep();
+  return !!was;
 }
 /* The plans, cheapest first. The ORDER is what makes a ladder a ladder, and
    it is written down once: a level is met by the plan that names it and by
