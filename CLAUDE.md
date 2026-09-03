@@ -230,18 +230,26 @@ migration and sync all require a regression test. "Code confirmed" and "device
 confirmed" are two separate statements and the first never stands in for the
 second. → `docs/TESTING.md`
 
-**Simple, and a bug is a hole in the shape.** 「シンプルに実装、コードを直して
-ごちゃごちゃにするんじゃなくてそのシンプルの穴、足りない部分を修正」
-「じゃないと、いつまで経ってもバカなバグが出てくるだろ」 OWNER 2026-09-03.
-One thing is done by ONE mechanism, and no question is answered in two places.
-When it turns out to be wrong, **the shape is what gets fixed** — never a
-second mechanism added to cover the first one's gap, which is the one thing
-that must not happen: from then on the feature runs on two, and nobody can
-say which is deciding. If it was asking the wrong thing, change what it asks.
-And **the old one is deleted** — not kept beside the new one, not 「as
-history」, not 「just in case」: what is left standing is read, and what is
-read is obeyed. **Nothing stops this. A person holds it by reading the
-change.** → `docs/FEATURE_RULES.md`
+**Simple, and a bug is REWRITTEN, not patched.** 「直すじゃなくてシンプル実装→
+修正じゃなくてコードそのものの書き換え」「じゃないと、いつまで経ってもバカな
+バグが出てくるだろ」 OWNER 2026-09-03. One thing is done by ONE mechanism, and
+no question is answered in two places. When it turns out to be wrong, **that
+code is deleted and written again** — the two words are different acts and
+only one is allowed:
+
+  *patch* — leave what is there and add to it: one more condition, a second
+  check, an exception. **Forbidden.**
+  *rewrite* — take that code out and write the right shape. It is usually
+  shorter.
+
+If it was asking the wrong thing, rewrite what it asks — never add a second
+thing that asks again. **A new mechanism covering the old one's gap is the one
+thing that must not happen**: from then on the feature runs on two and nobody
+can say which is deciding. And **the old one is deleted** — not kept beside
+the new one, not 「as history」, not 「just in case」: what is left standing is
+read, and what is read is obeyed. This is not about large designs; it is about
+the moment you reach to add one line. **Nothing stops this. A person holds it
+by reading the change.** → `docs/FEATURE_RULES.md`
 
 **Refactoring.** Not a goal. Only for duplication that causes bugs, a spec
 change that would touch several places, something untestable, or a feature
