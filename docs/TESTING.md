@@ -3,18 +3,18 @@
 ## The gate
 
 ```
-npm test        # thirty-three checks
+npm test        # thirty-five checks
 ```
 
 `tools/gate.mjs` runs them, and the two numbers below are `FAST` and `SLOW` in
-that file — count them there rather than believing this line, which has said
-seventeen, six and eleven since it was written and has been wrong about all
-three for a while. The **eight** that need no browser go first, one after
-another, and take about two seconds between them — a missing script tag or an
-arrow function fails there and nothing heavy is started at all. The **eighteen**
-that each start a headless Chromium then go **four at a time**, because they
-are separate processes holding separate ports with nothing to say to each
-other. Run one after another they were about ten minutes.
+that file — **count them there rather than believing this line.** The **nine**
+that need no browser go first,
+one after another, and take about two seconds between them — a missing script
+tag or an arrow function fails there and nothing heavy is started at all. The
+**twenty-six** that each start a headless Chromium then go **four at a time**
+(`WIDE` is `min(4, cpus)`), because they are separate processes holding separate
+ports with nothing to say to each other. Run one after another they were about
+ten minutes, on a machine nobody has re-measured on since the count grew.
 
 Each check's own output is printed whole, in the order the list below has
 them rather than the order they finished in, so a green run reads the same as
@@ -25,16 +25,21 @@ it always did and a counter that moved is still visible.
 **Once before pushing, not once per commit.** A session that makes five
 commits and gates each one has spent half an hour proving the same thing five
 times. Make the whole batch, gate it once, push. 「全部やって完成！じゃあ全部
-のチェックを回す」 If it goes red the fast five and the by-name check have
-already caught most of what could have caused it, and `git log -p` is there
-for the rest.
+のチェックを回す」 If it goes red the nine browserless checks and the by-name
+check have already caught most of what could have caused it, and `git log -p` is
+there for the rest.
 
 **While working, run the check that holds what you are changing** — one, by
-name, plus the five fast ones. `npm run backup`, `npm run post`. That is the
-loop; `npm test` is the gate at the end of it.
+name, plus the nine that need no browser. `npm run backup`, `npm run post`.
+That is the loop; `npm test` is the gate at the end of it.
+
+**"the fast five" means the five in `tools/pre-commit`**, and it is a different
+group from the gate's nine. The hook runs `dead` `import` `sides` `face` `box`
+as one line; the gate's `FAST` is those five plus `assets` `es5`
+`grammar-engine` `store`. **Two groups, two names** — never call both "fast".
 
 **Watching a check fail is one run, not a suite.** Put the bug back, run
-**that check alone**, watch it go red, take the bug out. The other fifteen
+**that check alone**, watch it go red, take the bug out. The other thirty-four
 have nothing to say about it.
 
 ### Who runs it, when more than one of you is in the tree
@@ -51,37 +56,62 @@ different days.
 
 `docs/SESSIONS.md` wins while there are parallel sessions; this page wins when
 there are not. The thing forbidden either way is the same: proving one green
-twice. Sixteen minutes multiplied by three sessions is that, three times over,
-and the third run is not more true than the first.
+twice. Ten minutes multiplied by three sessions is that, three times over, and
+the third run is not more true than the first.
 
-`tools/pre-commit` runs the ones that need no browser plus i18n when a screen
-file changed. **It is not the gate.** CI runs three of the thirty-three, so a
-green tick on a push is not the gate either.
+`tools/pre-commit` runs **seven** of the nine browserless checks — `assets`
+`es5` `dead` `import` `sides` `face` `box` — plus `i18n` when a screen file
+changed. `grammar-engine` and `store` are in the gate and **not** in the hook.
+**It is not the gate.** CI runs three of the thirty-five, so a green tick on a
+push is not the gate either.
+
+All thirty-five, in the order `tools/gate.mjs` prints them. **If this table and
+that file disagree, the file is right.**
+
+Nine that need no browser:
 
 | check | holds |
 |---|---|
 | `assets` | every `.js` is in `index.html` and tracked by git; every `.swift` is in the Xcode Sources phase |
-| `es5` | nothing under `www/` uses anything WKWebView on an old iPhone lacks |
+| `es5` | nothing under `www/` uses anything WKWebView on an old iPhone lacks, and every file parses |
+| `grammar-engine` | the grammar engine's own files, without a browser |
 | `dead` | nothing unreached; nothing called that is not something; `CAN` has nothing spare and nothing missing |
-| `migrate` | an old install opens with everything in it |
-| `i18n` | every visible string went through `t()`, in all ten languages, with fallback armed |
 | `import` | eleven real shapes of somebody's word list come in whole |
 | `sides` | below the line in `post.js` and `card.js`, nothing names the open language |
 | `face` | a font family is named on `:root` and nowhere else, and the drawn font under one name |
+| `box` | NO ROUNDED BOX (rule 18) — corners and borders against a frozen baseline, and none set from JS |
+| `store` | what the store layer claims about the four products and the plan they map to |
+
+Twenty-six that each start a headless Chromium:
+
+| check | holds |
+|---|---|
+| `migrate` | an old install opens with everything in it |
+| `i18n` | every visible string went through `t()`, in all ten languages, with fallback armed |
 | `act` | every name a screen says is bound, and every binding is said |
-| `conv` | the seven claims made about the conversion table |
+| `conv` | the nine claims made about the conversion table (the count is in its own last line) |
 | `card` | a card of a post is a picture of *that* post |
-| `word` | what screen you are standing on after a word is renamed or deleted |
+| `word` | what a word does after two presses in a row — rename, delete, save — and what screen you are left on |
 | `post` | what a post carries is put on it when it is written |
 | `backup` | a language survives a wipe, and a restore never wins |
-| `fill` | the inside of what was drawn round survives being saved and read back |
-| `round` | ROUND bends a stroke that exists, never invents one, and undoes exactly |
-| `press` | every button of every screen, pressed for real; 44pt floor |
-| `word` | what a word does after two presses in a row — rename, delete, save |
-| `post` | what a post carries is put on it when it is written |
-| `fill` | a stroke drawn with the fill on inks the inside of what it went round |
-| `round` | ROUND is done to a stroke already drawn, is reversible, and never bends a straight one |
+| `fill` | a stroke drawn with the fill on inks the inside of what it went round, and that survives being saved and read back |
+| `round` | ROUND bends a stroke that exists, never invents one, never bends a straight one, and undoes exactly |
 | `base` | raising the base makes the digits at once; lowering it never takes away one somebody drew |
+| `kb` | the keyboard editor's rows, columns and the step back behind them |
+| `plan` | `CAN`, `can()`, `has()`, the ceilings, and where the plan is kept |
+| `term` | the grammar terms |
+| `sheet` | a file arriving is sorted into the right one of four kinds |
+| `shape` | the ink shapes, off `file://` — it takes no port, which is why it cannot collide in the pool |
+| `draft` | a draft survives and comes back |
+| `gramlang` | the grammar and the language together |
+| `world` | the world screen |
+| `acct` | whose phone this is — one account's things and nobody else's |
+| `page` | the pages of a keyboard |
+| `dl` | taking a chapter of somebody else's language |
+| `again` | what happens on the second press |
+| `open` | what a brand new phone opens on, booted from an empty `localStorage`, read off `#app` |
+| `find` | typing a person's name reaches the server and the answer reaches the screen, full-width ＠ included |
+| `press` | every button of every screen, pressed for real; 44pt floor |
 
 ```
 npm run rls     # supabase/schema.sql, and a second person (~15s)
@@ -113,7 +143,12 @@ One check, by name, for what you changed. Not `npm test` — see rule 2.
 | a screen | `node tools/shot.mjs <screen>` and look at it |
 | `www/i18n/*` | `npm run i18n` |
 | anything a plan gates | `npm run plan`, **and** add a `halfDone` face in `tools/fixture.mjs` that flips `SET.plan` and puts it back |
-| `CAN`, `can()`, `has()`, the word ceiling, or where the plan is kept | `npm run plan` |
+| `CAN`, `can()`, `has()`, a ceiling, or where the plan is kept | `npm run plan` |
+| a corner, a border, or a panel | `npm run box` — rule 18, against a frozen baseline |
+| what the app asks the server for | `npm run acct` + `npm run find` |
+| what a brand new phone opens on, or any step of the onboarding | `npm run open` |
+| the keyboard's pages, or a key that goes to another face | `npm run page` |
+| the four products or the plan they map to | `npm run store` |
 
 ## Fixing a bug
 
@@ -134,10 +169,9 @@ This is not theoretical. `card-check`'s first version was worthless: it asked
 — a copy of the decision under test — so putting the bug back left it green.
 It has to observe the real code path, not restate it.
 
-It happened again, in `conv-check`'s eighth claim, and it is the same shape
-each time: the check worked the private use assignment out again inside
-itself, so shifting `installTypeFont()` by one moved the keys and the check's
-own copy together and it stayed green with the bug in. **A check that
+It happens the same way each time. `conv-check` worked the private use
+assignment out again inside itself, so shifting `installTypeFont()` by one moved
+the keys and the check's own copy together and it stayed green with the bug in. **A check that
 recomputes the thing under test is a copy of it, and a copy always agrees.**
 `LinguaFont.build` is wrapped now and the assignment is read off what the font
 writer was actually handed. If you find yourself writing the answer out in the
@@ -256,29 +290,27 @@ protecting.
 Three checks print a count so that nothing shrinks silently:
 
 ```
-screens walked: 366
-screens the mirror rendered: 275
-buttons pressed: 8683
+screens walked: …
+screens the mirror rendered: …
+buttons pressed: …
 ```
 
-All three measured 2026-08-22. `CLAUDE.md` carries the full history of the
-button count, move by move.
+**The numbers are deliberately not written here.** Take them from your own first
+run and compare your second run against those. A stale number on this page turns
+a correct run into a false alarm, which is worse than having no number at all.
+`CLAUDE.md` carries the history of the button count, move by move.
 
 **A number moving is only ever a question: what changed?** And the answer has
-to be a change somebody made on purpose. Two recent ones, so that neither
-looks like a fault:
+to be a change somebody made on purpose. Two shapes the answer has taken, so
+that neither looks like a fault:
 
-- **`screens the mirror rendered` FELL, 377 → 271.** `i18n-check` renders every
-  screen once per plan, and `['free','plus','studio']` became `['free','plus']`
-  when Studio was deleted. A third of the renders went with the tier; coverage
-  did not fall, the walk went 51 faces → 56.
-- **`buttons pressed` went 7884 → 8627 → 8453 → 8683**, and not in one step: it was
-  measured back over the seventy-four commits between `cd712dd` and `dbd73d4`
-  and moved ten times, down as often as up. `CLAUDE.md` has the table. The two
-  largest swings are a merge of two diverged branches showing up as a fall and
-  a rise in `rev-list` order, not as anything the app did. The last 174 are
-  `wdMode`'s six fixture faces coming out; the last rise is three sessions
-  integrated in one day, plus two buttons the walk had been hiding from itself.
+- **The mirror count can FALL without coverage falling.** `i18n-check` renders
+  every screen once per plan, so deleting a tier deletes a third of the renders
+  while the walk gets wider. That is what happened when Studio went.
+- **The button count moves down as often as up, and a merge moves it twice.**
+  Two diverged branches coming together show up as a fall and then a rise in
+  `rev-list` order rather than as anything the app did. Fixture faces coming out
+  of `tools/fixture.mjs` move it too. `CLAUDE.md` has the table, move by move.
 
 ## Screenshots
 
@@ -309,6 +341,8 @@ Device required:
   the backup generations (.1 / .2), and a corrupt newest file
   anything in WKWebView that a headless Chromium does not reproduce
   the system keyboard extension
+  registering the drawn font with iOS (LinguaShare.registerFont)
+  the home-screen widgets
   purchases
   TestFlight-only behaviour
   sharing a file out
@@ -317,6 +351,11 @@ Device required:
   the network
   cloud sync
 ```
+
+**There is no Swift on a Linux runner**, so every `.swift` in `ios/App/` is on
+this list by construction — the app's five, the keyboard extension's six, the
+widget's eight. `assets-check` asks whether each one is in the Xcode Sources
+phase and says nothing whatever about whether it compiles.
 
 `backup-check` holds everything on this side of the native call; `keep()` and
 `kept()` are Swift and there is no Swift on a Linux runner.

@@ -45,6 +45,8 @@
     "open": "node tools/open-check.mjs",
     "store": "node tools/store-check.mjs",
     "del": "node tools/del-check.mjs"
+    "token": "node tools/token-check.mjs",
+    "store": "node tools/store-check.mjs"
   },
   "keywords": [],
   "author": "",
