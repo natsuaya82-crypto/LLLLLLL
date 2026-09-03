@@ -384,3 +384,11 @@ cd tools && grep -rln "kbFixed\|VO_MS\|postMenuHTML\|fmLabel\|wldRow\|lnField\|k
   保存されるものを変えていないため）
 - 他のブランチは merge も rebase も cherry-pick もしていません。枝は
   `origin/master` (`36e65562`) から切りました
+
+---
+
+**結果（2026-09-03）** ── 決定ログの 93・96・110 に superseded の印と今の姿を書き、102 の Implementation status を「入りました」に書き直しました（`docs/FEATURE_RULES.md` のみ）。93 を置き換えたのは 2026-09-02「ダウンロードは Plus から」で、make の上限は Free 1・Plus 1・Pro 3 です。
+
+102 はリーダーがコードを書き換えました ── 録音の終わりにファイルを書き、`PW.vo` は `{f, ms}` だけ、`voPlayPW()` は削除、古い下書きは `draftOpen()` が置き換え、`draftDropGo()` がファイルを落とします。私が「オーナーの判断」として残した点はオーナーが答えました:「声は投稿上で再生できるよね？下書き消した時にはいらなくない？」
+
+111 の「ポップがトーストである件」は**直していません**（画面の形はオーナーのもの）。分からなかったことをそのまま `docs/BACKLOG.md` に一項として立てました。同じ場所に、`CLAUDE.md` § what the free plan is の下段についての一文が古いままである件も立てています ── このセッションは二つの docs しか触れないためです。上の本文の行番号は `36e65562` 時点のもので、その後の master 取り込みでずれています。

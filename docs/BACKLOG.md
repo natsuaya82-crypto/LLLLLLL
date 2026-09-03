@@ -2557,3 +2557,70 @@ throw しない**。`post(id)` を参照する表も三つあり（`quote` `reac
        二度目に言い出すと、二つの検査が同じ鍵について食い違う
 ```
 
+
+
+## 活用ラベルの「⭕️？」が出すのはトーストです ── ポップでよいか訊いていません
+
+2026-09-03、監査4（決定ログ 91〜113 件目）で見つけました。**分からなかった
+ので直していません。画面の形はオーナーのものです。**
+
+決定は 2026-08-20「A word's related words」（`docs/FEATURE_RULES.md`、この
+ログの 111 件目）で、こう書いてあります:
+
+> Every label we supply carries a small circled `?` beside the word itself,
+> and it says one line and one example as a pop rather than opening a page.
+>
+> 「⭕️？にして少し小さめでポップとして出してほしい。で、文字の横に置いて」
+
+**合っている部分は確かめました。**丸い `?` は `fmQ()`（`www/wordsheet.js`）に
+あり、`<span class="qo">?</span>` を単語のすぐ横に置いています。供給ラベルに
+だけ付く点も `if(!f || fmOwn(f)) return '';` で合っています。一行と一例の
+文言も `www/i18n/en.js` に `.d` / `.e` の対で入っていて、十言語ぶんあります。
+
+**分からないのはここです。**`fmSay()`（`www/wordsheet.js`）が出しているのは
+`toast()` です:
+
+```js
+function fmSay(f){
+  if(!f || fmOwn(f)) return;
+  toast(t('word.fm.'+f+'.d')+' · '+t('word.fm.'+f+'.e'));
+}
+```
+
+このアプリには `popAsk()`（`www/shell.js`）という別物があり、画面の真ん中に
+出て、押して答えるものです。オーナーの言う「ポップ」がトーストを指すのか、
+`popAsk()` の形を指すのかが、**コードからも決定文からも読み取れません。**
+
+トーストを選んだのは意図的に読めます ── `fmSay()` の上の註が「一行と一例、
+それで消える。誰もページを読むことを選んでいないから」と書いています。ただ
+それは書いた人の判断で、決定の言葉とは別のものです。
+
+**訊くこと**: 「⭕️？を押したとき、いまのように上から出て消える帯でよいか。
+それとも画面の中央に出て、押して閉じるものか。」
+
+どちらであっても**押さえるものはありません** ── `fmLabel` も `fmSay` も
+`fmQ` も、`tools/` のどのファイルにも一度も出てきません。
+
+
+## `CLAUDE.md` § what the free plan is が、無料キーボードの下段について古い
+
+2026-09-03、同じ監査で見つけました。**直していません。**そのセッションは
+`docs/FEATURE_RULES.md` と `docs/BACKLOG.md` しか触ってよいことになって
+いませんでした。
+
+`CLAUDE.md` の § What the free plan is に、この一文があります:
+
+> And `!` and `?` are at the ends of the space bar rather than the tail of the
+> third row, with the delete two keys wide, which evens the rows to ten, nine,
+> and seven letters.
+
+**両方とも今は違います。**`kbFixed()`（`www/keyboard.js`）では削除キーは
+3 幅で、`!` と `?` は下段の手前側に並んでいて、その隣が スペース と 改行 です。
+どちらもオーナーの言葉によるもので、`docs/CHANGELOG.md` に
+「2があった分謎に隙間できたから無くして」「改行入れるか無料も。！？スペース　改行」
+として入っています。決定ログの側（91〜113 の 96 件目）は 2026-09-03 に直しました。
+
+**コードは正しく、この一文だけが古い**ので、`CLAUDE.md` のこの文を今の姿に
+書き直せば閉じます。`kb-check` はこの画面の行数とキー数を見ていますが、
+**削除キーの幅も下段の並びも見ていません** ── 一週間気づかれなかったのは
+そのためです。押さえるものを足すかどうかは別の判断で、ここでは訊いていません。

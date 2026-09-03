@@ -3477,16 +3477,23 @@ for.
 - Affected docs: DATA_MODEL.md, CHANGELOG.md, CLAUDE.md rule 12
 - Implementation status: implemented; code confirmed, not device confirmed
 
-### Decision
+### Number of languages — **superseded 2026-09-02**
 - Date: 2026-08-12
 - Area: Number of languages
+- **Superseded by 2026-09-02 「ダウンロードは Plus から。上限は make と別で、
+  Plus 1・Pro 3」** (in this log). Making a language is now **Free 1, Plus 1,
+  Pro 3** — `FREE_LANGS` / `PRO_LANGS` and `langCap()` in `www/core.js`,
+  with `langStop()` sending somebody to the plans screen at the ceiling.
+  Downloading somebody else's is a separate number again.
 - Decision: One language per person, on every plan. Not a price.
 - Reason: there is no way to make a second anywhere in the app, so a plan
   promising more would promise a button that does not exist.
+- **Why it fell**: that reason stopped being true. `langAddRow()`
+  (`www/home.js`) is the door to a second language and `langNew()`
+  (`www/core.js`) is what it presses, so the number is something a plan can
+  sell. `LANG_MAX`, which this entry named, no longer exists.
 - Affected features: languages
-- Affected data: `LANG_MAX`
 - Affected docs: PAID_FEATURES.md, FEATURES.md
-- Implementation status: implemented
 
 ### Decision
 - Date: 2026-08-11
@@ -3519,15 +3526,26 @@ for.
 ### Decision
 - Date: 2026-08-11
 - Area: The free keyboard's face
-- Decision: One face. Digits above the QWERTY, `!` and `?` at the ends of the
-  space bar, delete two keys wide. No second page.
+- Decision: One face, and no second page. Digits above the QWERTY. The
+  bottom bar is `! ? スペース 改行` — the two marks together at the near
+  end — and the delete key is **three** keys wide, hard against the right
+  edge. Every row comes to ten.
 - Reason: 「2ページ目なしでqwertyの上に1〜0の数字と！？入れてこれで無料版1ページに
   抑えよう」「これスペースデカすぎやね。！スペース？みたいにできない？」
   「デリートキーは横二つ分欲しいかも」
+- **The bar and the delete key were settled again after this entry was
+  written, and this entry did not say so for a week.** Both are the owner's
+  and both are in `docs/CHANGELOG.md`:
+  「2があった分謎に隙間できたから無くして」 took the key-wide hole out of
+  the third row, which made the delete three wide rather than two; and
+  「改行入れるか無料も。！？スペース　改行」 moved the two marks together to
+  make room for a return key — a keyboard that cannot start a new line is
+  one nobody can send a message on. The Decision above is written as they
+  left it. 「2ページ目なし」 is untouched.
 - Affected features: keyboard
 - Affected data: none (`kbFixed()` is built from `LETTERS`, stored nowhere)
-- Affected docs: PAID_FEATURES.md
-- Implementation status: implemented
+- Affected docs: PAID_FEATURES.md, CLAUDE.md § what the free plan is
+- Implementation status: implemented. `kbFixed()` in `www/keyboard.js`
 
 ### Decision
 - Date: 2026-08-11
@@ -3601,7 +3619,25 @@ for.
 - Affected docs: DATA_MODEL, DATA_SAFETY, CHANGELOG, CLAUDE.md
 - Implementation status: implemented in the app; **not device confirmed** —
   the microphone, `NSMicrophoneUsageDescription` and the two new Swift calls
-  have never run on a phone
+  have never run on a phone.
+- **「never into `localStorage`」 was broken by the drafts and was put right
+  on 2026-09-03.** A draft carried `PW.vo` whole, base64 and all, so up to
+  thirty seconds of audio went into `lingua.drafts` and up to the server in
+  the draft's body — and `draftsSave()` swallows its exception, so hitting
+  the quota made drafts stop saving in silence, which is the 「保存したつもり」
+  this decision was written to prevent. The fix is not a condition added on
+  top: the file is written **the moment the recording ends** (`voTook()` in
+  `www/rec.js`), so `PW.vo` is `{f, ms}` from then on and no base64 is held
+  anywhere. There is one road for a voice instead of two — `voPlayPW()` is
+  gone and the composer plays through `voPlay()` like everything else. A
+  draft written before this still holding `b64` is put on the disk by
+  `draftOpen()` and replaced in place. `post-check` walks the recording
+  through to the post; four reds were watched first.
+- **A draft thrown away takes its recording with it.**
+  「声は投稿上で再生できるよね？下書き消した時にはいらなくない？」 OWNER
+  2026-09-03. `draftDropGo()` drops that one file and nothing else — it names
+  the file it was given rather than walking the directory asking what is
+  stale (`docs/DATA_SAFETY.md` § DELETE REVIEW)
 
 ### Decision
 - Date: 2026-08-13
@@ -3714,9 +3750,17 @@ for.
   invisible on build 57 and could not be reproduced here, so the row is a
   second entrance rather than a replacement
 
-### Decision
+### A word's derived words — **superseded 2026-08-20 (the entry below)**
 - Date: 2026-08-20
 - Area: A word's derived words
+- **Superseded the same day by 「A word's related words」, which is the NEXT
+  entry down.** The nine below became **two groups of twelve** — 活用 and
+  派生 — and a language may write its own in either. `FM_INF` and `FM_DER` in
+  `www/wordsheet.js` are those two lists.
+  **The ordering of this log is what makes this worth marking**: entries run
+  newest first, and these two share a date the wrong way round, so whoever
+  reads down the file meets the nine before the twenty-four and takes the
+  nine for the newer answer.
 - Decision: A derived word carries **which form of its parent it is**, chosen
   from a fixed list of labels the app supplies. The language does not declare
   a paradigm, nothing obliges a word to have every form or any of them, and a
