@@ -15,6 +15,80 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-03 Google のサインイン ── 渡していた nonce は、読まれない道に渡っていました
+
+オーナーの端末、「Google で続ける」を押して:
+
+```
+Passed nonce and nonce in id_token should either both exist or not.
+(nonce id_token:n sent:y)
+```
+
+丸かっこは `netIdWhy()` がこのアプリ自身で付けている診断で、
+`docs/scope/claude-nonce.md` § 7 が「B が入ったあとにこれが出たら、渡し方が
+効いていない」と書いていたものです。**そのとおりでした。ただし届いていない
+のではありません。**
+
+**`@capgo/capacitor-social-login` の Google には道が二本あり、`payload["nonce"]`
+を読むのは片方だけです**（`GoogleProvider.swift:81`）:
+
+```swift
+if hasPreviousSignIn() && !forceAuthCode && mode != .OFFLINE {
+    restorePreviousSignIn { ... refreshTokensIfNeeded ... }   // nonce を見ない
+} else {
+    login()                                                    // ここだけが読む
+}
+```
+
+`restorePreviousSignInWithCompletion:` は nonce を取る引数を持っていません
+（`GoogleSignIn-iOS 9.0.0`、`GIDSignIn.h:124`）。**一度でも Google で入った
+端末はそれ以降ずっとこの枝を通ります** ── つまり最初の一回を除く全部です。
+返る id_token は refresh で取り直したもので、更新の id_token に nonce クレームは
+載りません（OIDC Core § 12.2）。だから `id_token:n sent:y` になります。
+
+**そして 106 のときに誰が nonce を付けていたのかも分かりました。AppAuth です**
+── `GoogleSignIn` の一段下の依存で、`OIDAuthorizationRequest.m:182` が、nonce を
+渡さずに作った認可要求に**自分で乱数の nonce を入れます**。`claude/nonce` が
+プラグイン・GoogleSignIn・`ios/App/` の Swift を全部読んで見つからなかったのは、
+そのどれでもなかったからです。三つの観測が一本の線に乗ります:
+
+| いつ | 通った道 | id_token | 送った | 結果 |
+|---|---|---|---|---|
+| ビルド 106 | 初回なので対話。AppAuth が付ける | 有り | 無し | 断られる |
+| ビルド 107 | 復元。更新で取り直す | 無し | 無し | **通る** |
+| いま | 復元のまま | 無し | 有り | 断られる |
+
+**107 が通ったのは直ったからではありません。**両側とも黙っていたからです。
+
+**変えたもの:** `obSocial()` の Google の道に `forcePrompt:true` が付きます
+（`www/onboard.js`、nonce と同じ一行）。`forceAuthCode` が真になって条件が
+偽になり、必ず `login()` を通ります。そこで初めてこちらの nonce が認可要求に
+乗り、Google が id_token に載せ、Supabase の `sha256(送った raw)` と一致します。
+
+**振る舞いの変化:** Google を押すと、毎回どのアカウントで入るかを選ぶ面が出ます。
+いままでは黙って前のアカウントで入っていました。**それはオーナーが直せと言った
+ものです** ── 「あと違うアカウントでログインしてんのに前のやつ出てくるんだけど？」
+OWNER 2026-08-31。前のアカウントが出てくるのが、この復元の枝そのものです。
+
+**Apple は一行も変わりません。**`nn` は Google の外では null なので、nonce も
+`forcePrompt` も付きません。Apple の provider は道が一本で（`AppleProvider.swift:201`
+は必ず `performRequests()` する）、`request.nonce` は payload からしか入らず、
+Apple 自身のフレームワークは nonce を作りません。**両側とも黙ったまま**です。
+
+**保存の変化:** ありません。移行なし、削除なし。
+
+**検査:** `tools/open-check.mjs` に § 5。プラグインの偽物が**道を二本持ちます**
+── 前に入ったことのある端末と、無い端末。そのうえで Supabase の条件そのもの
+（片側だけ在るか／両側在って中身が違うか）を、実際に返ってきたトークンに対して
+訊きます。`tools/acct-check.mjs` の 26 は「nonce を**渡した**か」を見ていて、
+今日の不具合を通しました ── 偽物が道を一本しか持っていなかったからです。
+**「渡している」と「載っている」は別の主張です。**
+
+**⚠ 実機未確認。**ここに iPhone はありません。外れた場合、画面には同じ丸かっこが
+出ます ── `(nonce id_token:n sent:y)` のままなら `forcePrompt` が効いていない、
+`(nonce id_token:y sent:y)` で「Nonces mismatch」なら載ったのがこちらの nonce では
+ない、という意味です。
+
 ### 2026-09-03 声は録った瞬間にファイルになる ── 下書きに音声が入っていた
 
 「声は Documents のファイル、`localStorage` には入れない」（2026-08-30）が、
