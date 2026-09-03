@@ -42,12 +42,10 @@ fi
 # catches -- the making side reaching into the timeline -- is invisible while
 # every post is yours, which is to say invisible to whoever is committing.
 #
-# The list is READ OUT OF gate.mjs rather than written here. It used to be
-# written here, and it drifted the way every hand-kept list in this repo has:
-# the comment said "the three", the line under it said "the fast five", it ran
-# five, and FAST held nine -- so grammar-engine-check and store-check were in
-# the gate and not in the hook, and CLAUDE.md said this hook runs "the ones
-# that need no browser". Adding one to FAST adds it here the same day now.
+# The list is READ OUT OF gate.mjs rather than written here, so adding one to
+# FAST adds it here the same day. Do not write the names back into this file:
+# a hand-kept copy of a list is the bug this repo keeps finding, and this one
+# had already drifted two checks behind the gate.
 if git diff --cached --name-only | grep -q '^www/'; then
   FAST=$(node -e "var s=require('fs').readFileSync('tools/gate.mjs','utf8');var m=s.match(/const FAST = \[([\s\S]*?)\];/)[1].match(/'[^']+'/g);console.log(m.map(function(x){return x.slice(1,-1)}).join(' '))") || exit 1
   echo "the fast ones, no browser: $FAST"

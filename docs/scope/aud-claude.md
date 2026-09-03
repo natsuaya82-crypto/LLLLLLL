@@ -118,8 +118,9 @@ www/index.html:3544   <div class="sheet" id="sheet" onclick="event.stopPropagati
 | 素の木 | 緑 |
 
 **二つの `on*=` そのものは直していません。**`www/index.html` は `claude/swipe`
-のものです。`data-do` に変えるかはその枝の仕事で、私は除外に名前で置いただけ
-です。**リーダーの判断待ちとして残ります。**
+のものです。**そして、規則3 は例外を書いていないのに私が除外を作りました** ──
+それは私が決めてよいことではないので、**下の「オーナーに訊くこと」の Q3** に
+置いています。
 
 ### 2. press が master で赤い ── 44pt が一つ割れている
 
@@ -476,12 +477,7 @@ www/sync.js:1    /* Lingua — putting a language and its copy back together (ch
 書きました。**どれが 26 を保つかは決めていません。
 （`www/store.js` は `claude/plannow` のものでもあります）
 
-**これはオーナーへの質問です。**作業中に master へ入った 2026-09-03 の決定が
-「食い違いを見つけたら、セッションもリーダーも決めない。オーナーに訊く」と
-言っているので、リーダー預かりではなく**オーナーへの一行**として置きます。
-
-> 「章 26 を `sheet.js`・`store.js`・`sync.js` の三つが名乗っています。
-> どれが 26 で、あとの二つは何番ですか」
+**これはオーナーへの質問です ── 下の「オーナーに訊くこと」の Q4。**
 
 ### 22. CLAUDE.md:1960 「`www/glyph.js` is 104 KB」
 
@@ -646,6 +642,7 @@ dead-check import-check sides-check face-check box-check store-check
 **やったこと: 直していない。確かめてもいません。**測るにはゲートを全部
 回す必要があり、**回すなと言われています。**リーダーが最後に一度回すとき、
 時計を見れば分かります。**どちらかは消してください。**
+**オーナーへの質問には入れていません** ── 訊くことではなく測ることなので。
 
 ---
 
@@ -859,6 +856,120 @@ FAILED (1):
 キーボードの記述はその前に読んだものなので、**取り込み後のキーボードには
 当て直していません。**規則19 を持つのは `kb-check` で、私は回していません
 （SLOW、リーダーの最後の一度に入ります）。**確かめていない、と書いておきます。**
+
+# オーナーに訊くこと
+
+リーダーの指示（2026-09-03、「食い違いはあなたが決めない」）に従って、
+**決めないと分からないものだけ**をここに集めました。数える・読む・動かせば
+分かるものは入れていません ── そちらは自分で確かめて上に書いています。
+
+四件です。
+
+---
+
+**Q1. 「置き換えられた規則は消す」を、`CLAUDE.md` の § Online と規則22 にも
+当てますか。**
+
+  A: **当てる（消す）** ── 2026-09-03 の決定「古い規則は残さない。
+     印を付けて本文を残すのも残したことになる」。今日の決定です。
+  B: **当てない（残す）** ── `CLAUDE.md:69-75` の「**This replaced a list.**
+     Until 2026-09-03 this said 「three things are the phone's ── a backup
+     file, an exported sheet, and the settings」」と、規則22 の
+     `:1560-1566`「This section used to end with a list of three things that
+     were 「the phone's own」...」。どちらも 2026-09-03 に書かれたもので、
+     **消された規則の姿をそのまま書き出しています。**
+
+  コードは今 A の側です（`SET_ACCT` と `setFor(uid)` がアカウントごとに
+  分けている。`lsWipeNS()` も消えている）。
+
+  訊きたいこと: **この二つの段落を消してよいですか。**
+  （消すと「なぜこの規則があるのか」── 端末のものという区分がオーナーの
+  言語を消した ── が `CLAUDE.md` から無くなり、`docs/CHANGELOG.md` と
+  `docs/FEATURE_RULES.md` の決定ログだけに残ります。**私は消していません。**
+  他のどの段落より強く「これを読め」と書いてある段なので、機械的に当てるより
+  訊くべきだと判断しました）
+
+---
+
+**Q2. `CLAUDE.md` 規則6 の「平キーから写す」の段は、いま消しますか、
+`claude/flat` がコードを消すときに一緒に消しますか。**
+
+  A: **いま消す** ── 2026-09-03 の決定「置き換えられた規則は消す」。
+     平キーの決定の Affected docs が **`CLAUDE.md 規則6` を名指ししています。**
+  B: **`claude/flat` と一緒に消す** ── `CLAUDE.md` 自身の
+     「a change lands with every sentence it falsifies」。平キーの決定の
+     Implementation status は **「未実装」**です。
+
+  コードは今 B の側です ── `langMigrate()` も `LS_FLAT` も `www/core.js` に
+  まだ在り、`migrate-check` がそれを回しています。いま文だけ消すと、
+  **動いているコードを説明する文が無くなります。**
+
+  訊きたいこと: **A と B のどちらですか。**
+  （**私は B のつもりで消していません。**間違っていれば戻せます）
+
+---
+
+**Q3. `www/index.html` に残る `on*=` 二つは、そのまま除外で置きますか、
+`data-do` に変えますか。**
+
+  A: **除外で置く** ── `#sbg` と `#sheet` はシート全体の下地で、
+     画面ではなく静的なシェルです。`box-check` の baseline と同じ形。
+  B: **`data-do` に変える** ── 規則3 は「A button carries a **name**, never
+     code. **Never write** `onclick="..."` or any other `on*=` attribute」と
+     書いていて、例外を書いていません。
+
+```
+www/index.html:3544   <div class="sbg" id="sbg" onclick="closeSheet(event)">
+www/index.html:3545   <div class="sheet" id="sheet" onclick="event.stopPropagation()"></div>
+```
+
+  コードは今 A の側です（**私が今日そうしました** ── `act-check` に
+  `SHELL_OK` として名前で置き、名前が当たらなくなったら落ちるようにした）。
+  **規則に例外を作ったのは私なので、これは訊くべきものです。**
+
+  訊きたいこと: **この二つは除外のままでよいですか、`data-do` に直しますか。**
+  （B なら `www/index.html` は `claude/swipe` の担当です。`closeSheet` は
+  既に他から呼ばれているので、`dead-check` は変わりません）
+
+---
+
+**Q4. 章 26 を三つのファイルが名乗っています。どれが 26 ですか。**
+
+```
+www/sheet.js:1   /* Lingua — the sheet somebody writes on (chapter 26)      79 KB
+www/store.js:1   /* Lingua — chapter 26. The App Store.                     23 KB
+www/sync.js:1    /* Lingua — putting a language and its copy back together (chapter 26)   5 KB
+```
+
+  A: と B: に分けられません ── **三つのうちどれ、という質問です。**
+  `CLAUDE.md`「Working on this repo」が「**One chapter per file**」と書いて
+  います。いちばん大きい番号は 27（`www/cal.js`）なので、空いている次の番号は
+  28 と 29 です。
+
+  コードは今、三つとも 26 を名乗っています。
+
+  訊きたいこと: **26 はどれで、あとの二つは何番ですか。**
+  （番号を振り直すのは rename なので、`CLAUDE.md` § Refactoring により
+  それ自身のコミットになります。`www/store.js` は `claude/plannow` の担当）
+
+---
+
+## ここに入れなかったもの（調べれば分かるので、調べました）
+
+リーダーの「調べれば分かることを混ぜるな」に従って、最初「訊く」に置いて
+いた三件を自分で確かめました。
+
+| 一度は訊こうとしたもの | どうやって決着したか |
+|---|---|
+| `conv-check` が seven / eight / nine と三つ言っている | **回した。**run が印字するのは nine で、数え上げると九つ。直した |
+| `kb-check` の「two hundred and fifty-one」 | **数えた。**`say(` は 277 本。数を消した |
+| 規則17 の「with one exception」 | **`npm run face` を回した。**二つ（`LinguaScript` と `LinguaType`）と印字する。直した |
+
+**ゲートの所要時間（`sixteen minutes` と `six minutes`）も訊きません。**
+**測れば分かります。**ただし測るにはゲートを全部回す必要があり、回すなと
+言われているので**私は測っていません。**リーダーが最後に回すとき時計を見て、
+片方を消してください（`CLAUDE.md:458` と `:2002`）。
+
 
 ## やったこと・回したもの
 

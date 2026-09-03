@@ -433,9 +433,8 @@ npm test        # tools/gate.mjs -- the FAST ones with no browser in a row
 
 Individual: every check in `FAST` and `SLOW` has an `npm run` alias in
 `package.json`, and that file is the list — `node -e "console.log(Object.keys(require('./package.json').scripts).join(' '))"`.
-Do not restate them here: the last version of this line named twenty-five of
-the thirty-five, and one of the names it gave (`npm run ask`) points at a
-`tools/ask-check.mjs` that does not exist.
+Do not restate them here. `assets-check` holds both directions: a script naming
+a tool that is not there, and a gate entry with no script to run it by.
 `tools/gate.mjs` is what `npm test` runs. The ones that need no browser go first, one
 after another, in about two seconds — a missing script tag or an arrow function fails
 there and nothing heavy is started at all — and the ones that each start a headless
@@ -512,8 +511,8 @@ throws, every screenshot is right, and `npm test` is green, because there is
 only ever one person in a test. So `rls-check` is a second person — it applies
 `schema.sql` unchanged to an empty database and then tries, as B and as
 somebody with no account, to do every one of the things the file says cannot be
-done -- `CASES` in `tools/rls-check.mjs` is that list and the run prints how
-many it tried; it was 34 when this line was written and it is not 34 now.
+done -- `CASES` in `tools/rls-check.mjs` is that list, and the run prints how
+many it tried. Count them off there.
 Adding a policy means adding the line somebody would use against it.
 
 ## The twenty-two rules the gate enforces
@@ -521,8 +520,8 @@ Adding a policy means adding the line somebody would use against it.
 Twenty-two is how many rules are written below. **The gate is a different number
 and the two must not be made to match** — count the rules here, and read the
 gate's own last line for the other (it prints `FAST.length + SLOW.length`). One
-rule can take three checks and one check can hold two rules. This sentence used
-to carry the gate's number as well, and it was wrong twice.
+rule can take three checks and one check can hold two rules. Do not write the
+gate's number here.
 
 ### 1. `www/**/*.js` must be ES5
 
@@ -565,14 +564,12 @@ screen named twice).
 
 A button carries a **name**, never code. Never write `onclick="..."` or any other
 `on*=` attribute — `act-check` fails on one anywhere, so the class cannot come back.
-"Anywhere" was two statements short of true for a while: it read what a screen
-RETURNED, and `index.html`'s own shell is not returned by anything, so the two on
-the sheet's backdrop (`#sbg` and `#sheet`) sat outside every walk with the rule
-saying they could not. The shell is read now, and those two are named in
-`SHELL_OK` in `act-check` — **named, and the names have to keep matching**, so an
-exemption left standing over markup that has changed fails the same as a new one.
-They are the only two, they are the static shell rather than a screen, and
-nothing new joins them.
+That is asked of what a screen RETURNS and of `index.html`'s own shell, which
+is returned by nothing and therefore reached by no walk. The shell's two — the
+sheet's backdrop, `#sbg` and `#sheet` — are named in `SHELL_OK` in `act-check`.
+**Named, and the names have to keep matching**: an exemption left standing over
+markup that has changed fails the same as a new handler. They are the only two,
+they are the static shell rather than a screen, and nothing new joins them.
 
 ```js
 '<button' + DO('tkAdd', [w.hw]) + '>'      // -> data-do="tkAdd" data-a="[...]"
@@ -697,11 +694,10 @@ second global and leave the sort where it was.
 
 **And what money buys, which is the same sentence a third time.** `CAN` in
 `core.js` names every capability a plan opens, and `can('kb')` is the
-only way to ask. **This line does not list them, because every version of it
-that did went stale**: it once listed `tr`, which is not a capability and never
-was; then it was missing `edit` and `badge`, which are; and after that was
-fixed it went on missing `dl` while `dl-check` and a whole rung of the plans
-page ran on it. Read `CAN`. `npm run dead` prints the number it actually counted on every run
+only way to ask. **This line does not list them**: every version of it that did
+went stale, in both directions — a name that was not a capability, and
+capabilities left off while checks and a rung of the plans page ran on them.
+Read `CAN`. `npm run dead` prints the number it actually counted on every run
 ("what money buys: N capabilities in CAN"), which is the thing to read.
 `has()` names a *plan* and is `core.js`'s alone. `dead-check` refuses a
 capability nothing asks for (a price with nothing behind it), a `can('x')` in
@@ -908,8 +904,7 @@ the check, so a sixth kind is walked the day it is added — calls the real
 seven now and its own last line is the list** — the seven the prose made, the
 eighth below, and a ninth that came out of splitting one of them: the roman layer
 appears where the person CHOSE a writing system and never where `wsGuess()` merely
-guessed one, which is a road that had never been walked. Read that line rather than
-a number here; three different numbers were written down inside the check itself.
+guessed one. Read that line rather than a number here.
 
 It already found one. `shareTable()`'s own comment claimed a shape was reserved
 only once a key could reach it; the code asked for the ink slot *first*, so a blank
@@ -944,15 +939,12 @@ is a copy of it, and a copy always agrees.** `LinguaFont.build` is wrapped
 instead — the same reason `card-check` wraps `cardInk()` rather than asking
 `cardSrc()`, and the same shape as the fault rule 12 was written after.
 
-**And the order is worked out in ONE place.** It used to be worked out in four
-— `installTypeFont()`, `puaRoman()`, `postCutTyped()` and `shareFace()` each
-writing `ltOrder(LETTERS.filter(has strokes))` out again. It is `ltPuaOrder()`
-in `glyph.js` now, beside `ltPua()`, and those four ask it: `puaRoman()` and
-`installTypeFont()` in `glyph.js`, `postCutTyped()` in `post.js`, `shareFace()`
-in `share.js`. Its name is in `sides-check`'s forbidden list beside `LETTERS`
-itself, which is the half that had to land in the same commit — it reads the
-making side, and **a function that reads the making side is a way to reach the
-making side; giving it a new name is not a way to stop being one.**
+**And the order is worked out in ONE place.** `ltPuaOrder()` in `glyph.js`,
+beside `ltPua()`, and four ask it: `puaRoman()` and `installTypeFont()` in
+`glyph.js`, `postCutTyped()` in `post.js`, `shareFace()` in `share.js`. Its
+name is in `sides-check`'s forbidden list beside `LETTERS` itself — it reads
+the making side, and **a function that reads the making side is a way to reach
+the making side; giving it a new name is not a way to stop being one.**
 
 ### 11. A language is never lost
 
@@ -1162,9 +1154,8 @@ things:
    it. There are two and `face-check` prints them: `LinguaScript`, the font the
    person drew (`SFONT_FAMILY` in `glyph.js`, which must be exactly the family
    in `--face-script`), and `LinguaType`, the private-use face rule 10 is
-   about, which must be the family in `--face-type`. This said "one exception"
-   after the second one landed. When a built family and its variable disagree
-   nothing throws: the font builds, the `@font-face`
+   about, which must be the family in `--face-type`. When a built family and its
+   variable disagree nothing throws: the font builds, the `@font-face`
    installs, and every `.sfont` element quietly falls back to roman.
 4. **A canvas font asks the page.** A canvas has no inheritance, so a literal
    there is the one kind of face the stylesheet cannot reach. `cssVar(n, fb)`
@@ -1316,8 +1307,7 @@ state *after* the change rather than the one before — every one of those is a
 keyboard that still renders, still installs, and is not the one somebody built.
 
 `tools/kb-check.mjs` holds these — count the `say(`
-lines there rather than trusting any number here, which went stale three times
-before the number was taken out altogether: the row
+lines there rather than writing a number here: the row
 that goes is the one pressed
 and every other row is untouched and in order; a column comes out of every row,
 one key's worth from each; **a key wider than the column is NARROWED and not
@@ -1590,13 +1580,11 @@ function in `www/net.js` that takes it there (and that function has to exist),
 or **the phone's own with a sentence saying why**.
 
 **That second half is what has to shrink to nothing**, and every entry left in
-it is a thing waiting to be handed to the wrong person. The three that used to
-be named here have gone: the plan, the saved searches and the notice marker sat
-in one settings key shared by whoever signed in, and `SET_ACCT` in `core.js` is
-now the list of the fields that are a PERSON's — `plan` `planWas` `planPend`
-`saved` `savedUp` `notAt` — with `setFor(uid)` parking them under
-`lingua.set.<uid>` on the way out and bringing that account's own back on the
-way in. What is left in the second half is the theme and how this handset is
+it is a thing waiting to be handed to the wrong person. **`SET_ACCT` in
+`core.js` is the list of the fields inside `lingua.set` that are a PERSON's** —
+`plan` `planWas` `planPend` `saved` `savedUp` `notAt` — and `setFor(uid)` parks
+them under `lingua.set.<uid>` on the way out and brings that account's own back
+on the way in. What is left as the phone's is the theme and how this handset is
 set up. `docs/BACKLOG.md` carries whatever is still there; read
 `store-check`'s own last two lines for the count rather than a sentence here.
 
