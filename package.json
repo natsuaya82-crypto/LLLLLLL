@@ -19,6 +19,7 @@
     "css-snap": "node tools/css-snap.mjs",
     "press": "node tools/press.mjs",
     "dead": "node tools/dead-check.mjs",
+    "order": "node tools/order-check.mjs",
     "migrate": "node tools/migrate-check.mjs",
     "rls": "node tools/rls-check.mjs",
     "backup": "node tools/backup-check.mjs",

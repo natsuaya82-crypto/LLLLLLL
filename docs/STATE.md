@@ -222,9 +222,16 @@ Connect と DNS のダッシュボードの話なので、**済んだかどう�
 A fresh clone of `master` is the current app. **No sha is written here** — a sha
 has a shelf life of about a day.
 
-The gate is **39 checks** — twelve that need no browser and twenty-seven that do.
-Count `FAST` and `SLOW` in `tools/gate.mjs`, which is the only place the number
-lives.
+**How many checks the gate is, is not written here.** It has been written here
+three times and it was wrong all three (thirty-one, then thirty-five, while the
+lists held more). `tools/gate.mjs` is the only place the number lives, and the
+run prints it on its own last line. Read it off there:
+
+```
+node -e "const s=require('fs').readFileSync('tools/gate.mjs','utf8');
+  for(const m of s.matchAll(/const (FAST|SLOW) = \[([^\]]*)\]/g))
+    console.log(m[1], m[2].split(',').length)"
+```
 
 **Never write "the gate is green" here unless you watched it go green.** A
 sentence in this file claiming a green nobody saw is the failure this file
@@ -579,29 +586,29 @@ life as a branch name.
 
 ## 5. The gate, and what CI does not run
 
-`npm test` is **thirty-nine** checks and is the specification. `CLAUDE.md` →
-"The rules the gate enforces" -- **and those two numbers are not the same kind
-of thing.** One counts RULES that are written down; this one counts CHECKS that
+`npm test` is the specification. **Its count is not written here** (§ 1 says
+why and gives the one line that answers it). `CLAUDE.md` →
+"The rules the gate enforces" carries a different number -- **and the two are
+not the same kind of thing.** One counts RULES that are written down; this one counts CHECKS that
 run. They have never been equal and making them equal would be wrong: one rule
 can take three checks and one check can hold two rules.
 
-`tools/gate.mjs` runs the **twelve** that need no browser first, in about two
-seconds, then the **twenty-seven** browser ones four at a time (`WIDE` is
-`min(4, cpus)`). Run one after another they were about ten minutes in this
+`tools/gate.mjs` runs `FAST` -- the ones that need no browser -- first, in about
+two seconds, then `SLOW`, four at a time (`WIDE` is `min(4, cpus)`). Run one after another they were about ten minutes in this
 container, which is a figure nobody has re-measured since the count grew.
 
 **It is run once before pushing**, not once per commit — the owner's rule, and
 `docs/TESTING.md` has all three. While working, run the one check that holds
-what you are changing, by name, plus the six fast ones.
+what you are changing, by name, plus `FAST`.
 
 **GitHub Actions runs three of them** — `assets`, `es5`, `i18n`
 (`.github/workflows/i18n.yml`). A green tick on a push does not mean the gate
-passed. **The other thirty-six run only where somebody runs them**, which means
+passed. **Every other one runs only where somebody runs them**, which means
 locally, which means you.
 
-The names are deliberately not listed here. A list of thirty-six check names is
-a list that goes stale the next time one is added, and this file has been wrong
-about that list twice. The command:
+The names are deliberately not listed here. A list of check names is a list
+that goes stale the next time one is added, and this file has been wrong about
+that list twice. The command:
 
 ```
 node -e "const s=require('fs').readFileSync('tools/gate.mjs','utf8');

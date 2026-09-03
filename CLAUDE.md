@@ -883,6 +883,20 @@ Also: every `.js` under `www/` must be referenced by `index.html`, and every fil
 `index.html` references must be **tracked by git** (not merely present on disk).
 Adding a script file means adding its tag and `git add`-ing it in the same commit.
 
+**And nothing that RUNS while the page is loading may reach a file loaded after
+it.** `order-check` holds that one, and it is the question the three above do
+not ask: they say what order the files are in, not whether a line running now
+can see what it needs. `migratePos()` at the top level of `shell.js` called
+`save()`, `save()` opens with `bkTouch()`, and `backup.js` is loaded after
+`shell.js` — so on any handset carrying one old part-of-speech label,
+`shell.js` threw on that line and **every definition below it was never made**.
+A blank screen, nothing in the log about a migration, and every check green.
+It is asked **transitively**, because the fault was three steps down and the
+call site named nothing from `backup.js`; and it is asked of whether a path
+EXISTS rather than whether it is taken, because a path only an old phone walks
+is the one nobody walks and everybody ships. `www/boot.js` is loaded last and
+exists for exactly this: a migration goes there, not beside its definition.
+
 `assets-check` holds the same statement on the other side of the wall: every `.swift`
 under `ios/App/` must be in `App.xcodeproj`'s Sources build phase, because Xcode
 compiles what the project file lists and nothing else — a file on disk, tracked by
