@@ -228,6 +228,7 @@ defLang('zh', (function(){
       "kb.new" : "添加键盘",
       "kb.n" : "键盘{0}",
       "kb.done" : "完成",
+      "kb.lt.ok" : "确定",
       "kb.rm" : "删除这个键盘",
       "kb.sel" : "选择",
       "kb.sel.done" : "完成",

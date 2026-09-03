@@ -180,6 +180,7 @@ defLang('es', (function(){
       "kb.new" : "Añadir un teclado",
       "kb.n" : "Teclado {0}",
       "kb.done" : "Listo",
+      "kb.lt.ok" : "Confirmar",
       "kb.rm" : "Eliminar este teclado",
       "kb.sel" : "Seleccionar",
       "kb.sel.done" : "Listo",

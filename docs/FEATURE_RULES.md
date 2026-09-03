@@ -379,7 +379,12 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected data: **無し。**選択は画面の状態で、`viewReset()`（`www/shell.js`）
   が忘れる場所。**言語にも `KB` にも何も足さない**
 - Affected docs: この項、docs/CHANGELOG.md、docs/keyboard.md
-- Implementation status: **未実装。**`claude/keysel` に渡した（2026-09-03）
+- Implementation status: **実装済み（`claude/keysel`、2026-09-03）。**
+  `kbLtGrid()` の押しは選択を憶えるだけになり、書き込む道は `kbLtPut()` 一本。
+  紫は `kbPickPaint()`（新しい色も class も足していない）。選択は
+  `www/keyboard.js` の `kbLtPick` 一つで、画面を開くたびに空になり
+  `viewReset()` も落とす ── **保存するものは増えていない。**
+  `tools/kb-check.mjs` に 15 の主張。**CODE CONFIRMED、DEVICE 未確認。**
 
 ### 買うボタンを消したところには、今のプランと期限を出す
 - Date: 2026-09-03

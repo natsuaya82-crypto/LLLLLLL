@@ -399,6 +399,7 @@ defLang('ko', (function(){
       "kb.new" : "키보드 추가",
       "kb.n" : "키보드 {0}",
       "kb.done" : "완료",
+      "kb.lt.ok" : "확인",
       "kb.rm" : "이 키보드 삭제",
       "kb.sel" : "선택",
       "kb.sel.done" : "완료",
