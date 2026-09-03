@@ -464,13 +464,16 @@ decision and not a cleanup.** 「直近5件」. Nothing on the server deletes on
 its own — there is no trigger — the phone drops the one that fell off by its
 words, the way it drops a star.
 
-**When a word is written down is the part with no obvious answer.** Recording
-inside `snsSetQ()` would leave 「a」「ay」「aya」 standing as three searches,
-because it runs on every letter — and so would recording when an answer
-lands, because an answer lands per letter too. So a word is recorded when the
-person **reaches for the answer**: pressing 🔍 (`snsGo`), or opening somebody
-off the list of people (`snsWhoRow`). Every prefix on the way is never
-reached for, which is exactly what tells it from the word somebody meant.
+**A word is written down when 🔍 is pressed, and by nothing else.**
+「検索は🔍押したらって言ってるやん」 OWNER 2026-09-03. `snsGo()` is the only
+caller of `snsRecentAdd()`. Recording inside `snsSetQ()` would leave
+「a」「ay」「aya」 standing as three searches, because it runs on every letter,
+and the search was the one press rather than the three letters; recording when
+an answer lands is the same mistake at a later moment, because an answer lands
+per letter too. It agrees with what this screen already said —
+「ツイートの検索は検索ボタン押したら出てくる。それまでは人」 (2026-08-26) — so
+🔍 is the place that already means 「searched」. Opening a person off the answer
+was built as a second road into it and the decision took it out.
 
 **What is not per-account yet, said plainly.** `SET.recent` rides in
 `lingua.set`, the one settings key shared by whoever signs in — the same place

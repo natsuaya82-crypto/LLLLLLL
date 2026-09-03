@@ -158,10 +158,10 @@ say(lang.rows === 1,
    「検索した履歴もユーザーはいらんから5個くらい検索履歴出るようにしたい」
    「1件づつ消せるでいいよ」 OWNER 2026-09-03.
 
-   一文字ごとに走る `snsSetQ()` の中で書けば「a」「ay」「aya」が三件残ります。
-   だから記録は**人が答えに手を伸ばした瞬間**だけ ── 🔍 を押す（`snsGo`）か、
-   人の行を開く（`snsWhoRow` の AFTER）。途中の接頭辞はどれも触られずに死ぬので、
-   それが「打ち終わった言葉」との違いになります。 */
+   「検索は🔍押したらって言ってるやん」 OWNER 2026-09-03。**入るのは 🔍 を
+   押したときだけです。**一文字ごとに走る `snsSetQ()` の中で書けば
+   「a」「ay」「aya」が三件残り、検索したのは押した一回で三回ではありません。
+   人の行を開く道も**ありません** ── 一度作って、決定で外しました。 */
 async function hist(){
   return await pg.evaluate(() => {
     var e = document.getElementById('sns-hits');
@@ -183,11 +183,36 @@ async function blank(){
 }
 
 await blank();
-/* 一文字ずつ打っただけでは増えない。 */
+/* 打っただけでは一件も増えない ── 何文字打っても 0 件のまま。
+   「検索は🔍押したらって言ってるやん」 */
+for (const q of ['a', 'ay', 'aya', 'ayan', 'ayana', 'k', 'ka', 'kan'])
+  await pg.evaluate((q) => snsSetQ(q), q);
+await pg.waitForTimeout(400);
+let h = await hist();
+say(h.words.length === 0,
+    '打っただけでは一件も増えない (8回 snsSetQ して: ' + JSON.stringify(h.words) + ')');
+say(h.sent.length === 0,
+    '打っただけではサーバーにも行かない (' + h.sent.length + '本)');
+
+/* そして人の行を開く道は無い ── 一度作って決定で外したので、戻ってこないよう
+   にここで押さえる。答えの中の人を開いても履歴は動かない。 */
+await pg.evaluate(() => {
+  snsQ = 'aya'; snsHits = { q:'aya', posts:[],
+    who:[{ who:'Aya', hd:'aya', av:null, lname:'', mine:false }] };
+  render();
+});
+await pg.waitForTimeout(150);
+const opened = await pg.evaluate(() => {
+  var b = document.querySelector('#sns-hits .whrow .whgo');
+  if (!b) return { none:true };
+  b.click();
+  return { none:false, words: SET.recent ? SET.recent.slice() : [] };
+});
+say(!opened.none && opened.words.length === 0,
+    '人の行を開いても履歴は動かない (🔍 だけ: ' + JSON.stringify(opened.words || []) + ')');
+await blank();
 for (const q of ['a', 'ay', 'aya']) await pg.evaluate((q) => snsSetQ(q), q);
 await pg.waitForTimeout(300);
-let h = await hist();
-say(h.words.length === 0, '一文字ごとには増えない (打っただけ: ' + JSON.stringify(h.words) + ')');
 
 /* 🔍 を押すと、その言葉が一件だけ入る。 */
 await pg.evaluate(() => { window.__ASK = []; snsGo(); });

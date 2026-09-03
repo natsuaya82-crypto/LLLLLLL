@@ -1147,18 +1147,10 @@ function snsWhoRow(p, full){
       (full && p.bio? '<span class="pbio">'+esc(p.bio)+'</span>' : '')+
     '</span>'+
     (p.lname? '<span class="plangtag">'+esc(p.lname)+'</span>' : '');
-  /* AND THIS IS WHERE A SEARCH BECOMES ONE SOMEBODY MADE. Reaching a person
-     off the answer is the person saying 「that word found who I wanted」 --
-     which is the only thing on this screen that tells a finished search from
-     the four prefixes typed on the way to it. snsRecentAdd() says the rest.
-
-     Only in the SEARCH's rows: `full` is the follows list, where a row is
-     somebody you already have and no word was typed to reach it. */
-  var keep=full? '' : AFTER('snsRecentKeep');
   return '<div class="whrow">'+
     (p.mine
-      ? '<button class="whgo"' + DO('goTab', ["profile"]) + keep + '>'+inner+'</button>'
-      : '<button class="whgo"' + DO('go', ["profile", h]) + keep + '>'+inner+'</button>')+
+      ? '<button class="whgo"' + DO('goTab', ["profile"]) + '>'+inner+'</button>'
+      : '<button class="whgo"' + DO('go', ["profile", h]) + '>'+inner+'</button>')+
     (p.mine? ''
       : '<button class="whfo'+(on? ' on' : '')+'"' + DO('meFollow', [h]) + '>'+
           esc(t(on? 'me.unfollow' : 'me.follow'))+'</button>')+
@@ -1378,17 +1370,21 @@ function snsRecentPull(){
     SET.recent=got; save(); render();
   }, function(){ snsRecentAsk=false; });
 }
-/* THE ONE PLACE A WORD ENTERS THE HISTORY, and what counts as 「searched」 is
-   the whole of the question. `snsSetQ()` runs on every letter, so anything
-   written from there leaves 「a」「ay」「aya」 standing as three searches --
-   and so does writing it when an ANSWER lands, because an answer lands per
-   letter too. A timer that waited for typing to stop would be a second
-   mechanism deciding the same thing.
+/* THE ONE PLACE A WORD ENTERS THE HISTORY, AND 🔍 IS THE ONLY ROAD TO IT.
+   「検索は🔍押したらって言ってるやん」 OWNER 2026-09-03.
 
-   So it is neither: a word is recorded when the person REACHES FOR THE
-   ANSWER. Pressing 🔍 is that (snsGo), and so is opening somebody off the
-   list of people (snsWhoRow). Every prefix on the way dies without being
-   reached for, which is exactly what tells it from the word somebody meant.
+   `snsGo()` is the whole of it. Nothing else calls this, and nothing else may:
+   `snsSetQ()` runs on every letter, so a word written from there leaves
+   「a」「ay」「aya」 standing as three searches -- and the search was the one
+   press, not the three letters. Writing it when an ANSWER lands is the same
+   mistake wearing a later moment, because an answer lands per letter too.
+
+   IT AGREES WITH WHAT THIS SCREEN ALREADY SAYS, which is why it is one road
+   and not two. 「ツイートの検索は検索ボタン押したら出てくる。それまでは人」
+   (2026-08-26): 🔍 is the place that already means 「searched」, and typing is
+   somebody looking at people. Opening a person off the answer was a second
+   road into this function and it is gone -- a history is what somebody
+   searched for, and reaching a person is not the act the owner named.
 
    Newest first, and the same words again MOVE rather than making a second
    line -- `unique (author, q)` on the server says the same thing. The sixth
@@ -1411,9 +1407,6 @@ function snsRecentAdd(q){
   SET.recent=out;
   save();
 }
-/* Pressed off a person's row, where the argument is not the word -- the
-   answer is on the screen and `snsQ` is what found it. */
-function snsRecentKeep(){ snsRecentAdd(snsQ); }
 /* One word off, and only that one. There is no button that takes them all:
    「1件づつ消せるでいいよ」. */
 function snsDropRecent(q){
