@@ -150,6 +150,59 @@ const r = await pg.evaluate(({s}) => {
   WLD.dl = true; WLD.secs = { letters: { dl: false } };
   out.sectionWins = wldSecDl('letters') === false && wldSecDl('words') === true;
 
+  /* ---- 4. somebody else's letters are drawn, and from THEIRS -----------
+     「人のwikiページ開いても文字表示されない」 OWNER 2026-09-03。
+
+     A letter's face was a `.tc` canvas carrying the letter's id, and
+     geTiles() fills one by asking inkOf() -> ltById() -> LETTERS: the OPEN
+     language. So a reader's alphabet was a grid of empty squares with the
+     right names under them -- nothing threw, and the page was perfect apart
+     from the one thing it is a page about.
+
+     The alphabet is emptied between the drawing and the reading, which is
+     the whole test: a page that draws the right shapes for a language whose
+     letters happen to be in front of it proves nothing (card-check § the
+     letters are redrawn between writing and reading, for the same reason). */
+  /* EVERY CANVAS IN THE ALPHABET, whatever class it wears. Asking for the
+     class the fix happens to use would make this a copy of the fix: with the
+     bug put back there were no such canvases at all and the check reported
+     「the fixture no longer reaches that page」 -- which was believed, and was
+     not what was wrong. What the rule says is that a letter on somebody
+     else's page is DRAWN; how it is keyed is not the claim. */
+  function inked(){
+    var n = document.querySelectorAll('#app .abtlt canvas'), o = [], i, j, d, hit;
+    for(i = 0; i < n.length; i++){
+      hit = 0;
+      try{
+        d = n[i].getContext('2d').getImageData(0, 0, n[i].width, n[i].height).data;
+        for(j = 3; j < d.length; j += 4) if(d[j]) hit++;
+      }catch(e){}
+      o.push(hit);
+    }
+    return o;
+  }
+  var TRI = [{pts:[[112,112],[688,112],[400,688]]}];
+  var BAR = [{pts:[[150,400],[650,400]]}];
+  WLD_HAVE['LX'] = { name:'Ishu', words:2, letters:2, at:'2026-09-03' };
+  WLDS_HAVE['LX'] = {
+    wld:     { body: JSON.stringify({ secs:{} }) },
+    letters: { body: JSON.stringify([
+                 { id:'x1', st:TRI, nm:'ka', snd:['k'] },
+                 { id:'x2', st:BAR, nm:'sa', snd:['s'] }]) },
+    snd:     { body: JSON.stringify([]) },
+    script:  { body: JSON.stringify({ dir:'ltr' }) }
+  };
+  stand('about', 'LX');
+  /* every section arrives shut, so the alphabet has to be opened to be seen */
+  abToggle('letters'); render();
+  out.seenCells = document.querySelectorAll('#app .abtlt .ltc').length;
+  out.seenNames = /ka/.test(document.getElementById('app').innerHTML);
+  /* AND NOW THIS PHONE HAS NO ALPHABET AT ALL. */
+  LETTERS = [];
+  render();
+  out.seenInk = inked();
+  out.seenDrawn = out.seenInk.filter(function(n){ return n > 0; }).length;
+
   return out;
 }, { s: seed.toString() });
 
@@ -222,6 +275,21 @@ if (r.fallbackOn !== true || r.fallbackOff !== false)
 if (r.sectionWins !== true)
   say('a section that HAS an answer no longer beats the page\'s default.');
 
+if (!r.seenCells)
+  say('somebody else\'s alphabet drew no letter cell at all — the fixture no ' +
+      'longer reaches that page, so the claim below was never asked.');
+else {
+  if (r.seenDrawn !== r.seenCells)
+    say('somebody else\'s letters: ' + r.seenDrawn + ' of ' + r.seenCells +
+        ' cells have ink in them, with this phone\'s own alphabet emptied. ' +
+        '「人のwikiページ開いても文字表示されない」 — a letter\'s face has to ' +
+        'come off the letter the page was handed (ltInk()\'s `at`, filled by ' +
+        'abInkMount()), never out of LETTERS by id.');
+  if (!r.seenNames)
+    say('somebody else\'s letters lost their names as well — ltName() reads ' +
+        'the letter it is given, so this is a different fault from the ink.');
+}
+
 console.log('the article: ' + ((r.arrive || []).length) + ' foldable sections, ' +
             'every one shut on arrival, on both faces');
 console.log('and closed again after walking off it, while the reading and ' +
@@ -231,6 +299,8 @@ console.log('and arrives closed in the next language too: ' +
 console.log('one place each: 公開 is the article\'s, DL is asked of a section');
 console.log('world().dl: still stored, still read as what an unanswered ' +
             'section falls back to');
+console.log('somebody else\'s alphabet: ' + r.seenDrawn + '/' + r.seenCells +
+            ' cells inked with this phone holding no letters at all');
 
 await br.close();
 if (fails.length) {

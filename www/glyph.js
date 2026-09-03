@@ -2707,6 +2707,9 @@ function render(){
      instead, which is the same fix the onboarding's canvas got above: they
      find nothing and do nothing on a screen that has none. */
   geTiles(); phkMount(); postFaces(); postLines(); pwHoldMount(); numWidMount();
+  /* and somebody else's alphabet, whose letters are not in LETTERS to be
+     looked up -- www/home.js hands the shapes over instead */
+  abInkMount();
   /* and a line field is made as tall as what is in it, which no markup can
      say -- the same reason the canvases are sized here */
   lnGrowAll();

@@ -1434,11 +1434,35 @@ function vAbout(){
    digit is past YOUR base. Both read the open language, and both mean nothing
    about a language you are only reading. The face and the name still come
    from the one place each lives: ltInk() and ltName(). */
-function abLtCell(l){
+/* AND THE FACE IS HANDED OVER RATHER THAN LOOKED UP. The cell used to ask
+   ltInk() for a `.tc` canvas, which geTiles() fills by asking inkOf() for the
+   letter of that id in the OPEN language -- so somebody else's alphabet was a
+   grid of empty squares with the right names under them.
+   「人のwikiページ開いても文字表示されない」 OWNER 2026-09-03.
+
+   ABLTS is what this page just drew, in the order it drew it, and abInkMount()
+   fills the canvases out of it. Same shape as PFACE in www/post.js: a post's
+   face is on the post, not in LETTERS, and this is the same sentence about an
+   alphabet. It is set here rather than worked out again at mount time, because
+   a second copy of "which letters, in what order" is a copy that agrees with
+   itself and not with the page. */
+var ABLTS=[];
+function abLtCell(l, i){
+  ABLTS[i]=l;
   return '<span class="ltc">'+
-    '<span class="ltcf">'+ltInk(l, '')+'</span>'+
+    '<span class="ltcf">'+ltInk(l, '', '', i)+'</span>'+
     '<span class="ltcn">'+esc(ltName(l)||'\u00b7')+'</span>'+
     '</span>';
+}
+/* Every reader's canvas on the page, filled from the letters themselves.
+   Called from render() beside geTiles(), and it finds nothing and does
+   nothing on a screen that has none. */
+function abInkMount(){
+  var ls=ABLTS;
+  inkCanvases('canvas.tcx', 48, 72, function(c){
+    var l=ls[parseInt(c.getAttribute('data-i'), 10)];
+    return l? inkGeo(l) : null;
+  });
 }
 /* The slices of somebody else's language. `slice_read` opens exactly five of
    them on a published one -- wld, script, snd, letters, kb -- and refuses the
@@ -1793,8 +1817,16 @@ function wldPage(ed, L, lid){
          the open language's base, so it can only ever be right about your
          own -- and it is a DIFFERENT CELL, which is a page that changes shape
          depending on whose it is. 「見た目は一緒にしてよ」 */
-      if(drawn.length) inner+='<div class="ltgrid abtlt">'+
-        ltOrder(drawn).map(abLtCell).join('')+'</div>';
+      /* Not `.map(abLtCell)`: it takes the index now, and a two-argument
+         function handed bare to map is the fault sides-check refuses -- it is
+         how postRow() came to wear my font on every row but the first. Here
+         the index is wanted, so it is passed on purpose and it says so. */
+      if(drawn.length){
+        ABLTS=[];
+        inner+='<div class="ltgrid abtlt">'+
+          ltOrder(drawn).map(function(l, i){ return abLtCell(l, i); }).join('')+
+          '</div>';
+      }
     } else if(sec.nm!==undefined){
       /* A section somebody wrote, and it is a SECTION on both faces --
          「追加したセクションも概要と同じ文字サイズだし▼で隠せるようにして編集でも」
