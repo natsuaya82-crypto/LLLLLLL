@@ -462,7 +462,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected features: ⑬。`www/sns.js` の同じ形も同じ値
 - Affected data: 無し
 - Affected docs: 無し
-- Implementation status: `claude/words2` `3ba0503`。取り込み待ち
+- Implementation status: **実装済み（master）。**`HOLD_SLOP=10` が
+  `www/shell.js:824`、測るのが `:855`。
 
 ### iOS 標準のダイアログもシートも使わない ── 五つ目の禁止
 - Date: 2026-09-01
@@ -794,7 +795,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status: **`claude/fo2` が持っています。**この枝は
   `www/` を持っていないので、ここは記録だけです。
 
-### 5. 端末に住むものはほとんど無い。古い記載は消す
+### 5. 端末に住むものはほとんど無い。古い記載は消す ── 決まったこと3は **superseded 2026-09-03**
 - Date: 2026-09-01
 - Area: サーバーと端末の分かれ目 ── 何が端末のものなのか
 - Decision:
@@ -819,10 +820,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
      **言語そのもの**（`slice` 行のぜんぶ）。
   2. **端末が持つのは、電波が無いときに動く写しだけ。**端末は物が住む場所では
      ない。`lingua.*` の鍵はどれも写しであって家ではない。
-  3. **端末のものとして残るのは三つだけ** ── 言語のバックアップのファイル
-     （`Documents/Languages/<name>.json`）、書き出した表、設定。
-  4. **古い記載は消す。**「これは歴史です」と前置きして残さない ── 読まれる。
-  5. **重いものをサーバーへ移すコードの作業は後回し。**原文の三つ目の
+  3. **古い記載は消す。**「これは歴史です」と前置きして残さない ── 読まれる。
+  4. **重いものをサーバーへ移すコードの作業は後回し。**原文の三つ目の
      ブロックの二行目。**記載を消すことと、コードを移すことは別**で、
      消すほうが今日です。
 
