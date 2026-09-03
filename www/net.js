@@ -969,6 +969,36 @@ function netLangRow(id, ok, bad){
       ok(sid);
     }, bad);
 }
+/* AND THE ONE THING THAT TAKES A LANGUAGE OFF THE SERVER.
+   -------------------------------------------------------------------------
+   「この言語を削除で言語の制作のものは全部なくなるってずっと言ってんだろ」
+   OWNER 2026-09-03.
+
+   A language LIVES on the server (CLAUDE.md § Online). Deleting only the copy
+   on the phone is not deleting it: the next netLangsDown() brings it back,
+   and 「gone, then back」 is not gone.
+
+   `language_drop` in supabase/schema.sql is `owner = auth.uid()`, so a
+   language somebody else wrote cannot be reached from here whatever this
+   phone sends. The slices go with it -- every table naming `language` says
+   `on delete cascade` -- so this one row is the whole of it.
+
+   A language that has never been up has no `sid`, and there is nothing on the
+   server to take away: that is `ok()` and not a failure. The caller has
+   already removed the phone's copy either way, which is the order that
+   matters -- a delete that stops halfway must not leave the language showing.
+
+   The name is not read and the row is not looked up first. Which language is
+   going was decided by the person pressing; asking the server to confirm it
+   would be a second answer to a question that has one. */
+function netLangDrop(id, ok, bad){
+  var L=LANGS[String(id||'')], sid;
+  ok=ok||function(){}; bad=bad||function(){};
+  sid=(L && L.sid)? String(L.sid) : '';
+  if(!netSignedIn() || !sid){ ok(); return; }
+  netSend('DELETE', '/rest/v1/language?id=eq.'+encodeURIComponent(sid),
+          null, SESS.at, function(){ ok(); }, bad);
+}
 /* WHETHER THIS LANGUAGE'S PAGE MAY BE READ BY ANYBODY ELSE.
    -------------------------------------------------------------------------
    「この言語については公開したら公開、非公開にしたら非公開だけどそれ以外に

@@ -1143,6 +1143,78 @@ const R = await pg.evaluate(() => {
     no('30c: 答えが来る前に「まだ誰もいない」と言っている');
   say('30c: 人のフォロー中／フォロワーの一覧が画面に出る ── 自分のぶんは一行も動かない');
 
+  /* ---- 30d. 言語を一つ消すのは、その一つだけ ----------------------------
+     「この言語を削除で言語の制作のものは全部なくなるってずっと言ってんだろ」
+     OWNER 2026-09-03。
+
+     ここに在ったのは「端末のデータを消す」で、**この端末の全言語**を消して
+     いました。誰のものでも。オーナーが頼んだ三本は ログアウト／言語を削除／
+     アカウントを削除 の三つで、真ん中はこれです。
+
+     押さえるのは二つ。**その言語の作ったものが全部消えること**と、**それ以外
+     が一つも動かないこと** ── 同じアカウントの別の言語も、他人の言語も、投稿も
+     下書きも。後者が、2026-09-03 にオーナーの言語を消した形そのものです。 */
+  start();
+  netOut(); arrive(A);
+  const keepL30d = LANGS, keepId30d = langId, keepNm30d = langName;
+  const drops = [];
+  const realSend30d = netSend;
+  netSend = (m, path, body, tok, ok) => {
+    if (m === 'DELETE') drops.push(path);
+    if (ok) ok({});
+  };
+  LANGS = {
+    'Lgo':   { name: '消すほう',   mine: true, uid: A, sid: 'srv-go' },
+    'Lstay': { name: '残るほう',   mine: true, uid: A, sid: 'srv-stay' },
+    'Lb':    { name: 'B のもの',   mine: true, uid: B, sid: 'srv-b' }
+  };
+  langStore();
+  const w30d = [{ hw: 'kano', ph: ['k'], mn: 'hill', mns: ['hill'], pos: 'n' }];
+  try {
+    localStorage.setItem(langKeyOf('Lgo', 'words'), JSON.stringify(w30d));
+    localStorage.setItem(langKeyOf('Lgo', 'kb'), '{"lay":[]}');
+    localStorage.setItem(langKeyOf('Lstay', 'words'), JSON.stringify(w30d));
+    localStorage.setItem(langKeyOf('Lb', 'words'), JSON.stringify(w30d));
+  } catch (e) {}
+  POSTS = [{ id: 'p30d', ln: 'kano', at: 1 }]; savePosts();
+  DRAFTS = [{ at: 1, ln: 'a draft', mn: '', to: '', pr: 0, pics: [], vo: null, pv: false }];
+  draftsSave();
+  langId = 'Lgo'; langName = '消すほう';
+
+  wipeLangs();
+  if (typeof popOn === 'function' && popOn()) popYes();
+  else no('30d: 言語の削除が何も訊かずに消した ── ポップが出ていない');
+
+  /* 消した言語の作ったものは、一つも残らない。 */
+  for (const sl of SLICES)
+    if (localStorage.getItem(langKeyOf('Lgo', sl)))
+      no('30d: 消した言語の ' + sl + ' が残っている');
+  if (LANGS['Lgo']) no('30d: 消した言語が索引に残っている');
+  /* そして、それ以外は一つも動かない。 */
+  if (!LANGS['Lstay']) no('30d: 同じアカウントの別の言語まで消えた');
+  if (!LANGS['Lb']) no('30d: 別のアカウントの言語まで消えた');
+  if (!localStorage.getItem(langKeyOf('Lstay', 'words')))
+    no('30d: 同じアカウントの別の言語の単語が消えた');
+  if (!localStorage.getItem(langKeyOf('Lb', 'words')))
+    no('30d: 別のアカウントの言語の単語が消えた ── 2026-09-03 の形');
+  if (!POSTS.length) no('30d: 投稿が消えた');
+  if (!DRAFTS.length) no('30d: 下書きが消えた');
+  /* サーバーからも消える。端末だけだと次の同期で戻る。 */
+  if (drops.join('\n').indexOf('srv-go') < 0)
+    no('30d: サーバーの行が消えていない ── 次の同期で戻ってくる（' +
+       (drops.join(' ') || '一件も送っていない') + '）');
+  if (drops.join('\n').indexOf('srv-stay') >= 0 ||
+      drops.join('\n').indexOf('srv-b') >= 0)
+    no('30d: 消していない言語をサーバーから消した ── ' + drops.join(' '));
+  /* 消したあと、立っているのはこのアカウントの言語。 */
+  if (!langId) no('30d: 消したあと、どの言語にも立っていない');
+  if (langId === 'Lgo') no('30d: 消した言語に立ったままになっている');
+  if (!langOwned(langId)) no('30d: 消したあと、他人の言語に立っている');
+
+  netSend = realSend30d;
+  LANGS = keepL30d; langId = keepId30d; langName = keepNm30d; langStore();
+  say('30d: 言語を一つ消すのは、その一つだけ ── ほかの言語も投稿も下書きも動かず、サーバーからも消える');
+
   /* ---- 31. キーボードのプールも、そのアカウントのぶん -------------------
      「じゃないとアカウント変えたら無限に言語作れるやん」OWNER 2026-09-01。
      langCount() と同じ穴が kbCount() にもありました ── LANGS は端末のもので
