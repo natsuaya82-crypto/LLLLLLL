@@ -2994,7 +2994,7 @@ function kbDelCol(ci){
    keyboard was on this visit.
 
    ONE PLACE records it -- kbNoted() -- rather than the thirty mutators:
-   kbDelRow, kbDelCol, kbDelKey, kbAddKey, kbSetW, kbSetKind, kbPut, the drag.
+   kbDelRow, kbDelCol, kbDelKey, kbAddKey, kbSetW, kbSetKind, kbLtPut, the drag.
    A list that has to be added to by hand is a list with a hole in it, and the
    hole is a change that cannot be taken back with no way of knowing which one.
 
@@ -3542,7 +3542,21 @@ function kbPick(ri, ki){
      route can be come back to, and `form:kbkey:0:0` is a route. */
   if(kbIsFree(kbShow)) return;
   kbSel={r:ri, k:ki};
-  openForm('kbkey:'+ri+':'+ki, t('kb.key'), kbKeyHTML(ri, ki), function(){ geTiles(); });
+  /* ARRIVING IS ARRIVING: nothing is chosen on a screen you have just opened.
+     「終わって戻ったら選択が解除されてる状態にして欲しい」OWNER 2026-09-03.
+     This is the whole of that face of it -- there is no "on the way out" to
+     write, because coming back and opening the key again comes through here.
+     kbLtDraw() is what paints this screen WITHOUT arriving on it. */
+  kbLtPick=null;
+  kbKeyForm(ri, ki);
+}
+/* The key's screen, drawn. Separated from kbPick() above for one reason: the
+   bar's confirm is part of what openForm() opens, so choosing a letter has to
+   rebuild the whole form -- and doing that through kbPick() would forget the
+   choice that had just been made. */
+function kbKeyForm(ri, ki){
+  openForm('kbkey:'+ri+':'+ki, t('kb.key'), kbKeyHTML(ri, ki), function(){ geTiles(); },
+           kbLtPutBtn());
 }
 FORM_OPEN.kbkey=function(a){
   var p=String(a||'').split(':');
@@ -3672,7 +3686,14 @@ function kbSheetH(){
 var kbSlotFor=null;
 function kbSlot(ri, ki, dir){
   kbSlotFor={r:ri, k:ki, d:dir};
-  openForm('kbslot:'+ri+':'+ki+':'+dir, t('toc.letters'), kbLtHTML(), function(){ geTiles(); });
+  /* Arriving, the same as kbPick() above and for the same sentence. */
+  kbLtPick=null;
+  kbSlotForm(ri, ki, dir);
+}
+/* And the sheet, drawn -- kbKeyForm()'s twin, for kbKeyForm()'s reason. */
+function kbSlotForm(ri, ki, dir){
+  openForm('kbslot:'+ri+':'+ki+':'+dir, t('toc.letters'), kbLtHTML(), function(){ geTiles(); },
+           kbLtPutBtn());
 }
 FORM_OPEN.kbslot=function(a){
   var p=String(a||'').split(':');
@@ -3721,16 +3742,24 @@ function kbLtGrid(ri, ki, dir){
     var ls=ltPickList(ltOfKind('alpha'));
     if(!ls.length) return '<div class="note">'+t('lt.none')+'</div>';
     return '<div class="ltgrid">'+ls.map(function(l){
-      return '<button class="ltc"' + DO('kbPut', [ri, ki, dir, l.id]) + ' aria-label="'+
+      return '<button class="ltc"'+kbLtOnCSS(ri, ki, dir, l.id) +
+        DO('kbLtTap', [ri, ki, dir, l.id]) + ' aria-label="'+
         esc(ltName(l)||t('lt.reads.none'))+'">'+
-        '<span class="ltcf">'+ltInk(l, '<span class="nol">'+ICON_PEN+'</span>')+'</span>'+
-        '<span class="ltcn">'+esc(ltName(l)||t('lt.reads.none'))+'</span></button>';
+        '<span class="ltcf">'+ltInk(l, '<span class="nol"'+
+          kbLtOnInk(ri, ki, dir, l.id)+'>'+ICON_PEN+'</span>')+'</span>'+
+        '<span class="ltcn"'+kbLtOnInk(ri, ki, dir, l.id)+'>'+
+        esc(ltName(l)||t('lt.reads.none'))+'</span></button>';
     }).join('')+'</div>';
   }
   ltReList=cells;
   return ltViewRow()+
-    '<button class="btn ghost" style="width:100%;margin:10px 0"' +
-      DO('kbPut', [ri, ki, dir, ""]) + '>'+t('kb.empty')+'</button>'+
+    /* "Nothing in this slot" is a choice like any other, so it is CHOSEN like
+       any other and waits for the same confirm. Leaving it applying on the
+       press would be the thing that must not happen -- two mechanisms writing
+       one field, one of them still 「触ったら効く」. */
+    '<button class="btn ghost" style="width:100%;margin:10px 0'+
+      kbLtOnPaint(ri, ki, dir, "")+'"' +
+      DO('kbLtTap', [ri, ki, dir, ""]) + '>'+t('kb.empty')+'</button>'+
     '<div id="lt-list">'+cells()+'</div>';
 }
 function kbLtHTML(){
@@ -3738,19 +3767,100 @@ function kbLtHTML(){
   if(!s) return '<div class="note">'+t('form.gone')+'</div>';
   return kbLtGrid(s.r, s.k, s.d);
 }
-/* One letter into one slot, from either screen: the sheet that only holds the
-   alphabet, and the key's own screen where it sits under the key. kbTake()
-   was the first and read kbSlotFor to know where it was going; this is told,
-   because the key's screen knows and has no reason to leave a note first. */
-function kbPut(ri, ki, dir, lid){
+/* ---- what has been CHOSEN on the alphabet, and the confirm over it -------
+   「ここに右上に選択したら適用ボタンが確定ボタン欲しい。終わって戻ったら選択が
+   解除されてる状態にして欲しい。後選択してる紫はもう一度同じ場所触れたら解除
+   して欲しい」 OWNER 2026-09-03.
+
+   Three sentences and ONE shape. A letter used to go onto the key the instant
+   it was touched -- kbPut() wrote it, saved, and redrew. That is gone rather
+   than fenced off: a confirm added beside a press that still wrote would be
+   two mechanisms deciding one field, and CLAUDE.md's 「修正ではなく書き換え」
+   is exactly about the moment you reach to add the second one. So the press
+   REMEMBERS and nothing else, and one road writes -- kbLtPut() below, the
+   button in the bar.
+
+   The three sentences fall out of that one shape:
+     the confirm is here only while something is chosen  -> kbLtPutBtn()
+     touching the chosen one again puts it down          -> kbLtTap()
+     the screen opens with nothing chosen                -> kbPick(), kbSlot()
+
+   And what is chosen is WHERE YOU ARE STANDING, not anything the language
+   has: no slice, no key, no property on a row -- JSON.stringify drops those
+   in silence (CLAUDE.md § 19). It is one variable, and viewReset() drops it
+   with kbSel and kbSlotFor.
+
+   {r, k, d, v} and not just the letter, because the same grid is drawn for
+   the key itself (d = -1) and for each of a flick key's four corners: a
+   choice made for one corner is not a choice made for the next. */
+var kbLtPick=null;
+function kbLtIs(ri, ki, dir, lid){
+  return !!kbLtPick && kbLtPick.r===ri && kbLtPick.k===ki &&
+         kbLtPick.d===dir && kbLtPick.v===lid;
+}
+/* Painted the purple this chapter already paints a chosen thing -- the row's
+   band, the column's band, a chosen key. kbPickPaint() is the one place that
+   says what that purple is, so a cell and a key cannot come to wear two.
+   The name under the letter, and the pen a letter with nothing drawn on it
+   wears, carry their own greys -- so they are told to take the cell's. What
+   IS drawn stays its own ink, because that is the letter. Nothing here is a
+   border or a corner (CLAUDE.md § 18). */
+function kbLtOnPaint(ri, ki, dir, lid){
+  return kbLtIs(ri, ki, dir, lid)? kbPickPaint() : '';
+}
+function kbLtOnCSS(ri, ki, dir, lid){
+  return kbLtIs(ri, ki, dir, lid)? ' style="'+kbPickPaint().slice(1)+'"' : '';
+}
+function kbLtOnInk(ri, ki, dir, lid){
+  return kbLtIs(ri, ki, dir, lid)? ' style="color:inherit"' : '';
+}
+/* The confirm, in the bar, top right, where openForm() puts one. Nothing is
+   chosen -> there is no button, which is 「何も選んでいなければ出ない」. */
+function kbLtPutBtn(){
+  return kbLtPick? '<button class="navdo"' + DO('kbLtPut') + '>'+
+    esc(t('kb.lt.ok'))+'</button>' : '';
+}
+/* A cell pressed. It is chosen, or -- if it is the one already chosen -- it
+   is put down again. 「もう一度同じ場所触れたら解除」 */
+function kbLtTap(ri, ki, dir, lid){
+  kbLtPick=kbLtIs(ri, ki, dir, lid)? null : {r:ri, k:ki, d:dir, v:lid};
+  kbLtDraw(ri, ki, dir);
+}
+/* WHICH OF THE TWO SCREENS THE ALPHABET IS ON, asked once, and asked of the
+   ROUTE. kbSlotFor is a note the sheet leaves for itself, and backing out of
+   the sheet without choosing leaves it lying there -- so a letter chosen
+   afterwards on the key's own screen read that note, believed it was on the
+   sheet, and went back one screen too far. That was already true of the
+   press that wrote (kbPut() read the same note); deferring the write to a
+   confirm only made it easier to reach. One question, one place. */
+function kbLtWhere(){ return formArg(here().a).kind; }
+/* Painting the screen again, which is not arriving on it. The two openers
+   above forget the choice; this one keeps it. */
+function kbLtDraw(ri, ki, dir){
+  var w=kbLtWhere();
+  if(w==='kbslot') kbSlotForm(ri, ki, dir);
+  else if(w==='kbkey') kbKeyForm(ri, ki);
+}
+/* And the one road that WRITES. One letter into one slot, from either screen:
+   the sheet that only holds the alphabet, and the key's own screen where it
+   sits under the key.
+
+   ONE saveKb(), so the confirm is ONE step back -- 「確定を押した一回が、戻る
+   一歩」. Choosing writes nothing and saves nothing, so no history is piled up
+   by a finger moving over the alphabet. */
+function kbLtPut(){
+  var p=kbLtPick, key;
+  if(!p) return;
   if(!kbEdit()) return;
-  var key=kbAt(ri, ki);
+  key=kbAt(p.r, p.k);
   if(!key) return;
-  if(dir<0) key.v=lid; else key.f[dir]=lid;
+  if(p.d<0) key.v=p.v; else key.f[p.d]=p.v;
   saveKb();
-  /* From the sheet, back to the key; from the key's own screen, stay on it. */
-  if(kbSlotFor){ kbSlotFor=null; back(); kbPick(ri, ki); return; }
-  kbPick(ri, ki);
+  /* From the sheet, back to the key; from the key's own screen, stay on it.
+     Either way it ends in kbPick(), which is arriving -- so the choice is
+     spent and the button is gone. */
+  if(kbLtWhere()==='kbslot'){ kbSlotFor=null; back(); kbPick(p.r, p.k); return; }
+  kbPick(p.r, p.k);
 }
 function kbSetKind(ri, ki, kind){
   if(!kbEdit()) return;

@@ -152,6 +152,30 @@ alter table profile add column if not exists admin boolean not null default fals
 alter table profile add column if not exists banned_at timestamptz;
 alter table profile add column if not exists banned_why text;
 
+-- When the @ last moved, and nothing else on this row is about time.
+-- 「ユーザーネームは14日に1度しか変更できないようにしたい」 OWNER 2026-09-03.
+-- What holds the fourteen days is profile_rename(), a thousand lines down,
+-- beside the other thing that may not be done to a handle.
+--
+-- NULL IS NOT "LONG AGO", IT IS "NEVER", and the difference is the whole of
+-- what this column had to be careful about. Choosing the @ when the account is
+-- made is not a change -- there was nothing there to change -- so somebody who
+-- signed up this morning is not held for a fortnight away from the first name
+-- they picked before they had seen it written anywhere. The trigger reads null
+-- as "go ahead", and the first rename is what writes this.
+--
+-- Not in either grant at the foot of this file, and that is the whole of why
+-- fourteen days mean anything. An account that could write when it last
+-- renamed itself could write that it was a month ago, and the rule would hold
+-- against nobody who did not want it to. Only the trigger writes it -- it
+-- assigns to NEW rather than naming a column in a statement, which is the same
+-- road profile_first() takes to `staff`, said again at the grants.
+--
+-- Not on profile_seen either. When somebody last changed their name is not
+-- something other people are shown; the view beside it is what everybody may
+-- read, and this is not on it.
+alter table profile add column if not exists handle_at timestamptz;
+
 -- ---- what ------------------------------------------------------------------
 -- A language. Published or not; a language nobody published is a private
 -- backup of what is on the phone.
@@ -1838,15 +1862,43 @@ create trigger profile_first before insert on profile
 -- Both directions, and the second is the one that costs something to get
 -- wrong: an owner who renames themselves is an owner with no screen left to
 -- fix it from -- staff_drop() carries the same sentence three functions down.
+--
+-- AND IT CANNOT BE MOVED TWICE IN A FORTNIGHT. 「ユーザーネームは14日に1度しか
+-- 変更できないようにしたい」 OWNER 2026-09-03. It is the same trigger and not a
+-- second one: both sentences are about the same act -- this handle becoming
+-- that handle -- and two triggers on one act are two places to read before
+-- anybody knows what a rename does.
+--
+-- HERE AND NOT ON THE PHONE. www/me.js can grey the field out and it should,
+-- but a screen is a suggestion: `handle` is in the UPDATE grant below, so
+-- PATCH /rest/v1/profile with a new one is a request anybody can make with the
+-- app closed. This is the only place that is not a suggestion.
+--
+-- The order of the three is the claim. The reserved name is asked FIRST and on
+-- its own, so that no window opened underneath it -- an account fourteen days
+-- clear, an account that has never renamed -- can ever be the reason a rename
+-- onto or off @lingua got through. The fortnight is the narrower rule and it
+-- goes second; if it ever comes out, the name is still held.
 create or replace function profile_rename() returns trigger
 language plpgsql set search_path = public as $$
 begin
-  if new.handle = 'lingua' and old.handle <> 'lingua' then
+  -- `before update of handle` fires on the column being SET, which is not the
+  -- same as the name having moved. A screen that writes the row back with the
+  -- handle it already had would otherwise spend somebody's fortnight on
+  -- nothing, and they would find out fourteen days later.
+  if new.handle is not distinct from old.handle then
+    return new;
+  end if;
+  -- Both directions in one sentence: with the line above holding, "one of the
+  -- two is lingua" IS "onto it or off it".
+  if new.handle = 'lingua' or old.handle = 'lingua' then
     raise exception 'handle reserved';
   end if;
-  if old.handle = 'lingua' and new.handle <> 'lingua' then
-    raise exception 'handle reserved';
+  if old.handle_at is not null
+     and old.handle_at > now() - interval '14 days' then
+    raise exception 'handle too soon';
   end if;
+  new.handle_at := now();
   return new;
 end $$;
 drop trigger if exists profile_rename on profile;

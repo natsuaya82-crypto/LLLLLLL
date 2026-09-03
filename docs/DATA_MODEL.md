@@ -484,6 +484,38 @@ not taken by `lsWipeAcct()`, which reaches `lingua.me.*`, `lingua.posts.*` and
 entry in `docs/BACKLOG.md` and it is not new here — but a history is the most
 revealing of the three, so it is named.
 
+## The @, and when it may move
+
+The handle is the one name this app has for a person. It is `profile.handle`
+in `supabase/schema.sql`, it is unique, and it is **frozen into other people's
+posts** the moment they reply to you — `post.toh`, the first table in this
+file. A reply keeps the name it was addressed to; it is not re-derived when
+that name changes, and it must not be, because what a reader is owed is what
+was actually written.
+
+That is why the @ may be changed **once in fourteen days**
+（「ユーザーネームは14日に1度しか変更できないようにしたい」 OWNER 2026-09-03）.
+A name that can be swapped every morning is a reply addressed to somebody who
+no longer exists.
+
+**The column: `profile.handle_at`, a `timestamptz`.** When the @ last moved,
+and nothing else. It is written by `profile_rename()`, the BEFORE trigger that
+already held the reserved name, and by nothing else — it is in **neither**
+grant on `profile`, so no account can say when it last renamed itself. It IS
+readable, by the account and by anybody: the profile screen has to be able to
+say when the name can next be moved.
+
+**Empty means never, not long ago.** Every row that existed before the column
+did has it null, and so does every account made since — choosing the @ when
+the account is made is not changing it. The trigger reads null as "go ahead".
+**So there is no migration and nothing to back-fill:** an existing account's
+first rename is free, which is the same thing it was yesterday, and the
+fourteen days start from that rename. Back-filling `created_at` into it would
+be the opposite — it would hold somebody to a change they have not made.
+
+**It is not on `profile_seen`.** When somebody last changed their name is not
+something other people are shown.
+
 ## What money is allowed to touch
 
 Nothing in this file. The plan decides what a person may *do*; it decides
@@ -494,3 +526,24 @@ nothing about what exists, what is saved, or what comes back.
 person to whatever phone they sign in on. `SET.plan` is where the value sits
 today and that is the code, not the model — `docs/STATE.md` § 3 item 4 has the
 gap. See `docs/PAID_FEATURES.md`.
+
+**And when the plan runs to is NOT stored, deliberately.** 2026-09-03: the
+plans screen draws no buy button for a rung already paid for, so the place it
+left says which plan is on and until when — 「消すなら同じ場所に現在この
+プランです〇〇/〇〇までみたいな感じにしないとわからんやろ」 OWNER 2026-09-03.
+The date comes from `Transaction.expirationDate` through `LinguaStore.current`
+and stops at `STORE_UNTIL` in `www/store.js`, which is a variable and not a
+key: it is gone when the app is closed and asked for again the next time the
+screen is opened.
+
+Two reasons, and either one is enough. **It could not answer 「which account
+is this」**, which is the question at the head of `CLAUDE.md` that a thing has
+to answer before it is written down — an expiry belongs to the Apple ID that
+paid, and `localStorage` is the account's. `SET.plan` already cannot answer it
+and that is a known fault (`docs/STATE.md`); a second one beside it is a second
+thing to unpick. **And a date that outlives the plan it was answered for is
+the one thing this line must never do**: it is held WITH that plan, so a plan
+that moves takes the date with it rather than leaving a date beside a plan it
+was never about. 「not known」 and 「there is no end」 are different states and
+do not share a branch, which is the same sentence this file makes about 「空」
+and 「読めていない」 everywhere else.
