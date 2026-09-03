@@ -1115,6 +1115,19 @@ function vvMount(){
    left. One is the phone's habit and one is the owner's, and neither costs the
    other anything.
 
+   AND THE SCREEN BEHIND IS WHAT DECIDES THERE IS A GESTURE AT ALL.
+   「画面左からスワイプで戻るのは下タブの画面はなくして欲しい。ホームを押した
+   瞬間の画面、プロフィールを押した瞬間の画面はいらない。ホームから人の投稿
+   行った時とかそう言う時にして欲しい。…ページを捲るみたいに戻るようにして
+   欲しい。今スキップする」 OWNER 2026-09-03. One sentence, and it is the whole
+   of it: WHERE THERE IS A SCREEN BEHIND, IT TURNS UNDER THE THUMB; WHERE THERE
+   IS NOT, NOTHING HAPPENS.
+
+   A bottom tab throws the trail away -- goTab() is one line and NAV comes out
+   one deep -- so the screen a tab puts you on has nothing behind it, and this
+   gesture is not on that screen. It is on the screen you went somewhere FROM:
+   home, then somebody's post.
+
    Three things it must not do. It must not fire on a drawing: the glyph
    editor is a canvas that goes to the edge of the screen and a stroke ending
    there is a stroke, not a gesture. It must not fire while a key is being
@@ -1141,17 +1154,21 @@ function swStart(e){
   if(e.clientX <= 30) swWay=1;
   else if(e.clientX >= window.innerWidth-30) swWay=-1;
   else return;
-  swX=e.clientX; swY=e.clientY; swOn=true; swPic=true;
+  swX=e.clientX; swY=e.clientY; swOn=true;
 }
 /* ---- the screen behind, while one is being dragged off it ---------------
    「iPhone標準みたいに左側になんかふわってやつ出てきてほしい」 OWNER
    2026-09-02, after the left edge started working at all.
 
    THE SCREEN YOU CAME FROM, KEPT BY render(). Two of them and not one: which
-   screen it was, and its HTML as it was left. A pair, because the picture is
-   only worth showing when the route it belongs to is the one `back()` would
-   take you to -- otherwise it is a screen from somewhere else entirely,
-   sliding in under a gesture that will not land there. */
+   screen it was, and its HTML as it was left. A pair, because a picture is
+   only the screen behind when the route it belongs to is the one `back()`
+   would take you to -- otherwise it is a screen from somewhere else entirely.
+
+   And this pair is what says whether there is a gesture. A tab press leaves a
+   picture here of the screen it took you off, and `back()` from a tab's own
+   screen goes nowhere, so the two disagree and swPrev() answers with nothing
+   -- which is the tab's screen having nothing behind it, said once. */
 var NAVBK=null;
 function navKeep(r, html){ NAVBK=(r && html)? {r:String(r), html:html} : null; }
 /* Where back() would go. NAV's last entry is where you are. */
@@ -1170,7 +1187,7 @@ function swLayer(){ return document.getElementById('swprev'); }
    while the gesture is live: once it IS a back gesture, the page must not
    scroll under it. Until then it is nothing and the page is left alone --
    which is why swLive is a second flag and not the same one as swOn. */
-var swLive=false, swW=1, swPic=true;
+var swLive=false, swW=1;
 function swMove(e){
   if(!swOn) return;
   var dx=e.clientX-swX, dy=e.clientY-swY, p;
@@ -1180,15 +1197,11 @@ function swMove(e){
        page scrolling and this never sees it again. */
     if(Math.abs(dy) > Math.abs(dx)){ swOn=false; return; }
     if(dx*swWay < 12) return;
-    /* NO PICTURE IS NOT NO GESTURE. This said `swOn=false` when there was
-       nothing kept to show -- and swEnd() returns on `!swOn`, so the plain
-       gesture below it, the one that goes back without animating, could
-       never run again. Adding the picture took the gesture away wherever the
-       picture was missing: the first screen of a tab, and the screen after
-       any tab switch. It only drops the drawing. */
-    if(!swPic) return;
+    /* And there has to be a screen behind to turn. With none there is nothing
+       to turn, so this is not the gesture: the thumb goes back to the page and
+       is not asked about again. */
     p=swPrev();
-    if(!p){ swPic=false; return; }
+    if(!p){ swOn=false; return; }
     swLive=true;
     swW=window.innerWidth||1;
     var el=swLayer();
@@ -1217,16 +1230,9 @@ function swClear(){
 function swEnd(e){
   if(!swOn) return;
   swOn=false;
-  var dx=e.clientX-swX, dy=e.clientY-swY, d=dx*swWay;
-  if(!swLive){
-    /* No picture to drag -- the screen behind was not kept, or this is the
-       first screen. The gesture still works, it simply does not animate. */
-    if(d < 70) return;
-    if(Math.abs(dy) > Math.abs(dx)*0.6) return;
-    back();
-    return;
-  }
+  if(!swLive) return;
   swLive=false;
+  var d=(e.clientX-swX)*swWay;
   /* Past a third of the way is going. Under it springs back. Either way it
      travels rather than jumping -- `swgo` is what puts the transition on. */
   var go=(d > swW/3);

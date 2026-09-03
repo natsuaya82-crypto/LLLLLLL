@@ -1109,15 +1109,26 @@ const SWR = await (async () => {
       'not on the document while the thumb was down.');
   else seen.push('from the left edge: words -> ' + g.at + ', with the screen behind it');
 
-  /* 2. the same with nothing kept to show. A missing picture used to kill the
-        gesture outright -- swMove set swOn=false and swEnd returns on that,
-        so the plain go-back below it could never run. */
-  await stand(`window.__seed(); SET.done = true; goTab('build'); NAVBK = null;`);
+  /* 2. THE SCREEN A BOTTOM TAB PUTS YOU ON, which has nowhere to go back to.
+        「下タブの画面はなくして欲しい。ホームを押した瞬間の画面、
+        プロフィールを押した瞬間の画面はいらない」 OWNER 2026-09-03.
+
+        goTab() throws the trail away, so there is no screen behind this one
+        and nothing to turn — and a gesture with nothing to turn does nothing
+        at all. It is stood up the way a thumb reaches it, by pressing a tab
+        from somewhere else: NAVBK is left holding the screen that press left,
+        which is the state the old branch fired on. Nothing is arranged for
+        the question. */
+  await stand(`window.__seed(); SET.done = true; go('words'); goTab('build');`);
   g = await pull(6, 318);
-  if (g.at === 'build')
-    out.push('with no screen kept to show, the gesture did nothing at all. ' +
-      'No picture is not no gesture — it only drops the drawing.');
-  else seen.push('with nothing kept to draw: still went back, to ' + g.at);
+  if (g.at !== 'build')
+    out.push('a drag from the left edge on the screen a bottom tab puts you ' +
+      'on went back, to ' + g.at + '. There is nothing behind that screen.');
+  else if (g.live)
+    out.push('a drag from the left edge on the screen a bottom tab puts you ' +
+      'on drew a screen behind it. There is none to draw.');
+  else seen.push('the screen a tab puts you on: nothing happens');
+
 
   /* 3. and a thumb that starts in the MIDDLE is not this. A gesture that
         fires anywhere is a page you cannot scroll sideways. */
