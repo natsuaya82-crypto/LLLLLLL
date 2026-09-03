@@ -458,11 +458,14 @@ want('while the app still knows what it is',
    The danger this section holds is still the third case, and that one has
    not moved: `lingua.sess` grew a key, and a phone that has been signed in
    for months does not have it; reading its absence as "anonymous" would take
-   the timeline away from every account that exists. netAnonTok() and
-   SESS.anon stay in www/net.js for exactly that, so they are still asked
-   for here. */
+   the timeline away from every account that exists.
+
+   `netMember()` is gone -- it and netSignedIn() asked one question and the
+   decision said 一本になる (2026-09-03). `member` here is netSignedIn(), which
+   is what the app asks everywhere now, and `anon` is still read off the
+   stored session because that is the field an old phone may not carry. */
 const SESSION = () => ({
-  inn: netSignedIn(), member: netMember(), uid: (SESS && SESS.uid) || '',
+  inn: netSignedIn(), member: netSignedIn(), uid: (SESS && SESS.uid) || '',
   anon: !!(SESS && SESS.anon),
   signup: (window.__sent || []).filter((u) => u.indexOf('/auth/v1/signup') >= 0).length,
 });
@@ -527,7 +530,7 @@ want('so nobody is signed in', s4.member, false);
 const s5 = await pg.evaluate(() => new Promise((res) => {
   localStorage.setItem('__test.net', JSON.stringify({ refresh: 'member' }));
   netSignIn('a@b.c', 'pw',
-    () => res({ member: netMember(), anon: !!(SESS && SESS.anon) }),
+    () => res({ member: netSignedIn(), anon: !!(SESS && SESS.anon) }),
     () => res({ member: null, anon: null }));
 }));
 want('signing in at the door makes somebody', s5.member, true);

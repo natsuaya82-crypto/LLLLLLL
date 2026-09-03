@@ -139,7 +139,7 @@ other's notices, and a notice names who did what to whom.
 
 **Nothing prunes it and nothing ages it out**, which is the same sentence
 `lingua.posts` and `lingua.drafts` carry: it is replaced whole by the next
-answer and by nothing else. It is removed by `lsWipeNS()` with everything else
+answer and by nothing else. It is removed by `lsWipeAcct()` with everything else
 under `lingua.` when an account goes — no list to add it to, which is why that
 function counts `localStorage` instead of walking a list.
 
@@ -166,7 +166,7 @@ The bytes go up when the post does, and not before.
 A draft carries no `ink`: ink is cut onto a post as it is sent (rule 13), and a
 draft has not been sent.
 
-**Deleting the account takes both sides.** `lsWipeNS()` removes every key
+**Deleting the account takes both sides.** `lsWipeAcct()` removes every key
 beginning `lingua.`, counted rather than listed, so `lingua.drafts` goes with
 it; `draft.author` is `references profile(id) on delete cascade`, so
 `account_delete()` takes the rows. 「アカウント削除で残るものねえ」
@@ -227,7 +227,7 @@ log somebody has to find.**
    same list for every language — but **`bkPack()` skips a language that is
    not `mine`.** It is not theirs to hand out, and it is not lost by being
    skipped: it came from somewhere and can be taken again. `wipeAll` is the
-   other way and does not change: `lsWipeNS()` counts `localStorage` and
+   other way and does not change: `lsWipeAcct()` counts `localStorage` and
    removes everything under `lingua.`, so a downloaded language goes with the
    account like everything else.
 3. **A partial language is a normal state, not an error.** OWNER 2026-09-01:

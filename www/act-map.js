@@ -221,7 +221,6 @@ act('voStart', voStart);
 act('voStop', voStop);
 act('voDrop', voDrop);
 act('voPlay', voPlay);
-act('voPlayPW', voPlayPW);
 act('pwDropPic', pwDropPic);
 act('pwMarkOpen', pwMarkOpen);
 act('pwMarkDel', pwMarkDel);

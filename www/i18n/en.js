@@ -742,7 +742,8 @@ defLang('en', (function(){
       'set.lock.csv.t'  : "CSV import",
       'set.lock.csv.d'  : "Pour in a batch you built in a spreadsheet",
       'set.wipe'        : 'Delete account',
-      'set.wipe.langs' : 'Erase the data on this phone',
+      'set.wipe.langs' : 'Delete this language',
+      'lang.untitled' : 'this language',
       'set.pw'        : 'Change password',
       'set.pw.old'        : 'Current password',
       'set.mail'        : 'Email',
@@ -750,7 +751,7 @@ defLang('en', (function(){
       'set.pw.done'        : 'Password changed',
       'net.needpw'        : 'Fill both.',
       'confirm.wipe'    : "Erase everything? Your account and every post, photograph and recording on it go from the server; every language, letter and setting goes from this phone; the backup files go with them. Nothing can be brought back. Cancel your subscription before deleting your account.",
-      'confirm.wipe.langs' : "Erase the data on this phone? Every language on it goes -- the words, the letters, the writing system, the keyboard, the notes. The backup files go too. The recordings and the exported sheets stay. Your account stays, and so do your posts and your settings. Nothing on this phone can be brought back.",
+      'confirm.wipe.langs' : "Delete {0}? Everything made in it goes -- the words, the letters, the writing system, the keyboard, the notes and the sounds. Its backup file goes too. It is removed from your account, so it will not come back on another phone. Your other languages, your posts and your account stay. This cannot be undone.",
       /* languages */
       'langs.title'     : "Languages",
       'langs.mine'      : "Your languages",

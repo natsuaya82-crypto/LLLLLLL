@@ -23,11 +23,8 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
   public let jsName = "LinguaShare"
   public let pluginMethods: [CAPPluginMethod] = [
     CAPPluginMethod(name: "write", returnType: CAPPluginReturnPromise),
-    CAPPluginMethod(name: "registerFont", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "keep", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "kept", returnType: CAPPluginReturnPromise),
-    CAPPluginMethod(name: "dropKept", returnType: CAPPluginReturnPromise),
-    CAPPluginMethod(name: "dropAll", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "dropSome", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "keepVoice", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "voice", returnType: CAPPluginReturnPromise),
@@ -180,70 +177,18 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
     }
   }
 
-  /// Every language on disk, and every generation of it, newest first.
-  ///
-  ///     [ ["<name>.json", "<name>.1.json", "<name>.2.json"],   one language
-  ///       [ ... ] ]                                            another
-  ///
-  /// The spares used to be withheld, on the argument that a restore which
-  /// cannot tell three copies apart should not be asked to choose. That was
-  /// wrong in the way that costs everything: when the newest file was
-  /// unreadable the restore was handed nothing else and reported that the
-  /// language did not exist, while two good copies of it sat in this folder.
-  /// Keeping spares that the only thing which reads them cannot see is not
-  /// keeping spares.
-  ///
-  /// It still does not choose. It hands them over in age order and
-  /// www/backup.js takes the first that reads back as a language -- which is
-  /// not a judgement, it is the absence of one.
-  ///
-  /// A ".tmp" is never in here: it has the wrong extension, and it is a write
-  /// that did not finish rather than a generation.
-  // Every backup file, gone. The one call in this plugin that destroys
-  // somebody's work, and it exists because "erase everything" has to be true:
-  // the copies in Documents are the thing that survives the app being
-  // deleted, so leaving them would make the sentence on the button a lie.
-  //
-  // Only ours, and only .json under the languages directory -- Documents is
-  // the person's own folder and the Files app puts other things in it.
-  @objc func dropKept(_ call: CAPPluginCall) {
-    do {
-      let dir = try languages()
-      let names = try FileManager.default.contentsOfDirectory(atPath: dir.path)
-      var gone = 0
-      for n in names where n.hasSuffix(".json") {
-        try? FileManager.default.removeItem(at: dir.appendingPathComponent(n))
-        gone += 1
-      }
-      call.resolve(["gone": gone])
-    } catch {
-      // Nothing there to remove is not a failure: it is a phone that has
-      // never written one.
-      call.resolve(["gone": 0])
-    }
-  }
-
-  /// Everything this app has written into Documents, in all three of its
-  /// folders. 「アカウント削除で残るものねえって言ってんだろ何回言わせんだよ
-  /// 全部消えんだよ。」OWNER 2026-08-27 -- and Documents is visible in the Files
-  /// app, so a language file still sitting there after somebody deleted their
-  /// account is the sentence being untrue where they can see it.
-  ///
-  /// `dropKept` above is the backups alone and stays what it is; this is the
-  /// account going. The recordings had only `dropVoice(name)`, one at a time
-  /// and by a name that is in localStorage -- which is emptied in the same
-  /// breath -- and the sheets had no way to be removed at all.
-  ///
-  /// Only OUR three directories, and only their contents. Documents itself is
-  /// the person's folder and may hold things they put there; the same
-  /// argument `dropKept` makes about staying inside Languages/.
-  /// The generations of ONE language's backup, and nobody else's.
+  /// The backups of the languages NAMED, and nobody else's.
   ///
   /// 「別アカウントでログインしてそれのアカウント削除したら、俺の元のアカウントが
-  /// 消えてんだよ」 OWNER 2026-09-03. dropAll() below empties the whole
-  /// directory, and deleting an account called it -- so a second account
+  /// 消えてんだよ」 OWNER 2026-09-03. There used to be two other ways out of
+  /// here -- one that emptied the Languages folder and one that emptied all
+  /// three folders -- and deleting an account called them, so a second account
   /// leaving took the first account's backups with it. The server was right;
-  /// the phone destroyed the only other copy.
+  /// the phone destroyed the only other copy. **Both are gone**: this is the
+  /// only road, and it cannot be asked for anything but a list.
+  ///
+  /// Only inside Languages/, and only `.json`. Documents is the person's own
+  /// folder and the Files app puts other things in it.
   ///
   /// `keep()` files a language as `<name> <id>.json`, `.1.json`, `.2.json`,
   /// so a base name is one language and every generation of it.
@@ -262,22 +207,6 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
         gone += 1
       }
     }
-    call.resolve(["gone": gone])
-  }
-
-  @objc func dropAll(_ call: CAPPluginCall) {
-    var gone = 0
-    for dir in [try? languages(), try? voices(), try? sheets()] {
-      guard let dir = dir else { continue }
-      guard let names = try? FileManager.default.contentsOfDirectory(atPath: dir.path)
-      else { continue }
-      for n in names {
-        try? FileManager.default.removeItem(at: dir.appendingPathComponent(n))
-        gone += 1
-      }
-    }
-    // Nothing there to remove is not a failure: it is a phone that never
-    // wrote one. Same answer dropKept gives.
     call.resolve(["gone": gone])
   }
 
@@ -480,42 +409,6 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
       return
     }
     call.resolve(["jpeg": out])
-  }
-
-  /// Put the language's font into the phone itself, which is the only way
-  /// somebody's own letters appear in an app that is not this one — and only
-  /// in apps with a font picker. Notes, Mail, Pages. Never LINE or Messages,
-  /// which have no way to change a font at all.
-  ///
-  /// iOS asks the person before it installs anything, so this is never done
-  /// on its own: it is a button, and it is theirs to press.
-  ///
-  /// Unregistered first because the font is rebuilt every time a letter is
-  /// drawn. Registering the same URL twice is an error, and the phone would
-  /// go on showing the alphabet as it stood the first time.
-  @objc func registerFont(_ call: CAPPluginCall) {
-    guard let dir = container() else {
-      call.reject("no container for \(Self.group)")
-      return
-    }
-    let url = dir.appendingPathComponent(Self.fontName)
-    guard FileManager.default.fileExists(atPath: url.path) else {
-      call.reject("no font written yet")
-      return
-    }
-    CTFontManagerUnregisterFontURLs([url] as CFArray, .persistent) { _, _ in true }
-    CTFontManagerRegisterFontURLs([url] as CFArray, .persistent, true) { errors, done in
-      guard done else { return true }
-      let bad = (errors as NSArray).compactMap { $0 as? NSError }.filter { e in
-        // Already there is not a failure. It is the answer.
-        e.code != Int(CTFontManagerError.alreadyRegistered.rawValue)
-      }
-      DispatchQueue.main.async {
-        if let first = bad.first { call.reject(first.localizedDescription) }
-        else { call.resolve() }
-      }
-      return true
-    }
   }
 
   // ---- the voice on a post ------------------------------------------------
