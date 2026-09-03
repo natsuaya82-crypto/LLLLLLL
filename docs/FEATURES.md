@@ -285,14 +285,14 @@ a jailbroken phone the app's own JavaScript can be edited and the question never
 gets asked. **So anybody determined enough can still set themselves to Pro**,
 and the server will write it down. So:
 
-1. ~~the plan lives on the account~~ — **done**, the `plan` table
-2. ~~anything that costs us money is refused by the server~~ — **nothing costs
-   us money per plan yet**; everything a plan opens runs on the phone
-   (`assist.js`, `grammar.js`, `reading.js` make no network call)
-3. the StoreKit receipt is verified **server-side**, not by the app — **open**,
-   and it is what stands between here and taking money
-4. `CAN` stays what it is: which buttons to show. It is not a security check
+1. the StoreKit receipt is verified **server-side**, not by the app. **This is
+   the one that is open**, and it is what stands between here and taking money
+2. `CAN` stays what it is: which buttons to show. It is not a security check
    and must never be relied on as one
+
+Nothing costs us money per plan yet — everything a plan opens runs on the phone
+(`assist.js`, `grammar.js`, `reading.js` make no network call) — so there is
+nothing for the server to refuse on cost grounds today.
 
 Decided: the four products and their prices (2026-08-14, `docs/apple.md` § 4),
 and that the plan follows the ACCOUNT 「課金とアカウントとキーボードはアカウント
@@ -736,25 +736,23 @@ called `7` becomes a new letter called `7` and does not land on the digit
 already in the alphabet — 「a,a,a は三枠」 — and the check holds that `a`, `7`
 and `2` are all still there afterwards.
 
-**Two of the three things that were NOT in are in. The remaining one is the
-drawing:**
+**The plan gate is `can('file')`.** The road is Pro (OWNER DECISION 2026-08-23)
+and `file` sits at `pro` in `CAN`, so asking it puts chapter 26 exactly where
+the decision put it. `shInFileHTML()` draws the door and sends a press to the
+plans screen; `shTakeIn()` refuses again, because the action tables reach it by
+name and a button is not the only way in. **There is no `write` capability** —
+「a list brought in as a file rather than a paste」 is what a sheet handed back
+is, and a second name at the same rung would be two answers to one question.
 
-- **The plan gate is in, and it is `can('file')`.** The road is Pro (OWNER
-  DECISION 2026-08-23) and `file` sits at `pro` in `CAN`, so asking it puts
-  chapter 26 exactly where the decision put it. `shInFileHTML()` draws the door
-  and sends a press to the plans screen; `shTakeIn()` refuses again, because
-  the action tables reach it by name and a button is not the only way in.
-  **There is no `write` capability** — 「a list brought in as a file rather
-  than a paste」 is what a sheet handed back is, and a second name at the same
-  rung would be two answers to one question.
-- **The drawing.** Nothing renders `sh` yet, so an imported letter shows
-  **blank** — the data is there, the face is not. That is `www/glyph.js`, and
-  it is the other half of the seam above.
-- ~~The way out to the phone.~~ **Built 2026-08-27** (`claude/sheet3`).
-  `LinguaShare.sheet` writes the PDF into `Documents/Sheets/`, never
-  overwriting; `LinguaShare.renderPdf` draws a page back into a picture with
-  **PDFKit**, because `CGContext.drawPDFPage` does not draw annotations and iOS
-  Markup saves every stroke as one. Neither has been on a phone.
+**The way out to the phone is built.** `LinguaShare.sheet` writes the PDF into
+`Documents/Sheets/`, never overwriting; `LinguaShare.renderPdf` draws a page
+back into a picture with **PDFKit**, because `CGContext.drawPDFPage` does not
+draw annotations and iOS Markup saves every stroke as one. Neither has been on
+a phone.
+
+**What is NOT in is the drawing.** Nothing renders `sh` yet, so an imported
+letter shows **blank** — the data is there, the face is not. That is
+`www/glyph.js`, and it is the other half of the seam above.
 
 **Still not measured, and it is the same list the spike had:** a brush, and a
 pencil. The sheet that came back was written with a pen that gives a solid

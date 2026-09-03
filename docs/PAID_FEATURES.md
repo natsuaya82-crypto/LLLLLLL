@@ -72,18 +72,15 @@ a–z と `!` `?` と基数ぶんの数字、キーボードは固定 QWERTY、�
 上位にある: 五百の単語は有料でなくなった後も五百のまま、どのスライスも
 一バイトも動いていない。
 
-### 形は一つに揃っています
-
-一箇所ずつ別の日に書かれて四通りに割れていたのを、2026-09-01 に揃えました。
-どれも赤くならなかったのは、一つずつは正しく動くからです。一つの画面で並べて
-見た人が居なかっただけでした。
+### 形は二つだけ
 
 ```
   先頭だけ見える  単語・文字・段・言語・DL言語   隠すだけ。消さない
   効き目が止まる  書記・向き                    見た目なので隠すも何もない
 ```
 
-**どれが何で切るかは § When a plan ends の表**にあります。
+**どれが何で切るかは § When a plan ends の表**にあります。三つ目の形を作らない
+でください ── 一つずつは正しく動くので、増えても赤くなりません。
 
 And, more importantly, what it may never touch.
 
@@ -210,10 +207,9 @@ dlはしかもplusは1つproは3つ DL言語とmake言語でそれぞれ別の�
 `can('dl')` is the door; `dlCount()` counts the languages whose `mine` is
 false and `dlStop()` is the refusal. `dl-check` holds all four.
 
-That decision REPLACES 2026-08-27's 「DL言語は plus 1個 pro 2個」, which this
-file carried until today and which said Pro 2. It also replaces 2026-08-19's
-「キーボードと文字の DL は無料、辞書は Plus」 (`docs/FEATURES.md` § 4) — the
-one that let a free plan use a downloaded language on a real phone.
+**Free does not download at all**, and that is the same sentence said twice:
+「plusからです」, and 「無料はdlさせるなんか話した？　公式アセットのdlは
+plusからっていう決定事項あんのになんで聞いてくんの？」
 
 **A DL'd language is counted SEPARATELY from your own**, which is what
 「それぞれ別の最大値」 says. Two ceilings and not one: `langCount()` counts
@@ -368,12 +364,11 @@ a `can()` given anything but a literal, and a `has()` anywhere else.
 | `gram` | pro | a grammar stage of your own, past the fifteen |
 | `dir` | pro | choosing which way the language is written. **Reading one is free** |
 
-**Twelve, and that is a number to read off `CAN` rather than off this line.**
-`npm run dead` prints what it counted on every run — "what money buys: N
-capabilities in CAN" — and `tools/paid-check.mjs` (`node tools/paid-check.mjs`)
-fails if this table and `CAN` stop agreeing on a name or a level. This table
-said `plus` for six of the twelve and named a thirteenth, `write`, that has
-never existed; that is what the check exists to stop happening again.
+**Read the number off `CAN` rather than off this line.** `npm run dead` prints
+what it counted on every run — "what money buys: N capabilities in CAN" — and
+`tools/paid-check.mjs` fails if this table and `CAN` stop agreeing on a name or
+a level. Nothing else holds this table, so a row edited on its own is a price
+the app does not charge.
 
 `words` is the one that reads backwards, and it is right: `can('words')` means
 **no ceiling at all**, so it is Pro. Plus's thousand is a NUMBER and lives in
@@ -612,9 +607,10 @@ this file: **a plan decides what may be DONE and nothing about what exists.**
 `tools/paid-check.mjs` is the second one, and it needs no browser. It holds
 this FILE against `www/core.js`: the capability table above names exactly the
 capabilities `CAN` has, at exactly the levels `CAN` gives them, and § The four
-numbers carries exactly the constants `core.js` declares. Everything in this
-file is a claim about the code, and until that check existed nothing held one
-of them — six levels and one whole capability had been wrong here for a week.
+numbers carries exactly the constants `core.js` declares. **Everything in this
+file is a claim about the code**, and those two tables are the claims a session
+acts on, so they are the two that are held. The rest is held by a person
+reading it.
 
 `dead-check` already holds the SHAPE of the table — every capability in `CAN`
 asked for by name, every `can()` naming one that exists, `has()` core.js's

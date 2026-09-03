@@ -4,12 +4,9 @@
    Run it:  node tools/paid-check.mjs        (it is in gate.mjs's FAST list)
 
    WHY THIS EXISTS. `docs/PAID_FEATURES.md` is the price list, and every
-   sentence in it is a claim about `www/core.js`. Nothing held one of them. On
-   2026-09-03 the capability table in that file said `plus` for six of the
-   twelve capabilities that are `pro`, named a thirteenth (`write`) that has
-   never existed in `CAN`, and gave the download ceiling as Pro 2 where
-   `dlCap()` answers 3. Every check in the gate was green, because none of
-   them reads a document.
+   sentence in it is a claim about `www/core.js`. Nothing held any of them, and
+   a whole table of levels drifted while every check in the gate stayed green,
+   because none of them reads a document.
 
    That is the dangerous half of stale writing rather than the harmless half:
    CLAUDE.md says so in its own words -- a stale RULE reads as odd and gets

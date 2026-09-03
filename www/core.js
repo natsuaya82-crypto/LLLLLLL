@@ -1300,8 +1300,7 @@ function has(level){ /* level: 'plus' | 'pro' */
    'words' is metered rather than shut, and what it names is the ceiling being
    LIFTED: free counts to a hundred, PLUS to a thousand, and only PRO has no
    number at all -- which is why it sits at 'pro' below and reads backwards to
-   anybody expecting a door. wordCap() above is the number and asks this once.
-   (It said "basic" and "plus", which were the names until 2026-08-23.) */
+   anybody expecting a door. wordCap() above is the number and asks this once. */
 var CAN={
   words:   'pro',    /* no ceiling on the dictionary at all -- see wordCap() */
   /* CSV out. It said "CSV out, and the cloud", and the cloud half was never
