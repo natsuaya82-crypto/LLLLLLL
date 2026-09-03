@@ -548,22 +548,15 @@ const R = await pg.evaluate(() => {
   LANGS['La'] = { name: 'A の1', mine: true, uid: A };
   LANGS['Lb'] = { name: 'A の2', mine: true, uid: A };
   LANGS['Lc'] = { name: 'B の1', mine: true, uid: B };
-  LANGS['Ld'] = { name: 'まだ扉を通っていない', mine: true };
+  LANGS['Ld'] = { name: '印の無い言語', mine: true };
   langStore();
   const asA = langCount();
   netOut(); arrive(B);
   const asB = langCount();
-  /* 印の無い `Ld` は、**最初に来た人のものになります。**arrive() は
-     langForAcct() を通り、この端末がまだ誰も迎えていなければ（SET.uidWas が
-     空）、印の無い言語にその人の印を押します ── 2026-09-03 に実機で
-     「ログインしたら言語が消えてる」が起きたのがこの一行の前の姿です。
-     印は 2026-09-02 に付き始めたので、それ以前に作られた言語は全部印が無く、
-     「印が無いものは誰のものでもない」は**今ある端末のほとんどから、作った
-     本人の言語を隠す**規則でした。docs/DATA_SAFETY.md の側を採ります。
-
-     押したあとは二人目に渡りません ── 印があるので。だから A から 3、
-     B から 1 になります。 */
-  if (asA !== 3) no('19: A から見た数が 3 でない（A の2つ＋最初に来た人が拾った1つ）— ' + asA);
+  /* 印の無い `Ld` は誰の数にも入りません。オンボーディングの歩きの途中
+     （`SET.done` が偽）だけが印の無い言語を自分のものと答える場所で、ここは
+     アプリの中です ── 案件 35 がその両側を押さえます。 */
+  if (asA !== 2) no('19: A から見た数が 2 でない（A の2つ）— ' + asA);
   if (asB !== 1) no('19: B から見た数が 1 でない（B の1つだけ）— ' + asB);
   if (asA === asB && asA === 4)
     no('19: 端末にある全部を数えている ── 他人の言語で上限が埋まる');
@@ -1251,20 +1244,23 @@ const R = await pg.evaluate(() => {
   SET.plan = 'free'; SET.planWas = 'free'; save();
   say('34: ＋ で作った言語は、押した人のアカウントのもの');
 
-  /* ---- 35. 印の無い言語を拾うのは、オンボーディングの扉だけ -------------
+  /* ---- 35. 印の無い言語を拾うのは、オンボーディングの歩きだけ -----------
      「1アドレス1アカウント」「これは絶対課金もアカウントごと言語もそう」
      OWNER 2026-09-02。
+     「アカウントごとに言語情報も違うんだって」 OWNER 2026-09-03。
 
      `langOwned()` は印の無い言語を「訊いた人のもの」と答えていました。
      だから **A がこの端末で作って一度も上げていない言語が、B がサインイン
      した瞬間に B のものになります。**辞書も文字もキーボードも、B の一覧に
      B の言語として並ぶ。何も throw しません。
 
-     **決まりました。拾ってよいのはオンボーディングの扉だけです。**
-     オンボーディングは口座ができる前に物を作る唯一の場所で、`obFinish()` が
-     扉を出た瞬間に上げます（`SET.done` がその二つを分ける ── `makeNeed()` が
-     前から同じ問いを同じ形で立てています）。それ以外で印の無い言語を拾うのは、
-     前の人のものを次の人に渡すことです。
+     **言語はその印が指すアカウントのものです。**印の無い言語を自分のものと
+     答える場所は一つだけ ── オンボーディングの歩きの途中、まだ `SET.done` が
+     偽のあいだ。そこは、アカウントができる前に物を作る唯一の場所だからです。
+     扉を出た `obFinish()` が `netLangSync()` を呼び、そこで印が付きます。
+
+     端末を憶える仕掛けはありません。「この端末の一人目」は端末ごとの事実で、
+     それを持ち込んだ日に A の言語が B の一覧に出ました。
 
      消しません。印の無い言語は索引に残り、保存に残り、バックアップに残り、
      単語も一つも減りません ── ここで押さえるのはその両方です
@@ -1276,49 +1272,38 @@ const R = await pg.evaluate(() => {
   langId = 'Lu'; langName = 'A が圏外で作った';
   try { localStorage.setItem(langKeyOf('Lu', 'words'), JSON.stringify(w35)); } catch (e) {}
 
-  /* 誰も入っていないうち ── オンボーディングの歩きの途中。まだ訊く相手が
-     いないので、作ったものはその場の人のもの。 */
-  netOut();
-  SET.uidWas = '';                 /* まだ誰も来ていない端末から始める */
-  if (!langOwned('Lu')) no('35: 誰もサインインしていないのに、作ったものが自分のでない');
+  /* 歩きの途中 ── まだ誰もサインインしていない。訊く相手がいないので、
+     作ったものはその場の人のもの。 */
+  netOut(); SET.done = false;
+  if (!langOwned('Lu')) no('35: 歩きの途中で、作ったものが自分のでない');
 
-  /* 扉。サインインは済んだが obFinish() はまだ ── ここは拾う。 */
-  arrive(B); SET.done = false;
+  /* 扉。サインインは済んだが obFinish() はまだ ── ここも歩きの内側。 */
+  arrive(B);
   if (!langOwned('Lu')) no('35: オンボーディングの扉で、歩きが作ったものが拾われない');
 
-  /* **そして印はそこで押されます。**扉を通った人が一人目なら、印の無い言語は
-     その人のもので、langForAcct() がその場で印を押す。だから扉を出たあとも
-     見えます ── 2026-09-03 に実機で「ログインしたら言語が消えてる」が起きたのは、
-     ここで「誰のものでもない」と答えていたからです。印は 2026-09-02 に付き
-     始めたので、それ以前の言語は全部印が無く、その規則は**今ある端末の
-     ほとんどから、作った本人の言語を隠す**ものでした。 */
+  /* 扉を出たら印が付いています。付いていない言語はもう誰のものでもない ──
+     端末の一人目という覚え方はしません。 */
   SET.done = true;
-  if (!langOwned('Lu')) no('35: 扉を通った一人目のものになっていない ── 消えて見える');
-
-  /* **二人目には渡りません。**SET.uidWas は最初の一人だけを憶えていて、
-     上書きされない。ここでは B がこの端末の最初の一人なので、A が入っても
-     印の無い言語は B のものです。 */
+  if (langOwned('Lu')) no('35: 印の無い言語が、アプリの中で訊いた人のものになっている');
+  if (langAcct('Lu')) no('35: 印の無い言語が、訊いた人の一覧に出る');
+  if (vLangs().indexOf('A が圏外で作った') >= 0)
+    no('35: 印の無い言語が、訊いた人の言語一覧に並んでいる');
   netOut(); arrive(A);
   if (langOwned('Lu')) no('35: 印の無い言語が、次に入った人のものになっている');
-  if (langAcct('Lu')) no('35: 印の無い言語が、次に入った人の一覧に出る');
-  if (vLangs().indexOf('A が圏外で作った') >= 0)
-    no('35: 印の無い言語が、次に入った人の言語一覧に並んでいる');
-  netOut(); arrive(B);
-  if (!langOwned('Lu')) no('35: 作った人が入り直しても返ってこない');
 
   /* そして何も消えていない。 */
   if (!LANGS.Lu) no('35: 印の無い言語が索引から消えた');
   if (!localStorage.getItem(langKeyOf('Lu', 'words')))
     no('35: 印の無い言語の単語が消えた ── 隠すのであって消すのではない');
 
-  /* 印のある言語は今までどおり。持ち主には見え、他人には見えない。 */
-  LANGS['Lb'] = { name: 'B の言語', mine: true, uid: B };
+  /* 印のある言語は持ち主には見え、他人には見えない。 */
+  LANGS['Lb'] = { name: 'A の言語', mine: true, uid: A };
   if (!langOwned('Lb')) no('35: 自分の印が付いた言語が自分のものでない');
-  netOut(); arrive(A);
+  netOut(); arrive(B);
   if (langOwned('Lb')) no('35: 他人の印が付いた言語が自分のものになっている');
 
   LANGS = keepL35; langId = keepId35; langName = keepNm35;
-  say('35: 印の無い言語を拾うのはオンボーディングの扉だけ ── 消さず、そこに残る');
+  say('35: 印の無い言語を拾うのはオンボーディングの歩きだけ ── 消さず、そこに残る');
 
   /* ---- 36. ＋ はアカウントを訊く ----------------------------------------
      「言語はアカウントないと作れないです」「ログインした人しか書けないけど」
@@ -1555,6 +1540,48 @@ const R = await pg.evaluate(() => {
     no('45: 名前が重なっても赤くならない');
   l45b.nm = was45;
   say('45: 赤い印は名前が重なった時だけ ── 音が同じでも印は付かない');
+
+  /* ---- 46. アカウント削除は、そのアカウントのものだけを消す -------------
+     「別アカウントでログインしてそれのアカウント削除したら、俺の元のアカウントが
+     消えてんだよ」 OWNER 2026-09-03。**この検査が無かったから起きました。**
+     act-check は削除の後どの画面に着くかしか訊いていません。
+
+     サーバーは正しく、消えたのは端末です ── wipeHere() が lingua. を全部消し、
+     bkDropAll() がバックアップを全部落としていた。2026-08-27 に「端末は一人の
+     もの」だった頃の姿のままで、アプリの意味が「アカウントごと」に変わった
+     あとも読み直されていなかった。 */
+  start();
+  netOut(); arrive('d46a');
+  LANGS = { La46: { name:'A の言語', mine:true, uid:'d46a' },
+            Lb46: { name:'B の言語', mine:true, uid:'d46b' } };
+  langId = 'La46'; langStore();
+  try{
+    localStorage.setItem(langKeyOf('La46','words'), '[{"hw":"a"}]');
+    localStorage.setItem(langKeyOf('Lb46','words'), '[{"hw":"b"}]');
+    localStorage.setItem('lingua.me.d46b', '{"name":"B"}');
+    localStorage.setItem('lingua.posts.d46b', '[{"id":"pb"}]');
+  }catch(e){}
+  SET.theme = 'dark'; SET.ui = 'ja'; save();
+  var dropped = [];
+  var realDrop = (typeof bkDropFor==='function')? bkDropFor : null;
+  bkDropFor = function(ids){ dropped = (ids||[]).slice(); };
+  var wasConfirm = window.confirm; window.confirm = function(){ return true; };
+  try{ wipeHere(); }catch(e){ no('46: 削除が投げた ── ' + e.message); }
+  window.confirm = wasConfirm;
+  if (realDrop) bkDropFor = realDrop;
+
+  if (LANGS.La46) no('46: 消したアカウントの言語が索引に残っている');
+  if (localStorage.getItem(langKeyOf('La46','words'))) no('46: 消したアカウントの単語が残っている');
+  if (!LANGS.Lb46) no('46: **別のアカウントの言語が消えた** ── これが起きたことです');
+  if (!localStorage.getItem(langKeyOf('Lb46','words'))) no('46: 別のアカウントの単語が消えた');
+  if (!localStorage.getItem('lingua.me.d46b')) no('46: 別のアカウントのプロフィールが消えた');
+  if (!localStorage.getItem('lingua.posts.d46b')) no('46: 別のアカウントの投稿が消えた');
+  if (dropped.indexOf('La46') < 0) no('46: 消したアカウントのバックアップが落とされていない');
+  if (dropped.indexOf('Lb46') >= 0) no('46: **別のアカウントのバックアップが落とされた**');
+  if (SET.theme !== 'dark') no('46: この端末の設え（テーマ）まで消した');
+  if (SET.plan !== 'free') no('46: 消したアカウントの段が残っている');
+  say('46: アカウント削除は、そのアカウントの言語・単語・投稿・段・バックアップだけ ── '
+    + '別のアカウントのものは一つも動かず、端末の設えも残る');
 
   return out;
 });

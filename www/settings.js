@@ -517,30 +517,28 @@ function wipeHere(){
      written back by the saves below -- keeping the old id was how
      lingua.langs surviving turned into the old language's letters being
      rebuilt under it. */
-  /* ONE ACCOUNT'S THINGS, WHERE ANOTHER ACCOUNT HAS THINGS HERE TOO.
+  /* ONE ACCOUNT'S THINGS. NOT THE PHONE'S.
      「別アカウントでログインしてそれのアカウント削除したら、俺の元のアカウントが
-     消えてんだよ」 OWNER 2026-09-03. The server was right -- account_delete()
-     removes the row of whoever is signed in and nothing else. The PHONE was
-     not: this emptied the whole namespace and the whole backup directory, so
-     a second account leaving took the first account's language with it, and
-     on a language that had never gone up the phone was the only copy left.
+     消えてんだよ」 OWNER 2026-09-03 -- and it did, because this emptied the
+     whole `lingua.` namespace and the whole backup directory. The server was
+     right: account_delete() removes the row of whoever is signed in and
+     nothing else. The phone destroyed the rest, including the only copy of a
+     language that had never gone up.
 
-     「アカウント削除で残るものねえ」 was 2026-08-27, when a phone held one
-     account and there was no other reading of it. The plan, the languages and
-     the posts became the ACCOUNT's after that, and this function was not read
-     again. It still meant 「the phone」.
+     「アカウント削除で残るものねえ」 was said on 2026-08-27 about a phone that
+     held one account, and there was no other reading of it then. There is
+     now, and it is the only one: **everything belongs to an account**
+     (CLAUDE.md § Online, 2026-09-03), so deleting an account deletes that
+     account's things and touches nothing else. Nothing of theirs is left --
+     which is what the sentence asked for -- and nothing of anybody else's
+     goes with it.
 
-     Both readings are kept and lsOthers() picks: a phone with nobody else on
-     it is wiped exactly as before -- that is the sentence the owner said, and
-     it is still true of the phone it was said about. */
+     There is no second branch. A phone that has only ever had one account
+     loses everything anyway, because everything on it is that account's.
+     Writing 「and if nobody else is here, wipe the lot」 was a first draft and
+     it is two behaviours where the rule has one. */
   var wipeUid=(typeof SESS!=='undefined' && SESS && SESS.uid)? String(SESS.uid) : '';
-  var wipeIds=null;
-  if(wipeUid && lsOthers(wipeUid)){
-    wipeIds=lsWipeAcct(wipeUid);
-  }else{
-    lsWipeNS();
-    LANGS={};
-  }
+  var wipeIds=lsWipeAcct(wipeUid);
   langId='';
   langFirst();
   langRead(); ltRead(); ntRead(); stRead(); sndRead();
@@ -560,18 +558,19 @@ function wipeHere(){
      cancelling a subscription, and Apple has not been told anything. Money
      decides what may be DONE and nothing about what exists -- here nothing
      exists either way, so it protects nothing and costs nothing. */
-  /* The settings are the PHONE's -- the theme, the interface language -- so
-     they go back to new only when this account was the only one here. With
-     somebody else's things still on the phone, taking their theme away is
-     this deletion reaching past the account it is about. What DOES go either
-     way is the three fields that name an account. */
-  if(wipeIds){
-    SET.plan='free'; SET.planWas='free';
-    delete SET.planUid; delete SET.planPend;
-    if(String(SET.uidWas||'')===wipeUid) delete SET.uidWas;
-  }else{
-    SET=setDefaults();
-  }
+  /* The fields of SET that were this account's, gone with it -- the plan, the
+     searches they starred, how far down their notices they had read. setFor()
+     in www/core.js is the list and the one place it is written down. The
+     theme and the interface language are how this handset is set up and are
+     not anybody's belongings, so they stay.
+
+     '' rather than a uid: nobody is signed in a line below, and this is the
+     same call netOut() makes. */
+  try{ localStorage.removeItem(setParkKey(wipeUid)); }catch(e){}
+  setFor('');
+  SET.plan='free'; SET.planWas='free';
+  delete SET.planUid; delete SET.planPend; delete SET.saved;
+  delete SET.savedUp; delete SET.notAt;
   /* AND IT OPENS ON THE DOOR, not on the walk. 「アカウント削除した後
      オンボーディングから始まるのはなぜ？」 OWNER 2026-09-03.
 
@@ -598,12 +597,12 @@ function wipeHere(){
   /* And the copies in Documents, which are the ones that outlive the app.
      Last, and after the save above rather than before it: a save writes a
      fresh backup out, so dropping the files first would leave one behind. */
-  /* AND THE BACKUP FILES OF THOSE LANGUAGES, and no others. bkDropAll()
-     empties the directory, which is right for a phone this account was the
-     only one on and is the other half of what took the owner's language on
-     2026-09-03. */
-  if(wipeIds) bkDropFor(wipeIds);
-  else bkDropAll();
+  /* AND THE BACKUP FILES OF THOSE LANGUAGES, AND NO OTHERS. bkDropAll()
+     empties the directory, and it is the other half of what took the owner's
+     language on 2026-09-03: a second account leaving carried off the first
+     one's files. It is still there for a language being deleted on its own;
+     nothing here calls it. */
+  bkDropFor(wipeIds);
   /* and where you were standing is nowhere now */
   viewReset();
   ob={step:0, name:'', mode:'draw', pick:'', strokes:null, ch:'', lid:''};

@@ -287,14 +287,17 @@ the reasoning — a reason can be re-derived, a decision cannot.
   **規則に「端末のものは三つ」と書いてあったことが、その姿を正しく見せて
   いました。**規則を消さないと同じ形が出続けます。
 - Affected features: 保存するもの全部。特にアカウント削除
-- Affected data: `SET` の中の `plan` `planWas` `planPend` `planUid`
-  `saved` `savedUp` `notAt` は、いま端末に一つしかなく、アカウントを変えると
-  混ざります。アカウントごとに分けるのが仕様。**未実装**
+- Affected data: `SET` の中の `plan` `planWas` `planPend`
+  `saved` `savedUp` `notAt` は、アカウントごとに `lingua.set.<uid>` へ
+  預けます（`setFor()`）。`planUid` は「いま誰の分が載っているか」なので
+  預けません。
 - Affected docs: `CLAUDE.md` § Online、§ 規則22 ── 同じコミットで書き換えた
-- Implementation status: **規則のみ。コードは未着手。**
-  印の無い言語の分岐（`SET.uidWas`、`langOwned()` の三つ目の枝）は、
-  印が全部の言語に付いた時点で消えます ── 昔の言語が失われたので、
-  印の無い言語はもう作られません。
+- Implementation status: **入りました。**三つです ──
+  (1) `setFor()` が段・保存した検索・通知の位置をアカウントごとに預ける、
+  (2) アカウント削除は `lsWipeAcct()` と `bkDropFor()` で**そのアカウントの
+  ぶんだけ**（`lsWipeNS()` と `bkDropAll()` は消えました）、
+  (3) `langOwned()` は印を読む一行で、端末を憶える枝はありません。
+  `acct-check` 19・35・46 が持ちます。
 
 ### 課金はメールアドレスのアカウントに紐づく。端末が同じでも引き継がない
 - Date: 2026-09-02
