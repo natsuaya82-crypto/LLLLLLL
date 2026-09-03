@@ -59,7 +59,6 @@ function viewReset(){
   kbLtPick=null;                       /* and which letter is chosen for a key,
                                           not yet confirmed (www/keyboard.js) */
   kbShow=0;                            /* and which of the three is on screen */
-  ltDraft=null;                        /* a letter's name, typed and unsaved */
   IMP=impBlank();                      /* a list being read in */
   PW=pwBlank();                        /* a post being written */
   pwPicAt=-1; pwMarkAt=-1; pwTool='mark';  /* and which picture, letter and tool */
@@ -83,6 +82,13 @@ function viewReset(){
      road. */
   NOTES_HAVE=null; notRead=false;
   BKLIST=null;                         /* what is on the disk, asked again */
+  /* And what has been typed into a field and not saved. It is where you are
+     standing rather than anything a language owns, and standing in one
+     language's article with the paragraph you were typing into another's
+     still in the box is the same bug as arriving with somebody else's filter
+     on. Nothing stored is touched: KEEP holds strings that have never been
+     written down. */
+  KEEP={};
 }
 
 /* ---- and what a SCREEN forgets when you walk off it ---------------------
@@ -296,11 +302,193 @@ function backQHTML(){
       ' aria-label="'+esc(t('post.back.stay'))+'">'+ICON_CROSS+'</button>'+
     '</span>';
 }
+/* ---- what has been TYPED and not saved yet -----------------------------
+   OWNER DECISION 2026-09-03:
+     「プロフィールも何か変えたら保存ボタン欲しい右上／自分のポップで／
+       入力内容を保存しますか？はいいいえ／ではいなら保存　いいえならそのまま
+       戻るにしない？保存ボタン必要なとこ全部」
+
+   Until this, a field wrote the language on every keystroke. So a letter
+   brushed by a thumb was already saved, and there was no moment at which
+   somebody had finished. This is the other half of the sentence the keyboard
+   screen already got on the same day: TYPING REMEMBERS, A BUTTON WRITES.
+
+   ONE MECHANISM, AND IT IS NOT WRITTEN PER SCREEN. A screen that had to
+   remember to ask on the way out is a screen that will one day forget, and a
+   screen that forgets throws somebody's words away in silence -- which is the
+   worst shape this could take. So the asking is in back(), which is the one
+   road off a screen and the road the left-edge swipe already takes (swEnd
+   below ends in back()), and the button is in navTop(), which is the one bar
+   every screen has.
+
+   What a screen supplies is the two things only it can know: what its fields
+   HELD when it opened, and how to write them. Everything else -- whether
+   anything changed, whether to show the button, whether to ask, what the
+   question says -- is here and is the same on all of them.
+
+   THREE THINGS ARE DELIBERATE.
+
+   A buffer is filed under the SCREEN, not kept as one global. Standing on a
+   letter and stepping into the sound chart is not leaving the letter, and
+   coming back has to find what was typed still in the field. One global would
+   have been overwritten by whichever screen was drawn last, in silence, which
+   is the failure this whole change exists to remove.
+
+   Nothing is dropped by walking away. A buffer is let go in exactly three
+   places -- a save that landed, a No, and viewReset(). A bottom tab is not
+   one of them, so pressing one and coming back finds the field as it was
+   left. Nothing is ever thrown away without somebody having said so.
+
+   And CHANGED is measured against what the field held when the screen opened,
+   value by value, as strings. Type a letter and rub it out and the screen is
+   unchanged: no button, and no question on the way out. 「変えていない画面
+   では何も訊かない」 */
+var KEEP={};
+/* The screen you are standing on. A route and its argument, which is what a
+   screen IS here -- so two letters are two buffers and the same letter
+   reached twice is one. */
+function keepKeyOf(r, a){ return String(r)+'|'+String(a||''); }
+function keepKey(){ return keepKeyOf(here().r, here().a); }
+/* A screen saying "these are my fields". Called from the view, so it runs on
+   every render of that screen: finding a buffer already here means somebody
+   has been typing into it, and it is left exactly as it is. Only `save` is
+   taken again, because it is a fresh closure over a screen that may have been
+   rebuilt around it. */
+function keepOn(key, was, save){
+  var k=String(key);
+  if(KEEP[k]){ KEEP[k].save=save; return; }
+  KEEP[k]={was:was, v:{}, save:save};
+}
+/* What goes in the field: what has been typed, or what it held when the
+   screen opened. */
+function keepVal(key, f){
+  var b=KEEP[String(key)];
+  if(!b) return '';
+  return b.v.hasOwnProperty(f)? String(b.v[f]) : String(b.was[f]||'');
+}
+/* Typed into. The screen you are on is the buffer it goes in -- a field can
+   only be typed into while it is on the screen. A screen that normalises what
+   it takes (the @ keeps the characters that survive being typed after one)
+   does that before handing it here, so what is compared is what the field
+   means rather than what was pressed. */
+function keepSet(f, v){ keepPut(keepKey(), f, v); }
+/* The same, said about a named screen. A field on a screen is typed into while
+   that screen is in front of somebody, which is what keepSet() above is about;
+   this is for the one place that is not typing at all -- the word sheet, whose
+   buffer is not a set of fields but the sheet said once, and which is put here
+   as the sheet is built. */
+function keepPut(key, f, v){
+  var b=KEEP[String(key)];
+  if(!b) return;
+  b.v[f]=String(v);
+  keepBtnPaint();
+}
+/* Anything different from what it opened with. */
+function keepDirty(key){
+  var b=KEEP[String(key)], f;
+  if(!b) return false;
+  for(f in b.v){
+    if(!b.v.hasOwnProperty(f)) continue;
+    if(String(b.v[f])!==String(b.was[f]||'')) return true;
+  }
+  return false;
+}
+/* Let go of. It is a buffer and nothing else: no slice is written, nothing
+   stored moves. docs/DATA_SAFETY.md -- 「いいえ」 discards what was being
+   typed and cannot reach what was already saved. */
+function keepDrop(key){ delete KEEP[String(key)]; }
+/* Write it. `done` is told whether it LANDED, because one of these can be
+   refused by somebody who is not this phone: the @ is unique on the server
+   and may already be taken. A save that did not land must not be followed by
+   leaving the screen, or the refusal is never seen. Every other screen's save
+   is this phone's own and says true straight away. */
+function keepSave(key, done){
+  var b=KEEP[String(key)], f;
+  if(!b || !b.save){ if(done) done(true); return; }
+  b.save(b.v, function(ok){
+    /* Levelled rather than thrown away. What has just been written down IS
+       what the screen opened with now, so there is nothing left to ask about
+       and nothing left to show a button for -- and the screen is still in
+       front of somebody, with these fields still on it. Dropping it here
+       would leave the next keystroke with nowhere to go. */
+    if(ok && KEEP[String(key)]===b){
+      for(f in b.v){ if(b.v.hasOwnProperty(f)) b.was[f]=String(b.v[f]); }
+      b.v={};
+    }
+    if(done) done(!!ok);
+  });
+}
+/* A form is built once, when it is opened, and kept whole on FORM (www/home.js
+   § openForm) -- so a screen that has just written its fields down has to be
+   built again out of what it now holds, or the next render puts the page back
+   the way it was before anything was typed. A view that is not a form is built
+   by its own function on every render and needs none of this. */
+function keepPaint(){
+  var h=here(), s, f;
+  if(h.r!=='form' || !FORM || FORM.key!==String(h.a||'')) return;
+  s=formArg(h.a); f=FORM_OPEN[s.kind];
+  if(f) try{ f(s.rest); }catch(e){}
+}
+/* The button in the corner of the bar. It writes and stays -- leaving is what
+   the arrow beside it is for, and after a save there is nothing left to ask
+   about, so the button goes. That IS the answer to "did it save": the thing
+   that appeared when you changed something is gone again. */
+/* The button, in one place, so the bar that is BUILT and the bar that is
+   PAINTED cannot end up with two different buttons in that corner. It goes
+   last, after whatever else the screen has put there -- the ? on the keyboard
+   is the only screen where both are up at once.
+
+   AND IT IS PAINTED RATHER THAN RENDERED. Typing does not redraw these
+   screens and must not: a field being typed into loses the keyboard the
+   moment the page under it is replaced, which is why every one of these
+   setters calls lnGrow() instead of render(). So the one thing on the screen
+   that has to change while somebody types is put there by hand, the same way
+   a line field is made taller by hand. */
+function keepBtnHTML(){
+  return keepDirty(keepKey())
+    ? '<button class="navdo"' + DO('keepPress') + '>'+esc(t('keep.save'))+'</button>'
+    : '';
+}
+function keepBtnPaint(){
+  var bar=document.querySelector('.navtop'), b, want;
+  if(!bar) return;
+  b=bar.querySelector('[data-do="keepPress"]');
+  want=keepBtnHTML();
+  if(want && !b) bar.insertAdjacentHTML('beforeend', want);
+  else if(!want && b) b.parentNode.removeChild(b);
+}
+function keepPress(){
+  var k=keepKey();
+  keepSave(k, function(ok){ if(ok) keepPaint(); render(); });
+}
+/* And the question on the way out. Returns true when it has taken the press
+   over -- the popup is up and back() is not to move.
+
+   popAsk() and not a shape of its own: 「自分のポップで」, and three ways of
+   asking were made and thrown away in one afternoon (CLAUDE.md § shape). Yes
+   writes and then goes; No lets the typing go and goes anyway 「いいえなら
+   そのまま戻る」; the scrim is neither and leaves you where you are. */
+function keepAsked(){
+  var k=keepKey();
+  if(!keepDirty(k)) return false;
+  popAsk(t('keep.q'),
+    function(){ keepSave(k, function(ok){ if(ok) backGo(); }); },
+    t('keep.yes'), t('keep.no'),
+    function(){ keepDrop(k); backGo(); });
+  return true;
+}
+/* Going back, with nothing left to ask. It is its own function because three
+   things reach it now -- the arrow, the Yes and the No -- and a second copy
+   of these two lines is a second answer to where back goes. */
+function backGo(){
+  if(NAV.length>1) NAV.pop(); else NAV=[{r:'profile'}];
+  route=here().r; render(); window.scrollTo(0,0);
+}
 function back(){
   if(BACKQ){ BACKQ = 0; render(); return; }
   if(backDraftKept()) return;
-  if(NAV.length>1) NAV.pop(); else NAV=[{r:'profile'}];
-  route=here().r; render(); window.scrollTo(0,0);
+  if(keepAsked()) return;
+  backGo();
 }
 /* Is this screen already behind you? go() lands on one that is by cutting the
    trail back to it rather than pushing, so a screen that wants to finish two
@@ -605,7 +793,17 @@ function navTop(count, right){
     '<span class="navt"' + (h.r==='settings'? DO('adminTap') : '') + '>'+
       esc(pageName(h.r, h.a))+'</span>'+
     (count? '<span class="navc">'+count+'</span>' : '')+
+    /* SAVE, AND ONLY WHEN THERE IS SOMETHING TO SAVE. 「何か変えたら、右上に
+       保存のボタンが出る」 OWNER 2026-09-03 -- a button that is always there
+       says nothing about whether anything has been written down, and a screen
+       that has not been touched should not offer to save it.
+
+       It is here rather than in the nine screens for the same reason the
+       question is in back(): one place, so the day a tenth screen takes
+       typing it is already in the bar. A screen that has NOT registered a
+       buffer has nothing dirty and gets nothing. */
     (right||'')+
+    keepBtnHTML()+
     '</div>'+
     /* Under the bar and across the page, not hanging off the arrow. It is
        about leaving this screen, which is what the whole bar is about. */
@@ -1389,21 +1587,38 @@ var tt;
    This one sits in the middle of the screen, over the scrim, and does not
    navigate -- the screen underneath is still there when it goes.
 
-   `yes` is what happens if they say yes. There is no callback for no: no is
-   the popup going away and nothing having happened, which is what no means. */
-var POP_YES=null;
-function popAsk(msg, yes, yesWord, noWord){
+   `yes` is what happens if they say yes.
+
+   AND `no` IS A THING THAT CAN HAPPEN TOO, which it was not until 2026-09-03.
+   For every question the app had asked until then, no was the popup going
+   away and nothing having happened -- deleting a word, deleting a note -- so
+   there was nothing for a no to do. 「入力内容を保存しますか？はいいいえ／
+   ではいなら保存　いいえならそのまま戻る」 is the first question whose no is
+   an instruction: don't save it, and leave anyway. Every caller that passes
+   none behaves exactly as it did.
+
+   Pressing NO and dismissing the popup are not the same answer and must not
+   run the same thing. The scrim (closeSheet, www/home.js) reaches popOff(),
+   which is the question going unanswered and leaves you where you are; the
+   button reaches popNo(), which is an answer. */
+var POP_YES=null, POP_NO=null;
+function popAsk(msg, yes, yesWord, noWord, no){
   var el=document.getElementById('pop'), bg=document.getElementById('sbg');
   if(!el || !bg){ /* no DOM to draw on: do nothing rather than act unasked */
     return; }
-  POP_YES=yes||null;
+  POP_YES=yes||null; POP_NO=no||null;
   el.innerHTML='<div class="popm">'+esc(msg)+'</div>'+
     '<button class="btn ghost"' + DO('popYes') + '>'+esc(yesWord||t('up.cta'))+'</button>'+
-    '<button class="btn ghost popno"' + DO('popOff') + '>'+esc(noWord||t('pop.no'))+'</button>';
+    '<button class="btn ghost popno"' + DO('popNo') + '>'+esc(noWord||t('pop.no'))+'</button>';
   bg.classList.add('on'); el.classList.add('on');
 }
 function popYes(){
   var f=POP_YES;
+  popOff();
+  if(f) f();
+}
+function popNo(){
+  var f=POP_NO;
   popOff();
   if(f) f();
 }
@@ -1414,7 +1629,7 @@ function popOff(){
   var el=document.getElementById('pop'), bg=document.getElementById('sbg');
   if(el) el.classList.remove('on');
   if(bg) bg.classList.remove('on');
-  POP_YES=null;
+  POP_YES=null; POP_NO=null;
 }
 function popOn(){
   var el=document.getElementById('pop');

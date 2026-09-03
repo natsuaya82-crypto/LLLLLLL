@@ -78,7 +78,7 @@ function openAdd(from){
   openForm('add:'+addFrom,
     (addFrom? t('add.title.from', addFrom) : t('add.title')),
     '<div id="wd-body">'+wdFormHTML()+'</div>',
-    function(){ phkMount(); geTiles(); }, wdSaveBtn(true));
+    function(){ phkMount(); geTiles(); }, wdSaveBtn());
 }
 FORM_OPEN.add=function(from){ openAdd(from||''); };
 function addOne(){
@@ -1111,14 +1111,20 @@ function wdEtyHTML(){
     esc(t('word.ety'))+'"' + IN('wdSetEty') + '>'+esc(wEdit.ety||'')+'</textarea></div>';
 }
 function wdSetReg(v){ wEdit.reg=v; }
-function wdSetTags(v){ wEdit.tags=tagCut(v); lnGrow('wd-tags'); }
-function wdSetEty(v){ wEdit.ety=v; }
+function wdSetTags(v){ wEdit.tags=tagCut(v); lnGrow('wd-tags'); wdKeepTouch(); }
+function wdSetEty(v){ wEdit.ety=v; wdKeepTouch(); }
 /* The sheet a word is written on -- the same one whether the word is in the
    dictionary or is being made. Three things differ, and all three are real:
    a word that does not exist yet cannot be deleted, cannot be shown as a
    picture, and is added rather than saved. Everything else is one screen. */
 function wdFormHTML(){
   var seq=wEdit.seq, mk=!!addW;
+  /* And this is where the sheet says what it now holds. www/shell.js § KEEP
+     and wdKeepOn() below -- it is here rather than in openEdit() because this
+     is the function that is run again every time anything on the sheet moves
+     (relDirty), so it is the one place that is true about the sheet AS IT IS
+     rather than as it was opened. */
+  if(!mk) wdKeepOn();
   /* The field IS the head of the sheet. It used to sit four rows down under
      a heading, with the word repeated above it as text you could not touch,
      so writing a word meant reading it at the top and typing it in the
@@ -1209,12 +1215,64 @@ function wdFormHTML(){
     (mk? '' : '<button class="set" style="margin-top:18px;border-bottom:none"' + DO('delWord') + '>'+
       '<span class="sl bad">'+t('word.del')+'</span></button>');
 }
-/* The one place that builds it, so the sheet that makes a word and the sheet
-   that changes one cannot end up with two different buttons in that corner. */
-function wdSaveBtn(mk){
-  return '<button class="navdo"' + DO(mk? 'addOne' : 'saveWord') + '>'+
-    esc(t(mk? 'add.btn' : 'word.save'))+'</button>';
+/* The button the sheet that MAKES a word carries. Adding is not saving: there
+   is nothing yet to have changed, and addOne() can refuse the word outright
+   (no spelling, a spelling somebody already has), so it is a press and not the
+   button www/shell.js § KEEP draws. The sheet that CHANGES a word has no
+   button of its own any more -- see wdKeepOn(). */
+function wdSaveBtn(){
+  return '<button class="navdo"' + DO('addOne') + '>'+esc(t('add.btn'))+'</button>';
 }
+/* ---- the word sheet, and what "changed" means on it ---------------------
+   OWNER DECISION 2026-09-03 -- www/shell.js § KEEP. This sheet already had the
+   shape the owner asked for and had had it since 「保存ボタンつけようもう。
+   単語作るのにも、文字作るのにも」: wEdit is what is being typed, and Save is
+   what writes it. Two things were missing, and they are the two the decision
+   is about -- the button stood there whether or not anything had been
+   touched, and the back arrow threw everything typed away without a word.
+
+   SO wEdit STAYS AND IS NOT COPIED. A spelling is a list of positions and a
+   word has as many meanings as somebody gives it; flattening that into a
+   handful of strings to put in the screen buffer would be the sheet written
+   down twice, and the two would drift. What goes in the buffer is the sheet
+   SAID ONCE -- one value, the sheet's whole content -- and "has anything
+   changed" is those two values compared. The answer comes off wEdit, which is
+   the thing that actually holds it.
+
+   `mn` is not in the signature: it is the first meaning, written from `mns` by
+   saveWord(), so it would be the same fact counted twice. */
+function wdSig(sp, mns, pos, reg, tags, ety, nt){
+  return JSON.stringify([sp||[], mns||[], pos||'', reg||'', tags||[],
+                         String(ety||''), String(nt||'')]);
+}
+function wdSigEdit(){
+  return wdSig(wEdit.sp, wEdit.mns, wEdit.pos, wEdit.reg, wEdit.tags,
+               wEdit.ety, wEdit.nt);
+}
+function wdSigWord(w){
+  return wdSig(spOf(w), wMns(w), w.pos, w.reg||'', (w.tags||[]).slice(),
+               w.ety||'', w.nt||'');
+}
+function wdKeepOn(){
+  if(!wEdit || !openHw || addW || langLocked()) return;
+  keepOn(keepKeyOf('form', 'edit:'+openHw), {w:wdSigOpen},
+         function(v, done){ done(wdWrite()); });
+  wdKeepTouch();
+}
+/* The sheet, said again into the buffer. Two roads reach it and they are two
+   because one is not enough: the sheet being BUILT (wdKeepOn above, through
+   relDirty), and a field being TYPED into -- which does not rebuild the sheet
+   and must not, because a field being typed into loses the keyboard the
+   moment the page under it is replaced. Without the second, the Save in the
+   bar would not appear until something else redrew the screen. */
+function wdKeepTouch(){
+  if(!wEdit || !openHw || addW || langLocked()) return;
+  keepPut(keepKeyOf('form', 'edit:'+openHw), 'w', wdSigEdit());
+}
+/* What the word was when the sheet was opened. Taken there and nowhere else:
+   it is the mark everything after it is measured from, and a mark taken again
+   later is a mark that has moved. */
+var wdSigOpen='';
 /* ---- a word, read -------------------------------------------------------
    Opening a word used to open its editor: every field live, a Save at the
    foot, the delete button under it. That is the wrong answer to "what does
@@ -1377,8 +1435,14 @@ function openEdit(hw){
   wEdit={seq:wPh(w).slice(), sp:JSON.parse(JSON.stringify(spOf(w))), mns:wMns(w).slice(),
          pos:w.pos, reg:w.reg||'', tags:(w.tags||[]).slice(),
          ety:w.ety||'', nt:w.nt||''};
+  /* The mark this sheet's changes are measured from, taken before anything is
+     drawn out of wEdit. Off the WORD and not off wEdit, so that the two being
+     equal is a fact rather than an assumption. */
+  wdSigOpen=wdSigWord(w);
+  /* No button in the corner. navTop() puts one there when something on the
+     sheet has been changed and not before -- www/shell.js § KEEP. */
   openForm('edit:'+w.hw, wOut(w.hw), '<div id="wd-body">'+wdFormHTML()+'</div>',
-           function(){ phkMount(); geTiles(); }, wdSaveBtn(false));
+           function(){ phkMount(); geTiles(); });
 }
 FORM_OPEN.edit=function(hw){ openEdit(hw); };
 FORM_OPEN.word=function(hw){ openWord(hw); };
@@ -1390,7 +1454,7 @@ function wdSync(){ wEdit.seq=spPh(wEdit.sp||[]); }
    of statements, and two assignments. Each is one line now, in a file a
    checker can read. */
 function goPlans(){ closeSheet(); go('plans'); }
-function wdSetNt(v){ wEdit.nt=v; }
+function wdSetNt(v){ wEdit.nt=v; wdKeepTouch(); }
 function wdSetPos(v){ wEdit.pos=v; }
 /* A reading typed whole, given back to the positions that make it up.
 
@@ -1440,12 +1504,21 @@ function wdPutExtras(w){
   if((wEdit.tags||[]).length) w.tags=wEdit.tags.slice(); else delete w.tags;
   w.up=Date.now();
 }
-function saveWord(){
-  var w=findWord(openHw); if(!w) return;
+/* Writing the sheet onto the word. It says whether it LANDED, because it can
+   refuse -- a word with no spelling is not a word, and a spelling somebody
+   already has is somebody else's word. A refusal must not be followed by
+   leaving the screen, or the toast that says why is gone before it is read.
+
+   It does not navigate. It used to end in closeSheet(), which made Save mean
+   "write it and take me off this screen"; leaving is the arrow's, and after a
+   save there is nothing left to ask about, so the button in the corner goes --
+   which is how somebody can tell it saved. OWNER DECISION 2026-09-03. */
+function wdWrite(){
+  var w=findWord(openHw); if(!w) return false;
   var hw=spWord(wEdit.sp||[]);
-  if(!(wEdit.sp && wEdit.sp.length) || !hw){ toast(t('toast.hw2')); return; }
+  if(!(wEdit.sp && wEdit.sp.length) || !hw){ toast(t('toast.hw2')); return false; }
   var clash=findWord(hw);
-  if(clash && clash!==w){ toast(t('toast.dup')); return; }
+  if(clash && clash!==w){ toast(t('toast.dup')); return false; }
   var old=String(w.hw);
   w.hw=hw; delete w.ph;
   w.sp=JSON.parse(JSON.stringify(wEdit.sp));
@@ -1453,9 +1526,13 @@ function saveWord(){
   w.pos=wEdit.pos;
   wdPutExtras(w);
   /* A word that changes is still the same word, so everything pointing at it
-     is told its new name rather than left pointing at one that is gone. */
-  if(hw!==old) wRename(old, hw);
-  save(); closeSheet({target:{id:'sbg'}}); render(); toast(t('toast.saved', hw));
+     is told its new name rather than left pointing at one that is gone -- the
+     trail among them (wRename, www/letters.js). The sheet is standing ON that
+     trail, so what it is open on follows too, or the next save would look for
+     a word under the name it has just stopped having. */
+  if(hw!==old){ wRename(old, hw); openHw=hw; }
+  save(); render(); toast(t('toast.saved', hw));
+  return true;
 }
 /* Taking one word out of the language, and leaving nothing pointing at it.
    It was the body of `delWord` and is its own function because it is about to

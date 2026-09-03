@@ -40,7 +40,7 @@ const SLOW = ['migrate-check', 'i18n-check', 'act-check', 'conv-check', 'card-ch
               'base-check', 'kb-check', 'plan-check', 'term-check', 'sheet-check',
               'shape-check', 'draft-check', 'gramlang-check', 'world-check', 
               'acct-check', 'page-check', 'dl-check', 'again-check', 'open-check',
-              'find-check', 'press'];
+              'find-check', 'keep-check', 'press'];
 const WIDE = Math.max(1, Math.min(4, (os.cpus() || []).length || 4));
 
 function run(name){

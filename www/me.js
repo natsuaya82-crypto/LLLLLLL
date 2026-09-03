@@ -176,15 +176,89 @@ function meName(){ return ME.name || langName || ''; }
 function meHandle(){
   return ME.handle || String(meName()).toLowerCase().replace(/[^a-z0-9]+/g, '');
 }
+/* ---- the profile is TYPED and then SAVED --------------------------------
+   OWNER DECISION 2026-09-03: 「プロフィールも何か変えたら保存ボタン欲しい右上
+   ／自分のポップで／入力内容を保存しますか？はいいいえ／ではいなら保存　いいえ
+   ならそのまま戻る」
+
+   Until this, every one of these five wrote ME and called saveMe() on every
+   keystroke, so a field brushed by a thumb was already the account's name.
+   They put what was typed in the buffer instead (www/shell.js § KEEP) and
+   meKeepSave() below is the only thing that writes ME.
+
+   The buffer is filed under this screen, and this screen is a form, so the
+   key is the one openForm() was given. It is written once here rather than
+   guessed at in five places. */
+var ME_KEY=keepKeyOf('form', 'me:');
+/* What the five fields hold right now, which is what "changed" is measured
+   against. Read off ME and not off the page: the page is what is being typed
+   into. */
+function meWas(){
+  return {name:String(ME.name||''), handle:String(ME.handle||''),
+          bio:String(ME.bio||''), link:String(ME.link||''), loc:String(ME.loc||'')};
+}
+/* And what goes in a field when the screen is drawn: what has been typed, or
+   what it held when the screen opened. */
+function meTyped(f){ return keepVal(ME_KEY, f); }
+/* Writing the five down. `v` is only the fields somebody actually touched, so
+   a field nobody typed into is not written over -- which matters here because
+   netBioSync() can fill the bio in from the account while this screen is
+   open. */
+function meKeepPut(v){
+  if(v.hasOwnProperty('name')) ME.name=String(v.name);
+  if(v.hasOwnProperty('handle')) ME.handle=String(v.handle);
+  if(v.hasOwnProperty('bio')) ME.bio=String(v.bio);
+  if(v.hasOwnProperty('link')) ME.link=String(v.link);
+  if(v.hasOwnProperty('loc')) ME.loc=String(v.loc);
+  saveMe();
+}
+/* THE @ IS THE ONE THING ON THIS SCREEN THIS PHONE DOES NOT DECIDE, and that
+   is why keepSave() carries an answer back at all.
+
+   `profile.handle` is `unique not null` on the server, so a handle can be
+   taken by somebody else between somebody choosing it and pressing Save --
+   and on 2026-09-03 the owner decided it may also be refused for a second
+   reason, that it was changed less than fourteen days ago (docs/FEATURE_RULES.md
+   § 「@ は14日に一度しか変えられない」; the refusing goes in profile_rename()
+   in supabase/schema.sql and is not this branch's).
+
+   So: SAVED MEANS SAVED, AND REFUSED MEANS YOU ARE STILL HERE. If the answer
+   is no, the refusal is said and the screen stays exactly as it is, with what
+   was typed still in the field. A "yes" on the way out that went back anyway
+   would take the refusal off the screen before it could be read -- and the
+   owner asked for the refusing to be visible on 2026-08-25: 「断る文章と実際に
+   断ってほしい」.
+
+   THIS REPLACED THE CHECK THAT RAN WHILE SOMEBODY WAS TYPING. There is a
+   moment for it now -- pressing Save -- so the 700ms wait for a thumb to
+   stop, the second wait for the field to lose focus, and putting the old
+   handle back afterwards are all gone. That timer existed only because the
+   screen had no such moment: 「ここに提出ボタンは無く、打つそばから保存される
+   画面なので」 was the reason written over it, and it is no longer true.
+
+   Not asked when the handle has not moved: your own handle is taken by you,
+   which is the right answer to the wrong question. Not asked with no signal
+   either -- the answer that never came is not evidence either way, which is
+   the same decision the timer made and the one place it is kept. */
+function meKeepSave(v, done){
+  var h=v.hasOwnProperty('handle')? String(v.handle) : String(ME.handle||'');
+  if(h===String(ME.handle||'')){ meKeepPut(v); done(true); return; }
+  if(h.length<2 || h.length>ME_MAX.handle){ toast(t('net.badhandle')); done(false); return; }
+  if(typeof netSignedIn!=='function' || !netSignedIn()){ meKeepPut(v); done(true); return; }
+  netHandleFree(h, function(free){
+    if(!free){ toast(t('net.handle.taken')); done(false); return; }
+    meKeepPut(v); done(true);
+  }, function(){ meKeepPut(v); done(true); });
+}
 /* Each of these makes its box as tall as what is in it. Nothing here calls
    render() -- a profile that redrew on every letter would take the keyboard's
    focus off the field being typed into -- so lnGrow() is what says the field
    grew, the same call the composer's line makes. */
-function meSetName(v){ ME.name=String(v||''); lnGrow('me-nm'); saveMe(); }
+function meSetName(v){ keepSet('name', String(v||'')); lnGrow('me-nm'); }
 /* A line about yourself, which is the one thing on a profile that is not
    about the language. It is never invented and never stands in for
    anything: with nothing written there is nothing there. */
-function meSetBio(v){ ME.bio=String(v||''); saveMe(); }
+function meSetBio(v){ keepSet('bio', String(v||'')); }
 /* 居るところは、ただの文字列。検証も、書式も、候補も無い ──
    OWNER DECISION, 2026-08-25:
      「自由入力です。」
@@ -223,15 +297,19 @@ function meLinkOK(v, was){
    言っていることになる。 */
 function meSetLink(v){
   var s=String(v||''), e;
-  if(!meLinkOK(s, ME.link)){
+  /* What it is being compared against is the last thing this field ACCEPTED,
+     which is now in the buffer rather than in ME -- otherwise a value typed
+     and not yet saved could not be deleted one character at a time, which is
+     the whole of the third paragraph above. */
+  if(!meLinkOK(s, meTyped('link'))){
     e=document.getElementById('me-lk');
-    if(e) e.value=String(ME.link||'');
+    if(e) e.value=meTyped('link');
     lnGrow('me-lk');
     return;
   }
-  ME.link=s; lnGrow('me-lk'); saveMe();
+  keepSet('link', s); lnGrow('me-lk');
 }
-function meSetLoc(v){ ME.loc=String(v||''); lnGrow('me-lc'); saveMe(); }
+function meSetLoc(v){ keepSet('loc', String(v||'')); lnGrow('me-lc'); }
 /* ---- a face of your own ------------------------------------------------
    A file input, because that is the one way a WKWebView opens the camera
    roll without a plugin, and the plugin would have to be installed on a
@@ -336,55 +414,25 @@ function mePicFile(){
 /* Taking it off. Not a button any more -- it is the red row of the sheet --
    so it is not in www/act-map.js: nothing on a screen names it. */
 function meDropPic(){ ME.pic=''; saveMe(); openMe(); }
-/* ---- ID を断る ----------------------------------------------------------
+/* ---- what somebody types after an @ ------------------------------------
    「IDは2文字以上で登録してくださいと / このIDはもう使われていますと
      みたいに断る文章と実際に断ってほしい」OWNER, 2026-08-25
 
    断る言葉は二つとも既にあり、十言語ぶん揃っている ── `net.badhandle` と
    `net.handle.taken`。オンボーディング (`obWhoGo`) が同じ二つで同じことを
-   していて、そこだけが持っていた。新しい鍵は足していない。
+   している。新しい鍵は足していない。
 
-   ここに提出ボタンは無く、打つそばから保存される画面なので、断つ場所は
-   「打ち終わったとき」にする ── 打っている最中の一文字目は必ず短いので、
-   そこで断ったら誰も二文字目に辿り着けない。欄から手が離れるまで待って、
-   離れたところで見て、駄目なら言って、開いたときの ID に戻す。
+   **断るのは保存を押したとき**で、それは meKeepSave() にある。打っている
+   途中に待ち構えて見る仕組み（700ms のタイマー、欄から手が離れるのを待つ、
+   断ったら元の ID に戻す）は**削った** ── それが存在した理由は「この画面に
+   は提出ボタンが無く、打つそばから保存される」ことだけで、それがもう本当ではない。
 
-   サーバに訊くのは長さと文字種が通った後だけ、しかも変えたときだけ。
-   自分の今の ID をもう一度打っただけで「使われています」と言うのは、
-   自分に使われているという意味では正しく、断る理由としては間違っている。
-   繋がっていないときは訊かない ── 訊けなかったことは、空いている証拠でも
-   埋まっている証拠でもない。 */
-var ME_HD0='';       /* 画面を開いたときの ID。断ったらここへ戻す */
-var ME_HD_T=null;    /* 打ち終わりを待つ間 */
-
+   欄が受け取るのは「@ の後ろに打って生き残る字」だけで、それは打鍵ごとに行う。
+   比べるのはその後の文字列だから、大文字で打って小文字になっただけの人は
+   「変えた」ことにならない。 */
 function meSetHandle(v){
-  /* A handle is what somebody types after an @, so it is the characters that
-     survive being typed after one. */
-  ME.handle=String(v||'').toLowerCase().replace(/[^a-z0-9_]+/g, '');
+  keepSet('handle', String(v||'').toLowerCase().replace(/[^a-z0-9_]+/g, ''));
   lnGrow('me-hd');
-  saveMe();
-  if(ME_HD_T) clearTimeout(ME_HD_T);
-  ME_HD_T=setTimeout(meHandleSee, 700);
-}
-/* まだ欄の中に居るなら、まだ打っている。見るのは手が離れてから。 */
-function meHandleSee(){
-  ME_HD_T=null;
-  var el=document.getElementById('me-hd');
-  if(!el) return;                                  /* 画面が閉じた */
-  if(document.activeElement===el){ ME_HD_T=setTimeout(meHandleSee, 700); return; }
-  var h=ME.handle;
-  if(h===ME_HD0) return;                           /* 変えていない */
-  if(h.length<2 || h.length>24){ meHandleNo(t('net.badhandle')); return; }
-  if(typeof netSignedIn!=='function' || !netSignedIn()) return;   /* 訊く先が無い */
-  netHandleFree(h, function(free){
-    if(!free) meHandleNo(t('net.handle.taken'));
-  }, function(){});                                /* 訊けなかった: 断らない */
-}
-function meHandleNo(msg){
-  toast(msg);
-  ME.handle=ME_HD0;
-  saveMe();
-  openMe();
 }
 
 /* ---- the block at the top of the profile ------------------------------- */
@@ -873,9 +921,11 @@ function whoCard(h){
    throwing away something a person made to prove a point about sessions. */
 function openMe(){
   if(!obNeed()) return;
-  /* 断ったときに戻す先。開き直すたびに取り直すので、断って開き直した後は
-     戻した ID がそのまま基準になる。 */
-  ME_HD0=ME.handle;
+  /* **打った内容はここに憶える。**書くのは右上の保存だけ ── www/shell.js
+     § KEEP、OWNER DECISION 2026-09-03。この画面に着くたびに通るので、
+     打ちかけを持ったまま出て戻ってきたら、その打ちかけが基準ごと残る
+     （keepOn は既に在る buffer に触らない）。 */
+  keepOn(ME_KEY, meWas(), meKeepSave);
   /* Named after the page it is the settings for, through the one function
      that names a page. */
   /* The picture first, then the name, the handle and the bio -- OWNER
@@ -949,16 +999,16 @@ function openMe(){
     '<div class="field at" style="gap:14px;margin-bottom:20px">'+
       '<span style="flex:0 0 auto;white-space:nowrap;min-width:4.5em">'+esc(t('me.name'))+'</span>'+
       lnField('me-nm', langName||'',
-        ' maxlength="'+ME_MAX.name+'"' + IN('meSetName'), ME.name)+'</div>'+
+        ' maxlength="'+ME_MAX.name+'"' + IN('meSetName'), meTyped('name'))+'</div>'+
     '<div class="field at" style="gap:14px;margin-bottom:20px">'+
       '<span style="flex:0 0 auto;white-space:nowrap;min-width:4.5em">'+esc(t('me.handle'))+'</span>'+
       lnField('me-hd', meHandle(),
         ' maxlength="'+ME_MAX.handle+'" autocapitalize="none"' + IN('meSetHandle'),
-        ME.handle)+'</div>'+
+        meTyped('handle'))+'</div>'+
     '<div class="sec">'+esc(t('me.bio'))+'</div>'+
     '<div class="field"><textarea id="me-bio" maxlength="'+ME_MAX.bio+'" '+
       'placeholder="'+esc(t('me.bio.ph'))+'"' +
-      IN('meSetBio') + '>'+esc(ME.bio)+'</textarea></div>'+
+      IN('meSetBio') + '>'+esc(meTyped('bio'))+'</textarea></div>'+
     /* リンクと場所。**両方とも自由入力**で、書式を決めない ──
        「自由入力です。」「だって自分の国入れたい人だっているやん」
        OWNER DECISION 2026-08-25。端末の位置ではなく、国コードでもなく、
@@ -975,11 +1025,11 @@ function openMe(){
       '<span style="flex:0 0 auto;white-space:nowrap;min-width:4.5em">'+esc(t('me.link'))+'</span>'+
       lnField('me-lk', t('me.link.ph')||'',
         ' maxlength="'+ME_MAX.link+'" autocapitalize="none"' + IN('meSetLink'),
-        ME.link||'')+'</div>'+
+        meTyped('link'))+'</div>'+
     '<div class="field at" style="gap:14px;margin-bottom:20px">'+
       '<span style="flex:0 0 auto;white-space:nowrap;min-width:4.5em">'+esc(t('me.loc'))+'</span>'+
       lnField('me-lc', t('me.loc.ph')||'',
-        ' maxlength="'+ME_MAX.loc+'"' + IN('meSetLoc'), ME.loc||'')+'</div>');
+        ' maxlength="'+ME_MAX.loc+'"' + IN('meSetLoc'), meTyped('loc'))+'</div>');
 }
 FORM_OPEN.me=function(){ openMe(); };
 /* The two lists behind the two numbers. One screen, and which one it is is the

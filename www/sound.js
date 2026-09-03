@@ -1061,8 +1061,8 @@ function ltAbField(l, id){
      where a class on this field is said. */
   return '<div class="field">'+
     lnField('lt-rom', t('lt.reads.ph'),
-      ' autocapitalize="none"' + IN('ltDraftName', [id]),
-      ltDraftAb(l), (dup? 'dup' : ''))+'</div>'+
+      ' autocapitalize="none"' + IN('ltDraftName'),
+      keepVal(keepKeyOf('letter', id), 'ab'), (dup? 'dup' : ''))+'</div>'+
     (dup? '<div class="ltdup">'+esc(t('lt.dup', dup))+'</div>' : '');
 }
 /* One letter of the alphabet, opened from the list. Not where an alphabet is
@@ -1078,17 +1078,21 @@ function ltAbField(l, id){
 function vLetter(){
   var lid=here().a, l=ltById(lid);
   if(!l) return viewGone();
+  /* The two fields on this page are typed into a buffer, so it has to exist
+     before they are drawn out of it. www/letters.js § ltKeepOn. */
+  ltKeepOn(lid);
   return '<div class="view">'+
     /* SAVE IS AT THE FAR END OF THE BAR. 「文字の保存ボタンは右上にしてくれ」
        OWNER 2026-09-01 -- it was in a strip across the foot, which is a second
        bar for one button and is under the thumb only after scrolling past the
-       sound, the borrowed character and the delete. It saves the NAME, so on
-       the free plan, where there is no name to type, there is nothing for it
-       to do and it is not there. The drawing has its own Save where it is
-       drawn. */
-    navTop('', can('letters')
-      ? '<button class="navdo"' + DO('ltSave', [lid]) + '>'+esc(t('glyph.save'))+'</button>'
-      : '')+'<div class="body">'+
+       sound, the borrowed character and the delete.
+
+       It is navTop()'s own now and not this screen's, and it is there only
+       when something on the page has been changed -- OWNER 2026-09-03,
+       www/shell.js § KEEP. A Save that is always standing there says nothing
+       about whether anything has been written down. The drawing has its own
+       Save where it is drawn. */
+    navTop('')+'<div class="body">'+
     /* The letter itself, first and big. A page about one letter that does not
        show it is a page of three buttons about nothing, and "draw it again"
        on a screen with nothing on it says nothing. A letter with no shape yet
@@ -1130,7 +1134,7 @@ function vLetter(){
        the person's note about their own letter.
        「標語文字の人は意味を持たせたいだろうから、メモ欄追加してもいいかも」 */
     '<div class="sec">'+t('lt.note')+'</div>'+
-    lnField('lt-nt', '', IN('ltSetNote', [lid]), l.nt||'', 'ntin')+
+    lnField('lt-nt', '', IN('ltSetNote'), keepVal(keepKeyOf('letter', lid), 'nt'), 'ntin')+
     (l.ch
       ? '<div class="gborrow" style="margin-top:8px"><span class="gbch">'+esc(l.ch)+'</span>'+
         '<span class="gbl">'+t('glyph.borrowed')+'</span>'+

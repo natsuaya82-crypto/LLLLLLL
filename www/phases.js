@@ -443,10 +443,31 @@ function stDelOwnGo(id){
 }
 
 /* ---- the note a stage carries ----------------------------------------- */
-function stNote(id, v){ STG.notes[id]=String(v||''); saveStg(); }
+/* ---- the two things written on a stage ---------------------------------
+   The rule and the note are typed, and the button in the bar writes them --
+   OWNER DECISION 2026-09-03, www/shell.js § KEEP. Both used to call saveStg()
+   the moment the field lost focus, which is a save nobody asked for at a
+   moment nobody chose.
+
+   The stage is the route's argument, so the buffer is filed under this screen
+   and two stages are two buffers. `stKeepOn()` is called from the stage's own
+   face below, which is what knows which stage is in front of somebody. */
+function stKeepOn(id){
+  /* Not in somebody else's language: saveStg() refuses one. */
+  if(langLocked()) return;
+  keepOn(keepKey(),
+         {rules:String(stRules(id)||''), note:String((STG.notes && STG.notes[id])||'')},
+         function(v, done){ stKeepSave(id, v); done(true); });
+}
+function stKeepSave(id, v){
+  if(v.hasOwnProperty('rules')){ if(!STG.rules) STG.rules={}; STG.rules[id]=String(v.rules); }
+  if(v.hasOwnProperty('note')){ if(!STG.notes) STG.notes={}; STG.notes[id]=String(v.note); }
+  saveStg();
+}
+function stNote(v){ keepSet('note', String(v||'')); }
 /* ---- the rule, and the lines that show it ----------------------------- */
 function stRules(id){ if(!STG.rules) STG.rules={}; return STG.rules[id]||''; }
-function stSetRules(id, v){ if(!STG.rules) STG.rules={}; STG.rules[id]=String(v||''); saveStg(); }
+function stSetRules(v){ keepSet('rules', String(v||'')); }
 function stEx(id){ if(!STG.ex) STG.ex={}; if(!STG.ex[id]) STG.ex[id]=[]; return STG.ex[id]; }
 function stAddEx(id){
   var a=document.getElementById('sx-lb'), b=document.getElementById('sx-ln'),
@@ -615,15 +636,18 @@ function stDetailHTML(p){
     for(i=0;i<p.slots.length;i++) out+=stSlotRow(p, p.slots[i]);
     out+='</div>';
   }
+  /* Both fields below are typed into a buffer, so it has to exist before they
+     are drawn out of it. www/shell.js § KEEP. */
+  stKeepOn(p.id);
   out+='<div class="sec">'+t('stg.rules')+'</div>'+
     '<textarea class="ntbody" style="min-height:130px" placeholder="'+esc(t('stg.rules.ph'))+'" '+
-    '' + CH('stSetRules', [p.id]) + '>'+esc(stRules(p.id))+'</textarea>';
+    '' + IN('stSetRules') + '>'+esc(keepVal(keepKey(), 'rules'))+'</textarea>';
 
   out+=secAdd(ICON_LINE+t('stg.ex'), DO('stExOpen', [p.id]), t('word.mn.add'))+stExHTML(p.id);
 
   out+='<div class="sec">'+t('stg.note')+'</div>'+
     '<textarea class="ntbody" style="min-height:90px" placeholder="'+esc(t('stg.note.ph'))+'" '+
-    '' + CH('stNote', [p.id]) + '>'+esc(STG.notes[p.id]||'')+'</textarea>';
+    '' + IN('stNote') + '>'+esc(keepVal(keepKey(), 'note'))+'</textarea>';
   if(p.own) out+='<button class="set" style="margin-top:18px;border-bottom:none"' + DO('stDelOwn', [p.id]) + '>'+
     '<span class="sl bad">'+t('stg.own.del')+'</span></button>';
   return out;

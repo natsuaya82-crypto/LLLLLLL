@@ -645,38 +645,54 @@ function ltDupOf(l){
    renaming a letter leaves its sound alone, and openSnd changes the sound
    without renaming anything. A name nothing can be read from -- 山 -- simply
    leaves the sound empty rather than inventing one. */
-/* ---- the name box, before it is the name -------------------------------
-   What has been typed into the box and not yet put on the letter. The box
-   used to write straight through on every change: the alphabet rebuilt itself
-   under a moving finger, the font was recompiled per keystroke, and a
-   half-typed name was, for as long as it took to type the rest, what the
+/* ---- what is typed on a letter's page, before it is on the letter -------
+   The box used to write straight through on every change: the alphabet
+   rebuilt itself under a moving finger, the font was recompiled per keystroke,
+   and a half-typed name was, for as long as it took to type the rest, what the
    letter was called. 「保存ボタンつけようもう。単語作るのにも、文字作るのにも」
+   That was answered with a draft of this file's own, and on 2026-09-03 the
+   owner asked for one shape on every screen that is typed into -- so the draft
+   is gone and this page uses the one buffer, www/shell.js § KEEP.
 
-   One draft, not one per letter: only one letter is open at a time, and the
-   id it carries is how a box on a different letter knows the draft is not
-   about it. viewReset() throws it away, because a half-typed name is where
-   you are standing and not something the language has. */
-var ltDraft=null;
+   IT IS ONE BUFFER AND THERE ARE TWO FIELDS IN IT. The page had a name that
+   was typed and saved by a button, and a note that wrote the alphabet on every
+   keystroke -- one screen with both shapes on it at once, which is the thing
+   the decision of 2026-09-03 exists to remove. One buffer, one Save, one
+   question on the way out.
+
+   The buffer is filed under the page, so two letters are two of them, and
+   viewReset() lets them go when another language is opened. */
+function ltKeepOn(id){
+  var l=ltById(id);
+  /* Not in somebody else's language: saveLetters() refuses one, so a buffer
+     here would put a Save in the bar that could not write. */
+  if(!l || langLocked()) return;
+  keepOn(keepKeyOf('letter', id),
+         {ab:String(ltBoxed(l)||''), nt:String(l.nt||'')},
+         function(v, done){ ltSave(id, v); done(true); });
+}
 /* The box is as tall as what is in it. Nothing here calls render() -- the
    letter page would take the keyboard's focus off the field being typed
    into -- so lnGrow() is what says the field grew. */
-function ltDraftName(id, v){ ltDraft={id:id, ab:String(v||'')}; lnGrow('lt-rom'); }
-function ltDraftAb(l){
-  return (l && ltDraft && ltDraft.id===l.id)? ltDraft.ab : ltBoxed(l);
-}
+function ltDraftName(v){ keepSet('ab', String(v||'')); lnGrow('lt-rom'); }
+function ltSetNote(v){ keepSet('nt', String(v||'')); }
 /* The letter, as typed. This is the only thing that writes it.
 
-   `quiet` is for a caller whose own screen is the answer. The onboarding's
-   second step saves the letter and goes somewhere else in the same breath, so
-   the toast landed on the NEXT question -- 「a updateってなに？いらん」. Saying
-   nothing is right exactly when the person is not standing on this letter
-   afterwards, and wrong everywhere else: the letter page stays put, and a
-   Save that says nothing is a Save nobody can tell happened. */
-function ltSave(id, quiet){
-  var l=ltById(id); if(!l) return id;
-  var now=ltSetRoman(id, ltDraftAb(l));
-  ltDraft=null;
-  if(!quiet) toast(t('toast.saved', ltName(ltById(now))||t('lt.untitled')));
+   The note goes on FIRST and the name second, and the order is the whole
+   reason this is one function. A name can move the shape into another letter
+   entirely -- ltSetRoman() says so and returns the one that holds it
+   afterwards -- and the note belongs to the letter whose PAGE this is, which
+   is the one it was typed on. Writing the note after the rename would put it
+   on whichever letter the shape landed in. */
+function ltSave(id, v){
+  var l=ltById(id), now=id;
+  if(!l) return id;
+  if(v.hasOwnProperty('nt')){
+    if(String(v.nt).length) l.nt=String(v.nt); else delete l.nt;
+    saveLetters();
+  }
+  if(v.hasOwnProperty('ab')) now=ltSetRoman(id, String(v.ab));
+  toast(t('toast.saved', ltName(ltById(now))||t('lt.untitled')));
   return now;
 }
 /* What a typed name reads: one unit per word, and the phonemes those units
@@ -717,13 +733,6 @@ function migrateSndName(){
     moved++;
   }
   if(moved) saveLetters();
-}
-/* A person's note about one of their own letters. Written down as it is
-   typed, like every other field on the sheet; the app never reads it. */
-function ltSetNote(id, v){
-  var l=ltById(id); if(!l) return;
-  if(String(v||'').length) l.nt=String(v); else delete l.nt;
-  saveLetters();
 }
 /* Returns the id of the letter that HOLDS this shape afterwards, which is
    usually the one handed in and is not on the free plan when the shape moves
