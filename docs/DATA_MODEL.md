@@ -49,6 +49,27 @@ the file, so a slice has one shape and not three that could drift.
 once — backup, wipe, and what goes up — and a slice added outside the list is
 missing from all three.
 
+**And a fourth: which global holds it while a screen is drawing.** `LANG_IO` in
+`www/core.js` is the one place that says, for each slice, the function that
+reads it in and the function that writes it out — or, for the two that have no
+global, why they have none (`talk` is a closed chapter and `gram2` is read by
+language id on demand). `langLoad()` and `langSaveAll()` walk `SLICES` through
+it, and every road that swaps the open language now takes them: opening one,
+deleting one, deleting an account, a restore, and the sync.
+
+It was written out by hand in **eight** places before 2026-09-03 — five reads
+and three writes — and no two of them agreed. The keyboard and the world were
+added to `SLICES` and to `www/core.js`'s copy, and to none of
+`www/settings.js`'s three, so **deleting an account read five of the ten back**:
+`KB` and `WLD` kept the deleted person's keyboard and their land, `wipeHere()`
+minted a fresh language a few lines later, and the next save wrote both of them
+into it. On disk, under the next language, with every check green. It is the
+third time 「a list of keys, written by hand, that nobody remembered to add
+to」 has been the answer here (CLAUDE.md rule 6), and `tools/acct-check.mjs`
+§ 54 is what asks `LANG_IO` whether it still answers for every slice in
+`SLICES`. **Adding a slice means adding its line there and nothing else
+anywhere.**
+
 **And all of it goes when the account does.** OWNER DECISION 2026-08-26 —
 「アカウント消したら全部消えるに決まってる」. Not the server rows only: the
 `slice` rows, the `language` row, the bytes in Storage, **and every

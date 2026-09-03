@@ -1911,6 +1911,75 @@ const R = await pg.evaluate(async () => {
 
   SET.done = true; SET.obback = null;
 
+  /* ---- 53. 消したアカウントのキーボードと世界が、次の言語に書き込まれる ----
+     「アカウント削除で残るものねえって言ってんだろ何回言わせんだよ全部消えんだよ。」
+     OWNER 2026-08-27。「アカウント削除した場合は制作やSNS含め全てが消える。
+     なにも残ってない。」 OWNER 2026-09-03。
+
+     言語が持つものは SLICES に 12 並んでいます。そのうち大域に載るのは 10 で、
+     それを読み直す並びが**五箇所に手で書いて**ありました。数は 5 / 7 / 9 / 10 で
+     全部ちがい、**アカウント削除だけが 5 でした。**
+
+     だから消したあと `KB` と `WLD` がメモリに残り、wipeHere() が新しい言語を
+     一つ作って保存を呼ぶので、**消した人のキーボードと土地が、次の言語の鍵に
+     書き込まれます。**メモリに残るだけではありません。ディスクに落ちます。
+
+     CLAUDE.md 規則6 が名指ししている形です ──「a list of keys, written by hand,
+     that nobody remembered to add to」。キーボードと世界は後から足されたスライス
+     で、足した人は core.js の並びには入れ、settings.js の三箇所には入れなかった。 */
+  start();
+  const U53 = '66666666-6666-4666-8666-666666666666';
+  netOut(); arrive(U53);
+  LANGS[langId] = LANGS[langId] || { name: '消される言語', mine: true };
+  LANGS[langId].uid = U53; LANGS[langId].mine = true; langStore();
+  KB = kbBoardsOf({ kbs:[{ nm:'消される人のキーボード', pat:'qwerty',
+                           lay:[{ rows:[['a']] }] }], at:0 });
+  saveKb();
+  WLD = { where:'消される人の土地', who:'消される人' };
+  saveWld();
+  const rDrop53 = bkDropFor; bkDropFor = function(){};
+  wipeHere(U53);
+  bkDropFor = rDrop53;
+  if (KB && KB.kbs && KB.kbs.length)
+    no('53: **消したアカウントのキーボードがメモリに残っている** ── 次の保存で'
+     + '新しい言語に書き込まれます');
+  if (WLD && WLD.where)
+    no('53: **消したアカウントの世界（土地・人）がメモリに残っている**');
+  saveKb(); saveWld();
+  let k53 = null, w53 = null;
+  try{ k53 = localStorage.getItem(langKey('kb')); }catch(e){}
+  try{ w53 = localStorage.getItem(langKey('wld')); }catch(e){}
+  if (k53 && k53.indexOf('消される人') >= 0)
+    no('53: **消したアカウントのキーボードが、次の言語に書き込まれた**');
+  if (w53 && w53.indexOf('消される人') >= 0)
+    no('53: **消したアカウントの土地が、次の言語に書き込まれた**');
+  say('53: アカウントを消したら、キーボードも世界も残らず、次の言語にも移らない');
+
+  /* ---- 54. 言語のものを読み書きする一覧は一つで、SLICES と合っている ------
+     53 が起きた形そのものを押さえます。手書きの一覧が八つある限り、次に
+     スライスが一つ足されたとき、また同じことが起きます ── 過去に二回。
+     キーボードはバックアップに入っておらず、世界は設定の中に居ました。
+
+     `LANG_IO` が唯一の一覧で、ここが訊くのは「SLICES に一つ残らず答えているか」
+     です。答えは読む関数・書く関数のどちらか、または「大域に写しを持たない」と
+     いう一言。**黙って抜けているものが無いこと**が全部です。 */
+  {
+    let miss = [];
+    for (let i = 0; i < SLICES.length; i++)
+      if (!LANG_IO[SLICES[i]]) miss.push(SLICES[i]);
+    if (miss.length)
+      no('54: LANG_IO が答えていないスライスがある ── ' + miss.join(' ') +
+         '。足したなら、読む関数・書く関数か、大域に持たない理由を一行で書く');
+    let extra = [];
+    for (const k of Object.keys(LANG_IO))
+      if (SLICES.indexOf(k) < 0) extra.push(k);
+    if (extra.length)
+      no('54: LANG_IO に SLICES に無いものがある ── ' + extra.join(' ') +
+         '。無くなったスライスの説明が残っています');
+  }
+  say('54: 言語のものを読み書きする一覧は一つで、SLICES の ' + SLICES.length +
+      ' 個に一つ残らず答えている');
+
   return out;
 });
 

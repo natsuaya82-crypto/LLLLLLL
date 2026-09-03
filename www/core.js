@@ -109,6 +109,87 @@ function lsWipeAcct(uid){
    written, it restored, every check was green, and the keyboard somebody
    built was simply not in the file. */
 var SLICES=['words','lines','lang','script','letters','notes','phases','talk','snd','kb','wld','gram2'];
+/* AND THE ONE PLACE THAT SAYS WHO READS AND WRITES EACH OF THEM.
+   「同じボタンは共有して使用すればいいのに直書きで書いてるだろだからこう言う
+   ことが起きてる」「こう言うのもルールで禁止してるから無くすように」 OWNER
+   2026-09-03.
+
+   The list above says what a language is MADE of. This says how each part of
+   it gets into the globals a screen draws from, and back out. It used to be
+   said nowhere: **the sequence of reads was written out by hand in five
+   places and the sequence of writes in three**, and the counts were five,
+   seven, nine and ten. No two of them agreed.
+
+   The keyboard and the world were added to `SLICES` and to `www/core.js`'s
+   copy, and to none of `www/settings.js`'s three. So deleting an account read
+   five of the ten back -- `KB` and `WLD` kept the deleted person's keyboard
+   and their land, `wipeHere()` minted a fresh language a few lines later, and
+   the next save wrote them into it. **Not left in memory: written to disk,
+   under the next language.** 「アカウント削除で残るものねえ」.
+
+   This is the shape CLAUDE.md rule 6 names by itself -- 「a list of keys,
+   written by hand, that nobody remembered to add to」 -- and it is the third
+   time it has been the answer here. The keyboard was in no backup for as long
+   as it existed; what a language is FOR sat in the person's settings. Both
+   were the same bug and both were fixed one site at a time.
+
+   So there is one list and it is asked of `SLICES` itself: a slice with no
+   line here is red (tools/acct-check.mjs § 54), and a line here for a slice
+   that is gone is red the same way. **Adding a slice means adding its line,
+   and nothing else anywhere.**
+
+   TWO OF THE TWELVE HAVE NO GLOBAL, and saying so is the point of writing
+   them down rather than leaving them out:
+
+     talk    a chapter that closed. Nothing in www/ reads or writes it, and it
+             is NOT deleted -- somebody's may be in it and that is the owner's
+             to decide (docs/DATA_SAFETY.md § 4)
+     gram2   read and written BY LANGUAGE ID, on demand, in
+             www/grammar-engine/adapter.js. There is no global copy to go
+             stale, which is why it never belonged in the sequences above
+
+   The functions are named inside a function body rather than beside the key,
+   because www/core.js is the FIRST script index.html loads: `ltRead` and
+   `saveKb` do not exist yet when this object is built, and they do by the
+   time anything calls it. */
+var LANG_IO={
+  /* four slices, one pair -- the dictionary, the lines, the language and the
+     writing are read and written together and always have been */
+  words:  { rd:function(){ langRead(); }, wr:function(){ save(); } },
+  lines:  { rd:function(){ langRead(); }, wr:function(){ save(); } },
+  lang:   { rd:function(){ langRead(); }, wr:function(){ save(); } },
+  script: { rd:function(){ langRead(); }, wr:function(){ save(); } },
+  letters:{ rd:function(){ ltRead(); },   wr:function(){ saveLetters(); } },
+  notes:  { rd:function(){ ntRead(); },   wr:function(){ saveNotes(); } },
+  phases: { rd:function(){ stRead(); },   wr:function(){ saveStg(); } },
+  snd:    { rd:function(){ sndRead(); },  wr:function(){ saveSnd(); } },
+  kb:     { rd:function(){ kbRead(); },   wr:function(){ saveKb(); } },
+  wld:    { rd:function(){ wldRead(); },  wr:function(){ saveWld(); } },
+  talk:   { why:'a chapter that closed. Nothing reads or writes it, and it is not deleted' },
+  gram2:  { why:'read by language id on demand in www/grammar-engine/adapter.js; there is no global copy' }
+};
+/* Everything this language is, into the globals. One pass, and a function
+   named by four slices is called once -- the dictionary and the lines come
+   out of one read and calling it four times would be four reads of the same
+   key. */
+function langLoad(){
+  var did=[], i, io;
+  for(i=0;i<SLICES.length;i++){
+    io=LANG_IO[SLICES[i]];
+    if(!io || !io.rd || did.indexOf(io.rd)>=0) continue;
+    did.push(io.rd); io.rd();
+  }
+}
+/* And out. The same list, the other way, so a slice cannot be written by one
+   road and forgotten by the other. */
+function langSaveAll(){
+  var did=[], i, io;
+  for(i=0;i<SLICES.length;i++){
+    io=LANG_IO[SLICES[i]];
+    if(!io || !io.wr || did.indexOf(io.wr)>=0) continue;
+    did.push(io.wr); io.wr();
+  }
+}
 /* id -> { name, mine, sid, uid }: the index says which languages are here, and
    the language's own keys hold what it is.
 
@@ -446,9 +527,12 @@ function langOpen(id){
      one in a backup file, netLangSync() does not sync one, and the row in the
      language list is not a button. Each of those is at the place that does
      the thing. docs/DATA_MODEL.md § A language that is only read. */
-  save(); saveLetters(); saveNotes(); saveStg(); saveSnd(); saveKb(); saveWld();
+  langSaveAll();
   langId=id; langStore();
-  langRead(); ltRead(); ntRead(); stRead(); sndRead(); ltStart(); kbRead(); migrateKbFree(); wldRead(); migratePostInk();
+  /* LANG_IO is the list; ltStart(), migrateKbFree() and migratePostInk() are
+     not reads and stay -- one tops a free language up, two bring an older
+     shape forward. */
+  langLoad(); ltStart(); migrateKbFree(); migratePostInk();
   /* and where you were standing in the old one is not a place in this one:
      a filter left on would hide most of a dictionary you have never seen. */
   viewReset();

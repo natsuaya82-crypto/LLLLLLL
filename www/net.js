@@ -1403,7 +1403,7 @@ function netLangSync1(id, done){
                ONLY for the open one: the globals are 「the language in front
                of me」, and filling them from another language is that language
                appearing on the screen somebody is standing on. */
-            langRead(); ltRead(); ntRead(); stRead(); sndRead(); kbRead(); wldRead();
+            langLoad();
             render();
           }
           /* And the one fact about this language that is a COLUMN rather than

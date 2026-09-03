@@ -512,12 +512,11 @@ function wipeLangsGo(){
      This is langOpen()'s own line less migratePostInk(), which cuts ink onto
      posts out of the alphabet they were written in -- there is no alphabet
      here now, and the posts are not going anywhere. */
-  langRead(); ltRead(); ntRead(); stRead(); sndRead(); ltStart();
-  kbRead(); migrateKbFree(); wldRead();
+  langLoad(); ltStart(); migrateKbFree();
   SFONT={built:false, sig:null};
   var css=document.getElementById('sfontcss');
   if(css && css.parentNode) css.parentNode.removeChild(css);
-  save(); saveLetters(); saveNotes(); saveStg(); saveSnd();
+  langSaveAll();
   /* and where you were standing was in a language that is not there.
      langOpen()'s own two lines: the last one leaves you on the cover of the
      language you are in now, which is the only way this row can be seen to
@@ -623,7 +622,14 @@ function wipeHere(uid){
   var wipeIds=lsWipeAcct(wipeUid);
   langId='';
   langFirst();
-  langRead(); ltRead(); ntRead(); stRead(); sndRead();
+  /* AND ALL TEN, NOT FIVE. This named five of them by hand, so `KB` and `WLD`
+     came through holding the deleted account's keyboard and their land -- and
+     langFirst() a line above has just minted a new language, so the saves at
+     the foot of this function wrote both of them into it. Written to disk
+     under the next language, not merely left in memory.
+     「アカウント削除で残るものねえ」 OWNER 2026-08-27.
+     LANG_IO in www/core.js is the one list now. */
+  langLoad();
   /* Whom this phone belonged to, what it was carrying, and what had been
      written and not sent. All three are the person's and none of them is a
      slice, which is why none of them was going anywhere before today. The
@@ -675,7 +681,7 @@ function wipeHere(uid){
   SFONT={built:false, sig:null};
   var css=document.getElementById('sfontcss');
   if(css && css.parentNode) css.parentNode.removeChild(css);
-  save(); saveLetters(); saveNotes(); saveStg(); saveSnd();
+  langSaveAll();
   /* And the copies in Documents, which are the ones that outlive the app.
      Last, and after the save above rather than before it: a save writes a
      fresh backup out, so dropping the files first would leave one behind. */
