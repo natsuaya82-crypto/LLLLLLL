@@ -91,7 +91,7 @@ function meFrom(m){
 /* Whether this copy has anything in it. Used before parking one: a blank
    copy is not worth a key, and writing one would matter -- wipeHere() blanks
    ME and then calls netOut(), so a park that did not ask this would write the
-   deleted person straight back out of memory, one line after lsWipeNS() had
+   deleted person straight back out of memory, one line after lsWipeAcct() had
    removed every trace of them. 「アカウント削除で残るものねえ」 */
 function meHas(m){
   return !!(m && (m.name || m.handle || m.bio || m.pic || m.link || m.loc ||
@@ -120,8 +120,8 @@ function saveMe(){
    handed back when that account returns. It stops being visible; it does not
    stop existing.
 
-   lsWipeNS() removes every key beginning `lingua.`, counted rather than
-   listed, so a parked copy goes with the account when the account goes.
+   lsWipeAcct(uid) removes the parked copy filed under that uid, so a parked
+   copy goes with the account when the account goes -- and only that account's.
    bkPack() walks SLICES under langKey() and has never carried lingua.me at
    all, so parking takes nothing out of a backup that was in one. */
 function meParkKey(uid){ return LS_ME + '.' + uid; }

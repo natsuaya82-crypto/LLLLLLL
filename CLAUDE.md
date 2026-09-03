@@ -732,21 +732,28 @@ somebody built simply was not in the file. `backup-check` now names both
 rather than counting slices — a count says eleven and goes on saying eleven
 when the eleventh is the wrong one.
 
-**Being in it has nothing to do with being deleted, and that is new on
-2026-08-27.** `wipeAll` used to walk `SLICES` too, and every key added after
-that line was written stayed behind — the drafts, the posts, the person's
-name and face, the index of languages, the flat keys from before there could
-be more than one. One bug, seven times: **a list of keys, written by hand,
-that nobody remembered to add to.** 「アカウント削除で残るものねえって言ってん
-だろ何回言わせんだよ全部消えんだよ。」 So `lsWipeNS()` counts `localStorage`
-instead and removes everything under `lingua.` — no list, and a key added
-tomorrow is gone the day it is added. The prefix includes the dot, because
-`lingua` and `linguaX` in the same storage are somebody else's.
+**Deleting an account counts the namespace rather than walking a list.**
+`wipeAll` used to walk `SLICES`, and every key added after that line was
+written stayed behind — the drafts, the posts, the person's name and face,
+the index of languages, the flat keys from before there could be more than
+one. One bug, seven times: **a list of keys, written by hand, that nobody
+remembered to add to.** So `lsWipeAcct(uid)` counts `localStorage` instead —
+no list, and a key added tomorrow is taken the day it is added. The prefix
+includes the dot, because `lingua` and `linguaX` in the same storage are
+somebody else's.
 
-**There is no way to delete one language**, and that is a fact about today
-rather than a rule: no screen offers it. When one is built it walks `SLICES`
-for one id through `langKeyOf()` — and it is emphatically not `lsWipeNS()`,
-which is the whole namespace and belongs to the account going.
+**And it takes THAT ACCOUNT's and no other's.** It walks the index for the
+languages carrying that stamp and takes the copies parked under that uid.
+The call that took the whole namespace whoever was holding the phone is
+deleted: it is what emptied the owner's languages on 2026-09-03 when a second
+account was deleted, and a function that can still be called is a function
+somebody calls.
+
+**One language is deleted by the middle of the three rows** — sign out,
+delete this language, delete the account. `wipeLangsGo()` in `www/settings.js`
+walks `SLICES` for one id through `langKeyOf()`, drops that language's backup
+and its row on the server, and touches nothing else. 「この言語を削除で言語の
+制作のものは全部なくなる」 OWNER 2026-09-03.
 
 The globals do not change. `WORDS` is the open language's dictionary, because
 the app shows one language at a time and 290-odd places say `WORDS` meaning

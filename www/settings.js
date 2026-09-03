@@ -421,11 +421,9 @@ function setUi(l){ SET.ui=l; save(); render(); }
                            recoverable FROM, and whether they should go is
                            not something the owner has said
 
-   So the keys are NAMED rather than counted -- the opposite of lsWipeNS(),
-   deliberately, and it is the one place in this file where naming them is
-   right. lsWipeNS() counts because "everything under lingua." is what it
-   means, and a key added tomorrow belongs in it. Here a key added tomorrow
-   belongs in it only if it is a LANGUAGE's, and the list of what a language
+   So the keys are NAMED rather than counted, deliberately. A key added
+   tomorrow belongs in this list only if it is a LANGUAGE's, and the list of
+   what a language
    is made of already exists and is already kept in step: SLICES, which
    bkPack() walks to write a backup. A count here would take the drafts and
    the timeline's copy with it on the day somebody adds a key, silently.
@@ -552,7 +550,8 @@ function wipeHere(uid){
      the drafts, the posts, the person's name and face, the index of languages
      and the eight flat keys from before there could be more than one all sat
      through it. Every one of them was the same bug: a list of keys, written by
-     hand, that nobody remembered to add to. lsWipeNS() in core.js has no list.
+     hand, that nobody remembered to add to. lsWipeAcct() in core.js counts the
+     namespace instead, and takes only what carries this account's stamp.
 
      Then a first run, out of the same functions a first run uses. langFirst()
      mints a NEW id, so not one key of the language that was here can be
