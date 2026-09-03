@@ -20,22 +20,18 @@ The rest of `docs/` is the working detail behind the rules at the head of
 | `BACKLOG.md` | found and deliberately not done, and why |
 
 **Every section below was read against the code on 2026-09-03.** Where a claim
-can go stale, it says the command that re-checks it — read the command, not the
-sentence. §3 is why: it went on saying the timeline was not on the server for a
-week after it was, and then said the languages were not, for as long again.
-Both were.
+can go stale it carries the command that re-checks it. **Run the command; do not
+believe the sentence.**
 
-**This file is the leader's, and the leader writes it.** It went for months
-with three places telling a session to read it and nowhere telling anyone to
-write it, and what that cost is in `CLAUDE.md`: a stale sentence here was read
-out to the owner as 「your finished work is not done」. A stale RULE is
-doubted. A stale statement of FACT is simply believed.
+**This file is the leader's, and the leader writes it.** A stale RULE is doubted.
+A stale statement of FACT is simply believed — which is why nothing here may sit
+un-re-read.
 
 ---
 
 ## 0-a. 2026-09-03 ── いまの状況
 
-**sha はここに書きません。**一日で古くなるからです。訊く一行:
+**sha はここに書きません。**一日で古くなります。訊く一行:
 
 ```
 git fetch --all --prune && git log --oneline -1 origin/master
@@ -148,31 +144,16 @@ Google と同じアドレスを打って二つ目のアカウントを立てて�
 ### 走っているセッション ── 2026-09-03
 
 `claude/door`（Google の扉）と `claude/rc`（RevenueCat、公開キー待ち）が
-未取り込み。`claude/plannow`（プランの期限）、`claude/keysel`（キーの確定）、
-`claude/me3`（画像と @ の14日）は 2026-09-03 のうちに入りました ──
-**この三行はこの文書を書いている数時間のあいだに変わりました。**
-保存のポップは決定だけあって未着手です（決定ログ `9bbd83d3`）。
+未取り込み。保存のポップは決定だけあって未着手です（決定ログ `9bbd83d3`）。
 
-**だからこの段落を信じないでください。**枝が取り込まれているかは名前からも
-この行からも推測せず、訊くこと:
+**この二行を信じないでください。**枝が取り込まれているかは名前からもこの行
+からも推測せず、訊くこと ── この段落は半日で二度変わりました:
 
 ```
 git merge-base --is-ancestor origin/<枝> origin/master && echo IN || echo NOT
 ```
 
 ### まだ直っていないと分かっているもの
-
-**この節は 2026-09-03 に読み直しました。**四つのうち三つは直っていたので
-消しました ── 解約が次の起動で取り消される件（`claude/lapse` 取り込み済み。
-`netPlanUp()` が `netSend()` に乗り、両方のハンドラが答えを聞き、
-`SET.planPend` が送信の前に書かれる）、アカウントを変えても段が残る件
-（`core.js` の `setFor()` と `SET_ACCT` の六つ。`LinguaPlan.swift` は uid を
-持っています）、復元と移行で印が押されない件（`backup.js` が
-`LANGS[d.id].uid` を書き、`langMigrate()` は `mig` を通して
-`langMigStamp()` が押す）。**直ったものをここに残すと、次の人が同じ穴を
-二度掘ります。**
-
-残っているのは一つだけです:
 
 - **端末はレシート無しで自分の行に `pro` を書ける。**`schema.sql` の RLS が
   閉じられるのは「他人の段を読み書きできない」まで。`www/net.js` の
@@ -189,22 +170,16 @@ Connect と DNS のダッシュボードの話なので、**済んだかどう�
 
 1. **`supabase/schema.sql` をダッシュボードに流す**（`supabase/setup.md` § 2）。
    流すまで、人の言語のページで単語と文法の ↓ を押しても何も落ちてきません。
-2. ~~**Plus と Pro を一つのサブスクリプショングループに。**~~ 済み ──
-   オーナーが 2026-09-03 に確認: 「グループ1個でレベルも分かれてた」。
-   **これは「Pro になりました」の原因ではありませんでした。**同じグループ内で
-   Plus を押すのは**格下げ**で、Apple は支払い済みの期間の終わりまで繰り延べ
-   ます。だから権利は Pro のままで、画面の段が Pro なのは正しい。直っていたのは
-   押した直後の一言のほうで、ビルド126 に入っています。
-3. **メールの送信設定と DNS**（`supabase/mail.md`）。**これが先です** ── 六桁が
+2. **メールの送信設定と DNS**（`supabase/mail.md`）。**これが先です** ── 六桁が
    飛ばないと審査用のデモアカウントも作れません。
-4. **審査用のデモアカウント。**扉を通らないと何もできないので、審査員が入れ
+3. **審査用のデモアカウント。**扉を通らないと何もできないので、審査員が入れ
    なければ即リジェクト。`natsuaya82+demo@gmail.com` のように自分のアカウントと
    分けること（審査員にパスワードを渡すため）。言語一つ、文字を何個か、投稿を
    二つ三つ入れておくこと。
-5. **Supabase の Authentication → Sessions の二つの値**を見て
+4. **Supabase の Authentication → Sessions の二つの値**を見て
    `supabase/setup.md` に書く。「久しぶりに開いたらサインアウトされるか」に
    このリポジトリは答えを持っていません。
-6. ウィジェットのプロビジョニングプロファイル、Apple / Google サインインが ON か、
+5. ウィジェットのプロビジョニングプロファイル、Apple / Google サインインが ON か、
    スタッフと admin、請求の上限 ── `docs/apple.md` § 4、`supabase/setup.md` § 4 § 5 § 6。
 
 ## 0. ずっと効いている決めごと
@@ -214,12 +189,7 @@ Connect と DNS のダッシュボードの話なので、**済んだかどう�
 取り込まず、ゲートを回さず、コードを書きません**（OWNER「君が作業するんじゃ
 なよね？」）。`docs/SESSIONS.md` と `CLAUDE.md` が本体です。
 
-**2026-08-28 にここに七つの表がありました。消しました。**七つのうち六つは
-その後に直っていて、直ったものが「分かったこと」として残っていると、次の人が
-同じ穴を二度掘ります。何が直ったかは `docs/CHANGELOG.md` にあります ──
-この文書は今どこに立っているかを書く場所で、履歴の場所ではありません。
-
-残っている一つだけ、まだ直っていないので書いておきます:
+コードを読んで分かっていて、まだ直っていないもの:
 
 | 何 | 分かったこと | どこ |
 |---|---|---|
@@ -249,66 +219,29 @@ Connect と DNS のダッシュボードの話なので、**済んだかどう�
 
 ## 1. `master` is the app again. Keep it that way.
 
-A fresh clone of `master` is the current app. **No sha is written here** — it
-is a fact with a shelf life of about a day, and this line has carried a stale
-one three times.
+A fresh clone of `master` is the current app. **No sha is written here** — a sha
+has a shelf life of about a day.
 
 The gate is **35 checks** — nine that need no browser and twenty-six that do.
-Count `FAST` and `SLOW` in `tools/gate.mjs`, which is the only place the
-number lives; the count went 34 → 35 on 2026-09-03 when `tools/find-check.mjs`
-went in.
+Count `FAST` and `SLOW` in `tools/gate.mjs`, which is the only place the number
+lives.
 
-**It has NOT been run on this `master`.** That is a statement about today, not
-a worry: three branches are out and the gate is run once, by whoever
-integrates, after integrating. Do not write "the gate is green" here again
-unless you watched it. A sentence in this file claiming a green nobody saw is
-the failure this file exists to prevent.
+**Never write "the gate is green" here unless you watched it go green.** A
+sentence in this file claiming a green nobody saw is the failure this file
+exists to prevent. The gate is run once, by whoever integrates, after
+integrating.
 
-**Four branches went in on 2026-08-26** -- `translate` `wiki` `draft` `me2` --
-on top of the six that went in the day before. Do not read that as the whole
-list: seventeen branch tips are ancestors of `master` now, and the way to
-count is the command rather than this sentence:
+**Never name a branch or a sha here.** Both have a shelf life of about a day.
+Which branches are in is a command, not a sentence:
 
 ```
 for b in $(git branch -r | grep -v HEAD); do \
   git merge-base --is-ancestor $b origin/master && echo "$b"; done
 ```
 
-`wiki` is in **as far as `03fcfa3`** and has moved since -- a branch being an
-ancestor and a branch being finished are different facts.
+**A branch being an ancestor and a branch being finished are different facts.**
 
-It said `1941783` for **66 commits** after that stopped being true, and the
-sentence around it -- "four branches were integrated into it that day" -- went
-on being read as the whole of the day. It was not: fifteen commits in that
-range say 「を取り込む」. Nobody wrote a wrong number; somebody wrote a right
-one and the ground moved under it, which is what the next paragraph is about
-and why the two lines below exist. **Counting it is one command**, which is the
-only reason this correction could be made at all:
-
-```
-git rev-list --count <the sha this file names>..origin/master     # 0 if current
-```
-
-That commit is a fact with a shelf life. **Run the two lines below rather than
-believing this paragraph** — it has been wrong before and the way it goes wrong
-is silent.
-
-Do not name a branch here again. This paragraph has said "master and
-`<branch>` are the same commit" three times and been wrong twice, because a
-branch name is a fact with a shelf life of about a day.
-`claude/cowork-migration-review-wfx1ra`, which it named until 2026-08-22, is
-**233 commits behind**.
-
-That is worth a paragraph because it was not true, and the way it failed is the
-way it will fail again. `master` sat at 2026-08-04 while 144 commits of work
-went onto the branch, so it had **no** `www/share.js`, **no**
-`ios/App/LinguaKeyboard/`, **no** `tools/conv-check.mjs` and **no**
-`docs/keyboard-extension.md`. A second session cloned the repository, landed on
-the default branch, and reported that the system keyboard was not built and the
-gate was nine checks. It was right about what it was looking at, and there was
-nothing in the repository that could have told it otherwise.
-
-So, before deciding anything is missing:
+Before deciding anything is missing:
 
 ```
 git fetch --all --prune                      # ALL of it, not just master
@@ -338,25 +271,10 @@ git fetch --all --prune
 git ls-remote origin | wc -l        # the remote's own answer, not the clone's
 ```
 
-**This has now caught two sessions on one day.** `claude/pw3` ran the collision
-test against one branch on 2026-08-27 and found out after pushing
-(`docs/reports/pw3-2026-08-27.md` § the hole, `5f33611`), and asked for this
-line here; `claude/acct` did the same thing a few hours later, reported "no
-live branches on this remote", and found **45** — eleven of them ahead of
-master, five of them touched within the same minutes — when a stop hook
-complained about something else entirely. Neither session was wrong about what
-it was looking at. **It is the same failure as the paragraph above and the
-opposite half of it**: that one is `master` being stale, this one is `master`
-being all you can see. Both end in believing two zeros.
-
-**`--all`, and `git branch -r`, are the point.** The two lines that used to be
-here compared HEAD against `origin/master` and nothing else, so they cannot see
-the case that has now happened twice: `master` itself being the stale thing. On
-2026-08-22 a session ran them, got two zeros, believed it, and spent a day
-refactoring a copy of the app that was **208 commits behind** — `claude/save`
-and `claude/yoo-kwdg28` were on the remote the whole time and a fresh clone had
-fetched neither. Two zeros against `master` proves you match `master`. It
-proves nothing about whether `master` is the app.
+**`--all`, and `git branch -r`, are the point.** Comparing HEAD against
+`origin/master` alone cannot see `master` itself being the stale thing. **Two
+zeros against `master` prove you match `master`. They prove nothing about
+whether `master` is the app.**
 
 If a branch is ahead of `master`, find out why before writing a line, and say
 so to whoever is running it — a number here is the difference between "not
@@ -394,31 +312,21 @@ Pushing to `master` is the owner's call and is asked for each time.
   What the walk made before the account existed goes to the server at the
   door — `obFinish()` calls `netLangSync()`.
 
-  **It was the other way round for two days and that is why `open-check`
-  exists.** A session read 「言語はアカウントないと作れないです」 as "so the
-  door is first" and moved it (`b64c491`), and the owner's phone opened on a
-  sign-in form 「そんなの俺頼んでねえぞ」. Every check stayed green: `appIs()`
-  answered `'ob'` for a brand new phone, correctly, and `vOb()` drew the door
-  anyway because the door was the step `ob.step` was sitting on. So
-  `open-check` boots from an empty `localStorage` and reads `#app` rather than
-  asking `appIs()` — **four** states, four screens: new phone → the
-  onboarding, part-way through in the walk → the app dimmed with one thing
-  lit, finished then signed out → the door, finished and signed in → the app.
+  **`open-check` is what holds the order.** It boots from an empty
+  `localStorage` and reads `#app` rather than asking `appIs()`, because
+  `appIs()` can answer correctly while the screen is wrong. **Four** states,
+  four screens: new phone → the onboarding; part-way through the walk → the app
+  dimmed with one thing lit; finished then signed out → the door; finished and
+  signed in → the app.
 
-  The fourth is there because putting the door back at the end turned it up.
-  `appIs()` answers `'app'` for the walk before it asks about the session —
-  the walk IS the app — and it did not have to while the door was first,
-  because by then somebody was always signed in. Without that line a new
-  phone draws its first letter, presses done, and is shown the door. The
-  three answers `b62ac29` decided are unchanged: `obTourOn()` is
+  `appIs()` answers `'app'` for the walk before it asks about the session — the
+  walk IS the app. Without that, a new phone draws its first letter, presses
+  done, and is shown the door. `obTourOn()` is
   `!SET.done && ob.step===OB_TOUR`, false for every finished phone.
 
 ## 3. What is NOT built, however much it looks like it is
 
-**The timeline IS on the server now, and this section used to say the
-opposite.** It said so correctly on 2026-08-11 and went on saying it after the
-work was done, which is the exact failure §1 is about — a file that is trusted
-and is out of date is worse than no file. Re-check rather than believe:
+**The timeline is on the server.** Re-check rather than believe:
 
 ```
 grep -n "rest/v1" www/net.js          # what the app actually asks the server for
@@ -643,49 +551,17 @@ The body is in `docs/FEATURE_RULES.md` § several sessions at once.
 A commit on a file from a branch that is not yours means another session is in
 that file. Stop and report there, not when a merge fails.
 
-**On 2026-08-25 there were three sessions and a leader**, and the territory was
-named by the leader rather than found by colliding. Who they are is not written
-here — a session list is a fact with the same shelf life as a branch name. What
-IS worth keeping is the shape, because it is the first time it was done this
-way and it held:
+**The split is by FILE, not by feature.** That is the only split that prevents
+a collision. Not one file may appear in two sessions' lists — and when a feature
+wants both markup and CSS, the feature is split to fit the file ownership rather
+than the other way round. `www/index.html` goes to exactly one session; everyone
+else writes the line they need in the commit body and the leader carries it
+across.
 
-```
-  the sheet          www/sheet.js (new), www/index.html, route-map, act-map,
-                     www/sound.js, www/letters.js, www/i18n/*, and the gate
-  the shape          www/otf5.js and the ink-drawing half of www/glyph.js
-  the grammar        www/grammar-engine/*, www/grammar.js
-```
+**Who the sessions are is not written here.** A session list has the same shelf
+life as a branch name.
 
-`www/index.html` went to exactly one of the three, and the other two send their
-one line — a `<script src>`, a CSS rule — to the leader. That is what made
-three sessions possible at all: on 2026-08-25 four branches were touching that
-file at once, and every one of the four conflicts in the last integration came
-out of a branch that had fallen behind.
-
-**Later the same day it was done again with six**, after the owner spent an
-hour on a real phone at build #91 and came back with about twenty-five things.
-The split was by FILE, not by feature, which is the only split that actually
-prevents a collision:
-
-```
-  post      www/post.js, www/sns.js, www/index.html, tools/box-baseline.txt
-  letters   www/letters.js, www/sound.js
-  me        www/me.js, www/settings.js, www/store.js, www/mod.js
-  sheet2    www/sheet.js
-  grammar2  www/grammar.js, www/phases.js, www/wordsheet.js
-  world     www/home.js
-```
-
-Not one file is in two rows. Several of the owner's items wanted both markup
-and CSS — the post header row, the line height under a drawn font, the rounded
-underline — and every one of those went to the session that holds
-`index.html`, rather than the session that holds the screen. **The feature was
-split to fit the file ownership, not the other way round.** The other five were
-told: if you find you need CSS, stop and write the line you need in the commit
-body, and the leader carries it across.
-
-**Three things about this environment, all measured, all of which shape the
-instructions:**
+**Three things about this environment, all measured:**
 
 - **A leader can only speak at birth.** `ListAgents` returns nobody and
   `SendMessage` reaches nobody — sessions are separate containers. The whole
@@ -693,9 +569,7 @@ instructions:**
   them later".
 - **The reverse direction works, and it is git.** So every session is told, in
   the hard half of its instructions: *what is unfinished, what you are stuck
-  on, and where the leader was wrong go in the COMMIT BODY, not in chat.* On
-  2026-08-25 that is how all three of the previous round's real corrections
-  reached the leader.
+  on, and where the leader was wrong go in the COMMIT BODY, not in chat.*
 - **The session tools come and go.** `create_session` / `archive_session`
   resolved under `mcp__bf7c680d-…__` and, for one call each, under
   `mcp__Claude_Code_Remote__`; the second name stopped resolving mid-session
@@ -734,14 +608,12 @@ node -e "const s=require('fs').readFileSync('tools/gate.mjs','utf8');
     console.log(m[1], m[2].split(',').length)"
 ```
 
-`fill` and `round` were missing from that list and from `CLAUDE.md`, and it was
-not only a list. Both loaded playwright as `import { chromium } from
-'playwright'`, where the other eight browser checks call a `loadChromium()`
-that falls back to the global install. On a machine with playwright installed
-globally rather than into `node_modules`, both died at module load — and
-because `npm test` is an `&&` chain, **`round` and `press` never ran at all**.
-Fixed 2026-08-22 by making the two match the eight. A check nobody can run is
-a check that is not in the gate.
+**Every browser check loads Chromium through `loadChromium()`**, which falls
+back to a global playwright install. A check that writes
+`import { chromium } from 'playwright'` instead dies at module load on any
+machine without playwright in `node_modules` — and since `npm test` chains on
+`&&`, everything after it silently never runs. **A check nobody can run is a
+check that is not in the gate.**
 
 `npm run rls` is not in `npm test` at all: it stands up a real PostgreSQL.
 Run it whenever `supabase/schema.sql` changes, which is the only time it can
@@ -750,12 +622,12 @@ start failing.
 ## 6. Builds
 
 `.github/workflows/ios-deploy.yml`, on `workflow_dispatch` or a `build-*` tag.
-It runs on `macos-latest` and takes about three minutes in practice, not the
-twenty this file used to claim — the app is a WebView and the archive is small.
+It runs on `macos-latest` and takes about three minutes — the app is a WebView
+and the archive is small.
 
 **Do not start one without being asked.** This is a standing instruction from
 the owner of the repository, not a suggestion, and it has been said more than
-once. 2026-08-25 was an exception the owner named out loud.
+once.
 
 Build numbers are the workflow's **run numbers** (`github.run_number`), and
 that matters more than it looks: the `build-*` tag is a trigger and a record,
@@ -763,13 +635,10 @@ never the source of the number. A `workflow_dispatch` run gets a build number
 exactly the same way.
 
 **Which build is the latest is not written here, and cannot be.** The number is
-the workflow's run number and it lives in the Actions tab — outside this
-repository and unreadable from a session. Every line in this file that named one
-went stale within days, and at one point three different numbers sat in three
-sections at once. Ask, or open the Actions tab.
+the workflow's run number, it lives in the Actions tab, and no session can read
+it. Ask, or open the Actions tab.
 
-The tag has not been the trigger in practice for some time; `workflow_dispatch`
-is what gets used.
+`workflow_dispatch` is what gets used; the tag is a record, not the trigger.
 
 **A green tick is not a delivery.** The workflow passes
 `wait-for-processing: false`, so it goes green the moment the bytes are
@@ -799,10 +668,6 @@ assuming a thing is waiting for you.
 
 ### Dug out of the code, and still open
 
-**Two of the four that used to sit here are fixed and have been deleted** — the
-self-drawn sheet's PDF (`LinguaPdf` scales the page now) and the rounded
-underline (`.wldrow` is declared once). The two that are still open:
-
 - **「今日のお題」is not a bug in the day feature.** The mechanism is entirely
   intact — `dayRow()` puts it at the top of the feed, `openPost('day')` carries
   it into the composer, `PW.pr` pins the answer to it so it cannot be edited
@@ -830,30 +695,27 @@ underline (`.wldrow` is declared once). The two that are still open:
   「上からなぞった文字のみ利用できる」 is a native-Swift job nobody holds, not
   a rename. Said here because the file's surface makes it look done.
 
-**And the lesson the underline left, which outlives the bug:** `.wldrow` was
-declared twice, and the second declaration overrode `border` while never
-mentioning `border-radius`, so a 10px radius survived on a bottom-only line.
-**A duplicate declaration is invisible to every check in the gate** — the same
-blind spot `act-map.js` had before duplicate names were checked for.
+**A duplicate CSS declaration is invisible to every check in the gate.** A
+second `.wldrow` overriding `border` while never mentioning `border-radius`
+leaves the radius standing on a bottom-only line, and nothing red says so.
+Declare a class once.
 
 ### 二つの規則、ゲートについて
 
 **A check enters the gate in the same commit that adds it, or it does not enter
-at all.** `shape-check` was written, merged, and left out for days: an
-`npm run shape` script existed, its name was in no list in `tools/gate.mjs`, and
-`npm test` never ran it. Nothing was red. **A silent check is the failure this
-repository is bitten by most often**, and `tools/token-check.mjs` is sitting in
-exactly that state today — in `tools/`, in no list, and named in §0-a as though
-it were holding something.
+at all.** A check in `tools/` and in no list is silent, not green, and a silent
+check is the failure this repository is bitten by most often.
+**`tools/token-check.mjs` is in exactly that state right now** — it has an
+`npm run token` name and is in neither `FAST` nor `SLOW`.
 
-**Count `FAST` and `SLOW`; never believe a sentence about the number.** This
-file has said 24, 25, 26, 30 and 34 and every one of them was right on the day
-it was written. `CLAUDE.md`'s count of RULES is a different number from this
-count of CHECKS and **must not be made to match it**.
+**Count `FAST` and `SLOW`; never believe a sentence about the number.**
+`CLAUDE.md`'s count of RULES is a different number from this count of CHECKS and
+**must not be made to match it**: one rule can take three checks and one check
+can hold two rules.
 
 ### Open, and the owner's
 
-- ~~**How many keyboards a plan buys.**~~ Settled 2026-08-25 and **implemented**.
+- **How many keyboards a plan buys — settled and implemented.**
   Free 1 language and the fixed QWERTY; Plus 1 language and 4 keyboards pooled;
   Pro 3 languages and no ceiling. In the code: `CAN.kb` is `'plus'` (the DOOR),
   `kbCap()` is the NUMBER — `FREE_KB=1`, `PLUS_KB=4`, `Infinity` on pro — and it
@@ -861,10 +723,10 @@ count of CHECKS and **must not be made to match it**.
   a number that is three facts is a function. The language ceiling is
   `langCap()` — `FREE_LANGS=1`, `PRO_LANGS=3`, and Plus is deliberately the same
   as free. `edit` and `badge` are both in `CAN` now.
-- ~~**The price of Pro.**~~ Decided — the four products and their prices are in
+- **The price of Pro is decided.** The four products and their prices are in
   `docs/apple.md` § 4 and written into `ios/App/App/LinguaStore.swift`. What is
-  left is not a decision, it is **entering them in App Store Connect**, which is
-  §7's item 17 and is nobody's but the owner's.
+  left is **entering them in App Store Connect**, which is nobody's but the
+  owner's.
 - **Whether the sheet says anything about what to write with.** The box is a
   fixed 37mm and a pen of about 1mm matches the app's own exactly; a person's
   own pen came in about a quarter lighter. Words on a sheet, so it is next to
@@ -891,31 +753,19 @@ count of CHECKS and **must not be made to match it**.
 
 ### Blocks shipping the free version
 
-1. ~~**Posts are not on the server.**~~ Done — `netPush`, `netFeed`,
-   `netNotices` and `postCatchUp`. `quote` and `publication` are still unused.
-2. ~~**Explore and Notices are empty screens.**~~ Done — both read the server.
-3. ~~**The password reset mail does not arrive.**~~ Done — the template is
-   `{{ .Token }}` (`supabase/mail.md`) and the app has a six-digit reset
-   screen, because a link has nowhere to land in a Capacitor app.
-4. ~~**The free ceilings are never explained in words.**~~ Done — and there
-   is only one ceiling. `capStop()` asks, in the words `toast.cap` already
-   had, at the moment a word will not fit, and stays on the screen the person
-   was typing on; the five sites that used to throw them at the price list do
-   not any more. The other two ceilings are gone rather than explained: word
-   suggestions went out with Studio, and layer three's three a day went with
-   the AI 「1日3回は亡くなりましたaiいれないから」.
-5. **Signing in from Settings** was fixed but has not been opened on a phone.
-   `obBackTo`/`obReturn` in `www/onboard.js`.
+- **Signing in from Settings** is written and has not been opened on a phone.
+  `obBackTo`/`obReturn` in `www/onboard.js`.
+
+Everything else on this list is done. What holds each: posts, Explore and
+Notices read the server (`netPush`, `netFeed`, `netNotices`, `postCatchUp`);
+the reset mail is a six-digit code because a link has nowhere to land in a
+Capacitor app (`supabase/mail.md`, template `{{ .Token }}`); and **there is one
+free ceiling**, asked by `capStop()` at the moment a word will not fit, on the
+screen the person was typing on. `quote` and `publication` are still unused.
 
 ### Found and left alone, deliberately
 
-**Three struck-through items were deleted from here on 2026-09-03.** They were
-claims this file had made and then disproved — a letter counted and unreachable,
-`ai`/`sug` ceilings that never existed, `press` not reaching `kbReset` — and a
-disproved claim kept on the page is a claim the next reader has to disprove
-again. What survives is the one that is still open:
-
-9. **`tools/verify-script.mjs` runs again** — three breakages, not one:
+- **`tools/verify-script.mjs` runs again** — three breakages, not one:
    `gstep`→`geStep`, `scriptDrawn` gone since `9226dd6`, and every click was
    landing on `#splash` because it waited 250 ms where every other check waits
    for the selector. It is not a font experiment: it is the only end-to-end
@@ -925,12 +775,7 @@ again. What survives is the one that is still open:
 
 ### Offered and not yet answered
 
-10. ~~**`node --check` over `www/*.js` inside `es5-check`.**~~ Done — 46 files
-    in 1.5 s, ahead of the rules, and nothing below runs if one of them does
-    not parse. Proved by putting the 2026-08-11 bug back: the comment on
-    `www/sync.js` closed one line early, and the check named the file and the
-    line and exited 1.
-11. **Find the strings nothing says.** 270 of 692 keys in `en.js` never appear
+- **Find the strings nothing says.** 270 of 692 keys in `en.js` never appear
     as a literal in `www/`, but most are built — `t('stg.'+p.id+'.t')` — so a
     grep cannot tell. `i18n-check` already renders 271 screens in 10 languages;
     recording what `t()` was asked for would say it properly. It has to be a
@@ -948,29 +793,23 @@ again. What survives is the one that is still open:
 
 ### The owner's, in a browser
 
-16. ~~Supabase — the Apple and Google providers (`supabase/setup.md` § 4).~~
-    **Done** (the owner, 2026-08-27: 「7終わってるわ」). Still the owner's, and
-    still outside this repository: the reset mail template and the Redirect
-    URLs (see 3).
-16a. ~~The Apple developer site — Sign in with Apple on the App ID, and the
-    profile regenerated after it.~~ **Done** (the owner, 2026-08-27).
-16b. ~~Google Cloud — the iOS client.~~ **Done**, and **the id is in this
-    repository now** (2026-08-27). It had been sitting in
-    `docs/HANDOVER-2026-08-26.md` for a day: the owner handed it over, it was
-    written down, and nobody put it in the code. Looking for a value before
-    asking for it again is the lesson.
-16c. Supabase — one SQL line making yourself staff, or the reports are on
-    nobody's screen (`supabase/setup.md` § 5). Sign in on the phone first: it
-    updates a row that has to exist.
-16d. Supabase — **Spend Cap ON**, `supabase/setup.md` § 6. Pro is not a price
-    that stops at $25: 250 GB of egress is included and $0.09/GB is added
-    after it, with no ceiling until this is switched on. What runs out first
-    is the timeline's photographs, and the way it goes wrong is a month that
-    is already spent by the time anybody looks.
-17. ~~**App Store Connect — the four subscription products**, and the four
-    sales keys into Supabase's Secrets.~~ **Done** (the owner, 2026-08-27:
-    「7終わってるわ」). `docs/apple.md` § 4 has every field; the four are kept
-    here because a price that changes has to be changed in one known place:
+**Still open, and all of it is in a browser:**
+
+- Supabase — **one SQL line making yourself staff**, or the reports are on
+  nobody's screen (`supabase/setup.md` § 5). Sign in on the phone first: it
+  updates a row that has to exist.
+- Supabase — **Spend Cap ON**, `supabase/setup.md` § 6. Pro is not a price that
+  stops at $25: 250 GB of egress is included and $0.09/GB is added after it,
+  with no ceiling until this is switched on. What runs out first is the
+  timeline's photographs, and the way it goes wrong is a month that is already
+  spent by the time anybody looks.
+- Supabase — the reset mail template and the Redirect URLs.
+
+**Before asking the owner for a value, grep for it.** The Google iOS client id
+sat written down in a handover file for a day while nobody put it in the code.
+
+**The four products, kept here because a price that changes has to change in one
+known place** (`docs/apple.md` § 4 has every field):
 
     | 参照名 | 製品 ID | 期間 | 価格 | レベル |
     |---|---|---|---|---|
@@ -1030,39 +869,36 @@ again. What survives is the one that is still open:
 17b. TestFlight, as before. `docs/apple.md`.
 18. GitHub Secrets, if a build ever needs a new one. No agent can write one.
 
-### Landed on 2026-08-22, and what it still needs
+### The drawn letters on the keyboard, and what is still unproved
 
-21. **The Lingua keyboard types the letters somebody drew.** It did not
-    before, and nothing said so: a letter key put the letter's NAME in — the
-    same character the phone's own QWERTY puts there — and `LinguaType` (the
-    face `.tfont` wears) carries only the private use area, so it fell through
-    to the ordinary font and came out roman. **The second font was built,
-    installed, and never once used through the keyboard it exists for.** It is
-    a private use code point now, `sharePua()` in `share.js`, on both plans —
-    `shareFace()` for a keyboard somebody built and `kbFix()`'s override for
-    the free QWERTY, which were one feature working on one plan and not the
-    other, split by nothing. Held by `conv-check`, per
-    letter and not as a count. It makes **nine** claims now and prints the
-    number in its own last line; do not carry an ordinal in prose. Nothing stored changes; the private use area
-    exists in the input field and inside the extension and nowhere else.
-    **Decided, not a defect:** used in Messages this keyboard sends tofu —
-    `967333c`, 「Lingua キーボードは Lingua の中で使うもの」.
-    **`DEVICE CONFIRMED` — no.** Whether the extension actually inserts
-    U+E000 upward, and whether what it inserts is drawn in `LinguaType`,
-    cannot be checked anywhere in this repo. That is item 20's phone.
+**A letter key inserts a private use code point**, `sharePua()` in
+`share.js`, on both plans — `shareFace()` for a keyboard somebody built, and the free QWERTY
+(`kbFixed()`) on the same road. Held by `conv-check`, per letter and
+not as a count (it prints how many claims it makes in its own last line; do not
+carry an ordinal in prose). Nothing stored changes: the private use area exists
+in the input field and inside the extension and nowhere else.
 
-### Found while writing the StoreKit code, 2026-08-22
+**Decided, not a defect:** used in Messages this keyboard sends tofu —
+「Lingua キーボードは Lingua の中で使うもの」.
 
-20a. **The plan was never written down on a phone.** `planKeep()` asked
-    `Capacitor.Plugins` for `LinguaPlan`, and `Capacitor.Plugins` is filled by
-    `@capacitor/core`, which this app does not load — `www/share.js` says so at
-    length and it cost four builds to learn. Every write was the early return.
-    And `setOnDisk()` takes the plan OUT of the settings file when the native
-    side is there, on the grounds that the Keychain is holding it. Nothing was
-    holding it: **on a real phone Plus came back as free at the next launch.**
-    Fixed to `Capacitor.nativePromise`, the way `sharePush()` does it. Invisible
-    in a browser, where `PLAN_NATIVE` is false and the plan stays in the file,
-    which is why every check passed. **Device unconfirmed.**
+**`DEVICE CONFIRMED` — no.** Whether the extension actually inserts U+E000
+upward, and whether what it inserts is drawn in `LinguaType`, cannot be checked
+anywhere in this repo.
+
+### The two native traps, and both are the same trap
+
+- **Reach the native side with `Capacitor.nativePromise` and nothing else.**
+    `Capacitor.Plugins` and `Capacitor.registerPlugin` are filled by
+    `@capacitor/core`, which this app does not load — there is no bundler, only
+    plain script tags. `planKeep()` asked `Capacitor.Plugins` for `LinguaPlan`
+    and every write was the early return.
+- **A native call that fails silently is invisible to every check here.**
+    In a browser `PLAN_NATIVE` is false and the plan stays in the settings file,
+    so everything is green; on a phone `setOnDisk()` takes the plan out of that
+    file on the grounds that the Keychain holds it, and if the write never
+    landed nothing holds it at all. **Plus came back as free at the next
+    launch.** Written correctly now, and **device unconfirmed** — no check here
+    can raise it.
 
 ### Waiting on a phone
 

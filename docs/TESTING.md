@@ -7,9 +7,8 @@ npm test        # thirty-five checks
 ```
 
 `tools/gate.mjs` runs them, and the two numbers below are `FAST` and `SLOW` in
-that file — count them there rather than believing this line, which has said
-seventeen, six, eleven, eighteen and thirty-three since it was written and has
-been wrong about every one of them. The **nine** that need no browser go first,
+that file — **count them there rather than believing this line.** The **nine**
+that need no browser go first,
 one after another, and take about two seconds between them — a missing script
 tag or an arrow function fails there and nothing heavy is started at all. The
 **twenty-six** that each start a headless Chromium then go **four at a time**
@@ -37,8 +36,7 @@ That is the loop; `npm test` is the gate at the end of it.
 **"the fast five" means the five in `tools/pre-commit`**, and it is a different
 group from the gate's nine. The hook runs `dead` `import` `sides` `face` `box`
 as one line; the gate's `FAST` is those five plus `assets` `es5`
-`grammar-engine` `store`. Two groups, two names, because calling both "fast"
-is how this page came to say five where it meant nine.
+`grammar-engine` `store`. **Two groups, two names** — never call both "fast".
 
 **Watching a check fail is one run, not a suite.** Put the bug back, run
 **that check alone**, watch it go red, take the bug out. The other thirty-four
@@ -68,9 +66,7 @@ changed. `grammar-engine` and `store` are in the gate and **not** in the hook.
 push is not the gate either.
 
 All thirty-five, in the order `tools/gate.mjs` prints them. **If this table and
-that file disagree, the file is right** — and a check missing from this table is
-how four rows came to be written twice and seventeen checks came to be missing
-altogether.
+that file disagree, the file is right.**
 
 Nine that need no browser:
 
@@ -173,10 +169,9 @@ This is not theoretical. `card-check`'s first version was worthless: it asked
 — a copy of the decision under test — so putting the bug back left it green.
 It has to observe the real code path, not restate it.
 
-It happened again, in `conv-check`'s eighth claim, and it is the same shape
-each time: the check worked the private use assignment out again inside
-itself, so shifting `installTypeFont()` by one moved the keys and the check's
-own copy together and it stayed green with the bug in. **A check that
+It happens the same way each time. `conv-check` worked the private use
+assignment out again inside itself, so shifting `installTypeFont()` by one moved
+the keys and the check's own copy together and it stayed green with the bug in. **A check that
 recomputes the thing under test is a copy of it, and a copy always agrees.**
 `LinguaFont.build` is wrapped now and the assignment is read off what the font
 writer was actually handed. If you find yourself writing the answer out in the
@@ -300,12 +295,10 @@ screens the mirror rendered: …
 buttons pressed: …
 ```
 
-**The numbers are deliberately not written here.** They were last measured on
-2026-08-22 and dozens of branches have gone in since; nobody has re-measured.
-Take them from your own first run and compare your second run against those. A
-stale number on this page turns a correct run into a false alarm, which is worse
-than having no number at all. `CLAUDE.md` carries the history of the button
-count, move by move.
+**The numbers are deliberately not written here.** Take them from your own first
+run and compare your second run against those. A stale number on this page turns
+a correct run into a false alarm, which is worse than having no number at all.
+`CLAUDE.md` carries the history of the button count, move by move.
 
 **A number moving is only ever a question: what changed?** And the answer has
 to be a change somebody made on purpose. Two shapes the answer has taken, so
