@@ -87,6 +87,22 @@ const R = await pg.evaluate(() => {
   WLD = { use: 'story', where: 'a valley', who: 'two families',
           note: 'nobody outside the valley speaks it' }; saveWld();
 
+  /* ---- every slice has a declared shape ----------------------------- */
+  /* BK_SHAPE is what bkSound() tells a slice from wreckage with, and SLICES is
+     what a language IS. A slice in the second and not the first does not
+     throw: bkSound() falls off the end of its own ladder with `want`
+     undefined and answers 「not an array」, which happens to be what 'object'
+     means -- so an object slice is right by accident and an ARRAY one would
+     be called wreckage and cost a backup. `gram2` sat there for as long as it
+     had been a slice. */
+  SLICES.forEach(k => {
+    if (!Object.prototype.hasOwnProperty.call(BK_SHAPE, k))
+      fails.push('slice "' + k + '" is in SLICES and has no shape in BK_SHAPE ' +
+                 '(www/backup.js). bkSound() then answers for it by falling ' +
+                 'through rather than by being told, and the next one forgotten ' +
+                 'will be an array');
+  });
+
   /* ---- what goes in the file --------------------------------------- */
   const file = JSON.stringify(bkPack());
   const packed = JSON.parse(file);
@@ -786,7 +802,8 @@ console.log('        comes back whole from a storage wipe, refuses to overwrite 
 console.log('        language that is already there, and carries save number ' + R.no +
             ', which');
 console.log('        goes up and never down.');
-console.log('        Deleting the account leaves nothing under `lingua.` and nothing');
+console.log('        Every slice of SLICES has a declared shape in BK_SHAPE.');
+console.log('        Deleting the account leaves nothing of THAT account\u2019s and nothing');
 console.log('        of anybody else\u2019s touched, and an ordinary save never takes a draft.');
 console.log('        A restore falls through unreadable generations to a good one,');
 console.log('        prefers a good file to wreckage in storage, refuses to write');

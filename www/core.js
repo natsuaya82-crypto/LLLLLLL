@@ -792,25 +792,18 @@ function langCap(){
 }
 /* And what it is compared against: the languages that are THIS PERSON'S.
 
-   `mine` and not the length of LANGS, and the reason is about what is COMING
-   rather than what is here. This comment used to say LANGS "also holds every
-   language being read from somebody else", and it does not: the three places
-   that write to LANGS -- langMigrate() and langMint() above, bkRestore() in
-   backup.js -- every one of them writes `mine:true`, and nothing anywhere
-   writes it false. There is no language in this app that is not the person's
-   own, and there never has been. vLangs() draws a 「読んでいる」 list that is
-   always the empty note, for the same reason.
+   `mine` and not the length of LANGS, because LANGS holds both kinds now:
+   langSeenAdd() above writes `mine:false` for a language taken off somebody
+   else's page, and vLangs() (www/home.js) draws the two lists that answers.
 
-   Counting `mine` is still right, and is right for the reason the old comment
-   was reaching for: a language somebody else made is not one this person
-   made, and a ceiling that filled up because you looked at somebody's work
-   would be a punishment for using the app. That is also the shape the owner
-   counted the downloads in -- 「自分の言語+DL言語1個」, two numbers and not one
-   (OWNER DECISION 2026-08-25, docs/FEATURE_RULES.md). Whatever counts those is
-   a second function beside this one; this one goes on counting `mine`.
+   A language somebody else made is not one this person made, and a ceiling
+   that filled up because you looked at somebody's work would be a punishment
+   for using the app. So they are TWO NUMBERS and not one --
+   「自分の言語+DL言語1個」 (OWNER DECISION 2026-08-25, docs/FEATURE_RULES.md),
+   「別に数える」 (OWNER 2026-09-01). dlCount() against dlCap() is the other
+   one, below; this one counts `mine`.
 
-   docs/DATA_MODEL.md § a language that is only read says what would have to
-   exist first. */
+   docs/DATA_MODEL.md § a language that is only read. */
 /* Whether a language counts towards the ceiling of the account that is here
    NOW. 「じゃないとアカウント変えたら無限に言語作れるやん」 OWNER 2026-09-01.
 

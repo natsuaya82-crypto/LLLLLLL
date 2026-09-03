@@ -59,9 +59,16 @@ function bkTouch(){ BK.dirty=true; }
 
    Conflating those two is how a save system eats somebody's work while
    believing it is protecting it. 「データ件数が減った」で判定しない。 */
+/* EVERY SLICE OF SLICES, and tools/backup-check.mjs holds that it is every one.
+   `gram2` was missing from here for as long as it had been a slice, and
+   nothing went wrong: bkSound() fell off the end of its own ladder with `want`
+   undefined and answered 「not an array」, which is what 'object' means, so it
+   was right by accident. A shape that is right by falling through is a shape
+   nobody declared, and the next slice to be forgotten will be an array. */
 var BK_SHAPE={ words:'array', lines:'array', lang:'text', script:'object',
                letters:'array', notes:'array', phases:'object',
-               talk:'array', snd:'array', kb:'object', wld:'object' };
+               talk:'array', snd:'array', kb:'object', wld:'object',
+               gram2:'object' };
 /* Is this stored text a slice, or is it wreckage?
 
    `lang` is the language's name and is stored as a bare string, not as JSON,
@@ -96,10 +103,11 @@ function bkOK(pack){
 
 /* The whole of the open language, as one object.
 
-   The slices are SLICES in core.js, so a tenth one added there is written out
-   the day it is added. They are copied as text and not parsed: what is in
-   storage is what gets written, byte for byte, and nothing here can reshape
-   it on the way through. */
+   The slices are SLICES in core.js, so one added there is written out the day
+   it is added -- count them off that list and not off a number written here,
+   which has said nine and has said ten. They are copied as text and not
+   parsed: what is in storage is what gets written, byte for byte, and nothing
+   here can reshape it on the way through. */
 /* How many times this language has been written out, counting up and never
    down. It is not a clock.
 
@@ -109,10 +117,16 @@ function bkOK(pack){
    backwards. A counter cannot be wrong about which of two writes came
    second, because the second one made it.
 
-   Nothing reads it yet. It is here before the cloud is, because the day the
-   cloud arrives is the day it has to already be on every file written before
-   then -- a counter added at the same time as the thing that needs it starts
-   at zero for everybody. */
+   Two things read it and no sync is one of them: bkTake() keeps the higher of
+   the file's number and this phone's, so the next save cannot look older than
+   a restore, and bkSay() is the save number on the settings screen. It was
+   here before either, because the day something needs it is the day it has to
+   already be on every file written before then -- a counter added at the same
+   time as its first reader starts at zero for everybody.
+
+   `lingua.<id>.bkn` is NOT in SLICES and that is deliberate: it is a fact
+   about the FILE, not part of the language, so it is in no backup and goes up
+   nowhere. docs/DATA_MODEL.md § the language. */
 function bkNo(){
   var n;
   try{ n=parseInt(localStorage.getItem(langKey('bkn')), 10); }catch(e){ n=0; }
