@@ -218,6 +218,33 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### 検索の履歴は直近5件。人の丸い列は作らない。一件ずつ消せる
+- Date: 2026-09-03
+- Area: 検索の画面
+- Decision:
+
+  ```
+  検索した履歴もユーザーはいらんから5個くらい検索履歴出るようにしたい
+  1件づつ消せるでいいよ
+  ```
+
+  **打った言葉を憶えて、検索の画面に直近 5 件を縦に並べる。**押すとその言葉で
+  検索する。**丸いユーザーの列は作らない** ── オーナーが送ってきた TikTok の
+  画面にはアイコンの横並びがあり、それは要らないと名指しされた。**一件ずつ
+  消せる。**全部まとめて消すボタンは作らない。
+- Reason: オーナーの言葉のまま上に。丸チップの横並びは CLAUDE.md § Shape が
+  名指しで禁じている四つの一つでもあり、二つの理由が同じ方を向いている。
+- Affected features: 検索の画面（`vExplore`）。**今ある「保存した検索」（星）の
+  行は別物で、触らない** ── あれは絞り込みの行に出る、人が星を付けたもの。
+  履歴は打った言葉で、星は選んだ言葉。二つの仕組みで、混ぜない
+- Affected data: **増える。**打った言葉の履歴。**サーバーに置く** ──
+  「NOTHING IS THE PHONE'S. EVERYTHING IS THE ACCOUNT'S.」なので、端末では
+  なくアカウントのもの。`localStorage` はいつもどおり圏外で動く写し
+- Affected docs: この項、docs/DATA_MODEL.md、docs/CHANGELOG.md、
+  docs/FEATURES.md
+- Implementation status: **未実装。**`claude/find` に渡した（2026-09-03）。
+  あの枝が `www/sns.js` と `www/net.js` を持っているため
+
 ### シンプルに作る。バグが出たら、直すのではなくそのコードを書き換える
 - Date: 2026-09-03
 - Area: 作り方そのもの。全部の機能に対して。
