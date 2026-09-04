@@ -771,6 +771,13 @@ const GLANGS = (setJson, phasesA) => pg.evaluate(([sj, pa]) => {
 const gramOf = () => pg.evaluate(() => ({
   a: localStorage.getItem('lingua.LA.phases'),
   g: localStorage.getItem('lingua.LG.phases'),
+  /* the settings are READ and never removed -- docs/DATA_SAFETY.md rule 2 */
+  setOrder: (JSON.parse(localStorage.getItem('lingua.set') || '{}') || {}).order,
+  /* and what the open language's screen answers with, off the app's own
+     function rather than off the slice: a field left empty has to come out
+     the same page it came out before */
+  shows: orderDef().id,
+  chose: !!STG.set.order,
   /* and what the restore would make of it, off www/backup.js's own answer --
      true means "there is something here", which is what makes bkTake() and
      netLangBack1() step over it */
@@ -791,6 +798,36 @@ want('a language with nothing to copy is left with no phases slice', g1.a, null)
 want('and so is the language that is not the open one', g1.g, null);
 want('absent is still absent, so a restore can still fill it in', g1.aSound, false);
 want('and the language opens exactly as it did', g1.name, 'Aya');
+
+/* 1-b. AND THE ONE NOBODY TYPED. setDefaults() in www/core.js puts
+        `order:'SOV'` into the settings of every person alive, so the road
+        above copied 'SOV' onto every language of everybody who has never
+        once opened the word-order stage -- a value the app itself put there,
+        written down as if somebody had answered.
+        「普通にアプリが入れる仕様なんて誰も頼んでないけど」OWNER 2026-09-04.
+        The field stays empty, and orderDef() answers SOV for an empty field,
+        so nothing on any screen moves.
+
+        Asked twice over, because the two ways a phone arrives at that value
+        are not the same file: a settings file that says 'SOV' outright, and
+        one from before there was an `order` key at all, which setDefaults()
+        fills in at load. */
+await GLANGS(JSON.stringify({ theme: 'dark', order: 'SOV' }));
+await twice();
+const g1b = await gramOf();
+want('the word order nobody typed is not written onto the language', g1b.a, null);
+want('nor onto the other one', g1b.g, null);
+want('absent, so a restore can still fill that in too', g1b.aSound, false);
+want('and the settings still say what they said', g1b.setOrder, 'SOV');
+want('and the screen answers with the same word order it always did', g1b.shows, 'SOV');
+want('with nothing marked as chosen', g1b.chose, false);
+
+await GLANGS(JSON.stringify({ theme: 'dark' }));
+await twice();
+const g1c = await gramOf();
+want('a settings file from before there was a word order writes none either', g1c.a, null);
+want('nor onto the other one', g1c.g, null);
+want('and that screen answers with SOV as well', g1c.shows, 'SOV');
 
 /* 2, 3. the three roads that DO copy something are untouched by that. */
 await GLANGS(JSON.stringify({ order: 'VSO' }));

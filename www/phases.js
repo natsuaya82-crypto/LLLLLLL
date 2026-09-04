@@ -98,6 +98,11 @@ function stRead(){
    copy onto is passed over again for the same reason as the first time. */
 function migrateGramLang(){
   if(SET.gramLang) return;
+  /* What the APP put in the settings, as against what a person put there.
+     Read off setDefaults() in www/core.js rather than written out here, so
+     there is one place that says it: a second copy of 'SOV' in this file is
+     a copy that goes on saying 'SOV' the day the default changes. */
+  var appOrder=setDefaults().order;
   var id, key, raw, o, g, k, v, failed=false;
   for(id in LANGS){
     if(!Object.prototype.hasOwnProperty.call(LANGS, id)) continue;
@@ -111,8 +116,38 @@ function migrateGramLang(){
     }
     /* Only an answer this app could have given is copied. Anything else in
        there is not a word order, and the screen has been showing the default
-       for it all along. */
-    if(o.order===undefined && ORDERS.indexOf(SET.order)>=0) o.order=SET.order;
+       for it all along.
+
+       AND ONLY AN ANSWER A PERSON GAVE. setDefaults() puts `order:'SOV'` into
+       the settings of everybody alive, so this used to write 'SOV' onto every
+       language of everybody who has never once opened the word-order stage --
+       a value the app itself put there, filed under the language as though
+       somebody had answered it.
+       「普通にアプリが入れる仕様なんて誰も頼んでないけど」OWNER 2026-09-04:
+       what nobody was asked for is not written down, and a field nobody
+       touched stays empty.
+
+       Nothing on any screen moves. orderDef() in www/grammar.js answers 'SOV'
+       for an empty field, which is the same page it drew before, and whether
+       anybody CHOSE it is STG.set's question and always was. What changes is
+       that the slice stays ABSENT -- which is what a restore is for, the same
+       argument as the `{}` two blocks down.
+
+       It does not narrow the other way. A person who chose one of the six
+       still has it copied onto every language they already have: that is
+       OWNER 2026-08-25 「言語ごとですよ？」, it is what every one of their
+       screens shows today, and taking it away would be this app changing a
+       word order under somebody -- the opposite mistake in the same place.
+       'SOV' chosen by hand is the one case that cannot be told from the
+       default, and it costs nothing: the field is empty and the screen says
+       SOV either way.
+
+       The three positions have no such value to guard against. Nothing in
+       www/ writes SET.gpos any more -- GPOS_DEF is read at the moment a
+       screen asks and is put nowhere -- so what is here is what a person
+       pressed, and it is copied as it always was. */
+    if(o.order===undefined && SET.order!==appOrder &&
+       ORDERS.indexOf(SET.order)>=0) o.order=SET.order;
     if(o.gpos===undefined){
       g={};
       for(k in GPOS_DEF) if(Object.prototype.hasOwnProperty.call(GPOS_DEF, k)){
