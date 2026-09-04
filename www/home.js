@@ -1642,6 +1642,20 @@ function wldOpen(){
     mine:    function(){ return true; }
   };
 }
+/* THE PAGE ITSELF -- the bar, the Edit in its corner, and the body under it.
+   wldPage() ends in two places, because a language nobody may open stops at
+   its heading, and the two were writing this out identically. The condition
+   was in both: Edit is only on your own. 「Edit は出ません（他人のものなので）」
+   -- and `mine` is whose ARTICLE this is, which is a different question from
+   whether the OPEN language may be changed: a downloaded language opened from
+   the switcher draws its own article with mine true. langLocked() answers the
+   second. Who may edit is one decision, so it is asked once. */
+function wldFrame(body, ed, mine){
+  return '<div class="view">'+
+    navTop('', (!ed && mine && !langLocked())?
+      navDo(t('wld.edit'), 'go', ["world"], true) : '')+
+    '<div class="body">'+body+'</div></div>';
+}
 function wldPage(ed, L, lid){
   var w, mine, drawn, body='', dls='', done, i;
   L=L||wldOpen();
@@ -1694,10 +1708,7 @@ function wldPage(ed, L, lid){
      Nothing is deleted and nothing is unset. `hide` is one flag, the sections
      keep their own answers, and every word is where it was: turning the
      switch back on brings the whole page back exactly as it was left. */
-  if(wldHidden(w)) return '<div class="view">'+
-    navTop('', (!ed && mine && !langLocked())?
-      navDo(t('wld.edit'), 'go', ["world"], true) : '')+
-    '<div class="body">'+body+'</div></div>';
+  if(wldHidden(w)) return wldFrame(body, ed, mine);
   wldSecs(w).forEach(function(sec){
     var inner='', extra='';
     /* Two of the sections do not reach the writing face at all, and both are
@@ -1975,15 +1986,7 @@ function wldPage(ed, L, lid){
     body+=abHead(dlsec, '')+(abShut(dlsec.r)? '' : dls);
   }
   if(!body) body='<div class="note">'+esc(t('wld.empty'))+'</div>';
-  return '<div class="view">'+
-    /* Edit is only on your own. 「Edit は出ません（他人のものなので）」 -- and
-       `mine` here is whose ARTICLE this is, which is a different question from
-       whether the OPEN language may be changed: a downloaded language opened
-       from the switcher draws its own article with mine true. langLocked()
-       answers the second. */
-    navTop('', (!ed && mine && !langLocked())?
-      navDo(t('wld.edit'), 'go', ["world"], true) : '')+
-    '<div class="body">'+body+'</div></div>';
+  return wldFrame(body, ed, mine);
 }
 /* What making this language public means, behind the `?` in the bar rather
    than as a sentence on the screen. 「showの横に？つけて他と同じ感じで」 */
