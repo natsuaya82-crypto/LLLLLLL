@@ -1,0 +1,19 @@
+# What the stylesheet was already saying twice the day css-once-check was
+# written. tools/css-once-check.mjs fails on any pair NOT on this list, and
+# fails again on any line here that no longer matches anything.
+#
+# Taking a line OUT is progress and needs nobody: merge the two blocks, delete
+# the line, same commit. There is no --write and putting a line IN is not
+# something a session does — a new conflict is the bug this check exists to
+# catch. docs/DUPLICATES.md items 4 and 5 are two of these.
+.gside .gsp | min-height
+.gside .gsp | min-width
+.lrow .lchk | flex
+.plterm .pp | display
+.plterm .pp | font-size
+.plterm .pper | display
+.plterm .pper | font-size
+.scin | border-radius
+.scin | font-size
+.scin | padding
+.wrow | width

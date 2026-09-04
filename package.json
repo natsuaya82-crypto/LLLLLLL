@@ -16,6 +16,7 @@
     "assets": "node tools/assets-check.mjs",
     "face": "node tools/face-check.mjs",
     "box": "node tools/box-check.mjs",
+    "css-once": "node tools/css-once-check.mjs",
     "css-snap": "node tools/css-snap.mjs",
     "press": "node tools/press.mjs",
     "dead": "node tools/dead-check.mjs",
