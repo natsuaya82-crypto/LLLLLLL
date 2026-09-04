@@ -273,6 +273,17 @@ is for」が効かなくなる、という形です。
 `claude/keep3`、2026-09-04。**`www/phases.js` は `claude/keep3` に渡されて
 いないので、一行も触っていません。**リーダー待ちです。
 
+**誰も入っていません。**`origin/master`（`d4b46ab4`）を基準に、生きている
+二つの枝はどちらも `www/phases.js` に一つもコミットを持っていません:
+
+```
+git rev-list --count origin/master..origin/claude/pop   -- www/phases.js   → 0
+git rev-list --count origin/master..origin/claude/post3 -- www/phases.js   → 0
+```
+
+**だから渡すのに衝突の心配はありません。**下の一行を誰かに渡すか、
+`claude/keep3` に `www/phases.js` を渡してくれれば、すぐ入れます。
+
 **確かめかた。** `migrateGramLang()`（`www/phases.js:98-125`）を、
 `www/grammar.js` の `ORDERS` と `GPOS_DEF` ごとそのまま Node に取り出して
 走らせました。文法の質問に一度も答えていない iPhone（`SET` が空）で:
