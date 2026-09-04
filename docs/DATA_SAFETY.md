@@ -121,13 +121,16 @@ past that can be deleted is this hole dug again from the inside.
 so the body it replaced — the broken one — is kept too, and a restore onto the
 wrong version is undone by the same five steps that did it.
 
-**How long these are kept is NOT DECIDED, and nothing removes them.** The owner
-has not answered it. So there is no sweeper, no interval and no ceiling
-anywhere: automatic deletion, pruning and cleanup are forbidden without a
-written spec — the DELETE REVIEW at the foot of this file — and this table is
-not an exception to that rule. `npm run rls` holds it — one of its claims is that nothing in `schema.sql`
-deletes from this table — and **the day a retention is decided, that line is
-what has to be taken out on purpose, with a DELETE REVIEW beside it.**
+**These are kept for ever.** 「そもそもバグで消えるなら一生残るはずだよね？
+自分で消してるわけじゃないし」「基本一生残るよな」 OWNER 2026-09-04, asked
+directly how long. So there is no sweeper, no interval and no ceiling, and that
+silence is the ANSWER rather than a question nobody got to. What it costs was
+said in the same breath and accepted: a slice goes up whole, so a five thousand
+word dictionary is 685 KB every time one word is added.
+
+`npm run rls` holds it — one of its claims is that nothing in `schema.sql`
+deletes from this table — and **an expiry added later is a decision replacing
+that one, not a tidy-up, and it starts with a DELETE REVIEW.**
 
 What it does not reach: a language that was never uploaded, anything deleted on
 purpose, posts, drafts, the bytes in the bucket, and the twenty settings fields

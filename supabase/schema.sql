@@ -279,11 +279,17 @@ create index if not exists slice_language_idx on slice(language);
 -- slice.body is text: it is exactly what localStorage held, and a copy that had
 -- been reshaped on the way in would not be the thing that was lost.
 --
--- HOW LONG THESE ARE KEPT IS NOT DECIDED, AND NOTHING HERE REMOVES THEM.
--- The owner has not answered it yet. Automatic deletion, pruning and cleanup
--- are forbidden without a written spec (docs/DATA_SAFETY.md), so there is no
--- sweeper, no interval and no ceiling anywhere in this file. Adding one is a
--- separate piece of work and it starts with a DELETE REVIEW.
+-- THESE ARE KEPT FOR EVER, AND THAT IS DECIDED.
+-- 「そもそもバグで消えるなら一生残るはずだよね？自分で消してるわけじゃないし」
+-- 「基本一生残るよな」 OWNER 2026-09-04, asked directly how long. So there is no
+-- sweeper, no interval and no ceiling anywhere in this file, and that is not a
+-- question left open -- it is the answer. What it costs is known and was said
+-- when it was decided: a slice goes up whole, so a five thousand word
+-- dictionary is 685 KB every time somebody adds one word.
+--
+-- Adding an expiry later is not a tidy-up somebody may do while they are in
+-- here. It would be a decision REPLACING that one, and it starts with a DELETE
+-- REVIEW (docs/DATA_SAFETY.md). rls-check holds the shape of it.
 create table if not exists slice_past (
   id       bigint generated always as identity primary key,
   language uuid not null references language(id) on delete cascade,

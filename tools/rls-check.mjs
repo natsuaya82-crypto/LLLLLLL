@@ -1608,12 +1608,13 @@ const SHAPE = [
   ['and it is never written through the API', `
      select count(*) from pg_policies
       where tablename='slice_past' and cmd in ('INSERT','UPDATE','DELETE')`, '0'],
-  /* AND NOTHING SWEEPS IT. 「残す期間は決まっていません」 -- the owner has not
-     answered how long these are kept, and until they do, automatic deletion is
-     forbidden (docs/DATA_SAFETY.md). This is what says so where somebody would
-     otherwise add an interval quietly, inside a function, where no attempt
-     above would ever see it. The day a retention IS decided, this line is what
-     has to be taken out on purpose, with a DELETE REVIEW beside it. */
+  /* AND NOTHING SWEEPS IT. 「そもそもバグで消えるなら一生残るはずだよね？
+     自分で消してるわけじゃないし」「基本一生残るよな」 OWNER 2026-09-04, asked
+     directly how long these are kept: for ever. So this is not a placeholder
+     standing in until somebody decides -- it IS the decision, and this is what
+     holds it where an interval would otherwise be added quietly, inside a
+     function, where no attempt above would ever see it. Taking this line out is
+     replacing an owner decision, and it starts with a DELETE REVIEW. */
   ['and nothing in this file deletes from it', `
      select count(*) from pg_proc
       where prosrc ilike '%delete from slice_past%'`, '0'],
