@@ -259,6 +259,29 @@ say(seven.length === 1 && seven[0] === 'bad 0',
     'and running out ends in the same one place a dead network does, exactly ' +
     'once -- no second way out: ' + JSON.stringify(seven));
 
+/* ---- 8. and the OTHER wire, the one that carries a file ------------------
+   netUp() is the second XMLHttpRequest in www/net.js -- one photograph or one
+   voice, bytes rather than JSON -- and it was written before there was a
+   deadline anywhere. A post's photographs go up one after another, never in
+   parallel, so a single stalled file holds the whole post open for ever.
+
+   The SAME NET_WAIT, not a second number: how long to wait is one decision,
+   and a decision written down twice is two decisions waiting to disagree.
+   Two PLACES obeying one number is not the same thing as two numbers. */
+const eight = await pg.evaluate(async ({ w, s }) => {
+  eval(w); eval(s); window.__reset();
+  SESS = { at:'AT', rt:'RT', uid:'me', anon:false };
+  netUp('p/1.jpg', 'AAECAwQ=', 'image/jpeg', function(){}, function(){});
+  await wait(30);
+  var r = window.__of('/storage/v1/object/')[0] || {};
+  return { sent: !!r.u, to: r.to, wait: (typeof NET_WAIT === 'number') ? NET_WAIT : null };
+}, { w: WIRE, s: wait });
+
+say(eight.sent, 'a file upload reaches the wire at all: ' + JSON.stringify(eight.sent));
+say(typeof eight.to === 'number' && eight.to > 0 && eight.to === eight.wait,
+    'and it carries the same deadline as everything else, not one of its own: ' +
+    'timeout=' + JSON.stringify(eight.to) + ' NET_WAIT=' + JSON.stringify(eight.wait));
+
 await br.close();
 console.log('');
 if (bad.length){

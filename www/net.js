@@ -2552,12 +2552,22 @@ function netBytes(b64){
 /* One file up. Not netSend(): this is a different service on the same host,
    the body is bytes rather than JSON, and the one header that matters is the
    content type -- a jpeg uploaded as octet-stream comes back as a download
-   rather than as a picture. */
+   rather than as a picture.
+
+   It carries THE SAME NET_WAIT as everything else. A post's photographs go up
+   one after another and never at once, so one file that is accepted and never
+   answered holds the whole post open with nothing said -- the fault netSend()
+   had, on the wire that carries the biggest thing this app sends. How long to
+   wait is ONE decision; this is a second place obeying it, not a second
+   number. Running out lands where a dead network already lands, by the same
+   readyState-4-status-0 the handler below reads, so there is no `ontimeout`
+   here either. */
 function netUp(path, b64, mime, ok, bad){
   var x, a=netBytes(b64);
   if(!netSignedIn() || !a){ bad(null, 0); return; }
   x=new XMLHttpRequest();
   x.open('POST', SB_URL+'/storage/v1/object/post-media/'+path, true);
+  x.timeout=NET_WAIT;
   x.setRequestHeader('apikey', SB_KEY);
   x.setRequestHeader('Authorization', 'Bearer '+SESS.at);
   x.setRequestHeader('Content-Type', mime || 'application/octet-stream');
