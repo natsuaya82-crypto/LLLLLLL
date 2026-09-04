@@ -1257,8 +1257,32 @@ function obPwField(id, val, ph, auto, act){
     'value="'+esc(val)+'" placeholder="'+esc(t(ph))+'" '+
     'autocomplete="'+auto+'" autocapitalize="none" autocorrect="off" '+
     'spellcheck="false"' + act + '>'+
-    '<button class="rowq" id="'+id+'-see" aria-label="'+esc(t('ob.mail.see'))+'"' +
-      DO('obPwSee', [id]) + '>'+OB_EYE+'</button></div>';
+    obPwEye(id, false) + '</div>';
+}
+/* THE EYE ITSELF, AND THE ONE PLACE THE MARK IS CHOSEN.
+
+   **The mark says WHICH STATE THE FIELD IS IN**, not what pressing will do:
+   hidden is a shut eye and showing is an open one.
+   「普段は目を閉じてる状態がデフォでしょ？」 OWNER 2026-09-04. It was the other
+   way round -- an open eye over a field of dots -- which is the button
+   describing its own press while the screen says nothing about itself.
+
+   The NAME is the other way, and deliberately: it is what pressing does, so
+   over a hidden field it says 「パスワードを表示」 while the mark is a shut
+   eye. They are not disagreeing -- one is the state and the other is the act,
+   which is what a button whose picture is its state has to say out loud for
+   somebody who cannot see the picture.
+
+   Two moments choose a mark -- the field being built, and the button being
+   pressed -- and that is exactly the shape that drifts, so neither of them
+   chooses one. Both ask here. obPwSee() replaces the whole button with what
+   this returns rather than reaching inside it, so there is no second place
+   that knows how an eye is put together. The listener is the delegated one in
+   www/act.js, so a replaced button needs nothing bound to it again. */
+function obPwEye(id, show){
+  return '<button class="rowq" id="'+id+'-see" aria-label="'+
+    esc(t(show? 'ob.mail.hide' : 'ob.mail.see'))+'"' +
+    DO('obPwSee', [id]) + '>'+(show? OB_EYE : OB_EYESHUT)+'</button>';
 }
 /* Pressing the eye shows what was typed; pressing it again hides it.
 
@@ -1277,8 +1301,7 @@ function obPwSee(id){
   if(!e || !b) return;
   var show = e.type==='password';
   e.type = show ? 'text' : 'password';
-  b.innerHTML = show ? OB_EYESHUT : OB_EYE;
-  b.setAttribute('aria-label', t(show ? 'ob.mail.hide' : 'ob.mail.see'));
+  b.outerHTML = obPwEye(id, show);
 }
 /* The arch and the wordmark, small, over every face of the door. There used
    to be a splash carrying them and a form behind it; the splash asked
