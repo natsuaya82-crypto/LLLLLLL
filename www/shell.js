@@ -1768,25 +1768,6 @@ function popOn(){
   var el=document.getElementById('pop');
   return !!(el && el.className.indexOf('on')>=0);
 }
-/* ---- the ceiling, said where it is met ---------------------------------
-   「+を押したらそのまま課金のポップが出るだけでしょ？」 OWNER 2026-09-01.
-
-   THIS IS iOS's OWN DIALOG AND NOT A SHEET. Two goes at it were wrong and
-   both are worth writing down, because the second looked right:
-
-     openForm('up', …)   is `go('form', key)` -- a page you travel to.
-                         「それはポップじゃなくてページ遷移やろ」
-     #sbg / #sheet       is the app's own sheet, and it slides up from the
-                         bottom, which is the third of the four shapes the
-                         owner banned outright: 「ページ遷移型にせず下から
-                         ひょいって出すやつ」. Reusing markup that was already
-                         there did not make it a different shape.
-
-   So it is confirm(), which is what capStop() has always used for the word
-   ceiling, and it is the same argument: the plans screen is one tap away and
-   this has to be answerable with "no"; iOS draws it, so it is not a shape
-   this app chose; and nobody is moved off the screen they are standing on
-   unless they say yes. 「システム標準（iOS/Android）を最優先」 */
 function toast(m){
   var el=document.getElementById('toast'); el.textContent=m; el.classList.add('on');
   clearTimeout(tt); tt=setTimeout(function(){el.classList.remove('on');},1900);
