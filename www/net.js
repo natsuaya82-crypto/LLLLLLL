@@ -2389,22 +2389,39 @@ function netRecent(ok, bad){
       ok(out);
     }, bad || function(){});
 }
-/* DROP AND THEN INSERT, which is how the same words typed again come back to
-   the top. `unique (author, q)` refuses a second row, so an insert alone
-   would fail and the word would keep whatever place it had -- and a PATCH
-   alone would do nothing at all for a word that is not there yet. One road
-   answers both, and the drop of a row that does not exist is a no-op rather
-   than an error.
+/* ONE WRITE, AND THERE IS NO MIDDLE OF IT.
+   `unique (author, q)` refuses a second row for words that are already there,
+   so an insert alone fails and the word keeps whatever place it had -- and a
+   PATCH alone does nothing at all for a word that is not there yet. This used
+   to answer both by DROPPING and then INSERTING, which is two requests with a
+   gap between them: **the delete landed, the phone lost its signal, and the
+   insert never went.** The word was gone from the server with the screen
+   still showing it, because the copy on the phone is written whatever the
+   network does -- and the next launch read the server's answer over it, so a
+   history one item shorter arrived on a morning when nobody had pressed
+   anything. A silent delete is docs/DATA_SAFETY.md's own sentence: what is
+   gone cannot be fixed.
+
+   `resolution=merge-duplicates` is one request that both inserts and updates
+   -- PostgREST's ON CONFLICT DO UPDATE -- so there is no moment at which the
+   row does not exist. `recent_edit` in supabase/schema.sql has been the
+   policy for that update since the table was written; nothing in www/ had
+   ever used it.
+
+   `at` is IN the body because the merge writes the columns it is given and
+   nothing else: without it the row would stay where it was and the words
+   somebody just searched for again would not move to the top, which is the
+   whole of what this call is for. A new row would have taken it from the
+   column's own default.
 
    The words are the name of the row, exactly as the star's are, so nothing
    here has to ask what an id was first. */
 function netRecentAdd(q, ok, bad){
   var w=String(q||'').replace(/^\s+|\s+$/g, '');
   if(!netSignedIn() || !w){ ok && ok(); return; }
-  netRecentDrop(w, function(){
-    netSend('POST', '/rest/v1/recent_search', {author:SESS.uid, q:w}, SESS.at,
-            function(){ ok && ok(); }, bad || function(){});
-  }, bad || function(){});
+  netSend('POST', '/rest/v1/recent_search',
+          {author:SESS.uid, q:w, at:(new Date()).toISOString()}, SESS.at,
+          function(){ ok && ok(); }, bad || function(){}, true);
 }
 function netRecentDrop(q, ok, bad){
   var w=String(q||'').replace(/^\s+|\s+$/g, '');
