@@ -132,6 +132,18 @@ grep -rn 'class="empty"' www/*.js
 `wldFrame(body, ed, mine)`（`www/home.js`）。`wldPage()` の二つの出口が
 囲みと右上の Edit と本体を一字も違わず書いていました。
 
+**一度やり直しています。**最初の形は `<div class="view">` から `</div>` まで
+**ページ全体**を返していて、それで `page-check` が赤くなりました ── あの検査が
+見るのは「その route が返した文字列そのものを返した、いちばん内側の関数」なので、
+`wldFrame` が `about` の描き手になり、**一つの route を二つの関数が描いている**
+と出ます（規則 21）。いまは帯と本体だけを返し、`<div class="view">` は
+`wldPage()` が巻きます。**一箇所にするとき、返すものがページ全体になっていないか
+見ること。**返り値は一字も変わりません。
+
+```
+npm run page
+```
+
 ## 14. handle から id を引き当てるのが二回 ── **開いている**
 
 `www/net.js` の `netBlock` と `netFollow`。同じ問い合わせと同じ後始末が
@@ -205,7 +217,28 @@ makes one」と自分で言っていて、それを持っているものは何�
 **残っている九件のうち八件は、`www/net.js` `www/post.js` `www/mod.js`
 `www/sheet.js` `www/import.js` `www/card.js` `www/sns.js` `www/me.js`
 `www/notes.js` `www/phases.js` `www/sound.js` にあります。**どれも
-`claude/pop` の持ち物ではないので、この枝では触っていません。
+`claude/pop` `claude/pop2` の持ち物ではないので、この枝では触っていません。
+
+**10〜19 を読み直しました（2026-09-04、`claude/pop2`）。動かせるものは
+残っていません。**要るファイルを一件ずつ:
+
+```
+  10  半分     残り五箇所 ── www/sns.js（三つ）www/me.js www/notes.js
+  12  開いている www/mod.js
+  14  開いている www/net.js
+  15  開いている www/post.js
+  17  開いている www/net.js
+  18  開いている www/import.js と www/sheet.js
+  19  待ち      www/card.js、かつ分けてよいかは読む人の判断
+```
+
+**一つのセッションが `www/net.js` を持てば 14 と 17 が同時に閉じます。**
+そこだけが二件まとまっている所です。
+
+**半分だけ寄せていません。**持ち主の違うファイルに手を伸ばして四箇所のうち
+二箇所だけを一箇所にすると、その日から**二つの仕組みが並んで走ります** ──
+CLAUDE.md「新しい仕組みが古いものの穴を覆うのは、いちばん起きてはいけない
+こと」。だから寄せずに、要るファイルの名前を置いてあります。
 
 # 何を直すかは決めていません
 
