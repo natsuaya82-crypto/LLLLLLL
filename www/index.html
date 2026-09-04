@@ -1061,7 +1061,15 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
    words. Everything else -- the size, the colour, the height a thumb needs --
    is `.btn.ghost`'s, which is what a button in this app IS.
    「これも角丸だし」OWNER 2026-08-27: it was a filled, cornered box, which is
-   the rule at the head of CLAUDE.md. `.shfile` below is the same one line. */
+   the rule at the head of CLAUDE.md. `.shfile` below is the same one line.
+
+   BOTH PLANS WEAR IT, and that is why it is a class rather than the input's
+   own rule. 「できないことは、有料と同じ画面に同じ形で出す」 OWNER 2026-09-04:
+   the free plan's face is a button that goes to the plans instead of a label
+   holding an input, and a control that is the full width of the screen on one
+   plan and as wide as its own words on the other is not the same control. The
+   second line below is the overlay and belongs to the paid face alone, which
+   is what `.impfile input` already says. */
 .impfile{position:relative;display:block;width:100%;text-align:center}
 .impfile input{position:absolute;left:0;top:0;width:100%;height:100%;opacity:0}
 /* The same trick for the sheet (www/sheet.js, chapter 26) and NOT .impfile:
@@ -1897,14 +1905,13 @@ a.set{text-decoration:none}
    under the bar with no way to scroll to it. */
 .view.plans{padding-bottom:calc(var(--tabh) + 96px)}
 
-/* ---------- locked behind a paid plan ---------- */
-.lock{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:none;
-      border:1px dashed var(--line);border-radius:13px;padding:14px 16px;color:var(--txs);margin-top:10px}
-.lock .lk{color:var(--txm);font-size:.86rem}
-.lock .lt{font-size:.9rem;color:var(--txs)}
-.lock .ld{font-size:.86rem;color:var(--txm)}
-.lock .tag{margin-left:auto;font-size:.82rem;letter-spacing:.14em;color:var(--pur);
-           border:1px solid var(--purln);border-radius:3px;padding:2px 8px;flex:0 0 auto}
+/* Nothing is drawn as locked any more. 「できないことは、有料と同じ画面に同じ
+   形で出す。押したら有料へ」 OWNER 2026-09-04 -- `.lock` was the dashed,
+   rounded panel the settings' data room put in front of the free plan, with a
+   bordered PLUS tag inside it, and it was the only shape in the app that said
+   「you may not」 by being drawn differently. The row is the ordinary `.set`
+   row on every plan now (www/settings.js), so there is nothing left to style.
+   The four lines it held in tools/box-baseline.txt went with it. */
 
 /* ---------- the profile, above the three lists ----------
    The whole of it under a third of the phone, so the posts start on the first
@@ -3407,7 +3414,6 @@ html[data-script="on"] .gsw{font-family:var(--face-script);letter-spacing:0}
    section -- so neither block was the look of this thing and changing either
    one moved half of it. One block. */
 .capgo{display:inline-flex;align-items:center;gap:4px;color:var(--gold);flex-shrink:0}
-.set.lock .sv{color:var(--gold)}
 /* ---------- the grammar, in stages ----------
    A list of stages, each with what it still needs; then one stage open, with
    its words as rows you can fill on the spot. */

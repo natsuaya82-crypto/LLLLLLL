@@ -847,8 +847,6 @@ defLang('ru', (function(){
       "set.terms"          : "Условия использования",
       "set.privacy"          : "Политика конфиденциальности",
       "set.csv.in"        : "Импорт из CSV",
-      "set.lock.csv.t"    : "Импорт CSV",
-      "set.lock.csv.d"    : "Влейте партию, собранную в таблице",
       "set.wipe"          : "Удалить аккаунт",
       "set.wipe.langs"     : "Удалить этот язык",
       "lang.untitled" : "этот язык",

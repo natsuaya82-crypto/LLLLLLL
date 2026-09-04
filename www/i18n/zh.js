@@ -838,8 +838,6 @@ defLang('zh', (function(){
       "set.terms"         : "使用条款",
       "set.privacy"         : "隐私政策",
       "set.csv.in"       : "从 CSV 导入",
-      "set.lock.csv.t"   : "CSV 导入",
-      "set.lock.csv.d"   : "把你在表格里做好的一批词倒进来",
       "set.wipe"         : "删除账号",
       "set.wipe.langs"   : "删除此语言",
       "lang.untitled" : "此语言",

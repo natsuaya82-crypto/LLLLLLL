@@ -749,8 +749,6 @@ defLang('ja', (function(){
       'set.terms'        : '利用規約',
       'set.privacy'        : 'プライバシーポリシー',
       'set.csv.in'      : 'リストの取り込み',
-      'set.lock.csv.t'  : 'CSVの取り込み',
-      'set.lock.csv.d'  : "表計算でまとめて作った単語を取り込む",
       'set.wipe'        : 'アカウントを削除',
       'set.wipe.langs' : 'この言語を削除',
       'lang.untitled' : 'この言語',

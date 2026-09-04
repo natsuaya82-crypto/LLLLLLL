@@ -41,10 +41,6 @@
 .kbring | border
 .kbring | border-radius
 .kbsk | border-radius
-.lock .tag | border
-.lock .tag | border-radius
-.lock | border
-.lock | border-radius
 .ltc | border
 .ltc | border-radius
 .ltx | border-radius

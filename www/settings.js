@@ -176,7 +176,10 @@ function setSummary(id, p){
   if(id==='ui')    return LANG[uiLang()].label;
   if(id==='lang')  return langName||'—';
   if(id==='acct')  return t(netSignedIn()? 'set.account.on' : 'set.account.guest');
-  if(id==='data')  return can('data')? 'CSV' : 'Free';
+  /* The same word on every plan, for the same reason the row inside the room
+     is the same row: 'Free' here was not 「this room is free」 but 「this room
+     is not yours」, which is the locked shape wearing a summary's clothes. */
+  if(id==='data')  return 'CSV';
   return '';
 }
 function vSet(){
@@ -344,16 +347,25 @@ function vSet(){
     if(BKLIST===null) bkList();
     body='<div class="sec">'+t('bk.h')+'</div>'+bkListHTML()+
       '<div class="sec" style="margin-top:18px">'+t('set.data')+'</div>'+
-      (can('data')
       /* No cloud row. It said "Cloud sync -- On" to anybody on Plus and did
          nothing at all: there is no code anywhere that sends a language to a
          server. A switch that reports a state the app does not have is worse
          than no switch, because somebody will trust it and stop making
          backups. It comes back when the thing behind it does. */
-      ? '<button class="set"' + DO('openImport') + '><span class="sl">'+t('set.csv.in')+'</span><span class="sv">'+ICON_GO+'</span></button>'
-      : '<button class="lock"' + DO('go', ["plans"]) + '><span class="lk">'+ICON_PLUS+'</span>'+
-        '<span><span class="lt">'+t('set.lock.csv.t')+'</span><br><span class="ld">'+t('set.lock.csv.d')+'</span></span>'+
-        '<span class="tag">PLUS</span></button>');
+      /* ONE ROW, THE SAME ON EVERY PLAN. 「できないことは、有料と同じ画面に
+         同じ形で出す。押したら有料へ」 OWNER 2026-09-04. The free plan used to
+         get a different thing here -- a dashed, rounded panel with a star, a
+         heading, two lines explaining what a spreadsheet is for and a bordered
+         PLUS tag -- so the one plan that cannot use this was shown the one
+         shape nothing else in the app wears. It broke three rules at once
+         (a box, an explanation, and a plan drawing its own screen) and it also
+         said 「CSVの取り込み」 where the paid row says 「リストの取り込み」, so
+         the two plans did not even name the same thing.
+         Same row, same words, same chevron; only the name it carries differs,
+         and pressing it on the free plan is the door 「扉は押したら飛ぶ」
+         (OWNER 2026-09-03). */
+      '<button class="set"' + (can('data')? DO('openImport') : DO('go', ["plans"])) +
+        '><span class="sl">'+t('set.csv.in')+'</span><span class="sv">'+ICON_GO+'</span></button>';
   } else {
     body=goneBox();
   }

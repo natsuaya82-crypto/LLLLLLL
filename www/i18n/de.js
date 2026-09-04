@@ -822,8 +822,6 @@ defLang('de', (function(){
       "set.terms"         : "Nutzungsbedingungen",
       "set.privacy"         : "Datenschutzerklärung",
       "set.csv.in"       : "Aus CSV importieren",
-      "set.lock.csv.t"   : "CSV-Import",
-      "set.lock.csv.d"   : "Kipp einen Stapel hinein, den du in einer Tabelle gebaut hast",
       "set.wipe"         : "Konto löschen",
       "set.wipe.langs"    : "Diese Sprache löschen",
       "lang.untitled" : "diese Sprache",
