@@ -542,6 +542,38 @@ function ltSlotKey(l){
   return (ab.length===1 && LT_START.indexOf(ab)>=0)? ab : '';
 }
 function ltIsBase(l){ return !!l && !!ltSlotKey(l); }
+/* WHETHER ANYBODY HAS MADE ANYTHING OF THIS LETTER -- a drawing, a shape that
+   came in on a sheet, or a character borrowed for it. It is the sentence the
+   two DELETE REVIEWs in this file already made in their own words twice
+   (「no strokes, no borrowed character, made by the app and never touched by
+   anybody」), and syPut() in www/sync.js asks it a third time when two rows
+   turn out to be one slot. One sentence, one place: an empty slot is the
+   app's, and anything else is somebody's. */
+function ltDrawn(l){ return !!l && (!!inkGeo(l) || !!l.ch); }
+/* THE THIRTY-EIGHT, ONCE EACH.
+   「だからリリース前の今は消していいから、描いてないからリリースしてから確認
+   してくれ、データがないから」OWNER 2026-09-04.
+
+   An alphabet that doubled before the ids were steady is still doubled -- the
+   rows are on the phone and on the server and nothing was going to take them
+   out. This is what takes them out, and it does not have a rule of its own:
+   it is syArr() putting this alphabet together with NOTHING, which is the one
+   place that says what two rows of one slot come to. So the copy that is
+   drawn on is the copy that stays, both are kept where both are drawn on, and
+   what goes is an empty slot the app made -- which is the same DELETE REVIEW
+   ltFreeSlot() and ltToDigit() are already written under.
+
+   The owner's decision above is why this may run today. Its reason is that
+   nobody has drawn anything yet; when that stops being true the decision
+   stops with it, and what holds afterwards is the paragraph above -- nothing
+   with a drawing on it is ever taken. docs/CHANGELOG.md, 2026-09-04. */
+function ltJoinSlots(){
+  var was=LETTERS.length, out=syArr('letters', LETTERS, [], null);
+  if(out.length===was) return 0;
+  LETTERS=out;
+  saveLetters();
+  return was-out.length;
+}
 /* THE ID A SLOT WEARS, WORKED OUT FROM WHICH SLOT IT IS.
    「あと、キーボードを足したりしてたら文字増殖してるんだけど何で？」OWNER
    2026-09-04, and this is why: ltId() mints an id out of LT_SEQ, which counts
@@ -593,7 +625,6 @@ function ltSlotIdFree(key){
    「長押しの後から-の3個目以降に普通に反応しなくなる」 */
 function ltCanDelete(l){ return !!l && !ltIsBase(l); }
 function ltStart(){
-  if(can('letters')) return;
   /* AND NOT INTO A LANGUAGE THAT IS ONLY READ. The twenty-eight slots are
      what the free plan gives somebody to draw their own alphabet on; a
      language taken off somebody else's page already has the letters they
@@ -601,8 +632,15 @@ function ltStart(){
      saveLetters(), the moment it was opened, with nobody typing anything.
      Measured before this line existed: the letters slice stopped being byte
      for byte what the server sent.
-     「dl言語はへんしゅうはできないってなんかいもいわせんなよ」 OWNER 2026-09-01. */
+     「dl言語はへんしゅうはできないってなんかいもいわせんなよ」 OWNER 2026-09-01.
+
+     It is asked FIRST now, because the line under it writes as well. */
   if(!langMine(langId)) return;
+  /* An alphabet that doubled before the ids were steady, put back to one of
+     each. Above the plan, because a paid alphabet doubled the same way and
+     the free plan is not what this is about. */
+  ltJoinSlots();
+  if(can('letters')) return;
   var have={}, made=0, i, c, l, read;
   for(i=0;i<LETTERS.length;i++) have[String(ltName(LETTERS[i])||'').toLowerCase()]=1;
   for(i=0;i<LT_START.length;i++){
@@ -950,7 +988,7 @@ function ltToDigit(id, v){
   var l=ltById(id), d;
   if(!l) return id;
   d=numByVal(v);
-  if(d && d.id!==l.id && !inkGeo(d) && !d.ch) ltDel(d.id);
+  if(d && d.id!==l.id && !ltDrawn(d)) ltDel(d.id);
   delete l.ab;
   l.val=v;
   l.snd=[];
@@ -998,7 +1036,7 @@ function ltFreeSlot(l, nm0){
        cross rooms at all rather than to rely on the order of two branches. */
     if(s===l || numIsDigit(s) || !ltIsBase(s)) continue;
     if(String(ltName(s)||'').toLowerCase()!==nm) continue;
-    if((s.st && s.st.length) || s.ch) return null;
+    if(ltDrawn(s)) return null;
     return s;
   }
   return null;

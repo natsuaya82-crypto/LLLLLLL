@@ -411,6 +411,66 @@ const r = await pg.evaluate(({s}) => {
   out.mgDup = dupes.sort().join(' ');
   LETTERS = merged;
   out.mgSeen = ltSeen().length;                  /* free hides none of them */
+
+  /* ---- AND NOTHING ANYBODY DREW IS TAKEN AWAY BY THE SAME CHANGE --------
+     Steady ids stop the doubling, and on their own they turn it into a
+     DELETION on the very same road: an account whose alphabet has not arrived
+     yet builds thirty-eight EMPTY slots, they wear the ids the drawn ones on
+     the server wear, and mine-first hands back thirty-eight blanks. Nothing
+     throws, the alphabet is the right length, and every drawing is gone. So
+     the count is not the claim -- what is ON the letters is.
+
+     Three shapes, and each is a real state:
+       empty here, drawn there            -> the drawing arrives
+       drawn here, empty there            -> mine stays drawn
+       drawn on both, and two ids apart   -> BOTH are kept, because which one
+                                             somebody wants is not this
+                                             function's to answer */
+  function pack(prep){
+    LT_SEQ = 0; LETTERS = []; ltStart();
+    LETTERS.forEach(prep);
+    return JSON.stringify(LETTERS);
+  }
+  function drawOn(l){ l.st = [{ pts: [[100, 100], [700, 700]] }]; }
+  function inked(a){ return a.filter(function(l){ return ltDrawn(l); }).length; }
+
+  var blank = pack(function(){}), drawn = pack(drawOn);
+  var mineBlank = JSON.parse(syMerge('letters', blank, drawn));
+  out.joinN     = mineBlank.length;
+  out.joinDrawn = inked(mineBlank);
+  var mineDrawn = JSON.parse(syMerge('letters', drawn, blank));
+  out.keptN     = mineDrawn.length;
+  out.keptDrawn = inked(mineDrawn);
+
+  /* two ids apart, both drawn on: the old ids are what a language that
+     doubled before today is still carrying */
+  LT_SEQ = 0; LETTERS = []; ltStart(); LETTERS.forEach(drawOn);
+  var old = JSON.parse(JSON.stringify(LETTERS));
+  old.forEach(function(l, i){ l.id = 'l' + (i + 1) + '_' + i + '_6'; });
+  var bothDrawn = JSON.parse(syMerge('letters', JSON.stringify(old), drawn));
+  out.bothN = bothDrawn.length;
+  out.bothDrawn = inked(bothDrawn);
+
+  /* ---- and an alphabet that ALREADY doubled comes back to one of each ----
+     The rows are on the phone and on the server and the ids they wear cannot
+     be changed under somebody. ltJoinSlots() is what takes them out, and it
+     takes the EMPTY copy: 「だからリリース前の今は消していいから、描いてない
+     から」OWNER 2026-09-04, and after the release the drawn one is what that
+     same line protects. */
+  LT_SEQ = 0; LETTERS = []; ltStart();
+  var one = JSON.parse(JSON.stringify(LETTERS));
+  one.forEach(function(l, i){ l.id = 'l' + (i + 1) + '_' + i + '_6'; });
+  drawOn(one[0]);                                /* one of them is somebody's */
+  LT_SEQ = 0; LETTERS = []; ltStart();
+  LETTERS = one.concat(LETTERS);                 /* seventy-six, as it stands */
+  out.wasDoubled = LETTERS.length;
+  /* through ltStart(), which is the road -- www/boot.js and langOpen() call
+     it, and nothing calls ltJoinSlots() by name. Asking the join directly
+     would leave "it is wired up" claimed by nothing. */
+  ltStart();
+  out.joinedN = LETTERS.length;
+  out.joinedDrawn = inked(LETTERS);
+  out.joinedA = ltDrawn(LETTERS.filter(function(l){ return ltSlotKey(l) === 'a'; })[0]);
   LETTERS = wasLts;
 
   return out;
@@ -557,6 +617,21 @@ say(r.mgN === 38 && r.mgDup === '',
 say(r.mgSeen === 38,
     'and the free plan is looking at all of them, so a double would have been ' +
     'on the screen rather than hidden (' + r.mgSeen + ' seen)');
+say(r.joinN === 38 && r.joinDrawn === 38,
+    'an alphabet that has not arrived here yet does not write blanks over the ' +
+    'drawn one -- the drawings come (' + r.joinN + ' letters, ' + r.joinDrawn +
+    ' drawn on)');
+say(r.keptN === 38 && r.keptDrawn === 38,
+    'and an empty copy coming back the other way takes nothing away (' +
+    r.keptN + ' letters, ' + r.keptDrawn + ' drawn on)');
+say(r.bothN === 76 && r.bothDrawn === 76,
+    'and where BOTH were drawn on, both are kept -- which of the two somebody ' +
+    'wants is not this function\'s to answer (' + r.bothN + ' letters, ' +
+    r.bothDrawn + ' drawn on)');
+say(r.wasDoubled === 76 && r.joinedN === 38 && r.joinedA,
+    'an alphabet that doubled before the ids were steady comes back to one of ' +
+    'each, and the copy that is kept is the one somebody drew on (' +
+    r.wasDoubled + ' -> ' + r.joinedN + ', `a` still drawn: ' + r.joinedA + ')');
 
 if (bad.length) { console.error('\nbase: ' + bad.length + ' failed'); process.exit(1); }
 console.log('\nbase: slots arrive when asked, and nothing drawn is ever taken away.');
