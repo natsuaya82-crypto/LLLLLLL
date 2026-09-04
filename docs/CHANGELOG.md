@@ -15,6 +15,54 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-04 文法を一つも持っていない言語に、空の文法が書かれなくなった
+
+`docs/EXPIRY.md` 4番。**`www/phases.js` の `migrateGramLang()` だけの話です。**
+
+**保存されるものの変化 ── これが全部です。**
+その人の語順と修飾語の位置を、設定から各言語へ一度だけ写す移行があります。
+写すのは「このアプリが出せた答え」だけ ── 六つのうちの語順と、`before` /
+`after` の位置です。**設定にそのどちらも入っていなかったとき、何も写さずに、
+写さなかったことを書き込んでいました** ── 文法を一度も持ったことのない言語に
+`{}` を。**いまは書きません。その言語は文法を持たないままです。**
+
+**人が作ったものは何も消えていません。**消えるものはこの一件には元から
+ありません。変わるのは「無い」が「有る」に変わらなくなることです。
+
+**なぜそれが要るか。**`bkTake()`（`www/backup.js`）と `netLangBack1()`
+（`www/net.js`）は、**その場にあるスライスを飛ばします** ── 上書きしないのが
+復元の規則だからです。`{}` が押されたあとは、その言語の文法は
+バックアップファイルからも他の iPhone からも二度と埋まりませんでした。
+`docs/DATA_SAFETY.md` の「A slice the app has never written is **absent**, and
+absent is what a restore is for」が効かなくなる、という形です。
+電波があれば `syMerge()` が両側を足すので戻ります。戻らないのは、電波が
+無い・アカウントが無い iPhone です。
+
+**写す道は一文字も変えていません。**語順を写す・位置を写す・もう文法を
+持っている言語には手を出さない・壊れているスライスは触らない ── 四つとも
+そのままです。
+
+**検査。**`tools/migrate-check.mjs` に項目を足しました（言語二つ、二回起動）。
+**直す前に走らせて赤三行**を見ています:
+
+```
+a language with nothing to copy is left with no phases slice: got "{}", wanted null
+and so is the language that is not the open one:              got "{}", wanted null
+absent is still absent, so a restore can still fill it in:    got true, wanted false
+```
+
+三行目は `bkSound()` にそのまま訊いたものです。直したあと `npm run migrate`
+は緑。**回したのは `migrate-check` と `es5-check` の二本だけで、全ゲートは
+回していません。実機では押していません。**
+
+**見た目は変わっていません。**画面も、押せるものも、一つも動いていません。
+
+**隣にあって、直していないこと。**既定のままの iPhone には
+`{"order":"SOV"}` が書かれ、これも同じだけ復元を止めます。ただし `SOV` は
+その言語がずっと従っていた値で、写すのはこの移行の仕事そのものです。
+**「既定は人が答えたことになるか」は振る舞いの判断**なので手を出していません
+（`docs/FEATURE_RULES.md` § Deciding）。
+
 ### 2026-09-04 投稿が、写真と声ごと揃ってからサーバーに載るようになった
 
 `docs/RISK.md` の 5番・6番・9番。三つとも同じ形で、`CLAUDE.md` 規則8 が

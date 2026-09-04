@@ -47,7 +47,16 @@
                            next time A is saved. Nothing on screen would look
                            wrong at any point
 
-   Exit code is 0 only when all six hold.
+     3. what was read      a migration COPIES and never removes what it read,
+                           and it does not turn ABSENT into empty either. An
+                           imported pronunciation is not replaced by a guess
+                           off the headword; an old letter's `key` is not
+                           thrown away for not being moved; and a language
+                           with nothing to copy onto it is left with no
+                           grammar slice at all, so the backup file and the
+                           other phone can still fill it in
+
+   Exit code is 0 only when all of them hold.
    --------------------------------------------------------------------------- */
 import http from 'http';
 import fs from 'fs';
@@ -721,6 +730,96 @@ if (mk.stored.indexOf('\u00b6') < 0)
              'Nothing else in www/ names `key`, so it is gone from this phone, from the ' +
              'backup file and from the slice row on the server. A migration copies and ' +
              'never removes what it read.');
+
+/* ---- a language with no grammar of its own is left with none ------------
+   CLAUDE.md § Data: *"empty" and "broken" are different states and must not
+   share a branch* -- and so are "empty" and ABSENT. www/backup.js says the
+   third one out loud: *a slice the app has never written is absent, and
+   absent is what a restore is for*.
+
+   migrateGramLang() copies the person's word order and the places their
+   modifiers sit out of the settings and onto every language, once. What it
+   copies is only ever an answer this app could have given: an order that is
+   one of the six, and a modifier position that is 'before' or 'after'. When
+   the settings hold neither -- an `order` outside ORDERS, which is what a
+   settings file edited out of a PC backup can say, and www/core.js names
+   that file as editable in as many words -- it copied nothing and then wrote
+   the nothing down: `{}`, on a language that had never had a phases slice.
+
+   Nothing throws and no screen changes. What changes is that the slice is
+   PRESENT from then on, and present is what both roads home step over:
+   bkTake() (www/backup.js) skips a slice that is already sound on the phone,
+   and netLangBack1() (www/net.js) does the same. So the language's grammar
+   can never be filled in from the backup file or from another phone again.
+   With a signal syMerge() adds both sides and it comes back; a phone with no
+   signal and no account is where it does not.
+
+   Two languages, because the migration walks LANGS and the open one is not a
+   special case. Two launches, so what is asked is what was WRITTEN rather
+   than what one launch happened to hold in memory. */
+const GLANGS = (setJson, phasesA) => pg.evaluate(([sj, pa]) => {
+  localStorage.clear();
+  localStorage.setItem('lingua.langs', JSON.stringify(
+    { LA: { name: 'Aya', mine: true }, LG: { name: 'Gora', mine: true } }));
+  localStorage.setItem('lingua.cur', 'LA');
+  localStorage.setItem('lingua.LA.lang', 'Aya');
+  localStorage.setItem('lingua.LG.lang', 'Gora');
+  if (pa !== null) localStorage.setItem('lingua.LA.phases', pa);
+  localStorage.setItem('lingua.set', sj);
+}, [setJson, phasesA === undefined ? null : phasesA]);
+
+const gramOf = () => pg.evaluate(() => ({
+  a: localStorage.getItem('lingua.LA.phases'),
+  g: localStorage.getItem('lingua.LG.phases'),
+  /* and what the restore would make of it, off www/backup.js's own answer --
+     true means "there is something here", which is what makes bkTake() and
+     netLangBack1() step over it */
+  aSound: bkSound('phases', localStorage.getItem('lingua.LA.phases')),
+  name: langName,
+  mark: SET.gramLang === 1 ? 'set' : 'unset'
+}));
+
+const twice = async () => { await pg.reload(); await settle();
+                            await pg.reload(); await settle(); };
+
+/* 1. nothing to copy. The settings say an order no screen in this app could
+      have put there, and no modifier position at all. */
+await GLANGS(JSON.stringify({ theme: 'dark', order: 'ZZZ' }));
+await twice();
+const g1 = await gramOf();
+want('a language with nothing to copy is left with no phases slice', g1.a, null);
+want('and so is the language that is not the open one', g1.g, null);
+want('absent is still absent, so a restore can still fill it in', g1.aSound, false);
+want('and the language opens exactly as it did', g1.name, 'Aya');
+
+/* 2, 3. the three roads that DO copy something are untouched by that. */
+await GLANGS(JSON.stringify({ order: 'VSO' }));
+await twice();
+const g2 = await gramOf();
+want('an order the person chose is still copied onto the language', g2.a, '{"order":"VSO"}');
+want('onto every language, not just the open one', g2.g, '{"order":"VSO"}');
+
+await GLANGS(JSON.stringify({ order: 'ZZZ', gpos: { adj: 'before' } }));
+await twice();
+const g3 = await gramOf();
+want('where the modifiers sit is copied on its own', g3.a, '{"gpos":{"adj":"before"}}');
+
+/* 4. a language that already has a phases slice keeps every word of it. */
+await GLANGS(JSON.stringify({ order: 'VSO' }), '{"done":{"a":1},"order":"SOV"}');
+await twice();
+const g4 = await pg.evaluate(() => {
+  const o = JSON.parse(localStorage.getItem('lingua.LA.phases') || 'null') || {};
+  return { order: o.order, done: o.done && o.done.a };
+});
+want('a language that already answered keeps its own order', g4.order, 'SOV');
+want('and everything else that was in there', g4.done, 1);
+
+/* 5. and wreckage is not "empty" -- it is left exactly where it is, because a
+      restore is what answers it. */
+await GLANGS(JSON.stringify({ order: 'VSO' }), '[[[not json');
+await twice();
+const g5 = await gramOf();
+want('a phases slice that will not parse is left alone', g5.a, '[[[not json');
 
 await br.close();
 srv.close();
