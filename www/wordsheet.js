@@ -1530,7 +1530,15 @@ function wdWrite(){
   var clash=findWord(hw);
   if(clash && clash!==w){ toast(t('toast.dup')); return false; }
   var old=String(w.hw);
-  w.hw=hw; delete w.ph;
+  /* The sheet writes what the sheet holds. `ph` -- the sounds that came with
+     the word, off an import or off the one migration that gave the oldest
+     words a sequence -- is not on this screen: there is no field for it, so
+     nobody here can see it, change it or clear it. It was deleted anyway,
+     and the next launch filled the hole with `phGuess(hw)`, so what somebody
+     imported came back as a machine's reading of the spelling under the same
+     key. CLAUDE.md § Data. `wPh()` already prefers the spelling, so nothing
+     on any screen reads this while there is one. */
+  w.hw=hw;
   w.sp=JSON.parse(JSON.stringify(wEdit.sp));
   w.mns=wEdit.mns.slice(); w.mn=wEdit.mns.length? wEdit.mns[0] : '';
   w.pos=wEdit.pos;
