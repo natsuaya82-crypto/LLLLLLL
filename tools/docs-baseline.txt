@@ -7,14 +7,14 @@
 # `dangling <doc> -> <path>`    <doc> sends a reader to a page that is not
 #                               there.
 #
-# Three documents nobody is sent to, and one page two documents promise and
-# nobody wrote. Not fixed here on purpose: which map each belongs on, whether
-# `docs/ONE.md` should be written or the two sentences taken out, and whether
-# a handover from a week ago is still worth a page are the owner's, not a
-# check's.
+# Two documents nobody is sent to. Not fixed here on purpose: which map each
+# belongs on, and whether a handover from a week ago is still worth a page,
+# are the owner's, not a check's.
+#
+# The two `dangling ... -> docs/ONE.md` lines are gone: `claude/one` wrote
+# that page, so both sentences point at a document that is there now. The
+# baseline said what was lost on 2026-09-04; the loss ended the day the page
+# landed, and a line that outlives what it allowed is a hole.
 
 orphan docs/HANDOVER-2026-08-28-2.md
 orphan docs/SCOPE-yaa.md
-
-dangling docs/STATE.md -> docs/ONE.md
-dangling docs/FEATURE_RULES.md -> docs/ONE.md
