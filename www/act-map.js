@@ -152,6 +152,10 @@ act('obMailForgot', obMailForgot);
 act('obMailAgain', obMailAgain);
 act('obResetGo', obResetGo);
 act('obNewPwGo', obNewPwGo);
+/* The eye on a password field. One name for all four of them -- the door's
+   two and the settings room's two -- because it is one button and it carries
+   the field's id. */
+act('obPwSee', obPwSee);
 act('obWhoGo', obWhoGo);
 act('setSignOut', setSignOut);
 act('setMail', setMail);

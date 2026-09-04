@@ -523,6 +523,8 @@ defLang('ko', (function(){
       "ob.mail.reset" : "설정",
       "ob.mail.wait" : "처리 중…",
       "ob.mail.to.forgot" : "비밀번호를 잊으셨나요?",
+      "ob.mail.see" : "비밀번호 표시",
+      "ob.mail.hide" : "비밀번호 숨기기",
       "ob.signin.or" : "또는",
       "ob.bar.up" : "계정 만들기",
       "ob.docs" : "계속하면 아래 내용에 동의하는 것이 됩니다.",

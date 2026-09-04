@@ -344,6 +344,8 @@ defLang('it', (function(){
       "ob.mail.reset" : "Salva",
       "ob.mail.wait" : "In corso…",
       "ob.mail.to.forgot" : "Password dimenticata?",
+      "ob.mail.see" : "Mostra password",
+      "ob.mail.hide" : "Nascondi password",
       "ob.signin.or" : "o",
       "ob.bar.up" : "Crea un account",
       "ob.docs" : "Continuando, accetti quanto segue.",

@@ -351,6 +351,8 @@ defLang('pt', (function(){
       "ob.mail.reset" : "Guardar",
       "ob.mail.wait" : "Trabalhando…",
       "ob.mail.to.forgot" : "Esqueceu sua senha?",
+      "ob.mail.see" : "Mostrar senha",
+      "ob.mail.hide" : "Ocultar senha",
       "ob.signin.or" : "ou",
       "ob.bar.up" : "Criar uma conta",
       "ob.docs" : "Ao continuar, você concorda com o seguinte.",

@@ -244,6 +244,8 @@ defLang('en', (function(){
       "ob.mail.reset" : "Set it",
       "ob.mail.wait" : "Working…",
       "ob.mail.to.forgot" : "Forgot your password?",
+      "ob.mail.see" : "Show password",
+      "ob.mail.hide" : "Hide password",
       "ob.signin.or" : "or",
       "ob.bar.up" : "Create an account",
       "ob.docs" : "By continuing you agree to the following.",

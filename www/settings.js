@@ -235,14 +235,14 @@ function vSet(){
     /* Two fields and a button. The same shape as the door's, because it is
        the same act -- and it is a page you went to rather than a sheet over
        where you were, which is what every other room here is. */
-    body='<div class="field"><input id="set-pwo" type="password" '+
-        'value="'+esc(PWF.old)+'" placeholder="'+esc(t('set.pw.old'))+'" '+
-        'autocomplete="current-password" autocapitalize="none" autocorrect="off" '+
-        'spellcheck="false"' + IN('setPwSet', ['old']) + '></div>'+
-      '<div class="field"><input id="set-pwn" type="password" '+
-        'value="'+esc(PWF.now)+'" placeholder="'+esc(t('ob.mail.newpw.ph'))+'" '+
-        'autocomplete="new-password" autocapitalize="none" autocorrect="off" '+
-        'spellcheck="false"' + IN('setPwSet', ['now']) + '></div>'+
+    /* Both fields are the door's obPwField() -- the same shape, and the same
+       eye on each of them. They were written out here in full, which is how
+       a change to what a password field IS reaches two of the four and not
+       the other two. */
+    body=obPwField('set-pwo', PWF.old, 'set.pw.old',
+                   'current-password', IN('setPwSet', ['old']))+
+      obPwField('set-pwn', PWF.now, 'ob.mail.newpw.ph',
+                'new-password', IN('setPwSet', ['now']))+
       (PWF.msg? '<div class="obmsg">'+esc(PWF.msg)+'</div>' : '')+
       '<button class="btn ghost" style="margin-top:18px"' + DO('setPwGo') +
         (PWF.busy? ' disabled':'') + '>'+

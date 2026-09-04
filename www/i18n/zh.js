@@ -352,6 +352,8 @@ defLang('zh', (function(){
       "ob.mail.reset" : "确定",
       "ob.mail.wait" : "处理中…",
       "ob.mail.to.forgot" : "忘记密码？",
+      "ob.mail.see" : "显示密码",
+      "ob.mail.hide" : "隐藏密码",
       "ob.signin.or" : "或",
       "ob.bar.up" : "注册账号",
       "ob.docs" : "继续即表示您同意以下内容。",

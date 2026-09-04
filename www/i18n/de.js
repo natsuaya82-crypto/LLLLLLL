@@ -332,6 +332,8 @@ defLang('de', (function(){
       "ob.mail.reset" : "Speichern",
       "ob.mail.wait" : "Läuft…",
       "ob.mail.to.forgot" : "Passwort vergessen?",
+      "ob.mail.see" : "Passwort anzeigen",
+      "ob.mail.hide" : "Passwort verbergen",
       "ob.signin.or" : "oder",
       "ob.bar.up" : "Konto erstellen",
       "ob.docs" : "Wenn du fortfährst, stimmst du dem Folgenden zu.",

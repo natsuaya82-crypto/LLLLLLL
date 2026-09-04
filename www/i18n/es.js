@@ -304,6 +304,8 @@ defLang('es', (function(){
       "ob.mail.reset" : "Guardar",
       "ob.mail.wait" : "Trabajando…",
       "ob.mail.to.forgot" : "¿Olvidaste tu contraseña?",
+      "ob.mail.see" : "Mostrar contraseña",
+      "ob.mail.hide" : "Ocultar contraseña",
       "ob.signin.or" : "o",
       "ob.bar.up" : "Crear una cuenta",
       "ob.docs" : "Al continuar, aceptas lo siguiente.",

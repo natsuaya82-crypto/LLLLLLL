@@ -1222,6 +1222,64 @@ function obMailField(id, k, type, auto, ph){
     'autocomplete="'+auto+'" autocapitalize="none" autocorrect="off" '+
     'spellcheck="false"' + IN('obMailSet', [k]) + '></div>';
 }
+/* An eye, open and struck through, and they are the only mark in this app for
+   "what is typed here is hidden". The lid is one path and the pupil another,
+   which is what every keyboard-facing app draws; the shut one is the same eye
+   with a line across it, so the two read as one control in two states rather
+   than as two different buttons. */
+var OB_EYE='<svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" '+
+  'stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" '+
+  'aria-hidden="true"><path d="M2.2 12S6 5.8 12 5.8 21.8 12 21.8 12 18 18.2 12 18.2 2.2 12 2.2 12Z"/>'+
+  '<path d="M12 9.2A2.8 2.8 0 1 0 12 14.8 2.8 2.8 0 1 0 12 9.2Z"/></svg>';
+var OB_EYESHUT='<svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" '+
+  'stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" '+
+  'aria-hidden="true"><path d="M2.2 12S6 5.8 12 5.8 21.8 12 21.8 12 18 18.2 12 18.2 2.2 12 2.2 12Z"/>'+
+  '<path d="M12 9.2A2.8 2.8 0 1 0 12 14.8 2.8 2.8 0 1 0 12 9.2Z"/>'+
+  '<path d="M4.4 19.6 19.6 4.4"/></svg>';
+/* A PASSWORD FIELD, AND THE EYE THAT SHOWS WHAT IS IN IT. One function, and
+   the four places a password is typed all call it: the door's sign-in face,
+   the door's new-password face, and the two on the settings room's password
+   screen. There were four fields written out four times; there is one shape
+   now, so an eye cannot appear on one of them and not the others.
+
+   The eye is a BUTTON carrying a NAME (rule 3) and it is registered in
+   www/act-map.js. What it carries is the field's id, because that is the only
+   thing that differs between the four.
+
+   `.field.at` and `.rowq` are worn rather than a class of this chapter's own.
+   www/index.html is another session's, so this screen adds no CSS: `.field.at`
+   is the row shape the stylesheet already has -- a flex row carrying the rule
+   under it, with the input's own border turned off -- and `.rowq` is the bare
+   44pt square it already has for a mark at the end of a row. What that costs
+   is one line and it is in the report, not worked around here. */
+function obPwField(id, val, ph, auto, act){
+  return '<div class="field at"><input id="'+id+'" type="password" '+
+    'value="'+esc(val)+'" placeholder="'+esc(t(ph))+'" '+
+    'autocomplete="'+auto+'" autocapitalize="none" autocorrect="off" '+
+    'spellcheck="false"' + act + '>'+
+    '<button class="rowq" id="'+id+'-see" aria-label="'+esc(t('ob.mail.see'))+'"' +
+      DO('obPwSee', [id]) + '>'+OB_EYE+'</button></div>';
+}
+/* Pressing the eye shows what was typed; pressing it again hides it.
+
+   It writes into the two elements and does NOT render. The field is on the
+   same screen, and a render would take the caret out of it and shut the
+   keyboard -- which is obAgainTick()'s reason a few lines above and the same
+   reason here.
+
+   Nothing is remembered and nothing is stored. The next render of the screen
+   builds the field as type="password" again, so leaving and coming back hides
+   it, and there is no state anywhere that has to be put back. What was typed
+   is never written down by any of this: the eye changes what the screen SHOWS
+   and touches nothing else. */
+function obPwSee(id){
+  var e=document.getElementById(id), b=document.getElementById(id+'-see');
+  if(!e || !b) return;
+  var show = e.type==='password';
+  e.type = show ? 'text' : 'password';
+  b.innerHTML = show ? OB_EYESHUT : OB_EYE;
+  b.setAttribute('aria-label', t(show ? 'ob.mail.hide' : 'ob.mail.see'));
+}
 /* The arch and the wordmark, small, over every face of the door. There used
    to be a splash carrying them and a form behind it; the splash asked
    nothing, so it was a page whose whole content was a button that opened the
@@ -1264,8 +1322,8 @@ function obFormHTML(up){
        the request that cannot land on an account somebody already has.
        Signing in still has one, because that is the face where somebody who
        set a password uses it. */
-    (up? '' : obMailField('ob-pw', 'pw', 'password',
-                          'current-password', 'ob.mail.pw.ph'))+
+    (up? '' : obPwField('ob-pw', OBM.pw, 'ob.mail.pw.ph',
+                        'current-password', IN('obMailSet', ['pw'])))+
     (OBM.msg? '<div class="obmsg">'+esc(OBM.msg)+'</div>' : '')+
     '<button class="btn"' + DO(up? 'obMailUp' : 'obMailIn') + (OBM.busy? ' disabled':'') + '>'+
       t(OBM.busy? 'ob.mail.wait' : (up? 'ob.mail.up' : 'ob.mail.in'))+'</button>'+
@@ -1498,8 +1556,8 @@ function obForgotHTML(){
 function obNewPwHTML(){
   return '<div class="mid obform">'+
     '<h2 class="obh">'+t(OBM.fresh? 'ob.mail.h.setpw' : 'ob.mail.h.reset')+'</h2>'+
-    obMailField('ob-pw', 'pw', 'password', 'new-password',
-                OBM.fresh? 'ob.mail.pw.ph' : 'ob.mail.newpw.ph')+
+    obPwField('ob-pw', OBM.pw, OBM.fresh? 'ob.mail.pw.ph' : 'ob.mail.newpw.ph',
+              'new-password', IN('obMailSet', ['pw']))+
     (OBM.msg? '<div class="obmsg">'+esc(OBM.msg)+'</div>' : '')+
     '<button class="btn"' + DO('obNewPwGo') + (OBM.busy? ' disabled':'') + '>'+
       t(OBM.busy? 'ob.mail.wait' : 'ob.mail.reset')+'</button>'+

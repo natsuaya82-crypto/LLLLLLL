@@ -392,6 +392,8 @@ defLang('fr', (function(){
       "ob.mail.reset" : "Valider",
       "ob.mail.wait" : "En cours…",
       "ob.mail.to.forgot" : "Mot de passe oublié ?",
+      "ob.mail.see" : "Afficher le mot de passe",
+      "ob.mail.hide" : "Masquer le mot de passe",
       "ob.signin.or" : "ou",
       "ob.bar.up" : "Créer un compte",
       "ob.docs" : "En continuant, vous acceptez ce qui suit.",

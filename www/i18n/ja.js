@@ -260,6 +260,8 @@ defLang('ja', (function(){
       "ob.mail.reset" : "決定",
       "ob.mail.wait" : "送信中…",
       "ob.mail.to.forgot" : "パスワードをお忘れですか？",
+      "ob.mail.see" : "パスワードを表示",
+      "ob.mail.hide" : "パスワードを隠す",
       "ob.signin.or" : "または",
       "ob.bar.up" : "アカウント登録はこちら",
       "ob.docs" : "続けると、以下に同意したことになります。",
