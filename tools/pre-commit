@@ -97,3 +97,11 @@ if git diff --cached --name-only | grep -E '^www/' | grep -qvE '^www/(i18n/[a-z]
     exit 1
   }
 fi
+
+# The screenshot rule -- 「見た目を変えたものは必ずスクショで提示する」 -- was
+# asked for here and is NOT here. It is in tools/commit-msg, next door, because
+# it needs the commit message and this hook runs before the message is written:
+# at this moment .git/COMMIT_EDITMSG still holds the PREVIOUS commit's message,
+# so a way out read from here would let the next visual commit through instead
+# of this one. Same core.hooksPath, same commit, one hook later. That file's
+# header has the rest.
