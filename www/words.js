@@ -438,6 +438,23 @@ function wordsUndoHTML(){
 
    Nothing about the family. A word is a word on this list; what it is of the
    word it came from, and what has come from it, is on its page. */
+/* WHAT A WORD SHOWS IN THE LIST: the headword, how it is said, what part of
+   speech it is, and what it means. It was written out twice inside the one
+   function below -- once for the row you press to CHOOSE and once for the row
+   you press to OPEN -- and the two were identical to the character. So adding
+   a thing to a word's line, or taking one off, was two edits that had to be
+   found, and a list being chosen from would quietly have shown something
+   different from the same list a moment earlier.
+
+   What genuinely differs between the two is the button around it: which name
+   it says and what it calls itself to somebody who cannot see it. That stays
+   where it is, which is what makes this the shared half. */
+function wEntryLines(w, mn){
+  return '<div class="hwrow"><span class="hw">'+esc(wOut(w.hw))+'</span>'+
+    '<span class="rd">'+esc(phIpa(wPh(w)))+'</span>'+
+    '<span class="pos">'+esc(posLabel(w.pos))+'</span></div>'+
+    '<div class="mn">'+mn+'</div>';
+}
 function entryHTML(w){
   var mns=wMns(w), mn;
   /* A missing meaning in a dictionary row is something to do, not a fact to
@@ -468,10 +485,7 @@ function entryHTML(w){
       ' role="button" aria-label="'+esc(t('words.sel.row'))+'">'+
       (wSel[w.hw]? ICON_DOT : ICON_RING)+'</span>'+
     '<button class="ebody"' + DO('wSelTap', [w.hw]) + ' aria-label="'+esc(t('words.sel.row'))+'">'+
-    '<div class="hwrow"><span class="hw">'+esc(wOut(w.hw))+'</span>'+
-    '<span class="rd">'+esc(phIpa(wPh(w)))+'</span>'+
-    '<span class="pos">'+esc(posLabel(w.pos))+'</span></div>'+
-    '<div class="mn">'+mn+'</div>'+
+    wEntryLines(w, mn)+
     '</button>'+
     '</div>';
   return '<div class="entry">'+
@@ -487,11 +501,7 @@ function entryHTML(w){
        thing this plan does not do 「無料版は音の編集できないから」. The word's
        own page has one, which is where somebody asking to hear it is. */
     '<button class="ebody"' + DO('openWord', [w.hw]) + ' aria-label="'+esc(t('words.open'))+'">'+
-    '<div class="hwrow"><span class="hw">'+esc(wOut(w.hw))+'</span>'+
-    '<span class="rd">'+esc(phIpa(wPh(w)))+'</span>'+
-    '<span class="pos">'+esc(posLabel(w.pos))+'</span></div>'+
-    '<div class="mn">'+mn+'</div>'+
-
+    wEntryLines(w, mn)+
     '</button>'+
     /* Beside the row rather than at the head of the list. Hearing one word is
        a thing you do to that word, and Play all answered a question nobody
