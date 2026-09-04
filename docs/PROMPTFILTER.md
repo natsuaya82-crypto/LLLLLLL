@@ -1,3 +1,35 @@
+# claude/find3 ── 触ってよいと理解したもの
+
+`claude/find2` の続きです。**私が書き換えてよいのは四本だけ**と理解しました:
+
+```
+www/sns.js
+tools/find-check.mjs
+tools/fixture.mjs
+docs/PROMPTFILTER.md   ← この紙
+```
+
+**触らないもの。**`www/index.html` `www/shell.js` `www/act-map.js` `www/i18n/`
+は claude/pop2、`www/net.js` `www/post.js` `www/rec.js` `www/card.js` は
+claude/post3、`www/core.js` `www/letters.js` `www/backup.js` `www/sync.js`
+`www/phases.js` は claude/keep3、`www/keyboard.js` は claude/kbfree3。
+`docs/FEATURE_RULES.md` `docs/STATE.md` `CLAUDE.md` はリーダーのもの。
+
+**取り込みはしません。**`master` を自分に入れるのだけ（入れました）。
+**ゲートは回しません** ── `npm run find` と、二秒で終わる速いものだけ。
+
+やること三つ:
+
+1. `find-check` の赤三本を緑に（最優先）
+2. お題のタグ `#今日のお題` ── 十言語で一つのタグ
+3. 検索を一度で ── `#` と `@` と投稿、Enter を押さなくても
+
+**待ち合わせ。**押しても何も起きない 🔍 は claude/pop2 が
+`www/shell.js` の `searchBox()` と `www/act-map.js` を直します。入ったと
+聞いてから `www/sns.js` の側で名前を渡します。
+
+---
+
 # お題で絞る ── 三つのやり方と、いま画面がどうなっているか
 
 リーダーへ。オーナーの「今日のお題のハッシュタグってないの？ないならフィルターに
