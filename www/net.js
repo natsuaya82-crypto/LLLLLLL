@@ -2609,41 +2609,73 @@ function netUp(path, b64, mime, ok, bad){
    One at a time and not all at once: a phone on a train has one usable
    connection, and four uploads racing each other is four that are slow.
 
-   A picture that will not go is DROPPED FROM THIS POST'S LIST and does not
-   stop the post. It is still on the phone -- nothing here removes anything --
-   and the post goes up carrying the pictures that made it. A post that
-   refused to exist because a photograph failed would be a post lost to a
-   tunnel. */
-/* Two files per picture: the photograph, and a small copy of it for the
-   timeline. `th` is indexed to match `out` rather than pushed onto, because a
-   small copy that fails to go leaves a HOLE and a list that closed the hole
-   would put picture two's thumbnail under picture one. A hole is read by
-   postThumbs() as "draw the photograph for this one", which is what every
-   post written before this does anyway -- so a thumbnail that does not go up
-   costs bytes and never correctness. */
-function netUpPics(uid, pid, pics, ok){
-  var out=[], th=[], i=0;
+   WHAT WENT UP IS WRITTEN ON THE POST, and that one sentence is what makes a
+   second attempt both cheap and safe. `pu[i]` is where photograph i is and
+   `pt[i]` is where its small copy is; a photograph that is already up is not
+   sent a second time, and the one that would not go leaves a HOLE at its own
+   index rather than closing the list -- closing it would put picture two's
+   small copy under picture one.
+
+   A picture that would not go used to be DROPPED FROM THIS POST'S LIST and
+   the post went up without it, for good: the row was inserted, `sid` was
+   written onto the post, and postCatchUp() never looks again at a post that
+   has one. The bytes stayed on the phone that wrote it, so the writer went on
+   seeing four photographs while everybody else saw three, and nothing
+   anywhere said so. 「他の人の画面には三枚しか出ないことがあります」
+   docs/RISK.md § 6.
+
+   It cannot be sent to the SAME path on a second attempt: supabase/schema.sql
+   § the bucket has no update policy on purpose -- 「an overwrite is how
+   somebody else's post quietly changes under them」 -- so a retry writes the
+   missing ones under that attempt's own folder, and the paths on the post are
+   what joins the two. Nothing is left behind either way, because netDropFiles()
+   deletes by the paths the post carries and not by the folder.
+
+   ok() is handed how many photographs are still not up, and the status of the
+   last refusal. What to DO about that is netPush()'s and is written there. */
+function netUpPics(uid, pid, p, pics, ok){
+  var i=0, st=0;
   function next(){ i++; step(); }
   function step(){
-    var d;
-    if(i>=pics.length){ ok(out, th); return; }
+    var d, at;
+    if(i>=pics.length){ ok(netPicsLeft(p, pics), st); return; }
+    /* Already on the server. Nothing to send, and re-sending it is the one
+       thing the bucket will refuse. */
+    if(p.pu && p.pu[i]){ next(); return; }
     d=netData(pics[i]);
+    /* Not something this phone can read as bytes -- a path from a post that
+       came down, or a picture that never was one. There is nothing to send
+       and nothing to wait for, which is not the same as a send that failed. */
     if(!d){ next(); return; }
-    netUp(uid+'/'+pid+'/'+i+netExt(d.mime), d.b64, d.mime,
+    at=i;
+    netUp(uid+'/'+pid+'/'+at+netExt(d.mime), d.b64, d.mime,
       function(path){
-        var k=out.length;
-        out.push(path);
-        postThumb(pics[i], function(small){
+        if(!p.pu) p.pu=[];
+        p.pu[at]=path;
+        postThumb(pics[at], function(small){
           var td=small && netData(small);
           if(!td){ next(); return; }
-          netUp(uid+'/'+pid+'/'+k+'.t'+netExt(td.mime), td.b64, td.mime,
-            function(tp){ th[k]=tp; next(); },
+          netUp(uid+'/'+pid+'/'+at+'.t'+netExt(td.mime), td.b64, td.mime,
+            function(tp){ if(!p.pt) p.pt=[]; p.pt[at]=tp; next(); },
+            /* A small copy that will not go costs bytes and never
+               correctness: postThumbs() reads a hole as 「draw the
+               photograph for this one」, which is what every post written
+               before there were small copies does anyway. So it is not
+               counted as missing. */
             function(){ next(); });
         });
       },
-      function(){ next(); });
+      function(d2, s){ st=s||st; next(); });
   }
   step();
+}
+/* How many of a post's photographs the server does not have. Asked of the
+   post rather than counted as it goes, so it is the same answer on the first
+   attempt and on the fourth. */
+function netPicsLeft(p, pics){
+  var n=0, i;
+  for(i=0;i<pics.length;i++) if(!(p.pu && p.pu[i]) && netData(pics[i])) n++;
+  return n;
 }
 /* What a file is called at the end. The mime is what the phone said it made,
    and these three are what it can make. */
@@ -2708,30 +2740,64 @@ function netPush(post, ok, bad){
   /* The bytes first, the row after, because the row carries where the bytes
      went. The other order is a post that exists with pictures it cannot name
      until a second request lands -- and a second request is a second thing
-     that can fail. */
-  netUpPics(SESS.uid, pid, postPics(post), function(paths, small){
-    if(paths.length) row.body.pu=paths;
-    /* The small copies, and only when there are any. A post whose pictures
-       were all smaller than POST_THUMB already carries no `pt` at all rather
-       than a list of empty strings. */
-    if(small.length) row.body.pt=small;
-    netUpVoice(SESS.uid, pid, post, function(vpath){
-      if(vpath) row.body.vu=vpath;
+     that can fail.
+
+     AND THE ROW GOES ONLY WHEN THE BYTES ARE ALL THERE. It used to go
+     whatever happened above it: a photograph that would not upload was
+     dropped from the list and the voice fell through to ok(''), the row was
+     inserted, and `sid` came back and was written onto the post -- which is
+     the one thing that makes postCatchUp() stop looking at it. The post was
+     finished, missing what somebody had put on it, silently and for ever.
+     docs/RISK.md § 6.
+
+     A refusal here is the same state as a post written in a tunnel: no row,
+     no `sid`, the post sitting in POSTS with its bytes in hand, and
+     postCatchUp() trying it again off the back of the next timeline answer.
+     The second attempt sends only what is still missing -- netUpPics() writes
+     the paths onto the post as they land -- so the retry is one file, not
+     four. NOTHING IS DROPPED and nothing is deleted; what is refused is the
+     ROW, and the row is the only thing here that can be sent again.
+
+     The person who pressed the button is told, because pwSendWith() already
+     says a failed push out loud (netWhy) and this is now one of the ways a
+     push fails. The retries behind a timeline stay quiet, which is what
+     postCatchUp() passes an empty handler for. */
+  netUpPics(SESS.uid, pid, post, postPics(post), function(left, st){
+    if(left){ bad(null, st); return; }
+    netUpVoice(SESS.uid, pid, post, function(vleft, vst){
+      if(vleft){ bad(null, vst); return; }
+      /* The paths are ON the post now, so netBody() carries them up with
+         everything else it carries. They were written onto the row here, and
+         that was a second place holding what a post is made of. */
+      row.body=netBody(post);
       netSend('POST', '/rest/v1/post?select=id', row, SESS.at,
         function(d){ ok((d && d.length? d[0].id : pid)); }, bad);
     });
   });
 }
 /* And the voice, which is a file on the disk rather than a string in hand --
-   so it is read back out before it can go. A post with no voice, or one whose
-   file has gone, is a post: ok('') and on. */
+   so it is read back out before it can go.
+
+   Three answers used to be one. A post with no voice, a post whose file has
+   gone off the disk, and a post whose voice WOULD NOT UPLOAD all came back as
+   ok('') -- so the row went up saying nothing about a recording, and a post
+   somebody spoke on arrived on everybody else's phone as a post that had
+   never been recorded on. 「自分の iPhone では再生でき、他の人には何も付いて
+   いない投稿に見えます」 docs/RISK.md § 6.
+
+   The first two are still 「on you go」: there is nothing to send and nothing
+   to wait for. The third is a refusal and says so, and netPush() holds the
+   row back for it. `vu` is written onto the post the moment it lands, so a
+   second attempt does not send thirty seconds of audio again. */
 function netUpVoice(uid, pid, post, ok){
   var vo=post && post.vo;
-  if(!vo || !vo.f){ ok(''); return; }
+  if(post && post.vu){ ok(0, 0); return; }
+  if(!vo || !vo.f){ ok(0, 0); return; }
   voRead(vo.f, function(b64){
-    if(!b64){ ok(''); return; }
+    if(!b64){ ok(0, 0); return; }
     netUp(uid+'/'+pid+'/vo.m4a', b64, 'audio/mp4',
-      function(path){ ok(path); }, function(){ ok(''); });
+      function(path){ post.vu=path; ok(0, 0); },
+      function(d, s){ ok(1, s||0); });
   });
 }
 /* ---- what was written and not sent -------------------------------------

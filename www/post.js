@@ -1069,8 +1069,14 @@ function postSend(p, ok, bad){
   var id=p && p.id;
   if(!id || POST_SENDING[id]) return;
   POST_SENDING[id]=1;
-  netPush(p, function(sid){ delete POST_SENDING[id]; ok(sid); },
-             function(d, s){ delete POST_SENDING[id]; bad(d, s); });
+  /* And it is written down either way. netUpPics() and netUpVoice() put the
+     paths of what DID go up onto the post as each file lands, so a send that
+     got three photographs of four leaves three paths behind it -- and the
+     next attempt sends one file instead of four. Kept here rather than after
+     every upload: one write at the end of a send, against one per file, on a
+     key that carries the photographs themselves. */
+  netPush(p, function(sid){ delete POST_SENDING[id]; savePosts(); ok(sid); },
+             function(d, s){ delete POST_SENDING[id]; savePosts(); bad(d, s); });
 }
 var POST_CATCH=4;
 function postCatchUp(){
