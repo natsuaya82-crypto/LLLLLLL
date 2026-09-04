@@ -1757,7 +1757,14 @@ a.set{text-decoration:none}
 .lrow{justify-content:space-between;gap:10px}
 .lrow .sl{flex:0 0 auto}
 .lrow .lsam{margin-left:auto;font-size:.88rem;color:var(--gold);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.lrow .lchk{flex:0 0 14px;text-align:right;color:var(--gold)}
+/* The tick beside the language that is chosen. It was written twice, 1777
+   lines apart, and the later one set `display:flex` -- which is what makes a
+   drawn mark sit in the middle of its box, and also what killed this one's
+   `text-align:right`. Somebody reading THIS line saw the line that puts the
+   tick on the right, changed it, and nothing moved. One block now, and the
+   right edge is `justify-content` because that is what a flex box listens
+   to. `text-align:right` is gone rather than carried: it decided nothing. */
+.lrow .lchk{flex:0 0 16px;display:flex;align-items:center;justify-content:flex-end;color:var(--gold)}
 .lrow.on .sl{font-weight:600}
 /* The plans, side by side. Three pages that slide, with the next one showing
    at the edge. 「横並びにして。ページは上に三つあるんじゃなくてスライドで
@@ -3534,7 +3541,6 @@ textarea.ntbody.grow{min-height:0;height:auto;overflow:hidden;resize:none}
 .set .sv{display:flex;align-items:center;gap:6px}
 .set .sv .go,.capgo .go{opacity:.75}
 .capgo{display:inline-flex;align-items:center;gap:4px}
-.lrow .lchk{flex:0 0 16px;display:flex;align-items:center;justify-content:flex-end}
 </style>
 </head>
 <body>

@@ -8,7 +8,6 @@
 # catch. docs/DUPLICATES.md items 4 and 5 are two of these.
 .gside .gsp | min-height
 .gside .gsp | min-width
-.lrow .lchk | flex
 .plterm .pp | display
 .plterm .pp | font-size
 .plterm .pper | display
