@@ -134,7 +134,39 @@ function migrateKbFree(){
   KB.kbs=kbs; KB.at=at; KB.v=2;
   saveKb();
 }
-function saveKb(){ if(langLocked()) return; kbVFix(); kbWayOff(); kbNoted(); bkTouch(); try{ localStorage.setItem(langKey('kb'), JSON.stringify(KB)); }catch(e){} }
+/* NO KEYBOARD AND A BROKEN KEYBOARD ARE DIFFERENT STATES, and this line put
+   them in the same one. `JSON.stringify(null)` is the four characters `null`,
+   which parse to something that is not an object -- so bkSound() read the
+   language as wreckage, bkOK() said no, and bkPush() refused to write its
+   backup FILE. Not once: from the first time somebody left that language,
+   for good. Everything they made afterwards was in no backup.
+
+   Every free language is that language. Free reads kbFixed(), a QWERTY built
+   out of LETTERS on the way to the screen and stored nowhere, so on the free
+   plan there is no other state this can be -- and saveKb() runs from
+   langSaveAll() every time a language is left, deleted, or swapped.
+   「無料の分も全部入らないとダメでしょ」 OWNER 2026-09-04.
+
+   So no keyboard is written as ABSENT rather than as the word null.
+   docs/DATA_SAFETY.md already had the sentence: *a slice the app has never
+   written is absent, and absent is what a restore is for* -- bkPack() skips
+   what is not there, so the file is written; netLangSync1() reads it as ''
+   and takes the server's copy down rather than pushing a null up. It reads
+   back the same either way: kbRead() turns a missing key and a stored `null`
+   into the same empty KB, which is what kbResetGo() means by clearing one.
+
+   Fixed HERE and not in bkSound(). That function is right to refuse a null
+   where an object belongs -- one line guards script, kb, wld and gram2
+   together -- and loosening it to let this through would let real wreckage
+   through for all four. What was wrong was what this wrote. */
+function saveKb(){
+  if(langLocked()) return;
+  kbVFix(); kbWayOff(); kbNoted(); bkTouch();
+  try{
+    if(!KB) localStorage.removeItem(langKey('kb'));
+    else localStorage.setItem(langKey('kb'), JSON.stringify(KB));
+  }catch(e){}
+}
 
 /* The four directions a finger can leave a key by, in the order they are
    stored. Written once because the editor, the renderer and the flick all
