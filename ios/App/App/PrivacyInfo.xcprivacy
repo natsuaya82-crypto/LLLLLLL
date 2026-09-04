@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- What the App binary reaches for that Apple asks a reason for.
+
+     WITHOUT THIS FILE THE DELIVERY IS REFUSED, AND NOT BY A RED TICK. The
+     upload succeeds, the workflow goes green, and an hour later an email
+     arrives (ITMS-91053, "Missing API declaration"). That is the same shape
+     as build 86, which went green and came back as ITMS-90158 for a
+     placeholder URL scheme — the one class of failure nothing in this
+     repository can watch happen.
+
+     NONE OF OUR OWN SWIFT REACHES FOR ONE. Measured, not assumed: the four
+     files under ios/App/App, the six under LinguaKeyboard and the eight under
+     LinguaWidget name no UserDefaults, no file timestamp, no boot time, no
+     disk space and no active-keyboard API. The App Group is reached by
+     FileManager.containerURL and read as a file, which is on none of Apple's
+     lists.
+
+     IT IS A POD THAT REACHES FOR ONE. @capgo/capacitor-social-login is
+     compiled into the App binary (the Podfile's capacitor_pods, target 'App')
+     and keeps the signed-in name in UserDefaults.standard — AppleProvider
+     writes it on sign-in and reads it back, and three more of its providers do
+     the same with their own keys. That pod ships NO privacy manifest of its
+     own, which is what makes the gap easy to miss: Capacitor's two pods DO
+     ship one, so the folder looks covered.
+
+       find node_modules/@capgo/capacitor-social-login -iname '*.xcprivacy'   0
+       find node_modules/@capacitor/ios               -iname '*.xcprivacy'   2
+
+     So the declaration has nowhere else to live and has to be the app's own.
+     `assets-check` derives that requirement rather than restating it: it
+     re-reads the pods on every run, and if this pod ever ships its own
+     manifest, or a new pod reaches for a category not declared here, the
+     check says so.
+
+     WHAT THIS CANNOT SEE. GoogleSignIn and Alamofire arrive through
+     CocoaPods on the build machine, not through node_modules, so nothing in
+     this repository can read them. Each carries its own manifest and that is
+     its vendor's to keep; if Apple's mail ever names one of those, it is
+     answered by moving that pod's version, not by adding a line here.
+
+     CA92.1 is Apple's reason for reading and writing preferences that only
+     this app can see. That is what the pod does: it writes under
+     UserDefaults.standard, which no other app can read, and reads its own
+     keys back. It is not 1C8F.1 — nothing here puts a preference in an App
+     Group — and not C56D.1, which is the reason an SDK declares in its OWN
+     manifest rather than one an app declares on an SDK's behalf.
+
+     NSPrivacyTracking IS false AND THAT IS A MEASUREMENT. The Facebook
+     provider is the only file in that pod that names AppTrackingTransparency,
+     and its whole class sits inside `#if canImport(FBSDKLoginKit)`; facebook
+     is false in capacitor.config.json, so the plugin's own sync hook comments
+     the FBSDK pods out of its podspec and that class is never compiled. No
+     other line under ios/ or node_modules names ATTrackingManager or the
+     advertising identifier.
+
+     NSPrivacyCollectedDataTypes IS DELIBERATELY ABSENT, and absent is not the
+     same as empty. An empty array is a claim that this app collects nothing,
+     which is untrue: it holds an address, a handle, a name, a line somebody
+     wrote about themselves, photographs, a voice, what people searched for
+     and what they wrote. Where that is answered is App Store Connect's
+     privacy questionnaire — the owner's screen, listed item by item in
+     docs/apple.md § 5. Answering it here as well would be the same list in
+     two places, free to drift, which is what this repository calls one place
+     not fifteen.
+
+     A FILE ON DISK IS NOT A FILE IN THE APP. It has to be in the App target's
+     Resources build phase, exactly the way a .swift has to be in Sources —
+     Compose.swift was written, committed, pushed, left out of the Sources
+     phase, and the build failed naming a missing TYPE rather than a missing
+     file. This one is worse: leaving it out of Resources fails nothing at
+     all. The archive is green, the upload is green, and the mail arrives an
+     hour later. `assets-check` holds both halves. -->
+<plist version="1.0">
+<dict>
+	<key>NSPrivacyTracking</key>
+	<false/>
+	<key>NSPrivacyTrackingDomains</key>
+	<array/>
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>CA92.1</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>
