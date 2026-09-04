@@ -1043,6 +1043,35 @@ function postSid(p, sid){
    Nothing is removed, nothing is rewritten, and a post that fails is simply
    one that still has no `sid` -- so the next pull tries it again. A post kept
    to yourself never goes, which is the same door pwSendWith() uses. */
+/* ---- ONE POST, ONE SEND AT A TIME --------------------------------------
+   Which posts are on the wire right now, by this phone's own name for them.
+
+   `sid` is the only thing that says 「this one has gone」 and it is not
+   written until the ROW lands -- and the row is the last thing to go, after
+   every photograph and the voice, one file at a time. So on a slow wire the
+   same post was sent again inside that window, under a new id (netPush()
+   makes one per call), and it arrived twice: on the writer's timeline and on
+   everybody else's, to be deleted one at a time.
+   「同じ投稿が二つ、三つと並びます」 docs/RISK.md § 5.
+
+   It is in memory and it is NOT on the post. A mark that is saved is a mark
+   that survives the app being killed halfway through a send, and the post
+   would then never be sent again -- which is worse than the fault it is
+   fixing. Killed, this phone holds a post with no `sid`, which is exactly
+   the state postCatchUp() exists for.
+
+   BOTH ROADS OUT OF THE COMPOSER COME THROUGH HERE, and that is the whole of
+   why it is a function rather than a line in postCatchUp(). The press
+   (pwSendWith) was half of the window: somebody sends, and a timeline answer
+   lands while the photographs are still going up. */
+var POST_SENDING={};
+function postSend(p, ok, bad){
+  var id=p && p.id;
+  if(!id || POST_SENDING[id]) return;
+  POST_SENDING[id]=1;
+  netPush(p, function(sid){ delete POST_SENDING[id]; ok(sid); },
+             function(d, s){ delete POST_SENDING[id]; bad(d, s); });
+}
 var POST_CATCH=4;
 function postCatchUp(){
   var i, n=0, ps;
@@ -1050,10 +1079,14 @@ function postCatchUp(){
   ps=POSTS.slice().sort(function(a, b){ return (a.at||0)-(b.at||0); });
   for(i=0;i<ps.length && n<POST_CATCH;i++){
     if(ps[i].sid || ps[i].pv || !ps[i].mine) continue;
+    /* Already on the wire. Read here as well as refused in postSend() so an
+       in-flight post does not eat one of the four -- postSend() is what owns
+       the answer; this is one of the places that ask it. */
+    if(POST_SENDING[ps[i].id]) continue;
     n++;
     /* The closure is the post, so a slow answer lands on the right one. */
     (function(p){
-      netPush(p, function(sid){ postSid(p, sid); }, function(){});
+      postSend(p, function(sid){ postSid(p, sid); }, function(){});
     })(ps[i]);
   }
 }
@@ -1510,8 +1543,11 @@ function pwSendWith(ln, pics, vo){
      Here and not in postCatchUp(): this is the moment somebody pressed the
      button, so this is the moment they are owed an answer. The retries
      happen behind a timeline being read and must stay quiet. */
+  /* postSend() and not netPush(): the press is one of the two roads a post
+     goes up by, and both have to be behind the same one-send-at-a-time mark
+     or the window is still open from this side. */
   if(!mine.pv)
-    netPush(mine, function(sid){ postSid(mine, sid); },
+    postSend(mine, function(sid){ postSid(mine, sid); },
             /* The toast and nothing else. Nothing on the screen changed: the
                post has been drawn as not-sent since the moment it was
                written, and it still is. A render() here would be the answer
