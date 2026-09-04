@@ -190,11 +190,32 @@ for (const key of dangling) {
 // ------------------------------------------------- a baseline that outlived
 
 /* Same as `box-check`: a line allowing something that no longer happens is a
-   hole nobody can see. Taking it out is the progress. */
+   hole nobody can see. Taking it out is the progress.
+
+   And it SAYS WHICH of the two happened. "That is not true any more" is true
+   of a document that got put on the map and equally of one that was deleted,
+   and those want opposite things done next: the first is finished, the second
+   may be a page somebody wanted. The first version of this said only the
+   sentence, and the first time it fired it was read as the first case when it
+   could as easily have been the second. A check that leaves the reader to
+   guess the cause is a check that gets guessed at. */
 for (const key of allowed) {
   if (used.has(key)) continue
+  let why = 'and that is not true any more'
+  if (key.startsWith('orphan ')) {
+    const path = key.slice(7).trim()
+    if (!tracked.has(path)) why = 'and THE DOCUMENT IS GONE -- nothing to be lost any more'
+    else if (isRecord(path)) why = 'and the document has moved into a record folder, which this check does not hold'
+    else why = 'and SOMETHING REACHES IT NOW -- it is on the map'
+  } else if (key.startsWith('dangling ')) {
+    const [c, target] = key.slice(9).split(' -> ').map((x) => x.trim())
+    if (!tracked.has(c)) why = `and ${c} IS GONE, so it names nothing`
+    else if (!reached.has(c)) why = `and ${c} is no longer reachable itself, so what it names is nobody's wrong turn`
+    else if (tracked.has(target)) why = `and ${target} EXISTS NOW`
+    else why = `and ${c} no longer names ${target}`
+  }
   note(
-    `tools/docs-baseline.txt allows "${key}" and that is not true any more —\n` +
+    `tools/docs-baseline.txt allows "${key}" ${why} —\n` +
       `      delete the line. A baseline that outlives what it allowed is a hole\n` +
       `      the next one falls through.`
   )
