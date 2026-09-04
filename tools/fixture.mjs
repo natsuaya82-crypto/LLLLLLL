@@ -1102,6 +1102,37 @@ export function halfDone(){
         snsHits = { q:'iri', who:[], posts:[], bad:t('net.offline') };
         window.route='explore'; NAV=[{r:'explore'}];
         const h = vExplore(); snsQ = ''; snsHits = null; return h; }],
+    /* ---- THE DAY'S TAG ------------------------------------------------
+       「タグとお題一本化してってこと。」 OWNER 2026-09-04. The tag's words
+       are the prompt's own, so a face of it needs `DAY` -- which is null in
+       every walk, because nothing here has a network. Three faces, because
+       the row, the timeline it turns into, and the answer it puts in the
+       search are three different screens and only one of them draws the row
+       that presses it. */
+    ['the filter, with the day\'s tag', () => {
+        DAY = { id: 7, on_day: '2026-08-23', text: 'It is unbearably hot today.',
+                says: { en: 'It is unbearably hot today.',
+                        ja: '今日はめちゃくちゃ暑い。' } };
+        window.route='filter'; NAV=[{r:'feed'},{r:'filter'}];
+        const h = vFilter(); DAY = null; return h; }],
+    /* And the same row with the tick on it, which is the state nobody
+       photographs and is therefore the one that is wrong. */
+    ['the filter, standing on the day\'s tag', () => {
+        DAY = { id: 7, on_day: '2026-08-23', text: 'It is unbearably hot today.',
+                says: { en: 'It is unbearably hot today.',
+                        ja: '今日はめちゃくちゃ暑い。' } };
+        snsFil = { pr:'7', r:{ q:'7', posts:POSTS.slice(0, 2) } };
+        window.route='filter'; NAV=[{r:'feed'},{r:'filter'}];
+        const h = vFilter(); snsFil = null; DAY = null; return h; }],
+    /* The timeline itself, filtered to that prompt: the corner of the bar
+       says the tag, and the rows are the answers to it. */
+    ['the timeline, filtered to the day\'s tag', () => {
+        DAY = { id: 7, on_day: '2026-08-23', text: 'It is unbearably hot today.',
+                says: { en: 'It is unbearably hot today.',
+                        ja: '今日はめちゃくちゃ暑い。' } };
+        snsFil = { pr:'7', r:{ q:'7', posts:POSTS.slice(0, 2) } };
+        window.route='feed'; NAV=[{r:'feed'}];
+        const h = vFeed(); snsFil = null; DAY = null; return h; }],
     /* The badge, which only exists on a paid plan -- so a walk on the free
        plan never draws one, and free is what these walks run on. Both plans,
        and both places it shows: beside a name on a profile and beside a name

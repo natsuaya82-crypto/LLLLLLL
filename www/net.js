@@ -2321,6 +2321,38 @@ function netFindPosts(q, ok, bad, more){
       ok(out);
     }, bad);
 }
+/* EVERY ANSWER TO ONE DAY'S PROMPT, AND IT IS ASKED OF THE COLUMN.
+   -------------------------------------------------------------------------
+   「タグとお題一本化してってこと。」 OWNER 2026-09-04. The tag on a post is
+   the prompt it answers, so what a tag COLLECTS is every post carrying that
+   prompt -- and `prompt` is a column with an index behind it (schema.sql
+   § asked, OWNER DECISION 2026-08-23 #6 「繋がりはハッシュタグではなく列」).
+
+   NOT netFindPosts(). That one matches `body->>ln/mn/lname` as text, and a
+   prompt asked for as text splits into as many answers as there are
+   languages -- which is the one thing this decision exists to prevent: a
+   post written in Japanese and a post written in English answer the same
+   day's sentence and belong in the same list. The tag is one tag with ten
+   ways of saying it, not ten tags.
+
+   Same shape and same reader as netFindPosts() and netFeed(): `post_seen`
+   and netRow(), so what comes back is a post like any other. `more` is the
+   `at` of the last row already held, keyset for the reason every other list
+   here is. */
+function netFindPrompt(id, ok, bad, more){
+  var pr=String(id||'');
+  if(!pr){ ok([]); return; }
+  netGet('/rest/v1/post_seen?select=id,author,created_at,reply_to,body,hidden_at,author_out'+
+         '&prompt=eq.'+encodeURIComponent(pr)+
+         '&order=created_at.desc'+
+         (more? '&created_at=lt.'+encodeURIComponent(String(more)) : '')+
+         '&limit='+NET_PAGE,
+    function(d){
+      var out=[], i;
+      for(i=0;i<(d||[]).length;i++) out.push(netRow(d[i]));
+      ok(out);
+    }, bad);
+}
 /* ---- what somebody looks for, kept -------------------------------------
 
    A starred search. 「SNSは全部サーバー」 OWNER -- what a person keeps is
