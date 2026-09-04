@@ -481,9 +481,12 @@ function impGetHTML(){
    filled panel with a hairline round it and a corner on it -- the shape
    CLAUDE.md's fifth rule is about -- and the comment over `.shfile` in
    index.html has named this button as the one still wearing it since the
-   sheet's own file control was moved off it. `.impfile` is what lays the
-   native control over the words, and that is all it is for now: a file input
-   cannot be styled and a hidden one cannot be pressed. */
+   sheet's own file control was moved off it. `.impfile` is the shape of this
+   control on BOTH plans -- block, the width of the screen, its words in the
+   middle -- and, on the paid one, what lays the native control over those
+   words: a file input cannot be styled and a hidden one cannot be pressed.
+   Only the second half is the paid face's, which is what `.impfile input`
+   says in index.html. */
 function impFileHTML(){
   /* THE SAME BUTTON ON EVERY PLAN, WITH THE SAME WORDS ON IT.
      「できないことは、有料と同じ画面に同じ形で出す。押したら有料へ」 OWNER
