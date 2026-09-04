@@ -249,6 +249,67 @@ create table if not exists slice (
 );
 create index if not exists slice_language_idx on slice(language);
 
+-- ---- and what a slice USED TO SAY ---------------------------------------
+-- 「あとバグとかで人のデータが消えた時に運営側で復旧できる要素が欲しい」
+-- 「バグが多すぎて、セーフティーネットを作らないと炎上するだろ」 OWNER 2026-09-03.
+--
+-- `slice` above is ONE row per (language, kind) and the phone upserts it, so
+-- the server held exactly one version of somebody's dictionary and every write
+-- destroyed the one before it. There was nowhere to go back to, on the server,
+-- for the thing that takes months to make.
+--
+-- And there is a way for a bug to write over it. syMerge() in www/sync.js
+-- returns the PHONE's copy when either side will not parse as JSON, and
+-- netLangSync1() hands that straight to netSlicePut() -- so one slice going
+-- bad in localStorage replaces a good one here, and the good one is gone.
+-- docs/RECOVERY.md § 三 is where that was traced.
+--
+-- So the version being replaced is written down here first. One row per
+-- overwrite, put in by slice_keep() below and by nothing else.
+--
+-- THIS IS FOR WHAT A BUG TOOK AND FOR NOTHING ELSE.
+-- 「復旧は自分で消した時じゃなくてバグで消えた時の話な」 OWNER 2026-09-03.
+-- So there is a trigger on UPDATE and there is none on DELETE, and the foreign
+-- key CASCADES: a language that is deleted takes its own past with it, and an
+-- account that is deleted takes every language it had, because language.owner
+-- cascades from auth.users and account_delete() deletes that row.
+-- 「アカウント削除で残るものねえ」 is still true with this table in the file.
+--
+-- `body` is text and holds the whole of the old string, for the same reason
+-- slice.body is text: it is exactly what localStorage held, and a copy that had
+-- been reshaped on the way in would not be the thing that was lost.
+--
+-- HOW LONG THESE ARE KEPT IS NOT DECIDED, AND NOTHING HERE REMOVES THEM.
+-- The owner has not answered it yet. Automatic deletion, pruning and cleanup
+-- are forbidden without a written spec (docs/DATA_SAFETY.md), so there is no
+-- sweeper, no interval and no ceiling anywhere in this file. Adding one is a
+-- separate piece of work and it starts with a DELETE REVIEW.
+create table if not exists slice_past (
+  id       bigint generated always as identity primary key,
+  language uuid not null references language(id) on delete cascade,
+  kind     text not null,
+  body     text not null,
+  -- The replaced row's own two, copied across unchanged.
+  --
+  -- `no` is the version number that body was written under, and it is what
+  -- says which of two rows here came second: slice.no goes up by one on every
+  -- write and the server is what raises it.
+  --
+  -- `at` came off a PHONE -- netSlicePut() puts new Date() in it -- so it is
+  -- somebody's clock and may say anything at all. It is kept because it is
+  -- part of the row that was replaced, and it is not what anything sorts by.
+  no       bigint not null,
+  at       timestamptz not null,
+  -- This server's own clock, at the moment the old version was moved here.
+  -- THIS is the one to read and to sort by. docs/DATA_SAFETY.md § the save
+  -- counter is the same argument from the other end: a phone whose date is
+  -- wrong wins every argument forever and nobody finds out why.
+  kept_at  timestamptz not null default now()
+);
+-- What the investigating is: one person's one slice, newest first.
+create index if not exists slice_past_slice_idx
+  on slice_past(language, kind, kept_at desc);
+
 -- The record that settles arguments without anybody having to judge one.
 -- Append only: no update policy and no delete policy exist for this table, so
 -- a row cannot be altered by anyone through the API, including its author.
@@ -834,6 +895,75 @@ drop policy if exists slice_drop on slice;
 create policy slice_drop on slice for delete
   using (is_member() and exists (select 1 from language l
                   where l.id = language and l.owner = auth.uid()));
+
+-- slice_past: the whole of the keeping, and who may look at what was kept.
+--
+-- BEFORE UPDATE, so the row that is about to be replaced is written down while
+-- it still exists. It fires on the phone's upsert too: PostgREST sends
+-- `Prefer: resolution=merge-duplicates`, which is INSERT ... ON CONFLICT DO
+-- UPDATE, and the UPDATE half of that fires row triggers like any other. The
+-- first write of a slice is an INSERT and keeps nothing, which is right --
+-- there was nothing there to lose.
+--
+-- THE GUARD IS THE VALUE AND NOT THE STATEMENT. `before update of body` would
+-- ask whether the write MENTIONED the column, and the phone mentions it every
+-- time; this asks whether the string is actually different. A launch that sends
+-- the same body back lost nothing, so there is nothing to keep. www/net.js
+-- already stops before sending an identical one, and the server does not get to
+-- assume that it always will.
+--
+-- `security definer` because slice_past has row level security on and NO
+-- insert policy at all -- nobody may write it through the API -- so this is the
+-- one thing that can. It reads nothing, asks nothing and decides nothing: it
+-- copies OLD into the table beside it, which is why the definer rights are not
+-- a way in. Same sentence as admin_counts(), reached from the other side.
+create or replace function slice_keep() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if new.body is not distinct from old.body then
+    return new;
+  end if;
+  insert into slice_past(language, kind, body, no, at)
+       values (old.language, old.kind, old.body, old.no, old.at);
+  return new;
+end $$;
+drop trigger if exists slice_keep on slice;
+create trigger slice_keep before update on slice
+  for each row execute function slice_keep();
+
+alter table slice_past enable row level security;
+
+-- The person whose language it is, and the one above staff. NOBODY ELSE, at
+-- any setting.
+--
+-- Publishing opens the five slices the About page is drawn from and slice_read
+-- above says which -- and it says nothing whatever about what those slices USED
+-- to hold. Somebody's alphabet as it was three weeks ago, or the dictionary
+-- they have since taken half of the words out of, is not part of a page. The
+-- worst thing this table could become is a way to read the history of a
+-- language that its owner never handed over, so the read is narrower than
+-- slice_read and not wider: `published_at` is not asked here at all.
+--
+-- is_admin(), which is 「＠linguaのアカウントだけ管理者ページには入れる」 and
+-- is the same question admin_counts() and staff_add() ask. Not a new one:
+-- there is one way of saying who runs this and it is the handle.
+--
+-- Staff are NOT in it. Whoever answers reports reads reports; this is somebody
+-- else's unpublished work, and it is the other screen -- the same line
+-- admin_counts() is drawn on.
+--
+-- AND THERE IS NO INSERT, UPDATE OR DELETE POLICY. They are missing on purpose
+-- and that is what makes this a record rather than a claim -- the same
+-- sentence `publication` is under, just below. The trigger above is the
+-- only thing that ever writes a row, and nothing anywhere alters or removes
+-- one.
+drop policy if exists slice_past_read on slice_past;
+create policy slice_past_read on slice_past for select
+  using (
+    is_admin()
+    or exists (select 1 from language l
+                where l.id = language and l.owner = auth.uid())
+  );
 
 -- publication: everyone reads the record. Anyone may add to it about their own
 -- language. NOBODY updates or deletes it -- those policies do not exist, which

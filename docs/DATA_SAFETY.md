@@ -8,6 +8,10 @@ and the file in `Documents` is the backup. Three places, and this file is about
 what happens when the first two are not there. Losing somebody's language is not
 a degraded experience; it is the end of months of their work.
 
+**And the server now keeps what a slice used to say** — § what a slice used to
+say, below. That is the fourth place and it is the only one this side can reach:
+the other three are on a phone we cannot open.
+
 ## The four ways it can go
 
 Three of these four are ordinary events, not disasters:
@@ -75,6 +79,66 @@ down all five before writing any code — see the DELETE REVIEW below.
 See `docs/PAID_FEATURES.md`. Keeping somebody's language is not a paid feature,
 because charging for it means answering, on the day it is lost, whether they
 had paid.
+
+## What a slice used to say
+
+「あとバグとかで人のデータが消えた時に運営側で復旧できる要素が欲しい」
+「バグが多すぎて、セーフティーネットを作らないと炎上するだろ」 OWNER 2026-09-03.
+
+The five rules above are all on the phone, and every one of them is about a
+write that has not happened yet. None of them helps on the day somebody says
+「単語が全部消えた」 about a phone nobody here is holding. The server held one
+version of a slice and the phone upserted over it, so a bug that wrote a bad
+`body` once destroyed the only copy there was — and there was no road from here
+to what it had said the moment before.
+
+**`slice_past` is that road.** `supabase/schema.sql` § what a slice USED to say:
+a BEFORE UPDATE trigger on `slice` writes the version being replaced into a
+table of its own, one row per overwrite, and only when the body actually
+changes. **Nothing in `www/` changed.**
+
+Five things about it, and each is a rule rather than a description:
+
+**It is for what a BUG took.** 「復旧は自分で消した時じゃなくてバグで消えた時の
+話な」 OWNER 2026-09-03. There is a trigger on UPDATE and none on DELETE, and the
+foreign key cascades — a language somebody deletes takes its own past with it,
+and an account that is deleted takes every language it had.
+「アカウント削除で残るものねえ」 is still true with this table in the file.
+
+**Only the person and the one above staff may read it.** `is_admin()`, which is
+the handle, and not a second way of saying who runs this. Publishing a language
+opens the five slices the About page is drawn from and says nothing whatever
+about what those slices used to hold — the read on `slice_past` does not ask
+`published_at` at all. Somebody's alphabet as it was three weeks ago is not part
+of a page, and staff do not read it either.
+
+**Nobody writes it, including the person whose language it is.** There is no
+insert, update or delete policy on the table. They are missing on purpose, the
+same way `publication`'s are: a past that can be edited is not a past, and a
+past that can be deleted is this hole dug again from the inside.
+
+**A restore is itself kept.** Putting an old version back is an ordinary write,
+so the body it replaced — the broken one — is kept too, and a restore onto the
+wrong version is undone by the same five steps that did it.
+
+**How long these are kept is NOT DECIDED, and nothing removes them.** The owner
+has not answered it. So there is no sweeper, no interval and no ceiling
+anywhere: automatic deletion, pruning and cleanup are forbidden without a
+written spec — the DELETE REVIEW at the foot of this file — and this table is
+not an exception to that rule. `npm run rls` holds it — one of its claims is that nothing in `schema.sql`
+deletes from this table — and **the day a retention is decided, that line is
+what has to be taken out on purpose, with a DELETE REVIEW beside it.**
+
+What it does not reach: a language that was never uploaded, anything deleted on
+purpose, posts, drafts, the bytes in the bucket, and the twenty settings fields
+that have no road to the server at all. `docs/RECOVERY.md` § 四 is the whole
+list, and `supabase/setup.md` § 11 is how somebody actually looks and puts one
+back.
+
+**And it does not stop the overwrite.** The bad write still lands; what changed
+is that the good one is still somewhere. If the broken copy is on the phone,
+`syMerge()` will send it up again after a restore — `docs/RECOVERY.md` § 三 1 —
+and that is an app-side fault this table only makes visible.
 
 ## A shorter list is not a deletion, and the difference has to be said out loud
 

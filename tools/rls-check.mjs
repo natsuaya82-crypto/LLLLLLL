@@ -424,8 +424,114 @@ const CASES = [
     `insert into slice(language,kind,body) values ('${L}','lines','[]')`],
   ['nor rewrite the article it can read',     'denied', B, 0,
     `update slice set body='{}' where language='${L}' and kind='wld'`],
-  ['nor delete it',                           'denied', B, 0,
+  ['nor delete it',                            'denied', B, 0,
     `delete from slice where language='${L}' and kind='wld'`],
+
+  /* --- and what a slice USED to say -------------------------------------
+     「あとバグとかで人のデータが消えた時に運営側で復旧できる要素が欲しい」
+     OWNER 2026-09-03. `slice` is one row per (language, kind) and the phone
+     upserts it, so every write destroyed the version before it and a bug that
+     wrote rubbish once took the only copy on the server with it. slice_past
+     is where the replaced version goes, and the whole of what has to hold
+     about it is WHO MAY SEE IT: this is somebody's unpublished work as it was
+     last week, which is the thing they would least expect a stranger to be
+     holding.
+
+     A wrote over LD's dictionary a few lines above -- '[1]' became '[1,2]' --
+     so there is a real row here rather than a select over an empty table. */
+  ['what A wrote over is still there',         'ok',     A, 0,
+    `select 1 from slice_past where language='${LD}' and kind='words' and body='[1]'`],
+  ['B cannot read it',                         'denied', B, 0,
+    `select 1 from slice_past where language='${LD}'`],
+  ['nor can somebody with no account at all',  'denied', B, 1,
+    `select 1 from slice_past where language='${LD}'`],
+  /* AND IT NEEDS A REAL ROW TO BE ASKED OF. L is published and B may read five
+     of its slices, but A has only ever INSERTED them, so until one is written
+     over there is no past of L at all and the two attempts below are selects
+     over an empty table -- which is the exact shape this file exists to catch,
+     and which they were until this write was put in front of them. */
+  ['A rewrites the published article',         'ok',     A, 0,
+    `update slice set body='{"where":"a wider valley"}', no=2
+      where language='${L}' and kind='wld'`],
+  ['and the version before it is kept',        'ok',     A, 0,
+    `select 1 from slice_past where language='${L}' and kind='wld'
+        and body='{"where":"a valley"}'`],
+  /* AND PUBLISHING SAYS NOTHING ABOUT IT. L is published by this point and B
+     may read five of its slices; what those slices used to hold is not the
+     page and is not open at any setting. The read on slice_past does not ask
+     `published_at` at all, and this is the attempt that would find out if it
+     ever started to. */
+  ['nor the past of a page B is allowed to read', 'denied', B, 0,
+    `select 1 from slice_past where language='${L}'`],
+  ['nor that one with no account either',      'denied', B, 1,
+    `select 1 from slice_past where language='${L}'`],
+  /* Nobody writes this table through the API, including the person whose
+     language it is. There is no insert, update or delete policy on it -- the
+     same sentence `publication` is under -- and a past somebody can edit is
+     not a past. A's attempts are the ones that matter: B's are refused by the
+     read before the missing policy is ever reached. */
+  ['B cannot plant a version',                 'denied', B, 0,
+    `insert into slice_past(language,kind,body,no,at) values ('${LD}','words','[9]',9,now())`],
+  ['nor can A, whose language it is',          'denied', A, 0,
+    `insert into slice_past(language,kind,body,no,at) values ('${LD}','words','[9]',9,now())`],
+  ['nor can A rewrite what was kept',          'denied', A, 0,
+    `update slice_past set body='[9]' where language='${LD}'`],
+  ['nor delete their own past',                'denied', A, 0,
+    `delete from slice_past where language='${LD}'`],
+
+  /* THE ONE THIS TABLE WAS MADE FOR, done the way the app does it.
+     -------------------------------------------------------------------
+     PostgREST sends `Prefer: resolution=merge-duplicates`, which is INSERT ...
+     ON CONFLICT DO UPDATE, so this is netSlicePut()'s statement and not a
+     tidier one. If the trigger did not fire on that shape the whole thing
+     would keep nothing on any real write, and every attempt above would still
+     pass -- they are about a row an ordinary UPDATE put there. */
+  ['a bug wipes A’s dictionary the way the phone writes', 'ok', A, 0,
+    `insert into slice(language,kind,body,no,at) values ('${LD}','words','',3,now())
+       on conflict (language,kind) do update
+       set body=excluded.body, no=excluded.no, at=excluded.at`],
+  ['and what it said the moment before is kept', 'ok',   A, 0,
+    `select 1 from slice_past where language='${LD}' and kind='words' and body='[1,2]'`],
+  /* And the one person who is meant to be able to look. is_admin(), which is
+     the handle -- 「＠linguaのアカウントだけ管理者ページには入れる」 -- and not
+     a second way of saying who runs this. */
+  ['the one above staff can read it',          'ok',     E, 0,
+    `select 1 from slice_past where language='${LD}' and kind='words' and body='[1,2]'`],
+  /* And staff cannot. Whoever answers reports answers reports; this is
+     somebody else's unpublished language, which is the other screen. */
+  ['staff cannot',                             'denied', C, 0,
+    `select 1 from slice_past where language='${LD}'`],
+  /* A write that changes nothing is not a version. The guard is the VALUE and
+     not the statement -- the phone names `body` in every write it sends -- so
+     the same string arriving twice has to leave nothing behind. */
+  ['the same empty body is sent again',        'ok',     A, 0,
+    `insert into slice(language,kind,body,no,at) values ('${LD}','words','',4,now())
+       on conflict (language,kind) do update
+       set body=excluded.body, no=excluded.no, at=excluded.at`],
+  ['and nothing was kept for it',              'denied', A, 0,
+    `select 1 from slice_past where language='${LD}' and kind='words' and body=''`],
+
+  /* AND THE WAY BACK, which is the statement in supabase/setup.md § 11 with
+     the id filled in. Run here as the owner of the language rather than from
+     the dashboard, because what has to hold is that it lands in the row it
+     came out of: the `from slice_past p ... and s.language=p.language and
+     s.kind=p.kind` is what makes a wrong number a no-op instead of a second
+     person's dictionary being written over. */
+  ['the version comes back',                   'ok',     A, 0,
+    `update slice s set body=p.body, no=s.no+1, at=now()
+       from slice_past p
+      where p.id=(select max(id) from slice_past
+                   where language='${LD}' and kind='words' and body='[1,2]')
+        and s.language=p.language and s.kind=p.kind
+      returning s.language, s.kind, length(s.body)`],
+  ['and the dictionary says what it said',     'ok',     A, 0,
+    `select 1 from slice where language='${LD}' and kind='words' and body='[1,2]'`],
+  /* And the restore is itself kept, so putting the wrong version back is
+     undone the same way it was done. The line above asked for this exact row
+     and was refused; it is here now because the restore is a write like any
+     other. */
+  ['and the empty one it replaced is kept too', 'ok',    A, 0,
+    `select 1 from slice_past where language='${LD}' and kind='words' and body=''`],
 
   /* --- the record that settles arguments without anybody judging one --- */
   ['A records publishing A\u2019s language',  'ok',     A, 0,
@@ -1475,7 +1581,49 @@ const SHAPE = [
        where not exists (select 1 from pg_policies p
                           where p.tablename='draft' and p.cmd=v.cmd
                             and coalesce(p.qual,'') || coalesce(p.with_check,'')
-                                like '%auth.uid()%')) q`, '0']
+                                like '%auth.uid()%')) q`, '0'],
+  /* ---- what a slice used to say ----------------------------------------
+     The keeping is a TRIGGER, and a trigger that is not there fails silently
+     and completely: every write goes on working, every screen is right, and
+     the day somebody's language is wiped there is nothing behind it. No
+     attempt in the list above can tell the difference between "the trigger
+     kept the old version" and "somebody happened to write that row", so this
+     asks the catalog whether the thing exists at all. */
+  ['what a slice used to say is kept by a trigger', `
+     select count(*) from (select 1 where not exists (
+       select 1 from pg_trigger t join pg_class c on c.oid = t.tgrelid
+        where c.relname='slice' and t.tgname='slice_keep'
+          and not t.tgisinternal and t.tgenabled <> 'D'
+     )) q`, '0'],
+  /* And it is the one thing that may write that table: slice_past has row
+     level security on and no insert policy, so a trigger that lost its definer
+     rights would start throwing on every save somebody makes. */
+  ['and writes it with rights nobody else has', `
+     select count(*) from (select 1 where
+       (select count(*) from pg_proc
+         where proname='slice_keep' and prosecdef) <> 1) q`, '0'],
+  /* The three policies that are missing on purpose. A past that can be edited
+     is not a past, and a past that can be deleted is the hole this table was
+     made to fill, dug again from the inside. */
+  ['and it is never written through the API', `
+     select count(*) from pg_policies
+      where tablename='slice_past' and cmd in ('INSERT','UPDATE','DELETE')`, '0'],
+  /* AND NOTHING SWEEPS IT. 「残す期間は決まっていません」 -- the owner has not
+     answered how long these are kept, and until they do, automatic deletion is
+     forbidden (docs/DATA_SAFETY.md). This is what says so where somebody would
+     otherwise add an interval quietly, inside a function, where no attempt
+     above would ever see it. The day a retention IS decided, this line is what
+     has to be taken out on purpose, with a DELETE REVIEW beside it. */
+  ['and nothing in this file deletes from it', `
+     select count(*) from pg_proc
+      where prosrc ilike '%delete from slice_past%'`, '0'],
+  /* And what somebody DELETES is deleted. 「復旧は自分で消した時じゃなくて
+     バグで消えた時の話な」 -- the line this whole table had to stay on the
+     right side of. A asked to be deleted in the last attempt above, so this is
+     asked by looking, as the owner of the table, after it happened: LD was
+     A's language and its past is not sitting here outliving them. */
+  ['and A’s past went when A did', `
+     select count(*) from slice_past where language='${LD}'`, '0']
 ];
 
 /* ---- a PostgreSQL to throw away ----------------------------------------- */
