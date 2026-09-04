@@ -73,7 +73,10 @@ on is a check that gets skipped.
 `tools/docs-baseline.txt` holds what was already lost the day it was written.
 **A NEW one fails. Taking a line out is progress and needs nobody**, and a
 line that is no longer true fails too — a baseline that outlives what it
-allowed is a hole the next one falls through.
+allowed is a hole the next one falls through. That failure **says which of
+the two happened**: the document went on the map, or the document was
+deleted. They read identically and want opposite things done next, and the
+first time it fired the cause was read off as the wrong one of the two.
 
 ### Who runs it, when more than one of you is in the tree
 
