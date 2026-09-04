@@ -1018,14 +1018,17 @@ function vPhoto(){
    on the contents page, because it searches what is on that page.
    「snsの探すと横断検索は別物ね」
 
-   One field. `@` was the switch -- a query starting with it looked for a
-   person and anything else looked for a post 「@でユーザー検索」 -- and it is
-   not any more: `snsMode` is, and it starts on people and goes back to people
-   the moment anybody types 「それまでは人」. This paragraph went on saying the
-   old thing after the switch moved, which is how the `@` came to be typed
-   straight through to the server as part of the handle being looked for.
+   One field, and ONE ANSWER WITH EVERYTHING IN IT.
+   「検索も#@投稿が一気に検索できるようにして」 OWNER 2026-09-04.
+
+   `@` was the switch -- a query starting with it looked for a person and
+   anything else looked for a post 「@でユーザー検索」 -- and then `snsMode`
+   was, and now nothing is: both are asked for, every time, and the answer
+   carries both. There is nothing to choose and nothing to press first.
+
    What `@` means now is only what it looks like: it is dropped off the front
-   of a name, because that is where people put it.
+   of a name, because that is where people put it. It does not decide
+   anything any more.
 
    SNS_SEAM. A search is a QUESTION ASKED OF SOMEWHERE ELSE, and it is built
    as one: snsFind(q, done) hands back an answer through a callback, the way
@@ -1044,16 +1047,21 @@ function vPhoto(){
    is no second shape for a person anywhere in this app, and there must not
    be: a post is signed with exactly these, so the search and the timeline are
    describing the same thing. */
-/* `snsMode` is which of the two the search is about -- people, or posts. It
-   starts on people and goes back to people the moment anybody types.
-   「それまでは人」 */
-var snsQ='', snsHits=null, snsMode='who', snsSort='new';
+/* ONE BOX, ONE ANSWER, AND NOTHING TO PRESS FIRST.
+   「検索も#@投稿が一気に検索できるようにして」 OWNER 2026-09-04.
+
+   `snsMode` is gone with that sentence. It was which of two things the search
+   was about -- people while you typed, posts once you pressed -- and it is
+   the shape the owner has just replaced: there is one question now and its
+   answer has people and posts in it together.
+
+   **This supersedes 2026-08-26** 「ツイートの検索は検索ボタン押したら
+   出てくる。それまでは人」. That decision made typing mean one thing and
+   pressing mean another; this one makes them the same thing. The 🔍 and the
+   return key still have a job and it is the history -- snsGo() below. */
+var snsQ='', snsHits=null, snsSort='new';
 function snsSetQ(v){
   snsQ=String(v||'');
-  /* Typing is looking for somebody again. A query that answered with posts
-     and then went on answering with posts as the next name was typed would
-     be a screen that changed what it was about and never changed back. */
-  snsMode='who';
   lnGrow('sns-q');
   snsFind(snsQ, snsGot);
   var x=document.getElementById('sns-x');
@@ -1069,14 +1077,14 @@ function snsGot(r){
   if(e) e.innerHTML=snsHitsHTML();
   postFaces(); postLines();
 }
-function snsClearQ(){ snsQ=''; snsHits=null; snsMode='who'; render(); }
+function snsClearQ(){ snsQ=''; snsHits=null; render(); }
 /* SNS_SEAM — ask for what matches `q` and call done() with
    { q: <the query it answers>, who: [person, …], posts: [post, …] }.
    `q` comes back on the answer so a late one can be thrown away.
 
-   The two lists are exclusive by the `@`: a query for a person asks for
-   people and gets no posts, and the other way round. That is the server's
-   business too -- it is cheaper to ask for one thing.
+   Both lists, always. They were exclusive until 2026-09-04 and are not any
+   more: two requests go out and the answer waits for both, so what comes
+   back to the screen is one answer and not two arriving at different times.
 
    AND THIS IS WHERE THE ORDER IS ASKED FOR. `snsSort` is 'new' or 'buzz',
    and netFindPosts() does not take it yet -- www/net.js is another session's
@@ -1087,23 +1095,34 @@ function snsClearQ(){ snsQ=''; snsHits=null; snsMode='who'; render(); }
 function snsFind(q, done){
   q=String(q||'').trim();
   if(!q){ done({q:q, who:[], posts:[]}); return; }
-  /* People until somebody asks for posts. Typing was searching POSTS unless
-     the query began with `@`, so looking for a person meant knowing to type a
-     character first -- and what a search on a timeline is for, before you
-     know anybody, is finding people. 「人だけにして」「ツイートの検索は検索
-     ボタン押したら出てくる。それまでは人」
+  /* BOTH, and the answer goes back once. 「検索も#@投稿が一気に検索できる
+     ようにして」 OWNER 2026-09-04.
 
-     Both ask the SERVER. They used to walk this phone's own POSTS, which
+     The two used to be exclusive -- the `@` chose which one was asked, and
+     later `snsMode` did -- so a person looking for a word had to know which
+     kind of thing they were looking for before they could look for it. They
+     are one question now and this is where the two answers meet.
+
+     `who` and `posts` start as null and mean 「has not answered」; `fire()`
+     is called by each side and does nothing until neither is null, so
+     `done()` runs exactly once however the two land.
+
+     COULD NOT ASK is only when NEITHER side answered. One side failing while
+     the other brought rows is an answer, and the rows are it -- 「0 件」 and
+     「訊けなかった」 stay two different screens, which is what snsAnsHTML()
+     reads `bad` for. */
+  var who=null, posts=null, why=null, name=netAtOff(q);
+  function fire(){
+    if(who===null || posts===null) return;
+    done({q:q, who:who, posts:posts,
+          bad:(!who.length && !posts.length && why)? why : null});
+  }
+  /* Both ask the SERVER. They used to walk this phone's own POSTS, which
      answers with the people you already know and the posts you already have
      -- the one search nobody needs.
 
      `bad` and not an empty list: nothing found and could not ask are two
      different answers and must not share a branch. */
-  function no(d, st){ done({q:q, who:[], posts:[], bad:netWhy(d, st)}); }
-  if(snsMode==='posts'){
-    netFindPosts(q, function(ps){ done({q:q, who:[], posts:ps}); }, no);
-    return;
-  }
   /* A handle is stored WITHOUT its @ -- netRow() and the head of a post both
      draw it as '@'+hd -- so `@aya` typed into this field asked the server for
      a handle CONTAINING the character `@`, and no handle contains one.
@@ -1129,9 +1148,14 @@ function snsFind(q, done){
      `q` on the ANSWER stays as it was typed. snsGot() throws away a late
      answer by comparing it with what is in the field, and the field has the
      @ in it. */
-  var name=netAtOff(q);
-  if(!name){ done({q:q, who:[], posts:[]}); return; }
-  netFindWho(name, function(ws){ done({q:q, who:ws, posts:[]}); }, no);
+  /* Nothing left after the `@` is a query that is only an `@`. There is
+     nobody to ask for, so that side is answered here and the posts still
+     go out -- a search box with one character in it is not a broken one. */
+  if(!name) who=[];
+  else netFindWho(name, function(ws){ who=ws||[]; fire(); },
+                        function(d, st){ who=[]; why=why||netWhy(d, st); fire(); });
+  netFindPosts(q, function(ps){ posts=ps||[]; fire(); },
+                  function(d, st){ posts=[]; why=why||netWhy(d, st); fire(); });
 }
 /* Which of the two the answer is about. Where you are standing rather than
    anything the language has, so viewReset() drops it. */
@@ -1149,7 +1173,6 @@ function snsFind(q, done){
    order. */
 function snsGo(){
   if(!snsQ.trim()) return;
-  snsMode='posts'; snsHits=null;
   snsRecentAdd(snsQ);
   render();
 }
@@ -1468,7 +1491,8 @@ function snsDropRecent(q){
 /* Pressed: that word goes into the field and is searched for again. It is
    put through snsSetQ() rather than set here, because that is the one place
    that says what typing into this field does -- writing it out again would
-   be a second copy of it, and the first thing to drift would be `snsMode`. */
+   be a second copy of it, and what would drift first is which questions get
+   asked. */
 function snsPickRecent(q){
   var k=String(q||'').trim();
   if(!k) return;
