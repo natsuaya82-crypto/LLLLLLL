@@ -435,7 +435,6 @@ defLang('de', (function(){
       'notes.sel.del' : 'Löschen',
       'notes.sel.row' : 'Diese Notiz wählen',
       'notes.sel.ask' : '{0} Notizen löschen?',
-      'notes.search' : "Notizen durchsuchen",
       "post.new"        : "Neuer Beitrag",
       "post.ln.ph"      : "ein Satz in deiner Sprache",
       "post.mn"         : "Was es heißt",

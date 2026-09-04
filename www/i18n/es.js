@@ -407,7 +407,6 @@ defLang('es', (function(){
       'notes.sel.del' : 'Eliminar',
       'notes.sel.row' : 'Elegir esta nota',
       'notes.sel.ask' : '¿Eliminar {0} notas?',
-      'notes.search' : "Buscar en las notas",
       "post.new"        : "Nueva entrada",
       "post.ln.ph"      : "una línea en tu lengua",
       "post.mn"         : "Qué significa",

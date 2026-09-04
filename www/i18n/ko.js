@@ -626,7 +626,6 @@ defLang('ko', (function(){
       'notes.sel.del' : '삭제',
       'notes.sel.row' : '이 메모 선택',
       'notes.sel.ask' : '메모 {0}개를 삭제할까요?',
-      'notes.search' : "메모 검색",
       "post.new"        : "새 글",
       "post.ln.ph"      : "당신의 언어로 한 줄",
       "post.mn"         : "무슨 뜻인지",

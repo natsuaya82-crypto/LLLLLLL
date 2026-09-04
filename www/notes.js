@@ -57,11 +57,8 @@ function openNote(i){
      一文が嘘になる ── 保存のボタンが出てしまう。 */
   if(!langLocked()) ntKeepOn(k, n);
   openForm('note:'+k, (k>=0? t('notes.edit') : t('notes.new')),
-    /* THE SAME FIELD AS EVERYWHERE ELSE, and it was an <input>.
-       「全部改行して画面内に文字が収まるようにして欲しい」 OWNER 2026-08-27.
-       An <input> is one row that scrolls sideways forever and no CSS makes it
-       wrap. This field carries no name of its own -- it is read when the form
-       is saved -- so what makes it grow is the line in www/act.js. */
+    /* This field carries no name of its own -- it is read when the form is
+       saved -- so what makes it grow is the line in www/act.js. */
     '<div class="field"><label>'+t('notes.t')+'</label>'+
       lnField('nt-t', t('notes.t.ph'), IN('ntSetT'), ntTyped(k, 't'))+'</div>'+
     '<div class="field"><label>'+t('notes.b')+'</label>'+
@@ -128,28 +125,15 @@ function delNoteGo(){
   saveNotes(); closeSheet({target:{id:'sbg'}}); render(); toast(t('toast.note.gone'));
 }
 
-/* Searching the notebook. The lens in the corner rather than a box always
-   across the top: a note is read far more often than it is looked for, and
-   the box would push the first note off the screen every day to serve the
-   day it is wanted. 「メモの右上に🔍ボタン置いて、メモ内検索できるように」
-
-   It looks in both halves of a note -- the heading and the body -- because
-   what somebody remembers about a note they wrote is as often a word
-   inside it as the line at the top. */
-var ntQ='', ntFind=false;
-function ntSearch(){
-  ntFind=!ntFind; if(!ntFind) ntQ='';
-  render();
-  var e=document.getElementById('nt-q'); if(e) e.focus();
-}
-function ntSetQ(v){ ntQ=v; render(); }
+/* Newest first, which is the order a notebook is read in. There was a search
+   over this -- a lens in the corner that opened a box -- and it is gone:
+   「メモの検索ボタンは一旦消そう」 OWNER 2026-09-04. 「一旦」, so it may be
+   asked for again; git is what remembers it, not a branch left standing here.
+   NOTHING SOMEBODY WROTE IS TOUCHED -- what went is the way of looking, and
+   every note is still in NOTES and still on this list. */
 function ntFound(){
-  var qq=String(ntQ||'').trim().toLowerCase(), out=[], i;
-  for(i=NOTES.length-1;i>=0;i--){
-    if(qq && (String(ntHead(NOTES[i])||'')+' '+String(ntBody(NOTES[i])||''))
-             .toLowerCase().indexOf(qq)<0) continue;
-    out.push(i);
-  }
+  var out=[], i;
+  for(i=NOTES.length-1;i>=0;i--) out.push(i);
   return out;
 }
 /* ---- choosing several notes, and taking them away ----------------------
@@ -211,29 +195,14 @@ function vNotes(){
             ? navDel(t('notes.sel.del'), 'ntSelDel')
             : '')+
          navDo(t('notes.sel.done'), 'ntSelOff', null, true))
-      : ('<button class="iconb'+(ntFind?' on':'')+'"' + DO('ntSearch') + ' aria-label="'+
-          esc(t('notes.search'))+'">'+ICON_LENS+'</button>'+
-         (langLocked()? ''
-           : navDo(t('notes.sel'), 'ntSelOn', null, true))))+
+      : (langLocked()? ''
+           : navDo(t('notes.sel'), 'ntSelOn', null, true)))+
     '<div class="body">'+
-    (ntFind
-      ? '<div class="search"><span class="lens">'+ICON_LENS+'</span>'+
-      /* THE SAME FIELD AS EVERYWHERE ELSE, and it was an <input>.
-         「全部改行して画面内に文字が収まるようにして欲しい」 OWNER 2026-08-27,
-         and 「全部なくせ」 when asked what was left. An <input> is one row that
-         scrolls sideways forever; there is no CSS for it, so the element
-         changes. lnField() is the one place that shape lives.
-
-         ntSetQ() calls render(), and lnGrowAll() runs there, so this one
-         needs no lnGrow of its own. */
-        lnField('nt-q', t('notes.search'), IN('ntSetQ'), ntQ)+'</div>'
-      : '<div class="note" style="margin-bottom:12px">'+t('notes.note')+'</div>')+
+    '<div class="note" style="margin-bottom:12px">'+t('notes.note')+'</div>'+
     (found.length
       ? '<div class="ntlist">'+rows+'</div>'
-      : ntQ
-        ? '<div class="empty"><div class="eb">'+t('words.nomatch')+'</div></div>'
-        : '<div class="empty"><div class="eb">'+t('notes.empty.t')+'</div>'+
-          '<div class="es">'+t('notes.empty.s')+'</div></div>')+
+      : '<div class="empty"><div class="eb">'+t('notes.empty.t')+'</div>'+
+        '<div class="es">'+t('notes.empty.s')+'</div></div>')+
     '</div>'+
     /* The round ＋ in the bottom right corner, which is where this app puts
        "make one" -- the timeline's post and the dictionary's word are both

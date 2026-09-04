@@ -440,6 +440,37 @@ const back = await pg.evaluate(async () => {
                'and a brand new language all look like — refusing it is the failure ' +
                'this whole design was built to avoid.');
 
+  /* 4b. AND A LANGUAGE WITH NO KEYBOARD IS EMPTY RATHER THAN BROKEN, asked of
+     what the APP WRITES rather than of keys taken out by hand.
+
+     That difference is the whole of this case. The one above removes the slice
+     keys itself, so it asks about a language nothing has ever saved -- and the
+     app does not leave that slice absent, it SAVES it: saveKb() runs from
+     langSaveAll() every time somebody leaves a language, and with no keyboard
+     built it wrote the four characters `null`, which parses and is not an
+     object, so bkSound() called the language wreckage and bkPush() refused the
+     file from then on.
+
+     Every free language is this one. Free reads kbFixed() -- a QWERTY built
+     out of LETTERS on the way to the screen -- and stores no keyboard of its
+     own, so on the free plan there is nothing else this can be.
+     「無料の分も全部入らないとダメでしょ」 OWNER 2026-09-04. */
+  KB = null; saveKb();
+  wrote = null; BK.dirty = true; bkPush();
+  if (wrote === null)
+    fails.push('a language with NO KEYBOARD was refused the file (' + BK.how + '). ' +
+               'Every free language is this one, so nothing anybody makes on the free ' +
+               'plan reaches a backup after the first time they leave the language. ' +
+               '「無料の分も全部入らないとダメでしょ」 OWNER 2026-09-04');
+
+  /* and again. Written once and refused ever after is the same fault arriving
+     a day later, which is exactly how this one was going to be found. */
+  KB = null; saveKb();
+  wrote = null; BK.dirty = true; bkPush();
+  if (wrote === null)
+    fails.push('a language with no keyboard was written once and refused on the next ' +
+               'save (' + BK.how + '). A backup that stops is a backup that is not one.');
+
   /* ---- the two copies of one language, put together --------------------
      A language belongs to the account now, so it exists twice: on the phone,
      where it is made, and on the server, where it is kept. Putting them back

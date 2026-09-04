@@ -82,8 +82,7 @@ const DELETES = {
 
   /* ---- nothing stored is removed ------------------------------------- */
   backDrop:   { takes: null, asks: false },
-  clearFq:    { takes: null, asks: false },
-  clearQ:     { takes: null, asks: false },
+  clearSearch: { takes: null, asks: false },
   snsClearQ:  { takes: null, asks: false },
   geClear:    { takes: null, asks: false },
   addFmDrop:  { takes: null, asks: false },

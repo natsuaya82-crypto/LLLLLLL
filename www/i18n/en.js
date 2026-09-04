@@ -350,7 +350,6 @@ defLang('en', (function(){
       'notes.sel.del' : 'Delete',
       'notes.sel.row' : 'Choose this note',
       'notes.sel.ask' : 'Delete {0} notes?',
-      'notes.search' : "Search notes",
       'post.new'        : 'New post',
       'post.ln.ph'      : 'a line in your language',
       'post.mn'         : 'What it means',

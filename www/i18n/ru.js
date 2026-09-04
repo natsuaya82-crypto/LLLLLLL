@@ -450,7 +450,6 @@ defLang('ru', (function(){
       'notes.sel.del' : 'Удалить',
       'notes.sel.row' : 'Выбрать эту заметку',
       'notes.sel.ask' : 'Удалить заметок: {0}?',
-      'notes.search' : "Поиск по заметкам",
       "post.new"        : "Новая запись",
       "post.ln.ph"      : "строка на вашем языке",
       "post.mn"         : "Что это значит",

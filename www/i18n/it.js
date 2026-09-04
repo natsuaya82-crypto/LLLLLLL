@@ -447,7 +447,6 @@ defLang('it', (function(){
       'notes.sel.del' : 'Elimina',
       'notes.sel.row' : 'Scegli questa nota',
       'notes.sel.ask' : 'Eliminare {0} note?',
-      'notes.search' : "Cerca nelle note",
       "post.new"        : "Nuovo post",
       "post.ln.ph"      : "una frase nella tua lingua",
       "post.mn"         : "Cosa vuol dire",

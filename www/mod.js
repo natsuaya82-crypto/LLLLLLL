@@ -317,13 +317,10 @@ function vAdmin(){
        with no argument -- see the head of this section. */
     '<div class="set"><span class="sl">'+esc(t('admin.staff'))+'</span></div>'+
     (ADMINS||[]).map(adminStaffRow).join('')+
-    /* THE SAME FIELD AS EVERYWHERE ELSE, and it was an <input>.
-       「全部改行して画面内に文字が収まるようにして欲しい」 OWNER 2026-08-27.
-       A handle is short, but nothing stops a long one being pasted here, and
-       an <input> is one row that scrolls sideways forever. The password on
-       the door above is NOT this -- it stays an <input type="password">,
-       because a textarea has no such type and would print somebody's word on
-       the screen. */
+    /* A handle is short, but nothing stops a long one being pasted here.
+       The password on the door above is NOT this -- it stays an
+       <input type="password">, because a textarea has no such type and would
+       print somebody's word on the screen. */
     '<div class="field">'+
       lnField('admin-h', t('admin.staff.ph'), ' autocapitalize="none"' +
         IN('adminStaffSet', ['h']), ADMIN_H)+'</div>'+

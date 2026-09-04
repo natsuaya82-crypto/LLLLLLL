@@ -343,7 +343,11 @@ function mePicKeep(url){
     c.width=ME_PIC; c.height=ME_PIC;
     x=c.getContext('2d');
     x.drawImage(im, (im.width-side)/2, (im.height-side)/2, side, side, 0, 0, ME_PIC, ME_PIC);
-    try{ ME.pic=c.toDataURL('image/jpeg', 0.82); saveMe(); }
+    /* The same quality every other photograph in this app is squeezed at.
+       It was 0.82 here and POST_PICQ everywhere else, with nothing saying why
+       -- one naked number against a named one, which is docs/DUPLICATES.md
+       item 6. 「合わせていいよ」 OWNER 2026-09-04. */
+    try{ ME.pic=c.toDataURL('image/jpeg', POST_PICQ); saveMe(); }
     catch(e){ toast(t('me.pic.bad')); return; }
     openMe();
   };

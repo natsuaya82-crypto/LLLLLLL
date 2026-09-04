@@ -1720,9 +1720,6 @@ export function halfDone(){
         window.route = 'notes'; NAV = [{ r:'notes' }];
         NTSEL = { 0:1 };
         const h = vNotes(); NTSEL = null; return h; }],
-    ['searching the notes', () => { ntFind = true; ntQ = 'a';
-                                    window.route='notes'; NAV=[{r:'notes'}];
-                                    return vNotes(); }],
     /* A slot's word is made on the word screen now, with the two things the
        slot already knows written in: the meaning is what the slot is called
        and the part of speech is the stage's. There is no form of its own any
@@ -2044,6 +2041,37 @@ export function halfDone(){
        WLD.hide = false;
        wldSecs().forEach(function(sec){ ABOPEN[sec.r] = true; });
        window.route = 'world'; NAV = [{ r:'world' }];
-       return vWorld(); }]
+       return vWorld(); }],
+    /* The word order WITH the demonstration under it. Every chapter that shows
+       one draws it only once the stage has been touched -- `stTouched(id)` is
+       `STG.set[id]`, and the seed's `set` is empty -- so `.gdemo`, the row
+       inside it and the button that says the line out loud were on no route
+       and in no face, and could not be photographed at all. Appended at the
+       END so no index above it moves. */
+    ['the word order, with the demonstration under it', () => {
+       STG.set['order'] = 1;
+       window.route = 'gram'; NAV = [{ r:'gram', a:'order' }];
+       return vGram(); }],
+    /* ---- the search boxes, with something typed in them -----------------
+       The cross only exists once there is something to clear, so a box with
+       an empty field says nothing about whether it has one. These are the
+       ones that had no face with a query in them. 「調べる系は ❌欲しいかも」
+       OWNER 2026-09-04 -- every box clears now, and this is where that is
+       looked at. Appended at the END so no index above moves. */
+    ['the dictionary, searched', () => {
+       q = 'ka';
+       window.route = 'words'; NAV = [{ r:'words' }];
+       const h = vWords(); q = ''; return h; }],
+    ['searching everything, searched', () => {
+       fq = 'ka';
+       window.route = 'find'; NAV = [{ r:'find' }];
+       const h = vFind(); fq = ''; return h; }],
+    /* vLetters() is the CONTENTS of the chapter -- Alphabet, Marks, Digits --
+       and carries no search box. The list that does is vLtset(), which reads
+       here() rather than an argument, so the route has to be stood on. */
+    ['the alphabet, searched', () => {
+       ltQ = 'k';
+       window.route = 'ltset'; NAV = [{ r:'ltset', a:'alpha' }];
+       const h = vLtset(); ltQ = ''; return h; }]
   ];
 }

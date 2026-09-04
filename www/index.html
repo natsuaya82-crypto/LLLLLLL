@@ -1757,7 +1757,14 @@ a.set{text-decoration:none}
 .lrow{justify-content:space-between;gap:10px}
 .lrow .sl{flex:0 0 auto}
 .lrow .lsam{margin-left:auto;font-size:.88rem;color:var(--gold);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.lrow .lchk{flex:0 0 14px;text-align:right;color:var(--gold)}
+/* The tick beside the language that is chosen. It was written twice, 1777
+   lines apart, and the later one set `display:flex` -- which is what makes a
+   drawn mark sit in the middle of its box, and also what killed this one's
+   `text-align:right`. Somebody reading THIS line saw the line that puts the
+   tick on the right, changed it, and nothing moved. One block now, and the
+   right edge is `justify-content` because that is what a flex box listens
+   to. `text-align:right` is gone rather than carried: it decided nothing. */
+.lrow .lchk{flex:0 0 16px;display:flex;align-items:center;justify-content:flex-end;color:var(--gold)}
 .lrow.on .sl{font-weight:600}
 /* The plans, side by side. Three pages that slide, with the next one showing
    at the edge. 「横並びにして。ページは上に三つあるんじゃなくてスライドで
@@ -1987,7 +1994,7 @@ a.set{text-decoration:none}
    a 40px face with 14 above and below -- and three lines of that put the
    timeline 44px further down the screen 「上の幅めちゃくちゃ広くなってる
    やんけ」. 32 + 6 + 6 is 44, which is the floor and not a pixel over it. */
-.wrow{display:flex;align-items:center;gap:12px;width:100%;
+.wrow{display:flex;align-items:center;gap:12px;
       margin:0 -24px 0;width:calc(100% + 48px);padding:6px 16px;
       border:0;border-bottom:1px solid var(--line);background:none;text-align:left}
 .wrow .pav{width:48px;height:48px;flex:0 0 auto}
@@ -3382,16 +3389,24 @@ html[data-script="on"] .gsw{font-family:var(--face-script);letter-spacing:0}
   border-radius:8px;background:var(--bg);color:var(--tx);font-size:1.15rem;cursor:pointer;padding:0}
 .pkch.had{opacity:.28}
 .pkch.cur{border-color:var(--gold);color:var(--gold)}
-.scin{width:100%;min-width:0;min-height:44px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 9px;
-  color:var(--tx);font:inherit;font-size:1rem;outline:none}
-.scin:focus{border-color:var(--gold)}
-.scin.own{text-align:left}
-.scin{width:100%;min-width:0;background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:5px 7px;
+/* The field a script's own characters are typed into. It was written twice,
+   four lines apart: the second block won the corner, the padding and the type
+   size, so the first looked dead -- and `min-height:44px` was in the first one
+   and nowhere else. The 44pt floor is the whole reason the first block could
+   not be deleted, and nothing said so. One block now, carrying what each of
+   the two actually contributed. `.own` is the one that is typed in rather
+   than chosen from, so it reads from the left. */
+.scin{width:100%;min-width:0;min-height:44px;background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:5px 7px;
   color:var(--tx);font:inherit;font-size:1.05rem;text-align:center;outline:none}
 .scin:focus{border-color:var(--gold)}
+.scin.own{text-align:left}
 .capwarn{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;margin:2px 0 14px;padding:12px 14px;
   border:1px solid rgba(201,168,106,.3);border-radius:10px;background:transparent;color:var(--txm);font:inherit;font-size:.88rem;cursor:pointer}
-.capgo{color:var(--gold);flex-shrink:0}
+/* The 「go and see the plans」 tail on a ceiling's row. It was written in two
+   places 142 lines apart -- the colour here, the layout down in the drawn-marks
+   section -- so neither block was the look of this thing and changing either
+   one moved half of it. One block. */
+.capgo{display:inline-flex;align-items:center;gap:4px;color:var(--gold);flex-shrink:0}
 .set.lock .sv{color:var(--gold)}
 /* ---------- the grammar, in stages ----------
    A list of stages, each with what it still needs; then one stage open, with
@@ -3509,7 +3524,12 @@ textarea.ntbody.grow{min-height:0;height:auto;overflow:hidden;resize:none}
 .gside .gsw{font-family:var(--face-caps);font-size:1.04rem;color:var(--tx);word-break:break-word}
 .gside .gsi{font-family:var(--face-mono);font-size:.84rem;color:var(--gold)}
 .gside .gsg{font-family:var(--face-ital);font-style:italic;font-size:.88rem;color:var(--txs)}
-.gside .gsp{margin-left:auto;flex:0 0 auto;min-width:38px;min-height:38px;background:none;border:0;
+/* 44 and not the 38 this was drawn at. Apple's floor is 44px and a phone has
+   nothing finer to point with. It said 38 here and was put right ten lines
+   below, in two places -- so this block read as the size of the button and was
+   not, and taking either of those two lines out dropped it under the floor
+   with nothing to say so. The size is here, once. */
+.gside .gsp{margin-left:auto;flex:0 0 auto;min-width:44px;min-height:44px;background:none;border:0;
   color:var(--txs);display:flex;align-items:center;justify-content:center;align-self:center}
 .gside .gsp:active{opacity:.5}
 .gneed{margin:10px 0 2px}
@@ -3518,8 +3538,7 @@ textarea.ntbody.grow{min-height:0;height:auto;overflow:hidden;resize:none}
    Apple's floor is 44px and a phone has nothing finer to point with. These
    are the buttons that were drawn to the size of their mark rather than to
    the size of the finger that has to find them. */
-.play,.gside .gsp,.pkclear,.obskip{min-height:44px}
-.gside .gsp{min-width:44px}
+.play,.pkclear,.obskip{min-height:44px}
 
 /* ---------- the marks, now that they are drawn ----------
    A typed character sat on the text baseline and took its size from whichever
@@ -3529,8 +3548,6 @@ textarea.ntbody.grow{min-height:0;height:auto;overflow:hidden;resize:none}
 .search .lens{display:flex;align-items:center;color:var(--txm);flex:0 0 auto}
 .set .sv{display:flex;align-items:center;gap:6px}
 .set .sv .go,.capgo .go{opacity:.75}
-.capgo{display:inline-flex;align-items:center;gap:4px}
-.lrow .lchk{flex:0 0 16px;display:flex;align-items:center;justify-content:flex-end}
 </style>
 </head>
 <body>

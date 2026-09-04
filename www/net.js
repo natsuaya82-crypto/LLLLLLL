@@ -199,14 +199,30 @@ function netFreshDone(got){
 
 /* ---- the wire ----------------------------------------------------------
    XHR rather than fetch: this has to run on a WKWebView old enough that the
-   rest of the file is ES5, and a Promise is banned three lines up. Both
-   callbacks are always called, so nothing is left waiting on a spinner.
+   rest of the file is ES5, and a Promise is banned three lines up. One of the
+   two callbacks is always called, so nothing is left waiting on a spinner --
+   and that sentence was not true until there was a deadline. A connection
+   that is ACCEPTED and never answered is not an error and never becomes one:
+   no handler fires, and the phone waits on a spinner until somebody kills the
+   app. A dead network is the case everybody thinks of and is the easy one;
+   this is the tunnel, the captive portal, the server that took the request
+   and stopped.
+
+   Twenty seconds. 「20で」 OWNER 2026-09-04. Written once, here, rather than
+   at each of the calls -- and there is no `ontimeout` beside it on purpose: a
+   timed-out XHR reaches readyState 4 with status 0, which was MEASURED in
+   Chromium rather than read off a specification, and that is the same thing
+   the handler below already sees when a request goes and nothing comes back.
+   So running out falls into the road that is already there. An `ontimeout`
+   would be a SECOND way out of the same event and would call `bad` twice.
+   token-check holds both halves.
 
    `up` asks for an upsert (`resolution=merge-duplicates`): the phone does not
    have to know whether this row has ever been up. It is a header rather than
    a second function because two hand-rolled XHRs down this file were exactly
    netSend() plus that one line, and both of them were therefore outside the
    refresh above -- which is where the fault lived. */
+var NET_WAIT=20000;
 function netSend(method, path, body, tok, ok, bad, up){
   netSend1(method, path, body, tok, ok, bad, up, true);
 }
@@ -216,6 +232,8 @@ function netSend1(method, path, body, tok, ok, bad, up, may){
   var mine=!!(tok && SESS && tok===SESS.at);
   var x=new XMLHttpRequest();
   x.open(method, SB_URL+path, true);
+  /* After open(), which is where a deadline may be set. */
+  x.timeout=NET_WAIT;
   x.setRequestHeader('apikey', SB_KEY);
   if(body) x.setRequestHeader('Content-Type', 'application/json');
   /* Signed in, this is the person; signed out, it is the key again, which is
@@ -1351,6 +1369,19 @@ function netKeeps(mine, put){
   }
   return String(put).length>=String(mine).length;
 }
+/* WHAT THE TWO SIDES NOW HOLD, written down so the next merge can tell a
+   removal from a thing this phone has not heard about. It is not anybody's
+   work and it is not a backup -- it is a copy of what BOTH sides already
+   have, and losing it costs one sync's worth of forgetting rather than any
+   data. Filed beside the slice (langWasKey in core.js), so deleting the
+   language takes it and lsWipeAcct, which counts the namespace rather than a
+   list, takes it when an account goes. */
+function netAgreed(id, kind, body){
+  try{
+    if(body==='') localStorage.removeItem(langWasKey(id, kind));
+    else localStorage.setItem(langWasKey(id, kind), body);
+  }catch(e){}
+}
 var NET_SHRANK=[];
 var NET_SYNCING=false;
 /* EVERY LANGUAGE THIS PERSON MADE, and it used to be the one that happened to
@@ -1402,7 +1433,7 @@ function netLangSync1(id, done){
     netSlices(sid, function(there){
       var i=0, moved=false;
       function step(){
-        var kind, mine, got, put;
+        var kind, mine, got, put, was;
         if(i>=SLICES.length){
           if(moved && id===langId){
             /* Something came back, so what the screens are holding is older
@@ -1432,8 +1463,15 @@ function netLangSync1(id, done){
         }
         kind=SLICES[i]; i++;
         try{ mine=localStorage.getItem(langKeyOf(id, kind)); }catch(e){ mine=null; }
+        /* What the two sides last agreed this slice was. It is the only thing
+           that tells 「somebody removed this here」 from 「this phone has not
+           been told about it yet」 -- the two look identical from here and
+           want opposite answers. No record means no dropping, which is what
+           this did before there was one. */
+        try{ was=localStorage.getItem(langWasKey(id, kind)); }catch(e){ was=null; }
         got=there[kind];
-        put=syMerge(kind, mine===null? '' : mine, got? got.body : '');
+        put=syMerge(kind, mine===null? '' : mine, got? got.body : '',
+                    was===null? '' : was);
         if(put!=='' && put!==mine){
           /* and only where it keeps everything that is already there */
           if(netKeeps(mine, put)){
@@ -1446,9 +1484,15 @@ function netLangSync1(id, done){
             step(); return;
           }
         }
-        if(put==='' || (got && put===got.body)){ step(); return; }
+        /* Both sides are holding the same string now, so that is what they
+           agreed. Recorded here rather than after the write, because there is
+           nothing to write. */
+        if(put==='' || (got && put===got.body)){ netAgreed(id, kind, put); step(); return; }
         netSlicePut(sid, kind, put, got? got.no : 0,
-                    function(){ step(); }, function(){ step(); });
+                    function(){ netAgreed(id, kind, put); step(); },
+                    /* A write that did not land agreed nothing. The record
+                       stays as it was and the next launch tries again. */
+                    function(){ step(); });
       }
       step();
     }, function(){ done(false); });
@@ -2534,12 +2578,22 @@ function netBytes(b64){
 /* One file up. Not netSend(): this is a different service on the same host,
    the body is bytes rather than JSON, and the one header that matters is the
    content type -- a jpeg uploaded as octet-stream comes back as a download
-   rather than as a picture. */
+   rather than as a picture.
+
+   It carries THE SAME NET_WAIT as everything else. A post's photographs go up
+   one after another and never at once, so one file that is accepted and never
+   answered holds the whole post open with nothing said -- the fault netSend()
+   had, on the wire that carries the biggest thing this app sends. How long to
+   wait is ONE decision; this is a second place obeying it, not a second
+   number. Running out lands where a dead network already lands, by the same
+   readyState-4-status-0 the handler below reads, so there is no `ontimeout`
+   here either. */
 function netUp(path, b64, mime, ok, bad){
   var x, a=netBytes(b64);
   if(!netSignedIn() || !a){ bad(null, 0); return; }
   x=new XMLHttpRequest();
   x.open('POST', SB_URL+'/storage/v1/object/post-media/'+path, true);
+  x.timeout=NET_WAIT;
   x.setRequestHeader('apikey', SB_KEY);
   x.setRequestHeader('Authorization', 'Bearer '+SESS.at);
   x.setRequestHeader('Content-Type', mime || 'application/octet-stream');

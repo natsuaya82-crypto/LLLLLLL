@@ -894,7 +894,15 @@ function viewGone(){
    an example under a word, a post -- and an input is one row that scrolls
    sideways forever: past the width of the phone the text simply left the
    screen, and there was no length at which it stopped.
-   「改行されないせいで画面が今でいく」
+   「改行されないせいで画面が今でいく」, then 「全部改行して画面内に文字が収まる
+   ようにして欲しい」 OWNER 2026-08-27 and 「全部なくせ」 when asked what was left
+   -- the search boxes included, which is why every one of them is this and not
+   an <input>.
+
+   That paragraph used to be pasted above ELEVEN of the calls, and each copy
+   said it again in its own words. It is here because here is where the field
+   is made; what is left at a call is only what is true of THAT field, which
+   is a different sentence and worth reading.
 
    It grows with what is in it rather than scrolling, so the whole line is
    always on the screen. `rows="1"` is the floor and lnGrow() raises it; the
@@ -923,6 +931,53 @@ function lnField(id, ph, attrs, val, cls){
     (cls? ' '+cls : '')+'" '+
     'rows="1" placeholder="'+esc(ph)+'" autocomplete="off" autocorrect="off" '+
     'spellcheck="false"'+(attrs||'')+'>'+esc(val||'')+'</textarea>';
+}
+/* A search box, and it was written out six times. The FIELD inside one was
+   already a single place -- lnField() above, and every screen went through it.
+   What each screen still hand-rolled was the box AROUND the field: the
+   magnifier, the wrapper, and the cross that empties it. So the six drifted in
+   exactly the things the wrapper decides: three could be cleared with one
+   press and three could not.
+
+   EVERY ONE OF THEM CLEARS NOW. 「調べる系は ❌欲しいかも」 OWNER 2026-09-04,
+   said after looking at the six side by side. So the cross is not something a
+   caller asks for any more -- it is what a search box IS, and there is nothing
+   to pass to get one.
+
+   `set` is the name of what the field calls as it is typed into, and it is the
+   whole of what a box needs to know: `<stem>-q` is the field, `<stem>-x` is
+   the cross, and clearing is that same setter given nothing. That is why there
+   is one clearSearch() below instead of one clear function per screen -- there
+   were three, all the same five lines, and two more were about to be written.
+
+   `opt` is for the one screen that is not like the others: the timeline, which
+   sends its query on the return key, keeps a search with a star, and empties
+   more than the field when it is cleared. */
+function searchBox(stem, ph, set, val, opt){
+  opt = opt || {};
+  return '<div class="search"><span class="lens">'+ICON_LENS+'</span>'+
+    lnField(stem+'-q', ph, IN(set)+(opt.attrs || ''), val)+
+    (opt.extra || '')+
+    '<button class="sx" id="'+stem+'-x"'+
+      (opt.clear? DO(opt.clear) : DO('clearSearch', [stem, set]))+
+      (val?'':' hidden')+
+      ' aria-label="'+esc(t('words.clear'))+'">'+ICON_CROSS+'</button>'+
+    '</div>';
+}
+/* Emptying one. It was three functions -- clearQ, clearFq and one more each
+   time a screen grew a search -- and all three said the same five lines: find
+   the field, blank it, put the cursor back in it, grow it, redraw the list.
+   The last two of those are what the SETTER already does, every keystroke, so
+   clearing is that setter given nothing.
+
+   The field is blanked here rather than left to the setter because a setter is
+   called BY the field and does not touch it; this is called by a button
+   beside it. And the cursor stays in the field: clearing a search is nearly
+   always the first half of typing a different one. */
+function clearSearch(stem, set){
+  var e=document.getElementById(stem+'-q'), fn=ACT_IN[set];
+  if(e){ e.value=''; e.focus(); }
+  if(fn) fn('');
 }
 /* Made as tall as its text, every time that text changes. A textarea has no
    CSS for "as tall as you need"; the height has to be measured and set, and

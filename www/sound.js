@@ -396,13 +396,10 @@ function ipaGroupsHTML(act, on){
 }
 function ipaPickHTML(act, on){
   on=on||[];
-  return '<div class="search"><span class="lens">'+ICON_LENS+'</span>'+
-      /* THE SAME FIELD AS EVERYWHERE ELSE, and it was an <input>.
-         「全部改行して画面内に文字が収まるようにして欲しい」 OWNER 2026-08-27,
-         and 「全部なくせ」 when asked what was left. An <input> is one row that
-         scrolls sideways forever; there is no CSS for it, so the element
-         changes. lnField() is the one place that shape lives. */
-      lnField('ipa-q', '', IN('ipaSetQ'), ipaQ)+'</div>'+
+  /* No placeholder and no cross -- the shape this list was drawn with, and
+     the same as ltFieldHTML() four hundred lines down. searchBox() is where
+     either would be given. */
+  return searchBox('ipa', '', 'ipaSetQ', ipaQ)+
     '<div id="ipa-list" data-act="'+esc(act)+'" data-on="'+esc(on.join(' '))+'">'+
     ipaGroupsHTML(act, on)+'</div>';
 }
@@ -797,13 +794,7 @@ function ltViewRow(){
 
      No placeholder and no clear button, which is ipaPickHTML() four hundred
      lines up -- the same .search, on the same chapter's other list. */
-  return '<div class="search"><span class="lens">'+ICON_LENS+'</span>'+
-      /* THE SAME FIELD AS EVERYWHERE ELSE, and it was an <input>.
-         「全部改行して画面内に文字が収まるようにして欲しい」 OWNER 2026-08-27,
-         and 「全部なくせ」 when asked what was left. An <input> is one row that
-         scrolls sideways forever; there is no CSS for it, so the element
-         changes. lnField() is the one place that shape lives. */
-      lnField('lt-q', '', IN('ltSetQ'), ltQ)+'</div>'+
+  return searchBox('lt', '', 'ltSetQ', ltQ)+
     '<div class="wfilrow">'+
     '<button class="wfil"' + DO('openLtView') + '>'+
       '<span class="wfilv">'+esc(t('lt.fil.'+ltFil))+'</span>'+ICON_GO+'</button>'+
@@ -1056,11 +1047,7 @@ function ltForUnitGo(sym){
    so it answers to the saved name and not to the one being typed. */
 function ltAbField(l, id){
   var dup=ltDupOf(l);
-  /* THE SAME FIELD AS EVERYWHERE ELSE, and it was an <input>.
-     「全部改行して画面内に文字が収まるようにして欲しい」 OWNER 2026-08-27.
-     An <input> is one row that scrolls sideways forever and no CSS makes it
-     wrap, so the element changes; lnField() is the one place that shape
-     lives. The red-when-taken class goes through its `cls`, because that is
+  /* The red-when-taken class goes through lnField()'s `cls`, because that is
      where a class on this field is said. */
   return '<div class="field">'+
     lnField('lt-rom', t('lt.reads.ph'),

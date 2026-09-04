@@ -467,6 +467,96 @@ say(V.savedTurns && V.savedMarkGone,
     'and so do the words it has kept (' + (V.savedTurns ? 'mark' : 'NO MARK') +
     ', ' + (V.savedMarkGone ? 'then gone' : 'AND KEPT TURNING') + ')');
 
+/* ---- a word somebody deleted stays deleted -------------------------------
+   docs/RISK.md item 4. This file already holds the other direction -- that
+   syncing twice does not GROW the dictionary, and that a merge coming back
+   smaller is refused -- and neither of those is this one. Nothing anywhere
+   asked whether something the person removed is still removed afterwards.
+
+   Measured before it was written: delete a word, sync once, and the word is
+   back at the END of the list and has been written UP to the server as well,
+   so the phone has now taught the server its own mistake.
+
+   「消すも保存もそうだけど、そういったものが動く時はサーバーに行かないと。
+   オフラインで作業できるのはオンラインに復帰した時にそれが最新データになる
+   んだから」 OWNER 2026-09-04. */
+/* THE PAGE IS RELOADED FIRST, and that is not tidiness. The scenario above
+   replaces `syMerge` itself with a stub -- `function(){ return [{hw:'a'}] }`,
+   to prove that a merge coming back smaller is refused -- and never puts the
+   real one back. Every scenario after it therefore runs against that stub, in
+   one page, in silence. Written without this reload, the claims below went red
+   for the wrong reason and looked exactly like the bug they were written for.
+   A fresh page is the only thing that gives them the real sync.js back. */
+await pg.evaluate(() => localStorage.clear());
+await pg.reload();
+await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
+
+const del = await pg.evaluate(async ({ s, srv }) => {
+  eval('(' + s + ')()');
+  SET.done = true;
+  eval(srv);
+  SESS = { at:'t', rt:'r', uid:'me', anon:false };
+  function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
+  for (var i in LANGS)
+    if (Object.prototype.hasOwnProperty.call(LANGS, i)) LANGS[i].uid = SESS.uid;
+  langStore();
+  /* On the disk before anything is sent. The seed fills the globals; a slice
+     is what localStorage holds, and the sync reads it from there. */
+  save(); saveLetters();
+
+  /* 1. the dictionary goes up, so the server is holding it */
+  await new Promise(function(f){ netLangSync(function(){ f(); }); });
+  await wait(150);
+  var S = window.__SRV, sid = (LANGS[langId] || {}).sid;
+  function onServer(){
+    var r = S.slice.filter(function(x){ return x.language === sid && x.kind === 'words'; })[0];
+    try { return r ? JSON.parse(r.body).map(function(w){ return String(w.hw); }) : []; }
+    catch (e) { return []; }
+  }
+  var hw = function(){ return WORDS.map(function(w){ return String(w.hw); }); };
+  var out = { server0: onServer() };
+
+  /* 2. somebody deletes one, the way the button does */
+  out.gone = hw()[0];
+  wDrop(out.gone); save();
+  out.storedAfterDelete = JSON.parse(localStorage.getItem(langKey('words')) || '[]')
+    .map(function(w){ return String(w.hw); });
+  out.afterDelete = hw();
+
+  /* 3. and the app speaks to the server again */
+  await new Promise(function(f){ netLangSync(function(){ f(); }); });
+  await wait(180);
+  out.afterSync = hw();
+  out.server1 = onServer();
+
+  /* 4. and once more -- "it comes back on the launch after" is the shape */
+  await new Promise(function(f){ netLangSync(function(){ f(); }); });
+  await wait(180);
+  out.afterTwice = hw();
+  out.server2 = onServer();
+  return out;
+}, { s: seed.toString(), srv: SERVER });
+
+say(del.server0.indexOf(del.gone) >= 0,
+    'the word was on the server before it was deleted, so this is about a ' +
+    'deletion and not about a word that never went up: ' + JSON.stringify(del.gone));
+say(del.afterDelete.indexOf(del.gone) < 0,
+    'deleting it takes it out of the dictionary on the phone');
+say(del.storedAfterDelete.indexOf(del.gone) < 0,
+    'and out of storage, so what follows is about the sync and not about a ' +
+    'delete that never landed: ' + JSON.stringify(del.storedAfterDelete));
+say(del.afterSync.indexOf(del.gone) < 0,
+    'AND IT IS STILL GONE after the app has spoken to the server: ' +
+    JSON.stringify(del.afterSync));
+say(del.server1.indexOf(del.gone) < 0,
+    'and the SERVER was told -- deleting is a thing that goes up, not a thing ' +
+    'that happens only here: ' + JSON.stringify(del.server1));
+say(del.afterTwice.indexOf(del.gone) < 0,
+    'and it does not come back on the launch after that one either');
+say(del.afterSync.length === del.afterDelete.length,
+    'and nothing else moved: ' + del.afterDelete.length + ' words before the ' +
+    'sync, ' + del.afterSync.length + ' after');
+
 await br.close();
 if (bad.length){
   console.log('\nagain: ' + bad.length + ' problem' + (bad.length > 1 ? 's' : '') + '.\n');

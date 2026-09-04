@@ -472,14 +472,7 @@ function vFind(){
   return '<div class="view">'+
     navTop()+
     '<div class="chead">'+
-    '<div class="search"><span class="lens">'+ICON_LENS+'</span>'+
-    /* THE SAME FIELD AS EVERY OTHER SEARCH BOX, and it was an <input>.
-       「全部改行して画面内に文字が収まるようにして欲しい」 OWNER 2026-08-27,
-       and 「全部なくせ」 when asked what was left. An <input> is one row that
-       scrolls sideways forever and no CSS makes it wrap. */
-    lnField('f-q', t('find.ph'), IN('fSetQ'), fq)+
-    '<button class="sx" id="f-x"' + DO('clearFq') + ''+(fq?'':' hidden')+
-      ' aria-label="'+esc(t('words.clear'))+'">'+ICON_CROSS+'</button></div></div>'+
+    searchBox('f', t('find.ph'), 'fSetQ', fq)+'</div>'+
     '<div class="body" id="f-list">'+findBodyHTML()+'</div>'+
     '</div>';
 }
@@ -627,12 +620,6 @@ function findPaint(){
 /* The box is as tall as what is in it, and typing repaints the list rather
    than the screen, so nothing else would say the field grew. */
 function fSetQ(v){ fq=v; if(v) fpick=null; lnGrow('f-q'); findPaint(); }
-function clearFq(){
-  var e=document.getElementById('f-q');
-  fq=''; if(e){ e.value=''; e.focus(); }
-  lnGrow('f-q');
-  findPaint();
-}
 /* ---- what the language is for ----------------------------------------
    「世界観とか、物語で使うなら物語用なのか設定できたり」
 
@@ -1820,13 +1807,9 @@ function wldPage(ed, L, lid){
            with nothing over it could be anything, and it is what the reading
            face has over it as well. */
         inner+='<div class="abfk">'+esc(t('wld.where'))+'</div>'+
-          /* THE SAME FIELD AS EVERYWHERE ELSE, and it was an <input>.
-             「全部改行して画面内に文字が収まるようにして欲しい」 OWNER
-             2026-08-27. A place and a people are written in words, and an
-             <input> is one row that scrolls sideways forever. These two had
-             no id at all -- lnField() needs one to be grown by name, and
-             nothing else in the app points at them, so the id is new and
-             carries nothing. */
+          /* These two had no id at all -- lnField() needs one to be grown
+             by name, and nothing else in the app points at them, so the id
+             is new and carries nothing. */
           '<div class="field">'+
           lnField('wld-where', t('wld.where.ph'), IN('wldSet', ["where"]), wldTyped('where'))+
           '</div>'+

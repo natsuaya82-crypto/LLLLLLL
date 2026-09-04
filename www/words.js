@@ -236,22 +236,10 @@ function vWords(){
       : (langLocked()? ''
           : navDo(t('words.sel'), 'wSelOn', null, true)))+
     '<div class="chead">'+
-    /* THE SAME FIELD AS EVERYWHERE ELSE, and it was an <input>.
-       「全部改行して画面内に文字が収まるようにして欲しい」 OWNER 2026-08-27,
-       and 「全部なくせ」 when asked what was left -- the search box included.
-       An <input> is one row that scrolls sideways forever: past the width of
-       the phone what was typed first simply left the screen. There is no CSS
-       for it; the element has to change. lnField() is the one place that
-       shape lives -- no new mechanism here, and nothing else about this row
-       moves. It grows with what is in it (lnGrow, below). */
-    '<div class="search"><span class="lens">'+ICON_LENS+'</span>'+
-    lnField('w-q', t('words.search'), IN('wordsSetQ'), q)+
-    /* always in the page, shown when there is something to clear -- typing
-       repaints the list, not the header, so a button conjured up by the query
-       string would never appear until the screen was left and come back to */
-    '<button class="sx" id="w-x"' + DO('clearQ') + ''+(q?'':' hidden')+
-      ' aria-label="'+esc(t('words.clear'))+'">'+ICON_CROSS+'</button>'+
-    '</div>'+
+    /* The cross is always in the page and hidden until there is something to
+       clear: typing repaints the list, not the header, so one conjured up by
+       the query would not appear until the screen was left and come back to. */
+    searchBox('w', t('words.search'), 'wordsSetQ', q)+
     /* One button, not a row of twelve. A part of speech is a CHOICE and a
        row of them is a scroll: the one you want is off the side about half
        the time, and adding a thirteenth made it worse.
@@ -314,12 +302,6 @@ function wordsPaint(){
 function wordsSetQ(v){ q=v; lnGrow('w-q'); wordsPaint(); }
 /* Clearing leaves the cursor where it was, because clearing a search is
    nearly always the first half of typing a different one. */
-function clearQ(){
-  var e=document.getElementById('w-q');
-  q=''; if(e){ e.value=''; e.focus(); }
-  lnGrow('w-q');
-  wordsPaint();
-}
 /* What the list is filtered to, as a word. */
 function wFilLab(){
   var fs=wFilters(), i;
@@ -450,6 +432,23 @@ function wordsUndoHTML(){
 
    Nothing about the family. A word is a word on this list; what it is of the
    word it came from, and what has come from it, is on its page. */
+/* WHAT A WORD SHOWS IN THE LIST: the headword, how it is said, what part of
+   speech it is, and what it means. It was written out twice inside the one
+   function below -- once for the row you press to CHOOSE and once for the row
+   you press to OPEN -- and the two were identical to the character. So adding
+   a thing to a word's line, or taking one off, was two edits that had to be
+   found, and a list being chosen from would quietly have shown something
+   different from the same list a moment earlier.
+
+   What genuinely differs between the two is the button around it: which name
+   it says and what it calls itself to somebody who cannot see it. That stays
+   where it is, which is what makes this the shared half. */
+function wEntryLines(w, mn){
+  return '<div class="hwrow"><span class="hw">'+esc(wOut(w.hw))+'</span>'+
+    '<span class="rd">'+esc(phIpa(wPh(w)))+'</span>'+
+    '<span class="pos">'+esc(posLabel(w.pos))+'</span></div>'+
+    '<div class="mn">'+mn+'</div>';
+}
 function entryHTML(w){
   var mns=wMns(w), mn;
   /* A missing meaning in a dictionary row is something to do, not a fact to
@@ -480,10 +479,7 @@ function entryHTML(w){
       ' role="button" aria-label="'+esc(t('words.sel.row'))+'">'+
       (wSel[w.hw]? ICON_DOT : ICON_RING)+'</span>'+
     '<button class="ebody"' + DO('wSelTap', [w.hw]) + ' aria-label="'+esc(t('words.sel.row'))+'">'+
-    '<div class="hwrow"><span class="hw">'+esc(wOut(w.hw))+'</span>'+
-    '<span class="rd">'+esc(phIpa(wPh(w)))+'</span>'+
-    '<span class="pos">'+esc(posLabel(w.pos))+'</span></div>'+
-    '<div class="mn">'+mn+'</div>'+
+    wEntryLines(w, mn)+
     '</button>'+
     '</div>';
   return '<div class="entry">'+
@@ -499,11 +495,7 @@ function entryHTML(w){
        thing this plan does not do 「無料版は音の編集できないから」. The word's
        own page has one, which is where somebody asking to hear it is. */
     '<button class="ebody"' + DO('openWord', [w.hw]) + ' aria-label="'+esc(t('words.open'))+'">'+
-    '<div class="hwrow"><span class="hw">'+esc(wOut(w.hw))+'</span>'+
-    '<span class="rd">'+esc(phIpa(wPh(w)))+'</span>'+
-    '<span class="pos">'+esc(posLabel(w.pos))+'</span></div>'+
-    '<div class="mn">'+mn+'</div>'+
-
+    wEntryLines(w, mn)+
     '</button>'+
     /* Beside the row rather than at the head of the list. Hearing one word is
        a thing you do to that word, and Play all answered a question nobody

@@ -40,7 +40,7 @@ import os from 'os';
 /* No browser: two seconds for all of them, and a failure here means nothing
    heavy was started for nothing. */
 const FAST = ['assets-check', 'es5-check', 'grammar-engine-check', 'dead-check', 'import-check', 'sides-check',
-              'face-check', 'box-check', 'store-check', 'del-check', 'paid-check',
+              'face-check', 'box-check', 'css-once-check', 'store-check', 'del-check', 'paid-check',
               'token-check'];
 /* A browser each. The order is the order they are PRINTED in; which one runs
    when is up to the pool. */
