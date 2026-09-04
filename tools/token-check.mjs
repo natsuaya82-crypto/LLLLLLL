@@ -43,7 +43,7 @@ const WIRE = `
   FakeX.prototype.send = function(b){
     var self = this;
     var rec = { m:this.m, u:this.u, tok:String(this.h['Authorization'] || ''),
-                pre:String(this.h['Prefer'] || ''), body:b };
+                pre:String(this.h['Prefer'] || ''), body:b, to:this.timeout };
     window.__X.sent.push(rec);
     var st = window.__X.refuse(rec);
     setTimeout(function(){
@@ -216,6 +216,48 @@ say(five.tries === 2 && five.lastTok === 'Bearer ' + five.at,
 say(/merge-duplicates/.test(five.pre || ''),
     'and it is still an upsert, which is the one thing its own XHR had that ' +
     'netSend() did not: ' + five.pre);
+
+/* ---- 6. every request carries a deadline --------------------------------
+   www/net.js had no `timeout` anywhere. A connection that is accepted and
+   never answered is not an error and never becomes one: the phone waits on a
+   spinner until somebody kills the app. The comment over netSend() said
+   「Both callbacks are always called, so nothing is left waiting on a
+   spinner」, and that was true of every road except the one that matters.
+   「20で」 OWNER 2026-09-04. */
+const six = await pg.evaluate(async ({ w, s }) => {
+  eval(w); eval(s); window.__reset();
+  netGet('/rest/v1/profile?select=*', function(){}, function(){});
+  await wait(30);
+  var r = window.__of('/rest/v1/profile')[0] || {};
+  return { to: r.to, wait: (typeof NET_WAIT === 'number') ? NET_WAIT : null };
+}, { w: WIRE, s: wait });
+
+say(typeof six.to === 'number' && six.to > 0,
+    'a request carries a deadline rather than waiting for ever: timeout=' +
+    JSON.stringify(six.to));
+say(six.wait !== null && six.to === six.wait,
+    'and the deadline is one named number rather than a figure typed at the ' +
+    'call: NET_WAIT=' + JSON.stringify(six.wait));
+
+/* ---- 7. and running out is the road that already exists ------------------
+   A timed-out XHR reaches readyState 4 with status 0 -- MEASURED in Chromium,
+   not read off a specification -- which is the same thing netSend() already
+   sees when a request goes and nothing comes back. So there is no `ontimeout`
+   here: adding one would call `bad` a SECOND time, because readystatechange
+   fires too. One road out, and this is what says so. */
+const seven = await pg.evaluate(async ({ w, s }) => {
+  eval(w); eval(s); window.__reset();
+  window.__X.refuse = function(){ return 0; };        /* what running out looks like */
+  var calls = [];
+  netGet('/rest/v1/profile?select=*', function(){ calls.push('ok'); },
+                                      function(d, st){ calls.push('bad ' + st); });
+  await wait(120);
+  return calls;
+}, { w: WIRE, s: wait });
+
+say(seven.length === 1 && seven[0] === 'bad 0',
+    'and running out ends in the same one place a dead network does, exactly ' +
+    'once -- no second way out: ' + JSON.stringify(seven));
 
 await br.close();
 console.log('');

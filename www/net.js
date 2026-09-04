@@ -199,14 +199,30 @@ function netFreshDone(got){
 
 /* ---- the wire ----------------------------------------------------------
    XHR rather than fetch: this has to run on a WKWebView old enough that the
-   rest of the file is ES5, and a Promise is banned three lines up. Both
-   callbacks are always called, so nothing is left waiting on a spinner.
+   rest of the file is ES5, and a Promise is banned three lines up. One of the
+   two callbacks is always called, so nothing is left waiting on a spinner --
+   and that sentence was not true until there was a deadline. A connection
+   that is ACCEPTED and never answered is not an error and never becomes one:
+   no handler fires, and the phone waits on a spinner until somebody kills the
+   app. A dead network is the case everybody thinks of and is the easy one;
+   this is the tunnel, the captive portal, the server that took the request
+   and stopped.
+
+   Twenty seconds. 「20で」 OWNER 2026-09-04. Written once, here, rather than
+   at each of the calls -- and there is no `ontimeout` beside it on purpose: a
+   timed-out XHR reaches readyState 4 with status 0, which was MEASURED in
+   Chromium rather than read off a specification, and that is the same thing
+   the handler below already sees when a request goes and nothing comes back.
+   So running out falls into the road that is already there. An `ontimeout`
+   would be a SECOND way out of the same event and would call `bad` twice.
+   token-check holds both halves.
 
    `up` asks for an upsert (`resolution=merge-duplicates`): the phone does not
    have to know whether this row has ever been up. It is a header rather than
    a second function because two hand-rolled XHRs down this file were exactly
    netSend() plus that one line, and both of them were therefore outside the
    refresh above -- which is where the fault lived. */
+var NET_WAIT=20000;
 function netSend(method, path, body, tok, ok, bad, up){
   netSend1(method, path, body, tok, ok, bad, up, true);
 }
@@ -216,6 +232,8 @@ function netSend1(method, path, body, tok, ok, bad, up, may){
   var mine=!!(tok && SESS && tok===SESS.at);
   var x=new XMLHttpRequest();
   x.open(method, SB_URL+path, true);
+  /* After open(), which is where a deadline may be set. */
+  x.timeout=NET_WAIT;
   x.setRequestHeader('apikey', SB_KEY);
   if(body) x.setRequestHeader('Content-Type', 'application/json');
   /* Signed in, this is the person; signed out, it is the key again, which is
