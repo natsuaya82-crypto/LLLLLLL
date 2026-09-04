@@ -80,6 +80,36 @@ function kbCount(){
    is one keyboard this person has, it is not stored, and it is not counted
    once per language -- so it is added here, once, to what they built. */
 function kbRoomKb(){ return 1 + kbCount() < kbCap(); }
+/* THE CEILING OF THIS CHAPTER, MET ON THE PRESS, and it is one place.
+   「＋は右下につけて／プラスは5個目以降／無料は1個目以降／ポップが出るように」
+   OWNER 2026-09-04.
+
+   It was two questions asked a screen apart. kbNew() asked the DOOR --
+   upStop(can('kb')) -- and kbAdd() asked the NUMBER, so Plus at four
+   keyboards opened the five patterns, let somebody choose one, and refused
+   after the choice: a chooser for a thing that could not be made. Nothing
+   threw and nothing was written, which is why it stood.
+
+   Both are here now and both are met at the press. Free stops on the door,
+   which is the same pop every other + in this app gives 「音もキーボードも
+   単語も+を押したらそのまま課金のポップが出るだけでしょ？増やすを潰す」 OWNER
+   2026-09-01. Plus stops on the number, and the number is kbCap() rather than
+   one written down here. Pro's ceiling is Infinity, so neither can fire.
+
+   AND NOTHING IS HIDDEN FOR EITHER OF THEM 「課金からフリーの隠すルールも
+   全部に適応ささてね」 OWNER 2026-09-04. What a plan cannot do is not drawn as
+   an empty frame or a grey row -- it is said on the press. The + is on the
+   list on every plan and looks the same on all of them; the only difference
+   is what happens after it is pressed.
+
+   popAsk() draws where the finger is and nothing behind it closes or moves,
+   which is the shape 「全部1枚目みたいにポップ出して背景変えずに」 asks for. */
+function kbCapStop(){
+  if(upStop(can('kb'))) return true;
+  if(kbRoomKb()) return false;
+  popAsk(t('kb.full', kbCap()), function(){ go('plans'); });
+  return true;
+}
 function kbRead(){
   KB=null;
   try{ KB=kbBoardsOf(JSON.parse(localStorage.getItem(langKey('kb'))||'null')); }
@@ -586,28 +616,12 @@ function kbAdd(pat){
   /* Asked here as well as on the door. kbNew() is a door and a door is a
      look; the act that WRITES a keyboard has to refuse on its own, the way
      kbEdit() refuses board 0 for all thirty mutators rather than trusting the
-     buttons to be down. */
-  if(upStop(can('kb'))) return;
+     buttons to be down. Both the door and the ceiling are one function
+     (kbCapStop above), so the two roads cannot come to answer differently. */
+  if(kbCapStop()) return;
   /* Storage holds only the ones the person built. The free QWERTY is board 0
      and is not among them, so the first one made here is the SECOND board. */
   if(!KB) KB={kbs:[], at:0};
-  /* The ceiling, said and offered. It was a toast: a sentence about a plan
-     with no way to the thing it is about, which is the one shape the owner
-     ruled out. 「そのプランでできることできないことで UI 自体に変更がない方が
-     良くない？」「課金させる動線を減らしたくない」 OWNER DECISION 2026-08-25.
-
-     capStop()'s shape exactly, and for capStop()'s reason: iOS's own dialog
-     rather than one of ours, answerable with "no", and nobody is moved unless
-     they say yes -- building a keyboard is not a place to have the screen
-     taken away. Two strings that are already in ten languages rather than an
-     eleventh.
-
-     Pro never sees it: kbCap() is Infinity there, so kbRoomKb() cannot be
-     false, and there is no plan above to be offered. */
-  if(!kbRoomKb()){
-    popAsk(t('kb.full', kbCap()), function(){ go('plans'); });
-    return;
-  }
   KB.kbs.push({nm:'', pat:pat, lay:kbBlank(kbPatLay(pat))});
   kbShow=kbBoards().length-1; kbLay=0; kbSel=null;
   kbForget();
@@ -963,20 +977,6 @@ function kbBoards(){
   if(!can('kb')) return [kbFree()];
   return [kbFree()].concat(kbStored());
 }
-/* How many ROWS the list draws, which is a different question from how many
-   keyboards there are: on the free plan the rest are frames, and pressing one
-   is the way to the plans screen.
-   「有料と同じ数の枠が並び、二つ目以降は押すとプランへ」 OWNER 2026-09-03.
-
-   `PLUS_KB` and not `kbCap()`: the number wanted here is the PAID one on every
-   plan, and `kbCap()` answers 1 on free -- which is the state the owner was
-   asking about. Pro's ceiling is Infinity, so it is not a number of frames
-   either; PLUS_KB is the paid ceiling that can be drawn, and it is exactly how
-   many rows a Plus list holds (kbRoomKb() stops at 1 + 3).
-
-   Paid draws the keyboards there are and adds with the +. Frames there would
-   be a second door to the chooser the + already opens. */
-function kbSlots(){ return can('kb')? kbBoards().length : PLUS_KB; }
 /* Board 0 and no other. Everything that writes asks this first. */
 function kbIsFree(i){ return (parseInt(i, 10)||0)===0; }
 function kbClamp(i, n){ return Math.max(0, Math.min(parseInt(i, 10)||0, n-1)); }
@@ -2354,6 +2354,19 @@ function kbSelDelGo(){
 }
 function kbRowHTML(x, i, at){
   var sel=!!KBSEL, on=!!(sel && KBSEL[i]);
+  /* AND NOT A DOOR ON THE FREE PLAN. 「編集ボタンも無料はいらんやろ」 OWNER
+     2026-09-04. Board 0 is the QWERTY itself -- kbEdit() refuses it, its page
+     has no editor on it, and the steps for switching it on in iOS are on this
+     screen already -- so the arrow opened a page with nothing on it to do,
+     and an arrow that opens nothing is the app saying there is more.
+
+     The paid list keeps it, because there the board's page is where Apply is
+     and choosing which keyboard goes on the phone is the one thing anybody
+     does to board 0. */
+  if(!can('kb'))
+    return '<div class="kbrow">'+
+      '<span class="kbrowk">'+kbShotHTML(x.lay)+'</span>'+
+      '<span class="kbrown">'+esc(kbName(i))+'</span></div>';
   if(sel && kbIsFree(i))
     return '<div class="kbrow kbrowq">'+
       '<span class="ltck" data-sel="0"></span>'+
@@ -2373,30 +2386,16 @@ function kbRowHTML(x, i, at){
     (i===at? '<span class="kbon">'+ICON_TICK+'</span>' : '')+
     ICON_GO+'</button>';
 }
-/* A slot with nothing in it: the same row, wearing the same class, with the
-   preview box empty and the name it would be called by.
-   「有料と同じ数の枠が並び、二つ目以降は押すとプランへ」 OWNER 2026-09-03.
+/* The keyboards there ARE, one row each, and nothing standing in for one
+   there is not. 「無料に空の枠は並べない」 OWNER 2026-09-04.
 
-   It names `kbNew`, which is the door every other + in this app already goes
-   through -- upStop(can('kb')) sends somebody to the plans screen on this
-   plan and opens the chooser on the paid one. There is no second mechanism
-   here and no sentence explaining what a paid plan would give: the frame is
-   there and pressing it goes to the plans screen, which is the whole of it.
-
-   `t('kb.n', i+1)` is the name kbNameHTML() already puts in the field as its
-   placeholder, so nothing new is written down. No border and no corner -- an
-   empty `.kbrowk` holds the 96px the preview would have taken, and the row's
-   own min-height is what makes it a thumb's worth of screen. */
-function kbFrameHTML(i){
-  return '<button class="kbrow"' + DO('kbNew') + '>'+
-    '<span class="kbrowk"></span>'+
-    '<span class="kbrown">'+esc(t('kb.n', i+1))+'</span>'+
-    ICON_GO+'</button>';
-}
+   It drew a fixed number of rows for a day and filled the tail with empty
+   frames, which put three keyboards on the free screen that do not exist --
+   while the paid list drew only what was built, so the plan that may have one
+   was shown the most rows of anybody. */
 function kbListHTML(){
-  var bs=kbBoards(), at=kbApplied(bs.length), rows=[], i, n=kbSlots();
-  for(i=0;i<n;i++)
-    rows.push(i<bs.length? kbRowHTML(bs[i], i, at) : kbFrameHTML(i));
+  var bs=kbBoards(), at=kbApplied(bs.length), rows=[], i;
+  for(i=0;i<bs.length;i++) rows.push(kbRowHTML(bs[i], i, at));
   return '<div class="kblist">'+
     rows.join('')+
     '</div>'+
@@ -2406,7 +2405,13 @@ function kbListHTML(){
     /* And not at all in somebody else's language. langLocked() (www/core.js)
        -- 「編集不可でそのアカウントに切り替えたらダウンロードした人の言語が
        使える」 OWNER 2026-09-02. */
-    ((!KBSEL && !langLocked() && kbRoomKb())
+    /* ON EVERY PLAN, and at the bottom right where every other + is
+       「＋は右下につけて」 OWNER 2026-09-04. It used to be drawn only while
+       kbRoomKb() was true -- never on free -- so the one thing both lists were
+       meant to share was the one thing free did not have. The ceiling is met
+       on the press instead (kbCapStop), which is where this app already meets
+       every other one. */
+    ((!KBSEL && !langLocked())
       ? '<button class="fab"' + DO('kbNew') + ' aria-label="'+esc(t('kb.new'))+'">'+
           ICON_ADD2+'</button>'
       : '');
@@ -2452,12 +2457,11 @@ function vKb(){
      list, so free never saw a list at all: one keyboard, no rows, and the
      rule 「無料でもplusでもproでも同じ画面なのよ」 broken on the screen whose
      own help sheet quotes it. There is one road down this function now and
-     both plans walk it -- the list, and one keyboard's page under it. What
-     the free plan has instead of the + is the FRAMES, which are rows of the
-     same list (kbFrameHTML above), so the door is one door.
+     both plans walk it -- the list, and one keyboard's page under it.
 
-     The round + is not lost either: kbListHTML() draws it while kbRoomKb() is
-     true, which is never on this plan -- 1 + 0 is not less than 1. */
+     THE LIST HOLDS WHAT THERE IS, and the + is the one door on every plan
+     「＋は右下につけて」 OWNER 2026-09-04. A free list is one row, because
+     that is one keyboard; the ceiling is met when the + is pressed. */
   /* The keyboard, and the row of the ones there are above it. There is no
      "nothing built yet" face any more: kbBoards() answers with the one
      already on the phone, so the first thing on this screen is always a
@@ -3291,7 +3295,7 @@ function kbNew(){
      different screen for the free plan, which is the thing being taken out
      everywhere else: 「なんでプロの画面から使えって言ってんのに別の画面が
      出るの？」 OWNER 2026-09-01. */
-  if(upStop(can('kb'))) return;
+  if(kbCapStop()) return;
   openForm('kbnew', t('kb.new'), kbPatsHTML('kbAdd'), function(){ geTiles(); });
 }
 FORM_OPEN.kbnew=function(){ kbNew(); };

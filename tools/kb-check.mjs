@@ -1704,8 +1704,8 @@ const r = await pg.evaluate(({ s }) => {
 
     /* ---- AND THE CHAPTER IS A LIST ON THIS PLAN TOO ---------------------
        「キーボードの画面無料だと何で1個なの？一覧が並ばないの？無料も有料も
-       同じ画面っちうルールは？」 OWNER 2026-09-03, and the answer:
-       「有料と同じ数の枠が並び、二つ目以降は押すとプランへ」.
+       同じ画面っちうルールは？」 OWNER 2026-09-03, and what a list holds:
+       「無料は1個目以降」「ポップが出るように」 OWNER 2026-09-04.
 
        Nothing here could go red before it, and that is the shape this file
        keeps failing in: every claim above stands on the KEYBOARD -- the rows,
@@ -1713,60 +1713,69 @@ const r = await pg.evaluate(({ s }) => {
        never asked about. The free plan had one board and no list for as long
        as it had a list to not have, with 251 claims green.
 
-       The number is read off `PLUS_KB` rather than written down, because
-       kbSlots() reads it too and two copies of a number is the thing that
-       drifts. Pro's ceiling is Infinity, so the paid number that can be drawn
-       as frames is Plus's, and it is exactly how many rows a Plus list holds. */
-    out.freeSlots = PLUS_KB;
+       THE ROWS ARE THE BOARDS THERE ARE, and that is the whole of the number:
+       one on this plan. It was PLUS_KB for a day -- four rows, three of them
+       empty -- which showed somebody who may have one keyboard three more
+       that do not exist, while the paid list showed only what was built.
+       「無料に空の枠は並べない」 So this is asked against kbBoards().length
+       rather than any constant: a frame coming back is a row this cannot
+       account for. */
     NAV = [{ r: 'kb' }]; route = 'kb';
     document.getElementById('app').innerHTML = vKb();
     var lrows = [].slice.call(document.querySelectorAll('.kblist .kbrow'));
     out.freeListRows = lrows.length;
+    out.freeBoards = kbBoards().length;
     /* A LIST and not a keyboard. The board is a page of its own, so the sheet
        is not on this screen at all -- which is what the claims above had to
        be moved onto {r:'kb','0'} for. */
     out.freeListNoSheet = document.querySelectorAll('#kb').length === 0;
     /* the first row IS the QWERTY: its preview carries the real keys */
     out.freeListFirstKeys = lrows.length ? lrows[0].querySelectorAll('.kbsk').length : -1;
-    /* and every row after it is a frame: nothing in the box, and it names the
-       ONE door -- kbNew, which is what the + names on the paid list and what
-       upStop() answers on this one. A second mechanism would show up here as
-       a data-do that is not kbNew. */
-    out.freeFrameCount = 0; out.freeFrameEmpty = true; out.freeFrameDoor = true;
-    /* AND A THUMB'S WORTH OF SCREEN, measured rather than assumed. A row with
-       nothing in it is exactly the row that collapses: the preview box is what
-       gives a real row its height, and today a search-history row came out
-       39px and turned the gate red. 44pt on both sides -- 基準8, and the row
-       is full width, so the height is the half that can go. */
-    out.freeFrameLow = 0;
-    for (i = 1; i < lrows.length; i++){
-      out.freeFrameCount++;
-      if (lrows[i].querySelectorAll('.kbsk').length !== 0) out.freeFrameEmpty = false;
-      if (lrows[i].getAttribute('data-do') !== 'kbNew') out.freeFrameDoor = false;
-      var fb = lrows[i].getBoundingClientRect();
-      if (fb.height < 44 || fb.width < 44)
-        out.freeFrameLow = Math.round(Math.min(fb.height, fb.width));
-    }
-    out.freeFrameH = lrows.length > 1
-      ? Math.round(lrows[1].getBoundingClientRect().height) : 0;
-    /* THE FIRST ONE IS THE KEYBOARD AND PRESSING IT IS NOT THE EDITOR.
-       「一つ目は今までどおり」 -- board 0 is the free QWERTY, kbEdit() refuses
-       it, and the page it lands on has nothing on the sheet to press. Pressed
-       through the row on the page rather than by calling kbGoBoard(), because
-       what is being asked is where a finger arrives. */
-    /* Guarded, because a check that THROWS says less than one that goes red --
-       CLAUDE.md's argument for tools/gate.mjs being a runner rather than an
-       && chain, one level down. Putting the free plan's own face back above
-       the list left no rows here, and `lrows[0].click()` took the whole file
-       with it: one uncaught TypeError, no claim, no counter, and 299 claims
-       that never ran. The three below say false instead. */
-    out.freeFirstPressed = lrows.length > 0;
-    if (out.freeFirstPressed) lrows[0].click();
-    out.freeFirstLands = out.freeFirstPressed &&
-                         here().r === 'kb' && String(here().a) === '0';
-    out.freeFirstSheet = document.querySelectorAll('#kb .kbrow').length;
-    out.freeFirstNoEdit = out.freeFirstPressed &&
-                          document.querySelectorAll('#kb [data-do]').length === 0;
+    /* AND NOTHING ON IT OPENS. 「編集ボタンも無料はいらんやろ」 OWNER
+       2026-09-04 -- board 0 on this plan is the QWERTY itself and there is
+       nothing to edit, so the row is not a door: no arrow, and nothing a
+       finger can name. Asked as the row's own tag and its own data-do rather
+       than as a count of the screen's, because the + is on this screen too
+       and is a button that SHOULD be there. */
+    out.freeRowTag = lrows.length ? lrows[0].tagName : '';
+    out.freeRowDo = lrows.length ? (lrows[0].getAttribute('data-do') || '') : 'x';
+    out.freeRowInside = lrows.length ? lrows[0].querySelectorAll('[data-do]').length : -1;
+    out.freeRowArrow = lrows.length ? lrows[0].querySelectorAll('svg.go').length : -1;
+
+    /* ---- THE + IS ON THIS PLAN'S LIST, AND IT IS THE SAME + -------------
+       「＋は右下につけて」「無料は1個目以降」 OWNER 2026-09-04. It was drawn
+       only while kbRoomKb() was true, which is never on this plan, so the one
+       thing both lists were meant to share was the one thing free did not
+       have -- and the frames stood in for it. The + is unconditional now and
+       the ceiling is met on the PRESS, which is what every other + in this
+       app already does 「音もキーボードも単語も+を押したらそのまま課金のポップ
+       が出るだけでしょ？」 OWNER 2026-09-01.
+
+       Right and bottom is `.fab` (www/index.html), measured rather than read
+       off the class: a class can be worn by something the stylesheet no
+       longer places. */
+    var fab = document.querySelector('.kblist ~ .fab, .fab');
+    out.freeFab = !!fab && fab.getAttribute('data-do') === 'kbNew';
+    if (fab){
+      var fb = fab.getBoundingClientRect();
+      out.freeFabRight = window.innerWidth - fb.right;
+      out.freeFabBottom = window.innerHeight - fb.bottom;
+    } else { out.freeFabRight = -1; out.freeFabBottom = -1; }
+
+    /* ---- AND PRESSING IT POPS, BECAUSE THIS PLAN IS AT ITS CEILING ------
+       「無料は1個目以降」: the ceiling is 1 and board 0 is already there, so
+       the press always pops. Pressed as a finger presses it, and answered
+       yes the way a person does -- popYes() runs what the pop was handed and
+       nothing is stubbed. */
+    out.freeFabPressed = !!fab;
+    if (fab) fab.click();
+    out.freeFabAsked = popOn();
+    if (popOn()) popYes();
+    out.freeFabToPlans = here().r === 'plans';
+    /* AND NO BOARD WAS MADE. */
+    out.freeFabWroteNothing = KB === null && kbStored().length === 0;
+    out.freeBoardsStillOne = kbBoards().length === 1;
+    popOff();
 
     /* ---- and the upgrade is offered where a keyboard is ADDED ------------
        「upgradeはそこにはいらんくね。追加するときに出てくるようにして欲しい」
@@ -1842,6 +1851,76 @@ const r = await pg.evaluate(({ s }) => {
 
     SET.plan = wasPlan; KB = wasKB; kbShow = wasShow;
     NAV = wasNav; route = wasRoute; KBH = null; kbSel = null;
+  }());
+
+  /* ---- AND THE PAID LIST IS THE SAME LIST -------------------------------
+     「＋は右下につけて／プラスは5個目以降／ポップが出るように」 OWNER
+     2026-09-04. One screen on every plan, and the only difference is what
+     happens AFTER the press: room left opens the patterns, the ceiling asks.
+
+     The ceiling was asked one screen too late. kbNew() looked only at the
+     DOOR -- upStop(can('kb')) -- so Plus at four keyboards opened the five
+     patterns, let somebody choose one, and only then said no: a chooser for
+     a thing that could not be made. Nothing threw and nothing was written,
+     which is why it sat there.
+
+     Built on Pro and then read on Plus, because kbAdd() is the only thing
+     that writes a board and the pool it fills is the person's rather than
+     the language's (kbCount()). */
+  (function (){
+    var wasPlan = SET.plan, wasKB = KB, wasShow = kbShow, wasNav = NAV,
+        wasRoute = route;
+    function built(n){
+      SET.plan = 'pro'; KB = null; kbShow = 0; kbLay = 0;
+      for (var i = 0; i < n; i++) kbAdd('qwerty');
+    }
+    function list(plan){
+      SET.plan = plan; kbShow = 0; kbLay = 0;
+      NAV = [{ r: 'kb' }]; route = 'kb';
+      document.getElementById('app').innerHTML = vKb();
+      return {
+        rows: document.querySelectorAll('.kblist .kbrow').length,
+        boards: kbBoards().length,
+        fab: document.querySelector('.fab')
+      };
+    }
+    /* two built, so three rows and room for one more */
+    built(2);
+    var a = list('plus');
+    out.plusListRows = a.rows; out.plusBoards = a.boards;
+    out.plusCount = kbCount();
+    out.plusFab = !!a.fab && a.fab.getAttribute('data-do') === 'kbNew';
+    if (a.fab) a.fab.click();
+    out.plusRoomAsked = popOn();
+    popOff();
+    out.plusRoomOpens = here().r === 'form' && String(here().a) === 'kbnew';
+
+    /* three built -- 1 + 3 is the whole of Plus, so the next one is the fifth
+       and the + is where it is refused */
+    built(3);
+    var b = list('plus');
+    out.plusFullRows = b.rows; out.plusFullFab = !!b.fab;
+    if (b.fab) b.fab.click();
+    out.plusFullAsked = popOn();
+    if (popOn()) popYes();
+    out.plusFullToPlans = here().r === 'plans';
+    out.plusFullWroteNothing = kbStored().length === 3;
+    popOff();
+
+    /* and Pro has no ceiling to meet, so the same + goes straight through */
+    built(1);
+    var c = list('pro');
+    out.proFab = !!c.fab;
+    if (c.fab) c.fab.click();
+    out.proAsked = popOn();
+    popOff();
+    var pat = document.querySelector('[data-do="kbAdd"]');
+    if (pat) pat.click();
+    out.proAdded = kbStored().length === 2;
+
+    SET.plan = wasPlan; KB = wasKB; kbShow = wasShow;
+    NAV = wasNav; route = wasRoute; KBH = null; kbSel = null;
+    popOff();
   }());
 
   fresh();
@@ -3439,36 +3518,56 @@ say(r.freeAddToPlans && r.freeAddWroteNothing,
 
 /* ---- and the chapter is a LIST on the free plan too ---------------------
    「キーボードの画面無料だと何で1個なの？一覧が並ばないの？無料も有料も同じ
-   画面っちうルールは？」→「有料と同じ数の枠が並び、二つ目以降は押すとプランへ」
-   OWNER 2026-09-03 */
-say(r.freeListRows === r.freeSlots,
-    'the free plan gets the same number of slots the paid one does (' +
-    r.freeListRows + ' rows, PLUS_KB is ' + r.freeSlots + ')');
+   画面っちうルールは？」 OWNER 2026-09-03、そして
+   「＋は右下につけて／無料は1個目以降／ポップが出るように」
+   「編集ボタンも無料はいらんやろ」 OWNER 2026-09-04 */
+say(r.freeListRows === r.freeBoards && r.freeListRows === 1,
+    'the list holds the keyboards there ARE and no empty frames (' +
+    r.freeListRows + ' rows, ' + r.freeBoards + ' boards)');
 say(r.freeListNoSheet,
     'and the chapter it arrives on is that list, not a keyboard');
 say(r.freeListFirstKeys > 0,
-    'the first of them is the QWERTY itself, drawn (' + r.freeListFirstKeys +
+    'the one of them is the QWERTY itself, drawn (' + r.freeListFirstKeys +
     ' keys in its preview)');
-say(r.freeFirstPressed && r.freeFirstLands && r.freeFirstSheet === 5 &&
-    r.freeFirstNoEdit,
-    'and pressing it lands on that board with nothing on the sheet to press --'
-    + ' no editor [' + [r.freeFirstPressed, r.freeFirstLands, r.freeFirstSheet,
-    r.freeFirstNoEdit].join(' ') + ']');
-say(r.freeFrameCount === r.freeSlots - 1 && r.freeFrameEmpty && r.freeFrameDoor,
-    'every row after it is an empty frame naming the one door, kbNew (' +
-    r.freeFrameCount + ' frames, empty ' + r.freeFrameEmpty + ', one name ' +
-    r.freeFrameDoor + ')');
-say(r.freeFrameLow === 0,
-    'and a frame is a thumb\u0027s worth of screen with nothing in it (' +
-    r.freeFrameH + 'px tall' +
-    (r.freeFrameLow ? ', one measured ' + r.freeFrameLow + 'px' : '') + ')');
-say(r.freeFramePressed && r.freeFrameAsked && r.freeFrameToPlans,
-    'pressing the second frame asks, and the yes is the plans screen [' +
-    [r.freeFramePressed, r.freeFrameAsked, r.freeFrameToPlans].join(' ') + ']');
-say(r.freeFrameWroteNothing && r.freeBoardsStillOne,
-    'AND THE LANGUAGE STILL HOLDS ONE BOARD -- the frames are what the screen'
-    + ' shows, not what KB has [' +
-    [r.freeFrameWroteNothing, r.freeBoardsStillOne].join(' ') + ']');
+say(r.freeRowTag === 'DIV' && r.freeRowDo === '' && r.freeRowInside === 0 &&
+    r.freeRowArrow === 0,
+    'and it does not open: no arrow and nothing a finger can name, because'
+    + ' board 0 on this plan is the QWERTY and there is nothing to edit ['
+    + [r.freeRowTag, JSON.stringify(r.freeRowDo), r.freeRowInside,
+       r.freeRowArrow].join(' ') + ']');
+say(r.freeFab, 'the + is on this list too, and it is the same + (kbNew)');
+say(r.freeFab && r.freeFabRight >= 0 && r.freeFabRight <= 40 &&
+    r.freeFabBottom >= 0,
+    'and it is at the bottom right (' + r.freeFabRight + 'px from the right, '
+    + r.freeFabBottom + 'px up from the bottom)');
+say(r.freeFabPressed && r.freeFabAsked && r.freeFabToPlans,
+    'pressing it asks -- the ceiling is 1 and board 0 is already there -- and'
+    + ' the yes is the plans screen [' +
+    [r.freeFabPressed, r.freeFabAsked, r.freeFabToPlans].join(' ') + ']');
+say(r.freeFabWroteNothing && r.freeBoardsStillOne,
+    'AND THE LANGUAGE STILL HOLDS ONE BOARD -- the pop is what the screen'
+    + ' says, not what KB has [' +
+    [r.freeFabWroteNothing, r.freeBoardsStillOne].join(' ') + ']');
+
+/* ---- the paid list is the same list, and the + is the same + -------------
+   「プラスは5個目以降」 OWNER 2026-09-04. The difference between the plans is
+   what happens AFTER the press, and nothing else. */
+say(r.plusListRows === r.plusBoards && r.plusListRows === 3,
+    'Plus with two built draws three rows and no frames (' + r.plusListRows +
+    ' rows, ' + r.plusBoards + ' boards, ' + r.plusCount + ' in the pool)');
+say(r.plusFab && r.plusRoomOpens && !r.plusRoomAsked,
+    'and with room left the + opens the patterns rather than asking ['
+    + [r.plusFab, r.plusRoomOpens, r.plusRoomAsked].join(' ') + ']');
+say(r.plusFullRows === 4 && r.plusFullFab,
+    'at four the list is four rows and the + is still there ('
+    + r.plusFullRows + ' rows, + ' + r.plusFullFab + ')');
+say(r.plusFullAsked && r.plusFullToPlans && r.plusFullWroteNothing,
+    'and THE FIFTH is where it asks -- the yes is the plans screen and'
+    + ' nothing was written [' + [r.plusFullAsked, r.plusFullToPlans,
+    r.plusFullWroteNothing].join(' ') + ']');
+say(r.proFab && !r.proAsked && r.proAdded,
+    'Pro has no ceiling to meet, so its + never asks [' +
+    [r.proFab, r.proAsked, r.proAdded].join(' ') + ']');
 
 /* ---- and the way into Settings is on the first step as well as the third -
    「１にもほしくない？」 OWNER 2026-09-03 */

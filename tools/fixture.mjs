@@ -1993,10 +1993,11 @@ export function halfDone(){
                                          return vWorld(); }],
     /* A language with a keyboard somebody BUILT, and three of its four
        chapters open to be taken away. Neither is reachable from seed(): the
-       walk runs on the free plan, where `kbBoards()` is empty and the article
-       draws no keyboard at all -- 「無料キーボードはなしでいいよ。作ったキーボード
-       のみ表示」 -- and nothing has ever been switched on for `dl`, so the mark
-       that says a chapter may be taken away was on no screen in any language.
+       walk runs on the free plan, where `kbBoards()` answers with the free
+       QWERTY alone and the article draws no keyboard at all -- 「無料キーボード
+       はなしでいいよ。作ったキーボードのみ表示」 -- and nothing has ever been
+       switched on for `dl`, so the mark that says a chapter may be taken away
+       was on no screen in any language.
        Board 1, because board 0 is the free QWERTY itself. */
     ['a language anybody may take away', () => {
        SET.plan = 'plus';
