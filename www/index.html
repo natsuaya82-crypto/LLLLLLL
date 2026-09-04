@@ -3402,7 +3402,11 @@ html[data-script="on"] .gsw{font-family:var(--face-script);letter-spacing:0}
 .scin.own{text-align:left}
 .capwarn{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;margin:2px 0 14px;padding:12px 14px;
   border:1px solid rgba(201,168,106,.3);border-radius:10px;background:transparent;color:var(--txm);font:inherit;font-size:.88rem;cursor:pointer}
-.capgo{color:var(--gold);flex-shrink:0}
+/* The 「go and see the plans」 tail on a ceiling's row. It was written in two
+   places 142 lines apart -- the colour here, the layout down in the drawn-marks
+   section -- so neither block was the look of this thing and changing either
+   one moved half of it. One block. */
+.capgo{display:inline-flex;align-items:center;gap:4px;color:var(--gold);flex-shrink:0}
 .set.lock .sv{color:var(--gold)}
 /* ---------- the grammar, in stages ----------
    A list of stages, each with what it still needs; then one stage open, with
@@ -3544,7 +3548,6 @@ textarea.ntbody.grow{min-height:0;height:auto;overflow:hidden;resize:none}
 .search .lens{display:flex;align-items:center;color:var(--txm);flex:0 0 auto}
 .set .sv{display:flex;align-items:center;gap:6px}
 .set .sv .go,.capgo .go{opacity:.75}
-.capgo{display:inline-flex;align-items:center;gap:4px}
 </style>
 </head>
 <body>
