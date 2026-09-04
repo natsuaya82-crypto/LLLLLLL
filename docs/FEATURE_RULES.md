@@ -218,6 +218,28 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### 上限のポップは、そこに出す。後ろの画面は閉じない、動かさない
+- Date: 2026-09-04
+- Area: 上限に当たったときのポップ（`capPop` まわり）。呼ぶ側ぜんぶ
+- Decision:
+
+  ```
+  全部1枚目みたいにポップ出して背景変えずに
+  ```
+
+- Reason: いま二通りある。**単語の作成のシートを開いたまま、その上にポップが
+  出る**road と、**シートを先に閉じてから、下にあった画面の上にポップが出る**
+  road。後者は、上限に当たっただけで書きかけの画面が消える。オーナーが選んだのは
+  前者 ── ポップは今いる所に出て、後ろは何も変わらない。
+- Affected features: 上限のポップを出す全部の口。**一箇所にする**（`docs/DUPLICATES.md` 7番）
+- Affected data: 無し。見た目と、押した後どこに立っているかだけ
+- Affected docs: `docs/DUPLICATES.md`、`docs/STATE.md`
+- Implementation status: `claude/dup2` に配布ずみ
+
+  **これは「後ろを閉じない」という一つの決まりで、ポップだけの話ではない。**
+  ポップから「アップグレード」でプランへ行き、戻ってきたときに立っているのも、
+  ポップを出したその画面である（`docs/DUPLICATES.md` 8番はこれで決まる）。
+
 ### 人が作ったものに期限は無い。バグで消えた分はずっと戻せる
 - Date: 2026-09-04
 - Area: 保存されるもの全部。とくに復旧の履歴（`supabase/schema.sql`）
