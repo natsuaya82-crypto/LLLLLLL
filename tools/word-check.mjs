@@ -177,6 +177,65 @@ const R = await pg.evaluate(() => {
   if (!wEdit || !wEdit.mns.length)
     out.fails.push('reopening the add sheet threw away the meanings');
 
+  /* ---- Save does not throw away what the word already carried -----------
+     `ph` is the sounds a word carries. An import writes it -- a list with a
+     pronunciation column puts that column on the word (www/import.js), over
+     an existing word too -- and the words that predate the chart were each
+     given one, once (`migratePh` in www/core.js).
+
+     THE SHEET HAS NO FIELD FOR IT. Nobody standing on that screen can see it,
+     change it or clear it, and Save was deleting it anyway: open a word, edit
+     the meaning, press Save, and what the person imported is gone. `sp` is
+     not a copy of it -- the spelling carries the sounds the LETTERS say, and
+     the two are different the moment somebody's own reading is not the roman
+     one, which is what a pronunciation column is FOR.
+
+     And it does not come back empty, which is why nobody notices. `migratePh`
+     runs at the next launch, finds nothing there, and fills the hole with
+     `phGuess(hw)` -- a machine's reading of the spelling, wearing the same
+     key. The field is not blank afterwards, it is WRONG, and only the person
+     who wrote it can tell.
+
+     CLAUDE.md § Data: nothing a person made is removed because the current
+     shape does not need it. Save writes what the sheet holds; it does not get
+     to remove what the sheet never asked about. */
+  start();
+  const carried = ['t', 'sʰ', 'ɑ', 'ŋ'];
+  const imported = findWord('tira');
+  /* A word that has been spelled and then had a list imported over it: `sp`
+     is its spelling and `ph` is the reading that came out of the file. Both,
+     because that is the state the sheet is opened in -- and it keeps the
+     headword still, so what is under test is Save and not a rename. */
+  imported.sp = JSON.parse(JSON.stringify(spOf(imported)));
+  imported.ph = carried.slice();
+  openWord('tira');
+  openEdit('tira');
+  wEdit.mns = ['意味を書き直す'];
+  wdSync();
+  wdWrite();
+  const kept = findWord('tira');
+  const keptPh = (kept && kept.ph) ? kept.ph.join(' ') : '';
+  out.said.push('a word saved from the sheet still carries the sounds that ' +
+    'came with it: ' + (keptPh ? '"' + keptPh + '"' : 'GONE'));
+  if (!kept || kept.mns.join('') !== '意味を書き直す')
+    out.fails.push('the save under test did not land: mns is ' +
+      JSON.stringify(kept && kept.mns));
+  if (keptPh !== carried.join(' '))
+    out.fails.push('Save left ph = ' + JSON.stringify(keptPh) + ' where the ' +
+      'word carried ' + JSON.stringify(carried.join(' ')) + ' -- the sheet has ' +
+      'no field for it, so nobody asked for it to go');
+  /* And the next launch, which is where it stops looking like nothing
+     happened: the hole is filled with a guess off the spelling. */
+  migratePh();
+  const after = (findWord('tira') || {}).ph;
+  const afterPh = after ? after.join(' ') : '';
+  out.said.push('and after the next launch it is: ' +
+    (afterPh ? '"' + afterPh + '"' : 'GONE'));
+  if (afterPh !== carried.join(' '))
+    out.fails.push('after the next launch ph = ' + JSON.stringify(afterPh) +
+      ' -- the sounds somebody imported were replaced by a guess off the ' +
+      'spelling, and nothing on any screen says so');
+
   /* ---- an import that is over is over ------------------------------------
      「取り込んだあとにアルファベットページに飛ばなくていいから戻る押しても
        前のページに染み付いてるせいで全然戻れない」OWNER 2026-09-02.

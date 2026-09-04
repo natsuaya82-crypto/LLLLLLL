@@ -91,7 +91,7 @@ function addOne(){
   /* The word AND the forms going in with it. Asking for room for one and then
      writing four is how a free language ends up over its own limit. */
   addFmSync();
-  if(!capOK(1+addFms.length)){ closeSheet(); capStop(1+addFms.length); return; }
+  if(capStop(1+addFms.length)) return;
   if(findWord(hw)){ toast(t('toast.dup')); return; }
   addPos=wEdit.pos;
   syn=(d.syn||[]).slice(); ant=(d.ant||[]).slice();
@@ -751,28 +751,37 @@ function fmrTodo(w){
   }
   return out;
 }
-/* Making them. Each one goes in as an ordinary word: it has a spelling, it
-   remembers what it came from and what it is of that, and nothing marks it as
-   having been made by a rule, because nothing about it is different.
+/* WHAT A FORM IS, and it is one place. This was written out three times --
+   in fmrAdd(), in fmrAddAll() and in addFmWrite() -- and the third one's
+   comment said "made the way fmrAdd() makes one", which nothing held. A word
+   is what it has ON it, so adding anything to a form meant finding all three.
 
    An inflection takes the meanings of the word it is a form of -- a past
-   tense is still the verb, which is the distinction the two lists above draw.
-   A derivation takes none: "one who wakes early" is a different word that
-   happens to be built out of this one, and filling in the parent's meaning
-   there would be the app claiming to know what somebody's word means. It
-   comes out with no meaning, and the half-done list on the search tab is
-   already the screen that says so. */
+   tense is still the verb. A derivation takes none: "one who wakes early" is
+   a different word that happens to be built out of this one, and filling in
+   the parent's meaning there would be the app claiming to know what somebody's
+   word means. It comes out with no meaning, and the half-done list on the
+   search tab is already the screen that says so.
+
+   Nothing marks it as having been made by a rule, because nothing about it is
+   different from a word somebody typed. */
+function fmrWord(w, m){
+  var nw={hw:m.hw, pos:w.pos, at:Date.now(), from:String(w.hw), fm:m.fm,
+          sp:JSON.parse(JSON.stringify(m.sp)),
+          mns:(fmGroup(m.fm)==='i')? wMns(w).slice() : []};
+  nw.mn=nw.mns[0]||'';
+  return nw;
+}
+/* Making them, for one word. What a form IS is fmrWord() above; this is the
+   list of them, the room for them, and the word's page again afterwards. */
 function fmrAdd(hw){
   var w=findWord(hw), todo=w? fmrTodo(w) : [], i, m, nw, made=[];
   if(!w || !todo.length) return;
-  if(!capOK(todo.length)){ closeSheet(); capStop(todo.length); return; }
+  if(capStop(todo.length)) return;
   for(i=0;i<todo.length;i++){
     m=todo[i];
     if(findWord(m.hw)) continue;
-    nw={hw:m.hw, pos:w.pos, at:Date.now(), from:String(w.hw), fm:m.fm,
-        sp:JSON.parse(JSON.stringify(m.sp)),
-        mns:(fmGroup(m.fm)==='i')? wMns(w).slice() : []};
-    nw.mn=nw.mns[0]||'';
+    nw=fmrWord(w, m);
     WORDS.push(nw); made.push(m.hw);
   }
   if(!made.length) return;
@@ -805,9 +814,9 @@ function fmrTodoAll(){
   }
   return out;
 }
-/* Making all of them. The same word that fmrAdd writes -- one function would
-   be better and is not possible without changing what fmrAdd does, which is
-   open the word's page afterwards; this one has no word to go back to.
+/* Making all of them. The same word fmrAdd writes, because both ask
+   fmrWord(). What is left different is the end: fmrAdd opens the word's page
+   afterwards and this one has no word to go back to.
 
    Every word the rules would make, or every word ONE KIND of rule would make.
    A chapter of the grammar page asks for its own -- 「その章のページへ」 -- and
@@ -825,10 +834,7 @@ function fmrAddAll(pos, fms){
   for(i=0;i<all.length;i++){
     w=all[i].w; m=all[i].m;
     if(findWord(m.hw)) continue;
-    nw={hw:m.hw, pos:w.pos, at:Date.now(), from:String(w.hw), fm:m.fm,
-        sp:JSON.parse(JSON.stringify(m.sp)),
-        mns:(fmGroup(m.fm)==='i')? wMns(w).slice() : []};
-    nw.mn=nw.mns[0]||'';
+    nw=fmrWord(w, m);
     WORDS.push(nw); made++;
   }
   if(!made) return;
@@ -924,22 +930,17 @@ function addFmDrop(id){
   delete addFmEd[String(id)];
   addFmPaint();
 }
-/* Written when the word is. Each is an ordinary word, made the way fmrAdd()
-   makes one -- what it is a form OF and what form it is, the parent's
-   meanings if it is an inflection and none if it is a derivation. A form
-   whose spelling is already a word in the dictionary is skipped rather than
-   overwriting it: two words cannot share a headword, and the one already
-   there is the one somebody wrote. */
+/* Written when the word is. Each is fmrWord() -- the same form fmrAdd() and
+   fmrAddAll() write. A form whose spelling is already a word in the
+   dictionary is skipped rather than overwriting it: two words cannot share a
+   headword, and the one already there is the one somebody wrote. */
 function addFmWrite(hw){
   var par=findWord(hw), i, m, nw, made=0;
   if(!par) return 0;
   for(i=0;i<addFms.length;i++){
     m=addFms[i];
     if(!m.hw || findWord(m.hw)) continue;
-    nw={hw:m.hw, pos:par.pos, at:Date.now(), from:String(par.hw), fm:m.fm,
-        sp:JSON.parse(JSON.stringify(m.sp)),
-        mns:(fmGroup(m.fm)==='i')? wMns(par).slice() : []};
-    nw.mn=nw.mns[0]||'';
+    nw=fmrWord(par, m);
     WORDS.push(nw); made++;
   }
   return made;
@@ -1460,10 +1461,9 @@ FORM_OPEN.word=function(hw){ openWord(hw); };
    pressed on the sound keyboard is a step whose letter is whichever letter
    writes it, or none at all if nothing does yet. */
 function wdSync(){ wEdit.seq=spPh(wEdit.sp||[]); }
-/* Four things that were written as code inside a button: a condition, a pair
-   of statements, and two assignments. Each is one line now, in a file a
-   checker can read. */
-function goPlans(){ closeSheet(); go('plans'); }
+/* Three things that were written as code inside a button: a route and two
+   assignments. Each is one line now, in a file a checker can read. */
+function goPlans(){ go('plans'); }
 function wdSetNt(v){ wEdit.nt=v; wdKeepTouch(); }
 function wdSetPos(v){ wEdit.pos=v; }
 /* A reading typed whole, given back to the positions that make it up.
@@ -1530,7 +1530,15 @@ function wdWrite(){
   var clash=findWord(hw);
   if(clash && clash!==w){ toast(t('toast.dup')); return false; }
   var old=String(w.hw);
-  w.hw=hw; delete w.ph;
+  /* The sheet writes what the sheet holds. `ph` -- the sounds that came with
+     the word, off an import or off the one migration that gave the oldest
+     words a sequence -- is not on this screen: there is no field for it, so
+     nobody here can see it, change it or clear it. It was deleted anyway,
+     and the next launch filled the hole with `phGuess(hw)`, so what somebody
+     imported came back as a machine's reading of the spelling under the same
+     key. CLAUDE.md § Data. `wPh()` already prefers the spelling, so nothing
+     on any screen reads this while there is one. */
+  w.hw=hw;
   w.sp=JSON.parse(JSON.stringify(wEdit.sp));
   w.mns=wEdit.mns.slice(); w.mn=wEdit.mns.length? wEdit.mns[0] : '';
   w.pos=wEdit.pos;

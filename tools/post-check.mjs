@@ -1642,6 +1642,198 @@ const R = await pg.evaluate(async () => {
                  'so changing phones still loses it');
   } finally { netSend = realSend2; DRAFTS = wasDrafts; SESS = wasSess2; draftsSave(); }
 
+
+  /* ---- 15 · 16 · 17. the three ways a post loses somebody's bytes --------
+     docs/RISK.md § 5, § 6 and § 9. All three are the same shape and it is the
+     shape CLAUDE.md § 8 names: the phone that WROTE the post keeps `pics` and
+     `vo` in hand, so the person who made it sees it correctly whatever
+     happened on the wire. Only the second reader sees the hole, and there is
+     no second reader in a test unless one is stood up.
+
+     So a server is stood up here -- a table of rows and a bucket of files --
+     and what is asked is what IT ends up holding. Not the screen, which is
+     right either way.
+
+     One fake, three claims, because they are three states of one road: the
+     row went twice, the bytes never went, the bytes never left. */
+  {
+    const realSend3 = netSend, realUp3 = netUp;
+    const wasPosts3 = POSTS.slice(), wasSess3 = SESS, wasGone3 = POST_GONE;
+
+    /* THE SERVER. `rows` is the `post` table by id, `bucket` is post-media by
+       path. `dropWall` refuses a storage DELETE while it is up, and `upWall`
+       is the list of path endings the wire will not accept. */
+    let rows = {}, bucket = {}, upWall = [], dropWall = false;
+    let inserts = 0, patches = 0;
+    netSend = function (method, path, body, tok, ok, bad) {
+      const p = String(path);
+      if (p.indexOf('/rest/v1/post') === 0) {
+        if (method === 'POST') {
+          inserts++;
+          rows[body.id] = JSON.parse(JSON.stringify(body));
+          setTimeout(() => { if (ok) ok([{ id: body.id }]); }, 5);
+          return;
+        }
+        const m = /id=eq\.([^&]+)/.exec(p), id = m && decodeURIComponent(m[1]);
+        if (method === 'PATCH') {
+          patches++;
+          if (rows[id] && body && body.body)
+            for (const k in body.body) rows[id].body[k] = body.body[k];
+          setTimeout(() => { if (ok) ok([{ id }]); }, 5);
+          return;
+        }
+        if (method === 'DELETE') {
+          delete rows[id];
+          setTimeout(() => { if (ok) ok(null); }, 5);
+          return;
+        }
+      }
+      if (p.indexOf('/storage/v1/object/post-media') === 0 && method === 'DELETE') {
+        if (dropWall) { setTimeout(() => { if (bad) bad(null, 0); }, 5); return; }
+        for (const f of ((body && body.prefixes) || [])) delete bucket[f];
+        setTimeout(() => { if (ok) ok(null); }, 5);
+        return;
+      }
+      return realSend3.apply(this, arguments);
+    };
+    /* A SLOW WIRE, and slow is the whole of § 5. netUpPics() walks the
+       photographs one after another, so two pictures is four of these end to
+       end -- and every one of those milliseconds is a window the timeline
+       answers inside. */
+    netUp = function (path, b64, mime, ok, bad) {
+      const no = upWall.some(w => String(path).indexOf(w) >= 0);
+      setTimeout(() => { if (no) bad(null, 500); else { bucket[path] = b64; ok(path); } }, 40);
+    };
+    /* What the server ends up holding for the one post under test. */
+    const only = () => { const k = Object.keys(rows); return k.length === 1 ? rows[k[0]] : null; };
+
+    try {
+      SESS = { at: 'x', rt: 'y', uid: 'u1', anon: false };
+
+      /* ---- 15. the same post does not go to the server twice ------------
+         docs/RISK.md § 5. www/sns.js calls postCatchUp() off the back of
+         EVERY netFeed answer, and vFeed() asks for a feed on every render --
+         so on a slow wire the second answer arrives while the first post is
+         still walking its photographs up. `sid` is the only thing that says
+         「this one has gone」 and it is not written until the row lands, so
+         the same post is sent again, under a NEW id (netPush() makes one per
+         call), and the timeline holds it twice. */
+      rows = {}; bucket = {}; upWall = []; inserts = 0;
+      POSTS = [{ id: 'catch-1', at: 1, mine: true, ln: 'kano',
+                 pics: [blackPic, blackPic] }];
+      POST_GONE = {};
+      postCatchUp();
+      await new Promise(r => setTimeout(r, 25));
+      postCatchUp();                       /* the second timeline answer */
+      await new Promise(r => setTimeout(r, 700));
+      if (inserts !== 1)
+        fails.push('one post that had not gone up yet was inserted ' + inserts +
+                   ' times while its photographs were still going up. A person ' +
+                   'on a bad train sees the same post two and three times, on ' +
+                   'their own timeline and on everybody else’s, and has to ' +
+                   'delete them one at a time');
+      if (Object.keys(rows).length > 1)
+        fails.push('the server is holding ' + Object.keys(rows).length +
+                   ' rows for one post');
+
+      /* ---- 16. what will not go up is not lost for good ------------------
+         docs/RISK.md § 6. A photograph that would not upload is dropped from
+         the post’s list and the row goes up anyway; the voice does the
+         same through ok(\'\'). Then `sid` is written, and postCatchUp() never
+         looks at a post that has one -- so the photograph and the voice are
+         gone for everybody except the phone that wrote them, which still
+         holds the bytes in hand and still draws all four.
+
+         What is asked here is NOT which of the two answers the app gives --
+         hold the post, or carry the failure home and finish it later. That is
+         the owner’s. What is asked is that ONE OF THEM HAPPENS: the wire
+         comes back, the app is given the same chance it is given for a post
+         written in a tunnel, and the server must end up holding everything
+         the post carries. Under one row, because two is § 15. */
+      rows = {}; bucket = {}; inserts = 0; patches = 0;
+      files['v-fail-1.m4a'] = 'QUJDRA==';
+      upWall = ['/1.jpg', 'vo.m4a'];       /* the second photograph, and the voice */
+      POSTS = [{ id: 'catch-2', at: 2, mine: true, ln: 'kano',
+                 pics: [blackPic, blackPic], vo: { f: 'v-fail-1.m4a', ms: 3000 } }];
+      POST_GONE = {};
+      postCatchUp();
+      await new Promise(r => setTimeout(r, 700));
+      upWall = [];                          /* the wire comes back */
+      postCatchUp();                        /* the next timeline answer */
+      await new Promise(r => setTimeout(r, 900));
+      const r16 = only();
+      if (!r16)
+        fails.push('after a photograph and a voice would not go up, the server ' +
+                   'holds ' + Object.keys(rows).length + ' rows for that post ' +
+                   'and one is what it should be');
+      else {
+        const pu = (r16.body && r16.body.pu) || [];
+        if (pu.length !== 2)
+          fails.push('the post carries two photographs and the row on the ' +
+                     'server names ' + pu.length + '. The one that would not go ' +
+                     'is dropped from the list and the row goes up as though it ' +
+                     'were finished, so nothing ever tries again -- the person ' +
+                     'who wrote it still sees two, and everybody else sees one');
+        if (!(r16.body && r16.body.vu))
+          fails.push('the post carries a recording and the row on the server ' +
+                     'names no file for it. netUpVoice() answers ok(\'\') when ' +
+                     'the upload fails, which is the same answer it gives for a ' +
+                     'post that never had a voice -- so the post goes up sounding ' +
+                     'like one that was never recorded');
+      }
+      delete files['v-fail-1.m4a'];
+
+      /* ---- 17. the bytes of a deleted post do not stay public ------------
+         docs/RISK.md § 9. netDropFiles() asks the bucket to remove the
+         photographs and the voice, and when that fails its handler is
+         function(){ done(); } -- the row is deleted anyway, deliberately
+         (「a post somebody asked to be gone must go」). What was never
+         written down is that the bucket is PUBLIC (netMediaURL() builds
+         /storage/v1/object/public/post-media/), so what is left is not
+         merely litter: anybody holding the URL goes on seeing the
+         photograph of a post its author deleted. Nothing points at the
+         files any more, so there is nothing left to delete them WITH.
+
+         The row going is right and is not what this asks about. What it
+         asks is that the paths are not thrown away with it. */
+      rows = {}; bucket = {}; upWall = []; dropWall = false;
+      POSTS = []; POST_GONE = {};
+      const del = { id: 'del-1', sid: 'sdel-1', at: 3, mine: true, ln: 'kano',
+                    pu: ['u1/p1/0.jpg', 'u1/p1/1.jpg'], pt: ['u1/p1/0.t.jpg'],
+                    vu: 'u1/p1/vo.m4a' };
+      const keep = { id: 'keep-1', sid: 'skeep-1', at: 4, mine: true, ln: 'tir',
+                     pu: ['u1/p2/0.jpg'] };
+      for (const f of del.pu.concat(del.pt, [del.vu], keep.pu)) bucket[f] = 'x';
+      POSTS = [del, keep];
+      rows[del.sid] = { id: del.sid }; rows[keep.sid] = { id: keep.sid };
+      dropWall = true;                      /* the bucket refuses */
+      postDel('del-1');
+      if (popOn()) popYes();
+      await new Promise(r => setTimeout(r, 300));
+      if (rows[del.sid])
+        fails.push('a post somebody deleted is still a row on the server. ' +
+                   'The files not going is not a reason for the post to stay');
+      dropWall = false;                     /* the wire comes back */
+      postCatchUp();                        /* the next timeline answer */
+      await new Promise(r => setTimeout(r, 400));
+      const left = del.pu.concat(del.pt, [del.vu]).filter(f => bucket[f] !== undefined);
+      if (left.length)
+        fails.push('the photographs and the voice of a deleted post are still ' +
+                   'in the bucket (' + JSON.stringify(left) + ') after the wire ' +
+                   'came back. post-media is PUBLIC, so anybody who has the URL ' +
+                   'goes on seeing a photograph its author deleted, and nothing ' +
+                   'points at the files any more so there is nothing left to ' +
+                   'delete them with');
+      if (keep.pu.some(f => bucket[f] === undefined))
+        fails.push('deleting one post took a photograph belonging to a post ' +
+                   'nobody deleted. That is a cleanup, and docs/DATA_SAFETY.md ' +
+                   'forbids one');
+    } finally {
+      netSend = realSend3; netUp = realUp3;
+      POSTS = wasPosts3; SESS = wasSess3; POST_GONE = wasGone3; savePosts();
+    }
+  }
+
   return { fails, mid: (nowLight * 100).toFixed(1), corner: (wasLight * 100).toFixed(1),
            bytes: Math.round(String(out[0] || '').length / 1024),
            thumb: Math.round(small.length / 1024), full: Math.round(big.length / 1024),
@@ -1686,4 +1878,11 @@ console.log('post: a letter placed on a black photograph is IN the file that goe
             '      not wearing the next one\u2019s.\n' +
             '      A post taken down leaves a tombstone where the post somebody\n' +
             '      came to read was, and nowhere else; it is out of the timeline,\n' +
-            '      and your own stays, wearing the word for it.');
+            '      and your own stays, wearing the word for it.\n' +
+            '      One post that has not gone up yet is sent ONCE however many\n' +
+            '      times the timeline answers while its photographs are going up.\n' +
+            '      A photograph or a voice that would not upload does not leave a\n' +
+            '      post the app believes is finished: the wire comes back and the\n' +
+            '      server ends up holding all of it, under one row. And the bytes\n' +
+            '      of a post somebody deleted do not stay in the public bucket\n' +
+            '      because the delete was refused once.');

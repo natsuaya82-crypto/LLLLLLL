@@ -3546,6 +3546,15 @@ textarea.ntbody.grow{min-height:0;height:auto;overflow:hidden;resize:none}
    one is told where to put it instead. */
 .ic{vertical-align:-.12em}
 .search .lens{display:flex;align-items:center;color:var(--txm);flex:0 0 auto}
+/* And where the search is SENT rather than narrowed as it is typed, the
+   magnifier is a button -- the timeline, and nothing else so far. It is the
+   same mark in the same place: the negative margins give back exactly the
+   44 it takes, so the icon and the field either side of it do not move, and
+   what is added is only the room a thumb needs. Same trick as .sx beside it,
+   and the same gold under the finger. */
+.search button.lens{min-width:44px;min-height:44px;margin:-10px -14.5px;
+      justify-content:center;background:none;border:0;padding:0}
+.search button.lens:active{color:var(--gold)}
 .set .sv{display:flex;align-items:center;gap:6px}
 .set .sv .go,.capgo .go{opacity:.75}
 </style>
