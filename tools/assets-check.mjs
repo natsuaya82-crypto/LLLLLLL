@@ -321,6 +321,171 @@ if (existsSync(IOS)) {
   look(IOS)
 }
 
+// --------------------------------------------------------- the privacy manifest
+// A FOURTH STATEMENT OF THE SAME SHAPE, and the only one whose failure arrives
+// by email.
+//
+// Apple asks a REASON for a handful of ordinary APIs -- user defaults, a
+// file's timestamp, free disk space, the seconds since boot, the list of
+// keyboards somebody has installed. A binary that reaches for one and carries
+// no PrivacyInfo.xcprivacy declaring why is refused AFTER the upload
+// succeeds: the workflow goes green, TestFlight says nothing, and an hour
+// later ITMS-91053 arrives in the mail. That is the same class as build 86's
+// ITMS-90158 above and it is the only one in this repository that cannot show
+// up as a red tick.
+//
+// TWO WAYS TO FORGET, and only the second looks like anything:
+//
+//   1. The file is not written at all.
+//   2. The file is written, committed, pushed -- and left out of the
+//      Resources build phase, so it is not in the bundle. Nothing fails.
+//      Not the archive, not the export, not the upload. It is Compose.swift
+//      left out of Sources, except that Sources at least produced a compiler
+//      error naming a missing type. This one produces silence and then mail.
+//
+// SO NOTHING HERE IS A LIST SOMEBODY MAINTAINS. What must be declared is
+// worked out on every run from what the binary actually reaches for:
+//
+//   * every .swift under ios/App/, filed under the target directory it sits
+//     in, because a manifest lives in the bundle whose code reached for the
+//     API -- the app's, the keyboard's or the widget's;
+//   * every Capacitor plugin under node_modules/ that ships NO .xcprivacy of
+//     its own. Those compile into the targets the Podfile names, so what they
+//     reach for is that target's to declare. A plugin that ships its own
+//     manifest answers for itself and is skipped -- which is exactly what
+//     makes this easy to miss by eye: @capacitor/ios carries two, so the
+//     folder looks covered while @capgo/capacitor-social-login carries none.
+//
+// It is asked BOTH DIRECTIONS, the way act-map's names are. A category
+// reached and not declared is the refusal. A category declared and not
+// reached any more is a line that outlived what it described -- box-check's
+// sentence about a stale baseline: it rots into permission.
+//
+// WHAT THIS CANNOT SEE, said out loud so silence is not read as a check:
+// pods that arrive through CocoaPods rather than node_modules (GoogleSignIn,
+// Alamofire, and whatever they pull) are not in this repository at all. Each
+// carries its own manifest and that is its vendor's to keep.
+const REASON_API = {
+  NSPrivacyAccessedAPICategoryUserDefaults:
+    /\b(?:NS)?UserDefaults\b/,
+  NSPrivacyAccessedAPICategoryFileTimestamp:
+    /\b(?:creationDate|modificationDate|fileModificationDate|attributesOfItem|f?getattrlist(?:bulk)?|NSFileCreationDate|NSFileModificationDate|creationDateKey|contentModificationDateKey|NSURLCreationDateKey|NSURLContentModificationDateKey)\b/,
+  NSPrivacyAccessedAPICategorySystemBootTime:
+    /\b(?:systemUptime|mach_absolute_time|mach_continuous_time)\b/,
+  NSPrivacyAccessedAPICategoryDiskSpace:
+    /\b(?:volumeAvailableCapacity\w*|volumeTotalCapacityKey|systemFreeSize|systemSize|f?stat[fv]fs|NSFileSystemFreeSize|NSFileSystemSize|NSURLVolumeAvailableCapacity\w*)\b/,
+  NSPrivacyAccessedAPICategoryActiveKeyboards:
+    /\bactiveInputModes\b/,
+}
+const reaches = (text) => {
+  const out = new Set()
+  for (const [cat, re] of Object.entries(REASON_API)) if (re.test(text)) out.add(cat)
+  return out
+}
+const sourcesUnder = (dir, exts) => {
+  const out = []
+  const go = (d) => {
+    for (const e of readdirSync(d, { withFileTypes: true })) {
+      if (e.name === 'Pods' || e.name === 'public' || e.name === 'build' || e.name === 'node_modules') continue
+      const f = join(d, e.name)
+      if (e.isDirectory()) go(f)
+      else if (exts.test(e.name)) out.push(f)
+    }
+  }
+  try { go(dir) } catch { /* not there */ }
+  return out
+}
+
+let manifests = 0, pods = 0
+if (existsSync(PBX) && existsSync(IOS)) {
+  // The bundles: every directory under ios/App/ that holds Swift of its own.
+  // Read off the tree rather than named here, so a fourth extension is a
+  // fourth bundle the day somebody adds one.
+  const bundles = new Map()
+  for (const e of readdirSync(IOS, { withFileTypes: true })) {
+    if (!e.isDirectory() || e.name === 'Pods' || e.name === 'App.xcodeproj' || e.name === 'App.xcworkspace') continue
+    const swift = sourcesUnder(join(IOS, e.name), /\.swift$/)
+    if (swift.length) bundles.set(e.name, reaches(swift.map((f) => readFileSync(f, 'utf8')).join('\n')))
+  }
+
+  // What the pods reach for, and which bundles they land in. The Podfile
+  // names the targets; a plugin with a manifest of its own answers for itself.
+  const MODULES = join(ROOT, 'node_modules')
+  let podReach = new Set(), podsSeen = false
+  if (existsSync(MODULES)) {
+    podsSeen = true
+    const packages = []
+    for (const e of readdirSync(MODULES, { withFileTypes: true })) {
+      if (!e.isDirectory()) continue
+      if (e.name.startsWith('@')) {
+        for (const s of readdirSync(join(MODULES, e.name), { withFileTypes: true }))
+          if (s.isDirectory()) packages.push(join(MODULES, e.name, s.name))
+      } else packages.push(join(MODULES, e.name))
+    }
+    for (const p of packages) {
+      let meta
+      try { meta = JSON.parse(readFileSync(join(p, 'package.json'), 'utf8')) } catch { continue }
+      const src = meta.capacitor && meta.capacitor.ios && meta.capacitor.ios.src
+      if (!src) continue
+      pods++
+      if (sourcesUnder(join(p, src), /\.xcprivacy$/).length) continue   // it answers for itself
+      const txt = sourcesUnder(join(p, src), /\.(swift|m|mm|h)$/)
+        .map((f) => readFileSync(f, 'utf8')).join('\n')
+      for (const c of reaches(txt)) podReach.add(c)
+    }
+    const podfile = existsSync(join(IOS, 'Podfile')) ? readFileSync(join(IOS, 'Podfile'), 'utf8') : ''
+    for (const m of podfile.matchAll(/^\s*target\s+['"]([^'"]+)['"]\s+do/gm)) {
+      const b = bundles.get(m[1])
+      if (b) for (const c of podReach) b.add(c)
+    }
+  }
+
+  // Only the Resources PHASE counts, for the same reason only the Sources
+  // phase counts above: a PBXBuildFile line reads identically to a wired-up
+  // file and means nothing on its own.
+  const all = readFileSync(PBX, 'utf8')
+  const ra = all.indexOf('/* Begin PBXResourcesBuildPhase section */')
+  const rb = all.indexOf('/* End PBXResourcesBuildPhase section */')
+  const res = (ra >= 0 && rb > ra) ? all.slice(ra, rb) : ''
+
+  for (const [name, reached] of bundles) {
+    const file = join(IOS, name, 'PrivacyInfo.xcprivacy')
+    if (!reached.size) {
+      if (existsSync(file))
+        note(`ios/App/${name}/PrivacyInfo.xcprivacy is there and nothing in that bundle reaches for an API Apple asks a reason for. Either it is answering for something this check cannot see -- say so in the file -- or it outlived what it described.`)
+      continue
+    }
+    if (!existsSync(file)) {
+      note(`ios/App/${name}/ reaches for ${[...reached].join(', ')} and there is no PrivacyInfo.xcprivacy beside it.\n` +
+           `      Apple refuses the delivery for this AFTER the upload succeeds -- the\n` +
+           `      workflow goes green and ITMS-91053 arrives by mail an hour later.`)
+      continue
+    }
+    manifests++
+    const txt = readFileSync(file, 'utf8')
+    if (txt.indexOf('NSPrivacyTracking') === -1)
+      note(`ios/App/${name}/PrivacyInfo.xcprivacy does not say NSPrivacyTracking. Absent is not an answer; Apple reads it as one.`)
+    const declared = new Set(Object.keys(REASON_API).filter((c) => txt.indexOf(c) >= 0))
+    for (const c of reached) if (!declared.has(c))
+      note(`ios/App/${name}/ reaches for ${c} and ios/App/${name}/PrivacyInfo.xcprivacy does not declare it. That is ITMS-91053, by mail, an hour after a green upload.`)
+    for (const c of declared) if (!reached.has(c))
+      note(`ios/App/${name}/PrivacyInfo.xcprivacy declares ${c} and nothing in that bundle or its pods reaches for it any more. Take the line out -- a declaration matching nothing rots into permission, the way box-check says a stale baseline line does.`)
+  }
+
+  // And every manifest that exists is in a Resources phase, whichever bundle
+  // it belongs to. A file on disk is not a file in the app.
+  for (const f of sourcesUnder(IOS, /\.xcprivacy$/)) {
+    const leaf = f.split('/').pop()
+    if (res.indexOf(`${leaf} in Resources`) === -1)
+      note(`${f.slice(ROOT.length + 1)} is not in any Resources build phase of App.xcodeproj, so it is not in the bundle.\n` +
+           `      Nothing fails: the archive, the export and the upload are all green,\n` +
+           `      and Apple refuses the delivery by mail (ITMS-91053).`)
+  }
+
+  if (!podsSeen)
+    console.log('privacy: node_modules is not here, so what the pods reach for was not read. Run npm ci first.')
+}
+
 // ------------------------------------------------------------------- verdict
 
 // AND EVERY NATIVE METHOD IS ONE THE APP ACTUALLY CALLS.
@@ -407,4 +572,5 @@ console.log(`assets: ${referenced.length} files loaded by index.html, all presen
 if (swiftCount) console.log(`swift: ${swiftCount} files under ios/App/, every one of them in the project's Sources phase.`)
 console.log(`placeholders: ${holes} under ios/App/, every one of them substituted by the deploy workflow.`)
 console.log(`the bridge: ${natives} native methods, every one of them named by www/.`)
+console.log(`privacy: ${manifests} manifest${manifests === 1 ? '' : 's'} under ios/App/, each in a Resources phase and declaring exactly what its bundle and the ${pods} Capacitor plugin${pods === 1 ? '' : 's'} reach for.`)
 console.log(`load order: core.js -> ${LANGS.length} languages -> ... -> otf5.js -> glyph.js -> act-map.js -> boot.js (last)`)
