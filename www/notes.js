@@ -125,28 +125,15 @@ function delNoteGo(){
   saveNotes(); closeSheet({target:{id:'sbg'}}); render(); toast(t('toast.note.gone'));
 }
 
-/* Searching the notebook. The lens in the corner rather than a box always
-   across the top: a note is read far more often than it is looked for, and
-   the box would push the first note off the screen every day to serve the
-   day it is wanted. 「メモの右上に🔍ボタン置いて、メモ内検索できるように」
-
-   It looks in both halves of a note -- the heading and the body -- because
-   what somebody remembers about a note they wrote is as often a word
-   inside it as the line at the top. */
-var ntQ='', ntFind=false;
-function ntSearch(){
-  ntFind=!ntFind; if(!ntFind) ntQ='';
-  render();
-  var e=document.getElementById('nt-q'); if(e) e.focus();
-}
-function ntSetQ(v){ ntQ=v; render(); }
+/* Newest first, which is the order a notebook is read in. There was a search
+   over this -- a lens in the corner that opened a box -- and it is gone:
+   「メモの検索ボタンは一旦消そう」 OWNER 2026-09-04. 「一旦」, so it may be
+   asked for again; git is what remembers it, not a branch left standing here.
+   NOTHING SOMEBODY WROTE IS TOUCHED -- what went is the way of looking, and
+   every note is still in NOTES and still on this list. */
 function ntFound(){
-  var qq=String(ntQ||'').trim().toLowerCase(), out=[], i;
-  for(i=NOTES.length-1;i>=0;i--){
-    if(qq && (String(ntHead(NOTES[i])||'')+' '+String(ntBody(NOTES[i])||''))
-             .toLowerCase().indexOf(qq)<0) continue;
-    out.push(i);
-  }
+  var out=[], i;
+  for(i=NOTES.length-1;i>=0;i--) out.push(i);
   return out;
 }
 /* ---- choosing several notes, and taking them away ----------------------
@@ -208,23 +195,14 @@ function vNotes(){
             ? navDel(t('notes.sel.del'), 'ntSelDel')
             : '')+
          navDo(t('notes.sel.done'), 'ntSelOff', null, true))
-      : ('<button class="iconb'+(ntFind?' on':'')+'"' + DO('ntSearch') + ' aria-label="'+
-          esc(t('notes.search'))+'">'+ICON_LENS+'</button>'+
-         (langLocked()? ''
-           : navDo(t('notes.sel'), 'ntSelOn', null, true))))+
+      : (langLocked()? ''
+           : navDo(t('notes.sel'), 'ntSelOn', null, true)))+
     '<div class="body">'+
-    (ntFind
-      /* ntSetQ() calls render(), and lnGrowAll() runs there, so this one needs
-         no lnGrow of its own. No cross today: it is the shape this screen was
-         drawn with, and searchBox() is where one would be given. */
-      ? searchBox('nt', t('notes.search'), 'ntSetQ', ntQ)
-      : '<div class="note" style="margin-bottom:12px">'+t('notes.note')+'</div>')+
+    '<div class="note" style="margin-bottom:12px">'+t('notes.note')+'</div>'+
     (found.length
       ? '<div class="ntlist">'+rows+'</div>'
-      : ntQ
-        ? '<div class="empty"><div class="eb">'+t('words.nomatch')+'</div></div>'
-        : '<div class="empty"><div class="eb">'+t('notes.empty.t')+'</div>'+
-          '<div class="es">'+t('notes.empty.s')+'</div></div>')+
+      : '<div class="empty"><div class="eb">'+t('notes.empty.t')+'</div>'+
+        '<div class="es">'+t('notes.empty.s')+'</div></div>')+
     '</div>'+
     /* The round ＋ in the bottom right corner, which is where this app puts
        "make one" -- the timeline's post and the dictionary's word are both

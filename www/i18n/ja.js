@@ -363,7 +363,6 @@ defLang('ja', (function(){
       'notes.sel.del' : '削除',
       'notes.sel.row' : 'このメモを選ぶ',
       'notes.sel.ask' : '{0} 件を削除しますか？',
-      'notes.search' : "メモを検索",
       'post.new'        : '投稿',
       'post.ln.ph'      : '自分の言語で一行',
       'post.mn'         : '意味',

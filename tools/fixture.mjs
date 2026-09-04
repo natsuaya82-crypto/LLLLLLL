@@ -1720,9 +1720,6 @@ export function halfDone(){
         window.route = 'notes'; NAV = [{ r:'notes' }];
         NTSEL = { 0:1 };
         const h = vNotes(); NTSEL = null; return h; }],
-    ['searching the notes', () => { ntFind = true; ntQ = 'a';
-                                    window.route='notes'; NAV=[{r:'notes'}];
-                                    return vNotes(); }],
     /* A slot's word is made on the word screen now, with the two things the
        slot already knows written in: the meaning is what the slot is called
        and the part of speech is the stage's. There is no form of its own any

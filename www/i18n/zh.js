@@ -455,7 +455,6 @@ defLang('zh', (function(){
       'notes.sel.del' : '删除',
       'notes.sel.row' : '选择这条笔记',
       'notes.sel.ask' : '删除 {0} 条笔记？',
-      'notes.search' : "搜索笔记",
       "post.new"        : "新帖",
       "post.ln.ph"      : "用你的语言写一句",
       "post.mn"         : "这句话的意思",

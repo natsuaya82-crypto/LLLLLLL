@@ -495,7 +495,6 @@ defLang('fr', (function(){
       'notes.sel.del' : 'Supprimer',
       'notes.sel.row' : 'Choisir cette note',
       'notes.sel.ask' : 'Supprimer {0} notes ?',
-      'notes.search' : "Rechercher dans les notes",
       "post.new"        : "Nouveau message",
       "post.ln.ph"      : "une phrase dans ta langue",
       "post.mn"         : "Ce que ça veut dire",
