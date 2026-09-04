@@ -43,8 +43,23 @@
 var BK={dirty:false, at:0, how:''};
 /* Something changed. Called by every save* function rather than worked out
    from the storage, because working it out means reading every slice back on
-   every render, and at 697 KB that is a copy of the whole language a frame. */
-function bkTouch(){ BK.dirty=true; }
+   every render, and at 697 KB that is a copy of the whole language a frame.
+
+   AND IT IS WHERE A SAVE REACHES THE SERVER. 「保存としたらオンライン
+   おしまい」「オンラインは一本化ね？」 OWNER 2026-09-04.
+
+   Until today a language went up on a LAUNCH and at the door, and nowhere
+   else: netLangSync() is called from www/boot.js and www/onboard.js and by
+   nothing at all in between (counted). So somebody wrote for an hour and
+   closed the app, and what they had made was on one phone until the next
+   time they opened it.
+
+   This is the one place every save already passes through -- seven save
+   functions call it and they are exactly the seven writers in LANG_IO -- so
+   it is where the send goes, rather than a line added to each of the seven.
+   netSaveUp() in www/net.js decides everything else: whether there is a
+   session, which slices moved, and how long to wait for the typing to stop. */
+function bkTouch(){ BK.dirty=true; if(typeof netSaveUp==='function') netSaveUp(); }
 
 /* What each slice has to BE, read off the functions that read them:
    langRead, ltRead, ntRead, stRead, sndRead. Nothing here is about

@@ -1226,8 +1226,26 @@ function netLangSeen(lid, ok, bad){
     }, bad);
 }
 /* Every slice of one language, as {kind: {body, no}}. */
-function netSlices(sid, ok, bad){
-  netGet('/rest/v1/slice?select=kind,body,no&language=eq.'+encodeURIComponent(sid),
+/* A PostgREST `in.(...)` list. The slice kinds are the twelve names in
+   SLICES and nothing a person types, so there is nothing to escape -- and
+   that is exactly why it is written down: the day this is handed something
+   else, the encoding is here rather than remembered. */
+function netInList(xs){
+  var out=[], i;
+  for(i=0;i<xs.length;i++) out.push(encodeURIComponent(String(xs[i])));
+  return out.join(',');
+}
+/* `kinds` is which of the twelve to ask for, and leaving it out is all of
+   them -- which is what a launch wants and what this asked for always. A SAVE
+   wants the one or two that moved: the whole language is 685 KB on a big one,
+   and reading it back on every save is a copy of somebody's dictionary over
+   the network each time they add a word. Written here rather than as a second
+   function, because 「どのスライスを訊くか」 is this question with an answer,
+   not a different question. */
+function netSlices(sid, ok, bad, kinds){
+  netGet('/rest/v1/slice?select=kind,body,no&language=eq.'+encodeURIComponent(sid)+
+         ((kinds && kinds.length)
+            ? '&kind=in.('+netInList(kinds)+')' : ''),
     function(d){
       var out={}, i;
       for(i=0;i<(d||[]).length;i++) out[d[i].kind]={body:String(d[i].body||''), no:d[i].no||0};
@@ -1384,6 +1402,113 @@ function netAgreed(id, kind, body){
 }
 var NET_SHRANK=[];
 var NET_SYNCING=false;
+/* ONE SLICE, BOTH WAYS, AND IT IS THE ONLY PLACE A SLICE GOES UP.
+   -------------------------------------------------------------------------
+   This was the body of the loop inside netLangSync1() and nothing else could
+   reach it, so the only moment a person's work went up was a LAUNCH -- twice
+   a session, from www/boot.js and from the door. 「保存としたらオンライン
+   おしまい」 OWNER 2026-09-04: a save has to arrive, and it could not,
+   because the road was written inside a walk over all twelve.
+
+   It is lifted out rather than copied. netLangSync1() below calls it twelve
+   times and netSaveUp() calls it for the slices that moved, and there is ONE
+   road: merge, keep, write, agree. A second function that only wrote would be
+   the phone overwriting whatever another one had added -- `slice`'s primary
+   key is (language, kind) and `no` is a counter that guards nothing, so an
+   unmerged write wins and 「そりゃあ両方足すだろ」 loses.
+
+   `got` is what the server is holding for this slice, or nothing. */
+function netSlice1(id, sid, kind, got, done){
+  var mine, was, put;
+  try{ mine=localStorage.getItem(langKeyOf(id, kind)); }catch(e){ mine=null; }
+  /* What the two sides last agreed this slice was. It is the only thing
+     that tells 「somebody removed this here」 from 「this phone has not
+     been told about it yet」 -- the two look identical from here and
+     want opposite answers. No record means no dropping, which is what
+     this did before there was one. */
+  try{ was=localStorage.getItem(langWasKey(id, kind)); }catch(e){ was=null; }
+  put=syMerge(kind, mine===null? '' : mine, got? got.body : '',
+              was===null? '' : was);
+  if(put!=='' && put!==mine){
+    /* and only where it keeps everything that is already there */
+    if(netKeeps(mine, put)){
+      try{ localStorage.setItem(langKeyOf(id, kind), put); }catch(e){}
+      /* Something came back, so say so: the caller reads the screens again. */
+      if(put===''){ done(true); return; }
+    } else {
+      /* Skipped, and remembered rather than swallowed: a merge that came
+         back smaller is a thing somebody has to be told about, and the
+         phone keeps what it had in the meantime. */
+      NET_SHRANK.push(id+'.'+kind);
+      done(false); return;
+    }
+    /* Both sides are holding the same string now, so that is what they
+       agreed. Recorded here rather than after the write, because there is
+       nothing to write. */
+    if(got && put===got.body){ netAgreed(id, kind, put); done(true); return; }
+    netSlicePut(sid, kind, put, got? got.no : 0,
+                function(){ netAgreed(id, kind, put); done(true); },
+                /* A write that did not land agreed nothing. The record
+                   stays as it was and the next launch tries again. */
+                function(){ done(true); });
+    return;
+  }
+  if(put==='' || (got && put===got.body)){ netAgreed(id, kind, put); done(false); return; }
+  netSlicePut(sid, kind, put, got? got.no : 0,
+              function(){ netAgreed(id, kind, put); done(false); },
+              function(){ done(false); });
+}
+/* ---- and the moment a save reaches the server --------------------------
+   「保存としたらオンラインおしまい」「オンラインは一本化ね？」 OWNER 2026-09-04.
+
+   WHICH SLICES MOVED IS ASKED OF WHAT IS ALREADY WRITTEN DOWN, and not of the
+   caller. bkTouch() is called by seven save functions with no argument -- it
+   has always been 「something changed」 and nothing more -- so this compares
+   each slice against `langWasKey`, which is what this phone and the server
+   last agreed it was. A slice equal to that has nothing to say. That record
+   is kept for the merge above and is exactly the question being asked here,
+   so nothing new is stored to answer it.
+
+   ONE BURST IS ONE SEND. Every letter drawn and every word added calls a
+   save, and NET_UPMS of quiet is what separates 「still typing」 from
+   「stopped」. Not zero: a person adding ten words would otherwise open ten
+   requests, and the tenth would be racing the first.
+
+   Fired and never waited for, like everything else here. Nobody is shown a
+   spinner for a save -- the language is on this phone the moment it is
+   written, and this is the copy that outlives the phone catching up. */
+var NET_UPMS=1200, NET_UPT=null;
+function netSaveUp(){
+  if(NET_UPT){ clearTimeout(NET_UPT); NET_UPT=null; }
+  if(!netSignedIn() || !langId || !langMine(langId)) return;
+  NET_UPT=setTimeout(netSaveUpGo, NET_UPMS);
+}
+function netSaveUpGo(){
+  var id=langId, kinds=[], i, k, mine, was;
+  NET_UPT=null;
+  if(NET_SYNCING || !netSignedIn() || !id || !langMine(id)) return;
+  for(i=0;i<SLICES.length;i++){
+    k=SLICES[i];
+    try{ mine=localStorage.getItem(langKeyOf(id, k)); }catch(e){ mine=null; }
+    try{ was=localStorage.getItem(langWasKey(id, k)); }catch(e){ was=null; }
+    if((mine===null? '' : mine)!==(was===null? '' : was)) kinds.push(k);
+  }
+  if(!kinds.length) return;
+  NET_SYNCING=true;
+  netLangRow(id, function(sid){
+    /* Only the slices that moved, and only those, so a save costs one small
+       read and one small write rather than the whole language. */
+    netSlices(sid, function(there){
+      var at=0;
+      function step(){
+        if(at>=kinds.length){ NET_SYNCING=false; return; }
+        var kind=kinds[at]; at++;
+        netSlice1(id, sid, kind, there[kind], function(){ step(); });
+      }
+      step();
+    }, function(){ NET_SYNCING=false; }, kinds);
+  }, function(){ NET_SYNCING=false; });
+}
 /* EVERY LANGUAGE THIS PERSON MADE, and it used to be the one that happened to
    be open. That is not a smaller version of the same thing: a second language
    had no row on the server, so it had no `sid`, so nothing of it was ever
@@ -1462,37 +1587,10 @@ function netLangSync1(id, done){
           done(moved); return;
         }
         kind=SLICES[i]; i++;
-        try{ mine=localStorage.getItem(langKeyOf(id, kind)); }catch(e){ mine=null; }
-        /* What the two sides last agreed this slice was. It is the only thing
-           that tells 「somebody removed this here」 from 「this phone has not
-           been told about it yet」 -- the two look identical from here and
-           want opposite answers. No record means no dropping, which is what
-           this did before there was one. */
-        try{ was=localStorage.getItem(langWasKey(id, kind)); }catch(e){ was=null; }
-        got=there[kind];
-        put=syMerge(kind, mine===null? '' : mine, got? got.body : '',
-                    was===null? '' : was);
-        if(put!=='' && put!==mine){
-          /* and only where it keeps everything that is already there */
-          if(netKeeps(mine, put)){
-            try{ localStorage.setItem(langKeyOf(id, kind), put); moved=true; }catch(e){}
-          } else {
-            /* Skipped, and remembered rather than swallowed: a merge that came
-               back smaller is a thing somebody has to be told about, and the
-               phone keeps what it had in the meantime. */
-            NET_SHRANK.push(id+'.'+kind);
-            step(); return;
-          }
-        }
-        /* Both sides are holding the same string now, so that is what they
-           agreed. Recorded here rather than after the write, because there is
-           nothing to write. */
-        if(put==='' || (got && put===got.body)){ netAgreed(id, kind, put); step(); return; }
-        netSlicePut(sid, kind, put, got? got.no : 0,
-                    function(){ netAgreed(id, kind, put); step(); },
-                    /* A write that did not land agreed nothing. The record
-                       stays as it was and the next launch tries again. */
-                    function(){ step(); });
+        netSlice1(id, sid, kind, there[kind], function(m){
+          if(m) moved=true;
+          step();
+        });
       }
       step();
     }, function(){ done(false); });

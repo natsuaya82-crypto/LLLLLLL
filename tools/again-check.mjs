@@ -557,6 +557,111 @@ say(del.afterSync.length === del.afterDelete.length,
     'and nothing else moved: ' + del.afterDelete.length + ' words before the ' +
     'sync, ' + del.afterSync.length + ' after');
 
+/* ---- 保存を押した瞬間にサーバーへ行く ------------------------------------
+   「オンラインは一本化ね？」「簡単よ」「保存としたらオンラインおしまい」
+   OWNER 2026-09-04。
+
+   **起動と扉の二回しか無かった。**`netLangSync()` を呼ぶのは `www/boot.js` と
+   `www/onboard.js` だけで、その間にサーバーへ行く道は一本も無かった（数えて
+   確認）。一時間書いて閉じた人の作ったものは、次に開くまでこの iPhone の中に
+   しかない。
+
+   ここが訊くのは四つ。**起動を一度も挟まずに**、押した保存が届くこと。
+   動いた欄だけを訊いて、動いた欄だけを送ること ── 全部訊くと大きい言語で
+   毎回 685 KB になる。動いていなければ何も送らないこと。そして署名が
+   無ければ何も送らず、何も失わないこと。
+
+   `netSend` の下の偽サーバーは上のものをそのまま使う。`netSaveUp` も
+   `netSlices` も本物が走る。 */
+const up2 = await pg.evaluate(async ({ s, srv }) => {
+  eval('(' + s + ')()');
+  SET.done = true;
+  eval(srv);
+  SESS = { at:'t', rt:'r', uid:'me2', anon:false };
+  function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
+  const out = {};
+  /* 待つのは NET_UPMS ＋ 往復のぶん。数はコードから読む ── ここに書くと
+     片方だけ動いたときに黙って通る。 */
+  const settle = () => wait(NET_UPMS + 400);
+
+  var id = langId;
+  LANGS[id].uid = 'me2'; LANGS[id].mine = true; langStore();
+  langName = 'Save Now'; save();
+
+  /* まず一度合わせて、両者が同じものを持っている所から始める。ここから先の
+     送信だけを見たいので、記録を空にする。 */
+  await new Promise(function(f){ netLangSync(f); });
+  window.__SRV.sent = [];
+  window.__SRV.asked = [];
+  /* GET が何を訊いたかを見る。上の stub は kind の絞りを読まないので、
+     絞れているかは「訊いた道」で見るしかない。 */
+  var realSend = netSend;
+  netSend = function(m, p, b, tk, ok, bd){
+    if (m === 'GET' && p.indexOf('/rest/v1/slice') === 0) window.__SRV.asked.push(p);
+    return realSend(m, p, b, tk, ok, bd);
+  };
+
+  /* 一. 単語を一つ足して保存する。起動はしない。扉も通らない。 */
+  WORDS.push({ hw:'nyala', gl:'a word added after the launch' });
+  save();
+  out.sentAtOnce = window.__SRV.sent.slice();   /* 押した直後 ── まだ空のはず */
+  await settle();
+  out.sentAfter = window.__SRV.sent.slice();
+  out.asked = window.__SRV.asked.slice();
+  out.onServer = (function(){
+    var S = window.__SRV, sid = LANGS[id].sid, i;
+    for (i = 0; i < S.slice.length; i++)
+      if (S.slice[i].language === sid && S.slice[i].kind === 'words')
+        return S.slice[i].body.indexOf('nyala') >= 0;
+    return false;
+  })();
+
+  /* 二. 何も動かしていない保存は、何も送らない。 */
+  window.__SRV.sent = [];
+  save();
+  await settle();
+  out.sentIdle = window.__SRV.sent.slice();
+
+  /* 三. 一続きに打っても、送るのは一度。十回保存して一回。 */
+  window.__SRV.sent = [];
+  for (var n = 0; n < 10; n++){ WORDS.push({ hw:'burst' + n, gl:'x' }); save(); }
+  await settle();
+  out.sentBurst = window.__SRV.sent.slice();
+
+  /* 四. 署名が無ければ何も送らない。そして何も失わない ── 言語はこの iPhone に
+     そのまま在る。「電波が無いときはログインできない」はオーナーの決定だが、
+     それは画面の話で、書いたものが消えてよいという意味ではない。 */
+  window.__SRV.sent = [];
+  var keep = SESS; SESS = null;
+  WORDS.push({ hw:'offline', gl:'written with nobody signed in' });
+  save();
+  await settle();
+  out.sentOut = window.__SRV.sent.slice();
+  out.keptOut = (localStorage.getItem(langKeyOf(id, 'words')) || '').indexOf('offline') >= 0;
+  SESS = keep;
+  netSend = realSend;
+  return out;
+}, { s: seed.toString(), srv: SERVER });
+
+say(up2.sentAtOnce.length === 0 && up2.sentAfter.length > 0,
+    '保存を押したらサーバーへ行く ── 起動も扉も通らずに（押した直後 ' +
+    up2.sentAtOnce.length + ' 件、落ち着いてから ' + up2.sentAfter.length + ' 件）');
+say(up2.onServer,
+    'そして足した単語がサーバーの行に入っている');
+say(up2.sentAfter.length === 1 && up2.sentAfter[0].indexOf(':words') > 0,
+    '送るのは動いた欄だけ ── 十二本ではなく一本: ' + JSON.stringify(up2.sentAfter));
+say(up2.asked.length === 1 && up2.asked[0].indexOf('kind=in.(words)') > 0,
+    'そして訊くのも動いた欄だけ ── 全部降ろすと大きい言語で毎回 685 KB: ' +
+    JSON.stringify(up2.asked));
+say(up2.sentIdle.length === 0,
+    '何も動いていない保存は、何も送らない: ' + JSON.stringify(up2.sentIdle));
+say(up2.sentBurst.length === 1,
+    '続けて十回保存しても送るのは一度 ── 一続きは一回（' +
+    up2.sentBurst.length + ' 件）');
+say(up2.sentOut.length === 0 && up2.keptOut,
+    '署名が無ければ何も送らず、書いたものはこの iPhone に残る（送信 ' +
+    up2.sentOut.length + ' 件、' + (up2.keptOut ? '残っている' : '**消えた**') + '）');
+
 await br.close();
 if (bad.length){
   console.log('\nagain: ' + bad.length + ' problem' + (bad.length > 1 ? 's' : '') + '.\n');

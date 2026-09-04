@@ -153,7 +153,8 @@ for real.
   a global (WORDS, LETTERS, KB, WLD, …)
       ↓  save() / saveLetters() / saveKb() / saveWld() / …
   localStorage,  lingua.<id>.<slice>        ← the working copy, never the home
-      ↓  netLangSync() at launch, through syMerge() (www/sync.js)
+      ↓  netSlice1() — netSaveUp() on every save, netLangSync() at launch,
+      ↓  both through syMerge() (www/sync.js)
   the `slice` rows on the server            ← the record
       ↓  and back down the same way, both sides added and neither made to win
 
