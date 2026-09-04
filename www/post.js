@@ -1082,6 +1082,13 @@ var POST_CATCH=4;
 function postCatchUp(){
   var i, n=0, ps;
   if(!netSignedIn()) return;
+  /* And everything the server should no longer HAVE. The files of a post
+     somebody deleted, where the bucket refused to take them -- netDropAgain()
+     in www/net.js owns the list and says why it is here. This is the moment
+     the network is known to be working, which is the whole reason the
+     sending below happens here rather than on a timer, and it is the same
+     reason for both directions. */
+  netDropAgain();
   ps=POSTS.slice().sort(function(a, b){ return (a.at||0)-(b.at||0); });
   for(i=0;i<ps.length && n<POST_CATCH;i++){
     if(ps[i].sid || ps[i].pv || !ps[i].mine) continue;

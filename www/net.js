@@ -2910,7 +2910,7 @@ function netDrop(p, ok, bad){
    is a listing this does not need and a permission it does not have. */
 function netDropFiles(p, done){
   var paths=[], i;
-  for(i=0;i<((p && p.pu) || []).length;i++) paths.push(p.pu[i]);
+  for(i=0;i<((p && p.pu) || []).length;i++) if(p.pu[i]) paths.push(p.pu[i]);
   /* The small copies too. A picture is two files now, and a deletion that
      took one of them would leave the other in a public bucket with nothing
      pointing at it -- which is the exact thing the paragraph above is about.
@@ -2919,7 +2919,57 @@ function netDropFiles(p, done){
   if(p && p.vu) paths.push(p.vu);
   if(!paths.length){ done(); return; }
   netSend('DELETE', '/storage/v1/object/post-media', {prefixes:paths}, SESS.at,
-          function(){ done(); }, function(){ done(); });
+          function(){ done(); },
+          /* The row still goes -- the paragraph above says why and it stands.
+             What used to happen next is that the paths went with it. The
+             bucket is PUBLIC (netMediaURL() builds
+             /storage/v1/object/public/post-media/), so what was left was not
+             litter: anybody holding the URL went on seeing the photograph of
+             a post its author had deleted, and nothing pointed at the file
+             any more, so there was nothing left to delete it with.
+             docs/RISK.md § 9.
+
+             So the paths are kept and asked for again. Not a cleanup and not
+             a sweep -- these are the files of a post somebody asked to be
+             gone, named by that post, which is exactly what the DELETE REVIEW
+             in docs/CHANGELOG.md allows and nothing more. */
+          function(){ netDropKeep(paths); done(); });
+}
+/* ---- what the bucket would not take -------------------------------------
+   The paths of files a person has already asked to be deleted and the wire
+   refused. One list, no duplicates, and it goes out whole on the next moment
+   the network is known to be working -- which is the same moment
+   postCatchUp() uses and for the same reason.
+
+   IT IS IN MEMORY AND IT DOES NOT SURVIVE THE APP BEING KILLED. That is a
+   hole and it is written here rather than left to be discovered: an app
+   closed between the refusal and the next timeline is an app that has
+   forgotten which files to chase, and they stay in a public bucket with
+   nothing pointing at them. Closing it needs somewhere durable to put them --
+   a key on the phone (tools/store-check.mjs) or a row on the server
+   (supabase/schema.sql) -- and how long they may sit there before somebody
+   sweeps them is a retention question, which is the owner's. */
+var NET_DROPLEFT=[], NET_DROPPING=false;
+function netDropKeep(paths){
+  var i;
+  for(i=0;i<paths.length;i++)
+    if(NET_DROPLEFT.indexOf(paths[i])<0) NET_DROPLEFT.push(paths[i]);
+}
+function netDropAgain(){
+  var lot;
+  if(NET_DROPPING || !NET_DROPLEFT.length || !netSignedIn()) return;
+  lot=NET_DROPLEFT.slice(0, 100);
+  NET_DROPPING=true;
+  netSend('DELETE', '/storage/v1/object/post-media', {prefixes:lot}, SESS.at,
+    function(){
+      var i;
+      NET_DROPPING=false;
+      for(i=0;i<lot.length;i++) NET_DROPLEFT.splice(NET_DROPLEFT.indexOf(lot[i]), 1);
+    },
+    /* Still refused. The list is left exactly as it is and the next timeline
+       tries it again; nothing here gives up on a file somebody asked to have
+       deleted. */
+    function(){ NET_DROPPING=false; });
 }
 /* ---- being deleted -----------------------------------------------------
    The one thing signing out is not. `account_delete()` in supabase/schema.sql
