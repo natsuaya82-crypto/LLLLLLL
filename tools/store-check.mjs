@@ -81,6 +81,16 @@ const ROADS = {
   "home.js:langKey('wld')":     { to: 'netSlicePut' },
   'backup.js:langKey(k)':       { to: 'netSlicePut' },
   'home.js:langKeyOf(id':       { to: 'netSlicePut' },
+  /* NOT somebody's work, and the one entry here that is a copy of what BOTH
+     sides already hold. It is what this phone and the server last agreed a
+     slice was, and it exists so the merge can tell 「I removed this」 from
+     「I have not been told about this yet」 -- which look the same and want
+     opposite answers, and which is how a deleted word used to come back off
+     the server on the next launch. Losing it costs one sync's worth of
+     forgetting and no data: with no record, nothing is dropped. It goes up
+     nowhere on purpose -- each phone has its own idea of what it last agreed,
+     and sending one phone's would be telling the other what it had seen. */
+  'net.js:langWasKey(id':       { phone: "what this phone and the server last agreed a slice was — a copy of what both already hold, so the merge can tell a removal from something not yet heard about. Each phone's own; nothing to send." },
   'net.js:langKeyOf(id':        { to: 'netSlicePut' },
   'net.js:langKeyOf(sid':       { to: 'netSlicePut' },
   /* the timeline */

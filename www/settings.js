@@ -491,7 +491,13 @@ function wipeLangsGo(){
      gone would be asking about a language this phone can no longer name. */
   netLangDrop(id);
   try{
-    for(j=0;j<SLICES.length;j++) localStorage.removeItem(langKeyOf(id, SLICES[j]));
+    for(j=0;j<SLICES.length;j++){
+      localStorage.removeItem(langKeyOf(id, SLICES[j]));
+      /* and what this phone and the server last agreed that slice was. It is
+         filed beside the slice and goes with it: a record of a language that
+         is no longer here describes nothing. */
+      localStorage.removeItem(langWasKey(id, SLICES[j]));
+    }
   }catch(e){}
   /* Its row, and nothing else's. langStore() writes the index back out. */
   delete LANGS[id];

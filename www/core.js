@@ -253,6 +253,14 @@ var SCRIPT={g:{}, extra:[]};
    CLAUDE.md names them. */
 function langKeyOf(id, slice){ return 'lingua.' + id + '.' + slice; }
 function langKey(slice){ return langKeyOf(langId, slice); }
+/* WHAT THIS PHONE AND THE SERVER LAST AGREED THIS SLICE WAS.
+   Not a copy of somebody's work and not a backup: it is the only way the
+   merge can tell 「I removed this」 from 「I have not been told about this
+   yet」, which are the same thing to look at and opposite things to do.
+   Written by netLangSync1() the moment the two sides hold the same string,
+   read by nothing else, and filed beside the slice so deleting a language
+   takes it with everything else. */
+function langWasKey(id, slice){ return langKeyOf(id, slice) + '.was'; }
 
 /* Which languages are here, and which one is open. Read before anything else
    in this file, because every other key is built out of langId. */

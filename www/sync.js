@@ -49,12 +49,38 @@ function syKeyOf(kind, x){
   }
   try{ return 'j'+JSON.stringify(x); }catch(e){ return 'j'+String(x); }
 }
+function syText(x){ try{ return JSON.stringify(x); }catch(e){ return String(x); } }
 /* Mine first, then whatever came back that is not already in it. Mine first
    because the order of a dictionary is the order somebody built it in, and a
    phone that reordered itself every time it spoke to the server would be
-   answering a question nobody asked. */
-function syArr(kind, mine, theirs){
-  var out=[], seen={}, i, k;
+   answering a question nobody asked.
+
+   AND WHAT SOMEBODY REMOVED STAYS REMOVED. This used to be the whole of the
+   function: both sides, added. Two of those sides can only ever grow, so a
+   word deleted here came back off the server on the next launch with a signal
+   -- at the END of the list rather than where it was -- and was then written
+   back UP, so the phone taught the server its own mistake. Measured before it
+   was written: delete, sync, and the word is in the dictionary and in the
+   slice on the server again. 「消すも保存もそうだけど、そういったものが動く時は
+   サーバーに行かないと。オフラインで作業できるのはオンラインに復帰した時に
+   それが最新データになるんだから」 OWNER 2026-09-04.
+
+   `base` is what this phone and the server LAST AGREED this slice was. With
+   it the two cases stop looking alike: something in the base that is not in
+   mine was REMOVED HERE, and something in theirs that is in no base is
+   something this phone has not been told about yet. Without a base -- the
+   first sync after this shipped, or a language that has never been up --
+   nothing is dropped and this is exactly what it always was.
+
+   IT DROPS ONLY WHAT IS UNCHANGED ON THE OTHER SIDE. If what the server is
+   holding is not the same thing that was removed, somebody edited it on
+   another phone after this one deleted it, and WHICH OF THOSE TWO WINS IS NOT
+   DECIDED ANYWHERE YET. So it comes back, which is what happens today and is
+   the side that loses nothing. Nothing here quietly answers a question the
+   owner has not been asked. */
+function syArr(kind, mine, theirs, base){
+  var out=[], seen={}, was={}, i, k;
+  if(base) for(i=0;i<base.length;i++) was[syKeyOf(kind, base[i])]=syText(base[i]);
   for(i=0;i<mine.length;i++){
     k=syKeyOf(kind, mine[i]);
     if(seen[k]) continue;
@@ -62,7 +88,10 @@ function syArr(kind, mine, theirs){
   }
   for(i=0;i<theirs.length;i++){
     k=syKeyOf(kind, theirs[i]);
-    if(seen[k]) continue;
+    if(seen[k]) continue;                       /* mine has it, or a repeat */
+    /* it was here, it is not here now, and nobody has touched it over there */
+    if(Object.prototype.hasOwnProperty.call(was, k) &&
+       was[k]===syText(theirs[i])) continue;
     seen[k]=1; out.push(theirs[i]);
   }
   return out;
@@ -78,13 +107,18 @@ function syIsArr(x){ return Object.prototype.toString.call(x)==='[object Array]'
    things, or two plain values, the phone's own is kept: this is called with
    what came back from the server as `theirs`, and a language is edited on
    the phone. */
-function syObj(kind, mine, theirs){
-  var out={}, k;
+function syObj(kind, mine, theirs, base){
+  var out={}, k, b;
   for(k in theirs) if(Object.prototype.hasOwnProperty.call(theirs, k)) out[k]=theirs[k];
   for(k in mine) if(Object.prototype.hasOwnProperty.call(mine, k)){
     if(!Object.prototype.hasOwnProperty.call(out, k)){ out[k]=mine[k]; continue; }
-    if(syIsArr(mine[k]) && syIsArr(out[k])){ out[k]=syArr(kind, mine[k], out[k]); continue; }
-    if(syIsObj(mine[k]) && syIsObj(out[k])){ out[k]=syObj(kind, mine[k], out[k]); continue; }
+    /* the same key of what the two sides last agreed, so a list nested inside
+       a slice -- STG's seven, SCRIPT's `extra` -- knows what was removed too */
+    b=(base && Object.prototype.hasOwnProperty.call(base, k))? base[k] : null;
+    if(syIsArr(mine[k]) && syIsArr(out[k])){
+      out[k]=syArr(kind, mine[k], out[k], syIsArr(b)? b : null); continue; }
+    if(syIsObj(mine[k]) && syIsObj(out[k])){
+      out[k]=syObj(kind, mine[k], out[k], syIsObj(b)? b : null); continue; }
     out[k]=mine[k];
   }
   return out;
@@ -101,13 +135,15 @@ function syObj(kind, mine, theirs){
    stored as plain text -- so it falls through to the last line and the
    phone's own is kept. Renaming a language on the other phone is not
    something this chapter can put together, and it is one word to retype. */
-function syMerge(kind, mine, theirs){
-  var a, b;
+function syMerge(kind, mine, theirs, base){
+  var a, b, c=null;
   if(typeof mine!=='string' || mine==='') return (typeof theirs==='string')? theirs : '';
   if(typeof theirs!=='string' || theirs==='') return mine;
   if(mine===theirs) return mine;
   try{ a=JSON.parse(mine); b=JSON.parse(theirs); }catch(e){ return mine; }
-  if(syIsArr(a) && syIsArr(b)) return JSON.stringify(syArr(kind, a, b));
-  if(syIsObj(a) && syIsObj(b)) return JSON.stringify(syObj(kind, a, b));
+  /* Unreadable is the same as absent: no base, and then nothing is dropped. */
+  if(typeof base==='string' && base!==''){ try{ c=JSON.parse(base); }catch(e){ c=null; } }
+  if(syIsArr(a) && syIsArr(b)) return JSON.stringify(syArr(kind, a, b, syIsArr(c)? c : null));
+  if(syIsObj(a) && syIsObj(b)) return JSON.stringify(syObj(kind, a, b, syIsObj(c)? c : null));
   return mine;
 }

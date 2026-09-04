@@ -1369,6 +1369,19 @@ function netKeeps(mine, put){
   }
   return String(put).length>=String(mine).length;
 }
+/* WHAT THE TWO SIDES NOW HOLD, written down so the next merge can tell a
+   removal from a thing this phone has not heard about. It is not anybody's
+   work and it is not a backup -- it is a copy of what BOTH sides already
+   have, and losing it costs one sync's worth of forgetting rather than any
+   data. Filed beside the slice (langWasKey in core.js), so deleting the
+   language takes it and lsWipeAcct, which counts the namespace rather than a
+   list, takes it when an account goes. */
+function netAgreed(id, kind, body){
+  try{
+    if(body==='') localStorage.removeItem(langWasKey(id, kind));
+    else localStorage.setItem(langWasKey(id, kind), body);
+  }catch(e){}
+}
 var NET_SHRANK=[];
 var NET_SYNCING=false;
 /* EVERY LANGUAGE THIS PERSON MADE, and it used to be the one that happened to
@@ -1420,7 +1433,7 @@ function netLangSync1(id, done){
     netSlices(sid, function(there){
       var i=0, moved=false;
       function step(){
-        var kind, mine, got, put;
+        var kind, mine, got, put, was;
         if(i>=SLICES.length){
           if(moved && id===langId){
             /* Something came back, so what the screens are holding is older
@@ -1450,8 +1463,15 @@ function netLangSync1(id, done){
         }
         kind=SLICES[i]; i++;
         try{ mine=localStorage.getItem(langKeyOf(id, kind)); }catch(e){ mine=null; }
+        /* What the two sides last agreed this slice was. It is the only thing
+           that tells 「somebody removed this here」 from 「this phone has not
+           been told about it yet」 -- the two look identical from here and
+           want opposite answers. No record means no dropping, which is what
+           this did before there was one. */
+        try{ was=localStorage.getItem(langWasKey(id, kind)); }catch(e){ was=null; }
         got=there[kind];
-        put=syMerge(kind, mine===null? '' : mine, got? got.body : '');
+        put=syMerge(kind, mine===null? '' : mine, got? got.body : '',
+                    was===null? '' : was);
         if(put!=='' && put!==mine){
           /* and only where it keeps everything that is already there */
           if(netKeeps(mine, put)){
@@ -1464,9 +1484,15 @@ function netLangSync1(id, done){
             step(); return;
           }
         }
-        if(put==='' || (got && put===got.body)){ step(); return; }
+        /* Both sides are holding the same string now, so that is what they
+           agreed. Recorded here rather than after the write, because there is
+           nothing to write. */
+        if(put==='' || (got && put===got.body)){ netAgreed(id, kind, put); step(); return; }
         netSlicePut(sid, kind, put, got? got.no : 0,
-                    function(){ step(); }, function(){ step(); });
+                    function(){ netAgreed(id, kind, put); step(); },
+                    /* A write that did not land agreed nothing. The record
+                       stays as it was and the next launch tries again. */
+                    function(){ step(); });
       }
       step();
     }, function(){ done(false); });
