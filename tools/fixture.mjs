@@ -502,6 +502,26 @@ export function halfDone(){
           photographs the screen it tidied back to. seed() is what clears
           DAY, once, before each. */
        return vFeed(); }],
+    /* AND AN ANSWER TO IT, SITTING IN THE TIMELINE. The tag is drawn from
+       the prompt id ON THE POST, so until one post carried an id there was
+       nothing anywhere that walked postTagHTML() -- find4 took the tag out
+       of the filter column, and a look nothing walks is a look nobody
+       notices breaking.
+
+       The other posts in this list carry no id and wear no tag, in the same
+       render, which is the half worth having: a tag drawn out of `DAY`
+       instead of out of the post would put today's tag on all four of them
+       and this face is where that shows. */
+    ['an answer to the day\'s sentence, in the timeline', () => {
+       DAY = { id: 7, on_day: '2026-08-23', text: 'It is unbearably hot today.',
+               says: { en: 'It is unbearably hot today.',
+                       ja: '今日はめちゃくちゃ暑い。' } };
+       POSTS.unshift({id:'pd', at:Date.now()-600000, lang:langId, lname:'Shango',
+                      ln:'tir mos kano', who:'Aya', hd:'aya', mine:true,
+                      av:{st:[{pts:[[112,112],[688,112],[400,688]]}]},
+                      mn:'It is unbearably hot today.', ui:'en', pr:7});
+       window.route = 'feed'; NAV = [{ r:'feed' }];
+       const h = vFeed(); POSTS.shift(); return h; }],
     ['answering the day\'s sentence', () => {
        DAY = { id: 7, on_day: '2026-08-23', text: 'It is unbearably hot today.',
                says: { en: 'It is unbearably hot today.',

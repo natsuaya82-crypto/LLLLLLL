@@ -2860,6 +2860,29 @@ function postAvHTML(p){
   return '<button class="pav pavb"' + DO('go', ["profile", h]) + '>'+
     postFace(p)+'</button>';
 }
+/* THE TAG, INSIDE THE POST. 「#今日のお題だし そこに出せなんて頼んでないけど、
+   ツイートの中だけど タグは」 OWNER 2026-09-04.
+
+   It is drawn from the POST'S OWN prompt id and from nothing else. `DAY` is
+   TODAY'S sentence -- it is what the composer is answering right now, not
+   what this post answered -- so a row drawn out of `DAY` would put today's
+   tag on an answer written a fortnight ago, which is rule 8 in its usual
+   costume: correct for as long as the only post on the screen is the one
+   just written.
+
+   The words are t('day.tag') and so they are the READER'S, not the writer's
+   -- 「今日のお題は翻訳もタグもその人の設定言語になるようにして」. The tag is
+   one fixed name said ten ways, and the `#` is dayTag()'s, in no language
+   file.
+
+   A post with no prompt id gets NO TAG, and that is the right answer rather
+   than a gap: an id is put on a post at the moment it is written (pwSend(),
+   above the line, rule 13), so a post without one never answered a prompt.
+   Nothing is guessed back out of the text. */
+function postTagHTML(p){
+  if(!p || !p.pr) return '';
+  return '<div class="pmn">'+esc(dayTag())+'</div>';
+}
 function postRow(p){
   var foc=(postFocus()===p.id), to=postToWho(p);
   return '<div class="post'+(foc? ' pfoc':'')+'"'+(foc? '' : DO('postOpen', [p.id]))+'>'+
@@ -3001,6 +3024,10 @@ function postRow(p){
          it means are one thing read twice; everything else the post carries
          comes after them. */
       (postSay(p)? '<div class="pmn">'+esc(postSay(p))+'</div>' : '')+
+      /* And the tag, with the two rows it belongs to rather than after the
+         pictures: it says what this post is an answer TO, which is part of
+         what it says. */
+      postTagHTML(p)+
       /* And then everything else the post carries -- the pictures first, and
          they are the one thing on a post that slides sideways.
          「画像だけ横スライドできる感じ」 One is a picture; several are a strip,
