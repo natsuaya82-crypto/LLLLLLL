@@ -643,6 +643,85 @@ if (p2.ph !== PH.join(' ') && p2.ph)
              JSON.stringify(p2.ph) + ', which phGuess() made up out of the spelling of ' +
              JSON.stringify(p2.hw) + '. A migration copies and never removes what it read.');
 
+/* ---- an old letter's `key` is not thrown away ---------------------------
+   CLAUDE.md § Data: *a migration COPIES and never removes what it read*, and
+   this is the second place that read something and then removed it.
+
+   A letter used to be two fields: `role`, which was 'mark' or 'snd', and
+   `key`, the character that types it -- a mark cannot borrow its code point
+   from the roman spelling of a sound it has not got. One field answers both
+   now, which is what the letter READS: `?` reads `?`.
+
+   migrateMarks() moves `key` into `snd`, and only when the letter said 'mark'
+   AND reads nothing yet. Then it deleted both fields on EVERY letter it
+   touched -- including the ones it had just decided not to move. So a mark
+   that already read something lost the character that typed it, and there is
+   nowhere left to read it back from: nothing else in www/ names `role` or
+   `key`, so once the delete has run the value is gone from this phone, from
+   the backup file and from the slice row on the server, all three.
+
+   Nothing forbids the old shape's fields from staying where they are. They
+   are inert -- no screen and no check reads them -- and inert is what a
+   migration leaves behind when it has nowhere to put a value.
+
+   Two launches, the way the pronunciation case above needs two: the first
+   runs the migration and saves, and the second is the phone that reads back
+   what the first one wrote. A delete that only lives in memory would pass a
+   single launch. */
+await pg.evaluate(() => {
+  localStorage.clear();
+  localStorage.setItem('lingua.langs', JSON.stringify({ LM: { name: 'Marks', mine: true } }));
+  localStorage.setItem('lingua.cur', 'LM');
+  localStorage.setItem('lingua.LM.lang', 'Marks');
+  localStorage.setItem('lingua.LM.letters', JSON.stringify([
+    /* the shape the migration is FOR: a mark that reads nothing, with the
+       character that types it in `key` */
+    { id: 'mQ', role: 'mark', key: '?', snd: [] },
+    /* and the one it is not for. It says 'mark' and already reads something,
+       so `key` is not moved -- and today it is deleted anyway. The character
+       is deliberately one no roman spelling and no ltStart slot would put
+       back, so a green here cannot be something else arriving. */
+    { id: 'mB', role: 'mark', key: '\u00b6', snd: ['b'] }
+  ]));
+});
+
+const marksOf = () => pg.evaluate(() => {
+  const at = (id) => {
+    const l = LETTERS.filter((x) => x.id === id)[0];
+    if (!l) return { snd: '(the letter is gone)', key: '(the letter is gone)',
+                     role: '(the letter is gone)' };
+    return { snd: (l.snd || []).join(' '),
+             key: l.key === undefined ? '(deleted)' : l.key,
+             role: l.role === undefined ? '(deleted)' : l.role };
+  };
+  return { q: at('mQ'), b: at('mB'),
+           /* and off STORAGE, not off the global -- the delete has to survive
+              a write and a read to be the thing that loses somebody's data */
+           stored: localStorage.getItem(langKey('letters')) || '',
+           ids: LETTERS.map((x) => x.id).join(',') };
+});
+
+await pg.reload(); await settle();
+await pg.reload(); await settle();
+const mk = await marksOf();
+
+/* ltStart() tops a free language up to its twenty-eight slots, so the two
+   seeded letters are a subsequence of a longer alphabet. keeps, never a
+   count -- the app rebuilds letters it cannot find, so a dropped one comes
+   back plausible and the number is the same either way. */
+keeps('the letters that were on the phone are still on it', mk.ids, 'mQ,mB');
+want('the mark that read nothing now reads the character that typed it', mk.q.snd, '?');
+want('and the character it was typed by is still on the letter', mk.q.key, '?');
+want('and what it said it was is still on it too', mk.q.role, 'mark');
+want('a mark that already read something keeps its reading', mk.b.snd, 'b');
+want('and its character is not thrown away for not being moved', mk.b.key, '\u00b6');
+want('nor is what it said it was', mk.b.role, 'mark');
+if (mk.stored.indexOf('\u00b6') < 0)
+  fails.push('the character that typed a mark is not in the letters slice on disk any more. ' +
+             'Nothing else in www/ names `key`, so it is gone from this phone, from the ' +
+             'backup file and from the slice row on the server. A migration copies and ' +
+             'never removes what it read.');
+
 await br.close();
 srv.close();
 
