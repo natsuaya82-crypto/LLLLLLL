@@ -1312,11 +1312,11 @@ function obFormHTML(up){
        CLAUDE.md. The rule went, so it went, and nothing replaced it --
        OB_IN is the last step and signing in is how it ends. The chevron
        still goes back a step. */
-    /* THE ONE LINE APPLE ASKS FOR, and it is on the face where an account is
-       made and nowhere else. Guideline 1.2: an app people write in has to say
-       what somebody is agreeing to before they are in, and the two documents
-       were only on the plans screen -- which somebody who never pays never
-       opens. 「続けるとの説明は ok」 OWNER 2026-09-02.
+    /* THE ONE LINE APPLE ASKS FOR, and it is on BOTH faces of this form.
+       Guideline 1.2: an app people write in has to say what somebody is
+       agreeing to before they are in, and the two documents were only on the
+       plans screen -- which somebody who never pays never opens.
+       「続けるとの説明は ok」 OWNER 2026-09-02.
 
        NO CHECKBOX. The consent is the press, which is what 「続ける」 already
        says on the two buttons above it.
@@ -1335,13 +1335,20 @@ function obFormHTML(up){
        The URLs stay DOC_TERMS / DOC_PRIVACY in www/settings.js and are not
        named here.
 
-       The sign-in face does not have it, which is what was asked for
-       (登録画面だけ). Worth knowing rather than assuming: Apple and Google can
-       make an account from the sign-in face too, because Supabase's id_token
-       grant makes one when the identity is new -- the comment on those two
-       buttons above says so. Whether the line belongs there as well is the
-       owner's, not this session's. */
-    (up? '<div class="docs">'+esc(t('ob.docs'))+'</div>'+docRows() : '')+
+       IT IS NOT `up`-ONLY, AND THE REASON IS THE TWO BUTTONS ABOVE IT.
+       Apple and Google stand on both faces, and Supabase's id_token grant
+       MAKES an account when the identity is new -- the comment on those two
+       buttons says so. So the sign-in face is a face an account can be made
+       on, and while the line was `up`-only somebody pressing 「Appleで続ける」
+       there had an account and had never been shown either document. That is
+       Guideline 1.2 on the road most people take, not a preference.
+
+       The sentence is `ob.docs` on both faces and not a second one written for
+       this one. 「続ける」 is what the two buttons say on both faces, so
+       「続けると、以下に同意したことになります。」 is the same true sentence in
+       the same place, and a second wording would be a second contract notice
+       to keep in step. */
+    '<div class="docs">'+esc(t('ob.docs'))+'</div>'+docRows()+
     '</div>'+
     '<div class="obbar"><button' + DO('obMailGo', [up? "in" : "up"]) + '>'+
       t(up? 'ob.bar.in' : 'ob.bar.up')+'</button></div>';
