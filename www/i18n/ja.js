@@ -89,7 +89,6 @@ defLang('ja', (function(){
       "kb.dir.down"               : "下",
       "kb.dir.left"               : "左",
       "kb.empty"               : "なし",
-      "kb.row.add"               : "行を足す",
       "kb.row.ins" : "ここに行を足す",
       "kb.row.up" : "この行の上",
       "kb.row.down" : "この行の下",
