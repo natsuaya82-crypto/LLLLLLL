@@ -1460,10 +1460,9 @@ FORM_OPEN.word=function(hw){ openWord(hw); };
    pressed on the sound keyboard is a step whose letter is whichever letter
    writes it, or none at all if nothing does yet. */
 function wdSync(){ wEdit.seq=spPh(wEdit.sp||[]); }
-/* Four things that were written as code inside a button: a condition, a pair
-   of statements, and two assignments. Each is one line now, in a file a
-   checker can read. */
-function goPlans(){ closeSheet(); go('plans'); }
+/* Three things that were written as code inside a button: a route and two
+   assignments. Each is one line now, in a file a checker can read. */
+function goPlans(){ go('plans'); }
 function wdSetNt(v){ wEdit.nt=v; wdKeepTouch(); }
 function wdSetPos(v){ wEdit.pos=v; }
 /* A reading typed whole, given back to the positions that make it up.
