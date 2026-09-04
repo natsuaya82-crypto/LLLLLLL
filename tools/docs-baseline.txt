@@ -14,7 +14,6 @@
 # check's.
 
 orphan docs/HANDOVER-2026-08-28-2.md
-orphan docs/PROMPTFILTER.md
 orphan docs/SCOPE-yaa.md
 
 dangling docs/STATE.md -> docs/ONE.md
