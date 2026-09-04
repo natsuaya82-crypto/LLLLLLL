@@ -91,7 +91,7 @@ function addOne(){
   /* The word AND the forms going in with it. Asking for room for one and then
      writing four is how a free language ends up over its own limit. */
   addFmSync();
-  if(!capOK(1+addFms.length)){ closeSheet(); capStop(1+addFms.length); return; }
+  if(capStop(1+addFms.length)) return;
   if(findWord(hw)){ toast(t('toast.dup')); return; }
   addPos=wEdit.pos;
   syn=(d.syn||[]).slice(); ant=(d.ant||[]).slice();
@@ -765,7 +765,7 @@ function fmrTodo(w){
 function fmrAdd(hw){
   var w=findWord(hw), todo=w? fmrTodo(w) : [], i, m, nw, made=[];
   if(!w || !todo.length) return;
-  if(!capOK(todo.length)){ closeSheet(); capStop(todo.length); return; }
+  if(capStop(todo.length)) return;
   for(i=0;i<todo.length;i++){
     m=todo[i];
     if(findWord(m.hw)) continue;
