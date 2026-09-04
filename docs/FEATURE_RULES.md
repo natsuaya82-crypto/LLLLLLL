@@ -218,6 +218,28 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### キーボードの編集画面、一番下の ＋ を外す
+- Date: 2026-09-04
+- Area: キーボードの編集（`www/keyboard.js`）
+
+- Decision:
+
+  ```
+  キーボードのこの下の+もいらない。誤タッチが多いから
+  ```
+
+- Reason: **誤タッチ。**鍵盤のすぐ下、指が普通に触れる所に、行を足す
+  ボタンが横いっぱいに置かれています（`docs/reports/2026-09-04-owner-shots/5-keyboard-plus.jpg`）。
+- Affected features: キーボードの編集。行を足す道が一つ減ります ──
+  **行を足す道が他にあるかどうかを確かめてから消してください。**
+  一つしかないなら、それは「行を足せなくする」ことになります。
+  その場合はオーナーに訊くこと。読み替えて別の場所に生やさないこと。
+- Affected data: 無し。
+- Affected docs: `CLAUDE.md` 規則19（キーボードの編集画面）に、この ＋ を
+  説明した文があれば同じコミットで直す。`press` のボタン数が減ります ──
+  減ったこと自体は正しい。
+- Implementation status: **着手していません。**`docs/HANDOVER.md` 六章の 10。
+
 ### 保存を押したときだけ、保存されているものが変わる
 - Date: 2026-09-04
 - Area: **保存されるものぜんぶ。**画面と、裏で走るものの両方
