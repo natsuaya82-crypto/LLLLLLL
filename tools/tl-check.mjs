@@ -120,6 +120,18 @@ const r = await pg.evaluate(({ s }) => {
   out.ownRowFace = row.indexOf('class="pav"') >= 0;
   POSTS.push.apply(POSTS, wasPosts);
 
+  /* ---- and the mark on your own name stays where it was ----------------
+     One place says whether a name wears it (postBadge), and your own card
+     started asking it through whoOf() -- so whoOf() has to say the row is
+     yours or the mark quietly leaves the one screen it worked on. */
+  const wasPlan = SET.plan;
+  SET.plan = 'pro';
+  NAV = [{ r:'profile', a:'' }];
+  out.proMark = meCard().indexOf('bdgw') >= 0;
+  SET.plan = 'free';
+  out.freeMark = meCard().indexOf('bdgw') >= 0;
+  SET.plan = wasPlan;
+
   /* ---- 5: a count that has not arrived --------------------------------- */
   const wasFo = ME.fo, wasFr = ME.fr;
   delete ME.fo; delete ME.fr;
@@ -186,6 +198,11 @@ if (r.ownRowQ || r.ownRowName !== 'Aya')
 if (!r.ownRowFace)
   say('and no face on it either.');
 
+if (!r.proMark)
+  say('the mark is off your own profile on Pro. One place says whether a ' +
+      'name wears it and whoOf() has to say the row is yours.');
+if (r.freeMark)
+  say('and it is on it on the free plan.');
 if (r.meWaits !== 2)
   say('your own profile prints ' + (2 - r.meWaits) + ' count(s) nobody has ' +
       'answered for. 「0 と出て1秒後に1に変わる、をしない」');
@@ -211,6 +228,7 @@ console.log('your own row elsewhere: 「' + r.ownRowName + '」 with a face, on 
             'phone holding no post of yours');
 console.log('counts: the mark until the answer comes, the number after it, ' +
             'and 0 is an answer');
+console.log('and the Pro mark is on your own name on Pro and off it on free');
 
 await br.close();
 if (fails.length) {

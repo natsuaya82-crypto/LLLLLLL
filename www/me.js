@@ -616,7 +616,13 @@ function whoOf(h){
   if(h===meHandle())
     return {who:meName(), hd:h, av:postAvatar(), lname:langName||'', id:'me',
             bio:String(ME.bio||''), fo:meFollowing().length,
-            fr:meFollowers().length, out:false, pro:can('badge')};
+            fr:meFollowers().length, out:false,
+            /* AND IT SAYS SO. `mine` means 「this is the reader's own」 and it
+               is what postBadge() asks -- so leaving it off took the mark off
+               your own card the moment meCard() started asking this instead
+               of plan(). Measured, not read: `bdgw` was in the card and then
+               was not. */
+            mine:true, pro:can('badge')};
   /* THE SERVER IS THE RECORD. What it sent is what the person looks like NOW,
      which is the right answer for a page about them; a post's copy is frozen
      at the moment it was written (rule 8) and is right for the post. */
