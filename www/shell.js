@@ -70,8 +70,7 @@ function viewReset(){
   kbWob=false;                         /* and whether the keys are wobbling */
   obTour=0;                            /* how far the walk through the app has got */
   KBH=null;                            /* and which row, column or key is being worked on */
-  snsQ=''; snsHits=null; snsMode='who'; /* the search, what came back, and
-                                          which of the two it is about */
+  snsQ=''; snsHits=null;               /* the search and what came back */
   snsSort='new';                       /* and newest or most answered */
   snsFil=null;                         /* and the word the feed is filtered to */
   /* The notices, asked again -- and the copy on the handset read again with
