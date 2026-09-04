@@ -236,14 +236,6 @@ function vWords(){
       : (langLocked()? ''
           : navDo(t('words.sel'), 'wSelOn', null, true)))+
     '<div class="chead">'+
-    /* THE SAME FIELD AS EVERYWHERE ELSE, and it was an <input>.
-       「全部改行して画面内に文字が収まるようにして欲しい」 OWNER 2026-08-27,
-       and 「全部なくせ」 when asked what was left -- the search box included.
-       An <input> is one row that scrolls sideways forever: past the width of
-       the phone what was typed first simply left the screen. There is no CSS
-       for it; the element has to change. lnField() is the one place that
-       shape lives -- no new mechanism here, and nothing else about this row
-       moves. It grows with what is in it (lnGrow, below). */
     /* The cross is always in the page and hidden until there is something to
        clear: typing repaints the list, not the header, so one conjured up by
        the query would not appear until the screen was left and come back to. */

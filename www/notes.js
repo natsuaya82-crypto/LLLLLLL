@@ -57,11 +57,8 @@ function openNote(i){
      一文が嘘になる ── 保存のボタンが出てしまう。 */
   if(!langLocked()) ntKeepOn(k, n);
   openForm('note:'+k, (k>=0? t('notes.edit') : t('notes.new')),
-    /* THE SAME FIELD AS EVERYWHERE ELSE, and it was an <input>.
-       「全部改行して画面内に文字が収まるようにして欲しい」 OWNER 2026-08-27.
-       An <input> is one row that scrolls sideways forever and no CSS makes it
-       wrap. This field carries no name of its own -- it is read when the form
-       is saved -- so what makes it grow is the line in www/act.js. */
+    /* This field carries no name of its own -- it is read when the form is
+       saved -- so what makes it grow is the line in www/act.js. */
     '<div class="field"><label>'+t('notes.t')+'</label>'+
       lnField('nt-t', t('notes.t.ph'), IN('ntSetT'), ntTyped(k, 't'))+'</div>'+
     '<div class="field"><label>'+t('notes.b')+'</label>'+

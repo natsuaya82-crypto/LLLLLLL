@@ -894,7 +894,15 @@ function viewGone(){
    an example under a word, a post -- and an input is one row that scrolls
    sideways forever: past the width of the phone the text simply left the
    screen, and there was no length at which it stopped.
-   「改行されないせいで画面が今でいく」
+   「改行されないせいで画面が今でいく」, then 「全部改行して画面内に文字が収まる
+   ようにして欲しい」 OWNER 2026-08-27 and 「全部なくせ」 when asked what was left
+   -- the search boxes included, which is why every one of them is this and not
+   an <input>.
+
+   That paragraph used to be pasted above ELEVEN of the calls, and each copy
+   said it again in its own words. It is here because here is where the field
+   is made; what is left at a call is only what is true of THAT field, which
+   is a different sentence and worth reading.
 
    It grows with what is in it rather than scrolling, so the whole line is
    always on the screen. `rows="1"` is the floor and lnGrow() raises it; the

@@ -1813,13 +1813,9 @@ function wldPage(ed, L, lid){
            with nothing over it could be anything, and it is what the reading
            face has over it as well. */
         inner+='<div class="abfk">'+esc(t('wld.where'))+'</div>'+
-          /* THE SAME FIELD AS EVERYWHERE ELSE, and it was an <input>.
-             「全部改行して画面内に文字が収まるようにして欲しい」 OWNER
-             2026-08-27. A place and a people are written in words, and an
-             <input> is one row that scrolls sideways forever. These two had
-             no id at all -- lnField() needs one to be grown by name, and
-             nothing else in the app points at them, so the id is new and
-             carries nothing. */
+          /* These two had no id at all -- lnField() needs one to be grown
+             by name, and nothing else in the app points at them, so the id
+             is new and carries nothing. */
           '<div class="field">'+
           lnField('wld-where', t('wld.where.ph'), IN('wldSet', ["where"]), wldTyped('where'))+
           '</div>'+
