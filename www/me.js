@@ -1190,15 +1190,62 @@ function folPull(ers, h){
 }
 function folGot(ers, h){ return !!FOL_HAVE[folKey(ers, h)]; }
 function folOf(ers, h){ return FOL_HAVE[folKey(ers, h)] || []; }
+/* WHOSE LIST THIS SCREEN IS SHOWING, AND WHICH DIRECTION -- read off the
+   route's argument, in one place. 「フォロワーとかタップしても見れないし」
+   OWNER 2026-09-03 put the handle on the end of it: `ing` and `ers` alone are
+   yours, `ing:<handle>` and `ers:<handle>` are somebody's, split on the same
+   colon `relate` and `gram` already split theirs on (www/shell.js).
+
+   It was worked out inside vFollows() and nowhere else, which was right until
+   the pull needed the same answer -- and a second reading of one argument is
+   two answers waiting to disagree. */
+function folWho(){
+  var a=String(here().a||''), c=a.indexOf(':');
+  return (c<0)? '' : a.slice(c+1);
+}
+function folErs(){
+  var a=String(here().a||''), c=a.indexOf(':');
+  return a.slice(0, c<0? a.length : c)==='ers';
+}
+/* ASK AGAIN. Everything about a person is asked ONCE -- whoPull() keeps
+   WHO_ASKED per handle so a name that has been deleted is not asked about
+   for ever, and the two follow pulls keep one flag each for the whole
+   session. That is right for a render, which happens constantly, and wrong
+   for a PULL, which is a person saying 「もう一度聞け」.
+
+   「他の人の画面でも更新できるようにしたい」 OWNER 2026-09-04. It is the same
+   sentence as the counts one screen up: somebody who followed you while the
+   app was open was in neither the number nor the list until it was killed and
+   opened again 「なんか3フォロワーなのに2人しかいない」.
+
+   THE FLAG IS CLEARED AND THE PULL IS ASKED -- nothing here talks to the
+   server itself, so there is still one place each request is made from. */
+function meAgain(h){
+  h=String(h||'');
+  if(!h || h===meHandle()){
+    FO_ASKED=false;
+    FR_ASKED=false;
+    meFollowPull();
+    meFollowerPull();
+    return;
+  }
+  WHO_ASKED[h]=0;
+  whoPull(h);
+}
+function folAgain(ers, h){
+  h=String(h||'');
+  if(!h) return;
+  FOL_ASKED[folKey(ers, h)]=0;
+  folPull(ers, h);
+}
 function vFollows(){
   /* WHOSE, and it is the argument's second half. 「フォロワーとかタップしても
      見れないし」 OWNER 2026-09-03. `ing` and `ers` alone are yours; `ing:<handle>`
      and `ers:<handle>` are somebody's -- the same colon `relate` and `gram`
      already split an argument on, because a screen is a route and at most one
      argument (www/shell.js). */
-  var a=String(here().a||''), c=a.indexOf(':');
-  var ers=(a.slice(0, c<0? a.length : c)==='ers');
-  var who=(c<0)? '' : a.slice(c+1);
+  var ers=folErs();
+  var who=folWho();
   var mine=(!who || who===meHandle());
   var list, got;
   if(mine){

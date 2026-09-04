@@ -120,6 +120,51 @@ const r = await pg.evaluate(({ s }) => {
   out.ownRowFace = row.indexOf('class="pav"') >= 0;
   POSTS.push.apply(POSTS, wasPosts);
 
+  /* ---- 6: a screen that can be asked again ------------------------------
+     The pull is driven through pullLet(true), which is what a thumb reaching
+     far enough down ends in -- so what is measured is the road a person
+     takes, not a function called by name. netReplies() and netPostsBy() are
+     wrapped where they are DEFINED, so what is read is the request that
+     would have gone out. */
+  const asked = { replies:null, by:null };
+  const realReplies = netReplies, realBy = netPostsBy, realWho = netWho,
+        realFollowers = netFollowers;
+  netReplies  = function(ids, k){ asked.replies = ids.slice(); k([]); };
+  netPostsBy  = function(h, k){ asked.by = String(h); k([]); };
+  netWho      = function(h, k){ asked.who = String(h); k(null); };
+  netFollowers = function(k){ asked.fr = (asked.fr || 0) + 1; k(null); };
+  try {
+    out.pullRoutes = Object.keys(PULL_ON).sort().join(' ');
+
+    /* A thread: every post drawn on it, by the name the server knows it by.
+       `p1` has gone up (sid SRV-1); the reply arrived wearing SRV-9; a post
+       written here and never sent has no name there and must be left out. */
+    POSTS.push({ id:'LOCAL-ONLY', at:Date.now(), lang:mine.lang, lname:'Shango',
+                 ln:'zz', mn:'zz', who:'Aya', hd:mine.hd, mine:true, to:'SRV-1' });
+    NAV = [{ r:'thread', a:mine.id }];
+    pullLet(true);
+    out.threadAsked = (asked.replies || []).slice().sort().join(' ');
+    POSTS.pop();
+
+    /* A person's page asks for what they have written, and for who they are
+       again -- WHO_ASKED is per handle and would otherwise never ask twice. */
+    WHO_ASKED['iri'] = 1;
+    NAV = [{ r:'profile', a:'iri' }];
+    pullLet(true);
+    out.whoPullAsked = asked.by === 'iri' && asked.who === 'iri';
+
+    /* And your own two lists, which are asked ONCE a session. A pull is a
+       person saying 「もう一度聞け」. 「なんか3フォロワーなのに2人しかいない」 */
+    FR_ASKED = true;
+    asked.fr = 0;
+    NAV = [{ r:'follows', a:'ers' }];
+    pullLet(true);
+    out.followersAskedAgain = asked.fr;
+  } finally {
+    netReplies = realReplies; netPostsBy = realBy; netWho = realWho;
+    netFollowers = realFollowers;
+  }
+
   /* ---- and the mark on your own name stays where it was ----------------
      One place says whether a name wears it (postBadge), and your own card
      started asking it through whoOf() -- so whoOf() has to say the row is
@@ -198,6 +243,22 @@ if (r.ownRowQ || r.ownRowName !== 'Aya')
 if (!r.ownRowFace)
   say('and no face on it either.');
 
+for (const want of ['thread', 'profile', 'follows', 'feed', 'explore', 'notif'])
+  if (r.pullRoutes.split(' ').indexOf(want) < 0)
+    say('the pull does not answer on `' + want + '`. 「ここ更新ないから見れないし」');
+if (r.threadAsked !== 'SRV-1 SRV-9')
+  say('pulling a thread asks about 「' + r.threadAsked + '」. It has to be ' +
+      'every post drawn on the page, by the name the server knows each by — ' +
+      'and never a post written here that has not gone up, which that server ' +
+      'has never heard of.');
+if (!r.whoPullAsked)
+  say('pulling a person’s page does not ask for their posts and for who they ' +
+      'are again. 「他の人の画面でも更新できるようにしたい」');
+if (r.followersAskedAgain !== 1)
+  say('pulling your followers list asks ' + r.followersAskedAgain + ' times. ' +
+      'It is asked once a session, so a pull has to clear that or the list ' +
+      'stands still until the app is killed.');
+
 if (!r.proMark)
   say('the mark is off your own profile on Pro. One place says whether a ' +
       'name wears it and whoOf() has to say the row is yours.');
@@ -229,6 +290,9 @@ console.log('your own row elsewhere: 「' + r.ownRowName + '」 with a face, on 
 console.log('counts: the mark until the answer comes, the number after it, ' +
             'and 0 is an answer');
 console.log('and the Pro mark is on your own name on Pro and off it on free');
+console.log('the pull answers on: ' + r.pullRoutes + ' — a thread asks about ' +
+            'every post drawn on it, a person’s page for what they wrote, ' +
+            'and a list that is asked once a session is asked again');
 
 await br.close();
 if (fails.length) {

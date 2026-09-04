@@ -2303,6 +2303,73 @@ function netPostById(id, ok, bad){
          '&id=eq.'+encodeURIComponent(String(id||''))+'&limit=1',
     function(d){ ok((d && d.length)? netRow(d[0]) : null); }, bad);
 }
+/* THE ANSWERS TO POSTS THAT ARE ON THE SCREEN.
+   -------------------------------------------------------------------------
+   「ここ更新ないから見れないし」「他の人の画面でも更新できるようにしたい」
+   OWNER 2026-09-04. A thread had no way to ask again: the pull answered on
+   three routes and this was not one of them, and there was nothing here for
+   it to have asked.
+
+   IT TAKES THE POSTS THAT ARE DRAWN, not one. A thread shows a post and
+   everything under it, so asking about the top one alone would refresh one
+   level of a page that draws all of them. `reply_to=in.(...)` is one request
+   for the whole of what is on the screen.
+
+   BY THE SERVER'S NAME FOR EACH. `reply_to` holds where a post lives on the
+   server, which is `sid` for something this account wrote here and the id
+   itself for anything that arrived (netRow sets both) -- www/post.js
+   § postIs. A post that has never gone up has no name there to be answered
+   under, and the caller leaves it out rather than sending a local uuid the
+   server has never seen.
+
+   Oldest first, because a conversation reads down. `post_read` is
+   `using (true)`, so this needs no account. */
+function netReplies(ids, ok, bad){
+  var list=[], i, s;
+  for(i=0;i<(ids||[]).length;i++){
+    s=String(ids[i]||'');
+    if(s && list.indexOf(s)<0) list.push(s);
+  }
+  if(!list.length){ ok([]); return; }
+  netGet('/rest/v1/post_seen?select=id,author,created_at,reply_to,body,hidden_at,author_out'+
+         ',likes,boosts,replies,i_like,i_boost'+
+         '&reply_to=in.('+list.join(',')+')'+
+         '&order=created_at.asc&limit='+NET_PAGE,
+    function(d){
+      var out=[], j;
+      for(j=0;j<(d||[]).length;j++) out.push(netRow(d[j]));
+      ok(out);
+    }, bad);
+}
+/* WHAT ONE PERSON HAS WRITTEN. The other half of the same sentence: their
+   page drew whatever this account happened to be holding of theirs, which is
+   whatever the timeline had swept up, and there was no way to ask for the
+   rest or for anything newer. 「他の人の画面でも更新できるようにしたい」
+
+   By HANDLE, because that is what a page is reached by and what every other
+   request here takes; netWhoseId() turns it into the uuid `author` is keyed
+   on, once, rather than in the screen. Your own handle answers with your own
+   uid without a request, which is what that function already does for
+   netFollowing().
+
+   Newest first and keyset on `created_at`, the same as netFindPosts(): a
+   page gains rows while somebody is reading it, and an offset would hand
+   them a post twice or step over one. */
+function netPostsBy(handle, ok, bad, more){
+  netWhoseId(handle, function(uid){
+    netGet('/rest/v1/post_seen?select=id,author,created_at,reply_to,body,hidden_at,author_out'+
+           ',likes,boosts,replies,i_like,i_boost'+
+           '&author=eq.'+encodeURIComponent(uid)+
+           '&order=created_at.desc'+
+           (more? '&created_at=lt.'+encodeURIComponent(String(more)) : '')+
+           '&limit='+NET_PAGE,
+      function(d){
+        var out=[], i;
+        for(i=0;i<(d||[]).length;i++) out.push(netRow(d[i]));
+        ok(out);
+      }, bad);
+  }, function(){ ok(null); });
+}
 function netFindPosts(q, ok, bad, more){
   var like=netLike(q);
   /* `more` is the `at` of the last post already held. Keyset and not an

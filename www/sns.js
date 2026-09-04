@@ -445,7 +445,33 @@ function snsPull(){
    ever completed on a real phone -- a finger never holds perfectly still. And preventDefault stops the browser
    bouncing the page, not the other listeners -- they are still called. */
 var PULL_R=0.5, PULL_GO=64, PULL_MAX=96;
-var PULL_ON={feed:1, explore:1, notif:1};
+/* WHICH SCREENS ANSWER A PULL, AND WHAT EACH ONE ASKS FOR -- ONE TABLE.
+   「ここ更新ないから見れないし」「他の人の画面でも更新できるようにしたい」
+   OWNER 2026-09-04, looking at 3-thread.png.
+
+   It was a map to `1` with the asking written out underneath as a row of
+   conditions, which is two lists of routes that had to be kept agreeing --
+   and they had already stopped: a thread and a person's page were on
+   neither, so the one screen the owner was standing on could not be asked
+   again at all.
+
+   So a route is bound to the function that asks, exactly as `route-map.js`
+   binds a route to the view that draws it and `act-map.js` binds a name to
+   the function it runs. A screen added to the timeline is pulled the day it
+   is added, and there is no second place to forget.
+
+   `follows` is here too and is the same complaint one screen along: the two
+   lists behind the counts are asked for ONCE a session (meFollowerPull's
+   FR_ASKED), so somebody who followed you while the app was open was in
+   neither the number nor the list until it was killed and opened again. */
+var PULL_ON={};
+function pullOn(r, fn){ PULL_ON[r]=fn; }
+pullOn('feed',    pullFeed);
+pullOn('explore', pullFeed);
+pullOn('notif',   notPull);
+pullOn('thread',  pullThread);
+pullOn('profile', pullWho);
+pullOn('follows', pullFollows);
 var pullY=-1, pullEl=null, pullAt=0;
 /* The mark that turns in the gap.
 
@@ -568,16 +594,78 @@ function pullLet(ask){
      the animation on `.pullrule.go` sets transform too -- an inline one wins
      over a stylesheet's keyframes and the mark would sit still. */
   if(PULL_SPIN){ PULL_SPIN.className='pullrule go'; PULL_SPIN.style.transform=''; }
-  if(r==='notif'){ notPull(); return; }
   if(!r){ pullSpinOff(); return; }
-  /* A pull is somebody saying "ask again", and what the feed is showing
-     while a word is on is the answer to that word -- so that is what gets
-     asked again. It is said HERE and not inside snsFilFind()'s own guard,
-     because vFeed() calls that on every render and a render is not a person
-     asking. The timeline underneath is asked for too: it is still the list
-     the word comes off onto. */
-  if(r==='feed' && snsFil) snsFilFind(true);
+  /* And what this screen asks is the screen's own, off the table above. */
+  PULL_ON[r]();
+}
+/* A timeline. A pull is somebody saying "ask again", and what the feed is
+   showing while a word is on is the answer to that word -- so that is what
+   gets asked again. It is said HERE and not inside snsFilFind()'s own guard,
+   because vFeed() calls that on every render and a render is not a person
+   asking. The timeline underneath is asked for too: it is still the list the
+   word comes off onto. */
+function pullFeed(){
+  if(here().r==='feed' && snsFil) snsFilFind(true);
   snsPull();
+}
+/* A THREAD, and it asks about every post drawn on it rather than the one at
+   the top. The page shows a post and everything under it, so one level would
+   be a refresh of part of what is on the screen.
+
+   BY THE NAME THE SERVER KNOWS EACH BY -- `sid`, or the id itself for
+   anything that arrived wearing it (www/post.js § postIs). A post written
+   here and not yet sent has no name there and is left out: asking with a
+   local uuid is a request that can only come back empty.
+
+   The post itself is asked for too where this phone does not have it, which
+   is a thread opened from a notice: vThread() draws 「ありません」 while the
+   answer is out, and this is the road that ends it. */
+function pullThread(){
+  var id=postFocus(), p=postById(id), ids=[], down, i, q;
+  if(!id){ pullSpinOff(); return; }
+  if(!p) netPostById(id, function(got){
+    if(!got) return;
+    postTake([got]);
+    render();
+  }, function(){});
+  ids.push((p && p.sid) || id);
+  down=postDown(id, 0, [], [id]);
+  for(i=0;i<down.length;i++){
+    q=down[i].p;
+    if(q.sid) ids.push(q.sid);
+  }
+  netReplies(ids, function(ps){
+    pullSpinOff();
+    if(!ps) return;
+    postTake(ps);
+    render();
+  }, function(){ pullSpinOff(); });
+}
+/* A PERSON'S PAGE: what they have written, who they are, and the two counts.
+   All three were asked once and never again -- whoPull() keeps WHO_ASKED per
+   handle, the two follow pulls keep one flag each for the session, and their
+   posts were only ever whatever the timeline had swept up.
+
+   Your own page and somebody else's ask the same three things of different
+   places, and www/me.js is where that is decided; this says only that a pull
+   is somebody asking again. */
+function pullWho(){
+  var h=pfWho() || meHandle();
+  meAgain(h);
+  netPostsBy(h, function(ps){
+    pullSpinOff();
+    if(!ps) return;
+    postTake(ps);
+    render();
+  }, function(){ pullSpinOff(); });
+}
+/* And the list behind one of those counts, which is the same ask without the
+   posts. 「フォロワーとかタップしても見れないし」 was the door; this is the
+   door opening on something that has moved since. */
+function pullFollows(){
+  meAgain(folWho());
+  folAgain(folErs(), folWho());
+  pullSpinOff();
 }
 /* touchmove has to be able to say no to the browser's own bounce, and a
    listener the browser thinks is passive cannot. Whether the third argument
