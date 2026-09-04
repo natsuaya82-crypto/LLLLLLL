@@ -59,7 +59,7 @@ CI（`.github/workflows/ios-deploy.yml`, `macos-latest`）が毎回やること:
 1. **developer.apple.com → Certificates, Identifiers & Profiles →
    Identifiers → `com.tokinets.lingua`**
    - Capabilities の一覧から **Sign in with Apple** にチェック → Save
-   - キーボード拡張（`com.tokinets.lingua.LinguaKeyboard`）のほうは
+   - キーボード拡張（`com.tokinets.lingua.keyboard`）のほうは
      **触らないでください。** ログインするのは本体だけです
 
 2. **Profiles → 本体の配布用プロファイル**
