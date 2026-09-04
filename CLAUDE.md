@@ -52,7 +52,8 @@ the app.** Everything the timeline is made of — posts, photographs, the voice,
 **drafts**, the handle, the display name, the profile picture, reactions,
 follows, blocks and reports 「SNSは全部サーバー」 — **and the language itself**,
 every slice of it, the keyboard among them, because a keyboard is part of a
-language. The phone keeps the copy that works with no signal; **it is never
+language. **⚠ 2026-09-04 に差し替えが決まりました ── オンライン前提。iPhone には言語を置きません。**下の一文はまだコードがそうなっている、という記録です（`docs/FEATURE_RULES.md` の決定ログ）。
+The phone keeps the copy that works with no signal; **it is never
 where a thing lives.**
 
 **NOTHING IS THE PHONE'S. EVERYTHING IS THE ACCOUNT'S.**
@@ -1589,6 +1590,18 @@ Three reds were watched before any of it was believed: the second page at
 the exemption's rot claim with `viewGone` renamed out from under it.
 
 ### 22. Nothing is kept on this phone alone, and nothing on it is nobody's
+
+> **⚠ この章は差し替えが決まっています。まだコードは変わっていません。**
+> 「オンライン前提に切り替える。保存を押した瞬間にサーバーへ行く」
+> OWNER 2026-09-04（`docs/FEATURE_RULES.md` の決定ログ）。
+> **サーバーが唯一の本物になり、iPhone には言語を一つも置きません**
+> ── 残るのは `lingua.sess`（この iPhone は誰か）だけ。オフラインは
+> 無くなり、電波が無いときアプリは何も出しません。**新しいものを、下に
+> 書いてある古い形の上に作らないでください。**設計は `claude/one` が
+> 書いています。それが通るまで、この章は「何が今そうなっているか」の
+> 記録として読んでください。
+
+
 
 **The app is online, and that is a decision about data rather than about
 screens** ── 「オンラインにしないとデータの改竄し放題だから」. The server is
