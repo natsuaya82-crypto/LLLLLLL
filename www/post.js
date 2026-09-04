@@ -150,9 +150,39 @@ function postOut(p){ return !!(p && p.out && !p.mine); }
    -- post_seen in supabase/schema.sql empties the body, so the words are not
    on the wire at all -- and there is nothing to draw but the fact of it. */
 function postGone(p){ return !!(p && p.down && !p.mine); }
+/* A POST HAS TWO NAMES, AND EVERY LOOKUP ANSWERS FOR BOTH.
+   -------------------------------------------------------------------------
+   `id` is what this phone calls it and `sid` is where it lives on the server
+   (postSid() above). A post this phone WROTE keeps the local name it was born
+   with -- rewriting it would move it out from under every reply that already
+   points at it -- so the two are different for exactly the posts the owner
+   writes, and the same for everything that arrived (netRow() sets both).
+
+   Nothing knew that. `postById()` matched `id` alone and `postKids()` matched
+   `to` against whatever name it was handed, so the two names sorted one
+   conversation into two halves that could not see each other:
+
+     the reply came back from the server carrying `to` = MY POST'S sid
+     the thread was opened on MY POST'S id
+     -> postKids() found nothing, and the answer to a post appeared on the
+        timeline and nowhere else. 「返事したはずなのにスレッドに来ない」
+        OWNER 2026-09-04, and 4-home.png shows the same reply the thread in
+        3-thread.png does not have.
+
+   And the other way: a notice carries the SERVER's id, so opening a thread
+   from one about your own post asked postById() for a name it refused to
+   answer to and drew 「ありません」 over a post that is right here.
+
+   So this is the one place that says whether a name is this post's, and both
+   walks ask it. It is not a second lookup beside the first -- the old one is
+   gone, because a phone that answers to one of a post's two names is a phone
+   that has half a conversation. */
+function postIs(p, id){
+  return !!(p && id && (p.id===id || p.sid===id));
+}
 function postById(id){
   var i;
-  for(i=0;i<POSTS.length;i++) if(POSTS[i].id===id) return POSTS[i];
+  for(i=0;i<POSTS.length;i++) if(postIs(POSTS[i], id)) return POSTS[i];
   return null;
 }
 
@@ -1137,6 +1167,38 @@ function planBadge(id){
   if(id==='pro') return badgeMark();
   return '';
 }
+/* THE MARK, AND IT IS ON ONE PHONE IN THE WORLD.
+   「後相手の画面にパッチ映らないけど？プロなのに」 OWNER 2026-09-04.
+
+   Both questions here are about the READER -- `p.mine` is 「is this post
+   mine」 and `can('badge')` is 「is MY plan Pro」 -- so the author is the only
+   person who ever sees it. That is rule 8, and it is NOT fixed by freezing
+   the answer onto the post when it is written: sides-check says in as many
+   words why this one is exempt from the freezing rule -- a badge says what is
+   true NOW, because somebody who cancels has to stop wearing it
+   「バッジは消える」. A stamped one would go on wearing it for ever.
+
+   SO THE ANSWER HAS TO COME FROM THE SERVER AND IT IS NOT THERE TO COME FROM.
+   The plan is a table of its own and is deliberately private
+   (supabase/schema.sql § plan: 「A `plan` column there would have published
+   every person's tier to every...」), `profile_seen` does not carry it and
+   `post_seen` does not either. There is no request in www/net.js that could
+   answer this and no column for one to read.
+
+   THE DRAWING IS ALREADY WAITING ON A PERSON'S PAGE and is deliberately not
+   here yet. whoCard() in www/me.js draws whatever whoOf() says about the
+   person, and whoOf() passes `pro` through the way it passes `lid` and
+   `lpub` -- so the day `profile_seen` carries the column, that screen is
+   right with no second change. The TIMELINE is a different question, because
+   a row is a post and not a person: it wants the same boolean on `post_seen`
+   and netRow() putting it on the row, and then these two lines are replaced
+   by `p.pro` alone.
+
+   Nothing is bolted on here in the meantime. A second road to one answer is
+   what CLAUDE.md forbids first, and reading `p.pro` today would be a road
+   nothing writes; taking the two lines out today would take the mark off the
+   author's own timeline and put it nowhere. So it stands as it is and the
+   report says what is missing: ONE BOOLEAN, in two views. */
 function postBadge(p){
   if(!p || !p.mine) return '';
   /* can('badge') and not plan(). It answered the same thing on the day this
@@ -2770,9 +2832,15 @@ function postToWho(p){
 }
 /* The answers to one post, oldest first, because a conversation reads down. */
 function postKids(id){
-  var out=[], i;
+  var out=[], i, up=postById(id);
   if(!id) return out;
-  for(i=0;i<POSTS.length;i++) if(POSTS[i].to===id) out.push(POSTS[i]);
+  /* Asked of the POST and not of the name it was asked about. An answer
+     points at whichever of its parent's two names the phone that wrote it
+     was holding, so the question is 「is this post the one I am reading」 --
+     postIs() -- and not 「is this string the string I was given」. */
+  for(i=0;i<POSTS.length;i++)
+    if(POSTS[i].to && (POSTS[i].to===id || (up && postIs(up, POSTS[i].to))))
+      out.push(POSTS[i]);
   return out.sort(function(a, b){ return (a.at||0)-(b.at||0); });
 }
 /* What is above a post: everything it is an answer to, oldest first. Bounded
