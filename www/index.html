@@ -320,7 +320,6 @@ canvas.pkc{width:34px;height:34px;display:block}
 .kb.kbsheet .kbrow, .kbhdr{display:grid;gap:0;position:relative;
      grid-template-columns:repeat(var(--kc, 20), 1fr)}
 .kb.kbsheet .kbk{min-width:0;margin:0 calc(var(--kbgap) / 2)}
-.kb.kbsheet .kbk.addrow{grid-column:1/-1}
 /* The letters across the top and the numbers down the side, and both of them
    are how a whole column and a whole row go. They are 44 tall for that
    reason -- they are targets now, not labels. Neither can be 44 WIDE: a
@@ -473,10 +472,13 @@ canvas.pkc{width:34px;height:34px;display:block}
 .kbedit.fn .kbec{grid-area:1/1}
 /* How tall the keys are, directly under them. No number and no label: the
    keyboard above is the readout, and it moves as the thumb moves. */
-/* A row is added where a row would be. It is drawn as the empty row it is
-   about to become, not as a button somewhere else on the screen. */
-.kbk.addrow{flex:1 1 auto;color:var(--txm);background:none;
-            border:1px dashed var(--line);opacity:.8}
+/* The ＋ under the keyboard is gone and so are the two rules that drew it.
+   「キーボードのこの下の+もいらない。誤タッチが多いから」 OWNER 2026-09-04,
+   through `claude/dup`, which took the button out of www/keyboard.js. This
+   file is not that session's, so the CSS was left standing -- and a selector
+   nothing wears is what `press` reports and what CLAUDE.md § box-baseline
+   calls permission for something nobody meant to allow. Its baseline line
+   (`.kbk.addrow | border`) goes with it, in this commit. */
 /* A line of the language, typed on the language's own keyboard. `readonly`
    keeps the phone's keyboard from coming up over it -- the keys are on the
    page, and two keyboards at once is one too many. */
