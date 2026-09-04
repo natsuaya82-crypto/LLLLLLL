@@ -49,7 +49,8 @@ await pg.evaluate(() => {
   window.__ASK = [];
   window.__POSTS = [];
   window.__FIELDS = [];
-  netSend = function(m, p, b, t, ok, bad){
+  window.__RECENT = [];
+  netSend = function(m, p, b, t, ok, bad, up){
     window.__ASK.push(p);
     var M = window.__MODE;
     if (p.indexOf('/rest/v1/profile') === 0){
@@ -101,6 +102,47 @@ await pg.evaluate(() => {
         if (on) hits.push(row);
       }
       setTimeout(function(){ ok(hits); }, 0);
+      return;
+    }
+    /* ---- 履歴の行、本物と同じ規則で ------------------------------------
+       `unique (author, q)` があるので、同じ言葉の二行目は入りません。
+       `Prefer: resolution=merge-duplicates` が付いていれば PostgREST は
+       ぶつかった行を UPDATE します ── 付いていなければ落ちます。**その
+       違いがこの検査の全部**なので、送られてきた見出しをそのまま読みます。
+
+       `__MODE` が 'cut' のとき、消す道だけが通って入れる道が落ちます ──
+       「消す」と「入れる」の間で電波が切れた瞬間そのものです。 */
+    if (p.indexOf('/rest/v1/recent_search') === 0){
+      var qq2 = decodeURIComponent(p), mq = /[?&]q=eq\.([^&]*)/.exec(qq2);
+      if (m === 'DELETE'){
+        var gone = mq ? mq[1] : '';
+        window.__RECENT = window.__RECENT.filter(function(r){ return r.q !== gone; });
+        setTimeout(function(){ ok(null); }, 0);
+        return;
+      }
+      if (m === 'POST'){
+        if (M === 'cut'){ setTimeout(function(){ bad({ message:'offline' }, 0); }, 0); return; }
+        var w = String((b || {}).q || ''), at = String((b || {}).at || '') ||
+                new Date().toISOString(), was = null, i2;
+        for (i2 = 0; i2 < window.__RECENT.length; i2++)
+          if (window.__RECENT[i2].q === w) was = window.__RECENT[i2];
+        /* 同じミリ秒に三本入ると `at` が並びます。本物のサーバーでは
+           起こらないので、入った順を持たせて並びを決めます ── 測って
+           いるのはアプリの動きで、時計の刻みではありません。 */
+        window.__SEQ = (window.__SEQ || 0) + 1;
+        if (was){
+          /* ぶつかった。合流を頼まれていなければ本物は 409 です。 */
+          if (!up){ setTimeout(function(){ bad({ message:'duplicate key' }, 409); }, 0); return; }
+          was.at = at; was.n = window.__SEQ;
+        } else window.__RECENT.push({ id:'r' + (window.__RECENT.length + 1),
+                                      q:w, at:at, n:window.__SEQ });
+        setTimeout(function(){ ok([{ id:'r' }]); }, 0);
+        return;
+      }
+      /* 読むほう ── 新しい順。 */
+      var rows2 = window.__RECENT.slice().sort(function(a2, b2){
+        return (a2.at < b2.at) ? 1 : (a2.at > b2.at) ? -1 : (b2.n - a2.n); });
+      setTimeout(function(){ ok(rows2); }, 0);
       return;
     }
     if (m === 'POST' && p.indexOf('/rest/v1/post') === 0){
@@ -327,6 +369,66 @@ const star = await pg.evaluate(() => {
 });
 say(star.saved.length === 1 && star.saved[0] === 'hoshi' && star.recent.length === 0,
     '履歴を消しても星は残る (星と履歴は別の仕組み)');
+
+/* ---- 7b. 同じ言葉をもう一度 ── 一番上へ動くのは一回の書き込み ---------
+   履歴が黙って一つ減ることがありました。同じ言葉をもう一度検索すると一番上
+   へ動きますが、その動かし方が **「消す」→「入れる」の二回**で、**間で電波
+   が切れると消えたまま**になります。手元には残るので画面は正しく見え、次の
+   起動で `snsRecentPull()` がサーバーの答えで上書きしたときに初めて減ります
+   ── 誰も何も押していないのに、一件だけ無くなる。
+
+   `unique (author, q)` があるから二回に分けていた、というのが元の理由です。
+   けれど PostgREST は `Prefer: resolution=merge-duplicates` でぶつかった行を
+   更新します。**問い合わせは一本になり、途中というものが無くなります。**
+   `recent_edit`（`supabase/schema.sql`）は前からその一本のために在ります。
+
+   `at` を本文に入れるのは、合流したときに更新される列がそれだけだからです
+   ── 入れなければ順番は動かず、「一番上へ動く」が起きません。 */
+async function server(){
+  return await pg.evaluate(() => window.__RECENT.slice().sort(function(a, b){
+    return (a.at < b.at) ? 1 : (a.at > b.at) ? -1 : (b.n - a.n);
+  }).map(function(r){ return r.q; }));
+}
+await pg.evaluate(() => {
+  window.__MODE = 'ok'; window.__ASK = []; window.__RECENT = []; window.__SEQ = 0;
+  SET.recent = []; snsRecentGot = true; snsQ = ''; snsHits = null; go('explore');
+});
+await pg.waitForTimeout(80);
+await pg.evaluate(() => { ['aya','kanuko','mira'].forEach(function(w){ snsQ = w; snsGo(); }); });
+await pg.waitForTimeout(500);
+say((await server()).join(',') === 'mira,kanuko,aya',
+    '三つ検索するとサーバーに三つ、新しい順 (' + (await server()).join(',') + ')');
+
+/* もう一度、電波が切れないとき ── 一番上へ動く。問い合わせは一本。 */
+await pg.evaluate(() => { window.__ASK = []; snsQ = 'aya'; snsGo(); });
+await pg.waitForTimeout(500);
+let sent = await pg.evaluate(() => window.__ASK.filter(function(s){
+  return s.indexOf('/rest/v1/recent_search') === 0; }));
+say((await server()).join(',') === 'aya,mira,kanuko',
+    'もう一度検索するとサーバーでも一番上へ動く (' + (await server()).join(',') + ')');
+say(sent.length === 1,
+    '動かすのに出ていく問い合わせは一本 ── 消す→入れるの二回ではない (' +
+    sent.length + '本: ' + sent.join(' / ') + ')');
+
+/* そして電波が切れたとき ── 何も消えない。 */
+await pg.evaluate(() => { window.__MODE = 'cut'; window.__ASK = []; snsQ = 'kanuko'; snsGo(); });
+await pg.waitForTimeout(500);
+await pg.evaluate(() => { window.__MODE = 'ok'; });
+const still = await server();
+say(still.length === 3 && still.indexOf('kanuko') !== -1,
+    '途中で電波が切れても履歴は減らない (' + JSON.stringify(still) + ')');
+
+/* 次の起動で読み直しても、減ったままにならない。**画面が忘れる所はここ**
+   ── サーバーの答えが `SET.recent` を上書きするので、消えていればここで
+   初めて人の目に入ります。 */
+const back2 = await pg.evaluate(() => new Promise(function(d){
+  window.__MODE = 'ok';
+  snsRecentAsk = false; snsRecentGot = false; SET.recent = [];
+  snsRecentPull();
+  setTimeout(function(){ d(SET.recent ? SET.recent.slice() : []); }, 600);
+}));
+say(back2.length === 3 && back2.indexOf('kanuko') !== -1,
+    '次の起動で読み直しても三件 (' + JSON.stringify(back2) + ')');
 
 /* ---- 8. 投稿の検索 ── いま書いたものが、探して出てくる ------------------
    「検索してもツイート出てこないよ」「今ツイートしたやつは検索しても出てこ
