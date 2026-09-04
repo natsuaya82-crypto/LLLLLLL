@@ -1296,9 +1296,15 @@ function shTakeCount(got){
    capability `write` at the same rung for this chapter and `CAN` does not
    have one; www/core.js is not this session's file. */
 function shInFileHTML(){
+  /* THE SAME BUTTON ON EVERY PLAN, WITH THE SAME WORDS ON IT -- and the same
+     sentence impFileHTML() in www/import.js is written under, said here
+     because the two say different words on the button and share no code.
+     「できないことは、有料と同じ画面に同じ形で出す。押したら有料へ」 OWNER
+     2026-09-04: 「PDF を選ぶ」 and 「アップグレード」 ran together into one
+     word on the free plan. The press is what says the rest. */
   if(!can('file'))
-    return '<button class="btn ghost"' + DO('go', ["plans"]) + '>'+esc(t('wr.in'))+
-      '<span class="capgo">'+t('up.cta')+ICON_GO+'</span></button>';
+    return '<button class="btn ghost shfile"' + DO('go', ["plans"]) + '>'+
+      esc(t('wr.in'))+'</button>';
   return '<label class="btn ghost shfile">'+esc(t('wr.in'))+
     '<input type="file" id="wr-file" accept="application/pdf,.pdf"></label>';
 }

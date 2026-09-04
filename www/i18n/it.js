@@ -834,8 +834,6 @@ defLang('it', (function(){
       "set.terms"         : "Termini di utilizzo",
       "set.privacy"         : "Informativa sulla privacy",
       "set.csv.in"       : "Importa da CSV",
-      "set.lock.csv.t"   : "Importazione CSV",
-      "set.lock.csv.d"   : "Riversa un blocco costruito in un foglio di calcolo",
       "set.wipe"         : "Elimina account",
       "set.wipe.langs"    : "Elimina questa lingua",
       "lang.untitled" : "questa lingua",

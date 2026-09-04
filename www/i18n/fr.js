@@ -881,8 +881,6 @@ defLang('fr', (function(){
       "set.terms"         : "Conditions d’utilisation",
       "set.privacy"         : "Politique de confidentialité",
       "set.csv.in"       : "Importer depuis un CSV",
-      "set.lock.csv.t"   : "Import CSV",
-      "set.lock.csv.d"   : "Versez d’un coup un lot préparé dans un tableur",
       "set.wipe"         : "Supprimer le compte",
       "set.wipe.langs"    : "Supprimer cette langue",
       "lang.untitled" : "cette langue",

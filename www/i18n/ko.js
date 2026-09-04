@@ -1008,8 +1008,6 @@ defLang('ko', (function(){
       "set.terms"         : "이용약관",
       "set.privacy"         : "개인정보처리방침",
       "set.csv.in"       : "CSV에서 가져오기",
-      "set.lock.csv.t"   : "CSV 가져오기",
-      "set.lock.csv.d"   : "스프레드시트에서 만들어 둔 묶음을 한꺼번에 부어 넣어요",
       "set.wipe"         : "계정 삭제",
       "set.wipe.langs"   : "이 언어 삭제",
       "lang.untitled" : "이 언어",

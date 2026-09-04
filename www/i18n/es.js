@@ -793,8 +793,6 @@ defLang('es', (function(){
       "set.terms"         : "Términos de uso",
       "set.privacy"         : "Política de privacidad",
       "set.csv.in"       : "Importar desde CSV",
-      "set.lock.csv.t"   : "Importar CSV",
-      "set.lock.csv.d"   : "Vuelca un lote que hayas armado en una hoja de cálculo",
       "set.wipe"         : "Eliminar cuenta",
       "set.wipe.langs"    : "Eliminar este idioma",
       "lang.untitled" : "este idioma",

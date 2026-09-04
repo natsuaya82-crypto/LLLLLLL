@@ -481,13 +481,24 @@ function impGetHTML(){
    filled panel with a hairline round it and a corner on it -- the shape
    CLAUDE.md's fifth rule is about -- and the comment over `.shfile` in
    index.html has named this button as the one still wearing it since the
-   sheet's own file control was moved off it. `.impfile` is what lays the
-   native control over the words, and that is all it is for now: a file input
-   cannot be styled and a hidden one cannot be pressed. */
+   sheet's own file control was moved off it. `.impfile` is the shape of this
+   control on BOTH plans -- block, the width of the screen, its words in the
+   middle -- and, on the paid one, what lays the native control over those
+   words: a file input cannot be styled and a hidden one cannot be pressed.
+   Only the second half is the paid face's, which is what `.impfile input`
+   says in index.html. */
 function impFileHTML(){
+  /* THE SAME BUTTON ON EVERY PLAN, WITH THE SAME WORDS ON IT.
+     「できないことは、有料と同じ画面に同じ形で出す。押したら有料へ」 OWNER
+     2026-09-04. The free plan used to get `up.cta` welded onto the end of the
+     button's own words with nothing between them, so 「ファイルを選ぶ」 and
+     「アップグレード」 ran together into one unreadable word -- a button whose
+     text a person cannot read is worse than one they cannot press. What the
+     tail was for is said by the press: this is a door, and 「扉は押したら飛ぶ」
+     (OWNER 2026-09-03). */
   if(!can('file'))
-    return '<button class="btn ghost"' + DO('go', ["plans"]) + '>'+esc(t('imp.file'))+
-      '<span class="capgo">'+t('up.cta')+ICON_GO+'</span></button>';
+    return '<button class="btn ghost impfile"' + DO('go', ["plans"]) + '>'+
+      esc(t('imp.file'))+'</button>';
   return '<label class="btn ghost impfile">'+esc(t('imp.file'))+
     '<input type="file" id="f-file" accept=".csv,.tsv,.tab,.txt,.json,.db,.dic,.lex"></label>';
 }

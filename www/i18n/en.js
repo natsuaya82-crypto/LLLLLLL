@@ -745,8 +745,6 @@ defLang('en', (function(){
       'set.terms'        : 'Terms of Use',
       'set.privacy'        : 'Privacy Policy',
       'set.csv.in'      : "Import from CSV",
-      'set.lock.csv.t'  : "CSV import",
-      'set.lock.csv.d'  : "Pour in a batch you built in a spreadsheet",
       'set.wipe'        : 'Delete account',
       'set.wipe.langs' : 'Delete this language',
       'lang.untitled' : 'this language',

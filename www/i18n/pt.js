@@ -840,8 +840,6 @@ defLang('pt', (function(){
       "set.terms"         : "Termos de uso",
       "set.privacy"         : "Política de privacidade",
       "set.csv.in"       : "Importar de CSV",
-      "set.lock.csv.t"   : "Importação CSV",
-      "set.lock.csv.d"   : "Despeje um lote que você montou numa planilha",
       "set.wipe"         : "Excluir conta",
       "set.wipe.langs"    : "Excluir este idioma",
       "lang.untitled" : "este idioma",
