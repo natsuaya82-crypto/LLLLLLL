@@ -416,15 +416,36 @@ function ltTaken(l){
 }
 /* Letters that had the switch: role 'mark' with the character in `key`. The
    character is what it reads now. Runs once, on a phone, and touches only the
-   letters that carry the old shape. */
+   letters that carry the old shape.
+
+   AND THE OLD TWO FIELDS STAY. They were deleted here, on every letter this
+   walked -- including the ones it had just decided NOT to move. `key` is the
+   character that types the letter, and it is moved only for a letter that
+   says 'mark' AND reads nothing yet; a mark that already read something kept
+   its reading, correctly, and lost the character it is typed by.
+
+   There is nowhere to read it back from. Nothing else in www/ names `role` or
+   `key` -- count it rather than trust this line, `grep -n "\.role\b\|\.key\b"
+   www/*.js` -- so the delete takes the value off this phone, out of the
+   backup file and off the slice row on the server in the same stroke.
+
+   Leaving them costs a few bytes a letter and cannot lose anything; moving
+   them could, which is langMigrate()'s own argument and docs/DATA_SAFETY.md
+   rule 2. Neither field is read by any screen or any check, so a letter that
+   keeps them behaves exactly as one that never had them.
+
+   `moved` counts a COPY now rather than a visit, so the second launch finds
+   `snd` already answered, copies nothing and writes nothing. Counting visits
+   with the delete gone would have saved the whole alphabet on every launch
+   for ever.
+
+   CLAUDE.md § Data: *a migration copies and never removes what it read*.
+   migrate-check holds it. */
 function migrateMarks(){
   var moved=0, i, l;
   for(i=0;i<LETTERS.length;i++){
     l=LETTERS[i];
-    if(l.role===undefined && l.key===undefined) continue;
-    if(l.role==='mark' && l.key && (!l.snd || !l.snd.length)) l.snd=[l.key];
-    delete l.role; delete l.key;
-    moved++;
+    if(l.role==='mark' && l.key && (!l.snd || !l.snd.length)){ l.snd=[l.key]; moved++; }
   }
   if(moved) saveLetters();
 }
