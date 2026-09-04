@@ -927,13 +927,27 @@ canvas.pkc{width:34px;height:34px;display:block}
    sentence does not stop for it. Everything here undoes what a browser
    does to a <button> so it sits in the line at the line's own size.
    www/sns.js § tagHTML. */
-.ptag{background:none;border:0;padding:0;margin:0;font:inherit;color:var(--tag);
+.ptag{background:none;border:0;font:inherit;color:var(--tag);
       cursor:pointer;-webkit-appearance:none;appearance:none;
       /* A <button> is a box the browser will not break, so a tag at the end
          of a line ran off the side of the phone instead of wrapping with the
          words round it. It is a word in a sentence and it breaks like one. */
       display:inline;white-space:normal;text-align:inherit;
-      word-break:break-word;overflow-wrap:anywhere}
+      word-break:break-word;overflow-wrap:anywhere;
+      /* AND A THUMB HAS 44pt OF IT, WITHOUT THE SENTENCE MOVING.
+         The words are 24 tall at this size, which is what a line of a
+         sentence IS -- and the sentence is where the owner put the tag
+         「タグは本文中に。」, so it may not be pushed apart to make room.
+
+         Ten above and ten below is the thumb's; the same ten back off the
+         margin is the line's. A <button> keeps its box even at
+         display:inline -- measured, not assumed: with the padding alone the
+         row went 24 -> 44 and every post carrying a tag grew twenty pixels,
+         and with the margin it is 24 again while getBoundingClientRect()
+         reads 94x44. It is not a box: no corner, no border, no fill -- the
+         same rule 18 the blue letters are already under, and there is
+         nothing here to see. */
+      padding:10px 0;margin:-10px 0}
 /* Spread edge to edge under the post, the way a thumb expects to find them. */
 /* Edge to edge under the post, the way a thumb expects to find them. */
 .pacts{display:flex;justify-content:space-between;margin:2px -8px -10px -10px}

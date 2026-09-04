@@ -500,7 +500,19 @@ const R = await pg.evaluate(async () => {
   {
     const app = document.getElementById('app');
     const wasPlan = SET.plan;
-    const own = POSTS.filter(p => p.mine)[0];
+    /* A post of this person's own THAT THE TIMELINE SHOWS. It was 「the first
+       one that is mine」, and by this point in the file the first one that is
+       mine is a REPLY -- the parent of the reply written above was deleted on
+       purpose two blocks up, and that parent is the fixture's own first post.
+       A reply is not on おすすめ any more (「リプライはおすすめ並ぶことないで
+       しょ？基本」 OWNER 2026-09-04, www/sns.js § snsList), so the walk below
+       found no row to measure and reported the head as having no wrapping row
+       -- which is the check failing to pick a subject, not the fold failing.
+
+       `!p.to` is the same sentence the feed asks. What is measured has to be
+       a post the feed is drawing, because the fold is measured ON the feed at
+       390px. */
+    const own = POSTS.filter(p => p.mine && !p.to)[0];
     const wasWho = own && own.who, wasHd = own && own.hd;
     if (!own) fails.push('no post of this person\u2019s own, so the badge and the ' +
                          'fold below are tests of nothing');
