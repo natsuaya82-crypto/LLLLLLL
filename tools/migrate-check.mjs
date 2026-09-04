@@ -595,6 +595,54 @@ want('and still not copied', f2.carried, '');
 want('and no mark is left for anybody to spend', f2.marks, 0);
 want('and the eight are still all there', f2.kept, f2.eight);
 
+/* ---- a pronunciation somebody brought in is not replaced by a guess -----
+   CLAUDE.md § Data: *a migration COPIES and never removes what it read*.
+   migrateSp() took a word from when a word was its sounds and, along with the
+   copies it was right to drop, deleted `w.ph` -- the pronunciation. A word
+   imported from a spreadsheet carries one, and it is not a copy of anything:
+   it is a column the person filled in (www/import.js reads it).
+
+   It needs TWO launches to show, which is why this reloads twice. boot.js
+   runs migratePh() FIRST and migrateSp() LAST, so launch one deletes the
+   pronunciation and launch two finds it missing and writes phGuess(hw) --
+   a guess made from the spelling of the HEADWORD -- in its place. One launch
+   and the word merely has nothing; two and it has somebody else's answer.
+   「2発音は消えないでくい」 OWNER 2026-09-04. */
+const PH = ['t', 'sʰ', 'ɑ', 'ŋ'];          /* nothing phGuess('kano') would say */
+await pg.evaluate((ph) => {
+  localStorage.clear();
+  localStorage.setItem('lingua.langs', JSON.stringify({ LP: { name: 'Imported', mine: true } }));
+  localStorage.setItem('lingua.cur', 'LP');
+  localStorage.setItem('lingua.LP.lang', 'Imported');
+  localStorage.setItem('lingua.LP.letters', JSON.stringify(
+    [{ id: 'pk', nm: 'k', snd: 'k' }, { id: 'pa', nm: 'a', snd: 'a' },
+     { id: 'pn', nm: 'n', snd: 'n' }, { id: 'po', nm: 'o', snd: 'o' }]));
+  /* The old shape: a spelling of letters, no `spv`, and a pronunciation that
+     came in with the word rather than out of the letters. */
+  localStorage.setItem('lingua.LP.words', JSON.stringify([
+    { hw: 'kano', mn: 'mountain', mns: ['mountain'], pos: 'n',
+      sp: [{ l: 'pk', u: 'k' }, { l: 'pa', u: 'a' },
+           { l: 'pn', u: 'n' }, { l: 'po', u: 'o' }],
+      ph: ph }]));
+}, PH);
+
+const phOf = () => pg.evaluate(() => {
+  const w = WORDS[0] || {};
+  return { hw: String(w.hw || ''), ph: (w.ph || []).join(' '), spv: !!w.spv };
+});
+
+await pg.reload(); await settle();
+const p1 = await phOf();
+want('after one launch the imported pronunciation is still there', p1.ph, PH.join(' '));
+
+await pg.reload(); await settle();
+const p2 = await phOf();
+want('and after the second launch too -- not a guess off the headword', p2.ph, PH.join(' '));
+if (p2.ph !== PH.join(' ') && p2.ph)
+  fails.push('the pronunciation that came in with the word was replaced by ' +
+             JSON.stringify(p2.ph) + ', which phGuess() made up out of the spelling of ' +
+             JSON.stringify(p2.hw) + '. A migration copies and never removes what it read.');
+
 await br.close();
 srv.close();
 

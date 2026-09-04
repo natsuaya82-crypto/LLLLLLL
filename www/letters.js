@@ -1262,7 +1262,23 @@ function migrateSp(){
       delete taken[String(w.hw)]; taken[hw]=1;
       wRename(String(w.hw), hw);
     }
-    delete w.ph;
+    /* AND THE PRONUNCIATION STAYS. It was deleted here, along with the copies
+       above, on the reasoning that a word from when a word was its sounds
+       carried a `ph` that was only ever a copy of what its letters read. That
+       is true of the words this app MADE and false of the ones it was GIVEN:
+       an imported word carries the pronunciation somebody typed into a column
+       of their spreadsheet (www/import.js reads it), and nothing here can tell
+       the two apart.
+
+       What made it worse than a deletion is the order in boot.js: migratePh()
+       runs FIRST and this LAST, so the launch after this one found `ph`
+       missing and wrote phGuess(hw) -- a guess made out of the spelling of the
+       HEADWORD -- in its place. Measured, with the line still in: an imported
+       /t sʰ ɑ ŋ/ came back as `k a n o`. Not lost, which somebody might
+       notice: replaced by an answer the app made up, which looks like theirs.
+
+       CLAUDE.md § Data: *a migration copies and never removes what it read*.
+       「2発音は消えないでくい」 OWNER 2026-09-04. migrate-check holds it now. */
     w.spv=1;
     moved++;
   }
