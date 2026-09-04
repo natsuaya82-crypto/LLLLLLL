@@ -569,7 +569,7 @@ function findBodyHTML(){
 }
 function fResultsHTML(qq){
   var g=fHits(qq), out='', total=g.w.length+g.l.length+g.s.length+g.n.length+g.r.length;
-  if(!total) return '<div class="empty"><div class="eb">'+t('words.nomatch')+'</div></div>';
+  if(!total) return emptyBox(t('words.nomatch'));
   if(g.w.length) out+=fSec(t('toc.words'), g.w.length)+g.w.map(entryOneHTML).join('');
   if(g.l.length) out+=fSec(t('toc.letters'), g.l.length)+
     '<div class="phkeys">'+g.l.map(function(l){
@@ -591,8 +591,7 @@ function fPickedHTML(){
       '<span class="rn"></span><span class="rt">'+esc(t('find.back'))+'</span>'+
       '<span class="lead"></span></button>'+
     fSec(t(fpick.k==='s'? 'find.hit.snd':'find.hit.lt', name), hits.length)+
-    (hits.length? hits.map(entryOneHTML).join('')
-                : '<div class="empty"><div class="eb">'+t('words.nomatch')+'</div></div>');
+    (hits.length? hits.map(entryOneHTML).join('') : emptyBox(t('words.nomatch')));
 }
 function fRestHTML(){
   var snd=addedSnd(), lt=LETTERS.filter(ltHasShape), todo=fTodo(), out='';

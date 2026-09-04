@@ -869,11 +869,29 @@ function navTop(count, right){
        about leaving this screen, which is what the whole bar is about. */
     (BACKQ? backQHTML() : '');
 }
+/* NOTHING HERE, in the box every screen says it in. Nine screens were
+   writing `.empty` with an `.eb` inside it out by hand, and five of them
+   escaped the sentence while four did not -- so one string with an ampersand
+   in it would have come out as markup on four screens and as words on five.
+
+   It is not what the sentence SAYS: that is the screen's, because "no words
+   yet" and "nobody you follow has written yet" are different facts. It is
+   only the box they are said in.
+
+   NOT the one place yet, and that is written here so silence is not read as a
+   check: www/sns.js (three), www/me.js and www/notes.js still write the
+   markup out. Those three files belong to another session. www/notes.js is
+   also the only screen with a SECOND line under the first (`.empty .es`), so
+   the argument for it goes in the day that file comes through here -- putting
+   one in now would be a branch no caller takes. */
+function emptyBox(text){
+  return '<div class="empty"><div class="eb">'+esc(text)+'</div></div>';
+}
 /* Coming back to a screen for a thing that is no longer there -- a word that
    was deleted, a form that was closed, a letter that is gone. Five screens
    said this, in the same nine words, in four files. */
 function goneBox(){
-  return '<div class="empty"><div class="eb">'+t('form.gone')+'</div></div>';
+  return emptyBox(t('form.gone'));
 }
 function viewGone(){
   return '<div class="view">'+navTop('')+'<div class="body">'+goneBox()+'</div></div>';

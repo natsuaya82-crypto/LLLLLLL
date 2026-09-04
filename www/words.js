@@ -160,8 +160,7 @@ function wPosAt(k){
    of the word it came from. */
 function wordsBodyHTML(items){
   if(!items.length)
-    return '<div class="empty"><div class="eb">'+
-      ((q||wFil!==POS_ALL)? t('words.nomatch') : t('words.empty'))+'</div></div>';
+    return emptyBox((q||wFil!==POS_ALL)? t('words.nomatch') : t('words.empty'));
   var out='', cur=null;
   items.forEach(function(w){
     var g=wGroupLab(w);
