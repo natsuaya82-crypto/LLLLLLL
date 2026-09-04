@@ -483,6 +483,10 @@ function ltNew(o){
      worked out again from the shape afterwards. */
   if(o && o.sh && o.sh.length) l.sh=o.sh;
   if(o && o.via) l.via=String(o.via);
+  /* A SLOT SAYS WHICH SLOT IT IS, and ltSlotId() below is the only caller.
+     Everything else a person makes is a letter of their own and takes the id
+     ltId() mints for it. */
+  if(o && o.id) l.id=String(o.id);
   LETTERS.push(l); saveLetters();
   return l;
 }
@@ -527,11 +531,50 @@ var LT_START='abcdefghijklmnopqrstuvwxyz!?';
    「無料で作ったやつを改名できなければ良くない？コピーできるようにして分ける
    とかは？」 The 複製する row that answered that quote went on 2026-09-01
    (「後複製するボタンいらんやろ」) and ltCopy() went with it. */
-function ltIsBase(l){
-  if(!l) return false;
-  if(numIsDigit(l)) return true;
-  var ab=String(l.ab||'').toLowerCase();
-  return ab.length===1 && LT_START.indexOf(ab)>=0;
+/* WHICH OF THE THIRTY-EIGHT SLOTS THIS LETTER IS, or '' for a letter somebody
+   added. A slot is not a row in a list: it is `a`, or `?`, or the digit worth
+   three, and what says which one is the NAME -- or for a digit the VALUE,
+   because a digit has no name to match on and its value is the whole of what
+   it is. Never the id it happens to be wearing. */
+function ltSlotKey(l){
+  if(numIsDigit(l)) return '#'+l.val;
+  var ab=String((l && l.ab)||'').toLowerCase();
+  return (ab.length===1 && LT_START.indexOf(ab)>=0)? ab : '';
+}
+function ltIsBase(l){ return !!l && !!ltSlotKey(l); }
+/* THE ID A SLOT WEARS, WORKED OUT FROM WHICH SLOT IT IS.
+   「あと、キーボードを足したりしてたら文字増殖してるんだけど何で？」OWNER
+   2026-09-04, and this is why: ltId() mints an id out of LT_SEQ, which counts
+   from zero every launch, so the SAME slot came out `l1_0_0` on one run of
+   ltStart() and `l39_0_0` on another. syArr() in www/sync.js puts two copies
+   of a language together by a letter's ID and nothing else -- that is chapter
+   26's whole design, 「そりゃあ両方足すだろ」 -- so thirty-eight and
+   thirty-eight became SEVENTY-SIX: a a, b b, c c, every reading twice, and
+   the free plan shows all of them because ltIsBase() is true of both.
+
+   A slot is not somebody's letter. It is the free plan's `a`, it is the same
+   `a` on every phone and at every launch, and its id says so. Two runs of
+   ltStart() anywhere now produce the same thirty-eight ids, so the merge sees
+   one of each and there is nothing to double.
+
+   The marks are spelled out rather than put in the id: `!` and `?` are fine in
+   a JSON string and are not fine everywhere an id is put -- kbFixed() writes
+   one into a `data-lt` attribute and the onboarding reads it back out of a CSS
+   selector. Letters and digits only, so there is nowhere for it to need
+   escaping. */
+var LT_SLOT_MARK={'!':'ex', '?':'qm'};
+function ltSlotId(key){
+  var k=String(key);
+  return (k.charAt(0)==='#')? ('lt.n'+k.slice(1)) : ('lt.'+(LT_SLOT_MARK[k] || k));
+}
+/* ...unless something already answers to it. Nothing this app has ever
+   written can collide -- ltId() makes `l<n>_<n>_<n>` and there is no dot in
+   it -- but two letters with one id is the one thing that would make the
+   merge above LOSE a row rather than double one, so it is asked rather than
+   assumed. */
+function ltSlotIdFree(key){
+  var id=ltSlotId(key);
+  return ltById(id)? ltId() : id;
 }
 /* WHETHER A LETTER CAN BE DELETED AT ALL, and it is the whole rule.
    「a-z 0-9 !?に1からナンバリングしてそれ以降に追加されるのは消す」
@@ -566,7 +609,7 @@ function ltStart(){
     c=LT_START.charAt(i);
     if(have[c]) continue;
     read=ltReadName(c);
-    l=ltNew({});
+    l=ltNew({id:ltSlotIdFree(c)});
     l.ab=c;
     /* A roman letter reads its sound; a mark reads itself, which is what
        migrateMarks made of every mark that came before this.

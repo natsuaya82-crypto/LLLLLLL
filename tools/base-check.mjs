@@ -361,6 +361,58 @@ const r = await pg.evaluate(({s}) => {
               baseSeen: baseSeen, baseMarks: baseMarks, addedMarked: addedMarked,
               kinds: kindsWalked };
 
+  /* ---- the same slot is the same row on every phone ----------------------
+     「あと、キーボードを足したりしてたら文字増殖してるんだけど何で？」OWNER
+     2026-09-04, and the alphabet had come out A A B B C C with every reading
+     twice. ltStart() minted its ids out of LT_SEQ, which counts from zero
+     every launch, so the SAME slot was `l1_0_0` on one run and `l39_0_0` on
+     another -- and syArr() puts two copies of a language together by a
+     letter's ID and nothing else, so thirty-eight and thirty-eight came back
+     seventy-six.
+
+     Asked of the two ends it actually breaks at. The ids first: ltStart() run
+     at three different points of one session, which is a first launch, a
+     second language opened after it, and another phone starting from zero.
+     Then the MERGE, through the real syMerge() with the real slices, because
+     the ids agreeing is only the reason -- what the owner is looking at is
+     the count. */
+  SET.plan = 'free';
+  var wasLts = LETTERS;
+  function slotIds(){
+    var m = {}, i, k;
+    for (i = 0; i < LETTERS.length; i++) {
+      k = ltSlotKey(LETTERS[i]);
+      if (k) m[k] = LETTERS[i].id;
+    }
+    return m;
+  }
+  LT_SEQ = 0; LETTERS = []; ltStart();
+  var runA = slotIds(), packA = JSON.stringify(LETTERS);
+  LETTERS = []; ltStart();                       /* later in the same session */
+  var runB = slotIds(), packB = JSON.stringify(LETTERS);
+  LT_SEQ = 0; LETTERS = []; ltStart();           /* another phone, from zero */
+  var runC = slotIds();
+  var keys = [], k2;
+  for (k2 in runA) if (Object.prototype.hasOwnProperty.call(runA, k2)) keys.push(k2);
+  out.slotN = keys.length;
+  out.slotSame = keys.filter(function(k){
+    return runB[k] === runA[k] && runC[k] === runA[k]; }).length;
+  out.slotA = runA.a || '';
+
+  var merged = JSON.parse(syMerge('letters', packA, packB));
+  var byName = {}, dupes = [];
+  merged.forEach(function(l){
+    var n = String(ltName(l));
+    byName[n] = (byName[n] || 0) + 1;
+  });
+  for (k2 in byName)
+    if (Object.prototype.hasOwnProperty.call(byName, k2) && byName[k2] > 1) dupes.push(k2);
+  out.mgN = merged.length;
+  out.mgDup = dupes.sort().join(' ');
+  LETTERS = merged;
+  out.mgSeen = ltSeen().length;                  /* free hides none of them */
+  LETTERS = wasLts;
+
   return out;
 }, { s: seed.toString() });
 await br.close();
@@ -493,6 +545,18 @@ say(r.wob && r.wob.pressed > 0 && r.wob.popless === 0 &&
     r.wob.dead === 0 && r.wob.moved === r.wob.pressed,
     'and every ⊖ that is drawn takes its letter away (' +
     (r.wob ? r.wob.moved + ' of ' + r.wob.pressed : '?') + ')');
+
+say(r.slotN === 38 && r.slotSame === 38,
+    'a slot wears the same id whenever ltStart runs -- first launch, a second ' +
+    'language later in the same session, and another phone from zero (' +
+    r.slotSame + ' of ' + r.slotN + ' agree, `a` is ' + (r.slotA || 'nothing') + ')');
+say(r.mgN === 38 && r.mgDup === '',
+    'so two copies of one free language merge back to thirty-eight and not ' +
+    'seventy-six -- 「文字増殖してるんだけど何で？」 (' + r.mgN + ' letters, ' +
+    'doubled names: ' + (r.mgDup || 'none') + ')');
+say(r.mgSeen === 38,
+    'and the free plan is looking at all of them, so a double would have been ' +
+    'on the screen rather than hidden (' + r.mgSeen + ' seen)');
 
 if (bad.length) { console.error('\nbase: ' + bad.length + ' failed'); process.exit(1); }
 console.log('\nbase: slots arrive when asked, and nothing drawn is ever taken away.');
