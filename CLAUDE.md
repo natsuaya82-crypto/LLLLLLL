@@ -284,6 +284,17 @@ screenshot and put it in front of them; do not look at it yourself and call that
 confirmed. And **never write 「直りました」 about something that has not been
 pressed** — say what was checked and what was not, separately.
 
+**AND ANYTHING WHOSE LOOK CHANGED IS SHOWN, EVERY TIME.**
+「見た目を変えたものは必ずスクショで提示する」 OWNER 2026-09-04. Not「if it
+seems worth it」and not「the diff says what moved」. A screen that renders is
+not a screen that looks right, and the owner is the only one who can say which
+it is. `node tools/shot.mjs --lang ja <screen>` takes it; a state the tool
+cannot reach is a state to make reachable in `tools/fixture.mjs`, not a reason
+to skip the picture. **Where a thing has two states — pressed and not, on and
+off — both are shown**, because the fault is nearly always in the one nobody
+photographed. **Nothing holds this. A person holds it by asking for the
+picture**, which is what the leader does at every audit.
+
 **Saying what you are doing, while you are doing it.** Work is reported as it
 happens, not at the end. Before a step that takes more than a moment -- a
 check, a measurement, a build, a file being rewritten -- say in one line what
