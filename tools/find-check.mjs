@@ -47,6 +47,8 @@ await pg.evaluate(seed);
 await pg.evaluate(() => {
   window.__MODE = 'ok';
   window.__ASK = [];
+  window.__POSTS = [];
+  window.__FIELDS = [];
   netSend = function(m, p, b, t, ok, bad){
     window.__ASK.push(p);
     var M = window.__MODE;
@@ -69,6 +71,48 @@ await pg.evaluate(() => {
     if (p.indexOf('/rest/v1/language') === 0){
       if (M === 'lang400'){ setTimeout(function(){ bad({ message:'boom' }, 400); }, 0); return; }
       setTimeout(function(){ ok([]); }, 0);
+      return;
+    }
+    /* ---- 投稿。書いたものを持って、訊かれたら渡す ----------------------
+       `post_seen` を先に見ること ── `post` で始まっているので、順番を
+       入れ替えると検索の問いが投稿を書く道に落ちます。 */
+    if (p.indexOf('/rest/v1/post_seen') === 0){
+      if (M === 'post400'){
+        setTimeout(function(){ bad({ message:'relation post_seen does not exist' }, 400); }, 0);
+        return;
+      }
+      /* 本物の PostgREST と同じ読み方で `body->>ln.ilike.*…*` を読む。
+         `*` は `%`、`ilike` は大文字小文字を区別しない。当たった鍵は
+         記録して、検査が「どこに当たったか」を訊けるようにしてある。 */
+      var qq = decodeURIComponent(p), pats = [], mm;
+      var re = /body->>([a-z]+)\.ilike\.(\*[^*,)]*\*)/g;
+      while ((mm = re.exec(qq))) pats.push([mm[1], mm[2]]);
+      window.__FIELDS = pats.map(function(a){ return a[0]; });
+      var hits = [];
+      for (var i = 0; i < window.__POSTS.length; i++){
+        var row = window.__POSTS[i], on = !pats.length;
+        for (var j = 0; j < pats.length; j++){
+          var val = (row.body || {})[pats[j][0]];
+          var rx = new RegExp('^' + pats[j][1]
+                     .replace(/[.+?^${}()|[\]\\]/g, '\\$&')
+                     .replace(/\*/g, '[\\s\\S]*') + '$', 'i');
+          if (rx.test(String(val == null ? '' : val))) on = true;
+        }
+        if (on) hits.push(row);
+      }
+      setTimeout(function(){ ok(hits); }, 0);
+      return;
+    }
+    if (m === 'POST' && p.indexOf('/rest/v1/post') === 0){
+      /* 出ていかなかった投稿 ── 信号が無いときに書いたものがこれです。 */
+      if (M === 'nosignal'){ setTimeout(function(){ bad({ message:'offline' }, 0); }, 0); return; }
+      var sid = 'sv' + (window.__POSTS.length + 1);
+      window.__POSTS.push({ id:sid, author:(SESS && SESS.uid) || 'u', body:b.body,
+                            prompt:b.prompt || null, reply_to:b.reply_to || null,
+                            created_at:new Date().toISOString(), hidden_at:null,
+                            author_out:false, likes:0, boosts:0, replies:0,
+                            i_like:false, i_boost:false });
+      setTimeout(function(){ ok([{ id:sid }]); }, 0);
       return;
     }
     setTimeout(function(){ ok([]); }, 0);
@@ -284,6 +328,181 @@ const star = await pg.evaluate(() => {
 say(star.saved.length === 1 && star.saved[0] === 'hoshi' && star.recent.length === 0,
     '履歴を消しても星は残る (星と履歴は別の仕組み)');
 
+/* ---- 8. 投稿の検索 ── いま書いたものが、探して出てくる ------------------
+   「検索してもツイート出てこないよ」「今ツイートしたやつは検索しても出てこ
+   ない？それとも完全一致しか出ない？」 OWNER 2026-09-04.
+
+   ここまでの七つは**人**の検索の話で、投稿の検索については一行も言っていま
+   せんでした。投稿の側は道が違います ── 打っている間は人だけで、押して初め
+   て投稿を訊きに行く（「ツイートの検索は検索ボタン押したら出てくる。それま
+   では人」2026-08-26）。だから「打っても出ない」は正しい姿で、「押しても
+   出ない」が壊れている姿です。その二つを分けて押さえます。
+
+   本物の作文画面から本物の `pwSend()` で一件書いて、それを探します。書く側
+   と探す側のどちらで落ちているかは、こうしないと分かりません。 */
+
+/* 一件書く。書けたら、その投稿がサーバーに在ることまで確かめる。 */
+async function wrote(ln, mn, mode){
+  return await pg.evaluate(([ln, mn, mode]) => new Promise(function(d){
+    window.__MODE = mode || 'ok';
+    go('feed');
+    setTimeout(function(){
+      openPost('');
+      setTimeout(function(){
+        PW.ln = ln; PW.mn = mn;
+        pwSend();
+        setTimeout(function(){
+          window.__MODE = 'ok';
+          d({ here: POSTS.filter(function(p){ return p.ln === ln; }).length,
+              there: window.__POSTS.filter(function(r){
+                       return (r.body || {}).ln === ln; }).length });
+        }, 900);
+      }, 200);
+    }, 200);
+  }), [ln, mn, mode]);
+}
+/* 探す。**押す道そのもの**を通す ── 検索欄に打って、改行キーを押す。
+   `snsGo()` を直接呼ぶと、押せるものが画面に無くても緑になります。 */
+async function pressed(q){
+  await pg.evaluate(() => {
+    window.__MODE = 'ok'; window.__ASK = []; window.__FIELDS = [];
+    snsQ = ''; snsHits = null; snsMode = 'who';
+    SET.recent = []; snsRecentGot = true; go('explore');
+  });
+  await pg.waitForTimeout(120);
+  await pg.fill('#sns-q', q);
+  await pg.waitForTimeout(500);
+  const typing = await pg.evaluate(() => ({
+    mode: snsMode,
+    posts: window.__ASK.filter(function(s){
+             return s.indexOf('/rest/v1/post_seen') === 0; }).length }));
+  await pg.evaluate(() => { window.__ASK = []; window.__FIELDS = []; });
+  await pg.focus('#sns-q');
+  await pg.keyboard.press('Enter');
+  await pg.waitForTimeout(700);
+  const after = await pg.evaluate(() => {
+    var e = document.getElementById('sns-hits');
+    var n = e ? e.querySelector('.note') : null;
+    return { mode: snsMode,
+             rows: e ? e.querySelectorAll('.post').length : -1,
+             note: n ? n.textContent : '',
+             fields: window.__FIELDS.slice(),
+             asks: window.__ASK.filter(function(s){
+                     return s.indexOf('/rest/v1/post_seen') === 0; }).length };
+  });
+  return { typing:typing, after:after };
+}
+const w1 = await wrote('kanuko mira', 'ねこがすきです');
+say(w1.here === 1, 'いま書いた投稿が手元にある (' + w1.here + ' 件)');
+say(w1.there === 1, 'いま書いた投稿がサーバーへ出ていく (' + w1.there + ' 件)');
+
+/* 打っている間は人だけ ── 投稿は一本も訊きに行かない。 */
+const p1 = await pressed('kanuko');
+say(p1.typing.posts === 0 && p1.typing.mode === 'who',
+    '打っている間は人だけ (投稿の問い ' + p1.typing.posts + ' 本)');
+
+/* 押したら投稿を訊きに行く。そして **一度だけ**。
+   二度訊いても答えは同じなので何も壊れませんが、検索のたびに同じ問いが二本
+   出ていくのは、誰も見ていないところで人数ぶん増える種類の無駄です。
+   一箇所で訊く ── 訊くのは画面を描くところ（`vExplore()`）です。 */
+say(p1.after.asks === 1,
+    '押すと投稿を訊きに行く、そして一度だけ (' + p1.after.asks + ' 本)');
+say(p1.after.rows === 1 && p1.after.mode === 'posts',
+    'いま書いた投稿が、押したら出てくる (' + p1.after.rows + ' 件)');
+
+/* ---- 9. 完全一致ではない ------------------------------------------------
+   「それとも完全一致しか出ない？」 */
+const part = await pressed('mira');
+say(part.after.rows === 1, '途中の言葉でも出る ── 完全一致ではない (' +
+    part.after.rows + ' 件)');
+const up = await pressed('MIRA');
+say(up.after.rows === 1, '大文字小文字は区別しない (' + up.after.rows + ' 件)');
+const ja = await pressed('がすき');
+say(ja.after.rows === 1, '自分の言葉の文字も途中から出る (' + ja.after.rows + ' 件)');
+
+/* ---- 10. 当たるのは投稿の三つの場所 ------------------------------------
+   綴った行と、意味と、言語の名前。書いた人の名前と @ には当たりません ──
+   人は人の検索が答えるもので、同じ言葉が二つの答えを持つと、どちらが出たのか
+   誰にも分からなくなります。 */
+say(p1.after.fields.join(',') === 'ln,mn,lname',
+    '当たるのは行と意味と言語の名前の三つ (' + p1.after.fields.join(',') + ')');
+const byWho = await pressed('aya');
+say(byWho.after.rows === 0,
+    '書いた人の @ では投稿は出ない (人の検索の仕事: ' + byWho.after.rows + ' 件)');
+
+/* ---- 11. 信号が無いときに書いた投稿は、追いついてから出る -------------
+   検索はサーバーのものです ── 手元の五十件を絞ったものは上位五十件ではない、
+   とこの画面は既に書いている。だからサーバーに届いていない投稿は、書いた
+   本人にも探せません。**そして、それは失われたということではありません。**
+   次にタイムラインを引いたときに追いついて上がり、そこから探せます。
+
+   二つを分けて押さえるのは、片方だけ見ると別の結論になるからです ──
+   「出ない」だけ見れば消えたように見え、「出る」だけ見れば信号の有無は
+   関係ないように見えます。 */
+const w2 = await wrote('zzuquat', 'つながっていないときに書いた', 'nosignal');
+say(w2.here === 1, '出ていかなくても手元には残る (' + w2.here + ' 件)');
+say(w2.there === 0, 'サーバーへは出ていかなかった (' + w2.there + ' 件)');
+const before = await pg.evaluate(() => new Promise(function(d){
+  window.__MODE = 'ok'; snsMode = 'posts';
+  snsFind('zzuquat', function(r){ d((r.posts || []).length); });
+}));
+say(before === 0,
+    'まだサーバーに無いので、その場では検索に出ない (' + before + ' 件)');
+/* 次につながったとき ── タイムラインを引いた背中で追いつきます。 */
+const caught = await pg.evaluate(() => new Promise(function(d){
+  window.__MODE = 'ok';
+  postCatchUp();
+  setTimeout(function(){
+    d(window.__POSTS.filter(function(r){
+        return (r.body || {}).ln === 'zzuquat'; }).length);
+  }, 700);
+}));
+say(caught === 1, '次につながったときに追いついて上がる (' + caught + ' 件)');
+const back = await pressed('zzuquat');
+say(back.after.rows === 1,
+    '上がったあとは検索に出る ── 何も失われていない (' + back.after.rows + ' 件)');
+
+/* ---- 11b. タイムラインは一度訊いて、止まる ---------------------------
+   上の二つが 2 件だったのは、投稿を二度書いたからではありません。**画面が
+   サーバーに訊き続けていたから**です。`snsPull()` は答えが来たら書き留めて
+   描き直し、`vFeed()` は描き直されるたびに訊く ── 一つの答えが画面を作り、
+   その画面がまた訊く。誰かがタイムラインを見ている間じゅう、同じ問いが
+   出続けていました。何も投げず、何も間違って見えません。
+
+   そして毎回 `postCatchUp()` が走ります。`sid` がまだ返ってきていない投稿は
+   「まだ送っていない投稿」なので、最初の送信が空中にある間に同じものが何度も
+   上がり、あとで探すと二件出てきました。
+
+   だから訊いた本数を数えます。一本が正しい姿です ── 立てて、一度訊いて、
+   答えが来て、止まる。**人が引っ張って訊き直す道はこれとは別**で、そちらは
+   `snsPull()` を直に呼ぶので、この数には出てきません。 */
+const loop = await pg.evaluate(() => new Promise(function(d){
+  window.__MODE = 'ok';
+  SNS_GOT = {}; snsTab = 'rec';
+  window.__ASK = [];
+  go('feed');
+  setTimeout(function(){
+    d(window.__ASK.filter(function(s){
+        return s.indexOf('/rest/v1/rpc/feed_hot') === 0; }).length);
+  }, 1500);
+}));
+say(loop === 1, 'タイムラインは一度訊いて止まる (' + loop + ' 本)');
+
+/* ---- 12. 見つからなかったのと、訊けなかったのは別の画面 ---------------
+   人の側で 5 番が言っているのと同じことを、投稿の側でも言う。 */
+const zero = await pressed('qqzzxx');
+const dead = await pg.evaluate(() => new Promise(function(d){
+  window.__MODE = 'post400'; snsMode = 'posts';
+  snsFind('kanuko', function(r){
+    window.__MODE = 'ok';
+    d({ n:(r.posts || []).length, bad:r.bad || '' });
+  });
+}));
+say(zero.after.rows === 0 && zero.after.note && dead.bad &&
+    zero.after.note !== dead.bad,
+    '0 件と訊けなかったは別の言葉 (' + JSON.stringify(zero.after.note) +
+    ' / ' + JSON.stringify(dead.bad) + ')');
+
 await br.close();
-console.log(bad.length ? '\nfind: FAILED ' + bad.length : '\nfind: 人の検索は打った通りに届き、答えは画面に出て、打った言葉が五件残る');
+console.log(bad.length ? '\nfind: FAILED ' + bad.length : '\nfind: 人は打てば届き、投稿は押せば出る。途中の言葉でも出て、出ていない投稿は出ない');
 process.exit(bad.length ? 1 : 0);
