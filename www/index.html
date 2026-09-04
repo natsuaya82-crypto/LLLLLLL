@@ -3382,13 +3382,17 @@ html[data-script="on"] .gsw{font-family:var(--face-script);letter-spacing:0}
   border-radius:8px;background:var(--bg);color:var(--tx);font-size:1.15rem;cursor:pointer;padding:0}
 .pkch.had{opacity:.28}
 .pkch.cur{border-color:var(--gold);color:var(--gold)}
-.scin{width:100%;min-width:0;min-height:44px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 9px;
-  color:var(--tx);font:inherit;font-size:1rem;outline:none}
-.scin:focus{border-color:var(--gold)}
-.scin.own{text-align:left}
-.scin{width:100%;min-width:0;background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:5px 7px;
+/* The field a script's own characters are typed into. It was written twice,
+   four lines apart: the second block won the corner, the padding and the type
+   size, so the first looked dead -- and `min-height:44px` was in the first one
+   and nowhere else. The 44pt floor is the whole reason the first block could
+   not be deleted, and nothing said so. One block now, carrying what each of
+   the two actually contributed. `.own` is the one that is typed in rather
+   than chosen from, so it reads from the left. */
+.scin{width:100%;min-width:0;min-height:44px;background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:5px 7px;
   color:var(--tx);font:inherit;font-size:1.05rem;text-align:center;outline:none}
 .scin:focus{border-color:var(--gold)}
+.scin.own{text-align:left}
 .capwarn{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;margin:2px 0 14px;padding:12px 14px;
   border:1px solid rgba(201,168,106,.3);border-radius:10px;background:transparent;color:var(--txm);font:inherit;font-size:.88rem;cursor:pointer}
 .capgo{color:var(--gold);flex-shrink:0}

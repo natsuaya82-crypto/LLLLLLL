@@ -13,7 +13,4 @@
 .plterm .pp | font-size
 .plterm .pper | display
 .plterm .pper | font-size
-.scin | border-radius
-.scin | font-size
-.scin | padding
 .wrow | width
