@@ -10,4 +10,3 @@
 .plterm .pp | font-size
 .plterm .pper | display
 .plterm .pper | font-size
-.wrow | width
