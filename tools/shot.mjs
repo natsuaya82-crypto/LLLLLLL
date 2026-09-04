@@ -169,7 +169,7 @@ for (const spec of shots) {
   const a = ci < 0 ? undefined : spec.slice(ci + 1);
   if (!ob && !hd && routes.indexOf(r) < 0) { console.error(`  no route called ${r}`); continue; }
   const err = hd
-    ? await pg.evaluate((n) => {
+    ? await pg.evaluate(({ n, ui: ui2, dk: dk2 }) => {
         try {
           /* The entry sets the app up and RETURNS the html. It used to be
              render() here, which rebuilds from the state -- and MANY of these
@@ -185,6 +185,15 @@ for (const spec of shots) {
              the face's own body replaces #app. */
           SET.done = true;
           window.__seed();
+          /* AND THE LANGUAGE AND THE THEME AGAIN. The seed sets `SET.ui` to
+             English -- every walk is built on that -- and it is re-run HERE,
+             after the flags at the top of this file were applied, so every
+             half-done picture came out in English however `--lang ja` was
+             typed. The owner does not read English, and a picture they cannot
+             read is a picture that did not get taken. */
+          SET.ui = ui2;
+          SET.theme = dk2 ? 'dark' : 'light';
+          if (typeof applyTheme === 'function') applyTheme();
           var html = HALF[n][1]();
           render();
           if (html) {
@@ -199,7 +208,7 @@ for (const spec of shots) {
           }
           return null;
         } catch (e) { return String(e && e.message || e); }
-      }, Number(hd[1]))
+      }, { n: Number(hd[1]), ui: uiLang, dk: dark })
     : ob
     ? await pg.evaluate(({ n, face }) => {
         try {

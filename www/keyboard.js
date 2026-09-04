@@ -282,8 +282,8 @@ function kbBar(del){
 /* ---- a pattern that does not fit is more FACES, never fewer letters -----
    「パターンから作った盤に、段の上限が効いていない」 LEADER, 2026-08-27.
 
-   kbRowsMax() was asked in two places -- kbRoomRow() and kbAddRowNew() --
-   which are the two ways somebody adds a row BY HAND. Nothing asked it of the
+   kbRowsMax() was asked in two places -- kbRoomRow() and kbIns() -- which is
+   the road somebody adds a row by BY HAND. Nothing asked it of the
    patterns, and a pattern is built out of however many letters the language
    has: 105 letters came out seven rows on a flick and twelve on an ABC, 300
    came out twenty and thirty-one. Nothing throws. The board is drawn, saved,
@@ -1915,11 +1915,13 @@ function kbHeadCol(ci){
   ci=parseInt(ci, 10)||0;
   kbSelTo(kbHeadTo('c', ci));
 }
-/* ---- a row going in where you are, rather than at the foot -------------
-   The dashed row at the bottom adds one AFTER the last. There was no way to
-   put one in the middle, which on a sheet is the ordinary thing to want.
-   「行を選択して+ボタン押したら上か下に追加するが出て押したら追加される
-   とかは？」
+/* ---- a row going in where you are, and it is the only road there is ----
+   There was a dashed key under the bottom row that added one AFTER the last,
+   with no way to put one in the middle -- which on a sheet is the ordinary
+   thing to want. 「行を選択して+ボタン押したら上か下に追加するが出て押したら
+   追加されるとかは？」 That key is gone as of 2026-09-04
+   （「キーボードのこの下の+もいらない。誤タッチが多いから」), so this is
+   where a row comes from.
 
    The + does not add. It ASKS -- and the two answers take the place of the
    three alignments and the bin while it is asking, because those are about
@@ -2261,15 +2263,19 @@ function kbHTML(sel, ro){
     }
     out+='</div>';
   }
-  /* A row is added where a row would go: under the last one, the width of
-     one, looking like the empty row it is about to be. It was a button at the
-     foot of the screen. 「行を出す層を足すも使いづらすぎる」
+  /* THERE IS NO + UNDER THE KEYBOARD. 「キーボードのこの下の+もいらない。
+     誤タッチが多いから」 OWNER 2026-09-04.
 
-     It is not there at all once the board is as tall as it may get. A button
-     that can be pressed and does nothing is the app saying it did something. */
-  if(!ro && kbRoomRow())
-    out+='<div class="kbrow"><button class="kbk addrow"' + DO('kbAddRowNew') +
-      ' aria-label="'+esc(t('kb.row.add'))+'">'+ICON_ADD+'</button></div>';
+     A dashed key the width of the sheet used to sit here, directly under the
+     bottom row, and pressing it added a row. That is where a thumb comes to
+     rest coming off the space bar, so it was being pressed by people who were
+     not adding anything.
+
+     Adding a row is unchanged and is the OTHER of the two roads this screen
+     has always had: press a row's number to select it, then the + over the
+     sheet, which asks 上 or 下 -- kbInsAsk() and kbIns(). That road says which
+     side the row goes on, which this one never could, and it is reached from
+     the band of buttons rather than from the keyboard itself. */
   /* the band down the column being worked on, if one is */
   if(!ro && KBH && KBH.k==='c' && KBH.i*2<cols)
     out='<span class="kbband" style="left:calc(100% / '+cols+' * '+(KBH.i*2)+');'+
@@ -4045,12 +4051,6 @@ function kbAddKey(ri, ki, w){
 }
 /* The row that is not there yet. Pressing it with a width chosen puts that
    key in a new row; pressing it with none adds the empty row it always did. */
-function kbAddRowNew(){
-  if(!kbEdit()) return;
-  if(!kbRoomRow()) return;
-  kbLayer().rows.push([kbKey('lt', '')]);
-  saveKb(); render();
-}
 /* A row with nothing left in it is not a row. */
 /* KEYS, and ONE step back for the press that took them. Each of these used to
    be its own kbDelKey() and so its own saveKb(), which is its own entry in the

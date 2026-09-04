@@ -173,7 +173,6 @@ defLang('it', (function(){
       "kb.dir.down"               : "Giù",
       "kb.dir.left"               : "Sinistra",
       "kb.empty"               : "Vuoto",
-      "kb.row.add"               : "Aggiungi una riga",
       "kb.row.ins" : "Aggiungi una riga qui",
       "kb.row.up" : "Sopra questa riga",
       "kb.row.down" : "Sotto questa riga",

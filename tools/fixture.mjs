@@ -2105,6 +2105,29 @@ export function halfDone(){
     ['the alphabet, searched', () => {
        ltQ = 'k';
        window.route = 'ltset'; NAV = [{ r:'ltset', a:'alpha' }];
-       const h = vLtset(); ltQ = ''; return h; }]
+       const h = vLtset(); ltQ = ''; return h; }],
+    /* AN ALPHABET THAT DOUBLED, ARRIVED AT.
+       「あと、キーボード足したりしてたら文字増殖してるんだけど何で？」OWNER
+       2026-09-04. Thirty-eight slots made twice under two sets of ids, which
+       is what the owner is holding: a a, b b, c c, every reading twice.
+
+       It goes through ltStart() rather than showing the seventy-six, because
+       ltStart() is the road -- www/boot.js and langOpen() call it -- and what
+       this face is for is the screen somebody ARRIVES at. With the join in it
+       is thirty-eight; with the join taken out it is the owner's photograph.
+       One face, both states, which is what a picture of a fix has to be. */
+    ['an alphabet that had doubled, arrived at', () => {
+       const was = LETTERS, wasPlan = SET.plan, wasSeq = LT_SEQ;
+       SET.plan = 'free';
+       LT_SEQ = 0; LETTERS = []; ltStart();
+       const old = JSON.parse(JSON.stringify(LETTERS));
+       old.forEach((l, i) => { l.id = 'l' + (i + 1) + '_' + i + '_6'; });
+       LT_SEQ = 0; LETTERS = []; ltStart();
+       LETTERS = old.concat(LETTERS);
+       ltStart();
+       window.route = 'ltset'; NAV = [{ r:'ltset', a:'alpha' }];
+       const h = vLtset();
+       LETTERS = was; SET.plan = wasPlan; LT_SEQ = wasSeq;
+       return h; }]
   ];
 }

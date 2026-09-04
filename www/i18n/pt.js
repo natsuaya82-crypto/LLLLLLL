@@ -180,7 +180,6 @@ defLang('pt', (function(){
       "kb.dir.down"               : "Baixo",
       "kb.dir.left"               : "Esquerda",
       "kb.empty"               : "Vazio",
-      "kb.row.add"               : "Adicionar uma linha",
       "kb.row.ins" : "Adicionar uma linha aqui",
       "kb.row.up" : "Acima desta linha",
       "kb.row.down" : "Abaixo desta linha",

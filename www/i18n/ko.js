@@ -352,7 +352,6 @@ defLang('ko', (function(){
       "kb.dir.down"               : "아래",
       "kb.dir.left"               : "왼쪽",
       "kb.empty"               : "없음",
-      "kb.row.add"               : "줄 추가",
       "kb.row.ins" : "여기에 행 추가",
       "kb.row.up" : "이 행 위에",
       "kb.row.down" : "이 행 아래에",

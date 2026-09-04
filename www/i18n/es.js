@@ -133,7 +133,6 @@ defLang('es', (function(){
       "kb.dir.down"               : "Abajo",
       "kb.dir.left"               : "Izquierda",
       "kb.empty"               : "Vacío",
-      "kb.row.add"               : "Añadir una fila",
       "kb.row.ins" : "Añadir una fila aquí",
       "kb.row.up" : "Encima de esta fila",
       "kb.row.down" : "Debajo de esta fila",

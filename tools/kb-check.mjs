@@ -333,11 +333,27 @@ const r = await pg.evaluate(({ s }) => {
   });
   SND = sndWas;
 
-  /* rows stop at the ceiling, and the dashed row stops being drawn */
+  /* rows stop at the ceiling, and the + over the sheet goes down when they do.
+     The road is the one the screen has: press the last row's number, press the
+     + over the sheet, answer 下. The dashed key that used to sit under the
+     bottom row is gone -- 「キーボードのこの下の+もいらない。誤タッチが多い
+     から」 OWNER 2026-09-04 -- and `noFootPlus` is what holds it away. */
+  function addRow(){
+    KBH = null;
+    kbHeadRow(kbLayer().rows.length - 1);
+    kbInsAsk();
+    kbIns(true);
+  }
   fresh();
-  for (i = 0; i < kbRowsMax() + 4; i++) kbAddRowNew();
+  for (i = 0; i < kbRowsMax() + 4; i++) addRow();
   out.rowsCap = kbLayer().rows.length === kbRowsMax();
-  out.plusGone = vKb().indexOf('kbAddRowNew') < 0;
+  out.plusOff = vKb().indexOf('kbInsAsk') < 0 ||
+                /kbInsAsk[^>]*disabled/.test(vKb());
+  /* and nothing under the keyboard at all, at the ceiling or well below it */
+  out.noFootPlusFull = vKb().indexOf('addrow') < 0;
+  fresh();
+  out.noFootPlus = vKb().indexOf('addrow') < 0;
+  out.stillAdds = (addRow(), kbLayer().rows.length) > 1;
   /* a full row takes no more keys, however it is asked */
   fresh();
   var full = -1;
@@ -364,7 +380,7 @@ const r = await pg.evaluate(({ s }) => {
   var over = lay.rows.length;
   saveKb(); render();
   out.overKept = kbLayer().rows.length === over;
-  out.overStillCant = (kbAddRowNew(), kbLayer().rows.length === over);
+  out.overStillCant = (addRow(), kbLayer().rows.length === over);
 
   /* ---- 6c. a short row sits in the middle of the sheet ----------------- */
   fresh();
@@ -510,8 +526,8 @@ const r = await pg.evaluate(({ s }) => {
   /* ---- 6d3. a row can be added on EVERY face --------------------------
      「8列も追加できるのに行は2ページ目から追加できない」 OWNER, build #92.
 
-     kbRoomRow() and kbAddRowNew() both read kbLayer(), which is the face
-     being shown, so this holds and held on the first run -- the row goes in.
+     kbRoomRow() and kbIns() both read kbLayer(), which is the face being
+     shown, so this holds and held on the first run -- the row goes in.
      It is written down anyway because nothing said it: every claim about
      adding a row above is made on face 0, and "it works on the face the
      fixture happens to be standing on" is the shape of claim that stays true
@@ -520,15 +536,16 @@ const r = await pg.evaluate(({ s }) => {
      What WAS wrong on page 2 is not the function, it is the size of the thing
      you press: the sheet was kbCols(this face's rows) columns of a fixed
      width, so a face of two keys was drawn a fifth of the phone across and
-     the dashed + with it -- 60px against 320 on page one. Which is the same
-     line as 「フリックなのに qwerty サイズ」, so it is claimed below with it. */
+     the + with it -- 60px against 320 on page one. Which is the same line as
+     「フリックなのに qwerty サイズ」, so it is claimed below with it. */
   fresh(); kbAddLay(); kbLay = 1; render();
   out.addOn2Was = kbLayer().rows.length;
-  out.addOn2Plus = vKb().indexOf('kbAddRowNew') >= 0;
-  kbAddRowNew();
+  KBH = null; kbHeadRow(kbLayer().rows.length - 1);
+  out.addOn2Plus = !/kbInsAsk[^>]*disabled/.test(vKb());
+  kbInsAsk(); kbIns(true);
   out.addOn2 = kbLayer().rows.length === out.addOn2Was + 1;
-  /* and the other road onto a face: the + over a selected row */
-  kbHeadRow(0); kbInsAsk(); kbIns(true);
+  /* and above a row as well as below one, on this face like any other */
+  KBH = null; kbHeadRow(0); kbInsAsk(); kbIns(false);
   out.insOn2 = kbLayer().rows.length === out.addOn2Was + 2;
   /* ---- 6d4. a key is its share of its row, and the board is the phone ---
      「フリックなのに qwerty サイズ」「qwartyはqwartyのサイズあるやろ
@@ -554,19 +571,19 @@ const r = await pg.evaluate(({ s }) => {
     return el ? Math.round(el.getBoundingClientRect().width) : -1;
   }
   function keyW(){
-    const el = document.querySelector('.kb.kbsheet .kbk:not(.cell):not(.addrow)');
+    const el = document.querySelector('.kb.kbsheet .kbk:not(.cell)');
     return el ? +el.getBoundingClientRect().width.toFixed(1) : -1;
   }
   out.narrowCols = kbCols(kbLayer().rows);
   out.narrowSheet = widthOf('.kb.kbsheet');
-  out.narrowPlus = widthOf('.kbk.addrow');
-  /* the ten-key board with one row off it, so the dashed row is drawn there
-     too -- at the ceiling it is not, and that is the ceiling and not the
-     width this is about */
+  /* the ten-key board with one row off it. The + that used to be measured
+     alongside these was the dashed key under the bottom row, and it is gone
+     -- 「キーボードのこの下の+もいらない」 OWNER 2026-09-04. A claim about a
+     selector nothing wears passes by measuring -1 against -1, which is the
+     stale-baseline shape CLAUDE.md refuses, so it went with the key. */
   fresh();
   kbHeadRow(0); kbCut(); KBH = null; render();
   out.wideSheet = widthOf('.kb.kbsheet');
-  out.widePlus = widthOf('.kbk.addrow');
   /* and the two boards the owner put side by side */
   const sizes = {};
   ['qwerty', 'flick'].forEach(function (p){
@@ -1469,8 +1486,8 @@ const r = await pg.evaluate(({ s }) => {
   kbUndo();
   /* it cannot break the ceiling, and the + is down when there is no room */
   fresh();
-  for (i = 0; i < kbRowsMax() + 4; i++) kbAddRowNew();
-  kbHeadRow(0);
+  for (i = 0; i < kbRowsMax() + 4; i++) addRow();
+  KBH = null; kbHeadRow(0);
   out.insFullDown = /kbInsAsk[^>]*disabled/.test(vKb());
   var wasFull = kbLayer().rows.length;
   kbInsAsk(); kbIns(true);
@@ -2497,8 +2514,7 @@ const r = await pg.evaluate(({ s }) => {
     return m ? +m[1] : 0;
   }
   function sheetRows(){
-    return [].slice.call(document.querySelectorAll('#kb .kbrow'))
-      .filter(function (rw){ return !rw.querySelector('.addrow'); });
+    return [].slice.call(document.querySelectorAll('#kb .kbrow'));
   }
   /* holes: grid items of a row that no finger can do anything with.
      wide:  what each row comes to, which must be the whole ten. */
@@ -2705,7 +2721,19 @@ const r = await pg.evaluate(({ s }) => {
   }());
   /* 5. put a key in, put the one beside it in, join them, back, forward */
   KBH = null; standKb();
-  out.seqAddA = tapDo('kbAddRowNew');
+  /* the row goes in by its own road, pressed rather than called: the last
+     row's number, the + over the sheet, then 下 */
+  out.seqAddA = (function (){
+    var was = kbLayer().rows.length, n = kbLayer().rows.length - 1, el;
+    el = document.querySelector('[data-do="kbHeadRow"][data-a=\'[' + n + ']\']');
+    if (el) el.click(); else kbHeadRow(n);
+    standKb();
+    if (!tapDo('kbInsAsk')) return false;
+    standKb();
+    if (!tapDo('kbIns', [true])) return false;
+    standKb();
+    return kbLayer().rows.length === was + 1;
+  }());
   (function (){
     var rs = kbLayer().rows, last = rs.length - 1, el, n, rw;
     /* the new row is one empty key wide, so what is beside it is frames.
@@ -2932,7 +2960,7 @@ const SM = await small.evaluate(({ s }) => {
   saveKb();
   window.route = 'kb'; NAV = [{ r: 'kb', a: String(kbShow) }]; render();
   var sheet = document.querySelector('.kb.kbsheet');
-  var key = document.querySelector('.kb.kbsheet .kbk:not(.cell):not(.addrow)');
+  var key = document.querySelector('.kb.kbsheet .kbk:not(.cell)');
   return {
     vw: window.innerWidth, vh: window.innerHeight,
     sheetW: sheet ? +sheet.getBoundingClientRect().width.toFixed(1) : -1,
@@ -3076,7 +3104,13 @@ say(r.patsShape,
     (r.patsShape ? '' : ': ' + r.shapes.filter((x) => x.aspect < 0.71 || x.aspect > 1.82)
       .map((x) => x.pat + ' is ' + x.aspect.toFixed(2) + ':1 at ' + x.cols + ' across').join(', ')));
 say(r.rowsCap, 'rows stop at the ceiling however many times the row is added');
-say(r.plusGone, 'and the dashed row is not drawn once there is no room for one');
+say(r.plusOff, 'and the + over the sheet is down once there is no room for one');
+say(r.noFootPlus && r.noFootPlusFull,
+    'there is no + UNDER the keyboard -- 「キーボードのこの下の+もいらない。' +
+    '誤タッチが多いから」 OWNER 2026-09-04 -- on a fresh board or a full one');
+say(r.stillAdds,
+    'and a row still goes in, by the road that says which side it goes on: ' +
+    'the row number, the + over the sheet, 下');
 say(r.foundFull, 'the board has a row that is already the full width');
 say(r.colsCap, 'and it takes no more keys');
 say(r.wCap, 'and a key in it cannot be widened past the edge');
@@ -3171,9 +3205,7 @@ say(r.qNoDrag && r.qDragBack,
 say(r.cutKeyStill, 'nor the size of the keys that are left (' + r.cutKeyWas +
     'px -> ' + r.cutKeyNow + 'px)');
 say(r.cutHdrStill, 'nor which columns there are (' + r.cutHdrNow + ')');
-say(r.narrowPlus === r.widePlus,
-    'the row-adding + is the same size on page 2 as on page 1 (' + r.narrowPlus + 'px)');
-say(r.addOn2Plus, 'the dashed row is drawn on page 2 as well as page 1');
+say(r.addOn2Plus, 'the + over the sheet is up on page 2 as well as page 1');
 say(r.addOn2, 'and a row goes in on page 2 (' + r.addOn2Was + ' -> ' + (r.addOn2Was + 1) + ')');
 say(r.insOn2, 'and the + over a selected row puts one in there too');
 say(r.deadRowKept, 'a face never loses its last row (it had ' + r.deadRowsWas + ')');
@@ -3383,9 +3415,8 @@ console.log('  as  width x height -> row height, rows that fit:');
     rh.toFixed(1) + 'pt, ' + Math.max(1, Math.floor((h * r.most - r.bars) / rh)) + ' rows');
 });
 console.log('\n  a face of ' + (r.narrowCols / 2) + ' keys is drawn ' + r.narrowSheet +
-  'px across, and the row-adding + on it is ' + r.narrowPlus + 'px');
-console.log('  a face of 10 keys is drawn ' + r.wideSheet +
-  'px across, and the same + is ' + r.widePlus + 'px');
+  'px across');
+console.log('  a face of 10 keys is drawn ' + r.wideSheet + 'px across');
 console.log('  a QWERTY key is ' + r.sizes.qwerty.key + 'px and a flick key is ' +
   r.sizes.flick.key + 'px, on boards both ' + r.sizes.qwerty.sheet + 'px across\n');
 

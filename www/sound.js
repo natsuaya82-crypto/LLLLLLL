@@ -731,7 +731,10 @@ function ltSortList(list){
   });
   return list;
 }
-function ltDrawn(l){ return !!((l.st && l.st.length) || l.ch); }
+/* ltDrawn() is www/letters.js's. There was a copy of it here and it was the
+   shorter one: it asked for `st` and for a borrowed character and never for
+   `sh`, the shape a letter arrives with off a written sheet -- so 「描いたもの」
+   hid every letter that came in that way. One sentence, one place. */
 function ltFilList(list){
   if(ltFil==='drawn') return list.filter(ltDrawn);
   if(ltFil==='blank') return list.filter(function(l){ return !ltDrawn(l); });
