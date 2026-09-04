@@ -96,19 +96,32 @@ await pg.evaluate('window.OB_STATES = (' + obStates.toString() + ')()');
    rest shows them, so `--all` never photographed one; `hd@N`, or `--half`
    for the lot. Same list act-check and press walk. */
 await pg.evaluate('window.HALF = (' + halfDone.toString() + ')()');
-await pg.evaluate(({ s, ui, dk, pd, mf }) => {
-  eval('(' + s + ')()');           /* the fixture, run inside the page */
-  SET.done = true;                 /* past the onboarding, unless it is what was asked for */
-  if (pd) SET.plan = 'pro';       /* --paid: the faces the free plan does not show */
-  if (mf) SET.myfont = true;       /* --myfont: the app in the letters somebody drew */
-  SET.ui = ui;
-  SET.theme = dk ? 'dark' : 'light';
-  /* SET.theme is what is stored; applyTheme() is what puts data-theme on the
-     document. Setting the one without calling the other photographed the
-     light theme with --dark on the command line, and the picture looked
-     perfectly fine -- which is how it would have gone unnoticed. */
-  if (typeof applyTheme === 'function') applyTheme();
-}, { s: seed.toString(), ui: uiLang, dk: dark, pd: paid, mf: mine });
+/* THE FIXTURE, AND THEN HOW THE COMMAND LINE ASKED FOR THE APP TO BE. One
+   function on the page, because this happens TWICE: once here, and again
+   inside every half-done face, which re-seeds before it builds.
+
+   It was written only here, and the re-seed below threw all four options
+   away -- so every `--half` picture came out in English, on the free plan, in
+   the light theme and in roman, whatever was typed. Nothing looked wrong: the
+   seed's own defaults are a screen somebody could have asked for, and the
+   only way to see it was to ask for Japanese and read the picture. The
+   language is what made it matter, because these pictures go to the owner. */
+await pg.evaluate(({ ui, dk, pd, mf }) => {
+  window.__setUp = function(){
+    window.__seed();               /* the fixture, run inside the page */
+    SET.done = true;               /* past the onboarding, unless it is what was asked for */
+    if (pd) SET.plan = 'pro';      /* --paid: the faces the free plan does not show */
+    if (mf) SET.myfont = true;     /* --myfont: the app in the letters somebody drew */
+    SET.ui = ui;
+    SET.theme = dk ? 'dark' : 'light';
+    /* SET.theme is what is stored; applyTheme() is what puts data-theme on the
+       document. Setting the one without calling the other photographed the
+       light theme with --dark on the command line, and the picture looked
+       perfectly fine -- which is how it would have gone unnoticed. */
+    if (typeof applyTheme === 'function') applyTheme();
+  };
+  window.__setUp();
+}, { ui: uiLang, dk: dark, pd: paid, mf: mine });
 
 /* Every route the app has, and every argument each one takes, asked of the
    page rather than listed here -- so a screen added tomorrow can be
@@ -183,8 +196,10 @@ for (const spec of shots) {
              it is for and what act-check and press already do with it. The
              shell is painted first so the bar and the tab bar are there, then
              the face's own body replaces #app. */
-          SET.done = true;
-          window.__seed();
+          /* The fixture AND the command line, not the fixture alone: this is
+             the re-seed that used to leave --lang, --dark, --paid and
+             --myfont on the floor. */
+          window.__setUp();
           var html = HALF[n][1]();
           render();
           if (html) {
