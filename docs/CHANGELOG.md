@@ -15,6 +15,95 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-04 バックアップのファイルを無くす
+
+> 「今ファイルもいらん。オンラインのみで行こうってことになってる今後オフライン
+> たいおする時にまた考えることにした」 OWNER 2026-09-04
+
+**iPhone の `Documents/Languages/` に言語まるごとの JSON を三世代置いていた
+所を、書く側・読む側・画面・Swift ごと消しました。**
+
+**消せるようになった理由は、その前の項目です。**ファイルが在ったのは、言語が
+サーバーへ行くのが起動と扉の二回だけで、**その間ずっと一時間分の仕事が一台の
+中にしかなかった**からです。保存した瞬間に行くようになったので、ファイルが
+埋めていた時間が無くなりました。
+
+**消したもの:**
+
+| ファイル | 何 |
+|---|---|
+| `www/backup.js` | `bkTouch()` 以外の全部（`BK` `BK_SHAPE` `bkSound` `bkOK` `bkNo` `bkNoSet` `bkPack` `bkName` `bkPush` `BKLIST` `bkList` `bkListHTML` `bkSay` `bkTake` `bkTakeGen` `bkDropFor` `bkRestore`） |
+| `www/boot.js` | 起動の `bkRestore(...)`。中の移行と `ltStart()` は下でも走るので落ちるものは無い |
+| `www/settings.js` | データの部屋の「この iPhone に在るもの」の一覧。`bkDropFor` 二箇所 |
+| `www/glyph.js` | 描画のたびの `bkPush()` |
+| `www/shell.js` | `BKLIST=null`（画面を出るときに忘れる所） |
+| `ios/App/App/LinguaShare.swift` | `keep()` `kept()` `dropSome()` と `Languages/` の道 |
+| `tools/backup-check.mjs` | ファイルごと。`package.json` と `tools/gate.mjs` からも |
+
+**`bkTouch()` だけ残しました。**保存七本が全部そこを通る唯一の場所で、いまは
+そこがサーバーへの送り口です。名前は章のもので、もう中身と合っていません
+── 直すには七本のファイルを触ることになります。
+
+**移し替えた検査 ── 消していません。問いを、在る道に移しました。**
+
+- `tools/dl-check.mjs`「他人の言語がファイルに入らない」→
+  **「保存が他人の言語をこのアカウントの行に送らない」。**「入らん」は同じで、
+  こちらのほうが強い問いです。今日まで一度も訊いていませんでした。
+- `tools/plan-check.mjs`「無料で書いたファイルは有料と同じスライスを持つ」→
+  **「無料の保存は有料と同じスライスを上げる」。**お金は存在に触らない、が
+  そのまま残ります。
+- `tools/migrate-check.mjs` `bkSound()` → **在るかどうか。**`netLangBack1()` が
+  実際に訊いているのは前から presence で、コメントのほうが古くなっていました。
+
+**振る舞いの変化:**
+
+- 設定 → データに「この iPhone に在るもの」の一覧が出なくなります。取り込みの
+  行は残ります。
+- **ファイルアプリから言語が見えなくなります。**声と手書き用紙の PDF は残ります。
+- ストレージが回収された iPhone は、**サーバーから戻ります**
+  （`netLangsDown()`、起動時）。前はファイルからでした。
+- **電波が無いあいだ、言語はその iPhone の `localStorage` にしかありません。**
+  後ろに立つものはもうありません。**オーナーの決定です。**
+
+**保存されるものの変化:** `lingua.<id>.bkn`（保存の通し番号）を書くものが
+無くなりました。**鍵は消していません** ── 既に在る iPhone のものはそのまま
+残り、アカウント削除で `lsWipeAcct()` が名前空間ごと持っていきます。
+
+```
+DELETE REVIEW
+  who deletes         これはコードの削除で、人のデータを消す口ではありません。
+                      **アプリはもう iPhone の中のファイルを消しません。**
+  when                ―
+  what exactly        **コード。**ファイルを書く・読む・消す道と、その画面と
+                      Swift。**もう iPhone に在るファイルは一つも消しません。**
+                      アプリが触らなくなるだけで、`Documents/Languages/` は
+                      そのまま残り、ファイルアプリから見えます。人が消せます。
+  why                 「今ファイルもいらん」 OWNER 2026-09-04。保存が即
+                      サーバーへ行くようになり、埋めていた時間が無くなった。
+  recoverable?        **人が持っているファイルは無事です。**ただしアプリは
+                      もうそれを読みません（`bkRestore()` が無い）。中身は
+                      JSON なので人が読めます。**アプリに戻す道はありません。**
+                      これが今回いちばん重い所です。
+  is it still on      **はい。**言語は `slice` の行としてサーバーに在り、
+  the server?         保存のたびに上がります。`netLangsDown()` が新しい
+                      iPhone に降ろします。
+  anything to do      no
+  with the plan?
+  migration /         **移行はありません。**戻すときは git から
+  rollback            `www/backup.js` と `LinguaShare.swift` を戻し、
+                      `bkTouch()` の中身を戻す。**人のファイルは触っていない
+                      ので、戻せば前のファイルがそのまま読めます。**
+```
+
+**まだ決まっていない一行 ── オーナーに要ります。**もう iPhone に在るファイルを
+アプリが一度掃除するかどうか。**やっていません。**やるなら DELETE REVIEW を
+別に書きます。**一度も上がっていない言語にとって、いまその一枚が最後の一枚
+だからです。**
+
+**回した検査:** `assets-check`（Swift の口も見ます）、`store-check`、
+`dead-check`、`es5-check`、`docs-check`、`del-check`、`dl-check`、`plan-check`。
+**押していないもの:** 実機。**画面が変わったので写真を撮りました**（下記）。
+
 ### 2026-09-04 保存を押した瞬間にサーバーへ行く
 
 > 「オンラインは一本化ね？」「簡単よ」「保存としたらオンラインおしまい」

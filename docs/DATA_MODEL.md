@@ -23,8 +23,9 @@ is the procedure.
 ## The language
 
 Twelve slices, filed under `lingua.<id>.<slice>`. `SLICES` in `www/core.js` is
-the list, and **being in that list is what makes a slice real**: `bkPack()`
-walks it, so a slice outside it is in no backup; `wipeLangsGo()` walks it for
+the list, and **being in that list is what makes a slice real**: `netSaveUp()`
+and `netLangSync()` walk it, so a slice outside it reaches no server;
+`wipeLangsGo()` walks it for
 one id and `lsWipeAcct()` walks it for every language an account has, so a
 slice outside it survives both deletes into the next language. Two were outside
 it once — the keyboard and the world — and neither could throw. **Count them
@@ -32,21 +33,21 @@ off `SLICES` itself and not off this sentence**, which has said eleven and has
 said twelve.
 
 **One key under `lingua.<id>.` is not a slice**, and it is the only one:
-`lingua.<id>.bkn`, the save counter (`bkNo()` / `bkNoSet()` in
-`www/backup.js`). It is not in `SLICES` on purpose — it is a fact about the
-FILE and not part of the language — so it is in no backup and goes up nowhere,
+`lingua.<id>.bkn`, the save counter. It was a fact about the backup FILE
+rather than part of the language, and the file is gone (`CLAUDE.md` rule 11,
+2026-09-04) — so the key is written by nothing now and goes up nowhere,
 and `tools/store-check.mjs` names it as the phone's own. Being outside `SLICES`
 also puts it outside both deletes above; **whether it should be** is with the
 owner (`docs/scope/aud-data.md` § オーナーに訊くこと).
 
 **And now a third reader walks it: the server.** OWNER DECISION 2026-08-26 —
-「基本は全部サーバー管理 言語周りだけバックアップにfile使う」. Each slice is one
+「基本は全部サーバー管理」. Each slice is one
 row in `slice` (`supabase/schema.sql`), keyed `(language, kind)`, and `body` is
-**the exact string `localStorage` holds** — the same string `bkPack()` writes to
-the file, so a slice has one shape and not three that could drift.
+**the exact string `localStorage` holds** — the same string `syMerge()` works
+on and the file, so a slice has one shape and not three that could drift.
 `netLangSync()` (`www/net.js`, fired from `www/boot.js`) reads, merges through
 `www/sync.js` and writes back. So being in `SLICES` now decides three things at
-once — backup, wipe, and what goes up — and a slice added outside the list is
+once — wipe and what goes up — and a slice added outside the list is
 missing from all three.
 
 **And a fourth: which global holds it while a screen is drawing.** `LANG_IO` in
@@ -102,13 +103,13 @@ break.
 | `letters` | `LETTERS` | the alphabet | array |
 | `notes` | `NOTES` | the notebook | array |
 | `phases` | `STG` | grammar stages, `fm` — the rules a form is made by (`docs/FEATURES.md`) — and the calendar's two numbers, `months` and `week` (`www/cal.js`) | object |
-| `talk` | — | the conversation. **Its screen and its global are both gone** — there is no `TALK` in `www/`, and nothing in the app reads or writes this. The slice stays in `SLICES`, `bkPack()` still copies the text out of storage under its own name, and a restore still puts it back: a screen going away is not a reason for somebody's conversation to be deleted | array |
+| `talk` | — | the conversation. **Its screen and its global are both gone** — there is no `TALK` in `www/`, and nothing in the app reads or writes this. The slice stays in `SLICES`, `netSaveUp()` still sends the text up under its own name, and it still comes back down: a screen going away is not a reason for somebody's conversation to be deleted | array |
 | `snd` | `SND` | the sound inventory | array |
 | `kb` | `KB` | the keyboards this language's owner **built**, and which one is applied. The free QWERTY is not among them: it is board 0, rebuilt from `kbFixed()` every time it is asked for, so it cannot go stale and cannot be edited. `v:2` says `migrateKbFree()` has taken the old copy of it out of the array | object |
-| `gram2` | — | the grammar engine's v2 model (`www/grammar-engine/`). **`gModel()` in `www/grammar.js` reads it**; nothing writes it yet, so every language today falls to `fromLegacy()` and answers exactly as before. What it holds when it is written is **everything except the dictionary and the rules that name words** — `words` is rebuilt from `WORDS` on every read and `grammarRules` from the stages, because both point AT the dictionary and a stored copy would part company with it the first time somebody renamed a word. `adapter.save` still has no caller. It is in `SLICES` from the day the key existed rather than the day the first caller does, which is the whole lesson of the keyboard and the world: a slice joins the list BEFORE anything writes to it, or the first thing written is the thing that is not in the backup. It sits **beside** `phases` and does not replace it — a migration copies and never removes | object |
+| `gram2` | — | the grammar engine's v2 model (`www/grammar-engine/`). **`gModel()` in `www/grammar.js` reads it**; nothing writes it yet, so every language today falls to `fromLegacy()` and answers exactly as before. What it holds when it is written is **everything except the dictionary and the rules that name words** — `words` is rebuilt from `WORDS` on every read and `grammarRules` from the stages, because both point AT the dictionary and a stored copy would part company with it the first time somebody renamed a word. `adapter.save` still has no caller. It is in `SLICES` from the day the key existed rather than the day the first caller does, which is the whole lesson of the keyboard and the world: a slice joins the list BEFORE anything writes to it, or the first thing written is the thing that never reaches the server. It sits **beside** `phases` and does not replace it — a migration copies and never removes | object |
 | `wld` | `WLD` | what the language is for — and two flags. `hide`: whether it has a page anybody else may open; **absent means public**. `dl`: whether the letters and the words may be taken away and used; **absent means no**, and the two defaults point opposite ways on purpose — a page is a thing to be looked at, and handing over months of somebody's drawing is not a thing to decide for them | object |
 
-`BK_SHAPE` in `www/backup.js` carries those shapes; `bkSound()` uses it to tell
+`syMerge()` in `www/sync.js` reads those shapes to put two copies together; it and `netKeeps()` tell
 a slice from wreckage. **`langKeyOf(id, slice)` is the only thing that knows how
 a language is filed**, and `langKey(slice)` is it asked about the open one —
 which is what 290-odd call sites mean. The two are one sentence and two
@@ -265,7 +266,6 @@ reads the list above as complete:
 
 ```
   lingua.notices.<uid>   the notices copy      www/sns.js  notKey()
-  lingua.<id>.bkn        the save counter      www/backup.js bkNoSet()
 ```
 
 `lingua.set.<uid>` — the parked settings — was on this list and is not on it
@@ -277,9 +277,10 @@ what this file is being audited for.
 Two written rules pull opposite ways here and **nothing in this file decides
 between them**: 「アカウント削除で残るものねえ」 (OWNER 2026-08-27) says
 everything of that account's goes, and `docs/DATA_SAFETY.md` § 4 says nothing
-is removed without a written spec asking for it. `lingua.<id>.bkn` is the same
-question a second time, under 「この言語を削除で言語の制作のものは全部なくなる」
-(OWNER 2026-09-03). **It is with the owner** —
+is removed without a written spec asking for it. **`lingua.<id>.bkn` is no
+longer part of this question**: nothing writes it since the backup file went
+(`CLAUDE.md` rule 11, 2026-09-04), and `lsWipeAcct()` counts the namespace, so
+it goes with the rest of that account's keys. **It is with the owner** —
 `docs/scope/aud-data.md` § オーナーに訊くこと, Q1 to Q3.
 
 ## The index of languages, and what is actually in it
@@ -318,11 +319,13 @@ and then writes the slices it was asked for with `langKeyOf(id, kind)`.
    like any other, or it is not a language at all — `langKeyOf(id, slice)` is
    the only thing that knows how a language is filed and a second answer is
    the bug `CLAUDE.md` names twice (the keyboard, the world).
-2. **It does not go into the backup file.** OWNER 2026-09-01, asked whether a
-   downloaded language is in the person's own backup: 「入らん」. `SLICES` is
+2. **It does not go up into this account's rows.** OWNER 2026-09-01, asked
+   whether a downloaded language travels with the person's own: 「入らん」.
+   (It said 「the backup file」 and there is no file — `CLAUDE.md` rule 11.)
+   `SLICES` is
    unchanged — it is the list of what a language is MADE of, and that is the
-   same list for every language — and `bkPack()` has no test in it either.
-   **`bkPush()` is where it is refused** (`www/backup.js`), on `langMine()`,
+   same list for every language. **`netSaveUp()` is where it is refused**
+   (`www/net.js`), on `langMine()`,
    with `BK.dirty` cleared so every later save does not come back to be
    refused again. Nothing is deleted and nothing is moved: it is the FILE that
    does not carry it, and it is not lost by being skipped, because it came
@@ -332,7 +335,7 @@ and then writes the slices it was asked for with `langKeyOf(id, kind)`.
    キーボード with a ↓ on each, and they are taken **one at a time**. So a
    language with `words` and no `letters` is what the app looks like halfway
    through, and it has to draw. "No slice" and "an empty slice" are already
-   separate states (`bkSound()`, `BK_SHAPE`); **a downloaded language uses the
+   separate states (`netKeeps()`); **a downloaded language uses the
    first** — the slice is absent until its ↓ is pressed. No third state is
    invented: "never offered" is the publisher's ↓ not being there to press.
    A section that is more than one slice is gathered and written together —
@@ -396,7 +399,7 @@ letters every time it is wanted, because a stored copy of a sound is what went
 stale the day the letter's sound changed.
 
 An empty field is deleted rather than stored: a key that is always there and
-always blank ends up in every export and every backup. `wdPutExtras()` in
+always blank ends up in every export and on the server. `wdPutExtras()` in
 `www/wordsheet.js` is the one place that writes `nt` / `ety` / `reg` / `fm` /
 `tags` / `up`, called by both Save and Add.
 

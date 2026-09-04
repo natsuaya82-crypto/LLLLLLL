@@ -1395,7 +1395,7 @@ const R = await pg.evaluate(async () => {
      端末を憶える仕掛けはありません。「この端末の一人目」は端末ごとの事実で、
      それを持ち込んだ日に A の言語が B の一覧に出ました。
 
-     消しません。印の無い言語は索引に残り、保存に残り、バックアップに残り、
+     消しません。印の無い言語は索引に残り、保存に残り、
      単語も一つも減りません ── ここで押さえるのはその両方です
      （`docs/DATA_SAFETY.md`「短い一覧は削除ではない」）。 */
   start();
@@ -1680,7 +1680,8 @@ const R = await pg.evaluate(async () => {
      act-check は削除の後どの画面に着くかしか訊いていません。
 
      サーバーは正しく、消えたのは端末です ── wipeHere() が lingua. を全部消し、
-     bkDropAll() がバックアップを全部落としていた。2026-08-27 に「端末は一人の
+     bkDropAll() がバックアップのファイルも全部落としていた（そのファイルは
+     2026-09-04 に無くなりました ── CLAUDE.md 規則 11）。2026-08-27 に「端末は一人の
      もの」だった頃の姿のままで、アプリの意味が「アカウントごと」に変わった
      あとも読み直されていなかった。 */
   start();
@@ -1695,13 +1696,9 @@ const R = await pg.evaluate(async () => {
     localStorage.setItem('lingua.posts.d46b', '[{"id":"pb"}]');
   }catch(e){}
   SET.theme = 'dark'; SET.ui = 'ja'; save();
-  var dropped = [];
-  var realDrop = (typeof bkDropFor==='function')? bkDropFor : null;
-  bkDropFor = function(ids){ dropped = (ids||[]).slice(); };
   var wasConfirm = window.confirm; window.confirm = function(){ return true; };
   try{ wipeHere(); }catch(e){ no('46: 削除が投げた ── ' + e.message); }
   window.confirm = wasConfirm;
-  if (realDrop) bkDropFor = realDrop;
 
   if (LANGS.La46) no('46: 消したアカウントの言語が索引に残っている');
   if (localStorage.getItem(langKeyOf('La46','words'))) no('46: 消したアカウントの単語が残っている');
@@ -1709,11 +1706,9 @@ const R = await pg.evaluate(async () => {
   if (!localStorage.getItem(langKeyOf('Lb46','words'))) no('46: 別のアカウントの単語が消えた');
   if (!localStorage.getItem('lingua.me.d46b')) no('46: 別のアカウントのプロフィールが消えた');
   if (!localStorage.getItem('lingua.posts.d46b')) no('46: 別のアカウントの投稿が消えた');
-  if (dropped.indexOf('La46') < 0) no('46: 消したアカウントのバックアップが落とされていない');
-  if (dropped.indexOf('Lb46') >= 0) no('46: **別のアカウントのバックアップが落とされた**');
   if (SET.theme !== 'dark') no('46: この端末の設え（テーマ）まで消した');
   if (SET.plan !== 'free') no('46: 消したアカウントの段が残っている');
-  say('46: アカウント削除は、そのアカウントの言語・単語・投稿・段・バックアップだけ ── '
+  say('46: アカウント削除は、そのアカウントの言語・単語・投稿・段だけ ── '
     + '別のアカウントのものは一つも動かず、端末の設えも残る');
 
   /* ---- 47-49. 消し切るまで消えていない、そして消えた側は本当に出される ----
@@ -1741,10 +1736,6 @@ const R = await pg.evaluate(async () => {
 
      ここで測るのは「描き直したか」ではなく **「画面が、今描いたらこうなる、
      というものになっているか」** です。render() を呼んだ結果と突き合わせます。 */
-  /* バックアップのファイルは 46 番のもので、ここの話ではありません。ネイティブ
-     の橋に触りに行かせないよう、46 番と同じように差し替えておきます。 */
-  const rDrop49 = bkDropFor;
-  bkDropFor = function(){};
   const rSend49 = netSend, rGet49 = netGet, rPost49 = netPost;
   const unwire49 = () => { netSend = rSend49; netGet = rGet49; netPost = rPost49; };
   /* サーバを一つの関数に。answer(path) が数字を返し、0 は「届かなかった」。 */
@@ -1846,7 +1837,6 @@ const R = await pg.evaluate(async () => {
   if (!localStorage.getItem(langKeyOf('Lx50','words')))
     no('50: **サインアウト中に削除を押したら、印の無い言語の単語が消えた**');
   say('50: サインアウト中に削除を押しても、頼む相手がいないので何も消えない');
-  bkDropFor = rDrop49;
 
   /* ---- 51-52. 扉。六十秒と、コードの画面が一枚であること ----------------
      「8桁で60秒再送信」 OWNER 2026-09-03。
@@ -1937,9 +1927,7 @@ const R = await pg.evaluate(async () => {
   saveKb();
   WLD = { where:'消される人の土地', who:'消される人' };
   saveWld();
-  const rDrop53 = bkDropFor; bkDropFor = function(){};
   wipeHere(U53);
-  bkDropFor = rDrop53;
   if (KB && KB.kbs && KB.kbs.length)
     no('53: **消したアカウントのキーボードがメモリに残っている** ── 次の保存で'
      + '新しい言語に書き込まれます');
@@ -1958,7 +1946,7 @@ const R = await pg.evaluate(async () => {
   /* ---- 54. 言語のものを読み書きする一覧は一つで、SLICES と合っている ------
      53 が起きた形そのものを押さえます。手書きの一覧が八つある限り、次に
      スライスが一つ足されたとき、また同じことが起きます ── 過去に二回。
-     キーボードはバックアップに入っておらず、世界は設定の中に居ました。
+     キーボードはどこにも上がっておらず、世界は設定の中に居ました。
 
      `LANG_IO` が唯一の一覧で、ここが訊くのは「SLICES に一つ残らず答えているか」
      です。答えは読む関数・書く関数のどちらか、または「大域に写しを持たない」と
@@ -2004,12 +1992,9 @@ const R = await pg.evaluate(async () => {
   LANGS = { La55: { name:'A の言語', mine:true, uid:'d55a' } };
   langId = 'La55'; langStore();
   SET.recent = ['ねこ', 'いぬ']; SET.saved = ['とり']; save();
-  var was55 = (typeof bkDropFor==='function')? bkDropFor : null;
-  bkDropFor = function(){};
   var cf55 = window.confirm; window.confirm = function(){ return true; };
   try{ wipeHere(); }catch(e){ no('55: 削除が投げた ── ' + e.message); }
   window.confirm = cf55;
-  if (was55) bkDropFor = was55;
 
   if (snsRecent().length)
     no('55: **消したアカウントの検索履歴が画面に残っている** ── これが起きたことです ── ' +

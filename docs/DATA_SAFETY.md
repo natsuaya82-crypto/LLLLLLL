@@ -3,10 +3,9 @@
 「データ消えるのだけはありえない」
 
 **Everything a person makes lives on the server** — the `slice` rows, every
-slice of the language. `localStorage` is the copy that works with no signal,
-and the file in `Documents` is the backup. Three places, and this file is about
-what happens when the first two are not there. Losing somebody's language is not
-a degraded experience; it is the end of months of their work.
+slice of the language. `localStorage` is the copy that works with no signal.
+**Two places, and there is no third.** Losing somebody's language is not a
+degraded experience; it is the end of months of their work.
 
 ## The four ways it can go
 
@@ -17,35 +16,57 @@ Three of these four are ordinary events, not disasters:
 3. WKWebView reclaims its storage
 4. a migration goes wrong
 
-**A signal answers 1–3 on its own now** — `netLangSync()` brings the slices
-back down at launch. The file is what is left when it does not: no account
-reachable, no network and none for a while, or a server that answers with less
-than it was given. **That is not an argument for keeping it any less
-carefully.** A backup nobody needs on most days is the one that matters on the
-day it is needed.
+**A SIGNAL ANSWERS 1–3, AND IT IS THE WHOLE ANSWER NOW.**
+「オンラインは一本化ね？」「保存としたらオンラインおしまい」「今ファイルもいらん。
+オンラインのみで行こうってことになってる今後オフライン対応する時にまた考える
+ことにした」 OWNER 2026-09-04.
 
-`www/backup.js` (chapter 24) answers 1–3 by writing the open language into
-`Documents/Languages/`, where iOS puts it in the device backup and the Files
-app can show it. It answers 4 by never overwriting.
+A save goes up the moment it is made — `bkTouch()` is the one line every
+writer passes through and `netSaveUp()` (`www/net.js`) sends the slices that
+moved — and `netLangsDown()` at the foot of `www/boot.js` brings back every
+language this ACCOUNT has that this phone has not got. Sign in on any handset
+and the language is there.
 
-It was measured before it was built: thirty-eight drawn letters are 12.1 KB, a
-hundred words 13.2 KB, five thousand words 685 KB. A free language is ~25 KB,
-so the whole thing is written on every change and there is no partial state to
-reason about.
+**There was a third place and it is deleted.** `www/backup.js` wrote the open
+language into `Documents/Languages/`, three generations deep, where iOS put it
+in the device backup and the Files app could show it. It existed because a
+language went up twice a session — at launch and at the door — so there were
+hours when an afternoon's work was on one handset and nowhere else. **That
+window is what closed**, and the file went with it. The DELETE REVIEW is in
+`docs/CHANGELOG.md`, 2026-09-04.
 
-## The five rules
+**What it costs is written here rather than left out.** With no signal there is
+one copy and it is `localStorage` on that handset. 「電波が無いときはログイン
+できない」 is the owner's answer to the screens; for the data the answer is that
+a language made offline is unbacked until there is a signal, and nothing stands
+behind it. **Offline is not a supported state any more** — it is a phone on its
+way back to one.
 
-### 1. A write never destroys the last good file
+## The rules
 
-`keep()` writes `.tmp`, validates it, rotates the previous file to `.1` and
-that to `.2`, and only then promotes. A write that produces rubbish costs a
-generation instead of somebody's months.
+
+### 1. A save reaches the server, and a merge never destroys what is there
+
+`netSlice1()` in `www/net.js` is the only thing that puts a slice up, and both
+roads call it — `netSaveUp()` on every save, `netLangSync()` at launch. It
+MERGES: `syMerge()` (`www/sync.js`) adds both sides and lets neither win by
+being newer, so a word added here and a word added there are both added.
+「そりゃあ両方足すだろ」
+
+**A write that only wrote would destroy.** `slice`'s primary key is
+`(language, kind)` and `no` guards nothing, so a phone that sent what it was
+holding would take out whatever another one had added, silently. That is why
+there is one road and not a short one beside it.
+
+`again-check` holds it: a save arrives without a launch, only the slices that
+moved are asked for and sent, and a word deleted here stays deleted.
 
 ### 2. A restore never overwrites a slice that is there
 
 It fills in one that is **missing** and stops. This is the one that matters:
-**the way a backup destroys somebody's work is by winning.** A restore that
-overwrites is worse than no restore at all.
+**the way a copy destroys somebody's work is by winning.** `netLangsDown()`
+and `netLangBack1()` both work that way — a slice already on the phone is
+stepped over, whatever the server is holding.
 
 `langMigrate()` has the same rule for the same reason — it **copies** from the
 eight old flat keys and never removes what it read. It runs once, on a phone,
@@ -55,14 +76,12 @@ few hundred kilobytes and cannot lose anything; moving could.
 ### 3. "Empty" and "broken" are not the same state
 
 An empty language is a legitimate state — somebody just made one. Wreckage is
-not, and is what a restore is for. `bkSound(slice, text)` is the difference: it
-parses and checks the shape against `BK_SHAPE`. "Is there one" was the question
-once and it was the wrong one — a slice holding `[[[not json` is *present*, so
-the file was skipped, the wreckage was kept, and the next save wrote the
-wreckage over the last good copy.
+not. `netKeeps(mine, put)` is where this lives now: a merge that came back
+holding LESS than what is here is refused and recorded in `NET_SHRANK`, and
+the phone keeps what it had.
 
-**A slice the app has never written is not unsound. It is absent, and absent is
-what a restore is for.**
+**A slice the app has never written is not unsound. It is absent**, and absent
+is what `netLangsDown()` fills in.
 
 ### 4. Nothing is deleted because a new shape arrived
 
@@ -81,8 +100,8 @@ had paid.
 When a plan ends the dictionary screen lists the first hundred words and no
 more (`docs/PAID_FEATURES.md` § when a plan ends). That is allowed and the rule
 above is untouched: `WORDS` is not written, `save()` writes every word,
-`bkPack()` packs every word, `findWord()` finds every word, and the file in
-Documents holds every word. One list on one screen is shorter.
+`netSaveUp()` sends every word, and `findWord()` finds every word. One list on
+one screen is shorter.
 
 It is in this file because it is the one thing in the app that **looks** like a
 deletion. Somebody opening it to find four thousand nine hundred words gone
@@ -91,10 +110,10 @@ the whole of their trust in the app. So:
 
 - the foot of the list says how many are not on it, every time
 - the day the plan changes, the app says it once, in a sheet: nothing has been
-  deleted, it is in the backup, it comes back
-- `backup-check` holds both halves — past the ceiling, on the free plan,
-  `findWord()` still finds an unlisted word and `bkPack()` still carries all of
-  them. Both were watched failing with the bug put back
+  deleted, it is on the server, it comes back
+- `plan-check` holds both halves — past the ceiling, on the free plan,
+  `findWord()` still finds an unlisted word and a save still sends every slice
+  up. Both were watched failing with the bug put back
 
 **Anything else that shortens what is shown gets the same three.** A list that
 is quietly short and says nothing is indistinguishable from data that is gone,
@@ -141,26 +160,8 @@ file, and none of them is optional:
 **A posted voice is on the server**: `netUpVoice()` puts it in the `post-media`
 bucket with the post it belongs to. The file this phone recorded stays in
 Documents, which is what iOS puts in the device backup, so a recording made
-with no signal survives until it can go up. What `bkPack()` writes does **not**
-contain them: a language file would be megabytes, and a voice is the post's
-rather than the language's.
-
-## The save counter
-
-`bkNo()` counts how many times a language has been written out. It goes up and
-never down. **It is not a clock**, deliberately: a clock is what a sync reaches
-for to decide which copy is newer, and a phone whose date is wrong then wins
-every argument forever and nobody finds out why their work keeps going
-backwards. A counter cannot be wrong about which of two writes came second,
-because the second one made it.
-
-Two things read it: `bkTake()`, which keeps the higher of the file's number and
-this phone's so the next save cannot look older than a restore, and `bkSay()`,
-which is the save number on the settings screen. **The sync does not** — a `slice`
-row carries its own `no`, raised by the server on every write, and `syMerge()`
-adds both sides rather than choosing between them, so nothing anywhere decides
-which copy is newer. That is the same argument as the paragraph above, reached
-from the other end.
+with no signal survives until it can go up. **A voice is the post's rather than
+the language's**, so nothing about a slice carries one.
 
 ## DELETE REVIEW
 
@@ -174,7 +175,7 @@ DELETE REVIEW
   what exactly
   why
   recoverable?        from where, by whom, how long after
-  does the backup survive it?
+  is it still on the server?
   anything to do with the plan?    (must be: no)
   migration / rollback
 ```
@@ -195,10 +196,8 @@ asked first, and, **when something is taken and nobody is asked, why that is
 right**. A new one is red until somebody answers. So is a confirm that quietly
 went away, and so is a line describing a button no screen carries any more.
 
-Two deletions are outside that table on purpose, because neither is a button:
+One deletion is outside that table on purpose, because it is not a button:
 
-- `keep()` rotating a generation out (`ios/App/App/LinguaShare.swift`) is the
-  price of rule 1 — a save costs the third-oldest file
 - `lsWipeAcct()` taking the eight flat keys (`www/core.js`) happens under
   `wipeAll`, which is in the table, and is written out in
   `docs/DATA_MODEL.md` § what an account deletion actually takes
@@ -212,22 +211,20 @@ somewhere:
   a normal save
   two saves in a row
   a relaunch
-  a restore
-  a corrupt file
+  a language coming back down onto a phone that has none of it
+  a merge that comes back SHORTER than what is here
   an empty language
   a large language
-  a failed write            (quota, storage reclaimed, no native bridge)
-  the backup generations
+  a failed write            (quota, storage reclaimed)
+  a save with no signal, and the signal returning
   a migration from an older shape
 ```
 
-`tools/backup-check.mjs` holds what can be held on this side of the native
-call. It cannot press the Swift — there is no Swift on a Linux runner — so
-`keep()` and `kept()` are confirmed on a device. See `docs/TESTING.md` §
-device.
+`tools/again-check.mjs` holds them, against a server made of two arrays behind
+`netSend()` — so `netSaveUp()`, `netSlices()` and the merge all run for real.
 
-**Every one of `backup-check`'s failures was made to happen before it was
-believed.** Do the same for anything added to it.
+**Every one of its failures was made to happen before it was believed.** Do the
+same for anything added to it.
 
 ## Row level security
 

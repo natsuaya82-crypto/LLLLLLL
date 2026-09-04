@@ -23,7 +23,6 @@
     "dead": "node tools/dead-check.mjs",
     "migrate": "node tools/migrate-check.mjs",
     "rls": "node tools/rls-check.mjs",
-    "backup": "node tools/backup-check.mjs",
     "card": "node tools/card-check.mjs",
     "post": "node tools/post-check.mjs",
     "fill": "node tools/fill-check.mjs",

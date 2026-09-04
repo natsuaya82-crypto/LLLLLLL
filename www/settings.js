@@ -340,13 +340,13 @@ function vSet(){
        feature -- charging for not losing somebody's work would mean
        answering, on the day it is lost, whether they had paid -- so this
        sits above the lock rather than behind it. */
-    /* Asked for once, on the way in. bkList() renders when the answer comes
-       back, and BKLIST stops being null then, so this does not loop.
-       viewReset() puts it back to null, which is what makes leaving the room
-       and returning ask again. */
-    if(BKLIST===null) bkList();
-    body='<div class="sec">'+t('bk.h')+'</div>'+bkListHTML()+
-      '<div class="sec" style="margin-top:18px">'+t('set.data')+'</div>'+
+    /* NO 「ON THIS PHONE」 LIST. It showed the backup files in Documents --
+       the generations, newest first, each with the save number it carried --
+       and there are no files. 「今ファイルもいらん」 OWNER 2026-09-04: a
+       language is on the server the moment it is saved (netSaveUp() in
+       www/net.js), so what that list answered is not a question this app
+       has any more. www/backup.js says the whole of it. */
+    body='<div class="sec">'+t('set.data')+'</div>'+
       /* No cloud row. It said "Cloud sync -- On" to anybody on Plus and did
          nothing at all: there is no code anywhere that sends a language to a
          server. A switch that reports a state the app does not have is worse
@@ -515,11 +515,11 @@ function wipeLangsGo(){
   delete LANGS[id];
   langId='';
   langStore();
-  /* AND THE BACKUP OF THAT ONE. bkDropFor() takes a list of ids and works out
-     each file's name by standing it in front of langId -- so it is called
-     while the row still says what the language was called. It is above the
-     delete for that reason and nowhere else. */
-  bkDropFor([id]);
+  /* NO FILE TO TAKE WITH IT. This dropped the language's backup file in
+     Documents, and had to run while the row still said what the language was
+     called, because the file was named after it. There are no files
+     (www/backup.js), and the row on the server went through netLangDrop()
+     above. */
   /* Where you are standing now. langForAcct(true) is the one place that
      answers 「which language is this account's to be in」 -- it opens one they
      already have, and mints one stamped with them when they have none. A
@@ -700,15 +700,13 @@ function wipeHere(uid){
   var css=document.getElementById('sfontcss');
   if(css && css.parentNode) css.parentNode.removeChild(css);
   langSaveAll();
-  /* And the copies in Documents, which are the ones that outlive the app.
-     Last, and after the save above rather than before it: a save writes a
-     fresh backup out, so dropping the files first would leave one behind. */
-  /* AND THE BACKUP FILES OF THOSE LANGUAGES, AND NO OTHERS. bkDropAll()
-     empties the directory, and it is the other half of what took the owner's
-     language on 2026-09-03: a second account leaving carried off the first
-     one's files. It is still there for a language being deleted on its own;
-     nothing here calls it. */
-  bkDropFor(wipeIds);
+  /* NO COPIES IN DOCUMENTS TO TAKE. This dropped the backup files of the
+     languages going -- and only those, which is what 2026-09-03 cost, when a
+     second account leaving carried off the first one's files. There are no
+     files now (www/backup.js), so this account's things are the storage keys
+     lsWipeAcct() counted and the rows account_delete() takes on the server,
+     and there is no third place. `wipeIds` is what lsWipeAcct() returned and
+     nothing reads it any more. */
   /* and where you were standing is nowhere now */
   viewReset();
   ob={step:0, name:'', mode:'draw', pick:'', strokes:null, ch:'', lid:''};

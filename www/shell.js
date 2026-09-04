@@ -80,7 +80,6 @@ function viewReset(){
      the server answered, which is the second of blank coming back by another
      road. */
   NOTES_HAVE=null; notRead=false;
-  BKLIST=null;                         /* what is on the disk, asked again */
   /* And what has been typed into a field and not saved. It is where you are
      standing rather than anything a language owns, and standing in one
      language's article with the paragraph you were typing into another's

@@ -2692,9 +2692,10 @@ function render(){
   /* and the system keyboard, which is a second program and holds its own copy
      of the letters, is told the same way and for the same reason */
   sharePush();
-  /* and the copy on disk, which is the one that is still there when the
-     storage this is all read from is not */
-  bkPush();
+  /* NOT THE COPY ON DISK. A render used to write the backup file out, so
+     「still there when the storage is not」 was answered a frame at a time.
+     There are no files (www/backup.js); the send is bkTouch() at the moment
+     of the SAVE, not here, and a render is not a save. */
   /* Which screen this route shows is written on the page itself, in
      www/route-map.js, with the view function rather than its name. This used
      to be twenty-two conditions here -- a second copy of PAGES that nothing

@@ -16,8 +16,8 @@ the user already owns. That is why `www/**` is ES5 and why `tools/es5-check.mjs`
 exists.
 
 Capacitor wraps it for iOS. `ios/App/` is the native side: the bridge
-(`App/LinguaShare.swift` — the backup file, the voice files, the sheet an
-export writes), the plan in the Keychain (`App/LinguaStore.swift`,
+(`App/LinguaShare.swift` — the voice files and the sheet an export writes; the
+backup file it also wrote is gone, `CLAUDE.md` rule 11), the plan in the Keychain (`App/LinguaStore.swift`,
 `App/LinguaPlan.swift`), the system keyboard extension (`LinguaKeyboard/`) and
 the home-screen widget (`LinguaWidget/`).
 
@@ -64,7 +64,6 @@ locked door but `langLocked()` (`www/core.js`), asked at every saver.
 | which languages exist, which is open | `lingua.langs`, `lingua.cur` — the phone's index of the copies it is holding. `LANGS[id].sid` is the language's row on the server, and an entry with no `sid` has never been up | `LANGS`, `langId` |
 | the person's settings | `lingua.set`. Everything in it is that account's and is parked under `lingua.set.<uid>` by `setFor()` when somebody else signs in, EXCEPT what `SET_PHONE` names — this handset's own setup | `SET` |
 | the person's session | `lingua.sess` — the token pair only | `SESS` (`www/net.js`) |
-| a copy that survives the app — **the backup**, now that the server is the record 「言語周りだけバックアップにfile使う」 | `Documents/Languages/<name>.json`. It is that account's language in a form a person can hold, which is why deleting an account drops the files of **its** languages (`bkDropFor()`) and no others | `bkPack()` / `bkTake()` (`www/backup.js`) |
 | what the server holds and who may touch it | `supabase/schema.sql` | nothing on the phone decides this |
 
 **No row of that table is the device's.** 「端末ごとにやることなんてねえよ」
@@ -72,8 +71,8 @@ locked door but `langLocked()` (`www/core.js`), asked at every saver.
 key is a working copy of something an account owns, filed under the account it
 belongs to — the settings among them (`SET_PHONE` and `setParkKey()` in
 `www/core.js`, where a field is an account's unless it is named as this
-handset's setup), and the backup file and an exported sheet are that account's
-language in a form a person can hold. When something new is stored the question
+handset's setup), and an exported sheet is that account's language in a form a
+person can hold. When something new is stored the question
 is not 「is this the phone's」, because there is no answer to that: it is
 **「which account is this」**, and a thing that cannot answer it must not be
 written down. `CLAUDE.md` § Online.
@@ -113,8 +112,6 @@ So, the order:
                                            and what makes the app work with no
                                            signal 「制作はオフラインでも可能
                                            次つながった時に更新される」
-  Documents/…json   is the BACKUP          bkPack(), ch. 24 — 「言語周りだけ
-                                           バックアップにfile使う」
 ```
 
 Nothing about how the code runs changes with that sentence: the globals are
@@ -158,17 +155,14 @@ for real.
   the `slice` rows on the server            ← the record
       ↓  and back down the same way, both sides added and neither made to win
 
-  and beside that, off to one side:
-
-  localStorage
-      ↓  bkTouch() marks it, bkPack() walks SLICES
-  one JSON file in Documents  ←→  iOS device backup, Files app
-      ↓  bkRestore() on launch, fills in ONLY what is missing
-  back into localStorage
 ```
 
-The file is not a step on the way to the server and does not sit between the
-two: it is what is left when neither of the others is there. See rule 11.
+**There is nothing off to one side any more.** A JSON file in Documents used
+to stand there — written by `bkPush()`, read by `bkRestore()` at launch — and
+it was what was left when neither of the other two was. It is deleted
+(`CLAUDE.md` rule 11, 2026-09-04): a save reaches the server at once now, so
+the hours it was covering are gone, and `netLangsDown()` at the foot of
+`www/boot.js` is what a phone whose storage was reclaimed comes back from.
 
 and, once, in the other direction:
 

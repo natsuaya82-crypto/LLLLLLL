@@ -778,10 +778,12 @@ const gramOf = () => pg.evaluate(() => ({
      the same page it came out before */
   shows: orderDef().id,
   chose: !!STG.set.order,
-  /* and what the restore would make of it, off www/backup.js's own answer --
-     true means "there is something here", which is what makes bkTake() and
-     netLangBack1() step over it */
-  aSound: bkSound('phases', localStorage.getItem('lingua.LA.phases')),
+  /* and what the restore would make of it. It used to ask bkSound() -- the
+     backup file's own shape test -- and there is no file (www/backup.js,
+     2026-09-04). What is left is the question netLangBack1() actually asks,
+     which is PRESENCE and always was: a slice already here is stepped over,
+     and one that is not here is filled in from the server. */
+  aThere: localStorage.getItem('lingua.LA.phases')!==null,
   name: langName,
   mark: SET.gramLang === 1 ? 'set' : 'unset'
 }));
@@ -796,7 +798,7 @@ await twice();
 const g1 = await gramOf();
 want('a language with nothing to copy is left with no phases slice', g1.a, null);
 want('and so is the language that is not the open one', g1.g, null);
-want('absent is still absent, so a restore can still fill it in', g1.aSound, false);
+want('absent is still absent, so a restore can still fill it in', g1.aThere, false);
 want('and the language opens exactly as it did', g1.name, 'Aya');
 
 /* 1-b. AND THE ONE NOBODY TYPED. setDefaults() in www/core.js puts
@@ -817,7 +819,7 @@ await twice();
 const g1b = await gramOf();
 want('the word order nobody typed is not written onto the language', g1b.a, null);
 want('nor onto the other one', g1b.g, null);
-want('absent, so a restore can still fill that in too', g1b.aSound, false);
+want('absent, so a restore can still fill that in too', g1b.aThere, false);
 want('and the settings still say what they said', g1b.setOrder, 'SOV');
 want('and the screen answers with the same word order it always did', g1b.shows, 'SOV');
 want('with nothing marked as chosen', g1b.chose, false);

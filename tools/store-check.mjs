@@ -79,7 +79,6 @@ const ROADS = {
   "sound.js:langKey('snd')":    { to: 'netSlicePut' },
   "keyboard.js:langKey('kb')":  { to: 'netSlicePut' },
   "home.js:langKey('wld')":     { to: 'netSlicePut' },
-  'backup.js:langKey(k)':       { to: 'netSlicePut' },
   'home.js:langKeyOf(id':       { to: 'netSlicePut' },
   /* NOT somebody's work, and the one entry here that is a copy of what BOTH
      sides already hold. It is what this phone and the server last agreed a
@@ -104,7 +103,6 @@ const ROADS = {
   'core.js:LS_LANGS':{ phone: 'the index of which languages are on THIS phone; what they ARE is `language` on the server, and netLangsDown() writes this from it' },
   'core.js:LS_CUR':  { phone: 'which language is open -- where somebody is standing, not what they made' },
   'net.js:LS_SESS':  { phone: 'the tokens. They are what talks to the server; they cannot be kept on it' },
-  "backup.js:langKey('bkn')": { phone: 'which generation the backup FILE is on. It is a fact about the file rather than part of the language, which is why it is not in SLICES -- and why nothing takes it when the language goes (docs/DATA_MODEL.md)' },
   /* もう一つの預け。meParkKey / postParkKey と同じ形で、SET のうち
      アカウントのものだけ ── 段、その前の段、まだ送れていない段、保存した検索、
      それを一度上げたか、通知をどこまで読んだか。テーマや表示言語はこの端末の

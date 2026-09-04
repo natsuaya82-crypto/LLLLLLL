@@ -15,7 +15,9 @@
      the slice is in localStorage under langKeyOf(<that language>, 'letters')
      LANGS[<that language>].mine is false
      every byte of the person's OWN language is where it was
-     bkPack() does not carry it -- 「入らん」 OWNER 2026-09-01
+     a save does not send it up into THIS account's rows -- 「入らん」
+       OWNER 2026-09-01. It used to be 「bkPack() does not carry it into the
+       backup FILE」, and there is no file (www/backup.js, 2026-09-04)
      netLangSync() will not run on it -- syMerge adds both sides, and one
        pass would put something into a language somebody else wrote
 
@@ -125,32 +127,32 @@ const r = await pg.evaluate(async ({ s, sid }) => {
   out.stillOpen = langId === mineId;
   out.langsGrewByOne = Object.keys(LANGS).length === Object.keys(JSON.parse(langsBefore)).length + 1;
 
-  /* ---- and the two things that must never reach it -------------------- */
-  var pack = bkPack();
-  out.packIsMine = pack.id === mineId;
-  out.packHasTheirs = JSON.stringify(pack).indexOf(THEIRS.letters.body) >= 0;
-  /* bkPack() packs the language that is OPEN, so the question is what it does
-     when the downloaded one IS open. Asked by opening it -- if the app
-     refuses to open it, that is an answer too and is recorded. */
+  /* ---- and the thing that must never reach it --------------------------
+     THE WAY OUT USED TO BE A FILE. bkPack() packed whatever language was
+     open and bkPush() wrote it into Documents, so what was asked here was
+     「does the writer refuse somebody else's」. There are no files
+     (www/backup.js, 2026-09-04) and the way out is now the SERVER: a save
+     goes up the moment it is made. So the same question is asked of the
+     road that exists -- 「does a save send somebody else's language into
+     THIS account's rows」 -- which is the stronger half of it anyway, and
+     it was never asked before today.
+
+     Asked by opening it, because netSaveUp() sends the OPEN language. If the
+     app refuses to open it, that is an answer too and is recorded. */
   var was = langId;
   var opened = false;
   try { langOpen(sid); opened = (langId === sid); } catch (e) {}
   out.opens = opened;
   if (opened){
-    out.packWhileOpenHasTheirs =
-      JSON.stringify(bkPack()).indexOf(THEIRS.letters.body) >= 0;
-    /* and the thing that actually hands a file over. bkPack() is arithmetic on
-       whatever is open and says nothing about whose it is; bkPush() is the one
-       that writes, so it is the one asked. */
-    var wrote = [];
-    BK.dirty = true; BK.how = '';
-    var oldPlug = window.sharePlug;
-    window.sharePlug = function(){ return function(a, b, o){ wrote.push(b); 
-      return { then:function(){ return { 'catch':function(){} }; } }; }; };
-    bkPush();
-    window.sharePlug = oldPlug;
-    out.pushRefused = wrote.length === 0;
-    out.pushHow = BK.how;
+    var sent = [];
+    var realSend = netSend;
+    netSend = function(m, p, b, tk, ok, bd){ sent.push(m + ' ' + p); if (bd) bd(null, 0); };
+    /* the save a person makes by having it on the screen at all */
+    bkTouch();
+    netSaveUpGo();                    /* the wait is not what is under test */
+    netSend = realSend;
+    out.pushRefused = sent.length === 0;
+    out.pushHow = sent.join(' | ');
 
     /* ---- AND NOTHING IN IT MAY BE CHANGED --------------------------------
        「編集不可でそのアカウントに切り替えたらダウンロードした人の言語が使える」
@@ -347,14 +349,12 @@ say(r.mineUntouched === '' && r.stillOpen,
     'and NOTHING of the person’s own moved: every slice of their language is ' +
     'byte for byte what it was, and it is still the one open' +
     (r.mineUntouched ? ' (`' + r.mineUntouched + '` changed)' : ''));
-say(!r.packHasTheirs && r.packIsMine,
-    'their language is not in this person’s backup — 「入らん」');
-console.log('    [opens=' + r.opens + ' packWhileOpenHasTheirs=' +
-            r.packWhileOpenHasTheirs + ' pushRefused=' + r.pushRefused + ']');
+console.log('    [opens=' + r.opens + ' pushRefused=' + r.pushRefused + ']');
 say(!r.opens || r.pushRefused === true,
-    'and nothing WRITES it out even when it is the language being looked at — ' +
-    'bkPack() packs whatever is open, so what is asked is the writer: ' +
-    (r.opens ? 'bkPush refused it (' + r.pushHow + ')'
+    'and a save does not send it up into THIS account’s rows, even while it ' +
+    'is the language on the screen — 「入らん」: ' +
+    (r.opens ? (r.pushRefused ? 'netSaveUp sent nothing'
+                              : 'IT SENT ' + r.pushHow)
              : 'it cannot be opened, which is the same answer'));
 say(r.opens, 'a downloaded language is one you SWITCH TO — the row in the ' +
     'switcher is a button and langOpen() takes it');

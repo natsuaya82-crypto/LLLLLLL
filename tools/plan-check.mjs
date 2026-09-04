@@ -409,30 +409,50 @@ const r = await pg.evaluate(({ s }) => {
   savePosts();
   SET.plan = 'free'; save();
 
-  /* ---- 5. a backup does not know what a plan is ------------------------
-     Written on the free plan, and it is the same file the paid plan writes.
-     The way this breaks is not a refusal -- it is a slice quietly left out of
-     the file of somebody who is not paying, found on the day they need it. */
-  /* Every slice has something in it first. bkPack() writes a slice only when
-     storage HAS one -- an absent slice is absent from the file, correctly --
-     so a language that has never been given a keyboard cannot answer the
-     question this is asking. The one this exists for is exactly that: the
-     keyboard was in no backup at all for a while, and a count of slices went
-     on saying the right number while it was. */
+  /* ---- 5. what goes UP does not know what a plan is --------------------
+     Saved on the free plan, and it is the same twelve slices the paid plan
+     sends. The way this breaks is not a refusal -- it is a slice quietly
+     left out of what is kept for somebody who is not paying, found on the
+     day they need it.
+
+     THIS USED TO ASK THE BACKUP FILE, and there is no file (www/backup.js,
+     2026-09-04). The road a language leaves this phone by is netSaveUp(), so
+     that is the road asked -- and it is the stronger question, because the
+     file was one handset's and the server is the copy that outlives it.
+
+     Every slice has something in it first, and nothing has been agreed yet:
+     netSaveUp() sends a slice only where it differs from what the two sides
+     last agreed, and an absent slice has nothing to say. The one this exists
+     for is exactly that -- the keyboard was in no backup at all for a while,
+     and a count went on saying the right number while it was. */
   SLICES.forEach(function(sl){
     if (localStorage.getItem(langKey(sl)) === null)
       localStorage.setItem(langKey(sl), '[]');
+    localStorage.removeItem(langWasKey(langId, sl));
   });
-  SET.plan = 'pro'; save();
-  var paidFile = bkPack();
-  SET.plan = 'free'; save();
-  var freeFile = bkPack();
-  function keysOf(f){ return Object.keys((f && f.slice) || {}).sort().join(' '); }
-  out.bkPaidKeys = keysOf(paidFile);
-  out.bkFreeKeys = keysOf(freeFile);
-  out.bkSame = JSON.stringify(freeFile).length > 0 &&
-               keysOf(paidFile) === keysOf(freeFile);
-  /* every slice core.js knows about is in the file, on the free plan */
+  function sentOn(p){
+    var got = [], realSend = netSend, realRow = netLangRow, realSlices = netSlices;
+    SET.plan = p; save();
+    SESS = { at:'t', rt:'r', uid:'planner', anon:false };
+    LANGS[langId].uid = 'planner'; LANGS[langId].mine = true;
+    netLangRow = function(id, ok){ ok('sid-plan'); };
+    netSlices = function(sid, ok){ ok({}); };
+    /* the ok half has to be called: netSlicePut() steps to the next slice
+       from inside it, so a stub that only records stops after the first one */
+    netSend = function(m, path, b, tok, ok){ if (b && b.kind) got.push(b.kind); if (ok) ok(); };
+    NET_SYNCING = false;
+    netSaveUpGo();
+    netSend = realSend; netLangRow = realRow; netSlices = realSlices;
+    NET_SYNCING = false;
+    /* what was sent has just been agreed, so a second call would have nothing
+       to say -- put the record back, so both plans are asked one question */
+    SLICES.forEach(function(sl){ localStorage.removeItem(langWasKey(langId, sl)); });
+    return got.sort().join(' ');
+  }
+  out.bkPaidKeys = sentOn('pro');
+  out.bkFreeKeys = sentOn('free');
+  out.bkSame = out.bkFreeKeys.length > 0 && out.bkPaidKeys === out.bkFreeKeys;
+  /* every slice core.js knows about goes up, on the free plan */
   out.bkHasSlices = SLICES.every(function(sl){ return out.bkFreeKeys.indexOf(sl) >= 0; });
 
   /* ---- 6. where the plan is kept ---------------------------------------
@@ -666,8 +686,10 @@ const r = await pg.evaluate(({ s }) => {
   out.freeShowsOpen = lhtml.indexOf(langId) !== -1;
   out.freeStillHolds2 = langCount() === 3;
   out.threeKeptBytes = same(bytesThree, bytes());
-  /* and the backup of the open one is written the same as it ever was */
-  out.threeBackup = bkPack().slices ? true : !!bkPack();
+  /* and the open one still holds every slice it held. There is no file to
+     write now, so what is asked is storage itself. */
+  out.threeBackup = SLICES.some(function(sl){
+    return localStorage.getItem(langKey(sl)) !== null; });
 
   /* The fourth is the only thing refused. */
   toastClear();
@@ -1127,13 +1149,11 @@ const BOOTWIRE = `
     };
     window.XMLHttpRequest=FakeX;
     window.__wrote=[];
-    /* A REAL thenable, and that is not a detail: www/boot.js opens with
-       bkRestore(), which is p('LinguaShare','kept',{}) with a .then on it.
-       A stub carrying only a catch throws TypeError on the FIRST line of
-       www/boot.js and
-       every line under it -- netResume among them -- never runs. The page
-       then looks exactly like a phone with no session, which is the one
-       state this section must not accidentally be measuring. */
+    /* A REAL thenable, and that is not a detail: a stub carrying only a
+       catch throws TypeError on the first line that uses it, and every line
+       under it -- netResume among them -- never runs. The page then looks
+       exactly like a phone with no session, which is the one state this
+       section must not accidentally be measuring. */
     function NP(){
       return { then:function(f){ try{ if(f) f(null); }catch(e){} return NP(); },
                'catch':function(){ return NP(); } };
@@ -1356,8 +1376,8 @@ say(r.midRoom, 'and there is room for another');
 say(r.freeShows2 === 100 && r.freeHolds2,
     'the same dictionary on free shows 100 and still holds 500');
 
-say(r.bkSame, 'a backup written on free holds the same slices as one written on plus');
-say(r.bkHasSlices, 'and every slice core.js knows about is in it (' + r.bkFreeKeys + ')');
+say(r.bkSame, 'a save on free sends the same slices up as a save on pro');
+say(r.bkHasSlices, 'and every slice core.js knows about goes up (' + r.bkFreeKeys + ')');
 
 say(r.diskHasPlan, 'in a browser the plan is in the settings file');
 say(r.nativeHidesPlan, 'on a phone it is not -- the Keychain is holding it');

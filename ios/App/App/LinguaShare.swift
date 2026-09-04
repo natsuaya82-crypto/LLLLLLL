@@ -23,9 +23,6 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
   public let jsName = "LinguaShare"
   public let pluginMethods: [CAPPluginMethod] = [
     CAPPluginMethod(name: "write", returnType: CAPPluginReturnPromise),
-    CAPPluginMethod(name: "keep", returnType: CAPPluginReturnPromise),
-    CAPPluginMethod(name: "kept", returnType: CAPPluginReturnPromise),
-    CAPPluginMethod(name: "dropSome", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "keepVoice", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "voice", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "dropVoice", returnType: CAPPluginReturnPromise),
@@ -102,140 +99,24 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
   // ---- the copy that survives the app ------------------------------------
   //
   // A different folder and a different argument from everything above. The
-  // App Group is how two programs of this app talk; Documents is where the
-  // person's own work lives. iOS puts Documents in the device backup, and
-  // with UIFileSharingEnabled the Files app can show it -- so a language is
-  // a thing somebody can hold, copy to iCloud Drive, and mail to themselves.
+  // ---- WHAT USED TO BE HERE, AND WHY IT IS NOT ------------------------
   //
-  // www/backup.js (chapter 24) decides what goes in it. This writes it down.
-
-  static let keepDir = "Languages"
-
-  private func languages() throws -> URL {
-    let docs = try FileManager.default.url(for: .documentDirectory, in: .userDomainMask,
-                                           appropriateFor: nil, create: true)
-    let dir = docs.appendingPathComponent(Self.keepDir, isDirectory: true)
-    if !FileManager.default.fileExists(atPath: dir.path) {
-      try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-    }
-    return dir
-  }
-
-  /// Written to one side, read back, and only then made the one that counts.
-  ///
-  /// The order matters and the first version of this had it wrong. It rotated
-  /// the generations FIRST and then wrote -- so a write that failed left no
-  /// <name>.json at all, and kept() below deliberately ignores the numbered
-  /// spares, which means the restore would have answered "there is no file
-  /// for this language" while two good ones sat beside it.
-  ///
-  /// So: the new bytes go to .tmp, .tmp is read back and parsed, and only a
-  /// file that survives being read becomes the language. Nothing that exists
-  /// is touched until then. `.atomic` alone is not this -- it promises you
-  /// never see half a file, not that the whole one means anything.
-  ///
-  /// Two spares behind it, which is about 50 KB for a free-sized language:
-  /// the price of being able to say that a bug in this app cannot take
-  /// somebody's months of work.
-  @objc func keep(_ call: CAPPluginCall) {
-    let name = (call.getString("name") ?? "language")
-    let json = call.getString("json") ?? ""
-    guard !json.isEmpty else { call.reject("nothing to keep"); return }
-    do {
-      let dir = try languages()
-      let fm = FileManager.default
-      let at: (Int) -> URL = { n in
-        dir.appendingPathComponent(n == 0 ? "\(name).json" : "\(name).\(n).json")
-      }
-      let tmp = dir.appendingPathComponent("\(name).tmp")
-
-      try Data(json.utf8).write(to: tmp,
-        options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
-
-      // Read it back off the disk, not out of memory: what is being checked
-      // is the file, and a file that cannot be parsed is not a save.
-      let back = try Data(contentsOf: tmp)
-      guard (try? JSONSerialization.jsonObject(with: back)) != nil else {
-        try? fm.removeItem(at: tmp)
-        call.reject("what was written could not be read back as JSON; nothing was replaced")
-        return
-      }
-
-      // Everything that exists is still exactly where it was until here.
-      for n in stride(from: 2, to: 0, by: -1) {
-        let from = at(n - 1), to = at(n)
-        if fm.fileExists(atPath: from.path) {
-          if fm.fileExists(atPath: to.path) { try? fm.removeItem(at: to) }
-          try? fm.moveItem(at: from, to: to)
-        }
-      }
-      if fm.fileExists(atPath: at(0).path) { try? fm.removeItem(at: at(0)) }
-      try fm.moveItem(at: tmp, to: at(0))
-      call.resolve()
-    } catch {
-      call.reject(error.localizedDescription)
-    }
-  }
-
-  /// The backups of the languages NAMED, and nobody else's.
-  ///
-  /// 「別アカウントでログインしてそれのアカウント削除したら、俺の元のアカウントが
-  /// 消えてんだよ」 OWNER 2026-09-03. There used to be two other ways out of
-  /// here -- one that emptied the Languages folder and one that emptied all
-  /// three folders -- and deleting an account called them, so a second account
-  /// leaving took the first account's backups with it. The server was right;
-  /// the phone destroyed the only other copy. **Both are gone**: this is the
-  /// only road, and it cannot be asked for anything but a list.
-  ///
-  /// Only inside Languages/, and only `.json`. Documents is the person's own
-  /// folder and the Files app puts other things in it.
-  ///
-  /// `keep()` files a language as `<name> <id>.json`, `.1.json`, `.2.json`,
-  /// so a base name is one language and every generation of it.
-  @objc func dropSome(_ call: CAPPluginCall) {
-    let names = call.getArray("names", String.self) ?? []
-    var gone = 0
-    guard let dir = try? languages() else { call.resolve(["gone": 0]); return }
-    let fm = FileManager.default
-    guard let have = try? fm.contentsOfDirectory(atPath: dir.path) else {
-      call.resolve(["gone": 0]); return
-    }
-    for base in names {
-      for n in have where n == "\(base).json"
-                       || (n.hasPrefix("\(base).") && n.hasSuffix(".json")) {
-        try? fm.removeItem(at: dir.appendingPathComponent(n))
-        gone += 1
-      }
-    }
-    call.resolve(["gone": gone])
-  }
-
-  @objc func kept(_ call: CAPPluginCall) {
-    do {
-      let dir = try languages()
-      let names = try FileManager.default.contentsOfDirectory(atPath: dir.path)
-      // base name -> generation number -> text
-      var byLang: [String: [Int: String]] = [:]
-      for n in names.sorted() {
-        guard n.hasSuffix(".json") else { continue }
-        let stem = String(n.dropLast(5))
-        var base = stem, gen = 0
-        if let dot = stem.lastIndex(of: "."),
-           let g = Int(stem[stem.index(after: dot)...]) {
-          base = String(stem[stem.startIndex..<dot]); gen = g
-        }
-        guard let d = try? Data(contentsOf: dir.appendingPathComponent(n)),
-              let s = String(data: d, encoding: .utf8) else { continue }
-        byLang[base, default: [:]][gen] = s
-      }
-      let out: [[String]] = byLang.keys.sorted().map { base in
-        (byLang[base] ?? [:]).keys.sorted().compactMap { byLang[base]?[$0] }
-      }
-      call.resolve(["langs": out])
-    } catch {
-      call.reject(error.localizedDescription)
-    }
-  }
+  // `keep()`, `kept()` and `dropSome()` wrote, read and removed a language as
+  // one JSON file in Documents/Languages/, three generations deep -- the copy
+  // that survived the app itself.
+  //
+  // 「オンラインは一本化ね？」「保存としたらオンラインおしまい」「今ファイルも
+  //   いらん。オンラインのみで行こうってことになってる今後オフライン対応する
+  //   時にまた考えることにした」 OWNER 2026-09-04.
+  //
+  // A save reaches the server the moment it is made now (netSaveUp() in
+  // www/net.js), so the hours those files were covering are gone. They are
+  // deleted rather than left compiled: a method in the plugin's table is one
+  // anybody can call, and tools/assets-check.mjs fails on one that no line of
+  // www/ names. docs/CHANGELOG.md 2026-09-04 carries the DELETE REVIEW.
+  //
+  // The voices and the sheets below are NOT this. They are the post's and the
+  // person's, they were never a copy of a language, and they stay.
 
   // ---- the paper -------------------------------------------------------
   //

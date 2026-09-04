@@ -28,7 +28,7 @@ here is the part that may not be argued with, and the file that holds the rest.
 **Data.** Nothing a person made is removed because the current shape does not
 need it, because it is an old format, to save space, or because something was
 restructured. A migration **copies** and never removes what it read. A restore
-fills in what is **missing** and stops — the way a backup destroys somebody's
+fills in what is **missing** and stops — the way a copy destroys somebody's
 work is by winning. "Empty" and "broken" are different states and must not
 share a branch. Automatic deletion, pruning and cleanup are forbidden unless a
 written spec asks for them; anything that deletes gets a DELETE REVIEW first.
@@ -41,7 +41,7 @@ object. `post.ink` is the worked example and `card-check` is what holds it.
 → `docs/DATA_MODEL.md`
 
 **Money.** A plan decides what a person may DO and decides nothing about what
-exists. No backup, restore or byte of anybody's language may depend on payment,
+exists. No byte of anybody's language may depend on payment,
 and "the no data" — a failed check means fewer buttons, never fewer words.
 **`plan-check` holds it**: five hundred words made on the paid plan are five
 hundred words after it ends, the list is a hundred, and not one byte of any
@@ -75,8 +75,9 @@ account on it, a settings key shared by everyone who ever signed in. Then
 deleting one account emptied the phone and took another account's work with
 it, and the only copy was the one the phone had destroyed.
 
-**So there is no such category and no such list.** A backup file and an
-exported sheet are that account's language in a form a person can hold. The
+**So there is no such category and no such list.** An exported sheet is that
+account's language in a form a person can hold; the backup file that stood
+beside it in that sentence is deleted (rule 11). The
 settings are that account's settings. When something new is stored, the
 question is not 「is this the phone's」 — there is no answer to that — it is
 **「which account is this」**, and a thing that cannot answer it is a thing
@@ -444,7 +445,7 @@ backlog entry is not permission, and neither is the absence of one.
 |---|---|
 | `docs/ARCHITECTURE.md` | the shape of the app, and where each thing is the truth |
 | `docs/DATA_MODEL.md` | every stored thing, its owner, and whether it may change under somebody |
-| `docs/DATA_SAFETY.md` | how a language is not lost; the backup rules; DELETE REVIEW |
+| `docs/DATA_SAFETY.md` | how a language is not lost; what a save owes the server; DELETE REVIEW |
 | `docs/FEATURE_RULES.md` | the eleven questions before code; past data; refactoring; what is the owner's |
 | `docs/PAID_FEATURES.md` | `CAN`, the three plans, and what money may never touch |
 | `docs/TESTING.md` | what to run when; how to fix a bug; what needs a device |
@@ -776,15 +777,16 @@ said twelve. `lingua.langs` says which languages are here and whose;
 `langKey('words')` is the only thing that knows how a language is filed.
 
 `SLICES` in `core.js` is that list, and being *in* it is what makes a slice
-**backed up**: `bkPack()` walks it, so a slice outside it is in no backup.
-Two were outside it. The **keyboard** is the language's — built in
-the app, filed under `langKey('kb')` beside the words — and was in no backup;
-and **what the language is for** sat in `SET`, the person's settings, directly
-under a comment saying it travels with the language. Neither could throw:
-a backup was written, it restored, every check was green, and the keyboard
-somebody built simply was not in the file. `backup-check` now names both
-rather than counting slices — a count says eleven and goes on saying eleven
-when the eleventh is the wrong one.
+**go up**: `netSaveUp()` and `netLangSync()` both walk it, so a slice outside
+it reaches no server. Two were outside it. The **keyboard** is the language's
+— built in the app, filed under `langKey('kb')` beside the words — and was
+kept nowhere but this handset; and **what the language is for** sat in `SET`,
+the person's settings, directly under a comment saying it travels with the
+language. Neither could throw: everything was written, everything read back,
+every check was green, and the keyboard somebody built was simply not in the
+copy that outlives the phone. Name a slice rather than counting them — a
+count says eleven and goes on saying eleven when the eleventh is the wrong
+one.
 
 **Deleting an account counts the namespace rather than walking a list.**
 `wipeAll` used to walk `SLICES`, and every key added after that line was
@@ -805,8 +807,8 @@ somebody calls.
 
 **One language is deleted by the middle of the three rows** — sign out,
 delete this language, delete the account. `wipeLangsGo()` in `www/settings.js`
-walks `SLICES` for one id through `langKeyOf()`, drops that language's backup
-and its row on the server, and touches nothing else. 「この言語を削除で言語の
+walks `SLICES` for one id through `langKeyOf()`, drops its row on the server,
+and touches nothing else. 「この言語を削除で言語の
 制作のものは全部なくなる」 OWNER 2026-09-03.
 
 The globals do not change. `WORDS` is the open language's dictionary, because
@@ -993,44 +995,34 @@ the making side; giving it a new name is not a way to stop being one.**
 
 ### 11. A language is never lost
 
-`www/backup.js` (chapter 24) writes the open language out as one file, into
-Documents, where iOS puts it in the device backup and the Files app can show
-it. The server is the record, `localStorage` is the working copy that runs with
-no signal, and **this file is the backup** — 「基本は全部サーバー管理 言語周りだけ
-バックアップにfile使う」. Every slice goes up and comes back (`netLangSync()` in
-`www/net.js`, from `www/boot.js`).
+**THE SERVER IS THE ONLY COPY, and a save reaches it at once.**
+「オンラインは一本化ね？」「保存としたらオンラインおしまい」「今ファイルもいらん。
+オンラインのみで行こうってことになってる今後オフライン対応する時にまた考える
+ことにした」 OWNER 2026-09-04.
 
-The file is what is left when the other two are not there: the app is deleted,
-the phone is replaced, WKWebView's storage is reclaimed, a migration goes
-wrong, or there is no signal and never was. 「データ消えるのだけはありえない」
+This chapter was a FILE. `www/backup.js` wrote the open language into
+Documents, three generations deep, and that file was what was left when the
+server and `localStorage` were both gone. It is deleted -- the writing, the
+reading, the three generations, the list on the settings screen and the Swift
+it called. `docs/CHANGELOG.md` 2026-09-04 carries the DELETE REVIEW.
 
-It was measured before it was built — thirty-eight drawn letters are 12.1 KB,
-a hundred words 13.2 KB, five thousand words 685 KB — so a free language is
-25 KB and the whole thing is written on every change. There is no partial
-state to reason about.
+**What made it removable is rule 6, not a decision to care less.** The file
+existed because a language went up twice a session -- at launch and at the
+door -- so there were hours when an afternoon's work was on one handset and
+nowhere else. A save now goes up the moment it is made (`netSaveUp()` in
+`www/net.js`, from `bkTouch()`), so the window the file was covering is the
+window that closed.
 
-Two rules, and `backup-check` holds both:
+**And a phone whose storage is reclaimed comes back from the server.**
+`netLangsDown()` at the foot of `www/boot.js` brings down every language this
+ACCOUNT has and fills in what is not here -- which is what `bkRestore()` used
+to do out of the file, with the same rule: it fills in what is **missing** and
+stops. `again-check` holds it, and holds the save arriving without a launch.
 
-**A write never destroys the last good file.** `keep()` rotates the previous
-one to `.1` and that to `.2` before writing, so a write that produces rubbish
-costs a generation instead of somebody's months.
-
-**A restore never overwrites a slice that is there.** It fills in one that is
-missing and stops — `langMigrate`'s argument, for the same reason. This is
-the one that matters: the way a backup destroys somebody's work is by
-*winning*, and a restore that overwrites is worse than no restore at all.
-
-The check wipes every slice the way iOS reclaiming storage would, reads the
-file back, and asks for the same words, the same letters and the language in
-the index again; then it restores an *older* file over a live language and
-demands that nothing moves. It also walks `SLICES`, so a slice added to
-`core.js` and forgotten in `bkPack()` fails here rather than being quietly
-left out of every backup until somebody needs it.
-
-It cannot press the native side — `keep()` and `kept()` are Swift and there is
-no Swift on a Linux runner — so what it holds is everything on this side of
-that call. All three of its failures were made to happen before it was
-believed.
+**What this costs is written down rather than hidden.** With no signal there
+is no copy but the one on this handset, and 「電波が無いときはログインできない」
+is the owner's answer to that. A language made offline is in `localStorage`
+until there is a signal; nothing else stands behind it.
 
 ### 12. A card of a post is a picture of that post
 
@@ -1884,7 +1876,7 @@ the string and the function — and `act-check` fails on either half alone.
 | `www/numbers.js` | numbers — a digit is a letter with a value (ch 18) |
 | `www/post.js` | a post, and the line the two sides do not cross (ch 19) |
 | `www/me.js` | who you are: the face, the name, the handle, the line about yourself (ch 20) |
-| `www/backup.js` | the copy that survives the app — a language as one file in Documents (ch 24) |
+| `www/backup.js` | the one line every save passes through, and where a save reaches the server (ch 24) |
 | `www/rec.js` | the voice on a post — thirty seconds. It goes up with the post 「SNSは全部サーバー」: `netUpVoice()` (`www/net.js`) puts it in the `post-media` bucket and writes the path to `body.vu`, and `voRemote()` is how one name tells a path on the server from a file this phone recorded (ch 25) |
 | `www/sheet.js` | the sheet somebody writes a word on paper on, and the number printed on it that says which one (ch 26) |
 | `www/store.js` | the App Store: what `LinguaStore.swift` is asked and what comes back (ch 26) |
