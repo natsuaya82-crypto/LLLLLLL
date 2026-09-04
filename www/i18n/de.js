@@ -362,7 +362,7 @@ defLang('de', (function(){
       "script.own.ph"             : "Zeichen einfügen oder tippen",
       "script.set"                : "Setzen",
       "up.cta"                    : "Upgraden",
-      "up.need"                   : "Pro ist unbegrenzt.",
+      "up.need"                   : "Mit Pro können Sie es unbegrenzt nutzen.",
       "pop.no"                  : "Schließen",
       "pop.yes"                 : "Löschen",
       "keep.q"                  : "Eingaben speichern?",
@@ -764,7 +764,7 @@ defLang('de', (function(){
       /* the conversation */
       /* rules */
       "words.addmn"      : "Bedeutung hinzufügen",
-      "toast.cap"        : "Dieser Tarif fasst {0} Wörter. Pro ist unbegrenzt.",
+      "toast.cap"        : "Dieser Tarif fasst {0} Wörter. Mit Pro können Sie es unbegrenzt nutzen.",
       "set.title"        : "Einstellungen",
       "set.look"         : "Anzeige",
       "theme.system"     : "System",

@@ -382,7 +382,7 @@ defLang('zh', (function(){
       "script.own.ph"             : "粘贴或输入一个字",
       "script.set"                : "使用",
       "up.cta"                    : "升级",
-      "up.need"                   : "Pro 无限制。",
+      "up.need"                   : "Pro 可无限制使用。",
       "pop.no"                  : "关闭",
       "pop.yes"                 : "删除",
       "keep.q"                  : "保存已输入的内容吗？",
@@ -780,7 +780,7 @@ defLang('zh', (function(){
       "gram.pair.line"   : "整句",
       /* rules */
       "words.addmn"      : "添加意思",
-      "toast.cap"        : "此方案最多存 {0} 个词。Pro 无限制。",
+      "toast.cap"        : "此方案最多存 {0} 个词。Pro 可无限制使用。",
       "set.title"        : "设置",
       "set.look"         : "显示",
       "theme.system"     : "系统",
