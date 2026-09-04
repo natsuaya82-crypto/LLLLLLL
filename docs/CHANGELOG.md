@@ -15,6 +15,62 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-04 語順を一度も触っていない言語に、既定の `SOV` が書かれなくなった
+
+OWNER 2026-09-04「普通にアプリが入れる仕様なんて誰も頼んでないけど」
+（`docs/FEATURE_RULES.md` § 頼まれていないものを、アプリが書き込まない）。
+`docs/EXPIRY.md` 4番の隣。**`www/phases.js` の `migrateGramLang()` だけの
+話です。**
+
+**保存されるものの変化 ── これが全部です。****減ります。**
+その人の語順を設定から各言語へ一度だけ写す移行があります。
+`setDefaults()`（`www/core.js`）が `order:'SOV'` を**全員の**設定に入れるので、
+**語順のページを一度も開いたことのない人の言語すべてに `{"order":"SOV"}` が
+書かれていました** ── アプリが自分で入れた値を、その人が答えたかのように
+言語の下に置いていた、という形です。**いまは書きません。触っていない欄は
+空のままです。**
+
+**人が作ったものは何も消えていません。**この移行は元から写すだけで、
+消すものはありません。変わるのは「無い」が「有る」に変わらなくなることです。
+**既に `{"order":"SOV"}` が書かれている iPhone は、そのままです** ── 書き
+換えも削除もしません（`CLAUDE.md` § Data）。
+
+**なぜそれが要るか。**書き込んだあとは「その人が選んだ」のか「アプリが
+入れた」のかが見分けられません。**そして「有る」は復元を止めます** ──
+`bkTake()`（`www/backup.js`）と `netLangBack1()`（`www/net.js`）は、その場に
+あるスライスを飛ばします。EXPIRY 4番の `{}` と同じ形で、同じだけ止めます。
+
+**狭めたのは片側だけです。**六つのうちの一つを**選んだ**人には、いままで
+どおりその人の全部の言語へ写します ── **OWNER 2026-08-25「言語ごとですよ？」**。
+そちらまで止めると `OSV` を選んでいた人の二つ目の言語が `SOV` に見えるように
+なり、それは同じ場所での逆向きの誤り（アプリが人の語順を勝手に変える）です。
+
+**修飾語の三つの位置は変えていません。**`www/` の中で `SET.gpos` に書き込む
+所は一つも無く、そこに在るのは人が押したものだけです。
+**発音の推測も変えていません** ── あれはオーナーが頼んでいます
+（同日「推測も含めて入れるでしょ」）。
+
+**検査。**`tools/migrate-check.mjs` に項目を足しました（言語二つ、二回起動、
+設定は `{"order":"SOV"}` と `order` の無い古い形の二通り）。
+**直す前に走らせて赤五行**を見ています:
+
+```
+the word order nobody typed is not written onto the language: got "{\"order\":\"SOV\"}", wanted null
+nor onto the other one:                                       got "{\"order\":\"SOV\"}", wanted null
+absent, so a restore can still fill that in too:              got true, wanted false
+a settings file from before there was a word order writes none either: got "{\"order\":\"SOV\"}", wanted null
+nor onto the other one:                                       got "{\"order\":\"SOV\"}", wanted null
+```
+
+同じ項目が**画面が動かないこと**も訊きます ── `orderDef()` は `SOV` のまま、
+`STG.set` には何も付かないまま。この二行は直す前も後も緑で、それがこの直しの
+値段が零だという証拠です。
+
+回したのは `migrate` `gramlang` `es5` の三本だけで、**全ゲートは回していません。
+実機では押していません。**
+
+**見た目は変わっていません。**画面も、押せるものも、一つも動いていません。
+
 ### 2026-09-04 一筆が 160 点で切れなくなった
 
 `docs/EXPIRY.md` 7番。OWNER 2026-09-04「160で止めないで」。

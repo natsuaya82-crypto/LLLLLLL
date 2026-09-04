@@ -9,7 +9,7 @@ asks for them* ── に照らして、いまのアプリを全部見た結果�
 `www/` `ios/` `supabase/` `.github/` `tools/` を読んだものです。
 
 **2026-09-04、`claude/keep3` が 3-a・3-b を、`claude/keep4` が 4番を、
-`claude/pen` が 7番を引き取りました。**
+`claude/pen` が 7番と 4番の隣（語順の既定値）を引き取りました。**
 直した項目には ✅ を、確かめたが直していない項目には ⚠️ を、
 オーナーのものは 🔒 を見出しに付けてあります。**印の意味は一つずつの節に
 書いてあります ── 「調べた」と「走らせて確かめた」と「直した」は別の文です。**
@@ -316,14 +316,71 @@ absent is still absent, so a restore can still fill it in:    got true, wanted f
 
 **見た目は変わっていません。**画面も、押せるものも、一つも動いていません。
 
-### ⚠️ 隣にあって、直していないこと ── リーダーへ
+### ✅ 隣にあったもの ── オーナーが決め、直りました（`claude/pen`、2026-09-04）
 
-**既定のままの iPhone には `{"order":"SOV"}` が書かれます。**これも
-「無い」を「有る」に変えるので、上と同じだけ `bkTake()` と
-`netLangBack1()` を止めます。ただし `SOV` は**その言語がずっと従っていた値**で、
-写すのはこの移行の仕事そのものです ── これを止めるかどうかは
-**「既定は人が答えたことになるか」という振る舞いの判断**で、
-`docs/FEATURE_RULES.md` § Deciding です。手を出していません。
+**既定のままの iPhone には `{"order":"SOV"}` が書かれていました。**
+`claude/keep4` はこれを**「既定は人が答えたことになるか」という振る舞いの
+判断**として置いていきました。**オーナーが答えました:**
+
+```
+普通にアプリが入れる仕様なんて誰も頼んでないけど
+```
+
+OWNER 2026-09-04（`docs/FEATURE_RULES.md` § 頼まれていないものを、アプリが
+書き込まない）。**書きません。触っていない欄は空のままです。**
+
+`setDefaults()`（`www/core.js`）が `order:'SOV'` を全員の設定に入れるので、
+**語順のページを一度も開いたことのない人の言語すべてに `'SOV'` が
+書かれていました** ── アプリが自分で入れた値を、その人が答えたかのように
+言語の下に置いていた、という形です。`migrateGramLang()` の写す条件が一つ
+増えました:
+
+```js
+    if(o.order===undefined && SET.order!==appOrder &&
+       ORDERS.indexOf(SET.order)>=0) o.order=SET.order;
+```
+
+`appOrder` は `setDefaults().order` です ── この file に `'SOV'` をもう一つ
+書くと、既定が変わった日にそちらだけ古いままになるからです。
+
+**狭めたのは片側だけです。**六つのうちの一つを**選んだ**人には、いままで
+どおりその人の全部の言語へ写します ── **OWNER 2026-08-25「言語ごとですよ？」**
+です。そちらまで止めると、`OSV` を選んでいた人の二つ目の言語が `SOV` に
+見えるようになります。**それは同じ場所での逆向きの誤り**（アプリが人の語順を
+勝手に変える）なので、していません。
+
+**手で `SOV` を選んだ人だけは既定と見分けられません。**それで何も失われ
+ません ── 欄が空でも `orderDef()`（`www/grammar.js`）は `SOV` を返すので、
+画面は同じです。
+
+**修飾語の三つの位置には、守るべき既定値がありません。**`www/` の中で
+`SET.gpos` に書き込む所は一つも無く（`GPOS_DEF` は画面が訊いた瞬間に読まれる
+だけで、どこにも入りません）、そこに在るのは人が押したものだけです。
+**触っていません。**
+
+**発音の推測も触っていません。**あれはオーナーが頼んでいます
+（同日「推測も含めて入れるでしょ」）。取り消されていません。
+
+**赤で見たこと。**`migrate-check` に項目を足し、直す前に走らせて**赤五行**:
+
+```
+the word order nobody typed is not written onto the language: got "{\"order\":\"SOV\"}", wanted null
+nor onto the other one:                                       got "{\"order\":\"SOV\"}", wanted null
+absent, so a restore can still fill that in too:              got true, wanted false
+a settings file from before there was a word order writes none either: got "{\"order\":\"SOV\"}", wanted null
+nor onto the other one:                                       got "{\"order\":\"SOV\"}", wanted null
+```
+
+同じ項目の中で、**画面が動かないこと**も訊いています ── `orderDef()` は
+`SOV` のまま、`STG.set` には何も付かないまま。この二行は直す前も後も緑で、
+**それがこの直しの値段が零だという証拠**です。
+
+`npm run migrate` は緑。`tools/gramlang-check.mjs`（この移行を持つもう一本、
+私の領地の外です）も緑 ── あれの置く設定は `OSV`、つまり**人が選んだ値**な
+ので、写す道はそのままです。**回したのは `migrate` `gramlang` `es5` の三本
+だけで、全ゲートは回していません。実機では押していません。**
+
+**見た目は変わっていません。**
 
 ---
 
