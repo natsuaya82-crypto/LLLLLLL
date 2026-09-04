@@ -218,6 +218,30 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### 人が作ったものに期限は無い。バグで消えた分はずっと戻せる
+- Date: 2026-09-04
+- Area: 保存されるもの全部。とくに復旧の履歴（`supabase/schema.sql`）
+- Decision:
+
+  ```
+  そもそもバグで消えるなら一生残るはずだよね？自分で消してるわけじゃないし
+  基本一生残るよな
+  2016年のTwitterアカウントいまろぐいんしてもみれる
+  ```
+
+- Reason: 自分で消したのでなければ、消える理由が無い。何年も前のものが
+  そのまま開けるのが当たり前で、この app もそうである。
+- Affected features: 復旧（`docs/RECOVERY.md` 案A）。スライスの前の版を残す表に、
+  **期限も掃除の仕組みも作らない。**
+- Affected data: `slice` の前の版。増える一方になる。一語足すたびにその時点の
+  単語ぜんぶが一行残るので、五千語の言語で一回 685 KB。数字は承知のうえ。
+- Affected docs: `docs/RECOVERY.md`、`docs/DATA_SAFETY.md`、`docs/STATE.md`
+- Implementation status: `claude/rec2` が実装中
+
+  **CLAUDE.md の「Data」が元から同じことを言っている** ── automatic deletion,
+  pruning and cleanup are forbidden unless a written spec asks for them。
+  この決定はそれを、期間を訊かれたその場で言い直したもの。
+
 ### 無料でも有料と同じ数の枠が並ぶ。二つ目以降は押すとプランへ
 - Date: 2026-09-03
 - Area: キーボードの章（`www/keyboard.js`、⑨）
