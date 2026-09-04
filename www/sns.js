@@ -310,6 +310,35 @@ function snsSetFil(k){
    `snsPulling` stops a second ask while one is out -- a person flicking
    between tabs would otherwise have four in the air. */
 var snsPulling=false;
+/* WHAT A RENDER ASKS, which is not the same act as a person asking.
+
+   `snsPull()` answers, writes the answer down and renders; vFeed() asks on
+   every render. So one answer built the screen, the screen asked again, and
+   the timeline sat there putting the same question to the server for as long
+   as anybody was looking at it -- measured at over twenty asks a second with
+   no network in the way. Nothing threw and nothing looked wrong.
+
+   It also duplicated a post. Every one of those answers ran postCatchUp(),
+   and a post this phone has not got a `sid` back for yet is a post that has
+   not been sent -- so the same post went up again, and again, while the first
+   send was still in the air. A search for it afterwards found two.
+
+   The guard is the fact this file already keeps: `SNS_GOT[tab]` is set when
+   an answer arrives, empty or not, and the body already reads it to tell
+   「waiting」 from 「nothing here」. A tab that has an answer does not ask
+   again on a render; a tab that has none does. An ask that FAILED leaves it
+   unset and renders nothing, so that road stays askable and still cannot
+   loop.
+
+   A person asking is a different road and is untouched: the pull gesture and
+   a tab being switched to call snsPull() itself. Same shape as notAsk() over
+   notPull(), and as dayPull() and snsFilFind() one screen up -- 「it returns
+   immediately once it has an answer, or this would ask, write the answer
+   down, render, and ask again」 is written over those two already. */
+function snsAsk(){
+  if(SNS_GOT[snsTab]) return;
+  snsPull();
+}
 function snsPull(){
   if(snsPulling) return;
   /* WHICH timeline was asked for, held while the answer is out. snsTab moves
@@ -656,7 +685,7 @@ function vFeed(){
      on every screen reads it. Same shape as the three below: it returns
      immediately once it has an answer. */
   meFollowPull();
-  snsPull();
+  snsAsk();
   /* Beside the feed's own pull and for the same reason: the moment somebody
      is looking at a timeline is the moment the network is known to be
      working. Once a session -- dayPull() returns immediately once it has one. */
@@ -1106,11 +1135,22 @@ function snsFind(q, done){
 }
 /* Which of the two the answer is about. Where you are standing rather than
    anything the language has, so viewReset() drops it. */
+/* IT ASKS BY THROWING THE ANSWER AWAY, and that is the whole of it. This
+   used to ask here AND render, and vExplore() asks whenever there is a word
+   with no answer under it -- so every press sent the same question to the
+   server twice. Nothing threw: two answers to one question are the same
+   answer, and the second one landed on a screen that already had it. It is
+   the kind of waste that is multiplied by however many people are searching
+   and is visible to nobody.
+
+   One place asks and it is vExplore(). snsSetSort() has had this shape since
+   it was written -- change what is being asked, empty `snsHits`, and let the
+   render put the question. This is that, with the mode moving instead of the
+   order. */
 function snsGo(){
   if(!snsQ.trim()) return;
   snsMode='posts'; snsHits=null;
   snsRecentAdd(snsQ);
-  snsFind(snsQ, snsGot);
   render();
 }
 /* A person, as a row: the face, the name and the handle, the language they
