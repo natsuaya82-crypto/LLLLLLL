@@ -381,7 +381,7 @@ defLang('pt', (function(){
       "script.own.ph"             : "Cole ou digite um caractere",
       "script.set"                : "Usar",
       "up.cta"                    : "Fazer upgrade",
-      "up.need"                   : "O Pro não tem limites.",
+      "up.need"                   : "Com o Pro pode usar sem limites.",
       "pop.no"                  : "Fechar",
       "pop.yes"                 : "Eliminar",
       "keep.q"                  : "Guardar o que escreveu?",
@@ -782,7 +782,7 @@ defLang('pt', (function(){
       "confirm.note.del" : "Apagar esta nota?",
       /* the conversation */
       "words.addmn"      : "Acrescentar um significado",
-      "toast.cap"        : "Este plano guarda {0} palavras. O Pro não tem limite.",
+      "toast.cap"        : "Este plano guarda {0} palavras. Com o Pro pode usar sem limites.",
       "set.title"        : "Ajustes",
       "set.look"         : "Ecrã",
       "theme.system"     : "Sistema",

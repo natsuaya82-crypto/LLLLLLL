@@ -274,7 +274,7 @@ defLang('en', (function(){
       "script.own.ph"             : "Paste or type a character",
       "script.set"                : "Use",
       "up.cta"                    : "Upgrade",
-      "up.need"                   : "Pro has no limits.",
+      "up.need"                   : "With Pro you can use it without limits.",
       "pop.no"                  : "Close",
       "pop.yes"                 : "Delete",
       "keep.q"                  : "Save what you have typed?",
@@ -686,7 +686,7 @@ defLang('en', (function(){
       /* sentences */
       'words.addmn'     : 'Add a meaning',
       /* make */
-      'toast.cap'       : "This plan holds {0} words. Pro has no limit.",
+      'toast.cap'       : "This plan holds {0} words. With Pro you can use it without limits.",
       /* settings */
       'set.title'       : "Settings",
       'set.look'        : "Display",

@@ -334,7 +334,7 @@ defLang('es', (function(){
       "script.own.ph"             : "Pega o escribe un carácter",
       "script.set"                : "Usar",
       "up.cta"                    : "Mejorar",
-      "up.need"                   : "Pro no tiene límites.",
+      "up.need"                   : "Con Pro puedes usarlo sin límites.",
       "pop.no"                  : "Cerrar",
       "pop.yes"                 : "Eliminar",
       "keep.q"                  : "¿Guardar lo que has escrito?",
@@ -735,7 +735,7 @@ defLang('es', (function(){
       "confirm.note.del" : "¿Eliminar esta nota?",
       /* the conversation */
       "words.addmn"      : "Añadir un significado",
-      "toast.cap"        : "Este plan admite {0} palabras. Pro no tiene límite.",
+      "toast.cap"        : "Este plan admite {0} palabras. Con Pro puedes usarlo sin límites.",
       "set.title"        : "Ajustes",
       "set.look"         : "Pantalla",
       "theme.system"     : "Sistema",
