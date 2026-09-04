@@ -1648,12 +1648,17 @@ function wldOpen(){
    -- and `mine` is whose ARTICLE this is, which is a different question from
    whether the OPEN language may be changed: a downloaded language opened from
    the switcher draws its own article with mine true. langLocked() answers the
-   second. Who may edit is one decision, so it is asked once. */
+   second. Who may edit is one decision, so it is asked once.
+
+   IT IS THE BAR AND THE BODY, AND NOT THE PAGE. Written to return the whole
+   page it BECAME the drawer of this route -- page-check watches the innermost
+   function whose return value IS what the view returned, so `about` came back
+   drawn by two functions and the gate went red on rule 21. The frame is a
+   piece wldPage() puts in; wldPage() is what draws this route. */
 function wldFrame(body, ed, mine){
-  return '<div class="view">'+
-    navTop('', (!ed && mine && !langLocked())?
+  return navTop('', (!ed && mine && !langLocked())?
       navDo(t('wld.edit'), 'go', ["world"], true) : '')+
-    '<div class="body">'+body+'</div></div>';
+    '<div class="body">'+body+'</div>';
 }
 function wldPage(ed, L, lid){
   var w, mine, drawn, body='', dls='', done, i;
@@ -1707,7 +1712,7 @@ function wldPage(ed, L, lid){
      Nothing is deleted and nothing is unset. `hide` is one flag, the sections
      keep their own answers, and every word is where it was: turning the
      switch back on brings the whole page back exactly as it was left. */
-  if(wldHidden(w)) return wldFrame(body, ed, mine);
+  if(wldHidden(w)) return '<div class="view">'+wldFrame(body, ed, mine)+'</div>';
   wldSecs(w).forEach(function(sec){
     var inner='', extra='';
     /* Two of the sections do not reach the writing face at all, and both are
@@ -1985,7 +1990,7 @@ function wldPage(ed, L, lid){
     body+=abHead(dlsec, '')+(abShut(dlsec.r)? '' : dls);
   }
   if(!body) body='<div class="note">'+esc(t('wld.empty'))+'</div>';
-  return wldFrame(body, ed, mine);
+  return '<div class="view">'+wldFrame(body, ed, mine)+'</div>';
 }
 /* What making this language public means, behind the `?` in the bar rather
    than as a sentence on the screen. 「showの横に？つけて他と同じ感じで」 */
