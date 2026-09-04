@@ -73,9 +73,16 @@ a〜z と `!` `?` は `lt.a` … `lt.z` `lt.ex` `lt.qm`、数字は値で `lt.n0
 
 **保存されるものの変化 ── ありません。**
 
-**まだ残っているもの。**`.addrow` の CSS（`www/index.html` 318 行と 473 行）と
-`kb.row.add` の十言語ぶんの言葉が、誰にも着られないまま残っています。
-**`www/index.html` と `www/i18n/*.js` はこのセッションの持ち場ではありません。**
+`kb.row.add` は、どの画面も言わなくなったので十言語から消しました
+（`i18n-check` がそれを止めます）。
+
+**まだ残っているもの ── `.addrow` の CSS（`www/index.html` 318 行と 473 行）。**
+着る画面が無くなったので、**`press` がこれ一つで赤になります**：
+「nothing wears .addrow — index.html styles it and no screen put it on any
+element」。`press` 自身の言うとおり、着せていた画面が消えたのだから消すのが
+直しです。**`www/index.html` はこのセッションの持ち場ではありません。**
+`tools/css-baseline.txt` に足して黙らせる道は取りません ── そこへ一行足すのは
+オーナーの判断だと CLAUDE.md § 18 が書いています。
 
 ### 2026-09-04 お題のタグは `#今日のお題`。**同じ日の前の項目を差し替えます**
 
