@@ -96,19 +96,47 @@ await pg.evaluate('window.OB_STATES = (' + obStates.toString() + ')()');
    rest shows them, so `--all` never photographed one; `hd@N`, or `--half`
    for the lot. Same list act-check and press walk. */
 await pg.evaluate('window.HALF = (' + halfDone.toString() + ')()');
-await pg.evaluate(({ s, ui, dk, pd, mf }) => {
-  eval('(' + s + ')()');           /* the fixture, run inside the page */
-  SET.done = true;                 /* past the onboarding, unless it is what was asked for */
-  if (pd) SET.plan = 'pro';       /* --paid: the faces the free plan does not show */
-  if (mf) SET.myfont = true;       /* --myfont: the app in the letters somebody drew */
-  SET.ui = ui;
-  SET.theme = dk ? 'dark' : 'light';
-  /* SET.theme is what is stored; applyTheme() is what puts data-theme on the
-     document. Setting the one without calling the other photographed the
-     light theme with --dark on the command line, and the picture looked
-     perfectly fine -- which is how it would have gone unnoticed. */
-  if (typeof applyTheme === 'function') applyTheme();
-}, { s: seed.toString(), ui: uiLang, dk: dark, pd: paid, mf: mine });
+/* What the command line asked for, and the ONE place that puts it on.
+
+   seed() is SET back to what a fresh install has -- `ui:'en'`, `plan:'free'`,
+   `myfont:false`, `theme:'system'` -- and it is what fills the app before
+   every picture. These four used to be assigned once, here, before anything
+   was photographed; the hd@N road then runs seed() AGAIN for each face, which
+   put all four back. So `--lang ja hd@3` photographed an English screen, and
+   had done since that road was added -- nobody has ever seen a half-done face
+   in the language they asked for. --paid and --myfont went the same way.
+   --dark alone looked right, and only by accident: data-theme was already on
+   the document and nothing re-reads SET.theme.
+
+   Measured rather than reasoned about: SET.ui reads 'ja' the line before
+   __seed() and 'en' the line after, and no entry in HALF or OB_STATES moves
+   it itself.
+
+   An `if` in the hd branch would have fixed that road and left the road
+   written tomorrow to be found the same way. So the answer is written down
+   once and __seed CARRIES it: seeding and dressing are one act, and there is
+   no way to do the first without the second. */
+await pg.evaluate(({ ui, dk, pd, mf }) => {
+  window.__shot = { ui: ui, dark: dk, paid: pd, myfont: mf };
+  window.__dress = function () {
+    SET.done = true;                 /* past the onboarding, unless it is what was asked for */
+    SET.ui = window.__shot.ui;
+    if (window.__shot.paid) SET.plan = 'pro';    /* --paid: the faces the free plan does not show */
+    if (window.__shot.myfont) SET.myfont = true; /* --myfont: the app in the letters somebody drew */
+    SET.theme = window.__shot.dark ? 'dark' : 'light';
+    /* SET.theme is what is stored; applyTheme() is what puts data-theme on the
+       document. Setting the one without calling the other photographed the
+       light theme with --dark on the command line, and the picture looked
+       perfectly fine -- which is how it would have gone unnoticed. */
+    if (typeof applyTheme === 'function') applyTheme();
+  };
+  var bare = window.__seed;
+  window.__seed = function () { bare(); window.__dress(); };
+}, { ui: uiLang, dk: dark, pd: paid, mf: mine });
+/* And the first fill goes through the same door, rather than a second copy of
+   seed() eval'd here -- two roads into the page state is how the first one
+   drifted out of sight. */
+await pg.evaluate(() => window.__seed());
 
 /* Every route the app has, and every argument each one takes, asked of the
    page rather than listed here -- so a screen added tomorrow can be
