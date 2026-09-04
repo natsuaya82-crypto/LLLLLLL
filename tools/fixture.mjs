@@ -2044,6 +2044,38 @@ export function halfDone(){
        WLD.hide = false;
        wldSecs().forEach(function(sec){ ABOPEN[sec.r] = true; });
        window.route = 'world'; NAV = [{ r:'world' }];
-       return vWorld(); }]
+       return vWorld(); }],
+    /* THE EYE ON A PASSWORD FIELD, PRESSED -- one of the two, so the same
+       picture carries both states of the same control.
+
+       It is here rather than in obStates() because the reveal is NOT state.
+       obPwSee() writes the input's type and the eye's own mark into the two
+       elements and does not render, so that a render does not take the caret
+       out of the field and shut the keyboard -- obAgainTick() in
+       www/onboard.js is the same shape for the same reason. shot.mjs rebuilds
+       an obStates face with render(), which builds the field from PWF and
+       therefore hidden, so a seed put there presses a button whose effect the
+       next line throws away and the picture comes out shut. That was
+       measured, with a seed that pressed it, before this was written here.
+
+       A halfDone face is the one shot.mjs takes the RETURNED html of, after
+       its own render(), which is why a screen that only exists once something
+       has been PRESSED can be photographed at all. Nothing is faked: the
+       screen is built by the real vSet(), put on the page, and the real
+       obPwSee() is pressed on the real element. What comes back is what the
+       button actually did.
+
+       The settings room rather than the door, and the door is not an
+       oversight. The door is what the app IS until SET.done, so a face of it
+       needs SET.done false -- and shot.mjs paints the chrome from that AFTER
+       the entry has run, so the two disagree and the picture comes out with
+       the walk's grey pad over it. The control is the same one in both
+       places. */
+    ['the eye pressed on a password field', () => {
+       PWF = { old: 'kanata', now: 'atarashii', busy: false, msg: '' };
+       window.route = 'set'; NAV = [{ r: 'set', a: 'pw' }];
+       document.getElementById('app').innerHTML = vSet();
+       obPwSee('set-pwo');
+       return document.getElementById('app').innerHTML; }]
   ];
 }
