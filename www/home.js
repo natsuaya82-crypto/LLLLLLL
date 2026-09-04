@@ -472,7 +472,7 @@ function vFind(){
   return '<div class="view">'+
     navTop()+
     '<div class="chead">'+
-    searchBox('f', t('find.ph'), IN('fSetQ'), fq, 'clearFq')+'</div>'+
+    searchBox('f', t('find.ph'), 'fSetQ', fq)+'</div>'+
     '<div class="body" id="f-list">'+findBodyHTML()+'</div>'+
     '</div>';
 }
@@ -620,12 +620,6 @@ function findPaint(){
 /* The box is as tall as what is in it, and typing repaints the list rather
    than the screen, so nothing else would say the field grew. */
 function fSetQ(v){ fq=v; if(v) fpick=null; lnGrow('f-q'); findPaint(); }
-function clearFq(){
-  var e=document.getElementById('f-q');
-  fq=''; if(e){ e.value=''; e.focus(); }
-  lnGrow('f-q');
-  findPaint();
-}
 /* ---- what the language is for ----------------------------------------
    「世界観とか、物語で使うなら物語用なのか設定できたり」
 

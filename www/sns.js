@@ -1581,12 +1581,14 @@ function snsFieldHTML(){
      rather than a class, because "saved" is a filled star and "not saved" is
      an outline of one, and that is the whole difference. It is only there when
      there is something to keep. */
-  return searchBox('sns', t('sns.search'),
-    ' enterkeyhint="search"' + IN('snsSetQ') + KD('snsGo'), snsQ, 'snsClearQ',
-    snsQ.trim()
+  return searchBox('sns', t('sns.search'), 'snsSetQ', snsQ, {
+    attrs: ' enterkeyhint="search"' + KD('snsGo'),
+    /* Its own, because emptying this one puts the answer away as well */
+    clear: 'snsClearQ',
+    extra: snsQ.trim()
       ? '<button class="sx"' + DO('snsSaveQ') + ' aria-label="'+
           esc(t('sns.save'))+'">'+(snsIsSaved(snsQ)? ICON_STAR_ON : ICON_STAR)+'</button>'
-      : '');
+      : '' });
 }
 /* ---- who read you, who answered, who followed --------------------------
    「いいね、返信、リポスト、フォロー、おすすめのツイートとか？」

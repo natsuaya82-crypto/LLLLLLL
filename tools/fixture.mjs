@@ -2055,26 +2055,24 @@ export function halfDone(){
        STG.set['order'] = 1;
        window.route = 'gram'; NAV = [{ r:'gram', a:'order' }];
        return vGram(); }],
-    /* ---- the six search boxes, with something typed in them --------------
-       docs/DUPLICATES.md item 3: three of them clear what was typed with one
-       press and three do not, and two have nothing in the field saying what
-       it searches. The owner asked to see the difference before it is
-       settled, and it is only visible with a query IN the box -- the cross
-       appears once there is something to clear. Three of the six were already
-       reachable (the notes, the sounds, the timeline); these are the other
-       three. Appended at the END so no index above moves. */
-    ['the dictionary, searched -- HAS a cross', () => {
+    /* ---- the search boxes, with something typed in them -----------------
+       The cross only exists once there is something to clear, so a box with
+       an empty field says nothing about whether it has one. These are the
+       ones that had no face with a query in them. 「調べる系は ❌欲しいかも」
+       OWNER 2026-09-04 -- every box clears now, and this is where that is
+       looked at. Appended at the END so no index above moves. */
+    ['the dictionary, searched', () => {
        q = 'ka';
        window.route = 'words'; NAV = [{ r:'words' }];
        const h = vWords(); q = ''; return h; }],
-    ['searching everything, searched -- HAS a cross', () => {
+    ['searching everything, searched', () => {
        fq = 'ka';
        window.route = 'find'; NAV = [{ r:'find' }];
        const h = vFind(); fq = ''; return h; }],
     /* vLetters() is the CONTENTS of the chapter -- Alphabet, Marks, Digits --
        and carries no search box. The list that does is vLtset(), which reads
        here() rather than an argument, so the route has to be stood on. */
-    ['the alphabet, searched -- NO cross and no words in the field', () => {
+    ['the alphabet, searched', () => {
        ltQ = 'k';
        window.route = 'ltset'; NAV = [{ r:'ltset', a:'alpha' }];
        const h = vLtset(); ltQ = ''; return h; }]

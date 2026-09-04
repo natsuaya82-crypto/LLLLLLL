@@ -61,8 +61,8 @@ act('modOut', modOut);
 act('modIn', modIn);
 act('storeRestore', storeRestore);
 act('storeManage', storeManage);
-act('clearFq', clearFq);
-act('clearQ', clearQ);
+/* One for every search box. www/shell.js § clearSearch. */
+act('clearSearch', clearSearch);
 act('delNote', delNote);
 act('delWord', delWord);
 act('doImport', doImport);

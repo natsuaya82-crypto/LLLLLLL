@@ -936,31 +936,48 @@ function lnField(id, ph, attrs, val, cls){
    already a single place -- lnField() above, and every screen went through it.
    What each screen still hand-rolled was the box AROUND the field: the
    magnifier, the wrapper, and the cross that empties it. So the six drifted in
-   exactly the things the wrapper decides, and docs/DUPLICATES.md counted the
-   drift: three screens could clear what was typed with one press and three
-   could not, and two had nothing in the field saying what it searched.
+   exactly the things the wrapper decides: three could be cleared with one
+   press and three could not.
 
-   Which of those is right for a given screen is NOT settled here, and this
-   changes none of them -- every caller passes exactly what it drew before.
-   What changes is that a difference between two search boxes is now an
-   argument you read on one line, instead of a shape you have to compare
-   across four files. A screen that should gain a cross gains it by being
-   given one.
+   EVERY ONE OF THEM CLEARS NOW. 「調べる系は ❌欲しいかも」 OWNER 2026-09-04,
+   said after looking at the six side by side. So the cross is not something a
+   caller asks for any more -- it is what a search box IS, and there is nothing
+   to pass to get one.
 
-   `stem` names both ids: `<stem>-q` is the field and `<stem>-x` is the cross,
-   which is what all three that had one were already called. `clear` is the
-   name of what the cross does, and no name is no cross. `extra` goes between
-   the field and the cross -- the timeline's keep-this-search star, which is
-   the one screen that has anything there. */
-function searchBox(stem, ph, attrs, val, clear, extra){
+   `set` is the name of what the field calls as it is typed into, and it is the
+   whole of what a box needs to know: `<stem>-q` is the field, `<stem>-x` is
+   the cross, and clearing is that same setter given nothing. That is why there
+   is one clearSearch() below instead of one clear function per screen -- there
+   were three, all the same five lines, and two more were about to be written.
+
+   `opt` is for the one screen that is not like the others: the timeline, which
+   sends its query on the return key, keeps a search with a star, and empties
+   more than the field when it is cleared. */
+function searchBox(stem, ph, set, val, opt){
+  opt = opt || {};
   return '<div class="search"><span class="lens">'+ICON_LENS+'</span>'+
-    lnField(stem+'-q', ph, attrs, val)+
-    (extra||'')+
-    (clear
-      ? '<button class="sx" id="'+stem+'-x"'+DO(clear)+(val?'':' hidden')+
-          ' aria-label="'+esc(t('words.clear'))+'">'+ICON_CROSS+'</button>'
-      : '')+
+    lnField(stem+'-q', ph, IN(set)+(opt.attrs || ''), val)+
+    (opt.extra || '')+
+    '<button class="sx" id="'+stem+'-x"'+
+      (opt.clear? DO(opt.clear) : DO('clearSearch', [stem, set]))+
+      (val?'':' hidden')+
+      ' aria-label="'+esc(t('words.clear'))+'">'+ICON_CROSS+'</button>'+
     '</div>';
+}
+/* Emptying one. It was three functions -- clearQ, clearFq and one more each
+   time a screen grew a search -- and all three said the same five lines: find
+   the field, blank it, put the cursor back in it, grow it, redraw the list.
+   The last two of those are what the SETTER already does, every keystroke, so
+   clearing is that setter given nothing.
+
+   The field is blanked here rather than left to the setter because a setter is
+   called BY the field and does not touch it; this is called by a button
+   beside it. And the cursor stays in the field: clearing a search is nearly
+   always the first half of typing a different one. */
+function clearSearch(stem, set){
+  var e=document.getElementById(stem+'-q'), fn=ACT_IN[set];
+  if(e){ e.value=''; e.focus(); }
+  if(fn) fn('');
 }
 /* Made as tall as its text, every time that text changes. A textarea has no
    CSS for "as tall as you need"; the height has to be measured and set, and

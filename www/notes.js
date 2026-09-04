@@ -217,7 +217,7 @@ function vNotes(){
       /* ntSetQ() calls render(), and lnGrowAll() runs there, so this one needs
          no lnGrow of its own. No cross today: it is the shape this screen was
          drawn with, and searchBox() is where one would be given. */
-      ? searchBox('nt', t('notes.search'), IN('ntSetQ'), ntQ)
+      ? searchBox('nt', t('notes.search'), 'ntSetQ', ntQ)
       : '<div class="note" style="margin-bottom:12px">'+t('notes.note')+'</div>')+
     (found.length
       ? '<div class="ntlist">'+rows+'</div>'

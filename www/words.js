@@ -239,7 +239,7 @@ function vWords(){
     /* The cross is always in the page and hidden until there is something to
        clear: typing repaints the list, not the header, so one conjured up by
        the query would not appear until the screen was left and come back to. */
-    searchBox('w', t('words.search'), IN('wordsSetQ'), q, 'clearQ')+
+    searchBox('w', t('words.search'), 'wordsSetQ', q)+
     /* One button, not a row of twelve. A part of speech is a CHOICE and a
        row of them is a scroll: the one you want is off the side about half
        the time, and adding a thirteenth made it worse.
@@ -302,12 +302,6 @@ function wordsPaint(){
 function wordsSetQ(v){ q=v; lnGrow('w-q'); wordsPaint(); }
 /* Clearing leaves the cursor where it was, because clearing a search is
    nearly always the first half of typing a different one. */
-function clearQ(){
-  var e=document.getElementById('w-q');
-  q=''; if(e){ e.value=''; e.focus(); }
-  lnGrow('w-q');
-  wordsPaint();
-}
 /* What the list is filtered to, as a word. */
 function wFilLab(){
   var fs=wFilters(), i;
