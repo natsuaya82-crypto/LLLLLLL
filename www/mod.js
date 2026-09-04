@@ -344,10 +344,12 @@ function vAdmin(){
    exception to that rule already in the checker is one more than it wants. */
 function adminDoor(){
   return '<div class="view">'+navTop('')+'<div class="body">'+
-    '<div class="field"><input id="admin-pw" type="password" '+
-      'value="'+esc(ADMIN_PW)+'" placeholder="'+esc(t('admin.pw'))+'" '+
-      'autocomplete="current-password" autocapitalize="none" autocorrect="off" '+
-      'spellcheck="false"' + IN('adminSet', ['pw']) + '></div>'+
+    /* The same password field as the other four, and the eye with it. It was
+       written out here in full, which is how a change to what a password
+       field IS reaches four of the five. obPwField() is the one place
+       (www/onboard.js). */
+    obPwField('admin-pw', ADMIN_PW, 'admin.pw',
+              'current-password', IN('adminSet', ['pw']))+
     (ADMIN_ERR? '<div class="obmsg">'+esc(ADMIN_ERR)+'</div>' : '')+
     '<button class="btn ghost" style="margin-top:18px"' + DO('adminGo') +
       (ADMIN_BUSY? ' disabled':'') + '>'+
