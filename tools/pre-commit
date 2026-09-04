@@ -58,6 +58,25 @@ if git diff --cached --name-only | grep -q '^www/'; then
   done
 fi
 
+# A second box costs nothing to make and answers to nothing. A new .md is
+# taken by git, looked at by no check, and read by nobody -- while the reader
+# who needed it is on the page that was already there. `docs/OWNER-TODO.md`
+# was made that way on 2026-09-04, and the same list had been sitting in
+# `docs/STATE.md` § 4 since August.
+#
+# `docs-check` is in the gate's FAST list, so the loop above already runs it
+# on a commit that touched `www/`. This is for the other commit -- the one
+# that touches documents and nothing else, which is exactly the commit that
+# makes a second box.
+if git diff --cached --name-only | grep -q '\.md$'; then
+  echo 'docs: checking every document under docs/ is one somebody is sent to...'
+  node tools/docs-check.mjs >/dev/null || {
+    echo ''
+    node tools/docs-check.mjs
+    exit 1
+  }
+fi
+
 # The screen files are the ones that can carry untranslated text; the ten
 # language files and the font writer cannot, so a commit that only touches
 # those does not need the two-minute walk.

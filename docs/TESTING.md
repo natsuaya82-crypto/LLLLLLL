@@ -42,6 +42,39 @@ as one line; the gate's `FAST` is those five plus `assets` `es5`
 **that check alone**, watch it go red, take the bug out. The other thirty-four
 have nothing to say about it.
 
+### What stops a second box: `npm run docs`
+
+**A document nobody is sent to is worse than no document**, because the thing
+it says is now said in two places and only one of them is read. On 2026-09-04 an
+`OWNER-TODO.md` was created for the things only the owner can do — which
+`docs/STATE.md` § 4 had held since August, as a table naming each one and who
+does it. Two boxes for one thing, and the older one is the one every session
+opens.
+
+`tools/docs-check.mjs` is `assets-check` pointed at the reading map instead of
+the app. There, `index.html` is the only thing that can load a script, so a
+`.js` nothing loads never runs. Here a session is handed `CLAUDE.md`,
+`README.md` and `docs/STATE.md` and reads outward, so a document none of the
+three reaches — directly, or through a document they do reach — is a document
+nobody opens.
+
+It looks both ways, because both have already happened:
+
+- a document under `docs/` that nothing reaches
+- a `docs/….md` a reachable document NAMES that is not there, which sends a
+  session looking for a page nobody wrote
+
+`docs/reports/` and `docs/scope/` are not in it. Those are what a session said
+on a day, like `docs/CHANGELOG.md` — written once, pointed at by nothing
+afterwards on purpose. Holding them to a map they were never on would make
+this fire on every tidy-up, and a check that fires on nothing anybody must act
+on is a check that gets skipped.
+
+`tools/docs-baseline.txt` holds what was already lost the day it was written.
+**A NEW one fails. Taking a line out is progress and needs nobody**, and a
+line that is no longer true fails too — a baseline that outlives what it
+allowed is a hole the next one falls through.
+
 ### Who runs it, when more than one of you is in the tree
 
 The three rules above say *you* run the gate once before pushing.
@@ -59,11 +92,13 @@ there are not. The thing forbidden either way is the same: proving one green
 twice. Ten minutes multiplied by three sessions is that, three times over, and
 the third run is not more true than the first.
 
-`tools/pre-commit` runs **seven** of the nine browserless checks — `assets`
-`es5` `dead` `import` `sides` `face` `box` — plus `i18n` when a screen file
-changed. `grammar-engine` and `store` are in the gate and **not** in the hook.
-**It is not the gate.** CI runs three of the thirty-five, so a green tick on a
-push is not the gate either.
+`tools/pre-commit` runs **the whole browserless group** when a commit touches
+`www/` — it reads the names out of `FAST` in `tools/gate.mjs` rather than
+keeping its own copy, so a check added to the gate is in the hook the same day
+— plus `i18n` when a screen file changed, and `docs` whenever a commit touches
+any `.md`. That last one has its own line because the commit that makes a
+second box touches no code at all. **It is not the gate.** CI runs three of
+them, so a green tick on a push is not the gate either.
 
 ### What stops a red master: `tools/pre-push`
 
@@ -110,6 +145,7 @@ Nine that need no browser:
 | check | holds |
 |---|---|
 | `assets` | every `.js` is in `index.html` and tracked by git; every `.swift` is in the Xcode Sources phase |
+| `docs` | every document under `docs/` is one a reader is sent to, and every `docs/….md` the map names exists |
 | `es5` | nothing under `www/` uses anything WKWebView on an old iPhone lacks, and every file parses |
 | `grammar-engine` | the grammar engine's own files, without a browser |
 | `dead` | nothing unreached; nothing called that is not something; `CAN` has nothing spare and nothing missing |

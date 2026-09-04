@@ -1,0 +1,21 @@
+# What was ALREADY lost the day tools/docs-check.mjs was written, 2026-09-04.
+# A NEW one fails. Taking a line OUT is progress and needs nobody -- either
+# the map learned to point at the document, or the document went.
+#
+# `orphan <path>`               nothing reaches it from CLAUDE.md, README.md
+#                               or docs/STATE.md.
+# `dangling <doc> -> <path>`    <doc> sends a reader to a page that is not
+#                               there.
+#
+# Three documents nobody is sent to, and one page two documents promise and
+# nobody wrote. Not fixed here on purpose: which map each belongs on, whether
+# `docs/ONE.md` should be written or the two sentences taken out, and whether
+# a handover from a week ago is still worth a page are the owner's, not a
+# check's.
+
+orphan docs/HANDOVER-2026-08-28-2.md
+orphan docs/PROMPTFILTER.md
+orphan docs/SCOPE-yaa.md
+
+dangling docs/STATE.md -> docs/ONE.md
+dangling docs/FEATURE_RULES.md -> docs/ONE.md
