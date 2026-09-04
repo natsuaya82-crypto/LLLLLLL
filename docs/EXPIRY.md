@@ -8,7 +8,8 @@ asks for them* ── に照らして、いまのアプリを全部見た結果�
 **元は調べただけの一覧で、一行も直していませんでした。**
 `www/` `ios/` `supabase/` `.github/` `tools/` を読んだものです。
 
-**2026-09-04、`claude/keep3` が 3-a・3-b・4番を引き取りました。**
+**2026-09-04、`claude/keep3` が 3-a・3-b を、`claude/keep4` が 4番を
+引き取りました。**
 直した項目には ✅ を、確かめたが直していない項目には ⚠️ を、
 オーナーのものは 🔒 を見出しに付けてあります。**印の意味は一つずつの節に
 書いてあります ── 「調べた」と「走らせて確かめた」と「直した」は別の文です。**
@@ -114,7 +115,7 @@ kb に `"null"` が入った荷物で `bkOK()` が `false` になることを確
 CLAUDE.md は「A migration **copies** and never removes what it read」と
 言っています。次の二つは消していました。**どちらも直っています。**
 
-### 3-a. ✅ 取り込んだ発音が消え、次の起動で推測に置き換わる ── 直った
+### 3-a. ✅⚠️ 取り込んだ発音が消え、次の起動で推測に置き換わる ── 扉が二つあり、一つはまだ開いている
 
 **何が、どういうときに消えるか。** CSV から取り込んだ単語の発音
 （`w.ph`）が消えます。次に起動したとき、綴りからの**推測**が代わりに
@@ -145,6 +146,61 @@ CLAUDE.md は「A migration **copies** and never removes what it read」と
 `"k a n o"` は `phGuess()` が見出し語の綴りから作った推測です。
 **無くなるのではなく、その人が入れたものに見える別の答えに置き換わります。**
 `migrate-check` がこの項目を持っています。**実機では押していません。**
+
+### 3-a-2. ⚠️ 同じことが、単語シートの保存でも起きる ── 確かめた。直していない
+
+**`claude/keep3`、2026-09-04。`www/wordsheet.js` は `claude/pop` のものなので、
+一行も触っていません。**リーダー待ちです。
+
+**3-a は「移行が消す」という一件でしたが、同じことをする道がもう一本あります。
+こちらは移行ではなく、人がボタンを押したときです。**
+
+**何が、どういうときに消えるか。** 取り込んだ単語を単語シートで開いて
+**保存を押すと、その人が表に打った発音が消えます。**次の起動で、
+綴りからの推測が代わりに書き込まれます。**発音はその画面に一つも出ていません**
+── 意味を直しただけでも、何も直さずに保存を押しても起きます。
+
+**どこにあるか。**
+
+| | |
+|---|---|
+| `www/wordsheet.js:1533` | `wdWrite()` の `w.hw=hw; delete w.ph;` |
+| `www/core.js:1653-1659` | `migratePh()` が、`ph` が空なら `phGuess(w.hw)` を書き込む |
+| `www/boot.js:31` | `migratePh()` は**毎起動走ります**（済みの印が無い） |
+| `www/import.js:818` | 表の発音の列が `w.ph` に入る所 |
+
+**確かめたこと ── 本物のアプリを走らせています。**取り込んだ単語
+（`spv:1` を付けてあるので `migrateSp()` はこの単語に何もしません ──
+**3-a とは別の道であることの確かめ方です**）に発音 `/t sʰ ɑ ŋ/` を入れて:
+
+```
+取り込んだまま、起動しただけ        ph = "t sʰ ɑ ŋ"
+単語シートで保存を押した（landed = true）
+  そのすぐあと                     ph = ""
+  次の起動のあと                   ph = "k a n o"
+```
+
+`"k a n o"` は `phGuess("kano")` が見出し語の綴りから作った推測です。
+**無くなるのではなく、その人が入れたものに見える別の答えに置き換わります。**
+無くなれば気づけますが、これは気づけません。3-a と完全に同じ形です。
+
+**半分ずつ、別の人のファイルにあります。**
+
+- **消す半分** `www/wordsheet.js:1533` ── `claude/pop` のもの。
+- **推測を書く半分** `www/core.js` の `migratePh()` ── `claude/keep3` のものだが、
+  **こちらを変えるのは振る舞いの判断です。**コメントに書いてあるとおり
+  「音の表より前の単語に並びを持たせる」という仕事があります。
+  勝手に止めません。
+
+**もう一つ、見てほしいこと。** `wPh(w)`（`www/core.js:1597`）は、`ph` が空のとき
+**読む側で `phGuess()` を返します**。つまり画面に出すだけなら `migratePh()` が
+書き込まなくても同じものが出ます。書き込むことで増えるのは、
+**その推測が人の打った値と見分けられなくなり、バックアップとサーバーにまで
+上がる**ことだけです。これをどうするかはオーナーかリーダーの判断だと思います。
+
+**検査はまだ足していません** ── 直せないまま赤がゲートに残るためです。
+上の三行を出した台本は `docs/reports/keep3-ph2-2026-09-04.md` に丸ごと置いてあるので、
+直す人がそのまま `migrate-check` へ写せます。**実機では押していません。**
 
 ### 3-b. ✅ 古い形の文字が持っていた `key` が、移し替えられずに消える ── 直った
 
@@ -187,7 +243,7 @@ www/*.js`）。だから一度消えると、iPhone からも、バックアッ�
 
 ---
 
-## 4. ⚠️ 文法のスライスが無い言語に、空の `{}` が書かれる ── 確かめた。直していない
+## 4. ✅ 文法のスライスが無い言語に、空の `{}` が書かれる ── 直った
 
 **何が、どういうときに消えるか。** 直接は何も消えません。
 **「無い」が「有る」に変わる**ので、そのあと
@@ -213,60 +269,61 @@ is for」が効かなくなる、という形です。
 
 **直す大きさ:** 小。
 
-### ⚠️ 走らせて確かめました。直していません ── 直す一行が territory の外です
+### ✅ 直りました ── `claude/keep4`、2026-09-04
 
-`claude/keep3`、2026-09-04。**`www/phases.js` は `claude/keep3` に渡されて
-いないので、一行も触っていません。**リーダー待ちです。
-
-**確かめかた。** `migrateGramLang()`（`www/phases.js:98-125`）を、
-`www/grammar.js` の `ORDERS` と `GPOS_DEF` ごとそのまま Node に取り出して
-走らせました。文法の質問に一度も答えていない iPhone（`SET` が空）で:
-
-```
-before  lingua.LA.phases = null
-after   lingua.LA.phases = "{}"
-```
-
-**そして、それが穴埋めを止めることも走らせて確かめました。**
-`bkSound()` を `www/backup.js:68-90` からそのまま取り出して:
-
-```
-その言語が phases を一度も書いていない  bkSound('phases', null) = false
-migrateGramLang が {} を押したあと      bkSound('phases', '{}')  = true
-```
-
-`bkTake()`（`www/backup.js:266-277`）は **true と答えたスライスを飛ばします**
-── 「その場にあるものを上書きしない」が復元の規則だからです。だから
-`{}` が押されたあとは、バックアップファイルからも他の iPhone からも、
-その言語の文法は二度と埋まりません。
-`docs/DATA_SAFETY.md`「A slice the app has never written is **absent**, and
-absent is what a restore is for」が効かなくなる、という形です。
-
-**電波があれば戻ります**（`syMerge()` は両側を足すので）。戻らないのは、
-電波が無い・アカウントが無い iPhone です。
-
-**直す一行（提案。`www/phases.js` を持っている人へ）。**
-`localStorage.setItem` の直前に一行:
+`www/phases.js` の `migrateGramLang()` に、`localStorage.setItem` の直前の
+一行（とその上のコメント三行）だけです。**写す条件は一文字も変えていません。**
 
 ```js
-      /* 写すものが何も無かった言語は、前も無く、後も無い。
-         「無い」と「空」は別の状態（CLAUDE.md § Data）。 */
-      if(raw===null && o.order===undefined && o.gpos===undefined) continue;
+    /* Nothing was there and nothing was copied. "Empty" and ABSENT are two
+       states, the way empty and broken are: an absent slice is what a restore
+       fills in, and one written here is a slice bkTake() and netLangBack1()
+       step over for good. So this language keeps having none. */
+    if(raw===null && o.order===undefined && o.gpos===undefined) continue;
 ```
 
-**この一行を入れて四通り走らせました。止まるのは一つだけで、写す道は三つとも
-一文字も変わりません:**
+**まず本物のアプリで確かめ直しました。**`claude/keep3` の確かめは
+`migrateGramLang()` を Node に取り出して `SET` を空にしたもので、
+**実アプリの `SET` は空になりません** ── `setDefaults()`（`www/core.js:220`）が
+`order:'SOV'` を入れるからです。本物のアプリ（言語二つ、二回起動）では:
 
-| 置いた状態 | いま | 一行を入れた後 |
-|---|---|---|
-| phases が無い・写すものも無い | `"{}"` | **書かれない** |
-| phases が無い・語順を写す | `{"order":"SOV"}` | `{"order":"SOV"}` |
-| phases が無い・位置を写す | `{"gpos":{"adj":"before"}}` | `{"gpos":{"adj":"before"}}` |
-| phases がもうある | `{"done":{},"order":"SOV"}` | `{"done":{},"order":"SOV"}` |
+| 置いた `lingua.set` | 書かれるもの |
+|---|---|
+| 無し、または `{"theme":"dark"}` | `{"order":"SOV"}` |
+| `{"order":"ZZZ"}` ── 六つのどれでもない | **`{}`** |
+| `{"order":"VSO","gpos":{"adj":"before"}}` | `{"order":"VSO","gpos":{"adj":"before"}}` |
 
-**検査はまだ足していません。**`migrate-check` に足すと、直せないまま赤が
-一本ゲートに残ります。`www/phases.js` を持つ人か、この一行の許しが出たら、
-同じコミットで足します。**実機では押していません。**
+**`{}` は実在します。**出るのは「写せるものが一つも無かったとき」だけで、
+六つのどれでもない `order` はそのときの姿です ── 設定ファイルは PC の
+バックアップから編集できると `www/core.js:411-418` 自身が書いています。
+
+**赤で見たこと。**`migrate-check` に項目を足し、直す前に走らせて**赤三行**:
+
+```
+a language with nothing to copy is left with no phases slice: got "{}", wanted null
+and so is the language that is not the open one:              got "{}", wanted null
+absent is still absent, so a restore can still fill it in:    got true, wanted false
+```
+
+三行目は `www/backup.js` の `bkSound()` にそのまま訊いたものです。`true` は
+「ここに何かある」で、それが `bkTake()`（`www/backup.js:274`）と
+`netLangBack1()`（`www/net.js:1168`）にそのスライスを飛ばさせます。
+
+**写す道は赤の時から緑のままで、直した後も緑です。**`migrate-check` が持って
+いる項目は九つ ── 上の三つに加えて、語順を写す・開いていない言語にも写す・
+位置だけを写す・もう答えている言語は自分の答えを保つ・その中身も残る・
+壊れているスライスは触らない。**実機では押していません。**
+
+**見た目は変わっていません。**画面も、押せるものも、一つも動いていません。
+
+### ⚠️ 隣にあって、直していないこと ── リーダーへ
+
+**既定のままの iPhone には `{"order":"SOV"}` が書かれます。**これも
+「無い」を「有る」に変えるので、上と同じだけ `bkTake()` と
+`netLangBack1()` を止めます。ただし `SOV` は**その言語がずっと従っていた値**で、
+写すのはこの移行の仕事そのものです ── これを止めるかどうかは
+**「既定は人が答えたことになるか」という振る舞いの判断**で、
+`docs/FEATURE_RULES.md` § Deciding です。手を出していません。
 
 ---
 
@@ -399,14 +456,19 @@ OWNER 2026-09-03「検索した履歴もユーザーはいらんから5個くら
 
 **1番は誰にも渡っていません。**`claude/keep3` は触っていません。
 
-**4番は直す一行が `www/phases.js` にあり、`claude/keep3` の territory の
-外です。**走らせて確かめてあり、一行と、その一行を入れた四通りの結果が
-上に書いてあります。
+**3-a-2 は消す半分が `www/wordsheet.js`（`claude/pop`）にあります。**触っていません。
+推測を書く半分は `www/core.js` で `claude/keep3` のものですが、こちらを
+変えるのは振る舞いの判断なので手を出していません。
+
+**4番は `claude/keep4` が直しました**（2026-09-04）。本物のアプリで赤三行を
+見てから入れています。**既定の `SOV` が写される件は隣の判断で、手を出して
+いません** ── 4番の節の末尾に書いてあります。
 
 ## 確かめていないこと
 
 - **実機では一つも押していません。**`claude/keep3` が回したのは
-  `migrate-check` と `es5-check` の二本だけで、**全ゲートは回していません。**
+  `migrate-check` と `es5-check` の二本だけで、`claude/keep4` も同じ二本です。
+  **どちらも全ゲートは回していません。**
 - 3-a・3-b・4 のほかは、この一覧を書いたときのまま ── 読んだだけです。
 - `docs/CHANGELOG.md`（15042 行）と `docs/FEATURE_RULES.md`（4695 行）は
   全文を読んでいません。決定ログの当該項目と、`期限`／`retention`／

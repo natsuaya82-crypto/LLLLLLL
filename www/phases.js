@@ -93,8 +93,9 @@ function stRead(){
    language this does not reach.
 
    A write that fails leaves the mark unwritten, so the next launch tries the
-   whole thing again: every language it did reach already has an `order` and
-   is skipped. */
+   whole thing again, and it is the same walk twice over: a language it wrote
+   already has an `order` and is left alone, and a language it had nothing to
+   copy onto is passed over again for the same reason as the first time. */
 function migrateGramLang(){
   if(SET.gramLang) return;
   var id, key, raw, o, g, k, v, failed=false;
@@ -122,6 +123,11 @@ function migrateGramLang(){
          at all are the same three defaults, and the second invents less. */
       for(k in g) if(Object.prototype.hasOwnProperty.call(g, k)){ o.gpos=g; break; }
     }
+    /* Nothing was there and nothing was copied. "Empty" and ABSENT are two
+       states, the way empty and broken are: an absent slice is what a restore
+       fills in, and one written here is a slice bkTake() and netLangBack1()
+       step over for good. So this language keeps having none. */
+    if(raw===null && o.order===undefined && o.gpos===undefined) continue;
     try{ localStorage.setItem(key, JSON.stringify(o)); }catch(e){ failed=true; }
   }
   if(failed) return;
