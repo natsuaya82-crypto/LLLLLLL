@@ -218,6 +218,29 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### 増えた文字は消してよい ── リリース前のあいだだけ
+- Date: 2026-09-04
+- Area: 文字（`www/letters.js`）。増殖した分の後始末
+
+- Decision:
+
+  ```
+  だからリリース前の今は消していいから、描いてないからリリースしてから
+  確認してくれ、データがないから
+  ```
+
+- Reason: **リリース前で、増えた文字には誰も何も描いていない。**だから
+  消しても失われるものが無い。
+- Affected features: 文字の増殖（`docs/HANDOVER.md` 六章の 0）の後始末。
+  **`docs/DATA_SAFETY.md` の DELETE REVIEW は、この件については要らない。**
+- Affected data: 増殖した文字。**中身は空 ── 誰も描いていない。**
+- Affected docs: `docs/HANDOVER.md` 六章の 0 に書いた「勝手に消してはいけない」
+  は取り消し。同じコミットで消した。
+- Implementation status: 増殖そのものが未着手。
+- **有効期限つきの決定です。**理由が「いまはデータが無いから」なので、
+  **リリース後はこの決定は効きません。**そのときは人が描いた文字が混ざる
+  ので、同じ消し方をしてはいけません。
+
 ### キーボードの編集画面、一番下の ＋ を外す
 - Date: 2026-09-04
 - Area: キーボードの編集（`www/keyboard.js`）
