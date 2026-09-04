@@ -627,21 +627,18 @@ say(zero.after.rows === 0 && zero.after.note && dead.bad &&
     '0 件と訊けなかったは別の言葉 (' + JSON.stringify(zero.after.note) +
     ' / ' + JSON.stringify(dead.bad) + ')');
 
-/* ---- 13. お題のタグ ── タグとお題は一つのもの --------------------------
-   「お題はなってる／タグとお題一本化してってこと。」 OWNER 2026-09-04
-   （`docs/FEATURE_RULES.md` 決定ログ「お題のタグは、お題そのものが持っている
-   十言語から出す」）。
+/* ---- 13. お題のタグ ── #今日のお題 ------------------------------------
+   「#今日のお題だし そこに出せなんて頼んでないけど、ツイートの中だけど
+   タグは」「タグとお題一本化してってこと」「今日のお題は翻訳もタグもその人の
+   設定言語になるようにしてって頼んでる」 OWNER 2026-09-04.
 
-   **お題の文は既に読む人の設定言語で出ています。**サーバーの `prompt.says`
-   が十言語ぶんを持っているからです。**タグも、その同じ十言語から出します** ──
-   `www/i18n/` に新しい鍵を足すと、同じお題の言葉が二箇所に十言語ぶん在る
-   ことになり、その時点で二本です。
+   **タグは決まった一つの名前で、お題の文ではありません。**読む人の設定言語で
+   出ます ── 日本語の人には `#今日のお題`、英語の人にはその言語での言い方。
+   `day.tag` が十言語ぶんの一つの鍵です。
 
-   だからここで測るのは二つ:
-     タグの言葉が、読む人の言語で変わり、**お題の文そのもの**であること
-     日本語で書かれた投稿と英語で書かれた投稿が、**同じ一つのタグ**で
-     一緒に出てくること ── 集めるのは `prompt` の列で、本文の文字合わせでは
-     ありません（言語の数だけ割れるのはそれです）。 */
+   そして**同じ一つのタグ**なので、日本語で書かれた投稿と英語で書かれた投稿が
+   一緒に出てきます ── 集めるのは `prompt` の列で、本文の文字合わせでは
+   ありません（文字で集めると言語の数だけ割れます）。 */
 async function withDay(){
   await pg.evaluate(() => {
     window.__MODE = 'ok'; window.__ASK = []; window.__BYPR = 0;
@@ -655,16 +652,34 @@ async function withDay(){
 await withDay();
 const tags = await pg.evaluate(() => {
   var was = SET.ui, out = {}, f = (typeof dayTag === 'function') ? dayTag : null;
-  SET.ui = 'ja'; out.ja = f ? f(DAY.id) : '(dayTag が無い)';
-  SET.ui = 'en'; out.en = f ? f(DAY.id) : '(dayTag が無い)';
+  SET.ui = 'ja'; out.ja = f ? f() : '(dayTag が無い)';
+  SET.ui = 'en'; out.en = f ? f() : '(dayTag が無い)';
+  SET.ui = 'ko'; out.ko = f ? f() : '(dayTag が無い)';
   SET.ui = was;
   return out;
 });
-say(tags.ja === '#今日はめちゃくちゃ暑い。',
-    '日本語で読む人のタグは、お題の日本語そのもの (' + tags.ja + ')');
-say(tags.en === '#It is unbearably hot today.',
-    '英語で読む人のタグは、お題の英語そのもの (' + tags.en + ')');
-say(tags.ja !== tags.en, 'タグは読む人の言語で変わる ── 一つのタグ、十の言い方');
+say(tags.ja === '#今日のお題',
+    '日本語で読む人のタグは #今日のお題 (' + tags.ja + ')');
+say(tags.en !== tags.ja && tags.ko !== tags.ja && tags.en.charAt(0) === '#',
+    'タグは読む人の言語で変わる ── 一つのタグ、十の言い方 (' +
+    tags.en + ' / ' + tags.ko + ')');
+/* **お題の文ではありません。**ここが緑でないと、前の版に戻っています。 */
+say(tags.ja.indexOf('めちゃくちゃ') === -1 &&
+    tags.en.indexOf('unbearably') === -1,
+    'タグはお題の文ではない ── 決まった一つの名前 (' + tags.ja + ')');
+/* `#` は言語の側に無い ── 十箇所に書けば、十箇所目が全角になります。 */
+const hashOnce = await pg.evaluate(() => {
+  var was = SET.ui, out = [], i, ls = ['en','es','pt','fr','de','it','ru','zh','ko','ja'];
+  for (i = 0; i < ls.length; i++){
+    SET.ui = ls[i];
+    if (t('day.tag').indexOf('#') !== -1 || t('day.tag').indexOf('＃') !== -1)
+      out.push(ls[i]);
+  }
+  SET.ui = was;
+  return out;
+});
+say(hashOnce.length === 0,
+    '# は言葉の側に無い ── 付けるのは一箇所 (' + hashOnce.join(',') + ')');
 
 /* 二人が二つの言語で答える。片方は日本語、片方は英語、どちらもお題 7。 */
 const two = await pg.evaluate(() => {
@@ -703,47 +718,21 @@ say(gathered.ask.indexOf('prompt=eq.7') !== -1 &&
     gathered.ask.indexOf('body->>') === -1,
     'お題で集めるのは列 ── 本文の文字合わせではない (' + gathered.ask + ')');
 
-/* ---- 絞り込みの四つ目の答え -------------------------------------------
-   「おすすめ」「フォロー中」と星つきの言葉に並ぶ、四つ目です。**同じ一つの
-   問い**（いま何を見ているか）の答えなので、二つ目の仕組みは作りません ──
-   押す名前も `snsSetFil` のままです。 */
+/* ---- 絞り込みにタグは出しません ---------------------------------------
+   「そこに出せなんて頼んでないけど」 OWNER 2026-09-04。一度出して、決定で
+   外しました。**戻ってこないようにここで押さえます。** */
 await withDay();
-const row = await pg.evaluate(() => {
+const rows = await pg.evaluate(() => {
   window.route = 'filter'; NAV = [{ r:'feed' }, { r:'filter' }];
-  var h = vFilter(), e = document.createElement('div');
-  e.innerHTML = h;
+  var e = document.createElement('div');
+  e.innerHTML = vFilter();
   var bs = e.querySelectorAll('button.set'), i, out = [];
   for (i = 0; i < bs.length; i++)
-    out.push({ label: bs[i].textContent.replace(/\s+/g, ' ').trim(),
-               a: bs[i].getAttribute('data-a') || '',
-               name: bs[i].getAttribute('data-do') || '' });
+    out.push(bs[i].textContent.replace(/\s+/g, ' ').trim());
   return out;
 });
-const tagRow = row.filter(function(r){ return r.label.indexOf('#') === 0; })[0];
-say(!!tagRow, '絞り込みにお題の行がある (' +
-    row.map(function(r){ return r.label; }).join(' / ') + ')');
-say(!!tagRow && tagRow.name === 'snsSetFil',
-    'その行は絞り込みと同じ名前で押される ── 二つ目の仕組みではない (' +
-    (tagRow ? tagRow.name : '(無い)') + ')');
-
-/* 押すと、タイムラインがその日のお題の投稿だけになる。 */
-const feed = await pg.evaluate(() => new Promise(function(d){
-  window.__ASK = []; window.__BYPR = 0;
-  try{ snsSetFil('7'); }catch(e){}
-  setTimeout(function(){
-    var e = document.getElementById('app');
-    d({ pr: snsFil ? String(snsFil.pr || '') : '',
-        rows: snsFil && snsFil.r ? (snsFil.r.posts || []).length : -1,
-        top: (function(){ var b = e.querySelector('.navfil');
-                          return b ? b.textContent.trim() : ''; })(),
-        bypr: window.__BYPR });
-  }, 700);
-}));
-say(feed.pr === '7', '押すと絞り込みがその日のお題になる (' + feed.pr + ')');
-say(feed.rows === 2,
-    'タイムラインがそのお題の投稿だけになる (' + feed.rows + ' 件)');
-say(feed.top.indexOf('#') === 0,
-    '帯の角が、いま何を見ているかを言う (' + JSON.stringify(feed.top) + ')');
+say(!rows.filter(function(r){ return r.indexOf('#') === 0; }).length,
+    '絞り込みにタグの行は無い (' + rows.join(' / ') + ')');
 
 /* ---- 検索の一つの答えに、お題の投稿も入る -----------------------------
    「検索も#@投稿が一気に検索できるようにして」 OWNER 2026-09-04。
@@ -758,14 +747,14 @@ const hash = await pg.evaluate(() => new Promise(function(d){
 }));
 say(hash.n === 2 && hash.ids.join(',') === 'sv-en,sv-ja',
     '# だけ打つと、その日のお題の投稿が出る (' + hash.ids.join(',') + ')');
-const part2 = await pg.evaluate(() => new Promise(function(d){
+const whole = await pg.evaluate(() => new Promise(function(d){
   SET.ui = 'ja';
-  snsFind('#めちゃくちゃ', function(r){
+  snsFind('#今日のお題', function(r){
     d((r.posts || []).map(function(p){ return p.sid; }).sort());
   });
 }));
-say(part2.join(',') === 'sv-en,sv-ja',
-    'お題の言葉の途中でも当たる (' + part2.join(',') + ')');
+say(whole.join(',') === 'sv-en,sv-ja',
+    'タグをそのまま打っても出る (' + whole.join(',') + ')');
 const nohash = await pg.evaluate(() => new Promise(function(d){
   SET.ui = 'ja';
   snsFind('#ぜんぜんちがう', function(r){
@@ -773,15 +762,14 @@ const nohash = await pg.evaluate(() => new Promise(function(d){
   });
 }));
 say(nohash.length === 0,
-    'お題でない言葉の # では、お題の投稿は出ない (' + nohash.join(',') + ')');
-/* そして `#` はお題であって、人でも投稿の本文でもありません ── 同じ言葉が
-   二つの答えを持つと、どちらが出たのか誰にも分からなくなります（10番）。 */
+    'タグでない言葉の # では、お題の投稿は出ない (' + nohash.join(',') + ')');
+/* 同じ投稿が二度並ばない ── お題にも答えていて言葉にも当たる投稿は一つ。 */
 const both = await pg.evaluate(() => new Promise(function(d){
   SET.ui = 'ja'; window.__POSTS.push({ id:'sv-txt', author:'u',
-    body:{ ln:'kanuko', mn:'#今日はめちゃくちゃ暑い。' }, prompt:null,
+    body:{ ln:'kanuko', mn:'#今日のお題' }, prompt:null,
     reply_to:null, created_at:'2026-08-23T04:00:00Z', hidden_at:null,
     author_out:false, likes:0, boosts:0, replies:0, i_like:false, i_boost:false });
-  snsFind('#今日はめちゃくちゃ暑い。', function(r){
+  snsFind('#今日のお題', function(r){
     var ids = (r.posts || []).map(function(p){ return p.sid; }).sort();
     d({ ids:ids, twice: ids.length !== ids.filter(function(v, i){
           return ids.indexOf(v) === i; }).length });

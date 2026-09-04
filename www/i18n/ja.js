@@ -1071,6 +1071,7 @@ defLang('ja', (function(){
       /* the day's sentence. The sentence itself is not here: it comes
          from the server, one row a day, in every interface language. */
       "day.k"  : "お題",
+      "day.tag": "今日のお題",
       "day.ask"          : "自分の言語で",
       /* The world's names for the twelve months and the seven days. What
          the slot is CALLED is the world's; what goes in it is the
