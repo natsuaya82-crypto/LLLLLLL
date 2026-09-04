@@ -2303,6 +2303,73 @@ function netPostById(id, ok, bad){
          '&id=eq.'+encodeURIComponent(String(id||''))+'&limit=1',
     function(d){ ok((d && d.length)? netRow(d[0]) : null); }, bad);
 }
+/* THE ANSWERS TO POSTS THAT ARE ON THE SCREEN.
+   -------------------------------------------------------------------------
+   「ここ更新ないから見れないし」「他の人の画面でも更新できるようにしたい」
+   OWNER 2026-09-04. A thread had no way to ask again: the pull answered on
+   three routes and this was not one of them, and there was nothing here for
+   it to have asked.
+
+   IT TAKES THE POSTS THAT ARE DRAWN, not one. A thread shows a post and
+   everything under it, so asking about the top one alone would refresh one
+   level of a page that draws all of them. `reply_to=in.(...)` is one request
+   for the whole of what is on the screen.
+
+   BY THE SERVER'S NAME FOR EACH. `reply_to` holds where a post lives on the
+   server, which is `sid` for something this account wrote here and the id
+   itself for anything that arrived (netRow sets both) -- www/post.js
+   § postIs. A post that has never gone up has no name there to be answered
+   under, and the caller leaves it out rather than sending a local uuid the
+   server has never seen.
+
+   Oldest first, because a conversation reads down. `post_read` is
+   `using (true)`, so this needs no account. */
+function netReplies(ids, ok, bad){
+  var list=[], i, s;
+  for(i=0;i<(ids||[]).length;i++){
+    s=String(ids[i]||'');
+    if(s && list.indexOf(s)<0) list.push(s);
+  }
+  if(!list.length){ ok([]); return; }
+  netGet('/rest/v1/post_seen?select=id,author,created_at,reply_to,body,hidden_at,author_out'+
+         ',likes,boosts,replies,i_like,i_boost'+
+         '&reply_to=in.('+list.join(',')+')'+
+         '&order=created_at.asc&limit='+NET_PAGE,
+    function(d){
+      var out=[], j;
+      for(j=0;j<(d||[]).length;j++) out.push(netRow(d[j]));
+      ok(out);
+    }, bad);
+}
+/* WHAT ONE PERSON HAS WRITTEN. The other half of the same sentence: their
+   page drew whatever this account happened to be holding of theirs, which is
+   whatever the timeline had swept up, and there was no way to ask for the
+   rest or for anything newer. 「他の人の画面でも更新できるようにしたい」
+
+   By HANDLE, because that is what a page is reached by and what every other
+   request here takes; netWhoseId() turns it into the uuid `author` is keyed
+   on, once, rather than in the screen. Your own handle answers with your own
+   uid without a request, which is what that function already does for
+   netFollowing().
+
+   Newest first and keyset on `created_at`, the same as netFindPosts(): a
+   page gains rows while somebody is reading it, and an offset would hand
+   them a post twice or step over one. */
+function netPostsBy(handle, ok, bad, more){
+  netWhoseId(handle, function(uid){
+    netGet('/rest/v1/post_seen?select=id,author,created_at,reply_to,body,hidden_at,author_out'+
+           ',likes,boosts,replies,i_like,i_boost'+
+           '&author=eq.'+encodeURIComponent(uid)+
+           '&order=created_at.desc'+
+           (more? '&created_at=lt.'+encodeURIComponent(String(more)) : '')+
+           '&limit='+NET_PAGE,
+      function(d){
+        var out=[], i;
+        for(i=0;i<(d||[]).length;i++) out.push(netRow(d[i]));
+        ok(out);
+      }, bad);
+  }, function(){ ok(null); });
+}
 function netFindPosts(q, ok, bad, more){
   var like=netLike(q);
   /* `more` is the `at` of the last post already held. Keyset and not an
@@ -2321,38 +2388,15 @@ function netFindPosts(q, ok, bad, more){
       ok(out);
     }, bad);
 }
-/* EVERY ANSWER TO ONE DAY'S PROMPT, AND IT IS ASKED OF THE COLUMN.
-   -------------------------------------------------------------------------
-   「タグとお題一本化してってこと。」 OWNER 2026-09-04. The tag on a post is
-   the prompt it answers, so what a tag COLLECTS is every post carrying that
-   prompt -- and `prompt` is a column with an index behind it (schema.sql
-   § asked, OWNER DECISION 2026-08-23 #6 「繋がりはハッシュタグではなく列」).
+/* The request that asked for one day's answers by the prompt's id is GONE.
+   「しかも何で検索が今日しか出ないの？ありえないだろ」 OWNER 2026-09-04.
 
-   NOT netFindPosts(). That one matches `body->>ln/mn/lname` as text, and a
-   prompt asked for as text splits into as many answers as there are
-   languages -- which is the one thing this decision exists to prevent: a
-   post written in Japanese and a post written in English answer the same
-   day's sentence and belong in the same list. The tag is one tag with ten
-   ways of saying it, not ten tags.
-
-   Same shape and same reader as netFindPosts() and netFeed(): `post_seen`
-   and netRow(), so what comes back is a post like any other. `more` is the
-   `at` of the last row already held, keyset for the reason every other list
-   here is. */
-function netFindPrompt(id, ok, bad, more){
-  var pr=String(id||'');
-  if(!pr){ ok([]); return; }
-  netGet('/rest/v1/post_seen?select=id,author,created_at,reply_to,body,hidden_at,author_out'+
-         '&prompt=eq.'+encodeURIComponent(pr)+
-         '&order=created_at.desc'+
-         (more? '&created_at=lt.'+encodeURIComponent(String(more)) : '')+
-         '&limit='+NET_PAGE,
-    function(d){
-      var out=[], i;
-      for(i=0;i<(d||[]).length;i++) out.push(netRow(d[i]));
-      ok(out);
-    }, bad);
-}
+   It was the second half of a tag mechanism that could only ever name
+   TODAY'S prompt -- the phone holds one row, the newest -- so a tag search
+   found what had been written since midnight and nothing before it.
+   A tag is characters in what somebody wrote now (www/sns.js § tagHTML), and
+   netFindPosts() above already matches `body->>ln` and `body->>mn` on every
+   day there is. One question, one request. */
 /* ---- what somebody looks for, kept -------------------------------------
 
    A starred search. 「SNSは全部サーバー」 OWNER -- what a person keeps is

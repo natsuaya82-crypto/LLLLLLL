@@ -181,7 +181,6 @@ defLang('zh', (function(){
       "kb.dir.down"               : "下",
       "kb.dir.left"               : "左",
       "kb.empty"               : "空",
-      "kb.row.add"               : "添加一行",
       "kb.row.ins" : "在此添加一行",
       "kb.row.up" : "在此行上方",
       "kb.row.down" : "在此行下方",
@@ -1160,7 +1159,6 @@ defLang('zh', (function(){
       /* the day's sentence. The sentence itself is not here: it comes
          from the server, one row a day, in every interface language. */
       "day.k"  : "今日",
-      "day.tag": "今日题目",
       "day.ask"          : "用你自己的语言？",
       /* The world's names for the twelve months and the seven days. What
          the slot is CALLED is the world's; what goes in it is the

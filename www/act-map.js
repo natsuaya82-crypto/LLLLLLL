@@ -99,7 +99,6 @@ act('keepPress', keepPress);
 act('goTab', goTab);
 act('kbAddLay', kbAddLay);
 act('kbDropLay', kbDropLay);
-act('kbAddRowNew', kbAddRowNew);
 act('kbWobEnd', kbWobEnd);
 act('kbDelKey', kbDelKey);
 act('kbHeadRow', kbHeadRow);
@@ -205,6 +204,9 @@ act('kbSelOn', kbSelOn);
 act('kbSelOff', kbSelOff);
 act('kbSelTap', kbSelTap);
 act('kbSelDel', kbSelDel);
+/* A tag in what somebody wrote. 「タップしたらタグの検索になる」 OWNER
+   2026-09-04 -- it is the ordinary search with those characters in the box. */
+act('snsTagGo', snsTagGo);
 act('snsSetFil', snsSetFil);
 act('snsSetSort', snsSetSort);
 act('snsSaveQ', snsSaveQ);

@@ -178,7 +178,6 @@ defLang('ru', (function(){
       "kb.dir.down"               : "Вниз",
       "kb.dir.left"               : "Влево",
       "kb.empty"               : "Пусто",
-      "kb.row.add"               : "Добавить ряд",
       "kb.row.ins" : "Добавить строку здесь",
       "kb.row.up" : "Над этой строкой",
       "kb.row.down" : "Под этой строкой",
@@ -1169,7 +1168,6 @@ defLang('ru', (function(){
       /* the day's sentence. The sentence itself is not here: it comes
          from the server, one row a day, in every interface language. */
       "day.k"  : "Сегодня",
-      "day.tag": "темадня",
       "day.ask"          : "На вашем языке?",
       /* The world's names for the twelve months and the seven days. What
          the slot is CALLED is the world's; what goes in it is the

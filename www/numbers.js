@@ -96,7 +96,9 @@ function numTopUp(){
   var v, n=numBase(), made=0;
   for(v=0;v<n;v++){
     if(numByVal(v)) continue;
-    ltNew({val:v});
+    /* By VALUE, because that is which slot it is -- ltSlotId() in
+       www/letters.js, and the reason is written there. */
+    ltNew({val:v, id:ltSlotIdFree('#'+v)});
     made++;
   }
   if(made) saveLetters();

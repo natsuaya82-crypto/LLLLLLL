@@ -180,7 +180,6 @@ defLang('pt', (function(){
       "kb.dir.down"               : "Baixo",
       "kb.dir.left"               : "Esquerda",
       "kb.empty"               : "Vazio",
-      "kb.row.add"               : "Adicionar uma linha",
       "kb.row.ins" : "Adicionar uma linha aqui",
       "kb.row.up" : "Acima desta linha",
       "kb.row.down" : "Abaixo desta linha",
@@ -1162,7 +1161,6 @@ defLang('pt', (function(){
       /* the day's sentence. The sentence itself is not here: it comes
          from the server, one row a day, in every interface language. */
       "day.k"  : "Hoje",
-      "day.tag": "temadehoje",
       "day.ask"          : "Na sua própria língua?",
       /* The world's names for the twelve months and the seven days. What
          the slot is CALLED is the world's; what goes in it is the

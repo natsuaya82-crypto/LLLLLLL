@@ -75,7 +75,6 @@ defLang('en', (function(){
       "kb.dir.down"               : "Down",
       "kb.dir.left"               : "Left",
       "kb.empty"               : "Empty",
-      "kb.row.add"               : "Add a row",
       "kb.row.ins" : "Add a row here",
       "kb.row.up" : "Above this row",
       "kb.row.down" : "Below this row",
@@ -1072,7 +1071,6 @@ defLang('en', (function(){
       /* the day's sentence. The sentence itself is not here: it comes
          from the server, one row a day, in every interface language. */
       'day.k'  : 'Today',
-      'day.tag': 'todaysprompt',
       'day.ask'         : 'In your own language?',
       /* The world's names for the twelve months and the seven days. What
          the slot is CALLED is the world's; what goes in it is the

@@ -181,7 +181,12 @@ export function seed(){
             ink:{g:[[{pts:[[150,650],[400,150],[650,650]]}],
                     [{pts:[[200,200],[600,200]]}, {pts:[[400,200],[400,640]]}]],
                  s:[0, 1, 0, ' ', 1, 0, 1, 1, 0]},
-            mn:'the sea has gone quiet', ui:'en',
+            /* AND A TAG IN WHAT SOMEBODY WROTE. 「タグは本文中に。」 OWNER
+               2026-09-04 -- a tag is characters, not a row the app adds, so
+               the only way one is on a screen is that a post carries one.
+               Without this the blue word is in no walk and nothing presses
+               it. tagHTML() in www/sns.js. */
+            mn:'the sea has gone quiet #\u4eca\u65e5\u306e\u304a\u984c', ui:'en',
             /* And it runs down the page, columns right to left. A post
                carries the direction it was written in for the same reason it
                carries its shapes: this phone's language runs left to right,
@@ -761,6 +766,51 @@ export function halfDone(){
     ['the profile, likes', () => { pfTab='li'; const p=postById('p2'); p.lime=1; p.li=1;
         window.route='profile'; NAV=[{r:'profile'}];
         const h=vProfile(); delete p.lime; p.li=0; pfTab='posts'; return h; }],
+    /* ---- the timeline read by somebody who did not write it -------------
+       Three states off the owner's phone on 2026-09-04. None of them is a
+       route: each is a fact about what has arrived, and each was the one
+       nobody had photographed. tools/tl-check.mjs holds them. */
+    /* A post of yours, gone up, answered by somebody else. The answer points
+       at the SERVER's name for your post -- the only name the phone that
+       wrote it ever saw -- and your phone still calls that post by its own.
+       「返事したはずなのにスレッドに来ない」 */
+    ['a thread with an answer that came back from the server', () => {
+        const mine = postById('p1'); mine.sid = 'SRV-1';
+        POSTS.push({ id:'SRV-9', sid:'SRV-9', at:Date.now(), lang:langId,
+                     lname:'Vethi', ln:'qel tir', mn:'and the rest of it',
+                     ui:'en', who:'Iri', hd:'iri', mine:false, av:{ch:'\u0416'},
+                     to:'SRV-1', toh:'aya' });
+        window.route='thread'; NAV=[{r:'thread', a:'p1'}];
+        const h = vThread(); POSTS.pop(); delete mine.sid; return h; }],
+    /* YOUR OWN ROW, on somebody else's followers list, on a phone holding no
+       post of yours to take a name off. 「ここも？になるの謎だし」 */
+    ['your own row on somebody else\u2019s followers list', () => {
+        const was = POSTS.slice(); POSTS.length = 0;
+        FOL_HAVE['ers:iri'] = [meHandle(), 'veth']; FOL_ASKED['ers:iri'] = 1;
+        window.route='follows'; NAV=[{r:'follows', a:'ers:iri'}];
+        const h = vFollows();
+        delete FOL_HAVE['ers:iri']; delete FOL_ASKED['ers:iri'];
+        POSTS.push.apply(POSTS, was); return h; }],
+    /* And a profile whose two counts nobody has answered for yet, which is
+       what stands there instead of a 0 that jumps.
+       「0 と出て1秒後に1に変わる、をしない」 */
+    ['a profile before the counts have arrived', () => {
+        const fo = ME.fo, fr = ME.fr; delete ME.fo; delete ME.fr;
+        window.route='profile'; NAV=[{r:'profile'}];
+        const h = vProfile(); ME.fo = fo; ME.fr = fr; return h; }],
+    /* ---- a tag, and what pressing one gives ------------------------------
+       「タグは青く光るからタップしたらタグの検索になる。」 OWNER 2026-09-04.
+       Two faces, because the fault is nearly always in the one nobody
+       photographed: the word sitting in what somebody wrote, and the answer
+       that comes back when a thumb lands on it. */
+    ['a tag in what somebody wrote', () => {
+        window.route='thread'; NAV=[{r:'thread', a:'p2'}];
+        return vThread(); }],
+    ['and the answer to pressing one', () => {
+        snsQ = '#\u4eca\u65e5\u306e\u304a\u984c';
+        snsHits = { q:snsQ, who:[], posts:POSTS.slice(0, 2) };
+        window.route='explore'; NAV=[{r:'explore'}];
+        const h = vExplore(); snsQ = ''; snsHits = null; return h; }],
     /* The three things an author can do to their own post. The menu hangs off
        the ... , inside the post, so nothing renders it unless one is open --
        and what opens it is PMENU, which is where you are standing rather than
@@ -2105,6 +2155,29 @@ export function halfDone(){
     ['the alphabet, searched', () => {
        ltQ = 'k';
        window.route = 'ltset'; NAV = [{ r:'ltset', a:'alpha' }];
-       const h = vLtset(); ltQ = ''; return h; }]
+       const h = vLtset(); ltQ = ''; return h; }],
+    /* AN ALPHABET THAT DOUBLED, ARRIVED AT.
+       「あと、キーボード足したりしてたら文字増殖してるんだけど何で？」OWNER
+       2026-09-04. Thirty-eight slots made twice under two sets of ids, which
+       is what the owner is holding: a a, b b, c c, every reading twice.
+
+       It goes through ltStart() rather than showing the seventy-six, because
+       ltStart() is the road -- www/boot.js and langOpen() call it -- and what
+       this face is for is the screen somebody ARRIVES at. With the join in it
+       is thirty-eight; with the join taken out it is the owner's photograph.
+       One face, both states, which is what a picture of a fix has to be. */
+    ['an alphabet that had doubled, arrived at', () => {
+       const was = LETTERS, wasPlan = SET.plan, wasSeq = LT_SEQ;
+       SET.plan = 'free';
+       LT_SEQ = 0; LETTERS = []; ltStart();
+       const old = JSON.parse(JSON.stringify(LETTERS));
+       old.forEach((l, i) => { l.id = 'l' + (i + 1) + '_' + i + '_6'; });
+       LT_SEQ = 0; LETTERS = []; ltStart();
+       LETTERS = old.concat(LETTERS);
+       ltStart();
+       window.route = 'ltset'; NAV = [{ r:'ltset', a:'alpha' }];
+       const h = vLtset();
+       LETTERS = was; SET.plan = wasPlan; LT_SEQ = wasSeq;
+       return h; }]
   ];
 }

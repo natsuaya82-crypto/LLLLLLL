@@ -78,21 +78,76 @@ function syText(x){ try{ return JSON.stringify(x); }catch(e){ return String(x); 
    DECIDED ANYWHERE YET. So it comes back, which is what happens today and is
    the side that loses nothing. Nothing here quietly answers a question the
    owner has not been asked. */
+/* ---- TWO ROWS THAT ARE ONE THING ---------------------------------------
+   An id says which ROW this is. It does not always say which THING, and for
+   the free plan's thirty-eight it never did: `a` is a slot, the same slot on
+   every account and at every launch, and the id it was wearing was minted by
+   whichever run of ltStart() happened to make it. Two runs made two ids, this
+   function was told they were two letters, and thirty-eight became
+   SEVENTY-SIX -- a a, b b, c c, every reading twice.
+   「あと、キーボード足したりしてたら文字増殖してるんだけど何で？」OWNER
+   2026-09-04.
+
+   The alphabet chapter is asked which slot a letter is rather than this one
+   deciding: ltSlotKey() in www/letters.js is where that sentence lives and
+   there is no second copy of it here. Everything else -- a letter somebody
+   added, a word, a note -- is its own name still, which is syKeyOf(). */
+function syOneOf(kind, x){
+  if(kind!=='letters' || !x || typeof x!=='object') return '';
+  var s=ltSlotKey(x);
+  return s? ('s'+s) : '';
+}
+/* WHETHER ANYBODY HAS MADE ANYTHING OF THIS ROW, and it is a question only the
+   alphabet can answer: ltDrawn() -- a drawing, a shape off a written sheet, a
+   borrowed character. FALSE everywhere else, and that is not a gap. It is what
+   keeps every other slice exactly as it was: a word, a note or a stage that is
+   on both sides falls to the last line of syPut(), which is mine. Nothing here
+   changes what happens to anything but letters. */
+function syMade(kind, x){ return (kind==='letters') && ltDrawn(x); }
+/* One row, put in -- and what happens when the thing it is, is already here.
+
+   Three answers, and they are docs/DATA_SAFETY.md's order rather than a
+   preference:
+
+     what is here has nothing on it and this has something -> this takes its place
+     both have something                                   -> BOTH are kept
+     otherwise                                             -> what is here stays
+
+   The first is the whole reason this is a join and not a choice. Giving the
+   slots steady ids stops the doubling, and ON ITS OWN it turns the doubling
+   into a DELETION: an account whose alphabet has not arrived yet builds
+   thirty-eight empty slots, they wear the same ids as the drawn ones on the
+   server, mine-first hands back thirty-eight blanks, and they are written up
+   over the drawings. Measured both ways on the same route -- seventy-six
+   letters of which thirty-eight were drawn, against thirty-eight of which NONE
+   were. A duplicate is on the screen and can be dealt with. A deletion is not
+   there to be noticed. 「そりゃあ両方足すだろ」 */
+function syPut(kind, out, at, seen, x){
+  var k=syOneOf(kind, x) || syKeyOf(kind, x), j=at[k];
+  seen[syKeyOf(kind, x)]=1;
+  if(j===undefined){ at[k]=out.length; out.push(x); return; }
+  if(!syMade(kind, out[j]) && syMade(kind, x)){ out[j]=x; return; }
+  /* BOTH KEPT ONLY WHERE THEY ARE TWO ROWS. One id is one row and always was:
+     redraw a letter here and redraw it there, and what comes back is one
+     letter -- this phone's -- because that is the same letter twice and not
+     two of them. `backup-check` holds that and went red when this line did not
+     say so. Two ids under one slot is the other thing, and is the only thing
+     this branch is for. */
+  if(syKeyOf(kind, out[j])!==syKeyOf(kind, x) &&
+     syMade(kind, out[j]) && syMade(kind, x)) out.push(x);
+}
 function syArr(kind, mine, theirs, base){
-  var out=[], seen={}, was={}, i, k;
+  var out=[], seen={}, at={}, was={}, i, k;
   if(base) for(i=0;i<base.length;i++) was[syKeyOf(kind, base[i])]=syText(base[i]);
-  for(i=0;i<mine.length;i++){
-    k=syKeyOf(kind, mine[i]);
-    if(seen[k]) continue;
-    seen[k]=1; out.push(mine[i]);
-  }
+  for(i=0;i<mine.length;i++) syPut(kind, out, at, seen, mine[i]);
   for(i=0;i<theirs.length;i++){
     k=syKeyOf(kind, theirs[i]);
-    if(seen[k]) continue;                       /* mine has it, or a repeat */
-    /* it was here, it is not here now, and nobody has touched it over there */
-    if(Object.prototype.hasOwnProperty.call(was, k) &&
+    /* it was here, it is not here now, and nobody has touched it over there.
+       Asked only of what mine does not already hold -- `seen` is every row
+       mine put in, which is what "it is not here now" means. */
+    if(!seen[k] && Object.prototype.hasOwnProperty.call(was, k) &&
        was[k]===syText(theirs[i])) continue;
-    seen[k]=1; out.push(theirs[i]);
+    syPut(kind, out, at, seen, theirs[i]);
   }
   return out;
 }

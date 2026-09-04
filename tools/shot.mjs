@@ -96,19 +96,47 @@ await pg.evaluate('window.OB_STATES = (' + obStates.toString() + ')()');
    rest shows them, so `--all` never photographed one; `hd@N`, or `--half`
    for the lot. Same list act-check and press walk. */
 await pg.evaluate('window.HALF = (' + halfDone.toString() + ')()');
-await pg.evaluate(({ s, ui, dk, pd, mf }) => {
-  eval('(' + s + ')()');           /* the fixture, run inside the page */
-  SET.done = true;                 /* past the onboarding, unless it is what was asked for */
-  if (pd) SET.plan = 'pro';       /* --paid: the faces the free plan does not show */
-  if (mf) SET.myfont = true;       /* --myfont: the app in the letters somebody drew */
-  SET.ui = ui;
-  SET.theme = dk ? 'dark' : 'light';
-  /* SET.theme is what is stored; applyTheme() is what puts data-theme on the
-     document. Setting the one without calling the other photographed the
-     light theme with --dark on the command line, and the picture looked
-     perfectly fine -- which is how it would have gone unnoticed. */
-  if (typeof applyTheme === 'function') applyTheme();
-}, { s: seed.toString(), ui: uiLang, dk: dark, pd: paid, mf: mine });
+/* What the command line asked for, and the ONE place that puts it on.
+
+   seed() is SET back to what a fresh install has -- `ui:'en'`, `plan:'free'`,
+   `myfont:false`, `theme:'system'` -- and it is what fills the app before
+   every picture. These four used to be assigned once, here, before anything
+   was photographed; the hd@N road then runs seed() AGAIN for each face, which
+   put all four back. So `--lang ja hd@3` photographed an English screen, and
+   had done since that road was added -- nobody has ever seen a half-done face
+   in the language they asked for. --paid and --myfont went the same way.
+   --dark alone looked right, and only by accident: data-theme was already on
+   the document and nothing re-reads SET.theme.
+
+   Measured rather than reasoned about: SET.ui reads 'ja' the line before
+   __seed() and 'en' the line after, and no entry in HALF or OB_STATES moves
+   it itself.
+
+   An `if` in the hd branch would have fixed that road and left the road
+   written tomorrow to be found the same way. So the answer is written down
+   once and __seed CARRIES it: seeding and dressing are one act, and there is
+   no way to do the first without the second. */
+await pg.evaluate(({ ui, dk, pd, mf }) => {
+  window.__shot = { ui: ui, dark: dk, paid: pd, myfont: mf };
+  window.__dress = function () {
+    SET.done = true;                 /* past the onboarding, unless it is what was asked for */
+    SET.ui = window.__shot.ui;
+    if (window.__shot.paid) SET.plan = 'pro';    /* --paid: the faces the free plan does not show */
+    if (window.__shot.myfont) SET.myfont = true; /* --myfont: the app in the letters somebody drew */
+    SET.theme = window.__shot.dark ? 'dark' : 'light';
+    /* SET.theme is what is stored; applyTheme() is what puts data-theme on the
+       document. Setting the one without calling the other photographed the
+       light theme with --dark on the command line, and the picture looked
+       perfectly fine -- which is how it would have gone unnoticed. */
+    if (typeof applyTheme === 'function') applyTheme();
+  };
+  var bare = window.__seed;
+  window.__seed = function () { bare(); window.__dress(); };
+}, { ui: uiLang, dk: dark, pd: paid, mf: mine });
+/* And the first fill goes through the same door, rather than a second copy of
+   seed() eval'd here -- two roads into the page state is how the first one
+   drifted out of sight. */
+await pg.evaluate(() => window.__seed());
 
 /* Every route the app has, and every argument each one takes, asked of the
    page rather than listed here -- so a screen added tomorrow can be
@@ -169,7 +197,7 @@ for (const spec of shots) {
   const a = ci < 0 ? undefined : spec.slice(ci + 1);
   if (!ob && !hd && routes.indexOf(r) < 0) { console.error(`  no route called ${r}`); continue; }
   const err = hd
-    ? await pg.evaluate((n) => {
+    ? await pg.evaluate(({ n, ui: ui2, dk: dk2 }) => {
         try {
           /* The entry sets the app up and RETURNS the html. It used to be
              render() here, which rebuilds from the state -- and MANY of these
@@ -185,6 +213,15 @@ for (const spec of shots) {
              the face's own body replaces #app. */
           SET.done = true;
           window.__seed();
+          /* AND THE LANGUAGE AND THE THEME AGAIN. The seed sets `SET.ui` to
+             English -- every walk is built on that -- and it is re-run HERE,
+             after the flags at the top of this file were applied, so every
+             half-done picture came out in English however `--lang ja` was
+             typed. The owner does not read English, and a picture they cannot
+             read is a picture that did not get taken. */
+          SET.ui = ui2;
+          SET.theme = dk2 ? 'dark' : 'light';
+          if (typeof applyTheme === 'function') applyTheme();
           var html = HALF[n][1]();
           render();
           if (html) {
@@ -199,7 +236,7 @@ for (const spec of shots) {
           }
           return null;
         } catch (e) { return String(e && e.message || e); }
-      }, Number(hd[1]))
+      }, { n: Number(hd[1]), ui: uiLang, dk: dark })
     : ob
     ? await pg.evaluate(({ n, face }) => {
         try {
