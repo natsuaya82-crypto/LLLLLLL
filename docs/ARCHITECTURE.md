@@ -62,7 +62,7 @@ locked door but `langLocked()` (`www/core.js`), asked at every saver.
 | what was written and not sent | **the `draft` rows on the server**, with `lingua.drafts` as the copy | `DRAFTS` (`www/post.js`) |
 | the person — the handle, the display name, the profile picture | **the `profile` row on the server**, with `lingua.me` as the copy | `ME` (`www/me.js`) |
 | which languages exist, which is open | `lingua.langs`, `lingua.cur` — the phone's index of the copies it is holding. `LANGS[id].sid` is the language's row on the server, and an entry with no `sid` has never been up | `LANGS`, `langId` |
-| the person's settings | `lingua.set`, with the six in `SET_ACCT` parked under `lingua.set.<uid>` by `setFor()` when somebody else signs in | `SET` |
+| the person's settings | `lingua.set`. Everything in it is that account's and is parked under `lingua.set.<uid>` by `setFor()` when somebody else signs in, EXCEPT what `SET_PHONE` names — this handset's own setup | `SET` |
 | the person's session | `lingua.sess` — the token pair only | `SESS` (`www/net.js`) |
 | a copy that survives the app — **the backup**, now that the server is the record 「言語周りだけバックアップにfile使う」 | `Documents/Languages/<name>.json`. It is that account's language in a form a person can hold, which is why deleting an account drops the files of **its** languages (`bkDropFor()`) and no others | `bkPack()` / `bkTake()` (`www/backup.js`) |
 | what the server holds and who may touch it | `supabase/schema.sql` | nothing on the phone decides this |
@@ -70,8 +70,9 @@ locked door but `langLocked()` (`www/core.js`), asked at every saver.
 **No row of that table is the device's.** 「端末ごとにやることなんてねえよ」
 「アカウントごとってずっと言ってるよな？」 OWNER 2026-09-03. Every `lingua.*`
 key is a working copy of something an account owns, filed under the account it
-belongs to — the settings among them (`SET_ACCT` and `setParkKey()` in
-`www/core.js`), and the backup file and an exported sheet are that account's
+belongs to — the settings among them (`SET_PHONE` and `setParkKey()` in
+`www/core.js`, where a field is an account's unless it is named as this
+handset's setup), and the backup file and an exported sheet are that account's
 language in a form a person can hold. When something new is stored the question
 is not 「is this the phone's」, because there is no answer to that: it is
 **「which account is this」**, and a thing that cannot answer it must not be
@@ -82,8 +83,8 @@ looks: it is not a thing somebody has, it is **which account this phone is**.
 
 **And the plan is the account's** 「課金とアカウントとキーボードはアカウントに
 結びつく」 OWNER 2026-09-01 — `SET.plan` is where the value sits on this handset
-while it travels, and `SET_ACCT` is what stops it being handed to whoever signs
-in next. The real copy on a phone is in the Keychain
+while it travels, and `setFor()` is what stops it being handed to whoever signs
+in next — `plan` is not in `SET_PHONE`, and nothing a person has is. The real copy on a phone is in the Keychain
 (`ios/App/App/LinguaPlan.swift`). The keyboard beside it in that sentence is
 the language's.
 

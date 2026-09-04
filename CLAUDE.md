@@ -1631,13 +1631,25 @@ function in `www/net.js` that takes it there (and that function has to exist),
 or **the phone's own with a sentence saying why**.
 
 **That second half is what has to shrink to nothing**, and every entry left in
-it is a thing waiting to be handed to the wrong person. **`SET_ACCT` in
-`core.js` is the list of the fields inside `lingua.set` that are a PERSON's** —
-`plan` `planWas` `planPend` `saved` `savedUp` `notAt` — and `setFor(uid)` parks
-them under `lingua.set.<uid>` on the way out and brings that account's own back
-on the way in. What is left as the phone's is the theme and how this handset is
-set up. `docs/BACKLOG.md` carries whatever is still there; read
-`store-check`'s own last two lines for the count rather than a sentence here.
+it is a thing waiting to be handed to the wrong person. Inside `lingua.set` the
+question is asked the OTHER WAY ROUND, and it had to be: 「アカウント消したのに
+検索履歴残ってたんだけどなんで？…全部アカウントだって言ってるやん おかしいだろ
+お前一本化しろって。」 OWNER 2026-09-04. `SET_ACCT` used to name the six fields
+that are a PERSON's, `recent` was added to `SET` a day later and never reached
+that list, and a deleted account's search history was still on the screen —
+**a list of keys, written by hand, that nobody remembered to add to**, which is
+the same fault `lsWipeAcct` was rewritten for a week earlier.
+
+**`SET_PHONE` in `core.js` names this HANDSET's own setup** — the theme, the
+interface language, the marks that a migration has run here, `planUid` — and
+**everything else in `SET` is an account's**, counted rather than named.
+`setFor(uid)` parks those on the way out and brings that account's own back on
+the way in; `lsWipeAcct(uid)` empties the live key of them and takes the parked
+one. A field added tomorrow is that account's the day it is added.
+`tools/store-check.mjs` holds the two tables together: a field it puts on a
+road to the server may not be named as this handset's setup. `docs/BACKLOG.md`
+carries whatever is still there; read `store-check`'s own last three lines for
+the count rather than a sentence here.
 
 **A new key fails until somebody writes down which of the two it is.** That is
 all it holds: whether the road is WALKED is `acct-check` and `again-check`, and

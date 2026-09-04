@@ -100,7 +100,7 @@ const ROADS = {
      handle and the display name are written when the account is made */
   'me.js:LS_ME':       { to: 'netAvSync' },
   /* and the four that are the phone's, each for its own reason */
-  'core.js:LS_S':    { phone: 'the settings. The six in SET_ACCT are the account\'s and are parked under `lingua.set.<uid>` by setFor(); what is left is how this handset is set up -- the theme, the interface language -- and follows the handset because there is nothing else for it to follow' },
+  'core.js:LS_S':    { phone: 'the settings. Everything in them is an account\'s and is parked under `lingua.set.<uid>` by setFor() EXCEPT what `SET_PHONE` in www/core.js names; what that names is how this handset is set up -- the theme, the interface language, the marks that a migration has run here -- and follows the handset because there is nothing else for it to follow' },
   'core.js:LS_LANGS':{ phone: 'the index of which languages are on THIS phone; what they ARE is `language` on the server, and netLangsDown() writes this from it' },
   'core.js:LS_CUR':  { phone: 'which language is open -- where somebody is standing, not what they made' },
   'net.js:LS_SESS':  { phone: 'the tokens. They are what talks to the server; they cannot be kept on it' },
@@ -247,7 +247,14 @@ const FIELDS = {
    work, and it is the one computed one there is. Named by its expression the
    way ROADS names `core.js:langKey(k)`, so a second computed write -- which
    nothing here could name a field for -- is red. */
-const SET_LOADER = { 'core.js:SET[sk]=s[sk]': true };
+const SET_LOADER = {
+  'core.js:SET[sk]=s[sk]': true,
+  /* setFor() handing an account its own fields back. The name it writes is a
+     name it has just read out of the parked copy, so there is no field here
+     that FIELDS does not already answer for -- what could be parked is what
+     `SET` held, and every one of those is in the table. */
+  'core.js:SET[k]=got[k]': true
+};
 
 /* Comments carry `SET.x` in prose all over www/, so they come off first --
    the same reason act-check strips them before counting names. */
@@ -323,6 +330,61 @@ for (const k of Object.keys(SET_LOADER))
   if (computed.indexOf(k) < 0)
     bad.push('SET_LOADER names `' + k + '` and nothing writes it any more — ' +
       'delete the line.');
+
+/* AND THE OTHER TABLE THAT ANSWERS THE SAME QUESTION, HELD AGAINST THIS ONE.
+   「全部アカウントだって言ってるやん おかしいだろお前一本化しろって。」
+   OWNER 2026-09-04.
+
+   FIELDS above says where a settings field GOES. `SET_PHONE` in www/core.js
+   says whose it IS -- whether signing in as somebody else parks it and
+   deleting an account takes it. Two tables about one key, and they drifted:
+   `recent`, the words somebody typed into the search field, was written down
+   here on the day it was added and never reached the other one, so a person
+   deleted their account and their search history was still on the screen.
+
+   The other table is now the SHORT one -- what this handset's own setup is --
+   and everything not in it is an account's, which is why a field added
+   tomorrow travels without anybody remembering. What is left to go wrong is
+   this table and that one disagreeing about a NAME, and that is what is asked
+   here, both ways:
+
+     named as the handset's there  ->  has to be `phone` here, with a reason
+     on a road to the server here  ->  may not be named there at all
+
+   A field on a road is a thing an account has; naming it as this handset's
+   setup would be handing one account's belongings to the next person, which
+   is the shape of every fault this file exists for. */
+{
+  const core = fs.readFileSync(path.join(WWW, 'core.js'), 'utf8');
+  const m = /var SET_PHONE=\[([\s\S]*?)\];/.exec(core);
+  if (!m)
+    bad.push('www/core.js has no `var SET_PHONE=[ … ];` for tools/store-check.mjs ' +
+      'to read. It is the list of settings fields that are this HANDSET\'s setup, ' +
+      'and everything not in it is an account\'s — if it moved, point this at ' +
+      'where it moved to. If it became a list of what IS an account\'s again, ' +
+      'that is the 2026-09-04 fault coming back: a field added tomorrow would ' +
+      'be left behind.');
+  else {
+    const named = (m[1].match(/'([A-Za-z0-9_]+)'/g) || []).map(x => x.slice(1, -1));
+    for (const k of named) {
+      const road = FIELDS[k];
+      if (!road)
+        bad.push('`SET_PHONE` in www/core.js names `' + k + '` and ' +
+          'tools/store-check.mjs does not say where it goes. A field called ' +
+          'this handset\'s setup in one place and unnamed in the other is the ' +
+          'drift that left the search history behind — add it to FIELDS.');
+      else if (road.to)
+        bad.push('`SET_PHONE` in www/core.js names `' + k + '` as this ' +
+          'handset\'s setup, and FIELDS says it goes up through ' + road.to +
+          '(). A field that goes to the server is an ACCOUNT\'s: named there, ' +
+          'it is not parked when somebody else signs in and not taken when ' +
+          'the account is deleted — it is handed to the next person.');
+    }
+    const acct = Object.keys(FIELDS).filter(k => named.indexOf(k) < 0);
+    console.log('and whose they are: ' + named.length + ' this handset\'s setup, ' +
+                acct.length + ' an account\'s — counted, not listed (SET_PHONE, www/core.js)');
+  }
+}
 
 const phone = Object.keys(ROADS).filter(k => ROADS[k].phone).length;
 const up = Object.keys(ROADS).filter(k => ROADS[k].to).length;

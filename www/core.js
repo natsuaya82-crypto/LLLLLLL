@@ -64,7 +64,7 @@ var LS_LANGS='lingua.langs', LS_CUR='lingua.cur', LS_S='lingua.set';
    Returns the language ids it took,
    so the caller can drop those backups and no others. */
 function lsWipeAcct(uid){
-  var me=String(uid||''), ids=[], doomed=[], id, i, k, j;
+  var me=String(uid||''), ids=[], doomed=[], keys, id, i, k, j;
   for(id in LANGS)
     if(Object.prototype.hasOwnProperty.call(LANGS, id) && LANGS[id] &&
        String(LANGS[id].uid||'')===me) ids.push(id);
@@ -72,19 +72,47 @@ function lsWipeAcct(uid){
     for(j=0;j<SLICES.length;j++) doomed.push(langKeyOf(ids[i], SLICES[j]));
     delete LANGS[ids[i]];
   }
-  /* and every other key this account put its name on */
-  try{
+  /* AND EVERY OTHER KEY THIS ACCOUNT PUT ITS NAME ON, counted rather than
+     listed. This asked for three prefixes by hand -- `lingua.me.`,
+     `lingua.posts.`, `lingua.drafts.` -- and `lingua.set.<uid>`, the parked
+     settings, was the fourth and was not among them. A key whose last part is
+     an account's name IS that account's; there is nothing else it could be,
+     and a fifth parked thing is taken the day it is written.
+
+     Only when there is a name to match. With no session the uid is '', and a
+     key ending in nothing is not a key of nobody's -- it is every key with a
+     trailing dot, which is the sweep that took a neighbour's language. */
+  if(me) try{
     for(i=0;i<localStorage.length;i++){
       k=localStorage.key(i);
       if(!k) continue;
-      if((k.indexOf('lingua.me.')===0 || k.indexOf('lingua.posts.')===0 ||
-          k.indexOf('lingua.drafts.')===0) && k.slice(k.lastIndexOf('.')+1)===me)
+      if(k.indexOf('lingua.')===0 && k.slice(k.lastIndexOf('.')+1)===me)
         doomed.push(k);
     }
   }catch(e){}
   /* the live copies, which are this account's while it is signed in */
   doomed.push('lingua.me'); doomed.push('lingua.posts'); doomed.push('lingua.drafts');
   try{ for(i=0;i<doomed.length;i++) localStorage.removeItem(doomed[i]); }catch(e){}
+  /* AND WHAT IS THEIRS INSIDE `lingua.set`, which is a key this account
+     SHARES rather than one it owns -- so it is emptied of them instead of
+     removed. 「アカウント消したのに検索履歴残ってたんだけどなんで？」 OWNER
+     2026-09-04: the history was here, in the live settings, and nothing in
+     this function had ever looked inside the key.
+
+     Here and not at the call site, because this is 「one account's things,
+     gone」 and the words somebody searched for are one of their things. The
+     caller wiped the parked copy and then signed out, and signing out PARKS
+     -- so the fields were written straight back under the name of the account
+     that had just been deleted. Cleared here, there is nothing left to park:
+     setFor('') finds no owner and returns having written nothing. */
+  if(String(SET.planUid||'')===me){
+    keys=setAcctKeys(null);
+    for(i=0;i<keys.length;i++) delete SET[keys[i]];
+    /* free is a value and not an absence -- the same two setFor() names. */
+    SET.plan='free'; SET.planWas='free';
+    delete SET.planUid;
+    setKeep();
+  }
   langStore();
   return ids;
 }
@@ -1190,22 +1218,62 @@ function planKeep(id){
    「端末ごとにやることなんてねえよ」「アカウントごとってずっと言ってるよな？」
    OWNER 2026-09-03.
 
-   The theme and the interface language are how this phone is set up. These
-   six are what a PERSON has: what they pay, what the plan was last time so a
-   lapse can be noticed, a plan the server has not been told about yet, the
-   searches they starred, whether those have gone up, and how far down their
-   notices they have read. Signing in as somebody else and finding any of them
-   is finding somebody else's belongings. */
-var SET_ACCT=['plan','planWas','planPend','saved','savedUp','notAt'];
+   THIS WAS A LIST OF WHAT IS AN ACCOUNT'S AND IT IS NOW A LIST OF WHAT IS
+   NOT. 「アカウント消したのに検索履歴残ってたんだけどなんで？アカウント単位
+   なのにそれが残るの？全部アカウントだって言ってるやん おかしいだろお前
+   一本化しろって。」 OWNER 2026-09-04.
+
+   It named six -- plan, planWas, planPend, saved, savedUp, notAt -- and
+   `recent`, the words somebody typed into the search field, was added to SET
+   on 2026-09-03 and never added here. So a person deleted their account and
+   the next screen still showed what they had searched for. That is the same
+   fault, in the same month, as the one lsWipeAcct() above was rewritten for:
+   **a list of keys, written by hand, that nobody remembered to add to.**
+   Adding `recent` to the six would fix that one field and leave the seventh
+   waiting, which is what 「一本化しろ」 refuses.
+
+   So the question is asked the other way round, and the default answer is the
+   owner's own: **EVERYTHING IN `SET` IS AN ACCOUNT'S UNLESS IT IS NAMED HERE.**
+   「全部アカウントだって言ってるやん」. What is named is how this HANDSET is
+   set up and nothing a person made: the theme and the interface language, the
+   marks that say a migration has run on this install, the measurement of this
+   handset's own keyboard, and `planUid`, which is not a setting at all -- it
+   is which account the fields beside it belong to, so it can never be one of
+   them.
+
+   A field added tomorrow is that account's the day it is added, and there is
+   nothing to keep in step. It fails toward 「this is somebody's」, which is the
+   side that loses nothing: a handset setting wrongly parked comes back the
+   moment that account signs in again, and a person's belongings wrongly left
+   behind are handed to a stranger. tools/store-check.mjs holds the two halves
+   against each other -- a name here has to be one it calls the handset's, and
+   a field it puts on a road to the server may not appear here at all. */
+var SET_PHONE=['theme','ui','planUid','planV','done','obback','myfont',
+               'showScript','kbrom','vvkb','gramLang','wldMoved','wsys',
+               'order','read','voice','script'];
+/* The fields of `SET` that are a PERSON's, counted rather than named. Asked of
+   a parked copy as well as of `SET` itself: a field this account has and this
+   handset has not written yet is still theirs, and reading only the live keys
+   would leave it in the file when somebody else arrives. */
+function setAcctKeys(park){
+  var out=[], k;
+  for(k in SET)
+    if(Object.prototype.hasOwnProperty.call(SET,k) &&
+       SET_PHONE.indexOf(k)<0 && out.indexOf(k)<0) out.push(k);
+  for(k in (park||{}))
+    if(Object.prototype.hasOwnProperty.call(park,k) &&
+       SET_PHONE.indexOf(k)<0 && out.indexOf(k)<0) out.push(k);
+  return out;
+}
 function setParkKey(uid){ return LS_S + '.' + String(uid||''); }
 /* Parked, not cleared -- the same shape as meFor() and postFor(). Signing
    back in brings them all to the screen again. */
 function setFor(uid){
-  var me=String(uid||''), was=String(SET.planUid||''), park, got=null, i, d;
+  var me=String(uid||''), was=String(SET.planUid||''), park, got=null, keys, i, k, d;
   if(was===me) return false;
   if(was){
-    d={};
-    for(i=0;i<SET_ACCT.length;i++) d[SET_ACCT[i]]=SET[SET_ACCT[i]];
+    d={}; keys=setAcctKeys(null);
+    for(i=0;i<keys.length;i++) d[keys[i]]=SET[keys[i]];
     try{ localStorage.setItem(setParkKey(was), JSON.stringify(d)); }catch(e){}
   }
   if(me){
@@ -1215,14 +1283,16 @@ function setFor(uid){
   /* Nobody was written down: what is here is this person's, the way meFor()
      adopts an unclaimed copy. Only on the way IN. */
   if(was){
-    for(i=0;i<SET_ACCT.length;i++){
-      if(got && got[SET_ACCT[i]]!==undefined) SET[SET_ACCT[i]]=got[SET_ACCT[i]];
+    keys=setAcctKeys(got);
+    for(i=0;i<keys.length;i++){
+      k=keys[i];
+      if(got && got[k]!==undefined) SET[k]=got[k];
       /* Absent and not undefined: a field this account has never written is a
          field it does not have, and setDefaults() answers for it everywhere
          else. `plan` is named because free is a value and not an absence. */
-      else if(SET_ACCT[i]==='plan') SET.plan='free';
-      else if(SET_ACCT[i]==='planWas') SET.planWas='free';
-      else delete SET[SET_ACCT[i]];
+      else if(k==='plan') SET.plan='free';
+      else if(k==='planWas') SET.planWas='free';
+      else delete SET[k];
     }
   }
   SET.planUid=me;

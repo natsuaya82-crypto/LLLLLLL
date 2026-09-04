@@ -1980,6 +1980,97 @@ const R = await pg.evaluate(async () => {
   say('54: 言語のものを読み書きする一覧は一つで、SLICES の ' + SLICES.length +
       ' 個に一つ残らず答えている');
 
+  /* ---- 55-57. 検索履歴はアカウントのもの ────────────────────────────────
+     「アカウント消したのに検索履歴残ってたんだけどなんで？アカウント単位なのに
+       それが残るの？全部アカウントだって言ってるやん おかしいだろお前
+       一本化しろって。」 OWNER 2026-09-04。
+
+     サーバーは正しく、残っていたのは端末の写しです。`recent_search` は
+     `profile` から、`profile` は `auth.users` から cascade で落ちるので
+     `account_delete()` が行を取ります。落ちなかったのは `SET.recent` ──
+     2026-09-03 に足された欄で、`SET_ACCT` という**手で書いた六つの一覧**に
+     入っていませんでした。46 が押さえたのは言語と投稿と段で、設定の中の
+     欄は一つも押さえていません。
+
+     一本化とは、`recent` を六つに足すことではありません。**訊き方を逆に
+     する**ことです ── この端末の設えとして名前が書いてあるものだけが端末の
+     もので、`SET` の残り全部はその人のもの。57 がそこを押さえます。 */
+
+  /* 55. 消したら、その場で無くなる。画面の中にも、ファイルの中にも、
+     預けた先にも。**預けた先が要ります** ── 削除は「預ける」道（setFor）を
+     通るので、消してから預け直す順になっていました。 */
+  start();
+  netOut(); arrive('d55a');
+  LANGS = { La55: { name:'A の言語', mine:true, uid:'d55a' } };
+  langId = 'La55'; langStore();
+  SET.recent = ['ねこ', 'いぬ']; SET.saved = ['とり']; save();
+  var was55 = (typeof bkDropFor==='function')? bkDropFor : null;
+  bkDropFor = function(){};
+  var cf55 = window.confirm; window.confirm = function(){ return true; };
+  try{ wipeHere(); }catch(e){ no('55: 削除が投げた ── ' + e.message); }
+  window.confirm = cf55;
+  if (was55) bkDropFor = was55;
+
+  if (snsRecent().length)
+    no('55: **消したアカウントの検索履歴が画面に残っている** ── これが起きたことです ── ' +
+       JSON.stringify(snsRecent()));
+  {
+    let f55 = {};
+    try{ f55 = JSON.parse(localStorage.getItem('lingua.set') || '{}'); }catch(e){}
+    if (f55.recent) no('55: 検索履歴が lingua.set に書き戻されている ── ' + JSON.stringify(f55.recent));
+    if (f55.saved) no('55: 保存した検索が lingua.set に書き戻されている');
+  }
+  if (localStorage.getItem('lingua.set.d55a'))
+    no('55: 消したアカウントの設定が lingua.set.<uid> に預け直されている ── ' +
+       localStorage.getItem('lingua.set.d55a'));
+  say('55: アカウントを消したら検索履歴も消える ── 画面にも、設定のファイルにも、預けた先にも残らない');
+
+  /* 56. そして消さずに入れ替わるときは、**預けて返す。**履歴は人が作った
+     ものなので、別の人が来ても消えません ── 脇に置いて、戻れば返る。
+     meFor() と postFor() と同じ形です。 */
+  start();
+  netOut(); arrive(A);
+  SET.recent = ['あさ', 'ひる']; save();
+  netOut(); arrive(B);
+  if (snsRecent().length)
+    no('56: 別のアカウントに前の人の検索履歴が見えている ── ' + JSON.stringify(snsRecent()));
+  SET.recent = ['よる']; save();
+  netOut(); arrive(A);
+  if (snsRecent().join(',') !== 'あさ,ひる')
+    no('56: 戻ってきた人の検索履歴が返ってこない ── ' + JSON.stringify(snsRecent()));
+  netOut(); arrive(B);
+  if (snsRecent().join(',') !== 'よる')
+    no('56: 二人目の検索履歴が返ってこない ── ' + JSON.stringify(snsRecent()));
+  say('56: 検索履歴はアカウントごと ── 別の人には見えず、戻れば返る');
+
+  /* 57. **数えていて、並べていない。**56 が通っても、明日足される欄はまた
+     置いていかれます ── それが `recent` に起きたことです。ここが訊くのは
+     一つだけ:「`SET` に名前を足したら、それはその人のものになるか」。
+
+     `SET_PHONE` はこの端末の設えの一覧で、そこに無いものは全部その人のもの。
+     だから知らない欄で押します ── 一覧に足していない、この検査が今作った
+     名前で。並べる形に戻したら、ここが赤くなります。 */
+  start();
+  netOut(); arrive(A);
+  SET.__later57 = 'この端末で作られた、明日の欄';
+  save();
+  netOut(); arrive(B);
+  if (SET.__later57 !== undefined)
+    no('57: **`SET` に足したばかりの欄が、次の人にそのまま渡っている** ── ' +
+       JSON.stringify(SET.__later57) + '。SET_PHONE に無い欄はその人のもので、' +
+       '預けて消えるはず。並べる一覧に戻っていませんか');
+  netOut(); arrive(A);
+  if (SET.__later57 !== 'この端末で作られた、明日の欄')
+    no('57: 足したばかりの欄が、本人が戻っても返ってこない ── ' + JSON.stringify(SET.__later57));
+  delete SET.__later57;
+  /* そして逆向き ── この端末の設えは、誰が来ても動かない。 */
+  SET.theme = 'dark'; SET.ui = 'ja'; save();
+  netOut(); arrive(B);
+  if (SET.theme !== 'dark' || SET.ui !== 'ja')
+    no('57: この端末の設え（テーマ・表示言語）が、人が変わって動いた ── ' +
+       SET.theme + ' / ' + SET.ui);
+  say('57: 一覧は数えていて並べていない ── 明日足す欄もその人のもの、端末の設えだけが残る');
+
   return out;
 });
 

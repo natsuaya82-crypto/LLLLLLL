@@ -605,20 +605,26 @@ per letter too. It agrees with what this screen already said —
 🔍 is the place that already means 「searched」. Opening a person off the answer
 was built as a second road into it and the decision took it out.
 
-**What is not per-account yet, said plainly, and it is now one field rather
-than three.** `SET.plan` and `SET.saved` moved: `SET_ACCT` in `www/core.js`
-names six — `plan`, `planWas`, `planPend`, `saved`, `savedUp`, `notAt` — and
-`setFor(uid)` parks them under `lingua.set.<uid>` when somebody signs out and
-reads the next person's back in, the same shape as `meFor()` and `postFor()`.
-**`recent` is not in that list**, so the history is the one field of the
-settings still shared by whoever signs in on this handset. `recent_search`
-cascades off `profile` and so off `auth.users`, so `account_delete()` takes the
-rows; the phone's COPY is reached by nothing — `lsWipeAcct()` takes
-`lingua.me.*`, `lingua.posts.*` and `lingua.drafts.*` by uid and does not touch
-the settings key. **Whether `recent` joins `SET_ACCT` is with the owner**
-(`docs/scope/aud-data.md` § オーナーに訊くこと, Q4). It is named here rather
-than left to a list because a history is the most revealing thing a settings
-key can hold.
+**And it is that account's, which took asking the question the other way
+round.** 「アカウント消したのに検索履歴残ってたんだけどなんで？…全部アカウント
+だって言ってるやん おかしいだろお前一本化しろって。」 OWNER 2026-09-04. The
+history was left behind on a deletion, and not because anything about it was
+special: `SET_ACCT` was a hand-written list of the fields that are an
+account's, `recent` was added to `SET` a day after the list was last touched,
+and `setFor(uid)` walks the list. `recent_search` cascades off `profile` and so
+off `auth.users`, so `account_delete()` had already taken the rows — what
+stayed was the phone's copy.
+
+**`SET_PHONE` in `www/core.js` is that list turned inside out**, and it names
+this HANDSET's own setup: the theme, the interface language, the marks that
+say a migration has run here, `planUid`. **Everything else in `SET` is an
+account's**, counted rather than named, so a field added tomorrow travels
+without anybody remembering — which is the whole of what went wrong. It is
+parked under `lingua.set.<uid>` when somebody signs out and read back when they
+return, the same shape as `meFor()` and `postFor()`; `lsWipeAcct()` empties the
+live key of that account's fields and takes the parked one with the rest.
+`tools/store-check.mjs` holds `SET_PHONE` against its own table: a field on a
+road to the server may not be called this handset's setup.
 
 ## The @, and when it may move
 
