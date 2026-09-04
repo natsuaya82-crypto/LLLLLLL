@@ -761,6 +761,38 @@ export function halfDone(){
     ['the profile, likes', () => { pfTab='li'; const p=postById('p2'); p.lime=1; p.li=1;
         window.route='profile'; NAV=[{r:'profile'}];
         const h=vProfile(); delete p.lime; p.li=0; pfTab='posts'; return h; }],
+    /* ---- the timeline read by somebody who did not write it -------------
+       Three states off the owner's phone on 2026-09-04. None of them is a
+       route: each is a fact about what has arrived, and each was the one
+       nobody had photographed. tools/tl-check.mjs holds them. */
+    /* A post of yours, gone up, answered by somebody else. The answer points
+       at the SERVER's name for your post -- the only name the phone that
+       wrote it ever saw -- and your phone still calls that post by its own.
+       「返事したはずなのにスレッドに来ない」 */
+    ['a thread with an answer that came back from the server', () => {
+        const mine = postById('p1'); mine.sid = 'SRV-1';
+        POSTS.push({ id:'SRV-9', sid:'SRV-9', at:Date.now(), lang:langId,
+                     lname:'Vethi', ln:'qel tir', mn:'and the rest of it',
+                     ui:'en', who:'Iri', hd:'iri', mine:false, av:{ch:'\u0416'},
+                     to:'SRV-1', toh:'aya' });
+        window.route='thread'; NAV=[{r:'thread', a:'p1'}];
+        const h = vThread(); POSTS.pop(); delete mine.sid; return h; }],
+    /* YOUR OWN ROW, on somebody else's followers list, on a phone holding no
+       post of yours to take a name off. 「ここも？になるの謎だし」 */
+    ['your own row on somebody else\u2019s followers list', () => {
+        const was = POSTS.slice(); POSTS.length = 0;
+        FOL_HAVE['ers:iri'] = [meHandle(), 'veth']; FOL_ASKED['ers:iri'] = 1;
+        window.route='follows'; NAV=[{r:'follows', a:'ers:iri'}];
+        const h = vFollows();
+        delete FOL_HAVE['ers:iri']; delete FOL_ASKED['ers:iri'];
+        POSTS.push.apply(POSTS, was); return h; }],
+    /* And a profile whose two counts nobody has answered for yet, which is
+       what stands there instead of a 0 that jumps.
+       「0 と出て1秒後に1に変わる、をしない」 */
+    ['a profile before the counts have arrived', () => {
+        const fo = ME.fo, fr = ME.fr; delete ME.fo; delete ME.fr;
+        window.route='profile'; NAV=[{r:'profile'}];
+        const h = vProfile(); ME.fo = fo; ME.fr = fr; return h; }],
     /* The three things an author can do to their own post. The menu hangs off
        the ... , inside the post, so nothing renders it unless one is open --
        and what opens it is PMENU, which is where you are standing rather than
