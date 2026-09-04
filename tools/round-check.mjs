@@ -294,6 +294,69 @@ const r = await pg.evaluate(({s}) => {
   out.onePts = GE.st[GE.st.length-1].pts.length;
   out.oneZoom = geZ();
 
+  /* ---- a long stroke keeps every dot the finger went over --------------
+     OWNER 2026-09-04 「160で止めないで」. A stroke used to stop taking dots
+     at GE_MAXPTS and from there the drag only pushed its last point about,
+     so the middle of a long line was simply not drawn -- and nothing threw:
+     the letter rendered, the font installed, and it was a different letter.
+     Nobody chose the number; the comment over it said it was higher than any
+     real stroke.
+
+     The path is a serpentine over the whole lattice, one dot at a time, one
+     event each, the way a phone sends them -- 441 dots and never a doubling
+     back onto the dot before, which geMove takes off again. It is asked
+     WHILE THE FINGER IS DOWN, because that is where the dots were being
+     dropped; what geShape does to them on the lift is thinning and is a
+     different statement, held below. */
+  fresh();
+  var serp = [], si2, sj2, sd;
+  for (sj2 = 0; sj2 <= 20; sj2++) {
+    for (sd = 0; sd <= 20; sd++) {
+      si2 = (sj2 % 2 === 0) ? sd : 20 - sd;
+      serp.push([si2, sj2]);
+    }
+  }
+  var g0 = glass(P(serp[0][0], serp[0][1]));
+  gePtDown(at(1, g0[0], g0[1]));
+  for (sd = 1; sd < serp.length; sd++) {
+    var gp = glass(P(serp[sd][0], serp[sd][1]));
+    gePtMove(at(1, gp[0], gp[1]));
+  }
+  var lst = GE.st[GE.st.length - 1];
+  out.longWant = serp.length;
+  out.longPts  = lst.pts.length;
+  /* and the dots themselves, not only how many: a dot the finger crossed
+     well past the old ceiling is either in the stroke or it is not. Row 15
+     is dot 315 of 441. */
+  function has(pt){
+    var k;
+    for (k = 0; k < lst.pts.length; k++)
+      if (lst.pts[k][0] === pt[0] && lst.pts[k][1] === pt[1]) return true;
+    return false;
+  }
+  out.longMid  = has(P(20, 15));
+  out.longMid2 = has(P(0, 16));
+  out.longEnd  = has(P(20, 20));
+  /* the lift, and what the thinning leaves. The turn at the end of a row is
+     four dots off the line between its neighbours, so it survives -- which
+     is what says the shape is still a serpentine and not a line from the top
+     of the drawing to the bottom of it. */
+  var gz = glass(P(serp[serp.length - 1][0], serp[serp.length - 1][1]));
+  gePtUp(at(1, gz[0], gz[1]));
+  out.longKept = lst.pts.length;
+  out.longTurn = has(P(20, 15)) && has(P(0, 16));
+  /* every row turns at both ends, so a serpentine of 21 rows keeps 40 corners
+     however hard the thinning works. A count is a weak thing to ask on its
+     own -- it is asked here beside the two turns named above, because what
+     went wrong was the shape collapsing into one long drag and not any one
+     dot going missing. */
+  out.longCorners = 0;
+  for (sd = 1; sd < lst.pts.length - 1; sd++) {
+    var q0 = lst.pts[sd - 1], q1 = lst.pts[sd], q2 = lst.pts[sd + 1];
+    if ((q1[0] - q0[0]) * (q2[1] - q1[1]) !== (q1[1] - q0[1]) * (q2[0] - q1[0]))
+      out.longCorners++;
+  }
+
   /* and none of it is written to the letter */
   out.stored = JSON.stringify(ltById(l.id) || {}).indexOf('"z"') === -1;
   return out;
@@ -355,6 +418,19 @@ say(r.oneNew, 'one finger still draws a new stroke');
 say(r.onePts > 1, 'and it is a line, not a dot -- ' + r.onePts + ' points');
 say(r.oneZoom === 1, 'and one finger never magnifies');
 say(r.stored, 'and nothing about any of it is written to the letter');
+
+/* a long stroke -- 「160で止めないで」 OWNER 2026-09-04 */
+say(r.longPts === r.longWant,
+    'a stroke drawn over ' + r.longWant + ' dots holds every one of them -- ' +
+    r.longPts);
+say(r.longMid, 'the dot at the end of row 15 is in it, 315 dots in');
+say(r.longMid2, 'and the one the finger turned onto after it');
+say(r.longEnd, 'and the dot it finished on');
+say(r.longTurn, 'and the two turns are still there after the finger lifts -- ' +
+    r.longKept + ' points kept of ' + r.longWant);
+say(r.longCorners >= 40,
+    'and it is still a serpentine and not one long drag -- ' + r.longCorners +
+    ' corners over 21 rows');
 
 if (bad.length) { console.error('\nround: ' + bad.length + ' failed'); process.exit(1); }
 console.log('\nround: done to a stroke, reversible both ways, and it never bends a straight one.');

@@ -87,12 +87,22 @@ var GPEN={width:24, angleDeg:0, contrast:1.0, curve:36};
    800-2*40 = 720 divides evenly by 4, 6, 9 and 10, so the dots stay integers at
    5, 7, 10 and 11. */
 var GGRID={n:21, inset:40};
-/* A stroke drawn in one go can be long, but not unbounded. It used to stop
-   at 24, and past that the drag stopped adding points and only dragged the
-   last one about -- which is why a long stroke cut off halfway through. The
-   thinning afterwards is what decides how many points a shape really keeps,
-   so this only has to be higher than any real stroke. */
-var GE_MAXPTS=160;
+/* A stroke drawn in one go takes every dot the finger goes over, and there is
+   no ceiling on it. 「160で止めないで」 OWNER 2026-09-04.
+
+   There were two, 24 and then 160, and past either one the drag stopped
+   adding points and only dragged the last one about -- so the middle of a
+   long line was simply not drawn, while its two ends were where they should
+   be. Nothing throws: the letter renders and the font installs, and it is
+   not the letter somebody drew. Nobody chose the number; the comment over it
+   said only that it was higher than any real stroke, which is a guess about
+   how people draw and not a decision anybody made.
+
+   What bounds it instead is the lattice: a dot is added only when the finger
+   reaches one it is not already on, doubling straight back takes the last one
+   off again, and geShape() thins on the lift. Twenty-one by twenty-one is 441
+   dots, so a stroke that went over every one of them is 441 points and
+   `tools/round-check.mjs` draws exactly that. */
 function geStep(){ return (800 - GGRID.inset*2) / (GGRID.n - 1); }
 /* What stands at each end of a letter, so the gap between any two of them is
    twice this whatever the two are.
@@ -1907,8 +1917,7 @@ function geMove(ev){
        a spur behind. */
     var n=st.pts.length, prev=n>=2? st.pts[n-2] : null;
     if(prev && prev[0]===p[0] && prev[1]===p[1]){ st.pts.pop(); }
-    else if(n < GE_MAXPTS){ st.pts.push([p[0],p[1]]); }
-    else { st.pts[n-1][0]=p[0]; st.pts[n-1][1]=p[1]; }
+    else { st.pts.push([p[0],p[1]]); }
     GE.pi=st.pts.length-1; GE.fresh=false; GE.moved=true;
     /* the finger's own path, kept beside the snapped one */
     if(GE.raw){
