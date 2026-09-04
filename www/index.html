@@ -586,6 +586,12 @@ canvas.pkc{width:34px;height:34px;display:block}
    www/sns.js § snsWaitHTML. */
 .snswait{padding:48px 0}
 .snswait .pullrule{position:static;margin:0 auto}
+/* And the same mark at the size of a WORD -- what stands where a count goes
+   while nobody has answered for it yet. 「0 と出て1秒後に1に変わる、をしない」
+   OWNER 2026-09-04. www/me.js § meCount. */
+.numwait{display:inline-flex;vertical-align:-2px}
+.numwait .pullrule{position:static;margin:0;width:13px;height:13px}
+.numwait .pullrule svg{width:13px;height:13px}
 @keyframes pullsp{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.pullrule.go{animation:none}}
 .chead{padding:0 24px 6px}
