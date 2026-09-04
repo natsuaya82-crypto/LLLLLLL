@@ -30,6 +30,52 @@
 			<false/>
 			<key>PrimaryLanguage</key>
 			<string>mul</string>
+			<!-- NOTHING THIS KEYBOARD DOES NEEDS THIS, and it is still true.
+			     It is left true on purpose, and only the owner takes it out.
+
+			     What open access grants, and what this extension does with
+			     each of them — measured across the six Swift files here, not
+			     assumed:
+
+			       write to the App Group   Shared.board() only READS. The
+			                                writing is the app's, in
+			                                ios/App/App/LinguaShare.swift.
+			       the network              no URLSession, no URLRequest, no
+			                                http anywhere under LinguaKeyboard.
+			       microphone and speaker   no AVAudio, no AudioServices, no
+			                                playInputClick.
+			       Location and Contacts    no CLLocation, no CNContact.
+			       iCloud, Game Center,     no NSUbiquitous, no StoreKit,
+			       In-App Purchase          no SKPayment.
+
+			     AND READING THE APP GROUP DOES NOT NEED IT. Apple's own
+			     current page, "Configuring open access for a custom
+			     keyboard", says the default sandbox "prevents writing to the
+			     containing app's shared group containers (reading is
+			     permitted)", and lists among the capabilities of a keyboard
+			     WITHOUT open access: "read-only access to the containing
+			     app's shared containers". The iOS 8 App Extension Programming
+			     Guide's "cannot share a container with its containing app" is
+			     the archived sentence this was built on, and it is superseded.
+			     KeyboardViewController.build() carries the same quotation
+			     over the full-access gate that was taken out of it.
+
+			     So the paper answer is that this can be false, and App Store
+			     Review 4.4.1 pushes that way — a keyboard must remain
+			     functional without requiring full access.
+
+			     IT IS NOT TAKEN OUT HERE, AND THE REASON IS THE COST OF BEING
+			     WRONG. There is no Swift on a Linux runner and no check in
+			     this repository can open a keyboard, so every sentence above
+			     is read rather than pressed. If reading the group turns out
+			     to need the switch after all, this keyboard draws NOT ONE KEY
+			     and the person has no way back — they cannot turn on a switch
+			     the app no longer asks for.
+
+			     IT IS ANSWERED BY ONE PRESS ON THE BUILD THAT IS ALREADY OUT,
+			     and no new build: turn Allow Full Access OFF for Lingua in
+			     iOS Settings, then open the keyboard. Drawn letters still
+			     there means false is safe. docs/apple.md § 2c. -->
 			<key>RequestsOpenAccess</key>
 			<true/>
 		</dict>

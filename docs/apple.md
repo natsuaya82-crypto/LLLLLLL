@@ -1,8 +1,8 @@
 # Apple 側でやること
 
-App Store Connect と Apple Developer の画面で入力するものだけを書いています。
-どれもコードに書ける場所がないので、ここが唯一の置き場所です。
-`supabase/mail.md` と同じ理由でここにあります。
+App Store Connect と Apple Developer の画面で入力するものと、**iPhone の設定で
+一度だけ押して答えを出すもの**（2c）を書いています。どれもコードに書ける場所が
+ないので、ここが唯一の置き場所です。`supabase/mail.md` と同じ理由でここにあります。
 
 アプリ: **Lingua** / Bundle ID **com.tokinets.lingua** / チーム ID は
 GitHub の Secret `APPLE_TEAM_ID`。
@@ -210,6 +210,49 @@ app.mobileprovision app groups: Array {
 
 Supabase 側は `supabase/setup.md` の 4-1 です。あちらは**この節の後**で
 構いません（順番はどちらでもいいのですが、ビルドが通らないと試せません）。
+
+---
+
+## 2c. キーボードのフルアクセスを一度切って、字が出るか見る
+
+**新しいビルドは要りません。今 iPhone に入っているもので出来ます。**
+**押すのは一箇所、戻すのも一箇所です。**
+
+1. iPhone の **設定 → 一般 → キーボード → キーボード → Lingua**
+2. **「フルアクセスを許可」を OFF**
+3. どこでもいいので文字を打つ欄を開いて、**Lingua のキーボードに切り替える**
+4. **自作の字が出るか、キーが一つも無いか**を見る
+
+| 見えたもの | 意味 |
+|---|---|
+| 自作の字がいつも通り出る | フルアクセスは要らない。`RequestsOpenAccess` を外せます |
+| キーが一つも無い／文字が一行出るだけ | 要る。今のまま `true` で正しい |
+
+**終わったら OFF のままにせず、元に戻してください。**
+
+### なぜこれを訊くか
+
+`ios/App/LinguaKeyboard/Info.plist` の `RequestsOpenAccess` が `true` です。
+これが `true` だと、iOS が人に「このキーボードにフルアクセスを許可しますか」と
+訊きます。審査の 4.4.1 は「フルアクセスを要求せずに動くこと」を求めるので、
+要らないなら外したほうがよい所です。
+
+**Apple の今の文書は「要らない」と言っています。**「Configuring open access
+for a custom keyboard」に、既定の砂場は
+「prevents writing to the containing app's shared group containers
+(reading is permitted)」とあり、フルアクセス無しでできることの一覧に
+「read-only access to the containing app's shared containers」が載っています。
+このキーボードは App Group を**読むだけ**で、書くのはアプリの側です。
+ネットワークもマイクも iCloud も課金も位置情報も、この拡張は一行も使って
+いません（六本の Swift を数えました）。
+
+**それでも外しませんでした。**Linux に Swift は無く、このリポジトリの検査は
+キーボードを一枚も開けないので、上は**読んだだけで押していません。**もし
+読み取りにもあの switch が要るのなら、外した瞬間にキーボードはキーが一つも
+無い状態になり、**人が自分で戻す道が消えます** ── アプリが訊かなくなった
+switch を、人が入れ直すことはできません。
+
+**なので、上の四手順の結果でオーナーが決めてください。**
 
 ---
 
