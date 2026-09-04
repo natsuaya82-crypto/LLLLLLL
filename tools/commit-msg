@@ -1,0 +1,105 @@
+#!/bin/sh
+# Refuse a commit that changes what a screen looks like and carries no picture
+# of it.
+#
+# Install once:  git config core.hooksPath tools   (session-start.sh does it)
+# Skip once:     git commit --no-verify
+#
+# 「見た目を変えたものは必ずスクショで提示する」 OWNER 2026-09-04.
+# 「見た目を見せてね作り変えたならどんな風になったか俺わからないし」
+#
+# The owner cannot read a diff of string concatenation and should not have to.
+# The rule was written in docs/TESTING.md under a heading that also says
+# screenshots are "not a gate", and it was held by whoever remembered it --
+# which on 2026-09-04 was nobody, twelve times.
+#
+# WHY THIS IS THE commit-msg HOOK AND NOT tools/pre-commit
+#
+# It was asked for in pre-commit, and it cannot live there. `git commit -m` runs
+# pre-commit BEFORE it writes the message down: at that moment
+# .git/COMMIT_EDITMSG still holds the PREVIOUS commit's message. A way out
+# read from there would be one commit stale -- write the line once and the NEXT
+# visual commit walks through, silently, forever. That is not a weaker gate,
+# it is a gate that lies. commit-msg is handed the real message as $1 and runs
+# before the commit exists, so it can refuse the same commit for the same
+# reason with nothing guessed. It is picked up by the same core.hooksPath=tools
+# that pre-commit is, and nothing had to be installed for it.
+#
+# WHAT COUNTS AS A PICTURE: any .png added under shots/. Not its name, not its
+# freshness, not whether it is of the screen that changed -- none of which a
+# hook can know. What it holds is the one thing it can see: that a commit which
+# changed a screen also carries something the owner can look at.
+#
+# WHAT COUNTS AS CHANGING A SCREEN: www/index.html, or any .js under www/
+# except the ten language files and the font writer, which draw nothing. Asked
+# that way round on purpose -- pre-commit's i18n block names the same two
+# exceptions, and the comment above it says why: the version that listed the
+# screen files instead went stale the day a screen moved, and skipped the walk
+# quietly for months. A file added under www/ tomorrow is covered by this
+# without anybody remembering to add it.
+#
+# THE ONE WAY PAST, and it is a sentence somebody has to write themselves:
+#
+#     見た目は変わっていない
+#
+# on a line of its own in the message. It is not a flag and not an env var,
+# because both of those get typed by reflex; a sentence is a claim, and the
+# person who commits it has said it. If it turns out to be untrue, the commit
+# says who said it.
+
+MSGFILE="$1"
+[ -n "$MSGFILE" ] || exit 0
+[ -f "$MSGFILE" ] || exit 0
+
+GITDIR=$(git rev-parse --git-dir) || exit 0
+
+# A merge, a cherry-pick and a revert carry somebody else's message about
+# somebody else's change. This asks the author of a change to show it; there is
+# no author here to ask.
+for f in MERGE_HEAD CHERRY_PICK_HEAD REVERT_HEAD; do
+  [ -f "$GITDIR/$f" ] && exit 0
+done
+
+STAGED=$(git diff --cached --name-only)
+[ -n "$STAGED" ] || exit 0
+
+VISUAL=$(printf '%s\n' "$STAGED" \
+  | grep -E '^(www/index\.html|www/.*\.js)$' \
+  | grep -vE '^www/(i18n/[a-z][a-z]\.js|otf5\.js)$')
+[ -n "$VISUAL" ] || exit 0
+
+# A deleted screenshot is not a screenshot, so this side asks for the ones the
+# commit ADDS or CHANGES.
+SHOTS=$(git diff --cached --name-only --diff-filter=ACMR | grep -iE '^shots/.*\.png$')
+[ -n "$SHOTS" ] && exit 0
+
+# git's own commented-out help, and the diff `commit -v` puts below the
+# scissors, are not things the author wrote.
+SAID=$(sed -e '/^#[[:space:]]*-\{1,\}[[:space:]]*>8[[:space:]]*-\{1,\}/,$d' "$MSGFILE" \
+       | grep -v '^#' \
+       | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' \
+       | grep -c '^見た目は変わっていない。\{0,1\}$')
+[ "$SAID" -gt 0 ] && exit 0
+
+echo ''
+echo '  This commit changes a screen and carries no screenshot.'
+echo ''
+printf '%s\n' "$VISUAL" | sed 's/^/      /'
+echo ''
+echo '  「見た目を変えたものは必ずスクショで提示する」 OWNER 2026-09-04. The owner'
+echo '  cannot see a screen from a diff, and neither can whoever reads this next.'
+echo ''
+echo '  Shoot it and put the picture in the commit:'
+echo ''
+echo '      node tools/shot.mjs <screen>          # --all --dark --lang ja'
+echo '      git add shots/<name>.png'
+echo ''
+echo '  If the screen really does look the same -- a rename, a comment, a'
+echo '  refactor meant to change nothing -- then say so, on a line of its own'
+echo '  in the commit message, in your own words being exactly these:'
+echo ''
+echo '      見た目は変わっていない'
+echo ''
+echo '  If you mean it anyway:  git commit --no-verify'
+echo ''
+exit 1
