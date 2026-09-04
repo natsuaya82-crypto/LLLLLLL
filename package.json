@@ -14,6 +14,7 @@
     "verify": "node tools/verify-script.mjs",
     "test": "node tools/gate.mjs",
     "assets": "node tools/assets-check.mjs",
+    "docs": "node tools/docs-check.mjs",
     "face": "node tools/face-check.mjs",
     "box": "node tools/box-check.mjs",
     "css-once": "node tools/css-once-check.mjs",

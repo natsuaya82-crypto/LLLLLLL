@@ -39,7 +39,7 @@ import os from 'os';
 
 /* No browser: two seconds for all of them, and a failure here means nothing
    heavy was started for nothing. */
-const FAST = ['assets-check', 'es5-check', 'grammar-engine-check', 'dead-check', 'import-check', 'sides-check',
+const FAST = ['assets-check', 'docs-check', 'es5-check', 'grammar-engine-check', 'dead-check', 'import-check', 'sides-check',
               'face-check', 'box-check', 'css-once-check', 'store-check', 'del-check', 'paid-check',
               'token-check'];
 /* A browser each. The order is the order they are PRINTED in; which one runs
@@ -119,6 +119,45 @@ for (const n of SLOW){
    the number off, and every number in CLAUDE.md is a copy of this one. */
 console.log('\ngate: ' + (FAST.length + SLOW.length) + ' checks -- ' +
             FAST.length + ' with no browser, ' + SLOW.length + ' walking the app.');
+
+/* And write down WHICH COMMIT that was, for `tools/pre-push` to read back.
+
+   The rule "run the gate once before pushing" was written in three places and
+   held by nobody, so on 2026-09-04 a gate and a push went up as one `&&` line,
+   the exit code was never read, and master went red. `git push` has no opinion
+   about whether what it is pushing works; this is how it gets one.
+
+   It goes in the git directory and never in a commit. A green is a thing that
+   happened ON THIS MACHINE -- carrying the claim to another machine as a
+   tracked file would be a green nobody watched.
+
+   A dirty tree records nothing. What was walked then is the working directory,
+   which is not any commit, and a sha written for it would say the gate had
+   passed on something it never saw. `assets-check` exists because of exactly
+   that gap: three checks green against a working directory that had the files
+   while the commit did not. */
+try {
+  const { writeFileSync, unlinkSync } = await import('node:fs');
+  const { execSync } = await import('child_process');
+  const gitdir = execSync('git rev-parse --git-dir', { encoding: 'utf8' }).trim();
+  const rec = gitdir + '/gate-green';
+  try { unlinkSync(rec); } catch (e) {}
+  if (!bad) {
+    const head = execSync('git rev-parse HEAD', { encoding: 'utf8' }).trim();
+    const dirty = execSync('git status --porcelain --untracked-files=no', { encoding: 'utf8' }).trim();
+    if (dirty) {
+      console.log('gate: green, but the tree has uncommitted changes, so no commit was');
+      console.log('      recorded as green. Commit, then run it again before pushing master.');
+    } else {
+      writeFileSync(rec, head + '\n' + new Date().toISOString() + '\n');
+      console.log('gate: green on ' + head.slice(0, 8) + '. master will accept that commit.');
+    }
+  }
+} catch (e) {
+  /* Not a git checkout, or git is not there. The gate still says what it
+     found; only the record is skipped. */
+}
+
 if (bad){
   console.error('\n' + bad + ' of ' + (FAST.length + SLOW.length) + ' checks failed.');
   process.exit(1);
