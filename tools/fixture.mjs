@@ -2044,6 +2044,16 @@ export function halfDone(){
        WLD.hide = false;
        wldSecs().forEach(function(sec){ ABOPEN[sec.r] = true; });
        window.route = 'world'; NAV = [{ r:'world' }];
-       return vWorld(); }]
+       return vWorld(); }],
+    /* The word order WITH the demonstration under it. Every chapter that shows
+       one draws it only once the stage has been touched -- `stTouched(id)` is
+       `STG.set[id]`, and the seed's `set` is empty -- so `.gdemo`, the row
+       inside it and the button that says the line out loud were on no route
+       and in no face, and could not be photographed at all. Appended at the
+       END so no index above it moves. */
+    ['the word order, with the demonstration under it', () => {
+       STG.set['order'] = 1;
+       window.route = 'gram'; NAV = [{ r:'gram', a:'order' }];
+       return vGram(); }]
   ];
 }
