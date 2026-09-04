@@ -472,14 +472,7 @@ function vFind(){
   return '<div class="view">'+
     navTop()+
     '<div class="chead">'+
-    '<div class="search"><span class="lens">'+ICON_LENS+'</span>'+
-    /* THE SAME FIELD AS EVERY OTHER SEARCH BOX, and it was an <input>.
-       「全部改行して画面内に文字が収まるようにして欲しい」 OWNER 2026-08-27,
-       and 「全部なくせ」 when asked what was left. An <input> is one row that
-       scrolls sideways forever and no CSS makes it wrap. */
-    lnField('f-q', t('find.ph'), IN('fSetQ'), fq)+
-    '<button class="sx" id="f-x"' + DO('clearFq') + ''+(fq?'':' hidden')+
-      ' aria-label="'+esc(t('words.clear'))+'">'+ICON_CROSS+'</button></div></div>'+
+    searchBox('f', t('find.ph'), IN('fSetQ'), fq, 'clearFq')+'</div>'+
     '<div class="body" id="f-list">'+findBodyHTML()+'</div>'+
     '</div>';
 }

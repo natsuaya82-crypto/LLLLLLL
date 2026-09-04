@@ -924,6 +924,36 @@ function lnField(id, ph, attrs, val, cls){
     'rows="1" placeholder="'+esc(ph)+'" autocomplete="off" autocorrect="off" '+
     'spellcheck="false"'+(attrs||'')+'>'+esc(val||'')+'</textarea>';
 }
+/* A search box, and it was written out six times. The FIELD inside one was
+   already a single place -- lnField() above, and every screen went through it.
+   What each screen still hand-rolled was the box AROUND the field: the
+   magnifier, the wrapper, and the cross that empties it. So the six drifted in
+   exactly the things the wrapper decides, and docs/DUPLICATES.md counted the
+   drift: three screens could clear what was typed with one press and three
+   could not, and two had nothing in the field saying what it searched.
+
+   Which of those is right for a given screen is NOT settled here, and this
+   changes none of them -- every caller passes exactly what it drew before.
+   What changes is that a difference between two search boxes is now an
+   argument you read on one line, instead of a shape you have to compare
+   across four files. A screen that should gain a cross gains it by being
+   given one.
+
+   `stem` names both ids: `<stem>-q` is the field and `<stem>-x` is the cross,
+   which is what all three that had one were already called. `clear` is the
+   name of what the cross does, and no name is no cross. `extra` goes between
+   the field and the cross -- the timeline's keep-this-search star, which is
+   the one screen that has anything there. */
+function searchBox(stem, ph, attrs, val, clear, extra){
+  return '<div class="search"><span class="lens">'+ICON_LENS+'</span>'+
+    lnField(stem+'-q', ph, attrs, val)+
+    (extra||'')+
+    (clear
+      ? '<button class="sx" id="'+stem+'-x"'+DO(clear)+(val?'':' hidden')+
+          ' aria-label="'+esc(t('words.clear'))+'">'+ICON_CROSS+'</button>'
+      : '')+
+    '</div>';
+}
 /* Made as tall as its text, every time that text changes. A textarea has no
    CSS for "as tall as you need"; the height has to be measured and set, and
    it has to be reset to nothing first or it can only ever grow. */

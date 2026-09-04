@@ -217,16 +217,10 @@ function vNotes(){
            : navDo(t('notes.sel'), 'ntSelOn', null, true))))+
     '<div class="body">'+
     (ntFind
-      ? '<div class="search"><span class="lens">'+ICON_LENS+'</span>'+
-      /* THE SAME FIELD AS EVERYWHERE ELSE, and it was an <input>.
-         「全部改行して画面内に文字が収まるようにして欲しい」 OWNER 2026-08-27,
-         and 「全部なくせ」 when asked what was left. An <input> is one row that
-         scrolls sideways forever; there is no CSS for it, so the element
-         changes. lnField() is the one place that shape lives.
-
-         ntSetQ() calls render(), and lnGrowAll() runs there, so this one
-         needs no lnGrow of its own. */
-        lnField('nt-q', t('notes.search'), IN('ntSetQ'), ntQ)+'</div>'
+      /* ntSetQ() calls render(), and lnGrowAll() runs there, so this one needs
+         no lnGrow of its own. No cross today: it is the shape this screen was
+         drawn with, and searchBox() is where one would be given. */
+      ? searchBox('nt', t('notes.search'), IN('ntSetQ'), ntQ)
       : '<div class="note" style="margin-bottom:12px">'+t('notes.note')+'</div>')+
     (found.length
       ? '<div class="ntlist">'+rows+'</div>'

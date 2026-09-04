@@ -1572,31 +1572,21 @@ function vExplore(){
     '</div></div>';
 }
 function snsFieldHTML(){
-  return '<div class="search"><span class="lens">'+ICON_LENS+'</span>'+
-      /* `enterkeyhint` is what makes the phone's own return key say Search,
-         and pressing it is what asks for posts. 「ツイートの検索は検索ボタン
-         押したら出てくる」 */
-      /* THE SAME FIELD AS EVERYWHERE ELSE, and it was an <input>.
-         「全部改行して画面内に文字が収まるようにして欲しい」 OWNER 2026-08-27,
-         and 「全部なくせ」 when asked what was left. An <input> is one row that
-         scrolls sideways forever; there is no CSS for it, so the element
-         changes. lnField() is the one place that shape lives.
+  /* `enterkeyhint` is what makes the phone's own return key say Search, and
+     pressing it is what asks for posts. 「ツイートの検索は検索ボタン押したら
+     出てくる」 Enter searches rather than putting a newline in: the keydown
+     listener stops the key before it runs the name.
 
-         Enter still searches rather than putting a newline in: the one
-         keydown listener stops the key before it runs the name. */
-      lnField('sns-q', t('sns.search'),
-        ' enterkeyhint="search"' + IN('snsSetQ') + KD('snsGo'), snsQ)+
-      /* Kept, or not. Two drawings rather than a class, because "saved" is a
-         filled star and "not saved" is an outline of one, and that is the
-         whole difference -- there is no CSS for it to need. It is only there
-         when there is a word to keep. */
-      (snsQ.trim()
-        ? '<button class="sx"' + DO('snsSaveQ') + ' aria-label="'+
-            esc(t('sns.save'))+'">'+(snsIsSaved(snsQ)? ICON_STAR_ON : ICON_STAR)+'</button>'
-        : '')+
-      '<button class="sx" id="sns-x"' + DO('snsClearQ') + (snsQ?'':' hidden')+
-        ' aria-label="'+esc(t('words.clear'))+'">'+ICON_CROSS+'</button>'+
-    '</div>';
+     The star is this screen's alone -- keep this search, or not. Two drawings
+     rather than a class, because "saved" is a filled star and "not saved" is
+     an outline of one, and that is the whole difference. It is only there when
+     there is something to keep. */
+  return searchBox('sns', t('sns.search'),
+    ' enterkeyhint="search"' + IN('snsSetQ') + KD('snsGo'), snsQ, 'snsClearQ',
+    snsQ.trim()
+      ? '<button class="sx"' + DO('snsSaveQ') + ' aria-label="'+
+          esc(t('sns.save'))+'">'+(snsIsSaved(snsQ)? ICON_STAR_ON : ICON_STAR)+'</button>'
+      : '');
 }
 /* ---- who read you, who answered, who followed --------------------------
    「いいね、返信、リポスト、フォロー、おすすめのツイートとか？」

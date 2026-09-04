@@ -244,14 +244,10 @@ function vWords(){
        for it; the element has to change. lnField() is the one place that
        shape lives -- no new mechanism here, and nothing else about this row
        moves. It grows with what is in it (lnGrow, below). */
-    '<div class="search"><span class="lens">'+ICON_LENS+'</span>'+
-    lnField('w-q', t('words.search'), IN('wordsSetQ'), q)+
-    /* always in the page, shown when there is something to clear -- typing
-       repaints the list, not the header, so a button conjured up by the query
-       string would never appear until the screen was left and come back to */
-    '<button class="sx" id="w-x"' + DO('clearQ') + ''+(q?'':' hidden')+
-      ' aria-label="'+esc(t('words.clear'))+'">'+ICON_CROSS+'</button>'+
-    '</div>'+
+    /* The cross is always in the page and hidden until there is something to
+       clear: typing repaints the list, not the header, so one conjured up by
+       the query would not appear until the screen was left and come back to. */
+    searchBox('w', t('words.search'), IN('wordsSetQ'), q, 'clearQ')+
     /* One button, not a row of twelve. A part of speech is a CHOICE and a
        row of them is a scroll: the one you want is off the side about half
        the time, and adding a thirteenth made it worse.
