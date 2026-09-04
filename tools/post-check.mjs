@@ -1878,4 +1878,11 @@ console.log('post: a letter placed on a black photograph is IN the file that goe
             '      not wearing the next one\u2019s.\n' +
             '      A post taken down leaves a tombstone where the post somebody\n' +
             '      came to read was, and nowhere else; it is out of the timeline,\n' +
-            '      and your own stays, wearing the word for it.');
+            '      and your own stays, wearing the word for it.\n' +
+            '      One post that has not gone up yet is sent ONCE however many\n' +
+            '      times the timeline answers while its photographs are going up.\n' +
+            '      A photograph or a voice that would not upload does not leave a\n' +
+            '      post the app believes is finished: the wire comes back and the\n' +
+            '      server ends up holding all of it, under one row. And the bytes\n' +
+            '      of a post somebody deleted do not stay in the public bucket\n' +
+            '      because the delete was refused once.');
