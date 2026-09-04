@@ -65,6 +65,43 @@ changed. `grammar-engine` and `store` are in the gate and **not** in the hook.
 **It is not the gate.** CI runs three of the thirty-five, so a green tick on a
 push is not the gate either.
 
+### What stops a red master: `tools/pre-push`
+
+**The gate is only a gate if somebody reads it.** On 2026-09-04 a gate and a
+push went up as one line joined by `&&`, nothing read what came back, and
+master went red. Every rule that would have stopped it was prose — written in
+three places, held by nobody, which is the third kind of rule `CLAUDE.md`
+forbids.
+
+So `tools/gate.mjs` now writes the commit it was green on into
+`.git/gate-green`, and `tools/pre-push` reads it back at the one moment it
+matters: **a push to `master` of a commit no green run has ever seen is
+refused.**
+
+- **It does not run the gate.** Sixteen minutes inside a push hook is a hook
+  people turn off. It only asks whether the gate HAS been run, on THIS commit.
+- **It stops `master` and nothing else.** A session pushes to its own branch
+  as often as it likes; none of those pushes broke anything.
+- **`git push --no-verify` still goes through.** The accident is what is being
+  stopped, not the person who means it.
+- **A dirty tree records nothing.** What a gate walks with uncommitted changes
+  in the tree is not any commit, so writing a sha for it would be a green
+  nobody watched. Commit first, then gate, then push.
+- **The record never enters a commit.** It says what was proved on this
+  machine; carrying it to another machine as a tracked file would be a claim
+  nobody made. A fresh clone has no record, which is correct — it has watched
+  nothing.
+
+The order this asks for, and the reason:
+
+```
+npm test          # and READ it
+git push
+```
+
+not `npm test && git push`, where the second half runs off an exit code and
+the first half goes unread.
+
 All thirty-five, in the order `tools/gate.mjs` prints them. **If this table and
 that file disagree, the file is right.**
 

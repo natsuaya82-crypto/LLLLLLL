@@ -1,0 +1,75 @@
+#!/bin/sh
+# Refuse a push to master of a commit the gate has never been green on.
+#
+# Install once:  git config core.hooksPath tools   (session-start.sh does it)
+# Skip once:     git push --no-verify
+#
+# 2026-09-04. The leader typed the gate and the push as one line joined by
+# `&&` -- ran the gate and pushed without reading what came back -- and master
+# went red. Nothing on this machine said a word: `git push` has never had an
+# opinion about whether the thing being pushed works. The rule "run the gate
+# once before pushing" was written down in three places and held by nobody,
+# which is the third kind of rule CLAUDE.md forbids: written as if something
+# were stopping it.
+#
+# So this is the check that holds it. `tools/gate.mjs` writes the commit it
+# was green on into the work area, and this reads it back at the one moment
+# it matters.
+#
+# Three things it deliberately does NOT do:
+#
+#   * It does not run the gate. Sixteen minutes inside a push hook is a hook
+#     people turn off, and the gate is the leader's to run once -- not once
+#     per push. This only asks whether it HAS been run.
+#   * It does not stop any branch but master. A session pushes to its own
+#     branch constantly and none of those pushes is what broke anything.
+#   * It does not close `--no-verify`. The point is to stop the accident, not
+#     to stand in front of somebody who means it.
+#
+# The record lives in the git directory and never in a commit: it says what
+# was proved ON THIS MACHINE, and carrying that to another machine as a file
+# would be a claim nobody made.
+
+GITDIR=$(git rev-parse --git-dir) || exit 1
+REC="$GITDIR/gate-green"
+ZERO=0000000000000000000000000000000000000000
+
+# git hands the hook one line per ref being pushed:
+#   <local ref> <local sha> <remote ref> <remote sha>
+while read -r LOCAL_REF LOCAL_SHA REMOTE_REF REMOTE_SHA; do
+  [ "$REMOTE_REF" = "refs/heads/master" ] || continue
+  # A deletion carries no commit, so there is nothing to have been green on.
+  [ "$LOCAL_SHA" = "$ZERO" ] && continue
+  [ -z "$LOCAL_SHA" ] && continue
+
+  GREEN=''
+  [ -f "$REC" ] && GREEN=$(head -1 "$REC" | tr -d ' \t\r\n')
+  [ "$GREEN" = "$LOCAL_SHA" ] && continue
+
+  SHORT=$(git rev-parse --short "$LOCAL_SHA" 2>/dev/null || echo "$LOCAL_SHA")
+  echo ''
+  echo "  This would push $SHORT to master, and the gate has not been green on it."
+  echo ''
+  if [ -n "$GREEN" ]; then
+    WAS=$(git rev-parse --short "$GREEN" 2>/dev/null || echo "$GREEN")
+    echo "  The last green run was $WAS -- a different commit. Whatever has"
+    echo "  been committed since then has not been through the gate."
+  else
+    echo "  There is no record of a green run in this work area at all."
+  fi
+  echo ''
+  echo "  Run the gate, READ what it says, and push after:"
+  echo ''
+  echo "      npm test"
+  echo "      git push"
+  echo ''
+  echo "  Not \`npm test && git push\` -- that is the line that put a red master"
+  echo "  up on 2026-09-04, because the second half runs on the exit code and"
+  echo "  nobody read the first half."
+  echo ''
+  echo "  If you mean it anyway:  git push --no-verify"
+  echo ''
+  exit 1
+done
+
+exit 0
