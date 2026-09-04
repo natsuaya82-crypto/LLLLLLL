@@ -73,12 +73,6 @@ function bootSession(){
      out. It is not asked again -- popAsk() answered when it was pressed, and
      asking twice would be the app doubting somebody who already said yes. */
   if(netEnded()){ wipeAllGo(); return; }
-  /* And the languages this ACCOUNT has that this phone has not got at all.
-     It fills in what is missing and stops, so a phone that is simply working
-     finds nothing to do. Before the sync below because that one is about the
-     language that is OPEN, and this is about the ones that are not here --
-     which, until it existed, were unreachable from a second phone.
-     「前のアカウント消えたんだが？」 */
   /* And what this ACCOUNT has paid for, which used to be a fact about the
      phone. The higher of the two rungs wins -- netPlanSync() has the whole
      of why. Before the languages, because the plan is what says how many of
@@ -99,15 +93,41 @@ function bootSession(){
      somebody who had paid. 「プランは絶対におかしくしちゃいけないんだって」
      OWNER 2026-09-02. */
   netPlanBoot();
-  netLangsDown();
-  /* And the language, which belongs to this account and exists twice. Read,
-     merged and written back -- both ways, so a phone that has been offline
-     for a week arrives holding the week rather than replacing it.
+  /* THE TWO ROADS BETWEEN THIS PHONE AND THE SERVER, AND THEY GO IN ORDER.
+     netLangsDown() brings down the languages this ACCOUNT has that this phone
+     has not got at all -- it fills in what is missing and stops, so a phone
+     that is simply working finds nothing to do, and until it existed a
+     language was unreachable from a second phone 「前のアカウント消えたんだ
+     が？」. netLangSync() puts up what this phone has and the server has not.
+     They used to be two lines here, fired in the same moment and neither
+     waited for, and the same language came down the first road while it was
+     going up the second one.
 
-     After the session and not before: it is done AS somebody, and there is
-     always somebody now. Not waited for either -- the app has already opened
-     on what is on the phone, which is all of the making side. */
-  netLangSync();
+     The one language that could reach: one that has NEVER BEEN UP. It has no
+     `sid`, so netLangsDown() -- which takes its 「what is already here」 off
+     LANGS before it asks -- has nothing to match it by, and netLangRow()
+     makes its row while that question is in the air. The answer then comes
+     back carrying a row this phone has never heard of, langMint() makes a
+     second entry for it, and the same language stands twice in the list.
+     Once, on the one launch it first goes up, and it does not go away again.
+
+     Nothing throws and nothing is lost: two entries, one server row, both
+     real. It is found by somebody looking at their own list of languages.
+
+     So the up road waits for the down road, which is one line rather than a
+     second thing that watches for duplicates -- a phone that has just been
+     told everything this account has is a phone that knows what is missing.
+     Everything else here is unchanged: still not waited for by the app, which
+     has already opened on what is on the phone. */
+  netLangsDown(function(){
+    /* And the language, which belongs to this account and exists twice. Read,
+       merged and written back -- both ways, so a phone that has been offline
+       for a week arrives holding the week rather than replacing it.
+
+       After the session and not before: it is done AS somebody, and there is
+       always somebody now. */
+    netLangSync();
+  });
   /* And whether this account is the one that answers the reports, which is
      one column on one profile and decides whether a row exists at the foot of
      the settings list. Asked after the session is resumed because it is asked
