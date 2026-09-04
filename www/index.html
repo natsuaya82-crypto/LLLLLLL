@@ -25,6 +25,10 @@ html[data-theme="dark"]{
      Not --bad, which means an error and would say the wrong thing about a
      Sunday. 「日曜🟥土曜🟦 カレンダーって数字だけがあればいいわけじゃねえぞ？」 */
   --sun:#d9705c; --sat:#6f9fd8;
+  /* A tag in what somebody wrote. 「タグは青く光る」 OWNER 2026-09-04.
+     Its own name and not --sat: that one means Saturday on a calendar, and
+     a colour borrowed for a second meaning moves both when one is changed. */
+  --tag:#7fb0e8;
   /* An area, while it is being drawn. The editor's only, and never a letter's:
      what is filled is the letter's own colour everywhere it is read. */
   --fill:#5fbf7a;
@@ -46,6 +50,7 @@ html[data-theme="light"]{
   --gold:#8a6a22; --goldsf:rgba(138,106,34,.07); --goldln:rgba(138,106,34,.30);
   --bad:#c9553f;
   --sun:#c9553f; --sat:#3b6ea5;
+  --tag:#2f5f9e;
   --fill:#2f8f4e;
   --pur:#5546c8; --pursf:rgba(85,70,200,.07); --purln:rgba(85,70,200,.34);
   --onGold:#fffdf6; --dot:rgba(26,23,18,.46); --shadow:0 8px 22px rgba(60,50,30,.10);
@@ -914,6 +919,19 @@ canvas.pkc{width:34px;height:34px;display:block}
 .numcn{position:relative}
 .numsep{display:inline-block;padding:0 .1em;opacity:.55}
 .pmn{font-size:1.0rem;line-height:1.5;color:var(--txs);margin-top:8px}
+/* A TAG, INSIDE WHAT SOMEBODY WROTE. 「タグは青く光るからタップしたら
+   タグの検索になる。」 OWNER 2026-09-04. Blue letters and nothing else --
+   no corner, no border, no fill: it is a word in a sentence, and the
+   sentence does not stop for it. Everything here undoes what a browser
+   does to a <button> so it sits in the line at the line's own size.
+   www/sns.js § tagHTML. */
+.ptag{background:none;border:0;padding:0;margin:0;font:inherit;color:var(--tag);
+      cursor:pointer;-webkit-appearance:none;appearance:none;
+      /* A <button> is a box the browser will not break, so a tag at the end
+         of a line ran off the side of the phone instead of wrapping with the
+         words round it. It is a word in a sentence and it breaks like one. */
+      display:inline;white-space:normal;text-align:inherit;
+      word-break:break-word;overflow-wrap:anywhere}
 /* Spread edge to edge under the post, the way a thumb expects to find them. */
 /* Edge to edge under the post, the way a thumb expects to find them. */
 .pacts{display:flex;justify-content:space-between;margin:2px -8px -10px -10px}

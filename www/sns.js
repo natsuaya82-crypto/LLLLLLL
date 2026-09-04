@@ -965,42 +965,72 @@ function dayMap(id){
   return null;
 }
 /* ---- THE TAG ------------------------------------------------------------
-   「#今日のお題だし」「タグとお題一本化してってこと」 OWNER 2026-09-04.
+   「投稿する時にタグを入れられるようにしろよ」「本文に#つけられるようにしろよ」
+   「タグは本文中に。」「翻訳はいらんから」 OWNER 2026-09-04.
 
-   A post written from the day's sentence carries the prompt's id, and that id
-   is what gathers the answers -- 「繋がりはハッシュタグではなく列」 (OWNER
-   DECISION 2026-08-23 #6). The tag is that id said out loud, as a word.
+   A TAG IS CHARACTERS SOMEBODY TYPED, and that is the whole of it. It was a
+   ROW drawn beside the post out of `t('day.tag')` -- ten words in ten
+   language files, put on by the app, sitting outside what anybody wrote and
+   impossible to type. The owner has replaced it: the `#` goes in the body,
+   a person puts it there, and there is one spelling of it.
 
-   IT IS ONE FIXED NAME AND NOT THE PROMPT'S SENTENCE. `day.tag` is
-   「今日のお題」 in the reader's own language, ten of them, exactly as every
-   other word this app says. A Japanese reader sees `#今日のお題` and an
-   English reader `#todaysprompt` -- ONE tag, ten ways of saying it, one list
-   of answers, and the posts under it are in every language they were written
-   in. 「今日のお題は翻訳もタグもその人の設定言語になるようにして」.
+   ONE SPELLING AND NO TRANSLATION. 「翻訳はいらんから」. A tag that is said
+   ten ways is ten tags, and the search that finds them is a text search --
+   so the ten would never meet. `DAY_TAG` is the day's, in the one form it
+   has, and it is not a word in any language file because it is not
+   interface: it is put into a field somebody can then edit.
 
-   The sentence a prompt CARRIES is a different thing and stays where it is --
-   daySay() and postSay() say it, in the reader's language, off the server's
-   ten. A tag made out of that sentence was this session's first attempt and
-   the owner replaced it: a tag is a name, and the name is the same every day.
+   The LINK is still the column. `post.pr` gathers the day's answers and
+   cannot be edited away 「繋がりはハッシュタグではなく列」 (OWNER DECISION
+   2026-08-23 #6, still in force). The tag is the same fact written where a
+   person can see it, delete it, and press it -- which is what 「投稿の本文に
+   タグの文字が入る」 in the decision of 2026-09-04 already said. */
+var DAY_TAG='#今日のお題';
+/* What a tag looks like: the mark, then anything that is not a space and not
+   another mark. Both spellings of the hash, for the reason netAtOff() takes
+   both of the `@` -- 「＃」 is what a Japanese keyboard gives -- and the marks
+   a sentence ends with are not part of the word.
 
-   The `#` is added HERE and is in no language file. It is not a word in any
-   of them; it is the mark that says 「this is a tag」, and ten copies of it is
-   ten places to write the full-width one by mistake. */
-function dayTag(){
-  return '#'+t('day.tag');
+   It is a `var` and it is global, so `lastIndex` survives between calls and
+   every walk resets it. A regexp with `g` that is not reset starts from
+   wherever the last one stopped, which reads as a tag that is blue on one
+   post and not on the next. */
+var TAG_RE=/[#＃][^\s#＃、。,.!?！？]+/g;
+/* A piece of a post, with its tags picked out. 「タグは青く光るからタップ
+   したらタグの検索になる。」 OWNER 2026-09-04.
+
+   ONE PLACE, and it is asked by everything that draws words somebody wrote:
+   the line, what it means, and the composer's own preview of what is being
+   answered. A tag blue on one of those and plain on another is the same
+   character meaning two things on one screen.
+
+   Everything that is not a tag goes through esc() exactly as it did before
+   -- this returns HTML and the text inside it is somebody's. */
+function tagHTML(s){
+  var x=String(s||''), out='', at=0, m;
+  TAG_RE.lastIndex=0;
+  while((m=TAG_RE.exec(x))){
+    out+=esc(x.slice(at, m.index));
+    out+='<button class="ptag"'+DO('snsTagGo', [m[0]])+'>'+esc(m[0])+'</button>';
+    at=m.index+m[0].length;
+  }
+  return out+esc(x.slice(at));
 }
-/* AND WHICH PROMPT A TYPED TAG NAMES, which is the other direction and is
-   only ever answerable about TODAY'S. `DAY` is one row -- the newest there
-   is -- and this phone holds no list of prompts, so `#今日のお題` typed into
-   the search means today's, which is what those words say.
+/* And pressing one searches for it. 「タップしたらタグの検索になる」
 
-   Both spellings of the hash, for the reason netAtOff() takes both of the
-   `@`: 「＃」 is what a Japanese keyboard gives. */
-function dayTagId(q){
-  var w=String(q||'').replace(/^[#＃]+/, ''), tag=dayTag();
-  if(!DAY) return '';
-  if(!w) return String(DAY.id);
-  return (tag.toLowerCase().indexOf(w.toLowerCase())!==-1)? String(DAY.id) : '';
+   It is the ordinary search with the tag in the box -- not a road of its own
+   -- so what comes back is what would come back if somebody had typed those
+   characters: every post carrying them, on every day, and nothing about
+   today. The box shows what was asked, which is what lets somebody change it.
+
+   snsGo() is what a person pressing the search does, and this is a person
+   searching. */
+function snsTagGo(q){
+  snsQ=String(q||'');
+  snsHits=null;
+  snsFil=null;
+  goTab('explore');
+  snsGo();
 }
 /* Which day this sentence is FOR, drawn. 「日付ないし」
 
@@ -1254,13 +1284,11 @@ function snsFind(q, done){
      the other brought rows is an answer, and the rows are it -- 「0 件」 and
      「訊けなかった」 stay two different screens, which is what snsAnsHTML()
      reads `bad` for. */
-  var who=null, posts=null, tag=null, why=null,
-      name=netAtOff(q), pid=dayTagId(q);
+  var who=null, posts=null, why=null, name=netAtOff(q);
   function fire(){
-    if(who===null || posts===null || tag===null) return;
-    var all=snsJoin(tag, posts);
-    done({q:q, who:who, posts:all,
-          bad:(!who.length && !all.length && why)? why : null});
+    if(who===null || posts===null) return;
+    done({q:q, who:who, posts:posts,
+          bad:(!who.length && !posts.length && why)? why : null});
   }
   /* Both ask the SERVER. They used to walk this phone's own POSTS, which
      answers with the people you already know and the posts you already have
@@ -1301,36 +1329,20 @@ function snsFind(q, done){
                         function(d, st){ who=[]; why=why||netWhy(d, st); fire(); });
   netFindPosts(q, function(ps){ posts=ps||[]; fire(); },
                   function(d, st){ posts=[]; why=why||netWhy(d, st); fire(); });
-  /* AND THE TAG, which is the `#` of 「#@投稿が一気に」. dayTagId() says
-     which prompt these words name and answers with nothing when they name
-     none, so a query with no `#` in it costs no request.
+  /* AND A TAG NEEDS NOTHING OF ITS OWN, which is the whole of what changed.
+     「しかも何で検索が今日しか出ないの？ありえないだろ」 OWNER 2026-09-04.
 
-     Its rows go IN FRONT of the ones the text matched, because a post that
-     ANSWERS the day's sentence is a nearer answer than one that happens to
-     contain the words -- and snsJoin() keeps a post that is both from being
-     drawn twice. */
-  if(!pid) tag=[];
-  else netFindPrompt(pid, function(ps){ tag=ps||[]; fire(); },
-                          function(d, st){ tag=[]; why=why||netWhy(d, st); fire(); });
-}
-/* Two lists of posts as one, in order, with nothing said twice. A post that
-   answers the day's sentence AND carries the words being looked for came
-   back from both roads, and two rows for one post is a timeline that has
-   lost count of itself. `sid` is the server's name for a post and is on
-   every row netRow() builds. */
-function snsJoin(a, b){
-  var out=[], seen={}, i, k;
-  for(i=0;i<(a||[]).length;i++){
-    k=a[i] && a[i].sid;
-    if(k){ if(seen[k]) continue; seen[k]=1; }
-    out.push(a[i]);
-  }
-  for(i=0;i<(b||[]).length;i++){
-    k=b[i] && b[i].sid;
-    if(k){ if(seen[k]) continue; seen[k]=1; }
-    out.push(b[i]);
-  }
-  return out;
+     A second road ran beside this one: the words were turned into a PROMPT'S
+     ID and netFindPrompt() asked for that day's answers. It could only ever
+     name TODAY'S -- `DAY` is one row and this phone holds no list of them --
+     so searching a tag found the posts written since midnight and nothing
+     before them, which is not a search.
+
+     A tag is characters somebody typed into what they wrote, so the request
+     above already finds every one of them: netFindPosts() matches
+     `body->>ln` and `body->>mn` with `ilike`, on every day there is. The
+     second road is deleted rather than fixed -- one question, one request,
+     and no id to be right about. */
 }
 /* Which of the two the answer is about. Where you are standing rather than
    anything the language has, so viewReset() drops it. */

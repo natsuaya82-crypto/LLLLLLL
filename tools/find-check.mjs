@@ -627,18 +627,27 @@ say(zero.after.rows === 0 && zero.after.note && dead.bad &&
     '0 件と訊けなかったは別の言葉 (' + JSON.stringify(zero.after.note) +
     ' / ' + JSON.stringify(dead.bad) + ')');
 
-/* ---- 13. お題のタグ ── #今日のお題 ------------------------------------
-   「#今日のお題だし そこに出せなんて頼んでないけど、ツイートの中だけど
-   タグは」「タグとお題一本化してってこと」「今日のお題は翻訳もタグもその人の
-   設定言語になるようにしてって頼んでる」 OWNER 2026-09-04.
+/* ---- 13. タグは本文の文字 -------------------------------------------
+   「投稿する時にタグを入れられるようにしろよ」「本文に#つけられるように
+   しろよ」「翻訳はいらんから」「しかも何で検索が今日しか出ないの？ありえない
+   だろ」「タグは本文中に。」「タグは青く光るからタップしたらタグの検索に
+   なる。」「検索は前の日も出るように」 OWNER 2026-09-04.
 
-   **タグは決まった一つの名前で、お題の文ではありません。**読む人の設定言語で
-   出ます ── 日本語の人には `#今日のお題`、英語の人にはその言語での言い方。
-   `day.tag` が十言語ぶんの一つの鍵です。
+   **前の版を差し替えます。**タグは `t('day.tag')` の十言語ぶんで、アプリが
+   投稿の横に一行として描いていました。人は打てず、十の言い方に割れていて、
+   検索は `netFindPrompt()` で**その日のぶんしか**出ませんでした。
+   ここが押さえるのは新しい四つです。
 
-   そして**同じ一つのタグ**なので、日本語で書かれた投稿と英語で書かれた投稿が
-   一緒に出てきます ── 集めるのは `prompt` の列で、本文の文字合わせでは
-   ありません（文字で集めると言語の数だけ割れます）。 */
+   1. **翻訳しない。**`day.tag` の鍵は十言語すべてから消えていて、
+      `dayTag()` も `dayTagId()` も無い。一つのタグに綴りは一つ。
+   2. **タグは本文の文字で、青くて、押せる。**投稿が持っている文字だけが
+      タグになる ── アプリが足す行はもう無い。
+   3. **押したらそのタグの検索になる。**箱にその文字が入り、答えは
+      ふつうの検索の答え。
+   4. **前の日も出る。**集めるのは本文の文字合わせなので、今日という
+      言葉がどこにも要らない。「列で集める」は投稿の `pr` のままで、
+      そちらは消えていません（OWNER DECISION 2026-08-23 #6）── 消えたのは
+      その上に乗っていた二つ目の仕組みです。 */
 async function withDay(){
   await pg.evaluate(() => {
     window.__MODE = 'ok'; window.__ASK = []; window.__BYPR = 0;
@@ -650,73 +659,137 @@ async function withDay(){
   });
 }
 await withDay();
-const tags = await pg.evaluate(() => {
-  var was = SET.ui, out = {}, f = (typeof dayTag === 'function') ? dayTag : null;
-  SET.ui = 'ja'; out.ja = f ? f() : '(dayTag が無い)';
-  SET.ui = 'en'; out.en = f ? f() : '(dayTag が無い)';
-  SET.ui = 'ko'; out.ko = f ? f() : '(dayTag が無い)';
-  SET.ui = was;
-  return out;
-});
-say(tags.ja === '#今日のお題',
-    '日本語で読む人のタグは #今日のお題 (' + tags.ja + ')');
-say(tags.en !== tags.ja && tags.ko !== tags.ja && tags.en.charAt(0) === '#',
-    'タグは読む人の言語で変わる ── 一つのタグ、十の言い方 (' +
-    tags.en + ' / ' + tags.ko + ')');
-/* **お題の文ではありません。**ここが緑でないと、前の版に戻っています。 */
-say(tags.ja.indexOf('めちゃくちゃ') === -1 &&
-    tags.en.indexOf('unbearably') === -1,
-    'タグはお題の文ではない ── 決まった一つの名前 (' + tags.ja + ')');
-/* `#` は言語の側に無い ── 十箇所に書けば、十箇所目が全角になります。 */
-const hashOnce = await pg.evaluate(() => {
-  var was = SET.ui, out = [], i, ls = ['en','es','pt','fr','de','it','ru','zh','ko','ja'];
+
+/* 1. 翻訳された仕組みが残っていないこと。 */
+const gone = await pg.evaluate(() => {
+  var was = SET.ui, out = { fns:[], keys:[] }, i,
+      ls = ['en','es','pt','fr','de','it','ru','zh','ko','ja'];
+  if (typeof dayTag === 'function') out.fns.push('dayTag');
+  if (typeof dayTagId === 'function') out.fns.push('dayTagId');
+  if (typeof netFindPrompt === 'function') out.fns.push('netFindPrompt');
+  if (typeof postTagHTML === 'function') out.fns.push('postTagHTML');
   for (i = 0; i < ls.length; i++){
     SET.ui = ls[i];
-    if (t('day.tag').indexOf('#') !== -1 || t('day.tag').indexOf('＃') !== -1)
-      out.push(ls[i]);
+    if (t('day.tag') !== 'day.tag') out.keys.push(ls[i]);
   }
   SET.ui = was;
+  out.one = (typeof DAY_TAG === 'string') ? DAY_TAG : '(DAY_TAG が無い)';
   return out;
 });
-say(hashOnce.length === 0,
-    '# は言葉の側に無い ── 付けるのは一箇所 (' + hashOnce.join(',') + ')');
+say(gone.fns.length === 0,
+    '翻訳されたタグの仕組みは消えている (' + (gone.fns.join(',') || '無し') + ')');
+say(gone.keys.length === 0,
+    'day.tag の鍵は十言語すべてから消えている (' + (gone.keys.join(',') || '無し') + ')');
+say(gone.one === '#今日のお題',
+    'タグの綴りは一つ (' + gone.one + ')');
 
-/* 二人が二つの言語で答える。片方は日本語、片方は英語、どちらもお題 7。 */
-const two = await pg.evaluate(() => {
+/* 2. 本文の文字が青くて押せる。アプリが足す行は無い。 */
+const drawn = await pg.evaluate(() => {
+  var e = document.createElement('div'), b, out = {};
+  e.innerHTML = postRow({ id:'t1', at:Date.now(), who:'Iri', hd:'iri',
+                          ln:'qel', mn:'あついね #今日のお題 でした',
+                          ui:'ja', mine:false });
+  b = e.querySelectorAll('button.ptag');
+  out.n = b.length;
+  out.text = b.length ? b[0].textContent : '';
+  out.does = b.length ? b[0].getAttribute('data-do') : '';
+  out.arg  = b.length ? b[0].getAttribute('data-a') : '';
+  /* そして、タグを持たない投稿には青い言葉が一つも無い ── お題に答えた
+     投稿でも、アプリが行を足すことはもう無い。 */
+  e.innerHTML = postRow({ id:'t2', at:Date.now(), who:'Aya', hd:'aya',
+                          ln:'mos', mn:'nothing here', ui:'en', pr:7,
+                          mine:true });
+  out.none = e.querySelectorAll('button.ptag').length;
+  return out;
+});
+say(drawn.n === 1 && drawn.text === '#今日のお題',
+    '本文の中のタグが一つ、押せる形で出る (' + drawn.n + ' / ' + drawn.text + ')');
+say(drawn.does === 'snsTagGo' && drawn.arg.indexOf('#今日のお題') !== -1,
+    '押すとそのタグの検索になる (' + drawn.does + ' ' + drawn.arg + ')');
+say(drawn.none === 0,
+    'タグを持たない投稿には青い言葉が無い ── アプリは行を足さない (' +
+    drawn.none + ')');
+
+/* 3. 押したら、その文字が箱に入って検索になる。 */
+const tapped = await pg.evaluate(() => {
+  snsQ = ''; snsHits = null;
+  snsTagGo('#今日のお題');
+  return { q: snsQ, where: here().r };
+});
+say(tapped.q === '#今日のお題' && tapped.where === 'explore',
+    '押すと検索の画面にその文字が入る (' + tapped.q + ' / ' + tapped.where + ')');
+
+/* 4. お題から書き始めると、本文にタグが入っている ── これが「前の日も
+      出る」を本当に支えている一つです。前の版ではタグはアプリが描く行で、
+      **どの投稿の本文にも入っていませんでした**。だから文字合わせの検索は
+      何にも当たらず、その日のお題を名指しする問い合わせだけが答えていて、
+      それが「今日しか出ない」の正体です。
+
+      そして**外せる**こと。入っているのは行（本文）で、意味ではありません
+      ── 意味はお題の下では読み取り専用です（OWNER DECISION 2026-08-23 #5
+      「消せないようにしよう そこからのやつは」）。 */
+const composed = await pg.evaluate(() => {
+  PW = pwBlank();
+  openPost('day');
+  var out = { ln: PW.ln, mn: PW.mn, pr: PW.pr };
+  /* 外せる ── 本文は打てる欄なので、消したら消える。 */
+  pwSetLn('');
+  out.after = PW.ln;
+  out.prAfter = PW.pr;
+  /* 意味のほうは読み取り専用のまま。 */
+  pwSetMn('べつのこと');
+  out.mnAfter = PW.mn;
+  PW = pwBlank();
+  return out;
+});
+say(composed.ln.indexOf('#今日のお題') === 0,
+    'お題から書き始めると本文にタグが入っている (' +
+    JSON.stringify(composed.ln) + ')');
+say(composed.after === '' ,
+    'そのタグは外せる (' + JSON.stringify(composed.after) + ')');
+say(composed.prAfter === 7,
+    'タグを外しても、その日に答えたことは投稿に残る ── 集めるのは列 (' +
+    composed.prAfter + ')');
+say(composed.mn === composed.mnAfter,
+    '意味はお題の下では変えられないまま (' + JSON.stringify(composed.mn) + ')');
+
+/* 5. 前の日も出る。二日ぶんの投稿を置いて、タグで探す。 */
+const days = await pg.evaluate(() => {
   window.__POSTS = [];
-  window.__POSTS.push({ id:'sv-ja', author:'u', body:{ ln:'kanuko', mn:'あついね' },
+  /* 今日のぶん */
+  window.__POSTS.push({ id:'sv-new', author:'u', body:{ ln:'kanuko',
+                        mn:'あついね #今日のお題' },
                         prompt:'7', reply_to:null, created_at:'2026-08-23T01:00:00Z',
                         hidden_at:null, author_out:false, likes:0, boosts:0,
                         replies:0, i_like:false, i_boost:false });
-  window.__POSTS.push({ id:'sv-en', author:'u2', body:{ ln:'mirasu', mn:'so hot' },
-                        prompt:'7', reply_to:null, created_at:'2026-08-23T02:00:00Z',
+  /* 三週間前のぶん ── 別のお題に答えている。ここが前の版で出なかった分。 */
+  window.__POSTS.push({ id:'sv-old', author:'u2', body:{ ln:'mirasu',
+                        mn:'so hot #今日のお題' },
+                        prompt:'3', reply_to:null, created_at:'2026-08-02T02:00:00Z',
                         hidden_at:null, author_out:false, likes:0, boosts:0,
                         replies:0, i_like:false, i_boost:false });
-  /* そしてお題に答えていない投稿。これが混ざったら、集めているのは
-     お題ではなく「全部」です。 */
+  /* タグを持たない投稿。混ざったら、探しているのはタグではありません。 */
   window.__POSTS.push({ id:'sv-no', author:'u3', body:{ ln:'zzoq', mn:'nothing' },
                         prompt:null, reply_to:null, created_at:'2026-08-23T03:00:00Z',
                         hidden_at:null, author_out:false, likes:0, boosts:0,
                         replies:0, i_like:false, i_boost:false });
   return window.__POSTS.length;
 });
-say(two === 3, 'お題に答えた投稿が二つ、答えていない投稿が一つ (' + two + ')');
+say(days === 3, '今日のと前の日のとタグ無しを一つずつ置いた (' + days + ')');
 
-const gathered = await pg.evaluate(() => new Promise(function(d){
-  window.__ASK = []; window.__BYPR = 0;
-  if (typeof netFindPrompt !== 'function'){
-    d({ n:-1, ids:[], ask:'(netFindPrompt が無い)', bypr:0 }); return; }
-  netFindPrompt('7', function(ps){
-    d({ n:ps.length, ids:ps.map(function(p){ return p.sid; }).sort(),
-        ask: decodeURIComponent(window.__ASK.join('|')), bypr: window.__BYPR });
-  }, function(){ d({ n:-1, ids:[], ask:'', bypr:0 }); });
+const found = await pg.evaluate(() => new Promise(function(d){
+  window.__ASK = [];
+  snsFind('#今日のお題', function(r){
+    d({ ids:(r.posts || []).map(function(p){ return p.sid; }).sort(),
+        ask: decodeURIComponent(window.__ASK.join('|')) });
+  });
 }));
-say(gathered.n === 2 && gathered.ids.join(',') === 'sv-en,sv-ja',
-    '日本語の投稿と英語の投稿が、同じ一つのタグで一緒に出る (' +
-    gathered.ids.join(',') + ')');
-say(gathered.ask.indexOf('prompt=eq.7') !== -1 &&
-    gathered.ask.indexOf('body->>') === -1,
-    'お題で集めるのは列 ── 本文の文字合わせではない (' + gathered.ask + ')');
+say(found.ids.join(',') === 'sv-new,sv-old',
+    '前の日のタグも出る (' + found.ids.join(',') + ')');
+say(found.ask.indexOf('prompt=eq.') === -1,
+    'その日のお題を名指しする問い合わせは出ていかない (' + found.ask + ')');
+say(found.ask.indexOf('body->>mn') !== -1,
+    '当たるのは本文の文字 (' + (found.ask.indexOf('body->>mn') !== -1) + ')');
 
 /* ---- 絞り込みにタグは出しません ---------------------------------------
    「そこに出せなんて頼んでないけど」 OWNER 2026-09-04。一度出して、決定で
@@ -733,49 +806,6 @@ const rows = await pg.evaluate(() => {
 });
 say(!rows.filter(function(r){ return r.indexOf('#') === 0; }).length,
     '絞り込みにタグの行は無い (' + rows.join(' / ') + ')');
-
-/* ---- 検索の一つの答えに、お題の投稿も入る -----------------------------
-   「検索も#@投稿が一気に検索できるようにして」 OWNER 2026-09-04。
-   箱は一つ、答えも一度 ── `#` はお題、`@` は人、そのほかは投稿。 */
-await withDay();
-const hash = await pg.evaluate(() => new Promise(function(d){
-  window.__ASK = []; SET.ui = 'ja';
-  snsFind('#', function(r){
-    d({ n:(r.posts || []).length,
-        ids:(r.posts || []).map(function(p){ return p.sid; }).sort() });
-  });
-}));
-say(hash.n === 2 && hash.ids.join(',') === 'sv-en,sv-ja',
-    '# だけ打つと、その日のお題の投稿が出る (' + hash.ids.join(',') + ')');
-const whole = await pg.evaluate(() => new Promise(function(d){
-  SET.ui = 'ja';
-  snsFind('#今日のお題', function(r){
-    d((r.posts || []).map(function(p){ return p.sid; }).sort());
-  });
-}));
-say(whole.join(',') === 'sv-en,sv-ja',
-    'タグをそのまま打っても出る (' + whole.join(',') + ')');
-const nohash = await pg.evaluate(() => new Promise(function(d){
-  SET.ui = 'ja';
-  snsFind('#ぜんぜんちがう', function(r){
-    d((r.posts || []).map(function(p){ return p.sid; }));
-  });
-}));
-say(nohash.length === 0,
-    'タグでない言葉の # では、お題の投稿は出ない (' + nohash.join(',') + ')');
-/* 同じ投稿が二度並ばない ── お題にも答えていて言葉にも当たる投稿は一つ。 */
-const both = await pg.evaluate(() => new Promise(function(d){
-  SET.ui = 'ja'; window.__POSTS.push({ id:'sv-txt', author:'u',
-    body:{ ln:'kanuko', mn:'#今日のお題' }, prompt:null,
-    reply_to:null, created_at:'2026-08-23T04:00:00Z', hidden_at:null,
-    author_out:false, likes:0, boosts:0, replies:0, i_like:false, i_boost:false });
-  snsFind('#今日のお題', function(r){
-    var ids = (r.posts || []).map(function(p){ return p.sid; }).sort();
-    d({ ids:ids, twice: ids.length !== ids.filter(function(v, i){
-          return ids.indexOf(v) === i; }).length });
-  });
-}));
-say(!both.twice, '同じ投稿が二度並ばない (' + both.ids.join(',') + ')');
 
 await br.close();
 console.log(bad.length ? '\nfind: FAILED ' + bad.length : '\nfind: 一つの箱に打てば人も投稿も出る。途中の言葉でも出て、出ていない投稿は出ない');

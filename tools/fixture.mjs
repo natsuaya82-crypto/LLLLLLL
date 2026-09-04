@@ -181,7 +181,12 @@ export function seed(){
             ink:{g:[[{pts:[[150,650],[400,150],[650,650]]}],
                     [{pts:[[200,200],[600,200]]}, {pts:[[400,200],[400,640]]}]],
                  s:[0, 1, 0, ' ', 1, 0, 1, 1, 0]},
-            mn:'the sea has gone quiet', ui:'en',
+            /* AND A TAG IN WHAT SOMEBODY WROTE. 「タグは本文中に。」 OWNER
+               2026-09-04 -- a tag is characters, not a row the app adds, so
+               the only way one is on a screen is that a post carries one.
+               Without this the blue word is in no walk and nothing presses
+               it. tagHTML() in www/sns.js. */
+            mn:'the sea has gone quiet #\u4eca\u65e5\u306e\u304a\u984c', ui:'en',
             /* And it runs down the page, columns right to left. A post
                carries the direction it was written in for the same reason it
                carries its shapes: this phone's language runs left to right,
@@ -793,6 +798,19 @@ export function halfDone(){
         const fo = ME.fo, fr = ME.fr; delete ME.fo; delete ME.fr;
         window.route='profile'; NAV=[{r:'profile'}];
         const h = vProfile(); ME.fo = fo; ME.fr = fr; return h; }],
+    /* ---- a tag, and what pressing one gives ------------------------------
+       「タグは青く光るからタップしたらタグの検索になる。」 OWNER 2026-09-04.
+       Two faces, because the fault is nearly always in the one nobody
+       photographed: the word sitting in what somebody wrote, and the answer
+       that comes back when a thumb lands on it. */
+    ['a tag in what somebody wrote', () => {
+        window.route='thread'; NAV=[{r:'thread', a:'p2'}];
+        return vThread(); }],
+    ['and the answer to pressing one', () => {
+        snsQ = '#\u4eca\u65e5\u306e\u304a\u984c';
+        snsHits = { q:snsQ, who:[], posts:POSTS.slice(0, 2) };
+        window.route='explore'; NAV=[{r:'explore'}];
+        const h = vExplore(); snsQ = ''; snsHits = null; return h; }],
     /* The three things an author can do to their own post. The menu hangs off
        the ... , inside the post, so nothing renders it unless one is open --
        and what opens it is PMENU, which is where you are standing rather than
