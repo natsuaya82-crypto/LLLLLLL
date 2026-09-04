@@ -160,11 +160,11 @@ function snsList(){
    「フォロー中」 yesterday arrives on a short list today with nothing on the
    screen to say why.
 
-   What is on the page is the two timelines and nothing else. The owner also
-   said 「自分が好きなトピックとか」 and there is nothing in this app that is a
-   topic: a post carries which language it is written in and which day's
-   question it answers, and no tags. That is the leader's to put to the
-   owner, and until it comes back nothing here invents one. */
+   What is on the page is the two timelines, the words somebody kept, and the
+   day's prompt. The owner said 「自分が好きなトピックとか」 and the answer
+   came back on 2026-09-04: the topic is the day's sentence, and the tag on a
+   post IS that sentence 「タグとお題一本化してってこと。」. Nothing here
+   invents a topic of its own and there are still no free-typed tags. */
 function snsFilNow(){ return (snsTab==='fo')? 'fo' : 'rec'; }
 function snsFilKey(k){ return (k==='fo')? 'feed.fo' : 'feed.rec'; }
 /* ---- and the third answer: a word somebody kept -------------------------
@@ -180,8 +180,13 @@ function snsFilKey(k){ return (k==='fo')? 'feed.fo' : 'feed.rec'; }
    answers the third, and they are exclusive -- choosing a timeline is how a
    word comes OFF, which is why there is no second button for that.
 
-   `null` is no word. Otherwise `{q: <the word>, r: <the answer, or null>}`,
-   and the three states of `r` are three and never share a branch:
+   `null` is nothing on. Otherwise `{q: <the word>, r: <…>}` for a word
+   somebody kept, or `{pr: <a day's prompt>, r: <…>}` for the day's tag --
+   ONE field, two kinds of question, because「what am I looking at」 is one
+   question and this is where its answer is written down. The tag is not a
+   second filter beside this one.
+
+   The three states of `r` are three and never share a branch:
 
      r === null   not answered yet     -- the mark turns, nothing is claimed
      r.bad        could not ask        -- the reason, netWhy()'s
@@ -213,21 +218,43 @@ var snsFil=null, snsFilAsk=false;
    since there was a search, and for the same reason. */
 function snsFilFind(again){
   var q=snsFil? String(snsFil.q||'').trim() : '';
-  if(!q || snsFilAsk) return;
+  var pr=snsFil? String(snsFil.pr||'') : '';
+  if((!q && !pr) || snsFilAsk) return;
   if(snsFil.r && !again) return;
   snsFilAsk=true;
-  netFindPosts(q, function(ps){
+  /* Still the same question when the answer lands. Both halves are compared,
+     because both can change while a request is in the air -- a word swapped
+     for the day's tag is exactly the case the word alone would miss. */
+  function mine(){
+    return !!snsFil && String(snsFil.q||'').trim()===q &&
+           String(snsFil.pr||'')===pr;
+  }
+  function got(ps){
     snsFilAsk=false;
-    if(!snsFil || String(snsFil.q||'').trim()!==q) return;
-    snsFil.r={q:q, posts:ps||[]};
+    if(!mine()) return;
+    snsFil.r={q:q||pr, posts:ps||[]};
     render();
-  }, function(d, st){
+  }
+  function no(d, st){
     snsFilAsk=false;
-    if(!snsFil || String(snsFil.q||'').trim()!==q) return;
+    if(!mine()) return;
     /* Could not ask, which is not nothing found. */
-    snsFil.r={q:q, posts:[], bad:netWhy(d, st)};
+    snsFil.r={q:q||pr, posts:[], bad:netWhy(d, st)};
     render();
-  });
+  }
+  /* THE PROMPT IS ASKED FOR BY ITS COLUMN and a word by its text. Two
+     questions, one place that asks them, one shape of answer -- netFindPrompt()
+     in www/net.js says why a prompt must not go through netFindPosts(). */
+  if(pr) netFindPrompt(pr, got, no);
+  else netFindPosts(q, got, no);
+}
+/* What the filter is on, as a word: the word somebody kept, or the day's
+   tag. One place, because the corner of the bar and the answer under it are
+   both about it, and two of them would say different things the day the tag
+   arrives late. */
+function snsFilWord(){
+  if(!snsFil) return '';
+  return snsFil.pr? (dayTag(snsFil.pr) || '#') : String(snsFil.q||'');
 }
 /* The mark in the corner of the timeline's bar. rootTop()'s second argument
    is what it is for -- www/home.js already puts the contents page's lens
@@ -241,7 +268,7 @@ function snsFilTop(){
      it does not go through t() -- the same as a word in the dictionary or
      the body of a post. */
   return '<button class="navq navfil"' + DO('go', ['filter']) + '>'+
-    esc(snsFil? snsFil.q : t(snsFilKey(snsFilNow())))+'</button>';
+    esc(snsFil? snsFilWord() : t(snsFilKey(snsFilNow())))+'</button>';
 }
 function vFilter(){
   var ks=['rec','fo'];
@@ -257,6 +284,25 @@ function vFilter(){
         '<span class="sv">'+((!snsFil && snsFilNow()===k)? ICON_TICK : '')+
         '</span></button>';
     }).join('')+
+    /* AND THE DAY'S PROMPT, which is a fourth answer to the one question.
+       「タグとお題一本化してってこと。」 OWNER 2026-09-04. Its words are the
+       prompt's own -- dayTag() -- so nothing here is a string of this
+       screen's and there is no key for it in `www/i18n/`.
+
+       Only when there is one. A day the server missed, or a phone that has
+       not been answered yet, has no tag to offer and this is nothing at all
+       rather than a row that cannot say what it is about.
+
+       The same name as the two timelines press, because it is the same
+       chooser -- a second name would be a second mechanism for one question
+       (CLAUDE.md § Simple). */
+    (dayTag(DAY && DAY.id)
+      ? '<button class="set"' + DO('snsSetFil', [String(DAY.id)]) + '>'+
+          '<span class="sl">'+esc(dayTag(DAY.id))+'</span>'+
+          '<span class="sv">'+
+            ((snsFil && String(snsFil.pr||'')===String(DAY.id))? ICON_TICK : '')+
+          '</span></button>'
+      : '')+
     /* And the words somebody keeps, under the two timelines because they are
        the same question asked a third way: what am I looking at. The heading
        is a NAME and not an explanation -- vWsys puts `dir.title` over its
@@ -287,7 +333,13 @@ function vFilter(){
    every other chooser that is a page of its own: the answer is the reason
    you came, so there is nothing left to do here. */
 function snsSetFil(k){
-  snsTab=(k==='fo')? 'fo' : 'rec';
+  var s=String(k==null? '' : k);
+  /* THE DAY'S PROMPT, and it arrives here rather than through a name of its
+     own because it is one more answer to the question this function IS.
+     A prompt's id is the server's number and can be neither of the two
+     timelines, so the two kinds cannot be mistaken for one another. */
+  if(s!=='rec' && s!=='fo'){ snsFil={pr:s, r:null}; back(); return; }
+  snsTab=(s==='fo')? 'fo' : 'rec';
   /* And this is how a word comes off. There is no second button for it and
      pressing the same word again does not do it either -- that shape was
      refused on the keyboard 「同じとこ触ると選択解除されるからわかりにくい」
@@ -740,7 +792,7 @@ function vFeed(){
          (no claim is made), the reason when it could not be asked, and
          `sns.nohit` only when an answer really came back empty. */
       : snsFil
-      ? snsAnsHTML(snsFil.q, snsFil.r)
+      ? snsAnsHTML(snsFil.q || snsFil.pr, snsFil.r)
       : list.length
       ? list.map(postRow).join('')
       /* Two different emptinesses. Nothing at all is a timeline that has not
@@ -815,12 +867,16 @@ function dayAgain(){
   setTimeout(function(){ dayPull(); }, dayWait);
   dayWait = (dayWait*2 > DAY_MAX)? DAY_MAX : dayWait*2;
 }
-/* In the person's own language, and the English one under it. A Japanese
-   speaker reading an English prompt is doing two translations and only the
-   second one is the game -- owner, 2026-08-23. */
+/* In the person's own language. A Japanese speaker reading an English prompt
+   is doing two translations and only the second one is the game -- owner,
+   2026-08-23.
+
+   THROUGH dayWords(), which is the one place a prompt's words are chosen for
+   a reader, because the TAG is made of the same words -- see dayTag() below.
+   `DAY.text` is the fallback for a row with no `says` at all, and it is
+   today's only: dayMap() answers with a map or with nothing. */
 function daySay(){
-  var m=(DAY && DAY.says) || {};
-  return String(m[uiLang()] || (DAY && DAY.text) || '');
+  return dayWords(DAY && DAY.id) || String((DAY && DAY.text) || '');
 }
 /* THE SAME SENTENCE, FOR SOMEBODY ELSE'S POST. 「今日のお題だけ、毎回その人の
    表示言語になるようにできないの？…今日のお題だけは全員見れるようにしたい」
@@ -858,6 +914,55 @@ function dayMap(id){
     });
   }
   return null;
+}
+/* ---- THE TAG IS THE PROMPT ---------------------------------------------
+   「お題はなってる／タグとお題一本化してってこと。」 OWNER 2026-09-04,
+   `docs/FEATURE_RULES.md` 決定ログ「お題のタグは、お題そのものが持っている
+   十言語から出す」.
+
+   A post written from the day's sentence carries the prompt's id, and that id
+   is what gathers the answers -- 「繋がりはハッシュタグではなく列」 (OWNER
+   DECISION 2026-08-23 #6). What was missing was the id said out loud, as a
+   word somebody can see and press: the tag.
+
+   ITS WORDS ARE THE PROMPT'S OWN. The server holds the sentence in ten
+   languages and this app already shows the reader theirs; the tag is that
+   same sentence with a `#` in front of it. A Japanese reader sees
+   `#今日はめちゃくちゃ暑い。` and an English reader sees
+   `#It is unbearably hot today.` -- ONE tag, one prompt, one list of answers,
+   and the posts under it are in every language they were written in.
+
+   **NOTHING GOES IN `www/i18n/`.** A `day.tag` key in ten languages would be
+   the same prompt's words written down a SECOND time, in a second place, and
+   the two would drift the first day somebody edited one of them -- CLAUDE.md
+   § One place, not fifteen. The leader handed this out as a separate word
+   first and the owner replaced that with one sentence.
+
+   dayWords() is that one place, and daySay() above is it asked of today's. */
+function dayWords(id){
+  var m=dayMap(id);
+  /* `en` under the reader's own, for the same reason `text` is under `says`:
+     a row that has not been translated yet still says something. */
+  return m? String(m[uiLang()] || m.en || '') : '';
+}
+function dayTag(id){
+  var w=dayWords(id);
+  return w? '#'+w : '';
+}
+/* AND WHICH PROMPT A TYPED TAG NAMES, which is the other direction and is
+   only ever answerable about TODAY'S. `DAY` is one row -- the newest there
+   is -- and this phone holds no list of prompts to match a word against, so
+   an older day's tag is reached by PRESSING it on a post and never by typing
+   it. That is not a hole: nobody types a tag whose words are a sentence they
+   would have to remember.
+
+   Both spellings of the hash, for the reason netAtOff() takes both of the
+   `@`: 「＃」 is what a Japanese keyboard gives. */
+function dayTagId(q){
+  var w=String(q||'').replace(/^[#＃]+/, ''), tag=dayTag(DAY && DAY.id);
+  if(!DAY || !tag) return '';
+  if(!w) return String(DAY.id);
+  return (tag.toLowerCase().indexOf(w.toLowerCase())!==-1)? String(DAY.id) : '';
 }
 /* Which day this sentence is FOR, drawn. 「日付ないし」
 
@@ -1111,11 +1216,13 @@ function snsFind(q, done){
      the other brought rows is an answer, and the rows are it -- 「0 件」 and
      「訊けなかった」 stay two different screens, which is what snsAnsHTML()
      reads `bad` for. */
-  var who=null, posts=null, why=null, name=netAtOff(q);
+  var who=null, posts=null, tag=null, why=null,
+      name=netAtOff(q), pid=dayTagId(q);
   function fire(){
-    if(who===null || posts===null) return;
-    done({q:q, who:who, posts:posts,
-          bad:(!who.length && !posts.length && why)? why : null});
+    if(who===null || posts===null || tag===null) return;
+    var all=snsJoin(tag, posts);
+    done({q:q, who:who, posts:all,
+          bad:(!who.length && !all.length && why)? why : null});
   }
   /* Both ask the SERVER. They used to walk this phone's own POSTS, which
      answers with the people you already know and the posts you already have
@@ -1156,6 +1263,36 @@ function snsFind(q, done){
                         function(d, st){ who=[]; why=why||netWhy(d, st); fire(); });
   netFindPosts(q, function(ps){ posts=ps||[]; fire(); },
                   function(d, st){ posts=[]; why=why||netWhy(d, st); fire(); });
+  /* AND THE TAG, which is the `#` of 「#@投稿が一気に」. dayTagId() says
+     which prompt these words name and answers with nothing when they name
+     none, so a query with no `#` in it costs no request.
+
+     Its rows go IN FRONT of the ones the text matched, because a post that
+     ANSWERS the day's sentence is a nearer answer than one that happens to
+     contain the words -- and snsJoin() keeps a post that is both from being
+     drawn twice. */
+  if(!pid) tag=[];
+  else netFindPrompt(pid, function(ps){ tag=ps||[]; fire(); },
+                          function(d, st){ tag=[]; why=why||netWhy(d, st); fire(); });
+}
+/* Two lists of posts as one, in order, with nothing said twice. A post that
+   answers the day's sentence AND carries the words being looked for came
+   back from both roads, and two rows for one post is a timeline that has
+   lost count of itself. `sid` is the server's name for a post and is on
+   every row netRow() builds. */
+function snsJoin(a, b){
+  var out=[], seen={}, i, k;
+  for(i=0;i<(a||[]).length;i++){
+    k=a[i] && a[i].sid;
+    if(k){ if(seen[k]) continue; seen[k]=1; }
+    out.push(a[i]);
+  }
+  for(i=0;i<(b||[]).length;i++){
+    k=b[i] && b[i].sid;
+    if(k){ if(seen[k]) continue; seen[k]=1; }
+    out.push(b[i]);
+  }
+  return out;
 }
 /* Which of the two the answer is about. Where you are standing rather than
    anything the language has, so viewReset() drops it. */

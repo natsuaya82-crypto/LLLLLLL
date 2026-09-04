@@ -50,6 +50,7 @@ await pg.evaluate(() => {
   window.__POSTS = [];
   window.__FIELDS = [];
   window.__RECENT = [];
+  window.__BYPR = 0;
   netSend = function(m, p, b, t, ok, bad, up){
     window.__ASK.push(p);
     var M = window.__MODE;
@@ -89,6 +90,18 @@ await pg.evaluate(() => {
       var re = /body->>([a-z]+)\.ilike\.(\*[^*,)]*\*)/g;
       while ((mm = re.exec(qq))) pats.push([mm[1], mm[2]]);
       window.__FIELDS = pats.map(function(a){ return a[0]; });
+      /* お題で集める問い ── 本文の文字合わせではなく、列そのものです。
+         `prompt` は列で、索引が後ろに在ります（`supabase/schema.sql`）。 */
+      var pm = /[?&]prompt=eq\.([^&]*)/.exec(qq);
+      if (pm){
+        var only = [];
+        for (var pi = 0; pi < window.__POSTS.length; pi++)
+          if (String(window.__POSTS[pi].prompt || '') === pm[1])
+            only.push(window.__POSTS[pi]);
+        window.__BYPR = (window.__BYPR || 0) + 1;
+        setTimeout(function(){ ok(only); }, 0);
+        return;
+      }
       var hits = [];
       for (var i = 0; i < window.__POSTS.length; i++){
         var row = window.__POSTS[i], on = !pats.length;
@@ -613,6 +626,168 @@ say(zero.after.rows === 0 && zero.after.note && dead.bad &&
     zero.after.note !== dead.bad,
     '0 件と訊けなかったは別の言葉 (' + JSON.stringify(zero.after.note) +
     ' / ' + JSON.stringify(dead.bad) + ')');
+
+/* ---- 13. お題のタグ ── タグとお題は一つのもの --------------------------
+   「お題はなってる／タグとお題一本化してってこと。」 OWNER 2026-09-04
+   （`docs/FEATURE_RULES.md` 決定ログ「お題のタグは、お題そのものが持っている
+   十言語から出す」）。
+
+   **お題の文は既に読む人の設定言語で出ています。**サーバーの `prompt.says`
+   が十言語ぶんを持っているからです。**タグも、その同じ十言語から出します** ──
+   `www/i18n/` に新しい鍵を足すと、同じお題の言葉が二箇所に十言語ぶん在る
+   ことになり、その時点で二本です。
+
+   だからここで測るのは二つ:
+     タグの言葉が、読む人の言語で変わり、**お題の文そのもの**であること
+     日本語で書かれた投稿と英語で書かれた投稿が、**同じ一つのタグ**で
+     一緒に出てくること ── 集めるのは `prompt` の列で、本文の文字合わせでは
+     ありません（言語の数だけ割れるのはそれです）。 */
+async function withDay(){
+  await pg.evaluate(() => {
+    window.__MODE = 'ok'; window.__ASK = []; window.__BYPR = 0;
+    DAY = { id: 7, on_day: '2026-08-23', text: 'It is unbearably hot today.',
+            says: { en: 'It is unbearably hot today.',
+                    ja: '今日はめちゃくちゃ暑い。' } };
+    PROMPTS = {}; PROMPT_ASK = {};
+    snsFil = null; snsQ = ''; snsHits = null;
+  });
+}
+await withDay();
+const tags = await pg.evaluate(() => {
+  var was = SET.ui, out = {}, f = (typeof dayTag === 'function') ? dayTag : null;
+  SET.ui = 'ja'; out.ja = f ? f(DAY.id) : '(dayTag が無い)';
+  SET.ui = 'en'; out.en = f ? f(DAY.id) : '(dayTag が無い)';
+  SET.ui = was;
+  return out;
+});
+say(tags.ja === '#今日はめちゃくちゃ暑い。',
+    '日本語で読む人のタグは、お題の日本語そのもの (' + tags.ja + ')');
+say(tags.en === '#It is unbearably hot today.',
+    '英語で読む人のタグは、お題の英語そのもの (' + tags.en + ')');
+say(tags.ja !== tags.en, 'タグは読む人の言語で変わる ── 一つのタグ、十の言い方');
+
+/* 二人が二つの言語で答える。片方は日本語、片方は英語、どちらもお題 7。 */
+const two = await pg.evaluate(() => {
+  window.__POSTS = [];
+  window.__POSTS.push({ id:'sv-ja', author:'u', body:{ ln:'kanuko', mn:'あついね' },
+                        prompt:'7', reply_to:null, created_at:'2026-08-23T01:00:00Z',
+                        hidden_at:null, author_out:false, likes:0, boosts:0,
+                        replies:0, i_like:false, i_boost:false });
+  window.__POSTS.push({ id:'sv-en', author:'u2', body:{ ln:'mirasu', mn:'so hot' },
+                        prompt:'7', reply_to:null, created_at:'2026-08-23T02:00:00Z',
+                        hidden_at:null, author_out:false, likes:0, boosts:0,
+                        replies:0, i_like:false, i_boost:false });
+  /* そしてお題に答えていない投稿。これが混ざったら、集めているのは
+     お題ではなく「全部」です。 */
+  window.__POSTS.push({ id:'sv-no', author:'u3', body:{ ln:'zzoq', mn:'nothing' },
+                        prompt:null, reply_to:null, created_at:'2026-08-23T03:00:00Z',
+                        hidden_at:null, author_out:false, likes:0, boosts:0,
+                        replies:0, i_like:false, i_boost:false });
+  return window.__POSTS.length;
+});
+say(two === 3, 'お題に答えた投稿が二つ、答えていない投稿が一つ (' + two + ')');
+
+const gathered = await pg.evaluate(() => new Promise(function(d){
+  window.__ASK = []; window.__BYPR = 0;
+  if (typeof netFindPrompt !== 'function'){
+    d({ n:-1, ids:[], ask:'(netFindPrompt が無い)', bypr:0 }); return; }
+  netFindPrompt('7', function(ps){
+    d({ n:ps.length, ids:ps.map(function(p){ return p.sid; }).sort(),
+        ask: decodeURIComponent(window.__ASK.join('|')), bypr: window.__BYPR });
+  }, function(){ d({ n:-1, ids:[], ask:'', bypr:0 }); });
+}));
+say(gathered.n === 2 && gathered.ids.join(',') === 'sv-en,sv-ja',
+    '日本語の投稿と英語の投稿が、同じ一つのタグで一緒に出る (' +
+    gathered.ids.join(',') + ')');
+say(gathered.ask.indexOf('prompt=eq.7') !== -1 &&
+    gathered.ask.indexOf('body->>') === -1,
+    'お題で集めるのは列 ── 本文の文字合わせではない (' + gathered.ask + ')');
+
+/* ---- 絞り込みの四つ目の答え -------------------------------------------
+   「おすすめ」「フォロー中」と星つきの言葉に並ぶ、四つ目です。**同じ一つの
+   問い**（いま何を見ているか）の答えなので、二つ目の仕組みは作りません ──
+   押す名前も `snsSetFil` のままです。 */
+await withDay();
+const row = await pg.evaluate(() => {
+  window.route = 'filter'; NAV = [{ r:'feed' }, { r:'filter' }];
+  var h = vFilter(), e = document.createElement('div');
+  e.innerHTML = h;
+  var bs = e.querySelectorAll('button.set'), i, out = [];
+  for (i = 0; i < bs.length; i++)
+    out.push({ label: bs[i].textContent.replace(/\s+/g, ' ').trim(),
+               a: bs[i].getAttribute('data-a') || '',
+               name: bs[i].getAttribute('data-do') || '' });
+  return out;
+});
+const tagRow = row.filter(function(r){ return r.label.indexOf('#') === 0; })[0];
+say(!!tagRow, '絞り込みにお題の行がある (' +
+    row.map(function(r){ return r.label; }).join(' / ') + ')');
+say(!!tagRow && tagRow.name === 'snsSetFil',
+    'その行は絞り込みと同じ名前で押される ── 二つ目の仕組みではない (' +
+    (tagRow ? tagRow.name : '(無い)') + ')');
+
+/* 押すと、タイムラインがその日のお題の投稿だけになる。 */
+const feed = await pg.evaluate(() => new Promise(function(d){
+  window.__ASK = []; window.__BYPR = 0;
+  try{ snsSetFil('7'); }catch(e){}
+  setTimeout(function(){
+    var e = document.getElementById('app');
+    d({ pr: snsFil ? String(snsFil.pr || '') : '',
+        rows: snsFil && snsFil.r ? (snsFil.r.posts || []).length : -1,
+        top: (function(){ var b = e.querySelector('.navfil');
+                          return b ? b.textContent.trim() : ''; })(),
+        bypr: window.__BYPR });
+  }, 700);
+}));
+say(feed.pr === '7', '押すと絞り込みがその日のお題になる (' + feed.pr + ')');
+say(feed.rows === 2,
+    'タイムラインがそのお題の投稿だけになる (' + feed.rows + ' 件)');
+say(feed.top.indexOf('#') === 0,
+    '帯の角が、いま何を見ているかを言う (' + JSON.stringify(feed.top) + ')');
+
+/* ---- 検索の一つの答えに、お題の投稿も入る -----------------------------
+   「検索も#@投稿が一気に検索できるようにして」 OWNER 2026-09-04。
+   箱は一つ、答えも一度 ── `#` はお題、`@` は人、そのほかは投稿。 */
+await withDay();
+const hash = await pg.evaluate(() => new Promise(function(d){
+  window.__ASK = []; SET.ui = 'ja';
+  snsFind('#', function(r){
+    d({ n:(r.posts || []).length,
+        ids:(r.posts || []).map(function(p){ return p.sid; }).sort() });
+  });
+}));
+say(hash.n === 2 && hash.ids.join(',') === 'sv-en,sv-ja',
+    '# だけ打つと、その日のお題の投稿が出る (' + hash.ids.join(',') + ')');
+const part2 = await pg.evaluate(() => new Promise(function(d){
+  SET.ui = 'ja';
+  snsFind('#めちゃくちゃ', function(r){
+    d((r.posts || []).map(function(p){ return p.sid; }).sort());
+  });
+}));
+say(part2.join(',') === 'sv-en,sv-ja',
+    'お題の言葉の途中でも当たる (' + part2.join(',') + ')');
+const nohash = await pg.evaluate(() => new Promise(function(d){
+  SET.ui = 'ja';
+  snsFind('#ぜんぜんちがう', function(r){
+    d((r.posts || []).map(function(p){ return p.sid; }));
+  });
+}));
+say(nohash.length === 0,
+    'お題でない言葉の # では、お題の投稿は出ない (' + nohash.join(',') + ')');
+/* そして `#` はお題であって、人でも投稿の本文でもありません ── 同じ言葉が
+   二つの答えを持つと、どちらが出たのか誰にも分からなくなります（10番）。 */
+const both = await pg.evaluate(() => new Promise(function(d){
+  SET.ui = 'ja'; window.__POSTS.push({ id:'sv-txt', author:'u',
+    body:{ ln:'kanuko', mn:'#今日はめちゃくちゃ暑い。' }, prompt:null,
+    reply_to:null, created_at:'2026-08-23T04:00:00Z', hidden_at:null,
+    author_out:false, likes:0, boosts:0, replies:0, i_like:false, i_boost:false });
+  snsFind('#今日はめちゃくちゃ暑い。', function(r){
+    var ids = (r.posts || []).map(function(p){ return p.sid; }).sort();
+    d({ ids:ids, twice: ids.length !== ids.filter(function(v, i){
+          return ids.indexOf(v) === i; }).length });
+  });
+}));
+say(!both.twice, '同じ投稿が二度並ばない (' + both.ids.join(',') + ')');
 
 await br.close();
 console.log(bad.length ? '\nfind: FAILED ' + bad.length : '\nfind: 一つの箱に打てば人も投稿も出る。途中の言葉でも出て、出ていない投稿は出ない');
