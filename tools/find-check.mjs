@@ -124,7 +124,7 @@ await pg.evaluate(() => {
 async function typed(q, mode){
   await pg.evaluate((mode) => {
     window.__MODE = mode || 'ok';
-    snsHits = null; snsMode = 'who'; snsQ = ''; go('explore');
+    snsHits = null; snsQ = ''; go('explore');
   }, mode);
   await pg.waitForTimeout(60);
   await pg.evaluate((q) => { window.__ASK = []; snsSetQ(q); }, q);
@@ -167,7 +167,7 @@ for (const [label, q] of [['半角 @aya (U+0040)', '@aya'],
 const mid = await typed('a@ya');
 say(mid.ask.indexOf('*a@ya*') !== -1, '真ん中の @ は落とさない');
 const post = await pg.evaluate(() => new Promise(function(d){
-  window.__ASK = []; window.__MODE = 'ok'; snsMode = 'posts';
+  window.__ASK = []; window.__MODE = 'ok';
   snsFind('＠aya', function(){ d(decodeURIComponent(window.__ASK.join('|'))); });
 }));
 say(post.indexOf('＠aya') !== -1, '投稿の検索は ＠ をそのまま訊く');
@@ -221,7 +221,7 @@ async function blank(){
   await pg.evaluate(() => {
     window.__MODE='ok'; window.__ASK=[];
     SET.recent = []; snsRecentGot = true; snsQ = ''; snsHits = null;
-    snsMode = 'who'; go('explore');
+    go('explore');
   });
   await pg.waitForTimeout(80);
 }
@@ -366,16 +366,21 @@ async function wrote(ln, mn, mode){
 async function pressed(q){
   await pg.evaluate(() => {
     window.__MODE = 'ok'; window.__ASK = []; window.__FIELDS = [];
-    snsQ = ''; snsHits = null; snsMode = 'who';
+    snsQ = ''; snsHits = null;
     SET.recent = []; snsRecentGot = true; go('explore');
   });
   await pg.waitForTimeout(120);
   await pg.fill('#sns-q', q);
   await pg.waitForTimeout(500);
-  const typing = await pg.evaluate(() => ({
-    mode: snsMode,
-    posts: window.__ASK.filter(function(s){
-             return s.indexOf('/rest/v1/post_seen') === 0; }).length }));
+  const typing = await pg.evaluate(() => {
+    var e = document.getElementById('sns-hits');
+    return { rows: e ? e.querySelectorAll('.post').length : -1,
+             fields: window.__FIELDS.slice(),
+             posts: window.__ASK.filter(function(s){
+                      return s.indexOf('/rest/v1/post_seen') === 0; }).length,
+             who: window.__ASK.filter(function(s){
+                    return s.indexOf('/rest/v1/profile') === 0; }).length };
+  });
   await pg.evaluate(() => { window.__ASK = []; window.__FIELDS = []; });
   await pg.focus('#sns-q');
   await pg.keyboard.press('Enter');
@@ -383,8 +388,7 @@ async function pressed(q){
   const after = await pg.evaluate(() => {
     var e = document.getElementById('sns-hits');
     var n = e ? e.querySelector('.note') : null;
-    return { mode: snsMode,
-             rows: e ? e.querySelectorAll('.post').length : -1,
+    return { rows: e ? e.querySelectorAll('.post').length : -1,
              note: n ? n.textContent : '',
              fields: window.__FIELDS.slice(),
              asks: window.__ASK.filter(function(s){
@@ -396,19 +400,24 @@ const w1 = await wrote('kanuko mira', 'ねこがすきです');
 say(w1.here === 1, 'いま書いた投稿が手元にある (' + w1.here + ' 件)');
 say(w1.there === 1, 'いま書いた投稿がサーバーへ出ていく (' + w1.there + ' 件)');
 
-/* 打っている間は人だけ ── 投稿は一本も訊きに行かない。 */
-const p1 = await pressed('kanuko');
-say(p1.typing.posts === 0 && p1.typing.mode === 'who',
-    '打っている間は人だけ (投稿の問い ' + p1.typing.posts + ' 本)');
+/* 打つだけで出る。押さなくても。
+   「検索も#@投稿が一気に検索できるようにして」 OWNER 2026-09-04。
 
-/* 押したら投稿を訊きに行く。そして **一度だけ**。
-   二度訊いても答えは同じなので何も壊れませんが、検索のたびに同じ問いが二本
-   出ていくのは、誰も見ていないところで人数ぶん増える種類の無駄です。
-   一箇所で訊く ── 訊くのは画面を描くところ（`vExplore()`）です。 */
-say(p1.after.asks === 1,
-    '押すと投稿を訊きに行く、そして一度だけ (' + p1.after.asks + ' 本)');
-say(p1.after.rows === 1 && p1.after.mode === 'posts',
-    'いま書いた投稿が、押したら出てくる (' + p1.after.rows + ' 件)');
+   **2026-08-26 の「ツイートの検索は検索ボタン押したら出てくる。それまでは
+   人」を差し替えます。**打つのと押すのが別の意味を持つ形が無くなり、問いは
+   一つ、答えも一つ。押す（🔍・改行キー）に残っている仕事は履歴だけで、
+   それは 7 番が押さえています。 */
+const p1 = await pressed('kanuko');
+say(p1.typing.rows === 1,
+    '打つだけで投稿が出る ── 押さなくても (' + p1.typing.rows + ' 件)');
+/* 一つの言葉に問い合わせは二本 ── 人に一本、投稿に一本。**一文字ごとに
+   同じ問いが二本出ていく**のは、誰も見ていないところで人数ぶん増える種類の
+   無駄です。訊くのは snsFind() 一箇所で、それぞれ一本ずつ。 */
+say(p1.typing.who === 1 && p1.typing.posts === 1,
+    '一つの言葉に二本、人と投稿で一本ずつ (人 ' + p1.typing.who +
+    ' 本 / 投稿 ' + p1.typing.posts + ' 本)');
+say(p1.after.rows === 1,
+    '押しても同じものが出ている (' + p1.after.rows + ' 件)');
 
 /* ---- 9. 完全一致ではない ------------------------------------------------
    「それとも完全一致しか出ない？」 */
@@ -424,8 +433,8 @@ say(ja.after.rows === 1, '自分の言葉の文字も途中から出る (' + ja.
    綴った行と、意味と、言語の名前。書いた人の名前と @ には当たりません ──
    人は人の検索が答えるもので、同じ言葉が二つの答えを持つと、どちらが出たのか
    誰にも分からなくなります。 */
-say(p1.after.fields.join(',') === 'ln,mn,lname',
-    '当たるのは行と意味と言語の名前の三つ (' + p1.after.fields.join(',') + ')');
+say(p1.typing.fields.join(',') === 'ln,mn,lname',
+    '当たるのは行と意味と言語の名前の三つ (' + p1.typing.fields.join(',') + ')');
 const byWho = await pressed('aya');
 say(byWho.after.rows === 0,
     '書いた人の @ では投稿は出ない (人の検索の仕事: ' + byWho.after.rows + ' 件)');
@@ -443,7 +452,7 @@ const w2 = await wrote('zzuquat', 'つながっていないときに書いた', 
 say(w2.here === 1, '出ていかなくても手元には残る (' + w2.here + ' 件)');
 say(w2.there === 0, 'サーバーへは出ていかなかった (' + w2.there + ' 件)');
 const before = await pg.evaluate(() => new Promise(function(d){
-  window.__MODE = 'ok'; snsMode = 'posts';
+  window.__MODE = 'ok';
   snsFind('zzuquat', function(r){ d((r.posts || []).length); });
 }));
 say(before === 0,
@@ -492,7 +501,7 @@ say(loop === 1, 'タイムラインは一度訊いて止まる (' + loop + ' 本
    人の側で 5 番が言っているのと同じことを、投稿の側でも言う。 */
 const zero = await pressed('qqzzxx');
 const dead = await pg.evaluate(() => new Promise(function(d){
-  window.__MODE = 'post400'; snsMode = 'posts';
+  window.__MODE = 'post400';
   snsFind('kanuko', function(r){
     window.__MODE = 'ok';
     d({ n:(r.posts || []).length, bad:r.bad || '' });
@@ -504,5 +513,5 @@ say(zero.after.rows === 0 && zero.after.note && dead.bad &&
     ' / ' + JSON.stringify(dead.bad) + ')');
 
 await br.close();
-console.log(bad.length ? '\nfind: FAILED ' + bad.length : '\nfind: 人は打てば届き、投稿は押せば出る。途中の言葉でも出て、出ていない投稿は出ない');
+console.log(bad.length ? '\nfind: FAILED ' + bad.length : '\nfind: 一つの箱に打てば人も投稿も出る。途中の言葉でも出て、出ていない投稿は出ない');
 process.exit(bad.length ? 1 : 0);

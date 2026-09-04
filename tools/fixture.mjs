@@ -1041,36 +1041,48 @@ export function halfDone(){
         window.route='notif'; NAV=[{r:'notif'}];
         const h = vNotif(); NOTES_HAVE = null; return h; }],
     /* The search, with something in it. An empty field draws no results at
-       all, so a walk that never types finds nothing to be wrong. Both
-       halves: `@` is looking for a person, anything else for a post. */
-    /* Searching is about PEOPLE until somebody presses the phone's own
-       Search key, so the two answers are two faces and `snsMode` is what
-       tells them apart. The people face carries the Follow button, which is
-       on no other screen.
+       all, so a walk that never types finds nothing to be wrong.
+
+       ONE ANSWER WITH BOTH IN IT since 2026-09-04 -- people and posts come
+       back together and nothing chooses between them. They are still several
+       faces here because the ROWS differ: a person's row carries the Follow
+       button, which is on no other screen, and a post's row carries
+       everything a post carries.
 
        The answer is put in by hand. snsFind() asks the SERVER now, and there
        is no server in a walk -- so a face that let it ask would render the
        empty page that is showing while the request is out, which is a
        different screen from the one being walked. What is put in is the shape
        netFindWho() returns. */
-    ['people found by searching', () => { snsQ = 'ir'; snsMode = 'who';
+    ['people found by searching', () => { snsQ = 'ir';
         snsHits = { q:'ir', who:[{ who:'Iri', hd:'iri', av:{ch:'\u0416'},
                                    lname:'Vethi', mine:false }], posts:[] };
         window.route='explore'; NAV=[{r:'explore'}];
         const h = vExplore(); snsQ = ''; snsHits = null; return h; }],
     /* Somebody already followed: Follow and Following are two states of one
        button and only one of them is drawn at a time. */
-    ['a person already followed', () => { snsQ = 'ir'; snsMode = 'who';
+    ['a person already followed', () => { snsQ = 'ir';
         const was = ME.fo; ME.fo = ['iri'];
         snsHits = { q:'ir', who:[{ who:'Iri', hd:'iri', av:{ch:'\u0416'},
                                    lname:'Vethi', mine:false }], posts:[] };
         window.route='explore'; NAV=[{r:'explore'}];
         const h = vExplore(); ME.fo = was; snsQ = ''; snsHits = null; return h; }],
-    ['posts found by searching', () => { snsQ = 'kano'; snsMode = 'posts';
+    ['posts found by searching', () => { snsQ = 'kano';
         snsHits = { q:'kano', who:[], posts:POSTS.slice(0, 2) };
         window.route='explore'; NAV=[{r:'explore'}];
-        const h = vExplore(); snsQ = ''; snsHits = null; snsMode = 'who'; return h; }],
-    ['a search that found nothing', () => { snsQ = 'zzzzzz'; snsMode = 'who';
+        const h = vExplore(); snsQ = ''; snsHits = null; return h; }],
+    /* And the shape the owner asked for: one word, and people and posts in
+       the same answer. It is its own face because neither of the two above
+       draws the other's rows -- a walk that only ever sees one kind at a
+       time cannot see them meeting. */
+    ['people and posts in one answer', () => { snsQ = 'kano';
+        snsHits = { q:'kano',
+                    who:[{ who:'Iri', hd:'iri', av:{ch:'\u0416'},
+                           lname:'Vethi', mine:false }],
+                    posts:POSTS.slice(0, 2) };
+        window.route='explore'; NAV=[{r:'explore'}];
+        const h = vExplore(); snsQ = ''; snsHits = null; return h; }],
+    ['a search that found nothing', () => { snsQ = 'zzzzzz';
         snsHits = { q:'zzzzzz', who:[], posts:[] };
         window.route='explore'; NAV=[{r:'explore'}];
         const h = vExplore(); snsQ = ''; snsHits = null; return h; }],
@@ -1079,14 +1091,14 @@ export function halfDone(){
        without this one the history's two buttons are walked by nothing and
        act-check reports them as entries no screen names, which is true and is
        not what anybody meant. */
-    ['the searches already made', () => { snsQ = ''; snsMode = 'who';
+    ['the searches already made', () => { snsQ = '';
         const was = SET.recent;
         SET.recent = ['kano', 'ir', 'tolven'];
         window.route='explore'; NAV=[{r:'explore'}];
         const h = vExplore(); SET.recent = was; return h; }],
     /* And a search that could not be made at all, which is a different answer
        from one that found nothing and must not look like it. */
-    ['a search that could not be asked', () => { snsQ = 'iri'; snsMode = 'who';
+    ['a search that could not be asked', () => { snsQ = 'iri';
         snsHits = { q:'iri', who:[], posts:[], bad:t('net.offline') };
         window.route='explore'; NAV=[{r:'explore'}];
         const h = vExplore(); snsQ = ''; snsHits = null; return h; }],
