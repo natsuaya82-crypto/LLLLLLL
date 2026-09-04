@@ -19,6 +19,15 @@
             "command": "node \"$CLAUDE_PROJECT_DIR/tools/push-alone.mjs\""
           }
         ]
+      },
+      {
+        "matcher": "Read|Grep|Glob|Edit|Write|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/tools/master-hands.mjs\""
+          }
+        ]
       }
     ]
   }
