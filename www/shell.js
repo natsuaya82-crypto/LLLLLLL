@@ -869,11 +869,29 @@ function navTop(count, right){
        about leaving this screen, which is what the whole bar is about. */
     (BACKQ? backQHTML() : '');
 }
+/* NOTHING HERE, in the box every screen says it in. Nine screens were
+   writing `.empty` with an `.eb` inside it out by hand, and five of them
+   escaped the sentence while four did not -- so one string with an ampersand
+   in it would have come out as markup on four screens and as words on five.
+
+   It is not what the sentence SAYS: that is the screen's, because "no words
+   yet" and "nobody you follow has written yet" are different facts. It is
+   only the box they are said in.
+
+   NOT the one place yet, and that is written here so silence is not read as a
+   check: www/sns.js (three), www/me.js and www/notes.js still write the
+   markup out. Those three files belong to another session. www/notes.js is
+   also the only screen with a SECOND line under the first (`.empty .es`), so
+   the argument for it goes in the day that file comes through here -- putting
+   one in now would be a branch no caller takes. */
+function emptyBox(text){
+  return '<div class="empty"><div class="eb">'+esc(text)+'</div></div>';
+}
 /* Coming back to a screen for a thing that is no longer there -- a word that
    was deleted, a form that was closed, a letter that is gone. Five screens
    said this, in the same nine words, in four files. */
 function goneBox(){
-  return '<div class="empty"><div class="eb">'+t('form.gone')+'</div></div>';
+  return emptyBox(t('form.gone'));
 }
 function viewGone(){
   return '<div class="view">'+navTop('')+'<div class="body">'+goneBox()+'</div></div>';
@@ -1750,25 +1768,6 @@ function popOn(){
   var el=document.getElementById('pop');
   return !!(el && el.className.indexOf('on')>=0);
 }
-/* ---- the ceiling, said where it is met ---------------------------------
-   「+を押したらそのまま課金のポップが出るだけでしょ？」 OWNER 2026-09-01.
-
-   THIS IS iOS's OWN DIALOG AND NOT A SHEET. Two goes at it were wrong and
-   both are worth writing down, because the second looked right:
-
-     openForm('up', …)   is `go('form', key)` -- a page you travel to.
-                         「それはポップじゃなくてページ遷移やろ」
-     #sbg / #sheet       is the app's own sheet, and it slides up from the
-                         bottom, which is the third of the four shapes the
-                         owner banned outright: 「ページ遷移型にせず下から
-                         ひょいって出すやつ」. Reusing markup that was already
-                         there did not make it a different shape.
-
-   So it is confirm(), which is what capStop() has always used for the word
-   ceiling, and it is the same argument: the plans screen is one tap away and
-   this has to be answerable with "no"; iOS draws it, so it is not a shape
-   this app chose; and nobody is moved off the screen they are standing on
-   unless they say yes. 「システム標準（iOS/Android）を最優先」 */
 function toast(m){
   var el=document.getElementById('toast'); el.textContent=m; el.classList.add('on');
   clearTimeout(tt); tt=setTimeout(function(){el.classList.remove('on');},1900);
