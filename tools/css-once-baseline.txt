@@ -6,8 +6,6 @@
 # the line, same commit. There is no --write and putting a line IN is not
 # something a session does — a new conflict is the bug this check exists to
 # catch. docs/DUPLICATES.md items 4 and 5 are two of these.
-.gside .gsp | min-height
-.gside .gsp | min-width
 .plterm .pp | display
 .plterm .pp | font-size
 .plterm .pper | display

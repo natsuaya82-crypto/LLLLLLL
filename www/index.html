@@ -3520,7 +3520,12 @@ textarea.ntbody.grow{min-height:0;height:auto;overflow:hidden;resize:none}
 .gside .gsw{font-family:var(--face-caps);font-size:1.04rem;color:var(--tx);word-break:break-word}
 .gside .gsi{font-family:var(--face-mono);font-size:.84rem;color:var(--gold)}
 .gside .gsg{font-family:var(--face-ital);font-style:italic;font-size:.88rem;color:var(--txs)}
-.gside .gsp{margin-left:auto;flex:0 0 auto;min-width:38px;min-height:38px;background:none;border:0;
+/* 44 and not the 38 this was drawn at. Apple's floor is 44px and a phone has
+   nothing finer to point with. It said 38 here and was put right ten lines
+   below, in two places -- so this block read as the size of the button and was
+   not, and taking either of those two lines out dropped it under the floor
+   with nothing to say so. The size is here, once. */
+.gside .gsp{margin-left:auto;flex:0 0 auto;min-width:44px;min-height:44px;background:none;border:0;
   color:var(--txs);display:flex;align-items:center;justify-content:center;align-self:center}
 .gside .gsp:active{opacity:.5}
 .gneed{margin:10px 0 2px}
@@ -3529,8 +3534,7 @@ textarea.ntbody.grow{min-height:0;height:auto;overflow:hidden;resize:none}
    Apple's floor is 44px and a phone has nothing finer to point with. These
    are the buttons that were drawn to the size of their mark rather than to
    the size of the finger that has to find them. */
-.play,.gside .gsp,.pkclear,.obskip{min-height:44px}
-.gside .gsp{min-width:44px}
+.play,.pkclear,.obskip{min-height:44px}
 
 /* ---------- the marks, now that they are drawn ----------
    A typed character sat on the text baseline and took its size from whichever
