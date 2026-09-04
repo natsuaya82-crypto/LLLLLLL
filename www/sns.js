@@ -142,9 +142,24 @@ var FO_HAVE=null;
 function snsMine(p){
   return !!p.mine || (FO_HAVE? !!FO_HAVE[p.id] : meFollows(p.hd));
 }
+/* AND A REPLY IS NOT ON おすすめ. 「リプライはおすすめ並ぶことないでしょ？
+   基本」 OWNER 2026-09-04, looking at 4-home.png -- an answer to one of their
+   own posts standing in the recommended list at the same size as the post it
+   answers.
+
+   It is the RECOMMENDED list and only that one. 「フォロー中」 is the people
+   you chose to read and everything they wrote is theirs to say, a thread
+   included; a person's own page keeps its 返信 tab; a search answers with
+   whatever matches. What a reply loses is the one list nobody asked to be
+   on.
+
+   Asked of the post -- `to` is what makes it an answer, and it is on the post
+   the moment it is written (pwSend, rule 13) -- rather than of the server, so
+   it is the same sentence on a phone with no signal. */
 function snsList(){
   var all=postAll();
-  return (snsTab==='fo')? all.filter(snsMine) : all;
+  if(snsTab==='fo') return all.filter(snsMine);
+  return all.filter(function(p){ return !p.to; });
 }
 /* ---- and where the two are chosen ---------------------------------------
    「右上にフィルター作ってフォロー中、自分が好きなトピックとかで見れるように
