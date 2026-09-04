@@ -970,10 +970,22 @@ function lnField(id, ph, attrs, val, cls){
 
    `opt` is for the one screen that is not like the others: the timeline, which
    sends its query on the return key, keeps a search with a star, and empties
-   more than the field when it is cleared. */
+   more than the field when it is cleared.
+
+   THE MAGNIFIER IS A BUTTON WHERE THERE IS SOMETHING TO PRESS, and a mark
+   where there is not. Five of the six narrow the list as you type, so on those
+   there is nothing a press could do and a button that does nothing is worse
+   than a mark. The timeline is the sixth: its query goes to the server, so it
+   is SENT, and the only way to send it was the phone's own return key.
+   「検索は🔍押したらって言ってるやん」 OWNER 2026-09-03. `opt.go` is the name
+   that sends it -- passed by the screen that has one, and by nothing else. */
 function searchBox(stem, ph, set, val, opt){
   opt = opt || {};
-  return '<div class="search"><span class="lens">'+ICON_LENS+'</span>'+
+  return '<div class="search">'+
+    (opt.go
+      ? '<button class="lens" id="'+stem+'-go"'+DO(opt.go)+
+        ' aria-label="'+esc(t('words.search'))+'">'+ICON_LENS+'</button>'
+      : '<span class="lens">'+ICON_LENS+'</span>')+
     lnField(stem+'-q', ph, IN(set)+(opt.attrs || ''), val)+
     (opt.extra || '')+
     '<button class="sx" id="'+stem+'-x"'+
