@@ -2356,9 +2356,10 @@ function kbRowHTML(x, i, at){
   var sel=!!KBSEL, on=!!(sel && KBSEL[i]);
   /* AND NOT A DOOR ON THE FREE PLAN. 「編集ボタンも無料はいらんやろ」 OWNER
      2026-09-04. Board 0 is the QWERTY itself -- kbEdit() refuses it, its page
-     has no editor on it, and the steps for switching it on in iOS are on this
-     screen already -- so the arrow opened a page with nothing on it to do,
-     and an arrow that opens nothing is the app saying there is more.
+     has no editor on it, and the steps for switching it on in iOS are behind
+     the ? in this screen's own bar -- so the arrow opened a page with nothing
+     on it to do, and an arrow that opens nothing is the app saying there is
+     more.
 
      The paid list keeps it, because there the board's page is where Apply is
      and choosing which keyboard goes on the phone is the one thing anybody
