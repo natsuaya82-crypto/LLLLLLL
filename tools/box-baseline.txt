@@ -34,7 +34,6 @@
 .kbe | border-radius
 .kbk | border
 .kbk | border-radius
-.kbk.addrow | border
 .kbmk | border-radius
 .kbpat | border
 .kbpat | border-radius

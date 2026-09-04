@@ -38,6 +38,7 @@
     "sheet": "node tools/sheet-check.mjs",
     "draft": "node tools/draft-check.mjs",
     "world": "node tools/world-check.mjs",
+    "tl": "node tools/tl-check.mjs",
     "keep": "node tools/keep-check.mjs",
     "acct": "node tools/acct-check.mjs",
     "dl": "node tools/dl-check.mjs",

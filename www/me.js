@@ -170,8 +170,61 @@ meFor(SESS && SESS.uid);
    `fr` is not -- being followed is something that happens to you, and this
    phone is not where it happens. Both are absent on an account that has
    neither, and absent is not empty. */
-function meFollowing(){ return (ME.fo && ME.fo.length)? ME.fo : []; }
-function meFollowers(){ return (ME.fr && ME.fr.length)? ME.fr : []; }
+/* AND NEITHER LIST HAS YOU IN IT. `follow` in supabase/schema.sql carries
+   `check (follower <> followed)`, so a row saying you follow yourself is a
+   row the server cannot hold and the copy must not either -- 「SNSは全部
+   サーバー」. It got into the copy anyway: `ME.fo` is written by a press on
+   this phone and by meFollowPull(), meFollow() has guarded against your own
+   handle since it was written, and meHandle() falls back to the LANGUAGE'S
+   name when a profile has no handle on it yet -- so the handle this phone
+   answers to today is not always the one it answered to when the row went in.
+
+   What the owner saw was that row: 「フォロー中」 with themselves at the top
+   of it, no name, no face, no button, and no 「フォローされています」 -- which
+   is what every one of those four is, on a row about yourself.
+   「ここにフォローされてますがないよ」 OWNER 2026-09-04, 1-following.png.
+
+   HERE, because these two are already the one place both lists are read
+   -- the comment above says so -- and the count under a profile is the length
+   of what these answer. Taking it out at the row instead would leave the
+   number saying two and the list showing one. */
+function meNotMe(hs){
+  var out=[], me=meHandle(), i;
+  for(i=0;i<hs.length;i++) if(String(hs[i])!==me) out.push(hs[i]);
+  return out;
+}
+function meFollowing(){ return meNotMe((ME.fo && ME.fo.length)? ME.fo : []); }
+function meFollowers(){ return meNotMe((ME.fr && ME.fr.length)? ME.fr : []); }
+/* HOW MANY, OR NOTHING AT ALL -- AND THE TWO MUST NOT SHARE A BRANCH.
+   -------------------------------------------------------------------------
+   「サーバーに聞く前にロードを挟み、遅れて数字が動くことを絶対に無くす。0 と
+   出て1秒後に1に変わる、をしない。」 OWNER 2026-09-04.
+
+   Both counts were the LENGTH of a list, and a list nobody has answered for
+   is empty -- so a profile opened before meFollowPull() lands printed 0 under
+   both words and then jumped to the real number when the answer arrived. A
+   number that moves under somebody's eye is a number they cannot trust, and
+   it is the same 「empty と broken は別」 the timeline already obeys one
+   screen over (snsWaitHTML).
+
+   `ME.fo` being an ARRAY is the answer -- meFollowPull() writes one, empty or
+   not, and following nobody is a real 0. Absent is 「nobody has asked yet」,
+   which is what the comment over the two lines above has always said and what
+   the two lines above collapsed. `undefined` carries it out of here, the same
+   way whoOf() keeps somebody else's two undefined rather than nailing them to
+   0, and meCount() below is the one place either is drawn. */
+function meNFollowing(){ return ME.fo? meFollowing().length : undefined; }
+function meNFollowers(){ return ME.fr? meFollowers().length : undefined; }
+/* A count, or the mark that says it has not arrived. One function, because
+   your card and somebody else's ask the same question and used to answer it
+   in two places with two different `||0`s on the end. The mark is the
+   timeline's own -- `.pullrule` in www/index.html, the thing that turns while
+   an answer is out -- at the size of a word rather than of a screen. */
+function meCount(n){
+  return (typeof n==='number')
+    ? '<b>'+esc(String(n))+'</b>'
+    : '<span class="numwait"><span class="pullrule go">'+ICON_PLUS+'</span></span>';
+}
 function meName(){ return ME.name || langName || ''; }
 function meHandle(){
   return ME.handle || String(meName()).toLowerCase().replace(/[^a-z0-9]+/g, '');
@@ -465,7 +518,11 @@ function meCard(){
     '<div class="pav">'+
       postFace({who:meName(), lname:langName, av:postAvatar()})+'</div>'+
     '<div class="mewho">'+
-      '<div class="pname">'+esc(meName())+planBadge(plan())+'</div>'+
+      /* ONE PLACE SAYS WHETHER A NAME WEARS THE MARK, and it is postBadge()
+         -- the same function every post and every other person's card asks.
+         It said planBadge(plan()) here, which is a second answer to one
+         question and is the half that only ever worked on your own phone. */
+      '<div class="pname">'+esc(meName())+postBadge(whoOf(meHandle()))+'</div>'+
       '<div class="mehr">'+
         '<span class="phandle">@'+esc(meHandle())+'</span>'+
       '</div>'+
@@ -489,10 +546,10 @@ function meCard(){
        they come from somewhere else they come from somewhere else HERE and
        nowhere else. */
     '<div class="pfstats">'+
-      '<button class="pfst"' + DO('go', ["follows", "ing"]) + '><b>'+
-        esc(String(meFollowing().length))+'</b> '+esc(t('me.following'))+'</button>'+
-      '<button class="pfst"' + DO('go', ["follows", "ers"]) + '><b>'+
-        esc(String(meFollowers().length))+'</b> '+esc(t('me.followers'))+'</button>'+
+      '<button class="pfst"' + DO('go', ["follows", "ing"]) + '>'+
+        meCount(meNFollowing())+' '+esc(t('me.following'))+'</button>'+
+      '<button class="pfst"' + DO('go', ["follows", "ers"]) + '>'+
+        meCount(meNFollowers())+' '+esc(t('me.followers'))+'</button>'+
     '</div>'+
     '</div>';
 }
@@ -536,6 +593,36 @@ function whoPull(h){
 function whoOf(h){
   var i, p, got;
   h=String(h||'');
+  /* YOU ARE THE ONE PERSON THIS PHONE ALREADY KNOWS, AND NOTHING READ IT.
+     ---------------------------------------------------------------------
+     whoPull() refuses to ask the server for your own handle and says why in
+     as many words -- 「that is ME, it is on this phone」. It was right and it
+     was only half a sentence: nothing here ever went and got ME, so your own
+     handle fell past WHO_HAVE, past the POSTS below, and out of the end as
+     `{who:'', av:null}`. postFace() draws '?' out of that and postWho() draws
+     nothing, so YOUR OWN ROW was a question mark with no name on it.
+     「ここも？になるの謎だし」 OWNER 2026-09-04, 1-following.png.
+
+     It looked right for as long as this phone happened to be holding a post
+     of yours -- the loop below found one and took the name off it -- which is
+     every screenshot anybody had taken. A phone that has not pulled a
+     timeline yet has none, and the row is the question mark.
+
+     Your own row is on this screen legitimately: somebody else's followers
+     list has you in it whenever you follow them, which is the ordinary way to
+     arrive there. So this is the first answer and not an exception -- ME is
+     what you look like NOW, which is exactly what the server's row is for
+     everybody else and is fresher than any of them. */
+  if(h===meHandle())
+    return {who:meName(), hd:h, av:postAvatar(), lname:langName||'', id:'me',
+            bio:String(ME.bio||''), fo:meFollowing().length,
+            fr:meFollowers().length, out:false,
+            /* AND IT SAYS SO. `mine` means 「this is the reader's own」 and it
+               is what postBadge() asks -- so leaving it off took the mark off
+               your own card the moment meCard() started asking this instead
+               of plan(). Measured, not read: `bdgw` was in the card and then
+               was not. */
+            mine:true, pro:can('badge')};
   /* THE SERVER IS THE RECORD. What it sent is what the person looks like NOW,
      which is the right answer for a page about them; a post's copy is frozen
      at the moment it was written (rule 8) and is right for the post. */
@@ -577,6 +664,14 @@ function whoOf(h){
                phone whose net.js does not answer with them yet: no address,
                no door, and the name stays a plain row exactly as it is now. */
             lid:got.lid||'', lpub:!!got.lpub,
+            /* AND WHETHER THEY WEAR THE MARK. Passed through with `!!` for
+               the reason `lid` and `lpub` above are: a phone whose net.js
+               does not answer with it yet draws a name with nothing beside
+               it, exactly as it does today. `profile_seen` carrying it, and
+               netWho() answering with it, are the other half and are in the
+               report -- www/net.js and supabase/schema.sql are not this
+               session's files. */
+            pro:!!got.pro,
             /* HOW MANY THEY FOLLOW AND HOW MANY FOLLOW THEM, passed through
                rather than nailed to 0. Both were `0` here because no request
                in www/net.js had ever asked for anybody's but your own --
@@ -603,10 +698,21 @@ function whoOf(h){
       /* `id` is the FACE'S key here and not the post's -- the same reason as
          above. Taking p.id would file this person's face under one of their
          posts, which is a key that means something else. */
+      /* AND THE TWO COUNTS ARE LEFT ALONE, which is not the same as 0. A
+         post carries neither and never did -- they were `p.fo||0`, so a
+         person this phone knows only from something they wrote printed 0
+         under both words and jumped to the real number when netWho() landed.
+         「0 と出て1秒後に1に変わる、をしない」 OWNER 2026-09-04. */
       return {who:p.who||'', hd:h, av:p.av, lname:p.lname||'', id:'w:'+h,
-              bio:p.bio||'', fo:p.fo||0, fr:p.fr||0, out:!!p.out};
+              bio:p.bio||'', fo:p.fo, fr:p.fr, out:!!p.out,
+              /* Off the POST, which is where the mark lives (postBadge in
+                 www/post.js) -- so a person this phone knows only from
+                 something they wrote wears it on their page too. */
+              pro:!!p.pro};
   }
-  return {who:'', hd:h, av:null, lname:'', bio:'', fo:0, fr:0, out:false};
+  /* Nobody by that name, here or anywhere yet: no name, no face, and no
+     count -- an unanswered number is not a zero, one line up. */
+  return {who:'', hd:h, av:null, lname:'', bio:'', out:false, pro:false};
 }
 function meFollows(h){ return meFollowing().indexOf(String(h||''))>=0; }
 /* AND WHERE THAT LIST COMES FROM WHEN IT IS NOT THIS PHONE THAT MADE IT.
@@ -791,7 +897,10 @@ function whoCard(h){
     '<div class="metop">'+
     '<div class="pav">'+postFace(p)+'</div>'+
     '<div class="mewho">'+
-      '<div class="pname">'+esc(postWho(p))+'</div>'+
+      /* AND THE MARK, in the slot your own card puts it in. It was on your
+         own name and on nobody else's, which is the same fault postBadge()
+         is about one screen over: 「相手の画面にパッチ映らない」. */
+      '<div class="pname">'+esc(postWho(p))+postBadge(p)+'</div>'+
       '<div class="mehr"><span class="phandle">@'+esc(h)+'</span></div>'+
     '</div>'+
     /* FOLLOW, IN THE SLOT ON THE NAME ROW -- the same slot your own card
@@ -859,11 +968,14 @@ function whoCard(h){
        for anybody's but your own, so these two were a pair of zeroes with no
        road to any other number.
 
-       Still `||0` on the way to the screen, and that is the one place it is
-       right: whoOf() keeps undefined so that "not answered" and "nobody" stay
-       apart in the data, and a profile has to print SOMETHING under the word
-       Followers. A person who arrived on a post rather than from netWho()
-       carries neither and reads zero until the answer lands.
+       AND `undefined` REACHES THE SCREEN, which it did not: it was `||0`
+       here, so a person whose row has not landed printed 0 under both words
+       and then jumped. 「0 と出て1秒後に1に変わる、をしない」 OWNER
+       2026-09-04. whoOf() has always kept the two apart in the data --
+       「not answered」 and 「nobody」 -- and this was the line that put them
+       back together on the way out. meCount() draws the mark instead, which
+       is what SOMETHING under the word Followers is when nobody has counted
+       yet.
        AND THEY ARE PRESSABLE. 「フォロワーとかタップしても見れないし」
        OWNER 2026-09-03. They were two `<span>`s under a comment saying the
        two lists behind them were yours -- which was true of the SCREEN and
@@ -886,10 +998,10 @@ function whoCard(h){
        holds many posts, and one of them needs an id. `.pfstats` carries the
        `position:relative` the box hangs off now; it was `.metop`. */
     '<div class="pfstats">'+
-      '<button class="pfst"' + DO('go', ["follows", 'ing:'+String(h)]) + '><b>'+
-        esc(String(p.fo||0))+'</b> '+esc(t('me.following'))+'</button>'+
-      '<button class="pfst"' + DO('go', ["follows", 'ers:'+String(h)]) + '><b>'+
-        esc(String(p.fr||0))+'</b> '+esc(t('me.followers'))+'</button>'+
+      '<button class="pfst"' + DO('go', ["follows", 'ing:'+String(h)]) + '>'+
+        meCount(p.fo)+' '+esc(t('me.following'))+'</button>'+
+      '<button class="pfst"' + DO('go', ["follows", 'ers:'+String(h)]) + '>'+
+        meCount(p.fr)+' '+esc(t('me.followers'))+'</button>'+
       '<button class="pmore"' + DO('whoMore', [String(h)]) + ' aria-label="'+
         esc(t('post.more'))+'">'+ICON_DOTS+'</button>'+
       (WMENU
@@ -1078,15 +1190,62 @@ function folPull(ers, h){
 }
 function folGot(ers, h){ return !!FOL_HAVE[folKey(ers, h)]; }
 function folOf(ers, h){ return FOL_HAVE[folKey(ers, h)] || []; }
+/* WHOSE LIST THIS SCREEN IS SHOWING, AND WHICH DIRECTION -- read off the
+   route's argument, in one place. 「フォロワーとかタップしても見れないし」
+   OWNER 2026-09-03 put the handle on the end of it: `ing` and `ers` alone are
+   yours, `ing:<handle>` and `ers:<handle>` are somebody's, split on the same
+   colon `relate` and `gram` already split theirs on (www/shell.js).
+
+   It was worked out inside vFollows() and nowhere else, which was right until
+   the pull needed the same answer -- and a second reading of one argument is
+   two answers waiting to disagree. */
+function folWho(){
+  var a=String(here().a||''), c=a.indexOf(':');
+  return (c<0)? '' : a.slice(c+1);
+}
+function folErs(){
+  var a=String(here().a||''), c=a.indexOf(':');
+  return a.slice(0, c<0? a.length : c)==='ers';
+}
+/* ASK AGAIN. Everything about a person is asked ONCE -- whoPull() keeps
+   WHO_ASKED per handle so a name that has been deleted is not asked about
+   for ever, and the two follow pulls keep one flag each for the whole
+   session. That is right for a render, which happens constantly, and wrong
+   for a PULL, which is a person saying 「もう一度聞け」.
+
+   「他の人の画面でも更新できるようにしたい」 OWNER 2026-09-04. It is the same
+   sentence as the counts one screen up: somebody who followed you while the
+   app was open was in neither the number nor the list until it was killed and
+   opened again 「なんか3フォロワーなのに2人しかいない」.
+
+   THE FLAG IS CLEARED AND THE PULL IS ASKED -- nothing here talks to the
+   server itself, so there is still one place each request is made from. */
+function meAgain(h){
+  h=String(h||'');
+  if(!h || h===meHandle()){
+    FO_ASKED=false;
+    FR_ASKED=false;
+    meFollowPull();
+    meFollowerPull();
+    return;
+  }
+  WHO_ASKED[h]=0;
+  whoPull(h);
+}
+function folAgain(ers, h){
+  h=String(h||'');
+  if(!h) return;
+  FOL_ASKED[folKey(ers, h)]=0;
+  folPull(ers, h);
+}
 function vFollows(){
   /* WHOSE, and it is the argument's second half. 「フォロワーとかタップしても
      見れないし」 OWNER 2026-09-03. `ing` and `ers` alone are yours; `ing:<handle>`
      and `ers:<handle>` are somebody's -- the same colon `relate` and `gram`
      already split an argument on, because a screen is a route and at most one
      argument (www/shell.js). */
-  var a=String(here().a||''), c=a.indexOf(':');
-  var ers=(a.slice(0, c<0? a.length : c)==='ers');
-  var who=(c<0)? '' : a.slice(c+1);
+  var ers=folErs();
+  var who=folWho();
   var mine=(!who || who===meHandle());
   var list, got;
   if(mine){

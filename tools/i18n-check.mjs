@@ -185,6 +185,15 @@ function checkSource(){
       const where = rel + ' line ' + (i + 1);
       if (rel === 'ipa.js' && /^var IPA_IN\s*=/.test(l)) inTable = true;
       else if (inTable && /^\};/.test(l)) inTable = false;
+      /* AND ONE TAG, which is a word people TYPE rather than a word this app
+         says. 「翻訳はいらんから」 OWNER 2026-09-04, replacing ten language
+         keys with one spelling: a tag said ten ways is ten tags, and the
+         search that finds them is a text search, so the ten would never
+         meet. It goes into a field somebody can then edit, which is what
+         makes it data and not interface -- the same argument IPA_IN is named
+         for one table up. Named, and bounded to its own declaration, so a
+         Japanese string anywhere else in sns.js still fails. */
+      if (rel === 'sns.js' && /^var DAY_TAG\s*=/.test(l)) return;
       if (FOREIGN.test(l) && !inTable) {
         fail('source', where + ' carries text in another script: ' + raw[i].trim().slice(0, 70));
       }
