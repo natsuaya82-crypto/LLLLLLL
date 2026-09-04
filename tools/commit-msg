@@ -30,6 +30,13 @@
 # hook can know. What it holds is the one thing it can see: that a commit which
 # changed a screen also carries something the owner can look at.
 #
+# `shots/` is in .gitignore -- on purpose, it says: "pictures taken to look at
+# once". So a NEW picture needs `git add -f`, and about a hundred already in
+# the repo were put there that way. Left as it is rather than un-ignored,
+# because the ignore is somebody's decision about scratch shots and this hook
+# is not the place to reverse it; what this hook changes is that the -f now has
+# to happen. A shot that is already tracked stages with a plain `git add`.
+#
 # WHAT COUNTS AS CHANGING A SCREEN: www/index.html, or any .js under www/
 # except the ten language files and the font writer, which draw nothing. Asked
 # that way round on purpose -- pre-commit's i18n block names the same two
@@ -75,10 +82,17 @@ SHOTS=$(git diff --cached --name-only --diff-filter=ACMR | grep -iE '^shots/.*\.
 
 # git's own commented-out help, and the diff `commit -v` puts below the
 # scissors, are not things the author wrote.
+#
+# -xF and not a regex: this first asked for the sentence with an optional 。 as
+# `。\{0,1\}`, and it refused the sentence written without one. In the C locale
+# grep counts BYTES, and 。 is three of them -- so the pattern quietly demanded
+# the first two and made only the third optional. A gate whose one way out does
+# not open is a gate that lies about having one. Two fixed strings, matched
+# whole-line, have no locale in them.
 SAID=$(sed -e '/^#[[:space:]]*-\{1,\}[[:space:]]*>8[[:space:]]*-\{1,\}/,$d' "$MSGFILE" \
        | grep -v '^#' \
        | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' \
-       | grep -c '^見た目は変わっていない。\{0,1\}$')
+       | grep -cxF -e '見た目は変わっていない' -e '見た目は変わっていない。')
 [ "$SAID" -gt 0 ] && exit 0
 
 echo ''
@@ -92,7 +106,7 @@ echo ''
 echo '  Shoot it and put the picture in the commit:'
 echo ''
 echo '      node tools/shot.mjs <screen>          # --all --dark --lang ja'
-echo '      git add shots/<name>.png'
+echo '      git add -f shots/<name>.png           # -f: shots/ is in .gitignore'
 echo ''
 echo '  If the screen really does look the same -- a rename, a comment, a'
 echo '  refactor meant to change nothing -- then say so, on a line of its own'
