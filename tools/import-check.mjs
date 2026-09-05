@@ -278,7 +278,42 @@ function read(sample){
    www/letters.js reads its letters off storage as it loads and www/numbers.js
    is what tells a digit from a letter, so both come in, in the order
    index.html loads them, with the three things they touch on the way past. */
-const LTREG = 'var localStorage={getItem:function(){return null;},setItem:function(){}};\n' +
+/* WHERE A SLICE IS KEPT IS core.js's ANSWER, AND IT IS TAKEN FROM THERE.
+   -------------------------------------------------------------------------
+   The first line of this used to be a hand-written `localStorage` stub, and
+   saveLetters() wrote through it. Rule 22 moved the slices into memory --
+   `LSL`, `slRd`, `slWr`, `slRm` in www/core.js -- and this harness went on
+   describing the disk, so `slWr` was a name nothing here had. The check died
+   inside ltNew(), the gate went red, and there was nothing wrong with the
+   app: on a phone core.js is loaded before letters.js and all three are
+   there. That is 「a list of keys, written by hand, that nobody remembered to
+   add to」 (CLAUDE.md rule 6) wearing a harness.
+
+   So the store is not restated here. The block is CUT OUT of www/core.js and
+   run, which leaves one answer to 「where does a slice live」 -- and a rename
+   there fails by name below instead of quietly agreeing with itself.
+
+   `localStorage` stays a stub, and that is not the same kind of thing: it is
+   the BROWSER's, not this app's. slRd() falls back to it for what a version
+   before 2026-09-04 left on the disk, and in Node there is no disk to fall
+   back to. */
+const CORE = fs.readFileSync(path.join(WWW, 'core.js'), 'utf8');
+function coreBlock(from, fn){
+  const a = CORE.indexOf(from), b = CORE.indexOf(fn, a);
+  let i = (a < 0 || b < 0) ? -1 : CORE.indexOf('{', b), d = 0;
+  for (; i >= 0 && i < CORE.length; i++){
+    if (CORE[i] === '{') d++;
+    else if (CORE[i] === '}' && --d === 0) return CORE.slice(a, i + 1);
+  }
+  console.error('\nimport: www/core.js no longer holds the slice store this harness runs.\n' +
+                '  Looked for `' + from + '` and the end of `' + fn + '`.\n' +
+                '  It is cut out rather than copied on purpose: find what it is\n' +
+                '  called now and say so here. Do not write a second store.\n');
+  process.exit(1);
+}
+const SLSRC = coreBlock('var LSL={};', 'function slRm(');
+const LTREG = 'var localStorage={getItem:function(){return null;},removeItem:function(){}};\n' +
+              SLSRC + '\n' +
               'function langKey(k){ return String(k); }\n' +
               'function bkTouch(){}\n' +
               /* Whether the open language may be written to -- www/core.js, and
