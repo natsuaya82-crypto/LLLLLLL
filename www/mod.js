@@ -93,17 +93,37 @@ function modWhyOf(uid){
   return 'other';
 }
 
-/* One report. The reason is the heading because it is what the list is sorted
-   in the head by; the line under it is what was actually said, which is the
-   only thing that decides anything. */
+/* ONE REPORT, AND THE TWO QUESTIONS IT HAS TO ANSWER BEFORE ANY OTHER.
+   「ツイートがなにで誰から通報されてるのかがわかりにくい」 OWNER 2026-09-05.
+
+   It was the reason, the time, and the words -- and neither person was on it
+   anywhere. Whose post this is was in the card only when the report was about
+   an ACCOUNT, where it stood in place of the words; who pressed the button
+   was on no screen at all. So the two people are the head now and the reason
+   goes down beside the time: the person reading these is deciding about two
+   accounts, and a card that names neither is a card they have to leave to
+   find out.
+
+   TWO grey lines and not one. Four things across 320px in the small grey type
+   is the illegibility being complained about; `.mhead` is a flex row with an
+   end at each side, so two of them are two pairs and each pair reads.
+
+   A report about an account carries no post, so it has no words to show and
+   the `.mline` goes with them -- @who is in the head now and printing it
+   again as the body was the same handle twice. */
 function modRow(r){
   return '<div class="mrep'+(r.down? ' mdown':'')+'">'+
     '<div class="mhead">'+
-      '<span class="mwhy">'+esc(t('report.'+r.why))+'</span>'+
+      '<span class="mwho">'+esc(t('mod.of', r.who))+'</span>'+
       '<span class="mwhen">'+esc(postWhen(r.at))+'</span>'+
     '</div>'+
-    '<div class="mline">'+
-      esc(r.pid? (r.ln || t('mod.noline')) : ('@'+r.who))+'</div>'+
+    '<div class="mhead">'+
+      '<span class="mwhy">'+esc(t('report.'+r.why))+'</span>'+
+      /* A report whose author has closed their account carries no handle, and
+         a blank space where a name goes says less than nothing. */
+      '<span class="mby">'+(r.by? esc(t('mod.by', r.by)) : '')+'</span>'+
+    '</div>'+
+    (r.pid? '<div class="mline">'+esc(r.ln || t('mod.noline'))+'</div>' : '')+
     (r.note? '<div class="mnote">'+esc(r.note)+'</div>' : '')+
     /* A report about an account and not a post has nothing to take down. It
        is still worth reading, which is why it is in the list at all. */
@@ -114,11 +134,14 @@ function modRow(r){
       : '')+
     /* And the person behind it, which every report has -- a report about an
        account has no post to take down and is often the one that needs this.
-       A report whose author has left carries no uid and offers nothing. */
+       A report whose author has left carries no uid and offers nothing.
+
+       `r.who` AND NOT `'@'+r.who`: the key already carries the @, so the
+       button read 「@@veth を凍結」 on every card. */
     (r.uid
       ? '<button class="btn'+(r.out? ' ghost' : ' bad')+'"' +
           DO(r.out? 'modIn' : 'modOut', [r.uid]) + '>'+
-          esc(t(r.out? 'mod.in' : 'mod.out', '@'+r.who))+'</button>'
+          esc(t(r.out? 'mod.in' : 'mod.out', r.who))+'</button>'
       : '')+
     '</div>';
 }

@@ -909,15 +909,19 @@ export function halfDone(){
        under it and nothing to press. */
     ['the reports', () => { const keep = MODS;
         MODS = [{ id:1, why:'spam',  note:'', at:Date.now()-600000,
-                  who:'veth', uid:'u1', out:false,
+                  who:'veth', uid:'u1', out:false, by:'aya',
                   pid:'ps1', ln:'kano mos tir', down:false },
                 { id:2, why:'abuse', note:'and again this morning',
                   at:Date.now()-7200000, who:'iri', uid:'u2', out:true,
-                  pid:'ps2', ln:'qel dross', down:true },
+                  by:'sol', pid:'ps2', ln:'qel dross', down:true },
                 /* About an account and not a post: nothing to take down, and
                    the only button on it is the one that matters. */
+                /* And one whose author has closed their account since: no
+                    handle to name, and the line simply has nothing on that
+                    side rather than a blank where a name goes. */
                 { id:3, why:'other', note:'', at:Date.now()-86400000,
-                  who:'iri', uid:'u2', out:true, pid:'', ln:'', down:false }];
+                  who:'iri', uid:'u2', out:true, by:'', pid:'', ln:'',
+                  down:false }];
         window.route='mod'; NAV=[{r:'mod'}];
         const h = vMod(); MODS = keep; return h; }],
     /* The reports before the server has answered, and the reports when there
@@ -943,7 +947,7 @@ export function halfDone(){
         ADMINS = [{ id:'u9', handle:'lingua', admin:true },
                   { id:'u1', handle:'mod', admin:false }];
         MODS = [{ id:1, why:'spam', note:'', at:Date.now()-600000,
-                  who:'veth', uid:'u1', out:false,
+                  who:'veth', uid:'u1', out:false, by:'aya',
                   pid:'ps1', ln:'kano mos tir', down:false }];
         window.route='admin'; NAV=[{r:'admin'}];
         const h = vAdmin();
