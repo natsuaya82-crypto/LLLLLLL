@@ -2475,17 +2475,23 @@ function netStaffList(ok, bad){
    `post(...)` is the row the report points at and not the column of the same
    name; PostgREST reads the brackets as "follow the foreign key". A report
    about an account carries no post at all, and `who(handle)` is what it is
-   about instead. */
+   about instead.
+
+   `actor(handle)` is who WROTE it, read the same way -- the column is
+   `report_actor_fkey` to profile, and a report whose author has deleted their
+   account carries a null there (schema.sql says `on delete set null`), which
+   comes back as an empty handle rather than as a row that cannot be drawn. */
 function netReports(ok, bad){
   if(!netSignedIn()){ bad(null, 0); return; }
   netGet('/rest/v1/report?select=id,why,note,created_at,'+
          'post(id,body,hidden_at,author(id,handle,banned_at)),'+
-         'who(id,handle,banned_at)'+
+         'who(id,handle,banned_at),'+
+         'actor(handle)'+
          '&order=created_at.desc&limit='+NET_PAGE,
     function(d){
-      var out=[], i, r, po, au;
+      var out=[], i, r, po, au, by;
       for(i=0;i<(d||[]).length;i++){
-        r=d[i]||{}; po=r.post||null;
+        r=d[i]||{}; po=r.post||null; by=r.actor||null;
         /* Whoever it is about: the author of the post, or -- when the report
            is about an account and carries no post -- the account itself. Both
            are the same embed of the same table, so both answer the same two
@@ -2496,6 +2502,7 @@ function netReports(ok, bad){
                    note:String(r.note||''),
                    at:Date.parse(r.created_at) || 0,
                    who:(au && au.handle) || '',
+                   by:(by && by.handle) || '',
                    uid:(au && au.id) || '',
                    out:!!(au && au.banned_at),
                    pid:po? po.id : '',
