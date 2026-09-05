@@ -39,6 +39,18 @@ const SERVER = `
   window.__SRV = { lang:[], slice:[], n:0, down:false, sent:[], tried:[] };
   netSend = function(method, p, body, tok, ok, bad){
     var S = window.__SRV;
+    /* A WIRE SAYS HOW MANY REQUESTS IT IS HOLDING, and this stands in for the
+       wire. netOn()/netOff() are the app's own counter (www/net.js § NET_OUT)
+       and are what tells 「答えを待っている」 from 「訊くものが無かった」 --
+       ［再接続］ reads it to decide whether the mark turns. Calling them here
+       is not a second rule: it is this stub playing the part it took over.
+       The real one stamps the XMLHttpRequest, so anything with a place to put
+       the stamp will do. */
+    var wire = {};
+    netOn(wire);
+    var realOk = ok, realBad = bad;
+    ok = function(v){ netOff(wire); realOk(v); };
+    bad = function(d, st, m){ netOff(wire); realBad(d, st, m); };
     /* WHAT WAS ASKED, before it is decided whether it is answered. S.sent is
        written inside each route and so records only what got through -- which
        is the right list for 「did this arrive」 and the wrong one for 「did
@@ -911,6 +923,123 @@ say(road.sent.length === 0,
 say(road.words.filter(w => w === 'newer').length === 1,
     '**写しはサーバーの答えに勝たない** ── 答えが来たらその上に書かれる: ' +
     JSON.stringify(road.words));
+
+/* ---- 引き下ろしも、待ちも、落ちたときのポップも、一本 ---------------------
+   「全部の画面でプルトゥーリフレッシュ入れないと動かないとこ出てくるぜ」
+   「設定はいらんよ？」「通信のくるくるも全部20秒で良くない？」
+   「再思考もポップ消えてくるくるみたいな。」
+   「エラーになったらエラー用のポップ出して再更新とかおさせればいいやんそれ
+     だけで1個作れば全部に使えるやん」 OWNER 2026-09-05。
+
+   **画面を一つずつ押して回らないための節です。**四本あった引き下ろしは
+   pullRun() 一本になったので、訊くべきは「三十七画面がそれぞれ正しいか」では
+   なく「一本の道が正しいか」と「三十七画面がその道に繋がっているか」の二つ
+   です。前者は下で実際に落として押します。後者は表を読みます ── PAGES が
+   ルートの全部なので、そこに在って PULL_ON にも PULL_NOT にも無いものが零で
+   あれば、忘れられた画面は在りません。
+
+   そして PULL_NOT の中身も訊きます。除外の表は放っておくと育つもので、
+   「設定はいらん」以外の一行が黙って入っていたら、それはこの決定ではなく
+   誰かの判断です。 */
+const one = await pg.evaluate(({ s, srv }) => {
+  eval('(' + s + ')()');
+  SET.done = true;
+  eval(srv);
+  SESS = { at:'t', rt:'r', uid:'me3', anon:false };
+  var out = {}, r, miss = [], not = [], slipped = [];
+  for (r in PAGES) if (Object.prototype.hasOwnProperty.call(PAGES, r)){
+    if (PULL_NOT[r]){ not.push(r); if (PULL_ON[r]) slipped.push(r); }
+    else if (!PULL_ON[r]) miss.push(r);
+  }
+  out.missing = miss;
+  out.excluded = not.sort();
+  /* 外したはずのものが引けてしまっていないか。表に名前が在ることと、その画面が
+     本当に引かないことは別で、後者が決定のほう。 */
+  out.slipped = slipped;
+  out.routes = Object.keys(PAGES).length;
+  /* 待ちは一つ。net.js が言い、store.js がそれを読む。 */
+  out.wait = NET_WAIT;
+  out.storeWait = STORE_WAIT;
+  return out;
+}, { s: seed.toString(), srv: SERVER });
+
+say(one.missing.length === 0,
+    '**引き下ろしはどの画面にも在る** ── PAGES の ' + one.routes +
+    ' ルートに、表の無いものは零（' +
+    (one.missing.length ? '**' + one.missing.join(' ') + '**' : 'なし') + '）');
+say(one.excluded.length === 2 && one.excluded[0] === 'set' &&
+    one.excluded[1] === 'settings' && one.slipped.length === 0,
+    'そして外れているのは設定の二つだけで、その二つは本当に引かない ── ' +
+    '「設定はいらんよ？」（' + one.excluded.join(' ') +
+    (one.slipped.length ? '、**' + one.slipped.join(' ') + ' が引ける**' : '') + '）');
+say(one.wait === 20000 && one.storeWait === one.wait,
+    '**待ちは一箇所** ── NET_WAIT が ' + one.wait + '、App Store もそれを読む（' +
+    one.storeWait + '）');
+
+/* 落ちたときの道を、実際に落として押す。**画面ごとに書き分けられていない
+   ことが訊きたいこと**なので、別々の三画面から落として、ポップが一つで
+   あることと、［再接続］がその三つとも出し直すことを見ます。 */
+const pop = await pg.evaluate(async ({ s, srv }) => {
+  eval('(' + s + ')()');
+  SET.done = true;
+  eval(srv);
+  SESS = { at:'t', rt:'r', uid:'me3', anon:false };
+  function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
+  var id = langId;
+  LANGS[id].uid = 'me3'; LANGS[id].mine = true;
+  LANGS[id].sid = 'srv-known'; langStore();
+  var out = {};
+  window.__SRV.down = true;
+  /* 三つの別の画面が、それぞれ自分のものを訊いて、落ちる。タイムライン、
+     言語を作る画面、通知 ── 昔は三本の別々の関数でした。 */
+  window.__SRV.tried = [];
+  go('feed'); render();     pullGo('feed');
+  go('letters'); render();  pullGo('letters');
+  pullGo('notif');
+  await wait(300);
+  out.fellTried = window.__SRV.tried.length;
+  out.pops = document.querySelectorAll('#pop.on').length;
+  out.popUp = popOn();
+  out.spinning = document.getElementById('netspin').className.indexOf('on') >= 0;
+  /* ［再接続］。人が押すのと同じ道 ── ポップのボタンをクリックする。 */
+  window.__SRV.tried = [];
+  var y = document.querySelector('#pop [data-do="popYes"]');
+  if (y) y.click();
+  out.popAfterPress = popOn();
+  out.spinAfterPress = document.getElementById('netspin').className.indexOf('on') >= 0;
+  out.inTheAir = NET_OUT;
+  await wait(300);
+  /* 通らなかったので、またポップ。そしてマークは止まっている。 */
+  out.againTried = window.__SRV.tried.length;
+  out.popAgain = popOn();
+  out.spinAgain = document.getElementById('netspin').className.indexOf('on') >= 0;
+  /* 通れば、マークは自分で降りる。 */
+  window.__SRV.down = false;
+  var y2 = document.querySelector('#pop [data-do="popYes"]');
+  if (y2) y2.click();
+  await wait(600);
+  out.spinAfterUp = document.getElementById('netspin').className.indexOf('on') >= 0;
+  out.popAfterUp = popOn();
+  return out;
+}, { s: seed.toString(), srv: SERVER });
+
+say(pop.fellTried > 0 && pop.pops === 1 && pop.popUp && !pop.spinning,
+    '**三つの画面が別々に落ちて、ポップは一つ** ── 出て行った要求 ' +
+    pop.fellTried + ' 件、立っているポップ ' + pop.pops + ' 個（' +
+    (pop.popUp ? 'あり' : '**なし**') + '）、そのときマークは回っていない');
+say(!pop.popAfterPress && pop.spinAfterPress && pop.inTheAir > 0,
+    '**［再接続］でポップが消えて、マークが回る** ── 押した瞬間に ' +
+    pop.inTheAir + ' 件が空へ出ている（ポップ ' +
+    (pop.popAfterPress ? '**残っている**' : '消えた') + '、マーク ' +
+    (pop.spinAfterPress ? '回っている' : '**止まっている**') + '）');
+say(pop.againTried >= pop.fellTried && pop.popAgain && !pop.spinAgain,
+    '**通らなければ、またポップ** ── ためた道が全部もう一度出て（' +
+    pop.againTried + ' 件、落ちたときは ' + pop.fellTried + ' 件）、' +
+    'ポップが戻り、マークは止まる');
+say(!pop.spinAfterUp && !pop.popAfterUp,
+    'そして通れば、マークは自分で降りる ── 待つものが空になったとき（マーク ' +
+    (pop.spinAfterUp ? '**回ったまま**' : '止まった') + '、ポップ ' +
+    (pop.popAfterUp ? '**あり**' : 'なし') + '）');
 
 await br.close();
 if (bad.length){
