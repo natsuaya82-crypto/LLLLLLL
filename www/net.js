@@ -1398,57 +1398,6 @@ function nidFor(row, here){
   LANGS[id].name=String(row.name||'');
   return id;
 }
-/* ---- 空と、届かなかったのは、別のこと -----------------------------------
-   「おかしくね？電波ない時は単語はまだありませんにはならなくね？
-     通信エラーです通信の良いところで接続してください見たいにしないと消えたと
-     思われるやろ、、、、」
-   「消えたのとエラーは別のことでただの分岐だからね？
-     消えたと思われるのはまずい。
-     TLはくるくるさせとけばどうにかなるけど」 OWNER 2026-09-05.
-
-   The slices are in memory (rule 22), so an app that has been closed holds
-   nothing until the server answers. A phone that kept a picture of the last
-   answer draws that (slGot in www/core.js). A phone with NO picture -- one
-   just out of the box, one that has never opened this language, one whose
-   storage was reclaimed -- draws nothing, and every screen with nothing on it
-   said 「単語がまだありません」. That is 「空」 and 「届かなかった」 sharing one
-   branch, which is the first page of CLAUDE.md, and what a person reads there
-   is that their own work is gone.
-
-   ONE BRANCH IN ONE PLACE, AND THE SCREENS ASK IT. Not a condition grown on
-   each screen: 「コードも継ぎ足し継ぎ足しして蛸足にするのもやめてね？」
-
-     NET_HEARD       the server has said what this account's languages are,
-                     this run of the app. False before it answers and false
-                     after a failure -- both of those are 「まだ聞けていない」
-                     and neither is 「この人は何も作っていない」.
-     netNoneHTML(h)  what a screen with nothing on it shows: its own 「まだ
-                     ありません」 when the server has answered, and the one
-                     sentence about the signal when it has not.
-
-   The timeline is not this and does not become this: it is other people's, an
-   empty one is not read as 「消えた」, and the mark that turns is already what
-   it does 「TLはくるくるさせとけばどうにかなるけど」.
-
-   It is set in ONE place -- the foot of netLangsDown() below, which is the
-   launch's own road to the server and the only thing that hears the whole
-   answer. Nothing else writes it, so nothing else can make a screen say the
-   server was reached. */
-var NET_HEARD=false;
-/* THE BREAK IS PART OF THE WORDING, NOT THE WIDTH.
-   「普通に／い／だけ下に行く気持ち悪さ理解できないの？／エラーです。／電波／
-     みたいに二行にしてくれ。」 OWNER 2026-09-05.
-
-   Flowed as one sentence, 390px put 「い」 on a line of its own. The sentence
-   is two -- what happened, and what to do -- so it is cut where it is written
-   rather than where the box ends, and the <br> travels with the translation
-   the way CLAUDE.md rule 2 says markup does. It is markup, so it is put in as
-   markup; esc() is what turned it into the letters b and r on the screen. The
-   ten strings are this repo's own and are the only thing that reaches here. */
-function netNoneHTML(html){
-  if(NET_HEARD) return html;
-  return '<div class="note">'+t('net.none')+'</div>';
-}
 function netLangsDown(then){
   var done=then || function(){}, here={}, filled=false, id;
   if(!netSignedIn()){ done(0); return; }
@@ -1459,7 +1408,7 @@ function netLangsDown(then){
     function(rows){
       var i=0, made=0, lost=false;
       function step(){
-        var row, nid, heard;
+        var row, nid;
         if(i>=(rows||[]).length){
           if(made) langStore();
           /* The OPEN language's slices came down, so what the screens are
@@ -1476,9 +1425,7 @@ function netLangsDown(then){
              filled -- so without this the sentence about the signal would be
              left standing on a screen that has just been told there is simply
              nothing there. */
-          heard=(!lost && !NET_HEARD);
-          if(!lost) NET_HEARD=true;
-          if(made || filled || heard) render();
+          if(made || filled) render();
           done(made); return;
         }
         row=rows[i]; i++;
@@ -1523,8 +1470,8 @@ function netLangsDown(then){
       }
       step();
     }, function(d, s, m){
-      /* 起動の道の二つ目で、人が気づくのはこちら ── NET_HEARD は偽のままで、
-         この人の言語は一本も来ていない。［再更新］はこの道をもう一度。 */
+      /* 起動の道の二つ目で、人が気づくのはこちら ── この人の言語は一本も
+         来ていない。［再更新］はこの道をもう一度。 */
       netPop(d, s, m, function(){ netLangsDown(then); });
       done(0);
     });

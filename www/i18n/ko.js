@@ -534,7 +534,6 @@ defLang('ko', (function(){
       "net.handle.taken" : "이미 사용 중인 ID입니다.",
       "net.offline" : "연결할 수 없습니다.",
       "net.again" : "다시 연결",
-      "net.none" : "통신 오류입니다.<br>신호가 좋은 곳에서 연결해 주세요.",
       "net.failed" : "되지 않았습니다.",
       "net.badlogin" : "주소나 비밀번호가 다릅니다.",
       "net.session" : "다시 로그인해 주세요.",

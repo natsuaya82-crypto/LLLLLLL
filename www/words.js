@@ -160,12 +160,7 @@ function wPosAt(k){
    of the word it came from. */
 function wordsBodyHTML(items){
   if(!items.length)
-    /* 「空」と「届かなかった」は別のこと -- netNoneHTML() in www/net.js is the
-       one branch and this screen only asks it. With a filter on, 「見つかり
-       ません」 is about the filter and is still a statement about a dictionary
-       that arrived; a dictionary that did not arrive has not been searched. */
-    return netNoneHTML(
-      emptyBox((q||wFil!==POS_ALL)? t('words.nomatch') : t('words.empty')));
+    return emptyBox((q||wFil!==POS_ALL)? t('words.nomatch') : t('words.empty'));
   var out='', cur=null;
   items.forEach(function(w){
     var g=wGroupLab(w);

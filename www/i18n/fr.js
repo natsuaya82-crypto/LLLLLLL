@@ -403,7 +403,6 @@ defLang('fr', (function(){
       "net.handle.taken" : "Cet ID est déjà pris.",
       "net.offline" : "Pas de connexion.",
       "net.again" : "Reconnecter",
-      "net.none" : "Erreur de connexion.<br>Connectez-vous là où le signal est bon.",
       "net.failed" : "Cela n’a pas marché.",
       "net.badlogin" : "Adresse ou mot de passe incorrect.",
       "net.session" : "Reconnectez-vous.",

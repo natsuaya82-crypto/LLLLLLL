@@ -201,8 +201,8 @@ function vNotes(){
     '<div class="note" style="margin-bottom:12px">'+t('notes.note')+'</div>'+
     (found.length
       ? '<div class="ntlist">'+rows+'</div>'
-      : netNoneHTML('<div class="empty"><div class="eb">'+t('notes.empty.t')+'</div>'+
-        '<div class="es">'+t('notes.empty.s')+'</div></div>'))+
+      : '<div class="empty"><div class="eb">'+t('notes.empty.t')+'</div>'+
+        '<div class="es">'+t('notes.empty.s')+'</div></div>')+
     '</div>'+
     /* The round ＋ in the bottom right corner, which is where this app puts
        "make one" -- the timeline's post and the dictionary's word are both

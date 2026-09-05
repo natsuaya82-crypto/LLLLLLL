@@ -271,7 +271,6 @@ defLang('ja', (function(){
       "net.handle.taken" : "このIDは使われています",
       "net.offline" : "接続できません",
       "net.again" : "再接続",
-      "net.none" : "通信エラーです。<br>通信の良いところで接続してください",
       "net.failed" : "うまくいきませんでした",
       "net.badlogin" : "アドレスかパスワードが違います",
       "net.session" : "サインインし直してください",

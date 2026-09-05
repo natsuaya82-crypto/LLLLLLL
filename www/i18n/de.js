@@ -343,7 +343,6 @@ defLang('de', (function(){
       "net.handle.taken" : "Diese ID ist vergeben.",
       "net.offline" : "Keine Verbindung.",
       "net.again" : "Neu verbinden",
-      "net.none" : "Verbindungsfehler.<br>Verbinde dich dort, wo das Signal gut ist.",
       "net.failed" : "Das hat nicht geklappt.",
       "net.badlogin" : "Adresse oder Passwort falsch.",
       "net.session" : "Bitte erneut anmelden.",

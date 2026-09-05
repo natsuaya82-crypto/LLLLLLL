@@ -255,7 +255,6 @@ defLang('en', (function(){
       "net.handle.taken" : "That ID is taken.",
       "net.offline" : "No connection.",
       "net.again" : "Reconnect",
-      "net.none" : "Connection error.<br>Connect where the signal is good.",
       "net.failed" : "That did not work.",
       "net.badlogin" : "Wrong address or password.",
       "net.session" : "Sign in again.",

@@ -355,7 +355,6 @@ defLang('it', (function(){
       "net.handle.taken" : "Questo ID è già in uso.",
       "net.offline" : "Nessuna connessione.",
       "net.again" : "Riconnetti",
-      "net.none" : "Errore di connessione.<br>Collegati dove il segnale è buono.",
       "net.failed" : "Non ha funzionato.",
       "net.badlogin" : "Indirizzo o password errati.",
       "net.session" : "Accedi di nuovo.",

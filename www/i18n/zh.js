@@ -363,7 +363,6 @@ defLang('zh', (function(){
       "net.handle.taken" : "该 ID 已被使用。",
       "net.offline" : "无法连接。",
       "net.again" : "重新连接",
-      "net.none" : "连接错误。<br>请在信号良好的地方连接。",
       "net.failed" : "没有成功。",
       "net.badlogin" : "邮箱或密码不对。",
       "net.session" : "请重新登录。",
