@@ -2700,6 +2700,12 @@ function geTiles(){ inkCanvases('canvas.tc', 48, 72); }
 /* Which screen the markup on the page belongs to, so the next render can tell
    a redraw of this one from a move to another. */
 var RENDERED=null;
+/* AND WHICH ARGUMENT, because a screen is a route AND its argument. The
+   grammar list and a grammar chapter are both `gram`, so a route-only
+   comparison said the screen had not changed and nothing was kept -- the
+   swipe back off a chapter had no picture behind it and therefore no
+   gesture at all. */
+var RENDERED_A=null;
 function render(){
   /* Any navigation takes the popup with it. */
   if(typeof popOff==='function') popOff();
@@ -2791,8 +2797,11 @@ function render(){
      notices read, three screens pull from the network, and a swipe that was
      abandoned would have done all of it. What is stashed is the page as it
      was actually left. www/shell.js § swStart is what shows it. */
-  if(!same) navKeep(RENDERED, app.innerHTML);
-  RENDERED=route;
+  /* Kept when the ROUTE or the ARGUMENT moved -- not on `same`, which is the
+     scroll's question and is about the route alone. */
+  var arg = here().a;
+  if(RENDERED!==route || RENDERED_A!==arg) navKeep(RENDERED, app.innerHTML);
+  RENDERED=route; RENDERED_A=arg;
   /* the entrance animation belongs to arriving, not to redrawing */
   app.setAttribute('data-fresh', same ? '0' : '1');
   app.innerHTML=v;

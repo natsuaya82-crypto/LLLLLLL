@@ -632,9 +632,15 @@ var WHO_HAVE={}, WHO_ASKED={};
 /* Asked for by the page that draws them, the way the timeline and the notices
    ask for theirs. Never for your own: that is ME, it is on this phone, and a
    request for it would be the app asking somebody else who you are. */
-function whoPull(h){
+/* THE ASK ITSELF, and it is the only place this phone asks who somebody is.
+   Nothing guards it: a person pulling the screen down is 「もう一度聞け」 and
+   is never refused -- www/sns.js § pullRun says the same sentence about every
+   other screen. 「他の人の画面でも更新できるようにしたい」 OWNER 2026-09-04. */
+function whoAsk(h){
   h=String(h||'');
-  if(!h || h===meHandle() || WHO_ASKED[h]) return;
+  /* Never your own: that is ME, it is on this phone, and a request for it
+     would be the app asking somebody else who you are. */
+  if(!h || h===meHandle()) return;
   WHO_ASKED[h]=1;
   netWho(h, function(p){
     /* Nobody by that name. It stays asked -- there is nothing to ask again. */
@@ -642,6 +648,15 @@ function whoPull(h){
     WHO_HAVE[h]=p;
     render();
   }, function(){ WHO_ASKED[h]=0; });
+}
+/* And the same ask put ONCE per handle, which is what a RENDER wants: a page
+   draws constantly and a question per draw is a question per frame. The flag
+   is read here and written by whoAsk() alone -- it used to be cleared from
+   www/me.js § meAgain by hand, which was a second road to the same request
+   with the guard reached into from outside it. */
+function whoPull(h){
+  if(WHO_ASKED[String(h||'')]) return;
+  whoAsk(h);
 }
 function whoOf(h){
   var i, p, got;
@@ -1323,7 +1338,7 @@ function folErs(){
   var a=String(here().a||''), c=a.indexOf(':');
   return a.slice(0, c<0? a.length : c)==='ers';
 }
-/* ASK AGAIN. Everything about a person is asked ONCE -- whoPull() keeps
+/* ASK AGAIN. Everything about a person is asked ONCE -- whoPull() reads
    WHO_ASKED per handle so a name that has been deleted is not asked about
    for ever, and the two follow pulls keep one flag each for the whole
    session. That is right for a render, which happens constantly, and wrong
@@ -1339,14 +1354,15 @@ function folErs(){
 function meAgain(h){
   h=String(h||'');
   if(!h || h===meHandle()){
-    /* Yours, asked again. A person pulling is never refused, which is what
-       pullGo() means and is why the flag is not cleared by hand here: the
-       table holds it (www/sns.js § pullRun). */
+    /* Yours, asked again. Not netWho(): what a person wrote about themselves
+       is ME and is on this phone. What the server holds about your own page
+       is the two follow lists behind its counts, and `mine` is the road to
+       them -- a person pulling is never refused, which is what pullGo()
+       means (www/sns.js § pullRun). */
     pullGo('mine');
     return;
   }
-  WHO_ASKED[h]=0;
-  whoPull(h);
+  whoAsk(h);
 }
 function folAgain(ers, h){
   h=String(h||'');
