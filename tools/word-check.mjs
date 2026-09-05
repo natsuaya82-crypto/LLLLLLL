@@ -335,6 +335,44 @@ const R = await pg.evaluate(() => {
     out.fails.push('opening the kind of word threw the choice away -- it is a ' +
       'page you go INTO from the list, and the filter stays up while choosing');
 
+  /* ---- a word with no meaning says nothing on its row -------------------
+     「あとここ意味の追加ってなるけど、追加ボタン押しても追加されないから、
+     空欄でいいよ。」OWNER 2026-09-05, on a build in their hand.
+
+     The row said 「意味の追加」 and the press opens the word -- because the
+     row IS the button that opens the word, and nothing on this screen has
+     ever added a meaning. A line naming an action its own press does not do
+     renders perfectly and photographs perfectly, so nothing but a person
+     reading it could find it, and this is what holds the answer.
+
+     Two halves. The blank one is the owner's decision; the OTHER one is what
+     makes the blank right -- a word that HAS a meaning still says it, and a
+     release that blanked the line for everybody would pass the first half
+     alone. */
+  start();
+  WORDS.push({ hw:'zolu', ph:['z','o','l','u'], mns:[], pos:'n', at:99 });
+  screen();
+  const rowOf = (hw) => [].slice.call(document.querySelectorAll('#app .entry'))
+    .filter(e => e.textContent.indexOf(hw) >= 0)[0] || null;
+  const blank = rowOf('zolu');
+  const full  = rowOf('tira');
+  const mnText = (row) => { const m = row && row.querySelector('.mn');
+                            return m ? m.textContent : '(no line at all)'; };
+  out.said.push('a word with no meaning shows on its row: ' + mnText(blank));
+  out.said.push('and one that has a meaning still shows: ' + mnText(full));
+  if (!blank) out.fails.push('the word with no meaning is not on the list, ' +
+    'so nothing below it was asked of anything');
+  else if (blank.textContent.indexOf(t('words.addmn')) >= 0)
+    out.fails.push('the row of a word with no meaning still says ' +
+      JSON.stringify(t('words.addmn')) + ' -- pressing it opens the word and ' +
+      'adds nothing. 「空欄でいいよ」 OWNER 2026-09-05');
+  else if (blank.querySelector('.mn'))
+    out.fails.push('the row of a word with no meaning carries an empty ' +
+      'meaning line -- 空欄 is no line, not a line with nothing on it');
+  if (!full || !full.querySelector('.mn') || !mnText(full).trim())
+    out.fails.push('a word that HAS a meaning stopped showing it: ' +
+      mnText(full) + ' -- the blank is for the words with none');
+
   return out;
 });
 

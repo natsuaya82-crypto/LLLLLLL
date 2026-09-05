@@ -446,14 +446,26 @@ function wEntryLines(w, mn){
   return '<div class="hwrow"><span class="hw">'+esc(wOut(w.hw))+'</span>'+
     '<span class="rd">'+esc(phIpa(wPh(w)))+'</span>'+
     '<span class="pos">'+esc(posLabel(w.pos))+'</span></div>'+
-    '<div class="mn">'+mn+'</div>';
+    /* A word nobody has given a meaning to yet has NO second line. Not an
+       empty one -- there is nothing to put on it, and a row is as tall as
+       what is on it, which is already true of this list: one meaning is a
+       line and three wrap to two. */
+    (mn? '<div class="mn">'+mn+'</div>' : '');
 }
 function entryHTML(w){
   var mns=wMns(w), mn;
-  /* A missing meaning in a dictionary row is something to do, not a fact to
-     report -- 「意味のところにまだ決めてないって書くのやめてくんない？」. As the name
-     of a filter it stays "no meaning", because there it does describe a set. */
-  if(!mns.length) mn='<span class="nomn">'+esc(t('words.addmn'))+'</span>';
+  /* A WORD WITH NO MEANING SAYS NOTHING. 「ここ意味の追加ってなるけど、
+     追加ボタン押しても追加されないから、空欄でいいよ。」OWNER 2026-09-05.
+
+     The row used to say 「意味の追加」, and pressing it opens the word --
+     it is the row, and the row opens the word. Nothing on this screen adds a
+     meaning and nothing ever did: the way in is the word's page, Edit, and
+     the meanings there. A line that names an action the press does not do is
+     worse than a blank one, and the owner has said which they want.
+
+     As the name of a FILTER it stays 「意味なし」, because there it does
+     describe a set (wFilters() above). */
+  if(!mns.length) mn='';
   else if(mns.length===1) mn=esc(mns[0]);
   else mn=mns.map(function(m,i){
     return '<span class="sn">'+(i+1)+'</span>'+esc(m); }).join(' ');

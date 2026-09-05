@@ -1831,9 +1831,9 @@ export function halfDone(){
                                              if (l) l.ch = was; return h; }],
     /* A word with no meaning on it yet, and a word with more than one. The
        dictionary numbers the meanings only when there are two to tell apart
-       -- www/words.js sn -- and says "add one" only when there are none --
-       nomn. Every word the fixture holds has exactly one, so neither line is
-       on any screen without this. */
+       -- www/words.js sn -- and a word with none has NO second line at all
+       since 2026-09-05 (「空欄でいいよ」). Every word the fixture holds has
+       exactly one, so neither row is on any screen without this. */
     ['the dictionary, with a word unfinished and a word with two meanings', () => {
         const keep = WORDS;
         WORDS = keep.concat([{ hw:'vel', ph:['v','e','l'], mns:[], pos:'n', at:11 },

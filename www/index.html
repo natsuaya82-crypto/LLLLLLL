@@ -1654,9 +1654,16 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
    the rule under it stay on the row while the touch targets sit inside. */
 .entry{display:flex;align-items:center;gap:4px;padding:13px 2px;
        border-bottom:1px solid var(--line);width:100%;color:var(--tx)}
-.ebody{flex:1;min-width:0;background:none;border:0;padding:0;text-align:left;color:inherit;font-family:inherit}
+/* 44 DOWN, ON EVERY ROW BODY THERE IS. A row is as tall as what is on it, and
+   a word nobody has given a meaning to is one line -- 23px, which is half a
+   thumb. The floor was on `.entry.one .ebody` alone, so it held the rows that
+   are one line BY DESIGN and missed the one that becomes one. It is on the
+   body itself now and that block is gone: a column, centred, so the two lines
+   of a word sit where they always did and one line sits in the middle of the
+   44. tools/press.mjs measures it. */
+.ebody{flex:1;min-width:0;background:none;border:0;padding:0;text-align:left;color:inherit;font-family:inherit;
+       min-height:44px;display:flex;flex-direction:column;justify-content:center}
 .ebody:active{opacity:.55}
-.entry.one .ebody{min-height:44px;display:flex;align-items:center}
 .rowq{flex:0 0 auto;width:44px;height:44px;background:none;border:0;padding:0;
   display:flex;align-items:center;justify-content:center;font-family:inherit}
 .rowq .qo{width:19px;height:19px;border-radius:50%;border:1px solid var(--goldln);
@@ -1706,7 +1713,6 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .sn{font-family:var(--face-caps);font-style:normal;font-size:.82rem;
       color:var(--gold);margin-right:.34em;vertical-align:.15em}
 .mn .sn + span{margin-right:0}
-.mn .nomn{opacity:.42}
 /* Where a word came from, and how many have come from it. */
 .usep{flex:0 0 auto;min-width:44px;min-height:44px;background:none;border:0;color:var(--txm);
       display:inline-flex;align-items:center;justify-content:center}
