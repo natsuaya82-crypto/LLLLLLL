@@ -374,7 +374,7 @@ defLang('it', (function(){
       "script.own.ph"             : "Incolla o scrivi un carattere",
       "script.set"                : "Usa",
       "up.cta"                    : "Passa a Plus",
-      "up.need"                   : "Con Pro puoi usarlo senza limiti.",
+      "up.need"                   : "Questa funzione richiede un piano superiore",
       "pop.no"                  : "Chiudi",
       "pop.yes"                 : "Elimina",
       "keep.q"                  : "Salvare quanto scritto?",
