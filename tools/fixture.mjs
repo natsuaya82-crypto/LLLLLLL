@@ -2049,6 +2049,17 @@ export function halfDone(){
     /* The rule a form is made by. It takes an id, and the id is the one the
        fixture put in STG above. */
     ['a rule for making a form', () => { openFmr('fr1'); return vForm(); }],
+    /* 規則 and 例文 are a page each now (openStRules / openStEx in
+       www/phases.js) and are the only place either is written, so without
+       these two faces nothing names what is typed into them. The examples page
+       is drawn TWICE: with the row for one more folded away, which is what it
+       opens as, and with it out, because the three fields and the Enter on
+       them exist only while it is out. */
+    ['what a stage says its rule is', () => { openStRules('neg'); return vForm(); }],
+    ['the examples of a stage', () => { stExNew=''; openStEx('neg'); return vForm(); }],
+    ['an example being written', () => {
+        stExOpen('neg');
+        const h=vForm(); stExNew=''; return h; }],
     /* The sheet (www/sheet.js, chapter 26). Four faces, because they share no
        buttons: the room, the names being typed, the one control before a file
        has been handed over, and what came off one afterwards.

@@ -547,15 +547,15 @@ function stAddEx(id){
   var ln=gExLine(String(b.value||''), gl);
   if(!ln){ toast(t('word.ex.need')); return; }
   stEx(id).push({lb:String((a&&a.value)||'').trim(), ln:ln, gl:gl});
-  saveStg(); render();
+  saveStg(); openStEx(id);
 }
-function stDelEx(id, i){ stEx(id).splice(i,1); saveStg(); render(); }
+function stDelEx(id, i){ stEx(id).splice(i,1); saveStg(); openStEx(id); }
 /* Two lines side by side is the whole of comparing: a label on each says what
    the pair is a pair of -- 肯定 / 否定 -- and the two read as one thought. */
 /* The same as the word sheet's: the field for one more appears when the `+`
    on the heading is pressed. */
 var stExNew='';
-function stExOpen(id){ stExNew=id; render(); }
+function stExOpen(id){ stExNew=id; openStEx(id); }
 function stExHTML(id){
   var a=stEx(id);
   return (a.length
@@ -571,6 +571,50 @@ function stExHTML(id){
     '</div>' : '');
 }
 
+/* 規則 IS A PAGE, AND SO IS 例文.
+   「規則>で規則だけの見開きでメモみたいな画面全体にかけるページにして。例文も
+   そう。時制のページとかも何を書くの」 OWNER 2026-09-05.
+
+   They were a 130px box and a list stacked in the middle of the stage's page,
+   between the words above them and the note below -- so writing a grammar down
+   was typing into a letterbox with the rest of the screen in the way, and the
+   examples were a section you scrolled past. Each is the whole screen now,
+   reached by its own row, and the page it opens is the one the notebook
+   already uses: a bar and a body and nothing else.
+
+   The buffer is filed under the FORM, exactly as a note's is (ntKeepOn in
+   www/notes.js) -- the field is typed into on that page, so that is the page
+   its buffer belongs to. stKeepSave() is still the one place either of them is
+   written to STG, so what the row saves and what this saves cannot differ. */
+function stRuleKeepOn(id){
+  if(langLocked()) return;
+  keepOn(keepKeyOf('form', 'strule:'+id),
+         {rules:String(stRules(id)||'')},
+         function(v, done){ stKeepSave(id, v); done(true); });
+}
+function openStRules(id){
+  var p=stBy(id);
+  if(!p) return;
+  stRuleKeepOn(id);
+  openForm('strule:'+id, t('stg.rules'),
+    '<textarea class="ntbody" style="min-height:66vh" placeholder="'+esc(t('stg.rules.ph'))+'"'+
+    IN('stSetRules') + '>'+esc(keepVal(keepKeyOf('form', 'strule:'+id), 'rules'))+'</textarea>');
+}
+FORM_OPEN.strule=function(a){ openStRules(String(a||'')); };
+function openStEx(id){
+  if(!stBy(id)) return;
+  openForm('stex:'+id, t('stg.ex'),
+    secAdd(ICON_LINE+t('stg.ex'), DO('stExOpen', [id]), t('word.mn.add'))+stExHTML(id));
+}
+FORM_OPEN.stex=function(a){ openStEx(String(a||'')); };
+/* The way in. The row says what is behind it and how much of it there is --
+   an example is a thing you can count and a rule written in prose is not, so
+   one says a number and the other says nothing. */
+function stPageRow(label, val, doAttr){
+  return '<button class="set"'+doAttr+'>'+
+    '<span class="sl">'+esc(label)+'</span>'+
+    '<span class="sv">'+esc(val)+ICON_GO+'</span></button>';
+}
 /* Which stage is open comes from the trail, so leaving the page and coming
    back lands on the same stage and the back button needs no help. */
 function gOpenOf(){ return (here().r==='gram')? (here().a||null) : null; }
@@ -701,14 +745,12 @@ function stDetailHTML(p){
     for(i=0;i<p.slots.length;i++) out+=stSlotRow(p, p.slots[i]);
     out+='</div>';
   }
-  /* Both fields below are typed into a buffer, so it has to exist before they
-     are drawn out of it. www/shell.js § KEEP. */
+  /* The note below is typed into a buffer, so it has to exist before it is
+     drawn out of it. www/shell.js § KEEP. The rule and the examples have a
+     page each and carry their own. */
   stKeepOn(p.id);
-  out+='<div class="sec">'+t('stg.rules')+'</div>'+
-    '<textarea class="ntbody" style="min-height:130px" placeholder="'+esc(t('stg.rules.ph'))+'" '+
-    '' + IN('stSetRules') + '>'+esc(keepVal(keepKey(), 'rules'))+'</textarea>';
-
-  out+=secAdd(ICON_LINE+t('stg.ex'), DO('stExOpen', [p.id]), t('word.mn.add'))+stExHTML(p.id);
+  out+=stPageRow(t('stg.rules'), '', DO('openStRules', [p.id]))+
+       stPageRow(t('stg.ex'), String(stEx(p.id).length||''), DO('openStEx', [p.id]));
 
   out+='<div class="sec">'+t('stg.note')+'</div>'+
     '<textarea class="ntbody" style="min-height:90px" placeholder="'+esc(t('stg.note.ph'))+'" '+
