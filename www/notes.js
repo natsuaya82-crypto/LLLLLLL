@@ -41,10 +41,19 @@ function ntBody(n){
 }
 
 var ntAt=-1;                        /* which note the sheet is open for, -1 = new */
+/* Whether the note:-1 buffer already became a real note. openNote(undefined)
+   is the + itself -- keepPaint's own redraw of the same sheet always passes
+   a number, never undefined -- so this is the one place that can tell "the
+   thing typed here is already on the list" from "still a draft, still worth
+   finding again". A draft that was never saved is left exactly as it was:
+   that is the rest of the app's own rule (www/shell.js § KEEP). Only a note
+   that has already landed makes the NEXT + start empty. */
+var ntNewSpent=false;
 function openNote(i){
   /* A note is the fourth. Editing one is making one -- what comes out is a
      note either way -- so this is asked on the way in, not only on the + . */
   if(!makeNeed()) return;
+  if(i===undefined && ntNewSpent){ keepDrop(keepKeyOf('form', 'note:-1')); ntNewSpent=false; }
   var k=(typeof i==='number' && NOTES[i]) ? i : -1;
   ntAt=k;
   var n = k>=0 ? NOTES[k] : {t:'',b:''};
@@ -106,7 +115,7 @@ function saveNote(v){
       bo=String(v.hasOwnProperty('b')? v.b : ntKept('b')).trim();
   if(!ti && !bo) return;
   if(ntAt>=0 && NOTES[ntAt]){ NOTES[ntAt].t=ti; NOTES[ntAt].b=bo; NOTES[ntAt].ed=Date.now(); }
-  else { NOTES.push({t:ti, b:bo, at:Date.now()}); ntAt=NOTES.length-1; }
+  else { NOTES.push({t:ti, b:bo, at:Date.now()}); ntAt=NOTES.length-1; ntNewSpent=true; }
   saveNotes(); toast(t('toast.note.kept'));
 }
 /* What the note holds now, for the half of the pair somebody did not touch. */
