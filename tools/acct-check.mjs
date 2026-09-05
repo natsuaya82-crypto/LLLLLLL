@@ -704,6 +704,13 @@ const R = await pg.evaluate(async () => {
   netOut(); arrive(A);
   const realSend2 = netSend;
   let feedCall = '';
+  /* ブロックの一覧は、セッションが始まった一回で手元に来ています
+     （www/net.js § netBlocked、2026-09-05）── タイムラインを引くたびに
+     訊いていたのをやめ、一本先に出しておく形にしました。ここで空にして
+     おくのは、タイムラインが訊かれる時の実際の状態がこれだからです。
+     置かないと、arrive() が出した本物の問い合わせが空中にある間に
+     netFeed() の返事が待ち行列に入り、この検査は同期で読みます。 */
+  NET_BL = [];
   netGet = (path, ok) => ok([]);
   netSend = (method, path, body, tok, ok2) => {
     feedCall = path;
@@ -797,6 +804,8 @@ const R = await pg.evaluate(async () => {
   start();
   netOut(); arrive(A);
   let sentBody = null, sentPath = '';
+  /* 23 と同じ理由 ── ブロックの一覧は起動の一回で手元にあります。 */
+  NET_BL = [];
   netGet = (path, ok) => ok([]);
   netSend = (method, path, body, tok, ok2) => {
     sentPath = path; sentBody = body;
@@ -1152,8 +1161,18 @@ const R = await pg.evaluate(async () => {
   if (seenHtml.indexOf('kai') >= 0)
     no('30c: 人の画面に自分のフォロー中が出ている');
 
-  /* 引数にハンドルが無ければ自分のぶん ── 今までどおり。 */
+  /* 引数にハンドルが無ければ自分のぶん ── ただし、この一覧も
+     「サーバーが今回答えたか」を待ちます。
+     「フォローとか0って出て1秒後に1とか数字が変わる」OWNER 2026-09-04、
+     「アイコンも1秒遅れ表示」OWNER 2026-09-05。ME.fo はこの端末が前回
+     もらったもので、それを先に描いて答えが来たら差し替えるのは、すぐ上の
+     二つの数がもう止めた動きと同じです。答えが来るまでは印、来てからが
+     一覧 ── PULL_GOT('mine') がその一つの記録（www/sns.js § pullRun）。 */
   NAV = [{ r: 'follows', a: 'ing' }];
+  PULL_GOT.mine = 0;
+  if (vFollows().indexOf('kai') >= 0)
+    no('30c: 答えが来る前に、前回の自分のフォロー中を出している');
+  PULL_GOT.mine = 1;
   if (vFollows().indexOf('kai') < 0) no('30c: 自分のフォロー中が出なくなった');
 
   /* 答えが来る前は「まだ誰もいない」と言わない。 */

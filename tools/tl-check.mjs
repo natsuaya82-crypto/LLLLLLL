@@ -51,15 +51,17 @@
       the phone has to have ASKED who follows it on the road that arrives
       straight at that card. vProfile() asked only on your OWN page, so
       ME.fr stayed absent -- and an absent list draws the same picture as
-      「nobody」. 「空」と「まだ誰も訊いていない」は別.
+      「nobody」. 「空」と「まだ誰も訊いていない」は別. No screen asks at all
+      now 「画面に入った瞬間にサーバーへ訊きに行くのは無し」 OWNER 2026-09-05:
+      the road is the session beginning, and that is what is read here.
 
    8. AND A FOLLOW PULL THAT FALLS OVER SAYS SO. 「通信エラーなら進むわけ
       ねえだろ全部」「エラーになったらエラー用のポップ出して再更新とかおさせれば
-      いい」 OWNER 2026-09-05. meFollowerPull() put FR_ASKED back and did
-      nothing else -- no 「接続できません」, and 再接続 had nowhere to go back
-      to -- while meFollowPull() beside it has put one up since it was
-      written. The pair is read side by side, because 「one of the two is
-      silent」 is the fault.
+      いい」 OWNER 2026-09-05. There were two functions with a flag each, and
+      one of them put its flag back and did nothing else -- no 「接続できま
+      せん」, and 再接続 had nowhere to go back to. They are ONE ask now
+      (`mine`), so either half falling has to reach the same pop; both are
+      read, because 「one of the two is silent」 was the fault.
 
    Run: node tools/tl-check.mjs                                          */
 import { seed } from './fixture.mjs';
@@ -171,9 +173,10 @@ const r = await pg.evaluate(({ s }) => {
     pullLet(true);
     out.whoPullAsked = asked.by === 'iri' && asked.who === 'iri';
 
-    /* And your own two lists, which are asked ONCE a session. A pull is a
-       person saying 「もう一度聞け」. 「なんか3フォロワーなのに2人しかいない」 */
-    FR_ASKED = true;
+    /* And your own two lists, which are asked ONCE a session -- when it
+       begins. A pull is a person saying 「もう一度聞け」.
+       「なんか3フォロワーなのに2人しかいない」 */
+    PULL_GOT.mine = 1;
     asked.fr = 0;
     NAV = [{ r:'follows', a:'ers' }];
     pullLet(true);
@@ -195,14 +198,28 @@ const r = await pg.evaluate(({ s }) => {
   out.freeMark = meCard().indexOf('bdgw') >= 0;
   SET.plan = wasPlan;
 
-  /* ---- 5: a count that has not arrived --------------------------------- */
-  const wasFo = ME.fo, wasFr = ME.fr;
-  delete ME.fo; delete ME.fr;
+  /* ---- 5: a count that has not arrived ---------------------------------
+     WHAT 「has not arrived」 IS was the wrong question until 2026-09-05. It
+     was read off ME.fo -- 「this phone has a list」 -- and ME is read back off
+     the handset at every launch, so a phone that has ever been opened always
+     had one, from last time. The mark was seen only on a phone that had never
+     run; everybody else got last week's number and watched it move.
+     「フォローとか0って出て1秒後に1とか数字が変わる」 OWNER 2026-09-04.
+
+     It is 「the server has answered THIS SESSION」 now, and that is the pull
+     table's PULL_GOT (www/sns.js § pullRun) -- so this sets THAT, and leaves
+     the lists on the phone exactly where they are, which is the state the
+     fault actually lived in. */
+  const wasFo = ME.fo, wasFr = ME.fr, wasGot = PULL_GOT.mine;
+  PULL_GOT.mine = 0;
   NAV = [{ r:'profile', a:'' }];
   out.meWaits = (meCard().match(/numwait/g) || []).length;
+  /* and the lists from last time are NOT what it draws while it waits */
+  out.meHeldStale = meCard().indexOf('<b>' + (wasFo || []).length + '</b>') >= 0;
+  PULL_GOT.mine = 1;
   ME.fo = []; ME.fr = [];
   out.meZeroIsZero = meCard().indexOf('<b>0</b>') >= 0;
-  ME.fo = wasFo; ME.fr = wasFr;
+  ME.fo = wasFo; ME.fr = wasFr; PULL_GOT.mine = wasGot;
   /* somebody known only from a post carries no counts and must not print 0 */
   delete WHO_HAVE['iri'];
   NAV = [{ r:'profile', a:'iri' }];
@@ -233,25 +250,35 @@ const r = await pg.evaluate(({ s }) => {
   ME.fr = [meHandle(), 'iri'];
   out.backOnSelf = whoCard(meHandle()).indexOf('whyou') >= 0;
 
+  /* AND THE QUESTION IS PUT, ON A ROAD THAT DOES NOT DEPEND ON WHICH SCREEN
+     SOMEBODY OPENED. It used to be asked by vProfile() being drawn, which is
+     why it is measured here at all -- somebody who reached a person's page
+     from a notice without ever opening their own profile never sent it.
+
+     It is not asked by a screen at all now 「画面に入った瞬間にサーバーへ
+     訊きに行くのは無し」 OWNER 2026-09-05: it goes out when the SESSION
+     begins, with everything else the app reads (www/sns.js § WHAT AN OPEN
+     ASKS FOR). So what is read here is that road -- `mine` is on the open's
+     list, and asking it sends the request. */
   const wasFollowers = netFollowers;
   let followerAsks = 0;
-  netFollowers = function () { followerAsks++; };
+  netFollowers = function (ok) { followerAsks++; ok([]); };
   delete ME.fr;
-  FR_ASKED = false;
-  NAV = [{ r:'profile', a:'iri' }];
-  vProfile();
+  out.mineOnOpen = PULL_OPEN.indexOf('mine') >= 0;
+  PULL_GOT.mine = 0; PULL_OUT.mine = 0;
+  pullBoot();
   out.askedOnTheirs = followerAsks;
   netFollowers = wasFollowers;
-  FR_ASKED = false;
+  PULL_GOT.mine = 1; PULL_OUT.mine = 0;
   ME.fr = heldFr;
 
   /* ---- 8: a request that falls over says so, and 再接続 goes back for it -
      「通信エラーなら進むわけねえだろ全部」「エラーになったらエラー用のポップ
      出して再更新とかおさせればいい」 OWNER 2026-09-05.
 
-     meFollowerPull() swallowed the failure -- FR_ASKED went back to false and
-     nothing else happened: no pop, and 再接続 had nowhere to go back to. Its
-     neighbour meFollowPull() has put one up since the day it was written.
+     One of the two swallowed its failure -- the flag went back and nothing
+     else happened: no pop, and 再接続 had nowhere to go back to. The other
+     had put one up since the day it was written.
 
      THE PAIR IS READ SIDE BY SIDE, because the fault is that ONE of two
      answers and the other is silent, and a check that watched one alone
@@ -259,21 +286,28 @@ const r = await pg.evaluate(({ s }) => {
      screen draws 「nobody follows you」 and the person is shown nothing at
      all about what happened. */
   const heldPair = { fr:ME.fr, fo:ME.fo, ers:netFollowers, ing:netFollowing };
-  const fell = (pull, fn) => {
+  const fell = () => {
     popOff();
     NET_AGAIN = [];
-    FR_ASKED = false; FO_ASKED = false;
-    pull();
-    return { pop:popOn(), again:NET_AGAIN.indexOf(fn) >= 0 };
+    PULL_GOT.mine = 0; PULL_OUT.mine = 0;
+    pullGo('mine');
+    return { pop:popOn(), again:NET_AGAIN.length === 1 };
   };
+  /* EITHER HALF FALLING IS ONE FALL, because the two lists are one ask now
+     (`mine`, www/me.js § meFollowsPull). It was two functions with a flag
+     each, and one of them swallowed its failure in silence -- no pop, and
+     再接続 with nowhere to go back to. There is one road and it cannot
+     differ from itself. */
   netFollowers = function (ok, bad) { bad(null, 0, 'follow 0'); };
+  netFollowing = function (ok, bad) { ok([]); };
+  out.ersFell = fell();
+  netFollowers = function (ok, bad) { ok([]); };
   netFollowing = function (ok, bad) { bad(null, 0, 'follow 0'); };
-  out.ersFell = fell(meFollowerPull, meFollowerPull);
-  out.ingFell = fell(meFollowPull, meFollowPull);
+  out.ingFell = fell();
   popOff();
   NET_AGAIN = [];
   netFollowers = heldPair.ers; netFollowing = heldPair.ing;
-  FR_ASKED = false; FO_ASKED = false;
+  PULL_GOT.mine = 1; PULL_OUT.mine = 0;
   ME.fr = heldPair.fr; ME.fo = heldPair.fo;
 
   return out;
@@ -350,6 +384,10 @@ if (r.freeMark)
 if (r.meWaits !== 2)
   say('your own profile prints ' + (2 - r.meWaits) + ' count(s) nobody has ' +
       'answered for. 「0 と出て1秒後に1に変わる、をしない」');
+if (r.meHeldStale)
+  say('and what it prints while it waits is LAST SESSION\u2019s number, off the ' +
+      'copy on the handset — which is the number that then moves. ' +
+      '「1秒後に変わるやつは本当に嫌だから」');
 if (!r.meZeroIsZero)
   say('and following nobody now draws the mark as well — an answered 0 is an ' +
       'answer and has to be printed.');
@@ -368,11 +406,15 @@ if (r.backOnOther)
 if (r.backOnSelf)
   say('and your own name wears it. meFollowers() is the list with you taken ' +
       'out of it and this reads something else.');
+if (!r.mineOnOpen)
+  say('「who follows me」 is not on the list the app asks for when a session ' +
+      'begins, so nothing asks it at all: no screen may ask on the way in. ' +
+      '「画面に入った瞬間にサーバーへ訊きに行くのは無し」');
 if (r.askedOnTheirs !== 1)
-  say('a person’s profile sends ' + r.askedOnTheirs + ' request(s) for who ' +
-      'follows this account. Opened without ever opening your own profile, ' +
-      'ME.fr stays ABSENT and an absent list draws the same picture as ' +
-      '「nobody follows you」. 「空」と「まだ誰も訊いていない」は別');
+  say('the session beginning sends ' + r.askedOnTheirs + ' request(s) for who ' +
+      'follows this account. With none, ME.fr stays ABSENT and an absent list ' +
+      'draws the same picture as 「nobody follows you」. ' +
+      '「空」と「まだ誰も訊いていない」は別');
 
 if (!r.ersFell.pop)
   say('「who follows me」 falling over puts nothing on the screen. The phone ' +
@@ -382,8 +424,8 @@ if (!r.ersFell.again)
   say('and 再接続 does not go back for it, so there is no way to ask again ' +
       'short of killing the app.');
 if (!r.ingFell.pop || !r.ingFell.again)
-  say('「who I follow」 falling over is silent too — the pair has gone quiet ' +
-      'together, which is a change to netPop() rather than to these two.');
+  say('「who I follow」 falling over is silent — the two lists are one ask ' +
+      'now, so either half falling has to reach the same pop.');
 
 if (errs.length) say('the page threw: ' + errs[0]);
 
@@ -400,10 +442,11 @@ console.log('counts: the mark until the answer comes, the number after it, ' +
             'and 0 is an answer');
 console.log('and the Pro mark is on your own name on Pro and off it on free');
 console.log('「フォローされています」: on the card of somebody who does, off ' +
-            'everybody else’s and off your own, and a person’s page asks who ' +
-            'follows this account ' + r.askedOnTheirs + ' time(s)');
-console.log('both follow pulls put up 「接続できません」 when they fall over, ' +
-            'and 再接続 goes back for both');
+            'everybody else’s and off your own, and the session beginning ' +
+            'asks who follows this account ' + r.askedOnTheirs + ' time(s) — ' +
+            'no screen asks on the way in');
+console.log('either half of the one follow ask falling over puts up ' +
+            '「接続できません」, and 再接続 goes back for it');
 console.log('the pull answers on: ' + r.pullRoutes + ' — a thread asks about ' +
             'every post drawn on it, a person’s page for what they wrote, ' +
             'and a list that is asked once a session is asked again');

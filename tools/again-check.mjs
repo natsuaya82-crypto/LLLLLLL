@@ -404,18 +404,53 @@ const W = await pg.evaluate(async () => {
   SNS_GOT['fo'] = 1; render();
   out.saysNoneAfter = document.querySelector('#app .empty .eb') !== null;
   out.markGone = !document.querySelector('#app .snswait');
-  /* And the day's sentence, refused twice. */
+  /* ---- AND THE DAY'S SENTENCE, WHICH IS THREE FACES AND ONE ROAD ---------
+     「お題も1秒遅れ表示」 OWNER 2026-09-05.
+
+     It had a back-off of its own -- a second, then two, then four -- and this
+     file used to count the tries. That is gone: a refusal reaches netPop()
+     through pullRun() like every other ask, and ［再接続］ is what asks again.
+     So what is measured here is the road, not a private timer.
+
+     And the row itself, which is where the owner was looking. Before the
+     answer it is the MARK; after an answer that carries no sentence it is the
+     plain composer row it has always been; both are pressable, because a row
+     that cannot be pressed while the app finds something out has taken the
+     way to post away. */
   let asks = 0;
-  window.netDay = function (ok){
+  let fall = true;
+  window.netDay = function (ok, bad){
     asks++;
-    ok(asks < 3 ? null
-                : { id:'p1', on_day:'2026-09-02', text:'the sea', says:{ en:'the sea' } });
+    if (fall) { bad(null, 0, 'day 0'); return; }
+    ok({ id:'p1', on_day:'2026-09-02', text:'the sea', says:{ en:'the sea' } });
   };
-  DAY = null; dayPulling = false; dayWait = 20;
-  dayPull();
-  await wait(500);
+  DAY = null; DAY_GOT = false; PULL_GOT.day = 0; PULL_OUT.day = 0;
+  /* Not asked yet: the mark stands where the sentence goes, and the row is
+     still a button. */
+  render();
+  out.dayMark = !!document.querySelector('#app .wrow .numwait');
+  out.dayRowPressable = !!document.querySelector('#app button.wrow');
+  out.daySaidPlaceholder = (document.querySelector('#app .wrow .wrt') || {}).textContent
+                             === t('post.ln.ph');
+  pullGo('day');
+  await wait(60);
+  out.popOnFall = popOn();
+  out.asksBeforeAgain = asks;
+  /* ［再接続］, which is the one road a fallen request comes back down. The
+     COUNT is not what is measured -- a render asks too, and how many renders
+     happen between here and there is not this file's business. What is
+     measured is that the fall raised the pop and that pressing 再接続 is what
+     got the sentence. */
+  fall = false;
+  netPopAgain();
+  await wait(200);
   out.asks = asks;
   out.gotDay = !!(DAY && DAY.text);
+  /* And a day the writer missed: an answer, with no sentence in it. */
+  DAY = null; DAY_GOT = true;
+  render();
+  out.plainAfterNone = !document.querySelector('#app .wrow .numwait') &&
+    (document.querySelector('#app .wrow .wrt') || {}).textContent === t('post.ln.ph');
   return out;
 });
 say(W.markTurns && !W.saidNoneWaiting,
@@ -424,9 +459,20 @@ say(W.markTurns && !W.saidNoneWaiting,
     (W.saidNoneWaiting ? 'AND SAID EMPTY' : 'said nothing') + ')');
 say(W.saysNoneAfter && W.markGone,
     'and an answer that came back empty is when it says so, with the mark gone');
-say(W.asks === 3 && W.gotDay,
-    'the day sentence asks again after a refusal instead of giving up for the ' +
-    'session (' + W.asks + ' asks, ' + (W.gotDay ? 'got it' : 'NEVER GOT IT') + ')');
+say(W.dayMark && !W.daySaidPlaceholder && W.dayRowPressable,
+    'the day row turns the mark before the server has answered, rather than ' +
+    'standing as the plain composer and swapping a second later -- and it is ' +
+    'still a button (' + (W.dayMark ? 'mark' : 'NO MARK') + ', ' +
+    (W.daySaidPlaceholder ? 'AND DREW THE PLAIN ROW' : 'drew no stand-in') + ', ' +
+    (W.dayRowPressable ? 'pressable' : 'NOT PRESSABLE') + ')');
+say(W.popOnFall && W.asks > W.asksBeforeAgain && W.gotDay,
+    'a refusal puts the one pop up rather than retrying on a timer of its own, ' +
+    'and 再接続 is what asks again (' + (W.popOnFall ? 'pop' : 'NO POP') + ', ' +
+    W.asksBeforeAgain + ' then ' + W.asks + ' asks, ' +
+    (W.gotDay ? 'got it' : 'NEVER GOT IT') + ')');
+say(W.plainAfterNone,
+    'and a day the writer missed is the plain row again, not the mark left ' +
+    'turning: an answer with no sentence in it is still an answer');
 
 /* ---- and the three screens beside the timeline -------------------------
    「なんか全体的に前のが残ってたりするからちゃんとローディングさせられないの？」
@@ -443,9 +489,11 @@ say(W.asks === 3 && W.gotDay,
    sees and the one nothing was measuring.
 
    `netSend` is not stubbed here: what is under test is what the screen says
-   while it has no answer, so the answer is simply withheld -- the flags the
-   screens read (`snsHits`, `snsSavedGot`, `snsRecentGot`) are the answer
-   arriving, and setting them by hand is the answer landing. Nothing else is
+   while it has no answer, so the answer is simply withheld. What the screens
+   read is `snsHits` and the pull table's own record of what has been answered
+   (`PULL_GOT`, www/sns.js § pullRun) -- the two flags these screens used to
+   keep for themselves are gone, and one table holds it for all of them now.
+   Setting the record by hand is the answer landing. Nothing else is
    replaced. */
 const V = await pg.evaluate(() => {
   const out = {};
@@ -465,16 +513,16 @@ const V = await pg.evaluate(() => {
   out.findMarkGone = !markOn();
 
   /* THE WORDS THIS ACCOUNT HAS TYPED, under an empty field. */
-  snsQ = ''; snsHits = null; SET.recent = []; snsRecentGot = false; render();
+  snsQ = ''; snsHits = null; SET.recent = []; PULL_GOT.recent = 0; render();
   out.recentTurns = markOn();
-  snsRecentGot = true; render();
+  PULL_GOT.recent = 1; render();
   out.recentMarkGone = !markOn();
 
   /* THE WORDS IT HAS KEPT, on the screen that lists them. */
   window.route = 'filter'; NAV = [{ r:'filter' }];
-  SET.saved = []; snsSavedGot = false; render();
+  SET.saved = []; PULL_GOT.saved = 0; render();
   out.savedTurns = markOn();
-  snsSavedGot = true; render();
+  PULL_GOT.saved = 1; render();
   out.savedMarkGone = !markOn();
   return out;
 });

@@ -220,7 +220,7 @@ meFor(SESS && SESS.uid);
    `check (follower <> followed)`, so a row saying you follow yourself is a
    row the server cannot hold and the copy must not either -- 「SNSは全部
    サーバー」. It got into the copy anyway: `ME.fo` is written by a press on
-   this phone and by meFollowPull(), meFollow() has guarded against your own
+   this phone and by meFollowsPull(), meFollow() has guarded against your own
    handle since it was written, and meHandle() falls back to the LANGUAGE'S
    name when a profile has no handle on it yet -- so the handle this phone
    answers to today is not always the one it answered to when the row went in.
@@ -247,20 +247,27 @@ function meFollowers(){ return meNotMe((ME.fr && ME.fr.length)? ME.fr : []); }
    出て1秒後に1に変わる、をしない。」 OWNER 2026-09-04.
 
    Both counts were the LENGTH of a list, and a list nobody has answered for
-   is empty -- so a profile opened before meFollowPull() lands printed 0 under
+   is empty -- so a profile opened before the follow lists land printed 0 under
    both words and then jumped to the real number when the answer arrived. A
    number that moves under somebody's eye is a number they cannot trust, and
    it is the same 「empty と broken は別」 the timeline already obeys one
    screen over (snsWaitHTML).
 
-   `ME.fo` being an ARRAY is the answer -- meFollowPull() writes one, empty or
-   not, and following nobody is a real 0. Absent is 「nobody has asked yet」,
-   which is what the comment over the two lines above has always said and what
-   the two lines above collapsed. `undefined` carries it out of here, the same
-   way whoOf() keeps somebody else's two undefined rather than nailing them to
-   0, and meCount() below is the one place either is drawn. */
-function meNFollowing(){ return ME.fo? meFollowing().length : undefined; }
-function meNFollowers(){ return ME.fr? meFollowers().length : undefined; }
+   IT ASKED THE WRONG QUESTION, AND SO IT STILL MOVED. `ME.fo` being an ARRAY
+   was read as the answer -- but ME is read back off this phone at every
+   launch, so a phone that has been opened before ALWAYS has both lists, from
+   last time. The mark was therefore only ever seen on a phone that had never
+   run, and everybody else got last week's number, held for the second it took
+   the server to answer, and then moved. 「フォローとか0って出て1秒後に1とか
+   数字が変わる」 is that second, and it survived 2026-09-04 untouched.
+
+   The question is 「has the server answered THIS SESSION」, and the pull
+   table is where that is kept for everything else the app asks for
+   (www/sns.js § pullRun). `undefined` carries 「not yet」 out of here, the
+   same way whoOf() keeps somebody else's two undefined rather than nailing
+   them to 0, and meCount() below is the one place either is drawn. */
+function meNFollowing(){ return pullHad('mine')? meFollowing().length : undefined; }
+function meNFollowers(){ return pullHad('mine')? meFollowers().length : undefined; }
 /* A count, or the mark that says it has not arrived. One function, because
    your card and somebody else's ask the same question and used to answer it
    in two places with two different `||0`s on the end. The mark is the
@@ -269,7 +276,7 @@ function meNFollowers(){ return ME.fr? meFollowers().length : undefined; }
 function meCount(n){
   return (typeof n==='number')
     ? '<b>'+esc(String(n))+'</b>'
-    : '<span class="numwait"><span class="pullrule go">'+ICON_PLUS+'</span></span>';
+    : snsWaitWord();
 }
 function meName(){ return ME.name || langName || ''; }
 function meHandle(){
@@ -780,67 +787,71 @@ function meFollows(h){ return meFollowing().indexOf(String(h||''))>=0; }
 
    Only a request that could not be MADE is asked again. `null` is that;
    an empty list is an answer and means this account follows nobody. */
-var FO_ASKED=false;
-function meFollowPull(){
-  var was;
-  if(FO_ASKED || !netSignedIn()) return;
-  FO_ASKED=true;
-  was=meFollowing().join(',');
+/* BOTH LISTS ARE ONE ASK, AND IT GOES OUT WHEN THE APP OPENS.
+   「フォローとか0って出て1秒後に1とか数字が変わる」 OWNER 2026-09-04,
+   「全部だけど、アイコンも1秒遅れ表示」 OWNER 2026-09-05.
+
+   They were two functions with a flag each, called from four screens'
+   drawing code, and each carrying its own road to netPop(). That is the
+   四箇所 www/sns.js § pullRun spent a day taking down one screen along, and
+   it had already drifted here in the same way: one of the two swallowed a
+   fall in silence for a while, so a phone that could not reach the server
+   drew 「nobody follows you」 and said nothing.
+
+   One entry in the pull table now -- `mine` -- so the flag is PULL_OUT, the
+   answer is PULL_GOT, the fall is netPop() and ［再接続］ comes back through
+   the same door. It is on PULL_OPEN, so the question goes out at the launch
+   and not when somebody walks onto a profile.
+
+   BOTH, BEFORE EITHER IS DRAWN. The two numbers stand side by side under one
+   name, and answering them one at a time would move one of them while the
+   other was still a mark -- which is the same jump the owner is describing,
+   halved rather than fixed. So `ok` waits for the pair.
+
+   Only a request that could not be MADE is a failure. `null` is that; an
+   empty list is an answer and means this account follows nobody.
+
+   Called by askMine() (www/sns.js) and by nothing else, which is the shape
+   draftsPull() already takes: the table lives in one file and the asking
+   lives in the file it is about. www/me.js is loaded after www/sns.js, so
+   naming this function in the table directly would read it before it
+   exists. */
+function meFollowsPull(ok, bad){
+  var left=2, fell=false, made=true, was=meFollowing().join(',');
+  /* `null` IS NOT AN ANSWER AND IS NOT A FALL EITHER. It is what these two
+     say when the account could not be looked up at all, and writing it down
+     would nail both counts to 0 for the session; handing it to `bad` would
+     put the pop up over a request that did not fail. `ok(0)` is the third
+     thing: nothing to draw, nothing written down, and the road stays askable
+     -- which is exactly what pullRun() does with it. */
+  function one(hs){
+    if(fell) return;
+    if(!hs) made=false;
+    left--;
+    if(left) return;
+    if(made) saveMe();
+    ok(made? 1 : 0);
+  }
+  function no(d, s, m){
+    if(fell) return;
+    fell=true;
+    bad(d, s, m);
+  }
   netFollowing(function(hs){
-    if(!hs) return;
     /* Somebody pressed Follow while this was in the air. That press is newer
        than this answer and netFollow() has already carried it to the server,
        so writing the older list over it would take it off the screen and
        leave the server holding the right one. */
-    if(meFollowing().join(',')!==was) return;
-    ME.fo=hs;
-    saveMe();
-    render();
-  }, function(d, s, m){
-    FO_ASKED=false;
-    /* 通信が落ちたら何も進まない ── netPop() (www/net.js)。この画面が
-       サーバーにしか無いものを取りに行く道の一本で、［再接続］はここも
-       もう一度行く。 */
-    netPop(d, s, m, meFollowPull);
-  });
-}
-/* AND WHO FOLLOWS YOU, which nothing had ever asked for.
-   -------------------------------------------------------------------------
-   「フォローされてもフォロワー1って増えないのはなぜ？」 OWNER 2026-08-28.
-
-   `ME.fr` was read by meFollowers() and filled in from localStorage by
-   meFrom() -- and written by NOTHING. The number under a profile was the
-   length of a list that started empty and had no way to stop being empty, so
-   it was not a wrong count: it was a count nobody had ever taken.
-
-   No press can move this one, which is the difference from the list above:
-   being followed is something somebody ELSE does, so there is no local change
-   to protect and the answer is simply written down. Asked once a session,
-   and only a request that could not be MADE is asked again. */
-var FR_ASKED=false;
-function meFollowerPull(){
-  if(FR_ASKED || !netSignedIn()) return;
-  FR_ASKED=true;
+    if(hs && meFollowing().join(',')===was) ME.fo=hs;
+    one(hs);
+  }, no);
+  /* No press can move this one, which is the difference from the list above:
+     being followed is something somebody ELSE does, so there is no local
+     change to protect and the answer is simply written down. */
   netFollowers(function(hs){
-    if(!hs) return;
-    ME.fr=hs;
-    saveMe();
-    render();
-  }, function(d, s, m){
-    FR_ASKED=false;
-    /* 通信が落ちたら何も進まない ── netPop() (www/net.js)。この画面も
-       サーバーにしか無いものを取りに行く道の一本で、［再接続］はここも
-       もう一度行く。「通信エラーなら進むわけねえだろ全部」
-       「エラーになったらエラー用のポップ出して再更新とかおさせればいい」
-       OWNER 2026-09-05.
-
-       落ちたことを黙って呑んでいた ── FR_ASKED を戻すだけで、ポップも出ず、
-       ［再接続］の行き先にも入らなかった。隣の meFollowPull() は出す。
-       同じ日の決定の下で片方だけが黙っているのは食い違いで、しかも黙るほうが
-       悪い: ME.fr が無いままの画面は「誰にも追われていない」と同じ絵になり、
-       その人には何が起きたのか見えるものが一つも無い。 */
-    netPop(d, s, m, meFollowerPull);
-  });
+    if(hs) ME.fr=hs;
+    one(hs);
+  }, no);
 }
 /* Who you have blocked, as handles, beside who you follow -- both are the
    account's and neither is a language's. The uuids the timeline needs are the
@@ -958,7 +969,7 @@ function whoMore(h){
    card had never had one.
 
    It costs the server nothing. Being followed is something this phone already
-   knows -- meFollowers() reads ME.fr, which meFollowerPull() has written once
+   knows -- meFollowers() reads ME.fr, which meFollowsPull() has written once
    this session -- so there is no request here and none added.
 
    No CSS either: `.whyou` and `.mehr` are both in www/index.html already,
@@ -1262,9 +1273,10 @@ FORM_OPEN.me=function(){ openMe(); };
    飛べないけど？」 OWNER. The row is snsWhoRow() now, which has opened a
    person's page since the day it was written. */
 /* ---- somebody else's two lists ------------------------------------------
-   Your own are ME.fo and ME.fr -- on this phone, written by meFollowPull()
-   and meFollowerPull(), and shown the moment the screen opens because the
-   copy is already here. Nobody else's is, so theirs is asked for and kept
+   Your own are ME.fo and ME.fr -- on this phone, written by meFollowsPull(),
+   and shown once the server has answered for them this session rather than
+   the moment the screen opens: the copy that is already here is last
+   launch's. Nobody else's is here at all, so theirs is asked for and kept
    the way WHO_HAVE keeps a person: once per handle, per direction, for as
    long as the app is open.
 
@@ -1327,10 +1339,10 @@ function folErs(){
 function meAgain(h){
   h=String(h||'');
   if(!h || h===meHandle()){
-    FO_ASKED=false;
-    FR_ASKED=false;
-    meFollowPull();
-    meFollowerPull();
+    /* Yours, asked again. A person pulling is never refused, which is what
+       pullGo() means and is why the flag is not cleared by hand here: the
+       table holds it (www/sns.js § pullRun). */
+    pullGo('mine');
     return;
   }
   WHO_ASKED[h]=0;
@@ -1353,14 +1365,15 @@ function vFollows(){
   var mine=(!who || who===meHandle());
   var list, got;
   if(mine){
-    /* Both lists are asked for here, because this screen is the only place
-       either is shown in full and the two numbers that lead to it are drawn
-       on a page that may never have been opened this session. */
-    meFollowPull();
-    meFollowerPull();
+    /* Both lists are one ask and it went out when the session began; this
+       screen asks for nothing on the way in, and a pull on it asks again. */
     list=ers? meFollowers() : meFollowing();
-    /* Yours is on this phone, so there is always an answer to draw. */
-    got=true;
+    /* AND WHETHER IT HAS BEEN ANSWERED, which used to be `true` because the
+       list is on this phone. It is on this phone from LAST time: a stored
+       copy drawn while this session's answer is in the air is a list that
+       changes under somebody's eye, which is the same fault as the number
+       above it. The mark until the server has spoken. */
+    got=pullHad('mine');
   }
   else {
     folPull(ers, who);

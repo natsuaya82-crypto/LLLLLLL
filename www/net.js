@@ -559,6 +559,25 @@ function netTook(d){
   if(typeof netLangBack==='function') netLangBack(function(){
     if(langForAcct(true)) render();
   });
+  /* AND EVERYTHING THE APP READS OFF THE SERVER, ASKED HERE, ONCE.
+     「最初の起動の一回の更新で全部取得してその後それぞれをプルトゥーリフレッシュ
+     とかで更新して取得するじゃダメなの？」 OWNER 2026-09-05.
+
+     The day's sentence, both timelines, the notices, your two follow lists,
+     the block list, the words you keep, the words you have typed and the
+     drafts. WHAT is asked for is www/sns.js § WHAT AN OPEN ASKS FOR and is
+     not listed twice; this is the moment.
+
+     Here for the reason meFor(), planFor() and langForAcct() are here: this
+     is the one place that knows a session ARRIVED, and every one of these is
+     asked as somebody. A launch comes through netResume(); somebody signing
+     in an hour later comes through the door; both are a session beginning and
+     both fill the app in the same breath.
+
+     A token refresh comes through here too and asks for nothing: pullNeed()
+     is refused the moment a thing has its answer, which is the same guard
+     netLangBack() keeps for itself one line up. */
+  if(typeof pullBoot==='function') pullBoot();
   return true;
 }
 /* There used to be netAnon() here, and boot.js called it before the first
@@ -595,6 +614,11 @@ function netOut(){
   /* And the timeline this phone was holding goes with the name. Parked under
      the account that had it, not thrown away. */
   if(typeof postFor==='function') postFor('');
+  /* And every answer the server gave this account (www/sns.js § pullForget),
+     including the block list above -- they are that account's, and the next
+     person to sign in on this phone must ask for their own. */
+  netBlockedDrop();
+  if(typeof pullForget==='function') pullForget();
   /* THE LANGUAGE IS NOT TOUCHED HERE, AND THAT IS THE SAFE DIRECTION.
      A slice is in memory now (CLAUDE.md rule 22), so it was tempting to empty
      the store on the way out -- 「what this phone is holding is the signed-in
@@ -2208,6 +2232,8 @@ function netFollowers(ok, bad, handle){
    By handle, because a handle is what one person knows another by; the uuid
    is looked up here exactly as netFollow() does. */
 function netBlock(handle, on, ok, bad){
+  /* The copy above is now wrong whichever way this goes. */
+  netBlockedDrop();
   if(!netSignedIn() || !handle){ ok(); return; }
   netGet('/rest/v1/profile?select=id&limit=1&handle=eq.'+encodeURIComponent(handle),
     function(d){
@@ -2225,15 +2251,67 @@ function netBlock(handle, on, ok, bad){
 }
 /* The uuids you have blocked, for the one thing that needs uuids: keeping
    their posts out of a timeline. Signed out there is nobody to have blocked
-   and the answer is none, which is not a failure. */
-function netBlocked(ok){
-  if(!netSignedIn()){ ok([]); return; }
-  netGet('/rest/v1/block?select=blocked&actor=eq.'+encodeURIComponent(SESS.uid),
+   and the answer is none, which is not a failure.
+
+   ---- AND IT IS ASKED ONCE, AT THE OPEN ------------------------------------
+   「アプリ開くタイミングで通信入るなら全部一気に入るやろ」 OWNER 2026-09-05.
+
+   It was asked EVERY TIME a timeline was, and asked FIRST -- netFeed() above
+   waits for this answer before it puts its own question, so every page of
+   every timeline cost two round trips end to end and the posts could not
+   arrive until both had. Measured on a launch: feed_hot went out, and the
+   block list went out 1.2 seconds later, off the back of it.
+
+   So the list is fetched like everything else the app needs -- once, when it
+   opens, through the pull table (`blocks`, www/sns.js) -- and this answers
+   out of `NET_BL` when it is held. A timeline is one question again.
+
+   `NET_BL` is null for 「nobody has asked」 and an ARRAY for 「asked」, empty
+   or not, which is the same distinction everything else on this branch makes.
+   Not asked yet, this falls back to asking -- so a timeline reached before
+   the open's answer lands is still right, it is only slower. */
+var NET_BL=null, NET_BL_WAIT=null;
+function netBlockedGot(){ return !!NET_BL; }
+/* ONE REQUEST, HOWEVER MANY ARE WAITING ON IT. The open asks for this list
+   and the timeline asks for it in the same moment -- feed_hot and this go out
+   together -- so without somewhere to wait, the second caller found `NET_BL`
+   still empty and put the identical question a second time. Measured on a
+   launch: two block requests, and the timeline waiting on the later one.
+
+   `NET_BL_WAIT` is that somewhere. It exists only while a request is out, and
+   everybody holding a place in it is answered from the one reply. */
+function netBlockedRead(ok, bad){
+  var i, who;
+  if(!netSignedIn()){ NET_BL=[]; ok([]); return; }
+  if(NET_BL_WAIT){ NET_BL_WAIT.push({ok:ok, bad:bad}); return; }
+  NET_BL_WAIT=[{ok:ok, bad:bad}];
+  /* WHO IT WAS ASKED FOR, held while the answer is out. Signing out with this
+     in the air would otherwise let the old account's list land afterwards and
+     be kept as the new one's -- the same shape netTook() guards meFor() and
+     postFor() against, one file over. The waiters are still answered, with
+     none, because a caller left hanging is worse than a caller told nothing. */
+  who=SESS.uid;
+  netGet('/rest/v1/block?select=blocked&actor=eq.'+encodeURIComponent(who),
     function(d){
-      var out=[], i;
+      var out=[], w=NET_BL_WAIT;
+      NET_BL_WAIT=null;
       for(i=0;i<(d||[]).length;i++) if(d[i] && d[i].blocked) out.push(d[i].blocked);
-      ok(out);
-    }, function(){ ok([]); });
+      if(netSignedIn() && SESS.uid===who) NET_BL=out; else out=[];
+      for(i=0;i<w.length;i++) w[i].ok(out);
+    },
+    function(d, s, m){
+      var w=NET_BL_WAIT;
+      NET_BL_WAIT=null;
+      for(i=0;i<w.length;i++) w[i].bad(d, s, m);
+    });
+}
+/* Blocking or unblocking somebody makes the copy wrong, and it is the one
+   thing that can. Dropped rather than re-asked: netBlock() below already
+   renders when the row lands, and the next timeline fetches it. */
+function netBlockedDrop(){ NET_BL=null; }
+function netBlocked(ok){
+  if(NET_BL){ ok(NET_BL); return; }
+  netBlockedRead(ok, function(){ ok([]); });
 }
 /* Something is wrong with this post, or with this person. Written and never
    read back: there is no select policy on `report` at all, so nobody using
@@ -3194,10 +3272,15 @@ function netPrompt(id, ok){
     function(d){ ok(d && d.length? d[0] : null); },
     function(){ ok(null); });
 }
-function netDay(ok){
+/* A FALL IS HANDED BACK NOW, and it used to be swallowed: `bad` answered
+   `ok(null)`, so 「the server has no sentence today」 and 「this phone could
+   not reach the server」 arrived at the caller wearing the same face. The
+   caller is askDay() (www/sns.js), which is a pull like every other one, and
+   a pull that cannot tell those apart is a pull that writes 「no sentence」
+   down as an answer and never asks again. */
+function netDay(ok, bad){
   netGet('/rest/v1/prompt?select=id,on_day,text,says&order=on_day.desc&limit=1',
-    function(d){ ok(d && d.length? d[0] : null); },
-    function(){ ok(null); });
+    function(d){ ok(d && d.length? d[0] : null); }, bad);
 }
 function netPush(post, ok, bad){
   var row, pid, up;

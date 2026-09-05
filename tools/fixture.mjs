@@ -285,6 +285,32 @@ export function seed(){
      existed. Anything here that viewReset() forgets has to be set after it. */
   NOTES_HAVE = [{kind:'like', at:Date.now()-60000, hd:'iri', who:'Iri',
                  av:{ch:'\u0416'}, id:'p1', n:1, more:[]}];
+  /* AND THE FACT THAT THE SERVER ANSWERED FOR ALL OF THEM, which is a second
+     thing and has to be said out loud now.
+
+     From 2026-09-05 every list that lives on the server has three faces and
+     not two -- the mark while the question is out, the list when it is in,
+     and 「none」 only once the server has said so (www/sns.js § WHAT AN OPEN
+     ASKS FOR). `PULL_GOT` is where 「the server has answered this session」 is
+     kept, for all of them, in one place.
+
+     There is no server behind any of these checks, so without this line the
+     fixture is a phone that has asked and never been answered: the kept
+     words, the history, the drafts and the notices all draw the mark, and the
+     buttons and the classes on their rows are on no screen at all. act-check
+     read that correctly and called seven names unreachable, and press said
+     eleven classes were worn by nothing -- both true of the app they were
+     handed, and neither what it meant. A phone holding two saved searches and
+     a notice HAS been answered; the seeding says so now instead of implying
+     it.
+
+     AFTER viewReset(), for the reason the seed above it is: viewReset() drops
+     the notices AND the record that they were answered, so a line written
+     before it is wiped by it.
+
+     `feed` is not in here: SNS_GOT is the timeline's own record, per tab, and
+     the walks that want an answered timeline set that themselves. */
+  PULL_GOT = { saved:1, recent:1, drafts:1, notif:1, mine:1, day:1, blocks:1 };
 }
 
 /* The steps of the onboarding that have a second face: the writing systems to

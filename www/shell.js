@@ -73,13 +73,15 @@ function viewReset(){
   snsQ=''; snsHits=null;               /* the search and what came back */
   snsSort='new';                       /* and newest or most answered */
   snsFil=null;                         /* and the word the feed is filtered to */
-  /* The notices, asked again -- and the copy on the handset read again with
-     them. notWake() only looks once a session, so nulling this without
-     clearing that left the screen with no notices AND no way back to the ones
-     it had already been given: switching language blanked the notices until
-     the server answered, which is the second of blank coming back by another
-     road. */
-  NOTES_HAVE=null; notRead=false;
+  /* The notices, ASKED AGAIN, because what a notice SAYS is written in the
+     language the app is read in. All three moves and not one: what was
+     answered, the table's record THAT it was answered, and the question
+     itself. Dropping the record alone would leave the screen turning its mark
+     for ever -- nothing asks on the way onto a screen any more (www/sns.js
+     § WHAT AN OPEN ASKS FOR), so unless the asking happens HERE, where the
+     language actually changed, the only thing left that would ask is somebody
+     pulling the screen down. */
+  NOTES_HAVE=null; pullDrop('notif'); pullNeed('notif');
   /* And what has been typed into a field and not saved. It is where you are
      standing rather than anything a language owns, and standing in one
      language's article with the paragraph you were typing into another's
@@ -1142,16 +1144,28 @@ function tabBar(){
   /* THE NUMBER ON THE BELL. 「最後に通知の画面を開いた時刻より新しいものを
      未読とする」「下のタブのベルに数字を出す」 OWNER 2026-09-01.
 
-     The copy is woken and the answer asked for HERE rather than on the
-     notices screen, because a count that only becomes true once you have
-     opened the tab is a count nobody ever sees: opening the tab is what
-     makes it zero. pullNeed('notif') is once a session -- it is the same one
-     road every screen's pull goes down (www/sns.js § pullRun) and not a
-     second way of asking -- and notWake() reads the copy on the handset, so
-     the bell is right on the first frame of whatever screen the app opened
-     on. www/sns.js owns all three. */
-  notWake();
-  pullNeed('notif');
+     The answer is not asked for from here, and it used to be -- because a
+     count that only becomes true once you have opened the bell is a count
+     nobody ever sees, so the asking could not live on the notices screen.
+     It does not live here either now: the notices come down when the session
+     begins (www/sns.js § WHAT AN OPEN ASKS FOR), which is earlier than this
+     bar is first drawn, so the number is right on the first frame of whatever
+     screen the app opened on and no screen has to ask for it.
+     www/sns.js owns both halves: the asking and what counts as unread.
+
+     AND THE NUMBER IS NOT DRAWN OFF A COPY ON THE HANDSET. There was one --
+     `lingua.notices`, read once a session -- and the count taken off it was
+     drawn on the first frame and then MOVED when the server answered.
+     「フォローとか0って出て1秒後に1とか数字が変わる」 is the same fault one
+     bar down, and it is the one you cannot look away from, because the bar is
+     on every screen. The copy is gone (www/sns.js § THE COPY ON THE HANDSET
+     IS GONE); what is left is the question of whether the server has spoken.
+
+     A count nobody has asked for yet has no honest face as a number, and
+     「まだ訊いていない」 does not get the mark here either: a spinner hung on a
+     tab icon is not a state, it is decoration on a thing you press. So the
+     bell is a bell until the server has answered, and the number appears once
+     and does not move. */
   for(i=0;i<TABS.length;i++){
     r=TABS[i];
     /* The mark and nothing else. 「下タブにホームとかつけるのやめない？」
@@ -1166,7 +1180,7 @@ function tabBar(){
          red circle. If the filled circle every other timeline wears is what
          is wanted, it is two lines in tools/box-baseline.txt and one word
          from the owner; it is not mine to add. */
-      ((r==='notif' && (n=notUnread())>0)
+      ((r==='notif' && pullHad('notif') && (n=notUnread())>0)
         ? '<span class="tabn">'+esc(String(n))+'</span>' : '')+
       '</button>';
   }

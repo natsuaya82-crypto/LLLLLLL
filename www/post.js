@@ -565,11 +565,10 @@ function draftDropGo(i){
    Both directions, for the same reason netLangSync() goes both ways: a draft
    written in a tunnel is on this phone and nowhere else, and the phone is not
    where it lives. */
-/* `ok(got)` and `bad(...)` where anybody asked for them, and neither where
-   nobody did. draftsPullOnce() below is the once-a-session road and draws for
-   itself; the pull on this screen hands both in, so the drafts fall down the
-   same one road every other screen's pull does -- the mark, the pop and
-   ［再接続］ are pullRun()'s (www/sns.js) and are not written again here. */
+/* `ok(got)` and `bad(...)`, both handed in by the one caller there is:
+   askDrafts() (www/sns.js). So the drafts fall down the same one road every
+   other screen's pull does -- the mark, the pop and ［再接続］ are pullRun()'s
+   and are not written again here. */
 function draftsPull(ok, bad){
   var done=ok || function(){};
   if(!netSignedIn()){ done(0); return; }
@@ -600,17 +599,17 @@ function draftsPull(ok, bad){
     done(got? 1 : 0);
   }, bad || function(){});
 }
-/* Once for the account signed in, rather than on every render: vDrafts() below
-   is drawn again every time this screen is. Keyed on the uid and not a
-   boolean, so signing in as somebody else asks again -- and so that the first
-   person's drafts are never what the second one is shown. */
-var DRAFTS_FOR='';
-function draftsPullOnce(){
-  var uid=(typeof SESS!=='undefined' && SESS && SESS.uid) || '';
-  if(!uid || DRAFTS_FOR===uid) return;
-  DRAFTS_FOR=uid;
-  draftsPull(function(got){ if(got) render(); });
-}
+/* THE SECOND ROAD IS GONE. This was draftsPullOnce(): once for the account
+   signed in, keyed on the uid, drawing for itself and swallowing a fall in
+   silence -- and it sat directly beside `pullOn('drafts', askDrafts)`, which
+   is the same ask down the road every other screen uses. Two ways to ask for
+   one list, and only one of them put the pop up.
+
+   It is one entry in the pull table now (`drafts`, www/sns.js), so the flag,
+   the mark, the pop and ［再接続］ are the table's; the uid it was keyed on is
+   pullForget(), which empties every answer when a session ends. And it is on
+   PULL_OPEN, so the drafts are in hand before this screen is opened rather
+   than a second after -- nothing is asked for on the way in. */
 /* A page of its own. 「下書きはそこに入れないで。別ページに飛ぶ感じで」 A list
    at the foot of the screen you are writing on is a list under the thing it
    is about, and the two are read as one screen -- so the drafts are somewhere
@@ -654,11 +653,25 @@ function dfSelDelGo(){
   render();
 }
 function vDrafts(){
-  var out='', i, d, on;
-  /* Asked for when they are looked at. There is no call in bootSession()
-     (www/boot.js) because that file is not this session's -- it is in the
-     report as the one thing left. */
-  draftsPullOnce();
+  var out='', i, d, on, got=pullHad('drafts');
+  /* The drafts came down when the session began (www/sns.js § WHAT AN OPEN
+     ASKS FOR). Nothing is asked from here; a pull on this screen asks again. */
+  /* THE MARK, AND NOT A LIST THAT IS ABOUT TO CHANGE.
+     「先に空で描いて、あとから差し替えるのを無くす」 OWNER 2026-09-05.
+
+     It drew what is on this phone the moment the screen opened, and the
+     server's drafts arrived a second later and were pushed in among them --
+     so 「No drafts」 became a draft, and 「Select」 appeared over a bar that
+     had not had it. Three faces and not two, the same as everywhere else:
+     the mark while the answer is out, the list when it is in, and 「No
+     drafts」 only once the server has said so.
+
+     Signed out there is nothing to wait for -- the drafts are this phone's
+     and that is the whole of them -- so the mark does not turn on a question
+     nobody is asking. */
+  if(netSignedIn() && !got)
+    return '<div class="view">'+navTop('')+
+      '<div class="body">'+snsWaitHTML()+'</div></div>';
   for(i=DRAFTS.length-1;i>=0;i--){
     d=DRAFTS[i];
     on=!!(DFSEL && DFSEL[i]);
