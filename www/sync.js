@@ -178,27 +178,79 @@ function syObj(kind, mine, theirs, base){
   }
   return out;
 }
-/* One slice, as the string localStorage holds -- which is the same string
-   bkPack() writes into a backup file, so a slice has one shape and not two.
+/* ---- WHAT A SIDE IS, and there are FOUR answers where there were two ----
+   The one place that asks. Everything below reads its answer, and nothing
+   below opens a slice a second time.
 
-   Three answers, and the order matters. Nothing on one side is the other
-   side whole: that is a phone that has never seen this language, or a
-   language that has never been up, and neither is a merge. Only then is
-   anything decided.
+     none    no string, or an empty one: there is nothing on this side
+     plain   a slice that is not JSON and never was. `lang` is the language's
+             NAME, written straight in by www/core.js, and it is the only one
+             -- measured through langSaveAll() rather than believed: eleven of
+             the twelve read as JSON and this one does not
+     read    a slice this app understands
+     wreck   a slice it does not
 
-   `lang` is the one slice that is not JSON -- it is the language's name,
-   stored as plain text -- so it falls through to the last line and the
-   phone's own is kept. Renaming a language on the other phone is not
-   something this chapter can put together, and it is one word to retype. */
+   `plain` and `wreck` are the two that looked alike, because from the string
+   alone they ARE alike: JSON.parse throws on `Shango` exactly as it throws on
+   `[[[not json`. Which of the two it is, is a question about the SLICE and
+   never about the string, so it is asked of `kind`. */
+function sySide(kind, s){
+  if(typeof s!=='string' || s==='') return {is:'none', v:null};
+  if(kind==='lang') return {is:'plain', v:s};
+  try{ return {is:'read', v:JSON.parse(s)}; }catch(e){ return {is:'wreck', v:null}; }
+}
+/* One slice, as the string the store holds, put together with the server's.
+
+   NOTHING ON ONE SIDE IS THE OTHER SIDE WHOLE. That is a phone that has never
+   seen this language, or a language that has never been up, and neither of
+   them is a merge.
+
+   THE NAME IS THE PHONE'S. Renaming a language on the other phone is not
+   something this chapter can put together, and it is one word to retype.
+
+   AND WRECKAGE IS NEITHER OF THOSE. 「空」と「壊れている」は違う状態で、同じ枝
+   に入れてはいけません -- CLAUDE.md's first rule, and this function was the
+   place breaking it. JSON.parse threw and the answer was `mine`, which is the
+   same answer 「the server has nothing」 gets, so an unreadable copy was handed
+   back as though it were the whole language and netSlice1() in www/net.js
+   WROTE IT UP. Pressed through the real netSlice1() on 2026-09-05: a slice
+   reading `[[[not json` on the phone went to netSlicePut() verbatim, over a
+   server that was holding the words.
+
+   A side that cannot be read holds nothing anybody can be shown and nothing
+   that can be put together. So neither side is decided out of it:
+
+     the copy is wreckage    -> the server's, which is the thing the copy is a
+                                copy OF. 「サーバーだけが本物」 -- a copy that
+                                cannot be read is written again from what it
+                                copies, and nothing of it goes up
+     the server is wreckage  -> '', which is the one answer that makes
+                                netSlice1() write NEITHER side. The phone keeps
+                                what it is holding 「なら失敗して残るにするべき」
+                                and nobody's work is written over merely
+                                because this app cannot read it
+
+   What the second one costs is said here rather than left to be found: that
+   slice does not go up again until the server's body can be read, and
+   netSlice1() drops the `was` record on its way past, so the next merge cannot
+   tell a removal from a row it has not been told about. That is the side that
+   drops nothing, which is the side to be on. */
 function syMerge(kind, mine, theirs, base){
-  var a, b, c=null;
-  if(typeof mine!=='string' || mine==='') return (typeof theirs==='string')? theirs : '';
-  if(typeof theirs!=='string' || theirs==='') return mine;
-  if(mine===theirs) return mine;
-  try{ a=JSON.parse(mine); b=JSON.parse(theirs); }catch(e){ return mine; }
-  /* Unreadable is the same as absent: no base, and then nothing is dropped. */
-  if(typeof base==='string' && base!==''){ try{ c=JSON.parse(base); }catch(e){ c=null; } }
-  if(syIsArr(a) && syIsArr(b)) return JSON.stringify(syArr(kind, a, b, syIsArr(c)? c : null));
-  if(syIsObj(a) && syIsObj(b)) return JSON.stringify(syObj(kind, a, b, syIsObj(c)? c : null));
+  var m=sySide(kind, mine), th=sySide(kind, theirs), c;
+  if(m.is==='none')   return (th.is==='none' || th.is==='wreck')? '' : theirs;
+  if(th.is==='none')  return mine;
+  if(m.is==='plain')  return mine;
+  if(mine===theirs)   return mine;
+  if(th.is==='wreck') return '';
+  if(m.is==='wreck')  return theirs;
+  /* what the two sides last agreed. Unreadable is not absent anywhere else in
+     this function and it does not have to be told apart here: this is not
+     anybody's work, it is a note of what both sides already had, and a note
+     that cannot be read is a merge with no note -- which drops nothing. */
+  c=sySide(kind, base); c=(c.is==='read')? c.v : null;
+  if(syIsArr(m.v) && syIsArr(th.v))
+    return JSON.stringify(syArr(kind, m.v, th.v, syIsArr(c)? c : null));
+  if(syIsObj(m.v) && syIsObj(th.v))
+    return JSON.stringify(syObj(kind, m.v, th.v, syIsObj(c)? c : null));
   return mine;
 }
