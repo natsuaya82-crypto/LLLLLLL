@@ -721,9 +721,30 @@ var ICON_RET='<svg class="ic" viewBox="0 0 24 24" width="16" height="16" fill="n
 var ICON_PEN='<svg class="ic" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" '+
   'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
   '<path d="M4 20h4L19.2 8.8a2 2 0 0 0-2.8-2.8L5 17.2V20Z"/><path d="M15.2 7.2 18 10"/></svg>';
+/* The star, and it is the app's own star. 「後パッチも更新のくるくるもただの
+   ダイヤじゃなくてこんな感じの手裏剣に近い細長い形にしてほしい。今のやつ
+   gemini ににすぎてる」 OWNER 2026-09-05. The four points were short and the
+   curves between them bulged outward, which made a rounded diamond -- the
+   shape another company's mark already is. So the points reach nearly to the
+   edge of the box and the curves fall away toward the middle instead of
+   swelling: a long needle on each side, thin where it leaves the centre,
+   which is the icon on the home screen and is nearer a 手裏剣 than a diamond.
+
+   Four points and no more. The diagonals are left empty on purpose -- eight
+   points is a sparkle and this is one star.
+
+   Everything else is untouched: the same box, the same 15px, the same hairline
+   stroke with no fill. The spinner, the pull-down and the wait on a timeline
+   all read this one name, so those are decided here.
+
+   THE BADGE IS NOT ONE OF THEM. `MARK_PLUS` below is the same star filled in
+   and it carries its own copy of this `d` -- two strings, nothing holding
+   them together. They were changed together on 2026-09-05 and a session
+   changing one has to change the other. */
 var ICON_PLUS='<svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" '+
   'stroke-width="1.5" stroke-linejoin="round" aria-hidden="true">'+
-  '<path d="M12 3.4c.9 4.6 4.1 7.8 8.6 8.6-4.5.9-7.7 4.1-8.6 8.6-.9-4.5-4.1-7.7-8.6-8.6 4.5-.8 7.7-4 8.6-8.6Z"/></svg>';
+  '<path d="M12 1.6C12.2 10.6 13.4 11.8 22.4 12C13.4 12.2 12.2 13.4 12 22.4'+
+  'C11.8 13.4 10.6 12.2 1.6 12C10.6 11.8 11.8 10.6 12 1.6Z"/></svg>';
 /* A minus, plain, for taking a photograph or a recording off a post. The
    plus that used to be beside it was the one button that stood for the
    camera, the library and the microphone all at once, and there are three
@@ -950,10 +971,19 @@ var ICON_MIC='<svg class="ic" viewBox="0 0 24 24" width="20" height="20" fill="n
    middle, and the colour is what the mark is for.
 
    No colour is written here. `currentColor` means index.html says which gold
-   it is -- act-check refuses a colour written into markup and is right to. */
+   it is -- act-check refuses a colour written into markup and is right to.
+
+   THE OUTLINE IS DIFFERENT AND THE SHAPE IS NOT. This is the same star as
+   ICON_PLUS with the middle filled in, so the `d` here is that one's, word for
+   word -- 「後パッチも更新のくるくるも…手裏剣に近い細長い形にしてほしい」 OWNER
+   2026-09-05 names both of them in one sentence, and a badge that kept the old
+   rounded diamond would be the mark this app is known by disagreeing with
+   itself on two screens. Nothing holds the two paths together: they are two
+   strings and a session may change one and not the other. */
 var MARK_PLUS='<svg class="bdg" viewBox="0 0 24 24" width="15" height="15" '+
   'fill="currentColor" stroke="none" aria-hidden="true">'+
-  '<path d="M12 3.4c.9 4.6 4.1 7.8 8.6 8.6-4.5.9-7.7 4.1-8.6 8.6-.9-4.5-4.1-7.7-8.6-8.6 4.5-.8 7.7-4 8.6-8.6Z"/></svg>';
+  '<path d="M12 1.6C12.2 10.6 13.4 11.8 22.4 12C13.4 12.2 12.2 13.4 12 22.4'+
+  'C11.8 13.4 10.6 12.2 1.6 12C10.6 11.8 11.8 10.6 12 1.6Z"/></svg>';
 /* A post kept to yourself. 「非公開の時はポストに🔓マークつけよ」
    The shackle is DOWN. It was opened once, on the emoji in that sentence, and
    an open padlock is the mark for a thing that is not locked -- which is the
