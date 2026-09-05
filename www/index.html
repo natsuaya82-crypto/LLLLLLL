@@ -3585,7 +3585,7 @@ html[data-script="on"] .gsw{font-family:var(--face-script);letter-spacing:0}
    全部+スクロールもできるようにしろ。メモの役割としてゴミやんけ」 OWNER
    2026-09-01. It scrolls inside itself past that, so a long note is a long
    note rather than a page that grows under the thumb. */
-.ntbody{min-height:52vh;line-height:1.8;overflow:auto}
+.ntbody{line-height:1.8;overflow:auto}
 /* A textarea outside a .field had no styling of its own, so a rule written
    straight onto a page came out as a white box on a dark screen. */
 textarea.ntbody{width:100%;background:none;border:0;border-bottom:1px solid var(--line);border-radius:0;
@@ -3599,6 +3599,13 @@ textarea.ntbody:focus{border-bottom-color:var(--goldln)}
    a single class written earlier loses to both, which is what left every one
    of these boxes tall and half empty. */
 textarea.ntbody.grow{min-height:0;height:auto;overflow:hidden;resize:none}
+/* iPhone のメモと同じ, screen-filling rather than a box in the middle of one:
+   www/notes.js opens the note screen with openForm's `fit`, and .view.fit
+   .body (above) is already the flex column that leaves the room -- .ntform
+   is the note's own field inside it, so it is the one asking to fill what
+   is left rather than a floor guessed in vh. */
+.view.fit .ntform{flex:1;min-height:0;display:flex;flex-direction:column}
+.view.fit .ntform .ntbody{flex:1;min-height:0}
 
 /* ---------- grammar: a decision, and what it does ----------
    A row of choices, then the piece of sound the choice is carried by, then

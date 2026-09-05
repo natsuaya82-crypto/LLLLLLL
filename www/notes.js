@@ -66,23 +66,23 @@ function openNote(i){
      一文が嘘になる ── 保存のボタンが出てしまう。 */
   if(!langLocked()) ntKeepOn(k, n);
   openForm('note:'+k, (k>=0? t('notes.edit') : t('notes.new')),
-    /* This field carries no name of its own -- it is read when the form is
-       saved -- so what makes it grow is the line in www/act.js. */
-    '<div class="field"><label>'+t('notes.t')+'</label>'+
-      lnField('nt-t', t('notes.t.ph'), IN('ntSetT'), ntTyped(k, 't'))+'</div>'+
-    '<div class="field"><label>'+t('notes.b')+'</label>'+
+    /* iPhone のメモと同じ: 題名の欄は無く、本文の textarea 一つが画面いっぱい
+       (openForm の fit ── www/home.js § a form is a page)。一行目が題名という
+       のは ntHead() が元から読んでいる形で、ここは t を分けて訊くのをやめただけ。
+       すでに t を持つメモを開いたときは t + 改行 + b を本文に出す ── 何も失わない。 */
+    '<div class="field ntform">'+
       '<textarea id="nt-b" class="ntbody" placeholder="'+esc(t('notes.b.ph'))+'"'+
-      IN('ntSetB') + '>'+esc(ntTyped(k, 'b'))+'</textarea></div>'+
+      IN('ntSetB') + '>'+esc(ntTyped(k))+'</textarea></div>'+
     /* AND NOTHING TO PRESS IN SOMEBODY ELSE'S LANGUAGE. A note opened from a
        row is opened to READ there -- langLocked() (www/core.js) -- so the
        delete goes with the save below, and what is left is the note. The
-       fields are not marked readonly: there is nothing to press, so nothing
-       typed into them goes anywhere, and a field that refuses the cursor is a
+       field is not marked readonly: there is nothing to press, so nothing
+       typed into it goes anywhere, and a field that refuses the cursor is a
        second way of saying what an absent Save already says. */
     (k>=0 && !langLocked()
       ? '<button class="set" style="margin-top:10px;border-bottom:none"' + DO('delNote') + '>'+
         '<span class="sl bad">'+t('notes.del')+'</span></button>' : ''),
-    null);
+    null, null, true);
 }
 FORM_OPEN.note=function(i){ openNote(parseInt(i,10)); };
 /* ---- what is typed on a note, before it is a note -----------------------
@@ -95,13 +95,15 @@ FORM_OPEN.note=function(i){ openNote(parseInt(i,10)); };
 
    The buffer is filed under the form, so the note being edited and the note
    being made are two of them and cannot be confused for each other. */
+function ntWhole(n){
+  return String(n.t||'').trim() ? (n.t+'\n'+n.b) : String(n.b||'');
+}
 function ntKeepOn(k, n){
   keepOn(keepKeyOf('form', 'note:'+k),
-         {t:String(n.t||''), b:String(n.b||'')},
+         {b:ntWhole(n)},
          function(v, done){ saveNote(v); done(true); });
 }
-function ntTyped(k, f){ return keepVal(keepKeyOf('form', 'note:'+k), f); }
-function ntSetT(v){ keepSet('t', String(v||'')); }
+function ntTyped(k){ return keepVal(keepKeyOf('form', 'note:'+k), 'b'); }
 function ntSetB(v){ keepSet('b', String(v||'')); }
 /* Writing it down, and STAYING on it -- leaving is what the arrow beside the
    button is for, and after a save there is nothing left to ask about, so the
@@ -111,17 +113,16 @@ function ntSetB(v){ keepSet('b', String(v||'')); }
    which is what `ntAt` is: without that line a second press would push a second
    copy of the same note. */
 function saveNote(v){
-  var ti=String(v.hasOwnProperty('t')? v.t : ntKept('t')).trim(),
-      bo=String(v.hasOwnProperty('b')? v.b : ntKept('b')).trim();
-  if(!ti && !bo) return;
-  if(ntAt>=0 && NOTES[ntAt]){ NOTES[ntAt].t=ti; NOTES[ntAt].b=bo; NOTES[ntAt].ed=Date.now(); }
-  else { NOTES.push({t:ti, b:bo, at:Date.now()}); ntAt=NOTES.length-1; ntNewSpent=true; }
+  var bo=String(v.hasOwnProperty('b')? v.b : ntKept()).trim();
+  if(!bo) return;
+  if(ntAt>=0 && NOTES[ntAt]){ NOTES[ntAt].t=''; NOTES[ntAt].b=bo; NOTES[ntAt].ed=Date.now(); }
+  else { NOTES.push({t:'', b:bo, at:Date.now()}); ntAt=NOTES.length-1; ntNewSpent=true; }
   saveNotes(); toast(t('toast.note.kept'));
 }
-/* What the note holds now, for the half of the pair somebody did not touch. */
-function ntKept(f){
+/* What the note holds now, if the save came through with nothing typed. */
+function ntKept(){
   var n=(ntAt>=0 && NOTES[ntAt])? NOTES[ntAt] : null;
-  return n? String(n[f]||'') : '';
+  return n? ntWhole(n) : '';
 }
 function delNote(){
   if(ntAt<0 || !NOTES[ntAt]) return;
