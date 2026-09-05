@@ -686,7 +686,7 @@ defLang('ru', (function(){
       "ob.draw.h"        : "Нарисуйте свою {0}.",
       /* the writing system */
       "script.show"     : "Показывать",
-      "script.show.own"   : "Своими буквами",
+      "script.show.own"   : "Показывать мои буквы",
       /* the letter editor */
       "glyph.circle"      : "Дуга",
       "glyph.fill"     : "Заливка",
@@ -1046,7 +1046,6 @@ defLang('ru', (function(){
       "report.other"         : "Другое",
       "report.done"         : "Отправлено",
       "mod.title"           : "Жалобы",
-      "mod.again"           : "Обновить",
       "mod.none"            : "Жалоб нет",
       "mod.noline"          : "(запись без текста)",
       "mod.down"            : "Снять с публикации",
@@ -1054,6 +1053,7 @@ defLang('ru', (function(){
       "mod.out"             : "Заблокировать @{0}",
       "mod.in"              : "Разблокировать @{0}",
       "mod.out.sure"        : "Заблокировать этот аккаунт?",
+      "mod.out.yes"        : "Заморозить",
       "admin.title"         : "Управление",
       "admin.pw"            : "Пароль",
       "admin.go"            : "Открыть",

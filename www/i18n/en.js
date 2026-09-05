@@ -586,7 +586,7 @@ defLang('en', (function(){
       'ob.draw.h'      : "Draw your own {0}.",
       /* the writing system */
       'script.show'     : 'Show',
-      'script.show.own'   : "Your letters",
+      'script.show.own'   : "Show my own letters",
       /* the letter editor */
       'glyph.circle'      : "Round",
       'glyph.fill'     : "Fill",
@@ -947,7 +947,6 @@ defLang('en', (function(){
       'report.other'       : "Something else",
       'report.done'       : "Sent",
       'mod.title'         : "Reports",
-      'mod.again'         : "Refresh",
       'mod.none'          : "No reports",
       'mod.noline'        : "(a post with no words)",
       'mod.down'          : "Take down",
@@ -955,6 +954,7 @@ defLang('en', (function(){
       'mod.out'           : "Suspend @{0}",
       'mod.in'            : "Unsuspend @{0}",
       'mod.out.sure'      : "Suspend this account?",
+      'mod.out.yes'      : "Suspend",
       'admin.title'       : "Admin",
       'admin.pw'          : "Password",
       'admin.go'          : "Open",

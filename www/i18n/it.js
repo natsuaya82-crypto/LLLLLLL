@@ -680,7 +680,7 @@ defLang('it', (function(){
       "ob.draw.h"       : "Disegna la tua {0}.",
       /* the writing system */
       "script.show"     : "Mostra",
-      "script.show.own"   : "Le tue lettere",
+      "script.show.own"   : "Mostra le mie lettere",
       /* the letter editor */
       "glyph.circle"      : "Curvare",
       "glyph.fill"     : "Riempi",
@@ -1033,7 +1033,6 @@ defLang('it', (function(){
       "report.other"        : "Altro",
       "report.done"        : "Inviato",
       "mod.title"          : "Segnalazioni",
-      "mod.again"          : "Aggiorna",
       "mod.none"           : "Nessuna segnalazione",
       "mod.noline"         : "(un post senza testo)",
       "mod.down"           : "Ritira",
@@ -1041,6 +1040,7 @@ defLang('it', (function(){
       "mod.out"            : "Sospendi @{0}",
       "mod.in"             : "Riattiva @{0}",
       "mod.out.sure"       : "Sospendere questo account?",
+      "mod.out.yes"       : "Sospendi",
       "admin.title"        : "Amministrazione",
       "admin.pw"           : "Password",
       "admin.go"           : "Apri",

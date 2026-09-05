@@ -596,7 +596,7 @@ defLang('ja', (function(){
       'ob.draw.h'      : "君の {0} を書いてみよう。",
       /* the writing system */
       'script.show'     : '表示',
-      'script.show.own'   : "自分の字",
+      'script.show.own'   : "自作文字を表示する",
       /* the letter editor */
       'glyph.circle'      : "曲線",
       'glyph.fill'     : "塗り",
@@ -948,7 +948,6 @@ defLang('ja', (function(){
       'report.other'       : "その他",
       'report.done'       : "送信しました",
       'mod.title'         : "通報",
-      'mod.again'         : "読み直す",
       'mod.none'          : "通報はありません",
       'mod.noline'        : "（文字のない投稿）",
       'mod.down'          : "公開を止める",
@@ -956,6 +955,7 @@ defLang('ja', (function(){
       'mod.out'           : "@{0} を凍結",
       'mod.in'            : "@{0} の凍結を解除",
       'mod.out.sure'      : "このアカウントを凍結しますか？",
+      'mod.out.yes'      : "凍結",
       'admin.title'       : "管理",
       'admin.pw'          : "パスワード",
       'admin.go'          : "開く",

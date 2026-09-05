@@ -687,7 +687,7 @@ defLang('pt', (function(){
       "ob.draw.h"        : "Desenhe o seu {0}.",
       /* the writing system */
       "script.show"     : "Mostrar",
-      "script.show.own"   : "As suas letras",
+      "script.show.own"   : "Mostrar minhas letras",
       /* the letter editor */
       "glyph.circle"      : "Curvar",
       "glyph.fill"     : "Preencher",
@@ -1039,7 +1039,6 @@ defLang('pt', (function(){
       "report.other"        : "Outra coisa",
       "report.done"        : "Enviado",
       "mod.title"          : "Denúncias",
-      "mod.again"          : "Atualizar",
       "mod.none"           : "Sem denúncias",
       "mod.noline"         : "(uma publicação sem texto)",
       "mod.down"           : "Retirar",
@@ -1047,6 +1046,7 @@ defLang('pt', (function(){
       "mod.out"            : "Suspender @{0}",
       "mod.in"             : "Reativar @{0}",
       "mod.out.sure"       : "Suspender esta conta?",
+      "mod.out.yes"       : "Suspender",
       "admin.title"        : "Administração",
       "admin.pw"           : "Palavra-passe",
       "admin.go"           : "Abrir",

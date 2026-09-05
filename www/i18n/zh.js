@@ -688,7 +688,7 @@ defLang('zh', (function(){
       "ob.draw.h"       : "画出你自己的 {0}。",
       /* the writing system */
       "script.show"     : "显示",
-      "script.show.own"   : "自造文字",
+      "script.show.own"   : "显示自创文字",
       /* the letter editor */
       "glyph.circle"      : "圆",
       "glyph.fill"     : "填充",
@@ -1037,7 +1037,6 @@ defLang('zh', (function(){
       "report.other"        : "其他",
       "report.done"        : "已发送",
       "mod.title"          : "举报",
-      "mod.again"          : "刷新",
       "mod.none"           : "没有举报",
       "mod.noline"         : "（没有文字的帖子）",
       "mod.down"           : "下架",
@@ -1045,6 +1044,7 @@ defLang('zh', (function(){
       "mod.out"            : "冻结 @{0}",
       "mod.in"             : "解除冻结 @{0}",
       "mod.out.sure"       : "要冻结这个账号吗？",
+      "mod.out.yes"       : "冻结",
       "admin.title"        : "管理",
       "admin.pw"           : "密码",
       "admin.go"           : "打开",

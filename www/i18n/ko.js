@@ -859,7 +859,7 @@ defLang('ko', (function(){
       "ob.draw.h"      : "당신의 {0} 를 그려 보세요.",
       /* the writing system */
       "script.show"     : "표시",
-      "script.show.own"   : "내 글자",
+      "script.show.own"   : "내 문자 표시",
       /* the letter editor */
       "glyph.circle"      : "원",
       "glyph.fill"     : "칠하기",
@@ -1207,7 +1207,6 @@ defLang('ko', (function(){
       "report.other"        : "기타",
       "report.done"        : "보냈습니다",
       "mod.title"          : "신고",
-      "mod.again"          : "새로 고침",
       "mod.none"           : "신고가 없습니다",
       "mod.noline"         : "(글자 없는 게시물)",
       "mod.down"           : "공개 중지",
@@ -1215,6 +1214,7 @@ defLang('ko', (function(){
       "mod.out"            : "@{0} 정지",
       "mod.in"             : "@{0} 정지 해제",
       "mod.out.sure"       : "이 계정을 정지할까요?",
+      "mod.out.yes"       : "정지",
       "admin.title"        : "관리",
       "admin.pw"           : "비밀번호",
       "admin.go"           : "열기",

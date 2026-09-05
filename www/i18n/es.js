@@ -640,7 +640,7 @@ defLang('es', (function(){
       "ob.draw.h"        : "Dibuja tu propia {0}.",
       /* the writing system */
       "script.show"     : "Mostrar",
-      "script.show.own"   : "Tus letras",
+      "script.show.own"   : "Mostrar mis letras",
       /* the letter editor */
       "glyph.circle"      : "Curvar",
       "glyph.fill"     : "Relleno",
@@ -992,7 +992,6 @@ defLang('es', (function(){
       "report.other"        : "Otra cosa",
       "report.done"        : "Enviado",
       "mod.title"          : "Denuncias",
-      "mod.again"          : "Actualizar",
       "mod.none"           : "No hay denuncias",
       "mod.noline"         : "(una publicación sin texto)",
       "mod.down"           : "Retirar",
@@ -1000,6 +999,7 @@ defLang('es', (function(){
       "mod.out"            : "Suspender a @{0}",
       "mod.in"             : "Reactivar a @{0}",
       "mod.out.sure"       : "¿Suspender esta cuenta?",
+      "mod.out.yes"       : "Suspender",
       "admin.title"        : "Administración",
       "admin.pw"           : "Contraseña",
       "admin.go"           : "Abrir",

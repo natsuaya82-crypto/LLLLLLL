@@ -668,7 +668,7 @@ defLang('de', (function(){
       "ob.draw.h"       : "Zeichne dein eigenes {0}.",
       /* the writing system */
       "script.show"     : "Anzeigen",
-      "script.show.own"   : "Deinen Buchstaben",
+      "script.show.own"   : "Meine Buchstaben anzeigen",
       /* the letter editor */
       "glyph.circle"      : "Runden",
       "glyph.fill"     : "Füllen",
@@ -1021,7 +1021,6 @@ defLang('de', (function(){
       "report.other"        : "Etwas anderes",
       "report.done"        : "Gesendet",
       "mod.title"          : "Meldungen",
-      "mod.again"          : "Neu laden",
       "mod.none"           : "Keine Meldungen",
       "mod.noline"         : "(ein Beitrag ohne Text)",
       "mod.down"           : "Zurückziehen",
@@ -1029,6 +1028,7 @@ defLang('de', (function(){
       "mod.out"            : "@{0} sperren",
       "mod.in"             : "Sperre für @{0} aufheben",
       "mod.out.sure"       : "Dieses Konto sperren?",
+      "mod.out.yes"       : "Sperren",
       "admin.title"        : "Verwaltung",
       "admin.pw"           : "Passwort",
       "admin.go"           : "Öffnen",
