@@ -592,12 +592,21 @@ function g2Sent(){
    in the 助詞 stage (`openSlot`). Two places that write the same thing is the
    shape this repository is most often bitten by, so a row goes to whichever
    of the two it came from -- which is what the rule's metadata carries. */
-function g2Row(lab, from, to, act, arg){
-  return '<button class="stslot has"' + DO(act, arg) + '>'+
+/* One row of a chapter, and the way out of it. `del` is the rule's id where the
+   row IS a rule -- the ⊖ takes it away after popAsk() has asked, which is where
+   every other list in this app deletes from and is where 「この規則を消す」 went
+   when the editor became two fields. A row that is a word made in a stage
+   carries none: that word is deleted where it was made. */
+function g2Row(lab, from, to, act, arg, del){
+  return '<div class="fmmk">'+
+    '<button class="stslot has"' + DO(act, arg) + '>'+
     '<span class="psm">'+esc(lab)+'</span>'+
     '<span class="psw'+(myFontOn()? ' sfont' : '')+'">'+esc(from)+'</span>'+
     '<span class="gsep">'+ICON_GO+'</span>'+
-    '<span class="psi">'+esc(to)+'</span>'+ICON_GO+'</button>';
+    '<span class="psi">'+esc(to)+'</span>'+ICON_GO+'</button>'+
+    (del? '<button class="mnx"' + DO('fmrAsk', [del]) +
+      ' aria-label="'+esc(t('fmr.del'))+'">'+ICON_MINUS+'</button>' : '')+
+    '</div>';
 }
 /* Which rules this chapter is about. A noun is changed for NUMBER and it is
    marked for CASE; the tenses belong to the verbs chapter and are not shown
@@ -645,7 +654,8 @@ function g2Forms(pos, chap){
     md=r.metadata||{};
     out+=g2Row(md.label || String(r.value), wOut(w.hw), made,
                md.slot? 'openSlot' : 'openFmr',
-               md.slot? ['part', md.slot] : [md.rule || '']);
+               md.slot? ['part', md.slot] : [md.rule || ''],
+               md.slot? '' : (md.rule || ''));
   }
   return out;
 }
@@ -723,7 +733,8 @@ function g2Pair(m, sub, v, rules, word, label, slotArgs){
     minus=g2NegSurf(m, v, rules[i], plus);
     if(!minus || minus===plus) continue;
     md=rules[i].metadata || {};
-    out+=g2Row(md.label || label, plus, minus, 'openFmr', [md.rule || '']);
+    out+=g2Row(md.label || label, plus, minus, 'openFmr', [md.rule || ''],
+               md.rule || '');
   }
   /* And a word of its own, which is not a rule at all: the sentence is
      arranged again WITH it in, and where it lands is what this language
