@@ -602,7 +602,88 @@ assert.equal(e.morphology.derive(derStem, derStem.words[1], 'ADJECTIVE').surface
    reader deciding whether Phase 3 and Phase 7 were covered would have got the
    wrong answer from the only line the gate prints. Adding a section here
    means adding it to this sentence. */
+
+
+/* ---- a post said in a natural language -------------------------------------
+   OWNER 2026-09-05 「単語はその単語の意味を 文法は並び替えた単語たちが文章と
+   して成り立つように。きかいほんやくはつかわない。」
+
+   The words come from the dictionary and the arrangement comes from the
+   grammar, and nothing else is consulted -- no hosted model, no network. So
+   what this holds is the two halves separately: that a word becomes what its
+   own entry says it means, and that the three words carrying a role land where
+   the reader's own language puts them.
+
+   `demo` above is SOV with `mi` (I), `poko` (apple) and `luma` (eat), so
+   `mi poko luma` is subject-object-verb in the invented language. Japanese
+   keeps that order and English does not, and that difference is the whole
+   feature. */
+const said = e.languageModel({languageId:'said', wordOrder:'SOV',
+  words:[e.word({id:'mi',   lemma:'mi',   partOfSpeech:'PRONOUN', meanings:['I']}),
+         e.word({id:'poko', lemma:'poko', partOfSpeech:'NOUN',    meanings:['apple']}),
+         e.word({id:'luma', lemma:'luma', partOfSpeech:'VERB',    meanings:['eat']})],
+  inflections:[e.inflection({id:'past', target:'VERB', feature:'TENSE', value:'PAST',
+                             operation:'suffix', form:'ka'}),
+               e.inflection({id:'neg',  target:'VERB', feature:'NEGATION', value:true,
+                             operation:'prefix', form:'na', separator:' '})]});
+
+/* (a) the same three words, in each reader's own order */
+assert.equal(e.translate.toNatural(said, 'mi poko luma', 'ja'), 'I apple eat');
+assert.equal(e.translate.toNatural(said, 'mi poko luma', 'ko'), 'I apple eat');
+assert.equal(e.translate.toNatural(said, 'mi poko luma', 'en'), 'I eat apple');
+assert.equal(e.translate.toNatural(said, 'mi poko luma', 'es'), 'I eat apple');
+assert.equal(e.translate.toNatural(said, 'mi poko luma', 'ru'), 'I eat apple');
+/* a language nobody named is read as SVO, which eight of the ten are */
+assert.equal(e.translate.toNatural(said, 'mi poko luma', ''), 'I eat apple');
+
+/* (b) what the sentence does that no single word carries. NEGATION and TENSE
+   are features of the parse, and ja and en are the two that get a mark --
+   writing one for the other eight would be inventing their grammar. */
+assert.equal(e.translate.toNatural(said, 'mi poko na luma', 'ja'), 'I apple eat ない');
+assert.equal(e.translate.toNatural(said, 'mi poko na luma', 'en'), 'I eat apple not');
+assert.equal(e.translate.toNatural(said, 'mi poko luma-ka', 'ja'), 'I apple eat た');
+assert.equal(e.translate.toNatural(said, 'mi poko luma-ka', 'en'), 'I eat apple (past)');
+assert.equal(e.translate.toNatural(said, 'mi poko na luma-ka', 'ja'), 'I apple eat ない た');
+/* the other eight get the arrangement, which is true, and nothing that is not */
+assert.equal(e.translate.toNatural(said, 'mi poko na luma-ka', 'de'), 'I eat apple');
+
+/* (c) a word this dictionary has never heard of comes back as itself. That is
+   the truth about it, and it is the door to making that word -- the same
+   answer lexicon.cut() gives a gap. */
+assert.equal(e.translate.toNatural(said, 'mi zzz luma', 'en'), 'I zzz eat');
+assert.equal(e.translate.toNatural(said, 'zzz', 'ja'), 'zzz');
+/* and the words around it are still their own meanings */
+assert.equal(e.translate.toNatural(said, 'poko zzz', 'ja'), 'apple zzz');
+
+/* (d) a line no role could be taken from is the words, one meaning each, in
+   the order they were typed. A language that has not said what order it puts
+   things in is that line: nothing is the subject and nothing is the object,
+   so there is nothing to arrange and the words are the whole of the answer. */
+const unordered = e.languageModel({languageId:'unordered',
+  words:[e.word({id:'poko', lemma:'poko', partOfSpeech:'NOUN', meanings:['apple']}),
+         e.word({id:'mi',   lemma:'mi',   partOfSpeech:'NOUN', meanings:['I']})]});
+assert.equal(unordered.wordOrder.length, 0);
+assert.equal(e.translate.toNatural(unordered, 'poko mi', 'en'), 'apple I');
+assert.equal(e.translate.toNatural(unordered, 'poko mi', 'ja'), 'apple I');
+/* an empty line is an empty line, not a crash and not a word */
+assert.equal(e.translate.toNatural(said, '', 'ja'), '');
+
+/* A word means a LIST of things and the first is the one that stands for it,
+   which is the same choice lexicon.cut() and toSemantic() already make. */
+const manyMeanings = e.languageModel({languageId:'many', wordOrder:'SOV',
+  words:[e.word({id:'mi',   lemma:'mi',   partOfSpeech:'PRONOUN', meanings:['I','me']}),
+         e.word({id:'poko', lemma:'poko', partOfSpeech:'NOUN',    meanings:['river','road']}),
+         e.word({id:'luma', lemma:'luma', partOfSpeech:'VERB',    meanings:['see','watch']})]});
+assert.equal(e.translate.toNatural(manyMeanings, 'mi poko luma', 'en'), 'I see river');
+/* a word with no meaning written down yet stays as itself rather than empty */
+const nameless = e.languageModel({languageId:'nameless', wordOrder:'SOV',
+  words:[e.word({id:'mi',   lemma:'mi',   partOfSpeech:'PRONOUN', meanings:['I']}),
+         e.word({id:'poko', lemma:'poko', partOfSpeech:'NOUN'}),
+         e.word({id:'luma', lemma:'luma', partOfSpeech:'VERB',    meanings:['eat']})]});
+assert.equal(e.translate.toNatural(nameless, 'mi poko luma', 'en'), 'I eat poko');
+
 console.log('Grammar Engine: derivation applies, a case MARK carries a role, the ' +
             'Semantic IR goes both ways and back, the Phase 1-2 contract is clean, ' +
             'a rule may change the stem and may be for some words only, ' +
-            'and the line a meaning makes is held');
+            'the line a meaning makes is held, and a line of this language is ' +
+            "said in the reader's own words and the reader's own order");

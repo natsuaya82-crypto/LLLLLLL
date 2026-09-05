@@ -322,5 +322,106 @@
 
   function surfaces(pieces){ var out=[], i; for(i=0;i<pieces.length;i++) out.push(pieces[i].surface); return out; }
 
-  api.translate={run:run, arrange:arrange, line:line, positionOf:positionOf, markedIds:markedIds, srcOrder:srcOrder, toSemantic:toSemantic, fromSemantic:fromSemantic};
+
+  /* ---- a line of this language, said in a natural one ---------------------
+     OWNER 2026-09-05 「単語はその単語の意味を 文法は並び替えた単語たちが文章
+     として成り立つように。きかいほんやくはつかわない。」
+
+     Two halves, and they are the two halves the app already has. The WORDS
+     come out of the dictionary -- each one swapped for what its own entry
+     says it means, and nothing else, because a word means what its maker
+     said it means. The GRAMMAR is the arrangement: morphology.parseSentence()
+     says which word is the subject, which the object and which the verb, and
+     those three are then put where the reader's own language puts them.
+
+     No hosted model and no network. That is not a limitation to be lifted
+     later -- it is the point. Everything this answers is read off the
+     dictionary and the grammar stages, so the line reads better tomorrow for
+     exactly one reason: somebody filled in more of either. 「単語と文法が埋ま
+     れば埋まるだけ投稿の翻訳の精度が上がるっていうのが目的」
+
+     It is the inverse of run() above. run() reads a NATURAL sentence into
+     this language; this writes a sentence OF this language out into a natural
+     one. Both are the same dictionary and the same grammar, read from the two
+     ends, which is why a chat or a translator built on this later has one
+     thing to call rather than two. */
+  function isSOV(lang){ var l=String(lang||'').toLowerCase(); return l==='ja'||l==='ko'; }
+
+  /* Where a word stands, per interface language. Ten languages, two shapes:
+     Japanese and Korean put the verb last, the other eight put it in the
+     middle. This is a fact about those ten languages and not a setting -- a
+     language nobody named is read as SVO, which eight of the ten are. */
+  function targetOrder(lang){
+    return isSOV(lang) ? ['SUBJECT','OBJECT','VERB'] : ['SUBJECT','VERB','OBJECT'];
+  }
+
+  /* What the sentence does that no single word carries. NEGATION and TENSE
+     are on the parse as features, so they are written as the smallest mark
+     the target language would recognise and put at the end of the line.
+
+     Only ja and en have one. That is deliberate: a mark that is nearly right
+     reads worse than no mark, and the eight other languages inflect their
+     verb rather than append a particle -- writing "no" or "nicht" at the end
+     of a Spanish or German line would be inventing a grammar those readers
+     can see is wrong. They get the arrangement, which is true, and nothing
+     that is not. */
+  function marksFor(lang, features){
+    var l=String(lang||'').toLowerCase(), out=[], past;
+    if(!features) return out;
+    past=String(features.TENSE||'').toUpperCase()==='PAST';
+    if(l==='ja'){ if(features.NEGATION) out.push('ない'); if(past) out.push('た'); return out; }
+    if(l==='en'){ if(features.NEGATION) out.push('not'); if(past) out.push('(past)'); return out; }
+    return out;
+  }
+
+  /* One word of this language, as what it means. A word the dictionary does
+     not have comes back as itself, which is the truth about it and is the
+     same answer the gloss has always given. */
+  function glossToken(model, surface){
+    var parsed=api.morphology.parseToken(model, surface);
+    if(!parsed||!parsed.word) return String(surface);
+    return meaningOf(parsed.word);
+  }
+  /* Every word of the line, in the order it was typed. This is what is left
+     when the grammar has nothing to say -- a line the reader could not parse,
+     or one where no word took a role -- and it is not a failure: it is the
+     words, which is most of what somebody needs, and it is what the composer
+     showed before any of this existed. */
+  function glossLine(model, text){
+    var parts=String(text===undefined||text===null?'':text).replace(/^\s+|\s+$/g,'').split(/\s+/),
+        out=[], i;
+    for(i=0;i<parts.length;i++){ if(parts[i]) out.push(glossToken(model, parts[i])); }
+    return out.join(' ');
+  }
+
+  /* The line, in the reader's own language. A string, because that is what
+     the meaning field of a post holds and what it falls back to.
+
+     Only the three words that HAVE a role move, and they move into the places
+     those three were already standing in. Everything else stays exactly where
+     it was written -- an adjective, a particle, a word the queue had no role
+     left for. Moving those would need a rule nobody has written down, and
+     inventing one is the thing this must not do. */
+  function toNatural(model, text, lang){
+    var parsed=api.morphology.parseSentence(model, text),
+        order=targetOrder(lang), slots=[], moved=[], said=[], out=[],
+        marks, i, j, role;
+    if(!parsed||!parsed.ok) return glossLine(model, text);
+    for(i=0;i<parsed.tokens.length;i++){
+      role=parsed.tokens[i].role;
+      if(role==='SUBJECT'||role==='OBJECT'||role==='VERB') slots.push(i);
+    }
+    if(!slots.length) return glossLine(model, text);
+    for(i=0;i<order.length;i++){
+      for(j=0;j<parsed.tokens.length;j++) if(parsed.tokens[j].role===order[i]){ moved.push(j); break; }
+    }
+    for(i=0;i<parsed.tokens.length;i++) said.push(meaningOf(parsed.tokens[i].word));
+    out=said.slice(0);
+    for(i=0;i<slots.length&&i<moved.length;i++) out[slots[i]]=said[moved[i]];
+    marks=marksFor(lang, parsed.features);
+    for(i=0;i<marks.length;i++) out.push(marks[i]);
+    return out.join(' ');
+  }
+
+  api.translate={run:run, arrange:arrange, line:line, positionOf:positionOf, markedIds:markedIds, srcOrder:srcOrder, toSemantic:toSemantic, fromSemantic:fromSemantic, toNatural:toNatural, glossLine:glossLine};
 }(typeof window!=='undefined'?window:this));
