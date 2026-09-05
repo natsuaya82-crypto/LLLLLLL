@@ -580,7 +580,7 @@ function meCard(){
         '<span class="phandle">@'+esc(meHandle())+'</span>'+
       '</div>'+
     '</div>'+
-    '<button class="meedit"' + DO('openMe') + '>'+esc(t('me.edit'))+'</button>'+
+    '<button class="meedit edit"' + DO('openMe') + '>'+esc(t('me.edit'))+'</button>'+
     '</div>'+
     (ME.bio? '<div class="pbio">'+esc(ME.bio)+'</div>' : '')+
     /* The language, between what somebody says about themselves and how many

@@ -1034,7 +1034,12 @@ export function halfDone(){
     ['somebody else\'s profile', () => { window.route='profile'; NAV=[{r:'profile', a:'iri'}];
         WHO_HAVE['iri'] = { who:'Iri', hd:'iri', av:{ch:'Ж'}, lname:'Vethi',
                              bio:'', fo:2, fr:3, out:false };
-        const h = vProfile(); NAV=[{r:'profile'}]; return h; }],
+        /* BEFORE you follow them, which is what this face is for and what it
+           was not: the seed already follows 'iri', so both faces drew
+           「フォロー中」 and the gold button the owner is talking about was
+           in no picture. */
+        const was = ME.fo; ME.fo = [];
+        const h = vProfile(); ME.fo = was; NAV=[{r:'profile'}]; return h; }],
     ['somebody else\'s profile, followed', () => { ME.fo = ['iri'];
         WHO_HAVE['iri'] = { who:'Iri', hd:'iri', av:{ch:'Ж'}, lname:'Vethi',
                              bio:'', fo:2, fr:3, out:false };
