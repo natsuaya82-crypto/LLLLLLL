@@ -21,7 +21,7 @@ The rest of `docs/` is the working detail behind the rules at the head of
 | `RECOVERY.md` | バグで人のものが消えたときに運営側で戻す案。三つ並べてある。**まだ決まっていません** |
 | `DUPLICATES.md` | 同じものが二箇所以上に直書きされている所の一覧。食い違っているものが八件、まだ一致しているものが十二件 |
 
-**§ 0-a was read against the code on 2026-09-04. Every other section was read
+**§ 0 was written on 2026-09-05 and § 0-a re-read that night. Every other section was read
 on 2026-09-03 and has not been re-read since.** Where a claim can go stale it
 carries the command that re-checks it. **Run the command; do not believe the
 sentence.**
@@ -29,6 +29,66 @@ sentence.**
 **This file is the leader's, and the leader writes it.** A stale RULE is doubted.
 A stale statement of FACT is simply believed — which is why nothing here may sit
 un-re-read.
+
+---
+
+## 2026-09-05 の夜 ── いまの状況（一番新しい）
+
+**訊く一行**（sha は書かない。一日で古くなる）:
+
+```
+git fetch --all --prune && git log --oneline -1 origin/master
+```
+
+**master は 2026-09-05 の 45 件を全部持っています。** オーナーが 9/5 の昼から
+夜に言った 45 件（`docs/CHANGELOG.md` 2026-09-05 の節が全部）を、リーダーが
+場所を指名し、8 本のセッション（opus 5・sonnet 3、`claude/tr g1 k1 c1 n1 q2 m2
+u2`）が直して push し、`integ-0905` に取り込み、ゲート 41 本を緑にして master を
+二度進めました（`97666ade` → `3ca3049c`）。**ビルドは出していません** ──
+「全部入ったら」「朝見てから」。
+
+**全部 CODE CONFIRMED だけです。実機で押したものは一つもありません。** 各件の
+スクショは `shots/` の 9/5 分（`git log --diff-filter=A --name-only
+f01b483d..origin/master -- shots/`）。
+
+### オーナーが自分で流すもの ── `supabase/schema.sql`、一回
+
+「3sqlはshimaみたいなやつに入れてほしい。1回で全部流すから。」 今日足した分は
+三つ、どれも `drop … if exists` → `create` で何度流しても同じ:
+
+- `report_drop(r bigint)`（:1757）── staff が通報を消す。
+- `plan_staff_hold()` と `plan` のトリガー（:1957〜）── staff の `plan` は常に `pro`。
+- `profile_staff_plan()` と `profile` のトリガー（:1974〜）── staff にした瞬間に
+  `plan` の行を `pro` で作る。
+
+流したら `npm run rls` の CASE が増えている分（staff でない B は消せない、
+staff の plan は free に戻らない）が実物でも真になります。
+
+### 今日、形が変わったもの ── 索引。中身は CHANGELOG
+
+- **投稿の意味欄は辞書と文法で組む。機械翻訳は無い。** `www/post.js` の `pwMn()`
+  → `LinguaGrammarEngine.translate.toNatural(model, line, lang)`。`postTr()`・
+  `TR_SEAM`・`post.tr` は削除。「単語はその単語の意味を 文法は並び替えた単語たち
+  が文章として成り立つように。きかいほんやくはつかわない。」
+- 文法ページ: 語順は常に出る、規則の画面は「足す文字」と「前後」だけ、時制・相の
+  章、規則と例文は一枚。単語に `sub`（下位分類）。
+- 通報画面: 誰の投稿を誰が通報したか、投稿を消す／凍結／通報を消す。
+- メモは本文一枚、削除は一覧のスワイプ。キーボード編集は保存ボタンが KEEP の道。
+- 保存の成功は `back()`。スワイプで戻るは引数の変わった画面でも。
+
+### リーダーのやり方 ── `docs/LEADER.md`
+
+一往復（オーナーの言葉 → リーダーがコードを読んで行まで指名 → セッションは直す
+だけ → 15 分）、15 分監査、`create_session` には `source_url` を必ず、sonnet は
+この指示の形だと「注入では」と止まるので opus で立てる、`fire_trigger` に `text`
+を付けると別のセッションが立つので一通ごとに trigger を作る。全部 9/5 に起きた
+ことで、そこに書いてあります。
+
+### まだ直っていないもの ── 9/5 の 45 件の外
+
+- 「文字増殖バグは治ったの？」── 押していないので分かりません。
+- 「保存できませんでした」の `save.no`、`syMerge()` の片道、電波の無いときの
+  写し ── 9/4 の五つの決定のうち着手していないものはそのまま（下の § 0-a）。
 
 ---
 
@@ -68,7 +128,7 @@ CODE CONFIRMED だけ。**検査の緑は証拠になりません。**
    危険がありました。
 5. **オンラインは進める。パッチはオーナーが後で流します。**アプリ側は待ちません。
 
-### 2026-09-04 に書かれたもの ── オンライン一本化。**`claude/online` の上で、master にはまだありません**
+### 2026-09-04 に書かれたもの ── オンライン一本化。**master に入っています（9/5）**
 
 **訊く一行:**
 
@@ -85,13 +145,12 @@ git merge-base --is-ancestor origin/claude/online origin/master && echo IN || ec
 - **アカウントを消したら検索履歴も消えます**（引き継ぎ書六章の1）。手で書いた
   一覧をやめて、数える形にしました。
 
-**master にはこの四つがありません。**master の `www/core.js` はまだ手で書いた
-`SET_ACCT` を持っています（`git show origin/master:www/core.js | grep SET_ACCT`）。
+**四つとも master にあります**（9/5 に取り込み。`git show origin/master:www/core.js | grep SET_PHONE`）。
 
-### ゲートの本数 ── master は42本、`claude/online` は41本
+### ゲートの本数 ── master は41本
 
-**数えました**（`tools/gate.mjs` の `FAST` と `SLOW`）。master が 14 + 28 = 42、
-`claude/online` が 14 + 27 = 41。**減った一本は `backup-check` です。**
+**数えました**（`tools/gate.mjs` の `FAST` と `SLOW`）。14 + 27 = 41。
+**`backup-check` は無くなりました。**
 **本数はここではなく、走らせた最後の行で読んでください。**
 
 ### 引き継ぎ書六章の11件 ── 十件は master、一件は枝の上
