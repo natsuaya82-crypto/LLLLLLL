@@ -839,9 +839,39 @@ canvas.pkc{width:34px;height:34px;display:block}
 /* Not pind0: a direct answer is the next row down, not a row inside
    anything, and a rail beside it would be a rail beside every reply. */
 .pind1 .post,.pind2 .post,.pind3 .post{border-left:1px solid var(--line)}
+/* AND THE RAILS OF EVERY STEP ABOVE THIS ONE.
+   「親から分岐した時とか子供が分岐した時に線で繋いでないとマジでどの投稿か
+   分からなくなる」 OWNER 2026-09-05.
+
+   The line above draws the rail this row starts at, so a row two deep had one
+   rail and no way to say which of the rows above it hangs off -- a second and
+   a third reply at the same depth read as a flat list wearing a margin.
+
+   They are drawn rather than bordered because a border only ever sits at the
+   edge of the box, and these stand 14 and 28 into it: `.pind` bleeds to the
+   screen edge (that is the negative margin above), so a border-left on the
+   wrapper would be a line down the very edge of the phone. The colour is
+   `--line`, which is where every colour in this app lives -- a gradient of
+   one colour is how a hairline gets painted somewhere a border cannot reach,
+   and nothing here is a box. */
 .pind1{padding-left:14px}
-.pind2{padding-left:28px}
-.pind3{padding-left:42px}
+.pind2{padding-left:28px;
+       background:linear-gradient(var(--line),var(--line)) 14px 0/1px 100% no-repeat}
+.pind3{padding-left:42px;
+       background:linear-gradient(var(--line),var(--line)) 14px 0/1px 100% no-repeat,
+                  linear-gradient(var(--line),var(--line)) 28px 0/1px 100% no-repeat}
+/* AND THE ONE THAT SAYS 「THERE IS AN ANSWER UNDER THIS」, which is the other
+   half of the same sentence: a rail from under the face down to the row
+   below, so a post and the reply to it are joined rather than stacked.
+
+   It hangs off `.post` and not off the wrapper, because 36px from the left of
+   a post is the middle of the face at every depth -- 16 of padding and half
+   of a 40 circle -- and 36px from the left of the WRAPPER is a different
+   place on every one of the four. 58px down clears the face, which is 44 tall
+   on the two rows that are buttons and 40 on the one that is not. */
+.pkid .post{position:relative}
+.pkid .post::after{content:'';position:absolute;left:36px;top:58px;bottom:0;
+                   width:1px;background:var(--line)}
 /* Drawn letters stand at their full height on this line, so 1.45 put the
    rows of a two-line post against each other. 「ここつまりすぎてる」 */
 .pline{font-size:1.3rem;line-height:1.7;color:var(--tx);

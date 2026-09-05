@@ -1522,7 +1522,7 @@ function snsFab(){
    after a server they will not, and the number on the screen has to be the
    number of rows under it or it is the app arguing with itself. */
 function vThread(){
-  var id=String(here().a||''), p=postById(id), ups, down, out='', i, d;
+  var id=String(here().a||''), p=postById(id), ups, down, out='', i, d, vis=[];
   /* Blocked is gone, not merely absent from the list: a thread reached by an
      old route is the one way a post could still be looked at. */
   if(!p || postBlocked(p)) return viewGone();
@@ -1532,16 +1532,32 @@ function vThread(){
      been taken down -- 「それ以外の会話は本ツイートとは関係ないものとする」.
      A reply that went is not a hole to be marked; it is a line somebody else
      wrote, and the conversation does not stand or fall with it. */
-  for(i=0;i<ups.length;i++) if(!postGone(ups[i])) out+=postRow(ups[i]);
+  /* WHAT IS ACTUALLY DRAWN, in the order somebody sees it. 「線で繋いでないと
+     マジでどの投稿か分からなくなる」 OWNER 2026-09-05: a row draws a rail
+     under its face when there is a deeper row beneath it, and「beneath」has to
+     mean beneath ON THE SCREEN. Asked of postDown()'s list instead, a reply
+     whose only child had been taken down would draw a rail down to nothing.
+     `postDown` walks depth first, so the row after this one is this one's
+     child exactly when it is deeper. */
+  for(i=0;i<down.length;i++) if(!postGone(down[i].p)) vis.push(down[i]);
+  /* Everything above the post is on the way down to it, so every one of them
+     has a row beneath it by construction. */
+  for(i=0;i<ups.length;i++) if(!postGone(ups[i]))
+    out+='<div class="pkid">'+postRow(ups[i])+'</div>';
   /* The one post somebody came here to read is the exception. It went, and
      saying so is the whole point of it having gone -- a gap here reads as
      "never existed", which is the opposite of what happened.
      「スレッドは本ツイートだけね？」 */
-  out+=postGone(p)? postTomb() : postRow(p);
-  for(i=0;i<down.length;i++){
-    if(postGone(down[i].p)) continue;
-    d=Math.min(down[i].d, THREAD_IN);
-    out+='<div class="pind pind'+d+'">'+postRow(down[i].p)+'</div>';
+  out+='<div'+(vis.length? ' class="pkid"' : '')+'>'+
+    (postGone(p)? postTomb() : postRow(p))+'</div>';
+  for(i=0;i<vis.length;i++){
+    /* The indent stops at THREAD_IN; whether there is a reply under this one
+       is about the tree and not about how far in it is drawn, so it is asked
+       of the depth that was not capped. */
+    d=Math.min(vis[i].d, THREAD_IN);
+    out+='<div class="pind pind'+d+
+      ((i+1<vis.length && vis[i+1].d>vis[i].d)? ' pkid' : '')+'">'+
+      postRow(vis[i].p)+'</div>';
   }
   return '<div class="view">'+navTop()+'<div class="body">'+
     out+

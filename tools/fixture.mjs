@@ -1292,6 +1292,28 @@ export function halfDone(){
                     mn:'seen from there', ui:'en', to:'pr5', toh:'iri'});
         window.route='thread'; NAV=[{r:'feed'},{r:'thread', a:'p1'}];
         const h = vThread(); POSTS.pop(); POSTS.pop(); return h; }],
+    /* A THREAD THAT BRANCHES, which the seeded one does not: p1 -> p3 -> p4
+       is a straight chain, and a chain is the one shape where stacking the
+       rows happens to be unambiguous. 「親から分岐した時とか子供が分岐した時に
+       線で繋いでないとマジでどの投稿か分からなくなる」 OWNER 2026-09-05 is
+       about the other shape, and no face had it.
+
+       p3 answers twice over -- once down through p4 and once beside it -- and
+       the branch under p4 runs three deep, so every rail this screen can draw
+       is on this one picture: the one under a face that has an answer, and
+       the ones standing at each step above a row two and three in. */
+    ['a thread that branches', () => {
+        POSTS.push({id:'pb1', at:Date.now()-700000, lang:'other', lname:'Vethi',
+                    ln:'dross', who:'Veth', hd:'veth', mine:false, av:{ch:'V'},
+                    mn:'or the other one', ui:'en', to:'p3', toh:'iri'},
+                   {id:'pb2', at:Date.now()-600000, lang:'other', lname:'Vethi',
+                    ln:'qel tir', who:'Iri', hd:'iri', mine:false, av:{ch:'\u0416'},
+                    mn:'and the rest of it', ui:'en', to:'p4', toh:'aya'},
+                   {id:'pb3', at:Date.now()-500000, lang:langId, lname:'Shango',
+                    ln:'kano', who:'Aya', hd:'aya', mine:true,
+                    mn:'that is the one', ui:'en', to:'pb2', toh:'iri'});
+        window.route='thread'; NAV=[{r:'feed'},{r:'thread', a:'p1'}];
+        const h = vThread(); POSTS.pop(); POSTS.pop(); POSTS.pop(); return h; }],
     /* A reply whose parent is not here: only `to`, nothing to read a handle
        off, and the line that says who it answers is correctly left off rather
        than guessed at. It is what every reply looks like the moment somebody
