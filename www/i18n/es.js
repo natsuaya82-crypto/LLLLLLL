@@ -719,6 +719,7 @@ defLang('es', (function(){
       "notes.note"       : "　",
       "notes.new"        : "Nota nueva",
       "notes.edit"       : "Nota",
+      "notes.t"          : "Título",
       "notes.b.ph"       : "Quién la habla. Por qué una palabra es también otra. Todo lo que mañana habrías olvidado.",
       "notes.save"       : "Guardar",
       "notes.del"        : "Borrar",

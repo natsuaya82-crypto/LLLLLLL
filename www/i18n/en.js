@@ -652,6 +652,7 @@ defLang('en', (function(){
       'notes.note'      : "　",
       'notes.new'       : "New note",
       'notes.edit'      : "Note",
+      'notes.t'         : "Heading",
       'notes.b.ph'      : "Who speaks it, why a word means two things, anything you want to remember.",
       'notes.save'      : "Save",
       'notes.del'       : "Delete",

@@ -660,6 +660,7 @@ defLang('ja', (function(){
       'notes.note'      : '　',
       'notes.new'       : 'メモの追加',
       'notes.edit'      : 'メモの編集',
+      'notes.t'         : '題名',
       'notes.b.ph'      : '本文',
       'notes.save'      : '保存',
       'notes.del'       : '削除',
