@@ -52,10 +52,12 @@ the app.** Everything the timeline is made of — posts, photographs, the voice,
 **drafts**, the handle, the display name, the profile picture, reactions,
 follows, blocks and reports 「SNSは全部サーバー」 — **and the language itself**,
 every slice of it, the keyboard among them, because a keyboard is part of a
-language. **The language is not on the phone at all** — a slice is in memory
-while the app is running and nowhere else (rule 22, OWNER 2026-09-04). The
-phone keeps a copy of the TIMELINE that works with no signal; **it is never
-where a thing lives.**
+language. **The server is the only place a language LIVES** — a slice is in
+memory while the app is running (rule 22, OWNER 2026-09-04). The phone keeps a
+copy of the timeline, and of the language as it was last loaded, so that with
+no signal there is still something to look at 「前に読み込んだ分は出て欲しい。
+制作も眺めたい人はいるだろうし、」 OWNER 2026-09-04. **That copy is read-only
+and it never goes back up** — it is never where a thing lives.
 
 **NOTHING IS THE PHONE'S. EVERYTHING IS THE ACCOUNT'S.**
 「端末ごとにやることなんてねえよ」「アカウントごとってずっと言ってるよな？」
@@ -97,11 +99,14 @@ sns tabs and the composer never asked who you were, while every write in
 you could write a post that went nowhere. Reading the timeline and posting to
 it both need an account now, **and so does making a language** 「言語はアカウント
 ないと作れないです」「ログインした人しか書けないけど」. The server is where a
-language lives, and a save reaches it the moment it is made. **Offline is not
-a supported state any more** 「オンラインのみで行こうってことになってる今後
-オフライン対応する時にまた考えることにした」 OWNER 2026-09-04: with no signal
-there is nothing to read and nothing to send, and 「電波が無いときはログイン
-できない」 is what a screen says about it.
+language lives, and a save reaches it the moment it is made. **Making and
+saving need a signal** 「オンラインのみで行こうってことになってる今後オフライン
+対応する時にまた考えることにした」 OWNER 2026-09-04: with none there is nothing
+to send, and 「電波が無いときはログインできない」 is what a screen says about
+signing in. **What there IS with no signal is what was loaded before, to look
+at** 「前に読み込んだ分は出て欲しい。制作も眺めたい人はいるだろうし、」 OWNER
+2026-09-04. Looking is the whole of it: nothing is made, nothing is saved, and
+nothing on that copy ever travels back to the server (rule 22).
 
 **The onboarding is the one place making happens before there is an account,
 and that is the order the owner asked for** 「オンボーディング→最後にログイン」.
@@ -1002,7 +1007,7 @@ the making side; giving it a new name is not a way to stop being one.**
 
 ### 11. A language is never lost
 
-**THE SERVER IS THE ONLY COPY, and a save reaches it at once.**
+**THE SERVER IS THE ONLY COPY THAT COUNTS, and a save reaches it at once.**
 「オンラインは一本化ね？」「保存としたらオンラインおしまい」「今ファイルもいらん。
 オンラインのみで行こうってことになってる今後オフライン対応する時にまた考える
 ことにした」 OWNER 2026-09-04.
@@ -1026,10 +1031,18 @@ ACCOUNT has and fills in what is not here -- which is what `bkRestore()` used
 to do out of the file, with the same rule: it fills in what is **missing** and
 stops. `again-check` holds it, and holds the save arriving without a launch.
 
-**What this costs is written down rather than hidden.** With no signal there
-is no copy but the one on this handset, and 「電波が無いときはログインできない」
-is the owner's answer to that. A language made offline is in `localStorage`
-until there is a signal; nothing else stands behind it.
+**What does not reach the server is lost, and that is the SPECIFICATION.**
+「Twitterとかは電波がないと開かないでしょ？…保存するタイミングでエラーが起きる
+なら、保存されないし。そう言うもんじゃないの？」 OWNER 2026-09-04. It is not a
+caveat, and it is not something to go back and ask about: an online app behaves
+this way, and the owner said so having been shown what it costs.
+
+**What must NOT happen is a failed save taking the work with it.**
+「なら失敗して残るにするべき。」 OWNER 2026-09-04. When a save fails at the
+server, what the person made stays in front of them and pressing again sends
+it. That is not a queue on the phone — nothing is put aside to be sent later —
+it is the screen keeping what is on it. **Not built: the catch in `save()`
+(`www/core.js`) is empty** (`docs/HANDOVER.md` 七章).
 
 ### 12. A card of a post is a picture of that post
 
@@ -1596,7 +1609,7 @@ the exemption's rot claim with `viewGone` renamed out from under it.
 
 ### 22. Nothing is kept on this phone alone, and nothing on it is nobody's
 
-**THE LANGUAGE IS NOT ON THIS PHONE AT ALL.**
+**THE LANGUAGE DOES NOT LIVE ON THIS PHONE.**
 「オンラインは一本化ね？」「簡単よ」「保存としたらオンラインおしまい」
 「今ファイルもいらん。オンラインのみで行こうってことになってる今後オフライン
 対応する時にまた考えることにした」 OWNER 2026-09-04.
@@ -1609,9 +1622,22 @@ RUNNING app is holding, the same kind of thing `WORDS` and `LETTERS` already
 were, one step further out. Close the app and it is gone; open it signed in
 and `netLangsDown()` brings it back.
 
-**It is not a cache and must not become one.** A copy that survives the app is
-a second answer to 「what is this language」, and the whole of this change is
-that there is one.
+**There is one copy on this phone and it is READ-ONLY.**
+「前に読み込んだ分は出て欲しい。制作も眺めたい人はいるだろうし、」 OWNER
+2026-09-04. With no signal the app shows the language as it was last loaded, so
+that somebody can look at what they made. **Looking is the whole of it** —
+nothing is made on it, nothing is saved to it, and **it never goes back to the
+server. The road is one way.**
+
+**The one-way line is what stops it becoming a second answer to 「what is this
+language」.** A copy that can travel back is a copy that can win, and
+`syMerge()` (`www/sync.js`) is that bug standing in the tree today: it reads a
+copy it cannot parse as an empty one and overwrites the server's good rows with
+it (`docs/HANDOVER.md` 七章). With no road back, a copy that is wrong costs the
+copy and nothing else.
+
+**Not built yet.** The slices are in memory only, so with no signal there is
+nothing to show today. `docs/STATE.md` says where this stands.
 
 **What an older version left on the disk is still READ, and that is the
 migration.** Every phone carrying this app has `lingua.<id>.<slice>` in
@@ -1626,12 +1652,12 @@ that does remove, and it is only ever a person deleting a language or an
 account; leaving the disk key there would be the slice coming back through
 the fallback on the next launch.
 
-**What that costs is written down rather than hidden.** With no signal there
-is nothing to read — 「電波が無いときはログインできない」 — and **work made
-before it reaches the server is lost if the app closes.** The window is the
-onboarding walk, which makes a language before there is an account to send it
-to; after the door a save goes up the moment it is made (rule 6), so there is
-no other window. `docs/CHANGELOG.md` 2026-09-04 carries it.
+**Work that has not reached the server is lost if the app closes, and that is
+the SPECIFICATION** 「保存するタイミングでエラーが起きるなら、保存されないし。
+そう言うもんじゃないの？」 OWNER 2026-09-04. The window is the onboarding walk,
+which makes a language before there is an account to send it to; after the door
+a save goes up the moment it is made (rule 6), so there is no other window.
+`docs/CHANGELOG.md` 2026-09-04 carries it.
 
 **And `netLangsDown()` fills a language it already knows about.** It used to
 skip one whose id was in the index, which was right while a slice survived a
