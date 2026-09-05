@@ -769,8 +769,14 @@ const GLANGS = (setJson, phasesA) => pg.evaluate(([sj, pa]) => {
 }, [setJson, phasesA === undefined ? null : phasesA]);
 
 const gramOf = () => pg.evaluate(() => ({
-  a: localStorage.getItem('lingua.LA.phases'),
-  g: localStorage.getItem('lingua.LG.phases'),
+  /* slRd() and not localStorage: a slice is in the MEMORY store now
+     (LSL in www/core.js, 2026-09-04), and slRd() is the one thing that
+     answers 「what is this slice」 -- it looks there first and falls back to
+     what an older version of the app left on the disk. Asking localStorage
+     alone is asking half the question, and it answers null for everything
+     this migration writes. */
+  a: slRd('lingua.LA.phases'),
+  g: slRd('lingua.LG.phases'),
   /* the settings are READ and never removed -- docs/DATA_SAFETY.md rule 2 */
   setOrder: (JSON.parse(localStorage.getItem('lingua.set') || '{}') || {}).order,
   /* and what the open language's screen answers with, off the app's own
@@ -783,7 +789,7 @@ const gramOf = () => pg.evaluate(() => ({
      2026-09-04). What is left is the question netLangBack1() actually asks,
      which is PRESENCE and always was: a slice already here is stepped over,
      and one that is not here is filled in from the server. */
-  aThere: localStorage.getItem('lingua.LA.phases')!==null,
+  aThere: slRd('lingua.LA.phases')!==null,
   name: langName,
   mark: SET.gramLang === 1 ? 'set' : 'unset'
 }));
