@@ -1582,16 +1582,15 @@ function vPhoto(){
    anything any more.
 
    SNS_SEAM. A search is a QUESTION ASKED OF SOMEWHERE ELSE, and it is built
-   as one: snsFind(q, done) hands back an answer through a callback, the way
-   postTr() and the AI already do, because that is the shape a request has and
-   a shape cannot be retrofitted onto a function that returns. Nothing at the
-   call site knows or cares where the answer came from -- it types, an answer
-   arrives, the rows are drawn.
+   as one: snsFind(q, done) hands back an answer through a callback, because
+   that is the shape a request has and a shape cannot be retrofitted onto a
+   function that returns. Nothing at the call site knows or cares where the
+   answer came from -- it types, an answer arrives, the rows are drawn.
 
    Until net.js is wired, the answer is assembled out of what has already
-   arrived. That is not the design; it is what the seam is filled with today,
-   the same way `tr` is absent and postTr() answers nothing. When there is a
-   server, snsFind() asks it and everything else is unchanged.
+   arrived. That is not the design; it is what the seam is filled with today.
+   When there is a server, snsFind() asks it and everything else is
+   unchanged.
 
    A PERSON is `{who, hd, av, lname}` -- the same four fields a post already
    carries about its author, and the same four a server row will have. There
