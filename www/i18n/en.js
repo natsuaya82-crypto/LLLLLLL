@@ -359,6 +359,7 @@ defLang('en', (function(){
       'post.del'        : 'Delete',
       'post.del.q'      : 'Delete this post?',
       'post.del.ok'     : 'Post deleted',
+      'post.del.no'     : 'Post could not be deleted',
       'when.now'        : 'now',
       'when.m'          : '{0}m',
       'when.h'          : '{0}h',
