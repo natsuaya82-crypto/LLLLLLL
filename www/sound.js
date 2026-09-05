@@ -60,15 +60,58 @@ HELP.wsys=function(){
       return wsHelpRow(t('dir.'+k), t('dir.'+k+'.eg'));
     }).join('')};
 };
+/* ---- PRESSING A ROW CHOOSES; THE BAR SAVES -----------------------------
+   「保存ボタンがデフォルトなんだから保存がないのがおかしい」 OWNER
+   2026-09-05.
+
+   This screen wrote the language on the press: a thumb landing on the wrong
+   row changed the writing system, rebuilt the font and redrew the app, with
+   nothing between the touch and the change. Every other screen with fields
+   holds what was chosen and writes it from the Save in the corner -- www/shell.js
+   § KEEP -- and this is the same thing said about a list of rows rather than
+   a box of text: the tick is what moves under the finger, the Save turns
+   gold, and the language moves when it is pressed.
+
+   Two fields and one buffer, filed under the screen. */
+function wsKeepOn(){
+  /* Not in somebody else's language: save() refuses one, so a buffer here
+     would put a Save in the bar that could not write. */
+  if(langLocked()) return;
+  keepOn(keepKey(), {ws:wsys(), dir:scriptDir()}, wsKeepSave);
+}
+/* What the ticks read: what has been chosen, or what the language holds. */
+function wsKept(f){ return keepVal(keepKey(), f); }
+/* THE PLAN IS ANSWERED ON THE PRESS AND NOT AT THE SAVE.
+   「+を押したらそのまま課金のポップが出るだけでしょ？」 OWNER 2026-09-01 --
+   the rows are drawn on every plan and the one that is not yours answers
+   with the popup where your thumb is, which is where somebody is looking. */
+function wsPick(k){
+  if(upStop(can('wsys'))) return;
+  if(WSYS.indexOf(k)<0) return;
+  keepSet('ws', k); render();
+}
+function dirPick(k){
+  if(DIRS.indexOf(k)<0) return;
+  if(upStop(can('dir'))) return;
+  keepSet('dir', k); render();
+}
+/* And the write, which is still setWsys() and setScriptDir() in www/wsys.js
+   -- the one place either of those is written down, font rebuild and all.
+   Nothing is written here beside them. */
+function wsKeepSave(v, done){
+  if(v.hasOwnProperty('ws')) setWsys(String(v.ws));
+  if(v.hasOwnProperty('dir')) setScriptDir(String(v.dir));
+  done(true);
+}
 function vWsys(){
-  /* Every kind, on every plan. Pressing one somebody has not bought is
-     answered by setWsys() with the popup -- 「無料でもplusでもproでも同じ
-     画面なのよ」 OWNER 2026-09-01. */
+  /* Every kind, on every plan, and the buffer registered before the bar is
+     built -- keepBtnHTML() inside navTop() is what puts the Save there. */
+  wsKeepOn();
   return '<div class="view">'+navTop('', helpQ('wsys'))+'<div class="body">'+
     WSYS.map(function(k){
-      return '<button class="set"' + DO('setWsys', [k]) + '>'+
+      return '<button class="set"' + DO('wsPick', [k]) + '>'+
         '<span class="sl">'+esc(t('ws.k.'+k))+'</span>'+
-        '<span class="sv">'+(wsys()===k? ICON_TICK : '')+'</span></button>';
+        '<span class="sv">'+(wsKept('ws')===k? ICON_TICK : '')+'</span></button>';
     }).join('')+
     /* Which way it is written. Here rather than in the person's settings
        because it is the language's -- one language, one answer, and it goes
@@ -83,9 +126,9 @@ function vWsys(){
        with the popup is not a row nothing can press. */
     '<div class="sec">'+t('dir.title')+'</div>'+
     DIRS.map(function(k){
-      return '<button class="set"' + DO('setScriptDir', [k]) + '>'+
+      return '<button class="set"' + DO('dirPick', [k]) + '>'+
         '<span class="sl">'+esc(t('dir.'+k))+'</span>'+
-        '<span class="sv">'+(scriptDir()===k? ICON_TICK : '')+'</span></button>';
+        '<span class="sv">'+(wsKept('dir')===k? ICON_TICK : '')+'</span></button>';
     }).join('')+
     /* Roman or your own letters is the same kind of decision -- it changes
        every screen in the app and nobody flips it twice a day -- so it sits

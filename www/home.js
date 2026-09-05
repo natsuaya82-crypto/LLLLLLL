@@ -206,10 +206,38 @@ function vForm(){
    `HELP.kb = function(){ ... }`, in the file the screen lives in, returning
    the title and the body. Nothing here knows what a keyboard is. */
 var HELP={};
+/* HOW THE MARK OPENS, written once: helpQ() builds it and helpQCut() below
+   finds it again in whatever a screen handed the bar. Two places matching a
+   string by hand is two places that drift. */
+var NAVQ_OPEN='<button class="navq"';
+/* `margin-left:0` because `.navq` carries `margin-left:auto`, which is what
+   stood it at the far end of the bar. It stands beside the name now
+   (www/shell.js § navTop) and the class is worn by nine other corners on six
+   screens, so the auto is undone here rather than taken off the class. */
 function helpQ(k){
   if(!HELP[k]) return '';
-  return '<button class="navq"' + DO('openHelp', [k]) +
+  return NAVQ_OPEN + ' style="margin-left:0"' + DO('openHelp', [k]) +
     ' aria-label="'+esc(t('help.q'))+'">?</button>';
+}
+/* THE MARK, TAKEN OUT OF WHAT A SCREEN PUT IN THE CORNER.
+   「？を文字の横に動かしたらいけない？」 OWNER 2026-09-05.
+
+   Every screen with something to explain hands `helpQ(...)` to navTop() as
+   part of `right`, and `right` is also where a Save, a delete and the
+   keyboard's ... arrive. So the bar takes the mark back out and stands it
+   next to the name; everything else in `right` is left exactly where it was.
+   Nothing that calls navTop() changed.
+
+   Returns the pair: the mark, and what is left. A `.navq` button holds one
+   character and no nested button, so the first `</button>` after it is its
+   own. */
+function helpQCut(right){
+  var s=String(right||''), i=s.indexOf(NAVQ_OPEN), j;
+  if(i<0) return ['', s];
+  j=s.indexOf('</button>', i);
+  if(j<0) return ['', s];
+  j=j+9;
+  return [s.slice(i, j), s.slice(0, i)+s.slice(j)];
 }
 function openHelp(k){
   var f=HELP[k], o;

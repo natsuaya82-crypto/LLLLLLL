@@ -898,6 +898,16 @@ function secAdd(label, doAttr, aria){
 function navTop(count, right){
   var h=here(), pv=prevPage(), n=h.a? '' : tocNum(h.r);
   var lab = pv? pageName(pv.r, pv.a) : t('tab.build');
+  /* THE ? STANDS BESIDE THE NAME OF THE SCREEN, not at the far end of the
+     bar. 「？を文字の横に動かしたらいけない？」 OWNER 2026-09-05.
+
+     A screen hands it in with everything else it wants in the corner, so it
+     is taken back out here -- helpQCut() in www/home.js, which is where the
+     mark is built and therefore where what it looks like is written down.
+     Whatever else was in `right` is untouched and still goes to the corner:
+     the Save, the delete, the keyboard's ... . */
+  var cut=helpQCut(right), mark=cut[0];
+  right=cut[1];
   /* An arrow and nothing else. It said where it goes -- Home, Build, Profile
      -- next to the name of where you ARE, which is two place names side by
      side and the smaller of them is the one you are leaving.
@@ -924,6 +934,7 @@ function navTop(count, right){
        than the door is worth. A `data-do` on any element is pressed. */
     '<span class="navt"' + (h.r==='settings'? DO('adminTap') : '') + '>'+
       esc(pageName(h.r, h.a))+'</span>'+
+    mark+
     (count? '<span class="navc">'+count+'</span>' : '')+
     /* SAVE, ON EVERY SCREEN THAT HAS FIELDS, GREY UNTIL SOMETHING IS
        CHANGED. 「なにもない時は薄い灰色、何か打ったら金にする」「これが決定
