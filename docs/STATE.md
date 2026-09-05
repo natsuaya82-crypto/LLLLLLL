@@ -807,23 +807,23 @@ under `lingua.sess`.
 
 | 本文のどこ | コードでの場所 |
 |---|---|
-| 一 設計を通すか | `docs/ONE.md`（`claude/one`）全体、`docs/FEATURE_RULES.md` §「消えないための仕組みを一本にする」 |
-| 一 止まっている二つの穴 | 壊れたものの上書き＝`www/backup.js` の `bkSound()` を「読めない＝無い」として扱う所、保存の失敗＝34 か所のうち 31 か所（`docs/ONE.md` 一章 A・B） |
-| 二 版の大きさ | `docs/ONE.md` 4-4 ①、`slice` テーブル、`netSlicePut()` |
+| 一 設計を通すか | `docs/FEATURE_RULES.md` §「消えないための仕組みを一本にする」 |
+| 一 止まっている二つの穴 | 壊れたものの上書き＝`www/backup.js` の `bkSound()` を「読めない＝無い」として扱う所、保存の失敗＝34 か所のうち 31 か所 |
+| 二 版の大きさ | `slice` テーブル、`netSlicePut()` |
 | 二 直した時刻の粒度 | `docs/FEATURE_RULES.md` §「同期でぶつかったら、後から『直した』ほうが残るべき」 |
 | 三 空のキーボード | `www/keyboard.js:137` `saveKb()` が `"null"` を書く。`www/backup.js:82` `bkSound()`、`:183` `bkPush()`。離れる所は `www/core.js:185` `:530`、`www/settings.js:519` `:684`、`www/keyboard.js:3634`。`docs/EXPIRY.md`（`claude/keep2`・`claude/keep4`）1番 |
-| 四 戻す画面 | `docs/ONE.md` 4-4 ⑤、`bkTake()` / `bkRestore()`、`docs/RECOVERY.md` |
-| 五 まとめてか一部か | `docs/ONE.md` 4-4 ② |
-| 六 小さくなったら書かない | `docs/ONE.md` 4-4 ⑥ と三章 ⑨、`netKeeps()` / `NET_SHRANK` |
+| 四 戻す画面 | `bkTake()` / `bkRestore()`、`docs/RECOVERY.md` |
+| 五 まとめてか一部か | 集めた先が消えました（下） |
+| 六 小さくなったら書かない | `netKeeps()` / `NET_SHRANK` |
 | 七 既定の値 | `www/phases.js:98-125` `migrateGramLang()`、`www/core.js:220` `setDefaults()` が `order:'SOV'` を入れる。`docs/EXPIRY.md`（`claude/keep4`）4番の末尾 |
 | 八 ★50 | `www/net.js:2295-2296` `netSearchSaved()`、`NET_PAGE=50`（`www/net.js:1490`）、`www/sns.js:1272` `SET.saved=got;`。`docs/EXPIRY.md` 5番 |
 | 九 三世代 | `ios/App/App/LinguaShare.swift:165-173` `keep()`、`docs/RECOVERY.md:75-92`、`docs/FEATURE_RULES.md` §「バックアップの三世代と、元に戻せる段数は、いまのまま」 |
 | 十 保存ボタンの有無 | `docs/FEATURE_RULES.md` §「保存を押したときだけ、保存されているものが変わる」 |
 | 十一 検索履歴 | `www/net.js:2357-2364` `netRecentAdd()`（消す側は成功、入れる側の失敗の受け口が `bad \|\| function(){}`）。`docs/RISK.md`（`claude/risk`）7番 |
 | 十一 言語が二つ | `www/boot.js:102` `netLangsDown()` と `:110` `netLangSync()`、`www/net.js:1270-1272`、`www/net.js:984` `netLangRow()`。扉側は `www/onboard.js:880` と `:1817`。`docs/RISK.md` 8番 |
-| 訊かなくてよくなったもの | `docs/FEATURE_RULES.md` §「オンライン前提に切り替える」（その下の項目は SUPERSEDED）、同 §「★は50件まで。一筆の160点は外す」、同 §「できないことは、有料と同じ画面に同じ形で出す」、`docs/ONE.md` 4-4 ③④、`docs/HIDEFREE.md`（`claude/kbfree3`） |
+| 訊かなくてよくなったもの | `docs/FEATURE_RULES.md` §「オンライン前提に切り替える」（その下の項目は SUPERSEDED）、同 §「★は50件まで。一筆の160点は外す」、同 §「できないことは、有料と同じ画面に同じ形で出す」、`docs/HIDEFREE.md`（`claude/kbfree3`） |
 
-**集めた先:** `docs/ONE.md`（`claude/one`）、`docs/EXPIRY.md`（`claude/keep4`
+**集めた先:** `docs/EXPIRY.md`（`claude/keep4`
 と `claude/keep2`）、`docs/HIDEFREE.md`（`claude/kbfree3`）、`docs/RISK.md`
 （`claude/risk`）7番・8番、`docs/FEATURE_RULES.md` の 2026-09-04 の決定ログ。
 **集めたセッションはコードを一行も変えていません。検査も一本も回していません。

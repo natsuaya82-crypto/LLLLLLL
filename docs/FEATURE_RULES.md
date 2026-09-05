@@ -299,9 +299,9 @@ the reasoning — a reason can be re-derived, a decision cannot.
   `docs/DATA_SAFETY.md`、`docs/ARCHITECTURE.md`、`docs/EXPIRY.md`
 - Implementation status: **着手していません。コードは別のセッションです。**
 
-### `docs/ONE.md` を消す
+### `ONE.md` を消す
 - Date: 2026-09-04
-- Area: 書いたもの（`docs/ONE.md`）
+- Area: 書いたもの（ONE.md ── 消しました）
 
 - Decision:
 
@@ -314,7 +314,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
   読みます。**
 - Affected features: 無し
 - Affected data: 無し
-- Affected docs: `docs/ONE.md` 本体と、そこを指していた `docs/STATE.md`・
+- Affected docs: 消した `ONE.md` 本体と、そこを指していた `docs/STATE.md`・
   `docs/FEATURE_RULES.md`・`docs/RECOVERY.md` の行。`tools/docs-baseline.txt`
 - Implementation status: **入りました。**同じ日に消しました。
 
@@ -545,7 +545,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
   黙って一つ減ることがある件と、同じ言語が一覧に二つ並ぶことがある件。
 - Affected features: 保存・同期・復元・運営側の復旧
 - Affected data: 版が積まれる。部分ごと、一回 12 KB 〜 685 KB
-- Affected docs: この項目、`docs/ONE.md`、`docs/STATE.md` § 4a、`docs/DATA_SAFETY.md`
+- Affected docs: この項目、`docs/STATE.md` § 4a、`docs/DATA_SAFETY.md`
 - Implementation status: **書き始めてよい。**`claude/one` の設計に沿って
 
 ### 【差し替え済み】お題のタグは、お題そのものが持っている十言語から出す
@@ -605,7 +605,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
   ルールなんだけど、それ守ってないからこうなるんじゃないの？」
 - Affected features: 文法の語順の既定値。**発音は変えません**
 - Affected data: 文法の語順を触っていない人の欄が、空のままになります
-- Affected docs: この項目、`docs/EXPIRY.md` 4番、`docs/ONE.md`
+- Affected docs: この項目、`docs/EXPIRY.md` 4番
 - Implementation status: **未実装。**オンライン前提への書き換えと同じ回で
 
 ### バックアップのファイルも無くす。★の51件目は一番古いのを押し出す
@@ -634,7 +634,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected features: ㉔ バックアップ ── **章ごと無くなります**
 - Affected data: **減ります。**`Documents/Languages/` に書かれていたファイルと、
   その三世代。**サーバーのバックアップがそれを引き受けます。**
-- Affected docs: この項目、`docs/ONE.md`、`docs/DATA_SAFETY.md`、
+- Affected docs: この項目、`docs/DATA_SAFETY.md`、
   `CLAUDE.md` 規則11、`docs/STATE.md`、`supabase/setup.md`
 - Implementation status: **設計に入れ直します（`claude/one`）。**
 
@@ -702,7 +702,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
   写しなど）が要らなくなります。**まだリリースしていないので、いま iPhone に
   溜まっている未送信の変更はありません** ──「溜まってるのはないから別に消えて
   もいい」OWNER。**移行で拾う仕事はありません。**
-- Affected docs: この項目、`docs/ONE.md`（設計）、`docs/DATA_SAFETY.md`、
+- Affected docs: この項目、`docs/DATA_SAFETY.md`、
   `docs/ARCHITECTURE.md`、`CLAUDE.md` 規則22
 - Implementation status: **設計中（`claude/one`）。**リリース前に潰す
   ──「まだリリースしてないから、リリースする前にバグは潰したい」
@@ -752,7 +752,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
   番号が、「後から変えたほうが残る」には時刻が要ります。**片方では足りません。**
 - Affected features: 保存・同期・復元・運営側の復旧
 - Affected data: **増えます。**版ごとに、サーバーの番号と、iPhone が押した時刻
-- Affected docs: この項目、`docs/ONE.md`（設計）、`docs/DATA_SAFETY.md`
+- Affected docs: この項目、`docs/DATA_SAFETY.md`
 - Implementation status: **設計中（`claude/one`）。**
 
   **決まっていないことが一つ残っています ── 時計が狂っている iPhone。**
