@@ -206,8 +206,12 @@ const r = await pg.evaluate(({ s }) => {
       go: kbStand,
       sel: '.kbnm', v: 'the small one',
       read: function(){ var b = kbBoards()[1]; return String((b && b.nm) || ''); } },
-    { n: 'a grammar stage',
-      go: function(){ goTab('build'); go('gram', 'neg'); },
+    /* 「規則>で規則だけの見開きでメモみたいな画面全体にかけるページにして」
+       OWNER 2026-09-05. What a stage says its rule is has a page of its own
+       now -- openStRules() in www/phases.js -- and its buffer is filed under
+       that form, exactly as a note's is. */
+    { n: "what a grammar stage says its rule is",
+      go: function(){ goTab('build'); go('gram', 'neg'); openStRules('neg'); },
       sel: '[data-in="stSetRules"]', v: 'it goes after the verb',
       read: function(){ return String((STG.rules && STG.rules.neg) || ''); } },
     { n: 'a note',
@@ -393,8 +397,11 @@ const more = await pg.evaluate(() => {
   goTab('profile'); go('world'); go('wldart', aid);
   missing.push(typeOn('#wldart-t', 'q'));
   goTab('build'); go('gram', 'neg');
-  missing.push(typeOn('[data-in="stSetRules"]', 'q'));
   missing.push(typeOn('[data-in="stNote"]', 'q'));
+  /* The rule is a page of its own, so it is typed into there and not on the
+     stage. openStRules() is the door. */
+  goTab('build'); go('gram', 'neg'); openStRules('neg');
+  missing.push(typeOn('[data-in="stSetRules"]', 'q'));
   goTab('build'); go('notes'); openNote(0);
   missing.push(typeOn('#nt-t', 'q'));
   missing.push(typeOn('#nt-b', 'q'));

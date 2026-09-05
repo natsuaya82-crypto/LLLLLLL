@@ -365,12 +365,16 @@ want('and so does the word order', h.order !== '', true);
 /* ---- 10: a word the dictionary does not have ----------------------------
    The row is exRowHTML() in www/wordsheet.js and a stage's Lines are one of
    the two places it is drawn -- STG.ex, which is this chapter's. `tuf` is in
-   the seeded dictionary and `rice` is not. */
+   the seeded dictionary and `rice` is not.
+
+   The examples are a PAGE of their own now -- 「例文もそう」 OWNER 2026-09-05
+   -- so this opens that page rather than the stage they used to sit inside. */
 const k = await pg.evaluate(() => {
   stEx('neg').length = 0;
   stEx('neg').push({ lb: 'a', ln: 'tuf rice', gl: 'b' });
   saveStg();
-  go('gram', 'neg');
+  openStEx('neg');
+  render();
   const line = document.querySelector('.exl');
   return {
     reads: line && line.textContent,
@@ -627,19 +631,24 @@ const g2 = await pg.evaluate(() => {
   WORDS.push({ hw:'zkano', pos:'n',  mns:['a thing'], at:1 });
   WORDS.push({ hw:'ztir', pos:'v',   mns:['does'], at:1 });
   const show = () => { window.route = 'gram'; NAV = [{ r:'gram', a:'v2:order' }]; render(); };
+  /* TWO rows of .seg on this page now -- the six orders, which are
+     `.segs.scrollx`, and this language's own three words, which are not.
+     「語順svoとか俺のページ並んでないけど？」 OWNER 2026-09-05 put the first
+     one there; everything below is about the second, so it says which. */
+  const SEG = '#app .segs:not(.scrollx) .seg';
   const words = () => Array.prototype.map.call(
-    document.querySelectorAll('#app .segs .seg'), (b) => b.textContent);
+    document.querySelectorAll(SEG), (b) => b.textContent);
   /* Says what it found rather than throwing on `undefined.click`. A check
      that dies with a TypeError names the wrong thing: the fault is "the row
      has n buttons", and a stack trace about `click` sends the next reader to
      the wrong file. */
   const press = (i) => {
-    const b = document.querySelectorAll('#app .segs .seg');
+    const b = document.querySelectorAll(SEG);
     if (!b[i]) throw new Error('no word ' + i + ' to press: the row has ' + b.length);
     b[i].click();
   };
   const lit = () => Array.prototype.map.call(
-    document.querySelectorAll('#app .segs .seg'), (b) => b.className.indexOf('on') >= 0)
+    document.querySelectorAll(SEG), (b) => b.className.indexOf('on') >= 0)
     .indexOf(true);
 
   /* Nobody has chosen anything yet. A block above this one presses the old
@@ -694,7 +703,7 @@ want('first and last change places, and THAT is what says the order',
 want('the words on screen followed', g2.moved, true);
 want('and nothing is left lifted afterwards', g2.litAfter, -1);
 
-/* ---- 41-48: the noun chapter shows what this language really does --------
+/* ---- 41-48: a chapter shows what this language really does --------------
    docs/GRAMMAR-V2-SPEC.md §14 Nouns: 「ユーザーが『りんご』『りんごたち』などを
    実際の言語で作る。例えば poko / poko-mi」
 
@@ -702,6 +711,10 @@ want('and nothing is left lifted afterwards', g2.litAfter, -1);
    translation takes. A row that showed the rule and not what it makes of this
    word would look identical and say nothing, which is why every claim below is
    about the surface that came out.
+
+   TWO CHAPTERS, because a plural is a form and has one of its own now. What is
+   left in 名詞 is the marks -- a word made in the 助詞 stage -- and that split
+   is the thing being held: a rule drawn in both would be one fact on two pages.
 
    And it must not build a second rule editor: the rules live on the word side
    and the marks are words made in the 助詞 stage, so a row goes back to
@@ -715,56 +728,60 @@ const g2n = await pg.evaluate(() => {
   stMarkSet('part');
   STG.fm = [
     { id:'p1', pos:'n', fm:'pl', at:'end', drop:0, add:sp('mi'), when:'' },
-    /* A SECOND way of making a plural, for nouns ending in a letter this one
-       does not end in. Two things at once, and both silent:
+    /* A SECOND way of making a plural, for nouns ending in a letter neither of
+       these ends in. 「過去形でもいろんな規則作れるよね？」 is the same sentence
+       about tense: a form is not one rule, so BOTH are drawn and each row has
+       to be about the rule it names. A feature is spent on the first rule that
+       matches it, so asking the engine for NUMBER=PLURAL rather than for THIS
+       RULE hands both rows the same answer -- the same word, under two
+       different numbers, both looking right.
 
-       it must draw NO row, because an unchanged row is the app claiming a
-       form the language has not got -- and this is the shape that tests it,
-       since a rule of some OTHER feature would be filtered out by the chapter
-       before the question was ever asked;
-
-       and the row that IS drawn must be the plain rule's. A feature is spent
-       on the first rule that matches it, so asking the engine for
-       NUMBER=PLURAL rather than for THIS RULE hands both rows the same answer
-       -- the same word, under two different names, both looking right. */
+       The one that says nothing about this word says what it ADDS instead. A
+       row showing an unchanged word would be the app claiming a form the
+       language has not got, and no row at all would be a rule somebody wrote
+       that they cannot see. */
     { id:'p2', pos:'n', fm:'pl', at:'end', drop:0, add:sp('zz'), when:'x',
       wend:sp('q') },
-    /* and a rule about VERBS, which is the verbs chapter's and must not be
-       shown here as well */
+    /* and a rule about VERBS, which is the past chapter's and must not be
+       shown in either of these */
     { id:'p3', pos:'v', fm:'pst', at:'end', drop:0, add:sp('ka'), when:'' }
   ];
-  window.route = 'gram'; NAV = [{ r:'gram', a:'v2:n' }]; render();
-  /* Only the rows that ARE a form: a chapter also lists what this language
-     has not said yet, and those carry 作成 instead of a word. */
-  const rows = Array.prototype.filter.call(
-      document.querySelectorAll('#app .stslot'), (b) => !!b.querySelector('.psi'))
-    .map((b) => ({
-      lab: b.querySelector('.psm').textContent,
-      from: b.querySelector('.psw').textContent,
-      to: b.querySelector('.psi').textContent,
-      go: b.getAttribute('data-do'), a: b.getAttribute('data-a') }));
+  const read = (id) => {
+    window.route = 'gram'; NAV = [{ r:'gram', a:'v2:' + id }]; render();
+    return Array.prototype.filter.call(
+        document.querySelectorAll('#app .stslot'), (b) => !!b.querySelector('.psi'))
+      .map((b) => ({
+        lab: b.querySelector('.psm').textContent,
+        from: b.querySelector('.psw').textContent,
+        to: b.querySelector('.psi').textContent,
+        go: b.getAttribute('data-do'), a: b.getAttribute('data-a') }));
+  };
+  const rows = read('pl'), marks = read('n');
   WORDS.length = wl;
   STG.fm = JSON.parse(wasFm);
   if (!wasPart) delete STG.set.part;
-  return { n: rows.length, rows: rows,
+  return { n: rows.length, rows: rows, marks: marks.length,
            pl: rows.filter((r) => r.to.indexOf('mi') >= 0)[0] || null,
-           mark: rows.filter((r) => r.to.indexOf(' ') >= 0)[0] || null,
-           tense: rows.filter((r) => r.to.indexOf('ka') >= 0).length };
+           other: rows.filter((r) => r.to === 'zz')[0] || null,
+           mark: marks.filter((r) => r.to.indexOf(' ') >= 0)[0] || null,
+           tense: rows.concat(marks).filter((r) => r.to.indexOf('ka') >= 0).length };
 });
 
-want('the noun has exactly the forms this language can make of it', g2n.n, 2);
-want('a rule that says nothing about this word draws no row',
-     g2n.rows.filter((r) => r.from === r.to).length, 0);
-want('and the verbs chapter is not shown here as well', g2n.tense, 0);
+want('the plural chapter draws every rule this language wrote for it', g2n.n, 2);
+want('the row that says nothing about this word says what it adds instead',
+     g2n.other && g2n.other.from, '');
+want('and the tense is drawn in neither of these chapters', g2n.tense, 0);
 
-/* `tuf` is the first noun of the language this check opens -- g2Nouns() shows
-   the language's own word, not one the check invented, which is the point. */
+/* `tuf` is the first noun of the language this check opens -- the chapter
+   shows the language's own word, not one the check invented, which is the
+   point. */
 want('the plural is the word this language really makes',
      g2n.pl && g2n.pl.to, 'tufmi');
 want('from the word it is a form of', g2n.pl && g2n.pl.from, 'tuf');
 want('and pressing it goes to where that rule is written',
      g2n.pl && g2n.pl.go, 'openFmr');
 
+want('the noun chapter is the marks and only the marks', g2n.marks, 1);
 want('the mark stands apart, which is how this app writes one',
      g2n.mark && g2n.mark.to, 'tuf ga');
 want('and pressing it goes to the word it is', g2n.mark && g2n.mark.go, 'openSlot');
@@ -814,46 +831,54 @@ const g2v = await pg.evaluate(() => {
   return { chaps: chaps, ids: g2Chaps().map((c) => c.id) };
 });
 
-want('the page is a list of chapters, each one its own', g2v.ids.length, 8);
-want('the nouns chapter holds only what a noun does',
-     g2v.chaps.n.join(' '), 'Plural:tufmi');
-/* Past and passive, and NOT the negation -- which is the next chapter's. */
-want('a verb shows the endings this language gives it',
-     g2v.chaps.v.indexOf('Past:zlumaka') >= 0, true);
+/* Eighteen, because A FORM IS A CHAPTER. There was one chapter called 動詞
+   holding eleven forms behind one 作成 row each, so a language wanting two ways
+   of making a past tense had nowhere to put the second -- 「過去形タップしたら
+   ❶みたいに並べたほうがいいんじゃないの？」 OWNER 2026-09-05. The number is
+   the ratchet: it moves when a chapter is added on purpose. */
+want('the page is a list of chapters, each one its own', g2v.ids.length, 18);
+/* The nouns chapter is the MARKS and nothing else now. A plural is a form, so
+   it has a chapter of its own, and drawing it here as well would be the same
+   rule on two pages -- which is the bug this file's §65-70 counts. */
+want('the nouns chapter holds only what is not a form', g2v.chaps.n.join(' '), '');
+want('a plural is its own chapter', g2v.chaps.pl.join(' '), '\u2776:tufmi');
+/* Past and passive, each in its own chapter, and NOT in each other's. */
+want('the past chapter shows the ending this language gives a verb',
+     g2v.chaps.pst.join(' '), '\u2776:zlumaka');
 want('a rule that goes on the front comes out on the front',
-     g2v.chaps.v.indexOf('Passive:ezluma') >= 0, true);
-want('and the negation is not drawn there',
-     g2v.chaps.v.join(' ').indexOf('nn'), -1);
-want('so the verbs chapter has exactly two rows', g2v.chaps.v.length, 2);
+     g2v.chaps.pas.join(' '), '\u2776:ezluma');
+want('the negation is drawn in the negation chapter',
+     g2v.chaps.neg.join(' '), '\u2776:zlumann');
+want('and nowhere else', g2v.chaps.pst.join(' ').indexOf('nn'), -1);
+/* Numbered rather than named, because every rule in a chapter makes the same
+   form: naming them would be one name printed five times. */
+want('the rules of a chapter are numbered', g2v.chaps.pst[0].split(':')[0], '\u2776');
 
 /* ---- 57-64: negation, and the three ways a language may write one --------
    docs/GRAMMAR-V2-SPEC.md §4: 「ただし『必ず PREFIX になる』と決めつけない」.
    An ending, a beginning, or A WORD OF ITS OWN -- and the last is not a
    setting of the first two: it changes the SENTENCE, not the verb.
 
-   So the row is a pair of LINES, and the same row reads for all three. What
-   is held here is that each way produces the line that way really makes, and
-   that where a negation WORD lands is the ENGINE's answer -- this language's
-   chosen position -- and not a guess made while drawing.
+   The chapter used to draw a PAIR OF LINES -- `mi luma` over `mi na luma` --
+   which read the same for all three ways and was the reason for its shape.
+   「4の否定もなにすればいいかわからんし」 OWNER 2026-09-05: a pair of lines
+   says what a rule DOES and never what the rules ARE, so a language with no
+   rule saw nothing at all and one with three saw three lines it could not tell
+   apart. The chapter is the LIST of its rules now, like every other form.
 
-   Nothing throws in any of it. A negation that never arrives leaves the
-   positive line printed twice, which looks like a language that does not
-   negate rather than like a fault. */
-const neg = (fm, opts) => pg.evaluate(({ fm, o }) => {
+   So this is asked in two halves, because it is two facts. The rules are asked
+   of the chapter. Where a negation WORD lands is not a rule and is not drawn
+   there -- it is the arrangement this language chose, applied by the engine --
+   so it is asked of gLay(), which is the one place a phrase is arranged and
+   which the chapter used to reach through.
+
+   Nothing throws in any of it. A negation that never arrives leaves the verb
+   printed unchanged, which looks like a language that does not negate rather
+   than like a fault. */
+const neg = (fm) => pg.evaluate((fm) => {
   const sp = (w) => w.split('').map((u) => ({ l:'', u:u }));
   const wasFm = JSON.stringify(STG.fm || []), wl = WORDS.length;
-  const hidden = [];
   WORDS.push({ hw:'zluma', pos:'v', mns:['eat'], at:1 });
-  /* The word this language says no with. It lives in the 否定 stage's slot,
-     which is where it has always lived; this check's language has a dictionary
-     of one word, so it is seeded here and taken away again. */
-  if (!o.noWord)
-    WORDS.push({ hw:'znak', pos:'part', mns:['not'], at:1, slot:'neg.not' });
-  if (o.noWord)
-    for (let i = WORDS.length - 1; i >= 0; i--)
-      if (WORDS[i].slot === 'neg.not') hidden.push(WORDS.splice(i, 1)[0]);
-  if (o.negp) { if (!STG.gpos) STG.gpos = {}; STG.gpos.negp = o.negp; }
-  const wasNegp = STG.gpos && STG.gpos.negp;
   STG.fm = fm.map((r) => ({ id:r.id, pos:r.pos, fm:r.fm, at:r.at, drop:0,
                             add:sp(r.add), when:r.when || '',
                             wend:r.wend? sp(r.wend) : [] }));
@@ -866,67 +891,69 @@ const neg = (fm, opts) => pg.evaluate(({ fm, o }) => {
       to: b.querySelector('.psi').textContent,
       go: b.getAttribute('data-do') }));
   WORDS.length = wl;
-  hidden.forEach((w) => WORDS.push(w));
   STG.fm = JSON.parse(wasFm);
-  return { rows: rows, negp: wasNegp };
-}, { fm, o: opts || {} });
+  return rows;
+}, fm);
 
-/* 1. a word of its own. Where it goes is what this language answered, so the
-   same word is asked for twice -- after the verb and before it -- and the two
-   lines have to differ. A drawing that put it in a fixed place would give the
-   same answer to both. */
-const nAfter = await neg([], { negp:'after' });
-const nBefore = await neg([], { negp:'before' });
-const rowOf = (r) => r.rows.filter((x) => x.from !== x.to && x.to.indexOf(' ') >= 0)
-                           .filter((x) => x.go === 'openSlot')[0] || null;
-
-want('a negation written as a word makes a longer line',
-     rowOf(nAfter) && rowOf(nAfter).to, 'tuf zluma znak');
-want('and the language decides which side it lands',
-     rowOf(nBefore) && rowOf(nBefore).to, 'tuf znak zluma');
-want('the positive line is the same either way',
-     rowOf(nAfter) && rowOf(nAfter).from, 'tuf zluma');
-want('and pressing it goes to the word it is',
-     rowOf(nAfter) && rowOf(nAfter).go, 'openSlot');
-
-/* 2. an ending, and a beginning. The verb changes and the rest of the line
-   does not -- which is the half a rebuilt line would get wrong. */
-const nEnd = await neg([{ id:'n1', pos:'v', fm:'neg', at:'end', add:'nn' }],
-                       { noWord:true });
-const nPre = await neg([{ id:'n2', pos:'v', fm:'neg', at:'start', add:'un' }],
-                       { noWord:true });
-const ruleRow = (r) => r.rows.filter((x) => x.go === 'openFmr' &&
-                                            x.from.indexOf(' ') >= 0)[0] || null;
+/* 1. an ending, and a beginning. The verb changes, and the row says which
+   word it was made from -- which is the half a row built from the wrong word
+   would get wrong. */
+const nEnd = await neg([{ id:'n1', pos:'v', fm:'neg', at:'end', add:'nn' }]);
+const nPre = await neg([{ id:'n2', pos:'v', fm:'neg', at:'start', add:'un' }]);
 
 want('a negation written as an ending goes on the verb',
-     ruleRow(nEnd) && ruleRow(nEnd).to, 'tuf zlumann');
+     nEnd[0] && nEnd[0].to, 'zlumann');
 want('one written as a beginning goes in front of the verb',
-     ruleRow(nPre) && ruleRow(nPre).to, 'tuf unzluma');
-want('and the rest of the line is untouched',
-     ruleRow(nPre) && ruleRow(nPre).from, 'tuf zluma');
+     nPre[0] && nPre[0].to, 'unzluma');
+want('and the row says the word it was made from',
+     nPre[0] && nPre[0].from, 'zluma');
 want('pressing it goes to where that rule is written',
-     ruleRow(nEnd) && ruleRow(nEnd).go, 'openFmr');
+     nEnd[0] && nEnd[0].go, 'openFmr');
 
-/* 3. two ways of saying no, which a language may have: one for verbs ending
-   in a letter, one for the rest. Both rows are drawn -- showing only the
-   first would be this page choosing which of somebody's rules counts -- and
-   each row has to be about the rule it names.
+/* 2. two ways of saying no, which a language may have: one for verbs ending
+   in a letter, one for the rest. 「過去形でもいろんな規則作れるよね？」 is the
+   same sentence about tense. Both rows are drawn -- showing only the first
+   would be this page choosing which of somebody's rules counts -- and each row
+   has to be about the rule it names.
 
    That last half is the one that goes silently wrong. A feature is spent on
    the first rule that matches it, so asking the engine for NEGATION rather
    than for THIS RULE gives both rows the same word, under two different
-   names, both looking perfectly right. */
+   numbers, both looking perfectly right. */
 const nTwo = await neg([{ id:'n3', pos:'v', fm:'neg', at:'end', add:'xx',
                           when:'x', wend:'a' },
-                        { id:'n4', pos:'v', fm:'neg', at:'end', add:'yy' }],
-                       { noWord:true });
-const twoRows = nTwo.rows.filter((x) => x.go === 'openFmr' &&
-                                        x.from.indexOf(' ') >= 0);
-want('both ways of saying no are drawn', twoRows.length, 2);
+                        { id:'n4', pos:'v', fm:'neg', at:'end', add:'yy' }]);
+want('both ways of saying no are drawn', nTwo.length, 2);
 want('the one for verbs ending in a is the one that ends in a',
-     twoRows.filter((x) => x.to === 'tuf zlumaxx').length, 1);
+     nTwo.filter((x) => x.to === 'zlumaxx').length, 1);
 want('and the other row is the OTHER rule, not the same word twice',
-     twoRows.filter((x) => x.to === 'tuf zlumayy').length, 1);
+     nTwo.filter((x) => x.to === 'zlumayy').length, 1);
+want('and they are numbered, not named the same thing twice',
+     nTwo.map((x) => x.lab).join(''), '\u2776\u2777');
+
+/* 3. a word of its own, which is not a rule at all. Where it goes is what this
+   language answered -- STG.gpos.negp, set on the 否定 stage's own page -- so
+   the same word is asked for twice, after the verb and before it, and the two
+   lines have to differ. A drawing that put it in a fixed place would give the
+   same answer to both. */
+const negWord = await pg.evaluate(() => {
+  const wl = WORDS.length, was = STG.gpos && STG.gpos.negp;
+  WORDS.push({ hw:'zluma', pos:'v', mns:['eat'], at:1 });
+  WORDS.push({ hw:'znak', pos:'part', mns:['not'], at:1, slot:'neg.not' });
+  const line = () => gLay([findWord('tuf'), findWord('zluma'), gSlot('neg', 'not')])
+    .map((w) => w.hw).join(' ');
+  if (!STG.gpos) STG.gpos = {};
+  STG.gpos.negp = 'after';  const after = line();
+  STG.gpos.negp = 'before'; const before = line();
+  if (was) STG.gpos.negp = was; else delete STG.gpos.negp;
+  WORDS.length = wl;
+  return { after: after, before: before };
+});
+
+want('a negation written as a word makes a longer line',
+     negWord.after, 'tuf zluma znak');
+want('and the language decides which side it lands',
+     negWord.before, 'tuf znak zluma');
 
 /* ---- 65-70: one rule, one chapter ----------------------------------------
    The general form of a bug that shipped. An interrogative is a MOOD, and the
@@ -979,7 +1006,10 @@ const chap = await pg.evaluate(() => {
            once: kinds.filter((k) => (seen[k.fm] || []).length === 1).length };
 });
 
-want('every kind of form the app can write was tried', chap.kinds.length, 12);
+/* Thirteen since the pluperfect was added -- 「過去完了は何かの説明を?に入れて
+   くれ」 OWNER 2026-09-05. The list comes from the app's own FM_INF, so this
+   number is the ratchet on it and not a second copy. */
+want('every kind of form the app can write was tried', chap.kinds.length, 13);
 want('no rule is drawn in two chapters', chap.twice.join(', '), '');
 want('and none is drawn in no chapter', chap.none.join(', '), '');
 want('so every one of them landed in exactly one', chap.once, chap.kinds.length);
@@ -1014,17 +1044,24 @@ const adj = await pg.evaluate(() => {
   STG.gpos.adj = 'before';
   const show = (id) => { window.route = 'gram';
     NAV = [{ r:'gram', a:'v2:' + id }]; render(); };
-  const segs = () => document.querySelectorAll('#app .segs .seg');
+  /* The six orders are `.segs.scrollx` on the sentence chapter and are not
+     words being arranged, so they are left out of every count below. */
+  const segs = () => document.querySelectorAll('#app .segs:not(.scrollx) .seg');
   const say = () => Array.prototype.map.call(segs(), (b) => b.textContent).join(' ');
   const press = (i) => { const b = segs();
     if (!b[i]) throw new Error('no word ' + i + ': the row has ' + b.length);
     b[i].click(); };
   g2Lift = ''; show('adj');
-  const nSegs = document.querySelectorAll('#app .segs').length;
+  const nSegs = document.querySelectorAll('#app .segs:not(.scrollx)').length;
   const before = say(), wasOrder = STG.order;
   press(0); press(1);
   const after = say(), side = STG.gpos.adj;
   const order = STG.order;
+  /* AND ON ANOTHER PAGE. A describing word that changes for number is a rule
+     that makes a PLURAL, and a form is a chapter -- so it is drawn in 複数形,
+     on a word of its own part of speech, and NOT here beside the arrangement.
+     One rule, one chapter. */
+  show('pl');
   const form = Array.prototype.filter.call(
       document.querySelectorAll('#app .stslot'), (b) => !!b.querySelector('.psi'))
     .map((b) => b.querySelector('.psm').textContent + ':' +
@@ -1043,7 +1080,7 @@ const adj = await pg.evaluate(() => {
   show('adj'); press(1);
   cross.afterOrder = STG.order;
   cross.afterSide = STG.gpos.adj;
-  cross.lit = document.querySelectorAll('#app .segs .seg.on').length;
+  cross.lit = document.querySelectorAll('#app .segs:not(.scrollx) .seg.on').length;
 
   WORDS.length = wl;
   STG.fm = JSON.parse(wasFm);
@@ -1065,7 +1102,8 @@ want('and that is what the language now holds', adj.side, 'after');
    fixture rather than about the two rows being separate. */
 want('the sentence above it did not move', adj.order, adj.wasOrder);
 
-want('a describing word that changes is drawn', adj.form, 'Plural:zruasi');
+want('a describing word that changes is drawn in the chapter of that form',
+     adj.form, '\u2776:zruasi');
 
 want('a word lifted in the sentence does not move the phrase',
      adj.cross.afterSide, adj.cross.side);
@@ -1183,14 +1221,16 @@ want('the forms are the ones the engine was handed', stat.rows['Forms'], '2');
 want('and the word formation is too', stat.rows['Word formation'], '1');
 
 /* ---- 91-98: a chapter is where a rule is made ---------------------------
-   「新しい規則は＋とかで作ればいいやん」 OWNER 2026-08-27.
+   「新しい規則は＋とかで作ればいいやん」 OWNER 2026-08-27, and
+   「過去形でもいろんな規則作れるよね？」 OWNER 2026-09-05.
 
-   The chapter shows what this language has and what it has not, the way a
-   stage shows its words, and pressing an empty row writes the rule. What is
-   held here is that the row wrote the rule THE ROW NAMED -- the part of
-   speech of the chapter and the form of the row -- because nothing asks
-   afterwards: the two screens that could have changed either are going away
-   in the same day's work.
+   A CHAPTER IS A FORM now, so the chapter knows both answers before the row is
+   pressed -- the part of speech it is written on and the form it makes -- and
+   nothing asks afterwards. It used to be a chapter called 動詞 offering nine
+   rows, one per form, each disappearing once it had been pressed: a language
+   with two ways of making a past tense had one row and nowhere to put the
+   second. So the row STAYS, and what is held here is that it goes on writing
+   the same two answers however often it is pressed.
 
    A rule made with the wrong part of speech applies to nothing and draws no
    row, which looks exactly like a language that has not said it yet. */
@@ -1200,65 +1240,53 @@ const mk = await pg.evaluate(() => {
   STG.fm = [];
   const open = (id) => { window.route = 'gram';
     NAV = [{ r:'gram', a:'v2:' + id }]; render(); };
-  const rows = () => Array.prototype.map.call(
-    document.querySelectorAll('#app .stslot'), (b) => ({
-      lab: b.querySelector('.psm').textContent,
-      make: !!b.querySelector('.psn'),
-      a: b.getAttribute('data-a') }));
-
-  open('v');
-  const verbs = rows();
-  /* every form a verb can take, and none of them said yet */
-  const before = verbs.length, allMake = verbs.filter((r) => r.make).length;
-  /* Press a row found by what it WRITES rather than by what it is called:
-     this check runs in English and the label is whatever the interface
-     language says. data-a is ["v","pas"].
-
-     The PASSIVE and not the past, deliberately. A button that ignored the row
-     and made whatever it always made would make a verb's PAST -- which is what
-     the one button there used to be able to make -- and pressing the past
-     would look perfectly right. The row has to be the answer, so the check
-     presses one whose answer is different. */
-  const press = (a) => {
-    const at = verbs.map((r) => r.a).indexOf(a);
-    if (at < 0) throw new Error('no row writes ' + a + '; rows: ' +
-                                verbs.map((r) => r.a).join(' '));
-    document.querySelectorAll('#app .stslot')[at].click();
+  /* Found by what it WRITES rather than by what it is called: this check runs
+     in English and the label is whatever the interface language says. */
+  const adds = () => Array.prototype.filter.call(
+    document.querySelectorAll('#app .stslot'),
+    (b) => b.getAttribute('data-do') === 'fmrNew');
+  const press = (id) => {
+    open(id);
+    const a = adds();
+    if (!a.length) throw new Error('the ' + id + ' chapter offers no way to add');
+    const arg = a[0].getAttribute('data-a');
+    a[0].click();
+    return arg;
   };
-  press('["v","pas"]');
+  /* THE PASSIVE and not the past, deliberately. A button that ignored the
+     chapter and made whatever it always made would make a verb's PAST -- which
+     is what the one button here used to be able to make -- and pressing the
+     past would look perfectly right. */
+  const pasArg = press('pas');
   const made = (STG.fm[0] || {}), nMade = STG.fm.length;
-  /* and the chapter no longer offers it */
-  open('v');
-  const after = rows().filter((r) => r.make).length;
-  /* And one from another chapter, so the PART OF SPEECH is tested as well:
-     a chapter that wrote its own name would give both rules `v`. */
-  open('n');
-  const nouns = rows().map((r) => r.lab);
-  const nAt = rows().map((r) => r.a).indexOf('["n","pl"]');
-  if (nAt < 0) throw new Error('the noun chapter offers no plural');
-  document.querySelectorAll('#app .stslot')[nAt].click();
+  /* and it goes on offering: a form is not one rule */
+  open('pas');
+  const stillOffers = adds().length;
+  /* One from another chapter, so the PART OF SPEECH is tested as well: a
+     chapter that wrote its own name would give both rules `v`. */
+  const plArg = press('pl');
   const second = STG.fm[1] || {};
+  /* and a chapter that is not a form has no such row at all */
+  open('n');
+  const nounAdds = adds().length;
 
   WORDS.length = wl;
   STG.fm = JSON.parse(wasFm);
-  return { before: before, allMake: allMake, pos: made.pos, fm: made.fm,
-           n: nMade, after: after, nouns: nouns,
+  return { pasArg: pasArg, plArg: plArg, pos: made.pos, fm: made.fm,
+           n: nMade, stillOffers: stillOffers, nounAdds: nounAdds,
            secondPos: second.pos, secondFm: second.fm };
 });
 
-want('a verb chapter offers every form a verb can take', mk.before, 9);
-want('and with nothing said yet, every one of them is a make row',
-     mk.allMake, mk.before);
-want('pressing one writes exactly one rule', mk.n, 1);
+want('a chapter that is a form says what it would write', mk.pasArg, '["v","pas"]');
+want('pressing it writes exactly one rule', mk.n, 1);
 want('with the part of speech of the chapter', mk.pos, 'v');
-want('and the form of the row', mk.fm, 'pas');
-want('which the chapter then stops offering', mk.after, mk.before - 1);
-
-/* The chapters do not offer each other's forms: that is what makes asking
-   unnecessary. A noun is not offered a tense. */
-want('the noun chapter offers what a noun takes', mk.nouns.join(','), 'Plural');
+want('and the form of the chapter', mk.fm, 'pas');
+want('and it goes on offering another, because a form is not one rule',
+     mk.stillOffers, 1);
+want('another chapter says its OWN two answers', mk.plArg, '["n","pl"]');
 want('and its row writes a NOUN rule', mk.secondPos, 'n');
-want('of the form that row names', mk.secondFm, 'pl');
+want('of the form that chapter names', mk.secondFm, 'pl');
+want('a chapter that is not a form offers no rule to write', mk.nounAdds, 0);
 
 /* ---- 99-106: the words a chapter's rules make are made from the chapter ---
    「fmrAddAll（規則が作る語をまとめて作る）も、その章のページへ。どこにも無く
@@ -1290,12 +1318,16 @@ const all = await pg.evaluate(() => {
   const ask = (id) => { open(id); const b = btn();
     return b ? b.getAttribute('data-a') : ''; };
 
-  const nBefore = ask('n'), vBefore = ask('v');
-  open('n');
+  /* The chapter of the FORM, because that is where a rule of that form now
+     lives: 複数形 for the nouns' plural, 過去形 for the verb's past. The two
+     chapters that used to hold them -- 名詞 and 動詞 -- hold no rule at all
+     and are asked about below. */
+  const nBefore = ask('pl'), vBefore = ask('pst'), plainBefore = ask('n');
+  open('pl');
   /* Said rather than left to throw. A missing button is the failure this
      whole commit is against -- 「どこにも無くなると、規則を作っても語が出ま
      せん」 -- and `undefined.click` names neither the screen nor the reason. */
-  if (!btn()) throw new Error('the noun chapter carries no way to make its words');
+  if (!btn()) throw new Error('the plural chapter carries no way to make its words');
   btn().click();
   const spellings = WORDS.map((w) => w.hw).join(' ');
   const madePos = WORDS.filter((w) => w.from).map((w) => w.pos + ':' + w.fm).join(' ');
@@ -1306,16 +1338,18 @@ const all = await pg.evaluate(() => {
   WORDS.length = wl;
   STG.fm = JSON.parse(wasFm);
   save();
-  return { nBefore: nBefore, vBefore: vBefore, spellings: spellings,
+  return { nBefore: nBefore, vBefore: vBefore, plainBefore: plainBefore,
+           spellings: spellings,
            madePos: madePos, vKids: vKids, rest: rest };
 });
 
 /* The button carries the chapter's own answer to both questions: whose words,
    and of which forms. Read off data-a rather than off the label, because the
    label is a count and a count is arrived at by accident. */
-want('the noun chapter offers to make the words its rule makes',
+want('the plural chapter offers to make the words its rule makes',
      all.nBefore, '["n",["pl"]]');
-want('and the verb chapter offers its own', all.vBefore, '["v",["pst","prs","fut","prg","prf","imp","cnd","cau","pas"]]');
+want('and the past chapter offers its own', all.vBefore, '["v",["pst"]]');
+want('and a chapter that is not a form offers none', all.plainBefore, '');
 /* Two nouns had a plural to make and one verb had a past. Pressing on the
    nouns makes the two, and `kano` comes back `canok` -- the word is re-spelled
    in this language's letters, whose letter for /k/ is named c. Same round trip
