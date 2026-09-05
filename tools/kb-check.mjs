@@ -2926,6 +2926,42 @@ const r = await pg.evaluate(({ s }) => {
   }());
 
 
+  /* ---- THE SAVE IN THE CORNER, ON THE SCREEN A KEYBOARD IS BUILT ON -----
+     「で、保存ボタンが何で灰色のままなの？保存する箇所が出たなら金色になって」
+     OWNER 2026-09-05.
+
+     The editor writes on every change -- every mutator on this sheet ends in
+     saveKb() -- so the one button in the bar had nothing registered but the
+     board's NAME, and a person who moved twenty keys was looking at a grey
+     Save. It is the KEEP road and not a flag of this chapter's own
+     (www/shell.js § KEEP): the layout the screen opened with is the `was`,
+     and saveKb() is what says it has moved.
+
+     Nothing here can throw. A Save that never goes gold is a button that
+     renders perfectly and says the wrong thing about somebody's work, which
+     is why it is asked of the BUTTON in the bar rather than of keepDirty(). */
+  (function (){
+    function gold(){
+      var b=document.querySelector('.navtop [data-do="keepPress"]');
+      return !b? 'none' : (b.className.indexOf('navon')>=0? 'gold' : 'grey');
+    }
+    fresh();
+    /* The buffer outlives the screen -- that is what KEEP is for -- so every
+       group above has left one behind, holding the layout the FIRST fresh()
+       drew. Dropped and drawn again, so `was` is what this board opened with
+       and not what some other claim did to it. */
+    keepDrop(keepKeyOf('kb', kbShow));
+    render();
+    out.keepOnArrival = gold();
+    kbHeadRow(1); kbCut();
+    out.keepAfterCut = gold();
+    /* and back to what it opened with is nothing to save. The step back is
+       the same road out as the change, so a `was` that levelled itself on
+       every write would be green above and grey nowhere. */
+    kbUndo();
+    out.keepAfterUndo = gold();
+  }());
+
   return out;
 }, { s: seed.toString() });
 /* ---- and the SHEET, on the smallest phone the app runs on ---------------
@@ -3608,6 +3644,17 @@ say(r.helpGoIn === '1,0,1,0',
 say(r.helpGoNames === 'kbSettings kbSettings',
     'and both of them call the one function rather than a second of its own ('
     + r.helpGoNames + ')');
+
+/* ---- the save in the corner ---------------------------------------------
+   「保存ボタンが何で灰色のままなの？保存する箇所が出たなら金色になって」
+   OWNER 2026-09-05 */
+say(r.keepOnArrival === 'grey',
+    'the Save is there and grey on a board nobody has touched (' + r.keepOnArrival + ')');
+say(r.keepAfterCut === 'gold',
+    'and gold the moment a row comes out (' + r.keepAfterCut + ')');
+say(r.keepAfterUndo === 'grey',
+    'and grey again when the step back puts the layout where it opened ('
+    + r.keepAfterUndo + ')');
 
 if (bad.length){ console.error('\nkb-check: ' + bad.length + ' FAILED'); process.exit(1); }
 console.log('\nkb: pressing a row number or a column letter SELECTS it and lights it up;\n' +
