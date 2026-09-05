@@ -168,6 +168,12 @@ function ntSwMove(e){
     /* A thumb heading down the page is the list scrolling, and a small
        wobble either way is still a tap on the row -- neither is this. */
     if(Math.abs(dy)>Math.abs(dx)) { ntSwOn=false; return; }
+    /* 左で出したものは右で戻る ── 開いている行を右に払えば閉じる。
+       閉じるのは一瞬で、指について動くのは開く側だけ ── render() で行は
+       作り直されるので ntSwEl はもうその行ではない。だからここで終わる。 */
+    if(dx>=12 && ntSwipeAt>=0 && ntSwipeAt===ntSwI){
+      ntSwOn=false; ntSwipeAt=-1; render(); return;
+    }
     if(dx>-12) return;
     ntSwLive=true;
     if(ntSwipeAt>=0 && ntSwipeAt!==ntSwI){ ntSwipeAt=-1; render(); }
