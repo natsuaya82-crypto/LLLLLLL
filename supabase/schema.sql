@@ -1172,9 +1172,15 @@ create policy block_drop on block for delete using (is_member() and actor = auth
 -- of being in the App Store, and a condition nobody can meet from a laptop
 -- they are not sitting at.
 --
--- No update and no delete either, for anybody: a report that can be withdrawn
--- by the person it is about is not a report, and one that staff can delete is
--- a record of what was decided that does not survive the deciding.
+-- No update policy and no delete policy, for anybody: a report that can be
+-- withdrawn by the person it is about is not a report.
+--
+-- Staff DO delete one, and it is not a policy -- report_drop() at the foot of
+-- this file, the same shape as post_hide(). 「通報で問題なかったらその通報が
+-- 消せるようにしてほしい」 OWNER 2026-09-05: a report that was looked at and
+-- found to be about nothing is not a record of a decision, it is a row in a
+-- queue that has been answered, and a queue that only grows is a queue nobody
+-- reads.
 drop policy if exists report_read on report;
 create policy report_read on report for select using (is_staff());
 drop policy if exists report_make on report;
@@ -1736,6 +1742,27 @@ begin
 end $$;
 revoke all on function post_show(uuid) from public;
 grant execute on function post_show(uuid) to authenticated;
+
+-- And the third answer, which is that there was nothing wrong.
+-- 「通報で問題なかったらその通報が消せるようにしてほしい」 OWNER 2026-09-05.
+-- The post stays exactly as it is and the account stays exactly as it is --
+-- what goes is the row asking somebody to look, because it has been looked at.
+--
+-- A function rather than a delete policy for the reason the two above are:
+-- report_read is is_staff() and a delete policy would be a second place saying
+-- who may act on a report.
+-- `bigint`, because that is what report.id IS -- the table is `generated always
+-- as identity` where post and profile are uuid, so the pair of them do not
+-- take the same kind of name however alike they read.
+create or replace function report_drop(r bigint)
+returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not is_staff() then raise exception 'not staff'; end if;
+  delete from report where id = r;
+end $$;
+revoke all on function report_drop(bigint) from public;
+grant execute on function report_drop(bigint) to authenticated;
 
 -- Ejecting somebody, which is the other half of answering a report and is the
 -- half App Store guideline 1.2 asks for by name. Taking the post down leaves
