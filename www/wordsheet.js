@@ -211,20 +211,23 @@ function vSpell(){
     ipaPickHTML('spAdd', [])+
     '</div></div>';
 }
-/* A field for one more of something appears when the `+` on the heading is
-   pressed and stays for the rest of the sheet, so a word with five meanings
-   is five presses of Enter and not five of anything else. Nothing is typed
-   into until somebody says there is one more. */
+/* The field is there when there is nothing yet, and the `+` on the heading is
+   for the SECOND one onwards -- 「追加した後意味が1つ目から+ボタン押さないと
+   いけない」 OWNER 2026-09-05. Once pressed it stays for the rest of the sheet,
+   so a word with five meanings is five presses of Enter and not five of
+   anything else. wdMnShow()/wdExShow() are the one place each answers it. */
 var wdMnNew=false, wdExNew=false;
 function wdMnOpen(){ wdMnNew=true; wdPaint(); }
 function wdExOpen(){ wdExNew=true; wdPaint(); }
+function wdMnShow(){ return wdMnNew || !(wEdit && wEdit.mns && wEdit.mns.length); }
+function wdExShow(){ var w=wdW(); return wdExNew || !(w && w.ex && w.ex.length); }
 function wdMnsHTML(){
   var rows=wEdit.mns.map(function(m,i){
     return '<div class="mnrow"><span class="mnv">'+esc(m)+'</span>'+
       '<button class="mnx"' + DO('wdDelMn', [i]) + ' aria-label="'+esc(t('word.mn.del'))+'">'+ICON_CROSS+'</button></div>';
   }).join('');
   return '<div class="mnlist">'+rows+'</div>'+
-    (wdMnNew? '<div class="mnadd">'+
+    (wdMnShow()? '<div class="mnadd">'+
       lnField('wd-mn', '', ' aria-label="'+esc(t('word.means'))+'"' + KD('wdAddMn'), '')+
       '</div>' : '');
 }
@@ -398,7 +401,7 @@ function wdExHTML(){
           exBtn('wdDelEx', [i], 'word.ex.del', ICON_CROSS));
       }).join('')+'</div>'
     : '')+
-    (wdExNew? '<div class="exadd">'+
+    (wdExShow()? '<div class="exadd">'+
       lnField('wd-exl', exHint(), KD('wdAddEx'), '')+
       lnField('wd-exg', '', ' aria-label="'+esc(t('word.ex.gl.ph'))+'"' + KD('wdAddEx'), '')+
     '</div>' : '');
