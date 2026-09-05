@@ -887,6 +887,41 @@ function whoMore(h){
   WMENU=!WMENU;
   render();
 }
+/* ---- 「フォローされています」 -------------------------------------------
+   「フォローされてるのに出ないよ。136で見てる」 OWNER 2026-09-05.
+
+   THE QUESTION AND THE SHAPE, IN ONE PLACE. The badge existed in exactly one
+   spot in the whole app -- inside snsWhoRow() (www/sns.js), which is a row of
+   the FOLLOW LIST -- and a profile card is not that row. So somebody who
+   follows you wore the label where you went looking for a list of them and
+   nowhere on their own page. It was never a fix that had stopped working: the
+   card had never had one.
+
+   It costs the server nothing. Being followed is something this phone already
+   knows -- meFollowers() reads ME.fr, which meFollowerPull() has written once
+   this session -- so there is no request here and none added.
+
+   No CSS either: `.whyou` and `.mehr` are both in www/index.html already,
+   `.mehr` being a flex row with a gap, which is what puts this beside the
+   handle rather than under it.
+
+   It is a small grey word and not a pill -- rule 18, 「角丸やめろ」: no
+   corner radius, no border, no filled panel on anything new. `.whyou` is
+   already that shape and this is the same span the list wears.
+
+   AND NOT ON YOUR OWN NAME, without asking a second time: meFollowers() is
+   already the list with your own handle taken out of it (meNotMe, above, and
+   the row on 「フォロー中」 is what that is there for). A handle test here
+   would be that same question answered twice, and the two would part company
+   the day meHandle() changed under one of them.
+
+   www/sns.js still writes this out by hand. That file belongs to another
+   session today, so its copy is theirs to fold into this call; it is the same
+   sentence in two places until they do. */
+function whoBackTag(h){
+  if(meFollowers().indexOf(String(h||''))<0) return '';
+  return '<span class="whyou">'+esc(t('me.follows.you'))+'</span>';
+}
 function whoCard(h){
   var p=whoOf(h), on=meFollows(h);
   /* Frozen, and then nothing else about them. No face, no name, no follow
@@ -907,7 +942,10 @@ function whoCard(h){
          own name and on nobody else's, which is the same fault postBadge()
          is about one screen over: 「相手の画面にパッチ映らない」. */
       '<div class="pname">'+esc(postWho(p))+postBadge(p)+'</div>'+
-      '<div class="mehr"><span class="phandle">@'+esc(h)+'</span></div>'+
+      /* AND WHETHER THEY FOLLOW YOU, beside the handle. whoBackTag() above
+         is the whole of it -- the question and the shape. */
+      '<div class="mehr"><span class="phandle">@'+esc(h)+'</span>'+
+        whoBackTag(h)+'</div>'+
     '</div>'+
     /* FOLLOW, IN THE SLOT ON THE NAME ROW -- the same slot your own card
        puts Edit in, because it is the same thing: the one action this page

@@ -43,6 +43,16 @@
       an unanswered list is empty -- so every profile printed 0 and then
       jumped.
 
+   7. 「フォローされています」 IS ON A PERSON'S CARD AND NOT ONLY ON A LIST.
+      「フォローされてるのに出ないよ。136で見てる」 OWNER 2026-09-05. The
+      badge lived in snsWhoRow() alone, which is a row of the FOLLOW LIST, so
+      somebody who follows you wore it where you went looking for a list of
+      them and nowhere on their own page. Two halves: it has to be drawn, and
+      the phone has to have ASKED who follows it on the road that arrives
+      straight at that card. vProfile() asked only on your OWN page, so
+      ME.fr stayed absent -- and an absent list draws the same picture as
+      「nobody」. 「空」と「まだ誰も訊いていない」は別.
+
    Run: node tools/tl-check.mjs                                          */
 import { seed } from './fixture.mjs';
 import { fileURLToPath } from 'url';
@@ -193,6 +203,40 @@ const r = await pg.evaluate(({ s }) => {
   const card = whoCard('iri');
   out.whoNums = card.indexOf('<b>3</b>') >= 0 && card.indexOf('<b>4</b>') >= 0;
   out.whoStillWaits = (card.match(/numwait/g) || []).length;
+
+  /* ---- 7: 「フォローされています」 is on the CARD, not only on the list ---
+     「フォローされてるのに出ないよ。136で見てる」 OWNER 2026-09-05.
+
+     TWO HALVES, and the second is the one that fails without a mark on the
+     screen. The badge has to be DRAWN on somebody's card, and this phone has
+     to have ASKED who follows it on the road that goes straight to that card.
+     With only the first, ME.fr is ABSENT, meFollowers() answers [], and an
+     absent list draws exactly the picture 「nobody follows you」 draws --
+     「空」と「まだ誰も訊いていない」は別 (CLAUDE.md § Data). That is the
+     half a screenshot cannot tell apart, so it is asked here as a REQUEST:
+     what is read is whether the question went out at all. */
+  const heldFr = ME.fr;
+  WHO_HAVE.veth = { who:'Veth', hd:'veth', fo:1, fr:1 };
+  ME.fr = ['iri'];
+  out.backOnCard  = whoCard('iri').indexOf('whyou') >= 0;
+  out.backOnOther = whoCard('veth').indexOf('whyou') >= 0;
+  /* and never on your own name -- meFollowers() is the list with you taken
+     out of it, and this is the screen that would say 「you follow you」 */
+  ME.fr = [meHandle(), 'iri'];
+  out.backOnSelf = whoCard(meHandle()).indexOf('whyou') >= 0;
+
+  const wasFollowers = netFollowers;
+  let followerAsks = 0;
+  netFollowers = function () { followerAsks++; };
+  delete ME.fr;
+  FR_ASKED = false;
+  NAV = [{ r:'profile', a:'iri' }];
+  vProfile();
+  out.askedOnTheirs = followerAsks;
+  netFollowers = wasFollowers;
+  FR_ASKED = false;
+  ME.fr = heldFr;
+
   return out;
 }, { s: seed.toString() });
 
@@ -276,6 +320,21 @@ if (r.whoWaits !== 2)
 if (!r.whoNums || r.whoStillWaits)
   say('and the numbers do not land when the server answers.');
 
+if (!r.backOnCard)
+  say('somebody who follows you wears no 「フォローされています」 on their ' +
+      'own page. The badge is in snsWhoRow() and that is a row of the follow ' +
+      'LIST — a profile card is not that row. 「フォローされてるのに出ないよ」');
+if (r.backOnOther)
+  say('and somebody who does NOT follow you wears it.');
+if (r.backOnSelf)
+  say('and your own name wears it. meFollowers() is the list with you taken ' +
+      'out of it and this reads something else.');
+if (r.askedOnTheirs !== 1)
+  say('a person’s profile sends ' + r.askedOnTheirs + ' request(s) for who ' +
+      'follows this account. Opened without ever opening your own profile, ' +
+      'ME.fr stays ABSENT and an absent list draws the same picture as ' +
+      '「nobody follows you」. 「空」と「まだ誰も訊いていない」は別');
+
 if (errs.length) say('the page threw: ' + errs[0]);
 
 console.log('a post answers to both its names: the thread carries the reply ' +
@@ -290,6 +349,9 @@ console.log('your own row elsewhere: 「' + r.ownRowName + '」 with a face, on 
 console.log('counts: the mark until the answer comes, the number after it, ' +
             'and 0 is an answer');
 console.log('and the Pro mark is on your own name on Pro and off it on free');
+console.log('「フォローされています」: on the card of somebody who does, off ' +
+            'everybody else’s and off your own, and a person’s page asks who ' +
+            'follows this account ' + r.askedOnTheirs + ' time(s)');
 console.log('the pull answers on: ' + r.pullRoutes + ' — a thread asks about ' +
             'every post drawn on it, a person’s page for what they wrote, ' +
             'and a list that is asked once a session is asked again');

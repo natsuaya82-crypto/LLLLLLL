@@ -376,9 +376,19 @@ function vProfile(){
   /* And whether you follow them, which is the one thing on somebody else's
      card that is about YOU. On your own page it is the count under the name. */
   meFollowPull();
-  /* And the count beside it, which is the other direction and had nobody
-     asking for it at all. 「フォローされてもフォロワー1って増えない」 */
-  if(pfMine()) meFollowerPull();
+  /* And who follows YOU, which is the other direction. Both of these are
+     about this account and neither is about the page, so neither is asked
+     about a page: they are asked once a session and the line above is the
+     same line.
+
+     IT WAS ASKED ONLY ON YOUR OWN PAGE. Somebody arriving at a person's
+     profile from a notice or a search without having opened their own
+     profile first never sent 「who follows me」 at all, so ME.fr stayed
+     ABSENT -- and absent draws the same picture as 「nobody follows you」,
+     which is 「空」と「まだ誰も訊いていない」は別 (CLAUDE.md § Data) on the
+     one screen the answer is read on. 「フォローされてるのに出ないよ」
+     OWNER 2026-09-05. */
+  meFollowerPull();
   return '<div class="view">'+
     /* The gear is yours and only yours: somebody else's page is arrived at
        from the search, so it gets a way back instead. */
