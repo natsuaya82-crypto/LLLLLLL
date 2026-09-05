@@ -785,6 +785,19 @@ const HELDR = await pg.evaluate(async () => {
     T(a, 'touchstart', ra.left + ra.width / 2, ra.top + ra.height / 2);
     /* past the 380ms the lift waits, because the lift IS the gesture */
     await new Promise(r => setTimeout(r, 460));
+    /* AND THE POPUP THAT SAYS THERE IS NO CONNECTION IS TAKEN DOWN FIRST.
+       There is no server behind this file, so every request the app makes
+       fails and netPop() draws 「接続できません」 over whatever is on screen
+       -- correctly: 「通信エラーなら進むわけねえだろ全部」, and its scrim is
+       meant to stop a finger reaching the screen underneath. It lands
+       whenever a request happens to reject, which was in the middle of this
+       measurement: `.sbg.on` answered elementFromPoint, `over` came back
+       null, the drag went home and this read 「held and carried and it did
+       not move」 about a gesture that works. Same shape as the swipe timer
+       two blocks up, same answer -- take the interference away rather than
+       measure through it. Nothing here is softened: the carry below still
+       has to change the order or this fails. */
+    popOff();
     T(a, 'touchmove', rb.left + rb.width / 2, rb.top + rb.height / 2);
     const now = order();
     T(a, 'touchend', rb.left + rb.width / 2, rb.top + rb.height / 2);
