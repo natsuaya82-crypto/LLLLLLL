@@ -722,18 +722,15 @@ canvas.pkc{width:34px;height:34px;display:block}
    and the second one set no `display`, so it inherited `flex` from this one
    and every word on the page stayed in a column beside the face. */
 .meedit{flex:0 0 auto;min-height:44px;padding:0 18px;border-radius:999px;
-        border:1px solid var(--gold);background:var(--gold);color:var(--onGold);
+        border:1px solid var(--gold);background:none;color:var(--gold);
         font-family:inherit;font-size:.88rem}
 .meedit:active{opacity:.85}
-/* Following somebody, and the same button once you do. FILLED while you are
-   not -- it is the thing to press -- and the ground's own colour once you
-   are, because then it is a state and the press is the undo.
-   「フォロー中は背景と同色、フォローが白とか背景と別の色」OWNER 2026-09-01.
-
-   It was the other way round, with this comment already saying which way it
-   should be: the rule was written and the two selectors were swapped, so
-   Following was the loud one. Nothing throws -- it is two colours -- and it
-   is on every row of the follows list. */
+/* 「編集のボタンだけ金◉なの気になる」→「枠だけで。」 OWNER 2026-09-05: this
+   is the profile's own Edit and, on somebody else's profile, Follow before
+   you do -- both the thing to press, both gold now in outline rather than
+   fill. Following IT is still the ground's own colour once you do, because
+   then it is a state and the press is the undo -- the two are told apart by
+   colour, gold against muted, and neither is filled any more. */
 .meedit.on{background:none;color:var(--tx);border-color:var(--line)}
 .phandle{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 /* The ... and the menu that hangs off it. The wrapper is what the menu is
