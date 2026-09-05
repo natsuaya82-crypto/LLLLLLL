@@ -622,10 +622,10 @@ function g2Row(lab, from, to, act, arg, del){
    here is the two kinds of rule that are NOT one form of a word: a describing
    word that agrees, and the marks the 助詞 stage makes. */
 function g2Chap(r){
-  var f=String(r.feature);
-  if(String(r.target)==='ADJECTIVE') return 'adj';
-  if(f==='CASE') return 'n';
-  return '';
+  /* The marks the 助詞 stage makes, and nothing else. Every rule somebody wrote
+     is claimed by the chapter of the FORM it makes -- g2FmRows() above -- so a
+     rule read by its feature here as well would be one fact drawn twice. */
+  return (String(r.feature)==='CASE')? 'n' : '';
 }
 /* One word of this part of speech, and every form of it this language can
    make that belongs to this chapter. Every chapter of §14 that is about a
@@ -718,8 +718,11 @@ function g2SidePick(key){
       DO('setGPos', [key, a[i]]) + '>'+esc(gPosLab(key, a[i]))+'</button>';
   return '<div class="segs">'+out+'</div>';
 }
+/* Where a describing word stands, and that alone. The ways one CHANGES are
+   chapters of their own now, one per form, so listing them here as well would
+   be the same rule on two pages. */
 function g2Adj(){
-  return g2Side('adj', gWordOf('adj'), gWordOf('n'))+g2Forms('adj', 'adj');
+  return g2Side('adj', gWordOf('adj'), gWordOf('n'));
 }
 
 /* §14 Adpositions / Location. 「現在の adp の位置設定だけではなく、場所を
@@ -920,14 +923,21 @@ function g2FmMade(m, id){
    is still a rule somebody wrote and a chapter that hid it would be the app
    forgetting what it was told. */
 function g2FmRows(c){
-  var a=(STG && STG.fm) || [], w=gWordOf(c.pos), m=null, out='', i, r, id, n=0, made;
-  if(w) m=gModel([w]);
+  var a=(STG && STG.fm) || [], out='', i, r, id, n=0, w, m, made;
   for(i=0;i<a.length;i++){
     r=a[i];
-    if(!r || String(r.fm)!==c.fm || String(r.pos||'')!==String(c.pos)) continue;
+    if(!r || String(r.fm)!==c.fm) continue;
+    /* Asked of the rule's OWN part of speech, and of the chapter's only where
+       the rule names none. A rule written for any word -- `pos` empty, which
+       is what the editor leaves when nobody narrowed it -- belongs to the form
+       it makes and to no other chapter, and matching the chapter's part of
+       speech instead hid every one of them: they were in a chapter nowhere,
+       which is the quieter half of being in two. */
+    w=gWordOf(r.pos || c.pos);
     id=String(r.id||'');
-    made=(w && m)? g2FmMade(m, id) : '';
-    out+=g2Row(g2Num(n++), (w && made)? wOut(w.hw) : '',
+    made='';
+    if(w){ m=gModel([w]); made=g2FmMade(m, id); }
+    out+=g2Row(g2Num(n++), made? wOut(w.hw) : '',
                made || gFmForm(r), 'openFmr', [id], id);
   }
   return out;
