@@ -2862,8 +2862,14 @@ const r = await pg.evaluate(({ s }) => {
     out.ltpPut = String(kbAt(0, 0).v) === lid;
     out.ltpPutWrote = bytes() !== was && stored() !== wasStored;
     out.ltpPutOneStep = KBU.u.length === wasU + 1;
-    /* and the choice is spent: the button is gone with it */
-    out.ltpBtnGone = bar().length === 0 && purple().length === 0;
+    /* AND IT IS ONE STEP BACK: the key's screen is left behind and what is in
+       front of somebody is the sheet the key is on.
+       「キー選んで確定押したらキーボード編集画面に戻ってくれ」 OWNER 2026-09-05.
+       It used to arrive on the key a second time, so getting out of a key was
+       the arrow pressed twice -- once for the key, once for the grid. */
+    out.ltpPutBack = here().r === 'kb' && String(here().a) === '1';
+    /* and the choice is spent with it: no grid, and nothing purple on one */
+    out.ltpBtnGone = cellsOn().length === 0 && purple().length === 0;
 
     /* ---- one step back puts it back ----------------------------------- */
     kbUndo();
@@ -2922,9 +2928,45 @@ const r = await pg.evaluate(({ s }) => {
     tap(cellsOn()[0]);
     out.ltpSqOnKey = formArg(here().a).kind === 'kbkey' && bar().length === 1;
     tap(bar()[0]);
-    out.ltpSqStayed = formArg(here().a).kind === 'kbkey' && cellsOn().length > 0;
+    out.ltpSqStayed = here().r === 'kb' && cellsOn().length === 0;
   }());
 
+
+  /* ---- THE SAVE IN THE CORNER, ON THE SCREEN A KEYBOARD IS BUILT ON -----
+     「で、保存ボタンが何で灰色のままなの？保存する箇所が出たなら金色になって」
+     OWNER 2026-09-05.
+
+     The editor writes on every change -- every mutator on this sheet ends in
+     saveKb() -- so the one button in the bar had nothing registered but the
+     board's NAME, and a person who moved twenty keys was looking at a grey
+     Save. It is the KEEP road and not a flag of this chapter's own
+     (www/shell.js § KEEP): the layout the screen opened with is the `was`,
+     and saveKb() is what says it has moved.
+
+     Nothing here can throw. A Save that never goes gold is a button that
+     renders perfectly and says the wrong thing about somebody's work, which
+     is why it is asked of the BUTTON in the bar rather than of keepDirty(). */
+  (function (){
+    function gold(){
+      var b=document.querySelector('.navtop [data-do="keepPress"]');
+      return !b? 'none' : (b.className.indexOf('navon')>=0? 'gold' : 'grey');
+    }
+    fresh();
+    /* The buffer outlives the screen -- that is what KEEP is for -- so every
+       group above has left one behind, holding the layout the FIRST fresh()
+       drew. Dropped and drawn again, so `was` is what this board opened with
+       and not what some other claim did to it. */
+    keepDrop(keepKeyOf('kb', kbShow));
+    render();
+    out.keepOnArrival = gold();
+    kbHeadRow(1); kbCut();
+    out.keepAfterCut = gold();
+    /* and back to what it opened with is nothing to save. The step back is
+       the same road out as the change, so a `was` that levelled itself on
+       every write would be green above and grey nowhere. */
+    kbUndo();
+    out.keepAfterUndo = gold();
+  }());
 
   return out;
 }, { s: seed.toString() });
@@ -3511,14 +3553,17 @@ say(r.ltpConfirmed && r.ltpPut && r.ltpPutWrote, 'the confirm is what writes it 
     + [r.ltpConfirmed, r.ltpPut, r.ltpPutWrote].join(' ') + ']');
 say(r.ltpPutOneStep, 'and it is ONE step back, not one per letter touched');
 say(r.ltpUndone, 'which one step back takes off again');
-say(r.ltpBtnGone, 'and the choice is spent: the confirm goes with it');
+say(r.ltpPutBack,
+    'and the confirm is ONE step back -- the key is left behind and the sheet'
+    + ' it is on is what is in front of you');
+say(r.ltpBtnGone, 'and the choice is spent: the grid goes with it');
 say(r.ltpOff, 'touching the chosen one again puts it down, and the confirm goes');
 say(r.ltpMoved, 'while touching a DIFFERENT one moves the choice rather than clearing it');
 say(r.ltpBackNoWrite,
     'go back without confirming and nothing was written -- what is not confirmed is not');
 say(r.ltpSqOpened && r.ltpSqSheet && r.ltpSqBack && r.ltpSqOnKey && r.ltpSqStayed,
-    'and choosing on the key\u0027s own grid keeps you on the key -- even after the'
-    + ' sheet for its square has been opened and left behind [' +
+    'and choosing on the key\u0027s own grid takes you back to the keyboard -- even'
+    + ' after the sheet for its square has been opened and left behind [' +
     [r.ltpSqOpened, r.ltpSqSheet, r.ltpSqBack, r.ltpSqOnKey, r.ltpSqStayed].join(' ')
     + ']');
 say(r.ltpReopened && r.ltpForgot,
@@ -3608,6 +3653,17 @@ say(r.helpGoIn === '1,0,1,0',
 say(r.helpGoNames === 'kbSettings kbSettings',
     'and both of them call the one function rather than a second of its own ('
     + r.helpGoNames + ')');
+
+/* ---- the save in the corner ---------------------------------------------
+   「保存ボタンが何で灰色のままなの？保存する箇所が出たなら金色になって」
+   OWNER 2026-09-05 */
+say(r.keepOnArrival === 'grey',
+    'the Save is there and grey on a board nobody has touched (' + r.keepOnArrival + ')');
+say(r.keepAfterCut === 'gold',
+    'and gold the moment a row comes out (' + r.keepAfterCut + ')');
+say(r.keepAfterUndo === 'grey',
+    'and grey again when the step back puts the layout where it opened ('
+    + r.keepAfterUndo + ')');
 
 if (bad.length){ console.error('\nkb-check: ' + bad.length + ' FAILED'); process.exit(1); }
 console.log('\nkb: pressing a row number or a column letter SELECTS it and lights it up;\n' +
