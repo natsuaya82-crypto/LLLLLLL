@@ -186,30 +186,23 @@ function postById(id){
   return null;
 }
 
-/* ---- the gloss ----------------------------------------------------------
-   Every word of the line, with what it means and what part of speech it is,
-   read straight out of the dictionary. No server, no model, no waiting: this
-   is the part that is just looking things up, and it is most of what a reader
-   needs. A word the dictionary has never heard of comes back as itself, which
-   is the truth about it. */
-function postGloss(ln){
-  var words=String(ln||'').split(/\s+/), out=[], i, w;
-  for(i=0;i<words.length;i++){
-    if(!words[i]) continue;
-    w=findWord(words[i]);
-    out.push(w? {w:words[i], m:wMns(w)[0]||'', p:w.pos||''}
-               : {w:words[i], m:'', p:''});
-  }
-  return out;
-}
-/* What the gloss reads as, run together. This is what the meaning field is
-   filled with before anybody types: it is never the right sentence and it is
-   always the right words, so the work left is arranging them. */
-function postGlossLine(gl){
-  var out=[], i;
-  for(i=0;i<gl.length;i++) out.push(gl[i].m || gl[i].w);
-  return out.join(' ');
-}
+/* ---- what the line means -------------------------------------------------
+   OWNER 2026-09-05 単語はその単語の意味を 文法は並び替えた単語たちが文章として
+   成り立つように
+
+   This was `postGloss()` with `postGlossLine()` beside it: every word of the
+   line swapped for what the dictionary says it means, and left in the order
+   the invented language wrote them. That is half the job and it is the half
+   this app could already do -- 「単語はその単語の意味を」 -- and the other half
+   was simply not being done, so a Japanese reader was handed an English
+   reader's word order and an English reader was handed a Japanese one.
+
+   Both halves are `translate.toNatural()` in www/grammar-engine/ now, and it
+   is one function rather than two here because the arrangement needs the
+   parse and the parse needs the dictionary. What it cannot arrange it leaves
+   in the order it was typed, which is exactly what the two functions here
+   used to answer -- so nothing that was being shown stopped being shown.
+   tools/grammar-engine-check.mjs holds both halves. */
 
 /* ---- writing one -------------------------------------------------------- */
 var PW={ln:'', mn:''};
@@ -716,7 +709,16 @@ FORM_OPEN.post=function(){ openPost(); };
    the Lingua keyboard typed, which is the private use area; everything below
    the field works on the roman spelling. */
 function pwLn(){ return puaRoman(PW.ln); }
-function pwMn(){ return postGlossLine(postGloss(pwLn())); }
+/* OWNER 2026-09-05 単語はその単語の意味を 文法は並び替えた単語たちが文章として成り立つように
+   What the meaning field starts as: the line said in the reader's own
+   language. The dictionary says what each word means and the grammar says
+   which of them is the subject, the object and the verb, so the three that
+   carry a role stand where the reader's own language stands them. Nothing is
+   asked of a network and nothing is guessed at -- what it cannot arrange it
+   leaves in the order it was typed, which is the words, and the words are
+   most of what somebody needs. 「単語と文法が埋まれば埋まるだけ投稿の翻訳の
+   精度が上がるっていうのが目的」 */
+function pwMn(){ return LinguaGrammarEngine.translate.toNatural(gModel(), pwLn(), uiLang()); }
 /* The composer is TWO rows, the same two the timeline is:
    「やっぱり、タイムラインも投稿も2段で。赤文字消して。」
    「これもお題のページと合わせるんだけど」 OWNER 2026-08-28
@@ -732,9 +734,9 @@ function pwMn(){ return postGlossLine(postGloss(pwLn())); }
    places, and the day's-sentence row (`dayRow()` in sns.js) is those two
    rows as well -- what is written, and the line under it.
 
-   The red went with the row that carried it. Nothing else did: `postGloss()`
-   and `postGlossLine()` are untouched and still fill the meaning field's
-   placeholder and the meaning a post falls back to. */
+   The red went with the row that carried it. What fills the meaning field's
+   placeholder, and the meaning a post falls back to, is `pwMn()` above --
+   the line said in the reader's own words and the reader's own order. */
 /* ---- a photograph on a post -------------------------------------------
 
    The long edge, and how hard it is squeezed. A photograph is stored as text
@@ -1577,9 +1579,6 @@ function pwSend(){
   pwBake(function(pics){ pwSendWith(ln, pics, PW.vo||null); });
 }
 function pwSendWith(ln, pics, vo){
-  /* Only to fall back on: the words run together, for somebody who typed a
-     line and no meaning. Not stored -- see postRow. */
-  var gl=postGloss(ln);
   /* Everything a reader needs is put ON the post, now, because the reader may
      not be here and may not have this language: who wrote it, what they are
      called, what it is written in, and a face. A timeline that asks the open
@@ -1588,7 +1587,10 @@ function pwSendWith(ln, pics, vo){
             lang:langId, lname:langName||'',
             who:meName(), hd:meHandle(), av:postAvatar(), mine:true,
             ln:ln, ink:postInkTyped(PWRAW), dir:scriptDir(),
-            mn:String(PW.mn||'').trim() || postGlossLine(gl),
+            /* OWNER 2026-09-05 単語はその単語の意味を 文法は並び替えた単語たちが
+               文章として成り立つように -- only to fall back on, for somebody who
+               typed a line and no meaning. Not stored, see postRow. */
+            mn:String(PW.mn||'').trim() || LinguaGrammarEngine.translate.toNatural(gModel(), ln, uiLang()),
             pr:PW.pr||0,
             ui:uiLang(), li:0, bo:0, re:0};
   /* If the letters made the files too big for what is left, the PHOTOGRAPHS
@@ -2609,7 +2611,8 @@ function postEdit(id){
 function pwSaveEdit(ln){
   var p=postById(PW.ed), mn;
   if(!p || !p.mine){ toast(t('post.gone')); PW=pwBlank(); goTab('feed'); return; }
-  mn=String(PW.mn||'').trim() || postGlossLine(postGloss(ln));
+  /* OWNER 2026-09-05 単語はその単語の意味を 文法は並び替えた単語たちが文章として成り立つように */
+  mn=String(PW.mn||'').trim() || LinguaGrammarEngine.translate.toNatural(gModel(), ln, uiLang());
   p.ln=ln; p.ink=postInkTyped(PWRAW); p.mn=mn;
   /* The translations were of the old sentence. They are dropped rather than
      left to be shown under a line they are no longer about, and asked for
@@ -3174,7 +3177,7 @@ function postRow(p){
          either, as of 2026-08-28** 「やっぱり、タイムラインも投稿も2段で。
          赤文字消して。」 -- this row and the composer's are the same two rows
          now, and so is the day's sentence. Where the default meaning comes
-         from is `postGloss()`, which is still here and is not a row.
+         from is `pwMn()`, which is not a row.
 
          Posts made before this keep whatever is on them. Nothing goes and
          removes it: it is somebody's, and deleting what a person made
