@@ -1379,6 +1379,26 @@ export function halfDone(){
         openPost(); const h = vForm();
         PW = pwBlank(); SET.myfont = false;
         SCRIPT.dir = wasDir; SET.plan = wasPlan; return h; }],
+    /* AND THE ONE WRITTEN DOWNWARD, THE FIRST COLUMN AT THE LEFT. Four
+       directions and this is the only one no screen wore. It used to be
+       reached by PRESSING it: the writing-system screen wrote the language
+       on the press, so `setScriptDir('ttb-lr')` took effect and every screen
+       drawn after it wore the class. That screen chooses now and writes from
+       the Save in the bar (www/sound.js § wsPick), and a walk cannot press
+       two buttons in a row -- press-check rebuilds the screen before every
+       press -- so nothing in it ever saves. The state is seeded here
+       instead, which is what tools/press.mjs asks for when it names a class
+       nothing wears.
+
+       Same element as the two above and for the same reason:
+       `dirClass(scriptDir())` on the composer's line is the whole of it, and
+       `scriptDir()` (www/wsys.js) answers 'ltr' on any plan but Pro. */
+    ['a line written downward, the first column at the left', () => {
+        const wasPlan = SET.plan, wasDir = SCRIPT.dir;
+        SET.plan = 'pro'; SCRIPT.dir = 'ttb-lr';
+        openPost(); const h = vForm();
+        PW = pwBlank();
+        SCRIPT.dir = wasDir; SET.plan = wasPlan; return h; }],
     /* And the same line in a timeline, where the direction is the post's own
        and not the reader's: a post says which way it was written and carries
        it, because rule 8 is that what somebody wrote is shown the way they
