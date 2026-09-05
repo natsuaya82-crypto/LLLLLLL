@@ -582,6 +582,12 @@ canvas.pkc{width:34px;height:34px;display:block}
    already: 「lingua のマークのダイヤを使って欲しいな回転でもいいけど。せっかく
    マークあるし」OWNER 2026-09-01. www/sns.js puts ICON_PLUS in it; the colour
    is here, as every colour in this app is, and `currentColor` carries it. */
+/* WHERE THE GAP OPENS. `.body` is the thing that slides under the finger, so
+   the mark belongs at ITS top edge -- not at the bottom of the bar, which is
+   a different line on every screen that carries a search field or a sort row
+   between the two. A box of no height, so nothing under it moves; www/sns.js
+   § pullSpinOn puts one in front of `.body` and takes it out again. */
+.pullat{position:relative;height:0}
 .pullrule{position:absolute;left:0;right:0;top:100%;margin:22px auto 0;
           width:22px;height:22px;color:var(--gold);
           display:flex;align-items:center;justify-content:center}

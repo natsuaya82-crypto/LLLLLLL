@@ -619,10 +619,24 @@ var pullY=-1, pullEl=null, pullAt=0;
    thumb is not. */
 var PULL_SPIN=null;
 function pullSpinOn(){
-  var bar;
+  var body, at;
   if(PULL_SPIN && document.contains(PULL_SPIN)) return PULL_SPIN;
-  bar=document.querySelector('#app .view > .navtop');
-  if(!bar) return null;
+  /* WHERE THE GAP OPENS, which is the top of `.body` and NOT the bottom of
+     the bar. Those were the same thing on the three screens the pull started
+     on, and they are not the same thing on the rest: the lexicon carries a
+     search field and a sort row between the two, standing still because they
+     are not `.body`, and a mark hung off the bar was drawn straight over the
+     search field. Measured: bar bottom 60, body top 165.
+
+     So it hangs off a point in the flow instead -- `.pullat`, a box of no
+     height inserted immediately before `.body`, which is by definition the
+     top of the thing that slides, on every screen and with nothing to keep
+     agreeing. The mark is `position:absolute` inside it and takes no room, so
+     nothing under it moves. */
+  body=document.querySelector('#app .view > .body');
+  if(!body || !body.parentNode) return null;
+  at=document.createElement('div');
+  at.className='pullat';
   PULL_SPIN=document.createElement('div');
   PULL_SPIN.className='pullrule';
   /* THE APP'S OWN MARK, turning. 「プルトゥーリフレッシュあるやん？lingua の
@@ -634,7 +648,8 @@ function pullSpinOn(){
      `currentColor` takes what `.pullrule` says, the way every other mark in
      this app does. */
   PULL_SPIN.innerHTML=ICON_PLUS;
-  bar.appendChild(PULL_SPIN);
+  at.appendChild(PULL_SPIN);
+  body.parentNode.insertBefore(at, body);
   return PULL_SPIN;
 }
 /* Taken out when the answer lands, when the pull is let go short, and when
@@ -642,8 +657,10 @@ function pullSpinOn(){
    -- but the road where nothing came back does not render, and a mark left
    turning over a timeline nobody is waiting for is worse than none. */
 function pullSpinOff(){
-  if(PULL_SPIN && PULL_SPIN.parentNode)
-    PULL_SPIN.parentNode.removeChild(PULL_SPIN);
+  /* The point it hangs off goes with it: an empty `.pullat` left in the flow
+     is a second one on the next pull. */
+  var at=PULL_SPIN && PULL_SPIN.parentNode;
+  if(at && at.parentNode) at.parentNode.removeChild(at);
   PULL_SPIN=null;
 }
 /* Which timeline is under the finger, or '' for a screen this is not about.
