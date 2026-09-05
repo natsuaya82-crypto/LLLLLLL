@@ -1821,17 +1821,11 @@ function migratePostInk(){
    OWNER 2026-09-05 単語はその単語の意味を 文法は並べ替えた単語たちが文章として
    成り立つように
 
-   Two things now, not three. The writer's own letters, and what the line
-   means -- and what it means is built here, out of the dictionary and the
-   grammar, by `pwMn()` when the post is written.
-
-   `postTr()` and TR_SEAM are gone. They were a third layer: the meaning
-   handed to a translator on the device, frozen onto the post as `tr`, and
-   said back to a reader in their own language. Nothing was ever behind it --
-   the function answered `done(null)`, no post ever carried a `tr`, and
-   `postSay()` read a field that was never written. 「きかいほんやくはつかわ
-   ない」, so it is deleted rather than left waiting for a machine that is not
-   coming, and the meaning a post carries is the one the app worked out. */
+   Two things. The writer's own letters, and what the line means -- and what
+   it means is built here, out of the dictionary and the grammar, by `pwMn()`
+   when the post is written. 「きかいほんやくはつかわない」 OWNER 2026-09-05:
+   a post's meaning is worked out by this app, on this phone, and nothing is
+   asked of a machine anywhere else. */
 /* What a post says to the person reading it: their own language if the post
    carries it, and otherwise the one the author typed. Never empty -- a line
    nobody can read is not a post. */
