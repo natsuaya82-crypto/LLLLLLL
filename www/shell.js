@@ -474,6 +474,22 @@ function keepSave(key, done){
         for(f in b.v){ if(b.v.hasOwnProperty(f)) b.was[f]=String(b.v[f]); }
         b.v={};
       }
+      /* AND A SAVE THAT LANDED ENDS ON THE SCREEN BEFORE IT.
+         「保存したらホーム戻って。単語なら単語保存したら単語一覧に戻る」
+         「保存したら一個前のページ。戻るは変更せず戻る 保存とか確定は変更して
+         戻る」 OWNER 2026-09-05.
+
+         Here and nowhere else, because this is the only caller of `b.save`
+         there is -- nine screens register a buffer and a way off written on
+         each of them would be nine answers to one question. The two things
+         that reach this function said it themselves before: the Save in the
+         corner stayed put and redrew, and the Yes on the way out went back.
+         Both of those lines are gone; there is this one.
+
+         A save that did NOT land goes nowhere: netPop() is up over the screen
+         saying why, what was typed is still in the field, and pressing again
+         sends it again. */
+      if(up){ keepPaint(); backGo(); }
       if(done) done(!!up);
     });
   });
@@ -576,10 +592,7 @@ function keepBtnPaint(){
   if(b) b.parentNode.removeChild(b);
   if(want) bar.insertAdjacentHTML('beforeend', want);
 }
-function keepPress(){
-  var k=keepKey();
-  keepSave(k, function(ok){ if(ok) keepPaint(); render(); });
-}
+function keepPress(){ keepSave(keepKey(), null); }
 /* And the question on the way out. Returns true when it has taken the press
    over -- the popup is up and back() is not to move.
 
@@ -591,7 +604,7 @@ function keepAsked(){
   var k=keepKey();
   if(!keepDirty(k)) return false;
   popAsk(t('keep.q'),
-    function(){ keepSave(k, function(ok){ if(ok) backGo(); }); },
+    function(){ keepSave(k, null); },
     t('keep.yes'), t('keep.no'),
     function(){ keepDrop(k); backGo(); });
   return true;
