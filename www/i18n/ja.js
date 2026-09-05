@@ -682,7 +682,6 @@ defLang('ja', (function(){
       'gram.pos.after.n' : '名詞の後',
       'gram.pos.before.v' : '動詞の前',
       'gram.pos.after.v' : '動詞の後',
-      'gram.demo.need'  : '単語をもう少し作ると例が出ます',
       'gram.demo.need.n': '名詞がいります。',
       'gram.demo.need.v': '動詞がいります。',
       'gram.demo.need.nv': '名詞と動詞がいります。',

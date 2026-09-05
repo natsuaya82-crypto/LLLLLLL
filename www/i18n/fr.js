@@ -814,7 +814,6 @@ defLang('fr', (function(){
       "gram.pos.after.n" : "Après le nom",
       "gram.pos.before.v" : "Avant le verbe",
       "gram.pos.after.v" : "Après le verbe",
-      "gram.demo.need"   : "Écrivez quelques mots de plus",
       "gram.demo.need.n": "Il faut un nom.",
       "gram.demo.need.v": "Il faut un verbe.",
       "gram.demo.need.nv": "Il faut un nom et un verbe.",

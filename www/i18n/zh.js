@@ -770,7 +770,6 @@ defLang('zh', (function(){
       "gram.pos.after.n" : "名词后",
       "gram.pos.before.v" : "动词前",
       "gram.pos.after.v" : "动词后",
-      "gram.demo.need"   : "再写几个词",
       "gram.demo.need.n": "需要一个名词。",
       "gram.demo.need.v": "需要一个动词。",
       "gram.demo.need.nv": "需要一个名词和一个动词。",

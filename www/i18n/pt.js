@@ -753,7 +753,6 @@ defLang('pt', (function(){
       "gram.pos.after.n" : "Depois do nome",
       "gram.pos.before.v" : "Antes do verbo",
       "gram.pos.after.v" : "Depois do verbo",
-      "gram.demo.need"   : "Escreva mais algumas palavras",
       "gram.demo.need.n": "Falta um substantivo.",
       "gram.demo.need.v": "Falta um verbo.",
       "gram.demo.need.nv": "Faltam um substantivo e um verbo.",

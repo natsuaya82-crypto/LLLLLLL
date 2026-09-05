@@ -941,7 +941,6 @@ defLang('ko', (function(){
       "gram.pos.after.n" : "명사 뒤",
       "gram.pos.before.v" : "동사 앞",
       "gram.pos.after.v" : "동사 뒤",
-      "gram.demo.need"   : "단어를 몇 개 더",
       "gram.demo.need.n": "명사가 필요합니다.",
       "gram.demo.need.v": "동사가 필요합니다.",
       "gram.demo.need.nv": "명사와 동사가 필요합니다.",

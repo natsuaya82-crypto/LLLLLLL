@@ -440,7 +440,15 @@ function gSide(lab, ws, gloss){
    this screen saying what another screen is for. Minimum, which is the side
    the owner narrowed to on 2026-08-22 -- what is missing, and not a word about
    how to go and get it. */
-function gNeedWords(k){ return '<div class="note gneed">'+t(k||'gram.demo.need')+'</div>'; }
+/* WHAT IS MISSING, and only when there is a name for it. The sentence that
+   used to stand here with no key -- 「単語をもう少し作ると例が出ます」 -- was
+   the whole of what the 語順 chapter drew: 「語順のとこ開くと単語が増えたら例が
+   出ますってなるけど意味わからなくね？」 OWNER 2026-09-05. A chapter shows what
+   it DECIDES whether or not there are words to demonstrate on, and the
+   demonstration is the part that waits. Where the missing piece is a word made
+   in a stage rather than a part of speech, there is no key and nothing is
+   drawn. */
+function gNeedWords(k){ return k? '<div class="note gneed">'+t(k)+'</div>' : ''; }
 /* Two words to be heard, in the order this language puts them in. gPair()
    took them already ordered and was the second place that decided which side
    each went; it is gone, and so is the fallback that would have called it --
@@ -469,11 +477,11 @@ function gPosDemo(id){
     /* The word for "not" is made in a stage rather than picked out of the
        dictionary, so when THAT is what is missing there is no part of speech
        to name and the older sentence is the true one. */
-    if(!v || !x) return gNeedWords(x? 'gram.demo.need.v' : '');
+    if(!v || !x) return gNeedWords(x? 'gram.demo.need.v' : '');  /* no key names a stage's word */
     pair = gPairOf([x, v]);
   } else {
     n=gWordOf('n'); x=gSlotAny('where');
-    if(!n || !x) return gNeedWords(x? 'gram.demo.need.n' : '');
+    if(!n || !x) return gNeedWords(x? 'gram.demo.need.n' : '');  /* the same, for 場所 */
     pair = gPairOf([x, n]);
   }
   return '<div class="gdemo">'+gSide(t('gram.pair.phrase'), pair.ws, pair.gl)+'</div>';
@@ -547,13 +555,30 @@ function g2Chip(key, i, w){
 }
 /* §14 Sentence Structure. The words, then what they are, then the name --
    in that order, because the name is the RESULT and nobody has to read it. */
+/* All six, and they are on the page whatever the dictionary holds.
+   「語順svoとか俺のページ並んでないけど？」 OWNER 2026-09-05. The chapter drew
+   the three words of a sentence and nothing else, so a language with no verb
+   yet had a chapter with no word order in it -- and the word order is the one
+   thing this chapter is FOR. stFeatHTML() in www/phases.js draws the same row
+   on the old stage screen and writes the same STG.order through setOrder(), so
+   the two cannot disagree. */
+function g2Orders(){
+  var now=orderDef().id, i, out='';
+  for(i=0;i<ORDERS.length;i++)
+    out+='<button class="seg'+(ORDERS[i]===now? ' on' : '')+'"' +
+      DO('setOrder', [ORDERS[i]]) + '>'+esc(ORDERS[i])+'</button>';
+  return '<div class="segs scrollx">'+out+'</div>';
+}
+/* §14 Sentence Structure. The choice first, then the roles in the order
+   chosen, and last this language's own three words in that order -- which is
+   the demonstration and is the only part that needs a dictionary. */
 function g2Sent(){
   var w=g2Three(), i, out='';
-  if(!w) return gNeedWords();
-  for(i=0;i<w.length;i++)
-    out+=g2Chip('order', i, w[i]);
-  return '<div class="segs">'+out+'</div>'+gOrderLine()+
-    '<div class="gsl">'+esc(orderDef().id)+'</div>';
+  if(w){
+    for(i=0;i<w.length;i++) out+=g2Chip('order', i, w[i]);
+    out='<div class="segs">'+out+'</div>';
+  }
+  return g2Orders()+gOrderLine()+out;
 }
 /* §14 Nouns. 「ユーザーが『りんご』『りんごたち』などを実際の言語で作る。
    例えば poko / poko-mi。ユーザーが差分を定義する」
@@ -609,7 +634,7 @@ function g2Chap(r){
    ABOUT, not in how they are drawn. */
 function g2Forms(pos, chap){
   var w=gWordOf(pos), m, a, i, r, made, out='', md;
-  if(!w) return gNeedWords();
+  if(!w) return '';
   m=gModel([w]);
   a=m.inflections;
   for(i=0;i<a.length;i++){
@@ -622,7 +647,7 @@ function g2Forms(pos, chap){
                md.slot? 'openSlot' : 'openFmr',
                md.slot? ['part', md.slot] : [md.rule || '']);
   }
-  return out || gNeedRules();
+  return out;
 }
 function g2Nouns(){ return g2Forms('n', 'n'); }
 /* §14 Verbs. 「luma / luma-ka をユーザーが実際に作る」 -- tense, and with it
@@ -654,7 +679,6 @@ function g2Made(m, r){
   m.inflections=all;
   return (made.surface===w.lemma)? '' : made.surface;
 }
-function gNeedRules(){ return '<div class="note gneed">'+t('gram.demo.need')+'</div>'; }
 
 /* §14 Negation. The chapter that is NOT the same walk as the two above, and
    the specification says why: 「必ず PREFIX になると決めつけない」. A language
@@ -709,7 +733,7 @@ function g2Pair(m, sub, v, rules, word, label, slotArgs){
     if(minus && minus!==plus)
       out+=g2Row(label, plus, minus, 'openSlot', slotArgs);
   }
-  return out || gNeedRules();
+  return out;
 }
 function g2Line(list){
   var laid=gLay(list), i, out=[];
@@ -718,7 +742,7 @@ function g2Line(list){
 }
 function g2Neg(){
   var sub=gWordOf('pro') || gWordOf('n'), v=gWordOf('v'), m;
-  if(!sub || !v) return gNeedWords();
+  if(!sub || !v) return '';
   m=gModel([sub, v]);
   return g2Pair(m, sub, v, g2Rules(m, 'neg'), gSlot('neg', 'not'),
                 t('stg.neg.t'), ['neg', 'not']);
@@ -760,20 +784,25 @@ function g2NegSurf(m, v, r, plus){
    moving one says which side. Two chapters are this -- a describing word
    beside its noun, and a place word beside its noun -- and both replace a
    pair of buttons that had to be READ. */
+/* Which side, as the two words themselves when this language has two, and as
+   the pair of names when it has not. The choice is the chapter and cannot wait
+   on the dictionary; only the phrase that demonstrates it can. */
 function g2Side(key, w, n){
   var laid, i, out='';
-  if(!w || !n) return gNeedWords();
+  if(!w || !n) return g2SidePick(key);
   laid=gLay([w, n]);
   for(i=0;i<laid.length;i++) out+=g2Chip(key, i, laid[i]);
   return '<div class="segs">'+out+'</div>';
 }
+function g2SidePick(key){
+  var a=['before','after'], i, now=gPos(key), out='';
+  for(i=0;i<a.length;i++)
+    out+='<button class="seg'+(a[i]===now? ' on' : '')+'"' +
+      DO('setGPos', [key, a[i]]) + '>'+esc(gPosLab(key, a[i]))+'</button>';
+  return '<div class="segs">'+out+'</div>';
+}
 function g2Adj(){
-  var a=gWordOf('adj'), n=gWordOf('n');
-  /* One "make some words first" and not two: without an adjective there is
-     nothing to arrange AND nothing to change, and saying so twice is the app
-     talking to itself. */
-  if(!a || !n) return gNeedWords();
-  return g2Side('adj', a, n)+g2Forms('adj', 'adj');
+  return g2Side('adj', gWordOf('adj'), gWordOf('n'))+g2Forms('adj', 'adj');
 }
 
 /* §14 Adpositions / Location. 「現在の adp の位置設定だけではなく、場所を
@@ -812,7 +841,7 @@ function g2Adp(){
    docs/BACKLOG.md carries what is missing, with what each would need. */
 function g2Ques(){
   var sub=gWordOf('pro') || gWordOf('n'), v=gWordOf('v'), m;
-  if(!sub || !v) return gNeedWords();
+  if(!sub || !v) return '';
   m=gModel([sub, v]);
   return g2Pair(m, sub, v, g2Rules(m, 'q'), null,
                 t('stg.ask.t'), null);

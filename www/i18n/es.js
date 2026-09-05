@@ -706,7 +706,6 @@ defLang('es', (function(){
       "gram.pos.after.n" : "Después del nombre",
       "gram.pos.before.v" : "Antes del verbo",
       "gram.pos.after.v" : "Después del verbo",
-      "gram.demo.need"   : "Escriba unas palabras más",
       "gram.demo.need.n": "Falta un sustantivo.",
       "gram.demo.need.v": "Falta un verbo.",
       "gram.demo.need.nv": "Faltan un sustantivo y un verbo.",

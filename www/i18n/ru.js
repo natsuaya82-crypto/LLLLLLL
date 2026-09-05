@@ -778,7 +778,6 @@ defLang('ru', (function(){
       "gram.pos.after.n"  : "После существительного",
       "gram.pos.before.v" : "Перед глаголом",
       "gram.pos.after.v"  : "После глагола",
-      "gram.demo.need"    : "Напишите ещё несколько слов",
       "gram.demo.need.n": "Нужно существительное.",
       "gram.demo.need.v": "Нужен глагол.",
       "gram.demo.need.nv": "Нужны существительное и глагол.",
