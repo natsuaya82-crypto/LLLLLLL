@@ -87,6 +87,36 @@ function modIn(uid){
   netUnban(uid, function(){ modMarkOut(uid, false); render(); },
            function(d, st){ toast(netWhy(d, st)); });
 }
+/* AND THE THIRD ANSWER: THERE WAS NOTHING WRONG.
+   「通報で問題なかったらその通報が消せるようにしてほしい」 OWNER 2026-09-05.
+
+   The two above are about the POST and the person; this is about the report,
+   and it is the only thing on this screen that really deletes -- a post comes
+   back and an account comes back, and a row that has gone has gone. So it
+   asks first, and the word on the button it asks with is what it does.
+
+   The row is taken off MODS by hand rather than by asking the server again:
+   the list is what came back, one row of it is now not there, and a second
+   read to learn that is a question whose answer is already known. Two reports
+   about one post are two rows and this removes the one that was pressed --
+   modMark() marks every row about a post because taking a post down answers
+   all of them, and 「there was nothing wrong with this report」 answers one.
+
+   A failure goes the same road every other failed request goes: netPop(),
+   with 再接続 running this same press. 「エラーになったらエラー用のポップ出して
+   再更新とかおさせればいい」 OWNER 2026-09-05. */
+function modDrop(id){
+  popAsk(t('mod.drop.sure'), function(){ modDropGo(id); }, t('mod.drop.yes'));
+}
+function modDropGo(id){
+  netReportDrop(id, function(){ modForget(id); render(); },
+    function(d, st){ netPop(d, st, '', function(){ modDropGo(id); }); });
+}
+function modForget(id){
+  var out=[], i, ms=MODS||[];
+  for(i=0;i<ms.length;i++) if(ms[i].id!==id) out.push(ms[i]);
+  MODS=out;
+}
 function modWhyOf(uid){
   var i;
   for(i=0;i<((MODS||[]).length);i++) if(MODS[i].uid===uid) return MODS[i].why;
@@ -143,6 +173,12 @@ function modRow(r){
           DO(r.out? 'modIn' : 'modOut', [r.uid]) + '>'+
           esc(t(r.out? 'mod.in' : 'mod.out', r.who))+'</button>'
       : '')+
+    /* And the answer that is about neither of them: the report was looked at
+       and there was nothing wrong. `.ghost` and not `.bad` -- what it takes
+       away is the card in front of you, and the red is for the two buttons
+       that reach somebody else's account. */
+    '<button class="btn ghost"' + DO('modDrop', [r.id]) + '>'+
+      esc(t('mod.drop'))+'</button>'+
     '</div>';
 }
 function vMod(){

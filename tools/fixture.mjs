@@ -943,6 +943,14 @@ export function halfDone(){
     ['the reports, and there are none', () => { const keep = MODS; MODS = [];
         window.route='mod'; NAV=[{r:'mod'}];
         const h = vMod(); MODS = keep; return h; }],
+    /* And the one thing on this screen that really deletes, asking. A post
+       comes back and an account comes back; a report row that has gone has
+       gone, so the word on the button that does it is the word for what it
+       does rather than 「はい」. */
+    ['a report being deleted, asking', () => {
+        popAsk(t('mod.drop.sure'), function(){}, t('mod.drop.yes'));
+        const h = document.getElementById('pop').outerHTML;
+        popOff(); return h; }],
     /* Both halves of the admin screen, because they are two screens and only
        one of them is ever on. The door is what everybody sees -- the fixture's
        account came in through `email`, so adminLocked() is true here exactly
