@@ -71,13 +71,14 @@ function stRead(){
    moving them could.
 
    OWNER DECISION 2026-08-25 「言語ごとですよ？」: the ONE value that is there
-   now goes to EVERY language the person already has. That is a decision and
-   not a reading of the data -- somebody with two languages has one value and
-   no way to say which language it was decided in -- and it is the day with
-   the least surprise in it, because that one value is what every one of their
-   screens shows today. A language made AFTERWARDS gets neither key and takes
-   the defaults, which is the whole of the bug: a new language is born with no
-   grammar on it.
+   now goes to EVERY language that was already on this phone. That is a
+   decision and not a reading of the data -- somebody with two languages has
+   one value and no way to say which language it was decided in -- and it is
+   the day with the least surprise in it, because that one value is what every
+   one of their screens shows today. A language made AFTERWARDS gets neither
+   key and takes the defaults 「当たり前でしょ」 OWNER 2026-09-05, which is the
+   whole of the bug: a new language is born with no grammar on it, and which
+   languages were here is migrateGramOld() below.
 
    Once per person, so the mark is the person's. It is written the way
    planMigrate() in www/core.js writes the settings at load, and for the same
@@ -92,19 +93,48 @@ function stRead(){
    one. That language keeps the value it has always had in SET and is the one
    language this does not reach.
 
-   It is safe to run twice, and that is what makes the mark a convenience
-   rather than a guard: a language it wrote already has an `order` and is left
-   alone, and a language it had nothing to copy onto is passed over again for
-   the same reason as the first time. */
+   It is safe to run twice: a language it wrote already has an `order` and is
+   left alone, and a language it had nothing to copy onto is passed over
+   again for the same reason as the first time. */
+/* WHICH LANGUAGES THAT ONE VALUE IS THE WORD ORDER OF, and it is the whole
+   of the answer to 「does this language have one of its own」.
+
+   `SET.order` and `SET.gpos` are the OLD APP's. They were written into
+   'lingua.set' by a version of this app that kept a language on this phone's
+   DISK, and nothing in www/ has written either of them since. So the
+   languages that one value is the word order of are the languages that same
+   version left here -- `lingua.<id>.<slice>`, the keys slMine() in
+   www/core.js reads as its fallback, which stopped being written on
+   2026-09-04 (CLAUDE.md rule 22: slWr() goes to memory, and what comes down
+   from the server is filed under `.got`).
+
+   A LANGUAGE MADE SINCE HAS NOTHING HERE, and that is how it is born with no
+   word order at all -- not by a mark saying 「this has run」. That mark was
+   `SET.gramLang`; it sat on the disk while what it recorded sat in memory,
+   and it is what lost the word order somebody had chosen on the second
+   launch. Not being here is the same answer on every launch, which is what a
+   mark could not be. */
+function migrateGramOld(){
+  var out=[], id, i;
+  for(id in LANGS){
+    if(!Object.prototype.hasOwnProperty.call(LANGS, id)) continue;
+    for(i=0;i<SLICES.length;i++){
+      try{
+        if(localStorage.getItem(langKeyOf(id, SLICES[i]))!==null){ out.push(id); break; }
+      }catch(e){ return out; }
+    }
+  }
+  return out;
+}
 function migrateGramLang(){
   /* What the APP put in the settings, as against what a person put there.
      Read off setDefaults() in www/core.js rather than written out here, so
      there is one place that says it: a second copy of 'SOV' in this file is
      a copy that goes on saying 'SOV' the day the default changes. */
   var appOrder=setDefaults().order;
-  var id, key, raw, o, g, k, v;
-  for(id in LANGS){
-    if(!Object.prototype.hasOwnProperty.call(LANGS, id)) continue;
+  var was=migrateGramOld(), n, id, key, raw, o, g, k, v;
+  for(n=0;n<was.length;n++){
+    id=was[n];
     key=langKeyOf(id, 'phases');
     raw=slRd(key);
     o={};
@@ -177,7 +207,12 @@ function migrateGramLang(){
      (`o.order===undefined`), and it copies FROM `SET.order`, which a
      migration never removes (docs/DATA_SAFETY.md rule 2) -- so it is still
      there on every launch, and the moment the language's own answer exists,
-     whether from here or from the server, this stops touching it. */
+     whether from here or from the server, this stops touching it.
+
+     The other thing the mark was doing -- keeping a language made afterwards
+     out of this -- is migrateGramOld(), which does not ask whether this has
+     run. It asks which languages were here before the move, and that is the
+     same answer on every launch. */
   try{ localStorage.setItem(LS_S, JSON.stringify(setOnDisk())); }catch(e){}
 }
 migrateGramLang();
