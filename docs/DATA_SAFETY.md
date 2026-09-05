@@ -36,12 +36,19 @@ hours when an afternoon's work was on one handset and nowhere else. **That
 window is what closed**, and the file went with it. The DELETE REVIEW is in
 `docs/CHANGELOG.md`, 2026-09-04.
 
-**What it costs is written here rather than left out.** With no signal there is
-one copy and it is `localStorage` on that handset. 「電波が無いときはログイン
-できない」 is the owner's answer to the screens; for the data the answer is that
-a language made offline is unbacked until there is a signal, and nothing stands
-behind it. **Offline is not a supported state any more** — it is a phone on its
-way back to one.
+**NOT SAVING IS THE SPEC.** 「保存するタイミングでエラーが起きるなら、保存
+されないし。そう言うもんじゃないの？オンラインアプリってどうなの？」 OWNER
+2026-09-05. With no signal there is nothing to send, so the save does not
+happen and 「電波が無いときはログインできない」 is what the screens say.
+**Offline is not a supported state any more** — it is a phone on its way back
+to one.
+
+**What a failure may not do is take the work with it.** 「なら失敗して残るに
+するべき。」 Same decision, and it is the half that is a rule: what somebody
+made stays on the screen, the app says so, and pressing save again is a save
+that can land. `saveTry()` in `www/core.js` is the one place a write to this
+phone answers for whether it landed. `docs/FEATURE_RULES.md` 2026-09-05 has
+the whole of it.
 
 ## The rules
 

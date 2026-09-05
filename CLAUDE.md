@@ -1026,10 +1026,21 @@ ACCOUNT has and fills in what is not here -- which is what `bkRestore()` used
 to do out of the file, with the same rule: it fills in what is **missing** and
 stops. `again-check` holds it, and holds the save arriving without a launch.
 
-**What this costs is written down rather than hidden.** With no signal there
-is no copy but the one on this handset, and 「電波が無いときはログインできない」
-is the owner's answer to that. A language made offline is in `localStorage`
-until there is a signal; nothing else stands behind it.
+**NOT SAVING IS THE SPEC. SAVING AND SAYING NOTHING IS NOT.**
+「Twitterとかは電波がないと開かないでしょ？…保存するタイミングでエラーが
+起きるなら、保存されないし」「なら失敗して残るにするべき。」 OWNER 2026-09-05.
+With no signal there is nothing to send and the save does not happen, and that
+is what an online app is rather than a hole to be plugged. What a failure may
+not do is take the work with it: `saveTry()` in `www/core.js` is the one place
+a write to this phone answers for whether it landed, and it says `save.no` --
+「保存できませんでした」 -- while `LSL`, `WORDS` and `LETTERS` stay exactly
+where they were, so pressing save again is a save that can land.
+
+**NOTHING HOLDS THIS, AND THAT IS SAID HERE SO SILENCE IS NOT READ AS A
+CHECK.** No check in the gate makes `localStorage` throw. It is a rule a
+person holds by pressing save on a phone with no room left. **And the server
+half still says nothing** -- a slice that `netSlicePut()` could not put up is
+kept and tried again, silently; `docs/BACKLOG.md` carries it.
 
 ### 12. A card of a post is a picture of that post
 
@@ -1626,12 +1637,13 @@ that does remove, and it is only ever a person deleting a language or an
 account; leaving the disk key there would be the slice coming back through
 the fallback on the next launch.
 
-**What that costs is written down rather than hidden.** With no signal there
-is nothing to read — 「電波が無いときはログインできない」 — and **work made
-before it reaches the server is lost if the app closes.** The window is the
+**Work made before it reaches the server does not survive the app closing,
+and that is the spec.** 「保存するタイミングでエラーが起きるなら、保存され
+ないし。そう言うもんじゃないの？」 OWNER 2026-09-05. The window is the
 onboarding walk, which makes a language before there is an account to send it
 to; after the door a save goes up the moment it is made (rule 6), so there is
-no other window. `docs/CHANGELOG.md` 2026-09-04 carries it.
+no other window. What that same decision does NOT allow is a failure that
+takes the work with it -- rule 11 above and `saveTry()` in `www/core.js`.
 
 **And `netLangsDown()` fills a language it already knows about.** It used to
 skip one whose id was in the index, which was right while a slice survived a
