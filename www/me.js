@@ -780,7 +780,21 @@ function meFollowerPull(){
     ME.fr=hs;
     saveMe();
     render();
-  }, function(){ FR_ASKED=false; });
+  }, function(d, s, m){
+    FR_ASKED=false;
+    /* 通信が落ちたら何も進まない ── netPop() (www/net.js)。この画面も
+       サーバーにしか無いものを取りに行く道の一本で、［再接続］はここも
+       もう一度行く。「通信エラーなら進むわけねえだろ全部」
+       「エラーになったらエラー用のポップ出して再更新とかおさせればいい」
+       OWNER 2026-09-05.
+
+       落ちたことを黙って呑んでいた ── FR_ASKED を戻すだけで、ポップも出ず、
+       ［再接続］の行き先にも入らなかった。隣の meFollowPull() は出す。
+       同じ日の決定の下で片方だけが黙っているのは食い違いで、しかも黙るほうが
+       悪い: ME.fr が無いままの画面は「誰にも追われていない」と同じ絵になり、
+       その人には何が起きたのか見えるものが一つも無い。 */
+    netPop(d, s, m, meFollowerPull);
+  });
 }
 /* Who you have blocked, as handles, beside who you follow -- both are the
    account's and neither is a language's. The uuids the timeline needs are the

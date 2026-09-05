@@ -53,6 +53,14 @@
       ME.fr stayed absent -- and an absent list draws the same picture as
       「nobody」. 「空」と「まだ誰も訊いていない」は別.
 
+   8. AND A FOLLOW PULL THAT FALLS OVER SAYS SO. 「通信エラーなら進むわけ
+      ねえだろ全部」「エラーになったらエラー用のポップ出して再更新とかおさせれば
+      いい」 OWNER 2026-09-05. meFollowerPull() put FR_ASKED back and did
+      nothing else -- no 「接続できません」, and 再接続 had nowhere to go back
+      to -- while meFollowPull() beside it has put one up since it was
+      written. The pair is read side by side, because 「one of the two is
+      silent」 is the fault.
+
    Run: node tools/tl-check.mjs                                          */
 import { seed } from './fixture.mjs';
 import { fileURLToPath } from 'url';
@@ -237,6 +245,37 @@ const r = await pg.evaluate(({ s }) => {
   FR_ASKED = false;
   ME.fr = heldFr;
 
+  /* ---- 8: a request that falls over says so, and 再接続 goes back for it -
+     「通信エラーなら進むわけねえだろ全部」「エラーになったらエラー用のポップ
+     出して再更新とかおさせればいい」 OWNER 2026-09-05.
+
+     meFollowerPull() swallowed the failure -- FR_ASKED went back to false and
+     nothing else happened: no pop, and 再接続 had nowhere to go back to. Its
+     neighbour meFollowPull() has put one up since the day it was written.
+
+     THE PAIR IS READ SIDE BY SIDE, because the fault is that ONE of two
+     answers and the other is silent, and a check that watched one alone
+     could not see that. Silence is the worse half here: with no ME.fr the
+     screen draws 「nobody follows you」 and the person is shown nothing at
+     all about what happened. */
+  const heldPair = { fr:ME.fr, fo:ME.fo, ers:netFollowers, ing:netFollowing };
+  const fell = (pull, fn) => {
+    popOff();
+    NET_AGAIN = [];
+    FR_ASKED = false; FO_ASKED = false;
+    pull();
+    return { pop:popOn(), again:NET_AGAIN.indexOf(fn) >= 0 };
+  };
+  netFollowers = function (ok, bad) { bad(null, 0, 'follow 0'); };
+  netFollowing = function (ok, bad) { bad(null, 0, 'follow 0'); };
+  out.ersFell = fell(meFollowerPull, meFollowerPull);
+  out.ingFell = fell(meFollowPull, meFollowPull);
+  popOff();
+  NET_AGAIN = [];
+  netFollowers = heldPair.ers; netFollowing = heldPair.ing;
+  FR_ASKED = false; FO_ASKED = false;
+  ME.fr = heldPair.fr; ME.fo = heldPair.fo;
+
   return out;
 }, { s: seed.toString() });
 
@@ -335,6 +374,17 @@ if (r.askedOnTheirs !== 1)
       'ME.fr stays ABSENT and an absent list draws the same picture as ' +
       '「nobody follows you」. 「空」と「まだ誰も訊いていない」は別');
 
+if (!r.ersFell.pop)
+  say('「who follows me」 falling over puts nothing on the screen. The phone ' +
+      'draws 「nobody follows you」 and the person is told nothing. ' +
+      '「通信エラーなら進むわけねえだろ全部」');
+if (!r.ersFell.again)
+  say('and 再接続 does not go back for it, so there is no way to ask again ' +
+      'short of killing the app.');
+if (!r.ingFell.pop || !r.ingFell.again)
+  say('「who I follow」 falling over is silent too — the pair has gone quiet ' +
+      'together, which is a change to netPop() rather than to these two.');
+
 if (errs.length) say('the page threw: ' + errs[0]);
 
 console.log('a post answers to both its names: the thread carries the reply ' +
@@ -352,6 +402,8 @@ console.log('and the Pro mark is on your own name on Pro and off it on free');
 console.log('「フォローされています」: on the card of somebody who does, off ' +
             'everybody else’s and off your own, and a person’s page asks who ' +
             'follows this account ' + r.askedOnTheirs + ' time(s)');
+console.log('both follow pulls put up 「接続できません」 when they fall over, ' +
+            'and 再接続 goes back for both');
 console.log('the pull answers on: ' + r.pullRoutes + ' — a thread asks about ' +
             'every post drawn on it, a person’s page for what they wrote, ' +
             'and a list that is asked once a session is asked again');
