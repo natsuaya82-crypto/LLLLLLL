@@ -70,7 +70,7 @@ function openAdd(from){
     wdMnNew=false; wdExNew=false;
     if(addFrom) addW.from=addFrom;
     wEdit={seq:[], sp:(par? JSON.parse(JSON.stringify(spOf(par))) : []),
-           mns:[], pos:addPos, reg:'', tags:[], ety:'', nt:''};
+           mns:[], pos:addPos, sub:'', reg:'', tags:[], ety:'', nt:''};
     addFmClear();
     wdSync();
   }
@@ -1094,6 +1094,49 @@ function vPos(){
     }).join('')+'</div></div>';
 }
 function posPick(k){ wdSetPos(k); relDirty(); back(); }
+/* ---- and the one the person made themselves ----------------------------
+   OWNER 2026-09-05: the thirteen stay the thirteen and a subclass goes under
+   one of them. www/shell.js § subsOf() is what a subclass IS -- what words
+   are already in -- so this screen is that list and a box to write one that
+   is not on it yet.
+
+   It is a form and not a route, which is what posPick's screen would be if it
+   were written today: the list is one press deep, it is built from the
+   dictionary rather than from anything stored, and a route would be a second
+   place saying that a word has a subclass.
+
+   The subclasses OF THIS PART OF SPEECH and no others. 動詞 → 自動詞 is not
+   an answer about a noun, and one list holding every subclass in the language
+   is the row of chips CLAUDE.md forbids wearing a list's clothes. */
+function wdSubHTML(){
+  return wdPickRow(t('f.sub'), wEdit.sub || t('f.sub.none'), DO('openSub'));
+}
+function openSub(){
+  var subs=subsOf(wEdit? wEdit.pos : ''), now=(wEdit && wEdit.sub) || '';
+  openForm('wsub', t('f.sub'),
+    /* "None" is a row like the others and is ticked when there is none, so
+       taking a subclass off is the same press as putting one on. */
+    wdOneHTML(t('f.sub.none'), !now, 'subPick', '')+
+    subs.map(function(x){
+      return wdOneHTML(x, x===now, 'subPick', x);
+    }).join('')+
+    '<div class="sec">'+t('f.sub.new')+'</div>'+
+    '<div class="field">'+
+      lnField('wd-sub', '', ' aria-label="'+esc(t('f.sub.new'))+'"'+
+              KD('subNew'), '')+'</div>');
+}
+FORM_OPEN.wsub=function(){ openSub(); };
+function subPick(x){ wdSetSub(x); relDirty(); back(); }
+/* Enter on the box is what makes one. There is no button beside it: a name
+   typed and not pressed is a subclass somebody believes they made, and Enter
+   is what every other one-line box on this sheet already answers to. */
+function subNew(){
+  var el=document.getElementById('wd-sub'), x;
+  if(!el) return;
+  x=String(el.value||'').trim();
+  if(!x) return;
+  wdSetSub(x); relDirty(); back();
+}
 function vReg(){
   if(!wEdit) return viewGone();
   return '<div class="view">'+navTop()+'<div class="body">'+
@@ -1180,6 +1223,7 @@ function wdFormHTML(){
        to. They had a heading each over a box each. */
     '<div style="margin-top:22px">'+
       wdPickRow(t('f.pos'), posLabel(wEdit.pos), DO('go', ["pos"]))+
+      wdSubHTML()+
       (wdFrom()? wdFmHTML() : '')+
       wdRegHTML()+
     '</div>'+
@@ -1257,17 +1301,17 @@ function wdSaveBtn(){
 
    `mn` is not in the signature: it is the first meaning, written from `mns` by
    saveWord(), so it would be the same fact counted twice. */
-function wdSig(sp, mns, pos, reg, tags, ety, nt){
-  return JSON.stringify([sp||[], mns||[], pos||'', reg||'', tags||[],
-                         String(ety||''), String(nt||'')]);
+function wdSig(sp, mns, pos, sub, reg, tags, ety, nt){
+  return JSON.stringify([sp||[], mns||[], pos||'', String(sub||''), reg||'',
+                         tags||[], String(ety||''), String(nt||'')]);
 }
 function wdSigEdit(){
-  return wdSig(wEdit.sp, wEdit.mns, wEdit.pos, wEdit.reg, wEdit.tags,
-               wEdit.ety, wEdit.nt);
+  return wdSig(wEdit.sp, wEdit.mns, wEdit.pos, wEdit.sub, wEdit.reg,
+               wEdit.tags, wEdit.ety, wEdit.nt);
 }
 function wdSigWord(w){
-  return wdSig(spOf(w), wMns(w), w.pos, w.reg||'', (w.tags||[]).slice(),
-               w.ety||'', w.nt||'');
+  return wdSig(spOf(w), wMns(w), w.pos, subOf(w), w.reg||'',
+               (w.tags||[]).slice(), w.ety||'', w.nt||'');
 }
 function wdKeepOn(){
   if(!wEdit || !openHw || addW || langLocked()) return;
@@ -1449,7 +1493,7 @@ function openEdit(hw){
   var w=findWord(hw); if(!w) return;
   openHw=w.hw; addW=null; wdMnNew=false; wdExNew=false;
   wEdit={seq:wPh(w).slice(), sp:JSON.parse(JSON.stringify(spOf(w))), mns:wMns(w).slice(),
-         pos:w.pos, reg:w.reg||'', tags:(w.tags||[]).slice(),
+         pos:w.pos, sub:subOf(w), reg:w.reg||'', tags:(w.tags||[]).slice(),
          ety:w.ety||'', nt:w.nt||''};
   /* The mark this sheet's changes are measured from, taken before anything is
      drawn out of wEdit. Off the WORD and not off wEdit, so that the two being
@@ -1470,7 +1514,17 @@ function wdSync(){ wEdit.seq=spPh(wEdit.sp||[]); }
    assignments. Each is one line now, in a file a checker can read. */
 function goPlans(){ go('plans'); }
 function wdSetNt(v){ wEdit.nt=v; wdKeepTouch(); }
-function wdSetPos(v){ wEdit.pos=v; }
+/* A subclass belongs UNDER a part of speech, so a part of speech that MOVES
+   leaves the old one standing under a heading it was never about -- 自動詞 on
+   a noun, offered to the next word by subsOf('n') the moment it is saved. It
+   is dropped rather than carried across or guessed at, and nothing is lost
+   that anybody else had: subsOf() reads the dictionary, so the name is still
+   on the list for as long as one word is still in it. */
+function wdSetPos(v){
+  if(wEdit.pos!==v) wEdit.sub='';
+  wEdit.pos=v;
+}
+function wdSetSub(v){ wEdit.sub=String(v||'').trim(); }
 /* A reading typed whole, given back to the positions that make it up.
 
    The sounds are cut out of what was typed and handed along in order, one to
@@ -1512,6 +1566,11 @@ function wdPutExtras(w){
   if(String(wEdit.nt||'').trim()) w.nt=String(wEdit.nt).trim(); else delete w.nt;
   if(String(wEdit.ety||'').trim()) w.ety=String(wEdit.ety).trim(); else delete w.ety;
   if(wEdit.reg) w.reg=wEdit.reg; else delete w.reg;
+  /* Empty is no subclass rather than an empty one, which is what `sub` being
+     absent means everywhere else -- subsOf() collects what words are IN, and
+     a word carrying '' would be a fourteenth thing on nobody's list. */
+  if(String(wEdit.sub||'').trim()) w.sub=String(wEdit.sub).trim();
+  else delete w.sub;
   /* `fm` is written where it is chosen, not here. What is here is the one
      thing Save has to hold: a form of nothing is not a form, so a word with
      no parent cannot carry one. */
