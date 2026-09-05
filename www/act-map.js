@@ -65,7 +65,7 @@ act('storeRestore', storeRestore);
 act('storeManage', storeManage);
 /* One for every search box. www/shell.js § clearSearch. */
 act('clearSearch', clearSearch);
-act('delNote', delNote);
+act('delNoteGo', delNoteGo);
 act('delWord', delWord);
 act('doImport', doImport);
 act('impScan', impScan);
@@ -187,6 +187,7 @@ act('ntSelOn', ntSelOn);
 act('ntSelOff', ntSelOff);
 act('ntSelTap', ntSelTap);
 act('ntSelDel', ntSelDel);
+act('ntSwTapClose', ntSwTapClose);
 act('openOwnPhase', openOwnPhase);
 act('openPick', openPick);
 act('openMe', openMe);

@@ -754,7 +754,6 @@ defLang('zh', (function(){
       "notes.empty.s"    : "还没有",
       "toast.note.kept"  : "笔记已留下",
       "toast.note.gone"  : "笔记已删除",
-      "confirm.note.del" : "删除这条笔记？",
       /* the conversation */
       /* grammar — the decisions */
       "gram.role.S"      : "做的",

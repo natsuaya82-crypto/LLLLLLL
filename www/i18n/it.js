@@ -750,7 +750,6 @@ defLang('it', (function(){
       "notes.empty.s"    : "Ancora nessuna",
       "toast.note.kept"  : "Nota conservata",
       "toast.note.gone"  : "Nota eliminata",
-      "confirm.note.del" : "Eliminare questa nota?",
       /* the conversation */
       /* grammar — the decisions */
       "gram.role.S"      : "chi fa",

@@ -17,6 +17,7 @@ var NOTES=[];
 function ntRead(){
   NOTES=[];
   try{ var nt=JSON.parse(slRd(langKey('notes'))||'[]'); if(Array.isArray(nt)) NOTES=nt; }catch(e){}
+  ntSwipeAt=-1;               /* another language's rows are not these rows */
 }
 ntRead();
 function saveNotes(){ if(langLocked()) return; bkTouch(); slWr(langKey('notes'), JSON.stringify(NOTES)); }
@@ -72,16 +73,16 @@ function openNote(i){
        すでに t を持つメモを開いたときは t + 改行 + b を本文に出す ── 何も失わない。 */
     '<div class="field ntform">'+
       '<textarea id="nt-b" class="ntbody" placeholder="'+esc(t('notes.b.ph'))+'"'+
-      IN('ntSetB') + '>'+esc(ntTyped(k))+'</textarea></div>'+
+      IN('ntSetB') + '>'+esc(ntTyped(k))+'</textarea></div>',
     /* AND NOTHING TO PRESS IN SOMEBODY ELSE'S LANGUAGE. A note opened from a
-       row is opened to READ there -- langLocked() (www/core.js) -- so the
-       delete goes with the save below, and what is left is the note. The
-       field is not marked readonly: there is nothing to press, so nothing
-       typed into it goes anywhere, and a field that refuses the cursor is a
-       second way of saying what an absent Save already says. */
-    (k>=0 && !langLocked()
-      ? '<button class="set" style="margin-top:10px;border-bottom:none"' + DO('delNote') + '>'+
-        '<span class="sl bad">'+t('notes.del')+'</span></button>' : ''),
+       row is opened to READ there -- langLocked() (www/core.js). The field is
+       not marked readonly: there is nothing to press, so nothing typed into
+       it goes anywhere, and a field that refuses the cursor is a second way
+       of saying what an absent Save already says.
+
+       Deleting is the list's own, by a left swipe on the row -- 「メモの編集の
+       ところに削除ボタンやめて。一覧から右にスワイプして削除。標準アプリと
+       同じ作りにして」 OWNER 2026-09-05, `delNoteGo()` below. */
     null, null, true);
 }
 FORM_OPEN.note=function(i){ openNote(parseInt(i,10)); };
@@ -124,16 +125,74 @@ function ntKept(){
   var n=(ntAt>=0 && NOTES[ntAt])? NOTES[ntAt] : null;
   return n? ntWhole(n) : '';
 }
-function delNote(){
-  if(ntAt<0 || !NOTES[ntAt]) return;
-  /* 確認は自前のポップで。「標準は使わねえって言ってるだろこれも禁止や」
-     OWNER 2026-09-01 -- confirm() は使わない。はいの側がこの下。 */
-  popAsk(t('confirm.note.del'), function(){ delNoteGo(); }, t('pop.yes'));
+/* By the index itself, and not `ntAt`: this is pressed from the list, where
+   no note is "open", so there is nothing for `ntAt` to name. */
+function delNoteGo(i){
+  if(!NOTES[i]) return;
+  NOTES.splice(i,1);
+  if(ntAt===i) ntAt=-1; else if(ntAt>i) ntAt--;
+  ntSwipeAt=-1;
+  saveNotes(); render(); toast(t('toast.note.gone'));
 }
-function delNoteGo(){
-  NOTES.splice(ntAt,1); ntAt=-1;
-  saveNotes(); closeSheet({target:{id:'sbg'}}); render(); toast(t('toast.note.gone'));
+/* ---- deleting a row by swiping it, the way the standard app does it ------
+   「メモの編集のところに削除ボタンやめて。一覧から右にスワイプして削除。
+   標準アプリと同じ作りにして」 OWNER 2026-09-05. Left on the row uncovers
+   `.ntdel` sitting under it; past halfway it stays open for a press, short
+   of that it springs back -- the same two-state shape www/shell.js's own
+   back-swipe (`swMove`/`swEnd`) already uses for the same reason: a real
+   thumb does not aim for a pixel.
+
+   `ntSwipeAt` is which row is open, so opening a second one closes the
+   first the way it does in every app that has ever done this. Nothing
+   round or bordered or filled -- .ntdel is red text and nothing else
+   (CLAUDE.md § NO ROUNDED BOX). */
+var NTDEL_W=76;
+var ntSwOn=false, ntSwLive=false, ntSwX=0, ntSwY=0, ntSwI=-1, ntSwEl=null;
+var ntSwipeAt=-1;
+function ntSwStart(e){
+  if(here().r!=='notes' || NTSEL || langLocked()) return;
+  /* The screen's own edge is the back gesture's (www/shell.js § swStart) --
+     a swipe starting there is never this one. */
+  var w=window.innerWidth||375;
+  if(e.clientX<=30 || e.clientX>=w-30) return;
+  var row=actOf(e.target, 'data-nti');
+  if(!row) return;
+  ntSwX=e.clientX; ntSwY=e.clientY; ntSwOn=true; ntSwLive=false;
+  ntSwI=parseInt(row.getAttribute('data-nti'),10);
+  ntSwEl=row;
 }
+function ntSwMove(e){
+  if(!ntSwOn) return;
+  var dx=e.clientX-ntSwX, dy=e.clientY-ntSwY, d;
+  if(!ntSwLive){
+    /* A thumb heading down the page is the list scrolling, and a small
+       wobble either way is still a tap on the row -- neither is this. */
+    if(Math.abs(dy)>Math.abs(dx)) { ntSwOn=false; return; }
+    if(dx>-12) return;
+    ntSwLive=true;
+    if(ntSwipeAt>=0 && ntSwipeAt!==ntSwI){ ntSwipeAt=-1; render(); }
+  }
+  if(e.cancelable) e.preventDefault();
+  d=Math.max(0, Math.min(NTDEL_W, -dx));
+  if(ntSwEl) ntSwEl.style.transform='translateX(-'+d+'px)';
+}
+function ntSwEnd(e){
+  if(!ntSwOn) return;
+  ntSwOn=false;
+  if(!ntSwLive) return;
+  ntSwLive=false;
+  var dx=e.clientX-ntSwX, d=Math.max(0, Math.min(NTDEL_W, -dx));
+  if(ntSwEl) ntSwEl.style.transform='';
+  ntSwipeAt=(d>NTDEL_W/2)? ntSwI : -1;
+  render();
+}
+document.addEventListener('pointerdown', ntSwStart, {passive:true});
+document.addEventListener('pointermove', ntSwMove, {passive:false});
+document.addEventListener('pointerup', ntSwEnd, {passive:true});
+document.addEventListener('pointercancel', ntSwEnd, {passive:true});
+/* Pressing the row itself while its delete is showing closes it, the way the
+   standard app does -- it is not a second way to open the note. */
+function ntSwTapClose(){ ntSwipeAt=-1; render(); }
 
 /* Newest first, which is the order a notebook is read in. There was a search
    over this -- a lens in the corner that opened a box -- and it is gone:
@@ -194,10 +253,14 @@ function vNotes(){
           '</button></div>';
       return;
     }
-    rows+='<button class="ntrow"' + DO('openNote', [i]) + '>'+
-      '<span class="nth">'+esc(ntHead(NOTES[i]))+'</span>'+
-      (ntBody(NOTES[i])? '<span class="ntb">'+esc(ntBody(NOTES[i]))+'</span>' : '')+
-      '</button>';
+    var swOpen=(ntSwipeAt===i);
+    rows+='<div class="ntswipe">'+
+      (langLocked()? '' : '<span class="ntdel"'+DO('delNoteGo', [i])+'>'+esc(t('notes.del'))+'</span>')+
+      '<button class="ntrow'+(swOpen? ' swopen':'')+'" data-nti="'+i+'"'+
+        (swOpen? DO('ntSwTapClose', [i]) : DO('openNote', [i]))+'>'+
+        '<span class="nth">'+esc(ntHead(NOTES[i]))+'</span>'+
+        (ntBody(NOTES[i])? '<span class="ntb">'+esc(ntBody(NOTES[i]))+'</span>' : '')+
+        '</button></div>';
   });
   return '<div class="view">'+
     navTop('', NTSEL
