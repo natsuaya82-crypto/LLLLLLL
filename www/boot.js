@@ -146,7 +146,15 @@ function bootSession(){
    this call is now the same as the missing half: no session, and nobody is
    told, because a phone that is merely offline on a launch is not a phone
    with a problem to report. */
-netResume(bootSession, function(){});
+/* 通信が落ちたら何も進まない ── netPop() (www/net.js) が四箇所の一つ。
+   この関数が「起動のとき一回」で、ポップの［再更新］はこれをもう一度呼ぶ。
+   署名の無い iPhone では netResume() はサーバーへ行かず `resume −` を返す
+   ので、netPop() はそこで何もしない ── 出て行かなかった要求に「もう一度」は
+   無いから。判断はあちらの一箇所にある。 */
+function bootAsk(){
+  netResume(bootSession, function(d, s, m){ netPop(d, s, m, bootAsk); });
+}
+bootAsk();
 /* one listener above the screen, since the screen itself is replaced whole on
    every render and nothing can be bound to it */
 actWire(document.getElementById('app'));

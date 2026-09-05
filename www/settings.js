@@ -492,16 +492,27 @@ function wipeLangs(){
   popAsk(t('confirm.wipe.langs', langName||t('lang.untitled')),
          function(){ wipeLangsGo(); }, t('pop.yes'));
 }
+/* THE SERVER FIRST, AND WAITED ON.
+   「通信エラーなら進むわけねえだろ全部」 OWNER 2026-09-05 ── 削除は保存の道
+   で、種類ごとの例外はない。落ちたら netPop() (www/net.js) が出て、この端末
+   には一文字も書かない。
+
+   それまでは待っていなかった ── 「答えは何も変えない、どちらにせよこの端末
+   からは消える」。あの一文は上の決定に置き換わった。行がサーバーに立ったまま
+   端末の写しだけ消えるのは、人が「消した」と思っているものが消えていない状態
+   で、削除の途中で止まっているということ。
+
+   サーバーへ一度も上がっていない言語には行が無く、netLangDrop() はそれを
+   ok() で返す ── サーバーへは行かないので、電波が無くてもこの道は通る。 */
 function wipeLangsGo(){
-  var id=langId, j;
+  var id=langId;
   if(!id || langLocked()) return;
-  /* THE SERVER FIRST AND NOT WAITED ON. A language lives there; the phone
-     holds the copy. Its answer changes nothing here -- the language is going
-     off this phone either way, and a row left behind on a bad network is
-     picked up by nothing (netLangsDown fills in what is MISSING, and this id
-     will not be in the index to be filled). Asking after the local keys were
-     gone would be asking about a language this phone can no longer name. */
-  netLangDrop(id);
+  netLangDrop(id, function(){ wipeLangsHere(id); },
+              function(d, s, m){ netPop(d, s, m, wipeLangsGo); });
+}
+/* 行が消えたあと。ここから先はこの端末の写しの話で、順番がそれ。 */
+function wipeLangsHere(id){
+  var j;
   for(j=0;j<SLICES.length;j++){
     slRm(langKeyOf(id, SLICES[j]));
     /* and what this phone and the server last agreed that slice was. It is

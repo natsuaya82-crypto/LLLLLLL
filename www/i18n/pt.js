@@ -361,6 +361,7 @@ defLang('pt', (function(){
       "net.badhandle" : "Um ID tem de 2 a 24 caracteres: a–z, 0–9 e _",
       "net.handle.taken" : "Esse ID já está em uso.",
       "net.offline" : "Sem conexão.",
+      "net.again" : "Tentar de novo",
       "net.none" : "Erro de conexão.<br>Conecte-se onde o sinal for bom.",
       "net.failed" : "Não funcionou.",
       "net.badlogin" : "E-mail ou senha incorretos.",

@@ -395,7 +395,13 @@ function snsPull(){
        render, and that is the one this line is for. */
     pullSpinOff();
     if(ps) render();
-  }, function(){ snsPulling=false; pullSpinOff(); });
+  }, function(d, s, m){
+    snsPulling=false; pullSpinOff();
+    /* 通信が落ちたら何も進まない ── netPop() (www/net.js)。snsAsk() もここへ
+       来るので、「引っ張って更新」と「サーバーにしか無いものを取りに行く画面
+       へ入ったとき」の二つの道が、この一本。 */
+    netPop(d, s, m, snsPull);
+  });
 }
 /* ---- pulling a timeline down to ask again --------------------------------
    「プルトゥーリフレッシュも入れて欲しい」 OWNER 2026-08-28.
@@ -639,7 +645,7 @@ function pullThread(){
     if(!ps) return;
     postTake(ps);
     render();
-  }, function(){ pullSpinOff(); });
+  }, function(d, s, m){ pullSpinOff(); netPop(d, s, m, pullThread); });
 }
 /* A PERSON'S PAGE: what they have written, who they are, and the two counts.
    All three were asked once and never again -- whoPull() keeps WHO_ASKED per
@@ -657,7 +663,7 @@ function pullWho(){
     if(!ps) return;
     postTake(ps);
     render();
-  }, function(){ pullSpinOff(); });
+  }, function(d, s, m){ pullSpinOff(); netPop(d, s, m, pullWho); });
 }
 /* And the list behind one of those counts, which is the same ask without the
    posts. 「フォロワーとかタップしても見れないし」 was the door; this is the
@@ -1949,7 +1955,10 @@ function notPull(){
     NOTES_HAVE=ns;
     notKeep();
     render();
-  }, function(){ notPulling=false; pullSpinOff(); });
+  }, function(d, s, m){
+    notPulling=false; pullSpinOff();
+    netPop(d, s, m, notPull);
+  });
 }
 /* The face, and the way to whoever wears it. 「行に顔、顔を押すとその人の
    ページ」 OWNER -- which is the same sentence the timeline already answered

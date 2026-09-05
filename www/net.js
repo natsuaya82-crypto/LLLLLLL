@@ -354,6 +354,50 @@ function netWhy(d, status, mark){
   if(status===409) return t('net.handle.taken');
   return m || t('net.failed');
 }
+/* ---- 通信が落ちたら、何も進まない --------------------------------------------
+   「通信エラーなら進むわけねえだろ全部」
+   「そもそも通信は最初に一回とかプルトゥーリフレッシュした時でしょ？
+     保存とか違う画面いく時にエラーが起きたらその画面表示ってわかる？」
+   「そもそも通信エラーならそこにはいけないはずでしょ。
+     途中でエラーになった場合は全部ポップで良くない？
+     いちいち直書きするからまた面倒なんだろエラーになったらエラー用のポップ出して再更新とかおさせればいいやんそれだけで1個作れば全部に使えるやん」
+   OWNER 2026-09-05.
+
+   ONE POPUP, AND IT IS THE ONLY THING A FAILED REQUEST DOES. Nothing is
+   written to the phone, nothing on the screen advances, and the person is
+   given the one way out there is: ask again.
+
+   IT IS 四箇所 AND NOT 四十三画面. The server is reached at a launch, at a
+   pull, at a save (a DELETE is a save -- there is no second kind), and on
+   the way into a screen that has to fetch something only the server has.
+   Walking the app touches nothing. So this is called from those roads and
+   from nowhere else, and a screen has no sentence of its own about the
+   signal.
+
+   THE DECISION IS HERE AND IS NOT COPIED INTO THE FOUR. A pop is for a
+   request that WENT OUT AND GOT NO ANSWER, which is what 通信エラー is.
+
+     `−`  never sent at all -- netResume() on a phone with no session, and
+        its siblings. There is nothing to ask again for.
+     `≠`  the server answered 200 and it was not a session. It answered.
+     any status  the server answered. A refresh token it no longer accepts
+        is the session ENDING (netResume() above signs the phone out and
+        draws), not a network that is down.
+
+   netWhy() says what it was -- the app's one place for that -- so no second
+   sentence is invented here. `netWhy(null, 0, ...)` is 「接続できません」.
+
+   AND ONE FAILURE IS ONE POP. A launch fires six requests; six pops stacked
+   on each other would be six people telling you the same thing. popOn() is
+   asked rather than a flag of this file's own, because the popup is one
+   thing and render() already takes it down. */
+function netPop(d, s, m, again){
+  var mark=String(m||'');
+  if(s) return;
+  if(mark.indexOf('−')>=0 || mark.indexOf('≠')>=0) return;
+  if(popOn()) return;
+  popAsk(netWhy(d, s, m), again||null, t('net.again'), t('pop.no'));
+}
 
 /* ---- coming and going --------------------------------------------------- */
 /* A session, put away. Everything that signs somebody in ends here, so there
@@ -1455,7 +1499,12 @@ function netLangsDown(then){
         }, function(){ lost=true; step(); });
       }
       step();
-    }, function(){ done(0); });
+    }, function(d, s, m){
+      /* 起動の道の二つ目で、人が気づくのはこちら ── NET_HEARD は偽のままで、
+         この人の言語は一本も来ていない。［再更新］はこの道をもう一度。 */
+      netPop(d, s, m, function(){ netLangsDown(then); });
+      done(0);
+    });
 }
 /* The open language and its copy, put together. Read, merge, write back
    whatever moved -- in that order, so a phone that has been offline for a
@@ -1629,8 +1678,14 @@ function netSaveUpGo(){
         netSlice1(id, sid, kind, there[kind], function(){ step(); });
       }
       step();
-    }, function(){ NET_SYNCING=false; }, kinds);
-  }, function(){ NET_SYNCING=false; });
+    }, function(d, s, m){
+      NET_SYNCING=false;
+      netPop(d, s, m, netSaveUpGo);
+    }, kinds);
+  }, function(d, s, m){
+    NET_SYNCING=false;
+    netPop(d, s, m, netSaveUpGo);
+  });
 }
 /* EVERY LANGUAGE THIS PERSON MADE, and it used to be the one that happened to
    be open. That is not a smaller version of the same thing: a second language
