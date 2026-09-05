@@ -119,11 +119,7 @@ const ROADS = {
   /* The notices are the server's own answer (`notices()` in schema.sql) --
      nothing here writes one, and the copy is what the screen draws in the
      first frame. netNotices() is the road, downward. */
-  'sns.js:k': { to: 'netNotices' },
-  /* The stage somebody wrote about, which used to live in the settings and
-     belongs to the language. phases.js writes the settings while it moves it;
-     the language half is a slice and is in memory. */
-  'phases.js:LS_S': { phone: 'the settings -- the same key core.js keeps, written from the migration that takes a stage OUT of it' }
+  'sns.js:k': { to: 'netNotices' }
 };
 
 const files = fs.readdirSync(WWW).filter(f => f.endsWith('.js'));

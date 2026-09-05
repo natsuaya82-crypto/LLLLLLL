@@ -2178,6 +2178,34 @@ export function halfDone(){
        window.route = 'ltset'; NAV = [{ r:'ltset', a:'alpha' }];
        const h = vLtset();
        LETTERS = was; SET.plan = wasPlan; LT_SEQ = wasSeq;
+       return h; }],
+    /* §14 語順、A LANGUAGE THAT WAS JUST MADE, on a phone whose settings still
+       carry the word order from before a language could hold one of its own.
+       That is the state migrateGramLang() (www/phases.js) is about and there
+       is no route to it: the migration runs at load, and a language minted
+       afterwards is one this file has to mint itself.
+
+       It is here because this screen CHANGES with it. The six buttons and the
+       example line are both behind stTouched('order') -- nobody chose this,
+       so neither is drawn either way -- but g2Sent() prints orderDef().id
+       under the three words and arranges them by orderDef().seq with no gate
+       at all. A new language used to come out OSV, wearing the phone's answer;
+       it comes out SOV now, which is the default with nothing chosen. */
+    ['§14 語順、a language just made on a phone that had one', () => {
+       const wasLangs = JSON.parse(JSON.stringify(LANGS));
+       const wasId = langId, wasStg = JSON.parse(JSON.stringify(STG));
+       const wasOrder = SET.order, wasGpos = SET.gpos;
+       SET.order = 'OSV';
+       SET.gpos = { adj:'before', negp:'before', adp:'after' };
+       const id = langMint();
+       LANGS[id].name = 'Tosk';
+       migrateGramLang();
+       langId = id; stRead();
+       window.route = 'gram'; NAV = [{ r:'gram', a:'v2:order' }];
+       const h = vGram();
+       delete LANGS[id]; LANGS = wasLangs;
+       SET.order = wasOrder; SET.gpos = wasGpos;
+       langId = wasId; STG = wasStg;
        return h; }]
   ];
 }

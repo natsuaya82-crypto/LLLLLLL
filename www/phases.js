@@ -79,10 +79,32 @@ function stRead(){
    the defaults, which is the whole of the bug: a new language is born with no
    grammar on it.
 
-   Once per person, so the mark is the person's. It is written the way
-   planMigrate() in www/core.js writes the settings at load, and for the same
-   reason: save() calls bkTouch(), and www/backup.js is loaded after this file
-   in index.html's list.
+   WHICH LANGUAGES THIS IS ABOUT, AND IT IS NOT 「every one in the index」.
+   -----------------------------------------------------------------------
+   That is what it used to ask and it is the wrong question, because the
+   index goes on filling up. `SET.order` is what the PHONE answered before a
+   language could answer for itself, so the languages it belongs to are the
+   ones that were LIVING UNDER IT -- and a language made since was never
+   under it and is born with none 「新しく作った言語は語順を持たずに生まれる」.
+
+   The two have to hold at once and each fix for one used to bring the other
+   back. `SET.gramLang` said 「this has run」 and stopped the second one: it
+   is gone and must not come back, because a slice is in memory now
+   (CLAUDE.md rule 22) while that mark was on the disk -- the copy died with
+   the app and the mark outlived it, so a word order somebody chose was
+   copied once and lost for good on the next launch. `migrate-check` is what
+   said so.
+
+   SO IT IS ASKED OF THE DISK, WHICH ALREADY KNOWS. An older version of this
+   app wrote every slice to `localStorage` as `lingua.<id>.<slice>`, and this
+   version writes NO such key -- slWr() puts a slice in memory and the only
+   per-language thing that reaches the disk now is slGot()'s picture, which
+   wears `.got`. So a plain slice key on this disk is a language an older
+   version left here, which is exactly a language that was living under the
+   phone's one word order. langUnderSet() below is that question, it is a
+   fact about the language rather than a record of what this function did,
+   and it answers the same way on every launch -- which is what lets this run
+   again and again with no mark at all.
 
    It does not touch STG.set. A value arriving is not somebody choosing it,
    and which decisions were chosen is already recorded per language.
@@ -90,12 +112,15 @@ function stRead(){
    A phases slice that will not parse is wreckage and is left alone -- "empty"
    and "broken" are different states, and a restore is what answers the second
    one. That language keeps the value it has always had in SET and is the one
-   language this does not reach.
-
-   It is safe to run twice, and that is what makes the mark a convenience
-   rather than a guard: a language it wrote already has an `order` and is left
-   alone, and a language it had nothing to copy onto is passed over again for
-   the same reason as the first time. */
+   language this does not reach. */
+function langUnderSet(id){
+  var i, v;
+  for(i=0;i<SLICES.length;i++){
+    try{ v=localStorage.getItem(langKeyOf(id, SLICES[i])); }catch(e){ v=null; }
+    if(v!==null) return true;
+  }
+  return false;
+}
 function migrateGramLang(){
   /* What the APP put in the settings, as against what a person put there.
      Read off setDefaults() in www/core.js rather than written out here, so
@@ -105,6 +130,7 @@ function migrateGramLang(){
   var id, key, raw, o, g, k, v;
   for(id in LANGS){
     if(!Object.prototype.hasOwnProperty.call(LANGS, id)) continue;
+    if(!langUnderSet(id)) continue;
     key=langKeyOf(id, 'phases');
     raw=slRd(key);
     o={};
@@ -164,21 +190,11 @@ function migrateGramLang(){
     if(raw===null && o.order===undefined && o.gpos===undefined) continue;
     slWr(key, JSON.stringify(o));
   }
-  /* THERE IS NO MARK, AND THERE MUST NOT BE ONE. `SET.gramLang` stood here
-     and said 「this has run」, which was right while the copy landed in
-     `localStorage` and survived the launch. **A slice is in memory now**
-     (CLAUDE.md rule 22), so the copy dies with the app -- and a mark that
-     outlives it means the second launch skips a migration whose output is
-     gone. The word order somebody chose was copied once and then lost for
-     good, on every phone, silently. `migrate-check` is what said so.
-
-     Nothing is needed in its place: this is IDEMPOTENT by construction. It
-     copies only into a field the slice does not already answer for
-     (`o.order===undefined`), and it copies FROM `SET.order`, which a
-     migration never removes (docs/DATA_SAFETY.md rule 2) -- so it is still
-     there on every launch, and the moment the language's own answer exists,
-     whether from here or from the server, this stops touching it. */
-  try{ localStorage.setItem(LS_S, JSON.stringify(setOnDisk())); }catch(e){}
+  /* AND NOTHING IS WRITTEN BACK TO THE SETTINGS. This wrote them at the foot
+     to save `SET.gramLang`; with the mark gone it wrote them out unchanged,
+     behind a catch with nothing in it, on every launch. `SET.order` and
+     `SET.gpos` are READ here and never touched -- docs/DATA_SAFETY.md rule 2
+     -- so there is nothing to save. */
 }
 migrateGramLang();
 stRead();
