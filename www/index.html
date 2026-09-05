@@ -3642,8 +3642,16 @@ textarea.ntbody.grow{min-height:0;height:auto;overflow:hidden;resize:none}
    .body (above) is already the flex column that leaves the room -- .ntform
    is the note's own field inside it, so it is the one asking to fill what
    is left rather than a floor guessed in vh. */
+/* 題名は一行、下線はその欄のもの。その下は本文だけで、本文は下線を持たず、
+   この画面に残っている高さを全部取る ── 「題名／下線／この下は何もなくて
+   下まで行く」 OWNER 2026-09-05。.lnin の下の余白もここで落とす: 題名の線と
+   本文は続いた一枚。
+   残っている高さ、であって画面の高さではない: .view.fit は `--vvmin`
+   (キーボードが上がったときの高さ、390x844 では 464px = 画面の 55%) の箱で、
+   本文はその中で伸びるところまで。下端まで届かせるのは openForm の側。 */
+.ntt{flex:0 0 auto;margin-bottom:0}
 .view.fit .ntform{flex:1;min-height:0;display:flex;flex-direction:column}
-.view.fit .ntform .ntbody{flex:1;min-height:0}
+.view.fit .ntform .ntbody{flex:1;min-height:0;border-bottom:0}
 
 /* ---------- grammar: a decision, and what it does ----------
    A row of choices, then the piece of sound the choice is carried by, then

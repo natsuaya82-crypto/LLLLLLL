@@ -790,6 +790,7 @@ defLang('fr', (function(){
       "notes.note"       : "　",
       "notes.new"        : "Nouvelle note",
       "notes.edit"       : "Note",
+      "notes.t"          : "Titre",
       "notes.b.ph"       : "Qui la parle. Pourquoi un mot en est aussi un autre. Tout ce que vous oublieriez d’ici demain.",
       "notes.save"       : "Enregistrer",
       "notes.del"        : "Supprimer",

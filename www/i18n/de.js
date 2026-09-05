@@ -745,6 +745,7 @@ defLang('de', (function(){
       "notes.note"       : "　",
       "notes.new"        : "Neue Notiz",
       "notes.edit"       : "Notiz",
+      "notes.t"          : "Überschrift",
       "notes.b.ph"       : "Wer sie spricht. Warum ein Wort auch ein anderes ist. Alles, was du sonst bis morgen vergessen hättest.",
       "notes.save"       : "Speichern",
       "notes.del"        : "Löschen",

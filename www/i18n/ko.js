@@ -917,6 +917,7 @@ defLang('ko', (function(){
       "notes.note"       : "　",
       "notes.new"        : "새 메모",
       "notes.edit"       : "메모",
+      "notes.t"          : "제목",
       "notes.b.ph"       : "누가 이 말을 쓰는지. 왜 한 낱말이 다른 낱말이기도 한지. 그냥 두면 내일이면 잊어버릴 것들.",
       "notes.save"       : "저장",
       "notes.del"        : "삭제",

@@ -216,8 +216,8 @@ const r = await pg.evaluate(({ s }) => {
       read: function(){ return String((STG.rules && STG.rules.neg) || ''); } },
     { n: 'a note',
       go: function(){ goTab('build'); go('notes'); openNote(0); },
-      sel: '#nt-b', v: 'what the river is called',
-      read: function(){ return String((NOTES[0] && NOTES[0].b) || ''); } },
+      sel: '#nt-t', v: 'what the river is called',
+      read: function(){ return String((NOTES[0] && NOTES[0].t) || ''); } },
     { n: "a word's sheet",
       go: function(){ goTab('build'); go('words'); openEdit(hw); },
       sel: '#wd-nt', v: 'said only of water',
@@ -403,6 +403,7 @@ const more = await pg.evaluate(() => {
   goTab('build'); go('gram', 'neg'); openStRules('neg');
   missing.push(typeOn('[data-in="stSetRules"]', 'q'));
   goTab('build'); go('notes'); openNote(0);
+  missing.push(typeOn('#nt-t', 'q'));
   missing.push(typeOn('#nt-b', 'q'));
   goTab('build'); go('words'); openEdit(hw);
   missing.push(typeOn('#wd-nt', 'q'));

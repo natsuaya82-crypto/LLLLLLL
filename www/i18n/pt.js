@@ -764,6 +764,7 @@ defLang('pt', (function(){
       "notes.note"       : "　",
       "notes.new"        : "Nota nova",
       "notes.edit"       : "Nota",
+      "notes.t"          : "Título",
       "notes.b.ph"       : "Quem a fala. Por que uma palavra também é outra. Qualquer coisa que amanhã você já teria esquecido.",
       "notes.save"       : "Guardar",
       "notes.del"        : "Apagar",

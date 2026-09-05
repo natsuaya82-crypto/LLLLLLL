@@ -746,6 +746,7 @@ defLang('zh', (function(){
       "notes.note"       : "　",
       "notes.new"        : "新的备注",
       "notes.edit"       : "备注",
+      "notes.t"          : "标题",
       "notes.b.ph"       : "谁在说它。为什么一个词同时也是另一个词。任何你到明天就会忘掉的事。",
       "notes.save"       : "保存",
       "notes.del"        : "删除",

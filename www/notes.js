@@ -67,13 +67,19 @@ function openNote(i){
      一文が嘘になる ── 保存のボタンが出てしまう。 */
   if(!langLocked()) ntKeepOn(k, n);
   openForm('note:'+k, (k>=0? t('notes.edit') : t('notes.new')),
-    /* iPhone のメモと同じ: 題名の欄は無く、本文の textarea 一つが画面いっぱい
-       (openForm の fit ── www/home.js § a form is a page)。一行目が題名という
-       のは ntHead() が元から読んでいる形で、ここは t を分けて訊くのをやめただけ。
-       すでに t を持つメモを開いたときは t + 改行 + b を本文に出す ── 何も失わない。 */
+    /* 「題名／下線／この下は何もなくて下まで行く」 OWNER 2026-09-05。題名は
+       一行の欄で、下線はその欄のもの (.lnin)。その下は本文だけで、本文は
+       下線を持たず、この画面に残っている高さを全部取る。
+       題名が空のときに一行目が題名になるのは ntHead() が元から読んでいる形。
+
+       **まだ画面の下端までは行っていない。** openForm の fit は高さを
+       `--vvmin` ── キーボードが上がったときの高さ、390x844 では画面の 55%
+       (464px) ── に合わせる箱で、それは投稿画面のための数
+       (www/shell.js § vvFit)。メモをそこから外すのは openForm の側の話。 */
     '<div class="field ntform">'+
+      lnField('nt-t', t('notes.t'), IN('ntSetT'), ntTyped(k, 't'), 'ntt')+
       '<textarea id="nt-b" class="ntbody" placeholder="'+esc(t('notes.b.ph'))+'"'+
-      IN('ntSetB') + '>'+esc(ntTyped(k))+'</textarea></div>',
+      IN('ntSetB') + '>'+esc(ntTyped(k, 'b'))+'</textarea></div>',
     /* AND NOTHING TO PRESS IN SOMEBODY ELSE'S LANGUAGE. A note opened from a
        row is opened to READ there -- langLocked() (www/core.js). The field is
        not marked readonly: there is nothing to press, so nothing typed into
@@ -96,15 +102,13 @@ FORM_OPEN.note=function(i){ openNote(parseInt(i,10)); };
 
    The buffer is filed under the form, so the note being edited and the note
    being made are two of them and cannot be confused for each other. */
-function ntWhole(n){
-  return String(n.t||'').trim() ? (n.t+'\n'+n.b) : String(n.b||'');
-}
 function ntKeepOn(k, n){
   keepOn(keepKeyOf('form', 'note:'+k),
-         {b:ntWhole(n)},
+         {t:String(n.t||''), b:String(n.b||'')},
          function(v, done){ saveNote(v); done(true); });
 }
-function ntTyped(k){ return keepVal(keepKeyOf('form', 'note:'+k), 'b'); }
+function ntTyped(k, f){ return keepVal(keepKeyOf('form', 'note:'+k), f); }
+function ntSetT(v){ keepSet('t', String(v||'')); }
 function ntSetB(v){ keepSet('b', String(v||'')); }
 /* Writing it down, and STAYING on it -- leaving is what the arrow beside the
    button is for, and after a save there is nothing left to ask about, so the
@@ -114,16 +118,17 @@ function ntSetB(v){ keepSet('b', String(v||'')); }
    which is what `ntAt` is: without that line a second press would push a second
    copy of the same note. */
 function saveNote(v){
-  var bo=String(v.hasOwnProperty('b')? v.b : ntKept()).trim();
-  if(!bo) return;
-  if(ntAt>=0 && NOTES[ntAt]){ NOTES[ntAt].t=''; NOTES[ntAt].b=bo; NOTES[ntAt].ed=Date.now(); }
-  else { NOTES.push({t:'', b:bo, at:Date.now()}); ntAt=NOTES.length-1; ntNewSpent=true; }
+  var ti=String(v.hasOwnProperty('t')? v.t : ntKept('t')).trim(),
+      bo=String(v.hasOwnProperty('b')? v.b : ntKept('b')).trim();
+  if(!ti && !bo) return;
+  if(ntAt>=0 && NOTES[ntAt]){ NOTES[ntAt].t=ti; NOTES[ntAt].b=bo; NOTES[ntAt].ed=Date.now(); }
+  else { NOTES.push({t:ti, b:bo, at:Date.now()}); ntAt=NOTES.length-1; ntNewSpent=true; }
   saveNotes(); toast(t('toast.note.kept'));
 }
-/* What the note holds now, if the save came through with nothing typed. */
-function ntKept(){
+/* What the note holds now, for the half of the pair somebody did not touch. */
+function ntKept(f){
   var n=(ntAt>=0 && NOTES[ntAt])? NOTES[ntAt] : null;
-  return n? ntWhole(n) : '';
+  return n? String(n[f]||'') : '';
 }
 /* By the index itself, and not `ntAt`: this is pressed from the list, where
    no note is "open", so there is nothing for `ntAt` to name. */

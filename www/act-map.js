@@ -326,6 +326,7 @@ actIn('meSetLink', meSetLink);
 actIn('meSetLoc', meSetLoc);
 actIn('meSetBio', meSetBio);
 actIn('meSetPic', meSetPic);
+actIn('ntSetT', ntSetT);
 actIn('ntSetB', ntSetB);
 actIn('meSetHandle', meSetHandle);
 actIn('pwSetLn', pwSetLn);

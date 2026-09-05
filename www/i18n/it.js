@@ -742,6 +742,7 @@ defLang('it', (function(){
       "notes.note"       : "　",
       "notes.new"        : "Nota nuova",
       "notes.edit"       : "Nota",
+      "notes.t"          : "Titolo",
       "notes.b.ph"       : "Chi la parla. Perché una parola è anche un'altra. Tutto quello che altrimenti domani avresti già dimenticato.",
       "notes.save"       : "Salvare",
       "notes.del"        : "Cancellare",
