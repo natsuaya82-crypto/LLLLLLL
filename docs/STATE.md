@@ -11,7 +11,7 @@ The rest of `docs/` is the working detail behind the rules at the head of
 |---|---|
 | `ARCHITECTURE.md` | the shape of the app, and where each thing is the truth |
 | `DATA_MODEL.md` | every stored thing, its owner, and whether it may change under somebody |
-| `DATA_SAFETY.md` | how a language is not lost; the backup rules; DELETE REVIEW |
+| `DATA_SAFETY.md` | how a language is not lost; what a save owes the server; DELETE REVIEW |
 | `FEATURES.md` | every feature, its plan, its data, and whether the owner has decided it |
 | `FEATURE_RULES.md` | the order, the owner decision log, scope for parallel sessions, what "done" is |
 | `PAID_FEATURES.md` | `CAN`, the three plans, and what money may never touch |
@@ -21,9 +21,10 @@ The rest of `docs/` is the working detail behind the rules at the head of
 | `RECOVERY.md` | バグで人のものが消えたときに運営側で戻す案。三つ並べてある。**まだ決まっていません** |
 | `DUPLICATES.md` | 同じものが二箇所以上に直書きされている所の一覧。食い違っているものが八件、まだ一致しているものが十二件 |
 
-**Every section below was read against the code on 2026-09-03.** Where a claim
-can go stale it carries the command that re-checks it. **Run the command; do not
-believe the sentence.**
+**§ 0-a was read against the code on 2026-09-04. Every other section was read
+on 2026-09-03 and has not been re-read since.** Where a claim can go stale it
+carries the command that re-checks it. **Run the command; do not believe the
+sentence.**
 
 **This file is the leader's, and the leader writes it.** A stale RULE is doubted.
 A stale statement of FACT is simply believed — which is why nothing here may sit
@@ -31,7 +32,7 @@ un-re-read.
 
 ---
 
-## 0-a. 2026-09-03 ── いまの状況
+## 0-a. 2026-09-04 ── いまの状況
 
 **sha はここに書きません。**一日で古くなります。訊く一行:
 
@@ -46,7 +47,72 @@ CODE CONFIRMED だけ。**検査の緑は証拠になりません。**
 唯一の出所で、それは GitHub Actions の履歴にしかなく、このリポジトリからは
 読めません（§6）。
 
-### 今日の決定 ── 一日で三つ、どれも仕様
+### 2026-09-04 の夜に決まったこと ── 五つ。全部が仕様
+
+**オーナーの言葉そのものは `docs/FEATURE_RULES.md` の決定ログの一番上の五件に
+あります。ここは索引です。要約で仕事をしないでください。**
+
+1. **「保存されない」は仕様です。**アプリが落ちて消えること、電波が無くて言語が
+   開かないこと、送れていない分が次の起動まででなくなること ── 全部です。
+   オーナーが自分で読んだうえで決めました。**但し書きとして書かないこと。
+   「オーナーに確認が要る」ものではありません。**
+2. **ただし「失敗して黙って消える」は仕様ではありません。**保存がサーバーで
+   失敗しても、人が作ったものは目の前に残ります。もう一度押せば送れる。
+   **着手していません** ── `www/core.js` の `save()` の catch はまだ空です。
+3. **電波が無いときは、前に読み込んだ分を出します。見るだけです。**作れない、
+   保存できない。**その写しはサーバーへ戻りません ── 片道です。**理由は
+   `syMerge()`（`www/sync.js`）が壊れた写しでサーバーの正しいほうを上書きする
+   バグだからです。**着手していません。**いまスライスはメモリだけなので、電波が
+   無いと出せるものがありません。
+4. **`ONE.md` を消しました。**承認されなかった案です。次の人が仕様として読む
+   危険がありました。
+5. **オンラインは進める。パッチはオーナーが後で流します。**アプリ側は待ちません。
+
+### 2026-09-04 に書かれたもの ── オンライン一本化。**`claude/online` の上で、master にはまだありません**
+
+**訊く一行:**
+
+```
+git merge-base --is-ancestor origin/claude/online origin/master && echo IN || echo NOT
+```
+
+- **保存を押した瞬間にサーバーへ行きます。**前は起動と扉の二回だけでした
+  （`netSaveUp()` を `bkTouch()` から）。
+- **バックアップのファイルが無くなりました。**書く側、読む側、設定の一覧、
+  Swift ごと。**`tools/backup-check.mjs` も丸ごと消えました。**
+- **言語の写しは iPhone のディスクにありません。**スライスはメモリ（`LSL`）。
+  古い鍵はまだ読みます ── 更新した人の言語が空にならないように。
+- **アカウントを消したら検索履歴も消えます**（引き継ぎ書六章の1）。手で書いた
+  一覧をやめて、数える形にしました。
+
+**master にはこの四つがありません。**master の `www/core.js` はまだ手で書いた
+`SET_ACCT` を持っています（`git show origin/master:www/core.js | grep SET_ACCT`）。
+
+### ゲートの本数 ── master は42本、`claude/online` は41本
+
+**数えました**（`tools/gate.mjs` の `FAST` と `SLOW`）。master が 14 + 28 = 42、
+`claude/online` が 14 + 27 = 41。**減った一本は `backup-check` です。**
+**本数はここではなく、走らせた最後の行で読んでください。**
+
+### 引き継ぎ書六章の11件 ── 十件は master、一件は枝の上
+
+**確かめたのは「そのコミットが master の先祖か」だけです。押していません。**
+実機で見ているのはオーナーだけです。
+
+| 六章の | 何 | どこ |
+|---|---|---|
+| 0 | 文字の増殖 | **master**（`claude/dup` を `77bba34b` で取り込み） |
+| 10 | キーボードの一番下の ＋ | **master**（同じ取り込み、CSS は `6a6056f8`） |
+| 1 | アカウントを消したのに検索履歴が残る | **`claude/online` / `claude/rules`。master にはまだありません**（`1e3eed4b`） |
+| 2・3・4〜9 | 更新できない、フォロワーの数、実機の写真の六つ | **master**（`claude/tl2`。報告は `docs/reports/tl2-2026-09-04.md`） |
+| 6（バッジ） | 相手の画面に有料のバッジが出ない | **アプリ側は済み。サーバーの列がまだで、そこはオーナーが SQL を流すまで動きません** |
+
+**バッジだけがオーナー待ちです。**流す SQL は書けていて、本物の PostgreSQL で
+確かめてあります ── `docs/reports/badge-sql-2026-09-04.md`。`profile_seen` と
+`post_seen` に「この人はプロか」を出す列一つです。**`supabase/schema.sql` には
+まだ入っていません。**
+
+### 2026-09-03 の決定 ── 一日で三つ、どれも仕様
 
 **「1アドレス1アカウント」「これは絶対課金もアカウントごと言語もそう」**
 「GoogleとかAppleのログインはあくまでもメアドより楽な手段を増やしてあげるための
@@ -419,10 +485,18 @@ groping at:
   アカウント消したら残るわけがない
 ```
 
-Always in sync, on every plan. Making a language works with no network and
-catches up on the next one; **making a language still needs an account**, and
-deleting the account takes the languages with it. The file in Documents
-(`www/backup.js`, chapter 24) is the one thing that is not the server's.
+**Two lines of that block were replaced on 2026-09-04 and the rest stands.**
+「言語周りだけバックアップに file 使う」 — there is no file: `www/backup.js` is
+one function now (`bkTouch`), and the writing, the three generations, the list
+on the settings screen and the Swift behind it are deleted. 「制作はオフライン
+でも可能　次つながった時に更新される」 — making and saving need a signal, and a
+save reaches the server the moment it is made. With no signal what the app shows
+is what was loaded before, to look at (`CLAUDE.md` rule 22). **What still
+stands:** always in sync, on every plan; **making a language still needs an
+account**; deleting the account takes the languages with it; the SNS side does
+not work offline. The newer decisions are in `docs/FEATURE_RULES.md` under
+「オンライン前提に切り替える」 and 「電波が無いときは、前に読み込んだ分を出す。
+見るだけ」.
 
 **`language` and `slice` are written and read.** **Count it rather than believe
 it:**
@@ -593,21 +667,17 @@ under `lingua.sess`.
 
 ---
 
-### 一 ── **「消えないための仕組みを一本にする」設計を、通すか**　【全部の入口】
+### 一 ── **【決まりました】「消えないための仕組みを一本にする」設計**
 
-**決めること:** 書き始めてよいか。**通るまで、誰も一行も書きません。**
+**オーナーが通しました** ──「オンライン進めて。パッチは俺が後で流す」
+（2026-09-04）。**書き始めています。**`claude/online` の上に、保存が押した瞬間
+にサーバーへ行く形、バックアップのファイルの削除、スライスのメモリ化が入って
+います。**master にはまだありません**（§ 0-a）。
 
-**いまどうなっているか。** **設計だけ書き終わっています。コードは一行も
-変わっていません。**2026-09-04 に「オーナーが読んで通してから、初めて書き
-始めます」と決めました。
-
-**それまで、見つかっている穴を一つずつ塞ぐのも止めています** ── いま塞ぐと
-一本化のときにもう一度書き換えることになるからです。**止まっているものが
-二つあります** ── 壊れたものが無事なサーバーを上書きする件と、保存の失敗が
-黙って済まされる件。**どちらも 2026-09-04 に見つかっています。**
-
-- [ ] 通す（下の二から七が、そのまま作る順になります）
-- [ ] 通さない（**そのときは、止めている二つの穴を先に塞ぎます**）
+**止めていた二つの穴には、どちらも答えが出ました。**壊れたものが無事な
+サーバーを上書きする件は、電波が無いときの写しに**サーバーへ戻る道を作らない**
+ことで消えます。保存の失敗が黙って済まされる件は「なら失敗して残るにするべき」
+と決まりました。**どちらもコードは着手していません。**
 
 ---
 
@@ -628,43 +698,29 @@ under `lingua.sess`.
 |---|---|---|
 | **言語まるごと** | 685 KB | 一番単純。**文字を一つ直しただけでも、言語ぜんぶが積まれます** |
 | **部分ごと**（単語・文字・音…） | 12 KB 〜 685 KB | **いまの保存の単位のまま。**作り直しが一番少なく済みます |
-| **一語ごと** | 0.14 KB | 四千分の一。ただし**アプリのほぼ全部を書き直すことになり**、控えのファイルとは単位が合わなくなって、そこで仕組みが二本に割れます |
+| **一語ごと** | 0.14 KB | 四千分の一。ただし**アプリのほぼ全部を書き直すことになります** |
 
 **勧め:** **部分ごと。**
 
 ---
 
-### 三 ── **キーボードを一度も作っていない言語は、控えのファイルが書かれていません**
+### 三 ── **【済みました】空のキーボードが「壊れている」と数えられていた件**
 
-**決めること:** **二つある直し方の、どちらにするか。**（どちらも一行です）
-
-**いまどうなっているか。** **走らせて確かめました。実機では押していません。**
-キーボードを一度も組んでいない言語から離れると（言語を切り替える、言語を消す、
-アカウントを消す）、その言語の控えのファイルが**それ以降ずっと書かれなく
-なります。**あとから足した単語も文字も、**ファイルに一度も入りません。**
-サーバーとその iPhone の両方が駄目になった日に残っているのは、**止まった時点の
-古いファイルだけです。**
-
-**書いた仕様はありません。むしろ逆のことが書いてあります** ──
-「空の言語も書かれるはずのもの」。**仕様どおりではなく、穴です。**
-
-- **空のキーボードを「空」として書く** ── 控えが元どおり毎回書かれます。
-  中身は空のままです。
-- **「空」を「壊れている」と数えないようにする** ── 同じく毎回書かれます。
-  こちらは判定のほうを直すので、**他の空の部分にも同じ効き方をします。**
-
-**勧め:** 人の目に見えるものはどちらも変わりません。**片方を選んで今日のうちに
-塞ぐこと自体が大事です。**
+**直っています。**`saveKb()`（`www/keyboard.js`）は、キーボードが無いとき
+`"null"` という四文字ではなく**その欄ごと書きません** ── 無いことと壊れて
+いることは別の状態、という線に揃いました。判定のほうは触っていません。
+**この節が守っていた控えのファイルは、そもそも無くなりました**（§ 0-a）。
 
 ---
 
-### 四 ── **戻す画面を、人に見せるか**
+### 四 ── **戻す画面を、人に見せるか**　【**版が積まれるまで訊けません**】
 
 **決めること:** 前の版に戻すのを、**人が自分でやれるようにするか。運営だけか。**
 
-**いまどうなっているか。** **読んだだけです。押していません。**設定→データに
-控えの一覧が出ますが、**押せません。**戻るのは自動です。アプリの外（Files
-アプリ）からは触れます。
+**いまどうなっているか。** **戻せる版がありません。**設定→データにあった控えの
+一覧は、バックアップのファイルごと無くなりました（§ 0-a）。サーバーの `slice`
+は言語一本につきいまの姿が一つあるだけで、**前の姿はどこにも残りません**（二）。
+**だからこの問いは、二が決まって版が積まれるようになるまで意味を持ちません。**
 
 - **見せない** ── 戻すのは運営だけ。人は「消えた」と言ってきます。
   **画面が一つも増えません。**「復旧はバグで消えた時の話」という線に合います。
@@ -720,11 +776,11 @@ under `lingua.sess`.
 **いまどうなっているか。** **本物のアプリを走らせて確かめました。実機では
 押していません。**語順の設定を一度も触っていない iPhone にも、**既定の値が
 「その人の答え」として書き込まれます。**書き込まれると、そこは「もう埋まって
-いる」ことになるので、**あとで控えやサーバーから穴埋めされなくなります。**
+いる」ことになるので、**あとでサーバーから穴埋めされなくなります。**
 
 - **既定も答えとして書く**（いまの形）── その人がずっと従っていた値なので
   移すのは正しい、という読み方です。**ただし穴埋めが効かなくなります。**
-- **触っていないものは空のままにする** ── 控えやサーバーから戻せます。
+- **触っていないものは空のままにする** ── サーバーから戻せます。
   **人の目には何も変わりません。**
 
 **勧め:** **触っていないものは空のまま。**「無い」と「空」は別、という線が
@@ -734,11 +790,10 @@ under `lingua.sess`.
 
 ### 八 ── ★を50件付けたあと、51件目を付けたらどうなるか
 
-**決めること:** **断るのか、押し出すのか。**
-
-**いまどうなっているか。** **読んだだけです。押していません。**上限50は
-決まりました（2026-09-04「50でいいよ。それ以上は増えないで」）。
-**いまは黙って一番古いのが押し出されます。**
+**決まりました。押し出します** ──「古いのの押し出していいよ」（OWNER
+2026-09-04）。上限50はそのまま（「50でいいよ。それ以上は増えないで」）。
+断らずに、一番古いものが出ます。**いまのコードがそう動いています。読んだだけ
+です。押していません。**
 
 **もう一つ、同じ所で起きていること。**★を50件より多く付けている人が起動すると、
 その iPhone の一覧が**新しい50件で置き換わり**、51件目より古い★は画面から
@@ -746,10 +801,11 @@ under `lingua.sess`.
 
 ---
 
-### 九 ── 控えのファイルの三世代　【**説明をやり直して、改めて訊きます**】
+### 九 ── **【無くなりました】控えのファイルの三世代**
 
-四回前の保存は消えます。2026-09-04 に「よくわからん」と言われました。
-**まだ決まっていません。**次に説明するときに、この節を書き直します。
+訊く相手がありません。**ファイルごと消えました**（§ 0-a、決定ログ
+「バックアップのファイルも無くす」）。三世代も、それを書いていた Swift も
+ありません。
 
 ---
 
@@ -808,16 +864,16 @@ under `lingua.sess`.
 | 本文のどこ | コードでの場所 |
 |---|---|
 | 一 設計を通すか | `docs/FEATURE_RULES.md` §「消えないための仕組みを一本にする」 |
-| 一 止まっている二つの穴 | 壊れたものの上書き＝`www/backup.js` の `bkSound()` を「読めない＝無い」として扱う所、保存の失敗＝34 か所のうち 31 か所 |
+| 一 止まっている二つの穴 | 壊れたものの上書き＝`www/sync.js` の `syMerge()`、保存の失敗＝`www/core.js` の `save()` の catch が空 |
 | 二 版の大きさ | `slice` テーブル、`netSlicePut()` |
 | 二 直した時刻の粒度 | `docs/FEATURE_RULES.md` §「同期でぶつかったら、後から『直した』ほうが残るべき」 |
-| 三 空のキーボード | `www/keyboard.js:137` `saveKb()` が `"null"` を書く。`www/backup.js:82` `bkSound()`、`:183` `bkPush()`。離れる所は `www/core.js:185` `:530`、`www/settings.js:519` `:684`、`www/keyboard.js:3634`。`docs/EXPIRY.md`（`claude/keep2`・`claude/keep4`）1番 |
+| 三 空のキーボード | `www/keyboard.js` の `saveKb()` ── 直っています。`docs/EXPIRY.md`（`claude/keep2`・`claude/keep4`）1番 |
 | 四 戻す画面 | `bkTake()` / `bkRestore()`、`docs/RECOVERY.md` |
 | 五 まとめてか一部か | 集めた先が消えました（下） |
 | 六 小さくなったら書かない | `netKeeps()` / `NET_SHRANK` |
 | 七 既定の値 | `www/phases.js:98-125` `migrateGramLang()`、`www/core.js:220` `setDefaults()` が `order:'SOV'` を入れる。`docs/EXPIRY.md`（`claude/keep4`）4番の末尾 |
 | 八 ★50 | `www/net.js:2295-2296` `netSearchSaved()`、`NET_PAGE=50`（`www/net.js:1490`）、`www/sns.js:1272` `SET.saved=got;`。`docs/EXPIRY.md` 5番 |
-| 九 三世代 | `ios/App/App/LinguaShare.swift:165-173` `keep()`、`docs/RECOVERY.md:75-92`、`docs/FEATURE_RULES.md` §「バックアップの三世代と、元に戻せる段数は、いまのまま」 |
+| 九 三世代 | 無くなりました。`docs/CHANGELOG.md` 2026-09-04 の DELETE REVIEW |
 | 十 保存ボタンの有無 | `docs/FEATURE_RULES.md` §「保存を押したときだけ、保存されているものが変わる」 |
 | 十一 検索履歴 | `www/net.js:2357-2364` `netRecentAdd()`（消す側は成功、入れる側の失敗の受け口が `bad \|\| function(){}`）。`docs/RISK.md`（`claude/risk`）7番 |
 | 十一 言語が二つ | `www/boot.js:102` `netLangsDown()` と `:110` `netLangSync()`、`www/net.js:1270-1272`、`www/net.js:984` `netLangRow()`。扉側は `www/onboard.js:880` と `:1817`。`docs/RISK.md` 8番 |
@@ -880,16 +936,20 @@ life as a branch name.
 
 ## 5. The gate, and what CI does not run
 
-`npm test` is **thirty-nine** checks and is the specification. `CLAUDE.md` →
-"The rules the gate enforces" -- **and those two numbers are not the same kind
-of thing.** One counts RULES that are written down; this one counts CHECKS that
-run. They have never been equal and making them equal would be wrong: one rule
-can take three checks and one check can hold two rules.
+`npm test` is the specification. `CLAUDE.md` → "The rules the gate enforces"
+-- **and those two numbers are not the same kind of thing.** One counts RULES
+that are written down; this one counts CHECKS that run. They have never been
+equal and making them equal would be wrong: one rule can take three checks and
+one check can hold two rules.
 
-`tools/gate.mjs` runs the **twelve** that need no browser first, in about two
-seconds, then the **twenty-seven** browser ones four at a time (`WIDE` is
-`min(4, cpus)`). Run one after another they were about ten minutes in this
-container, which is a figure nobody has re-measured since the count grew.
+**How many checks there are is printed on the run's last line. Read it there.**
+Counted on 2026-09-04: master is 14 + 28 = **42**, and `claude/online` is
+14 + 27 = **41** — `backup-check` went with the file it held (§ 0-a).
+
+`tools/gate.mjs` runs the ones that need no browser first, in about two seconds,
+then the browser ones four at a time (`WIDE` is `min(4, cpus)`). Run one after
+another they were about ten minutes in this container, which is a figure nobody
+has re-measured since the count grew.
 
 **It is run once before pushing**, not once per commit — the owner's rule, and
 `docs/TESTING.md` has all three. While working, run the one check that holds
