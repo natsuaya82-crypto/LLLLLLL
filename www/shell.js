@@ -427,20 +427,53 @@ function keepDrop(key){ delete KEEP[String(key)]; }
    and may already be taken. A save that did not land must not be followed by
    leaving the screen, or the refusal is never seen. Every other screen's save
    is this phone's own and says true straight away. */
+/* One press at a time. The button stays where it is while the send is out and
+   a second press would put a second save on the same fields. The drawing
+   screen holds the same thing on GE.busy, for the same reason. */
+var KEEP_BUSY=false;
 function keepSave(key, done){
   var b=KEEP[String(key)], f;
   if(!b || !b.save){ if(done) done(true); return; }
+  if(KEEP_BUSY) return;
+  KEEP_BUSY=true;
   b.save(b.v, function(ok){
-    /* Levelled rather than thrown away. What has just been written down IS
-       what the screen opened with now, so there is nothing left to ask about
-       and nothing left to show a button for -- and the screen is still in
-       front of somebody, with these fields still on it. Dropping it here
-       would leave the next keystroke with nowhere to go. */
-    if(ok && KEEP[String(key)]===b){
-      for(f in b.v){ if(b.v.hasOwnProperty(f)) b.was[f]=String(b.v[f]); }
-      b.v={};
-    }
-    if(done) done(!!ok);
+    if(!ok){ KEEP_BUSY=false; if(done) done(false); return; }
+    /* AND IT IS NOT SAVED UNTIL IT IS UP.
+       「保存ボタン押して保存ができるかできないかは通信の有無だけだからな？」
+       「通信エラーなら進むわけねえだろ全部」 OWNER 2026-09-05.
+
+       `b.save` has written the fields to this phone by now, which is what it
+       has always done and is what makes the language survive a dead battery.
+       What it never did was ask whether the server heard -- the copy went up
+       on netSaveUp()'s 1.2-second burst timer, behind a person who had
+       already been told 「saved」 and sent back a screen. Nine screens
+       register a buffer here, so that was nine buttons lying in the same
+       way, and it is one road rather than nine: this function is the only
+       caller of `b.save` there is.
+
+       netSaveNow() (www/net.js) is the SAME road up as the burst with the
+       wait taken off it -- the send happens on the press and answers whether
+       it landed. It is not reached before net.js is loaded, so the check is
+       for the order of the script tags in www/index.html and nothing else.
+
+       WHAT IS TYPED IS NOT TAKEN BACK when it does not land. The buffer is
+       left exactly as it is, so the fields still hold what the person wrote
+       and pressing again sends it again. What a failure withholds is the
+       levelling below and the way off the screen -- and netPop() is already
+       up over it saying why. */
+    netSaveNow(function(up){
+      KEEP_BUSY=false;
+      /* Levelled rather than thrown away. What has just been written down IS
+         what the screen opened with now, so there is nothing left to ask about
+         and nothing left to show a button for -- and the screen is still in
+         front of somebody, with these fields still on it. Dropping it here
+         would leave the next keystroke with nowhere to go. */
+      if(up && KEEP[String(key)]===b){
+        for(f in b.v){ if(b.v.hasOwnProperty(f)) b.was[f]=String(b.v[f]); }
+        b.v={};
+      }
+      if(done) done(!!up);
+    });
   });
 }
 /* A form is built once, when it is opened, and kept whole on FORM (www/home.js
@@ -1112,11 +1145,13 @@ function tabBar(){
      The copy is woken and the answer asked for HERE rather than on the
      notices screen, because a count that only becomes true once you have
      opened the tab is a count nobody ever sees: opening the tab is what
-     makes it zero. notAsk() is once a session, notWake() reads the copy on
-     the handset, so the bell is right on the first frame of whatever screen
-     the app opened on. www/sns.js owns all three. */
+     makes it zero. pullNeed('notif') is once a session -- it is the same one
+     road every screen's pull goes down (www/sns.js § pullRun) and not a
+     second way of asking -- and notWake() reads the copy on the handset, so
+     the bell is right on the first frame of whatever screen the app opened
+     on. www/sns.js owns all three. */
   notWake();
-  notAsk();
+  pullNeed('notif');
   for(i=0;i<TABS.length;i++){
     r=TABS[i];
     /* The mark and nothing else. 「下タブにホームとかつけるのやめない？」

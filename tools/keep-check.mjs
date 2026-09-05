@@ -54,6 +54,9 @@
         said about the app rather than about one screen, and it is the one that
         catches a screen half converted
     13  an @ the server refuses does not leave the screen; one it allows does
+    15  and with the wire REFUSING, Yes does not leave: the person is still on
+        their screen, the pop says why, and what they typed is still in the
+        field. 「通信エラーなら進むわけねえだろ全部」
     14  a bottom tab is not an answer. Walking off a screen with something typed
         on it and coming back finds it still there, still unsaved, with the
         Save still in the bar AND STILL GOLD -- nothing is thrown away without
@@ -75,6 +78,31 @@ const r = await pg.evaluate(({ s }) => {
   eval('(' + s + ')()');
   SET.done = true; SET.plan = 'pro';
   var out = { screens: [], fails: [] };
+
+  /* ---- THE WIRE, ANSWERING --------------------------------------------
+     A save is not saved until it is UP.
+     「保存ボタン押して保存ができるかできないかは通信の有無だけだからな？」
+     「通信エラーなら進むわけねえだろ全部」 OWNER 2026-09-05.
+
+     So the Yes below waits on netSaveNow() (www/net.js) and this file has no
+     server behind it. ONE WINDOW IS FAKED and everything over it runs for
+     real (CLAUDE.md rule 12): netSend() answers, and netLangRow(),
+     netSlices() and netSlicePut() are the app's own code doing its own work.
+
+     IT ANSWERS IN THE SAME TURN. Every claim below is written as one press
+     and one read; a wire that came back a tick later would turn this into a
+     check on the tick. A real one does not, which is exactly what claim 15
+     in the second walk is for -- there the wire REFUSES, and the person stays
+     on their screen.
+
+     The language is given a row, or the first thing the stub would be asked
+     is netLangRow() minting one. */
+  LANGS[langId].sid = 'srv-known'; langStore();
+  window.WIRE = true;
+  netSend = function(method, path, body, tok, ok, bad){
+    if(!window.WIRE){ bad(null, 0, 'no wire'); return; }
+    ok(String(path).indexOf('/rest/v1/language?') === 0 ? [{ id: 'srv-known' }] : []);
+  };
 
   /* EVERYTHING THE PHONE IS HOLDING, AS ONE STRING. This is what "not one
      byte moved" is asked of, rather than one slice by name: a save that wrote
@@ -428,6 +456,35 @@ const more = await pg.evaluate(() => {
   out.freeLeft = (here().r + '|' + here().a) !== atKey;
   out.freeHandle = String(ME.handle || '');
   window.netHandleFree = realFree; window.netSignedIn = realIn;
+
+  /* ---- 15. AND WITH NO WIRE, YES DOES NOT LEAVE -------------------------
+     「保存ボタン押して保存ができるかできないかは通信の有無だけだからな？」
+     「通信エラーなら進むわけねえだろ全部」 OWNER 2026-09-05.
+
+     Every claim above runs with the wire answering, which is the ordinary
+     day. This is the other half and it is the half that was wrong: pressed
+     with no signal, the Save wrote the phone, said so, and sent the person
+     back to the list, with the first request still 1.2 seconds in the future
+     and the pop -- when it came -- over a screen they had already left.
+
+     What is asked here is only what a person would see: they are still on
+     their letter, and the app has told them why. What they typed is still in
+     the field, so pressing again sends it again. */
+  viewReset(); popOff();
+  window.WIRE = false;
+  goTab('build'); go('letter', LETTERS[0].id);
+  var deadKey = here().r + '|' + here().a;
+  var e7 = document.querySelector('#lt-nt');
+  if(e7){ e7.value = 'written in a tunnel'; e7.dispatchEvent(new Event('input', { bubbles: true })); }
+  back();
+  var y3 = document.querySelector('#pop [data-do="popYes"]');
+  if(y3) y3.click();
+  out.deadStayed = (here().r + '|' + here().a) === deadKey;
+  out.deadSaid = popOn();
+  out.deadTyped = (function(){ var e = document.querySelector('#lt-nt');
+                               return e ? String(e.value || '') : ''; })();
+  window.WIRE = true;
+  popOff(); viewReset();
   return out;
 });
 
@@ -454,6 +511,9 @@ if(!more.tabGold) fails.push('coming back to a screen with typing on it, the Sav
 if(more.tabStored === 'Wandered') fails.push('a bottom tab saved what was typed');
 if(!more.freeLeft) fails.push('an @ the server allowed did not go back');
 if(more.freeHandle !== 'freename') fails.push('an @ the server allowed was not written down');
+if(!more.deadStayed) fails.push('a save with no wire went back anyway');
+if(!more.deadSaid) fails.push('a save with no wire went nowhere and said nothing');
+if(more.deadTyped !== 'written in a tunnel') fails.push('a save with no wire threw away what was typed: ' + JSON.stringify(more.deadTyped));
 
 r.screens.forEach((s) => {
   console.log('  ' + s.n + ' (' + s.key + ')');
@@ -471,6 +531,7 @@ console.log('a bottom tab: threw nothing away and asked nothing -- ' +
             'what was typed was still in the field on the way back');
 console.log('the @: refused stays put (' + more.refusedHandle + '), allowed goes (' +
             more.freeHandle + ')');
+console.log('no wire: the Yes stayed on the screen, said why, and kept what was typed');
 
 if(fails.length){
   console.error('\nFAILED (' + fails.length + '):');

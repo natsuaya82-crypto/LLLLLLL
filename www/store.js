@@ -164,7 +164,7 @@ function storeRestore(){
   function say(m){ if(said) return; said=true; clearTimeout(STRT); toast(m); }
   toast(t('store.wait'));
   clearTimeout(STRT);
-  STRT=setTimeout(function(){ say(t('store.fail')); }, 25000);
+  STRT=setTimeout(function(){ say(t('store.fail')); }, STORE_WAIT);
   np('LinguaStore', 'restore', {})
     .then(function(r){
       var p=storeTook(r);
@@ -233,10 +233,21 @@ var STORE_BAD='';
    and an older one answering after a newer one began is not an answer to
    anything. */
 var STORE_N=0;
-/* How long the App Store is given. 12 is what LinguaStore.syncWithin() gives
-   AppStore.sync(); this is twice it, because a price list is not a sign-in
-   sheet and there is nothing for a person to be waiting in front of. */
-var STORE_WAIT=25000;
+/* HOW LONG A WAIT IS, AND IT IS NOT THIS FILE'S NUMBER.
+   「通信のくるくるも全部20秒で良くない？」 OWNER 2026-09-05.
+
+   It was 25000, written here, beside a 25000 written again in storeRestore()
+   below -- so the app had three deadlines: net.js's twenty seconds for every
+   request that goes over the wire, and two of Apple's own that nobody had
+   looked at together. A person standing in front of a spinner cannot tell
+   which of the three they are waiting on, and there is no reason they should
+   have to.
+
+   So there is ONE number and it is NET_WAIT (www/net.js). This file is
+   loaded after net.js by www/index.html, which is what lets it be read here
+   rather than copied. Moving it moves every wait in the app at once, which
+   is the whole of why it is one. */
+var STORE_WAIT=NET_WAIT;
 
 function storeRow(id){
   return (STORE_P && STORE_P[String(id)]) || null;

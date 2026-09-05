@@ -565,8 +565,14 @@ function draftDropGo(i){
    Both directions, for the same reason netLangSync() goes both ways: a draft
    written in a tunnel is on this phone and nowhere else, and the phone is not
    where it lives. */
-function draftsPull(){
-  if(!netSignedIn()) return;
+/* `ok(got)` and `bad(...)` where anybody asked for them, and neither where
+   nobody did. draftsPullOnce() below is the once-a-session road and draws for
+   itself; the pull on this screen hands both in, so the drafts fall down the
+   same one road every other screen's pull does -- the mark, the pop and
+   ［再接続］ are pullRun()'s (www/sns.js) and are not written again here. */
+function draftsPull(ok, bad){
+  var done=ok || function(){};
+  if(!netSignedIn()){ done(0); return; }
   netDrafts(function(rows){
     var i, k, r, b, d, seen={}, got=0;
     for(i=0;i<(rows||[]).length;i++){
@@ -585,13 +591,14 @@ function draftsPull(){
       DRAFTS.push(d);
       got++;
     }
-    if(got){ draftsSave(); render(); }
+    if(got) draftsSave();
     /* And what the server has not got. Not waited on and not counted: each
        one answers for itself, and one that does not go up is still on this
        phone and is tried again the next time this runs. */
     for(i=0;i<DRAFTS.length;i++)
       if(DRAFTS[i] && DRAFTS[i].id && !seen[DRAFTS[i].id]) netDraftUp(DRAFTS[i]);
-  });
+    done(got? 1 : 0);
+  }, bad || function(){});
 }
 /* Once for the account signed in, rather than on every render: vDrafts() below
    is drawn again every time this screen is. Keyed on the uid and not a
@@ -602,7 +609,7 @@ function draftsPullOnce(){
   var uid=(typeof SESS!=='undefined' && SESS && SESS.uid) || '';
   if(!uid || DRAFTS_FOR===uid) return;
   DRAFTS_FOR=uid;
-  draftsPull();
+  draftsPull(function(got){ if(got) render(); });
 }
 /* A page of its own. 「下書きはそこに入れないで。別ページに飛ぶ感じで」 A list
    at the foot of the screen you are writing on is a list under the thing it
@@ -973,7 +980,7 @@ function pwAddHTML(){
    question and was missing.
 
    Deleting a post ends in render(); on the timeline render() is vFeed(), and
-   vFeed() calls snsPull() every time it runs. So the DELETE going up and the
+   vFeed() asks for the timeline every time it runs. So the DELETE going up and the
    GET coming down are in the air together, and the GET was sent against a
    server that still had the row. postTake() then asked "have I got this one"
    -- and the honest answer was no, because it had just been thrown away --

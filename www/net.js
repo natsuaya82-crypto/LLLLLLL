@@ -223,6 +223,58 @@ function netFreshDone(got){
    netSend() plus that one line, and both of them were therefore outside the
    refresh above -- which is where the fault lived. */
 var NET_WAIT=20000;
+/* ---- HOW MANY REQUESTS ARE IN THE AIR ------------------------------------
+   One number, kept by the two XMLHttpRequests this file owns and by nothing
+   else -- netSend1() above and netUp() at the foot of the file are the whole
+   of the app's wire, so counting here counts everything.
+
+   It exists for one reason: 「再思考もポップ消えてくるくるみたいな。」OWNER
+   2026-09-05. 再接続 puts a mark up, and the mark has to come down when the
+   asking is OVER -- not after a fixed sleep, which would leave it turning
+   over a screen whose answer landed a second in, and would take it away from
+   a screen still waiting.
+
+   ONE REQUEST IS COUNTED ONCE. A dead network reaches readyState 4 AND then
+   fires `onerror`, so both roads out call netOff() for the same request; the
+   stamp on the request itself is what makes the second call nothing. It is
+   put on the XHR rather than kept in a list because the request is the thing
+   that is either counted or not.
+
+   AND THE CHECK IS ONE TICK LATE, on purpose. A 401 goes again from inside
+   its own handler, so the count drops to zero and comes back up in the same
+   turn; asking there would flicker the mark off between a request and its
+   own retry. */
+var NET_OUT=0;
+function netOn(x){ if(x.__net) return; x.__net=1; NET_OUT++; }
+function netOff(x){
+  if(!x.__net) return;
+  x.__net=0;
+  if(NET_OUT>0) NET_OUT--;
+  setTimeout(netIdle, 0);
+}
+/* Nothing left in the air. Whatever fell has already put the pop up through
+   netPop(); this only stops the mark turning. */
+function netIdle(){ if(!NET_OUT) netSpin(false); }
+/* ---- AND THE MARK ITSELF -------------------------------------------------
+   「エラーになったらエラー用のポップ出して再更新とかおさせればいいやんそれ
+   だけで1個作れば全部に使えるやん」OWNER 2026-09-05.
+
+   It is the app's own four-pointed star, the same one the pull turns and the
+   same one a timeline shows while its first answer is out -- ICON_PLUS, and
+   not a fifth drawing of it. What it looks like is `.netspin` in
+   www/index.html; this file turns it on and off and nothing more.
+
+   IT COVERS THE SCREEN AND TAKES THE PRESSES. 「通信エラーなら進むわけねえ
+   だろ全部」 -- while the app is finding out whether it can reach the server,
+   there is nothing underneath worth pressing, and a press that did something
+   would be the app moving on a question it has not answered yet. There is no
+   handler on it: pressing it does nothing, which is the whole intention. */
+function netSpin(on){
+  var el=document.getElementById('netspin');
+  if(!el) return;
+  if(on && !el.firstChild) el.innerHTML='<div class="mk">'+ICON_PLUS+'</div>';
+  if(on) el.className='netspin on'; else el.className='netspin';
+}
 function netSend(method, path, body, tok, ok, bad, up){
   netSend1(method, path, body, tok, ok, bad, up, true);
 }
@@ -255,6 +307,7 @@ function netSend1(method, path, body, tok, ok, bad, up, may){
   x.onreadystatechange=function(){
     if(x.readyState!==4) return;
     var d=null;
+    netOff(x);
     try{ d=JSON.parse(x.responseText||'null'); }catch(e){}
     if(x.status>=200 && x.status<300){ ok(d); return; }
     /* An hour has gone by with the app open. Everything about this request is
@@ -277,7 +330,8 @@ function netSend1(method, path, body, tok, ok, bad, up, may){
     }
     bad(d, x.status, netTag(path)+' '+x.status);
   };
-  x.onerror=function(){ bad(null, 0, netTag(path)+' 0'); };
+  x.onerror=function(){ netOff(x); bad(null, 0, netTag(path)+' 0'); };
+  netOn(x);
   x.send(body? JSON.stringify(body) : null);
 }
 function netPost(path, body, tok, ok, bad){
@@ -411,6 +465,9 @@ function netPop(d, s, m, again){
     for(i=0;i<NET_AGAIN.length;i++) if(NET_AGAIN[i]===again) break;
     if(i===NET_AGAIN.length) NET_AGAIN.push(again);
   }
+  /* 落ちた。回っていたものは止まり、ポップが出る ── 二つが同時に出ている
+     状態は無い。 */
+  netSpin(false);
   if(popOn()) return;
   popAsk(t('net.offline'), netPopAgain, t('net.again'), t('pop.no'));
 }
@@ -419,7 +476,14 @@ function netPop(d, s, m, again){
 function netPopAgain(){
   var go=NET_AGAIN, i;
   NET_AGAIN=[];
+  /* ポップは popYes() が消してある。ここからは、答えが来るまでマークが回る
+     ── 押した人が見ているのは「押したのに何も起きない画面」ではなく、
+     「今きいているところ」。通らなければ netPop() がまたポップを出す。 */
+  netSpin(true);
   for(i=0;i<go.length;i++) go[i]();
+  /* 一件も出て行かなかったとき。ためた道が全部「送るものが無い」だったなら
+     待つものは無いので、その場で止める ── 回り続ける方が嘘になる。 */
+  if(!NET_OUT) netSpin(false);
 }
 
 /* ---- coming and going --------------------------------------------------- */
@@ -1401,7 +1465,12 @@ function nidFor(row, here){
   LANGS[id].name=String(row.name||'');
   return id;
 }
-function netLangsDown(then){
+/* `bad` is for a caller that puts its own pop up -- the pull on any screen of
+   the language (www/sns.js § askLang), whose ［再接続］ has to run that
+   screen's ask again rather than this function on its own. Where none is
+   handed in this behaves exactly as it did: the pop is put up here and the
+   caller is told nothing came. */
+function netLangsDown(then, bad){
   var done=then || function(){}, here={}, filled=false, id;
   if(!netSignedIn()){ done(0); return; }
   for(id in LANGS)
@@ -1464,7 +1533,8 @@ function netLangsDown(then){
       step();
     }, function(d, s, m){
       /* 起動の道の二つ目で、人が気づくのはこちら ── この人の言語は一本も
-         来ていない。［再更新］はこの道をもう一度。 */
+         来ていない。［再接続］はこの道をもう一度。 */
+      if(bad){ bad(d, s, m); return; }
       netPop(d, s, m, function(){ netLangsDown(then); });
       done(0);
     });
@@ -1650,12 +1720,29 @@ function netSaveNow(done){
   if(NET_UPT){ clearTimeout(NET_UPT); NET_UPT=null; }
   netSaveUpGo(done);
 }
-/* `done(ok)` when anybody asked for one. It is called for every way out of
-   this function, including the ways that send nothing at all -- a slice that
-   has not moved, and a language that is not this account's to write. Those
-   are not a network that is down: netPop() above says so about a request that
-   never went out, and this says the same thing about one that was never
-   made. The caller may go on. */
+/* `done(ok)` when anybody asked for one, and `done` is also how this function
+   tells the two callers apart: the burst above passes none and is nobody's
+   question, netSaveNow() passes one and is a person standing in front of a
+   button they have just pressed.
+
+   THE ANSWER TO A PRESS IS THE WIRE AND NOTHING ELSE.
+   「保存ボタン押して保存ができるかできないかは通信の有無だけだからな？」
+   OWNER 2026-09-05.
+
+   Every way out of here used to say `done(true)` -- a slice that had not
+   moved, a language that is not this account's to write -- on the grounds
+   that those are not a network being down. That reasoning is right about the
+   burst and wrong about a press: it is the difference between 「there was
+   nothing to send」 and 「it is saved」, and the button says the second one.
+   With the phone in flight mode the profile screen therefore saved, said so,
+   and went back, having touched nothing.
+
+   So there are two exits and no third. Signed OUT is the one road that is
+   still true without asking: there is no server for this phone yet, the
+   language lives here, and nothing was ever going to go up. Everything else
+   asks -- either by sending what moved, or, when nothing moved, by putting
+   the smallest question this account has to the server through none() below
+   and letting the answer stand for the press. */
 function netSaveUpGo(done){
   var id=langId, kinds=[], i, k, mine, was;
   NET_UPT=null;
@@ -1664,14 +1751,26 @@ function netSaveUpGo(done){
     netPop(d, s, m, netSaveUpGo);
     if(done) done(false);
   }
-  if(NET_SYNCING || !netSignedIn() || !id || !langMine(id)){ if(done) done(true); return; }
+  /* Nothing to send, and somebody pressed. The wire is the question, so the
+     wire is asked: one row of one column, the cheapest thing this account can
+     ask for, and its content is not read. A failure lands in `no` and is
+     therefore the same pop and the same 再接続 as every other failed save. */
+  function none(){
+    if(!done) return;
+    netGet('/rest/v1/language?select=id&limit=1', function(){ done(true); }, no);
+  }
+  /* Already going up. A second send on top of the first would race it. */
+  if(NET_SYNCING){ if(done) done(true); return; }
+  /* No account: the language is on the phone and has nowhere else to be. */
+  if(!netSignedIn()){ if(done) done(true); return; }
+  if(!id || !langMine(id)){ none(); return; }
   for(i=0;i<SLICES.length;i++){
     k=SLICES[i];
     mine=slMine(langKeyOf(id, k));
     was=slMine(langWasKey(id, k));
     if((mine===null? '' : mine)!==(was===null? '' : was)) kinds.push(k);
   }
-  if(!kinds.length){ if(done) done(true); return; }
+  if(!kinds.length){ none(); return; }
   NET_SYNCING=true;
   netLangRow(id, function(sid){
     /* Only the slices that moved, and only those, so a save costs one small
@@ -2979,10 +3078,12 @@ function netUp(path, b64, mime, ok, bad){
   x.setRequestHeader('Content-Type', mime || 'application/octet-stream');
   x.onreadystatechange=function(){
     if(x.readyState!==4) return;
+    netOff(x);
     if(x.status>=200 && x.status<300) ok(path);
     else bad(null, x.status);
   };
-  x.onerror=function(){ bad(null, 0); };
+  x.onerror=function(){ netOff(x); bad(null, 0); };
+  netOn(x);
   x.send(a);
 }
 /* Every picture on a post, one after the other, and then the caller.

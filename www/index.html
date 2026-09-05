@@ -600,7 +600,29 @@ canvas.pkc{width:34px;height:34px;display:block}
 .numwait .pullrule{position:static;margin:0;width:13px;height:13px}
 .numwait .pullrule svg{width:13px;height:13px}
 @keyframes pullsp{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-@media (prefers-reduced-motion:reduce){.pullrule.go{animation:none}}
+/* THE SAME MARK AGAIN, over the whole screen: what turns after 再接続 is
+   pressed. 「再思考もポップ消えてくるくるみたいな。」OWNER 2026-09-05.
+
+   It stands where the pop stood, so the eye does not have to move -- the pop
+   goes and this is in its place. No frame, no corner, no panel behind it:
+   there is one mark and the screen dimmed behind it, and the dim is the same
+   rgba(0,0,0,.5) `.sbg` uses, because it is the same act of putting the
+   screen out of reach.
+
+   AND IT TAKES THE PRESSES. While the app is finding out whether it can
+   reach the server there is nothing underneath worth pressing --
+   「通信エラーなら進むわけねえだろ全部」-- so this layer is `pointer-events:
+   auto` and carries no handler at all. www/net.js § netSpin. */
+.netspin{position:fixed;inset:0;z-index:42;display:flex;align-items:center;
+         justify-content:center;background:rgba(0,0,0,.5);
+         opacity:0;pointer-events:none;transition:.24s}
+.netspin.on{opacity:1;pointer-events:auto}
+.netspin .mk{width:22px;height:22px;color:var(--gold);
+             display:flex;align-items:center;justify-content:center;
+             animation:pullsp .9s linear infinite}
+.netspin .mk svg{width:22px;height:22px;display:block}
+@media (prefers-reduced-motion:reduce){.pullrule.go{animation:none}
+                                       .netspin .mk{animation:none}}
 .chead{padding:0 24px 6px}
 .body{padding:10px 24px calc(var(--tabh) + 90px)}
 /* As tall as what is left of the screen, so something can be put at the FOOT
@@ -3651,6 +3673,10 @@ textarea.ntbody.grow{min-height:0;height:auto;overflow:hidden;resize:none}
   <div class="sheet" id="sheet" onclick="event.stopPropagation()"></div>
   <div class="pop" id="pop"></div>
 </div>
+<!-- 再接続を押したあと、答えが来るまで回るもの。スクリムの外に置く: #sbg は
+     押すと closeSheet() が走るが、これは押しても何も起きないのが正しい。
+     www/net.js § netSpin が中身を入れて on を付け外しする。 -->
+<div class="netspin" id="netspin"></div>
 <div class="toast" id="toast"></div>
 <script>
 /* Plain script, no module: it must run before anything heavy. The splash is
