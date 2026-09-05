@@ -205,9 +205,21 @@ function kbLaySig(b){ return JSON.stringify(b.lay); }
    gold -- one road, www/shell.js § KEEP, and no dirty flag of this chapter's
    own.
 
-   The key is the BOARD's page and not keepKey(): saveKb() runs from
-   langSaveAll() and from the slice writer in core.js, where the screen in
-   front of somebody is not this one.
+   THE KEY IS THE BOARD'S PAGE, AND IT IS THE SAME STRING keepKey() ANSWERS
+   WITH while that page is the screen. It has to be the board rather than the
+   screen, because saveKb() runs from langSaveAll(), from the slice writer in
+   core.js and from the key's own sheet, where the screen in front of somebody
+   is not this one -- and a change made on the sheet has to reach the buffer
+   the page behind it will read.
+
+   That leaves ONE thing to hold, and it is the whole of rule 20's fault:
+   which board is on the screen is written in the route, and `kbShow` is the
+   same fact read back. Deleting a keyboard slid `kbShow` and left the route
+   naming the one it had, so from then on this wrote `kb|1` while the bar read
+   `kb|2` -- a row really came out of the layout and the Save stayed grey, and
+   the arrow asked nothing on the way out. Both deletes land on the board they
+   end on now (kbDropGo, kbDelSel), so the two cannot come apart. `keep-check`
+   holds it.
 
    Board 0 is asked and answered here rather than at the call: it is the free
    QWERTY, built from LETTERS and stored nowhere, so kbEdit() answers null and
@@ -733,8 +745,14 @@ function kbDropGo(i){
   kbForget();
   saveKb();
   /* Deleting is pressed on the ⋯ sheet, so the same thing was true of it:
-     the keyboard was gone and the screen was still the sheet about it. */
-  kbGo();
+     the keyboard was gone and the screen was still the sheet about it.
+     ONTO THE BOARD IT ENDS ON, and that is the whole of rule 20's fault: the
+     boards below the deleted one slide down, so `kbShow` moved and the route
+     went on naming the one it had. Which board is on the screen is one thing
+     and the route is where it is written -- a second answer to it is what
+     put the layout in one buffer and the Save in the bar on another
+     (www/keyboard.js § kbKeepLay). */
+  kbGo(kbShow);
 }
 /* What a keyboard is called: whatever somebody called it, and otherwise
    Keyboard 1, 2, 3. 「キーボード1、キーボード2、キーボード3って名前が初期」
@@ -2469,7 +2487,9 @@ function kbSelDelGo(){
   kbLay=0; kbSel=null;
   kbForget();
   saveKb();
-  kbGo();
+  /* Onto the board it ends on, for kbDropGo()'s reason above -- this is the
+     same delete done to several at once. */
+  kbGo(kbShow);
 }
 function kbRowHTML(x, i, at){
   var sel=!!KBSEL, on=!!(sel && KBSEL[i]);
@@ -3340,8 +3360,20 @@ function kbNoted(){
    "row 3" means row 3 of a board, and the board is gone. Leaving it behind
    lights up a row of the new keyboard that nobody pressed, with the bin above
    it up and ready. viewReset() clears it on the way to another screen; this
-   is the other way to arrive somewhere else without leaving the screen. */
-function kbForget(){ KBU={id:'', cur:'', u:[], r:[]}; KBH=null; }
+   is the other way to arrive somewhere else without leaving the screen.
+
+   AND THE BUFFER THE SAVE READS, for the same sentence a third time. It is
+   filed under the board's PAGE (kbKeepLay above), so a board deleted out from
+   under a page leaves what it opened with sitting there as what the next
+   board's change is measured against -- and the Save came up gold on a
+   keyboard nobody had touched. Every one of them goes, not the page you are
+   standing on: the boards below a deleted one all slide, so every page from
+   there down is now about a different keyboard. */
+function kbForget(){
+  KBU={id:'', cur:'', u:[], r:[]}; KBH=null;
+  var k;
+  for(k in KEEP) if(KEEP.hasOwnProperty(k) && k.indexOf('kb|')===0) keepDrop(k);
+}
 /* Both steps are the same move in opposite directions, so they are one
    function told which way. What comes off one stack goes onto the other, and
    the layout put back is a copy -- JSON out and JSON in -- so nothing on

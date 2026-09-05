@@ -1603,6 +1603,22 @@ export function halfDone(){
                                               kbAdd('flick'); kbLay = 0;
                                               const h = vKb(); KB = null; kbShow = 0;
                                               SET.plan = 'free'; return h; }],
+    /* THE SAVE IN THE CORNER, GOLD, on the keyboard being built. It is the
+       one thing on this screen the change of 2026-09-05 moves and it is a
+       COLOUR, so both states have to be photographed or the fault is in the
+       one nobody looked at: every other face of this chapter is the grey.
+       A board is deleted out from under the page first, because that is the
+       road the buffer used to come apart on -- the layout wrote one key and
+       the bar read another, and the Save stayed grey with a row gone. */
+    ['a keyboard changed, the Save gold', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
+                                                  KEEP = {};
+                                                  kbAdd('qwerty'); kbAdd('flick');
+                                                  kbGoBoard(2); render();
+                                                  kbDropGo(1); render();
+                                                  KBH = { k:'r', r:0, i:0 }; kbCut();
+                                                  const h = vKb();
+                                                  KEEP = {}; KB = null; kbShow = 0;
+                                                  SET.plan = 'free'; return h; }],
     /* A key that switches layers rather than typing one: which layer it goes
        to is a question only that kind of key is asked. */
     ['a key that switches layers', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
