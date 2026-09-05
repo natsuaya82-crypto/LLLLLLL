@@ -1565,7 +1565,12 @@ function swStart(e){
   var t=e.target;
   while(t && t!==document.body){
     var n=t.nodeName;
-    if(n==='CANVAS' || n==='INPUT' || n==='TEXTAREA') return;
+    /* A canvas is drawn ON, so a thumb there is a stroke and never a
+       gesture. A field is not: on a screen whose field reaches the edge,
+       every back swipe started inside one and was thrown away -- and a
+       thumb that starts at the very edge of a field is not typing.
+       「スライドで戻るができてないページ多すぎ」 OWNER 2026-09-05. */
+    if(n==='CANVAS') return;
     t=t.parentNode;
   }
   /* Which edge it started at, and therefore which way it has to go. A thumb's
