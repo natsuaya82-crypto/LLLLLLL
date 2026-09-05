@@ -373,6 +373,83 @@ const R = await pg.evaluate(() => {
     out.fails.push('a word that HAS a meaning stopped showing it: ' +
       mnText(full) + ' -- the blank is for the words with none');
 
+  /* ---- a subclass somebody made themselves ------------------------------
+     OWNER 2026-09-05: the thirteen parts of speech stay the thirteen, and
+     underneath them a person makes their own -- 動詞 → 自動詞／他動詞. Three
+     steps and press-check can never take three, so it is here: put a word in
+     a subclass from the sheet, save, and ask the LIST what it now says and
+     what it can now be narrowed to.
+
+     None of the three can throw. A subclass that is written and not saved, a
+     row that does not say it, and a filter that lets every word through are
+     each a screen that renders perfectly and is not the one somebody built. */
+  start();
+  const SUB = '\u4f7f\u5f79\u52d5\u8a5e';           /* a subclass no fixture word is in */
+  openWord('tira');
+  openEdit('tira');
+  wdSetSub(SUB);
+  wdWrite();
+  const subbed = findWord('tira');
+  out.said.push('a subclass written on the sheet and saved is: ' +
+    ((subbed && subbed.sub) ? '"' + subbed.sub + '"' : 'GONE'));
+  if (!subbed || subbed.sub !== SUB)
+    out.fails.push('saved a subclass and the word carries ' +
+      JSON.stringify(subbed && subbed.sub) + ' -- Save did not write it');
+  /* And the language now HAS it, which is the whole of what a subclass is:
+     there is no list of them kept anywhere, so a subclass exists exactly
+     while a word is in it. */
+  if (subsOf('v').indexOf(SUB) < 0)
+    out.fails.push('the word carries ' + JSON.stringify(SUB) + ' and ' +
+      'subsOf("v") does not offer it: ' + JSON.stringify(subsOf('v')));
+  if (subsOf('n').indexOf(SUB) >= 0)
+    out.fails.push('a subclass of the verbs is being offered under the nouns');
+
+  /* The row of the list says it, beside the part of speech and not instead
+     of it -- both, because "verb" alone and 使役動詞 alone are each half of
+     what the row is for. */
+  back();
+  window.route = 'words'; NAV = [{ r: 'words' }];
+  const listed = screen();
+  out.said.push('and the list row says it: ' +
+    (listed.indexOf(SUB) >= 0 ? 'yes' : 'NO'));
+  if (listed.indexOf(SUB) < 0)
+    out.fails.push('the dictionary row of a word in ' + JSON.stringify(SUB) +
+      ' does not say so');
+  if (listed.indexOf(posLabel('v')) < 0)
+    out.fails.push('the subclass replaced the part of speech on the row ' +
+      'instead of standing beside it');
+
+  /* And the list narrows to it. Three answers have to differ or the filter is
+     doing nothing: everything, the verbs, and this one subclass of them. */
+  wordsSetFil(POS_ALL);
+  const nAll = wordsList().length;
+  wordsSetFil('v');
+  const nPos = wordsList().length;
+  wordsSetFil('v:' + SUB);
+  const nSub = wordsList().map(w => w.hw);
+  out.said.push('everything ' + nAll + ', the verbs ' + nPos +
+    ', that subclass ' + JSON.stringify(nSub));
+  if (!(nSub.length === 1 && nSub[0] === 'tira'))
+    out.fails.push('narrowed to ' + JSON.stringify(SUB) + ' and the list is ' +
+      JSON.stringify(nSub) + ' -- one word is in it');
+  if (!(nSub.length < nPos && nPos < nAll))
+    out.fails.push('the three counts do not differ: everything ' + nAll +
+      ', verbs ' + nPos + ', subclass ' + nSub.length);
+  /* What the button over the list says it is narrowed to. "動詞" over a list
+     of nothing but 使役動詞 is the screen naming the wrong one of the two. */
+  if (wFilLab() !== SUB)
+    out.fails.push('narrowed to a subclass and the list says it is showing ' +
+      JSON.stringify(wFilLab()));
+  /* And the part of speech moving takes it off, because a subclass of the
+     verbs is not an answer about a noun. */
+  openEdit('tira');
+  wdSetPos('n');
+  out.said.push('and changing the part of speech leaves the subclass: ' +
+    JSON.stringify(wEdit.sub));
+  if (wEdit.sub)
+    out.fails.push('changed the part of speech and the sheet still carries ' +
+      JSON.stringify(wEdit.sub) + ' -- a subclass of the verbs, on a noun');
+
   return out;
 });
 

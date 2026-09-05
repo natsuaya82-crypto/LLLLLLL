@@ -93,8 +93,16 @@ export function seed(){
   WORDS = [
     {hw:'kano', ph:['k','a','n','o'], mn:'mountain', mns:['mountain'], pos:'n', at:1,
      reg:'wr', tags:['land'], ety:'from the word for head', up:2},
-    {hw:'tir',  ph:['t','i','r'],     mn:'to see',   mns:['to see'],   pos:'v', at:2},
+    /* Two verbs in two subclasses of the person's own making, and a third
+       verb in neither. OWNER 2026-09-05 put those under the thirteen, and
+       what the screens do with them cannot be walked unless a word is in one:
+       the row of subclasses on the filter appears only where a word wears
+       one, and the sheet's picker is that same list. Three, so that "narrows
+       to this subclass" is a different answer from "narrows to this part of
+       speech" and from "everything". */
+    {hw:'tir',  ph:['t','i','r'],     mn:'to see',   mns:['to see'],   pos:'v', sub:'\u4ed6\u52d5\u8a5e', at:2},
     {hw:'mos',  ph:['m','o','s'],     mn:'tall',     mns:['tall'],     pos:'adj', at:3},
+    {hw:'lom',  ph:['l','o','m'],     mn:'to fall',  mns:['to fall'],  pos:'v', sub:'\u81ea\u52d5\u8a5e', at:11},
     {hw:'sar',  ph:['s','a','r'],     mn:'river',    mns:['river'],    pos:'n', at:4},
     {hw:'nak',  ph:['n','a','k'],     mn:'not',      mns:['not'],      pos:'part', slot:'neg.not', at:5},
     {hw:'ke',   ph:['k','e'],         mn:'what',     mns:['what'],     pos:'pro',  slot:'ask.what', at:6},
@@ -570,6 +578,12 @@ export function halfDone(){
        window.route = 'pos'; NAV = [{ r:'pos' }]; return vPos(); }],
     ['how it is said', () => { openEdit('kano');
        window.route = 'reg'; NAV = [{ r:'reg' }]; return vReg(); }],
+    /* And the fourth, which is the person's own -- OWNER 2026-09-05. Opened
+       on a VERB, because the list on it is the subclasses of the part of
+       speech the word is in and the fixture's subclasses are the verbs'.
+       Opened on `kano` it would be the empty face, which is a real state and
+       is not the one this is here to show. */
+    ['the subclass under it', () => { openEdit('tir'); openSub(); return vForm(); }],
     ['one more meaning', () => { openEdit('kano'); wdMnNew = true;
                                  return sheet('<div id="wd-body">'+wdFormHTML()+'</div>'); }],
     ['one more example', () => { openEdit('kano'); wdExNew = true;

@@ -1907,6 +1907,33 @@ function posLabel(k){
   if(k===POS_ALL) return langDef().all;
   return langDef().pos[k]||k;
 }
+/* ---- and what a person puts UNDER one -----------------------------------
+   OWNER 2026-09-05: the thirteen above stay the thirteen, and underneath them
+   somebody makes their own -- 動詞 → 自動詞／他動詞, 名詞 → 固有／普通. A word
+   carries `sub`, which is the person's own words and nothing the app knows.
+
+   THE GRAMMAR IS NOT TOLD. What reaches the engine is `pos`, still one of the
+   thirteen, so a language that divides its verbs in two is not a language the
+   rules have to be rewritten for. `sub` is read by the dictionary and by the
+   sheet a word is written on, and by nothing else.
+
+   It is not a list kept anywhere. A subclass EXISTS because a word is in it,
+   which is why there is nothing to make first, nothing to delete when the
+   last word leaves it, and nothing that can be out of step with the words --
+   the same shape `tags` already has. So this is the one place that asks the
+   dictionary what subclasses a part of speech has, and every screen that
+   offers them asks it here. */
+function subOf(w){ return String((w && w.sub) || '').trim(); }
+function subsOf(pos){
+  var out=[], i, s;
+  for(i=0;i<WORDS.length;i++){
+    if(pos && WORDS[i].pos!==pos) continue;
+    s=subOf(WORDS[i]);
+    if(s && out.indexOf(s)<0) out.push(s);
+  }
+  out.sort();
+  return out;
+}
 /* A CSV can say 名詞, noun or n; all three are accepted as the same key */
 function posKey(s){
   var v=String(s||'').trim();

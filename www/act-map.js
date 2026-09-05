@@ -360,6 +360,8 @@ act('fmPick', fmPick);
 act('fmSay', fmSay);
 act('fmOpen', fmOpen);
 act('posPick', posPick);
+act('openSub', openSub);
+act('subPick', subPick);
 /* Forms made by a rule: writing one, and asking a word for the ones it has
    not got. */
 act('fmrNew', fmrNew);
@@ -377,6 +379,7 @@ actIn('wdSetEty', wdSetEty);
 actKey('obName', obName);
 actKey('snsGo', snsGo);
 actKey('stAddEx', stAddEx);
+actKey('subNew', subNew);
 actKey('takeOwn', takeOwn);
 actKey('wdAddEx', wdAddEx);
 actKey('wdAddMn', wdAddMn);

@@ -86,6 +86,27 @@ function wSelTap(hw){
   if(wSel[hw]) delete wSel[hw]; else wSel[hw]=1;
   render();
 }
+/* ---- what the list is narrowed to --------------------------------------
+   `wFil` is one of: `*` (everything), `nomn` (nothing said about it yet), a
+   part of speech, or a part of speech AND a subclass under it, written
+   `v:自動詞`. OWNER 2026-09-05 put the person's own subclasses under the
+   thirteen (www/shell.js § subsOf), and this is the one thing that had to
+   change on this screen to hold them.
+
+   ONE KEY AND NOT TWO. A second global beside this one would be a second
+   thing viewReset() has to forget and a second thing openFil() has to keep in
+   step -- and the day one is forgotten and the other is not, the list is
+   filtered by a subclass of a part of speech nobody is looking at. A colon,
+   because it is what a form's own argument already uses to carry two things
+   (www/home.js § formArg). */
+function wFilPos(k){
+  var s=String(k||''), i=s.indexOf(':');
+  return (i<0)? s : s.slice(0, i);
+}
+function wFilSub(k){
+  var s=String(k||''), i=s.indexOf(':');
+  return (i<0)? '' : s.slice(i+1);
+}
 function wFilters(){
   var out=[{k:POS_ALL, lab:posLabel(POS_ALL)}], i;
   for(i=0;i<POS.length;i++) out.push({k:POS[i], lab:posLabel(POS[i])});
@@ -123,8 +144,12 @@ function wordsHidden(){ return WORDS.length-wordsSeen().length; }
    that says them all can never disagree about it. */
 function wordsList(){
   var items=wordsSeen().slice(), qq=String(q||'').trim().toLowerCase();
+  var fp=wFilPos(wFil), fs=wFilSub(wFil);
   if(wFil==='nomn') items=items.filter(function(w){ return !wMns(w).length; });
-  else if(wFil!==POS_ALL) items=items.filter(function(w){ return w.pos===wFil; });
+  else if(fp!==POS_ALL){
+    items=items.filter(function(w){ return w.pos===fp; });
+    if(fs) items=items.filter(function(w){ return subOf(w)===fs; });
+  }
   if(qq) items=items.filter(function(w){ return srcKey(w).indexOf(qq)>=0; });
   /* Alphabetically within a group as well as without one, so a part of
      speech holding two hundred words is still a list a word can be found in.
@@ -303,20 +328,39 @@ function wordsSetQ(v){ q=v; lnGrow('w-q'); wordsPaint(); }
    nearly always the first half of typing a different one. */
 /* What the list is filtered to, as a word. */
 function wFilLab(){
-  var fs=wFilters(), i;
+  var fs=wFilters(), i, sub=wFilSub(wFil);
+  /* The subclass is the narrower of the two, so it is what the button says.
+     "動詞" over a list of nothing but 自動詞 is the screen naming the wrong
+     one of the two things it is doing. */
+  if(sub) return sub;
   for(i=0;i<fs.length;i++) if(fs[i].k===wFil) return fs[i].lab;
   return posLabel(POS_ALL);
 }
 /* The list, on a sheet. Every kind that has a word in it, and the count
    beside each -- which the row of tabs could not show and is most of what
    somebody is choosing on. */
+function wFilRow(k, lab){
+  return '<button class="set"' + DO('wordsSetFil', [k]) + '>'+
+    '<span class="sl'+(wFil===k? ' on':'')+'">'+esc(lab)+'</span>'+
+    (wFil===k? '<span class="sv">'+ICON_TICK+'</span>' : '')+'</button>';
+}
+/* And, underneath, the subclasses of whichever part of speech is chosen --
+   OWNER 2026-09-05. Only of that one, and only when a word is actually in
+   one: a heading over an empty list is a screen explaining that this language
+   does not use a feature, which is CLAUDE.md § Explaining.
+
+   Choosing the part of speech again is how the subclass comes off, because
+   its row is the one already at the top of this list and is ticked whenever
+   no subclass is chosen. There is no second "all" to press. */
 function openFil(){
-  var fs=wFilters();
-  openForm('wfil', t('f.pos'), fs.map(function(f){
-    return '<button class="set"' + DO('wordsSetFil', [f.k]) + '>'+
-      '<span class="sl'+(wFil===f.k? ' on':'')+'">'+esc(f.lab)+'</span>'+
-      (wFil===f.k? '<span class="sv">'+ICON_TICK+'</span>' : '')+'</button>';
-  }).join(''));
+  var fs=wFilters(), pos=wFilPos(wFil),
+      subs=(pos && pos!==POS_ALL && pos!=='nomn')? subsOf(pos) : [];
+  openForm('wfil', t('f.pos'),
+    fs.map(function(f){ return wFilRow(f.k, f.lab); }).join('')+
+    (subs.length?
+      '<div class="sec">'+esc(t('f.sub'))+'</div>'+
+      subs.map(function(x){ return wFilRow(pos+':'+x, x); }).join('')
+      : ''));
 }
 FORM_OPEN.wfil=function(){ openFil(); };
 function wordsSetFil(k){
@@ -445,7 +489,13 @@ function wordsUndoHTML(){
 function wEntryLines(w, mn){
   return '<div class="hwrow"><span class="hw">'+esc(wOut(w.hw))+'</span>'+
     '<span class="rd">'+esc(phIpa(wPh(w)))+'</span>'+
-    '<span class="pos">'+esc(posLabel(w.pos))+'</span></div>'+
+    /* The subclass sits INSIDE the same span as the part of speech, not in
+       one beside it. `.pos` carries `margin-left:auto` -- two of them is two
+       things each pushed to the right of the other -- and a row of this list
+       is one height, which a second element with its own type size is how you
+       lose (CLAUDE.md § Rows in one list are one height). */
+    '<span class="pos">'+esc(posLabel(w.pos)+
+      (subOf(w)? ' \u00b7 '+subOf(w) : ''))+'</span></div>'+
     /* A word nobody has given a meaning to yet has NO second line. Not an
        empty one -- there is nothing to put on it, and a row is as tall as
        what is on it, which is already true of this list: one meaning is a
