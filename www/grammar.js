@@ -958,7 +958,13 @@ function g2HelpReg(){
   for(i=0;i<G2FM_CHAPS.length;i++)
     HELP['g2.'+G2FM_CHAPS[i][0]]=g2HelpOf(G2FM_CHAPS[i][1]);
 }
-g2HelpReg();
+/* `HELP` is www/home.js's, and www/index.html loads that file first, so in the
+   app it is here. THIS FILE IS ALSO READ ON ITS OWN: tools/grammar-engine-check
+   .mjs puts it into a bare Node context to run samples through the engine, and
+   there is no screen there and no HELP to register with -- the call threw on
+   load and took the whole check with it. So it is asked, once, rather than
+   assumed. Nothing else in this file touches a screen at load time. */
+if(typeof HELP!=='undefined') g2HelpReg();
 
 /* THE CHAPTERS, and each one is a PAGE.
 
