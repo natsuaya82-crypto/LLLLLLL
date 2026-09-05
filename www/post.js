@@ -1608,14 +1608,6 @@ function pwSendWith(ln, pics, vo){
      Documents; what is in localStorage is this. */
   if(vo && vo.f) mine.vo={f:vo.f, ms:vo.ms||0};
   if(PW.pv) mine.pv=1;
-  /* The natural language, translated once, here, and carried. It is asked
-     for and NOT waited on: the post is pushed either way, and a translation
-     that arrives late lands on a post that already exists. A post that
-     cannot be published until a machine answers is a post a machine can
-     lose. */
-  postTr(mine.mn, mine.ui, function(tr){
-    if(tr && typeof tr==='object'){ mine.tr=tr; savePosts(); render(); }
-  });
   if(PW.to){
     mine.to=PW.to;
     var up=postById(PW.to);
@@ -1825,35 +1817,21 @@ function migratePostInk(){
   if(n) savePosts();
 }
 
-/* ---- what a post says, and what it says in YOUR words ------------------
+/* ---- what a post says ---------------------------------------------------
+   OWNER 2026-09-05 単語はその単語の意味を 文法は並べ替えた単語たちが文章として
+   成り立つように
 
-   Three layers, and only the third is new.
+   Two things now, not three. The writer's own letters, and what the line
+   means -- and what it means is built here, out of the dictionary and the
+   grammar, by `pwMn()` when the post is written.
 
-     1  the writer's own letters      ln + ink        already on the post
-     2  what it means, in a natural   mn + tr         mn is already on it
-        language
-     3  the same thing in the         built from      here
-        READER's own language          THIS dictionary
-
-   Layer 2 is translated WHEN THE POST IS WRITTEN, not when it is read, and
-   the translations travel on the post. A post written in Japanese reaches an
-   English reader in English without anybody's phone asking anything of the
-   network at read time -- which is the whole point, because a timeline is
-   read far more often than it is written.
-
-   TR_SEAM: the translator is the reader's own device AI, borrowed at the
-   moment of posting. There is no key of ours and no service of ours, so
-   there is nothing to pay per post and nothing that can leak. Until it is
-   wired up, postTr() answers nothing, `tr` is simply absent, and every
-   reader sees the natural language the author typed -- which is what happens
-   today and is not a failure. Same shape as AI_SEAM in www/glyph.js. */
-function postTr(mn, from, done){
-  /* TR_SEAM — hand `mn` to the device's own translator and call done() with
-     { <lang code>: <text>, … }. Nothing here yet; posting does not wait on
-     it and never will, because a post that cannot be published until a
-     machine answers is a post that can be lost by a machine not answering. */
-  done(null);
-}
+   `postTr()` and TR_SEAM are gone. They were a third layer: the meaning
+   handed to a translator on the device, frozen onto the post as `tr`, and
+   said back to a reader in their own language. Nothing was ever behind it --
+   the function answered `done(null)`, no post ever carried a `tr`, and
+   `postSay()` read a field that was never written. 「きかいほんやくはつかわ
+   ない」, so it is deleted rather than left waiting for a machine that is not
+   coming, and the meaning a post carries is the one the app worked out. */
 /* What a post says to the person reading it: their own language if the post
    carries it, and otherwise the one the author typed. Never empty -- a line
    nobody can read is not a post. */
@@ -1869,7 +1847,6 @@ function postSay(p){
      lands this falls through to the words the post carries, which is what it
      always showed. */
   if(p.pr){ d=dayMap(p.pr); if(d && d[u]) return String(d[u]); }
-  if(p.tr && typeof p.tr==='object' && p.tr[u]) return String(p.tr[u]);
   return String(p.mn||'');
 }
 
@@ -2614,16 +2591,8 @@ function pwSaveEdit(ln){
   /* OWNER 2026-09-05 単語はその単語の意味を 文法は並び替えた単語たちが文章として成り立つように */
   mn=String(PW.mn||'').trim() || LinguaGrammarEngine.translate.toNatural(gModel(), ln, uiLang());
   p.ln=ln; p.ink=postInkTyped(PWRAW); p.mn=mn;
-  /* The translations were of the old sentence. They are dropped rather than
-     left to be shown under a line they are no longer about, and asked for
-     again -- which lands late, on a post that already exists, exactly as it
-     does when one is written. */
-  delete p.tr;
   p.ui=uiLang();
   p.ed=Date.now();
-  postTr(p.mn, p.ui, function(tr){
-    if(tr && typeof tr==='object'){ p.tr=tr; savePosts(); render(); }
-  });
   savePosts();
   PW=pwBlank();
   goTab('feed');

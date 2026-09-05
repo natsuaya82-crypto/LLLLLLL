@@ -17,13 +17,13 @@
    words and you are the one who can see it is wrong. docs/FEATURES.md says
    the same thing under "A post shown three ways", layer three.
 
-   It is not postTr() and not TR_SEAM. Those are layer TWO: the meaning of a
-   post, translated into another NATURAL language when it is written, frozen
-   onto the post, and waiting on a hosted model that does not exist. This one
-   is natural → your own language, computed now, offline, costing nothing, and
-   it is right that it is not frozen: a line that half-rendered yesterday
+   Nothing here is frozen onto a post and nothing here waits on a hosted
+   model. Both directions are computed now, offline, costing nothing, and it
+   is right that they are not frozen: a line that half-rendered yesterday
    renders fully today because the dictionary grew. docs/FEATURES.md calls
-   freezing that one the bug.
+   freezing a translation onto a post the bug, and the seam that was going to
+   do it -- postTr() in www/post.js -- is deleted. 「きかいほんやくはつかわない」
+   OWNER 2026-09-05.
 
    DOM-free and globals-free, like lexicon.js beside it. */
 (function(root){
