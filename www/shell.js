@@ -130,6 +130,33 @@ function viewLeft(from, to){
      screen would empty it on the way to the thing it is for. `viewReset()`
      drops that one. */
   if(from==='words') wUndo=null;
+  /* AND WHAT WAS CHOSEN, once the list is BEHIND you rather than under you.
+     「洗濯して前の画面戻ると選択画面がキープされたままや。流石に解除して
+     欲しい。」 OWNER 2026-09-05, on a build in their hand (「洗濯」is 「選択」
+     typed wrong). Pressing 選択, walking back a page and coming to the
+     dictionary again found it still a list you choose from, with the words
+     chosen before still marked.
+
+     It was kept ON PURPOSE, and the reason is gone: the choice had to survive
+     leaving the screen because editing what was chosen was a page you went
+     to. 「複数選択のedit今実装しないでいいやdeleteだけにしよう。」OWNER
+     2026-09-01 took that page out, and everything the choosing is for happens
+     in the bar of this screen. Nothing is left to carry it off the screen for.
+
+     `navHas()` is the difference between walking OFF and going deeper, and it
+     is the question it was already written to answer -- 「is this screen
+     already behind you」. The kind of word and the order are on this screen
+     while you choose (that is deliberate: what somebody selects twenty of is
+     what they have just narrowed down to), and both open as their own page,
+     so a plain 「left the words route」 would drop the choice every time
+     somebody filtered. Going deeper leaves `words` on the trail; going back,
+     or a tab, does not.
+
+     This is not viewReset()'s line written twice. That one is the wholesale
+     forget -- another language opened, everything erased, and the fixture's
+     arriving state, which tools/press.mjs stands on between faces. This one
+     is one screen being walked off, which is what wUndo above is too. */
+  if(from==='words' && !navHas('words')) wSel=null;
 }
 
 /* ---- how much of the screen the phone's own keyboard is covering ------

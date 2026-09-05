@@ -59,12 +59,12 @@ function wGroupLab(w){
 
    Neither this nor the undo below is the language's -- nothing here is
    written to `localStorage`, nothing is in `SLICES`, and nothing is in the
-   backup. They are forgotten in two different places and that is not an
-   oversight: `wSel` is in `viewReset()` beside the search and the order,
-   because it is where you are standing in a LANGUAGE, and going to the page
-   that edits what was chosen must not throw the choice away. `wUndo` is in
-   `viewLeft()`, which is walking off the screen, because it holds words as
-   they were at the positions they were in. */
+   backup. Both are forgotten in `viewLeft()` (www/shell.js) when this screen
+   is walked off: the choosing because 「前の画面戻ると選択画面がキープされた
+   ままや」 OWNER 2026-09-05, the undo because it holds words as they were at
+   the positions they were in. The kind of word and the order are not -- they
+   stay up while you choose, because what somebody selects twenty of is what
+   they have just narrowed the list down to. */
 var wSel=null;
 /* What a bulk delete can put back, held only while you are standing on the
    list it happened on. */

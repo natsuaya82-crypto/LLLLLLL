@@ -272,6 +272,69 @@ const R = await pg.evaluate(() => {
     out.fails.push('opening the import again shows the last result — 完了 ' +
       'goes back, so that is a loop with no way in and no way out');
 
+  /* ---- the word list forgets it was being chosen from -------------------
+     「洗濯して前の画面戻ると選択画面がキープされたままや。流石に解除して
+     欲しい。」 OWNER 2026-09-05, on a build in their hand.
+
+     Nothing can throw here and no screenshot is wrong: the list renders
+     perfectly as a list you choose from, and the bar says 完了 instead of
+     選択 because that is what it says while choosing. It is found by walking
+     off the screen and coming back, which is a SEQUENCE, so it is here rather
+     than in press-check -- the same reason the import above is.
+
+     Both directions, because the fix has an exception in it and the exception
+     is where this will regress. Walking OFF releases the choice; going
+     DEEPER -- the kind of word and the order each open as a page of their own,
+     and both stay up while you choose -- keeps it. A release written as
+     「left the words route」 passes the first half and throws the choice away
+     every time somebody filters. */
+  const chooseTwo = () => {
+    const on = document.querySelector('#app .navtop [data-do="wSelOn"]');
+    if (on) on.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    /* Re-asked each time: tapping a mark redraws the whole screen (the bar
+       has to stop saying 完了 and start saying 削除), so the second element
+       of a list read once is no longer on the page. */
+    for (let i = 0; i < 2; i++) {
+      const m = document.querySelectorAll('#app [data-sel="1"]')[i];
+      if (m) m.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    }
+    return wSel ? Object.keys(wSel).length : -1;
+  };
+  const chosen = () => wSel ? 'choosing ' + Object.keys(wSel).length : 'a plain list';
+
+  start(); screen();
+  const tookTwo = chooseTwo();
+  out.said.push('the word list, with 選択 pressed and two marks tapped, is ' +
+                chosen());
+  if (tookTwo < 1) out.fails.push('選択 and two marks chose ' + tookTwo +
+    ' words -- there is nothing to leave behind, so what follows proves nothing');
+  back();
+  go('words'); screen();
+  out.said.push('back a page and into the dictionary again: ' + chosen() +
+                ', the bar says ' +
+                (document.querySelector('#app .navtop [data-do="wSelOff"]') ? '完了' : '選択'));
+  if (wSel)
+    out.fails.push('walked off the word list and came back to it still being ' +
+      'chosen from (' + chosen() + ') -- 「前の画面戻ると選択画面がキープされた' +
+      'ままや」 OWNER 2026-09-05');
+  if (document.querySelector('#app .navtop [data-do="wSelOff"]'))
+    out.fails.push('the bar still says 完了 on a list arrived at fresh');
+
+  start(); screen();
+  chooseTwo();
+  const before = chosen();
+  openFil(); screen();
+  const onFil = here().r + ':' + here().a;
+  back(); screen();
+  out.said.push('with ' + before + ', the kind of word opened (' + onFil +
+                ') and closed again: ' + chosen());
+  if (onFil !== 'form:wfil')
+    out.fails.push('the kind of word did not open as its own page (' + onFil +
+      ') -- the exception below is about a page, so this no longer tests it');
+  if (!wSel)
+    out.fails.push('opening the kind of word threw the choice away -- it is a ' +
+      'page you go INTO from the list, and the filter stays up while choosing');
+
   return out;
 });
 
