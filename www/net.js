@@ -1368,9 +1368,19 @@ function nidFor(row, here){
    answer. Nothing else writes it, so nothing else can make a screen say the
    server was reached. */
 var NET_HEARD=false;
+/* THE BREAK IS PART OF THE WORDING, NOT THE WIDTH.
+   「普通に／い／だけ下に行く気持ち悪さ理解できないの？／エラーです。／電波／
+     みたいに二行にしてくれ。」 OWNER 2026-09-05.
+
+   Flowed as one sentence, 390px put 「い」 on a line of its own. The sentence
+   is two -- what happened, and what to do -- so it is cut where it is written
+   rather than where the box ends, and the <br> travels with the translation
+   the way CLAUDE.md rule 2 says markup does. It is markup, so it is put in as
+   markup; esc() is what turned it into the letters b and r on the screen. The
+   ten strings are this repo's own and are the only thing that reaches here. */
 function netNoneHTML(html){
   if(NET_HEARD) return html;
-  return '<div class="note">'+esc(t('net.none'))+'</div>';
+  return '<div class="note">'+t('net.none')+'</div>';
 }
 function netLangsDown(then){
   var done=then || function(){}, here={}, filled=false, id;
