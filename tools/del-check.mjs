@@ -161,6 +161,82 @@ for (const name of Object.keys(DELETES))
     bad.push('tools/del-check.mjs names `' + name + '` and www/act-map.js does ' +
       'not bind it any more — delete the line.');
 
+/* ---- AND ONE OF THEM IS RUN --------------------------------------------
+   「投稿削除ボタン押しても消えないけど？」 A DELETE that matched NO ROW --
+   the row policy in supabase/schema.sql refusing it -- answers exactly like
+   one that matched, so the post went off the phone, the person was told it
+   was gone, and the next pull brought it back. Nothing threw and no screen
+   looked wrong: 「消えたつもり」 is a state with no error in it.
+
+   The list above is read off the source. This is not: netDrop() and
+   postDelGo() are taken out of www/ and RUN, against a netSend() that answers
+   the way the server does, because 「the post is still on the screen」 is a
+   thing the code does rather than a thing it says. No browser -- neither
+   function touches the DOM, the way www/import.js's reader does not.       */
+const evalled = (names) => {
+  const bodies = names.map(n => {
+    const fn = bodyOf(n);
+    if (!fn) throw new Error('del: www/ has no `function ' + n + '(` any more');
+    return fn.text;
+  });
+  return bodies.join('\n');
+};
+
+{
+  const world = {
+    POSTS: [], POST_GONE: {}, PMENU: 'x', SESS: { uid: 'u', at: 'tok' },
+    said: [], sent: null, answer: null,
+    netSignedIn: () => true,
+    netDropFiles: (p, done) => done(),
+    netSend: (m, path, body, tok, ok, bad) => { world.sent = m + ' ' + path; world.answer(ok, bad); },
+    netPop: (d, s, mk) => { world.said.push('pop'); },
+    netWhy: () => 'no',
+    toast: (x) => { world.said.push('say:' + x); },
+    t: (k) => k,
+    postById: () => null,
+    savePosts: () => {}, render: () => {}, back: () => {},
+    here: () => ({ r: 'feed' }), voDropFile: () => {}
+  };
+  const src2 = evalled(['netDrop', 'postDelGo', 'postDelDone']);
+  const keys = Object.keys(world);
+  /* eslint-disable no-new-func */
+  const make = new Function(keys.join(','), src2 + '\nreturn {postDelGo:postDelGo};');
+  const app = make.apply(null, keys.map(k => world[k]));
+
+  const run = (post, answer) => {
+    world.POSTS.length = 0; world.POSTS.push(post);
+    world.said.length = 0; world.sent = null; world.answer = answer;
+    app.postDelGo(post.id);
+    return { left: world.POSTS.indexOf(post) >= 0, said: world.said.slice() };
+  };
+
+  /* 0 行。The server answered, and it removed nothing. */
+  const none = run({ id: 'p1', sid: 's1', mine: 1 }, (ok, bad) => ok([]));
+  if (!none.left)
+    bad.push('a DELETE that removed NO ROW took the post off the screen. ' +
+      'PostgREST answers 204 for a delete the row policy refused, exactly as ' +
+      'it does for one that worked — netDrop() has to count the rows that came ' +
+      'back. 「投稿削除ボタン押しても消えないけど？」');
+  if (none.said.indexOf('say:no') < 0)
+    bad.push('a DELETE that removed NO ROW said nothing. The post staying put ' +
+      'with no sentence is the same silence in a different place — and it is ' +
+      'not 通信エラー either, so it is not the pop: the server answered.');
+
+  /* And a post whose own send never came back. There is no row to delete and
+     no way to say there is not one. */
+  const nosid = run({ id: 'p2', mine: 1 }, (ok, bad) => ok([]));
+  if (!nosid.left || nosid.said.indexOf('say:no') < 0)
+    bad.push('a post with no `sid` was taken off the screen as though the ' +
+      'server had agreed. Nothing was ever sent — that is not a deletion.');
+  if (nosid.said.indexOf('say:no') >= 0 && world.sent)
+    bad.push('a post with no `sid` still sent a DELETE. There is no row to name.');
+
+  /* The other way, or the check above is green on a delete that never works. */
+  const gone = run({ id: 'p3', sid: 's3', mine: 1 }, (ok) => ok([{ id: 's3' }]));
+  if (gone.left)
+    bad.push('a DELETE that removed the row left the post on the screen.');
+}
+
 if (bad.length) {
   console.error('del: what deletes, and what it takes\n');
   for (const b of bad) console.error('  - ' + b + '\n');
@@ -174,3 +250,6 @@ console.log('del: ' + Object.keys(DELETES).length + ' delete-shaped buttons — 
   'ask first and ' + (takes.length - asked.length) + ' say in writing why they do not');
 console.log('     nothing deletes that is not written down, and nothing written ' +
   'down has lost its confirm');
+console.log('     and one of them was run: a DELETE that removed no row leaves the ' +
+  'post on the screen and says so, a post with no sid sends nothing, and a ' +
+  'DELETE that removed the row takes it off');

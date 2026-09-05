@@ -3391,8 +3391,13 @@ function postDelGo(id){
   if(!gone) return;
   /* 消えるのはサーバーから消えた時だけ ── 落ちて何も言わず画面からだけ消える
      のは「消えたつもり」を作る。netPop() (www/net.js) が pullRun() (sns.js)
-     と同じ道で失敗を出し、［再接続］は同じ削除をもう一度投げる。 */
+     と同じ道で失敗を出し、［再接続］は同じ削除をもう一度投げる。
+
+     答えが返ってきて、それでも行が消えていないときは通信の話ではない ──
+     ポップは「送ったのに返事が無い」ためのもので、これは返事が来ている。
+     一文で言う。印は netDrop() が付ける `∅`。 */
   netDrop(gone, function(){ postDelDone(gone); }, function(d, s, m){
+    if(String(m||'').indexOf('∅')>=0){ toast(netWhy(d, s, m)); return; }
     netPop(d, s, m, function(){ postDelGo(id); });
   });
 }
