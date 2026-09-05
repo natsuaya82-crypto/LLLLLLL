@@ -462,6 +462,7 @@ defLang('zh', (function(){
       "post.none"       : "没有可发布的内容",
       "post.del"        : "删除",
       "post.del.q"      : "删除这条帖子？",
+      "post.del.ok"     : "帖子已删除",
       "when.now"        : "刚刚",
       "when.m"          : "{0}分钟",
       "when.h"          : "{0}小时",

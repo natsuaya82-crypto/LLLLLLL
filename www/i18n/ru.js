@@ -457,6 +457,7 @@ defLang('ru', (function(){
       "post.none"       : "Нечего публиковать",
       "post.del"        : "Удалить",
       "post.del.q"      : "Удалить эту запись?",
+      "post.del.ok"     : "Запись удалена",
       "when.now"        : "сейчас",
       "when.m"          : "{0} мин",
       "when.h"          : "{0} ч",

@@ -3374,21 +3374,29 @@ function postDel(id){
   popAsk(t('post.del.q'), function(){ postDelGo(id); }, t('pop.yes'));
 }
 function postDelGo(id){
-  var i, gone=null, vo=null, to='', up;
+  var i, gone=null;
+  for(i=0;i<POSTS.length;i++) if(POSTS[i].id===id){ gone=POSTS[i]; break; }
   PMENU='';
-  for(i=0;i<POSTS.length;i++) if(POSTS[i].id===id){
-    gone=POSTS[i]; vo=gone.vo; to=gone.to||''; POSTS.splice(i, 1); break;
-  }
+  render();
+  if(!gone) return;
+  /* 消えるのはサーバーから消えた時だけ ── 落ちて何も言わず画面からだけ消える
+     のは「消えたつもり」を作る。netPop() (www/net.js) が pullRun() (sns.js)
+     と同じ道で失敗を出し、［再接続］は同じ削除をもう一度投げる。 */
+  netDrop(gone, function(){ postDelDone(gone); }, function(d, s, m){
+    netPop(d, s, m, function(){ postDelGo(id); });
+  });
+}
+function postDelDone(gone){
+  var i, up, to=gone.to||'';
+  for(i=0;i<POSTS.length;i++) if(POSTS[i]===gone){ POSTS.splice(i, 1); break; }
   /* Under both names, for the reason postTake() gives about `have`: this
      phone knows it as the id it wrote, and the timeline hands it back wearing
      the server's. netRow() sets p.id and p.sid to the same server id, so the
      first of these is what actually catches it -- the second is there because
      the day a row arrives under one name and not the other, this still
      holds. */
-  if(gone){
-    POST_GONE[id]=1;
-    if(gone.sid) POST_GONE[gone.sid]=1;
-  }
+  POST_GONE[gone.id]=1;
+  if(gone.sid) POST_GONE[gone.sid]=1;
   /* A reply counted one on the post it answered, and deleting it never took
      that one back -- so a post somebody replied to and then deleted the reply
      from said "1" forever, pointing at nothing.
@@ -3401,8 +3409,8 @@ function postDelGo(id){
     if(up) up.re=Math.max(0, (up.re||0)-1);
   }
   savePosts();
-  if(vo && vo.f) voDropFile(vo.f);
-  netDrop(gone, function(){}, function(){});
+  if(gone.vo && gone.vo.f) voDropFile(gone.vo.f);
+  toast(t('post.del.ok'));
   if(here().r==='form') back();
   render();
 }

@@ -502,6 +502,7 @@ defLang('fr', (function(){
       "post.none"       : "Rien à publier",
       "post.del"        : "Supprimer",
       "post.del.q"      : "Supprimer ce message ?",
+      "post.del.ok"     : "Message supprimé",
       "when.now"        : "à l'instant",
       "when.m"          : "{0} min",
       "when.h"          : "{0} h",

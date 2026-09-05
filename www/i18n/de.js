@@ -442,6 +442,7 @@ defLang('de', (function(){
       "post.none"       : "Nichts zu senden",
       "post.del"        : "Löschen",
       "post.del.q"      : "Diesen Beitrag löschen?",
+      "post.del.ok"     : "Beitrag gelöscht",
       "when.now"        : "jetzt",
       "when.m"          : "{0} Min.",
       "when.h"          : "{0} Std.",

@@ -454,6 +454,7 @@ defLang('it', (function(){
       "post.none"       : "Niente da pubblicare",
       "post.del"        : "Elimina",
       "post.del.q"      : "Eliminare questo post?",
+      "post.del.ok"     : "Post eliminato",
       "when.now"        : "ora",
       "when.m"          : "{0} min",
       "when.h"          : "{0} h",

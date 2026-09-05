@@ -461,6 +461,7 @@ defLang('pt', (function(){
       "post.none"       : "Não há nada para publicar",
       "post.del"        : "Eliminar",
       "post.del.q"      : "Eliminar esta publicação?",
+      "post.del.ok"     : "Publicação eliminada",
       "when.now"        : "agora",
       "when.m"          : "{0} min",
       "when.h"          : "{0} h",

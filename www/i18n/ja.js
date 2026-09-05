@@ -370,6 +370,7 @@ defLang('ja', (function(){
       'post.none'       : '書いてください',
       'post.del'        : '削除',
       'post.del.q'      : 'この投稿を消しますか？',
+      'post.del.ok'     : '投稿を削除しました',
       'when.now'        : '今',
       'when.m'          : '{0}分',
       'when.h'          : '{0}時間',
