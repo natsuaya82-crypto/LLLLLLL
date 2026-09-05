@@ -202,7 +202,6 @@ const FIELDS = {
   showScript: { phone: 'whether the drawn letters are shown rather than the roman ones' },
   kbrom:    { phone: 'whether the keyboard shows its roman face' },
   vvkb:     { phone: 'how much of THIS screen the phone\'s own keyboard covers. A measurement of one handset and meaningless on another' },
-  gramLang: { phone: 'the mark that the grammar was given its language once. A migration mark, not a thing somebody made' },
   wldMoved: { phone: 'the mark that 「what the language is for」 has been moved out of the settings and into the language. A migration mark' },
   /* NAMED AS A GAP RATHER THAN BLESSED. www/home.js says it in its own words:
      「the writing system is SET.wsys -- the PERSON's settings, not the

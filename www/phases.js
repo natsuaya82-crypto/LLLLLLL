@@ -97,7 +97,6 @@ function stRead(){
    alone, and a language it had nothing to copy onto is passed over again for
    the same reason as the first time. */
 function migrateGramLang(){
-  if(SET.gramLang) return;
   /* What the APP put in the settings, as against what a person put there.
      Read off setDefaults() in www/core.js rather than written out here, so
      there is one place that says it: a second copy of 'SOV' in this file is
@@ -165,11 +164,20 @@ function migrateGramLang(){
     if(raw===null && o.order===undefined && o.gpos===undefined) continue;
     slWr(key, JSON.stringify(o));
   }
-  /* The mark that this has run. It used to be held back when a write to
-     storage was refused -- a full disk left half the languages migrated, so
-     the next launch had to try again. A slice is in memory now and the write
-     cannot be refused, so there is nothing to wait for. */
-  SET.gramLang=1;
+  /* THERE IS NO MARK, AND THERE MUST NOT BE ONE. `SET.gramLang` stood here
+     and said 「this has run」, which was right while the copy landed in
+     `localStorage` and survived the launch. **A slice is in memory now**
+     (CLAUDE.md rule 22), so the copy dies with the app -- and a mark that
+     outlives it means the second launch skips a migration whose output is
+     gone. The word order somebody chose was copied once and then lost for
+     good, on every phone, silently. `migrate-check` is what said so.
+
+     Nothing is needed in its place: this is IDEMPOTENT by construction. It
+     copies only into a field the slice does not already answer for
+     (`o.order===undefined`), and it copies FROM `SET.order`, which a
+     migration never removes (docs/DATA_SAFETY.md rule 2) -- so it is still
+     there on every launch, and the moment the language's own answer exists,
+     whether from here or from the server, this stops touching it. */
   try{ localStorage.setItem(LS_S, JSON.stringify(setOnDisk())); }catch(e){}
 }
 migrateGramLang();

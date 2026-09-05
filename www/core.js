@@ -1314,7 +1314,7 @@ function planKeep(id){
    against each other -- a name here has to be one it calls the handset's, and
    a field it puts on a road to the server may not appear here at all. */
 var SET_PHONE=['theme','ui','planUid','planV','done','obback','myfont',
-               'showScript','kbrom','vvkb','gramLang','wldMoved','wsys',
+               'showScript','kbrom','vvkb','wldMoved','wsys',
                'order','read','voice','script'];
 /* The fields of `SET` that are a PERSON's, counted rather than named. Asked of
    a parked copy as well as of `SET` itself: a field this account has and this
