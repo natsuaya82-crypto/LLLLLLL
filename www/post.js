@@ -2660,8 +2660,18 @@ function postWhen(at){
    the row both need it and they were answering it separately. */
 function postWho(p){ return String((p && (p.who || p.lname)) || ''); }
 var PFACE={};
+/* THE ONE THING ON A POST THAT ASKS WHAT IT LOOKS LIKE NOW, NOT WHEN IT WAS
+   WRITTEN. Everything else here is past tense on purpose (rule 8): the
+   name, the handle, the shapes. An icon is not the language, so unlike
+   those it is shown as it is NOW when this phone knows that -- whoOf(p.hd)
+   (www/me.js) answers with the CURRENT icon, this phone's own or anybody it
+   has asked the server about, keyed on the post's own handle rather than on
+   ME. Only a post whoOf() has nothing on falls back to the one it carries.
+   「アイコン変えた前の投稿が古いアイコンのまま」 OWNER 2026-09-05.
+   tools/sides-check.mjs holds why whoOf() may be called from here. */
 function postFace(p){
-  var av=p && p.av, k;
+  var av=p && p.av, k, who=p && p.hd? whoOf(p.hd) : null;
+  if(who && who.av) av=who.av;
   if(av && av.st && av.st.length){
     k=String((p && p.id) || 'me');
     PFACE[k]=av.st;

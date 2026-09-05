@@ -272,8 +272,25 @@ taints.delete('netSend');
 taints.delete('netSend1');
 taints.delete('netFresh');
 taints.delete('netFreshDone');
+/* AND THE ONE PLACE AN ICON IS ASKED FOR BY THE POST'S OWN HANDLE.
+   whoOf(h) (www/me.js) reads ME, meHandle() and postAvatar() inside itself,
+   which is exactly the shape this file exists to forbid -- and every one of
+   those three answers about the person THIS PHONE IS, never about whoever
+   `h` names. What makes it safe below the line is that nothing here ever
+   hands it anything but the post's own `hd`: `whoOf(p.hd)` answers what that
+   HANDLE looks like right now -- this phone's own current icon when the
+   handle is mine, or a row this phone asked the server for when it is not
+   -- and never the open language sitting in ME by accident. It is the
+   avatar's one deliberate exception to rule 8 (OWNER 2026-09-05): the name,
+   the handle and the shapes stay frozen at the moment a post was written,
+   because they are the language; an icon is not the language, so postFace()
+   is allowed to ask what it looks like NOW instead of what it looked like
+   THEN. 「アイコン変えた前の投稿が古いアイコンのまま」 OWNER 2026-09-05.
+   A reader-side copy keyed on the post's own handle -- it does not read ME. */
+taints.delete('whoOf');
 const READER = new Set(['render', 'uiLang', 't',
-                        'netSend', 'netSend1', 'netFresh', 'netFreshDone']);
+                        'netSend', 'netSend1', 'netFresh', 'netFreshDone',
+                        'whoOf']);
 for (let moved = true; moved;) {
   moved = false;
   for (const [name, body] of Object.entries(bodies)) {
