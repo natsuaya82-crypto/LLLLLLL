@@ -891,9 +891,18 @@ export function halfDone(){
        room behind it are on no screen at all without these two. */
     /* The two things you can do about a PERSON, which live behind the ... on
        their page. Nothing at rest opens it, so nothing had ever pressed
-       either of them. */
+       either of them.
+
+       WHO_HAVE['iri'] is seeded here on purpose: vProfile() now spins the
+       whole screen in place of the card until the server's own answer is
+       in (OWNER 2026-09-05, see 'waiting on the server' below), and the
+       menu lives ON that card -- nothing gives it a screen to sit on
+       without this. */
     ["somebody else's page, with the menu open",
                                  () => { WMENU = true;
+                                         WHO_HAVE['iri'] = { who:'Iri', hd:'iri',
+                                             av:{ch:'Ж'}, lname:'Vethi', bio:'',
+                                             fo:2, fr:3, out:false };
                                          window.route = 'profile';
                                          NAV = [{ r: 'profile', a: 'iri' }];
                                          return vProfile(); }],
@@ -1012,16 +1021,35 @@ export function halfDone(){
        は自己責任で見れるようにする」 */
     ["somebody else's page, frozen", () => {
         POSTS.forEach((x) => { if (x.hd === 'iri') x.out = true; });
+        /* WHO_HAVE is the record now (whoOf()'s `out`), not just the posts
+           this phone happens to be holding -- carried here too so the card
+           still draws instead of the wait mark below. */
+        WHO_HAVE['iri'] = { who:'Iri', hd:'iri', av:{ch:'Ж'}, lname:'Vethi',
+                             bio:'', fo:2, fr:3, out:true };
         window.route = 'profile'; NAV = [{ r: 'profile', a: 'iri' }];
         return vProfile(); }],
     /* Somebody else's profile, the follow button on it, and the same page
        once you follow them. The only profile a walk sees is this person's
        own, and the two cards are different screens. */
     ['somebody else\'s profile', () => { window.route='profile'; NAV=[{r:'profile', a:'iri'}];
+        WHO_HAVE['iri'] = { who:'Iri', hd:'iri', av:{ch:'Ж'}, lname:'Vethi',
+                             bio:'', fo:2, fr:3, out:false };
         const h = vProfile(); NAV=[{r:'profile'}]; return h; }],
     ['somebody else\'s profile, followed', () => { ME.fo = ['iri'];
+        WHO_HAVE['iri'] = { who:'Iri', hd:'iri', av:{ch:'Ж'}, lname:'Vethi',
+                             bio:'', fo:2, fr:3, out:false };
         window.route='profile'; NAV=[{r:'profile', a:'iri'}];
         const h = vProfile(); NAV=[{r:'profile'}]; ME.fo = ['iri','veth']; return h; }],
+    /* AND THE FACE BEFORE THE SERVER HAS ANSWERED. 「他の人のプロフィール
+       いく時、フォロー中とフォロワーがくるくるするけど、そこじゃなくて
+       その人の画面がくるくるして欲しい」 OWNER 2026-09-05 -- vProfile()
+       spins the whole screen in place of the card while WHO_HAVE[h] is
+       still empty, and every fixture above now seeds it so the card itself
+       stays walked. 'kai' carries no seed anywhere in this file and no post
+       of their own, so this is the one face that is left turning. */
+    ['somebody else\'s profile, waiting on the server', () => {
+        window.route='profile'; NAV=[{r:'profile', a:'kai'}];
+        const h = vProfile(); NAV=[{r:'profile'}]; return h; }],
     /* A post kept to yourself, which is the lock beside the time, and the
        composer while it is going to be one -- the button says so. */
     ['a post kept to yourself', () => { const p = postById('p1'); p.pv = 1;
