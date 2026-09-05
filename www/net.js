@@ -808,9 +808,20 @@ function netSetPass(pass, ok, bad){
    ago. */
 function netMyProfile(ok, bad){
   if(!netSignedIn()){ bad(null, 0, 'profile −'); return; }
-  netGet('/rest/v1/profile?select=handle,display,bio&limit=1&id=eq.'+
+  netGet('/rest/v1/profile?select=handle,display,bio,av&limit=1&id=eq.'+
          encodeURIComponent(SESS.uid),
-         function(d){ ok(d && d.length? d[0] : null); }, bad);
+         function(d){
+           var p=d && d.length? d[0] : null;
+           /* The face, read back same as the name and the handle -- signing
+              in on a second phone used to leave ME.av empty until a letter
+              was drawn or redrawn here, so the account's own icon never
+              followed it over. avSent is set to match so netAvSync() does
+              not turn straight round and PATCH back what it was just given. */
+           if(p && p.av!==undefined){
+             ME.av=p.av; ME.avSent=JSON.stringify(p.av||null); saveMe();
+           }
+           ok(p);
+         }, bad);
 }
 /* The polite half of unique. It answers a moment before the insert does and
    can be wrong by that much; the constraint is what actually decides, and
