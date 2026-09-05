@@ -853,7 +853,7 @@ function vLtset(){
        is already behind; nothing is deleted and paying brings the offer back. */
     var free=(pick && can('snd') && ltFil==='all' && !ltQ)? sndLoose() : [];
     if(!list.length && !free.length)
-      return netNoneHTML('<div class="note">'+t('lt.none')+'</div>');
+      return '<div class="note">'+t('lt.none')+'</div>';
     return '<div class="ltgrid'+(ltWob? ' held':'')+'" id="'+gid+'" data-k="'+esc(k)+'">'+
       list.map(function(l){ return ltCell(l, ''); }).join('')+
       free.map(function(sym){ return sndCell(sym, ltWob && can('snd')); }).join('')+

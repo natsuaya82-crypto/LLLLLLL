@@ -3882,7 +3882,7 @@ function kbLtGrid(ri, ki, dir){
      same kind of function behind. Both screens put them in #lt-list. */
   function cells(){
     var ls=ltPickList(ltOfKind('alpha'));
-    if(!ls.length) return netNoneHTML('<div class="note">'+t('lt.none')+'</div>');
+    if(!ls.length) return '<div class="note">'+t('lt.none')+'</div>';
     return '<div class="ltgrid">'+ls.map(function(l){
       return '<button class="ltc"'+kbLtOnCSS(ri, ki, dir, l.id) +
         DO('kbLtTap', [ri, ki, dir, l.id]) + ' aria-label="'+

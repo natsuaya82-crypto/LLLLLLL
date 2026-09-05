@@ -451,7 +451,7 @@ function vRelate(){
             '<div class="mn">'+esc(wMns(x)[0]||t('words.addmn'))+'</div></button>'+
             '<span class="ltck">'+(has? ICON_TICK : '')+'</span></div>';
         }).join('')
-      : netNoneHTML('<div class="note">'+t('words.empty')+'</div>'))+
+      : '<div class="note">'+t('words.empty')+'</div>')+
     '</div></div>';
 }
 /* Made and joined in one press. A word typed here is spelled by the same

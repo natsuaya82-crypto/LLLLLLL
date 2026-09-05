@@ -2206,6 +2206,20 @@ export function halfDone(){
        delete LANGS[id]; LANGS = wasLangs;
        SET.order = wasOrder; SET.gpos = wasGpos;
        langId = wasId; STG = wasStg;
+       return h; }],
+    /* 写しの無い iPhone で辞書を開いたところ ── 単語が一つも無く、サーバーは
+       まだ何も答えていない。この検査の後ろにサーバーは無いので、その二つ目は
+       ここでは既定の状態。
+
+       この形が二度書き換わった画面で、どちらの姿も一枚ずつ要る:
+       2026-09-05 の朝は「通信エラーです。通信の良いところで接続してください」
+       を出し、同じ日にそれを消して「単語がまだありません」に戻した。 */
+    ['写しの無い iPhone の辞書', () => {
+       const was = WORDS;
+       WORDS = [];
+       window.route = 'words'; NAV = [{ r:'words' }];
+       const h = vWords();
+       WORDS = was;
        return h; }]
   ];
 }
