@@ -612,7 +612,12 @@ canvas.pkc{width:34px;height:34px;display:block}
    AND IT TAKES THE PRESSES. While the app is finding out whether it can
    reach the server there is nothing underneath worth pressing --
    「通信エラーなら進むわけねえだろ全部」-- so this layer is `pointer-events:
-   auto` and carries no handler at all. www/net.js § netSpin. */
+   auto` and carries no handler at all.
+
+   It stands OUTSIDE `#sbg` for that reason and not for a layering one: the
+   scrim runs `closeSheet()` on a press, and this must do nothing when it is
+   pressed. `#netspin` is the empty div at the foot of this file, and
+   www/net.js § netSpin puts the mark in it and takes `on` on and off. */
 .netspin{position:fixed;inset:0;z-index:42;display:flex;align-items:center;
          justify-content:center;background:rgba(0,0,0,.5);
          opacity:0;pointer-events:none;transition:.24s}
@@ -3673,9 +3678,6 @@ textarea.ntbody.grow{min-height:0;height:auto;overflow:hidden;resize:none}
   <div class="sheet" id="sheet" onclick="event.stopPropagation()"></div>
   <div class="pop" id="pop"></div>
 </div>
-<!-- 再接続を押したあと、答えが来るまで回るもの。スクリムの外に置く: #sbg は
-     押すと closeSheet() が走るが、これは押しても何も起きないのが正しい。
-     www/net.js § netSpin が中身を入れて on を付け外しする。 -->
 <div class="netspin" id="netspin"></div>
 <div class="toast" id="toast"></div>
 <script>

@@ -831,7 +831,7 @@ const st = await pg.evaluate(async () => {
 
    So the fake App Store here never answers at all. STORE_WAIT is lowered for
    the test and read off the source below for what it really is -- waiting the
-   real 25 seconds in the gate would buy nothing the assertion does not.  */
+   real twenty seconds in the gate would buy nothing the assertion does not. */
 const nul = await pg.evaluate(async () => {
   var out = {}, calls = 0, hold = route, wait = STORE_WAIT, give = null;
   route = 'plans';
@@ -1651,11 +1651,21 @@ say(/func readPlan\(\)\s*->\s*\(String,\s*OSStatus\)/.test(KEYC),
 say(/window\.__planok=/.test(KEYC) && /errSecItemNotFound/.test(KEYC),
     'and the injection carries that, with 「there is nothing there」 counted ' +
     'as an answer and everything else as a failure');
-/* The bound the test lowered. Read rather than waited on: 25 seconds in the
-   gate would prove the same thing and cost 25 seconds. */
+/* The bound the test lowered. Read rather than waited on: twenty seconds in
+   the gate would prove the same thing and cost twenty seconds.
+
+   AND IT IS NOT A NUMBER IN THIS FILE. 「通信のくるくるも全部20秒で良くない？」
+   OWNER 2026-09-05. It was `25000` written in www/store.js beside a second
+   25000 in storeRestore(), so the app had three deadlines and a person in
+   front of a spinner could not tell which one they were waiting on. What is
+   asked here is therefore the shape and not the value: store.js READS
+   NET_WAIT, so moving the one number moves this too and nothing here has to
+   be edited to follow it. */
 const WWWSTORE = fs.readFileSync(path.join(dir, '..', 'www', 'store.js'), 'utf8');
-say(/var STORE_WAIT=25000;/.test(WWWSTORE),
-    'and the bound on a real phone is 25 seconds, not the 20ms this check used');
+say(/var STORE_WAIT=NET_WAIT;/.test(WWWSTORE) && !/[0-9]{4,}/.test(
+      (/var STORE_WAIT=[^;]*;/.exec(WWWSTORE) || [''])[0]),
+    'and the bound on a real phone is the app\'s one wait, not a number this ' +
+    'file keeps -- www/store.js reads NET_WAIT (www/net.js)');
 
 /* ---- and where the date comes from, READ rather than run ----------------
    The browser above holds everything on this side of the bridge: the line,

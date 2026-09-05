@@ -354,18 +354,21 @@ function snsHas(){ return !!SNS_GOT[snsTab]; }
 /* THE TIMELINE'S ASK. It writes the answer down and says whether one came;
    the mark, the pop, the 再接続 and the render are pullRun()'s and are not
    here. */
-function askFeed(ok, bad){
+function askFeed(ok, bad, person){
   /* WHICH timeline was asked for, held while the answer is out. snsTab moves
      when somebody switches tabs, and switching tabs is exactly when a pull is
      in the air -- so reading it again in the callback is how the followed
      timeline's answer gets written down as the recommended one's. */
   var which=snsTab;
   /* And what the feed is showing while a word is on is the answer to that
-     word, so that is asked again too. It is said HERE and not inside
-     snsFilFind()'s own guard, because vFeed() calls that on every render and
-     a render is not a person asking. The timeline underneath is asked for as
-     well: it is still the list the word comes off onto. */
-  if(here().r==='feed' && snsFil) snsFilFind(true);
+     word, so that is asked again too -- ONLY when a person asked. It is said
+     HERE and not inside snsFilFind()'s own guard, because vFeed() calls that
+     on every render and a render is not a person asking; and it is behind
+     `person` because vFeed() has already called it, unforced, on the render
+     that reaches this, so forcing it there is the same word asked twice. The
+     timeline underneath is asked for either way: it is still the list the
+     word comes off onto. */
+  if(person && here().r==='feed' && snsFil) snsFilFind(true);
   netFeed(which, function(ps){
     var have, i;
     /* And what this phone has that the server has not. It goes off the back
@@ -493,7 +496,12 @@ function pullOn(r, ask, hav){ PULL_ON[r]=ask; if(hav) PULL_HAS[r]=hav; }
    render asks through pullNeed() and is refused the moment this screen has
    its answer; a person asks through pullGo() and is never refused. Where a
    screen names no `hav`, PULL_GOT holds it: once per route per session, which
-   cannot loop. */
+   cannot loop.
+
+   AND `person` REACHES THE ASK, as a third argument, because one screen has
+   something it does only when somebody asked: the timeline re-asks the word
+   that is on it. On a render that would be a second request beside the one
+   vFeed() already makes for the same word. */
 function pullGo(r){ pullRun(r, true); }
 function pullNeed(r){ pullRun(r, false); }
 function pullRun(r, person){
@@ -520,7 +528,7 @@ function pullRun(r, person){
     /* 通信が落ちたら何も進まない ── netPop() (www/net.js)。［再接続］が
        走らせるのはこの画面の同じ問いで、それは人が押したのと同じ道です。 */
     netPop(d, s, m, function(){ pullRun(r, true); });
-  });
+  }, person);
 }
 /* ---- WHAT EACH SCREEN ASKS FOR ------------------------------------------
    「ここ更新ないから見れないし」「他の人の画面でも更新できるようにしたい」
