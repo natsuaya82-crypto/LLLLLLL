@@ -852,7 +852,8 @@ function vLtset(){
        2026-09-01. can('snd') is the same door the sound chart behind a letter
        is already behind; nothing is deleted and paying brings the offer back. */
     var free=(pick && can('snd') && ltFil==='all' && !ltQ)? sndLoose() : [];
-    if(!list.length && !free.length) return '<div class="note">'+t('lt.none')+'</div>';
+    if(!list.length && !free.length)
+      return netNoneHTML('<div class="note">'+t('lt.none')+'</div>');
     return '<div class="ltgrid'+(ltWob? ' held':'')+'" id="'+gid+'" data-k="'+esc(k)+'">'+
       list.map(function(l){ return ltCell(l, ''); }).join('')+
       free.map(function(sym){ return sndCell(sym, ltWob && can('snd')); }).join('')+

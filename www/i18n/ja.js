@@ -270,6 +270,7 @@ defLang('ja', (function(){
       "net.badhandle" : "IDは a-z 0-9 _ で2〜24文字です",
       "net.handle.taken" : "このIDは使われています",
       "net.offline" : "接続できません",
+      "net.none" : "通信エラーです。通信の良いところで接続してください",
       "net.failed" : "うまくいきませんでした",
       "net.badlogin" : "アドレスかパスワードが違います",
       "net.session" : "サインインし直してください",

@@ -254,6 +254,7 @@ defLang('en', (function(){
       "net.badhandle" : "An ID is 2–24 characters: a–z, 0–9 and _",
       "net.handle.taken" : "That ID is taken.",
       "net.offline" : "No connection.",
+      "net.none" : "Connection error. Connect where the signal is good.",
       "net.failed" : "That did not work.",
       "net.badlogin" : "Wrong address or password.",
       "net.session" : "Sign in again.",

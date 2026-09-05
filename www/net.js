@@ -1331,6 +1331,47 @@ function nidFor(row, here){
   LANGS[id].name=String(row.name||'');
   return id;
 }
+/* ---- 空と、届かなかったのは、別のこと -----------------------------------
+   「おかしくね？電波ない時は単語はまだありませんにはならなくね？
+     通信エラーです通信の良いところで接続してください見たいにしないと消えたと
+     思われるやろ、、、、」
+   「消えたのとエラーは別のことでただの分岐だからね？
+     消えたと思われるのはまずい。
+     TLはくるくるさせとけばどうにかなるけど」 OWNER 2026-09-05.
+
+   The slices are in memory (rule 22), so an app that has been closed holds
+   nothing until the server answers. A phone that kept a picture of the last
+   answer draws that (slGot in www/core.js). A phone with NO picture -- one
+   just out of the box, one that has never opened this language, one whose
+   storage was reclaimed -- draws nothing, and every screen with nothing on it
+   said 「単語がまだありません」. That is 「空」 and 「届かなかった」 sharing one
+   branch, which is the first page of CLAUDE.md, and what a person reads there
+   is that their own work is gone.
+
+   ONE BRANCH IN ONE PLACE, AND THE SCREENS ASK IT. Not a condition grown on
+   each screen: 「コードも継ぎ足し継ぎ足しして蛸足にするのもやめてね？」
+
+     NET_HEARD       the server has said what this account's languages are,
+                     this run of the app. False before it answers and false
+                     after a failure -- both of those are 「まだ聞けていない」
+                     and neither is 「この人は何も作っていない」.
+     netNoneHTML(h)  what a screen with nothing on it shows: its own 「まだ
+                     ありません」 when the server has answered, and the one
+                     sentence about the signal when it has not.
+
+   The timeline is not this and does not become this: it is other people's, an
+   empty one is not read as 「消えた」, and the mark that turns is already what
+   it does 「TLはくるくるさせとけばどうにかなるけど」.
+
+   It is set in ONE place -- the foot of netLangsDown() below, which is the
+   launch's own road to the server and the only thing that hears the whole
+   answer. Nothing else writes it, so nothing else can make a screen say the
+   server was reached. */
+var NET_HEARD=false;
+function netNoneHTML(html){
+  if(NET_HEARD) return html;
+  return '<div class="note">'+esc(t('net.none'))+'</div>';
+}
 function netLangsDown(then){
   var done=then || function(){}, here={}, filled=false, id;
   if(!netSignedIn()){ done(0); return; }
@@ -1339,16 +1380,28 @@ function netLangsDown(then){
       here[String(LANGS[id].sid)]=1;
   netGet('/rest/v1/language?select=id,name&owner=eq.'+encodeURIComponent(SESS.uid),
     function(rows){
-      var i=0, made=0;
+      var i=0, made=0, lost=false;
       function step(){
-        var row, nid;
+        var row, nid, heard;
         if(i>=(rows||[]).length){
           if(made) langStore();
           /* The OPEN language's slices came down, so what the screens are
              holding is older than what is in the store. Read it in the way
              langOpen() does rather than patching each global by hand. */
           if(filled) langLoad();
-          if(made || filled) render();
+          /* AND THE SCREENS ARE TOLD THE SERVER SPOKE. The whole answer, or
+             none of it: one language whose slices never came back leaves this
+             false, because a screen that then says 「まだありません」 is saying
+             it about a language nobody has heard about yet.
+
+             The re-draw is the same statement. A person who genuinely has
+             nothing changes nothing here -- no language was made, no slice was
+             filled -- so without this the sentence about the signal would be
+             left standing on a screen that has just been told there is simply
+             nothing there. */
+          heard=(!lost && !NET_HEARD);
+          if(!lost) NET_HEARD=true;
+          if(made || filled || heard) render();
           done(made); return;
         }
         row=rows[i]; i++;
@@ -1389,7 +1442,7 @@ function netLangsDown(then){
             if(nid===langId) filled=true;
           }
           step();
-        }, function(){ step(); });
+        }, function(){ lost=true; step(); });
       }
       step();
     }, function(){ done(0); });

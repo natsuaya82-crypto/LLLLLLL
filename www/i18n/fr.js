@@ -402,6 +402,7 @@ defLang('fr', (function(){
       "net.badhandle" : "Un ID fait 2 à 24 caractères : a–z, 0–9 et _",
       "net.handle.taken" : "Cet ID est déjà pris.",
       "net.offline" : "Pas de connexion.",
+      "net.none" : "Erreur de connexion. Connectez-vous là où le signal est bon.",
       "net.failed" : "Cela n’a pas marché.",
       "net.badlogin" : "Adresse ou mot de passe incorrect.",
       "net.session" : "Reconnectez-vous.",
