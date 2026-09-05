@@ -1172,9 +1172,15 @@ create policy block_drop on block for delete using (is_member() and actor = auth
 -- of being in the App Store, and a condition nobody can meet from a laptop
 -- they are not sitting at.
 --
--- No update and no delete either, for anybody: a report that can be withdrawn
--- by the person it is about is not a report, and one that staff can delete is
--- a record of what was decided that does not survive the deciding.
+-- No update policy and no delete policy, for anybody: a report that can be
+-- withdrawn by the person it is about is not a report.
+--
+-- Staff DO delete one, and it is not a policy -- report_drop() at the foot of
+-- this file, the same shape as post_hide(). 「通報で問題なかったらその通報が
+-- 消せるようにしてほしい」 OWNER 2026-09-05: a report that was looked at and
+-- found to be about nothing is not a record of a decision, it is a row in a
+-- queue that has been answered, and a queue that only grows is a queue nobody
+-- reads.
 drop policy if exists report_read on report;
 create policy report_read on report for select using (is_staff());
 drop policy if exists report_make on report;
@@ -1737,6 +1743,27 @@ end $$;
 revoke all on function post_show(uuid) from public;
 grant execute on function post_show(uuid) to authenticated;
 
+-- And the third answer, which is that there was nothing wrong.
+-- 「通報で問題なかったらその通報が消せるようにしてほしい」 OWNER 2026-09-05.
+-- The post stays exactly as it is and the account stays exactly as it is --
+-- what goes is the row asking somebody to look, because it has been looked at.
+--
+-- A function rather than a delete policy for the reason the two above are:
+-- report_read is is_staff() and a delete policy would be a second place saying
+-- who may act on a report.
+-- `bigint`, because that is what report.id IS -- the table is `generated always
+-- as identity` where post and profile are uuid, so the pair of them do not
+-- take the same kind of name however alike they read.
+create or replace function report_drop(r bigint)
+returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not is_staff() then raise exception 'not staff'; end if;
+  delete from report where id = r;
+end $$;
+revoke all on function report_drop(bigint) from public;
+grant execute on function report_drop(bigint) to authenticated;
+
 -- Ejecting somebody, which is the other half of answering a report and is the
 -- half App Store guideline 1.2 asks for by name. Taking the post down leaves
 -- whoever wrote it free to write it again.
@@ -1904,6 +1931,56 @@ end $$;
 drop trigger if exists profile_rename on profile;
 create trigger profile_rename before update of handle on profile
   for each row execute function profile_rename();
+
+-- ---------------------------------------------------------------------------
+-- Whoever is staff is Pro, and stays Pro
+--
+-- 「管理の画面でスタッフ設定を@でできるでしょ？そこに記載されてる人だけずっと
+-- プロに」 OWNER 2026-09-05. The staff screen is the whole of the list: being
+-- on it IS being Pro, and there is no second place that says so.
+--
+-- Here and not in www/, because www/ is a suggestion -- a phone with the app
+-- closed can PATCH /rest/v1/plan through plan_edit, which is its own account's
+-- row and is allowed. So the tier is held where the row is written rather than
+-- where the screen is drawn, and it holds against every road at once: the app,
+-- the dashboard, and a request nobody wrote a screen for.
+--
+-- Two triggers because there are two moments, and they are one mechanism seen
+-- from each end: a plan row being WRITTEN for somebody who is already staff,
+-- and somebody BECOMING staff when the row is already there. Neither can be
+-- the other's job -- the first fires on the plan table and the second on
+-- profile.
+--
+-- Taking staff away does NOT take Pro away. What that account should then be
+-- paying is a decision and is nobody's to make from here; the row is left
+-- exactly as it is. → docs/FEATURE_RULES.md § Deciding.
+create or replace function plan_staff_hold() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if exists (select 1 from profile where id = new.id and staff) then
+    new.plan := 'pro';
+  end if;
+  return new;
+end $$;
+drop trigger if exists plan_staff_hold on plan;
+create trigger plan_staff_hold before insert or update on plan
+  for each row execute function plan_staff_hold();
+
+-- And the other end. `of staff` narrows the UPDATE to the column being set,
+-- the way profile_rename() is narrowed; on INSERT that clause says nothing, so
+-- `when (new.staff)` is what carries both -- and a profile that arrives
+-- already staff is the dashboard's road, which is the road the decision is
+-- about.
+create or replace function profile_staff_plan() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  insert into plan(id, plan, at) values (new.id, 'pro', now())
+    on conflict (id) do update set plan = 'pro', at = now();
+  return null;
+end $$;
+drop trigger if exists profile_staff_plan on profile;
+create trigger profile_staff_plan after insert or update of staff on profile
+  for each row when (new.staff) execute function profile_staff_plan();
 
 update profile set staff = true where handle = 'lingua';
 

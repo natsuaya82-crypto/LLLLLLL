@@ -194,6 +194,28 @@ function saveKb(){
   kbVFix(); kbWayOff(); kbNoted(); bkTouch();
   if(!KB) slRm(langKey('kb'));
   else slWr(langKey('kb'), JSON.stringify(KB));
+  kbKeepLay();
+}
+/* The layout, said once as a string. Three things ask whether it has moved --
+   the step-back, the buffer the editor opened with, and the write below. */
+function kbLaySig(b){ return JSON.stringify(b.lay); }
+/* AND THE BAR IS TOLD. 「保存する箇所が出たなら金色になって」 OWNER
+   2026-09-05. The editor registers its buffer with the layout it arrived with
+   (kbKeepOn), so writing the layout here is what makes the Save in the corner
+   gold -- one road, www/shell.js § KEEP, and no dirty flag of this chapter's
+   own.
+
+   The key is the BOARD's page and not keepKey(): saveKb() runs from
+   langSaveAll() and from the slice writer in core.js, where the screen in
+   front of somebody is not this one.
+
+   Board 0 is asked and answered here rather than at the call: it is the free
+   QWERTY, built from LETTERS and stored nowhere, so kbEdit() answers null and
+   there is no layout to write down. */
+function kbKeepLay(){
+  var b=kbEdit();
+  if(!b) return;
+  keepPut(keepKeyOf('kb', kbShow), 'lay', kbLaySig(b));
 }
 
 /* The four directions a finger can leave a key by, in the order they are
@@ -746,8 +768,17 @@ function kbKeepOn(){
      www/core.js), so a buffer here would put a Save in the bar that could not
      write. */
   if(!b || langLocked()) return;
-  keepOn(keepKey(), {nm:String(b.nm||'')}, kbKeepSave);
+  /* The name AND the layout. What the screen opened with is what changed is
+     measured against, so a keyboard arrived at and left alone shows a grey
+     Save and asks nothing on the way out. */
+  keepOn(keepKey(), {nm:String(b.nm||''), lay:kbLaySig(b)}, kbKeepSave);
 }
+/* `lay` is not written here and must not be: the layout is already on this
+   phone by the time the button is gold -- every mutator on the sheet ends in
+   saveKb(). What the press is FOR is the wire, and keepSave() is what puts it
+   there (netSaveNow, which cancels bkTouch()'s burst so one press is one
+   send). Writing it again here would be a second answer to where a layout is
+   written down. */
 function kbKeepSave(v, done){
   var b=kbEdit();
   if(b && v.hasOwnProperty('nm')){ b.nm=String(v.nm).slice(0, 24); saveKb(); }
@@ -1492,9 +1523,9 @@ function kbCellAdd(ri, at, span){
   render();
 }
 /* And what the button over the sheet does: a key goes into the selected
-   frame, THE WIDTH OF THAT FRAME -- half a key into half a frame. A frame is
-   at most one key wide wherever the sheet draws one, so this is the only
-   width there is to take.
+   frame, THE WIDTH OF THAT FRAME. A frame is at most one key wide wherever
+   the sheet draws one, and one narrower than a key is refused above, so the
+   key that goes in is exactly one.
 
    Two places a frame can be, and the difference is whether the row writes it
    down. Slack it does not write down is beyond the keys, so the key is spliced
@@ -1502,9 +1533,29 @@ function kbCellAdd(ri, at, span){
    room the row already holds, so the key takes that frame's share of it and
    what is left stays a gap on either side; the row's total does not move and
    there is nothing to ask. */
+/* A KEY IS A KEY WIDE, and a frame narrower than one takes none.
+   「半キーを追加できるのやめてほしい」 OWNER 2026-09-05.
+
+   A frame is drawn over whatever room the sheet has, counted in COLUMNS, and
+   a column is half a key -- so a row pushed to one end leaves half a column
+   at the other and the sheet offers a frame half a key wide. Putting a key in
+   one made a half key, which is a key nobody chose the width of: the width
+   picker on a key's own page offers 1, 2, 3 and 4 and has never offered a
+   half.
+
+   The frame is still PRESSED to be selected -- that is what pressing a frame
+   is on this sheet, and every frame answers to it (「全部のます触ったら選択で」
+   OWNER 2026-08-28). What it cannot do is take a key, and the + over the
+   sheet is down while it is the one selected.
+
+   The inset that makes a QWERTY's third row a QWERTY is a GAP and not a key,
+   and nothing here touches it. */
+function kbCellFits(){
+  return !!KBH && KBH.k==='f' && (KBH.span||2)>=2;
+}
 function kbCellPut(){
   var b=kbEdit(), rows, row, w, i, at, u, k, put;
-  if(!b || !KBH || KBH.k!=='f') return;
+  if(!b || !kbCellFits()) return;
   rows=kbLayer().rows;
   row=rows[KBH.r];
   if(!row) return;
@@ -3141,7 +3192,7 @@ function kbNoted(){
   var b=kbEdit(), id, str;
   if(!b) return;
   id=String(kbShow);
-  str=JSON.stringify(b.lay);
+  str=kbLaySig(b);
   /* Another board is another history. Nothing is carried across: undoing onto
      a keyboard the layout never belonged to is not a step back, it is a
      different keyboard arriving. */
@@ -3257,6 +3308,7 @@ function kbToolHTML(){
               ' aria-label="'+esc(t('kb.row.down'))+'">'+ICON_INDN+'</button>')
       : cell
         ? '<button class="kbtb"' + DO('kbCellAdd') +
+            (kbCellFits()? '' : ' disabled') +
             ' aria-label="'+esc(t('kb.cell.add'))+'">'+ICON_ADD+'</button>'
       : key
         /* KEYS are selected, and WHICH buttons is how many.
@@ -3997,11 +4049,19 @@ function kbLtPut(){
   if(!key) return;
   if(p.d<0) key.v=p.v; else key.f[p.d]=p.v;
   saveKb();
-  /* From the sheet, back to the key; from the key's own screen, stay on it.
-     Either way it ends in kbPick(), which is arriving -- so the choice is
-     spent and the button is gone. */
+  /* THE CONFIRM IS ONE STEP BACK, from wherever it was pressed.
+     「キー選んで確定押したらキーボード編集画面に戻ってくれ」 OWNER 2026-09-05,
+     and 「確定を押した一回が、戻る一歩」 before it -- one sentence said of both
+     screens now. From the sheet for one corner, the step back is the key it
+     belongs to; from the key's own screen it is the sheet the key is on.
+
+     It used to END on the key's own screen -- kbPick() again, which is
+     arriving on it a second time. The letter was on the key and the screen
+     was still the one it had been chosen on, so getting out of a key was the
+     arrow: once for the key, and once more for the grid under it. */
+  kbLtPick=null;
   if(kbLtWhere()==='kbslot'){ kbSlotFor=null; back(); kbPick(p.r, p.k); return; }
-  kbPick(p.r, p.k);
+  back();
 }
 function kbSetKind(ri, ki, kind){
   if(!kbEdit()) return;

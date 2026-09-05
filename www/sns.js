@@ -737,6 +737,11 @@ function pullBoot(){
    THE SETTINGS ARE OUT, and they are the only ones. 「設定はいらんよ？」 --
    nothing on them comes off the server, and `set` is the page each one opens
    onto. */
+/* AND THE REPORTS, which are a list on the server exactly as the six above
+   are. It is registered here rather than left to pullEvery() below because
+   that binds askLang, and the reports are not the language. mod.js loads
+   after this file, so the name is reached when the pull runs and not now. */
+pullOn('mod', function(ok, bad){ modAsk(ok, bad); });
 var PULL_NOT={ settings:1, set:1 };
 function pullEvery(){
   var r;
