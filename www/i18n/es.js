@@ -411,6 +411,7 @@ defLang('es', (function(){
       "post.ln.ph"      : "una línea en tu lengua",
       "post.mn"         : "Qué significa",
       "post.send"       : "Publicar",
+      "post.sent"       : "Publicado",
       "post.none"       : "No hay nada que publicar",
       "post.del"        : "Eliminar",
       "post.del.q"      : "¿Eliminar esta entrada?",

@@ -630,6 +630,7 @@ defLang('ko', (function(){
       "post.ln.ph"      : "당신의 언어로 한 줄",
       "post.mn"         : "무슨 뜻인지",
       "post.send"       : "올리기",
+      "post.sent"       : "게시했습니다",
       "post.none"       : "올릴 것이 없습니다",
       "post.del"        : "삭제",
       "post.del.q"      : "이 글을 삭제할까요?",

@@ -499,6 +499,7 @@ defLang('fr', (function(){
       "post.ln.ph"      : "une phrase dans ta langue",
       "post.mn"         : "Ce que ça veut dire",
       "post.send"       : "Publier",
+      "post.sent"       : "Publié",
       "post.none"       : "Rien à publier",
       "post.del"        : "Supprimer",
       "post.del.q"      : "Supprimer ce message ?",

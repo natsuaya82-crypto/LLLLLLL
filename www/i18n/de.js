@@ -439,6 +439,7 @@ defLang('de', (function(){
       "post.ln.ph"      : "ein Satz in deiner Sprache",
       "post.mn"         : "Was es heißt",
       "post.send"       : "Senden",
+      "post.sent"       : "Gepostet",
       "post.none"       : "Nichts zu senden",
       "post.del"        : "Löschen",
       "post.del.q"      : "Diesen Beitrag löschen?",

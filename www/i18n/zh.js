@@ -459,6 +459,7 @@ defLang('zh', (function(){
       "post.ln.ph"      : "用你的语言写一句",
       "post.mn"         : "这句话的意思",
       "post.send"       : "发布",
+      "post.sent"       : "已发布",
       "post.none"       : "没有可发布的内容",
       "post.del"        : "删除",
       "post.del.q"      : "删除这条帖子？",

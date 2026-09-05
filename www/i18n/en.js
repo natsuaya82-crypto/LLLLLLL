@@ -354,6 +354,7 @@ defLang('en', (function(){
       'post.ln.ph'      : 'a line in your language',
       'post.mn'         : 'What it means',
       'post.send'       : 'Post',
+      'post.sent'       : 'Posted',
       'post.none'       : 'Nothing to post',
       'post.del'        : 'Delete',
       'post.del.q'      : 'Delete this post?',

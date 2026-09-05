@@ -1631,35 +1631,41 @@ function pwSendWith(ln, pics, vo){
      draft still goes: private is what the POST is, and the draft was never a
      way of storing one. */
   if(PW.did){ netDraftDrop(PW.did); PW.did=''; }
-  /* And it is told to the server, which today is told nothing. It is not
-     waited on: the post is on this phone the moment it is written, and a
-     person in a tunnel is still using this app. */
   /* A post kept to yourself is never told to anybody. It is the one post
      that does not go through this door at all -- not "sent and hidden",
      which is a flag somebody else's server has to be trusted with. */
-  /* And the failure is SAID. It was `function(){}` -- so a post the server
-     refused was a post that looked sent, on a screen that looked right, and
-     nothing anywhere could tell you otherwise. That is the app being
-     half-online, which is the one thing it may not be. The post itself is
-     never lost either way: it is already in POSTS and postCatchUp() keeps
-     trying. 「spl流したのにまだ投稿載らんの？」
-
-     Here and not in postCatchUp(): this is the moment somebody pressed the
-     button, so this is the moment they are owed an answer. The retries
-     happen behind a timeline being read and must stay quiet. */
-  /* postSend() and not netPush(): the press is one of the two roads a post
-     goes up by, and both have to be behind the same one-send-at-a-time mark
-     or the window is still open from this side. */
-  if(!mine.pv)
-    postSend(mine, function(sid){ postSid(mine, sid); },
-            /* The toast and nothing else. Nothing on the screen changed: the
-               post has been drawn as not-sent since the moment it was
-               written, and it still is. A render() here would be the answer
-               to a request redrawing a screen somebody has since moved on
-               from. */
-            function(d, s){ toast(netWhy(d, s)); });
+  /* AND IT IS WAITED ON, WITH A SPINNER, AND SAID WHEN IT IS DONE.
+     「投稿した後に投稿しましたって出ないと…投稿する時もくるくる入れて欲しい」
+     OWNER 2026-09-05. It used to fire postSend() and move straight to the
+     feed with nothing on screen but the post drawn as not-yet-sent -- pwSendPost()
+     is the one place that waits for the answer, so this function only starts
+     it. The post itself is never lost either way: it is already in POSTS and
+     postCatchUp() keeps trying if the app is closed before an answer comes
+     back. 「spl流したのにまだ投稿載らんの？」 */
+  if(!mine.pv) pwSendPost(mine);
   PW=pwBlank();
   goTab('feed');
+}
+/* postSend() and not netPush(): the press is one of the two roads a post goes
+   up by, and both have to be behind the same one-send-at-a-time mark or the
+   window is still open from this side.
+
+   netSpin() covers the screen while this is out, which is the whole reason it
+   is a function of its own rather than a line inside pwSendWith(): a retry
+   pressed from the popup below calls this again, on the exact post, and has
+   to spin and answer exactly the same way the first press did. */
+function pwSendPost(p){
+  netSpin(true);
+  postSend(p, function(sid){
+    netSpin(false);
+    postSid(p, sid);
+    toast(t('post.sent'));
+  }, function(d, s, m){
+    netSpin(false);
+    /* 通信が落ちたら何も進まない ── netPop() (www/net.js) が pullRun()
+       (sns.js) と同じ道で失敗を出し、［再接続］は同じ投稿をもう一度送る。 */
+    netPop(d, s, m, function(){ pwSendPost(p); });
+  });
 }
 
 /* The face a post carries: one letter of the language it is written in, cut
