@@ -1926,6 +1926,13 @@ export function halfDone(){
         window.route = 'notes'; NAV = [{ r:'notes' }];
         NTSEL = { 0:1 };
         const h = vNotes(); NTSEL = null; return h; }],
+    /* A row swiped left, its delete showing -- 「一覧から右にスワイプして削除」
+       OWNER 2026-09-05. Nothing at rest ever has a row open, the same reason
+       the lens above never had a box: a walk over the routes never swipes. */
+    ['a note row with its delete showing', () => {
+        window.route = 'notes'; NAV = [{ r:'notes' }];
+        ntSwipeAt = 0;
+        const h = vNotes(); ntSwipeAt = -1; return h; }],
     /* A slot's word is made on the word screen now, with the two things the
        slot already knows written in: the meaning is what the slot is called
        and the part of speech is the stage's. There is no form of its own any

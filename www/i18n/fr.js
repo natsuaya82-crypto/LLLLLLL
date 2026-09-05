@@ -798,7 +798,6 @@ defLang('fr', (function(){
       "notes.empty.s"    : "Aucune",
       "toast.note.kept"  : "Note gardée",
       "toast.note.gone"  : "Note supprimée",
-      "confirm.note.del" : "Supprimer cette note ?",
       /* the conversation */
       /* grammar — the decisions */
       "gram.role.S"      : "qui fait",

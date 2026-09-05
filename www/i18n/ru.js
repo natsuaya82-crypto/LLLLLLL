@@ -762,7 +762,6 @@ defLang('ru', (function(){
       "notes.empty.s"     : "Пока нет",
       "toast.note.kept"   : "Заметка сохранена",
       "toast.note.gone"   : "Заметка удалена",
-      "confirm.note.del"  : "Удалить эту заметку?",
       /* разговор */
       /* грамматика — решения */
       "gram.role.S"       : "кто делает",

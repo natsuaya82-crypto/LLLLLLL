@@ -666,7 +666,6 @@ defLang('ja', (function(){
       'notes.empty.s'   : 'まだありません',
       'toast.note.kept' : "メモを保存しました",
       'toast.note.gone' : "メモを削除しました",
-      'confirm.note.del': '削除しますか？',
       /* the conversation */
       /* grammar — the decisions */
       'gram.role.S'     : '主語',

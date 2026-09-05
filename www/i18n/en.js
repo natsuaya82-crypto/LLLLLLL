@@ -658,7 +658,6 @@ defLang('en', (function(){
       'notes.empty.s'   : "None yet",
       'toast.note.kept' : "Note kept",
       'toast.note.gone' : "Note deleted",
-      'confirm.note.del': "Delete this note?",
       /* the conversation */
       /* grammar — the decisions */
       'gram.role.S'     : "doer",

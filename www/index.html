@@ -3572,9 +3572,20 @@ html[data-script="on"] .gsw{font-family:var(--face-script);letter-spacing:0}
    「かくまるみたいなのでくくるのやめて欲しい。基本下線だけ」, and the gap goes
    with the box: rows in one list sit against each other. */
 .ntlist{display:flex;flex-direction:column}
+/* The row sits over its own delete label and slides to show it -- 標準アプリ
+   と同じ作り, www/notes.js § deleting a row by swiping it. .ntswipe clips
+   what slides past its own width; .ntrow needs an actual ground under it
+   (not `none`) or the label it is meant to be hiding would show through at
+   rest, which is why this is the one row background in the app that is not
+   `none` -- the colour is the same either way, only opaque now. */
+.ntswipe{position:relative;overflow:hidden}
+.ntdel{position:absolute;top:0;right:0;bottom:0;width:76px;display:flex;
+  align-items:center;justify-content:center;color:var(--bad);font-size:.92rem;cursor:pointer}
 .ntrow{display:flex;flex-direction:column;gap:4px;width:100%;text-align:left;padding:14px 2px;
-  border:0;border-bottom:1px solid var(--line);background:none;color:inherit;font:inherit;cursor:pointer}
+  border:0;border-bottom:1px solid var(--line);background:var(--bg);color:inherit;font:inherit;
+  cursor:pointer;transition:transform .18s;position:relative}
 .ntrow:active{transform:scale(.995)}
+.ntrow.swopen{transform:translateX(-76px)}
 /* The title is the row: what a note IS. 「題名の方が少し文字でかくしてほしい」
    OWNER 2026-09-02 -- it sat at .95 with the line under it at .88, which is
    not enough between them to read as a heading and its line. */

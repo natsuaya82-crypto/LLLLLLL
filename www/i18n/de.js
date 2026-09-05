@@ -753,7 +753,6 @@ defLang('de', (function(){
       "notes.empty.s"    : "Noch keine",
       "toast.note.kept"  : "Notiz behalten",
       "toast.note.gone"  : "Notiz gelöscht",
-      "confirm.note.del" : "Diese Notiz löschen?",
       /* the conversation */
       /* rules */
       "words.addmn"      : "Bedeutung hinzufügen",

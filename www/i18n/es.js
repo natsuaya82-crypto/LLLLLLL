@@ -725,7 +725,6 @@ defLang('es', (function(){
       "notes.empty.s"    : "Todavía ninguna",
       "toast.note.kept"  : "Nota guardada",
       "toast.note.gone"  : "Nota eliminada",
-      "confirm.note.del" : "¿Eliminar esta nota?",
       /* the conversation */
       "words.addmn"      : "Añadir un significado",
       "toast.cap"        : "Este plan admite {0} palabras. Con Pro puedes usarlo sin límites.",
