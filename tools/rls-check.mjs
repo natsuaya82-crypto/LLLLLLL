@@ -741,6 +741,29 @@ const CASES = [
     `select staff_add('iri')`],
   ['and B is staff now',                      'ok',     E, 0,
     `select 1 from profile where handle='iri' and staff`],
+  /* --- and whoever is on that list is Pro --------------------------------
+     「管理の画面でスタッフ設定を@でできるでしょ？そこに記載されてる人だけ
+     ずっとプロに」 OWNER 2026-09-05. Being staff is the whole of it: no plan
+     row was written by anybody here, so the row can only have come from
+     becoming staff. */
+  ['and B is Pro because of it',              'ok',     B, 0,
+    `select 1 from plan where id='${B}' and plan='pro'`],
+  /* And the half a screen cannot hold. plan_edit lets an account write its
+     own row, so the app -- or a PATCH sent with the app closed -- can set it
+     to free, and free is what it would be from then on if this were held
+     anywhere but where the row lands. The write is ALLOWED and the row does
+     not move, which is why the two are asked separately: a refusal here would
+     be a screen saying no, and what is wanted is a tier that does not budge. */
+  ['and setting it back to free is allowed',  'ok',     B, 0,
+    `update plan set plan='free' where id='${B}'`],
+  ['and it is still Pro afterwards',          'ok',     B, 0,
+    `select 1 from plan where id='${B}' and plan='pro'`],
+  /* And nobody else was swept up in it. A trigger that made every plan row
+     pro would pass all three above. */
+  ['somebody who is not staff writes free',   'ok',     F, 0,
+    `insert into plan(id,plan) values ('${F}','free')`],
+  ['and it stays free',                       'ok',     F, 0,
+    `select 1 from plan where id='${F}' and plan='free'`],
   ['and can take it away again',              'ok',     E, 0,
     `select staff_drop('iri')`],
   ['and B is not staff any more',             'denied', E, 0,
