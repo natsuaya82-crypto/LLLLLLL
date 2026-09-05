@@ -132,10 +132,22 @@ const OLD = {
 
 /* Read out of storage rather than off the globals, because that is where a
    language that is not open lives -- and the language that is not open is
-   half of what this is about. */
+   half of what this is about.
+
+   A SLICE IS ASKED OF slRd(), WHICH IS THE APP'S OWN ANSWER TO 「what IS this
+   part of the language」 (CLAUDE.md rule 22). The slices moved into memory on
+   2026-09-04 and every read here was a hand-written localStorage.getItem, so
+   this file was asking the disk about something that stopped living there --
+   fifteen claims went red at once and not one byte of anybody's work had
+   moved. The seeds below stay on the disk deliberately: that is what an older
+   version of the app left, it is the road the migration walks, and it is the
+   half that survives pg.reload() while memory does not.
+
+   `lingua.set`, `lingua.langs` and `lingua.cur` are NOT slices -- the person's
+   settings and the index -- and stay on the disk in both directions. */
 const REPORT = () => {
   const slice = (id) => {
-    const raw = localStorage.getItem('lingua.' + id + '.phases');
+    const raw = slRd('lingua.' + id + '.phases');
     let o = null;
     try { o = JSON.parse(raw); } catch (e) { o = null; }
     return { raw: raw, o: o };
@@ -220,7 +232,7 @@ const c = await pg.evaluate(() => {
 });
 await pg.reload();
 const d = await pg.evaluate((id) => ({
-  phases: localStorage.getItem('lingua.' + id + '.phases'),
+  phases: slRd('lingua.' + id + '.phases'),
   order: STG.order, negp: STG.gpos && STG.gpos.negp, open: langId,
   /* What the screen reads, which is the half that matters: nothing stored is
      one thing, and the buttons answering with somebody else's grammar is the
@@ -246,8 +258,8 @@ await pg.evaluate((old) => {
 }, OLD);
 await pg.reload();
 const e = await pg.evaluate(() => ({
-  wreck: localStorage.getItem('lingua.LC.phases'),
-  aOrder: (JSON.parse(localStorage.getItem('lingua.LA.phases') || 'null') || {}).order
+  wreck: slRd('lingua.LC.phases'),
+  aOrder: (JSON.parse(slRd('lingua.LA.phases') || 'null') || {}).order
 }));
 want('the unreadable slice is exactly as it was', e.wreck, WRECK);
 want('and the languages beside it still arrive', e.aOrder, 'OSV');
@@ -267,14 +279,14 @@ const f = await pg.evaluate(() => {
   const bReads = orderDef().id, bNegp = gPos('negp');
   langOpen('LA');
   let aSet = null;
-  try { aSet = JSON.parse(localStorage.getItem('lingua.LA.phases') || 'null'); } catch (e) {}
+  try { aSet = JSON.parse(slRd('lingua.LA.phases') || 'null'); } catch (e) {}
   let person = null;
   try { person = JSON.parse(localStorage.getItem('lingua.set') || 'null'); } catch (e) {}
   return {
     bReads: bReads, bNegp: bNegp,
     aReads: orderDef().id, aNegp: gPos('negp'),
     aStored: aSet && aSet.order, aStoredNegp: aSet && aSet.gpos && aSet.gpos.negp,
-    bStored: (JSON.parse(localStorage.getItem('lingua.LB.phases') || '{}')).order,
+    bStored: (JSON.parse(slRd('lingua.LB.phases') || '{}')).order,
     /* And the person's settings are not written to any more: they still say
        what they said before the move, and nothing goes back through them. */
     personOrder: person && person.order,
@@ -384,7 +396,7 @@ want('and the word this dictionary does not have is the one marked', k.marked, '
 const m = await pg.evaluate(() => {
   /* A model of this language's own: a word order the stages do not say, and
      an inflection, which is the thing that has nowhere else to live. */
-  localStorage.setItem('lingua.' + langId + '.gram2', JSON.stringify({
+  slWr('lingua.' + langId + '.gram2', JSON.stringify({
     schema: 'lingua.grammar', version: 2, languageId: langId,
     wordOrder: ['VERB', 'SUBJECT', 'OBJECT'],
     words: [{ id: 'hw:GONE', lemma: 'GONE', meaning: 'not in the dictionary' }],
@@ -402,7 +414,7 @@ const m = await pg.evaluate(() => {
   const grew = after.words.filter((w) => w.lemma === 'zzznew').length;
   WORDS.pop();
   /* And a language with no model of its own is untouched. */
-  localStorage.removeItem('lingua.' + langId + '.gram2');
+  slRm('lingua.' + langId + '.gram2');
   const none = gModel();
   return {
     order: before.wordOrder.join(','), infl: before.inflections.length,
