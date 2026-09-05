@@ -714,33 +714,51 @@ async function pressSave(how){
        作ったものを運ぶ POST は一度も試されません。 */
     LANGS[id].sid = 'srv-known'; langStore();
     var l = LETTERS[0];
-    go('glyph', l.id); render();
+    /* **文字の編集に入る道は editLetter() で、go('glyph', id) ではありません。**
+       GE を作るのは editLetter()/editGlyph() のほうで、go() だけで入ると
+       vGlyph() の「冷えたまま歩く検査のための」逃げ道 newGE('a') が立ちます
+       ── 'a' という id の文字はこの言語に無いので ltSetStrokes() は先頭の
+       `if(!l) return null` で返り、書いた線はどこにも載りません。それで下の
+       inkKept は fixture が l1 に最初から持たせている別の線を読んでいて、
+       線を取り上げる実装に変えても緑のままでした。 */
+    editLetter(l.id); render();
     await wait(200);
-    /* 指が一本置いていったのと同じもの */
-    GE.st = [{ pts:[{ x:0.2, y:0.2 }, { x:0.5, y:0.8 }, { x:0.8, y:0.3 }] }];
+    /* 指が一本置いていったのと同じもの。**アプリ自身が作る形で書く** ──
+       線の点は 0..800 の格子の [x,y] の並びで（GPLACE も保存された線もそう）、
+       {x:0.2,y:0.8} のような形はアプリが一度も作らず、画面にも何も描かれま
+       せん。そして l1 が最初から持っている三角とは別の形にする ── 同じ形だと
+       「書いた線が載った」と「元から載っていた」が見分けられません。 */
+    GE.st = [{ pts:[[112,688],[400,400],[688,688],[400,112],[112,400]] }];
     render();
     await wait(50);
     window.__SRV.down = (how === 'down');
     window.__SRV.downSlice = (how === 'slice');
     window.__SRV.sent = []; window.__SRV.tried = [];
     return { drew: geDirty(), screen: JSON.stringify(NAV[NAV.length - 1]),
-             lid: l.id, hasBtn: !!document.querySelector('[data-do="geSave"]') };
+             /* 触っている文字と、そこに書いた線そのもの。長さではなく中身で
+                見るので、元からある線と取り違えません。 */
+             lid: GE.lid, ink: JSON.stringify(geInk(GE.st)),
+             hasBtn: !!document.querySelector('[data-do="geSave"]') };
   }, { s: seed.toString(), srv: SERVER, how });
   if (!set.hasBtn) return Object.assign(set, { noButton:true });
   await pg.click('[data-do="geSave"]');
   /* 溜めの時間より長く待つ。ここで通るなら、押した瞬間に出て行っています ──
      NET_UPMS をコードから読むので、溜めが変わってもこの検査は付いていきます。 */
   await pg.waitForTimeout(await pg.evaluate(() => NET_UPMS + 900));
-  return await pg.evaluate((lid) => ({
+  return await pg.evaluate(({ lid, ink }) => ({
     screen: JSON.stringify(NAV[NAV.length - 1]),
     pop: popOn(),
     toast: String((document.querySelector('.toast, #toast') || {}).textContent || ''),
     /* 描いたものは、落ちても取り上げない。docs/DATA_SAFETY.md
-       「人が作ったものは消さない」── 落ちた送信は、手を戻す理由ではない。 */
-    inkKept: JSON.stringify((ltById(lid) || {}).st || []).length > 4,
+       「人が作ったものは消さない」── 落ちた送信は、手を戻す理由ではない。
+       **書いた線そのものと引き比べる。**「何か線が在る」では、この文字が最初
+       から持っている線に当たって、取り上げる実装でも緑になります。 */
+    inkKept: JSON.stringify((ltById(lid) || {}).st || []) === ink,
+    inkNow: JSON.stringify((ltById(lid) || {}).st || []),
+    ink: ink,
     sent: window.__SRV.sent.slice(),
     tried: window.__SRV.tried.slice()
-  }), set.lid);
+  }), { lid: set.lid, ink: set.ink });
 }
 
 const sv = { down: await pressSave('down'), slice: await pressSave('slice'),
@@ -758,8 +776,10 @@ say(sv.slice.screen.indexOf('glyph') >= 0 && sv.slice.pop && !sv.slice.toast,
     (sv.slice.toast ? '**「' + sv.slice.toast + '」**' : 'なし') + '）');
 say(sv.down.inkKept && sv.slice.inkKept,
     'そして描いたものは取り上げない ── 落ちた送信は手を戻す理由ではない' +
-    '（通信ごと ' + (sv.down.inkKept ? '在る' : '**消えた**') + '、POST だけ ' +
-    (sv.slice.inkKept ? '在る' : '**消えた**') + '）');
+    '（書いた線 ' + sv.down.ink + '。通信ごと ' +
+    (sv.down.inkKept ? '同じものが在る' : '**' + sv.down.inkNow + '**') +
+    '、POST だけ ' +
+    (sv.slice.inkKept ? '同じものが在る' : '**' + sv.slice.inkNow + '**') + '）');
 say(sv.down.tried.length > 0 && sv.slice.tried.length > 0,
     '押した瞬間に出て行く ── 溜め（NET_UPMS）を待たずに（通信ごと ' +
     sv.down.tried.length + ' 件、POST だけ ' + sv.slice.tried.length + ' 件）');
