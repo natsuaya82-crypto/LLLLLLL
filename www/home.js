@@ -645,7 +645,7 @@ function fSetQ(v){ fq=v; if(v) fpick=null; lnGrow('f-q'); findPaint(); }
 var WLD={};
 function wldRead(){
   WLD={};
-  try{ var w=JSON.parse(localStorage.getItem(langKey('wld'))||'null');
+  try{ var w=JSON.parse(slRd(langKey('wld'))||'null');
        if(w && typeof w==='object' && !(w instanceof Array)) WLD=w; }catch(e){}
 }
 /* An install from before this is holding its answer in SET, which is the
@@ -670,7 +670,7 @@ function migrateWorld(){
   if(got) saveWld();
   save();
 }
-function saveWld(){ if(langLocked()) return; bkTouch(); try{ localStorage.setItem(langKey('wld'), JSON.stringify(WLD)); }catch(e){} }
+function saveWld(){ if(langLocked()) return; bkTouch(); slWr(langKey('wld'), JSON.stringify(WLD)); }
 function world(){ return WLD; }
 /* 用途 -- the five 「物語 / 種族 / 土地 / 実際に話す / 試す」 -- came off both
    screens: 「編集画面の謎のその5択なに？いらんやろ」 OWNER 2026-08-25. What each
@@ -1372,13 +1372,13 @@ function wldGet(lid, r){
      is the leftovers bug langKeyOf() exists to prevent. */
   langSeenAdd(id, seen? seen.name : '');
   try{
-    for(i=0;i<got.length;i++) localStorage.setItem(langKeyOf(id, got[i][0]), got[i][1]);
+    for(i=0;i<got.length;i++) slWr(langKeyOf(id, got[i][0]), got[i][1]);
   }catch(e){ return; }
   /* And the language's own name where a language keeps it, so the one in the
      index and the one in the language cannot drift. `lang` is a slice like
      any other and langRead() is what reads it. */
   if(seen && seen.name){
-    try{ localStorage.setItem(langKeyOf(id, 'lang'), seen.name); }catch(e){}
+    slWr(langKeyOf(id, 'lang'), seen.name);
   }
   render();
 }

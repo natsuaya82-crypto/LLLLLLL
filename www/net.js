@@ -464,6 +464,15 @@ function netOut(){
   /* And the timeline this phone was holding goes with the name. Parked under
      the account that had it, not thrown away. */
   if(typeof postFor==='function') postFor('');
+  /* THE LANGUAGE IS NOT TOUCHED HERE, AND THAT IS THE SAFE DIRECTION.
+     A slice is in memory now (CLAUDE.md rule 22), so it was tempting to empty
+     the store on the way out -- 「what this phone is holding is the signed-in
+     account's」. It would destroy a language that has never reached the
+     server: somebody who made one with no signal and signed out would have
+     nothing left anywhere, and 「人が作ったものは消さない」 is the rule that
+     outranks tidiness. Nothing leaks by leaving it: `LANGS[id].uid` is what
+     every list asks, so another account's language is filtered out of the
+     next person's screens exactly as it was before today. */
   /* AND THE SCREEN, HERE, BECAUSE THIS IS WHERE A SESSION ENDS.
      「2端末で同じアカウントにログインしてても、片方が消したら、もう片方も確実に
      消えるように。ログアウトさせて、新しいアカウント作ったら、もうひと端末も
@@ -1182,11 +1191,12 @@ function netLangBack1(sid, name, done){
       /* FILLS IN AND STOPS. A slice this phone already has is left alone --
          netLangSync() is what puts the two together, and it MERGES; this one
          only ever adds what is not here. */
-      try{
-        if(localStorage.getItem(langKeyOf(sid, kind))!==null) continue;
-        localStorage.setItem(langKeyOf(sid, kind), o.body);
-        wrote=true;
-      }catch(e){}
+      if(slRd(langKeyOf(sid, kind))!==null) continue;
+      slWr(langKeyOf(sid, kind), o.body);
+      /* and what the two sides now agree it is, so a removal made after this
+         is told apart from a slice this phone has not heard about */
+      netAgreed(sid, kind, o.body);
+      wrote=true;
     }
     if(wrote) langStore();
     done(wrote);
@@ -1300,8 +1310,27 @@ function netSlicePut(sid, kind, body, no, ok, bad){
 
    Fired and not waited for, like everything else here. A phone with no signal
    is a phone somebody is still writing a language on. */
+/* The entry for a server row: the one already carrying that sid, or a new
+   one. Written out here because netLangsDown() below asks it inside a loop
+   and the answer decides whether anything was MADE. */
+function nidFor(row, here){
+  var sid=String(row.id), id;
+  for(id in LANGS)
+    if(Object.prototype.hasOwnProperty.call(LANGS, id) && LANGS[id] &&
+       String(LANGS[id].sid||'')===sid) return id;
+  if(here[sid]) return '';
+  /* The entry first, so a sync that fails halfway leaves a language that is
+     HERE and empty rather than slices under an id nothing names. Empty and
+     broken are different states -- docs/DATA_SAFETY.md rule 3 -- and an empty
+     language is a legitimate one. */
+  id=langMint();
+  LANGS[id].sid=sid;
+  LANGS[id].uid=String(SESS.uid||'');
+  LANGS[id].name=String(row.name||'');
+  return id;
+}
 function netLangsDown(then){
-  var done=then || function(){}, here={}, id;
+  var done=then || function(){}, here={}, filled=false, id;
   if(!netSignedIn()){ done(0); return; }
   for(id in LANGS)
     if(Object.prototype.hasOwnProperty.call(LANGS, id) && LANGS[id] && LANGS[id].sid)
@@ -1312,32 +1341,46 @@ function netLangsDown(then){
       function step(){
         var row, nid;
         if(i>=(rows||[]).length){
-          if(made){ langStore(); render(); }
+          if(made) langStore();
+          /* The OPEN language's slices came down, so what the screens are
+             holding is older than what is in the store. Read it in the way
+             langOpen() does rather than patching each global by hand. */
+          if(filled) langLoad();
+          if(made || filled) render();
           done(made); return;
         }
         row=rows[i]; i++;
-        if(!row || !row.id || here[String(row.id)]){ step(); return; }
-        /* The entry first, so a sync that fails halfway leaves a language
-           that is HERE and empty rather than slices under an id nothing
-           names. Empty and broken are different states -- docs/DATA_SAFETY.md
-           rule 3 -- and an empty language is a legitimate one. */
-        nid=langMint();
-        LANGS[nid].sid=String(row.id);
-        LANGS[nid].uid=String(SESS.uid||'');
-        LANGS[nid].name=String(row.name||'');
-        made++;
+        if(!row || !row.id){ step(); return; }
+        /* THE ENTRY MAY ALREADY BE HERE, AND ITS SLICES ARE NOT.
+           This skipped a language whose id was already in the index, and that
+           was right for as long as a slice survived a launch: the copy was on
+           the phone, so there was nothing to fetch. **The slices are in memory
+           now** (LSL in www/core.js), so on every launch there is an index
+           full of languages and not one word in any of them -- and skipping
+           by id would be the app showing somebody an empty dictionary and
+           calling it theirs.
+
+           So the entry is made only when it is new, and the slices are asked
+           for either way. */
+        nid=nidFor(row, here);
+        if(nid===''){ step(); return; }
+        if(!here[String(row.id)]) made++;
+        here[String(row.id)]=1;
         langStore();
         netSlices(row.id, function(there){
-          var k, key;
+          var k;
           for(k in there){
             if(!Object.prototype.hasOwnProperty.call(there, k)) continue;
             if(!there[k] || there[k].body==='') continue;
-            key=langKeyOf(nid, k);
-            /* Missing, and only missing. */
-            try{
-              if(localStorage.getItem(key)===null)
-                localStorage.setItem(key, there[k].body);
-            }catch(e){}
+            /* FILLS IN AND STOPS -- docs/DATA_SAFETY.md rule 2. A slice this
+               phone is already holding is left exactly as it is, because it
+               may be a minute of somebody's typing that has not gone up yet. */
+            if(slRd(langKeyOf(nid, k))!==null) continue;
+            slWr(langKeyOf(nid, k), there[k].body);
+            /* and what the two sides agree it is, so the first thing removed
+               after this is understood as a removal */
+            netAgreed(nid, k, there[k].body);
+            if(nid===langId) filled=true;
           }
           step();
         }, function(){ step(); });
@@ -1396,8 +1439,8 @@ function netKeeps(mine, put){
    list, takes it when an account goes. */
 function netAgreed(id, kind, body){
   try{
-    if(body==='') localStorage.removeItem(langWasKey(id, kind));
-    else localStorage.setItem(langWasKey(id, kind), body);
+    if(body==='') slRm(langWasKey(id, kind));
+    else slWr(langWasKey(id, kind), body);
   }catch(e){}
 }
 var NET_SHRANK=[];
@@ -1420,19 +1463,19 @@ var NET_SYNCING=false;
    `got` is what the server is holding for this slice, or nothing. */
 function netSlice1(id, sid, kind, got, done){
   var mine, was, put;
-  try{ mine=localStorage.getItem(langKeyOf(id, kind)); }catch(e){ mine=null; }
+  mine=slRd(langKeyOf(id, kind));
   /* What the two sides last agreed this slice was. It is the only thing
      that tells 「somebody removed this here」 from 「this phone has not
      been told about it yet」 -- the two look identical from here and
      want opposite answers. No record means no dropping, which is what
      this did before there was one. */
-  try{ was=localStorage.getItem(langWasKey(id, kind)); }catch(e){ was=null; }
+  was=slRd(langWasKey(id, kind));
   put=syMerge(kind, mine===null? '' : mine, got? got.body : '',
               was===null? '' : was);
   if(put!=='' && put!==mine){
     /* and only where it keeps everything that is already there */
     if(netKeeps(mine, put)){
-      try{ localStorage.setItem(langKeyOf(id, kind), put); }catch(e){}
+      slWr(langKeyOf(id, kind), put);
       /* Something came back, so say so: the caller reads the screens again. */
       if(put===''){ done(true); return; }
     } else {
@@ -1489,8 +1532,8 @@ function netSaveUpGo(){
   if(NET_SYNCING || !netSignedIn() || !id || !langMine(id)) return;
   for(i=0;i<SLICES.length;i++){
     k=SLICES[i];
-    try{ mine=localStorage.getItem(langKeyOf(id, k)); }catch(e){ mine=null; }
-    try{ was=localStorage.getItem(langWasKey(id, k)); }catch(e){ was=null; }
+    mine=slRd(langKeyOf(id, k));
+    was=slRd(langWasKey(id, k));
     if((mine===null? '' : mine)!==(was===null? '' : was)) kinds.push(k);
   }
   if(!kinds.length) return;

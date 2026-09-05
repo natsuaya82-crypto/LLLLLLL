@@ -7,162 +7,25 @@ refactor, a feature and a rename never arrive in the same diff.
 
 The order is the order to do them in.
 
-## オンライン一本化 ── 二歩目と三歩目で消す所の一覧。**先に数えてあります**
+## オンライン一本化 ── 残っている一行はオーナーのものです
 
-2026-09-04。オーナーの決定です。**言い換えていません。**
+2026-09-04。四歩とも入りました（`docs/CHANGELOG.md`）。**残っているのは
+「消すかどうか」だけで、それはオーナーが決めることです。**
 
-> 「オンラインは一本化ね？」「簡単よ」「保存としたらオンラインおしまい」
-> 「今ファイルもいらん。オンラインのみで行こうってことになってる今後オフライン
->   たいおする時にまた考えることにした」
+**① 読まれなくなった `lingua.<id>.*` を掃除するか。**言語のスライスは
+メモリになり、古い鍵は**読みも書きもされません。**消してはいません。
+**消さないほうが安全です** ── 一度もサーバーへ行っていない言語には、その鍵が
+最後の一枚だからです。
 
-**四歩のうち四歩目（検索履歴）だけ終わっています。**一・二・三は `www/net.js` が
-master に入るのを待っています。**これはその三つで消す所を先に数えたもので、
-まだ一行も消していません。**歩ごとに、コードと同じコミットで消します。
+**② もう iPhone に在るバックアップのファイルを掃除するか。**同じ形です。
+`Documents/Languages/` はアプリが触らなくなっただけで、ファイルアプリからは
+見えます。人が消せます。
 
-### 開いていない鍵 ── `bkTouch()`
+**どちらもやるなら DELETE REVIEW を別に書きます。**
 
-**三歩目は `www/net.js` が来るまで完成しません。**バックアップのファイルを消すと
-`bkTouch()` はすることが無くなり、`BK.dirty` は書くだけで誰も読まない印になります
-── `CLAUDE.md` 規則 5 が名指しで禁じている「片端の外れた線」です。
-
-`bkTouch()` を消すには呼ぶ側が要りますが、七本のうち六本が別の持ち場です
-（`home.js` `keyboard.js` `letters.js` `notes.js` `phases.js` `sound.js`）。
-
-**答えは一歩目です。**`bkTouch()` に「保存をサーバーへ押し出す」仕事が入れば、
-六本は一行も触らずに済み、名前も意味も合ったまま残ります。**だから順番は
-一 → 三 → 二 で、一が先です。**
-
-### 一歩目に要るもの ── `www/net.js` に一つ
-
-`netSlices()` の一欄版:
-`'/rest/v1/slice?select=kind,body,no&language=eq.'+sid+'&kind=eq.'+kind`
-
-**二つ目の道を足すのではありません。**いま `netLangSync1()` が十二欄を回している
-中身を、一欄ぶんだけ回せるように分けます。終わったとき、サーバーへ書く道は
-一本だけであること。`netLangRow()` は `sid` と `uid` が揃っていれば通信しないので
-（読んで確認）、保存ごとの通信は「一欄の GET 一回と PUT 一回」に収まります。
-
-**全欄を降ろす形は出せません** ── 5000 語の言語で毎回およそ 685 KB
-（`docs/ONE.md` 二章の測定値。自分では測っていません）。
-**降ろさずに上げる形も出せません** ── `slice` の主キーは `(language, kind)` で
-`no` はどこからも条件に使われていないので（`supabase/schema.sql` を読んで確認）、
-別の iPhone が足した語がその場で消えます。「そりゃあ両方足すだろ」に反します。
-
-### 三歩目で消すもの ── バックアップのファイル
-
-**コード:**
-
-| ファイル | 消す所 |
-|---|---|
-| `www/backup.js` | `bkTouch()` 以外の全部（`BK` `BK_SHAPE` `bkSound` `bkOK` `bkNo` `bkNoSet` `bkPack` `bkName` `bkPush` `BKLIST` `bkList` `bkListHTML` `bkSay` `bkTake` `bkTakeGen` `bkDropFor` `bkRestore`） |
-| `www/boot.js` | 頭の `bkRestore(...)` の塊。中の移行と `ltStart()` と `installScriptFont()` は下でも走るので落ちるものは無い |
-| `www/settings.js` | `data` の部屋のバックアップ半分（`if(BKLIST===null) bkList();` と `t('bk.h')+bkListHTML()`）。取り込みの行は残る。`bkDropFor([id])` と `bkDropFor(wipeIds)` |
-| `www/glyph.js` | `bkPush()` 一箇所 |
-| `tools/backup-check.mjs` | ファイルごと |
-| `tools/plan-check.mjs` `tools/dl-check.mjs` `tools/migrate-check.mjs` `tools/import-check.mjs` | `bkPack` `bkPush` `bkSound` `bkRestore` `bkTouch` を使う所 |
-| `tools/store-check.mjs` | `ROADS` の `backup.js:langKey('bkn')` と `backup.js:langKey(k)` |
-
-**`ios/App/App/LinguaShare.swift` は触りません。**呼ぶ側が消えれば新しいファイルは
-書かれません。掃除は後日で、人には見えません。
-
-**もう iPhone に在るファイルをどうするか ── オーナーに一行要ります。**
-`bkDropFor()` を全言語ぶん一度回せば消えます。**ただしこれは一歩目より先には
-やれません。**サーバーに一度も上がっていない言語にとって、いまファイルが最後の
-一枚です（`docs/RECOVERY.md` 三章）。一歩目が入って、保存が即サーバーへ行くように
-なってからです。**消すならその時に DELETE REVIEW を書きます。**
-
-**嘘になる文（同じコミットで消す）:**
-
-- `CLAUDE.md` 規則 11「A language is never lost」── **章ごと。**中身は
-  「`www/backup.js` がファイルを書く。それが最後の一枚」で、全文がファイルの話。
-- `CLAUDE.md` 規則 6 の後半 ──「being *in* `SLICES` is what makes a slice
-  **backed up**: `bkPack()` walks it」。`SLICES` の前半は残る。
-- `docs/DATA_SAFETY.md` ── 五つの規則のうち **1・2・3 は全部ファイルの話**
-  （`keep()` の世代回し、復元が埋めるだけ、`bkSound` と `BK_SHAPE`）。**4 と 5 は
-  残る**（新しい形が来ても消さない／存在は課金に依らない）。「The save counter」の
-  節も全部（`bkNo`）。「Changing anything that saves」の一覧から
-  `the backup generations` と `a restore` と `a corrupt file`。
-- `docs/RECOVERY.md` ── 一章「ファイル（iOS の Documents）── 三つのフォルダ」、
-  三章の 1（壊れた一本が上書きする）、四章の案A・案B・案C。**この文書は
-  ほぼ全部です。**残るのは一章のサーバーと localStorage の数え。
-- `docs/EXPIRY.md` ── 1番（キーボードの無い言語はファイルが書かれない）、
-  2番（三世代。四回前は消える）。
-- `docs/DATA_MODEL.md` ── `bkn` の節と、バックアップに何が入るかの節。
-- `docs/ARCHITECTURE.md` ── 表の「a copy that survives the app ── **the backup**」の行。
-
-### 二歩目 ── 形は決まりました。**まだ書いていません**
-
-**写しをやめる形は「メモリに持つ」です。**`localStorage` には言語を一文字も
-書かず、動いているアプリが持っている値だけにします。アプリを閉じたら消え、
-扉を出た瞬間と保存のたびにサーバーへ行きます。
-
-**これで二つの決定が両方立ちます。**「オンボーディング→最後にログイン」
-（扉は最後のまま。歩いている間はメモリ）と「写しも要らない」（`localStorage`
-には書かない）。**扉を先頭に戻す案は駄目です** ── オーナーが名指しで否定して
-います（「そんなの俺頼んでねえぞ」）。
-
-**振る舞いが変わる所が一つ:** 歩いている途中でアプリが落ちると、描いた文字は
-消えます。いまは写しがあるので残ります。**扉を出たあとは、保存のたびに
-サーバーへ行くので露出はありません**（一歩目）。
-
-#### ⚠ これを書く人が最初に直す一行
-
-`netLangsDown()`（`www/net.js`）に**こう書いてあります。**
-
-```js
-if(!row || !row.id || here[String(row.id)]){ step(); return; }
-```
-
-**索引に既に在る言語は、スライスを一つも降ろしません。**いまはそれで正しい
-── スライスは `localStorage` に残っているからです。**写しをやめた瞬間、
-この一行が「戻ってきた人の言語を全部空にする」になります。**索引
-（`lingua.langs`）は端末に残るので、全部の言語が「もう在る」と判定され、
-何も降りてきません。**押して確かめていません。読んで確認しました。**
-
-直し方は `netLangBack1()` と同じ形です ── 索引に在る言語も、**欠けている
-スライスだけ**埋める。`docs/DATA_SAFETY.md` の規則 2 がそのまま効きます。
-
-#### 触る所 ── 38 か所、10 ファイル
-
-`langKey` / `langKeyOf` の呼び出しを数えました（コメントを剥がして）。
-
-| | 数 | ファイル |
-|---|---|---|
-| いまの持ち場 | 20 | `core.js` 13、`net.js` 6、`settings.js` 1 |
-| **持ち場の外** | **18** | `home.js` 4、`keyboard.js` 4、`phases.js` 3、`letters.js` 2、`notes.js` 2、`sound.js` 2、`grammar-engine/adapter.js` 1 |
-
-その 18 は全部 `LANG_IO` の読む側と書く側です ── `ltRead`/`saveLetters`、
-`ntRead`/`saveNotes`、`stRead`/`saveStg`、`sndRead`/`saveSnd`、
-`kbRead`/`saveKb`、`wldRead`/`saveWld`。**一行ずつの機械的な差し替えです。**
-
-### 二歩目で消すもの ── iPhone の言語の写し
-
-**`www/net.js` の中が本体です。**`netLangSync1` は
-`localStorage.getItem(langKeyOf(id, kind))` を読み、`netLangsDown` は書き、
-`netKeeps` と `netAgreed` も同じ写しの上に立っています。
-
-**`www/sync.js` はファイルごと消えます。**合わせる相手が無くなるので `syMerge`
-`syArr` `syObj` `syKeyOf` `syText` の全部です。**先には消せません** ── いま
-`net.js` が `syMerge` を呼んでいます。
-
-**`www/index.html` の `<script src="sync.js">` を落とすのに、別の持ち場が要ります。**
-
-**嘘になる文（同じコミットで消す）:**
-
-- `CLAUDE.md` 規則 22 ──「`localStorage` is the copy that runs with no signal」。
-  頭の ⚠ が指しているのがこの節です。
-- `CLAUDE.md` 規則 6 の前半 ──「`lingua.<id>.<slice>` is the copy that runs with
-  no signal, and `netLangSync()` puts the two together at launch」。
-- `docs/ARCHITECTURE.md` ── 表の言語の行の「`localStorage` under
-  `lingua.<id>.<slice>` as the working copy that runs with no signal」。
-- `docs/DATA_SAFETY.md` ──「PUT THE TWO TOGETHER. NEITHER SIDE WINS BY BEING
-  NEWER.」。**写しが無ければ合わせるものがありません。**
-- `tools/store-check.mjs` ── `ROADS` の言語のスライス十二本。**この検査の前提
-  そのものが変わります**（「鍵は必ずサーバーへの道を持つ」から「言語の鍵は無い」へ）。
-
-**そして電波が無いときアプリは何も出せなくなります。**オーナーの決定です ──
-「電波が無いときはログインできない。そう出す」。**その文言はまだどこにも
-ありません。**`www/i18n/` は別の持ち場なので、鍵が一つ要ります。
+**そして電波が無いときの文言がまだありません。**「電波が無いときはログイン
+できない。そう出す」はオーナーの決定ですが、鍵が一つ要ります。`www/i18n/` は
+このセッションの持ち場ではありませんでした。
 
 ## シート（章 26）の門は `can('file')` で、専用の名前がありません
 

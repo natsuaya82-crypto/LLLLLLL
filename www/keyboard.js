@@ -70,7 +70,7 @@ function kbCount(){
     if(!langOwned(id)) continue;
     if(id===langId){ n+=kbStored().length; continue; }
     k=null;
-    try{ k=kbBoardsOf(JSON.parse(localStorage.getItem(langKeyOf(id, 'kb'))||'null')); }
+    try{ k=kbBoardsOf(JSON.parse(slRd(langKeyOf(id, 'kb'))||'null')); }
     catch(e){}
     if(k && k.kbs) n+=k.kbs.length;
   }
@@ -112,7 +112,7 @@ function kbCapStop(){
 }
 function kbRead(){
   KB=null;
-  try{ KB=kbBoardsOf(JSON.parse(localStorage.getItem(langKey('kb'))||'null')); }
+  try{ KB=kbBoardsOf(JSON.parse(slRd(langKey('kb'))||'null')); }
   catch(e){}
 }
 /* What is on the disk, whichever shape it is in. It was one keyboard --
@@ -192,10 +192,8 @@ function migrateKbFree(){
 function saveKb(){
   if(langLocked()) return;
   kbVFix(); kbWayOff(); kbNoted(); bkTouch();
-  try{
-    if(!KB) localStorage.removeItem(langKey('kb'));
-    else localStorage.setItem(langKey('kb'), JSON.stringify(KB));
-  }catch(e){}
+  if(!KB) slRm(langKey('kb'));
+  else slWr(langKey('kb'), JSON.stringify(KB));
 }
 
 /* The four directions a finger can leave a key by, in the order they are

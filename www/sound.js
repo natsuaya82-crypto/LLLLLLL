@@ -202,11 +202,11 @@ var SND=[];
 /* The open language's sounds. Empty first: see langRead() in core.js. */
 function sndRead(){
   SND=[];
-  try{ var s=JSON.parse(localStorage.getItem(langKey('snd'))||'null');
+  try{ var s=JSON.parse(slRd(langKey('snd'))||'null');
        if(s && s.length) SND=s; }catch(e){}
 }
 sndRead();
-function saveSnd(){ if(langLocked()) return; bkTouch(); try{ localStorage.setItem(langKey('snd'), JSON.stringify(SND)); }catch(e){} }
+function saveSnd(){ if(langLocked()) return; bkTouch(); slWr(langKey('snd'), JSON.stringify(SND)); }
 /* The one sound inventory anything reads. 35 places say addedSnd() meaning
    "the sounds of the language in front of me", and they still do. */
 function addedSnd(){ return SND; }

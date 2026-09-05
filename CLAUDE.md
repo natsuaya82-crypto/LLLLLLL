@@ -52,8 +52,9 @@ the app.** Everything the timeline is made of — posts, photographs, the voice,
 **drafts**, the handle, the display name, the profile picture, reactions,
 follows, blocks and reports 「SNSは全部サーバー」 — **and the language itself**,
 every slice of it, the keyboard among them, because a keyboard is part of a
-language. **⚠ 2026-09-04 に差し替えが決まりました ── オンライン前提。iPhone には言語を置きません。**下の一文はまだコードがそうなっている、という記録です（`docs/FEATURE_RULES.md` の決定ログ）。
-The phone keeps the copy that works with no signal; **it is never
+language. **The language is not on the phone at all** — a slice is in memory
+while the app is running and nowhere else (rule 22, OWNER 2026-09-04). The
+phone keeps a copy of the TIMELINE that works with no signal; **it is never
 where a thing lives.**
 
 **NOTHING IS THE PHONE'S. EVERYTHING IS THE ACCOUNT'S.**
@@ -96,16 +97,21 @@ sns tabs and the composer never asked who you were, while every write in
 you could write a post that went nowhere. Reading the timeline and posting to
 it both need an account now, **and so does making a language** 「言語はアカウント
 ないと作れないです」「ログインした人しか書けないけど」. The server is where a
-language lives, the phone keeps the copy that works with no signal, and what was
-made offline goes up when there is a signal again 「制作はオフラインでも可能次
-つながった時に更新される」 — offline is a phone that is CARRYING an account, not
-one that has none.
+language lives, and a save reaches it the moment it is made. **Offline is not
+a supported state any more** 「オンラインのみで行こうってことになってる今後
+オフライン対応する時にまた考えることにした」 OWNER 2026-09-04: with no signal
+there is nothing to read and nothing to send, and 「電波が無いときはログイン
+できない」 is what a screen says about it.
 
 **The onboarding is the one place making happens before there is an account,
 and that is the order the owner asked for** 「オンボーディング→最後にログイン」.
 Somebody draws a letter, is walked through the app, and names what they are
 making; the door is the LAST step, and `obFinish()` calls `netLangSync()` the
-moment they are through it, so what they made goes up as they arrive. **A
+moment they are through it, so what they made goes up as they arrive. **That
+walk is the one window where work is on this phone and nowhere else** — a
+slice is in memory (rule 22), so an app closed mid-walk loses the letters that
+were drawn. It is the price of the door staying last, and it is in
+`docs/CHANGELOG.md` rather than left for somebody to find. **A
 screen that makes something before that door still has to put it on the
 server at it** — anything added to the walk is added to what that call
 carries, and there is no second road out: 「あとで」 is gone and nothing gets
@@ -763,8 +769,9 @@ anybody noticed.
 ### 6. A language somebody already has still opens
 
 Storage is per language. **The record is the `slice` rows on the server**;
-`lingua.<id>.<slice>` is the copy that runs with no signal. **A save goes up
-the moment it is made** — `bkTouch()` is the one place all seven writers pass
+`lingua.<id>.<slice>` names the slice in the MEMORY store (`LSL` in
+`core.js`, rule 22) — it is not a key on this phone's disk and has not been
+one since 2026-09-04. **A save goes up the moment it is made** — `bkTouch()` is the one place all seven writers pass
 through and `netSaveUp()` (`www/net.js`) sends the slices that moved, one
 short read and one short write, after the typing stops. 「保存としたらオンライン
 おしまい」 OWNER 2026-09-04; before that a language went up on a LAUNCH and at
@@ -1589,21 +1596,44 @@ the exemption's rot claim with `viewGone` renamed out from under it.
 
 ### 22. Nothing is kept on this phone alone, and nothing on it is nobody's
 
-> **⚠ この章は差し替えが決まっています。まだコードは変わっていません。**
-> 「オンライン前提に切り替える。保存を押した瞬間にサーバーへ行く」
-> OWNER 2026-09-04（`docs/FEATURE_RULES.md` の決定ログ）。
-> **サーバーが唯一の本物になり、iPhone には言語を一つも置きません**
-> ── 残るのは `lingua.sess`（この iPhone は誰か）だけ。オフラインは
-> 無くなり、電波が無いときアプリは何も出しません。**新しいものを、下に
-> 書いてある古い形の上に作らないでください。**設計は `claude/one` が
-> 書いています。それが通るまで、この章は「何が今そうなっているか」の
-> 記録として読んでください。
+**THE LANGUAGE IS NOT ON THIS PHONE AT ALL.**
+「オンラインは一本化ね？」「簡単よ」「保存としたらオンラインおしまい」
+「今ファイルもいらん。オンラインのみで行こうってことになってる今後オフライン
+対応する時にまた考えることにした」 OWNER 2026-09-04.
 
+Every one of the twelve slices used to be a `localStorage` key, written on
+every save and read back at launch. **They are in memory now** — `LSL` in
+`core.js`, reached by `slRd`/`slWr`/`slRm`, keyed by the same `langKeyOf()`
+that has always said how a language is filed. What is there is what the
+RUNNING app is holding, the same kind of thing `WORDS` and `LETTERS` already
+were, one step further out. Close the app and it is gone; open it signed in
+and `netLangsDown()` brings it back.
 
+**It is not a cache and must not become one.** A copy that survives the app is
+a second answer to 「what is this language」, and the whole of this change is
+that there is one.
 
-**The app is online, and that is a decision about data rather than about
-screens** ── 「オンラインにしないとデータの改竄し放題だから」. The server is
-where things live; `localStorage` is the copy that runs with no signal.
+**What that costs is written down rather than hidden.** With no signal there
+is nothing to read — 「電波が無いときはログインできない」 — and **work made
+before it reaches the server is lost if the app closes.** The window is the
+onboarding walk, which makes a language before there is an account to send it
+to; after the door a save goes up the moment it is made (rule 6), so there is
+no other window. `docs/CHANGELOG.md` 2026-09-04 carries it.
+
+**And `netLangsDown()` fills a language it already knows about.** It used to
+skip one whose id was in the index, which was right while a slice survived a
+launch and is the line that would silently empty everybody's dictionary now:
+the index is on disk and the slices are not, so every launch starts with a
+list of languages and nothing in them. It fills what is **missing** and stops
+— a slice this phone is holding is never written over, because that is the
+half that loses an afternoon. `acct-check` 13 holds both directions.
+
+**Twelve keys are left in `localStorage` and not one is a language.** The
+index (`lingua.langs`, `lingua.cur`) is which languages this account has and
+where somebody is standing — what the app asks the server WITH, rather than
+the answer. The session, the settings, the timeline's copy, the profile's,
+and the parked copies of each are the rest. `store-check` prints the count on
+every run; read it there.
 
 **And every key of that copy belongs to an ACCOUNT.**
 「端末ごとにやることなんてねえよ」 OWNER 2026-09-03. This section used to end
@@ -1626,17 +1656,18 @@ as long again after that; both were found by a person holding a phone.
 by the expression, because `k` is a loop variable in two files about two
 different things — and each one is either **on a road to the server**, with the
 function in `www/net.js` that takes it there (and that function has to exist),
-or **the phone's own with a sentence saying why**.
+or **the phone's own with a sentence saying why**. A `lingua.<id>.<slice>` key
+appearing there again is the copy coming back, and it fails as a key nobody
+wrote down.
 
-**That second half is what has to shrink to nothing**, and every entry left in
-it is a thing waiting to be handed to the wrong person. Inside `lingua.set` the
-question is asked the OTHER WAY ROUND, and it had to be: 「アカウント消したのに
-検索履歴残ってたんだけどなんで？…全部アカウントだって言ってるやん おかしいだろ
-お前一本化しろって。」 OWNER 2026-09-04. `SET_ACCT` used to name the six fields
-that are a PERSON's, `recent` was added to `SET` a day later and never reached
-that list, and a deleted account's search history was still on the screen —
-**a list of keys, written by hand, that nobody remembered to add to**, which is
-the same fault `lsWipeAcct` was rewritten for a week earlier.
+**Inside `lingua.set` the question is asked the OTHER WAY ROUND**, and it had
+to be: 「アカウント消したのに検索履歴残ってたんだけどなんで？…全部アカウント
+だって言ってるやん おかしいだろお前一本化しろって。」 OWNER 2026-09-04.
+`SET_ACCT` used to name the six fields that are a PERSON's, `recent` was added
+to `SET` a day later and never reached that list, and a deleted account's
+search history was still on the screen — **a list of keys, written by hand,
+that nobody remembered to add to**, which is the same fault `lsWipeAcct` was
+rewritten for a week earlier.
 
 **`SET_PHONE` in `core.js` names this HANDSET's own setup** — the theme, the
 interface language, the marks that a migration has run here, `planUid` — and
@@ -1880,7 +1911,7 @@ the string and the function — and `act-check` fails on either half alone.
 | `www/rec.js` | the voice on a post — thirty seconds. It goes up with the post 「SNSは全部サーバー」: `netUpVoice()` (`www/net.js`) puts it in the `post-media` bucket and writes the path to `body.vu`, and `voRemote()` is how one name tells a path on the server from a file this phone recorded (ch 25) |
 | `www/sheet.js` | the sheet somebody writes a word on paper on, and the number printed on it that says which one (ch 26) |
 | `www/store.js` | the App Store: what `LinguaStore.swift` is asked and what comes back (ch 26) |
-| `www/sync.js` | putting a language and the copy on this phone back together (ch 26) |
+| `www/sync.js` | putting a language and what this phone is holding back together — two phones can still both edit one language, so the merge stays (ch 26) |
 | `www/mod.js` | the other side of a report — what somebody with the flag sees |
 | `www/cal.js` | the calendar: a month is a word (ch 27) |
 | `www/net.js` | the one window onto the server, and the only place a secret could be (ch 21) |

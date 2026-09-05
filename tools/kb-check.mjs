@@ -2822,7 +2822,7 @@ const r = await pg.evaluate(({ s }) => {
        the screen, and a check that then threw would report nothing at all --
        one crash instead of the one claim that is about that button. */
     function tap(el){ if (el) el.click(); return !!el; }
-    function stored(){ try { return localStorage.getItem(langKey('kb')); } catch (e){ return null; } }
+    function stored(){ try { return slRd(langKey('kb')); } catch (e){ return null; } }
     function openKey(){ fresh(); kbShow = 1; kbLay = 0; standKb(); kbPick(0, 0); }
 
     /* ---- nothing chosen: no confirm ---------------------------------- */

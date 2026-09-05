@@ -68,8 +68,14 @@ function lsWipeAcct(uid){
   for(id in LANGS)
     if(Object.prototype.hasOwnProperty.call(LANGS, id) && LANGS[id] &&
        String(LANGS[id].uid||'')===me) ids.push(id);
+  /* The slices are in MEMORY now (LSL above), so they are dropped rather than
+     removed from storage -- and the record of what was last agreed with them,
+     which is filed beside each one. */
   for(i=0;i<ids.length;i++){
-    for(j=0;j<SLICES.length;j++) doomed.push(langKeyOf(ids[i], SLICES[j]));
+    for(j=0;j<SLICES.length;j++){
+      slRm(langKeyOf(ids[i], SLICES[j]));
+      slRm(langWasKey(ids[i], SLICES[j]));
+    }
     delete LANGS[ids[i]];
   }
   /* AND EVERY OTHER KEY THIS ACCOUNT PUT ITS NAME ON, counted rather than
@@ -290,6 +296,38 @@ function langKey(slice){ return langKeyOf(langId, slice); }
    takes it with everything else. */
 function langWasKey(id, slice){ return langKeyOf(id, slice) + '.was'; }
 
+/* AND WHERE A SLICE ACTUALLY SITS, WHICH IS MEMORY AND NOT THIS PHONE'S DISK.
+   -------------------------------------------------------------------------
+   「オンラインは一本化ね？」「簡単よ」「保存としたらオンラインおしまい」
+   「今ファイルもいらん。オンラインのみで行こうってことになってる今後オフライン
+     たいおする時にまた考えることにした」 OWNER 2026-09-04.
+
+   Every one of the twelve used to be a `localStorage` key. **The server is
+   the only place a language is kept now**, and what is here is the value the
+   running app is holding -- the same kind of thing `WORDS` and `LETTERS`
+   already were, one step further out. Close the app and it is gone; open it
+   signed in and netLangsDown() brings it back.
+
+   IT IS NOT A CACHE AND MUST NOT BECOME ONE. A copy that survives the app is
+   a second answer to 「what is this language」, and the whole of this change
+   is that there is one. With no signal there is nothing to read, and that is
+   the decision rather than a gap: 「電波が無いときはログインできない」.
+
+   KEYED BY langKeyOf() STILL, and that is not leftovers. It is the one place
+   that knows how a language is filed (CLAUDE.md rule 6), the keys are what
+   `SLICES` and `wipeLangsGo()` and `lsWipeAcct()` already walk, and a second
+   naming scheme here would be exactly the fault that comment is about.
+
+   `lingua.langs` and `lingua.cur` are NOT this. They are the index -- which
+   languages this account has and where somebody is standing -- and they stay
+   on disk, because they are what the app asks the server WITH. */
+var LSL={};
+function slRd(k){
+  return Object.prototype.hasOwnProperty.call(LSL, k) ? LSL[k] : null;
+}
+function slWr(k, v){ LSL[k]=String(v); }
+function slRm(k){ delete LSL[k]; }
+
 /* Which languages are here, and which one is open. Read before anything else
    in this file, because every other key is built out of langId. */
 try{
@@ -415,11 +453,11 @@ try{
    somebody else's language and find your own dictionary in it. */
 function langRead(){
   WORDS=[]; LINES=[]; langName=''; SCRIPT={g:{}, extra:[]};
-  try{ var a=JSON.parse(localStorage.getItem(langKey('words'))||'[]'); if(Array.isArray(a)) WORDS=a; }catch(e){}
-  try{ var l=JSON.parse(localStorage.getItem(langKey('lines'))||'[]'); if(Array.isArray(l)) LINES=l; }catch(e){}
-  try{ langName=localStorage.getItem(langKey('lang'))||''; }catch(e){}
+  try{ var a=JSON.parse(slRd(langKey('words'))||'[]'); if(Array.isArray(a)) WORDS=a; }catch(e){}
+  try{ var l=JSON.parse(slRd(langKey('lines'))||'[]'); if(Array.isArray(l)) LINES=l; }catch(e){}
+  try{ langName=slRd(langKey('lang'))||''; }catch(e){}
   try{
-    var gg=JSON.parse(localStorage.getItem(langKey('script'))||'null');
+    var gg=JSON.parse(slRd(langKey('script'))||'null');
     if(gg && gg.g){ SCRIPT.g=gg.g; SCRIPT.extra=gg.extra||[]; }
     /* Which way the language is written. Read on its own rather than inside
        the `gg.g` branch above: a language can have a direction and no glyphs
@@ -633,10 +671,10 @@ function save(){
   if(langLocked()) return;   /* somebody else's language: nothing is written to it */
   bkTouch();
   try{
-    localStorage.setItem(langKey('words'),JSON.stringify(WORDS));
-    localStorage.setItem(langKey('lines'),JSON.stringify(LINES));
-    localStorage.setItem(langKey('lang'),langName);
-    localStorage.setItem(langKey('script'),JSON.stringify(SCRIPT));
+    slWr(langKey('words'),JSON.stringify(WORDS));
+    slWr(langKey('lines'),JSON.stringify(LINES));
+    slWr(langKey('lang'),langName);
+    slWr(langKey('script'),JSON.stringify(SCRIPT));
     localStorage.setItem(LS_S,JSON.stringify(setOnDisk()));
     /* the index carries the name so a list of languages can be shown without
        opening each one to find out what it is called */

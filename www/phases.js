@@ -39,7 +39,7 @@ var STG={done:{}, notes:{}, set:{}, extra:[], rules:{}, ex:{}, fm:[], order:'', 
 function stRead(){
   STG={done:{}, notes:{}, set:{}, extra:[], rules:{}, ex:{}, fm:[], order:'', gpos:{}};
   try{
-    var stgs=JSON.parse(localStorage.getItem(langKey('phases'))||'null');
+    var stgs=JSON.parse(slRd(langKey('phases'))||'null');
     if(stgs){ STG.done=stgs.done||{}; STG.notes=stgs.notes||{}; STG.set=stgs.set||{};
               STG.extra=stgs.extra||[]; STG.rules=stgs.rules||{}; STG.ex=stgs.ex||{};
               STG.fm=stgs.fm||[];
@@ -57,8 +57,8 @@ function stRead(){
    travels with the language.
 
    They come to STG because STG is already the language's -- langKey('phases')
-   -- and 'phases' is already in SLICES, so a value put here is in the backup
-   and goes when the language goes, with nothing added to core.js and nothing
+   -- and 'phases' is already in SLICES, so a value put here goes up to the
+   server and goes when the language goes, with nothing added to core.js and nothing
    added to the list of slices. The state was already split down the middle
    and this is the half that was on the wrong side: STG.set, which says
    whether a decision was TOUCHED, has been the language's all along while the
@@ -92,10 +92,10 @@ function stRead(){
    one. That language keeps the value it has always had in SET and is the one
    language this does not reach.
 
-   A write that fails leaves the mark unwritten, so the next launch tries the
-   whole thing again, and it is the same walk twice over: a language it wrote
-   already has an `order` and is left alone, and a language it had nothing to
-   copy onto is passed over again for the same reason as the first time. */
+   It is safe to run twice, and that is what makes the mark a convenience
+   rather than a guard: a language it wrote already has an `order` and is left
+   alone, and a language it had nothing to copy onto is passed over again for
+   the same reason as the first time. */
 function migrateGramLang(){
   if(SET.gramLang) return;
   /* What the APP put in the settings, as against what a person put there.
@@ -103,11 +103,11 @@ function migrateGramLang(){
      there is one place that says it: a second copy of 'SOV' in this file is
      a copy that goes on saying 'SOV' the day the default changes. */
   var appOrder=setDefaults().order;
-  var id, key, raw, o, g, k, v, failed=false;
+  var id, key, raw, o, g, k, v;
   for(id in LANGS){
     if(!Object.prototype.hasOwnProperty.call(LANGS, id)) continue;
     key=langKeyOf(id, 'phases');
-    raw=localStorage.getItem(key);
+    raw=slRd(key);
     o={};
     if(raw!==null){
       try{ o=JSON.parse(raw); }catch(e){ o=null; }
@@ -159,19 +159,22 @@ function migrateGramLang(){
       for(k in g) if(Object.prototype.hasOwnProperty.call(g, k)){ o.gpos=g; break; }
     }
     /* Nothing was there and nothing was copied. "Empty" and ABSENT are two
-       states, the way empty and broken are: an absent slice is what a restore
-       fills in, and one written here is a slice bkTake() and netLangBack1()
-       step over for good. So this language keeps having none. */
+       states, the way empty and broken are: an absent slice is what
+       netLangsDown() fills in, and one written here is a slice it steps over
+       for good. So this language keeps having none. */
     if(raw===null && o.order===undefined && o.gpos===undefined) continue;
-    try{ localStorage.setItem(key, JSON.stringify(o)); }catch(e){ failed=true; }
+    slWr(key, JSON.stringify(o));
   }
-  if(failed) return;
+  /* The mark that this has run. It used to be held back when a write to
+     storage was refused -- a full disk left half the languages migrated, so
+     the next launch had to try again. A slice is in memory now and the write
+     cannot be refused, so there is nothing to wait for. */
   SET.gramLang=1;
   try{ localStorage.setItem(LS_S, JSON.stringify(setOnDisk())); }catch(e){}
 }
 migrateGramLang();
 stRead();
-function saveStg(){ if(langLocked()) return; bkTouch(); try{ localStorage.setItem(langKey('phases'), JSON.stringify(STG)); }catch(e){} }
+function saveStg(){ if(langLocked()) return; bkTouch(); slWr(langKey('phases'), JSON.stringify(STG)); }
 
 /* The stages, in the order they open each other up. `slots` are the words the
    stage cannot do without; `feats` are the decisions from www/grammar.js it

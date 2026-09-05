@@ -625,7 +625,7 @@ const built = await pg.evaluate(() => {
     l.st = S[r];
   });
   saveLetters(); save(); installScriptFont(); render();
-  const back = JSON.parse(localStorage.getItem(langKey('letters')) || '[]');
+  const back = JSON.parse(slRd(langKey('letters')) || '[]');
   /* scriptDrawn() counted the units with ink in them and went out in
      9226dd6, when the font stopped being built from anything but the
      letters. What the font is made of is now the one list, so ask that
@@ -802,8 +802,8 @@ const on = await pg.evaluate(() => {
     text: el ? el.textContent : '',
     /* Per language now: lingua.<langId>.words, not the flat key a single
        language used to have. www/core.js: langKey(). */
-    stored: JSON.stringify(JSON.parse(localStorage.getItem(langKey('words')) || '[]').map(w => w.hw)),
-    scriptStored: JSON.parse(localStorage.getItem(langKey('letters')) || '[]')
+    stored: JSON.stringify(JSON.parse(slRd(langKey('words')) || '[]').map(w => w.hw)),
+    scriptStored: JSON.parse(slRd(langKey('letters')) || '[]')
       .some(l => l.st && l.st.length),
   };
 });

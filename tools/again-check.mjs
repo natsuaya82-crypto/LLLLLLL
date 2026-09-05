@@ -125,7 +125,7 @@ const up = await pg.evaluate(async ({ s, srv }) => {
   langStore();
   /* and a language that is only READ, which must never go up */
   langSeenAdd('theirs-1', 'Shango');
-  localStorage.setItem(langKeyOf('theirs-1', 'letters'), '[{"id":"x"}]');
+  slWr(langKeyOf('theirs-1', 'letters'), '[{"id":"x"}]');
 
   await new Promise(function(f){ netLangSync(function(){ f(); }); });
   await wait(120);
@@ -180,7 +180,7 @@ const came = await pg.evaluate(async ({ srv, saved }) => {
   var ids = Object.keys(LANGS), i, out = [];
   for (i = 0; i < ids.length; i++)
     out.push({ id:ids[i], name:LANGS[ids[i]].name, mine:LANGS[ids[i]].mine,
-               words:(localStorage.getItem(langKeyOf(ids[i], 'words')) || '').length });
+               words:(slRd(langKeyOf(ids[i], 'words')) || '').length });
   return { before: before, after: ids.length, langs: out };
 }, { srv: SERVER, saved: up.srv });
 
@@ -210,9 +210,9 @@ const holds = await pg.evaluate(async ({ srv, saved }) => {
   /* This phone's copy of a language the SERVER also has, and it says something
      different. A restore that wins writes the server's over it; a restore that
      fills in leaves it. */
-  localStorage.setItem(langKeyOf(one, 'words'),
+  slWr(langKeyOf(one, 'words'),
     JSON.stringify([{ hw:'ONPHONE', ph:['o'], mn:'here', mns:['here'], pos:'n', at:9 }]));
-  var was = localStorage.getItem(langKeyOf(one, 'words'));
+  var was = slRd(langKeyOf(one, 'words'));
   /* netLangBack() runs once per account per launch, so a second netTook()
      with the same uid returns at the door. Cleared here, or the two claims
      below are green because nothing ran -- which is what they were the first
@@ -220,12 +220,12 @@ const holds = await pg.evaluate(async ({ srv, saved }) => {
   NET_BACK = '';
   netTook({ access_token:'t', refresh_token:'r', user:{ id:'me' } });
   await wait(400);
-  var now = localStorage.getItem(langKeyOf(one, 'words'));
+  var now = slRd(langKeyOf(one, 'words'));
   /* and a server that does not answer at all */
   S.down = true;
   NET_BACK = '';
   var langsWas = JSON.stringify(LANGS);
-  var slicesWas = ids.map(function(i2){ return localStorage.getItem(langKeyOf(i2, 'words')); }).join('|');
+  var slicesWas = ids.map(function(i2){ return slRd(langKeyOf(i2, 'words')); }).join('|');
   netTook({ access_token:'t', refresh_token:'r', user:{ id:'me' } });
   await wait(400);
   S.down = false;
@@ -239,7 +239,7 @@ const holds = await pg.evaluate(async ({ srv, saved }) => {
     keptWhat: String(now || '').slice(0, 60),
     ran: NET_BACK,
     downLangs: JSON.stringify(LANGS) === langsWas,
-    downSlices: ids.map(function(i2){ return localStorage.getItem(langKeyOf(i2, 'words')); }).join('|') === slicesWas
+    downSlices: ids.map(function(i2){ return slRd(langKeyOf(i2, 'words')); }).join('|') === slicesWas
   };
 }, { srv: SERVER, saved: up.srv });
 
@@ -301,7 +301,7 @@ const safe = await pg.evaluate(async ({ srv, saved }) => {
   var one = '', z;
   for (z = 0; z < S.lang.length; z++) if (LANGS[S.lang[z].id]) one = S.lang[z].id;
   function words(){
-    try { return (JSON.parse(localStorage.getItem(langKeyOf(one, 'words')) || '[]') || []).length; }
+    try { return (JSON.parse(slRd(langKeyOf(one, 'words')) || '[]') || []).length; }
     catch (e) { return -1; }
   }
   await new Promise(function(f){ netLangSync(function(){ f(); }); });
@@ -314,14 +314,14 @@ const safe = await pg.evaluate(async ({ srv, saved }) => {
      by handing the merge a shorter body than the phone has -- the one shape
      the condition names, made to happen rather than reasoned about. */
   var big = JSON.stringify([{hw:'a'},{hw:'b'},{hw:'c'},{hw:'d'}]);
-  localStorage.setItem(langKeyOf(one, 'words'), big);
+  slWr(langKeyOf(one, 'words'), big);
   var oldMerge = syMerge;
   syMerge = function(){ return JSON.stringify([{hw:'a'}]); };
   NET_SHRANK = [];
   await new Promise(function(f){ netLangSync(function(){ f(); }); });
   await wait(200);
   syMerge = oldMerge;
-  out.shrankKept = localStorage.getItem(langKeyOf(one, 'words')) === big;
+  out.shrankKept = slRd(langKeyOf(one, 'words')) === big;
   out.shrankSaid = NET_SHRANK.length > 0;
   return out;
 }, { srv: SERVER, saved: up.srv });
@@ -519,7 +519,7 @@ const del = await pg.evaluate(async ({ s, srv }) => {
   /* 2. somebody deletes one, the way the button does */
   out.gone = hw()[0];
   wDrop(out.gone); save();
-  out.storedAfterDelete = JSON.parse(localStorage.getItem(langKey('words')) || '[]')
+  out.storedAfterDelete = JSON.parse(slRd(langKey('words')) || '[]')
     .map(function(w){ return String(w.hw); });
   out.afterDelete = hw();
 
@@ -637,7 +637,7 @@ const up2 = await pg.evaluate(async ({ s, srv }) => {
   save();
   await settle();
   out.sentOut = window.__SRV.sent.slice();
-  out.keptOut = (localStorage.getItem(langKeyOf(id, 'words')) || '').indexOf('offline') >= 0;
+  out.keptOut = (slRd(langKeyOf(id, 'words')) || '').indexOf('offline') >= 0;
   SESS = keep;
   netSend = realSend;
   return out;

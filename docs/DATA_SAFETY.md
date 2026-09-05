@@ -3,8 +3,9 @@
 「データ消えるのだけはありえない」
 
 **Everything a person makes lives on the server** — the `slice` rows, every
-slice of the language. `localStorage` is the copy that works with no signal.
-**Two places, and there is no third.** Losing somebody's language is not a
+slice of the language, and **nowhere else**: `LSL` in `www/core.js` holds a
+slice while the app is running, in memory, and the app closing takes it.
+**One place, and there is no second.** Losing somebody's language is not a
 degraded experience; it is the end of months of their work.
 
 ## The four ways it can go

@@ -16,10 +16,10 @@ var NOTES=[];
 /* The open language's notes. Empty first: see langRead() in core.js. */
 function ntRead(){
   NOTES=[];
-  try{ var nt=JSON.parse(localStorage.getItem(langKey('notes'))||'[]'); if(Array.isArray(nt)) NOTES=nt; }catch(e){}
+  try{ var nt=JSON.parse(slRd(langKey('notes'))||'[]'); if(Array.isArray(nt)) NOTES=nt; }catch(e){}
 }
 ntRead();
-function saveNotes(){ if(langLocked()) return; bkTouch(); try{ localStorage.setItem(langKey('notes'), JSON.stringify(NOTES)); }catch(e){} }
+function saveNotes(){ if(langLocked()) return; bkTouch(); slWr(langKey('notes'), JSON.stringify(NOTES)); }
 
 /* The first line of a note stands in for a title when there is none, the way
    a paper notebook does. Cut short, because a row is a row. */

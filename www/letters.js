@@ -33,10 +33,10 @@ var LETTERS=[];
 /* The open language's alphabet. Empty first: see langRead() in core.js. */
 function ltRead(){
   LETTERS=[];
-  try{ var lt=JSON.parse(localStorage.getItem(langKey('letters'))||'null'); if(lt && lt.length) LETTERS=lt; }catch(e){}
+  try{ var lt=JSON.parse(slRd(langKey('letters'))||'null'); if(lt && lt.length) LETTERS=lt; }catch(e){}
 }
 ltRead();
-function saveLetters(){ if(langLocked()) return; bkTouch(); try{ localStorage.setItem(langKey('letters'), JSON.stringify(LETTERS)); }catch(e){} }
+function saveLetters(){ if(langLocked()) return; bkTouch(); slWr(langKey('letters'), JSON.stringify(LETTERS)); }
 
 /* ---- moving the old shape of things over ------------------------------
    Everything drawn before this ran was stored under its sound, which is

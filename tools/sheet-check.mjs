@@ -390,7 +390,7 @@ const took = await pg.evaluate(({ before }) => {
       return l.nm === '25' && typeof l.val !== 'number';
     }).length,
     stored: (function(){
-      try { return JSON.parse(localStorage.getItem(langKey('letters')) || '[]').length; }
+      try { return JSON.parse(slRd(langKey('letters')) || '[]').length; }
       catch(e){ return -1; }
     })()
   };

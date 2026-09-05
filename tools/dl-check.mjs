@@ -85,7 +85,7 @@ const r = await pg.evaluate(async ({ s, sid }) => {
   var mineId = langId;
   var before = {};
   for (var i = 0; i < SLICES.length; i++)
-    before[SLICES[i]] = localStorage.getItem(langKeyOf(mineId, SLICES[i]));
+    before[SLICES[i]] = slRd(langKeyOf(mineId, SLICES[i]));
   var langsBefore = JSON.stringify(LANGS);
 
   /* ---- their article, by the road the app itself offers ---------------- */
@@ -116,12 +116,12 @@ const r = await pg.evaluate(async ({ s, sid }) => {
   if (press){ press.click(); await wait(120); render(); }
 
   /* ---- and now: storage --------------------------------------------- */
-  out.landed = localStorage.getItem(langKeyOf(sid, 'letters'));
+  out.landed = slRd(langKeyOf(sid, 'letters'));
   out.wanted = THEIRS.letters.body;
   out.row = LANGS[sid] ? { name: LANGS[sid].name, mine: LANGS[sid].mine } : null;
   out.mineUntouched = (function(){
     for (var k = 0; k < SLICES.length; k++)
-      if (localStorage.getItem(langKeyOf(mineId, SLICES[k])) !== before[SLICES[k]]) return SLICES[k];
+      if (slRd(langKeyOf(mineId, SLICES[k])) !== before[SLICES[k]]) return SLICES[k];
     return '';
   })();
   out.stillOpen = langId === mineId;
@@ -225,7 +225,7 @@ const r = await pg.evaluate(async ({ s, sid }) => {
      so before langOpen() refused, looking at a downloaded language replaced
      its letters with this person's twenty-eight slots and nobody typed a
      thing. Asked after the attempt above, whichever way it went. */
-  out.stillTheirs = localStorage.getItem(langKeyOf(sid, 'letters')) === THEIRS.letters.body;
+  out.stillTheirs = slRd(langKeyOf(sid, 'letters')) === THEIRS.letters.body;
   out.syncRefused = await new Promise(function(f){
     var wasId = langId;
     /* uid, the way langSeenAdd() puts one on: a language with no stamp
@@ -235,7 +235,7 @@ const r = await pg.evaluate(async ({ s, sid }) => {
     langId = sid;
     var ran = [], oldPut = netSlicePut, k, snap = {};
     for (k = 0; k < SLICES.length; k++)
-      snap[SLICES[k]] = localStorage.getItem(langKeyOf(sid, SLICES[k]));
+      snap[SLICES[k]] = slRd(langKeyOf(sid, SLICES[k]));
     netSlicePut = function(a, kind){ if(a === 'srv-of-' + sid) ran.push(kind); };
     /* Both halves, because either one alone is green with the bug in.
        A put is somebody else's language being WRITTEN on the server; a
@@ -245,7 +245,7 @@ const r = await pg.evaluate(async ({ s, sid }) => {
       netSlicePut = oldPut; langId = wasId;
       var moved = '';
       for (var j = 0; j < SLICES.length; j++)
-        if (localStorage.getItem(langKeyOf(sid, SLICES[j])) !== snap[SLICES[j]])
+        if (slRd(langKeyOf(sid, SLICES[j])) !== snap[SLICES[j]])
           moved = SLICES[j];
       out.syncPut = ran.join(',');
       out.syncMoved = moved;

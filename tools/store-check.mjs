@@ -68,30 +68,17 @@ const WWW = path.join(HERE, '..', 'www');
    `to` names the function in www/net.js that puts it on the server.
    `phone` is the reason it is the phone's own, and is a sentence. */
 const ROADS = {
-  /* the language: every slice, up and down, once a launch */
-  "core.js:langKey('words')":   { to: 'netSlicePut' },
-  "core.js:langKey('lines')":   { to: 'netSlicePut' },
-  "core.js:langKey('lang')":    { to: 'netSlicePut' },
-  "core.js:langKey('script')":  { to: 'netSlicePut' },
-  "letters.js:langKey('letters')": { to: 'netSlicePut' },
-  "notes.js:langKey('notes')":  { to: 'netSlicePut' },
-  "phases.js:langKey('phases')":{ to: 'netSlicePut' },
-  "sound.js:langKey('snd')":    { to: 'netSlicePut' },
-  "keyboard.js:langKey('kb')":  { to: 'netSlicePut' },
-  "home.js:langKey('wld')":     { to: 'netSlicePut' },
-  'home.js:langKeyOf(id':       { to: 'netSlicePut' },
-  /* NOT somebody's work, and the one entry here that is a copy of what BOTH
-     sides already hold. It is what this phone and the server last agreed a
-     slice was, and it exists so the merge can tell 「I removed this」 from
-     「I have not been told about this yet」 -- which look the same and want
-     opposite answers, and which is how a deleted word used to come back off
-     the server on the next launch. Losing it costs one sync's worth of
-     forgetting and no data: with no record, nothing is dropped. It goes up
-     nowhere on purpose -- each phone has its own idea of what it last agreed,
-     and sending one phone's would be telling the other what it had seen. */
-  'net.js:langWasKey(id':       { phone: "what this phone and the server last agreed a slice was — a copy of what both already hold, so the merge can tell a removal from something not yet heard about. Each phone's own; nothing to send." },
-  'net.js:langKeyOf(id':        { to: 'netSlicePut' },
-  'net.js:langKeyOf(sid':       { to: 'netSlicePut' },
+  /* NOT ONE LANGUAGE KEY, AND THAT IS THE POINT OF THIS BLOCK BEING EMPTY.
+     「オンラインは一本化ね？」「保存としたらオンラインおしまい」「今ファイルも
+     いらん。オンラインのみで行こうってことになってる」 OWNER 2026-09-04.
+
+     Twelve slices used to be twelve lines here, each naming netSlicePut() as
+     the road that took it up. They are in MEMORY now -- `LSL` in www/core.js,
+     reached by slRd/slWr -- and the server is the only place a language is
+     kept. A `lingua.<id>.<slice>` key appearing under this comment again is
+     the copy coming back, which is the whole of what that decision removed,
+     so it fails as a key nobody wrote down rather than being quietly allowed.
+     */
   /* the timeline */
   'post.js:LS_POSTS':  { to: 'netPush' },
   'post.js:LS_DRAFTS': { to: 'netDraftUp' },
@@ -119,13 +106,9 @@ const ROADS = {
      nothing here writes one, and the copy is what the screen draws in the
      first frame. netNotices() is the road, downward. */
   'sns.js:k': { to: 'netNotices' },
-  /* `key` and `k` are the loops that walk the two above -- langKeyOf() in
-     www/backup.js and langKey() in www/core.js -- so they are those roads
-     and not a key of their own. */
-  'net.js:key':     { to: 'netSlicePut' },
-  'phases.js:key':  { to: 'netSlicePut' },
   /* The stage somebody wrote about, which used to live in the settings and
-     belongs to the language. phases.js writes both while it moves them. */
+     belongs to the language. phases.js writes the settings while it moves it;
+     the language half is a slice and is in memory. */
   'phases.js:LS_S': { phone: 'the settings -- the same key core.js keeps, written from the migration that takes a stage OUT of it' }
 };
 

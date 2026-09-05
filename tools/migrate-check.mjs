@@ -110,9 +110,9 @@ const REPORT = () => ({
      www/core.js -- so there is no TALK to ask, and asking one would have
      turned "the screen is not loaded" into "the conversation is gone". What
      has to survive a migration is the bytes, and the bytes are here. */
-  talk: (function(){ try{ var a=JSON.parse(localStorage.getItem(langKey('talk'))||'[]');
+  talk: (function(){ try{ var a=JSON.parse(slRd(langKey('talk'))||'[]');
                           return a.length; }catch(e){ return 0; } })(),
-  talk0: (function(){ try{ var a=JSON.parse(localStorage.getItem(langKey('talk'))||'[]');
+  talk0: (function(){ try{ var a=JSON.parse(slRd(langKey('talk'))||'[]');
                            return a[0] && a[0].q; }catch(e){ return undefined; } })(),
   sound: !!STG.done.sound,
   snd: addedSnd().join(','),
@@ -706,7 +706,7 @@ const marksOf = () => pg.evaluate(() => {
   return { q: at('mQ'), b: at('mB'),
            /* and off STORAGE, not off the global -- the delete has to survive
               a write and a read to be the thing that loses somebody's data */
-           stored: localStorage.getItem(langKey('letters')) || '',
+           stored: slRd(langKey('letters')) || '',
            ids: LETTERS.map((x) => x.id).join(',') };
 });
 

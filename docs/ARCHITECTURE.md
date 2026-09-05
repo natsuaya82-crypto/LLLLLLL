@@ -57,7 +57,7 @@ locked door but `langLocked()` (`www/core.js`), asked at every saver.
 
 | thing | the truth is | read by |
 |---|---|---|
-| a language's words, letters, script, keyboard, world | **the `slice` rows on the server**, with `localStorage` under `lingua.<id>.<slice>` as the working copy that runs with no signal (OWNER DECISION 2026-08-26) | globals loaded at boot and on `langOpen()`; `netLangSync()` puts the two together |
+| a language's words, letters, script, keyboard, world | **the `slice` rows on the server, and nowhere else.** `LSL` in `www/core.js` holds them under `lingua.<id>.<slice>` while the app is RUNNING — memory, not this phone's disk 「今ファイルもいらん。オンラインのみで行こう」 OWNER 2026-09-04 | globals loaded on `langOpen()`; `netSaveUp()` sends a save, `netLangsDown()` brings a language back |
 | the timeline — a post, its photographs, its voice, reactions, follows, blocks, reports | **the server**, with `lingua.posts` as the copy that survives a bad network 「SNSは全部サーバー」 | `POSTS` (`www/post.js`) |
 | what was written and not sent | **the `draft` rows on the server**, with `lingua.drafts` as the copy | `DRAFTS` (`www/post.js`) |
 | the person — the handle, the display name, the profile picture | **the `profile` row on the server**, with `lingua.me` as the copy | `ME` (`www/me.js`) |
@@ -108,16 +108,15 @@ So, the order:
 
 ```
   the server        is the record          language + slice rows
-  localStorage      is the working copy    read at boot, written as you type,
-                                           and what makes the app work with no
-                                           signal 「制作はオフラインでも可能
-                                           次つながった時に更新される」
+  LSL (memory)      is what the app holds  filled by netLangsDown() at launch,
+                                           written as you type, sent by
+                                           netSaveUp() -- and gone when the
+                                           app closes 「オンラインのみで行こう」
 ```
 
-Nothing about how the code runs changes with that sentence: the globals are
-still read from `localStorage` at boot and every screen still writes there
-first. What changes is which one is **believed** when they differ — and the
-answer is neither, on purpose. `www/sync.js` adds both sides and lets neither
+What changes when the two differ is which one is **believed** — and the answer
+is neither, on purpose. **Two phones can still both be editing one language**,
+which is why `www/sync.js` did not go with the disk copy. `www/sync.js` adds both sides and lets neither
 win by being newer, because the cost of merging is a duplicate and the cost of
 choosing is somebody's word 「そりゃあ両方足すだろ」.
 

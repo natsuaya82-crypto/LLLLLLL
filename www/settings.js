@@ -502,15 +502,13 @@ function wipeLangsGo(){
      will not be in the index to be filled). Asking after the local keys were
      gone would be asking about a language this phone can no longer name. */
   netLangDrop(id);
-  try{
-    for(j=0;j<SLICES.length;j++){
-      localStorage.removeItem(langKeyOf(id, SLICES[j]));
-      /* and what this phone and the server last agreed that slice was. It is
-         filed beside the slice and goes with it: a record of a language that
-         is no longer here describes nothing. */
-      localStorage.removeItem(langWasKey(id, SLICES[j]));
-    }
-  }catch(e){}
+  for(j=0;j<SLICES.length;j++){
+    slRm(langKeyOf(id, SLICES[j]));
+    /* and what this phone and the server last agreed that slice was. It is
+       filed beside the slice and goes with it: a record of a language that
+       is no longer here describes nothing. */
+    slRm(langWasKey(id, SLICES[j]));
+  }
   /* Its row, and nothing else's. langStore() writes the index back out. */
   delete LANGS[id];
   langId='';

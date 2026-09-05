@@ -423,7 +423,19 @@ const R = await pg.evaluate(async () => {
   LANGS[langId] = { name: 'いまの言語', mine: true, sid: 'here-already', uid: A };
   langStore();
   const keepId = langId;
-  const keepWords = localStorage.getItem(langKeyOf(keepId, 'words'));
+  /* THIS LANGUAGE ALREADY HAS ITS WORDS AND HAS NO NAME SLICE, which is the
+     pair the claim is about. Until 2026-09-04 a slice lived in localStorage
+     and survived a launch, so netLangsDown() skipped a language whose id was
+     already in the index and there was nothing to ask. **A slice is in memory
+     now** (LSL in www/core.js): every launch starts with an index full of
+     languages and not one word in any of them, so skipping by id would be the
+     app showing somebody an empty dictionary and calling it theirs. What must
+     still not happen is the server's copy landing ON a slice this phone is
+     holding -- that is docs/DATA_SAFETY.md rule 2, and it is the half that
+     loses somebody's afternoon. */
+  slWr(langKeyOf(keepId, 'words'), '[{"hw":"うわがきされてはいけない"}]');
+  slRm(langKeyOf(keepId, 'lang'));
+  const keepWords = slRd(langKeyOf(keepId, 'words'));
   netGet = (path, ok) => {
     if (path.indexOf('/rest/v1/language?select=id,name') === 0)
       return ok([{ id: 'here-already', name: '上書きされてはいけない' },
@@ -441,9 +453,18 @@ const R = await pg.evaluate(async () => {
   if (langId !== keepId) no('13: 開いている言語が動いた — 立っていた場所が変わる');
   if (LANGS[keepId].name !== 'いまの言語')
     no('13: 既にある言語の名前が上書きされた — ' + JSON.stringify(LANGS[keepId].name));
-  if (localStorage.getItem(langKeyOf(keepId, 'words')) !== keepWords)
-    no('13: 既にある言語の単語が上書きされた ── これが「勝つ」ほう');
-  say('13: 既にある言語には一切触らない（名前も、単語も、開いている場所も）');
+  if (slRd(langKeyOf(keepId, 'words')) !== keepWords)
+    no('13: 既にある言語の単語が上書きされた ── これが「勝つ」ほう。前 ' +
+       JSON.stringify(String(keepWords).slice(0,40)) + ' → 後 ' +
+       JSON.stringify(String(slRd(langKeyOf(keepId, 'words'))).slice(0,40)));
+  /* AND THE OTHER HALF, which is the one 2026-09-04 added. A slice this phone
+     does NOT have comes down, on a language it already knows about. Without
+     it every launch is an empty dictionary. */
+  if (slRd(langKeyOf(keepId, 'lang')) !== 'むこうの言語')
+    no('13: 既にある言語の、欠けていたスライスが降りてこない ── ' +
+       JSON.stringify(slRd(langKeyOf(keepId, 'lang'))) +
+       '。写しがメモリになったので、起動のたびにこれが要る');
+  say('13: 既にある言語は、持っているスライスを上書きされず、欠けているスライスが埋まる');
 
   let far = '';
   for (const k in LANGS) if (LANGS[k] && LANGS[k].sid === 'far-lang') far = k;
@@ -451,9 +472,9 @@ const R = await pg.evaluate(async () => {
   else {
     if (LANGS[far].uid !== A) no('14: 降ろした言語に uid が付いていない');
     if (!LANGS[far].mine) no('14: 降ろした言語が自分のものになっていない');
-    if (localStorage.getItem(langKeyOf(far, 'words')) !== '[{"hw":"むこうの単語"}]')
+    if (slRd(langKeyOf(far, 'words')) !== '[{"hw":"むこうの単語"}]')
       no('14: 降ろした言語の単語が入っていない');
-    if (localStorage.getItem(langKeyOf(far, 'lang')) !== 'むこうの言語')
+    if (slRd(langKeyOf(far, 'lang')) !== 'むこうの言語')
       no('14: 降ろした言語の名前スライスが入っていない');
   }
   say('14: 端末に無い自分の言語は、スライスごと降りてくる');
@@ -466,7 +487,7 @@ const R = await pg.evaluate(async () => {
   start();
   netOut(); arrive(A);
   const ORPH = 'Lorphan';
-  localStorage.setItem(langKeyOf(ORPH, 'words'), '[{"hw":"残っていた単語"}]');
+  slWr(langKeyOf(ORPH, 'words'), '[{"hw":"残っていた単語"}]');
   const realMint = langMint;
   langMint = () => { LANGS[ORPH] = { name: '', mine: true }; return ORPH; };
   netGet = (path, ok) => {
@@ -480,9 +501,9 @@ const R = await pg.evaluate(async () => {
   netLangsDown(() => {});
   netGet = realGet; langMint = realMint;
 
-  if (localStorage.getItem(langKeyOf(ORPH, 'words')) !== '[{"hw":"残っていた単語"}]')
+  if (slRd(langKeyOf(ORPH, 'words')) !== '[{"hw":"残っていた単語"}]')
     no('15: 端末に既にあったスライスが降りてきたもので上書きされた ── 「勝つ」ほう');
-  if (localStorage.getItem(langKeyOf(ORPH, 'lang')) !== 'むこうの言語')
+  if (slRd(langKeyOf(ORPH, 'lang')) !== 'むこうの言語')
     no('15: 無かったスライスが埋められていない ── 埋めて止まる、の埋めるほう');
   say('15: 降ろす先に既にあるスライスは書かない。無いものだけ埋める');
 
@@ -1171,10 +1192,10 @@ const R = await pg.evaluate(async () => {
   langStore();
   const w30d = [{ hw: 'kano', ph: ['k'], mn: 'hill', mns: ['hill'], pos: 'n' }];
   try {
-    localStorage.setItem(langKeyOf('Lgo', 'words'), JSON.stringify(w30d));
-    localStorage.setItem(langKeyOf('Lgo', 'kb'), '{"lay":[]}');
-    localStorage.setItem(langKeyOf('Lstay', 'words'), JSON.stringify(w30d));
-    localStorage.setItem(langKeyOf('Lb', 'words'), JSON.stringify(w30d));
+    slWr(langKeyOf('Lgo', 'words'), JSON.stringify(w30d));
+    slWr(langKeyOf('Lgo', 'kb'), '{"lay":[]}');
+    slWr(langKeyOf('Lstay', 'words'), JSON.stringify(w30d));
+    slWr(langKeyOf('Lb', 'words'), JSON.stringify(w30d));
   } catch (e) {}
   POSTS = [{ id: 'p30d', ln: 'kano', at: 1 }]; savePosts();
   DRAFTS = [{ at: 1, ln: 'a draft', mn: '', to: '', pr: 0, pics: [], vo: null, pv: false }];
@@ -1187,15 +1208,15 @@ const R = await pg.evaluate(async () => {
 
   /* 消した言語の作ったものは、一つも残らない。 */
   for (const sl of SLICES)
-    if (localStorage.getItem(langKeyOf('Lgo', sl)))
+    if (slRd(langKeyOf('Lgo', sl)))
       no('30d: 消した言語の ' + sl + ' が残っている');
   if (LANGS['Lgo']) no('30d: 消した言語が索引に残っている');
   /* そして、それ以外は一つも動かない。 */
   if (!LANGS['Lstay']) no('30d: 同じアカウントの別の言語まで消えた');
   if (!LANGS['Lb']) no('30d: 別のアカウントの言語まで消えた');
-  if (!localStorage.getItem(langKeyOf('Lstay', 'words')))
+  if (!slRd(langKeyOf('Lstay', 'words')))
     no('30d: 同じアカウントの別の言語の単語が消えた');
-  if (!localStorage.getItem(langKeyOf('Lb', 'words')))
+  if (!slRd(langKeyOf('Lb', 'words')))
     no('30d: 別のアカウントの言語の単語が消えた ── 2026-09-03 の形');
   if (!POSTS.length) no('30d: 投稿が消えた');
   if (!DRAFTS.length) no('30d: 下書きが消えた');
@@ -1231,9 +1252,9 @@ const R = await pg.evaluate(async () => {
   LANGS['Lmine']  = { name: '自分', mine: true, uid: A };
   LANGS['Ltheirs']= { name: '他人', mine: true, uid: B };
   langId = 'Lmine';
-  localStorage.setItem(langKeyOf('Lmine', 'kb'),
+  slWr(langKeyOf('Lmine', 'kb'),
     JSON.stringify({ kbs: [{ rows: [] }] }));
-  localStorage.setItem(langKeyOf('Ltheirs', 'kb'),
+  slWr(langKeyOf('Ltheirs', 'kb'),
     JSON.stringify({ kbs: [{ rows: [] }, { rows: [] }] }));
   kbRead();
   const mineOnly = kbCount();
@@ -1309,14 +1330,14 @@ const R = await pg.evaluate(async () => {
   LANGS = { 'La': { name: 'A の言語', mine: true, uid: A },
             'Lb': { name: 'B の言語', mine: true, uid: B } };
   langId = 'La'; langName = 'A の言語';
-  try { localStorage.setItem(langKeyOf('La', 'words'),
+  try { slWr(langKeyOf('La', 'words'),
     JSON.stringify([{ hw: 'aaa', ph: ['a'], mn: 'A のことば', mns: ['A のことば'], pos: 'n' }])); } catch (e) {}
   arrive(B);
   langForAcct(true);
   if (langId === 'La') no('33: B でサインインしたのに A の言語が開いたまま');
   if (!langAcct(langId)) no('33: 開いた言語が B のものではない（' + langId + '）');
   if (!LANGS.La) no('33: A の言語が索引から消えた');
-  if (!localStorage.getItem(langKeyOf('La', 'words')))
+  if (!slRd(langKeyOf('La', 'words')))
     no('33: A の単語が消えた ── 隠すのであって消すのではない');
   /* そして A に戻ると、A の言語がそのまま返る。 */
   netOut(); arrive(A);
@@ -1403,7 +1424,7 @@ const R = await pg.evaluate(async () => {
   const w35 = [{ hw: 'aaa', ph: ['a'], mn: 'A のことば', mns: ['A のことば'], pos: 'n' }];
   LANGS = { 'Lu': { name: 'A が圏外で作った', mine: true } };   /* 印が無い */
   langId = 'Lu'; langName = 'A が圏外で作った';
-  try { localStorage.setItem(langKeyOf('Lu', 'words'), JSON.stringify(w35)); } catch (e) {}
+  try { slWr(langKeyOf('Lu', 'words'), JSON.stringify(w35)); } catch (e) {}
 
   /* 歩きの途中 ── まだ誰もサインインしていない。訊く相手がいないので、
      作ったものはその場の人のもの。 */
@@ -1426,7 +1447,7 @@ const R = await pg.evaluate(async () => {
 
   /* そして何も消えていない。 */
   if (!LANGS.Lu) no('35: 印の無い言語が索引から消えた');
-  if (!localStorage.getItem(langKeyOf('Lu', 'words')))
+  if (!slRd(langKeyOf('Lu', 'words')))
     no('35: 印の無い言語の単語が消えた ── 隠すのであって消すのではない');
 
   /* 印のある言語は持ち主には見え、他人には見えない。 */
@@ -1690,8 +1711,8 @@ const R = await pg.evaluate(async () => {
             Lb46: { name:'B の言語', mine:true, uid:'d46b' } };
   langId = 'La46'; langStore();
   try{
-    localStorage.setItem(langKeyOf('La46','words'), '[{"hw":"a"}]');
-    localStorage.setItem(langKeyOf('Lb46','words'), '[{"hw":"b"}]');
+    slWr(langKeyOf('La46','words'), '[{"hw":"a"}]');
+    slWr(langKeyOf('Lb46','words'), '[{"hw":"b"}]');
     localStorage.setItem('lingua.me.d46b', '{"name":"B"}');
     localStorage.setItem('lingua.posts.d46b', '[{"id":"pb"}]');
   }catch(e){}
@@ -1701,9 +1722,9 @@ const R = await pg.evaluate(async () => {
   window.confirm = wasConfirm;
 
   if (LANGS.La46) no('46: 消したアカウントの言語が索引に残っている');
-  if (localStorage.getItem(langKeyOf('La46','words'))) no('46: 消したアカウントの単語が残っている');
+  if (slRd(langKeyOf('La46','words'))) no('46: 消したアカウントの単語が残っている');
   if (!LANGS.Lb46) no('46: **別のアカウントの言語が消えた** ── これが起きたことです');
-  if (!localStorage.getItem(langKeyOf('Lb46','words'))) no('46: 別のアカウントの単語が消えた');
+  if (!slRd(langKeyOf('Lb46','words'))) no('46: 別のアカウントの単語が消えた');
   if (!localStorage.getItem('lingua.me.d46b')) no('46: 別のアカウントのプロフィールが消えた');
   if (!localStorage.getItem('lingua.posts.d46b')) no('46: 別のアカウントの投稿が消えた');
   if (SET.theme !== 'dark') no('46: この端末の設え（テーマ）まで消した');
@@ -1755,7 +1776,7 @@ const R = await pg.evaluate(async () => {
     netOut(); arrive(D);
     LANGS.Ld47 = { name: 'D の言語', mine: true, uid: D };
     langId = 'Ld47'; langStore();
-    try{ localStorage.setItem(langKeyOf('Ld47','words'), '[{"hw":"d"}]'); }catch(e){}
+    try{ slWr(langKeyOf('Ld47','words'), '[{"hw":"d"}]'); }catch(e){}
   };
 
   /* 47. サーバが答えないとき、端末は空にならない。 */
@@ -1767,7 +1788,7 @@ const R = await pg.evaluate(async () => {
   if (!LANGS.Ld47)
     no('47: **サーバが消していないのに端末の言語が消えた** ── 記録はサーバで、'
      + 'これは作ったものが消える向きの取り違えです');
-  if (!localStorage.getItem(langKeyOf('Ld47','words')))
+  if (!slRd(langKeyOf('Ld47','words')))
     no('47: **サーバが消していないのに端末の単語が消えた**');
   if (!netSignedIn())
     no('47: 消えていないのにログアウトした ── アカウントはまだそこにあります');
@@ -1786,7 +1807,7 @@ const R = await pg.evaluate(async () => {
   await settle49();
   unwire49();
   if (LANGS.Ld47) no('48: 続きの削除で、その言語が消えていない');
-  if (localStorage.getItem(langKeyOf('Ld47','words')))
+  if (slRd(langKeyOf('Ld47','words')))
     no('48: 続きの削除で、その単語が消えていない');
   if (netSignedIn()) no('48: 消え切ったのにセッションが残っている');
   say('48: 途中で切れた削除は、次に開いたときサーバが答えて消し切られる');
@@ -1826,7 +1847,7 @@ const R = await pg.evaluate(async () => {
   netOut();
   LANGS.Lx50 = { name: '印の無い言語', mine: true };
   langId = 'Lx50'; langStore();
-  try{ localStorage.setItem(langKeyOf('Lx50','words'), '[{"hw":"x"}]'); }catch(e){}
+  try{ slWr(langKeyOf('Lx50','words'), '[{"hw":"x"}]'); }catch(e){}
   srv49(() => 200);
   wipeAllGo();
   await settle49();
@@ -1834,7 +1855,7 @@ const R = await pg.evaluate(async () => {
   if (!LANGS.Lx50)
     no('50: **サインアウト中に削除を押したら、印の無い言語が消えた** ── '
      + 'サーバには何も頼んでいません');
-  if (!localStorage.getItem(langKeyOf('Lx50','words')))
+  if (!slRd(langKeyOf('Lx50','words')))
     no('50: **サインアウト中に削除を押したら、印の無い言語の単語が消えた**');
   say('50: サインアウト中に削除を押しても、頼む相手がいないので何も消えない');
 
@@ -1935,8 +1956,8 @@ const R = await pg.evaluate(async () => {
     no('53: **消したアカウントの世界（土地・人）がメモリに残っている**');
   saveKb(); saveWld();
   let k53 = null, w53 = null;
-  try{ k53 = localStorage.getItem(langKey('kb')); }catch(e){}
-  try{ w53 = localStorage.getItem(langKey('wld')); }catch(e){}
+  try{ k53 = slRd(langKey('kb')); }catch(e){}
+  try{ w53 = slRd(langKey('wld')); }catch(e){}
   if (k53 && k53.indexOf('消される人') >= 0)
     no('53: **消したアカウントのキーボードが、次の言語に書き込まれた**');
   if (w53 && w53.indexOf('消される人') >= 0)

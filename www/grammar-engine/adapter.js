@@ -47,10 +47,19 @@
   function fromLegacy(languageId, legacyWords, legacySet){ legacySet=legacySet||{}; return api.languageModel({languageId:languageId||null,wordOrder:legacySet.order||'SOV',words:words(legacyWords),metadata:{source:'legacy-adapter',legacyGrammarVersion:1}}); }
   /* How a language is filed is core.js's to say, and it says it in one place.
      langKey(slice) answers for the language that is open; this model names
-     the language it belongs to, so it asks for that one by id. */
+     the language it belongs to, so it asks for that one by id.
+
+     AND WHERE IT SITS IS core.js's TOO. A slice is in memory rather than on
+     this phone's disk (CLAUDE.md rule 22, 2026-09-04), and slRd/slWr are the
+     two functions that reach it. They are put behind the getItem/setItem face
+     this module already takes, so it goes on knowing nothing about either --
+     it is written to be given a store and this is the store it is given. The
+     default was `localStorage`, which after that change is the one place a
+     language would still have been left on the phone. */
+  function slice(){ return { getItem: root.slRd, setItem: root.slWr }; }
   function key(languageId){ return langKeyOf(languageId,'gram2'); }
-  function load(languageId, storage){ var raw; storage=storage||root.localStorage; if(!storage||!languageId) return null; try{ raw=storage.getItem(key(languageId)); return raw?api.languageModel(JSON.parse(raw)):null; }catch(e){ return null; } }
-  function save(model, storage){ storage=storage||root.localStorage; if(!storage||!model||!model.languageId) throw new Error('Grammar v2 model needs languageId and storage'); storage.setItem(key(model.languageId),JSON.stringify(model)); return model; }
+  function load(languageId, storage){ var raw; storage=storage||slice(); if(!storage||!languageId) return null; try{ raw=storage.getItem(key(languageId)); return raw?api.languageModel(JSON.parse(raw)):null; }catch(e){ return null; } }
+  function save(model, storage){ storage=storage||slice(); if(!storage||!model||!model.languageId) throw new Error('Grammar v2 model needs languageId and storage'); storage.setItem(key(model.languageId),JSON.stringify(model)); return model; }
   /* The dictionary alone, without a model around it. A stored model does not
      carry its words -- they are rebuilt from the dictionary every time it is
      read -- so the one that reads it needs this half on its own. fromLegacy()

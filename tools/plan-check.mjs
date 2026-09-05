@@ -40,7 +40,7 @@ const r = await pg.evaluate(({ s }) => {
      and forgotten is a slice this check would stop looking at. */
   function bytes(){
     var o = {}, i;
-    for (i = 0; i < SLICES.length; i++) o[SLICES[i]] = localStorage.getItem(langKey(SLICES[i]));
+    for (i = 0; i < SLICES.length; i++) o[SLICES[i]] = slRd(langKey(SLICES[i]));
     o['@langs'] = localStorage.getItem('lingua.langs');
     return JSON.stringify(o);
   }
@@ -231,7 +231,7 @@ const r = await pg.evaluate(({ s }) => {
      unstamped one seeded here is not in this person's ceiling at all --
      which is the thing this claim is about. */
   LANGS['l_other'] = { nm: 'Other', uid: 'u' };
-  localStorage.setItem(langKeyOf('l_other', 'kb'), JSON.stringify(
+  slWr(langKeyOf('l_other', 'kb'), JSON.stringify(
     { kbs: [{ nm:'', pat:'qwerty', lay: kbFixed().lay },
             { nm:'', pat:'qwerty', lay: kbFixed().lay }], at: 0 }));
   out.kbPool = kbCount();                        /* 3 */
@@ -241,11 +241,11 @@ const r = await pg.evaluate(({ s }) => {
      not nothing: kbBoardsOf() reads either shape, and counting only the new
      one would hand somebody a free keyboard for every language they made
      before this. */
-  localStorage.setItem(langKeyOf('l_other', 'kb'), JSON.stringify(
+  slWr(langKeyOf('l_other', 'kb'), JSON.stringify(
     { lay: kbFixed().lay }));
   out.kbPoolOld = kbCount();                     /* 2 */
   delete LANGS['l_other'];
-  localStorage.removeItem(langKeyOf('l_other', 'kb'));
+  slRm(langKeyOf('l_other', 'kb'));
   KB = null; saveKb();
   SET.plan = 'free'; save();
 
@@ -426,9 +426,9 @@ const r = await pg.evaluate(({ s }) => {
      for is exactly that -- the keyboard was in no backup at all for a while,
      and a count went on saying the right number while it was. */
   SLICES.forEach(function(sl){
-    if (localStorage.getItem(langKey(sl)) === null)
-      localStorage.setItem(langKey(sl), '[]');
-    localStorage.removeItem(langWasKey(langId, sl));
+    if (slRd(langKey(sl)) === null)
+      slWr(langKey(sl), '[]');
+    slRm(langWasKey(langId, sl));
   });
   function sentOn(p){
     var got = [], realSend = netSend, realRow = netLangRow, realSlices = netSlices;
@@ -446,7 +446,7 @@ const r = await pg.evaluate(({ s }) => {
     NET_SYNCING = false;
     /* what was sent has just been agreed, so a second call would have nothing
        to say -- put the record back, so both plans are asked one question */
-    SLICES.forEach(function(sl){ localStorage.removeItem(langWasKey(langId, sl)); });
+    SLICES.forEach(function(sl){ slRm(langWasKey(langId, sl)); });
     return got.sort().join(' ');
   }
   out.bkPaidKeys = sentOn('pro');
@@ -689,7 +689,7 @@ const r = await pg.evaluate(({ s }) => {
   /* and the open one still holds every slice it held. There is no file to
      write now, so what is asked is storage itself. */
   out.threeBackup = SLICES.some(function(sl){
-    return localStorage.getItem(langKey(sl)) !== null; });
+    return slRd(langKey(sl)) !== null; });
 
   /* The fourth is the only thing refused. */
   toastClear();
