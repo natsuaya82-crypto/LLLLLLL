@@ -111,6 +111,28 @@ const R = await pg.evaluate(() => {
     fails.push('the post carries no ink, so nothing below this is a test of anything');
   const wrote = shapes(itemsFor('p', 'pcard').items);
 
+  /* ---- imported letters (sh only, no st) are drawn too --------------- */
+  /* A letter brought in from a PDF import carries `sh` -- a ring -- and no
+     `st` at all (www/sheet.js's ltNew via 'write'). postCut() and
+     postCutTyped() used to read `l.st` by hand, so a line spelled with one
+     of these letters carried no ink: postInkOK() saw nothing on it and the
+     post fell back to plain text. inkGeo(l) is the one place that already
+     knows a letter's shape is either st or sh; postCut/postCutTyped have to
+     ask it instead. */
+  LETTERS.push({ id: 'lsh', sh: [[[100, 100], [700, 100], [700, 700], [100, 700]]],
+                 ch: '', nm: 'zz', snd: [] });
+  const shInk = postInk('zz');
+  if (!shInk || !shInk.g.length)
+    fails.push('a letter imported with only sh (no st) is not drawn into a ' +
+               "post's ink -- postCut() must ask inkGeo(l), not l.st");
+  const shIdx = ltPuaOrder().map((l) => l.id).indexOf('lsh');
+  const typedInk = shIdx >= 0 ? postInkTyped(ltPua(shIdx)) : null;
+  if (!typedInk || !typedInk.g.length)
+    fails.push('a letter imported with only sh (no st) is not drawn when ' +
+               'typed through the keyboard -- postCutTyped() must ask ' +
+               'inkGeo(l), not l.st');
+  LETTERS.pop();
+
   /* ---- 2. and then the language moves under it ---------------------- */
   /* Every drawn letter is redrawn as one straight line nothing else uses, and
      the word it was spelled with is deleted. If the card still spells the post

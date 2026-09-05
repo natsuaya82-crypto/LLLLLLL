@@ -1722,13 +1722,14 @@ function postAvatar(){
    that way: a letter called `ka` must be found before the letter called `k`,
    or nothing longer than one character is ever drawn. */
 function postCut(ln){
-  var names=[], i, l, n;
+  var names=[], i, l, n, geo;
   for(i=0;i<LETTERS.length;i++){
     l=LETTERS[i];
-    if(!l.st || !l.st.length) continue;
+    geo=inkGeo(l);
+    if(!geo || !geo.length) continue;
     n=String(ltName(l)||'');
     if(!n) continue;
-    names.push({n:n, st:l.st});
+    names.push({n:n, st:geo});
   }
   names.sort(function(a, b){ return b.n.length-a.n.length; });
   var s=String(ln||''), out=[], txt='', at=0, j, hit;
@@ -1767,7 +1768,7 @@ function postCutTyped(raw){
     at=s.charCodeAt(i)-PUA0;
     if(at>=0 && at<lts.length){
       if(txt){ cut.push({t:txt}); txt=''; }
-      cut.push({st:lts[at].st});
+      cut.push({st:inkGeo(lts[at])});
     } else txt+=s.charAt(i);
   }
   if(txt) cut.push({t:txt});
