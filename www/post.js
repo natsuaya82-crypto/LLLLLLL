@@ -1631,35 +1631,41 @@ function pwSendWith(ln, pics, vo){
      draft still goes: private is what the POST is, and the draft was never a
      way of storing one. */
   if(PW.did){ netDraftDrop(PW.did); PW.did=''; }
-  /* And it is told to the server, which today is told nothing. It is not
-     waited on: the post is on this phone the moment it is written, and a
-     person in a tunnel is still using this app. */
   /* A post kept to yourself is never told to anybody. It is the one post
      that does not go through this door at all -- not "sent and hidden",
      which is a flag somebody else's server has to be trusted with. */
-  /* And the failure is SAID. It was `function(){}` -- so a post the server
-     refused was a post that looked sent, on a screen that looked right, and
-     nothing anywhere could tell you otherwise. That is the app being
-     half-online, which is the one thing it may not be. The post itself is
-     never lost either way: it is already in POSTS and postCatchUp() keeps
-     trying. 「spl流したのにまだ投稿載らんの？」
-
-     Here and not in postCatchUp(): this is the moment somebody pressed the
-     button, so this is the moment they are owed an answer. The retries
-     happen behind a timeline being read and must stay quiet. */
-  /* postSend() and not netPush(): the press is one of the two roads a post
-     goes up by, and both have to be behind the same one-send-at-a-time mark
-     or the window is still open from this side. */
-  if(!mine.pv)
-    postSend(mine, function(sid){ postSid(mine, sid); },
-            /* The toast and nothing else. Nothing on the screen changed: the
-               post has been drawn as not-sent since the moment it was
-               written, and it still is. A render() here would be the answer
-               to a request redrawing a screen somebody has since moved on
-               from. */
-            function(d, s){ toast(netWhy(d, s)); });
+  /* AND IT IS WAITED ON, WITH A SPINNER, AND SAID WHEN IT IS DONE.
+     「投稿した後に投稿しましたって出ないと…投稿する時もくるくる入れて欲しい」
+     OWNER 2026-09-05. It used to fire postSend() and move straight to the
+     feed with nothing on screen but the post drawn as not-yet-sent -- pwSendPost()
+     is the one place that waits for the answer, so this function only starts
+     it. The post itself is never lost either way: it is already in POSTS and
+     postCatchUp() keeps trying if the app is closed before an answer comes
+     back. 「spl流したのにまだ投稿載らんの？」 */
+  if(!mine.pv) pwSendPost(mine);
   PW=pwBlank();
   goTab('feed');
+}
+/* postSend() and not netPush(): the press is one of the two roads a post goes
+   up by, and both have to be behind the same one-send-at-a-time mark or the
+   window is still open from this side.
+
+   netSpin() covers the screen while this is out, which is the whole reason it
+   is a function of its own rather than a line inside pwSendWith(): a retry
+   pressed from the popup below calls this again, on the exact post, and has
+   to spin and answer exactly the same way the first press did. */
+function pwSendPost(p){
+  netSpin(true);
+  postSend(p, function(sid){
+    netSpin(false);
+    postSid(p, sid);
+    toast(t('post.sent'));
+  }, function(d, s, m){
+    netSpin(false);
+    /* 通信が落ちたら何も進まない ── netPop() (www/net.js) が pullRun()
+       (sns.js) と同じ道で失敗を出し、［再接続］は同じ投稿をもう一度送る。 */
+    netPop(d, s, m, function(){ pwSendPost(p); });
+  });
 }
 
 /* The face a post carries: one letter of the language it is written in, cut
@@ -1722,13 +1728,14 @@ function postAvatar(){
    that way: a letter called `ka` must be found before the letter called `k`,
    or nothing longer than one character is ever drawn. */
 function postCut(ln){
-  var names=[], i, l, n;
+  var names=[], i, l, n, geo;
   for(i=0;i<LETTERS.length;i++){
     l=LETTERS[i];
-    if(!l.st || !l.st.length) continue;
+    geo=inkGeo(l);
+    if(!geo || !geo.length) continue;
     n=String(ltName(l)||'');
     if(!n) continue;
-    names.push({n:n, st:l.st});
+    names.push({n:n, st:geo});
   }
   names.sort(function(a, b){ return b.n.length-a.n.length; });
   var s=String(ln||''), out=[], txt='', at=0, j, hit;
@@ -1767,7 +1774,7 @@ function postCutTyped(raw){
     at=s.charCodeAt(i)-PUA0;
     if(at>=0 && at<lts.length){
       if(txt){ cut.push({t:txt}); txt=''; }
-      cut.push({st:lts[at].st});
+      cut.push({st:inkGeo(lts[at])});
     } else txt+=s.charAt(i);
   }
   if(txt) cut.push({t:txt});
@@ -1821,17 +1828,11 @@ function migratePostInk(){
    OWNER 2026-09-05 単語はその単語の意味を 文法は並べ替えた単語たちが文章として
    成り立つように
 
-   Two things now, not three. The writer's own letters, and what the line
-   means -- and what it means is built here, out of the dictionary and the
-   grammar, by `pwMn()` when the post is written.
-
-   `postTr()` and TR_SEAM are gone. They were a third layer: the meaning
-   handed to a translator on the device, frozen onto the post as `tr`, and
-   said back to a reader in their own language. Nothing was ever behind it --
-   the function answered `done(null)`, no post ever carried a `tr`, and
-   `postSay()` read a field that was never written. 「きかいほんやくはつかわ
-   ない」, so it is deleted rather than left waiting for a machine that is not
-   coming, and the meaning a post carries is the one the app worked out. */
+   Two things. The writer's own letters, and what the line means -- and what
+   it means is built here, out of the dictionary and the grammar, by `pwMn()`
+   when the post is written. 「きかいほんやくはつかわない」 OWNER 2026-09-05:
+   a post's meaning is worked out by this app, on this phone, and nothing is
+   asked of a machine anywhere else. */
 /* What a post says to the person reading it: their own language if the post
    carries it, and otherwise the one the author typed. Never empty -- a line
    nobody can read is not a post. */
@@ -3373,21 +3374,29 @@ function postDel(id){
   popAsk(t('post.del.q'), function(){ postDelGo(id); }, t('pop.yes'));
 }
 function postDelGo(id){
-  var i, gone=null, vo=null, to='', up;
+  var i, gone=null;
+  for(i=0;i<POSTS.length;i++) if(POSTS[i].id===id){ gone=POSTS[i]; break; }
   PMENU='';
-  for(i=0;i<POSTS.length;i++) if(POSTS[i].id===id){
-    gone=POSTS[i]; vo=gone.vo; to=gone.to||''; POSTS.splice(i, 1); break;
-  }
+  render();
+  if(!gone) return;
+  /* 消えるのはサーバーから消えた時だけ ── 落ちて何も言わず画面からだけ消える
+     のは「消えたつもり」を作る。netPop() (www/net.js) が pullRun() (sns.js)
+     と同じ道で失敗を出し、［再接続］は同じ削除をもう一度投げる。 */
+  netDrop(gone, function(){ postDelDone(gone); }, function(d, s, m){
+    netPop(d, s, m, function(){ postDelGo(id); });
+  });
+}
+function postDelDone(gone){
+  var i, up, to=gone.to||'';
+  for(i=0;i<POSTS.length;i++) if(POSTS[i]===gone){ POSTS.splice(i, 1); break; }
   /* Under both names, for the reason postTake() gives about `have`: this
      phone knows it as the id it wrote, and the timeline hands it back wearing
      the server's. netRow() sets p.id and p.sid to the same server id, so the
      first of these is what actually catches it -- the second is there because
      the day a row arrives under one name and not the other, this still
      holds. */
-  if(gone){
-    POST_GONE[id]=1;
-    if(gone.sid) POST_GONE[gone.sid]=1;
-  }
+  POST_GONE[gone.id]=1;
+  if(gone.sid) POST_GONE[gone.sid]=1;
   /* A reply counted one on the post it answered, and deleting it never took
      that one back -- so a post somebody replied to and then deleted the reply
      from said "1" forever, pointing at nothing.
@@ -3400,8 +3409,8 @@ function postDelGo(id){
     if(up) up.re=Math.max(0, (up.re||0)-1);
   }
   savePosts();
-  if(vo && vo.f) voDropFile(vo.f);
-  netDrop(gone, function(){}, function(){});
+  if(gone.vo && gone.vo.f) voDropFile(gone.vo.f);
+  toast(t('post.del.ok'));
   if(here().r==='form') back();
   render();
 }

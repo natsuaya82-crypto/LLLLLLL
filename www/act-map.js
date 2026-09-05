@@ -51,10 +51,11 @@ act('adminGo', adminGo);
    the screen already does on every open, so the button was a second way to do
    what opening the page does. adminLoad() itself is still what goAdmin() and
    adminGo() call; it is no longer a thing anybody presses.
-   The reports screen keeps its own, which is modLoad below. */
+   The reports screen had one too and it is gone the same way: a screen is
+   asked again by pulling it down -- www/sns.js § WHICH SCREENS ANSWER A
+   PULL, and modAsk() in www/mod.js is what it asks. */
 act('adminStaffAdd', adminStaffAdd);
 act('adminStaffDrop', adminStaffDrop);
-act('modLoad', modLoad);
 act('modDown', modDown);
 act('modUp', modUp);
 act('modOut', modOut);
@@ -298,6 +299,8 @@ act('wRelOff', wRelOff);
 act('wdMnOpen', wdMnOpen);
 act('wdExOpen', wdExOpen);
 act('stExOpen', stExOpen);
+act('openStRules', openStRules);
+act('openStEx', openStEx);
 act('wdDelEx', wdDelEx);
 act('wdDelMn', wdDelMn);
 act('wdDerive', wdDerive);
@@ -354,7 +357,6 @@ actIn('addFmSet', addFmSet);
 actIn('ipaSetQ', ipaSetQ);
 actIn('ltSetQ', ltSetQ);
 actIn('fmrSetAdd', fmrSetAdd);
-actIn('fmrSetWend', fmrSetWend);
 act('fmPick', fmPick);
 act('fmSay', fmSay);
 act('fmOpen', fmOpen);
@@ -364,11 +366,9 @@ act('posPick', posPick);
 act('fmrNew', fmrNew);
 act('fmrAddAll', fmrAddAll);
 act('openFmr', openFmr);
-act('fmrDel', fmrDel);
+act('fmrAsk', fmrAsk);
 act('fmrAdd', fmrAdd);
 act('fmrSetAt', fmrSetAt);
-act('fmrSetDrop', fmrSetDrop);
-act('fmrSetWhen', fmrSetWhen);
 act('regPick', regPick);
 actKey('fmNew', fmNew);
 actIn('wdSetTags', wdSetTags);

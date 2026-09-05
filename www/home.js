@@ -358,13 +358,56 @@ function pfList(){
   mine.sort(function(a, b){ return (b.pin?1:0)-(a.pin?1:0); });
   return mine;
 }
+/* The three lists, in the order they stand in. ONE list: the row of buttons
+   is built from it and the swipe below walks it, so a fourth list added here
+   is a fourth list you can reach either way. */
+var PF_TABS=[['posts','prof.posts'], ['re','prof.replies'], ['li','prof.likes']];
 function pfTabs(){
-  var tabs=[['posts','prof.posts'], ['re','prof.replies'], ['li','prof.likes']];
-  return '<div class="pftabs">'+tabs.map(function(x){
+  return '<div class="pftabs">'+PF_TABS.map(function(x){
     return '<button class="pftab'+(pfTab===x[0]?' on':'')+'"' + DO('pfSetTab', [x[0]]) + '>'+
       esc(t(x[1]))+'</button>';
   }).join('')+'</div>';
 }
+/* ---- AND THE SAME THREE, PAID ACROSS -----------------------------------
+   「スライドで投稿返信いいねの行き来」 OWNER 2026-09-05.
+
+   The neighbour, or nothing. The ends do not wrap: a page that jumps from
+   the last list to the first under a thumb is a page that has moved and
+   nobody can say where to. */
+function pfStep(way){
+  var i, at=-1;
+  for(i=0;i<PF_TABS.length;i++) if(PF_TABS[i][0]===pfTab) at=i;
+  if(at<0) return;
+  at=at+way;
+  if(at<0 || at>=PF_TABS.length) return;
+  pfSetTab(PF_TABS[at][0]);
+}
+/* WHERE THE THUMB WENT DOWN. Not within a thumb's width of either edge --
+   that is the gesture that goes BACK, and www/shell.js § swStart owns it.
+   Asking here rather than letting both run is what keeps one thumb from
+   meaning two things. */
+var PF_X=0, PF_Y=0, PF_SW=false;
+function pfSwDown(e){
+  PF_SW=false;
+  if(!e.isPrimary || here().r!=='profile') return;
+  if(e.clientX<=30 || e.clientX>=(window.innerWidth||0)-30) return;
+  PF_X=e.clientX; PF_Y=e.clientY; PF_SW=true;
+}
+/* And it is decided when the thumb LEAVES, not while it moves: nothing here
+   ever takes the page away from the browser, so a thumb heading down the
+   list scrolls it exactly as it did before. What makes it a move sideways is
+   40px across AND more across than down. */
+function pfSwUp(e){
+  if(!PF_SW) return;
+  PF_SW=false;
+  if(here().r!=='profile') return;
+  var dx=e.clientX-PF_X, dy=e.clientY-PF_Y;
+  if(Math.abs(dx)<40 || Math.abs(dx)<=Math.abs(dy)) return;
+  pfStep(dx<0? 1 : -1);
+}
+document.addEventListener('pointerdown', pfSwDown, {passive:true});
+document.addEventListener('pointerup', pfSwUp, {passive:true});
+document.addEventListener('pointercancel', function(){ PF_SW=false; }, {passive:true});
 function vProfile(){
   var list=pfList();
   /* Who this page is about, asked for when it is somebody else -- the same

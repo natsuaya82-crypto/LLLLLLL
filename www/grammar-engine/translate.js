@@ -18,12 +18,11 @@
    the same thing under "A post shown three ways", layer three.
 
    Nothing here is frozen onto a post and nothing here waits on a hosted
-   model. Both directions are computed now, offline, costing nothing, and it
-   is right that they are not frozen: a line that half-rendered yesterday
-   renders fully today because the dictionary grew. docs/FEATURES.md calls
-   freezing a translation onto a post the bug, and the seam that was going to
-   do it -- postTr() in www/post.js -- is deleted. 「きかいほんやくはつかわない」
-   OWNER 2026-09-05.
+   model. 「きかいほんやくはつかわない」 OWNER 2026-09-05. Both directions are
+   computed now, offline, costing nothing, and it is right that they are not
+   frozen: a line that half-rendered yesterday renders fully today because the
+   dictionary grew. docs/FEATURES.md calls freezing a translation onto a post
+   the bug.
 
    DOM-free and globals-free, like lexicon.js beside it. */
 (function(root){

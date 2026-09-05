@@ -73,23 +73,18 @@ var SETS=[
   {id:'data',  k:'set.data'},
   {id:'ui',    k:'set.display'}
 ];
-/* Which account this is, in one row. Apple and Google are names and are not
-   translated, and there is no address of ours to show for either -- what
-   Apple hands over may be a relay address, and neither is something somebody
-   signs in WITH here.
+/* Which account this is, in one row. The address IS the answer, whichever
+   door was used to sign in: Apple and Google both hand one over, and it is
+   what everything else in this app files a person under.
 
-   An email account is the row the other way round: the address IS the
-   answer, so the row is called Email and the address is what it says. Two
-   rows -- one saying "Email" and one saying "Email: the address" -- was the
-   same word twice, which was the first way this was written.
-
-   A token this phone could not read falls through to the plain word, which
-   is a state and not a failure. */
+   A token this phone could not read has no address on it, and only then does
+   the row fall through to the name of the door -- which is a state and not a
+   failure. */
 function setWhoRow(){
   var h=netHow(), m=netMail(), lab=t('set.account'), val=t('set.account.on');
-  if(h==='apple')  val='Apple';
+  if(m){ lab=t('set.mail'); val=m; }
+  else if(h==='apple')  val='Apple';
   else if(h==='google') val='Google';
-  else if(m){ lab=t('set.mail'); val=m; }
   return '<button class="set"><span class="sl">'+esc(lab)+'</span>'+
     '<span class="sv">'+esc(val)+'</span></button>';
 }

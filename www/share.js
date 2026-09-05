@@ -52,10 +52,24 @@ var SHARE_BOX=800;
 
    The try is glyphContours': a stroke of one point on top of itself has no
    hull and it says so by throwing. */
+/* `inkGeo()` and not `l.st`, which is the same sentence letters.js § ltInk
+   and numbers.js already say: a letter brought in on a PAPER SHEET carries
+   its picture as `sh`, and inkGeo() is the one place that knows a letter's
+   shape may be either. inkDef() is the one place that knows which of the two
+   it was handed -- installScriptFont() builds the font through that same
+   pair, so a letter that has a glyph in the font has a shape here.
+
+   IT ASKED `l.st` AND sharePua() ASKED inkGeo(), AND THAT GAP IS WHAT PUT AN
+   EMOJI ON A KEY. A digit drawn on a sheet was 「drawn」 to ltPuaOrder(), so
+   it was given a private use code point; it was 「not drawn」 to this, so no
+   shape went with it. The key crossed carrying U+E002 and nothing to draw,
+   and KeyBoardView.swift falls back to `key.ch ?? key.t` -- which iOS renders
+   as the old SoftBank emoji. 「1のキーが絵文字で出る」 Nothing threw: the
+   file was written, the keyboard drew, and the 1 key was a girl. */
 function shareInk(l){
-  var cs;
-  if(!l || !l.st || !l.st.length) return null;
-  try{ cs=LinguaFont.glyphContours({strokes:l.st}, GPEN); }catch(e){ return null; }
+  var g=inkGeo(l), cs;
+  if(!g) return null;
+  try{ cs=LinguaFont.glyphContours(inkDef(g), GPEN); }catch(e){ return null; }
   return (cs && cs.length)? cs : null;
 }
 /* WHAT A KEY PUTS IN THE DOCUMENT.
@@ -119,7 +133,7 @@ function shareFace(id){
        its row, and shareKey() writes it over whatever the face put there.
        Two different widths cannot share a name in a file where the key and
        the face it wears are one object. */
-    a=inkAdv(l.st);
+    a=inkAdv(inkGeo(l));
     if(a){ o.aw=a.w; o.dx=a.dx; }
   }
   else if(l.ch) o.ch=l.ch;

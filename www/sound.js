@@ -155,7 +155,7 @@ function abScale(f){
   saveLetters(); installScriptFont(); render();
 }
 function vAbugida(){
-  var vs=wsVows(), cs=wsCons(), v=abVowel();
+  var vs=wsVows(), cs=wsCons(), v=abVowel(), vl=ltMain(v);
   if(!wsHasMarks())
     return '<div class="view">'+navTop('')+'<div class="body">'+
       '<div class="note">'+t('ab.notabugida')+'</div>'+
@@ -175,7 +175,8 @@ function vAbugida(){
             '<button' + DO('abNudge', [0, 1]) + ' aria-label="'+esc(t('ab.down'))+'">'+ICON_ARR_D+'</button>'+
             '<button' + DO('abScale', [1.25]) + '>'+t('ab.bigger')+'</button>'+
             '<button' + DO('abScale', [0.8]) + '>'+t('ab.smaller')+'</button>'+
-            '<button' + DO('editGlyph', [v]) + '>'+ICON_PEN+t('ab.draw')+'</button>'+
+            ((vl && vl.sh && vl.sh.length)? '' :
+              '<button' + DO('editGlyph', [v]) + '>'+ICON_PEN+t('ab.draw')+'</button>')+
           '</div></div>'+
         '<div class="sec">'+t('ab.every', v)+'</div>'+
         (cs.length
