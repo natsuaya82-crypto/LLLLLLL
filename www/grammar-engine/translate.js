@@ -98,6 +98,7 @@
     var p=unit.word?unit.word.partOfSpeech:null;
     if(p==='VERB') return 'VERB';
     if(p==='ADJECTIVE') return 'ADJECTIVE';
+    if(p==='ADVERB') return 'ADVERB';
     if(p==='ADPOSITION') return 'ADPOSITION';
     if(NOMINAL[p]) return 'NOMINAL';
     return 'LOOSE';
@@ -139,10 +140,20 @@
   function arrange(model, units){
     var order=(model&&model.wordOrder&&model.wordOrder.length)?model.wordOrder:['SUBJECT','OBJECT','VERB'],
         negIds=markedIds(model,'NEGATION'), adpIds=markedIds(model,'ADPOSITION'),
-        kinds=[], adjs=[], adps=[], negs=[], loose=[], noms=[], verb=-1,
+        kinds=[], adjs=[], adps=[], advs=[], negs=[], loose=[], noms=[], verb=-1,
         adjPos=positionOf(model,'ADJECTIVE'), adpPos=positionOf(model,'ADPOSITION'),
-        negPos=positionOf(model,'NEGATION'),
+        negPos=positionOf(model,'NEGATION'), onBoard={}, adpHead={},
         i, j, k, slots=[], si=0, role, roleOf=[], head, out=[], phrase, extra=[], seen={};
+
+    /* WHICH ROLES ARE ON THE BOARD. The word order used to be exactly three
+       roles, so everything else had a place worked out from one of them --
+       an adverb after the sentence, the negation beside the verb, an
+       adposition inside the noun phrase it governs. A role somebody has put
+       on the board says WHERE IT STANDS instead, and a role they have not
+       put there behaves exactly as it did. 「無い役割は台に無ければ今まで
+       通り」 -- so this is one question asked once, and every place below
+       reads it rather than deciding again. */
+    for(i=0;i<order.length;i++) onBoard[order[i]]=true;
 
     for(i=0;i<units.length;i++) kinds.push(kindOf(model,units[i],negIds,adpIds));
     for(i=0;i<units.length;i++){
@@ -152,8 +163,9 @@
     }
     for(i=0;i<units.length;i++){
       if(kinds[i]==='ADJECTIVE'){ j=attach(kinds,i); if(j<0) loose.push(i); else adjs.push({at:i, to:j}); }
-      else if(kinds[i]==='ADPOSITION'){ j=attach(kinds,i); if(j<0) loose.push(i); else adps.push({at:i, to:j}); }
-      else if(kinds[i]==='NEGATION'){ if(verb<0) loose.push(i); else negs.push(i); }
+      else if(kinds[i]==='ADPOSITION'){ j=attach(kinds,i); if(j<0) loose.push(i); else { adps.push({at:i, to:j}); adpHead[j]=1; } }
+      else if(kinds[i]==='NEGATION'){ if(verb<0 && !onBoard.NEGATION) loose.push(i); else negs.push(i); }
+      else if(kinds[i]==='ADVERB'){ if(onBoard.ADVERB) advs.push(i); else loose.push(i); }
       else if(kinds[i]==='LOOSE') loose.push(i);
     }
 
@@ -170,7 +182,16 @@
        to state -- a SOURCE/ORDER rule on the model overrides it without
        touching anything here. */
     slots=srcOrder(model);
-    for(i=0;i<noms.length;i++){ role=slots[si++]; roleOf[noms[i]]=role||'MODIFIER'; }
+    /* A NOUN AN ADPOSITION GOVERNS IS THE PHRASE, not a role in the queue.
+       「場所（前置詞句）」 is the whole of `lon telo`, so when that card is on
+       the board the noun goes with the adposition and takes no turn in the
+       subject/object queue -- otherwise the same word stands in two places
+       and one of them is empty. With the card off the board nothing here
+       happens and the noun queues as it always did. */
+    for(i=0;i<noms.length;i++){
+      if(onBoard.ADPOSITION && adpHead[noms[i]]){ roleOf[noms[i]]='ADPOSITION'; continue; }
+      role=slots[si++]; roleOf[noms[i]]=role||'MODIFIER';
+    }
 
     function phraseOf(at, role){
       var mine=[], theirs=[], p=[], q;
@@ -184,21 +205,54 @@
     }
     function verbPhrase(){
       var p=[], q;
-      if(verb<0){ for(q=0;q<negs.length;q++) loose.push(negs[q]); negs=[]; return; }
-      p=(negPos==='before')?negs.slice():[];
+      if(verb<0){
+        if(!onBoard.NEGATION){ for(q=0;q<negs.length;q++) loose.push(negs[q]); negs=[]; }
+        return;
+      }
+      /* The negation stands beside the verb only while nobody has said where
+         it stands. Its own card on the board is that saying, and then the
+         verb phrase is the verb. */
+      p=(!onBoard.NEGATION && negPos==='before')?negs.slice():[];
       p.push(verb);
-      if(negPos!=='before') p=p.concat(negs);
+      if(!onBoard.NEGATION && negPos!=='before') p=p.concat(negs);
       for(q=0;q<p.length;q++){ seen[p[q]]=1; out.push(tag(units[p[q]],'VERB')); }
     }
+    /* A card whose words are simply a run of units -- the adverbs, or the
+       negation once it has a place of its own. They come out in the order
+       they were written, which is the only order anybody stated. */
+    function runOf(list, role){
+      var q;
+      for(q=0;q<list.length;q++) if(!seen[list[q]]){ seen[list[q]]=1; out.push(tag(units[list[q]], role)); }
+    }
 
-    for(i=0;i<noms.length;i++) if(roleOf[noms[i]]==='MODIFIER') extra.push(noms[i]);
     for(i=0;i<order.length;i++){
       role=order[i];
       if(role==='VERB'){ verbPhrase(); continue; }
+      if(role==='ADVERB'){ runOf(advs, 'ADVERB'); continue; }
+      if(role==='NEGATION'){ runOf(negs, 'NEGATION'); continue; }
+      /* Every adposition phrase, not the first: a sentence may say where and
+         when, and taking one would leave the other to fall out at the end. */
+      if(role==='ADPOSITION'){
+        for(j=0;j<noms.length;j++) if(roleOf[noms[j]]==='ADPOSITION' && !seen[noms[j]]) phraseOf(noms[j], 'ADPOSITION');
+        continue;
+      }
+      /* QUESTION is on the board and nothing in this sentence is one: no
+         part of speech says a word asks, so there is nothing to place. It is
+         not an error and nothing is dropped -- the card simply has no words
+         under it in this sentence. */
       for(j=0;j<noms.length;j++) if(roleOf[noms[j]]===role){ phraseOf(noms[j], role); break; }
     }
     if(order.indexOf('VERB')<0) verbPhrase();
-    for(i=0;i<extra.length;i++) if(!seen[extra[i]]) phraseOf(extra[i],'MODIFIER');
+    /* EVERY NOUN THE BOARD HAD NO PLACE FOR still follows the sentence. It
+       was the third nominal alone -- the one the queue ran out of roles for
+       -- because the order was always the same three and a subject or an
+       object therefore always had somewhere to stand. A board is what the
+       person arranged now, so it may hold neither: 'I eat at sea water' on a
+       board of 場所・主語・動詞 lost the object silently, which is the one
+       thing arrange() must not do. It keeps the role it was given, so a word
+       that is the object is still the object wherever it ends up. */
+    for(i=0;i<noms.length;i++) if(!seen[noms[i]]) extra.push(noms[i]);
+    for(i=0;i<extra.length;i++) if(!seen[extra[i]]) phraseOf(extra[i], roleOf[extra[i]]||'MODIFIER');
     loose.sort(function(a,b){ return a-b; });
     for(i=0;i<loose.length;i++) if(!seen[loose[i]]){ seen[loose[i]]=1; out.push(tag(units[loose[i]],'MODIFIER')); }
     /* Nothing somebody wrote leaves without being placed: every kind above
