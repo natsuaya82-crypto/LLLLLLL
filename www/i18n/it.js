@@ -1039,6 +1039,7 @@ defLang('it', (function(){
       "mod.out"            : "Sospendi @{0}",
       "mod.in"             : "Riattiva @{0}",
       "mod.out.sure"       : "Sospendere questo account?",
+      "mod.out.yes"       : "Sospendi",
       "admin.title"        : "Amministrazione",
       "admin.pw"           : "Password",
       "admin.go"           : "Apri",

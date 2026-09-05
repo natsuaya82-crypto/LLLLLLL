@@ -998,6 +998,7 @@ defLang('es', (function(){
       "mod.out"            : "Suspender a @{0}",
       "mod.in"             : "Reactivar a @{0}",
       "mod.out.sure"       : "¿Suspender esta cuenta?",
+      "mod.out.yes"       : "Suspender",
       "admin.title"        : "Administración",
       "admin.pw"           : "Contraseña",
       "admin.go"           : "Abrir",

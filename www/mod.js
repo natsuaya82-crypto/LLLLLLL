@@ -68,8 +68,9 @@ function modUp(pid){
    will look for it. */
 function modOut(uid){
   /* 確認は自前のポップで。「標準は使わねえって言ってるだろこれも禁止や」
-     OWNER 2026-09-01 -- confirm() は使わない。はいの側がこの下。 */
-  popAsk(t('mod.out.sure'), function(){ modOutGo(uid); }, t('pop.yes'));
+     OWNER 2026-09-01 -- confirm() は使わない。押す側のボタンは「はい」では
+     なく、その動作の名前が書いてある -- 何が起きるかはボタンが言う。 */
+  popAsk(t('mod.out.sure'), function(){ modOutGo(uid); }, t('mod.out.yes'));
 }
 function modOutGo(uid){
   netBan(uid, modWhyOf(uid), function(){ modMarkOut(uid, true); render(); },

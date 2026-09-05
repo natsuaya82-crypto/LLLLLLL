@@ -1043,6 +1043,7 @@ defLang('zh', (function(){
       "mod.out"            : "冻结 @{0}",
       "mod.in"             : "解除冻结 @{0}",
       "mod.out.sure"       : "要冻结这个账号吗？",
+      "mod.out.yes"       : "冻结",
       "admin.title"        : "管理",
       "admin.pw"           : "密码",
       "admin.go"           : "打开",

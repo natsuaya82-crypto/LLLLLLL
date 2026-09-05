@@ -1045,6 +1045,7 @@ defLang('pt', (function(){
       "mod.out"            : "Suspender @{0}",
       "mod.in"             : "Reativar @{0}",
       "mod.out.sure"       : "Suspender esta conta?",
+      "mod.out.yes"       : "Suspender",
       "admin.title"        : "Administração",
       "admin.pw"           : "Palavra-passe",
       "admin.go"           : "Abrir",

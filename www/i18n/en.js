@@ -953,6 +953,7 @@ defLang('en', (function(){
       'mod.out'           : "Suspend @{0}",
       'mod.in'            : "Unsuspend @{0}",
       'mod.out.sure'      : "Suspend this account?",
+      'mod.out.yes'      : "Suspend",
       'admin.title'       : "Admin",
       'admin.pw'          : "Password",
       'admin.go'          : "Open",

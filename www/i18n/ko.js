@@ -1213,6 +1213,7 @@ defLang('ko', (function(){
       "mod.out"            : "@{0} 정지",
       "mod.in"             : "@{0} 정지 해제",
       "mod.out.sure"       : "이 계정을 정지할까요?",
+      "mod.out.yes"       : "정지",
       "admin.title"        : "관리",
       "admin.pw"           : "비밀번호",
       "admin.go"           : "열기",

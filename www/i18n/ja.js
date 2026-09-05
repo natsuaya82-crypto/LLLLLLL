@@ -954,6 +954,7 @@ defLang('ja', (function(){
       'mod.out'           : "@{0} を凍結",
       'mod.in'            : "@{0} の凍結を解除",
       'mod.out.sure'      : "このアカウントを凍結しますか？",
+      'mod.out.yes'      : "凍結",
       'admin.title'       : "管理",
       'admin.pw'          : "パスワード",
       'admin.go'          : "開く",

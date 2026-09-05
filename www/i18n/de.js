@@ -1027,6 +1027,7 @@ defLang('de', (function(){
       "mod.out"            : "@{0} sperren",
       "mod.in"             : "Sperre für @{0} aufheben",
       "mod.out.sure"       : "Dieses Konto sperren?",
+      "mod.out.yes"       : "Sperren",
       "admin.title"        : "Verwaltung",
       "admin.pw"           : "Passwort",
       "admin.go"           : "Öffnen",
