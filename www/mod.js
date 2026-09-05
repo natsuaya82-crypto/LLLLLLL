@@ -29,12 +29,19 @@ var MODS=null, MODBUSY=false, MODERR='';
    The press is on the admin screen now and not in settings.
    「設定の通報ボタン消せ」OWNER 2026-08-26 -- see vSettings() in
    www/settings.js for what went, and adminRow() below for where it went. */
-function goMod(){ go('mod'); modLoad(); }
-function modLoad(){
-  if(MODBUSY) return;
+function goMod(){ go('mod'); pullGo('mod'); }
+/* AND THE ASKING IS THE PULL'S. 「読み直すってなに？」 OWNER 2026-08-26 took
+   that button off the admin screen and left this one standing; a screen is
+   asked again by pulling it down now, which is the one road every other
+   screen answers on -- www/sns.js § WHICH SCREENS ANSWER A PULL. So there is
+   no modLoad(): the flag, the mark, the failed pop and the retry are
+   pullRun()'s, and what is left here is the question itself.
+
+   `ok(1)` -- the answer is what the screen draws, so it is always redrawn. */
+function modAsk(ok, bad){
   MODBUSY=true; MODERR=''; render();
-  netReports(function(rows){ MODS=rows; MODBUSY=false; render(); },
-             function(d, st){ MODBUSY=false; MODERR=netWhy(d, st); render(); });
+  netReports(function(rows){ MODS=rows; MODBUSY=false; ok(1); },
+             function(d, st){ MODBUSY=false; MODERR=netWhy(d, st); bad(d, st); });
 }
 /* Two reports about one post are two rows and one post, so answering either
    of them answers both. Marking every row that points at it is what stops the
@@ -118,7 +125,6 @@ function modRow(r){
 function vMod(){
   var rows=MODS||[];
   return '<div class="view">'+navTop('')+'<div class="body">'+
-    '<button class="btn ghost"' + DO('modLoad') + '>'+esc(t('mod.again'))+'</button>'+
     (MODERR? '<div class="mnone bad">'+esc(MODERR)+'</div>' : '')+
     ((!MODBUSY && !MODERR && MODS && !rows.length)
       ? '<div class="mnone">'+esc(t('mod.none'))+'</div>' : '')+
@@ -248,7 +254,7 @@ function adminLoad(){
    screen is for. */
 function adminAsk(){
   ADMIN_BUSY=false;
-  modLoad();
+  pullGo('mod');
 }
 function adminStaffSet(k, v){ if(k==='h'){ ADMIN_H=String(v||''); lnGrow('admin-h'); } }
 function adminStaffAdd(){

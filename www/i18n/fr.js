@@ -1078,7 +1078,6 @@ defLang('fr', (function(){
       "report.other"        : "Autre chose",
       "report.done"        : "Envoyé",
       "mod.title"          : "Signalements",
-      "mod.again"          : "Actualiser",
       "mod.none"           : "Aucun signalement",
       "mod.noline"         : "(un billet sans texte)",
       "mod.down"           : "Retirer",

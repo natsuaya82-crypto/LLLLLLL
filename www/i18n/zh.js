@@ -1035,7 +1035,6 @@ defLang('zh', (function(){
       "report.other"        : "其他",
       "report.done"        : "已发送",
       "mod.title"          : "举报",
-      "mod.again"          : "刷新",
       "mod.none"           : "没有举报",
       "mod.noline"         : "（没有文字的帖子）",
       "mod.down"           : "下架",

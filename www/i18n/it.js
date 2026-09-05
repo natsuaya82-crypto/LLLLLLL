@@ -1031,7 +1031,6 @@ defLang('it', (function(){
       "report.other"        : "Altro",
       "report.done"        : "Inviato",
       "mod.title"          : "Segnalazioni",
-      "mod.again"          : "Aggiorna",
       "mod.none"           : "Nessuna segnalazione",
       "mod.noline"         : "(un post senza testo)",
       "mod.down"           : "Ritira",

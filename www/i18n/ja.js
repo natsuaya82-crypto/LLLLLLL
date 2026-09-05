@@ -946,7 +946,6 @@ defLang('ja', (function(){
       'report.other'       : "その他",
       'report.done'       : "送信しました",
       'mod.title'         : "通報",
-      'mod.again'         : "読み直す",
       'mod.none'          : "通報はありません",
       'mod.noline'        : "（文字のない投稿）",
       'mod.down'          : "公開を止める",

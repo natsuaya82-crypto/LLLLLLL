@@ -1044,7 +1044,6 @@ defLang('ru', (function(){
       "report.other"         : "Другое",
       "report.done"         : "Отправлено",
       "mod.title"           : "Жалобы",
-      "mod.again"           : "Обновить",
       "mod.none"            : "Жалоб нет",
       "mod.noline"          : "(запись без текста)",
       "mod.down"            : "Снять с публикации",

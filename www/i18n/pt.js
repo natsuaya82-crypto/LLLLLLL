@@ -1037,7 +1037,6 @@ defLang('pt', (function(){
       "report.other"        : "Outra coisa",
       "report.done"        : "Enviado",
       "mod.title"          : "Denúncias",
-      "mod.again"          : "Atualizar",
       "mod.none"           : "Sem denúncias",
       "mod.noline"         : "(uma publicação sem texto)",
       "mod.down"           : "Retirar",

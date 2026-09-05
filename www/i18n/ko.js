@@ -1205,7 +1205,6 @@ defLang('ko', (function(){
       "report.other"        : "기타",
       "report.done"        : "보냈습니다",
       "mod.title"          : "신고",
-      "mod.again"          : "새로 고침",
       "mod.none"           : "신고가 없습니다",
       "mod.noline"         : "(글자 없는 게시물)",
       "mod.down"           : "공개 중지",

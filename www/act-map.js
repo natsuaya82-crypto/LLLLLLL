@@ -51,10 +51,11 @@ act('adminGo', adminGo);
    the screen already does on every open, so the button was a second way to do
    what opening the page does. adminLoad() itself is still what goAdmin() and
    adminGo() call; it is no longer a thing anybody presses.
-   The reports screen keeps its own, which is modLoad below. */
+   The reports screen had one too and it is gone the same way: a screen is
+   asked again by pulling it down -- www/sns.js § WHICH SCREENS ANSWER A
+   PULL, and modAsk() in www/mod.js is what it asks. */
 act('adminStaffAdd', adminStaffAdd);
 act('adminStaffDrop', adminStaffDrop);
-act('modLoad', modLoad);
 act('modDown', modDown);
 act('modUp', modUp);
 act('modOut', modOut);

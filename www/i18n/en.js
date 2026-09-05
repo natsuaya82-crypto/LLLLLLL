@@ -945,7 +945,6 @@ defLang('en', (function(){
       'report.other'       : "Something else",
       'report.done'       : "Sent",
       'mod.title'         : "Reports",
-      'mod.again'         : "Refresh",
       'mod.none'          : "No reports",
       'mod.noline'        : "(a post with no words)",
       'mod.down'          : "Take down",

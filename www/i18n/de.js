@@ -1019,7 +1019,6 @@ defLang('de', (function(){
       "report.other"        : "Etwas anderes",
       "report.done"        : "Gesendet",
       "mod.title"          : "Meldungen",
-      "mod.again"          : "Neu laden",
       "mod.none"           : "Keine Meldungen",
       "mod.noline"         : "(ein Beitrag ohne Text)",
       "mod.down"           : "Zurückziehen",

@@ -990,7 +990,6 @@ defLang('es', (function(){
       "report.other"        : "Otra cosa",
       "report.done"        : "Enviado",
       "mod.title"          : "Denuncias",
-      "mod.again"          : "Actualizar",
       "mod.none"           : "No hay denuncias",
       "mod.noline"         : "(una publicación sin texto)",
       "mod.down"           : "Retirar",
