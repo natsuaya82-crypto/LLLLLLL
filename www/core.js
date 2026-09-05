@@ -340,19 +340,74 @@ var LSL={};
    **WHEN THOSE KEYS STOP BEING READ IS THE OWNER'S**, and it is not answered
    here: doing it on a launch with no signal would take a language nobody had
    managed to send. docs/BACKLOG.md carries it. */
-function slRd(k){
+function slMine(k){
   if(Object.prototype.hasOwnProperty.call(LSL, k)) return LSL[k];
   try{ return localStorage.getItem(k); }catch(e){ return null; }
 }
+/* AND WHAT CAME DOWN FROM THE SERVER LAST TIME, WHICH IS A PICTURE AND NOT A
+   COPY OF ANYBODY'S WORK.
+   -------------------------------------------------------------------------
+   「Twitterとかは電波がないと開かないでしょ？」「前に読み込んだ分は出て欲しい。
+     制作も眺めたい人はいるだろうし、」
+   「スタンダードに合わせて作りたいから間違ってることあったら言って。」
+   OWNER 2026-09-05.
+
+   The slices are in memory, so an app that has been closed holds nothing --
+   and with no signal netResume() never comes back, netLangsDown() never runs,
+   and somebody opens their own language to find it empty. That is what this
+   answers and the whole of what it answers: **the language that was last
+   brought down is on the screen.** Nothing can be made and nothing can be
+   saved -- a save is the send, and with no signal it does not land.
+
+   IT NEVER GOES BACK UP, AND THAT IS HELD BY THERE BEING TWO QUESTIONS RATHER
+   THAN BY ANYBODY REMEMBERING:
+
+     slRd(k)    「what IS this part of the language」 -- what the SCREENS ask.
+                Memory, then what an older version left on the disk, then this
+                picture.
+     slMine(k)  「what is this phone holding that the server may not have been
+                told about」 -- what the UP ROAD asks. Memory, then what an
+                older version left on the disk. **The picture is not in it.**
+
+   So the picture is drawn and is never sent, never merged, and never wins:
+   every 「fills in what is missing and stops」 in www/net.js asks slMine(),
+   finds nothing, and writes the server's answer straight over it.
+
+   The other direction is the disk key an older version wrote, and it is a
+   different thing wearing a similar shape -- that one IS somebody's own work,
+   it has never been up, and the migration exists to send it. It is in
+   slMine() for exactly that reason and stays ahead of the picture here.
+
+   Written in one place (netAgreed in www/net.js, the moment both sides hold
+   the same string) and removed in one place (slRm below, which is only ever a
+   person deleting a language or an account). */
+function slGotKey(k){ return k + '.got'; }
+function slRd(k){
+  var v=slMine(k);
+  if(v!==null) return v;
+  try{ return localStorage.getItem(slGotKey(k)); }catch(e){ return null; }
+}
+/* A picture that did not land says NOTHING, and that is a decision rather
+   than the empty catch saveTry() was written to end. Nothing of anybody's is
+   lost by it -- the language is on the server and on the screen -- so
+   「保存できませんでした」 here would be a sentence that is not true. What is
+   lost is the picture on the next launch with no signal. */
+function slGot(k, body){
+  try{
+    if(body===null || body==='') localStorage.removeItem(slGotKey(k));
+    else localStorage.setItem(slGotKey(k), String(body));
+  }catch(e){}
+}
 function slWr(k, v){ LSL[k]=String(v); }
-/* Gone from memory, and the disk copy with it -- this is the one place that
-   REMOVES, and it is only ever a person deleting a language or an account
-   (wipeLangsGo, lsWipeAcct). Leaving the disk key behind would be the slice
-   coming back through the fallback above on the next launch, which is 「消した
-   ものが戻ってくる」 wearing the migration's clothes. */
+/* Gone from memory, and both disk keys with it -- what an older version wrote
+   and the picture slGot() keeps. This is the one place that REMOVES, and it is
+   only ever a person deleting a language or an account (wipeLangsGo,
+   lsWipeAcct). Leaving either one behind would be the slice coming back
+   through a fallback above on the next launch, which is 「消したものが戻って
+   くる」 wearing the migration's clothes. */
 function slRm(k){
   delete LSL[k];
-  try{ localStorage.removeItem(k); }catch(e){}
+  try{ localStorage.removeItem(k); localStorage.removeItem(slGotKey(k)); }catch(e){}
 }
 
 /* ---- AND A SAVE THAT DID NOT LAND SAYS SO -------------------------------

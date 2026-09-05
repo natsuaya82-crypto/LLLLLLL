@@ -662,6 +662,130 @@ say(up2.sentOut.length === 0 && up2.keptOut,
     '署名が無ければ何も送らず、書いたものはこの iPhone に残る（送信 ' +
     up2.sentOut.length + ' 件、' + (up2.keptOut ? '残っている' : '**消えた**') + '）');
 
+/* ---- 電波が無いとき、前に読み込んだ分が出る ------------------------------
+   「Twitterとかは電波がないと開かないでしょ？」
+   「前に読み込んだ分は出て欲しい。制作も眺めたい人はいるだろうし、」
+   「スタンダードに合わせて作りたいから間違ってることあったら言って。」
+   OWNER 2026-09-05。
+
+   2026-09-04 にスライスを記憶へ移してから、**閉じたアプリは言語を一文字も
+   持っていない。**電波が無ければ `netResume()` は返らず `netLangsDown()` も
+   走らないので、開いた人は自分の言語が空になっているのを見る。
+
+   訊くのは四つ。最初の一つは土台で、残りの三つのうち後ろ二つが「危ないほう」
+   ── 写しが勝つこと、写しが出て行くことは、どちらも黙って起きる：
+
+     一. サーバーから降りた分がディスクに写してある（土台）
+     二. 電波を落としたまま閉じて開き直すと、前の言語が画面に出る
+     三. 写しはサーバーの答えに一度も勝たない ── 答えが来たら上書きされる
+     四. 写しはサーバーへ一度も出て行かない
+
+   **電波が無いというのを本物でやる。**`netSend` は差し替えず、Supabase への
+   要求そのものを `pg.route` で落とす。起動は本物の道を通って失敗する。 */
+await pg.evaluate(() => localStorage.clear());
+await pg.reload();
+await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
+
+/* 一段目 ── 署名して、言語をサーバーへ上げる。ここで写しが書かれる。
+   名前と ID も書く： appIs() は名前の無いアカウントに扉を出すので、それが
+   無いと二番目は「言語が出ない」ではなく「扉が出た」で赤くなる。 */
+const seenUp = await pg.evaluate(async ({ s, srv }) => {
+  eval('(' + s + ')()');
+  SET.done = true; setKeep();
+  eval(srv);
+  SESS = { at:'t', rt:'r', uid:'me3', anon:false };
+  ME.name = 'Aya'; ME.handle = 'aya'; saveMe();
+  function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
+  var id = langId;
+  LANGS[id].uid = 'me3'; LANGS[id].mine = true; langStore();
+  langName = 'Kela';
+  WORDS.push({ hw:'kelasu', gl:'a word that was on the screen before the signal went' });
+  save();
+  await new Promise(function(f){ netLangSync(function(){ f(); }); });
+  await wait(200);
+  netSave();
+  var S = window.__SRV, got = 0, i, k;
+  for (i = 0; i < localStorage.length; i++){
+    k = localStorage.key(i);
+    if (k && k.indexOf('.got') === k.length - 4) got++;
+  }
+  return { id:id, gotKeys:got, srv:JSON.stringify({ lang:S.lang, slice:S.slice }) };
+}, { s: seed.toString(), srv: SERVER });
+
+say(seenUp.gotKeys > 0,
+    'サーバーから降りた分がディスクに写してある ── これが無ければ下の三つは ' +
+    '「まだ何も無い」を測っているだけになる（' + seenUp.gotKeys + ' 本）');
+
+/* 二段目 ── アプリを閉じて、電波の無いところで開く。localStorage は消さない。
+   それが「閉じた」であって「機種変」ではない（機種変は上の 2 番）。 */
+await pg.route('https://*.supabase.co/**', r => r.abort());
+await pg.reload();
+await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
+
+const offline = await pg.evaluate(async () => {
+  function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
+  await wait(400);
+  window.route = 'words'; NAV = [{ r:'words' }]; render();
+  var app = document.getElementById('app');
+  return { words:WORDS.length, name:langName, signed:netSignedIn(),
+           onScreen:(app ? app.textContent : '').indexOf('kelasu') >= 0 };
+});
+
+say(offline.words > 0 && offline.name === 'Kela',
+    '**電波が無くても、前に読み込んだ言語が出る**（' + offline.words + ' 語、' +
+    (offline.name || '名前なし') + '）');
+say(offline.onScreen,
+    'そして辞書の画面に本当に並んでいる ── 変数に入っているだけではない');
+
+/* 三段目と四段目 ── 電波が戻る。
+   **記憶の側を空にしてから訊く。**起動のあいだに走る移行と ltStart() は、
+   何か直すことがあれば直したものを保存する ── それはこの iPhone が持っていて
+   サーバーがまだ知らないものなので、上がって正しい。ここで見たいのはその手前、
+   **移行が何もしなかった起動**、つまり写しだけがある状態で、写しがどう扱われる
+   かである。だから手で空にする。 */
+await pg.unroute('https://*.supabase.co/**');
+const road = await pg.evaluate(async ({ srv, saved }) => {
+  function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
+  eval(srv);
+  var S = window.__SRV, keep = JSON.parse(saved), k, i, out = {};
+  for (k in LSL) if (Object.prototype.hasOwnProperty.call(LSL, k)) delete LSL[k];
+  var wk = langKeyOf(langId, 'words');
+  out.screenSees = (slRd(wk) || '').indexOf('kelasu') >= 0;
+  out.roadSees = slMine(wk) !== null;
+
+  /* 四. サーバーがこの言語の欄を一本も持っていない所へ同期する。写しが上りの
+     道から見えていれば、ここで写しがまるごと送られる。 */
+  S.lang = keep.lang; S.slice = []; S.sent = [];
+  SESS = { at:'t', rt:'r', uid:'me3', anon:false };
+  await new Promise(function(f){ netLangSync(function(){ f(); }); });
+  await wait(300);
+  out.sent = S.sent.filter(function(x){ return x.indexOf('slice:') === 0; });
+
+  /* 三. 別の iPhone がこの言語に一語足した、という形にして降ろす。 */
+  for (k in LSL) if (Object.prototype.hasOwnProperty.call(LSL, k)) delete LSL[k];
+  S.slice = keep.slice.map(function(r){ return { language:r.language, kind:r.kind, body:r.body, no:r.no }; });
+  for (i = 0; i < S.slice.length; i++)
+    if (S.slice[i].kind === 'words')
+      S.slice[i].body = JSON.stringify(
+        JSON.parse(S.slice[i].body).concat([{ hw:'newer', gl:'added on another phone' }]));
+  await new Promise(function(f){ netLangsDown(function(){ f(); }); });
+  await wait(300);
+  out.words = WORDS.map(function(w){ return String(w.hw); });
+  return out;
+}, { srv: SERVER, saved: seenUp.srv });
+
+say(road.screenSees && !road.roadSees,
+    '写しは画面には見え、上りの道からは見えない ── slRd() と slMine() は別の ' +
+    '問いで、それが仕組みの全部（画面 ' + (road.screenSees ? '見える' : '**見えない**') +
+    '、上り ' + (road.roadSees ? '**見える**' : '見えない') + '）');
+say(road.sent.length === 0,
+    '**写しはサーバーへ一度も出て行かない** ── サーバーがこの言語の欄を一本も ' +
+    '持っていなくても、写しは送られない（送信 ' + road.sent.length + ' 件' +
+    (road.sent.length ? ': ' + JSON.stringify(road.sent) : '') + '）');
+say(road.words.filter(w => w === 'newer').length === 1,
+    '**写しはサーバーの答えに勝たない** ── 答えが来たらその上に書かれる: ' +
+    JSON.stringify(road.words));
+
 await br.close();
 if (bad.length){
   console.log('\nagain: ' + bad.length + ' problem' + (bad.length > 1 ? 's' : '') + '.\n');

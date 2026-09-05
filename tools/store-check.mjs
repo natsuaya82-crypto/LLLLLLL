@@ -78,7 +78,21 @@ const ROADS = {
      kept. A `lingua.<id>.<slice>` key appearing under this comment again is
      the copy coming back, which is the whole of what that decision removed,
      so it fails as a key nobody wrote down rather than being quietly allowed.
-     */
+
+     ONE KEY UNDER THIS COMMENT, AND IT IS A PICTURE RATHER THAN A COPY.
+     「前に読み込んだ分は出て欲しい。制作も眺めたい人はいるだろうし、」
+     OWNER 2026-09-05. With the slices in memory, an app that has been closed
+     holds nothing, so a launch with no signal opened somebody's own language
+     to find it empty. `lingua.<id>.<slice>.got` is what the SERVER last said
+     that slice was, written down so the screens have something to draw.
+
+     It is not the copy coming back, and the difference is mechanical rather
+     than careful: it is on NO road up. www/core.js asks two questions where
+     it used to ask one -- `slRd()` for the screens, which sees it, and
+     `slMine()` for everything that sends, which does not -- so it can be
+     drawn and can never be merged, sent, or preferred to an answer that has
+     just arrived. */
+  'core.js:slGotKey(k)': { phone: 'what the server last said this slice was, kept so a launch with no signal draws the language instead of nothing. It belongs to the account the slice does -- filed under `lingua.<id>.<slice>`, so wipeLangsGo() takes it with the language and lsWipeAcct(), which counts the namespace, takes it with the account. It has no road UP and must not be given one: `slMine()` in www/core.js is what keeps it out of netSlice1(), netSaveUpGo() and both of the 「fills in and stops」 reads' },
   /* the timeline */
   'post.js:LS_POSTS':  { to: 'netPush' },
   'post.js:LS_DRAFTS': { to: 'netDraftUp' },

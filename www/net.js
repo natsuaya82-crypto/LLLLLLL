@@ -1190,8 +1190,10 @@ function netLangBack1(sid, name, done){
       if(!o || !o.body) continue;
       /* FILLS IN AND STOPS. A slice this phone already has is left alone --
          netLangSync() is what puts the two together, and it MERGES; this one
-         only ever adds what is not here. */
-      if(slRd(langKeyOf(sid, kind))!==null) continue;
+         only ever adds what is not here. slMine() for the reason
+         netLangsDown() gives: the picture is not something this phone is
+         holding, it is the last answer this one gave. */
+      if(slMine(langKeyOf(sid, kind))!==null) continue;
       slWr(langKeyOf(sid, kind), o.body);
       /* and what the two sides now agree it is, so a removal made after this
          is told apart from a slice this phone has not heard about */
@@ -1374,8 +1376,12 @@ function netLangsDown(then){
             if(!there[k] || there[k].body==='') continue;
             /* FILLS IN AND STOPS -- docs/DATA_SAFETY.md rule 2. A slice this
                phone is already holding is left exactly as it is, because it
-               may be a minute of somebody's typing that has not gone up yet. */
-            if(slRd(langKeyOf(nid, k))!==null) continue;
+               may be a minute of somebody's typing that has not gone up yet.
+               slMine() and not slRd(): the picture kept for a launch with no
+               signal is not somebody's typing, and asking about it here is
+               what would let the picture win over the answer that has just
+               come back. 「サーバーの答えが来たら、そちらが勝ちます」 */
+            if(slMine(langKeyOf(nid, k))!==null) continue;
             slWr(langKeyOf(nid, k), there[k].body);
             /* and what the two sides agree it is, so the first thing removed
                after this is understood as a removal */
@@ -1437,10 +1443,17 @@ function netKeeps(mine, put){
    data. Filed beside the slice (langWasKey in core.js), so deleting the
    language takes it and lsWipeAcct, which counts the namespace rather than a
    list, takes it when an account goes. */
+/* AND THE PICTURE THE SCREENS FALL BACK TO WITH NO SIGNAL, written from the
+   same moment and for the same reason: this is the one place in this file that
+   knows what the SERVER is holding for a slice. 「前に読み込んだ分は出て欲しい」
+   OWNER 2026-09-05. slGot() in www/core.js says what it may and may not be
+   read for -- it is on no road back up, and slMine() below is what keeps it
+   off one. */
 function netAgreed(id, kind, body){
   try{
     if(body==='') slRm(langWasKey(id, kind));
     else slWr(langWasKey(id, kind), body);
+    slGot(langKeyOf(id, kind), body);
   }catch(e){}
 }
 var NET_SHRANK=[];
@@ -1463,13 +1476,17 @@ var NET_SYNCING=false;
    `got` is what the server is holding for this slice, or nothing. */
 function netSlice1(id, sid, kind, got, done){
   var mine, was, put;
-  mine=slRd(langKeyOf(id, kind));
+  /* WHAT THIS PHONE HAS THAT THE SERVER MAY NOT KNOW ABOUT, and never the
+     picture kept for a launch with no signal -- slGot() in www/core.js says
+     why. This is the only function that puts a slice up, so slMine() here is
+     the whole of 「写しは絶対にサーバーへ戻らない」. */
+  mine=slMine(langKeyOf(id, kind));
   /* What the two sides last agreed this slice was. It is the only thing
      that tells 「somebody removed this here」 from 「this phone has not
      been told about it yet」 -- the two look identical from here and
      want opposite answers. No record means no dropping, which is what
      this did before there was one. */
-  was=slRd(langWasKey(id, kind));
+  was=slMine(langWasKey(id, kind));
   put=syMerge(kind, mine===null? '' : mine, got? got.body : '',
               was===null? '' : was);
   if(put!=='' && put!==mine){
@@ -1532,8 +1549,8 @@ function netSaveUpGo(){
   if(NET_SYNCING || !netSignedIn() || !id || !langMine(id)) return;
   for(i=0;i<SLICES.length;i++){
     k=SLICES[i];
-    mine=slRd(langKeyOf(id, k));
-    was=slRd(langWasKey(id, k));
+    mine=slMine(langKeyOf(id, k));
+    was=slMine(langWasKey(id, k));
     if((mine===null? '' : mine)!==(was===null? '' : was)) kinds.push(k);
   }
   if(!kinds.length) return;
