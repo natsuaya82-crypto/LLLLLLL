@@ -1642,13 +1642,17 @@ const r = await pg.evaluate(({ s }) => {
      row that is not there. kbVFix() answers for both, from saveKb(). */
   fresh();
   kbVJoin(0, 3);
-  kbDelRow(0);
+  /* kbDelRow() and kbDelCol() are the mutating halves and write nothing --
+     one press of the bin can be a run of four, and four saves is four steps
+     back for one press. kbCut() saves once, so the save is said here once
+     too, which is what a finger ends in either way. */
+  kbDelRow(0); saveKb();
   out.vjDelUp = !kbLayer().rows.join ? false :
     kbLayer().rows.every(function (row) {
       return row.every(function (k) { return !k.up; }); });
   fresh();
   kbVJoin(0, 3);
-  kbDelRow(1);
+  kbDelRow(1); saveKb();
   out.vjDelDn = kbLayer().rows.every(function (row) {
     return row.every(function (k) { return (k.h || 1) === 1; }); });
 
@@ -1658,7 +1662,7 @@ const r = await pg.evaluate(({ s }) => {
   kbJoin(0, 3); kbJoin(1, 3);
   kbVJoin(0, 3);
   var wideWas = (kbLayer().rows[0][3].w || 1);
-  kbDelCol(3);
+  kbDelCol(3); saveKb();
   var vcU = kbLayer().rows[0][3], vcD = kbLayer().rows[1][3];
   out.vjColBoth = !!vcU && !!vcD && (vcU.w || 1) === (vcD.w || 1) &&
     (vcU.w || 1) < wideWas;
@@ -3025,6 +3029,100 @@ const r = await pg.evaluate(({ s }) => {
     out.keepAfterUndo = gold();
   }());
 
+  /* ---- A HEAD, HELD AND DRAWN ALONG ------------------------------------
+     「キーボードaおしたら縦列選択できるけどさ、そこからabcdみたいに引っ張っても
+     選択ができない。…エクセルとかなら真ん中に丸ポチがあって引っ張れるでしょ？」
+     OWNER 2026-09-05.
+
+     Driven through the real handlers the way the carry above is, with
+     elementFromPoint standing in for the finger: the drag is
+     touchstart/touchmove/touchend and carries no [data-do], so press cannot
+     reach it and every claim here would be about nothing if it were pressed.
+
+     None of it can throw. A run that acts on one column, or on one too many,
+     is a keyboard that still renders and is not the one somebody built. */
+  (function (){
+    SET.plan = 'pro';
+    function head(k, n){
+      return document.querySelector(
+        '#kb [data-do="' + (k === 'c' ? 'kbHeadCol' : 'kbHeadRow') + '"][data-a="[' + n + ']"]');
+    }
+    /* press the head at `from`, draw the finger to the one at `to`, let go */
+    function pull(k, from, to){
+      var src = head(k, from), dst = head(k, to), real;
+      if (!src || !dst) return false;
+      kbDown({ target: src, touches: [{ clientX: 60, clientY: 60 }] });
+      real = document.elementFromPoint;
+      document.elementFromPoint = function (){ return dst; };
+      kbDragTo({ touches: [{ clientX: 160, clientY: 60 }], preventDefault: function (){} });
+      document.elementFromPoint = real;
+      kbUp({ preventDefault: function (){} });
+      return true;
+    }
+    function lit(k){
+      return [].slice.call(document.querySelectorAll(
+        k === 'c' ? '#kb .kbcl' : '#kb .kbn'))
+        .filter(function (e){ return / on( |$)/.test(' ' + e.className); }).length;
+    }
+    fresh(); kbShow = 1; kbLay = 0; KBH = null; standKb();
+    out.pullDone = pull('c', 0, 3);
+    out.pullRun = !!KBH && KBH.k === 'c' && KBH.i === 0 && KBH.j === 3;
+    /* and all four heads are lit, not just the one under the finger */
+    out.pullLit = lit('c');
+
+    /* ---- and the bin takes the whole run, in ONE step -------------------- */
+    var wasW = kbLayer().rows.map(kbUsed), wasU = KBU.u.length;
+    kbCut(); standKb();
+    out.pullCutW = kbLayer().rows.map(kbUsed).join(',');
+    out.pullCut = kbLayer().rows.every(function (r, i){
+      return kbUsed(r) === Math.max(0, wasW[i] - 8) || wasW[i] <= 8;
+    });
+    out.pullCutStep = KBU.u.length === wasU + 1;
+    kbUndo(); standKb();
+    out.pullCutBack = kbLayer().rows.map(kbUsed).join(',') === wasW.join(',');
+
+    /* ---- the + puts in as many as were chosen --------------------------- */
+    fresh(); kbShow = 1; kbLay = 0; KBH = null; standKb();
+    /* room for two, in EVERY row: a column goes into every row that reaches
+       it, so a board that is ten across everywhere has room for none. */
+    kbLayer().rows.forEach(function (r){ r.splice(0, 3); });
+    saveKb(); standKb();
+    var insW = kbLayer().rows.map(kbUsed);
+    pull('c', 0, 1);
+    kbInsCol(true); standKb();
+    out.pullIns = kbLayer().rows.map(kbUsed).every(function (n, i){
+      return n === insW[i] + 4 || n === insW[i];
+    });
+    out.pullInsAny = kbLayer().rows.map(kbUsed).some(function (n, i){
+      return n === insW[i] + 4;
+    });
+    out.pullInsW = kbLayer().rows.map(kbUsed).join(',');
+
+    /* ---- and the three alignments take every row of the run -------------- */
+    fresh(); kbShow = 1; kbLay = 0; KBH = null; standKb();
+    kbLayer().rows[0].splice(0, 2); kbLayer().rows[1].splice(0, 2);
+    saveKb(); standKb();
+    var alWas = kbLayer().rows.map(function (r){
+      return r.map(function (k){ return k.k + ':' + (k.w || 1); }).join(' ');
+    });
+    pull('r', 0, 1);
+    out.pullRows = !!KBH && KBH.k === 'r' && KBH.i === 0 && KBH.j === 1;
+    out.pullRowsLit = lit('r');
+    var alU = KBU.u.length;
+    kbAlign('l'); standKb();
+    /* pushed left, the leftover of BOTH rows is one run of gaps at the end */
+    out.pullAl = [0, 1].every(function (i){
+      var r = kbLayer().rows[i];
+      return r[0].k !== 'gap' && r[r.length - 1].k === 'gap';
+    });
+    out.pullAlStep = KBU.u.length === alU + 1;
+    /* and every row OUTSIDE the run is exactly as it was */
+    out.pullAlOnly = kbLayer().rows.map(function (r){
+      return r.map(function (k){ return k.k + ':' + (k.w || 1); }).join(' ');
+    }).slice(2).join('|') === alWas.slice(2).join('|');
+    KBH = null; kbSel = null;
+  }());
+
   return out;
 }, { s: seed.toString() });
 /* ---- and the SHEET, on the smallest phone the app runs on ---------------
@@ -3735,6 +3833,25 @@ say(r.keepAfterCut === 'gold',
 say(r.keepAfterUndo === 'grey',
     'and grey again when the step back puts the layout where it opened ('
     + r.keepAfterUndo + ')');
+
+/* ---- a head, held and drawn along ---------------------------------------
+   「aおしたら縦列選択できるけどさ、そこからabcdみたいに引っ張っても選択ができ
+   ない」 OWNER 2026-09-05 */
+say(r.pullDone && r.pullRun && r.pullLit === 4,
+    'a column head drawn along to the fourth selects a to d, and all four are'
+    + ' lit (' + r.pullLit + ' of them)');
+say(r.pullCut && r.pullCutStep,
+    'the bin then takes FOUR columns, and it is one step back for one press ['
+    + r.pullCutW + ']');
+say(r.pullCutBack, 'which that one step puts back whole');
+say(r.pullIns && r.pullInsAny,
+    'and the + puts in as many as were chosen -- two columns for two ['
+    + r.pullInsW + ']');
+say(r.pullRows && r.pullRowsLit === 2,
+    'a row number drawn down selects the run the same way (' + r.pullRowsLit + ' lit)');
+say(r.pullAl && r.pullAlStep && r.pullAlOnly,
+    'and an alignment takes every row of it, in one step, leaving the row under'
+    + ' it alone [' + [r.pullAl, r.pullAlStep, r.pullAlOnly].join(' ') + ']');
 
 if (bad.length){ console.error('\nkb-check: ' + bad.length + ' FAILED'); process.exit(1); }
 console.log('\nkb: pressing a row number or a column letter SELECTS it and lights it up;\n' +

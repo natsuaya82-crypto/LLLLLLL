@@ -1602,6 +1602,29 @@ export function halfDone(){
                                                   const h = vKb();
                                                   KBH = null; KB = null; kbShow = 0; kbLay = 0;
                                                   SET.plan = 'free'; return h; }],
+    /* A RUN of columns, chosen by drawing the finger along the heads.
+       「キーボードaおしたら縦列選択できるけどさ、そこからabcdみたいに引っ張って
+       も選択ができない」 OWNER 2026-09-05. The far end is written by the drag
+       and by nothing else, so the face is built by the drag -- the real
+       handlers, with elementFromPoint standing in for the finger for the
+       length of one question, exactly as tools/kb-check.mjs drives it. */
+    ['a run of columns of the keyboard selected', () => { SET.plan = 'pro'; KB = null;
+                                                  kbShow = 0; kbAdd('qwerty'); kbLay = 0;
+                                                  const hd = (n) => document.querySelector(
+                                                    '#kb [data-do="kbHeadCol"][data-a="[' + n + ']"]');
+                                                  const src = hd(0), dst = hd(3),
+                                                        real = document.elementFromPoint;
+                                                  if (src && dst) {
+                                                    kbDown({ target: src, touches: [{ clientX: 60, clientY: 60 }] });
+                                                    document.elementFromPoint = () => dst;
+                                                    kbDragTo({ touches: [{ clientX: 160, clientY: 60 }],
+                                                               preventDefault: () => {} });
+                                                    document.elementFromPoint = real;
+                                                    kbUp({ preventDefault: () => {} });
+                                                  }
+                                                  const h = vKb();
+                                                  KBH = null; KB = null; kbShow = 0; kbLay = 0;
+                                                  SET.plan = 'free'; return h; }],
     /* the + asking which side of the selected COLUMN a new one goes on, which
        is the row face one axis over -- and it needs a column CUT first,
        because every pattern the app builds comes to the full ten and a board

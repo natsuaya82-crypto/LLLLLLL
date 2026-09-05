@@ -1922,7 +1922,48 @@ function kbNHTML(ri){
    Where you are standing rather than anything the language has, so
    viewReset() drops it. Pressing the same head again puts it down. */
 var KBH=null;
-function kbHeadIs(k, i){ return !!KBH && KBH.k===k && KBH.i===i; }
+/* ---- A HEAD SELECTION IS A RUN -----------------------------------------
+   「キーボードaおしたら縦列選択できるけどさ、そこからabcdみたいに引っ張っても
+   選択ができない。…エクセルとかなら真ん中に丸ポチがあって引っ張れるでしょ？」
+   OWNER 2026-09-05.
+
+   `i` is the head that was pressed and `j` is the one the finger reached, so
+   a run of one is `j` absent -- which is every selection this sheet had until
+   now, and is why nothing stored or drawn needed a second field. Which end
+   was pressed first matters to nobody below, so the run is said in order HERE
+   and read from nowhere else. */
+function kbHeadRun(){
+  var j;
+  if(!KBH || (KBH.k!=='r' && KBH.k!=='c')) return null;
+  j=(KBH.j===undefined)? KBH.i : KBH.j;
+  return {a:Math.min(KBH.i, j), b:Math.max(KBH.i, j)};
+}
+function kbHeadJ(){ var r=kbHeadRun(); return r? (KBH.j===undefined? KBH.i : KBH.j) : 0; }
+/* Every head in the run is lit, not just the one under the finger. */
+function kbHeadIs(k, i){
+  var r=kbHeadRun();
+  return !!r && KBH.k===k && i>=r.a && i<=r.b;
+}
+/* Whether this key stands inside the columns being worked on -- ANY of them,
+   because the selection is a run. Entirely inside one, which is kbColHas()'s
+   sentence and is not restated here. */
+function kbColSel(at, w){
+  var r=kbHeadRun(), i;
+  if(!r || KBH.k!=='c') return false;
+  for(i=r.a;i<=r.b;i++) if(kbColHas(at, w, i)) return true;
+  return false;
+}
+/* Whether anything in the run is half of a merge. The three alignments are
+   down on such a row -- where a merged pair goes when its row is pushed is
+   the OWNER's and has not been asked -- and a run is down when ANY row in it
+   is: pushing three rows and silently leaving the fourth is not an answer
+   either. */
+function kbRunTied(){
+  var r=kbHeadRun(), i;
+  if(!r || KBH.k!=='r') return false;
+  for(i=r.a;i<=r.b;i++) if(kbRowTied(i)) return true;
+  return false;
+}
 /* ---- WHAT IS SELECTED CHANGES IN ONE PLACE ------------------------------
    A row, a column and a key are three things to select and there were three
    places deciding it, each toggling on its own. That is one rule written out
@@ -1987,7 +2028,10 @@ function kbInsRoom(){
      well as on the button: a button being down is a look, and the act has to
      refuse on its own. */
   if(KBH.k==='k' || KBH.k==='f') return false;
-  return KBH.k==='r'? kbRoomRow() : kbRoomCol(KBH.i);
+  var run=kbHeadRun();
+  /* As many as are chosen: four columns selected is four going in, so the
+     room asked for is the room for four. */
+  return KBH.k==='r'? kbRoomRow() : kbRoomCol(run.a, run.b-run.a+1);
 }
 function kbInsAsk(){
   if(!KBH || !kbInsRoom()) return;
@@ -2033,24 +2077,31 @@ function kbColRows(ci){
   for(i=0;i<rows.length;i++) if(kbUsed(rows[i])>ci*2) out.push(i);
   return out;
 }
-function kbRoomCol(ci){
+/* `n` columns, because a head selection is a RUN and four chosen means four
+   going in. Every row that reaches the run has to hold all of them or none:
+   half a run put in is a keyboard nobody asked for. */
+function kbRoomCol(ci, n){
   var rows=kbLayer().rows, at=kbColRows(ci), i;
+  n=n||1;
   if(!at.length) return false;
-  for(i=0;i<at.length;i++) if(kbUsed(rows[at[i]])+2>KB_COLS) return false;
+  for(i=0;i<at.length;i++) if(kbUsed(rows[at[i]])+2*n>KB_COLS) return false;
   return true;
 }
 function kbInsCol(right){
-  var b=kbEdit(), rows, at, i, half;
-  if(!b || !KBH || KBH.k!=='c' || !kbRoomCol(KBH.i)) return;
+  var b=kbEdit(), rows, at, i, j, half, run=kbHeadRun(), n;
+  if(!b || !run || KBH.k!=='c') return;
+  n=run.b-run.a+1;
+  if(!kbRoomCol(run.a, n)) return;
   rows=kbLayer().rows;
-  half=KBH.i*2 + (right? 2 : 0);
-  at=kbColRows(KBH.i);
+  half=run.a*2 + (right? n*2 : 0);
+  at=kbColRows(run.a);
   for(i=0;i<at.length;i++)
-    rows[at[i]].splice(kbColAt(rows[at[i]], half), 0, kbKey('lt', ''));
-  /* and the selection follows the column it was on, which has moved right by
-     one if the new one went in on its left -- kbIns() does the same thing one
+    for(j=0;j<n;j++)
+      rows[at[i]].splice(kbColAt(rows[at[i]], half), 0, kbKey('lt', ''));
+  /* and the selection follows the columns it was on, which have moved right
+     by as many as went in on their left -- kbIns() does the same thing one
      axis over */
-  KBH={k:'c', i:right? KBH.i : KBH.i+1};
+  KBH={k:'c', i:right? run.a : run.a+n, j:right? run.b : run.b+n};
   kbSel=null;
   saveKb(); render();
 }
@@ -2079,7 +2130,7 @@ function kbIns(down){
    keyboard -- it is asked for by pressing the bin, and the step back holds it. */
 function kbCut(){
   if(!KBH) return;
-  var h=KBH, ms, j;
+  var h=KBH, ms, j, run, i;
   /* An empty frame holds nothing to take. Without this the bin would ask
      kbDelCol() for column `undefined`, which is a keyboard that still renders
      and is not the one somebody built. */
@@ -2090,9 +2141,18 @@ function kbCut(){
     kbDelKeys(ms);
     return;
   }
+  run=kbHeadRun();
   KBH=null;
-  if(h.k==='r') kbDelRow(h.i);
-  else kbDelCol(h.i);
+  /* From the far end back, so that taking one out does not move the ones
+     still to go. ONE save and therefore ONE step back for one press --
+     kbDelRow() and kbDelCol() write nothing themselves for exactly this
+     reason: four columns taken by one press is one thing that happened. */
+  for(i=run.b;i>=run.a;i--){
+    if(h.k==='r') kbDelRow(i);
+    else kbDelCol(i);
+  }
+  kbSel=null;
+  saveKb(); render();
 }
 /* The two the toolbar does to a key. They take what is selected rather than
    arguments, because a button over the sheet acts on the selection -- the bin
@@ -2128,15 +2188,18 @@ function kbOpenSel(){ if(KBH && KBH.k==='k') kbPick(KBH.r, KBH.i); }
    space somebody put between two keys and is none of this function's
    business. */
 function kbGapW(half){ return half/2; }
+/* Every row of the run, and ONE save for the press that did them --
+   kbCut()'s reason. A run with half a merge anywhere in it is refused whole:
+   the button is down for one, and pushing three rows while silently leaving
+   the fourth is not an answer to what the OWNER has not been asked. */
 function kbAlign(how){
-  var b=kbEdit(), rows, row, i, tot, rem, lead, tail;
-  if(!b || !KBH || KBH.k!=='r') return;
-  /* Not a row with half a merge in it. The button is down for one, and this
-     is the same sentence said where it cannot be got round -- where a merged
-     pair goes when its row is pushed is the OWNER's and has not been asked. */
-  if(kbRowTied(KBH.i)) return;
-  rows=kbLayer().rows;
-  row=rows[KBH.i];
+  var b=kbEdit(), run=kbHeadRun(), i;
+  if(!b || !run || KBH.k!=='r' || kbRunTied()) return;
+  for(i=run.a;i<=run.b;i++) kbAlign1(i, how);
+  saveKb(); render();
+}
+function kbAlign1(ri, how){
+  var rows=kbLayer().rows, row=rows[ri], tot, rem, lead, tail;
   if(!row) return;
   /* off with the old ends */
   while(row.length && row[0].k==='gap') row.shift();
@@ -2174,7 +2237,6 @@ function kbAlign(how){
     if(tail>0) row.push(kbGap(kbGapW(tail)));
     if(lead>0) row.unshift(kbGap(kbGapW(lead)));
   }
-  saveKb(); render();
 }
 /* How much empty goes BEFORE the keys of a short row, so they sit in the
    middle of the sheet rather than piled at its left. 「揃えて欲しい」
@@ -2221,7 +2283,7 @@ function kbHTML(sel, ro){
          another key, so nothing is ever made smaller to fit something in.
          kbRoomIn() has always said that; what was missing was the fixed
          width for it to be true against. */
-      cols=ro? 0 : KB_COLS, at, b, lead, tot, ki2;
+      cols=ro? 0 : KB_COLS, at, b, lead, tot, ki2, hrun;
   if(!ro){ kbNoted(); out+=kbHdrHTML(cols); }
   for(ri=0;ri<lay.rows.length;ri++){
     row=lay.rows[ri];
@@ -2284,7 +2346,7 @@ function kbHTML(sel, ro){
            7% on a 28px key. 「選んだキーは色変えないと選んでるかわかんなく
            ない？」OWNER 2026-08-27. */
         ((!ro && kbKeyIs(ri, ki))? ' pick':'')+
-        ((!ro && KBH && KBH.k==='c' && kbColHas(at, key.w, KBH.i))? ' sel':'');
+        ((!ro && kbColSel(at, key.w))? ' sel':'');
       /* Two columns wide, or as many as it is: a key of three IS six columns
          joined, which is where a wide key comes from on a sheet. */
       at+=kbU(key.w);
@@ -2326,9 +2388,11 @@ function kbHTML(sel, ro){
      side the row goes on, which this one never could, and it is reached from
      the band of buttons rather than from the keyboard itself. */
   /* the band down the column being worked on, if one is */
-  if(!ro && KBH && KBH.k==='c' && KBH.i*2<cols)
-    out='<span class="kbband" style="left:calc(100% / '+cols+' * '+(KBH.i*2)+');'+
-      'width:calc(100% / '+cols+' * '+Math.min(2, cols-KBH.i*2)+')"></span>'+out;
+  hrun=kbHeadRun();
+  if(!ro && hrun && KBH.k==='c' && hrun.a*2<cols)
+    out='<span class="kbband" style="left:calc(100% / '+cols+' * '+(hrun.a*2)+');'+
+      'width:calc(100% / '+cols+' * '+
+        Math.min((hrun.b-hrun.a+1)*2, cols-hrun.a*2)+')"></span>'+out;
   return '<div class="kb'+(ro? '' : ' kbsheet')+'" id="kb"'+
     (ro? '' : ' style="--kc:'+cols+';width:'+kbSheetW()+';--kh:'+kbSheetH()+'"')+'>'+out+'</div>';
 }
@@ -2766,9 +2830,64 @@ function kbMateEl(el){
   if(di<0) return null;
   return g.querySelector('.kbk[data-r="'+wr+'"][data-k="'+di+'"]');
 }
+/* ---- A HEAD, HELD AND DRAWN ALONG ---------------------------------------
+   「そこからabcdみたいに引っ張っても選択ができない。…エクセルとかなら真ん中に
+   丸ポチがあって引っ張れるでしょ？」 OWNER 2026-09-05.
+
+   The same touch road the sheet already had -- one listener on #kb, mounted
+   by kbDragMount() -- because dragging a head and carrying a key are the same
+   gesture asked of two things, and two roads over one sheet is two answers to
+   what a finger is doing.
+
+   The PRESS is untouched: act.js's one listener still calls kbHeadRow() or
+   kbHeadCol() on the click, so a tap chooses, stands and releases exactly as
+   it did. What is added is the far end, and it is only ever written by a
+   finger that has MOVED -- which is what makes a drag a drag rather than a
+   press that happened to wander. */
+var KBHD=null;
+function kbHeadAt(el){
+  var c;
+  while(el && el.getAttribute){
+    c=' '+(el.className||'')+' ';
+    if(c.indexOf(' kbcl ')!==-1) return {k:'c', el:el};
+    if(c.indexOf(' kbn ')!==-1) return {k:'r', el:el};
+    el=el.parentNode;
+  }
+  return null;
+}
+/* Which head it is, read off the argument the button already carries -- the
+   number is written down once, in kbHdrHTML() and kbNHTML(), and this reads
+   the same one rather than counting the elements again. */
+function kbHeadN(el){
+  var a;
+  try{ a=JSON.parse(el.getAttribute('data-a')||'[]'); }catch(x){ return null; }
+  return (a.length && typeof a[0]==='number')? a[0] : null;
+}
+function kbHeadDrag(e, p){
+  var over=kbHeadAt(document.elementFromPoint(p.clientX, p.clientY)), n;
+  if(!over || over.k!==KBHD.k) return;
+  n=kbHeadN(over.el);
+  if(n===null) return;
+  if(e.preventDefault) e.preventDefault();
+  /* The first move is what makes it a drag: the head it started on becomes
+     the selection, exactly as a press on it would, and the one under the
+     finger becomes the far end. */
+  if(!KBH || KBH.k!==KBHD.k || KBH.i!==KBHD.i) KBH={k:KBHD.k, i:KBHD.i, ins:false};
+  if(kbHeadJ()===n) return;
+  KBH.j=n;
+  kbSel=null;
+  render();
+}
 function kbDown(e){
-  var b=kbKeyAt(e.target), p=e.touches? e.touches[0] : e, mate, k;
-  if(!b || !p || b.getAttribute('data-r')===null) return;
+  var b=kbKeyAt(e.target), p=e.touches? e.touches[0] : e, mate, k, h, n;
+  if(!p) return;
+  h=kbHeadAt(e.target);
+  if(h){
+    n=kbHeadN(h.el);
+    KBHD=(n===null)? null : {k:h.k, i:n};
+    return;
+  }
+  if(!b || b.getAttribute('data-r')===null) return;
   mate=kbMateEl(b);
   /* The pair is carried by its TOP half whichever half was touched -- the top
      is the key, and the one under it is the room it takes. kbVJoin() keeps
@@ -2845,9 +2964,10 @@ function kbLift(){
   kbWob=true;
 }
 function kbDragTo(e){
-  if(!KBD) return;
   var p=e.touches? e.touches[0] : e;
   if(!p) return;
+  if(KBHD){ kbHeadDrag(e, p); return; }
+  if(!KBD) return;
   var dx=p.clientX-KBD.x, dy=p.clientY-KBD.y;
   if(!KBD.on){
     if(dx*dx+dy*dy>144){ clearTimeout(KBD.timer); KBD=null; }
@@ -3037,6 +3157,7 @@ function kbPairMove(row, over, w){
   return true;
 }
 function kbUp(e){
+  if(KBHD){ KBHD=null; return; }
   if(!KBD) return;
   clearTimeout(KBD.timer);
   var d=KBD, g=document.getElementById('kb'), c=kbCarried(), i;
@@ -3126,6 +3247,10 @@ function kbReadRows(){
    A keyboard is built by taking rows out and putting them back; a dialog on
    every one of those would make it a conversation. 「巻き戻しボタンと進む
    ボタンも入れよう」 */
+/* THE MUTATING HALF, and it writes nothing. A head selection is a RUN, so one
+   press of the bin can be four rows or four columns -- and four saves is four
+   steps back for one press, which is not what the step back is. kbCut() loops
+   these and saves once. */
 function kbDelRow(ri){
   var lay=kbEdit();
   if(!lay) return;
@@ -3139,7 +3264,6 @@ function kbDelRow(ri){
      way to be rid of a face is the x beside the tabs. */
   if(rows.length<2) return;
   rows.splice(ri, 1);
-  kbSel=null; KBH=null; saveKb(); render();
 }
 /* A column, in whole keys, taken out of every row -- and a key that is wider
    than one column loses a column and stays. That is the half of this the word
@@ -3149,7 +3273,9 @@ function kbDelRow(ri){
 
    Counted in half columns, because a key can be half of one -- kbU() above
    says why. What is left is rounded back to keys, and anything that comes out
-   at nothing goes. */
+   at nothing goes.
+
+   The mutating half, writing nothing, for kbDelRow()'s reason above. */
 function kbDelCol(ci){
   var lay=kbEdit();
   if(!lay) return;
@@ -3165,7 +3291,6 @@ function kbDelCol(ci){
     }
     rows[i]=out;
   }
-  kbSel=null; KBH=null; saveKb(); render();
 }
 /* ---- the step back, and the step forward again -------------------------
    Where the editor has been, as whole layouts. It is in memory and in memory
@@ -3291,7 +3416,7 @@ function kbToolHTML(){
          half a merge in it may not: where a merged pair goes when its row is
          pushed is the OWNER's and has not been asked, and moving one half
          and not the other is not an answer to it. */
-      al=row && !kbRowTied(KBH.i);
+      al=row && !kbRunTied();
   return '<div class="kbtool">'+
     kbTb('kbUndo', ICON_UNDO, t('kb.undo'), !KBU.u.length)+
     kbTb('kbRedo', ICON_REDO, t('kb.redo'), !KBU.r.length)+
