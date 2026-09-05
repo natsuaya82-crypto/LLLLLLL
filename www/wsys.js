@@ -103,10 +103,15 @@ function setWsys(k){
   if(upStop(can('wsys'))) return;
 
   if(WSYS.indexOf(k)<0) return;
-  /* The screen only offers the alphabet on the free plan; this is the same
-     sentence said where it can be relied on, since a route can be arrived at
-     from anywhere and a plan can end while one of the other four is set. */
-  if(!can('wsys') && k!=='alpha'){ goPlans(); return; }
+  /* There is no second guard under this one. It used to read
+     `if(!can('wsys') && k!=='alpha'){ goPlans(); return; }` -- the free plan
+     carried off to the price list, which is the older sentence
+     「無料はタップすると課金ページに飛ばされる」 and 「ポップだって。その
+     古いのは消して」 OWNER 2026-09-05 is what replaced it. Said as
+     `upStop(can('wsys'))` it is the line at the top of this function, word
+     for word, and a route arrived at from anywhere or a plan that ended
+     while one of the other four was set meets it there. Written twice, the
+     second one can never run. */
   SET.wsys=k; save();
   installScriptFont();
   render();

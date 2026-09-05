@@ -535,9 +535,12 @@ const boxes = await pg.evaluate(async () => {
    among them, which the free keyboard has no key for. Measured: 39 letters
    before, 42 after.
 
-   A closed door is DRAWN and goes to the plans screen -- 「無料はタップすると
-   課金ページに飛ばされる」 OWNER 2026-08-25 -- so what is asked for is the
-   door, not its absence. And the take itself is refused where the rule is and
+   A closed door is DRAWN rather than missing, so what is asked for is the
+   door and not its absence. What the press does is the pop -- 「ポップだって。
+   その古いのは消して」 OWNER 2026-09-05, which took 「無料はタップすると課金
+   ページに飛ばされる」 (2026-08-25) away with it -- so the door is asked for
+   by the name it carries, `upFile`, and the flight to the plans screen is
+   what its YES does. And the take itself is refused where the rule is and
    not only on the screen, because a button is not the only way in. */
 const free = await pg.evaluate(() => {
   var was = SET.plan, ring = [[[150,150],[650,150],[650,650],[150,650]]];
@@ -549,7 +552,7 @@ const free = await pg.evaluate(() => {
   var body = document.getElementById('form-body');
   var out = {
     input: !!document.getElementById('wr-file'),
-    door: body ? /data-do="go"[^>]*plans/.test(body.innerHTML) : false,
+    door: body ? /data-do="upFile"/.test(body.innerHTML) : false,
     /* and the take, driven straight past the screen */
     before: LETTERS.length
   };
@@ -1025,8 +1028,8 @@ say(boxes.before.join(',') === boxes.after.join(','),
     'placeholder boxes: m o u t i inked ' + boxes.before.join('/') +
     ' before the sheet and ' + boxes.after.join('/') + ' after');
 say(!free.input && free.door,
-    'on the free plan the sheet does not offer a file: it offers the door to ' +
-    'the plans screen, drawn and pressable (' +
+    'on the free plan the sheet does not offer a file: it offers the door, ' +
+    'drawn and pressable, and the press is the pop (' +
     (free.input ? 'a file input is still there' : 'no file input') + ', ' +
     (free.door ? 'the door is drawn' : 'NO DOOR') + ')');
 say(free.after === free.before && free.same,

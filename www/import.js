@@ -494,10 +494,14 @@ function impFileHTML(){
      button's own words with nothing between them, so 「ファイルを選ぶ」 and
      「アップグレード」 ran together into one unreadable word -- a button whose
      text a person cannot read is worse than one they cannot press. What the
-     tail was for is said by the press: this is a door, and 「扉は押したら飛ぶ」
-     (OWNER 2026-09-03). */
+     tail was for is said by the press, and what the press says is the pop:
+     「ポップだって。その古いのは消して」 OWNER 2026-09-05. It used to jump to
+     the price list -- 「扉は押したら飛ぶ」 (OWNER 2026-09-03) -- and the flight
+     is now the "yes" inside upStop() (www/core.js) rather than the press
+     itself, which is the same sentence shInFileHTML() in www/sheet.js is
+     written under. */
   if(!can('file'))
-    return '<button class="btn ghost impfile"' + DO('go', ["plans"]) + '>'+
+    return '<button class="btn ghost impfile"' + DO('upFile') + '>'+
       esc(t('imp.file'))+'</button>';
   return '<label class="btn ghost impfile">'+esc(t('imp.file'))+
     '<input type="file" id="f-file" accept=".csv,.tsv,.tab,.txt,.json,.db,.dic,.lex"></label>';
