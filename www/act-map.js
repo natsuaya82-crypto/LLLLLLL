@@ -106,7 +106,6 @@ act('keepPress', keepPress);
 act('goTab', goTab);
 act('kbAddLay', kbAddLay);
 act('kbDropLay', kbDropLay);
-act('kbWobEnd', kbWobEnd);
 act('kbDelKey', kbDelKey);
 act('kbHeadRow', kbHeadRow);
 act('kbHeadCol', kbHeadCol);
