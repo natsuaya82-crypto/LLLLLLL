@@ -182,9 +182,25 @@ const evalled = (names) => {
   return bodies.join('\n');
 };
 
+/* ---- AND THE PRESS THAT ANSWERS THE QUESTION ---------------------------
+   「消すボタン押しても何も変わらない」 OWNER 2026-09-05, on a phone. Not the
+   post going and coming back -- NOTHING. postMenuTook() (www/post.js) takes
+   the first press that is not part of an open menu and closes the menu with
+   it, and the popup's 「削除」 carries no `data-pm`, so it is exactly such a
+   press: the question stood over a menu still open, answering it closed the
+   menu, and postDelGo() never ran. A confirm somebody answers and nothing
+   happens, with nothing thrown and no screen looking wrong.
+
+   `PMENU` empty and `WMENU` false is not a proxy for 「the press gets
+   through」 -- it is the whole of postMenuTook()'s first line, and that
+   function is RUN here rather than read. What is stubbed is actOf(), and it
+   answers what the popup's own button is: not part of any menu.           */
 {
   const world = {
-    POSTS: [], POST_GONE: {}, PMENU: 'x', SESS: { uid: 'u', at: 'tok' },
+    POSTS: [], POST_GONE: {}, PMENU: 'p1', WMENU: false, SESS: { uid: 'u', at: 'tok' },
+    asked: null,
+    popAsk: (msg, yes) => { world.asked = yes; },
+    actOf: () => null,
     said: [], sent: null, answer: null,
     netSignedIn: () => true,
     netDropFiles: (p, done) => done(),
@@ -197,10 +213,12 @@ const evalled = (names) => {
     savePosts: () => {}, render: () => {}, back: () => {},
     here: () => ({ r: 'feed' }), voDropFile: () => {}
   };
-  const src2 = evalled(['netDrop', 'postDelGo', 'postDelDone']);
+  const src2 = evalled(['netDrop', 'postDel', 'postDelGo', 'postDelDone', 'postMenuTook']);
   const keys = Object.keys(world);
   /* eslint-disable no-new-func */
-  const make = new Function(keys.join(','), src2 + '\nreturn {postDelGo:postDelGo};');
+  const make = new Function(keys.join(','), src2 +
+    '\nreturn {postDel:postDel, postDelGo:postDelGo, ' +
+    'swallows:function(){ return postMenuTook(null); }};');
   const app = make.apply(null, keys.map(k => world[k]));
 
   const run = (post, answer) => {
@@ -209,6 +227,30 @@ const evalled = (names) => {
     app.postDelGo(post.id);
     return { left: world.POSTS.indexOf(post) >= 0, said: world.said.slice() };
   };
+
+  /* THE WHOLE ROAD, from the menu row to the request going out. */
+  {
+    world.POSTS.length = 0;
+    world.POSTS.push({ id: 'p1', sid: 's1', mine: 1 });
+    world.said.length = 0; world.sent = null; world.asked = null;
+    world.answer = (ok) => ok([{ id: 's1' }]);
+    app.postDel('p1');
+    if (app.swallows())
+      bad.push('the ... menu was still open with the 「delete this post?」 ' +
+        'question standing over it, so postMenuTook() takes the press that ' +
+        'answers it and postDelGo() never runs — 「消すボタン押しても何も' +
+        '変わらない」. A row that ENDS a menu closes it itself; openReport() ' +
+        'says so about the row beside this one.');
+    if (!world.asked)
+      bad.push('postDel() asked nobody. Deleting a post is asked first — ' +
+        'tools/del-check.mjs says so in the list above.');
+    else {
+      world.asked();
+      if (!world.sent)
+        bad.push('answering 「delete this post?」 with yes sent no DELETE. ' +
+          'The post came off the phone and stayed on the server.');
+    }
+  }
 
   /* 0 行。The server answered, and it removed nothing. */
   const none = run({ id: 'p1', sid: 's1', mine: 1 }, (ok, bad) => ok([]));
@@ -250,6 +292,8 @@ console.log('del: ' + Object.keys(DELETES).length + ' delete-shaped buttons — 
   'ask first and ' + (takes.length - asked.length) + ' say in writing why they do not');
 console.log('     nothing deletes that is not written down, and nothing written ' +
   'down has lost its confirm');
-console.log('     and one of them was run: a DELETE that removed no row leaves the ' +
-  'post on the screen and says so, a post with no sid sends nothing, and a ' +
-  'DELETE that removed the row takes it off');
+console.log('     and one of them was run, from the menu row to the request: the ' +
+  'question closes the menu so the press that answers it gets through, a ' +
+  'DELETE that removed no row leaves the post on the screen and says so, a ' +
+  'post with no sid sends nothing, and a DELETE that removed the row takes ' +
+  'it off');

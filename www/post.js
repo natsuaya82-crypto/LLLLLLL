@@ -3379,6 +3379,17 @@ function postPin(id){
    whose voice is silently missing, which is worse than a file nobody hears.
    Only the file this post names, and only from this post. */
 function postDel(id){
+  /* MENUS FIRST, AND THAT IS WHAT WAS MISSING. 「消すボタン押しても何も
+     変わらない」 OWNER 2026-09-05. postMenuTook() above swallows the first
+     press that is not part of an open menu -- and the popup's 「削除」 is
+     not part of it, so the question came up over a menu still standing, the
+     press closed the menu, and postDelGo() never ran. Nothing threw: a
+     confirm somebody answers and nothing happens.
+
+     openReport() says the sentence this row was breaking: 「a row that ENDS a
+     menu closes it itself」. This row ends it. `WMENU` too, because the same
+     ... is on a person's page. */
+  PMENU=''; WMENU=false;
   /* 確認は自前のポップで。「標準は使わねえって言ってるだろこれも禁止や」
      OWNER 2026-09-01 -- confirm() は使わない。はいの側がこの下。 */
   popAsk(t('post.del.q'), function(){ postDelGo(id); }, t('pop.yes'));
@@ -3386,7 +3397,6 @@ function postDel(id){
 function postDelGo(id){
   var i, gone=null;
   for(i=0;i<POSTS.length;i++) if(POSTS[i].id===id){ gone=POSTS[i]; break; }
-  PMENU='';
   render();
   if(!gone) return;
   /* 消えるのはサーバーから消えた時だけ ── 落ちて何も言わず画面からだけ消える
