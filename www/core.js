@@ -355,6 +355,43 @@ function slRm(k){
   try{ localStorage.removeItem(k); }catch(e){}
 }
 
+/* ---- AND A SAVE THAT DID NOT LAND SAYS SO -------------------------------
+   「なら失敗して残るにするべき。」
+   「スタンダードに合わせて作りたいから間違ってることあったら言って。」
+   OWNER 2026-09-05.
+
+   Four writes to this phone's disk sat in this file behind a catch with
+   nothing in it -- the settings, the settings again from the plan migration,
+   the index of languages, and the settings of an account parked on its way
+   out. A phone with no room left wrote none of them and said nothing.
+   「保存が失敗しても何も言いません」 was how the leader wrote it down, and
+   the owner's answer is that a save FAILING is what an online app does and a
+   save failing QUIETLY is not: what somebody made stays in front of them, and
+   the app says it did not get written down.
+
+   ONE PLACE ANSWERS IT, and this is the place. What is written and under
+   which key stays at the call site -- that is what tools/store-check.mjs
+   reads, and 「which account is this」 is asked of each key there. What was
+   in four places is the other question, 「did it land」, and it is here.
+
+   NOTHING IS THROWN AWAY BY A FAILURE. The language is in LSL above before
+   any of this runs, WORDS and LETTERS are what the screens draw, and the send
+   is bkTouch()'s -- so what a person made is still on the screen and pressing
+   save again is a save that can land. 「失敗して残る」.
+
+   toast() is www/shell.js's, and index.html loads that file after the whole
+   of this one, so a failure DURING THE LOAD has nobody to say it to:
+   planMigrate() below runs while core.js is still being read. It is asked for
+   rather than assumed because the alternative is core.js stopping on that
+   line with everything under it -- CAN among them -- never defined, which is
+   a white screen from a message about a full disk. If toast() is there then
+   so is t(), for the same reason. And the toast is one line on the screen
+   that rewrites itself, so a burst that fails twice says it once. */
+function saveTry(put){
+  try{ put(); }
+  catch(e){ if(typeof toast==='function') toast(t('save.no')); }
+}
+
 /* Which languages are here, and which one is open. Read before anything else
    in this file, because every other key is built out of langId. */
 try{
@@ -364,10 +401,10 @@ try{
 try{ langId=localStorage.getItem(LS_CUR)||''; }catch(e){}
 
 function langStore(){
-  try{
+  saveTry(function(){
     localStorage.setItem(LS_LANGS, JSON.stringify(LANGS));
     localStorage.setItem(LS_CUR, langId);
-  }catch(e){}
+  });
 }
 /* A new language of this person's, in the index and nowhere else yet. Its
    slices do not exist until something writes one, which is what an empty
@@ -602,7 +639,7 @@ function planMigrate(){
      them) is never defined: a white screen from a migration that was only
      ever meant to move one word. Found by migrate-check, which is the only
      check that reloads the page with an old file under it. */
-  try{ localStorage.setItem(LS_S, JSON.stringify(setOnDisk())); }catch(e){}
+  saveTry(function(){ localStorage.setItem(LS_S, JSON.stringify(setOnDisk())); });
   /* PLAN_READ_OK for the same reason the branch above asks it: on a launch
      that could not read the Keychain, `SET.plan` is the settings' copy, and
      writing that down would put a stale word over whatever the Keychain
@@ -697,7 +734,7 @@ function langNew(){
 function save(){
   if(langLocked()) return;   /* somebody else's language: nothing is written to it */
   bkTouch();
-  try{
+  saveTry(function(){
     slWr(langKey('words'),JSON.stringify(WORDS));
     slWr(langKey('lines'),JSON.stringify(LINES));
     slWr(langKey('lang'),langName);
@@ -707,7 +744,7 @@ function save(){
        opening each one to find out what it is called */
     if(LANGS[langId]) LANGS[langId].name=langName;
     langStore();
-  }catch(e){}
+  });
 }
 
 /* =========================================================================
@@ -1185,7 +1222,7 @@ function setOnDisk(){
    planMigrate() above already writes this key straight, for its own reason,
    so this is that line with a name on it rather than a new road. */
 function setKeep(){
-  try{ localStorage.setItem(LS_S, JSON.stringify(setOnDisk())); }catch(e){}
+  saveTry(function(){ localStorage.setItem(LS_S, JSON.stringify(setOnDisk())); });
 }
 /* Written down when somebody has just changed it, and not waited for. What
    this session uses is the value in memory; a Keychain that refused the write
@@ -1339,7 +1376,7 @@ function setFor(uid){
   if(was){
     d={}; keys=setAcctKeys(null);
     for(i=0;i<keys.length;i++) d[keys[i]]=SET[keys[i]];
-    try{ localStorage.setItem(setParkKey(was), JSON.stringify(d)); }catch(e){}
+    saveTry(function(){ localStorage.setItem(setParkKey(was), JSON.stringify(d)); });
   }
   if(me){
     try{ park=localStorage.getItem(setParkKey(me)); }catch(e){ park=null; }

@@ -1120,6 +1120,7 @@ defLang('pt', (function(){
       "confirm.del"      : "Apagar {0}?",
       "toast.saved"      : "{0} atualizada",
       "toast.deleted"    : "{0} apagada",
+      "save.no"       : "Não foi salvo",
       "card.title"        : "Cartão",
       "card.save"         : "Partilhar",
       "card.shape"         : "Formato",

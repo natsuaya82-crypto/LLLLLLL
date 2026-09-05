@@ -1029,6 +1029,7 @@ defLang('ja', (function(){
       'confirm.del'     : '{0} を消しますか？',
       'toast.saved'     : '{0} を更新しました',
       'toast.deleted'   : '{0} を消しました',
+      'save.no'       : '保存できませんでした',
       'card.title'      : 'カード',
       'card.save'       : '共有',
       'card.shape'       : 'かたち',

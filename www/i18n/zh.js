@@ -1118,6 +1118,7 @@ defLang('zh', (function(){
       "confirm.del"      : "删除 {0}？",
       "toast.saved"      : "{0} 已更新",
       "toast.deleted"    : "{0} 已删除",
+      "save.no"       : "未保存",
       "card.title"        : "卡片",
       "card.save"         : "分享",
       "card.shape"         : "尺寸",

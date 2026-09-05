@@ -1161,6 +1161,7 @@ defLang('fr', (function(){
       "confirm.del"      : "Supprimer {0} ?",
       "toast.saved"      : "{0} mis à jour",
       "toast.deleted"    : "{0} supprimé",
+      "save.no"       : "Non enregistré",
       "card.title"        : "Carte",
       "card.save"         : "Partager",
       "card.shape"         : "Format",

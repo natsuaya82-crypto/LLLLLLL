@@ -1114,6 +1114,7 @@ defLang('it', (function(){
       "confirm.del"      : "Eliminare {0}?",
       "toast.saved"      : "{0} aggiornata",
       "toast.deleted"    : "{0} eliminata",
+      "save.no"       : "Non salvato",
       "card.title"        : "Scheda",
       "card.save"         : "Condividi",
       "card.shape"         : "Formato",

@@ -1073,6 +1073,7 @@ defLang('es', (function(){
       "confirm.del"      : "¿Eliminar {0}?",
       "toast.saved"      : "{0} actualizada",
       "toast.deleted"    : "{0} eliminada",
+      "save.no"       : "No se guardó",
       "card.title"        : "Tarjeta",
       "card.save"         : "Compartir",
       "card.shape"         : "Forma",

@@ -1102,6 +1102,7 @@ defLang('de', (function(){
       "confirm.del"      : "{0} löschen?",
       "toast.saved"      : "{0} aktualisiert",
       "toast.deleted"    : "{0} gelöscht",
+      "save.no"       : "Nicht gespeichert",
       "card.title"        : "Karte",
       "card.save"         : "Teilen",
       "card.shape"         : "Format",

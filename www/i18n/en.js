@@ -1028,6 +1028,7 @@ defLang('en', (function(){
       'confirm.del'     : "Delete {0}?",
       'toast.saved'     : "{0} updated",
       'toast.deleted'   : "{0} deleted",
+      'save.no'       : 'Not saved',
       'card.title'      : 'Card',
       'card.save'       : 'Share',
       'card.shape'       : 'Shape',

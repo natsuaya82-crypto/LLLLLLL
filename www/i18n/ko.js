@@ -1288,6 +1288,7 @@ defLang('ko', (function(){
       "confirm.del"      : "{0}, 지울까요?",
       "toast.saved"      : "{0} 고쳤어요",
       "toast.deleted"    : "{0} 지웠어요",
+      "save.no"       : "저장되지 않았습니다",
       "card.title"        : "카드",
       "card.save"         : "공유",
       "card.shape"         : "모양",
