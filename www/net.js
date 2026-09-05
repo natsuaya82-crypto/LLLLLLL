@@ -1548,8 +1548,18 @@ var NET_SYNCING=false;
    key is (language, kind) and `no` is a counter that guards nothing, so an
    unmerged write wins and 「そりゃあ両方足すだろ」 loses.
 
-   `got` is what the server is holding for this slice, or nothing. */
-function netSlice1(id, sid, kind, got, done){
+   `got` is what the server is holding for this slice, or nothing.
+
+   AND A WRITE THAT DID NOT LAND IS SAID OUT LOUD. Both of the netSlicePut()
+   failures below used to call done(), exactly as a success does, so the one
+   request that carries a person's work could fail with nothing told to
+   anybody -- pressed on 2026-09-05: Save on the drawing screen, five POSTs of
+   /rest/v1/slice refused, no pop, the screen moved on and the toast said
+   saved. 「通信エラーなら進むわけねえだろ全部」 OWNER 2026-09-05. `bad` is
+   that answer, and it is the file's own `ok, bad` shape rather than a new
+   one. Which of the two a caller wants is the CALLER's, so both call sites
+   pass one and neither can inherit a swallow it did not ask for. */
+function netSlice1(id, sid, kind, got, done, bad){
   var mine, was, put;
   /* WHAT THIS PHONE HAS THAT THE SERVER MAY NOT KNOW ABOUT, and never the
      picture kept for a launch with no signal -- slGot() in www/core.js says
@@ -1583,15 +1593,15 @@ function netSlice1(id, sid, kind, got, done){
     if(got && put===got.body){ netAgreed(id, kind, put); done(true); return; }
     netSlicePut(sid, kind, put, got? got.no : 0,
                 function(){ netAgreed(id, kind, put); done(true); },
-                /* A write that did not land agreed nothing. The record
-                   stays as it was and the next launch tries again. */
-                function(){ done(true); });
+                /* A write that did not land agreed nothing, and the record
+                   stays as it was. What happens next is the caller's. */
+                function(d, st){ bad(d, st); });
     return;
   }
   if(put==='' || (got && put===got.body)){ netAgreed(id, kind, put); done(false); return; }
   netSlicePut(sid, kind, put, got? got.no : 0,
               function(){ netAgreed(id, kind, put); done(false); },
-              function(){ done(false); });
+              function(d, st){ bad(d, st); });
 }
 /* ---- and the moment a save reaches the server --------------------------
    「保存としたらオンラインおしまい」「オンラインは一本化ね？」 OWNER 2026-09-04.
@@ -1618,17 +1628,50 @@ function netSaveUp(){
   if(!netSignedIn() || !langId || !langMine(langId)) return;
   NET_UPT=setTimeout(netSaveUpGo, NET_UPMS);
 }
-function netSaveUpGo(){
+/* ---- AND WHEN A PERSON PRESSED THE BUTTON, THE BUTTON WAITS ---------------
+   「後通信なくても文字書いて保存できたけど、これって消えない？
+     普通ボタン押したら通信できませんになるはずだよね？」 OWNER 2026-09-05.
+
+   They are right, and it is the same road with the wait taken off it. Above
+   is the burst: every letter drawn and every word typed calls save(), and
+   NET_UPMS of quiet is what separates 「still typing」 from 「stopped」.
+   Nobody presses anything for those and nobody is waiting for an answer.
+
+   A SAVE BUTTON IS NOT A BURST. Somebody pressed it and is standing there.
+   Pressed on 2026-09-05: Save on the drawing screen moved the screen and said
+   「保存しました」 with not one request yet sent -- the send was 1.2 seconds
+   behind a person who had already left, and the pop, when it came, was over a
+   screen they were no longer on. 「通信エラーなら進むわけねえだろ全部」.
+
+   So this is the same netSaveUpGo() and NOT a second road up: the timer is
+   dropped, the send happens now, and `done` is told whether it landed. There
+   is one place a slice goes up and this does not become the second one. */
+function netSaveNow(done){
+  if(NET_UPT){ clearTimeout(NET_UPT); NET_UPT=null; }
+  netSaveUpGo(done);
+}
+/* `done(ok)` when anybody asked for one. It is called for every way out of
+   this function, including the ways that send nothing at all -- a slice that
+   has not moved, and a language that is not this account's to write. Those
+   are not a network that is down: netPop() above says so about a request that
+   never went out, and this says the same thing about one that was never
+   made. The caller may go on. */
+function netSaveUpGo(done){
   var id=langId, kinds=[], i, k, mine, was;
   NET_UPT=null;
-  if(NET_SYNCING || !netSignedIn() || !id || !langMine(id)) return;
+  function no(d, s, m){
+    NET_SYNCING=false;
+    netPop(d, s, m, netSaveUpGo);
+    if(done) done(false);
+  }
+  if(NET_SYNCING || !netSignedIn() || !id || !langMine(id)){ if(done) done(true); return; }
   for(i=0;i<SLICES.length;i++){
     k=SLICES[i];
     mine=slMine(langKeyOf(id, k));
     was=slMine(langWasKey(id, k));
     if((mine===null? '' : mine)!==(was===null? '' : was)) kinds.push(k);
   }
-  if(!kinds.length) return;
+  if(!kinds.length){ if(done) done(true); return; }
   NET_SYNCING=true;
   netLangRow(id, function(sid){
     /* Only the slices that moved, and only those, so a save costs one small
@@ -1636,19 +1679,17 @@ function netSaveUpGo(){
     netSlices(sid, function(there){
       var at=0;
       function step(){
-        if(at>=kinds.length){ NET_SYNCING=false; return; }
+        if(at>=kinds.length){ NET_SYNCING=false; if(done) done(true); return; }
         var kind=kinds[at]; at++;
-        netSlice1(id, sid, kind, there[kind], function(){ step(); });
+        /* A slice that did not land stops the save. The ones already up
+           stay up -- they arrived -- and the record says so, so pressing
+           again sends only what is still missing. */
+        netSlice1(id, sid, kind, there[kind], function(){ step(); },
+                  function(d, st){ no(d, st, ''); });
       }
       step();
-    }, function(d, s, m){
-      NET_SYNCING=false;
-      netPop(d, s, m, netSaveUpGo);
-    }, kinds);
-  }, function(d, s, m){
-    NET_SYNCING=false;
-    netPop(d, s, m, netSaveUpGo);
-  });
+    }, no, kinds);
+  }, no);
 }
 /* EVERY LANGUAGE THIS PERSON MADE, and it used to be the one that happened to
    be open. That is not a smaller version of the same thing: a second language
@@ -1731,7 +1772,14 @@ function netLangSync1(id, done){
         netSlice1(id, sid, kind, there[kind], function(m){
           if(m) moved=true;
           step();
-        });
+        }, /* A LAUNCH WALKS ON, and it did before `bad` existed too -- this
+              is that same behaviour, written where it is chosen rather than
+              buried in netSlice1(). The launch is its own one of the four
+              places a pop comes from and www/boot.js already holds it; what
+              this line has not been pressed about is a launch where the
+              slices are the only thing that fails. Whoever presses that
+              decides it. */
+           function(){ step(); });
       }
       step();
     }, function(){ done(false); });

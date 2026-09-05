@@ -1492,25 +1492,56 @@ function geSave(){
 
      The pen already lays a dot down -- one point gives one square of ink, the
      nib itself -- so nothing else had to change for this to be drawable. */
+  /* AND IT WAITS FOR THE SERVER BEFORE IT SAYS ANYTHING.
+     「後通信なくても文字書いて保存できたけど、これって消えない？ 普通ボタン
+       押したら通信できませんになるはずだよね？」 OWNER 2026-09-05.
+
+     Pressed with no signal: the screen went to the letters, 「保存しました」
+     came up, and the first request left 1.2 seconds later -- the save was
+     netSaveUp()'s burst timer and nothing here ever asked how it went.
+     「通信エラーなら進むわけねえだろ全部」. So the send happens on the press
+     (netSaveNow, www/net.js) and the screen does not move until it lands.
+     On a failure netPop() is already up and this returns: the person is
+     still on their letter, with their drawing on it, and pressing again
+     sends it again.
+
+     THE DRAWING IS NOT TAKEN BACK. geKeep() has already written it, and it
+     stays written whichever way this goes -- leaving this screen keeps the
+     drawing (geLeft above, 「書いている途中で戻ったらそれはそこの文字として
+     保存して」), and a failed send is not a reason to undo somebody's hand.
+     What a failure withholds is the WORD 「保存しました」 and the way out,
+     which is what was untrue. */
   var keep=geKeep();
   var r=GE.r, l=ltById(GE.lid), snd=(l||{}).snd||[], k=ltKindOf(l);
-  GE=null;
-  /* Saving a letter finishes the letter, so it puts you back with the others
-     rather than on the page about the one you just drew -- which is where
-     back() landed, one press short of the list you came from.
-     「保存したら勝手にアルファベット一覧のとこに戻って欲しいかも」
+  /* One press at a time. The button stays where it is while the send is out,
+     and a second press would put a second save on the same slice. */
+  if(GE.busy) return;
+  GE.busy=true;
+  var was=GE;
+  netSaveNow(function(ok){
+    was.busy=false;
+    if(!ok) return;
+    /* Only now is the letter finished. GE is dropped here rather than before
+       the send, because until it lands this screen is still the one being
+       stood on -- and geLeft() reads GE to keep the drawing. */
+    if(GE===was) GE=null;
+    /* Saving a letter finishes the letter, so it puts you back with the others
+       rather than on the page about the one you just drew -- which is where
+       back() landed, one press short of the list you came from.
+       「保存したら勝手にアルファベット一覧のとこに戻って欲しいかも」
 
-     Only when that list is the way you came in. The abugida bench opens this
-     screen too, and from there the letters list is not behind you: going to
-     it would be going somewhere new, with the drawing screen left in front
-     of the back button. */
-  if(k && navHas('ltset', k)) go('ltset', k);
-  else back();
-  /* The shape and the sound are the same thing seen twice. Drawing one in
-     silence leaves them unconnected, so the letter says itself as it is put
-     away -- and only if there is a letter, since deleting one should not. */
-  if(keep.length && snd.length===1 && snd[0].length===1) sayOne(snd[0]);
-  toast(t('glyph.saved', r||t('lt.untitled')));
+       Only when that list is the way you came in. The abugida bench opens this
+       screen too, and from there the letters list is not behind you: going to
+       it would be going somewhere new, with the drawing screen left in front
+       of the back button. */
+    if(k && navHas('ltset', k)) go('ltset', k);
+    else back();
+    /* The shape and the sound are the same thing seen twice. Drawing one in
+       silence leaves them unconnected, so the letter says itself as it is put
+       away -- and only if there is a letter, since deleting one should not. */
+    if(keep.length && snd.length===1 && snd[0].length===1) sayOne(snd[0]);
+    toast(t('glyph.saved', r||t('lt.untitled')));
+  });
 }
 
 /* Taking the letter off a sound entirely -- the drawing and the borrowed

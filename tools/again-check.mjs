@@ -36,10 +36,23 @@ await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
 
 /* ---- a server made of two arrays, behind the one transport -------------- */
 const SERVER = `
-  window.__SRV = { lang:[], slice:[], n:0, down:false, sent:[] };
+  window.__SRV = { lang:[], slice:[], n:0, down:false, sent:[], tried:[] };
   netSend = function(method, p, body, tok, ok, bad){
     var S = window.__SRV;
+    /* WHAT WAS ASKED, before it is decided whether it is answered. S.sent is
+       written inside each route and so records only what got through -- which
+       is the right list for 「did this arrive」 and the wrong one for 「did
+       the app even try」. A save that is refused has to be seen to have gone
+       out, or 「押した瞬間に出て行く」 cannot be told from 「never sent」. */
+    S.tried.push(method + ' ' + p);
     if (S.down){ setTimeout(function(){ bad(null, 0, 'down'); }, 0); return; }
+    /* The write that actually carries a person's work, refused on its own.
+       It is not a contrived case: the language row is already known and the
+       GET of the slices is cached or small, so the POST is the request most
+       likely to be the one that does not make it. */
+    if (S.downSlice && method === 'POST' && p.indexOf('/rest/v1/slice') === 0){
+      setTimeout(function(){ bad(null, 0, 'down'); }, 0); return;
+    }
     function answer(v){ setTimeout(function(){ ok(v); }, 0); }
     function arg(k){
       var m = new RegExp('[?&]' + k + '=eq\\\\.([^&]*)').exec(p);
@@ -661,6 +674,99 @@ say(up2.sentBurst.length === 1,
 say(up2.sentOut.length === 0 && up2.keptOut,
     '署名が無ければ何も送らず、書いたものはこの iPhone に残る（送信 ' +
     up2.sentOut.length + ' 件、' + (up2.keptOut ? '残っている' : '**消えた**') + '）');
+
+/* ---- 保存を押して通信が落ちたら、何も進まない ------------------------------
+   「後通信なくても文字書いて保存できたけど、これって消えない？
+     普通ボタン押したら通信できませんになるはずだよね？」 OWNER 2026-09-05
+   「通信エラーなら進むわけねえだろ全部」 OWNER 2026-09-05。
+
+   **上の四つは「届く」だけを訊いていて、届かなかったときを訊いていなかった。**
+   それが 2026-09-05 に実機で出た形です ── 電波の無いところで文字を書いて保存を
+   押すと、画面はレターの一覧へ進み、「保存しました」と出て、要求はその 1.2 秒
+   後にはじめて出て行きました。保存は netSaveUp() の溜め（NET_UPMS）で、押した
+   ボタンはその結果を一度も訊いていませんでした。
+
+   **ここは押します。**geSave() を呼ぶのではなく、画面に立って、バーの保存を
+   クリックします ── 訊いているのは「ボタンが何をするか」で、関数が何をするか
+   ではないからです。関数を呼ぶ検査は、ボタンがその関数に繋がっていない日に
+   緑のままになります。
+
+   落ち方は二つあり、**二つ目が黙っていたほうです**:
+
+     S.down       通信ごと落ちる。GET も POST も返らない
+     S.downSlice  言語の欄は分かっていて、**その人の作ったものを運ぶ POST だけ**
+                  が落ちる。netSlice1() の netSlicePut 失敗が done() を呼んで
+                  いたので、五本落ちてもポップは一つも立ちませんでした
+
+   そして三つ目に、**電波があるときは今までどおり進む**ことを訊きます。落ちた
+   ときに止める直しは、止まったままにする直しと一行しか違わないので。 */
+async function pressSave(how){
+  const set = await pg.evaluate(async ({ s, srv, how }) => {
+    eval('(' + s + ')()');
+    SET.done = true;
+    eval(srv);
+    SESS = { at:'t', rt:'r', uid:'me3', anon:false };
+    function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
+    var id = langId;
+    LANGS[id].uid = 'me3'; LANGS[id].mine = true;
+    /* この言語はもうサーバーに欄がある ── 一度でも保存した iPhone がそうです。
+       欄が無い状態だけを見ると、落ちるのは POST /language になり、その人の
+       作ったものを運ぶ POST は一度も試されません。 */
+    LANGS[id].sid = 'srv-known'; langStore();
+    var l = LETTERS[0];
+    go('glyph', l.id); render();
+    await wait(200);
+    /* 指が一本置いていったのと同じもの */
+    GE.st = [{ pts:[{ x:0.2, y:0.2 }, { x:0.5, y:0.8 }, { x:0.8, y:0.3 }] }];
+    render();
+    await wait(50);
+    window.__SRV.down = (how === 'down');
+    window.__SRV.downSlice = (how === 'slice');
+    window.__SRV.sent = []; window.__SRV.tried = [];
+    return { drew: geDirty(), screen: JSON.stringify(NAV[NAV.length - 1]),
+             lid: l.id, hasBtn: !!document.querySelector('[data-do="geSave"]') };
+  }, { s: seed.toString(), srv: SERVER, how });
+  if (!set.hasBtn) return Object.assign(set, { noButton:true });
+  await pg.click('[data-do="geSave"]');
+  /* 溜めの時間より長く待つ。ここで通るなら、押した瞬間に出て行っています ──
+     NET_UPMS をコードから読むので、溜めが変わってもこの検査は付いていきます。 */
+  await pg.waitForTimeout(await pg.evaluate(() => NET_UPMS + 900));
+  return await pg.evaluate((lid) => ({
+    screen: JSON.stringify(NAV[NAV.length - 1]),
+    pop: popOn(),
+    toast: String((document.querySelector('.toast, #toast') || {}).textContent || ''),
+    /* 描いたものは、落ちても取り上げない。docs/DATA_SAFETY.md
+       「人が作ったものは消さない」── 落ちた送信は、手を戻す理由ではない。 */
+    inkKept: JSON.stringify((ltById(lid) || {}).st || []).length > 4,
+    sent: window.__SRV.sent.slice(),
+    tried: window.__SRV.tried.slice()
+  }), set.lid);
+}
+
+const sv = { down: await pressSave('down'), slice: await pressSave('slice'),
+             up: await pressSave('up') };
+
+say(sv.down.screen.indexOf('glyph') >= 0 && sv.down.pop && !sv.down.toast,
+    '**通信ごと落ちたら、保存は何も進めない** ── 画面はレターのまま、ポップが ' +
+    '立ち、「保存しました」は出ない（画面 ' + sv.down.screen + '、ポップ ' +
+    (sv.down.pop ? 'あり' : '**なし**') + '、文 ' +
+    (sv.down.toast ? '**「' + sv.down.toast + '」**' : 'なし') + '）');
+say(sv.slice.screen.indexOf('glyph') >= 0 && sv.slice.pop && !sv.slice.toast,
+    '**その人の作ったものを運ぶ POST だけが落ちても、同じ** ── これが黙って ' +
+    'いたほうで、五本落ちてポップが零だった（画面 ' + sv.slice.screen +
+    '、ポップ ' + (sv.slice.pop ? 'あり' : '**なし**') + '、文 ' +
+    (sv.slice.toast ? '**「' + sv.slice.toast + '」**' : 'なし') + '）');
+say(sv.down.inkKept && sv.slice.inkKept,
+    'そして描いたものは取り上げない ── 落ちた送信は手を戻す理由ではない' +
+    '（通信ごと ' + (sv.down.inkKept ? '在る' : '**消えた**') + '、POST だけ ' +
+    (sv.slice.inkKept ? '在る' : '**消えた**') + '）');
+say(sv.down.tried.length > 0 && sv.slice.tried.length > 0,
+    '押した瞬間に出て行く ── 溜め（NET_UPMS）を待たずに（通信ごと ' +
+    sv.down.tried.length + ' 件、POST だけ ' + sv.slice.tried.length + ' 件）');
+say(sv.up.screen.indexOf('glyph') < 0 && !sv.up.pop && !!sv.up.toast,
+    'そして電波があれば今までどおり進む ── レターの一覧へ戻り、保存したと言う' +
+    '（画面 ' + sv.up.screen + '、文 ' +
+    (sv.up.toast ? '「' + sv.up.toast + '」' : '**なし**') + '）');
 
 /* ---- 電波が無いとき、前に読み込んだ分が出る ------------------------------
    「Twitterとかは電波がないと開かないでしょ？」
