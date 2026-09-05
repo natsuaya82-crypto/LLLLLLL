@@ -384,8 +384,10 @@ function netWhy(d, status, mark){
         is the session ENDING (netResume() above signs the phone out and
         draws), not a network that is down.
 
-   netWhy() says what it was -- the app's one place for that -- so no second
-   sentence is invented here. `netWhy(null, 0, ...)` is 「接続できません」.
+   THE PERSON SEES TWO THINGS AND NO THIRD. 「feed0ってなに？ 再接続か閉じる
+   でしょ？」 OWNER 2026-09-05. netWhy() は印（`feed 0`）を付ける ── あれは
+   スクリーンショット一枚で原因が落ちてくるための状態で、人に読ませるもので
+   はない。ポップは `net.offline` の一文だけ。
 
    AND ONE FAILURE IS ONE POP. A launch fires six requests; six pops stacked
    on each other would be six people telling you the same thing. popOn() is
@@ -396,7 +398,7 @@ function netPop(d, s, m, again){
   if(s) return;
   if(mark.indexOf('−')>=0 || mark.indexOf('≠')>=0) return;
   if(popOn()) return;
-  popAsk(netWhy(d, s, m), again||null, t('net.again'), t('pop.no'));
+  popAsk(t('net.offline'), again||null, t('net.again'), t('pop.no'));
 }
 
 /* ---- coming and going --------------------------------------------------- */
