@@ -2862,8 +2862,14 @@ const r = await pg.evaluate(({ s }) => {
     out.ltpPut = String(kbAt(0, 0).v) === lid;
     out.ltpPutWrote = bytes() !== was && stored() !== wasStored;
     out.ltpPutOneStep = KBU.u.length === wasU + 1;
-    /* and the choice is spent: the button is gone with it */
-    out.ltpBtnGone = bar().length === 0 && purple().length === 0;
+    /* AND IT IS ONE STEP BACK: the key's screen is left behind and what is in
+       front of somebody is the sheet the key is on.
+       「キー選んで確定押したらキーボード編集画面に戻ってくれ」 OWNER 2026-09-05.
+       It used to arrive on the key a second time, so getting out of a key was
+       the arrow pressed twice -- once for the key, once for the grid. */
+    out.ltpPutBack = here().r === 'kb' && String(here().a) === '1';
+    /* and the choice is spent with it: no grid, and nothing purple on one */
+    out.ltpBtnGone = cellsOn().length === 0 && purple().length === 0;
 
     /* ---- one step back puts it back ----------------------------------- */
     kbUndo();
@@ -2922,7 +2928,7 @@ const r = await pg.evaluate(({ s }) => {
     tap(cellsOn()[0]);
     out.ltpSqOnKey = formArg(here().a).kind === 'kbkey' && bar().length === 1;
     tap(bar()[0]);
-    out.ltpSqStayed = formArg(here().a).kind === 'kbkey' && cellsOn().length > 0;
+    out.ltpSqStayed = here().r === 'kb' && cellsOn().length === 0;
   }());
 
 
@@ -3547,14 +3553,17 @@ say(r.ltpConfirmed && r.ltpPut && r.ltpPutWrote, 'the confirm is what writes it 
     + [r.ltpConfirmed, r.ltpPut, r.ltpPutWrote].join(' ') + ']');
 say(r.ltpPutOneStep, 'and it is ONE step back, not one per letter touched');
 say(r.ltpUndone, 'which one step back takes off again');
-say(r.ltpBtnGone, 'and the choice is spent: the confirm goes with it');
+say(r.ltpPutBack,
+    'and the confirm is ONE step back -- the key is left behind and the sheet'
+    + ' it is on is what is in front of you');
+say(r.ltpBtnGone, 'and the choice is spent: the grid goes with it');
 say(r.ltpOff, 'touching the chosen one again puts it down, and the confirm goes');
 say(r.ltpMoved, 'while touching a DIFFERENT one moves the choice rather than clearing it');
 say(r.ltpBackNoWrite,
     'go back without confirming and nothing was written -- what is not confirmed is not');
 say(r.ltpSqOpened && r.ltpSqSheet && r.ltpSqBack && r.ltpSqOnKey && r.ltpSqStayed,
-    'and choosing on the key\u0027s own grid keeps you on the key -- even after the'
-    + ' sheet for its square has been opened and left behind [' +
+    'and choosing on the key\u0027s own grid takes you back to the keyboard -- even'
+    + ' after the sheet for its square has been opened and left behind [' +
     [r.ltpSqOpened, r.ltpSqSheet, r.ltpSqBack, r.ltpSqOnKey, r.ltpSqStayed].join(' ')
     + ']');
 say(r.ltpReopened && r.ltpForgot,

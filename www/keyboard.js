@@ -4028,11 +4028,19 @@ function kbLtPut(){
   if(!key) return;
   if(p.d<0) key.v=p.v; else key.f[p.d]=p.v;
   saveKb();
-  /* From the sheet, back to the key; from the key's own screen, stay on it.
-     Either way it ends in kbPick(), which is arriving -- so the choice is
-     spent and the button is gone. */
+  /* THE CONFIRM IS ONE STEP BACK, from wherever it was pressed.
+     「キー選んで確定押したらキーボード編集画面に戻ってくれ」 OWNER 2026-09-05,
+     and 「確定を押した一回が、戻る一歩」 before it -- one sentence said of both
+     screens now. From the sheet for one corner, the step back is the key it
+     belongs to; from the key's own screen it is the sheet the key is on.
+
+     It used to END on the key's own screen -- kbPick() again, which is
+     arriving on it a second time. The letter was on the key and the screen
+     was still the one it had been chosen on, so getting out of a key was the
+     arrow: once for the key, and once more for the grid under it. */
+  kbLtPick=null;
   if(kbLtWhere()==='kbslot'){ kbSlotFor=null; back(); kbPick(p.r, p.k); return; }
-  kbPick(p.r, p.k);
+  back();
 }
 function kbSetKind(ri, ki, kind){
   if(!kbEdit()) return;
