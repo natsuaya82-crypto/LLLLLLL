@@ -2538,6 +2538,24 @@ function netShow(pid, ok, bad){
   netSend('POST', '/rest/v1/rpc/post_show', {p:pid},
           SESS.at, function(){ ok(); }, bad);
 }
+/* AND THE REPORT ITSELF, WHICH IS THE ONE THING HERE THAT REALLY DELETES.
+   「通報で問題なかったらその通報が消せるようにしてほしい」 OWNER 2026-09-05.
+
+   The two above take a post down and put it back, and both are reversible
+   because a report is about somebody and a decision about somebody has to be
+   one you can look at again. This is the other answer: there was nothing
+   wrong, so there is nothing left to keep, and the row goes.
+
+   `r` and not `p`, and a number and not a uuid: report.id is `generated
+   always as identity` where post and profile are uuid, so the two do not take
+   the same kind of name however alike they read -- supabase/schema.sql at
+   report_drop(). is_staff() is asked there and not here: this file is a
+   suggestion and the function is the wall. */
+function netReportDrop(id, ok, bad){
+  if(!netSignedIn() || !id){ bad(null, 0); return; }
+  netSend('POST', '/rest/v1/rpc/report_drop', {r:id},
+          SESS.at, function(){ ok(); }, bad);
+}
 /* And the person, which is the other half of answering a report: taking the
    post down leaves whoever wrote it free to write it again. Nothing of theirs
    is deleted and they are not signed out -- is_member() in schema.sql stops
