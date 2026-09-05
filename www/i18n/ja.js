@@ -269,6 +269,7 @@ defLang('ja', (function(){
       "net.needname" : "ユーザー名を入れてください",
       "net.badhandle" : "IDは a-z 0-9 _ で2〜24文字です",
       "net.handle.taken" : "このIDは使われています",
+      "net.nohandle"     : "そのIDのアカウントはありません",
       "net.offline" : "接続できません",
       "net.again" : "再接続",
       "net.failed" : "うまくいきませんでした",

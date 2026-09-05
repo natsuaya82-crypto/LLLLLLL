@@ -253,6 +253,7 @@ defLang('en', (function(){
       "net.needname" : "Enter a name.",
       "net.badhandle" : "An ID is 2–24 characters: a–z, 0–9 and _",
       "net.handle.taken" : "That ID is taken.",
+      "net.nohandle"     : "No account has that ID.",
       "net.offline" : "No connection.",
       "net.again" : "Reconnect",
       "net.failed" : "That did not work.",

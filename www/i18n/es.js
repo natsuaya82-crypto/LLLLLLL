@@ -313,6 +313,7 @@ defLang('es', (function(){
       "net.needname" : "Escribe un nombre.",
       "net.badhandle" : "Un ID tiene de 2 a 24 caracteres: a–z, 0–9 y _",
       "net.handle.taken" : "Ese ID ya está en uso.",
+      "net.nohandle"     : "Ninguna cuenta tiene ese ID.",
       "net.offline" : "Sin conexión.",
       "net.again" : "Reconectar",
       "net.failed" : "No funcionó.",

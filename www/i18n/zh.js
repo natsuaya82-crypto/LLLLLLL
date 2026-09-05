@@ -361,6 +361,7 @@ defLang('zh', (function(){
       "net.needname" : "请输入名字。",
       "net.badhandle" : "ID 为 2–24 个字符：a–z、0–9 和 _",
       "net.handle.taken" : "该 ID 已被使用。",
+      "net.nohandle"     : "没有账号使用该 ID。",
       "net.offline" : "无法连接。",
       "net.again" : "重新连接",
       "net.failed" : "没有成功。",
