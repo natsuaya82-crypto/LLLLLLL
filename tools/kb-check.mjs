@@ -857,22 +857,71 @@ const r = await pg.evaluate(({ s }) => {
     return !!on && !!off &&
       getComputedStyle(on).backgroundColor !== getComputedStyle(off).backgroundColor;
   }());
-  /* and what the band offers for it is the one button that fills it */
+  /* AND THE + IS DOWN ON IT, because a key is a key wide and this frame is
+     half of one. 「半キーを追加できるのやめてほしい」 OWNER 2026-09-05.
+     The frame is still selected by the press above -- that is what pressing a
+     frame is -- and what it cannot do is take a key. */
   out.cellTool = [].slice.call(document.querySelectorAll('.kbtool [data-do]'))
     .filter(function (b){ return !b.disabled; })
     .map(function (b){ return b.getAttribute('data-do'); }).join(' ');
+  /* and the press writes nothing even reached round the button. `disabled`
+     is what a finger meets; kbCellPut() is what a name still resolves to. */
   out.cellPut = (function (){
-    /* the one in the BAND, not a frame on the sheet: the band's carries no
-       arguments, because a button over the sheet acts on what is selected */
     var b = document.querySelector('.kbtool [data-do="kbCellAdd"]');
     if (b) b.click();
+    kbCellPut();
     return !!b;
   }());
   standKb();
-  out.cellAdded = kbLayer().rows[0].length === keysWas + 1;
-  out.cellAddedW = out.cellAdded && kbUsed(kbLayer().rows[0]) === usedWas + c0span;
+  out.cellHalfKept = kbLayer().rows[0].length === keysWas &&
+                     kbUsed(kbLayer().rows[0]) === usedWas;
   out.cellSpan = c0span;
-  out.cellBack = (kbUndo(), kbLayer().rows[0].length === keysWas);
+
+  /* ---- and a WHOLE frame still takes a whole key ------------------------
+     A row short by TWO keys leaves four columns, and centring splits those
+     two and two -- so each end is one frame a key wide. Short by one key it
+     is one column at each end, which is the half frame above: the leftover is
+     always halved, so a whole frame needs a whole key at each end. Every row
+     here is a different length, so the frame is found by its WIDTH rather
+     than by being the first one on the sheet. */
+  fresh(); kbShow = 1; kbLay = 0; KBH = null;
+  kbLayer().rows[0].splice(0, 2); saveKb(); standKb();
+  var c1 = (function (){
+    var es = [].slice.call(document.querySelectorAll('.kb.kbsheet .kbrow .kbk.cell')), i;
+    for (i = 0; i < es.length; i++)
+      if (es[i].getAttribute('data-do') === 'kbCellAdd' && spanEl(es[i]) === 2)
+        return es[i];
+    return null;
+  }());
+  out.cellWholeSpan = c1 ? spanEl(c1) : 0;
+  if (c1) c1.click();
+  standKb();
+  out.cellWholeTool = [].slice.call(document.querySelectorAll('.kbtool [data-do]'))
+    .filter(function (b){ return !b.disabled; })
+    .map(function (b){ return b.getAttribute('data-do'); }).join(' ');
+  var wholeWas = kbLayer().rows[0].length, wholeUsed = kbUsed(kbLayer().rows[0]);
+  (function (){
+    var b = document.querySelector('.kbtool [data-do="kbCellAdd"]');
+    if (b) b.click();
+  }());
+  standKb();
+  out.cellAdded = kbLayer().rows[0].length === wholeWas + 1;
+  out.cellAddedW = out.cellAdded && kbUsed(kbLayer().rows[0]) === wholeUsed + 2;
+  /* and not one key on this board is narrower than a key */
+  out.cellNoHalf = kbLayer().rows.every(function (r){
+    return r.every(function (k){ return k.k === 'gap' || (k.w || 1) >= 1; });
+  });
+  out.cellBack = (kbUndo(), kbLayer().rows[0].length === wholeWas);
+
+  /* ---- AND A HALF KEY SOMEBODY ALREADY HAS IS NOT TOUCHED ---------------
+     The rule is about what can be MADE, exactly as the two ceilings on this
+     screen are: a layout carrying one is left as it is, because cutting it
+     down would be the app deleting somebody's key. */
+  fresh();
+  kbLayer().rows[0][0].w = 0.5;
+  var halfWas = JSON.stringify(kbLayer().rows);
+  saveKb(); render();
+  out.halfKept = JSON.stringify(kbLayer().rows) === halfWas;
 
   /* ---- the leftover an alignment leaves is FRAMES, one to a cell ---------
      「中心に寄せたら半キーが二つできるけど寄せたら1つになるの」 OWNER
@@ -2549,26 +2598,34 @@ const r = await pg.evaluate(({ s }) => {
   kbLayer().rows[1].splice(0, 1);
   saveKb(); standKb();
   out.holeShort = noHole('short by a half and by a whole');
-  /* the half frame is a button; pressing it SELECTS it, and the band puts in
-     HALF A KEY -- 「全部のます触ったら選択で」 OWNER 2026-08-28 */
+  /* the half frame is a button and pressing it SELECTS it -- 「全部のます触っ
+     たら選択で」 OWNER 2026-08-28 -- and the + over the sheet is DOWN on it,
+     because a key is a key wide. 「半キーを追加できるのやめてほしい」 OWNER
+     2026-09-05. */
   (function (){
-    var rw = sheetRows()[0], el = null, i, was, put;
+    var rw = sheetRows()[0], el = null, i, was, wasHalf, put;
+    function halves(){
+      return kbLayer().rows[0].filter(function (k){
+        return k.k === 'lt' && (k.w || 1) === 0.5;
+      }).length;
+    }
     for (i = 0; i < rw.children.length; i++)
       if (rw.children[i].getAttribute('data-do') === 'kbCellAdd' &&
           spanOf(rw.children[i]) === 1){ el = rw.children[i]; break; }
     out.halfFrameFound = !!el;
     if (!el) return;
-    was = kbUsed(kbLayer().rows[0]);
+    was = kbUsed(kbLayer().rows[0]); wasHalf = halves();
     el.click(); standKb();
     out.halfFrameSel = !!(KBH && KBH.k === 'f' && KBH.span === 1);
     put = document.querySelector('.kbtool [data-do="kbCellAdd"]');
+    out.halfFrameDown = !put || put.disabled;
     if (put) put.click();
     standKb();
-    out.halfFrameAdds = kbUsed(kbLayer().rows[0]) === was + 1;
-    out.halfFrameKey = kbLayer().rows[0].filter(function (k){
-      return k.k === 'lt' && (k.w || 1) === 0.5;
-    }).length > 0;
-    out.holeAfterHalf = noHole('after the half went in');
+    out.halfFrameNoAdd = kbUsed(kbLayer().rows[0]) === was;
+    /* and the half key the row already carried is still there: the rule is
+       about what can be MADE */
+    out.halfFrameKept = halves() === wasHalf;
+    out.holeAfterHalf = noHole('after the + was pressed on a half frame');
   }());
   /* and none of the three alignments leaves one, on the row carrying half a
      key. 「左寄せにしたら全部寄せるし空白が出るのがおかしい」 */
@@ -3265,11 +3322,21 @@ say(r.gapRoPlain, 'and it is nothing at all on the board that goes to the phone'
 say(r.cellShown && r.cellIsButton, 'cut a column out and the empty frames are buttons');
 say(r.cellHalf, 'nine keys on a sheet of ten leave half a frame at each end');
 say(r.cellSel && r.cellLit, 'pressing one SELECTS it and lights it -- it does not put a key in');
-say(r.cellPut && r.cellTool === 'kbUndo kbCellAdd',
-    'and the band over the sheet offers the one button that fills it [' + r.cellTool + ']');
-say(r.cellAdded && r.cellAddedW,
-    'which puts in a key exactly the width of the frame it was ('
+say(r.cellPut && r.cellTool === 'kbUndo',
+    'and the + over the sheet is DOWN on it -- a key is a key wide and this'
+    + ' frame is half of one [' + r.cellTool + ']');
+say(r.cellHalfKept,
+    'so nothing goes in, reached by the button or by the name behind it ('
     + (r.cellSpan / 2) + ' of a key)');
+say(r.cellWholeSpan === 2 && r.cellWholeTool === 'kbUndo kbCellAdd',
+    'a row short by two keys leaves a WHOLE frame, and the + is up over it ['
+    + r.cellWholeSpan + ' ' + r.cellWholeTool + ']');
+say(r.cellAdded && r.cellAddedW && r.cellNoHalf,
+    'which puts in a key a key wide, and no key on the board is narrower ['
+    + [r.cellAdded, r.cellAddedW, r.cellNoHalf].join(' ') + ']');
+say(r.halfKept,
+    'and a half key somebody already has is not touched -- the rule is about'
+    + ' what can be MADE, like the two ceilings beside it');
 say(r.cellBack, 'and the step back takes it away again');
 say(r.alGaps === 2 && r.alFrames === '2,2,2,1,2,2,2,1',
     'a row of three centred on a sheet of ten leaves three frames and a half at'
@@ -3487,9 +3554,13 @@ say(r.wobKeys > 0 && r.wobPressable === r.wobKeys,
 say(r.holeFresh, 'every frame of a board as built is a key or a dotted key');
 say(r.holeShort,
     'and of one short by half a key and of one short by a whole key -- no blank');
-say(r.halfFrameFound && r.halfFrameSel && r.halfFrameAdds && r.halfFrameKey,
-    'the half frame is a button; pressing it selects it and the band puts in half a key');
-say(r.holeAfterHalf, 'and the sheet is still whole after it went in');
+say(r.halfFrameFound && r.halfFrameSel,
+    'the half frame is a button and pressing it selects it');
+say(r.halfFrameDown && r.halfFrameNoAdd && r.halfFrameKept,
+    'and the + over the sheet is down on it -- nothing goes in, and the half key'
+    + ' the row already carried is still there ['
+    + [r.halfFrameDown, r.halfFrameNoAdd, r.halfFrameKept].join(' ') + ']');
+say(r.holeAfterHalf, 'and the sheet is still whole');
 say(r.holeAlL && r.holeAlC && r.holeAlR,
     'none of the three alignments leaves a blank on a row carrying half a key');
 say(r.alCEnds, 'centring leaves a frame at each end of it');

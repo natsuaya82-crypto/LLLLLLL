@@ -1523,9 +1523,9 @@ function kbCellAdd(ri, at, span){
   render();
 }
 /* And what the button over the sheet does: a key goes into the selected
-   frame, THE WIDTH OF THAT FRAME -- half a key into half a frame. A frame is
-   at most one key wide wherever the sheet draws one, so this is the only
-   width there is to take.
+   frame, THE WIDTH OF THAT FRAME. A frame is at most one key wide wherever
+   the sheet draws one, and one narrower than a key is refused above, so the
+   key that goes in is exactly one.
 
    Two places a frame can be, and the difference is whether the row writes it
    down. Slack it does not write down is beyond the keys, so the key is spliced
@@ -1533,9 +1533,29 @@ function kbCellAdd(ri, at, span){
    room the row already holds, so the key takes that frame's share of it and
    what is left stays a gap on either side; the row's total does not move and
    there is nothing to ask. */
+/* A KEY IS A KEY WIDE, and a frame narrower than one takes none.
+   「半キーを追加できるのやめてほしい」 OWNER 2026-09-05.
+
+   A frame is drawn over whatever room the sheet has, counted in COLUMNS, and
+   a column is half a key -- so a row pushed to one end leaves half a column
+   at the other and the sheet offers a frame half a key wide. Putting a key in
+   one made a half key, which is a key nobody chose the width of: the width
+   picker on a key's own page offers 1, 2, 3 and 4 and has never offered a
+   half.
+
+   The frame is still PRESSED to be selected -- that is what pressing a frame
+   is on this sheet, and every frame answers to it (「全部のます触ったら選択で」
+   OWNER 2026-08-28). What it cannot do is take a key, and the + over the
+   sheet is down while it is the one selected.
+
+   The inset that makes a QWERTY's third row a QWERTY is a GAP and not a key,
+   and nothing here touches it. */
+function kbCellFits(){
+  return !!KBH && KBH.k==='f' && (KBH.span||2)>=2;
+}
 function kbCellPut(){
   var b=kbEdit(), rows, row, w, i, at, u, k, put;
-  if(!b || !KBH || KBH.k!=='f') return;
+  if(!b || !kbCellFits()) return;
   rows=kbLayer().rows;
   row=rows[KBH.r];
   if(!row) return;
@@ -3288,6 +3308,7 @@ function kbToolHTML(){
               ' aria-label="'+esc(t('kb.row.down'))+'">'+ICON_INDN+'</button>')
       : cell
         ? '<button class="kbtb"' + DO('kbCellAdd') +
+            (kbCellFits()? '' : ' disabled') +
             ' aria-label="'+esc(t('kb.cell.add'))+'">'+ICON_ADD+'</button>'
       : key
         /* KEYS are selected, and WHICH buttons is how many.
