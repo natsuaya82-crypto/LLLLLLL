@@ -769,8 +769,12 @@ function vGram(){
      list used to open, or a chapter that has gone -- falls through to the
      list rather than to a blank page. */
   var c=(gOpen && gOpen.indexOf('v2:')===0)? g2ChapBy(gOpen.slice(3)) : null;
+  /* The `?` in the bar, and the whole of what a chapter has to say is behind
+     it -- 「説明禁止の代わりに？を儲けてるからね？」 OWNER 2026-09-05.
+     helpQ() draws nothing for a chapter that has registered none, so the
+     chapters that are not a form of a word simply have no mark. */
   if(c)
-    return '<div class="view">'+navTop()+
+    return '<div class="view">'+navTop('', helpQ('g2.'+c.id))+
       '<div class="body">'+g2Page(c)+'</div></div>';
   p = gOpen? stBy(gOpen) : null;
   return '<div class="view">'+

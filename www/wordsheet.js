@@ -545,7 +545,12 @@ function regLabel(r){ return r? t('word.reg.'+r) : ''; }
    not ours to translate, and it is stored on the word rather than in a list
    of its own: the labels a language has are the ones its words are wearing.
    Nothing to migrate, nothing to keep in step, nothing to delete. */
-var FM_INF=['pst','prs','fut','prg','prf','neg','imp','que','cnd','cau','pas','pl'];
+/* `plp` is the pluperfect and is the newest of them -- 「過去完了は何かの説明を
+   ?に入れてくれ」 OWNER 2026-09-05. It is added at the END of the ones it
+   follows rather than beside `pst`, because fmRank() reads a form's place in
+   this list as the order a word's family is read in, and moving one moves
+   every word already wearing the ones after it. */
+var FM_INF=['pst','prs','fut','prg','prf','plp','neg','imp','que','cnd','cau','pas','pl'];
 var FM_DER=['agt','ins','loc','act','qua','dim','aug','col','opp','adj','vrb','adv'];
 function fmOwn(f){ return String(f||'').slice(0,2)==='i~' || String(f||'').slice(0,2)==='d~'; }
 function fmGroup(f){
