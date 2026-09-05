@@ -3938,12 +3938,39 @@ function kbKeyHTML(ri, ki){
    finger slides off it. Which is exactly how the key is drawn on the
    keyboard itself, one screen back -- kbFlicks() puts the four at the
    middles of the edges, and this is that, big enough to press. */
+/* THE SHAPE, WITH THE NAME SMALL UNDER IT. 「選んだ文字の形を上の四角に」
+   OWNER 2026-09-05. It was the name and nothing else -- ltInk()'s fallback,
+   reached because a letter's shape and its name were two answers to the
+   square and only one of them fitted. The square is what says WHAT IS ON THIS
+   KEY, and what is on a key of this app is a letter somebody drew: answering
+   with the roman it happens to be filed under is the app showing its own
+   filing rather than the alphabet.
+
+   A letter with nothing drawn on it has only its name, and keeps it -- that
+   is ltInk() answering empty, not a second branch of this. The name goes
+   small only when there is a shape over it to be small under. */
 function kbSlotFace(lid){
-  var l=lid? ltById(lid) : null;
-  return l? ltInk(l, '<span class="kbl">'+esc(ltName(l)||'·')+'</span>', 'midink')
-          : '<span class="kbsx">'+ICON_ADD+'</span>';
+  var l=lid? ltById(lid) : null, ink;
+  if(!l) return '<span class="kbsx">'+ICON_ADD+'</span>';
+  ink=ltInk(l, '', 'midink');
+  if(!ink) return '<span class="kbl">'+esc(ltName(l)||'·')+'</span>';
+  /* Written here rather than in www/index.html because that file is another
+     session's this week. Nothing here is a border or a corner (CLAUDE.md
+     § 18) -- it is a stack and a type size. */
+  return '<span style="display:flex;flex-direction:column;align-items:center;'+
+    'justify-content:center;gap:2px">'+ink+
+    '<span class="kbl" style="font-size:.6rem;line-height:1">'+
+    esc(ltName(l)||'·')+'</span></span>';
 }
+/* WHAT THE SQUARE SHOWS IS WHAT HAS BEEN CHOSEN, when something has.
+   Choosing writes nothing until the confirm (kbLtPut below), so the square
+   read the key and the key still held what it held -- press a letter and the
+   cell went purple while the square over it went on saying the old thing, or
+   nothing at all. The purple and the square are one answer to one question
+   and it is asked in one place, kbLtAt(). */
 function kbSlotBtn(cls, lid, ri, ki, dir, label){
+  var p=kbLtAt(ri, ki, dir);
+  if(p) lid=p.v;
   return '<button class="kbe '+cls+(lid && ltById(lid)? '' : ' non')+'"' +
     DO('kbSlot', [ri, ki, dir]) +
     ' aria-label="'+esc(label)+'">'+kbSlotFace(lid)+'</button>';
@@ -4114,9 +4141,16 @@ function kbLtHTML(){
    the key itself (d = -1) and for each of a flick key's four corners: a
    choice made for one corner is not a choice made for the next. */
 var kbLtPick=null;
+/* What has been chosen FOR THIS SLOT, or null. One place, because two things
+   ask it: the purple on the cell, and the square over the alphabet that says
+   what is on the key. */
+function kbLtAt(ri, ki, dir){
+  return (kbLtPick && kbLtPick.r===ri && kbLtPick.k===ki && kbLtPick.d===dir)
+    ? kbLtPick : null;
+}
 function kbLtIs(ri, ki, dir, lid){
-  return !!kbLtPick && kbLtPick.r===ri && kbLtPick.k===ki &&
-         kbLtPick.d===dir && kbLtPick.v===lid;
+  var p=kbLtAt(ri, ki, dir);
+  return !!p && p.v===lid;
 }
 /* Painted the purple this chapter already paints a chosen thing -- the row's
    band, the column's band, a chosen key. kbPickPaint() is the one place that

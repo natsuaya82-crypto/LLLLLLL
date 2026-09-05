@@ -1571,6 +1571,19 @@ export function halfDone(){
                                                   const h = vForm(); kbLtPick = null;
                                                   KB = null; kbShow = 0;
                                                   SET.plan = 'free'; return h; }],
+    /* AND THE SAME KEY WITH A DRAWN LETTER CHOSEN, which is the other state
+       of one square and the one the change of 2026-09-05 is about: the shape
+       goes in the square with the name small under it, and a letter with
+       nothing drawn on it -- the face above -- keeps its name and nothing
+       else. Both, because the fault is nearly always in the one nobody
+       photographed. */
+    ['a key with a drawn letter chosen for it', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
+                                                  kbAdd('qwerty'); kbLay = 0; kbPick(0, 0);
+                                                  const d = ltOfKind('alpha').filter((l) => inkGeo(l));
+                                                  if (d.length) kbLtTap(0, 0, -1, d[0].id);
+                                                  const h = vForm(); kbLtPick = null;
+                                                  KB = null; kbShow = 0;
+                                                  SET.plan = 'free'; return h; }],
     /* A FLICK keyboard, which is the other half of the editor and the only
        one that has corners. kbSlotsShown() is true when the board's pattern
        is 'flick' or when a key already carries something in one of its four,
