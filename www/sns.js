@@ -42,6 +42,20 @@ var SNS_GOT={};
 function snsWaitHTML(){
   return '<div class="empty snswait"><div class="pullrule go">'+ICON_PLUS+'</div></div>';
 }
+/* THE SAME MARK AT THE SIZE OF A WORD, for the places where what is waited
+   for is one line inside a row rather than a screenful. `.numwait` in
+   www/index.html is what draws it, and it was written for the counts under a
+   profile; the day's sentence needs the same thing for the same reason, and a
+   second copy of three tags is how the two would come to differ.
+
+   IT IS A WORD AND NOT A SCREEN BECAUSE THE ROW MUST NOT MOVE. snsWaitHTML()
+   carries 48px of padding, so a row wearing it stands three times its own
+   height and then shrinks when the answer lands -- which is the timeline
+   jumping under somebody's thumb, and is the same complaint arriving as
+   layout instead of as text. */
+function snsWaitWord(){
+  return '<span class="numwait"><span class="pullrule go">'+ICON_PLUS+'</span></span>';
+}
 /* ---- the timeline is online -------------------------------------------
    A post has a writer. So the timeline is the one part of this app that has
    to know who you are -- reading it and writing to it both -- and it did not
@@ -262,9 +276,10 @@ function snsFilTop(){
 }
 function vFilter(){
   var ks=['rec','fo'];
-  /* The page that lists them asks for them. Once a session, and it draws
-     what the phone already has while the answer is on its way. */
-  snsSavedPull();
+  /* NOTHING IS ASKED HERE. 「画面に入った瞬間にサーバーへ訊きに行くのは無し」
+     OWNER 2026-09-05 -- the words this account keeps came down when the
+     session began (§ WHAT AN OPEN ASKS FOR), and a pull on this screen asks
+     again. Standing on it is not a question. */
   return '<div class="view">'+navTop('')+'<div class="body">'+
     ks.map(function(k){
       return '<button class="set"' + DO('snsSetFil', [k]) + '>'+
@@ -295,9 +310,9 @@ function vFilter(){
          answer that says whether any are. A phone that has never held this
          account's list drew the same empty space for 「keeps none」 and for
          「has not been told yet」, and the second is the one a new phone is in
-         every time. netSignedIn() is snsSavedPull()'s own condition for
-         asking: no question, no mark. */
-      : (netSignedIn() && !snsSavedGot)? snsWaitHTML() : '')+
+         every time. netSignedIn() is the ask's own condition: no question, no
+         mark. */
+      : (netSignedIn() && !pullHad('saved'))? snsWaitHTML() : '')+
     '</div></div>';
 }
 /* Chosen, and then you are back on the thing it is about. The same shape as
@@ -354,12 +369,38 @@ function snsHas(){ return !!SNS_GOT[snsTab]; }
 /* THE TIMELINE'S ASK. It writes the answer down and says whether one came;
    the mark, the pop, the 再接続 and the render are pullRun()'s and are not
    here. */
+/* THE TWO TIMELINES ON ONE SCREEN, which is what makes this ask different
+   from every other one in the table: the followed one and the recommended
+   one are two answers, and a tab is not a route.
+
+   THE OPEN ASKS FOR BOTH; A PULL ASKS FOR THE ONE YOU ARE LOOKING AT.
+   「最初の起動の一回の更新で全部取得してその後それぞれをプルトゥーリフレッシュ
+   とかで更新して取得する」「TLの更新ならTLだけでいい分けでしょ？」 OWNER
+   2026-09-05.
+
+   Both halves are the owner's sentence. If the open asked for only the tab
+   that happens to be showing, switching to the other one would be a question
+   put to the server at the moment somebody arrived at it -- which is the
+   thing being taken out of this app today, wearing a tab instead of a screen.
+   And a person pulling a timeline down is refreshing THAT timeline; asking
+   for the other one as well would be a request nobody made. */
+var SNS_TABS=['fo', 'rec'];
 function askFeed(ok, bad, person){
-  /* WHICH timeline was asked for, held while the answer is out. snsTab moves
-     when somebody switches tabs, and switching tabs is exactly when a pull is
-     in the air -- so reading it again in the callback is how the followed
-     timeline's answer gets written down as the recommended one's. */
-  var which=snsTab;
+  /* WHICH timelines to ask for. A tab that already has an answer is not asked
+     again at the open -- that is SNS_GOT, the same record `snsHas` reads. */
+  var want=[], i;
+  if(person) want=[snsTab];
+  else for(i=0;i<SNS_TABS.length;i++) if(!SNS_GOT[SNS_TABS[i]]) want.push(SNS_TABS[i]);
+  if(!want.length){ ok(0); return; }
+  askFeedRun(want, ok, bad, person);
+}
+/* AND ONE ANSWER FOR HOWEVER MANY WENT OUT. Two timelines arriving one at a
+   time would draw the screen twice, and the second draw is a list moving
+   under somebody's eye -- the same fault this whole day is about, arriving as
+   two renders instead of one. So the render waits for the pair; a fall is
+   handed on once, from whichever fell first. */
+function askFeedRun(tabs, ok, bad, person){
+  var left=tabs.length, drew=0, fell=false, i;
   /* And what the feed is showing while a word is on is the answer to that
      word, so that is asked again too -- ONLY when a person asked. It is said
      HERE and not inside snsFilFind()'s own guard, because vFeed() calls that
@@ -369,12 +410,28 @@ function askFeed(ok, bad, person){
      timeline underneath is asked for either way: it is still the list the
      word comes off onto. */
   if(person && here().r==='feed' && snsFil) snsFilFind(true);
+  /* And what this phone has that the server has not. It goes off the back of
+     a pull rather than on a timer: the moment somebody is asking for a
+     timeline is the moment the network is known to be working. ONCE, however
+     many tabs went out -- it was inside the ask and therefore ran per tab,
+     and a post sent twice is what www/sns.js § pullRun was written about. */
+  postCatchUp();
+  function one(got){
+    if(fell) return;
+    if(got) drew=1;
+    left--;
+    if(!left) ok(drew);
+  }
+  function no(d, s, m){
+    if(fell) return;
+    fell=true;
+    bad(d, s, m);
+  }
+  for(i=0;i<tabs.length;i++) askFeed1(tabs[i], one, no);
+}
+function askFeed1(which, ok, bad){
   netFeed(which, function(ps){
     var have, i;
-    /* And what this phone has that the server has not. It goes off the back
-       of a pull rather than on a timer: the moment somebody is looking at a
-       timeline is the moment the network is known to be working. */
-    postCatchUp();
     /* The followed timeline, as the server answered it. `null` is "could not
        ask" and is not an answer -- writing it down as one would empty the tab
        on every phone that went through a tunnel. An empty ARRAY is an answer
@@ -461,9 +518,9 @@ var PULL_R=0.5, PULL_GO=64, PULL_MAX=96;
    is added, and there is no second place to forget.
 
    `follows` is here too and is the same complaint one screen along: the two
-   lists behind the counts are asked for ONCE a session (meFollowerPull's
-   FR_ASKED), so somebody who followed you while the app was open was in
-   neither the number nor the list until it was killed and opened again. */
+   lists behind the counts are asked for ONCE a session (`mine`), so somebody
+   who followed you while the app was open was in neither the number nor the
+   list until it was killed and opened again. */
 var PULL_ON={}, PULL_HAS={}, PULL_OUT={}, PULL_GOT={};
 function pullOn(r, ask, hav){ PULL_ON[r]=ask; if(hav) PULL_HAS[r]=hav; }
 /* ---- AND ONE ROAD THROUGH ALL OF THEM ------------------------------------
@@ -504,6 +561,40 @@ function pullOn(r, ask, hav){ PULL_ON[r]=ask; if(hav) PULL_HAS[r]=hav; }
    vFeed() already makes for the same word. */
 function pullGo(r){ pullRun(r, true); }
 function pullNeed(r){ pullRun(r, false); }
+/* AND WHETHER THE ANSWER IS IN, WHICH IS THE THING A SCREEN DRAWS.
+   「サーバーに聞く前にロード挟んで絶対に遅れて表示させることないように」
+   OWNER 2026-09-04, and 「アイコンも1秒遅れ表示、お題も1秒遅れ表示」 the day
+   after, about the same fault in five more places.
+
+   The table already knows this -- it is the same column pullRun() reads to
+   refuse a render's ask -- and every screen that wanted it had been keeping
+   a flag of its own beside it. So it is asked here, of the table, and the
+   three faces of 2026-09-04 fall out of one question: no answer yet is the
+   mark, an answer that is empty is 0, and a screen with nothing on the
+   server to ask for never comes here at all. */
+function pullHad(r){
+  var h=PULL_HAS[r];
+  return h? !!h() : !!PULL_GOT[r];
+}
+/* AND EVERY ANSWER IS FORGOTTEN WHEN THE SESSION IS. netOut() (www/net.js)
+   is the one place a session ends, and what these answers are is 「what the
+   server told THIS account」 -- the drafts, the follows, the kept words. Left
+   standing, the next person to sign in on this phone would be shown the last
+   one's, and shown it as an ANSWER, so nothing would ever ask again.
+
+   `drafts` kept this for itself, keyed on the uid (DRAFTS_FOR), and was the
+   only one of the eight that did. */
+function pullForget(){
+  PULL_GOT={};
+  DAY=null; DAY_GOT=false;
+}
+/* And ONE answer forgotten, for the one thing that can go stale without the
+   session ending: switching the language you read the app in re-asks the
+   notices, because what a notice SAYS is written in that language. Clearing
+   what was answered without clearing that it was answered would leave the
+   screen on the mark for ever -- pullNeed() is refused by PULL_GOT, and
+   nothing else would ever set it back. www/shell.js § langWipe. */
+function pullDrop(r){ PULL_GOT[r]=0; }
 function pullRun(r, person){
   var ask=PULL_ON[r], hav=PULL_HAS[r];
   /* Signed out there is nothing to ask for: the three screens are the door. */
@@ -545,9 +636,9 @@ function pullRun(r, person){
    function it runs.
 
    `follows` is here too and is the same complaint one screen along: the two
-   lists behind the counts are asked for ONCE a session (meFollowerPull's
-   FR_ASKED), so somebody who followed you while the app was open was in
-   neither the number nor the list until it was killed and opened again. */
+   lists behind the counts are asked for ONCE a session (`mine`), so somebody
+   who followed you while the app was open was in neither the number nor the
+   list until it was killed and opened again. */
 pullOn('feed',    askFeed,    snsHas);
 pullOn('explore', askFeed,    snsHas);
 pullOn('notif',   askNot);
@@ -555,6 +646,78 @@ pullOn('thread',  askThread);
 pullOn('profile', askWho);
 pullOn('follows', askFollows);
 pullOn('drafts',  askDrafts);
+/* ---- AND THE FIVE THINGS THAT ARE NOT A SCREEN ---------------------------
+   「全部だけど、アイコンも1秒遅れ表示、お題も1秒遅れ表示」 OWNER 2026-09-05.
+
+   A key in this table was a ROUTE, and every one of these was therefore
+   outside it: each kept a flag of its own for 「asking」, a second for
+   「answered」, and its own road to netPop() or -- three times out of five --
+   no road at all. That is the four-copies fault of § AND ONE ROAD THROUGH ALL
+   OF THEM arriving from the other side: not four screens asking the same way
+   four times, but five things asked five ways because none of them was a
+   screen.
+
+   A key is the NAME OF SOMETHING THE APP NEEDS. A route is one kind of name
+   and these are another, and nothing in pullRun() ever cared which -- the
+   flag, the mark, the pop, the retry and the render are the same for both.
+   Being on this table is what puts them on PULL_OPEN above, which is what
+   makes them arrive before anybody is looking. */
+pullOn('day',     askDay,     dayGot);
+pullOn('mine',    askMine);
+pullOn('blocks',  askBlocks,  netBlockedGot);
+pullOn('saved',   askSaved);
+pullOn('recent',  askRecent);
+/* ---- AND WHAT AN OPEN ASKS FOR -------------------------------------------
+   「そもそもそれだけ送れるの意味わからないアプリ開くタイミングで通信入るなら
+   全部一気に入るやろ」「全部だけど、アイコンも1秒遅れ表示、お題も1秒遅れ表示」
+   OWNER 2026-09-05.
+
+   Every one of the asks above was fired by the SCREEN that shows it, from
+   inside the function that draws it -- so the app opened, asked for four
+   things, and then asked for a fifth the moment somebody walked onto the
+   screen that needed it. Measured on a launch: the day's sentence, the
+   timeline, the block list, the kept words, the history and the drafts each
+   went out when their screen was first drawn and not before. That is the
+   whole of 「1秒遅れ」: the screen is already up when the question is put.
+
+   So the open asks for all of it, in one moment, and there is one list of
+   what 「all of it」 is. It is the same table and the same road, so an answer
+   that arrives before anybody walks onto the screen simply means the screen
+   finds it there, and an answer that has not arrived is a mark rather than a
+   stand-in.
+
+   AND NO SCREEN ASKS ON THE WAY IN. 「画面に入った瞬間にサーバーへ訊きに行く
+   のは無し。それが 1 秒遅れの正体です」 OWNER 2026-09-05. After this list,
+   the only thing that asks again is somebody pulling a screen down, and that
+   asks for THAT screen -- 「TLの更新ならTLだけでいい分けでしょ？」. There is
+   no pullNeed() left in any view.
+
+   The splash is up for 900ms (www/index.html), which is the only reason this
+   is not merely faster: a question put at the open is answered UNDER it, and
+   nothing on the far side of it changes under anybody's eye.
+
+   WHAT IS NOT ON THIS LIST, and why it is not a hole. A thread and somebody
+   else's page are ABOUT one post or one person, and which one is not known
+   until the door is opened -- there is nothing to ask for at a launch. They
+   are in the table (`thread`, `profile`, `follows`) so a pull refreshes them,
+   and what fills them the first time is whoPull() and folPull() in www/me.js,
+   asked once per handle. That is not the fault being fixed here: nobody was
+   looking at that person's page a second before they pressed their name. */
+var PULL_OPEN=['feed', 'notif', 'day', 'mine', 'blocks', 'saved', 'recent', 'drafts'];
+/* Fired by netTook() (www/net.js), which is the one place that knows a
+   session ARRIVED -- a launch through netResume(), or somebody signing in an
+   hour later through the door. Every one of these is asked AS somebody, so
+   there is nowhere earlier it could go: a question put before the session is
+   in hand is a question pullRun() refuses on its own netSignedIn().
+
+   Not waited for -- the app opens on what is on the phone, exactly as the two
+   language roads beside it do. What covers the gap is the splash, which is up
+   for 900ms (www/index.html), and the mark on any screen whose answer is
+   still out. */
+function pullBoot(){
+  var i;
+  for(i=0;i<PULL_OPEN.length;i++) pullNeed(PULL_OPEN[i]);
+}
 /* ---- AND EVERY OTHER SCREEN, WITHOUT NAMING ONE OF THEM -------------------
    「全部の画面でプルトゥーリフレッシュ入れないと動かないとこ出てくるぜ」
    「設定はいらんよ？」 OWNER 2026-09-05.
@@ -794,7 +957,6 @@ function askNot(ok, bad){
   netNotices(function(ns){
     if(!ns){ ok(0); return; }
     NOTES_HAVE=ns;
-    notKeep();
     ok(1);
   }, bad);
 }
@@ -821,9 +983,37 @@ function askLang(ok, bad){
 }
 /* THE DRAFTS, which are on this phone and on the server both, and are the one
    list on the sns side that is not a timeline. */
+/* `ok(1)` WHATEVER CAME BACK, and draftsPull()'s own answer is thrown away
+   here on purpose. It says 「did anything NEW arrive」, which was the right
+   question while the screen drew the phone's copy and this only added to it;
+   it is the wrong one now that the screen draws a MARK until the server has
+   answered (www/post.js § vDrafts). An answer with nothing in it is what
+   turns that mark into 「No drafts」, so it is as much a render as one
+   carrying a draft -- and it is what writes the answer down, without which
+   this would be asked again on every render of the screen. */
 function askDrafts(ok, bad){
-  draftsPull(ok, bad);
+  draftsPull(function(){ ok(1); }, bad);
 }
+/* WHOEVER YOU HAVE BLOCKED. It is not a screen and nothing draws it: it is
+   what a timeline is filtered by, and it was asked for again in front of
+   every page of every timeline (www/net.js § netBlocked). Once, at the open,
+   and the timeline is one question again. `ok(0)`: no screen changes when
+   this lands. */
+/* YOUR OWN TWO FOLLOW LISTS, which are ME's and are asked for by www/me.js
+   § meFollowsPull -- the same shape as askDrafts() above, and for the same
+   two reasons: the asking belongs in the file the thing belongs to, and that
+   file is loaded after this one. */
+function askMine(ok, bad){
+  meFollowsPull(ok, bad);
+}
+function askBlocks(ok, bad){
+  netBlockedRead(function(){ ok(0); }, bad);
+}
+/* `mine` NAMES NO hav() ON PURPOSE, and that is the whole of what was wrong
+   with the counts. PULL_GOT is 「answered THIS SESSION」; ME.fo is 「this
+   phone has a list」, and a phone that has been opened before always has one.
+   Answering the second question drew last week's number and then moved it,
+   which is 「1秒後に1とか数字が変わる」 exactly. */
 /* touchmove has to be able to say no to the browser's own bounce, and a
    listener the browser thinks is passive cannot. Whether the third argument
    is read as an options object or as `capture` is the one thing that differs
@@ -946,12 +1136,15 @@ function vFeed(){
      back to it before the server's own answer lands, and every Follow button
      on every screen reads it. Same shape as the three below: it returns
      immediately once it has an answer. */
-  meFollowPull();
-  pullNeed(here().r);
-  /* Beside the feed's own pull and for the same reason: the moment somebody
-     is looking at a timeline is the moment the network is known to be
-     working. Once a session -- dayPull() returns immediately once it has one. */
-  dayPull();
+  /* NOTHING IS ASKED HERE, AND THAT IS THE WHOLE OF TODAY'S FIX.
+     「画面に入った瞬間にサーバーへ訊きに行くのは無し。それが 1 秒遅れの正体
+     です」 OWNER 2026-09-05.
+
+     Four asks stood on these lines -- your follows, the timeline, the day's
+     sentence, the block list -- and every one of them went out with the
+     screen already on the glass. All four come down when the session begins
+     (§ WHAT AN OPEN ASKS FOR); what refreshes this screen afterwards is
+     somebody pulling it, and that asks for the timeline and nothing else. */
   /* And the word, if one is on. Once per word: it returns immediately once
      it has an answer, or this would ask, write the answer down, render, and
      ask again. Same shape as the two above it. */
@@ -1046,37 +1239,45 @@ function vFeed(){
    there is no sentence -- offline, or a day the writer missed -- it is that
    row again, unchanged. A screen that half-works is a bug; a screen that
    goes back to what it was is not. */
-/* ---- the day's sentence, asked until it answers --------------------------
-   ONE ANSWER A SESSION is right and 「one attempt a session」 was not. This
-   ran from the feed being built, and the feed is built when somebody arrives
-   at it -- so a first ask that came back with nothing was the last one, and
-   the row stayed the plain composer until the person navigated away and back.
-   Sitting on the timeline waiting did nothing at all. 「後お題も出てこない
-   1秒待つけど」 OWNER 2026-09-02.
+/* ---- the day's sentence, asked at the open --------------------------------
+   「お題も1秒遅れ表示」 OWNER 2026-09-05.
 
-   So a failed ask asks again, on its own, and stops the moment it has one.
-   It backs off -- a second, then two, then four, to half a minute -- because
-   a phone in a tunnel is not a phone that will answer sooner if asked harder,
-   and this is a sentence rather than the timeline: nothing waits on it. */
-var DAY=null, dayPulling=false, dayWait=1000, DAY_MAX=32000;
-function dayPull(){
-  if(dayPulling || DAY) return;
-  dayPulling=true;
+   IT WAS ASKED BY THE FEED BEING DRAWN, and that is the whole of why it came
+   late: the feed is drawn when somebody arrives at it, so the question went
+   out with the screen already on the glass and the answer landed a second
+   into looking at it. The row was the plain composer for that second and then
+   became the sentence -- which is 「先に空で描いて、あとから差し替える」 said
+   in one row.
+
+   So it is one entry in the pull table now (§ WHAT EACH SCREEN ASKS FOR) and
+   one name on PULL_OPEN, which means it is asked when the app opens, under
+   the splash, and the feed finds the answer already here.
+
+   THE BACK-OFF IS GONE AND NOTHING REPLACES IT. It was a second, then two,
+   then four, to half a minute -- a private retry, on a private timer, for one
+   sentence, written before there was one road for a request that fell.
+   There is one now: a failed ask reaches netPop() through pullRun() like
+   every other, and ［再接続］ asks this again with everything else that fell.
+   「エラーになったらエラー用のポップ出して再更新とかおさせればいいやんそれ
+   だけで1個作れば全部に使えるやん」
+
+   `DAY_GOT` is 「the server has answered」 and `DAY` is 「and there is a
+   sentence today」 -- two facts and not one, because a day the writer missed
+   is an answer and the row has to be able to tell it from a question still in
+   the air. That is the 2026-09-04 rule with nothing added: the mark, the
+   sentence, or the plain row. */
+var DAY=null, DAY_GOT=false;
+function askDay(ok, bad){
   netDay(function(p){
-    dayPulling=false;
-    if(!p){ dayAgain(); return; }
-    DAY=p;
-    render();
-  });
+    DAY_GOT=true;
+    if(p) DAY=p;
+    /* Drawn either way. An answer with no sentence in it is what turns the
+       mark into the plain composer row, so it is as much a render as one
+       carrying today's words. */
+    ok(1);
+  }, bad);
 }
-/* Asked again later, and only while nobody has an answer. The timer is not
-   kept: a second dayPull() before it fires returns on `dayPulling` or on
-   `DAY`, so the worst this can do is ask twice. */
-function dayAgain(){
-  if(DAY) return;
-  setTimeout(function(){ dayPull(); }, dayWait);
-  dayWait = (dayWait*2 > DAY_MAX)? DAY_MAX : dayWait*2;
-}
+function dayGot(){ return DAY_GOT; }
 /* In the person's own language. A Japanese speaker reading an English prompt
    is doing two translations and only the second one is the game -- owner,
    2026-08-23. */
@@ -1237,6 +1438,26 @@ function dayWhen(){
    grey line this row has always been. */
 function dayRow(){
   var say=daySay();
+  /* THE MARK, AND NOT THE ROW IT MIGHT TURN OUT TO BE.
+     「先に空で描いて、あとから差し替えるのを無くす」 OWNER 2026-09-05.
+
+     Three faces and not two, which is the 2026-09-04 rule arriving at the one
+     row that had never obeyed it: the sentence, the plain composer for a day
+     that has none, and -- here -- the mark, for the second before the server
+     has said which of the two this is. It drew the plain composer through
+     that second and then swapped, and the swap is the whole complaint.
+
+     THE ROW STAYS A ROW. Only the words are unknown: a person can always
+     press it and write, because a row that cannot be pressed while the app
+     finds something out is the app taking the way to post away for a second.
+     The mark sits where the sentence goes. */
+  if(!say && !dayGot() && netSignedIn()){
+    return '<button class="wrow"' + DO('openPost') + '>'+
+      '<span class="pav">'+
+        postFace({who:meName(), lname:langName, av:postAvatar()})+'</span>'+
+      '<span class="wrt">'+snsWaitWord()+'</span>'+
+    '</button>';
+  }
   if(!say){
     return '<button class="wrow"' + DO('openPost') + '>'+
       '<span class="pav">'+
@@ -1608,10 +1829,10 @@ function snsSameWords(a, b){
   for(i=0;i<a.length;i++) if(a[i]!==b[i]) return false;
   return true;
 }
-/* Asked once, the shape dayPull() already uses: the screens that show these
-   call it every time they are drawn, and it returns immediately once it has
-   an answer. Without that, writing the answer down calls render(), which
-   draws the screen, which asks again.
+/* Asked once, through the pull table like everything else, and asked when the
+   session begins rather than by the screens that show them -- which is what
+   stopped both of these arriving a second after somebody was already looking
+   at the list they replace.
 
    `netSignedIn()` is asked HERE and not left to net.js. netSearchSaved()
    answers `ok([])` when there is no member -- an empty list that means
@@ -1641,7 +1862,6 @@ function snsSameWords(a, b){
    is the OTHER thing: when the server's answer is allowed to be the whole
    truth. It is set only when every upload came back, so a phone that lost
    its signal half way through tries again next time. */
-var snsSavedAsk=false, snsSavedGot=false;
 function snsSavedHas(a, w){
   var i;
   for(i=0;i<a.length;i++) if(a[i]===w) return true;
@@ -1663,20 +1883,22 @@ function snsSavedPush(add, done){
       function(){ one(true); },
       function(){ one(false); });
 }
-function snsSavedPull(){
-  if(snsSavedAsk || snsSavedGot) return;
-  if(!netSignedIn()) return;
-  snsSavedAsk=true;
+/* ONE ENTRY IN THE TABLE, and it is asked at the open like everything else.
+   It kept a flag for 「asking」 and a flag for 「answered」, which is what
+   PULL_OUT and PULL_GOT already are, and it swallowed a fall in silence --
+   so a phone that could not reach the server drew the same empty list as one
+   whose account keeps nothing. `bad` is the road out now, and it is the same
+   road every other ask falls down. */
+function askSaved(ok, bad){
   netSearchSaved(function(rows){
-    snsSavedAsk=false; snsSavedGot=true;
     var got=[], mine=snsSaved(), add=[], out, i;
     for(i=0;i<(rows||[]).length;i++)
       if(rows[i] && rows[i].q) got.push(String(rows[i].q));
     /* Once handed over, the server is simply the answer -- including an
        empty one, which is somebody having cleared them on another phone. */
     if(SET.savedUp){
-      if(snsSameWords(got, mine)) return;
-      SET.saved=got; save(); render();
+      if(snsSameWords(got, mine)){ ok(1); return; }
+      SET.saved=got; save(); ok(1);
       return;
     }
     for(i=0;i<mine.length;i++)
@@ -1689,8 +1911,11 @@ function snsSavedPull(){
       SET.savedUp=true;
       save();
     });
-    if(!snsSameWords(out, mine)){ SET.saved=out; save(); render(); }
-  }, function(){ snsSavedAsk=false; });
+    if(!snsSameWords(out, mine)){ SET.saved=out; save(); }
+    /* Drawn whatever came back: the answer itself is what turns the mark into
+       a list, or into the empty space that means this account keeps none. */
+    ok(1);
+  }, bad);
 }
 function snsIsSaved(q){
   var a=snsSaved(), i, k=String(q||'').trim();
@@ -1765,23 +1990,20 @@ function snsPickSaved(q){
    server, so it had a copy to hand over once. A history has never been
    anywhere else, so the server's answer is simply the answer. */
 var SNS_RECENT=5;
-var snsRecentAsk=false, snsRecentGot=false;
 function snsRecent(){
   var a=SET.recent;
   return (a && a.length)? a : [];
 }
-function snsRecentPull(){
-  if(snsRecentAsk || snsRecentGot) return;
-  if(!netSignedIn()) return;
-  snsRecentAsk=true;
+/* And the same, one row down: an entry in the table rather than two flags
+   and a fall nobody was told about. */
+function askRecent(ok, bad){
   netRecent(function(rows){
-    snsRecentAsk=false; snsRecentGot=true;
     var got=[], i;
     for(i=0;i<(rows||[]).length && got.length<SNS_RECENT;i++)
       if(rows[i] && rows[i].q) got.push(String(rows[i].q));
-    if(snsSameWords(got, snsRecent())) return;
-    SET.recent=got; save(); render();
-  }, function(){ snsRecentAsk=false; });
+    if(!snsSameWords(got, snsRecent())){ SET.recent=got; save(); }
+    ok(1);
+  }, bad);
 }
 /* THE ONE PLACE A WORD ENTERS THE HISTORY, AND 🔍 IS THE ONLY ROAD TO IT.
    「検索は🔍押したらって言ってるやん」 OWNER 2026-09-03.
@@ -1852,12 +2074,16 @@ function snsPickRecent(q){
    `.pmore` is the small trailing control a post's row already wears. */
 function snsRecentHTML(){
   var a=snsRecent();
-  /* An empty list and a list that has not come back are two different facts.
-     This phone's copy is drawn the moment there is one; before the first
-     answer there is nothing to draw and nothing to claim, so the mark turns.
-     netSignedIn() because snsRecentPull() does not ask without somebody to
-     ask for -- a mark turning on a question nobody is asking is a lie. */
-  if(!a.length) return (netSignedIn() && !snsRecentGot)? snsWaitHTML() : '';
+  /* An empty list and a list that has not come back are two different facts,
+     AND SO IS A LIST FROM LAST TIME. It drew this phone's stored copy while
+     this session's answer was in the air, so a history that had changed on
+     the other phone appeared and then rearranged itself -- 「1秒後に変わる
+     やつは本当に嫌」. The mark until the server has answered, whether or not
+     there is a copy underneath it. netSignedIn() because the ask does not go
+     without somebody to ask for -- a mark turning on a question nobody is
+     asking is a lie. */
+  if(netSignedIn() && !pullHad('recent')) return snsWaitHTML();
+  if(!a.length) return '';
   return '<div class="sec">'+esc(t('sns.recent'))+'</div>'+
     a.map(function(q){
       return '<div class="whrow">'+
@@ -1956,14 +2182,10 @@ function snsHitsHTML(){
 }
 function vExplore(){
   if(!netSignedIn()) return snsLocked('explore');
-  /* The rows this screen draws carry Follow, and it has to say which state it
-     is in. */
-  meFollowPull();
-  /* And the screen the star is on, because whether it is filled is the same
-     question the filter asks. */
-  snsSavedPull();
-  /* And the words this account has typed, which is this screen's own list. */
-  snsRecentPull();
+  /* Three things this screen reads live on the server -- whether you follow
+     the people in its rows, the words you keep, and the words you have typed
+     -- and all three came down when the session began (§ WHAT AN OPEN ASKS
+     FOR). Nothing is asked from here. */
   /* Asked once when the screen is built, so coming back to a query already
      typed shows its answer rather than an empty page. */
   if(snsQ.trim() && !snsHits) snsFind(snsQ, snsGot);
@@ -2014,46 +2236,32 @@ function snsFieldHTML(){
    in the same four fields everything else describes a person with, and which
    post it was about. */
 var NOTES_HAVE=null;
-/* THE COPY ON THE HANDSET, and it is the answer to the second of blank.
+/* THE COPY ON THE HANDSET IS GONE, AND THE ANSWER IT WAS FOR IS NOW ASKED
+   EARLIER INSTEAD.
+   -------------------------------------------------------------------------
+   It was `lingua.notices`, filed under the account, put on the screen in the
+   first frame and replaced when the server answered. It was built for
    「通知とか表示されるのに1秒くらいの空白の時間があるのうざいからそれ無くして
-   欲しい」 OWNER 2026-08-28.
+   欲しい」 OWNER 2026-08-28 -- the second of blank before the notices land --
+   and it answered that complaint by drawing LAST TIME'S notices through it.
 
-   The feed draws instantly because `lingua.posts` is a copy; the notices had
-   none at all, so the screen was empty for as long as the request was in the
-   air. This is that copy: drawn first, replaced when the answer lands.
+   Which is the other complaint. 「フォローとか0って出て1秒後に1とか数字が
+   変わる」 OWNER 2026-09-04, 「アイコンも1秒遅れ表示」 OWNER 2026-09-05: this
+   list is the one screen in the app that is made of faces, and every one of
+   them was last session's, held for a second, and then swapped for whatever
+   had actually happened. The two complaints are the pair cf987fe6 named, and
+   the owner has already said which way they resolve -- 「サーバーに聞く前に
+   ロード挟んで絶対に遅れて表示させることないように」.
 
-   FILED UNDER THE ACCOUNT, the way `lingua.me` is parked by meParkKey(). Two
-   accounts on one handset must not read each other's notices, and a notice
-   names who did what to whom.
+   BOTH ARE ANSWERED BY ASKING EARLIER, which is why the copy can go rather
+   than merely stop being drawn. The notices are on PULL_OPEN (§ WHAT AN OPEN
+   ASKS FOR): the question goes out when the app opens, under the 900ms
+   splash, so by the time anybody presses the bell the answer is here. There
+   is no second of blank to cover, and nothing stale to cover it with.
 
-   IT REPLACES RATHER THAN FILLS IN, which is the opposite of what draftsPull()
-   does and is not an exception to it: `notices()` is computed on the server
-   from `react`, `post` and `follow` every time it is asked, so nothing here can
-   ever be the only surviving copy of anything. A draft is something a person
-   MADE; a notice is something that happened to them. `docs/DATA_MODEL.md`. */
-var LS_NOTES='lingua.notices';
-function notKey(){
-  var u=(typeof SESS==='object' && SESS && SESS.uid)? String(SESS.uid) : '';
-  return u? (LS_NOTES+'.'+u) : '';
-}
-/* Read once, when the screen first asks. `NOTES_HAVE` stays null until then,
-   which is still "nobody has asked" -- and a phone with no copy yet is that
-   too, so the two agree without a third flag. */
-var notRead=false;
-function notWake(){
-  var k=notKey(), raw=null, got=null;
-  if(notRead || !k) return;
-  notRead=true;
-  try{ raw=localStorage.getItem(k); }catch(e){ raw=null; }
-  if(!raw) return;
-  try{ got=JSON.parse(raw); }catch(e){ got=null; }
-  if(got && got.length) NOTES_HAVE=got;
-}
-function notKeep(){
-  var k=notKey();
-  if(!k || !NOTES_HAVE) return;
-  try{ localStorage.setItem(k, JSON.stringify(NOTES_HAVE)); }catch(e){}
-}
+   What is left is the mark, for the launch where the answer really is still
+   out -- which is vNotif() below and is the same mark the timeline turns. */
+var NOTES_HAVE=null;
 /* WHAT MAKES A NOTICE UNREAD, and it is the owner's answer rather than the
    server's. 「最後に通知の画面を開いた時刻より新しいものを未読とする」 OWNER
    2026-09-01, X と Instagram と同じ形.
@@ -2084,11 +2292,10 @@ function notSeen(){
   SET.notAt=Date.now();
   if(had) save();
 }
-/* Asked once a session, from the tab bar, so the count is right on the screen
-   somebody is actually standing on. Same shape as meFollowPull()'s FO_ASKED
-   and snsSavedPull(): a screen that draws every render must not ask every
-   render -- and that is now pullNeed() and not a flag of its own, held one
-   place for every screen. www/sns.js § pullRun.
+/* Asked when the session begins, so the count is right on the first frame of
+   whatever screen the app opened on and no screen has to ask for it. What
+   holds 「asked once」 is the pull table and not a flag of this file's own.
+   www/sns.js § pullRun.
 
    THE NOTICES ARE WHY IT IS HELD THERE. This screen's own pull was called
    from vNotif() with no such guard: the answer landed, the screen was drawn,
@@ -2262,19 +2469,20 @@ function notRow(n){
    snsAnsHTML() in this same file has had it right since it was written --
    `if(!r) return ''` -- so this is the search's shape, not a new one.
 
-   The second of blank is gone with `lingua.notices` above: notWake() puts
-   last time's notices on the screen in the first frame, and the answer
-   replaces them when it lands. The three states are still three -- a phone
-   that has never had an answer has no copy either, so it draws nothing rather
-   than saying there is nothing. */
+   AND THE THIRD STATE IS THE MARK, NOT LAST TIME'S NOTICES. `lingua.notices`
+   used to stand here -- the copy on the handset, drawn in the first frame and
+   replaced when the answer landed -- and replacing a screenful of faces a
+   second after somebody is looking at them is 「アイコンも1秒遅れ表示」 OWNER
+   2026-09-05. It is gone (§ THE COPY ON THE HANDSET IS GONE) and what covers
+   the wait is the mark, exactly as it does on the timeline and under the two
+   counts. `pullHad('notif')` is the question 「has the server answered this
+   session」 and it is the table's, not a flag of this screen's. */
 function vNotif(){
   if(!netSignedIn()) return snsLocked('notif');
-  /* The copy first, so there is something on the screen before the request
-     goes out; then the request. */
-  notWake();
   notSeen();
-  pullNeed('notif');
-  var got=NOTES_HAVE;
+  /* The notices came down when the session began (§ WHAT AN OPEN ASKS FOR).
+     Standing on this screen asks for nothing; pulling it asks again. */
+  var got=pullHad('notif')? (NOTES_HAVE||[]) : null;
   var ns=(got||[]).filter(function(n){ return !meBlocks(n.hd); });
   return '<div class="view">'+rootTop('notif')+
     '<div class="body">'+

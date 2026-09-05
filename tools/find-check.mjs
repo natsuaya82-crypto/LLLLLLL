@@ -275,7 +275,7 @@ async function hist(){
 async function blank(){
   await pg.evaluate(() => {
     window.__MODE='ok'; window.__ASK=[];
-    SET.recent = []; snsRecentGot = true; snsQ = ''; snsHits = null;
+    SET.recent = []; PULL_GOT.recent = 1; snsQ = ''; snsHits = null;
     go('explore');
   });
   await pg.waitForTimeout(80);
@@ -387,7 +387,7 @@ say(star.saved.length === 1 && star.saved[0] === 'hoshi' && star.recent.length =
    履歴が黙って一つ減ることがありました。同じ言葉をもう一度検索すると一番上
    へ動きますが、その動かし方が **「消す」→「入れる」の二回**で、**間で電波
    が切れると消えたまま**になります。手元には残るので画面は正しく見え、次の
-   起動で `snsRecentPull()` がサーバーの答えで上書きしたときに初めて減ります
+   起動で 履歴の答えがサーバーから来て `SET.recent` を上書きしたときに初めて減ります
    ── 誰も何も押していないのに、一件だけ無くなる。
 
    `unique (author, q)` があるから二回に分けていた、というのが元の理由です。
@@ -404,7 +404,7 @@ async function server(){
 }
 await pg.evaluate(() => {
   window.__MODE = 'ok'; window.__ASK = []; window.__RECENT = []; window.__SEQ = 0;
-  SET.recent = []; snsRecentGot = true; snsQ = ''; snsHits = null; go('explore');
+  SET.recent = []; PULL_GOT.recent = 1; snsQ = ''; snsHits = null; go('explore');
 });
 await pg.waitForTimeout(80);
 await pg.evaluate(() => { ['aya','kanuko','mira'].forEach(function(w){ snsQ = w; snsGo(); }); });
@@ -436,8 +436,12 @@ say(still.length === 3 && still.indexOf('kanuko') !== -1,
    初めて人の目に入ります。 */
 const back2 = await pg.evaluate(() => new Promise(function(d){
   window.__MODE = 'ok';
-  snsRecentAsk = false; snsRecentGot = false; SET.recent = [];
-  snsRecentPull();
+  /* 「次の起動」は、セッションが始まる瞬間そのもの ── 画面ではなく
+     www/sns.js § WHAT AN OPEN ASKS FOR がこれを取りに行きます。
+     PULL_OUT / PULL_GOT が「訊いている／訊けた」の記録で、二つの旗を
+     この画面が持つのはやめました。 */
+  PULL_OUT.recent = 0; PULL_GOT.recent = 0; SET.recent = [];
+  pullNeed('recent');
   setTimeout(function(){ d(SET.recent ? SET.recent.slice() : []); }, 600);
 }));
 say(back2.length === 3 && back2.indexOf('kanuko') !== -1,
@@ -482,7 +486,7 @@ async function pressed(q){
   await pg.evaluate(() => {
     window.__MODE = 'ok'; window.__ASK = []; window.__FIELDS = [];
     snsQ = ''; snsHits = null;
-    SET.recent = []; snsRecentGot = true; go('explore');
+    SET.recent = []; PULL_GOT.recent = 1; go('explore');
   });
   await pg.waitForTimeout(120);
   await pg.fill('#sns-q', q);
@@ -599,12 +603,20 @@ say(back.after.rows === 1,
 
    だから訊いた本数を数えます。一本が正しい姿です ── 立てて、一度訊いて、
    答えが来て、止まる。**人が引っ張って訊き直す道はこれとは別**で、そちらは
-   `snsPull()` を直に呼ぶので、この数には出てきません。 */
+   `pullGo()` を直に呼ぶので、この数には出てきません。
+
+   訊く場所は変わりました。2026-09-05、オーナー:「画面に入った瞬間に
+   サーバーへ訊きに行くのは無し。それが 1 秒遅れの正体です」── いま問いを
+   出すのはセッションが始まる瞬間で（www/sns.js § WHAT AN OPEN ASKS FOR）、
+   `vFeed()` は一本も出しません。数える理由は同じです: 答えが来て描き直され、
+   その描き直しがまた訊く、という輪がここに戻っていないこと。 */
 const loop = await pg.evaluate(() => new Promise(function(d){
   window.__MODE = 'ok';
   SNS_GOT = {}; snsTab = 'rec';
+  PULL_GOT.feed = 0; PULL_OUT.feed = 0;
   window.__ASK = [];
   go('feed');
+  pullBoot();
   setTimeout(function(){
     d(window.__ASK.filter(function(s){
         return s.indexOf('/rest/v1/rpc/feed_hot') === 0; }).length);

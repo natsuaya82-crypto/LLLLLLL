@@ -115,11 +115,14 @@ const ROADS = {
      kept for working with no signal had no owner on it. Parked and not
      deleted -- what is in it came from `post` and `draft` and goes back there
      the moment that account signs in again. */
-  'post.js:postParkKey(had': { phone: 'another account\'s posts and drafts, parked while this one is signed in. They came from `post` and `draft` and go back there' },
-  /* The notices are the server's own answer (`notices()` in schema.sql) --
-     nothing here writes one, and the copy is what the screen draws in the
-     first frame. netNotices() is the road, downward. */
-  'sns.js:k': { to: 'netNotices' }
+  'post.js:postParkKey(had': { phone: 'another account\'s posts and drafts, parked while this one is signed in. They came from `post` and `draft` and go back there' }
+  /* `sns.js:k` -- the notices, kept under the account -- STOOD HERE AND IS
+     GONE. The copy was what the notices screen drew in its first frame, and
+     drawing it meant drawing last session's faces and swapping them a second
+     later 「アイコンも1秒遅れ表示」 OWNER 2026-09-05. The notices are asked
+     for when the app opens now (www/sns.js § WHAT AN OPEN ASKS FOR), so the
+     answer is here before anybody presses the bell and there is no second of
+     blank for a stale copy to cover. Nothing on this phone keeps them. */
 };
 
 const files = fs.readdirSync(WWW).filter(f => f.endsWith('.js'));
