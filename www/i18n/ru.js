@@ -684,7 +684,7 @@ defLang('ru', (function(){
       "ob.draw.h"        : "Нарисуйте свою {0}.",
       /* the writing system */
       "script.show"     : "Показывать",
-      "script.show.own"   : "Своими буквами",
+      "script.show.own"   : "Показывать мои буквы",
       /* the letter editor */
       "glyph.circle"      : "Дуга",
       "glyph.fill"     : "Заливка",

@@ -686,7 +686,7 @@ defLang('zh', (function(){
       "ob.draw.h"       : "画出你自己的 {0}。",
       /* the writing system */
       "script.show"     : "显示",
-      "script.show.own"   : "自造文字",
+      "script.show.own"   : "显示自创文字",
       /* the letter editor */
       "glyph.circle"      : "圆",
       "glyph.fill"     : "填充",

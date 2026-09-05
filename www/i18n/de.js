@@ -666,7 +666,7 @@ defLang('de', (function(){
       "ob.draw.h"       : "Zeichne dein eigenes {0}.",
       /* the writing system */
       "script.show"     : "Anzeigen",
-      "script.show.own"   : "Deinen Buchstaben",
+      "script.show.own"   : "Meine Buchstaben anzeigen",
       /* the letter editor */
       "glyph.circle"      : "Runden",
       "glyph.fill"     : "Füllen",

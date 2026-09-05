@@ -584,7 +584,7 @@ defLang('en', (function(){
       'ob.draw.h'      : "Draw your own {0}.",
       /* the writing system */
       'script.show'     : 'Show',
-      'script.show.own'   : "Your letters",
+      'script.show.own'   : "Show my own letters",
       /* the letter editor */
       'glyph.circle'      : "Round",
       'glyph.fill'     : "Fill",

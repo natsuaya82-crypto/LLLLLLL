@@ -857,7 +857,7 @@ defLang('ko', (function(){
       "ob.draw.h"      : "당신의 {0} 를 그려 보세요.",
       /* the writing system */
       "script.show"     : "표시",
-      "script.show.own"   : "내 글자",
+      "script.show.own"   : "내 문자 표시",
       /* the letter editor */
       "glyph.circle"      : "원",
       "glyph.fill"     : "칠하기",

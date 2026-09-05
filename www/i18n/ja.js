@@ -594,7 +594,7 @@ defLang('ja', (function(){
       'ob.draw.h'      : "君の {0} を書いてみよう。",
       /* the writing system */
       'script.show'     : '表示',
-      'script.show.own'   : "自分の字",
+      'script.show.own'   : "自作文字を表示する",
       /* the letter editor */
       'glyph.circle'      : "曲線",
       'glyph.fill'     : "塗り",
