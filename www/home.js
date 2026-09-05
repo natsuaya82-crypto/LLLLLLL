@@ -409,13 +409,13 @@ document.addEventListener('pointerdown', pfSwDown, {passive:true});
 document.addEventListener('pointerup', pfSwUp, {passive:true});
 document.addEventListener('pointercancel', function(){ PF_SW=false; }, {passive:true});
 function vProfile(){
-  var list=pfList();
+  var h=pfWho(), waiting=!pfMine() && !WHO_HAVE[h], list;
   /* Who this page is about, asked for when it is somebody else -- the same
      shape vFeed() and vNotif() ask for theirs. Everything drawn below used to
      come off a post of theirs, so a person with nothing on this phone was a
      '?' with a Follow button. whoPull() asks once per handle and does nothing
      at all on your own page. */
-  if(!pfMine()) whoPull(pfWho());
+  if(!pfMine()) whoPull(h);
   /* AND YOUR OWN FOLLOWS ARE NOT ASKED FOR HERE. Both directions came down
      when the session began (`mine`, www/sns.js § WHAT AN OPEN ASKS FOR): a
      count asked for by the screen that shows it is a count that arrives after
@@ -430,6 +430,16 @@ function vProfile(){
         esc(t('set.title'))+'">'+ICON_GEAR+'</button></div>'
       : navTop(''))+
     '<div class="body" style="padding-top:0">'+
+    /* SOMEBODY ELSE'S SCREEN, AND NOTHING FROM THIS PHONE'S OWN GUESS.
+       whoOf() answers before the server does -- a post of theirs if this
+       phone has one -- and that used to be what the whole page was drawn
+       from: a card built out of a stale copy, with only the follow counts
+       (snsWaitWord(), inside whoCard()) turning while the real numbers were
+       still out. 「他の人のプロフィールいく時、フォロー中とフォロワーが
+       くるくるするけど、そこじゃなくてその人の画面がくるくるして欲しい」
+       OWNER 2026-09-05 -- so until WHO_HAVE[h] actually has this person's
+       page, the SCREEN turns and nothing guessed is shown. */
+    (waiting? snsWaitHTML() : (
     /* Everything above the three lists is meCard() -- the face, the name, the
        handle, the language, the line about yourself and who follows whom.
        「プロフィール視認性悪すぎだしごちゃごちゃしてる」
@@ -448,11 +458,11 @@ function vProfile(){
     /* Your own card, or somebody else's. The card is where a profile differs
        -- yours has Edit and the way to a badge, theirs has Follow -- and the
        lists under it are the same lists. */
-    (pfMine()? meCard() : whoCard(pfWho()))+
+    (pfMine()? meCard() : whoCard(h))+
     pfTabs()+
-    (list.length? list.map(postRow).join('')
+    ((list=pfList()).length? list.map(postRow).join('')
                 : '<div class="note">'+esc(t(pfTab==='li'? 'prof.none.li'
-                                            : pfTab==='re'? 'prof.none.re' : 'prof.none'))+'</div>')+
+                                            : pfTab==='re'? 'prof.none.re' : 'prof.none'))+'</div>')))+
     '</div>'+
     /* The same one as the timeline's, from the same place. This screen is
        where the app opens, so without it a person who never pressed the home
