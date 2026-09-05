@@ -613,6 +613,11 @@ function keepAsked(){
    things reach it now -- the arrow, the Yes and the No -- and a second copy
    of these two lines is a second answer to where back goes. */
 function backGo(){
+  /* And the keyboard stops wobbling. It is a state of a screen you are
+     standing ON (www/keyboard.js § kbWob), so leaving is what ends it --
+     there is no Done in that bar any more, and a save that landed comes down
+     this road too. 「並べ替えは保存か戻るで終わる」 OWNER 2026-09-05. */
+  kbWob=false;
   if(NAV.length>1) NAV.pop(); else NAV=[{r:'profile'}];
   route=here().r; render(); window.scrollTo(0,0);
 }

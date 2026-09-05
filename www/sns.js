@@ -742,7 +742,11 @@ function pullBoot(){
    that binds askLang, and the reports are not the language. mod.js loads
    after this file, so the name is reached when the pull runs and not now. */
 pullOn('mod', function(ok, bad){ modAsk(ok, bad); });
-var PULL_NOT={ settings:1, set:1 };
+/* AND THE KEYBOARD. A board is built on that screen and nothing about it
+   comes off the server while it is open -- so the pull is a spinner that
+   asks nobody anything, over a sheet a finger is already dragging keys
+   around on. 「キーボード編集画面はくるくる無し」 OWNER 2026-09-05. */
+var PULL_NOT={ settings:1, set:1, kb:1 };
 function pullEvery(){
   var r;
   for(r in PAGES){

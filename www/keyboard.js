@@ -2657,11 +2657,6 @@ function vKb(){
    「キーボード1の右上の・・・いらないから消して。そうしたら、そもそも
    キーボードはいじれないから、防げる。」 */
 function kbMoreQ(){
-  if(kbWob)
-    /* The same button as every other Done in this bar, and it used to be
-       spelled `navq navdone` -- a second name for one thing, a sixteenth of
-       a rem smaller and in the other face. www/shell.js § navDo. */
-    return navDo(t('kb.done'), 'kbWobEnd', null, true);
   /* The ? in its place. There is nothing behind the ⋯ on board 0 -- so the
      corner was empty, and on the free plan that was the corner the steps used
      to be in: its one screen carried helpQ('kb') until this board became a
@@ -3175,7 +3170,14 @@ function kbUp(e){
   kbReadRows();
 }
 /* ---- the state a home screen is in while an icon is held ---------------
-   Every key wobbling, and Done in the bar.
+   Every key wobbling, and nothing in the bar.
+
+   THERE IS NO DONE. 「並べ替え中の完了ボタンはいらない」 OWNER
+   2026-09-05. A Done was a third way off a screen that already has two --
+   the Save in the corner and the arrow beside it -- and it did nothing
+   either of those does not do. The wobbling ends where the screen does:
+   backGo() (www/shell.js) is the one road off, and a save that landed goes
+   down it too.
 
    A press still SELECTS while it lasts, and that is a fix rather than a
    choice. This state used to strip `kbTapKey` off every key, and the reason
@@ -3194,9 +3196,8 @@ function kbUp(e){
    already stopped in kbUp() -- it calls preventDefault(), which is what keeps
    a key from being selected by the finger that just put it down.
 
-   Where you are standing, so viewReset() drops it. */
+   Where you are standing, so backGo() and viewReset() drop it. */
 var kbWob=false;
-function kbWobEnd(){ kbWob=false; kbSel=null; render(); }
 /* The layout, read back off the screen. The keys moved in the page while the
    finger was down and the language is told once, here -- the same way the
    alphabet is told its order once, on the way up. */
