@@ -353,6 +353,7 @@ defLang('it', (function(){
       "net.needname" : "Inserisci un nome.",
       "net.badhandle" : "Un ID ha da 2 a 24 caratteri: a–z, 0–9 e _",
       "net.handle.taken" : "Questo ID è già in uso.",
+      "net.nohandle"     : "Nessun account ha questo ID.",
       "net.offline" : "Nessuna connessione.",
       "net.again" : "Riconnetti",
       "net.failed" : "Non ha funzionato.",

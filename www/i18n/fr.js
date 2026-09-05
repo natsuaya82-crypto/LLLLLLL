@@ -401,6 +401,7 @@ defLang('fr', (function(){
       "net.needname" : "Saisissez un nom.",
       "net.badhandle" : "Un ID fait 2 à 24 caractères : a–z, 0–9 et _",
       "net.handle.taken" : "Cet ID est déjà pris.",
+      "net.nohandle"     : "Aucun compte n’a cet ID.",
       "net.offline" : "Pas de connexion.",
       "net.again" : "Reconnecter",
       "net.failed" : "Cela n’a pas marché.",

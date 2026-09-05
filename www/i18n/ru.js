@@ -356,6 +356,7 @@ defLang('ru', (function(){
       "net.needname" : "Введите имя.",
       "net.badhandle" : "ID — от 2 до 24 символов: a–z, 0–9 и _",
       "net.handle.taken" : "Этот ID уже занят.",
+      "net.nohandle"     : "Нет аккаунта с таким ID.",
       "net.offline" : "Нет соединения.",
       "net.again" : "Переподключиться",
       "net.failed" : "Не получилось.",

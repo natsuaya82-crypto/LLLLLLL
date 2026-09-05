@@ -532,6 +532,7 @@ defLang('ko', (function(){
       "net.needname" : "이름을 입력하세요.",
       "net.badhandle" : "ID는 2~24자입니다: a–z, 0–9, _",
       "net.handle.taken" : "이미 사용 중인 ID입니다.",
+      "net.nohandle"     : "해당 ID를 쓰는 계정이 없습니다.",
       "net.offline" : "연결할 수 없습니다.",
       "net.again" : "다시 연결",
       "net.failed" : "되지 않았습니다.",

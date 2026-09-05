@@ -420,6 +420,12 @@ function netWhy(d, status, mark){
   /* profile.handle is unique in the schema, so this is the server settling a
      race the check a moment ago could not see. */
   if(status===409) return t('net.handle.taken');
+  /* staff_add() in supabase/schema.sql, asked for somebody nobody is. It used
+     to change no row and say so to nobody, so the screen emptied its field on
+     a name that had gone nowhere -- 「勝手に＠の中が消える。追加されてない」
+     OWNER 2026-09-05. The message is the schema's own words and is matched the
+     way the two above are matched. */
+  if(status===400 && /no such handle/i.test(m)) return t('net.nohandle');
   return m || t('net.failed');
 }
 /* ---- 通信が落ちたら、何も進まない --------------------------------------------
