@@ -42,10 +42,19 @@
         what the line MEANS, then everything the post carries -- the
         photographs and the voice. 投稿 / 翻訳 / そのた
 
+    18  THE FACE IS DECIDED ONCE. 「最初の文字になるのはいいけど、それはオン
+        ボーディングを通ってかいたもじだけで、それ以降は勝手に変えないで」
+        OWNER 2026-09-05. postAvatar() walked LETTERS every call and answered
+        whichever letter was first with a shape, so redrawing it, putting
+        another in front, or taking a photograph off moved the face with
+        nobody having touched it. It is written on the account now, by the
+        walk, and read here.
+
    Claim 1 is checked by reading the pixels of the file that came out, because
    "the string is different" would also be true of a bake that drew nothing.
 
-   Exit code is 0 only when all eleven hold.
+   Exit code is 0 only when every claim in this file holds. The list above is
+   not all of them: 12 to 17 are named where they are driven, further down.
    --------------------------------------------------------------------------- */
 import http from 'http';
 import fs from 'fs';
@@ -1434,8 +1443,10 @@ const R = await pg.evaluate(async () => {
      Three things, and the middle one is the reason it sat in the backlog
      rather than being fixed: sending on every change would be a request per
      letter drawn. It is not -- postAvatar() answers the photograph, else the
-     FIRST drawn letter -- but "it only sends when it moved" has to be held or
-     the cheap version silently becomes the expensive one.
+     face written down on the account (claim 18 below), which moves twice in
+     a language's life and not once per stroke -- but "it only sends when it
+     moved" has to be held or the cheap version silently becomes the expensive
+     one.
 
      The requests are counted rather than the state read: what is being held
      is what goes OUT. netSend is wrapped and answers success without a
@@ -1485,6 +1496,110 @@ const R = await pg.evaluate(async () => {
                  ' rather than PATCH -- schema.sql grants update(handle, ' +
                  'display, av), and an insert on a row that exists is a 409');
   } finally { netSend = realSend; }
+
+  /* ---- 18. the face is DECIDED ONCE, and nothing decides it again -------
+     「アイコン勝手に変わるのは何だ。最初の文字になるのはいいけど、それはオン
+     ボーディングを通ってかいたもじだけで、それ以降は勝手に変えないで。ユーザー
+     がアイコン設定したのに変えられるバグになる」 OWNER 2026-09-05.
+
+     postAvatar() walked LETTERS on every call and answered whichever letter
+     happened to be first with a shape on it. Nothing was written down, so
+     redrawing that letter, putting another in front of it, or taking a
+     photograph off all moved the face with nobody having touched it -- and
+     the letter drawn in the walk was the answer only for as long as it stayed
+     at the front. Pressed on a real walk, 2026-09-05.
+
+     DRIVEN, AND THE LETTERS ARE ACTUALLY MOVED. 「the value is stored」 and
+     「the answer stops moving」 are two statements and only the second is the
+     owner's sentence, so what is read here is the answer, after each move.
+
+     The walk is driven too, because 「オンボーディングを通ってかいたもじ」 names
+     a moment and not a position: obFinish()'s letter is deliberately NOT the
+     one at the front of LETTERS here, so a check that passed by accident on
+     「the first drawn letter」 cannot pass this. */
+  {
+    const realSendAv = netSend;
+    netSend = function () {};
+    const wasAv = ME.av, wasPic = ME.pic, wasLetters = LETTERS.slice(),
+          wasLid = ob.lid, wasRoute = route;
+    const face = () => JSON.stringify(postAvatar() || null);
+    const put = (id, pts) => {
+      const l = { id, st: [{ pts }] };
+      LETTERS.unshift(l);
+      return l;
+    };
+    try {
+      /* (a) an account that finished the walk before there was anywhere to
+             write this: the face it wears today is adopted, ONCE. */
+      delete ME.av;
+      ME.pic = '';
+      const front = put('av-front', [[1, 1], [2, 2]]);
+      const adopted = face();
+      if (adopted !== JSON.stringify({ st: front.st }))
+        fails.push('an account with no face on file does not wear the one it ' +
+                   'was wearing: ' + adopted);
+      if (!ME.av)
+        fails.push('and nothing was written down, so the next call decides it ' +
+                   'all over again');
+
+      /* (b) NOW MOVE THE LETTERS. Nobody has touched the icon. */
+      put('av-newer', [[9, 9], [8, 8]]);
+      const afterFront = face();
+      front.st = [{ pts: [[5, 5], [6, 6]] }];
+      const afterRedraw = face();
+      if (afterFront !== adopted)
+        fails.push('putting another letter in front of it moved the face: ' +
+                   afterFront + ' where ' + adopted + ' was worn. Nobody ' +
+                   'touched the icon. 「それ以降は勝手に変えないで」');
+      if (afterRedraw !== adopted)
+        fails.push('redrawing a letter moved the face: ' + afterRedraw +
+                   '. 「それ以降は勝手に変えないで」');
+
+      /* (c) a photograph wins, and taking it off gives back THAT face -- not
+             whatever is at the front of the alphabet by then. */
+      ME.pic = 'data:image/jpeg;base64,AAAA';
+      const wearingPhoto = face();
+      ME.pic = '';
+      const backOff = face();
+      if (wearingPhoto.indexOf('pic') < 0)
+        fails.push('a photograph somebody set is not what they wear: ' + wearingPhoto);
+      if (backOff !== adopted)
+        fails.push('taking the photograph off gave back ' + backOff + ' rather ' +
+                   'than the face on file. 「ユーザーがアイコン設定したのに' +
+                   '変えられるバグになる」');
+
+      /* (d) and it may not be written over, by anything. */
+      meAvSet({ ch: 'Z' });
+      if (face() !== adopted)
+        fails.push('the face was written over by a second call to meAvSet(). ' +
+                   'It is decided once and there is no second decider.');
+
+      /* (e) THE WALK. Its letter is at the BACK, so 「the first drawn letter」
+             cannot be mistaken for 「the letter the walk drew」. */
+      delete ME.av;
+      ME.pic = '';
+      const walkLetter = { id: 'av-walk', st: [{ pts: [[7, 7], [7, 70]] }] };
+      LETTERS.push(walkLetter);
+      ob.lid = 'av-walk';
+      obFinish();
+      const afterWalk = face();
+      if (afterWalk !== JSON.stringify({ st: walkLetter.st }))
+        fails.push('the walk did not put the letter it drew on the account: ' +
+                   afterWalk + ' where the drawn letter was ' +
+                   JSON.stringify({ st: walkLetter.st }) + '. ' +
+                   '「オンボーディングを通ってかいたもじ」');
+      put('av-after-walk', [[3, 3], [4, 4]]);
+      if (face() !== afterWalk)
+        fails.push('and a letter drawn after the walk took the face off it.');
+    } finally {
+      netSend = realSendAv;
+      LETTERS.length = 0;
+      LETTERS.push.apply(LETTERS, wasLetters);
+      ME.av = wasAv; ME.pic = wasPic;
+      if (!ME.av) delete ME.av;
+      ob.lid = wasLid; route = wasRoute;
+    }
+  }
 
   /* ---- 14. a draft is the server's, and the phone is the copy ---------
      「SNSは全部サーバー」 OWNER 2026-08-27, and CLAUDE.md § Online. A draft
@@ -1897,4 +2012,8 @@ console.log('post: a letter placed on a black photograph is IN the file that goe
             '      post the app believes is finished: the wire comes back and the\n' +
             '      server ends up holding all of it, under one row. And the bytes\n' +
             '      of a post somebody deleted do not stay in the public bucket\n' +
-            '      because the delete was refused once.');
+            '      because the delete was refused once.\n' +
+            '      And the face is decided once: the walk writes the letter it\n' +
+            '      drew, and after that a letter redrawn, a letter put in front,\n' +
+            '      a photograph set and a photograph taken off all leave it\n' +
+            '      where it is.');

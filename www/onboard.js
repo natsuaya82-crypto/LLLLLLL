@@ -1800,6 +1800,19 @@ function obFinish(){
      Unnamed is a state this app already has: the cover says so and offers the
      pencil, settings shows a dash. */
   if(!langName) langName=ob.name||'';
+  /* AND THE FACE, decided here and nowhere else afterwards.
+     「最初の文字になるのはいいけど、それはオンボーディングを通ってかいたもじ
+     だけで、それ以降は勝手に変えないで」 OWNER 2026-09-05.
+
+     `ob.lid` is the letter this walk drew or borrowed -- obDone() and
+     obTakeCh() both write it, and it is the one letter in this alphabet that
+     the sentence above is about. It is taken as a SHAPE and not as an id, so
+     redrawing that letter later does not move the face; meAvSet()
+     (www/me.js) is the only writer and refuses every call after the first.
+
+     BEFORE SET.done, so the line in postAvatar() that adopts a face for an
+     account older than this field can never fire during the walk. */
+  meAvSet(meAvOf(ltById(ob.lid)));
   SET.done=true; save();
   /* And what was made on the way here goes up. The door is the LAST step, so
      the letter, the alphabet and the language's name were all made before

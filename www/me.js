@@ -75,6 +75,46 @@ var ME_MAX={ name:30, handle:24, bio:160, link:100, loc:30 };
    else's. */
 var ME={name:'', handle:'', bio:'', pic:'', link:'', loc:'', avSent:'', uid:''};
 function meBlank(){ return {name:'', handle:'', bio:'', pic:'', link:'', loc:'', avSent:'', uid:''}; }
+/* ---- the face this account wears, WRITTEN DOWN ---------------------------
+   「アイコン勝手に変わるのは何だ。最初の文字になるのはいいけど、それはオンボー
+   ディングを通ってかいたもじだけで、それ以降は勝手に変えないで。ユーザーが
+   アイコン設定したのに変えられるバグになる」 OWNER 2026-09-05.
+
+   It was not written down anywhere. postAvatar() went and looked at LETTERS
+   every time it was called and answered whichever letter happened to be first
+   with a shape on it -- so redrawing that letter, drawing another and moving
+   it to the front, or taking a photograph off all changed the face, with
+   nobody having touched it. Pressed on 2026-09-05: the letter drawn in the
+   walk was the answer only because it happened to be at the front.
+
+   `av` IS THE ACCOUNT'S, like everything else on ME. It is parked and handed
+   back with the account (meFor above), and it goes UP as the `av` of the
+   profile row -- netMakeProfile() writes that column and netAvSync() keeps it
+   level, both off this same value. There is no such thing as the phone's.
+
+   It is the SHAPE and not the letter's id, and that is the owner's sentence
+   rather than a convenience: an id would be read again every time, and
+   redrawing that letter would move the face -- 「それ以降は勝手に変えないで」.
+   It is the same reason a post carries its own face (rule 8, docs/DATA_MODEL).
+
+   Absent is not empty. An account with no `av` has not been asked yet; one
+   with a face has been. */
+function meAvOf(l){
+  if(l && l.st && l.st.length) return {st:l.st};
+  if(l && l.ch) return {ch:l.ch};
+  return null;
+}
+/* ONCE, AND THIS IS THE ONLY PLACE IT IS WRITTEN. Two moments hand it a face
+   -- the walk, at obFinish(), for somebody arriving; and postAvatar(), once,
+   for an account that finished the walk before there was anywhere to write it
+   -- and neither of them may write over an answer that already exists. That
+   is the whole of 「それ以降は勝手に変えないで」, and it is held here rather
+   than at the two call sites so there is one rule and not two. */
+function meAvSet(av){
+  if(ME.av || !av) return;
+  ME.av=av;
+  saveMe();
+}
 function meFrom(m){
   var o=meBlank();
   if(m){ o.name=String(m.name||''); o.handle=String(m.handle||'');
@@ -85,7 +125,13 @@ function meFrom(m){
             meFollowers() are written against that and would answer [] for a
             list that had been turned into one. */
          if(m.fo && m.fo.length) o.fo=m.fo;
-         if(m.fr && m.fr.length) o.fr=m.fr; }
+         if(m.fr && m.fr.length) o.fr=m.fr;
+         /* The face, and absent is not empty here either: an account with no
+            `av` is one nothing has decided for yet, and meAvSet() decides it
+            once. Kept whole rather than rebuilt field by field -- it is a
+            shape, and a shape read back missing a stroke is not the face
+            somebody drew. */
+         if(m.av) o.av=m.av; }
   return o;
 }
 /* Whether this copy has anything in it. Used before parking one: a blank
@@ -95,7 +141,7 @@ function meFrom(m){
    removed every trace of them. 「アカウント削除で残るものねえ」 */
 function meHas(m){
   return !!(m && (m.name || m.handle || m.bio || m.pic || m.link || m.loc ||
-                  (m.fo && m.fo.length) || (m.fr && m.fr.length)));
+                  m.av || (m.fo && m.fo.length) || (m.fr && m.fr.length)));
 }
 function meRead(){
   ME=meBlank();
@@ -780,7 +826,21 @@ function meFollowerPull(){
     ME.fr=hs;
     saveMe();
     render();
-  }, function(){ FR_ASKED=false; });
+  }, function(d, s, m){
+    FR_ASKED=false;
+    /* 通信が落ちたら何も進まない ── netPop() (www/net.js)。この画面も
+       サーバーにしか無いものを取りに行く道の一本で、［再接続］はここも
+       もう一度行く。「通信エラーなら進むわけねえだろ全部」
+       「エラーになったらエラー用のポップ出して再更新とかおさせればいい」
+       OWNER 2026-09-05.
+
+       落ちたことを黙って呑んでいた ── FR_ASKED を戻すだけで、ポップも出ず、
+       ［再接続］の行き先にも入らなかった。隣の meFollowPull() は出す。
+       同じ日の決定の下で片方だけが黙っているのは食い違いで、しかも黙るほうが
+       悪い: ME.fr が無いままの画面は「誰にも追われていない」と同じ絵になり、
+       その人には何が起きたのか見えるものが一つも無い。 */
+    netPop(d, s, m, meFollowerPull);
+  });
 }
 /* Who you have blocked, as handles, beside who you follow -- both are the
    account's and neither is a language's. The uuids the timeline needs are the
@@ -887,6 +947,41 @@ function whoMore(h){
   WMENU=!WMENU;
   render();
 }
+/* ---- 「フォローされています」 -------------------------------------------
+   「フォローされてるのに出ないよ。136で見てる」 OWNER 2026-09-05.
+
+   THE QUESTION AND THE SHAPE, IN ONE PLACE. The badge existed in exactly one
+   spot in the whole app -- inside snsWhoRow() (www/sns.js), which is a row of
+   the FOLLOW LIST -- and a profile card is not that row. So somebody who
+   follows you wore the label where you went looking for a list of them and
+   nowhere on their own page. It was never a fix that had stopped working: the
+   card had never had one.
+
+   It costs the server nothing. Being followed is something this phone already
+   knows -- meFollowers() reads ME.fr, which meFollowerPull() has written once
+   this session -- so there is no request here and none added.
+
+   No CSS either: `.whyou` and `.mehr` are both in www/index.html already,
+   `.mehr` being a flex row with a gap, which is what puts this beside the
+   handle rather than under it.
+
+   It is a small grey word and not a pill -- rule 18, 「角丸やめろ」: no
+   corner radius, no border, no filled panel on anything new. `.whyou` is
+   already that shape and this is the same span the list wears.
+
+   AND NOT ON YOUR OWN NAME, without asking a second time: meFollowers() is
+   already the list with your own handle taken out of it (meNotMe, above, and
+   the row on 「フォロー中」 is what that is there for). A handle test here
+   would be that same question answered twice, and the two would part company
+   the day meHandle() changed under one of them.
+
+   www/sns.js still writes this out by hand. That file belongs to another
+   session today, so its copy is theirs to fold into this call; it is the same
+   sentence in two places until they do. */
+function whoBackTag(h){
+  if(meFollowers().indexOf(String(h||''))<0) return '';
+  return '<span class="whyou">'+esc(t('me.follows.you'))+'</span>';
+}
 function whoCard(h){
   var p=whoOf(h), on=meFollows(h);
   /* Frozen, and then nothing else about them. No face, no name, no follow
@@ -907,7 +1002,10 @@ function whoCard(h){
          own name and on nobody else's, which is the same fault postBadge()
          is about one screen over: 「相手の画面にパッチ映らない」. */
       '<div class="pname">'+esc(postWho(p))+postBadge(p)+'</div>'+
-      '<div class="mehr"><span class="phandle">@'+esc(h)+'</span></div>'+
+      /* AND WHETHER THEY FOLLOW YOU, beside the handle. whoBackTag() above
+         is the whole of it -- the question and the shape. */
+      '<div class="mehr"><span class="phandle">@'+esc(h)+'</span>'+
+        whoBackTag(h)+'</div>'+
     '</div>'+
     /* FOLLOW, IN THE SLOT ON THE NAME ROW -- the same slot your own card
        puts Edit in, because it is the same thing: the one action this page
