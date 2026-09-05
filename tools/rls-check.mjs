@@ -692,6 +692,25 @@ const CASES = [
      file stays something anybody can add to. */
   ['staff reads the reports',                 'ok',     C, 0,
     `select 1 from report`],
+  /* And the third answer: there was nothing wrong with it.
+     「通報で問題なかったらその通報が消せるようにしてほしい」 OWNER 2026-09-05.
+     A function and not a delete policy, so it is is_staff() inside that
+     decides -- which is what these three ask. B reads no report at all, so
+     the row it names comes back null and the call is refused for being
+     nobody's to make rather than for naming nothing. */
+  ['B cannot drop a report',                  'denied', B, 0,
+    `select report_drop((select min(id) from report))`],
+  ['nor can somebody with no account',        'denied', B, 1,
+    `select report_drop((select min(id) from report))`],
+  ['staff drops the one that was about nothing', 'ok',  C, 0,
+    `select report_drop((select id from report where who='${A}'))`],
+  ['and that report is gone',                 'denied', C, 0,
+    `select 1 from report where who='${A}'`],
+  /* And nothing else went with it. The report about the POST is a second row
+     by the same author about the same person, so a delete reaching too far
+     takes it -- which is the only way this can be wrong and look right. */
+  ['and the other report is still there',     'ok',     C, 0,
+    `select 1 from report where post='${P}'`],
   /* And the four numbers, which are the same door with a different handle on
      it. A count that anybody could ask for would be the one thing on the
      screen that did not need staff, which is how a screen ends up being the
@@ -722,6 +741,29 @@ const CASES = [
     `select staff_add('iri')`],
   ['and B is staff now',                      'ok',     E, 0,
     `select 1 from profile where handle='iri' and staff`],
+  /* --- and whoever is on that list is Pro --------------------------------
+     「管理の画面でスタッフ設定を@でできるでしょ？そこに記載されてる人だけ
+     ずっとプロに」 OWNER 2026-09-05. Being staff is the whole of it: no plan
+     row was written by anybody here, so the row can only have come from
+     becoming staff. */
+  ['and B is Pro because of it',              'ok',     B, 0,
+    `select 1 from plan where id='${B}' and plan='pro'`],
+  /* And the half a screen cannot hold. plan_edit lets an account write its
+     own row, so the app -- or a PATCH sent with the app closed -- can set it
+     to free, and free is what it would be from then on if this were held
+     anywhere but where the row lands. The write is ALLOWED and the row does
+     not move, which is why the two are asked separately: a refusal here would
+     be a screen saying no, and what is wanted is a tier that does not budge. */
+  ['and setting it back to free is allowed',  'ok',     B, 0,
+    `update plan set plan='free' where id='${B}'`],
+  ['and it is still Pro afterwards',          'ok',     B, 0,
+    `select 1 from plan where id='${B}' and plan='pro'`],
+  /* And nobody else was swept up in it. A trigger that made every plan row
+     pro would pass all three above. */
+  ['somebody who is not staff writes free',   'ok',     F, 0,
+    `insert into plan(id,plan) values ('${F}','free')`],
+  ['and it stays free',                       'ok',     F, 0,
+    `select 1 from plan where id='${F}' and plan='free'`],
   ['and can take it away again',              'ok',     E, 0,
     `select staff_drop('iri')`],
   ['and B is not staff any more',             'denied', E, 0,
@@ -1357,7 +1399,12 @@ const SHAPE = [
      select count(*) from pg_policies
       where tablename in ('language','slice') and cmd <> 'SELECT'
         and coalesce(qual,'') || coalesce(with_check,'') not like '%is_member%'`, '0'],
-  ['a report is never edited or withdrawn', `
+  /* No policy, either way. Staff DO drop a report that was about nothing, and
+     that is report_drop() -- a security definer function asking is_staff(),
+     the same shape as post_hide(). A policy would be a second place saying who
+     may act on a report, and the person it is about would be reaching the same
+     door. */
+  ['a report is edited or withdrawn through no policy', `
      select count(*) from pg_policies
       where tablename='report' and cmd in ('UPDATE','DELETE')`, '0'],
   ['the media bucket is there and is public', `
