@@ -573,10 +573,13 @@ function netOut(){
 
    Deleting an account is one thing that happens in two places -- the server's
    row and this phone's copy -- and the server is the record, so the copy goes
-   only after the row has. When the row cannot be reached the deletion has not
-   happened, and the phone has to remember that it was asked for so the next
-   launch can finish it. www/settings.js § wipeAllGo() is the press and
-   www/boot.js § bootSession() is the launch.
+   only after the row has. **This is written after the row is gone, never
+   before the ask** 「通信エラーなら進むわけねえだろ全部」 OWNER 2026-09-05: it
+   is what stands between `account_delete()` answering and wipeHere() getting
+   through the phone, so an app closed in that moment comes back and finishes.
+   A request that fell over leaves nothing here at all -- the account is still
+   there and there is nothing to finish. www/settings.js § wipeAllGo() is the
+   press and www/boot.js § bootSession() is the launch.
 
    It is a field of `lingua.sess` rather than a key of its own, and that is
    the whole answer to 「which account is this」 (CLAUDE.md rule 22): the mark

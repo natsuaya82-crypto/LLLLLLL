@@ -53,11 +53,16 @@ function bootSession(){
      「そもそもこのアプリはオンラインが基本なんだからね？SNSなんだから、削除し
      切ってないと消えない。」 OWNER 2026-09-03.
 
-     The press is in www/settings.js and it writes the mark on the session
-     before it asks the server, so a phone that lost its signal in the middle
-     -- or was closed -- comes back still signed in, with everything still on
-     it, and finishes here. It is the same call the button makes, so there is
-     one road and not a second one for the second try.
+     The press is in www/settings.js and it writes the mark once the server
+     says the row is gone, so what comes back here is a phone whose ACCOUNT
+     has already been deleted and whose copy did not finish going. It is the
+     same call the button makes, so there is one road and not a second one
+     for the second try.
+
+     A phone whose request never landed carries no mark and does not come
+     through here: the account is still there and nothing was written down
+     (www/settings.js § wipeAllGo). The popup is what it got, and ［再更新］
+     is its second try.
 
      FIRST, and before the plan or the languages: everything below this line
      asks the server for things that belong to an account that is on its way

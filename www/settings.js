@@ -591,21 +591,37 @@ function wipeAll(){
    Nothing is asked about the session here. netDropMe() refuses without one and
    says so, which is the same answer in the one place that can give it.
 
-   The mark goes on before the ask, not after the refusal: a phone that is
-   closed while the request is in the air has to come back knowing this was
-   asked for. www/boot.js § bootSession() is what reads it. */
+   AND THE MARK GOES ON AFTER THE SERVER HAS ANSWERED, NOT BEFORE THE ASK.
+   「通信エラーなら進むわけねえだろ全部」 OWNER 2026-09-05. It stood above this
+   call, so pressing 削除 with no signal wrote `"end":1` into `lingua.sess`
+   while all three requests fell over -- the phone said the account was on its
+   way out and the server had never been told. **Nothing is written until the
+   row is gone**, which is measured rather than read: pressed with netSend
+   failing, the session came back carrying `end` and 25 keys untouched.
+
+   It still covers the gap it was written for. netEndMe() answers only once
+   `account_delete()` has run, so the mark now sits between the row going and
+   wipeHere() finishing -- a phone closed in THAT moment comes back and
+   finishes at www/boot.js § bootSession(). A phone closed while the request
+   was in the air has nothing to finish: the account is still there. */
 function wipeAllGo(){
   var uid=(typeof SESS!=='undefined' && SESS && SESS.uid)? String(SESS.uid) : '';
-  netEnding();
-  netDropMe(function(){ wipeHere(uid); }, wipeStopped);
+  netDropMe(function(){ netEnding(); wipeHere(uid); }, wipeStopped);
 }
-/* It did not go. Nothing on this phone has been touched and the account is
-   still there, which is what the sentence says -- netWhy() is the app's one
-   place for what a refusal was, and 「削除し切ってないと消えない」 is the
-   state, not an error to hide. It is picked up again at the next launch. */
+/* It did not go. Nothing on this phone has been touched, nothing was written
+   down, and the account is still there -- which is what 「削除し切ってないと
+   消えない」 says. The popup is the app's one answer to a request that fell
+   over and ［再更新］ presses this again; a toast beside it was a second thing
+   speaking, and it read out netWhy()'s mark -- 「feed0ってなに？再接続か閉じる
+   でしょ？」 OWNER 2026-09-05, which is a state for a screenshot and not for a
+   person. */
 function wipeStopped(d, s, m){
-  toast(netWhy(d, s, m));
-  render();
+  /* AND NO render() AFTER IT. Every render() takes the popup down --
+     「Any navigation takes the popup with it」, www/glyph.js -- so calling one
+     here closed the pop this line had just opened, and the screen went back to
+     saying nothing. It was there for the toast that used to be on the line
+     above; nothing on this screen has changed, so there is nothing to redraw. */
+  netPop(d, s, m, wipeAllGo);
 }
 function wipeHere(uid){
   /* Everything under this app's name, counted rather than listed.
