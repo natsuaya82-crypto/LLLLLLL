@@ -274,7 +274,7 @@ defLang('en', (function(){
       "script.own.ph"             : "Paste or type a character",
       "script.set"                : "Use",
       "up.cta"                    : "Upgrade",
-      "up.need"                   : "With Pro you can use it without limits.",
+      "up.need"                   : "You need to upgrade to use this feature",
       "pop.no"                  : "Close",
       "pop.yes"                 : "Delete",
       "keep.q"                  : "Save what you have typed?",

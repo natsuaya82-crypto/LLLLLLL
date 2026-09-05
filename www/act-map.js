@@ -91,6 +91,11 @@ act('go', go);
 act('goIn', goIn);
 act('openHelp', openHelp);
 act('goPlans', goPlans);
+/* A door drawn on the free plan, pressed. It asks upStop() and stays where it
+   is; `goPlans` above is for a button whose own words already say upgrade.
+   「ポップだって。その古いのは消して」 OWNER 2026-09-05. */
+act('upFile', upFile);
+act('upData', upData);
 act('popYes', popYes);
 act('popNo', popNo);
 /* Saving what has been typed into the screen you are on, from the corner of

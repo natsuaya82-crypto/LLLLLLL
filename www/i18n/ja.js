@@ -290,7 +290,7 @@ defLang('ja', (function(){
       "script.own.ph"             : "字を入力または貼り付け",
       "script.set"                : "これにする",
       "up.cta"                    : "アップグレード",
-      "up.need"                   : "Pro なら無制限で使用できます。",
+      "up.need"                   : "この機能を使うにはアップグレードが必要です",
       "pop.no"                  : "閉じる",
       "pop.yes"                 : "削除",
       "keep.q"                  : "入力内容を保存しますか？",

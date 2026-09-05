@@ -422,7 +422,7 @@ defLang('fr', (function(){
       "script.own.ph"             : "Collez ou saisissez un caractère",
       "script.set"                : "Choisir",
       "up.cta"                    : "Passer à Plus",
-      "up.need"                   : "Avec Pro, vous pouvez l’utiliser sans limite.",
+      "up.need"                   : "Cette fonctionnalité nécessite un forfait supérieur",
       "pop.no"                  : "Fermer",
       "pop.yes"                 : "Supprimer",
       "keep.q"                  : "Enregistrer ce que vous avez saisi ?",

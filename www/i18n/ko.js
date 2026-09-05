@@ -553,7 +553,7 @@ defLang('ko', (function(){
       "script.own.ph"             : "글자를 붙여넣거나 입력",
       "script.set"                : "적용",
       "up.cta"                    : "업그레이드",
-      "up.need"                   : "Pro는 제한 없이 사용할 수 있습니다.",
+      "up.need"                   : "이 기능을 사용하려면 업그레이드가 필요합니다",
       "pop.no"                  : "닫기",
       "pop.yes"                 : "삭제",
       "keep.q"                  : "입력한 내용을 저장할까요?",

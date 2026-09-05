@@ -362,7 +362,7 @@ defLang('de', (function(){
       "script.own.ph"             : "Zeichen einfügen oder tippen",
       "script.set"                : "Setzen",
       "up.cta"                    : "Upgraden",
-      "up.need"                   : "Mit Pro können Sie es unbegrenzt nutzen.",
+      "up.need"                   : "Für diese Funktion ist ein Upgrade erforderlich",
       "pop.no"                  : "Schließen",
       "pop.yes"                 : "Löschen",
       "keep.q"                  : "Eingaben speichern?",

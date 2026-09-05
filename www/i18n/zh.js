@@ -382,7 +382,7 @@ defLang('zh', (function(){
       "script.own.ph"             : "粘贴或输入一个字",
       "script.set"                : "使用",
       "up.cta"                    : "升级",
-      "up.need"                   : "Pro 可无限制使用。",
+      "up.need"                   : "使用此功能需要升级套餐",
       "pop.no"                  : "关闭",
       "pop.yes"                 : "删除",
       "keep.q"                  : "保存已输入的内容吗？",

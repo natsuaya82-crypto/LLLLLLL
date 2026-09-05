@@ -381,7 +381,7 @@ defLang('pt', (function(){
       "script.own.ph"             : "Cole ou digite um caractere",
       "script.set"                : "Usar",
       "up.cta"                    : "Fazer upgrade",
-      "up.need"                   : "Com o Pro pode usar sem limites.",
+      "up.need"                   : "Esta funcionalidade requer um plano superior",
       "pop.no"                  : "Fechar",
       "pop.yes"                 : "Eliminar",
       "keep.q"                  : "Guardar o que escreveu?",

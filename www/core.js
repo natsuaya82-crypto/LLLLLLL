@@ -1688,6 +1688,21 @@ function upStop(ok){
   return true;
 }
 
+/* THE SAME WALL, ON A BUTTON THAT CARRIES NO CODE OF ITS OWN.
+   「ポップだって。その古いのは消して」 OWNER 2026-09-05. A door drawn on the
+   free plan used to be `DO('go', ["plans"])` -- the press left the screen
+   somebody was standing on and landed them on the price list, which is the
+   one thing upStop()'s comment above says a wall must not do. Markup holds a
+   NAME and not JavaScript (www/act.js), so the name it holds is one of these
+   and the pop is what answers the press; the plans screen is where saying yes
+   goes, exactly as it is everywhere else.
+
+   One function per capability, and not one that takes the name: `can()` may
+   only be given a literal (CLAUDE.md § 5, and dead-check refuses anything
+   else), which is the same sentence upStop() is written under. */
+function upFile(){ upStop(can('file')); }
+function upData(){ upStop(can('data')); }
+
 /* The day a plan ends, said out loud, once.
 
    A subscription ending puts the app back into the shape the free plan has:

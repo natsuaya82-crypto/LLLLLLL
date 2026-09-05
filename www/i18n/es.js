@@ -334,7 +334,7 @@ defLang('es', (function(){
       "script.own.ph"             : "Pega o escribe un carácter",
       "script.set"                : "Usar",
       "up.cta"                    : "Mejorar",
-      "up.need"                   : "Con Pro puedes usarlo sin límites.",
+      "up.need"                   : "Necesitas mejorar tu plan para usar esta función",
       "pop.no"                  : "Cerrar",
       "pop.yes"                 : "Eliminar",
       "keep.q"                  : "¿Guardar lo que has escrito?",

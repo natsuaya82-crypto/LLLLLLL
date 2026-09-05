@@ -362,9 +362,11 @@ function vSet(){
          said 「CSVの取り込み」 where the paid row says 「リストの取り込み」, so
          the two plans did not even name the same thing.
          Same row, same words, same chevron; only the name it carries differs,
-         and pressing it on the free plan is the door 「扉は押したら飛ぶ」
-         (OWNER 2026-09-03). */
-      '<button class="set"' + (can('data')? DO('openImport') : DO('go', ["plans"])) +
+         and pressing it on the free plan is the door. The door no longer
+         flies: 「ポップだって。その古いのは消して」 OWNER 2026-09-05, so the
+         press asks upStop() (www/core.js) and 「扉は押したら飛ぶ」
+         (OWNER 2026-09-03) is what saying yes to it does. */
+      '<button class="set"' + (can('data')? DO('openImport') : DO('upData')) +
         '><span class="sl">'+t('set.csv.in')+'</span><span class="sv">'+ICON_GO+'</span></button>';
   } else {
     body=goneBox();

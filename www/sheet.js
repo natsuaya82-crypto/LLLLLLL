@@ -1284,10 +1284,14 @@ function shTakeCount(got){
    that adds `zz` to a free alphabet takes that away, and this file asked no
    plan at all.
 
-   The door is DRAWN rather than missing, and pressing it goes to the plans
-   screen: 「だいたい無料で使えないやつは表示させていいよ。課金させる動線を
-   減らしたくない」「無料はタップすると課金ページに飛ばされる」 OWNER
-   2026-08-25. Same shape and same words as impFileHTML() in www/import.js,
+   The door is DRAWN rather than missing: 「だいたい無料で使えないやつは表示
+   させていいよ。課金させる動線を減らしたくない」 OWNER 2026-08-25. What the
+   press DOES is the pop -- 「ポップだって。その古いのは消して」 OWNER
+   2026-09-05, and 「無料はタップすると課金ページに飛ばされる」 is gone with
+   it: a wall is answerable with "no" and nobody is carried off the screen
+   they are standing on unless they say yes. upStop() in www/core.js is that
+   pop, and there is only the one.
+   Same shape and same words as impFileHTML() in www/import.js,
    which is the other file control in this app; it is not shared with it
    because the two say different things on the button.
 
@@ -1301,9 +1305,10 @@ function shInFileHTML(){
      because the two say different words on the button and share no code.
      「できないことは、有料と同じ画面に同じ形で出す。押したら有料へ」 OWNER
      2026-09-04: 「PDF を選ぶ」 and 「アップグレード」 ran together into one
-     word on the free plan. The press is what says the rest. */
+     word on the free plan. The press is what says the rest, and what it says
+     is the pop: 「ポップだって」 OWNER 2026-09-05. */
   if(!can('file'))
-    return '<button class="btn ghost shfile"' + DO('go', ["plans"]) + '>'+
+    return '<button class="btn ghost shfile"' + DO('upFile') + '>'+
       esc(t('wr.in'))+'</button>';
   return '<label class="btn ghost shfile">'+esc(t('wr.in'))+
     '<input type="file" id="wr-file" accept="application/pdf,.pdf"></label>';
