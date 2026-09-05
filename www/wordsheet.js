@@ -545,7 +545,12 @@ function regLabel(r){ return r? t('word.reg.'+r) : ''; }
    not ours to translate, and it is stored on the word rather than in a list
    of its own: the labels a language has are the ones its words are wearing.
    Nothing to migrate, nothing to keep in step, nothing to delete. */
-var FM_INF=['pst','prs','fut','prg','prf','neg','imp','que','cnd','cau','pas','pl'];
+/* `plp` is the pluperfect and is the newest of them -- 「過去完了は何かの説明を
+   ?に入れてくれ」 OWNER 2026-09-05. It is added at the END of the ones it
+   follows rather than beside `pst`, because fmRank() reads a form's place in
+   this list as the order a word's family is read in, and moving one moves
+   every word already wearing the ones after it. */
+var FM_INF=['pst','prs','fut','prg','prf','plp','neg','imp','que','cnd','cau','pas','pl'];
 var FM_DER=['agt','ins','loc','act','qua','dim','aug','col','opp','adj','vrb','adv'];
 function fmOwn(f){ return String(f||'').slice(0,2)==='i~' || String(f||'').slice(0,2)==='d~'; }
 function fmGroup(f){
@@ -958,6 +963,14 @@ function fmrNew(pos, fm){
          at:'end', drop:0, add:[], when:''};
   fmRules().push(r); saveStg(); openFmr(r.id);
 }
+/* Asked before it happens, in the app's own popup -- `confirm()` is banned by
+   name. The row it is asked from is the rule's own row in its chapter, so
+   there is no question about which one is going. */
+function fmrAsk(id){
+  var r=fmrById(id);
+  if(!r) return;
+  popAsk(t('fmr.del'), function(){ fmrDel(id); });
+}
 function fmrDel(id){
   var a=fmRules(), i;
   for(i=0;i<a.length;i++) if(a[i].id===String(id)){ a.splice(i,1); break; }
@@ -971,6 +984,26 @@ function fmrSegs(now, list, fn){
       DO(fn, [list[i][0]]) + '>'+esc(list[i][1])+'</button>';
   return out+'</div>';
 }
+/* WHAT A RULE IS, and it is two things.
+   「最初は文字追加とかだけのシンプルな画面でいいよ。削るとか色んなのつけると
+   ごちゃごちゃする。今後の機能追加でやる。」 OWNER 2026-09-05.
+
+   The letters it adds, and which end of the word they go on. That is the whole
+   screen. It used to carry four more -- how many letters to drop first, and a
+   condition of always / after a vowel / after a consonant / ends in these
+   letters, with a second field appearing under the last of them -- and every
+   one of those is a question somebody has to answer before they can write down
+   「past is -ka」.
+
+   **NOTHING SOMEBODY WROTE IS DROPPED.** `drop`, `when` and `wend` are still on
+   the rules that carry them, gFmDrop() and gFmCond() in www/grammar.js still
+   hand them to the engine, and fmrFits()/fmrStem() still obey them -- so a rule
+   written on the old screen goes on working exactly as it did. What is gone is
+   the way to write a NEW one, which is the thing that was in the way.
+
+   The way OUT is gone from here too: a rule is deleted from the row it is on,
+   in the list its chapter draws, which is where every other list in this app
+   deletes from. */
 function fmrFormHTML(){
   var r=fmrById(fmrOpen);
   if(!r) return '';
@@ -978,23 +1011,6 @@ function fmrFormHTML(){
     '<div class="sec">'+esc(t('fmr.add'))+'</div>'+
     spTypeField('fmr-add', 'fmrSetAdd', r.add||[], 'whin')+
     fmrSegs(r.at||'end', [['end', t('fmr.end')], ['start', t('fmr.start')]], 'fmrSetAt')+
-    '<div class="sec">'+esc(t('fmr.drop'))+'</div>'+
-    fmrSegs(String(r.drop||0), [['0','0'],['1','1'],['2','2']], 'fmrSetDrop')+
-    '<div class="sec">'+esc(t('fmr.when'))+'</div>'+
-    fmrSegs(r.when||'', [['', t('fmr.always')], ['v', t('fmr.vowel')],
-                         ['c', t('fmr.cons')], ['x', t('fmr.ends')]],
-            'fmrSetWhen')+
-    /* The letters themselves, and only while that is the condition chosen:
-       a field for an answer to a question nobody asked is a field that will
-       be filled in and then not used. */
-    ((r.when==='x')
-      ? spTypeField('fmr-end', 'fmrSetWend', r.wend||[], 'whin')
-      : '')+
-    /* The same row the word sheet says it with. A destructive thing is not
-       the brightest button on its own screen. */
-    '<button class="set" style="margin-top:22px;border-bottom:none"' +
-      DO('fmrDel', [r.id]) + '>'+
-      '<span class="sl bad">'+esc(t('fmr.del'))+'</span></button>'+
     '</div>';
 }
 function fmrPaint(){
@@ -1015,17 +1031,6 @@ function fmrKeep(fn){
 }
 function fmrSetAdd(v){ fmrKeep(function(r){ r.add=spType(v); }); lnGrow('fmr-add'); }
 function fmrSetAt(v){ fmrKeep(function(r){ r.at=(v==='start')? 'start':'end'; }); fmrPaint(); }
-function fmrSetDrop(v){ fmrKeep(function(r){ r.drop=parseInt(v,10)||0; }); fmrPaint(); }
-function fmrSetWhen(v){
-  fmrKeep(function(r){
-    r.when=(v==='v'||v==='c'||v==='x')? v : '';
-    /* The letters belong to the condition. Leaving them behind under another
-       condition is a value nothing reads, waiting to come back wrong. */
-    if(r.when!=='x') delete r.wend;
-  });
-  fmrPaint();
-}
-function fmrSetWend(v){ fmrKeep(function(r){ r.wend=spType(v); }); lnGrow('fmr-end'); }
 function vFm(){
   var hw=String(here().a||''), w=hw? findWord(hw) : addW, now;
   if(!w) return viewGone();

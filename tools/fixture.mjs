@@ -1700,11 +1700,12 @@ export function halfDone(){
         openAdd('');
         wdSetLn('tirek');
         return sheet('<div id="wd-body">'+wdFormHTML()+'</div>'); }],
-    /* A rule whose condition is the letters a word ends in. The field for
-       those letters is on the screen only while that is the condition
-       chosen -- a field for a question nobody asked gets filled in and then
-       not used -- so without this face nothing names fmrSetWend. */
-    ['a rule that fires on an ending', () => {
+    /* A rule written on the OLD editor -- it drops a letter and fires only on
+       words ending in one. The screen is two fields now and cannot write
+       another like it, and this face is what proves the ones somebody already
+       has are untouched: the values are still on the rule, and gFmDrop() and
+       gFmCond() in www/grammar.js still hand them to the engine. */
+    ['a rule written before the editor was two fields', () => {
         /* Left in place rather than put back: press-check rebuilds the screen
            and then presses it, so a rule that only exists while the HTML is
            being made is a rule fmrKeep cannot find -- every press emptied the
@@ -2048,6 +2049,17 @@ export function halfDone(){
     /* The rule a form is made by. It takes an id, and the id is the one the
        fixture put in STG above. */
     ['a rule for making a form', () => { openFmr('fr1'); return vForm(); }],
+    /* 規則 and 例文 are a page each now (openStRules / openStEx in
+       www/phases.js) and are the only place either is written, so without
+       these two faces nothing names what is typed into them. The examples page
+       is drawn TWICE: with the row for one more folded away, which is what it
+       opens as, and with it out, because the three fields and the Enter on
+       them exist only while it is out. */
+    ['what a stage says its rule is', () => { openStRules('neg'); return vForm(); }],
+    ['the examples of a stage', () => { stExNew=''; openStEx('neg'); return vForm(); }],
+    ['an example being written', () => {
+        stExOpen('neg');
+        const h=vForm(); stExNew=''; return h; }],
     /* The sheet (www/sheet.js, chapter 26). Four faces, because they share no
        buttons: the room, the names being typed, the one control before a file
        has been handed over, and what came off one afterwards.
