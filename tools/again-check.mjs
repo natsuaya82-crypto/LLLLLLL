@@ -815,7 +815,16 @@ const said = await pg.evaluate(async ({ srv }) => {
     window.route = r; NAV = [{ r:r }]; render();
     return String((document.querySelector('#app') || {}).textContent || '');
   }
-  out.err = t('net.none');
+  /* 画面から読むのは textContent なので、文言も画面に置いてから読む。
+     net.none は改行を <br> で持っている（OWNER 2026-09-05「二行にしてくれ」）
+     ので、生の文字列と textContent は一致しない。<br> をここに書き写すと
+     markup の写しが二つになるので、ページに置いて聞く。 */
+  function asText(html){
+    var d = document.createElement('div');
+    d.innerHTML = String(html);
+    return String(d.textContent || '');
+  }
+  out.err = asText(t('net.none'));
   out.wordsEmpty = t('words.empty');
   /* 一。電波が無く、写しも無い。 */
   out.heardBefore = NET_HEARD;
