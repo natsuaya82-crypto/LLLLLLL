@@ -697,12 +697,6 @@ defLang('en', (function(){
       'set.name'        : "Name",
       'set.count'       : "Words",
       'set.plan'        : "Plan",
-      'bk.off'            : "The app cannot reach the file store.",
-      'bk.bad'            : "Not written: {0}",
-      'bk.h'              : "On this phone",
-      'bk.none'           : "Not written yet",
-      'bk.no'             : "save {0}",
-      'bk.gen'            : "spare {0}",
       /* ---- the sheet somebody writes on (ch 26) ---- */
       'wr.title'          : 'Sheet',
       'wr.make'           : 'Make your own font',

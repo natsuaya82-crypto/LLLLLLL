@@ -745,12 +745,6 @@ defLang('es', (function(){
       "set.name"         : "Nombre",
       "set.count"        : "Palabras",
       "set.plan"         : "Plan",
-      "bk.off"           : "La app no puede acceder al almacén de archivos.",
-      "bk.bad"           : "No escrito: {0}",
-      "bk.h"             : "En este teléfono",
-      "bk.none"          : "Aún no se ha escrito",
-      "bk.no"            : "guardado {0}",
-      "bk.gen"           : "copia {0}",
       /* ---- the sheet somebody writes on (ch 26) ---- */
       "wr.title"         : "Hoja",
       "wr.make"          : "Crear tu propia tipografía",

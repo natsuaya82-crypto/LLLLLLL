@@ -790,12 +790,6 @@ defLang('zh', (function(){
       "set.name"         : "名字",
       "set.count"        : "词数",
       "set.plan"         : "方案",
-      "bk.off"           : "应用无法访问文件存储。",
-      "bk.bad"           : "未写入：{0}",
-      "bk.h"             : "在这台手机上",
-      "bk.none"          : "尚未写入",
-      "bk.no"            : "保存 {0}",
-      "bk.gen"           : "备份 {0}",
       /* ---- the sheet somebody writes on (ch 26) ---- */
       "wr.title"         : "用纸",
       "wr.make"          : "制作自己的字体",

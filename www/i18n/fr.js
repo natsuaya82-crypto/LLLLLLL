@@ -833,12 +833,6 @@ defLang('fr', (function(){
       "set.name"         : "Nom",
       "set.count"        : "Mots",
       "set.plan"         : "Formule",
-      "bk.off"           : "L'app n'atteint pas le stockage de fichiers.",
-      "bk.bad"           : "Non écrit : {0}",
-      "bk.h"             : "Sur ce téléphone",
-      "bk.none"          : "Pas encore écrit",
-      "bk.no"            : "sauvegarde {0}",
-      "bk.gen"           : "copie {0}",
       /* ---- the sheet somebody writes on (ch 26) ---- */
       "wr.title"         : "Feuille",
       "wr.make"          : "Créer sa propre police",

@@ -786,12 +786,6 @@ defLang('it', (function(){
       "set.name"         : "Nome",
       "set.count"        : "Parole",
       "set.plan"         : "Piano",
-      "bk.off"           : "L'app non raggiunge l'archivio file.",
-      "bk.bad"           : "Non scritto: {0}",
-      "bk.h"             : "Su questo telefono",
-      "bk.none"          : "Non ancora scritto",
-      "bk.no"            : "salvataggio {0}",
-      "bk.gen"           : "copia {0}",
       /* ---- the sheet somebody writes on (ch 26) ---- */
       "wr.title"         : "Foglio",
       "wr.make"          : "Creare il proprio carattere",

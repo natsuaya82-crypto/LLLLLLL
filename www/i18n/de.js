@@ -774,12 +774,6 @@ defLang('de', (function(){
       "set.name"         : "Name",
       "set.count"        : "Wörter",
       "set.plan"         : "Tarif",
-      "bk.off"           : "Die App erreicht den Dateispeicher nicht.",
-      "bk.bad"           : "Nicht geschrieben: {0}",
-      "bk.h"             : "Auf diesem Telefon",
-      "bk.none"          : "Noch nicht geschrieben",
-      "bk.no"            : "Speicherung {0}",
-      "bk.gen"           : "Reserve {0}",
       /* ---- the sheet somebody writes on (ch 26) ---- */
       "wr.title"         : "Blatt",
       "wr.make"          : "Eigene Schrift erstellen",

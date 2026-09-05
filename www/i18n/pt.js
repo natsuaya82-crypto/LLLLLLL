@@ -792,12 +792,6 @@ defLang('pt', (function(){
       "set.name"         : "Nome",
       "set.count"        : "Palavras",
       "set.plan"         : "Plano",
-      "bk.off"           : "O app não consegue acessar o armazenamento.",
-      "bk.bad"           : "Não gravado: {0}",
-      "bk.h"             : "Neste telefone",
-      "bk.none"          : "Ainda não gravado",
-      "bk.no"            : "gravação {0}",
-      "bk.gen"           : "cópia {0}",
       /* ---- the sheet somebody writes on (ch 26) ---- */
       "wr.title"         : "Folha",
       "wr.make"          : "Criar a sua própria fonte",
