@@ -1613,6 +1613,19 @@ and `netLangsDown()` brings it back.
 a second answer to 「what is this language」, and the whole of this change is
 that there is one.
 
+**What an older version left on the disk is still READ, and that is the
+migration.** Every phone carrying this app has `lingua.<id>.<slice>` in
+`localStorage`, and reading only `LSL` means all of those people open the app
+to an empty language — the words are right there and nothing looks at them.
+`migrate-check` said so in twenty-five lines. So `slRd()` falls back to the
+disk and `slWr()` never goes there: it **copies and removes nothing**, which
+is what every migration here does. **When those keys stop being read is the
+owner's** — doing it on a launch with no signal takes a language nobody
+managed to send — and `docs/BACKLOG.md` carries it. `slRm()` is the one place
+that does remove, and it is only ever a person deleting a language or an
+account; leaving the disk key there would be the slice coming back through
+the fallback on the next launch.
+
 **What that costs is written down rather than hidden.** With no signal there
 is nothing to read — 「電波が無いときはログインできない」 — and **work made
 before it reaches the server is lost if the app closes.** The window is the

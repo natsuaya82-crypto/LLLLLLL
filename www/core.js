@@ -322,11 +322,38 @@ function langWasKey(id, slice){ return langKeyOf(id, slice) + '.was'; }
    languages this account has and where somebody is standing -- and they stay
    on disk, because they are what the app asks the server WITH. */
 var LSL={};
+/* AND WHAT AN OLDER VERSION OF THIS APP LEFT ON THE DISK IS STILL READ.
+   -------------------------------------------------------------------------
+   Every phone that has this app on it today has `lingua.<id>.<slice>` in
+   `localStorage`, written by every version before 2026-09-04. Reading only
+   LSL means every one of those people opens the app to an EMPTY language --
+   the words are on the disk, in the same keys, and nothing looks at them.
+   `migrate-check` said so in twenty-five lines before this existed.
+
+   So this is a MIGRATION and it obeys the rule migrations obey: **it copies
+   and never removes what it read** (docs/DATA_SAFETY.md rule 2, langMigrate's
+   own argument). The disk is the fallback and never the destination: `slWr`
+   goes to memory alone, so what is there is exactly what an older version
+   wrote and it stops changing from today. Once a slice has been through the
+   server and back it is in LSL, which is asked first.
+
+   **WHEN THOSE KEYS STOP BEING READ IS THE OWNER'S**, and it is not answered
+   here: doing it on a launch with no signal would take a language nobody had
+   managed to send. docs/BACKLOG.md carries it. */
 function slRd(k){
-  return Object.prototype.hasOwnProperty.call(LSL, k) ? LSL[k] : null;
+  if(Object.prototype.hasOwnProperty.call(LSL, k)) return LSL[k];
+  try{ return localStorage.getItem(k); }catch(e){ return null; }
 }
 function slWr(k, v){ LSL[k]=String(v); }
-function slRm(k){ delete LSL[k]; }
+/* Gone from memory, and the disk copy with it -- this is the one place that
+   REMOVES, and it is only ever a person deleting a language or an account
+   (wipeLangsGo, lsWipeAcct). Leaving the disk key behind would be the slice
+   coming back through the fallback above on the next launch, which is 「消した
+   ものが戻ってくる」 wearing the migration's clothes. */
+function slRm(k){
+  delete LSL[k];
+  try{ localStorage.removeItem(k); }catch(e){}
+}
 
 /* Which languages are here, and which one is open. Read before anything else
    in this file, because every other key is built out of langId. */

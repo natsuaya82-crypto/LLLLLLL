@@ -74,8 +74,17 @@ if(!row || !row.id || here[String(row.id)]){ step(); return; }
   （`LANGS[id].uid` が今までどおり弾きます）。
 
 **保存されるものの変化:** `lingua.<id>.<slice>` と `lingua.<id>.<slice>.was` を
-**もう書きません。**既に iPhone に在るものは**消していません** ── 下の DELETE
-REVIEW のとおりです。
+**もう書きません。**既に iPhone に在るものは**消していません。**
+
+**そして、まだ読みます。**`slRd()` は `LSL` に無ければ `localStorage` に
+落ちます。**これが無いと、更新した人の言語がその場で空になります** ──
+`migrate-check` が二十五行の赤でそう言いました（「the language somebody already
+has did not survive」）。**移行の規則どおり、写して、読んだものは消しません。**
+サーバーから降りてきたスライスは `LSL` に入り、そちらが先に訊かれます。
+**古い鍵を読むのをやめる日はオーナーのものです**（`docs/BACKLOG.md`）。
+
+`slRm()` だけは disk からも消します ── 人が言語やアカウントを消したときだけで、
+残すと次の起動に上の道から戻ってきてしまうからです。
 
 ```
 DELETE REVIEW
