@@ -786,6 +786,84 @@ say(road.words.filter(w => w === 'newer').length === 1,
     '**写しはサーバーの答えに勝たない** ── 答えが来たらその上に書かれる: ' +
     JSON.stringify(road.words));
 
+/* ---- 空と、届かなかったのは、別の画面 -------------------------------------
+   「おかしくね？電波ない時は単語はまだありませんにはならなくね？
+     通信エラーです通信の良いところで接続してください見たいにしないと消えたと
+     思われるやろ、、、、」
+   「消えたのとエラーは別のことでただの分岐だからね？」 OWNER 2026-09-05.
+
+   写しがある人は上の三件が押さえている ── 前に読み込んだ分が画面に出る。
+   ここで測るのは**写しが無い人**で、そこが残っていた: 箱から出したばかりの
+   iPhone、その言語をまだ一度も読み込んでいない iPhone、写しが消えている
+   iPhone。localStorage を空にして読み直した頁がそれ。
+
+   netSend は差し替えない。**届かないことそのもの**が測るものだから ── 電波が
+   無ければ netResume() は返らず、netLangsDown() は走らず、NET_HEARD は偽の
+   ままになる。二件目でだけサーバーを立て、「この人の言語は一本も無い」と
+   答えさせる。空だと言えるのはそれを聞いたあとだけ、というのが分岐の全部。 */
+await pg.evaluate(() => localStorage.clear());
+await pg.reload();
+await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
+
+const said = await pg.evaluate(async ({ srv }) => {
+  function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
+  const out = {};
+  SET.done = true;
+  ME.name = 'Aya'; ME.handle = 'aya'; saveMe();
+  SESS = { at:'t', rt:'r', uid:'me', anon:false };
+  function screen(r){
+    window.route = r; NAV = [{ r:r }]; render();
+    return String((document.querySelector('#app') || {}).textContent || '');
+  }
+  /* 画面から読むのは textContent なので、文言も画面に置いてから読む。
+     net.none は改行を <br> で持っている（OWNER 2026-09-05「二行にしてくれ」）
+     ので、生の文字列と textContent は一致しない。<br> をここに書き写すと
+     markup の写しが二つになるので、ページに置いて聞く。 */
+  function asText(html){
+    var d = document.createElement('div');
+    d.innerHTML = String(html);
+    return String(d.textContent || '');
+  }
+  out.err = asText(t('net.none'));
+  out.wordsEmpty = t('words.empty');
+  /* 一。電波が無く、写しも無い。 */
+  out.heardBefore = NET_HEARD;
+  out.offWords = screen('words');
+  out.offLangs = screen('langs');
+  /* 二。立ったまま答えが来る。render() をこちらから呼ばないのは、答えが来た
+     瞬間に画面が描き直されるかどうかが測るものだから ── 何も作っていない人は
+     言語も欄も増えないので、描き直しが無ければ電波の文が立ったまま残る。 */
+  screen('words');
+  eval(srv);
+  window.__SRV.lang = []; window.__SRV.slice = [];
+  await new Promise(function(f){ netLangsDown(function(){ f(); }); });
+  await wait(250);
+  out.heardAfter = NET_HEARD;
+  out.onWords = String((document.querySelector('#app') || {}).textContent || '');
+  out.onLangs = screen('langs');
+  return out;
+}, { srv: SERVER });
+
+say(said.offWords.indexOf(said.err) >= 0 && said.offWords.indexOf(said.wordsEmpty) < 0,
+    '写しの無い iPhone が電波の無いところで辞書を開くと、通信のことを言い、' +
+    '「単語がまだありません」とは言わない（' +
+    (said.offWords.indexOf(said.err) >= 0 ? '通信の文が出た' : '**通信の文が無い**') +
+    '、' + (said.offWords.indexOf(said.wordsEmpty) < 0 ? '空とは言わない'
+                                                      : '**空だと言った**') + '）');
+say(said.offLangs.indexOf(said.err) >= 0,
+    'そして言語の一覧も同じ ── 一本も無い一覧は「この人は言語を持っていない」' +
+    'ではない（' + (said.offLangs.indexOf(said.err) >= 0 ? '通信の文が出た'
+                                                        : '**何も言わなかった**') + '）');
+say(!said.heardBefore && said.heardAfter &&
+    said.onWords.indexOf(said.wordsEmpty) >= 0 && said.onWords.indexOf(said.err) < 0,
+    'サーバーが「この人の言語は無い」と答えたら、その場で描き直されて本当の空に' +
+    '戻る ── 押していない画面が電波の文を抱えたままにならない（' +
+    (said.onWords.indexOf(said.wordsEmpty) >= 0 ? '空だと言った' : '**空だと言わない**') +
+    '、' + (said.onWords.indexOf(said.err) < 0 ? '通信の文は消えた'
+                                              : '**通信の文が残った**') + '）');
+say(said.onLangs.indexOf(said.err) < 0,
+    'それは言語の一覧も同じで、答えを聞いたあとは黙る');
+
 await br.close();
 if (bad.length){
   console.log('\nagain: ' + bad.length + ' problem' + (bad.length > 1 ? 's' : '') + '.\n');

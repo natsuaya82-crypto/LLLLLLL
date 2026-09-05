@@ -2171,7 +2171,14 @@ function vLangs(){
   other += mine.length-mineSeen.length;
   var readHid = reading.length-readSeen.length;
   var body='<div class="sec">'+esc(t('langs.mine'))+'</div>'+
-    mineSeen.map(function(id){ return langRow(id); }).join('')+
+    /* AND A LIST WITH NOTHING ON IT IS NOT A PERSON WITH NO LANGUAGES.
+       This section has never had a 「まだありません」 -- somebody standing here
+       has one -- so what it showed on a phone that has not heard from the
+       server was a heading and a +. netNoneHTML() (www/net.js) is the one
+       branch: nothing when the languages came down, the one sentence about
+       the signal when they did not. */
+    (mineSeen.length? mineSeen.map(function(id){ return langRow(id); }).join('')
+                    : netNoneHTML(''))+
     /* AND HOW MANY ARE NOT ON IT, every time.
        `docs/DATA_SAFETY.md` § a shorter list is not a deletion: somebody
        opening this to find a language gone has no way to tell which of the
@@ -2184,6 +2191,9 @@ function vLangs(){
     /* .empty is the full-screen one: 54px of padding and a serif heading,
        which is right for a screen with nothing on it and far too loud for a
        section of a screen that has something on it. */
+    /* 「読んでいる言語」は他人のもので、空でも「自分のものが消えた」とは読ま
+       れない -- TL と同じ側。netNoneHTML() はここには要らず、置けば一つの画面で
+       同じ文が二度立つ。 */
     (readSeen.length? readSeen.map(function(id){ return langRow(id); }).join('')
                     : '<div class="note">'+esc(t('langs.none'))+'</div>')+
     (readHid? '<div class="note">'+esc(t('cap.hid', readHid))+'</div>' : '');

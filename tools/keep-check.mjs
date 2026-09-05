@@ -29,15 +29,17 @@
 
    SEVEN CLAIMS, ASKED OF EVERY ONE OF THE EIGHT:
 
-     1  typing writes NOTHING -- localStorage is byte-identical afterwards
+     1  typing writes NOTHING -- what the phone holds is byte-identical
+        afterwards, LSL and the disk together
      2  a screen with fields has a Save in the bar from the moment it opens,
         and with nothing changed it is PALE GREY
      3  one keystroke turns that same Save GOLD, and nothing was rendered to
         do it -- the button is still there, it changed colour where it stood
      4  back() off an untouched screen leaves, and asks nothing
      5  back() off a changed screen ASKS, and does not leave
-     6  No leaves, and localStorage is byte-identical to before the typing
-     7  Yes leaves, and the value is on the phone
+     6  No leaves, and what the phone holds is byte-identical to before the
+        typing
+     7  Yes leaves, and the value is one of the things the phone is holding
 
    AND SIX ABOUT THE MECHANISM ITSELF:
 
@@ -74,16 +76,33 @@ const r = await pg.evaluate(({ s }) => {
   SET.done = true; SET.plan = 'pro';
   var out = { screens: [], fails: [] };
 
-  /* EVERYTHING ON THE PHONE, AS ONE STRING. This is what "not one byte moved"
-     is asked of, rather than one slice by name: a save that wrote the wrong
-     slice would pass a check that only looked at the right one. */
+  /* EVERYTHING THE PHONE IS HOLDING, AS ONE STRING. This is what "not one
+     byte moved" is asked of, rather than one slice by name: a save that wrote
+     the wrong slice would pass a check that only looked at the right one.
+
+     IT IS LSL AND THE DISK, AND IT IS ASKED THROUGH slMine(). This counted
+     `localStorage` alone, and the slices moved into memory on 2026-09-04
+     (CLAUDE.md rule 22) -- so seven of the eight screens saved correctly into
+     LSL and this said 「Yes wrote it to no key on the phone」. It broke the
+     other way too, and that half is the dangerous one: claim 1 「typing writes
+     NOTHING」 and claim 6 「No moved nothing」 were both asking a store the
+     language had left, so a screen that wrote the dictionary on every
+     keystroke would have passed them.
+
+     slMine() is the app's own answer to 「what is this phone holding」
+     (www/core.js), so this is not a second copy of that rule. The picture
+     slGot() keeps is a disk key and is enumerated like any other. */
   function all(){
-    var keys = [], i, acc = '';
+    var keys = [], i, k, acc = '';
     for(i = 0; i < localStorage.length; i++) keys.push(localStorage.key(i));
+    for(k in LSL) if(Object.prototype.hasOwnProperty.call(LSL, k) && keys.indexOf(k) < 0) keys.push(k);
     keys.sort();
-    for(i = 0; i < keys.length; i++) acc += keys[i] + '=' + localStorage.getItem(keys[i]) + ';';
+    for(i = 0; i < keys.length; i++) acc += keys[i] + '=' + slMine(keys[i]) + ';';
     return acc;
   }
+  /* The swipe is measured after the page's own turn (600ms below), so it needs
+     this same answer from outside this call. One function, asked twice. */
+  window.keepAll = all;
   /* A REAL KEYSTROKE. The app carries no on* in its markup, so the only road
      in is the one delegated listener in www/act.js -- a check that called the
      handler by name would be walking a road no thumb takes. */
@@ -221,14 +240,15 @@ const r = await pg.evaluate(({ s }) => {
     res.noWrote = (all() !== before);
     res.noWroteValue = (sc.read() === sc.v);
 
-    /* 7 -- Yes leaves, and the value is on the phone */
+    /* 7 -- Yes leaves, and the value is one of the things the phone is
+       holding. read() above is a global; this is the store. */
     sc.go();
     type(sc.sel, sc.v);
     back();
     clickSel('#pop [data-do="popYes"]');
     res.yesLeft = (whereAmI() !== key);
     res.yesStored = (sc.read() === sc.v);
-    res.yesOnDisk = (all().indexOf(sc.v) >= 0);
+    res.yesHeld = (all().indexOf(sc.v) >= 0);
 
     if(!res.thereBefore) fail(sc.n + ': no Save in the bar on a screen that takes typing');
     if(res.goldBefore) fail(sc.n + ': a GOLD Save with nothing changed');
@@ -247,7 +267,7 @@ const r = await pg.evaluate(({ s }) => {
     if(res.noWroteValue) fail(sc.n + ': No wrote what was typed anyway');
     if(!res.yesLeft) fail(sc.n + ': Yes did not go back');
     if(!res.yesStored) fail(sc.n + ': Yes did not write it');
-    if(!res.yesOnDisk) fail(sc.n + ': Yes wrote it to no key on the phone');
+    if(!res.yesHeld) fail(sc.n + ': Yes wrote it to no key the phone is holding');
     out.screens.push(res);
   }
 
@@ -279,13 +299,7 @@ const r = await pg.evaluate(({ s }) => {
 const sw = await pg.evaluate(() => new Promise((ok) => setTimeout(() => {
   ok({ asked: popOn(),
        here: here().r + '|' + (here().a === undefined ? '' : here().a),
-       moved: (function(){
-         var keys = [], i, acc = '';
-         for(i = 0; i < localStorage.length; i++) keys.push(localStorage.key(i));
-         keys.sort();
-         for(i = 0; i < keys.length; i++) acc += keys[i] + '=' + localStorage.getItem(keys[i]) + ';';
-         return acc;
-       })() });
+       moved: keepAll() });
 }, 600)));
 
 const more = await pg.evaluate(() => {

@@ -354,6 +354,73 @@ function netWhy(d, status, mark){
   if(status===409) return t('net.handle.taken');
   return m || t('net.failed');
 }
+/* ---- 通信が落ちたら、何も進まない --------------------------------------------
+   「通信エラーなら進むわけねえだろ全部」
+   「そもそも通信は最初に一回とかプルトゥーリフレッシュした時でしょ？
+     保存とか違う画面いく時にエラーが起きたらその画面表示ってわかる？」
+   「そもそも通信エラーならそこにはいけないはずでしょ。
+     途中でエラーになった場合は全部ポップで良くない？
+     いちいち直書きするからまた面倒なんだろエラーになったらエラー用のポップ出して再更新とかおさせればいいやんそれだけで1個作れば全部に使えるやん」
+   OWNER 2026-09-05.
+
+   ONE POPUP, AND IT IS THE ONLY THING A FAILED REQUEST DOES. Nothing is
+   written to the phone, nothing on the screen advances, and the person is
+   given the one way out there is: ask again.
+
+   IT IS 四箇所 AND NOT 四十三画面. The server is reached at a launch, at a
+   pull, at a save (a DELETE is a save -- there is no second kind), and on
+   the way into a screen that has to fetch something only the server has.
+   Walking the app touches nothing. So this is called from those roads and
+   from nowhere else, and a screen has no sentence of its own about the
+   signal.
+
+   THE DECISION IS HERE AND IS NOT COPIED INTO THE FOUR. A pop is for a
+   request that WENT OUT AND GOT NO ANSWER, which is what 通信エラー is.
+
+     `−`  never sent at all -- netResume() on a phone with no session, and
+        its siblings. There is nothing to ask again for.
+     `≠`  the server answered 200 and it was not a session. It answered.
+     any status  the server answered. A refresh token it no longer accepts
+        is the session ENDING (netResume() above signs the phone out and
+        draws), not a network that is down.
+
+   THE PERSON SEES TWO THINGS AND NO THIRD. 「feed0ってなに？ 再接続か閉じる
+   でしょ？」 OWNER 2026-09-05. netWhy() は印（`feed 0`）を付ける ── あれは
+   スクリーンショット一枚で原因が落ちてくるための状態で、人に読ませるもので
+   はない。ポップは `net.offline` の一文だけ。
+
+   ONE POP, AND 再接続 ASKS AGAIN FOR EVERY ONE OF THEM. 「再接続したらどう
+   なるの？」 OWNER 2026-09-05. ホームに入ると要求は四件出る。ポップを一つに
+   するのは正しいが、最初の一件の道だけを覚えていたので、再接続で出て行くのは
+   その一件だけだった ── 測ると `rpc/notices` が出て、その人が見ている
+   タイムラインは取りに行かなかった。**どれが最初に落ちたかは、その人が何を
+   見ているかと関係がない。**
+
+   だから落ちた道はためる。ポップは一つ、再接続はためた全部。NET_AGAIN が
+   その置き場で、押した瞬間に空になる ── 押していないものが次のポップに
+   混ざらないように。
+
+   閉じるは何もしない。要求は出ず、端末には何も書かれず、画面も動かない ──
+   決定の一行がそれ。 */
+var NET_AGAIN=[];
+function netPop(d, s, m, again){
+  var mark=String(m||''), i;
+  if(s) return;
+  if(mark.indexOf('−')>=0 || mark.indexOf('≠')>=0) return;
+  if(again){
+    for(i=0;i<NET_AGAIN.length;i++) if(NET_AGAIN[i]===again) break;
+    if(i===NET_AGAIN.length) NET_AGAIN.push(again);
+  }
+  if(popOn()) return;
+  popAsk(t('net.offline'), netPopAgain, t('net.again'), t('pop.no'));
+}
+/* 再接続。ためた道を空にしてから走らせる ── 走らせている最中にまた落ちると
+   netPop() がここへ積み直すので、先に空にしないと同じ道が二重になる。 */
+function netPopAgain(){
+  var go=NET_AGAIN, i;
+  NET_AGAIN=[];
+  for(i=0;i<go.length;i++) go[i]();
+}
 
 /* ---- coming and going --------------------------------------------------- */
 /* A session, put away. Everything that signs somebody in ends here, so there
@@ -1331,6 +1398,57 @@ function nidFor(row, here){
   LANGS[id].name=String(row.name||'');
   return id;
 }
+/* ---- 空と、届かなかったのは、別のこと -----------------------------------
+   「おかしくね？電波ない時は単語はまだありませんにはならなくね？
+     通信エラーです通信の良いところで接続してください見たいにしないと消えたと
+     思われるやろ、、、、」
+   「消えたのとエラーは別のことでただの分岐だからね？
+     消えたと思われるのはまずい。
+     TLはくるくるさせとけばどうにかなるけど」 OWNER 2026-09-05.
+
+   The slices are in memory (rule 22), so an app that has been closed holds
+   nothing until the server answers. A phone that kept a picture of the last
+   answer draws that (slGot in www/core.js). A phone with NO picture -- one
+   just out of the box, one that has never opened this language, one whose
+   storage was reclaimed -- draws nothing, and every screen with nothing on it
+   said 「単語がまだありません」. That is 「空」 and 「届かなかった」 sharing one
+   branch, which is the first page of CLAUDE.md, and what a person reads there
+   is that their own work is gone.
+
+   ONE BRANCH IN ONE PLACE, AND THE SCREENS ASK IT. Not a condition grown on
+   each screen: 「コードも継ぎ足し継ぎ足しして蛸足にするのもやめてね？」
+
+     NET_HEARD       the server has said what this account's languages are,
+                     this run of the app. False before it answers and false
+                     after a failure -- both of those are 「まだ聞けていない」
+                     and neither is 「この人は何も作っていない」.
+     netNoneHTML(h)  what a screen with nothing on it shows: its own 「まだ
+                     ありません」 when the server has answered, and the one
+                     sentence about the signal when it has not.
+
+   The timeline is not this and does not become this: it is other people's, an
+   empty one is not read as 「消えた」, and the mark that turns is already what
+   it does 「TLはくるくるさせとけばどうにかなるけど」.
+
+   It is set in ONE place -- the foot of netLangsDown() below, which is the
+   launch's own road to the server and the only thing that hears the whole
+   answer. Nothing else writes it, so nothing else can make a screen say the
+   server was reached. */
+var NET_HEARD=false;
+/* THE BREAK IS PART OF THE WORDING, NOT THE WIDTH.
+   「普通に／い／だけ下に行く気持ち悪さ理解できないの？／エラーです。／電波／
+     みたいに二行にしてくれ。」 OWNER 2026-09-05.
+
+   Flowed as one sentence, 390px put 「い」 on a line of its own. The sentence
+   is two -- what happened, and what to do -- so it is cut where it is written
+   rather than where the box ends, and the <br> travels with the translation
+   the way CLAUDE.md rule 2 says markup does. It is markup, so it is put in as
+   markup; esc() is what turned it into the letters b and r on the screen. The
+   ten strings are this repo's own and are the only thing that reaches here. */
+function netNoneHTML(html){
+  if(NET_HEARD) return html;
+  return '<div class="note">'+t('net.none')+'</div>';
+}
 function netLangsDown(then){
   var done=then || function(){}, here={}, filled=false, id;
   if(!netSignedIn()){ done(0); return; }
@@ -1339,16 +1457,28 @@ function netLangsDown(then){
       here[String(LANGS[id].sid)]=1;
   netGet('/rest/v1/language?select=id,name&owner=eq.'+encodeURIComponent(SESS.uid),
     function(rows){
-      var i=0, made=0;
+      var i=0, made=0, lost=false;
       function step(){
-        var row, nid;
+        var row, nid, heard;
         if(i>=(rows||[]).length){
           if(made) langStore();
           /* The OPEN language's slices came down, so what the screens are
              holding is older than what is in the store. Read it in the way
              langOpen() does rather than patching each global by hand. */
           if(filled) langLoad();
-          if(made || filled) render();
+          /* AND THE SCREENS ARE TOLD THE SERVER SPOKE. The whole answer, or
+             none of it: one language whose slices never came back leaves this
+             false, because a screen that then says 「まだありません」 is saying
+             it about a language nobody has heard about yet.
+
+             The re-draw is the same statement. A person who genuinely has
+             nothing changes nothing here -- no language was made, no slice was
+             filled -- so without this the sentence about the signal would be
+             left standing on a screen that has just been told there is simply
+             nothing there. */
+          heard=(!lost && !NET_HEARD);
+          if(!lost) NET_HEARD=true;
+          if(made || filled || heard) render();
           done(made); return;
         }
         row=rows[i]; i++;
@@ -1389,10 +1519,15 @@ function netLangsDown(then){
             if(nid===langId) filled=true;
           }
           step();
-        }, function(){ step(); });
+        }, function(){ lost=true; step(); });
       }
       step();
-    }, function(){ done(0); });
+    }, function(d, s, m){
+      /* 起動の道の二つ目で、人が気づくのはこちら ── NET_HEARD は偽のままで、
+         この人の言語は一本も来ていない。［再更新］はこの道をもう一度。 */
+      netPop(d, s, m, function(){ netLangsDown(then); });
+      done(0);
+    });
 }
 /* The open language and its copy, put together. Read, merge, write back
    whatever moved -- in that order, so a phone that has been offline for a
@@ -1566,8 +1701,14 @@ function netSaveUpGo(){
         netSlice1(id, sid, kind, there[kind], function(){ step(); });
       }
       step();
-    }, function(){ NET_SYNCING=false; }, kinds);
-  }, function(){ NET_SYNCING=false; });
+    }, function(d, s, m){
+      NET_SYNCING=false;
+      netPop(d, s, m, netSaveUpGo);
+    }, kinds);
+  }, function(d, s, m){
+    NET_SYNCING=false;
+    netPop(d, s, m, netSaveUpGo);
+  });
 }
 /* EVERY LANGUAGE THIS PERSON MADE, and it used to be the one that happened to
    be open. That is not a smaller version of the same thing: a second language
