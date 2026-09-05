@@ -1650,19 +1650,44 @@ function pwSendWith(ln, pics, vo){
 
 /* The face a post carries: one letter of the language it is written in, cut
    loose from that language so it survives being read on somebody else's
-   phone. A shape, not a reference. */
+   phone. A shape, not a reference.
+
+   IT IS READ, NOT DECIDED. 「アイコン勝手に変わるのは何だ。最初の文字になるの
+   はいいけど、それはオンボーディングを通ってかいたもじだけで、それ以降は勝手に
+   変えないで」 OWNER 2026-09-05.
+
+   This used to walk LETTERS on every call and answer whichever letter was
+   first with a shape on it, which is not a decision anybody made: redrawing
+   that letter, drawing another and moving it to the front, or taking a
+   photograph off all moved the face with nobody having touched it. Pressed
+   on 2026-09-05 -- the letter drawn in the walk was the answer only because
+   it happened to be at the front, and it stopped being the answer the moment
+   anything went in front of it.
+
+   The face is `ME.av` now, written once by meAvSet() (www/me.js) and read
+   here. The walk writes it at obFinish(), which is 「オンボーディングを通って
+   かいたもじ」 exactly.
+
+   THE ONE LINE BELOW IS NOT A SECOND DECIDER. An account that finished the
+   walk before there was anywhere to write this has no face on file, and the
+   old walk over LETTERS is what it is wearing today -- so that is adopted,
+   once, and meAvSet() refuses every call after it. It fills in what is
+   MISSING and stops (docs/DATA_SAFETY.md rule 2); it never writes over a face
+   that exists, and nothing here removes one. SET.done keeps it out of the
+   walk, where the letters are still being made and obFinish() has not
+   decided yet. */
 function postAvatar(){
-  var i, l;
+  var i, av;
   /* A photo if there is one. It travels on the post like the letter does,
      for the same reason: whoever reads it has neither this person's camera
      roll nor their alphabet. */
   if(ME.pic) return {pic:ME.pic};
-  for(i=0;i<LETTERS.length;i++){
-    l=LETTERS[i];
-    if(l.st && l.st.length) return {st:l.st};
-    if(l.ch) return {ch:l.ch};
+  if(!ME.av && SET.done){
+    av=null;
+    for(i=0;i<LETTERS.length && !av;i++) av=meAvOf(LETTERS[i]);
+    meAvSet(av);
   }
-  return null;
+  return ME.av || null;
 }
 /* ---- the line, cut into the shapes it is written with -----------------
    The face has travelled on the post since the day the timeline was written,

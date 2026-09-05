@@ -75,6 +75,46 @@ var ME_MAX={ name:30, handle:24, bio:160, link:100, loc:30 };
    else's. */
 var ME={name:'', handle:'', bio:'', pic:'', link:'', loc:'', avSent:'', uid:''};
 function meBlank(){ return {name:'', handle:'', bio:'', pic:'', link:'', loc:'', avSent:'', uid:''}; }
+/* ---- the face this account wears, WRITTEN DOWN ---------------------------
+   「アイコン勝手に変わるのは何だ。最初の文字になるのはいいけど、それはオンボー
+   ディングを通ってかいたもじだけで、それ以降は勝手に変えないで。ユーザーが
+   アイコン設定したのに変えられるバグになる」 OWNER 2026-09-05.
+
+   It was not written down anywhere. postAvatar() went and looked at LETTERS
+   every time it was called and answered whichever letter happened to be first
+   with a shape on it -- so redrawing that letter, drawing another and moving
+   it to the front, or taking a photograph off all changed the face, with
+   nobody having touched it. Pressed on 2026-09-05: the letter drawn in the
+   walk was the answer only because it happened to be at the front.
+
+   `av` IS THE ACCOUNT'S, like everything else on ME. It is parked and handed
+   back with the account (meFor above), and it goes UP as the `av` of the
+   profile row -- netMakeProfile() writes that column and netAvSync() keeps it
+   level, both off this same value. There is no such thing as the phone's.
+
+   It is the SHAPE and not the letter's id, and that is the owner's sentence
+   rather than a convenience: an id would be read again every time, and
+   redrawing that letter would move the face -- 「それ以降は勝手に変えないで」.
+   It is the same reason a post carries its own face (rule 8, docs/DATA_MODEL).
+
+   Absent is not empty. An account with no `av` has not been asked yet; one
+   with a face has been. */
+function meAvOf(l){
+  if(l && l.st && l.st.length) return {st:l.st};
+  if(l && l.ch) return {ch:l.ch};
+  return null;
+}
+/* ONCE, AND THIS IS THE ONLY PLACE IT IS WRITTEN. Two moments hand it a face
+   -- the walk, at obFinish(), for somebody arriving; and postAvatar(), once,
+   for an account that finished the walk before there was anywhere to write it
+   -- and neither of them may write over an answer that already exists. That
+   is the whole of 「それ以降は勝手に変えないで」, and it is held here rather
+   than at the two call sites so there is one rule and not two. */
+function meAvSet(av){
+  if(ME.av || !av) return;
+  ME.av=av;
+  saveMe();
+}
 function meFrom(m){
   var o=meBlank();
   if(m){ o.name=String(m.name||''); o.handle=String(m.handle||'');
@@ -85,7 +125,13 @@ function meFrom(m){
             meFollowers() are written against that and would answer [] for a
             list that had been turned into one. */
          if(m.fo && m.fo.length) o.fo=m.fo;
-         if(m.fr && m.fr.length) o.fr=m.fr; }
+         if(m.fr && m.fr.length) o.fr=m.fr;
+         /* The face, and absent is not empty here either: an account with no
+            `av` is one nothing has decided for yet, and meAvSet() decides it
+            once. Kept whole rather than rebuilt field by field -- it is a
+            shape, and a shape read back missing a stroke is not the face
+            somebody drew. */
+         if(m.av) o.av=m.av; }
   return o;
 }
 /* Whether this copy has anything in it. Used before parking one: a blank
@@ -95,7 +141,7 @@ function meFrom(m){
    removed every trace of them. 「アカウント削除で残るものねえ」 */
 function meHas(m){
   return !!(m && (m.name || m.handle || m.bio || m.pic || m.link || m.loc ||
-                  (m.fo && m.fo.length) || (m.fr && m.fr.length)));
+                  m.av || (m.fo && m.fo.length) || (m.fr && m.fr.length)));
 }
 function meRead(){
   ME=meBlank();
