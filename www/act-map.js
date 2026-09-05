@@ -281,8 +281,8 @@ act('setWldHide', setWldHide);
 /* the same two, asked of one section of the article rather than of the page */
 act('setWldSecDl', setWldSecDl);
 act('abToggle', abToggle);
-act('setWsys', setWsys);
-act('setScriptDir', setScriptDir);
+act('wsPick', wsPick);
+act('dirPick', dirPick);
 act('g2Move', g2Move);
 act('stAddOwn', stAddOwn);
 act('stDelEx', stDelEx);
