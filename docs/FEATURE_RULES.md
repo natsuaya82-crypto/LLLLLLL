@@ -268,6 +268,126 @@ the reasoning — a reason can be re-derived, a decision cannot.
   **止めるものはありません。**ディスクをいっぱいにする検査は門にありません。
   人が押して確かめる規則です。
 
+### 【差し替え済み 2026-09-05】「保存されない」は仕様。オンラインのアプリとはそういうもの
+- Date: 2026-09-04
+- Area: 保存・オフライン。**制作側ぜんぶ**
+
+- Decision:
+
+  ```
+  Twitterとかは電波がないと開かないでしょ？ そもそも通信してないならエラーで
+  開けないし、保存するタイミングでエラーが起きるなら、保存されないし。そう言う
+  もんじゃないの？オンラインアプリってどうなの？
+
+  スタンダードに合わせて作りたいから間違ってることあったら言って。
+  ```
+
+- Reason: **オーナーが自分で読んだうえでの決定です。**リーダーが「これは失われ
+  ます」と並べた三つ ── **アプリが落ちて消えること、電波が無くて言語が開かない
+  こと、送れていない分が次の起動まででなくなること** ── は、この一言で全部
+  **仕様になりました。**
+
+  **だから、この三つはもう但し書きではありません。**「オーナーに確認が要る」
+  「気をつけること」「これが代償です」として書いてある文は、決まったので
+  消します。オンラインのアプリはそういうものだ、というのがオーナーの答えです。
+- Affected features: 保存、起動、オンボーディングの歩き
+- Affected data: **サーバーに届いていない分は失われます。それが仕様です。**
+- Affected docs: この項目、`CLAUDE.md` 冒頭の Online・規則11・規則22、
+  `docs/DATA_SAFETY.md`、`docs/STATE.md`
+- Implementation status: **仕様として書き留めました。**コードは変わりません ──
+  いまの姿がそのまま仕様になった、という決定です。
+
+### 【差し替え済み 2026-09-05】保存が失敗したら、人が作ったものは目の前に残る
+- Date: 2026-09-04
+- Area: 保存の失敗（`www/core.js` の `save()`、`www/net.js`）
+
+- Decision:
+
+  ```
+  なら失敗して残るにするべき。
+  ```
+
+- Reason: 上の決定の**続きで、そこに引かれた線です。**「保存されない」は仕様
+  ですが、**「失敗して黙って消える」は仕様ではありません。**
+
+  保存がサーバーで失敗したとき、人が作ったものは**目の前に残ります。**もう一度
+  押せば送れる状態です。**これは「iPhone に溜めて後で送る」ではありません** ──
+  溜めるのはオフライン対応で、それは今やりません。残るのは、その人がいま見て
+  いる画面の中です。
+- Affected features: 保存のある画面ぜんぶ
+- Affected data: **無くなりません。**失敗したときに消えないことが、この決定です。
+- Affected docs: この項目、`docs/HANDOVER.md` 七章
+- Implementation status: **入りました 2026-09-05。**`saveTry()`（`www/core.js`）が
+  一箇所で答え、届かなければ `save.no` と言います。上の 2026-09-05 の項目が
+  この項目に代わります。
+
+### 電波が無いときは、前に読み込んだ分を出す。見るだけ
+- Date: 2026-09-04
+- Area: 電波が無いときの写し。`CLAUDE.md` 規則22
+
+- Decision:
+
+  ```
+  前に読み込んだ分は出て欲しい。制作も眺めたい人はいるだろうし、
+  ```
+
+- Reason: **同じ日の「写しも別に今はいらなくない？」を、オーナー自身が一部
+  差し替えました。**電波が無いとき、画面を真っ白にはしません。前に読み込んだ
+  ものを出します。
+
+  **見るだけです。作れません。保存できません。**「眺めたい人はいるだろう」が
+  オーナーの言葉です。**編集と読み替えて広げないでください。**
+
+  **この写しは絶対にサーバーへ戻りません。片道です。**理由は
+  `docs/HANDOVER.md` 七章にあります ── `www/sync.js` の `syMerge()` は
+  **壊れた写しでサーバーの正しいほうを上書きするバグ**です。読めない側を
+  「無い」と同じに扱っています。**戻る道があるかぎり、同じ形の事故が起きます。**
+  戻る道が無ければ、写しが壊れていても失われるのは写しだけです。
+- Affected features: 制作側の全画面（電波が無いとき）
+- Affected data: **増えます。**iPhone に読み取り専用の写しが載ります。
+  **そこからサーバーへ戻る道はありません。**
+- Affected docs: この項目、`CLAUDE.md` 冒頭の Online と規則22、
+  `docs/DATA_SAFETY.md`、`docs/ARCHITECTURE.md`、`docs/EXPIRY.md`
+- Implementation status: **入りました 2026-09-05。**`www/net.js` が画面だけの
+  写しを一本持ちます。戻る道はありません。
+
+### `ONE.md` を消す
+- Date: 2026-09-04
+- Area: 書いたもの（ONE.md ── 消しました）
+
+- Decision:
+
+  ```
+  消していいよ
+  ```
+
+- Reason: **承認されなかった案です。**オンライン一本化はもう入っていて、そこに
+  書いてあった設計は通っていません。**残しておくと、次に読む人が仕様として
+  読みます。**
+- Affected features: 無し
+- Affected data: 無し
+- Affected docs: 消した `ONE.md` 本体と、そこを指していた `docs/STATE.md`・
+  `docs/FEATURE_RULES.md`・`docs/RECOVERY.md` の行。`tools/docs-baseline.txt`
+- Implementation status: **入りました。**同じ日に消しました。
+
+### オンラインを進める。パッチはオーナーが後で流す
+- Date: 2026-09-04
+- Area: オンライン一本化ぜんぶ。バッジ
+
+- Decision:
+
+  ```
+  オンライン進めて。パッチは俺が後で流す
+  ```
+
+- Reason: **止めずに進める、という指示です。**サーバー側の一枚はオーナーが自分で
+  流します。**アプリ側はそれを待ちません。**
+- Affected features: オンライン一本化。バッジ
+- Affected data: 無し
+- Affected docs: この項目、`docs/STATE.md`
+- Implementation status: オンライン一本化は入りました。**バッジはオーナーの
+  SQL 待ちで、アプリ側から出来ることはありません。**
+
 ### 増えた文字は消してよい ── リリース前のあいだだけ
 - Date: 2026-09-04
 - Area: 文字（`www/letters.js`）。増殖した分の後始末
@@ -477,7 +597,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
   黙って一つ減ることがある件と、同じ言語が一覧に二つ並ぶことがある件。
 - Affected features: 保存・同期・復元・運営側の復旧
 - Affected data: 版が積まれる。部分ごと、一回 12 KB 〜 685 KB
-- Affected docs: この項目、`docs/ONE.md`、`docs/STATE.md` § 4a、`docs/DATA_SAFETY.md`
+- Affected docs: この項目、`docs/STATE.md` § 4a、`docs/DATA_SAFETY.md`
 - Implementation status: **書き始めてよい。**`claude/one` の設計に沿って
 
 ### 【差し替え済み】お題のタグは、お題そのものが持っている十言語から出す
@@ -537,7 +657,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
   ルールなんだけど、それ守ってないからこうなるんじゃないの？」
 - Affected features: 文法の語順の既定値。**発音は変えません**
 - Affected data: 文法の語順を触っていない人の欄が、空のままになります
-- Affected docs: この項目、`docs/EXPIRY.md` 4番、`docs/ONE.md`
+- Affected docs: この項目、`docs/EXPIRY.md` 4番
 - Implementation status: **未実装。**オンライン前提への書き換えと同じ回で
 
 ### バックアップのファイルも無くす。★の51件目は一番古いのを押し出す
@@ -566,7 +686,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected features: ㉔ バックアップ ── **章ごと無くなります**
 - Affected data: **減ります。**`Documents/Languages/` に書かれていたファイルと、
   その三世代。**サーバーのバックアップがそれを引き受けます。**
-- Affected docs: この項目、`docs/ONE.md`、`docs/DATA_SAFETY.md`、
+- Affected docs: この項目、`docs/DATA_SAFETY.md`、
   `CLAUDE.md` 規則11、`docs/STATE.md`、`supabase/setup.md`
 - Implementation status: **設計に入れ直します（`claude/one`）。**
 
@@ -617,13 +737,13 @@ the reasoning — a reason can be re-derived, a decision cannot.
   写しも別に今はいらなくない？今後の設計で。
   ```
 
-  OWNER 2026-09-04。**写しは速さのための道具で、仕組みの一部ではありません。**
-  仕組みに入れておくと、必ず「これが本物かもしれない」と思い始めます ──
-  **それが今日の穴でした。**設計から外します。
+  OWNER 2026-09-04。**書き込む写しは持ちません。**仕組みに入れておくと、必ず
+  「これが本物かもしれない」と思い始めます ── **それが今日の穴でした。**
 
-  **その代わり、電波が無いときアプリは何も出せません。**「保存できない」では
-  なく、**自分の辞書を開いて眺めることもできません。**リーダーからその一点を
-  出したうえでの決定です。
+  **電波が無いときの画面は、同じ日の「電波が無いときは、前に読み込んだ分を出す。
+  見るだけ」が今の仕様です**（この決定ログの上のほう）。真っ白にはしません。
+  **前に読み込んだものを、見るだけ出します。**その写しは**読むだけで、
+  サーバーへ戻る道はありません。**
 
   **iPhone に残るのは `lingua.sess` だけです** ── どのアカウントでログイン
   しているか。**これは写しではなく「この iPhone は誰か」という札**で、無いと
@@ -634,7 +754,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
   写しなど）が要らなくなります。**まだリリースしていないので、いま iPhone に
   溜まっている未送信の変更はありません** ──「溜まってるのはないから別に消えて
   もいい」OWNER。**移行で拾う仕事はありません。**
-- Affected docs: この項目、`docs/ONE.md`（設計）、`docs/DATA_SAFETY.md`、
+- Affected docs: この項目、`docs/DATA_SAFETY.md`、
   `docs/ARCHITECTURE.md`、`CLAUDE.md` 規則22
 - Implementation status: **設計中（`claude/one`）。**リリース前に潰す
   ──「まだリリースしてないから、リリースする前にバグは潰したい」
@@ -684,7 +804,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
   番号が、「後から変えたほうが残る」には時刻が要ります。**片方では足りません。**
 - Affected features: 保存・同期・復元・運営側の復旧
 - Affected data: **増えます。**版ごとに、サーバーの番号と、iPhone が押した時刻
-- Affected docs: この項目、`docs/ONE.md`（設計）、`docs/DATA_SAFETY.md`
+- Affected docs: この項目、`docs/DATA_SAFETY.md`
 - Implementation status: **設計中（`claude/one`）。**
 
   **決まっていないことが一つ残っています ── 時計が狂っている iPhone。**

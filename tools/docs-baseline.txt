@@ -11,10 +11,10 @@
 # belongs on, and whether a handover from a week ago is still worth a page,
 # are the owner's, not a check's.
 #
-# The two `dangling ... -> docs/ONE.md` lines are gone: `claude/one` wrote
-# that page, so both sentences point at a document that is there now. The
-# baseline said what was lost on 2026-09-04; the loss ended the day the page
-# landed, and a line that outlives what it allowed is a hole.
+# `ONE.md` was written, then deleted the same day on the owner's word
+# (2026-09-04, decision log). No line here allows a pointer at it: the two
+# sentences that still remember the page say its bare file name, which is what
+# this check asks of a sentence ABOUT a document that is gone.
 
 orphan docs/HANDOVER-2026-08-28-2.md
 orphan docs/SCOPE-yaa.md
