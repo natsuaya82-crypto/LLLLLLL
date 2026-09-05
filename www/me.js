@@ -750,7 +750,13 @@ function meFollowPull(){
     ME.fo=hs;
     saveMe();
     render();
-  }, function(){ FO_ASKED=false; });
+  }, function(d, s, m){
+    FO_ASKED=false;
+    /* 通信が落ちたら何も進まない ── netPop() (www/net.js)。この画面が
+       サーバーにしか無いものを取りに行く道の一本で、［再接続］はここも
+       もう一度行く。 */
+    netPop(d, s, m, meFollowPull);
+  });
 }
 /* AND WHO FOLLOWS YOU, which nothing had ever asked for.
    -------------------------------------------------------------------------

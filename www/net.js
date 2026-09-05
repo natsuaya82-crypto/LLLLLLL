@@ -389,16 +389,37 @@ function netWhy(d, status, mark){
    スクリーンショット一枚で原因が落ちてくるための状態で、人に読ませるもので
    はない。ポップは `net.offline` の一文だけ。
 
-   AND ONE FAILURE IS ONE POP. A launch fires six requests; six pops stacked
-   on each other would be six people telling you the same thing. popOn() is
-   asked rather than a flag of this file's own, because the popup is one
-   thing and render() already takes it down. */
+   ONE POP, AND 再接続 ASKS AGAIN FOR EVERY ONE OF THEM. 「再接続したらどう
+   なるの？」 OWNER 2026-09-05. ホームに入ると要求は四件出る。ポップを一つに
+   するのは正しいが、最初の一件の道だけを覚えていたので、再接続で出て行くのは
+   その一件だけだった ── 測ると `rpc/notices` が出て、その人が見ている
+   タイムラインは取りに行かなかった。**どれが最初に落ちたかは、その人が何を
+   見ているかと関係がない。**
+
+   だから落ちた道はためる。ポップは一つ、再接続はためた全部。NET_AGAIN が
+   その置き場で、押した瞬間に空になる ── 押していないものが次のポップに
+   混ざらないように。
+
+   閉じるは何もしない。要求は出ず、端末には何も書かれず、画面も動かない ──
+   決定の一行がそれ。 */
+var NET_AGAIN=[];
 function netPop(d, s, m, again){
-  var mark=String(m||'');
+  var mark=String(m||''), i;
   if(s) return;
   if(mark.indexOf('−')>=0 || mark.indexOf('≠')>=0) return;
+  if(again){
+    for(i=0;i<NET_AGAIN.length;i++) if(NET_AGAIN[i]===again) break;
+    if(i===NET_AGAIN.length) NET_AGAIN.push(again);
+  }
   if(popOn()) return;
-  popAsk(t('net.offline'), again||null, t('net.again'), t('pop.no'));
+  popAsk(t('net.offline'), netPopAgain, t('net.again'), t('pop.no'));
+}
+/* 再接続。ためた道を空にしてから走らせる ── 走らせている最中にまた落ちると
+   netPop() がここへ積み直すので、先に空にしないと同じ道が二重になる。 */
+function netPopAgain(){
+  var go=NET_AGAIN, i;
+  NET_AGAIN=[];
+  for(i=0;i<go.length;i++) go[i]();
 }
 
 /* ---- coming and going --------------------------------------------------- */
