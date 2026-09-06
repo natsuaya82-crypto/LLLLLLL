@@ -240,37 +240,59 @@ const R = await pg.evaluate(() => {
      「取り込んだあとにアルファベットページに飛ばなくていいから戻る押しても
        前のページに染み付いてるせいで全然戻れない」OWNER 2026-09-02.
 
-     `IMP.done` decides which face the import screen draws, and it used to
-     stand for the rest of the session: 完了 was `back()` and forgot nothing,
-     so opening 取り込み again showed the LAST import's result, with 完了 on
-     it, and 完了 goes back. From the alphabet that is a loop -- import, the
-     old result, back, import, the old result -- with no way in to the import
-     screen and no way out that felt like going back. Nothing threw and every
-     press did what it says, which is why this is a SEQUENCE and not a press.
+     There WAS a screen after the import saying how many came in, with 完了 on
+     it, and `IMP.done` stood for the rest of the session -- so opening 取り込み
+     again showed the LAST import's result, and 完了 went back. From the
+     alphabet that is a loop: import, the old result, back, import, the old
+     result. Nothing threw and every press did what it says, which is why this
+     is a SEQUENCE and not a press.
 
-     Only 完了 forgets. Leaving by the arrow keeps it, because 元に戻す is on
-     that face and is the one press that makes an import not have happened. */
+     That screen is gone. 「押したら取り込んで辞書へ戻る」OWNER 2026-09-06: the
+     press imports and stands you in the room it went into -- the dictionary
+     for words, the alphabet for letters -- and the owner's sentence above is
+     what this asks now, one step further out. Three things, and the middle one
+     is what nothing else can see: the finished import screen comes OFF the
+     trail (navDrop, www/import.js § impLand). Without that, 戻る out of the
+     room it landed in leads straight back to a blank import screen, which is
+     the owner's sentence again with no result screen left to blame for it. */
   start();
-  goTab('build'); go('letters');
+  /* From the road the import is actually reached by. It is a row on the search
+     screen (www/home.js) and one in the settings, and NEITHER is the room a
+     file goes into -- so the room it lands in is not already behind you, and
+     the trail is not tidied by going back to a screen you came through. That
+     is the case navDrop() is for, and standing on `letters` first would hide
+     it: go() cuts the trail back to a screen already on it, so the finished
+     import screen would come off by accident and this would be green with
+     nothing holding it. */
+  goTab('find');
   openImport();
-  impTake('character,name\n\u03a8,psi\n\u03a9,omega');
+  impTake('character,name\nΨ,psi\nΩ,omega');
   IMP.into = 'l'; IMP.roles = impMove(IMP.roles, 'l');
-  doImport();
-  const impWas = !!(IMP.done);
-  const okBtn = (screen(), document.querySelector('#app [data-do="impOK"]'));
-  if (okBtn) okBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+  IMP.step = 'ready'; openImport();
+  /* The real button on the real screen, not doImport() called by name: what
+     is being asked is what pressing it leaves behind. */
+  const goBtn = (screen(), document.querySelector('#app [data-do="doImport"]'));
+  if (goBtn) goBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
   const impAt = here().r + (here().a ? ':' + here().a : '');
+  const impTrail = NAV.map((n) => n.r + (n.a ? ':' + n.a : '')).join(' > ');
+  back();
+  const impBack = here().r + (here().a ? ':' + here().a : '');
   openImport();
-  const impFresh = !IMP.done;
-  out.said.push('the import screen forgets that it finished: ' +
-    (impWas ? '' : 'NEVER SAID IT DID — ') +
-    '完了 landed on ' + impAt + ', opening it again is ' +
-    (impFresh ? 'the start' : 'THE OLD RESULT'));
-  if (!impWas) out.fails.push('the import never reported a result to forget');
-  if (!okBtn) out.fails.push('the done screen has no 完了 to press');
-  if (!impFresh)
-    out.fails.push('opening the import again shows the last result — 完了 ' +
-      'goes back, so that is a loop with no way in and no way out');
+  const impFresh = IMP.step;
+  out.said.push('an import that is over: the press landed on ' + impAt +
+    ', the trail is "' + impTrail + '", 戻る goes to ' + impBack +
+    ', and opening it again is the "' + impFresh + '" screen');
+  if (!goBtn) out.fails.push('the screen before the import has no button to press');
+  if (impAt !== 'letters')
+    out.fails.push('letters imported and the screen left in front of you is ' +
+      impAt + ' — an alphabet went into the alphabet, so that is where you are');
+  if (impTrail.indexOf('form:csv:') >= 0 || impBack.indexOf('form') >= 0)
+    out.fails.push('the finished import screen is still on the trail — 戻る ' +
+      'out of ' + impAt + ' lands on ' + impBack + ', which is the import ' +
+      'screen you just left, with nothing on it');
+  if (impFresh !== 'get')
+    out.fails.push('opening the import again is the "' + impFresh + '" screen ' +
+      'and not the start — an import that is over is over');
 
   /* ---- the word list forgets it was being chosen from -------------------
      「洗濯して前の画面戻ると選択画面がキープされたままや。流石に解除して
