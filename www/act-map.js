@@ -178,6 +178,7 @@ act('openWrIn', openWrIn);
 act('shMake', shMake);
 act('shTakeIn', shTakeIn);
 act('openNote', openNote);
+act('openNoteEdit', openNoteEdit);
 act('ntSelOn', ntSelOn);
 act('ntSelOff', ntSelOff);
 act('ntSelTap', ntSelTap);
