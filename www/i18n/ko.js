@@ -1363,7 +1363,7 @@ defLang('ko', (function(){
       "csv.title"        : "목록 가져오기",
       "csv.ph"           : "고양이\n물\n걷다\n\nkano, 산, 명사",
       "csv.btn"          : "가져오기",
-      "csv.full"        : "{0}개 가져옴, {1}개 만듦 — Free가 가득 찼습니다",
+      "csv.full"        : "{0}개 가져옴, {1}개 만듦 — 목록이 가득 찼습니다",
       /* the day's sentence. The sentence itself is not here: it comes
          from the server, one row a day, in every interface language. */
       "day.k"  : "오늘",

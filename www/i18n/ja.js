@@ -1104,7 +1104,7 @@ defLang('ja', (function(){
       'csv.title'       : 'リストの取り込み',
       'csv.ph'          : 'ねこ\nみず\n歩く\n\nkano, 山, 名詞',
       'csv.btn'         : '取り込み',
-      'csv.full'        : '{0}語取り込み、{1}語作成。Freeの上限に達しました',
+      'csv.full'        : '{0}語取り込み、{1}語作成。上限に達しました',
       /* the day's sentence. The sentence itself is not here: it comes
          from the server, one row a day, in every interface language. */
       "day.k"  : "お題",

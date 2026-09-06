@@ -1193,7 +1193,7 @@ defLang('zh', (function(){
       "csv.title"        : "导入清单",
       "csv.ph"           : "猫\n水\n走\n\nkano, 山, 名词",
       "csv.btn"          : "导入",
-      "csv.full"        : "已导入 {0}，已创建 {1} — Free 已满",
+      "csv.full"        : "已导入 {0}，已创建 {1} — 列表已满",
       /* the day's sentence. The sentence itself is not here: it comes
          from the server, one row a day, in every interface language. */
       "day.k"  : "今日",

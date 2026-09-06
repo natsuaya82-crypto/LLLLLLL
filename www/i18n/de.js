@@ -1177,7 +1177,7 @@ defLang('de', (function(){
       "csv.title"        : "Liste importieren",
       "csv.ph"           : "Katze\nWasser\ngehen\n\nkano, Berg, Substantiv",
       "csv.btn"          : "Importieren",
-      "csv.full"        : "{0} übernommen, {1} erstellt — Free ist voll",
+      "csv.full"        : "{0} übernommen, {1} erstellt — die Liste ist voll",
       /* the day's sentence. The sentence itself is not here: it comes
          from the server, one row a day, in every interface language. */
       "day.k"  : "Heute",
