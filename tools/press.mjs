@@ -91,8 +91,42 @@ const br = await chromium.launch(LAUNCH);
    come out fine. The same numbers verify-script uses, because there is one
    phone and it should not be described twice. */
 const pg = await br.newPage({ viewport: { width: 402, height: 874 }, deviceScaleFactor: 3 });
-await pg.goto(`http://127.0.0.1:${PORT}/`);
+/* AND NOTHING BEHIND IT. A page is opened at about:blank and pg.goto() puts
+   the app in FRONT of it, so `history.length` is 2 -- and the one check here
+   that uses a real touch drags in from the left edge, which is Chromium's own
+   「swipe back」 gesture. `#app{touch-action:pan-y}` hands a sideways thumb to
+   the browser on purpose (§ the way back, below), so the browser took it,
+   went back to about:blank, and every evaluate after that said
+   `here is not defined` -- the app's JS was not merely wrong, it was gone.
+
+   It was three runs in four, and only inside the gate: the gesture is decided
+   on how fast the thumb moves, and four browsers on four cores stretch the
+   16ms between two touchMoves into something else. Alone it passed every time.
+
+   `location.replace()` REPLACES about:blank instead of standing in front of
+   it, so there is one entry and the gesture has nowhere to go. That is also
+   what the phone is: a WKWebView opened on this app has no page behind it.
+
+   Not a launch flag. `--disable-features=OverscrollHistoryNavigation` does
+   turn it off, and it is one switch: Chromium keeps the LAST
+   `--disable-features` it is given, so passing ours drops the sixteen
+   playwright passes -- PaintHolding and Translate among them -- for all
+   eleven browser checks. (`--overscroll-history-navigation=0` is not read by
+   this Chromium at all; it was measured.) */
+/* Waited for as a NAVIGATION, not as a load state. location.replace() only
+   STARTS one, and the document it is called from is already loaded -- so
+   waitForLoadState() answers about about:blank and comes back at once, and
+   the first evaluate after it reads a page whose script tags have not run
+   (`OB_STEPS is not defined`). */
+const HOME = `http://127.0.0.1:${PORT}/`;
+await Promise.all([
+  pg.waitForURL(HOME, { waitUntil: 'load' }),
+  pg.evaluate((u) => location.replace(u), HOME)
+]);
 await pg.waitForTimeout(300);
+if (await pg.evaluate(() => history.length) !== 1)
+  console.error('press: the page has something behind it, so a drag from the ' +
+                'left edge can take the browser back to it. See the note above.');
 
 /* The fixture is shared with act-check, so the two press and walk the same
    app. It goes in as a page global because it has to be called again before
@@ -1127,6 +1161,11 @@ const SWR = await (async () => {
     }
     await T('touchEnd', toX, y);
     await pg.waitForTimeout(420);
+    /* What the gesture must never do is leave the app. Asked before the
+       evaluate below, because a page that has gone answers that one with
+       `here is not defined` -- an error that names nothing. */
+    if (pg.url() !== HOME)
+      return { live: !!mid, at: 'GONE: ' + pg.url() };
     return { live: !!mid, at: await pg.evaluate(() => here().r) };
   }
   const stand = (js) => pg.evaluate(js);
