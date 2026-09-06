@@ -1252,10 +1252,16 @@ function subList(pos){
    Enter on the box is still the only thing that makes one. */
 var wdSubNew=false;
 function subNewOpen(){ wdSubNew=true; render(); }
+/* The same row as every other row on this list, and it has to be: it was an
+   `.entry one` -- the DICTIONARY's row, a headword at 20px on 71px of height
+   -- standing under five `.set` rows at 15px on 50, so the one row that is
+   not an answer was the largest thing on the screen
+   「下位分類の＋新しく作るの行だけ字が大きい」 OWNER 2026-09-06. CLAUDE.md
+   § Rows in one list are one height. wdOneHTML() is what a row of this list
+   is, and this is that row with a ＋ on it and no tick. */
 function subAddRow(){
-  return '<div class="entry one"><button class="ebody"' + DO('subNewOpen') + '>'+
-    '<div class="hwrow"><span class="hwl">'+ICON_ADD+esc(t('f.sub.new'))+
-    '</span></div></button><span class="ltck" style="margin-left:auto"></span></div>';
+  return '<button class="set"' + DO('subNewOpen') + '>'+
+    '<span class="sl">'+ICON_ADD+esc(t('f.sub.new'))+'</span></button>';
 }
 function vSub(){
   if(!wEdit) return viewGone();
