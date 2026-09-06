@@ -1801,16 +1801,29 @@ const r = await pg.evaluate(({ s }) => {
     out.freeListNoSheet = document.querySelectorAll('#kb').length === 0;
     /* the first row IS the QWERTY: its preview carries the real keys */
     out.freeListFirstKeys = lrows.length ? lrows[0].querySelectorAll('.kbsk').length : -1;
-    /* AND NOTHING ON IT OPENS. 「編集ボタンも無料はいらんやろ」 OWNER
-       2026-09-04 -- board 0 on this plan is the QWERTY itself and there is
-       nothing to edit, so the row is not a door: no arrow, and nothing a
-       finger can name. Asked as the row's own tag and its own data-do rather
-       than as a count of the screen's, because the + is on this screen too
-       and is a button that SHOULD be there. */
+    /* AND IT OPENS. 「キーボード1を触れさせて戻る工程が必要」 OWNER
+       2026-09-06 -- the row is a door on this plan too, and it is the same
+       door the paid list has: kbGoBoard on board 0, with the arrow on it.
+       Asked as the row's own tag and its own data-do rather than as a count
+       of the screen's, because the + is on this screen too. */
     out.freeRowTag = lrows.length ? lrows[0].tagName : '';
     out.freeRowDo = lrows.length ? (lrows[0].getAttribute('data-do') || '') : 'x';
-    out.freeRowInside = lrows.length ? lrows[0].querySelectorAll('[data-do]').length : -1;
+    out.freeRowArg = lrows.length ? (lrows[0].getAttribute('data-a') || '') : '';
     out.freeRowArrow = lrows.length ? lrows[0].querySelectorAll('svg.go').length : -1;
+    /* AND WHAT IT OPENS IS THE KEYBOARD, TO LOOK AT. 「無料でも行を押すと
+       QWERTY が画面いっぱいに開く（見るだけ）」 -- the keys are there, and
+       the editor is not: no row of tools over the sheet, no rail of layers
+       under it, and no numbers down the side, which is the editor's sheet
+       leaking into the thing on the phone. What is left to press is the way
+       back out. */
+    if (lrows.length) lrows[0].click();
+    out.freeRowWent = here().r === 'kb' && String(here().a || '') === '0';
+    document.getElementById('app').innerHTML = vKb();
+    out.freeBoardKeys = document.querySelectorAll('#kb .kbk').length;
+    out.freeBoardTools = document.querySelectorAll('.kbtool, .kbsegs, .kbhdr, .kbn, .kbnm').length;
+    out.freeBoardBack = document.querySelectorAll('.navtop .back.nb').length;
+    NAV = [{ r: 'kb' }]; route = 'kb';
+    document.getElementById('app').innerHTML = vKb();
 
     /* ---- THE + IS ON THIS PLAN'S LIST, AND IT IS THE SAME + -------------
        「＋は右下につけて」「無料は1個目以降」 OWNER 2026-09-04. It was drawn
@@ -3774,12 +3787,21 @@ say(r.freeListNoSheet,
 say(r.freeListFirstKeys > 0,
     'the one of them is the QWERTY itself, drawn (' + r.freeListFirstKeys +
     ' keys in its preview)');
-say(r.freeRowTag === 'DIV' && r.freeRowDo === '' && r.freeRowInside === 0 &&
-    r.freeRowArrow === 0,
-    'and it does not open: no arrow and nothing a finger can name, because'
-    + ' board 0 on this plan is the QWERTY and there is nothing to edit ['
-    + [r.freeRowTag, JSON.stringify(r.freeRowDo), r.freeRowInside,
+say(r.freeRowTag === 'BUTTON' && r.freeRowDo === 'kbGoBoard' &&
+    r.freeRowArg === '[0]' && r.freeRowArrow === 1,
+    'and it opens, by the same door the paid list has ['
+    + [r.freeRowTag, JSON.stringify(r.freeRowDo), r.freeRowArg,
        r.freeRowArrow].join(' ') + ']');
+say(r.freeRowWent && r.freeBoardKeys > 0,
+    'pressing it lands on board 0, and the QWERTY is drawn there ('
+    + r.freeBoardKeys + ' keys)');
+/* asked of the board the press LANDED on -- without freeRowWent this reads
+   the list, which has no tools and one arrow and would say yes to a row that
+   never opened */
+say(r.freeRowWent && r.freeBoardTools === 0 && r.freeBoardBack === 1,
+    'to LOOK at: no tools, no layer rail, no numbers down the side, and the'
+    + ' arrow back out is what there is to press ['
+    + [r.freeBoardTools, r.freeBoardBack].join(' ') + ']');
 say(r.freeFab, 'the + is on this list too, and it is the same + (kbNew)');
 say(r.freeFab && r.freeFabRight >= 0 && r.freeFabRight <= 40 &&
     r.freeFabBottom >= 0,
