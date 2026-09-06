@@ -198,7 +198,7 @@ defLang('fr', (function(){
       "cap.warn"                  : "{0} mots restants en Gratuit",
       "cap.hid"                   : "{0} masqués",
       "cap.lapse.h"               : "Votre forfait a pris fin",
-      "cap.lapse.d"               : "Retour au Gratuit : le dictionnaire affiche 100 mots. <b>Rien n’a été supprimé.</b> Tout est encore là.",
+      "cap.lapse.d"               : "Rien de ce que vous avez créé n’a été supprimé. Vos mots, vos lettres, vos claviers, votre grammaire et vos publications sont toujours sur votre compte, tels quels.<br><br>Avec le forfait Gratuit, le dictionnaire affiche jusqu’à 100 mots, un clavier et une langue. Les mots au-delà de 100 n’ont pas disparu. Ils ne sont simplement pas affichés.<br><br>En reprenant un forfait, tout revient tel quel.",
       "cap.lapse.ok"              : "Fermer",
       "ch.clear"                  : "Aucun caractère",
       "ch.for"                    : "Un caractère pour « {0} »",
