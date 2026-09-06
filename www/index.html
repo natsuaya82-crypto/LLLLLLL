@@ -3657,6 +3657,12 @@ textarea.ntbody.grow{min-height:0;height:auto;overflow:hidden;resize:none}
 .view.fit .ntform{flex:1;min-height:0;display:flex;flex-direction:column;margin-bottom:0}
 /* resize は落とす: 画面いっぱいの一枚に、引っ張って伸ばす角は要らない。 */
 .view.fit .ntform .ntbody{flex:1;min-height:0;border-bottom:0;resize:none}
+/* 読む顔 ── 開いたときはこれで、右上の「編集」で上の欄の顔に変わる
+   (OWNER 2026-09-06、www/notes.js § openNote / openNoteEdit)。題名は上の帯に
+   立つので、ここは本文だけ ── 残りの高さを全部取って、打たれた改行はそのまま。
+   囲いも角丸も無い ── 字だけ。 */
+.ntrb{flex:1;min-height:0;overflow:auto;padding:12px 2px;font-size:.94rem;line-height:1.8;
+   white-space:pre-wrap;overflow-wrap:break-word}
 
 /* ---------- grammar: a decision, and what it does ----------
    A row of choices, then the piece of sound the choice is carried by, then

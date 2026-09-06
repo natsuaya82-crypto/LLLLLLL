@@ -217,8 +217,10 @@ const r = await pg.evaluate(({ s }) => {
       go: function(){ goTab('build'); go('gram', 'greet'); openStRules('greet'); },
       sel: '[data-in="stSetRules"]', v: 'they are said on meeting',
       read: function(){ return String((STG.rules && STG.rules.greet) || ''); } },
+    /* 開いた顔は閲覧で、欄は無い ── 右上の「編集」で書く顔に入る
+       (OWNER 2026-09-06)。保存が出るのはその顔なので、ここはそこへ行く。 */
     { n: 'a note',
-      go: function(){ goTab('build'); go('notes'); openNote(0); },
+      go: function(){ goTab('build'); go('notes'); openNote(0); openNoteEdit(0); },
       sel: '#nt-t', v: 'what the river is called',
       read: function(){ return String((NOTES[0] && NOTES[0].t) || ''); } },
     { n: "a word's sheet",
@@ -497,6 +499,24 @@ const more = await pg.evaluate(() => {
   out.glYesWrote = glStored() !== glWas;
   out.glYesSaid = glSaid.length;
 
+  /* ---- 11b. a note opens to be READ ------------------------------------
+     「メモ：開いた時は閲覧、右上（今は保存がある所）に「編集」、押すと編集
+     できて、そのボタンが「保存」に変わる」 OWNER 2026-09-06. It used to open
+     straight into the fields, so somebody opening a note to read it was
+     standing in the middle of its body with a Save over it. Two faces now,
+     and the buffer belongs to the second: what holds it is that the corner of
+     the first is 編集 and NOT the Save. */
+  goTab('build'); go('notes'); openNote(0);
+  out.ntReadKey = here().r + '|' + (here().a === undefined ? '' : here().a);
+  out.ntReadSave = !!document.querySelector('.navtop [data-do="keepPress"]');
+  out.ntReadEdit = !!document.querySelector('.navtop [data-do="openNoteEdit"]');
+  out.ntReadField = !!document.getElementById('nt-b');
+  out.ntReadBody = (document.querySelector('.ntrb') || {}).textContent || '';
+  openNoteEdit(0);
+  out.ntEditKey = here().r + '|' + (here().a === undefined ? '' : here().a);
+  out.ntEditSave = !!document.querySelector('.navtop [data-do="keepPress"]');
+  out.ntEditField = !!document.getElementById('nt-b');
+
   /* ---- 11. viewReset() lets them go ------------------------------------- */
   goTab('profile'); openMe();
   var e2 = document.querySelector('#me-nm');
@@ -542,7 +562,7 @@ const more = await pg.evaluate(() => {
      stage. openStRules() is the door. */
   goTab('build'); go('gram', 'greet'); openStRules('greet');
   missing.push(typeOn('[data-in="stSetRules"]', 'q'));
-  goTab('build'); go('notes'); openNote(0);
+  goTab('build'); go('notes'); openNote(0); openNoteEdit(0);
   missing.push(typeOn('#nt-t', 'q'));
   missing.push(typeOn('#nt-b', 'q'));
   goTab('build'); go('words'); openEdit(hw);
@@ -698,6 +718,14 @@ for(const d of r.dead){
     fails.push(d.n + ': a save that did not land lost what was typed: ' +
                JSON.stringify(d.field));
 }
+if(more.ntReadSave) fails.push('a note opened to be read and the Save was already in the corner');
+if(!more.ntReadEdit) fails.push('a note opened to be read with no way on to the writing face');
+if(more.ntReadField) fails.push('the reading face of a note is a field to type into');
+if(!more.ntReadBody) fails.push('the reading face of a note showed nothing of it');
+if(!more.ntEditSave) fails.push('the writing face of a note has no Save in the corner');
+if(!more.ntEditField) fails.push('the writing face of a note has no field to type into');
+if(more.ntReadKey === more.ntEditKey)
+  fails.push('the two faces of a note are one screen: ' + more.ntReadKey);
 if(!more.deadStayed) fails.push('a save with no wire went back anyway');
 if(!more.deadSaid) fails.push('a save with no wire went nowhere and said nothing');
 if(more.deadTyped !== 'written in a tunnel') fails.push('a save with no wire threw away what was typed: ' + JSON.stringify(more.deadTyped));
@@ -716,6 +744,8 @@ console.log('the keyboard, one key: a board deleted under the page leaves ' + mo
 console.log('the letter being drawn: grey on arrival, gold on a stroke, nothing written until ' +
             'Yes; a bottom tab kept the drawing, No let it go and wrote nothing, Yes wrote it ' +
             'and said so once');
+console.log('a note opens to be read (' + more.ntReadKey + '): 編集 in the corner and no Save, ' +
+            'and 編集 goes to ' + more.ntEditKey + ', which has the field and the Save');
 console.log('viewReset(): lets what was typed go');
 console.log('one shape only: ' + more.bothShapes.length + " of the app's nine save functions " +
             'fired while somebody was typing');

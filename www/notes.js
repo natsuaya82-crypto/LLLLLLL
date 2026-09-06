@@ -42,7 +42,7 @@ function ntBody(n){
 }
 
 var ntAt=-1;                        /* which note the sheet is open for, -1 = new */
-/* Whether the note:-1 buffer already became a real note. openNote(undefined)
+/* Whether the ntedit:-1 buffer already became a real note. openNote(undefined)
    is the + itself -- keepPaint's own redraw of the same sheet always passes
    a number, never undefined -- so this is the one place that can tell "the
    thing typed here is already on the list" from "still a draft, still worth
@@ -50,11 +50,52 @@ var ntAt=-1;                        /* which note the sheet is open for, -1 = ne
    that is the rest of the app's own rule (www/shell.js § KEEP). Only a note
    that has already landed makes the NEXT + start empty. */
 var ntNewSpent=false;
+/* 開いたときは閲覧、右上の「編集」で編集の顔へ、そこの右上が保存。
+   「メモ：開いた時は閲覧、右上（今は保存がある所）に「編集」、押すと編集
+   できて、そのボタンが「保存」に変わる」 OWNER 2026-09-06。単語がずっとその形
+   で (www/wordsheet.js § openWord / openEdit)、メモだけが開いた瞬間に欄で、
+   読むだけのつもりで開いた人が本文の真ん中に立たされていた。
+
+   顔が二つなので鍵も二つ ── 読む方が `note:<i>`、書く方が `ntedit:<i>`。
+   名前が `openNoteEdit` なのは飾りではない: 歩き方 (tools/act-check.mjs、
+   i18n-check) は `open` で始まる大文字の名前を頁として拾うので、この名前で
+   ある限り明日足された顔も明日歩かれる ── 誰かが一覧に書き足すのを憶えて
+   いなくてよい。
+   KEEP の buffer は書く方の鍵で登録するので、読む顔には保存が出ない
+   (www/shell.js § keepBtnHTML)。人の言語では編集のボタンごと出ない。 */
 function openNote(i){
   /* A note is the fourth. Editing one is making one -- what comes out is a
      note either way -- so this is asked on the way in, not only on the + . */
   if(!makeNeed()) return;
-  if(i===undefined && ntNewSpent){ keepDrop(keepKeyOf('form', 'note:-1')); ntNewSpent=false; }
+  if(i===undefined && ntNewSpent){ keepDrop(keepKeyOf('form', 'ntedit:-1')); ntNewSpent=false; }
+  var k=(typeof i==='number' && NOTES[i]) ? i : -1;
+  /* 作るときは読むものが無いので、+ はそのまま書く顔。 */
+  if(k<0) return openNoteEdit(-1);
+  ntAt=k;
+  /* 題の場所に立つのはそのメモの名前 ── 単語の紙が見出し語を立てるのと同じ。
+     `notes.edit`（メモの編集）は書く顔のもので、読むだけの顔がそう名乗ると
+     押せないものの名前を掲げることになる。 */
+  openForm('note:'+k, ntHead(NOTES[k]), ntReadHTML(NOTES[k]), null,
+    /* AND NOTHING TO PRESS IN SOMEBODY ELSE'S LANGUAGE -- langLocked()
+       (www/core.js). A note opened from a row there is opened to READ, which
+       is now what every note does; what somebody else's language does not get
+       is the way on to the writing face.
+
+       Deleting is the list's own, by a left swipe on the row -- 「メモの編集の
+       ところに削除ボタンやめて。一覧から右にスワイプして削除。標準アプリと
+       同じ作りにして」 OWNER 2026-09-05, `delNoteGo()` below. */
+    langLocked()? '' : navDo(t('wld.edit'), 'openNoteEdit', [k], true), 'full');
+}
+/* 本文だけ、打たれたまま ── 改行はそのまま出す。題名は上の帯に立っている
+   ので、ここには書かない: 名前は一か所。題名が空のときは一行目が名前の代わり
+   になるのを ntHead() がずっとやっていて、そのときは帯が本文の一行目という
+   ことになる ── 一覧の行がずっとそう見えているのと同じ。 */
+function ntReadHTML(n){
+  return '<div class="ntform"><div class="ntrb">'+
+    esc(String(n.b||''))+'</div></div>';
+}
+function openNoteEdit(i){
+  if(!makeNeed()) return;
   var k=(typeof i==='number' && NOTES[i]) ? i : -1;
   ntAt=k;
   var n = k>=0 ? NOTES[k] : {t:'',b:''};
@@ -66,7 +107,7 @@ function openNote(i){
      行かない」というのがこの画面の元からの一文で、buffer を持たせるとその
      一文が嘘になる ── 保存のボタンが出てしまう。 */
   if(!langLocked()) ntKeepOn(k, n);
-  openForm('note:'+k, (k>=0? t('notes.edit') : t('notes.new')),
+  openForm('ntedit:'+k, (k>=0? t('notes.edit') : t('notes.new')),
     /* 「題名／下線／この下は何もなくて下まで行く」 OWNER 2026-09-05。題名は
        一行の欄で、下線はその欄のもの (.lnin)。その下は本文だけで、本文は
        下線を持たず、この画面に残っている高さを全部取る。
@@ -79,18 +120,10 @@ function openNote(i){
       lnField('nt-t', t('notes.t'), IN('ntSetT'), ntTyped(k, 't'), 'ntt')+
       '<textarea id="nt-b" class="ntbody" placeholder="'+esc(t('notes.b.ph'))+'"'+
       IN('ntSetB') + '>'+esc(ntTyped(k, 'b'))+'</textarea></div>',
-    /* AND NOTHING TO PRESS IN SOMEBODY ELSE'S LANGUAGE. A note opened from a
-       row is opened to READ there -- langLocked() (www/core.js). The field is
-       not marked readonly: there is nothing to press, so nothing typed into
-       it goes anywhere, and a field that refuses the cursor is a second way
-       of saying what an absent Save already says.
-
-       Deleting is the list's own, by a left swipe on the row -- 「メモの編集の
-       ところに削除ボタンやめて。一覧から右にスワイプして削除。標準アプリと
-       同じ作りにして」 OWNER 2026-09-05, `delNoteGo()` below. */
     null, null, 'full');
 }
 FORM_OPEN.note=function(i){ openNote(parseInt(i,10)); };
+FORM_OPEN.ntedit=function(i){ openNoteEdit(parseInt(i,10)); };
 /* ---- what is typed on a note, before it is a note -----------------------
    SAVE AT THE FAR END OF THE BAR 「メモも保存は右上」 OWNER 2026-09-01, and
    since 2026-09-03 it is navTop()'s own: it stands there from the moment the
@@ -102,11 +135,11 @@ FORM_OPEN.note=function(i){ openNote(parseInt(i,10)); };
    The buffer is filed under the form, so the note being edited and the note
    being made are two of them and cannot be confused for each other. */
 function ntKeepOn(k, n){
-  keepOn(keepKeyOf('form', 'note:'+k),
+  keepOn(keepKeyOf('form', 'ntedit:'+k),
          {t:String(n.t||''), b:String(n.b||'')},
          function(v, done){ saveNote(v); done(true); });
 }
-function ntTyped(k, f){ return keepVal(keepKeyOf('form', 'note:'+k), f); }
+function ntTyped(k, f){ return keepVal(keepKeyOf('form', 'ntedit:'+k), f); }
 function ntSetT(v){ keepSet('t', String(v||'')); }
 function ntSetB(v){ keepSet('b', String(v||'')); }
 /* Writing it down, and STAYING on it -- leaving is what the arrow beside the
