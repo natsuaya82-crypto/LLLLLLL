@@ -3814,13 +3814,14 @@ say(r.proFab && !r.proAsked && r.proAdded,
     'Pro has no ceiling to meet, so its + never asks [' +
     [r.proFab, r.proAsked, r.proAdded].join(' ') + ']');
 
-/* ---- and the way into Settings is on the first step as well as the third -
-   「１にもほしくない？」 OWNER 2026-09-03 */
-say(r.helpGoIn === '1,0,1,0',
-    'the button into Settings is on step 1 AND on step 3, and on neither of'
-    + ' the other two (steps carrying it: ' + r.helpGoIn + ' of ' + r.helpSteps + ')');
-say(r.helpGoNames === 'kbSettings kbSettings',
-    'and both of them call the one function rather than a second of its own ('
+/* ---- and the way into Settings is on the third step and nowhere else ----
+   「設定のとこ 3 番だけリンクでいいよ。1 のは消して」 OWNER 2026-09-06, which
+   replaces 「１にもほしくない？」 of 2026-09-03. */
+say(r.helpGoIn === '0,0,1,0',
+    'the button into Settings is on step 3 and on no other step'
+    + ' (steps carrying it: ' + r.helpGoIn + ' of ' + r.helpSteps + ')');
+say(r.helpGoNames === 'kbSettings',
+    'and it calls the one function rather than a second of its own ('
     + r.helpGoNames + ')');
 
 /* ---- the save in the corner ---------------------------------------------
