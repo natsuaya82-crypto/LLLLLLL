@@ -15,6 +15,43 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-06 文法の一覧から重複する段を消しました（`claude/gramdup`）
+
+> 「文法はさっき言ったルール。しっかり翻訳できる仕様にしてくれればいい。
+> 重複はいらない。」 OWNER 2026-09-06
+
+文法の一覧は上に「規則で作る形」の十八章、下に段が並んでいて、語順・名詞
+（複数）・動詞（時制）・否定・疑問・形容詞・場所 が**両方に**ありました。段の
+ほうを消しました。残るのは あいさつ / 代名詞 / 所有 / 数詞 / 接続詞 / 敬語 /
+助詞 / 時 / 月 / 曜日 の十です。
+
+**人が気づくこと。**一覧の行が二十八になり、同じ名前が二度出ることはなくなり
+ました。消した段のうち枠を持っていた三つ ── 否定（ない）、疑問（何・誰・どこ・
+いつ・なぜ・どう）、場所（の中・の上・の下・へ・から・と）── の枠は、同じ名前の
+規則の章（否定形・疑問形・場所）に「必要な単語」として出ます。
+
+**保存されるものは何も変わっていません。**枠に入っていた単語は `WORDS` にあり、
+slot 鍵（`neg.not` `ask.*` `where.*`）もそのままなので、作ってあった語はその行に
+出ます。`STG` の中の古い段のメモ・規則・例文（`STG.notes` `STG.rules` `STG.ex`）は
+**消していません** ── 読まれなくなっただけです。`STG.set` と `STG.gpos` も
+そのままで、サーバーにも上がります。
+
+**消したもの。**`STAGES` の七段と、段が持っていた `feats`。その `feats` だけが
+呼んでいた `stFeatHTML()` `stOn()` `stTouched()`（www/phases.js）と
+`gOrderLine()` `gOrderDemo()` `gPosDemo()` `gSide()` `gPairOf()` `gNeedWords()`
+`gTxt()` `gIpaOf()` `gFlat()`（www/grammar.js）。それらだけが使っていた i18n の
+鍵十七個を十言語から（`stg.noun.t` `stg.noun.d` `stg.verb.t` `stg.verb.d`
+`stg.neg.t` `stg.ask.t` `stg.ask.d` `stg.desc.t` `stg.order.d` `stg.where.d`
+`gram.pair.line` `gram.pair.phrase` `gram.demo.need.{adj,n,nadj,nv,v}`）。
+着るものが無くなった CSS を `www/index.html` から（`.gdemo` `.gside .gsi`
+`.gside .gsg` `.gside .gsp`）── **見た目は変わっていません**。`.gside` `.gsl`
+`.gsw` は この言語について の数え上げ（`g2Stat()`）が今も着ています。
+`tools/box-baseline.txt` の `.gdemo` 二行も、指すものが無くなったので消しました。
+
+**残した穴。**否定語の「動詞の前／後」（`STG.gpos.negp`）を書く画面が無くなり
+ました。読む側（`gRules()`）はそのままで、値も消えていません。どこに置くかは
+オーナーのもので、`docs/BACKLOG.md` に書いてあります。
+
 ### 2026-09-05 この日 `integ-0905` に入ったもの ── まとめ
 
 この節はこの日 `master` の `f01b483d` から `integ-0905` に入った変更の**全体**

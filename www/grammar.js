@@ -449,9 +449,6 @@ function gExLine(ln, gl){
   if(!n) return '';
   return e.translate.line(r);
 }
-function gTxt(ws){ var i,o=[]; for(i=0;i<ws.length;i++) o.push(ws[i].join('')); return o.join(' '); }
-function gIpaOf(ws){ var i,o=[]; for(i=0;i<ws.length;i++) o.push(ws[i].join('')); return '/'+o.join(' ')+'/'; }
-function gFlat(ws){ var i,o=[]; for(i=0;i<ws.length;i++) o=o.concat(ws[i]); return o; }
 
 /* A word of a given part of speech to demonstrate on. Any will do; the first
    is the least surprising choice because it is the one at the top of the
@@ -462,81 +459,20 @@ function gWordOf(pos, not){
   return null;
 }
 
-/* ---- the demonstration ------------------------------------------------
-   A position you cannot hear is a position you cannot check, so every one of
-   them is shown in your own words and will say itself out loud. */
-function gSide(lab, ws, gloss){
-  return '<div class="gside"><span class="gsl">'+esc(lab)+'</span>'+
-    '<span class="gsw">'+esc(gTxt(ws))+'</span>'+
-    '<span class="gsi">'+esc(gIpaOf(ws))+'</span>'+
-    (gloss? '<span class="gsg">'+esc(gloss)+'</span>' : '')+
-    '<button class="gsp"' + DO('sayPh', [gFlat(ws)]) + ' aria-label="'+esc(t('f.listen'))+'">'+ICON_SPK+'</button></div>';
-}
-/* WHAT IS MISSING, AND NOT HOW MANY. This said 「Write a few more words」 to
-   everybody, and to somebody holding a hundred it is simply false --
-   「文法のword orderのページはなに？なにも出てこないけど100単語くらいあるのに」
-   OWNER, build 107.
+/* ---- the demonstration, and where it went -------------------------------
+   gSide(), gNeedWords(), gPairOf(), gPosDemo(), gOrderLine() and gOrderDemo()
+   drew a pair of this language's own words with the arrangement applied and a
+   speaker beside it. The ONE place any of them was drawn from was
+   stFeatHTML() in www/phases.js -- the `feats` of the 語順, 否定, 形容詞 and
+   場所 stages. All four stages are gone (「重複はいらない」 OWNER 2026-09-06),
+   so those six were reachable from nowhere: not dead by dead-check's measure,
+   because stFeatHTML() still named them, and dead on the phone, which is the
+   worse half.
 
-   The demonstration is three of this language's own words in the order it puts
-   them in, so what it needs is a NOUN and a VERB, not a number. A dictionary
-   can be any size and have neither: `addPos` starts at 'n' and the word sheet
-   keeps whatever was last used, so a hundred words nobody ever set the part of
-   speech on are a hundred nouns, and the old sentence sent that person off to
-   write more of them -- which could never work, however many they wrote.
-
-   One place still. The key comes in rather than a second function going out,
-   and `gram.demo.need` stays for the two callers whose missing piece is not a
-   part of speech at all: the negation word and the word for `where` are made
-   in a stage, not chosen from the dictionary, and naming them here would be
-   this screen saying what another screen is for. Minimum, which is the side
-   the owner narrowed to on 2026-08-22 -- what is missing, and not a word about
-   how to go and get it. */
-/* WHAT IS MISSING, and only when there is a name for it. The sentence that
-   used to stand here with no key -- 「単語をもう少し作ると例が出ます」 -- was
-   the whole of what the 語順 chapter drew: 「語順のとこ開くと単語が増えたら例が
-   出ますってなるけど意味わからなくね？」 OWNER 2026-09-05. A chapter shows what
-   it DECIDES whether or not there are words to demonstrate on, and the
-   demonstration is the part that waits. Where the missing piece is a word made
-   in a stage rather than a part of speech, there is no key and nothing is
-   drawn. */
-function gNeedWords(k){ return k? '<div class="note gneed">'+t(k)+'</div>' : ''; }
-/* Two words to be heard, in the order this language puts them in. gPair()
-   took them already ordered and was the second place that decided which side
-   each went; it is gone, and so is the fallback that would have called it --
-   gLay() is handed a model built from the same list, so it cannot come back
-   short, and a branch nothing can reach hides the next bug rather than
-   catching it. */
-function gPairOf(list){
-  var laid=gLay(list);
-  return {ws:laid.map(function(w){ return wPh(w); }),
-          gl:laid.map(function(w){ return wMn(w); }).filter(Boolean).join(' + ')};
-}
-function gPosDemo(id){
-  var pair=null, n, v, a, x;
-  /* The two words, and never which side each goes. That is the one answer
-     this language already gave, and it is applied where every other phrase in
-     the app is arranged -- here it was applied a second time, by hand, so the
-     button could have agreed with itself and disagreed with a sentence. */
-  if(id==='adj'){
-    n=gWordOf('n'); a=gWordOf('adj');
-    if(!n || !a)
-      return gNeedWords(!n && !a? 'gram.demo.need.nadj'
-                      : (n? 'gram.demo.need.adj' : 'gram.demo.need.n'));
-    pair = gPairOf([a, n]);
-  } else if(id==='negp'){
-    v=gWordOf('v'); x=gSlot('neg','not');
-    /* The word for "not" is made in a stage rather than picked out of the
-       dictionary, so when THAT is what is missing there is no part of speech
-       to name and the older sentence is the true one. */
-    if(!v || !x) return gNeedWords(x? 'gram.demo.need.v' : '');  /* no key names a stage's word */
-    pair = gPairOf([x, v]);
-  } else {
-    n=gWordOf('n'); x=gSlotAny('where');
-    if(!n || !x) return gNeedWords(x? 'gram.demo.need.n' : '');  /* the same, for 場所 */
-    pair = gPairOf([x, n]);
-  }
-  return '<div class="gdemo">'+gSide(t('gram.pair.phrase'), pair.ws, pair.gl)+'</div>';
-}
+   What decides a side now is g2Adj() and g2Adp() below, and each draws the
+   pair ITSELF -- g2Side(), two of this language's words you MOVE rather than
+   two buttons you read. The board and the sentence under it are g2Sent()'s.
+   One fact, one place, which is what taking the stages out was for. */
 
 /* ====================================================================
    Grammar v2 -- the page that DEFINES a language, chapter by chapter
@@ -1331,25 +1267,3 @@ function g2Page(c){
 }
 
 /* ---- the screen -------------------------------------------------------- */
-/* Word order, written as the three roles in the order chosen, with the drawn
-   chevron between them. It used to be a translated string with an arrow
-   character inside it, which is a mark typed into copy. */
-function gOrderLine(){
-  var s=orderDef().seq, i, out=[];
-  for(i=0;i<s.length;i++) out.push('<span class="gor">'+esc(t('gram.role.'+s[i]))+'</span>');
-  return '<div class="gorder">'+out.join('<span class="gsep">'+ICON_GO+'</span>')+'</div>';
-}
-/* The same order, in your own words, so it is a sentence and not a diagram. */
-function gOrderDemo(){
-  var n=gWordOf('n'), v=gWordOf('v'), n2=gWordOf('n', n), laid, ws, gl;
-  if(!n || !v)
-    return gNeedWords(!n && !v? 'gram.demo.need.nv'
-                    : (n? 'gram.demo.need.v' : 'gram.demo.need.n'));
-  /* Subject, verb, object -- the order they would be TYPED in, not the order
-     they come out in. Which of the six this language uses is the engine's to
-     apply, and it applies it in the one place a phrase is arranged. */
-  laid=gLay([n, v, (n2||n)]);
-  ws=laid.map(function(w){ return wPh(w); });
-  gl=laid.map(function(w){ return wMn(w)||w.hw; }).join(' ');
-  return '<div class="gdemo">'+gSide(t('gram.pair.line'), ws, gl)+'</div>';
-}

@@ -201,8 +201,9 @@ stRead();
 function saveStg(){ if(langLocked()) return; bkTouch(); slWr(langKey('phases'), JSON.stringify(STG)); }
 
 /* The stages, in the order they open each other up. `slots` are the words the
-   stage cannot do without; `feats` are the decisions from www/grammar.js it
-   carries. A stage may have only one of the two. */
+   stage cannot do without. There was a `feats` beside it -- the decisions from
+   www/grammar.js a stage carried -- and it is gone with the four stages that
+   had one: what a chapter decides is the chapter's now. */
 /* ---- the parts of a grammar ------------------------------------------
    「語順のページなにそれ。SVOを決めて終わり？そんなページいらねえよ。もっと長い文法の
    時は？キモい分け方すんなよ。接続詞とかもっと会話に必要なところあるだろ。」
@@ -238,25 +239,25 @@ function saveStg(){ if(langLocked()) return; bkTouch(); slWr(langKey('phases'), 
    of the same name draws them. Ten parts, and you can add as many of your own
    as you like. */
 var STAGES=[
-  {id:'greet', slots:['yes','no','hello','bye','thanks'], pos:'x',   feats:[]},
-  {id:'pron',  slots:['i','you','he','we','youpl','they'], pos:'pro', feats:[]},
-  {id:'have',  slots:[], pos:'n', feats:[]},
+  {id:'greet', slots:['yes','no','hello','bye','thanks'], pos:'x'},
+  {id:'pron',  slots:['i','you','he','we','youpl','they'], pos:'pro'},
+  {id:'have',  slots:[], pos:'n'},
   /* The numbers are numerals, which read the same in every language on the
      list, so they are the one set of labels that needs no translating. */
-  {id:'count', slots:['1','2','3','4','5','6','7','8','9','10'], pos:'num', feats:[]},
-  {id:'conj',  slots:['and','or','but','because','if','then'], pos:'conj', feats:[]},
-  {id:'polite',slots:[], pos:'x',  feats:[]},
+  {id:'count', slots:['1','2','3','4','5','6','7','8','9','10'], pos:'num'},
+  {id:'conj',  slots:['and','or','but','because','if','then'], pos:'conj'},
+  {id:'polite',slots:[], pos:'x'},
   /* Particles. It sat in a list of its own, off the chapter until somebody
      pressed a row at the foot -- 「助詞は最初から出せ」 OWNER 2026-09-01, so
      it is a stage like the rest. A language with no particles leaves it empty,
      which is what an unanswered stage already is everywhere else. */
-  {id:'part',  slots:['subj','obj','rec'], pos:'part', feats:[]},
-  {id:'when',  slots:['now','before','after','today','tomorrow','yesterday'], pos:'x', feats:[]},
+  {id:'part',  slots:['subj','obj','rec'], pos:'part'},
+  {id:'when',  slots:['now','before','after','today','tomorrow','yesterday'], pos:'x'},
   /* The calendar, and its slots come from two numbers the way counting's come
      from the base. www/cal.js says why there is no arithmetic of anybody's
      own behind them. */
-  {id:'month', slots:[], pos:'n', feats:[]},
-  {id:'wday',  slots:[], pos:'n', feats:[]}
+  {id:'month', slots:[], pos:'n'},
+  {id:'wday',  slots:[], pos:'n'}
 ];
 /* The words three chapters of the rule-made group ask for. They were the
    slots of three stages that are gone, and a word somebody made for one of
@@ -266,16 +267,16 @@ var STAGES=[
 
    `chap` is which chapter draws them: the 否定 stage's word for "not" belongs
    to the 否定形 chapter, the 疑問 stage's six to 疑問形, and the 場所 stage's
-   six to 場所. No feats: what a chapter decides is the chapter's, and the two
-   that decide a side -- 形容詞 and 場所 -- ask g2Side() on their own page.
+   six to 場所. Words only: what a chapter decides is the chapter's, and the
+   two that decide a side -- 形容詞 and 場所 -- ask g2Side() on their own page.
 
    The negation's own side has nowhere left to be set. It was this stage's
    `negp` and the 否定形 chapter has no picker; docs/BACKLOG.md is where that
    goes, not a second table here. */
 var CHAP_SLOTS=[
-  {id:'neg',   chap:'neg', slots:['not'], pos:'part', feats:[]},
-  {id:'ask',   chap:'q',   slots:['what','who','where','when','why','how'], pos:'pro', feats:[]},
-  {id:'where', chap:'adp', slots:['in','on','under','to','from','with'], pos:'part', feats:[]}
+  {id:'neg',   chap:'neg', slots:['not'], pos:'part'},
+  {id:'ask',   chap:'q',   slots:['what','who','where','when','why','how'], pos:'pro'},
+  {id:'where', chap:'adp', slots:['in','on','under','to','from','with'], pos:'part'}
 ];
 function chapSlots(id){
   var i;
@@ -322,7 +323,7 @@ function chapSlotsHTML(chap){
 /* A copy with its slots filled in, and a copy is the point: STAGES is one
    array shared by every call, so a stage edited in place stays edited. */
 function stWith(p, slots){
-  return {id:p.id, slots:slots, pos:p.pos, feats:p.feats};
+  return {id:p.id, slots:slots, pos:p.pos};
 }
 function stAll(){
   var out=[], i;
@@ -346,7 +347,7 @@ function stAll(){
      IS, and they stay. */
   if(can('gram'))
     for(i=0;i<STG.extra.length;i++) out.push({id:STG.extra[i].id, slots:STG.extra[i].slots||[],
-                                             pos:'x', feats:[], own:STG.extra[i]});
+                                             pos:'x', own:STG.extra[i]});
   return out;
 }
 /* How many are not on screen. The foot of the list says so, the same way the
@@ -424,22 +425,20 @@ function stSlotsDone(p){
   for(i=0;i<p.slots.length;i++) if(stWordFor(p, p.slots[i])) n++;
   return n;
 }
-/* A decision counts once it has been touched. Every one of them has a default
-   and a default nobody chose is not a decision. */
-function stTouched(id){ return !!STG.set[id]; }
+/* A decision counts once it has been touched. `STG.set` is written by
+   setOrder() and setGPos() in www/grammar.js and is what says a language
+   ANSWERED rather than took the default. Nothing draws off it any more: it was
+   read by stOn(), which lit a stage's button, and the stages that had buttons
+   are gone. It is kept because it is somebody's answer -- docs/DATA_SAFETY.md
+   -- and because a chapter that wants to know is going to ask it. */
 function stMarkSet(id){ STG.set[id]=1; saveStg(); }
-function stFeatsDone(p){
-  var n=0, i;
-  for(i=0;i<p.feats.length;i++) if(stTouched(p.feats[i])) n++;
-  return n;
-}
-function stTotal(p){ return p.slots.length + p.feats.length + 1; }
+function stTotal(p){ return p.slots.length + 1; }
 /* The +1 is the part itself: something written about it, or a line showing
    it. A part with no words and no buttons -- politeness, particles -- is
    finished when you have said what it does, which is the only thing it could
    ever have meant. */
 function stSaid(p){ return (stRules(p.id).length || stEx(p.id).length)? 1 : 0; }
-function stFilled(p){ return stSlotsDone(p) + stFeatsDone(p) + stSaid(p); }
+function stFilled(p){ return stSlotsDone(p) + stSaid(p); }
 function stIsDone(p){ return stFilled(p)>=stTotal(p); }
 function stCount(){
   var a=stAll(), n=0, i;
@@ -771,15 +770,6 @@ function stDetailHTML(p){
      heading already said. */
   if(stWhat(p)) out+='<div class="note" style="margin-bottom:6px">'+esc(stWhat(p))+'</div>';
 
-  /* No heading over the decisions. 「決めることってなに？意味わからない説明は
-     禁止してるのよ。ゴミみたいな日本語はいらん」 OWNER 2026-08-25. A row of
-     「動詞の前 / 動詞の後」 says what it is by being it, and a word over it
-     saying that a decision is a decision is the same shape as the four
-     subtitles that went the same day. The other three headings here name
-     things that would otherwise be unnamed -- the words, the rule, the note --
-     which is why they stay. */
-  if(p.feats.length)
-    for(i=0;i<p.feats.length;i++) out+=stFeatHTML(p.feats[i]);
   if(p.slots.length){
     out+='<div class="sec">'+t('stg.words')+'</div>';
     out+='<div class="stslots">';
@@ -800,48 +790,20 @@ function stDetailHTML(p){
     '<span class="sl bad">'+t('stg.own.del')+'</span></button>';
   return out;
 }
-/* The decisions that are decisions: word order, and the three places a word
-   can stand. Each is one answer for the whole language, each changes every
-   sentence that uses it, and each is shown in your own words underneath so it
-   can be heard rather than only read. Everything else on a stage is written. */
-/* A button is lit when this language ANSWERED, not when the default happens
-   to be what it would answer. stTouched() is that question and has been since
-   the line above stMarkSet() was written -- 「a default nobody chose is not a
-   decision」 -- and the counting on the list has always been right. Only the
-   drawing was not: an untouched stage lit 「動詞の後」, so the screen said
-   somebody had decided where the negation goes when nobody had.
-   No new state and no new concept: the same function the progress reads.
+/* The decisions that are decisions -- word order and the three places a word
+   can stand -- are NOT here any more, and neither is the drawing of them. They
+   were the `feats` of the 語順, 否定, 形容詞 and 場所 stages, and all four of
+   those stages are gone: each was a chapter of the rule-made group said a
+   second time, 「重複はいらない」 OWNER 2026-09-06. The board is g2Sent()'s and
+   the two sides are g2Adj()'s and g2Adp()'s, on their own chapters, which is
+   where they are now decided. stOn(), stFeatHTML() and the demonstrations they
+   drew (gOrderLine, gOrderDemo, gPosDemo, gSide, gPairOf, gNeedWords in
+   www/grammar.js) went with them rather than being left standing unreachable.
 
-   Nothing else here changes. The demonstration underneath still says the
-   whole line out loud, because a language has to be arranged somehow to be
-   heard, and the default is what it is arranged by until somebody says
-   otherwise. What is gone is the claim that they already did. */
-function stOn(id, is){ return (stTouched(id) && is)? ' on' : ''; }
-/* And the demonstration is the other half of the same sentence.
-   「動詞の前と決まったわけじゃないのに」 OWNER. Lighting neither button was
-   half of it: underneath, gPosDemo() went on laying the two words out by the
-   default and gOrderLine()/gOrderDemo() went on drawing 主語→目的語→動詞,
-   so the screen still answered a question nobody had answered -- louder than
-   the buttons did, because it showed the arrangement as a finished phrase.
-   A stage that has not been touched shows the choices and nothing under them.
-   Press one and it appears. Same stTouched() as the buttons; no new state. */
-function stFeatHTML(id){
-  if(id==='order'){
-    /* THE BOARD, the same one the grammar chapter draws. It was six buttons
-       reading SOV, SVO and the rest, and they are gone with the six:
-       「選択式じゃなくて主語とか置いてあって指でどこに置くか決めれる形がいい」
-       OWNER 2026-09-05. One function draws it, so the two screens cannot
-       disagree -- which is what the six buttons here were for. */
-    return g2Board()+
-      (stTouched('order')? gOrderLine()+gOrderDemo() : '');
-  }
-  if(id!=='adj' && id!=='negp' && id!=='adp') return '';
-  return '<div class="segs">'+['before','after'].map(function(o){
-      return '<button class="seg'+stOn(id, o===gPos(id))+'"' + DO('setGPos', [id, o]) + '>'+
-        esc(gPosLab(id, o))+'</button>';
-    }).join('')+'</div>'+
-    (stTouched(id)? gPosDemo(id) : '');
-}
+   THE NEGATION'S OWN SIDE HAS NOWHERE LEFT TO BE SET. `STG.gpos.negp` is still
+   read by gRules() and still travels; nothing writes it any more, because the
+   否定形 chapter has no picker and putting one there is not this session's to
+   decide. docs/BACKLOG.md carries it. */
 function vGram(){
   var gOpen=gOpenOf();
   var p;

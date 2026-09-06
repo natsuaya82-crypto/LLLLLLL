@@ -2098,8 +2098,7 @@ export function halfDone(){
        mark on a finished row is on no screen. A part with no slots and no
        decisions is finished by saying what it does, which is one line. */
     ['the stages, with one finished', () => {
-        const p = stAll().filter(x => !x.slots.length && !x.feats.length)[0]
-                  || stAll()[0];
+        const p = stAll().filter(x => !x.slots.length)[0] || stAll()[0];
         const was = stRules(p.id);
         stKeepSave(p.id, { rules: 'a name is a word that stands for a thing' });
         window.route = 'gram'; NAV = [{ r:'gram' }];
@@ -2112,11 +2111,12 @@ export function halfDone(){
        there and the walk simply never stood where it is.
 
        Finished the same way "the stages, with one finished" does it, and for
-       the same reason: a part with no slots and no decisions is finished by
-       saying what it does, which is one line. Put back afterwards. */
+       the same reason: a part with no slots is finished by saying what it
+       does, which is one line. (There were decisions to ask about too, until
+       the four stages that carried them went -- 「重複はいらない」 OWNER
+       2026-09-06.) Put back afterwards. */
     ['this language, with a stage finished in it', () => {
-        const p = stAll().filter(x => !x.slots.length && !x.feats.length)[0]
-                  || stAll()[0];
+        const p = stAll().filter(x => !x.slots.length)[0] || stAll()[0];
         const was = stRules(p.id);
         stKeepSave(p.id, { rules: 'a name is a word that stands for a thing' });
         window.route = 'about'; NAV = [{ r:'about' }];
@@ -2454,6 +2454,24 @@ export function halfDone(){
        window.route = 'words'; NAV = [{ r:'words' }];
        const h = vWords();
        WORDS = was;
+       return h; }],
+    /* The NOUN chapter with a mark made, which is the row that says what the
+       mark turns a noun into -- the noun, the chevron (`.gsep`) and the form.
+       The 助詞 face above pushes and pops the same word for the STAGE, and the
+       chapter that shows what it MAKES is a different screen, so that word has
+       to be standing while this one renders. Without it `made` is empty, the
+       row draws no chevron, and press reported `.gsep` as worn by nothing --
+       which is the "add the seed" side of press's two and not the "delete the
+       CSS" side: the wearer is right there and the walk never stood where it
+       is. It used to be worn by gOrderLine() on the 語順 STAGE as well, and
+       that stage is gone (「重複はいらない」 OWNER 2026-09-06).
+       Appended at the END so no index above it moves. */
+    ['the noun chapter, with a mark made', () => {
+       WORDS.push({ hw:'ga', ph:['g','a'], mn:'subject mark',
+                    mns:['subject mark'], pos:'part', slot:'part.subj', at:5 });
+       window.route = 'gram'; NAV = [{ r:'gram', a:'v2:n' }];
+       const h = vGram();
+       WORDS.pop();
        return h; }]
   ];
 }

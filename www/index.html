@@ -3665,21 +3665,16 @@ textarea.ntbody.grow{min-height:0;height:auto;overflow:hidden;resize:none}
 .gorder{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:12px 0 2px}
 .gor{font-size:.86rem;color:var(--tx)}
 .gsep{display:flex;align-items:center;color:var(--gold);opacity:.8}
-.gdemo{margin:12px 0 2px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--pane)}
+/* .gdemo, .gsi, .gsg and .gsp went with the demonstration they dressed:
+   gSide() and gPosDemo() in www/grammar.js were reachable only from the
+   grammar STAGES, and those stages are gone (「重複はいらない」 OWNER
+   2026-09-06). What still wears .gside is g2Stat() -- the count of what this
+   language has, at the foot of この言語について -- and it wears .gsl and .gsw
+   and nothing else, so nothing on any screen looks different. */
 .gside{display:flex;align-items:baseline;gap:10px;padding:11px 14px;border-top:1px solid var(--line2);flex-wrap:wrap}
 .gside:first-child{border-top:0}
 .gside .gsl{flex:0 0 auto;font-size:.82rem;letter-spacing:.13em;text-transform:uppercase;color:var(--txm);min-width:50px}
 .gside .gsw{font-family:var(--face-caps);font-size:1.04rem;color:var(--tx);word-break:break-word}
-.gside .gsi{font-family:var(--face-mono);font-size:.84rem;color:var(--gold)}
-.gside .gsg{font-family:var(--face-ital);font-style:italic;font-size:.88rem;color:var(--txs)}
-/* 44 and not the 38 this was drawn at. Apple's floor is 44px and a phone has
-   nothing finer to point with. It said 38 here and was put right ten lines
-   below, in two places -- so this block read as the size of the button and was
-   not, and taking either of those two lines out dropped it under the floor
-   with nothing to say so. The size is here, once. */
-.gside .gsp{margin-left:auto;flex:0 0 auto;min-width:44px;min-height:44px;background:none;border:0;
-  color:var(--txs);display:flex;align-items:center;justify-content:center;align-self:center}
-.gside .gsp:active{opacity:.5}
 
 /* ---------- nothing tappable smaller than a thumb ----------
    Apple's floor is 44px and a phone has nothing finer to point with. These
