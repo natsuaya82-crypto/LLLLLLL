@@ -31,7 +31,7 @@
 | 1 | free/plus/pro 共通 | 単語の編集シート（`form:edit:<語>`） | 下位分類の行を押す → 一覧から一つ選ぶ | シートに戻るが下位分類は「None」のまま。`wEdit.sub` は変わらない。保存ボタンも灰のまま。トーストも何も出ない。「None」を押して外すのも、「New subclass」で新しく作るのも同じで、一つも入らない | 選んだ下位分類が入る。新規単語のシート（`form:add:`）では同じ操作が正しく入る | `11-subclass-not-taken.png` |
 | 2 | free/plus/pro 共通 | 単語の編集シート | つづりの欄だけを書き換えて［戻る］ | 何も聞かれずに戻り、書き換えは消える。保存ボタンも灰のまま金にならない | 他の欄（意味・タグ・語源・メモ）はどれも金になり、戻る時に「保存しますか」を聞く。つづりだけ聞かれない | `08-save-grey-after-spelling.png` / `09-save-gold-after-note.png` |
 | 3 | free/plus/pro 共通 | 新規単語のシート（`form:add:`） | 意味の欄と例文の欄に打ち込んで、Enter を押さずに［追加］ | 打った意味と例文は捨てられ、単語は「no meaning」で入る。同じ画面のメモ・語源・タグは打っただけで入る | 同じシートの欄が同じように扱われるか、捨てるなら捨てると言う | `06-add-meaning-lost.png` |
-| 4 | free/plus/pro 共通 | 単語の編集シート | 左上の戻るの字を読む | 「Build」と書いてある。実際に押すと単語のページ（`form:word:<語>`）に戻る | 戻り先の名前。単語のページからの戻るは「Lexicon」、語域の画面からの戻るは「kano」と、他は戻り先を言っている | `08-save-grey-after-spelling.png` |
+| 4 | free/plus/pro 共通 | 単語の編集シート／下位分類のシート／派生語のシート | 戻る矢印の `aria-label` を読む（画面に字は出ない。読み上げが読むのはこれ） | 「Build」。実際の戻り先は編集シートなら単語のページ、下位分類のシートなら編集シート、派生語のシートなら編集シート | 戻り先の名前。辞書は「Profile」、単語のページは「Lexicon」、新規単語のシートは「Lexicon」、語域のページは「kano」と、他は全部戻り先を言っている | 画面に出る字ではないのでスクショなし |
 | 5 | plus/pro（読みの画面は `can('snd')`） | 単語の読みの画面（`spell`） | 音のタイルを一つ押す | 画面が何も変わらない。上の `/vora/` も動かない。押した音は `wEdit.seq` にだけ入っている | 押した音が読みに足されて見える | `23-reading-before.png` / `24-reading-after-pressing-a.png` |
 | 6 | plus/pro | 同上。**CSV で取り込んだ単語**、または綴りに文字が付いていない単語 | 読みの画面で音を一つ押す → 戻る → ［保存］ | 単語の名前が変わる（`vora` → `voraa`）。戻ったシートは最後まで `vora` と表示していて、綴りの欄も `vora`、保存ボタンも灰。押した瞬間に別の語になる | 読みを触っても綴りは動かない（`vSpell` の上のコメントがそう書いている）。アプリの中で作った単語（`sp` に文字が付いている）では正しく読みだけが変わる | `25-sheet-still-says-vora.png` / `26-saved-as-voraa.png` |
 | 7 | free | 検索の画面（`find`）の「Import from CSV」 | 押す → CSV を貼る → ［Next］→［Import］ | free のまま最後まで通り、単語が三つ入る。設定 → データの同じ行は「You need to upgrade to use this feature」で止まる（`can('data')` は free で false） | 二つの入口が同じ答えを出す | `15-import-on-free.png` / `16-settings-import-gated.png` |
@@ -40,6 +40,7 @@
 | 10 | free | 検索の画面 →［Import from CSV］→「Letters」に切り替えて取り込む | `za, z` `qu, q` `xi, x` を貼って［Letters］→［Import］ | free で `LETTERS` が 39 → 42 に増える。文字の一覧の「hidden」は 4 → 7 になり、増えた三つはそのまま上限の裏に入って見えない。`can('letters')` は free で false | free は a-z と `!` `?` と数字だけで、足すことも消すことも改名もできない（CLAUDE.md「無料版は何か」） | `35-free-alphabet-grew.png` |
 | 11 | plus | 取り込みで上限（1000）に当たったとき | 1100 行を貼って［Import］ | 「989 taken, 0 coined — **Free** is full」と出る。プランは plus | 自分が使っているプランの名前 | `31-plus-cap-says-free.png` |
 | 12 | 全部 | 辞書の選択モード | 一つだけ選んで［Delete］ | ポップが「Delete 1 words?」 | 一語のときの言い方 | `28-bulk-delete-ask.png` |
+| 13 | free/plus/pro 共通 | 単語の編集シート | 何か変えて［戻る］→ ポップの［Yes］ | 保存はされる（「kano updated」）が、画面は編集シートのまま動かない。［No］を押したときは戻る | Yes でも戻る。`keepAsked()` の上のコメントは「Yes writes and then goes; No lets the typing go and goes anyway」と書いてある | `40-yes-stays-put.png` |
 
 ### 再現手順
 
@@ -75,9 +76,20 @@
    「WHAT IT MEANS / Add a meaning」（＝意味なし）で、例文の節は無い。
    メモだけ入っている。
 
-**#4 戻るの字**
+**#4 戻る矢印の読み上げの名前**
 1. 辞書 → `kano` → ［Edit］。
-2. 左上に「Build」と書いてある。押すと `form:word:kano` に落ちる。
+2. 戻る矢印の `aria-label` は「Build」。押すと `form:word:kano` に落ちる。
+3. 下位分類のシート（`form:wsub`）と派生語のシート（`form:add:<語>`）も「Build」。
+4. 他は戻り先を言っている — 辞書「Profile」、単語のページ「Lexicon」、
+   新規単語のシート「Lexicon」、語域のページ「kano」。
+
+**#13 Yes を押しても戻らない**
+1. 辞書 → `kano` → ［Edit］。メモの欄に `a note` と打つ。保存が金になる。
+2. ［戻る］。「Save what you have typed?」／［Yes］／［No］。
+3. ［Yes］。トーストは「kano updated」でメモは保存される。画面は
+   `form:edit:kano` のまま。
+4. 同じところで［No］を押すと、打った字は捨てられて `form:word:kano` に戻る。
+5. ポップの外を押すとポップだけ閉じて編集シートに残る。
 
 
 **#5 / #6 読みの画面**
