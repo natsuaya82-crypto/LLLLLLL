@@ -93,6 +93,9 @@ function addOne(){
   addFmSync();
   if(capStop(1+addFms.length)) return;
   if(findWord(hw)){ toast(t('toast.dup')); return; }
+  /* After the guards, so a refused Add leaves the boxes holding what was
+     typed rather than having quietly eaten it. */
+  wdTakeFields();
   addPos=wEdit.pos;
   syn=(d.syn||[]).slice(); ant=(d.ant||[]).slice();
   /* No `ph` on it: the spelling is the word, and what it sounds like is
@@ -414,14 +417,14 @@ function wdExHTML(){
       lnField('wd-exg', '', ' aria-label="'+esc(t('word.ex.gl.ph'))+'"' + KD('wdAddEx'), '')+
     '</div>' : '');
 }
+/* An example needs its line: a gloss on its own is a gloss of nothing, and
+   Enter on the empty box says so rather than doing nothing quietly. What it
+   then takes is wdTakeFields() above -- the same act, not a copy of it. */
 function wdAddEx(){
-  var w=wdW(), a=document.getElementById('wd-exl'), b=document.getElementById('wd-exg');
-  if(!w || !a) return;
-  var ln=String(a.value||'').trim();
-  if(!ln){ toast(t('word.ex.need')); return; }
-  if(!w.ex) w.ex=[];
-  w.ex.push({ln:ln, gl:String((b&&b.value)||'').trim()});
-  wdStore(); wdPaint();
+  var a=document.getElementById('wd-exl');
+  if(!a) return;
+  if(!String(a.value||'').trim()){ toast(t('word.ex.need')); return; }
+  wdTakeFields(); wdStore(); wdPaint();
 }
 function wdDelEx(i){
   var w=wdW(); if(!w || !w.ex) return;
@@ -1598,13 +1601,34 @@ function wdSetRd(v){
     spSetU(sp[i], i<us.length? (i===sp.length-1? us.slice(i).join('') : us[i]) : '');
   wdSync(); wdPaint();
 }
-function wdAddMn(){
-  var e=document.getElementById('wd-mn'); if(!e) return;
-  var v=String(e.value||'').trim();
-  if(!v) return;
-  if(wEdit.mns.indexOf(v)<0) wEdit.mns.push(v);
-  wdPaint();
+/* WHAT IS STILL IN THE TWO BOXES. A meaning and an example reached the sheet
+   by pressing Enter in the box they were typed into, and 「追加」 and the Save
+   in the corner looked at neither box -- so a word written straight down and
+   added without pressing Enter arrived carrying no meaning and no example.
+   Nothing threw: they were typed, they were on the screen, and they had never
+   been anywhere else. The note, the etymology and the tags were unaffected
+   because those are written into wEdit as they are typed.
+
+   One function, and all four roads into the sheet's content go through it:
+   Enter on either box, 「追加」, and Save. The boxes are not emptied here --
+   what empties them is the repaint that follows, built out of wEdit, so there
+   is one answer to what is in them. */
+function wdTakeFields(){
+  var w=wdW(), e=document.getElementById('wd-mn'),
+      a=document.getElementById('wd-exl'), b=document.getElementById('wd-exg'), v, ln;
+  if(e && wEdit){
+    v=String(e.value||'').trim();
+    if(v && wEdit.mns.indexOf(v)<0) wEdit.mns.push(v);
+  }
+  if(w && a){
+    ln=String(a.value||'').trim();
+    if(ln){
+      if(!w.ex) w.ex=[];
+      w.ex.push({ln:ln, gl:String((b&&b.value)||'').trim()});
+    }
+  }
 }
+function wdAddMn(){ wdTakeFields(); wdStore(); wdPaint(); }
 function wdDelMn(i){ wEdit.mns.splice(i,1); wdPaint(); }
 /* A derived word starts as its parent and is changed from there, which is what
    deriving is. It is a real entry, so it can itself be derived from. */
@@ -1649,6 +1673,8 @@ function wdWrite(){
   if(!(wEdit.sp && wEdit.sp.length) || !hw){ toast(t('toast.hw2')); return false; }
   var clash=findWord(hw);
   if(clash && clash!==w){ toast(t('toast.dup')); return false; }
+  /* Same as addOne(): after the guards, so a refused Save keeps the boxes. */
+  wdTakeFields();
   var old=String(w.hw);
   /* The sheet writes what the sheet holds. `ph` -- the sounds that came with
      the word, off an import or off the one migration that gave the oldest
