@@ -168,6 +168,8 @@ async function boot(pre, drive) {
          before this one and two drives writing one key is one of them
          reading the other's answer. */
       outDoor: (typeof window.__outDoor === 'undefined') ? null : window.__outDoor,
+      /* and where § 3e's sign-in put somebody down */
+      inLand: (typeof window.__inLand === 'undefined') ? null : window.__inLand,
       /* what § 5's drive left behind: every argument the door handed the
          native plugin, and what Supabase would have said about it. It is
          `hand` and not `door` because `door` above is already this object's
@@ -528,6 +530,56 @@ const SESS = JSON.stringify({ at: 'not a jwt', rt: 'a refresh token',
     no('signing out after the password road threw: ' + O.err);
   say('signing out after the password road: appIs()=' + O.is +
       ', the door is on its sign-in face (OBM.mode=' + JSON.stringify(O.mode) + ')');
+}
+
+/* ---- 3e. and signing back in opens the PROFILE -------------------------
+   「開く画面はプロフィール画面であって設定画面じゃない」 OWNER 2026-09-06.
+
+   Signing out is done from Settings, so that is the screen somebody is
+   standing on when the door opens. obIn()'s road for a person who is already
+   inside was `render()` -- draw where you are -- so the app re-opened on the
+   room the account had just been signed out of.
+
+   Not the same sentence as obReturn(), which is one line above it in obIn():
+   a door that was opened FROM somewhere and remembered where goes back there
+   (§ 3c is that road being finished). This is the door with nothing recorded
+   behind it, and the profile is what an account IS -- the name and the handle
+   that have just come back down.
+
+   netMyProfile() is stood in for, because what is under test is where obIn()
+   puts somebody once the row is in hand, and a headless browser has no
+   server to get one from. Everything else is the real app: the real obIn(),
+   the real goTab(), and here() read off the trail afterwards. */
+{
+  const r = await boot({ 'lingua.set': JSON.stringify({ done: true }),
+                         'lingua.sess': SESS,
+                         'lingua.me': JSON.stringify({ name: 'Aya', handle: 'aya' }) },
+                       () => {
+                         SET.obback = null;
+                         goTab('profile'); go('settings'); go('set', 'acct');
+                         window.netMyProfile = function (ok) {
+                           ok({ display: 'Aya', handle: 'aya' });
+                         };
+                         window.__inLand = { from: here().r };
+                         try { obIn(); }
+                         catch (e) { window.__inLand.err = String(e && e.message); }
+                         window.__inLand.at = here().r;
+                         window.__inLand.trail =
+                           NAV.map(n => n.r + (n.a ? ':' + n.a : '')).join(' > ');
+                         window.__inLand.is = appIs();
+                       });
+  const I = r.inLand || {};
+  if (I.err)
+    no('signing in threw: ' + I.err);
+  if (I.at !== 'profile')
+    no('signing back in from ' + JSON.stringify(I.from) + ' lands on ' +
+       JSON.stringify(I.at) + ', wanted profile. 「開く画面はプロフィール画面' +
+       'であって設定画面じゃない」');
+  if (I.trail !== 'profile')
+    no('and the trail behind it is "' + I.trail + '" -- the profile is where ' +
+       'the app opens, not a screen laid on top of where somebody was.');
+  say('signing back in with nothing pending: from ' + JSON.stringify(I.from) +
+      ' onto ' + JSON.stringify(I.at) + ' (appIs()=' + I.is + ')');
 }
 
 /* ---- 3. finished, and signed in ---------------------------------------- */

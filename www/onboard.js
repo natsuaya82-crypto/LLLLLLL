@@ -918,13 +918,21 @@ function obIn(){
          been here. Sending them into the onboarding is sending them to
          draw an alphabet they already have. */
       if(obReturn()) return;
-      /* And so is sending anybody who is already inside. obReturn() answers
-         for the doors that were opened from somewhere and remembered where
-         -- Settings does that. The timeline's door is the screen itself, so
-         there is nowhere recorded to go back to and nothing to go back to:
-         signing in leaves you standing on the tab you were already on, which
-         now has a timeline in it. */
-      if(SET.done){ render(); return; }
+      /* And so is sending anybody who is already inside -- ONTO THE PROFILE.
+         「開く画面はプロフィール画面であって設定画面じゃない」 OWNER
+         2026-09-06.
+
+         obReturn() above answers for the doors that were opened from
+         somewhere and remembered where -- Settings' password room does that,
+         and coming back to it is the road being finished rather than a
+         landing. What is left here is the door with nothing recorded behind
+         it, and it used to draw where somebody was already standing. Signing
+         out is done from Settings, so that was the settings screen: the app
+         re-opened on the room the account had just been signed out of.
+
+         The profile is what the account IS -- the name, the face, the handle
+         that have just come back down -- so it is the screen to open on. */
+      if(SET.done){ goTab('profile'); return; }
       /* A profile row means this account has been used. It cannot be a
          first launch, whatever SET.done on THIS phone says -- signing out
          and back in used to land somebody in the onboarding here.
