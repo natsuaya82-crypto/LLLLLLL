@@ -485,8 +485,15 @@ function kbChartLay(){
   /* The chart's columns are the language's -- a column per vowel and one for
      the three that are not letters -- so this is the one pattern whose count
      is not ours to pick from KB_PERS. Each key takes as many whole columns as
-     fit, and kbFillRow() puts the remainder at the ends, exactly as the free
-     QWERTY's nine-letter row is inset by half a key at each end. */
+     fit, and what is left over is ONE GAP at the end of the row.
+
+     It was kbFillRow()'s two halves -- the free QWERTY's inset, half a key at
+     each end -- and half a key is not somewhere a key to another face can go:
+     kbFacePut() refuses a gap under a whole key, fell through to the space
+     bar, and took a whole key off it. Five vowels make every key 1.5 wide, so
+     the space came out 0.5 -- 13pt on a 402pt phone, beside a layer key of 29.
+     A chart's leftover is exactly the room a layer key wants, so it is left
+     whole and the space bar pays for nothing. */
   var cw=Math.max(1, Math.floor(KB_COLS/(vs.length+1)))/2, kk, fr=kbFaceRows();
   for(i=0;i<cs.length;i++){
     row=[];
@@ -507,7 +514,9 @@ function kbChartLay(){
     kk=(at===0? kbKey('del') : at===1? kbKey('sp') : at===2? kbKey('ret') : kbGap(cw));
     kk.w=cw;
     row.push(kk);
-    rows.push(kbFillRow(row));
+    var rem=KB_COLS-kbUsed(row);
+    if(rem>0) row.push(kbGap(kbGapW(rem)));
+    rows.push(row);
   }
   var parts=kbChunk(rows, fr), out=[], q;
   for(q=0;q<parts.length;q++) out.push({rows:parts[q]});
