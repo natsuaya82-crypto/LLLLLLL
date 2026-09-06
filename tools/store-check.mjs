@@ -93,6 +93,14 @@ const ROADS = {
      drawn and can never be merged, sent, or preferred to an answer that has
      just arrived. */
   'core.js:slGotKey(k)': { phone: 'what the server last said this slice was, kept so a launch with no signal draws the language instead of nothing. It belongs to the account the slice does -- filed under `lingua.<id>.<slice>`, so wipeLangsGo() takes it with the language and lsWipeAcct(), which counts the namespace, takes it with the account. It has no road UP and must not be given one: `slMine()` in www/core.js is what keeps it out of netSlice1(), netSaveUpGo() and both of the 「fills in and stops」 reads' },
+  /* AND ONE WRITE THAT ADDS NO KEY, because it is the same keys put back.
+     keepSave() in www/shell.js takes a copy of the `lingua.` namespace before
+     a save writes anything and writes it back when the send does not land
+     (「先にサーバーじゃないの？」 OWNER 2026-09-06), so every key this can
+     touch is a key that was already on this phone a moment earlier and has
+     its own row somewhere in this table. It cannot invent one: a key that is
+     not in the copy is REMOVED rather than written. */
+  'shell.js:k': { phone: 'nothing of its own. It is keepBack() in www/shell.js putting the `lingua.` namespace back exactly as it was before a save that did not reach the server, so each key it writes is one of the others in this table, with the value it already had' },
   /* the timeline */
   'post.js:LS_POSTS':  { to: 'netPush' },
   'post.js:LS_DRAFTS': { to: 'netDraftUp' },
