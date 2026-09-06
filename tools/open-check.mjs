@@ -409,6 +409,63 @@ const SESS = JSON.stringify({ at: 'not a jwt', rt: 'a refresh token',
   say('the password screen, signed in: there is a way into the app (' + f.chev + ')');
 }
 
+/* ---- 3c. and giving up on a password change leaves you signed in --------
+   「設定 → アカウント → パスワード変更を途中でやめるとログインを求められる」
+   OWNER 2026-09-06, on a phone.
+
+   The road is Settings -> account -> change password -> 「forgot」, which is
+   the door's own reset face opened from inside the app (setPwForgot() in
+   www/settings.js). Behind that face is the SIGN-IN FORM, which is true of
+   the road somebody signed out takes to it and is the opposite of true here:
+   this person is signed in, never stood on the form, and one press back put
+   it in front of them.
+
+   Both halves are measured, because each was broken on its own: where the
+   press LANDS, and what is on the screen after it. obReturn() puts SET.done
+   back and calls go(), and go() is a no-op when it is handed the screen
+   already on the trail -- which this always is, since the door was opened
+   from it -- so the door stayed drawn over an app that had come back. */
+{
+  /* With a name on the account, for § 3's reason: a session with no handle
+     beside it is a phone that has never seen this account named, and that is
+     the door however this road ends. */
+  const r = await boot({ 'lingua.set': JSON.stringify({ done: true }),
+                         'lingua.sess': SESS,
+                         'lingua.me': JSON.stringify({ name: 'Aya', handle: 'aya' }) },
+                       () => {
+                         NAV = [{ r:'settings', a:'' }];
+                         go('set', 'acct'); go('set', 'pw');
+                         setPwForgot();
+                         obBack();
+                         /* READ THE MOMENT THE PRESS ENDS, and not what the
+                            screen settles into. Everything else here is read
+                            after the boot has been left alone for a beat, and
+                            in that beat something else in the app renders --
+                            so a door left drawn over the app was gone by the
+                            time anybody looked, and the check was green with
+                            the fault in. `__landed` is where the chevron
+                            LANDS, which is this. */
+                         window.__landed = {
+                           is: appIs(), done: !!SET.done, inS: netSignedIn(),
+                           door: !!document.querySelector('#app .ob')
+                         };
+                       });
+  const L = r.landed || {};
+  if (L.is !== 'app')
+    no('giving up on a password change: appIs()=' + L.is + ', wanted app. ' +
+       'A person who is signed in must never be asked to sign in.');
+  if (!L.inS)
+    no('and the session is gone — 「やめたら元のセッションのまま設定へ戻る」.');
+  if (!L.done)
+    no('and SET.done is still false, so the app is the onboarding.');
+  if (L.door)
+    no('and the door is still what is DRAWN, the moment the press ends: ' +
+       'obReturn() put the app back and nothing rendered it, so the reset ' +
+       'screen stayed on top of an app that had already come back.');
+  say('giving up on a password change: one press back, appIs()=' + L.is +
+      ', signed in, and the door is off the screen the moment it is pressed');
+}
+
 /* ---- 3. finished, and signed in ---------------------------------------- */
 {
   /* WITH A NAME ON THE ACCOUNT, and that is not decoration. A person who has
