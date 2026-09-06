@@ -594,6 +594,57 @@ const R = await pg.evaluate(() => {
   SET.myfont = false;
   installScriptFont();
 
+  /* ---- and what the Lingua keyboard typed is stored as the roman ---------
+     The keyboard inserts private use code points -- U+E000 upward, one per
+     drawn letter -- because that is the only thing on a phone that tells this
+     alphabet's `a` from the system QWERTY's. www/glyph.js § puaRoman is where
+     they stop: everything past the field works on the roman spelling, which
+     is what findWord(), exSeq() and exGloss() read.
+
+     The example line was the one field on this sheet that never asked. A line
+     typed on somebody's own keyboard was stored as U+E000 upward and drawn in
+     `.exl`, which is var(--face-caps) -- a font with no glyph up there -- so
+     the row came out 「▓▓▓」 on the owner's phone, build 140. Nothing threw:
+     it was stored, read back and rendered, in a face that has no such
+     characters, and the gloss under it was wrong for the same reason.
+
+     Asked of what was STORED and of what was DRAWN. Either alone is the bug
+     half seen: a row drawn through a converter would leave the stored line
+     unreadable to findWord(), and a stored line nobody drew says nothing
+     about the square. */
+  installTypeFont();
+  const puaLts = ltPuaOrder();
+  const puaTyped = puaLts.map((l, i) => ltPua(i)).join('');
+  const puaWant = puaLts.map(l => ltName(l) || '').join('');
+  openEdit('mos');
+  /* 'mos' already carries an example from the claim above, so the box is not
+     drawn until the ＋ opens one. */
+  wdExOpen();
+  document.getElementById('wd-exl').value = puaTyped;
+  document.getElementById('wd-exg').value = '';
+  wdAddEx();
+  const puaRow = (findWord('mos').ex || []).slice(-1)[0];
+  const puaStored = puaRow ? String(puaRow.ln) : '';
+  const puaDrawn = [].slice.call(document.querySelectorAll('.exl'))
+    .map(e => e.textContent).join(' ');
+  const puaLeft = (t) => t.split('').filter(c => c.charCodeAt(0) >= 0xE000 &&
+                                                 c.charCodeAt(0) <= 0xF8FF).join('');
+  out.said.push('a line typed on the Lingua keyboard (' + puaLts.length +
+    ' letters, U+E000 up) is stored as ' + JSON.stringify(puaStored));
+  if (!puaTyped)
+    out.fails.push('no letter in the fixture is drawn, so nothing could be typed ' +
+      'on the Lingua keyboard -- this claim asked nothing');
+  if (puaStored !== puaWant)
+    out.fails.push('the line was typed on the Lingua keyboard and stored as ' +
+      JSON.stringify(puaStored) + ' -- the roman is ' + JSON.stringify(puaWant));
+  if (puaLeft(puaStored))
+    out.fails.push('a private use character reached storage: ' +
+      JSON.stringify(puaLeft(puaStored)) + ' -- findWord() has never heard of it');
+  if (puaLeft(puaDrawn))
+    out.fails.push('a private use character is on the screen in the example row: ' +
+      JSON.stringify(puaLeft(puaDrawn)) + ' -- .exl is var(--face-caps) and ' +
+      'that font has no glyph there, which is the box');
+
   /* ---- and the spelling alone turns the Save gold ----------------------
      www/shell.js § KEEP: the button is grey until something has changed, and
      the back arrow asks only while it is gold. The spelling is the word

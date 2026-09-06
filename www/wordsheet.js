@@ -1714,7 +1714,21 @@ function wdTakeFields(){
     if(v && wEdit.mns.indexOf(v)<0) wEdit.mns.push(v);
   }
   if(w && a){
-    ln=String(a.value||'').trim();
+    /* Whatever the Lingua keyboard put in the field comes back to roman
+       first, exactly as a typed SPELLING does (www/letters.js § spType).
+       This is the same one mechanism, not a second one: the private use area
+       is what that keyboard types INTO a field and it goes no further --
+       everything past here is the roman spelling, which is what findWord(),
+       exSeq() and exGloss() read and what a card and an export carry.
+
+       An example typed on somebody's own keyboard was stored as U+E000
+       upward and drawn in .exl, which is var(--face-caps) and has no glyph
+       up there: 「▓▓▓」 on the owner's phone, build 140. Nothing threw --
+       the line was stored, read back and rendered; it was rendered in a font
+       that has no such characters. The gloss under it was wrong for the same
+       reason, because findWord() had never heard of those characters
+       either. */
+    ln=puaRoman(String(a.value||'')).trim();
     if(ln){
       if(!w.ex) w.ex=[];
       w.ex.push({ln:ln, gl:String((b&&b.value)||'').trim()});
