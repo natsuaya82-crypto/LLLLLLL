@@ -1123,6 +1123,7 @@ defLang('de', (function(){
       'post.editplan'         : "Beiträge bearbeiten gibt es im Plus-Plan",
       'post.save'             : "Sichern",
       'post.edited'           : "Bearbeitet",
+      'post.unsent'           : "Nicht gesendet",
       'post.pv'               : "Privat",
       'post.pv.on'            : "Nur du siehst das",
       'post.pv.off'           : "Alle sehen das",
