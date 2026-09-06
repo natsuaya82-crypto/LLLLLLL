@@ -696,6 +696,7 @@ defLang('es', (function(){
       "words.sel.row"    : "Elegir esta palabra",
       "words.sel.del"    : "Eliminar",
       "confirm.delmany"  : "¿Eliminar {0} palabras?",
+      "confirm.delmany.1"  : "¿Eliminar 1 palabra?",
       "words.sel.gone"   : "{0} palabras eliminadas",
       "words.sel.back"   : "{0} palabras restauradas",
       "words.open"       : "Abrir",

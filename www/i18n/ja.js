@@ -652,6 +652,7 @@ defLang('ja', (function(){
       'words.sel.row'   : 'この単語を選ぶ',
       'words.sel.del'   : '削除',
       'confirm.delmany' : '{0} 語を消しますか？',
+      'confirm.delmany.1' : '1 語を消しますか？',
       'words.sel.gone'  : '{0} 語を消しました',
       'words.sel.back'  : '{0} 語を戻しました',
       'words.open'      : '詳細',

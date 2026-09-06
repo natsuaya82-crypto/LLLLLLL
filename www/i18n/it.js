@@ -736,6 +736,7 @@ defLang('it', (function(){
       "words.sel.row"    : "Scegli questa parola",
       "words.sel.del"    : "Elimina",
       "confirm.delmany"  : "Eliminare {0} parole?",
+      "confirm.delmany.1"  : "Eliminare 1 parola?",
       "words.sel.gone"   : "{0} parole eliminate",
       "words.sel.back"   : "{0} parole ripristinate",
       "words.open"       : "Aprire",

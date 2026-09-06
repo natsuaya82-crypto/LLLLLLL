@@ -741,6 +741,7 @@ defLang('zh', (function(){
       "words.sel.row"    : "选择这个词",
       "words.sel.del"    : "删除",
       "confirm.delmany"  : "删除 {0} 个词？",
+      "confirm.delmany.1"  : "删除 1 个词？",
       "words.sel.gone"   : "已删除 {0} 个词",
       "words.sel.back"   : "已恢复 {0} 个词",
       "words.open"       : "打开",

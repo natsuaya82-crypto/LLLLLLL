@@ -784,6 +784,7 @@ defLang('fr', (function(){
       "words.sel.row"    : "Choisir ce mot",
       "words.sel.del"    : "Supprimer",
       "confirm.delmany"  : "Supprimer {0} mots ?",
+      "confirm.delmany.1"  : "Supprimer 1 mot ?",
       "words.sel.gone"   : "{0} mots supprimés",
       "words.sel.back"   : "{0} mots rétablis",
       "words.open"       : "Ouvrir",

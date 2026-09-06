@@ -643,6 +643,7 @@ defLang('en', (function(){
       'words.sel.row'   : 'Choose this word',
       'words.sel.del'   : 'Delete',
       'confirm.delmany' : 'Delete {0} words?',
+      'confirm.delmany.1' : 'Delete 1 word?',
       'words.sel.gone'  : '{0} words deleted',
       'words.sel.back'  : '{0} words put back',
       'words.open'      : 'Open',

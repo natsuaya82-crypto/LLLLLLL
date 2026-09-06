@@ -743,6 +743,7 @@ defLang('pt', (function(){
       "words.sel.row"    : "Escolher esta palavra",
       "words.sel.del"    : "Eliminar",
       "confirm.delmany"  : "Eliminar {0} palavras?",
+      "confirm.delmany.1"  : "Eliminar 1 palavra?",
       "words.sel.gone"   : "{0} palavras eliminadas",
       "words.sel.back"   : "{0} palavras repostas",
       "words.open"       : "Abrir",

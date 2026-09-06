@@ -912,6 +912,7 @@ defLang('ko', (function(){
       "words.sel.row"    : "이 단어 선택",
       "words.sel.del"    : "삭제",
       "confirm.delmany"  : "{0}개 단어를 삭제할까요?",
+      "confirm.delmany.1"  : "1개 단어를 삭제할까요?",
       "words.sel.gone"   : "{0}개 단어를 삭제했습니다",
       "words.sel.back"   : "{0}개 단어를 되돌렸습니다",
       "words.open"       : "열기",

@@ -724,6 +724,7 @@ defLang('de', (function(){
       "words.sel.row"    : "Dieses Wort wählen",
       "words.sel.del"    : "Löschen",
       "confirm.delmany"  : "{0} Wörter löschen?",
+      "confirm.delmany.1"  : "1 Wort löschen?",
       "words.sel.gone"   : "{0} Wörter gelöscht",
       "words.sel.back"   : "{0} Wörter zurückgeholt",
       "words.open"       : "Öffnen",
