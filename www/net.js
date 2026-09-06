@@ -3524,17 +3524,20 @@ function netMark(id, kind, on, ok, bad){
    still on the server, and the person is told so rather than watching it go
    and come back.
 
-   NO SESSION AND NO `sid` ARE THE SAME ANSWER. Both used to be ok() -- 「there
-   is nothing on the server」 -- and neither can say that: signed out there is
-   nobody to ask, and a post with no sid is a post whose own send has not come
-   back. The one thing neither of them is, is a deletion that worked.
+   SIGNED OUT IS NOT THE SAME ANSWER AS NO `sid`, and they were one branch.
+   Signed out there is nobody to ask, so nothing can be said about the row:
+   that is the `∅` below. **A post with no `sid` has no row** -- it was never
+   on the server, so there is nothing there to take away and the deletion is
+   done the moment the phone lets go of it. Refusing it left somebody unable
+   to delete a post that had never left this handset.
 
    `∅` is the mark, and it is a STATE the way netWhy()'s others are: the
    request was answered and took nothing away, which is not 通信エラー and
    must not raise its pop. */
 function netDrop(p, ok, bad){
   var sid=p && p.sid;
-  if(!netSignedIn() || !sid){ bad(null, 0, 'post ∅'); return; }
+  if(!netSignedIn()){ bad(null, 0, 'post ∅'); return; }
+  if(!sid){ ok(); return; }
   netDropFiles(p, function(){
     netSend('DELETE', '/rest/v1/post?id=eq.'+encodeURIComponent(sid),
             null, SESS.at, function(d){

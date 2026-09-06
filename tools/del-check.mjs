@@ -263,14 +263,25 @@ const evalled = (names) => {
       'with no sentence is the same silence in a different place — and it is ' +
       'not 通信エラー either, so it is not the pop: the server answered.');
 
-  /* And a post whose own send never came back. There is no row to delete and
-     no way to say there is not one. */
-  const nosid = run({ id: 'p2', mine: 1 }, (ok, bad) => ok([]));
-  if (!nosid.left || nosid.said.indexOf('say:no') < 0)
-    bad.push('a post with no `sid` was taken off the screen as though the ' +
-      'server had agreed. Nothing was ever sent — that is not a deletion.');
-  if (nosid.said.indexOf('say:no') >= 0 && world.sent)
+  /* And a post whose own send never came back. **There is no row**, so there
+     is nothing for the server to agree to: the post goes the moment the phone
+     lets go of it, and no DELETE is sent.
+
+     It used to be refused, on the grounds that no session and no `sid` are
+     one answer. They are not: signed out there is nobody to ask, and a post
+     that never reached the server has nothing there to take away. Refusing it
+     left somebody unable to delete a post that had never left this handset. */
+  const nosid = run({ id: 'p2', mine: 1 }, (ok) => ok([]));
+  if (nosid.left)
+    bad.push('a post with no `sid` could not be deleted. There is no row on ' +
+      'the server to take away, so there is nothing to refuse — and the post ' +
+      'somebody asked to be gone stayed on their timeline.');
+  if (world.sent)
     bad.push('a post with no `sid` still sent a DELETE. There is no row to name.');
+  if (nosid.said.indexOf('say:no') >= 0)
+    bad.push('a post with no `sid` was deleted and the screen said it could ' +
+      'not be. 「消せませんでした」 is for a server that answered and took no ' +
+      'row; this one was never asked.');
 
   /* The other way, or the check above is green on a delete that never works. */
   const gone = run({ id: 'p3', sid: 's3', mine: 1 }, (ok) => ok([{ id: 's3' }]));
@@ -294,5 +305,5 @@ console.log('     nothing deletes that is not written down, and nothing written 
 console.log('     and one of them was run, from the menu row to the request: the ' +
   'question closes the menu so the press that answers it gets through, a ' +
   'DELETE that removed no row leaves the post on the screen and says so, a ' +
-  'post with no sid sends nothing, and a DELETE that removed the row takes ' +
+  'post with no sid sends nothing and goes, and a DELETE that removed the row takes ' +
   'it off');

@@ -310,6 +310,66 @@ const R = await pg.evaluate(async () => {
                  'to drop one');
   }
 
+  /* ---- 7b. a post the SERVER has goes only when the row goes ---------
+     「消えるのはサーバーから消えた時だけ」(www/post.js § postDelGo). A DELETE
+     is answered with the rows it took (netSend()'s Prefer header), and
+     netDrop() is the one place that counts them: no row means the post is
+     still on the server, and the person is told so rather than watching it
+     go and come back on the next feed.
+
+     **Nothing about that throws, and the two ends look identical from the
+     phone**: the post disappears from the timeline either way unless
+     somebody reads the answer. So both are asked, with a wire that says how
+     many rows it took. Everything above this is about a post that never left
+     the handset -- that one has no row to take away and goes at once, which
+     is the other half of the same sentence. */
+  PW = pwBlank(); PW.ln = 'tir';
+  pwSend();
+  await new Promise(r => setTimeout(r, 200));
+  const srv = POSTS[POSTS.length - 1];
+  srv.sid = 'srv-post-1';
+  savePosts();
+
+  const wasSend = netSend;
+  let rowsBack = [];
+  const sentTo = [];
+  netSend = function(method, path, body, tok, ok2){
+    sentTo.push(method + ' ' + path);
+    setTimeout(function(){ ok2(rowsBack); }, 0);
+  };
+  function toastNow(){
+    const el = document.getElementById('toast');
+    return String((el && el.textContent) || '');
+  }
+
+  /* 零行 ── 答えは返ってきていて、行は一つも消えていない */
+  rowsBack = [];
+  sentTo.length = 0;
+  document.getElementById('toast').textContent = '';
+  postDel(srv.id);
+  if (popOn()) popYes();
+  await new Promise(r => setTimeout(r, 120));
+  if (!sentTo.some(x => x.indexOf('DELETE /rest/v1/post?id=eq.srv-post-1') === 0))
+    fails.push('deleting a post the server has did not send the DELETE for its ' +
+               'row: ' + JSON.stringify(sentTo));
+  if (!POSTS.some(x => x.id === srv.id))
+    fails.push('the server took no row and the post went off the timeline ' +
+               'anyway. That is 「消えたつもり」 -- it comes back on the next feed');
+  if (toastNow().indexOf(t('post.del.no')) < 0)
+    fails.push('the server took no row and nothing said so (' +
+               JSON.stringify(toastNow()) + '). A post that would not delete ' +
+               'and a screen that says nothing is somebody pressing it again');
+
+  /* 一行 ── サーバーから消えた。ここでだけ画面から消える */
+  rowsBack = [{ id: srv.sid }];
+  sentTo.length = 0;
+  postDel(srv.id);
+  if (popOn()) popYes();
+  await new Promise(r => setTimeout(r, 120));
+  if (POSTS.some(x => x.id === srv.id))
+    fails.push('the server took the row and the post is still on the timeline');
+  netSend = wasSend;
+
   /* ---- 8. a reply that is deleted stops being counted ---------------- */
   /* 「リプライ消したのに数字1のまま」 -- pwSendWith() adds one to the post
      being answered and nothing ever took it back, so a post whose only reply
