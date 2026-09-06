@@ -718,44 +718,32 @@ function pullBoot(){
   var i;
   for(i=0;i<PULL_OPEN.length;i++) pullNeed(PULL_OPEN[i]);
 }
-/* ---- AND EVERY OTHER SCREEN, WITHOUT NAMING ONE OF THEM -------------------
-   「全部の画面でプルトゥーリフレッシュ入れないと動かないとこ出てくるぜ」
-   「設定はいらんよ？」 OWNER 2026-09-05.
+/* ---- AND NOTHING ELSE. THE PULL IS THE SNS SIDE'S ------------------------
+   「引っ張って更新は SNS だけ。制作側（字を描く画面など）でも効いていて、
+   描いている途中でくるくるが出て線が途切れる」 OWNER 2026-09-06, on a phone.
 
-   The six routes above are the ones with a list of their own on the server.
-   The other thirty are the language being made -- letters, the keyboard, the
-   words, the grammar, the notes, the world -- and every one of them shows
-   something that exists twice: on this phone, where it is written, and on the
-   server, where it is kept. A phone that went through a tunnel is holding the
-   older of the two and has no way to say so.
+   Every route in PAGES used to be given `askLang` here, with three names
+   excused, so a finger drawing a stroke down a glyph was a finger dragging
+   the screen down: the mark turned, the language was asked for again, and
+   the line broke where the drawing surface stopped seeing the touch. That
+   was 「全部の画面でプルトゥーリフレッシュ入れないと動かないとこ出てくるぜ」
+   of 2026-09-05, and it is replaced by the sentence above rather than
+   narrowed -- the making side does not pull at all, and there is no list of
+   exceptions to keep, because there is nothing to except from.
 
-   They are not listed. The list is PAGES (www/shell.js), which is what a
-   route IS, so a screen added tomorrow is pulled tomorrow and there is no
-   second place to forget -- which is exactly how the six above came to be
-   four with two missing.
+   So this table is the whole of it, and every entry in it is written above
+   with the thing it asks for. A route that is not there does not pull: the
+   letters, the glyph, the words, the grammar, the keyboard, the notes, the
+   world, the settings and the plans. What puts the language and the server
+   back together is the save itself (www/net.js § netSaveUp), which goes up
+   the moment a thing is made, and the launch (netLangsDown), which brings
+   down what this phone is missing. Neither is a thumb.
 
-   THE SETTINGS ARE OUT, and they are the only ones. 「設定はいらんよ？」 --
-   nothing on them comes off the server, and `set` is the page each one opens
-   onto. */
-/* AND THE REPORTS, which are a list on the server exactly as the six above
-   are. It is registered here rather than left to pullEvery() below because
-   that binds askLang, and the reports are not the language. mod.js loads
-   after this file, so the name is reached when the pull runs and not now. */
+   AND THE REPORTS, which are a list on the server exactly as the timelines
+   above are, and are the other side of a post rather than anything of the
+   language. mod.js loads after this file, so the name is reached when the
+   pull runs and not now. */
 pullOn('mod', function(ok, bad){ modAsk(ok, bad); });
-/* AND THE KEYBOARD. A board is built on that screen and nothing about it
-   comes off the server while it is open -- so the pull is a spinner that
-   asks nobody anything, over a sheet a finger is already dragging keys
-   around on. 「キーボード編集画面はくるくる無し」 OWNER 2026-09-05. */
-var PULL_NOT={ settings:1, set:1, kb:1 };
-function pullEvery(){
-  var r;
-  for(r in PAGES){
-    if(!Object.prototype.hasOwnProperty.call(PAGES, r)) continue;
-    if(PULL_ON[r] || PULL_NOT[r]) continue;
-    pullOn(r, askLang);
-  }
-}
-pullEvery();
 var pullY=-1, pullEl=null, pullAt=0;
 /* The mark that turns in the gap.
 
@@ -966,27 +954,6 @@ function askNot(ok, bad){
   netNotices(function(ns){
     if(!ns){ ok(0); return; }
     NOTES_HAVE=ns;
-    ok(1);
-  }, bad);
-}
-/* WHAT IS BEING WRITTEN, WHICH IS EVERY OTHER SCREEN.
-   「保存としたらオンラインおしまい」「オンラインは一本化ね？」 -- so a pull on
-   a screen of the language is not a fifth kind of request, it is the two
-   copies being put together, now, instead of at the next launch:
-
-     netLangsDown   every language this account has, and any slice this phone
-                    is missing. This is the half that FAILS on a bad network
-                    and is therefore the half the pop is about.
-     netLangSync    the open language both ways -- what is here that the
-                    server has not got, and what the server has that this
-                    phone has not.
-
-   The second is fired and not waited on, exactly as every other caller of it
-   does: by the time it runs the wire has already answered once, so it is not
-   what the person is standing in front of. */
-function askLang(ok, bad){
-  netLangsDown(function(){
-    netLangSync(function(){});
     ok(1);
   }, bad);
 }
