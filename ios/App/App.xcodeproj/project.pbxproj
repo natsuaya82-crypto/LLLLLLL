@@ -37,6 +37,9 @@
 		7A1C0F5E2B9D41C8A0E33108 /* TimeWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1C0F5E2B9D41C8A0E33120 /* TimeWidget.swift */; };
 		7A1C0F5E2B9D41C8A0E33109 /* CalendarWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1C0F5E2B9D41C8A0E33121 /* CalendarWidget.swift */; };
 		7A1C0F5E2B9D41C8A0E33130 /* LinguaWidget.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 7A1C0F5E2B9D41C8A0E33110 /* LinguaWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		7A1C0F5E2B9D41C8A0E33201 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 7A1C0F5E2B9D41C8A0E33200 /* PrivacyInfo.xcprivacy */; };
+		7A1C0F5E2B9D41C8A0E33203 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 7A1C0F5E2B9D41C8A0E33202 /* PrivacyInfo.xcprivacy */; };
+		7A1C0F5E2B9D41C8A0E33205 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 7A1C0F5E2B9D41C8A0E33204 /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -96,6 +99,9 @@
 		7A1C0F5E2B9D41C8A0E33119 /* ScriptFont.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptFont.swift; sourceTree = "<group>"; };
 		7A1C0F5E2B9D41C8A0E33120 /* TimeWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeWidget.swift; sourceTree = "<group>"; };
 		7A1C0F5E2B9D41C8A0E33121 /* CalendarWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarWidget.swift; sourceTree = "<group>"; };
+		7A1C0F5E2B9D41C8A0E33200 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		7A1C0F5E2B9D41C8A0E33202 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		7A1C0F5E2B9D41C8A0E33204 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -169,6 +175,7 @@
 				7A1C0F5E2B9D41C8A0E33018 /* CandidateBar.swift */,
 				7A1C0F5E2B9D41C8A0E33013 /* Shared.swift */,
 				7A1C0F5E2B9D41C8A0E33011 /* Info.plist */,
+				7A1C0F5E2B9D41C8A0E33202 /* PrivacyInfo.xcprivacy */,
 				7A1C0F5E2B9D41C8A0E33012 /* LinguaKeyboard.entitlements */,
 			);
 			path = LinguaKeyboard;
@@ -186,6 +193,7 @@
 				7A1C0F5E2B9D41C8A0E33120 /* TimeWidget.swift */,
 				7A1C0F5E2B9D41C8A0E33121 /* CalendarWidget.swift */,
 				7A1C0F5E2B9D41C8A0E33111 /* Info.plist */,
+				7A1C0F5E2B9D41C8A0E33204 /* PrivacyInfo.xcprivacy */,
 				7A1C0F5E2B9D41C8A0E33112 /* LinguaWidget.entitlements */,
 			);
 			path = LinguaWidget;
@@ -217,6 +225,7 @@
 				504EC30E1FED79650016851F /* Assets.xcassets */,
 				504EC3101FED79650016851F /* LaunchScreen.storyboard */,
 				504EC3131FED79650016851F /* Info.plist */,
+				7A1C0F5E2B9D41C8A0E33200 /* PrivacyInfo.xcprivacy */,
 				2FAD9762203C412B000D30F8 /* config.xml */,
 				50B271D01FEDC1A000F3C39B /* public */,
 			);
@@ -348,6 +357,7 @@
 				50379B232058CBB4000EE86E /* capacitor.config.json in Resources */,
 				504EC30D1FED79650016851F /* Main.storyboard in Resources */,
 				2FAD9763203C412B000D30F8 /* config.xml in Resources */,
+				7A1C0F5E2B9D41C8A0E33201 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -355,6 +365,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7A1C0F5E2B9D41C8A0E33203 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -362,6 +373,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7A1C0F5E2B9D41C8A0E33205 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

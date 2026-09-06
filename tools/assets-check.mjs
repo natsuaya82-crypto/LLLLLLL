@@ -273,6 +273,54 @@ if (existsSync(PBX)) {
   if (!problems.length) swiftCount = swift.length
 }
 
+// ------------------------------------------------ the privacy manifest
+// The same statement a third time, on the Resources side of the same project
+// file. Apple has required `PrivacyInfo.xcprivacy` since spring 2024, and an
+// app extension needs ITS OWN -- the aggregated report is assembled from the
+// manifest in each bundle, so a keyboard with none is a bundle that declared
+// nothing.
+//
+// It fails the way `__GOOGLE_REVERSED_CLIENT_ID__` failed: not as a red tick.
+// The upload is accepted, the build appears in TestFlight, and Apple writes an
+// hour later to say the declaration is short. Nothing on this side of the wall
+// can see that, so what is asked here is the two things that ARE visible --
+// the file is on disk, and it is in that target's RESOURCES phase. A manifest
+// that is written and not in the phase is not in the bundle, which looks
+// identical to being wired up if you grep the whole project file. That is the
+// mistake the Sources half of this check made in its first version.
+// Every target that SHIPS, and that is the whole list -- the app and the two
+// extensions embedded in it. A bundle with no manifest is a bundle that
+// declared nothing, whichever of the three it is.
+const PRIV = [
+  ['App', 'App', '504EC3021FED79650016851F'],
+  ['LinguaKeyboard', 'LinguaKeyboard', '7A1C0F5E2B9D41C8A0E33053'],
+  ['LinguaWidget', 'LinguaWidget', '7A1C0F5E2B9D41C8A0E33153'],
+]
+let privCount = 0
+if (existsSync(PBX)) {
+  const all = readFileSync(PBX, 'utf8')
+  const a = all.indexOf('/* Begin PBXResourcesBuildPhase section */')
+  const b = all.indexOf('/* End PBXResourcesBuildPhase section */')
+  const res = (a >= 0 && b > a) ? all.slice(a, b) : ''
+  for (const [target, dir, phase] of PRIV) {
+    const f = join(IOS, dir, 'PrivacyInfo.xcprivacy')
+    if (!existsSync(f)) {
+      problems.push(`ios/App/${dir}/PrivacyInfo.xcprivacy is not there — Apple requires a privacy manifest in every bundle, and refuses the delivery by email rather than by a red tick.`)
+      continue
+    }
+    // The phase's own block, not the whole section: a build file listed under
+    // another target's Resources is in another target's bundle.
+    const i = res.indexOf(`${phase} /* Resources */ = {`)
+    const j = i >= 0 ? res.indexOf('};', i) : -1
+    const own = (i >= 0 && j > i) ? res.slice(i, j) : ''
+    if (own.indexOf('PrivacyInfo.xcprivacy in Resources') === -1) {
+      problems.push(`${target}'s PrivacyInfo.xcprivacy is not in that target's Resources phase — the file is written and it is not in the bundle.`)
+      continue
+    }
+    privCount++
+  }
+}
+
 // -------------------------------------------------- a placeholder nobody fills
 // A third statement of the same shape: something is written down as a stand-in
 // and the thing that was supposed to replace it does not exist.
@@ -405,6 +453,7 @@ if (problems.length) {
 
 console.log(`assets: ${referenced.length} files loaded by index.html, all present and tracked.`)
 if (swiftCount) console.log(`swift: ${swiftCount} files under ios/App/, every one of them in the project's Sources phase.`)
+if (privCount) console.log(`privacy: ${privCount} PrivacyInfo.xcprivacy (${PRIV.map(p => p[0]).join(', ')}), each in its own target's Resources phase.`)
 console.log(`placeholders: ${holes} under ios/App/, every one of them substituted by the deploy workflow.`)
 console.log(`the bridge: ${natives} native methods, every one of them named by www/.`)
 console.log(`load order: core.js -> ${LANGS.length} languages -> ... -> otf5.js -> glyph.js -> act-map.js -> boot.js (last)`)

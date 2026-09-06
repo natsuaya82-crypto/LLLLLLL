@@ -367,18 +367,69 @@ App Store Connect → Lingua → **App Store** タブ:
   `ios/App/App/App.entitlements` が `com.apple.developer.applesignin` を
   宣言しています。プロファイル側は 2 節が済んでいることが条件です
 
+### 審査ノート（App Review Information）に書くこと
+
+**審査員用のアカウント。**この app はサインインしないと何も見えないので、
+**メールとパスワードの要ります**。オーナーが `natsuaya82-demo@gmail.com` の
+形で用意します。**メールもパスワードもここには書きません** ── App Store
+Connect の審査ノート欄に直接入れてください。repo に置いた資格情報は、repo を
+読める全員の資格情報です。
+
+**キーボード拡張のフルアクセスの理由。**下の一文をそのまま入れてください。
+拡張には外へ出す道が一本もありません（`URLSession` / `URLRequest` を
+`ios/App/LinguaKeyboard` に grep して 0）。
+
+> The Lingua keyboard requests Full Access only to read the user's own drawn
+> letters from the App Group shared with the main app. It sends nothing
+> anywhere: no network calls, no logging of typed text. See
+> ios/App/LinguaKeyboard/.
+
 ---
 
 
-### プライバシーの一覧表 ── **まだ在りません。上げる前に要ります**
+### プライバシーの一覧表 ── **入りました**
 
 上の「App のプライバシー」は**画面で答える申告**です。それとは別に、
 **アプリの中に入れる一覧表**（`PrivacyInfo.xcprivacy`）が要ります。
 
-**探して確かめました。この repo には一つも在りません。**
+**出荷される三つのターゲットに一枚ずつ在ります** ──
+`ios/App/App/PrivacyInfo.xcprivacy`（本体）、
+`ios/App/LinguaKeyboard/PrivacyInfo.xcprivacy`（キーボード拡張）、
+`ios/App/LinguaWidget/PrivacyInfo.xcprivacy`（ウィジェット）。
+**拡張は自分の一覧表が要ります** ── Apple の一覧はバンドルごとに集められる
+ので、一覧表の無い拡張は「何も申告していない拡張」です。
 
-**オーナーがやることは、いまはありません。**作るのはセッション側の仕事で、
-別のところが持っています（`docs/scope/aud-reject.md` § 1）。
+中身はこの repo の事実だけで書いてあります。
+
+- **追跡は false、追跡ドメインは空。**`www/` と `ios/` に広告・IDFA・解析の
+  SDK は一つもありません（`IDFA` `advertisingIdentifier` `ASIdentifierManager`
+  `AppTrackingTransparency` `AdSupport` `Firebase` `GoogleAnalytics` `FBSDK`
+  `amplitude` `mixpanel` `Sentry` `appsflyer` を grep して 0）
+- **理由の要る API（`NSPrivacyAccessedAPITypes`）は空です。**使っていません。
+  App Group の受け渡しは `UserDefaults` ではなく**ファイル**で、
+  `LinguaShare.swift` も `Shared.swift` も
+  `FileManager.containerURL(forSecurityApplicationGroupIdentifier:)` を使い
+  ます。ファイルの日時（`attributesOfItem` / `resourceValues`）、空き容量、
+  起動からの時間、`UITextInputMode` ── どれも `ios/App` に一つもありません。
+  **使っていないものは書きません**
+- **集めるもの**（すべて「ユーザーに紐づく」「追跡ではない」「アプリの機能の
+  ため」）: メールアドレス（`auth.users`。メール・Apple・Google の三つの扉）、
+  名前（`profile.display`）、ユーザー ID（`profile.handle` と uuid）、
+  ユーザーコンテンツ（`post` `draft` `slice` `language` `report`、
+  `profile.bio`）、写真（`post-media` バケット）、音声（同じバケットの
+  三十秒の声）、検索履歴（`recent_search` `saved_search`）、
+  購入（`plan` テーブルの段）
+
+**二つの拡張はどちらも何も集めません。**外へ出す道が一本もないからです
+（`URLSession` / `URLRequest` を `ios/App/LinguaKeyboard` と
+`ios/App/LinguaWidget` に grep して、どちらも 0）。どちらも App Group の
+ファイルを読むだけで、理由の要る API も 0 です。
+
+`tools/assets-check.mjs` が三つのターゲットについて二つのことを見ています ──
+一覧表が在ること、そして**そのターゲット自身の Resources フェーズ**に入って
+いること。別のターゲットの Resources に入れただけでは赤になります（バンドルに
+入っていないので）。`npm run assets` の `privacy:` の行がその証拠で、
+数はそこで読んでください。
 
 **オーナーに見てほしいのは、その次です。**入ってから上げたビルドで、
 **Apple から警告のメールが来ないか。**アップロードは通っても、
@@ -397,8 +448,8 @@ App Store Connect → Lingua → **App Store** タブ:
 - [ ] **3 節の三つ**（有料 App 契約・銀行口座・税務情報）が全部「有効」か。
       **数日かかることがあります。**ここが済むまで、商品を作っても
       「送信準備完了」になりません
-- [ ] **4 節の商品**が四つとも出来ているか。**商品が無いあいだ、アプリの
-      値段は打ち込みの数字に落ちます**
+- [x] **4 節の商品**は四つとも App Store Connect に在ります
+      （OWNER 2026-09-06「2あるやんけ」）
 - [ ] **TestFlight で 133 が配れているか。**内部テストなら審査は要りません
 
 ---
@@ -440,16 +491,12 @@ App Store Connect → Lingua → **App Store** タブ:
 なので:
 
 - **TestFlight で配って中身を見てもらうのは、今のままで問題ありません。**
-- **App Store の審査に出すのは、4 節の商品を作ってからです。** 商品が無い
-  あいだ StoreKit は何も返さず、画面は打ち込みの値段に落ちます。有料の機能を
-  出しておいて App 内課金を通していないアプリは Guideline 3.1.1 で落ちます。
+- **商品 4 つは App Store Connect に在ります**（OWNER 2026-09-06「2あるやんけ」）。
+  StoreKit は値段を返せるので、画面が打ち込みの数字に落ちることはありません。
 
 残っている作業は一つだけで、上のレシート検証です。`plan` の行と RLS は
 `supabase/schema.sql` に在るので、足りないのは**サーバーが Apple に訊く一本**
 です。
-
-**そちらでやることは 4 節（商品 4 つ）です。** 作った商品から順に
-アプリに出てくるので、Plus を先に作っても問題ありません。
 
 ---
 
