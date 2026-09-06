@@ -1107,7 +1107,48 @@ const SWR = await (async () => {
   const T = (type, x, y) => cdp.send('Input.dispatchTouchEvent',
     { type: type, touchPoints: type === 'touchEnd' ? [] : [{ x: x, y: y }] });
   const y = 430;
+  /* THE BROWSER CAN TAKE THE TOUCH AWAY, AND THAT IS NOT THE APP FAILING.
+     Measured on 2026-09-06 with the renderer's main thread slowed down
+     (CDP Emulation.setCPUThrottlingRate): the page gets `pointerdown`, one
+     `pointermove` -- swMove() runs on it and the gesture goes live -- and
+     then `pointercancel` at x=0, with no further move and no `pointerup`.
+     The thumb is gone before it has travelled far enough to be a back
+     gesture, so nothing goes back, and the old shape of this check reported
+     「dragged in from the left edge on words and it did not go back」 -- a
+     fault named at www that is not in www. That is what the gate saw: red at
+     cdccec67, green at 620e2d33, red again at 5fe827b0 with the same www on
+     all three, four browsers on one machine.
+
+     So the cancel is READ rather than reasoned about, and a gesture taken
+     away is tried again. Three that are all taken away is a machine too busy
+     to be asked, and it is SAID rather than passed off as green: the line
+     below prints it, because a check that quietly stops asking is worse than
+     one that asks and fails.
+
+     TAKEN AWAY IS 「cancelled AND the screen behind never drew」, and both
+     halves are measured. A cancel arrives on the healthy gesture too, at the
+     end of it, once the thumb has done its work -- so counting cancels alone
+     called a run that had already gone back 「never delivered」. `live` is
+     `.swon` on the document read while the thumb is still down, which is the
+     gesture having visibly engaged; a cancel before that is a thumb that was
+     never allowed to travel. */
   async function pull(fromX, toX) {
+    let g = null;
+    for (let n = 0; n < 3; n++) {
+      g = await pull1(fromX, toX);
+      if (!(g.cancel && !g.live)) return g;
+    }
+    return g;
+  }
+  async function pull1(fromX, toX) {
+    await pg.evaluate(() => {
+      window.__swcancel = 0;
+      if (!window.__swhook) {
+        window.__swhook = 1;
+        document.addEventListener('pointercancel',
+          function(){ window.__swcancel++; }, true);
+      }
+    });
     await T('touchStart', fromX, y);
     let mid = null;
     const step = fromX < toX ? 24 : -24;
@@ -1119,13 +1160,34 @@ const SWR = await (async () => {
           document.documentElement.classList.contains('swon'));
     }
     await T('touchEnd', toX, y);
-    await pg.waitForTimeout(420);
+    /* WAITED FOR AND NOT SLEPT THROUGH. 「戻る」 happens inside a timer:
+       swEnd() (www/shell.js) puts `swgo` on the document, lets the two
+       screens travel for 230ms, and calls back() at the end of it. A fixed
+       420ms covered that on a quiet machine and did not on a busy one -- the
+       gate runs four browsers at once, and this came out red at cdccec67,
+       green at 620e2d33 and red again at 5fe827b0 with the same www on all
+       three. Nothing was wrong with the road; the check let go of it too
+       early and then reported the screen it had not moved off yet, which is
+       the worst kind of red: it names a fault that is not there.
+
+       `swon` and `swgo` are the gesture's own two marks and swClear() takes
+       both off in the same breath that calls back(), so 「neither is on the
+       document」 is 「the travel is over」 said by the app rather than by a
+       clock. A thumb that never became the gesture wears neither from the
+       start and answers at once, which is what cases 2 and 3 are. */
+    await pg.waitForFunction(() => {
+      const c = document.documentElement.classList;
+      return !c.contains('swon') && !c.contains('swgo');
+    }, null, { timeout: 8000 }).catch(() => {});
+    /* and one beat for the render back() ends in */
+    await pg.waitForTimeout(60);
     /* What the gesture must never do is leave the app. Asked before the
        evaluate below, because a page that has gone answers that one with
        `here is not defined` -- an error that names nothing. */
     if (pg.url().indexOf('127.0.0.1:' + PORT) < 0)
-      return { live: !!mid, at: 'GONE: ' + pg.url() };
-    return { live: !!mid, at: await pg.evaluate(() => here().r) };
+      return { live: !!mid, at: 'GONE: ' + pg.url(), cancel: 0 };
+    return { live: !!mid, at: await pg.evaluate(() => here().r),
+             cancel: await pg.evaluate(() => window.__swcancel) };
   }
   const stand = (js) => pg.evaluate(js);
 
@@ -1133,7 +1195,11 @@ const SWR = await (async () => {
   await stand(`window.__seed(); SET.done = true; SET.plan = 'pro';
                goTab('build'); go('words');`);
   let g = await pull(6, 318);
-  if (g.at !== 'build')
+  if (g.cancel && !g.live)
+    seen.push('from the left edge: **the browser took the touch away** three ' +
+      'times running (pointercancel), so the gesture was never delivered and ' +
+      'nothing here is claimed about it — this machine is too busy to be asked');
+  else if (g.at !== 'build')
     out.push('dragged in from the left edge on words and it did not go back (' +
       g.at + '). The browser takes a sideways thumb unless touch-action says ' +
       'otherwise — www/index.html § #app.');
