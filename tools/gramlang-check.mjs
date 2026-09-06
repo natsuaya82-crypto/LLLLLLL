@@ -1452,6 +1452,61 @@ want('a page with nothing on it is what this was', nouns.bareEmpty, false);
 want('no role of this language has a mark yet, so none shows what it makes',
      nouns.madeRows, 0);
 
+/* ---- a rule is deleted the way every other list here deletes ------------
+   「プラスとかプロなのに消す時も勝手に ui 足すのやめて。今まである選択とか
+   スライドとかで消すようにして」 OWNER 2026-09-05.
+
+   There was a ⊖ on every row with a popAsk() behind it -- a delete this one
+   list had invented for itself, on a screen the free plan never sees. It is
+   Select / ◉ / Delete now, which is what the keyboards, the notes, the drafts
+   and the dictionary already do.
+
+   Three claims, and the middle one is the one that could go wrong quietly: a
+   chapter draws the rules of ONE form out of a list holding every form's, so
+   a selection held by POSITION would delete a rule from another chapter. It
+   is held by id, and this asks the other chapter what it still has. */
+const sel = await pg.evaluate(() => {
+  const sp = (w) => w.split('').map((u) => ({ l:'', u:u }));
+  const wasFm = JSON.stringify(STG.fm || []);
+  STG.fm = [{ id:'s1', pos:'v', fm:'pst', at:'end', drop:0, add:sp('ka'), when:'' },
+            { id:'s2', pos:'v', fm:'pst', at:'start', drop:0, add:sp('ez'), when:'' },
+            { id:'s3', pos:'n', fm:'pl',  at:'end', drop:0, add:sp('mi'), when:'' }];
+  const show = (id) => { window.route = 'gram'; NAV = [{ r:'gram', a:'v2:' + id }];
+                         render(); };
+  const bar = () => Array.prototype.map.call(
+    document.querySelectorAll('.navtop [data-do]'), (b) => b.getAttribute('data-do'));
+  const marks = () => document.querySelectorAll('#app .fmmk .ltck').length;
+  G2SEL = null;
+  show('pst');
+  const restBar = bar(), restMarks = marks();
+  /* NO ⊖ ANYWHERE. The class it wore is `.mnx`, and it is the one thing this
+     change had to take away rather than move. */
+  const crosses = document.querySelectorAll('#app .fmmk .mnx').length;
+  g2SelOn();
+  const selBar = bar(), selMarks = marks();
+  g2SelTap('s1');
+  const oneBar = bar();
+  g2SelDelGo();
+  const left = (STG.fm || []).map((r) => r.id).join(',');
+  const after = G2SEL;
+  STG.fm = JSON.parse(wasFm);
+  G2SEL = null;
+  return { restBar: restBar.join(','), restMarks: restMarks, crosses: crosses,
+           selBar: selBar.join(','), selMarks: selMarks,
+           oneBar: oneBar.join(','), left: left, after: after };
+});
+
+want('no row of a chapter carries a ⊖ of its own', sel.crosses, 0);
+want('and at rest the bar offers Select', sel.restBar, 'back,g2SelOn');
+want('with no mark on any row', sel.restMarks, 0);
+want('choosing puts a mark on every rule of this chapter', sel.selMarks, 2);
+want('and the bar says Done, with no Delete until something is chosen',
+     sel.selBar, 'back,g2SelOff');
+want('Delete arrives with the first one chosen', sel.oneBar, 'back,g2SelDel,g2SelOff');
+want('what was chosen goes, and the other chapter’s rule stays',
+     sel.left, 's2,s3');
+want('and the list stops being one you choose from', sel.after, null);
+
 await br.close();
 srv.close();
 
@@ -1493,3 +1548,5 @@ console.log('          The words a chapter\'s rules make are made from that chap
 console.log('          and another chapter\'s are left where they were.');
 console.log('          The noun chapter names its three roles whether or not this');
 console.log('          language has written any of them, and with no words at all.');
+console.log('          A rule is deleted by the Select every other list here has,');
+console.log('          and what is chosen is chosen by id, not by where it sits.');

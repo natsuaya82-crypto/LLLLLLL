@@ -816,7 +816,7 @@ function vGram(){
      helpQ() draws nothing for a chapter that has registered none, so the
      chapters that are not a form of a word simply have no mark. */
   if(c)
-    return '<div class="view">'+navTop('', helpQ('g2.'+c.id))+
+    return '<div class="view">'+navTop('', g2ChapBar(c))+
       '<div class="body">'+g2Page(c)+'</div></div>';
   p = gOpen? stBy(gOpen) : null;
   return '<div class="view">'+
