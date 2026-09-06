@@ -222,7 +222,14 @@ function impRead(src){
    and it is the same act of importing as a list of words -- so it is the same
    screen and the same table, and what comes out is decided by what is in the
    file rather than by which button was pressed to open it. */
-var IMP_ROLES=['hw', 'mn', 'pos', 'ph', 'ch', 'nm', 'skip'];
+var IMP_ROLES=['hw', 'mn', 'pos', 'ph', 'ex', 'exg', 'reg', 'tags', 'ety',
+               'nt', 'sub', 'ch', 'nm', 'skip'];
+/* The ones a column may be more than once. Two meaning columns join, and a
+   spreadsheet with 例文1 and 例文2 in it has two examples on the row rather
+   than one column too many. Everything else is one to a row: a second
+   spelling, a second part of speech, a second etymology are all the same
+   mistake, and skipping the later one says so on the screen. */
+var IMP_MANY={mn:1, ex:1, exg:1};
 /* Names seen in the wild. Not a table of services: a table of words, so that
    a service that renames its columns tomorrow still lands, and one nobody
    here has heard of lands the first time. */
@@ -236,18 +243,43 @@ var IMP_NAME={
         'category','ps','wordtype','grammar'],
   ph:  ['ipa','pronunciation','phonetic','phonetics','phonemic','phonology',
         'sounds','sound','phonemes','transcription','ph','pron','say','value'],
+  ex:  ['example','examples','example sentence','example sentences','sentence',
+        'sentences','usage','usage example','sample sentence','xv','ex'],
+  exg: ['example meaning','example gloss','example translation','xe','xg',
+        'sentence meaning','sentence gloss','gloss of example',
+        'translation of example'],
+  reg: ['register','style','formality','reg','ur','tone'],
+  tags:['tag','tags','field','fields','domain','domains','topic','topics',
+        'semantic field','semantic domain','keywords','sd'],
+  ety: ['etymology','etym','ety','origin','derivation','root','derived from'],
+  nt:  ['note','notes','comment','comments','remark','remarks','memo','nt',
+        'annotation'],
+  sub: ['subclass','sub class','subcategory','sub category','subtype',
+        'sub type','subpos','sub'],
   ch:  ['character','char','glyph','letter','letters','symbol','sign','sigil',
         'grapheme','graph','ch','rune','sc'],
   nm:  ['name','letter name','called','nm','label','title']
 };
-/* The app already knows what it calls these, in ten languages, and that is
-   where those names live. Reading them off here means a person whose
-   spreadsheet is headed 「つづり」 or 「品詞」 is understood without anybody
-   typing those words into this file. */
-var IMP_KEY={hw:['f.spelling'], mn:['f.meaning','word.means'], pos:['f.pos'],
-             ch:['lt.title','toc.letters'], nm:['lt.name']};
+/* WHAT THIS APP ITSELF CALLS EACH OF THEM, in one place, because two things
+   need it and they must not drift: the row on the mapping screen is labelled
+   with it, and impNames() reads it in all ten languages so that a person
+   whose spreadsheet is headed 「つづり」, 「品詞」 or 「例文」 is understood
+   without anybody typing those words into this file.
+
+   Most of them are the word the dictionary already uses -- a column called an
+   example is what the word sheet calls an example. Four have no home outside
+   this screen and keep their own key. */
+var IMP_LABEL={hw:'f.spelling', mn:'f.meaning', pos:'f.pos', ph:'imp.role.ph',
+               ex:'word.ex', exg:'word.ex.gl.ph', reg:'word.reg',
+               tags:'word.tags', ety:'word.ety', nt:'word.note', sub:'f.sub',
+               ch:'imp.role.ch', nm:'imp.role.nm', skip:'imp.role.skip'};
+/* And the other names the app has for the same thing, where it has two. */
+var IMP_KEY={mn:['word.means'], ch:['lt.title','toc.letters'], nm:['lt.name']};
+function impKeys(role){
+  return (IMP_LABEL[role]? [IMP_LABEL[role]] : []).concat(IMP_KEY[role]||[]);
+}
 function impNames(role){
-  var out=IMP_NAME[role].slice(), keys=IMP_KEY[role]||[], i, j, L, v;
+  var out=IMP_NAME[role].slice(), keys=impKeys(role), i, j, L, v;
   if(typeof LANG==='undefined' || typeof UI_LANGS==='undefined') return out;
   for(i=0;i<UI_LANGS.length;i++){
     L=LANG[UI_LANGS[i]];
@@ -355,7 +387,7 @@ function impGuess(read){
   var roles=[], taken={}, i, r, col;
   for(i=0;i<wide;i++){
     r=head? impRoleOf(head[i]) : '';
-    if(r && r!=='mn' && taken[r]) r='';
+    if(r && !IMP_MANY[r] && taken[r]) r='';
     if(r){ taken[r]=1; }
     roles.push(r);
   }
@@ -396,7 +428,8 @@ function impWidth(rows){
 function impRows(read, roles, snd){
   var rows=read.rows||[], out=[], i, j, rec, r, v;
   for(i=0;i<rows.length;i++){
-    rec={hw:'', mn:'', pos:'', ph:[], phRaw:'', ch:'', nm:''};
+    rec={hw:'', mn:'', pos:'', ph:[], phRaw:'', ch:'', nm:'',
+         ex:[], exg:[], reg:'', tags:[], ety:'', nt:'', sub:''};
     for(j=0;j<roles.length;j++){
       r=roles[j]; v=String(rows[i][j]||'').trim();
       if(!r || r==='skip' || !v) continue;
@@ -404,12 +437,47 @@ function impRows(read, roles, snd){
       else if(r==='mn') rec.mn = rec.mn? rec.mn+' / '+v : v;
       else if(r==='pos' && !rec.pos) rec.pos=v;
       else if(r==='ph' && !rec.ph.length){ rec.ph=impPh(v, snd); rec.phRaw=impClean(v); }
+      else if(r==='ex') rec.ex.push(v);
+      else if(r==='exg') rec.exg.push(v);
+      else if(r==='reg' && !rec.reg) rec.reg=v;
+      else if(r==='tags') rec.tags=impJoinList(rec.tags, v);
+      else if(r==='ety' && !rec.ety) rec.ety=v;
+      else if(r==='nt' && !rec.nt) rec.nt=v;
+      else if(r==='sub' && !rec.sub) rec.sub=v;
       else if(r==='ch' && !rec.ch) rec.ch=v;
       else if(r==='nm' && !rec.nm) rec.nm=v;
     }
     if(rec.hw || rec.mn || rec.ch) out.push(rec);
   }
   return out;
+}
+/* Several things in one cell. Fields are written 「料理; 天文」 or with commas
+   in a file that is not comma-separated, and a list somebody keeps by hand
+   has the same thing twice in it as often as not. */
+function impJoinList(have, v){
+  var parts=String(v||'').split(/[;,、，]/), out=have.slice(), i, s;
+  for(i=0;i<parts.length;i++){
+    s=parts[i].trim();
+    if(s && out.indexOf(s)<0) out.push(s);
+  }
+  return out;
+}
+/* The examples of one row, each with its translation beside it. Two columns
+   of examples and two of their meanings pair off in the order they stand in,
+   which is how a spreadsheet with 例文1 例文1の意味 例文2 例文2の意味 is
+   written. A translation with no sentence over it is not an example and is
+   dropped -- an empty line with a meaning under it is nothing anybody can
+   read. */
+function impExs(rec){
+  var out=[], i;
+  for(i=0;i<rec.ex.length;i++) out.push({ln:rec.ex[i], gl:rec.exg[i]||''});
+  return out;
+}
+/* Meanings arrive joined, because a file can hold several in one cell and
+   several cells can each hold one. The app keeps them apart, and a semicolon
+   is what a person writes between two of them. */
+function impSenses(mn){
+  return String(mn||'').split(/\s*[;\/；]\s*/).filter(function(x){ return !!x.trim(); });
 }
 /* The sounds a file gives, read as sounds rather than guessed from letters.
    "k a n o" is already cut. "/kaˈno/" is one string and comes apart against
@@ -434,6 +502,50 @@ function impClean(v){
 }
 function impCut(s, snd){
   return longCut(s, (snd||[]).concat((typeof ipaAll==='function')? ipaAll() : []));
+}
+
+/* ---- which side of the language a file is -------------------------------
+   A file goes into the dictionary or into the alphabet, and the person says
+   which. 「文字に入れるか単語に入れるかきめさせたら？」
+
+   It used to be decided per ROW: a row carrying a character was a letter and
+   every other row was a word, so one file could quietly be both. That is a
+   guess about what somebody's file IS, made from what the columns look like,
+   and it is the one guess in this whole reader that cannot be seen being
+   wrong -- a dictionary of one- and two-letter words reads as an alphabet,
+   and nothing on the screen says the words went somewhere else.
+
+   So the side is chosen first, and the column roles are only the ones that
+   side has. Nothing goes into both. The guess still runs and still picks the
+   side, but now it picks a thing that is sitting there being switchable.
+
+   It is ABOVE the line with the rest of the guess, because it is part of it:
+   what the guess ANSWERS is these roles read as one side, and a check that
+   asked impGuess() alone would be asking a question the app never asks.
+   Nothing here touches a global or the document; impSetInto(), which does,
+   is below. */
+var IMP_SIDE={w:['hw','mn','pos','ph','ex','exg','reg','tags','ety','nt','sub','skip'],
+              l:['ch','ph','nm','skip']};
+function impRolesFor(into){ return IMP_SIDE[into] || IMP_SIDE.w; }
+/* Which side the guess landed on: a column called a character means the file
+   is an alphabet, because nothing else in a word list is one. */
+function impInto(roles){ return roles.indexOf('ch')>=0 ? 'l' : 'w'; }
+/* The same guess, read as the other side. A spelling and a character are the
+   same column asked a different question, and so are a meaning and a name;
+   a part of speech has no answer on the letter side and is dropped rather
+   than turned into something it is not. Only `mn` may repeat -- a second
+   spelling or a second character is one column too many, so it is skipped. */
+function impMove(roles, into){
+  var swap = into==='l' ? {hw:'ch', mn:'nm', pos:'skip'} : {ch:'hw', nm:'mn'};
+  var ok=impRolesFor(into), out=[], seen={}, i, r;
+  for(i=0;i<roles.length;i++){
+    r=swap[roles[i]] || roles[i];
+    if(ok.indexOf(r)<0) r='skip';
+    if(r!=='skip' && !IMP_MANY[r] && seen[r]) r='skip';
+    if(r!=='skip') seen[r]=1;
+    out.push(r);
+  }
+  return out;
 }
 
 /* ==== below this line the app begins ==== */
@@ -538,42 +650,6 @@ function impTake(src){
   openImport();
 }
 
-/* ---- 2. which side of the language, and what each column is -------------
-   A file goes into the dictionary or into the alphabet, and the person says
-   which. 「文字に入れるか単語に入れるかきめさせたら？」
-
-   It used to be decided per ROW: a row carrying a character was a letter and
-   every other row was a word, so one file could quietly be both. That is a
-   guess about what somebody's file IS, made from what the columns look like,
-   and it is the one guess in this whole reader that cannot be seen being
-   wrong -- a dictionary of one- and two-letter words reads as an alphabet,
-   and nothing on the screen says the words went somewhere else.
-
-   So the side is chosen first, and the column roles are only the ones that
-   side has. Nothing goes into both. The guess still runs and still picks the
-   side, but now it picks a thing that is sitting there being switchable. */
-var IMP_SIDE={w:['hw','mn','pos','ph','skip'], l:['ch','ph','nm','skip']};
-function impRolesFor(into){ return IMP_SIDE[into] || IMP_SIDE.w; }
-/* Which side the guess landed on: a column called a character means the file
-   is an alphabet, because nothing else in a word list is one. */
-function impInto(roles){ return roles.indexOf('ch')>=0 ? 'l' : 'w'; }
-/* The same guess, read as the other side. A spelling and a character are the
-   same column asked a different question, and so are a meaning and a name;
-   a part of speech has no answer on the letter side and is dropped rather
-   than turned into something it is not. Only `mn` may repeat -- a second
-   spelling or a second character is one column too many, so it is skipped. */
-function impMove(roles, into){
-  var swap = into==='l' ? {hw:'ch', mn:'nm', pos:'skip'} : {ch:'hw', nm:'mn'};
-  var ok=impRolesFor(into), out=[], seen={}, i, r;
-  for(i=0;i<roles.length;i++){
-    r=swap[roles[i]] || roles[i];
-    if(ok.indexOf(r)<0) r='skip';
-    if(r!=='skip' && r!=='mn' && seen[r]) r='skip';
-    if(r!=='skip') seen[r]=1;
-    out.push(r);
-  }
-  return out;
-}
 function impSetInto(v){
   if(v!==IMP.into){ IMP.roles=impMove(IMP.roles, v); IMP.into=v; }
   openImport();
@@ -597,7 +673,7 @@ function impMapHTML(){
     out+='<th><select' + CH('impSetRole', [j]) + '>'+
       side.map(function(r){
         return '<option value="'+r+'"'+(IMP.roles[j]===r? ' selected':'')+'>'+
-          esc(t('imp.role.'+r))+'</option>';
+          esc(t(IMP_LABEL[r]))+'</option>';
       }).join('')+'</select>'+
       (head? '<div class="impcap">'+esc(head[j]||'')+'</div>' : '')+'</th>';
   }
@@ -755,10 +831,52 @@ function impAt(hw){
 
 /* ---- doing it ----------------------------------------------------------- */
 function doImport(){ impPut(impRows(IMP.read, IMP.roles, addedSnd())); }
-/* Meanings arrive joined, because a file can hold several in one cell and
-   several cells can each hold one. The app keeps them apart. */
-function impSenses(mn){
-  return String(mn||'').split(/\s*\/\s*/).filter(function(x){ return !!x.trim(); });
+/* THE REST OF WHAT A ROW CARRIED, written onto the word. The shape is the
+   word sheet's own -- wdPutExtras() in www/wordsheet.js writes exactly these
+   keys off wEdit -- because a word that arrives here has to be a word that
+   sheet can open, and a key spelled differently on this road would be a
+   second answer to what a word is made of.
+
+   Nothing is DELETED: a column the file does not have says nothing about a
+   word that is already in the dictionary, and an overwrite that emptied the
+   note somebody wrote here would be the file winning over their own work.
+   Examples are ADDED beside the ones already there rather than replacing
+   them, for the same reason -- they are separate things, not one field.
+
+   One place, for the new word and the overwritten one alike. */
+function impPutRow(w, r){
+  var ex=impExs(r), reg=impRegKey(r.reg), i;
+  if(r.sub) w.sub=String(r.sub).trim();
+  if(reg) w.reg=reg;
+  if(r.ety) w.ety=String(r.ety).trim();
+  if(r.nt) w.nt=String(r.nt).trim();
+  if(r.tags.length) w.tags=r.tags.slice();
+  for(i=0;i<ex.length;i++){
+    if(!w.ex) w.ex=[];
+    if(!impHasEx(w.ex, ex[i])) w.ex.push(ex[i]);
+  }
+}
+function impHasEx(list, e){
+  var i;
+  for(i=0;i<list.length;i++) if(list[i].ln===e.ln) return true;
+  return false;
+}
+/* A register is one of the four the app knows and not free text -- the sheet
+   offers those and nothing else can be chosen on it -- so a column saying
+   「口語」, "Spoken" or "sp" arrives as `sp`, and one saying anything else
+   arrives as nothing rather than as a fifth register nobody can pick again.
+   The same shape posKey() has, and for the same reason. */
+function impRegKey(v){
+  var l=String(v||'').trim().toLowerCase(), k='', i;
+  if(!l) return '';
+  for(i=0;i<REG.length;i++) if(REG[i]===l) return REG[i];
+  Object.keys(LANG).forEach(function(L){
+    var str=LANG[L] && LANG[L].str, j;
+    if(!str) return;
+    for(j=0;j<REG.length;j++)
+      if(!k && String(str['word.reg.'+REG[j]]||'').toLowerCase()===l) k=REG[j];
+  });
+  return k;
 }
 /* Every row, as a word.
 
@@ -828,9 +946,10 @@ function impPut(rows){
       if(w){
         if(IMP.dup!=='over') continue;
         was.push({hw:hw, w:JSON.parse(JSON.stringify(w))});
-        if(r.mn){ w.mn=r.mn; w.mns=impSenses(r.mn); }
+        if(r.mn){ w.mns=impSenses(r.mn); w.mn=w.mns[0]||r.mn; }
         if(r.pos) w.pos=posKey(r.pos);
         if(r.ph.length) w.ph=r.ph;
+        impPutRow(w, r);
         continue;
       }
       /* A word with no sounds is still a word. phGuess() works from the
@@ -866,8 +985,11 @@ function impPut(rows){
       if(!seq) continue;
       hw=seq.join('');
     }
-    WORDS.push({hw:hw, ph:seq, mn:r.mn, mns:impSenses(r.mn),
-                pos:r.pos? posKey(r.pos) : 'n', at:Date.now()+i});
+    w={hw:hw, ph:seq, mns:impSenses(r.mn), mn:'',
+       pos:r.pos? posKey(r.pos) : 'n', at:Date.now()+i};
+    w.mn=w.mns[0]||r.mn||'';
+    impPutRow(w, r);
+    WORDS.push(w);
     added.push(hw);
   }
   save();

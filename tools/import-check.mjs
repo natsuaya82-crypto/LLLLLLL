@@ -70,7 +70,8 @@ if (IMPSRC.indexOf(MARK) < 0){
 const src = REG + I18N + '\n' +
   fs.readFileSync(path.join(WWW, 'ipa.js'), 'utf8') + '\n' +
   IMPSRC.slice(0, IMPSRC.indexOf(MARK));
-const names = ['impRead', 'impGuess', 'impRows', 'impShape', 'impDelim', 'impCells', 'impPh'];
+const names = ['impRead', 'impGuess', 'impInto', 'impMove', 'impRows',
+               'impShape', 'impDelim', 'impCells', 'impPh'];
 let IMP;
 try {
   IMP = new Function(src + '\nreturn {' + names.map(n => n + ':' + n).join(',') + '};')();
@@ -88,11 +89,24 @@ function is(what, got, want){
   const g = JSON.stringify(got), w = JSON.stringify(want);
   if (g !== w) fails.push(what + '\n      got  ' + g + '\n      want ' + w);
 }
-/* Every sample goes through the same three calls the app makes. */
+/* A record as impRows() makes one -- the SAME field order, because `is`
+   compares the two as text -- so a case below names only the fields it is
+   about. A column role added tomorrow is one default here rather than a
+   rewrite of every sample in this file. */
+const REC = () => ({ hw: '', mn: '', pos: '', ph: [], phRaw: '', ch: '', nm: '',
+                     ex: [], exg: [], reg: '', tags: [], ety: '', nt: '', sub: '' });
+const rec = (o) => Object.assign(REC(), o);
+/* Every sample goes through the calls impTake() makes, in that order and no
+   other. The guess is read WHOLE and then read as one side of the language,
+   which is where a column the chosen side has no use for becomes `skip` --
+   asking impGuess() alone would report a note column on an alphabet as a
+   note, which is true of the guess and is not what the app does with it. */
 function read(sample){
   const r = IMP.impRead(sample);
-  const roles = IMP.impGuess(r);
-  return { shape: r.shape, roles: roles, rows: IMP.impRows(r, roles) };
+  const guess = IMP.impGuess(r);
+  const into = IMP.impInto(guess);
+  const roles = IMP.impMove(guess, into);
+  return { shape: r.shape, into: into, roles: roles, rows: IMP.impRows(r, roles) };
 }
 
 /* ---- 1. the app's own export, which it could not read back -------------- */
@@ -122,7 +136,7 @@ function read(sample){
   const r = read(s);
   is('excel paste: tab wins', IMP.impDelim(s), '\t');
   is('excel paste: the date is not a meaning', r.roles, ['hw', 'mn', 'pos', 'skip']);
-  is('excel paste: the row', r.rows[0], { hw: 'kano', mn: '山', pos: '名詞', ph: [], phRaw: '', ch: '', nm: '' });
+  is('excel paste: the row', r.rows[0], rec({ hw: 'kano', mn: '山', pos: '名詞' }));
 }
 
 /* ---- 3. a European Excel, which writes semicolons ----------------------- */
@@ -142,7 +156,7 @@ function read(sample){
   const s = 'kano,mountain,n\ntir,to see,v\nmos,tall,adj\n';
   const r = read(s);
   is('headless: read off the contents', r.roles, ['hw', 'mn', 'pos']);
-  is('headless: the row', r.rows[1], { hw: 'tir', mn: 'to see', pos: 'v', ph: [], phRaw: '', ch: '', nm: '' });
+  is('headless: the row', r.rows[1], rec({ hw: 'tir', mn: 'to see', pos: 'v' }));
 }
 
 /* ---- 5. a pronunciation column, named and unnamed ----------------------- */
@@ -162,7 +176,7 @@ function read(sample){
   is('mdf: recognised', r.shape, 'mdf');
   is('mdf: two records', r.rows.length, 2);
   is('mdf: two senses join', r.rows[0].mn, 'mountain / hill');
-  is('mdf: the row', r.rows[1], { hw: 'tir', mn: 'to see', pos: 'v', ph: ['t', 'i', 'r'], phRaw: 'tir', ch: '', nm: '' });
+  is('mdf: the row', r.rows[1], rec({ hw: 'tir', mn: 'to see', pos: 'v', ph: ['t', 'i', 'r'], phRaw: 'tir' }));
 }
 
 /* ---- 7. json, wrapped in something -------------------------------------- */
@@ -183,7 +197,7 @@ function read(sample){
   const r = read(s);
   is('lines: recognised', r.shape, 'lines');
   is('lines: three of them', r.rows.length, 3);
-  is('lines: dash', r.rows[0], { hw: 'kano', mn: 'mountain', pos: '', ph: [], phRaw: '', ch: '', nm: '' });
+  is('lines: dash', r.rows[0], rec({ hw: 'kano', mn: 'mountain' }));
   is('lines: colon', r.rows[1].mn, 'to see');
   is('lines: two spaces', r.rows[2].hw, 'mos');
 }
@@ -197,7 +211,7 @@ function read(sample){
   const s = 'mountain\nto see\ntall\nriver\n';
   const r = read(s);
   is('meanings only: one column of meanings', r.roles, ['mn']);
-  is('meanings only: nothing became a spelling', r.rows[0], { hw: '', mn: 'mountain', pos: '', ph: [], phRaw: '', ch: '', nm: '' });
+  is('meanings only: nothing became a spelling', r.rows[0], rec({ mn: 'mountain' }));
 }
 
 /* ---- 10. an alphabet rather than a dictionary --------------------------- */
@@ -249,7 +263,97 @@ function read(sample){
      IMP.impPh('tʃa', []), ['t', 'ʃ', 'a']);
 }
 
-/* ---- 12. and the letters it made can be typed --------------------------- */
+/* ---- 12. everything else a word is made of ------------------------------ */
+/* 「二行（列）だけしか対応してないの？意味・例文とか全部対応させて」 OWNER
+   2026-09-06. Six columns were understood -- the spelling, the meaning, the
+   part of speech, the reading, and on the letter side the character and its
+   name -- and a spreadsheet somebody has actually kept has an example
+   sentence in it, and its translation, and a field, and a note. Everything
+   the word sheet can hold is a column now, and these are the samples that
+   say so. */
+{
+  /* An English Excel sheet with the lot in it, in an order nobody would
+     choose on purpose, which is what a real one looks like. */
+  const s = 'Word\tMeaning\tPart of Speech\tSubclass\tRegister\tFields\tExample\t' +
+            'Example meaning\tEtymology\tNotes\n' +
+            'kano\tmountain; hill\tnoun\tCommon\tWritten\tnature; place\t' +
+            'kano mos tir\ta tall mountain is seen\tfrom kan, to rise\tsays it twice\n';
+  const r = read(s);
+  is('every column: the roles',
+     r.roles, ['hw', 'mn', 'pos', 'sub', 'reg', 'tags', 'ex', 'exg', 'ety', 'nt']);
+  is('every column: the row', r.rows[0], rec({
+    hw: 'kano', mn: 'mountain; hill', pos: 'noun', sub: 'Common', reg: 'Written',
+    tags: ['nature', 'place'], ex: ['kano mos tir'], exg: ['a tall mountain is seen'],
+    ety: 'from kan, to rise', nt: 'says it twice' }));
+}
+{
+  /* The same sheet kept in Japanese, headed with the words the app itself
+     uses -- read off ja.js, not typed into import.js. 文体 is the register,
+     分野 the fields, 語源 the origin, メモ the note, 下位分類 the subclass. */
+  const s = 'つづり,意味,品詞,下位分類,文体,分野,例文,語源,メモ\n' +
+            'kano,山,名詞,普通名詞,文語,自然,kano mos tir,kan より,ふたつめ\n';
+  const r = read(s);
+  is('every column, in Japanese: the roles',
+     r.roles, ['hw', 'mn', 'pos', 'sub', 'reg', 'tags', 'ex', 'ety', 'nt']);
+  is('every column, in Japanese: the row', r.rows[0], rec({
+    hw: 'kano', mn: '山', pos: '名詞', sub: '普通名詞', reg: '文語', tags: ['自然'],
+    ex: ['kano mos tir'], ety: 'kan より', nt: 'ふたつめ' }));
+}
+{
+  /* Semicolon CSV out of a European Excel, with the example and its meaning
+     under Toolbox's own names for them. A semicolon file cannot use a
+     semicolon between two fields, so this one uses a comma -- both are read. */
+  const s = 'Word;Definition;xv;xe;Tags\n' +
+            'mos;tall;mos kano;the mountain is tall;shape,size\n';
+  const r = read(s);
+  is('semicolon csv: the example and its meaning',
+     [r.rows[0].ex, r.rows[0].exg], [['mos kano'], ['the mountain is tall']]);
+  is('semicolon csv: a comma still separates two fields',
+     r.rows[0].tags, ['shape', 'size']);
+}
+{
+  /* Two example columns and two meaning columns pair off in the order they
+     stand in. Everything else is one to a row: a second etymology column is
+     one column too many and is skipped rather than joined into the first. */
+  const s = 'Word,Meaning,Example,Example meaning,Example,Example meaning,Etymology,Etymology\n' +
+            'tir,to see,tir kano,I see a mountain,tir mos,he sees far,from ti,from tir\n';
+  const r = read(s);
+  is('two examples: the roles',
+     r.roles, ['hw', 'mn', 'ex', 'exg', 'ex', 'exg', 'ety', 'skip']);
+  is('two examples: they pair off',
+     [r.rows[0].ex, r.rows[0].exg],
+     [['tir kano', 'tir mos'], ['I see a mountain', 'he sees far']]);
+  is('two examples: the second etymology is not joined on',
+     r.rows[0].ety, 'from ti');
+}
+{
+  /* Two meaning columns still join, which is what they did before any of
+     these existed, and a semicolon inside one cell is two meanings. */
+  const s = 'Word,Meaning,Definition\nkano,mountain; hill,山\n';
+  const r = read(s);
+  is('two meaning columns still join', r.roles, ['hw', 'mn', 'mn']);
+  is('two meanings join', r.rows[0].mn, 'mountain; hill / 山');
+}
+{
+  /* Backslash-coded, which is where \\xv and \\xe come from in the first
+     place, and where \\nt is the note and \\sd the semantic domain. */
+  const s = '\\lx kano\n\\ge mountain\n\\ps n\n\\xv kano mos tir\n' +
+            '\\xe a tall mountain is seen\n\\nt says it twice\n\\sd nature\n';
+  const r = read(s);
+  is('mdf: the example, its meaning, the note and the domain',
+     [r.rows[0].ex, r.rows[0].exg, r.rows[0].nt, r.rows[0].tags],
+     [['kano mos tir'], ['a tall mountain is seen'], 'says it twice', ['nature']]);
+}
+{
+  /* And none of it reaches the letter side: an alphabet has a character, what
+     it reads and what it is called, and nothing else. */
+  const s = 'Letter,Sound,Name,Notes\nϘ,k,qoppa,borrowed\n';
+  const r = read(s);
+  is('an alphabet is read as one', r.into, 'l');
+  is('an alphabet has no notes on it', r.roles, ['ch', 'ph', 'nm', 'skip']);
+}
+
+/* ---- 13. and the letters it made can be typed --------------------------- */
 /* A file gets in, and then nothing of it can be written. That is not a
    reading fault and no sample above can see it: the reader answered
    correctly, the letters were made, and the font they went into has no way in.
