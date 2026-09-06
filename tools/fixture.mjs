@@ -229,7 +229,38 @@ export function seed(){
             ln:'mos', who:'Aya', hd:'aya', mine:true,
             av:{st:[{pts:[[112,112],[688,112],[400,688]]}]},
             mn:'the one behind the village', ui:'en',
-            to:'p3', toh:'iri'}];
+            to:'p3', toh:'iri'},
+           /* AND THE CONVERSATION GOES DOWN AS FAR AS IT IS DRAWN.
+              「返信の孫投稿（返信の返信）に線が無い」 OWNER 2026-09-06.
+
+              A thread indents four steps and stops -- THREAD_IN in
+              www/post.js -- and the line joining a post to the answers under
+              it stands in the column of the post it comes from
+              (`.prail0`..`.prail3` in www/index.html, thRails() in
+              www/sns.js). The deepest of those four had nothing wearing it:
+              the walk's thread was p1 -> p3 -> p4, which is two steps, so
+              press reported `nothing wears .prail3` -- a rule with no row in
+              front of it.
+
+              THREE MORE AND NOT ONE, and the count is the geometry rather
+              than a preference. The last column is worn by a row that is at
+              the cap AND still has an answer below it, so the chain has to
+              reach one step PAST the cap: p5 is the third step, p6 the
+              fourth, which is where the indent stops, and p7 is the answer
+              under it that makes p6 draw its line. */
+           {id:'p5', at:Date.now()-800000, lang:'other', lname:'Vethi',
+            ln:'qel', who:'Iri', hd:'iri', mine:false, av:{ch:'\u0416'},
+            mn:'the one with the white stones', ui:'en',
+            to:'p4', toh:'aya'},
+           {id:'p6', at:Date.now()-700000, lang:langId, lname:'Shango',
+            ln:'tir', who:'Aya', hd:'aya', mine:true,
+            av:{st:[{pts:[[112,112],[688,112],[400,688]]}]},
+            mn:'that is the one', ui:'en',
+            to:'p5', toh:'iri'},
+           {id:'p7', at:Date.now()-600000, lang:'other', lname:'Vethi',
+            ln:'qel', who:'Iri', hd:'iri', mine:false, av:{ch:'\u0416'},
+            mn:'I will go tomorrow', ui:'en',
+            to:'p6', toh:'aya'}];
   LETTERS = [{id:'l1', st:[{pts:[[112,112],[688,112],[400,688]]}], ch:'', nm:'', snd:['k']},
              {id:'l2', st:null, ch:'Ϙ', nm:'', snd:['t']},
              {id:'l3', st:[{pts:[[112,688],[400,112],[688,688]]}], ch:'', nm:'', snd:[]},
