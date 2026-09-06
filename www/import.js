@@ -585,7 +585,25 @@ function impBlank(){ return {step:'get', read:null, roles:[], into:'w', dup:'ski
              per column saying what that column is.
      ready   how many words are about to come in, and how many are already
              here. Pressing it imports and puts you on the dictionary. */
-function openImport(){ openForm('csv:', t('csv.title'), impHTML(), impMount); }
+/* OPENING IT AND REDRAWING IT ARE TWO ACTS, and one function was both.
+   openImport() was the name on the row that opens this (www/home.js
+   § fRow(t('set.csv.in'))) AND what every step of it called to draw itself
+   again -- so `step` was whatever the last import left behind. Somebody who
+   pasted a list once and came back a week later was put straight on the
+   paste box, past the screen that asks whether it is a paste or a file.
+   「取り込みが貼り付け画面に直行する」
+
+   It is not a condition added to the old function: what it was asked was
+   wrong, so what it asks is rewritten. The door starts an import, impPaint()
+   draws the one that is running, and no press has to remember which it
+   meant.
+
+   FORM_OPEN is how a form is rebuilt when nothing holds it any more -- the
+   back button onto a route with no FORM behind it -- so that is an arrival
+   too, and it starts one the same way. impStep() and impAgain() go through
+   impPaint(), because they ARE the running import. */
+function openImport(){ IMP=impBlank(); impPaint(); }
+function impPaint(){ openForm('csv:', t('csv.title'), impHTML(), impMount); }
 FORM_OPEN.csv=function(){ openImport(); };
 function impHTML(){
   if(IMP.step==='ready') return impReadyHTML();
@@ -596,8 +614,8 @@ function impHTML(){
 /* Rebuilding it rather than patching a piece: choosing what a column is
    changes the counts underneath it and can change the buttons, and a screen
    that redraws two of its three parts is where the third goes stale. */
-function impAgain(){ IMP=impBlank(); openImport(); }
-function impStep(v){ IMP.step=v; openImport(); }
+function impAgain(){ IMP=impBlank(); impPaint(); }
+function impStep(v){ IMP.step=v; impPaint(); }
 
 /* ---- 1. getting it in ---------------------------------------------------
    Two rows. It used to be the box, the file button and 「次へ」 all on one
@@ -677,12 +695,12 @@ function impTake(src){
      read whole, then read as one side. */
   IMP.roles=impMove(IMP.roles, IMP.into);
   IMP.step='map';
-  openImport();
+  impPaint();
 }
 
 function impSetInto(v){
   if(v!==IMP.into){ IMP.roles=impMove(IMP.roles, v); IMP.into=v; }
-  openImport();
+  impPaint();
 }
 
 /* ---- 2. what each column is --------------------------------------------
@@ -745,8 +763,8 @@ function impColName(j){
   var head=IMP.read && IMP.read.head;
   return (head && head[j])? String(head[j]) : t('imp.col', j+1);
 }
-function impSetRole(j, v){ IMP.roles[j]=v; openImport(); }
-function impSetDup(v){ IMP.dup=v; openImport(); }
+function impSetRole(j, v){ IMP.roles[j]=v; impPaint(); }
+function impSetDup(v){ IMP.dup=v; impPaint(); }
 
 /* ---- 3. what is about to happen ----------------------------------------
    One line saying how many are coming in, and how many of them the language

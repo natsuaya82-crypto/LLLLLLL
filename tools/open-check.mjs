@@ -163,6 +163,13 @@ async function boot(pre, drive) {
          one listener, because obDoorBack() saying 'up' and obBack() going
          there are two statements. */
       landed: (typeof window.__landed === 'undefined') ? null : window.__landed,
+      /* and what § 3d's drive left behind: the door the moment a session
+         ended. Its own key, because `landed` is § 3c's word for the press
+         before this one and two drives writing one key is one of them
+         reading the other's answer. */
+      outDoor: (typeof window.__outDoor === 'undefined') ? null : window.__outDoor,
+      /* and where § 3e's sign-in put somebody down */
+      inLand: (typeof window.__inLand === 'undefined') ? null : window.__inLand,
       /* what § 5's drive left behind: every argument the door handed the
          native plugin, and what Supabase would have said about it. It is
          `hand` and not `door` because `door` above is already this object's
@@ -464,6 +471,115 @@ const SESS = JSON.stringify({ at: 'not a jwt', rt: 'a refresh token',
        'screen stayed on top of an app that had already come back.');
   say('giving up on a password change: one press back, appIs()=' + L.is +
       ', signed in, and the door is off the screen the moment it is pressed');
+}
+
+/* ---- 3d. and signing out after that road opens the door on the FORM -----
+   「ログアウトを押すとパスワード送信の画面になる」 OWNER 2026-09-06, on a
+   phone. The road is § 3c's and one press further: Settings -> account ->
+   change password -> 「forgot」, back out of it, then sign out.
+
+   OBM is the door's buffer and it outlives the screen. netOut() ended the
+   session and drew, appIs() answered 'door' correctly -- and the door drew
+   whatever OBM still said, which was `forgot`. So somebody who signed out was
+   shown a box asking for their address and a 「送信」, with no sign-in form
+   and no account to send anything to.
+
+   Read the moment the press ends, for § 3c's reason, and read as OBM.mode
+   AND as what is on the screen: the mode is where the fault is and the face
+   is what the owner saw, and neither on its own is the sentence. This block
+   also reads OBM.mode inside the drive rather than off the boot, because the
+   boot's own reading of the two faces sets OBM.mode as it goes. */
+{
+  const r = await boot({ 'lingua.set': JSON.stringify({ done: true }),
+                         'lingua.sess': SESS,
+                         'lingua.me': JSON.stringify({ name: 'Aya', handle: 'aya' }) },
+                       () => {
+                         NAV = [{ r:'settings', a:'' }];
+                         go('set', 'acct'); go('set', 'pw');
+                         setPwForgot();
+                         obBack();
+                         try { setSignOutGo(); }
+                         catch (e) { window.__outErr = String(e && e.message); }
+                         window.__outDoor = {
+                           err: window.__outErr || '',
+                           is: appIs(), mode: OBM.mode, msg: OBM.msg,
+                           busy: !!OBM.busy, inS: netSignedIn(),
+                           forgotFace: !!document.querySelector('[data-do="obMailForgot"]'),
+                           form: !!document.querySelector('#app [data-do="obMailIn"]')
+                         };
+                       });
+  const O = r.outDoor || {};
+  if (O.inS)
+    no('signing out after the password road: there is still a session.');
+  if (O.is !== 'door')
+    no('signing out after the password road: appIs()=' + O.is + ', wanted door.');
+  if (O.mode !== 'in')
+    no('signing out after the password road: the door still says OBM.mode=' +
+       JSON.stringify(O.mode) + ' -- the buffer outlived the session, so the ' +
+       'door opens on the face the last road left it on.');
+  if (O.busy || O.msg)
+    no('and the door opens mid-press: busy=' + O.busy + ' msg=' +
+       JSON.stringify(O.msg) + '.');
+  if (O.forgotFace)
+    no('and what is DRAWN is the password-send screen: 「ログアウトを押すと' +
+       'パスワード送信の画面になる」 is on the screen, not only in the buffer.');
+  if (!O.form)
+    no('and the sign-in form is not on the screen -- the door has to open on ' +
+       'the one thing there is to do when nobody is signed in.');
+  if (O.err)
+    no('signing out after the password road threw: ' + O.err);
+  say('signing out after the password road: appIs()=' + O.is +
+      ', the door is on its sign-in face (OBM.mode=' + JSON.stringify(O.mode) + ')');
+}
+
+/* ---- 3e. and signing back in opens the PROFILE -------------------------
+   「開く画面はプロフィール画面であって設定画面じゃない」 OWNER 2026-09-06.
+
+   Signing out is done from Settings, so that is the screen somebody is
+   standing on when the door opens. obIn()'s road for a person who is already
+   inside was `render()` -- draw where you are -- so the app re-opened on the
+   room the account had just been signed out of.
+
+   Not the same sentence as obReturn(), which is one line above it in obIn():
+   a door that was opened FROM somewhere and remembered where goes back there
+   (§ 3c is that road being finished). This is the door with nothing recorded
+   behind it, and the profile is what an account IS -- the name and the handle
+   that have just come back down.
+
+   netMyProfile() is stood in for, because what is under test is where obIn()
+   puts somebody once the row is in hand, and a headless browser has no
+   server to get one from. Everything else is the real app: the real obIn(),
+   the real goTab(), and here() read off the trail afterwards. */
+{
+  const r = await boot({ 'lingua.set': JSON.stringify({ done: true }),
+                         'lingua.sess': SESS,
+                         'lingua.me': JSON.stringify({ name: 'Aya', handle: 'aya' }) },
+                       () => {
+                         SET.obback = null;
+                         goTab('profile'); go('settings'); go('set', 'acct');
+                         window.netMyProfile = function (ok) {
+                           ok({ display: 'Aya', handle: 'aya' });
+                         };
+                         window.__inLand = { from: here().r };
+                         try { obIn(); }
+                         catch (e) { window.__inLand.err = String(e && e.message); }
+                         window.__inLand.at = here().r;
+                         window.__inLand.trail =
+                           NAV.map(n => n.r + (n.a ? ':' + n.a : '')).join(' > ');
+                         window.__inLand.is = appIs();
+                       });
+  const I = r.inLand || {};
+  if (I.err)
+    no('signing in threw: ' + I.err);
+  if (I.at !== 'profile')
+    no('signing back in from ' + JSON.stringify(I.from) + ' lands on ' +
+       JSON.stringify(I.at) + ', wanted profile. 「開く画面はプロフィール画面' +
+       'であって設定画面じゃない」');
+  if (I.trail !== 'profile')
+    no('and the trail behind it is "' + I.trail + '" -- the profile is where ' +
+       'the app opens, not a screen laid on top of where somebody was.');
+  say('signing back in with nothing pending: from ' + JSON.stringify(I.from) +
+      ' onto ' + JSON.stringify(I.at) + ' (appIs()=' + I.is + ')');
 }
 
 /* ---- 3. finished, and signed in ---------------------------------------- */

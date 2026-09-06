@@ -674,7 +674,20 @@ function netOut(){
      netTook() on the way in is deliberately not the mirror of this: arriving
      is followed by a screen that is chosen -- obIn() picks it -- and leaving
      is not, because there is only one thing to show somebody who is not
-     signed in. */
+     signed in.
+
+     AND THE DOOR OPENS ON ITS OWN FACE. OBM is what the door is showing --
+     the address, the six digits, the new password -- and it is a buffer that
+     outlives the screen, so a session ending in the middle of one of those
+     roads left the next door standing on it. Pressing 「パスワードを忘れた」
+     and then backing out and signing out drew the door in its `forgot` face:
+     appIs() answered 'door' correctly and the door drew what OBM still said.
+
+     Here, because this is where a session ends -- the same sentence the
+     render() above is: it is the four roads out, not the one a person takes.
+     obDoor() writes these three on the way IN to the door and that is the
+     other end of the same walk; what was missing is the way out. */
+  OBM.mode='in'; OBM.msg=''; OBM.busy=false;
   render();
 }
 /* AN ACCOUNT ON ITS WAY OUT, WRITTEN ON THE SESSION.
