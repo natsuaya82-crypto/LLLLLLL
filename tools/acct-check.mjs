@@ -514,52 +514,59 @@ const R = await pg.evaluate(async () => {
      プランは SET.plan ── lingua.set、端末の設定 ── にあり、アカウントにも
      サーバーにも紐づいていませんでした。二台目で入れば無料から始まります。 */
 
-  /* 16. サーバーのほうが上なら、それを採る。 */
+  /* 16. 段はサーバーが答え、その答えがそのまま段になる。
+     OWNER 2026-09-06「アカウントごとなんだから、違うアカウントで復元できるの
+     おかしいだろ。検証して」、OWNER 2026-09-03「だから端末でやるわけねえだろ」。
+
+     ここは 2026-09-06 まで「高いほうの段を採る」でした。端末とサーバーが
+     食い違いうる前提の規則で、食い違えたのは端末が自分の段を書けたから
+     です。書けなくなったので、食い違うものがありません ── 端末は署名付きの
+     取引を送り、段は supabase/functions/verify-plan が決めます。 */
   start();
   netOut(); arrive(A);
   SET.plan = 'free'; SET.planWas = 'free'; save();
-  netGet = (path, ok) => {
-    if (path.indexOf('/rest/v1/plan') === 0) return ok([{ plan: 'pro' }]);
-    return ok([]);
+  let sentP = null;
+  const realSendP = netSend;
+  netSend = (m, path, body, tok, ok) => {
+    sentP = { path, body };
+    if (path.indexOf('/functions/v1/verify-plan') === 0) return ok({ plan: 'pro' });
+    return ok(null);
   };
-  netPlanSync(() => {});
-  netGet = realGet;
-  if (plan() !== 'pro') no('16: アカウントが持っている段が降りてこない — ' + plan());
-  say('16: アカウントのほうが上なら、その段になる');
+  netPlanVerify(['J1'], () => {});
+  netSend = realSendP;
+  if (plan() !== 'pro') no('16: サーバーの答えが段にならない — ' + plan());
+  if (!sentP || sentP.path.indexOf('/functions/v1/verify-plan') !== 0)
+    no('16: 段を訊く先が函数ではない — ' + (sentP && sentP.path));
+  if (!sentP || !sentP.body || (sentP.body.jws || []).join(',') !== 'J1')
+    no('16: 上がっていくのが領収書ではない — ' + JSON.stringify(sentP && sentP.body));
+  say('16: 段はサーバーが答え、上がるのは署名付きの取引だけ');
 
-  /* 17. **端末のほうが上なら、取り上げない。**これがいちばん危ない向きです ──
-     サーバーの答えをそのまま採ると、領収書を持っている端末から段を
-     取り上げます。docs/PAID_FEATURES.md。 */
+  /* 17. **失効も同じ一本の道で降りてくる。**ここは 2026-09-06 まで逆でした
+     ── 「端末のほうが上なら取り上げない」。それは段を端末が決めていたから
+     必要だった規則で、端末の `free` は「持っていない」と「読めなかった」の
+     両方だったからです。サーバーの `free` は、検証できた取引が一つも生きて
+     いないという意味しかありません。 */
   start();
   netOut(); arrive(A);
   SET.plan = 'pro'; SET.planWas = 'pro'; save();
-  let sent = [];
-  netGet = (path, ok) => {
-    if (path.indexOf('/rest/v1/plan') === 0) return ok([{ plan: 'free' }]);
-    return ok([]);
-  };
-  const realUp = netPlanUp;
-  netPlanUp = (id) => { sent.push(id); };
-  netPlanSync(() => {});
-  netGet = realGet; netPlanUp = realUp;
-  if (plan() !== 'pro') no('17: 端末が持っていた段が取り上げられた — ' + plan());
-  if (sent.indexOf('pro') < 0)
-    no('17: 上の段をアカウントに伝えていない — 送ったもの ' + JSON.stringify(sent));
-  say('17: 端末のほうが上なら取り上げず、アカウントに伝える');
+  netSend = (m, path, body, tok, ok) => ok({ plan: 'free' });
+  netPlanVerify([], () => {});
+  netSend = realSendP;
+  if (plan() !== 'free') no('17: 失効が降りてこない — ' + plan());
+  say('17: 失効も同じ道で降りてくる');
 
-  /* 18. そして段が動いたら、その場でアカウントに伝わる。capLapse() が
-     プランの動いた唯一の場所 ── ボタンでも領収書でも失効でもここに来る。 */
+  /* 18. そして**届かなかった答えは何も書かない。**これが 17 の裏で、
+     取り違えると金を払った直後に free になります。
+     「今課金したのに（仮）フリーになりましたって出たんだけど」OWNER
+     2026-09-01。 */
   start();
   netOut(); arrive(A);
-  SET.plan = 'free'; SET.planWas = 'free'; save();
-  sent = [];
-  netPlanUp = (id) => { sent.push(id); };
-  SET.plan = 'pro';
-  capLapse();
-  netPlanUp = realUp;
-  if (sent.indexOf('pro') < 0)
-    no('18: 段が動いてもアカウントに伝わらない — 送ったもの ' + JSON.stringify(sent));
-  say('18: 段が動いたら、その場でアカウントに伝わる');
+  SET.plan = 'pro'; SET.planWas = 'pro'; save();
+  netSend = (m, path, body, tok, ok, bad) => bad(null, 0, 'no signal');
+  netPlanVerify(['J1'], () => {});
+  netSend = realSendP;
+  if (plan() !== 'pro') no('18: 届かなかった答えが段を書き換えた — ' + plan());
+  say('18: 届かなかった答えは何も書かない');
 
   /* ---- 19. 言語の数は、そのアカウントの言語を数える -------------------
      「じゃないとアカウント変えたら無限に言語作れるやん」 */
@@ -1536,8 +1543,10 @@ const R = await pg.evaluate(async () => {
 
        A（Pro）がサインアウト → B がサインイン
        端末の SET.plan はまだ pro（Keychain は誰のものでもない）
-       次の起動 → netPlanSync：B の行は空 → best='pro' → netPlanUp('pro')
-       → B のアカウントに Pro が付く
+       次の起動 → 端末が自分の段をサーバーに書く → B のアカウントに Pro が付く
+
+     書く道は 2026-09-06 に無くなりましたが、**端末に残った段そのもの**は
+     まだここにあり、それが B の画面に出るかどうかはこの章の話です。
 
      `SET.planUid` が持ち主で、実機では Keychain が本体です（そこは Swift なので
      この容器では走りません ── `ios/App/App/LinguaPlan.swift`）。ブラウザには
@@ -1555,25 +1564,31 @@ const R = await pg.evaluate(async () => {
     no('37: 段の持ち主が入った人になっていない — ' + JSON.stringify(SET.planUid));
   say('37: 別のアカウントは、この端末で買われた購読を引き継がない');
 
-  /* 38. **そして B のサーバーの行に pro が書かれない。**これが実害の出る
-     ところです ── 37 で画面が free でも、送るほうが pro なら B のアカウントに
-     Pro が付いたまま残ります。 */
+  /* 38. **そして B のアカウントに pro が付かない。**2026-09-06 まで、これは
+     「端末が送るものが pro でないこと」でした。送る道が無くなったので、主張は
+     一段強くなります ── **端末は段を一言も言わない。**上がるのは署名付きの
+     取引だけで、それは A の appAccountToken を持っているので B には付きません
+     （拒むのはサーバー、tools/verify-check.mjs）。 */
   start();
   SET.plan = 'pro'; SET.planWas = 'pro'; SET.planUid = A; save();
   netOut();
   const sent38 = [];
-  const realUp38 = netPlanUp;
-  netPlanUp = (id) => { sent38.push(id); };
-  arrive(B);
-  netGet = (path, ok) => {
-    if (path.indexOf('/rest/v1/plan') === 0) return ok([]);   /* B の行は無い */
-    return ok([]);
+  const realSend38 = netSend;
+  netSend = (m, path, body, tok, ok) => {
+    sent38.push({ path, body });
+    if (path.indexOf('/functions/v1/verify-plan') === 0) return ok({ plan: 'free' });
+    return ok(null);
   };
-  netPlanSync(() => {});
-  netGet = realGet; netPlanUp = realUp38;
-  if (sent38.indexOf('pro') >= 0)
-    no('38: B のアカウントに pro を送った — 送ったもの ' + JSON.stringify(sent38));
-  say('38: B のアカウントに、A が買った段は送られない');
+  arrive(B);
+  netPlanVerify([], () => {});
+  netSend = realSend38;
+  if (sent38.some((r) => r.path.indexOf('/rest/v1/plan') === 0))
+    no('38: 段の表に書きにいった — ' + JSON.stringify(sent38.map((r) => r.path)));
+  if (sent38.some((r) => r.body && r.body.plan))
+    no('38: 端末が段を送った — ' + JSON.stringify(sent38.map((r) => r.body)));
+  if (plan() !== 'free')
+    no('38: B の段がサーバーの答えになっていない — ' + plan());
+  say('38: B のアカウントに、A が買った段は送られない ── 端末は段を言わない');
 
   /* 39. **買った人のものは取り上げない。**Keychain には書き戻さないので、A の
      段と名前はそこに残り、A が戻ってきた起動で読み直されます。ブラウザには
@@ -1601,22 +1616,22 @@ const R = await pg.evaluate(async () => {
   say('40: 持ち主の書かれていない端末は、名前を書き留めるだけで段は動かさない');
 
   /* 41. **planWas も一緒に下りる。**飾りではありません。下りないと起動時の
-     capLapse() が pro → free を「解約された」と読み、①別人の段を基準にした
-     シートを出し、②`netPlanUp('free')` を **B のサーバーの行** に書きます。
-     ここは capLapse() を本当に呼んで、何も送られないことを見ます。 */
+     capLapse() が pro → free を「解約された」と読み、別人の段を基準にした
+     シートを B に出します。送る側は 2026-09-06 に無くなったので、残っている
+     のは**その一言**で、ここは capLapse() を本当に呼んで何も言われないことを
+     見ます。 */
   start();
   SET.plan = 'pro'; SET.planWas = 'pro'; SET.planUid = A; save();
   netOut();
   arrive(B);
-  const sent41 = [];
-  const realUp41 = netPlanUp;
-  netPlanUp = (id) => { sent41.push(id); };
+  const said41 = [];
+  const realPop41 = window.openCapLapse;
+  window.openCapLapse = () => { said41.push('lapse'); };
   capLapse();
-  netPlanUp = realUp41;
-  if (sent41.length)
-    no('41: B のアカウントに、B のものではない解約が送られた — ' +
-       JSON.stringify(sent41));
-  say('41: planWas も一緒に下りるので、別人の解約は送られない');
+  window.openCapLapse = realPop41;
+  if (said41.length)
+    no('41: B に、B のものではない解約が知らされた — ' + JSON.stringify(said41));
+  say('41: planWas も一緒に下りるので、別人の解約は言われない');
 
   /* 42. **起動して憶えているセッションを読んだ瞬間にも訊く。**netTook() だけでは
      遅すぎます ── netResume() は非同期で、www/boot.js の末尾の capLapse() は

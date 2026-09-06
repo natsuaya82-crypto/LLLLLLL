@@ -775,6 +775,7 @@ defLang('en', (function(){
       "plan.date" : "{1}/{2}/{0}",
       "plan.cancel" : "Cancel subscription",
       "store.none" : "Nothing to restore",
+      "store.nosess" : "Not signed in",
       'plan.price.free' : "$0",
       'plan.price.pro.yr' : "$99.99",
       'plan.per.yr' : "/ year",

@@ -909,6 +909,7 @@ defLang('fr', (function(){
       "plan.date" : "{2}/{1}/{0}",
       "plan.cancel" : "Résilier l'abonnement",
       "store.none" : "Rien à restaurer",
+      "store.nosess" : "Non connecté",
       "plan.price.free"  : "0 $",
       "plan.price.pro.yr"  : "$99.99",
       "plan.per.yr"  : "/ an",

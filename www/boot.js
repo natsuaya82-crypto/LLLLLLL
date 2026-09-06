@@ -70,25 +70,25 @@ function bootSession(){
      asking twice would be the app doubting somebody who already said yes. */
   if(netEnded()){ wipeAllGo(); return; }
   /* And what this ACCOUNT has paid for, which used to be a fact about the
-     phone. The higher of the two rungs wins -- netPlanSync() has the whole
-     of why. Before the languages, because the plan is what says how many of
-     them there may be. 「課金とアカウントとキーボードはアカウントに結びつく」
+     phone. The receipts this device holds go up and the plan comes back --
+     storeSync() in www/store.js and netPlanVerify() in www/net.js have the
+     whole of why. Before the languages, because the plan is what says how
+     many of them there may be.
+     「課金とアカウントとキーボードはアカウントに結びつく」
 
-     THROUGH netPlanBoot(), AND THAT IS AN ORDER RATHER THAN A RENAME. What
-     this phone is holding and has not managed to send goes up first, and the
-     two copies are read together inside that send's ANSWER.
+     IT IS ONE ROAD NOW AND THERE IS NOTHING LEFT TO RACE. It was
+     netPlanBoot(): a send of what this phone had not managed to tell the
+     server, and a read that took the higher of the two rungs, in that order
+     because otherwise they raced and the read won -- an ended subscription
+     answered with the plan Apple had already ended, permanently, on the phone
+     of somebody who had paid. 「プランは絶対におかしくしちゃいけないんだって」
+     OWNER 2026-09-02.
 
-     It was netPlanSync() on its own, and the line above it -- capLapse(), at
-     the foot of this file -- was firing the send that says a plan ENDED into
-     the same moment. netResume() is asynchronous and has not come back when
-     capLapse() runs; this function is what netResume() calls when it does.
-     So the send and the read raced, the read won, and the account answered
-     with the plan Apple had already ended. The higher rung then won for the
-     wrong reason and wrote itself back into the Keychain, where the next
-     launch read it: a cancellation undone, permanently, on the phone of
-     somebody who had paid. 「プランは絶対におかしくしちゃいけないんだって」
-     OWNER 2026-09-02. */
-  netPlanBoot();
+     Neither side of that race exists. This phone holds no opinion about what
+     it has paid for, so there is nothing to send and nothing to read against:
+     what goes up is what Apple SIGNED, and what comes back is the plan.
+     「だから端末でやるわけねえだろ」 OWNER 2026-09-03. */
+  storeSync();
   /* THE TWO ROADS BETWEEN THIS PHONE AND THE SERVER, AND THEY GO IN ORDER.
      netLangsDown() brings down the languages this ACCOUNT has that this phone
      has not got at all -- it fills in what is missing and stops, so a phone

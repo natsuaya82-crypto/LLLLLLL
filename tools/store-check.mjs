@@ -183,12 +183,14 @@ const FIELDS = {
   /* what somebody pays. It is the ACCOUNT's -- 「課金とアカウントとキーボードは
      アカウントに結びつく」 -- and `SET.plan` is where the value sits on this
      phone while it travels. */
-  plan:     { to: 'netPlanUp' },
-  /* and the one this phone is holding that the server has NOT been told:
-     a launch opened with no signal, or closed before the answer came back.
-     It is written before the send and cleared when the send lands, so it is
-     an unfinished road rather than a second place the plan lives. */
-  planPend: { to: 'netPlanUp' },
+  /* The road is netPlanVerify(), and it goes the other way from every other
+     row in this table: what goes UP is the signed receipt, and the plan comes
+     BACK. `SET.plan` is where the answer sits on this phone until the next
+     one. 「だから端末でやるわけねえだろ」 OWNER 2026-09-03 -- there is no road
+     from here to the `plan` table any more, and `planPend`, which held what
+     this phone had not managed to tell the server, went with it: a phone that
+     holds no opinion has nothing left unsent. */
+  plan:     { to: 'netPlanVerify' },
   /* the searches somebody starred. The server is the record and this is the
      copy the screen draws in the first frame -- www/sns.js says so. */
   saved:    { to: 'netSearchSave' },

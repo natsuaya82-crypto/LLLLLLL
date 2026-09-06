@@ -19,14 +19,19 @@
 
    What this file does NOT do, deliberately:
 
-   - it does not write the plan to the Keychain. LinguaStore.swift already
-     does that (`LinguaPlanPlugin.set`) on every road that changes anything,
-     and a second writer is a second answer to "what plan is this".
+   - it does not decide what plan a receipt buys. Nothing on this phone does,
+     since 2026-09-06: what goes up is the signed transaction and what comes
+     back is the plan (supabase/functions/verify-plan). 「だから端末でやるわけ
+     ねえだろ」 OWNER 2026-09-03.
+   - it does not write the plan anywhere. planTook() in www/core.js is the one
+     place, and netPlanVerify() is the one caller.
    - it does not decide what a plan may DO. That is `CAN` and `can()`.
-   - it does not ask the App Store on launch. `current` exists on the native
-     side for that and nothing calls it yet: a launch that phones Apple before
-     drawing anything is a launch that waits on the network, and the Keychain
-     already holds the answer from last time.                                */
+
+   IT DOES ASK ON LAUNCH, and that changed with the same decision. storeSync()
+   is called from www/boot.js: the receipts this device holds are what the
+   server needs to answer, and nothing on the phone can answer without it.
+   Nothing waits on it -- the app opens on the plan it had, and the answer
+   lands a moment later.                                                     */
 
 /* Whether there is a native side to ask at all. */
 function storePlug(){
@@ -35,99 +40,97 @@ function storePlug(){
 }
 function storeOn(){ return !!storePlug(); }
 
-/* What came back, put where the app keeps it.
-   The plan is taken from the ANSWER and never assumed from what was asked
-   for: a purchase that ends up pending, or a receipt that will not verify,
-   comes back saying free, and believing the request instead of the reply is
-   how an app gives away a tier nobody paid for.
+/* WHAT COMES BACK FROM THE APP STORE IS RECEIPTS, NOT A PLAN.
+   「だから端末でやるわけねえだろ」 OWNER 2026-09-03,
+   「アカウントごとなんだから、違うアカウントで復元できるのおかしいだろ。
+     検証して」 OWNER 2026-09-06.
 
-   AND IT ONLY EVER GOES UP FROM HERE. 「復元するものはありませんって出るけどさ、
-   さっきまでプロだったんだけど消えたってこと？」OWNER 2026-09-02, having
-   pressed Restore while paying. The answer said `free` -- an empty
-   entitlement list, which on TestFlight and in the sandbox is routine for an
-   account that IS paying -- and this line wrote it over their plan.
+   `storeTook()` was here until 2026-09-06: it read `r.plan` -- a word the
+   phone had worked out -- and wrote it down. ios/App/App/LinguaStore.swift no
+   longer answers a plan at all. Every road out of it answers
+   `jws`: the signed transactions, exactly as Apple wrote them, and the one
+   thing that reads a signature is supabase/functions/verify-plan.
 
-   The phone side is fixed too (ios/App/App/LinguaStore.swift: only
-   `Transaction.updates` may lower), and this is the second door on the same
-   room. A plan ending arrives as a Keychain the next launch reads, which is
-   Apple having SAID so; nothing a button did will take a tier away.
-   「プランは絶対におかしくしちゃいけないんだって」 */
-function storeTook(r){
-  var p = (r && r.plan) ? String(r.plan) : 'free';
-  p = planBest(p, plan());
-  SET.plan = p;
-  save();
-  /* The same sentence a plan ending has always said, said by the same
-     function: capLapse() compares against the plan it last saw, so it does
-     not care whether the change came from a button, a receipt or a lapse. */
-  capLapse();
-  render();
-  return p;
+   So this file's job on every road is the same two lines: take the receipts,
+   hand them to netPlanVerify(), and say what came back. */
+function storeJws(r){
+  return (r && r.jws && r.jws.length) ? r.jws : [];
+}
+/* Which plan a product id buys, for the SENTENCE after a purchase and for
+   nothing else. 「plus で課金しても pro になりましたって出る」 OWNER
+   2026-09-02: what a person pressed and what their account now holds are two
+   different facts, and the sentence wants the first.
+
+   It is the other end of storeId() and reads the id apart the same way that
+   builds it. WHAT A PRODUCT IS WORTH is not decided here and not decided in
+   www at all -- that is `PRODUCTS` in supabase/functions/verify-plan/verify.mjs,
+   because deciding is the server's. This only names what was pressed. */
+function storePlanOf(pid){
+  var s=String(pid||''), head='com.tokinets.lingua.', dot;
+  if(s.indexOf(head)!==0) return '';
+  s=s.substring(head.length);
+  dot=s.indexOf('.');
+  return dot<0 ? '' : s.substring(0, dot);
+}
+
+/* The launch, and every other moment the app wants to know where it stands.
+
+   THE EMPTY LIST IS THE QUESTION 「what does this account pay」. There is no
+   second call that only reads: the function works the plan out from every
+   transaction it has ever verified for this account, so sending nothing asks
+   exactly that -- which is what a browser does, and what a phone does when the
+   App Store could not be reached. netPlanVerify() has the long version.
+
+   Nothing waits on it and nothing is said. A launch that cannot reach the
+   server leaves the plan where it was, which is the one direction it is safe
+   to be wrong in. */
+function storeSync(){
+  var np=storePlug();
+  if(!np){ netPlanVerify([], storeUntilTook); return; }
+  np('LinguaStore', 'current', {})
+    .then(function(r){ netPlanVerify(storeJws(r), storeUntilTook); })
+    ['catch'](function(){ netPlanVerify([], storeUntilTook); });
 }
 
 /* Buy one, by product id.
+
+   IT NEEDS AN ACCOUNT, and that is the decision of 2026-09-06 rather than a
+   guard somebody added. The uid goes down to StoreKit as `appAccountToken`,
+   Apple carries it inside every transaction of that subscription for as long
+   as it lives, and the server refuses it for anybody else. A purchase made
+   with no account on it is a purchase belonging to whoever verifies it first.
 
    The four answers are told apart because they need four different things
    said: it worked, you cancelled, somebody has to approve it and you will
    hear later, and it failed. Cancelling says nothing at all -- a person who
    just pressed Cancel does not need to be told they cancelled. */
 function storeBuy(id){
-  var np = storePlug();
+  var np=storePlug();
   if(!np) return false;
+  if(!netSignedIn()){ toast(t('store.nosess')); return true; }
   toast(t('store.wait'));
-  np('LinguaStore', 'buy', { id: String(id||'') })
+  np('LinguaStore', 'buy', { id:String(id||''), uid:SESS.uid })
     .then(function(r){
-      var how = (r && r.how) ? String(r.how) : '';
-      var got = (r && r.plan) ? String(r.plan) : '';
-      /* WHAT WAS PRESSED, which is not what is HELD.
-         `r.plan` is the best of everything this Apple ID holds, and that is
-         what a plan IS -- see storeTook(). `r.bought` is the plan the signed
-         transaction was for. LinguaStore.swift § buy answers both because
-         they are two different facts, and the sentence after a purchase wants
-         the second one. */
-      var paid = (r && r.bought) ? String(r.bought) : '';
-      /* A PURCHASE NEVER LOWERS THE PLAN. The phone side reads the plan off
-         the signed transaction now (ios/App/App/LinguaStore.swift § buy), so
-         a `bought` that still says `free` is not a person who owns nothing --
-         it is an answer that has not caught up, or one that arrived wrong.
-         Writing it down would take away what was just paid for and put the
-         lapse popup up on top of it. 「今課金したのに（仮）フリーになりました
-         って出たんだけど…消費者が一番ブチギレる」 OWNER 2026-09-01.
-
-         So the answer is refused rather than believed, and nothing is
-         written: the next launch reads the Keychain, and Restore is the
-         button for right now. `storeTook` is left exactly as it is -- it is
-         also restore's and manage's, where coming back free is the truth. */
-      if(how === 'bought' && (!got || got === 'free')){
-        toast(t('store.fail'));
-        return;
-      }
-      storeTook(r);
-      /* AND THE SENTENCE NAMES WHAT WAS BOUGHT, not the top rung held.
-         「plus で課金しても pro になりましたって出る」 OWNER 2026-09-02, on a
-         real phone. This read `planName(plan())`, and plan() after storeTook()
-         is planBest(the answer, what was already on) -- the BEST of the two,
-         which is the right rule for a plan and the wrong thing to say to
-         somebody who has just pressed Plus.
-
-         The rung itself is untouched: storeTook() still takes the better of
-         the two and nothing here lowers anything. What changes is the words.
-
-         The two come apart whenever a better entitlement is already live,
-         and one subscription group does not close that -- it is the ordinary
-         shape of a DOWNGRADE. Plus and Pro are in one group with the levels
-         split (OWNER 2026-09-03: 「グループ1個でレベルも分かれてた」), so
-         pressing Plus while Pro is running is Apple deferring the change to
-         the end of the paid period: the person keeps Pro until then, which
-         is what they paid for and what `currentEntitlements` says. The plan
-         on the screen is Pro and is right. The sentence after the press is
-         about the press.
-
-         `got` and never plan() for the fallback: a phone carrying a native
-         side older than this answers no `bought` at all, and the ANSWER is
-         still closer to what was pressed than the best rung on the account. */
-      if(how === 'bought') toast(t('toast.plan.other', planName(paid || got)));
-      else if(how === 'pending') toast(t('store.pending'));
+      var how=(r && r.how)? String(r.how) : '';
+      if(how==='cancelled') return;
+      if(how==='pending'){ toast(t('store.pending')); return; }
+      /* WHAT WAS PRESSED, which is not what is HELD. `r.bought` is the signed
+         transaction's own product id; the plan that comes back is the best of
+         everything this account holds, and after pressing Plus while Pro is
+         running those are two different words. 「plus で課金しても pro に
+         なりましたって出る」 OWNER 2026-09-02. */
+      var paid=storePlanOf(r && r.bought);
+      netPlanVerify(storeJws(r), function(p, d){
+        /* NOTHING CAME BACK is not 「無料」. A purchase that went through and
+           an answer that did not arrive is a phone with money spent on it, and
+           writing `free` there is the fault that cost the owner their plan
+           twice. 「今課金したのに（仮）フリーになりましたって出たんだけど」
+           OWNER 2026-09-01. netPlanVerify() writes nothing in that case; this
+           says the App Store road failed and leaves the plan alone. */
+        if(!p){ toast(t('store.fail')); return; }
+        storeUntilTook(p, d);
+        toast(t('toast.plan.other', planName(paid || p)));
+      });
     })
     ['catch'](function(){ toast(t('store.fail')); });
   return true;
@@ -138,6 +141,13 @@ function storeBuy(id){
    holds -- `current` would answer the same -- but `restore` is the one road
    that calls AppStore.sync(), which is what a person who has just reinstalled
    on a new phone actually needs, and it is the road a reviewer looks for.
+
+   IT RESTORES ONTO THE ACCOUNT THAT IS SIGNED IN. 「アカウントごとなんだから、
+   違うアカウントで復元できるのおかしいだろ」 OWNER 2026-09-06. Nothing in www
+   enforces that and nothing here could: the same receipts go up whoever is
+   holding the phone, and the server answers `free` when they belong to
+   somebody else. 「復元するものはありません」 is that answer, and it is the
+   true one.
 
    In a browser there is nothing to read, and it says so rather than saying
    nothing: a button that answers with silence reads as broken. */
@@ -152,14 +162,20 @@ var STRT=null;
 /* The three numbers Apple's walk came back with, in the smallest form that
    still tells them apart. Not a sentence: this is a state, and what somebody
    does with it is send the photograph. */
-function storeWhyNone(r){
-  var saw=(r && r.saw)|0, un=(r && r.unverified)|0, uk=(r && r.unknown)|0;
+function storeWhyNone(r, d){
+  var saw=(r && r.saw)|0, un=(r && r.unverified)|0;
+  /* How many the SERVER would not take, which is the count this phone cannot
+     work out: a receipt Apple signed for somebody else's account is refused
+     there and nowhere else. 「アカウントごとなんだから、違うアカウントで復元
+     できるのおかしいだろ」 OWNER 2026-09-06. */
+  var no=(d && d.left && d.left.length)|0;
   var sy=!!(r && r.synced);
-  return ' ('+saw+'/'+un+'/'+uk+(sy? '' : ' ×')+')';
+  return ' ('+saw+'/'+un+'/'+no+(sy? '' : ' ×')+')';
 }
 function storeRestore(){
   var np=storePlug();
   if(!np){ toast(t('store.none')); return; }
+  if(!netSignedIn()){ toast(t('store.nosess')); return; }
   var said=false;
   function say(m){ if(said) return; said=true; clearTimeout(STRT); toast(m); }
   toast(t('store.wait'));
@@ -167,15 +183,18 @@ function storeRestore(){
   STRT=setTimeout(function(){ say(t('store.fail')); }, STORE_WAIT);
   np('LinguaStore', 'restore', {})
     .then(function(r){
-      var p=storeTook(r);
-      if(p!=='free'){ say(t('toast.plan.other', planName(p))); return; }
-      /* AND WHICH 「nothing」 IT IS. 「これ出るのに、復元できるものはありません
-         って出るけど？」 OWNER 2026-09-03, with Apple's sheet on screen saying
-         the subscription is live. Three different faults say this sentence
-         and one of them is 「you really own nothing」. ios/App/App/
-         LinguaStore.swift § entitledSeen() counts them; this puts the count
-         where a person can photograph it. An error is a state. */
-      say(t('store.none') + storeWhyNone(r));
+      netPlanVerify(storeJws(r), function(p, d){
+        if(!p){ say(t('store.fail')); return; }
+        storeUntilTook(p, d);
+        if(p!=='free'){ say(t('toast.plan.other', planName(p))); return; }
+        /* AND WHICH 「nothing」 IT IS. 「これ出るのに、復元できるものはありません
+           って出るけど？」 OWNER 2026-09-03, with Apple's sheet on screen saying
+           the subscription is live. Four different faults say this sentence now
+           and one of them is 「you really own nothing」. The fourth is the new
+           one and is the owner's decision of 2026-09-06: the receipts are real
+           and belong to ANOTHER ACCOUNT. An error is a state. */
+        say(t('store.none') + storeWhyNone(r, d));
+      });
     })
     ['catch'](function(){ say(t('store.fail')); });
 }
@@ -184,6 +203,10 @@ function storeRestore(){
    on another device, and about the date it runs to.
    「サブスクリプションを解除する」
 
+   Coming back from the sheet asks the server again rather than deciding
+   anything: somebody may have cancelled in there, and a cancellation is
+   Apple's to say. It arrives as a transaction, which goes up with the rest.
+
    In a browser there is no sheet to open, and the plan goes back to free by
    hand -- which is what the button under it used to do on every plan, and is
    how a tier is tried on and taken off again while none of them is on sale. */
@@ -191,7 +214,7 @@ function storeManage(){
   var np=storePlug();
   if(!np){ setPlan('free'); return; }
   np('LinguaStore', 'manage', {})
-    .then(function(r){ storeTook(r); })
+    .then(function(r){ netPlanVerify(storeJws(r), storeUntilTook); })
     ['catch'](function(){ toast(t('store.fail')); });
 }
 /* Which product a plan is bought with, monthly or yearly.
@@ -312,8 +335,9 @@ function storeRow(id){
    So the screen WAITS -- the same answer the owner gave about a language
    arriving after a sign-in, and the same mark drawn for it.
 
-   One call per visit, the latch storeAsk() already uses. `storeTook()` writes
-   what came back, which is where the plan is taken from every other road. */
+   One call per visit, the latch storeAsk() already uses. The receipts go to
+   netPlanVerify() and the plan comes back from the server, which is the same
+   road every other one here takes. */
 var STORE_CUR=false;   /* asked this visit */
 var STORE_GOT=false;   /* and the answer is in */
 function storeHeld(){ return !storeOn() || STORE_GOT; }
@@ -342,21 +366,29 @@ function storeHeld(){ return !storeOn() || STORE_GOT; }
    lie the screen has no way to notice. Holding the two together makes the
    mismatch answerable -- see storeUntil(). */
 var STORE_UNTIL=null;  /* {plan:'plus', at:<ms>} -- or null, 「not known」 */
-/* What `current` came back with, put where the screen reads it.
-   Only `current` carries a date: restore and manage answer no `until` at all,
-   and reading their answers here would clear a date that is still true. */
-function storeUntilTook(r){
-  var p=(r && r.plan) ? String(r.plan) : '';
-  var at=(r && typeof r.until==='number') ? r.until : 0;
-  STORE_UNTIL=(p && at>0) ? { plan:p, at:at } : null;
+/* What the SERVER came back with, put where the screen reads it. It is the
+   answer to netPlanVerify() on every road -- the launch, the plans screen,
+   a purchase, a restore, Apple's own sheet -- because since 2026-09-06 the
+   date is worked out in the same place the plan is
+   (`decidePlan()` in supabase/functions/verify-plan/verify.mjs). It used to
+   come off `current` alone, and only `current` carried one.
+
+   It is the CALLBACK netPlanVerify() takes, so every road records the date by
+   handing this in rather than by remembering to. An answer that did not
+   arrive comes through with no plan and clears nothing. */
+function storeUntilTook(p, d){
+  var at=(d && typeof d.until==='number') ? d.until : 0;
+  if(!p) return;
+  STORE_UNTIL=(p!=='free' && at>0) ? { plan:p, at:at } : null;
 }
 /* When the plan in force runs to, or 0 for 「not known」.
 
-   `plan()` and not the plan that was answered: storeTook() puts the answer
-   through planBest() against what is already on, so the plan on the screen
-   can be HIGHER than the one this date is about. It is 0 then, which is the
-   honest answer -- 「not known」 and 「there is no end」 are different states
-   and CLAUDE.md says they may not share a branch. */
+   `plan()` and not the plan that was answered: the two can still come apart
+   for a frame -- planTook() renders the moment the plan lands and the date is
+   written a line later -- and they come apart for good if anything else moves
+   the plan afterwards. It is 0 then, which is the honest answer --
+   「not known」 and 「there is no end」 are different states and CLAUDE.md says
+   they may not share a branch. */
 function storeUntil(){
   if(!STORE_UNTIL || STORE_UNTIL.plan!==plan()) return 0;
   return STORE_UNTIL.at;
@@ -366,10 +398,9 @@ function storeCurAsk(){
   if(!np || STORE_CUR) return;
   STORE_CUR=true;
   np('LinguaStore', 'current', {})
-    /* The date is taken BEFORE storeTook(), which renders: a screen drawn
-       between the two would be a screen drawn with the plan already moved
-       and the date still absent. */
-    .then(function(r){ STORE_GOT=true; storeUntilTook(r); storeTook(r); storeDrew(); })
+    .then(function(r){ netPlanVerify(storeJws(r), function(p, d){
+      STORE_GOT=true; storeUntilTook(p, d); storeDrew();
+    }); })
     /* An answer that never came is not 「this person owns nothing」. The
        screen stops waiting and draws what the phone holds, which is what it
        drew before any of this. */

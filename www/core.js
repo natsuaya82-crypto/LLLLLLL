@@ -1279,9 +1279,9 @@ function setOnDisk(){
    entirely when the language on screen is somebody else's -- langLocked() is
    its first line, and that is right: nothing may be written into a language
    this phone is only reading. It is wrong for a field that is nobody's
-   language. SET.planPend is what the SERVER has not been told about the plan,
-   and losing it because somebody happened to be reading a published language
-   when their subscription ended is losing the only record there is.
+   language. `SET.planUid` is which account the plan on this handset belongs
+   to, and losing it because somebody happened to be reading a published
+   language when they signed in is losing the only record there is.
 
    planMigrate() above already writes this key straight, for its own reason,
    so this is that line with a name on it rather than a new road. */
@@ -1361,8 +1361,8 @@ function planKeep(id){
    which is the one a session may take on its own. CLAUDE.md § Deciding.
 
    SOMEBODY ELSE BOUGHT IT -- start from free and let the account answer.
-   netPlanSync() reads this account's own row a moment later and raises it to
-   whatever they hold. Nothing is taken away from the person who DID buy it:
+   storeSync() sends this device's receipts a moment later and the server
+   answers with whatever THIS account holds. Nothing is taken away from the person who DID buy it:
    the Keychain is not written here, so their plan and their name are still in
    it, and the launch they come back on reads them out again.
 
@@ -1370,9 +1370,8 @@ function planKeep(id){
    capLapse() runs at the foot of www/boot.js, synchronously, and compares the
    plan against the last one this phone saw. Left where it was, it would read
    pro -> free as 「the subscription ended」 and do the two things that answer
-   is for: show the sheet that says so, against a plan this person never had,
-   and send `free` to THEIR row on the server -- writing somebody else's
-   cancellation onto an account that never bought anything. Moved together,
+   is for: show the sheet that says so, against a plan this person never had.
+   Moved together,
    there is nothing for it to notice.
 
    setKeep() and not save(): save() opens with bkTouch(), and netRead() runs
@@ -1389,7 +1388,7 @@ function planKeep(id){
    なのにそれが残るの？全部アカウントだって言ってるやん おかしいだろお前
    一本化しろって。」 OWNER 2026-09-04.
 
-   It named six -- plan, planWas, planPend, saved, savedUp, notAt -- and
+   It named six -- plan, planWas, saved, savedUp, notAt and one more -- and
    `recent`, the words somebody typed into the search field, was added to SET
    on 2026-09-03 and never added here. So a person deleted their account and
    the next screen still showed what they had searched for. That is the same
@@ -1487,21 +1486,34 @@ function planFor(uid){
    name of a FREE tier in most apps, so Free and Basic were the confusable
    pair rather than Basic and Plus. Free < Plus < Pro needs nobody told. */
 var PLAN_ORDER=['free', 'plus', 'pro'];
-/* The better of two plans, and the same sentence LinguaStore.swift's best()
-   is -- 「段が二つ見えたときの答えは上の段」. Two copies of a ladder is how
-   the two sides of a bridge come to disagree about which plan is better, so
-   the rule is written the same way on both.
+/* THE PLAN THE SERVER ANSWERED, put where the app keeps it. The one place.
+   「だから端末でやるわけねえだろ」 OWNER 2026-09-03.
 
-   It is asked when the phone and the SERVER disagree, which they can: a
-   purchase made on another device, a phone that has been offline, a plan
-   written before it belonged to an account. A plan nobody has heard of is
-   not a plan and reads as free -- a Keychain that answered nothing, a row
-   somebody edited. */
-function planBest(a, b){
-  var ia=PLAN_ORDER.indexOf(a), ib=PLAN_ORDER.indexOf(b);
-  if(ia<0) ia=0;
-  if(ib<0) ib=0;
-  return (ia>=ib)? PLAN_ORDER[ia] : PLAN_ORDER[ib];
+   `planBest()` was here until 2026-09-06 -- the higher of two rungs, asked
+   whenever the phone and the server disagreed. There is nothing left to
+   disagree: the phone holds no opinion about what it has paid for. It sends
+   what Apple signed and this is what comes back, from
+   supabase/functions/verify-plan, which is the only thing that reads a
+   signature and the only thing that writes the `plan` row.
+
+   AND IT MAY GO DOWN, which the old road could not. That is not a loosening:
+   the server decides from every transaction it has ever verified for this
+   account, so `free` here means every one of them has run out or been
+   refunded -- Apple saying so rather than an empty list nobody could read.
+   A launch with no signal never reaches this at all, and the plan stays what
+   it was. 「プランは絶対におかしくしちゃいけないんだって」 OWNER 2026-09-02.
+
+   capLapse() is what says it out loud, and it is called from here because
+   here is the one place a plan arrives. */
+function planTook(id){
+  var p=String(id||'free');
+  if(PLAN_ORDER.indexOf(p)<0) p='free';
+  SET.plan=p;
+  save();
+  planKeep(p);
+  capLapse();
+  render();
+  return p;
 }
 function has(level){ /* level: 'plus' | 'pro' */
   var want=PLAN_ORDER.indexOf(level), got=PLAN_ORDER.indexOf(plan());
@@ -1735,22 +1747,15 @@ function capLapse(){
   if(was===undefined || was===null){ SET.planWas=now; save(); return; }
   if(was===now) return;
   SET.planWas=now; save();
-  /* AND THE ACCOUNT IS TOLD, from here, because here is the one place that
-     knows the plan MOVED. 「課金とアカウントとキーボードはアカウントに
-     結びつく」 OWNER 2026-09-01.
+  /* NOTHING IS SENT FROM HERE, and that is 2026-09-06. It used to call
+     netPlanUp() -- the phone telling the server what it had decided its own
+     plan was -- and that is the road that is gone: the server decides.
+     「だから端末でやるわけねえだろ」 OWNER 2026-09-03.
 
-     This function's own comment in www/store.js already says why it is the
-     one: 「capLapse() compares against the plan it last saw, so it does not
-     care whether the change came from a button, a receipt or a lapse.」
-     Every road that changes a plan ends here -- setPlan() on the plans
-     screen, storeTook() with Apple's answer in hand, and a lapse noticed on
-     launch -- so putting the send anywhere else would be putting it in two
-     or three places and missing the fourth.
-
-     Fired and not waited for. A phone with no signal has still changed
-     plan, and netPlanSync() on the next launch is what makes a send that
-     never arrived correct itself. */
-  netPlanUp(now);
+     What is left is the sentence. It is said from here because here is the
+     one place that knows the plan MOVED, whichever road moved it: the plans
+     screen in a browser, a purchase, a restore, or a launch that asked the
+     server and was told the subscription has run out. */
   if(now==='free') openCapLapse();
 }
 

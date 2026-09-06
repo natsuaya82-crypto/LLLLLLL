@@ -861,6 +861,7 @@ defLang('it', (function(){
       "plan.date" : "{2}/{1}/{0}",
       "plan.cancel" : "Annulla l'abbonamento",
       "store.none" : "Niente da ripristinare",
+      "store.nosess" : "Non hai eseguito l’accesso",
       "plan.price.free"  : "$0",
       "plan.price.pro.yr"  : "$99.99",
       "plan.per.yr"  : "/ anno",

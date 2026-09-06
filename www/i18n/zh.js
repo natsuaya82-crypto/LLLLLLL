@@ -866,6 +866,7 @@ defLang('zh', (function(){
       "plan.date" : "{0}/{1}/{2}",
       "plan.cancel" : "取消订阅",
       "store.none" : "没有可恢复的购买",
+      "store.nosess" : "尚未登录",
       "plan.price.free"  : "$0",
       "plan.price.pro.yr"  : "$99.99",
       "plan.per.yr"  : "／年",

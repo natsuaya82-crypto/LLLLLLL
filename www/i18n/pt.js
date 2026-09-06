@@ -868,6 +868,7 @@ defLang('pt', (function(){
       "plan.date" : "{2}/{1}/{0}",
       "plan.cancel" : "Cancelar a assinatura",
       "store.none" : "Não há nada a restaurar",
+      "store.nosess" : "Não tens sessão iniciada",
       "plan.price.free"  : "$0",
       "plan.price.pro.yr"  : "$99.99",
       "plan.per.yr"  : "/ ano",

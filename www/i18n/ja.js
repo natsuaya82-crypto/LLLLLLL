@@ -777,6 +777,7 @@ defLang('ja', (function(){
       "plan.date" : "{0}/{1}/{2}",
       "plan.cancel" : "サブスクリプションを解除する",
       "store.none" : "復元するものはありません",
+      "store.nosess" : "サインインしていません",
       'plan.price.free' : '$0',
       'plan.price.pro.yr' : '$99.99',
       'plan.per.yr' : '／年',

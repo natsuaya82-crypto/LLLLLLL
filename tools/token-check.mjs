@@ -190,32 +190,38 @@ say(four.tries === 2 && four.got === 'bad 401',
     'not the clock — it goes once more and then stops: ' +
     four.tries + ' attempts, ' + four.got);
 
-/* ---- 5. the plan is written down the same wire --------------------------- */
+/* ---- 5. the receipts go up the same wire ---------------------------------
+   It was the plan that went up here until 2026-09-06 -- `netPlanUp()`, the
+   phone writing its own row. What goes up now is the signed transaction and
+   what comes back is the plan (supabase/functions/verify-plan). The claim is
+   the same one and it is about the WIRE: this call is inside the token
+   renewal, which is the thing it used to be outside of. */
 const five = await pg.evaluate(async ({ w, s }) => {
   eval(w); eval(s);
   SESS = { at:'OLD', rt:'r', uid:'me', anon:false };
   window.__reset();
   var first = true;
   window.__X.refuse = function(r){
-    if (/\/rest\/v1\/plan/.test(r.u) && first){ first = false; return 401; }
+    if (/verify-plan/.test(r.u) && first){ first = false; return 401; }
     return 200;
   };
-  netPlanUp('pro');
+  netPlanVerify(['J1'], function(){});
   await wait(150);
-  var p = window.__of('/rest/v1/plan');
+  var p = window.__of('/functions/v1/verify-plan');
   return { tries: p.length,
            lastTok: p[p.length - 1] && p[p.length - 1].tok,
            at: SESS && SESS.at,
-           pre: p[0] && p[0].pre,
+           body: p[0] && p[0].body,
+           table: window.__of('/rest/v1/plan').length,
            refreshes: window.__count('grant_type=refresh_token') };
 }, { w: WIRE, s: wait });
 
 say(five.tries === 2 && five.lastTok === 'Bearer ' + five.at,
-    'the plan is written down the same wire, so it is renewed too — this is ' +
+    'the receipts go up the same wire, so the call is renewed too — this is ' +
     'the write that used to vanish on a launch: ' + five.tries + ' tries');
-say(/merge-duplicates/.test(five.pre || ''),
-    'and it is still an upsert, which is the one thing its own XHR had that ' +
-    'netSend() did not: ' + five.pre);
+say(/"jws"/.test(five.body || '') && !/"plan"/.test(five.body || '') && five.table === 0,
+    'and what goes up is the RECEIPT and never a plan word — the table is not ' +
+    'touched at all (' + (five.body || '') + ')');
 
 /* ---- 6. every request carries a deadline --------------------------------
    www/net.js had no `timeout` anywhere. A connection that is accepted and
