@@ -499,9 +499,9 @@ iPhone の Ink 注釈、線のまま描かれた PDF）は**中心線**として
 `kb-check` は 26/60/105/150/300 字と子音 3/8/14/24 で測り、どの面も上限以下・
 文字は全部残る・どの面にも行き来のキーがある、を見ます。赤は三通り見ました。
 
-## 規約とプライバシーポリシー ── リンクは在るが、ページが無く、道も無い
+## 規約とプライバシーポリシー ── リンクも、ページも在る
 
-三つ別の話で、リリース前に三つとも要ります。**リリースを止めるのは二つ目です。**
+三つ別の話で、三つとも片が付いています。
 
 ### 1. 押したら Safari に出る（これは大丈夫）
 
@@ -518,86 +518,11 @@ Capacitor 8 の実物の Swift を読んで確かめました
 **確認メールのリンクが着地できなかった件（`docs/keyboard-extension.md` の教訓）とは
 別の話です** ── あちらはアプリに戻ってくる必要があり、こちらは出ていくだけ。
 
-### 2. Lingua 用のページが無く、**別アプリ用のものが二本ある** ← 審査で止まる
+### 2. Lingua 用のページ ── 在る
 
-```
-https://tokinets.com/lingua/terms.html      -> 404
-https://tokinets.com/lingua/privacy.html    -> 404
-```
-
-**OWNER 2026-08-26: 「まだ無い / 404」。** サイトの repo
-（`natsuaya82-crypto/tokine2`、Vercel で tokinets.com、`559dee1`）を読んで、
-なぜ 404 なのかと、**何が在るのか**が分かりました:
-
-- **`lingua/` の中は `index.html` 一つだけ。** Lingua の紹介ページで、リンクは
-  `/` と X だけ。規約へもプライバシーへも行かない
-- `vercel.json` は `cleanUrls` と `trailingSlash` だけ。**`/lingua/…` を直下へ
-  振り替える書き換えは無い**
-- 直下に `terms.html` と `privacy.html` が在るが、**どちらも Lingua のものでは
-  ない**
-
-**ここが危ない所です。** 直下の二本は流用できそうに見えて、できません:
-
-- `terms.html` の題は **「利用規約 | JPEL Manager」** ── 別製品
-- `privacy.html` は「§1 はじめに 本ポリシーは、刻音…が開発・提供するアプリケーション
-  における情報の取り扱いについて説明します。**本アプリには「JPEL Manager」が
-  含まれます。**」
-
-そして中身が Lingua と真逆を宣言しています:
-
-| privacy.html が言っていること | Lingua の実際 |
-|---|---|
-| 「**メールアドレス**など…求めることはありません」 | メールでアカウントを作る |
-| 「§2 端末内にのみ保存 … サーバーへ送信されることはありません」 | 言語も投稿も Supabase に載る |
-| 「§4 本アプリは Google **AdMob** による広告を表示します」「IDFA」 | 広告は一つも無い。IDFA も触らない |
-
-**`Lingua` という語は二本のどちらにも一度も出ません。** Lingua を名指ししている
-html は `index.html` `works.html` `lingua/index.html` の三つだけ。
-
-**流用したら、審査に落ちるより先に事実と違う申告になります。**
-`docs/apple.md` §5 の「App のプライバシー」欄は、メールアドレスとユーザー
-コンテンツを収集すると書く前提です。JPEL のポリシーはその逆を宣言しています。
-
-**書きました。`natsuaya82-crypto/tokine2` の枝 `claude/lingua-legal`**（`5f3b5d6`）に
-`lingua/terms.html` と `lingua/privacy.html` を英語で置いてあります。**まだ `main` に
-入れていないので、tokinets.com には出ていません** ── 押した瞬間に Vercel が本番へ
-出すので、公開はオーナーの判断です。
-
-`cleanUrls: true` なので `/lingua/terms.html` は `/lingua/terms` に 308 で飛びます。
-**アプリ側の URL は一文字も変えなくてよい。**
-
-中身はこの repo から採った事実だけで書いてあります（推測なし）:
-
-| 書いたこと | 出どころ |
-|---|---|
-| 写真と音声は**誰でも読める**バケットに入る | `schema.sql` の `post-media` が `public=true`、`media_read` が `using (bucket_id='post-media')` |
-| サーバに載るもの | `schema.sql` の profile / language / slice / post / react / follow / block / report |
-| パスワードは受け取らない | 認証は Supabase、返ってくるのはトークン |
-| 広告・IDFA・解析は無い | `www/` と `ios/App/App/` に AdMob も IDFA も解析 SDK も一件も無い |
-| 販売者は Apple、カード情報は来ない | `LinguaStore.swift` は `Transaction` しか見ない |
-| プランは「できること」だけを決め、あるものには触らない | `docs/PAID_FEATURES.md` と `plan-check` |
-| アカウント削除はファイルを先に消す。**通信が失敗したら残ることがある** | `netDropMe()` と、その上のコメント |
-
-**オーナーが決めたこと（2026-08-26）**: 名乗りは `Tokine (刻音)` だけ ── **法人ではない**
-ので、`company` `corporation` を意味する語は二本とも 0 件。連絡先は
-`lingua@tokinets.com`。
-
-**オーナーが決めたこと（2026-08-28）**: 準拠法と裁判管轄は「日本法・東京地裁を
-第一審の専属的合意管轄、ただし居住国の消費者保護法が与える権利は奪わない」──
-この文のまま（「それでいいよ」）。**通報への対応は24時間**（「24時間でいいよ」）。
-**13歳以上のみ**（「13さん以上だね。snsって基本そうやん」）。原文と経緯は
-`docs/FEATURE_RULES.md` § Owner decision log。
-
-**日本語版はありません。** オーナーの指示は「それぞれ英語版で作って欲しい」でした。
-
-`docs/apple.md` §5 が書いているとおり、**App Store Connect のプライバシーポリシー
-URL は必須**で、無ければ審査に落ちます。アカウント（メール）と投稿を Supabase に
-置いているので、これは避けられません。
-
-⚠ **このセッションからは URL を叩けません。** エージェントのプロキシが方針で
-CONNECT を 403 にします（`example.com` でも同じ 403 なので、サイト側の話では
-ありません）。DNS だけは通り、`tokinets.com` → `216.198.79.1`。
-**確かめる人はブラウザで開いてください。**
+`https://tokinets.com/lingua/terms` と `https://tokinets.com/lingua/privacy` は
+**公開済み**です（OWNER 2026-09-06「1あるやん」）。アプリ側の `DOC_TERMS` /
+`DOC_PRIVACY` はそこを指しています。
 
 ### 3. ログアウト中はそこに行けない ← 2026-08-26 に入れた退行
 

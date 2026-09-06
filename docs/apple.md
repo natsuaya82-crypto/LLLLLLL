@@ -367,6 +367,23 @@ App Store Connect → Lingua → **App Store** タブ:
   `ios/App/App/App.entitlements` が `com.apple.developer.applesignin` を
   宣言しています。プロファイル側は 2 節が済んでいることが条件です
 
+### 審査ノート（App Review Information）に書くこと
+
+**審査員用のアカウント。**この app はサインインしないと何も見えないので、
+**メールとパスワードの要ります**。オーナーが `natsuaya82-demo@gmail.com` の
+形で用意します。**メールもパスワードもここには書きません** ── App Store
+Connect の審査ノート欄に直接入れてください。repo に置いた資格情報は、repo を
+読める全員の資格情報です。
+
+**キーボード拡張のフルアクセスの理由。**下の一文をそのまま入れてください。
+拡張には外へ出す道が一本もありません（`URLSession` / `URLRequest` を
+`ios/App/LinguaKeyboard` に grep して 0）。
+
+> The Lingua keyboard requests Full Access only to read the user's own drawn
+> letters from the App Group shared with the main app. It sends nothing
+> anywhere: no network calls, no logging of typed text. See
+> ios/App/LinguaKeyboard/.
+
 ---
 
 
@@ -428,8 +445,8 @@ target's Resources phase.` がその行です。
 - [ ] **3 節の三つ**（有料 App 契約・銀行口座・税務情報）が全部「有効」か。
       **数日かかることがあります。**ここが済むまで、商品を作っても
       「送信準備完了」になりません
-- [ ] **4 節の商品**が四つとも出来ているか。**商品が無いあいだ、アプリの
-      値段は打ち込みの数字に落ちます**
+- [x] **4 節の商品**は四つとも App Store Connect に在ります
+      （OWNER 2026-09-06「2あるやんけ」）
 - [ ] **TestFlight で 133 が配れているか。**内部テストなら審査は要りません
 
 ---
@@ -471,16 +488,12 @@ target's Resources phase.` がその行です。
 なので:
 
 - **TestFlight で配って中身を見てもらうのは、今のままで問題ありません。**
-- **App Store の審査に出すのは、4 節の商品を作ってからです。** 商品が無い
-  あいだ StoreKit は何も返さず、画面は打ち込みの値段に落ちます。有料の機能を
-  出しておいて App 内課金を通していないアプリは Guideline 3.1.1 で落ちます。
+- **商品 4 つは App Store Connect に在ります**（OWNER 2026-09-06「2あるやんけ」）。
+  StoreKit は値段を返せるので、画面が打ち込みの数字に落ちることはありません。
 
 残っている作業は一つだけで、上のレシート検証です。`plan` の行と RLS は
 `supabase/schema.sql` に在るので、足りないのは**サーバーが Apple に訊く一本**
 です。
-
-**そちらでやることは 4 節（商品 4 つ）です。** 作った商品から順に
-アプリに出てくるので、Plus を先に作っても問題ありません。
 
 ---
 
