@@ -768,6 +768,29 @@ const CASES = [
     `select staff_drop('iri')`],
   ['and B is not staff any more',             'denied', E, 0,
     `select 1 from profile where handle='iri' and staff`],
+  /* --- and a handle nobody has says so ------------------------------------
+     「何も出ない。勝手に＠の中が消える。追加されてない」 OWNER 2026-09-05. An
+     UPDATE that matches no row is a statement that succeeded, so the screen
+     emptied its field and reloaded the same list -- a name nobody has looked
+     exactly like a name that had just gone on. It raises now, and the second
+     claim is the reason the match is lower() on both sides: `handle` is lower
+     case by the check constraint, so a capital typed into the field is a
+     person typing a name rather than a person getting it wrong. */
+  ['a handle nobody has is refused',          'denied', E, 0,
+    `select staff_add('nobodyhasthis')`],
+  ['and nobody was made staff by it',         'denied', E, 0,
+    `select 1 from profile where staff and handle='nobodyhasthis'`],
+  ['a handle typed with capitals still goes on', 'ok',   E, 0,
+    `select staff_add('IRI')`],
+  ['and B is staff again',                    'ok',     E, 0,
+    `select 1 from profile where handle='iri' and staff`],
+  /* And put back where the claims above found it. The rows here are one
+     database read in order, so a claim that leaves somebody staff is every
+     later claim asking its question of a different person. */
+  ['and comes off again',                     'ok',     E, 0,
+    `select staff_drop('iri')`],
+  ['and B is not staff after that',           'denied', E, 0,
+    `select 1 from profile where handle='iri' and staff`],
   ['B cannot take staff off anybody',         'denied', B, 0,
     `select staff_drop('mod')`],
   /* The one that cannot be undone from inside the app. The call is allowed

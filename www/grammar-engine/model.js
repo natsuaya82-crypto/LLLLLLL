@@ -22,7 +22,15 @@
   function grammarRule(data){ data=data||{}; return {id:data.id||id('rule'),type:data.type||'syntax',target:data.target||null,feature:data.feature||null,operation:data.operation||null,value:data.value===undefined?null:data.value,conditions:object(data.conditions),metadata:object(data.metadata)}; }
   function sentence(data){ data=data||{}; return {id:data.id||id('sentence'),languageId:data.languageId||null,originalText:data.originalText||'',tokens:array(data.tokens),parsedStructure:data.parsedStructure||null,semanticId:data.semanticId||null,metadata:object(data.metadata)}; }
   function semanticIR(data){ data=data||{}; return {version:1,id:data.id||id('sem'),languageIndependent:true,roles:object(data.roles),features:object(data.features),relations:array(data.relations),metadata:object(data.metadata)}; }
-  function wordOrder(value){ var map={S:'SUBJECT',O:'OBJECT',V:'VERB'}; var out=[],i,s;
+  /* A word order is a LIST OF ROLES, and the three a sentence needs are not
+     all of them. 「主語とか置いてあって指でどこに置くか決めれる形がいい。3語
+     以外も置けるようにしたい」 OWNER 2026-09-05. So the codes www/grammar.js
+     writes on the board are turned into role names here, in the one place that
+     has ever turned a word order into roles -- a second table somewhere else
+     is a second answer to what ADV means. A code nobody knows is passed
+     through uppercased rather than dropped: a role this table has not heard of
+     is still somebody's, and dropping it would silently shorten their order. */
+  function wordOrder(value){ var map={S:'SUBJECT',O:'OBJECT',V:'VERB',ADV:'ADVERB',ADP:'ADPOSITION',NEG:'NEGATION',Q:'QUESTION'}; var out=[],i,s;
     if(typeof value==='string') value=value.split('');
     if(!Array.isArray(value)) return out;
     for(i=0;i<value.length;i++){ s=String(value[i]).toUpperCase(); out.push(map[s]||s); }

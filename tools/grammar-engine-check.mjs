@@ -298,6 +298,7 @@ const D=[{hw:'mi',   mns:['I','me'],        pos:'pro'},
          {hw:'luma', mns:['eat'],           pos:'v'},
          {hw:'nai',  mns:['not'],           pos:'part', slot:'neg.not'},
          {hw:'lon',  mns:['at'],            pos:'part', slot:'where.at'},
+         {hw:'wawa', mns:['quickly'],       pos:'adv'},
          {hw:'te',   mns:['sea'],           pos:'n'},
          {hw:'telo', mns:['sea water'],     pos:'n'}];
 const id=(hw)=>'hw:'+hw;
@@ -375,6 +376,60 @@ assert.equal(say(build('SOV',{negp:'after'}),'I not eat fish'),'mi poko luma nai
 assert.equal(say(build('SOV',{negp:'before'}),'I not eat fish'),'mi poko nai luma');
 assert.equal(say(build('SOV',{adp:'after'}),'I eat at sea water'),'mi telo lon luma');
 assert.equal(say(build('SOV',{adp:'before'}),'I eat at sea water'),'mi lon telo luma');
+
+/* ---- a word order that is a LIST OF ROLES -------------------------------
+   「選択式じゃなくて主語とか置いてあって指でどこに置くか決めれる形がいい。…
+   3語以外も置けるようにしたい」 OWNER 2026-09-05. The order was three roles
+   and is a board of them now, so a role that used to have its place worked
+   out from one of the three -- an adverb after the sentence, the negation
+   beside the verb, an adposition inside the noun it governs -- stands where
+   the board says instead. A role that is NOT on the board behaves exactly as
+   it did, which is the half that would break somebody's language silently:
+   every assertion above this line is a board of three and is unchanged. */
+const ordArr=(seq,pos)=>{ const m=build('SOV',pos); m.wordOrder=e.wordOrder(seq); return m; };
+assert.equal(e.wordOrder(['S','O','V','ADV']).join(','),'SUBJECT,OBJECT,VERB,ADVERB');
+assert.equal(e.wordOrder(['S','O','V','ADP','NEG','Q']).join(','),
+  'SUBJECT,OBJECT,VERB,ADPOSITION,NEGATION,QUESTION');
+assert.equal(e.wordOrder('SOV').join(','),'SUBJECT,OBJECT,VERB',
+  'The six strings are what every language on this phone already has stored.');
+/* Three cards is the old answer, arrived at the new way. */
+assert.equal(say(ordArr(['S','O','V']),'I eat fish'),'mi poko luma');
+/* The adverb card, and it is the FRONT of the sentence that says the board
+   was read: an adverb with no card of its own already falls out at the end,
+   so a board with ADV last cannot tell the two apart. */
+assert.equal(say(build('SOV'),'I quickly eat fish'),'mi poko luma wawa',
+  'No card for it: the adverb follows the sentence, exactly as it did.');
+assert.equal(say(ordArr(['ADV','S','O','V']),'I quickly eat fish'),'wawa mi poko luma');
+assert.equal(say(ordArr(['S','O','ADV','V']),'I quickly eat fish'),'mi poko wawa luma');
+/* The negation card takes it off the verb. Without the card it stands beside
+   the verb on whichever side this language puts it -- asserted above. */
+assert.equal(say(ordArr(['NEG','S','O','V'],{negp:'after'}),'I not eat fish'),'nai mi poko luma');
+/* 「場所（前置詞句）」 is the WHOLE phrase, so the noun goes with its
+   adposition and does not also take the object's turn. */
+assert.equal(say(ordArr(['ADP','S','V'],{adp:'after'}),'I eat at sea water'),'telo lon mi luma');
+assert.equal(say(ordArr(['S','V','ADP'],{adp:'before'}),'I eat at sea water'),'mi luma lon telo');
+/* A card with nothing under it in this sentence places nothing and drops
+   nothing. Nothing in this app says a word ASKS, so QUESTION is always that. */
+assert.equal(say(ordArr(['S','O','V','Q']),'I eat fish'),'mi poko luma');
+/* And nothing somebody wrote leaves, whatever the board says -- the same
+   sentence the three-card orders are held to. */
+for(const seq of [['ADV','S','O','V'],['NEG','S','O','V'],['ADP','S','V'],['S','O','V','Q']]){
+  for(const text of ['I quickly eat big fish at sea water not','I eat fish','rice and beans']){
+    const r=e.translate.run(ordArr(seq),text);
+    assert.equal(r.pieces.length,r.units.length,
+      'arrange() gave back '+r.pieces.length+' pieces for '+r.units.length+' units of "'+text+'" on ['+seq+'].');
+  }
+}
+/* Reading one back: only a role a NOUN can take waits in the positional
+   queue. With ADV first on the board and no such rule, the first noun of the
+   sentence was handed ADVERB and the subject went to the object's word. */
+{
+  const back=e.morphology.parseSentence(ordArr(['ADV','S','O','V']),'mi poko luma wawa');
+  assert.equal(back.ok,true);
+  assert.equal(back.roles.SUBJECT,'mi');
+  assert.equal(back.roles.OBJECT,'poko');
+  assert.equal(back.roles.PREDICATE,'luma');
+}
 
 /* A word this dictionary does not have stays in the natural language and
    keeps its place in the sentence -- it does not vanish, and it is not

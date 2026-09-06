@@ -722,15 +722,15 @@ canvas.pkc{width:34px;height:34px;display:block}
    and the second one set no `display`, so it inherited `flex` from this one
    and every word on the page stayed in a column beside the face. */
 .meedit{flex:0 0 auto;min-height:44px;padding:0 18px;border-radius:999px;
-        border:1px solid var(--gold);background:none;color:var(--gold);
+        border:1px solid var(--gold);background:var(--gold);color:var(--onGold);
         font-family:inherit;font-size:.88rem}
 .meedit:active{opacity:.85}
-/* 「編集のボタンだけ金◉なの気になる」→「枠だけで。」 OWNER 2026-09-05: this
-   is the profile's own Edit and, on somebody else's profile, Follow before
-   you do -- both the thing to press, both gold now in outline rather than
-   fill. Following IT is still the ground's own colour once you do, because
-   then it is a state and the press is the undo -- the two are told apart by
-   colour, gold against muted, and neither is filled any more. */
+/* 「フォロー前は金でいいんだけど何でそこ勝手に変えた」 OWNER 2026-09-05:
+   Follow, before you do, is the gold fill it has always been -- it is the one
+   thing to press on somebody else's page. The profile's own Edit is not that:
+   it wears `edit` and is the outline alone. Following is the ground's own
+   colour once you do, because then it is a state and the press is the undo. */
+.meedit.edit{background:none;color:var(--gold)}
 .meedit.on{background:none;color:var(--tx);border-color:var(--line)}
 .phandle{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 /* The ... and the menu that hangs off it. The wrapper is what the menu is
@@ -820,9 +820,9 @@ canvas.pkc{width:34px;height:34px;display:block}
 .mnone.bad{color:var(--bad)}
 /* ---------- one conversation ----------
    The post a thread was opened on. It does not go anywhere, so it does not
-   look pressable; what marks it is a hairline down its left edge, which is
-   the same mark the indent below it uses. Nothing is coloured in: a filled
-   row would read as selected, and there is nothing to select here. */
+   look pressable; what marks it is the ground under it, a shade off the
+   page. Nothing is coloured in: a filled row would read as selected, and
+   there is nothing to select here. */
 .pfoc{background:var(--sf)}
 /* And how deep an answer is. Three steps and then it stops -- past that a
    phone is drawing a column of margin and no room for the words.
@@ -830,33 +830,22 @@ canvas.pkc{width:34px;height:34px;display:block}
 
    The wrapper takes over the post's bleed to the edge of the screen, so the
    indent is one number in one place: the post no longer pushes itself left,
-   the wrapper does, and what is left is how far in this row starts. */
+   the wrapper does, and what is left is how far in this row starts.
+
+   ONE STEP IS ONE FACE. 「線はあるけど、わかりにくすぎる。孫投稿の方が外に線
+   があるし」 OWNER 2026-09-05. There were RAILS down the left of every deep
+   row -- a fence at the row's own edge and gradients standing 14 and 28 into
+   it -- so the deeper a reply went the further OUT its line stood, which is
+   backwards: a reply hangs off the post above it, and the thing above it is
+   the face. So the fences are gone, the step is the width of a face (40, the
+   `.pav` above), and the only line left is the one down the face's own
+   column -- `.pkid .post::after` below. A grandchild's line starts at the
+   CHILD's face, because the child's row is where it is drawn. */
 .pind{margin:0 -24px}
 .pind .post{margin:0}
-/* Not pind0: a direct answer is the next row down, not a row inside
-   anything, and a rail beside it would be a rail beside every reply. */
-.pind1 .post,.pind2 .post,.pind3 .post{border-left:1px solid var(--line)}
-/* AND THE RAILS OF EVERY STEP ABOVE THIS ONE.
-   「親から分岐した時とか子供が分岐した時に線で繋いでないとマジでどの投稿か
-   分からなくなる」 OWNER 2026-09-05.
-
-   The line above draws the rail this row starts at, so a row two deep had one
-   rail and no way to say which of the rows above it hangs off -- a second and
-   a third reply at the same depth read as a flat list wearing a margin.
-
-   They are drawn rather than bordered because a border only ever sits at the
-   edge of the box, and these stand 14 and 28 into it: `.pind` bleeds to the
-   screen edge (that is the negative margin above), so a border-left on the
-   wrapper would be a line down the very edge of the phone. The colour is
-   `--line`, which is where every colour in this app lives -- a gradient of
-   one colour is how a hairline gets painted somewhere a border cannot reach,
-   and nothing here is a box. */
-.pind1{padding-left:14px}
-.pind2{padding-left:28px;
-       background:linear-gradient(var(--line),var(--line)) 14px 0/1px 100% no-repeat}
-.pind3{padding-left:42px;
-       background:linear-gradient(var(--line),var(--line)) 14px 0/1px 100% no-repeat,
-                  linear-gradient(var(--line),var(--line)) 28px 0/1px 100% no-repeat}
+.pind1{padding-left:40px}
+.pind2{padding-left:80px}
+.pind3{padding-left:120px}
 /* AND THE ONE THAT SAYS 「THERE IS AN ANSWER UNDER THIS」, which is the other
    half of the same sentence: a rail from under the face down to the row
    below, so a post and the reply to it are joined rather than stacked.
@@ -3642,8 +3631,16 @@ textarea.ntbody.grow{min-height:0;height:auto;overflow:hidden;resize:none}
    .body (above) is already the flex column that leaves the room -- .ntform
    is the note's own field inside it, so it is the one asking to fill what
    is left rather than a floor guessed in vh. */
+/* 題名は一行、下線はその欄のもの。その下は本文だけで、本文は下線を持たず、
+   この画面に残っている高さを全部取る ── 「題名／下線／この下は何もなくて
+   下まで行く」 OWNER 2026-09-05。.lnin の下の余白もここで落とす: 題名の線と
+   本文は続いた一枚。
+   残っている高さ、であって画面の高さではない: .view.fit は `--vvmin`
+   (キーボードが上がったときの高さ、390x844 では 464px = 画面の 55%) の箱で、
+   本文はその中で伸びるところまで。下端まで届かせるのは openForm の側。 */
+.ntt{flex:0 0 auto;margin-bottom:0}
 .view.fit .ntform{flex:1;min-height:0;display:flex;flex-direction:column}
-.view.fit .ntform .ntbody{flex:1;min-height:0}
+.view.fit .ntform .ntbody{flex:1;min-height:0;border-bottom:0}
 
 /* ---------- grammar: a decision, and what it does ----------
    A row of choices, then the piece of sound the choice is carried by, then

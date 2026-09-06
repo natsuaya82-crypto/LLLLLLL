@@ -1376,6 +1376,57 @@ want('and asked for with no kind it is still there too',
    moving, so it is not asserted here in either direction; what is asserted is
    that the verb was left alone, which is this commit's whole claim. */
 
+/* ---- the noun chapter is never blank -------------------------------------
+   「文法の名詞ページ見たけど、真っ暗で何もない」 OWNER 2026-09-05.
+
+   It drew the CASE marks the 助詞 stage had made, and nothing else -- no way
+   to write one, because no form in FM_INF makes a CASE rule and g2Add() had
+   therefore nothing to offer. A language that has not written its case marks
+   has no marks, so the page was empty; with a dictionary full of nouns, still
+   empty. Nothing failed and nothing threw.
+
+   The claim is the one every other chapter of this page already answers: the
+   three roles are there whether or not this language has said any of them,
+   and the ones it has not are a row to write them on. The EXAMPLE is the half
+   that waits on a word -- what a mark makes of a noun needs a noun. So it is
+   asked twice, with a dictionary and with none. */
+const nouns = await pg.evaluate(() => {
+  const keep = WORDS, wasStg = JSON.stringify(STG.set || {});
+  const show = () => { window.route = 'gram'; NAV = [{ r:'gram', a:'v2:n' }];
+                       render(); };
+  /* Every row of this chapter, by the door it goes through: a mark that
+     exists and a mark that does not are one press with one answer, so both
+     carry data-do="openSlot". Counting `.stslot` alone would also count the
+     rows of any other chapter that happened to be drawn. */
+  const rows = () => Array.prototype.filter.call(
+    document.querySelectorAll('#app [data-do="openSlot"]'), (b) => {
+      let a = null;
+      try { a = JSON.parse(b.getAttribute('data-a') || '[]'); } catch (e) {}
+      return !!a && a[0] === 'part';
+    });
+  show();
+  const withWords = rows().length;
+  const madeRows = rows().filter((b) => !!b.querySelector('.psi')).length;
+  /* And with nothing in the dictionary at all, which is the phone the owner
+     was holding: a language whose grammar is being written before its words. */
+  WORDS = [];
+  show();
+  const bare = rows().length;
+  const bareText = (document.getElementById('app') || {}).textContent || '';
+  WORDS = keep;
+  STG.set = JSON.parse(wasStg);
+  show();
+  return { withWords: withWords, madeRows: madeRows, bare: bare,
+           bareEmpty: !bareText.replace(/\s+/g, '') };
+});
+
+want('the noun chapter draws a row for every role the 助詞 stage names',
+     nouns.withWords, 3);
+want('and it is not blank with an empty dictionary either', nouns.bare, 3);
+want('a page with nothing on it is what this was', nouns.bareEmpty, false);
+want('no role of this language has a mark yet, so none shows what it makes',
+     nouns.madeRows, 0);
+
 await br.close();
 srv.close();
 
@@ -1415,3 +1466,5 @@ console.log('          A chapter is where a rule is made, and the row pressed is
 console.log('          the answer to both what and of what.');
 console.log('          The words a chapter\'s rules make are made from that chapter,');
 console.log('          and another chapter\'s are left where they were.');
+console.log('          The noun chapter names its three roles whether or not this');
+console.log('          language has written any of them, and with no words at all.');

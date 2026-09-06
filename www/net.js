@@ -300,7 +300,15 @@ function netSend1(method, path, body, tok, ok, bad, up, may){
      matched. netDraftUp() below is built on being able to tell -- that is how
      a draft the server has never seen turns into an insert -- and a write
      that changed nothing must never read as a write that worked. */
-  if((method==='POST' || method==='PATCH') && path.indexOf('/rest/v1/')===0)
+  /* AND DELETE, for that second reason and nothing else. A DELETE that matched
+     NO ROW answers 204 exactly like one that matched -- so a post the row
+     policy refused to remove came back 「消えました」, went off the phone, and
+     was there again on the next pull. 「投稿削除ボタン押しても消えないけど？」
+     Asked for here rather than at netDrop(), because it is the same sentence
+     the two lines above are: a write that changed nothing must never read as
+     a write that worked. */
+  if((method==='POST' || method==='PATCH' || method==='DELETE') &&
+     path.indexOf('/rest/v1/')===0)
     x.setRequestHeader('Prefer',
       'return=representation'+(up? ', resolution=merge-duplicates' : ''));
   else if(up) x.setRequestHeader('Prefer', 'resolution=merge-duplicates');
@@ -372,7 +380,9 @@ function netGet(path, ok, bad){
    count, a state, an error — none of those is an explanation.」 It is not
    translated for the same reason a status code is not. `−` is "never sent",
    `≠` is "not a session", and a bare word plus the real HTTP number is the
-   ordinary road. www/backup.js's BK.how and www/share.js's SHARE.how are the
+   ordinary road. `∅` is the fourth: the request went, the server answered,
+   and it took nothing away -- netDrop() below is the one thing that says it.
+   www/backup.js's BK.how and www/share.js's SHARE.how are the
    same instrument, put in for the same reason and on the same day's evidence:
    一枚のスクリーンショットで原因が落ちてくる。 */
 function netTag(path){
@@ -380,6 +390,10 @@ function netTag(path){
   return p[p.length-1] || 'server';
 }
 function netWhy(d, status, mark){
+  /* 消せなかった。答えは返ってきていて、行は一つも消えていない ── 通信が
+     落ちた話ではないので `net.offline` ではないし、状態のどれでもない。
+     `−` や `≠` と同じく印で分ける。今これを出すのは netDrop() だけ。 */
+  if(String(mark||'').indexOf('∅')>=0) return t('post.del.no');
   if(!status) return t('net.offline') + (mark? ' ('+mark+')' : '');
   var m=(d && (d.msg || d.message || d.error_description || d.error)) || '';
   if(status===400 && /invalid login/i.test(m)) return t('net.badlogin');
@@ -406,6 +420,12 @@ function netWhy(d, status, mark){
   /* profile.handle is unique in the schema, so this is the server settling a
      race the check a moment ago could not see. */
   if(status===409) return t('net.handle.taken');
+  /* staff_add() in supabase/schema.sql, asked for somebody nobody is. It used
+     to change no row and say so to nobody, so the screen emptied its field on
+     a name that had gone nowhere -- 「勝手に＠の中が消える。追加されてない」
+     OWNER 2026-09-05. The message is the schema's own words and is matched the
+     way the two above are matched. */
+  if(status===400 && /no such handle/i.test(m)) return t('net.nohandle');
   return m || t('net.failed');
 }
 /* ---- 通信が落ちたら、何も進まない --------------------------------------------
@@ -3497,12 +3517,30 @@ function netMark(id, kind, on, ok, bad){
    with the next feed. 「投稿削除ボタン押しても消えないけど？」 Nothing threw and
    nothing could: the one branch that means "there is no server copy" is the
    same branch as "I cannot find this post". */
+/* AND WHAT CAME BACK IS COUNTED. 204 is not 「消えました」 -- it is 「the
+   server has nothing to say」, and a row policy that refused the delete
+   answers with it. netSend() asks for the rows now (see the Prefer header
+   there), so this is the one place that reads them: no row means the post is
+   still on the server, and the person is told so rather than watching it go
+   and come back.
+
+   NO SESSION AND NO `sid` ARE THE SAME ANSWER. Both used to be ok() -- 「there
+   is nothing on the server」 -- and neither can say that: signed out there is
+   nobody to ask, and a post with no sid is a post whose own send has not come
+   back. The one thing neither of them is, is a deletion that worked.
+
+   `∅` is the mark, and it is a STATE the way netWhy()'s others are: the
+   request was answered and took nothing away, which is not 通信エラー and
+   must not raise its pop. */
 function netDrop(p, ok, bad){
   var sid=p && p.sid;
-  if(!netSignedIn() || !sid){ ok(); return; }
+  if(!netSignedIn() || !sid){ bad(null, 0, 'post ∅'); return; }
   netDropFiles(p, function(){
     netSend('DELETE', '/rest/v1/post?id=eq.'+encodeURIComponent(sid),
-            null, SESS.at, function(){ ok(); }, bad);
+            null, SESS.at, function(d){
+              if(!d || !d.length){ bad(d, 200, 'post ∅'); return; }
+              ok();
+            }, bad);
   });
 }
 /* Everything of this post's that is in the bucket. Named rather than searched

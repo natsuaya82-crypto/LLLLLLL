@@ -157,6 +157,7 @@
   }
   function lookupWord(model,lemma){ var words=model.words||[],i; for(i=0;i<words.length;i++) if(words[i].lemma===lemma) return words[i]; return null; }
   function parseToken(model,text){ var words=model.words||[],i,w,a; for(i=0;i<words.length;i++){ w=words[i]; a=analyzeForm(model,text,w); if(a.lemma===w.lemma) return {word:w,lemma:w.lemma,inflections:a.inflections,derivations:[],surface:text}; } return parseDerived(model,text); }
+  var NOT_A_SLOT={VERB:1, ADVERB:1, ADPOSITION:1, NEGATION:1, QUESTION:1};
   function parseSentence(model,text){ var parts=String(text||'').replace(/^\s+|\s+$/g,'').split(/\s+/), tokens=[], i, parsed, role, order=model.wordOrder||[], roles={}, features={}, rule, j, next, slots=[], si=0, vi=-1, marked=[], taken={};
     for(i=0;i<parts.length;i++){ parsed=parseToken(model,parts[i]); if(!parsed && i+1<parts.length){
         for(j=0;j<(model.inflections||[]).length;j++){ rule=model.inflections[j]; if(rule.operation==='prefix' && String(rule.separator)===' ' && formOf(model,rule)===parts[i]){ next=parseToken(model,parts[i+1]); if(next&&applies(rule,next.word)){ next.inflections.push(rule); next.surface=parts[i]+' '+parts[i+1]; parsed=next; i++; break; } } }
@@ -176,7 +177,13 @@
        put the verb in the OBJECT slot and left nothing as the PREDICATE --
        ok:true, and wrong. The rest still go in the language's own order, with
        the verb's place taken out of the queue. */
-    for(i=0;i<order.length;i++) if(order[i]!=='VERB') slots.push(order[i]);
+    /* Only the roles a NOUN can take queue for a place. A word order is a
+       list of roles now and not always three, so ADVERB or NEGATION standing
+       in it would otherwise be handed to the first noun that came along --
+       the same fault the verb's own place had before it was found by what it
+       is. What is not in this list still queues, because a role nobody here
+       has heard of is somebody's and is most likely a nominal one. */
+    for(i=0;i<order.length;i++) if(!NOT_A_SLOT[order[i]]) slots.push(order[i]);
     for(i=0;i<tokens.length;i++) if(tokens[i].word.partOfSpeech==='VERB'){ vi=i; break; }
     /* A marked word takes its role first, and the place it would have stood in
        is then taken OUT of the positional queue -- otherwise the mark gives it

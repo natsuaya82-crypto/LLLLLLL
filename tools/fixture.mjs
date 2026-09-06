@@ -584,6 +584,13 @@ export function halfDone(){
        Opened on `kano` it would be the empty face, which is a real state and
        is not the one this is here to show. */
     ['the subclass under it', () => { openEdit('tir'); openSub(); return vForm(); }],
+    /* And the box behind its ＋. The names this app offers are on the screen
+       from the moment it opens; the field that writes one that is not on it
+       is one press away, and nothing else renders it -- so without this face
+       act-check reports the Enter on that box as an entry no screen names,
+       which is true and is not what was meant. */
+    ['a subclass being written', () => { openEdit('tir'); subNewOpen();
+                                         return vForm(); }],
     ['one more meaning', () => { openEdit('kano'); wdMnNew = true;
                                  return sheet('<div id="wd-body">'+wdFormHTML()+'</div>'); }],
     ['one more example', () => { openEdit('kano'); wdExNew = true;
@@ -1034,7 +1041,12 @@ export function halfDone(){
     ['somebody else\'s profile', () => { window.route='profile'; NAV=[{r:'profile', a:'iri'}];
         WHO_HAVE['iri'] = { who:'Iri', hd:'iri', av:{ch:'Ж'}, lname:'Vethi',
                              bio:'', fo:2, fr:3, out:false };
-        const h = vProfile(); NAV=[{r:'profile'}]; return h; }],
+        /* BEFORE you follow them, which is what this face is for and what it
+           was not: the seed already follows 'iri', so both faces drew
+           「フォロー中」 and the gold button the owner is talking about was
+           in no picture. */
+        const was = ME.fo; ME.fo = [];
+        const h = vProfile(); ME.fo = was; NAV=[{r:'profile'}]; return h; }],
     ['somebody else\'s profile, followed', () => { ME.fo = ['iri'];
         WHO_HAVE['iri'] = { who:'Iri', hd:'iri', av:{ch:'Ж'}, lname:'Vethi',
                              bio:'', fo:2, fr:3, out:false };

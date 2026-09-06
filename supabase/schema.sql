@@ -1996,12 +1996,28 @@ update profile set staff = true where handle = 'lingua';
 -- policy. `for update using (is_admin())` would say "the one above staff may
 -- edit these rows" -- every column of them, including somebody's handle and
 -- the name they chose. These two reach one column and nothing else.
+--
+-- A HANDLE NOBODY HAS IS AN ERROR AND NOT A SILENCE. 「何も出ない。勝手に＠の
+-- 中が消える。追加されてない」 OWNER 2026-09-05. `update ... where handle = h`
+-- matching no row is a successful statement: the function returned, the app
+-- took the success road, emptied the field and reloaded a list that had not
+-- changed -- so a handle that does not exist looked exactly like one that had
+-- just been added. `if not found` is the whole of the difference; the app has
+-- a sentence to show for it (net.nohandle in www/i18n).
+--
+-- And the match is `lower()` on both sides, in this one place. `handle` is
+-- lower case by the check constraint at the top of this file, so this changes
+-- no row that could ever have matched -- what it does is let somebody type a
+-- capital. netHandleOf() in www/net.js already lowers what the screen sends;
+-- this function is reachable without that screen, and a rule the caller is
+-- trusted to have applied is a rule nothing holds.
 create or replace function staff_add(h text)
 returns void
 language plpgsql security definer set search_path = public as $$
 begin
   if not is_admin() then raise exception 'not admin'; end if;
-  update profile set staff = true where handle = h;
+  update profile set staff = true where lower(handle) = lower(h);
+  if not found then raise exception 'no such handle'; end if;
 end $$;
 revoke all on function staff_add(text) from public;
 grant execute on function staff_add(text) to authenticated;
