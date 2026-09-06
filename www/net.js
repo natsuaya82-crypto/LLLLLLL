@@ -1542,11 +1542,10 @@ function nidFor(row, here){
   LANGS[id].name=String(row.name||'');
   return id;
 }
-/* `bad` is for a caller that puts its own pop up -- the pull on any screen of
-   the language (www/sns.js § askLang), whose ［再接続］ has to run that
-   screen's ask again rather than this function on its own. Where none is
-   handed in this behaves exactly as it did: the pop is put up here and the
-   caller is told nothing came. */
+/* `bad` is for a caller that puts its own pop up, whose ［再接続］ has to run
+   that caller's own question again rather than this function on its own.
+   Where none is handed in this behaves exactly as it did: the pop is put up
+   here and the caller is told nothing came. */
 function netLangsDown(then, bad){
   var done=then || function(){}, here={}, filled=false, id;
   if(!netSignedIn()){ done(0); return; }

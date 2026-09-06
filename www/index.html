@@ -841,23 +841,33 @@ canvas.pkc{width:34px;height:34px;display:block}
    `.pav` above), and the only line left is the one down the face's own
    column -- `.pkid .post::after` below. A grandchild's line starts at the
    CHILD's face, because the child's row is where it is drawn. */
-.pind{margin:0 -24px}
+.pind{position:relative;margin:0 -24px}
 .pind .post{margin:0}
 .pind1{padding-left:40px}
 .pind2{padding-left:80px}
 .pind3{padding-left:120px}
-/* AND THE ONE THAT SAYS 「THERE IS AN ANSWER UNDER THIS」, which is the other
-   half of the same sentence: a rail from under the face down to the row
-   below, so a post and the reply to it are joined rather than stacked.
+/* AND THE LINES THAT SAY WHICH POST ANSWERS WHICH, which is the other half of
+   the same sentence: a line from under a post's face down to the answers to
+   it, so the two are joined rather than stacked. 「返信の孫投稿に線が無い」
+   OWNER 2026-09-06.
 
-   It hangs off `.post` and not off the wrapper, because 36px from the left of
-   a post is the middle of the face at every depth -- 16 of padding and half
-   of a 40 circle -- and 36px from the left of the WRAPPER is a different
-   place on every one of the four. 58px down clears the face, which is 44 tall
-   on the two rows that are buttons and 40 on the one that is not. */
-.pkid .post{position:relative}
-.pkid .post::after{content:'';position:absolute;left:36px;top:58px;bottom:0;
-                   width:1px;background:var(--line)}
+   A line stands in a COLUMN, not in a row: 40 for each step in, 36 to the
+   middle of a 40 circle behind 16 of padding, and the four are the four steps
+   the indent takes. It was one rail hung off `.post` and it could therefore
+   only ever be that row's own -- a line reaching a later answer has to stand
+   through the rows between, which are other posts at other depths. So the
+   rails are in the wrapper, which is the thing that spans the row, and
+   thRails() in www/sns.js is what says which of them this row carries.
+
+   `pfrom` is the row's own: it starts under the face, which is 58 down --
+   44 on the two rows that are buttons, 40 on the one that is not. Every other
+   line is passing through and runs the whole height. */
+.prail{position:absolute;top:0;bottom:0;width:1px;background:var(--line)}
+.prail0{left:36px}
+.prail1{left:76px}
+.prail2{left:116px}
+.prail3{left:156px}
+.prail.pfrom{top:58px}
 /* Drawn letters stand at their full height on this line, so 1.45 put the
    rows of a two-line post against each other. 「ここつまりすぎてる」 */
 .pline{font-size:1.3rem;line-height:1.7;color:var(--tx);

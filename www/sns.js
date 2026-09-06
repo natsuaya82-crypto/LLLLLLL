@@ -718,44 +718,32 @@ function pullBoot(){
   var i;
   for(i=0;i<PULL_OPEN.length;i++) pullNeed(PULL_OPEN[i]);
 }
-/* ---- AND EVERY OTHER SCREEN, WITHOUT NAMING ONE OF THEM -------------------
-   「全部の画面でプルトゥーリフレッシュ入れないと動かないとこ出てくるぜ」
-   「設定はいらんよ？」 OWNER 2026-09-05.
+/* ---- AND NOTHING ELSE. THE PULL IS THE SNS SIDE'S ------------------------
+   「引っ張って更新は SNS だけ。制作側（字を描く画面など）でも効いていて、
+   描いている途中でくるくるが出て線が途切れる」 OWNER 2026-09-06, on a phone.
 
-   The six routes above are the ones with a list of their own on the server.
-   The other thirty are the language being made -- letters, the keyboard, the
-   words, the grammar, the notes, the world -- and every one of them shows
-   something that exists twice: on this phone, where it is written, and on the
-   server, where it is kept. A phone that went through a tunnel is holding the
-   older of the two and has no way to say so.
+   Every route in PAGES used to be given `askLang` here, with three names
+   excused, so a finger drawing a stroke down a glyph was a finger dragging
+   the screen down: the mark turned, the language was asked for again, and
+   the line broke where the drawing surface stopped seeing the touch. That
+   was 「全部の画面でプルトゥーリフレッシュ入れないと動かないとこ出てくるぜ」
+   of 2026-09-05, and it is replaced by the sentence above rather than
+   narrowed -- the making side does not pull at all, and there is no list of
+   exceptions to keep, because there is nothing to except from.
 
-   They are not listed. The list is PAGES (www/shell.js), which is what a
-   route IS, so a screen added tomorrow is pulled tomorrow and there is no
-   second place to forget -- which is exactly how the six above came to be
-   four with two missing.
+   So this table is the whole of it, and every entry in it is written above
+   with the thing it asks for. A route that is not there does not pull: the
+   letters, the glyph, the words, the grammar, the keyboard, the notes, the
+   world, the settings and the plans. What puts the language and the server
+   back together is the save itself (www/net.js § netSaveUp), which goes up
+   the moment a thing is made, and the launch (netLangsDown), which brings
+   down what this phone is missing. Neither is a thumb.
 
-   THE SETTINGS ARE OUT, and they are the only ones. 「設定はいらんよ？」 --
-   nothing on them comes off the server, and `set` is the page each one opens
-   onto. */
-/* AND THE REPORTS, which are a list on the server exactly as the six above
-   are. It is registered here rather than left to pullEvery() below because
-   that binds askLang, and the reports are not the language. mod.js loads
-   after this file, so the name is reached when the pull runs and not now. */
+   AND THE REPORTS, which are a list on the server exactly as the timelines
+   above are, and are the other side of a post rather than anything of the
+   language. mod.js loads after this file, so the name is reached when the
+   pull runs and not now. */
 pullOn('mod', function(ok, bad){ modAsk(ok, bad); });
-/* AND THE KEYBOARD. A board is built on that screen and nothing about it
-   comes off the server while it is open -- so the pull is a spinner that
-   asks nobody anything, over a sheet a finger is already dragging keys
-   around on. 「キーボード編集画面はくるくる無し」 OWNER 2026-09-05. */
-var PULL_NOT={ settings:1, set:1, kb:1 };
-function pullEvery(){
-  var r;
-  for(r in PAGES){
-    if(!Object.prototype.hasOwnProperty.call(PAGES, r)) continue;
-    if(PULL_ON[r] || PULL_NOT[r]) continue;
-    pullOn(r, askLang);
-  }
-}
-pullEvery();
 var pullY=-1, pullEl=null, pullAt=0;
 /* The mark that turns in the gap.
 
@@ -966,27 +954,6 @@ function askNot(ok, bad){
   netNotices(function(ns){
     if(!ns){ ok(0); return; }
     NOTES_HAVE=ns;
-    ok(1);
-  }, bad);
-}
-/* WHAT IS BEING WRITTEN, WHICH IS EVERY OTHER SCREEN.
-   「保存としたらオンラインおしまい」「オンラインは一本化ね？」 -- so a pull on
-   a screen of the language is not a fifth kind of request, it is the two
-   copies being put together, now, instead of at the next launch:
-
-     netLangsDown   every language this account has, and any slice this phone
-                    is missing. This is the half that FAILS on a bad network
-                    and is therefore the half the pop is about.
-     netLangSync    the open language both ways -- what is here that the
-                    server has not got, and what the server has that this
-                    phone has not.
-
-   The second is fired and not waited on, exactly as every other caller of it
-   does: by the time it runs the wire has already answered once, so it is not
-   what the person is standing in front of. */
-function askLang(ok, bad){
-  netLangsDown(function(){
-    netLangSync(function(){});
     ok(1);
   }, bad);
 }
@@ -1525,8 +1492,83 @@ function snsFab(){
    They agree today, because every post anybody has made is on this phone;
    after a server they will not, and the number on the screen has to be the
    number of rows under it or it is the app arguing with itself. */
+/* ---- WHICH ROW ANSWERS WHICH, AND THE LINES THAT SAY SO ------------------
+   「返信の孫投稿（返信の返信）に線が無い。わざとではない」 OWNER 2026-09-06,
+   on a phone. 「線で繋いでないとマジでどの投稿か分からなくなる」 the day
+   before is the same sentence, and this is the whole of it: a line runs from
+   the post above to the one answering it, at every depth.
+
+   It was 「the row after me is deeper」, asked of the walk one row at a time,
+   and that is a different sentence: it is true of the FIRST answer to a post
+   and false of the second. A post with two answers, the first of which had an
+   answer of its own, drew its line down to the first, past the grandchild --
+   and the second answer began under a line that had stopped three rows
+   earlier, joined to nothing. Nothing throws: the rows are all there, in the
+   right order, at the right depth, and one of them is simply loose.
+
+   So the rows are built ONCE, each carrying which row it answers, and a line
+   at a row's column stands through every row between it and its LAST answer.
+   Reading it off the tree rather than off the pair of rows in front of you is
+   the difference, and it is why this is a list and not a condition.
+
+   A row's column is its face: 40 for each step in, 36 to the middle of a 40
+   circle behind 16 of padding. `.prail0`..`.prail3` in index.html are those
+   four columns, and THREAD_IN is where the stepping stops. */
+function thRows(p, ups, vis){
+  var rows=[], cols=[], fi, i, d;
+  /* Everything above the post is a straight chain: each answers the one
+     before it, and the top of it answers nothing that is on this screen. */
+  for(i=0;i<ups.length;i++) rows.push({ p:ups[i], col:0, par:i-1, tomb:false });
+  fi=rows.length;
+  /* The one post somebody came here to read. It went, and saying so is the
+     whole point of it having gone -- a gap here reads as "never existed",
+     which is the opposite of what happened. Blocked answered with viewGone()
+     above, so the tomb is the taken-down one and no other.
+     「スレッドは本ツイートだけね？」 */
+  rows.push({ p:p, col:0, par:fi-1, tomb:!postShown(p) });
+  /* And the answers, depth first. `cols[d]` is the last row seen at that
+     depth, which is the one a row of `d+1` answers -- the walk is depth
+     first, so it is always the right one and nothing has to be searched for.
+     A direct answer stands in the post's own column, which is why `pind0` is
+     no step at all. */
+  for(i=0;i<vis.length;i++){
+    d=vis[i].d;
+    cols[d]=rows.length;
+    rows.push({ p:vis[i].p, col:Math.min(d, THREAD_IN),
+                par:d? cols[d-1] : fi, tomb:false });
+  }
+  return rows;
+}
+/* The last answer each row has, or -1 for a row nothing answers. The rows are
+   in the order they are drawn, so writing it down as they go leaves the
+   greatest. */
+function thLast(rows){
+  var last=[], i;
+  for(i=0;i<rows.length;i++) last[i]=-1;
+  for(i=0;i<rows.length;i++) if(rows[i].par>=0) last[rows[i].par]=i;
+  return last;
+}
+/* The lines standing in this row. One for the row itself where an answer to
+   it is below -- from under its own face, because the face is what the line
+   hangs off -- and one for every row above it that still has an answer to
+   come, because that line has to get past this row to reach it.
+
+   Two rows deeper than THREAD_IN share a column, so a column already drawn is
+   not drawn again: the second is the same 1px in the same place. */
+function thRails(rows, last, i){
+  var out='', at={}, a=i, c;
+  while(a>=0){
+    c=rows[a].col;
+    if(last[a]>i && !at[c]){
+      at[c]=1;
+      out+='<i class="prail prail'+c+(a===i? ' pfrom' : '')+'"></i>';
+    }
+    a=rows[a].par;
+  }
+  return out;
+}
 function vThread(){
-  var id=String(here().a||''), p=postById(id), ups, vis, out='', i, d;
+  var id=String(here().a||''), p=postById(id), ups, vis, rows, last, out='', i;
   /* Blocked is gone, not merely absent from the list: a thread reached by an
      old route is the one way a post could still be looked at. */
   if(!p || postBlocked(p)) return viewGone();
@@ -1537,34 +1579,17 @@ function vThread(){
      so somebody you had blocked was off the timeline and still in the thread.
      「それ以外の会話は本ツイートとは関係ないものとする」
 
-     「線で繋いでないとマジでどの投稿か分からなくなる」 OWNER 2026-09-05: a row
-     draws a rail under its face when there is a deeper row beneath it,
-     and「beneath」has to mean beneath ON THE SCREEN -- a reply whose only
-     child had gone would otherwise draw a rail down to nothing. `postDown`
-     walks depth first and hands back only the rows there are, so the row
-     after this one is this one's child exactly when it is deeper. */
+     「線で繋いでないとマジでどの投稿か分からなくなる」 OWNER 2026-09-05, and
+     「返信の孫投稿に線が無い」 the day after. The rows and the lines down them
+     are thRows()/thRails() above: every row is joined to the post it answers,
+     at every depth. */
   ups=postUps(p);
   vis=postDown(id, 0, [], [id]);
-  /* Everything above the post is on the way down to it, so every one of them
-     has a row beneath it by construction. */
-  for(i=0;i<ups.length;i++)
-    out+='<div class="pkid">'+postRow(ups[i])+'</div>';
-  /* The one post somebody came here to read is the exception. It went, and
-     saying so is the whole point of it having gone -- a gap here reads as
-     "never existed", which is the opposite of what happened. Blocked answered
-     with viewGone() above, so the tomb is the taken-down one and no other.
-     「スレッドは本ツイートだけね？」 */
-  out+='<div'+(vis.length? ' class="pkid"' : '')+'>'+
-    (postShown(p)? postRow(p) : postTomb())+'</div>';
-  for(i=0;i<vis.length;i++){
-    /* The indent stops at THREAD_IN; whether there is a reply under this one
-       is about the tree and not about how far in it is drawn, so it is asked
-       of the depth that was not capped. */
-    d=Math.min(vis[i].d, THREAD_IN);
-    out+='<div class="pind pind'+d+
-      ((i+1<vis.length && vis[i+1].d>vis[i].d)? ' pkid' : '')+'">'+
-      postRow(vis[i].p)+'</div>';
-  }
+  rows=thRows(p, ups, vis);
+  last=thLast(rows);
+  for(i=0;i<rows.length;i++)
+    out+='<div class="pind pind'+rows[i].col+'">'+thRails(rows, last, i)+
+      (rows[i].tomb? postTomb() : postRow(rows[i].p))+'</div>';
   return '<div class="view">'+navTop()+'<div class="body">'+
     out+
     '</div></div>';
