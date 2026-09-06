@@ -48,7 +48,8 @@
     "store": "node tools/store-check.mjs",
     "del": "node tools/del-check.mjs",
     "paid": "node tools/paid-check.mjs",
-    "token": "node tools/token-check.mjs"
+    "token": "node tools/token-check.mjs",
+    "vplan": "node tools/verify-check.mjs"
   },
   "keywords": [],
   "author": "",
