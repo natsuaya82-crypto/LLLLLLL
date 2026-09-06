@@ -435,7 +435,7 @@ function openSlot(pid, k){
   if(fresh){
     openHw=''; addFrom='';
     addW={hw:'', mns:[], pos:p.pos, syn:[], ant:[], ex:[]};
-    wdMnNew=false; wdExNew=false;
+    wdMnNew=false; wdExNew=false; wdSubNew=false;
     wEdit={seq:[], sp:[], mns:[stSlotLabel(p, key)], pos:p.pos,
            reg:'', tags:[], ety:'', nt:''};
     addFmClear();

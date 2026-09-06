@@ -584,6 +584,13 @@ export function halfDone(){
        Opened on `kano` it would be the empty face, which is a real state and
        is not the one this is here to show. */
     ['the subclass under it', () => { openEdit('tir'); openSub(); return vForm(); }],
+    /* And the box behind its ＋. The names this app offers are on the screen
+       from the moment it opens; the field that writes one that is not on it
+       is one press away, and nothing else renders it -- so without this face
+       act-check reports the Enter on that box as an entry no screen names,
+       which is true and is not what was meant. */
+    ['a subclass being written', () => { openEdit('tir'); subNewOpen();
+                                         return vForm(); }],
     ['one more meaning', () => { openEdit('kano'); wdMnNew = true;
                                  return sheet('<div id="wd-body">'+wdFormHTML()+'</div>'); }],
     ['one more example', () => { openEdit('kano'); wdExNew = true;
