@@ -123,9 +123,32 @@ function kbRead(){
    newer one only. */
 function kbBoardsOf(k){
   if(!k) return null;
-  if(k.kbs && k.kbs.length) return k;
-  if(k.lay && k.lay.length) return {kbs:[{nm:'', pat:'', lay:k.lay}], at:0};
+  if(k.kbs && k.kbs.length) return kbIded(k);
+  if(k.lay && k.lay.length) return kbIded({kbs:[{nm:'', pat:'', lay:k.lay}], at:0});
   return null;
+}
+/* WHICH BOARD THIS IS, and it is a field because nothing else on a board says
+   so. Two copies of one language are put back together by www/sync.js, which
+   asks syKeyOf() what makes two rows the same row -- a word is its headword,
+   a letter is its id, and everything else is its own JSON. A board had no id,
+   so the JSON was the whole of it: a board touched here differed from the
+   server's copy by a byte and the two were kept as two, every launch, so a
+   keyboard nobody had opened came back 2, 4, 8.
+   「何もしていないのにキーボードが8枚に増える」 OWNER 2026-09-06.
+
+   Minted when a board is made (kbAdd) and put on the ones that predate this
+   the first time they are READ. Reading only: nothing is written here, so a
+   launch with no signal stamps the copy in memory and stops. The write comes
+   with the next save, the way every other field of a board does. */
+var KB_SEQ=0;
+function kbId(){ KB_SEQ++; return 'k'+Date.now()+'_'+KB_SEQ; }
+/* A board that has one keeps it. This is not a repair and does not compare
+   anything: a board with no id has never been named, and a board with one is
+   already answered for. */
+function kbIded(k){
+  var kbs=k.kbs||[], i;
+  for(i=0;i<kbs.length;i++) if(kbs[i] && !kbs[i].id) kbs[i].id=kbId();
+  return k;
 }
 kbRead();
 /* Two layouts, the same or not. JSON, because both sides are built by the
@@ -663,7 +686,7 @@ function kbAdd(pat){
   /* Storage holds only the ones the person built. The free QWERTY is board 0
      and is not among them, so the first one made here is the SECOND board. */
   if(!KB) KB={kbs:[], at:0};
-  KB.kbs.push({nm:'', pat:pat, lay:kbBlank(kbPatLay(pat))});
+  KB.kbs.push({id:kbId(), nm:'', pat:pat, lay:kbBlank(kbPatLay(pat))});
   kbShow=kbBoards().length-1; kbLay=0; kbSel=null;
   kbForget();
   saveKb();
