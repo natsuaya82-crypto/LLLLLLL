@@ -97,7 +97,6 @@ OWNER 2026-09-06。
 たときの行き帰りのキーは `kbAddLay()` がこれまでどおり作ります。`kbSetW`・
 `kbFitsW`・`kbSetLay` と i18n の `kb.w`・`kb.lay` は消しました。
 
->>>>>>> origin/claude/r3-kb
 
 ### 2026-09-06 言語の削除は、サーバーの行が消えたときだけ
 
