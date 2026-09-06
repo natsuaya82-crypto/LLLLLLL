@@ -3732,9 +3732,18 @@ FORM_OPEN.kbmore=function(){ kbMore(); };
    nothing was ever handed over, drawing more letters will not help. */
 /* No bridge means a browser, which is every check and no phone: there is no
    Settings to open and nothing to say about it. */
+/* Settings, opened at this app's own page. LinguaShare.swift § settings says
+   what that is and why it is the only door Apple gives.
+
+   IT SAYS SO WHEN IT CANNOT. This returned in silence with no bridge under it
+   -- a button pressed, nothing on the screen, and nothing to tell a person
+   whether they had missed it. The two ways this fails are one thing to say:
+   there is no bridge (the app is not on a phone), and the bridge refused. One
+   string for both, because 「設定を開けませんでした」 is the whole of what
+   somebody can do anything about. */
 function kbSettings(){
   var p=sharePlug();
-  if(!p) return;
+  if(!p){ toast(t('kb.sys.no')); return; }
   p('LinguaShare', 'settings', {})['catch'](function(){ toast(t('kb.sys.no')); });
 }
 function kbGoLay(i){ kbLay=i; render(); }
