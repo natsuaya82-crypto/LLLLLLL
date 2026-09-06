@@ -746,9 +746,15 @@ function fmrMake(w, r){
 /* The forms this word has not got. A rule is skipped when the word already
    wears that label -- an irregular past that was typed by hand is the past,
    and offering to make a second one beside it would be the app arguing with
-   the person about their own language. */
+   the person about their own language.
+
+   A word a rule MADE has no forms of its own. It carries fm, and a plural of
+   a plural is not a word in anybody's language: the rules were run on the
+   made words too, so every press of "n words" made another generation and the
+   count never came down. */
 function fmrTodo(w){
   var a=fmRules(), kids=w? wKids(w) : [], out=[], i, j, m, has;
+  if(!w || w.fm) return out;
   for(i=0;i<a.length;i++){
     m=fmrMake(w, a[i]);
     if(!m || findWord(m.hw)) continue;

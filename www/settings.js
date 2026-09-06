@@ -85,8 +85,12 @@ function setWhoRow(){
   if(m){ lab=t('set.mail'); val=m; }
   else if(h==='apple')  val='Apple';
   else if(h==='google') val='Google';
-  return '<button class="set"><span class="sl">'+esc(lab)+'</span>'+
-    '<span class="sv">'+esc(val)+'</span></button>';
+  /* A div, not a button. There is nothing to press here -- the address is
+     what this account IS, and it is not changed from this row -- and a row
+     drawn as a button says there is. `.set` sets its own font, line-height,
+     background and borders, so it is the same row either way. */
+  return '<div class="set"><span class="sl">'+esc(lab)+'</span>'+
+    '<span class="sv">'+esc(val)+'</span></div>';
 }
 /* Changing a password, which is two calls and not one. Supabase will set a
    new password for anybody holding a session -- so a phone somebody picked up
