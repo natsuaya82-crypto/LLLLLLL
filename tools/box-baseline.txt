@@ -26,6 +26,8 @@
 .gborrow | border-radius
 .gcanv | border
 .gcanv | border-radius
+.gordc | border
+.gordc | border-radius
 .imptab | border
 .imptab | border-radius
 .kbe | border
