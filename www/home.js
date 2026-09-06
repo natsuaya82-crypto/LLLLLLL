@@ -1189,10 +1189,13 @@ function wldOvMint(){
     if(hit){ n++; id='O'+(new Date()).getTime().toString(36)+n.toString(36); } }
   return id;
 }
+/* THE SECTION OPENS. A row put in behind a shut heading is a row nobody can
+   see: the list grew and the page did not move. 「＋ を押したら概要が開く」
+   OWNER 2026-09-06. `wldov` is the overview's own `r` in wldSecs(). */
 function wldOvAdd(){
   var a=wldOvs();
   a.push({id:wldOvMint(), k:'', v:''});
-  world().ovs=a; saveWld(); render();
+  world().ovs=a; saveWld(); ABOPEN['wldov']=true; render();
 }
 /* One field of one row, put on the language. The buffer above hands it what
    was typed; a row deleted since is not found and nothing is written. */
