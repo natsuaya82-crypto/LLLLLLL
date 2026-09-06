@@ -733,6 +733,7 @@ defLang('pt', (function(){
       "words.sel.row"    : "Escolher esta palavra",
       "words.sel.del"    : "Eliminar",
       "confirm.delmany"  : "Eliminar {0} palavras?",
+      "confirm.delmany.1"  : "Eliminar 1 palavra?",
       "words.sel.gone"   : "{0} palavras eliminadas",
       "words.sel.back"   : "{0} palavras repostas",
       "words.open"       : "Abrir",
@@ -1184,7 +1185,7 @@ defLang('pt', (function(){
       "csv.title"        : "Importar uma lista",
       "csv.ph"           : "gato\nágua\nandar\n\nkano, montanha, substantivo",
       "csv.btn"          : "Importar",
-      "csv.full"        : "{0} importadas, {1} criadas — o Free está cheio",
+      "csv.full"        : "{0} importadas, {1} criadas — a lista está cheia",
       /* the day's sentence. The sentence itself is not here: it comes
          from the server, one row a day, in every interface language. */
       "day.k"  : "Hoje",

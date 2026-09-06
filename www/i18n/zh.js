@@ -731,6 +731,7 @@ defLang('zh', (function(){
       "words.sel.row"    : "选择这个词",
       "words.sel.del"    : "删除",
       "confirm.delmany"  : "删除 {0} 个词？",
+      "confirm.delmany.1"  : "删除 1 个词？",
       "words.sel.gone"   : "已删除 {0} 个词",
       "words.sel.back"   : "已恢复 {0} 个词",
       "words.open"       : "打开",
@@ -1182,7 +1183,7 @@ defLang('zh', (function(){
       "csv.title"        : "导入清单",
       "csv.ph"           : "猫\n水\n走\n\nkano, 山, 名词",
       "csv.btn"          : "导入",
-      "csv.full"        : "已导入 {0}，已创建 {1} — Free 已满",
+      "csv.full"        : "已导入 {0}，已创建 {1} — 列表已满",
       /* the day's sentence. The sentence itself is not here: it comes
          from the server, one row a day, in every interface language. */
       "day.k"  : "今日",

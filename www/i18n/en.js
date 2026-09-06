@@ -633,6 +633,7 @@ defLang('en', (function(){
       'words.sel.row'   : 'Choose this word',
       'words.sel.del'   : 'Delete',
       'confirm.delmany' : 'Delete {0} words?',
+      'confirm.delmany.1' : 'Delete 1 word?',
       'words.sel.gone'  : '{0} words deleted',
       'words.sel.back'  : '{0} words put back',
       'words.open'      : 'Open',
@@ -1092,7 +1093,7 @@ defLang('en', (function(){
       'csv.title'       : "Import a list",
       'csv.ph'          : "cat\nwater\nto walk\n\nkano, mountain, noun",
       'csv.btn'         : "Import",
-      'csv.full'        : '{0} taken, {1} coined — Free is full',
+      'csv.full'        : '{0} taken, {1} coined — the list is full',
       /* voice errors */
       /* how IPA and reading are joined when both are shown */
       /* the day's sentence. The sentence itself is not here: it comes

@@ -642,6 +642,7 @@ defLang('ja', (function(){
       'words.sel.row'   : 'この単語を選ぶ',
       'words.sel.del'   : '削除',
       'confirm.delmany' : '{0} 語を消しますか？',
+      'confirm.delmany.1' : '1 語を消しますか？',
       'words.sel.gone'  : '{0} 語を消しました',
       'words.sel.back'  : '{0} 語を戻しました',
       'words.open'      : '詳細',
@@ -1093,7 +1094,7 @@ defLang('ja', (function(){
       'csv.title'       : 'リストの取り込み',
       'csv.ph'          : 'ねこ\nみず\n歩く\n\nkano, 山, 名詞',
       'csv.btn'         : '取り込み',
-      'csv.full'        : '{0}語取り込み、{1}語作成。Freeの上限に達しました',
+      'csv.full'        : '{0}語取り込み、{1}語作成。上限に達しました',
       /* the day's sentence. The sentence itself is not here: it comes
          from the server, one row a day, in every interface language. */
       "day.k"  : "お題",

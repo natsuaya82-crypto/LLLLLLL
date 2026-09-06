@@ -736,7 +736,9 @@ defLang('ru', (function(){
       "words.sel.done"    : "Готово",
       "words.sel.row"     : "Выбрать это слово",
       "words.sel.del"     : "Удалить",
-      "confirm.delmany"   : "Удалить слов: {0}?",
+      "confirm.delmany"   : "Удалить {0} слов?",
+      "confirm.delmany.1"   : "Удалить 1 слово?",
+      "confirm.delmany.few"   : "Удалить {0} слова?",
       "words.sel.gone"    : "Удалено слов: {0}",
       "words.sel.back"    : "Возвращено слов: {0}",
       "words.open"        : "Открыть",
@@ -1189,7 +1191,7 @@ defLang('ru', (function(){
       "csv.title"         : "Импорт списка",
       "csv.ph"            : "кошка\nвода\nидти\n\nkano, гора, существительное",
       "csv.btn"           : "Импортировать",
-      "csv.full"        : "{0} перенесено, {1} создано — Free заполнен",
+      "csv.full"        : "{0} перенесено, {1} создано — список заполнен",
       /* the day's sentence. The sentence itself is not here: it comes
          from the server, one row a day, in every interface language. */
       "day.k"  : "Сегодня",
