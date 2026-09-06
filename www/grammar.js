@@ -721,7 +721,7 @@ function g2Row(lab, add, side, from, to, act, arg, id){
         (on? ICON_DOT : ICON_RING)+'</span>'+
       '<button class="stslot has"' + DO('g2SelTap', [id]) + '>'+
       '<span class="psm">'+esc(lab)+'</span>'+
-      (add? '<span class="psw'+(myFontOn()? ' sfont' : '')+'">'+esc(add)+'</span>' : '')+
+      (add? '<span class="psw">'+sfontHTML(add)+'</span>' : '')+
       (side? '<span class="psi">'+esc(side)+'</span>' : '')+
       ((to || side)? '<span class="psi">'+esc(to)+'</span>' : '')+
       '</button></div>';
@@ -729,9 +729,9 @@ function g2Row(lab, add, side, from, to, act, arg, id){
   return '<div class="fmmk">'+
     '<button class="stslot has"' + DO(act, arg) + '>'+
     '<span class="psm">'+esc(lab)+'</span>'+
-    (add? '<span class="psw'+(myFontOn()? ' sfont' : '')+'">'+esc(add)+'</span>' : '')+
+    (add? '<span class="psw">'+sfontHTML(add)+'</span>' : '')+
     (side? '<span class="psi">'+esc(side)+'</span>' : '')+
-    (from? '<span class="psw'+(myFontOn()? ' sfont' : '')+'">'+esc(from)+'</span>'+
+    (from? '<span class="psw">'+sfontHTML(from)+'</span>'+
            '<span class="gsep">'+ICON_GO+'</span>' : '')+
     /* AND THE FORM IT MAKES IS ALWAYS A SLOT WHERE THE ROW SAID AN END. A rule
        that makes nothing of this language's word -- one written for words

@@ -529,6 +529,49 @@ const R = await pg.evaluate(() => {
   if (!document.getElementById('wd-exl'))
     out.fails.push('＋ was pressed on the examples and left no box to type in');
 
+  /* ---- and nothing wears the drawn font that the drawn font cannot draw --
+     A letter read as two characters -- sh, ch, ng -- reaches the font as a
+     ligature, and an OpenType rule fires only over glyphs that exist, so
+     every component no letter holds gets a dashed placeholder. `.sfont` was
+     put on whole strings, so every s and every h in the app came out as that
+     box 「例文の行がたまに文字化け」 OWNER 2026-09-06. www/glyph.js §
+     sfontHTML is the one place, and what it must never do is put a character
+     the font does not draw inside a `.sfont` span. Asked of the page, so the
+     answer is the font that was actually built. */
+  let drawn = null;
+  for (let i = 0; i < LETTERS.length; i++)
+    if (LETTERS[i].st && LETTERS[i].st.length) { drawn = LETTERS[i]; break; }
+  drawn.ab = 'sh';
+  SET.myfont = true;
+  installScriptFont();
+  const runs = sfontRuns('sash mos kano');
+  const worn = runs.filter(r => r.on).map(r => r.t);
+  const bare = runs.filter(r => !r.on).map(r => r.t);
+  out.said.push('a letter read "sh": the drawn font is asked for ' +
+    JSON.stringify(worn) + ' and the rest stays roman ' + JSON.stringify(bare));
+  /* Character by character, which is the claim itself: every character inside
+     a .sfont span is one the font draws, alone or as part of a run it draws. */
+  let bad = '';
+  worn.forEach(r => {
+    let i = 0;
+    while (i < r.length) {
+      const q = SFONT.seq.find(x => r.substr(i, x.length) === x);
+      if (q) { i += q.length; continue; }
+      if (!SFONT.one[r.charAt(i)] && bad.indexOf(r.charAt(i)) < 0) bad += r.charAt(i);
+      i++;
+    }
+  });
+  if (bad)
+    out.fails.push('the drawn font was asked to draw ' + JSON.stringify(bad) +
+      ', which it has no shape for -- that is the box');
+  if (bare.join('').indexOf('mos') < 0)
+    out.fails.push('a word the font cannot draw did not fall back to roman: ' +
+      JSON.stringify(bare));
+  if (!worn.length)
+    out.fails.push('nothing was set in the drawn font at all');
+  SET.myfont = false;
+  installScriptFont();
+
   /* ---- and the spelling alone turns the Save gold ----------------------
      www/shell.js § KEEP: the button is grey until something has changed, and
      the back arrow asks only while it is gold. The spelling is the word

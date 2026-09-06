@@ -226,8 +226,7 @@ function spAdd(sym){
 function vSpell(){
   var sp=(wEdit&&wEdit.sp)||[];
   return '<div class="view">'+navTop('')+'<div class="body">'+
-    '<div class="whd"><span class="whw'+(myFontOn()? ' sfont':'')+'">'+
-      esc(spWord(sp))+'</span>'+
+    '<div class="whd"><span class="whw">'+sfontHTML(spWord(sp))+'</span>'+
       '<button class="play"' + DO('sayPh', [spPh(sp)]) + ' aria-label="'+
         esc(t('f.listen'))+'">'+ICON_SPK+'</button></div>'+
     '<div class="wsub">'+esc(phIpa(spPh(sp)))+'</div>'+
@@ -413,8 +412,8 @@ function exLnHTML(ln){
   for(i=0;i<ps.length;i++){
     w=ps[i];
     if(!w) continue;
-    if(!w.replace(/^\s+|\s+$/g,'') || findWord(w)) out.push(esc(w));
-    else out.push('<span class="exnew">'+esc(w)+'</span>');
+    if(!w.replace(/^\s+|\s+$/g,'') || findWord(w)) out.push(sfontHTML(w));
+    else out.push('<span class="exnew">'+sfontHTML(w)+'</span>');
   }
   return out.join('');
 }
@@ -422,7 +421,7 @@ function exRowHTML(e, seq, tail){
   return '<div class="exrow">'+
     '<div class="exb">'+
       (e.lb? '<span class="exlb">'+esc(e.lb)+'</span>' : '')+
-      '<span class="exl'+(myFontOn()?' sfont':'')+'">'+exLnHTML(e.ln)+'</span>'+
+      '<span class="exl">'+exLnHTML(e.ln)+'</span>'+
       '<span class="exg">'+esc(e.gl || exGloss(e.ln))+'</span></div>'+
     (seq.length? exBtn('sayPh', [seq], 'f.listen', ICON_SPK) : '')+
     tail+'</div>';
@@ -1548,7 +1547,7 @@ function wdRowHTML(x, fm){
      word, in two alphabets, on one screen. */
   return '<button class="wdrow"' + DO('openWord', [x.hw]) + '>'+
     (fm? '<span class="wdrowf">'+esc(fmLabel(fm))+'</span>' : '')+
-    '<span class="wdroww'+(myFontOn()? ' sfont' : '')+'">'+esc(wOut(x.hw))+'</span>'+
+    '<span class="wdroww">'+sfontHTML(wOut(x.hw))+'</span>'+
     '<span class="wdrowm">'+esc(wMn(x)||t('sent.nomean'))+'</span></button>';
 }
 /* Those of a family that are inflections, those that are derivations, and
@@ -1580,7 +1579,7 @@ function wdRdShown(w){ return myFontOn() || wOut(w.hw)!==String(w.hw); }
 function wdViewHTML(){
   var w=findWord(openHw); if(!w) return viewGone();
   var seq=wPh(w), mns=wMns(w), ex=w.ex||[];
-  return '<div class="whd"><span class="whw'+(myFontOn()?' sfont':'')+'">'+esc(wOut(w.hw))+'</span>'+
+  return '<div class="whd"><span class="whw">'+sfontHTML(wOut(w.hw))+'</span>'+
       '<button class="play" style="margin:0 0 0 auto"' + DO('sayPh', [seq]) +
         ' aria-label="'+esc(t('f.listen'))+'">'+ICON_SPK+'</button>'+
       '<button class="usep"' + DO('cardOpen', ["w", w.hw]) + ' aria-label="'+

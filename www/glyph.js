@@ -325,7 +325,7 @@ function inkDef(v){
    those. */
 function glyphName(id){ return 'lt_'+String(id).replace(/[^A-Za-z0-9_]/g, ''); }
 function scriptGlyphDefs(){
-  var defs=[], ligs=[], holds={}, taken={}, long=[], i;
+  var defs=[], ligs=[], holds={}, taken={}, long=[], i, drawOne={}, drawSeq=[];
   /* One sign: a shape, and every character that types it. Whoever claims a
      character keeps it -- and the letters are walked in the order they are
      held in, which is the order ltMain answers in, so the letter the alphabet
@@ -341,8 +341,13 @@ function scriptGlyphDefs(){
       c=codes[j];
       if(taken[c]) continue;
       taken[c]=1;
-      if(c.length===1){ one+=c; holds[c]=key; continue; }
-      long.push({txt:c, by:key});
+      /* drawOne and drawSeq are what this font DRAWS, as opposed to what it
+         merely answers to. sign() is called for a real shape and only for a
+         real shape, so everything recorded here has ink behind it -- the
+         boxes below are made in the resolve pass and are recorded nowhere.
+         www/glyph.js § sfontRuns. */
+      if(c.length===1){ one+=c; holds[c]=key; drawOne[c]=1; continue; }
+      long.push({txt:c, by:key}); drawSeq.push(c);
     }
     d=inkDef(ink);
     d.name=key; d.roman=one||null;
@@ -385,7 +390,8 @@ function scriptGlyphDefs(){
     ligs.push({sub:sub, by:L.by, n:sub.length});
   });
   ligs.sort(function(a,b){ return b.n-a.n; });
-  return {defs:defs, ligs:ligs};
+  drawSeq.sort(function(a,b){ return b.length-a.length; });
+  return {defs:defs, ligs:ligs, one:drawOne, seq:drawSeq};
 }
 
 /* Build the font and hand it to the browser as a @font-face. This runs on the
@@ -404,7 +410,11 @@ function scriptGlyphDefs(){
    appearing: the font builds, the rule installs, and nothing matches it.
    tools/face-check.mjs holds this one against the stylesheet. */
 var SFONT_FAMILY='LinguaScript';
-var SFONT={built:false, sig:null, b64:''};
+/* `one` and `seq` are what the font draws: the single characters that reach a
+   drawn shape, and the character runs that reach one through a ligature.
+   Empty until a font is built, and emptied with it -- www/glyph.js § sfontRuns
+   is the only thing that reads them. */
+var SFONT={built:false, sig:null, b64:'', one:{}, seq:[]};
 /* The typing face. No `b64`: it never leaves this phone -- what the system
    keyboard is handed is the shapes, not a font file. */
 var TFONT={built:false};
@@ -519,6 +529,7 @@ function installScriptFont(){
   if(el) el.parentNode.removeChild(el);
   SFONT.built=false;
   SFONT.b64='';
+  SFONT.one={}; SFONT.seq=[];
   SFONT.sig=scriptSig();
   try{
     var d=scriptGlyphDefs();
@@ -535,8 +546,9 @@ function installScriptFont(){
       "@font-face{font-family:'"+SFONT_FAMILY+"';src:url("+f.dataUrl()+") format('opentype');}"));
     document.head.appendChild(el);
     SFONT.b64=f.base64();
+    SFONT.one=d.one; SFONT.seq=d.seq;
     SFONT.built=true;
-  }catch(e){ SFONT.built=false; SFONT.b64=''; }
+  }catch(e){ SFONT.built=false; SFONT.b64=''; SFONT.one={}; SFONT.seq=[]; }
   /* The typing face is built from the same letters and at the same time, so
      the two can never be out of step with each other. */
   installTypeFont();
@@ -546,6 +558,62 @@ function installScriptFont(){
    letters you drew, which change only the face the same text is set in. This
    one is the drawn one, so it is named for the font and not for the script. */
 function myFontOn(){ return !!SET.myfont && SFONT.built; }
+/* ---- and which of the characters in front of you it can actually draw ----
+   「アプリ内はみんなが見れる仕様なんだから、どこがおかしいかじゃなくて全部
+   見れるように一本化」 OWNER 2026-09-06, about a row of NO GLYPH boxes on an
+   example sentence.
+
+   The boxes are not a fault in one screen. A letter read as two characters --
+   `sh`, `ch`, `ng` -- reaches the font as a LIGATURE, and an OpenType rule
+   can only fire over glyphs that exist, so scriptGlyphDefs() makes one for
+   every component no letter holds and that glyph is GPLACE, the dashed box.
+   Measured: one letter read `sh` puts a box on s, S, h and H, so every s and
+   every h anywhere in the app came out as a box. Nothing throws, the font
+   builds, the @font-face installs, and `.sfont` matches it.
+
+   So `.sfont` stops being a thing a screen puts on a whole string. It goes on
+   the RUNS the font draws, and what it cannot draw is left in the letters it
+   was written in -- which is what somebody can read. The walk is the font's
+   own shaping done once: the longest ligature that matches here, else this
+   character if a drawn shape carries it, else it is roman. SFONT.one and
+   SFONT.seq come off the build, so this can never disagree with the file.
+
+   ONE PLACE. sfontHTML() is what every screen calls, and no screen asks
+   myFontOn() about text again: the answer is per character now, and a second
+   place asking it is a second answer. What it does not reach is a TEXTAREA --
+   the composer's line over a photograph, which cannot hold a span -- and the
+   card and the timeline, which draw ink rather than text and were never
+   asking this question. */
+function sfontRuns(txt){
+  var s=String(txt||''), out=[], i=0, on='', off='', hit, k, q;
+  if(!s) return out;
+  if(!myFontOn()) return [{t:s, on:false}];
+  while(i<s.length){
+    hit='';
+    /* seq is longest first, so the first that matches is the longest. */
+    for(k=0;k<SFONT.seq.length;k++){
+      q=SFONT.seq[k];
+      if(s.substr(i, q.length)===q){ hit=q; break; }
+    }
+    if(!hit && SFONT.one[s.charAt(i)]) hit=s.charAt(i);
+    if(hit){
+      if(off){ out.push({t:off, on:false}); off=''; }
+      on+=hit; i+=hit.length;
+    }else{
+      if(on){ out.push({t:on, on:true}); on=''; }
+      off+=s.charAt(i); i++;
+    }
+  }
+  if(off) out.push({t:off, on:false});
+  if(on) out.push({t:on, on:true});
+  return out;
+}
+function sfontHTML(txt){
+  var a=sfontRuns(txt), out='', i;
+  for(i=0;i<a.length;i++)
+    out+=a[i].on? '<span class="sfont">'+esc(a[i].t)+'</span>' : esc(a[i].t);
+  return out;
+}
 function setMyFont(v){
   SET.myfont=!!v;
   if(SET.myfont && !SFONT.built) installScriptFont();
