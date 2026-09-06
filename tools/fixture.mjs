@@ -570,7 +570,13 @@ export function halfDone(){
                        ja: '今日はめちゃくちゃ暑い。' } };
        PW = pwBlank(); openPost('day');
        return vForm(); }],
-    ['the word being edited', () => { openEdit('kano'); wEdit.mns = ['mountain','peak'];
+    /* Opened THE WAY A THUMB OPENS IT -- the word's page, then 編集 in its
+       corner -- because the back arrow is part of this screen and what it
+       says is read off the trail. Opened straight onto the sheet the trail is
+       one entry long and the arrow names the tab, which is a screen nobody
+       can reach. */
+    ['the word being edited', () => { openWord('kano'); openEdit('kano');
+                                      wEdit.mns = ['mountain','peak'];
                                       return vForm(); }],
     /* The field for one more of something is not on the sheet until the `+`
        on the heading is pressed, so without these the only way to write a
@@ -586,14 +592,15 @@ export function halfDone(){
        speech the word is in and the fixture's subclasses are the verbs'.
        Opened on `kano` it would be the empty face, which is a real state and
        is not the one this is here to show. */
-    ['the subclass under it', () => { openEdit('tir'); openSub(); return vForm(); }],
+    ['the subclass under it', () => { openEdit('tir');
+       window.route = 'sub'; NAV = [{ r:'sub' }]; return vSub(); }],
     /* And the box behind its ＋. The names this app offers are on the screen
        from the moment it opens; the field that writes one that is not on it
        is one press away, and nothing else renders it -- so without this face
        act-check reports the Enter on that box as an entry no screen names,
        which is true and is not what was meant. */
-    ['a subclass being written', () => { openEdit('tir'); subNewOpen();
-                                         return vForm(); }],
+    ['a subclass being written', () => { openEdit('tir'); wdSubNew = true;
+       window.route = 'sub'; NAV = [{ r:'sub' }]; return vSub(); }],
     ['one more meaning', () => { openEdit('kano'); wdMnNew = true;
                                  return sheet('<div id="wd-body">'+wdFormHTML()+'</div>'); }],
     ['one more example', () => { openEdit('kano'); wdExNew = true;

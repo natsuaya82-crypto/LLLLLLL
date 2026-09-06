@@ -795,6 +795,7 @@ var PAGES={
   fm:      {tab:'build', k:'word.fm'},
   pos:     {tab:'build', k:'f.pos'},
   reg:     {tab:'build', k:'word.reg'},
+  sub:     {tab:'build', k:'f.sub'},
   follows: {tab:'profile'},
   glyph:   {tab:'build'},
   spell:   {tab:'build', k:'word.sp'},
@@ -850,9 +851,25 @@ function pageName(r, a){
     return (pl? ltName(pl) : '') || t('lt.untitled');
   }
   /* A form is named after what it is a form for -- the word, the note, the
-     slot -- which the opener knows and nothing else does. */
+     slot. The one that is OPEN says so itself, because its opener said so.
+     ONE FURTHER BACK ON THE TRAIL IS NOT THAT ONE, and FORM holds one form at
+     a time: the back arrow off a word's edit sheet points at `form:word:kano`
+     and got `tab.build` for it, so it said 制作 while the screen behind it was
+     the word. The register's list is a route, so its own arrow said `kano`
+     correctly -- and that is the answer this line has to give too.
+
+     So the two word forms are asked of the WORD, the way `letter`, `glyph`
+     and `about` above are asked of the thing they are open on, and a word
+     that is renamed brings its name with it because navRename() moves the
+     argument. The other form kinds still fall back: each would have to name
+     its own thing, and none of them has been asked for. */
   if(r==='form'){
     if(FORM && FORM.key===a && FORM.title) return FORM.title;
+    var fk=formArg(a);
+    if((fk.kind==='word' || fk.kind==='edit') && typeof findWord==='function'){
+      var fw=findWord(fk.rest);
+      if(fw) return wOut(fw.hw);
+    }
     return t('tab.build');
   }
   if(r==='gram' && a){

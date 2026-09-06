@@ -93,6 +93,9 @@ function addOne(){
   addFmSync();
   if(capStop(1+addFms.length)) return;
   if(findWord(hw)){ toast(t('toast.dup')); return; }
+  /* After the guards, so a refused Add leaves the boxes holding what was
+     typed rather than having quietly eaten it. */
+  wdTakeFields();
   addPos=wEdit.pos;
   syn=(d.syn||[]).slice(); ant=(d.ant||[]).slice();
   /* No `ph` on it: the spelling is the word, and what it sounds like is
@@ -163,6 +166,14 @@ function wdTypeHTML(){ return spTypeField('wd-ln', 'wdSetLn', wEdit.sp||[], 'whi
 function wdSetLn(v){
   wEdit.sp=spType(v);
   wdSync();
+  /* The one place the spelling is written, so the one place that tells the
+     sheet it has moved. Typing does not redraw this screen -- lnGrow() below
+     is why -- so nothing else was going to say so: the Save in the corner
+     stayed grey while the word under it was a different word, and the back
+     arrow then left without asking and took the change with it. The note does
+     it (wdSetNt), the etymology does it, the tags do it; the spelling, which
+     is the word itself, did not. www/shell.js § KEEP. */
+  wdKeepTouch();
   lnGrow('wd-ln');
   var r=document.getElementById('wd-rd');
   if(r) r.textContent=phIpa(wEdit.seq);
@@ -406,14 +417,14 @@ function wdExHTML(){
       lnField('wd-exg', '', ' aria-label="'+esc(t('word.ex.gl.ph'))+'"' + KD('wdAddEx'), '')+
     '</div>' : '');
 }
+/* An example needs its line: a gloss on its own is a gloss of nothing, and
+   Enter on the empty box says so rather than doing nothing quietly. What it
+   then takes is wdTakeFields() above -- the same act, not a copy of it. */
 function wdAddEx(){
-  var w=wdW(), a=document.getElementById('wd-exl'), b=document.getElementById('wd-exg');
-  if(!w || !a) return;
-  var ln=String(a.value||'').trim();
-  if(!ln){ toast(t('word.ex.need')); return; }
-  if(!w.ex) w.ex=[];
-  w.ex.push({ln:ln, gl:String((b&&b.value)||'').trim()});
-  wdStore(); wdPaint();
+  var a=document.getElementById('wd-exl');
+  if(!a) return;
+  if(!String(a.value||'').trim()){ toast(t('word.ex.need')); return; }
+  wdTakeFields(); wdStore(); wdPaint();
 }
 function wdDelEx(i){
   var w=wdW(); if(!w || !w.ex) return;
@@ -1101,16 +1112,21 @@ function posPick(k){ wdSetPos(k); relDirty(); back(); }
    are already in -- so this screen is that list and a box to write one that
    is not on it yet.
 
-   It is a form and not a route, which is what posPick's screen would be if it
-   were written today: the list is one press deep, it is built from the
-   dictionary rather than from anything stored, and a route would be a second
-   place saying that a word has a subclass.
+   IT IS A ROUTE, and it is the same route the part of speech and the register
+   are. It was a FORM, and a form is the one thing this screen could not be:
+   openForm() replaces FORM the moment it opens, so the sheet it was opened
+   from was no longer the form on the trail -- relDirty() found FORM.key
+   saying `wsub` and rebuilt nothing, and the back arrow's vForm() found the
+   same and called FORM_OPEN.edit, which builds wEdit out of the WORD again.
+   The subclass just chosen was gone, and nothing threw. The part of speech
+   and the register are routes and were never affected, which is the whole of
+   why they worked.
 
    The subclasses OF THIS PART OF SPEECH and no others. 動詞 → 自動詞 is not
    an answer about a noun, and one list holding every subclass in the language
    is the row of chips CLAUDE.md forbids wearing a list's clothes. */
 function wdSubHTML(){
-  return wdPickRow(t('f.sub'), wEdit.sub || t('f.sub.none'), DO('openSub'));
+  return wdPickRow(t('f.sub'), wEdit.sub || t('f.sub.none'), DO('go', ["sub"]));
 }
 /* THE SUBCLASSES THIS APP ALREADY KNOWS THE NAMES OF, one part of speech at a
    time. 「下位分類の中身も結構書いていいよ」 OWNER 2026-09-05. The screen used
@@ -1153,15 +1169,16 @@ function subList(pos){
    into it and not confirmed was a subclass somebody believed they had made.
    Enter on the box is still the only thing that makes one. */
 var wdSubNew=false;
-function subNewOpen(){ wdSubNew=true; openSub(); }
+function subNewOpen(){ wdSubNew=true; render(); }
 function subAddRow(){
   return '<div class="entry one"><button class="ebody"' + DO('subNewOpen') + '>'+
     '<div class="hwrow"><span class="hwl">'+ICON_ADD+esc(t('f.sub.new'))+
     '</span></div></button><span class="ltck" style="margin-left:auto"></span></div>';
 }
-function openSub(){
-  var subs=subList(wEdit? wEdit.pos : ''), now=(wEdit && wEdit.sub) || '';
-  openForm('wsub', t('f.sub'),
+function vSub(){
+  if(!wEdit) return viewGone();
+  var subs=subList(wEdit.pos), now=wEdit.sub || '';
+  return '<div class="view">'+navTop()+'<div class="body">'+
     /* "None" is a row like the others and is ticked when there is none, so
        taking a subclass off is the same press as putting one on. */
     wdOneHTML(t('f.sub.none'), !now, 'subPick', '')+
@@ -1172,9 +1189,8 @@ function openSub(){
       ? '<div class="field">'+
           lnField('wd-sub', '', ' aria-label="'+esc(t('f.sub.new'))+'"'+
                   KD('subNew'), '')+'</div>'
-      : subAddRow()));
+      : subAddRow())+'</div></div>';
 }
-FORM_OPEN.wsub=function(){ openSub(); };
 function subPick(x){ wdSetSub(x); relDirty(); back(); }
 /* Enter on the box is what makes one. There is no button beside it: a name
    typed and not pressed is a subclass somebody believes they made, and Enter
@@ -1591,13 +1607,34 @@ function wdSetRd(v){
     spSetU(sp[i], i<us.length? (i===sp.length-1? us.slice(i).join('') : us[i]) : '');
   wdSync(); wdPaint();
 }
-function wdAddMn(){
-  var e=document.getElementById('wd-mn'); if(!e) return;
-  var v=String(e.value||'').trim();
-  if(!v) return;
-  if(wEdit.mns.indexOf(v)<0) wEdit.mns.push(v);
-  wdPaint();
+/* WHAT IS STILL IN THE TWO BOXES. A meaning and an example reached the sheet
+   by pressing Enter in the box they were typed into, and 「追加」 and the Save
+   in the corner looked at neither box -- so a word written straight down and
+   added without pressing Enter arrived carrying no meaning and no example.
+   Nothing threw: they were typed, they were on the screen, and they had never
+   been anywhere else. The note, the etymology and the tags were unaffected
+   because those are written into wEdit as they are typed.
+
+   One function, and all four roads into the sheet's content go through it:
+   Enter on either box, 「追加」, and Save. The boxes are not emptied here --
+   what empties them is the repaint that follows, built out of wEdit, so there
+   is one answer to what is in them. */
+function wdTakeFields(){
+  var w=wdW(), e=document.getElementById('wd-mn'),
+      a=document.getElementById('wd-exl'), b=document.getElementById('wd-exg'), v, ln;
+  if(e && wEdit){
+    v=String(e.value||'').trim();
+    if(v && wEdit.mns.indexOf(v)<0) wEdit.mns.push(v);
+  }
+  if(w && a){
+    ln=String(a.value||'').trim();
+    if(ln){
+      if(!w.ex) w.ex=[];
+      w.ex.push({ln:ln, gl:String((b&&b.value)||'').trim()});
+    }
+  }
 }
+function wdAddMn(){ wdTakeFields(); wdStore(); wdPaint(); }
 function wdDelMn(i){ wEdit.mns.splice(i,1); wdPaint(); }
 /* A derived word starts as its parent and is changed from there, which is what
    deriving is. It is a real entry, so it can itself be derived from. */
@@ -1642,6 +1679,8 @@ function wdWrite(){
   if(!(wEdit.sp && wEdit.sp.length) || !hw){ toast(t('toast.hw2')); return false; }
   var clash=findWord(hw);
   if(clash && clash!==w){ toast(t('toast.dup')); return false; }
+  /* Same as addOne(): after the guards, so a refused Save keeps the boxes. */
+  wdTakeFields();
   var old=String(w.hw);
   /* The sheet writes what the sheet holds. `ph` -- the sounds that came with
      the word, off an import or off the one migration that gave the oldest

@@ -61,6 +61,7 @@ page('relate',   vRelate);
 page('fm',       vFm);
 page('pos',      vPos);
 page('reg',      vReg);
+page('sub',      vSub);
 page('follows',  vFollows);
 page('glyph',    vGlyph);
 page('words',    vWords);

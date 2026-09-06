@@ -450,6 +450,95 @@ const R = await pg.evaluate(() => {
     out.fails.push('changed the part of speech and the sheet still carries ' +
       JSON.stringify(wEdit.sub) + ' -- a subclass of the verbs, on a noun');
 
+  /* ---- what is still in the boxes when the sheet is committed ----------
+     A meaning and an example reached the sheet by pressing Enter in the box
+     they were typed into, and 「追加」 and Save looked at neither box: a word
+     written straight down and added without pressing Enter arrived with no
+     meaning and no example. It is here rather than in press-check for the
+     same reason as everything above -- it takes three acts in a row, and a
+     walk that rebuilds the screen between presses can never make them. */
+  openAdd('');
+  wdSetLn('zoro');
+  document.getElementById('wd-mn').value = 'a written meaning';
+  document.getElementById('wd-exl').value = 'zoro tira';
+  document.getElementById('wd-exg').value = 'a gloss';
+  addOne();
+  const zo = findWord('zoro');
+  out.said.push('added without pressing Enter, the word carries: ' +
+    JSON.stringify(zo ? zo.mns : null) + ' and ' +
+    JSON.stringify(zo && zo.ex ? zo.ex.map(e => e.ln) : null));
+  if (!zo)
+    out.fails.push('typed a spelling and pressed 追加 and no word was made');
+  else {
+    if (!(zo.mns && zo.mns.length === 1 && zo.mns[0] === 'a written meaning'))
+      out.fails.push('a meaning was typed in the box and 追加 threw it away: ' +
+        JSON.stringify(zo.mns));
+    if (!(zo.ex && zo.ex.length === 1 && zo.ex[0].ln === 'zoro tira' &&
+          zo.ex[0].gl === 'a gloss'))
+      out.fails.push('an example was typed in the boxes and 追加 threw it ' +
+        'away: ' + JSON.stringify(zo.ex));
+  }
+
+  /* And Save, on a word that already exists, which is the same boxes. */
+  openEdit('kano');
+  wdMnNew = true; wdExNew = true; wdPaint();
+  document.getElementById('wd-mn').value = 'a second meaning';
+  document.getElementById('wd-exl').value = 'kano tira';
+  wdWrite();
+  const ka = findWord('kano');
+  out.said.push('saved without pressing Enter, the word carries: ' +
+    JSON.stringify(ka.mns) + ' and ' +
+    JSON.stringify(ka.ex ? ka.ex.map(e => e.ln) : null));
+  if (ka.mns.indexOf('a second meaning') < 0)
+    out.fails.push('a meaning was typed in the box and Save threw it away: ' +
+      JSON.stringify(ka.mns));
+  if (!(ka.ex || []).some(e => e.ln === 'kano tira'))
+    out.fails.push('an example was typed in the box and Save threw it away: ' +
+      JSON.stringify(ka.ex));
+
+  /* ---- and the spelling alone turns the Save gold ----------------------
+     www/shell.js § KEEP: the button is grey until something has changed, and
+     the back arrow asks only while it is gold. The spelling is the word
+     itself and was the one field on this sheet that told the buffer nothing,
+     so changing it left both saying the sheet was untouched. */
+  openWord('tir'); openEdit('tir');
+  const greyFirst = !keepDirty(keepKey());
+  wdSetLn('tirr');
+  const goldAfter = keepDirty(keepKey());
+  out.said.push('the sheet is open on ' + JSON.stringify(openHw) +
+    ', untouched: ' + greyFirst +
+    ', and after the spelling is typed it has changed: ' + goldAfter);
+  /* openEdit() returns doing nothing for a word that is not there, and the
+     sheet then stays open on whatever it was: without this the claim below
+     was being asked of the PREVIOUS word, half edited, and read as a failure
+     of the thing it is here to hold. */
+  if (openHw !== 'tir')
+    out.fails.push('the sheet did not open on the word this claim is about');
+  if (!greyFirst)
+    out.fails.push('an untouched sheet already says it has changed');
+  if (!goldAfter)
+    out.fails.push('the spelling was changed and the sheet still says nothing ' +
+      'has -- the Save stays grey and the back arrow leaves without asking');
+
+  /* ---- and what the arrow that leaves the sheet is called ---------------
+     www/shell.js § pageName. The label is on the button as an aria-label, so
+     it is on the screen for anybody who cannot see the arrow and nowhere else
+     -- which is why it said 制作 for as long as it did with every check
+     green. It is the trail's name for the screen behind, and the screen
+     behind an edit sheet is the word. */
+  goTab('build'); go('words');
+  document.querySelector('[data-do="openWord"]').click();
+  document.querySelector('.navtop [data-do="openEdit"]').click();
+  const arrow = document.querySelector('.navtop .back').getAttribute('aria-label');
+  out.said.push('the trail into the sheet is ' +
+    JSON.stringify(NAV.map(n => n.r + (n.a ? ':' + n.a : '')).join(' > ')) +
+    ' and the arrow off it says ' + JSON.stringify(arrow));
+  if (here().r !== 'form' || String(here().a).indexOf('edit:') !== 0)
+    out.fails.push('the word list did not lead to an edit sheet');
+  else if (arrow !== wOut(String(here().a).slice(5)))
+    out.fails.push('the arrow off the edit sheet says ' + JSON.stringify(arrow) +
+      ' -- the screen behind it is the word, not a tab');
+
   return out;
 });
 
