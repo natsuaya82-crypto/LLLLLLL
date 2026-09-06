@@ -382,12 +382,13 @@ function keepKey(){ return keepKeyOf(here().r, here().a); }
    has been typing into it, and it is left exactly as it is. Only `save` is
    taken again, because it is a fresh closure over a screen that may have been
    rebuilt around it. */
-/* `landed` is for the one screen that has something to SAY once the save is
+/* `landed` is for the one screen that has something to DO once the save is
    up, and it is not a second answer to where a save ends -- backGo() below is
-   still the only one. The letter being drawn says its own sound and names
-   itself as it is put away, and neither may happen while the send is still
-   out: 「通信エラーなら進むわけねえだろ全部」. It is optional; eight of the
-   nine screens hand nothing. */
+   still the only one, and 「保存しました」 is keepSave()'s one line for all
+   nine. The letter being drawn plays its own sound as it is put away, which
+   may not happen while the send is still out:
+   「通信エラーなら進むわけねえだろ全部」. It is optional; eight of the nine
+   screens hand nothing. */
 function keepOn(key, was, save, landed){
   var k=String(key);
   if(KEEP[k]){ KEEP[k].save=save; KEEP[k].landed=landed; return; }
@@ -584,6 +585,22 @@ function keepSave(key, done){
       /* And what the screen has to say about a save that LANDED, before it
          goes. Nothing decides where it goes but the line under it. */
       if(up && b.landed) b.landed();
+      /* AND IT SAYS SO. 「保存したら下に小さく『保存しました』。今は黙って前の
+         画面に戻る」 OWNER 2026-09-06. A screen that writes something down and
+         slides away without a word leaves somebody looking at the page behind
+         it wondering whether the press landed -- and here it landed, which is
+         the one thing worth saying.
+
+         HERE AND NOWHERE ELSE, for this function's own reason: it is the only
+         caller of `b.save` there is, so nine screens are one sentence rather
+         than nine. The letter being drawn used to say its own 「{0} saved」
+         from geKeepSaid() -- that was this sentence written a second time,
+         and with this line it would have been said twice on one press, so it
+         is gone from there and the sound it plays is not.
+
+         And only when it LANDED. A save that did not is netPop()'s to speak
+         about, and 「保存できませんでした」 is the sentence it already has. */
+      if(up) toast(t('keep.saved'));
       if(up){ keepPaint(); backGo(); }
       if(done) done(!!up);
     });
