@@ -22,12 +22,6 @@
    answer for the whole language, changes every sentence, and is exactly the
    kind of thing word order already is. */
 
-/* The six, kept because www/phases.js draws them on the OLD stage screen and
-   writes the same STG.order through setOrder(). They are no longer a choice
-   in the grammar chapter: 「選択式じゃなくて主語とか置いてあって指でどこに置く
-   か決めれる形がいい」 OWNER 2026-09-05, so this chapter is a board of cards
-   and these six are shortcuts to six arrangements of it. */
-var ORDERS=['SOV','SVO','VSO','VOS','OVS','OSV'];
 /* THE CARDS. A word order is a list of ROLES and the three a sentence needs
    are not all of them -- 「3語以外も置けるようにしたい」. Codes rather than the
    engine's full role names, because this is what is STORED: 'SOV' is the shape
@@ -77,9 +71,12 @@ function orderDef(){
 }
 /* One write, not two. The value and the mark saying somebody chose it are
    both in STG now, and stMarkSet() is what saves it. It takes either shape --
-   the six-letter string www/phases.js hands it, or the cards off the board --
-   and what it WRITES is always the list, so there is one shape in storage from
-   the first time anybody touches it. */
+   the cards off the board, or the six-letter string a language written before
+   today still holds -- and what it WRITES is always the list, so there is one
+   shape in storage from the first time anybody touches it.
+
+   No button says its name any more: the six are gone and the board is carried
+   with a finger, so g2Up() is the one thing that calls this. */
 function setOrder(v){ STG.order=orderSeq(v); stMarkSet('order'); render(); }
 
 /* ---- where a word stands ----------------------------------------------

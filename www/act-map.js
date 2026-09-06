@@ -261,7 +261,6 @@ act('openFil', openFil);
 act('wordsSetFil', wordsSetFil);
 act('setGPos', setGPos);
 act('setMyFont', setMyFont);
-act('setOrder', setOrder);
 act('openLtView', openLtView);
 act('nextLtSort', nextLtSort);
 act('setLtFil', setLtFil);

@@ -740,8 +740,9 @@ if (mk.stored.indexOf('\u00b6') < 0)
    migrateGramLang() copies the person's word order and the places their
    modifiers sit out of the settings and onto every language, once. What it
    copies is only ever an answer this app could have given: an order that is
-   one of the six, and a modifier position that is 'before' or 'after'. When
-   the settings hold neither -- an `order` outside ORDERS, which is what a
+   made of cards this app knows, and a modifier position that is 'before' or
+   'after'. When the settings hold neither -- an `order` that orderSeq()
+   (www/grammar.js) cannot read back as itself, which is what a
    settings file edited out of a PC backup can say, and www/core.js names
    that file as editable in as many words -- it copied nothing and then wrote
    the nothing down: `{}`, on a language that had never had a phases slice.
