@@ -2502,20 +2502,17 @@ function kbSelDelGo(){
 }
 function kbRowHTML(x, i, at){
   var sel=!!KBSEL, on=!!(sel && KBSEL[i]);
-  /* AND NOT A DOOR ON THE FREE PLAN. 「編集ボタンも無料はいらんやろ」 OWNER
-     2026-09-04. Board 0 is the QWERTY itself -- kbEdit() refuses it, its page
-     has no editor on it, and the steps for switching it on in iOS are behind
-     the ? in this screen's own bar -- so the arrow opened a page with nothing
-     on it to do, and an arrow that opens nothing is the app saying there is
-     more.
+  /* AND IT IS A DOOR ON EVERY PLAN. 「キーボード1を触れさせて戻る工程が
+     必要」 OWNER 2026-09-06. It was a bare div on the free plan -- the row
+     drawn and nothing to press -- on the argument that board 0 has no editor
+     and an arrow that opens nothing is the app saying there is more. What is
+     behind it is not an editor: it is the keyboard itself, drawn big, which
+     is the one thing somebody who has just drawn an alphabet wants to look
+     at. The onboarding walk goes through this row and comes back out of it.
 
-     The paid list keeps it, because there the board's page is where Apply is
-     and choosing which keyboard goes on the phone is the one thing anybody
-     does to board 0. */
-  if(!can('kb'))
-    return '<div class="kbrow">'+
-      '<span class="kbrowk">'+kbShotHTML(x.lay)+'</span>'+
-      '<span class="kbrown">'+esc(kbName(i))+'</span></div>';
+     One row, one shape, both plans -- 「一覧の行の形は有料と同じ」. What
+     the board's page then holds is vKb()'s to say, and on board 0 it is the
+     QWERTY with nothing on it to change. */
   if(sel && kbIsFree(i))
     return '<div class="kbrow kbrowq">'+
       '<span class="ltck" data-sel="0"></span>'+
