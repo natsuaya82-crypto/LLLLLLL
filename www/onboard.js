@@ -622,7 +622,24 @@ function obDoorBack(){
      in hand -- the digits were spent to get one -- so the screens behind it
      ask for an address that has been proved and an account that exists. */
   if(m==='newpw') return '';
-  if(m==='forgot' || m==='up') return 'in';
+  /* AND NOBODY SIGNED IN IS EVER ASKED TO SIGN IN.
+     「設定 → アカウント → パスワード変更を途中でやめるとログインを求められる」
+     OWNER 2026-09-06, on a phone.
+
+     Behind 「forgot」 is the sign-in form, which is true of the road it is
+     usually travelled: signed out, at the door, somebody presses 「forgot」
+     from the form and one press back is the form again. It is not true of
+     the other road. setPwForgot() (www/settings.js) opens this face from
+     inside the app, for somebody who is signed in and changing their
+     password, and that person never stood on the form -- so backing out put
+     a sign-in screen in front of an account that was already signed in, and
+     getting to the app took a second press that looked like giving up.
+
+     Signed in there is nothing behind it: obCanBack() falls to obPending(),
+     which is the screen the door was opened FROM, and one press is the way
+     back to it with the session untouched. */
+  if(m==='forgot') return netSignedIn()? '' : 'in';
+  if(m==='up') return 'in';
   return '';
 }
 function obCanBack(){
@@ -1092,6 +1109,18 @@ function obReturn(){
   if(!b) return false;
   SET.obback=null; SET.done=true; save();
   go(b.r, b.a);
+  /* AND IT DRAWS, WHICH go() ON ITS OWN DOES NOT.
+     「途中でやめるとログインを求められる」 OWNER 2026-09-06.
+
+     go() is a no-op when it is handed the screen already on the trail
+     (www/shell.js § go) -- and coming back from the door is nearly always
+     exactly that, because the door was opened FROM the screen it goes back
+     to: Settings' password room presses 「forgot」 and SET.obback is that
+     room. So the session came back, SET.done came back, and what stayed on
+     the screen was the door, until something else in the app happened to
+     render. What changed here is not where somebody is standing, it is what
+     the app IS, and go() cannot know that. */
+  render();
   return true;
 }
 /* コードの画面に立ったときだけ数が動きます。離れれば止まる ── obAgainTick() は
