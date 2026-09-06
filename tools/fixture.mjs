@@ -2256,25 +2256,39 @@ export function halfDone(){
         PW.ed = POSTS[0].id; PW.ln = POSTS[0].ln; PW.mn = POSTS[0].mn;
         openPost(); const h = vForm(); PW = pwBlank(); return h; }],
     ['who you are, being edited', () => { openMe(); return vForm(); }],
+    /* The box a list is pasted into, which is its own screen: the one before
+       it offers pasting or a file and nothing else. */
+    ['a list being pasted', () => { IMP = impBlank(); IMP.step = 'paste';
+        openImport(); return vForm(); }],
+    /* Every column a word can be made of, which is what a spreadsheet
+       somebody actually keeps has in it. One row per column, and the first
+       three rows of the file over them. */
     ['a list waiting to be understood', () => { IMP = impBlank();
-        impTake('Word,Meaning,Part of Speech,Made\n' +
-                'kano,mountain,noun,2024\nzzk,a thing,verb,2024\n');
+        impTake('Word,Meaning,Part of Speech,Example,Example meaning,Fields,Notes,Made\n' +
+                'kano,mountain,noun,kano mos,a tall mountain,nature,seen twice,2024\n' +
+                'zzk,a thing,verb,zzk tir,it is seen,,,2024\n');
         return vForm(); }],
-    /* The same list where one of its words is already in the dictionary, so
-       the choice between skipping and overwriting exists at all. */
-    ['a list with words already here', () => { IMP = impBlank();
+    /* A file with no headings at all: the columns are named by where they
+       stand, and they can still be chosen. */
+    ['a list with no headings waiting to be understood', () => { IMP = impBlank();
+        impTake('kano,mountain,n\ntir,to see,v\nmos,tall,adj\n');
+        return vForm(); }],
+    /* And what is about to happen, which is the screen the press is on. One
+       of its words is already in the dictionary, so the choice between
+       skipping and overwriting exists at all. */
+    ['a list about to come in', () => { IMP = impBlank();
         impTake('Word,Meaning\nkano,mountain\nzzk,a thing\n');
+        IMP.step = 'ready'; openImport();
         return vForm(); }],
-    /* An alphabet rather than a dictionary: the same screen, and the counts
-       below the table say letters instead of words. */
+    /* An alphabet rather than a dictionary: the same screens, and the counts
+       say letters instead of words. */
     ['an alphabet waiting to be understood', () => { IMP = impBlank();
         impTake('Letter,Sound,Name\nϘ,k,qoppa\nϠ,sh,sampi\n');
         return vForm(); }],
-    ['a list just brought in', () => { IMP = impBlank();
-        IMP.read = {shape:'table', head:null, rows:[['zzk', 'a thing']]};
-        IMP.roles = ['hw', 'mn'];
-        doImport();
-        const h = vForm(); impUndo(); return h; }],
+    ['an alphabet about to come in', () => { IMP = impBlank();
+        impTake('Letter,Sound,Name\nϘ,k,qoppa\nϠ,sh,sampi\n');
+        IMP.step = 'ready'; openImport();
+        return vForm(); }],
     /* On the paid plan the file button is a real file input rather than the
        way to the plans. */
     ['a file being chosen', () => { SET.plan = 'pro'; IMP = impBlank();
