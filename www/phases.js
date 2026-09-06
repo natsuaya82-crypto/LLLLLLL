@@ -447,7 +447,7 @@ function openSlot(pid, k){
   if(capStop(1)) return;
   openForm(route, stSlotLabel(p, key),
     '<div id="wd-body">'+wdFormHTML()+'</div>',
-    function(){ phkMount(); geTiles(); });
+    function(){ phkMount(); geTiles(); }, wdSaveBtn());
 }
 FORM_OPEN.slot=function(a){ var i=String(a).indexOf('/'); openSlot(a.slice(0,i), a.slice(i+1)); };
 /* ---- a stage of your own ---------------------------------------------- */
