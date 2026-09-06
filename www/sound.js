@@ -676,8 +676,8 @@ function ltKindOf(l){
    ltById(), the font, the keyboard and the spelling all go on seeing every
    letter, exactly as findWord() goes on seeing every word: what somebody
    already wrote does not change because a plan ended. */
-function ltHidHTML(){
-  var n=ltHidden();
+function ltHidHTML(k){
+  var n=ltHidden(k);
   if(!n) return '';
   return '<button class="capwarn" style="margin:14px 0 0"' + DO('goPlans') + '>'+
     t('cap.hid', n)+'<span class="capgo">'+t('up.cta')+ICON_GO+'</span></button>';
@@ -686,15 +686,23 @@ function ltSeen(){
   if(can('letters')) return LETTERS;
   return LETTERS.filter(ltIsBase);
 }
-function ltHidden(){ return LETTERS.length-ltSeen().length; }
-function ltOfKind(k){
+/* How many are not on screen. With no room named it is the alphabet entire,
+   which is what the settings row asks; named a room, it is that room's own --
+   the digits room said "4 hidden" while every digit it holds was on screen,
+   because the number it printed was the whole alphabet's. It is the one split
+   ltOfKind() makes, asked of LETTERS instead of ltSeen(). */
+function ltHidden(k){
+  if(!k) return LETTERS.length-ltSeen().length;
+  return ltOfKindIn(LETTERS,k).length-ltOfKind(k).length;
+}
+function ltOfKind(k){ return ltOfKindIn(ltSeen(),k); }
+function ltOfKindIn(list,k){
   /* Digits and marks keep their own list functions because each has an order
      of its own -- a digit's is its value. The alphabet is everything else,
      and says so by asking ltKindOf rather than restating the two tests. */
-  var seen=ltSeen();
-  if(k==='num') return numDigits().filter(function(l){ return seen.indexOf(l)>=0; });
-  if(k==='mark') return ltMarks().filter(function(l){ return seen.indexOf(l)>=0; });
-  return ltOrder(seen.filter(function(l){ return ltKindOf(l)==='alpha'; }));
+  if(k==='num') return numDigits().filter(function(l){ return list.indexOf(l)>=0; });
+  if(k==='mark') return ltMarks().filter(function(l){ return list.indexOf(l)>=0; });
+  return ltOrder(list.filter(function(l){ return ltKindOf(l)==='alpha'; }));
 }
 function ltKindRow(k){
   return '<button class="trow"' + DO('go', ["ltset", k]) + '>'+
@@ -933,7 +941,7 @@ function vLtset(){
        telling somebody their work is gone. It is not gone -- every letter is
        in LETTERS, in storage, in the backup and on the server -- and paying
        again brings it straight back. */
-    ltHidHTML()+
+    ltHidHTML(k)+
     ((k==='alpha' && loose.length)
       ? '<div class="mini" style="margin-top:10px">'+tn('lt.loose', loose.length)+'</div>' : '')+
 
