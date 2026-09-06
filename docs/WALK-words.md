@@ -37,6 +37,9 @@
 | 7 | free | 検索の画面（`find`）の「Import from CSV」 | 押す → CSV を貼る → ［Next］→［Import］ | free のまま最後まで通り、単語が三つ入る。設定 → データの同じ行は「You need to upgrade to use this feature」で止まる（`can('data')` は free で false） | 二つの入口が同じ答えを出す | `15-import-on-free.png` / `16-settings-import-gated.png` |
 | 8 | plus/pro | 文法の章（例 `gram:v2:pl`）の「4 words」 | 続けて何度も押す | 押すたびに 4 語増え、ボタンの字は「4 words」のまま変わらない。規則が作った語にもう一度同じ規則がかかり、四回押すと `kano` → `kanok` → `kanokk` → `kanokkk` → `kanokkkk` になる（`from` が一つ前の形を指す） | 一度押したら数が減るか、規則が作った形にその規則がまたかからない | `14-nwords-repeats.png` |
 | 9 | 全部 | 取り込みの終わりの画面 | 一語だけ取り込む | 英語で「1 words in」。文字を一つだけ入れたときは「1 letters into the alphabet」 | 一語のときの言い方。この二つは `t()` で、他の数の出る所（`4 words`、`1 already here`）は `tn()` を通っている | `15-import-on-free.png` |
+| 10 | free | 検索の画面 →［Import from CSV］→「Letters」に切り替えて取り込む | `za, z` `qu, q` `xi, x` を貼って［Letters］→［Import］ | free で `LETTERS` が 39 → 42 に増える。文字の一覧の「hidden」は 4 → 7 になり、増えた三つはそのまま上限の裏に入って見えない。`can('letters')` は free で false | free は a-z と `!` `?` と数字だけで、足すことも消すことも改名もできない（CLAUDE.md「無料版は何か」） | `35-free-alphabet-grew.png` |
+| 11 | plus | 取り込みで上限（1000）に当たったとき | 1100 行を貼って［Import］ | 「989 taken, 0 coined — **Free** is full」と出る。プランは plus | 自分が使っているプランの名前 | `31-plus-cap-says-free.png` |
+| 12 | 全部 | 辞書の選択モード | 一つだけ選んで［Delete］ | ポップが「Delete 1 words?」 | 一語のときの言い方 | `28-bulk-delete-ask.png` |
 
 ### 再現手順
 
@@ -104,12 +107,28 @@
 3. もう一度押す。「4 words made」。`kanokk` `sarkk` `tirorkk` `tirokkk`。
 4. 四回で `kano` の系列は `kanokkkk` まで伸びる。
 
+
+**#10 free で文字が増える**
+1. `SET.plan='free'`。文字の一覧を開く。「Alphabet 24」「4 hidden」。`LETTERS` は 39。
+2. 検索 →［Import from CSV］。
+3. `za, z` / `qu, q` / `xi, x` を貼って［Next］。
+4. 上の「IMPORT INTO」を「Letters」に切り替える。列の見出しが
+   Character / Sounds / Name に変わる。
+5. ［Import］。「3 letters into the alphabet」。
+6. `LETTERS` は 42。文字の一覧は「Alphabet 24」のままで「7 hidden」になる。
+7. plus で同じことをすると `qu` `xi` `za` が一覧に並んで見える。
+
+**#11 plus なのに Free**
+1. `SET.plan='plus'`。1100 行の CSV を貼って［Next］→［Import］。
+2. 「989 words in」の下に「989 taken, 0 coined — Free is full」。
+
 ## 気になる（仕様かどうかはこちらでは決められない）
 
 | # | プラン | 画面 | 見たこと |
 |---|---|---|---|
 | A | 全部 | 単語の編集シート | 保存ボタンが灰（＝変えていない）のときも押せて、押すと保存される。何も変えずに押すと「kano updated」と出て `up` の時刻だけ動く |
 | B | 全部 | 取り込みの列を割り当てる画面 | 列の役目（Spelling / Meaning / …）が `<select>` で、iPhone では下から出る標準のホイールになる。この画面以外では品詞も語域も形も「別のページで選ぶ」形になっている |
+| D | 全部 | 単語の編集シート・新規単語のシート | 意味と例文は Enter を押さないと入らない（バグ #3）。編集シートでも同じで、意味の欄に打って［保存］を押すと「sar updated」と出るのに意味は増えていない |
 | C | 全部 | 単語を消したあと | 基となる語を消すと、その語から作られた語は残り、`fm`（`pst` など）を持ったまま `from` だけ外れる。単語のページからは「Past」の字が消えて「verb」だけになる。データは消えていない |
 
 ## 正しく動いたことの記録
@@ -126,3 +145,23 @@
 - 品詞と語域は選べば入り、保存ボタンが金になる。
 - 単語の改名（つづりを変えて［保存］）→ トースト「kanoo updated」、
   戻った先も `form:word:kanoo` で、消えた名前の画面には落ちない。
+  続けて二度改名しても正しい。すでにある語の名前にしようとすると
+  「That word already exists」で止まり、空にすると
+  「A spelling needs two letters or more」で止まる。どちらも辞書は動かない。
+- 単語の削除。ポップは「Delete sar?」、［Delete］で消えて辞書に落ちる。
+  ［Close］なら何も起きない。基となる語を消しても派生語は残る。
+- 改名すると派生語の `from` が全部ついてくる（`tir`→`tirr` で四語とも）。
+- 派生語（Derive a word）。「A word from kano」のシートが開き、
+  ［Add］で `from` の付いた語が入る。
+- 同義語・反対語。選ぶと両方の語に書かれ、もう一度押すと両方から消える。
+  相手の単語のページからも見える。
+- 選択モードの一括削除。ポップの数は合っていて、［戻る］で選択は消える。
+- 取り込み。CSV・TSV・JSON・ただの単語の並び、どれも列を読めている。
+  すでにある語は既定で「Skip」、「Overwrite」に切り替えると上書きされ、
+  ［Undo］で元の意味まで戻る。
+- 上限。free は 100 でちょうど止まり（150 行貼ると 89 語入って
+  「Free is full」）、plus は 1000 でちょうど止まり、pro は 1100 行そのまま入る。
+- 規則の編集（`form:fmr:<id>`）。足す文字を打つと `STG.fm` に入り、
+  「On the front / On the end」も入る。戻ると章の行に反映される。
+- 単語のページの「Make the form this word has not got」。
+  `kano` で押すと `kanok` が一つできて「1 word made」。
