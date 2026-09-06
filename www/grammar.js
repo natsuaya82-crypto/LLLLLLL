@@ -1130,15 +1130,22 @@ function g2FmRows(c){
 }
 /* And the way to write another, which is on the chapter always. A form is not
    one rule: 「過去形でもいろんな規則作れるよね？」 -- so this is never hidden
-   because the language already has one. */
+   because the language already has one.
+
+   IT IS THE ＋ ON THE HEADING, not a row saying what it does.
+   「＋◉が規定なんだからそれにしろ」 OWNER 2026-09-06. secAdd() is the one
+   place that shape is written -- the example lines on a stage add with it, and
+   so does the word sheet -- so the chapter's rules are added the way every
+   other list in this app adds one more, and the heading names the list at the
+   same time. What the button says out loud is still `g2.fm.add`: it is the
+   aria-label now rather than the face of a row. */
 function g2FmAdd(c){
-  return '<button class="stslot"' + DO('fmrNew', [c.pos, c.fm]) + '>'+
-    '<span class="psm">'+esc(t('g2.fm.add'))+'</span>'+ICON_GO+'</button>';
+  return secAdd(esc(t('stg.rules')), DO('fmrNew', [c.pos, c.fm]), t('g2.fm.add'));
 }
 /* And the words this chapter's own stage used to ask for, where there was
    one: 否定形 wants the word for "not" and 疑問形 the six question words.
    chapSlotsHTML() draws nothing for the eleven chapters that have none. */
-function g2FmChap(c){ return g2FmRows(c)+g2FmAdd(c)+chapSlotsHTML(c.id); }
+function g2FmChap(c){ return g2FmAdd(c)+g2FmRows(c)+chapSlotsHTML(c.id); }
 /* What is behind the `?`. 「説明禁止の代わりに？を儲けてるからね？」 OWNER
    2026-09-05 -- so a chapter says nothing about itself on the screen and the
    whole of what it means is one press away. The two lines are the app's own
