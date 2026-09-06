@@ -1964,6 +1964,19 @@ export function halfDone(){
                                        return vLetter(); }],
     ['a mark, opened',          () => { window.route='letter'; NAV=[{r:'letter', a:'l4'}];
                                        return vLetter(); }],
+    /* A LETTER THAT IS NOBODY'S SLOT, which is the only kind whose page
+       carries the name field -- the thirty-eight are named a, b, c and the
+       two marks, and that name is not the person's to change on any plan.
+       l3 is that letter: it reads nothing and is called nothing, so it is
+       one somebody added. Every other letter opened here answers to one of
+       the slots -- ltSlotKey() in www/letters.js is what says so, and it
+       reads what the letter CALLS itself, so l1 is the k slot and l4 is the
+       `?` one. Until this face existed the field was in no walk at all and
+       act-check reported the name it is typed into as an entry no screen
+       names, which was true. */
+    ['a letter of somebody\'s own, opened', () => { window.route='letter';
+                                       NAV=[{r:'letter', a:'l3'}];
+                                       return vLetter(); }],
     /* TWO LETTERS FOR ONE SOUND, which is c and k and is allowed --
        「全部入力で被ったら赤字」. The field goes red and the line under it says
        which letter already reads it. Nothing else here reaches that state:

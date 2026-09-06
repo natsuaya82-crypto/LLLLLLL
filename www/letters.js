@@ -535,11 +535,22 @@ var LT_START='abcdefghijklmnopqrstuvwxyz!?';
    added. A slot is not a row in a list: it is `a`, or `?`, or the digit worth
    three, and what says which one is the NAME -- or for a digit the VALUE,
    because a digit has no name to match on and its value is the whole of what
-   it is. Never the id it happens to be wearing. */
+   it is. Never the id it happens to be wearing.
+
+   THE NAME IS WHAT THE LETTER CALLS ITSELF, which is ltName() and not one
+   field of it. This asked `ab` alone, and ltStart() asked ltName() -- two
+   questions about one thing, and they disagreed about exactly the letters a
+   list brings in: an imported letter carries `nm` and no `ab`, so ltStart()
+   said the q slot was taken and this said the letter was not a slot. A paid
+   language given a q and a z that way came down to free with 24 letters and
+   the two it had hidden behind 「2 hidden」, where nothing could reach them.
+   There is one question now and this is where it is answered: a letter that
+   calls itself q IS the q slot, whether a list brought it in or somebody
+   typed the name. 「アルファベットが24文字になり q と z が取り戻せない」 */
 function ltSlotKey(l){
   if(numIsDigit(l)) return '#'+l.val;
-  var ab=String((l && l.ab)||'').toLowerCase();
-  return (ab.length===1 && LT_START.indexOf(ab)>=0)? ab : '';
+  var nm=String(ltName(l)||'').toLowerCase();
+  return (nm.length===1 && LT_START.indexOf(nm)>=0)? nm : '';
 }
 function ltIsBase(l){ return !!l && !!ltSlotKey(l); }
 /* WHETHER ANYBODY HAS MADE ANYTHING OF THIS LETTER -- a drawing, a shape that
@@ -642,7 +653,10 @@ function ltStart(){
   ltJoinSlots();
   if(can('letters')) return;
   var have={}, made=0, i, c, l, read;
-  for(i=0;i<LETTERS.length;i++) have[String(ltName(LETTERS[i])||'').toLowerCase()]=1;
+  /* Which slots are already filled, asked of the one place that says which
+     slot a letter is. It used to read ltName() here and ltIsBase() read `ab`
+     over there, so a letter could fill a slot and not be one. */
+  for(i=0;i<LETTERS.length;i++) have[ltSlotKey(LETTERS[i])]=1;
   for(i=0;i<LT_START.length;i++){
     c=LT_START.charAt(i);
     if(have[c]) continue;
