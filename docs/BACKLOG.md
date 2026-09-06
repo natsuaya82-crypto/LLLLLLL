@@ -7,6 +7,12 @@ refactor, a feature and a rename never arrive in the same diff.
 
 The order is the order to do them in.
 
+**文字・キーボードを手で歩いた記録は `docs/WALK-kb.md`。**2026-09-06、`master` を
+人が触るように押して回った記録です。文字の一覧、字を描く画面、音、書記体系、
+キーボードの編集と拡張への受け渡しを、無料・Plus・Pro の三つで触っています。
+ここに畳まずに別の頁にしてあるのは、直したことではなく「その日そう見えた」こと
+だからです。
+
 ## オンライン一本化 ── 残っている一行はオーナーのものです
 
 2026-09-04。四歩とも入りました（`docs/CHANGELOG.md`）。**残っているのは
