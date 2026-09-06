@@ -595,7 +595,6 @@ defLang('en', (function(){
       'glyph.undo'        : "Undo",
       'glyph.redo'        : "Redo",
       'glyph.clear'       : "Clear",
-      'glyph.save'        : "Save",
       'glyph.help.t' : "Drawing a letter",
       'glyph.help.draw' : "Draw in the square with your finger.",
       'glyph.help.zoom' : "Two fingers to zoom, and to move the paper.",

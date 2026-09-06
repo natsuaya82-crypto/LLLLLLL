@@ -605,7 +605,6 @@ defLang('ja', (function(){
       'glyph.undo'        : "一画戻す",
       'glyph.redo'        : "一画進む",
       'glyph.clear'       : "すべて消去",
-      'glyph.save'        : "保存",
       'glyph.help.t' : "文字を描く",
       'glyph.help.draw' : "四角の中を指でなぞると線が引けます。",
       'glyph.help.zoom' : "二本指でズームできます。そのまま動かすと紙が動きます。",

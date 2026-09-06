@@ -394,6 +394,66 @@ const more = await pg.evaluate(() => {
     return asked;
   })();
 
+  /* ---- 10c. the letter being DRAWN, on the same road --------------------
+     「戻るは保存しますか？のポップ使ってほしい。他で使ってるのそのまま流用。
+     文字も単語も一緒」 OWNER 2026-09-05.
+
+     This screen was the one that answered differently, and it answered in the
+     direction nothing would ever show: leaving it WROTE the drawing onto the
+     letter, in silence, so there was no question on the way out and no way to
+     say no. It is a buffer now like the other nine.
+
+     The bottom tab is the claim to read twice. What is being kept here is
+     somebody's hand rather than a line of typing, so a promise kept on eight
+     screens and broken on this one is the one that costs a letter -- geOpen()
+     builds the drawing back out of the buffer.
+
+     Not typed into: strokes are pushed and geTools() is what the app calls
+     when the pen comes up. That is the road a finger takes. */
+  SET.plan = 'pro';
+  var glid = LETTERS[0].id;
+  function glStored(){ return JSON.stringify((ltById(glid) || {}).st || []); }
+  function glDraw(){
+    GE.st.push({ pts: [{ x: 100, y: 100 }, { x: 300, y: 300 }] });
+    GE.si = GE.st.length - 1;
+    geTools();
+  }
+  function glBtn(){
+    var b = document.querySelector('.navtop [data-do="keepPress"]');
+    return b ? (b.classList.contains('navon') ? 'gold' : 'grey') : 'none';
+  }
+  editLetter(glid); render();
+  var glWas = glStored();
+  out.glArrive = glBtn();
+  glDraw();
+  out.glDrawn = glBtn();
+  out.glWroteWhileDrawing = glStored() !== glWas;
+  goTab('build'); render();
+  editLetter(glid); render();
+  out.glTabKept = geInk(GE.st).length;
+  out.glTabBtn = glBtn();
+  var glAsked = 0, glNo = null, glPop = popAsk;
+  popAsk = function(q, y, yl, nl, n){ glAsked++; glNo = n; };
+  back();
+  popAsk = glPop;
+  out.glAsked = glAsked;
+  out.glStayed = here().r === 'glyph';
+  glNo();
+  out.glNoLeft = here().r !== 'glyph';
+  out.glNoWrote = glStored() !== glWas;
+  editLetter(glid); render();
+  out.glAfterNo = geInk(GE.st).length;
+  out.glAfterNoBtn = glBtn();
+  glDraw();
+  var glSaid = [], glToast = window.toast;
+  window.toast = function(m){ glSaid.push(m); };
+  popAsk = function(q, y){ y(); };
+  back();
+  popAsk = glPop; window.toast = glToast;
+  out.glYesLeft = here().r !== 'glyph';
+  out.glYesWrote = glStored() !== glWas;
+  out.glYesSaid = glSaid.length;
+
   /* ---- 11. viewReset() lets them go ------------------------------------- */
   goTab('profile'); openMe();
   var e2 = document.querySelector('#me-nm');
@@ -548,6 +608,20 @@ if(!more.kbRowWent) fails.push('the row the bin was pressed on is still there');
 if(!more.kbGoldOnChange) fails.push('a row taken out of the layout left the Save grey');
 if(more.kbBufs !== 1) fails.push('one keyboard screen kept ' + more.kbBufs + ' buffers');
 if(!more.kbAsked) fails.push('back off a changed keyboard asked nothing');
+if(more.glArrive !== 'grey') fails.push('the drawing screen opened with its Save ' + more.glArrive);
+if(more.glDrawn !== 'gold') fails.push('a stroke drawn left the Save ' + more.glDrawn);
+if(more.glWroteWhileDrawing) fails.push('drawing wrote the letter with nobody having saved');
+if(more.glTabKept !== 2) fails.push('a bottom tab lost the drawing: ' + more.glTabKept + ' strokes came back');
+if(more.glTabBtn !== 'gold') fails.push('coming back to a drawing left the Save ' + more.glTabBtn);
+if(more.glAsked !== 1) fails.push('back off a changed drawing asked ' + more.glAsked + ' times');
+if(!more.glStayed) fails.push('back off a changed drawing left the screen while the question was up');
+if(!more.glNoLeft) fails.push('No did not leave the drawing screen');
+if(more.glNoWrote) fails.push('No wrote the drawing onto the letter');
+if(more.glAfterNo !== 1) fails.push('No did not let the drawing go: ' + more.glAfterNo + ' strokes came back');
+if(more.glAfterNoBtn !== 'grey') fails.push('after No the Save was ' + more.glAfterNoBtn);
+if(!more.glYesLeft) fails.push('Yes did not leave the drawing screen');
+if(!more.glYesWrote) fails.push('Yes did not write the drawing onto the letter');
+if(more.glYesSaid !== 1) fails.push('Yes said it ' + more.glYesSaid + ' times, not once');
 if(!more.keptBefore) fails.push('typing into the profile left nothing to save');
 if(more.keptAfter) fails.push('viewReset() kept what had been typed');
 if(more.fieldsMissing.length) fails.push('fields not on their screens: ' + more.fieldsMissing.join(', '));
@@ -576,6 +650,9 @@ console.log('the keyboard: ' + more.kbSavesWhileTyping + ' writes while typing, 
             more.kbStepsWhileTyping + ' steps stacked, ' + more.kbSavesOnSave + ' write on save');
 console.log('the keyboard, one key: a board deleted under the page leaves ' + more.kbBufs +
             ' buffer, the Save grey; a row taken turns it gold and the arrow asks');
+console.log('the letter being drawn: grey on arrival, gold on a stroke, nothing written until ' +
+            'Yes; a bottom tab kept the drawing, No let it go and wrote nothing, Yes wrote it ' +
+            'and said so once');
 console.log('viewReset(): lets what was typed go');
 console.log('one shape only: ' + more.bothShapes.length + " of the app's nine save functions " +
             'fired while somebody was typing');

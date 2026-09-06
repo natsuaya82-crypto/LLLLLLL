@@ -695,7 +695,6 @@ defLang('ru', (function(){
       "glyph.undo"        : "Назад",
       "glyph.redo"        : "Вперёд",
       "glyph.clear"       : "Очистить",
-      "glyph.save"        : "Сохранить",
       "glyph.help.t" : "Рисуем букву",
       "glyph.help.draw" : "Рисуйте в квадрате пальцем.",
       "glyph.help.zoom" : "Два пальца — зум и передвинуть бумагу.",

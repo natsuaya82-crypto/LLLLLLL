@@ -868,7 +868,6 @@ defLang('ko', (function(){
       "glyph.undo"        : "되돌리기",
       "glyph.redo"        : "다시 실행",
       "glyph.clear"       : "모두 지우기",
-      "glyph.save"        : "저장",
       "glyph.help.t" : "글자 그리기",
       "glyph.help.draw" : "네모 안을 손가락으로 그립니다.",
       "glyph.help.zoom" : "두 손가락으로 확대·축소하고, 종이를 옮깁니다.",

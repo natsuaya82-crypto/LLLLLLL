@@ -737,7 +737,6 @@ defLang('fr', (function(){
       "glyph.undo"        : "Annuler",
       "glyph.redo"        : "Rétablir",
       "glyph.clear"       : "Tout effacer",
-      "glyph.save"        : "Enregistrer",
       "glyph.help.t" : "Dessiner une lettre",
       "glyph.help.draw" : "Dessinez dans le carré avec le doigt.",
       "glyph.help.zoom" : "Deux doigts pour zoomer et pour déplacer le papier.",

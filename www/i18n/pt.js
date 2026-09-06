@@ -696,7 +696,6 @@ defLang('pt', (function(){
       "glyph.undo"        : "Desfazer",
       "glyph.redo"        : "Refazer",
       "glyph.clear"       : "Limpar",
-      "glyph.save"        : "Salvar",
       "glyph.help.t" : "Desenhar uma letra",
       "glyph.help.draw" : "Desenhe no quadrado com o dedo.",
       "glyph.help.zoom" : "Dois dedos para dar zoom e para mover o papel.",

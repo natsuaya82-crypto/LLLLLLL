@@ -598,13 +598,40 @@ function newGE(lid, label){
 function editGlyph(unit){
   if(!makeNeed()) return;
   var l=ltForUnit(unit);
-  GE=newGE(l.id, unit); go('glyph', l.id);
+  geOpen(l.id, unit);
 }
 /* From the letters chapter: draw this letter, whatever it reads. */
 function editLetter(id){
   if(!makeNeed()) return;
   var l=ltById(id); if(!l) return;
-  GE=newGE(id, ltName(l)); go('glyph', id);
+  geOpen(id, ltName(l));
+}
+/* ONE WAY ONTO THE PAPER, and it finds what was being drawn on it.
+   ---------------------------------------------------------------------
+   The drawing is a buffer now (www/shell.js § KEEP, geKeepOn below), which is
+   what makes the arrow ask 「保存しますか？」 rather than write in silence.
+   That has a second half nobody would see until it cost them a letter:
+   walking off with a bottom tab keeps a buffer 「what was typed was still in
+   the field on the way back」, and coming back through here used to build a
+   blank GE over it -- so the promise would have been kept everywhere except
+   the one screen where what is being kept is somebody's hand.
+
+   So the strokes come from the buffer when there is one. keepVal() answers
+   with what has been drawn, or with what the letter opened with, or with
+   nothing at all when no buffer was ever registered -- three cases, one
+   question, and newGE() is right for the third. */
+function geOpen(lid, label){
+  var held=keepVal(keepKeyOf('glyph', lid), 'ink'), st=null;
+  GE=newGE(lid, label);
+  if(held){ try{ st=JSON.parse(held); }catch(e){ st=null; } }
+  if(st && st.length){
+    GE.st=st;
+    GE.si=st.length-1;
+    /* Opened, not mid-stroke: the same sentence newGE() makes about a letter
+       that already had something on it. */
+    GE.seal=true;
+  }
+  go('glyph', lid);
 }
 /* A letter with nothing on it yet -- 「文字から作るだろ普通」 */
 /* The + on a list makes that list's kind: on the digits page a new sign is a
@@ -1059,10 +1086,15 @@ function vGlyph(){
 
      Two buttons at the foot said the screen had two ways out, and one of them
      was the arrow's job -- so the arrow and Cancel were the same press, drawn
-     twice, in two places. What the arrow does is no longer cancelling either:
-     see geLeft(). Leaving with the drawing kept is what both of them do now,
-     and Save is the one that also finishes the letter and puts you back with
-     the others.
+     twice, in two places. The arrow IS the cancel, and it asks: leaving with
+     something drawn puts up 「保存しますか？」, the same pop every other
+     screen puts up (www/shell.js § keepAsked), and Save is the one that
+     writes and puts you back with the others.
+
+     IT IS NOT WRITTEN OUT HERE ANY MORE. keepBtnHTML() puts it in this
+     corner with every other screen's, so the label, the two colours and the
+     press are one button in one place -- which is the whole of why this one
+     spent two days grey whatever anybody drew.
 
      navTop's `right` is the slot for exactly this -- "one control pinned to
      the far end of the bar, the place every phone puts the thing that
@@ -1077,8 +1109,12 @@ function vGlyph(){
      third place for the rule to be absent from. It is built by www/shell.js
      § navDo now, with every other button in this corner, and the two states
      are that function's. */
+  /* The buffer, so the bar has a Save to put there and the arrow has
+     something to ask about. It is registered from the view, like every other
+     screen's, so it runs on every render of this one. */
+  geKeepOn();
   return '<div class="view">'+
-    navTop('', navDo(t('glyph.save'), 'geSave', null, geDirty()))+
+    navTop('')+
     /* Nothing is pinned over the foot of this screen any more, so the room
        that was left for it is not left. What is under the page is the tab
        bar, which is what .body's own padding is already about. */
@@ -1464,9 +1500,39 @@ function geClear(){ geMark(); GE.st=[]; GE.si=-1; GE.pi=-1; GE.seal=false;
 function geInk(st){
   return (st||[]).filter(function(s){ return s.pts.length>0; });
 }
-/* Anything different from what the letter opened with. */
-function geDirty(){
-  return !!GE && JSON.stringify(geInk(GE.st))!==GE.was;
+/* ---- the drawing, as a buffer ------------------------------------------
+   「戻るは保存しますか？のポップ使ってほしい。他で使ってるのそのまま流用。
+   文字も単語も一緒」 OWNER 2026-09-05.
+
+   The letters chapter is on the same road as the other nine screens now
+   (www/shell.js § KEEP): the Save stands in the bar from the moment the
+   screen does, it is grey until the drawing differs from what the letter
+   opened with, and the arrow asks before it lets that difference go.
+
+   THIS REPLACES geLeft(), which wrote the drawing onto the letter as the
+   screen was left, and the decision it was built on
+   (2026-08-27「書いている途中で戻ったらそれはそこの文字として保存して」) is
+   superseded by the one above. Nothing is quietly written now and nothing is
+   quietly lost either: what was drawn stays in the buffer through a bottom
+   tab and comes back on the way in (geOpen above), and it is let go of only
+   where every other screen lets go of what was typed -- a 「いいえ」, a save
+   that landed, and viewReset().
+
+   `was` is the letter as it opened, said once by newGE(); `ink` is what is on
+   the paper. Both are the strokes that would be WRITTEN -- geInk() drops the
+   empty one geCur() opens and nobody drew on -- so opening a letter and
+   putting the pen down twice without drawing is not a change to it. */
+function geKeepOn(){
+  if(!GE) return;
+  /* Not in somebody else's language: geKeep() writes through save(), which
+     langLocked() refuses, so a buffer here would put a Save in the bar that
+     could not write. */
+  if(langLocked()) return;
+  keepOn(keepKey(), {ink:GE.was}, geKeepSave, geKeepSaid);
+}
+function geKeepPut(){
+  if(!GE) return;
+  keepPut(keepKey(), 'ink', JSON.stringify(geInk(GE.st)));
 }
 function geKeep(){
   var keep=geInk(GE.st);
@@ -1479,101 +1545,41 @@ function geKeep(){
   installScriptFont();
   return keep;
 }
-/* ---- leaving the drawing screen keeps the drawing ----------------------
-   「書いている途中で戻ったらそれはそこの文字として保存していちいち消える
-   のやめて。」 OWNER 2026-08-27.
+/* ---- the save, which is one road with every other screen's ------------
+   `keepSave()` (www/shell.js) is what calls this: it writes, then sends, and
+   only a send that LANDED levels the buffer and goes back. So there is no
+   toast here, no going anywhere, and no one-press-at-a-time flag -- all three
+   are that function's, said once for nine screens.
+   「保存ボタン押して保存ができるかできないかは通信の有無だけだからな？」
+   「通信エラーなら進むわけねえだろ全部」 OWNER 2026-09-05.
 
-   It used to be thrown away. GE held every stroke until something wrote it
-   down, and the only thing that did was the Save button -- so the back arrow,
-   the tab bar, and anything else that moved the screen took the drawing with
-   it without a word. Nothing was warned about and nothing was recoverable:
-   `docs/DATA_SAFETY.md` is 「人が作ったものは消さない」 and this was the app
-   quietly doing the opposite, on the one screen whose entire purpose is
-   making something by hand.
+   A dot is a mark. It used to be thrown away on the grounds that a stroke
+   with one point is a line half-drawn -- which is true of a line and is the
+   app deciding that a language cannot have a dot in it. A letter that IS a
+   dot, or a line with a dot beside it, could not be saved: the dot came back
+   as nothing every time. 「点一つで点で。だって線にするには2で繋ぐ必要ある
+   でしょ」 What is still dropped is a stroke with NO points, which is the
+   empty one geCur() opens and nobody drew on.
 
-   So there is no such thing as an unsaved drawing here any more. Leaving the
-   screen writes what is on it to the letter it was opened for. That is the
-   whole of it -- no question hanging off the arrow, because there is nothing
-   to ask: nothing is being lost either way.
-
-   Called from render(), on the one line that knows the screen changed. GE is
-   already null by the time geSave() gets here, so the two never both run. */
-function geLeft(from, to){
-  if(from!=='glyph' || to==='glyph' || !GE) return;
-  /* Opening a letter and leaving it alone is not a change to it. Without
-     this, walking past this screen rewrote the letter, saved the language and
-     rebuilt the whole font every time -- and rebuilding the font is not
-     cheap. What is compared is what would be WRITTEN against what is already
-     there, so a letter nobody drew on is left exactly as it was found,
-     borrowed character and all. */
-  var l=ltById(GE.lid), was=(l && l.st)? l.st : [],
-      now=GE.st.filter(function(s){ return s.pts.length>0; });
-  if(JSON.stringify(was)!==JSON.stringify(now)) geKeep();
+   THE DRAWING IS NOT TAKEN BACK when the send fails. geKeep() has written it
+   to the letter by then and it stays written; what a failure withholds is the
+   word and the way off the screen, which is what was untrue. */
+function geKeepSave(v, done){
+  geKeep();
+  done(true);
+}
+/* And what the screen says once it is up, which is the only thing that had
+   to wait. The shape and the sound are the same thing seen twice, so a letter
+   says itself as it is put away -- and only if there IS a letter, since
+   deleting one should not. */
+function geKeepSaid(){
+  if(!GE) return;
+  var l=ltById(GE.lid), snd=(l||{}).snd||[], r=GE.r;
+  var keep=geInk(GE.st);
   GE=null;
+  if(keep.length && snd.length===1 && snd[0].length===1) sayOne(snd[0]);
+  toast(t('glyph.saved', r||t('lt.untitled')));
 }
-function geSave(){
-  /* A dot is a mark. It used to be thrown away here on the grounds that a
-     stroke with one point is a line half-drawn -- which is true of a line and
-     is the app deciding that a language cannot have a dot in it. A letter that
-     IS a dot, or a line with a dot beside it, could not be saved: the dot came
-     back as nothing every time. 「点一つで点で。だって線にするには2で繋ぐ
-     必要あるでしょ」 What is still dropped is a stroke with NO points, which
-     is the empty one geCur() opens and nobody drew on.
-
-     The pen already lays a dot down -- one point gives one square of ink, the
-     nib itself -- so nothing else had to change for this to be drawable. */
-  /* AND IT WAITS FOR THE SERVER BEFORE IT SAYS ANYTHING.
-     「後通信なくても文字書いて保存できたけど、これって消えない？ 普通ボタン
-       押したら通信できませんになるはずだよね？」 OWNER 2026-09-05.
-
-     Pressed with no signal: the screen went to the letters, 「保存しました」
-     came up, and the first request left 1.2 seconds later -- the save was
-     netSaveUp()'s burst timer and nothing here ever asked how it went.
-     「通信エラーなら進むわけねえだろ全部」. So the send happens on the press
-     (netSaveNow, www/net.js) and the screen does not move until it lands.
-     On a failure netPop() is already up and this returns: the person is
-     still on their letter, with their drawing on it, and pressing again
-     sends it again.
-
-     THE DRAWING IS NOT TAKEN BACK. geKeep() has already written it, and it
-     stays written whichever way this goes -- leaving this screen keeps the
-     drawing (geLeft above, 「書いている途中で戻ったらそれはそこの文字として
-     保存して」), and a failed send is not a reason to undo somebody's hand.
-     What a failure withholds is the WORD 「保存しました」 and the way out,
-     which is what was untrue. */
-  var keep=geKeep();
-  var r=GE.r, l=ltById(GE.lid), snd=(l||{}).snd||[], k=ltKindOf(l);
-  /* One press at a time. The button stays where it is while the send is out,
-     and a second press would put a second save on the same slice. */
-  if(GE.busy) return;
-  GE.busy=true;
-  var was=GE;
-  netSaveNow(function(ok){
-    was.busy=false;
-    if(!ok) return;
-    /* Only now is the letter finished. GE is dropped here rather than before
-       the send, because until it lands this screen is still the one being
-       stood on -- and geLeft() reads GE to keep the drawing. */
-    if(GE===was) GE=null;
-    /* Saving a letter finishes the letter, so it puts you back with the others
-       rather than on the page about the one you just drew -- which is where
-       back() landed, one press short of the list you came from.
-       「保存したら勝手にアルファベット一覧のとこに戻って欲しいかも」
-
-       Only when that list is the way you came in. The abugida bench opens this
-       screen too, and from there the letters list is not behind you: going to
-       it would be going somewhere new, with the drawing screen left in front
-       of the back button. */
-    if(k && navHas('ltset', k)) go('ltset', k);
-    else back();
-    /* The shape and the sound are the same thing seen twice. Drawing one in
-       silence leaves them unconnected, so the letter says itself as it is put
-       away -- and only if there is a letter, since deleting one should not. */
-    if(keep.length && snd.length===1 && snd[0].length===1) sayOne(snd[0]);
-    toast(t('glyph.saved', r||t('lt.untitled')));
-  });
-}
-
 /* Taking the letter off a sound entirely -- the drawing and the borrowed
    character both. The sound stays in the language; only its letter goes. */
 /* Deleting the letter, shape and sounds and all. The sounds it read stay in
@@ -2378,7 +2384,11 @@ function geTools(){
      have anything behind them. Drawing does not redraw this screen -- the
      canvas is painted, not rendered -- so this is the road. geHist() and
      geClear() call render() and are answered there. */
-  navDoPaint('geSave', geDirty());
+  /* The Save in the bar is a control too, and what it is told is the drawing
+     itself -- one buffer, so grey and gold are the same question KEEP asks of
+     every other screen (www/shell.js § KEEP). keepPut() repaints the button
+     where it stands, which is what this line was for. */
+  geKeepPut();
   /* querySelectorAll and not querySelector, though there is one rail again.
      For a day there were two and this answered only the first of them, so
      fill, round and clear stayed frozen at whatever they were when the
@@ -2780,11 +2790,10 @@ function render(){
   var same = (RENDERED===route);
   /* and what the screen being left forgets, which is viewLeft()'s in
      www/shell.js -- this is the one line that knows a screen changed. */
-  /* The drawing screen writes what is on it down as it is left. It is here
-     rather than in viewLeft() because viewLeft is www/shell.js's and this is
-     the glyph editor's own business -- and because it has to run BEFORE the
-     next screen is built out of the letters it just changed. */
-  if(!same) geLeft(RENDERED, route);
+  /* The drawing screen used to write what was on it down here, as it was
+     left. It does not: what is on the paper is a buffer and leaving asks
+     (www/glyph.js § geKeepOn), which is the same road every other screen
+     takes. 「戻るは保存しますか？のポップ」 OWNER 2026-09-05. */
   if(!same) viewLeft(RENDERED, route);
   var y = same ? (window.scrollY || window.pageYOffset || 0) : 0;
   /* THE SCREEN BEING LEFT, KEPT. Not to redraw it -- to show it behind the

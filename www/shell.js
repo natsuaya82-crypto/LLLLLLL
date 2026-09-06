@@ -381,10 +381,16 @@ function keepKey(){ return keepKeyOf(here().r, here().a); }
    has been typing into it, and it is left exactly as it is. Only `save` is
    taken again, because it is a fresh closure over a screen that may have been
    rebuilt around it. */
-function keepOn(key, was, save){
+/* `landed` is for the one screen that has something to SAY once the save is
+   up, and it is not a second answer to where a save ends -- backGo() below is
+   still the only one. The letter being drawn says its own sound and names
+   itself as it is put away, and neither may happen while the send is still
+   out: 「通信エラーなら進むわけねえだろ全部」. It is optional; eight of the
+   nine screens hand nothing. */
+function keepOn(key, was, save, landed){
   var k=String(key);
-  if(KEEP[k]){ KEEP[k].save=save; return; }
-  KEEP[k]={was:was, v:{}, save:save};
+  if(KEEP[k]){ KEEP[k].save=save; KEEP[k].landed=landed; return; }
+  KEEP[k]={was:was, v:{}, save:save, landed:landed};
 }
 /* What goes in the field: what has been typed, or what it held when the
    screen opened. */
@@ -489,6 +495,9 @@ function keepSave(key, done){
          A save that did NOT land goes nowhere: netPop() is up over the screen
          saying why, what was typed is still in the field, and pressing again
          sends it again. */
+      /* And what the screen has to say about a save that LANDED, before it
+         goes. Nothing decides where it goes but the line under it. */
+      if(up && b.landed) b.landed();
       if(up){ keepPaint(); backGo(); }
       if(done) done(!!up);
     });

@@ -689,7 +689,6 @@ defLang('it', (function(){
       "glyph.undo"        : "Indietro",
       "glyph.redo"        : "Avanti",
       "glyph.clear"       : "Svuota",
-      "glyph.save"        : "Salva",
       "glyph.help.t" : "Disegnare una lettera",
       "glyph.help.draw" : "Disegna nel quadrato con il dito.",
       "glyph.help.zoom" : "Due dita per lo zoom e per spostare il foglio.",

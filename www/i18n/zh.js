@@ -697,7 +697,6 @@ defLang('zh', (function(){
       "glyph.undo"        : "撤销",
       "glyph.redo"        : "重做",
       "glyph.clear"       : "清空",
-      "glyph.save"        : "保存",
       "glyph.help.t" : "画一个字",
       "glyph.help.draw" : "用手指在方格里画。",
       "glyph.help.zoom" : "两指缩放，也可以移动纸面。",
