@@ -288,9 +288,13 @@ if (existsSync(PBX)) {
 // that is written and not in the phase is not in the bundle, which looks
 // identical to being wired up if you grep the whole project file. That is the
 // mistake the Sources half of this check made in its first version.
+// Every target that SHIPS, and that is the whole list -- the app and the two
+// extensions embedded in it. A bundle with no manifest is a bundle that
+// declared nothing, whichever of the three it is.
 const PRIV = [
   ['App', 'App', '504EC3021FED79650016851F'],
   ['LinguaKeyboard', 'LinguaKeyboard', '7A1C0F5E2B9D41C8A0E33053'],
+  ['LinguaWidget', 'LinguaWidget', '7A1C0F5E2B9D41C8A0E33153'],
 ]
 let privCount = 0
 if (existsSync(PBX)) {

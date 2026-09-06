@@ -392,8 +392,10 @@ Connect の審査ノート欄に直接入れてください。repo に置いた�
 上の「App のプライバシー」は**画面で答える申告**です。それとは別に、
 **アプリの中に入れる一覧表**（`PrivacyInfo.xcprivacy`）が要ります。
 
-**二つ在ります。**`ios/App/App/PrivacyInfo.xcprivacy`（本体）と
-`ios/App/LinguaKeyboard/PrivacyInfo.xcprivacy`（キーボード拡張）。
+**出荷される三つのターゲットに一枚ずつ在ります** ──
+`ios/App/App/PrivacyInfo.xcprivacy`（本体）、
+`ios/App/LinguaKeyboard/PrivacyInfo.xcprivacy`（キーボード拡張）、
+`ios/App/LinguaWidget/PrivacyInfo.xcprivacy`（ウィジェット）。
 **拡張は自分の一覧表が要ります** ── Apple の一覧はバンドルごとに集められる
 ので、一覧表の無い拡張は「何も申告していない拡張」です。
 
@@ -418,15 +420,16 @@ Connect の審査ノート欄に直接入れてください。repo に置いた�
   三十秒の声）、検索履歴（`recent_search` `saved_search`）、
   購入（`plan` テーブルの段）
 
-**キーボード拡張は何も集めません。**外へ出す道が一本もないからです
-（`URLSession` / `URLRequest` を `ios/App/LinguaKeyboard` に grep して 0）。
+**二つの拡張はどちらも何も集めません。**外へ出す道が一本もないからです
+（`URLSession` / `URLRequest` を `ios/App/LinguaKeyboard` と
+`ios/App/LinguaWidget` に grep して、どちらも 0）。どちらも App Group の
+ファイルを読むだけで、理由の要る API も 0 です。
 
-`tools/assets-check.mjs` が二つのことを見ています ── 一覧表が在ること、
-そして**そのターゲット自身の Resources フェーズ**に入っていること。
-別のターゲットの Resources に入れただけでは赤になります（バンドルに入って
-いないので）。`npm run assets` の
-`privacy: 2 PrivacyInfo.xcprivacy (App, LinguaKeyboard), each in its own
-target's Resources phase.` がその行です。
+`tools/assets-check.mjs` が三つのターゲットについて二つのことを見ています ──
+一覧表が在ること、そして**そのターゲット自身の Resources フェーズ**に入って
+いること。別のターゲットの Resources に入れただけでは赤になります（バンドルに
+入っていないので）。`npm run assets` の `privacy:` の行がその証拠で、
+数はそこで読んでください。
 
 **オーナーに見てほしいのは、その次です。**入ってから上げたビルドで、
 **Apple から警告のメールが来ないか。**アップロードは通っても、
