@@ -646,6 +646,7 @@ defLang('ko', (function(){
       "sns.none.fo"     : "팔로우한 사람이 아직 쓴 글이 없습니다",
       "feed.rec"        : "추천",
       "feed.fo"         : "팔로잉",
+      "feed.filter.prompt": "#오늘의 주제",
       "feed.fil"        : "필터",
       "sort.title"      : "정렬",
       "sort.new"        : "최신",

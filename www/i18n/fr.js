@@ -515,6 +515,7 @@ defLang('fr', (function(){
       "sns.none.fo"     : "Personne que vous suivez n’a encore écrit",
       "feed.rec"        : "Pour vous",
       "feed.fo"         : "Abonnements",
+      "feed.filter.prompt": "#Sujet du jour",
       "feed.fil"        : "Filtre",
       "sort.title"      : "Trier",
       "sort.new"        : "Récents",

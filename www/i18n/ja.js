@@ -383,6 +383,7 @@ defLang('ja', (function(){
       'sns.none.fo'     : "フォローしている人はまだ書いていない",
       'feed.rec'        : "おすすめ",
       'feed.fo'         : "フォロー中",
+      'feed.filter.prompt': "#今日のお題",
       'feed.fil'        : "絞り込み",
       'sort.title'      : "並べ替え",
       'sort.new'        : "最新",

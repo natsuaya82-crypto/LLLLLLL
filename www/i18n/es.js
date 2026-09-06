@@ -427,6 +427,7 @@ defLang('es', (function(){
       "sns.none.fo"     : "Todavía no ha escrito nadie a quien sigues",
       "feed.rec"        : "Para ti",
       "feed.fo"         : "Siguiendo",
+      "feed.filter.prompt": "#Tema de hoy",
       "feed.fil"        : "Filtro",
       "sort.title"      : "Orden",
       "sort.new"        : "Recientes",

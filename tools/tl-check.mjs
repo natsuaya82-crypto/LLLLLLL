@@ -120,6 +120,38 @@ const r = await pg.evaluate(({ s }) => {
   out.profileReplies = pfList().filter((p) => !!p.to).length;
   pfTab = 'posts';
 
+  /* ---- 4b: and the third list is one day's ------------------------------
+     「絞り込みに「#今日のお題」を足す。その行を選ぶと、その日のお題に答えた
+     投稿だけ」 OWNER 2026-09-06.
+
+     Two halves and each is enough on its own: the row has to BE on the filter
+     page, and choosing it has to narrow the timeline to the posts carrying
+     today's id. The narrowing is asked of `pr` -- the column, not the
+     characters in the body -- so a post somebody deleted the tag from is
+     still in the list and a post that merely says 「#今日のお題」 is not. */
+  DAY = { id:77, on_day:'2026-09-06', text:'today', says:{} };
+  DAY_GOT = true;
+  POSTS.push({ id:'pr-yes', at:Date.now()-10, lang:'other', lname:'V', ln:'qel',
+               who:'Iri', hd:'iri', mine:false, mn:'answered it', ui:'en', pr:77 },
+             { id:'pr-tag', at:Date.now()-20, lang:'other', lname:'V',
+               ln:'qel #今日のお題', who:'Iri', hd:'iri', mine:false,
+               mn:'says the tag and answers nothing', ui:'en' },
+             { id:'pr-old', at:Date.now()-30, lang:'other', lname:'V', ln:'qel',
+               who:'Iri', hd:'iri', mine:false, mn:'yesterday', ui:'en', pr:76 });
+  NAV = [{ r:'filter', a:'' }];
+  out.filRows = (vFilter().match(/data-do="snsSetFil" data-a="\[&quot;(\w+)/g) || [])
+                  .map((m) => m.slice(m.lastIndexOf(';') + 1));
+  const wasTab = snsTab;
+  snsTab = 'day';
+  out.dayList = snsList().map((p) => p.id);
+  /* and a phone that has not been told today's sentence shows no day at all,
+     rather than every post that carries any prompt */
+  const wasDay = DAY;
+  DAY = null;
+  out.dayNoRow = snsList().length;
+  DAY = wasDay;
+  snsTab = wasTab;
+
   /* ---- 2: yourself, out of your own two lists -------------------------- */
   ME.fo = [meHandle(), 'iri'];
   ME.fr = [meHandle(), 'veth'];
@@ -396,6 +428,17 @@ if (!r.proMark)
       'name wears it and whoOf() has to say the row is yours.');
 if (r.freeMark)
   say('and it is on it on the free plan.');
+if (r.filRows.indexOf('day') < 0)
+  say('the filter page offers ' + r.filRows.join(' ') + ' — 「#今日のお題」 is ' +
+      'one of the answers to 「what am I looking at」 (OWNER 2026-09-06).');
+if (r.dayList.join(',') !== 'pr-yes')
+  say('choosing 「#今日のお題」 shows ' + (r.dayList.join(',') || 'nothing') +
+      '. It is the posts carrying today\u2019s id and nothing else — not the ' +
+      'ones that merely type the tag, and not another day\u2019s.');
+if (r.dayNoRow)
+  say('a phone that has not been told today\u2019s sentence still draws ' +
+      r.dayNoRow + ' post(s) under 「#今日のお題」. With no id there is no day.');
+
 if (r.meWaits)
   say('something turns under the two counts on your own profile (' +
       r.meWaits + ' mark(s)). 「くるくる回る → 回さない」 OWNER 2026-09-06.');
@@ -451,6 +494,8 @@ if (errs.length) say('the page threw: ' + errs[0]);
 
 console.log('a post answers to both its names: the thread carries the reply ' +
             'opened either way');
+console.log('絞り込み: ' + r.filRows.join(' ') + ' — 「#今日のお題」 is the ' +
+            'posts carrying today’s id, by the column and not by the tag');
 console.log('おすすめ: ' + r.recPosts + ' posts, no replies; フォロー中 and the ' +
             '返信 tab keep theirs');
 console.log('your own two lists: ' + r.ownFollowing.length + ' / ' +

@@ -173,7 +173,25 @@ function snsMine(p){
 function snsList(){
   var all=postAll();
   if(snsTab==='fo') return all.filter(snsMine);
+  /* AND THE THIRD IS ONE DAY'S. 「絞り込みに「#今日のお題」を足す。その行を
+     選ぶと、その日のお題に答えた投稿だけ」 OWNER 2026-09-06.
+
+     Asked of `pr`, which is the prompt's id and is put on the post when it is
+     written (pwSend, rule 13) -- 「繋がりはハッシュタグではなく列」 OWNER
+     DECISION 2026-08-23 #6, still in force. Not of the tag in the body: that
+     is characters somebody can delete, and a post they deleted it from is
+     still an answer to the day. */
+  if(snsTab==='day') return all.filter(dayIs);
   return all.filter(function(p){ return !p.to; });
+}
+/* Today's sentence, by the name the server knows it by, or 0 where this phone
+   has not been told one. One place, because the list above, the request that
+   asks for it (www/net.js § netFeed) and the row on the filter page all mean
+   the same id. */
+function dayId(){ return (DAY && DAY.id)? DAY.id : 0; }
+function dayIs(p){
+  var id=dayId();
+  return !!(id && p && p.pr && String(p.pr)===String(id));
 }
 /* ---- and where the two are chosen ---------------------------------------
    「右上にフィルター作ってフォロー中、自分が好きなトピックとかで見れるように
@@ -189,15 +207,20 @@ function snsList(){
    「フォロー中」 yesterday arrives on a short list today with nothing on the
    screen to say why.
 
-   What is on the page is the two timelines and the words somebody kept.
-   THE DAY'S TAG IS NOT ON IT, and that is the owner's own sentence rather
-   than an omission: 「#今日のお題だし そこに出せなんて頼んでないけど、
-   ツイートの中だけど タグは」 OWNER 2026-09-04. It was put here for one
-   commit and taken out again. A tag lives in the post that carries it; the
-   way to a day's answers is to search for it. Nothing here invents a topic
-   of its own and there are still no free-typed tags. */
-function snsFilNow(){ return (snsTab==='fo')? 'fo' : 'rec'; }
-function snsFilKey(k){ return (k==='fo')? 'feed.fo' : 'feed.rec'; }
+   What is on the page is the three timelines and the words somebody kept.
+   THE DAY IS ONE OF THE THREE. 「絞り込みに「#今日のお題」を足す」 OWNER
+   2026-09-06. It was off this page from 2026-09-04 -- 「#今日のお題だし そこに
+   出せなんて頼んでないけど、ツイートの中だけど タグは」 -- and what was refused
+   then was the TAG standing here as a topic somebody typed. This is not that:
+   it is the day's own list, gathered by the column the post carries, which is
+   the same thing the two above it are. Nothing here invents a topic of its
+   own and there are still no free-typed tags. */
+function snsFilNow(){
+  return (snsTab==='fo')? 'fo' : (snsTab==='day')? 'day' : 'rec';
+}
+function snsFilKey(k){
+  return (k==='fo')? 'feed.fo' : (k==='day')? 'feed.filter.prompt' : 'feed.rec';
+}
 /* ---- and the third answer: a word somebody kept -------------------------
    「絞り込みで星つけたやつはなんで検索欄行くの？ホームからね。」OWNER
    2026-08-28. Choosing a starred word used to call goTab('explore') -- which
@@ -275,7 +298,7 @@ function snsFilTop(){
     esc(snsFil? snsFil.q : t(snsFilKey(snsFilNow())))+'</button>';
 }
 function vFilter(){
-  var ks=['rec','fo'];
+  var ks=['rec','fo','day'];
   /* NOTHING IS ASKED HERE. 「画面に入った瞬間にサーバーへ訊きに行くのは無し」
      OWNER 2026-09-05 -- the words this account keeps came down when the
      session began (§ WHAT AN OPEN ASKS FOR), and a pull on this screen asks
@@ -319,7 +342,7 @@ function vFilter(){
    every other chooser that is a page of its own: the answer is the reason
    you came, so there is nothing left to do here. */
 function snsSetFil(k){
-  snsTab=(k==='fo')? 'fo' : 'rec';
+  snsTab=(k==='fo')? 'fo' : (k==='day')? 'day' : 'rec';
   /* And this is how a word comes off. There is no second button for it and
      pressing the same word again does not do it either -- that shape was
      refused on the keyboard 「同じとこ触ると選択解除されるからわかりにくい」
@@ -1247,10 +1270,19 @@ function askDay(ok, bad){
   netDay(function(p){
     DAY_GOT=true;
     if(p) DAY=p;
-    /* Drawn either way. An answer with no sentence in it is what turns the
+    /* AND WHAT PEOPLE WROTE TO IT, which is the third timeline (§ where the
+       three are chosen). It is asked HERE and not beside the other two
+       because it is asked BY this answer: the list is 「the posts carrying
+       this id」 and the id is what has just arrived. Two requests one after
+       the other and one answer out of the pair, which is what the open is
+       for -- 「最初の起動の一回の更新で全部取得」 OWNER 2026-09-05.
+
+       Drawn either way. An answer with no sentence in it is what turns the
        mark into the plain composer row, so it is as much a render as one
-       carrying today's words. */
-    ok(1);
+       carrying today's words -- and a day nobody has answered yet is an
+       empty list rather than a question still in the air. */
+    if(!dayId()){ ok(1); return; }
+    askFeed1('day', function(){ ok(1); }, bad);
   }, bad);
 }
 function dayGot(){ return DAY_GOT; }
