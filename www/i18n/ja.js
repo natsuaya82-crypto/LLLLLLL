@@ -195,6 +195,7 @@ defLang('ja', (function(){
       "ob.borrow.take"            : "　",
       "ob.tour.tab" : "制作をひらく。",
       "ob.tour.build" : "キーボードをタップ。",
+      "ob.tour.kb0" : "キーボードをタップ。",
       "ob.tour.kb1" : "いま描いた文字はここに入ったよ。",
       "ob.tour.sns" : "ここがSNS。",
       "ob.sns.a.n" : "Ilva",

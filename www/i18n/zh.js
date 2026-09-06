@@ -287,6 +287,7 @@ defLang('zh', (function(){
       "ob.borrow.take"            : "　",
       "ob.tour.tab" : "打开制作。",
       "ob.tour.build" : "点一下键盘。",
+      "ob.tour.kb0" : "点一下你的键盘。",
       "ob.tour.kb1" : "你画的字进到这里了。",
       "ob.tour.sns" : "时间线。",
       "ob.sns.a.n" : "Ilva",

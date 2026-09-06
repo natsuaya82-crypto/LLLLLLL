@@ -239,6 +239,7 @@ defLang('es', (function(){
       "ob.borrow.take"            : "　",
       "ob.tour.tab" : "Abre Crear.",
       "ob.tour.build" : "Toca el teclado.",
+      "ob.tour.kb0" : "Toca tu teclado.",
       "ob.tour.kb1" : "Tu letra entró aquí.",
       "ob.tour.sns" : "La cronología.",
       "ob.sns.a.n" : "Ilva",

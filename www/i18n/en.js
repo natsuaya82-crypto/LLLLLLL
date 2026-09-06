@@ -181,6 +181,7 @@ defLang('en', (function(){
       "ob.borrow.take"            : "　",
       "ob.tour.tab" : "Open Build.",
       "ob.tour.build" : "Tap the keyboard.",
+      "ob.tour.kb0" : "Tap your keyboard.",
       "ob.tour.kb1" : "Your letter went in here.",
       "ob.tour.sns" : "The timeline.",
       "ob.sns.a.n" : "Ilva",
