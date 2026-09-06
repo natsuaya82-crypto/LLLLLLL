@@ -769,12 +769,14 @@ const r = await pg.evaluate(({ s }) => {
    so the saving works out to 33 rather than the 17 written on PLANS, because
    17 appearing would prove nothing about where it came from.               */
 const st = await pg.evaluate(async () => {
-  var out = {};
+  var out = {}, realVerify = window.netPlanVerify;
+  /* What this ACCOUNT holds, which the screen waits for before it draws
+     anything (2026-09-03). The receipts come from the phone and the plan from
+     the server (2026-09-06), so both halves are answered here -- `free`, so
+     that the rest of this block is about prices, which is what it is about. */
+  window.netPlanVerify = function(list, then){ then('free', { plan:'free' }); };
   window.Capacitor = { nativePromise: function(plug, m){
-    /* What this Apple ID holds, which the screen now waits for before it
-       draws anything (2026-09-03). Answered `free` so the rest of this block
-       is about prices, which is what it is about. */
-    if (m === 'current') return Promise.resolve({ plan: 'free' });
+    if (m === 'current') return Promise.resolve({ jws: [] });
     if (m !== 'products') return Promise.reject(new Error('not this one'));
     return Promise.resolve({ products: [
       /* `year` is twelve of the monthly one, formatted by the App Store and
@@ -850,6 +852,7 @@ const st = await pg.evaluate(async () => {
   out.dearOff = storeOff('pro');               /* a year that costs MORE */
 
   delete window.Capacitor;
+  window.netPlanVerify = realVerify;
   STORE_P = null; STORE_ASK = false;
   return out;
 });
@@ -934,12 +937,16 @@ const nul = await pg.evaluate(async () => {
    place, and a screen where the only thing that ever changes is an absence
    is a screen no check can tell apart from a screen that has broken.
 
-   The date is StoreKit's, so it needs a fake App Store: in a browser there is
-   nothing to ask and there is never a date, which is exactly the state the
-   last two claims here are about. `current` is the one call that carries it --
-   restore and manage answer no `until` at all.                            */
+   The date is the SERVER's since 2026-09-06 -- `decidePlan()` in
+   supabase/functions/verify-plan/verify.mjs works it out from the same
+   transactions the plan is worked out from, so it arrives with the plan on
+   every road rather than on `current` alone. This needs a fake App Store to
+   hand over receipts and a fake answer to come back; in a browser there is
+   neither, and there is never a date, which is exactly the state the last two
+   claims here are about.                                                  */
 const nowl = await pg.evaluate(async () => {
   var out = {}, hold = route, at = Date.UTC(2026, 9, 4, 12, 0, 0), give = null;
+  var realVerify = window.netPlanVerify;
   route = 'plans'; NAV = [{ r: 'plans' }];
   out.lang = uiLang();
   function tick(){ return new Promise(function (r) { setTimeout(r, 0); }); }
@@ -947,16 +954,27 @@ const nowl = await pg.evaluate(async () => {
     STORE_CUR = false; STORE_GOT = false; STORE_UNTIL = null;
     STORE_P = null; STORE_ASK = false; STORE_BAD = '';
   }
-  function apple(ans){
+  /* The phone hands over receipts; the server answers with the plan and the
+     date. Both halves are stubbed because both are outside this check: what
+     the signature says is tools/verify-check.mjs's, and what the screen does
+     with the answer is this file's. */
+  function apple(p, until){
     window.Capacitor = { nativePromise: function (plug, m) {
-      if (m === 'current') return ans();
+      if (m === 'current') return Promise.resolve({ jws: ['J1'] });
       if (m === 'products') return Promise.resolve({ products: [] });
       return Promise.reject(new Error('not this one'));
     } };
+    window.netPlanVerify = function (list, then) {
+      setTimeout(function () {
+        var d = { plan: p };
+        if (until) d.until = until;
+        then(planTook(p), d);
+      }, 0);
+    };
   }
 
   /* ---- A. Apple has answered, with a date ----------------------------- */
-  apple(function () { return Promise.resolve({ plan: 'pro', until: at }); });
+  apple('pro', at);
   reset();
   SET.plan = 'free'; save();
   PLPICK = { id: 'pro', yr: false };
@@ -993,7 +1011,7 @@ const nowl = await pg.evaluate(async () => {
   out.upNoLine = up.indexOf('10/04/2026') === -1;
 
   /* ---- D. Apple answered and gave no date ----------------------------- */
-  apple(function () { return Promise.resolve({ plan: 'pro' }); });
+  apple('pro', 0);
   reset();
   SET.plan = 'free'; save();
   PLPICK = { id: 'pro', yr: false };
@@ -1018,6 +1036,7 @@ const nowl = await pg.evaluate(async () => {
   out.movedNoDate = vPlans().indexOf('10/04/2026') === -1;
 
   delete window.Capacitor;
+  window.netPlanVerify = realVerify;
   reset();
   PLPICK = null; SET.plan = 'free'; save();
   route = hold; NAV = [{ r: hold }];
@@ -1256,7 +1275,7 @@ async function boot(page, seed){
 }
 
 const p1 = await br.newPage({ viewport:{ width:390, height:844 } });
-const LAPSE = await boot(p1, { had:'free', was:'pro', srv:'pro' });
+const LAPSE = await boot(p1, { had:'free', was:'pro', srv:'free' });
 await p1.close();
 
 /* The same launch with no signal at all, and then the launch after it. There
@@ -1680,8 +1699,10 @@ say(/window\.__planok=/.test(KEYC) && /errSecItemNotFound/.test(KEYC),
    NET_WAIT, so moving the one number moves this too and nothing here has to
    be edited to follow it. */
 const WWWSTORE = fs.readFileSync(path.join(dir, '..', 'www', 'store.js'), 'utf8');
-say(/var STORE_WAIT=25000;/.test(WWWSTORE),
-    'and the bound on a real phone is 25 seconds, not the 20ms this check used');
+say(/var STORE_WAIT=NET_WAIT;/.test(WWWSTORE) && !/[0-9]{4,}/.test(
+      (/var STORE_WAIT=[^;]*;/.exec(WWWSTORE) || [''])[0]),
+    'and the bound on a real phone is the app\'s one wait, not a number this ' +
+    'file keeps -- www/store.js reads NET_WAIT (www/net.js)');
 /* And the one road up. A second POST to the plan table anywhere in www/ is
    the old road growing back, and it would be added by somebody who found the
    app could not write its own plan. */
