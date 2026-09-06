@@ -500,12 +500,20 @@ function wipeLangs(){
    で、削除の途中で止まっているということ。
 
    サーバーへ一度も上がっていない言語には行が無く、netLangDrop() はそれを
-   ok() で返す ── サーバーへは行かないので、電波が無くてもこの道は通る。 */
+   ok() で返す ── サーバーへは行かないので、電波が無くてもこの道は通る。
+
+   答えが返ってきて、それでも行が消えていないときは通信の話ではない ── ポップ
+   は「送ったのに返事が無い」ためのもので、これは返事が来ている。一文で言う。
+   印は netLangDrop() が付ける `∅`。postDelGo() (www/post.js) と同じ形で、
+   同じ理由。 */
 function wipeLangsGo(){
   var id=langId;
   if(!id || langLocked()) return;
   netLangDrop(id, function(){ wipeLangsHere(id); },
-              function(d, s, m){ netPop(d, s, m, wipeLangsGo); });
+              function(d, s, m){
+                if(String(m||'').indexOf('∅')>=0){ toast(netWhy(d, s, m)); return; }
+                netPop(d, s, m, wipeLangsGo);
+              });
 }
 /* 行が消えたあと。ここから先はこの端末の写しの話で、順番がそれ。 */
 function wipeLangsHere(id){

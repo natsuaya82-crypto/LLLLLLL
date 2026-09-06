@@ -1199,9 +1199,11 @@ const R = await pg.evaluate(async () => {
   const keepL30d = LANGS, keepId30d = langId, keepNm30d = langName;
   const drops = [];
   const realSend30d = netSend;
+  /* 行が返る答え。netLangDrop() は消えた行を数えるので、`{}` は「答えは来た
+     が一行も消えていない」── 本物のサーバーが返さない形でした。 */
   netSend = (m, path, body, tok, ok) => {
     if (m === 'DELETE') drops.push(path);
-    if (ok) ok({});
+    if (ok) ok([{ id: 'srv' }]);
   };
   LANGS = {
     'Lgo':   { name: '消すほう',   mine: true, uid: A, sid: 'srv-go' },

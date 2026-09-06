@@ -506,6 +506,7 @@ defLang('fr', (function(){
       "post.del.q"      : "Supprimer ce message ?",
       "post.del.ok"     : "Message supprimé",
       "post.del.no"     : "Le message n’a pas pu être supprimé",
+      "lang.del.no"     : "La langue n’a pas pu être supprimée",
       "when.now"        : "à l'instant",
       "when.m"          : "{0} min",
       "when.h"          : "{0} h",

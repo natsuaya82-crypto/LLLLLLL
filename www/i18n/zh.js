@@ -466,6 +466,7 @@ defLang('zh', (function(){
       "post.del.q"      : "删除这条帖子？",
       "post.del.ok"     : "帖子已删除",
       "post.del.no"     : "帖子无法删除",
+      "lang.del.no"     : "无法删除该语言",
       "when.now"        : "刚刚",
       "when.m"          : "{0}分钟",
       "when.h"          : "{0}小时",
