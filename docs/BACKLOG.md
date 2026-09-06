@@ -7,6 +7,11 @@ refactor, a feature and a rename never arrive in the same diff.
 
 The order is the order to do them in.
 
+**単語まわりを手で歩いた記録は `docs/WALK-words.md`。**2026-09-06、`master` を
+人が触るように押して回った記録です。辞書・単語シート・取り込み・読みの四つの
+画面で見つかったことが、再現手順つきの表で入っています。ここに畳まずに別の頁に
+してあるのは、直したことではなく「その日そう見えた」ことだからです。
+
 ## オンライン一本化 ── 残っている一行はオーナーのものです
 
 2026-09-04。四歩とも入りました（`docs/CHANGELOG.md`）。**残っているのは
