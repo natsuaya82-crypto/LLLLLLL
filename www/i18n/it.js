@@ -279,6 +279,7 @@ defLang('it', (function(){
       "ob.borrow.take"            : "　",
       "ob.tour.tab" : "Apri Crea.",
       "ob.tour.build" : "Tocca la tastiera.",
+      "ob.tour.kb0" : "Tocca la tua tastiera.",
       "ob.tour.kb1" : "La tua lettera è finita qui.",
       "ob.tour.sns" : "La cronologia.",
       "ob.sns.a.n" : "Ilva",

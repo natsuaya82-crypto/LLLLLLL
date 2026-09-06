@@ -284,6 +284,7 @@ defLang('ru', (function(){
       "ob.borrow.take"            : "　",
       "ob.tour.tab" : "Откройте «Создание».",
       "ob.tour.build" : "Нажмите на клавиатуру.",
+      "ob.tour.kb0" : "Нажмите на свою клавиатуру.",
       "ob.tour.kb1" : "Ваша буква попала сюда.",
       "ob.tour.sns" : "Лента.",
       "ob.sns.a.n" : "Ilva",

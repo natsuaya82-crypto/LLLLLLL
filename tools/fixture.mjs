@@ -377,27 +377,54 @@ export function obStates(){
        the screen: the hole in the grey is cut around the lit thing, and the
        hand is stood under it. A screen that is only a string is not on the
        document and has no boxes to measure. */
+    /* The contents, with the keyboard's own row lit: the stop before the
+       three below. It stood here as stop 0, which is the TAB of the bar at
+       the foot -- and the bar is the shell, outside #app, so what the picture
+       showed was the making screen with nothing lit on it at all. */
     ['the walk: the making screen, with the keyboard lit', () => {
-        SET.done = false; ob.step = OB_TOUR; obTour = 0; ob.mode = '';
+        SET.done = false; ob.step = OB_TOUR; obTour = 1; ob.mode = '';
         window.route = 'build'; NAV = [{ r: 'build', a: '' }];
         var h = vBuild();
         document.getElementById('app').innerHTML = h;
         return h + obTourHTML(); }],
+    /* THE KEYBOARD IS THREE STOPS AND THEY ARE THREE SCREENS.
+       「キーボード1を触れさせて戻る工程が必要」 OWNER 2026-09-06: the row of
+       the list, the keyboard it opens, and the arrow back out of it. They sat
+       here as one stop on one screen for as long as the chapter had a list,
+       so the state the owner was looking at on a phone was a state no picture
+       was ever taken of. The stop numbers are OB_TOUR_STOPS' own order. */
+    ['the walk: the row that opens the keyboard', () => {
+        SET.done = false; ob.step = OB_TOUR; obTour = 2; ob.mode = '';
+        window.route = 'kb'; NAV = [{ r: 'build', a: '' }, { r: 'kb', a: '' }];
+        var h = vKb();
+        document.getElementById('app').innerHTML = h;
+        return h + obTourHTML(); }],
     ['the walk: the key the letter went on', () => {
-        SET.done = false; ob.step = OB_TOUR; obTour = 1; ob.mode = '';
+        SET.done = false; ob.step = OB_TOUR; obTour = 3; ob.mode = '';
         ob.lid = (LETTERS[0] || {}).id || '';
-        window.route = 'kb'; NAV = [{ r: 'kb', a: '' }];
+        window.route = 'kb';
+        NAV = [{ r: 'build', a: '' }, { r: 'kb', a: '' }, { r: 'kb', a: '0' }];
         var h = vKb();
         document.getElementById('app').innerHTML = h;
         return h + obTourHTML(); }],
     /* And the same stop with nothing to light. ob.lid is empty for anybody
        who skipped the drawing, so the key they drew is a key that is not
        there -- and a grey screen with nothing on it to press would be an app
-       somebody cannot leave. The pad is the whole screen here. */
+       somebody cannot leave. The keyboard itself is what is lit then. */
     ['the walk: the key that is not there', () => {
-        SET.done = false; ob.step = OB_TOUR; obTour = 1; ob.mode = '';
+        SET.done = false; ob.step = OB_TOUR; obTour = 3; ob.mode = '';
         ob.lid = '';
-        window.route = 'kb'; NAV = [{ r: 'kb', a: '' }];
+        window.route = 'kb';
+        NAV = [{ r: 'build', a: '' }, { r: 'kb', a: '' }, { r: 'kb', a: '0' }];
+        var h = vKb();
+        document.getElementById('app').innerHTML = h;
+        return h + obTourHTML(); }],
+    /* And the arrow out of it, which is the stop after those two: the walk
+       has come back to the list by itself and the hand is on the back arrow.
+       「戻る矢印に手」 */
+    ['the walk: the arrow back out of the keyboard', () => {
+        SET.done = false; ob.step = OB_TOUR; obTour = 4; ob.mode = '';
+        window.route = 'kb'; NAV = [{ r: 'build', a: '' }, { r: 'kb', a: '' }];
         var h = vKb();
         document.getElementById('app').innerHTML = h;
         return h + obTourHTML(); }],

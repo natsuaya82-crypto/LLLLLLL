@@ -169,10 +169,14 @@ var OB_TOUR_STOPS=[
      とかないよ？」 */
   { r:'profile', a:'', tab:'build', lab:'ob.tour.tab' },
   { r:'build', a:'', go:'kb', lab:'ob.tour.build' },
-  /* The free plan has no LIST of keyboards -- board 0 is the keyboard and the
-     chapter opens straight onto it -- so the owner's fourth and fifth stops
-     are one screen here, and the thing lit on it is the key the letter just
-     drawn ended up on. It is the last of them: tapping it ends the walk. */
+  /* THE CHAPTER IS A LIST, AND THE WALK GOES THROUGH IT.
+     「キーボード1を触れさせて戻る工程が必要」 OWNER 2026-09-06. This stop
+     used to be the keyboard itself, on the argument that the free plan opens
+     straight onto one -- and it has not for two chapters: the chapter is a
+     list on every plan, so the walk lit a screen with no keyboard on it,
+     found nothing, greyed the whole of it and moved itself on after 1.8s.
+     A person pressing that screen pressed the dark. */
+  { r:'kb',    a:'',  do:['kbGoBoard', 0], lab:'ob.tour.kb0' },
   /* NOBODY TAPS THE KEY. The stop shows itself: the key is lit, `a` fades off
      it and the letter just drawn is underneath -- obTourHTML()'s `obwas`,
      which starts .9s in and is done at 1.4s -- and then the walk moves itself
@@ -181,7 +185,7 @@ var OB_TOUR_STOPS=[
        手を置いて欲しい」 OWNER 2026-08-28.
      `auto` is the milliseconds. The key is still pressable; it is simply no
      longer the only way out. */
-  { r:'kb',    a:'', lt:1, auto:1800, lab:'ob.tour.kb1' },
+  { r:'kb',    a:'0', lt:1, auto:1800, lab:'ob.tour.kb1' },
   /* And then the chapters, each one ENTERED from the contents and LEFT by
      pressing the app's own back arrow. 「単語とかやったら戻る」 and
      「戻るボタン押させてないね」 OWNER 2026-08-28 -- the second of those is
@@ -200,7 +204,9 @@ var OB_TOUR_STOPS=[
      Three kinds of stop and each says what a press does -- obTourNext():
 
        go / tab   a door. Pressing the real thing goes there and obTourAt()
-                  notices; the walk does not move itself.
+       do         notices; the walk does not move itself. `do` is the same
+                  thing said of an act that is not go(): the row that opens
+                  one keyboard is kbGoBoard, and it is a door.
        bk         the app's own back arrow, which is a door too: back() lands
                   on the contents, which is the next stop.
        look / lt  a page, or a key. Nothing on it leads where the walk goes
@@ -228,9 +234,17 @@ function obTourStop(){ return OB_TOUR_STOPS[Math.min(obTour, OB_TOUR_STOPS.lengt
 /* The route the tour wants to be on. render() sends the app there rather than
    drawing a picture of it. */
 function obTourGo(){
-  var st=obTourStop();
-  if(here().r!==st.r || String(here().a||'')!==st.a) go(st.r, st.a);
-  else render();
+  var st=obTourStop(), p=prevPage();
+  if(here().r===st.r && String(here().a||'')===st.a){ render(); return; }
+  /* And a stop the walk has already stood on is the screen BEHIND this one,
+     so moving to it is coming back OUT. The row that opens one keyboard
+     pushes that keyboard's page onto the trail; go() would push a second
+     copy of the list on top of it, and the back arrow the next stop points
+     at would land on the keyboard again instead of on the contents.
+     `a||''` because a row that navigates with no argument leaves it
+     undefined, which here() is read as '' everywhere else. */
+  if(p && p.r===st.r && String(p.a||'')===st.a){ back(); return; }
+  go(st.r, st.a);
 }
 /* The app moved. If where it landed is the NEXT stop, the tour moves with it;
    the person did the thing rather than being shown it. */
@@ -508,6 +522,11 @@ function obTourFind(st){
      match below, because the bar says goTab and a row says go, and a screen
      can hold both for the same route. */
   if(st.tab) return obTourArg('.tabbar [data-do="goTab"]', st.tab);
+  /* A door that is not go(): the name of the act and its first argument,
+     written the way `go` is one line down. The row of the keyboards says
+     kbGoBoard, and a row that opens a screen is a door whatever it is
+     called. */
+  if(st.do) return obTourArg('[data-do="'+st.do[0]+'"]', st.do[1]);
   /* The key the letter just drawn is on. kbHTML() puts the letter's id on
      every letter key, so this is the one place that has to agree with it.
 

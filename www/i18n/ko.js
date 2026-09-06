@@ -458,6 +458,7 @@ defLang('ko', (function(){
       "ob.borrow.take"            : "　",
       "ob.tour.tab" : "제작을 여세요.",
       "ob.tour.build" : "키보드를 눌러 보세요.",
+      "ob.tour.kb0" : "내 키보드를 눌러 보세요.",
       "ob.tour.kb1" : "방금 그린 글자가 여기 들어갔어요.",
       "ob.tour.sns" : "타임라인.",
       "ob.sns.a.n" : "Ilva",
