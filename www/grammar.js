@@ -22,23 +22,65 @@
    answer for the whole language, changes every sentence, and is exactly the
    kind of thing word order already is. */
 
-/* All six orders, because all six are used by languages on this planet. The
-   old list had three, which quietly ruled out the other half. */
+/* The six, kept because www/phases.js draws them on the OLD stage screen and
+   writes the same STG.order through setOrder(). They are no longer a choice
+   in the grammar chapter: 「選択式じゃなくて主語とか置いてあって指でどこに置く
+   か決めれる形がいい」 OWNER 2026-09-05, so this chapter is a board of cards
+   and these six are shortcuts to six arrangements of it. */
 var ORDERS=['SOV','SVO','VSO','VOS','OVS','OSV'];
+/* THE CARDS. A word order is a list of ROLES and the three a sentence needs
+   are not all of them -- 「3語以外も置けるようにしたい」. Codes rather than the
+   engine's full role names, because this is what is STORED: 'SOV' is the shape
+   every language on every phone already carries, and the letters of it are
+   three of these. model.js's wordOrder() is the one place that turns them into
+   what the engine calls a role, so ADV means ADVERB in exactly one file. */
+var ROLES=['S','O','V','ADV','ADP','NEG','Q'];
+/* What a sentence needs, and what stands when nobody has answered. */
+var ORDER_DEF=['S','O','V'];
+/* The one place a stored word order is READ. Two shapes arrive here and both
+   are somebody's: the six-letter string every language written before today
+   holds, and the list of cards a finger arranged. The string is COPIED into
+   the list and nothing is removed -- a language opened on an older build still
+   finds its own 'SOV' where it left it, because setOrder() is the only thing
+   that ever writes over it.
+
+   A card nobody knows is dropped and a card written twice is kept once: the
+   value is arranged by a finger and the engine reads it as places in a row, so
+   the same role standing in two of them is one role with two places. */
+function orderSeq(v){
+  var out=[], i, c;
+  if(typeof v==='string') v=v.split('');
+  if(!v || !v.length) return ORDER_DEF.slice();
+  for(i=0;i<v.length;i++){
+    c=String(v[i]);
+    if(ROLES.indexOf(c)>=0 && out.indexOf(c)<0) out.push(c);
+  }
+  /* A board carried empty is the three back again. There is no such thing as
+     a language that puts nothing anywhere, and the alternative is the engine
+     quietly falling back to its own default while the screen shows nothing --
+     one answer in two places. */
+  return out.length? out : ORDER_DEF.slice();
+}
 /* The word order is the LANGUAGE's and is filed under langKey('phases') with
    the rest of what the stages hold -- STG.order, and migrateGramLang() in
    www/phases.js is how it got there. It was SET.order, which is the person's
    settings and belongs to no language, so two languages on one phone had one
    word order between them: 「言語ごとですよ？」 OWNER DECISION 2026-08-25.
-   Empty means nobody has answered, and the default stands. */
+   Empty means nobody has answered, and the default stands.
+
+   `id` is the cards run together, so the three still read as one of the six
+   and the old stage screen goes on lighting the right one. A board with a
+   fourth card on it matches none of them, which is the honest answer. */
 function orderDef(){
-  var o=(STG && STG.order)||'SOV';
-  if(ORDERS.indexOf(o)<0) o='SOV';
-  return {id:o, seq:o.split('')};
+  var seq=orderSeq(STG && STG.order);
+  return {id:seq.join(''), seq:seq};
 }
 /* One write, not two. The value and the mark saying somebody chose it are
-   both in STG now, and stMarkSet() is what saves it. */
-function setOrder(id){ STG.order=id; stMarkSet('order'); render(); }
+   both in STG now, and stMarkSet() is what saves it. It takes either shape --
+   the six-letter string www/phases.js hands it, or the cards off the board --
+   and what it WRITES is always the list, so there is one shape in storage from
+   the first time anybody touches it. */
+function setOrder(v){ STG.order=orderSeq(v); stMarkSet('order'); render(); }
 
 /* ---- where a word stands ----------------------------------------------
    Three positions. Each is one answer for the whole language and each is
@@ -325,7 +367,13 @@ function gFmPos(p){
    arithmetic is `current`, not `frozen`, and freezing it would be the bug. */
 function gModel(list){
   var e=LinguaGrammarEngine, m=e.adapter.load(langId);
-  if(!m) m=e.adapter.fromLegacy(langId, list||WORDS, {order:orderDef().id});
+  /* THE CARDS, not the name they make. `id` is them run together so that three
+     of them still read as one of the six on the old stage screen, and handing
+     THAT to the engine is a string it reads one letter at a time: a board of
+     主語 副詞 目的語 動詞 came out 'SADVOV', which is S A D V O V -- six roles
+     with the verb in twice, and the demonstration under the board printed this
+     language's verb twice. Nothing threw. */
+  if(!m) m=e.adapter.fromLegacy(langId, list||WORDS, {order:orderDef().seq});
   else m.words=e.adapter.wordsOf(list||WORDS);
   m.grammarRules=gRules();
   var fm=gFmRules();
@@ -529,12 +577,11 @@ function g2Three(){
    other one stood -- two presses and no dragging, because a drag needs a
    listener of its own and every button in this app carries a NAME instead.
 
-   What is swapped is the ORDER, not the words: position i is showing the role
-   orderDef().seq[i], because gLay() arranged them by exactly that. So this
-   writes the one value the old screen writes, through setOrder(), which marks
-   it chosen and redraws. */
+   The word ORDER is not one of these rows any more -- it is the board of cards
+   above, carried with a finger. What is left here is the rows of two, where
+   the swap IS the answer. */
 function g2Move(key, i){
-  var at=g2Lift.split(':'), q, t, j;
+  var at=g2Lift.split(':'), j;
   /* Nothing lifted, or a word of a DIFFERENT row: this one is lifted instead.
      Two rows arrange two different things -- what order the roles go in, and
      which side a describing word stands -- and carrying a word from one into
@@ -543,12 +590,6 @@ function g2Move(key, i){
   j=Number(at[1]);
   if(j===i){ g2Lift=''; render(); return; }
   g2Lift='';
-  if(key==='order'){
-    q=orderDef().seq.slice();
-    t=q[j]; q[j]=q[i]; q[i]=t;
-    setOrder(q.join(''));
-    return;
-  }
   /* A row of two. Swapping them IS the other answer, so there is nothing to
      work out: it is whichever side this language is not on now. */
   setGPos(key, gPos(key)==='before'? 'after' : 'before');
@@ -559,33 +600,142 @@ function g2Chip(key, i, w){
   return '<button class="seg'+(g2Lift===key+':'+i? ' on' : '')+'"' +
     DO('g2Move', [key, i]) + '>'+esc(wOut(w.hw))+'</button>';
 }
-/* §14 Sentence Structure. The words, then what they are, then the name --
-   in that order, because the name is the RESULT and nobody has to read it. */
-/* All six, and they are on the page whatever the dictionary holds.
-   「語順svoとか俺のページ並んでないけど？」 OWNER 2026-09-05. The chapter drew
-   the three words of a sentence and nothing else, so a language with no verb
-   yet had a chapter with no word order in it -- and the word order is the one
-   thing this chapter is FOR. stFeatHTML() in www/phases.js draws the same row
-   on the old stage screen and writes the same STG.order through setOrder(), so
-   the two cannot disagree. */
-function g2Orders(){
-  var now=orderDef().id, i, out='';
-  for(i=0;i<ORDERS.length;i++)
-    out+='<button class="seg'+(ORDERS[i]===now? ' on' : '')+'"' +
-      DO('setOrder', [ORDERS[i]]) + '>'+esc(ORDERS[i])+'</button>';
-  return '<div class="segs scrollx">'+out+'</div>';
+
+/* ---- THE BOARD THE WORD ORDER IS ARRANGED ON ---------------------------
+   「選択式じゃなくて主語とか置いてあって指でどこに置くか決めれる形がいい。
+   ドラッグスワイプする感じ。3語以外も置けるようにしたい」 OWNER 2026-09-05.
+
+   Six buttons and a two-press swap are both gone. What is here is one rail of
+   cards -- the roles, in the order this language puts them -- and a rail under
+   it holding the ones this language does not place. A card is carried from
+   either into either with a finger, and where it lands IS the word order.
+
+   The cards carry no name and no action: a press does nothing, because there
+   is nothing a press could mean here. www/act.js's one listener is untouched.
+
+   Which cards are OFF the board is worked out rather than stored -- ROLES less
+   what is on it -- so there is one list and adding a card tomorrow is one
+   entry in ROLES and one key in the ten i18n files. */
+function g2Card(r){
+  return '<button class="seg'+(GORD && GORD.on && GORD.r===r? ' on' : '')+
+    '" data-gr="'+esc(r)+'">'+esc(t('gram.role.'+r))+'</button>';
 }
-/* §14 Sentence Structure. The choice first, then the roles in the order
-   chosen, and last this language's own three words in that order -- which is
-   the demonstration and is the only part that needs a dictionary. */
-function g2Sent(){
+function g2Board(){
+  var seq=orderDef().seq, i, on='', off='';
+  for(i=0;i<seq.length;i++) on+=g2Card(seq[i]);
+  for(i=0;i<ROLES.length;i++) if(seq.indexOf(ROLES[i])<0) off+=g2Card(ROLES[i]);
+  return '<div class="segs" data-gord="on">'+on+'</div>'+
+         (off? '<div class="segs" data-gord="off">'+off+'</div>' : '');
+}
+/* This language's own words, in the order the board says. gLay() runs the real
+   engine, so this is what a sentence would actually come out as and not a
+   diagram of one -- which is why it is the demonstration and the only part
+   that needs a dictionary. They are read, not moved: the cards above are what
+   arranges the sentence, and a second way to do it would be a second answer to
+   what the order is. */
+function g2Demo(){
   var w=g2Three(), i, out='';
-  if(w){
-    for(i=0;i<w.length;i++) out+=g2Chip('order', i, w[i]);
-    out='<div class="segs">'+out+'</div>';
-  }
-  return g2Orders()+gOrderLine()+out;
+  if(!w) return '';
+  for(i=0;i<w.length;i++) out+='<span class="gor">'+esc(wOut(w[i].hw))+'</span>';
+  return '<div class="gorder">'+out+'</div>';
 }
+/* §14 Sentence Structure. The board, then this language's own words in the
+   order it says. gOrderLine() drew the same role names with chevrons between
+   them and is not here: the cards ARE that line now, and the same fact twice
+   on one screen is the thing this repository is most often bitten by. It is
+   still what www/phases.js draws on the old stage screen. */
+function g2Sent(){
+  return g2Board()+g2Demo();
+}
+
+/* ---- a card, carried ---------------------------------------------------
+   The same road www/home.js's overview rows take and www/keyboard.js's keys
+   take: one listener on the document, because the page is rebuilt by every
+   render and render() lives in a file this session does not own.
+
+   NO HOLD. 「ドラッグスワイプする感じ」 -- a card comes up the moment the
+   finger has moved, not after a delay. The rows are two short rails, so there
+   is nothing under them to scroll past; the overview's 380ms wait is there
+   because that list is as long as somebody's language.
+
+   Where it LANDS is the whole of what is written down. Nothing is saved while
+   the finger is down, so a carry that goes nowhere writes nothing at all. */
+var GORD=null;
+function g2CardEl(el){
+  while(el && el.getAttribute && !el.getAttribute('data-gr')) el=el.parentNode;
+  return (el && el.getAttribute && el.getAttribute('data-gr'))? el : null;
+}
+function g2Down(e){
+  var b=g2CardEl(e.target), p=e.touches? e.touches[0] : e;
+  if(!b || !p || !b.parentNode || !b.parentNode.getAttribute('data-gord')) return;
+  GORD={el:b, r:b.getAttribute('data-gr'), x:p.clientX, y:p.clientY, on:false};
+}
+/* The rail the finger is over, and the card in it the finger is over. Asked by
+   the rectangles rather than by elementFromPoint, because the card being
+   carried is directly under the finger and would answer every time -- the same
+   thing kbDragTo() takes its carried key out of the hit test for. */
+function g2Over(x, y){
+  var g=document.querySelectorAll('[data-gord]'), r, i;
+  for(i=0;i<g.length;i++){
+    r=g[i].getBoundingClientRect();
+    if(x>=r.left && x<=r.right && y>=r.top && y<=r.bottom) return g[i];
+  }
+  return null;
+}
+function g2Move2(e){
+  var p=e.touches? e.touches[0] : e, rail, kids, i, k, r;
+  if(!GORD || !p) return;
+  if(!GORD.on){
+    if(Math.abs(p.clientX-GORD.x)<6 && Math.abs(p.clientY-GORD.y)<6) return;
+    GORD.on=true;
+    GORD.el.className+=' on';
+  }
+  e.preventDefault();
+  rail=g2Over(p.clientX, p.clientY);
+  if(!rail) return;
+  kids=rail.childNodes;
+  for(i=0;i<kids.length;i++){
+    k=kids[i];
+    if(!k || k===GORD.el || !k.getAttribute || !k.getAttribute('data-gr')) continue;
+    r=k.getBoundingClientRect();
+    if(p.clientX>=r.left && p.clientX<=r.right){
+      rail.insertBefore(GORD.el, (p.clientX < r.left + r.width/2)? k : k.nextSibling);
+      return;
+    }
+  }
+  /* PAST EITHER END OF THAT RAIL. The cards do not fill it, so most of what a
+     finger can land on is rail and no card -- and the first version of this
+     appended only when the card came from the OTHER rail, so carrying a card
+     to the right-hand half of its own row moved nothing at all. Right of the
+     last card is the end of the rail and left of the first is the front of it;
+     an empty rail has only an end, which is how a card is carried back into
+     one it emptied. */
+  kids=rail.querySelectorAll('[data-gr]');
+  if(!kids.length){ rail.appendChild(GORD.el); return; }
+  r=kids[kids.length-1].getBoundingClientRect();
+  if(p.clientX>r.right){ rail.appendChild(GORD.el); return; }
+  r=kids[0].getBoundingClientRect();
+  if(p.clientX<r.left) rail.insertBefore(GORD.el, kids[0]);
+}
+function g2Up(){
+  var rail, kids, seq=[], i;
+  if(!GORD) return;
+  if(GORD.on){
+    rail=document.querySelector('[data-gord="on"]');
+    kids=rail? rail.childNodes : [];
+    for(i=0;i<kids.length;i++)
+      if(kids[i] && kids[i].getAttribute && kids[i].getAttribute('data-gr'))
+        seq.push(kids[i].getAttribute('data-gr'));
+    GORD=null;
+    setOrder(seq);
+    return;
+  }
+  GORD=null;
+}
+document.addEventListener('touchstart', g2Down, false);
+document.addEventListener('touchmove', g2Move2, {passive:false});
+document.addEventListener('touchend', g2Up, false);
+document.addEventListener('touchcancel', g2Up, false);
 /* §14 Nouns. 「ユーザーが『りんご』『りんごたち』などを実際の言語で作る。
    例えば poko / poko-mi。ユーザーが差分を定義する」
 
