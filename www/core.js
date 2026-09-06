@@ -1180,7 +1180,7 @@ function dlStop(){
      （「標準は使わねえって言ってるだろこれも禁止や」OWNER 2026-09-01）and
      there is nothing to ASK here -- somebody already on the top rung cannot
      be offered a bigger one, so what is left is the sentence. */
-  else toast(t('langs.full', dlCap()));
+  else toast(t('up.need'));
   return true;
 }
 /* THE OPEN LANGUAGE BELONGS TO WHOEVER IS SIGNED IN.
@@ -1243,7 +1243,7 @@ function langStop(){
     popAsk(t('up.need'), function(){ go('plans'); });
   }
   /* toast() and not alert(), for the reason written over dlStop() above. */
-  else toast(t('langs.full', langCap()));
+  else toast(t('up.need'));
   return true;
 }
 function plan(){ return SET.plan||'free'; }

@@ -835,7 +835,6 @@ defLang('de', (function(){
       "langs.open"       : "Geöffnet",
       "langs.none"       : "Noch nichts",
       "langs.new"       : "Neue Sprache",
-      "langs.full"       : "Das Maximum in diesem Tarif ist {0}.",
       "plans.title"      : "Tarife",
       "plan.cur"         : "aktuell",
       'plan.badge'            : "Ein Abzeichen neben deinem Namen",

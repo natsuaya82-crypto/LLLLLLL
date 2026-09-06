@@ -894,7 +894,6 @@ defLang('fr', (function(){
       "langs.open"       : "Ouverte",
       "langs.none"       : "Rien pour l'instant",
       "langs.new"       : "Nouvelle langue",
-      "langs.full"       : "Le maximum sur ce forfait est de {0}.",
       "plans.title"      : "Formules",
       "plan.cur"         : "actuelle",
       'plan.badge'            : "Un badge à côté de votre nom",

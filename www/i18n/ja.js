@@ -762,7 +762,6 @@ defLang('ja', (function(){
       'langs.open'      : '開いている',
       'langs.none'      : 'まだありません',
       'langs.new'      : '言語を追加',
-      'langs.full'      : 'このプランでは最大 {0} つです。',
       'plans.title'     : 'プラン',
       'plan.cur'        : 'いま',
       'plan.badge'            : "名前の横にバッジ",

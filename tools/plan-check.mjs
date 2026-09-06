@@ -704,8 +704,10 @@ const r = await pg.evaluate(({ s }) => {
   out.fourthKeptBytes = same(bytesThree, bytes());
 
   /* And on the plan that buys the most, where a price list answers nothing,
-     it says one sentence instead of moving anybody. That is CLAUDE.md's
-     2026-08-22 narrowing and the only place in this feature that has words. */
+     it says the sentence instead of moving anybody -- a toast rather than a
+     pop, because there is nothing to fly to. The sentence itself is the one
+     every ceiling says（「この機能を使用するにはアップグレードしてください」
+     OWNER 2026-09-06). */
   SET.plan = 'pro'; save();
   go('langs');
   toastClear();
@@ -1361,8 +1363,8 @@ say(r.fourthKeptAll && r.fourthKeptBytes,
     'and being refused took none of the three away -- the same three ids, the same bytes');
 say(r.topRefused && r.topStayed,
     'on the plan that buys the most the fourth is refused without moving anybody');
-say(/3/.test(r.topSaid || ''),
-    'and that is the one place with a sentence, because a price list would answer nothing (' +
+say(r.topSaid === r.upNeed,
+    'and it says the one upgrade line too -- every ceiling says the same sentence (' +
     (r.topSaid || 'nothing said') + ')');
 
 say(r.capFree === 100, 'free counts to 100 (' + r.capFree + ')');
