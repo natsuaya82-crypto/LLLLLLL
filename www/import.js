@@ -270,11 +270,16 @@ var IMP_NAME={
    example is what the word sheet calls an example. Four have no home outside
    this screen and keep their own key. */
 var IMP_LABEL={hw:'f.spelling', mn:'f.meaning', pos:'f.pos', ph:'imp.role.ph',
-               ex:'word.ex', exg:'word.ex.gl.ph', reg:'word.reg',
+               ex:'word.ex', exg:'imp.role.exg', reg:'word.reg',
                tags:'word.tags', ety:'word.ety', nt:'word.note', sub:'f.sub',
                ch:'imp.role.ch', nm:'imp.role.nm', skip:'imp.role.skip'};
-/* And the other names the app has for the same thing, where it has two. */
-var IMP_KEY={mn:['word.means'], ch:['lt.title','toc.letters'], nm:['lt.name']};
+/* And the other names the app has for the same thing, where it has two. An
+   example's meaning is 「意味」 on the word sheet, where the example is right
+   over the box and nothing else on that screen is a meaning; on a list of
+   thirteen roles it would be the second 「意味」 in the list, so this screen
+   calls it what it is and matches the sheet's word as well. */
+var IMP_KEY={mn:['word.means'], exg:['word.ex.gl.ph'],
+             ch:['lt.title','toc.letters'], nm:['lt.name']};
 function impKeys(role){
   return (IMP_LABEL[role]? [IMP_LABEL[role]] : []).concat(IMP_KEY[role]||[]);
 }
@@ -559,30 +564,54 @@ function impMove(roles, into){
 /* ---- where you are in it ------------------------------------------------
    Cleared by viewReset() in www/shell.js, which is the one place a screen
    forgets, because arriving at somebody else's language holding half of a
-   spreadsheet you were reading into your own is the worst kind of bug. */
-var IMP=impBlank();
-function impBlank(){ return {read:null, roles:[], into:'w', dup:'skip', done:null}; }
+   spreadsheet you were reading into your own is the worst kind of bug.
 
-/* Three faces, and which one you see is what has happened so far: nothing
-   yet, a file read and waiting to be understood, or a dictionary that just
-   grew by two thousand words and can be put back. */
+   `step` is which of the four screens you are standing on, and it is the ONE
+   thing that decides -- it used to be read off what happened to be filled in
+   (`IMP.done` then `IMP.read`), so the screen was a conclusion drawn from the
+   state rather than a place, and there was nowhere for a screen that has read
+   nothing yet to differ from a screen that is about to. */
+var IMP=impBlank();
+function impBlank(){ return {step:'get', read:null, roles:[], into:'w', dup:'skip'}; }
+
+/* FOUR SCREENS, ONE THING ON EACH.
+   「データの取り込み画面も意味がわからん、特にファイル」 OWNER 2026-09-06.
+
+     get     paste it, or choose a file. Two rows and nothing else.
+     paste   the box to paste into -- because choosing is a screen and the
+             thing you chose is the screen you arrive at, which is CLAUDE.md's
+             third banned shape read the right way round.
+     map     the first three rows as they were read, and under them one row
+             per column saying what that column is.
+     ready   how many words are about to come in, and how many are already
+             here. Pressing it imports and puts you on the dictionary. */
 function openImport(){ openForm('csv:', t('csv.title'), impHTML(), impMount); }
 FORM_OPEN.csv=function(){ openImport(); };
 function impHTML(){
-  if(IMP.done) return impDoneHTML();
-  if(IMP.read) return impMapHTML();
+  if(IMP.step==='ready') return impReadyHTML();
+  if(IMP.step==='map') return impMapHTML();
+  if(IMP.step==='paste') return impPasteHTML();
   return impGetHTML();
 }
 /* Rebuilding it rather than patching a piece: choosing what a column is
    changes the counts underneath it and can change the buttons, and a screen
    that redraws two of its three parts is where the third goes stale. */
 function impAgain(){ IMP=impBlank(); openImport(); }
+function impStep(v){ IMP.step=v; openImport(); }
 
-/* ---- 1. getting it in --------------------------------------------------- */
+/* ---- 1. getting it in ---------------------------------------------------
+   Two rows. It used to be the box, the file button and 「次へ」 all on one
+   screen, so the commonest way in -- a file -- was the middle of three things
+   under a box most people have nothing to put in. */
 function impGetHTML(){
+  return '<button class="set"' + DO('impStep', ["paste"]) + '>'+
+      '<span class="sl">'+esc(t('imp.paste'))+'</span></button>'+
+    impFileHTML();
+}
+/* And the box, on its own screen, with the one thing to do next under it. */
+function impPasteHTML(){
   return '<div class="field"><textarea id="f-csv" placeholder="'+esc(t('csv.ph'))+'"></textarea></div>'+
-    impFileHTML()+
-    '<button class="btn" style="width:100%;margin-top:12px"' + DO('impScan') + '>'+
+    '<button class="btn ghost" style="width:100%;margin-top:12px"' + DO('impScan') + '>'+
       esc(t('imp.next'))+'</button>';
 }
 /* A file rather than a paste. Pasting is fine for forty words and impossible
@@ -613,9 +642,9 @@ function impFileHTML(){
      itself, which is the same sentence shInFileHTML() in www/sheet.js is
      written under. */
   if(!can('file'))
-    return '<button class="btn ghost impfile"' + DO('upFile') + '>'+
-      esc(t('imp.file'))+'</button>';
-  return '<label class="btn ghost impfile">'+esc(t('imp.file'))+
+    return '<button class="set impfile"' + DO('upFile') + '>'+
+      '<span class="sl">'+esc(t('imp.file'))+'</span></button>';
+  return '<label class="set impfile"><span class="sl">'+esc(t('imp.file'))+'</span>'+
     '<input type="file" id="f-file" accept=".csv,.tsv,.tab,.txt,.json,.db,.dic,.lex"></label>';
 }
 /* The file input is the one control in the app that cannot go through the
@@ -643,10 +672,11 @@ function impScan(){
 function impTake(src){
   var r=impRead(src);
   if(!r.rows.length){ toast(t('imp.empty')); return; }
-  IMP.read=r; IMP.roles=impGuess(r); IMP.into=impInto(IMP.roles); IMP.done=null;
+  IMP.read=r; IMP.roles=impGuess(r); IMP.into=impInto(IMP.roles);
   /* The guess may have named a role the chosen side does not have -- it is
      read whole, then read as one side. */
   IMP.roles=impMove(IMP.roles, IMP.into);
+  IMP.step='map';
   openImport();
 }
 
@@ -655,75 +685,133 @@ function impSetInto(v){
   openImport();
 }
 
-/* The guess is already made and already chosen; this is where it gets
-   corrected. Three rows are enough to recognise your own spreadsheet and
-   few enough to fit on a phone. */
+/* ---- 2. what each column is --------------------------------------------
+   The first three rows exactly as they were read -- enough to recognise your
+   own spreadsheet, few enough to fit on a phone -- and under them one ROW per
+   column saying what that column is.
+
+   It was one row of dropdowns across the head of that table, which scrolled
+   sideways: with six roles the last column was already off the edge of the
+   screen, and with thirteen the sheet would have to be dragged twice to reach
+   the note. 「横スクロールのチップは禁止（一覧は縦の行）」 A list is a list of
+   rows going down, so the columns are a list and the table is a picture of
+   the file beside it.
+
+   A column with no heading over it is still a column: it is called by its
+   place in the row, which is what a spreadsheet with no headings gives you to
+   go on. */
 function impMapHTML(){
   var rows=IMP.read.rows, head=IMP.read.head, n=Math.min(3, rows.length);
-  var p=impPlan(), i, j, out='';
-  var side=impRolesFor(IMP.into);
+  var side=impRolesFor(IMP.into), wide=IMP.roles.length, i, j, out='';
   out+='<div class="sec">'+t('imp.into')+'</div>'+
     '<div class="segs" style="margin-bottom:12px">'+
       '<button class="seg'+(IMP.into==='w'? ' on':'')+'"' + DO('impSetInto', ["w"]) + '>'+
         esc(t('toc.words'))+'</button>'+
       '<button class="seg'+(IMP.into==='l'? ' on':'')+'"' + DO('impSetInto', ["l"]) + '>'+
         esc(t('toc.letters'))+'</button></div>';
-  out+='<div class="imptab"><table><tr>';
-  for(j=0;j<IMP.roles.length;j++){
-    out+='<th><select' + CH('impSetRole', [j]) + '>'+
-      side.map(function(r){
-        return '<option value="'+r+'"'+(IMP.roles[j]===r? ' selected':'')+'>'+
-          esc(t(IMP_LABEL[r]))+'</option>';
-      }).join('')+'</select>'+
-      (head? '<div class="impcap">'+esc(head[j]||'')+'</div>' : '')+'</th>';
+  out+='<div class="imptab"><table>';
+  if(head){
+    out+='<tr>';
+    for(j=0;j<wide;j++) out+='<th>'+esc(head[j]||'')+'</th>';
+    out+='</tr>';
   }
-  out+='</tr>';
   for(i=0;i<n;i++){
     out+='<tr>';
-    for(j=0;j<IMP.roles.length;j++) out+='<td>'+esc(rows[i][j]||'')+'</td>';
+    for(j=0;j<wide;j++) out+='<td>'+esc(rows[i][j]||'')+'</td>';
     out+='</tr>';
   }
   out+='</table></div>';
-  out+='<div class="impsum">'+
-    (p.add?  '<span><b>'+p.add+'</b>'+esc(t('imp.new'))+'</span>' : '')+
-    (p.ltr?  '<span><b>'+p.ltr+'</b>'+esc(t('imp.ltr'))+'</span>' : '')+
-    (p.coin? '<span><b>'+p.coin+'</b>'+esc(t('imp.coin'))+'</span>' : '')+
-    '</div>';
-  /* The choice only exists when there is something to choose about -- and it
-     sits ON the count it is about. Two words floating under a table say
-     nothing: 「飛ばすってなんの話？」 They are about the words that are
-     already here, so they are beside the number of them. */
-  if(p.have)
-    out+='<div class="impdup"><span class="impn"><b>'+p.have+'</b>'+esc(t('imp.have'))+'</span>'+
-      '<div class="segs">'+
-      '<button class="seg'+(IMP.dup==='skip'? ' on':'')+'"' + DO('impSetDup', ["skip"]) + '>'+
-        esc(t('imp.skip'))+'</button>'+
-      '<button class="seg'+(IMP.dup==='over'? ' on':'')+'"' + DO('impSetDup', ["over"]) + '>'+
-        esc(t('imp.over'))+'</button></div></div>';
-  out+='<button class="btn" style="width:100%;margin-top:14px"' + DO('doImport') + '>'+
-    esc(t('csv.btn'))+'</button>'+
+  for(j=0;j<wide;j++) out+=impColRow(j, side);
+  out+='<button class="btn ghost" style="width:100%;margin-top:14px"' + DO('impStep', ["ready"]) + '>'+
+      esc(t('imp.next'))+'</button>'+
     '<button class="set" style="margin-top:10px;border-bottom:none"' + DO('impAgain') + '>'+
       '<span class="sl">'+esc(t('imp.again'))+'</span></button>';
   return out;
 }
+/* One column, one row. The name on the left is the heading the file gave it,
+   or which column it is when the file gave none, and it is the select's
+   aria-label as well -- a row whose only words are on the left of it says
+   nothing to anybody not looking at the screen. */
+function impColRow(j, side){
+  var nm=impColName(j);
+  return '<div class="set"><span class="sl">'+esc(nm)+'</span>'+
+    '<span class="sv"><select' + CH('impSetRole', [j]) + ' aria-label="'+esc(nm)+'">'+
+      side.map(function(r){
+        return '<option value="'+r+'"'+(IMP.roles[j]===r? ' selected':'')+'>'+
+          esc(t(IMP_LABEL[r]))+'</option>';
+      }).join('')+'</select></span></div>';
+}
+function impColName(j){
+  var head=IMP.read && IMP.read.head;
+  return (head && head[j])? String(head[j]) : t('imp.col', j+1);
+}
 function impSetRole(j, v){ IMP.roles[j]=v; openImport(); }
 function impSetDup(v){ IMP.dup=v; openImport(); }
+
+/* ---- 3. what is about to happen ----------------------------------------
+   One line saying how many are coming in, and how many of them the language
+   already has. Every number here was on the screen AFTER the import and is
+   said before it instead, which is the same information asked at the moment
+   somebody can still do something about it. */
+function impReadyHTML(){
+  var p=impPlan(), n=impGoN(p);
+  return '<div class="impsum">'+
+      (p.add?  '<span><b>'+p.add+'</b>'+esc(t('imp.new'))+'</span>' : '')+
+      (p.ltr?  '<span><b>'+p.ltr+'</b>'+esc(t('imp.ltr'))+'</span>' : '')+
+      (p.coin? '<span><b>'+p.coin+'</b>'+esc(t('imp.coin'))+'</span>' : '')+
+      '</div>'+
+    /* The choice only exists when there is something to choose about -- and it
+       sits ON the count it is about. Two words floating under a table say
+       nothing: 「飛ばすってなんの話？」 They are about the words that are
+       already here, so they are beside the number of them. */
+    (p.have?
+      '<div class="impdup"><span class="impn"><b>'+p.have+'</b>'+esc(t('imp.have'))+'</span>'+
+      '<div class="segs">'+
+      '<button class="seg'+(IMP.dup==='skip'? ' on':'')+'"' + DO('impSetDup', ["skip"]) + '>'+
+        esc(t('imp.skip'))+'</button>'+
+      '<button class="seg'+(IMP.dup==='over'? ' on':'')+'"' + DO('impSetDup', ["over"]) + '>'+
+        esc(t('imp.over'))+'</button></div></div>' : '')+
+    /* How many will come in without a reading. It is not a failure and they
+       are not missing -- they will be in the dictionary and can be given a
+       reading one at a time. It is said because the alternative was saying
+       nothing, and saying nothing is what made a list arrive as nothing at
+       all. */
+    (p.mute? '<div class="note">'+esc(tn('imp.mute', p.mute))+'</div>' : '')+
+    '<button class="btn ghost" style="width:100%;margin-top:14px"' + DO('doImport') + '>'+
+      esc(t(IMP.into==='l'? 'imp.golt' : 'imp.go', n))+'</button>'+
+    '<button class="set" style="margin-top:10px;border-bottom:none"' + DO('impAgain') + '>'+
+      '<span class="sl">'+esc(t('imp.again'))+'</span></button>';
+}
 /* What pressing it would do, said before it is pressed. It follows the side
    that was chosen and not what the rows look like, which is the whole point
-   of choosing: the counts under the table are what will happen. */
+   of choosing: the counts on this screen are what will happen. */
 function impPlan(){
   var rows=impRows(IMP.read, IMP.roles, addedSnd());
-  var p={add:0, ltr:0, coin:0, have:0}, i, r;
+  var p={add:0, ltr:0, coin:0, have:0, mute:0}, i, r;
   for(i=0;i<rows.length;i++){
     r=rows[i];
     if(IMP.into==='l'){
       if(!r.ch) continue;
       if(impLtrBy(r.ch)) p.have++; else p.ltr++;
     }
-    else if(r.hw){ if(findWord(r.hw)) p.have++; else p.add++; }
+    else if(r.hw){
+      if(findWord(r.hw)) p.have++;
+      else {
+        p.add++;
+        /* A word arriving with no reading: the file gave none and the
+           spelling gives none either, which is every list not written in
+           roman. Asked the same way impPut() asks it. */
+        if(!r.ph.length && !phGuess(r.hw).length) p.mute++;
+      }
+    }
     else if(r.mn) p.coin++;
   }
   return p;
+}
+/* The number on the button, which is what will actually be written: the ones
+   already here are among them only if they are to be overwritten. */
+function impGoN(p){
+  return (IMP.into==='l'? p.ltr : p.add+p.coin) + (IMP.dup==='over'? p.have : 0);
 }
 /* The letter wearing this character, if there is one. A borrowed character is
    a letter's shape, and two letters cannot wear the same one. */
@@ -756,77 +844,6 @@ function impGrow(units){
       if(all.indexOf(parts[j])>=0 && have.indexOf(parts[j])<0){ have.push(parts[j]); grew=true; }
   }
   if(grew){ SND=asOrder(have); saveSnd(); }
-}
-
-/* ---- 3. what happened, and putting it back ------------------------------ */
-function impDoneHTML(){
-  var d=IMP.done;
-  return ((d.nw || !d.nl)? '<div class="impbig">'+esc(t('imp.done', d.nw))+'</div>' : '')+
-    /* Where a letter went. The dictionary is not the alphabet, and somebody
-       who imported one character and was told "1 word in" went looking for it
-       in the word list. */
-    (d.nl? '<div class="impbig">'+esc(t('imp.donelt', d.nl))+'</div>' : '')+
-    (d.full? '<div class="note">'+esc(t('csv.full', d.nw, 0))+'</div>' : '')+
-    /* How many came in without a reading. It is not a failure and they are
-       not missing -- they are in the dictionary and can be given a reading
-       one at a time. It is said because the alternative was saying nothing,
-       and saying nothing is what made a list arrive as nothing at all. */
-    (d.mute? '<div class="note">'+esc(tn('imp.mute', d.mute))+'</div>' : '')+
-    '<button class="btn" style="width:100%;margin-top:16px"' + DO('impOK') + '>'+
-      esc(t('imp.ok'))+'</button>'+
-    '<button class="set" style="margin-top:10px;border-bottom:none"' + DO('impUndo') + '>'+
-      '<span class="sl bad">'+esc(t('imp.undo'))+'</span></button>';
-}
-/* 完了. THE IMPORT IS OVER, so the screen forgets that it happened.
-   「取り込んだあとにアルファベットページに飛ばなくていいから戻る押しても
-     前のページに染み付いてるせいで全然戻れない」OWNER 2026-09-02.
-
-   This was `back()` and nothing else, and `IMP.done` stayed set for the rest
-   of the session -- impHTML() draws the done face whenever it is, so opening
-   取り込み again showed the LAST import's result, with 完了 on it, and 完了
-   goes back. From the alphabet that is a loop with no way out of it and no
-   way in to the import screen: import -> the old result -> back -> import ->
-   the old result. Nothing threw and every press did what it says.
-
-   Only HERE, and not on the way off the screen by the arrow. `impUndo()` is
-   on this face and is the one press that makes an import not have happened
-   (docs/DATA_SAFETY.md); forgetting on a plain back would take that away
-   from somebody who left to go and look at what arrived. 完了 is the press
-   that says it is finished. */
-function impOK(){ IMP=impBlank(); back(); }
-/* Putting two thousand words into the only copy of something somebody spent
-   years on is not a thing anybody should have to be brave about. Every word
-   this added is remembered by its spelling, and every word it overwrote is
-   remembered whole, so one press is enough to make it not have happened. */
-function impUndo(){
-  var d=IMP.done, i, k;
-  if(!d) return;
-  for(i=0;i<d.hws.length;i++){
-    k=impAt(d.hws[i]);
-    if(k>=0) WORDS.splice(k, 1);
-  }
-  for(i=0;i<d.was.length;i++){
-    k=impAt(d.was[i].hw);
-    if(k>=0) WORDS[k]=d.was[i].w;
-  }
-  for(i=0;i<d.lts.length;i++) ltDel(d.lts[i]);
-  for(i=0;i<d.wasL.length;i++){
-    k=impLtrAt(d.wasL[i].id);
-    if(k>=0) LETTERS[k]=d.wasL[i].l;
-  }
-  save(); saveLetters(); installScriptFont();
-  IMP=impBlank(); openImport();
-  toast(t('imp.undone'));
-}
-function impLtrAt(id){
-  var i;
-  for(i=0;i<LETTERS.length;i++) if(LETTERS[i].id===id) return i;
-  return -1;
-}
-function impAt(hw){
-  var i;
-  for(i=0;i<WORDS.length;i++) if(WORDS[i].hw===hw) return i;
-  return -1;
 }
 
 /* ---- doing it ----------------------------------------------------------- */
@@ -889,7 +906,7 @@ function impRegKey(v){
    own sounds, which is the commonest thing anybody imports: a list of what
    the words are for, with no words yet. */
 function impPut(rows){
-  var added=[], was=[], lts=[], wasL=[], full=false, mute=0, i, r, seq, hw, w, l, u, guard, v, d;
+  var added=0, was=0, lts=0, wasL=0, full=false, i, r, seq, hw, w, l, u, guard, v, d;
   for(i=0;i<rows.length;i++){
     r=rows[i];
     /* A letter, not a word -- because the person said the file is an
@@ -912,29 +929,29 @@ function impPut(rows){
       v=numTyped(r.nm || r.ch);
       if(numInBase(v)){
         d=numByVal(v);
-        if(!d){ lts.push(ltNew({val:v, ch:r.ch, snd:u}).id); if(u.length) impGrow(u); continue; }
+        if(!d){ ltNew({val:v, ch:r.ch, snd:u}); lts++; if(u.length) impGrow(u); continue; }
         if(!inkGeo(d) && !d.ch){
-          wasL.push({id:d.id, l:JSON.parse(JSON.stringify(d))});
+          wasL++;
           d.ch=r.ch;
           if(u.length){ impGrow(u); d.snd=u; d.chose=1; }
           saveLetters();
           continue;
         }
-        lts.push(ltNew({val:v, ch:r.ch, snd:u}).id); if(u.length) impGrow(u);
+        ltNew({val:v, ch:r.ch, snd:u}); lts++; if(u.length) impGrow(u);
         continue;
       }
       l=impLtrBy(r.ch);
       if(l){
         if(IMP.dup!=='over') continue;
-        wasL.push({id:l.id, l:JSON.parse(JSON.stringify(l))});
+        wasL++;
         if(r.nm) l.nm=r.nm;
         /* The list said what this letter reads, so it is an answer and not
            the app's guess: renaming the letter later leaves it alone. */
         if(u.length){ impGrow(u); l.snd=u; l.chose=1; }
       } else {
         if(u.length) impGrow(u);
-        l=ltNew({ch:r.ch, nm:r.nm, snd:u});
-        lts.push(l.id);
+        ltNew({ch:r.ch, nm:r.nm, snd:u});
+        lts++;
       }
       continue;
     }
@@ -945,7 +962,7 @@ function impPut(rows){
       w=findWord(hw);
       if(w){
         if(IMP.dup!=='over') continue;
-        was.push({hw:hw, w:JSON.parse(JSON.stringify(w))});
+        was++;
         if(r.mn){ w.mns=impSenses(r.mn); w.mn=w.mns[0]||r.mn; }
         if(r.pos) w.pos=posKey(r.pos);
         if(r.ph.length) w.ph=r.ph;
@@ -961,11 +978,10 @@ function impPut(rows){
 
          Sounds are the app's guess at how a spelling is said. Somebody's list
          of words is the thing they came here with. If the guess comes out
-         empty the word goes in without one, and `mute` says how many, so the
-         screen afterwards can say so rather than the number quietly being
-         smaller than the file. */
+         empty the word goes in without one, and how many that will be is
+         counted by impPlan() and said on the screen BEFORE the press, rather
+         than the number quietly being smaller than the file. */
       seq = r.ph.length? r.ph : phGuess(hw);
-      if(!seq.length) mute++;
     } else {
       if(!r.mn) continue;
       if(!addedSnd().length) continue;
@@ -990,15 +1006,30 @@ function impPut(rows){
     w.mn=w.mns[0]||r.mn||'';
     impPutRow(w, r);
     WORDS.push(w);
-    added.push(hw);
+    added++;
   }
   save();
-  if(lts.length || wasL.length){ saveLetters(); installScriptFont(); }
-  /* Words and letters are counted apart. They were one number, and a file
-     that carried three letters and no words said "3 words in" -- so the
-     letters were in the alphabet, correctly, and the one sentence the screen
-     said about them named the wrong room. */
-  IMP.done={nw:added.length+was.length, nl:lts.length+wasL.length,
-            hws:added, was:was, lts:lts, wasL:wasL, full:full, mute:mute};
-  openImport();
+  if(lts || wasL){ saveLetters(); installScriptFont(); }
+  impLand(added+was, lts+wasL, full);
+}
+/* AND THEN YOU ARE STANDING ON WHAT ARRIVED. 「押したら取り込んで辞書へ戻る」
+   OWNER 2026-09-06. There was a screen after this one saying how many came in;
+   what it said is now on the screen BEFORE the press, where somebody can still
+   change their mind about it, and what is left to do afterwards is to be in
+   front of the words.
+
+   Words and letters land in different rooms, and they are counted apart. They
+   were one number once, and a file that carried three letters and no words
+   said "3 words in" -- so the letters were in the alphabet, correctly, and the
+   one sentence the screen said about them named the wrong room.
+
+   go() cuts the trail back to a screen already on it, so coming here from the
+   dictionary is going back to it rather than pushing a second copy of it. */
+function impLand(nw, nl, full){
+  var lt=IMP.into==='l';
+  IMP=impBlank();
+  go(lt? 'letters' : 'words');
+  /* The list being full is the one thing that did not go as asked, so it is
+     what the screen says; otherwise it says what arrived. */
+  toast(full? t('csv.full', nw, 0) : t(lt? 'imp.donelt' : 'imp.done', lt? nl : nw));
 }

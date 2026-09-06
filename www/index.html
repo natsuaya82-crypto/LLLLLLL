@@ -1125,10 +1125,14 @@ canvas.pkc{width:34px;height:34px;display:block}
           var(--pane)}
 .imptab table{border-collapse:collapse;font-size:.88rem;white-space:nowrap}
 .imptab th{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;font-weight:400}
-.imptab th select{min-height:44px;background:none;border:0;border-bottom:1px solid var(--goldln);
-                  border-radius:0;color:var(--gold);font-family:inherit;font-size:.88rem;padding:0 2px}
-.imptab .impcap{font-size:.76rem;color:var(--txm);margin-top:4px;max-width:150px;
-                overflow:hidden;text-overflow:ellipsis}
+/* What a column is, chosen on the row that names it. The select left the head
+   of the table when the roles went from six to thirteen: thirteen dropdowns
+   across a phone is a sheet you drag twice to reach the last column, and a
+   list of thirteen things is a list of rows going down. It is the system's own
+   control, undressed down to the underline every field in this app wears. */
+.set select{min-height:44px;background:none;border:0;border-bottom:1px solid var(--goldln);
+            border-radius:0;color:var(--gold);font-family:inherit;font-size:.92rem;
+            padding:0 2px;max-width:56vw}
 .imptab td{padding:7px 10px;color:var(--txs);border-bottom:1px solid var(--line2);
            max-width:190px;overflow:hidden;text-overflow:ellipsis}
 /* A page's signs side by side, at a size you can judge. */
@@ -1175,8 +1179,6 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
    overlay and is the paid face's alone. */
 .shfile{position:relative;display:block;width:100%;text-align:center}
 .shfile input{position:absolute;left:0;top:0;width:100%;height:100%;opacity:0}
-.impbig{font-family:var(--face-ital);font-size:1.6rem;text-align:center;
-        padding:26px 0 4px;color:var(--tx)}
 /* ---------- the card ----------
    The picture is 1080 square whatever the phone is; the preview is however
    wide the sheet is. Nothing here says what is drawn on it -- that is
