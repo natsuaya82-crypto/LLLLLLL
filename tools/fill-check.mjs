@@ -32,9 +32,25 @@ const pg = await br.newPage({ viewport:{width:390,height:844} });
 await pg.goto('file://' + path.join(dir,'..','www','index.html'));
 await pg.waitForSelector('#splash', { state:'detached', timeout:10000 });
 
-const r = await pg.evaluate(({s}) => {
+const r = await pg.evaluate(async ({s}) => {
   eval('(' + s + ')()');
   SET.done = true; SET.theme = 'light'; SET.myfont = true;
+  function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
+  /* A WIRE THAT ANSWERS. The Save in the bar is not saved until it is up
+     (www/shell.js § keepSave -> netSaveNow), so a press with nothing on the
+     other end never lands, never levels the buffer and never lets the screen
+     go -- and this file would then be asking about a road that stopped
+     half way. What is on the other end is not this check's subject: it
+     answers everything, and whether a save that does NOT land stops is
+     again-check's. */
+  window.__SENT = [];
+  netSend = function(method, p, body, tok, ok){
+    window.__SENT.push(method + ' ' + p);
+    setTimeout(function(){
+      ok(method === 'POST' && p.indexOf('/rest/v1/language') === 0
+         ? [{ id:'srv1' }] : []);
+    }, 0);
+  };
   var o = GGRID.inset, D = geStep(), P = function(i,j){ return [o+i*D, o+j*D]; };
   var out = {};
 
@@ -125,32 +141,54 @@ const r = await pg.evaluate(({s}) => {
   /* saved, read back, and drawn again -- a flag dropped on the way to
      storage looks exactly like a fill that was never asked for */
   var l = LETTERS[0];
-  GE = newGE(l.id, ltName(l));
+  /* **The BUTTON, not a function.** The drawing is a buffer now
+     (www/shell.js § KEEP, www/glyph.js § geKeepOn): the Save stands in the
+     bar and geSave() is gone. A check that calls a function goes green on the
+     day the button stops being wired to it, so this stands on the screen the
+     way editLetter() puts somebody there, leaves the drawing in the buffer
+     the way a finger does (geKeepPut), and clicks what is in the corner. */
+  editLetter(l.id); render();
   GE.st = [{ pts: tri, fill: true }];
-  geSave();
+  geKeepPut();
+  document.querySelector('[data-do="keepPress"]').click();
+  await wait(60);
   /* not `back` -- that is the app's back arrow, and a `var back` here hoists
      over it for the whole of this function */
   var readBack = (ltById(l.id) || {}).st || [];
   out.kept = !!(readBack[0] && readBack[0].fill);
   out.reopened = ink(readBack);
 
-  /* ---- and it survives being LEFT, which is the other way out of here ----
-     「書いている途中で戻ったらそれはそこの文字として保存していちいち消える
-     のやめて。」 OWNER 2026-08-27.
+  /* ---- and it survives the way OUT, which is the arrow ----------------
+     「戻るは保存しますか？のポップ使ってほしい。他で使ってるのそのまま流用。
+     文字も単語も一緒」 OWNER 2026-09-05.
 
-     A fill that is dropped on the way to storage and a fill that is dropped
-     because somebody pressed the arrow instead of Save are the same letter
-     arriving thinner, and neither throws. The one above is asked of
-     geSave(); this is asked of the back arrow.
+     The arrow used to write the drawing onto the letter as the screen was
+     left (geLeft, 2026-08-27), and that decision is superseded: the arrow
+     ASKS now, and 「はい」 is the same Save as the one in the bar
+     (www/shell.js § keepAsked). What this file is about is unchanged --
+     a fill dropped on the way to storage and a fill dropped on the way OUT
+     of the editor are the same letter arriving thinner, and neither throws.
+
+     So the arrow is asked three things: it writes nothing by itself, it
+     throws nothing away, and the area is on the letter once the Yes has
+     been pressed.
 
      Driven the way the app drives it: editGlyph() to get onto the screen,
-     strokes onto GE, then back(), which is what the arrow is wired to. */
+     strokes onto GE, geKeepPut() for what the finger leaves in the buffer,
+     then back(), which is what the arrow is wired to. */
   var l2 = LETTERS[1] || LETTERS[0];
   var sq2 = [P(5,5), P(15,5), P(15,15), P(5,15)];
-  editGlyph(ltName(l2) || l2.id);
+  editGlyph(ltName(l2) || l2.id); render();
   GE.st = [{ pts: sq2, closed: true, fill: true }];
-  var lid2 = GE.lid;                       /* back() is about to let GE go */
+  geKeepPut();
+  var lid2 = GE.lid;                       /* the Yes is about to let GE go */
   back();
+  out.leftAsked = popOn();
+  /* nothing written by the arrow alone, and the drawing still on the paper */
+  out.leftQuiet = ((ltById(lid2) || {}).st || []).length === 0;
+  out.leftHeld  = ink(geInk(GE.st));
+  document.querySelector('[data-do="popYes"]').click();
+  await wait(60);
   var kept = (ltById(lid2) || {}).st || [];
   out.leftKept  = kept.length;
   out.leftFill  = !!(kept[0] && kept[0].fill);
@@ -218,12 +256,17 @@ say(r.partial === r.partialOne,
     + (r.partial === r.partialOne ? '' : ' (pieces: ' + r.partial + 'px)'));
 say(r.seam === 0,
     'a filled square is solid across all ' + r.span + 'px of it, no seam at a cut');
-say(r.kept, 'the flag is still on the stroke after geSave()');
+say(r.kept, 'the flag is still on the stroke after the Save in the bar');
 say(r.reopened === r.filled,
     'saved and read back it draws the same ' + r.reopened + 'px');
+say(r.leftAsked, 'the arrow asks before it lets a drawing go');
+say(r.leftQuiet, 'and writes nothing by itself');
+say(r.leftHeld === r.leftWant,
+    'and the area is still on the paper while it asks -- ' + r.leftHeld + 'px'
+    + (r.leftHeld === r.leftWant ? '' : ' (wanted ' + r.leftWant + 'px)'));
 say(r.leftKept > 0,
-    'backing out of the editor keeps the drawing: ' + r.leftKept + ' stroke(s)');
-say(r.leftFill, 'and it is still an area after backing out, not a line');
+    'the Yes writes the drawing: ' + r.leftKept + ' stroke(s)');
+say(r.leftFill, 'and it is still an area once written, not a line');
 say(r.leftInk === r.leftWant,
     'and it draws the same ' + r.leftWant + 'px as it did on the screen'
     + (r.leftInk === r.leftWant ? '' : ' (kept: ' + r.leftInk + 'px)'));
