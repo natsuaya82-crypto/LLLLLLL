@@ -528,6 +528,26 @@ const more = await pg.evaluate(() => {
   out.ntEditSave = !!document.querySelector('.navtop [data-do="keepPress"]');
   out.ntEditField = !!document.getElementById('nt-b');
 
+  /* ---- 11c. the word order board ---------------------------------------
+     「右上に保存（KEEP：置いた並びが開いた時と違えば金、保存で STG.order に
+     書く。戻るで「保存しますか」）」 OWNER 2026-09-06. It is here rather than
+     in the table above because the table types into a field and this screen
+     has none -- what is arranged on it is arranged by pressing cards. The
+     button is the same button and the rule is the same rule. */
+  window.route = 'gram'; NAV = [{ r:'gram', a:'v2:order' }];
+  keepDrop(keepKeyOf('gram', 'v2:order'));
+  render();
+  var gb = function(){ return document.querySelector('.navtop [data-do="keepPress"]'); };
+  out.gordBtn = !!gb();
+  out.gordGrey = !!gb() && !gb().classList.contains('navon');
+  var gc = document.querySelector('[data-gord="on"] [data-gr]');
+  if(gc) gc.click();
+  out.gordGold = !!gb() && gb().classList.contains('navon');
+  out.gordUnwritten = JSON.stringify(STG.order);
+  /* and the arrow asks, because the board differs from what it opened with */
+  out.gordAsks = keepDirty(keepKeyOf('gram', 'v2:order'));
+  keepDrop(keepKeyOf('gram', 'v2:order'));
+
   /* ---- 11. viewReset() lets them go ------------------------------------- */
   goTab('profile'); openMe();
   var e2 = document.querySelector('#me-nm');
@@ -730,6 +750,10 @@ for(const d of r.dead){
     fails.push(d.n + ': a save that did not land lost what was typed: ' +
                JSON.stringify(d.field));
 }
+if(!more.gordBtn) fails.push('the word order board has no Save in the corner');
+if(!more.gordGrey) fails.push('the word order board arrived with the Save already gold');
+if(!more.gordGold) fails.push('a card was moved on the word order board and the Save stayed grey');
+if(!more.gordAsks) fails.push('a card was moved and the board says nothing has changed, so the arrow would not ask');
 if(more.ntReadSave) fails.push('a note opened to be read and the Save was already in the corner');
 if(!more.ntReadEdit) fails.push('a note opened to be read with no way on to the writing face');
 if(more.ntReadField) fails.push('the reading face of a note is a field to type into');
@@ -757,6 +781,9 @@ console.log('the keyboard, one key: deleting a board lands on the list, and the 
 console.log('the letter being drawn: grey on arrival, gold on a stroke, nothing written until ' +
             'Yes; a bottom tab kept the drawing, No let it go and wrote nothing, Yes wrote it ' +
             'and said so once');
+console.log('the word order board: the Save stood there grey, a card moved turned it gold, ' +
+            'and nothing was written until it was pressed (STG.order was still ' +
+            more.gordUnwritten + ')');
 console.log('a note opens to be read (' + more.ntReadKey + '): 編集 in the corner and no Save, ' +
             'and 編集 goes to ' + more.ntEditKey + ', which has the field and the Save');
 console.log('viewReset(): lets what was typed go');

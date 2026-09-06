@@ -75,8 +75,9 @@ function orderDef(){
    today still holds -- and what it WRITES is always the list, so there is one
    shape in storage from the first time anybody touches it.
 
-   No button says its name any more: the six are gone and the board is carried
-   with a finger, so g2Up() is the one thing that calls this. */
+   The six buttons are gone. What calls this is the SAVE on the board's own
+   screen -- g2KeepOn()'s closure below -- so the language's word order moves
+   when somebody presses save and at no other moment. */
 function setOrder(v){ STG.order=orderSeq(v); stMarkSet('order'); render(); }
 
 /* ---- where a word stands ----------------------------------------------
@@ -535,30 +536,94 @@ function g2Chip(key, i, w){
 }
 
 /* ---- THE BOARD THE WORD ORDER IS ARRANGED ON ---------------------------
-   「選択式じゃなくて主語とか置いてあって指でどこに置くか決めれる形がいい。
-   ドラッグスワイプする感じ。3語以外も置けるようにしたい」 OWNER 2026-09-05.
+   「語順ボード：スライド式をやめて Duolingo 式に。下に選択肢の札（主語・
+   目的語・動詞・その他の役割）、上に置き場。下の札を押すと上の列の末尾に
+   入り、上の札を押すと下に戻る。枠の数は決めない。入れ替えはドラッグでは
+   なく戻して置き直す。右上に保存」 OWNER 2026-09-06.
 
-   Six buttons and a two-press swap are both gone. What is here is one rail of
-   cards -- the roles, in the order this language puts them -- and a rail under
-   it holding the ones this language does not place. A card is carried from
-   either into either with a finger, and where it lands IS the word order.
+   It was carried with a finger -- three document listeners, a hit test by
+   rectangles, and a write on every lift. All of that is gone. A card is a
+   BUTTON with a name on it, which is what every other thing in this app is
+   (CLAUDE.md § No JavaScript inside the markup), and there is nothing to aim
+   at: the tray puts one on the end, the board takes one off.
 
-   The cards carry no name and no action: a press does nothing, because there
-   is nothing a press could mean here. www/act.js's one listener is untouched.
+   TWO ROWS AND NO SLOTS. The board holds what has been placed, in order, and
+   the tray holds the roles that are not on it -- ROLES less the board, worked
+   out rather than stored, so there is one list and a role added tomorrow is
+   one entry in ROLES and one key in the ten i18n files. Three words is not a
+   rule here: a board of four is a board of four.
 
-   Which cards are OFF the board is worked out rather than stored -- ROLES less
-   what is on it -- so there is one list and adding a card tomorrow is one
-   entry in ROLES and one key in the ten i18n files. */
-function g2Card(r){
-  return '<button class="seg'+(GORD && GORD.on && GORD.r===r? ' on' : '')+
-    '" data-gr="'+esc(r)+'">'+esc(t('gram.role.'+r))+'</button>';
+   AND IT IS NOT WRITTEN UNTIL THE SAVE IS PRESSED. It used to write STG.order
+   on every landing, which is a language's word order changing under somebody
+   while they were still deciding. The arrangement lives in the screen's KEEP
+   buffer (www/shell.js § KEEP), so the button in the corner is grey until the
+   board differs from what it opened with, gold after, and the back arrow asks
+   -- the same as every other screen that takes an answer. */
+/* The screen the board is on, asked of the trail rather than written out
+   here: the chapter is reached as `gram` + `v2:order` and a second copy of
+   that string is a second answer to which screen this is. */
+function g2KeepKey(){ return keepKey(); }
+/* Called from the view, so it runs on every render of this screen and finding
+   a buffer already here leaves it exactly as it is -- somebody has been
+   arranging. The list travels as a comma-joined string because a buffer holds
+   strings (keepPut), and orderSeq() is what turns it back into the list. */
+function g2KeepOn(){
+  keepOn(g2KeepKey(), {seq:orderDef().seq.join(',')},
+         /* Split before it is handed on: setOrder() takes the list of cards
+            or the old six-letter string, and a comma-joined string is
+            neither -- orderSeq() would read 'O,V,S,ADV' one character at a
+            time and keep the three single letters. The buffer holds strings
+            (keepPut); this is where it stops being one. */
+         function(v, done){
+           var s=v.hasOwnProperty('seq')? String(v.seq) : orderDef().seq.join(',');
+           setOrder(s? s.split(',') : []);
+           done(true);
+         });
+}
+/* What is on the board NOW: what has been arranged, or what the language
+   holds if nothing has been touched. One answer, off the buffer. */
+function g2Seq(){
+  var s=keepVal(g2KeepKey(), 'seq');
+  return s? s.split(',') : [];
+}
+function g2Set(a){ keepPut(g2KeepKey(), 'seq', a.join(',')); render(); }
+/* From the tray onto the end of the board 「下の札を押すと上の列の末尾に入り」.
+   A role already on the board is not put on twice: the tray only ever shows
+   what is off it, so this can only be reached by a screen that has gone
+   stale under a press. */
+function g2Put(r){
+  var a=g2Seq();
+  if(a.indexOf(r)>=0) return;
+  a.push(r); g2Set(a);
+}
+/* And back off it 「上の札を押すと下に戻る」. That is also how two are
+   swapped -- take one off and put it back on the end -- so there is no
+   second way to move a card and nothing to drag. */
+function g2Take(i){
+  var a=g2Seq();
+  if(i<0 || i>=a.length) return;
+  a.splice(i,1); g2Set(a);
+}
+/* `data-gr` is which role this card IS, under whatever name the interface
+   language calls it. Nothing in the app reads it -- what a press does is on
+   the button as a NAME, the way every button here carries one -- and
+   tools/gramlang-check.mjs asks the board by it, so its claims are about the
+   roles rather than about ten translations of them. */
+function g2Card(r, act, arg){
+  return '<button class="seg" data-gr="'+esc(r)+'"' + DO(act, arg) + '>'+
+    esc(t('gram.role.'+r))+'</button>';
 }
 function g2Board(){
-  var seq=orderDef().seq, i, on='', off='';
-  for(i=0;i<seq.length;i++) on+=g2Card(seq[i]);
-  for(i=0;i<ROLES.length;i++) if(seq.indexOf(ROLES[i])<0) off+=g2Card(ROLES[i]);
-  return '<div class="segs" data-gord="on">'+on+'</div>'+
-         (off? '<div class="segs" data-gord="off">'+off+'</div>' : '');
+  g2KeepOn();
+  var seq=g2Seq(), i, on='', off='';
+  for(i=0;i<seq.length;i++) on+=g2Card(seq[i], 'g2Take', [i]);
+  for(i=0;i<ROLES.length;i++)
+    if(seq.indexOf(ROLES[i])<0) off+=g2Card(ROLES[i], 'g2Put', [ROLES[i]]);
+  /* The board keeps a row's height with nothing on it: an empty rail that
+     collapses to its own line is a place to put something that does not look
+     like one, and the board starts empty the first time somebody clears it. */
+  return '<div class="segs gordput" data-gord="on">'+on+'</div>'+
+         '<div class="segs" data-gord="off">'+off+'</div>';
 }
 /* This language's own words, in the order the board says. gLay() runs the real
    engine, so this is what a sentence would actually come out as and not a
@@ -581,95 +646,6 @@ function g2Demo(){
 function g2Sent(){
   return g2Board()+g2Demo();
 }
-
-/* ---- a card, carried ---------------------------------------------------
-   The same road www/home.js's overview rows take and www/keyboard.js's keys
-   take: one listener on the document, because the page is rebuilt by every
-   render and render() lives in a file this session does not own.
-
-   NO HOLD. 「ドラッグスワイプする感じ」 -- a card comes up the moment the
-   finger has moved, not after a delay. The rows are two short rails, so there
-   is nothing under them to scroll past; the overview's 380ms wait is there
-   because that list is as long as somebody's language.
-
-   Where it LANDS is the whole of what is written down. Nothing is saved while
-   the finger is down, so a carry that goes nowhere writes nothing at all. */
-var GORD=null;
-function g2CardEl(el){
-  while(el && el.getAttribute && !el.getAttribute('data-gr')) el=el.parentNode;
-  return (el && el.getAttribute && el.getAttribute('data-gr'))? el : null;
-}
-function g2Down(e){
-  var b=g2CardEl(e.target), p=e.touches? e.touches[0] : e;
-  if(!b || !p || !b.parentNode || !b.parentNode.getAttribute('data-gord')) return;
-  GORD={el:b, r:b.getAttribute('data-gr'), x:p.clientX, y:p.clientY, on:false};
-}
-/* The rail the finger is over, and the card in it the finger is over. Asked by
-   the rectangles rather than by elementFromPoint, because the card being
-   carried is directly under the finger and would answer every time -- the same
-   thing kbDragTo() takes its carried key out of the hit test for. */
-function g2Over(x, y){
-  var g=document.querySelectorAll('[data-gord]'), r, i;
-  for(i=0;i<g.length;i++){
-    r=g[i].getBoundingClientRect();
-    if(x>=r.left && x<=r.right && y>=r.top && y<=r.bottom) return g[i];
-  }
-  return null;
-}
-function g2Move2(e){
-  var p=e.touches? e.touches[0] : e, rail, kids, i, k, r;
-  if(!GORD || !p) return;
-  if(!GORD.on){
-    if(Math.abs(p.clientX-GORD.x)<6 && Math.abs(p.clientY-GORD.y)<6) return;
-    GORD.on=true;
-    GORD.el.className+=' on';
-  }
-  e.preventDefault();
-  rail=g2Over(p.clientX, p.clientY);
-  if(!rail) return;
-  kids=rail.childNodes;
-  for(i=0;i<kids.length;i++){
-    k=kids[i];
-    if(!k || k===GORD.el || !k.getAttribute || !k.getAttribute('data-gr')) continue;
-    r=k.getBoundingClientRect();
-    if(p.clientX>=r.left && p.clientX<=r.right){
-      rail.insertBefore(GORD.el, (p.clientX < r.left + r.width/2)? k : k.nextSibling);
-      return;
-    }
-  }
-  /* PAST EITHER END OF THAT RAIL. The cards do not fill it, so most of what a
-     finger can land on is rail and no card -- and the first version of this
-     appended only when the card came from the OTHER rail, so carrying a card
-     to the right-hand half of its own row moved nothing at all. Right of the
-     last card is the end of the rail and left of the first is the front of it;
-     an empty rail has only an end, which is how a card is carried back into
-     one it emptied. */
-  kids=rail.querySelectorAll('[data-gr]');
-  if(!kids.length){ rail.appendChild(GORD.el); return; }
-  r=kids[kids.length-1].getBoundingClientRect();
-  if(p.clientX>r.right){ rail.appendChild(GORD.el); return; }
-  r=kids[0].getBoundingClientRect();
-  if(p.clientX<r.left) rail.insertBefore(GORD.el, kids[0]);
-}
-function g2Up(){
-  var rail, kids, seq=[], i;
-  if(!GORD) return;
-  if(GORD.on){
-    rail=document.querySelector('[data-gord="on"]');
-    kids=rail? rail.childNodes : [];
-    for(i=0;i<kids.length;i++)
-      if(kids[i] && kids[i].getAttribute && kids[i].getAttribute('data-gr'))
-        seq.push(kids[i].getAttribute('data-gr'));
-    GORD=null;
-    setOrder(seq);
-    return;
-  }
-  GORD=null;
-}
-document.addEventListener('touchstart', g2Down, false);
-document.addEventListener('touchmove', g2Move2, {passive:false});
-document.addEventListener('touchend', g2Up, false);
-document.addEventListener('touchcancel', g2Up, false);
 /* §14 Nouns. 「ユーザーが『りんご』『りんごたち』などを実際の言語で作る。
    例えば poko / poko-mi。ユーザーが差分を定義する」
 

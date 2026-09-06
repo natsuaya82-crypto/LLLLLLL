@@ -1585,11 +1585,19 @@ export function halfDone(){
     /* And a board with a fourth card on it -- 「3語以外も置けるようにしたい」.
        The rail underneath is one card shorter, which is the state every claim
        about carrying one off it is about. */
+    /* The buffer is dropped either side of it: the board is drawn out of the
+       screen's KEEP buffer now (www/grammar.js § g2Board), so one left behind
+       by an earlier face would be what this one renders -- and one left behind
+       by THIS one would be what the next face renders. */
     ['the word order, a fourth card on the board', () => {
         window.route = 'gram'; NAV = [{ r:'gram', a:'v2:order' }];
         const was = STG.order;
+        keepDrop(keepKeyOf('gram', 'v2:order'));
         STG.order = ['S','ADV','O','V'];
-        const h = vGram(); STG.order = was; return h; }],
+        const h = vGram();
+        STG.order = was;
+        keepDrop(keepKeyOf('gram', 'v2:order'));
+        return h; }],
     /* ---- the 助詞 stage, both faces ------------------------------------
        It is a stage like every other one now 「助詞は最初から出せ」 OWNER
        2026-09-01, so no mark has to be set to reach it. The first is the
@@ -2481,11 +2489,11 @@ export function halfDone(){
        is no route to it: the migration runs at load, and a language minted
        afterwards is one this file has to mint itself.
 
-       It is here because this screen CHANGES with it. g2Sent() draws the board
-       from orderDef().seq with no gate at all, so a new language used to come
-       out wearing the phone's answer -- the cards in the order OSV -- where it
-       comes out 主語 目的語 動詞 now, which is the default with nothing
-       chosen. */
+       It is here because this screen CHANGES with it. g2Board() opens the
+       screen's buffer from orderDef().seq with no gate at all, so a new
+       language used to come out wearing the phone's answer -- the cards in the
+       order OSV -- where it comes out 主語 目的語 動詞 now, which is the
+       default with nothing chosen. */
     ['§14 語順、a language just made on a phone that had one', () => {
        const wasLangs = JSON.parse(JSON.stringify(LANGS));
        const wasId = langId, wasStg = JSON.parse(JSON.stringify(STG));
