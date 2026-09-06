@@ -157,7 +157,7 @@ defLang('pt', (function(){
       "cap.warn"                  : "Restam {0} palavras no Grátis",
       "cap.hid"                   : "{0} ocultos",
       "cap.lapse.h"               : "O seu plano terminou",
-      "cap.lapse.d"               : "Nada do que você criou foi apagado. As suas palavras, letras, teclados, gramática e publicações continuam na sua conta, tal como estavam.<br><br>No plano Grátis o dicionário mostra até 100 palavras, um teclado e um idioma. As palavras a partir da 100 não sumiram. Apenas não são mostradas.<br><br>Se fizer o upgrade de novo, tudo volta tal como estava.",
+      "cap.lapse.d"               : "Nada foi perdido. Suas palavras, letras, teclados e publicações continuam na sua conta.<br><br>No plano gratuito você vê as primeiras 100 palavras, um teclado e um idioma. O resto está oculto, não apagado.<br><br>Ao assinar de novo, tudo volta exatamente como estava.",
       "cap.lapse.ok"              : "Fechar",
       "ch.clear"                  : "Sem caractere",
       "ch.for"                    : "Um caractere para “{0}”",
