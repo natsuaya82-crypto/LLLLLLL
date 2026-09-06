@@ -2681,9 +2681,14 @@ function vKb(){
            navDo(t('kb.sel.done'), 'kbSelOff', null, true))
         : ((!can('kb') || langLocked())? ''
             : navDo(t('kb.sel'), 'kbSelOn', null, true)))+
+      /* AND NOT THE SWITCH. 「一覧の『キーに文字を表示』のスイッチを消す」
+         OWNER 2026-09-06. kbSysHTML() is on every keyboard's own page, which
+         is where the keys it changes are drawn, so a second copy of it here
+         is one setting written from two screens -- the fault rule 20 is
+         about, on this chapter. The setting itself is untouched: it is asked
+         of kbRomOn() and answered on a board's page. */
       '<div class="body">'+
       kbListHTML()+
-      kbSysHTML()+
       '</div></div>';
   var now=kbClamp(a, bs.length);
   kbShow=now;
