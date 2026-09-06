@@ -172,7 +172,7 @@ function migrateGramLang(){
        screen asks and is put nowhere -- so what is here is what a person
        pressed, and it is copied as it always was. */
     if(o.order===undefined && SET.order!==appOrder &&
-       ORDERS.indexOf(SET.order)>=0) o.order=SET.order;
+       orderSeq(SET.order).join('')===SET.order) o.order=SET.order;
     if(o.gpos===undefined){
       g={};
       for(k in GPOS_DEF) if(Object.prototype.hasOwnProperty.call(GPOS_DEF, k)){
@@ -786,9 +786,12 @@ function stOn(id, is){ return (stTouched(id) && is)? ' on' : ''; }
    Press one and it appears. Same stTouched() as the buttons; no new state. */
 function stFeatHTML(id){
   if(id==='order'){
-    return '<div class="segs">'+ORDERS.map(function(o){
-        return '<button class="seg'+stOn('order', o===orderDef().id)+'"' + DO('setOrder', [o]) + '>'+o+'</button>';
-      }).join('')+'</div>'+
+    /* THE BOARD, the same one the grammar chapter draws. It was six buttons
+       reading SOV, SVO and the rest, and they are gone with the six:
+       「選択式じゃなくて主語とか置いてあって指でどこに置くか決めれる形がいい」
+       OWNER 2026-09-05. One function draws it, so the two screens cannot
+       disagree -- which is what the six buttons here were for. */
+    return g2Board()+
       (stTouched('order')? gOrderLine()+gOrderDemo() : '');
   }
   if(id!=='adj' && id!=='negp' && id!=='adp') return '';
