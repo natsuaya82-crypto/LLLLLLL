@@ -275,8 +275,8 @@ Google と同じアドレスを打って二つ目のアカウントを立てて�
 - **一時間たっても保存が届く。**`netResume()` は起動の一回だけで、アクセス
   トークンは一時間で切れる。開いたままのアプリはサーバーへの書き込みが全部
   黙って落ちていた ── slice も plan も draft も `bad` が空関数。`netSend()` が
-  401 で更新して一度だけ投げ直します。`netPlanUp()` と `netSlicePut()` は
-  自前の XHR をやめて `netSend()` に乗りました（その二つが線の外にいた）。
+  401 で更新して一度だけ投げ直します。段の道と `netSlicePut()` は自前の XHR を
+  やめて `netSend()` に乗りました（その二つが線の外にいた）。
   `tools/token-check.mjs`（新）が `XMLHttpRequest` だけを偽物にして持ちます。
 - **メール確認の画面に戻ると再送信。**`obCanBack()` が `appIs()==='door'` で
   扉ぜんぶに false を返していて、六桁の画面から降りる道が無かった。
@@ -365,11 +365,11 @@ git merge-base --is-ancestor origin/<枝> origin/master && echo IN || echo NOT
   ネイティブは `UIApplication.openSettingsURLString` を開きます。橋が無いときに
   無言で終わる枝があります。**どこで止まっているかは押さないと分かりません。**
   押せるのはオーナーだけです。原因を並べるのは直すことではありません。
-- **アプリはレシート無しで自分の行に `pro` を書ける。**`schema.sql` の RLS が
-  閉じられるのは「他人の段を読み書きできない」まで。`www/net.js` の
-  `netPlanUp()` の上のコメントが同じことを書いています。**決めごと** ──
-  閉じるには Apple のレシートを iPhone でないものが検証する必要があり、
-  それは一行のコードではなく決定です（`docs/scope/claude-acct2.md`）。
+- ~~アプリはレシート無しで自分の行に `pro` を書ける。~~ **閉じました
+  （2026-09-06）。** `plan` と `purchase` は API からは読むだけで、書くのは
+  `supabase/functions/verify-plan` が service role で。端末が送るのは Apple が
+  署名した取引です。**オーナーの側で函数の deploy と `APPLE_ROOT_CA_G3` が要り
+  ます**（`supabase/setup.md` § 8b）。それまでは誰にも段が付きません。
 
 ### オーナーの側に残っているもの ── 2026-09-03 現在
 
@@ -644,16 +644,19 @@ Order, and where it stands:
 4. **The plan — on the account, done.** OWNER 2026-09-01: 「課金とアカウントと
    キーボードはアカウントに結びつく」. It is **its own table and not a column on
    `profile`** — `plan` in `supabase/schema.sql`, one row per uid.
-   `netPlanUp()` posts it, `netPlanSync()` reads both copies back and takes the
-   higher rung, and `SET.planPend` holds what a launch with no signal could not
-   send. On the device `setFor()` parks the six per-account settings under the
-   uid that had them, so signing in as somebody else does not inherit a plan.
+   **The server writes it and nobody else can.** `plan` and `purchase` are
+   read-only through the API; `supabase/functions/verify-plan` reads Apple's
+   signature off the transactions the phone sends and writes the row with the
+   service role. On the device `setFor()` parks the per-account settings under
+   the uid that had them, so signing in as somebody else does not inherit a
+   plan.
 
-   **What is still missing is the receipt.** The phone writes its own row, so
-   anybody who can reach this database can set their own plan. Closing that
-   needs Apple's receipt checked by something that is not the phone, which is a
-   decision rather than a line of code — `docs/scope/claude-acct2.md` holds the
-   three ways and why none is written.
+   **The receipt IS checked, since 2026-09-06.** 「アカウントごとなんだから、
+   違うアカウントで復元できるのおかしいだろ。検証して」 OWNER 2026-09-06 — a
+   purchase carries `appAccountToken`, the function refuses it for any other
+   account, and `purchase` records the binding. **Not confirmed on a device**,
+   and it needs the owner to deploy the function and set `APPLE_ROOT_CA_G3`
+   (`supabase/setup.md` § 8b); until then nobody gets a plan at all.
 5. The rest of moderation — **the tombstone in a thread (`postTomb()`), the
    notices (`vNotif`) and the frozen state are in.** What is left is the ⋯
    menu on a profile.

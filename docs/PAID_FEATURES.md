@@ -1,15 +1,37 @@
 # What money buys
 
+## 段はサーバーが決める ── OWNER DECISION 2026-09-06
+
+「アカウントごとなんだから、違うアカウントで復元できるのおかしいだろ。検証して」
+OWNER 2026-09-06。「だから端末でやるわけねえだろ」OWNER 2026-09-03。
+
+**仕様。**
+
+- 段（plus/pro）は **Lingua のアカウント**のもの。買った時にサインインしていた
+  アカウントに束縛される。
+- **別のアカウントでサインインして「購入を復元」しても、その購入は付かない。**
+- 段を決めるのは**サーバー**。端末が言った値を書き留める形は終わり。
+- 変わらないこと：段は「できること」だけを決め、誰の言語の 1 バイトにも触らない。
+
+**どこで決まるか。**`supabase/functions/verify-plan`。端末は署名付きの取引
+（`jwsRepresentation`）を送り、函数が x5c 鎖を Apple の根まで辿って署名を見て、
+`appAccountToken` がそのアカウントかを見て、`purchase` 表に束縛して、その uid の
+行全部から段を決め、service role で `plan` に書く。`plan` も `purchase` も API
+からは**読むだけ**（`supabase/schema.sql`、`npm run rls`）。
+
+端末には段を決める判定が一つも残っていない ── `LinguaStore.swift` の `best()`、
+`entitledPlan()`、`writeDown()` は消えた。`www/` から `plan` 表を触る道も無い
+（`netPlanUp`、`netPlanSync` は削除）。
+
 ## プランは絶対におかしくしてはいけない
 
 「プランは絶対におかしくしちゃいけないんだって」 OWNER 2026-09-02。買ったものが
-自分で無料に戻った日に言われた。**この節が他の全部より先に来る。**
+自分で無料に戻った日に言われた。**この節は上の決定の下で読む。**
 
 **規則は一つ。答えが無かったことを、答えとして書かない。**
 
-プランが下がるのは、**下げていいと言われた時だけ**。「読めなかった」「まだ来て
-いない」「空だった」は、どれも下げる理由にならない。何も書かず、そこにあるものを
-そのままにする。
+「読めなかった」「まだ来ていない」「届かなかった」は、どれも段を書き換える理由に
+ならない。何も書かず、そこにあるものをそのままにする。
 
 失った日の原因は二つあり、二つとも同じ形だった。
 
@@ -21,10 +43,16 @@
 どちらも「持っていない」と「分からない」が同じ枝だった。CLAUDE.md の一ページ目
 に書いてある通りのことが、お金の上で起きた。
 
-**下げていい道は三つしかない。**Apple が自分から言った時
-（`Transaction.updates`）、本人が復元を押して `AppStore.sync()` が通った時、
-Apple の管理シートから戻った時。それ以外は上げるだけ。**一日甘いのは、払った
-ものを取り上げるより軽い。**
+**2026-09-06 に、二つ目の原因そのものが消えた。**端末は段を答えなくなったので、
+「権利が一つも返らない」という状態を段の語に変える場所が無い。残っているのは
+`www/net.js` の `netPlanVerify()` で、**答えが届かなかった時と、段の語の無い
+答えが返った時は、何も書かない**。書くのは `planTook()`（`www/core.js`）一箇所。
+
+**段は下がりうる。**ここは 2026-09-02 の書き方と逆で、逆にしてよい理由は一つ
+だけある ── 語がサーバーから来るようになったこと。サーバーの `free` は「このアカ
+ウントについて検証できた取引が一つも期限内に無い」という意味しかない。失効は
+これ以外の道では降りてこられない。**端末が言う `free` は今も信じない**、が、
+端末はもう `free` と言わない。
 
 ### 何が持っているか ── `plan-check`
 
@@ -32,21 +60,27 @@ Apple の管理シートから戻った時。それ以外は上げるだけ。**
 CLAUDE.md が禁じている三番目の規則 ── 何も止めていないのに止まるかのように書い
 たもの ── になる。書き直した。
 
-**動かして測る側**（Keychain）。読み取り失敗で一バイトも書かれないこと、本当に
-空なら移行の道は今までどおり動くこと、Keychain が持っていればそれが勝つこと。
+**動かして測る側**（Keychain と www）。読み取り失敗で一バイトも書かれないこと、
+本当に空なら移行の道は今までどおり動くこと、Keychain が持っていればそれが勝つ
+こと。そして `planTook()` が段を書く唯一の場所であること、売っていない語は段に
+ならないこと、**届かなかった verify が何も書かないこと**。
 
 **読んで形を持つ側**（App Store）。Swift は Linux でコンパイルできず、ゲートは
 `.swift` を実行できない。**が、読むことはできる** ── `sides-check` が `post.js`
-を、`assets-check` が `project.pbxproj` を読むのと同じ。`LinguaStore.swift` の
-`writeDown()` の呼び出しを全部見つけ、**下げていい三つ以外が `mayLower: true` を
-渡していたら落ちる。**三つの名前だけが書いてあり、他の道は**探して**いるので、
-明日四つ目の道が足されればその日に落ちる。関門が「Keychain が答えた時だけ
-比べる」形であることも読む。
+を、`assets-check` が `project.pbxproj` を読むのと同じ。今読んでいるのは
+**段の語が `LinguaStore.swift` に一つも無いこと**、Keychain に書かないこと、
+`best()`／`entitledPlan()` が無いこと、四本の道が全部 `jws` を返すこと、
+`appAccountToken` が付くこと、アカウント無しの購入を断ること、
+`Transaction.updates` に来たものを取っておくこと。
 
-どちらも赤を見てある ── `current` に下げる権利を渡すと名指しで落ち、`core.js`
-の `PLAN_READ_OK` を外すと 0 of 3 で落ちる。
+**署名そのもの**は `tools/verify-check.mjs` が持つ ── 自分で作った P-256 の鎖で
+署名した取引を、函数が実際に使う一枚（`supabase/functions/verify-plan/verify.mjs`）
+に通す。正しい鎖は通り、根が違えば落ち、中身を書き換えれば落ち、別のアカウントの
+`appAccountToken` は拒まれ、期限切れは free、pro と plus が両方なら pro。
 
+**RLS** は `npm run rls` ── A も B も匿名も `plan` にも `purchase` にも書けない。
 
+どれも赤を見てある。
 
 ## 課金で追加したものは、無料になったら全部隠れる ── OWNER 2026-09-01
 
@@ -92,13 +126,14 @@ And, more importantly, what it may never touch.
 に結びつく」 OWNER 2026-09-01. Not to a phone, and **not to the settings** — it
 follows the person to whatever phone they sign in on, the way everything else
 of theirs does. **That is built**: the `plan` table in `supabase/schema.sql`,
-sent by `netPlanUp()` and read back by `netPlanSync()`, which takes the higher
-of the two rungs. `SET.plan` is still the value the app asks, and it is the
+written by `supabase/functions/verify-plan` with the service role and read-only
+to everybody else. `SET.plan` is still the value the app asks, and it is the
 copy that works with no signal — the same shape as every other slice.
 
-What is **not** built is anybody checking the receipt. The row holds what the
-phone said, so it is where the plan LIVES and is not proof of what was bought;
-`docs/FEATURES.md` § 1 is the list.
+**And the receipt IS checked, since 2026-09-06.** The row holds what Apple
+signed, bound to the account that bought it (`purchase` in `schema.sql`), so it
+is proof of what was bought and not merely where the plan lives. The section at
+the head of this file has the whole of it.
 
 Forbidden, without exception:
 
