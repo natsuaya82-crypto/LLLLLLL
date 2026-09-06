@@ -496,6 +496,82 @@ const R = await pg.evaluate(() => {
     out.fails.push('an example was typed in the box and Save threw it away: ' +
       JSON.stringify(ka.ex));
 
+  /* ---- and the ＋ over the heading, which is the third road into the boxes
+     and read neither of them. It was `flag = true; wdPaint()`: the repaint is
+     built out of wEdit, so a meaning typed and then ＋ was gone
+     「意味の2つ目を＋で足すと1つ目が消える」, and the example's ＋ with no
+     example yet re-drew the box that was already there and did nothing at all
+     「例文の＋を押しても反応しない」 OWNER 2026-09-06. Three acts in a row, so
+     it belongs here and not in press-check. */
+  openAdd('');
+  wdSetLn('zunn');
+  document.getElementById('wd-mn').value = 'the first meaning';
+  wdMnOpen();
+  document.getElementById('wd-mn').value = 'the second meaning';
+  wdMnOpen();
+  out.said.push('two meanings put in with ＋ alone: ' + JSON.stringify(wEdit.mns));
+  if (!(wEdit.mns.length === 2 && wEdit.mns[0] === 'the first meaning' &&
+        wEdit.mns[1] === 'the second meaning'))
+    out.fails.push('＋ was pressed to add a second meaning and the sheet ' +
+      'carries ' + JSON.stringify(wEdit.mns));
+
+  openEdit('mos');
+  document.getElementById('wd-exl').value = 'mos kano';
+  document.getElementById('wd-exg').value = 'the mountain is tall';
+  wdExOpen();
+  const mo = findWord('mos');
+  out.said.push('an example put in with ＋ alone: ' +
+    JSON.stringify(mo.ex ? mo.ex.map(e => e.ln) : null) +
+    ', and the box is back: ' + !!document.getElementById('wd-exl'));
+  if (!(mo.ex || []).some(e => e.ln === 'mos kano'))
+    out.fails.push('an example was typed and ＋ threw it away: ' +
+      JSON.stringify(mo.ex));
+  if (!document.getElementById('wd-exl'))
+    out.fails.push('＋ was pressed on the examples and left no box to type in');
+
+  /* ---- and nothing wears the drawn font that the drawn font cannot draw --
+     A letter read as two characters -- sh, ch, ng -- reaches the font as a
+     ligature, and an OpenType rule fires only over glyphs that exist, so
+     every component no letter holds gets a dashed placeholder. `.sfont` was
+     put on whole strings, so every s and every h in the app came out as that
+     box 「例文の行がたまに文字化け」 OWNER 2026-09-06. www/glyph.js §
+     sfontHTML is the one place, and what it must never do is put a character
+     the font does not draw inside a `.sfont` span. Asked of the page, so the
+     answer is the font that was actually built. */
+  let drawn = null;
+  for (let i = 0; i < LETTERS.length; i++)
+    if (LETTERS[i].st && LETTERS[i].st.length) { drawn = LETTERS[i]; break; }
+  drawn.ab = 'sh';
+  SET.myfont = true;
+  installScriptFont();
+  const runs = sfontRuns('sash mos kano');
+  const worn = runs.filter(r => r.on).map(r => r.t);
+  const bare = runs.filter(r => !r.on).map(r => r.t);
+  out.said.push('a letter read "sh": the drawn font is asked for ' +
+    JSON.stringify(worn) + ' and the rest stays roman ' + JSON.stringify(bare));
+  /* Character by character, which is the claim itself: every character inside
+     a .sfont span is one the font draws, alone or as part of a run it draws. */
+  let bad = '';
+  worn.forEach(r => {
+    let i = 0;
+    while (i < r.length) {
+      const q = SFONT.seq.find(x => r.substr(i, x.length) === x);
+      if (q) { i += q.length; continue; }
+      if (!SFONT.one[r.charAt(i)] && bad.indexOf(r.charAt(i)) < 0) bad += r.charAt(i);
+      i++;
+    }
+  });
+  if (bad)
+    out.fails.push('the drawn font was asked to draw ' + JSON.stringify(bad) +
+      ', which it has no shape for -- that is the box');
+  if (bare.join('').indexOf('mos') < 0)
+    out.fails.push('a word the font cannot draw did not fall back to roman: ' +
+      JSON.stringify(bare));
+  if (!worn.length)
+    out.fails.push('nothing was set in the drawn font at all');
+  SET.myfont = false;
+  installScriptFont();
+
   /* ---- and the spelling alone turns the Save gold ----------------------
      www/shell.js § KEEP: the button is grey until something has changed, and
      the back arrow asks only while it is gold. The spelling is the word

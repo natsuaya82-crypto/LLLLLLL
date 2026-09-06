@@ -226,8 +226,7 @@ function spAdd(sym){
 function vSpell(){
   var sp=(wEdit&&wEdit.sp)||[];
   return '<div class="view">'+navTop('')+'<div class="body">'+
-    '<div class="whd"><span class="whw'+(myFontOn()? ' sfont':'')+'">'+
-      esc(spWord(sp))+'</span>'+
+    '<div class="whd"><span class="whw">'+sfontHTML(spWord(sp))+'</span>'+
       '<button class="play"' + DO('sayPh', [spPh(sp)]) + ' aria-label="'+
         esc(t('f.listen'))+'">'+ICON_SPK+'</button></div>'+
     '<div class="wsub">'+esc(phIpa(spPh(sp)))+'</div>'+
@@ -243,8 +242,24 @@ function vSpell(){
    so a word with five meanings is five presses of Enter and not five of
    anything else. wdMnShow()/wdExShow() are the one place each answers it. */
 var wdMnNew=false, wdExNew=false;
-function wdMnOpen(){ wdMnNew=true; wdPaint(); }
-function wdExOpen(){ wdExNew=true; wdPaint(); }
+/* 「＋」 does not make the box appear -- it finishes the box in front of you
+   and opens the next one. It was `flag=true; wdPaint()`, which reads no box
+   at all: a first meaning typed and then ＋ was repainted out of wEdit, which
+   had never been told about it, and the meaning was gone
+   「意味の2つ目を＋で足すと1つ目が消える」 OWNER 2026-09-06. The example's ＋
+   did the same, and with no example yet its box was already on the screen, so
+   the press changed nothing whatever 「例文の＋を押しても反応しない」.
+
+   One road for both, and it is the road that already exists: wdAddMn() is
+   wdTakeFields() -- the one place that reads the boxes -- then the store and
+   the repaint. What ＋ adds to it is standing in the box that came back, so
+   the press answers even when the box was already there. */
+function wdOpenMore(id){
+  wdAddMn();
+  var e=document.getElementById(id); if(e) e.focus();
+}
+function wdMnOpen(){ wdMnNew=true; wdOpenMore('wd-mn'); }
+function wdExOpen(){ wdExNew=true; wdOpenMore('wd-exl'); }
 function wdMnShow(){ return wdMnNew || !(wEdit && wEdit.mns && wEdit.mns.length); }
 function wdExShow(){ var w=wdW(); return wdExNew || !(w && w.ex && w.ex.length); }
 function wdMnsHTML(){
@@ -397,8 +412,8 @@ function exLnHTML(ln){
   for(i=0;i<ps.length;i++){
     w=ps[i];
     if(!w) continue;
-    if(!w.replace(/^\s+|\s+$/g,'') || findWord(w)) out.push(esc(w));
-    else out.push('<span class="exnew">'+esc(w)+'</span>');
+    if(!w.replace(/^\s+|\s+$/g,'') || findWord(w)) out.push(sfontHTML(w));
+    else out.push('<span class="exnew">'+sfontHTML(w)+'</span>');
   }
   return out.join('');
 }
@@ -406,7 +421,7 @@ function exRowHTML(e, seq, tail){
   return '<div class="exrow">'+
     '<div class="exb">'+
       (e.lb? '<span class="exlb">'+esc(e.lb)+'</span>' : '')+
-      '<span class="exl'+(myFontOn()?' sfont':'')+'">'+exLnHTML(e.ln)+'</span>'+
+      '<span class="exl">'+exLnHTML(e.ln)+'</span>'+
       '<span class="exg">'+esc(e.gl || exGloss(e.ln))+'</span></div>'+
     (seq.length? exBtn('sayPh', [seq], 'f.listen', ICON_SPK) : '')+
     tail+'</div>';
@@ -1236,10 +1251,16 @@ function subList(pos){
    Enter on the box is still the only thing that makes one. */
 var wdSubNew=false;
 function subNewOpen(){ wdSubNew=true; render(); }
+/* The same row as every other row on this list, and it has to be: it was an
+   `.entry one` -- the DICTIONARY's row, a headword at 20px on 71px of height
+   -- standing under five `.set` rows at 15px on 50, so the one row that is
+   not an answer was the largest thing on the screen
+   「下位分類の＋新しく作るの行だけ字が大きい」 OWNER 2026-09-06. CLAUDE.md
+   § Rows in one list are one height. wdOneHTML() is what a row of this list
+   is, and this is that row with a ＋ on it and no tick. */
 function subAddRow(){
-  return '<div class="entry one"><button class="ebody"' + DO('subNewOpen') + '>'+
-    '<div class="hwrow"><span class="hwl">'+ICON_ADD+esc(t('f.sub.new'))+
-    '</span></div></button><span class="ltck" style="margin-left:auto"></span></div>';
+  return '<button class="set"' + DO('subNewOpen') + '>'+
+    '<span class="sl">'+ICON_ADD+esc(t('f.sub.new'))+'</span></button>';
 }
 function vSub(){
   if(!wEdit) return viewGone();
@@ -1526,7 +1547,7 @@ function wdRowHTML(x, fm){
      word, in two alphabets, on one screen. */
   return '<button class="wdrow"' + DO('openWord', [x.hw]) + '>'+
     (fm? '<span class="wdrowf">'+esc(fmLabel(fm))+'</span>' : '')+
-    '<span class="wdroww'+(myFontOn()? ' sfont' : '')+'">'+esc(wOut(x.hw))+'</span>'+
+    '<span class="wdroww">'+sfontHTML(wOut(x.hw))+'</span>'+
     '<span class="wdrowm">'+esc(wMn(x)||t('sent.nomean'))+'</span></button>';
 }
 /* Those of a family that are inflections, those that are derivations, and
@@ -1558,7 +1579,7 @@ function wdRdShown(w){ return myFontOn() || wOut(w.hw)!==String(w.hw); }
 function wdViewHTML(){
   var w=findWord(openHw); if(!w) return viewGone();
   var seq=wPh(w), mns=wMns(w), ex=w.ex||[];
-  return '<div class="whd"><span class="whw'+(myFontOn()?' sfont':'')+'">'+esc(wOut(w.hw))+'</span>'+
+  return '<div class="whd"><span class="whw">'+sfontHTML(wOut(w.hw))+'</span>'+
       '<button class="play" style="margin:0 0 0 auto"' + DO('sayPh', [seq]) +
         ' aria-label="'+esc(t('f.listen'))+'">'+ICON_SPK+'</button>'+
       '<button class="usep"' + DO('cardOpen', ["w", w.hw]) + ' aria-label="'+

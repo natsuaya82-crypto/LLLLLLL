@@ -343,10 +343,15 @@ function numClockHTML(){
    spelling is the drawing. `.sfont` is the class that asks for it, and it is
    the same class every other word in the app is shown through.
 
-   All or nothing. One undrawn letter is one character falling through to the
-   serif in the middle of a word, so a word the font cannot carry whole is set
-   plainly instead. shareWordAll() is the one place that answers that, and the
-   widget asks it too. */
+   Character by character, and the one place that answers it is
+   www/glyph.js § sfontHTML -- the same call every other word in the app is
+   shown through. It used to be ALL OR NOTHING here, asked of shareWordAll():
+   a word with one undrawn letter in it was set plainly, and a word whose
+   letters were all drawn was set whole -- which drew a box for any character
+   the font answers to without drawing 「例文の行がたまに文字化け」 OWNER
+   2026-09-06. shareWordAll() is still what the WIDGET asks, and that is a
+   different question: the widget has no fallback face to fall through to, so
+   it says the number instead. */
 /* The first n of a word, for a place that is n wide. */
 function numCut(s, n){
   s=String(s||'');
@@ -358,7 +363,7 @@ function numCut(s, n){
 function numMonthHTML(){
   var m=calMonthOf(new Date()), w=shareSlotWord('month.'+numLabel(m));
   if(!w || !w.hw) return '<span class="numcm">'+numLineHTML(m)+'</span>';
-  return '<span class="numcm'+(shareWordAll(w)? ' sfont':'')+'">'+esc(w.hw)+'</span>';
+  return '<span class="numcm">'+sfontHTML(w.hw)+'</span>';
 }
 /* The name a day of the week already has, for the days the language has not
    named yet. 「ない分の言葉はmondayとかで代用しよう」
@@ -427,8 +432,8 @@ function numCalHTML(){
        the day's name down -- Mon, 月, M -- because seven of them share the
        width of the grid, and a word somebody made is no different. Two signs,
        which is what the phone's own short names come to. */
-    nm=(w && w.hw)? esc(numCut(w.hw, 2)) : esc(numCut(numWdayName(i), 3));
-    heads+='<span class="numch'+((w && w.hw && shareWordAll(w))? ' sfont':'')+
+    nm=(w && w.hw)? sfontHTML(numCut(w.hw, 2)) : esc(numCut(numWdayName(i), 3));
+    heads+='<span class="numch'+
       (calRed(i)? ' sun':'')+(calBlue(i)? ' sat':'')+'">'+nm+'</span>';
   }
   for(day=1;day<=last;day++){
