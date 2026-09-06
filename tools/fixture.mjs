@@ -401,7 +401,11 @@ export function obStates(){
         return h + obTourHTML(); }],
     ['the walk: the key the letter went on', () => {
         SET.done = false; ob.step = OB_TOUR; obTour = 3; ob.mode = '';
-        ob.lid = (LETTERS[0] || {}).id || '';
+        /* The letter the walk lights is the one the person DREW, and the
+           drawing step draws `a` (obSlot() in www/onboard.js) -- so the face
+           lights a and not whichever letter the seed happens to list first,
+           which was k and read as the app choosing k. OWNER 2026-09-06. */
+        ob.lid = (LETTERS.filter(function (l) { return ltName(l) === 'a'; })[0] || LETTERS[0] || {}).id || '';
         window.route = 'kb';
         NAV = [{ r: 'build', a: '' }, { r: 'kb', a: '' }, { r: 'kb', a: '0' }];
         var h = vKb();
