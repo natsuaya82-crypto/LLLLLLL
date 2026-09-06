@@ -1023,12 +1023,19 @@ function impPut(rows){
    said "3 words in" -- so the letters were in the alphabet, correctly, and the
    one sentence the screen said about them named the wrong room.
 
-   go() cuts the trail back to a screen already on it, so coming here from the
-   dictionary is going back to it rather than pushing a second copy of it. */
+   The import screen comes OFF the trail first: an import that has already
+   happened is not a screen to be put back down on, which is exactly what
+   navDrop() is for and what the word sheet does with a word that has been
+   deleted. Without it the back arrow from the dictionary led to a blank
+   import screen. Then the dictionary, and a paint -- go() draws when it moves
+   and is silent when the trail already ended where it was sent, and either
+   way the screen still has the form's body on it. */
 function impLand(nw, nl, full){
   var lt=IMP.into==='l';
   IMP=impBlank();
+  navDrop('csv:');
   go(lt? 'letters' : 'words');
+  render();
   /* The list being full is the one thing that did not go as asked, so it is
      what the screen says; otherwise it says what arrived. */
   toast(full? t('csv.full', nw, 0) : t(lt? 'imp.donelt' : 'imp.done', lt? nl : nw));
