@@ -2297,8 +2297,12 @@ export function halfDone(){
     ['who you are, being edited', () => { openMe(); return vForm(); }],
     /* The box a list is pasted into, which is its own screen: the one before
        it offers pasting or a file and nothing else. */
+    /* impPaint() and not openImport(): the door STARTS an import and blanks
+       IMP (www/import.js), so opening it is the one thing that cannot stand
+       a half-done one up. impPaint() is what every step of a running import
+       draws itself with, which is what these faces are. */
     ['a list being pasted', () => { IMP = impBlank(); IMP.step = 'paste';
-        openImport(); return vForm(); }],
+        impPaint(); return vForm(); }],
     /* Every column a word can be made of, which is what a spreadsheet
        somebody actually keeps has in it. One row per column, and the first
        three rows of the file over them. */
@@ -2317,7 +2321,7 @@ export function halfDone(){
        skipping and overwriting exists at all. */
     ['a list about to come in', () => { IMP = impBlank();
         impTake('Word,Meaning\nkano,mountain\nzzk,a thing\n');
-        IMP.step = 'ready'; openImport();
+        IMP.step = 'ready'; impPaint();
         return vForm(); }],
     /* An alphabet rather than a dictionary: the same screens, and the counts
        say letters instead of words. */
@@ -2326,7 +2330,7 @@ export function halfDone(){
         return vForm(); }],
     ['an alphabet about to come in', () => { IMP = impBlank();
         impTake('Letter,Sound,Name\nϘ,k,qoppa\nϠ,sh,sampi\n');
-        IMP.step = 'ready'; openImport();
+        IMP.step = 'ready'; impPaint();
         return vForm(); }],
     /* On the paid plan the file button is a real file input rather than the
        way to the plans. */
