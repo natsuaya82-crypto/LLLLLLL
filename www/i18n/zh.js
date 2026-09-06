@@ -235,7 +235,6 @@ defLang('zh', (function(){
       "kb.sel.row" : "选择这个键盘",
       "kb.rm.n" : "删除 {0} 个键盘？",
       "kb.rm.q" : "删除这个键盘？其他的不动。",
-      "kb.full" : "最多 {0} 个键盘",
       "kb.reset.ask"               : "丢弃这个键盘，重新生成第一个吗？",
       "kb.reset.done"               : "键盘已重建",
       "ipa.b.back"                : "后",
@@ -783,7 +782,6 @@ defLang('zh', (function(){
       "gram.pair.line"   : "整句",
       /* rules */
       "words.addmn"      : "添加意思",
-      "toast.cap"        : "此方案最多存 {0} 个词。Pro 可无限制使用。",
       "set.title"        : "设置",
       "set.look"         : "显示",
       "theme.system"     : "系统",

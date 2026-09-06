@@ -590,6 +590,9 @@ const r = await pg.evaluate(({ s }) => {
   var kbWas = kbBoards().length;
   /* said no: nobody is moved, and no keyboard is made */
   go('kb');
+  /* Every ceiling says the same sentence and names no number
+     （「この機能を使用するにはアップグレードしてください」OWNER 2026-09-06). */
+  out.upNeed = t('up.need');
   out.kbAsked = askPop(function(){ kbAdd('qwerty'); });
   out.kbSaidNo = kbBoards().length === kbWas && here().r === 'kb';
   /* said yes: the plans screen, which is the thing the sentence is about */
@@ -642,9 +645,6 @@ const r = await pg.evaluate(({ s }) => {
   var askedLang = askPop(function(){ langNew(); });
   out.freeAsked = askedLang;
   out.freeSaidNo = langCount() === wasCount && langId === wasLang && here().r === 'langs';
-  /* the sentence has to read at ONE, which is what the free ceiling is --
-     "1 languages" was what the first version of this string said */
-  out.freeAskedNoPlural = (askedLang || '').indexOf('1 languages') === -1;
   /* said yes: the plans screen, still without making one.
      The toast is emptied FIRST. It is one element that lives for the whole
      run, so what is in it is whatever was last said, by any step above --
@@ -1328,7 +1328,7 @@ say(r.kbSpun < 60,
     '(' + r.kbSpun + ' pushed, pool counts ' + r.kbPoolCount + ')');
 say(r.kbAtCeiling, 'plus fills up at four keyboards');
 say(r.kbSaidNo, 'and the fourth-and-one asks rather than telling -- no is no, and nobody is moved');
-say(/4/.test(r.kbAsked || ''), 'the sentence says the number (' + (r.kbAsked || 'nothing') + ')');
+say(r.kbAsked === r.upNeed, 'the sentence is the one upgrade line and names no number (' + (r.kbAsked || 'nothing') + ')');
 say(r.kbSaidYes, 'and yes goes to the plans screen, still without making one');
 
 say(r.langFree === 1 && r.langMid === 1 && r.langTop === 3,
@@ -1338,8 +1338,7 @@ say(r.langCountReading === 1,
     'a language being READ from somebody else is not one of yours (' + r.langCountReading + ')');
 say(r.doorOnFree, 'the way to make one is drawn on free -- a closed door is shown, not hidden');
 say(r.freeSaidNo, 'pressed on free it asks rather than telling -- no is no, and nobody is moved');
-say(/1/.test(r.freeAsked || ''), 'the sentence says the number (' + (r.freeAsked || 'nothing') + ')');
-say(r.freeAskedNoPlural, 'and it reads at one, which is what the free ceiling is');
+say(r.freeAsked === r.upNeed, 'the sentence is the one upgrade line and names no number (' + (r.freeAsked || 'nothing') + ')');
 say(r.freeMadeNone && r.freeWent && r.freeSaidNothing,
     'and yes goes to the plans screen, still without making one');
 say(r.proMade && r.proOpened, 'pressed on pro it is made and opened');

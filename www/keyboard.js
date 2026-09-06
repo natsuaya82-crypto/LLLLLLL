@@ -107,7 +107,7 @@ function kbRoomKb(){ return 1 + kbCount() < kbCap(); }
 function kbCapStop(){
   if(upStop(can('kb'))) return true;
   if(kbRoomKb()) return false;
-  popAsk(t('kb.full', kbCap()), function(){ go('plans'); });
+  popAsk(t('up.need'), function(){ go('plans'); });
   return true;
 }
 function kbRead(){
