@@ -746,7 +746,7 @@ say(up2.sentOut.length === 0 && up2.keptOut,
    後にはじめて出て行きました。保存は netSaveUp() の溜め（NET_UPMS）で、押した
    ボタンはその結果を一度も訊いていませんでした。
 
-   **ここは押します。**geSave() を呼ぶのではなく、画面に立って、バーの保存を
+   **ここは押します。**関数を呼ぶのではなく、画面に立って、バーの保存を
    クリックします ── 訊いているのは「ボタンが何をするか」で、関数が何をするか
    ではないからです。関数を呼ぶ検査は、ボタンがその関数に繋がっていない日に
    緑のままになります。
@@ -789,19 +789,24 @@ async function pressSave(how){
        せん。そして l1 が最初から持っている三角とは別の形にする ── 同じ形だと
        「書いた線が載った」と「元から載っていた」が見分けられません。 */
     GE.st = [{ pts:[[112,688],[400,400],[688,688],[400,112],[112,400]] }];
+    /* **描いたものは buffer に置く。**線は www/shell.js § KEEP の預かりに
+       なっていて、指が一本引くたび geKeepPut() が呼ばれます（www/glyph.js）。
+       GE.st に載せるだけでは buffer は空のままで、バーの保存は「変わって
+       いない画面」を押したことになります。 */
+    geKeepPut();
     render();
     await wait(50);
     window.__SRV.down = (how === 'down');
     window.__SRV.downSlice = (how === 'slice');
     window.__SRV.sent = []; window.__SRV.tried = [];
-    return { drew: geDirty(), screen: JSON.stringify(NAV[NAV.length - 1]),
+    return { drew: keepDirty(keepKey()), screen: JSON.stringify(NAV[NAV.length - 1]),
              /* 触っている文字と、そこに書いた線そのもの。長さではなく中身で
                 見るので、元からある線と取り違えません。 */
              lid: GE.lid, ink: JSON.stringify(geInk(GE.st)),
-             hasBtn: !!document.querySelector('[data-do="geSave"]') };
+             hasBtn: !!document.querySelector('[data-do="keepPress"]') };
   }, { s: seed.toString(), srv: SERVER, how });
   if (!set.hasBtn) return Object.assign(set, { noButton:true });
-  await pg.click('[data-do="geSave"]');
+  await pg.click('[data-do="keepPress"]');
   /* 溜めの時間より長く待つ。ここで通るなら、押した瞬間に出て行っています ──
      NET_UPMS をコードから読むので、溜めが変わってもこの検査は付いていきます。 */
   await pg.waitForTimeout(await pg.evaluate(() => NET_UPMS + 900));
@@ -1015,10 +1020,15 @@ say(one.missing.length === 0,
     '**引き下ろしはどの画面にも在る** ── PAGES の ' + one.routes +
     ' ルートに、表の無いものは零（' +
     (one.missing.length ? '**' + one.missing.join(' ') + '**' : 'なし') + '）');
-say(one.excluded.length === 2 && one.excluded[0] === 'set' &&
-    one.excluded[1] === 'settings' && one.slipped.length === 0,
-    'そして外れているのは設定の二つだけで、その二つは本当に引かない ── ' +
-    '「設定はいらんよ？」（' + one.excluded.join(' ') +
+/* 外してよい画面は三つで、三つとも決定で外れています ── 設定の二つが
+   「設定はいらんよ？」、キーボードの編集画面が「キーボード編集画面はくるくる
+   無し」OWNER 2026-09-05。名前で訊くのは、この表が放っておくと育つからで、
+   四つ目が黙って入っていたらそれは決定ではなく誰かの判断です。 */
+const PULL_OUT = ['kb', 'set', 'settings'];
+say(one.excluded.join(' ') === PULL_OUT.join(' ') && one.slipped.length === 0,
+    'そして外れているのは決定で外した三つだけで、その三つは本当に引かない ── ' +
+    '「設定はいらんよ？」「キーボード編集画面はくるくる無し」（' +
+    one.excluded.join(' ') +
     (one.slipped.length ? '、**' + one.slipped.join(' ') + ' が引ける**' : '') + '）');
 say(one.wait === 20000 && one.storeWait === one.wait,
     '**待ちは一箇所** ── NET_WAIT が ' + one.wait + '、App Store もそれを読む（' +
