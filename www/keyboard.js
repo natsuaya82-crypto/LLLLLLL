@@ -3385,7 +3385,7 @@ function kbDelCol(ci){
    keyboard was on this visit.
 
    ONE PLACE records it -- kbNoted() -- rather than the thirty mutators:
-   kbDelRow, kbDelCol, kbDelKey, kbAddKey, kbSetW, kbSetKind, kbLtPut, the drag.
+   kbDelRow, kbDelCol, kbDelKey, kbAddKey, kbSetKind, kbLtPut, the drag.
    A list that has to be added to by hand is a list with a hole in it, and the
    hole is a change that cannot be taken back with no way of knowing which one.
 
@@ -3996,30 +3996,34 @@ function kbKeyHTML(ri, ki){
        「キーボード設定まじでやりにくい」 */
     ((key.k==='lt' && !kbSlotsShown(key))
       ? '<div class="kbltin">'+kbLtGrid(ri, ki, -1)+'</div>' : '')+
+    /* FOUR, AND THE SAME FOUR ON EVERY KEY. 「「押したとき」は文字／スペース／
+       削除／改行 の 4 つだけ（層は消す）」「削除や改行を置けるキーが決まって
+       いるのはおかしい ── 全キーで選べるように」 OWNER 2026-09-06.
+
+       The fifth was 層 -- a key that turns to another page of this keyboard
+       -- and it is off this screen. A board that already has one is untouched:
+       kbFace() draws it, kbAddLay() is what mints the way there and the way
+       back when a page is added, and the extension is handed the same key it
+       always was. What has gone is choosing it HERE, and with it the row of
+       page names that only a 層 key ever showed. */
     '<div class="sec">'+t('kb.what')+'</div>'+
     '<div class="segs">'+
       '<button class="seg'+(key.k==='lt'?' on':'')+'"' + DO('kbSetKind', [ri, ki, "lt"]) + '>'+t('toc.letters')+'</button>'+
       '<button class="seg'+(key.k==='sp'?' on':'')+'"' + DO('kbSetKind', [ri, ki, "sp"]) + '>'+t('kb.sp')+'</button>'+
       '<button class="seg'+(key.k==='del'?' on':'')+'"' + DO('kbSetKind', [ri, ki, "del"]) + '>'+t('kb.del')+'</button>'+
       '<button class="seg'+(key.k==='ret'?' on':'')+'"' + DO('kbSetKind', [ri, ki, "ret"]) + '>'+t('kb.ret')+'</button>'+
-      '<button class="seg'+(key.k==='lay'?' on':'')+'"' + DO('kbSetKind', [ri, ki, "lay"]) + '>'+t('kb.lay')+'</button>'+
-    '</div>';
-  if(key.k==='lay')
-    out+='<div class="segs" style="margin-top:8px">'+kbOf().lay.map(function(x, i){
-      return '<button class="seg'+((parseInt(key.v,10)||0)===i?' on':'')+'"' +
-        DO('kbSetLay', [ri, ki, i]) + '>'+esc(kbLayName(i))+'</button>';
-    }).join('')+'</div>';
-  out+='<div class="sec">'+t('kb.w')+'</div><div class="segs">'+
-    [1,2,3,4].filter(function(w){
-      return (key.w||1)===w || kbFitsW(ri, ki, w);
-    }).map(function(w){
-      return '<button class="seg'+((key.w||1)===w?' on':'')+'"' +
-        DO('kbSetW', [ri, ki, w]) + '>'+w+'</button>';
-    }).join('')+'</div>'+
-    /* The ◀ and ▶ that used to be here are gone: a key is moved by holding it
-       on the keyboard itself. 「長押しで編集とかスマホの編集にしてくれよ」 What
-       is left is the thing a sheet is for -- what this key IS -- and the one
-       thing a hold cannot do, which is make a key that is not there yet. */
+    '</div>'+
+    /* AND NO WIDTH. 「「幅」の段は消す」 OWNER 2026-09-06. It was four
+       numbers, and which of the four a key was offered depended on how much
+       room its row had left -- so one key showed 1 2 3 4 and the key beside it
+       showed 1, which is the screen being a different screen on every key.
+       A key already carrying a `w` keeps it and is drawn that wide; the way to
+       make one wider is to JOIN it to the key beside it, which is a button
+       over the sheet and is where every other act on a key already lives.
+
+       The ◀ and ▶ that used to be here are gone too: a key is moved by holding
+       it on the keyboard itself. 「長押しで編集とかスマホの編集にしてくれよ」
+       What is left is the thing a sheet is for -- what this key IS. */
     '<button class="set" style="margin-top:12px;border-bottom:none"' + DO('kbDelKey', [ri, ki]) + '>'+
       '<span class="sl bad">'+t('kb.key.del')+'</span></button>';
   return out;
@@ -4325,34 +4329,23 @@ function kbLtPut(){
   if(kbLtWhere()==='kbslot'){ kbSlotFor=null; back(); kbPick(p.r, p.k); return; }
   back();
 }
+/* THE FOUR THE SCREEN OFFERS AND NOTHING ELSE. 「文字／スペース／削除／改行
+   の 4 つだけ」 OWNER 2026-09-06. `lay` is gone from here for the reason
+   written over the buttons in kbKeyHTML(): a board that already carries one
+   still draws it and still hands it to the phone, and kbAddLay() is what
+   makes one. This is what a PRESS may turn a key into, and a route can be
+   come back to -- so it is refused here rather than only left off the screen.
+
+   `gap` is not among them either and never was: a gap is where a key is not,
+   and it is made by an alignment rather than chosen. */
 function kbSetKind(ri, ki, kind){
   if(!kbEdit()) return;
+  if(kind!=='lt' && kind!=='sp' && kind!=='del' && kind!=='ret') return;
   var key=kbAt(ri, ki); if(!key) return;
   key.k=kind;
   if(kind!=='lt') key.f=['','','',''];
-  if(kind==='lay' && !/^[0-9]+$/.test(String(key.v))) key.v='0';
-  if(kind==='del' || kind==='sp' || kind==='ret') key.v='';
+  if(kind!=='lt') key.v='';
   saveKb(); kbPick(ri, ki);
-}
-function kbSetLay(ri, ki, i){
-  if(!kbEdit()) return;
-  var key=kbAt(ri, ki); if(!key) return;
-  key.v=String(i); saveKb(); kbPick(ri, ki);
-}
-/* Making a key wider is adding columns to its row, so it is the same
-   question. A width that will not fit is not offered -- kbKeyHTML() takes the
-   four buttons from here -- and this refuses it as well, because a route can
-   be come back to. */
-function kbFitsW(ri, ki, w){
-  var row=kbLayer().rows[ri], key=kbAt(ri, ki);
-  if(!row || !key) return false;
-  return kbUsed(row)-kbU(key.w)+kbU(w)<=KB_COLS;
-}
-function kbSetW(ri, ki, w){
-  if(!kbEdit()) return;
-  var key=kbAt(ri, ki); if(!key) return;
-  if(!kbFitsW(ri, ki, w)) return;
-  key.w=w; saveKb(); kbPick(ri, ki);
 }
 function kbAddKey(ri, ki, w){
   if(!kbEdit()) return;

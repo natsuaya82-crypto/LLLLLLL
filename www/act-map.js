@@ -126,8 +126,6 @@ act('kbReset', kbReset);
 act('kbSettings', kbSettings);
 act('setKbRom', setKbRom);
 act('kbSetKind', kbSetKind);
-act('kbSetLay', kbSetLay);
-act('kbSetW', kbSetW);
 act('kbSlot', kbSlot);
 act('kbLtTap', kbLtTap);
 act('kbLtPut', kbLtPut);

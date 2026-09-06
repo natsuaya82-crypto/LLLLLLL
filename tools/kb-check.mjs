@@ -367,11 +367,35 @@ const r = await pg.evaluate(({ s }) => {
     var had = kbLayer().rows[full].length;
     kbAddKey(full, 0, 1);
     out.colsCap = kbLayer().rows[full].length === had;
-    /* and a key cannot be widened past it either */
-    var w0 = kbLayer().rows[full][0].w || 1;
-    kbSetW(full, 0, 4);
-    out.wCap = (kbLayer().rows[full][0].w || 1) === w0;
   }
+  /* AND THE KEY'S SCREEN NO LONGER OFFERS A WIDTH AT ALL. 「「幅」の段は
+     消す」 OWNER 2026-09-06, which replaces the claim that stood here -- a
+     key could be widened from its own sheet and the four numbers it was
+     offered were filtered by how much room its row had left, so the screen
+     was a different screen on every key. There is no such road now: the way
+     to make a key wider is to join it to the one beside it.
+
+     Asked of the SCREEN rather than of a function that is gone, because
+     「the function was deleted」 is a thing dead-check already says and is
+     not what somebody would notice. */
+  fresh();
+  kbPick(0, 0);
+  out.noWidthRow = kbKeyHTML(0, 0).indexOf('kbSetW') < 0;
+  /* and the four it does offer, with no fifth */
+  out.fourKinds = (function(){
+    var h = kbKeyHTML(0, 0), k = ['lt', 'sp', 'del', 'ret'], i, n = 0;
+    for (i = 0; i < k.length; i++) if (h.indexOf('&quot;' + k[i] + '&quot;') >= 0) n++;
+    return n === 4 && h.indexOf('&quot;lay&quot;') < 0;
+  })();
+  /* and a key a board already carries as a layer key is untouched by any of
+     it -- the one thing that must not have changed */
+  out.layKeyLives = (function(){
+    var b = kbEdit();
+    b.lay[0].rows[0][0] = kbKey('lay', '1');
+    saveKb();
+    return kbEdit().lay[0].rows[0][0].k === 'lay' &&
+           kbFace(kbEdit().lay[0].rows[0][0]).length > 0;
+  })();
   /* NOTHING is cut down to fit: a layout already over the ceiling is left
      alone. This is the half that would lose somebody's keys. */
   fresh();
@@ -1296,13 +1320,19 @@ const r = await pg.evaluate(({ s }) => {
   out.plusLayGone = vKb().indexOf('kbAddLay') < 0;
   out.plusLayNoop = (kbAddLay(), kbEdit().lay.length === 1);
 
-  /* ---- 6e. the switch that draws a letter on each key is on every face -- */
+  /* ---- 6e. the switch that draws a letter on each key is on a KEYBOARD ---
+     and not on the list. 「一覧の『キーに文字を表示』のスイッチを消す（各
+     キーボードの画面に同じスイッチがあるので二重）」 OWNER 2026-09-06, which
+     replaces 「on every face」: the keys it changes are drawn on a keyboard's
+     own page, and a second copy of one setting on the screen above it is one
+     switch written from two places -- turn it off on one and it is on in the
+     other. Both faces that HAVE keys keep it. */
   fresh();
   out.romOnEditor = vKb().indexOf('data-do="setKbRom"') >= 0;
   NAV = [{ r: 'kb', a: '0' }]; render();
   out.romOnFree = vKb().indexOf('data-do="setKbRom"') >= 0;
   NAV = [{ r: 'kb', a: '' }]; render();
-  out.romOnList = vKb().indexOf('data-do="setKbRom"') >= 0;
+  out.romOffList = vKb().indexOf('data-do="setKbRom"') < 0;
 
   /* ---- 6f. selecting, and the buttons that act on what is selected -----
      「今即削除なの危なすぎだろ…行とか列選択したらそこが光ってそこを作業して
@@ -3323,7 +3353,9 @@ say(r.stillAdds,
     'the row number, the + over the sheet, 下');
 say(r.foundFull, 'the board has a row that is already the full width');
 say(r.colsCap, 'and it takes no more keys');
-say(r.wCap, 'and a key in it cannot be widened past the edge');
+say(r.noWidthRow, "and the key's own screen offers no width");
+say(r.fourKinds, 'which offers four things a key can be and no fifth');
+say(r.layKeyLives, 'while a layer key a board already carries still draws');
 say(r.overKept, 'a layout that is already over the ceiling is left exactly as it is');
 say(r.overStillCant, 'and still cannot be added to');
 say(r.centred, 'a short row sits in the middle of the ten: ' + r.centreLead +
@@ -3522,8 +3554,8 @@ say(r.insColKey, 'and what goes in is an empty key, not a gap');
 say(r.insColBack, 'and the step back takes it out again');
 say(r.plusLayGone, 'a face with nowhere to put that key is not offered a + at all');
 say(r.plusLayNoop, 'and asking for one anyway does nothing');
-say(r.romOnEditor && r.romOnFree && r.romOnList,
-    'the letter-on-each-key switch is on the editor, the free face and the list');
+say(r.romOnEditor && r.romOnFree && r.romOffList,
+    'the letter-on-each-key switch is on both keyboards and not on the list');
 say(r.selKeeps, 'pressing a row number does NOT delete the row any more');
 say(r.selLit && r.selHead, 'it lights the row up and its number with it');
 say(r.cutUp && r.alUp, 'and the bin and the three alignments come up');
