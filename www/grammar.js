@@ -41,18 +41,31 @@ var ORDER_DEF=['S','O','V'];
    A card nobody knows is dropped and a card written twice is kept once: the
    value is arranged by a finger and the engine reads it as places in a row, so
    the same role standing in two of them is one role with two places. */
-function orderSeq(v){
+function orderKeep(v){
   var out=[], i, c;
   if(typeof v==='string') v=v.split('');
-  if(!v || !v.length) return ORDER_DEF.slice();
+  if(!v) return out;
   for(i=0;i<v.length;i++){
     c=String(v[i]);
     if(ROLES.indexOf(c)>=0 && out.indexOf(c)<0) out.push(c);
   }
+  return out;
+}
+function orderSeq(v){
+  var out=orderKeep(v);
   /* A board carried empty is the three back again. There is no such thing as
      a language that puts nothing anywhere, and the alternative is the engine
      quietly falling back to its own default while the screen shows nothing --
-     one answer in two places. */
+     one answer in two places.
+
+     WHAT IS SAVED AND WHAT IS ON THE BOARD ARE TWO QUESTIONS, and this line is
+     why they had to be split. A sentence has to be arranged somehow, so this
+     answers with the three where nothing has been saved -- and the board was
+     opened from it, so a language nobody had answered for came up with 主語
+     目的語 動詞 already placed, reading as an answer somebody had given.
+     「最初から主語と動詞とかが入ってるせいでわかりにくい」 OWNER 2026-09-06.
+     orderKeep() above is the same read WITHOUT the default, and the board opens
+     from that. */
   return out.length? out : ORDER_DEF.slice();
 }
 /* The word order is the LANGUAGE's and is filed under langKey('phases') with
@@ -472,7 +485,7 @@ function gWordOf(pos, not){
 
    What decides a side now is g2Adj() and g2Adp() below, and each draws the
    pair ITSELF -- g2Side(), two of this language's words you MOVE rather than
-   two buttons you read. The board and the sentence under it are g2Sent()'s.
+   two buttons you read. The board and the sentence under it are g2Board()'s.
    One fact, one place, which is what taking the stages out was for. */
 
 /* ====================================================================
@@ -567,15 +580,21 @@ function g2KeepKey(){ return keepKey(); }
    a buffer already here leaves it exactly as it is -- somebody has been
    arranging. The list travels as a comma-joined string because a buffer holds
    strings (keepPut), and orderSeq() is what turns it back into the list. */
+/* WHAT THIS LANGUAGE HAS ACTUALLY SAVED, which is what the board opens with.
+   Empty is a real answer here and means nobody has arranged anything yet -- so
+   the sentence line starts blank and every card is in the tray, which is what
+   an exercise of this shape looks like everywhere it exists.
+   「最初から主語と動詞とかが入ってるせいでわかりにくい」 OWNER 2026-09-06. */
+function g2Stored(){ return orderKeep(STG && STG.order); }
 function g2KeepOn(){
-  keepOn(g2KeepKey(), {seq:orderDef().seq.join(',')},
+  keepOn(g2KeepKey(), {seq:g2Stored().join(',')},
          /* Split before it is handed on: setOrder() takes the list of cards
             or the old six-letter string, and a comma-joined string is
             neither -- orderSeq() would read 'O,V,S,ADV' one character at a
             time and keep the three single letters. The buffer holds strings
             (keepPut); this is where it stops being one. */
          function(v, done){
-           var s=v.hasOwnProperty('seq')? String(v.seq) : orderDef().seq.join(',');
+           var s=v.hasOwnProperty('seq')? String(v.seq) : g2Stored().join(',');
            setOrder(s? s.split(',') : []);
            done(true);
          });
@@ -609,27 +628,40 @@ function g2Take(i){
    the button as a NAME, the way every button here carries one -- and
    tools/gramlang-check.mjs asks the board by it, so its claims are about the
    roles rather than about ten translations of them. */
-function g2Card(r, act, arg){
-  return '<button class="gordc" data-gr="'+esc(r)+'"' + DO(act, arg) + '>'+
-    esc(t('gram.role.'+r))+'</button>';
+/* A CARD IS A BOX. 「箱でいいよ」 OWNER 2026-09-06 -- two rows of bare words
+   read as a heading over a second heading, and nothing about them said one
+   could be picked up. `off` is the tray's, in a paler ink, because a card
+   waiting to be placed and a card standing in the sentence are not the same
+   thing and looked identical. www/index.html § r4-gram carries both, and
+   tools/box-baseline.txt carries the corner. */
+function g2Card(r, act, arg, cls){
+  return '<button class="gordc'+(cls||'')+'" data-gr="'+esc(r)+'"' +
+    DO(act, arg) + '>'+esc(t('gram.role.'+r))+'</button>';
 }
+/* THE WHOLE SCREEN, not a strip at the top of one.
+   「画面そんな広いのになんで上ちょこっとでやるの？」 OWNER 2026-09-06.
+
+   The sentence is written on RULED LINES -- the upper half of the screen, three
+   of them, so a sentence that runs past one carries on to the next and the
+   place to put a card is visible before there is a card in it. The line under
+   this language's own words comes directly beneath them, which is where the
+   sentence being built is; it used to sit under the TRAY, two rows further
+   down, so the words and the cards that arranged them were not next to each
+   other at all.
+
+   The lines are drawn by the stylesheet rather than by an element each: they
+   are the paper, not a list of slots, and 「枠の数は決めない」 -- a card lands
+   on the end of what is there and the lines are what it is written on. */
 function g2Board(){
   g2KeepOn();
   var seq=g2Seq(), i, on='', off='';
-  for(i=0;i<seq.length;i++) on+=g2Card(seq[i], 'g2Take', [i]);
+  for(i=0;i<seq.length;i++) on+=g2Card(seq[i], 'g2Take', [i], '');
   for(i=0;i<ROLES.length;i++)
-    if(seq.indexOf(ROLES[i])<0) off+=g2Card(ROLES[i], 'g2Put', [ROLES[i]]);
-  /* The board keeps a row's height with nothing on it: an empty rail that
-     collapses to its own line is a place to put something that does not look
-     like one, and the board starts empty the first time somebody clears it.
-
-     A CARD IS A BOX. 「箱でいいよ」 OWNER 2026-09-06 -- two rows of bare words
-     read as a heading over a second heading, and nothing about them said one
-     could be picked up. It is .gordrow rather than .segs for the same reason:
-     .segs is the underlined rail of CHOICES, and these are not choices, they
-     are cards on and off a board. www/index.html § r4-gram carries both, and
-     tools/box-baseline.txt carries the exception. */
-  return '<div class="gordrow gordput" data-gord="on">'+on+'</div>'+
+    if(seq.indexOf(ROLES[i])<0) off+=g2Card(ROLES[i], 'g2Put', [ROLES[i]], ' off');
+  return '<div class="gordtop">'+
+           '<div class="gordput" data-gord="on">'+on+'</div>'+
+           g2Demo()+
+         '</div>'+
          '<div class="gordrow" data-gord="off">'+off+'</div>';
 }
 /* This language's own words, in the order the board says. gLay() runs the real
@@ -643,15 +675,6 @@ function g2Demo(){
   if(!w) return '';
   for(i=0;i<w.length;i++) out+='<span class="gor">'+esc(wOut(w[i].hw))+'</span>';
   return '<div class="gorder">'+out+'</div>';
-}
-/* §14 Sentence Structure. The board, then this language's own words in the
-   order it says. gOrderLine() drew the same role names with chevrons between
-   them and is not here: the cards ARE that line now, and the same fact twice
-   on one screen is the thing this repository is most often bitten by. The
-   語順 stage that drew it a second way is gone -- 「重複はいらない」 OWNER
-   2026-09-06 -- so this is the one place the board is. */
-function g2Sent(){
-  return g2Board()+g2Demo();
 }
 /* §14 Nouns. 「ユーザーが『りんご』『りんごたち』などを実際の言語で作る。
    例えば poko / poko-mi。ユーザーが差分を定義する」
@@ -1302,7 +1325,7 @@ function g2Chaps(){
      counts a mention as the name against a bracket, a comma or a semicolon,
      so a function that is the LAST thing in an object literal is followed by
      `}` and reads as unused. Eight of them did. */
-  var out=[{id:'order', body:g2Sent,  nm:t('stg.order.t')},
+  var out=[{id:'order', body:g2Board, nm:t('stg.order.t')},
            {id:'n',     body:g2Nouns, nm:posLabel('n'), pos:'n'}], i, a;
   /* The forms, one chapter each, from the one list. A chapter is drawn by
      g2FmChap() and knows its own form and its own part of speech, so nothing
@@ -1349,7 +1372,7 @@ function g2ChapName(id){
    without having to open every chapter to find out.
 
    ASKED OF WHAT IS STORED and never of what the page draws. Calling a chapter's
-   own body from the list would run g2Sent(), which arms this screen's KEEP
+   own body from the list would run g2Board(), which arms this screen's KEEP
    buffer, so drawing the contents would have told the Save that a board had
    been opened.
 

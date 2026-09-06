@@ -835,7 +835,7 @@ function stDetailHTML(p){
    can stand -- are NOT here any more, and neither is the drawing of them. They
    were the `feats` of the 語順, 否定, 形容詞 and 場所 stages, and all four of
    those stages are gone: each was a chapter of the rule-made group said a
-   second time, 「重複はいらない」 OWNER 2026-09-06. The board is g2Sent()'s and
+   second time, 「重複はいらない」 OWNER 2026-09-06. The board is g2Board()'s and
    the two sides are g2Adj()'s and g2Adp()'s, on their own chapters, which is
    where they are now decided. stOn(), stFeatHTML() and the demonstrations they
    drew (gOrderLine, gOrderDemo, gPosDemo, gSide, gPairOf, gNeedWords in

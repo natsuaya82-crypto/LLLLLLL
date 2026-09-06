@@ -256,6 +256,13 @@ for (const spec of shots) {
       }, { r, a });
   if (err) { console.error(`  ${spec} threw: ${err}`); continue; }
   await pg.waitForTimeout(120);            /* fonts and any transition settle */
+  /* THERE IS NO SERVER BEHIND THIS FILE, so anything the screen asks for fails
+     and netPop() puts 「接続できません」 over the middle of the picture. That is
+     the app being right about the network and has nothing to do with the screen
+     being photographed -- it covered half of every picture taken from here.
+     Taken down the way the No takes it down, so nothing is drawn that the app
+     would not draw. */
+  await pg.evaluate(() => { if (typeof popOff === 'function') popOff(); });
   const covered = await pg.evaluate(() => !!document.getElementById('splash') ||
                                           !document.getElementById('app') ||
                                           !document.getElementById('app').innerHTML.trim());

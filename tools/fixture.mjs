@@ -1599,20 +1599,24 @@ export function halfDone(){
        entry no screen names, and every string on it could be hard-coded
        forever. Two faces, because a word being carried looks different from
        a word standing still, and that difference is the whole chapter. */
-    ['the word order, arranged', () => {
+    /* NOTHING PLACED YET, which is what this chapter opens as for a language
+       nobody has answered for -- 「最初から主語と動詞とかが入ってるせいで
+       わかりにくい」 OWNER 2026-09-06. The seed writes no STG.order, so the
+       ruled lines are empty and every card is in the tray. The buffer is
+       dropped either side of it for the reason the face below says: the board
+       is drawn out of the screen's KEEP buffer, and one left behind by another
+       face is what this one would render.
+
+       The face called 'a card being carried' was here and is gone: it set
+       `GORD`, which no file in www/ has read since the board stopped being
+       dragged, so it walked a state the app cannot be in and drew exactly what
+       the face above it drew. */
+    ['the word order, nothing placed yet', () => {
         window.route = 'gram'; NAV = [{ r:'gram', a:'v2:order' }];
-        GORD = null;
-        return vGram(); }],
-    /* A CARD IN THE AIR. The board is carried with a finger, so the second
-       face is one card held: GORD is where the app keeps what is under the
-       finger and g2Card() is what draws it lit. It was g2Lift='order:0' when
-       the order was two presses and a swap, and that state is one the sentence
-       chapter can no longer be in -- a face nothing can reach walks a screen
-       the app does not have. */
-    ['the word order, a card being carried', () => {
-        window.route = 'gram'; NAV = [{ r:'gram', a:'v2:order' }];
-        GORD = { r:'O', on:true };
-        const h = vGram(); GORD = null; return h; }],
+        keepDrop(keepKeyOf('gram', 'v2:order'));
+        const h = vGram();
+        keepDrop(keepKeyOf('gram', 'v2:order'));
+        return h; }],
     /* And a board with a fourth card on it -- 「3語以外も置けるようにしたい」.
        The rail underneath is one card shorter, which is the state every claim
        about carrying one off it is about. */
@@ -2538,11 +2542,14 @@ export function halfDone(){
        is no route to it: the migration runs at load, and a language minted
        afterwards is one this file has to mint itself.
 
-       It is here because this screen CHANGES with it. g2Board() opens the
+       It is here because this screen CHANGES with it. g2Board() opened the
        screen's buffer from orderDef().seq with no gate at all, so a new
-       language used to come out wearing the phone's answer -- the cards in the
-       order OSV -- where it comes out 主語 目的語 動詞 now, which is the
-       default with nothing chosen. */
+       language came out wearing the phone's answer -- the cards in the order
+       OSV. It opens from g2Stored() now, which is what this language has
+       SAVED and nothing else, so a language nobody has answered for comes out
+       with the lines empty and every card in the tray. Both the leak and the
+       default that replaced it are gone from the picture; what this face still
+       holds is that the phone's old SET.order does not arrive on the board. */
     ['§14 語順、a language just made on a phone that had one', () => {
        const wasLangs = JSON.parse(JSON.stringify(LANGS));
        const wasId = langId, wasStg = JSON.parse(JSON.stringify(STG));
