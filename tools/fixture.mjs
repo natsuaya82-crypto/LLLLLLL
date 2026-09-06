@@ -243,6 +243,17 @@ export function seed(){
      five-letter alphabet that no free phone can be holding, and the QWERTY
      was three keys wide. */
   ltStart();
+  /* AND ONE WORD SPELLED IN THAT ALPHABET. Every word above carries `ph` and
+     no `sp`, which is what a word looked like before the spelling was the
+     word -- spOf() cuts those into syllables no letter writes, and a position
+     with no letter behind it is named by the unit it holds. A reading is
+     written onto units (wdSetRd), so on those words a reading and a name are
+     one string and the reading screen is not offered at all (spRdOK,
+     www/letters.js). Nothing here was a word anybody had typed, so `spell`
+     was a route with no way in and act-check said so. Typed through the
+     app's own road rather than by writing letter ids down here, which would
+     be a second answer to which letter writes `k`. */
+  var __kano=findWord('kano'); if(__kano) __kano.sp=spType(__kano.hw);
   /* and the ink for the post that is this person's own, for the same reason:
      boot.js cut what it could before this file put these posts here. */
   migratePostInk();
