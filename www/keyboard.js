@@ -2692,8 +2692,15 @@ function vKb(){
      with the editor goes with it: the row of faces (it has one), the height
      (it is the height free types at), and the row of keys as buttons. What
      stays is Apply, because choosing it is the one thing anybody does to it. */
+  /* AND THE ? IS ON THIS SCREEN, not on the list and not on the contents.
+     「「？」は一覧ではなく、一つ中（板を開いた画面）の bar に」 OWNER
+     2026-09-06. navTop() takes it back out of the corner and stands it beside
+     the name of the screen (www/home.js § helpQCut), so the ... keeps the
+     corner. It is on BOTH faces: what is behind it is how to switch the
+     keyboard on in iOS and whether the letters were handed over, and board 0
+     is the keyboard the free plan types on. */
   if(kbIsFree(now))
-    return '<div class="view">'+navTop('', kbMoreQ())+'<div class="body">'+
+    return '<div class="view">'+navTop('', helpQ('kb')+kbMoreQ())+'<div class="body">'+
       kbHTML(null, true)+
       kbSysHTML()+
       kbApplyHTML()+
@@ -2701,7 +2708,7 @@ function vKb(){
   /* The name on this board is typed into a buffer, so the buffer has to exist
      before the field is drawn out of it. www/shell.js § KEEP. */
   kbKeepOn();
-  return '<div class="view">'+navTop('', kbMoreQ())+'<div class="body">'+
+  return '<div class="view">'+navTop('', helpQ('kb')+kbMoreQ())+'<div class="body">'+
     kbNameHTML(now)+
     kbToolHTML()+
     kbHTML(kbSel)+

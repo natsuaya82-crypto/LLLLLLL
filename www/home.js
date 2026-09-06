@@ -563,18 +563,16 @@ function vBuild(){
         esc(pageName('find'))+'">'+ICON_LENS+'</button>')+
     '<div class="body" style="padding-top:4px">'+
     capBanner()+
-    /* AND THE MARK BESIDE THE CHAPTER'S NAME, where a chapter is chosen.
-       「キーボードの？は目次のキーボードの題名の横」 OWNER 2026-09-05. It was
-       in the corner of the keyboard's own page, which is one screen further
-       in than the question 「how do I switch this on」 is asked.
-
-       Asked of the row rather than named: helpQ() answers with nothing for a
-       chapter that has nothing to explain, so this is the keyboard today and
-       is whatever HELP holds tomorrow -- no list here to be forgotten. */
+    /* AND NO MARK HERE. 「「？」は一覧ではなく、一つ中（板を開いた画面）の
+       bar に」 OWNER 2026-09-06, which replaces 「キーボードの？は目次の
+       キーボードの題名の横」 of 2026-09-05: the contents is a list of
+       chapters, and this row is one of them. It is on the keyboard's own page
+       now (www/keyboard.js § vKb), which is the screen the answer is about --
+       the keys are drawn on it and 「how do I switch this on」 is asked with
+       one in front of you. A chapter's row here is its name and the way in. */
     '<div class="toc">'+tocRows().map(function(row, i){
       return '<button class="trow"' + DO('go', [row.r]) + '>'+
         '<span class="rn">'+(TOC_N[i]||'')+'</span><span class="rt">'+esc(t(row.k))+'</span>'+
-        helpQ(row.r)+
         '<span class="lead"></span>'+ICON_GO+'</button>';
     }).join('')+'</div>'+
     /* Settings used to hang off the bottom of the contents. It belongs to the
