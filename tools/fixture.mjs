@@ -247,7 +247,10 @@ export function seed(){
      boot.js cut what it could before this file put these posts here. */
   migratePostInk();
   STG = {done:{}, notes:{gr:'x'}, set:{}, extra:[],
-         rules:{neg:'a rule'}, ex:{neg:[{lb:'a', ln:'kano tir', gl:'b'}]},
+         /* Under 挨拶 rather than 否定: the 否定 stage is gone (「重複はいらない」
+            OWNER 2026-09-06) and a rule and an example filed under a stage
+            that is not there any more are a page nothing renders. */
+         rules:{greet:'a rule'}, ex:{greet:[{lb:'a', ln:'kano tir', gl:'b'}]},
          /* One rule for making a form, because the screen it is written on
             renders nothing at all without one -- so a walk over an empty list
             pressed the button that opens the editor and came back with a
@@ -2250,10 +2253,10 @@ export function halfDone(){
        is drawn TWICE: with the row for one more folded away, which is what it
        opens as, and with it out, because the three fields and the Enter on
        them exist only while it is out. */
-    ['what a stage says its rule is', () => { openStRules('neg'); return vForm(); }],
-    ['the examples of a stage', () => { stExNew=''; openStEx('neg'); return vForm(); }],
+    ['what a stage says its rule is', () => { openStRules('greet'); return vForm(); }],
+    ['the examples of a stage', () => { stExNew=''; openStEx('greet'); return vForm(); }],
     ['an example being written', () => {
-        stExOpen('neg');
+        stExOpen('greet');
         const h=vForm(); stExNew=''; return h; }],
     /* The sheet (www/sheet.js, chapter 26). Four faces, because they share no
        buttons: the room, the names being typed, the one control before a file
@@ -2358,15 +2361,14 @@ export function halfDone(){
        wldSecs().forEach(function(sec){ ABOPEN[sec.r] = true; });
        window.route = 'world'; NAV = [{ r:'world' }];
        return vWorld(); }],
-    /* The word order WITH the demonstration under it. Every chapter that shows
-       one draws it only once the stage has been touched -- `stTouched(id)` is
-       `STG.set[id]`, and the seed's `set` is empty -- so `.gdemo`, the row
-       inside it and the button that says the line out loud were on no route
-       and in no face, and could not be photographed at all. Appended at the
-       END so no index above it moves. */
+    /* The word order. It was the 語順 STAGE, which is gone -- the 語順 chapter
+       of the rule-made group was the same page said twice, 「重複はいらない」
+       OWNER 2026-09-06 -- so this is that chapter, which is where the board
+       and the sentence under it are now. Appended at the END so no index
+       above it moves. */
     ['the word order, with the demonstration under it', () => {
        STG.set['order'] = 1;
-       window.route = 'gram'; NAV = [{ r:'gram', a:'order' }];
+       window.route = 'gram'; NAV = [{ r:'gram', a:'v2:order' }];
        return vGram(); }],
     /* ---- the search boxes, with something typed in them -----------------
        The cross only exists once there is something to clear, so a box with

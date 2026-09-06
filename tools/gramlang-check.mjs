@@ -93,7 +93,7 @@ const LA_PHASES = { done: { greet: true }, notes: { neg: 'a note' },
 /* A phone with somebody on it. Every screen in this file is one you have to
    be signed in to see -- OWNER 2026-08-26, 「言語はアカウントないと作れない
    です」-- and appIs() in www/shell.js sends a phone with no session to the
-   door instead of to the route it was asked for. Without this, go('gram','neg')
+   door instead of to the route it was asked for. Without this, go('gram','greet')
    renders the sign-in screen, `.segs .seg.on` matches nothing, and four of the
    claims below read "" for the wrong reason while a fifth PASSES for the wrong
    reason: "a stage nobody has touched lights nothing" is also true of a door.
@@ -345,27 +345,26 @@ const g = await pg.evaluate(() => {
      lit. It passed through a whole run where every other claim here was
      rendering the sign-in screen. */
   const segs = () => document.querySelectorAll('.segs .seg').length;
-  go('gram', 'desc');
-  const untouched = lit(), untouchedOf = segs();
-  go('gram', 'neg');
-  const touched = lit();
-  /* And pressing one is what turns it on, with nothing else changing. */
-  go('gram', 'desc');
-  setGPos('adj', 'after');
-  return { untouched: untouched, untouchedOf: untouchedOf,
-           touched: touched, pressed: lit(),
-           /* What the button SAYS is the interface language's and is asked of
-              the page rather than written out here -- a check that spells the
-              label itself is a second copy of it. */
-           saysBefore: gPosLab('negp', 'before'), saysAfter: gPosLab('adj', 'after'),
-           /* the value was 'after' before the press as well -- what moved is
-              that somebody said so */
+  /* It was the 形容詞 and 否定 STAGES. Both are gone -- the rule chapters are
+     the grammar and the stages beside them were the same chapter twice,
+     「重複はいらない」 OWNER 2026-09-06 -- so the side is decided where it is
+     now decided, on the chapter's own page. */
+  go('gram', 'v2:adj');
+  const on = segs(), first = lit(), stood = gPosLab('adj', gPos('adj'));
+  /* And pressing the other side is what moves it, with nothing else changing.
+     Which side it stood on to begin with is READ rather than written down
+     here: the seed is somebody else's file and a check that names the answer
+     is a second copy of it. */
+  const other = gPos('adj') === 'before' ? 'after' : 'before';
+  setGPos('adj', other);
+  go('gram', 'v2:adj');
+  return { on: on, first: first, stood: stood, moved: lit(),
+           saysOther: gPosLab('adj', other),
            was: STG.set.adj ? 'marked' : 'not marked' };
 });
-want('a stage nobody has touched is on the page', g.untouchedOf > 0, true);
-want('and lights nothing', g.untouched, '');
-want('one that was touched lights the answer it was given', g.touched, g.saysBefore);
-want('pressing the button that was already the default lights it', g.pressed, g.saysAfter);
+want('the chapter that decides a side has both of them on the page', g.on, 2);
+want('and lights the one this language stands on', g.first, g.stood);
+want('pressing the other moves it', g.moved, g.saysOther);
 want('and marks it as chosen', g.was, 'marked');
 
 /* ---- 9: a stage with nothing more to say says nothing --------------------
@@ -374,17 +373,13 @@ want('and marks it as chosen', g.was, 'marked');
    with the key itself when nothing defines it, and 「否定」の下に
    「stg.neg.d」 is worse than the sentence that was removed. */
 const h = await pg.evaluate(() => ({
-  neg: stWhat(stBy('neg')), have: stWhat(stBy('have')),
-  when: stWhat(stBy('when')), desc: stWhat(stBy('desc')),
+  have: stWhat(stBy('have')), when: stWhat(stBy('when')),
   /* and one that adds something is untouched */
-  count: stWhat(stBy('count')), order: stWhat(stBy('order'))
+  count: stWhat(stBy('count'))
 }));
-want('the negation stage says nothing under its title', h.neg, '');
-want('nor does belonging', h.have, '');
+want('the belonging stage says nothing under its title', h.have, '');
 want('nor time', h.when, '');
-want('nor describing', h.desc, '');
 want('a stage that adds something still says it', h.count !== '', true);
-want('and so does the word order', h.order !== '', true);
 
 /* ---- 10: a word the dictionary does not have ----------------------------
    The row is exRowHTML() in www/wordsheet.js and a stage's Lines are one of
@@ -394,10 +389,10 @@ want('and so does the word order', h.order !== '', true);
    The examples are a PAGE of their own now -- 「例文もそう」 OWNER 2026-09-05
    -- so this opens that page rather than the stage they used to sit inside. */
 const k = await pg.evaluate(() => {
-  stEx('neg').length = 0;
-  stEx('neg').push({ lb: 'a', ln: 'tuf rice', gl: 'b' });
+  stEx('greet').length = 0;
+  stEx('greet').push({ lb: 'a', ln: 'tuf rice', gl: 'b' });
   saveStg();
-  openStEx('neg');
+  openStEx('greet');
   render();
   const line = document.querySelector('.exl');
   return {
@@ -1005,7 +1000,8 @@ want('and they are numbered, not named the same thing twice',
      nTwo.map((x) => x.lab).join(''), '\u2776\u2777');
 
 /* 3. a word of its own, which is not a rule at all. Where it goes is what this
-   language answered -- STG.gpos.negp, set on the 否定 stage's own page -- so
+   language answered -- STG.gpos.negp, which has no page of its own since the
+   否定 stage went (docs/BACKLOG.md) -- so
    the same word is asked for twice, after the verb and before it, and the two
    lines have to differ. A drawing that put it in a fixed place would give the
    same answer to both. */

@@ -105,7 +105,7 @@ function gPosLab(id, o){ return t('gram.pos.'+o+'.'+(GPOS_OF[id]||'n')); }
 
 /* ---- reading the words the stages made --------------------------------- */
 function gSlot(pid, k){
-  var p=(typeof stBy==='function')? stBy(pid) : null;
+  var p=(typeof stSlotsBy==='function')? stSlotsBy(pid) : null;
   return p? stWordFor(p, k) : null;
 }
 /* Every word a stage made, not the first one. A language has one word for
@@ -114,7 +114,7 @@ function gSlot(pid, k){
    all of them to know which words are adpositions at all. gSlotAny is the
    head of this list rather than a second walk of the same slots. */
 function gSlotAll(pid){
-  var p=(typeof stBy==='function')? stBy(pid) : null, i, w, out=[];
+  var p=(typeof stSlotsBy==='function')? stSlotsBy(pid) : null, i, w, out=[];
   if(!p) return out;
   for(i=0;i<p.slots.length;i++){ w=stWordFor(p, p.slots[i]); if(w) out.push(w); }
   return out;
@@ -639,8 +639,9 @@ function g2Demo(){
 /* §14 Sentence Structure. The board, then this language's own words in the
    order it says. gOrderLine() drew the same role names with chevrons between
    them and is not here: the cards ARE that line now, and the same fact twice
-   on one screen is the thing this repository is most often bitten by. It is
-   still what www/phases.js draws on the old stage screen. */
+   on one screen is the thing this repository is most often bitten by. The
+   語順 stage that drew it a second way is gone -- 「重複はいらない」 OWNER
+   2026-09-06 -- so this is the one place the board is. */
 function g2Sent(){
   return g2Board()+g2Demo();
 }
@@ -1009,11 +1010,13 @@ function g2Adj(){
    carries that, because which of the two places a person should write it in
    is not this file's to decide.
 
-   The place words themselves are the 場所 stage's and are not listed again
-   here: this chapter is about how a place is SAID, not about which places
-   this language has words for. */
+   The place words themselves are under the pair now. There WAS a 場所 stage
+   holding them and this chapter beside it, which is the one list saying 場所
+   twice -- 「重複はいらない」 OWNER 2026-09-06. They are the same rows the
+   stage drew, from www/phases.js's CHAP_SLOTS, so nothing anybody made moved
+   and nothing new is stored. */
 function g2Adp(){
-  return g2Side('adp', gSlotAny('where'), gWordOf('n'));
+  return g2Side('adp', gSlotAny('where'), gWordOf('n'))+chapSlotsHTML('adp');
 }
 
 /* §14 Questions says 「方法は言語によって違う ── suffix / prefix / separate
@@ -1220,7 +1223,10 @@ function g2FmAdd(c){
   return '<button class="stslot"' + DO('fmrNew', [c.pos, c.fm]) + '>'+
     '<span class="psm">'+esc(t('g2.fm.add'))+'</span>'+ICON_GO+'</button>';
 }
-function g2FmChap(c){ return g2FmRows(c)+g2FmAdd(c); }
+/* And the words this chapter's own stage used to ask for, where there was
+   one: 否定形 wants the word for "not" and 疑問形 the six question words.
+   chapSlotsHTML() draws nothing for the eleven chapters that have none. */
+function g2FmChap(c){ return g2FmRows(c)+g2FmAdd(c)+chapSlotsHTML(c.id); }
 /* What is behind the `?`. 「説明禁止の代わりに？を儲けてるからね？」 OWNER
    2026-09-05 -- so a chapter says nothing about itself on the screen and the
    whole of what it means is one press away. The two lines are the app's own

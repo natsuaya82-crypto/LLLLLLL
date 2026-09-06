@@ -224,27 +224,28 @@ function saveStg(){ if(langLocked()) return; bkTouch(); slWr(langKey('phases'), 
      the rule                written by you, in your own words
      lines that show it      pairs you can put side by side and compare
 
-   Word order stays a choice with buttons, because it genuinely is one: six
-   options, one answer, and the answer changes every sentence. Nothing else
-   is. The rest are written, because a grammar is written.
+   The rest are written, because a grammar is written.
 
-   Fifteen parts, and you can add as many of your own as you like. */
+   SEVEN OF THEM ARE GONE. 語順, 名詞（複数）, 動詞（時制）, 否定, 疑問, 形容詞
+   and 場所 were each a chapter of the rule-made group as well, so one list
+   named them twice and the number beside each pair was the only thing telling
+   them apart. 「文法はさっき言ったルール。しっかり翻訳できる仕様にしてくれれば
+   いい。重複はいらない。」 OWNER 2026-09-06 -- the rule chapters are the
+   grammar, and what is left here is the ten no rule chapter says.
+
+   The WORDS three of them asked for did not go with them: CHAP_SLOTS below
+   carries those slots, under the ids they were stored under, and the chapter
+   of the same name draws them. Ten parts, and you can add as many of your own
+   as you like. */
 var STAGES=[
   {id:'greet', slots:['yes','no','hello','bye','thanks'], pos:'x',   feats:[]},
   {id:'pron',  slots:['i','you','he','we','youpl','they'], pos:'pro', feats:[]},
-  {id:'order', slots:[], pos:'v', feats:['order']},
-  {id:'noun',  slots:[], pos:'n',  feats:[]},
-  {id:'verb',  slots:[], pos:'v',  feats:[]},
-  {id:'neg',   slots:['not'], pos:'part', feats:['negp']},
-  {id:'ask',   slots:['what','who','where','when','why','how'], pos:'pro', feats:[]},
-  {id:'desc',  slots:[], pos:'adj', feats:['adj']},
   {id:'have',  slots:[], pos:'n', feats:[]},
   /* The numbers are numerals, which read the same in every language on the
      list, so they are the one set of labels that needs no translating. */
   {id:'count', slots:['1','2','3','4','5','6','7','8','9','10'], pos:'num', feats:[]},
   {id:'conj',  slots:['and','or','but','because','if','then'], pos:'conj', feats:[]},
   {id:'polite',slots:[], pos:'x',  feats:[]},
-  {id:'where', slots:['in','on','under','to','from','with'], pos:'part', feats:['adp']},
   /* Particles. It sat in a list of its own, off the chapter until somebody
      pressed a row at the foot -- 「助詞は最初から出せ」 OWNER 2026-09-01, so
      it is a stage like the rest. A language with no particles leaves it empty,
@@ -257,6 +258,41 @@ var STAGES=[
   {id:'month', slots:[], pos:'n', feats:[]},
   {id:'wday',  slots:[], pos:'n', feats:[]}
 ];
+/* The words three chapters of the rule-made group ask for. They were the
+   slots of three stages that are gone, and a word somebody made for one of
+   them is in WORDS with `neg.not` or `ask.what` or `where.in` written on it --
+   so the ids here are the ids they were stored under, and every one of those
+   words is still found by the row that asks for it.
+
+   `chap` is which chapter draws them: the 否定 stage's word for "not" belongs
+   to the 否定形 chapter, the 疑問 stage's six to 疑問形, and the 場所 stage's
+   six to 場所. No feats: what a chapter decides is the chapter's, and the two
+   that decide a side -- 形容詞 and 場所 -- ask g2Side() on their own page.
+
+   The negation's own side has nowhere left to be set. It was this stage's
+   `negp` and the 否定形 chapter has no picker; docs/BACKLOG.md is where that
+   goes, not a second table here. */
+var CHAP_SLOTS=[
+  {id:'neg',   chap:'neg', slots:['not'], pos:'part', feats:[]},
+  {id:'ask',   chap:'q',   slots:['what','who','where','when','why','how'], pos:'pro', feats:[]},
+  {id:'where', chap:'adp', slots:['in','on','under','to','from','with'], pos:'part', feats:[]}
+];
+function chapSlots(id){
+  var i;
+  for(i=0;i<CHAP_SLOTS.length;i++) if(CHAP_SLOTS[i].id===id) return CHAP_SLOTS[i];
+  return null;
+}
+/* The rows one chapter draws, asked by the CHAPTER's id rather than the
+   slots' -- 疑問形 is `q` and the slots it draws are `ask`'s. Drawn by
+   stSlotRow(), which is the row the stage drew, so a slot looks and behaves on
+   a chapter exactly as it did on the stage it came from. */
+function chapSlotsHTML(chap){
+  var p=null, i, out='';
+  for(i=0;i<CHAP_SLOTS.length;i++) if(CHAP_SLOTS[i].chap===chap) p=CHAP_SLOTS[i];
+  if(!p) return '';
+  for(i=0;i<p.slots.length;i++) out+=stSlotRow(p, p.slots[i]);
+  return '<div class="sec">'+t('stg.words')+'</div><div class="stslots">'+out+'</div>';
+}
 /* Stages that are not every language's, and are not offered until somebody's
    language turns out to have one.
    「助詞がない言語もあるんだから、助詞が最初からあるのおかしいだろ」
@@ -333,6 +369,11 @@ function stBy(id){
   for(i=0;i<a.length;i++) if(a[i].id===id) return a[i];
   return null;
 }
+/* What SLOTS an id has, wherever they live. A stage carries its own; three
+   chapters carry the ones their stage used to. stBy() stays "is this a stage"
+   -- it is what the route, the bar and the detail page ask, and answering it
+   with a chapter's slots would put a second page back on the list. */
+function stSlotsBy(id){ return stBy(id) || chapSlots(id); }
 /* What a slot is called. A stage you added names its own; the numbers name
    themselves. */
 function stSlotLabel(p, k){
@@ -423,7 +464,7 @@ function stCount(){
    A slot that is already filled is not a form at all -- it is a word, and it
    opens on the word. */
 function openSlot(pid, k){
-  var p=stBy(pid) || stAll()[0];
+  var p=stSlotsBy(pid) || stAll()[0];
   var key=(k===undefined||k===null)? (p.slots[0]||'') : String(k);
   var had=stWordFor(p, key);
   if(had){ openWord(had.hw); return; }

@@ -525,14 +525,19 @@ vm.runInContext(fs.readFileSync('www/grammar.js','utf8'),app,{filename:'www/gram
    else now, so anything that starts reading it again fails here first. */
 function stage(words,lang,slots){
   app.WORDS=words.slice(); app.SET={}; app.STG=lang||{}; app.langId='demo';
-  /* stBy/stWordFor are www/phases.js's. A stage is "the words made in it",
-     which is all gRules() asks of them -- www/grammar.js already guards both
-     with typeof, so a language with no stages is the no-stub case below. */
+  /* stSlotsBy/stBy/stWordFor are www/phases.js's. A stage is "the words made
+     in it", which is all gRules() asks of them -- www/grammar.js already
+     guards them with typeof, so a language with no stages is the no-stub case
+     below. stSlotsBy() is the one gSlot()/gSlotAll() ask now: three of the
+     stages that held slots are gone and their words are the rule chapters'
+     (www/phases.js CHAP_SLOTS), so "which slots does this id have" and "is
+     this a stage" are two questions. Both answer the same here. */
   if(slots){
-    app.stBy=(id)=>slots[id]?{id, slots:Object.keys(slots[id])}:null;
+    const by=(id)=>slots[id]?{id, slots:Object.keys(slots[id])}:null;
+    app.stSlotsBy=by; app.stBy=by;
     app.stWordFor=(p,k)=>{ const hw=slots[p.id][k]; let f=null;
       for(const w of app.WORDS) if(w.hw===hw) f=w; return f; };
-  } else { app.stBy=undefined; app.stWordFor=undefined; }
+  } else { app.stSlotsBy=undefined; app.stBy=undefined; app.stWordFor=undefined; }
 }
 const DICT=[{hw:'mi',mns:['I','me'],pos:'pro'},{hw:'poko',mns:['fish'],pos:'n'},
             {hw:'suli',mns:['big'],pos:'adj'},{hw:'luma',mns:['eat'],pos:'v'},
