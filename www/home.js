@@ -162,10 +162,26 @@ var FORM_OPEN={};   /* what rebuilds it when you arrive by the back button */
 /* `fit` is the sixth: a form that is one screen and does not scroll. It was
    read off FORM in vForm() and set by nobody, so the composer scrolled, kept
    its bar of tabs, and let the keyboard carry its own header off the top of
-   the phone -- while a comment two files away said otherwise. */
+   the phone -- while a comment two files away said otherwise.
+
+   AND IT SAYS WHICH SCREEN IT IS ONE OF. Two forms ask for it and they want
+   two different heights:
+
+     true     the height the phone has with the KEYBOARD UP (`--vvmin`). The
+              composer, which has a bar and a row of pictures under the field
+              -- laid out to anything taller and they slide down the phone
+              every time the keyboard goes 「キーボードをおろしても位置は
+              動かない」.
+     'full'   the whole screen, keyboard or no keyboard 「キーボードかんがえ
+              ないでいいから。画面全部にしてほしい」 OWNER 2026-09-05. The
+              note, which has nothing under the body: a keyboard covers the
+              foot of it and covers nothing anybody was looking at.
+
+   It is one word rather than a second flag because it is one question -- how
+   tall is this one screen -- and a form answers it once. */
 function openForm(key, title, html, mount, right, fit){
   FORM={key:key, title:title, html:html, mount:mount||null, right:right||'',
-        fit:!!fit};
+        fit:fit? (fit==='full'? 'full' : true) : false};
   if(here().r==='form' && here().a===key){ render(); window.scrollTo(0,0); }
   else go('form', key);
 }
@@ -186,7 +202,8 @@ function vForm(){
      bottom, so the thing you were about to press was somewhere you had to go
      and find. 「この中に1画面収めてうごかないようにしてほしい」 The form says
      so when it opens; nothing here decides it. */
-  return '<div class="view'+(FORM.fit? ' fit' : '')+'">'+navTop('', FORM.right)+
+  return '<div class="view'+(FORM.fit? ' fit' : '')+
+    (FORM.fit==='full'? ' fitfull' : '')+'">'+navTop('', FORM.right)+
     '<div class="body" id="form-body">'+FORM.html+'</div></div>';
 }
 /* ---- where an explanation goes -----------------------------------------

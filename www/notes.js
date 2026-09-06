@@ -72,10 +72,9 @@ function openNote(i){
        下線を持たず、この画面に残っている高さを全部取る。
        題名が空のときに一行目が題名になるのは ntHead() が元から読んでいる形。
 
-       **まだ画面の下端までは行っていない。** openForm の fit は高さを
-       `--vvmin` ── キーボードが上がったときの高さ、390x844 では画面の 55%
-       (464px) ── に合わせる箱で、それは投稿画面のための数
-       (www/shell.js § vvFit)。メモをそこから外すのは openForm の側の話。 */
+       下端まで、は openForm の 'full' ── 一画面の高さを画面全部に取る面で、
+       投稿画面の `--vvmin`(キーボードが上がったときの高さ、390x844 では
+       464px) ではない方 (www/home.js § openForm)。 */
     '<div class="field ntform">'+
       lnField('nt-t', t('notes.t'), IN('ntSetT'), ntTyped(k, 't'), 'ntt')+
       '<textarea id="nt-b" class="ntbody" placeholder="'+esc(t('notes.b.ph'))+'"'+
@@ -89,7 +88,7 @@ function openNote(i){
        Deleting is the list's own, by a left swipe on the row -- 「メモの編集の
        ところに削除ボタンやめて。一覧から右にスワイプして削除。標準アプリと
        同じ作りにして」 OWNER 2026-09-05, `delNoteGo()` below. */
-    null, null, true);
+    null, null, 'full');
 }
 FORM_OPEN.note=function(i){ openNote(parseInt(i,10)); };
 /* ---- what is typed on a note, before it is a note -----------------------

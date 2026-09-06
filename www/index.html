@@ -1302,6 +1302,25 @@ html.fitlock, html.fitlock body{height:100%;overflow:hidden;overscroll-behavior:
 .view.fit{position:fixed;left:0;right:0;top:var(--vvtop,0px);
    height:var(--vvmin,55vh);
    display:flex;flex-direction:column;overflow:hidden}
+/* AND THE OTHER KIND OF ONE SCREEN: the whole phone 「キーボードかんがえない
+   でいいから。画面全部にしてほしい」 OWNER 2026-09-05, about the note.
+
+   `--vvmin` above is what the phone has with the keyboard UP, and on a 390x844
+   it never falls below the 55% guess -- so a form laid out to it is 464 of an
+   844 phone and stops just past halfway, whether or not a keyboard is there.
+   That is the right number for the composer, which has a bar and a row of
+   pictures under the field and must not let them slide when the keyboard
+   goes. A note has nothing under the body, so a keyboard covers the foot of a
+   page and covers nothing anybody was reading -- and 「下まで行かない」 is
+   what the owner saw instead.
+
+   www/home.js § openForm is where a form says which of the two it is; nothing
+   here decides it. 100vh first and 100dvh after, the way .ob already does it:
+   an old WKWebView takes the first and every phone gets a full screen. */
+.view.fit.fitfull{height:100vh;height:100dvh}
+/* And no room kept at the foot for a bar this kind of screen does not have --
+   the 53px below is .pwbar's, and it was 53px of nothing under the note. */
+.view.fit.fitfull .body{padding-bottom:env(safe-area-inset-bottom,0px)}
 /* No room left at the foot for the bar of tabs, because there is no bar of
    tabs: a screen that is one screen has nowhere else to be, and where you
    are is not a question anybody is asking while they write a post.
@@ -3646,12 +3665,12 @@ textarea.ntbody.grow{min-height:0;height:auto;overflow:hidden;resize:none}
    この画面に残っている高さを全部取る ── 「題名／下線／この下は何もなくて
    下まで行く」 OWNER 2026-09-05。.lnin の下の余白もここで落とす: 題名の線と
    本文は続いた一枚。
-   残っている高さ、であって画面の高さではない: .view.fit は `--vvmin`
-   (キーボードが上がったときの高さ、390x844 では 464px = 画面の 55%) の箱で、
-   本文はその中で伸びるところまで。下端まで届かせるのは openForm の側。 */
+   残っている高さが画面の下端までであるのは、この画面が openForm の 'full'
+   ── 一画面を画面全部に取る面 ── で開くから (上の .view.fit.fitfull)。 */
 .ntt{flex:0 0 auto;margin-bottom:0}
-.view.fit .ntform{flex:1;min-height:0;display:flex;flex-direction:column}
-.view.fit .ntform .ntbody{flex:1;min-height:0;border-bottom:0}
+.view.fit .ntform{flex:1;min-height:0;display:flex;flex-direction:column;margin-bottom:0}
+/* resize は落とす: 画面いっぱいの一枚に、引っ張って伸ばす角は要らない。 */
+.view.fit .ntform .ntbody{flex:1;min-height:0;border-bottom:0;resize:none}
 
 /* ---------- grammar: a decision, and what it does ----------
    A row of choices, then the piece of sound the choice is carried by, then
