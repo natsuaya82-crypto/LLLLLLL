@@ -235,6 +235,7 @@ act('voDrop', voDrop);
 act('voPlay', voPlay);
 act('pwDropPic', pwDropPic);
 act('pwMarkOpen', pwMarkOpen);
+act('pwMarkClose', pwMarkClose);
 act('pwMarkDel', pwMarkDel);
 act('pwMarkInk', pwMarkInk);
 act('pwTool', pwToolSet);

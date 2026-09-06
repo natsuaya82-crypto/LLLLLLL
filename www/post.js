@@ -1953,13 +1953,13 @@ function pwMarkHTML(){
        buttons over the picture, which is what a phone puts over a picture --
        a pill with a word in it is what a settings screen puts under one. */
     '<div class="mkbar">'+
-      '<button class="mkr"' + DO('back') + ' aria-label="'+esc(t('post.mark.done'))+'">'+
+      '<button class="mkr"' + DO('pwMarkClose') + ' aria-label="'+esc(t('post.mark.done'))+'">'+
         ICON_BACK+'</button>'+
       '<button class="mkr'+(cr?' on':'')+'"' + DO('pwTool', ["crop"]) + ' aria-label="'+
         esc(t('post.cut'))+'">'+ICON_CROP+'</button>'+
       '<button class="mkr'+(cr?'':' on')+'"' + DO('pwTool', ["mark"]) + ' aria-label="'+
         esc(t('post.mark.tool'))+'">'+ICON_LTR+'</button>'+
-      '<button class="mkdone"' + DO('back') + '>'+esc(t('post.mark.done'))+'</button>'+
+      '<button class="mkdone"' + DO('pwMarkClose') + '>'+esc(t('post.mark.done'))+'</button>'+
     '</div>'+
     (cr
       ? '<div class="mktools">'+
@@ -2016,6 +2016,16 @@ function pwToolSet(k){
   pwMarkPaint();
   var e=document.getElementById('mk-tx');
   if(e) e.focus();
+}
+/* The way off this screen, and there is one of it. Done and the arrow are
+   two buttons saying the same thing, and both used to say `back` -- so a mark
+   with nothing typed into it went into the picture's `marks` and travelled
+   with the post, an empty sticker nobody could see or reach. Every road that
+   stops editing a mark passes through pwMarkTrim(): this one, the tools, and
+   another mark being picked up. */
+function pwMarkClose(){
+  pwMarkTrim();
+  back();
 }
 /* A line nobody typed anything into is not a line. */
 function pwMarkTrim(){
@@ -2317,6 +2327,25 @@ function pwMarkFit(){
       box=document.getElementById('mk-box');
   if(!e || !m || !box) return;
   var bw=box.getBoundingClientRect().width||300;
+  e.style.left=(m.x*100)+'%';
+  e.style.top=(m.y*100)+'%';
+  /* How big the field is comes from what is IN the mark, and a mark of no
+     characters is ONE CELL -- the box the first letter is about to land in,
+     at the size it will be the moment it is typed. The floor used to be 44,
+     the thumb's, with the height read off the field's own scrollHeight
+     whatever was in it -- and with nothing typed what is in it is the
+     PLACEHOLDER, so the app's own sentence was flowed into a 44px column at
+     the cell's em and came to a 909px band down a 260px photograph. The
+     placeholder says what the box is for; it does not get to say how big it
+     is. 44 is still the smallest a cell may be, because that is the thumb. */
+  var room=Math.max(44, Math.round(m.s*bw));
+  if(!String(m.tx||'').length){
+    e.style.whiteSpace='';
+    e.style.width=room+'px';
+    e.style.fontSize=pwMarkPhSize(e, room)+'px';
+    e.style.height=room+'px';
+    return;
+  }
   /* The size is not calculated, it is measured against the canvas. The field
      is the font drawing the line and the canvas is inkStrokes drawing it, and
      the two do not agree on their own: the advance the font gives a letter is
@@ -2345,11 +2374,24 @@ function pwMarkFit(){
      the photograph gets. Both ask pwMarkLines(); the sizes agree because the
      two renderers were reconciled three lines up. */
   e.style.whiteSpace='';
-  e.style.width=Math.max(44, Math.round(pwMarkWide(m)*bw)+4)+'px';
+  e.style.width=Math.max(room, Math.round(pwMarkWide(m)*bw)+4)+'px';
   e.style.height='auto';
-  e.style.height=Math.max(44, e.scrollHeight)+'px';
-  e.style.left=(m.x*100)+'%';
-  e.style.top=(m.y*100)+'%';
+  e.style.height=Math.max(room, e.scrollHeight)+'px';
+}
+/* And how big the placeholder is drawn, which is the field's own font-size:
+   there is one type size on this field and the app's sentence has to fit the
+   cell in it. Measured down rather than worked out -- how a sentence wraps
+   does not scale with its type size -- starting at the cell's own em, which
+   is the size a letter typed here would be. */
+function pwMarkPhSize(e, room){
+  var fs=Math.max(8, Math.round(room*1.25)), i;
+  e.style.height='auto';
+  for(i=0;i<14 && fs>8;i++){
+    e.style.fontSize=fs+'px';
+    if(e.scrollHeight<=room && e.scrollWidth<=room) break;
+    fs=Math.max(8, Math.round(fs*0.75));
+  }
+  return fs;
 }
 /* One pointer, on the box rather than on each letter: a finger that leaves a
    small canvas mid-drag would otherwise drop it. */
