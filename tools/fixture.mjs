@@ -1898,12 +1898,10 @@ export function halfDone(){
            and then presses it, so a rule that only exists while the HTML is
            being made is a rule fmrKeep cannot find -- every press emptied the
            screen. One rule is what a language with a rule looks like. */
-        STG.fm = [];
-        fmrNew();
-        const r = fmRules()[0];
-        r.pos = 'v'; r.fm = 'pst'; r.add = spType('ied');
-        r.drop = 1; r.when = 'x'; r.wend = spType('y');
+        STG.fm = [{ id: 'fr-old', pos: 'v', fm: 'pst', at: 'end',
+                    add: spType('ied'), drop: 1, when: 'x', wend: spType('y') }];
         saveStg();
+        openFmr('fr-old');
         return sheet(fmrFormHTML()); }],
     ['the two that undo a keyboard', () => {
         SET.plan = 'pro'; KB = null; kbShow = 0;

@@ -1316,6 +1316,14 @@ const mk = await pg.evaluate(() => {
   const wasFm = JSON.stringify(STG.fm || []), wl = WORDS.length;
   WORDS.push({ hw:'zluma', pos:'v', mns:['eat'], at:1 });
   STG.fm = [];
+  fmrDraft = null;
+  /* ONE WINDOW IS FAKED and everything over it runs for real, which is what
+     keep-check does for the same reason: a save is not saved until it is up
+     (www/shell.js § keepSave) and there is no server behind this file. */
+  LANGS[langId].sid = 'srv-known'; langStore();
+  netSend = function (method, path, body, tok, ok, bad) {
+    ok(String(path).indexOf('/rest/v1/language?') === 0 ? [{ id: 'srv-known' }] : []);
+  };
   const open = (id) => { window.route = 'gram';
     NAV = [{ r:'gram', a:'v2:' + id }]; render(); };
   /* Found by what it WRITES rather than by what it is called: this check runs
@@ -1336,14 +1344,29 @@ const mk = await pg.evaluate(() => {
      is what the one button here used to be able to make -- and pressing the
      past would look perfectly right. */
   const pasArg = press('pas');
+  /* AND PRESSING IT WRITES NOTHING YET. A rule is a rule once it is SAVED
+     (www/wordsheet.js § writing one): the row opens a draft, so a sheet
+     opened and left without a word typed into it leaves the chapter as it
+     was. It used to push the rule and saveStg() it on the press, and an empty
+     one stayed in the chapter and went up to the server. */
+  const nOnPress = STG.fm.length;
+  /* The Save writes it, and that is the road a thumb takes: a letter typed
+     into the field, then the button in the corner. */
+  const fld = document.getElementById('fmr-add');
+  fld.value = 'ta';
+  fld.dispatchEvent(new Event('input', { bubbles: true }));
+  keepPress();
   const made = (STG.fm[0] || {}), nMade = STG.fm.length;
   /* and it goes on offering: a form is not one rule */
   open('pas');
   const stillOffers = adds().length;
   /* One from another chapter, so the PART OF SPEECH is tested as well: a
-     chapter that wrote its own name would give both rules `v`. */
+     chapter that wrote its own name would give both rules `v`. Read off the
+     draft, because nothing is typed into this one -- what is being asked is
+     which two answers the row handed over. */
   const plArg = press('pl');
-  const second = STG.fm[1] || {};
+  const second = fmrDraft || {};
+  fmrDraft = null;
   /* and a chapter that is not a form has no such row at all */
   open('n');
   const nounAdds = adds().length;
@@ -1351,18 +1374,20 @@ const mk = await pg.evaluate(() => {
   WORDS.length = wl;
   STG.fm = JSON.parse(wasFm);
   return { pasArg: pasArg, plArg: plArg, pos: made.pos, fm: made.fm,
-           n: nMade, stillOffers: stillOffers, nounAdds: nounAdds,
+           n: nMade, nOnPress: nOnPress, stillOffers: stillOffers,
+           nounAdds: nounAdds,
            secondPos: second.pos, secondFm: second.fm };
 });
 
 want('a chapter that is a form says what it would write', mk.pasArg, '["v","pas"]');
-want('pressing it writes exactly one rule', mk.n, 1);
+want('pressing it writes nothing into the chapter yet', mk.nOnPress, 0);
+want('and the save writes exactly one rule', mk.n, 1);
 want('with the part of speech of the chapter', mk.pos, 'v');
 want('and the form of the chapter', mk.fm, 'pas');
 want('and it goes on offering another, because a form is not one rule',
      mk.stillOffers, 1);
 want('another chapter says its OWN two answers', mk.plArg, '["n","pl"]');
-want('and its row writes a NOUN rule', mk.secondPos, 'n');
+want('and its row starts a NOUN rule', mk.secondPos, 'n');
 want('of the form that chapter names', mk.secondFm, 'pl');
 want('a chapter that is not a form offers no rule to write', mk.nounAdds, 0);
 

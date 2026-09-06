@@ -686,8 +686,13 @@ function fmGroupHTML(hw, g, now){
    and typing it by hand is not working around the rule -- it is the rule not
    applying, which is what an irregular is. */
 function fmRules(){ if(!STG.fm) STG.fm=[]; return STG.fm; }
+/* WHICH RULE AN ID IS, AND IT IS THE ONE PLACE THAT CHOOSES. A rule being
+   written for the first time is not in the chapter yet -- it is the draft
+   (fmrDraft, § writing one) -- so every screen that asks for a rule by its id
+   asks here and none of them has to know which of the two it has. */
 function fmrById(id){
   var a=fmRules(), i;
+  if(fmrDraft && fmrDraft.id===String(id)) return fmrDraft;
   for(i=0;i<a.length;i++) if(a[i].id===String(id)) return a[i];
   return null;
 }
@@ -961,10 +966,23 @@ var fmrOpen='';
    the part of speech and the form were how you got any other. A chapter of the
    grammar page knows both before the button is pressed, so it says them here
    and those two screens have nothing left to ask. */
+/* A RULE IS A RULE ONCE IT IS SAVED. This used to push the new one onto
+   STG.fm and saveStg() it before the sheet had been seen, so opening the
+   sheet and walking back out without typing anything left an empty ❷ in the
+   chapter -- written to the phone, sent to the server, and there for somebody
+   to find and delete.
+
+   So a new one is a DRAFT until the save, which is the shape the new-word
+   sheet at the head of this file already has (`addW`): the fields write into
+   the draft, back with nothing in it leaves nothing behind, back with
+   something in it is the question KEEP asks on every other screen, and the
+   save is the one place a rule joins the chapter. An EXISTING rule is
+   unchanged -- the sheet writes it where it lives, as it always has. */
+var fmrDraft=null;
 function fmrNew(pos, fm){
-  var r={id:'fr'+Date.now()+String(fmRules().length), pos:pos||'v', fm:fm||'pst',
-         at:'end', drop:0, add:[], when:''};
-  fmRules().push(r); saveStg(); openFmr(r.id);
+  fmrDraft={id:'fr'+Date.now()+String(fmRules().length), pos:pos||'v', fm:fm||'pst',
+            at:'end', drop:0, add:[], when:''};
+  openFmr(fmrDraft.id);
 }
 function fmrSegs(now, list, fn){
   var i, out='<div class="pick">';
@@ -1010,13 +1028,46 @@ function openFmr(id){
   var r=fmrById(id);
   if(!r) return;
   fmrOpen=String(id);
+  fmrKeepOn();
   openForm('fmr:'+fmrOpen, t('fmr.title'), fmrFormHTML());
 }
 FORM_OPEN.fmr=function(id){ openFmr(id||''); };
+/* The sheet said once, so "has anything been typed" is two of these compared
+   -- what wdSig() is for the word sheet. The letters and which end they go on
+   is the whole screen (fmrFormHTML above); nothing else on a rule is
+   reachable from here. */
+function fmrSig(r){ return JSON.stringify([(r && r.add)||[], (r && r.at)||'end']); }
+/* The buffer is the DRAFT's alone. An existing rule is written where it lives
+   on every keystroke and has been since it was built that way; putting it
+   behind a Save would be changing a screen nobody asked to have changed. */
+function fmrKeepOn(){
+  if(!fmrDraft || fmrOpen!==fmrDraft.id || langLocked()) return;
+  keepOn(keepKeyOf('form', 'fmr:'+fmrOpen), {r:fmrSig(fmrDraft)},
+         function(v, done){ done(fmrDraftWrite()); });
+}
+/* And the draft said again into it, from the one place a change to a rule
+   goes through, so the Save in the corner lights on the first letter typed
+   and the way out asks. */
+function fmrKeepTouch(){
+  if(!fmrDraft || fmrOpen!==fmrDraft.id) return;
+  keepPut(keepKeyOf('form', 'fmr:'+fmrOpen), 'r', fmrSig(fmrDraft));
+}
+/* THE ONE PLACE A NEW RULE JOINS THE CHAPTER. Nothing else pushes onto
+   fmRules(), so a rule that was never saved is a rule that never existed. */
+function fmrDraftWrite(){
+  if(!fmrDraft) return true;
+  fmRules().push(fmrDraft);
+  fmrDraft=null;
+  saveStg();
+  return true;
+}
+/* Where a change to the open rule lands, chosen in one place: the draft, which
+   is written down by the save, or the rule itself, which is written down now. */
 function fmrKeep(fn){
   var r=fmrById(fmrOpen);
   if(!r) return;
-  fn(r); saveStg();
+  fn(r);
+  if(r===fmrDraft) fmrKeepTouch(); else saveStg();
 }
 function fmrSetAdd(v){ fmrKeep(function(r){ r.add=spType(v); }); lnGrow('fmr-add'); }
 function fmrSetAt(v){ fmrKeep(function(r){ r.at=(v==='start')? 'start':'end'; }); fmrPaint(); }
