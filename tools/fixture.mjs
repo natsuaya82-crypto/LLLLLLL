@@ -1503,13 +1503,27 @@ export function halfDone(){
        forever. Two faces, because a word being carried looks different from
        a word standing still, and that difference is the whole chapter. */
     ['the word order, arranged', () => {
-        window.route = 'gram'; NAV = [{ r:'gram', a:'v2' }];
-        g2Lift = '';
+        window.route = 'gram'; NAV = [{ r:'gram', a:'v2:order' }];
+        GORD = null;
         return vGram(); }],
-    ['the word order, one word lifted', () => {
-        window.route = 'gram'; NAV = [{ r:'gram', a:'v2' }];
-        g2Lift = 'order:0';
-        const h = vGram(); g2Lift = ''; return h; }],
+    /* A CARD IN THE AIR. The board is carried with a finger, so the second
+       face is one card held: GORD is where the app keeps what is under the
+       finger and g2Card() is what draws it lit. It was g2Lift='order:0' when
+       the order was two presses and a swap, and that state is one the sentence
+       chapter can no longer be in -- a face nothing can reach walks a screen
+       the app does not have. */
+    ['the word order, a card being carried', () => {
+        window.route = 'gram'; NAV = [{ r:'gram', a:'v2:order' }];
+        GORD = { r:'O', on:true };
+        const h = vGram(); GORD = null; return h; }],
+    /* And a board with a fourth card on it -- 「3語以外も置けるようにしたい」.
+       The rail underneath is one card shorter, which is the state every claim
+       about carrying one off it is about. */
+    ['the word order, a fourth card on the board', () => {
+        window.route = 'gram'; NAV = [{ r:'gram', a:'v2:order' }];
+        const was = STG.order;
+        STG.order = ['S','ADV','O','V'];
+        const h = vGram(); STG.order = was; return h; }],
     /* ---- the 助詞 stage, both faces ------------------------------------
        It is a stage like every other one now 「助詞は最初から出せ」 OWNER
        2026-09-01, so no mark has to be set to reach it. The first is the
@@ -2390,12 +2404,11 @@ export function halfDone(){
        is no route to it: the migration runs at load, and a language minted
        afterwards is one this file has to mint itself.
 
-       It is here because this screen CHANGES with it. The six buttons and the
-       example line are both behind stTouched('order') -- nobody chose this,
-       so neither is drawn either way -- but g2Sent() prints orderDef().id
-       under the three words and arranges them by orderDef().seq with no gate
-       at all. A new language used to come out OSV, wearing the phone's answer;
-       it comes out SOV now, which is the default with nothing chosen. */
+       It is here because this screen CHANGES with it. g2Sent() draws the board
+       from orderDef().seq with no gate at all, so a new language used to come
+       out wearing the phone's answer -- the cards in the order OSV -- where it
+       comes out 主語 目的語 動詞 now, which is the default with nothing
+       chosen. */
     ['§14 語順、a language just made on a phone that had one', () => {
        const wasLangs = JSON.parse(JSON.stringify(LANGS));
        const wasId = langId, wasStg = JSON.parse(JSON.stringify(STG));

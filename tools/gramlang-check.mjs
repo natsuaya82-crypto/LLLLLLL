@@ -295,7 +295,14 @@ const f = await pg.evaluate(() => {
 });
 want('the language that was changed says the new order', f.bReads, 'VOS');
 want('and the new position', f.bNegp, 'after');
-want('and it is written down under that language', f.bStored, 'VOS');
+/* And what is written down is the CARDS -- a list of roles, because the board
+   is a list of roles. The six-letter string is what a language written before
+   today holds and is read back into this (orderSeq); it is not what setOrder()
+   writes any more. `aStored` two lines down is still 'OSV', which is that
+   half: LA was never arranged in this run, so its own string is exactly where
+   it was. */
+want('and it is written down under that language, as the cards',
+     JSON.stringify(f.bStored), '["V","O","S"]');
 want('the other language still says its own order', f.aReads, 'OSV');
 want('and its own position', f.aNegp, 'before');
 want('which is still what its file says', f.aStored, 'OSV');
@@ -621,104 +628,144 @@ want('and it is an adjective afterwards', fmr.beautyPos, 'ADJECTIVE');
    ending is what was missing before this. */
 want('and a sentence comes out with the tense on it', fmr.line, 'zmi lumaka');
 
-/* ---- 32-40: the word order is arranged, not chosen from six -------------
-   docs/GRAMMAR-V2-SPEC.md §3: 「ユーザーに最初から SOV/SVO などを選ばせるのでは
-   ない。まず実際に自分の言語で文章を作ってみるところから始める」
+/* ---- 32-40: the word order is a board of cards, carried with a finger ---
+   「選択式じゃなくて主語とか置いてあって指でどこに置くか決めれる形がいい。
+   ドラッグスワイプする感じ。3語以外も置けるようにしたい」 OWNER 2026-09-05.
 
-   So the thing to hold is that MOVING A WORD IS WHAT SAYS THE ORDER -- and
-   that the words drawn are this language's own, arranged by the real engine,
-   so what is on screen is what a sentence would come out as.
+   So the thing to hold is that WHERE A CARD LANDS IS THE WORD ORDER -- and
+   that a card carried off the board is a role this language does not place,
+   which is what the rail underneath is for.
 
-   Nothing here throws either. A swap that wrote the wrong order still redraws
-   three words in some order, and the page looks exactly as convincing. Every
-   claim below is about WHICH word ended up where.
+   Nothing here throws either. A carry that wrote the wrong list still redraws
+   a rail of cards in some order, and the page looks exactly as convincing.
+   Every claim below is about WHICH card ended up where and what was stored.
 
-   Pressed for real through the app's own action table, because a check that
-   calls g2Move() directly would be a copy of the button rather than the
-   button -- the same reason card-check drives cardPaint(). */
+   Carried for real, by dispatching the touches on the real elements, because
+   a check that called setOrder() would be a copy of the gesture rather than
+   the gesture -- the same reason card-check drives cardPaint(). */
 const g2 = await pg.evaluate(() => {
   const was = STG.order, wasSet = !!STG.set.order, wl = WORDS.length;
-  /* This chapter needs a pronoun, a noun and a verb, and the open language of
-     this check has ONE word. Seeded here and taken away again, the way the two
-     blocks above do it -- and worth saying why: the first version of this
-     block assumed the dictionary was full, and the check DIED on
-     `undefined.click` instead of failing. It looked green, because the command
-     that ran it grepped for FAILED and a crash prints no such line. */
+  /* This chapter's demonstration needs a pronoun, a noun and a verb, and the
+     open language of this check has ONE word. Seeded here and taken away
+     again, the way the blocks above do it. */
   WORDS.push({ hw:'zke',  pos:'pro', mns:['the one speaking'], at:1 });
   WORDS.push({ hw:'zkano', pos:'n',  mns:['a thing'], at:1 });
   WORDS.push({ hw:'ztir', pos:'v',   mns:['does'], at:1 });
   const show = () => { window.route = 'gram'; NAV = [{ r:'gram', a:'v2:order' }]; render(); };
-  /* TWO rows of .seg on this page now -- the six orders, which are
-     `.segs.scrollx`, and this language's own three words, which are not.
-     「語順svoとか俺のページ並んでないけど？」 OWNER 2026-09-05 put the first
-     one there; everything below is about the second, so it says which. */
-  const SEG = '#app .segs:not(.scrollx) .seg';
-  const words = () => Array.prototype.map.call(
-    document.querySelectorAll(SEG), (b) => b.textContent);
-  /* Says what it found rather than throwing on `undefined.click`. A check
-     that dies with a TypeError names the wrong thing: the fault is "the row
-     has n buttons", and a stack trace about `click` sends the next reader to
-     the wrong file. */
-  const press = (i) => {
-    const b = document.querySelectorAll(SEG);
-    if (!b[i]) throw new Error('no word ' + i + ' to press: the row has ' + b.length);
-    b[i].click();
+  const cards = (rail) => Array.prototype.map.call(
+    document.querySelectorAll('[data-gord="' + rail + '"] [data-gr]'),
+    (b) => b.getAttribute('data-gr'));
+  /* the demonstration: this language's own words, laid by the real engine */
+  const demo = () => Array.prototype.map.call(
+    document.querySelectorAll('#app .gorder .gor'), (x) => x.textContent).join(' ');
+  const T = (el, type, x, y) => {
+    const t = new Touch({ identifier: 1, target: el, clientX: x, clientY: y });
+    el.dispatchEvent(new TouchEvent(type, {
+      touches: type === 'touchend' ? [] : [t],
+      targetTouches: type === 'touchend' ? [] : [t],
+      changedTouches: [t], bubbles: true, cancelable: true }));
   };
-  const lit = () => Array.prototype.map.call(
-    document.querySelectorAll(SEG), (b) => b.className.indexOf('on') >= 0)
-    .indexOf(true);
+  /* Pick the card up and put it down on `to` -- on its right half when
+     `after`, so it lands beyond it. `to` may be a RAIL rather than a card,
+     which is how a card is carried onto an empty one. */
+  const carry = (r, to, after) => {
+    const a = document.querySelector('[data-gr="' + r + '"]');
+    const b = document.querySelector(to);
+    if (!a) throw new Error('no card ' + r + ' to carry');
+    if (!b) throw new Error('nothing at ' + to + ' to carry it to');
+    const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
+    T(a, 'touchstart', ra.left + ra.width / 2, ra.top + ra.height / 2);
+    T(a, 'touchmove', after ? rb.right - 2 : rb.left + 2, rb.top + rb.height / 2);
+    T(a, 'touchend', after ? rb.right - 2 : rb.left + 2, rb.top + rb.height / 2);
+  };
 
-  /* Nobody has chosen anything yet. A block above this one presses the old
-     六択, so the mark is already standing when this starts -- and an assertion
-     about "has decided nothing yet" would pass on any code at all. Cleared
-     here and put back at the end. */
+  /* Nobody has arranged anything yet. A block above this one presses the old
+     六択 on the stage screen, so the mark is already standing when this starts
+     -- and an assertion about "has decided nothing yet" would pass on any code
+     at all. Cleared here and put back at the end. */
   delete STG.set.order;
   g2Lift = ''; STG.order = 'SOV'; show();
-  const start = words();
-  /* one press lifts and writes nothing */
-  press(0);
-  const afterOne = { lit: lit(), order: STG.order, words: words(),
-                     /* and, the half a same-value write hides: lifting a word
-                        is not DECIDING anything. STG.set.order is what says
-                        somebody chose -- 「a default nobody chose is not a
-                        decision」 -- and a first press that called setOrder()
-                        with the order unchanged would write the same string
-                        and mark it chosen, which no assertion about the string
-                        can see. */
-                     set: !!STG.set.order };
-  /* pressing the same one puts it down again */
-  press(0);
-  const putDown = { lit: lit(), order: STG.order };
-  /* lift the first and drop it on the last: S and V change places */
-  press(0); press(2);
-  const swapped = { order: STG.order, words: words(), lit: lit() };
-  /* and the words on screen followed, because they are laid by the engine */
-  const moved = swapped.words[0] === start[2] && swapped.words[2] === start[0];
+  /* THE OLD SIX-LETTER STRING IS READ. Every language on every phone holds one
+     of them, so this is the migration and it is the first thing asked. */
+  const start = cards('on'), shelf = cards('off'), startDemo = demo();
+
+  /* A finger that goes down and comes up without moving is not a carry: it
+     writes nothing and decides nothing. */
+  const a = document.querySelector('[data-gr="S"]');
+  const ra = a.getBoundingClientRect();
+  T(a, 'touchstart', ra.left + ra.width / 2, ra.top + ra.height / 2);
+  T(a, 'touchend', ra.left + ra.width / 2, ra.top + ra.height / 2);
+  const tapped = { order: JSON.stringify(STG.order), set: !!STG.set.order };
+
+  /* Carry the subject past the verb: S O V becomes O V S. */
+  carry('S', '[data-gr="V"]', true);
+  const moved = { on: cards('on'), stored: JSON.stringify(STG.order),
+                  set: !!STG.set.order, demo: demo() };
+
+  /* PAST THE END OF THE RAIL. A rail is as wide as the screen and the cards do
+     not fill it, so most of what a finger can land on is rail and no card --
+     and a carry that lands there has to mean the end of that rail, or the
+     right-hand half of this screen does nothing.
+
+     Put back to S O V first. The carry above left the board at O V S, and
+     carrying S to the end of THAT is a claim about a board it is already at
+     the end of -- true whatever the code does. */
+  STG.order = 'SOV'; show();
+  carry('S', '[data-gord="on"]', true);
+  const far = { on: cards('on'), stored: JSON.stringify(STG.order) };
+
+  /* A CARD FROM THE SHELF. 「3語以外も置けるようにしたい」 -- the adverb is not
+     one of the three and goes onto the board like anything else. */
+  show();
+  carry('ADV', '[data-gr="O"]', true);
+  const four = { on: cards('on'), off: cards('off'), stored: JSON.stringify(STG.order),
+                 /* AND THE DEMONSTRATION UNDER IT. It is laid by the real
+                    engine, and what the engine is handed is the cards -- not
+                    the name they run together into. A board of four was handed
+                    'SADVOV' and read it a letter at a time, so the verb stood
+                    in the sentence twice. */
+                 demo: demo() };
+
+  /* And back off it: a role this language does not place lives on the rail
+     underneath, and the rail can be carried INTO as well as out of. */
+  show();
+  carry('ADV', '[data-gord="off"]', false);
+  const back = { on: cards('on'), off: cards('off'), stored: JSON.stringify(STG.order) };
 
   WORDS.length = wl;
   STG.order = was;
   if (wasSet) STG.set.order = 1; else delete STG.set.order;
   g2Lift = '';
-  return { start: start.join(' '), n: start.length,
-           afterOneLit: afterOne.lit, afterOneOrder: afterOne.order,
-           afterOneWords: afterOne.words.join(' '), afterOneSet: afterOne.set,
-           putDownLit: putDown.lit, putDownOrder: putDown.order,
-           order: swapped.order, moved: moved, litAfter: swapped.lit,
-           words: swapped.words.join(' ') };
+  return { start: start.join(' '), shelf: shelf.join(' '), startDemo: startDemo,
+           tapped: tapped, moved: moved, far: far, four: four, back: back };
 });
 
-want('three words of this language are on the page', g2.n, 3);
-want('one press lifts that word and no other', g2.afterOneLit, 0);
-want('and writes nothing yet', g2.afterOneOrder, 'SOV');
-want('and moves nothing yet', g2.afterOneWords, g2.start);
-want('and has decided nothing yet', g2.afterOneSet, false);
-want('pressing it again puts it down', g2.putDownLit, -1);
-want('still writing nothing', g2.putDownOrder, 'SOV');
-
-want('first and last change places, and THAT is what says the order',
-     g2.order, 'VOS');
-want('the words on screen followed', g2.moved, true);
-want('and nothing is left lifted afterwards', g2.litAfter, -1);
+want('the old six-letter string is read as the three cards', g2.start, 'S O V');
+want('and every other role is on the rail underneath', g2.shelf, 'ADV ADP NEG Q');
+want('this language’s own words are under it, in that order',
+     g2.startDemo, 'zke tuf ztir');
+want('a finger down and up again writes nothing', g2.tapped.order, '"SOV"');
+want('and decides nothing', g2.tapped.set, false);
+want('carrying the subject past the verb is what says the order',
+     g2.moved.on.join(' '), 'O V S');
+want('and THAT is what is written down, as cards',
+     g2.moved.stored, '["O","V","S"]');
+want('and it is a decision now', g2.moved.set, true);
+want('the words followed, because they are laid by the engine',
+     g2.moved.demo, 'tuf ztir zke');
+want('a card let go past the last one goes on the end of the rail',
+     g2.far.on.join(' '), 'O V S');
+want('and that is written down too', g2.far.stored, '["O","V","S"]');
+want('a fourth card comes off the rail onto the board',
+     g2.four.on.join(' '), 'O ADV V S');
+want('and it is gone from the rail', g2.four.off.join(' '), 'ADP NEG Q');
+want('and the words under it are still this language’s three, once each',
+     g2.four.demo, 'tuf ztir zke');
+want('and the board of four is what is stored',
+     g2.four.stored, '["O","ADV","V","S"]');
+want('and it can be carried back off again', g2.back.on.join(' '), 'O V S');
+want('to the rail it came from', g2.back.off.join(' '), 'ADV ADP NEG Q');
+want('leaving the three behind it', g2.back.stored, '["O","V","S"]');
 
 /* ---- 41-48: a chapter shows what this language really does --------------
    docs/GRAMMAR-V2-SPEC.md §14 Nouns: 「ユーザーが『りんご』『りんごたち』などを
@@ -1093,19 +1140,23 @@ const adj = await pg.evaluate(() => {
     .map((b) => rowOf(b).lab + ':' + rowOf(b).to)
     .filter((x) => x.indexOf('si') >= 0).join(',');
 
-  /* ACROSS THE PAGES. The two rows that arrange a pair are on different
-     chapters now, and what is lifted survives going from one to the other --
-     so this is the same claim it always was and a longer road to it: lift a
-     word in the sentence, walk to the phrase, press. Carrying a role into a
-     phrase means nothing, so that press lifts instead and neither answer
-     moves. */
+  /* ACROSS THE PAGES. The sentence chapter is a board of cards carried with a
+     finger and the phrase chapters are rows of two arranged by pressing, so
+     walking from one to the other must leave both answers where they were: a
+     press on the phrase says which side the describing word stands, and says
+     nothing about the word order. What is lifted is the phrase rows' own --
+     there is nothing to lift on the board. */
   g2Lift = ''; STG.order = wasOrder; STG.gpos.adj = 'before';
-  show('order'); press(0);
-  const cross = { order:STG.order, side:STG.gpos.adj };
-  show('adj'); press(1);
-  cross.afterOrder = STG.order;
+  show('order');
+  const cross = { order:JSON.stringify(STG.order), side:STG.gpos.adj,
+                  /* and the board is on that chapter and on no other */
+                  board:document.querySelectorAll('[data-gord]').length };
+  show('adj');
+  cross.noBoard = document.querySelectorAll('[data-gord]').length;
+  press(0); press(1);
+  cross.afterOrder = JSON.stringify(STG.order);
   cross.afterSide = STG.gpos.adj;
-  cross.lit = document.querySelectorAll('#app .segs:not(.scrollx) .seg.on').length;
+  cross.lit = document.querySelectorAll('#app .segs .seg.on').length;
 
   WORDS.length = wl;
   STG.fm = JSON.parse(wasFm);
@@ -1130,11 +1181,13 @@ want('the sentence above it did not move', adj.order, adj.wasOrder);
 want('a describing word that changes is drawn in the chapter of that form',
      adj.form, '\u2776:zruasi');
 
-want('a word lifted in the sentence does not move the phrase',
-     adj.cross.afterSide, adj.cross.side);
-want('nor the other way about', adj.cross.afterOrder, adj.cross.order);
-want('and exactly one word is lifted afterwards -- the one just pressed',
-     adj.cross.lit, 1);
+want('the board is on the sentence chapter', adj.cross.board, 2);
+want('and on no other', adj.cross.noBoard, 0);
+want('arranging the phrase says which side the word stands',
+     adj.cross.afterSide, 'after');
+want('and does not move the word order', adj.cross.afterOrder, adj.cross.order);
+want('and nothing is left lifted once the pair has swapped',
+     adj.cross.lit, 0);
 
 /* ---- 79-84: where a place word stands ------------------------------------
    docs/GRAMMAR-V2-SPEC.md §7: 「現在の adp の位置設定だけではなく、場所を

@@ -508,7 +508,14 @@ for(const file of ['www/grammar-engine/lexicon.js','www/grammar-engine/translate
 
    Only the app's shapes are stubbed. gExLine(), gModel() and gRules() are the
    real ones, read off www/grammar.js. */
-const app=vm.createContext({console, LinguaGrammarEngine:e, WORDS:[], SET:{}, STG:{}, langId:'demo'});
+/* `document` is here because www/grammar.js mounts the word order board's one
+   touch listener as it loads -- the same road www/home.js takes for the
+   overview rows, and for the same reason: the page is rebuilt by every render
+   and render() lives in a file no session owns. Nothing below dispatches a
+   touch (that is tools/gramlang-check.mjs, in a real browser); this only has
+   to let the file finish loading. */
+const app=vm.createContext({console, LinguaGrammarEngine:e, WORDS:[], SET:{}, STG:{}, langId:'demo',
+                            document:{addEventListener(){}}});
 vm.runInContext(fs.readFileSync('www/grammar.js','utf8'),app,{filename:'www/grammar.js'});
 /* `lang` is the word order and the three positions. It goes into STG and not
    into SET, because that is where www/grammar.js reads them from since
