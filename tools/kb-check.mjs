@@ -3163,6 +3163,51 @@ const r = await pg.evaluate(({ s }) => {
     out.pullAlOnly = kbLayer().rows.map(function (r){
       return r.map(function (k){ return k.k + ':' + (k.w || 1); }).join(' ');
     }).slice(2).join('|') === alWas.slice(2).join('|');
+    /* ---- AND THE SHEET IS NOT DRAWN AGAIN ON THE WAY -------------------
+       「列の頭 a を押して j まで横に伸ばす選択の反応が悪い（引っかかる）」
+       OWNER 2026-09-06. Every move called render(), so a finger drawn from a
+       to j threw the sheet away and built a new one nine times over -- and
+       the element under the finger was a different element on each of them.
+       12 to 15ms a move measured in the page, against the 16 a finger
+       arrives at; painting the classes is 0.5 to 1.
+
+       Two claims and they are one sentence. The moves draw NOTHING, and what
+       they paint is what a render would have drawn -- a faster answer that
+       is a different answer is not the same screen, and mid-finger is the
+       one place nobody would see it. So the sheet is read while the finger
+       is still down, then rendered, then read again. */
+    (function (){
+      var i, dst, drew = 0, real = document.elementFromPoint, was = render;
+      function sig(){
+        return [].slice.call(document.querySelectorAll('#kb .kbcl, #kb .kbn, #kb .kbk'))
+          .map(function (e){
+            return (/ on( |$)/.test(' ' + e.className) ? '1' : '0') +
+                   (/ sel( |$)/.test(' ' + e.className) ? '1' : '0');
+          }).join('');
+      }
+      fresh(); kbShow = 1; kbLay = 0; KBH = null; standKb();
+      /* the press first, which is how somebody starts: a, then drawn to j */
+      kbHeadCol(0); standKb();
+      window.render = function (){ drew++; return was.apply(null, arguments); };
+      kbDown({ target: head('c', 0), touches: [{ clientX: 60, clientY: 60 }] });
+      for (i = 1; i <= 9; i++){
+        dst = head('c', i);
+        if (!dst) break;
+        document.elementFromPoint = function (){ return dst; };
+        kbDragTo({ touches: [{ clientX: 60 + i * 10, clientY: 60 }],
+                   preventDefault: function (){} });
+      }
+      document.elementFromPoint = real;
+      out.pullDrew = drew;
+      out.pullFar = !!KBH && KBH.j === 9;
+      out.pullWideLit = lit('c');
+      var painted = sig();
+      window.render = was;
+      standKb();
+      out.pullSame = sig() === painted;
+      kbUp({ preventDefault: function (){} });
+    }());
+
     KBH = null; kbSel = null;
   }());
 
@@ -3895,6 +3940,11 @@ say(r.keepAfterUndo === 'grey',
 say(r.pullDone && r.pullRun && r.pullLit === 4,
     'a column head drawn along to the fourth selects a to d, and all four are'
     + ' lit (' + r.pullLit + ' of them)');
+say(r.pullDrew === 0 && r.pullFar && r.pullWideLit === 10,
+    'and drawn from a to j it lights all ' + r.pullWideLit +
+    ' without drawing the sheet again (' + r.pullDrew + ' renders on the way)');
+say(r.pullSame,
+    'and what the moves painted is what a render draws -- key for key, head for head');
 say(r.pullCut && r.pullCutStep,
     'the bin then takes FOUR columns, and it is one step back for one press ['
     + r.pullCutW + ']');

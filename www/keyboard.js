@@ -2944,20 +2944,81 @@ function kbHeadN(el){
   try{ a=JSON.parse(el.getAttribute('data-a')||'[]'); }catch(x){ return null; }
   return (a.length && typeof a[0]==='number')? a[0] : null;
 }
+/* ---- AND IT IS PAINTED, NOT DRAWN AGAIN --------------------------------
+   「列の頭 a を押して j まで横に伸ばす選択の反応が悪い（引っかかる）」 OWNER
+   2026-09-06.
+
+   Every move called render(), which builds the whole screen's HTML and hands
+   it to innerHTML -- so a finger drawn from a to j threw the sheet away and
+   made a new one nine times, and the element under the finger was a different
+   element on every one of them. Measured before it was written: 18 to 51ms a
+   move on a phone-sized page, against the 16ms a finger arrives at.
+
+   Nothing about the run CHANGES the sheet. The keys are the keys, the rows
+   are the rows and the columns are the columns -- what moves is which of them
+   are lit, which is a class. So this puts the classes on and takes them off,
+   and the drawing is left where it is.
+
+   IT ASKS THE SAME FUNCTIONS THE DRAWING ASKS. kbHeadIs() and kbColSel() are
+   what kbHdrHTML(), kbNHTML() and kbHTML() put the classes on with; a second
+   opinion here would be the sheet drawn one way by a render and another way
+   by a drag, and the difference would show up only mid-finger. The numbers
+   come off the buttons themselves (kbHeadN), which is where they are already
+   written down.
+
+   The band down a column is an inline width and offset rather than a class,
+   so it is the one thing moved by hand -- and `--kc` is read off the sheet,
+   which is the number it was drawn with. */
+function kbLitEl(el, on){
+  if(on) el.classList.add('on'); else el.classList.remove('on');
+}
+function kbSelEl(el, on){
+  if(on) el.classList.add('sel'); else el.classList.remove('sel');
+}
+function kbHeadPaint(){
+  var g=document.getElementById('kb'), rows=kbLayer().rows;
+  var es, i, n, ri, ki, row, key, run, band, cols;
+  if(!g || !rows) return;
+  es=g.querySelectorAll('.kbcl');
+  for(i=0;i<es.length;i++){ n=kbHeadN(es[i]); kbLitEl(es[i], n!==null && kbHeadIs('c', n)); }
+  es=g.querySelectorAll('.kbn');
+  for(i=0;i<es.length;i++){ n=kbHeadN(es[i]); kbLitEl(es[i], n!==null && kbHeadIs('r', n)); }
+  es=g.querySelectorAll('.kbrow');
+  for(i=0;i<es.length;i++) kbSelEl(es[i], kbHeadIs('r', i));
+  es=g.querySelectorAll('.kbk');
+  for(i=0;i<es.length;i++){
+    ri=parseInt(es[i].getAttribute('data-r'), 10);
+    ki=parseInt(es[i].getAttribute('data-k'), 10);
+    row=rows[ri]; key=row? row[ki] : null;
+    kbSelEl(es[i], !!key && kbColSel(kbAtOf(row, ki), key.w));
+  }
+  band=g.querySelector('.kbband');
+  run=kbHeadRun();
+  cols=parseInt(g.style.getPropertyValue('--kc'), 10)||KB_COLS;
+  if(band && run && KBH.k==='c'){
+    band.style.left='calc(100% / '+cols+' * '+(run.a*2)+')';
+    band.style.width='calc(100% / '+cols+' * '+
+      Math.min((run.b-run.a+1)*2, cols-run.a*2)+')';
+  }
+}
 function kbHeadDrag(e, p){
-  var over=kbHeadAt(document.elementFromPoint(p.clientX, p.clientY)), n;
+  var over=kbHeadAt(document.elementFromPoint(p.clientX, p.clientY)), n, first;
   if(!over || over.k!==KBHD.k) return;
   n=kbHeadN(over.el);
   if(n===null) return;
   if(e.preventDefault) e.preventDefault();
   /* The first move is what makes it a drag: the head it started on becomes
      the selection, exactly as a press on it would, and the one under the
-     finger becomes the far end. */
-  if(!KBH || KBH.k!==KBHD.k || KBH.i!==KBHD.i) KBH={k:KBHD.k, i:KBHD.i, ins:false};
-  if(kbHeadJ()===n) return;
+     finger becomes the far end. THAT one is drawn, because the band down the
+     column does not exist in the page until a column is chosen and there is
+     nothing to move; every move after it is painted. */
+  first=(!KBH || KBH.k!==KBHD.k || KBH.i!==KBHD.i);
+  if(first) KBH={k:KBHD.k, i:KBHD.i, ins:false};
+  else if(kbHeadJ()===n) return;
   KBH.j=n;
   kbSel=null;
-  render();
+  KBHD.moved=true;
+  if(first) render(); else kbHeadPaint();
 }
 function kbDown(e){
   var b=kbKeyAt(e.target), p=e.touches? e.touches[0] : e, mate, k, h, n;
@@ -3238,7 +3299,11 @@ function kbPairMove(row, over, w){
   return true;
 }
 function kbUp(e){
-  if(KBHD){ KBHD=null; return; }
+  /* AND THE SHEET IS DRAWN ONCE, WHEN THE FINGER COMES UP. The moves painted
+     classes onto the sheet that was already there (kbHeadPaint above); the
+     buttons over it -- the bin, the three alignments, the + -- are up or down
+     by what the run IS, and settling that is a render. One, at the end. */
+  if(KBHD){ var moved=KBHD.moved; KBHD=null; if(moved) render(); return; }
   if(!KBD) return;
   clearTimeout(KBD.timer);
   var d=KBD, g=document.getElementById('kb'), c=kbCarried(), i;
