@@ -37,15 +37,29 @@
                word up by it and nothing else does
      letters   the id ltNew() gives them
 
+   kb        the id kbId() gives a board. The kb slice is {kbs:[...], at},
+             so syObj() carries `kind` down into that array and this is asked
+             of a board -- a board is not a slice of its own
+
    For everything else the item is its own name: two notes are the same note
    when they say the same thing. That is coarser than an id would be -- edit
    a note on two phones and there are two of it -- and it is the direction
    this chapter errs in. Giving the keyless ones an id here would be
-   inventing a field the rest of the app does not write. */
+   inventing a field the rest of the app does not write.
+
+   THE BOARD IS WHY THAT LAST SENTENCE IS ABOUT A FIELD AND NOT ABOUT THIS
+   FUNCTION. A keyboard had no id, so its JSON was the whole of what made it
+   itself -- and a board is rewritten on the way to the disk (kbVFix,
+   kbWayOff), so the copy here and the copy on the server differed by a byte
+   without anybody touching either. Two rows, both kept, every launch:
+   2, 4, 8. 「何もしていないのにキーボードが8枚に増える」 OWNER 2026-09-06.
+   The field is written by the keyboard chapter, which is where a board is
+   made (www/keyboard.js § kbId), and this only reads it. */
 function syKeyOf(kind, x){
   if(x && typeof x==='object'){
     if(kind==='words'  && x.hw) return 'k'+String(x.hw);
     if(kind==='letters'&& x.id) return 'k'+String(x.id);
+    if(kind==='kb'     && x.id) return 'k'+String(x.id);
   }
   try{ return 'j'+JSON.stringify(x); }catch(e){ return 'j'+String(x); }
 }

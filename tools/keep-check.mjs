@@ -415,13 +415,24 @@ const more = await pg.evaluate(() => {
      up on the burst, so every screenshot is right and every other check is
      green. What is wrong is what the button SAYS.
 
+     OWNER 2026-09-06 answered it a second way and this claim follows:
+     「キーボードを削除すると一覧ではなく1枚目の盤面が開く」. A delete lands
+     on the LIST now (kbDropGo -> kbGo with nothing named), so the route names
+     no board afterwards and there is no Save on that screen to come apart
+     from one. The two names are asked of the board somebody then walks INTO,
+     which is where a keyboard is built and the only place the question means
+     anything.
+
      Asked of the real roads: make two, stand on the second, delete the first,
-     then take a row out and read the bar. */
+     read where that left you, walk into a board, then take a row out and read
+     the bar. */
   SET.plan = 'pro';
   KB = null; kbShow = 0; KEEP = {};
   kbAdd('qwerty'); kbAdd('flick');
   kbGoBoard(2); render();
   kbDropGo(1); render();
+  out.kbDropList = here().r === 'kb' && !here().a;
+  kbGoBoard(1); render();
   out.kbKeyOne = keepKey() === keepKeyOf('kb', kbShow);
   out.kbGoldAfterDrop = keepDirty(keepKey());
   var rowsWas = kbLayer().rows.length;
@@ -645,6 +656,7 @@ if(more.kbSavesWhileTyping !== 0) fails.push('typing a keyboard name called save
 if(more.kbStepsWhileTyping !== 0) fails.push('typing a keyboard name stacked ' + more.kbStepsWhileTyping + ' steps to go back through');
 if(more.kbSavesOnSave !== 1) fails.push('one save was ' + more.kbSavesOnSave + ' writes, not one');
 if(more.kbName !== 'one') fails.push('the keyboard name did not land: ' + more.kbName);
+if(!more.kbDropList) fails.push('deleting a keyboard opened a board instead of the list');
 if(!more.kbKeyOne) fails.push('the keyboard is written under one key and read under another');
 if(more.kbGoldAfterDrop) fails.push('deleting a keyboard left the Save gold on the one that took its place');
 if(!more.kbRowWent) fails.push('the row the bin was pressed on is still there');
@@ -711,8 +723,9 @@ console.log('the screens that take typing: ' + r.screens.length + ' walked, and 
 console.log('the left-edge swipe: same question, same road (back())');
 console.log('the keyboard: ' + more.kbSavesWhileTyping + ' writes while typing, ' +
             more.kbStepsWhileTyping + ' steps stacked, ' + more.kbSavesOnSave + ' write on save');
-console.log('the keyboard, one key: a board deleted under the page leaves ' + more.kbBufs +
-            ' buffer, the Save grey; a row taken turns it gold and the arrow asks');
+console.log('the keyboard, one key: deleting a board lands on the list, and the board '  +
+            'walked into after it keeps ' + more.kbBufs + ' buffer with the Save grey; ' +
+            'a row taken turns it gold and the arrow asks');
 console.log('the letter being drawn: grey on arrival, gold on a stroke, nothing written until ' +
             'Yes; a bottom tab kept the drawing, No let it go and wrote nothing, Yes wrote it ' +
             'and said so once');

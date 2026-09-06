@@ -123,9 +123,32 @@ function kbRead(){
    newer one only. */
 function kbBoardsOf(k){
   if(!k) return null;
-  if(k.kbs && k.kbs.length) return k;
-  if(k.lay && k.lay.length) return {kbs:[{nm:'', pat:'', lay:k.lay}], at:0};
+  if(k.kbs && k.kbs.length) return kbIded(k);
+  if(k.lay && k.lay.length) return kbIded({kbs:[{nm:'', pat:'', lay:k.lay}], at:0});
   return null;
+}
+/* WHICH BOARD THIS IS, and it is a field because nothing else on a board says
+   so. Two copies of one language are put back together by www/sync.js, which
+   asks syKeyOf() what makes two rows the same row -- a word is its headword,
+   a letter is its id, and everything else is its own JSON. A board had no id,
+   so the JSON was the whole of it: a board touched here differed from the
+   server's copy by a byte and the two were kept as two, every launch, so a
+   keyboard nobody had opened came back 2, 4, 8.
+   「何もしていないのにキーボードが8枚に増える」 OWNER 2026-09-06.
+
+   Minted when a board is made (kbAdd) and put on the ones that predate this
+   the first time they are READ. Reading only: nothing is written here, so a
+   launch with no signal stamps the copy in memory and stops. The write comes
+   with the next save, the way every other field of a board does. */
+var KB_SEQ=0;
+function kbId(){ KB_SEQ++; return 'k'+Date.now()+'_'+KB_SEQ; }
+/* A board that has one keeps it. This is not a repair and does not compare
+   anything: a board with no id has never been named, and a board with one is
+   already answered for. */
+function kbIded(k){
+  var kbs=k.kbs||[], i;
+  for(i=0;i<kbs.length;i++) if(kbs[i] && !kbs[i].id) kbs[i].id=kbId();
+  return k;
 }
 kbRead();
 /* Two layouts, the same or not. JSON, because both sides are built by the
@@ -663,7 +686,7 @@ function kbAdd(pat){
   /* Storage holds only the ones the person built. The free QWERTY is board 0
      and is not among them, so the first one made here is the SECOND board. */
   if(!KB) KB={kbs:[], at:0};
-  KB.kbs.push({nm:'', pat:pat, lay:kbBlank(kbPatLay(pat))});
+  KB.kbs.push({id:kbId(), nm:'', pat:pat, lay:kbBlank(kbPatLay(pat))});
   kbShow=kbBoards().length-1; kbLay=0; kbSel=null;
   kbForget();
   saveKb();
@@ -696,9 +719,19 @@ function kbAdd(pat){
    was the way there that was missing.
 
    The board goes on TOP of the chapter, so the back arrow still walks to the
-   list rather than out of the chapter altogether. Pressed with nothing named
-   -- which is what deleting a keyboard does -- it is the list, because the
-   board it was pressed on is gone. */
+   list rather than out of the chapter altogether. Pressed with NOTHING NAMED
+   it is the list itself, which is what a delete wants -- the board it was
+   pressed on is gone.
+
+   The chapter is reached first and the board put on top of it, always. It
+   used to be reached only `if(h.r!=='kb')`, and that guard is what made
+   「nothing named」 a sentence this function did not keep: pressed from a
+   board's own page it took neither branch and did nothing at all, so the
+   route went on naming a board that had just been deleted and vKb() drew
+   whichever board had slid into that index. 「キーボードを削除すると一覧では
+   なく1枚目の盤面が開く」 OWNER 2026-09-06. go() walks back to a screen
+   already on the trail rather than pushing a second copy, so reaching the
+   chapter unguarded is what cuts back to the list. */
 function kbGo(i){
   var to = (i===undefined || i===null)? undefined
          : String(kbClamp(i, Math.max(1, kbBoards().length)));
@@ -707,7 +740,7 @@ function kbGo(i){
      case, which is right for a press that is going somewhere and wrong for
      one that has just changed what is on the screen. */
   if(h.r==='kb' && h.a===to){ render(); return; }
-  if(h.r!=='kb') go('kb');
+  go('kb');
   if(to!==undefined) go('kb', to);
 }
 /* Which one goes to the phone. The only thing on this screen that changes
@@ -753,15 +786,23 @@ function kbDropGo(i){
   kbLay=0; kbSel=null;
   kbForget();
   saveKb();
-  /* Deleting is pressed on the ⋯ sheet, so the same thing was true of it:
-     the keyboard was gone and the screen was still the sheet about it.
-     ONTO THE BOARD IT ENDS ON, and that is the whole of rule 20's fault: the
-     boards below the deleted one slide down, so `kbShow` moved and the route
-     went on naming the one it had. Which board is on the screen is one thing
-     and the route is where it is written -- a second answer to it is what
-     put the layout in one buffer and the Save in the bar on another
-     (www/keyboard.js § kbKeepLay). */
-  kbGo(kbShow);
+  /* ONTO THE LIST. 「キーボードを削除すると一覧ではなく1枚目の盤面が開く」
+     OWNER 2026-09-06. Deleting is pressed on the ⋯ sheet of a board, and the
+     board it was pressed on is gone -- so there is no board this ends on.
+     It landed on `kbShow` instead, which the line above had just slid down to
+     the neighbour, and somebody who deleted the third keyboard was put on the
+     first one's keys with no press of their own.
+
+     The chapter's own page is the LIST (vKb), which is where somebody
+     deleting a keyboard was going anyway, and kbGo() with nothing named is
+     that page.
+
+     It also settles what rule 20's fault was about: the layout goes in a
+     buffer keyed by the board and the Save in the bar reads the screen, so
+     the two came apart when a delete left the route naming a board that had
+     moved. There is no board named afterwards now, and no Save on the list --
+     so there is nothing to come apart. `keep-check` 10b holds it. */
+  kbGo();
 }
 /* What a keyboard is called: whatever somebody called it, and otherwise
    Keyboard 1, 2, 3. 「キーボード1、キーボード2、キーボード3って名前が初期」
@@ -2496,9 +2537,11 @@ function kbSelDelGo(){
   kbLay=0; kbSel=null;
   kbForget();
   saveKb();
-  /* Onto the board it ends on, for kbDropGo()'s reason above -- this is the
-     same delete done to several at once. */
-  kbGo(kbShow);
+  /* Onto the list, for kbDropGo()'s reason above -- this is the same delete
+     done to several at once, and it is PRESSED on the list, so opening a
+     board here was the screen moving under somebody who had asked for
+     nothing. */
+  kbGo();
 }
 function kbRowHTML(x, i, at){
   var sel=!!KBSEL, on=!!(sel && KBSEL[i]);
