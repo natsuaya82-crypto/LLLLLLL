@@ -686,6 +686,11 @@ function g2Sent(){
    different things. They are separate spans because they are separate faces:
    one is this language and one is the interface.
 
+   `lab` is HTML and not text, the way secAdd()'s label is. The two callers are
+   this file's own: the noun chapter's rows are a sentence of the interface with
+   one word in bold (gEg above), and a form chapter's are the numerals ❶❷❸.
+   Nothing anybody typed reaches it.
+
    `id` is the rule's id where the row IS a rule, and it is what the row is
    CHOSEN by -- 「プラスとかプロなのに消す時も勝手に ui 足すのやめて。今まで
    ある選択とかスライドとかで消すようにして」 OWNER 2026-09-05. There was a ⊖
@@ -703,7 +708,7 @@ function g2Row(lab, add, side, from, to, act, arg, id){
         ' role="button" aria-label="'+esc(t('fmr.sel.row'))+'">'+
         (on? ICON_DOT : ICON_RING)+'</span>'+
       '<button class="stslot has"' + DO('g2SelTap', [id]) + '>'+
-      '<span class="psm">'+esc(lab)+'</span>'+
+      '<span class="psm">'+lab+'</span>'+
       (add? '<span class="psw">'+sfontHTML(add)+'</span>' : '')+
       (side? '<span class="psi">'+esc(side)+'</span>' : '')+
       ((to || side)? '<span class="psi">'+esc(to)+'</span>' : '')+
@@ -711,7 +716,7 @@ function g2Row(lab, add, side, from, to, act, arg, id){
   }
   return '<div class="fmmk">'+
     '<button class="stslot has"' + DO(act, arg) + '>'+
-    '<span class="psm">'+esc(lab)+'</span>'+
+    '<span class="psm">'+lab+'</span>'+
     (add? '<span class="psw">'+sfontHTML(add)+'</span>' : '')+
     (side? '<span class="psi">'+esc(side)+'</span>' : '')+
     (from? '<span class="psw">'+sfontHTML(from)+'</span>'+
@@ -821,6 +826,24 @@ function g2Chap(r){
    opens the word where the stage has one and the sheet that writes it where
    it has not, so a row that is there and a row that is not are one press with
    one answer. */
+/* WHAT A ROW OF THIS CHAPTER IS CALLED, and not one word of grammar in it.
+   「名詞の主語という記載…何それ？になるのを無くしたい」「格の渡すとか言われても
+   全く分かりません」 OWNER 2026-09-06. The rows said 主語 / 目的語 / 渡す相手,
+   which are the names of the three roles a mark takes a word out of the queue
+   for -- true, and the kind of word somebody has to have been taught before it
+   says anything at all.
+
+   So a row is a SENTENCE of the interface language with the word in question in
+   bold: 「<b>私は</b>山を見る」. Nobody has to know what a subject is called to
+   see which word is meant. It is the interface's own line and never this
+   language's, which is why it is a translated string rather than anything the
+   dictionary makes -- a language with no verb in it yet still has to be able to
+   read the row.
+
+   The 助詞 stage's own list still says 主語 / 目的語 / 渡す相手 (stg.part.*), and
+   that is not one fact said twice: there a row NAMES the mark being made, here
+   it SHOWS where the mark would stand. */
+function gEg(k){ return t('gram.eg.'+k); }
 function g2Nouns(){
   var p=(typeof stBy==='function')? stBy('part') : null;
   var a=(p && p.slots) || [], n=gWordOf('n'), m=null, out='', i, k, w, made;
@@ -831,12 +854,12 @@ function g2Nouns(){
     w=stWordFor(p, k);
     if(!w){
       out+='<button class="stslot"' + DO('openSlot', ['part', k]) + '>'+
-        '<span class="psm">'+esc(stSlotLabel(p, k))+'</span>'+
+        '<span class="psm">'+gEg(k)+'</span>'+
         '<span class="psn">'+t('stg.make')+'</span>'+ICON_GO+'</button>';
       continue;
     }
     made=m? g2MadeBy(m, 'slot', k) : '';
-    out+=g2Row(stSlotLabel(p, k), '', '', made? wOut(n.hw) : '',
+    out+=g2Row(gEg(k), '', '', made? wOut(n.hw) : '',
                made || wOut(w.hw), 'openSlot', ['part', k], '');
   }
   return out;
