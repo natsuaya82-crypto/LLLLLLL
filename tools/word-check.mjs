@@ -496,6 +496,39 @@ const R = await pg.evaluate(() => {
     out.fails.push('an example was typed in the box and Save threw it away: ' +
       JSON.stringify(ka.ex));
 
+  /* ---- and the ＋ over the heading, which is the third road into the boxes
+     and read neither of them. It was `flag = true; wdPaint()`: the repaint is
+     built out of wEdit, so a meaning typed and then ＋ was gone
+     「意味の2つ目を＋で足すと1つ目が消える」, and the example's ＋ with no
+     example yet re-drew the box that was already there and did nothing at all
+     「例文の＋を押しても反応しない」 OWNER 2026-09-06. Three acts in a row, so
+     it belongs here and not in press-check. */
+  openAdd('');
+  wdSetLn('zunn');
+  document.getElementById('wd-mn').value = 'the first meaning';
+  wdMnOpen();
+  document.getElementById('wd-mn').value = 'the second meaning';
+  wdMnOpen();
+  out.said.push('two meanings put in with ＋ alone: ' + JSON.stringify(wEdit.mns));
+  if (!(wEdit.mns.length === 2 && wEdit.mns[0] === 'the first meaning' &&
+        wEdit.mns[1] === 'the second meaning'))
+    out.fails.push('＋ was pressed to add a second meaning and the sheet ' +
+      'carries ' + JSON.stringify(wEdit.mns));
+
+  openEdit('mos');
+  document.getElementById('wd-exl').value = 'mos kano';
+  document.getElementById('wd-exg').value = 'the mountain is tall';
+  wdExOpen();
+  const mo = findWord('mos');
+  out.said.push('an example put in with ＋ alone: ' +
+    JSON.stringify(mo.ex ? mo.ex.map(e => e.ln) : null) +
+    ', and the box is back: ' + !!document.getElementById('wd-exl'));
+  if (!(mo.ex || []).some(e => e.ln === 'mos kano'))
+    out.fails.push('an example was typed and ＋ threw it away: ' +
+      JSON.stringify(mo.ex));
+  if (!document.getElementById('wd-exl'))
+    out.fails.push('＋ was pressed on the examples and left no box to type in');
+
   /* ---- and the spelling alone turns the Save gold ----------------------
      www/shell.js § KEEP: the button is grey until something has changed, and
      the back arrow asks only while it is gold. The spelling is the word

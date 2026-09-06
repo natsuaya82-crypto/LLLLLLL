@@ -243,8 +243,24 @@ function vSpell(){
    so a word with five meanings is five presses of Enter and not five of
    anything else. wdMnShow()/wdExShow() are the one place each answers it. */
 var wdMnNew=false, wdExNew=false;
-function wdMnOpen(){ wdMnNew=true; wdPaint(); }
-function wdExOpen(){ wdExNew=true; wdPaint(); }
+/* 「＋」 does not make the box appear -- it finishes the box in front of you
+   and opens the next one. It was `flag=true; wdPaint()`, which reads no box
+   at all: a first meaning typed and then ＋ was repainted out of wEdit, which
+   had never been told about it, and the meaning was gone
+   「意味の2つ目を＋で足すと1つ目が消える」 OWNER 2026-09-06. The example's ＋
+   did the same, and with no example yet its box was already on the screen, so
+   the press changed nothing whatever 「例文の＋を押しても反応しない」.
+
+   One road for both, and it is the road that already exists: wdAddMn() is
+   wdTakeFields() -- the one place that reads the boxes -- then the store and
+   the repaint. What ＋ adds to it is standing in the box that came back, so
+   the press answers even when the box was already there. */
+function wdOpenMore(id){
+  wdAddMn();
+  var e=document.getElementById(id); if(e) e.focus();
+}
+function wdMnOpen(){ wdMnNew=true; wdOpenMore('wd-mn'); }
+function wdExOpen(){ wdExNew=true; wdOpenMore('wd-exl'); }
 function wdMnShow(){ return wdMnNew || !(wEdit && wEdit.mns && wEdit.mns.length); }
 function wdExShow(){ var w=wdW(); return wdExNew || !(w && w.ex && w.ex.length); }
 function wdMnsHTML(){
