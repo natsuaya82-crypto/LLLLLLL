@@ -203,6 +203,43 @@ const r = await pg.evaluate(({s}) => {
   out.seenInk = inked();
   out.seenDrawn = out.seenInk.filter(function(n){ return n > 0; }).length;
 
+  /* ---- 5. YOUR OWN PAGE OPENS WHILE IT IS PRIVATE ----------------------
+     「ホームの自分の言語の wiki ページを非公開にすると開けなくなり、編集も
+     再公開もできない」 OWNER 2026-09-06, on a phone.
+
+     Private stopped two things at once and each was enough on its own: the
+     row on the profile stopped being a button, and the page itself stopped
+     at its heading on BOTH faces. The switch that turns it back is on that
+     page, and the one that used to stand beside it in the settings went on
+     2026-08-26 -- so a language turned private was a language nobody could
+     open, edit, or publish again.
+
+     Measured on the page and not read off the source: the row is pressed,
+     the sections are counted, and the switch is pressed to see the flag come
+     back. */
+  langOpen(langId);
+  stand('about');
+  setWldHide(true);
+  stand('profile');
+  var prow = document.querySelector('#app .wldrow');
+  out.hidRow = prow ? prow.getAttribute('data-do') : '';
+  out.hidRowSays = prow ? /\bwldoff\b/.test(prow.innerHTML) : false;
+  stand('about');
+  out.hidArtSecs = heads().length;
+  stand('world');
+  out.hidEdSecs = heads().length;
+  out.hidEdSwitch = /data-do="setWldHide"/.test(document.getElementById('app').innerHTML);
+  /* and the switch is the way back */
+  setWldHide(false);
+  out.hidBack = !wldHidden();
+
+  /* AND SOMEBODY ELSE'S PRIVATE PAGE IS STILL THE NAME AND NOTHING ELSE.
+     「非公開にする場合は言語名しか表示されない」 OWNER 2026-08-25 is about the
+     face a reader gets, and that is the half this must not have widened. */
+  WLDS_HAVE['LX'].wld = { body: JSON.stringify({ hide:true, secs:{} }) };
+  stand('about', 'LX');
+  out.seenHidSecs = heads().length;
+
   return out;
 }, { s: seed.toString() });
 
@@ -275,6 +312,25 @@ if (r.fallbackOn !== true || r.fallbackOff !== false)
 if (r.sectionWins !== true)
   say('a section that HAS an answer no longer beats the page\'s default.');
 
+if (!r.hidRow)
+  say('a private language of your own has no way in from the profile: the row ' +
+      'is not a button. 「非公開にすると開けなくなり、編集も再公開もできない」');
+if (!r.hidRowSays)
+  say('the row no longer says which state it is in — 非公開 is the word beside ' +
+      'the name, and without it a private page looks published.');
+if (!r.hidArtSecs)
+  say('your own private article stops at its heading: ' + r.hidArtSecs +
+      ' section(s). Private is what the page shows somebody else.');
+if (!r.hidEdSecs || !r.hidEdSwitch)
+  say('the writing face of your own private article draws ' + r.hidEdSecs +
+      ' section(s) and ' + (r.hidEdSwitch ? 'the switch' : 'NO switch') +
+      '. The switch is the way back and the sections are what editing is.');
+if (!r.hidBack)
+  say('pressing the switch did not make the page public again.');
+if (r.seenHidSecs)
+  say('somebody ELSE’s private article drew ' + r.seenHidSecs + ' section(s). ' +
+      'That face is the name and nothing else — 「非公開にする場合は言語名しか' +
+      '表示されない」.');
 if (!r.seenCells)
   say('somebody else\'s alphabet drew no letter cell at all — the fixture no ' +
       'longer reaches that page, so the claim below was never asked.');
@@ -301,6 +357,9 @@ console.log('world().dl: still stored, still read as what an unanswered ' +
             'section falls back to');
 console.log('somebody else\'s alphabet: ' + r.seenDrawn + '/' + r.seenCells +
             ' cells inked with this phone holding no letters at all');
+console.log('private: your own page still opens from the profile and draws its ' +
+            r.hidArtSecs + ' sections, the switch is on the writing face and ' +
+            'turns it back, and somebody else\'s stops at the name');
 
 await br.close();
 if (fails.length) {
