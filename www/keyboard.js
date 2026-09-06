@@ -2615,19 +2615,23 @@ function vKb(){
     /* SELECT AT THE FAR END OF THE BAR, where the ? was 「？の位置を
        キーボード 選択 にしたい」 OWNER 2026-09-01.
 
-       And the ? where there is nothing to select. The free plan's one board
+       And NOTHING where there is nothing to select. The free plan's one board
        is board 0, which kbSelTap() refuses and which cannot be deleted, so
-       Select there is a word that puts marks on nothing. What that plan needs
-       in the corner is the steps -- how to switch the keyboard on in iOS --
-       and this is the screen it arrives on. */
+       Select there is a word that puts marks on nothing.
+
+       The steps used to be in that corner, on the free plan only. They are on
+       the CONTENTS now, beside the chapter's own name and on both plans
+       (www/home.js § vBuild) -- 「キーボードの？は目次のキーボードの題名の
+       横」 OWNER 2026-09-05 -- and one mark in two places is two places to
+       change. It is a step earlier as well, which is where 「how do I switch
+       this on」 is asked. */
     return '<div class="view">'+navTop('', KBSEL
         ? ((kbSelList().length
               ? navDel(t('kb.sel.del'), 'kbSelDel')
               : '')+
            navDo(t('kb.sel.done'), 'kbSelOff', null, true))
-        : (!can('kb')? helpQ('kb')
-            : (langLocked()? ''
-                : navDo(t('kb.sel'), 'kbSelOn', null, true))))+
+        : ((!can('kb') || langLocked())? ''
+            : navDo(t('kb.sel'), 'kbSelOn', null, true)))+
       '<div class="body">'+
       kbListHTML()+
       kbSysHTML()+
@@ -2677,12 +2681,13 @@ function vKb(){
    「キーボード1の右上の・・・いらないから消して。そうしたら、そもそも
    キーボードはいじれないから、防げる。」 */
 function kbMoreQ(){
-  /* The ? in its place. There is nothing behind the ⋯ on board 0 -- so the
-     corner was empty, and on the free plan that was the corner the steps used
-     to be in: its one screen carried helpQ('kb') until this board became a
-     page of its own. The board is the same board on both plans, so the corner
-     is the same corner. 「無料でもplusでもproでも同じ画面なのよ」 */
-  if(kbIsFree(kbShow)) return helpQ('kb');
+  /* NOTHING on board 0. It is the free QWERTY: it cannot be deleted and it
+     has no editor, so there is nothing behind a ⋯ -- and the ? that stood
+     here has gone to the contents, beside the chapter's own name
+     (www/home.js § vBuild). 「キーボードの？は目次のキーボードの題名の横」
+     OWNER 2026-09-05. That is one screen earlier than this one, which is
+     where 「how do I switch this on」 is asked. */
+  if(kbIsFree(kbShow)) return '';
   return '<button class="navq"' + DO('kbMore') + ' aria-label="'+esc(t('kb.more'))+'">'+
     ICON_DOTS+'</button>';
 }
