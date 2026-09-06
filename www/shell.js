@@ -440,19 +440,102 @@ function keepDrop(key){ delete KEEP[String(key)]; }
    a second press would put a second save on the same fields. The drawing
    screen holds the same thing on GE.busy, for the same reason. */
 var KEEP_BUSY=false;
+/* ---- AND THE SERVER GOES FIRST ------------------------------------------
+   「先にサーバーじゃないの？失敗しましたなのに端末に出るの変じゃない？」
+   OWNER 2026-09-06.
+
+   The order was write, then send, then say. So a save that did not land left
+   the pop over a phone that had ALREADY been changed: the profile screen with
+   no signal said 「保存できませんでした」, and going back and answering
+   「いいえ」 to 「保存しますか」 found the name changed anyway. The person was
+   told twice that nothing was written down, and it was.
+
+   WHAT IS TAKEN. Everything a save can WRITE, and it is counted rather than
+   listed -- a list of keys somebody has to remember to add to is the one
+   fault docs/DATA_SAFETY.md names by name, and lsWipeAcct() was rewritten to
+   count the namespace for exactly this reason. So: the whole of LSL (the
+   twelve slices live there, rule 22), and every `lingua.` key on the disk,
+   which is where the settings, the profile and the index of languages are.
+   `LS_SESS` is the one thing left out and it is not a belonging: it is WHICH
+   ACCOUNT THIS PHONE IS, no save moves it, and netSend() can refresh the
+   token while the send is out -- putting an older one back would sign
+   somebody out of a save that merely failed.
+
+   The three globals kept beside it are the three whose store is that disk and
+   not LSL. Everything else -- WORDS, LETTERS, STG, WLD, KB, NOTES, SND,
+   SCRIPT, langName -- is read back out of the slices by langLoad(), which is
+   the one road globals take from storage (LANG_IO in www/core.js) and is not
+   restated here.
+
+   `.was` and `.got` come back with it, and that is what makes a HALF-landed
+   save safe. Two slices moved, the first arrived, the second did not: the
+   phone goes back to before the press with its agreement record saying the
+   old string, and the server keeps the newer one. Nothing is sent over it and
+   nothing is dropped -- the next launch's merge finds a slice it has not been
+   told about and takes the server's, which is the adding side.
+
+   WHAT IS NOT TAKEN is the buffer. `b.v` is what the person typed and it is
+   never touched here, so the fields still hold it and pressing again sends it
+   again. 「打ったものは欄に残る」. */
+function keepSnap(){
+  var snap={lsl:{}, ls:{}, set:'', me:'', langs:''}, k, i;
+  for(k in LSL) if(Object.prototype.hasOwnProperty.call(LSL,k)) snap.lsl[k]=LSL[k];
+  try{
+    for(i=0;i<localStorage.length;i++){
+      k=localStorage.key(i);
+      if(k && k.indexOf('lingua.')===0 && k!==LS_SESS) snap.ls[k]=localStorage.getItem(k);
+    }
+  }catch(e){}
+  snap.set=JSON.stringify(SET);
+  snap.langs=JSON.stringify(LANGS);
+  if(typeof ME!=='undefined') snap.me=JSON.stringify(ME);
+  return snap;
+}
+/* And back, in the order storage is read in: the disk and the memory store
+   first, then the globals that are derived from them. A key written by the
+   save and not in the snapshot is REMOVED -- the phone is what it was, and a
+   new key left standing is the save half-landed on this phone. */
+function keepBack(snap){
+  var gone=[], k, i;
+  if(!snap) return;
+  LSL={};
+  for(k in snap.lsl) if(Object.prototype.hasOwnProperty.call(snap.lsl,k)) LSL[k]=snap.lsl[k];
+  try{
+    for(i=0;i<localStorage.length;i++){
+      k=localStorage.key(i);
+      if(k && k.indexOf('lingua.')===0 && k!==LS_SESS &&
+         !Object.prototype.hasOwnProperty.call(snap.ls,k)) gone.push(k);
+    }
+    for(i=0;i<gone.length;i++) localStorage.removeItem(gone[i]);
+    for(k in snap.ls){
+      if(Object.prototype.hasOwnProperty.call(snap.ls,k)) localStorage.setItem(k, snap.ls[k]);
+    }
+  }catch(e){}
+  try{ SET=JSON.parse(snap.set); }catch(e){}
+  try{ LANGS=JSON.parse(snap.langs); }catch(e){}
+  if(snap.me && typeof ME!=='undefined'){ try{ ME=JSON.parse(snap.me); }catch(e){} }
+  langLoad();
+}
 function keepSave(key, done){
-  var b=KEEP[String(key)], f;
+  var b=KEEP[String(key)], f, snap;
   if(!b || !b.save){ if(done) done(true); return; }
   if(KEEP_BUSY) return;
   KEEP_BUSY=true;
+  /* Before anything is written, so that nothing has to be worked out
+     afterwards from what changed. */
+  snap=keepSnap();
   b.save(b.v, function(ok){
-    if(!ok){ KEEP_BUSY=false; if(done) done(false); return; }
+    /* Refused by the screen itself -- the @ is taken, the sheet would not
+       write. It is the same sentence as a send that did not land and it is
+       the same road back: nothing on this phone moves. */
+    if(!ok){ keepBack(snap); KEEP_BUSY=false; if(done) done(false); return; }
     /* AND IT IS NOT SAVED UNTIL IT IS UP.
        「保存ボタン押して保存ができるかできないかは通信の有無だけだからな？」
        「通信エラーなら進むわけねえだろ全部」 OWNER 2026-09-05.
 
-       `b.save` has written the fields to this phone by now, which is what it
-       has always done and is what makes the language survive a dead battery.
+       `b.save` has written the fields to this phone by now, and keepBack()
+       above takes that back when the send does not land -- 「先にサーバー
+       じゃないの？」 OWNER 2026-09-06.
        What it never did was ask whether the server heard -- the copy went up
        on netSaveUp()'s 1.2-second burst timer, behind a person who had
        already been told 「saved」 and sent back a screen. Nine screens
@@ -472,6 +555,8 @@ function keepSave(key, done){
        up over it saying why. */
     netSaveNow(function(up){
       KEEP_BUSY=false;
+      /* It did not arrive, so it did not happen. */
+      if(!up) keepBack(snap);
       /* Levelled rather than thrown away. What has just been written down IS
          what the screen opened with now, so there is nothing left to ask about
          and nothing left to show a button for -- and the screen is still in

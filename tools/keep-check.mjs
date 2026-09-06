@@ -303,6 +303,46 @@ const r = await pg.evaluate(({ s }) => {
     out.screens.push(res);
   }
 
+  /* ---- 16. AND WITH THE WIRE REFUSING, THE PHONE DOES NOT MOVE ----------
+     「先にサーバーじゃないの？失敗しましたなのに端末に出るの変じゃない？」
+     OWNER 2026-09-06.
+
+     Claim 15 below asks what a person SEES when a save does not land -- they
+     are still on their screen and the app has said why. This is the other
+     half and it is the one that was wrong: the write went in FIRST and the
+     send afterwards, so a refused save left the pop standing over a phone
+     that had already been changed. Pressed on the profile: the name was
+     changed, the pop said it was not saved, and going back and answering
+     「いいえ」 to 「保存しますか」 found the new name there anyway.
+
+     Asked of all eight screens rather than of the one it was reported on,
+     because keepSave() is one road and a fix that held on one of them would
+     be a fix in the wrong place. Three things, per screen: the value the
+     screen writes is what it was, not one byte of what the phone holds moved
+     (LSL and the disk together, through the app's own slMine()), and what was
+     typed is still in the field -- pressing again sends it again. */
+  window.WIRE = false;
+  out.dead = [];
+  for(i = 0; i < SCREENS.length; i++){
+    var sd = SCREENS[i], wasV, wasAll, f, v2;
+    viewReset(); popOff();
+    sd.go();
+    /* Not sd.v: claim 7 above has already written that one down, so typing it
+       again is a save with nothing in it and would pass whatever this does. */
+    v2 = sd.v + ' again';
+    wasV = sd.read(); wasAll = all();
+    type(sd.sel, v2);
+    keepPress();
+    f = document.querySelector(sd.sel);
+    out.dead.push({ n: sd.n, value: sd.read(), was: wasV, typed: v2,
+                    moved: all() !== wasAll,
+                    dirty: keepDirty(keepKey()),
+                    field: f ? String(f.value || '') : null });
+    popOff();
+  }
+  window.WIRE = true;
+  viewReset(); popOff();
+
   /* ---- 9. the swipe is the same road ------------------------------------
      swEnd() ends in back() (www/shell.js), so the gesture cannot have an
      answer of its own. Asked by DRIVING the gesture rather than by reading
@@ -635,6 +675,26 @@ if(!more.tabGold) fails.push('coming back to a screen with typing on it, the Sav
 if(more.tabStored === 'Wandered') fails.push('a bottom tab saved what was typed');
 if(!more.freeLeft) fails.push('an @ the server allowed did not go back');
 if(more.freeHandle !== 'freename') fails.push('an @ the server allowed was not written down');
+for(const d of r.dead){
+  if(d.value !== d.was)
+    fails.push(d.n + ': a save that did not land changed the phone anyway (' +
+               JSON.stringify(d.was) + ' -> ' + JSON.stringify(d.value) + ')');
+  if(d.moved)
+    fails.push(d.n + ': a save that did not land moved something on the phone');
+  if(!d.dirty)
+    fails.push(d.n + ': a save that did not land let go of what was typed');
+  /* AND IT IS STILL IN THE FIELD, asked of every screen whose buffer IS its
+     fields. The word sheet is the one that is not -- its buffer is the sheet
+     said once (`w`, wdSigEdit in www/wordsheet.js), what was typed is in
+     `wEdit`, and the fields are redrawn from the form built when the sheet
+     was opened. `dirty` above is what says the typing is still there on that
+     one; the field reverting on a press is a fault of its own and is older
+     than this walk -- it does the same with the bug this claim was written
+     for put back. */
+  if(d.n !== "a word's sheet" && d.field !== d.typed)
+    fails.push(d.n + ': a save that did not land lost what was typed: ' +
+               JSON.stringify(d.field));
+}
 if(!more.deadStayed) fails.push('a save with no wire went back anyway');
 if(!more.deadSaid) fails.push('a save with no wire went nowhere and said nothing');
 if(more.deadTyped !== 'written in a tunnel') fails.push('a save with no wire threw away what was typed: ' + JSON.stringify(more.deadTyped));
@@ -661,6 +721,8 @@ console.log('a bottom tab: threw nothing away and asked nothing -- ' +
 console.log('the @: refused stays put (' + more.refusedHandle + '), allowed goes (' +
             more.freeHandle + ')');
 console.log('no wire: the Yes stayed on the screen, said why, and kept what was typed');
+console.log('no wire: ' + r.dead.length + ' screens saved, and not one of them moved ' +
+            'anything on the phone -- the server goes first');
 
 if(fails.length){
   console.error('\nFAILED (' + fails.length + '):');

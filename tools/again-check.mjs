@@ -803,6 +803,9 @@ async function pressSave(how){
              /* 触っている文字と、そこに書いた線そのもの。長さではなく中身で
                 見るので、元からある線と取り違えません。 */
              lid: GE.lid, ink: JSON.stringify(geInk(GE.st)),
+             /* 押す前に文字が持っていた線。落ちたときはこれのままでなければ
+                なりません ── 下の inkBack。 */
+             was: JSON.stringify((ltById(GE.lid) || {}).st || []),
              hasBtn: !!document.querySelector('[data-do="keepPress"]') };
   }, { s: seed.toString(), srv: SERVER, how });
   if (!set.hasBtn) return Object.assign(set, { noButton:true });
@@ -810,20 +813,28 @@ async function pressSave(how){
   /* 溜めの時間より長く待つ。ここで通るなら、押した瞬間に出て行っています ──
      NET_UPMS をコードから読むので、溜めが変わってもこの検査は付いていきます。 */
   await pg.waitForTimeout(await pg.evaluate(() => NET_UPMS + 900));
-  return await pg.evaluate(({ lid, ink }) => ({
+  return await pg.evaluate(({ lid, ink, was }) => ({
     screen: JSON.stringify(NAV[NAV.length - 1]),
     pop: popOn(),
     toast: String((document.querySelector('.toast, #toast') || {}).textContent || ''),
-    /* 描いたものは、落ちても取り上げない。docs/DATA_SAFETY.md
-       「人が作ったものは消さない」── 落ちた送信は、手を戻す理由ではない。
+    /* **落ちたら文字は元のまま。**
+       「先にサーバーじゃないの？失敗しましたなのに端末に出るの変じゃない？」
+       OWNER 2026-09-06。ここは 2026-09-05 の決定のもとでは逆を訊いていて
+       ── 落ちた送信でも線は文字に載る ── その決定はこの日の一言で置き換わり
+       ました。サーバーが受け取るまで端末の状態は動きません（keepSave() の
+       keepBack、www/shell.js § KEEP）。
        **書いた線そのものと引き比べる。**「何か線が在る」では、この文字が最初
-       から持っている線に当たって、取り上げる実装でも緑になります。 */
-    inkKept: JSON.stringify((ltById(lid) || {}).st || []) === ink,
+       から持っている線に当たって、どちらの実装でも緑になります。 */
+    inkBack: JSON.stringify((ltById(lid) || {}).st || []) === was,
+    /* そして描いたものは目の前から取り上げない ── GE はそのままで、buffer も
+       持ったまま。もう一度押せばもう一度送られます。 */
+    inkHeld: !!(typeof GE !== 'undefined' && GE) &&
+             JSON.stringify(geInk(GE.st)) === ink && keepDirty(keepKey()),
     inkNow: JSON.stringify((ltById(lid) || {}).st || []),
-    ink: ink,
+    ink: ink, was: was,
     sent: window.__SRV.sent.slice(),
     tried: window.__SRV.tried.slice()
-  }), { lid: set.lid, ink: set.ink });
+  }), { lid: set.lid, ink: set.ink, was: set.was });
 }
 
 const sv = { down: await pressSave('down'), slice: await pressSave('slice'),
@@ -839,12 +850,17 @@ say(sv.slice.screen.indexOf('glyph') >= 0 && sv.slice.pop && !sv.slice.toast,
     'いたほうで、五本落ちてポップが零だった（画面 ' + sv.slice.screen +
     '、ポップ ' + (sv.slice.pop ? 'あり' : '**なし**') + '、文 ' +
     (sv.slice.toast ? '**「' + sv.slice.toast + '」**' : 'なし') + '）');
-say(sv.down.inkKept && sv.slice.inkKept,
-    'そして描いたものは取り上げない ── 落ちた送信は手を戻す理由ではない' +
-    '（書いた線 ' + sv.down.ink + '。通信ごと ' +
-    (sv.down.inkKept ? '同じものが在る' : '**' + sv.down.inkNow + '**') +
+say(sv.down.inkBack && sv.slice.inkBack,
+    '**落ちたら文字は元のまま** ── 先にサーバー、届いてから端末（OWNER ' +
+    '2026-09-06）（押す前 ' + sv.down.was + '。通信ごと ' +
+    (sv.down.inkBack ? '元のまま' : '**' + sv.down.inkNow + '**') +
     '、POST だけ ' +
-    (sv.slice.inkKept ? '同じものが在る' : '**' + sv.slice.inkNow + '**') + '）');
+    (sv.slice.inkBack ? '元のまま' : '**' + sv.slice.inkNow + '**') + '）');
+say(sv.down.inkHeld && sv.slice.inkHeld,
+    'そして描いたものは目の前から取り上げない ── 画面の線はそのまま、もう一度 ' +
+    '押せばもう一度送られる（書いた線 ' + sv.down.ink + '、通信ごと ' +
+    (sv.down.inkHeld ? '在る' : '**消えた**') + '、POST だけ ' +
+    (sv.slice.inkHeld ? '在る' : '**消えた**') + '）');
 say(sv.down.tried.length > 0 && sv.slice.tried.length > 0,
     '押した瞬間に出て行く ── 溜め（NET_UPMS）を待たずに（通信ごと ' +
     sv.down.tried.length + ' 件、POST だけ ' + sv.slice.tried.length + ' 件）');
