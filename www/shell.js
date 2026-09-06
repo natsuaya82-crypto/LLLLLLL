@@ -795,6 +795,7 @@ var PAGES={
   fm:      {tab:'build', k:'word.fm'},
   pos:     {tab:'build', k:'f.pos'},
   reg:     {tab:'build', k:'word.reg'},
+  sub:     {tab:'build', k:'f.sub'},
   follows: {tab:'profile'},
   glyph:   {tab:'build'},
   spell:   {tab:'build', k:'word.sp'},

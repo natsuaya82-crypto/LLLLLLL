@@ -360,7 +360,6 @@ act('fmPick', fmPick);
 act('fmSay', fmSay);
 act('fmOpen', fmOpen);
 act('posPick', posPick);
-act('openSub', openSub);
 act('subPick', subPick);
 act('subNewOpen', subNewOpen);
 /* Forms made by a rule: writing one, and asking a word for the ones it has

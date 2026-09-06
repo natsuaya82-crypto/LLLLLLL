@@ -1095,16 +1095,21 @@ function posPick(k){ wdSetPos(k); relDirty(); back(); }
    are already in -- so this screen is that list and a box to write one that
    is not on it yet.
 
-   It is a form and not a route, which is what posPick's screen would be if it
-   were written today: the list is one press deep, it is built from the
-   dictionary rather than from anything stored, and a route would be a second
-   place saying that a word has a subclass.
+   IT IS A ROUTE, and it is the same route the part of speech and the register
+   are. It was a FORM, and a form is the one thing this screen could not be:
+   openForm() replaces FORM the moment it opens, so the sheet it was opened
+   from was no longer the form on the trail -- relDirty() found FORM.key
+   saying `wsub` and rebuilt nothing, and the back arrow's vForm() found the
+   same and called FORM_OPEN.edit, which builds wEdit out of the WORD again.
+   The subclass just chosen was gone, and nothing threw. The part of speech
+   and the register are routes and were never affected, which is the whole of
+   why they worked.
 
    The subclasses OF THIS PART OF SPEECH and no others. 動詞 → 自動詞 is not
    an answer about a noun, and one list holding every subclass in the language
    is the row of chips CLAUDE.md forbids wearing a list's clothes. */
 function wdSubHTML(){
-  return wdPickRow(t('f.sub'), wEdit.sub || t('f.sub.none'), DO('openSub'));
+  return wdPickRow(t('f.sub'), wEdit.sub || t('f.sub.none'), DO('go', ["sub"]));
 }
 /* THE SUBCLASSES THIS APP ALREADY KNOWS THE NAMES OF, one part of speech at a
    time. 「下位分類の中身も結構書いていいよ」 OWNER 2026-09-05. The screen used
@@ -1147,15 +1152,16 @@ function subList(pos){
    into it and not confirmed was a subclass somebody believed they had made.
    Enter on the box is still the only thing that makes one. */
 var wdSubNew=false;
-function subNewOpen(){ wdSubNew=true; openSub(); }
+function subNewOpen(){ wdSubNew=true; render(); }
 function subAddRow(){
   return '<div class="entry one"><button class="ebody"' + DO('subNewOpen') + '>'+
     '<div class="hwrow"><span class="hwl">'+ICON_ADD+esc(t('f.sub.new'))+
     '</span></div></button><span class="ltck" style="margin-left:auto"></span></div>';
 }
-function openSub(){
-  var subs=subList(wEdit? wEdit.pos : ''), now=(wEdit && wEdit.sub) || '';
-  openForm('wsub', t('f.sub'),
+function vSub(){
+  if(!wEdit) return viewGone();
+  var subs=subList(wEdit.pos), now=wEdit.sub || '';
+  return '<div class="view">'+navTop()+'<div class="body">'+
     /* "None" is a row like the others and is ticked when there is none, so
        taking a subclass off is the same press as putting one on. */
     wdOneHTML(t('f.sub.none'), !now, 'subPick', '')+
@@ -1166,9 +1172,8 @@ function openSub(){
       ? '<div class="field">'+
           lnField('wd-sub', '', ' aria-label="'+esc(t('f.sub.new'))+'"'+
                   KD('subNew'), '')+'</div>'
-      : subAddRow()));
+      : subAddRow())+'</div></div>';
 }
-FORM_OPEN.wsub=function(){ openSub(); };
 function subPick(x){ wdSetSub(x); relDirty(); back(); }
 /* Enter on the box is what makes one. There is no button beside it: a name
    typed and not pressed is a subclass somebody believes they made, and Enter
