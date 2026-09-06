@@ -1113,7 +1113,7 @@ function wldRow(){
      It returned nothing at all, so a language nobody had named had no row on
      the profile and therefore no way in to its article from here -- and the
      article was the one screen that would have let them name it. */
-  var lnm=langName || t('langs.untitled');
+  var lnm=langNameSaid(langName);
   /* And while it is private it is not a way through at all --
      「そもそも非公開ならプロフィールから飛べないんだって」 OWNER 2026-08-25. It was
      a button either way, with a badge beside the name saying so, which is the
@@ -1831,7 +1831,7 @@ function wldPage(ed, L, lid){
   /* The article always has its heading, named or not: 「言語名なくても
      wikiページは出してほしい」OWNER 2026-09-02. Without one the page had no
      title and, with nothing written under it either, came out blank. */
-  body+='<h1 class="abth">'+esc(L.name() || t('langs.untitled'))+'</h1>';
+  body+='<h1 class="abth">'+esc(langNameSaid(L.name()))+'</h1>';
   /* Whether the page exists for anybody else at all. Only while writing:
      a state with no way to change it does not belong on the reading face. */
   if(ed) body+='<button class="set"' + DO('setWldHide', [!wldHidden()]) + '>'+
@@ -2183,10 +2183,9 @@ function saveName(){
   var a=document.getElementById('ln-nm');
   if(!a) return;
   var v=String(a.value||'').replace(/^\s+|\s+$/g, '');
-  /* An empty box is not a rename. It used to be `v.trim()` guarding the same
-     thing, and a language with no name at all is what the box would have
-     written. */
-  if(!v){ closeSheet({target:{id:'sbg'}}); return; }
+  /* 空は未設定 -- OWNER 2026-09-06. Emptying the box takes the name off, and
+     what every screen then says is langNameSaid()'s. It used to be thrown
+     away here, so the box closed and the old name stayed with nothing said. */
   langName=v; save(); closeSheet({target:{id:'sbg'}}); render();
 }
 
@@ -2222,7 +2221,7 @@ function langRow(id){
      and the rest in roman -- which is one row looking like the answer and the
      others looking broken. `.pav` is the circle every face in this app already
      wears, so no new corner is drawn (規則18). */
-  var mk=String(nm||t('langs.untitled')).charAt(0);
+  var mk=langNameSaid(nm).charAt(0);
   /* A DOWNLOADED LANGUAGE IS A LANGUAGE YOU SWITCH TO, and it was a dead row
      until 2026-09-02. 「ダウンロード言語にしようよ。編集不可でそのアカウントに
      切り替えたらダウンロードした人の言語が使える」 OWNER -- so the row is a
@@ -2238,7 +2237,7 @@ function langRow(id){
   return '<button class="lgrow'+(isOpen?' on':'')+'"' + DO('langOpen', [id]) +
     (isOpen? ' aria-label="'+esc(t('langs.open'))+'"' : '') + '>'+
     '<span class="pav lgav">'+esc(mk)+'</span>'+
-    '<span class="lgn">'+esc(nm||t('langs.untitled'))+'</span>'+
+    '<span class="lgn">'+esc(langNameSaid(nm))+'</span>'+
     '<span class="lgck">'+(isOpen?ICON_TICK:'')+'</span></button>';
 }
 /* The way to make another one, at the foot of the list -- where "add an
