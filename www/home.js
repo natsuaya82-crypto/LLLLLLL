@@ -679,7 +679,10 @@ function fHits(qq){
   var g={w:[], l:[], s:[], n:[], r:[]};
   g.w=WORDS.filter(function(w){ return srcKey(w).indexOf(qq)>=0; })
     .sort(function(a,b){ return String(a.hw).localeCompare(String(b.hw)); });
-  g.l=LETTERS.filter(function(l){
+  /* ltSeen(), not LETTERS: the alphabet's own room hides what a free plan
+     cannot reach, and a search that answered off the whole list put those
+     letters back on the screen through the other door. */
+  g.l=ltSeen().filter(function(l){
     return (ltName(l)+' '+(l.ch||'')+' '+ltUnits(l).join(' ')).toLowerCase().indexOf(qq)>=0; });
   g.s=addedSnd().filter(function(x){ return String(x).toLowerCase().indexOf(qq)>=0; });
   g.n=[];
