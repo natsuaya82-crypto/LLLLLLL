@@ -110,7 +110,7 @@ defLang('es', (function(){
       "cap.warn"                  : "Quedan {0} palabras en Gratis",
       "cap.hid"                   : "{0} ocultos",
       "cap.lapse.h"               : "Tu plan ha terminado",
-      "cap.lapse.d"               : "Vuelves a Gratis: el diccionario muestra 100 palabras. <b>No se ha borrado nada.</b> Todo sigue aquí, y en tu copia de seguridad.",
+      "cap.lapse.d"               : "No se ha borrado nada de lo que has creado. Tus palabras, letras, teclados, gramática y publicaciones siguen en tu cuenta, tal como estaban.<br><br>En el plan Gratis el diccionario muestra hasta 100 palabras, un teclado y un idioma. Las palabras a partir de la 100 no han desaparecido. Solo no se muestran.<br><br>Si vuelves a mejorar tu plan, todo vuelve tal cual.",
       "cap.lapse.ok"              : "Cerrar",
       "ch.clear"                  : "Sin carácter",
       "ch.for"                    : "Un carácter para «{0}»",

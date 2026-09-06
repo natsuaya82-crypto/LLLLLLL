@@ -150,7 +150,7 @@ defLang('it', (function(){
       "cap.warn"                  : "Restano {0} parole nel piano Gratis",
       "cap.hid"                   : "{0} nascosti",
       "cap.lapse.h"               : "Il tuo piano è finito",
-      "cap.lapse.d"               : "Torni a Gratis: il dizionario elenca 100 parole. <b>Non è stato cancellato nulla.</b> C’è ancora tutto, e nel tuo backup.",
+      "cap.lapse.d"               : "Non è stato cancellato nulla di ciò che hai creato. Le tue parole, lettere, tastiere, grammatica e i tuoi post sono ancora tutti sul tuo account, esattamente com’erano.<br><br>Con il piano Gratis il dizionario mostra fino a 100 parole, una tastiera e una lingua. Le parole dopo la 100 non sono sparite. Semplicemente non vengono mostrate.<br><br>Se torni a un piano a pagamento, torna tutto com’era.",
       "cap.lapse.ok"              : "Chiudi",
       "ch.clear"                  : "Nessun carattere",
       "ch.for"                    : "Un carattere per “{0}”",

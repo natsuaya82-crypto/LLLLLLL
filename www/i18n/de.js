@@ -138,7 +138,7 @@ defLang('de', (function(){
       "cap.warn"                  : "Noch {0} Wörter in Gratis",
       "cap.hid"                   : "{0} ausgeblendet",
       "cap.lapse.h"               : "Dein Tarif ist beendet",
-      "cap.lapse.d"               : "Zurück auf Gratis: das Wörterbuch zeigt 100 Wörter. <b>Es wurde nichts gelöscht.</b> Es ist alles noch da, und in deiner Sicherung.",
+      "cap.lapse.d"               : "Nichts von dem, was du gemacht hast, wurde gelöscht. Deine Wörter, Zeichen, Tastaturen, Grammatik und Beiträge sind alle noch in deinem Konto, genau wie vorher.<br><br>Im Gratis-Tarif zeigt das Wörterbuch bis zu 100 Wörter, eine Tastatur und eine Sprache. Die Wörter ab 100 sind nicht weg. Sie werden nur nicht angezeigt.<br><br>Wenn du wieder upgradest, kommt alles genauso zurück.",
       "cap.lapse.ok"              : "Schließen",
       "ch.clear"                  : "Kein Zeichen",
       "ch.for"                    : "Ein Zeichen für „{0}“",

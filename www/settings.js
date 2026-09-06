@@ -746,7 +746,15 @@ function wipeHere(uid){
    whole reason this exists is that the app is about to look as though work has
    gone. It is the app's own sheet rather than the browser's alert() because
    nothing in Lingua has ever used one, and a native dialog in the middle of
-   a launch reads as an error. */
+   a launch reads as an error.
+
+   AND IT IS THE ONE SCREEN IN THE APP THAT EXPLAINS ITSELF, by name.
+   「みんな消えたと思うだろうし、説明禁止だけどここはちゃんと説明文書いてユーザーにわかりやすくしないと」 OWNER 2026-09-06.
+   The ban on explanatory text holds everywhere else and holds here for every
+   other sentence; `cap.lapse.d` is the exception and is not to be cut back to
+   a state with no cause. It says three things and each is why somebody would
+   otherwise think their work had gone: nothing was deleted, what the free
+   plan SHOWS is not what it keeps, and upgrading brings it all back. */
 function openCapLapse(){
   openForm('lapse:', t('cap.lapse.h'),
     '<div class="note" style="margin-bottom:18px">'+t('cap.lapse.d')+'</div>'+
