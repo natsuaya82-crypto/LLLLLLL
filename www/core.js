@@ -252,6 +252,15 @@ function langSaveAll(){
    place a language meets a session. */
 var LANGS={}, langId='';
 var WORDS=[], LINES=[], langName='', SET=setDefaults();
+/* WHAT A LANGUAGE IS CALLED WHEN IT IS CALLED NOTHING, in one place.
+   An empty name is 未設定 -- OWNER 2026-09-06 -- and that sentence was written
+   out at four sites in home.js and answered with '—' at two more in
+   settings.js, which is six places agreeing about one word. The name itself
+   stays empty: this says how it is SAID, and nothing here writes it.
+
+   It takes the name rather than reading `langName`, because a post carries the
+   name it was written with and the reader is the one who has to say it. */
+function langNameSaid(nm){ return String(nm||'') || t('langs.untitled'); }
 /* What a person's settings are before they touch anything. A function rather
    than a literal because it is needed twice -- here, and when everything is
    wiped -- and the second copy was written out by hand and did not have the

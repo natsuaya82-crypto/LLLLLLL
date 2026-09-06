@@ -127,7 +127,7 @@ function cardSrc(){
   /* The handle is whose the card is. On a post it is the post's, frozen when
      it was written; on a word or an example it is this person's, because
      those are things in the language that is open. */
-  var v=CARD.v, i, w, ex, po, hd=meHandle(), nm=String(langName||'');
+  var v=CARD.v, i, w, ex, po, hd=meHandle(), nm=langNameSaid(langName);
   /* A post is already a line with its meaning fixed to it, which is what a
      card is. Nothing to work out. */
   if(CARD.k==='p'){
@@ -1096,7 +1096,7 @@ function cardOfPost(po){
      in a band that wide. The card has three shapes now, so it no longer has
      to misspell somebody's writing to fit one of them. */
   return {kind:'p', line:String(po.ln||''), mn:String(po.mn||''),
-          hd:String(po.hd||''), nm:String(po.lname||''),
+          hd:String(po.hd||''), nm:langNameSaid(po.lname),
           ink:postInkOK(po.ink)? po.ink : null, dir:postDir(po)};
 }
 /* The post's line as things to draw, in the shapes cardInk() already knows:

@@ -2452,6 +2452,15 @@ export function halfDone(){
        window.route = 'words'; NAV = [{ r:'words' }];
        const h = vWords();
        WORDS = was;
-       return h; }]
+       return h; }],
+    /* 名前を空にして保存した言語 ── 「未設定」と出る。OWNER 2026-09-06.
+       seed() が langName に名前を入れるので、名前の無い言語はどの route から
+       も出てこない。空の名前がどう言われるかは langNameSaid() が一箇所で
+       答えていて、その答えが出る画面はこの一枚しかない。戻さないのは他の面と
+       同じ理由で、次の面の前に seed() がもう一度走るから。 */
+    ['a language with no name -- 名前を空にした言語の設定', () => {
+       langName = '';
+       window.route = 'set'; NAV = [{ r:'set', a:'lang' }];
+       return vSet(); }]
   ];
 }

@@ -169,7 +169,7 @@ function vSettings(){
 function setSummary(id, p){
   if(id==='look')  return t('theme.'+(SET.theme||'system'));
   if(id==='ui')    return LANG[uiLang()].label;
-  if(id==='lang')  return langName||'—';
+  if(id==='lang')  return langNameSaid(langName);
   if(id==='acct')  return t(netSignedIn()? 'set.account.on' : 'set.account.guest');
   /* The same word on every plan, for the same reason the row inside the room
      is the same row: 'Free' here was not 「this room is free」 but 「this room
@@ -204,7 +204,7 @@ function vSet(){
     body='<button class="set"' + DO('go', ["langs"]) + '><span class="sl">'+t('langs.title')+'</span>'+
       '<span class="sv">'+ICON_GO+'</span></button>'+
       '<button class="set"' + DO('editName') + '><span class="sl">'+t('set.name')+'</span>'+
-      '<span class="sv">'+esc(langName||'—')+ICON_GO+'</span></button>'+
+      '<span class="sv">'+esc(langNameSaid(langName))+ICON_GO+'</span></button>'+
       '<button class="set"' + DO('go', ["words"]) + '><span class="sl">'+t('set.count')+'</span>'+
       '<span class="sv">'+WORDS.length+(can('words')?'':' / '+wordCap())+ICON_GO+'</span></button>'+
       '<button class="set"' + DO('go', ["letters"]) + '><span class="sl">'+t('toc.letters')+'</span>'+
