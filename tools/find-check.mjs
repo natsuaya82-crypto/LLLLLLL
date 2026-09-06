@@ -803,9 +803,16 @@ say(found.ask.indexOf('prompt=eq.') === -1,
 say(found.ask.indexOf('body->>mn') !== -1,
     '当たるのは本文の文字 (' + (found.ask.indexOf('body->>mn') !== -1) + ')');
 
-/* ---- 絞り込みにタグは出しません ---------------------------------------
-   「そこに出せなんて頼んでないけど」 OWNER 2026-09-04。一度出して、決定で
-   外しました。**戻ってこないようにここで押さえます。** */
+/* ---- 絞り込みに #今日のお題 の行が一つ ---------------------------------
+   「絞り込み（おすすめ／フォロー中）に「#今日のお題」を足す」 OWNER
+   2026-09-06。**この行は 2026-09-04 の「そこに出せなんて頼んでないけど」を
+   上書きしました** ── 今日オーナーが言った側が決定です。あの日外したのは
+   「誰かが打った言葉を話題としてここに立てる」ほうで、これは列（post.pr）が
+   集める一日ぶんのタイムラインです。
+
+   一本であること、そして t('feed.filter.prompt') であることの二つを訊きます。
+   行が二本になるのは、タグを言葉として足した日 ── つまり 09-04 が外したほうが
+   戻ってきた日です。 */
 await withDay();
 const rows = await pg.evaluate(() => {
   window.route = 'filter'; NAV = [{ r:'feed' }, { r:'filter' }];
@@ -814,10 +821,12 @@ const rows = await pg.evaluate(() => {
   var bs = e.querySelectorAll('button.set'), i, out = [];
   for (i = 0; i < bs.length; i++)
     out.push(bs[i].textContent.replace(/\s+/g, ' ').trim());
-  return out;
+  return { rows: out, say: t('feed.filter.prompt') };
 });
-say(!rows.filter(function(r){ return r.indexOf('#') === 0; }).length,
-    '絞り込みにタグの行は無い (' + rows.join(' / ') + ')');
+const tagRows = rows.rows.filter(function(r){ return r.indexOf('#') === 0; });
+say(tagRows.length === 1 && tagRows[0] === rows.say,
+    '絞り込みの #今日のお題 は一本で、その言葉は言語ファイルのもの (' +
+    rows.rows.join(' / ') + ')');
 
 await br.close();
 console.log(bad.length ? '\nfind: FAILED ' + bad.length : '\nfind: 一つの箱に打てば人も投稿も出る。途中の言葉でも出て、出ていない投稿は出ない');
