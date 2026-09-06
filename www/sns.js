@@ -1173,7 +1173,7 @@ function vFeed(){
        not see it has no way to post at all. 「ホームからもツイートできるように」
        It is not a field: pressing it opens the screen a post is written on,
        which is where the letters, the photographs and the voice are. */
-    (NET_BANNED? '' : dayRow())+
+    (postMay()? dayRow() : '')+
     /* Frozen, said here and nowhere else. Not a notice -- 「通知はいらんて
        ホーム画面にバンでいいやん」 -- and not a coloured strip over a
        timeline that goes on scrolling underneath it: it takes the timeline's
@@ -1184,7 +1184,7 @@ function vFeed(){
        「3タブを閉じる必要もないし。ホームに出ればいいやん」. Every door being
        frozen shuts is shut by is_member() in supabase/schema.sql whether or
        not anything on screen says so; this is the saying so. */
-    (NET_BANNED
+    (!postMay()
       ? '<div class="empty"><div class="eb">'+esc(t('post.out'))+'</div>'+
           /* The one place in this app that explains itself, and it is here
              because not knowing is worse than being told: somebody who finds
@@ -1500,7 +1500,7 @@ function snsFab(){
      sealed under one pad, so nothing on it is ever pressed. Written as one
      condition and not as a second return, because two returns building the
      same button is the thing this whole change is about. */
-  if(!netSignedIn() || NET_BANNED) return '';
+  if(!postMay()) return '';
   return '<button class="fab"' + DO('openPost', ["new"]) +
     ' aria-label="'+esc(t('post.new'))+'">'+ICON_ADD2+'</button>';
 }

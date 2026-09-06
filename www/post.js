@@ -2598,6 +2598,21 @@ function pwSaveEdit(ln){
   PW=pwBlank();
   goTab('feed');
 }
+/* MAY THIS PERSON POST, REPLY, BOOST AND LIKE -- one question, one place.
+   Signed in, and not frozen.
+
+   The feed asked it three times and the row of a post asked it nowhere, so a
+   frozen account had the composer and the round + taken away and the reply,
+   the boost and the like still sitting under every post on the profile and in
+   a thread -- and still working: the count went to 1 under the thumb and the
+   server refused the write without a word.
+
+   is_member() in supabase/schema.sql is what actually shuts every one of
+   those doors whether or not anything on screen says so; this is the screen
+   agreeing with it, drawn and pressed. The sentence about being frozen stays
+   the feed's one line and is not repeated here -- 「ホーム画面にバンでいい
+   やん」. */
+function postMay(){ return netSignedIn() && !NET_BANNED; }
 /* ==== below this line a post renders from the post ====
    Nothing here may ask the open language, the open dictionary, the drawn
    letters or the account anything. A post is read by people who do not have
@@ -3164,9 +3179,15 @@ function postRow(p){
          because the current shape has no use for it is the one thing
          docs/DATA_SAFETY.md forbids outright. */
       '<div class="pacts">'+
-        postAct('postReply', p.id, ICON_REPLY, postNReply(p), false)+
-        postAct('postBoost', p.id, ICON_BOOST, postNBoost(p), postIBoost(p))+
-        postAct('postLike',  p.id, ICON_HEART, postNLike(p),  postILike(p))+
+        /* The three that WRITE are drawn only while this account may write
+           one. The share below them is not one of the three: a card is the
+           one way anything in this app leaves the phone and it puts nothing
+           anywhere, so being frozen does not take it away. */
+        (postMay()
+          ? postAct('postReply', p.id, ICON_REPLY, postNReply(p), false)+
+            postAct('postBoost', p.id, ICON_BOOST, postNBoost(p), postIBoost(p))+
+            postAct('postLike',  p.id, ICON_HEART, postNLike(p),  postILike(p))
+          : '')+
         /* On every post, not only your own. The comment that used to be here
            said a card is drawn out of a dictionary and a set of letters, so it
            could only be made of a post whose language is here -- and that
@@ -3185,7 +3206,7 @@ function postRow(p){
    thing that will have somewhere else to go when there is a server. */
 function postLike(id){
   var p=postById(id);
-  if(!p) return;
+  if(!p || !postMay()) return;
   /* Off what is ON THE SCREEN, which is the server's number where there is
      one. Toggling the local copy alone made the thumb argue with the figure
      above it: pressing a post showing the server's 12 set `li` to 1. */
@@ -3204,7 +3225,7 @@ function postLike(id){
 }
 function postBoost(id){
   var p=postById(id);
-  if(!p) return;
+  if(!p || !postMay()) return;
   var on=!postIBoost(p);
   p.bome=on;
   p.bo=Math.max(0, postNBoost(p)+(on? 1 : -1));
@@ -3217,7 +3238,7 @@ function postBoost(id){
    is a reply TO. */
 function postReply(id){
   var p=postById(id);
-  if(!p) return;
+  if(!p || !postMay()) return;
   PW=pwBlank(); PW.to=id;
   openPost();
 }
