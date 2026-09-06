@@ -268,7 +268,7 @@ const R = await pg.evaluate(() => {
   openImport();
   impTake('character,name\nΨ,psi\nΩ,omega');
   IMP.into = 'l'; IMP.roles = impMove(IMP.roles, 'l');
-  IMP.step = 'ready'; openImport();
+  IMP.step = 'ready'; impPaint();
   /* The real button on the real screen, not doImport() called by name: what
      is being asked is what pressing it leaves behind. */
   const goBtn = (screen(), document.querySelector('#app [data-do="doImport"]'));
@@ -277,11 +277,15 @@ const R = await pg.evaluate(() => {
   const impTrail = NAV.map((n) => n.r + (n.a ? ':' + n.a : '')).join(' > ');
   back();
   const impBack = here().r + (here().a ? ':' + here().a : '');
-  openImport();
+  /* Read off IMP itself, the moment the import ended, and not by opening the
+     door again: the door blanks IMP now (www/import.js § openImport), so a
+     claim that asks it after a press of the door is a claim about the door
+     and cannot fail. What is under test here is impLand() -- an import that
+     RAN leaves nothing of itself behind. */
   const impFresh = IMP.step;
   out.said.push('an import that is over: the press landed on ' + impAt +
     ', the trail is "' + impTrail + '", 戻る goes to ' + impBack +
-    ', and opening it again is the "' + impFresh + '" screen');
+    ', and what it left behind is the "' + impFresh + '" screen');
   if (!goBtn) out.fails.push('the screen before the import has no button to press');
   if (impAt !== 'letters')
     out.fails.push('letters imported and the screen left in front of you is ' +
@@ -291,8 +295,46 @@ const R = await pg.evaluate(() => {
       'out of ' + impAt + ' lands on ' + impBack + ', which is the import ' +
       'screen you just left, with nothing on it');
   if (impFresh !== 'get')
-    out.fails.push('opening the import again is the "' + impFresh + '" screen ' +
-      'and not the start — an import that is over is over');
+    out.fails.push('an import that ran left the "' + impFresh + '" screen ' +
+      'behind it — an import that is over is over');
+
+  /* ---- and an import NOBODY finished is over too --------------------------
+     「取り込みを開くと貼り付け画面に直行する」 OWNER 2026-09-06. The claim
+     above is about an import that RAN: impLand() blanks IMP on the way out,
+     so the next one starts at the beginning. An import walked away from does
+     not reach impLand at all -- press 「貼り付ける」, think better of it, leave
+     -- and `IMP.step` sat at 'paste' for the rest of the session. Opening
+     取り込み again went straight to the paste box, past the screen that asks
+     whether this is a paste or a file.
+
+     One function was the door and the redraw both, so it could not tell the
+     two apart. openImport() is the door and starts one; impPaint() draws the
+     one that is running. Asked as a SEQUENCE and off the rendered screen,
+     because `step` being 'get' and the get screen being what is drawn are two
+     statements and the second is the owner's. */
+  start();
+  goTab('find');
+  openImport();
+  impStep('paste');
+  const impLeft = IMP.step;
+  back();
+  openImport();
+  screen();
+  const impAgainStep = IMP.step;
+  const impAgainDrawn = !!document.querySelector('#app [data-do="impStep"]');
+  out.said.push('an import walked away from at the "' + impLeft +
+    '" screen: opening it again is the "' + impAgainStep +
+    '" screen, and the two rows are drawn: ' + impAgainDrawn);
+  if (impLeft !== 'paste')
+    out.fails.push('the import did not reach the paste screen, so this claim ' +
+      'asked nothing');
+  if (impAgainStep !== 'get')
+    out.fails.push('an import was left at the paste box and opening it again ' +
+      'is the "' + impAgainStep + '" screen -- the last import decided where ' +
+      'this one starts');
+  if (!impAgainDrawn)
+    out.fails.push('and what is DRAWN is not the screen that asks whether ' +
+      'this is a paste or a file');
 
   /* ---- the word list forgets it was being chosen from -------------------
      「洗濯して前の画面戻ると選択画面がキープされたままや。流石に解除して
