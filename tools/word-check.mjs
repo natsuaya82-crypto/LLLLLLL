@@ -520,6 +520,25 @@ const R = await pg.evaluate(() => {
     out.fails.push('the spelling was changed and the sheet still says nothing ' +
       'has -- the Save stays grey and the back arrow leaves without asking');
 
+  /* ---- and what the arrow that leaves the sheet is called ---------------
+     www/shell.js § pageName. The label is on the button as an aria-label, so
+     it is on the screen for anybody who cannot see the arrow and nowhere else
+     -- which is why it said 制作 for as long as it did with every check
+     green. It is the trail's name for the screen behind, and the screen
+     behind an edit sheet is the word. */
+  goTab('build'); go('words');
+  document.querySelector('[data-do="openWord"]').click();
+  document.querySelector('.navtop [data-do="openEdit"]').click();
+  const arrow = document.querySelector('.navtop .back').getAttribute('aria-label');
+  out.said.push('the trail into the sheet is ' +
+    JSON.stringify(NAV.map(n => n.r + (n.a ? ':' + n.a : '')).join(' > ')) +
+    ' and the arrow off it says ' + JSON.stringify(arrow));
+  if (here().r !== 'form' || String(here().a).indexOf('edit:') !== 0)
+    out.fails.push('the word list did not lead to an edit sheet');
+  else if (arrow !== wOut(String(here().a).slice(5)))
+    out.fails.push('the arrow off the edit sheet says ' + JSON.stringify(arrow) +
+      ' -- the screen behind it is the word, not a tab');
+
   return out;
 });
 

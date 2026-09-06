@@ -567,7 +567,13 @@ export function halfDone(){
                        ja: '今日はめちゃくちゃ暑い。' } };
        PW = pwBlank(); openPost('day');
        return vForm(); }],
-    ['the word being edited', () => { openEdit('kano'); wEdit.mns = ['mountain','peak'];
+    /* Opened THE WAY A THUMB OPENS IT -- the word's page, then 編集 in its
+       corner -- because the back arrow is part of this screen and what it
+       says is read off the trail. Opened straight onto the sheet the trail is
+       one entry long and the arrow names the tab, which is a screen nobody
+       can reach. */
+    ['the word being edited', () => { openWord('kano'); openEdit('kano');
+                                      wEdit.mns = ['mountain','peak'];
                                       return vForm(); }],
     /* The field for one more of something is not on the sheet until the `+`
        on the heading is pressed, so without these the only way to write a
