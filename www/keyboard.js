@@ -3664,18 +3664,7 @@ HELP.kb=function(){
      2026-08-28 is answered, and 「無料でもplusでもproでも同じ画面なのよ」
      OWNER 2026-09-01 decides which way round the two go. */
   return {t:t('kb.sys.h'), h:
-    /* AND THE WAY INTO SETTINGS IS ON THE FIRST STEP TOO.
-       「後これも、この画面まで飛ぶリンクあったはずなのに無くなった？」then
-       「１にもほしくない？」 OWNER 2026-09-03. It was on step 3 only, which is
-       three steps in -- and step 1 is where somebody is being sent to
-       Settings for the first time.
-
-       The SAME kbSettings(), the same t('kb.sys.go'): one function and one
-       string named from two places. What it opens is Settings → Lingua
-       (openSettingsURLString is Apple's only public door -- LinguaShare.swift
-       says so), which is not step 1's own row; Settings → General → Keyboard
-       has no public URL. So this is the door into Settings, and the path
-       under it is what says where to walk from there.
+    /* 手順 3 にだけ。OWNER 2026-09-06
 
        AND THE PATH SAYS WHERE THE WALK STARTS, which it did not. It read
        「設定 → 一般 → キーボード → キーボード」 -- true from the top of
@@ -3685,8 +3674,6 @@ HELP.kb=function(){
        now, in all ten languages. The photographs under steps 1 and 2 are of
        that walk and are unchanged, because the walk is. */
     kbStepHTML(1, t('kb.step1'), '<div class="mini">'+t('kb.step1.d')+'</div>'+
-      '<button class="btn" style="width:100%;margin-top:10px"' + DO('kbSettings') + '>'+
-        esc(t('kb.sys.go'))+'</button>'+
       kbShot('kb-list.jpg'))+
     kbStepHTML(2, t('kb.step2'), kbShot('kb-add.jpg'))+
     kbStepHTML(3, t('kb.step3'),
