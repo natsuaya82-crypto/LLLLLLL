@@ -80,7 +80,7 @@ console.error は全部拾った。スクショは `shots/walk-set/`（コミッ
 | B | 全部 | 言語のページ (`world`) | **「Public」を切ると、その下が全部画面から消える。**残るのは題と「Public」の二行だけ。Overview に書いた文も、書いた記事の行も、DOWNLOADABLE の四つも消える。`world()` の中身は変わっていないので**消えてはいない**が、画面はそう言っていない（`85-world-public-off.png`） |
 | C | plus | 設定 → Data | 「Import from CSV」の行は free と plus では `upData`、pro では `openImport`。**行の字はどのプランでも同じ**で、free と plus で押すと「You need to upgrade to use this feature」、pro で押すと取り込みの画面が開く。plus も金を払っているので、そのポップが何を勧めているのかは行からも文からも分からない（`102-data-free.png` / `102-data-plus.png` / `102-data-pro.png`） |
 | D | 全部 | 設定 → Account → Sign out | 扉に戻り、そこから動かない（正しい）。ただし**サインアウトしたあとも `SET.plan` は `pro` のまま**。画面に出るものではないので押して見えるものではないが、扉しか無い状態で誰のものでもないプランが一つ残っている。`SET_PHONE`（`www/core.js`）に `planUid` が入っているので、次に誰が入ってくるかで決まる話だと思われる |
-| E | 全部 | 設定 → Account →「Delete this language」 | 通信が無い状態で［Delete］を押すと、**手元では消える**（画面が profile へ移り、開いている言語が入れ替わる）。同じ 4 秒のあいだに `netPop()` は `{s:0, m:"language 0"}` を二本受けている ── サーバーの行は落ちていない。人には「No connection.」が出るので黙ってはいない。手元だけ先に消える形でいいのかは決められない（`122-wipelangs-nonet.png`） |
+| E | 全部 | 設定 → Account →「Delete this language」 | 通信が無い状態で［Delete］を押すと、**手元からは消え、サーバーの行は落ちない。**言語二つ（`Shango` / `Second`）で `Second` を開いた状態から押して測った ── 押す前 `Object.keys(LANGS)` は二つ、押したあとは `Shango` 一つだけで、`localStorage` の `lingua.langs` も `{"Lmtpr9jek":{"name":"Shango",…}}` の一行になる。同じ 4 秒のあいだ `netPop()` が受け取った印は `language 0` が二本 ── サーバーへの削除は届いていない。人には「No connection.」が出るので黙ってはいない。ただし規則 22 では言語が居るのはサーバーなので、**次の起動で `netLangsDown()` が同じ言語を降ろし直すはず**で、そのとき何が起きるかはここでは確かめられない（網が無いので）。手元だけ先に消える形でいいのかは決められない（`122-wipelangs-nonet.png`） |
 | F | 全部 | 凍結画面 (`openCapLapse`) | ［Upgrade］と［Close］の間が一画面分ちかく空いていて、画面の下三分の二が白い。字が三行あって、そのあとボタンが二つ、離れて縦に並ぶ（`90-frozen.png`） |
 
 ## 正しく動いたことの記録
