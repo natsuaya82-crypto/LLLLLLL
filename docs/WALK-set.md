@@ -1,7 +1,7 @@
 # 手で歩いた記録（設定・アカウント） — 2026-09-06
 
 `master`（`de4ad262`）を headless Chromium で人が触るように操作した記録。
-**コードは一切直していない。**見たことだけを書く。**バグ 3 件、気になる 5 件。**
+**コードは一切直していない。**見たことだけを書く。**バグ 2 件、気になる 6 件。**
 
 担当は設定・アカウントまわり ── `www/settings.js` `www/boot.js`
 `www/onboard.js` `www/home.js` `www/store.js` `www/net.js` の画面側。
@@ -24,10 +24,19 @@ deviceScaleFactor 3。押すのは実際の click で、`data-do` の名前か�
 console.error は全部拾った。スクショは `shots/walk-set/`（コミットしない）。
 
 このコンテナには外へ出る網が無い。`netPop()` の「接続がありません」は仕様
-どおりの動きなので下には書かないし、それが下のボタンを覆ってしまうので、
-seed の直後に `window.netPop=function(){}` を入れて黙らせた上で押した。
-**ただしバグ 1 だけは、黙らせずに、ポップが出るはずの状態でもう一度確かめて
-いる**（黙らせたせいで何も出ていないのではないことを確かめるため）。
+どおりの動きなので下には書かないし、それが `#sbg.on` で画面全体を覆って下の
+ボタンに触れなくなるので、seed の直後に `window.netPop=function(){}` を
+入れて黙らせた上で押した。
+
+**この道具のせいで一度まちがえた。**「アカウントを削除」→［Delete］が通信の
+無いところで黙って何も起こさない、とここに一度書いた。**黙っていたのは
+アプリではなく、こちらが黙らせた `netPop()` だった。**確かめ方が悪いことに
+気づいてから、`netPop()` を消さずに**描くところだけ止めて呼ばれた回数を
+数える**やり方でやり直したところ、［Delete］の 4 秒後に
+`{s:0, m:"account_delete 0", again:true}` が四本立っていた ── アプリは
+ちゃんと「No connection. ／ Reconnect ／ Close」を出す。**下に残した二件は、
+この数え方でもう一度確かめたものだけ。**前の人の記録も同じ罠で三回まちがえて
+いる（`claude/walk`）。
 
 オンボーディングは空の `localStorage` から始めた。設定の各画面は
 `tools/fixture.mjs` の `seed()` を入れて `SET.plan` を三つとも試した。
@@ -36,19 +45,12 @@ seed の直後に `window.netPop=function(){}` を入れて黙らせた上で押
 
 | # | プラン | 画面 | 操作 | 起きたこと | 期待 | スクショ |
 |---|---|---|---|---|---|---|
-| 1 | 全部 | 設定 → Account | 「Delete account」→ ポップの［Delete］ | ポップが閉じるだけ。アカウントは残り、サインインしたまま、画面は Account のまま。トーストもポップも出ない。8.5 秒待っても何も出ない | 消せなかったことを言う。`saveTry()` が保存で言うのと同じ扱い | `61-wipeall-ask.png` / `63-wipeall-nonet-netpop-live.png` / `64-wipeall-nonet-8s.png` |
-| 2 | 全部 | 三か所 | 「この言語を削除」「アカウントを削除」「凍結画面」を開く | 三つとも**バックアップファイルの話をする**。2026-09-04 にファイルは消えている（`docs/CHANGELOG.md`、`www/backup.js` の冒頭） | ファイルが無いのだから、その一節が無いこと | `53-wipelangs-ask.png` / `61-wipeall-ask.png` / `90-frozen.png` |
-| 3 | 全部 | 設定 →「Your language」→ Name | 鉛筆（`editName`）→ 欄を全選択して消す →［Save］ | 名前は「Shango」のまま。設定の部屋に戻るだけで、トーストもメッセージも出ない。押した人には何が起きたのか分からない | 空で保存できるか、できないと言うか、どちらか | `100-name-emptied.png` / `101-langs-after-empty-name.png` |
+| 1 | 全部 | 三か所 | 「この言語を削除」「アカウントを削除」「凍結画面」を開く | 三つとも**バックアップファイルの話をする**。2026-09-04 にファイルは消えている（`docs/CHANGELOG.md`、`www/backup.js` の冒頭） | ファイルが無いのだから、その一節が無いこと | `53-wipelangs-ask.png` / `61-wipeall-ask.png` / `90-frozen.png` |
+| 2 | 全部 | 設定 →「Your language」→ Name | 鉛筆（`editName`）→ 欄を全選択して消す →［Save］ | 名前は「Shango」のまま。設定の部屋に戻るだけで、トーストもメッセージも出ない。押した人には何が起きたのか分からない | 空で保存できるか、できないと言うか、どちらか | `100-name-emptied.png` / `101-langs-after-empty-name.png` |
 
 ### 再現手順
 
-**1.** 設定 → Account →「Delete account」。ポップが出る（"Erase everything?…"）
-→［Delete］。`#pop` から `on` が外れ、`#sbg` も消える。`SESS` はそのまま、
-`Object.keys(LANGS).length` も 1 のまま、`#app` の中身も一文字も変わらない。
-console には `net::ERR_TUNNEL_CONNECTION_FAILED` が四本立つ。**`netPop()` を
-黙らせずに同じことをしても、ポップは出ない。**2.5 秒後・8.5 秒後も同じ。
-
-**2.** 三つとも英語の文をそのまま写す。
+**1.** 三つとも英語の文をそのまま写す。
 - 「Delete this language」のポップ ── `confirm.wipe.langs`:
   「… **Its backup file goes too.** It is removed from your account, so it
   will not come back on another phone. …」
@@ -64,7 +66,7 @@ console には `net::ERR_TUNNEL_CONNECTION_FAILED` が四本立つ。**`netPop()
 2026-09-04。**一番押すのが怖い二つのボタンが、無いものを根拠に「大丈夫」と
 言っている。**十か国語ぶんの同じ鍵が同じことを言っている。
 
-**3.** 設定 →「Your language」→ Name の行（`editName`）。欄には「Shango」が
+**2.** 設定 →「Your language」→ Name の行（`editName`）。欄には「Shango」が
 入っている。欄を触って ⌘A → Backspace（欄の値は `""` になる）→［Save］。
 `set:lang` に戻り、`langName` は `"Shango"`。`langs` の一覧も「Shango」。
 オンボーディングの「Decide later」は名前を空のまま通すので、**空という状態は
@@ -78,7 +80,8 @@ console には `net::ERR_TUNNEL_CONNECTION_FAILED` が四本立つ。**`netPop()
 | B | 全部 | 言語のページ (`world`) | **「Public」を切ると、その下が全部画面から消える。**残るのは題と「Public」の二行だけ。Overview に書いた文も、書いた記事の行も、DOWNLOADABLE の四つも消える。`world()` の中身は変わっていないので**消えてはいない**が、画面はそう言っていない（`85-world-public-off.png`） |
 | C | plus | 設定 → Data | 「Import from CSV」の行は free と plus では `upData`、pro では `openImport`。**行の字はどのプランでも同じ**で、free と plus で押すと「You need to upgrade to use this feature」、pro で押すと取り込みの画面が開く。plus も金を払っているので、そのポップが何を勧めているのかは行からも文からも分からない（`102-data-free.png` / `102-data-plus.png` / `102-data-pro.png`） |
 | D | 全部 | 設定 → Account → Sign out | 扉に戻り、そこから動かない（正しい）。ただし**サインアウトしたあとも `SET.plan` は `pro` のまま**。画面に出るものではないので押して見えるものではないが、扉しか無い状態で誰のものでもないプランが一つ残っている。`SET_PHONE`（`www/core.js`）に `planUid` が入っているので、次に誰が入ってくるかで決まる話だと思われる |
-| E | 全部 | 凍結画面 (`openCapLapse`) | ［Upgrade］と［Close］の間が一画面分ちかく空いていて、画面の下三分の二が白い。字が三行あって、そのあとボタンが二つ、離れて縦に並ぶ（`90-frozen.png`） |
+| E | 全部 | 設定 → Account →「Delete this language」 | 通信が無い状態で［Delete］を押すと、**手元では消える**（画面が profile へ移り、開いている言語が入れ替わる）。同じ 4 秒のあいだに `netPop()` は `{s:0, m:"language 0"}` を二本受けている ── サーバーの行は落ちていない。人には「No connection.」が出るので黙ってはいない。手元だけ先に消える形でいいのかは決められない（`122-wipelangs-nonet.png`） |
+| F | 全部 | 凍結画面 (`openCapLapse`) | ［Upgrade］と［Close］の間が一画面分ちかく空いていて、画面の下三分の二が白い。字が三行あって、そのあとボタンが二つ、離れて縦に並ぶ（`90-frozen.png`） |
 
 ## 正しく動いたことの記録
 
@@ -117,6 +120,11 @@ console には `net::ERR_TUNNEL_CONNECTION_FAILED` が四本立つ。**`netPop()
 - **この言語を削除。**二つある状態で開いている方を消すと、もう一方が開いて
   profile に降りる。**最後の一つを消すと、名前の無い言語が一つ新しく立つ**
   ので、言語が 0 の状態にはならない。
+- **通信が落ちたときのポップ。**「No connection. ／ Reconnect ／ Close」の
+  三行だけ。［Reconnect］は落ちた道をためた分ぜんぶ出し直し、まだ網が無いので
+  同じポップがまた出る。［Close］は閉じるだけで何もしない。ボタンはどちらも
+  280×45（44pt 以上）。ポップが出ているあいだは `#sbg.on` が画面全体を覆い、
+  下のボタンには触れない（`111-netpop.png` / `112-netpop-retry.png`）。
 - **サインアウト。**トースト「Signed out」、扉。そのあと `settings` `set:acct`
   `langs` `build` `world` のどれへ行かせても扉のまま動かない。
 - **`localStorage` に残る鍵。**`lingua.cur` `lingua.langs` `lingua.me`
