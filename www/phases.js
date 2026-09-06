@@ -287,9 +287,17 @@ function chapSlots(id){
    slots' -- 疑問形 is `q` and the slots it draws are `ask`'s. Drawn by
    stSlotRow(), which is the row the stage drew, so a slot looks and behaves on
    a chapter exactly as it did on the stage it came from. */
+/* Which of the three a chapter's words are, asked here and nowhere else: the
+   list draws a chapter faint when this language has said nothing in it
+   (g2Said() in www/grammar.js) and that is the same question as which words it
+   is about. It was a loop inside the drawing below. */
+function chapSlotsOf(chap){
+  var i;
+  for(i=0;i<CHAP_SLOTS.length;i++) if(CHAP_SLOTS[i].chap===chap) return CHAP_SLOTS[i];
+  return null;
+}
 function chapSlotsHTML(chap){
-  var p=null, i, out='';
-  for(i=0;i<CHAP_SLOTS.length;i++) if(CHAP_SLOTS[i].chap===chap) p=CHAP_SLOTS[i];
+  var p=chapSlotsOf(chap), i, out='';
   if(!p) return '';
   for(i=0;i<p.slots.length;i++) out+=stSlotRow(p, p.slots[i]);
   return '<div class="sec">'+t('stg.words')+'</div><div class="stslots">'+out+'</div>';
@@ -427,10 +435,13 @@ function stSlotsDone(p){
 }
 /* A decision counts once it has been touched. `STG.set` is written by
    setOrder() and setGPos() in www/grammar.js and is what says a language
-   ANSWERED rather than took the default. Nothing draws off it any more: it was
-   read by stOn(), which lit a stage's button, and the stages that had buttons
-   are gone. It is kept because it is somebody's answer -- docs/DATA_SAFETY.md
-   -- and because a chapter that wants to know is going to ask it. */
+   ANSWERED rather than took the default. It went unread for a while -- stOn()
+   lit a stage's button and the stages that had buttons are gone -- and the
+   chapter that was going to ask it has arrived: the contents draws a chapter
+   faint until this language has said something in it, and for 語順 and the two
+   pairs that is exactly this and nothing else (g2Said() in www/grammar.js).
+   One place reads it, as one place writes it. */
+function stTouched(id){ return !!(STG && STG.set && STG.set[id]); }
 function stMarkSet(id){ STG.set[id]=1; saveStg(); }
 function stTotal(p){ return p.slots.length + 1; }
 /* The +1 is the part itself: something written about it, or a line showing
@@ -671,9 +682,15 @@ function stOpen(id){
   if(!makeNeed()) return;
   go('gram', id);
 }
+/* And a chapter nobody has written in yet is FAINT. 「まだ書いていない章は
+   薄い字」 OWNER 2026-09-06 -- so the contents says at a glance how far the
+   book has got, which is what a contents page is for. Same question the count
+   on the right has always answered; what is new is that it is legible without
+   reading a number. */
 function stRow(p, n){
   var done=stIsDone(p), tot=stTotal(p);
-  return '<button class="strow'+(done?' done':'')+'"' + DO('stOpen', [p.id]) + '>'+
+  return '<button class="strow'+(done?' done':'')+(stFilled(p)? '':' pale')+'"' +
+    DO('stOpen', [p.id]) + '>'+
     '<span class="stn">'+n+'</span>'+
     '<span class="stt">'+esc(stTitle(p))+'</span>'+
     '<span class="lead"></span>'+
@@ -704,20 +721,44 @@ function stHidHTML(){
   return '<button class="capwarn" style="margin:14px 0 0"' + DO('goPlans') + '>'+
     t('cap.hid', n)+'<span class="capgo">'+t('up.cta')+ICON_GO+'</span></button>';
 }
+/* THE ORDER OF THE CONTENTS, and it is a grammar book's rather than the app's.
+   「1 語順 2 名詞 3 動詞（時制・否定・疑問）4 代名詞 5 数 6 挨拶…」 OWNER
+   2026-09-06.
+
+   The list was two lists with a name over each -- the chapters that say what a
+   word turns into, then the stages -- and the split was true of the code and of
+   nothing anybody opens the page to find out. A grammar book has ONE contents
+   page: word order, then the noun and what happens to it, then the verb and
+   everything that happens to that, then the pronouns, the numbers, the
+   greetings, and the rest.
+
+   A CHAPTER NOT NAMED HERE STILL APPEARS. It goes to the foot in the order it
+   was in, which is what a stage somebody added themselves is, and is also why
+   this can never hide one: a thirteenth form added to G2FM_CHAPS lands on the
+   list the day it is added, at the end, and moving it into the book's order is
+   a line here. The tie is broken by where it was, because sort() is not
+   promised to be stable on the WKWebView this runs in and two of somebody's own
+   stages swapping places on a redraw is the app rearranging their work. */
+var G2TOC=['order','n','pl',
+           'prs','pst','fut','plp','prg','prf','cnd','cau','imp','pas','neg','q',
+           'pron','count','greet',
+           'adj','adp','part','conj','polite','have','when','month','wday','st'];
+function stTocAt(id){
+  var i=G2TOC.indexOf(String(id));
+  return (i<0)? G2TOC.length : i;
+}
 function stListHTML(){
-  var g=g2Chaps(), a=stAll(), i, n=0, grow='', srow='';
-  for(i=0;i<g.length;i++) grow+=g2ChapRow(g[i], ++n);
-  for(i=0;i<a.length;i++) srow+=stRow(a[i], ++n);
+  var g=g2Chaps(), a=stAll(), all=[], i, n=0, out='';
+  for(i=0;i<g.length;i++) all.push({id:g[i].id, c:g[i], at:all.length});
+  for(i=0;i<a.length;i++) all.push({id:a[i].id, p:a[i], at:all.length});
+  all.sort(function(x, y){
+    return (stTocAt(x.id)-stTocAt(y.id)) || (x.at-y.at); });
+  for(i=0;i<all.length;i++)
+    out+= all[i].c? g2ChapRow(all[i].c, ++n) : stRow(all[i].p, ++n);
   /* The rules that make a form out of a word were at the head of this list.
      They are not a stage of the grammar and they are about the dictionary, so
      they are behind the ... in the dictionary's bar -- wordsMore(). */
-  /* Two containers rather than one, and a name is not a row: a `sec` inside
-     `.stlist` would be a sibling of the rows, and the rows in one list are
-     one height. */
-  return '<div class="sec">'+esc(t('stg.grp.rule'))+'</div>'+
-    '<div class="stlist">'+grow+'</div>'+
-    '<div class="sec">'+esc(t('stg.grp.chap'))+'</div>'+
-    '<div class="stlist">'+srow+'</div>'+
+  return '<div class="stlist">'+out+'</div>'+
     stHidHTML()+
     /* The fifteen are free and are the whole of the chapter there. They ask
        for forty-six words between them, which is most of what a free

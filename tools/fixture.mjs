@@ -1979,6 +1979,24 @@ export function halfDone(){
         openAdd('');
         wdSetLn('tirek');
         return sheet('<div id="wd-body">'+wdFormHTML()+'</div>'); }],
+    /* 文法書の一ページ ── a chapter with a rule on it. The base seed has no
+       rules at all, so every form chapter drew its heading, its + and nothing
+       else: the sentence, the table of what the rule makes of this language's
+       own verbs, and the lines written under it had no face to be walked or
+       photographed on. One plain rule, of the kind the two-field editor writes
+       (www/wordsheet.js § fmrFormHTML), on the two verbs the seed has.
+
+       Left in place for the reason the face below it is: press-check rebuilds
+       the screen before every press, and a rule that only existed while the
+       HTML was being made is a rule the row cannot open. */
+    ['a chapter of the grammar book, with a rule in it', () => {
+        STG.fm = [{ id: 'fr-ta', pos: 'v', fm: 'pst', at: 'end',
+                    add: spType('ta'), drop: 0, when: '' }];
+        STG.ex = STG.ex || {};
+        STG.ex.pst = [{ lb: '', ln: 'ke tirta', gl: 'I saw it' }];
+        saveStg();
+        window.route = 'gram'; NAV = [{ r: 'gram', a: 'v2:pst' }];
+        return vGram(); }],
     /* A rule written on the OLD editor -- it drops a letter and fires only on
        words ending in one. The screen is two fields now and cannot write
        another like it, and this face is what proves the ones somebody already

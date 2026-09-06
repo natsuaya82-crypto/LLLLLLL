@@ -3743,6 +3743,26 @@ textarea.ntbody.grow{min-height:0;height:auto;overflow:hidden;resize:none}
 .gordc{min-height:44px;min-width:44px;padding:11px 15px;font-size:.86rem;line-height:1.4;
    background:none;color:var(--tx);border:1px solid var(--line2);border-radius:9px}
 .gordc:active{border-color:var(--gold);color:var(--gold)}
+
+/* 章の表 ── 規則が辞書の語に効いた結果 (www/grammar.js § g2FmTable)。
+   罫線なし、字の大きさは他の行と同じ、余白は広く、色は三つ ── 元の語、
+   間の印、できた語。囲いも角丸もない。
+
+   font-size and line-height are on the ROW class and not left to the tag:
+   a <button> takes the browser's own 13.3px and the rows either side of it
+   take the body's, which is the same list coming out at two heights. */
+.gtab{margin:2px 0 22px}
+.gtabr{display:flex;align-items:center;gap:12px;width:100%;min-height:44px;
+   padding:10px 0;background:none;border:0;text-align:left;
+   font-size:.94rem;line-height:1.6;color:var(--tx)}
+.gtabr .gtw{flex:0 0 40%;color:var(--txs);overflow-wrap:anywhere}
+.gtabr .gts{flex:0 0 auto;display:flex;align-items:center;color:var(--gold);opacity:.5}
+.gtabr .gtm{flex:1 1 auto;color:var(--tx);overflow-wrap:anywhere}
+.gtabr:active .gtm{color:var(--gold)}
+
+/* 目次の、まだ書いていない章 (www/phases.js § stListHTML)。字を薄くするだけ ──
+   行の高さも大きさも動かさない: 一つの一覧の行は一つの高さ。 */
+.strow.pale .stt,.strow.pale .stn{color:var(--txm)}
 </style>
 </head>
 <body>

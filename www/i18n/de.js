@@ -548,8 +548,6 @@ defLang('de', (function(){
       "toc.gram"         : "Grammatik",
       /* what the app proposes */
       /* the grammar, in stages */
-      "stg.grp.rule"     : "Regeln",
-      "stg.grp.chap"     : "Kapitel",
       "stg.words"        : "Wörter, die diese Stufe braucht",
       "stg.rules"        : "Die Regel",
       "stg.rules.ph"     : "　",
@@ -681,6 +679,8 @@ defLang('de', (function(){
       "fmr.title"        : "Formen nach einer Regel",
       "fmr.add"          : "Buchstaben, die sie anfügt",
       "g2.fm.add"          : "Regel hinzufügen",
+      "g2.rule.end"        : "{0}: {1} am Ende",
+      "g2.rule.start"      : "{0}: {1} am Anfang",
       "fmr.end"          : "Hinten",
       "fmr.start"        : "Vorne",
       "fmr.sel" : "Auswählen",

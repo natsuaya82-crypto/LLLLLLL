@@ -739,8 +739,6 @@ defLang('ko', (function(){
       "toc.gram"         : "문법",
       /* what the app proposes */
       /* the grammar, in stages */
-      "stg.grp.rule"     : "규칙",
-      "stg.grp.chap"     : "장",
       "stg.words"        : "이 단계에 필요한 낱말",
       "stg.rules"        : "규칙",
       "stg.rules.ph"     : "　",
@@ -872,6 +870,8 @@ defLang('ko', (function(){
       "fmr.title"        : "규칙으로 만드는 형태",
       "fmr.add"          : "붙이는 글자",
       "g2.fm.add"          : "규칙 추가",
+      "g2.rule.end"        : "{0}: 끝에 {1}",
+      "g2.rule.start"      : "{0}: 앞에 {1}",
       "fmr.end"          : "뒤에",
       "fmr.start"        : "앞에",
       "fmr.sel" : "선택",

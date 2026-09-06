@@ -560,8 +560,6 @@ defLang('it', (function(){
       "toc.gram"         : "Grammatica",
       /* what the app proposes */
       /* the grammar, in stages */
-      "stg.grp.rule"     : "Regole",
-      "stg.grp.chap"     : "Capitoli",
       "stg.words"        : "Parole che servono a questa tappa",
       "stg.rules"        : "La regola",
       "stg.rules.ph"     : "　",
@@ -693,6 +691,8 @@ defLang('it', (function(){
       "fmr.title"        : "Forme fatte da una regola",
       "fmr.add"          : "Lettere che aggiunge",
       "g2.fm.add"          : "Aggiungi una regola",
+      "g2.rule.end"        : "{0}: {1} alla fine",
+      "g2.rule.start"      : "{0}: {1} all’inizio",
       "fmr.end"          : "In fondo",
       "fmr.start"        : "All'inizio",
       "fmr.sel" : "Seleziona",

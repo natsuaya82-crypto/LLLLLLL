@@ -778,9 +778,6 @@ function g2ChapBar(c){
     return navDo(t('fmr.sel'), 'g2SelOn', null, true);
   return helpQ('g2.'+c.id);
 }
-/* Which end the letters go on, as the word the rule's own screen is set with.
-   Asked here rather than written out, so there is one name for each end. */
-function gFmSide(r){ return t((r && r.at==='start')? 'fmr.start' : 'fmr.end'); }
 /* And the same fact in the shape every dictionary in the world writes an affix
    in: the hyphen stands where the word goes. It is the app's mark and not a
    letter of anybody's language, so with the drawn font on it falls back the way
@@ -1135,28 +1132,110 @@ function g2MadeBy(m, key, val){
   }
   return '';
 }
+/* ====================================================================
+   A CHAPTER IS A PAGE OF THIS LANGUAGE'S GRAMMAR BOOK
+   「文法のページを開いたら文法書が見れないと作ってる価値ねえだろ」
+   「文法書にしてくれ」「wiki に見せるかどうかは今はしないけど見せれるくらい
+   美しくしてくれ」 OWNER 2026-09-06.
+
+   What a chapter showed was its rules and nothing else -- 過去形 read
+   「規則を足す ›」 and stopped, on a language with six words in it. A list of
+   rules is not a grammar. A grammar is the rule, what it does to the words this
+   language actually has, and the line somebody wrote to show it, so a chapter
+   is those three down the page:
+
+     a  the rule as a SENTENCE      g2FmSent()   「動詞の末尾に -ta」
+     b  the words it MAKES          g2FmTable()  kano › kanota
+     c  the LINES written for it    g2ChapEx()   the same store a stage's are in
+
+   and then the words the chapter itself asks for, which is chapSlotsHTML() and
+   is unchanged.
+
+   NOT ONE OF THE THREE IS A SECOND PLACE FOR ANYTHING. The sentence is read
+   off the rule the editor writes (`at` and `add`, which is the whole of that
+   screen); the table is fmrMake(), the one function that says what a rule makes
+   of a word; the lines are stEx(), which stages have written into since they
+   had examples at all.
+   ==================================================================== */
 /* The rules this language has for one form, in the order they were written.
    Asked of STG.fm rather than of the engine, because a rule that did not travel
    is still a rule somebody wrote and a chapter that hid it would be the app
-   forgetting what it was told. */
+   forgetting what it was told.
+
+   ONE PLACE. The chapter's rows, its table and whether the list draws it faint
+   are three questions about the same set, and each of them walked STG.fm for
+   itself until this was pulled out. */
+function g2RulesOf(fm){
+  var a=(STG && STG.fm) || [], out=[], i;
+  for(i=0;i<a.length;i++) if(a[i] && String(a[i].fm)===String(fm)) out.push(a[i]);
+  return out;
+}
+/* THE RULE, AS ONE LINE OF A GRAMMAR BOOK. 「規則を一行の文にしたもの」
+   -- 「動詞の末尾に -ta」. It used to be ❶ › › –, four marks round a gap, and
+   the owner asked what it meant twice.
+
+   The part of speech is the rule's own where it names one and the chapter's
+   where it does not, which is the same reading g2FmRows has always taken. The
+   letters are the ones somebody drew, so they go through sfontHTML().
+
+   WHAT IT DOES NOT SAY is a condition. `when` and `drop` are on rules written
+   before the editor was cut back to the two fields (www/wordsheet.js
+   § fmrFormHTML) and no screen can write another; a sentence claiming such a
+   rule always applies would be a lie, so it says the affix and the end, and
+   the table underneath shows exactly which words it reached. docs/BACKLOG.md
+   carries it. */
+function g2FmSent(r, pos){
+  var a=gFmAffix(r);
+  if(!a) return '';
+  return t((r && r.at==='start')? 'g2.rule.start' : 'g2.rule.end',
+           esc(posLabel(r.pos || pos)), sfontHTML(a));
+}
 function g2FmRows(c){
-  var a=(STG && STG.fm) || [], out='', i, r, id, n=0, w, m, made;
+  var a=g2RulesOf(c.fm), out='', i, id;
   for(i=0;i<a.length;i++){
-    r=a[i];
-    if(!r || String(r.fm)!==c.fm) continue;
-    /* Asked of the rule's OWN part of speech, and of the chapter's only where
-       the rule names none. A rule written for any word -- `pos` empty, which
-       is what the editor leaves when nobody narrowed it -- belongs to the form
-       it makes and to no other chapter, and matching the chapter's part of
-       speech instead hid every one of them: they were in a chapter nowhere,
-       which is the quieter half of being in two. */
-    w=gWordOf(r.pos || c.pos);
-    id=String(r.id||'');
-    made='';
-    if(w){ m=gModel([w]); made=g2MadeBy(m, 'rule', id); }
-    out+=g2Row(g2Num(n++), gFmAffix(r), gFmSide(r), '', made, 'openFmr', [id], id);
+    id=String(a[i].id||'');
+    /* The numerals are what a rule with no letters on it yet is called: there
+       is no sentence to write, and ❶ is what this list has always numbered by.
+       Everything else says what it does. */
+    out+=g2Row(g2FmSent(a[i], c.pos) || g2Num(i), '', '', '', '',
+               'openFmr', [id], id);
   }
   return out;
+}
+/* THE TABLE: what these rules make of the words this language really has.
+   「辞書の実際の語で作った表（kano → kanota、tir → tirta …）」
+
+   fmrMake() is asked, which is the one place that says what a rule makes of a
+   word -- so a condition on an old rule is obeyed here without this knowing
+   what a condition is, and a word the rule does not reach is simply not on the
+   table. A word a rule MADE is left out for the reason fmrTodo() leaves it out:
+   a plural of a plural is not a word in anybody's language.
+
+   wordsSeen() and not WORDS. What a plan hides from the dictionary it hides
+   here too -- the same one place decides, so the two screens cannot come out
+   saying different things about which words there are.
+
+   A cell opens the word it is made of. Nothing is written from this table: it
+   is what the rules WOULD make, drawn fresh on every render, so the book is
+   right the day the dictionary grows and there is no copy to go stale. */
+function g2Cell(w, made){
+  return '<button class="gtabr"' + DO('openWord', [w.hw]) + '>'+
+    '<span class="gtw">'+sfontHTML(wOut(w.hw))+'</span>'+
+    '<span class="gts">'+ICON_GO+'</span>'+
+    '<span class="gtm">'+sfontHTML(wOut(made))+'</span></button>';
+}
+function g2FmTable(c){
+  var rules=g2RulesOf(c.fm), seen=wordsSeen(), out='', i, j, w, m;
+  for(j=0;j<rules.length;j++)
+    for(i=0;i<seen.length;i++){
+      w=seen[i];
+      if(w.fm) continue;
+      m=fmrMake(w, rules[j]);
+      if(m) out+=g2Cell(w, m.hw);
+    }
+  if(!out) return '';
+  return '<div class="sec">'+esc(t('g2.words'))+'</div>'+
+    '<div class="gtab">'+out+'</div>';
 }
 /* And the way to write another, which is on the chapter always. A form is not
    one rule: 「過去形でもいろんな規則作れるよね？」 -- so this is never hidden
@@ -1175,7 +1254,7 @@ function g2FmAdd(c){
 /* And the words this chapter's own stage used to ask for, where there was
    one: 否定形 wants the word for "not" and 疑問形 the six question words.
    chapSlotsHTML() draws nothing for the eleven chapters that have none. */
-function g2FmChap(c){ return g2FmAdd(c)+g2FmRows(c)+chapSlotsHTML(c.id); }
+function g2FmChap(c){ return g2FmAdd(c)+g2FmRows(c)+g2FmTable(c)+chapSlotsHTML(c.id); }
 /* What is behind the `?`. 「説明禁止の代わりに？を儲けてるからね？」 OWNER
    2026-09-05 -- so a chapter says nothing about itself on the screen and the
    whole of what it means is one press away. The two lines are the app's own
@@ -1264,8 +1343,33 @@ function g2ChapName(id){
    where there is no number to write. Names and nothing else otherwise -- a
    row that explained what a chapter was for would be the thing
    「無駄に説明をするやつ」 names. */
+/* WHETHER THIS LANGUAGE HAS SAID ANYTHING IN THIS CHAPTER YET. The contents
+   draws a chapter faint until it has -- 「まだ書いていない章は薄い字」 OWNER
+   2026-09-06 -- which is what a contents page is for: how far the book has got,
+   without having to open every chapter to find out.
+
+   ASKED OF WHAT IS STORED and never of what the page draws. Calling a chapter's
+   own body from the list would run g2Sent(), which arms this screen's KEEP
+   buffer, so drawing the contents would have told the Save that a board had
+   been opened.
+
+   Five things a chapter can hold, in one place, so a chapter that gains a
+   sixth is a line here rather than a sixth answer somewhere else. */
+function g2Said(c){
+  var p;
+  if(stEx(c.id).length) return true;
+  p=chapSlotsOf(c.id);
+  if(p && stSlotsDone(p)) return true;
+  if(c.fm) return g2RulesOf(c.fm).length>0;
+  if(c.id==='order') return stTouched('order');
+  if(c.id==='n'){ p=stBy('part'); return !!p && !!stSlotsDone(p); }
+  if(c.id==='adj' || c.id==='adp') return stTouched(c.id);
+  /* この言語について counts what this language has and is never empty. */
+  return true;
+}
 function g2ChapRow(c, n){
-  return '<button class="strow"' + DO('go', ['gram', 'v2:'+c.id]) + '>'+
+  return '<button class="strow'+(g2Said(c)? '' : ' pale')+'"' +
+    DO('go', ['gram', 'v2:'+c.id]) + '>'+
     '<span class="stn">'+n+'</span>'+
     '<span class="stt">'+esc(c.nm)+'</span>'+
     '<span class="lead"></span>'+
@@ -1275,8 +1379,22 @@ function g2ChapRow(c, n){
 /* One chapter's page. It is handed the chapter rather than the argument now:
    vGram() looks it up, because it is vGram() that has to fall back to the
    list when the argument names no chapter. */
+/* THE LINES WRITTEN FOR THIS CHAPTER. 「その章の例文（言語の一行＋訳）」 --
+   the same stEx() a stage's examples have always been in, keyed by the chapter's
+   own id, drawn by the same exRowHTML() and added with the same ＋ on the
+   heading. Nothing new is stored and nothing new decides anything: what a
+   chapter had to have was somewhere to put the line that shows the rule.
+
+   この言語について is the one page without it. It is three counts of what this
+   language has, not a chapter of the book, and a place to write an example of a
+   count is a slot nobody can fill. */
+function g2ChapEx(id){
+  return secAdd(ICON_LINE+t('stg.ex'), DO('stExOpen', [id]), t('word.mn.add'))+
+    stExHTML(id);
+}
 function g2Page(c){
-  return c.body(c)+g2Add(c.id)+g2MakeAll(c.id);
+  return c.body(c)+g2Add(c.id)+g2MakeAll(c.id)+
+    (c.id==='st'? '' : g2ChapEx(c.id));
 }
 
 /* ---- the screen -------------------------------------------------------- */
