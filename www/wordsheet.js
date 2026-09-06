@@ -163,6 +163,14 @@ function wdTypeHTML(){ return spTypeField('wd-ln', 'wdSetLn', wEdit.sp||[], 'whi
 function wdSetLn(v){
   wEdit.sp=spType(v);
   wdSync();
+  /* The one place the spelling is written, so the one place that tells the
+     sheet it has moved. Typing does not redraw this screen -- lnGrow() below
+     is why -- so nothing else was going to say so: the Save in the corner
+     stayed grey while the word under it was a different word, and the back
+     arrow then left without asking and took the change with it. The note does
+     it (wdSetNt), the etymology does it, the tags do it; the spelling, which
+     is the word itself, did not. www/shell.js § KEEP. */
+  wdKeepTouch();
   lnGrow('wd-ln');
   var r=document.getElementById('wd-rd');
   if(r) r.textContent=phIpa(wEdit.seq);

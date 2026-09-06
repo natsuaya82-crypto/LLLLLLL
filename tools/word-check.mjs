@@ -450,6 +450,30 @@ const R = await pg.evaluate(() => {
     out.fails.push('changed the part of speech and the sheet still carries ' +
       JSON.stringify(wEdit.sub) + ' -- a subclass of the verbs, on a noun');
 
+  /* ---- and the spelling alone turns the Save gold ----------------------
+     www/shell.js § KEEP: the button is grey until something has changed, and
+     the back arrow asks only while it is gold. The spelling is the word
+     itself and was the one field on this sheet that told the buffer nothing,
+     so changing it left both saying the sheet was untouched. */
+  openWord('tir'); openEdit('tir');
+  const greyFirst = !keepDirty(keepKey());
+  wdSetLn('tirr');
+  const goldAfter = keepDirty(keepKey());
+  out.said.push('the sheet is open on ' + JSON.stringify(openHw) +
+    ', untouched: ' + greyFirst +
+    ', and after the spelling is typed it has changed: ' + goldAfter);
+  /* openEdit() returns doing nothing for a word that is not there, and the
+     sheet then stays open on whatever it was: without this the claim below
+     was being asked of the PREVIOUS word, half edited, and read as a failure
+     of the thing it is here to hold. */
+  if (openHw !== 'tir')
+    out.fails.push('the sheet did not open on the word this claim is about');
+  if (!greyFirst)
+    out.fails.push('an untouched sheet already says it has changed');
+  if (!goldAfter)
+    out.fails.push('the spelling was changed and the sheet still says nothing ' +
+      'has -- the Save stays grey and the back arrow leaves without asking');
+
   return out;
 });
 
