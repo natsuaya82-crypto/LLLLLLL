@@ -128,10 +128,17 @@ function postBlocked(p){ return !!(p && !p.mine && meBlocks(p.hd)); }
    A frozen account's posts are NOT dropped here. They come off the timeline
    and stay on that account's own page, so the sieve for that is one line
    further down and this list is what the page uses. */
+/* THE ONE PLACE THAT SAYS WHETHER A POST IS STILL A ROW. Blocked and taken
+   down are two ways of the same thing -- there is nothing left to show -- and
+   they were being asked separately, so a list that remembered one forgot the
+   other. The thread was that list: postUps() and postDown() walked past
+   postGone() and had never heard of postBlocked(), so somebody you had
+   blocked was gone from the timeline and still answering you in a thread.
+   Whoever asks 「is this post there」 asks HERE, and adding a third way for a
+   post to be absent is a line in this function and nowhere else. */
+function postShown(p){ return !!(p && !postBlocked(p) && !postGone(p)); }
 function postKept(){
-  return POSTS.slice().filter(function(p){
-      return !postBlocked(p) && !postGone(p);
-    })
+  return POSTS.slice().filter(postShown)
     .sort(function(a, b){ return (b.at||0)-(a.at||0); });
 }
 function postAll(){
@@ -2898,7 +2905,10 @@ function postUps(p){
   while(up && up.to && n<POSTS.length){
     up=postById(up.to);
     if(!up) break;
-    out.unshift(up);
+    /* A post that is not there is not a row, and the chain still goes
+       THROUGH it: what somebody blocked wrote is gone, and what was written
+       above it is not theirs and is still the conversation. */
+    if(postShown(up)) out.unshift(up);
     n++;
   }
   return out;
@@ -2912,7 +2922,9 @@ function postDown(id, d, out, seen){
   for(i=0;i<ks.length;i++){
     if(seen.indexOf(ks[i].id)>=0) continue;
     seen.push(ks[i].id);
-    out.push({p:ks[i], d:d});
+    /* Same as the walk above: the row goes and the answers to it stay. A
+       reply to somebody you blocked was written by somebody else. */
+    if(postShown(ks[i])) out.push({p:ks[i], d:d});
     postDown(ks[i].id, d+1, out, seen);
   }
   return out;

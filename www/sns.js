@@ -1526,34 +1526,36 @@ function snsFab(){
    after a server they will not, and the number on the screen has to be the
    number of rows under it or it is the app arguing with itself. */
 function vThread(){
-  var id=String(here().a||''), p=postById(id), ups, down, out='', i, d, vis=[];
+  var id=String(here().a||''), p=postById(id), ups, vis, out='', i, d;
   /* Blocked is gone, not merely absent from the list: a thread reached by an
      old route is the one way a post could still be looked at. */
   if(!p || postBlocked(p)) return viewGone();
+  /* WHAT IS ACTUALLY DRAWN, in the order somebody sees it. Both walks answer
+     with the rows that are THERE -- postShown() in www/post.js is the one
+     place that says so, and it sees blocked and taken down alike. This screen
+     used to sieve the two lists itself, and it asked only about taken down,
+     so somebody you had blocked was off the timeline and still in the thread.
+     「それ以外の会話は本ツイートとは関係ないものとする」
+
+     「線で繋いでないとマジでどの投稿か分からなくなる」 OWNER 2026-09-05: a row
+     draws a rail under its face when there is a deeper row beneath it,
+     and「beneath」has to mean beneath ON THE SCREEN -- a reply whose only
+     child had gone would otherwise draw a rail down to nothing. `postDown`
+     walks depth first and hands back only the rows there are, so the row
+     after this one is this one's child exactly when it is deeper. */
   ups=postUps(p);
-  down=postDown(id, 0, [], [id]);
-  /* Whatever was above it and whatever answers it, less anything that has
-     been taken down -- 「それ以外の会話は本ツイートとは関係ないものとする」.
-     A reply that went is not a hole to be marked; it is a line somebody else
-     wrote, and the conversation does not stand or fall with it. */
-  /* WHAT IS ACTUALLY DRAWN, in the order somebody sees it. 「線で繋いでないと
-     マジでどの投稿か分からなくなる」 OWNER 2026-09-05: a row draws a rail
-     under its face when there is a deeper row beneath it, and「beneath」has to
-     mean beneath ON THE SCREEN. Asked of postDown()'s list instead, a reply
-     whose only child had been taken down would draw a rail down to nothing.
-     `postDown` walks depth first, so the row after this one is this one's
-     child exactly when it is deeper. */
-  for(i=0;i<down.length;i++) if(!postGone(down[i].p)) vis.push(down[i]);
+  vis=postDown(id, 0, [], [id]);
   /* Everything above the post is on the way down to it, so every one of them
      has a row beneath it by construction. */
-  for(i=0;i<ups.length;i++) if(!postGone(ups[i]))
+  for(i=0;i<ups.length;i++)
     out+='<div class="pkid">'+postRow(ups[i])+'</div>';
   /* The one post somebody came here to read is the exception. It went, and
      saying so is the whole point of it having gone -- a gap here reads as
-     "never existed", which is the opposite of what happened.
+     "never existed", which is the opposite of what happened. Blocked answered
+     with viewGone() above, so the tomb is the taken-down one and no other.
      「スレッドは本ツイートだけね？」 */
   out+='<div'+(vis.length? ' class="pkid"' : '')+'>'+
-    (postGone(p)? postTomb() : postRow(p))+'</div>';
+    (postShown(p)? postRow(p) : postTomb())+'</div>';
   for(i=0;i<vis.length;i++){
     /* The indent stops at THREAD_IN; whether there is a reply under this one
        is about the tree and not about how far in it is drawn, so it is asked
