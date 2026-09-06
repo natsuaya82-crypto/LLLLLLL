@@ -286,6 +286,8 @@ act('abToggle', abToggle);
 act('wsPick', wsPick);
 act('dirPick', dirPick);
 act('g2Move', g2Move);
+act('g2Put', g2Put);
+act('g2Take', g2Take);
 act('stAddOwn', stAddOwn);
 act('stDelEx', stDelEx);
 act('stDelOwn', stDelOwn);

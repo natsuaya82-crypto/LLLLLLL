@@ -623,21 +623,23 @@ want('and it is an adjective afterwards', fmr.beautyPos, 'ADJECTIVE');
    ending is what was missing before this. */
 want('and a sentence comes out with the tense on it', fmr.line, 'zmi lumaka');
 
-/* ---- 32-40: the word order is a board of cards, carried with a finger ---
-   「選択式じゃなくて主語とか置いてあって指でどこに置くか決めれる形がいい。
-   ドラッグスワイプする感じ。3語以外も置けるようにしたい」 OWNER 2026-09-05.
+/* ---- 32-42: the word order is a board of cards, pressed onto it ---------
+   「語順ボード：スライド式をやめて Duolingo 式に。下に選択肢の札、上に置き場。
+   下の札を押すと上の列の末尾に入り、上の札を押すと下に戻る。枠の数は決めない。
+   入れ替えはドラッグではなく戻して置き直す。右上に保存」 OWNER 2026-09-06.
 
-   So the thing to hold is that WHERE A CARD LANDS IS THE WORD ORDER -- and
-   that a card carried off the board is a role this language does not place,
-   which is what the rail underneath is for.
+   Two things to hold, and the second is the one that is new. WHERE A CARD
+   ENDS UP IS THE WORD ORDER, still. And NOTHING IS WRITTEN UNTIL THE SAVE IS
+   PRESSED: the board used to write STG.order on every landing, so a language's
+   word order moved while somebody was still deciding.
 
-   Nothing here throws either. A carry that wrote the wrong list still redraws
+   Nothing here throws either. A press that built the wrong list still redraws
    a rail of cards in some order, and the page looks exactly as convincing.
    Every claim below is about WHICH card ended up where and what was stored.
 
-   Carried for real, by dispatching the touches on the real elements, because
-   a check that called setOrder() would be a copy of the gesture rather than
-   the gesture -- the same reason card-check drives cardPaint(). */
+   Pressed for real, by clicking the real buttons, because a check that called
+   g2Set() would be a copy of the act rather than the act -- the same reason
+   card-check drives cardPaint(). */
 const g2 = await pg.evaluate(() => {
   const was = STG.order, wasSet = !!STG.set.order, wl = WORDS.length;
   /* This chapter's demonstration needs a pronoun, a noun and a verb, and the
@@ -653,66 +655,61 @@ const g2 = await pg.evaluate(() => {
   /* the demonstration: this language's own words, laid by the real engine */
   const demo = () => Array.prototype.map.call(
     document.querySelectorAll('#app .gorder .gor'), (x) => x.textContent).join(' ');
-  const T = (el, type, x, y) => {
-    const t = new Touch({ identifier: 1, target: el, clientX: x, clientY: y });
-    el.dispatchEvent(new TouchEvent(type, {
-      touches: type === 'touchend' ? [] : [t],
-      targetTouches: type === 'touchend' ? [] : [t],
-      changedTouches: [t], bubbles: true, cancelable: true }));
+  /* The card for that role, in that rail. By `data-gr` and not by the label:
+     the names are translated and the roles are not. */
+  const press = (rail, role) => {
+    const b = document.querySelector(
+      '[data-gord="' + rail + '"] [data-gr="' + role + '"]');
+    if (!b) throw new Error('no card ' + role + ' in the ' + rail + ' rail');
+    b.click();
   };
-  /* Pick the card up and put it down on `to` -- on its right half when
-     `after`, so it lands beyond it. `to` may be a RAIL rather than a card,
-     which is how a card is carried onto an empty one. */
-  const carry = (r, to, after) => {
-    const a = document.querySelector('[data-gr="' + r + '"]');
-    const b = document.querySelector(to);
-    if (!a) throw new Error('no card ' + r + ' to carry');
-    if (!b) throw new Error('nothing at ' + to + ' to carry it to');
-    const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
-    T(a, 'touchstart', ra.left + ra.width / 2, ra.top + ra.height / 2);
-    T(a, 'touchmove', after ? rb.right - 2 : rb.left + 2, rb.top + rb.height / 2);
-    T(a, 'touchend', after ? rb.right - 2 : rb.left + 2, rb.top + rb.height / 2);
-  };
+  const saveBtn = () => document.querySelector('.navtop [data-do="keepPress"]');
+  const gold = () => { const b = saveBtn(); return !!b && b.classList.contains('navon'); };
+  /* The save goes up before it goes down (www/shell.js § keepSave), and this
+     check stands up no server. Answered yes here and put back at the end, so
+     what is being asked about is the board and not the wire. */
+  const realNet = window.netSaveNow;
+  window.netSaveNow = (cb) => cb(true);
 
   /* Nobody has arranged anything yet. A block above this one presses the old
      六択 on the stage screen, so the mark is already standing when this starts
      -- and an assertion about "has decided nothing yet" would pass on any code
      at all. Cleared here and put back at the end. */
   delete STG.set.order;
-  g2Lift = ''; STG.order = 'SOV'; show();
+  keepDrop(keepKeyOf('gram', 'v2:order'));
+  STG.order = 'SOV'; show();
   /* THE OLD SIX-LETTER STRING IS READ. Every language on every phone holds one
      of them, so this is the migration and it is the first thing asked. */
   const start = cards('on'), shelf = cards('off'), startDemo = demo();
+  const startGold = gold(), startBtn = !!saveBtn();
 
-  /* A finger that goes down and comes up without moving is not a carry: it
-     writes nothing and decides nothing. */
-  const a = document.querySelector('[data-gr="S"]');
-  const ra = a.getBoundingClientRect();
-  T(a, 'touchstart', ra.left + ra.width / 2, ra.top + ra.height / 2);
-  T(a, 'touchend', ra.left + ra.width / 2, ra.top + ra.height / 2);
-  const tapped = { order: JSON.stringify(STG.order), set: !!STG.set.order };
+  /* Taking one off the board. It goes to the tray, and NOTHING is written. */
+  press('on', start[0]);
+  const off1 = { on: cards('on'), off: cards('off'),
+                 stored: JSON.stringify(STG.order), set: !!STG.set.order,
+                 gold: gold() };
 
-  /* Carry the subject past the verb: S O V becomes O V S. */
-  carry('S', '[data-gr="V"]', true);
-  const moved = { on: cards('on'), stored: JSON.stringify(STG.order),
-                  set: !!STG.set.order, demo: demo() };
+  /* And back on, which goes on the END -- so taking one off and putting it
+     back is how two are swapped. S O V becomes O V S. */
+  press('off', start[0]);
+  const swapped = { on: cards('on'), stored: JSON.stringify(STG.order),
+                    set: !!STG.set.order };
 
-  /* PAST THE END OF THE RAIL. A rail is as wide as the screen and the cards do
-     not fill it, so most of what a finger can land on is rail and no card --
-     and a carry that lands there has to mean the end of that rail, or the
-     right-hand half of this screen does nothing.
-
-     Put back to S O V first. The carry above left the board at O V S, and
-     carrying S to the end of THAT is a claim about a board it is already at
-     the end of -- true whatever the code does. */
-  STG.order = 'SOV'; show();
-  carry('S', '[data-gord="on"]', true);
-  const far = { on: cards('on'), stored: JSON.stringify(STG.order) };
-
-  /* A CARD FROM THE SHELF. 「3語以外も置けるようにしたい」 -- the adverb is not
-     one of the three and goes onto the board like anything else. */
+  /* The save is what writes it. */
+  /* A save that lands ends on the screen before it (www/shell.js § keepSave,
+     OWNER 2026-09-05), so the board is asked again after every one. */
+  saveBtn().click();
   show();
-  carry('ADV', '[data-gr="O"]', true);
+  const saved = { stored: JSON.stringify(STG.order), set: !!STG.set.order,
+                  demo: demo(), gold: gold() };
+
+  /* A CARD FROM THE TRAY. 「3語以外も置けるようにしたい」 -- the adverb is not
+     one of the three and goes onto the board like anything else, on the end.
+     「枠の数は決めない」. */
+  show();
+  press('off', shelf[0]);
+  saveBtn().click();
+  show();
   const four = { on: cards('on'), off: cards('off'), stored: JSON.stringify(STG.order),
                  /* AND THE DEMONSTRATION UNDER IT. It is laid by the real
                     engine, and what the engine is handed is the cards -- not
@@ -722,45 +719,65 @@ const g2 = await pg.evaluate(() => {
                  demo: demo() };
 
   /* And back off it: a role this language does not place lives on the rail
-     underneath, and the rail can be carried INTO as well as out of. */
+     underneath, and the board can be emptied into it. */
   show();
-  carry('ADV', '[data-gord="off"]', false);
+  press('on', shelf[0]);
+  saveBtn().click();
+  show();
   const back = { on: cards('on'), off: cards('off'), stored: JSON.stringify(STG.order) };
 
+  /* AND THE PLACE TO PUT ONE IS THERE WHEN THERE IS NOTHING ON IT. An empty
+     board that collapses to its own line is a place to put something that does
+     not look like one. */
+  show();
+  while (cards('on').length) press('on', cards('on')[0]);
+  const empty = { on: cards('on').length, off: cards('off').length,
+                  h: Math.round(document.querySelector('[data-gord="on"]')
+                       .getBoundingClientRect().height) };
+
+  window.netSaveNow = realNet;
+  keepDrop(keepKeyOf('gram', 'v2:order'));
   WORDS.length = wl;
   STG.order = was;
   if (wasSet) STG.set.order = 1; else delete STG.set.order;
-  g2Lift = '';
   return { start: start.join(' '), shelf: shelf.join(' '), startDemo: startDemo,
-           tapped: tapped, moved: moved, far: far, four: four, back: back };
+           startGold: startGold, startBtn: startBtn, off1: off1, swapped: swapped,
+           saved: saved, four: four, back: back, empty: empty };
 });
 
 want('the old six-letter string is read as the three cards', g2.start, 'S O V');
 want('and every other role is on the rail underneath', g2.shelf, 'ADV ADP NEG Q');
-want('this language’s own words are under it, in that order',
+want('this language\u2019s own words are under it, in that order',
      g2.startDemo, 'zke tuf ztir');
-want('a finger down and up again writes nothing', g2.tapped.order, '"SOV"');
-want('and decides nothing', g2.tapped.set, false);
-want('carrying the subject past the verb is what says the order',
-     g2.moved.on.join(' '), 'O V S');
-want('and THAT is what is written down, as cards',
-     g2.moved.stored, '["O","V","S"]');
-want('and it is a decision now', g2.moved.set, true);
+want('the save is in the corner from the moment the board is', g2.startBtn, true);
+want('and it is grey until the board is moved', g2.startGold, false);
+want('a card pressed on the board goes back to the tray',
+     g2.off1.on.join(' '), 'O V');
+want('and it is on the tray now', g2.off1.off.join(' '), 'S ADV ADP NEG Q');
+want('and nothing was written', g2.off1.stored, '"SOV"');
+want('and nothing was decided', g2.off1.set, false);
+want('but the save has gone gold', g2.off1.gold, true);
+want('a card pressed in the tray goes on the END of the board',
+     g2.swapped.on.join(' '), 'O V S');
+want('and that is still not written', g2.swapped.stored, '"SOV"');
+want('the save is what writes it, as cards', g2.saved.stored, '["O","V","S"]');
+want('and it is a decision now', g2.saved.set, true);
 want('the words followed, because they are laid by the engine',
-     g2.moved.demo, 'tuf ztir zke');
-want('a card let go past the last one goes on the end of the rail',
-     g2.far.on.join(' '), 'O V S');
-want('and that is written down too', g2.far.stored, '["O","V","S"]');
-want('a fourth card comes off the rail onto the board',
-     g2.four.on.join(' '), 'O ADV V S');
-want('and it is gone from the rail', g2.four.off.join(' '), 'ADP NEG Q');
-want('and the words under it are still this language’s three, once each',
+     g2.saved.demo, 'tuf ztir zke');
+want('and the save is grey again', g2.saved.gold, false);
+want('a fourth card comes off the tray onto the end of the board',
+     g2.four.on.join(' '), 'O V S ADV');
+want('and it is gone from the tray', g2.four.off.join(' '), 'ADP NEG Q');
+want('and the words under it are still this language\u2019s three, once each',
      g2.four.demo, 'tuf ztir zke');
 want('and the board of four is what is stored',
-     g2.four.stored, '["O","ADV","V","S"]');
-want('and it can be carried back off again', g2.back.on.join(' '), 'O V S');
-want('to the rail it came from', g2.back.off.join(' '), 'ADV ADP NEG Q');
+     g2.four.stored, '["O","V","S","ADV"]');
+want('and it can be pressed back off again', g2.back.on.join(' '), 'O V S');
+want('to the tray it came from', g2.back.off.join(' '), 'ADV ADP NEG Q');
 want('leaving the three behind it', g2.back.stored, '["O","V","S"]');
+want('the board can be emptied altogether', g2.empty.on, 0);
+want('every role is on the tray then', g2.empty.off, 7);
+want('and the place to put one is still a row high', g2.empty.h >= 44, true);
 
 /* ---- 41-48: a chapter shows what this language really does --------------
    docs/GRAMMAR-V2-SPEC.md §14 Nouns: 「ユーザーが『りんご』『りんごたち』などを

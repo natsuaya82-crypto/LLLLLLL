@@ -3668,6 +3668,9 @@ textarea.ntbody.grow{min-height:0;height:auto;overflow:hidden;resize:none}
    A row of choices, then the piece of sound the choice is carried by, then
    one of your own words before and after it. The demonstration is the point,
    so the panel is built around it. */
+/* 語順の置き場 ── 置いた札がここに並ぶ (www/grammar.js § g2Board)。空のとき
+   も一行分の高さがある: 置く場所が、置くまで見えないのはおかしい。 */
+.gordput{min-height:44px}
 .gorder{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:12px 0 2px}
 .gor{font-size:.86rem;color:var(--tx)}
 .gsep{display:flex;align-items:center;color:var(--gold);opacity:.8}
