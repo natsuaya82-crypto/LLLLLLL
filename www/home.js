@@ -1112,20 +1112,23 @@ function wldRow(){
      the profile and therefore no way in to its article from here -- and the
      article was the one screen that would have let them name it. */
   var lnm=langNameSaid(langName);
-  /* And while it is private it is not a way through at all --
-     「そもそも非公開ならプロフィールから飛べないんだって」 OWNER 2026-08-25. It was
-     a button either way, with a badge beside the name saying so, which is the
-     app marking a door as shut and leaving it open. The row stays, because
-     the name of the language is a fact of this profile and its owner is the
-     one reading it; what goes is the press and the arrow.
+  /* PRIVATE IS A STATE OF THE PAGE AND NOT A LOCK ON ITS OWNER.
+     「ホームの自分の言語の wiki ページを非公開にすると開けなくなり、編集も
+     再公開もできない」 OWNER 2026-09-06, on a phone.
 
-     The way back is the same switch in the settings (www/settings.js), which
-     is where it has always also been, so nothing is shut away by this. */
-  if(wldHidden()) return '<div class="wldrow">'+
-    '<span class="wldnm">'+esc(lnm)+'</span>'+
-    '<span class="wldoff">'+esc(t('wld.hidden'))+'</span></div>';
+     It stopped being a button while it was private -- 「そもそも非公開なら
+     プロフィールから飛べないんだって」 OWNER 2026-08-25 -- and that was true
+     of the door somebody ELSE comes through. This row is on your own profile,
+     the page behind it is yours, and it was the only way to it: the switch
+     that put it there is on that page, and the one that used to stand beside
+     it in the settings went on 2026-08-26. So a language turned private was
+     a language nobody could open, edit, or make public again.
+
+     The row is a button. What private means here is the word beside the name,
+     which is the row saying which state it is in rather than a shut door. */
   return '<button class="wldrow"' + DO('go', ["about"]) + '>'+
     '<span class="wldnm">'+esc(lnm)+'</span>'+
+    (wldHidden()? '<span class="wldoff">'+esc(t('wld.hidden'))+'</span>' : '')+
     ICON_GO+'</button>';
 }
 /* ---- a section of the article opens and shuts -------------------------
@@ -1837,25 +1840,23 @@ function wldPage(ed, L, lid){
     swtHTML(!wldHidden())+'</button>';
   /* And a page nobody may open is the NAME and nothing else --
      「非公開にする場合は言語名しか表示されない」「非公開にしたら編集画面が全部
-     非表示になる感じ」 OWNER 2026-08-25.
+     非表示になる感じ」 OWNER 2026-08-25. That is what a language says to
+     SOMEBODY ELSE, and it is asked of `mine` here rather than of the flag:
+     private is what the page shows the world, never what it shows its owner.
+     「非公開にすると開けなくなり、編集も再公開もできない」 OWNER 2026-09-06 --
+     both faces of your own article stopped at this line, so the sections went,
+     and on the writing face everything under the switch went with them.
 
-     Both faces stop here, and they stop at different lines on purpose. The
-     article stops above the switch, because there is no switch on it: what is
-     left is the heading, which is the one thing a language still says about
-     itself when it says nothing else.
-
-     The EDITOR stops BELOW it, and the one row it keeps is the switch that
-     put it here. 「一番上のトグル」 is what the owner called it, and it is the
-     way back: a screen that hid its own way out would be a language shut
-     away with nothing on the phone able to open it again. docs/keyboard.md
-     carries the same trap written out in four steps -- a face reached by a
-     key nobody placed -- and it is a manual page standing in for the thing
-     working. Not here.
+     Your own private article is the whole page: every section, and the switch
+     that put it here, which is the way back. A screen that hid its own way
+     out is a language shut away with nothing on the phone able to open it
+     again -- docs/keyboard.md carries the same trap written out in four steps,
+     and that is a manual page standing in for the thing working.
 
      Nothing is deleted and nothing is unset. `hide` is one flag, the sections
      keep their own answers, and every word is where it was: turning the
      switch back on brings the whole page back exactly as it was left. */
-  if(wldHidden(w)) return '<div class="view">'+wldFrame(body, ed, mine)+'</div>';
+  if(wldHidden(w) && !mine) return '<div class="view">'+wldFrame(body, ed, mine)+'</div>';
   wldSecs(w).forEach(function(sec){
     var inner='', extra='';
     /* Two of the sections do not reach the writing face at all, and both are
