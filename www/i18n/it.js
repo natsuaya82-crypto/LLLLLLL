@@ -191,7 +191,7 @@ defLang('it', (function(){
       "kb.undo" : "Annulla",
       "kb.redo" : "Ripeti",
       "kb.step1" : "Tocca Aggiungi nuova tastiera",
-      "kb.step1.d" : "Impostazioni → Generali → Tastiera → Tastiere",
+      "kb.step1.d" : "Dall'inizio di Impostazioni: Generali → Tastiera → Tastiere",
       "kb.step2" : "Scegli Lingua",
       "kb.step3" : "Nelle impostazioni di Lingua, tocca Tastiere",
       "kb.step4" : "Attiva Consenti accesso completo",

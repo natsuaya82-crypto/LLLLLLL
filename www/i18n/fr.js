@@ -239,7 +239,7 @@ defLang('fr', (function(){
       "kb.undo" : "Annuler",
       "kb.redo" : "Rétablir",
       "kb.step1" : "Touchez Ajouter un clavier",
-      "kb.step1.d" : "Réglages → Général → Clavier → Claviers",
+      "kb.step1.d" : "Depuis le haut de Réglages : Général → Clavier → Claviers",
       "kb.step2" : "Choisissez Lingua",
       "kb.step3" : "Dans les réglages de Lingua, touchez Claviers",
       "kb.step4" : "Activez Autoriser l'accès complet",

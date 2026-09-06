@@ -370,7 +370,7 @@ defLang('ko', (function(){
       "kb.undo" : "실행 취소",
       "kb.redo" : "다시 실행",
       "kb.step1" : "'새로운 키보드 추가' 누르기",
-      "kb.step1.d" : "설정 → 일반 → 키보드 → 키보드",
+      "kb.step1.d" : "설정 맨 위에서: 일반 → 키보드 → 키보드",
       "kb.step2" : "Lingua 고르기",
       "kb.step3" : "Lingua 설정에서 '키보드' 누르기",
       "kb.step4" : "'전체 접근 허용' 켜기",

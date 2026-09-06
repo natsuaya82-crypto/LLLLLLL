@@ -179,7 +179,7 @@ defLang('de', (function(){
       "kb.undo" : "Rückgängig",
       "kb.redo" : "Wiederherstellen",
       "kb.step1" : "Tippe auf „Tastatur hinzufügen“",
-      "kb.step1.d" : "Einstellungen → Allgemein → Tastatur → Tastaturen",
+      "kb.step1.d" : "Von oben in Einstellungen: Allgemein → Tastatur → Tastaturen",
       "kb.step2" : "Wähle Lingua",
       "kb.step3" : "Tippe in den Lingua-Einstellungen auf Tastaturen",
       "kb.step4" : "Aktiviere „Vollzugriff erlauben“",

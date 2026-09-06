@@ -199,7 +199,7 @@ defLang('zh', (function(){
       "kb.undo" : "撤销",
       "kb.redo" : "重做",
       "kb.step1" : "点按「添加新键盘」",
-      "kb.step1.d" : "设置 → 通用 → 键盘 → 键盘",
+      "kb.step1.d" : "从「设置」顶部：通用 → 键盘 → 键盘",
       "kb.step2" : "选择 Lingua",
       "kb.step3" : "在 Lingua 的设置中点按「键盘」",
       "kb.step4" : "打开「允许完全访问」",

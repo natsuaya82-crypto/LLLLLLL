@@ -3670,7 +3670,15 @@ HELP.kb=function(){
        (openSettingsURLString is Apple's only public door -- LinguaShare.swift
        says so), which is not step 1's own row; Settings → General → Keyboard
        has no public URL. So this is the door into Settings, and the path
-       under it is what says where to walk from there. */
+       under it is what says where to walk from there.
+
+       AND THE PATH SAYS WHERE THE WALK STARTS, which it did not. It read
+       「設定 → 一般 → キーボード → キーボード」 -- true from the top of
+       Settings and not from where this button lands, which is Lingua's own
+       page. Somebody pressed it, arrived somewhere the line did not name, and
+       had nothing to tell them they had to go back up. So it names the top
+       now, in all ten languages. The photographs under steps 1 and 2 are of
+       that walk and are unchanged, because the walk is. */
     kbStepHTML(1, t('kb.step1'), '<div class="mini">'+t('kb.step1.d')+'</div>'+
       '<button class="btn" style="width:100%;margin-top:10px"' + DO('kbSettings') + '>'+
         esc(t('kb.sys.go'))+'</button>'+

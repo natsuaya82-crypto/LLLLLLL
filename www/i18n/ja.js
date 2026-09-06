@@ -107,7 +107,7 @@ defLang('ja', (function(){
       "kb.undo" : "戻す",
       "kb.redo" : "進む",
       "kb.step1" : "「新しいキーボードを追加」を押す",
-      "kb.step1.d" : "設定 → 一般 → キーボード → キーボード",
+      "kb.step1.d" : "設定の一番上から　一般 → キーボード → キーボード",
       "kb.step2" : "Lingua を選ぶ",
       "kb.step3" : "Lingua の設定で「キーボード」を押す",
       "kb.step4" : "「フルアクセスを許可」をオンにする",

@@ -198,7 +198,7 @@ defLang('pt', (function(){
       "kb.undo" : "Desfazer",
       "kb.redo" : "Refazer",
       "kb.step1" : "Toque em Adicionar novo teclado",
-      "kb.step1.d" : "Ajustes → Geral → Teclado → Teclados",
+      "kb.step1.d" : "A partir do topo dos Ajustes: Geral → Teclado → Teclados",
       "kb.step2" : "Escolha Lingua",
       "kb.step3" : "Nos ajustes do Lingua, toque em Teclados",
       "kb.step4" : "Ative Permitir acesso total",

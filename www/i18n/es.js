@@ -151,7 +151,7 @@ defLang('es', (function(){
       "kb.undo" : "Deshacer",
       "kb.redo" : "Rehacer",
       "kb.step1" : "Toca Añadir nuevo teclado",
-      "kb.step1.d" : "Ajustes → General → Teclado → Teclados",
+      "kb.step1.d" : "Desde el inicio de Ajustes: General → Teclado → Teclados",
       "kb.step2" : "Elige Lingua",
       "kb.step3" : "En los ajustes de Lingua, toca Teclados",
       "kb.step4" : "Activa Permitir acceso completo",
