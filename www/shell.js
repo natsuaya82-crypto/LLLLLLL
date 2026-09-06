@@ -1848,10 +1848,31 @@ function swEnd(e){
    The composer is the exception and asks the same question pwKeepKb() asks,
    in the same words -- two places saying "am I the composer" that must not
    drift, which is why neither invents its own test. */
-function kbLetGo(e){
+/* THE ONE PLACE A KEYBOARD GOES DOWN, and it is one line: the keyboard on an
+   iPhone belongs to whatever has focus, so blurring that is the whole of it.
+
+   What matters is WHEN, and that is what was missing. A keyboard put up by a
+   field that is no longer on the page cannot be put down by anything at all:
+   `render()` replaces `#app` whole, the field goes with it, `activeElement`
+   becomes BODY -- and WKWebView leaves the keyboard standing over a screen
+   that has nothing to blur. Measured: focus the search field, call render(),
+   and activeElement is BODY with the field out of the document. From that
+   moment kbLetGo below returned at its first line and tapping the paper did
+   nothing, which is 「投稿以外のキーボードは別の場所タップしたら普通に下ろせる
+   ようにして」 OWNER 2026-09-06 said a second time about a build that already
+   had the tap.
+
+   So the two callers are the two moments: a thumb on the paper, and a screen
+   being thrown away. One function, because it is one act -- a second way to
+   put a keyboard down is a second answer to when it is down. */
+function kbLower(){
   var a=document.activeElement;
-  if(!a) return;
-  if(a.nodeName!=='INPUT' && a.nodeName!=='TEXTAREA' && !a.isContentEditable) return;
+  if(!a) return false;
+  if(a.nodeName!=='INPUT' && a.nodeName!=='TEXTAREA' && !a.isContentEditable) return false;
+  a.blur();
+  return true;
+}
+function kbLetGo(e){
   if(here().r==='form' && here().a==='post:') return;
   var t=e.target, n;
   while(t && t!==document && t.nodeName!=='BODY'){
@@ -1861,7 +1882,7 @@ function kbLetGo(e){
     if(t.getAttribute && t.getAttribute('data-do')) return;
     t=t.parentNode;
   }
-  a.blur();
+  kbLower();
 }
 function swMount(){
   document.addEventListener('pointerdown', kbLetGo, {passive:true});

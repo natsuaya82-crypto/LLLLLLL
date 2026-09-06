@@ -2792,6 +2792,21 @@ var RENDERED_A=null;
 function render(){
   /* Any navigation takes the popup with it. */
   if(typeof popOff==='function') popOff();
+  /* AND THE KEYBOARD, because the field holding it up is about to be thrown
+     away. `#app` is replaced whole below, so a focused field stops existing
+     and there is nothing left for anything to blur -- on a phone the keyboard
+     stays standing over a screen that cannot lower it. kbLower() in
+     www/shell.js is the one place, and this is the second of its two moments;
+     the other is a thumb on the paper.
+
+     The composer is not an exception written here: it puts its own keyboard
+     back through pwKeepKb() (www/post.js), which is the one place that says
+     「投稿画面は下させるな」 and the only place that may.
+
+     Safe on every screen because typing does not come through here -- a
+     keystroke in the search field, the filter, the profile, a note and a new
+     word renders zero times, measured. */
+  kbLower();
   /* the document's own language, so the browser picks the right font and
      line-breaking for it — and so the CSS above can drop Latin tracking */
   document.documentElement.setAttribute('lang', uiLang());
