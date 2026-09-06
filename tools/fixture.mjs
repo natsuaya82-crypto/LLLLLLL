@@ -584,6 +584,13 @@ export function halfDone(){
        Opened on `kano` it would be the empty face, which is a real state and
        is not the one this is here to show. */
     ['the subclass under it', () => { openEdit('tir'); openSub(); return vForm(); }],
+    /* And the box behind its ＋. The names this app offers are on the screen
+       from the moment it opens; the field that writes one that is not on it
+       is one press away, and nothing else renders it -- so without this face
+       act-check reports the Enter on that box as an entry no screen names,
+       which is true and is not what was meant. */
+    ['a subclass being written', () => { openEdit('tir'); subNewOpen();
+                                         return vForm(); }],
     ['one more meaning', () => { openEdit('kano'); wdMnNew = true;
                                  return sheet('<div id="wd-body">'+wdFormHTML()+'</div>'); }],
     ['one more example', () => { openEdit('kano'); wdExNew = true;
@@ -1034,7 +1041,12 @@ export function halfDone(){
     ['somebody else\'s profile', () => { window.route='profile'; NAV=[{r:'profile', a:'iri'}];
         WHO_HAVE['iri'] = { who:'Iri', hd:'iri', av:{ch:'Ж'}, lname:'Vethi',
                              bio:'', fo:2, fr:3, out:false };
-        const h = vProfile(); NAV=[{r:'profile'}]; return h; }],
+        /* BEFORE you follow them, which is what this face is for and what it
+           was not: the seed already follows 'iri', so both faces drew
+           「フォロー中」 and the gold button the owner is talking about was
+           in no picture. */
+        const was = ME.fo; ME.fo = [];
+        const h = vProfile(); ME.fo = was; NAV=[{r:'profile'}]; return h; }],
     ['somebody else\'s profile, followed', () => { ME.fo = ['iri'];
         WHO_HAVE['iri'] = { who:'Iri', hd:'iri', av:{ch:'Ж'}, lname:'Vethi',
                              bio:'', fo:2, fr:3, out:false };
@@ -1585,6 +1597,19 @@ export function halfDone(){
                                                   const h = vForm(); kbLtPick = null;
                                                   KB = null; kbShow = 0;
                                                   SET.plan = 'free'; return h; }],
+    /* AND THE SAME KEY WITH A DRAWN LETTER CHOSEN, which is the other state
+       of one square and the one the change of 2026-09-05 is about: the shape
+       goes in the square with the name small under it, and a letter with
+       nothing drawn on it -- the face above -- keeps its name and nothing
+       else. Both, because the fault is nearly always in the one nobody
+       photographed. */
+    ['a key with a drawn letter chosen for it', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
+                                                  kbAdd('qwerty'); kbLay = 0; kbPick(0, 0);
+                                                  const d = ltOfKind('alpha').filter((l) => inkGeo(l));
+                                                  if (d.length) kbLtTap(0, 0, -1, d[0].id);
+                                                  const h = vForm(); kbLtPick = null;
+                                                  KB = null; kbShow = 0;
+                                                  SET.plan = 'free'; return h; }],
     /* A FLICK keyboard, which is the other half of the editor and the only
        one that has corners. kbSlotsShown() is true when the board's pattern
        is 'flick' or when a key already carries something in one of its four,
@@ -1604,6 +1629,22 @@ export function halfDone(){
                                               kbAdd('flick'); kbLay = 0;
                                               const h = vKb(); KB = null; kbShow = 0;
                                               SET.plan = 'free'; return h; }],
+    /* THE SAVE IN THE CORNER, GOLD, on the keyboard being built. It is the
+       one thing on this screen the change of 2026-09-05 moves and it is a
+       COLOUR, so both states have to be photographed or the fault is in the
+       one nobody looked at: every other face of this chapter is the grey.
+       A board is deleted out from under the page first, because that is the
+       road the buffer used to come apart on -- the layout wrote one key and
+       the bar read another, and the Save stayed grey with a row gone. */
+    ['a keyboard changed, the Save gold', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
+                                                  KEEP = {};
+                                                  kbAdd('qwerty'); kbAdd('flick');
+                                                  kbGoBoard(2); render();
+                                                  kbDropGo(1); render();
+                                                  KBH = { k:'r', r:0, i:0 }; kbCut();
+                                                  const h = vKb();
+                                                  KEEP = {}; KB = null; kbShow = 0;
+                                                  SET.plan = 'free'; return h; }],
     /* A key that switches layers rather than typing one: which layer it goes
        to is a question only that kind of key is asked. */
     ['a key that switches layers', () => { SET.plan = 'pro'; KB = null; kbShow = 0;

@@ -376,7 +376,6 @@ function vAdmin(){
      the reports count is read off it now. Nothing was deleted on the server. */
   var n=ADMINN||{}, rows=MODS||[];
   return '<div class="view">'+navTop('')+'<div class="body">'+
-    (ADMIN_ERR? '<div class="mnone bad">'+esc(ADMIN_ERR)+'</div>' : '')+
     adminRow('admin.reports', n.reports, 'goMod')+
     /* Who answers them, and the field that adds one. Both stay here: their
        buttons exist only where they are drawn, and act-check walks this route
@@ -390,6 +389,12 @@ function vAdmin(){
     '<div class="field">'+
       lnField('admin-h', t('admin.staff.ph'), ' autocapitalize="none"' +
         IN('adminStaffSet', ['h']), ADMIN_H)+'</div>'+
+    /* What went wrong, under the field it went wrong in. It used to be at the
+       top of the screen, above the list and the reports count, which is the
+       far end of the page from the thing that was typed -- so a handle nobody
+       has emptied the field and said nothing anybody saw. One message, in the
+       one place a failure on this screen can come from. */
+    (ADMIN_ERR? '<div class="mnone bad">'+esc(ADMIN_ERR)+'</div>' : '')+
     '<button class="btn ghost"' + DO('adminStaffAdd') +
       (ADMIN_BUSY? ' disabled':'') + '>'+esc(t('admin.staff.add'))+'</button>'+
     /* And the reports themselves, drawn by the row the reports screen draws

@@ -777,30 +777,48 @@ function g2Chap(r){
      rule read by its feature here as well would be one fact drawn twice. */
   return (String(r.feature)==='CASE')? 'n' : '';
 }
-/* One word of this part of speech, and every form of it this language can
-   make that belongs to this chapter. Every chapter of §14 that is about a
-   word changing is this same walk with a different word and a different set
-   of features, so it is written once: the chapters differ in what they are
-   ABOUT, not in how they are drawn. */
-function g2Forms(pos, chap){
-  var w=gWordOf(pos), m, a, i, r, made, out='', md;
-  if(!w) return '';
-  m=gModel([w]);
-  a=m.inflections;
+/* §14 Nouns. The chapter is the three roles the 助詞 stage names -- 主語 /
+   目的語 / 受け手 -- and it is drawn the way every other chapter of this page
+   is: the ones this language has said, and the ones it has not as a row
+   saying 作成. 「文法の名詞ページ見たけど、真っ暗で何もない」 OWNER
+   2026-09-05.
+
+   It used to be a walk over the model's CASE inflections, and gInfl() builds
+   one only where the stage already HAS the word -- so a language that had not
+   written its case marks yet had no rows, and this chapter has no g2Add() row
+   either, because no form in FM_INF makes a CASE rule. The page came out
+   empty however many nouns were in the dictionary. Not blank because
+   something failed: blank because nothing was ever drawn.
+
+   THE EXAMPLE IS THE HALF THAT WAITS ON A WORD. What a mark makes of a noun
+   needs a noun to make it of, so that is drawn where there is one and the
+   mark's own spelling stands where there is not -- which is g2FmRows()'s
+   answer to the same question, one row up.
+
+   openSlot() is the one door and it is the door these rows already used: it
+   opens the word where the stage has one and the sheet that writes it where
+   it has not, so a row that is there and a row that is not are one press with
+   one answer. */
+function g2Nouns(){
+  var p=(typeof stBy==='function')? stBy('part') : null;
+  var a=(p && p.slots) || [], n=gWordOf('n'), m=null, out='', i, k, w, made;
+  if(!p) return '';
+  if(n) m=gModel([n]);
   for(i=0;i<a.length;i++){
-    r=a[i];
-    if(g2Chap(r)!==chap) continue;
-    made=g2Made(m, r);
-    if(!made) continue;
-    md=r.metadata||{};
-    out+=g2Row(md.label || String(r.value), wOut(w.hw), made,
-               md.slot? 'openSlot' : 'openFmr',
-               md.slot? ['part', md.slot] : [md.rule || ''],
-               md.slot? '' : (md.rule || ''));
+    k=a[i];
+    w=stWordFor(p, k);
+    if(!w){
+      out+='<button class="stslot"' + DO('openSlot', ['part', k]) + '>'+
+        '<span class="psm">'+esc(stSlotLabel(p, k))+'</span>'+
+        '<span class="psn">'+t('stg.make')+'</span>'+ICON_GO+'</button>';
+      continue;
+    }
+    made=m? g2MadeBy(m, 'slot', k) : '';
+    out+=g2Row(stSlotLabel(p, k), made? wOut(n.hw) : '', made || wOut(w.hw),
+               'openSlot', ['part', k], '');
   }
   return out;
 }
-function g2Nouns(){ return g2Forms('n', 'n'); }
 /* What THIS RULE makes of this word, asked of the engine and not worked out
    again here.
 
@@ -1056,15 +1074,17 @@ var G2NUM=['\u2776','\u2777','\u2778','\u2779','\u277A',
 function g2Num(i){ return G2NUM[i] || String(i+1); }
 /* What THIS rule makes of a word of this language, asked of the engine by way
    of the inflection it became. g2Made() is the one place that asks; this only
-   finds which of the model's rules is the one on this row, which is what the
-   metadata `rule` was put there for. A rule the engine could not carry -- a
-   condition about sound, which it has no phonology for -- is in the model
-   nowhere, and the row falls back to the letters it adds. */
-function g2FmMade(m, id){
+   finds which of the model's rules is the one on this row, by whichever of the
+   metadata fields names it -- `rule` for a rule somebody wrote, `slot` for a
+   mark the 助詞 stage made. Those two were the same loop written twice, one in
+   each chapter. A rule the engine could not carry -- a condition about sound,
+   which it has no phonology for -- is in the model nowhere, and the row falls
+   back to the letters it adds. */
+function g2MadeBy(m, key, val){
   var a=m.inflections, i, md;
   for(i=0;i<a.length;i++){
     md=a[i].metadata || {};
-    if(String(md.rule)===String(id)) return g2Made(m, a[i]);
+    if(String(md[key])===String(val)) return g2Made(m, a[i]);
   }
   return '';
 }
@@ -1086,7 +1106,7 @@ function g2FmRows(c){
     w=gWordOf(r.pos || c.pos);
     id=String(r.id||'');
     made='';
-    if(w){ m=gModel([w]); made=g2FmMade(m, id); }
+    if(w){ m=gModel([w]); made=g2MadeBy(m, 'rule', id); }
     out+=g2Row(g2Num(n++), made? wOut(w.hw) : '',
                made || gFmForm(r), 'openFmr', [id], id);
   }

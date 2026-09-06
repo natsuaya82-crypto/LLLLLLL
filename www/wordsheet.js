@@ -67,7 +67,7 @@ function openAdd(from){
        the register, the fields, the etymology, the note -- is in wEdit, the
        same as when the word already exists. */
     addW={hw:'', mns:[], pos:addPos, syn:[], ant:[], ex:[]};
-    wdMnNew=false; wdExNew=false;
+    wdMnNew=false; wdExNew=false; wdSubNew=false;
     if(addFrom) addW.from=addFrom;
     wEdit={seq:[], sp:(par? JSON.parse(JSON.stringify(spOf(par))) : []),
            mns:[], pos:addPos, sub:'', reg:'', tags:[], ety:'', nt:''};
@@ -211,20 +211,23 @@ function vSpell(){
     ipaPickHTML('spAdd', [])+
     '</div></div>';
 }
-/* A field for one more of something appears when the `+` on the heading is
-   pressed and stays for the rest of the sheet, so a word with five meanings
-   is five presses of Enter and not five of anything else. Nothing is typed
-   into until somebody says there is one more. */
+/* The field is there when there is nothing yet, and the `+` on the heading is
+   for the SECOND one onwards -- 「追加した後意味が1つ目から+ボタン押さないと
+   いけない」 OWNER 2026-09-05. Once pressed it stays for the rest of the sheet,
+   so a word with five meanings is five presses of Enter and not five of
+   anything else. wdMnShow()/wdExShow() are the one place each answers it. */
 var wdMnNew=false, wdExNew=false;
 function wdMnOpen(){ wdMnNew=true; wdPaint(); }
 function wdExOpen(){ wdExNew=true; wdPaint(); }
+function wdMnShow(){ return wdMnNew || !(wEdit && wEdit.mns && wEdit.mns.length); }
+function wdExShow(){ var w=wdW(); return wdExNew || !(w && w.ex && w.ex.length); }
 function wdMnsHTML(){
   var rows=wEdit.mns.map(function(m,i){
     return '<div class="mnrow"><span class="mnv">'+esc(m)+'</span>'+
       '<button class="mnx"' + DO('wdDelMn', [i]) + ' aria-label="'+esc(t('word.mn.del'))+'">'+ICON_CROSS+'</button></div>';
   }).join('');
   return '<div class="mnlist">'+rows+'</div>'+
-    (wdMnNew? '<div class="mnadd">'+
+    (wdMnShow()? '<div class="mnadd">'+
       lnField('wd-mn', '', ' aria-label="'+esc(t('word.means'))+'"' + KD('wdAddMn'), '')+
       '</div>' : '');
 }
@@ -398,7 +401,7 @@ function wdExHTML(){
           exBtn('wdDelEx', [i], 'word.ex.del', ICON_CROSS));
       }).join('')+'</div>'
     : '')+
-    (wdExNew? '<div class="exadd">'+
+    (wdExShow()? '<div class="exadd">'+
       lnField('wd-exl', exHint(), KD('wdAddEx'), '')+
       lnField('wd-exg', '', ' aria-label="'+esc(t('word.ex.gl.ph'))+'"' + KD('wdAddEx'), '')+
     '</div>' : '');
@@ -1111,8 +1114,55 @@ function posPick(k){ wdSetPos(k); relDirty(); back(); }
 function wdSubHTML(){
   return wdPickRow(t('f.sub'), wEdit.sub || t('f.sub.none'), DO('openSub'));
 }
+/* THE SUBCLASSES THIS APP ALREADY KNOWS THE NAMES OF, one part of speech at a
+   time. 「下位分類の中身も結構書いていいよ」 OWNER 2026-09-05. The screen used
+   to be `subsOf()` alone -- what the words of this language are ALREADY in --
+   so a dictionary with no subclass in it offered an empty list and a box, and
+   the only way to say 他動詞 was to type it.
+
+   What is stored is still the WORDS, not a key: `sub` is free text, it arrives
+   that way out of a CSV, and 「what a language calls a thing is its own」. A
+   row here is a name offered, and pressing it writes that name down.
+
+   The parts of speech not on this list -- 感動詞, 接辞, 固有名詞, イディオム,
+   その他 -- have no names anybody supplied, and inventing some here would be
+   the app deciding something about somebody's language. They get the list this
+   screen always had: what their own words are in, and the way to write one. */
+var SUB_DEF={
+  v:   ['vi','vt','aux','cop'],
+  n:   ['com','prop','coll','mass','abst'],
+  adj: ['qual','stat','quant'],
+  adv: ['man','deg','time','place','freq'],
+  pro: ['pers','dem','int','indef'],
+  num: ['card','ord'],
+  conj:['co','sub'],
+  part:['case','fin','top']
+};
+/* The names offered for one part of speech: the ones this app knows, then the
+   ones this language is already using that are not among them. One list and no
+   row twice -- a language that has typed 他動詞 by hand must not be shown it
+   twice the day the defaults arrive. */
+function subList(pos){
+  var a=SUB_DEF[pos]||[], out=[], used=subsOf(pos), i, x;
+  for(i=0;i<a.length;i++) out.push(t('f.sub.d.'+pos+'.'+a[i]));
+  for(i=0;i<used.length;i++){ x=used[i]; if(out.indexOf(x)<0) out.push(x); }
+  return out;
+}
+/* The box is behind the ＋ and nothing else opens it. 「追加は+〇にして勝手に
+   新しいの作らないで」「欄に打っただけでは登録しない」 OWNER 2026-09-05: the
+   field used to be on the screen from the moment it opened, under a heading,
+   which reads as 「write one」 rather than 「pick one」 -- and what was typed
+   into it and not confirmed was a subclass somebody believed they had made.
+   Enter on the box is still the only thing that makes one. */
+var wdSubNew=false;
+function subNewOpen(){ wdSubNew=true; openSub(); }
+function subAddRow(){
+  return '<div class="entry one"><button class="ebody"' + DO('subNewOpen') + '>'+
+    '<div class="hwrow"><span class="hwl">'+ICON_ADD+esc(t('f.sub.new'))+
+    '</span></div></button><span class="ltck" style="margin-left:auto"></span></div>';
+}
 function openSub(){
-  var subs=subsOf(wEdit? wEdit.pos : ''), now=(wEdit && wEdit.sub) || '';
+  var subs=subList(wEdit? wEdit.pos : ''), now=(wEdit && wEdit.sub) || '';
   openForm('wsub', t('f.sub'),
     /* "None" is a row like the others and is ticked when there is none, so
        taking a subclass off is the same press as putting one on. */
@@ -1120,10 +1170,11 @@ function openSub(){
     subs.map(function(x){
       return wdOneHTML(x, x===now, 'subPick', x);
     }).join('')+
-    '<div class="sec">'+t('f.sub.new')+'</div>'+
-    '<div class="field">'+
-      lnField('wd-sub', '', ' aria-label="'+esc(t('f.sub.new'))+'"'+
-              KD('subNew'), '')+'</div>');
+    (wdSubNew
+      ? '<div class="field">'+
+          lnField('wd-sub', '', ' aria-label="'+esc(t('f.sub.new'))+'"'+
+                  KD('subNew'), '')+'</div>'
+      : subAddRow()));
 }
 FORM_OPEN.wsub=function(){ openSub(); };
 function subPick(x){ wdSetSub(x); relDirty(); back(); }
@@ -1491,7 +1542,7 @@ function openWord(hw){
 /* The same sheet a new word is written on, opened on one that exists. */
 function openEdit(hw){
   var w=findWord(hw); if(!w) return;
-  openHw=w.hw; addW=null; wdMnNew=false; wdExNew=false;
+  openHw=w.hw; addW=null; wdMnNew=false; wdExNew=false; wdSubNew=false;
   wEdit={seq:wPh(w).slice(), sp:JSON.parse(JSON.stringify(spOf(w))), mns:wMns(w).slice(),
          pos:w.pos, sub:subOf(w), reg:w.reg||'', tags:(w.tags||[]).slice(),
          ety:w.ety||'', nt:w.nt||''};

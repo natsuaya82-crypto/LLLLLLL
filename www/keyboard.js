@@ -205,9 +205,21 @@ function kbLaySig(b){ return JSON.stringify(b.lay); }
    gold -- one road, www/shell.js § KEEP, and no dirty flag of this chapter's
    own.
 
-   The key is the BOARD's page and not keepKey(): saveKb() runs from
-   langSaveAll() and from the slice writer in core.js, where the screen in
-   front of somebody is not this one.
+   THE KEY IS THE BOARD'S PAGE, AND IT IS THE SAME STRING keepKey() ANSWERS
+   WITH while that page is the screen. It has to be the board rather than the
+   screen, because saveKb() runs from langSaveAll(), from the slice writer in
+   core.js and from the key's own sheet, where the screen in front of somebody
+   is not this one -- and a change made on the sheet has to reach the buffer
+   the page behind it will read.
+
+   That leaves ONE thing to hold, and it is the whole of rule 20's fault:
+   which board is on the screen is written in the route, and `kbShow` is the
+   same fact read back. Deleting a keyboard slid `kbShow` and left the route
+   naming the one it had, so from then on this wrote `kb|1` while the bar read
+   `kb|2` -- a row really came out of the layout and the Save stayed grey, and
+   the arrow asked nothing on the way out. Both deletes land on the board they
+   end on now (kbDropGo, kbDelSel), so the two cannot come apart. `keep-check`
+   holds it.
 
    Board 0 is asked and answered here rather than at the call: it is the free
    QWERTY, built from LETTERS and stored nowhere, so kbEdit() answers null and
@@ -733,8 +745,14 @@ function kbDropGo(i){
   kbForget();
   saveKb();
   /* Deleting is pressed on the ⋯ sheet, so the same thing was true of it:
-     the keyboard was gone and the screen was still the sheet about it. */
-  kbGo();
+     the keyboard was gone and the screen was still the sheet about it.
+     ONTO THE BOARD IT ENDS ON, and that is the whole of rule 20's fault: the
+     boards below the deleted one slide down, so `kbShow` moved and the route
+     went on naming the one it had. Which board is on the screen is one thing
+     and the route is where it is written -- a second answer to it is what
+     put the layout in one buffer and the Save in the bar on another
+     (www/keyboard.js § kbKeepLay). */
+  kbGo(kbShow);
 }
 /* What a keyboard is called: whatever somebody called it, and otherwise
    Keyboard 1, 2, 3. 「キーボード1、キーボード2、キーボード3って名前が初期」
@@ -2469,7 +2487,9 @@ function kbSelDelGo(){
   kbLay=0; kbSel=null;
   kbForget();
   saveKb();
-  kbGo();
+  /* Onto the board it ends on, for kbDropGo()'s reason above -- this is the
+     same delete done to several at once. */
+  kbGo(kbShow);
 }
 function kbRowHTML(x, i, at){
   var sel=!!KBSEL, on=!!(sel && KBSEL[i]);
@@ -2595,19 +2615,23 @@ function vKb(){
     /* SELECT AT THE FAR END OF THE BAR, where the ? was 「？の位置を
        キーボード 選択 にしたい」 OWNER 2026-09-01.
 
-       And the ? where there is nothing to select. The free plan's one board
+       And NOTHING where there is nothing to select. The free plan's one board
        is board 0, which kbSelTap() refuses and which cannot be deleted, so
-       Select there is a word that puts marks on nothing. What that plan needs
-       in the corner is the steps -- how to switch the keyboard on in iOS --
-       and this is the screen it arrives on. */
+       Select there is a word that puts marks on nothing.
+
+       The steps used to be in that corner, on the free plan only. They are on
+       the CONTENTS now, beside the chapter's own name and on both plans
+       (www/home.js § vBuild) -- 「キーボードの？は目次のキーボードの題名の
+       横」 OWNER 2026-09-05 -- and one mark in two places is two places to
+       change. It is a step earlier as well, which is where 「how do I switch
+       this on」 is asked. */
     return '<div class="view">'+navTop('', KBSEL
         ? ((kbSelList().length
               ? navDel(t('kb.sel.del'), 'kbSelDel')
               : '')+
            navDo(t('kb.sel.done'), 'kbSelOff', null, true))
-        : (!can('kb')? helpQ('kb')
-            : (langLocked()? ''
-                : navDo(t('kb.sel'), 'kbSelOn', null, true))))+
+        : ((!can('kb') || langLocked())? ''
+            : navDo(t('kb.sel'), 'kbSelOn', null, true)))+
       '<div class="body">'+
       kbListHTML()+
       kbSysHTML()+
@@ -2657,17 +2681,13 @@ function vKb(){
    「キーボード1の右上の・・・いらないから消して。そうしたら、そもそも
    キーボードはいじれないから、防げる。」 */
 function kbMoreQ(){
-  if(kbWob)
-    /* The same button as every other Done in this bar, and it used to be
-       spelled `navq navdone` -- a second name for one thing, a sixteenth of
-       a rem smaller and in the other face. www/shell.js § navDo. */
-    return navDo(t('kb.done'), 'kbWobEnd', null, true);
-  /* The ? in its place. There is nothing behind the ⋯ on board 0 -- so the
-     corner was empty, and on the free plan that was the corner the steps used
-     to be in: its one screen carried helpQ('kb') until this board became a
-     page of its own. The board is the same board on both plans, so the corner
-     is the same corner. 「無料でもplusでもproでも同じ画面なのよ」 */
-  if(kbIsFree(kbShow)) return helpQ('kb');
+  /* NOTHING on board 0. It is the free QWERTY: it cannot be deleted and it
+     has no editor, so there is nothing behind a ⋯ -- and the ? that stood
+     here has gone to the contents, beside the chapter's own name
+     (www/home.js § vBuild). 「キーボードの？は目次のキーボードの題名の横」
+     OWNER 2026-09-05. That is one screen earlier than this one, which is
+     where 「how do I switch this on」 is asked. */
+  if(kbIsFree(kbShow)) return '';
   return '<button class="navq"' + DO('kbMore') + ' aria-label="'+esc(t('kb.more'))+'">'+
     ICON_DOTS+'</button>';
 }
@@ -3175,7 +3195,14 @@ function kbUp(e){
   kbReadRows();
 }
 /* ---- the state a home screen is in while an icon is held ---------------
-   Every key wobbling, and Done in the bar.
+   Every key wobbling, and nothing in the bar.
+
+   THERE IS NO DONE. 「並べ替え中の完了ボタンはいらない」 OWNER
+   2026-09-05. A Done was a third way off a screen that already has two --
+   the Save in the corner and the arrow beside it -- and it did nothing
+   either of those does not do. The wobbling ends where the screen does:
+   backGo() (www/shell.js) is the one road off, and a save that landed goes
+   down it too.
 
    A press still SELECTS while it lasts, and that is a fix rather than a
    choice. This state used to strip `kbTapKey` off every key, and the reason
@@ -3194,9 +3221,8 @@ function kbUp(e){
    already stopped in kbUp() -- it calls preventDefault(), which is what keeps
    a key from being selected by the finger that just put it down.
 
-   Where you are standing, so viewReset() drops it. */
+   Where you are standing, so backGo() and viewReset() drop it. */
 var kbWob=false;
-function kbWobEnd(){ kbWob=false; kbSel=null; render(); }
 /* The layout, read back off the screen. The keys moved in the page while the
    finger was down and the language is told once, here -- the same way the
    alphabet is told its order once, on the way up. */
@@ -3339,8 +3365,20 @@ function kbNoted(){
    "row 3" means row 3 of a board, and the board is gone. Leaving it behind
    lights up a row of the new keyboard that nobody pressed, with the bin above
    it up and ready. viewReset() clears it on the way to another screen; this
-   is the other way to arrive somewhere else without leaving the screen. */
-function kbForget(){ KBU={id:'', cur:'', u:[], r:[]}; KBH=null; }
+   is the other way to arrive somewhere else without leaving the screen.
+
+   AND THE BUFFER THE SAVE READS, for the same sentence a third time. It is
+   filed under the board's PAGE (kbKeepLay above), so a board deleted out from
+   under a page leaves what it opened with sitting there as what the next
+   board's change is measured against -- and the Save came up gold on a
+   keyboard nobody had touched. Every one of them goes, not the page you are
+   standing on: the boards below a deleted one all slide, so every page from
+   there down is now about a different keyboard. */
+function kbForget(){
+  KBU={id:'', cur:'', u:[], r:[]}; KBH=null;
+  var k;
+  for(k in KEEP) if(KEEP.hasOwnProperty(k) && k.indexOf('kb|')===0) keepDrop(k);
+}
 /* Both steps are the same move in opposite directions, so they are one
    function told which way. What comes off one stack goes onto the other, and
    the layout put back is a copy -- JSON out and JSON in -- so nothing on
@@ -3637,7 +3675,15 @@ HELP.kb=function(){
        (openSettingsURLString is Apple's only public door -- LinguaShare.swift
        says so), which is not step 1's own row; Settings → General → Keyboard
        has no public URL. So this is the door into Settings, and the path
-       under it is what says where to walk from there. */
+       under it is what says where to walk from there.
+
+       AND THE PATH SAYS WHERE THE WALK STARTS, which it did not. It read
+       「設定 → 一般 → キーボード → キーボード」 -- true from the top of
+       Settings and not from where this button lands, which is Lingua's own
+       page. Somebody pressed it, arrived somewhere the line did not name, and
+       had nothing to tell them they had to go back up. So it names the top
+       now, in all ten languages. The photographs under steps 1 and 2 are of
+       that walk and are unchanged, because the walk is. */
     kbStepHTML(1, t('kb.step1'), '<div class="mini">'+t('kb.step1.d')+'</div>'+
       '<button class="btn" style="width:100%;margin-top:10px"' + DO('kbSettings') + '>'+
         esc(t('kb.sys.go'))+'</button>'+
@@ -3699,9 +3745,18 @@ FORM_OPEN.kbmore=function(){ kbMore(); };
    nothing was ever handed over, drawing more letters will not help. */
 /* No bridge means a browser, which is every check and no phone: there is no
    Settings to open and nothing to say about it. */
+/* Settings, opened at this app's own page. LinguaShare.swift § settings says
+   what that is and why it is the only door Apple gives.
+
+   IT SAYS SO WHEN IT CANNOT. This returned in silence with no bridge under it
+   -- a button pressed, nothing on the screen, and nothing to tell a person
+   whether they had missed it. The two ways this fails are one thing to say:
+   there is no bridge (the app is not on a phone), and the bridge refused. One
+   string for both, because 「設定を開けませんでした」 is the whole of what
+   somebody can do anything about. */
 function kbSettings(){
   var p=sharePlug();
-  if(!p) return;
+  if(!p){ toast(t('kb.sys.no')); return; }
   p('LinguaShare', 'settings', {})['catch'](function(){ toast(t('kb.sys.no')); });
 }
 function kbGoLay(i){ kbLay=i; render(); }
@@ -3937,12 +3992,39 @@ function kbKeyHTML(ri, ki){
    finger slides off it. Which is exactly how the key is drawn on the
    keyboard itself, one screen back -- kbFlicks() puts the four at the
    middles of the edges, and this is that, big enough to press. */
+/* THE SHAPE, WITH THE NAME SMALL UNDER IT. 「選んだ文字の形を上の四角に」
+   OWNER 2026-09-05. It was the name and nothing else -- ltInk()'s fallback,
+   reached because a letter's shape and its name were two answers to the
+   square and only one of them fitted. The square is what says WHAT IS ON THIS
+   KEY, and what is on a key of this app is a letter somebody drew: answering
+   with the roman it happens to be filed under is the app showing its own
+   filing rather than the alphabet.
+
+   A letter with nothing drawn on it has only its name, and keeps it -- that
+   is ltInk() answering empty, not a second branch of this. The name goes
+   small only when there is a shape over it to be small under. */
 function kbSlotFace(lid){
-  var l=lid? ltById(lid) : null;
-  return l? ltInk(l, '<span class="kbl">'+esc(ltName(l)||'·')+'</span>', 'midink')
-          : '<span class="kbsx">'+ICON_ADD+'</span>';
+  var l=lid? ltById(lid) : null, ink;
+  if(!l) return '<span class="kbsx">'+ICON_ADD+'</span>';
+  ink=ltInk(l, '', 'midink');
+  if(!ink) return '<span class="kbl">'+esc(ltName(l)||'·')+'</span>';
+  /* Written here rather than in www/index.html because that file is another
+     session's this week. Nothing here is a border or a corner (CLAUDE.md
+     § 18) -- it is a stack and a type size. */
+  return '<span style="display:flex;flex-direction:column;align-items:center;'+
+    'justify-content:center;gap:2px">'+ink+
+    '<span class="kbl" style="font-size:.6rem;line-height:1">'+
+    esc(ltName(l)||'·')+'</span></span>';
 }
+/* WHAT THE SQUARE SHOWS IS WHAT HAS BEEN CHOSEN, when something has.
+   Choosing writes nothing until the confirm (kbLtPut below), so the square
+   read the key and the key still held what it held -- press a letter and the
+   cell went purple while the square over it went on saying the old thing, or
+   nothing at all. The purple and the square are one answer to one question
+   and it is asked in one place, kbLtAt(). */
 function kbSlotBtn(cls, lid, ri, ki, dir, label){
+  var p=kbLtAt(ri, ki, dir);
+  if(p) lid=p.v;
   return '<button class="kbe '+cls+(lid && ltById(lid)? '' : ' non')+'"' +
     DO('kbSlot', [ri, ki, dir]) +
     ' aria-label="'+esc(label)+'">'+kbSlotFace(lid)+'</button>';
@@ -4113,9 +4195,16 @@ function kbLtHTML(){
    the key itself (d = -1) and for each of a flick key's four corners: a
    choice made for one corner is not a choice made for the next. */
 var kbLtPick=null;
+/* What has been chosen FOR THIS SLOT, or null. One place, because two things
+   ask it: the purple on the cell, and the square over the alphabet that says
+   what is on the key. */
+function kbLtAt(ri, ki, dir){
+  return (kbLtPick && kbLtPick.r===ri && kbLtPick.k===ki && kbLtPick.d===dir)
+    ? kbLtPick : null;
+}
 function kbLtIs(ri, ki, dir, lid){
-  return !!kbLtPick && kbLtPick.r===ri && kbLtPick.k===ki &&
-         kbLtPick.d===dir && kbLtPick.v===lid;
+  var p=kbLtAt(ri, ki, dir);
+  return !!p && p.v===lid;
 }
 /* Painted the purple this chapter already paints a chosen thing -- the row's
    band, the column's band, a chosen key. kbPickPaint() is the one place that

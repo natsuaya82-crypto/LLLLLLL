@@ -216,8 +216,8 @@ const r = await pg.evaluate(({ s }) => {
       read: function(){ return String((STG.rules && STG.rules.neg) || ''); } },
     { n: 'a note',
       go: function(){ goTab('build'); go('notes'); openNote(0); },
-      sel: '#nt-b', v: 'what the river is called',
-      read: function(){ return String((NOTES[0] && NOTES[0].b) || ''); } },
+      sel: '#nt-t', v: 'what the river is called',
+      read: function(){ return String((NOTES[0] && NOTES[0].t) || ''); } },
     { n: "a word's sheet",
       go: function(){ goTab('build'); go('words'); openEdit(hw); },
       sel: '#wd-nt', v: 'said only of water',
@@ -357,6 +357,43 @@ const more = await pg.evaluate(() => {
   out.kbName = String(kbBoards()[1].nm || '');
   window.saveKb = realSaveKb;
 
+  /* ---- 10b. ONE KEY, on the screen a keyboard is built on ---------------
+     The layout is written into the buffer by kbKeepLay(), keyed by the BOARD
+     (kbShow); the Save in the bar reads the buffer keyed by the SCREEN
+     (here().a). Those are two names for one thing and they came apart:
+     deleting a keyboard slides every board below it down, so kbShow moved and
+     the route went on naming the one it had. From then on a row really taken
+     out of the layout wrote `kb|1` while the bar read `kb|2` -- the Save
+     stayed grey with the keyboard changed under it, and the arrow asked
+     nothing on the way out. 「変えてない時も保存ボタン押せる」 OWNER
+     2026-09-05, on the other end of the same fault.
+
+     Nothing about it throws: the layout is on the phone either way and goes
+     up on the burst, so every screenshot is right and every other check is
+     green. What is wrong is what the button SAYS.
+
+     Asked of the real roads: make two, stand on the second, delete the first,
+     then take a row out and read the bar. */
+  SET.plan = 'pro';
+  KB = null; kbShow = 0; KEEP = {};
+  kbAdd('qwerty'); kbAdd('flick');
+  kbGoBoard(2); render();
+  kbDropGo(1); render();
+  out.kbKeyOne = keepKey() === keepKeyOf('kb', kbShow);
+  out.kbGoldAfterDrop = keepDirty(keepKey());
+  var rowsWas = kbLayer().rows.length;
+  KBH = { k: 'r', r: 0, i: 0 }; kbCut(); render();
+  out.kbRowWent = kbLayer().rows.length < rowsWas;
+  out.kbGoldOnChange = keepDirty(keepKey());
+  out.kbBufs = Object.keys(KEEP).filter(function(k){ return k.indexOf('kb|') === 0; }).length;
+  out.kbAsked = (function(){
+    var asked = false, op = popAsk;
+    popAsk = function(){ asked = true; };
+    back();
+    popAsk = op;
+    return asked;
+  })();
+
   /* ---- 11. viewReset() lets them go ------------------------------------- */
   goTab('profile'); openMe();
   var e2 = document.querySelector('#me-nm');
@@ -403,6 +440,7 @@ const more = await pg.evaluate(() => {
   goTab('build'); go('gram', 'neg'); openStRules('neg');
   missing.push(typeOn('[data-in="stSetRules"]', 'q'));
   goTab('build'); go('notes'); openNote(0);
+  missing.push(typeOn('#nt-t', 'q'));
   missing.push(typeOn('#nt-b', 'q'));
   goTab('build'); go('words'); openEdit(hw);
   missing.push(typeOn('#wd-nt', 'q'));
@@ -504,6 +542,12 @@ if(more.kbSavesWhileTyping !== 0) fails.push('typing a keyboard name called save
 if(more.kbStepsWhileTyping !== 0) fails.push('typing a keyboard name stacked ' + more.kbStepsWhileTyping + ' steps to go back through');
 if(more.kbSavesOnSave !== 1) fails.push('one save was ' + more.kbSavesOnSave + ' writes, not one');
 if(more.kbName !== 'one') fails.push('the keyboard name did not land: ' + more.kbName);
+if(!more.kbKeyOne) fails.push('the keyboard is written under one key and read under another');
+if(more.kbGoldAfterDrop) fails.push('deleting a keyboard left the Save gold on the one that took its place');
+if(!more.kbRowWent) fails.push('the row the bin was pressed on is still there');
+if(!more.kbGoldOnChange) fails.push('a row taken out of the layout left the Save grey');
+if(more.kbBufs !== 1) fails.push('one keyboard screen kept ' + more.kbBufs + ' buffers');
+if(!more.kbAsked) fails.push('back off a changed keyboard asked nothing');
 if(!more.keptBefore) fails.push('typing into the profile left nothing to save');
 if(more.keptAfter) fails.push('viewReset() kept what had been typed');
 if(more.fieldsMissing.length) fails.push('fields not on their screens: ' + more.fieldsMissing.join(', '));
@@ -530,6 +574,8 @@ console.log('the screens that take typing: ' + r.screens.length + ' walked, and 
 console.log('the left-edge swipe: same question, same road (back())');
 console.log('the keyboard: ' + more.kbSavesWhileTyping + ' writes while typing, ' +
             more.kbStepsWhileTyping + ' steps stacked, ' + more.kbSavesOnSave + ' write on save');
+console.log('the keyboard, one key: a board deleted under the page leaves ' + more.kbBufs +
+            ' buffer, the Save grey; a row taken turns it gold and the arrow asks');
 console.log('viewReset(): lets what was typed go');
 console.log('one shape only: ' + more.bothShapes.length + " of the app's nine save functions " +
             'fired while somebody was typing');

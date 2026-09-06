@@ -209,15 +209,41 @@ var HELP={};
 /* HOW THE MARK OPENS, written once: helpQ() builds it and helpQCut() below
    finds it again in whatever a screen handed the bar. Two places matching a
    string by hand is two places that drift. */
-var NAVQ_OPEN='<button class="navq"';
+/* A SPAN AND NOT A BUTTON, so the mark can stand inside a row that is itself
+   one press. 「キーボードの？は目次の題名の横」 OWNER 2026-09-05, and the
+   contents is a list where each row is a single `<button class="trow">`: the
+   parser closes a button when it meets another, so a nested one is not a
+   small mark inside a row, it is the row cut in half. actOf() (www/act.js)
+   walks up from what was touched to the nearest `data-do`, so the mark
+   answers for itself and the row answers for everywhere else -- one press,
+   one act, either way.
+
+   It stays a flex ITEM everywhere it is used -- the bar is a flex row and so
+   is `.trow` -- so `min-height`/`min-width` still make it the 44pt box a
+   thumb needs, which is the one thing a span would otherwise lose. */
+var NAVQ_OPEN='<span class="navq"';
 /* `margin-left:0` because `.navq` carries `margin-left:auto`, which is what
    stood it at the far end of the bar. It stands beside the name now
    (www/shell.js § navTop) and the class is worn by nine other corners on six
-   screens, so the auto is undone here rather than taken off the class. */
+   screens, so the auto is undone here rather than taken off the class.
+
+   The vertical pull is the same sentence about a LIST. A 44pt box in a row
+   whose words are 21px makes that one row half again as tall as the others,
+   and 「行の高さは揃える」 -- so the box reaches out into the padding the row
+   already has, where a thumb still lands. It is 44pt still; it just stops
+   being what decides the row's height. In the bar there is nothing to pull
+   past: every other thing in that corner is 44pt too.
+
+   And the `?` is centred in that box BY THIS RULE rather than by the tag. A
+   `<button>` centres its own text and a span does not, so the mark sat at the
+   top of its 44pt box the moment it stopped being a button -- which is the
+   whole class of fault that comes of changing what something IS. */
 function helpQ(k){
   if(!HELP[k]) return '';
-  return NAVQ_OPEN + ' style="margin-left:0"' + DO('openHelp', [k]) +
-    ' aria-label="'+esc(t('help.q'))+'">?</button>';
+  return NAVQ_OPEN + ' role="button" tabindex="0"' +
+    ' style="margin:-12px 0;display:flex;align-items:center;justify-content:center"' +
+    DO('openHelp', [k]) +
+    ' aria-label="'+esc(t('help.q'))+'">?</span>';
 }
 /* THE MARK, TAKEN OUT OF WHAT A SCREEN PUT IN THE CORNER.
    「？を文字の横に動かしたらいけない？」 OWNER 2026-09-05.
@@ -228,15 +254,22 @@ function helpQ(k){
    next to the name; everything else in `right` is left exactly where it was.
    Nothing that calls navTop() changed.
 
-   Returns the pair: the mark, and what is left. A `.navq` button holds one
-   character and no nested button, so the first `</button>` after it is its
-   own. */
+   Returns the pair: the mark, and what is left. The mark holds one character
+   and nothing nested, so the first `</span>` after it is its own.
+
+   AND IT CAN NOW TELL WHAT IT IS CUTTING. The mark and the keyboard's ⋯ both
+   wore `.navq` on a `<button>`, so this matched whichever came first in the
+   string and had no way to know which it had. The mark is a span now and the
+   ⋯ is still a button, so there is nothing left to confuse. Nothing visible
+   was measured to move by it -- the bar puts the mark and `right` in the same
+   place on that screen either way -- so this is the ambiguity going, not a
+   fault being fixed. */
 function helpQCut(right){
   var s=String(right||''), i=s.indexOf(NAVQ_OPEN), j;
   if(i<0) return ['', s];
-  j=s.indexOf('</button>', i);
+  j=s.indexOf('</span>', i);
   if(j<0) return ['', s];
-  j=j+9;
+  j=j+7;
   return [s.slice(i, j), s.slice(0, i)+s.slice(j)];
 }
 function openHelp(k){
@@ -513,9 +546,18 @@ function vBuild(){
         esc(pageName('find'))+'">'+ICON_LENS+'</button>')+
     '<div class="body" style="padding-top:4px">'+
     capBanner()+
+    /* AND THE MARK BESIDE THE CHAPTER'S NAME, where a chapter is chosen.
+       「キーボードの？は目次のキーボードの題名の横」 OWNER 2026-09-05. It was
+       in the corner of the keyboard's own page, which is one screen further
+       in than the question 「how do I switch this on」 is asked.
+
+       Asked of the row rather than named: helpQ() answers with nothing for a
+       chapter that has nothing to explain, so this is the keyboard today and
+       is whatever HELP holds tomorrow -- no list here to be forgotten. */
     '<div class="toc">'+tocRows().map(function(row, i){
       return '<button class="trow"' + DO('go', [row.r]) + '>'+
         '<span class="rn">'+(TOC_N[i]||'')+'</span><span class="rt">'+esc(t(row.k))+'</span>'+
+        helpQ(row.r)+
         '<span class="lead"></span>'+ICON_GO+'</button>';
     }).join('')+'</div>'+
     /* Settings used to hang off the bottom of the contents. It belongs to the
