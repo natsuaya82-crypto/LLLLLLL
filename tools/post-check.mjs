@@ -368,6 +368,34 @@ const R = await pg.evaluate(async () => {
   await new Promise(r => setTimeout(r, 120));
   if (POSTS.some(x => x.id === srv.id))
     fails.push('the server took the row and the post is still on the timeline');
+
+  /* ---- 7c. and a post with no row still takes its FILES with it -------
+     A send can come apart in the middle: the photographs and the voice reach
+     the bucket and the row that would name them does not. So there is no row
+     and there ARE files, and leaving them is a file nothing points at in a
+     PUBLIC bucket (docs/RISK.md § 9). Nothing throws either way -- the post
+     goes off the timeline in both, and only the bucket knows the difference. */
+  PW = pwBlank(); PW.ln = 'mos';
+  pwSend();
+  await new Promise(r => setTimeout(r, 200));
+  const orphan = POSTS[POSTS.length - 1];
+  delete orphan.sid;
+  orphan.pu = ['u/1.jpg']; orphan.pt = ['u/1t.jpg']; orphan.vu = 'u/1.m4a';
+  rowsBack = [];
+  sentTo.length = 0;
+  postDel(orphan.id);
+  if (popOn()) popYes();
+  await new Promise(r => setTimeout(r, 120));
+  if (!sentTo.some(x => x.indexOf('DELETE /storage/v1/object/post-media') === 0))
+    fails.push('a post with no row on the server was deleted and its files were ' +
+               'left in the bucket: ' + JSON.stringify(sentTo) + '. The bucket is ' +
+               'public, so anybody holding the URL goes on seeing the photograph ' +
+               'of a post its author deleted, and nothing points at it any more');
+  if (sentTo.some(x => x.indexOf('DELETE /rest/v1/post') === 0))
+    fails.push('a post with no `sid` still sent a DELETE for a row. There is no ' +
+               'row to name');
+  if (POSTS.some(x => x.id === orphan.id))
+    fails.push('a post with no row on the server could not be deleted');
   netSend = wasSend;
 
   /* ---- 8. a reply that is deleted stops being counted ---------------- */

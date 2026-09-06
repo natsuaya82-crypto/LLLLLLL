@@ -3531,13 +3531,20 @@ function netMark(id, kind, on, ok, bad){
    done the moment the phone lets go of it. Refusing it left somebody unable
    to delete a post that had never left this handset.
 
+   ITS FILES STILL GO. A post's send can come apart in the middle: the
+   photographs and the voice reach the bucket and the row that would name
+   them does not. So there is no row and there ARE files, and leaving them is
+   a file nothing points at in a PUBLIC bucket -- which is voDrop()'s reason
+   said about a post instead of a recording, and docs/RISK.md § 9. The same
+   netDropFiles() road, named by the post being deleted and nothing else.
+
    `∅` is the mark, and it is a STATE the way netWhy()'s others are: the
    request was answered and took nothing away, which is not 通信エラー and
    must not raise its pop. */
 function netDrop(p, ok, bad){
   var sid=p && p.sid;
   if(!netSignedIn()){ bad(null, 0, 'post ∅'); return; }
-  if(!sid){ ok(); return; }
+  if(!sid){ netDropFiles(p, ok); return; }
   netDropFiles(p, function(){
     netSend('DELETE', '/rest/v1/post?id=eq.'+encodeURIComponent(sid),
             null, SESS.at, function(d){

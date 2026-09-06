@@ -202,7 +202,8 @@ const evalled = (names) => {
     actOf: () => null,
     said: [], sent: null, answer: null,
     netSignedIn: () => true,
-    netDropFiles: (p, done) => done(),
+    dropped: 0,
+    netDropFiles: (p, done) => { world.dropped++; done(); },
     netSend: (m, path, body, tok, ok, bad) => { world.sent = m + ' ' + path; world.answer(ok, bad); },
     netPop: (d, s, mk) => { world.said.push('pop'); },
     netWhy: () => 'no',
@@ -271,13 +272,21 @@ const evalled = (names) => {
      one answer. They are not: signed out there is nobody to ask, and a post
      that never reached the server has nothing there to take away. Refusing it
      left somebody unable to delete a post that had never left this handset. */
+  world.dropped = 0;
   const nosid = run({ id: 'p2', mine: 1 }, (ok) => ok([]));
   if (nosid.left)
     bad.push('a post with no `sid` could not be deleted. There is no row on ' +
       'the server to take away, so there is nothing to refuse — and the post ' +
       'somebody asked to be gone stayed on their timeline.');
   if (world.sent)
-    bad.push('a post with no `sid` still sent a DELETE. There is no row to name.');
+    bad.push('a post with no `sid` still sent a DELETE for a row. There is no ' +
+      'row to name.');
+  if (!world.dropped)
+    bad.push('a post with no `sid` was deleted without its files being asked ' +
+      'for. A send can come apart in the middle — the bucket has the ' +
+      'photographs and the row that would name them never arrived — and the ' +
+      'bucket is public, so what is left is a file nothing points at that ' +
+      'anybody holding the URL can still see.');
   if (nosid.said.indexOf('say:no') >= 0)
     bad.push('a post with no `sid` was deleted and the screen said it could ' +
       'not be. 「消せませんでした」 is for a server that answered and took no ' +
@@ -305,5 +314,5 @@ console.log('     nothing deletes that is not written down, and nothing written 
 console.log('     and one of them was run, from the menu row to the request: the ' +
   'question closes the menu so the press that answers it gets through, a ' +
   'DELETE that removed no row leaves the post on the screen and says so, a ' +
-  'post with no sid sends nothing and goes, and a DELETE that removed the row takes ' +
+  'post with no sid names no row and goes with its files, and a DELETE that removed the row takes ' +
   'it off');
