@@ -1144,6 +1144,7 @@ defLang('ru', (function(){
       'post.editplan'         : "Изменять записи можно на плане Plus",
       'post.save'             : "Сохранить",
       'post.edited'           : "Изменено",
+      'post.unsent'           : "Не отправлено",
       'post.pv'               : "Только для вас",
       'post.pv.on'            : "Это увидите только вы",
       'post.pv.off'           : "Это увидят все",

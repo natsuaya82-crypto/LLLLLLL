@@ -1180,6 +1180,7 @@ defLang('fr', (function(){
       'post.editplan'         : "Modifier un post est réservé au forfait Plus",
       'post.save'             : "Enregistrer",
       'post.edited'           : "Modifié",
+      'post.unsent'           : "Non envoyé",
       'post.pv'               : "Privé",
       'post.pv.on'            : "Vous seul le verrez",
       'post.pv.off'           : "Tout le monde le verra",

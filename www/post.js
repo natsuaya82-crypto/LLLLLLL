@@ -1106,6 +1106,15 @@ function postSid(p, sid){
   p.sid=String(sid);
   savePosts();
 }
+/* Written here and never sent. One question, one place: a post of mine that
+   the server has no id for, and that is not kept to myself -- postCatchUp()
+   is what tries to send those, and the row is what says so on the screen.
+   「5 いります」 OWNER 2026-09-06.
+
+   It reads nothing but what is ON the post, so the reading side may ask it. */
+function postUnsent(p){
+  return !!(p && p.mine && !p.sid && !p.pv);
+}
 /* Everything already on this phone that the server has never seen.
    「あげよう」
 
@@ -1165,7 +1174,7 @@ function postCatchUp(){
   netDropAgain();
   ps=POSTS.slice().sort(function(a, b){ return (a.at||0)-(b.at||0); });
   for(i=0;i<ps.length && n<POST_CATCH;i++){
-    if(ps[i].sid || ps[i].pv || !ps[i].mine) continue;
+    if(!postUnsent(ps[i])) continue;
     /* Already on the wire. Read here as well as refused in postSend() so an
        in-flight post does not eat one of the four -- postSend() is what owns
        the answer; this is one of the places that ask it. */
@@ -3063,7 +3072,14 @@ function postRow(p){
                there when this head was two fixed lines and the lower one had
                stopped fitting; the lower one wraps now, so the reason it moved
                up is gone and it goes back where the order says. */
-            '<span class="pwhen">'+esc(postWhen(p.at))+'</span>'+
+            /* And where the time would be, a post that has not reached the
+               server says so instead -- the same span, because it answers
+               the same question: how old is this. A post written with no
+               signal used to wear「now」 and look exactly like one that had
+               gone up. 「5 いります」 OWNER 2026-09-06. It goes the moment
+               the sid lands, because that is a redraw of this row. */
+            '<span class="pwhen">'+
+              esc(postUnsent(p)? t('post.unsent') : postWhen(p.at))+'</span>'+
             /* Kept to yourself, then edited. OWNER 2026-08-25:「🔑と編集済み
                逆にしたら終わりかな」-- asked for the other way round first and
                swapped after looking at it. The two are not the same kind of

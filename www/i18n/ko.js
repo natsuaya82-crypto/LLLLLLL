@@ -1307,6 +1307,7 @@ defLang('ko', (function(){
       'post.editplan'         : "글 편집은 Plus 플랜부터입니다",
       'post.save'             : "저장",
       'post.edited'           : "편집됨",
+      'post.unsent'           : "보내지 않음",
       'post.pv'               : "나만 보기",
       'post.pv.on'            : "나만 볼 수 있습니다",
       'post.pv.off'           : "모두가 볼 수 있습니다",
