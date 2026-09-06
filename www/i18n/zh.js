@@ -473,6 +473,7 @@ defLang('zh', (function(){
       "sns.none.fo"     : "你关注的人还没有写过",
       "feed.rec"        : "推荐",
       "feed.fo"         : "关注中",
+      "feed.filter.prompt": "#今日话题",
       "feed.fil"        : "筛选",
       "sort.title"      : "排序",
       "sort.new"        : "最新",

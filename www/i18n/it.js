@@ -465,6 +465,7 @@ defLang('it', (function(){
       "sns.none.fo"     : "Nessuno che segui ha ancora scritto",
       "feed.rec"        : "Per te",
       "feed.fo"         : "Seguiti",
+      "feed.filter.prompt": "#Tema di oggi",
       "feed.fil"        : "Filtro",
       "sort.title"      : "Ordina",
       "sort.new"        : "Recenti",

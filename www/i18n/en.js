@@ -368,6 +368,7 @@ defLang('en', (function(){
       'sns.none.fo'     : "Nobody you follow has written yet",
       'feed.rec'        : "For you",
       'feed.fo'         : "Following",
+      'feed.filter.prompt': "#Today’s prompt",
       'feed.fil'        : "Filter",
       'sort.title'      : "Sort",
       'sort.new'        : "Latest",

@@ -472,6 +472,7 @@ defLang('pt', (function(){
       "sns.none.fo"     : "Ninguém que você segue escreveu ainda",
       "feed.rec"        : "Para você",
       "feed.fo"         : "A seguir",
+      "feed.filter.prompt": "#Tema de hoje",
       "feed.fil"        : "Filtro",
       "sort.title"      : "Ordenar",
       "sort.new"        : "Recentes",

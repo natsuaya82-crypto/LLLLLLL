@@ -453,6 +453,7 @@ defLang('de', (function(){
       "sns.none.fo"     : "Noch niemand, dem du folgst, hat geschrieben",
       "feed.rec"        : "Für dich",
       "feed.fo"         : "Folge ich",
+      "feed.filter.prompt": "#Thema des Tages",
       "feed.fil"        : "Filter",
       "sort.title"      : "Sortieren",
       "sort.new"        : "Neueste",

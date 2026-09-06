@@ -2117,6 +2117,29 @@ function netFeed(which, ok, bad, more){
       netGet(bl.length? q+'&author=not.in.('+bl.join(',')+')' : q, got, bad);
     });
   }
+  /* THE DAY'S ANSWERS. 「絞り込みに「#今日のお題」を足す。その行を選ぶと、
+     その日のお題に答えた投稿だけ」 OWNER 2026-09-06.
+
+     `prompt` is a column on the post with a key behind it and an index over
+     it (`post_prompt_idx` in supabase/schema.sql), so this is the plain row
+     question the other two lists are not: no score, no follow list, just the
+     posts carrying today's id, newest first.
+
+     A request that asked for one day's answers by the prompt's id was here
+     until 2026-09-04 and was taken out with the tag mechanism it belonged to
+     -- 「しかも何で検索が今日しか出ないの？」: it was answering a SEARCH,
+     which has to reach every day there is, and a search is netFindPosts()'s.
+     This one is not a search. It is a timeline of one day, chosen by name on
+     the filter page, and the id it needs is the row this phone already holds.
+
+     No prompt in hand is 「could not ask」 and not an empty day: `null` leaves
+     the road askable, the way the followed timeline does signed out. */
+  if(which==='day'){
+    var pid=(typeof dayId==='function')? dayId() : 0;
+    if(!pid){ ok(null); return; }
+    pull('&prompt=eq.'+encodeURIComponent(String(pid)));
+    return;
+  }
   /* What is going round, which is one question the server answers -- the
      weights, the window and the tie are supabase/schema.sql's feed_hot() and
      not this file's. A phone that scored posts itself would be scoring the

@@ -468,6 +468,7 @@ defLang('ru', (function(){
       "sns.none.fo"     : "Никто из тех, на кого вы подписаны, ещё не писал",
       "feed.rec"        : "Для вас",
       "feed.fo"         : "Подписки",
+      "feed.filter.prompt": "#Тема дня",
       "feed.fil"        : "Фильтр",
       "sort.title"      : "Сортировка",
       "sort.new"        : "Новые",
