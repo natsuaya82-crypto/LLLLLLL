@@ -636,6 +636,7 @@ defLang('ko', (function(){
       "post.del.q"      : "이 글을 삭제할까요?",
       "post.del.ok"     : "게시글을 삭제했습니다",
       "post.del.no"     : "게시글을 삭제하지 못했습니다",
+      "lang.del.no"     : "언어를 삭제하지 못했습니다",
       "when.now"        : "방금",
       "when.m"          : "{0}분",
       "when.h"          : "{0}시간",

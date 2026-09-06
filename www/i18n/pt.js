@@ -464,6 +464,7 @@ defLang('pt', (function(){
       "post.del.q"      : "Eliminar esta publicação?",
       "post.del.ok"     : "Publicação eliminada",
       "post.del.no"     : "Não foi possível eliminar a publicação",
+      "lang.del.no"     : "Não foi possível excluir o idioma",
       "when.now"        : "agora",
       "when.m"          : "{0} min",
       "when.h"          : "{0} h",

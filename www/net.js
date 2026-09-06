@@ -392,8 +392,10 @@ function netTag(path){
 function netWhy(d, status, mark){
   /* 消せなかった。答えは返ってきていて、行は一つも消えていない ── 通信が
      落ちた話ではないので `net.offline` ではないし、状態のどれでもない。
-     `−` や `≠` と同じく印で分ける。今これを出すのは netDrop() だけ。 */
-  if(String(mark||'').indexOf('∅')>=0) return t('post.del.no');
+     `−` や `≠` と同じく印で分ける。出すのは netDrop() と netLangDrop() で、
+     どちらの話かは印の頭に書いてある ── 「投稿」と「言語」は別の文。 */
+  if(String(mark||'').indexOf('∅')>=0)
+    return String(mark).indexOf('language')===0? t('lang.del.no') : t('post.del.no');
   if(!status) return t('net.offline') + (mark? ' ('+mark+')' : '');
   var m=(d && (d.msg || d.message || d.error_description || d.error)) || '';
   if(status===400 && /invalid login/i.test(m)) return t('net.badlogin');
@@ -1241,9 +1243,25 @@ function netLangRow(id, ok, bad){
    `on delete cascade` -- so this one row is the whole of it.
 
    A language that has never been up has no `sid`, and there is nothing on the
-   server to take away: that is `ok()` and not a failure. The caller has
-   already removed the phone's copy either way, which is the order that
-   matters -- a delete that stops halfway must not leave the language showing.
+   server to take away: that is `ok()` and not a failure. It is the one road
+   here that does not ask the server anything, and it is netDrop()'s own
+   `if(!sid)` said about a language instead of a post.
+
+   AND WHAT CAME BACK IS COUNTED, which is netDrop()'s other sentence. A DELETE
+   that matched NO ROW answers exactly like one that matched -- so a row
+   `language_drop` refused, or a row this phone has the wrong id for, read as
+   `消えました`: the language went off the phone, stayed on the server, and the
+   next netLangsDown() brought it back. Measured on 2026-09-06: with the DELETE
+   answered 200 `[]`, both LANGS and `lingua.langs` lost the language and the
+   person was told nothing. netSend() asks for the rows (the Prefer header
+   above), so this reads them: no row means the language is still there, and
+   the person is told so rather than watching it go and come back.
+
+   `∅` is the mark and it is a STATE, the way netWhy()'s others are: the
+   request was answered and took nothing away, which is not 通信エラー and must
+   not raise its pop. Signed out with a row standing is the same answer -- there
+   is nobody to ask, so nothing can be said about the row, and a language that
+   is still on the server must not leave this phone.
 
    The name is not read and the row is not looked up first. Which language is
    going was decided by the person pressing; asking the server to confirm it
@@ -1252,9 +1270,13 @@ function netLangDrop(id, ok, bad){
   var L=LANGS[String(id||'')], sid;
   ok=ok||function(){}; bad=bad||function(){};
   sid=(L && L.sid)? String(L.sid) : '';
-  if(!netSignedIn() || !sid){ ok(); return; }
+  if(!sid){ ok(); return; }
+  if(!netSignedIn()){ bad(null, 200, 'language ∅'); return; }
   netSend('DELETE', '/rest/v1/language?id=eq.'+encodeURIComponent(sid),
-          null, SESS.at, function(){ ok(); }, bad);
+          null, SESS.at, function(d){
+            if(!d || !d.length){ bad(d, 200, 'language ∅'); return; }
+            ok(d);
+          }, bad);
 }
 /* WHETHER THIS LANGUAGE'S PAGE MAY BE READ BY ANYBODY ELSE.
    -------------------------------------------------------------------------

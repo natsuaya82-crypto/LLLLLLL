@@ -417,6 +417,7 @@ defLang('es', (function(){
       "post.del.q"      : "¿Eliminar esta entrada?",
       "post.del.ok"     : "Publicación eliminada",
       "post.del.no"     : "No se pudo eliminar la publicación",
+      "lang.del.no"     : "No se pudo eliminar el idioma",
       "when.now"        : "ahora",
       "when.m"          : "{0} min",
       "when.h"          : "{0} h",

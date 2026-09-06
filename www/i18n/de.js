@@ -445,6 +445,7 @@ defLang('de', (function(){
       "post.del.q"      : "Diesen Beitrag löschen?",
       "post.del.ok"     : "Beitrag gelöscht",
       "post.del.no"     : "Beitrag konnte nicht gelöscht werden",
+      "lang.del.no"     : "Die Sprache konnte nicht gelöscht werden",
       "when.now"        : "jetzt",
       "when.m"          : "{0} Min.",
       "when.h"          : "{0} Std.",
