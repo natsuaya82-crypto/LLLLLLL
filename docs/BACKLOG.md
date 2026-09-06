@@ -7,6 +7,11 @@ refactor, a feature and a rename never arrive in the same diff.
 
 The order is the order to do them in.
 
+**設定・アカウントを手で歩いた記録は `docs/WALK-set.md`。**2026-09-06、
+`master` の設定・プラン・言語・アカウント・オンボーディングを人が触るように
+一つずつ押して回った記録です。直したことではなく「その日そう見えた」ことなので、
+ここに畳まずに別の頁にしてあります。
+
 ## オンライン一本化 ── 残っている一行はオーナーのものです
 
 2026-09-04。四歩とも入りました（`docs/CHANGELOG.md`）。**残っているのは
