@@ -1568,17 +1568,22 @@ function geKeepSave(v, done){
   geKeep();
   done(true);
 }
-/* And what the screen says once it is up, which is the only thing that had
+/* And what the screen SOUNDS once it is up, which is the only thing that had
    to wait. The shape and the sound are the same thing seen twice, so a letter
    says itself as it is put away -- and only if there IS a letter, since
-   deleting one should not. */
+   deleting one should not.
+
+   IT NO LONGER SAYS 「SAVED」. That sentence is keepSave()'s, once, for all
+   nine screens that register a buffer 「保存したら下に小さく『保存しました』」
+   OWNER 2026-09-06 -- and this screen saying its own was that sentence
+   written twice, which on one press is two toasts. What is left here is the
+   sound, which is not a save saying anything. */
 function geKeepSaid(){
   if(!GE) return;
-  var l=ltById(GE.lid), snd=(l||{}).snd||[], r=GE.r;
+  var l=ltById(GE.lid), snd=(l||{}).snd||[];
   var keep=geInk(GE.st);
   GE=null;
   if(keep.length && snd.length===1 && snd[0].length===1) sayOne(snd[0]);
-  toast(t('glyph.saved', r||t('lt.untitled')));
 }
 /* Taking the letter off a sound entirely -- the drawing and the borrowed
    character both. The sound stays in the language; only its letter goes. */
