@@ -1175,7 +1175,7 @@ function dlCount(){
    there is gets one line and no dialog, because there is nothing to fly to. */
 function dlStop(){
   if(dlCount()<dlCap()) return false;
-  if(dlCap()<PRO_DL) popAsk(t('langs.full', dlCap()), function(){ go('plans'); });
+  if(dlCap()<PRO_DL) popAsk(t('up.need'), function(){ go('plans'); });
   /* toast() and not alert(): iOS's own box is banned outright
      （「標準は使わねえって言ってるだろこれも禁止や」OWNER 2026-09-01）and
      there is nothing to ASK here -- somebody already on the top rung cannot
@@ -1240,7 +1240,7 @@ function langForAcct(mayMint){
 function langStop(){
   if(langCount()<langCap()) return false;
   if(langCap()<PRO_LANGS){
-    popAsk(t('langs.full', langCap()), function(){ go('plans'); });
+    popAsk(t('up.need'), function(){ go('plans'); });
   }
   /* toast() and not alert(), for the reason written over dlStop() above. */
   else toast(t('langs.full', langCap()));
@@ -1640,7 +1640,7 @@ function capOK(add){
    A new key here would have been one sentence in English and nine holes. */
 function capStop(add){
   if(capOK(add)) return false;
-  popAsk(t('toast.cap', wordCap()), function(){ go('plans'); });
+  popAsk(t('up.need'), function(){ go('plans'); });
   return true;
 }
 /* THE SAME THING FOR A CAPABILITY, AND IT IS WHY EVERY PLAN SEES ONE SCREEN.

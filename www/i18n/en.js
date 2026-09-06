@@ -129,7 +129,6 @@ defLang('en', (function(){
       "kb.sel.row" : "Choose this keyboard",
       "kb.rm.n" : "Delete {0} keyboards?",
       "kb.rm.q" : "Delete this keyboard? The others are untouched.",
-      "kb.full" : "{0} keyboards is the most",
       "kb.reset.ask"               : "Throw this keyboard away and build the first one again?",
       "kb.reset.done"               : "Keyboard rebuilt",
       "ipa.b.back"                : "back",
@@ -689,7 +688,6 @@ defLang('en', (function(){
       /* sentences */
       'words.addmn'     : 'Add a meaning',
       /* make */
-      'toast.cap'       : "This plan holds {0} words. With Pro you can use it without limits.",
       /* settings */
       'set.title'       : "Settings",
       'set.look'        : "Display",

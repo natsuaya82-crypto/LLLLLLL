@@ -215,7 +215,6 @@ defLang('de', (function(){
       "kb.sel.row" : "Diese Tastatur wählen",
       "kb.rm.n" : "{0} Tastaturen löschen?",
       "kb.rm.q" : "Diese Tastatur löschen? Die anderen bleiben.",
-      "kb.full" : "{0} Tastaturen sind das Höchste",
       "kb.reset.ask"               : "Diese Tastatur verwerfen und die erste neu bauen?",
       "kb.reset.done"               : "Tastatur neu gebaut",
       "ipa.b.back"                : "hinten",
@@ -767,7 +766,6 @@ defLang('de', (function(){
       /* the conversation */
       /* rules */
       "words.addmn"      : "Bedeutung hinzufügen",
-      "toast.cap"        : "Dieser Tarif fasst {0} Wörter. Mit Pro können Sie es unbegrenzt nutzen.",
       "set.title"        : "Einstellungen",
       "set.look"         : "Anzeige",
       "theme.system"     : "System",

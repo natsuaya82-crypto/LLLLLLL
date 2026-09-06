@@ -234,7 +234,6 @@ defLang('pt', (function(){
       "kb.sel.row" : "Escolher este teclado",
       "kb.rm.n" : "Eliminar {0} teclados?",
       "kb.rm.q" : "Excluir este teclado? Os outros ficam como estão.",
-      "kb.full" : "{0} teclados é o máximo",
       "kb.reset.ask"               : "Descartar este teclado e voltar ao primeiro?",
       "kb.reset.done"               : "Teclado refeito",
       "ipa.b.back"                : "posterior",
@@ -785,7 +784,6 @@ defLang('pt', (function(){
       "toast.note.gone"  : "Nota apagada",
       /* the conversation */
       "words.addmn"      : "Acrescentar um significado",
-      "toast.cap"        : "Este plano guarda {0} palavras. Com o Pro pode usar sem limites.",
       "set.title"        : "Ajustes",
       "set.look"         : "Ecrã",
       "theme.system"     : "Sistema",
