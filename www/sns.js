@@ -1544,8 +1544,12 @@ function snsFab(){
    the difference, and it is why this is a list and not a condition.
 
    A row's column is its face: 40 for each step in, 36 to the middle of a 40
-   circle behind 16 of padding. `.prail0`..`.prail3` in index.html are those
-   four columns, and THREAD_IN is where the stepping stops. */
+   circle behind 16 of padding, and THREAD_IN is where the stepping stops.
+   The ROW carries that number -- thColX() below is the one place it is worked
+   out, and it goes onto the line as `left`. It was four classes in the
+   stylesheet, `.prail0`..`.prail3`, which is the depth written into the CSS
+   and a fifth step nothing could draw. */
+function thColX(col){ return 36+40*col; }
 function thRows(p, ups, vis){
   var rows=[], cols=[], fi, i, d;
   /* Everything above the post is a straight chain: each answers the one
@@ -1588,12 +1592,31 @@ function thLast(rows){
    Two rows deeper than THREAD_IN share a column, so a column already drawn is
    not drawn again: the second is the same 1px in the same place. */
 function thRails(rows, last, i){
-  var out='', at={}, a=i, c;
+  var out='', at={}, a=i, c, px;
+  /* AND THE LINE INTO THIS ROW, which is the half that was missing. The rails
+     above are all VERTICAL, so a row standing a step further in than the post
+     it answers was never reached by one: the parent's line fell down its own
+     column to the foot of its row and the answer's face sat 40 to the right of
+     it, joined to nothing. 「返信の孫投稿（返信の返信）に線が無い」 OWNER
+     2026-09-06, on a phone, with the rails above already in.
+
+     So the row draws its own way in: down the column of the post it answers,
+     from the top of the row -- which is where that post's line left off -- to
+     the top of its own face, and then across to its own column. It is one
+     element because it is one line, and where the two columns are the same
+     (a direct answer, or two rows sharing the last column) the crossing is
+     nothing wide and what is left is the vertical between the two faces. */
+  if(rows[i].par>=0){
+    px=thColX(rows[rows[i].par].col);
+    out+='<i class="pjoin" style="left:'+px+'px;width:'+
+      (thColX(rows[i].col)-px)+'px"></i>';
+  }
   while(a>=0){
     c=rows[a].col;
     if(last[a]>i && !at[c]){
       at[c]=1;
-      out+='<i class="prail prail'+c+(a===i? ' pfrom' : '')+'"></i>';
+      out+='<i class="prail'+(a===i? ' pfrom' : '')+
+        '" style="left:'+thColX(c)+'px"></i>';
     }
     a=rows[a].par;
   }

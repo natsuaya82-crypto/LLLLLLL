@@ -861,12 +861,13 @@ canvas.pkc{width:34px;height:34px;display:block}
 
    `pfrom` is the row's own: it starts under the face, which is 58 down --
    44 on the two rows that are buttons, 40 on the one that is not. Every other
-   line is passing through and runs the whole height. */
+   line is passing through and runs the whole height.
+
+   WHICH COLUMN a line stands in is not written here. It was four classes,
+   `.prail0`..`.prail3`, which is the depth in the stylesheet and a fifth step
+   nothing could draw; thColX() in www/sns.js works it out and the row carries
+   it as `left`. What is left here is what a line LOOKS like. */
 .prail{position:absolute;top:0;bottom:0;width:1px;background:var(--line)}
-.prail0{left:36px}
-.prail1{left:76px}
-.prail2{left:116px}
-.prail3{left:156px}
 .prail.pfrom{top:58px}
 /* Drawn letters stand at their full height on this line, so 1.45 put the
    rows of a two-line post against each other. 「ここつまりすぎてる」 */
@@ -3720,6 +3721,20 @@ textarea.ntbody.grow{min-height:0;height:auto;overflow:hidden;resize:none}
 .search button.lens:active{color:var(--gold)}
 .set .sv{display:flex;align-items:center;gap:6px}
 .set .sv .go,.capgo .go{opacity:.75}
+/* ---- r4-sns ---- */
+/* THE WAY INTO A ROW, on the thread. `.prail` above is a column standing
+   through a row; this is the one that ARRIVES: it comes down the column of
+   the post being answered, turns at the top of this row's face, and runs
+   across to this row's own column. Two sides of a box, which is a line
+   twice and not a box -- 「上の投稿から自分へ、全部の深さで」.
+
+   `left` and `width` come from the row, because which column is the row's
+   business and not the stylesheet's: thColX()/thRails() in www/sns.js. What
+   is here is the shape -- 10 down to the top of a face, the same 10 the
+   post's own padding puts above it, and a width of nothing where the answer
+   stands in its parent's column. */
+.pjoin{position:absolute;top:0;height:10px;
+       border-left:1px solid var(--line);border-bottom:1px solid var(--line)}
 </style>
 </head>
 <body>
