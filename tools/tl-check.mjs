@@ -37,11 +37,15 @@
       基本」 OWNER 2026-09-04. 「フォロー中」 keeps them: those are the people
       somebody chose to read.
 
-   5. A COUNT NOBODY HAS TAKEN IS NOT A ZERO. 「サーバーに聞く前にロードを
-      挟み、遅れて数字が動くことを絶対に無くす。0 と出て1秒後に1に変わる、を
-      しない。」 OWNER 2026-09-04. Both counts were the length of a list, and
-      an unanswered list is empty -- so every profile printed 0 and then
-      jumped.
+   5. NOTHING TURNS UNDER A COUNT, AND A COUNT NOBODY HAS TAKEN IS NOT A
+      ZERO. 「プロフィールのフォロー／フォロワーの数がくるくる回る → 回さない。
+      取れなかったら数は出さずに行だけ（空欄ではなく前回の値があればそれ）」
+      OWNER 2026-09-06. Both counts were the length of a list, and an
+      unanswered list is empty -- so every profile printed 0 and then jumped
+      (「0 と出て1秒後に1に変わる、をしない」 OWNER 2026-09-04). A turning mark
+      was put under the two words to stop that, and it is the same complaint
+      arriving as a moving picture: what stands there now is the number this
+      phone came up holding, and the word on its own where it holds none.
 
    7. 「フォローされています」 IS ON A PERSON'S CARD AND NOT ONLY ON A LIST.
       「フォローされてるのに出ないよ。136で見てる」 OWNER 2026-09-05. The
@@ -199,31 +203,42 @@ const r = await pg.evaluate(({ s }) => {
   SET.plan = wasPlan;
 
   /* ---- 5: a count that has not arrived ---------------------------------
-     WHAT 「has not arrived」 IS was the wrong question until 2026-09-05. It
-     was read off ME.fo -- 「this phone has a list」 -- and ME is read back off
-     the handset at every launch, so a phone that has ever been opened always
-     had one, from last time. The mark was seen only on a phone that had never
-     run; everybody else got last week's number and watched it move.
-     「フォローとか0って出て1秒後に1とか数字が変わる」 OWNER 2026-09-04.
+     Three states and they are three. The server has answered this session --
+     the number, 0 included. It has not, and this phone came up holding the
+     lists from last time -- THAT number, which is an answer to the same
+     question and is what 「前回の値があればそれ」 asks for. Neither -- the
+     word on its own.
 
-     It is 「the server has answered THIS SESSION」 now, and that is the pull
-     table's PULL_GOT (www/sns.js § pullRun) -- so this sets THAT, and leaves
-     the lists on the phone exactly where they are, which is the state the
-     fault actually lived in. */
+     Nothing turns in any of the three. PULL_GOT is the pull table's own
+     record of what the server has said this session (www/sns.js § pullRun),
+     so this sets THAT and leaves the lists on the phone where they are, which
+     is the state the fault lived in. */
   const wasFo = ME.fo, wasFr = ME.fr, wasGot = PULL_GOT.mine;
   PULL_GOT.mine = 0;
   NAV = [{ r:'profile', a:'' }];
+  /* Two names in one list and one in the other, neither of them yours: the
+     count is what these say and there is nothing for meNotMe() to take out
+     of them, so the number expected here is written down rather than worked
+     out again from the lists. */
+  ME.fo = ['iri', 'veth']; ME.fr = ['iri'];
   out.meWaits = (meCard().match(/numwait/g) || []).length;
-  /* and the lists from last time are NOT what it draws while it waits */
-  out.meHeldStale = meCard().indexOf('<b>' + (wasFo || []).length + '</b>') >= 0;
+  /* and what stands there is the number this phone came up holding */
+  out.meHeldLast = meCard().indexOf('<b>2</b>') >= 0 &&
+                   meCard().indexOf('<b>1</b>') >= 0;
+  /* and a phone holding nothing at all says nothing */
+  ME.fo = undefined; ME.fr = undefined;
+  out.meBareWords = !/pfst"[^>]*>\s*<b>/.test(meCard());
+  out.meBareWaits = (meCard().match(/numwait/g) || []).length;
   PULL_GOT.mine = 1;
   ME.fo = []; ME.fr = [];
   out.meZeroIsZero = meCard().indexOf('<b>0</b>') >= 0;
   ME.fo = wasFo; ME.fr = wasFr; PULL_GOT.mine = wasGot;
-  /* somebody known only from a post carries no counts and must not print 0 */
+  /* somebody known only from a post carries no counts: the two words stand on
+     their own rather than saying 0, and nothing turns over them either */
   delete WHO_HAVE['iri'];
   NAV = [{ r:'profile', a:'iri' }];
   out.whoWaits = (whoCard('iri').match(/numwait/g) || []).length;
+  out.whoBareWords = !/pfst"[^>]*>\s*<b>/.test(whoCard('iri'));
   WHO_HAVE['iri'] = { who:'Iri', fo:3, fr:4 };
   const card = whoCard('iri');
   out.whoNums = card.indexOf('<b>3</b>') >= 0 && card.indexOf('<b>4</b>') >= 0;
@@ -381,19 +396,24 @@ if (!r.proMark)
       'name wears it and whoOf() has to say the row is yours.');
 if (r.freeMark)
   say('and it is on it on the free plan.');
-if (r.meWaits !== 2)
-  say('your own profile prints ' + (2 - r.meWaits) + ' count(s) nobody has ' +
-      'answered for. 「0 と出て1秒後に1に変わる、をしない」');
-if (r.meHeldStale)
-  say('and what it prints while it waits is LAST SESSION\u2019s number, off the ' +
-      'copy on the handset — which is the number that then moves. ' +
-      '「1秒後に変わるやつは本当に嫌だから」');
+if (r.meWaits)
+  say('something turns under the two counts on your own profile (' +
+      r.meWaits + ' mark(s)). 「くるくる回る → 回さない」 OWNER 2026-09-06.');
+if (!r.meHeldLast)
+  say('and while the answer is out it prints no number, with the lists from ' +
+      'last session right there on the phone. 「空欄ではなく前回の値があれば' +
+      'それ」');
+if (!r.meBareWords || r.meBareWaits)
+  say('a phone holding neither list prints a number under the two words ' +
+      '(' + r.meBareWaits + ' mark(s)). Nothing known is the word on its own, ' +
+      'never a 0 and never something turning.');
 if (!r.meZeroIsZero)
-  say('and following nobody now draws the mark as well — an answered 0 is an ' +
-      'answer and has to be printed.');
-if (r.whoWaits !== 2)
+  say('and following nobody prints nothing — an answered 0 is an answer and ' +
+      'has to be printed.');
+if (r.whoWaits || !r.whoBareWords)
   say('somebody known only from a post prints a count off their post, which ' +
-      'carries none: 0, and then the real number a moment later.');
+      'carries none (' + r.whoWaits + ' mark(s)): 0, or a mark, and then the ' +
+      'real number a moment later.');
 if (!r.whoNums || r.whoStillWaits)
   say('and the numbers do not land when the server answers.');
 
@@ -438,8 +458,9 @@ console.log('your own two lists: ' + r.ownFollowing.length + ' / ' +
             'say the same');
 console.log('your own row elsewhere: 「' + r.ownRowName + '」 with a face, on a ' +
             'phone holding no post of yours');
-console.log('counts: the mark until the answer comes, the number after it, ' +
-            'and 0 is an answer');
+console.log('counts: nothing turns under them — the number this phone came up ' +
+            'holding until the answer comes, the word on its own where it ' +
+            'holds none, and 0 is an answer');
 console.log('and the Pro mark is on your own name on Pro and off it on free');
 console.log('「フォローされています」: on the card of somebody who does, off ' +
             'everybody else’s and off your own, and the session beginning ' +

@@ -261,22 +261,34 @@ function meFollowers(){ return meNotMe((ME.fr && ME.fr.length)? ME.fr : []); }
    the server to answer, and then moved. 「フォローとか0って出て1秒後に1とか
    数字が変わる」 is that second, and it survived 2026-09-04 untouched.
 
-   The question is 「has the server answered THIS SESSION」, and the pull
-   table is where that is kept for everything else the app asks for
-   (www/sns.js § pullRun). `undefined` carries 「not yet」 out of here, the
-   same way whoOf() keeps somebody else's two undefined rather than nailing
-   them to 0, and meCount() below is the one place either is drawn. */
-function meNFollowing(){ return pullHad('mine')? meFollowing().length : undefined; }
-function meNFollowers(){ return pullHad('mine')? meFollowers().length : undefined; }
-/* A count, or the mark that says it has not arrived. One function, because
-   your card and somebody else's ask the same question and used to answer it
-   in two places with two different `||0`s on the end. The mark is the
-   timeline's own -- `.pullrule` in www/index.html, the thing that turns while
-   an answer is out -- at the size of a word rather than of a screen. */
+   NOTHING TURNS UNDER A NUMBER. 「プロフィールのフォロー／フォロワーの数が
+   くるくる回る → 回さない。取れなかったら数は出さずに行だけ（空欄ではなく
+   前回の値があればそれ）」 OWNER 2026-09-06, on a phone. The mark was put
+   here on 2026-09-04 so that a number would not move; a mark that spins under
+   two words on the screen the app opens on is the same complaint arriving as
+   a moving picture instead of as a moving number.
+
+   So the two are answered with WHAT IS KNOWN. The server's answer where it
+   has come this session, otherwise the list this phone came up holding, which
+   is last session's answer to the same question and is a number rather than a
+   guess. Nothing known at all -- a phone that has never been opened as this
+   account -- is `undefined`, and the row is then the word on its own.
+
+   `undefined` carries 「nothing to say」 out of here, the same way whoOf()
+   keeps somebody else's two undefined rather than nailing them to 0, and
+   meCount() below is the one place either is drawn. */
+function meKnown(list){
+  return pullHad('mine') || !!(list && typeof list.length==='number');
+}
+function meNFollowing(){ return meKnown(ME.fo)? meFollowing().length : undefined; }
+function meNFollowers(){ return meKnown(ME.fr)? meFollowers().length : undefined; }
+/* A count, or nothing at all. One function, because your card and somebody
+   else's ask the same question and used to answer it in two places with two
+   different `||0`s on the end. The space is inside it: a number and the word
+   after it are one thing, and a row that has no number must not begin with
+   the gap where one would have been. */
 function meCount(n){
-  return (typeof n==='number')
-    ? '<b>'+esc(String(n))+'</b>'
-    : snsWaitWord();
+  return (typeof n==='number')? '<b>'+esc(String(n))+'</b> ' : '';
 }
 function meName(){ return ME.name || langName || ''; }
 function meHandle(){
@@ -600,9 +612,9 @@ function meCard(){
        nowhere else. */
     '<div class="pfstats">'+
       '<button class="pfst"' + DO('go', ["follows", "ing"]) + '>'+
-        meCount(meNFollowing())+' '+esc(t('me.following'))+'</button>'+
+        meCount(meNFollowing())+esc(t('me.following'))+'</button>'+
       '<button class="pfst"' + DO('go', ["follows", "ers"]) + '>'+
-        meCount(meNFollowers())+' '+esc(t('me.followers'))+'</button>'+
+        meCount(meNFollowers())+esc(t('me.followers'))+'</button>'+
     '</div>'+
     '</div>';
 }
@@ -1103,9 +1115,9 @@ function whoCard(h){
        and then jumped. 「0 と出て1秒後に1に変わる、をしない」 OWNER
        2026-09-04. whoOf() has always kept the two apart in the data --
        「not answered」 and 「nobody」 -- and this was the line that put them
-       back together on the way out. meCount() draws the mark instead, which
-       is what SOMETHING under the word Followers is when nobody has counted
-       yet.
+       back together on the way out. meCount() draws no number at all where
+       nobody has counted yet: the word stands on its own, and nothing turns
+       under it (OWNER 2026-09-06).
        AND THEY ARE PRESSABLE. 「フォロワーとかタップしても見れないし」
        OWNER 2026-09-03. They were two `<span>`s under a comment saying the
        two lists behind them were yours -- which was true of the SCREEN and
@@ -1129,9 +1141,9 @@ function whoCard(h){
        `position:relative` the box hangs off now; it was `.metop`. */
     '<div class="pfstats">'+
       '<button class="pfst"' + DO('go', ["follows", 'ing:'+String(h)]) + '>'+
-        meCount(p.fo)+' '+esc(t('me.following'))+'</button>'+
+        meCount(p.fo)+esc(t('me.following'))+'</button>'+
       '<button class="pfst"' + DO('go', ["follows", 'ers:'+String(h)]) + '>'+
-        meCount(p.fr)+' '+esc(t('me.followers'))+'</button>'+
+        meCount(p.fr)+esc(t('me.followers'))+'</button>'+
       '<button class="pmore"' + DO('whoMore', [String(h)]) + ' aria-label="'+
         esc(t('post.more'))+'">'+ICON_DOTS+'</button>'+
       (WMENU
