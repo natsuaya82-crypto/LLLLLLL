@@ -3,6 +3,9 @@
 `master`（`de4ad262`）を headless Chromium で人が触るように操作した記録。
 コードは直していない。見たことだけを書く。**バグ 3 件、気になる 3 件。**
 
+**歩き終えたあとに `master` が `f04c8444` まで進んだので、三件とも取り込んだ
+木でもう一度押し直した。三件とも同じように出る。**
+
 担当は www/grammar.js www/phases.js www/ipa.js www/numbers.js www/cal.js
 www/assist.js www/voice.js。前の人が同じ日に `master` を一周した記録
 （`claude/walk` ブランチ）に既にある件は書かない ── 語順の板、Plural の
