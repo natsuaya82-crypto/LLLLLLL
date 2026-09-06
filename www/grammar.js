@@ -769,10 +769,29 @@ document.addEventListener('touchcancel', g2Up, false);
    different things. They are separate spans because they are separate faces:
    one is this language and one is the interface.
 
-   `del` is the rule's id where the row IS a rule -- the ⊖ takes it away after
-   popAsk() has asked. A row that is a word made in a stage carries none: that
-   word is deleted where it was made. */
-function g2Row(lab, add, side, from, to, act, arg, del){
+   `id` is the rule's id where the row IS a rule, and it is what the row is
+   CHOSEN by -- 「プラスとかプロなのに消す時も勝手に ui 足すのやめて。今まで
+   ある選択とかスライドとかで消すようにして」 OWNER 2026-09-05. There was a ⊖
+   on every row with a popAsk() behind it, which is a delete this list invented
+   for itself; the list now deletes the way the keyboards, the notes, the
+   drafts and the dictionary all do -- Select in the corner, a ◉ on each row,
+   Delete beside Done. A row that is a word made in a stage carries no id: that
+   word is deleted where it was made, and it cannot be chosen here. */
+function g2Row(lab, add, side, from, to, act, arg, id){
+  var on;
+  if(G2SEL && id){
+    on=!!G2SEL[id];
+    return '<div class="fmmk">'+
+      '<span class="ltck'+(on? ' on':'')+'" data-sel="1"'+DO('g2SelTap', [id])+
+        ' role="button" aria-label="'+esc(t('fmr.sel.row'))+'">'+
+        (on? ICON_DOT : ICON_RING)+'</span>'+
+      '<button class="stslot has"' + DO('g2SelTap', [id]) + '>'+
+      '<span class="psm">'+esc(lab)+'</span>'+
+      (add? '<span class="psw'+(myFontOn()? ' sfont' : '')+'">'+esc(add)+'</span>' : '')+
+      (side? '<span class="psi">'+esc(side)+'</span>' : '')+
+      ((to || side)? '<span class="psi">'+esc(to)+'</span>' : '')+
+      '</button></div>';
+  }
   return '<div class="fmmk">'+
     '<button class="stslot has"' + DO(act, arg) + '>'+
     '<span class="psm">'+esc(lab)+'</span>'+
@@ -787,10 +806,55 @@ function g2Row(lab, add, side, from, to, act, arg, del){
        form. Nothing on the screen changes; what changes is that the row means
        the same thing whether or not there is a word to try it on. */
     ((to || side)? '<span class="psi">'+esc(to)+'</span>' : '')+
-    ICON_GO+'</button>'+
-    (del? '<button class="mnx"' + DO('fmrAsk', [del]) +
-      ' aria-label="'+esc(t('fmr.del'))+'">'+ICON_MINUS+'</button>' : '')+
-    '</div>';
+    ICON_GO+'</button></div>';
+}
+/* ---- choosing several rules, and taking them away ----------------------
+   The same shape kbSelDel() and ntSelDel() are, down to the names, because it
+   is the same act on a different list. `G2SEL` is where you are standing on
+   this screen, so viewReset() drops it, and it holds rule IDS rather than
+   positions: a chapter draws the rules of one form out of one list that holds
+   every form's, so a position here is a position in nothing. */
+var G2SEL=null;
+function g2SelOn(){ G2SEL={}; render(); }
+function g2SelOff(){ G2SEL=null; render(); }
+function g2SelList(){
+  var out=[], k;
+  if(!G2SEL) return out;
+  for(k in G2SEL) if(G2SEL.hasOwnProperty(k) && G2SEL[k]) out.push(k);
+  return out;
+}
+function g2SelTap(id){
+  if(!G2SEL) return;
+  if(G2SEL[id]) delete G2SEL[id]; else G2SEL[id]=1;
+  render();
+}
+function g2SelDel(){
+  var n=g2SelList().length;
+  if(!n) return;
+  popAsk(tn('fmr.sel.ask', n), function(){ g2SelDelGo(); }, t('pop.yes'));
+}
+/* Off the ids, so nothing here depends on the order the list happens to be in
+   -- which is the reason a position was the wrong thing to hold. */
+function g2SelDelGo(){
+  var ids=g2SelList(), a=(STG && STG.fm) || [], i;
+  for(i=a.length-1;i>=0;i--)
+    if(a[i] && ids.indexOf(String(a[i].id))>=0) a.splice(i, 1);
+  G2SEL=null;
+  saveStg();
+  render();
+}
+/* What the chapter's bar carries. The `?` is what a chapter has always had --
+   「説明禁止の代わりに？を儲けてるからね？」 -- and Select stands where every
+   other list in this app puts it, on the chapters that have a rule to choose.
+   A chapter whose rows are not rules (the roles of a noun, the two words of a
+   phrase) has nothing to select and keeps the `?` alone. */
+function g2ChapBar(c){
+  if(G2SEL)
+    return (g2SelList().length? navDel(t('fmr.sel.del'), 'g2SelDel') : '')+
+      navDo(t('fmr.sel.done'), 'g2SelOff', null, true);
+  if(c && c.fm && g2FmRows(c) && !langLocked())
+    return navDo(t('fmr.sel'), 'g2SelOn', null, true);
+  return helpQ('g2.'+c.id);
 }
 /* Which end the letters go on, as the word the rule's own screen is set with.
    Asked here rather than written out, so there is one name for each end. */

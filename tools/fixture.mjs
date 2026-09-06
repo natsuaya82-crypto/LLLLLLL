@@ -660,6 +660,20 @@ export function halfDone(){
         window.route='gram'; NAV=[{r:'gram', a:'ownfix'}];
         const h = vGram();
         STG.extra.pop(); SET.plan = 'free'; return h; }],
+    /* CHOOSING RULES TO DELETE, both ways round. The chapter's list deletes
+       the way every other list in this app does -- Select in the corner, a ◉
+       on each row, Delete beside Done -- and none of those four buttons is
+       drawn until somebody has pressed Select, so without these faces
+       act-check reports three of them as entries no screen names. Two,
+       because Delete is only in the bar once something is chosen. */
+    ['the rules of a chapter, choosing', () => {
+        window.route='gram'; NAV=[{r:'gram', a:'v2:pl'}];
+        G2SEL = {};
+        const h = vGram(); G2SEL = null; return h; }],
+    ['the rules of a chapter, one chosen', () => {
+        window.route='gram'; NAV=[{r:'gram', a:'v2:pl'}];
+        G2SEL = { fr1: 1 };
+        const h = vGram(); G2SEL = null; return h; }],
     ['the digits, where the base is set', () => { SET.plan = 'pro';
        window.route='ltset'; NAV=[{r:'ltset', a:'num'}];
        const h=vLtset('num'); SET.plan='free'; return h; }],

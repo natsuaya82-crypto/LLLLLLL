@@ -966,20 +966,6 @@ function fmrNew(pos, fm){
          at:'end', drop:0, add:[], when:''};
   fmRules().push(r); saveStg(); openFmr(r.id);
 }
-/* Asked before it happens, in the app's own popup -- `confirm()` is banned by
-   name. The row it is asked from is the rule's own row in its chapter, so
-   there is no question about which one is going. */
-function fmrAsk(id){
-  var r=fmrById(id);
-  if(!r) return;
-  popAsk(t('fmr.del'), function(){ fmrDel(id); });
-}
-function fmrDel(id){
-  var a=fmRules(), i;
-  for(i=0;i<a.length;i++) if(a[i].id===String(id)){ a.splice(i,1); break; }
-  saveStg();
-  if(here().r==='form') back(); else render();
-}
 function fmrSegs(now, list, fn){
   var i, out='<div class="pick">';
   for(i=0;i<list.length;i++)
