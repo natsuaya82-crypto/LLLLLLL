@@ -370,15 +370,46 @@ App Store Connect → Lingua → **App Store** タブ:
 ---
 
 
-### プライバシーの一覧表 ── **まだ在りません。上げる前に要ります**
+### プライバシーの一覧表 ── **入りました**
 
 上の「App のプライバシー」は**画面で答える申告**です。それとは別に、
 **アプリの中に入れる一覧表**（`PrivacyInfo.xcprivacy`）が要ります。
 
-**探して確かめました。この repo には一つも在りません。**
+**二つ在ります。**`ios/App/App/PrivacyInfo.xcprivacy`（本体）と
+`ios/App/LinguaKeyboard/PrivacyInfo.xcprivacy`（キーボード拡張）。
+**拡張は自分の一覧表が要ります** ── Apple の一覧はバンドルごとに集められる
+ので、一覧表の無い拡張は「何も申告していない拡張」です。
 
-**オーナーがやることは、いまはありません。**作るのはセッション側の仕事で、
-別のところが持っています（`docs/scope/aud-reject.md` § 1）。
+中身はこの repo の事実だけで書いてあります。
+
+- **追跡は false、追跡ドメインは空。**`www/` と `ios/` に広告・IDFA・解析の
+  SDK は一つもありません（`IDFA` `advertisingIdentifier` `ASIdentifierManager`
+  `AppTrackingTransparency` `AdSupport` `Firebase` `GoogleAnalytics` `FBSDK`
+  `amplitude` `mixpanel` `Sentry` `appsflyer` を grep して 0）
+- **理由の要る API（`NSPrivacyAccessedAPITypes`）は空です。**使っていません。
+  App Group の受け渡しは `UserDefaults` ではなく**ファイル**で、
+  `LinguaShare.swift` も `Shared.swift` も
+  `FileManager.containerURL(forSecurityApplicationGroupIdentifier:)` を使い
+  ます。ファイルの日時（`attributesOfItem` / `resourceValues`）、空き容量、
+  起動からの時間、`UITextInputMode` ── どれも `ios/App` に一つもありません。
+  **使っていないものは書きません**
+- **集めるもの**（すべて「ユーザーに紐づく」「追跡ではない」「アプリの機能の
+  ため」）: メールアドレス（`auth.users`。メール・Apple・Google の三つの扉）、
+  名前（`profile.display`）、ユーザー ID（`profile.handle` と uuid）、
+  ユーザーコンテンツ（`post` `draft` `slice` `language` `report`、
+  `profile.bio`）、写真（`post-media` バケット）、音声（同じバケットの
+  三十秒の声）、検索履歴（`recent_search` `saved_search`）、
+  購入（`plan` テーブルの段）
+
+**キーボード拡張は何も集めません。**外へ出す道が一本もないからです
+（`URLSession` / `URLRequest` を `ios/App/LinguaKeyboard` に grep して 0）。
+
+`tools/assets-check.mjs` が二つのことを見ています ── 一覧表が在ること、
+そして**そのターゲット自身の Resources フェーズ**に入っていること。
+別のターゲットの Resources に入れただけでは赤になります（バンドルに入って
+いないので）。`npm run assets` の
+`privacy: 2 PrivacyInfo.xcprivacy (App, LinguaKeyboard), each in its own
+target's Resources phase.` がその行です。
 
 **オーナーに見てほしいのは、その次です。**入ってから上げたビルドで、
 **Apple から警告のメールが来ないか。**アップロードは通っても、
