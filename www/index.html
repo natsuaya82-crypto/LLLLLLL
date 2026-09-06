@@ -3720,6 +3720,29 @@ textarea.ntbody.grow{min-height:0;height:auto;overflow:hidden;resize:none}
 .search button.lens:active{color:var(--gold)}
 .set .sv{display:flex;align-items:center;gap:6px}
 .set .sv .go,.capgo .go{opacity:.75}
+
+/* ---- r4-gram ----------------------------------------------------------
+   語順ボードの札 (www/grammar.js § g2Board)。
+
+   THE ONE BOX THIS APP ALLOWS OUTSIDE THE PLANS PAGE. 「箱でいいよ」 OWNER
+   2026-09-06, asked about this board and about nothing else. It earns the
+   exception the same way .btn.plterm earned its own: a card is a thing you
+   PICK UP and PUT DOWN, and two rows of bare words are not two places -- the
+   board read as a heading over a second heading, which is the picture the
+   owner was looking at when they said it. Both lines are on
+   tools/box-baseline.txt; the ban stands everywhere else.
+
+   .gordrow is its own rail rather than .segs: .segs is the underlined row of
+   choices this app uses everywhere, and a line under a row of boxes is a
+   second frame round the same thing. What the board keeps of it is the line
+   the sentence sits ON -- one side, which is the shape CLAUDE.md § 18 says a
+   rule may be -- so an empty board is still visibly a place to put a card. */
+.gordrow{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.gordput{border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:14px;
+   align-items:flex-start}
+.gordc{min-height:44px;min-width:44px;padding:11px 15px;font-size:.86rem;line-height:1.4;
+   background:none;color:var(--tx);border:1px solid var(--line2);border-radius:9px}
+.gordc:active{border-color:var(--gold);color:var(--gold)}
 </style>
 </head>
 <body>

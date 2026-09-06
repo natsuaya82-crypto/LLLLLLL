@@ -610,7 +610,7 @@ function g2Take(i){
    tools/gramlang-check.mjs asks the board by it, so its claims are about the
    roles rather than about ten translations of them. */
 function g2Card(r, act, arg){
-  return '<button class="seg" data-gr="'+esc(r)+'"' + DO(act, arg) + '>'+
+  return '<button class="gordc" data-gr="'+esc(r)+'"' + DO(act, arg) + '>'+
     esc(t('gram.role.'+r))+'</button>';
 }
 function g2Board(){
@@ -621,9 +621,16 @@ function g2Board(){
     if(seq.indexOf(ROLES[i])<0) off+=g2Card(ROLES[i], 'g2Put', [ROLES[i]]);
   /* The board keeps a row's height with nothing on it: an empty rail that
      collapses to its own line is a place to put something that does not look
-     like one, and the board starts empty the first time somebody clears it. */
-  return '<div class="segs gordput" data-gord="on">'+on+'</div>'+
-         '<div class="segs" data-gord="off">'+off+'</div>';
+     like one, and the board starts empty the first time somebody clears it.
+
+     A CARD IS A BOX. 「箱でいいよ」 OWNER 2026-09-06 -- two rows of bare words
+     read as a heading over a second heading, and nothing about them said one
+     could be picked up. It is .gordrow rather than .segs for the same reason:
+     .segs is the underlined rail of CHOICES, and these are not choices, they
+     are cards on and off a board. www/index.html § r4-gram carries both, and
+     tools/box-baseline.txt carries the exception. */
+  return '<div class="gordrow gordput" data-gord="on">'+on+'</div>'+
+         '<div class="gordrow" data-gord="off">'+off+'</div>';
 }
 /* This language's own words, in the order the board says. gLay() runs the real
    engine, so this is what a sentence would actually come out as and not a
