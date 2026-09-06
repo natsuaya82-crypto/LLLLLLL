@@ -210,10 +210,13 @@ const r = await pg.evaluate(({ s }) => {
        OWNER 2026-09-05. What a stage says its rule is has a page of its own
        now -- openStRules() in www/phases.js -- and its buffer is filed under
        that form, exactly as a note's is. */
+    /* 挨拶 rather than 否定: the 否定 stage is gone -- the 否定形 chapter of
+       the rule-made group was the same chapter said twice, 「重複はいらない」
+       OWNER 2026-09-06 -- so this asks a stage that is still on the list. */
     { n: "what a grammar stage says its rule is",
-      go: function(){ goTab('build'); go('gram', 'neg'); openStRules('neg'); },
-      sel: '[data-in="stSetRules"]', v: 'it goes after the verb',
-      read: function(){ return String((STG.rules && STG.rules.neg) || ''); } },
+      go: function(){ goTab('build'); go('gram', 'greet'); openStRules('greet'); },
+      sel: '[data-in="stSetRules"]', v: 'they are said on meeting',
+      read: function(){ return String((STG.rules && STG.rules.greet) || ''); } },
     { n: 'a note',
       go: function(){ goTab('build'); go('notes'); openNote(0); },
       sel: '#nt-t', v: 'what the river is called',
@@ -533,11 +536,11 @@ const more = await pg.evaluate(() => {
   var aid = wldArts()[wldArts().length - 1].id;
   goTab('profile'); go('world'); go('wldart', aid);
   missing.push(typeOn('#wldart-t', 'q'));
-  goTab('build'); go('gram', 'neg');
+  goTab('build'); go('gram', 'greet');
   missing.push(typeOn('[data-in="stNote"]', 'q'));
   /* The rule is a page of its own, so it is typed into there and not on the
      stage. openStRules() is the door. */
-  goTab('build'); go('gram', 'neg'); openStRules('neg');
+  goTab('build'); go('gram', 'greet'); openStRules('greet');
   missing.push(typeOn('[data-in="stSetRules"]', 'q'));
   goTab('build'); go('notes'); openNote(0);
   missing.push(typeOn('#nt-t', 'q'));

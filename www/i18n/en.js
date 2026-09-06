@@ -669,13 +669,6 @@ defLang('en', (function(){
       'gram.pos.after.n' : 'After the noun',
       'gram.pos.before.v' : 'Before the verb',
       'gram.pos.after.v' : 'After the verb',
-      'gram.demo.need.n': "Needs a noun.",
-      'gram.demo.need.v': "Needs a verb.",
-      'gram.demo.need.nv': "Needs a noun and a verb.",
-      'gram.demo.need.adj': "Needs an adjective.",
-      'gram.demo.need.nadj': "Needs a noun and an adjective.",
-      'gram.pair.phrase': "phrase",
-      'gram.pair.line'  : "line",
       /* rules */
       /* sentences */
       'words.addmn'     : 'Add a meaning',
