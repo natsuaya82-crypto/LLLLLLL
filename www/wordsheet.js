@@ -1065,15 +1065,21 @@ function wdRegHTML(){
    -- a part of speech and a register are stored as codes and the label is
    whatever the interface language calls them today. */
 function wdOneHTML(label, on, doName, val){
-  return '<div class="entry one'+(on?' on':'')+'">'+
-    '<button class="ebody"' + DO(doName, [val]) + '>'+
-    /* `hwl` and not `hw`. A headword is a word of the person's LANGUAGE and
-       wears the letters they drew; what is on this row is the app's own word
-       for a part of speech or a register. Wearing the same class meant the
-       list of parts of speech came out in a script nobody can read.
-       「自作文字になるのは自分が打った文字だけにしてくれない？」 */
-    '<div class="hwrow"><span class="hwl">'+esc(label)+'</span></div>'+
-    '</button><span class="ltck" style="margin-left:auto">'+(on? ICON_TICK : '')+'</span></div>';
+  /* THE ROW IS THE BUTTON. It used to be a row holding a button the size of
+     its label -- 44px of 「名詞」 on a row 342 wide -- so a thumb, which lands
+     in the middle of a row, hit nothing at all and the part of speech could
+     not be changed. 「勝手に名詞になる。他のに変更しようとしても変更できない、タップできない」
+     OWNER 2026-09-06, on a real phone.
+
+     Choosing one of a short list and ticking it is www/words.js § wFilRow(),
+     which is a `.set` row that IS a button, and this is that shape rather
+     than a second one beside it. `.sl` is the app's own text: what is on this
+     row is the app's word for a part of speech or a register, never the
+     letters somebody drew.
+     「自作文字になるのは自分が打った文字だけにしてくれない？」 */
+  return '<button class="set"' + DO(doName, [val]) + '>'+
+    '<span class="sl'+(on?' on':'')+'">'+esc(label)+'</span>'+
+    (on? '<span class="sv">'+ICON_TICK+'</span>' : '')+'</button>';
 }
 function vPos(){
   if(!wEdit) return viewGone();
