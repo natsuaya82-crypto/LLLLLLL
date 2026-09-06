@@ -994,58 +994,70 @@ say(road.words.filter(w => w === 'newer').length === 1,
     JSON.stringify(road.words));
 
 /* ---- 引き下ろしも、待ちも、落ちたときのポップも、一本 ---------------------
-   「全部の画面でプルトゥーリフレッシュ入れないと動かないとこ出てくるぜ」
-   「設定はいらんよ？」「通信のくるくるも全部20秒で良くない？」
-   「再思考もポップ消えてくるくるみたいな。」
+   「引っ張って更新は SNS だけ。制作側（字を描く画面など）でも効いていて、
+     描いている途中でくるくるが出て線が途切れる」 OWNER 2026-09-06。
+   「通信のくるくるも全部20秒で良くない？」「再思考もポップ消えてくるくる
+     みたいな。」
    「エラーになったらエラー用のポップ出して再更新とかおさせればいいやんそれ
      だけで1個作れば全部に使えるやん」 OWNER 2026-09-05。
 
    **画面を一つずつ押して回らないための節です。**四本あった引き下ろしは
-   pullRun() 一本になったので、訊くべきは「三十七画面がそれぞれ正しいか」では
-   なく「一本の道が正しいか」と「三十七画面がその道に繋がっているか」の二つ
-   です。前者は下で実際に落として押します。後者は表を読みます ── PAGES が
-   ルートの全部なので、そこに在って PULL_ON にも PULL_NOT にも無いものが零で
-   あれば、忘れられた画面は在りません。
+   pullRun() 一本になったので、訊くべきは「一本の道が正しいか」と「引く画面が
+   引く画面だけか」の二つです。前者は下で実際に落として押します。後者は表を
+   読みます。
 
-   そして PULL_NOT の中身も訊きます。除外の表は放っておくと育つもので、
-   「設定はいらん」以外の一行が黙って入っていたら、それはこの決定ではなく
-   誰かの判断です。 */
+   **問いは 2026-09-06 に裏返りました。**それまでは「PAGES の全ルートが引く、
+   除外は三つ」で、除外の表が育たないかを訊いていました。今は逆で、引くのは
+   SNS の画面だけ、制作側は一本も引きません ── だから育つ恐れがあるのは
+   引くほうの表です。二つ訊きます: 制作側（PAGES の tab が build）は零、
+   そして引くルートの顔ぶれがこの決定のとおりであること。 */
 const one = await pg.evaluate(({ s, srv }) => {
   eval('(' + s + ')()');
   SET.done = true;
   eval(srv);
   SESS = { at:'t', rt:'r', uid:'me3', anon:false };
-  var out = {}, r, miss = [], not = [], slipped = [];
+  var out = {}, r, pulls = [], build = [];
   for (r in PAGES) if (Object.prototype.hasOwnProperty.call(PAGES, r)){
-    if (PULL_NOT[r]){ not.push(r); if (PULL_ON[r]) slipped.push(r); }
-    else if (!PULL_ON[r]) miss.push(r);
+    if (!PULL_ON[r]) continue;
+    pulls.push(r);
+    /* 制作側かどうかは PAGES の tab が言います ── ここに一覧を書くと、
+       画面が増えた日にこの check が古いほうを持ちます。 */
+    if (PAGES[r].tab === 'build') build.push(r);
   }
-  out.missing = miss;
-  out.excluded = not.sort();
-  /* 外したはずのものが引けてしまっていないか。表に名前が在ることと、その画面が
-     本当に引かないことは別で、後者が決定のほう。 */
-  out.slipped = slipped;
+  out.pulls = pulls.sort();
+  out.build = build.sort();
   out.routes = Object.keys(PAGES).length;
+  /* 表に名前が無いことと、その画面が本当に引かないことは別で、後者が決定の
+     ほう。字を描く画面に立って、指が届く先を訊きます。 */
+  NAV = [{ r:'glyph', a:(LETTERS[0] && LETTERS[0].id) || '' }];
+  window.route = 'glyph'; render();
+  out.glyphPull = pullWhere();
+  NAV = [{ r:'feed', a:'' }];
+  window.route = 'feed'; render();
+  out.feedPull = pullWhere();
   /* 待ちは一つ。net.js が言い、store.js がそれを読む。 */
   out.wait = NET_WAIT;
   out.storeWait = STORE_WAIT;
   return out;
 }, { s: seed.toString(), srv: SERVER });
 
-say(one.missing.length === 0,
-    '**引き下ろしはどの画面にも在る** ── PAGES の ' + one.routes +
-    ' ルートに、表の無いものは零（' +
-    (one.missing.length ? '**' + one.missing.join(' ') + '**' : 'なし') + '）');
-/* 外してよい画面は三つで、三つとも決定で外れています ── 設定の二つが
-   「設定はいらんよ？」、キーボードの編集画面が「キーボード編集画面はくるくる
-   無し」OWNER 2026-09-05。名前で訊くのは、この表が放っておくと育つからで、
-   四つ目が黙って入っていたらそれは決定ではなく誰かの判断です。 */
-const PULL_OUT = ['kb', 'set', 'settings'];
-say(one.excluded.join(' ') === PULL_OUT.join(' ') && one.slipped.length === 0,
-    'そして外れているのは決定で外した三つだけで、その三つは本当に引かない ── ' +
-    '「設定はいらんよ？」「キーボード編集画面はくるくる無し」（' +
-    one.excluded.join(' ') +
-    (one.slipped.length ? '、**' + one.slipped.join(' ') + ' が引ける**' : '') + '）');
+say(one.build.length === 0 && one.glyphPull === '',
+    '**制作側は一本も引かない** ── PAGES の ' + one.routes +
+    ' ルートのうち tab が build のものは零で、字を描く画面に立った指の先は ' +
+    (one.glyphPull ? '**' + one.glyphPull + '**' : '無し') +
+    '（「描いている途中でくるくるが出て線が途切れる」OWNER 2026-09-06）' +
+    (one.build.length ? '、**' + one.build.join(' ') + ' が引ける**' : ''));
+/* 引くのはこの八つで、八つとも決定です ── 六つは 2026-09-04/05 の
+   「ここ更新ないから見れないし」「他の人の画面でも更新できるようにしたい」、
+   follows は数の裏の二つの一覧、mod は通報の一覧。名前で訊くのは、この表が
+   放っておくと育つからで、九つ目が黙って入っていたらそれは決定ではなく誰かの
+   判断です。 */
+const PULL_ROUTES = ['drafts', 'explore', 'feed', 'follows', 'mod', 'notif',
+                     'profile', 'thread'];
+say(one.pulls.join(' ') === PULL_ROUTES.join(' ') && one.feedPull === 'feed',
+    'そして引くのは SNS の ' + PULL_ROUTES.length + ' 画面だけで、その画面は ' +
+    '本当に引く（' + one.pulls.join(' ') + ' ／ タイムラインに立った指の先は ' +
+    (one.feedPull || '**無し**') + '）');
 say(one.wait === 20000 && one.storeWait === one.wait,
     '**待ちは一箇所** ── NET_WAIT が ' + one.wait + '、App Store もそれを読む（' +
     one.storeWait + '）');
