@@ -32,6 +32,11 @@
 | 2 | free/plus/pro 共通 | 単語の編集シート | つづりの欄だけを書き換えて［戻る］ | 何も聞かれずに戻り、書き換えは消える。保存ボタンも灰のまま金にならない | 他の欄（意味・タグ・語源・メモ）はどれも金になり、戻る時に「保存しますか」を聞く。つづりだけ聞かれない | `08-save-grey-after-spelling.png` / `09-save-gold-after-note.png` |
 | 3 | free/plus/pro 共通 | 新規単語のシート（`form:add:`） | 意味の欄と例文の欄に打ち込んで、Enter を押さずに［追加］ | 打った意味と例文は捨てられ、単語は「no meaning」で入る。同じ画面のメモ・語源・タグは打っただけで入る | 同じシートの欄が同じように扱われるか、捨てるなら捨てると言う | `06-add-meaning-lost.png` |
 | 4 | free/plus/pro 共通 | 単語の編集シート | 左上の戻るの字を読む | 「Build」と書いてある。実際に押すと単語のページ（`form:word:<語>`）に戻る | 戻り先の名前。単語のページからの戻るは「Lexicon」、語域の画面からの戻るは「kano」と、他は戻り先を言っている | `08-save-grey-after-spelling.png` |
+| 5 | plus/pro（読みの画面は `can('snd')`） | 単語の読みの画面（`spell`） | 音のタイルを一つ押す | 画面が何も変わらない。上の `/vora/` も動かない。押した音は `wEdit.seq` にだけ入っている | 押した音が読みに足されて見える | `23-reading-before.png` / `24-reading-after-pressing-a.png` |
+| 6 | plus/pro | 同上。**CSV で取り込んだ単語**、または綴りに文字が付いていない単語 | 読みの画面で音を一つ押す → 戻る → ［保存］ | 単語の名前が変わる（`vora` → `voraa`）。戻ったシートは最後まで `vora` と表示していて、綴りの欄も `vora`、保存ボタンも灰。押した瞬間に別の語になる | 読みを触っても綴りは動かない（`vSpell` の上のコメントがそう書いている）。アプリの中で作った単語（`sp` に文字が付いている）では正しく読みだけが変わる | `25-sheet-still-says-vora.png` / `26-saved-as-voraa.png` |
+| 7 | free | 検索の画面（`find`）の「Import from CSV」 | 押す → CSV を貼る → ［Next］→［Import］ | free のまま最後まで通り、単語が三つ入る。設定 → データの同じ行は「You need to upgrade to use this feature」で止まる（`can('data')` は free で false） | 二つの入口が同じ答えを出す | `15-import-on-free.png` / `16-settings-import-gated.png` |
+| 8 | plus/pro | 文法の章（例 `gram:v2:pl`）の「4 words」 | 続けて何度も押す | 押すたびに 4 語増え、ボタンの字は「4 words」のまま変わらない。規則が作った語にもう一度同じ規則がかかり、四回押すと `kano` → `kanok` → `kanokk` → `kanokkk` → `kanokkkk` になる（`from` が一つ前の形を指す） | 一度押したら数が減るか、規則が作った形にその規則がまたかからない | `14-nwords-repeats.png` |
+| 9 | 全部 | 取り込みの終わりの画面 | 一語だけ取り込む | 英語で「1 words in」。文字を一つだけ入れたときは「1 letters into the alphabet」 | 一語のときの言い方。この二つは `t()` で、他の数の出る所（`4 words`、`1 already here`）は `tn()` を通っている | `15-import-on-free.png` |
 
 ### 再現手順
 
@@ -68,11 +73,44 @@
 1. 辞書 → `kano` → ［Edit］。
 2. 左上に「Build」と書いてある。押すと `form:word:kano` に落ちる。
 
+
+**#5 / #6 読みの画面**
+1. `plus` で 検索 →［Import from CSV］→ `vora, to run, verb` を貼って
+   ［Next］→［Import］→［Done］。
+2. 辞書 → `vora` → ［Edit］。シートの「Reading」は `/vora/`。
+3. 「Reading」の行を押す。読みの画面が開き、上に `vora` と `/vora/`。
+4. 「a」のタイルを押す。**画面は一つも変わらない**（`/vora/` のまま）。
+   `wEdit.seq` は `voraa` になっている。
+5. ［戻る］。シートの綴りの欄は `vora`、「Reading」の行も `/vora/`、
+   保存ボタンは灰。
+6. ［保存］。トーストは「voraa updated」。辞書の中の語が `voraa` になる。
+7. アプリの中で作った単語（`zima`）で同じことをすると、綴りは動かず最後の
+   位置の読みだけが `aa` になる（正しい）。違いは `sp` の各位置に文字
+   （`l`）が付いているかどうかで、CSV から来た語と fixture の `kano` は
+   付いていない。
+
+**#7 free で取り込みが通る**
+1. `SET.plan='free'`。
+2. 検索の画面（`find`）の下の「Import from CSV」を押す。
+3. `zima, a hill, noun` などを貼って［Next］→［Import］。
+4. 「3 words in」。辞書に三語入っている。
+5. 設定 → データ の「Import from CSV」は同じ free で
+   「You need to upgrade to use this feature」のポップになる。
+
+**#8 「4 words」**
+1. `plus` で `gram:v2:pl`（Plural の章）。規則は `-k`、名詞につく。
+2. 「4 words」を押す。「4 words made」。`kanok` `sark` `tirork` `tirokk`。
+   ボタンの字は「4 words」のまま。
+3. もう一度押す。「4 words made」。`kanokk` `sarkk` `tirorkk` `tirokkk`。
+4. 四回で `kano` の系列は `kanokkkk` まで伸びる。
+
 ## 気になる（仕様かどうかはこちらでは決められない）
 
 | # | プラン | 画面 | 見たこと |
 |---|---|---|---|
 | A | 全部 | 単語の編集シート | 保存ボタンが灰（＝変えていない）のときも押せて、押すと保存される。何も変えずに押すと「kano updated」と出て `up` の時刻だけ動く |
+| B | 全部 | 取り込みの列を割り当てる画面 | 列の役目（Spelling / Meaning / …）が `<select>` で、iPhone では下から出る標準のホイールになる。この画面以外では品詞も語域も形も「別のページで選ぶ」形になっている |
+| C | 全部 | 単語を消したあと | 基となる語を消すと、その語から作られた語は残り、`fm`（`pst` など）を持ったまま `from` だけ外れる。単語のページからは「Past」の字が消えて「verb」だけになる。データは消えていない |
 
 ## 正しく動いたことの記録
 
