@@ -7,6 +7,12 @@ refactor, a feature and a rename never arrive in the same diff.
 
 The order is the order to do them in.
 
+**SNS 側を手で歩いた記録は `docs/WALK-sns.md`。**2026-09-06、`master` の
+タイムライン・投稿・スレッド・プロフィール・検索・通知・通報の側を人が触る
+ように押して回った記録です。バグと「気になる」を分けた表になっています。
+ここに畳まずに別の頁にしてあるのは、直したことではなく「その日そう見えた」
+ことだからです。
+
 ## オンライン一本化 ── 残っている一行はオーナーのものです
 
 2026-09-04。四歩とも入りました（`docs/CHANGELOG.md`）。**残っているのは
