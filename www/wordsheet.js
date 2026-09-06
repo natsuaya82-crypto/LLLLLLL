@@ -179,7 +179,10 @@ function wdSetLn(v){
    「音から文字と文字から音で二重になるから困る」 */
 function wdSeqHTML(){
   var sp=wEdit.sp||[];
-  if(!sp.length) return '';
+  /* The reading itself is stated above this on every word. What is here is the
+     way to CHANGE it, and there is none where the spelling has no letters to
+     hang one on -- spRdOK(), www/letters.js. */
+  if(!spRdOK(sp)) return '';
   return '<button class="set"' + DO('go', ["spell"]) + '>'+
     '<span class="sl">'+esc(t('word.sp'))+'</span>'+
     '<span class="sv">'+esc(phIpa(spPh(sp)))+ICON_GO+'</span></button>';
@@ -196,9 +199,18 @@ function wdSeqHTML(){
    theta is not on anybody's keyboard, and a sound nobody can hear is not a
    sound. It is chosen, off tiles, and every press says it out loud. */
 /* Appended to the reading, and said. The positions of the word do not move:
-   wdSetRd hands the sounds back to them in order. */
+   wdSetRd hands the sounds back to them in order.
+
+   This screen is a screen and not the sheet, so nothing on it is repainted by
+   wdPaint() -- the press wrote the reading down and the page went on saying
+   what it said before, for as long as somebody kept pressing. render() draws
+   this screen again out of wEdit, and relDirty() rebuilds the sheet waiting
+   behind it, which is a string built before any of this happened (see above).
+   The relation picker is the same screen-changes-the-sheet shape and this is
+   the same answer to it. */
 function spAdd(sym){
   wdSetRd(spPh((wEdit&&wEdit.sp)||[]).join('')+sym); sayOne(sym);
+  relDirty(); render();
 }
 function vSpell(){
   var sp=(wEdit&&wEdit.sp)||[];
@@ -208,7 +220,10 @@ function vSpell(){
       '<button class="play"' + DO('sayPh', [spPh(sp)]) + ' aria-label="'+
         esc(t('f.listen'))+'">'+ICON_SPK+'</button></div>'+
     '<div class="wsub">'+esc(phIpa(spPh(sp)))+'</div>'+
-    ipaPickHTML('spAdd', [])+
+    /* No tiles where a reading cannot go -- spRdOK(), www/letters.js. What is
+       left is the word and what it reads, which is what this screen states;
+       what is gone is the press that would have renamed it. */
+    (spRdOK(sp)? ipaPickHTML('spAdd', []) : '')+
     '</div></div>';
 }
 /* The field is there when there is nothing yet, and the `+` on the heading is
@@ -1580,10 +1595,10 @@ function wdSetSub(v){ wEdit.sub=String(v||'').trim(); }
    typing the word and not by typing its reading. */
 function wdSetRd(v){
   var sp=(wEdit&&wEdit.sp)||[], us=uSplit(String(v||'')), i;
-  if(!sp.length) return;
+  if(!spRdOK(sp)) return;
   for(i=0;i<sp.length;i++)
     spSetU(sp[i], i<us.length? (i===sp.length-1? us.slice(i).join('') : us[i]) : '');
-  wdSync(); wdPaint();
+  wdSync();
 }
 function wdAddMn(){
   var e=document.getElementById('wd-mn'); if(!e) return;

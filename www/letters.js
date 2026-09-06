@@ -1329,6 +1329,32 @@ function spWord(sp){
   }
   return out;
 }
+/* Whether a reading can be written onto this spelling. Asked here and nowhere
+   else -- 「読みを付けるには綴りに文字が要る」.
+
+   A reading is given back to the POSITIONS of a word, one sound to each
+   (wdSetRd, www/wordsheet.js), and a position holds a unit. Where the
+   position is a LETTER that unit is only what it reads: the word is still
+   called what its letters are called, and spWord() above never looks at it.
+   Where it is not -- an import, or a spelling cut into pieces no letter
+   writes (spOf) -- the unit is the only thing spWord() has to name that
+   position by, so the unit IS the name there. Writing a reading onto such a
+   word renamed it: `vora` came back `vorak` off one press of a sound, and the
+   fixture's `kano` came back `kanok`.
+
+   There is nothing to repair on those words -- a name and a reading are one
+   string on them, and the app has nowhere to put the second. So a reading is
+   not attached to them at all: the sheet offers no way in and the screen
+   offers no tiles, which is how it says so. */
+function spRdOK(sp){
+  var i, l;
+  if(!sp || !sp.length) return false;
+  for(i=0;i<sp.length;i++){
+    l=ltById(sp[i].l);
+    if(!l || !String(ltName(l)||'')) return false;
+  }
+  return true;
+}
 function spPh(sp){
   var out=[], i;
   for(i=0;i<sp.length;i++) out=out.concat(uSplit(spUnit(sp[i])));
