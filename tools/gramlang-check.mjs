@@ -312,6 +312,23 @@ await pg.evaluate((old) => {
   Object.keys(old).forEach((k) => localStorage.setItem(k, old[k]));
 }, OLD);
 await pg.reload();
+/* ONE READER FOR A CHAPTER'S ROW, because g2Row() draws one row and this file
+   read it in five places. A row is: the number or the role (`.psm`), what
+   belongs to this LANGUAGE (`.psw` -- the affix a form rule adds, or the word
+   a case mark is shown on), the app's own words about it (`.psi`), and the
+   form that came out (the LAST `.psi`, because a form rule says which end the
+   letters go on before it says what they make).
+
+   Read off the page and by what each slot IS, so that moving a span in
+   grammar.js fails the claim rather than the reader. */
+await pg.evaluate(`window.rowOf = function(b){
+  var ps = b.querySelectorAll('.psi'), w = b.querySelector('.psw');
+  return { lab: b.querySelector('.psm').textContent,
+           from: w? w.textContent : '',
+           side: (ps.length > 1)? ps[0].textContent : '',
+           to: ps.length? ps[ps.length - 1].textContent : '',
+           go: b.getAttribute('data-do'), a: b.getAttribute('data-a') };
+};`);
 const g = await pg.evaluate(() => {
   const lit = () => Array.prototype.map.call(
     document.querySelectorAll('.segs .seg.on'), (b) => b.textContent).join(',');
@@ -750,11 +767,7 @@ const g2n = await pg.evaluate(() => {
     window.route = 'gram'; NAV = [{ r:'gram', a:'v2:' + id }]; render();
     return Array.prototype.filter.call(
         document.querySelectorAll('#app .stslot'), (b) => !!b.querySelector('.psi'))
-      .map((b) => ({
-        lab: b.querySelector('.psm').textContent,
-        from: b.querySelector('.psw').textContent,
-        to: b.querySelector('.psi').textContent,
-        go: b.getAttribute('data-do'), a: b.getAttribute('data-a') }));
+      .map(rowOf);
   };
   const rows = read('pl'), marks = read('n');
   WORDS.length = wl;
@@ -762,14 +775,23 @@ const g2n = await pg.evaluate(() => {
   if (!wasPart) delete STG.set.part;
   return { n: rows.length, rows: rows, marks: marks.length,
            pl: rows.filter((r) => r.to.indexOf('mi') >= 0)[0] || null,
-           other: rows.filter((r) => r.to === 'zz')[0] || null,
+           other: rows.filter((r) => r.from === '-zz')[0] || null,
            mark: marks.filter((r) => r.to.indexOf(' ') >= 0)[0] || null,
            tense: rows.concat(marks).filter((r) => r.to.indexOf('ka') >= 0).length };
 });
 
 want('the plural chapter draws every rule this language wrote for it', g2n.n, 2);
-want('the row that says nothing about this word says what it adds instead',
-     g2n.other && g2n.other.from, '');
+/* THE ROW IS THE RULE, and the example is what is added to it. 「規則で作る形
+   の>>-分かりにくすぎない？意味わからないから」 OWNER 2026-09-05: the row used
+   to be the example alone -- the word and what the rule made of it -- so a rule
+   that makes nothing of this language's word, and a rule with no letters on it
+   yet, both drew a row with nothing in it. What it says now is the letters and
+   which end they go on, which is the whole of what the rule's own screen
+   writes; what came out is added where there is something to add. */
+want('a rule that says nothing about this word still says what it adds',
+     g2n.other && g2n.other.from, '-zz');
+want('and shows nothing as the form it makes',
+     g2n.other && g2n.other.to, '');
 want('and the tense is drawn in neither of these chapters', g2n.tense, 0);
 
 /* `tuf` is the first noun of the language this check opens -- the chapter
@@ -777,7 +799,8 @@ want('and the tense is drawn in neither of these chapters', g2n.tense, 0);
    point. */
 want('the plural is the word this language really makes',
      g2n.pl && g2n.pl.to, 'tufmi');
-want('from the word it is a form of', g2n.pl && g2n.pl.from, 'tuf');
+want('and the row says the letters that make it', g2n.pl && g2n.pl.from, '-mi');
+want('and which end they go on, in words', g2n.pl && g2n.pl.side, 'On the end');
 want('and pressing it goes to where that rule is written',
      g2n.pl && g2n.pl.go, 'openFmr');
 
@@ -821,8 +844,7 @@ const g2v = await pg.evaluate(() => {
        are an invitation, not something the language does. */
     return Array.prototype.filter.call(document.querySelectorAll('#app .stslot'),
         (b) => !!b.querySelector('.psi'))
-      .map((b) => b.querySelector('.psm').textContent + ':' +
-                  b.querySelector('.psi').textContent);
+      .map((b) => rowOf(b).lab + ':' + rowOf(b).to);
   };
   const chaps = {};
   g2Chaps().forEach((c) => { chaps[c.id] = on(c.id); });
@@ -886,9 +908,8 @@ const neg = (fm) => pg.evaluate((fm) => {
   const rows = Array.prototype.filter.call(
       document.querySelectorAll('#app .stslot'), (b) => !!b.querySelector('.psi'))
     .map((b) => ({
-      lab: b.querySelector('.psm').textContent,
-      from: b.querySelector('.psw').textContent,
-      to: b.querySelector('.psi').textContent,
+      lab: rowOf(b).lab, from: rowOf(b).from, to: rowOf(b).to,
+      side: rowOf(b).side,
       go: b.getAttribute('data-do') }));
   WORDS.length = wl;
   STG.fm = JSON.parse(wasFm);
@@ -905,8 +926,13 @@ want('a negation written as an ending goes on the verb',
      nEnd[0] && nEnd[0].to, 'zlumann');
 want('one written as a beginning goes in front of the verb',
      nPre[0] && nPre[0].to, 'unzluma');
-want('and the row says the word it was made from',
-     nPre[0] && nPre[0].from, 'zluma');
+/* And the hyphen stands where the word goes, which is how every dictionary
+   writes an affix: `un-` in front, `-nn` on the end. */
+want('and the row says the letters it puts in front',
+     nPre[0] && nPre[0].from, 'un-');
+want('with the end it goes on said in words',
+     nPre[0] && nPre[0].side, 'On the front');
+want('and the other one the other way round', nEnd[0] && nEnd[0].from, '-nn');
 want('pressing it goes to where that rule is written',
      nEnd[0] && nEnd[0].go, 'openFmr');
 
@@ -989,7 +1015,7 @@ const chap = await pg.evaluate(() => {
     window.route = 'gram'; NAV = [{ r:'gram', a:'v2:' + c.id }]; render();
     Array.prototype.forEach.call(document.querySelectorAll('#app .stslot'), (el) => {
       if (!el.querySelector('.psi')) return;   /* a make row, not a form */
-      const to = el.querySelector('.psi').textContent;
+      const to = rowOf(el).to;
       kinds.forEach((k) => {
         if (to.indexOf(k.add) < 0) return;
         if (!seen[k.fm]) seen[k.fm] = [];
@@ -1064,8 +1090,7 @@ const adj = await pg.evaluate(() => {
   show('pl');
   const form = Array.prototype.filter.call(
       document.querySelectorAll('#app .stslot'), (b) => !!b.querySelector('.psi'))
-    .map((b) => b.querySelector('.psm').textContent + ':' +
-                b.querySelector('.psi').textContent)
+    .map((b) => rowOf(b).lab + ':' + rowOf(b).to)
     .filter((x) => x.indexOf('si') >= 0).join(',');
 
   /* ACROSS THE PAGES. The two rows that arrange a pair are on different

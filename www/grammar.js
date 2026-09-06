@@ -598,21 +598,62 @@ function g2Sent(){
    in the 助詞 stage (`openSlot`). Two places that write the same thing is the
    shape this repository is most often bitten by, so a row goes to whichever
    of the two it came from -- which is what the rule's metadata carries. */
-/* One row of a chapter, and the way out of it. `del` is the rule's id where the
-   row IS a rule -- the ⊖ takes it away after popAsk() has asked, which is where
-   every other list in this app deletes from and is where 「この規則を消す」 went
-   when the editor became two fields. A row that is a word made in a stage
-   carries none: that word is deleted where it was made. */
-function g2Row(lab, from, to, act, arg, del){
+/* One row of a chapter, and the way out of it.
+
+   THE ROW SAYS WHAT THE RULE IS, IN WORDS. 「規則で作る形の>>-分かりにくすぎ
+   ない？意味わからないから」 OWNER 2026-09-05, on a picture of the 現在形
+   chapter reading 「❶　›　　›　–」 and nothing else. It used to be the EXAMPLE
+   alone -- the word this language has and what the rule makes of it -- and both
+   halves are empty until there is a word to make it of, so a rule written
+   before the dictionary had a verb in it drew two chevrons round a gap. A rule
+   with no letters on it yet drew the same, because the fallback was the
+   letters.
+
+   So the rule itself is the row: the letters it adds and which end they go on,
+   which is the whole of what fmrFormHTML() lets anybody write. The example is
+   ADDED where there is a word and is not what the row is made of.
+
+   `add` wears the letters somebody drew and `side` is the app's own word for
+   the end -- t('fmr.end') and t('fmr.start'), the same two the rule's own
+   screen is set with, so the row and the editor cannot come out saying
+   different things. They are separate spans because they are separate faces:
+   one is this language and one is the interface.
+
+   `del` is the rule's id where the row IS a rule -- the ⊖ takes it away after
+   popAsk() has asked. A row that is a word made in a stage carries none: that
+   word is deleted where it was made. */
+function g2Row(lab, add, side, from, to, act, arg, del){
   return '<div class="fmmk">'+
     '<button class="stslot has"' + DO(act, arg) + '>'+
     '<span class="psm">'+esc(lab)+'</span>'+
-    '<span class="psw'+(myFontOn()? ' sfont' : '')+'">'+esc(from)+'</span>'+
-    '<span class="gsep">'+ICON_GO+'</span>'+
-    '<span class="psi">'+esc(to)+'</span>'+ICON_GO+'</button>'+
+    (add? '<span class="psw'+(myFontOn()? ' sfont' : '')+'">'+esc(add)+'</span>' : '')+
+    (side? '<span class="psi">'+esc(side)+'</span>' : '')+
+    (from? '<span class="psw'+(myFontOn()? ' sfont' : '')+'">'+esc(from)+'</span>'+
+           '<span class="gsep">'+ICON_GO+'</span>' : '')+
+    /* AND THE FORM IT MAKES IS ALWAYS A SLOT WHERE THE ROW SAID AN END. A rule
+       that makes nothing of this language's word -- one written for words
+       ending in a letter none of them ends in -- has nothing to put here, and
+       leaving the span out made the row's LAST `.psi` the END rather than the
+       form. Nothing on the screen changes; what changes is that the row means
+       the same thing whether or not there is a word to try it on. */
+    ((to || side)? '<span class="psi">'+esc(to)+'</span>' : '')+
+    ICON_GO+'</button>'+
     (del? '<button class="mnx"' + DO('fmrAsk', [del]) +
       ' aria-label="'+esc(t('fmr.del'))+'">'+ICON_MINUS+'</button>' : '')+
     '</div>';
+}
+/* Which end the letters go on, as the word the rule's own screen is set with.
+   Asked here rather than written out, so there is one name for each end. */
+function gFmSide(r){ return t((r && r.at==='start')? 'fmr.start' : 'fmr.end'); }
+/* And the same fact in the shape every dictionary in the world writes an affix
+   in: the hyphen stands where the word goes. It is the app's mark and not a
+   letter of anybody's language, so with the drawn font on it falls back the way
+   any mark nobody drew does. Empty stays empty -- a rule with no letters on it
+   yet is a rule somebody has not finished, and `-` alone would read as one. */
+function gFmAffix(r){
+  var f=gFmForm(r);
+  if(!f) return '';
+  return (r && r.at==='start')? f+'-' : '-'+f;
 }
 /* WHICH CHAPTER AN ENGINE RULE BELONGS TO, and it is asked here and nowhere
    else. It used to be a table of five features, because the verbs chapter was
@@ -664,8 +705,8 @@ function g2Nouns(){
       continue;
     }
     made=m? g2MadeBy(m, 'slot', k) : '';
-    out+=g2Row(stSlotLabel(p, k), made? wOut(n.hw) : '', made || wOut(w.hw),
-               'openSlot', ['part', k], '');
+    out+=g2Row(stSlotLabel(p, k), '', '', made? wOut(n.hw) : '',
+               made || wOut(w.hw), 'openSlot', ['part', k], '');
   }
   return out;
 }
@@ -957,8 +998,7 @@ function g2FmRows(c){
     id=String(r.id||'');
     made='';
     if(w){ m=gModel([w]); made=g2MadeBy(m, 'rule', id); }
-    out+=g2Row(g2Num(n++), made? wOut(w.hw) : '',
-               made || gFmForm(r), 'openFmr', [id], id);
+    out+=g2Row(g2Num(n++), gFmAffix(r), gFmSide(r), '', made, 'openFmr', [id], id);
   }
   return out;
 }
