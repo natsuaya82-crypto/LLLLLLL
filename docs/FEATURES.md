@@ -43,7 +43,7 @@ Marked separately, because they are not the same question:
 | Sound inventory, per letter | shipped | letter's own reading only | `snd`: choose a different one | slice `snd` | decided |
 | A word read as something other than its letters (連音化 and the like) | shipped | no | `snd`: the reading page — the language's sounds and the whole IPA, grouped by how each is made, searched by those words, said out loud on every press | slice `words` (`sp[i].u`) | decided — it is sounds and only sounds; a letter never appears on it 「音から文字と文字から音で二重になるから困る」 |
 | Writing system | shipped | alphabet only | `wsys`: syllabary, abjad, abugida, logography | `SET.wsys`, slice `script` | decided |
-| Grammar stages | shipped | the fifteen there are | `gram`: your own | slice `phases` | decided |
+| Grammar — 文法書の四十四章 | shipped | 章は全部ある。無料で書けないのは自分で足した段だけ | `gram`: 自分の段を足す | slice `phases`（`STG`: `order` `np` `gpos` `ncls` `fm` `rules` `ex` `set` `extra`）と slice `words`（章が要る語） | decided — 「文法のページが中途半端すぎる」「この文法ページを埋めたら翻訳にもなるし文法書になる」 OWNER 2026-09-07。完成の定義は `docs/GRAMMAR-V2-SPEC.md` § 完成の定義 |
 | Notebook | shipped | yes | — | slice `notes` | decided |
 | Numbers — a digit is a letter with a value | shipped | yes | — | slice `letters` | decided |
 | What the language is for (the world) | shipped | yes | — | slice `wld` | decided |
@@ -134,16 +134,26 @@ third goes the opposite way from the other two **on purpose**:
                dictionary grew. Freezing this one would be the bug
 ```
 
-Missing: a lookup from a meaning to one of my words. The grammar stages exist.
+**Built.** The lookup from a meaning to one of my words is
+`www/grammar-engine/lexicon.js`, and what is written out of it is
+`translate.fromSemantic()`. What that can now say is the whole of
+`docs/GRAMMAR-V2-SPEC.md` § 完成の定義 — 語順、名詞句の並び、複文、七つの格、
+名詞クラスの一致、冠詞・指示詞、人称・数、時制・相、法、態、否定・疑問、
+コピュラ・存在、比較 — and each of those is a chapter somebody fills in.
+**A chapter left empty is that part dropping OUT of the sentence, never the
+sentence breaking**, and `tools/grammar-engine-check.mjs` asserts both halves
+for every one of them.
 
 Word order is `STG.order` — it belongs to the LANGUAGE, not the phone.
 `SET.order` was the old flat key and `migrateGramLang()` in `www/phases.js`
-copied it across; `grammar.js` says so on `orderOf()`. Six of them
-(`ORDERS`), chosen on a screen. **The owner has said that is going away** —
+copied it across. **The six are gone.**
 「俺も選ばせたくないし、文章書いてたらsvoが基本でも助詞があるかもしれない」
-(2026-08-26, relayed) — because a sentence with a particle in it is not
-described by one of six letters-triples. Nothing has been built: `ORDERS` is
-still six and `setOrder()` still writes one.
+(2026-08-26, relayed) — a sentence with a particle in it is not described by
+one of six letter-triples. It is a BOARD of cards now (`g2Board()` in
+`www/grammar.js`), and `ROLES` is nine of them: 主語・目的語・動詞・副詞・場所・
+否定・疑問・なにである・なにより. **There is a second board beside it** — the
+noun phrase's own order (`NPARTS`), because two languages that agree about SOV
+can still disagree about everything inside a noun.
 
 **What takes its place is a gradient, not another answer.** OWNER 2026-08-26:
 
@@ -167,12 +177,18 @@ a language with none is arranged by position alone, which is what English and
 Chinese do. Adding particles does not replace word order — it takes words out
 of the positional queue one at a time.
 
-**Built 2026-08-26.** A particle is a WORD, made in the 助詞 stage the way the
-word for "not" is made in the 否定 one, and `gInfl()` in `www/grammar.js` is
-what hands it to the engine. Three slots — the doer, the one done to, the one
-given to — because those are the roles WORD ORDER would otherwise decide, and
-a mark is what takes a word out of that queue. Where a thing is and where it
-goes are the 場所 stage's adpositions and are not repeated here.
+**Built 2026-08-26, and seven since 2026-09-07.** A particle is a WORD, made in
+the 助詞 stage the way the word for "not" is made in the 否定 one, and
+`gInfl()` in `www/grammar.js` is what hands it to the engine. Seven slots —
+the doer, the one done to, the one given to, the owner, the place, the tool
+and the one it is done with. The first three are the roles WORD ORDER would
+otherwise decide; the four beside them are the ones it never could, and 所有
+is the one that proves it — a possessor is a word INSIDE a noun phrase, so no
+arrangement of a sentence says which noun owns which.
+
+The place MARK (`loc`, 山で) and the 場所 chapter's place WORDS (in / on /
+under) are different things and a language may have either or both — OWNER
+2026-09-07's completion definition says so on both sides (§4 and §17).
 
 Nothing new is stored: the particle is a word in `WORDS`, whether the stage is
 on the list is `STG.set.part`, and the `inflections` the engine reads are
@@ -182,14 +198,12 @@ would be the spelling as of the day it was saved — the same reason `words` and
 reads it (§1 of that day's work), and there is nothing in the app yet that a
 person can write which does NOT point at the dictionary.
 
-The stage was already in `STAGES_IF` — off the list until a language uses one,
-because English has none and opening the chapter with it would be the app
-asserting something about somebody's language. What it did not have was a way
-IN, which rule 19 of `CLAUDE.md` is written about ("a page arrives with the way
-THERE and the way BACK already on it"). The door is at the FOOT of the stage
-list, beside the one that adds a stage of your own, and it is gone once the
-stage is on the list. **Where the door goes is a screen decision and is the
-owner's** — that it has to exist is not.
+**It is on the list from the start.** 「文法ページに◉+ あるのに下までいくと
+助詞+って二重になってる。◉＋だけにして、助詞は最初から出せ」 OWNER 2026-09-01.
+It used to be off the list until a language turned out to have one, with a door
+at the foot to turn it on — `STAGES_IF`, which is gone with the door. A language
+with no particles leaves the chapter empty, which is what an unanswered chapter
+already is everywhere else.
 
 **Settled 2026-09-05, and it settles the whole of it:**
 
