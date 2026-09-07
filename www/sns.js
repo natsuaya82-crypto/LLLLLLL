@@ -1372,12 +1372,53 @@ var TAG_RE=/[#＃][^\s#＃、。,.!?！？]+/g;
 
    Everything that is not a tag goes through esc() exactly as it did before
    -- this returns HTML and the text inside it is somebody's. */
+/* And what a HANDLE looks like, which is the server's shape and not one
+   chosen here: `check (handle ~ '^[a-z0-9_]{2,24}$')` in supabase/schema.sql.
+   Deciding a different one here would make a name the server cannot hold into
+   a word somebody can press. Capitals are matched and lowered on the way out
+   -- somebody typing `@Aya` means the person -- and the `＠` a Japanese
+   keyboard gives is taken for the same reason the hash takes both spellings.
+
+   A `var` and global for the same reason TAG_RE is: `lastIndex` survives
+   between calls, so every walk resets it. */
+var AT_RE=/[@＠][A-Za-z0-9_]{2,24}/g;
+/* ONE HANDLE, drawn so a thumb can go to whoever it names. 「リプライング to
+   @〇〇 の @〇〇 をタップしたらその人のページ飛べるように」 OWNER 2026-09-07.
+
+   THE ONE PLACE a handle becomes a thing you press. It was nowhere: `#tag`
+   had tagHTML() and `@aya` had nothing, so the same act -- pressing a word
+   somebody wrote to go where it points -- worked on one mark and not the
+   other. tagHTML() below calls this rather than writing a second button, so
+   the @ in a body and the @ over a reply are one road.
+
+   It wears `.ptag`, which is the tag's own class: blue letters, no corner, no
+   border, no fill, and 44pt taken in padding the line does not feel
+   (www/index.html § .ptag). Nothing new is styled. */
+function atHTML(hd){
+  var h=netHandleOf(hd);
+  if(!h) return '';
+  return '<button class="ptag"'+DO('snsAtGo', [h])+'>@'+esc(h)+'</button>';
+}
+/* And pressing one stands you on that person's page. The route takes a
+   HANDLE -- pfWho() reads here().a and pfList() matches p.hd against it -- so
+   what travels is the name, not an id. */
+function snsAtGo(hd){ go('profile', netHandleOf(hd)); }
 function tagHTML(s){
-  var x=String(s||''), out='', at=0, m;
-  TAG_RE.lastIndex=0;
-  while((m=TAG_RE.exec(x))){
+  var x=String(s||''), out='', at=0, m, tg, ah;
+  TAG_RE.lastIndex=0; AT_RE.lastIndex=0;
+  /* Two marks over one string, so the runs have to be taken in the order they
+     appear rather than one mark's pass after the other's -- a second pass
+     over what the first had already turned into HTML would find the `#` of
+     `&#10;` and the `@` of nothing, and would cut a button in half. */
+  while(1){
+    TAG_RE.lastIndex=at; AT_RE.lastIndex=at;
+    tg=TAG_RE.exec(x); ah=AT_RE.exec(x);
+    m=(!tg? ah : (!ah? tg : (tg.index<ah.index? tg : ah)));
+    if(!m) break;
     out+=esc(x.slice(at, m.index));
-    out+='<button class="ptag"'+DO('snsTagGo', [m[0]])+'>'+esc(m[0])+'</button>';
+    out+=(m===tg
+      ? '<button class="ptag"'+DO('snsTagGo', [m[0]])+'>'+esc(m[0])+'</button>'
+      : atHTML(m[0]));
     at=m.index+m[0].length;
   }
   return out+esc(x.slice(at));

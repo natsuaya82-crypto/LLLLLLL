@@ -3849,6 +3849,27 @@ textarea.ntbody.grow{min-height:0;height:auto;overflow:hidden;resize:none}
    この一箇所が両方に届く。 */
 .lnin.dir-ttb-rl,
 .lnin.dir-ttb-lr{-webkit-text-orientation:mixed;text-orientation:mixed}
+/* 「@aya への返信」の @aya は押せる（OWNER 2026-09-07）。着るのは `.ptag`
+   ── 本文中のタグと同じ、青い字だけの形で、角丸も枠線も無い。
+
+   `.ptag` の 44pt は上下 10px の padding と、それを相殺する -10px の margin で
+   取ってあり、そこに書いてある通り「文字が 24 ある」ことを当てにしている。
+   この行の字は `.pto` の .84rem なので行は 23 で、10+23+10 = 43 ── 測った：
+   38x43、1px 足りない。同じ規則をこの字の大きさで書き直すだけで、新しい規則
+   ではない：11+23+11 = 45、margin が同じ 11 を戻すので `.pto` の高さは 23 の
+   まま動かない（文は押し広げない ── 「タグは本文中に。」と同じ理由）。
+
+   横は `min-width` で取る。`.ptag` は `display:inline` で、それは本文の行末に
+   来たタグが折り返すためにわざとそうしてある（`.ptag` にその話が書いてある）
+   ── `inline` に `min-width` は効かない。この行は `white-space:nowrap` の
+   一行のラベルで、折り返す先が無いので `inline-block` にしても失うものが無い。
+   字は左のまま（`.ptag` の `text-align:inherit`）で、余りは右に出る。測った：
+   44x45、行は 23 のまま。
+
+   本文の中の `@` は `#` とまったく同じ形のまま ── 同じ字の大きさ、同じ
+   `.ptag`、同じ折り返し。一方だけ広げたら、一つの文の中で同じ marks が二つの
+   形になる。 */
+.pto .ptag{display:inline-block;min-width:44px;padding:11px 0;margin:-11px 0}
 </style>
 </head>
 <body>

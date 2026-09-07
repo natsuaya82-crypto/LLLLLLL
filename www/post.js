@@ -3084,6 +3084,20 @@ function postAvHTML(p){
    files, put on by the app, sitting outside anything anybody wrote. A tag is
    characters in the body now, and tagHTML() in www/sns.js is what makes one
    blue and pressable wherever those characters are drawn. */
+/* 「@aya への返信」, with the @aya a thing you press. 「リプライング to
+   @〇〇 の @〇〇 をタップしたらその人のページ飛べるように」 OWNER 2026-09-07.
+
+   The sentence is still one key with one `{0}` in it, so it stays one thing
+   for a translator to move: the handle goes in as a mark no keyboard makes,
+   the whole sentence is escaped, and the mark is then the one place the
+   button lands. Handing HTML to t() would work today and would break the day
+   somebody wraps a `{0}` in `<b>`.
+
+   atHTML() (www/sns.js) is the one place a handle becomes pressable and the
+   @ in a body goes through it too, so both @ on a post are the same road. */
+function ptoHTML(hd){
+  return esc(t('post.re.to', '\u0001')).replace('\u0001', atHTML(hd));
+}
 function postRow(p){
   var foc=(postFocus()===p.id), to=postToWho(p);
   return '<div class="post'+(foc? ' pfoc':'')+'"'+(foc? '' : DO('postOpen', [p.id]))+'>'+
@@ -3208,7 +3222,7 @@ function postRow(p){
          replies in it -- a reply sitting between two posts that have nothing
          to do with it has to say what it is, and the id it carries says
          nothing to anybody's eye. */
-      (to? '<div class="pto">'+esc(t('post.re.to', '@'+to))+'</div>' : '')+
+      (to? '<div class="pto">'+ptoHTML(to)+'</div>' : '')+
       /* It used to be text wearing MY font, and only ever on my own post,
          because my font is the font of MY language and putting it on
          somebody else's line drew their words in my shapes. Now the shapes
