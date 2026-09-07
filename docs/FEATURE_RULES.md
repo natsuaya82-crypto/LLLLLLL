@@ -218,6 +218,43 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### 段はサーバーが決め、購入は買ったアカウントに束縛される
+- Date: 2026-09-06
+- Area: 課金（`plan` 表、`purchase` 表、`LinguaStore.swift`、`www/store.js`、
+  `www/net.js`）
+- Decision:
+
+  ```
+  アカウントごとなんだから、違うアカウントで復元できるのおかしいだろ。検証して
+  ```
+
+  そして 2026-09-03 の「だから端末でやるわけねえだろ」。
+
+  - 段（plus/pro）は **Lingua のアカウント**のもので、買った時にサインインして
+    いたアカウントに束縛される
+  - **別のアカウントでサインインして「購入を復元」しても付かない**
+  - 段を決めるのは**サーバー**。端末が言った値を書き留める形は終わり
+  - 変わらないこと：段は「できること」だけを決め、誰の言語の 1 バイトにも触らない
+- Reason: `schema.sql` 自身が書いていた ──「anybody who can send this database
+  a request can set their OWN plan to 'pro'」。行を書くのは電話で、電話はその人。
+- Affected features: 買う・復元する・失効する。`CAN` が閉める全部
+- Affected data: `purchase` 表が増える（取引が誰のものか）。`plan` 表を書くのが
+  service role だけになる。`SET.planPend` が消える。**人が作ったものは動かない**
+- Affected docs: `docs/PAID_FEATURES.md`（先頭に節）、`docs/FEATURES.md` § 1、
+  `docs/apple.md`、`docs/STATE.md`、`supabase/setup.md` § 8b、
+  `docs/CHANGELOG.md` ── 同じコミットで書き換えた
+- Implementation status: **入りました。**`supabase/functions/verify-plan` が
+  x5c の鎖を Apple の根まで辿り、`appAccountToken` で束縛し、段を書きます。
+  `tools/verify-check.mjs`（自作の鎖で署名した取引を通す）、`npm run rls`、
+  `plan-check` が持ちます。**実機未確認** ── 買う／同じアカウントで復元して
+  付く／別のアカウントで復元して付かない、の三つ。**オーナーの側**に函数の
+  deploy と `APPLE_ROOT_CA_G3` が残っています（`supabase/setup.md` § 8b）。
+
+  この決定は、2026-09-02 の「段は絶対に下げない」の**理由**を置き換えます。
+  下げなかったのは端末が段を決めていたからで、端末の `free` は「持っていない」
+  と「読めなかった」の両方でした。サーバーの `free` は前者だけを意味します。
+  届かなかった答えが何も書かないことは変わりません。
+
 ### 通信が落ちたら何も進まない。ポップは一つ
 - Date: 2026-09-05
 - Area: サーバーへ行く四箇所ぜんぶ（起動・引っ張って更新・保存/削除・サーバーに
@@ -1865,7 +1902,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
   **規則に「端末のものは三つ」と書いてあったことが、その姿を正しく見せて
   いました。**規則を消さないと同じ形が出続けます。
 - Affected features: 保存するもの全部。特にアカウント削除
-- Affected data: `SET` の中の `plan` `planWas` `planPend`
+- Affected data: `SET` の中の `plan` `planWas`
   `saved` `savedUp` `notAt` は、アカウントごとに `lingua.set.<uid>` へ
   預けます（`setFor()`）。`planUid` は「いま誰の分が載っているか」なので
   預けません。
@@ -1879,7 +1916,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 
 ### 課金はメールアドレスのアカウントに紐づく。端末が同じでも引き継がない
 - Date: 2026-09-02
-- Area: プラン（`SET.plan`、Keychain、`netPlanSync()`）とアカウントの関係
+- Area: プラン（`SET.plan`、Keychain、段を読み合わせる道）とアカウントの関係
 - Decision:
 
   ```
@@ -1892,7 +1929,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
 
 - Reason: 言語とアカウントが結びついているのと同じ話。A（Pro）がサインアウト
   して B がサインインすると、端末の `SET.plan` が pro のまま残り、次の起動で
-  `netPlanSync()` が B のアカウントに Pro を書き込む。一つの Apple ID から
+  端末が B のアカウントに Pro を書き込んでいた（その道は 2026-09-06 に無くなり
+  ました）。一つの Apple ID から
   いくつでもアカウントに Pro を配れる。「アカウント変えたら無限に言語作れる
   やん」（2026-09-01）で段をアカウントへ移した、その口が別の場所で開いている。
 - Affected features: 課金全体。CLAUDE.md の「プランはアカウントのもの」を
@@ -4781,7 +4819,7 @@ and is never merged into your own」と言っている。**入らない、は二
   どこを押すかまで書いてあります。
 - Affected features: the plans screen, everything `CAN` gates
 - Affected data: none. `SET.plan` は端末の写しで、**答えは Apple のもの** ──
-  `storeTook()` は要求ではなく返事から段を取ります。
+  2026-09-06 以降、その答えを読むのはサーバー（`verify-plan`）です。
 - Affected docs: `docs/apple.md`, `docs/PAID_FEATURES.md`, `docs/FEATURES.md`
 - Implementation status: **StoreKit は入っています。**
   `ios/App/App/LinguaStore.swift` が StoreKit 2 でこの四つを扱い、

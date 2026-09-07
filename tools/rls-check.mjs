@@ -1166,13 +1166,25 @@ const CASES = [
      rather than a column on `profile`, which is `using (true)` -- what
      somebody pays is not a handle.
 
-     What is NOT claimed here, and must not be read into a green run: that
-     somebody cannot set their OWN plan. They can. The phone writes this row
-     and the phone is the person; closing it needs Apple's receipt checked by
-     something that is not the phone. docs/scope/claude-acct2.md. A test that
-     appeared to cover it would be worse than none. */
-  ['A writes A\u2019s own plan',              'ok',     A, 0,
-    `insert into plan(id,plan) values ('${A}','pro')`],
+     AND THE THIRD IS NEW ON 2026-09-06: **A cannot set their OWN plan either.**
+     That used to be the thing this file said out loud it did not claim -- the
+     phone wrote the row and the phone is the person. `plan_make` and
+     `plan_edit` are gone, and supabase/functions/verify-plan is the only thing
+     that writes here, with the service role, which no policy applies to.
+     「だから端末でやるわけねえだろ」 OWNER 2026-09-03.
+
+     So both rows below are put in by the OWNER of the table, up in the seed,
+     the way the function writes them. That is the one shortcut here and it is
+     the claim rather than a way round it: through the API there is no road in
+     at all, so a row that exists had to arrive from outside every policy. */
+  /* B and not A for the insert: A's row is seeded, so an insert for A would be
+     refused by the primary key -- a denial for the wrong reason, which reads
+     exactly like the right one. B has an account, has no plan row, and is
+     trying to give themselves one. */
+  ['B cannot write their OWN plan either',    'denied', B, 0,
+    `insert into plan(id,plan) values ('${B}','pro')`],
+  ['nor can A change the one that is there',  'denied', A, 0,
+    `update plan set plan='pro' where id='${A}'`],
   ['B cannot write A\u2019s plan',            'denied', B, 0,
     `insert into plan(id,plan) values ('${A}','pro')`],
   ['B cannot change A\u2019s plan',           'denied', B, 0,
@@ -1187,10 +1199,39 @@ const CASES = [
     `delete from plan where id='${A}'`],
   ['nor can A delete their own',              'denied', A, 0,
     `delete from plan where id='${A}'`],
-  ['and a tier nobody sells is refused',      'denied', A, 0,
-    `update plan set plan='studio' where id='${A}'`],
   ['A still reads their own',                 'ok',     A, 0,
     `select 1 from plan where id='${A}'`],
+  /* --- and which account a purchase belongs to --------------------------
+     「アカウントごとなんだから、違うアカウントで復元できるのおかしいだろ」
+     OWNER 2026-09-06.
+
+     `purchase` is the binding: one row per subscription, saying whose it is.
+     Every write to it is somebody claiming a purchase, which is the whole of
+     what the table exists to stop -- so there is no insert, update or delete
+     policy, and each of the three is a different attack.
+
+     DELETE is the one that reads as harmless and is not. Unbinding your own
+     transaction and then binding it to a second account is the same attack
+     walking backwards, and it would give one subscription to as many accounts
+     as somebody cared to make. */
+  ['A reads their own purchase',              'ok',     A, 0,
+    `select 1 from purchase where uid='${A}'`],
+  ['B cannot read what A bought',             'denied', B, 0,
+    `select 1 from purchase where uid='${A}'`],
+  ['B cannot claim a purchase',               'denied', B, 0,
+    `insert into purchase(orig_tx,uid) values ('2000000000000009','${B}')`],
+  ['nor take A\u2019s over',                  'denied', B, 0,
+    `update purchase set uid='${B}' where uid='${A}'`],
+  ['nor unbind A\u2019s',                     'denied', B, 0,
+    `delete from purchase where uid='${A}'`],
+  ['nor can A unbind their own',              'denied', A, 0,
+    `delete from purchase where uid='${A}'`],
+  ['nor change what it says',                 'denied', A, 0,
+    `update purchase set product='com.tokinets.lingua.pro.yearly' where uid='${A}'`],
+  ['somebody with no account cannot read a purchase', 'denied', B, 1,
+    `select 1 from purchase where uid='${A}'`],
+  ['nor write one',                           'denied', B, 1,
+    `insert into purchase(orig_tx,uid) values ('2000000000000010','${B}')`],
   /* Deleting the account takes the drafts with it. Asked by DOING it, and
      asked as the owner of the table rather than through a policy, because
      what has to hold is that the row is GONE -- a select that returns nothing
@@ -1217,6 +1258,33 @@ const SHAPE = [
      select count(*) from pg_policies where tablename='publication' and cmd='DELETE'`, '0'],
   ['the day\u2019s sentence is read-only', `
      select count(*) from pg_policies where tablename='prompt' and cmd<>'SELECT'`, '0'],
+  /* And the two the money is on. A policy of any other kind on either table is
+     a road back to the phone writing its own plan, which is what 2026-09-06
+     closed -- and it would be added by somebody who found the app could not
+     write and "fixed" it. Asked of the catalogue rather than by trying, so a
+     policy that exists but happens to refuse today still fails. */
+  ['a plan is read-only through the API', `
+     select count(*) from pg_policies where tablename='plan' and cmd<>'SELECT'`, '0'],
+  ['a purchase is read-only through the API', `
+     select count(*) from pg_policies where tablename='purchase' and cmd<>'SELECT'`, '0'],
+  /* A tier nobody sells still cannot be written down, and that is the CHECK
+     rather than a policy now: nothing signed in can write this table at all,
+     so the attempt that used to hold it would be denied for the wrong reason.
+     The service role is not stopped by policies, which makes the constraint
+     the only thing standing between a typo in the function and a plan word
+     nothing in www/ has ever heard of.
+
+     Asked as「there is no such table without one」rather than as a count of
+     constraints, because SHAPE's answer is always「none found」-- and a claim
+     phrased so that an empty catalogue passes it is a claim about nothing. */
+  ['a plan word the app does not know is refused', `
+     select count(*) from (select 1 where not exists (
+       select 1 from pg_constraint c join pg_class t on t.oid = c.conrelid
+        where t.relname='plan' and c.contype='c'
+          and pg_get_constraintdef(c.oid) like '%''free''%'
+          and pg_get_constraintdef(c.oid) like '%''plus''%'
+          and pg_get_constraintdef(c.oid) like '%''pro''%'
+     )) q`, '0'],
   ['a profile is never deleted, only the account', `
      select count(*) from pg_policies where tablename='profile' and cmd='DELETE'`, '0'],
   /* A report is about somebody else, so it has to outlive the person who
@@ -1678,6 +1746,16 @@ const sql = [
   `insert into profile(id,handle,handle_at) values
      (${q(N2)}, 'twoo',   now() - interval '15 days'),
      (${q(N3)}, 'threeo', now() - interval '13 days');`,
+  /* And what the server writes, written here for the same reason: through the
+     API there is NO road into `plan` or `purchase` at all since 2026-09-06 --
+     supabase/functions/verify-plan writes both with the service role, which no
+     policy applies to. A row that exists is therefore a row that arrived from
+     outside every policy, which is the claim, and the attempts above are every
+     way somebody could try to make one from inside. */
+  `insert into plan(id,plan) values (${q(A)},'pro');`,
+  `insert into purchase(orig_tx,uid,product,until,env) values
+     ('2000000000000001', ${q(A)}, 'com.tokinets.lingua.pro.monthly',
+      now() + interval '20 days', 'Sandbox');`,
   run,
   /* Three posts of different ages, written HERE by the owner of the table and
      not by anybody a policy lets write. That is not a shortcut around a

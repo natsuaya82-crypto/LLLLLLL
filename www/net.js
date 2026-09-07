@@ -157,7 +157,7 @@ function netMail(){
    as long as that was the only place, an app left open for an hour went on
    sending a dead token to everything. Nothing threw. Every write answered
    401 and every 401 went where that write's `bad` went, which for a slice
-   (`netSlicePut`), a plan (`netPlanUp`) and a draft was nowhere at all. So a
+   (`netSlicePut`), a plan and a draft was nowhere at all. So a
    person who opened Lingua in the morning and saved a word in the afternoon
    saved it to the phone and to nothing else, and was told it had gone up.
    「保存押せば起動されないの？」 OWNER 2026-09-02 -- no, it did not: saving
@@ -1006,134 +1006,55 @@ function netIdToken(provider, token, nonce, ok, bad){
 /* ---- what this account has paid for -------------------------------------
    「課金とアカウントとキーボードはアカウントに結びつく。じゃないとアカウント
      変えたら無限に言語作れるやん」 OWNER 2026-09-01.
+   「アカウントごとなんだから、違うアカウントで復元できるのおかしいだろ。
+     検証して」 OWNER 2026-09-06.
+   「だから端末でやるわけねえだろ」 OWNER 2026-09-03.
 
-   The plan was `SET.plan`, in `lingua.set` -- the person's SETTINGS, which
-   belong to the phone and to no account. So it did not travel. Signing in on
-   a second phone started at free, and every ceiling a plan opens was counted
-   per device.
+   ONE ROAD, AND IT GOES THE OTHER WAY NOW.
 
-   `plan` in supabase/schema.sql is where it lives now. It is a table of its
-   own rather than a column on `profile` because `profile_read` is
-   `using (true)` -- what somebody pays is not a handle.
+   There were two functions here until 2026-09-06. `netPlanUp()` POSTed this
+   phone's idea of its own plan into `/rest/v1/plan`, and `netPlanSync()` read
+   the row back and took the higher of the two rungs. Both are gone, and the
+   table they wrote is read-only through the API (supabase/schema.sql).
 
-   WHAT THIS IS NOT: proof of a purchase. The phone writes the row and the
-   phone is the person, so anybody who can send this database a request can
-   set their own plan. Closing that needs Apple's receipt checked by
-   something that is not the phone, and that is a decision rather than a line
-   of code -- docs/scope/claude-acct2.md holds the three ways and the reason
-   none of them is written yet. Nothing here should be read as more than
-   「the plan lives on the account now」. */
-/* AND IT ANSWERS. Both handlers were empty functions, and that is the other
-   half of how a cancelled subscription came back:
+   The reason is one line of that file's own comment: 「anybody who can send
+   this database a request can set their OWN plan to 'pro'」. The phone wrote
+   the row and the phone is the person.
 
-     解約 → Transaction.updates → Keychain 'free'
-     次の起動 → capLapse() が free を送る（誰も答えを聞いていない）
-             → netPlanSync() が古い pro を読む → 端末も Keychain も pro に戻る
+   What goes up now is not a plan. It is the **signed transactions** the App
+   Store gave this device -- `jwsRepresentation`, exactly as Apple wrote them
+   -- and what comes back is the plan, worked out by
+   supabase/functions/verify-plan: it reads the signature against Apple's
+   root, refuses a purchase whose `appAccountToken` is another account's, and
+   decides the rung from every transaction it has ever verified for this uid.
 
-   Nobody was listening, so nobody could know the send had not arrived, so the
-   read that came after it was answered with the plan Apple had already ended
-   -- and the higher rung then won for the wrong reason. 「プランは絶対に
-   おかしくしちゃいけないんだって」 OWNER 2026-09-02.
+   THE READ IS THE SAME ROAD. There is no second call that just asks what the
+   account pays: sending an empty list is that question, because the answer is
+   worked out from what the server holds rather than from what arrived. That
+   is what a launch in a browser does, and what a launch does when the App
+   Store could not be asked. One mechanism, and the lapse comes down it too.
 
-   SET.planPend IS THE ANSWER NOBODY HEARD, kept. It is written BEFORE the
-   send and cleared when the send lands, rather than the other way round: an
-   app that is shut between the two has still changed plan, and a record
-   written only on failure is no record at all for a launch that never got an
-   answer to fail on. One plan, never a queue -- what is unsent is a fact
-   about this phone's plan NOW, and a second one replaces the first.
-
-   Written with setKeep() and not save(): save() declines when the language on
-   screen is somebody else's, and this is not anybody's language.
-
-   The 401 half of this repairs itself since a6ebf1d -- this rides netSend(),
-   which renews the token and goes again. What planPend carries is the launch
-   opened with no signal at all, and the launch that was closed before the
-   answer came back. Neither of those is refused; nothing arrives. */
-function netPlanUp(id, then){
-  var done=then || function(){}, p=String(id||'free');
-  if(SET.planPend!==p){ SET.planPend=p; setKeep(); }
-  if(!netSignedIn()){ done(false); return; }
-  /* Through netSend() like everything else. It used to open its own
-     XMLHttpRequest, which differed from netSend() by one header and by being
-     outside the token renewal -- so on a launch, where this is sent before
-     the refresh has come back, the 401 went to an empty function and the plan
-     never moved. */
-  netSend('POST', '/rest/v1/plan',
-          {id:SESS.uid, plan:p, at:(new Date()).toISOString()},
-          SESS.at,
-          function(){
-            /* Cleared only if it is still THIS plan that is waiting. A plan
-               that moved again while this was in the air is a newer fact and
-               is not this send's to answer for. */
-            if(SET.planPend===p){ SET.planPend=''; setKeep(); }
-            done(true);
-          },
-          function(){ done(false); }, true);
-}
-/* THE LAUNCH, IN ORDER. What this phone is holding goes up FIRST, and the two
-   copies are read together INSIDE ITS ANSWER -- not beside it.
-
-   www/boot.js is where the order went wrong and it is not a mistake anybody
-   made in one place: netResume() is asynchronous and has not come back, while
-   capLapse() is synchronous and runs under it. So the send that says a plan
-   ENDED and the read that takes the HIGHER of two rungs were racing, and the
-   read won. Every launch. The read never lowers anything by design, so the
-   only road down was that send, and it was the one being overtaken.
-
-   Nothing here weakens 「高いほうを採る」. That rule protects somebody who
-   bought on another phone or bought while this one was offline, and it is
-   untouched: what changed is that the account is no longer asked a question
-   this phone already knows a newer answer to.
-
-   A pend that no longer matches the plan this phone holds is DROPPED rather
-   than sent. At that point it is not a send that was missed; it is a record
-   that something else -- a purchase, a restore, Apple's own answer -- has
-   since said otherwise, and sending it would put the plan back to a word
-   nobody is on any more. */
-function netPlanBoot(then){
-  var pend=SET.planPend;
-  if(pend && pend!==plan()){ SET.planPend=''; setKeep(); pend=''; }
-  if(!pend){ netPlanSync(then); return; }
-  netPlanUp(pend, function(){ netPlanSync(then); });
-}
-/* The two copies, read together. THE HIGHER RUNG WINS, and that is
-   LinguaStore.swift's best() rather than a new rule -- somebody can hold a
-   plan this phone has not heard of (bought on another device, bought while
-   this one was offline) and the answer to two plans has been 「the higher
-   one, never the last one read」 since there were two tiers.
-
-   Which direction to be wrong in was the whole of the question. Taking the
-   SERVER's answer flat would take a plan away from somebody whose phone
-   holds a receipt the server has not been told about yet -- and
-   docs/PAID_FEATURES.md is explicit that a plan decides what may be DONE and
-   that being wrong on the side that removes is the one that costs somebody
-   their work. Taking the higher rung cannot do that.
-
-   It never writes a plan DOWN. A plan ending is Apple's to say, through
-   storeTook(), and this is not a second place that decides it. */
-function netPlanSync(then){
+   A failure says nothing and changes nothing. A phone with no signal has the
+   plan it had, which is the one direction it is safe to be wrong in
+   (docs/PAID_FEATURES.md), and the next launch asks again. */
+function netPlanVerify(list, then){
   var done=then || function(){};
-  if(!netSignedIn()){ done(''); return; }
-  netGet('/rest/v1/plan?select=plan&id=eq.'+encodeURIComponent(SESS.uid),
+  if(!netSignedIn()){ done('', null); return; }
+  netSend('POST', '/functions/v1/verify-plan', {jws:(list || [])}, SESS.at,
     function(d){
-      var there=(d && d.length)? String(d[0].plan||'free') : '',
-          mine=plan(), best=planBest(mine, there||'free');
-      /* The account had none, or a lower one: tell it what this phone holds.
-         An account with no row at all is a real state -- it has never paid
-         and never been told anything -- and `there===''` is that, kept apart
-         from 'free' because they arrive differently even though they mean
-         the same rung. */
-      if(there!==best) netPlanUp(best);
-      if(best!==mine){
-        SET.plan=best;
-        /* planWas moves with it, so capLapse() does not read a plan arriving
-           from the account as a plan that has just changed on this phone and
-           send it straight back. */
-        SET.planWas=best;
-        save(); planKeep(best); render();
-      }
-      done(best);
-    }, function(){ done(''); });
+      var p=(d && d.plan)? String(d.plan) : '';
+      /* An answer with no plan word in it is an answer that was not
+         understood, and that is not the same state as `free`. Nothing is
+         written for it. */
+      if(!p){ done('', null); return; }
+      /* The whole answer as well as the word: what the server REFUSED is a
+         count this phone cannot work out for itself -- a receipt Apple signed
+         for another account is refused there and nowhere else -- and 「復元
+         するものはありません」 has four causes now. www/store.js § storeWhyNone
+         is what puts it where a person can photograph it. */
+      done(planTook(p), d);
+    },
+    function(){ done('', null); });
 }
 
 /* ---- a language, which belongs to the account --------------------------
@@ -1492,10 +1413,10 @@ function netSlices(sid, ok, bad, kinds){
    insert into a table with a two-column primary key an upsert -- the phone
    does not have to know whether this slice has ever been up. */
 function netSlicePut(sid, kind, body, no, ok, bad){
-  /* Through netSend(), for the reason netPlanUp() gives just above: this is
-     the write a person's work actually goes up in, and it was the one outside
-     the token renewal. 「保存押せば起動されないの？」 -- it did not, and this
-     is the line that answers it. */
+  /* Through netSend(), like everything else here: this is the write a
+     person's work actually goes up in, and it used to open its own
+     XMLHttpRequest, outside the token renewal. 「保存押せば起動されないの？」
+     -- it did not, and this is the line that answers it. */
   netSend('POST', '/rest/v1/slice',
           {language:sid, kind:kind, body:String(body||''),
            no:(no||0)+1, at:(new Date()).toISOString()},

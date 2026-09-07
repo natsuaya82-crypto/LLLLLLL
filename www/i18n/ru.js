@@ -874,6 +874,7 @@ defLang('ru', (function(){
       "plan.date" : "{2}.{1}.{0}",
       "plan.cancel" : "Отменить подписку",
       "store.none" : "Восстанавливать нечего",
+      "store.nosess" : "Вы не вошли в аккаунт",
       "plan.price.free"   : "$0",
       "plan.price.pro.yr"   : "$99.99",
       "plan.per.yr"   : "/ год",

@@ -413,6 +413,83 @@ ON にすると、含まれている分を使い切った時点で**課金が増
   § 9 の関数です
 - **`language` `publication` `quote` は書かれていません。** テーブルとポリシー
   はありますが、アプリがまだ触っていません
+- **`plan` と `purchase` は API からは誰も書けません。** insert も update も
+  ポリシーがありません。それは意図で、書くのは § 8b の関数だけです
+
+---
+
+## 8b. 課金の検証 ── verify-plan（**schema.sql を流し直してから**）
+
+段（plus/pro）を決めるのはサーバーです。「だから端末でやるわけねえだろ」OWNER
+2026-09-03、「アカウントごとなんだから、違うアカウントで復元できるのおかしい
+だろ。検証して」OWNER 2026-09-06。
+
+**これをやるまで、誰にも段が付きません。**函数が置かれていないか、根の証明書
+が入っていないと、端末が受領書を送っても答えが返らず、みんな free のままです。
+free の側に間違えるのが、間違えてよい側なので、そういう作りにしてあります。
+
+### 8b-1. schema.sql を流し直す
+
+Dashboard → SQL Editor に `supabase/schema.sql` を**丸ごと**貼って実行します。
+何度流しても同じです（そう書いてあります）。この回で変わるのは三つ:
+
+- `purchase` 表が出来ます（取引が誰のものか）
+- `plan_make` と `plan_edit` が**落ちます** ── 端末が自分の段を書けた道
+- `purchase_read` が付きます（本人が読むだけ）
+
+### 8b-2. Apple のルート証明書を預ける
+
+Apple の公開証明書で、秘密ではありません。**repo には置いていません** ──
+値を間違えると実機の受領書が一つも通らず、しかも何も投げないので、
+「人が一度だけ入れる値」にしてあります。
+
+1. https://www.apple.com/certificateauthority/ から **Apple Root CA - G3** の
+   `.cer` を落とす（`AppleRootCA-G3.cer`）
+2. ターミナルで base64 の一行にする:
+
+```
+base64 -i AppleRootCA-G3.cer | tr -d '\n'
+```
+
+3. Dashboard → Project Settings → Edge Functions → **Secrets** で
+
+| 名前 | 中身 |
+|---|---|
+| `APPLE_ROOT_CA_G3` | 2 で出た一行 |
+
+`SUPABASE_URL` `SUPABASE_ANON_KEY` `SUPABASE_SERVICE_ROLE_KEY` は Supabase が
+函数に自動で持たせるので、入れる必要はありません。
+
+Apple が根を更新する日が来たら、**カンマで区切って二つ書けます**（古いものと
+新しいものが並ぶ期間のため）。repo を触る必要はありません。
+
+### 8b-3. 関数を置く
+
+パソコンのターミナルで、このリポジトリの中で:
+
+```
+npx supabase login
+npx supabase link --project-ref <あなたのプロジェクトの ref>
+npx supabase functions deploy verify-plan
+```
+
+### 8b-4. 確かめる
+
+セッションからは実機の受領書が作れないので、ここで確かめられるのは**断ること**
+だけです。それでも意味があります ── 誰でも通ってしまう状態がいちばん危ないので。
+
+```
+curl -X POST "https://<ref>.supabase.co/functions/v1/verify-plan" \
+  -H "Content-Type: application/json" -d '{"jws":[]}'
+```
+
+| 返り | 意味 |
+|---|---|
+| `401 {"why":"no session"}` | 正しい。サインインしていない人には何も答えません |
+| `500 {"why":"APPLE_ROOT_CA_G3 is not set"}` | 8b-2 がまだです |
+
+**残りは実機です。**サンドボックスで ①買う ②同じアカウントで復元して付く
+③別のアカウントで復元して**付かない**、の三つ。これは電話でしか答えが出ません。
 
 ---
 

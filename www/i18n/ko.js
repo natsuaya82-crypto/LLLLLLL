@@ -1036,6 +1036,7 @@ defLang('ko', (function(){
       "plan.date" : "{0}. {1}. {2}.",
       "plan.cancel" : "구독 해지",
       "store.none" : "복원할 구매가 없습니다",
+      "store.nosess" : "로그인되어 있지 않습니다",
       "plan.price.free"  : "$0",
       "plan.price.pro.yr"  : "$99.99",
       "plan.per.yr"  : "／년",

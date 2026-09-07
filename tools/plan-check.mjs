@@ -534,28 +534,63 @@ const r = await pg.evaluate(({ s }) => {
     return storeId(p, false) + ' ' + storeId(p, true);
   }).join(' ');
 
-  /* And nothing in www/ writes the plan to the Keychain on the way back from
-     a purchase: LinguaStore.swift already did, and a second writer is a
-     second answer to what plan this is. */
-  var kept = 0, realKeep = window.planKeep;
-  window.planKeep = function(){ kept++; };
-  storeTook({ plan: 'plus' });
-  out.tookNoKeychain = kept === 0;
+  /* ONE PLACE WRITES THE PLAN DOWN, and since 2026-09-06 it is this side.
+     planTook() is it: SET, the Keychain, capLapse() and a redraw, together,
+     whichever road the word came from. LinguaStore.swift used to write the
+     Keychain as well, which was two answers to 「what plan is this」; it
+     writes nothing now. */
+  var kept = [], realKeep = window.planKeep;
+  window.planKeep = function(p){ kept.push(p); };
+  planTook('plus');
+  out.tookKeeps = kept.join(',');
   out.tookTakesAnswer = plan() === 'plus';
+
+  /* AND IT MAY GO DOWN, which is the change of 2026-09-06 and is the
+     opposite of what this check used to hold. The old rule -- never lower --
+     was there because the word came from the PHONE, and a phone answers
+     `free` for 「the entitlement list gave me nothing」 as readily as for
+     「owns nothing」. That cost the owner Pro twice.
+
+     The word comes from the server now, worked out from every transaction it
+     has ever verified for this account and stored (supabase/schema.sql §
+     purchase). `free` there means every one of them has run out or been
+     refunded -- which is a lapse, and a lapse has to be able to land. */
+  SET.plan = 'pro'; save();
+  planTook('free');
+  out.tookLowers = plan();
+
+  /* A WORD NOBODY SELLS IS NOT A PLAN. The one thing between a typo on the
+     server and every door in CAN swinging open is this line. */
+  SET.plan = 'pro'; save();
+  planTook('studio');
+  out.tookRefusesJunk = plan();
   window.planKeep = realKeep;
 
-  /* AND IT ONLY GOES UP. An answer of `free` arriving while a paid plan is on
-     is not a person who owns nothing -- currentEntitlements comes back empty
-     for an account that IS paying, routinely, on TestFlight and in the
-     sandbox. The owner pressed Restore, was told there was nothing to
-     restore, and lost Pro:「復元するものはありませんって出るけどさ、さっきまで
-     プロだったんだけど消えたってこと？」OWNER 2026-09-02. */
+  /* AND AN ANSWER THAT NEVER ARRIVED WRITES NOTHING. That is where the old
+     rule went: it is netPlanVerify()'s failing half rather than a rule about
+     which direction a plan may move. A purchase that went through and a
+     server that could not be reached is a phone with money spent on it, and
+     `free` written there is the fault that cost the owner their plan.
+     「今課金したのに（仮）フリーになりましたって出たんだけど」 OWNER
+     2026-09-01. */
   SET.plan = 'pro'; save();
-  storeTook({ plan: 'free' });
-  out.tookNoDrop = plan();
-  SET.plan = 'free'; save();
-  storeTook({ plan: 'pro' });
-  out.tookStillRaises = plan();
+  var realSend = window.netSend, saidTo = '';
+  window.netSend = function(m, path, body, tok, ok, bad){
+    saidTo = path;
+    bad(null, 0, 'no signal');
+  };
+  netPlanVerify(['whatever'], function(p){ out.verifySaidNothing = (p === ''); });
+  out.verifyKeptPlan = plan();
+  /* And an answer with no plan word in it is the same state, not `free`. */
+  window.netSend = function(m, path, body, tok, ok){ ok({ took: 0 }); };
+  netPlanVerify([], function(){});
+  out.verifyKeptPlan2 = plan();
+  /* And the road it takes is the function, not the table. */
+  window.netSend = function(m, path, body, tok, ok){ ok({ plan: 'plus' }); };
+  netPlanVerify([], function(){});
+  out.verifyRoad = saidTo;
+  out.verifyTook = plan();
+  window.netSend = realSend;
 
   SET.plan = 'free'; save();
 
@@ -734,12 +769,14 @@ const r = await pg.evaluate(({ s }) => {
    so the saving works out to 33 rather than the 17 written on PLANS, because
    17 appearing would prove nothing about where it came from.               */
 const st = await pg.evaluate(async () => {
-  var out = {};
+  var out = {}, realVerify = window.netPlanVerify;
+  /* What this ACCOUNT holds, which the screen waits for before it draws
+     anything (2026-09-03). The receipts come from the phone and the plan from
+     the server (2026-09-06), so both halves are answered here -- `free`, so
+     that the rest of this block is about prices, which is what it is about. */
+  window.netPlanVerify = function(list, then){ then('free', { plan:'free' }); };
   window.Capacitor = { nativePromise: function(plug, m){
-    /* What this Apple ID holds, which the screen now waits for before it
-       draws anything (2026-09-03). Answered `free` so the rest of this block
-       is about prices, which is what it is about. */
-    if (m === 'current') return Promise.resolve({ plan: 'free' });
+    if (m === 'current') return Promise.resolve({ jws: [] });
     if (m !== 'products') return Promise.reject(new Error('not this one'));
     return Promise.resolve({ products: [
       /* `year` is twelve of the monthly one, formatted by the App Store and
@@ -815,6 +852,7 @@ const st = await pg.evaluate(async () => {
   out.dearOff = storeOff('pro');               /* a year that costs MORE */
 
   delete window.Capacitor;
+  window.netPlanVerify = realVerify;
   STORE_P = null; STORE_ASK = false;
   return out;
 });
@@ -899,12 +937,16 @@ const nul = await pg.evaluate(async () => {
    place, and a screen where the only thing that ever changes is an absence
    is a screen no check can tell apart from a screen that has broken.
 
-   The date is StoreKit's, so it needs a fake App Store: in a browser there is
-   nothing to ask and there is never a date, which is exactly the state the
-   last two claims here are about. `current` is the one call that carries it --
-   restore and manage answer no `until` at all.                            */
+   The date is the SERVER's since 2026-09-06 -- `decidePlan()` in
+   supabase/functions/verify-plan/verify.mjs works it out from the same
+   transactions the plan is worked out from, so it arrives with the plan on
+   every road rather than on `current` alone. This needs a fake App Store to
+   hand over receipts and a fake answer to come back; in a browser there is
+   neither, and there is never a date, which is exactly the state the last two
+   claims here are about.                                                  */
 const nowl = await pg.evaluate(async () => {
   var out = {}, hold = route, at = Date.UTC(2026, 9, 4, 12, 0, 0), give = null;
+  var realVerify = window.netPlanVerify;
   route = 'plans'; NAV = [{ r: 'plans' }];
   out.lang = uiLang();
   function tick(){ return new Promise(function (r) { setTimeout(r, 0); }); }
@@ -912,16 +954,27 @@ const nowl = await pg.evaluate(async () => {
     STORE_CUR = false; STORE_GOT = false; STORE_UNTIL = null;
     STORE_P = null; STORE_ASK = false; STORE_BAD = '';
   }
-  function apple(ans){
+  /* The phone hands over receipts; the server answers with the plan and the
+     date. Both halves are stubbed because both are outside this check: what
+     the signature says is tools/verify-check.mjs's, and what the screen does
+     with the answer is this file's. */
+  function apple(p, until){
     window.Capacitor = { nativePromise: function (plug, m) {
-      if (m === 'current') return ans();
+      if (m === 'current') return Promise.resolve({ jws: ['J1'] });
       if (m === 'products') return Promise.resolve({ products: [] });
       return Promise.reject(new Error('not this one'));
     } };
+    window.netPlanVerify = function (list, then) {
+      setTimeout(function () {
+        var d = { plan: p };
+        if (until) d.until = until;
+        then(planTook(p), d);
+      }, 0);
+    };
   }
 
   /* ---- A. Apple has answered, with a date ----------------------------- */
-  apple(function () { return Promise.resolve({ plan: 'pro', until: at }); });
+  apple('pro', at);
   reset();
   SET.plan = 'free'; save();
   PLPICK = { id: 'pro', yr: false };
@@ -958,7 +1011,7 @@ const nowl = await pg.evaluate(async () => {
   out.upNoLine = up.indexOf('10/04/2026') === -1;
 
   /* ---- D. Apple answered and gave no date ----------------------------- */
-  apple(function () { return Promise.resolve({ plan: 'pro' }); });
+  apple('pro', 0);
   reset();
   SET.plan = 'free'; save();
   PLPICK = { id: 'pro', yr: false };
@@ -983,6 +1036,7 @@ const nowl = await pg.evaluate(async () => {
   out.movedNoDate = vPlans().indexOf('10/04/2026') === -1;
 
   delete window.Capacitor;
+  window.netPlanVerify = realVerify;
   reset();
   PLPICK = null; SET.plan = 'free'; save();
   route = hold; NAV = [{ r: hold }];
@@ -991,10 +1045,10 @@ const nowl = await pg.evaluate(async () => {
 
 /* ---- and the sentence after a purchase names what was PRESSED -----------
    「plus で課金しても pro になりましたって出る」 OWNER 2026-09-02, on a real
-   phone. `r.plan` is the best of everything this Apple ID holds -- which is
-   what a plan IS, and is the wrong thing to say to somebody who just pressed
-   Plus. LinguaStore.swift answers the signed transaction's own plan beside it
-   now, and that is the one the words use.
+   phone. What comes back from the server is the best of everything this
+   ACCOUNT holds -- which is what a plan IS, and is the wrong thing to say to
+   somebody who just pressed Plus. LinguaStore.swift answers the signed
+   transaction's own product id beside it, and that is the one the words use.
 
    The two come apart whenever a better entitlement is already live, and that
    is the state a phone is actually in today: Plus and Pro sit in two
@@ -1006,35 +1060,54 @@ const nowl = await pg.evaluate(async () => {
    「say the lower one」 is one careless line away from 「write the lower one
    down」, which is the bug this whole file exists after.                  */
 const buy = await pg.evaluate(async () => {
-  var out = {}, said = [], realToast = window.toast, answer = null;
+  var out = {}, said = [], realToast = window.toast, answer = null, srv = 'free';
+  var realVerify = window.netPlanVerify;
   window.toast = function (m) { said.push(m); };
   window.Capacitor = { nativePromise: function (plug, m) {
     if (m !== 'buy') return Promise.reject(new Error('not this one'));
     return Promise.resolve(answer);
   } };
-  async function press(a, had) {
-    answer = a; said = [];
+  /* The server's answer, stubbed. WHAT it decides is held by
+     tools/verify-check.mjs against a real signature; what the WORDS do with
+     it is this file's, and stubbing the road is what keeps the two apart. */
+  window.netPlanVerify = function (list, then) {
+    out.sentJws = (list || []).join(',');
+    then(planTook(srv));
+  };
+  async function press(a, had, says) {
+    answer = a; said = []; srv = says;
     SET.plan = had; save();
     storeBuy('com.tokinets.lingua.plus.monthly');
     await new Promise(function (r) { setTimeout(r, 0); });
     return { last: said[said.length - 1], rung: plan() };
   }
 
-  /* Plus was pressed; Pro is already live in the other group. */
-  var a = await press({ how: 'bought', plan: 'pro', bought: 'plus' }, 'free');
+  /* Plus was pressed; Pro is already live in the other group, so the account
+     comes back Pro. */
+  var a = await press({ how: 'bought', bought: 'com.tokinets.lingua.plus.monthly',
+                        jws: ['J1'] }, 'free', 'pro');
   out.saidPlus = a.last; out.rungPro = a.rung;
   /* The plain case, where the two agree and nothing about this is visible. */
-  var b = await press({ how: 'bought', plan: 'plus', bought: 'plus' }, 'free');
+  var b = await press({ how: 'bought', bought: 'com.tokinets.lingua.plus.monthly',
+                        jws: ['J1'] }, 'free', 'plus');
   out.plainSaid = b.last; out.plainRung = b.rung;
   /* A phone carrying a native side older than this answers no `bought`. The
-     ANSWER is still nearer what was pressed than the best rung on the
-     account, which is what plan() would have been. */
-  var c = await press({ how: 'bought', plan: 'plus' }, 'pro');
+     server's answer is what is left to name. */
+  var c = await press({ how: 'bought', jws: ['J1'] }, 'free', 'plus');
   out.oldSaid = c.last; out.oldRung = c.rung;
+  /* AND WHAT WENT UP IS THE RECEIPT, untouched. A purchase that sent a plan
+     word instead is the road of 2026-09-06 growing back. */
+  out.sentIsReceipt = out.sentJws === 'J1';
+  /* Cancelling says nothing at all, and asks the server nothing either. */
+  out.sentJws = '';
+  var d = await press({ how: 'cancelled', jws: ['J1'] }, 'plus', 'free');
+  out.cancelSaid = d.last; out.cancelRung = d.rung; out.cancelQuiet = out.sentJws === '';
 
   out.plus = t('toast.plan.other', 'Plus');
   out.pro  = t('toast.plan.other', 'Pro');
+  out.wait = t('store.wait');
   window.toast = realToast;
+  window.netPlanVerify = realVerify;
   delete window.Capacitor;
   SET.plan = 'free'; save();
   return out;
@@ -1076,21 +1149,26 @@ for (const c of [
   KEY.push(await kp.evaluate((n) => ({ n: n, plan: plan(), wrote: window.__wrote.slice() }), c.n));
   await kp.close();
 }
-/* ---- the cancellation that came back, and the ORDER that brought it back --
-   「プランは絶対におかしくしちゃいけないんだって」 OWNER 2026-09-02.
+/* ---- the launch, and where the plan comes from at boot -------------------
+   「プランは絶対におかしくしちゃいけないんだって」 OWNER 2026-09-02,
+   「だから端末でやるわけねえだろ」 OWNER 2026-09-03.
 
-   A subscription was cancelled, Apple said so through Transaction.updates,
-   the Keychain was written `free` -- and the next launch put the paid plan
-   back, on the device and in the Keychain, for good.
+   This section was written after a cancellation came BACK: Apple said the
+   subscription had ended, the Keychain was written `free`, and the next
+   launch put the paid plan back on the device and in the Keychain, for good.
+   The fault was an ORDER -- a send that said 「it ended」 racing a read that
+   took the higher of two rungs, and the read winning.
 
-   Nothing above could see it, because nothing above is a LAUNCH. Every claim
-   in this file drives the app after boot has finished; this one is about what
-   boot does and in what order, and the order is the whole fault:
+   Since 2026-09-06 there is no race, because there are not two things. The
+   phone holds no opinion about what it has paid for: `storeSync()` sends the
+   receipts and the server answers with the plan. What is measured here is
+   that the launch takes that answer, that a launch with no signal takes
+   nothing and loses nothing, and that no launch touches the `plan` table at
+   all.
 
-     www/boot.js  netResume()  is asynchronous and has not come back
-                  capLapse()   is synchronous and runs here, sending `free`
-                  bootSession() then reads the server, which still says `pro`,
-                  takes the higher rung, and writes `pro` back down
+   Nothing above could see any of it, because nothing above is a LAUNCH.
+   Every claim in this file drives the app after boot has finished; this one
+   is about what boot does.
 
    WHAT IS STUBBED IS XMLHttpRequest, and only that -- the same shape
    tools/token-check.mjs uses, for the same reason: netSend()'s renewal, the
@@ -1099,14 +1177,9 @@ for (const c of [
    addInitScript rather than after the page has loaded, because what is being
    measured happened before the first frame.
 
-   The server is a `plan` row that REMEMBERS: a POST moves it, a GET answers
-   with whatever it holds. That is the whole of why the bug exists -- the read
-   and the write are the same row and the app did them in the wrong order --
-   and a stub that answered a constant would agree with either order.
-
-   Three reds were watched before any of this was believed, with the fault
-   still in the code: the plan came back `pro`, the Keychain was written
-   `pro`, and the row on the server stayed `pro`. */
+   The server is a function that ANSWERS and a `plan` table that is watched:
+   the answer is whatever `__srv` holds, and the table is counted so that a
+   launch reaching for it fails here. */
 const BOOTWIRE = `
   (function(){
     function srv(v){
@@ -1115,6 +1188,7 @@ const BOOTWIRE = `
     }
     window.__srv = srv;
     window.__read = undefined;
+    window.__sent = undefined;
     window.__X = { sent:[] };
     function FakeX(){ this.h={}; this.readyState=0; this.status=0; this.responseText=''; }
     FakeX.prototype.open = function(m,u){ this.m=m; this.u=u; };
@@ -1132,18 +1206,14 @@ const BOOTWIRE = `
         } else if(rec.tok==='Bearer OLD'){
           /* the hour ran out while the app was shut */
           st=401; out='null';
-        } else if(rec.u.indexOf('/rest/v1/plan')>=0){
-          if(rec.m==='POST'){
-            try{ p=JSON.parse(rec.body||'null'); }catch(e){}
-            if(p && p.plan) srv(p.plan);
-          } else {
-            /* WHAT THE READ WAS ANSWERED WITH, kept: that is the ordering
-               itself. A launch that reads the account before it has sent
-               what it is holding is answered with the plan Apple has already
-               ended, and the higher rung then wins for the wrong reason. */
-            out=JSON.stringify([{ plan:srv() }]);
-            if(window.__read===undefined) window.__read=srv();
-          }
+        } else if(rec.u.indexOf('/functions/v1/verify-plan')>=0){
+          /* WHAT WENT UP AND WHAT CAME BACK. The body is kept because a plan
+             word going up is the road of 2026-09-06 growing back, and the
+             answer is kept because taking it is the whole claim. */
+          try{ p=JSON.parse(rec.body||'null'); }catch(e){}
+          if(window.__sent===undefined) window.__sent=String(rec.body||'');
+          out=JSON.stringify({ plan:srv(), until:0, took:0, left:[] });
+          if(window.__read===undefined) window.__read=srv();
         }
         self.readyState=4; self.status=st; self.responseText=out;
         if(self.onreadystatechange) self.onreadystatechange();
@@ -1191,27 +1261,27 @@ async function boot(page, seed){
   await page.waitForTimeout(700);
   return page.evaluate(() => ({
     plan: plan(),
-    pend: SET.planPend || '',
     was: SET.planWas || '',
     srv: window.__srv(),
     read: window.__read === undefined ? '' : window.__read,
+    sent: window.__sent === undefined ? '' : window.__sent,
     wrote: window.__wrote.slice(),
-    gets: window.__X.sent.filter(function(r){
-      return r.m === 'GET' && r.u.indexOf('/rest/v1/plan') >= 0; }).length,
-    posts: window.__X.sent.filter(function(r){
-      return r.m === 'POST' && r.u.indexOf('/rest/v1/plan') >= 0; }).length
+    /* Every touch of the plan TABLE, in either direction. Zero is the claim. */
+    table: window.__X.sent.filter(function(r){
+      return r.u.indexOf('/rest/v1/plan') >= 0; }).length,
+    asks: window.__X.sent.filter(function(r){
+      return r.u.indexOf('/functions/v1/verify-plan') >= 0; }).length
   }));
 }
 
 const p1 = await br.newPage({ viewport:{ width:390, height:844 } });
-const LAPSE = await boot(p1, { had:'free', was:'pro', srv:'pro' });
+const LAPSE = await boot(p1, { had:'free', was:'pro', srv:'free' });
 await p1.close();
 
-/* The same launch with no signal at all, and then the launch after it. The
-   401 half repairs itself now that netPlanUp() is on netSend(); this half
-   cannot, because nothing was refused -- nothing arrived. It is the launch
-   somebody opens in a tunnel, and the only thing that can carry the
-   cancellation to the next one is the phone remembering it. */
+/* The same launch with no signal at all, and then the launch after it. There
+   is nothing for the phone to remember between the two: it was not holding a
+   plan to send, it was asking. So the tunnel costs the ANSWER and nothing
+   else, and the launch after it asks again. */
 const p2 = await br.newPage({ viewport:{ width:390, height:844 } });
 const OFF = await boot(p2, { had:'free', was:'pro', srv:'pro', off:true });
 await p2.evaluate(() => localStorage.removeItem('__off'));
@@ -1219,16 +1289,15 @@ await p2.reload();
 await p2.waitForFunction(() => typeof window.plan === 'function');
 await p2.waitForTimeout(700);
 const BACK = await p2.evaluate(() => ({
-  plan: plan(), pend: SET.planPend || '', srv: window.__srv(),
+  plan: plan(), srv: window.__srv(), read: window.__read === undefined ? '' : window.__read,
   wrote: window.__wrote.slice()
 }));
 await p2.close();
 
 /* And the other direction, which is the one that must NOT change: a plan
-   bought on another phone still arrives here. This is netPlanSync()'s whole
-   reason and the rule the fix above may not touch -- 「段が二つ見えたときの
-   答えは上の段」. Nothing is pending on this phone, so the launch is the
-   launch it always was. */
+   bought on another phone still arrives here. It is the same one road -- the
+   server answers for the ACCOUNT, so a receipt verified on another handset is
+   already in the answer. */
 const p3 = await br.newPage({ viewport:{ width:390, height:844 } });
 const UP = await boot(p3, { had:'free', was:'free', srv:'pro' });
 await p3.close();
@@ -1403,13 +1472,18 @@ say(r.byHand && r.byHandBack, 'so the plans screen still sets the plan by hand t
 say(r.ids === 'com.tokinets.lingua.plus.monthly com.tokinets.lingua.plus.yearly ' +
              'com.tokinets.lingua.pro.monthly com.tokinets.lingua.pro.yearly',
     'the four product ids are the four LinguaStore.swift sells (' + r.ids + ')');
-say(r.tookNoKeychain, 'what comes back from a purchase is not written to the Keychain twice');
+say(r.tookKeeps === 'plus', 'one place writes the plan down, and the Keychain is part of it');
 say(r.tookTakesAnswer, 'and the plan is taken from the ANSWER, not from what was asked for');
-say(r.tookNoDrop === 'pro',
-    'and the app side never lowers it — an answer of `free` arriving on a ' +
-    'paid plan leaves the plan alone (' + r.tookNoDrop + ')');
-say(r.tookStillRaises === 'pro',
-    'while an answer ABOVE what is held is still taken (' + r.tookStillRaises + ')');
+say(r.tookLowers === 'free',
+    'a lapse can land — the server is what says `free` now (' + r.tookLowers + ')');
+say(r.tookRefusesJunk === 'free',
+    'and a word nobody sells is not a plan (' + r.tookRefusesJunk + ')');
+say(r.verifySaidNothing && r.verifyKeptPlan === 'pro',
+    'a verify that never came back writes nothing (' + r.verifyKeptPlan + ')');
+say(r.verifyKeptPlan2 === 'pro',
+    'and an answer with no plan word in it is not `free` (' + r.verifyKeptPlan2 + ')');
+say(r.verifyRoad === '/functions/v1/verify-plan' && r.verifyTook === 'plus',
+    'the plan comes back from the function and nothing writes the table (' + r.verifyRoad + ')');
 
 say(st.asked && st.twice, 'the App Store is asked once and remembered');
 /* THE SCREEN WAITS INSTEAD OF DRAWING A PRICE LIST IT WILL CORRECT.
@@ -1508,9 +1582,15 @@ say(buy.rungPro === 'pro',
 say(buy.plainSaid === buy.plus && buy.plainRung === 'plus',
     'and where the two agree, nothing about this is visible (' +
     buy.plainSaid + ')');
-say(buy.oldSaid === buy.plus && buy.oldRung === 'pro',
-    'a phone whose native side answers no `bought` falls back to the ANSWER ' +
-    'and never to the rung on the account (' + buy.oldSaid + ')');
+say(buy.oldSaid === buy.plus && buy.oldRung === 'plus',
+    'a phone whose native side answers no `bought` falls back to what the ' +
+    'server answered (' + buy.oldSaid + ')');
+say(buy.sentIsReceipt,
+    'and what went up is the RECEIPT and nothing else — a plan word going up ' +
+    'is the road of 2026-09-06 growing back');
+say(buy.cancelSaid === buy.wait && buy.cancelRung === 'plus' && buy.cancelQuiet,
+    'cancelling says nothing, asks nothing and moves nothing (' +
+    buy.cancelRung + ')');
 
 const K = {}; KEY.forEach(function (r) { K[r.n] = r; });
 say(K['unreadable'].wrote.length === 0,
@@ -1535,122 +1615,78 @@ say(K['holds pro'].plan === 'pro',
     'and a Keychain that holds a plan is the one that decides, over the ' +
     'settings (' + K['holds pro'].plan + ')');
 
-/* ---- the plan may not go DOWN on an answer that never came ---------------
-   「プランは絶対におかしくしちゃいけないんだって」 OWNER 2026-09-02.
+/* ---- and the phone decides nothing about what it has paid for -----------
+   「だから端末でやるわけねえだろ」 OWNER 2026-09-03,
+   「アカウントごとなんだから、違うアカウントで復元できるのおかしいだろ。
+     検証して」 OWNER 2026-09-06.
 
-   The Keychain half is above and is driven for real. This half is the App
-   Store's, and it is READ rather than run: Swift does not compile on a Linux
-   runner and `npm test` reads no `.swift` at all -- which is exactly why the
-   rule was, for one commit, held by nobody but somebody reading it. That is
-   the third kind of rule CLAUDE.md forbids: written as if something stopped
-   it, when nothing did.
+   READ rather than run: Swift does not compile on a Linux runner and
+   `npm test` reads no `.swift` at all. A reading cannot say what the file
+   DOES on a real receipt; it can say what is in it, and here that is nearly
+   the whole rule, because the rule is an absence.
 
-   What a reading CAN hold is the shape, and the shape is the whole rule.
-   `entitledPlan()` answers `free` for 「has nothing」 and for 「the list gave
-   me nothing」 alike, so `writeDown()` may only lower the plan where Apple
-   positively said so. ONE road may: the `Transaction.updates` listener. Every
-   other caller may raise it and may not lower it.
+   Until 2026-09-06 this section held a rule about WHICH ROAD may lower the
+   plan -- `writeDown(mayLower:)`, the `Transaction.updates` listener, a
+   comparison against the Keychain. Every one of those existed because the
+   PHONE worked the plan out, and a phone answers `free` for 「the entitlement
+   list gave me nothing」 as readily as for 「owns nothing」. None of them is
+   there any more. The plan comes from supabase/functions/verify-plan, which
+   reads Apple's signature, so the question 「may this road lower it」 has no
+   roads left to be about.
 
-   And not even that road lowers it on everything that arrives. A renewal
-   arrives there too, and re-reading the entitlement list with permission to
-   lower took the plan away on the day it was paid for. So no call site passes
-   a bare `true` at all: the listener asks what ARRIVED -- revoked, or an
-   expiry behind us -- and hands that answer in.
-
-   Read off the SOURCE and not written down here: the allowed three are named,
-   and every other call site is found rather than listed, so a fourth road
-   added tomorrow fails here on the day it is added. */
+   What is held instead is that the phone HAS no opinion: not one plan word in
+   the file, and nothing written down on this side of the bridge. */
 const IOS = path.join(dir, '..', 'ios', 'App', 'App');
 const STORE = fs.readFileSync(path.join(IOS, 'LinguaStore.swift'), 'utf8');
 const KEYC = fs.readFileSync(path.join(IOS, 'LinguaPlan.swift'), 'utf8');
-/* Which Swift function a line is inside: the nearest `func` above it. */
-function funcAt(src, idx){
-  const head = src.slice(0, idx);
-  const m = head.match(/func\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(/g);
-  if (!m) return '';
-  const last = m[m.length - 1];
-  return /func\s+([A-Za-z_][A-Za-z0-9_]*)/.exec(last)[1];
-}
-/* ONE road, and it is Apple pushing a change at us. `restore` and `manage`
-   were on this list for a morning: both end in reading currentEntitlements,
-   and an empty list there is 「Apple told me nothing」 as often as it is
-   「this person owns nothing」 -- routinely so on TestFlight and in the
-   sandbox, for an account that is paying. It cost the owner their plan on
-   the build that had it. 「復元するものはありませんって出るけどさ、さっきまで
-   プロだったんだけど消えたってこと？」OWNER 2026-09-02. */
-const MAY_LOWER = ['load'];
-const calls = [];
-{
-  const re = /writeDown\s*\(([^)]*)\)/g;
-  let m;
-  while ((m = re.exec(STORE))){
-    /* Its own declaration is not a call, and neither is the line inside it
-       that names it. funcAt() answers the nearest `func` ABOVE, so a mention
-       inside writeDown itself comes back as `writeDown` -- and `entitledPlan`
-       turned up in this list because the declaration line matched before the
-       skip did. Both are the function talking about itself. */
-    /* THE DECLARATION IS NOT A CALL. funcAt() answers the nearest `func`
-       ABOVE, so `private func writeDown(...)` itself comes back as whatever
-       function happens to sit above it -- which was `entitledPlan` when this
-       list was written and became `entitledSeen` the day one was split out of
-       the other. Naming the neighbour was always the wrong test: what has to
-       be skipped is the line that DECLARES it, whoever it is under. */
-    if (/^\s*(private\s+|static\s+)*func\s*$/.test(
-          STORE.slice(Math.max(0, m.index - 40), m.index).split('\n').pop() + ' ')
-        || /func\s+$/.test(STORE.slice(Math.max(0, m.index - 20), m.index))) continue;
-    const f = funcAt(STORE, m.index);
-    if (f === 'writeDown') continue;
-    /* Three states and not two. `mayLower:` absent or `false` is a road that
-       never lowers; a bare `true` lowers whatever arrived; anything else is a
-       road that lowers only when what it hands in says so. */
-    const arg = m[1];
-    calls.push({ inside: f,
-                 lower: /mayLower\s*:/.test(arg) && !/mayLower\s*:\s*false/.test(arg),
-                 always: /mayLower\s*:\s*true/.test(arg) });
-  }
-}
-const lowered = calls.filter(c => c.lower).map(c => c.inside).sort();
-const raised  = calls.filter(c => !c.lower).map(c => c.inside).sort();
-say(calls.length >= 4,
-    'every road that writes the plan down is found in LinguaStore.swift (' +
-    calls.length + ')');
-say(lowered.every(f => MAY_LOWER.indexOf(f) >= 0),
-    'and only the one road where Apple positively said so may LOWER it — the ' +
-    'Transaction.updates listener, and nothing else (' + JSON.stringify(lowered) + ')');
-say(raised.length > 0 && raised.every(f => MAY_LOWER.indexOf(f) < 0),
-    'while every other road may raise it and may not lower it (' +
-    JSON.stringify(raised) + ')');
-const always = calls.filter(c => c.always).map(c => c.inside).sort();
-say(always.length === 0,
-    'and not even that road lowers it on EVERYTHING that arrives — no call ' +
-    'site passes a bare `true`, because a renewal arrives at the listener too ' +
-    '(' + JSON.stringify(always) + ')');
-say(/writeDown\(mayLower:\s*Self\.ended\(t\)\)/.test(STORE) &&
-    /func ended\(_ t: Transaction\)\s*->\s*Bool/.test(STORE) &&
-    /revocationDate/.test(STORE) && /expirationDate/.test(STORE) &&
-    /isUpgraded/.test(STORE),
-    'it asks what ARRIVED instead — revoked, or an expiry behind us, and an ' +
-    'upgrade is neither (READ off the source: no Swift on this runner, so ' +
-    'what it DOES on a real receipt is not measured here)');
-say(/if\s*!mayLower/.test(STORE) && /best\(seen,\s*held\)\s*!=\s*seen/.test(STORE),
-    'and the guard is a comparison with what the Keychain HOLDS, not a flag ' +
-    'on its own');
-say(/st\s*==\s*errSecSuccess/.test(STORE),
-    'and only a Keychain that ANSWERED gets a vote — a read that failed says ' +
-    'nothing about what is there');
-/* Not getting a vote was only half of it. The other half fell through to the
-   write, and what it wrote was `free` whenever the entitlement list gave
-   nothing. Read, not run: this only says the line is in the source. */
-say(/st\s*!=\s*errSecSuccess\s*&&\s*st\s*!=\s*errSecItemNotFound/.test(STORE),
-    'and a read that FAILED is not written over either — the same line ' +
-    'LinguaPlan.inject() draws, with 「there is nothing there」 the one other ' +
-    'status that counts as an answer');
-/* And the Keychain's own half, which the browser above cannot see either:
-   the value and the status are two facts, and the injection carries both. */
+/* Comments say the words on purpose -- this change is written down in them --
+   so it is the CODE that is asked. */
+const CODE = STORE.replace(/\/\*[\s\S]*?\*\//g, ' ')
+                  .split('\n').filter((l) => !/^\s*\/\//.test(l)).join('\n');
+const WORDS = (CODE.match(/"(free|plus|pro)"/g) || []);
+say(WORDS.length === 0,
+    'LinguaStore.swift names no plan at all — deciding one is the server\u2019s ' +
+    '(' + JSON.stringify(WORDS) + ')');
+say(!/LinguaPlanPlugin\.set/.test(CODE) && !/writeDown/.test(CODE),
+    'and it writes nothing down: one place holds the plan and it is www\u2019s ' +
+    'planTook()');
+say(!/func best\(/.test(CODE) && !/entitledPlan/.test(CODE),
+    'the ladder and the walk that used to pick a rung here are gone, not ' +
+    'narrowed');
+/* What it DOES answer, on every road out. Four roads and one shape: a list of
+   what Apple signed, which is the only thing the server can read. */
+const ROADS = ['buy', 'restore', 'current', 'manage'];
+const answers = ROADS.filter((f) => new RegExp('func ' + f + '\\(').test(CODE));
+say(answers.length === ROADS.length,
+    'the four roads out are still there (' + answers.join(' ') + ')');
+say(/out\["jws"\] = jws/.test(CODE) && /"jws": r\.jws/.test(CODE),
+    'and every one of them answers jwsRepresentation — what Apple signed, ' +
+    'not what the phone thinks it is worth');
+say(/jwsRepresentation/.test(CODE) && !/case \.unverified: return nil/.test(CODE),
+    'a receipt the DEVICE could not verify goes up too — the server reads the ' +
+    'same signature, and dropping it here was the weaker of two answers ' +
+    'winning');
+/* The binding, which is the owner's sentence of 2026-09-06 in one line of
+   Swift. Both halves: the token goes on, and a buy with no account is
+   refused rather than made without one. */
+say(/\.appAccountToken\(who\)/.test(CODE),
+    'a purchase carries the account that made it — appAccountToken, which ' +
+    'Apple signs into every transaction of that subscription');
+say(/UUID\(uuidString: uid\)/.test(CODE) && /call\.reject\("not signed in"\)/.test(CODE),
+    'and a buy with no account on it is refused, not made anyway — a ' +
+    'purchase with no token belongs to whoever verifies it first');
+/* And a refund, which is the one thing `currentEntitlements` will not carry:
+   it arrives at the listener and has to be kept until somebody asks. */
+say(/Transaction\.updates/.test(CODE) && /held\.add\(result\.jwsRepresentation\)/.test(CODE),
+    'what arrives with nobody in the app is KEPT — a refund reaches the ' +
+    'server no other way');
+/* The Keychain's own half, which the browser above cannot see either: the
+   value and the status are two facts, and the injection carries both. It is
+   unchanged -- what changed is who WRITES it. */
 say(/func readPlan\(\)\s*->\s*\(String,\s*OSStatus\)/.test(KEYC),
     'LinguaPlan.readPlan() answers the plan AND whether the Keychain answered');
 say(/window\.__planok=/.test(KEYC) && /errSecItemNotFound/.test(KEYC),
-    'and the injection carries that, with 「there is nothing there」 counted ' +
+    'and the injection carries that, with \u300cthere is nothing there\u300d counted ' +
     'as an answer and everything else as a failure');
 /* The bound the test lowered. Read rather than waited on: twenty seconds in
    the gate would prove the same thing and cost twenty seconds.
@@ -1667,32 +1703,14 @@ say(/var STORE_WAIT=NET_WAIT;/.test(WWWSTORE) && !/[0-9]{4,}/.test(
       (/var STORE_WAIT=[^;]*;/.exec(WWWSTORE) || [''])[0]),
     'and the bound on a real phone is the app\'s one wait, not a number this ' +
     'file keeps -- www/store.js reads NET_WAIT (www/net.js)');
-
-/* ---- and where the date comes from, READ rather than run ----------------
-   The browser above holds everything on this side of the bridge: the line,
-   the plan it names, the date on it, and the two states with no date. What
-   it cannot hold is that the phone ever SENDS one -- there is no Swift on
-   this runner, so this is CODE CONFIRMED and no further. Three sentences,
-   and each is a place the date could be taken from the wrong transaction. */
-say(/let plan = await writeDown\(\)/.test(STORE) &&
-    /if let e = await Self\.untilOf\(plan\)/.test(STORE) &&
-    /out\["until"\] = e\.timeIntervalSince1970 \* 1000/.test(STORE),
-    'LinguaStore.current answers the date of the plan writeDown() ANSWERED — ' +
-    'not of the best entitlement it saw, which is a different plan whenever ' +
-    'the Keychain held the higher one');
-say(/func untilOf\(_ plan: String\) async -> Date\? \{[\s\S]{0,200}?if plan == "free" \{ return nil \}[\s\S]{0,200}?entitledSeen\(\)\.until\[plan\]/.test(STORE),
-    'and untilOf() is the one place that answers it — `free` has no end, and ' +
-    'a plan with no entitlement on this device has no date to give');
-say(/guard let p = planOf\(t\.productID\) else \{ unknown \+= 1; continue \}\s*\n\s*out = best\(out, p\)\s*\n\s*if let e = t\.expirationDate/.test(STORE),
-    'and the date is filled in from inside the same walk, after verified(), ' +
-    'after revocationDate and after planOf — a transaction Apple has not ' +
-    'signed carries no date either');
-
-/* The other end of it, and READ rather than run: no Swift on this runner. */
-say(/let paid = Self\.planOf\(t\.productID\)/.test(STORE) &&
-    /"bought": paid \?\? ""/.test(STORE),
-    'and LinguaStore.swift answers what was bought beside what is held — off ' +
-    'the SIGNED transaction\'s own productID, not off the request');
+/* And the one road up. A second POST to the plan table anywhere in www/ is
+   the old road growing back, and it would be added by somebody who found the
+   app could not write its own plan. */
+const NET = fs.readFileSync(path.join(dir, '..', 'www', 'net.js'), 'utf8')
+                .replace(/\/\*[\s\S]*?\*\//g, ' ');
+say(NET.indexOf('/rest/v1/plan') < 0,
+    'and nothing in www/ writes the plan table any more — the one road up is ' +
+    'the function');
 
 const CORE = fs.readFileSync(path.join(dir, '..', 'www', 'core.js'), 'utf8');
 const keeps = (CORE.match(/planKeep\(/g) || []).length;
@@ -1703,39 +1721,38 @@ say(keeps >= 3 && guarded >= 2,
     ' of ' + keeps + ' planKeep sites, the third being setPlan, which is ' +
     'somebody pressing something)');
 
-/* ---- and the launch after a cancellation -------------------------------- */
+/* ---- and the launch, which takes the server's answer -------------------- */
 say(LAPSE.plan === 'free',
     'a cancellation survives the next launch — the plan is still free after ' +
-    'boot has read the account (' + LAPSE.plan + ')');
+    'boot has asked (' + LAPSE.plan + ')');
 say(LAPSE.wrote.indexOf('pro') < 0,
-    'and the Keychain is never written back UP by a launch — that is what ' +
+    'and nothing writes the old plan back into the Keychain — that is what ' +
     'made it permanent (wrote ' + JSON.stringify(LAPSE.wrote) + ')');
-say(LAPSE.read === 'free' && LAPSE.srv === 'free',
-    'and the account is READ only after what this phone is holding has been ' +
-    'SENT — the read is answered `free`, not the plan Apple already ended ' +
-    '(read ' + (LAPSE.read || 'never read') + ', row ends ' + LAPSE.srv + ')');
-say(LAPSE.pend === '',
-    'nothing is left waiting once it has landed (' +
-    (LAPSE.pend || 'nothing') + ')');
+say(LAPSE.read === 'free' && LAPSE.asks === 1,
+    'the launch asks the function once and takes what it says (' +
+    (LAPSE.read || 'never asked') + ', ' + LAPSE.asks + ' ask)');
+say(LAPSE.table === 0,
+    'and no launch touches the plan TABLE at all, in either direction — the ' +
+    'road of 2026-09-06 has not grown back (' + LAPSE.table + ')');
+say(LAPSE.sent.indexOf('jws') >= 0 && LAPSE.sent.indexOf('"plan"') < 0,
+    'what goes up is the receipts and never a plan word (' + LAPSE.sent + ')');
 
 say(OFF.plan === 'free' && OFF.srv === 'pro',
-    'a launch with no signal changes nothing on the server and still ends on ' +
-    'free (' + OFF.plan + ', row ' + OFF.srv + ')');
-say(OFF.pend === 'free',
-    'and the phone remembers what it could not send — the one thing that can ' +
-    'carry it to the next launch (' + (OFF.pend || 'nothing') + ')');
-say(BACK.srv === 'free' && BACK.plan === 'free',
-    'the launch after it sends that, and the row moves (' + BACK.srv + ')');
-say(BACK.wrote.indexOf('pro') < 0 && BACK.pend === '',
-    'and nothing writes the old plan back down onto the phone (wrote ' +
-    JSON.stringify(BACK.wrote) + ')');
+    'a launch with no signal changes nothing anywhere and ends on what this ' +
+    'phone was holding (' + OFF.plan + ', server still ' + OFF.srv + ')');
+say(OFF.wrote.indexOf('pro') < 0 && OFF.read === '',
+    'and it writes nothing down — an answer that never came is not an answer ' +
+    '(wrote ' + JSON.stringify(OFF.wrote) + ')');
+say(BACK.read === 'pro' && BACK.plan === 'pro',
+    'the launch after it asks again, and there is nothing left over from the ' +
+    'one that could not (' + BACK.plan + ')');
 
 say(UP.plan === 'pro',
     'while a plan bought on ANOTHER phone still arrives on this one — the ' +
-    'higher rung is untouched (' + UP.plan + ')');
-say(UP.gets === 1,
-    'and a phone with nothing waiting reads the account once, as it always ' +
-    'did (' + UP.gets + ')');
+    'answer is about the ACCOUNT (' + UP.plan + ')');
+say(UP.asks === 1 && UP.table === 0,
+    'and every launch is one call to the function and none to the table (' +
+    UP.asks + ', ' + UP.table + ')');
 
 /* ---- the place the buy button left ------------------------------------- */
 say(nowl.lang === 'en',

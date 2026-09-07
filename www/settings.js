@@ -709,7 +709,7 @@ function wipeHere(uid){
   try{ localStorage.removeItem(setParkKey(wipeUid)); }catch(e){}
   setFor('');
   SET.plan='free'; SET.planWas='free';
-  delete SET.planUid; delete SET.planPend; delete SET.saved;
+  delete SET.planUid; delete SET.saved;
   delete SET.savedUp; delete SET.notAt;
   /* AND IT OPENS ON THE DOOR, not on the walk. 「アカウント削除した後
      オンボーディングから始まるのはなぜ？」 OWNER 2026-09-03.
@@ -1174,7 +1174,10 @@ function vPlans(){
 var PLAN_BUY=true;
 function setPlan(id, yearly){
   if(PLAN_BUY && id!=='free' && storeOn() && storeBuy(storeId(id, yearly))) return;
-  SET.plan=id; planKeep(id); save(); render();
+  /* planTook() and not four lines of its own: it is the one place a plan is
+     written down, wherever the word came from -- the server's answer, or this
+     hand in a browser. 2026-09-06. */
+  planTook(id);
   toast(id==='free'? t('toast.plan.free') : t('toast.plan.other', id));
 }
 

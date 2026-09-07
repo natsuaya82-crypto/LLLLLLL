@@ -273,25 +273,37 @@ anonymous one through and comes out with it. `claude/admin` has that half.
 
 ### 1. The plan, on the server — the one with money on it
 
-**Two of the four are built.** The plan is in the Keychain on the phone —
-`ios/App/App/LinguaPlan.swift`, read before the web view loads and injected as
-`window.__plan` — because `localStorage` is a file inside the app and that file
-is in the backup a phone makes onto a PC, where free tools and no jailbreak turn
-`free` into `plus`. **And it is on the ACCOUNT**: `plan (id, plan, at)` in
-`supabase/schema.sql` with its three policies, written by `netPlanUp()` and read
-by `netPlanSync()`, which takes the HIGHER of the two rungs (`planBest()`) so a
-purchase made on another phone arrives on this one. `acct-check` walks it.
+**Built, and the receipt is checked.** 2026-09-06.
 
-**What decides the plan today is the PHONE, and that is what is being fixed.**
-Nothing verifies a receipt. `netPlanUp()` sends whatever `SET.plan` says and the
-row takes it; `is_member()` asks only whether somebody is signed in. On a
-jailbroken phone the app's own JavaScript can be edited, so anybody determined
-enough sets themselves to Pro and the server writes it down.
+The plan is in the Keychain on the phone — `ios/App/App/LinguaPlan.swift`, read
+before the web view loads and injected as `window.__plan` — because
+`localStorage` is a file inside the app and that file is in the backup a phone
+makes onto a PC, where free tools and no jailbreak turn `free` into `plus`.
+That copy is what the app opens on with no signal and nothing else.
 
-**「だから端末でやるわけねえだろ」 OWNER 2026-09-03.** The shape it goes to:
-the server asks Apple, and the row is what Apple answered rather than what the
-phone claimed. That work is another session's; what this section is for is that
-nobody reads the `plan` table as proof of anything until it lands.
+**What DECIDES the plan is the server.** 「だから端末でやるわけねえだろ」 OWNER
+2026-09-03. The phone sends the signed transactions the App Store gave it
+(`jwsRepresentation`); `supabase/functions/verify-plan` reads the x5c chain
+against Apple's root, refuses anything that is not signed, refuses a purchase
+whose `appAccountToken` is another account's, records the binding in
+`purchase`, works the rung out from every transaction it has verified for that
+account, and writes `plan` with the service role. `plan` and `purchase` are
+**read-only** through the API — no insert policy, no update policy — so the old
+attack (edit the app's JavaScript on a jailbroken phone, tell the database you
+are Pro) has nowhere to land.
+
+**And a purchase belongs to the Lingua account that made it.**
+「アカウントごとなんだから、違うアカウントで復元できるのおかしいだろ。検証して」
+OWNER 2026-09-06. Signing in as somebody else and pressing Restore sends the
+same receipts and gets `free`.
+
+Held by: `tools/verify-check.mjs` (a real signature, a chain built in the
+check), `npm run rls` (nobody signed in can write either table), `plan-check`
+(no plan word left in `LinguaStore.swift`, one road up, nothing writes the
+table), `acct-check`.
+
+**Not confirmed on a device.** Buying, restoring on the same account, and
+restoring on a different account are three things only a phone can answer.
 
 `CAN` stays what it is either way: which buttons to show. **It is not a security
 check and must never be relied on as one.**

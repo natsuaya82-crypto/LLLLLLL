@@ -473,17 +473,17 @@ create index if not exists recent_search_author_idx
 -- from the moment it exists, and picking a handle is a later step it must not
 -- depend on.
 --
--- WHAT THIS DOES NOT DO, SAID PLAINLY SO SILENCE IS NOT READ AS SAFETY:
--- it does not make a plan unforgeable. The policies below stop B writing A's
--- row -- which is a real attack and is probed in tools/rls-check.mjs -- but
--- the row is written by the PHONE, and the phone is the person. Anybody who
--- can send this database a request can set their OWN plan to 'pro'.
+-- NOBODY WRITES THIS ROW BUT THE SERVER, and that is 2026-09-06.
+-- 「だから端末でやるわけねえだろ」 OWNER 2026-09-03.
 --
--- Closing that needs Apple's receipt checked by something that is not the
--- phone, and there is no server of ours to check it in. That is a decision
--- and not a line of SQL, so it is written up rather than guessed at:
--- docs/scope/claude-acct2.md. Until it is answered, this column is where the
--- plan LIVES, not proof of what was bought.
+-- It used to be written by the PHONE, and the phone is the person: anybody who
+-- could send this database a request could set their own plan to 'pro'. That
+-- is closed. `verify-plan` (supabase/functions/verify-plan) is the only thing
+-- that writes here -- it reads Apple's signature off the transaction itself,
+-- binds it to the account that bought it, and writes the answer with the
+-- service role, which no policy applies to. There is no insert policy and no
+-- update policy below, so through the API this table is READ ONLY, to its
+-- owner, and to nobody else.
 --
 -- `at` is when it last moved, and it is a record rather than a clock anything
 -- reasons with -- the same argument bkNo() makes in docs/DATA_SAFETY.md.
@@ -492,6 +492,48 @@ create table if not exists plan (
   plan  text not null default 'free' check (plan in ('free', 'plus', 'pro')),
   at    timestamptz not null default now()
 );
+
+-- WHICH ACCOUNT A PURCHASE BELONGS TO.
+--
+-- 「アカウントごとなんだから、違うアカウントで復元できるのおかしいだろ。
+--   検証して」 OWNER 2026-09-06.
+--
+-- One row per subscription, keyed on Apple's `originalTransactionId` -- the id
+-- that stays the same across every renewal of one subscription, which is what
+-- makes a renewal an update of this row rather than a second row claiming the
+-- same money.
+--
+-- IT IS THE BINDING AND NOT A RECEIPT STORE. What it answers is one question:
+-- **whose is this?** A purchase made while signed in as A carries A's uid in
+-- `appAccountToken`, signed by Apple, and the function refuses it for anybody
+-- else -- so signing in as B and pressing Restore gives B nothing. A purchase
+-- made BEFORE `appAccountToken` was sent carries nobody, and throwing those
+-- away would take from people what they paid for; they are bound to the first
+-- uid that verifies them, and refused to every other uid after that.
+--
+-- `until` and `revoked` are Apple's dates off the signed transaction, and the
+-- plan is worked out from THESE ROWS rather than from whatever a phone sent in
+-- the last call -- supabase/functions/verify-plan/index.ts says why at length.
+-- A row whose `until` has passed simply stops counting, so a lapse is the same
+-- one road as a purchase.
+--
+-- `env` is Sandbox or Production. It is written down rather than acted on: a
+-- sandbox receipt on a TestFlight build is a real purchase to that tester, and
+-- the day the two need telling apart, the answer is on the row rather than
+-- worked out again.
+--
+-- Written ONLY by the service role, like `plan`. There is no insert or update
+-- policy below.
+create table if not exists purchase (
+  orig_tx text primary key,
+  uid     uuid not null references auth.users on delete cascade,
+  product text not null default '',
+  until   timestamptz,
+  revoked timestamptz,
+  env     text not null default '',
+  at      timestamptz not null default now()
+);
+create index if not exists purchase_uid on purchase(uid);
 
 -- A word taken from somebody else's language and used in a post. This is the
 -- citation, and it is a table rather than a field in body because it is the
@@ -632,6 +674,7 @@ alter table draft       enable row level security;
 alter table saved_search enable row level security;
 alter table recent_search enable row level security;
 alter table plan        enable row level security;
+alter table purchase    enable row level security;
 
 -- One question, and until 2026-08-26 there were two.
 --
@@ -1110,12 +1153,33 @@ create policy recent_drop on recent_search for delete using (is_member() and aut
 drop policy if exists plan_read on plan;
 create policy plan_read on plan for select
   using (is_member() and id = auth.uid());
+-- `plan_make` and `plan_edit` were here until 2026-09-06 and are GONE, not
+-- narrowed. They let the owner of a row write it, and the owner of a row is a
+-- phone: 「だから端末でやるわけねえだろ」 OWNER 2026-09-03. The function writes
+-- with the service role, which policies do not apply to, so taking these away
+-- takes nothing from the app that is meant to work -- it takes away the one
+-- that was never meant to.
+--
+-- Dropped by name above, so that a database this file has already been run on
+-- loses them too. A policy left standing on a server nobody re-created is a
+-- policy still in force, whatever this file says.
 drop policy if exists plan_make on plan;
-create policy plan_make on plan for insert
-  with check (is_member() and id = auth.uid());
 drop policy if exists plan_edit on plan;
-create policy plan_edit on plan for update
-  using (is_member() and id = auth.uid()) with check (id = auth.uid());
+
+-- purchase: yours to read and nobody's to write.
+--
+-- READING IS THE OWNER'S, and not `using (true)`, for the same reason `plan`
+-- is a table of its own: what somebody bought is not a handle.
+--
+-- There is no insert, update or delete policy, and every one of those is
+-- deliberate. Insert and update would be somebody claiming a purchase --
+-- which is the whole of what this table exists to stop. Delete would be
+-- somebody unbinding a transaction from their own account and then binding it
+-- to another one, which is the same attack walking backwards. The account
+-- going takes the rows (`on delete cascade`); nothing else removes them.
+drop policy if exists purchase_read on purchase;
+create policy purchase_read on purchase for select
+  using (is_member() and uid = auth.uid());
 
 -- quote: readable by everyone, because the count is the point. Written only by
 -- the author of the post it sits in -- so nobody can inflate somebody else's

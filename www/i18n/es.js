@@ -821,6 +821,7 @@ defLang('es', (function(){
       "plan.date" : "{2}/{1}/{0}",
       "plan.cancel" : "Cancelar la suscripción",
       "store.none" : "No hay nada que restaurar",
+      "store.nosess" : "No has iniciado sesión",
       "plan.price.free"  : "$0",
       "plan.price.pro.yr"  : "$99.99",
       "plan.per.yr"  : "/ año",

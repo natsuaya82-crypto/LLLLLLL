@@ -73,10 +73,11 @@
   そして預けの三つ（`setParkKey` `meParkKey` `postParkKey`）と
   `phases.js` からの設定書き込み。
 
-### 設定（`lingua.set`）の中身 ── 名前の付いた欄 24 個
+### 設定（`lingua.set`）の中身 ── 名前の付いた欄
 
-同じファイルの `FIELDS` を数えて 24。**そのうちサーバーへの道があるのは 4 つだけ**
-（`plan` `planPend` `saved` `recent`）。残り 20 はサーバーに写しがありません。
+`tools/store-check.mjs` の `FIELDS` を数えます（数は run が印字するので、ここに
+書き写しません）。**そのうちサーバーへの道があるのは三つだけ**
+（`plan` `saved` `recent`）。残りはサーバーに写しがありません。
 その中に **`wsys`（書記体系）** があり、`tools/store-check.mjs` 自身が
 「これは言語のものなのに設定に入っている、穴だ」と書いています。**サーバーに
 無いので、消えたら戻す先がありません。**

@@ -850,6 +850,7 @@ defLang('de', (function(){
       "plan.date" : "{2}.{1}.{0}",
       "plan.cancel" : "Abo kündigen",
       "store.none" : "Nichts wiederherzustellen",
+      "store.nosess" : "Nicht angemeldet",
       "plan.price.free"  : "0 $",
       "plan.price.pro.yr"  : "$99.99",
       "plan.per.yr"  : "/ Jahr",
