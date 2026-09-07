@@ -501,14 +501,19 @@ want('so the count followed the dictionary', m.afterCount, m.dict + 1);
 want('a language with no model of its own answers from its stages',
      m.noneOrder, 'OBJECT,SUBJECT,VERB');
 want('with nothing invented in the slot nobody has filled', m.noneInfl, 0);
+/* NOT A NUMBER. How many rules gRules() builds is what gRules() decides, and
+   writing it here would be a second answer to it -- which is exactly what went
+   red the day the 助詞 stage went from three roles to seven. What is held is
+   the two things the label says: there ARE some, and a stored model comes back
+   with the same ones a model with none does. */
 want('and the rules that name words are built fresh either way',
-     m.rules, 3);
+     m.rules > 0, true);
 /* The one the objection is about. The stored model above carries an EMPTY
    grammarRules on purpose: a rule there says 'hw:<headword>' and would stop
    matching the day that word was renamed, so it is rebuilt from the stages on
-   every read exactly as the words are. Empty in, three out. */
+   every read exactly as the words are. Empty in, the same ones out. */
 want('a model stored with no rules still comes back with the ones the stages say',
-     m.storedRules, 3);
+     m.storedRules, m.rules);
 
 /* ---- 14-19: a mark takes a word out of the queue, wherever it stands -----
    The engine has been able to hear a case mark since the day morphology.js
@@ -778,20 +783,26 @@ const g2 = await pg.evaluate(() => {
   WORDS.length = wl;
   STG.order = was;
   if (wasSet) STG.set.order = 1; else delete STG.set.order;
-  return { start: start.join(' '), shelf: shelf.join(' '), startDemo: startDemo,
+  return { roles: ROLES.slice(),
+           start: start.join(' '), shelf: shelf.join(' '), startDemo: startDemo,
            startGold: startGold, startBtn: startBtn, off1: off1, swapped: swapped,
            saved: saved, four: four, back: back, empty: empty };
 });
 
+/* THE TRAY IS ROLES LESS WHAT IS ON THE BOARD, and it is worked out from the
+   app's own list rather than written down. A card added to ROLES -- 「なにである」
+   and 「なにより」 were, on 2026-09-07 -- lands in the tray the day it is added,
+   and a list written here would be red for the app being right. */
+const tray = (...on) => g2.roles.filter((r) => on.indexOf(r) < 0).join(' ');
 want('the old six-letter string is read as the three cards', g2.start, 'S O V');
-want('and every other role is on the rail underneath', g2.shelf, 'ADV ADP NEG Q');
+want('and every other role is on the rail underneath', g2.shelf, tray('S','O','V'));
 want('this language\u2019s own words are under it, in that order',
      g2.startDemo, 'zke tuf ztir');
 want('the save is in the corner from the moment the board is', g2.startBtn, true);
 want('and it is grey until the board is moved', g2.startGold, false);
 want('a card pressed on the board goes back to the tray',
      g2.off1.on.join(' '), 'O V');
-want('and it is on the tray now', g2.off1.off.join(' '), 'S ADV ADP NEG Q');
+want('and it is on the tray now', g2.off1.off.join(' '), tray('O','V'));
 want('and nothing was written', g2.off1.stored, '"SOV"');
 want('and nothing was decided', g2.off1.set, false);
 want('but the save has gone gold', g2.off1.gold, true);
@@ -805,16 +816,16 @@ want('the words followed, because they are laid by the engine',
 want('and the save is grey again', g2.saved.gold, false);
 want('a fourth card comes off the tray onto the end of the board',
      g2.four.on.join(' '), 'O V S ADV');
-want('and it is gone from the tray', g2.four.off.join(' '), 'ADP NEG Q');
+want('and it is gone from the tray', g2.four.off.join(' '), tray('O','V','S','ADV'));
 want('and the words under it are still this language\u2019s three, once each',
      g2.four.demo, 'tuf ztir zke');
 want('and the board of four is what is stored',
      g2.four.stored, '["O","V","S","ADV"]');
 want('and it can be pressed back off again', g2.back.on.join(' '), 'O V S');
-want('to the tray it came from', g2.back.off.join(' '), 'ADV ADP NEG Q');
+want('to the tray it came from', g2.back.off.join(' '), tray('O','V','S'));
 want('leaving the three behind it', g2.back.stored, '["O","V","S"]');
 want('the board can be emptied altogether', g2.empty.on, 0);
-want('every role is on the tray then', g2.empty.off, 7);
+want('every role is on the tray then', g2.empty.off, g2.roles.length);
 want('and the place to put one is still a row high', g2.empty.h >= 44, true);
 
 /* ---- 41-48: a chapter shows what this language really does --------------
@@ -951,15 +962,26 @@ const g2v = await pg.evaluate(() => {
   g2Chaps().forEach((c) => { chaps[c.id] = chapSays(c.id); makes[c.id] = chapMakes(c.id); });
   WORDS.length = wl;
   STG.fm = JSON.parse(wasFm);
-  return { chaps: chaps, makes: makes, ids: g2Chaps().map((c) => c.id) };
+  const ids = g2Chaps().map((c) => c.id);
+  const seenId = {}, uniq = [];
+  ids.forEach((x) => { if (!seenId[x]) { seenId[x] = 1; uniq.push(x); } });
+  return { chaps: chaps, makes: makes, ids: ids, unique: uniq.length };
 });
 
-/* Eighteen, because A FORM IS A CHAPTER. There was one chapter called 動詞
-   holding eleven forms behind one 作成 row each, so a language wanting two ways
-   of making a past tense had nowhere to put the second -- 「過去形タップしたら
-   ❶みたいに並べたほうがいいんじゃないの？」 OWNER 2026-09-05. The number is
-   the ratchet: it moves when a chapter is added on purpose. */
-want('the page is a list of chapters, each one its own', g2v.ids.length, 18);
+/* A FORM IS A CHAPTER. There was one chapter called 動詞 holding eleven forms
+   behind one 作成 row each, so a language wanting two ways of making a past
+   tense had nowhere to put the second -- 「過去形タップしたら ❶みたいに並べた
+   ほうがいいんじゃないの？」 OWNER 2026-09-05.
+
+   IT WAS A NUMBER AND IT IS NOT ANY MORE. Eighteen was true until nine
+   chapters were added on 2026-09-07, and a count written here is a second
+   answer to "how many chapters are there" -- the first is g2Chaps(). What the
+   label actually claims is that each one is ITS OWN, so that is what is asked:
+   no two chapters share an id, which is a real bug (the second would draw
+   under the first's name and be unreachable) and a number could never catch. */
+want('the page is a list of chapters, each one its own',
+     g2v.ids.length, g2v.unique);
+want('and there are some', g2v.ids.length > 0, true);
 /* The nouns chapter is the MARKS and nothing else now. A plural is a form, so
    it has a chapter of its own, and drawing it here as well would be the same
    rule on two pages -- which is the bug this file's §65-70 counts. */
@@ -1130,17 +1152,20 @@ const chap = await pg.evaluate(() => {
   });
   WORDS.length = wl;
   STG.fm = JSON.parse(wasFm);
-  return { kinds: kinds.map((k) => k.fm),
+  return { kinds: kinds.map((k) => k.fm), all: FM_INF.length,
            twice: kinds.filter((k) => (seen[k.fm] || []).length > 1)
                        .map((k) => k.fm + ' in ' + (seen[k.fm] || []).join('+')),
            none: kinds.filter((k) => !(seen[k.fm] || []).length).map((k) => k.fm),
            once: kinds.filter((k) => (seen[k.fm] || []).length === 1).length };
 });
 
-/* Thirteen since the pluperfect was added -- 「過去完了は何かの説明を?に入れて
-   くれ」 OWNER 2026-09-05. The list comes from the app's own FM_INF, so this
-   number is the ratchet on it and not a second copy. */
-want('every kind of form the app can write was tried', chap.kinds.length, 13);
+/* The list comes from the app's own FM_INF, so the number is asked of it
+   rather than written: it was thirteen, and eleven more forms were added on
+   2026-09-07 (six person, three moods, two degrees). What is held is that the
+   walk covered the whole list and that the list is not empty -- the three
+   claims under this one are what make it worth walking. */
+want('every kind of form the app can write was tried', chap.kinds.length, chap.all);
+want('and there are some to try', chap.kinds.length > 0, true);
 want('no rule is drawn in two chapters', chap.twice.join(', '), '');
 want('and none is drawn in no chapter', chap.none.join(', '), '');
 want('so every one of them landed in exactly one', chap.once, chap.kinds.length);
@@ -1546,10 +1571,17 @@ want('and asked for with no kind it is still there too',
    empty. Nothing failed and nothing threw.
 
    The claim is the one every other chapter of this page already answers: the
-   three roles are there whether or not this language has said any of them,
-   and the ones it has not are a row to write them on. The EXAMPLE is the half
-   that waits on a word -- what a mark makes of a noun needs a noun. So it is
-   asked twice, with a dictionary and with none. */
+   roles are there whether or not this language has said any of them, and the
+   ones it has not are a row to write them on. The EXAMPLE is the half that
+   waits on a word -- what a mark makes of a noun needs a noun. So it is asked
+   twice, with a dictionary and with none.
+
+   HOW MANY ROLES IS COUNTED, NEVER WRITTEN. It said three, and three was true
+   for as long as the 助詞 stage had three slots; on 2026-09-07 the owner made
+   it seven (所有・場所・道具・共同) and this went red for the app being
+   right. A number written here is a second answer to "how many roles are
+   there", and the first one is the stage itself -- so the stage is asked, and
+   an eighth role is held the day it is added. */
 const nouns = await pg.evaluate(() => {
   const keep = WORDS, wasStg = JSON.stringify(STG.set || {});
   const show = () => { window.route = 'gram'; NAV = [{ r:'gram', a:'v2:n' }];
@@ -1564,6 +1596,10 @@ const nouns = await pg.evaluate(() => {
       try { a = JSON.parse(b.getAttribute('data-a') || '[]'); } catch (e) {}
       return !!a && a[0] === 'part';
     });
+  /* The stage's own slots, which is what g2Nouns() walks to draw these rows.
+     Asked of the page rather than counted here, for the same reason the
+     board's cards are: one list, one answer. */
+  const slots = ((typeof stBy === 'function' && stBy('part')) || { slots: [] }).slots.length;
   show();
   const withWords = rows().length;
   const madeRows = rows().filter((b) => !!b.querySelector('.psi')).length;
@@ -1576,13 +1612,15 @@ const nouns = await pg.evaluate(() => {
   WORDS = keep;
   STG.set = JSON.parse(wasStg);
   show();
-  return { withWords: withWords, madeRows: madeRows, bare: bare,
+  return { withWords: withWords, madeRows: madeRows, bare: bare, slots: slots,
            bareEmpty: !bareText.replace(/\s+/g, '') };
 });
 
+want('the 助詞 stage names at least the three roles a word order decides',
+     nouns.slots >= 3, true);
 want('the noun chapter draws a row for every role the 助詞 stage names',
-     nouns.withWords, 3);
-want('and it is not blank with an empty dictionary either', nouns.bare, 3);
+     nouns.withWords, nouns.slots);
+want('and it is not blank with an empty dictionary either', nouns.bare, nouns.slots);
 want('a page with nothing on it is what this was', nouns.bareEmpty, false);
 want('no role of this language has a mark yet, so none shows what it makes',
      nouns.madeRows, 0);
@@ -1681,7 +1719,7 @@ console.log('          A chapter is where a rule is made, and the row pressed is
 console.log('          the answer to both what and of what.');
 console.log('          The words a chapter\'s rules make are made from that chapter,');
 console.log('          and another chapter\'s are left where they were.');
-console.log('          The noun chapter names its three roles whether or not this');
-console.log('          language has written any of them, and with no words at all.');
+console.log('          The noun chapter names every role the 助詞 stage has,');
+console.log('          written or not, and with no words in the dictionary at all.');
 console.log('          A rule is deleted by the Select every other list here has,');
 console.log('          and what is chosen is chosen by id, not by where it sits.');
