@@ -283,7 +283,7 @@ var STAGES=[
      pressed a row at the foot -- 「助詞は最初から出せ」 OWNER 2026-09-01, so
      it is a stage like the rest. A language with no particles leaves it empty,
      which is what an unanswered stage already is everywhere else. */
-  {id:'part',  slots:['subj','obj','rec'], pos:'part'},
+  {id:'part',  slots:['subj','obj','rec','poss','loc','inst','com'], pos:'part'},
   {id:'when',  slots:['now','before','after','today','tomorrow','yesterday'], pos:'x'},
   /* The calendar, and its slots come from two numbers the way counting's come
      from the base. www/cal.js says why there is no arithmetic of anybody's
@@ -355,11 +355,23 @@ function chapSlotsHTML(chap){
    and nothing new is stored anywhere. gInfl() in www/grammar.js is what turns
    the word somebody made here into something the engine reads.
 
-   Three, and not the eight morphology.js knows: these are the ones WORD ORDER
-   would otherwise decide, and a mark is what takes a word out of that queue.
-   Where a thing IS and where it goes are the 場所 stage's adpositions and
-   already have somewhere to live -- two places saying the same thing is the
-   one shape this repository is most often bitten by. */
+   SEVEN NOW, AND NOT THREE. 「格 ── 主語・目的語・渡す相手 に加えて 所有（〜の）・
+   場所（〜で／に）・道具（〜で）・共同（〜と）」 OWNER 2026-09-07. The first
+   three are the ones WORD ORDER would otherwise decide; the four beside them
+   are the ones it never could, and a language that marks them had nowhere to
+   write them down. 「所有」 is the one that shows why: a possessor is a word
+   inside a noun phrase, so no arrangement of a sentence can say it.
+
+   THE PLACE MARK AND THE PLACE WORDS ARE NOT THE SAME THING. `loc` is a mark
+   ON the noun -- 山で, `house-LOC`, the third way §7 names -- and the 場所
+   chapter's `in` / `on` / `under` are separate WORDS standing beside it. A
+   language may have either, or both, and until today it could only have the
+   words: docs/BACKLOG.md carried exactly this hole and this is it filled.
+
+   Adding four is adding four slots. Nothing anybody made moves, and a
+   language that has answered the first three still has answered them -- the
+   count under 助詞 goes from three to seven because there are four more
+   questions, not because anything was lost. */
 /* A copy with its slots filled in, and a copy is the point: STAGES is one
    array shared by every call, so a stage edited in place stays edited. */
 function stWith(p, slots){

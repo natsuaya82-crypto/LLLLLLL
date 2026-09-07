@@ -902,6 +902,62 @@ const looped=e.translate.fromSemantic(lang('CX7','SOV',CXW),loop);
 assert.equal(looped.ok,true);
 assert.ok(looped.text.length<4000,'an IR that carries itself was written out without end');
 
+/* ---- B4 格 ── seven marks, not three ---------------------------------------
+   「主語・目的語・渡す相手 に加えて 所有（〜の）・場所（〜で／に）・道具（〜で）・
+   共同（〜と）」 OWNER 2026-09-07.
+
+   The first three are what a word order could have decided. The four beside
+   them are what it never could -- and 所有 is the one that proves it: a
+   possessor is a word INSIDE a noun phrase, so no arrangement of a sentence
+   says which noun owns which. */
+const CASEW=[['mi','I','PRONOUN'],['tomo','friend','NOUN'],['hon','book','NOUN'],
+             ['yama','mountain','NOUN'],['pen','pen','NOUN'],['yomu','read','VERB']];
+/* `target:'WORD'` is the engine's own way of saying "any word", and it is what
+   gInfl() in www/grammar.js writes: a mark here is a separate word, so which
+   part of speech it may follow is a question about a sentence somebody typed
+   wrong, not about what this language is. Written 'NOUN' the subject mark
+   never reached the pronoun standing in the subject's place. */
+const mark=(id,role,form)=>({id:id,target:'WORD',feature:'CASE',value:role,
+                             operation:'suffix',form:form,separator:' '});
+const cs=withNp(lang('CS','SOV',CASEW,[
+  mark('nom','SUBJECT','ga'), mark('acc','OBJECT','wo'),
+  mark('gen','POSSESSOR','no'), mark('loc','PLACE','de'),
+  mark('ins','INSTRUMENT','shi'), mark('com','COMPANION','to')]),['POSS','N']);
+/* 場所・道具・共同 are roles of the sentence and take their own marks */
+const csOut=e.translate.fromSemantic(cs,e.semanticIR({roles:{
+  SUBJECT:'I', OBJECT:'book', PLACE:'mountain', INSTRUMENT:'pen',
+  COMPANION:'friend', PREDICATE:'read'}}));
+assert.equal(csOut.complete,true);
+assert.equal(csOut.text,'mi ga hon wo yomu yama de pen shi tomo to');
+/* 所有 IS INSIDE THE PHRASE, and the possessor carries the mark. This is the
+   one of the seven that a word order can never say. */
+assert.equal(e.translate.fromSemantic(cs,e.semanticIR({roles:{
+  SUBJECT:'I', OBJECT:{head:'book', mods:{POSSESSOR:'friend'}}, PREDICATE:'read'}})).text,
+  'mi ga tomo no hon wo yomu');
+/* and where the possessor stands against the noun is the noun-phrase board,
+   not the mark: the same language with the board the other way round. The
+   role's own mark stays ON THE HEAD -- 「本を」 is the object whichever side
+   its owner is written -- because a mark in this app is a word attached to
+   the word it marks, and the board arranges what is around that. */
+const csAfter=withNp(lang('CS2','SOV',CASEW,[
+  mark('nom','SUBJECT','ga'), mark('acc','OBJECT','wo'), mark('gen','POSSESSOR','no')]),['N','POSS']);
+assert.equal(e.translate.fromSemantic(csAfter,e.semanticIR({roles:{
+  SUBJECT:'I', OBJECT:{head:'book', mods:{POSSESSOR:'friend'}}, PREDICATE:'read'}})).text,
+  'mi ga hon wo tomo no yomu');
+/* A LANGUAGE THAT MARKS NONE OF THEM. Every one of the seven is a chapter
+   that may be empty, and empty is the word standing bare -- arranged by the
+   board and by nothing else. Nothing throws and nothing is dropped. */
+const csNone=withNp(lang('CS3','SOV',CASEW),['POSS','N']);
+assert.equal(e.translate.fromSemantic(csNone,e.semanticIR({roles:{
+  SUBJECT:'I', OBJECT:{head:'book', mods:{POSSESSOR:'friend'}}, PLACE:'mountain',
+  PREDICATE:'read'}})).text,'mi tomo hon yomu yama');
+/* and the mark travels the other way too: a sentence carrying 〜の is read
+   back as a POSSESSOR wherever it stands */
+assert.equal(e.morphology.parseSentence(cs,'tomo no hon wo yomu').roles.POSSESSOR,'tomo');
+assert.equal(e.morphology.parseSentence(cs,'yama de yomu').roles.PLACE,'yama');
+assert.equal(e.morphology.parseSentence(cs,'pen shi yomu').roles.INSTRUMENT,'pen');
+assert.equal(e.morphology.parseSentence(cs,'tomo to yomu').roles.COMPANION,'tomo');
+
 console.log('Grammar Engine: derivation applies, a case MARK carries a role, the ' +
             'Semantic IR goes both ways and back, the Phase 1-2 contract is clean, ' +
             'a rule may change the stem and may be for some words only, ' +
@@ -911,4 +967,6 @@ console.log('Grammar Engine: derivation applies, a case MARK carries a role, the
             'the noun-phrase board says (and in the order every other chapter ' +
             'already said, where that board is empty), and a SENTENCE INSIDE A ' +
             "SENTENCE is written by the same writer, so it obeys this language's " +
-            'own order, with its mark where this language puts one');
+            'own order, with its mark where this language puts one, and a mark may say ' +
+            'any of SEVEN roles -- the possessor inside a noun phrase among them, ' +
+            'which no word order could ever have said');

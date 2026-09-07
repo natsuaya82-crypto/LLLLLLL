@@ -496,8 +496,8 @@
      list is what somebody meant. A meaning this language has no word for is a
      gap here exactly as it is for a head -- it stays as the meaning, and the
      gap is the door to making that word. */
-  function modWords(model, v, gaps, depth){
-    var out=[], list, i, found;
+  function modWords(model, v, gaps, depth, part){
+    var out=[], list, i, found, cv, marked;
     /* HOW DEEP IN is read here as well as passed in, and that is not belt and
        braces: a caller that forgot the argument made `depth < CLAUSE_DEEP`
        compare undefined, which is false, and every relative clause was
@@ -517,8 +517,18 @@
         continue;
       }
       found=lexFind(model, list[i]);
-      if(found.length) out.push(String(found[0].lemma||''));
-      else { gaps.push(String(list[i])); out.push(String(list[i])); }
+      if(!found.length){ gaps.push(String(list[i])); out.push(String(list[i])); continue; }
+      /* A PART OF A PHRASE MAY CARRY THIS LANGUAGE'S MARK FOR IT. 「所有（〜の）」
+         is a mark on the possessor exactly as 「〜が」 is one on the subject,
+         and it is asked for by the same function -- caseFor() -- so a language
+         that writes one writes it here and a language that does not is
+         arranged by its noun-phrase board alone. Nothing else in a phrase has
+         a mark today; asking for all of them costs one lookup and means the
+         day 「どんな」 gets one, it is already written. */
+      cv=part? caseFor(model, part) : null;
+      if(cv===null){ out.push(String(found[0].lemma||'')); continue; }
+      marked={}; marked.CASE=cv;
+      out.push(api.morphology.inflect(model, found[0], marked).surface);
     }
     return out;
   }
@@ -533,16 +543,16 @@
     if(order.length){
       for(i=0;i<order.length;i++){ part=order[i]; said[part]=1;
         if(part==='NOUN') out.push(headSurface);
-        else out=out.concat(modWords(model, mods[part], gaps, depth));
+        else out=out.concat(modWords(model, mods[part], gaps, depth, part));
       }
       if(!said.NOUN) out.push(headSurface);
-      for(i=0;i<NP_PARTS.length;i++) if(!said[NP_PARTS[i]]) out=out.concat(modWords(model, mods[NP_PARTS[i]], gaps, depth));
+      for(i=0;i<NP_PARTS.length;i++) if(!said[NP_PARTS[i]]) out=out.concat(modWords(model, mods[NP_PARTS[i]], gaps, depth, NP_PARTS[i]));
       return out;
     }
-    out=(positionOf(model,'ADJECTIVE')==='before')? modWords(model, mods.ADJECTIVE, gaps, depth) : [];
+    out=(positionOf(model,'ADJECTIVE')==='before')? modWords(model, mods.ADJECTIVE, gaps, depth, 'ADJECTIVE') : [];
     out.push(headSurface);
-    if(positionOf(model,'ADJECTIVE')!=='before') out=out.concat(modWords(model, mods.ADJECTIVE, gaps, depth));
-    for(i=0;i<NP_PARTS.length;i++) if(NP_PARTS[i]!=='ADJECTIVE') out=out.concat(modWords(model, mods[NP_PARTS[i]], gaps, depth));
+    if(positionOf(model,'ADJECTIVE')!=='before') out=out.concat(modWords(model, mods.ADJECTIVE, gaps, depth, 'ADJECTIVE'));
+    for(i=0;i<NP_PARTS.length;i++) if(NP_PARTS[i]!=='ADJECTIVE') out=out.concat(modWords(model, mods[NP_PARTS[i]], gaps, depth, NP_PARTS[i]));
     return out;
   }
 

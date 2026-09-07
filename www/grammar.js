@@ -255,7 +255,19 @@ function gRules(){
    are: `form` is the particle's SPELLING, read from the dictionary now. A
    stored copy would be the spelling as it was on the day it was saved, and
    would go quietly wrong the moment somebody redrew or renamed that word. */
-var GCASE={subj:'SUBJECT', obj:'OBJECT', rec:'RECIPIENT'};
+/* WHAT EACH MARK MEANS, and it is the ROLE it gives rather than the name a
+   grammar book would give the case. `subj` is SUBJECT and not NOMINATIVE
+   because that is what somebody making a language said: this word is the one
+   doing it. morphology.js's CASE_ROLE turns the traditional names into these
+   same roles, and takes a value it does not know as the role it names -- so
+   the two roads arrive at one answer and this table needs no row there.
+
+   Seven. The first three are what a word order could have decided; the four
+   after them are what it never could. POSSESSOR is the one that shows why:
+   it is a word inside a noun phrase, and no arrangement of a sentence says
+   which noun owns which. */
+var GCASE={subj:'SUBJECT', obj:'OBJECT', rec:'RECIPIENT',
+           poss:'POSSESSOR', loc:'PLACE', inst:'INSTRUMENT', com:'COMPANION'};
 function gInfl(){
   var e=LinguaGrammarEngine, out=[], p=(typeof stBy==='function')? stBy('part') : null, k, w, f;
   if(!p) return out;
