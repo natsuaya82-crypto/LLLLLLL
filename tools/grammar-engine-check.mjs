@@ -749,8 +749,286 @@ const nameless = e.languageModel({languageId:'nameless', wordOrder:'SOV',
          e.word({id:'luma', lemma:'luma', partOfSpeech:'VERB',    meanings:['eat']})]});
 assert.equal(e.translate.toNatural(nameless, 'mi poko luma', 'en'), 'I eat poko');
 
+/* ---- A2 名詞句の並び ── a role of an IR may be a NOUN PHRASE ---------------
+   OWNER 2026-09-07「この文法ページを埋めたら翻訳にもなるし文法書になる」. One
+   sentence's word order is not enough to write a language: 「この赤い山」 is a
+   demonstrative, an adjective and a noun, and two languages that agree about
+   SOV can still disagree about every one of those.
+
+   So a role of an IR may be a phrase -- {head, mods, features} -- and a bare
+   string is still a bare string, which is what every IR written before today
+   is. Both are asserted, because the day the second stops working is the day
+   every post written before today stops rendering. */
+function withNp(model, cards){
+  if(cards) model.grammarRules.push(e.grammarRule({type:'syntax',target:'NOUNPHRASE',feature:'ORDER',value:cards}));
+  return model;
+}
+const NPW=[['yama','mountain','NOUN'],['aka','red','ADJECTIVE'],['futa','two','NUMERAL'],
+           ['kono','this','OTHER'],['mi','I','PRONOUN'],['miru','see','VERB']];
+const NPIR=e.semanticIR({roles:{
+  SUBJECT:'I',
+  OBJECT:{head:'mountain', mods:{ADJECTIVE:['red'], NUMERAL:'two', DEMONSTRATIVE:'this'}},
+  PREDICATE:'see'}, features:{}});
+/* the board says この・いくつ・どんな・もの, in that order */
+const npA=withNp(lang('NPA','SOV',NPW),['DEM','NUM','ADJ','N']);
+assert.equal(e.translate.fromSemantic(npA,NPIR).text,'mi kono futa aka yama miru');
+/* and a language that puts every one of them AFTER the noun writes the same
+   meaning as a different sentence. That is the whole reason this chapter is
+   not the word order chapter. */
+const npB=withNp(lang('NPB','SOV',NPW),['N','ADJ','NUM','DEM']);
+assert.equal(e.translate.fromSemantic(npB,NPIR).text,'mi yama aka futa kono miru');
+/* THE CHAPTER LEFT EMPTY. The part drops out of the ORDERING and never out of
+   the sentence: the adjective keeps the side its own chapter gives it, and
+   what nobody has placed follows the noun. Nothing is lost and nothing throws
+   -- 「章が空の時はその部分が抜ける（壊れない）」. */
+const npNone=lang('NPC','SOV',NPW);
+const npNoneOut=e.translate.fromSemantic(npNone,NPIR);
+assert.equal(npNoneOut.ok,true);
+assert.equal(npNoneOut.complete,true);
+assert.equal(npNoneOut.text.indexOf('yama')>=0,true);
+for(const part of ['aka','futa','kono'])
+  assert.ok(npNoneOut.text.indexOf(part)>=0,'the empty chapter lost '+part+' out of the sentence');
+/* and the adjective is on the side the 形容詞 chapter says, which on a
+   language nobody has asked is after the noun */
+assert.equal(npNoneOut.text.indexOf('yama')<npNoneOut.text.indexOf('aka'),true);
+/* A BOARD THAT NAMES SOME OF THEM. What it names is in its order; what it
+   does not is still written -- a card nobody has placed is a part of the
+   phrase that has no place YET, and dropping the word would be this app
+   losing what somebody said. */
+const npHalf=withNp(lang('NPD','SOV',NPW),['ADJ','N']);
+const npHalfOut=e.translate.fromSemantic(npHalf,NPIR);
+assert.equal(npHalfOut.text.indexOf('aka yama')>=0,true);
+for(const part of ['futa','kono'])
+  assert.ok(npHalfOut.text.indexOf(part)>=0,'a part the board does not name was dropped: '+part);
+/* a bare string is still a role, and still comes out as one word */
+assert.equal(e.translate.fromSemantic(npA,e.semanticIR({roles:{SUBJECT:'I',PREDICATE:'see'}})).text,'mi miru');
+/* a modifier this language has no word for is a GAP and stays as the meaning,
+   the same answer a head with no word gets. Inventing one would be worse. */
+const npGap=e.translate.fromSemantic(npA,e.semanticIR({roles:{
+  OBJECT:{head:'mountain', mods:{ADJECTIVE:['blue']}}, PREDICATE:'see'}}));
+assert.equal(npGap.complete,false);
+assert.equal(npGap.gaps.join('|'),'blue');
+assert.equal(npGap.text,'blue yama miru');
+
+/* THE OTHER DIRECTION. A natural sentence read INTO this language puts a
+   numeral in its noun's phrase only where the board names it -- the same
+   sentence the adverb card has always said: 「無い役割は台に無ければ今まで通り」.
+   Both are asserted because the difference between them is the chapter. */
+const npD=[{hw:'yama', mns:['mountain'], pos:'n'},
+           {hw:'aka',  mns:['red'],      pos:'adj'},
+           {hw:'futa', mns:['two'],      pos:'num'},
+           {hw:'mi',   mns:['I'],        pos:'pro'},
+           {hw:'miru', mns:['see'],      pos:'v'}];
+const npRead=(cards)=>{
+  const m=e.adapter.fromLegacy('npr',npD,{order:'SOV'});
+  return e.translate.line(e.translate.run(withNp(m,cards),'I see two red mountain'));
+};
+assert.equal(npRead(['NUM','ADJ','N']),'mi futa aka yama miru');
+/* the board empty: the adjective is where its own chapter puts it and the
+   number follows the sentence, exactly as it did before this board existed */
+assert.equal(npRead(null),'mi yama aka miru futa');
+
+/* ---- A3 複文 ── a sentence inside a sentence -------------------------------
+   「複文 ── 従属節（〜とき／〜ので／〜なら／〜と言う）の位置と印、関係節
+   （「私が見た山」）の位置と印、並列（と／か／しかし）」 OWNER 2026-09-07.
+
+   A clause is A SENTENCE, so the same writer writes it: this is recursion and
+   not a second writer, and the assertions below are about exactly that -- the
+   inner clause obeys this language's word order, its marks and its endings,
+   because it went through the same function. */
+function withPos(model, target, side){
+  model.grammarRules.push(e.grammarRule({type:'syntax',target:target,feature:'POSITION',value:side}));
+  return model;
+}
+const CXW=[['mi','I','PRONOUN'],['yama','mountain','NOUN'],['miru','see','VERB'],
+           ['iku','go','VERB'],['node','because','CONJUNCTION'],['ga','that','CONJUNCTION']];
+const INNER=e.semanticIR({roles:{SUBJECT:'I',OBJECT:'mountain',PREDICATE:'see'}});
+const CXIR=e.semanticIR({roles:{SUBJECT:'I',PREDICATE:'go'},
+  relations:[{type:'SUBORDINATE', marker:'because', ir:INNER}]});
+/* the inner sentence after the main one, its mark opening it: 'mi iku node mi yama miru' */
+let cx=lang('CX','SOV',CXW);
+withPos(cx,'CLAUSE','after'); withPos(cx,'CLAUSEMARK','before');
+assert.equal(e.translate.fromSemantic(cx,CXIR).text,'mi iku node mi yama miru');
+/* the other way round on both counts, which is Japanese: the inner sentence
+   first, and its mark at the end of it */
+cx=lang('CX2','SOV',CXW);
+withPos(cx,'CLAUSE','before'); withPos(cx,'CLAUSEMARK','after');
+assert.equal(e.translate.fromSemantic(cx,CXIR).text,'mi yama miru node mi iku');
+/* THE INNER SENTENCE OBEYS THIS LANGUAGE'S WORD ORDER, which is the whole
+   reason it is written by the same writer. SVO moves the verb in BOTH. */
+cx=lang('CX3','SVO',CXW);
+withPos(cx,'CLAUSE','after'); withPos(cx,'CLAUSEMARK','before');
+assert.equal(e.translate.fromSemantic(cx,CXIR).text,'mi iku node mi miru yama');
+/* A LANGUAGE THAT MARKS IT WITH NOTHING. An empty marker is a real answer and
+   not a gap -- 私が見た山 has no word between them -- so the clause is written
+   and nothing is reported missing. */
+cx=lang('CX4','SOV',CXW);
+withPos(cx,'CLAUSE','before');
+const cxBare=e.translate.fromSemantic(cx,e.semanticIR({roles:{SUBJECT:'I',PREDICATE:'go'},
+  relations:[{type:'SUBORDINATE', ir:INNER}]}));
+assert.equal(cxBare.text,'mi yama miru mi iku');
+assert.equal(cxBare.complete,true);
+/* THE CHAPTER LEFT EMPTY. No relation on the IR is the main sentence alone,
+   which is every sentence written before this chapter existed. */
+assert.equal(e.translate.fromSemantic(lang('CX5','SOV',CXW),
+  e.semanticIR({roles:{SUBJECT:'I',PREDICATE:'go'}})).text,'mi iku');
+/* a mark this language has no word for is a gap, and the clause still stands */
+const cxGap=e.translate.fromSemantic(lang('CX6','SOV',CXW),
+  e.semanticIR({roles:{SUBJECT:'I',PREDICATE:'go'},
+                relations:[{type:'SUBORDINATE', marker:'although', ir:INNER}]}));
+assert.equal(cxGap.complete,false);
+assert.equal(cxGap.gaps.join('|'),'although');
+
+/* A RELATIVE CLAUSE HANGS ON A NOUN, and where it stands against that noun is
+   the REL card on the noun-phrase board -- not a second answer here. The mark
+   inside it is this chapter's. 「私が見た山」 is REL before N. */
+const REL={marker:'that', ir:e.semanticIR({roles:{SUBJECT:'I',PREDICATE:'see'}})};
+let rel=withNp(lang('RL','SOV',CXW),['REL','N']);
+withPos(rel,'RELATIVE','after');
+assert.equal(e.translate.fromSemantic(rel,e.semanticIR({roles:{
+  SUBJECT:'I', OBJECT:{head:'mountain', mods:{RELATIVE:REL}}, PREDICATE:'see'}})).text,
+  'mi mi miru ga yama miru');
+/* and a language that puts it after the noun with the mark opening it */
+rel=withNp(lang('RL2','SOV',CXW),['N','REL']);
+withPos(rel,'RELATIVE','before');
+assert.equal(e.translate.fromSemantic(rel,e.semanticIR({roles:{
+  SUBJECT:'I', OBJECT:{head:'mountain', mods:{RELATIVE:REL}}, PREDICATE:'see'}})).text,
+  'mi yama ga mi miru miru');
+/* AN IR THAT CARRIES ITSELF is a phone that stops, and it must not be. The
+   depth limit answers with a short sentence rather than a wrong one. */
+const loop=e.semanticIR({roles:{SUBJECT:'I',PREDICATE:'go'}});
+loop.relations=[{type:'SUBORDINATE', marker:'because', ir:loop}];
+const looped=e.translate.fromSemantic(lang('CX7','SOV',CXW),loop);
+assert.equal(looped.ok,true);
+assert.ok(looped.text.length<4000,'an IR that carries itself was written out without end');
+
+/* ---- B4 格 ── seven marks, not three ---------------------------------------
+   「主語・目的語・渡す相手 に加えて 所有（〜の）・場所（〜で／に）・道具（〜で）・
+   共同（〜と）」 OWNER 2026-09-07.
+
+   The first three are what a word order could have decided. The four beside
+   them are what it never could -- and 所有 is the one that proves it: a
+   possessor is a word INSIDE a noun phrase, so no arrangement of a sentence
+   says which noun owns which. */
+const CASEW=[['mi','I','PRONOUN'],['tomo','friend','NOUN'],['hon','book','NOUN'],
+             ['yama','mountain','NOUN'],['pen','pen','NOUN'],['yomu','read','VERB']];
+/* `target:'WORD'` is the engine's own way of saying "any word", and it is what
+   gInfl() in www/grammar.js writes: a mark here is a separate word, so which
+   part of speech it may follow is a question about a sentence somebody typed
+   wrong, not about what this language is. Written 'NOUN' the subject mark
+   never reached the pronoun standing in the subject's place. */
+const mark=(id,role,form)=>({id:id,target:'WORD',feature:'CASE',value:role,
+                             operation:'suffix',form:form,separator:' '});
+const cs=withNp(lang('CS','SOV',CASEW,[
+  mark('nom','SUBJECT','ga'), mark('acc','OBJECT','wo'),
+  mark('gen','POSSESSOR','no'), mark('loc','PLACE','de'),
+  mark('ins','INSTRUMENT','shi'), mark('com','COMPANION','to')]),['POSS','N']);
+/* 場所・道具・共同 are roles of the sentence and take their own marks */
+const csOut=e.translate.fromSemantic(cs,e.semanticIR({roles:{
+  SUBJECT:'I', OBJECT:'book', PLACE:'mountain', INSTRUMENT:'pen',
+  COMPANION:'friend', PREDICATE:'read'}}));
+assert.equal(csOut.complete,true);
+assert.equal(csOut.text,'mi ga hon wo yomu yama de pen shi tomo to');
+/* 所有 IS INSIDE THE PHRASE, and the possessor carries the mark. This is the
+   one of the seven that a word order can never say. */
+assert.equal(e.translate.fromSemantic(cs,e.semanticIR({roles:{
+  SUBJECT:'I', OBJECT:{head:'book', mods:{POSSESSOR:'friend'}}, PREDICATE:'read'}})).text,
+  'mi ga tomo no hon wo yomu');
+/* and where the possessor stands against the noun is the noun-phrase board,
+   not the mark: the same language with the board the other way round. The
+   role's own mark stays ON THE HEAD -- 「本を」 is the object whichever side
+   its owner is written -- because a mark in this app is a word attached to
+   the word it marks, and the board arranges what is around that. */
+const csAfter=withNp(lang('CS2','SOV',CASEW,[
+  mark('nom','SUBJECT','ga'), mark('acc','OBJECT','wo'), mark('gen','POSSESSOR','no')]),['N','POSS']);
+assert.equal(e.translate.fromSemantic(csAfter,e.semanticIR({roles:{
+  SUBJECT:'I', OBJECT:{head:'book', mods:{POSSESSOR:'friend'}}, PREDICATE:'read'}})).text,
+  'mi ga hon wo tomo no yomu');
+/* A LANGUAGE THAT MARKS NONE OF THEM. Every one of the seven is a chapter
+   that may be empty, and empty is the word standing bare -- arranged by the
+   board and by nothing else. Nothing throws and nothing is dropped. */
+const csNone=withNp(lang('CS3','SOV',CASEW),['POSS','N']);
+assert.equal(e.translate.fromSemantic(csNone,e.semanticIR({roles:{
+  SUBJECT:'I', OBJECT:{head:'book', mods:{POSSESSOR:'friend'}}, PLACE:'mountain',
+  PREDICATE:'read'}})).text,'mi tomo hon yomu yama');
+/* and the mark travels the other way too: a sentence carrying 〜の is read
+   back as a POSSESSOR wherever it stands */
+assert.equal(e.morphology.parseSentence(cs,'tomo no hon wo yomu').roles.POSSESSOR,'tomo');
+assert.equal(e.morphology.parseSentence(cs,'yama de yomu').roles.PLACE,'yama');
+assert.equal(e.morphology.parseSentence(cs,'pen shi yomu').roles.INSTRUMENT,'pen');
+assert.equal(e.morphology.parseSentence(cs,'tomo to yomu').roles.COMPANION,'tomo');
+
+/* ---- B6 性・名詞クラス ── agreement ----------------------------------------
+   「無し／2 つ／3 つ…、名前は自由、語ごとにどれか、形容詞・動詞への一致
+   （あれば）」 OWNER 2026-09-07.
+
+   A class has no meaning this engine knows, and the assertions are written to
+   prove exactly that: the class names below are `ka` and `mi`, which are
+   nobody's grammatical tradition, and everything works because the name is
+   carried rather than understood. */
+function withClasses(model, classes){
+  for(const name in classes)
+    model.grammarRules.push(e.grammarRule({type:'syntax',target:'CLASS',feature:name,value:classes[name]}));
+  return model;
+}
+const CLW=[['yama','mountain','NOUN'],['umi','sea','NOUN'],['aka','red','ADJECTIVE'],
+           ['miru','see','VERB'],['mi','I','PRONOUN']];
+const agree=(id,cls,pos,form)=>({id:id,target:pos,feature:'CLASS',value:cls,
+                                 operation:'suffix',form:form,separator:''});
+const cl=withNp(withClasses(lang('CL','SOV',CLW,[
+  agree('a1','ka','ADJECTIVE','ta'), agree('a2','mi','ADJECTIVE','na')]),
+  {ka:['CL:yama'], mi:['CL:umi']}),['ADJ','N']);
+/* THE ADJECTIVE AGREES WITH ITS NOUN, and with a different noun it agrees
+   differently. One IR, two phrases, and the only thing that differs is which
+   class the head is in. */
+assert.equal(e.translate.fromSemantic(cl,e.semanticIR({roles:{
+  OBJECT:{head:'mountain', mods:{ADJECTIVE:['red']}}, PREDICATE:'see'}})).text,'akata yama miru');
+assert.equal(e.translate.fromSemantic(cl,e.semanticIR({roles:{
+  OBJECT:{head:'sea', mods:{ADJECTIVE:['red']}}, PREDICATE:'see'}})).text,'akana umi miru');
+/* A NOUN IN NO CLASS. 「無し」 is a real answer -- a language may have classes
+   and still have nouns in none of them -- and the adjective is then written
+   bare. Nothing throws and nothing is guessed. */
+const clNone=withNp(withClasses(lang('CL2','SOV',CLW,[
+  agree('a1','ka','ADJECTIVE','ta')]),{ka:['CL2:yama']}),['ADJ','N']);
+assert.equal(e.translate.fromSemantic(clNone,e.semanticIR({roles:{
+  OBJECT:{head:'sea', mods:{ADJECTIVE:['red']}}, PREDICATE:'see'}})).text,'aka umi miru');
+/* THE CHAPTER LEFT EMPTY. A language with no classes at all is every language
+   written before this chapter existed, and it comes out exactly as it did. */
+const clOff=withNp(lang('CL3','SOV',CLW),['ADJ','N']);
+assert.equal(e.translate.fromSemantic(clOff,e.semanticIR({roles:{
+  OBJECT:{head:'mountain', mods:{ADJECTIVE:['red']}}, PREDICATE:'see'}})).text,'aka yama miru');
+/* THE VERB AGREES WITH ITS SUBJECT where a language says verbs do, and that
+   is a rule on VERB rather than on ADJECTIVE -- one table of classes, two
+   places it can be heard. */
+const clV=withClasses(lang('CL4','SOV',CLW,[
+  agree('v1','ka','VERB','yo'), agree('v2','mi','VERB','wa')]),
+  {ka:['CL4:yama'], mi:['CL4:umi']});
+assert.equal(e.translate.fromSemantic(clV,e.semanticIR({roles:{
+  SUBJECT:'mountain', PREDICATE:'see'}})).text,'yama miruyo');
+assert.equal(e.translate.fromSemantic(clV,e.semanticIR({roles:{
+  SUBJECT:'sea', PREDICATE:'see'}})).text,'umi miruwa');
+/* and a subject in no class leaves the verb alone */
+assert.equal(e.translate.fromSemantic(clV,e.semanticIR({roles:{
+  SUBJECT:'I', PREDICATE:'see'}})).text,'mi miru');
+/* THE IR IS NOT WRITTEN INTO. A class is one language's way of saying a
+   meaning, and the meaning belongs to nobody's language -- so the same IR
+   written twice, into two languages, comes out as each of them. */
+const shared=e.semanticIR({roles:{SUBJECT:'mountain', PREDICATE:'see'}});
+e.translate.fromSemantic(clV,shared);
+assert.equal(shared.features.CLASS,undefined,'the IR was written into');
+assert.equal(e.translate.fromSemantic(lang('CL5','SOV',CLW),shared).text,'yama miru');
+
 console.log('Grammar Engine: derivation applies, a case MARK carries a role, the ' +
             'Semantic IR goes both ways and back, the Phase 1-2 contract is clean, ' +
             'a rule may change the stem and may be for some words only, ' +
-            'the line a meaning makes is held, and a line of this language is ' +
-            "said in the reader's own words and the reader's own order");
+            'the line a meaning makes is held, a line of this language is ' +
+            "said in the reader's own words and the reader's own order, " +
+            'a role of an IR may be a NOUN PHRASE, written in the order ' +
+            'the noun-phrase board says (and in the order every other chapter ' +
+            'already said, where that board is empty), and a SENTENCE INSIDE A ' +
+            "SENTENCE is written by the same writer, so it obeys this language's " +
+            'own order, with its mark where this language puts one, and a mark may say ' +
+            'any of SEVEN roles -- the possessor inside a noun phrase among them, ' +
+            'which no word order could ever have said, and a word may AGREE with the ' +
+            'class of the noun it belongs to -- under whatever name that class ' +
+            'was given, which this engine carries and never understands');

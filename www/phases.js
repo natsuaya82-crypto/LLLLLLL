@@ -34,16 +34,40 @@
    stand. They are here rather than in SET from 2026-08-25 -- see
    migrateGramLang() below -- because they are the language's, not the
    phone's. Empty means nobody has answered and the default stands. */
-var STG={done:{}, notes:{}, set:{}, extra:[], rules:{}, ex:{}, fm:[], order:'', gpos:{}};
-/* How far the open language has got. Empty first: see langRead() in core.js. */
+/* WHAT A LANGUAGE'S GRAMMAR HOLDS, AND IT IS WRITTEN DOWN ONCE. The same nine
+   fields were written three times -- the value STG starts as, the same value
+   again inside stRead(), and a line per field copying it out of storage -- so
+   a tenth field added to two of the three is read back empty on every launch,
+   with nothing throwing and every screen right. That is the fault this
+   repository keeps finding under another name: a list of keys, written by
+   hand, that nobody remembered to add to (docs/DATA_SAFETY.md, and lsWipeAcct
+   in www/core.js, which was rewritten for it).
+
+   Each row is the field and what an UNANSWERED one is, which is the only
+   thing the three copies were ever saying. Adding a field is this line and
+   nothing else. */
+var STG_DEF={done:{}, notes:{}, set:{}, extra:[], rules:{}, ex:{}, fm:[], order:'', np:[], gpos:{}, ncls:{}};
+function stBlank(){
+  var out={}, k, v;
+  for(k in STG_DEF) if(Object.prototype.hasOwnProperty.call(STG_DEF, k)){
+    v=STG_DEF[k];
+    out[k]=(typeof v==='string')? v : (Array.isArray(v)? [] : {});
+  }
+  return out;
+}
+var STG=stBlank();
+/* How far the open language has got. Empty first: see langRead() in core.js.
+   What is on the disk and nothing else: a field this build has never heard of
+   is left where it is rather than read into a shape nothing understands --
+   slWr writes STG whole, so what is not read is not written either, and that
+   is the one thing that could quietly drop somebody's work on an older
+   build. docs/BACKLOG.md carries it. */
 function stRead(){
-  STG={done:{}, notes:{}, set:{}, extra:[], rules:{}, ex:{}, fm:[], order:'', gpos:{}};
+  STG=stBlank();
   try{
-    var stgs=JSON.parse(slRd(langKey('phases'))||'null');
-    if(stgs){ STG.done=stgs.done||{}; STG.notes=stgs.notes||{}; STG.set=stgs.set||{};
-              STG.extra=stgs.extra||[]; STG.rules=stgs.rules||{}; STG.ex=stgs.ex||{};
-              STG.fm=stgs.fm||[];
-              STG.order=stgs.order||''; STG.gpos=stgs.gpos||{}; }
+    var stgs=JSON.parse(slRd(langKey('phases'))||'null'), k;
+    if(stgs) for(k in STG_DEF)
+      if(Object.prototype.hasOwnProperty.call(STG_DEF, k) && stgs[k]) STG[k]=stgs[k];
   }catch(e){}
 }
 /* ---- the word order and the three positions belong to the LANGUAGE -------
@@ -245,13 +269,21 @@ var STAGES=[
   /* The numbers are numerals, which read the same in every language on the
      list, so they are the one set of labels that needs no translating. */
   {id:'count', slots:['1','2','3','4','5','6','7','8','9','10'], pos:'num'},
-  {id:'conj',  slots:['and','or','but','because','if','then'], pos:'conj'},
+  /* `rel` is the word a relative clause is marked with -- 「私が見た山」の
+     「〜が」ではなく、英語の that / which に当たる語。It is here rather than
+     on the 複文 chapter because a mark is a WORD in this app and every other
+     conjunction of this language is made on this stage: 「印の語は章の語の欄
+     （接続詞の章と一本化：二つの場所に同じ語を置かない）」 OWNER 2026-09-07.
+     A language that marks it with nothing leaves the slot empty, which is
+     what an unanswered slot already is everywhere else -- and Japanese is
+     that language. */
+  {id:'conj',  slots:['and','or','but','because','if','then','rel'], pos:'conj'},
   {id:'polite',slots:[], pos:'x'},
   /* Particles. It sat in a list of its own, off the chapter until somebody
      pressed a row at the foot -- 「助詞は最初から出せ」 OWNER 2026-09-01, so
      it is a stage like the rest. A language with no particles leaves it empty,
      which is what an unanswered stage already is everywhere else. */
-  {id:'part',  slots:['subj','obj','rec'], pos:'part'},
+  {id:'part',  slots:['subj','obj','rec','poss','loc','inst','com'], pos:'part'},
   {id:'when',  slots:['now','before','after','today','tomorrow','yesterday'], pos:'x'},
   /* The calendar, and its slots come from two numbers the way counting's come
      from the base. www/cal.js says why there is no arithmetic of anybody's
@@ -323,11 +355,23 @@ function chapSlotsHTML(chap){
    and nothing new is stored anywhere. gInfl() in www/grammar.js is what turns
    the word somebody made here into something the engine reads.
 
-   Three, and not the eight morphology.js knows: these are the ones WORD ORDER
-   would otherwise decide, and a mark is what takes a word out of that queue.
-   Where a thing IS and where it goes are the 場所 stage's adpositions and
-   already have somewhere to live -- two places saying the same thing is the
-   one shape this repository is most often bitten by. */
+   SEVEN NOW, AND NOT THREE. 「格 ── 主語・目的語・渡す相手 に加えて 所有（〜の）・
+   場所（〜で／に）・道具（〜で）・共同（〜と）」 OWNER 2026-09-07. The first
+   three are the ones WORD ORDER would otherwise decide; the four beside them
+   are the ones it never could, and a language that marks them had nowhere to
+   write them down. 「所有」 is the one that shows why: a possessor is a word
+   inside a noun phrase, so no arrangement of a sentence can say it.
+
+   THE PLACE MARK AND THE PLACE WORDS ARE NOT THE SAME THING. `loc` is a mark
+   ON the noun -- 山で, `house-LOC`, the third way §7 names -- and the 場所
+   chapter's `in` / `on` / `under` are separate WORDS standing beside it. A
+   language may have either, or both, and until today it could only have the
+   words: docs/BACKLOG.md carried exactly this hole and this is it filled.
+
+   Adding four is adding four slots. Nothing anybody made moves, and a
+   language that has answered the first three still has answered them -- the
+   count under 助詞 goes from three to seven because there are four more
+   questions, not because anything was lost. */
 /* A copy with its slots filled in, and a copy is the point: STAGES is one
    array shared by every call, so a stage edited in place stays edited. */
 function stWith(p, slots){
@@ -739,7 +783,7 @@ function stHidHTML(){
    a line here. The tie is broken by where it was, because sort() is not
    promised to be stable on the WKWebView this runs in and two of somebody's own
    stages swapping places on a redraw is the app rearranging their work. */
-var G2TOC=['order','n','pl',
+var G2TOC=['order','np','cx','n','pl','ncls',
            'prs','pst','fut','plp','prg','prf','cnd','cau','imp','pas','neg','q',
            'pron','count','greet',
            'adj','adp','part','conj','polite','have','when','month','wday','st'];

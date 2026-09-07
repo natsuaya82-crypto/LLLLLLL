@@ -31,6 +31,24 @@
 var ROLES=['S','O','V','ADV','ADP','NEG','Q'];
 /* What a sentence needs, and what stands when nobody has answered. */
 var ORDER_DEF=['S','O','V'];
+/* THE PARTS OF A NOUN PHRASE, and they are cards on a board exactly as the
+   roles of a sentence are -- 「札の板（語順と同じ形）」 OWNER 2026-09-07.
+   Where a sentence puts its verb and where a noun phrase puts its adjective
+   are two different answers, and a language may give them in two different
+   directions: Japanese is SOV with every modifier before the noun, and Irish
+   is VSO with them after. One board could not have said that.
+
+   Codes, for the reason ROLES above is codes: this is what is STORED, and
+   model.js's npOrder() is the one place that turns a card into the part the
+   engine writes with. N is the noun ITSELF, because where the head stands
+   among what describes it is the whole question.
+
+   THERE IS NO DEFAULT. An empty board is a language nobody has asked, and
+   what that language does is what it did before the board existed -- the
+   adjective on the side the 形容詞 chapter gives it, and nothing else
+   placed at all. A default here would be this app deciding the shape of
+   somebody's noun phrase for them. */
+var NPARTS=['DEM','NUM','ADJ','POSS','REL','N'];
 /* The one place a stored word order is READ. Two shapes arrive here and both
    are somebody's: the six-letter string every language written before today
    holds, and the list of cards a finger arranged. The string is COPIED into
@@ -92,6 +110,25 @@ function orderDef(){
    screen -- g2KeepOn()'s closure below -- so the language's word order moves
    when somebody presses save and at no other moment. */
 function setOrder(v){ STG.order=orderSeq(v); stMarkSet('order'); render(); }
+/* The noun phrase's order, read and written the way the sentence's is. It has
+   no orderSeq() beside it and no ORDER_DEF behind it, and that is the whole
+   difference between the two: a sentence has to be arranged somehow, and a
+   noun phrase that nobody has arranged is every other chapter's answer left
+   exactly where it was. `STG.np` is the language's, beside `STG.order`, for
+   the reason written over that field: it is the language's and not the
+   phone's. */
+function npKeep(v){
+  var out=[], i, c;
+  if(typeof v==='string') v=v.split(',');
+  if(!v) return out;
+  for(i=0;i<v.length;i++){
+    c=String(v[i]);
+    if(NPARTS.indexOf(c)>=0 && out.indexOf(c)<0) out.push(c);
+  }
+  return out;
+}
+function npStored(){ return npKeep(STG && STG.np); }
+function setNpOrder(v){ STG.np=npKeep(v); stMarkSet('np'); render(); }
 
 /* ---- where a word stands ----------------------------------------------
    Three positions. Each is one answer for the whole language and each is
@@ -99,7 +136,17 @@ function setOrder(v){ STG.order=orderSeq(v); stMarkSet('order'); render(); }
    and nothing else does. None of them asks whether the language marks
    something, and none asks you to invent a piece of sound: the word already
    exists, made in the stage that needed it. */
-var GPOS_DEF={adj:'after', negp:'after', adp:'after'};
+/* And three more of them, which are the 複文 chapter's: where a subordinate
+   clause stands against the main one, where the mark of such a clause stands
+   inside it, and where the mark of a relative clause stands inside that.
+
+   A MARK OPENS ITS CLAUSE until somebody says otherwise, and that is not a
+   guess about anybody's language: all ten of the interface languages do it,
+   and it is what stands where nobody has answered -- stTouched() is the
+   question "was this chosen" and always was. Where the clause itself stands is
+   left at the same 'after' the three above take. */
+var GPOS_DEF={adj:'after', negp:'after', adp:'after',
+              cx:'after', cxm:'before', relm:'before'};
 /* The language's, beside the word order and for the same reason. Reading one
    does not write it: the old pair put the default into the person's settings
    the first time a stage was drawn, so a value existed for three decisions
@@ -114,7 +161,11 @@ function setGPos(id, v){
 }
 /* Which side, and of what. "Before" on its own is not a label: before the
    noun and before the verb are different facts. */
-var GPOS_OF={adj:'n', negp:'v', adp:'n'};
+/* Which side, and of what. "Before" on its own is not a label, and the three
+   clause decisions are two different "of": a subordinate clause stands before
+   or after THE MAIN SENTENCE, and a mark stands before or after THE CLAUSE it
+   belongs to. */
+var GPOS_OF={adj:'n', negp:'v', adp:'n', cx:'main', cxm:'cl', relm:'cl'};
 function gPosLab(id, o){ return t('gram.pos.'+o+'.'+(GPOS_OF[id]||'n')); }
 
 /* ---- reading the words the stages made --------------------------------- */
@@ -158,10 +209,27 @@ function gRule(target, feature, value){
 /* What this language has decided: the three places a word can stand, and
    which words the stages made are the negation and the adpositions. */
 function gRules(){
-  var e=LinguaGrammarEngine, out=[], w, ws, i;
+  var e=LinguaGrammarEngine, out=[], w, ws, i, np;
+  /* The noun phrase's order, and ONLY where somebody has arranged one: an
+     empty board says nothing rather than saying "in this order, nothing",
+     which the engine would read as a phrase with no noun in it. */
+  np=npStored();
+  if(np.length) out.push(gRule('NOUNPHRASE', 'ORDER', np));
   out.push(gRule('ADJECTIVE',  'POSITION', gPos('adj')));
   out.push(gRule('NEGATION',   'POSITION', gPos('negp')));
   out.push(gRule('ADPOSITION', 'POSITION', gPos('adp')));
+  /* 複文. The clause against the sentence, and each of the two marks inside
+     its own clause. Three answers, each heard in every sentence that uses it,
+     which is the test this app applies to giving something a button. */
+  out.push(gRule('CLAUSE',     'POSITION', gPos('cx')));
+  out.push(gRule('CLAUSEMARK', 'POSITION', gPos('cxm')));
+  out.push(gRule('RELATIVE',   'POSITION', gPos('relm')));
+  /* WHICH WORDS ARE IN WHICH CLASS, one rule per class, in the same shape
+     "which words are the negation" already takes. The engine never has to know
+     what a class is: it is handed a name and a list of words, and a rule
+     asking for CLASS/<that name> fires on those words and no others. */
+  np=nclsAll();
+  for(i=0;i<np.length;i++) out.push(gRule('CLASS', String(np[i]), nclsWordIds(i)));
   w=gSlot('neg','not');
   if(w) out.push(gRule('NEGATION','WORD', e.adapter.idOf(w)));
   ws=gSlotAll('where');
@@ -193,7 +261,19 @@ function gRules(){
    are: `form` is the particle's SPELLING, read from the dictionary now. A
    stored copy would be the spelling as it was on the day it was saved, and
    would go quietly wrong the moment somebody redrew or renamed that word. */
-var GCASE={subj:'SUBJECT', obj:'OBJECT', rec:'RECIPIENT'};
+/* WHAT EACH MARK MEANS, and it is the ROLE it gives rather than the name a
+   grammar book would give the case. `subj` is SUBJECT and not NOMINATIVE
+   because that is what somebody making a language said: this word is the one
+   doing it. morphology.js's CASE_ROLE turns the traditional names into these
+   same roles, and takes a value it does not know as the role it names -- so
+   the two roads arrive at one answer and this table needs no row there.
+
+   Seven. The first three are what a word order could have decided; the four
+   after them are what it never could. POSSESSOR is the one that shows why:
+   it is a word inside a noun phrase, and no arrangement of a sentence says
+   which noun owns which. */
+var GCASE={subj:'SUBJECT', obj:'OBJECT', rec:'RECIPIENT',
+           poss:'POSSESSOR', loc:'PLACE', inst:'INSTRUMENT', com:'COMPANION'};
 function gInfl(){
   var e=LinguaGrammarEngine, out=[], p=(typeof stBy==='function')? stBy('part') : null, k, w, f;
   if(!p) return out;
@@ -234,7 +314,7 @@ function gInfl(){
    label of the app becomes a feature of the engine, and it is written out
    rather than derived: `pst` is TENSE/PAST because somebody decided that, not
    because of anything about the letters. */
-var GFM_INF={
+var GFM_FEAT={
   pst:['TENSE','PAST'],      prs:['TENSE','PRESENT'],   fut:['TENSE','FUTURE'],
   /* 「過去完了は何かの説明を?に入れてくれ」 OWNER 2026-09-05. A tense of its own
      rather than PAST and PERFECT together: the engine spends a feature on the
@@ -248,6 +328,24 @@ var GFM_INF={
   cau:['VOICE','CAUSATIVE'], pas:['VOICE','PASSIVE'],
   pl :['NUMBER','PLURAL']
 };
+/* WHAT A LABEL MEANS, and it is one question with one answer. The table above
+   is the labels this app supplies; the two lines under it are the labels a
+   language makes for itself, and they are here rather than in a branch beside
+   gFmRules() because "what does this label mean" is one question and a second
+   place answering it is a second answer.
+
+   A class agreement rule means CLASS/<the name somebody typed>, so the engine
+   can be asked for it by the class the noun is in. A label somebody wrote
+   themselves (`i~…`, www/wordsheet.js § fmOwn) is its own feature under the
+   name they gave it -- we do not know what kind of thing it is and must not
+   guess one, 指示書 §10. */
+function gFmFeat(fm){
+  var i;
+  if(GFM_FEAT[fm]) return GFM_FEAT[fm];
+  i=nclsIndexOf(fm);
+  if(i>=0) return ['CLASS', nclsName(i)];
+  return [fm || 'FORM', true];
+}
 /* A derivation says what the word BECOMES. Three of the twelve name a part of
    speech outright; the other nine name a kind of word without saying which
    part of speech it is -- an agent is usually a noun and this app has never
@@ -289,7 +387,7 @@ function gFmCond(r){
 }
 var gFmLeftN=0;
 function gFmRules(){
-  var e=LinguaGrammarEngine, a=(STG && STG.fm) || [], inf=[], der=[], i, r, f, c, k, op, pos, fm;
+  var e=LinguaGrammarEngine, a=(STG && STG.fm) || [], inf=[], der=[], i, r, f, c, g, k, op, pos, fm;
   gFmLeftN=0;
   for(i=0;i<a.length;i++){
     r=a[i]; if(!r) continue;
@@ -312,8 +410,9 @@ function gFmRules(){
       /* A label somebody wrote themselves is its own feature. We do not know
          what kind of thing it is and must not guess one -- 指示書 §10 -- so it
          is asked for by the name they gave it. */
-      k.feature=(GFM_INF[fm]? GFM_INF[fm][0] : (fm || 'FORM'));
-      k.value  =(GFM_INF[fm]? GFM_INF[fm][1] : true);
+      g=gFmFeat(fm);
+      k.feature=g[0];
+      k.value  =g[1];
       inf.push(e.inflection(k));
     }
   }
@@ -576,6 +675,26 @@ function g2Chip(key, i, w){
    here: the chapter is reached as `gram` + `v2:order` and a second copy of
    that string is a second answer to which screen this is. */
 function g2KeepKey(){ return keepKey(); }
+/* A BOARD IS FOUR THINGS, and this app has two boards. Everything else about
+   one -- the ruled paper, the tray, the KEEP buffer, the Save in the corner,
+   how a card is picked up and put down -- is the same act done to a different
+   list, so it is written once and the two differ by these four alone. A third
+   board is a line here.
+
+   `id` is which of the two this is, and the only thing it decides is what a
+   card is CALLED -- g2CardName() below. A card is a role of a sentence on one
+   board and a part of a noun phrase on the other; one set of names for both
+   would be the two boards saying one thing, and they are saying two.
+
+   `stored` is WHAT THIS LANGUAGE HAS SAVED, never what it falls back to. The
+   board opens from it, so a language nobody has answered opens empty -- 「最初
+   から主語と動詞とかが入ってるせいでわかりにくい」 OWNER 2026-09-06 -- and the
+   fallback, where there is one, is orderSeq()'s and belongs to the engine's
+   side of the wall. */
+function g2Bd(id){
+  if(id==='np') return {id:'np', demo:g2NpDemo, stored:npStored, save:setNpOrder, cards:NPARTS};
+  return {id:'order', demo:g2Demo, stored:g2Stored, save:setOrder, cards:ROLES};
+}
 /* Called from the view, so it runs on every render of this screen and finding
    a buffer already here leaves it exactly as it is -- somebody has been
    arranging. The list travels as a comma-joined string because a buffer holds
@@ -586,16 +705,16 @@ function g2KeepKey(){ return keepKey(); }
    an exercise of this shape looks like everywhere it exists.
    「最初から主語と動詞とかが入ってるせいでわかりにくい」 OWNER 2026-09-06. */
 function g2Stored(){ return orderKeep(STG && STG.order); }
-function g2KeepOn(){
-  keepOn(g2KeepKey(), {seq:g2Stored().join(',')},
+function g2KeepOn(b){
+  keepOn(g2KeepKey(), {seq:b.stored().join(',')},
          /* Split before it is handed on: setOrder() takes the list of cards
             or the old six-letter string, and a comma-joined string is
             neither -- orderSeq() would read 'O,V,S,ADV' one character at a
             time and keep the three single letters. The buffer holds strings
             (keepPut); this is where it stops being one. */
          function(v, done){
-           var s=v.hasOwnProperty('seq')? String(v.seq) : g2Stored().join(',');
-           setOrder(s? s.split(',') : []);
+           var s=v.hasOwnProperty('seq')? String(v.seq) : b.stored().join(',');
+           b.save(s? s.split(',') : []);
            done(true);
          });
 }
@@ -634,9 +753,17 @@ function g2Take(i){
    waiting to be placed and a card standing in the sentence are not the same
    thing and looked identical. www/index.html § r4-gram carries both, and
    tools/box-baseline.txt carries the corner. */
-function g2Card(r, act, arg, cls){
+/* WHAT A CARD IS CALLED. Two lists of names because there are two boards, and
+   the prefix is written out on both sides rather than handed in as a string:
+   tools/i18n-check.mjs holds a key that is BUILT by finding its prefix inside
+   a `t(` call, so a prefix arriving as a variable is a key nothing holds --
+   thirteen of them went unheld the first time this was written that way. */
+function g2CardName(bd, r){
+  return (bd==='np')? t('gram.np.'+r) : t('gram.role.'+r);
+}
+function g2Card(bd, r, act, arg, cls){
   return '<button class="gordc'+(cls||'')+'" data-gr="'+esc(r)+'"' +
-    DO(act, arg) + '>'+esc(t('gram.role.'+r))+'</button>';
+    DO(act, arg) + '>'+esc(g2CardName(bd, r))+'</button>';
 }
 /* THE WHOLE SCREEN, not a strip at the top of one.
    「画面そんな広いのになんで上ちょこっとでやるの？」 OWNER 2026-09-06.
@@ -652,15 +779,16 @@ function g2Card(r, act, arg, cls){
    The lines are drawn by the stylesheet rather than by an element each: they
    are the paper, not a list of slots, and 「枠の数は決めない」 -- a card lands
    on the end of what is there and the lines are what it is written on. */
-function g2Board(){
-  g2KeepOn();
-  var seq=g2Seq(), i, on='', off='';
-  for(i=0;i<seq.length;i++) on+=g2Card(seq[i], 'g2Take', [i], '');
-  for(i=0;i<ROLES.length;i++)
-    if(seq.indexOf(ROLES[i])<0) off+=g2Card(ROLES[i], 'g2Put', [ROLES[i]], ' off');
+function g2Board(c){
+  var b=g2Bd(c && c.id), seq, i, on='', off='';
+  g2KeepOn(b);
+  seq=g2Seq();
+  for(i=0;i<seq.length;i++) on+=g2Card(b.id, seq[i], 'g2Take', [i], '');
+  for(i=0;i<b.cards.length;i++)
+    if(seq.indexOf(b.cards[i])<0) off+=g2Card(b.id, b.cards[i], 'g2Put', [b.cards[i]], ' off');
   return '<div class="gordtop">'+
            '<div class="gordput" data-gord="on">'+on+'</div>'+
-           g2Demo()+
+           b.demo()+
          '</div>'+
          '<div class="gordrow" data-gord="off">'+off+'</div>';
 }
@@ -673,6 +801,28 @@ function g2Board(){
 function g2Demo(){
   var w=g2Three(), i, out='';
   if(!w) return '';
+  for(i=0;i<w.length;i++) out+='<span class="gor">'+esc(wOut(w[i].hw))+'</span>';
+  return '<div class="gorder">'+out+'</div>';
+}
+/* THE SAME DEMONSTRATION, of a noun phrase. gLay() runs the real engine on a
+   sentence with no verb in it, so what comes back is the phrase alone, in the
+   order the board above says -- not a diagram of one.
+
+   WHAT IS IN IT IS WHAT THE DICTIONARY HAS. An adjective and a number where
+   there are any, and the noun. The other three cards name parts that no single
+   word of a dictionary is -- a possessor, a relative clause, a demonstrative --
+   and the words for those are made in the chapters that are about them; the
+   card here says where they WOULD stand. A language with neither an adjective
+   nor a number in it yet has nothing to arrange, and draws nothing rather than
+   a noun standing on its own. */
+function g2NpDemo(){
+  var n=gWordOf('n'), a=gWordOf('adj'), q=gWordOf('num'), list=[], w, i, out='';
+  if(!n) return '';
+  if(a) list.push(a);
+  if(q) list.push(q);
+  if(!list.length) return '';
+  list.push(n);
+  w=gLay(list);
   for(i=0;i<w.length;i++) out+='<span class="gor">'+esc(wOut(w[i].hw))+'</span>';
   return '<div class="gorder">'+out+'</div>';
 }
@@ -958,6 +1108,181 @@ function g2Adj(){
   return g2Side('adj', gWordOf('adj'), gWordOf('n'));
 }
 
+/* A HEADING OVER A DECISION, and it is the same `.sec` every chapter of this
+   page already puts over its words and its table. A chapter that takes three
+   answers has to say which of the three each row is; that is a label, not an
+   explanation, and it is written once here rather than three times below. */
+function g2Sec(k){ return '<div class="sec">'+esc(t(k))+'</div>'; }
+/* §複文. 「従属節（〜とき／〜ので／〜なら／〜と言う）の位置と印、関係節
+   （「私が見た山」）の位置と印、並列（と／か／しかし）」 OWNER 2026-09-07.
+
+   Three answers and no words. That is deliberate on both counts.
+
+   THE WORDS ARE THE 接続詞 CHAPTER'S. 「印の語は章の語の欄（接続詞の章と一本化：
+   二つの場所に同じ語を置かない）」 -- so 〜ので and 〜なら and 〜と are made
+   where every other conjunction of this language is made, and the word for a
+   relative clause is one more slot on that same stage. Drawing them here as
+   well would be one list saying 接続詞 twice, which is what took seven stages
+   off this page on 2026-09-06.
+
+   AND THE POSITION OF A RELATIVE CLAUSE IS NOT HERE EITHER. It is the REL card
+   on the noun-phrase board, because that is where a language says what stands
+   in front of its nouns. What is left for this chapter is the MARK.
+
+   IT IS A PAIR OF LABELLED BUTTONS AND NOT A PAIR OF WORDS. The 形容詞 and 場所
+   chapters replaced their buttons with the two words themselves -- 「単に
+   before / after だけにしない」 -- because there were two words of this
+   language to move. A clause is not a word: there is nothing to pick up, so
+   the honest shape is the two answers, named.
+
+   並列 -- と / か / しかし -- has nothing to decide. A word that joins two
+   things stands between them in every language anybody has written down, and
+   the words themselves are the 接続詞 chapter's. The lines that show it are
+   this chapter's 例文, which is what every chapter of this page ends with. */
+function g2Cx(){
+  return g2Sec('g2.cx.sub')+g2SidePick('cx')+
+         g2Sec('g2.cx.mark')+g2SidePick('cxm')+
+         g2Sec('g2.cx.rel')+g2SidePick('relm');
+}
+
+/* ====================================================================
+   §性・名詞クラス
+   「無し／2 つ／3 つ…、名前は自由、語ごとにどれか、形容詞・動詞への一致
+   （あれば）」 OWNER 2026-09-07.
+
+   A CLASS HAS NO MEANING THIS APP KNOWS. 「名前は自由」 -- masculine and
+   feminine, animate and inanimate, or the nine of a Bantu language named after
+   whatever their maker likes. So the app stores the NAME somebody typed and
+   never a code of its own: a table of genders here would be this app deciding
+   what kinds of noun there are, which is 指示書 §10.
+
+   Three things, and the third is the one that makes a translation possible:
+
+     the classes      names, as many as this language has, none to begin with
+     which noun       every noun of this language, one class or none
+     the agreement    a rule per class, written with the same rule editor
+                      every other rule in this app is written with
+
+   THE AGREEMENT RULE IS AN ORDINARY RULE. Its `fm` is `ncls~<i>`, and that is
+   not a second kind of rule: gFmFeat() below is the one place that says what a
+   label MEANS, and it answers CLASS/<the name> for these exactly as it answers
+   TENSE/PAST for `pst`. So `STG.fm` holds it, the rule editor writes it, and
+   gFmRules() hands it to the engine, with nothing new stored and no second
+   editor. Its part of speech is left empty -- any word -- because a language
+   may agree on its adjectives, on its verbs, or on both, and asking which
+   before there is a rule is a question nobody can answer yet.
+
+   RENAMING IS HERE. DELETING IS NOT, and that is not an oversight: what
+   deleting a class should do to the nouns that are in it is a decision about
+   somebody's data, and docs/FEATURE_RULES.md § Deciding says deletion is not
+   decided by a session. docs/BACKLOG.md carries it. */
+function nclsAll(){ return (STG && STG.ncls && STG.ncls.names) || []; }
+function nclsName(i){ var a=nclsAll(); return (a[i]===undefined)? '' : String(a[i]); }
+/* Which class a word is in, by the headword -- which is what the dictionary
+   files a word under and what everything else in this app points at a word
+   with (adapter.idOf). A word renamed loses its class, the same way a rule
+   naming that word loses it, and for the same reason: nothing here is a copy
+   of the dictionary. */
+function nclsOf(hw){
+  var m=(STG && STG.ncls && STG.ncls.of) || {}, v=m[String(hw)];
+  return (v===undefined || v===null)? -1 : Number(v);
+}
+function nclsPut(hw, i){
+  if(!STG.ncls) STG.ncls={names:[], of:{}};
+  if(!STG.ncls.of) STG.ncls.of={};
+  if(i<0) delete STG.ncls.of[String(hw)];
+  else STG.ncls.of[String(hw)]=Number(i);
+  saveStg();
+  render();
+}
+/* The `fm` label an agreement rule of this class wears. One place, because
+   www/wordsheet.js's fmLabel() reads it back to name the rule. */
+function nclsFm(i){ return 'ncls~'+String(i); }
+/* Every word of this language in one class, as the engine's own word ids.
+   Read off the dictionary on every call rather than stored beside it, for the
+   reason gRules() and gInfl() are: a stored copy of something that points at
+   the dictionary parts company with it the first time somebody renames a
+   word. */
+function nclsWordIds(i){
+  var e=LinguaGrammarEngine, out=[], j;
+  for(j=0;j<WORDS.length;j++)
+    if(nclsOf(WORDS[j].hw)===Number(i)) out.push(e.adapter.idOf(WORDS[j]));
+  return out;
+}
+function nclsIndexOf(fm){
+  var s=String(fm||'');
+  return (s.slice(0,5)==='ncls~')? Number(s.slice(5)) : -1;
+}
+/* Making one, and naming one. Both are the same form: a class is a NAME and
+   nothing else, so there is one field and the way in decides whether it is
+   added or written over. */
+function nclsNew(){ nclsForm(-1); }
+function nclsOpen(i){ nclsForm(Number(i)); }
+function nclsForm(i){
+  openForm((i<0? 'ncls:' : 'nclsr:'+i), t('g2.ncls.h'),
+    '<div class="field"><label>'+t('g2.ncls.name')+'</label>'+
+      lnField('ncls-n', t('g2.ncls.name'), nclsName(i), '')+'</div>'+
+    '<button class="btn" style="width:100%;margin-top:6px"' + DO('nclsSave', [i]) + '>'+
+      t(i<0? 'g2.ncls.add' : 'form.save')+'</button>');
+}
+function nclsSave(i){
+  var a=document.getElementById('ncls-n'), v;
+  if(!a) return;
+  v=String(a.value||'').trim();
+  if(!v){ toast(t('g2.ncls.need')); return; }
+  if(!STG.ncls) STG.ncls={names:[], of:{}};
+  if(!STG.ncls.names) STG.ncls.names=[];
+  i=Number(i);
+  if(i<0) STG.ncls.names.push(v); else STG.ncls.names[i]=v;
+  stMarkSet('ncls');
+  closeSheet({target:{id:'sbg'}});
+  render();
+}
+/* A form is a ROUTE, so both ways in are registered -- and they are asked for
+   rather than assumed, for the reason g2HelpReg() below is: THIS FILE IS ALSO
+   READ ON ITS OWN by tools/grammar-engine-check.mjs, in a bare Node context
+   with no screen in it, where FORM_OPEN does not exist. Writing into it at
+   load time threw and took the whole check with it. */
+if(typeof FORM_OPEN!=='undefined'){
+  FORM_OPEN.ncls=function(){ nclsNew(); };
+  FORM_OPEN.nclsr=function(a){ nclsOpen(Number(a)); };
+}
+/* One noun of this language and which class it is in. A row of choices, the
+   same `.segs` every side on this page is chosen with -- 「語ごとにどれか」 --
+   with なし first, because a language may have classes and still have nouns
+   that are in none of them. Pressing a chip IS the answer; there is nothing
+   to save. */
+function nclsRow(w){
+  var a=nclsAll(), now=nclsOf(w.hw), i,
+      out='<button class="seg'+(now<0? ' on':'')+'"'+DO('nclsPut', [w.hw, -1])+'>'+
+          esc(t('word.none'))+'</button>';
+  for(i=0;i<a.length;i++)
+    out+='<button class="seg'+(now===i? ' on':'')+'"'+DO('nclsPut', [w.hw, i])+'>'+
+      esc(String(a[i]))+'</button>';
+  return '<div class="nclsw"><span class="nclsn">'+sfontHTML(wOut(w.hw))+'</span>'+
+    '<div class="segs">'+out+'</div></div>';
+}
+function g2Ncls(){
+  var a=nclsAll(), seen=wordsSeen(), out='', i, w;
+  out+=secAdd(esc(t('g2.ncls.t')), DO('nclsNew'), t('g2.ncls.add'));
+  for(i=0;i<a.length;i++){
+    /* The name is a button so it can be written over, and the ＋ beside it
+       adds an agreement rule for this class. Two acts on one heading, which
+       is what a chapter of a grammar book's own section is. */
+    out+=secAdd('<button class="secnm"'+DO('nclsOpen', [i])+'>'+esc(String(a[i]))+'</button>',
+                DO('fmrNew', ['', nclsFm(i)]), t('g2.fm.add'))+
+         g2FmRows({fm:nclsFm(i), pos:''});
+  }
+  if(!a.length) return out;
+  out+='<div class="sec">'+esc(t('g2.ncls.words'))+'</div>';
+  for(i=0;i<seen.length;i++){
+    w=seen[i];
+    if(w.pos!=='n' || w.fm) continue;
+    out+=nclsRow(w);
+  }
+  return out;
+}
+
 /* §14 Adpositions / Location. 「現在の adp の位置設定だけではなく、場所を
    どう表現するかを定義できるようにする」
 
@@ -1045,7 +1370,7 @@ function g2FmsOf(id){
   if(c.fm) return [c.fm];
   if(typeof FM_INF==='undefined') return out;
   for(i=0;i<FM_INF.length;i++){
-    f=FM_INF[i]; g=GFM_INF[f];
+    f=FM_INF[i]; g=GFM_FEAT[f];
     if(!g) continue;
     if(g2Chap({feature:g[0], value:g[1], target:g2PosTarget(c.pos)})!==id) continue;
     out.push(f);
@@ -1326,6 +1651,9 @@ function g2Chaps(){
      so a function that is the LAST thing in an object literal is followed by
      `}` and reads as unused. Eight of them did. */
   var out=[{id:'order', body:g2Board, nm:t('stg.order.t')},
+           {id:'np',    body:g2Board, nm:t('g2.np.t')},
+           {id:'cx',    body:g2Cx,    nm:t('g2.cx.t')},
+           {id:'ncls',  body:g2Ncls,  nm:t('g2.ncls.t')},
            {id:'n',     body:g2Nouns, nm:posLabel('n'), pos:'n'}], i, a;
   /* The forms, one chapter each, from the one list. A chapter is drawn by
      g2FmChap() and knows its own form and its own part of speech, so nothing
@@ -1384,9 +1712,15 @@ function g2Said(c){
   p=chapSlotsOf(c.id);
   if(p && stSlotsDone(p)) return true;
   if(c.fm) return g2RulesOf(c.fm).length>0;
-  if(c.id==='order') return stTouched('order');
+  if(c.id==='order' || c.id==='np') return stTouched(c.id);
   if(c.id==='n'){ p=stBy('part'); return !!p && !!stSlotsDone(p); }
   if(c.id==='adj' || c.id==='adp') return stTouched(c.id);
+  /* Three decisions in one chapter, so any one of them is the chapter having
+     been written in. */
+  if(c.id==='cx') return stTouched('cx') || stTouched('cxm') || stTouched('relm');
+  /* A language with a class in it has said something here, whether or not any
+     noun is in one yet. */
+  if(c.id==='ncls') return nclsAll().length>0;
   /* この言語について counts what this language has and is never empty. */
   return true;
 }

@@ -1656,6 +1656,25 @@ export function halfDone(){
         const h = vGram();
         WORDS.pop();
         return h; }],
+    /* 性・名詞クラス, and the whole chapter only exists once a language has a
+       class in it: an empty one is a ＋ and nothing else, so the class row,
+       the chips on every noun and the way to write an agreement rule are all
+       on this face and on no other. Two classes rather than one, because
+       「どれか」 with one choice on it is not a choice. */
+    ['the noun classes, empty', () => {
+        window.route = 'gram'; NAV = [{ r:'gram', a:'v2:ncls' }];
+        return vGram(); }],
+    ['the noun classes, two of them', () => {
+        const was = STG.ncls;
+        STG.ncls = { names:['ka','mi'], of:{} };
+        STG.ncls.of[WORDS[0].hw] = 0;
+        window.route = 'gram'; NAV = [{ r:'gram', a:'v2:ncls' }];
+        const h = vGram();
+        STG.ncls = was;
+        return h; }],
+    /* And naming one, which is a form and is therefore reached by nothing the
+       walk would otherwise take. */
+    ['naming a noun class', () => { nclsNew(); return vForm(); }],
     /* And the list with the door on it, which is the only place the way in
        exists. Everything else walks with the stage off the list, so this is
        the one face that renders that button. */

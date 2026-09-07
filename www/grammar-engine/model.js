@@ -36,6 +36,20 @@
     for(i=0;i<value.length;i++){ s=String(value[i]).toUpperCase(); out.push(map[s]||s); }
     return out;
   }
+  /* A NOUN PHRASE IS A LIST TOO, and it is a different list from the
+     sentence's. 「名詞句の並び ── 指示詞・数・形容詞・所有者・関係節が、名詞の
+     前か後か」 OWNER 2026-09-07. Same shape as wordOrder above and here for the
+     same reason: www/grammar.js stores the CARDS, and this is the one place a
+     card becomes a part the writer knows, so DEM means DEMONSTRATIVE in
+     exactly one file. A part nobody knows is passed through uppercased rather
+     than dropped -- it is still somebody's, and dropping it would silently
+     shorten their phrase. */
+  function npOrder(value){ var map={DEM:'DEMONSTRATIVE',NUM:'NUMERAL',ADJ:'ADJECTIVE',POSS:'POSSESSOR',REL:'RELATIVE',N:'NOUN'}; var out=[],i,s;
+    if(typeof value==='string') value=value.split(',');
+    if(!Array.isArray(value)) return out;
+    for(i=0;i<value.length;i++){ s=String(value[i]).toUpperCase(); if(s) out.push(map[s]||s); }
+    return out;
+  }
   function languageModel(data){ data=data||{}; return {schema:'lingua.grammar',version:VERSION,languageId:data.languageId||null,wordOrder:wordOrder(data.wordOrder),words:array(data.words),morphemes:array(data.morphemes),derivations:array(data.derivations),inflections:array(data.inflections),grammarRules:array(data.grammarRules),sentences:array(data.sentences),metadata:object(data.metadata)}; }
-  root.LinguaGrammarEngine={VERSION:VERSION,word:word,morpheme:morpheme,derivation:derivation,inflection:inflection,grammarRule:grammarRule,sentence:sentence,semanticIR:semanticIR,languageModel:languageModel,wordOrder:wordOrder};
+  root.LinguaGrammarEngine={VERSION:VERSION,word:word,morpheme:morpheme,derivation:derivation,inflection:inflection,grammarRule:grammarRule,sentence:sentence,semanticIR:semanticIR,languageModel:languageModel,wordOrder:wordOrder,npOrder:npOrder};
 }(typeof window!=='undefined'?window:this));

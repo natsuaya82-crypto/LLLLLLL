@@ -53,6 +53,20 @@
     var r=rulesFor(model,target,'POSITION');
     return (r.length && r[0].value==='before') ? 'before' : 'after';
   }
+  /* THE PARTS OF A NOUN PHRASE, in the order this language puts them, and an
+     empty list is the honest answer for a language nobody has asked. It is a
+     syntax rule for the same reason the three positions are: grammarRule() is
+     already the shape for "this language does this", and the codes it carries
+     are turned into parts by the one place that does that (model.js npOrder).
+
+     A PART THIS LIST DOES NOT NAME KEEPS THE PLACE IT ALREADY HAD. That is
+     the whole of what an empty chapter means here -- 「章が空の時はその部分が
+     抜ける（壊れない）」 -- so a language that has never opened the board is
+     arranged exactly as it was before the board existed. */
+  function npOrderOf(model){
+    var r=rulesFor(model,'NOUNPHRASE','ORDER');
+    return (r.length && api.npOrder)? api.npOrder(r[0].value) : [];
+  }
   /* Which words ARE the negation, and which are adpositions, is not something
      a part of speech can say: the app makes them in a stage, so the page that
      knows about stages names them here by id. More than one is ordinary —
@@ -77,6 +91,31 @@
     }
     return ['SUBJECT','OBJECT'];
   }
+  /* ---- what class a word is in --------------------------------------------
+     「性・名詞クラス ── 無し／2 つ／3 つ…、名前は自由、語ごとにどれか、
+     形容詞・動詞への一致（あれば）」 OWNER 2026-09-07.
+
+     A class has no meaning this engine knows, and must not: the app stores
+     the NAME somebody typed, and here it is the `feature` of a syntax rule
+     whose value is the words in it. So a language with nine classes named
+     after whatever its maker likes works exactly as one with two named
+     masculine and feminine, and nothing here decides what kinds of noun
+     there are.
+
+     An agreement rule is then an ordinary inflection asking for CLASS/<that
+     name>, and `applies()` is what keeps it on the right part of speech: a
+     rule written for adjectives fires on adjectives, one written for verbs on
+     verbs, and a language with neither is untouched. */
+  function classOf(model, word){
+    var rules=(model&&model.grammarRules)||[], id=word&&String(word.id), i, r, v, j;
+    if(!id) return null;
+    for(i=0;i<rules.length;i++){ r=rules[i];
+      if(r.type!=='syntax' || r.target!=='CLASS') continue;
+      v=r.value; if(!Array.isArray(v)) v=(v===null||v===undefined)?[]:[v];
+      for(j=0;j<v.length;j++) if(String(v[j])===id) return r.feature;
+    }
+    return null;
+  }
   function isMarked(ids, unit){
     var i; if(unit.kind!=='word'||!unit.word) return false;
     for(i=0;i<ids.length;i++) if(ids[i]===String(unit.word.id)) return true;
@@ -100,6 +139,11 @@
     if(p==='ADJECTIVE') return 'ADJECTIVE';
     if(p==='ADVERB') return 'ADVERB';
     if(p==='ADPOSITION') return 'ADPOSITION';
+    /* A numeral is a part of a NOUN PHRASE and not a role of a sentence, so
+       it is named here and placed by the noun-phrase board below. Where that
+       board says nothing it goes on falling out at the end of the line, which
+       is exactly where it went before there was a board. */
+    if(p==='NUMERAL') return 'NUMERAL';
     if(NOMINAL[p]) return 'NOMINAL';
     return 'LOOSE';
   }
@@ -141,6 +185,7 @@
     var order=(model&&model.wordOrder&&model.wordOrder.length)?model.wordOrder:['SUBJECT','OBJECT','VERB'],
         negIds=markedIds(model,'NEGATION'), adpIds=markedIds(model,'ADPOSITION'),
         kinds=[], adjs=[], adps=[], advs=[], negs=[], loose=[], noms=[], verb=-1,
+        np=npOrderOf(model), npOn={}, nmods=[],
         adjPos=positionOf(model,'ADJECTIVE'), adpPos=positionOf(model,'ADPOSITION'),
         negPos=positionOf(model,'NEGATION'), onBoard={}, adpHead={},
         i, j, k, slots=[], si=0, role, roleOf=[], head, out=[], phrase, extra=[], seen={};
@@ -154,6 +199,7 @@
        通り」 -- so this is one question asked once, and every place below
        reads it rather than deciding again. */
     for(i=0;i<order.length;i++) onBoard[order[i]]=true;
+    for(i=0;i<np.length;i++) npOn[np[i]]=true;
 
     for(i=0;i<units.length;i++) kinds.push(kindOf(model,units[i],negIds,adpIds));
     for(i=0;i<units.length;i++){
@@ -166,6 +212,10 @@
       else if(kinds[i]==='ADPOSITION'){ j=attach(kinds,i); if(j<0) loose.push(i); else { adps.push({at:i, to:j}); adpHead[j]=1; } }
       else if(kinds[i]==='NEGATION'){ if(verb<0 && !onBoard.NEGATION) loose.push(i); else negs.push(i); }
       else if(kinds[i]==='ADVERB'){ if(onBoard.ADVERB) advs.push(i); else loose.push(i); }
+      /* The same sentence the adverb's line above says, about the other
+         board: a part the noun-phrase board does not name is not attached to
+         anything, and follows the sentence as it always did. */
+      else if(kinds[i]==='NUMERAL'){ j=npOn.NUMERAL? attach(kinds,i) : -1; if(j<0) loose.push(i); else nmods.push({at:i, to:j, part:'NUMERAL'}); }
       else if(kinds[i]==='LOOSE') loose.push(i);
     }
 
@@ -193,15 +243,38 @@
       role=slots[si++]; roleOf[noms[i]]=role||'MODIFIER';
     }
 
+    /* Everything attached to this noun, by the part of the phrase it is. */
+    function modsOf(at, part){
+      var m=[], q;
+      for(q=0;q<nmods.length;q++) if(nmods[q].to===at && nmods[q].part===part) m.push(nmods[q].at);
+      return m;
+    }
     function phraseOf(at, role){
-      var mine=[], theirs=[], p=[], q;
+      var mine=[], theirs=[], p=[], q, k, part;
       for(q=0;q<adjs.length;q++) if(adjs[q].to===at) mine.push(adjs[q].at);
       for(q=0;q<adps.length;q++) if(adps[q].to===at) theirs.push(adps[q].at);
-      p=(adjPos==='before')?mine.slice():[];
-      p.push(at);
-      if(adjPos!=='before') p=p.concat(mine);
+      if(np.length){
+        /* The board's own order, with the noun standing where N stands. A
+           part the board names and this sentence has none of contributes
+           nothing, which is not an error: the card says where it WOULD go. */
+        for(k=0;k<np.length;k++){ part=np[k];
+          if(part==='NOUN') p.push(at);
+          else if(part==='ADJECTIVE') p=p.concat(mine);
+          else p=p.concat(modsOf(at, part));
+        }
+        /* A board that never names the noun still has to write it, and an
+           adjective the board says nothing about keeps the side the
+           adjective chapter gave it. Neither is a default put over an
+           answer: both are what happens where there is no answer. */
+        if(!npOn.NOUN) p.push(at);
+        if(!npOn.ADJECTIVE) p=(adjPos==='before')? mine.concat(p) : p.concat(mine);
+      }else{
+        p=(adjPos==='before')?mine.slice():[];
+        p.push(at);
+        if(adjPos!=='before') p=p.concat(mine);
+      }
       p=(adpPos==='before')?theirs.concat(p):p.concat(theirs);
-      for(q=0;q<p.length;q++){ seen[p[q]]=1; out.push(tag(units[p[q]], role)); }
+      for(q=0;q<p.length;q++) if(!seen[p[q]]){ seen[p[q]]=1; out.push(tag(units[p[q]], role)); }
     }
     function verbPhrase(){
       var p=[], q;
@@ -253,6 +326,10 @@
        that is the object is still the object wherever it ends up. */
     for(i=0;i<noms.length;i++) if(!seen[noms[i]]) extra.push(noms[i]);
     for(i=0;i<extra.length;i++) if(!seen[extra[i]]) phraseOf(extra[i], roleOf[extra[i]]||'MODIFIER');
+    /* A part of a noun phrase whose noun never got drawn. Nothing somebody
+       wrote leaves without being placed -- the same sentence the sweep below
+       says, and the one thing arrange() must not do is lose a word. */
+    for(i=0;i<nmods.length;i++) if(!seen[nmods[i].at]) loose.push(nmods[i].at);
     loose.sort(function(a,b){ return a-b; });
     for(i=0;i<loose.length;i++) if(!seen[loose[i]]){ seen[loose[i]]=1; out.push(tag(units[loose[i]],'MODIFIER')); }
     /* Nothing somebody wrote leaves without being placed: every kind above
@@ -344,33 +421,215 @@
      has no word for is a gap and stays as the meaning, for the same reason
      lexicon.cut() leaves one: inventing the word would be worse than showing
      that it is missing, and the gap is the door to making it. */
-  function fromSemantic(model, ir){
+  /* ---- a sentence inside a sentence ---------------------------------------
+     「複文 ── 従属節（〜とき／〜ので／〜なら／〜と言う）の位置と印、関係節
+     （「私が見た山」）の位置と印、並列」 OWNER 2026-09-07.
+
+     A subordinate clause is A SENTENCE, so it is written by the same function
+     that writes a sentence -- this one, called again on the inner IR. That is
+     why it is recursion and not a second writer: a clause obeys this
+     language's word order, its case marks and its verb endings exactly as the
+     main clause does, and a writer of its own would be a second answer to all
+     three.
+
+     `depth` is the one thing recursion needs and the IR cannot promise: an IR
+     that carries itself, or two that carry each other, would otherwise be a
+     phone that stops. Past the limit the clause is written as its own marker
+     and nothing else, which is a short sentence rather than a wrong one. */
+  var CLAUSE_DEEP=8;
+  /* Where the clause and its mark stand, and both are one answer for the
+     whole language, heard in every sentence that uses them -- which is the
+     test this app has always applied to giving something a button. */
+  function clauseMark(model, marker, gaps){
+    var found;
+    if(marker===undefined||marker===null||String(marker)==='') return '';
+    found=lexFind(model, marker);
+    if(found.length) return String(found[0].lemma||'');
+    gaps.push(String(marker));
+    return String(marker);
+  }
+  /* One clause, with its mark on the side this language puts it. An empty
+     mark is a language that marks it with nothing, which is a real answer and
+     not a gap -- Japanese writes 私が見た山 with no word between them. */
+  function clauseText(model, rel, gaps, depth, side){
+    var inner=fromSemantic(model, (rel&&rel.ir)||null, depth+1), mk, parts=[];
+    for(var i=0;i<inner.gaps.length;i++) gaps.push(inner.gaps[i]);
+    mk=clauseMark(model, rel&&rel.marker, gaps);
+    if(mk && positionOf(model, side)==='before') parts.push(mk);
+    if(inner.text) parts.push(inner.text);
+    if(mk && positionOf(model, side)!=='before') parts.push(mk);
+    return parts.join(' ');
+  }
+  /* Every clause hanging off this sentence, in the order they were written.
+     `relations` has been on semanticIR() since Phase 1 with nothing reading
+     it; this is what it is for. */
+  function clausesOf(model, ir, gaps, depth){
+    var rels=(ir&&ir.relations)||[], out=[], i, r;
+    for(i=0;i<rels.length;i++){ r=rels[i];
+      if(!r || !r.ir) continue;
+      out.push(clauseText(model, r, gaps, depth, 'CLAUSEMARK'));
+    }
+    return out;
+  }
+  function fromSemantic(model, ir, depth){
     var order=(model&&model.wordOrder&&model.wordOrder.length)?model.wordOrder:['SUBJECT','OBJECT','VERB'],
         roles=(ir&&ir.roles)||{}, features=(ir&&ir.features)||{},
-        seen={}, queue=[], out=[], gaps=[], i, k, role, slot;
+        seen={}, queue=[], out=[], gaps=[], subs=[], main, vfeat, i, k, role, slot;
+    depth=Math.max(0, parseInt(depth,10)||0);
     /* the order this language puts roles in, then anything it has no place for */
     for(i=0;i<order.length;i++){ slot=(order[i]==='VERB')?'PREDICATE':order[i]; if(!seen[slot]){ seen[slot]=true; queue.push(slot); } }
     for(k in roles) if(Object.prototype.hasOwnProperty.call(roles,k)&&!seen[k]){ seen[k]=true; queue.push(k); }
+    /* THE VERB AGREES WITH ITS SUBJECT, where this language says verbs do.
+       The sentence's own features are the IR's and are never written into --
+       a copy is made, because an IR is somebody's meaning and this is one
+       language's way of saying it. */
+    vfeat=withClass(model, features, roles.SUBJECT);
     for(i=0;i<queue.length;i++){ role=queue[i];
       if(!Object.prototype.hasOwnProperty.call(roles,role)) continue;
-      out.push(pieceFor(model, role, roles[role], features, gaps));
+      out.push(pieceFor(model, role, roles[role], (role==='PREDICATE')? vfeat : features, gaps, depth));
     }
-    return {ok:true, text:surfaces(out).join(' '), pieces:out, gaps:gaps, complete:gaps.length===0};
+    main=surfaces(out).join(' ');
+    if(depth<CLAUSE_DEEP) subs=clausesOf(model, ir, gaps, depth);
+    return {ok:true, text:cxJoin(model, main, subs), pieces:out, gaps:gaps,
+            clauses:subs, complete:gaps.length===0};
+  }
+  /* The sentence's features with the subject's class added, where there is
+     one. A copy, never the IR's own object. */
+  function withClass(model, features, subject){
+    var out={}, k, found, cls;
+    for(k in features) if(Object.prototype.hasOwnProperty.call(features,k)) out[k]=features[k];
+    if(subject===undefined || subject===null) return out;
+    found=lexFind(model, isPhrase(subject)? subject.head : subject);
+    if(!found.length) return out;
+    cls=classOf(model, found[0]);
+    if(cls) out.CLASS=cls;
+    return out;
+  }
+  /* The main clause and what hangs off it, on the side this language says.
+     Nothing said is the main clause alone, which is what every sentence
+     written before this chapter existed is. */
+  function cxJoin(model, main, subs){
+    var parts=[], i;
+    if(!subs.length) return main;
+    if(positionOf(model,'CLAUSE')==='before'){ for(i=0;i<subs.length;i++) parts.push(subs[i]); }
+    if(main) parts.push(main);
+    if(positionOf(model,'CLAUSE')!=='before'){ for(i=0;i<subs.length;i++) parts.push(subs[i]); }
+    return parts.join(' ');
+  }
+
+  /* ---- a role that is a NOUN PHRASE ---------------------------------------
+     A role of an IR is a MEANING, and a meaning is not always one word: 「この
+     赤い山」 is a demonstrative, an adjective and a noun, and a language that
+     writes them in another order writes a different sentence out of the same
+     meaning. So a role may arrive as a phrase --
+
+       {head:'mountain', mods:{ADJECTIVE:['red'], DEMONSTRATIVE:['this']},
+        features:{NUMBER:'PLURAL'}}
+
+     -- and a bare string is still a bare string, which is what every IR
+     written before today is. Nothing had to change to keep working.
+
+     `features` on the phrase are the NOUN's own (plural, and the mark for
+     its role); `features` of the sentence are the verb's. Those are two
+     different things and were one word away from being confused. */
+  var NP_PARTS=['DEMONSTRATIVE','NUMERAL','ADJECTIVE','POSSESSOR','RELATIVE'];
+  function isPhrase(v){ return !!(v && typeof v==='object' && !Array.isArray(v)); }
+  /* One modifier, or several: a noun may have two adjectives on it and the
+     list is what somebody meant. A meaning this language has no word for is a
+     gap here exactly as it is for a head -- it stays as the meaning, and the
+     gap is the door to making that word. */
+  function modWords(model, v, gaps, depth, part, cls){
+    var out=[], list, i, found, cv, marked;
+    /* HOW DEEP IN is read here as well as passed in, and that is not belt and
+       braces: a caller that forgot the argument made `depth < CLAUSE_DEEP`
+       compare undefined, which is false, and every relative clause was
+       dropped in silence. A missing depth is the top of the sentence. */
+    depth=Math.max(0, parseInt(depth,10)||0);
+    if(v===undefined || v===null) return out;
+    list=Array.isArray(v)? v : [v];
+    for(i=0;i<list.length;i++){
+      /* A RELATIVE CLAUSE IS A SENTENCE hanging on a noun -- 「私が見た山」 --
+         so a modifier that carries an `ir` is written by the same writer the
+         main clause is, with its own mark on the side this language puts it.
+         Where the clause stands relative to the NOUN is not decided here: it
+         is the REL card on the noun-phrase board, which is the one place that
+         answers it. */
+      if(list[i] && typeof list[i]==='object' && list[i].ir){
+        if(depth<CLAUSE_DEEP) out.push(clauseText(model, list[i], gaps, depth, 'RELATIVE'));
+        continue;
+      }
+      found=lexFind(model, list[i]);
+      if(!found.length){ gaps.push(String(list[i])); out.push(String(list[i])); continue; }
+      /* A PART OF A PHRASE MAY CARRY THIS LANGUAGE'S MARK FOR IT. 「所有（〜の）」
+         is a mark on the possessor exactly as 「〜が」 is one on the subject,
+         and it is asked for by the same function -- caseFor() -- so a language
+         that writes one writes it here and a language that does not is
+         arranged by its noun-phrase board alone. Nothing else in a phrase has
+         a mark today; asking for all of them costs one lookup and means the
+         day 「どんな」 gets one, it is already written. */
+      cv=part? caseFor(model, part) : null;
+      marked={};
+      if(cv!==null) marked.CASE=cv;
+      /* AND IT AGREES WITH THE NOUN IT IS ON, where this language says words
+         do. `cls` is the head's class and is handed down rather than looked up
+         again here -- one lookup per phrase, and one answer to which noun this
+         modifier belongs to. */
+      if(cls) marked.CLASS=cls;
+      if(cv===null && !cls){ out.push(String(found[0].lemma||'')); continue; }
+      out.push(api.morphology.inflect(model, found[0], marked).surface);
+    }
+    return out;
+  }
+  /* The phrase, in the order this language's board says. A part the board
+     does not name is written where it has always been written -- the
+     adjective on the side its own chapter gives, everything else after the
+     noun -- so a chapter nobody has filled in leaves that part OUT of the
+     ordering rather than out of the sentence. */
+  function npWrite(model, value, headSurface, gaps, depth, cls){
+    var order=npOrderOf(model), mods=(isPhrase(value) && value.mods)||{},
+        out=[], said={}, i, part;
+    if(order.length){
+      for(i=0;i<order.length;i++){ part=order[i]; said[part]=1;
+        if(part==='NOUN') out.push(headSurface);
+        else out=out.concat(modWords(model, mods[part], gaps, depth, part, cls));
+      }
+      if(!said.NOUN) out.push(headSurface);
+      for(i=0;i<NP_PARTS.length;i++) if(!said[NP_PARTS[i]]) out=out.concat(modWords(model, mods[NP_PARTS[i]], gaps, depth, NP_PARTS[i], cls));
+      return out;
+    }
+    out=(positionOf(model,'ADJECTIVE')==='before')? modWords(model, mods.ADJECTIVE, gaps, depth, 'ADJECTIVE', cls) : [];
+    out.push(headSurface);
+    if(positionOf(model,'ADJECTIVE')!=='before') out=out.concat(modWords(model, mods.ADJECTIVE, gaps, depth, 'ADJECTIVE', cls));
+    for(i=0;i<NP_PARTS.length;i++) if(NP_PARTS[i]!=='ADJECTIVE') out=out.concat(modWords(model, mods[NP_PARTS[i]], gaps, depth, NP_PARTS[i], cls));
+    return out;
   }
 
   /* One role of an IR, as this language writes it. The verb takes the
      sentence's features; a nominal takes this language's mark for its role,
-     when this language has one. */
-  function pieceFor(model, role, meaning, features, gaps){
-    var found=lexFind(model, meaning), word, made, cv, marked;
-    if(!found.length){ gaps.push(meaning); return {role:role, surface:String(meaning), word:null, gap:true}; }
+     when this language has one, and whatever its own phrase carries. */
+  function pieceFor(model, role, value, features, gaps, depth){
+    var meaning=isPhrase(value)? value.head : value,
+        own=(isPhrase(value) && value.features)||{},
+        found=lexFind(model, meaning), word, made, cv, marked, cls, k;
+    if(!found.length){
+      gaps.push(String(meaning));
+      /* A head this language has no word for has no class either -- a class is
+         a fact about a word, and there is no word. */
+      return {role:role, surface:npWrite(model, value, String(meaning), gaps, depth, null).join(' '), word:null, gap:true};
+    }
     word=found[0];
     if(role==='PREDICATE'){ made=api.morphology.inflect(model, word, features); return {role:role, surface:made.surface, word:word, gap:false}; }
+    marked={};
+    for(k in own) if(Object.prototype.hasOwnProperty.call(own,k)) marked[k]=own[k];
     cv=caseFor(model, role);
-    if(cv===null) return {role:role, surface:String(word.lemma||''), word:word, gap:false};
-    marked={}; marked.CASE=cv;
+    if(cv!==null) marked.CASE=cv;
+    /* THE NOUN ITSELF MAY CARRY ITS CLASS. Some languages mark the class on
+       the noun and some only on what agrees with it; a language that writes
+       neither has no rule and nothing happens. */
+    cls=classOf(model, word);
+    if(cls) marked.CLASS=cls;
     made=api.morphology.inflect(model, word, marked);
-    return {role:role, surface:made.surface, word:word, gap:false};
+    return {role:role, surface:npWrite(model, value, made.surface, gaps, depth, cls).join(' '), word:word, gap:false};
   }
 
   function surfaces(pieces){ var out=[], i; for(i=0;i<pieces.length;i++) out.push(pieces[i].surface); return out; }
@@ -476,5 +735,5 @@
     return out.join(' ');
   }
 
-  api.translate={run:run, arrange:arrange, line:line, positionOf:positionOf, markedIds:markedIds, srcOrder:srcOrder, toSemantic:toSemantic, fromSemantic:fromSemantic, toNatural:toNatural, glossLine:glossLine};
+  api.translate={run:run, arrange:arrange, line:line, positionOf:positionOf, markedIds:markedIds, srcOrder:srcOrder, toSemantic:toSemantic, fromSemantic:fromSemantic, toNatural:toNatural, glossLine:glossLine, npOrderOf:npOrderOf};
 }(typeof window!=='undefined'?window:this));

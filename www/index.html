@@ -3806,6 +3806,26 @@ textarea.ntbody.grow{min-height:0;height:auto;overflow:hidden;resize:none}
    「日本語キーボードで意味の行が隠れるなら、道具の行の上に意味の行も一緒に
    寄せる」 */
 .view.fit{height:100vh;height:100dvh}
+
+/* ---- r5-gram ----------------------------------------------------------
+   文法の章を埋める（オーナー決定 2026-09-07）。ここより上には触っていない。
+
+   性・名詞クラスの二つ ── 一つの名詞とそれがどのクラスか、そして章の見出しに
+   立つクラスの名前。囲いも角丸も無い（`docs/CHANGELOG.md` の 2026-09-07、
+   `tools/box-baseline.txt` に足した行は無い）。 */
+/* 一つの名詞の行。名詞そのものと、その横に `.segs` ── このページで側を選ぶ
+   のに使っているのと同じ行。名詞が長いときに札を押し出さないよう、名前の側が
+   縮む。一つの一覧の行は一つの高さなので、字の大きさと行の高さは行の側で
+   決める（タグに決めさせない）。 */
+.nclsw{display:flex;align-items:center;gap:12px;min-height:44px;
+   font-size:.94rem;line-height:1.6}
+.nclsw .nclsn{flex:1 1 auto;min-width:0;color:var(--tx);overflow-wrap:anywhere}
+.nclsw .segs{flex:0 0 auto;margin-bottom:0;border-bottom:0}
+/* クラスの名前は見出しの字であり、押せば書き換えられる。見出しの字のまま
+   44pt の的を持つために、上下の余白へはみ出す ── `.navq` と同じ手。 */
+.secnm{min-height:44px;min-width:44px;margin:-10px 0;padding:0;
+   background:none;border:0;font:inherit;color:inherit;text-align:left}
+.secnm:active{color:var(--gold)}
 </style>
 </head>
 <body>

@@ -285,6 +285,12 @@ act('dirPick', dirPick);
 act('g2Move', g2Move);
 act('g2Put', g2Put);
 act('g2Take', g2Take);
+/* 性・名詞クラス. A class is made and named on a form, and which class a noun
+   is in is one press on the chapter itself -- there is nothing to save. */
+act('nclsNew', nclsNew);
+act('nclsOpen', nclsOpen);
+act('nclsSave', nclsSave);
+act('nclsPut', nclsPut);
 act('stAddOwn', stAddOwn);
 act('stDelEx', stDelEx);
 act('stDelOwn', stDelOwn);
