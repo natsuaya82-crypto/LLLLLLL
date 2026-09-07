@@ -27,15 +27,16 @@
 返った後。**印を描く行は消えていない**（`wldRow()` の `.wldoff` は在る）。
 出ないのは `WLD` がまだ空だから。
 
-## 触るもの
+## 触ったもの
 
-- `www/me.js` ── プロフィールへ入る一か所（`profileOpen`）と、前の値を見せる道の削除
-- `www/sns.js` ── `PULL_ON` の表（言語も一つの名前にする）と `askWho`
-- `www/home.js` ── `vProfile`（くるくるの道の削除）
-- `www/post.js`・`www/shell.js` ── プロフィールへの入口をその一か所に向ける
-- `www/boot.js` ── 起動もその一か所を通る
+- `www/me.js` ── `profileOpen`・`profileReady`・`whoWait`、前の値を見せる道の削除
+- `www/sns.js` ── `PULL_ON` の表（`mylangs`・`myposts`）、`pullWait`、`pullForget`
+- `www/home.js` ── `vProfile`（くるくるの道と `whoPull` の削除）
+- `www/post.js`・`www/shell.js` ── プロフィールへの入口をその一か所に向けた
+- `www/boot.js`・`www/onboard.js` ── 起動とサインインもその一か所を通る
+- `www/net.js` ── `netLangsDown()` が答えでないものを行として読む一行だけ
 - `www/act-map.js`
-- `tools/acct-check.mjs`・`tools/fixture.mjs`
+- `tools/acct-check.mjs`（59・60）・`tools/fixture.mjs`
 - `docs/CHANGELOG.md`
 
 ## 触らないもの
