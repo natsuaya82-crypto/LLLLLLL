@@ -671,6 +671,199 @@ assert.equal(e.morphology.derive(derStem, derStem.words[1], 'ADJECTIVE').surface
    means adding it to this sentence. */
 
 
+/* ---- D16 形容詞の比較 -------------------------------------------------------
+   「比較・最上級の規則（fmr の形）と位置」 OWNER 2026-09-07.
+
+   The rules are ordinary rules (DEGREE, two values, held with the moods and
+   the person forms above). What is new here is the STANDARD -- 「山より高い」
+   の「山より」 -- because it is the one position in a comparison this app does
+   not already answer somewhere else: where the adjective itself stands is the
+   noun-phrase board's and the 形容詞 chapter's. */
+const CMPW=[['yama','mountain','NOUN'],['taka','tall','ADJECTIVE'],
+            ['yori','than','PARTICLE'],['mi','I','PRONOUN']];
+function withStandard(model, side, word){
+  if(word) model.grammarRules.push(e.grammarRule({type:'syntax',target:'STANDARD',feature:'WORD',value:word}));
+  model.grammarRules.push(e.grammarRule({type:'syntax',target:'STANDARD',feature:'POSITION',value:side}));
+  return model;
+}
+const CMPIR=e.semanticIR({roles:{SUBJECT:'I', STANDARD:'mountain', PREDICATE:'tall'},
+                          features:{DEGREE:'COMPARATIVE'}});
+const cmpRule={id:'c',target:'ADJECTIVE',feature:'DEGREE',value:'COMPARATIVE',
+               operation:'suffix',form:'sa',separator:''};
+/* 「私 山より 高いsa」 -- the standard on the board before the verb, its word
+   after the noun, which is Japanese. Both halves are stated: WHERE the phrase
+   stands is the STD card on the word order board, and WHICH SIDE the word
+   stands is the 比較級 chapter's. */
+const CMPORD=['S','STD','V'];
+assert.equal(e.translate.fromSemantic(
+  withStandard(lang('CM',CMPORD,CMPW,[cmpRule]),'after','CM:yori'),CMPIR).text,
+  'mi yama yori takasa');
+/* and before it, which is English's `than` */
+assert.equal(e.translate.fromSemantic(
+  withStandard(lang('CM2',CMPORD,CMPW,[cmpRule]),'before','CM2:yori'),CMPIR).text,
+  'mi yori yama takasa');
+/* THE CARD LEFT OFF THE BOARD. The phrase follows the sentence, which is what
+   every role this board has no place for already does -- nothing is dropped
+   and the word it is measured with still stands where the chapter says. */
+assert.equal(e.translate.fromSemantic(
+  withStandard(lang('CM5','SOV',CMPW,[cmpRule]),'after','CM5:yori'),CMPIR).text,
+  'mi takasa yama yori');
+/* A LANGUAGE THAT MEASURES WITH NO WORD AT ALL writes the standard bare. That
+   is a real answer, not a gap -- nothing is missing, the language simply says
+   it another way. */
+assert.equal(e.translate.fromSemantic(
+  withStandard(lang('CM3',CMPORD,CMPW,[cmpRule]),'after',null),CMPIR).text,
+  'mi yama takasa');
+/* THE CHAPTER LEFT EMPTY. No rule for the comparative is the adjective
+   standing as it is -- the part drops out, nothing breaks. */
+assert.equal(e.translate.fromSemantic(
+  withStandard(lang('CM4',CMPORD,CMPW),'after','CM4:yori'),CMPIR).text,
+  'mi yama yori taka');
+/* 比較級 and 最上級 are one feature with two values, held the way the moods
+   are: a word is not both at once. */
+const DEG={};
+for(const f of ['cmp','sup']){
+  const [feat, val]=app.gFmFeat(f);
+  assert.equal(feat,'DEGREE');
+  assert.ok(!DEG[val],'比較級と最上級が同じ意味になっている: '+val);
+  DEG[val]=1;
+}
+
+/* ---- C15 コピュラ・存在 -----------------------------------------------------
+   「「〜です」「〜がある」の語と位置」 OWNER 2026-09-07.
+
+   The two WORDS are the chapter's; the POSITION is the CMP card on the word
+   order board, because where a copula stands is a place in a sentence and
+   that board is what says where the places are. Putting a complement where an
+   object goes would be a guess about somebody's language rather than
+   something they said, and the assertions below are written to show the card
+   really is what decides. */
+const COPW=[['mi','I','PRONOUN'],['sensei','teacher','NOUN'],['yama','mountain','NOUN'],
+            ['desu','be','VERB'],['aru','there is','VERB']];
+const COPIR=e.semanticIR({roles:{SUBJECT:'I', COMPLEMENT:'teacher', PREDICATE:'be'}});
+/* 主語・補語・動詞 ── 「私 先生 です」. The order is a LIST here and not the
+   six-letter string: 'SOV' is three cards that happen to be one letter each,
+   and model.js splits a string one character at a time, so a card with a name
+   longer than one letter has to arrive as a list -- which is what the board
+   stores (orderSeq in www/grammar.js). */
+assert.equal(e.translate.fromSemantic(lang('CP',['S','CMP','V'],COPW),COPIR).text,'mi sensei desu');
+/* and a language that puts the copula in the middle writes the same meaning
+   as 「私 です 先生」 */
+assert.equal(e.translate.fromSemantic(lang('CP2',['S','V','CMP'],COPW),COPIR).text,'mi desu sensei');
+/* THE CARD LEFT OFF THE BOARD. A role the board has no place for still
+   follows the sentence -- nothing is dropped, which is the one thing this
+   must not do -- and the sentence is the shorter for it rather than wrong. */
+const copOff=e.translate.fromSemantic(lang('CP3','SOV',COPW),COPIR);
+assert.equal(copOff.complete,true);
+assert.ok(copOff.text.indexOf('sensei')>=0,'the complement was dropped');
+/* 存在 ── 「山 が ある」. Nothing new: the existential word is the sentence's
+   verb, found by what it is, so a subject and a predicate is the whole of it. */
+assert.equal(e.translate.fromSemantic(lang('CP4','SOV',COPW),
+  e.semanticIR({roles:{SUBJECT:'mountain', PREDICATE:'there is'}})).text,'yama aru');
+/* A LANGUAGE THAT USES NO WORD AT ALL. Russian says 「я учитель」 with nothing
+   between them, and the chapter left empty is exactly that: the copula is a
+   gap and the two words that ARE there still stand where the board says. */
+const copBare=e.translate.fromSemantic(lang('CP5',['S','CMP','V'],
+  [['mi','I','PRONOUN'],['sensei','teacher','NOUN']]),COPIR);
+assert.equal(copBare.complete,false);
+assert.equal(copBare.gaps.join('|'),'be');
+assert.equal(copBare.text,'mi sensei be');
+/* and the card is one of the cards -- a word order written before it existed
+   is read back unchanged */
+assert.equal(e.wordOrder('SOV').join(','),'SUBJECT,OBJECT,VERB');
+assert.equal(e.wordOrder(['S','CMP','V']).join(','),'SUBJECT,COMPLEMENT,VERB');
+
+/* ---- C10 人称・数 ── what a form LABEL means, in one place -----------------
+   「私／君／彼・彼女／私たち／君たち／彼ら で動詞がどう変わるか。規則の形は
+   既存の fmr と同じ：語尾」 OWNER 2026-09-07.
+
+   Six more labels, and the thing worth holding is not that they exist -- it is
+   that the ONE place which says what a label means says something about every
+   one of them. GFM_FEAT used to be a table and is a function now (gFmFeat),
+   because a class agreement rule's meaning cannot be written in a table; a
+   label that falls through it becomes a feature named after itself, which
+   works and is not what anybody meant for a label this app supplies.
+
+   The list is read off www/wordsheet.js so a twentieth form is held the day it
+   is added, and not the day somebody remembers this file. */
+const FM_SRC=fs.readFileSync('www/wordsheet.js','utf8');
+const FMI=/var FM_INF=\[([\s\S]*?)\];/.exec(FM_SRC)[1]
+  .split(',').map((x)=>x.trim().replace(/'/g,'')).filter(Boolean);
+const FMD=/var FM_DER=\[([\s\S]*?)\];/.exec(FM_SRC)[1]
+  .split(',').map((x)=>x.trim().replace(/'/g,'')).filter(Boolean);
+assert.ok(FMI.length>=19,'www/wordsheet.js no longer states its forms as a literal list.');
+for(const f of ['p1s','p2s','p3s','p1p','p2p','p3p'])
+  assert.ok(FMI.indexOf(f)>=0, 'the person forms are not in FM_INF: '+f);
+/* every label this app supplies means something the engine can be asked for,
+   and never falls through to being named after itself */
+for(const f of FMI){
+  const [feat, val]=app.gFmFeat(f);
+  assert.notEqual(feat, f, 'no one place says what the form "'+f+'" means, so it '+
+                           'reaches the engine as a feature named after itself.');
+  assert.ok(feat && val!==undefined && val!==null, f);
+}
+/* ONE FEATURE, SIX VALUES. A language with one ending for "we" writes one
+   rule; asked as PERSON and NUMBER apart, the first-person rule and the plural
+   rule would both fire and the word would carry two endings. Same argument the
+   pluperfect settled. */
+const PERS=['p1s','p2s','p3s','p1p','p2p','p3p'].map((f)=>app.gFmFeat(f));
+const PVAL={};
+for(const [feat, val] of PERS){
+  assert.equal(feat,'PERSON');
+  assert.ok(!PVAL[val], 'two person forms mean the same thing: '+val);
+  PVAL[val]=1;
+}
+/* C12 法. 「命令・条件はある。可能・義務・願望を足す」 OWNER 2026-09-07. Five
+   moods and ONE feature, for the reason the six person forms are one: a
+   language spends a single ending on what mood a sentence is in, and asking
+   for two of them at once would put two endings on one verb. */
+const MOODS={};
+for(const f of ['imp','cnd','pot','obl','des']){
+  const [feat, val]=app.gFmFeat(f);
+  assert.equal(feat,'MOOD','the mood "'+f+'" is not a mood to the engine');
+  assert.ok(!MOODS[val], 'two moods mean the same thing: '+val);
+  MOODS[val]=1;
+}
+/* AND IT REACHES THE ENGINE. A rule written on the 彼・彼女の形 chapter is an
+   ordinary rule in STG.fm, and gFmRules() is what carries it over -- so this
+   drives the real one, with the app's own shapes stubbed the way this section
+   has always stubbed them. */
+app.spWord=(letters)=>(letters||[]).join('');
+app.fmGroup=(f)=>(FMD.indexOf(f)>=0)?'d':'i';
+app.fmLabel=(f)=>String(f);
+stage([{hw:'luma',mns:['eat'],pos:'v'}],
+      {order:'SOV', fm:[{id:'r3s', fm:'p3s', pos:'v', at:'end', add:['s'], drop:0, when:''},
+                        {id:'r1p', fm:'p1p', pos:'v', at:'end', add:['m','u'], drop:0, when:''}]},
+      null);
+const persModel=app.gModel();
+const persVerb=persModel.words[0];
+/* `separator:''` is what gFmRules() writes: a rule of this app adds LETTERS to
+   the end of a word, not a hyphen and then letters. */
+assert.equal(e.morphology.inflect(persModel, persVerb, {PERSON:'3SG'}).surface,'lumas');
+assert.equal(e.morphology.inflect(persModel, persVerb, {PERSON:'1PL'}).surface,'lumamu');
+/* and a sentence whose meaning says who is doing it comes out wearing it */
+assert.equal(e.translate.fromSemantic(persModel,
+  e.semanticIR({roles:{PREDICATE:'eat'}, features:{PERSON:'3SG'}})).text,'lumas');
+/* THE CHAPTER LEFT EMPTY. A meaning that does not say who is doing it leaves
+   the verb alone -- the part drops out, nothing breaks. */
+assert.equal(e.translate.fromSemantic(persModel,
+  e.semanticIR({roles:{PREDICATE:'eat'}})).text,'luma');
+/* a mood reaches the engine the same way, and only one of them at a time */
+stage([{hw:'luma',mns:['eat'],pos:'v'}],
+      {order:'SOV', fm:[{id:'rp', fm:'pot', pos:'v', at:'end', add:['r','e'], drop:0, when:''},
+                        {id:'ro', fm:'obl', pos:'v', at:'end', add:['b','a'], drop:0, when:''}]},
+      null);
+const moodModel=app.gModel();
+assert.equal(e.translate.fromSemantic(moodModel,
+  e.semanticIR({roles:{PREDICATE:'eat'}, features:{MOOD:'POTENTIAL'}})).text,'lumare');
+assert.equal(e.translate.fromSemantic(moodModel,
+  e.semanticIR({roles:{PREDICATE:'eat'}, features:{MOOD:'OBLIGATIVE'}})).text,'lumaba');
+/* and a language that has written no person rule at all is untouched by a
+   meaning that does say */
+stage([{hw:'luma',mns:['eat'],pos:'v'}],{order:'SOV'},null);
+assert.equal(e.translate.fromSemantic(app.gModel(),
+  e.semanticIR({roles:{PREDICATE:'eat'}, features:{PERSON:'3SG'}})).text,'luma');
+
 /* ---- a post said in a natural language -------------------------------------
    OWNER 2026-09-05 「単語はその単語の意味を 文法は並び替えた単語たちが文章と
    して成り立つように。きかいほんやくはつかわない。」
@@ -1018,6 +1211,47 @@ e.translate.fromSemantic(clV,shared);
 assert.equal(shared.features.CLASS,undefined,'the IR was written into');
 assert.equal(e.translate.fromSemantic(lang('CL5','SOV',CLW),shared).text,'yama miru');
 
+/* ---- B7 冠詞・指示詞 -------------------------------------------------------
+   「a／the／this／that に当たる語と位置」 OWNER 2026-09-07. The four words are
+   this chapter's; WHERE one of them stands is the DEM card on the noun-phrase
+   board, and the assertions here are written to show that it really is the
+   board deciding -- the same language, the same words, the card moved. */
+const DETW=[['yama','mountain','NOUN'],['kono','this','PARTICLE'],
+            ['aka','red','ADJECTIVE'],['miru','see','VERB'],['mi','I','PRONOUN']];
+const DETIR=e.semanticIR({roles:{
+  OBJECT:{head:'mountain', mods:{DEMONSTRATIVE:'this', ADJECTIVE:['red']}}, PREDICATE:'see'}});
+assert.equal(e.translate.fromSemantic(withNp(lang('DT','SOV',DETW),['DEM','ADJ','N']),DETIR).text,
+  'kono aka yama miru');
+assert.equal(e.translate.fromSemantic(withNp(lang('DT2','SOV',DETW),['N','ADJ','DEM']),DETIR).text,
+  'yama aka kono miru');
+/* A LANGUAGE WITH NO WORD FOR IT. The four are slots like any other and an
+   unanswered one is a gap -- the meaning stays, and the gap is the door to
+   making that word. */
+const detGap=e.translate.fromSemantic(withNp(lang('DT3','SOV',
+  [['yama','mountain','NOUN'],['miru','see','VERB']]),['DEM','N']),DETIR);
+assert.equal(detGap.complete,false);
+assert.ok(detGap.gaps.indexOf('this')>=0);
+/* AND READING ONE BACK. No part of speech tells `this` from any other little
+   word, so the chapter names them -- the same road the negation and the
+   adpositions take -- and the word then joins its noun's phrase where the
+   board says it may. */
+const detD=[{hw:'yama', mns:['mountain'], pos:'n'},
+            {hw:'kono', mns:['this'],     pos:'part', slot:'det.this'},
+            {hw:'miru', mns:['see'],      pos:'v'},
+            {hw:'mi',   mns:['I'],        pos:'pro'}];
+const detRead=(cards, named)=>{
+  const m=e.adapter.fromLegacy('dtr',detD,{order:'SOV'});
+  if(named) m.grammarRules.push(e.grammarRule({type:'syntax',target:'DEMONSTRATIVE',feature:'WORD',value:'hw:kono'}));
+  return e.translate.line(e.translate.run(withNp(m,cards),'I see this mountain'));
+};
+assert.equal(detRead(['DEM','N'], true),'mi kono yama miru');
+/* named, but the board does not carry the card: it follows the sentence,
+   exactly as an adverb does when its own card is off the board */
+assert.equal(detRead(['ADJ','N'], true),'mi yama miru kono');
+/* and a language that has never said which words these are reads `kono` as an
+   ordinary word. That is not a failure -- it is the chapter being empty. */
+assert.equal(detRead(['DEM','N'], false),'mi yama miru kono');
+
 console.log('Grammar Engine: derivation applies, a case MARK carries a role, the ' +
             'Semantic IR goes both ways and back, the Phase 1-2 contract is clean, ' +
             'a rule may change the stem and may be for some words only, ' +
@@ -1031,4 +1265,12 @@ console.log('Grammar Engine: derivation applies, a case MARK carries a role, the
             'any of SEVEN roles -- the possessor inside a noun phrase among them, ' +
             'which no word order could ever have said, and a word may AGREE with the ' +
             'class of the noun it belongs to -- under whatever name that class ' +
-            'was given, which this engine carries and never understands');
+            'was given, which this engine carries and never understands, and the words ' +
+            'for a / the / this / that stand where the noun-phrase board says, ' +
+            'which is the one place that says it, and every form label this app supplies ' +
+            'means something the engine can be asked for -- the six person forms ' +
+            'among them, as one feature with six values, and the five moods as one ' +
+            'feature with five, and a copular sentence stands where the CMP card on the ' +
+            'word order board says -- with the copula itself a gap where a language ' +
+            'uses no word for it, and a comparison carries the word its standard is ' +
+            'measured with, on the side that chapter says');

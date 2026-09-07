@@ -28,7 +28,20 @@
    every language on every phone already carries, and the letters of it are
    three of these. model.js's wordOrder() is the one place that turns them into
    what the engine calls a role, so ADV means ADVERB in exactly one file. */
-var ROLES=['S','O','V','ADV','ADP','NEG','Q'];
+/* CMP is the COMPLEMENT -- what a copular sentence says the subject IS.
+   「コピュラ・存在 ──「〜です」「〜がある」の語と位置」 OWNER 2026-09-07: the
+   two WORDS are the コピュラ chapter's, and their POSITION is here, on the
+   board that already says where every other role of a sentence stands. A
+   second picker on that chapter would be one answer in two places, and a
+   complement standing where an object stands is a guess about somebody's
+   language rather than something they said. */
+/* STD is the STANDARD -- what a comparison is measured against, 「山より高い」
+   の「山」. It is a role of a sentence exactly as 場所 is, and a phrase of the
+   same shape (a nominal with a little word beside it), so where it stands is
+   said here and the WORD it is said with is the 比較級 chapter's. Without a
+   card it follows the sentence, which is what every role this board has no
+   place for already does -- true, and not something anybody chose. */
+var ROLES=['S','O','V','ADV','ADP','NEG','Q','CMP','STD'];
 /* What a sentence needs, and what stands when nobody has answered. */
 var ORDER_DEF=['S','O','V'];
 /* THE PARTS OF A NOUN PHRASE, and they are cards on a board exactly as the
@@ -146,7 +159,7 @@ function setNpOrder(v){ STG.np=npKeep(v); stMarkSet('np'); render(); }
    question "was this chosen" and always was. Where the clause itself stands is
    left at the same 'after' the three above take. */
 var GPOS_DEF={adj:'after', negp:'after', adp:'after',
-              cx:'after', cxm:'before', relm:'before'};
+              cx:'after', cxm:'before', relm:'before', than:'after'};
 /* The language's, beside the word order and for the same reason. Reading one
    does not write it: the old pair put the default into the person's settings
    the first time a stage was drawn, so a value existed for three decisions
@@ -165,7 +178,7 @@ function setGPos(id, v){
    clause decisions are two different "of": a subordinate clause stands before
    or after THE MAIN SENTENCE, and a mark stands before or after THE CLAUSE it
    belongs to. */
-var GPOS_OF={adj:'n', negp:'v', adp:'n', cx:'main', cxm:'cl', relm:'cl'};
+var GPOS_OF={adj:'n', negp:'v', adp:'n', cx:'main', cxm:'cl', relm:'cl', than:'n'};
 function gPosLab(id, o){ return t('gram.pos.'+o+'.'+(GPOS_OF[id]||'n')); }
 
 /* ---- reading the words the stages made --------------------------------- */
@@ -234,6 +247,18 @@ function gRules(){
   if(w) out.push(gRule('NEGATION','WORD', e.adapter.idOf(w)));
   ws=gSlotAll('where');
   for(i=0;i<ws.length;i++) out.push(gRule('ADPOSITION','WORD', e.adapter.idOf(ws[i])));
+  /* WHICH WORDS ARE THE ARTICLES AND THE DEMONSTRATIVES, said the same way the
+     negation and the adpositions are said: no part of speech can tell them
+     apart from any other little word, so the page that knows about slots names
+     them here, by id, and the engine never has to know what a slot is. */
+  ws=gSlotAll('det');
+  for(i=0;i<ws.length;i++) out.push(gRule('DEMONSTRATIVE','WORD', e.adapter.idOf(ws[i])));
+  /* 比較. Which word means 「〜より」, and which side of what is being measured
+     against it stands. Named the same way, for the same reason: no part of
+     speech can tell it from any other little word. */
+  ws=gSlotAll('than');
+  for(i=0;i<ws.length;i++) out.push(gRule('STANDARD','WORD', e.adapter.idOf(ws[i])));
+  out.push(gRule('STANDARD', 'POSITION', gPos('than')));
   return out;
 }
 /* ---- the marks --------------------------------------------------------
@@ -325,8 +350,24 @@ var GFM_FEAT={
   prg:['ASPECT','PROGRESSIVE'], prf:['ASPECT','PERFECT'],
   neg:['NEGATION',true],
   imp:['MOOD','IMPERATIVE'], que:['MOOD','INTERROGATIVE'], cnd:['MOOD','CONDITIONAL'],
+  /* 法. 「命令・条件はある。可能・義務・願望を足す」 OWNER 2026-09-07. The
+     same feature the imperative and the conditional already are, because they
+     are the same kind of fact about a sentence and a language spends one
+     ending on it. */
+  pot:['MOOD','POTENTIAL'], obl:['MOOD','OBLIGATIVE'], des:['MOOD','DESIDERATIVE'],
+  /* 形容詞の比較. 「比較・最上級の規則（fmr の形）と位置」 OWNER 2026-09-07.
+     One feature and two values, the same argument as the moods and the person
+     forms: a word is not comparative and superlative at once. */
+  cmp:['DEGREE','COMPARATIVE'], sup:['DEGREE','SUPERLATIVE'],
   cau:['VOICE','CAUSATIVE'], pas:['VOICE','PASSIVE'],
-  pl :['NUMBER','PLURAL']
+  pl :['NUMBER','PLURAL'],
+  /* 人称・数. One feature and six values rather than PERSON and NUMBER apart,
+     because the engine spends a feature on the first rule that matches it: a
+     language with ONE ending for "we" would otherwise be answered by the
+     first-person rule and the plural rule one after the other, which is not
+     what such a language does. Same argument the pluperfect settled. */
+  p1s:['PERSON','1SG'], p2s:['PERSON','2SG'], p3s:['PERSON','3SG'],
+  p1p:['PERSON','1PL'], p2p:['PERSON','2PL'], p3p:['PERSON','3PL']
 };
 /* WHAT A LABEL MEANS, and it is one question with one answer. The table above
    is the labels this app supplies; the two lines under it are the labels a
@@ -1139,6 +1180,19 @@ function g2Sec(k){ return '<div class="sec">'+esc(t(k))+'</div>'; }
    things stands between them in every language anybody has written down, and
    the words themselves are the 接続詞 chapter's. The lines that show it are
    this chapter's 例文, which is what every chapter of this page ends with. */
+/* §冠詞・指示詞. The four words and nothing else: where one of them stands is
+   the DEM card on the noun-phrase board, and a second answer here would be the
+   two chapters disagreeing the first time somebody changed one of them.
+
+   www/phases.js § CHAP_SLOTS holds the slots, and stSlotRow() draws them --
+   the same row the 否定形 and 場所 chapters draw their words with, so a word
+   made here looks and behaves exactly as one made anywhere else. */
+function g2Det(){ return chapSlotsHTML('det'); }
+/* §コピュラ・存在. The two words, and nothing else: where a copula stands is
+   the CMP card on the word order board -- 「〜です」 is heard between the
+   subject and what it is, and that is a place in a sentence, which is what
+   that board is for. */
+function g2Cop(){ return chapSlotsHTML('cop'); }
 function g2Cx(){
   return g2Sec('g2.cx.sub')+g2SidePick('cx')+
          g2Sec('g2.cx.mark')+g2SidePick('cxm')+
@@ -1451,6 +1505,10 @@ function g2Add(id){
    they already had, because those two are named after what they DO rather than
    after a form of a word. */
 var G2FM_CHAPS=[
+  ['p1s','p1s','v'], ['p2s','p2s','v'], ['p3s','p3s','v'],
+  ['p1p','p1p','v'], ['p2p','p2p','v'], ['p3p','p3p','v'],
+  ['pot','pot','v'], ['obl','obl','v'], ['des','des','v'],
+  ['cmp','cmp','adj','than'], ['sup','sup','adj'],
   ['pst','pst','v'], ['prs','prs','v'], ['fut','fut','v'], ['plp','plp','v'],
   ['prg','prg','v'], ['prf','prf','v'], ['cnd','cnd','v'], ['cau','cau','v'],
   ['imp','imp','v'], ['pas','pas','v'], ['neg','neg','v'], ['q','que','v'],
@@ -1602,7 +1660,17 @@ function g2FmAdd(c){
 /* And the words this chapter's own stage used to ask for, where there was
    one: 否定形 wants the word for "not" and 疑問形 the six question words.
    chapSlotsHTML() draws nothing for the eleven chapters that have none. */
-function g2FmChap(c){ return g2FmAdd(c)+g2FmRows(c)+g2FmTable(c)+chapSlotsHTML(c.id); }
+/* A FORM CHAPTER MAY ALSO TAKE A SIDE, and one of them does: 比較級 has a word
+   for 「〜より」 and a side for it, which no other form chapter has and which is
+   the only position in a comparison this app does not already answer somewhere
+   else (where the adjective itself stands is §2's board and the 形容詞
+   chapter's). `side` is the key gPos() holds it under, named in G2FM_CHAPS
+   beside the form -- a string and not a function, because a chapter is a row
+   of a table and a table of functions is a table nothing can check. */
+function g2FmChap(c){
+  return (c.side? g2Side(c.side, gSlotAny(c.side), gWordOf('n')) : '')+
+         g2FmAdd(c)+g2FmRows(c)+g2FmTable(c)+chapSlotsHTML(c.id);
+}
 /* What is behind the `?`. 「説明禁止の代わりに？を儲けてるからね？」 OWNER
    2026-09-05 -- so a chapter says nothing about itself on the screen and the
    whole of what it means is one press away. The two lines are the app's own
@@ -1654,13 +1722,15 @@ function g2Chaps(){
            {id:'np',    body:g2Board, nm:t('g2.np.t')},
            {id:'cx',    body:g2Cx,    nm:t('g2.cx.t')},
            {id:'ncls',  body:g2Ncls,  nm:t('g2.ncls.t')},
+           {id:'det',   body:g2Det,   nm:t('g2.det.t')},
+           {id:'cop',   body:g2Cop,   nm:t('g2.cop.t')},
            {id:'n',     body:g2Nouns, nm:posLabel('n'), pos:'n'}], i, a;
   /* The forms, one chapter each, from the one list. A chapter is drawn by
      g2FmChap() and knows its own form and its own part of speech, so nothing
      here is written thirteen times. */
   for(i=0;i<G2FM_CHAPS.length;i++){
     a=G2FM_CHAPS[i];
-    out.push({id:a[0], body:g2FmChap, nm:fmLabel(a[1]), pos:a[2], fm:a[1]});
+    out.push({id:a[0], body:g2FmChap, nm:fmLabel(a[1]), pos:a[2], fm:a[1], side:a[3]});
   }
   out.push({id:'adj', body:g2Adj,    nm:posLabel('adj'), pos:'adj'});
   out.push({id:'adp', body:g2Adp,    nm:t('stg.where.t')});

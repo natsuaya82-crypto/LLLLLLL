@@ -306,6 +306,28 @@ var STAGES=[
    `negp` and the 否定形 chapter has no picker; docs/BACKLOG.md is where that
    goes, not a second table here. */
 var CHAP_SLOTS=[
+  /* 冠詞・指示詞. 「a／the／this／that に当たる語と位置」 OWNER 2026-09-07.
+     Four words and no decision, because the decision is already somewhere:
+     WHERE one of these stands is the DEM card on the noun-phrase board, which
+     is the one place a language says what goes in front of its nouns. Putting
+     a side here as well would be one answer in two places.
+
+     The four are ONE part of a phrase and not two, and that is the owner's
+     grouping rather than this file's: 「冠詞・指示詞」 is one chapter of the
+     completion definition. A language may have all four, one, or none -- an
+     unanswered slot is what every stage already has. */
+  {id:'det',   chap:'det', slots:['a','the','this','that'], pos:'part'},
+  /* コピュラ・存在. 「〜です」「〜がある」 -- the two words, and only the
+     words: WHERE a copula stands is the CMP card on the word order board.
+     `pos:'v'` because both are the thing a sentence is built round, and the
+     engine finds a sentence's verb by what it is -- a copula written as
+     anything else would leave a copular sentence with no verb in it. A
+     language that uses no word at all leaves them empty. */
+  {id:'cop',   chap:'cop', slots:['be','exist'], pos:'v'},
+  /* 比較. The word a comparison is measured against is said with -- 「山より
+     高い」の「より」, English `than`. One word, on the 比較級 chapter, and
+     which side of what is being measured it stands is that chapter's too. */
+  {id:'than',  chap:'cmp', slots:['than'], pos:'part'},
   {id:'neg',   chap:'neg', slots:['not'], pos:'part'},
   {id:'ask',   chap:'q',   slots:['what','who','where','when','why','how'], pos:'pro'},
   {id:'where', chap:'adp', slots:['in','on','under','to','from','with'], pos:'part'}
@@ -767,7 +789,11 @@ function stHidHTML(){
 }
 /* THE ORDER OF THE CONTENTS, and it is a grammar book's rather than the app's.
    「1 語順 2 名詞 3 動詞（時制・否定・疑問）4 代名詞 5 数 6 挨拶…」 OWNER
-   2026-09-06.
+   2026-09-06, and A→E OWNER 2026-09-07 -- 文の骨格、名詞、動詞、修飾、語用.
+   The second is the first said again with the chapters that were missing on
+   the day it was written, so it replaces it rather than arguing with it: the
+   verb's own chapters are grouped as 人称・時制・法・態・否定 rather than being
+   one heading called 動詞, because each of them is a chapter now.
 
    The list was two lists with a name over each -- the chapters that say what a
    word turns into, then the stages -- and the split was true of the code and of
@@ -783,10 +809,20 @@ function stHidHTML(){
    a line here. The tie is broken by where it was, because sort() is not
    promised to be stable on the WKWebView this runs in and two of somebody's own
    stages swapping places on a redraw is the app rearranging their work. */
-var G2TOC=['order','np','cx','n','pl','ncls',
-           'prs','pst','fut','plp','prg','prf','cnd','cau','imp','pas','neg','q',
-           'pron','count','greet',
-           'adj','adp','part','conj','polite','have','when','month','wday','st'];
+var G2TOC=[/* A 文の骨格 -- 語順、名詞句の並び、複文（とその印の語） */
+           'order','np','cx','conj',
+           /* B 名詞 -- 格、その印を作る段、複数、種類、冠詞・指示詞、所有、
+              代名詞、数詞 */
+           'n','part','pl','ncls','det','have','pron','count',
+           /* C 動詞 -- 人称・数、時制・相、法、態、否定・疑問、コピュラ・存在 */
+           'p1s','p2s','p3s','p1p','p2p','p3p',
+           'prs','pst','fut','plp','prg','prf',
+           'imp','cnd','pot','obl','des',
+           'pas','cau','neg','q','cop',
+           /* D 修飾 -- 形容詞の側、比較、前置詞／後置詞 */
+           'adj','cmp','sup','adp',
+           /* E 語用 -- 敬語、あいさつ、時、月、曜日。最後にこの言語について */
+           'polite','greet','when','month','wday','st'];
 function stTocAt(id){
   var i=G2TOC.indexOf(String(id));
   return (i<0)? G2TOC.length : i;
