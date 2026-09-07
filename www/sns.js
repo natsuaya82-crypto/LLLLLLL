@@ -44,9 +44,10 @@ function snsWaitHTML(){
 }
 /* THE SAME MARK AT THE SIZE OF A WORD, for the places where what is waited
    for is one line inside a row rather than a screenful. `.numwait` in
-   www/index.html is what draws it, and it was written for the counts under a
-   profile; the day's sentence needs the same thing for the same reason, and a
-   second copy of three tags is how the two would come to differ.
+   www/index.html is what draws it. It was written for the counts under a
+   profile and there is nothing to wait for there any more -- that page is not
+   drawn until every answer is in (www/me.js § profileOpen). What is left is
+   the day's sentence, which needed the same thing for the same reason.
 
    IT IS A WORD AND NOT A SCREEN BECAUSE THE ROW MUST NOT MOVE. snsWaitHTML()
    carries 48px of padding, so a row wearing it stands three times its own

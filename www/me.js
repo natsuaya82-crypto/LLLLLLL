@@ -241,54 +241,28 @@ function meNotMe(hs){
 }
 function meFollowing(){ return meNotMe((ME.fo && ME.fo.length)? ME.fo : []); }
 function meFollowers(){ return meNotMe((ME.fr && ME.fr.length)? ME.fr : []); }
-/* HOW MANY, OR NOTHING AT ALL -- AND THE TWO MUST NOT SHARE A BRANCH.
-   -------------------------------------------------------------------------
-   「サーバーに聞く前にロードを挟み、遅れて数字が動くことを絶対に無くす。0 と
-   出て1秒後に1に変わる、をしない。」 OWNER 2026-09-04.
+/* HOW MANY. 「サーバーに聞く前にロードを挟み、遅れて数字が動くことを絶対に
+   無くす。0 と出て1秒後に1に変わる、をしない。」 OWNER 2026-09-04.
 
-   Both counts were the LENGTH of a list, and a list nobody has answered for
-   is empty -- so a profile opened before the follow lists land printed 0 under
-   both words and then jumped to the real number when the answer arrived. A
-   number that moves under somebody's eye is a number they cannot trust, and
-   it is the same 「empty と broken は別」 the timeline already obeys one
-   screen over (snsWaitHTML).
+   THE ROAD THAT SHOWED THE PREVIOUS VALUE IS GONE, and so is the road that
+   drew the word on its own. 「プロフィールは、出す物を全部読み込んでから
+   開く」 OWNER 2026-09-07 replaces b7f5bce3 of 2026-09-06: a page that is not
+   drawn until every answer is in has no state to stand in for one, so there
+   is nothing here to decide. Both were answers to 「what do I put where the
+   count would be」, which is a question this screen can no longer be asked.
 
-   IT ASKED THE WRONG QUESTION, AND SO IT STILL MOVED. `ME.fo` being an ARRAY
-   was read as the answer -- but ME is read back off this phone at every
-   launch, so a phone that has been opened before ALWAYS has both lists, from
-   last time. The mark was therefore only ever seen on a phone that had never
-   run, and everybody else got last week's number, held for the second it took
-   the server to answer, and then moved. 「フォローとか0って出て1秒後に1とか
-   数字が変わる」 is that second, and it survived 2026-09-04 untouched.
+   These two ARE the answer now -- the lists the server gave this session,
+   counted -- and www/me.js § profileOpen is what makes that true: the page
+   waits on `mine` before it opens.
 
-   NOTHING TURNS UNDER A NUMBER. 「プロフィールのフォロー／フォロワーの数が
-   くるくる回る → 回さない。取れなかったら数は出さずに行だけ（空欄ではなく
-   前回の値があればそれ）」 OWNER 2026-09-06, on a phone. The mark was put
-   here on 2026-09-04 so that a number would not move; a mark that spins under
-   two words on the screen the app opens on is the same complaint arriving as
-   a moving picture instead of as a moving number.
-
-   So the two are answered with WHAT IS KNOWN. The server's answer where it
-   has come this session, otherwise the list this phone came up holding, which
-   is last session's answer to the same question and is a number rather than a
-   guess. Nothing known at all -- a phone that has never been opened as this
-   account -- is `undefined`, and the row is then the word on its own.
-
-   `undefined` carries 「nothing to say」 out of here, the same way whoOf()
-   keeps somebody else's two undefined rather than nailing them to 0, and
-   meCount() below is the one place either is drawn. */
-function meKnown(list){
-  return pullHad('mine') || !!(list && typeof list.length==='number');
-}
-function meNFollowing(){ return meKnown(ME.fo)? meFollowing().length : undefined; }
-function meNFollowers(){ return meKnown(ME.fr)? meFollowers().length : undefined; }
-/* A count, or nothing at all. One function, because your card and somebody
-   else's ask the same question and used to answer it in two places with two
+   A count, and one function draws it, because your card and somebody else's
+   ask the same question and used to answer it in two places with two
    different `||0`s on the end. The space is inside it: a number and the word
-   after it are one thing, and a row that has no number must not begin with
-   the gap where one would have been. */
+   after it are one thing. */
+function meNFollowing(){ return meFollowing().length; }
+function meNFollowers(){ return meFollowers().length; }
 function meCount(n){
-  return (typeof n==='number')? '<b>'+esc(String(n))+'</b> ' : '';
+  return '<b>'+esc(String(Number(n)||0))+'</b> ';
 }
 function meName(){ return ME.name || langName || ''; }
 function meHandle(){
@@ -1187,14 +1161,11 @@ function whoCard(h){
        for anybody's but your own, so these two were a pair of zeroes with no
        road to any other number.
 
-       AND `undefined` REACHES THE SCREEN, which it did not: it was `||0`
-       here, so a person whose row has not landed printed 0 under both words
-       and then jumped. 「0 と出て1秒後に1に変わる、をしない」 OWNER
-       2026-09-04. whoOf() has always kept the two apart in the data --
-       「not answered」 and 「nobody」 -- and this was the line that put them
-       back together on the way out. meCount() draws no number at all where
-       nobody has counted yet: the word stands on its own, and nothing turns
-       under it (OWNER 2026-09-06).
+       AND THERE IS NO SUCH THING HERE AS A ROW THAT HAS NOT LANDED. This page
+       is not drawn until netWho() has answered for this person (§ profileOpen
+       above), so the two numbers are the server's count and not a stand-in
+       for one. 「0 と出て1秒後に1に変わる、をしない」 OWNER 2026-09-04 is
+       kept by the page waiting rather than by the number hiding.
        AND THEY ARE PRESSABLE. 「フォロワーとかタップしても見れないし」
        OWNER 2026-09-03. They were two `<span>`s under a comment saying the
        two lists behind them were yours -- which was true of the SCREEN and

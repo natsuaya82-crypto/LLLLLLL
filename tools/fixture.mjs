@@ -945,13 +945,10 @@ export function halfDone(){
         const h = vFollows();
         delete FOL_HAVE['ers:iri']; delete FOL_ASKED['ers:iri'];
         POSTS.push.apply(POSTS, was); return h; }],
-    /* And a profile whose two counts nobody has answered for yet, which is
-       what stands there instead of a 0 that jumps.
-       「0 と出て1秒後に1に変わる、をしない」 */
-    ['a profile before the counts have arrived', () => {
-        const fo = ME.fo, fr = ME.fr; delete ME.fo; delete ME.fr;
-        window.route='profile'; NAV=[{r:'profile'}];
-        const h = vProfile(); ME.fo = fo; ME.fr = fr; return h; }],
+    /* A PROFILE BEFORE THE COUNTS HAVE ARRIVED IS NOT A STATE ANY MORE.
+       「プロフィールは、出す物を全部読み込んでから開く」 OWNER 2026-09-07 --
+       the page waits on `mine` before it opens (www/me.js § profileOpen), so
+       there is no face where the two words stand without their numbers.
     /* ---- a tag, and what pressing one gives ------------------------------
        「タグは青く光るからタップしたらタグの検索になる。」 OWNER 2026-09-04.
        Two faces, because the fault is nearly always in the one nobody
