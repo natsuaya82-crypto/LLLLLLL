@@ -332,7 +332,14 @@ var GFM_FEAT={
   neg:['NEGATION',true],
   imp:['MOOD','IMPERATIVE'], que:['MOOD','INTERROGATIVE'], cnd:['MOOD','CONDITIONAL'],
   cau:['VOICE','CAUSATIVE'], pas:['VOICE','PASSIVE'],
-  pl :['NUMBER','PLURAL']
+  pl :['NUMBER','PLURAL'],
+  /* 人称・数. One feature and six values rather than PERSON and NUMBER apart,
+     because the engine spends a feature on the first rule that matches it: a
+     language with ONE ending for "we" would otherwise be answered by the
+     first-person rule and the plural rule one after the other, which is not
+     what such a language does. Same argument the pluperfect settled. */
+  p1s:['PERSON','1SG'], p2s:['PERSON','2SG'], p3s:['PERSON','3SG'],
+  p1p:['PERSON','1PL'], p2p:['PERSON','2PL'], p3p:['PERSON','3PL']
 };
 /* WHAT A LABEL MEANS, and it is one question with one answer. The table above
    is the labels this app supplies; the two lines under it are the labels a
@@ -1465,6 +1472,8 @@ function g2Add(id){
    they already had, because those two are named after what they DO rather than
    after a form of a word. */
 var G2FM_CHAPS=[
+  ['p1s','p1s','v'], ['p2s','p2s','v'], ['p3s','p3s','v'],
+  ['p1p','p1p','v'], ['p2p','p2p','v'], ['p3p','p3p','v'],
   ['pst','pst','v'], ['prs','prs','v'], ['fut','fut','v'], ['plp','plp','v'],
   ['prg','prg','v'], ['prf','prf','v'], ['cnd','cnd','v'], ['cau','cau','v'],
   ['imp','imp','v'], ['pas','pas','v'], ['neg','neg','v'], ['q','que','v'],

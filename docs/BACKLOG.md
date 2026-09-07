@@ -440,9 +440,13 @@ Lingua 側が勝手に決めない。
 語形の規則（`www/wordsheet.js` の `FM_INF`、`STG.fm`）には格がありません:
 
 ```
-FM_INF = pst prs fut prg prf neg imp que cnd cau pas pl
+FM_INF = pst prs fut prg prf plp neg imp que cnd cau pas pl
+         p1s p2s p3s p1p p2p p3p
                                     ↑ 格が一つも無い
 ```
+
+（2026-09-07 に人称の六つが**末尾に**足されました。既存の添字は動いていません。
+格の話はそのまま残っています。）
 
 `fm` は「何の形か」（過去・複数・受身）で、「文の中で何の役か」ではありません。
 `ga` を**語形の規則として**書きたい人は、今は書けません。

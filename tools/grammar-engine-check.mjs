@@ -671,6 +671,76 @@ assert.equal(e.morphology.derive(derStem, derStem.words[1], 'ADJECTIVE').surface
    means adding it to this sentence. */
 
 
+/* ---- C10 人称・数 ── what a form LABEL means, in one place -----------------
+   「私／君／彼・彼女／私たち／君たち／彼ら で動詞がどう変わるか。規則の形は
+   既存の fmr と同じ：語尾」 OWNER 2026-09-07.
+
+   Six more labels, and the thing worth holding is not that they exist -- it is
+   that the ONE place which says what a label means says something about every
+   one of them. GFM_FEAT used to be a table and is a function now (gFmFeat),
+   because a class agreement rule's meaning cannot be written in a table; a
+   label that falls through it becomes a feature named after itself, which
+   works and is not what anybody meant for a label this app supplies.
+
+   The list is read off www/wordsheet.js so a twentieth form is held the day it
+   is added, and not the day somebody remembers this file. */
+const FM_SRC=fs.readFileSync('www/wordsheet.js','utf8');
+const FMI=/var FM_INF=\[([\s\S]*?)\];/.exec(FM_SRC)[1]
+  .split(',').map((x)=>x.trim().replace(/'/g,'')).filter(Boolean);
+const FMD=/var FM_DER=\[([\s\S]*?)\];/.exec(FM_SRC)[1]
+  .split(',').map((x)=>x.trim().replace(/'/g,'')).filter(Boolean);
+assert.ok(FMI.length>=19,'www/wordsheet.js no longer states its forms as a literal list.');
+for(const f of ['p1s','p2s','p3s','p1p','p2p','p3p'])
+  assert.ok(FMI.indexOf(f)>=0, 'the person forms are not in FM_INF: '+f);
+/* every label this app supplies means something the engine can be asked for,
+   and never falls through to being named after itself */
+for(const f of FMI){
+  const [feat, val]=app.gFmFeat(f);
+  assert.notEqual(feat, f, 'no one place says what the form "'+f+'" means, so it '+
+                           'reaches the engine as a feature named after itself.');
+  assert.ok(feat && val!==undefined && val!==null, f);
+}
+/* ONE FEATURE, SIX VALUES. A language with one ending for "we" writes one
+   rule; asked as PERSON and NUMBER apart, the first-person rule and the plural
+   rule would both fire and the word would carry two endings. Same argument the
+   pluperfect settled. */
+const PERS=['p1s','p2s','p3s','p1p','p2p','p3p'].map((f)=>app.gFmFeat(f));
+const PVAL={};
+for(const [feat, val] of PERS){
+  assert.equal(feat,'PERSON');
+  assert.ok(!PVAL[val], 'two person forms mean the same thing: '+val);
+  PVAL[val]=1;
+}
+/* AND IT REACHES THE ENGINE. A rule written on the 彼・彼女の形 chapter is an
+   ordinary rule in STG.fm, and gFmRules() is what carries it over -- so this
+   drives the real one, with the app's own shapes stubbed the way this section
+   has always stubbed them. */
+app.spWord=(letters)=>(letters||[]).join('');
+app.fmGroup=(f)=>(FMD.indexOf(f)>=0)?'d':'i';
+app.fmLabel=(f)=>String(f);
+stage([{hw:'luma',mns:['eat'],pos:'v'}],
+      {order:'SOV', fm:[{id:'r3s', fm:'p3s', pos:'v', at:'end', add:['s'], drop:0, when:''},
+                        {id:'r1p', fm:'p1p', pos:'v', at:'end', add:['m','u'], drop:0, when:''}]},
+      null);
+const persModel=app.gModel();
+const persVerb=persModel.words[0];
+/* `separator:''` is what gFmRules() writes: a rule of this app adds LETTERS to
+   the end of a word, not a hyphen and then letters. */
+assert.equal(e.morphology.inflect(persModel, persVerb, {PERSON:'3SG'}).surface,'lumas');
+assert.equal(e.morphology.inflect(persModel, persVerb, {PERSON:'1PL'}).surface,'lumamu');
+/* and a sentence whose meaning says who is doing it comes out wearing it */
+assert.equal(e.translate.fromSemantic(persModel,
+  e.semanticIR({roles:{PREDICATE:'eat'}, features:{PERSON:'3SG'}})).text,'lumas');
+/* THE CHAPTER LEFT EMPTY. A meaning that does not say who is doing it leaves
+   the verb alone -- the part drops out, nothing breaks. */
+assert.equal(e.translate.fromSemantic(persModel,
+  e.semanticIR({roles:{PREDICATE:'eat'}})).text,'luma');
+/* and a language that has written no person rule at all is untouched by a
+   meaning that does say */
+stage([{hw:'luma',mns:['eat'],pos:'v'}],{order:'SOV'},null);
+assert.equal(e.translate.fromSemantic(app.gModel(),
+  e.semanticIR({roles:{PREDICATE:'eat'}, features:{PERSON:'3SG'}})).text,'luma');
+
 /* ---- a post said in a natural language -------------------------------------
    OWNER 2026-09-05 「単語はその単語の意味を 文法は並び替えた単語たちが文章と
    して成り立つように。きかいほんやくはつかわない。」
@@ -1074,4 +1144,6 @@ console.log('Grammar Engine: derivation applies, a case MARK carries a role, the
             'class of the noun it belongs to -- under whatever name that class ' +
             'was given, which this engine carries and never understands, and the words ' +
             'for a / the / this / that stand where the noun-phrase board says, ' +
-            'which is the one place that says it');
+            'which is the one place that says it, and every form label this app supplies ' +
+            'means something the engine can be asked for -- the six person forms ' +
+            'among them, as one feature with six values');

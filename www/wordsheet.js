@@ -594,7 +594,14 @@ function regLabel(r){ return r? t('word.reg.'+r) : ''; }
    follows rather than beside `pst`, because fmRank() reads a form's place in
    this list as the order a word's family is read in, and moving one moves
    every word already wearing the ones after it. */
-var FM_INF=['pst','prs','fut','prg','prf','plp','neg','imp','que','cnd','cau','pas','pl'];
+/* 人称・数 ── 「私／君／彼・彼女／私たち／君たち／彼ら で動詞がどう変わるか」
+   OWNER 2026-09-07. Six more, and they are at the END for the reason `plp` is:
+   fmRank() reads a form's place in this list as the order a word's family is
+   read in, so moving one moves every word already wearing the ones after it.
+   Appended, the twelve above keep their places and a person form sorts after
+   them in a family that has both. */
+var FM_INF=['pst','prs','fut','prg','prf','plp','neg','imp','que','cnd','cau','pas','pl',
+            'p1s','p2s','p3s','p1p','p2p','p3p'];
 var FM_DER=['agt','ins','loc','act','qua','dim','aug','col','opp','adj','vrb','adv'];
 function fmOwn(f){ return String(f||'').slice(0,2)==='i~' || String(f||'').slice(0,2)==='d~'; }
 function fmGroup(f){
