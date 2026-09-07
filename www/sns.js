@@ -688,6 +688,8 @@ pullOn('drafts',  askDrafts);
 pullOn('day',     askDay,     dayGot);
 pullOn('mine',    askMine);
 pullOn('blocks',  askBlocks,  netBlockedGot);
+pullOn('langs',   askLangs);
+pullOn('myposts', askMyPosts);
 pullOn('saved',   askSaved);
 pullOn('recent',  askRecent);
 /* ---- AND WHAT AN OPEN ASKS FOR -------------------------------------------
@@ -726,7 +728,17 @@ pullOn('recent',  askRecent);
    and what fills them the first time is whoPull() and folPull() in www/me.js,
    asked once per handle. That is not the fault being fixed here: nobody was
    looking at that person's page a second before they pressed their name. */
-var PULL_OPEN=['feed', 'notif', 'day', 'mine', 'blocks', 'saved', 'recent', 'drafts'];
+/* AND THE THREE THE PROFILE IS MADE OF ARE ON IT.
+   「開いた時フォロー中の横に数字でない。非公開の文字も出ない。全部読み込んで
+   から開くんじゃないの？」 OWNER 2026-09-07, on a phone.
+
+   `mine` was already here and is the two counts. `langs` is the language --
+   its row, and the word beside it when it is private. `myposts` is what you
+   have written. The profile is the screen the app OPENS on, so all three
+   belong to the open exactly as the timeline's do; asking for them from the
+   screen that shows them is what 「1秒遅れ」 is. */
+var PULL_OPEN=['feed', 'notif', 'day', 'mine', 'blocks', 'saved', 'recent',
+               'drafts', 'langs', 'myposts'];
 /* Fired by netTook() (www/net.js), which is the one place that knows a
    session ARRIVED -- a launch through netResume(), or somebody signing in an
    hour later through the door. Every one of these is asked AS somebody, so
@@ -953,11 +965,7 @@ function askThread(ok, bad){
 function askWho(ok, bad){
   var h=pfWho() || meHandle();
   meAgain(h);
-  netPostsBy(h, function(ps){
-    if(!ps){ ok(0); return; }
-    postTake(ps);
-    ok(1);
-  }, bad);
+  pfPosts(h, ok, bad);
 }
 /* And the list behind one of those counts, which is the same ask without the
    posts. 「フォロワーとかタップしても見れないし」 was the door; this is the
@@ -1008,6 +1016,43 @@ function askMine(ok, bad){
 function askBlocks(ok, bad){
   netBlockedRead(function(){ ok(0); }, bad);
 }
+/* THE LANGUAGES THIS ACCOUNT HAS, AND THE OPEN ONE PUT BACK TOGETHER.
+   -------------------------------------------------------------------------
+   Two roads that go in order, and www/boot.js says why: what the server has
+   and this phone has not comes DOWN, and only then does what this phone has
+   and the server has not go UP.
+
+   It is a name on this table because a SCREEN draws part of it. The profile
+   carries the language's row and the word beside it when the language is
+   private, and both come out of the `wld` slice -- which lives in memory
+   (rule 22) and arrives only when netLangsDown() answers. This was a call in
+   www/boot.js with its answer written down nowhere, so nothing could ask
+   whether it was in: the profile was drawn with WLD still empty and the word
+   appeared 160ms later. Measured, 2026-09-07: 非公開 at 330ms on a page that
+   was on the screen at 164ms. 「非公開の文字も出ない」 OWNER 2026-09-07.
+
+   `bad` is handed through rather than left to netLangsDown()'s own netPop(),
+   for the reason every other entry here has one: ［再接続］ runs pullRun()'s
+   own question again, which is one road back rather than two. */
+function askLangs(ok, bad){
+  netLangsDown(function(){ netLangSync(); ok(1); }, bad);
+}
+/* WHAT ONE PERSON HAS WRITTEN, and it is the one place a profile's list of
+   posts is asked for. Three roads wanted it -- the open, a pull, and the
+   press that walks onto somebody's page -- and a request made three ways is
+   three answers waiting to differ. */
+function pfPosts(h, ok, bad){
+  netPostsBy(h, function(ps){
+    if(!ps){ ok(0); return; }
+    postTake(ps);
+    ok(1);
+  }, bad);
+}
+/* YOUR OWN PAGE'S POSTS, asked at the open with everything else the profile
+   is made of. The profile is where the app opens, so its list arriving after
+   the screen does is the same 「1秒遅れ」 as the rest of § WHAT AN OPEN ASKS
+   FOR. */
+function askMyPosts(ok, bad){ pfPosts(meHandle(), ok, bad); }
 /* `mine` NAMES NO hav() ON PURPOSE, and that is the whole of what was wrong
    with the counts. PULL_GOT is 「answered THIS SESSION」; ME.fo is 「this
    phone has a list」, and a phone that has been opened before always has one.

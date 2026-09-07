@@ -906,14 +906,12 @@ function obIn(){
          else's. 「前のアカウント消えたんだが？」 OWNER 2026-08-31: nothing was
          deleted, there was no way back to it.
 
-         boot.js asks this too, but only at a launch, and the launch that
-         matters already happened -- signing in here would otherwise show the
-         phone's own languages until the app was closed and opened again.
-
-         It is www/net.js's and decides everything itself: nothing without a
-         session, it FILLS IN what is missing and never overwrites, and it is
-         safe to call twice. So this is a call and not a condition. */
-      if(typeof netLangsDown==='function') netLangsDown();
+         IT IS NOT ASKED FOR HERE ANY MORE, and nothing is lost by that.
+         netTook() -- which this door has already been through -- fires
+         pullBoot(), and `langs` is on PULL_OPEN (www/sns.js § WHAT AN OPEN
+         ASKS FOR). One road, from the one place that knows a session
+         arrived, instead of a call here, a second in www/boot.js, and no
+         record anywhere that either had answered. */
       /* An account that already has a profile belongs to somebody who has
          been here. Sending them into the onboarding is sending them to
          draw an alphabet they already have. */

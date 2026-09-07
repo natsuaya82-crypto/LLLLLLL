@@ -113,17 +113,20 @@ function bootSession(){
      So the up road waits for the down road, which is one line rather than a
      second thing that watches for duplicates -- a phone that has just been
      told everything this account has is a phone that knows what is missing.
-     Everything else here is unchanged: still not waited for by the app, which
-     has already opened on what is on the phone. */
-  netLangsDown(function(){
-    /* And the language, which belongs to this account and exists twice. Read,
-       merged and written back -- both ways, so a phone that has been offline
-       for a week arrives holding the week rather than replacing it.
+     Everything else here is unchanged.
 
-       After the session and not before: it is done AS somebody, and there is
-       always somebody now. */
-    netLangSync();
-  });
+     AND IT IS NOT ASKED FOR HERE ANY MORE. Both roads are askLangs() in
+     www/sns.js § WHAT EACH SCREEN ASKS FOR, and `langs` is on PULL_OPEN --
+     so the question goes out from netTook(), which is the one place that
+     knows a session ARRIVED, and covers a launch and somebody signing in an
+     hour later with one line instead of three (this one, and www/onboard.js
+     § obIn).
+
+     What that buys is the answer being WRITTEN DOWN. 「the language has come
+     down」 is `pullHad('langs')` now, so the profile can wait for it instead
+     of drawing itself without it: the row and the word beside a private
+     language come out of the `wld` slice, and a slice lives in memory
+     (rule 22). 「非公開の文字も出ない」 OWNER 2026-09-07. */
   /* And whether this account is the one that answers the reports, which is
      one column on one profile and decides whether a row exists at the foot of
      the settings list. Asked after the session is resumed because it is asked
