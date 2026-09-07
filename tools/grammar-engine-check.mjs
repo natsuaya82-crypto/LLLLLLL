@@ -958,6 +958,66 @@ assert.equal(e.morphology.parseSentence(cs,'yama de yomu').roles.PLACE,'yama');
 assert.equal(e.morphology.parseSentence(cs,'pen shi yomu').roles.INSTRUMENT,'pen');
 assert.equal(e.morphology.parseSentence(cs,'tomo to yomu').roles.COMPANION,'tomo');
 
+/* ---- B6 性・名詞クラス ── agreement ----------------------------------------
+   「無し／2 つ／3 つ…、名前は自由、語ごとにどれか、形容詞・動詞への一致
+   （あれば）」 OWNER 2026-09-07.
+
+   A class has no meaning this engine knows, and the assertions are written to
+   prove exactly that: the class names below are `ka` and `mi`, which are
+   nobody's grammatical tradition, and everything works because the name is
+   carried rather than understood. */
+function withClasses(model, classes){
+  for(const name in classes)
+    model.grammarRules.push(e.grammarRule({type:'syntax',target:'CLASS',feature:name,value:classes[name]}));
+  return model;
+}
+const CLW=[['yama','mountain','NOUN'],['umi','sea','NOUN'],['aka','red','ADJECTIVE'],
+           ['miru','see','VERB'],['mi','I','PRONOUN']];
+const agree=(id,cls,pos,form)=>({id:id,target:pos,feature:'CLASS',value:cls,
+                                 operation:'suffix',form:form,separator:''});
+const cl=withNp(withClasses(lang('CL','SOV',CLW,[
+  agree('a1','ka','ADJECTIVE','ta'), agree('a2','mi','ADJECTIVE','na')]),
+  {ka:['CL:yama'], mi:['CL:umi']}),['ADJ','N']);
+/* THE ADJECTIVE AGREES WITH ITS NOUN, and with a different noun it agrees
+   differently. One IR, two phrases, and the only thing that differs is which
+   class the head is in. */
+assert.equal(e.translate.fromSemantic(cl,e.semanticIR({roles:{
+  OBJECT:{head:'mountain', mods:{ADJECTIVE:['red']}}, PREDICATE:'see'}})).text,'akata yama miru');
+assert.equal(e.translate.fromSemantic(cl,e.semanticIR({roles:{
+  OBJECT:{head:'sea', mods:{ADJECTIVE:['red']}}, PREDICATE:'see'}})).text,'akana umi miru');
+/* A NOUN IN NO CLASS. 「無し」 is a real answer -- a language may have classes
+   and still have nouns in none of them -- and the adjective is then written
+   bare. Nothing throws and nothing is guessed. */
+const clNone=withNp(withClasses(lang('CL2','SOV',CLW,[
+  agree('a1','ka','ADJECTIVE','ta')]),{ka:['CL2:yama']}),['ADJ','N']);
+assert.equal(e.translate.fromSemantic(clNone,e.semanticIR({roles:{
+  OBJECT:{head:'sea', mods:{ADJECTIVE:['red']}}, PREDICATE:'see'}})).text,'aka umi miru');
+/* THE CHAPTER LEFT EMPTY. A language with no classes at all is every language
+   written before this chapter existed, and it comes out exactly as it did. */
+const clOff=withNp(lang('CL3','SOV',CLW),['ADJ','N']);
+assert.equal(e.translate.fromSemantic(clOff,e.semanticIR({roles:{
+  OBJECT:{head:'mountain', mods:{ADJECTIVE:['red']}}, PREDICATE:'see'}})).text,'aka yama miru');
+/* THE VERB AGREES WITH ITS SUBJECT where a language says verbs do, and that
+   is a rule on VERB rather than on ADJECTIVE -- one table of classes, two
+   places it can be heard. */
+const clV=withClasses(lang('CL4','SOV',CLW,[
+  agree('v1','ka','VERB','yo'), agree('v2','mi','VERB','wa')]),
+  {ka:['CL4:yama'], mi:['CL4:umi']});
+assert.equal(e.translate.fromSemantic(clV,e.semanticIR({roles:{
+  SUBJECT:'mountain', PREDICATE:'see'}})).text,'yama miruyo');
+assert.equal(e.translate.fromSemantic(clV,e.semanticIR({roles:{
+  SUBJECT:'sea', PREDICATE:'see'}})).text,'umi miruwa');
+/* and a subject in no class leaves the verb alone */
+assert.equal(e.translate.fromSemantic(clV,e.semanticIR({roles:{
+  SUBJECT:'I', PREDICATE:'see'}})).text,'mi miru');
+/* THE IR IS NOT WRITTEN INTO. A class is one language's way of saying a
+   meaning, and the meaning belongs to nobody's language -- so the same IR
+   written twice, into two languages, comes out as each of them. */
+const shared=e.semanticIR({roles:{SUBJECT:'mountain', PREDICATE:'see'}});
+e.translate.fromSemantic(clV,shared);
+assert.equal(shared.features.CLASS,undefined,'the IR was written into');
+assert.equal(e.translate.fromSemantic(lang('CL5','SOV',CLW),shared).text,'yama miru');
+
 console.log('Grammar Engine: derivation applies, a case MARK carries a role, the ' +
             'Semantic IR goes both ways and back, the Phase 1-2 contract is clean, ' +
             'a rule may change the stem and may be for some words only, ' +
@@ -969,4 +1029,6 @@ console.log('Grammar Engine: derivation applies, a case MARK carries a role, the
             "SENTENCE is written by the same writer, so it obeys this language's " +
             'own order, with its mark where this language puts one, and a mark may say ' +
             'any of SEVEN roles -- the possessor inside a noun phrase among them, ' +
-            'which no word order could ever have said');
+            'which no word order could ever have said, and a word may AGREE with the ' +
+            'class of the noun it belongs to -- under whatever name that class ' +
+            'was given, which this engine carries and never understands');

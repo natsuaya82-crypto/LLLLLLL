@@ -46,7 +46,7 @@
    Each row is the field and what an UNANSWERED one is, which is the only
    thing the three copies were ever saying. Adding a field is this line and
    nothing else. */
-var STG_DEF={done:{}, notes:{}, set:{}, extra:[], rules:{}, ex:{}, fm:[], order:'', np:[], gpos:{}};
+var STG_DEF={done:{}, notes:{}, set:{}, extra:[], rules:{}, ex:{}, fm:[], order:'', np:[], gpos:{}, ncls:{}};
 function stBlank(){
   var out={}, k, v;
   for(k in STG_DEF) if(Object.prototype.hasOwnProperty.call(STG_DEF, k)){
@@ -783,7 +783,7 @@ function stHidHTML(){
    a line here. The tie is broken by where it was, because sort() is not
    promised to be stable on the WKWebView this runs in and two of somebody's own
    stages swapping places on a redraw is the app rearranging their work. */
-var G2TOC=['order','np','cx','n','pl',
+var G2TOC=['order','np','cx','n','pl','ncls',
            'prs','pst','fut','plp','prg','prf','cnd','cau','imp','pas','neg','q',
            'pron','count','greet',
            'adj','adp','part','conj','polite','have','when','month','wday','st'];

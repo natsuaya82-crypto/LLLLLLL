@@ -603,7 +603,13 @@ function fmGroup(f){
 }
 function fmLabel(f){
   if(!f) return '';
-  return fmOwn(f)? String(f).slice(2) : t('word.fm.'+f);
+  if(fmOwn(f)) return String(f).slice(2);
+  /* A rule that makes a word agree with a noun class is named by the class,
+     and the class's name is somebody's own word. www/grammar.js § nclsName is
+     the one place that holds those names; this is where a form label asks for
+     one, because this is the one place a form label is turned into a name. */
+  if(typeof nclsIndexOf==='function' && nclsIndexOf(f)>=0) return nclsName(nclsIndexOf(f));
+  return t('word.fm.'+f);
 }
 /* The order the family is read in: the inflections in their order, then the
    derivations in theirs, with anything somebody wrote themselves after the

@@ -91,6 +91,31 @@
     }
     return ['SUBJECT','OBJECT'];
   }
+  /* ---- what class a word is in --------------------------------------------
+     「性・名詞クラス ── 無し／2 つ／3 つ…、名前は自由、語ごとにどれか、
+     形容詞・動詞への一致（あれば）」 OWNER 2026-09-07.
+
+     A class has no meaning this engine knows, and must not: the app stores
+     the NAME somebody typed, and here it is the `feature` of a syntax rule
+     whose value is the words in it. So a language with nine classes named
+     after whatever its maker likes works exactly as one with two named
+     masculine and feminine, and nothing here decides what kinds of noun
+     there are.
+
+     An agreement rule is then an ordinary inflection asking for CLASS/<that
+     name>, and `applies()` is what keeps it on the right part of speech: a
+     rule written for adjectives fires on adjectives, one written for verbs on
+     verbs, and a language with neither is untouched. */
+  function classOf(model, word){
+    var rules=(model&&model.grammarRules)||[], id=word&&String(word.id), i, r, v, j;
+    if(!id) return null;
+    for(i=0;i<rules.length;i++){ r=rules[i];
+      if(r.type!=='syntax' || r.target!=='CLASS') continue;
+      v=r.value; if(!Array.isArray(v)) v=(v===null||v===undefined)?[]:[v];
+      for(j=0;j<v.length;j++) if(String(v[j])===id) return r.feature;
+    }
+    return null;
+  }
   function isMarked(ids, unit){
     var i; if(unit.kind!=='word'||!unit.word) return false;
     for(i=0;i<ids.length;i++) if(ids[i]===String(unit.word.id)) return true;
@@ -449,19 +474,36 @@
   function fromSemantic(model, ir, depth){
     var order=(model&&model.wordOrder&&model.wordOrder.length)?model.wordOrder:['SUBJECT','OBJECT','VERB'],
         roles=(ir&&ir.roles)||{}, features=(ir&&ir.features)||{},
-        seen={}, queue=[], out=[], gaps=[], subs=[], main, i, k, role, slot;
+        seen={}, queue=[], out=[], gaps=[], subs=[], main, vfeat, i, k, role, slot;
     depth=Math.max(0, parseInt(depth,10)||0);
     /* the order this language puts roles in, then anything it has no place for */
     for(i=0;i<order.length;i++){ slot=(order[i]==='VERB')?'PREDICATE':order[i]; if(!seen[slot]){ seen[slot]=true; queue.push(slot); } }
     for(k in roles) if(Object.prototype.hasOwnProperty.call(roles,k)&&!seen[k]){ seen[k]=true; queue.push(k); }
+    /* THE VERB AGREES WITH ITS SUBJECT, where this language says verbs do.
+       The sentence's own features are the IR's and are never written into --
+       a copy is made, because an IR is somebody's meaning and this is one
+       language's way of saying it. */
+    vfeat=withClass(model, features, roles.SUBJECT);
     for(i=0;i<queue.length;i++){ role=queue[i];
       if(!Object.prototype.hasOwnProperty.call(roles,role)) continue;
-      out.push(pieceFor(model, role, roles[role], features, gaps, depth));
+      out.push(pieceFor(model, role, roles[role], (role==='PREDICATE')? vfeat : features, gaps, depth));
     }
     main=surfaces(out).join(' ');
     if(depth<CLAUSE_DEEP) subs=clausesOf(model, ir, gaps, depth);
     return {ok:true, text:cxJoin(model, main, subs), pieces:out, gaps:gaps,
             clauses:subs, complete:gaps.length===0};
+  }
+  /* The sentence's features with the subject's class added, where there is
+     one. A copy, never the IR's own object. */
+  function withClass(model, features, subject){
+    var out={}, k, found, cls;
+    for(k in features) if(Object.prototype.hasOwnProperty.call(features,k)) out[k]=features[k];
+    if(subject===undefined || subject===null) return out;
+    found=lexFind(model, isPhrase(subject)? subject.head : subject);
+    if(!found.length) return out;
+    cls=classOf(model, found[0]);
+    if(cls) out.CLASS=cls;
+    return out;
   }
   /* The main clause and what hangs off it, on the side this language says.
      Nothing said is the main clause alone, which is what every sentence
@@ -496,7 +538,7 @@
      list is what somebody meant. A meaning this language has no word for is a
      gap here exactly as it is for a head -- it stays as the meaning, and the
      gap is the door to making that word. */
-  function modWords(model, v, gaps, depth, part){
+  function modWords(model, v, gaps, depth, part, cls){
     var out=[], list, i, found, cv, marked;
     /* HOW DEEP IN is read here as well as passed in, and that is not belt and
        braces: a caller that forgot the argument made `depth < CLAUSE_DEEP`
@@ -526,8 +568,14 @@
          a mark today; asking for all of them costs one lookup and means the
          day 「どんな」 gets one, it is already written. */
       cv=part? caseFor(model, part) : null;
-      if(cv===null){ out.push(String(found[0].lemma||'')); continue; }
-      marked={}; marked.CASE=cv;
+      marked={};
+      if(cv!==null) marked.CASE=cv;
+      /* AND IT AGREES WITH THE NOUN IT IS ON, where this language says words
+         do. `cls` is the head's class and is handed down rather than looked up
+         again here -- one lookup per phrase, and one answer to which noun this
+         modifier belongs to. */
+      if(cls) marked.CLASS=cls;
+      if(cv===null && !cls){ out.push(String(found[0].lemma||'')); continue; }
       out.push(api.morphology.inflect(model, found[0], marked).surface);
     }
     return out;
@@ -537,22 +585,22 @@
      adjective on the side its own chapter gives, everything else after the
      noun -- so a chapter nobody has filled in leaves that part OUT of the
      ordering rather than out of the sentence. */
-  function npWrite(model, value, headSurface, gaps, depth){
+  function npWrite(model, value, headSurface, gaps, depth, cls){
     var order=npOrderOf(model), mods=(isPhrase(value) && value.mods)||{},
         out=[], said={}, i, part;
     if(order.length){
       for(i=0;i<order.length;i++){ part=order[i]; said[part]=1;
         if(part==='NOUN') out.push(headSurface);
-        else out=out.concat(modWords(model, mods[part], gaps, depth, part));
+        else out=out.concat(modWords(model, mods[part], gaps, depth, part, cls));
       }
       if(!said.NOUN) out.push(headSurface);
-      for(i=0;i<NP_PARTS.length;i++) if(!said[NP_PARTS[i]]) out=out.concat(modWords(model, mods[NP_PARTS[i]], gaps, depth, NP_PARTS[i]));
+      for(i=0;i<NP_PARTS.length;i++) if(!said[NP_PARTS[i]]) out=out.concat(modWords(model, mods[NP_PARTS[i]], gaps, depth, NP_PARTS[i], cls));
       return out;
     }
-    out=(positionOf(model,'ADJECTIVE')==='before')? modWords(model, mods.ADJECTIVE, gaps, depth, 'ADJECTIVE') : [];
+    out=(positionOf(model,'ADJECTIVE')==='before')? modWords(model, mods.ADJECTIVE, gaps, depth, 'ADJECTIVE', cls) : [];
     out.push(headSurface);
-    if(positionOf(model,'ADJECTIVE')!=='before') out=out.concat(modWords(model, mods.ADJECTIVE, gaps, depth, 'ADJECTIVE'));
-    for(i=0;i<NP_PARTS.length;i++) if(NP_PARTS[i]!=='ADJECTIVE') out=out.concat(modWords(model, mods[NP_PARTS[i]], gaps, depth, NP_PARTS[i]));
+    if(positionOf(model,'ADJECTIVE')!=='before') out=out.concat(modWords(model, mods.ADJECTIVE, gaps, depth, 'ADJECTIVE', cls));
+    for(i=0;i<NP_PARTS.length;i++) if(NP_PARTS[i]!=='ADJECTIVE') out=out.concat(modWords(model, mods[NP_PARTS[i]], gaps, depth, NP_PARTS[i], cls));
     return out;
   }
 
@@ -562,10 +610,12 @@
   function pieceFor(model, role, value, features, gaps, depth){
     var meaning=isPhrase(value)? value.head : value,
         own=(isPhrase(value) && value.features)||{},
-        found=lexFind(model, meaning), word, made, cv, marked, k;
+        found=lexFind(model, meaning), word, made, cv, marked, cls, k;
     if(!found.length){
       gaps.push(String(meaning));
-      return {role:role, surface:npWrite(model, value, String(meaning), gaps, depth).join(' '), word:null, gap:true};
+      /* A head this language has no word for has no class either -- a class is
+         a fact about a word, and there is no word. */
+      return {role:role, surface:npWrite(model, value, String(meaning), gaps, depth, null).join(' '), word:null, gap:true};
     }
     word=found[0];
     if(role==='PREDICATE'){ made=api.morphology.inflect(model, word, features); return {role:role, surface:made.surface, word:word, gap:false}; }
@@ -573,8 +623,13 @@
     for(k in own) if(Object.prototype.hasOwnProperty.call(own,k)) marked[k]=own[k];
     cv=caseFor(model, role);
     if(cv!==null) marked.CASE=cv;
+    /* THE NOUN ITSELF MAY CARRY ITS CLASS. Some languages mark the class on
+       the noun and some only on what agrees with it; a language that writes
+       neither has no rule and nothing happens. */
+    cls=classOf(model, word);
+    if(cls) marked.CLASS=cls;
     made=api.morphology.inflect(model, word, marked);
-    return {role:role, surface:npWrite(model, value, made.surface, gaps, depth).join(' '), word:word, gap:false};
+    return {role:role, surface:npWrite(model, value, made.surface, gaps, depth, cls).join(' '), word:word, gap:false};
   }
 
   function surfaces(pieces){ var out=[], i; for(i=0;i<pieces.length;i++) out.push(pieces[i].surface); return out; }
