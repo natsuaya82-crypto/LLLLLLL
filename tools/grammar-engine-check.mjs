@@ -711,6 +711,17 @@ for(const [feat, val] of PERS){
   assert.ok(!PVAL[val], 'two person forms mean the same thing: '+val);
   PVAL[val]=1;
 }
+/* C12 法. 「命令・条件はある。可能・義務・願望を足す」 OWNER 2026-09-07. Five
+   moods and ONE feature, for the reason the six person forms are one: a
+   language spends a single ending on what mood a sentence is in, and asking
+   for two of them at once would put two endings on one verb. */
+const MOODS={};
+for(const f of ['imp','cnd','pot','obl','des']){
+  const [feat, val]=app.gFmFeat(f);
+  assert.equal(feat,'MOOD','the mood "'+f+'" is not a mood to the engine');
+  assert.ok(!MOODS[val], 'two moods mean the same thing: '+val);
+  MOODS[val]=1;
+}
 /* AND IT REACHES THE ENGINE. A rule written on the 彼・彼女の形 chapter is an
    ordinary rule in STG.fm, and gFmRules() is what carries it over -- so this
    drives the real one, with the app's own shapes stubbed the way this section
@@ -735,6 +746,16 @@ assert.equal(e.translate.fromSemantic(persModel,
    the verb alone -- the part drops out, nothing breaks. */
 assert.equal(e.translate.fromSemantic(persModel,
   e.semanticIR({roles:{PREDICATE:'eat'}})).text,'luma');
+/* a mood reaches the engine the same way, and only one of them at a time */
+stage([{hw:'luma',mns:['eat'],pos:'v'}],
+      {order:'SOV', fm:[{id:'rp', fm:'pot', pos:'v', at:'end', add:['r','e'], drop:0, when:''},
+                        {id:'ro', fm:'obl', pos:'v', at:'end', add:['b','a'], drop:0, when:''}]},
+      null);
+const moodModel=app.gModel();
+assert.equal(e.translate.fromSemantic(moodModel,
+  e.semanticIR({roles:{PREDICATE:'eat'}, features:{MOOD:'POTENTIAL'}})).text,'lumare');
+assert.equal(e.translate.fromSemantic(moodModel,
+  e.semanticIR({roles:{PREDICATE:'eat'}, features:{MOOD:'OBLIGATIVE'}})).text,'lumaba');
 /* and a language that has written no person rule at all is untouched by a
    meaning that does say */
 stage([{hw:'luma',mns:['eat'],pos:'v'}],{order:'SOV'},null);
@@ -1146,4 +1167,5 @@ console.log('Grammar Engine: derivation applies, a case MARK carries a role, the
             'for a / the / this / that stand where the noun-phrase board says, ' +
             'which is the one place that says it, and every form label this app supplies ' +
             'means something the engine can be asked for -- the six person forms ' +
-            'among them, as one feature with six values');
+            'among them, as one feature with six values, and the five moods as one ' +
+            'feature with five');

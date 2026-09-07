@@ -601,7 +601,7 @@ function regLabel(r){ return r? t('word.reg.'+r) : ''; }
    Appended, the twelve above keep their places and a person form sorts after
    them in a family that has both. */
 var FM_INF=['pst','prs','fut','prg','prf','plp','neg','imp','que','cnd','cau','pas','pl',
-            'p1s','p2s','p3s','p1p','p2p','p3p'];
+            'p1s','p2s','p3s','p1p','p2p','p3p','pot','obl','des'];
 var FM_DER=['agt','ins','loc','act','qua','dim','aug','col','opp','adj','vrb','adv'];
 function fmOwn(f){ return String(f||'').slice(0,2)==='i~' || String(f||'').slice(0,2)==='d~'; }
 function fmGroup(f){

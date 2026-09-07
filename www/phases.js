@@ -796,7 +796,7 @@ function stHidHTML(){
    stages swapping places on a redraw is the app rearranging their work. */
 var G2TOC=['order','np','cx','n','pl','ncls','det',
            'p1s','p2s','p3s','p1p','p2p','p3p',
-           'prs','pst','fut','plp','prg','prf','cnd','cau','imp','pas','neg','q',
+           'prs','pst','fut','plp','prg','prf','cnd','pot','obl','des','cau','imp','pas','neg','q',
            'pron','count','greet',
            'adj','adp','part','conj','polite','have','when','month','wday','st'];
 function stTocAt(id){

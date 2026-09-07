@@ -331,6 +331,11 @@ var GFM_FEAT={
   prg:['ASPECT','PROGRESSIVE'], prf:['ASPECT','PERFECT'],
   neg:['NEGATION',true],
   imp:['MOOD','IMPERATIVE'], que:['MOOD','INTERROGATIVE'], cnd:['MOOD','CONDITIONAL'],
+  /* 法. 「命令・条件はある。可能・義務・願望を足す」 OWNER 2026-09-07. The
+     same feature the imperative and the conditional already are, because they
+     are the same kind of fact about a sentence and a language spends one
+     ending on it. */
+  pot:['MOOD','POTENTIAL'], obl:['MOOD','OBLIGATIVE'], des:['MOOD','DESIDERATIVE'],
   cau:['VOICE','CAUSATIVE'], pas:['VOICE','PASSIVE'],
   pl :['NUMBER','PLURAL'],
   /* 人称・数. One feature and six values rather than PERSON and NUMBER apart,
@@ -1474,6 +1479,7 @@ function g2Add(id){
 var G2FM_CHAPS=[
   ['p1s','p1s','v'], ['p2s','p2s','v'], ['p3s','p3s','v'],
   ['p1p','p1p','v'], ['p2p','p2p','v'], ['p3p','p3p','v'],
+  ['pot','pot','v'], ['obl','obl','v'], ['des','des','v'],
   ['pst','pst','v'], ['prs','prs','v'], ['fut','fut','v'], ['plp','plp','v'],
   ['prg','prg','v'], ['prf','prf','v'], ['cnd','cnd','v'], ['cau','cau','v'],
   ['imp','imp','v'], ['pas','pas','v'], ['neg','neg','v'], ['q','que','v'],
