@@ -671,6 +671,64 @@ assert.equal(e.morphology.derive(derStem, derStem.words[1], 'ADJECTIVE').surface
    means adding it to this sentence. */
 
 
+/* ---- D16 形容詞の比較 -------------------------------------------------------
+   「比較・最上級の規則（fmr の形）と位置」 OWNER 2026-09-07.
+
+   The rules are ordinary rules (DEGREE, two values, held with the moods and
+   the person forms above). What is new here is the STANDARD -- 「山より高い」
+   の「山より」 -- because it is the one position in a comparison this app does
+   not already answer somewhere else: where the adjective itself stands is the
+   noun-phrase board's and the 形容詞 chapter's. */
+const CMPW=[['yama','mountain','NOUN'],['taka','tall','ADJECTIVE'],
+            ['yori','than','PARTICLE'],['mi','I','PRONOUN']];
+function withStandard(model, side, word){
+  if(word) model.grammarRules.push(e.grammarRule({type:'syntax',target:'STANDARD',feature:'WORD',value:word}));
+  model.grammarRules.push(e.grammarRule({type:'syntax',target:'STANDARD',feature:'POSITION',value:side}));
+  return model;
+}
+const CMPIR=e.semanticIR({roles:{SUBJECT:'I', STANDARD:'mountain', PREDICATE:'tall'},
+                          features:{DEGREE:'COMPARATIVE'}});
+const cmpRule={id:'c',target:'ADJECTIVE',feature:'DEGREE',value:'COMPARATIVE',
+               operation:'suffix',form:'sa',separator:''};
+/* 「私 山より 高いsa」 -- the standard on the board before the verb, its word
+   after the noun, which is Japanese. Both halves are stated: WHERE the phrase
+   stands is the STD card on the word order board, and WHICH SIDE the word
+   stands is the 比較級 chapter's. */
+const CMPORD=['S','STD','V'];
+assert.equal(e.translate.fromSemantic(
+  withStandard(lang('CM',CMPORD,CMPW,[cmpRule]),'after','CM:yori'),CMPIR).text,
+  'mi yama yori takasa');
+/* and before it, which is English's `than` */
+assert.equal(e.translate.fromSemantic(
+  withStandard(lang('CM2',CMPORD,CMPW,[cmpRule]),'before','CM2:yori'),CMPIR).text,
+  'mi yori yama takasa');
+/* THE CARD LEFT OFF THE BOARD. The phrase follows the sentence, which is what
+   every role this board has no place for already does -- nothing is dropped
+   and the word it is measured with still stands where the chapter says. */
+assert.equal(e.translate.fromSemantic(
+  withStandard(lang('CM5','SOV',CMPW,[cmpRule]),'after','CM5:yori'),CMPIR).text,
+  'mi takasa yama yori');
+/* A LANGUAGE THAT MEASURES WITH NO WORD AT ALL writes the standard bare. That
+   is a real answer, not a gap -- nothing is missing, the language simply says
+   it another way. */
+assert.equal(e.translate.fromSemantic(
+  withStandard(lang('CM3',CMPORD,CMPW,[cmpRule]),'after',null),CMPIR).text,
+  'mi yama takasa');
+/* THE CHAPTER LEFT EMPTY. No rule for the comparative is the adjective
+   standing as it is -- the part drops out, nothing breaks. */
+assert.equal(e.translate.fromSemantic(
+  withStandard(lang('CM4',CMPORD,CMPW),'after','CM4:yori'),CMPIR).text,
+  'mi yama yori taka');
+/* 比較級 and 最上級 are one feature with two values, held the way the moods
+   are: a word is not both at once. */
+const DEG={};
+for(const f of ['cmp','sup']){
+  const [feat, val]=app.gFmFeat(f);
+  assert.equal(feat,'DEGREE');
+  assert.ok(!DEG[val],'比較級と最上級が同じ意味になっている: '+val);
+  DEG[val]=1;
+}
+
 /* ---- C15 コピュラ・存在 -----------------------------------------------------
    「「〜です」「〜がある」の語と位置」 OWNER 2026-09-07.
 
@@ -1214,4 +1272,5 @@ console.log('Grammar Engine: derivation applies, a case MARK carries a role, the
             'among them, as one feature with six values, and the five moods as one ' +
             'feature with five, and a copular sentence stands where the CMP card on the ' +
             'word order board says -- with the copula itself a gap where a language ' +
-            'uses no word for it');
+            'uses no word for it, and a comparison carries the word its standard is ' +
+            'measured with, on the side that chapter says');

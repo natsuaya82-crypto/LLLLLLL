@@ -324,6 +324,10 @@ var CHAP_SLOTS=[
      anything else would leave a copular sentence with no verb in it. A
      language that uses no word at all leaves them empty. */
   {id:'cop',   chap:'cop', slots:['be','exist'], pos:'v'},
+  /* 比較. The word a comparison is measured against is said with -- 「山より
+     高い」の「より」, English `than`. One word, on the 比較級 chapter, and
+     which side of what is being measured it stands is that chapter's too. */
+  {id:'than',  chap:'cmp', slots:['than'], pos:'part'},
   {id:'neg',   chap:'neg', slots:['not'], pos:'part'},
   {id:'ask',   chap:'q',   slots:['what','who','where','when','why','how'], pos:'pro'},
   {id:'where', chap:'adp', slots:['in','on','under','to','from','with'], pos:'part'}
@@ -805,7 +809,7 @@ var G2TOC=['order','np','cx','n','pl','ncls','det','cop',
            'p1s','p2s','p3s','p1p','p2p','p3p',
            'prs','pst','fut','plp','prg','prf','cnd','pot','obl','des','cau','imp','pas','neg','q',
            'pron','count','greet',
-           'adj','adp','part','conj','polite','have','when','month','wday','st'];
+           'adj','cmp','sup','adp','part','conj','polite','have','when','month','wday','st'];
 function stTocAt(id){
   var i=G2TOC.indexOf(String(id));
   return (i<0)? G2TOC.length : i;

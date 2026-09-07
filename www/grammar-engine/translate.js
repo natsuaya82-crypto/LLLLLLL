@@ -610,18 +610,39 @@
     return out;
   }
 
+  /* 比較. The word a comparison is measured against -- 「山より高い」の「より」
+     -- is a nominal with a word beside it, and which word that is cannot be
+     told from a part of speech, so the chapter that makes it names it exactly
+     as the negation and the adpositions are named. Which side of the standard
+     it stands is this language's, on that same chapter. A language that
+     measures with no word at all writes the standard bare, which is a real
+     answer and not a gap. */
+  function standardWord(model){
+    var ids=markedIds(model,'STANDARD'), words=(model&&model.words)||[], i, j;
+    for(i=0;i<ids.length;i++)
+      for(j=0;j<words.length;j++) if(String(words[j].id)===ids[i]) return String(words[j].lemma||'');
+    return '';
+  }
+  function standardSay(model, surface){
+    var mk=standardWord(model);
+    if(!mk) return surface;
+    return (positionOf(model,'STANDARD')==='before')? mk+' '+surface : surface+' '+mk;
+  }
   /* One role of an IR, as this language writes it. The verb takes the
      sentence's features; a nominal takes this language's mark for its role,
      when this language has one, and whatever its own phrase carries. */
   function pieceFor(model, role, value, features, gaps, depth){
     var meaning=isPhrase(value)? value.head : value,
         own=(isPhrase(value) && value.features)||{},
-        found=lexFind(model, meaning), word, made, cv, marked, cls, k;
+        found=lexFind(model, meaning), word, made, cv, marked, cls, surface, k;
     if(!found.length){
       gaps.push(String(meaning));
       /* A head this language has no word for has no class either -- a class is
-         a fact about a word, and there is no word. */
-      return {role:role, surface:npWrite(model, value, String(meaning), gaps, depth, null).join(' '), word:null, gap:true};
+         a fact about a word, and there is no word. What it IS still keeps its
+         place and its mark, so the gap is where the missing word goes. */
+      surface=npWrite(model, value, String(meaning), gaps, depth, null).join(' ');
+      if(role==='STANDARD') surface=standardSay(model, surface);
+      return {role:role, surface:surface, word:null, gap:true};
     }
     word=found[0];
     if(role==='PREDICATE'){ made=api.morphology.inflect(model, word, features); return {role:role, surface:made.surface, word:word, gap:false}; }
@@ -635,7 +656,9 @@
     cls=classOf(model, word);
     if(cls) marked.CLASS=cls;
     made=api.morphology.inflect(model, word, marked);
-    return {role:role, surface:npWrite(model, value, made.surface, gaps, depth, cls).join(' '), word:word, gap:false};
+    surface=npWrite(model, value, made.surface, gaps, depth, cls).join(' ');
+    if(role==='STANDARD') surface=standardSay(model, surface);
+    return {role:role, surface:surface, word:word, gap:false};
   }
 
   function surfaces(pieces){ var out=[], i; for(i=0;i<pieces.length;i++) out.push(pieces[i].surface); return out; }

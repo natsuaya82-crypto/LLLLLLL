@@ -30,7 +30,7 @@
      is a second answer to what ADV means. A code nobody knows is passed
      through uppercased rather than dropped: a role this table has not heard of
      is still somebody's, and dropping it would silently shorten their order. */
-  function wordOrder(value){ var map={S:'SUBJECT',O:'OBJECT',V:'VERB',ADV:'ADVERB',ADP:'ADPOSITION',NEG:'NEGATION',Q:'QUESTION',CMP:'COMPLEMENT'}; var out=[],i,s;
+  function wordOrder(value){ var map={S:'SUBJECT',O:'OBJECT',V:'VERB',ADV:'ADVERB',ADP:'ADPOSITION',NEG:'NEGATION',Q:'QUESTION',CMP:'COMPLEMENT',STD:'STANDARD'}; var out=[],i,s;
     if(typeof value==='string') value=value.split('');
     if(!Array.isArray(value)) return out;
     for(i=0;i<value.length;i++){ s=String(value[i]).toUpperCase(); out.push(map[s]||s); }
