@@ -2102,6 +2102,71 @@ const R = await pg.evaluate(async () => {
        SET.theme + ' / ' + SET.ui);
   say('57: 一覧は数えていて並べていない ── 明日足す欄もその人のもの、端末の設えだけが残る');
 
+  /* ---- 58. スタッフの @ を打って押すと、呼び出しが一回出る ---------------
+     「スタッフ＠追加を押しても何も出ない」 OWNER 2026-09-06。押しても何も
+     起きず、文言も出ない ── つまり画面が黙って戻っている線が疑われた。
+
+     黙って戻る所は www/mod.js § adminStaffAdd の頭の二つだけです：
+     ADMIN_BUSY が立っている（前の要求が返っていない）か、ADMIN_H が空
+     （打った字が届いていない）。だから訊くのはその二つと、実際に出た要求の
+     数の三つ。
+
+     欄からは本物の input で読みます ── ADMIN_H に直に代入したら、届いて
+     いるかどうかというこの問いを飛ばすことになる。act.js の一つの listener
+     が `data-in` を読み、IN('adminStaffSet', ['h']) の引数の後ろに打った字を
+     足して呼ぶ（www/act.js § actRun）ので、adminStaffSet(k, v) の順は
+     ここで確かめられます。押す方も本物の click で、名前で関数を呼ばない。
+
+     そして **一回**。二回出れば同じ人が二度書かれ、零回はこの一件そのもの。 */
+  start();
+  {
+    const realSendSt = netSend, realGetSt = netGet;
+    const rpc = [];
+    netSend = (method, path, body, tok, ok2, bad2) => {
+      rpc.push(String(path) + ' ' + JSON.stringify(body || null));
+      /* 何も答えない ── 答えの側は rls-check が持っている。ここは
+         「出たか」だけの話で、ok を呼べば adminLoad() が続けて別の要求を
+         出すので、数えている物が二つになる。 */
+    };
+    netGet = () => {};
+    ADMIN_OK = true; ADMIN_H = ''; ADMIN_BUSY = false; ADMIN_ERR = '';
+    NAV = [{ r: 'admin' }]; route = 'admin';
+    render();
+    const fld = document.getElementById('admin-h');
+    let busyAt = null, hAt = null, sent = [];
+    if (fld) {
+      /* 全角の＠ ── オーナーが打つのはこれ（www/net.js § netHandleOf）。 */
+      fld.value = '＠iri';
+      fld.dispatchEvent(new Event('input', { bubbles: true }));
+      hAt = ADMIN_H;
+      const btn = document.querySelector('#app [data-do="adminStaffAdd"]');
+      busyAt = ADMIN_BUSY;
+      if (btn) btn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+      sent = rpc.slice();
+    }
+    netSend = realSendSt; netGet = realGetSt;
+    ADMIN_OK = false; ADMIN_H = ''; ADMIN_BUSY = false; ADMIN_ERR = '';
+    if (!fld)
+      no('58: 管理の画面に @ を打つ欄が無い');
+    else {
+      if (hAt !== '＠iri')
+        no('58: 欄に打った字が ADMIN_H に届いていない ── ' + JSON.stringify(hAt) +
+           '。届かなければ adminStaffAdd() は頭で黙って戻り、画面には何も出ない');
+      if (busyAt)
+        no('58: 押す前から ADMIN_BUSY が立っている ── ' +
+           'adminStaffAdd() は頭で黙って戻る');
+      const adds = sent.filter((x) => x.indexOf('/rest/v1/rpc/staff_add') === 0);
+      if (adds.length !== 1)
+        no('58: 押して staff_add が ' + adds.length + ' 回 ── 出た要求は ' +
+           JSON.stringify(sent) + '。零回なら「押しても何も出ない」そのもの、' +
+           '二回なら同じ人が二度書かれる');
+      else if (adds[0].indexOf('"h":"iri"') < 0)
+        no('58: 送っている @ が違う ── ' + adds[0] +
+           '（全角の＠を外して小文字にするのは www/net.js § netHandleOf）');
+    }
+  }
+  say('58: 管理の欄に＠を打って押すと、staff_add の呼び出しが一回だけ出る');
+
   return out;
 });
 
