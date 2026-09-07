@@ -1487,11 +1487,20 @@ function netLangsDown(then, bad){
     if(Object.prototype.hasOwnProperty.call(LANGS, id) && LANGS[id] && LANGS[id].sid)
       here[String(LANGS[id].sid)]=1;
   netGet('/rest/v1/language?select=id,name&owner=eq.'+encodeURIComponent(SESS.uid),
-    function(rows){
-      var i=0, made=0;
+    function(d){
+      /* WHAT CAME BACK IS A LIST OR IT IS NOT AN ANSWER. netLangBack() above
+         has said so since it was written -- 「it did not answer」 and 「there
+         is nothing there」 are two states and must not share a branch -- and
+         this one read `d` as rows without asking. Anything without a length
+         (an error body, a single row, `null`) left `i >= undefined` false for
+         ever: step() called itself until the stack ran out. Nothing on a
+         phone would say why -- the languages simply never arrived.
+         Measured 2026-09-07, act-check: `Maximum call stack size exceeded`,
+         every frame `step`. */
+      var rows=(d && typeof d.length==='number')? d : [], i=0, made=0;
       function step(){
         var row, nid;
-        if(i>=(rows||[]).length){
+        if(i>=rows.length){
           if(made) langStore();
           /* The OPEN language's slices came down, so what the screens are
              holding is older than what is in the store. Read it in the way
