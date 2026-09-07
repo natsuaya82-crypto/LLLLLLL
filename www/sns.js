@@ -618,6 +618,38 @@ function pullForget(){
    screen on the mark for ever -- pullNeed() is refused by PULL_GOT, and
    nothing else would ever set it back. www/shell.js § langWipe. */
 function pullDrop(r){ PULL_GOT[r]=0; }
+/* ---- AND SOMEBODY WAITING FOR ONE OF THESE ANSWERS TO COME IN ------------
+   「プロフィールは、出す物を全部読み込んでから開く」 OWNER 2026-09-07.
+
+   A screen that must not be drawn until its answers are in needs a third
+   thing beside 「ask」 and 「have you got it」: 「tell me when」. It is here
+   rather than at each caller because pullRun() below is already the one
+   place that knows when an asking ENDED, and it knows it whichever way it
+   went.
+
+   ONE CALLBACK AND NOT TWO. An answer that came back empty is an answer, and
+   a request that could not be made is already netPop()'s -- pullRun() puts
+   the pop up and ［再接続］ runs the same question again. So there is
+   nothing left for a waiter to do about a failure except stop waiting, and
+   telling it apart here would be a second place deciding what a failure
+   means.
+
+   Nothing to ask is nothing to wait for: signed out, or a name this table
+   does not carry, answers at once. */
+var PULL_WAIT={};
+function pullWait(r, done){
+  if(pullHad(r) || !PULL_ON[r] || !netSignedIn()){ done(); return; }
+  if(!PULL_WAIT[r]) PULL_WAIT[r]=[];
+  PULL_WAIT[r].push(done);
+  pullNeed(r);
+}
+/* The list is taken FIRST, so a waiter that asks again from inside its own
+   callback starts a new list rather than being woken by this one. */
+function pullWoke(r){
+  var ws=PULL_WAIT[r];
+  PULL_WAIT[r]=null;
+  return ws || [];
+}
 function pullRun(r, person){
   var ask=PULL_ON[r], hav=PULL_HAS[r];
   /* Signed out there is nothing to ask for: the three screens are the door. */
@@ -628,17 +660,25 @@ function pullRun(r, person){
   if(!person && (hav? hav() : PULL_GOT[r])) return;
   PULL_OUT[r]=1;
   ask(function(got){
+    var ws, i;
     PULL_OUT[r]=0;
     /* The mark stops turning when the asking is over, whatever came back. A
        render takes it out by itself; the road where nothing came back does
        not render, and that is the one this line is for. */
     pullSpinOff();
-    if(!got) return;
-    PULL_GOT[r]=1;
-    render();
+    if(got) PULL_GOT[r]=1;
+    /* And whoever is waiting for this one, BEFORE the render: an answer that
+       came back empty is still an answer, so both roads out of here wake
+       them. */
+    ws=pullWoke(r);
+    for(i=0;i<ws.length;i++) ws[i]();
+    if(got) render();
   }, function(d, s, m){
+    var ws, i;
     PULL_OUT[r]=0;
     pullSpinOff();
+    ws=pullWoke(r);
+    for(i=0;i<ws.length;i++) ws[i]();
     /* 通信が落ちたら何も進まない ── netPop() (www/net.js)。［再接続］が
        走らせるのはこの画面の同じ問いで、それは人が押したのと同じ道です。 */
     netPop(d, s, m, function(){ pullRun(r, true); });
@@ -1943,8 +1983,8 @@ function snsWhoRow(p, full){
     (p.lname? '<span class="plangtag">'+esc(p.lname)+'</span>' : '');
   return '<div class="whrow">'+
     (p.mine
-      ? '<button class="whgo"' + DO('goTab', ["profile"]) + '>'+inner+'</button>'
-      : '<button class="whgo"' + DO('go', ["profile", h]) + '>'+inner+'</button>')+
+      ? '<button class="whgo"' + DO('profileOpen', [""]) + '>'+inner+'</button>'
+      : '<button class="whgo"' + DO('profileOpen', [h]) + '>'+inner+'</button>')+
     (p.mine? ''
       : '<button class="whfo'+(on? ' on' : '')+'"' + DO('meFollow', [h]) + '>'+
           esc(t(on? 'me.unfollow' : 'me.follow'))+'</button>')+
@@ -2592,10 +2632,10 @@ function notGo(n){
        and a list of one is a screen you would have to press twice. */
     ps=notPeople(n);
     if(ps.length>1) return DO('go', ["notfo", ps.join(',')]);
-    return h? DO('go', ["profile", h]) : '';
+    return h? DO('profileOpen', [h]) : '';
   }
   if(n.id) return DO('postOpen', [String(n.id)]);
-  return h? DO('go', ["profile", h]) : '';
+  return h? DO('profileOpen', [h]) : '';
 }
 function notRow(n){
   var k=String(n.kind||''), p=postById(n.id), pics=p? postPics(p) : [], ic=

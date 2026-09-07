@@ -648,27 +648,104 @@ var WHO_HAVE={}, WHO_ASKED={};
    Nothing guards it: a person pulling the screen down is 「もう一度聞け」 and
    is never refused -- www/sns.js § pullRun says the same sentence about every
    other screen. 「他の人の画面でも更新できるようにしたい」 OWNER 2026-09-04. */
-function whoAsk(h){
+function whoAsk(h, ok, bad){
   h=String(h||'');
   /* Never your own: that is ME, it is on this phone, and a request for it
      would be the app asking somebody else who you are. */
-  if(!h || h===meHandle()) return;
+  if(!h || h===meHandle()){ if(ok) ok(); return; }
   WHO_ASKED[h]=1;
   netWho(h, function(p){
-    /* Nobody by that name. It stays asked -- there is nothing to ask again. */
-    if(!p) return;
-    WHO_HAVE[h]=p;
-    render();
-  }, function(){ WHO_ASKED[h]=0; });
+    /* Nobody by that name. It stays asked -- there is nothing to ask again,
+       and the page opens on whoOf()'s last answer rather than never
+       opening. */
+    if(p) WHO_HAVE[h]=p;
+    if(ok) ok(); else render();
+  }, function(d, s, m){
+    WHO_ASKED[h]=0;
+    if(bad) bad(d, s, m);
+  });
 }
-/* And the same ask put ONCE per handle, which is what a RENDER wants: a page
+/* The same ask put ONCE per handle, which is what a RENDER wants: a page
    draws constantly and a question per draw is a question per frame. The flag
-   is read here and written by whoAsk() alone -- it used to be cleared from
-   www/me.js § meAgain by hand, which was a second road to the same request
-   with the guard reached into from outside it. */
+   is read here and written by whoAsk() alone. One screen still asks this way
+   and it is the right way for it -- the two follow lists are a page of many
+   people, each row a handle this phone may not know, and each answer redraws
+   the row it belongs to (vFollows below). */
 function whoPull(h){
   if(WHO_ASKED[String(h||'')]) return;
   whoAsk(h);
+}
+/* AND ONE PERSON'S PAGE WAITS FOR IT INSTEAD OF DRAWING WITHOUT IT. The same
+   ask again -- whoAsk() is still the only place this phone asks who somebody
+   is -- with the answer handed back rather than rendered into a page that is
+   already up. A profile is not drawn until it is whole (profileOpen below),
+   so there is no frame to guard against. */
+function whoWait(h, ok, bad){
+  if(WHO_HAVE[String(h||'')]){ ok(); return; }
+  whoAsk(h, ok, bad);
+}
+/* ---- THE ONE ROAD ONTO A PROFILE ----------------------------------------
+   「プロフィールは、出す物を全部読み込んでから開く」「押してから読み込みが
+   終わるまで前の画面のままで、揃った瞬間にプロフィールが出る」「くるくるも
+   出さない」 OWNER 2026-09-07, on a phone:
+   「開いた時フォロー中の横に数字でない。非公開の文字も出ない。全部読み込んで
+   から開くんじゃないの？」
+
+   WHAT THIS REPLACES, AND IT WAS THREE MECHANISMS FOR ONE THING. The page
+   went up at once and filled in behind itself, and each of the three things
+   on it had grown its own way of standing in for an answer that was not
+   there: the counts drew last session's list, or the word on its own where
+   there was none (b7f5bce3); the language's row was drawn out of an empty
+   WLD, so a private language said nothing beside its name; somebody else's
+   page put a turning mark where the card would be. All three are deleted.
+   The page is not drawn until it is whole, so there is nothing to stand in
+   for.
+
+   MEASURED, 2026-09-07, every answer 120ms out: the page was on the screen
+   at 164ms with neither number and no 非公開; the numbers arrived at 172ms
+   and the word at 330ms.
+
+   YOUR OWN PAGE ASKS FOR NOTHING HERE. Its three answers -- `mine`, `langs`
+   and `myposts` -- are on PULL_OPEN (www/sns.js § WHAT AN OPEN ASKS FOR), so
+   they came down at the session's own moment, under the splash, before any
+   screen was drawn. This waits on answers that are in by then, which is why
+   pressing the tab is not a pause.
+
+   SOMEBODY ELSE'S IS THE WAIT A PERSON ACTUALLY SEES. It is about one person
+   and there is nothing to ask for until their name is pressed, so it is two
+   requests: who they are, and what they have written. Until both are back
+   the screen that was pressed FROM stays exactly as it is. */
+function profileOpen(h){
+  var mine, left=1, fell=false;
+  h=String(h||'');
+  mine=(!h || h===meHandle());
+  function one(){
+    if(fell) return;
+    left--;
+    if(left>0) return;
+    /* Your own is a TAB and somebody else's is a page you walked to, which
+       is the difference between throwing the trail away and pushing onto it.
+       www/shell.js § goTab. */
+    if(mine) goTab('profile'); else go('profile', h);
+  }
+  /* 揃わなかったら画面は動かない ── netPop() (www/net.js)。［再接続］が
+     走らせるのは同じ問いで、それは名前を押したのと同じ道です。 */
+  function no(d, s, m){
+    if(fell) return;
+    fell=true;
+    netPop(d, s, m, function(){ profileOpen(h); });
+  }
+  if(mine){
+    /* No `no` on these three: pullRun() owns the pop for everything on that
+       table, and a second one here would be the same failure said twice. */
+    left++; pullWait('mine', one);
+    left++; pullWait('langs', one);
+    left++; pullWait('myposts', one);
+  }else{
+    left++; whoWait(h, one, no);
+    left++; pfPosts(h, one, no);
+  }
+  one();
 }
 function whoOf(h){
   var i, p, got;

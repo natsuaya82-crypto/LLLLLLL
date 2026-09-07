@@ -102,6 +102,7 @@ act('popNo', popNo);
    the bar. www/shell.js § KEEP. */
 act('keepPress', keepPress);
 act('goTab', goTab);
+act('profileOpen', profileOpen);
 act('kbAddLay', kbAddLay);
 act('kbDropLay', kbDropLay);
 act('kbDelKey', kbDelKey);

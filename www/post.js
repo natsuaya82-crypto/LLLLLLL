@@ -3073,10 +3073,10 @@ function postOpen(id){
 function postAvHTML(p){
   var h=String((p && p.hd) || '');
   if(p && p.mine)
-    return '<button class="pav pavb"' + DO('goTab', ["profile"]) + '>'+
+    return '<button class="pav pavb"' + DO('profileOpen', [""]) + '>'+
       postFace(p)+'</button>';
   if(!h) return '<div class="pav">'+postFace(p)+'</div>';
-  return '<button class="pav pavb"' + DO('go', ["profile", h]) + '>'+
+  return '<button class="pav pavb"' + DO('profileOpen', [h]) + '>'+
     postFace(p)+'</button>';
 }
 /* The row that drew the tag beside the post is GONE. 「タグは本文中に。」
