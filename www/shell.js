@@ -899,6 +899,10 @@ var PAGES={
   reg:     {tab:'build', k:'word.reg'},
   sub:     {tab:'build', k:'f.sub'},
   follows: {tab:'profile'},
+  /* The people one notice is about. Named 「フォロワー」 because that is what
+     they are -- a follow notice is people who followed you -- and the word is
+     already written in all ten languages, under the number on a profile. */
+  notfo:   {tab:'notif', k:'me.followers'},
   glyph:   {tab:'build'},
   spell:   {tab:'build', k:'word.sp'},
   words:   {tab:'build', k:'toc.words'},

@@ -442,6 +442,9 @@ const R = await pg.evaluate(() => {
                        'ing:' + (meFollowing()[0] || 'iri'),
                        'ers:' + (meFollowing()[0] || 'iri'),
                        'ers:nobody-at-all'] :
+    /* The people one notice is about -- the handles off the row, joined by
+       commas. `null` is the face nothing routes to and is a screen anyway. */
+    r === 'notfo' ? [null, meFollowing().slice(0, 2).join(',')] :
     [null];
   /* The sheets are opened, not routed. openWord needs a headword; the rest
      take nothing. */
@@ -607,6 +610,25 @@ const R = await pg.evaluate(() => {
   });
   LINES.forEach(l => { learn(l.mn); l.ws.forEach(learnWord); });
   learn(langName);
+  /* WHO THE PEOPLE ARE. A handle and a display name are somebody's, exactly
+     as a word and its meaning are -- @iri is @iri in all ten languages, and a
+     mirror asking to see it translated is asking for a person's name in ten
+     languages.
+
+     It had never come up because no screen the mirror RENDERED had a person
+     on it: vFollows draws the waiting mark here (its list is behind
+     pullHad('mine')), and the timeline's rows are posts. The list of the
+     people one notice names has nothing to wait for -- the handles arrive in
+     the route's argument -- so it is the first screen to draw one.
+
+     Read off the fixture rather than listed by name, so somebody seeded
+     tomorrow is data tomorrow. */
+  meFollowing().concat(meFollowers(), [meHandle(), meName()]).forEach(learn);
+  try { postAll().forEach(p => { learn(p.hd); learn(p.who); }); } catch (e) {}
+  (NOTES_HAVE || []).forEach(n => {
+    learn(n.hd); learn(n.who);
+    (n.more || []).forEach(o => { learn(o.hd); learn(o.who); });
+  });
   /* What somebody wrote ABOUT their language: where it is spoken, who speaks
      it, the note, and every section's title and body. All of it is theirs,
      none of it is copy -- an article says the same thing in all ten because

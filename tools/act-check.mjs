@@ -265,6 +265,12 @@ const R = await pg.evaluate(() => {
             meFollowing().concat(['nobody-at-all']).reduce(
               (o, h) => o.concat(['ing:' + h, 'ers:' + h]), [])),
           'vFollows');
+  /* The people one notice is about, which is the handles the row carries
+     joined by commas. Two and three, because a row of two is the shape the
+     owner pressed and a row of three is what the fixture's follow notice
+     has -- and one, which is the screen nothing routes to and which has to
+     be a screen anyway if it is ever reached. */
+  walkArg('notfo', vNotfo, ['veth,iri', 'veth,iri,kai', 'veth'], 'vNotfo');
 
   /* the forms, which are pages reached by opening rather than by routing */
   const forms = [

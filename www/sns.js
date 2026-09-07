@@ -2506,9 +2506,40 @@ function notFaces(n){
    post too, so it goes there like the rest. What is left with nowhere to go
    is a notice carrying neither, and that gets no door rather than a door
    onto nothing. */
+/* WHO THE ROW NAMES, as handles, in the order it names them: the one the
+   sentence is about first and then the ones behind it. It is what the ROW
+   HAS and never `n` -- the server caps `more` at three, so 「他11人」 is a
+   row about twelve people carrying four of them, and a list that claimed
+   twelve would be the app inventing eight. */
+function notPeople(n){
+  var few=n.more||[], out=[], h=String(n.hd||''), i, o;
+  if(h) out.push(h);
+  for(i=0;i<few.length;i++){
+    o=String((few[i] && few[i].hd) || '');
+    if(o && out.indexOf(o)<0) out.push(o);
+  }
+  return out;
+}
 function notGo(n){
-  var k=String(n.kind||''), h=String(n.hd||'');
-  if(k==='follow') return h? DO('go', ["profile", h]) : '';
+  var k=String(n.kind||''), h=String(n.hd||''), ps;
+  if(k==='follow'){
+    /* A GROUP GOES TO THE GROUP. 「jj と linguaa がフォロー」 was one row
+       naming two people and a door onto ONE of them -- the one in front --
+       so the other was on the screen, in the sentence and in a circle, with
+       no way to reach them. OWNER 実機 141.
+
+       The handles ARE the argument. A notice is not a thing with an id --
+       the server builds each row out of a group -- so a route pointing at
+       one would be pointing at a position in a list that is asked for again
+       every session. What the row is about is these people, and the people
+       are what it carries.
+
+       One person is unchanged: a row about one person goes to that person,
+       and a list of one is a screen you would have to press twice. */
+    ps=notPeople(n);
+    if(ps.length>1) return DO('go', ["notfo", ps.join(',')]);
+    return h? DO('go', ["profile", h]) : '';
+  }
   if(n.id) return DO('postOpen', [String(n.id)]);
   return h? DO('go', ["profile", h]) : '';
 }
@@ -2557,6 +2588,36 @@ function notRow(n){
     (pics.length? '<span class="ntfpic"><img src="'+esc(pics[0])+'" alt=""></span>'
                 : '')+
     '</div>';
+}
+/* THE PEOPLE ON ONE NOTICE. 「二人以上がまとまった行は、押すとその人たちの
+   一覧」 -- and it is the follows list's own screen, one row per person, drawn
+   by snsWhoRow() exactly as vFollows() draws its rows. Two lists showing the
+   same thing drawn twice is how they drift apart (www/me.js § vFollows).
+
+   NOTHING IS ASKED OF THE SERVER ABOUT THE LIST ITSELF. The handles came in
+   the route's argument, off the row that was pressed, so this screen is never
+   waiting for it -- what it waits for is each PERSON, which whoPull() asks
+   once per handle and whoOf() answers with the copy in the meantime, exactly
+   as the follows list does.
+
+   A handle is [a-z0-9_] (supabase/schema.sql), so a comma can be the join and
+   nothing has to be escaped out of it again. */
+function vNotfo(){
+  var a=String(here().a||''), hs=a? a.split(',') : [];
+  return '<div class="view">'+navTop()+'<div class="body">'+
+    (hs.length
+      ? hs.map(function(h){
+          var p;
+          h=String(h);
+          whoPull(h);
+          p=whoOf(h);
+          /* 自分の行は「フォローする」を出さない -- 相手のフォロワー一覧に
+             自分が入っているのと同じ理由（www/me.js § vFollows）。 */
+          p.mine=(h===meHandle());
+          return snsWhoRow(p, true);
+        }).join('')
+      : snsNone())+
+    '</div></div>';
 }
 /* WAITING FOR AN ANSWER IS NOT THE SAME AS THERE BEING NOTHING, and this
    screen said both with one sentence. 「通知とか表示されるのに1秒くらいの空白
