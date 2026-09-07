@@ -450,7 +450,6 @@ defLang('fr', (function(){
       'wld.public.d' : "D'autres personnes peuvent ouvrir la page de votre langue et la lire.",
       'wld.dl'       : "Autoriser le téléchargement",
       'wld.dl.d'     : "Qui peut ouvrir la page de votre langue pourra télécharger vos lettres et vos mots et s'en servir dans la sienne.",
-      'wld.hidden'            : "Privée",
       'wld.secs'              : "Sections",
       'wld.ov.v.ph'              : "Ce qu’il dit",
       'wld.ov.del'              : "Retirer cet élément",

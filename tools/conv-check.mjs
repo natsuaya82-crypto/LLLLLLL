@@ -435,6 +435,59 @@ const R = await pg.evaluate(() => {
   }
   guessFails.forEach((m) => fails.push('nothing chosen: ' + m));
 
+  /* 10. NOTHING IS CUT UNTIL THERE IS SOMETHING NEW TO CUT.
+
+     sharePush() is called from render(), which runs on every press anywhere
+     in the app, and it used to build the whole hand-over -- every key of
+     every face with its shapes on it, and the widget's ten digits -- BEFORE
+     asking whether any of it had moved, and then drop it on the floor. On an
+     alphabet the size of a real one that is 140ms of every render.
+     「こういうページがカクカク動く」 OWNER 実機 141.
+
+     The real shareKbd() and shareWidget() are wrapped and counted: two
+     pushes with nothing changed in between cut once, and a letter redrawn
+     cuts again. Counting is what says it -- the timing of it belongs to the
+     phone, and a check that asked for milliseconds would fail on a busy
+     machine and pass on a fast one with the bug in.
+
+     THE FIRST PUSH STILL CUTS, and that is claimed rather than assumed: it
+     is what makes a shape that cannot be cut a failed check here instead of
+     a blank keyboard on somebody's phone. */
+  {
+    const realKbd = window.shareKbd, realWid = window.shareWidget;
+    let cut = 0, wid = 0;
+    window.shareKbd = function(){ cut++; return realKbd.apply(this, arguments); };
+    window.shareWidget = function(){ wid++; return realWid.apply(this, arguments); };
+    try {
+      SHARE.sent = null;
+      sharePush();
+      if (cut !== 1 || wid !== 1)
+        fails.push('the first push cut the keyboard ' + cut + ' times and the ' +
+          'widget ' + wid + ' -- it has to cut once, or a shape that cannot ' +
+          'be cut reaches a phone instead of failing here');
+      sharePush(); sharePush();
+      if (cut !== 1 || wid !== 1)
+        fails.push('nothing changed and the keyboard was cut ' + cut + ' times ' +
+          'and the widget ' + wid + '. sharePush() runs on every render, so ' +
+          'that is the whole hand-over rebuilt and thrown away on every press ' +
+          'anywhere in the app');
+      /* 文字を一つ描き直したら、また切る。署名を先に訊く直しが「二度と送らない」
+         になっていたら、描いた字がキーボードに出ません。 */
+      const lt = LETTERS[0];
+      const wasSt = lt.st;
+      lt.st = (lt.st || []).concat([{ pts: [[100, 100], [700, 700]], w: 6 }]);
+      sharePush();
+      if (cut !== 2)
+        fails.push('a letter was redrawn and the keyboard was not cut again ' +
+          '(' + cut + '). What somebody just drew would never reach the ' +
+          'keyboard they built it for');
+      lt.st = wasSt;
+    } finally {
+      window.shareKbd = realKbd; window.shareWidget = realWid;
+      SHARE.sent = null;
+    }
+  }
+
   return { fails: fails, systems: systems, listedCount: list.length,
            guessed: guessed };
 });
@@ -464,7 +517,7 @@ if (R.fails.length) {
   if (R.fails.length > 40) console.error('  ...and ' + (R.fails.length - 40) + ' more');
   process.exit(1);
 }
-console.log('\nall nine claims hold, for every writing system: every map index' +
+console.log('\nall ten claims hold, for every writing system: every map index' +
   ' resolves, max is the longest key, nothing in ink goes unreached, every' +
   ' key is lower case and unique, the roman layer appears exactly where the' +
   ' person CHOSE one and never where the app merely guessed, and wears' +
@@ -472,4 +525,6 @@ console.log('\nall nine claims hold, for every writing system: every map index' 
   ' conv.how says what wsys() says. And a letter key puts in the code point' +
   ' installTypeFont() gave that letter, on both plans -- so what the Lingua' +
   ' keyboard types is drawn in the letters somebody drew, and what any other' +
-  ' keyboard types is not.');
+  ' keyboard types is not. And nothing is cut until there is something new' +
+  ' to cut: the first push cuts, two pushes with nothing changed cut once,' +
+  ' and a letter redrawn cuts again.');

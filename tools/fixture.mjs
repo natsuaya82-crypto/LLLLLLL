@@ -1173,6 +1173,12 @@ export function halfDone(){
        faults. `pwHead()` is above the line in post.js on purpose (the head is
        somebody else's post), which makes it exactly the shape rule 8 is about:
        nothing in the gate was looking at it. */
+    /* 人のページの ＋ から開いた投稿画面。本文に @handle が入っているのが
+       その画面で、入っていないのは別の画面です ── どちらも歩かせないと、
+       前を書き足す一行が消えても緑のまま出ます。 */
+    ['the composer, opened from somebody\u2019s page', () => {
+        PW = pwBlank(); openPost('new', 'jjj');
+        const h = vForm(); PW = pwBlank(); return h; }],
     ['the composer, replying to somebody', () => {
         PW = pwBlank(); PW.to = 'p1'; openPost('reply');
         const h = vForm(); PW = pwBlank(); return h; }],

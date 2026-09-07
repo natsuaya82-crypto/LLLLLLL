@@ -305,7 +305,6 @@ defLang('en', (function(){
       'wld.public.d' : "Other people can open your language page and read it.",
       'wld.dl'       : "Let people download it",
       'wld.dl.d'     : "Anyone who can open your language page can download your letters and words and use them in their own language.",
-      'wld.hidden'            : "Private",
       'wld.secs'              : "Sections",
       'wld.ov.v.ph'              : "What it says",
       'wld.ov.del'              : "Remove this item",

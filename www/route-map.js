@@ -63,6 +63,7 @@ page('pos',      vPos);
 page('reg',      vReg);
 page('sub',      vSub);
 page('follows',  vFollows);
+page('notfo',    vNotfo);
 page('glyph',    vGlyph);
 page('words',    vWords);
 page('gram',     vGram);

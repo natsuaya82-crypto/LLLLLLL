@@ -362,7 +362,6 @@ defLang('es', (function(){
       'wld.public.d' : "Otras personas pueden abrir la página de tu lengua y leerla.",
       'wld.dl'       : "Permitir descargarlo",
       'wld.dl.d'     : "Quien pueda abrir la página de tu lengua podrá descargar tus letras y palabras y usarlas en la suya.",
-      'wld.hidden'            : "Privada",
       'wld.secs'              : "Secciones",
       'wld.ov.v.ph'              : "Qué dice",
       'wld.ov.del'              : "Quitar este elemento",

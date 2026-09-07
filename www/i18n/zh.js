@@ -410,7 +410,6 @@ defLang('zh', (function(){
       'wld.public.d' : "其他人可以打开并阅读你的语言页面。",
       'wld.dl'       : "允许他人下载",
       'wld.dl.d'     : "能打开你语言页面的人，可以下载你的文字和词语，用在自己的语言里。",
-      'wld.hidden'            : "不公开",
       'wld.secs'              : "章节",
       'wld.ov.v.ph'              : "内容",
       'wld.ov.del'              : "移除此项",

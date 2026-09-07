@@ -1492,15 +1492,24 @@ function dayRow(){
 /* `from` was a parameter nobody ever passed -- both callers say `snsFab()` --
    so the argument this button carried was always none, and openPost() was
    asked for "whatever PW happens to hold". It says 'new' now, which is the
-   one thing this button has ever meant. */
-function snsFab(){
+   one thing this button has ever meant.
+
+   `at` IS WHOSE PAGE THIS + IS STANDING ON, and only somebody else's page
+   passes one 「他人のプロフィールの右下 ＋ → @そのhandle を本文の先頭に」
+   OWNER 2026-09-07. It is the caller's to say rather than this function's to
+   work out: the same button is on the timeline, on the contents and on your
+   own page, and a fab that asked where it was would be answering the
+   question in the one place that cannot see it. What the handle then DOES is
+   openPost()'s, in www/post.js, beside the day's tag -- the other thing that
+   arrives in the field already written. */
+function snsFab(at){
   /* The onboarding's timeline carries it too -- it is one of the five things
      the owner named as missing -- and there it is scenery: that whole stage is
      sealed under one pad, so nothing on it is ever pressed. Written as one
      condition and not as a second return, because two returns building the
      same button is the thing this whole change is about. */
   if(!postMay()) return '';
-  return '<button class="fab"' + DO('openPost', ["new"]) +
+  return '<button class="fab"' + DO('openPost', ["new", String(at||'')]) +
     ' aria-label="'+esc(t('post.new'))+'">'+ICON_ADD2+'</button>';
 }
 /* ---- one conversation --------------------------------------------------
@@ -2506,9 +2515,40 @@ function notFaces(n){
    post too, so it goes there like the rest. What is left with nowhere to go
    is a notice carrying neither, and that gets no door rather than a door
    onto nothing. */
+/* WHO THE ROW NAMES, as handles, in the order it names them: the one the
+   sentence is about first and then the ones behind it. It is what the ROW
+   HAS and never `n` -- the server caps `more` at three, so 「他11人」 is a
+   row about twelve people carrying four of them, and a list that claimed
+   twelve would be the app inventing eight. */
+function notPeople(n){
+  var few=n.more||[], out=[], h=String(n.hd||''), i, o;
+  if(h) out.push(h);
+  for(i=0;i<few.length;i++){
+    o=String((few[i] && few[i].hd) || '');
+    if(o && out.indexOf(o)<0) out.push(o);
+  }
+  return out;
+}
 function notGo(n){
-  var k=String(n.kind||''), h=String(n.hd||'');
-  if(k==='follow') return h? DO('go', ["profile", h]) : '';
+  var k=String(n.kind||''), h=String(n.hd||''), ps;
+  if(k==='follow'){
+    /* A GROUP GOES TO THE GROUP. 「jj と linguaa がフォロー」 was one row
+       naming two people and a door onto ONE of them -- the one in front --
+       so the other was on the screen, in the sentence and in a circle, with
+       no way to reach them. OWNER 実機 141.
+
+       The handles ARE the argument. A notice is not a thing with an id --
+       the server builds each row out of a group -- so a route pointing at
+       one would be pointing at a position in a list that is asked for again
+       every session. What the row is about is these people, and the people
+       are what it carries.
+
+       One person is unchanged: a row about one person goes to that person,
+       and a list of one is a screen you would have to press twice. */
+    ps=notPeople(n);
+    if(ps.length>1) return DO('go', ["notfo", ps.join(',')]);
+    return h? DO('go', ["profile", h]) : '';
+  }
   if(n.id) return DO('postOpen', [String(n.id)]);
   return h? DO('go', ["profile", h]) : '';
 }
@@ -2557,6 +2597,36 @@ function notRow(n){
     (pics.length? '<span class="ntfpic"><img src="'+esc(pics[0])+'" alt=""></span>'
                 : '')+
     '</div>';
+}
+/* THE PEOPLE ON ONE NOTICE. 「二人以上がまとまった行は、押すとその人たちの
+   一覧」 -- and it is the follows list's own screen, one row per person, drawn
+   by snsWhoRow() exactly as vFollows() draws its rows. Two lists showing the
+   same thing drawn twice is how they drift apart (www/me.js § vFollows).
+
+   NOTHING IS ASKED OF THE SERVER ABOUT THE LIST ITSELF. The handles came in
+   the route's argument, off the row that was pressed, so this screen is never
+   waiting for it -- what it waits for is each PERSON, which whoPull() asks
+   once per handle and whoOf() answers with the copy in the meantime, exactly
+   as the follows list does.
+
+   A handle is [a-z0-9_] (supabase/schema.sql), so a comma can be the join and
+   nothing has to be escaped out of it again. */
+function vNotfo(){
+  var a=String(here().a||''), hs=a? a.split(',') : [];
+  return '<div class="view">'+navTop()+'<div class="body">'+
+    (hs.length
+      ? hs.map(function(h){
+          var p;
+          h=String(h);
+          whoPull(h);
+          p=whoOf(h);
+          /* 自分の行は「フォローする」を出さない -- 相手のフォロワー一覧に
+             自分が入っているのと同じ理由（www/me.js § vFollows）。 */
+          p.mine=(h===meHandle());
+          return snsWhoRow(p, true);
+        }).join('')
+      : snsNone())+
+    '</div></div>';
 }
 /* WAITING FOR AN ANSWER IS NOT THE SAME AS THERE BEING NOTHING, and this
    screen said both with one sentence. 「通知とか表示されるのに1秒くらいの空白

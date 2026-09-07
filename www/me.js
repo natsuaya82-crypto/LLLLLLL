@@ -595,12 +595,14 @@ function meCard(){
     '<button class="meedit edit"' + DO('openMe') + '>'+esc(t('me.edit'))+'</button>'+
     '</div>'+
     (ME.bio? '<div class="pbio">'+esc(ME.bio)+'</div>' : '')+
-    /* The language, between what somebody says about themselves and how many
-       people are reading them. It was a small tag beside the handle, which is
-       where a timeline puts an affiliation and is exactly the wrong size for
-       the thing this whole app is about.
-       「フォローと自己紹介の間に」「linguaパッチの代わり」 */
-    wldRow()+
+    /* THE LANGUAGE'S ROW IS GONE FROM HERE 「「この言語について」を目次から
+       外して隠す」 OWNER 2026-09-07 -- and hiding is the whole of it: the
+       page, the article, what is published and what can be downloaded are
+       all exactly as they were, and `about` is still a route with a view on
+       it. What went is the way IN from this card, which was the only one in
+       the app (measured: every other screen draws none).
+       「フォローと自己紹介の間に」「linguaパッチの代わり」 of 2026-09-01 is
+       what put it here, and this replaces it. */
     /* There is no way in on the profile any more. 「get a バッチ消していいよ。
        なんか品がないそこに並ぶと」 OWNER 2026-09-01. It sat between what
        somebody says about themselves and how many people read them, which is

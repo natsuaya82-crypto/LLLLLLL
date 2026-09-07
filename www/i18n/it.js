@@ -402,7 +402,6 @@ defLang('it', (function(){
       'wld.public.d' : "Altre persone possono aprire la pagina della tua lingua e leggerla.",
       'wld.dl'       : "Permetti di scaricarla",
       'wld.dl.d'     : "Chi può aprire la pagina della tua lingua potrà scaricare le tue lettere e le tue parole e usarle nella propria.",
-      'wld.hidden'            : "Privata",
       'wld.secs'              : "Sezioni",
       'wld.ov.v.ph'              : "Che cosa dice",
       'wld.ov.del'              : "Rimuovi questa voce",

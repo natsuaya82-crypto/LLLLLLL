@@ -2049,6 +2049,132 @@ const R = await pg.evaluate(async () => {
     }
   }
 
+  /* ---- 18. a notice about two people goes to the two people ------------
+     「jj と linguaa がフォロー」を押すと一人にしか行けない ── OWNER 実機 141。
+     行は二人を名指しているのに、扉は前にいる一人ぶんしか無かった。もう一人は
+     画面に出て、丸も出て、たどり着けない。
+
+     ここは本物の押下です。`notRow()` が書いた行を `#app` に置いて、その行を
+     click する ── 名前を読んで自分で `go()` を呼ぶのは検査が自分の答えを
+     訊き返すだけになる（CLAUDE.md 規則 12）。届く先は act.js の一本の聞き手が
+     決めます。
+
+     一人の行が今までどおりであることも同じ押し方で訊きます。まとめ方を
+     変えた日に、一人の行がついでに一覧へ行くようになるのがこの直しの壊れ方
+     です。 */
+  {
+    const wasNotes = NOTES_HAVE, wasRoute = window.route, wasNav = NAV.slice();
+    const app = document.getElementById('app');
+    NOTES_HAVE = [
+      { kind:'follow', at: Date.now() - 1000, hd:'jj', who:'jj', av:null, id:'',
+        n:2, more:[{ hd:'linguaa', who:'linguaa', av:null }] },
+      { kind:'follow', at: Date.now() - 2000, hd:'veth', who:'Veth', av:null,
+        id:'', n:1, more:[] }];
+    PULL_GOT.notif = 1;
+    const pressRow = (i) => {
+      window.route = 'notif'; NAV = [{ r:'notif' }];
+      app.innerHTML = vNotif();
+      const rows = app.querySelectorAll('.ntf');
+      if (rows.length !== 2) return { rows: rows.length };
+      rows[i].click();
+      return { rows: rows.length, r: here().r, a: String(here().a || '') };
+    };
+
+    const two = pressRow(0);
+    if (two.rows !== 2)
+      fails.push('the notices drew ' + two.rows + ' rows out of two notices, so ' +
+                 'nothing below this is a test of anything');
+    else if (two.r !== 'notfo')
+      fails.push('a notice naming two people goes to ' + two.r + ':' + two.a +
+                 '. Two people are in the sentence and in the circles, and the ' +
+                 'row is a door onto one of them -- the other is on the screen ' +
+                 'with no way to reach them');
+    else if (two.a !== 'jj,linguaa')
+      fails.push('the list is asked for ' + two.a + ' and the row names ' +
+                 'jj and linguaa');
+
+    /* そして一覧にその二人が並ぶこと。行が出る所まで見ないと、扉だけ直って
+       着いた先が空という壊れ方が緑のまま出ます。 */
+    if (two.r === 'notfo') {
+      app.innerHTML = vNotfo();
+      const who = app.querySelectorAll('.whrow');
+      const hs = [];
+      app.querySelectorAll('.whrow .phandle').forEach(e => hs.push(e.textContent.trim()));
+      if (who.length !== 2)
+        fails.push('the list of the two people has ' + who.length + ' rows');
+      else if (hs.join(',') !== '@jj,@linguaa')
+        fails.push('the list of the two people is ' + hs.join(',') +
+                   ' and the row named jj and linguaa');
+    }
+
+    const one = pressRow(1);
+    if (one.rows === 2 && !(one.r === 'profile' && one.a === 'veth'))
+      fails.push('a notice about ONE person goes to ' + one.r + ':' + one.a +
+                 ' and not to that person. A list of one is a screen you have ' +
+                 'to press twice to reach somebody');
+
+    NOTES_HAVE = wasNotes; window.route = wasRoute; NAV = wasNav;
+  }
+
+  /* ---- 19. the + on somebody else's page opens with their handle -------
+     「他人のプロフィールの右下 ＋ → 投稿画面が『@そのhandle 』を本文の先頭に
+     入れた状態で開く」 OWNER 2026-09-07 ── Twitter のメンションと同じ。
+
+     本物の ＋ を押します。ボタンが持っている引数は画面が書いたもので、そこを
+     読んで自分で openPost() を呼ぶのは自分の答えを訊き返すだけになる。
+
+     三つ目と四つ目が、この手の直しの壊れ方です。自分のページの ＋ が
+     「@自分」で開く（自分に宛てた投稿）のと、打ちかけの一行の前に handle が
+     割り込む（このボタンが人の文を書き換える）の二つ。 */
+  {
+    const app = document.getElementById('app');
+    const wasPW = PW, wasRoute = window.route, wasNav = NAV.slice();
+    const plus = (route, a) => {
+      PW = pwBlank();
+      try { closeSheet(); } catch (e) {}
+      window.route = route; NAV = [{ r: route, a: a }];
+      render();
+      const f = app.querySelector('.fab');
+      if (!f) return null;
+      f.click();
+      return String(PW.ln || '');
+    };
+
+    const other = plus('profile', 'jjj');
+    if (other === null)
+      fails.push('somebody else\u2019s profile has no + on it, so nothing ' +
+                 'below this is a test of anything');
+    else if (other !== '@jjj ')
+      fails.push('the + on somebody else\u2019s profile opened with "' + other +
+                 '" in the line and not "@jjj ". Pressing + on a page about a ' +
+                 'person is how you answer that person');
+
+    const mine = plus('profile', undefined);
+    if (mine !== '' && mine !== null)
+      fails.push('the + on your OWN profile opened with "' + mine + '" in the ' +
+                 'line. You cannot mention yourself, and an empty composer is ' +
+                 'what that button has always opened');
+
+    const feed = plus('feed', undefined);
+    if (feed !== '' && feed !== null)
+      fails.push('the + on the timeline opened with "' + feed + '" in the ' +
+                 'line. It is not on anybody\u2019s page');
+
+    PW = pwBlank(); PW.ln = 'kano tir';
+    try { closeSheet(); } catch (e) {}
+    window.route = 'profile'; NAV = [{ r:'profile', a:'jjj' }];
+    render();
+    const fb = app.querySelector('.fab');
+    if (fb) fb.click();
+    if (String(PW.ln || '') !== 'kano tir')
+      fails.push('a half-written line became "' + PW.ln + '" when + was ' +
+                 'pressed on somebody\u2019s page. PW outlives the composer on ' +
+                 'purpose, and this button is not an edit of what somebody typed');
+
+    PW = wasPW; window.route = wasRoute; NAV = wasNav;
+    try { closeSheet(); } catch (e) {}
+  }
+
   return { fails, mid: (nowLight * 100).toFixed(1), corner: (wasLight * 100).toFixed(1),
            bytes: Math.round(String(out[0] || '').length / 1024),
            thumb: Math.round(small.length / 1024), full: Math.round(big.length / 1024),
@@ -2104,4 +2230,9 @@ console.log('post: a letter placed on a black photograph is IN the file that goe
             '      And the face is decided once: the walk writes the letter it\n' +
             '      drew, and after that a letter redrawn, a letter put in front,\n' +
             '      a photograph set and a photograph taken off all leave it\n' +
-            '      where it is.');
+            '      where it is.\n' +
+            '      A notice naming two people opens the list of those two, and\n' +
+            '      one naming one still opens that person.\n' +
+            '      The + on somebody else\u2019s page opens with their handle in\n' +
+            '      the line, your own opens empty, and neither writes over a\n' +
+            '      line somebody had already typed.');

@@ -572,19 +572,37 @@ function sharePlug(){
 /* The one window onto the App Group, the way net.js is the one window onto
    the server.
 
-   The payload is built whether or not anybody is listening, so that every
-   walk of the app builds it and a shape that cannot be cut is a failed check
-   here rather than a blank keyboard on somebody's phone.
+   THE SIGNATURE IS ASKED FIRST, AND NOTHING IS BUILT UNTIL IT HAS MOVED.
+   This is called from render(), which is every frame anybody presses
+   anything on -- and it used to cut the whole keyboard, and the widget's ten
+   digits, BEFORE asking whether any of it had changed, and then throw the
+   answer away. Measured on an alphabet the size of a real one (38 letters,
+   six strokes each): shareKbd() 132.6ms and shareWidget() 14.7ms, so 140ms
+   of every render went on a payload nobody had asked for. One press on the
+   word-order board cost 146ms end to end; the board's own drawing is 0.2ms
+   of that. 「こういうページがカクカク動く」 OWNER 実機 141.
+
+   It was deliberate and the reason is kept: building it on every walk means a
+   shape that cannot be cut is a failed check here rather than a blank
+   keyboard on somebody's phone. That still holds -- SHARE.sent starts null,
+   so the first render builds it, and every change to a letter, a layout, the
+   plan or the language builds it again. What is gone is only the rebuild of
+   a payload identical to the one already sent.
+
+   And it is built BEFORE the bridge is asked about, so a bench with no
+   native side underneath it -- every check in tools/ -- still cuts it.
 
    What came of the last push is kept rather than dropped. There is nothing to
    say to somebody standing in the app — they did not ask for this and are not
    waiting on it — but the one question worth answering later is "did it ever
    land", and the answer has to survive until something asks. */
 function sharePush(){
-  var sig=shareSig(), out=JSON.stringify(shareKbd()), p=sharePlug(),
-      num=JSON.stringify(shareWidget());
+  var sig=shareSig(), out, num, p;
   if(sig===SHARE.sent) return;
   SHARE.sent=sig;
+  out=JSON.stringify(shareKbd());
+  num=JSON.stringify(shareWidget());
+  p=sharePlug();
   if(!p){ SHARE.how='no bridge'; return; }
   SHARE.how='sent';
   p('LinguaShare', 'write', {json:out, font:SFONT.b64||'', num:num})['catch'](function(e){
