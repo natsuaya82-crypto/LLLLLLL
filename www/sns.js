@@ -1492,15 +1492,24 @@ function dayRow(){
 /* `from` was a parameter nobody ever passed -- both callers say `snsFab()` --
    so the argument this button carried was always none, and openPost() was
    asked for "whatever PW happens to hold". It says 'new' now, which is the
-   one thing this button has ever meant. */
-function snsFab(){
+   one thing this button has ever meant.
+
+   `at` IS WHOSE PAGE THIS + IS STANDING ON, and only somebody else's page
+   passes one 「他人のプロフィールの右下 ＋ → @そのhandle を本文の先頭に」
+   OWNER 2026-09-07. It is the caller's to say rather than this function's to
+   work out: the same button is on the timeline, on the contents and on your
+   own page, and a fab that asked where it was would be answering the
+   question in the one place that cannot see it. What the handle then DOES is
+   openPost()'s, in www/post.js, beside the day's tag -- the other thing that
+   arrives in the field already written. */
+function snsFab(at){
   /* The onboarding's timeline carries it too -- it is one of the five things
      the owner named as missing -- and there it is scenery: that whole stage is
      sealed under one pad, so nothing on it is ever pressed. Written as one
      condition and not as a second return, because two returns building the
      same button is the thing this whole change is about. */
   if(!postMay()) return '';
-  return '<button class="fab"' + DO('openPost', ["new"]) +
+  return '<button class="fab"' + DO('openPost', ["new", String(at||'')]) +
     ' aria-label="'+esc(t('post.new'))+'">'+ICON_ADD2+'</button>';
 }
 /* ---- one conversation --------------------------------------------------

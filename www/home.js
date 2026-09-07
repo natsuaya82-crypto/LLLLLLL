@@ -544,8 +544,13 @@ function vProfile(){
     '</div>'+
     /* The same one as the timeline's, from the same place. This screen is
        where the app opens, so without it a person who never pressed the home
-       tab could not post at all. */
-    snsFab()+
+       tab could not post at all.
+
+       ON SOMEBODY ELSE'S PAGE IT CARRIES THEIR HANDLE 「他人のプロフィールの
+       右下 ＋ → @そのhandle を本文の先頭に」 OWNER 2026-09-07 -- which is
+       what pressing + on a profile means everywhere else. Your own page hands
+       over nothing and opens empty: you cannot mention yourself. */
+    snsFab(pfMine()? '' : h)+
     '</div>';
 }
 

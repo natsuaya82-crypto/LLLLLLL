@@ -299,7 +299,7 @@ function pwSidePaint(){
 function pwOn(){ return pwHas(puaRoman(String(PW.ln||'')).trim()); }
 /* The thing that finishes it goes in the top bar, filled, where every phone
    puts it -- not at the foot of a screen you have to scroll to. */
-function openPost(from){
+function openPost(from, at){
   /* The + button, and what it opens is what its name says: a post. Not a
      reply, and not an edit.
 
@@ -375,6 +375,25 @@ function openPost(from){
        costs them the word and not the day. */
     PW.ln=DAY_TAG+' ';
   }
+  /* AND WHOSE PAGE THE + WAS ON, put in front of what they are about to
+     write. 「他人のプロフィールの右下 ＋ → 投稿画面が『@そのhandle 』を本文の
+     先頭に入れた状態で開く」 OWNER 2026-09-07.
+
+     In the LINE, which is the one field somebody types into, and beside the
+     day's tag above for the same reason: it is put IN rather than printed
+     round the edge of the screen, so it can be read, moved and deleted. A
+     mention somebody takes out is taken out.
+
+     ONLY INTO AN EMPTY ONE. PW outlives the composer on purpose (the comment
+     at the head of this function), so half a post written an hour ago is
+     still in that field -- and putting a handle in front of it would be this
+     button editing somebody's sentence. With something already there the
+     composer opens as it was, which is what + has always done.
+
+     `at` is a handle, [a-z0-9_] (supabase/schema.sql), so nothing here has to
+     escape it and nothing is parsed back out of it later: what goes in is
+     characters in a field, exactly as the tag is. */
+  if(from==='new' && at && !PW.ln) PW.ln='@'+at+' ';
   /* A post has a writer. Nothing on the timeline is reachable signed out --
      snsLocked() is what the three tabs answer with -- but a form is a route
      and a route can be come back to, so the composer says so itself rather

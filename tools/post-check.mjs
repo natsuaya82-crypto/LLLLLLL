@@ -2116,6 +2116,65 @@ const R = await pg.evaluate(async () => {
     NOTES_HAVE = wasNotes; window.route = wasRoute; NAV = wasNav;
   }
 
+  /* ---- 19. the + on somebody else's page opens with their handle -------
+     「他人のプロフィールの右下 ＋ → 投稿画面が『@そのhandle 』を本文の先頭に
+     入れた状態で開く」 OWNER 2026-09-07 ── Twitter のメンションと同じ。
+
+     本物の ＋ を押します。ボタンが持っている引数は画面が書いたもので、そこを
+     読んで自分で openPost() を呼ぶのは自分の答えを訊き返すだけになる。
+
+     三つ目と四つ目が、この手の直しの壊れ方です。自分のページの ＋ が
+     「@自分」で開く（自分に宛てた投稿）のと、打ちかけの一行の前に handle が
+     割り込む（このボタンが人の文を書き換える）の二つ。 */
+  {
+    const app = document.getElementById('app');
+    const wasPW = PW, wasRoute = window.route, wasNav = NAV.slice();
+    const plus = (route, a) => {
+      PW = pwBlank();
+      try { closeSheet(); } catch (e) {}
+      window.route = route; NAV = [{ r: route, a: a }];
+      render();
+      const f = app.querySelector('.fab');
+      if (!f) return null;
+      f.click();
+      return String(PW.ln || '');
+    };
+
+    const other = plus('profile', 'jjj');
+    if (other === null)
+      fails.push('somebody else\u2019s profile has no + on it, so nothing ' +
+                 'below this is a test of anything');
+    else if (other !== '@jjj ')
+      fails.push('the + on somebody else\u2019s profile opened with "' + other +
+                 '" in the line and not "@jjj ". Pressing + on a page about a ' +
+                 'person is how you answer that person');
+
+    const mine = plus('profile', undefined);
+    if (mine !== '' && mine !== null)
+      fails.push('the + on your OWN profile opened with "' + mine + '" in the ' +
+                 'line. You cannot mention yourself, and an empty composer is ' +
+                 'what that button has always opened');
+
+    const feed = plus('feed', undefined);
+    if (feed !== '' && feed !== null)
+      fails.push('the + on the timeline opened with "' + feed + '" in the ' +
+                 'line. It is not on anybody\u2019s page');
+
+    PW = pwBlank(); PW.ln = 'kano tir';
+    try { closeSheet(); } catch (e) {}
+    window.route = 'profile'; NAV = [{ r:'profile', a:'jjj' }];
+    render();
+    const fb = app.querySelector('.fab');
+    if (fb) fb.click();
+    if (String(PW.ln || '') !== 'kano tir')
+      fails.push('a half-written line became "' + PW.ln + '" when + was ' +
+                 'pressed on somebody\u2019s page. PW outlives the composer on ' +
+                 'purpose, and this button is not an edit of what somebody typed');
+
+    PW = wasPW; window.route = wasRoute; NAV = wasNav;
+    try { closeSheet(); } catch (e) {}
+  }
+
   return { fails, mid: (nowLight * 100).toFixed(1), corner: (wasLight * 100).toFixed(1),
            bytes: Math.round(String(out[0] || '').length / 1024),
            thumb: Math.round(small.length / 1024), full: Math.round(big.length / 1024),
@@ -2173,4 +2232,7 @@ console.log('post: a letter placed on a black photograph is IN the file that goe
             '      a photograph set and a photograph taken off all leave it\n' +
             '      where it is.\n' +
             '      A notice naming two people opens the list of those two, and\n' +
-            '      one naming one still opens that person.');
+            '      one naming one still opens that person.\n' +
+            '      The + on somebody else\u2019s page opens with their handle in\n' +
+            '      the line, your own opens empty, and neither writes over a\n' +
+            '      line somebody had already typed.');
