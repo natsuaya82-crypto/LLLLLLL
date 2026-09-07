@@ -749,8 +749,90 @@ const nameless = e.languageModel({languageId:'nameless', wordOrder:'SOV',
          e.word({id:'luma', lemma:'luma', partOfSpeech:'VERB',    meanings:['eat']})]});
 assert.equal(e.translate.toNatural(nameless, 'mi poko luma', 'en'), 'I eat poko');
 
+/* ---- A2 名詞句の並び ── a role of an IR may be a NOUN PHRASE ---------------
+   OWNER 2026-09-07「この文法ページを埋めたら翻訳にもなるし文法書になる」. One
+   sentence's word order is not enough to write a language: 「この赤い山」 is a
+   demonstrative, an adjective and a noun, and two languages that agree about
+   SOV can still disagree about every one of those.
+
+   So a role of an IR may be a phrase -- {head, mods, features} -- and a bare
+   string is still a bare string, which is what every IR written before today
+   is. Both are asserted, because the day the second stops working is the day
+   every post written before today stops rendering. */
+function withNp(model, cards){
+  if(cards) model.grammarRules.push(e.grammarRule({type:'syntax',target:'NOUNPHRASE',feature:'ORDER',value:cards}));
+  return model;
+}
+const NPW=[['yama','mountain','NOUN'],['aka','red','ADJECTIVE'],['futa','two','NUMERAL'],
+           ['kono','this','OTHER'],['mi','I','PRONOUN'],['miru','see','VERB']];
+const NPIR=e.semanticIR({roles:{
+  SUBJECT:'I',
+  OBJECT:{head:'mountain', mods:{ADJECTIVE:['red'], NUMERAL:'two', DEMONSTRATIVE:'this'}},
+  PREDICATE:'see'}, features:{}});
+/* the board says この・いくつ・どんな・もの, in that order */
+const npA=withNp(lang('NPA','SOV',NPW),['DEM','NUM','ADJ','N']);
+assert.equal(e.translate.fromSemantic(npA,NPIR).text,'mi kono futa aka yama miru');
+/* and a language that puts every one of them AFTER the noun writes the same
+   meaning as a different sentence. That is the whole reason this chapter is
+   not the word order chapter. */
+const npB=withNp(lang('NPB','SOV',NPW),['N','ADJ','NUM','DEM']);
+assert.equal(e.translate.fromSemantic(npB,NPIR).text,'mi yama aka futa kono miru');
+/* THE CHAPTER LEFT EMPTY. The part drops out of the ORDERING and never out of
+   the sentence: the adjective keeps the side its own chapter gives it, and
+   what nobody has placed follows the noun. Nothing is lost and nothing throws
+   -- 「章が空の時はその部分が抜ける（壊れない）」. */
+const npNone=lang('NPC','SOV',NPW);
+const npNoneOut=e.translate.fromSemantic(npNone,NPIR);
+assert.equal(npNoneOut.ok,true);
+assert.equal(npNoneOut.complete,true);
+assert.equal(npNoneOut.text.indexOf('yama')>=0,true);
+for(const part of ['aka','futa','kono'])
+  assert.ok(npNoneOut.text.indexOf(part)>=0,'the empty chapter lost '+part+' out of the sentence');
+/* and the adjective is on the side the 形容詞 chapter says, which on a
+   language nobody has asked is after the noun */
+assert.equal(npNoneOut.text.indexOf('yama')<npNoneOut.text.indexOf('aka'),true);
+/* A BOARD THAT NAMES SOME OF THEM. What it names is in its order; what it
+   does not is still written -- a card nobody has placed is a part of the
+   phrase that has no place YET, and dropping the word would be this app
+   losing what somebody said. */
+const npHalf=withNp(lang('NPD','SOV',NPW),['ADJ','N']);
+const npHalfOut=e.translate.fromSemantic(npHalf,NPIR);
+assert.equal(npHalfOut.text.indexOf('aka yama')>=0,true);
+for(const part of ['futa','kono'])
+  assert.ok(npHalfOut.text.indexOf(part)>=0,'a part the board does not name was dropped: '+part);
+/* a bare string is still a role, and still comes out as one word */
+assert.equal(e.translate.fromSemantic(npA,e.semanticIR({roles:{SUBJECT:'I',PREDICATE:'see'}})).text,'mi miru');
+/* a modifier this language has no word for is a GAP and stays as the meaning,
+   the same answer a head with no word gets. Inventing one would be worse. */
+const npGap=e.translate.fromSemantic(npA,e.semanticIR({roles:{
+  OBJECT:{head:'mountain', mods:{ADJECTIVE:['blue']}}, PREDICATE:'see'}}));
+assert.equal(npGap.complete,false);
+assert.equal(npGap.gaps.join('|'),'blue');
+assert.equal(npGap.text,'blue yama miru');
+
+/* THE OTHER DIRECTION. A natural sentence read INTO this language puts a
+   numeral in its noun's phrase only where the board names it -- the same
+   sentence the adverb card has always said: 「無い役割は台に無ければ今まで通り」.
+   Both are asserted because the difference between them is the chapter. */
+const npD=[{hw:'yama', mns:['mountain'], pos:'n'},
+           {hw:'aka',  mns:['red'],      pos:'adj'},
+           {hw:'futa', mns:['two'],      pos:'num'},
+           {hw:'mi',   mns:['I'],        pos:'pro'},
+           {hw:'miru', mns:['see'],      pos:'v'}];
+const npRead=(cards)=>{
+  const m=e.adapter.fromLegacy('npr',npD,{order:'SOV'});
+  return e.translate.line(e.translate.run(withNp(m,cards),'I see two red mountain'));
+};
+assert.equal(npRead(['NUM','ADJ','N']),'mi futa aka yama miru');
+/* the board empty: the adjective is where its own chapter puts it and the
+   number follows the sentence, exactly as it did before this board existed */
+assert.equal(npRead(null),'mi yama aka miru futa');
+
 console.log('Grammar Engine: derivation applies, a case MARK carries a role, the ' +
             'Semantic IR goes both ways and back, the Phase 1-2 contract is clean, ' +
             'a rule may change the stem and may be for some words only, ' +
-            'the line a meaning makes is held, and a line of this language is ' +
-            "said in the reader's own words and the reader's own order");
+            'the line a meaning makes is held, a line of this language is ' +
+            "said in the reader's own words and the reader's own order, " +
+            'and a role of an IR may be a NOUN PHRASE, written in the order ' +
+            'the noun-phrase board says (and in the order every other chapter ' +
+            'already said, where that board is empty)');

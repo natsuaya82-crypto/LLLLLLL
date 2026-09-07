@@ -31,6 +31,24 @@
 var ROLES=['S','O','V','ADV','ADP','NEG','Q'];
 /* What a sentence needs, and what stands when nobody has answered. */
 var ORDER_DEF=['S','O','V'];
+/* THE PARTS OF A NOUN PHRASE, and they are cards on a board exactly as the
+   roles of a sentence are -- 「札の板（語順と同じ形）」 OWNER 2026-09-07.
+   Where a sentence puts its verb and where a noun phrase puts its adjective
+   are two different answers, and a language may give them in two different
+   directions: Japanese is SOV with every modifier before the noun, and Irish
+   is VSO with them after. One board could not have said that.
+
+   Codes, for the reason ROLES above is codes: this is what is STORED, and
+   model.js's npOrder() is the one place that turns a card into the part the
+   engine writes with. N is the noun ITSELF, because where the head stands
+   among what describes it is the whole question.
+
+   THERE IS NO DEFAULT. An empty board is a language nobody has asked, and
+   what that language does is what it did before the board existed -- the
+   adjective on the side the 形容詞 chapter gives it, and nothing else
+   placed at all. A default here would be this app deciding the shape of
+   somebody's noun phrase for them. */
+var NPARTS=['DEM','NUM','ADJ','POSS','REL','N'];
 /* The one place a stored word order is READ. Two shapes arrive here and both
    are somebody's: the six-letter string every language written before today
    holds, and the list of cards a finger arranged. The string is COPIED into
@@ -92,6 +110,25 @@ function orderDef(){
    screen -- g2KeepOn()'s closure below -- so the language's word order moves
    when somebody presses save and at no other moment. */
 function setOrder(v){ STG.order=orderSeq(v); stMarkSet('order'); render(); }
+/* The noun phrase's order, read and written the way the sentence's is. It has
+   no orderSeq() beside it and no ORDER_DEF behind it, and that is the whole
+   difference between the two: a sentence has to be arranged somehow, and a
+   noun phrase that nobody has arranged is every other chapter's answer left
+   exactly where it was. `STG.np` is the language's, beside `STG.order`, for
+   the reason written over that field: it is the language's and not the
+   phone's. */
+function npKeep(v){
+  var out=[], i, c;
+  if(typeof v==='string') v=v.split(',');
+  if(!v) return out;
+  for(i=0;i<v.length;i++){
+    c=String(v[i]);
+    if(NPARTS.indexOf(c)>=0 && out.indexOf(c)<0) out.push(c);
+  }
+  return out;
+}
+function npStored(){ return npKeep(STG && STG.np); }
+function setNpOrder(v){ STG.np=npKeep(v); stMarkSet('np'); render(); }
 
 /* ---- where a word stands ----------------------------------------------
    Three positions. Each is one answer for the whole language and each is
@@ -158,7 +195,12 @@ function gRule(target, feature, value){
 /* What this language has decided: the three places a word can stand, and
    which words the stages made are the negation and the adpositions. */
 function gRules(){
-  var e=LinguaGrammarEngine, out=[], w, ws, i;
+  var e=LinguaGrammarEngine, out=[], w, ws, i, np;
+  /* The noun phrase's order, and ONLY where somebody has arranged one: an
+     empty board says nothing rather than saying "in this order, nothing",
+     which the engine would read as a phrase with no noun in it. */
+  np=npStored();
+  if(np.length) out.push(gRule('NOUNPHRASE', 'ORDER', np));
   out.push(gRule('ADJECTIVE',  'POSITION', gPos('adj')));
   out.push(gRule('NEGATION',   'POSITION', gPos('negp')));
   out.push(gRule('ADPOSITION', 'POSITION', gPos('adp')));
@@ -576,6 +618,26 @@ function g2Chip(key, i, w){
    here: the chapter is reached as `gram` + `v2:order` and a second copy of
    that string is a second answer to which screen this is. */
 function g2KeepKey(){ return keepKey(); }
+/* A BOARD IS FOUR THINGS, and this app has two boards. Everything else about
+   one -- the ruled paper, the tray, the KEEP buffer, the Save in the corner,
+   how a card is picked up and put down -- is the same act done to a different
+   list, so it is written once and the two differ by these four alone. A third
+   board is a line here.
+
+   `id` is which of the two this is, and the only thing it decides is what a
+   card is CALLED -- g2CardName() below. A card is a role of a sentence on one
+   board and a part of a noun phrase on the other; one set of names for both
+   would be the two boards saying one thing, and they are saying two.
+
+   `stored` is WHAT THIS LANGUAGE HAS SAVED, never what it falls back to. The
+   board opens from it, so a language nobody has answered opens empty -- 「最初
+   から主語と動詞とかが入ってるせいでわかりにくい」 OWNER 2026-09-06 -- and the
+   fallback, where there is one, is orderSeq()'s and belongs to the engine's
+   side of the wall. */
+function g2Bd(id){
+  if(id==='np') return {id:'np', demo:g2NpDemo, stored:npStored, save:setNpOrder, cards:NPARTS};
+  return {id:'order', demo:g2Demo, stored:g2Stored, save:setOrder, cards:ROLES};
+}
 /* Called from the view, so it runs on every render of this screen and finding
    a buffer already here leaves it exactly as it is -- somebody has been
    arranging. The list travels as a comma-joined string because a buffer holds
@@ -586,16 +648,16 @@ function g2KeepKey(){ return keepKey(); }
    an exercise of this shape looks like everywhere it exists.
    「最初から主語と動詞とかが入ってるせいでわかりにくい」 OWNER 2026-09-06. */
 function g2Stored(){ return orderKeep(STG && STG.order); }
-function g2KeepOn(){
-  keepOn(g2KeepKey(), {seq:g2Stored().join(',')},
+function g2KeepOn(b){
+  keepOn(g2KeepKey(), {seq:b.stored().join(',')},
          /* Split before it is handed on: setOrder() takes the list of cards
             or the old six-letter string, and a comma-joined string is
             neither -- orderSeq() would read 'O,V,S,ADV' one character at a
             time and keep the three single letters. The buffer holds strings
             (keepPut); this is where it stops being one. */
          function(v, done){
-           var s=v.hasOwnProperty('seq')? String(v.seq) : g2Stored().join(',');
-           setOrder(s? s.split(',') : []);
+           var s=v.hasOwnProperty('seq')? String(v.seq) : b.stored().join(',');
+           b.save(s? s.split(',') : []);
            done(true);
          });
 }
@@ -634,9 +696,17 @@ function g2Take(i){
    waiting to be placed and a card standing in the sentence are not the same
    thing and looked identical. www/index.html § r4-gram carries both, and
    tools/box-baseline.txt carries the corner. */
-function g2Card(r, act, arg, cls){
+/* WHAT A CARD IS CALLED. Two lists of names because there are two boards, and
+   the prefix is written out on both sides rather than handed in as a string:
+   tools/i18n-check.mjs holds a key that is BUILT by finding its prefix inside
+   a `t(` call, so a prefix arriving as a variable is a key nothing holds --
+   thirteen of them went unheld the first time this was written that way. */
+function g2CardName(bd, r){
+  return (bd==='np')? t('gram.np.'+r) : t('gram.role.'+r);
+}
+function g2Card(bd, r, act, arg, cls){
   return '<button class="gordc'+(cls||'')+'" data-gr="'+esc(r)+'"' +
-    DO(act, arg) + '>'+esc(t('gram.role.'+r))+'</button>';
+    DO(act, arg) + '>'+esc(g2CardName(bd, r))+'</button>';
 }
 /* THE WHOLE SCREEN, not a strip at the top of one.
    「画面そんな広いのになんで上ちょこっとでやるの？」 OWNER 2026-09-06.
@@ -652,15 +722,16 @@ function g2Card(r, act, arg, cls){
    The lines are drawn by the stylesheet rather than by an element each: they
    are the paper, not a list of slots, and 「枠の数は決めない」 -- a card lands
    on the end of what is there and the lines are what it is written on. */
-function g2Board(){
-  g2KeepOn();
-  var seq=g2Seq(), i, on='', off='';
-  for(i=0;i<seq.length;i++) on+=g2Card(seq[i], 'g2Take', [i], '');
-  for(i=0;i<ROLES.length;i++)
-    if(seq.indexOf(ROLES[i])<0) off+=g2Card(ROLES[i], 'g2Put', [ROLES[i]], ' off');
+function g2Board(c){
+  var b=g2Bd(c && c.id), seq, i, on='', off='';
+  g2KeepOn(b);
+  seq=g2Seq();
+  for(i=0;i<seq.length;i++) on+=g2Card(b.id, seq[i], 'g2Take', [i], '');
+  for(i=0;i<b.cards.length;i++)
+    if(seq.indexOf(b.cards[i])<0) off+=g2Card(b.id, b.cards[i], 'g2Put', [b.cards[i]], ' off');
   return '<div class="gordtop">'+
            '<div class="gordput" data-gord="on">'+on+'</div>'+
-           g2Demo()+
+           b.demo()+
          '</div>'+
          '<div class="gordrow" data-gord="off">'+off+'</div>';
 }
@@ -673,6 +744,28 @@ function g2Board(){
 function g2Demo(){
   var w=g2Three(), i, out='';
   if(!w) return '';
+  for(i=0;i<w.length;i++) out+='<span class="gor">'+esc(wOut(w[i].hw))+'</span>';
+  return '<div class="gorder">'+out+'</div>';
+}
+/* THE SAME DEMONSTRATION, of a noun phrase. gLay() runs the real engine on a
+   sentence with no verb in it, so what comes back is the phrase alone, in the
+   order the board above says -- not a diagram of one.
+
+   WHAT IS IN IT IS WHAT THE DICTIONARY HAS. An adjective and a number where
+   there are any, and the noun. The other three cards name parts that no single
+   word of a dictionary is -- a possessor, a relative clause, a demonstrative --
+   and the words for those are made in the chapters that are about them; the
+   card here says where they WOULD stand. A language with neither an adjective
+   nor a number in it yet has nothing to arrange, and draws nothing rather than
+   a noun standing on its own. */
+function g2NpDemo(){
+  var n=gWordOf('n'), a=gWordOf('adj'), q=gWordOf('num'), list=[], w, i, out='';
+  if(!n) return '';
+  if(a) list.push(a);
+  if(q) list.push(q);
+  if(!list.length) return '';
+  list.push(n);
+  w=gLay(list);
   for(i=0;i<w.length;i++) out+='<span class="gor">'+esc(wOut(w[i].hw))+'</span>';
   return '<div class="gorder">'+out+'</div>';
 }
@@ -1326,6 +1419,7 @@ function g2Chaps(){
      so a function that is the LAST thing in an object literal is followed by
      `}` and reads as unused. Eight of them did. */
   var out=[{id:'order', body:g2Board, nm:t('stg.order.t')},
+           {id:'np',    body:g2Board, nm:t('g2.np.t')},
            {id:'n',     body:g2Nouns, nm:posLabel('n'), pos:'n'}], i, a;
   /* The forms, one chapter each, from the one list. A chapter is drawn by
      g2FmChap() and knows its own form and its own part of speech, so nothing
@@ -1384,7 +1478,7 @@ function g2Said(c){
   p=chapSlotsOf(c.id);
   if(p && stSlotsDone(p)) return true;
   if(c.fm) return g2RulesOf(c.fm).length>0;
-  if(c.id==='order') return stTouched('order');
+  if(c.id==='order' || c.id==='np') return stTouched(c.id);
   if(c.id==='n'){ p=stBy('part'); return !!p && !!stSlotsDone(p); }
   if(c.id==='adj' || c.id==='adp') return stTouched(c.id);
   /* この言語について counts what this language has and is never empty. */
