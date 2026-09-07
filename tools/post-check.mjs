@@ -42,6 +42,12 @@
         what the line MEANS, then everything the post carries -- the
         photographs and the voice. 投稿 / 翻訳 / そのた
 
+    20  a roman line in a VERTICAL field lies on its side and runs down one
+        column -- placeholder and typed line both. Stacked a letter at a time
+        it folds into a second column, which is what OWNER 実機 142
+        photographed. And the composer answering somebody is the SAME composer
+        as the one writing a new post, element for element
+
     18  THE FACE IS DECIDED ONCE. 「最初の文字になるのはいいけど、それはオン
         ボーディングを通ってかいたもじだけで、それ以降は勝手に変えないで」
         OWNER 2026-09-05. postAvatar() walked LETTERS every call and answered
@@ -2249,6 +2255,119 @@ const R = await pg.evaluate(async () => {
     try { closeSheet(); } catch (e) {}
   }
 
+  /* ---- 20. 縦書きの欄と、返信の欄 -------------------------------------
+     OWNER 実機 142（2026-09-07、写真つき）。英語のUIで縦書きの投稿画面を
+     開くと、欄の placeholder が一字ずつ縦に積まれ、二列目に折れて切れて
+     いました。ローマ字は横に倒して一列に、日本語は立てたまま。
+
+     二つ訊きます。
+
+     一つ目は本物の欄そのものに訊きます。長いローマ字を入れた欄が、一文字
+     だけ入れた欄より広くない ── 縦書きでは幅が「列がどこまで来たか」なので、
+     広くなったならそれは折り返しです。lnFit() が実際に付けた幅を読むので、
+     どこにも計算のやり直しがありません。
+
+     二つ目は placeholder で、これは欄の中にあってDOMには無いので、欄の
+     computed style（writing-mode・text-orientation・字と行）と欄の高さを
+     そのまま借りた測り台に置いて測ります。バグはその computed style そのもの
+     だったので、訊いているのは本物です。
+
+     三つ目は返信の欄で、新規と同じ pwHTML() が描いているという主張です。
+     第二の機構が生えたらここが赤くなります ── 引用の投稿（.pwqs）は
+     `.pwscroll` の外にあるので、中身は新規と一文字も違いません。 */
+  {
+    const app = document.getElementById('app');
+    const wasPW = PW, wasPlan = SET.plan, wasDir = SCRIPT.dir;
+    const wasRoute = window.route, wasNav = NAV.slice();
+
+    /* how many columns a string takes, in the field's own style */
+    const colsOf = (f, txt) => {
+      const cs = getComputedStyle(f);
+      const one = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize);
+      const d = document.createElement('div');
+      d.style.cssText = 'position:absolute;top:0;left:0;visibility:hidden;white-space:' +
+        cs.whiteSpace + ';font:' + cs.font + ';writing-mode:' + cs.writingMode +
+        ';text-orientation:' + cs.textOrientation +
+        ';height:' + f.getBoundingClientRect().height + 'px';
+      d.textContent = txt;
+      document.body.appendChild(d);
+      const w = d.getBoundingClientRect().width;
+      d.remove();
+      return Math.max(1, Math.round(w / one));
+    };
+    const openIn = (dir, to) => {
+      SET.plan = 'pro'; SCRIPT.dir = dir;
+      PW = pwBlank(); if (to) PW.to = to;
+      try { closeSheet(); } catch (e) {}
+      openPost(to ? 'reply' : undefined);
+      render();
+      return document.getElementById('pw-ln');
+    };
+    const widthWith = (f, v) => {
+      f.value = v; PW.ln = v;
+      f.dispatchEvent(new Event('input', { bubbles: true }));
+      const g = document.getElementById('pw-ln');
+      return Math.round(g.getBoundingClientRect().width);
+    };
+
+    /* a post that is still here to answer -- 'p1' is the fixture's, and the
+       claims above delete posts, so it is asked for rather than written in */
+    const answerable = (POSTS.filter(p => !p.del && !p.hid)[0] || POSTS[0] || {}).id;
+    if (!answerable)
+      fails.push('there is no post left to answer, so nothing about the reply ' +
+                 'composer below this is a test of anything');
+
+    ['ttb-rl', 'ttb-lr'].forEach((dir) => {
+      [null, answerable].forEach((to) => {
+        const where = dir + (to ? ', replying' : '');
+        const f = openIn(dir, to);
+        if (!f) { fails.push('the composer written ' + dir + ' has no line to ' +
+                             'type into, so nothing below this is a test of anything');
+                  return; }
+        const n = colsOf(f, f.placeholder);
+        if (n !== 1)
+          fails.push('the placeholder of a column (' + where + ') takes ' + n +
+                     ' columns. A roman line in a vertical field lies on its ' +
+                     'side and runs down one column; stacked a letter at a time ' +
+                     'it folds, and the second column is what the owner ' +
+                     'photographed');
+        const one = widthWith(f, 'a');
+        const many = widthWith(document.getElementById('pw-ln'),
+                               'a line in your language');
+        if (many > one)
+          fails.push('a roman line typed into a column (' + where + ') made the ' +
+                     'field ' + many + 'px wide where one letter makes it ' + one +
+                     'px. In a vertical field the WIDTH is how far the columns ' +
+                     'have got, so wider is a second column');
+      });
+    });
+
+    /* 返信と新規は同じ一本 */
+    const shapeOf = () => {
+      const s = app.querySelector('.pwscroll');
+      if (!s) return null;
+      return Array.prototype.map.call(s.querySelectorAll('*'),
+        (e) => e.tagName + '.' + String(e.className || '')).join('|');
+    };
+    openIn('ltr', null);        const plain = shapeOf();
+    openIn('ltr', answerable);  const reply = shapeOf();
+    if (plain === null || reply === null)
+      fails.push('the composer has no .pwscroll, so nothing about the two ' +
+                 'composers being one was tested');
+    else if (plain !== reply)
+      fails.push('the composer answering somebody is built out of different ' +
+                 'elements from the composer writing a new post. There is one ' +
+                 'pwHTML() and the post being answered sits ABOVE the scroll; ' +
+                 'two shapes here is a second composer');
+    if (reply !== null && !app.querySelector('.pwqs'))
+      fails.push('the composer answering somebody does not carry the post it ' +
+                 'answers');
+
+    PW = wasPW; SET.plan = wasPlan; SCRIPT.dir = wasDir;
+    window.route = wasRoute; NAV = wasNav;
+    try { closeSheet(); } catch (e) {}
+  }
+
   return { fails, mid: (nowLight * 100).toFixed(1), corner: (wasLight * 100).toFixed(1),
            bytes: Math.round(String(out[0] || '').length / 1024),
            thumb: Math.round(small.length / 1024), full: Math.round(big.length / 1024),
@@ -2309,4 +2428,10 @@ console.log('post: a letter placed on a black photograph is IN the file that goe
             '      one naming one still opens that person.\n' +
             '      The + on somebody else\u2019s page opens with their handle in\n' +
             '      the line, your own opens empty, and neither writes over a\n' +
-            '      line somebody had already typed.');
+            '      line somebody had already typed.\n' +
+            '      A roman line in a vertical field lies on its side and runs\n' +
+            '      down ONE column -- the placeholder and the line somebody\n' +
+            '      types, written downward from the right and from the left, new\n' +
+            '      and replying. And the composer answering somebody is the same\n' +
+            '      composer as the one writing a new post, element for element,\n' +
+            '      with the post being answered above it.');
