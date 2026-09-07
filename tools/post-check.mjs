@@ -1171,17 +1171,39 @@ const R = await pg.evaluate(async () => {
     PW = wasPW;
   }
 
-  /* ---- 11d2. the row over the keyboard does not move while one arrives --
-     「2枚目が正解なのに1枚目みたいにまだガチャガチャうごくのうざい。
-     写真とかは固定でしょ？」 OWNER 2026-08-27, two photographs a second
-     apart: no row in the first, the row in the second, one screen.
+  /* ---- 11d2. the row over the keyboard ends up ON the keyboard ---------
+     「本体は動かず、道具の行だけキーボードの直上に付いてくる」 OWNER
+     2026-09-06 through the leader, which REPLACES 「2枚目が正解なのに1枚目
+     みたいにまだガチャガチャうごくのうざい」 OWNER 2026-08-27 for the row.
+
+     What that older sentence bought was a row that did not move at all once
+     a keyboard had been measured, and the price was measured on a phone: the
+     remembered number is the DEEPEST of the launch, so a person who types in
+     Japanese (380) and then in roman (336) had the row standing 44px clear
+     of the keyboard for the rest of the session. The row follows the live
+     number now.
+
+     SO THE MOVING IS NOT ASKED ABOUT AND THE RESTING PLACE IS. How many
+     values iOS sends on the way up is the phone's business, and a check that
+     counted them was holding the old rule under the new one's name. What is
+     held is where everything IS once the keyboard has stopped: the row's
+     bottom edge on the keyboard's top edge, and the body of the composer
+     exactly where it was without one.
+
+     THE BODY IS THE HEAD OF THE COMPOSER -- the face and the line somebody
+     writes in. The MEANING is not claimed to stand still and does not:
+     measured, 390x844 with a 336 keyboard, `#pw-mn` moves 741..787 ->
+     405..451, exactly the keyboard's height, because it hangs at the foot of
+     `.pwscroll` and the scroll area is what gets shorter. That is the page
+     being shorter rather than the composer being dragged, and writing a
+     claim that says otherwise would be a check disagreeing with the screen.
 
      `.view.fit .pwbar` hangs off `--vvkb`, which vvFit() recomputes on every
-     `resize` and every `scroll` visualViewport sends. Two things follow and
-     both were live: while the keyboard is rising and the viewport has not
-     been told yet, `innerHeight - height` is 0 -- the same answer as no
-     keyboard -- so the row was at the foot of the page, UNDER the keyboard;
-     and every intermediate value iOS hands over on the way moved it again.
+     `resize` and every `scroll` visualViewport sends. On the frame a field
+     takes focus there is no number yet -- `innerHeight - height` is 0, the
+     same answer as no keyboard at all -- so a row placed on that would sit
+     UNDER the keyboard and then leap. The remembered number covers exactly
+     that window, and it is still claimed below.
 
      visualViewport is replaced with one this check can drive. That is the
      only way to ask this on a Linux runner: a headless browser has no soft
@@ -1189,10 +1211,9 @@ const R = await pg.evaluate(async () => {
      held is vvFit()'s answer to each value -- how many values a real iPhone
      sends, and when, is the phone's business and is not knowable from here.
 
-     The ramp is fed twice on purpose. The FIRST keyboard of a launch has
-     never been measured, so the row rises with it; the second must not move
-     at all, and neither must the third if the phone sends one event rather
-     than twenty. */
+     The ramp is fed twice on purpose: once to make a launch that has
+     measured a keyboard, and once to ask where everything ends up on the
+     second one. */
   {
     const wasPW = PW, root = document.documentElement;
     const hadKb = root.style.getPropertyValue('--vvkb');
@@ -1209,6 +1230,20 @@ const R = await pg.evaluate(async () => {
       const b = document.querySelector('.pwbar');
       return b ? Math.round(b.getBoundingClientRect().top) : null;
     };
+    const barBottom = () => {
+      const b = document.querySelector('.pwbar');
+      return b ? Math.round(b.getBoundingClientRect().bottom) : null;
+    };
+    /* The head of the composer: the face, and the line somebody writes in.
+       Read as a string so two of them can be compared as one thing and the
+       failure can print what moved. */
+    const body = () => ['.view.fit .pwtop .pav', '#pw-ln'].map((sel) => {
+      const e = document.querySelector(sel);
+      if (!e) return sel + ':none';
+      const b = e.getBoundingClientRect();
+      return sel + ':' + Math.round(b.top) + ',' + Math.round(b.bottom) +
+             ',' + Math.round(b.left) + ',' + Math.round(b.right);
+    }).join(' ');
     const ramp = [0.08, 0.22, 0.41, 0.6, 0.78, 0.92, 1];
     const open = () => {
       PW = pwBlank(); openPost(); render();
@@ -1231,14 +1266,53 @@ const R = await pg.evaluate(async () => {
     const settled = first[first.length - 1];
     shut();
     const down = barTop();
-    const second = open();
-    const moved = second.filter(y => y !== settled).length;
+    /* WHERE THE BODY IS WITH NO KEYBOARD, read on the same screen the ramp is
+       about to be fed to.
 
-    if (moved)
-      fails.push('with a keyboard already measured, the row over the keyboard ' +
-                 'moved ' + moved + ' time(s) while the next one came up (' +
-                 second.join(' -> ') + '). It is meant to be standing on the ' +
-                 'keyboard before iOS says anything and not to move again');
+       THE FIELD IS BLURRED BY HAND HERE, and it has to be: the composer takes
+       focus as it opens, vvTyping() is then true, and --vvkb answers with the
+       REMEMBERED height even though no keyboard is up. Read without this, the
+       "no keyboard" snapshot is the keyboard-up one, the comparison below is
+       a value against itself, and it passes with the body nailed to the
+       keyboard -- which is what it did until it was watched failing. */
+    PW = pwBlank(); openPost(); render();
+    if (document.activeElement && document.activeElement.blur)
+      document.activeElement.blur();
+    fake.height = window.innerHeight; fake.offsetTop = 0; vvFit();
+    const kbSaid = root.style.getPropertyValue('--vvkb');
+    if (kbSaid !== '0px')
+      fails.push('the composer with no keyboard up says --vvkb is ' + kbSaid +
+                 ', so what follows is not a reading of a screen without one');
+    const bodyDown = body();
+    const second = open();
+
+    /* THE ROW ENDS UP ON THE KEYBOARD. Its bottom edge is the keyboard's top
+       edge, which on a 390x844 with a 336 keyboard is 508. Not "it did not
+       move": where it stands. */
+    const kbTop = window.innerHeight - KB;
+    const rest = barBottom();
+    if (rest !== kbTop)
+      fails.push('with the keyboard all the way up the row over it ends at ' +
+                 rest + ' and the keyboard begins at ' + kbTop + '. It is ' +
+                 (rest > kbTop ? 'under the keyboard' : 'floating ' +
+                  (kbTop - rest) + 'px above it') + ', and the row is meant to ' +
+                 'be standing ON it');
+    /* AND THE BODY IS WHERE IT WAS. Only the row follows the keyboard; the
+       face and the line somebody writes in do not move at all. */
+    const bodyUp = body();
+    /* A selector that matches nothing answers the same twice and would make
+       the claim below vacuous. */
+    if (bodyUp.indexOf(':none') >= 0)
+      fails.push('the composer drew no head to measure (' + bodyUp + '), so ' +
+                 'the claim about the body not moving is about nothing');
+    if (bodyUp !== bodyDown)
+      fails.push('the keyboard came up and the head of the composer moved ' +
+                 'with it: ' + bodyDown + ' became ' + bodyUp + '. Only the ' +
+                 'row of tools follows a keyboard');
+    /* AND IT IS ON THE KEYBOARD BEFORE iOS SAYS ANYTHING. On the frame a
+       field takes focus there is no number to read, and a row placed on that
+       nothing sits at the foot of the page under the keyboard -- which is
+       the frame the owner photographed with no row on it. */
     if (second[0] !== settled)
       fails.push('the row over the keyboard starts at ' + second[0] + ' and ' +
                  'ends at ' + settled + ', so it is drawn under the keyboard ' +
