@@ -861,12 +861,13 @@ canvas.pkc{width:34px;height:34px;display:block}
 
    `pfrom` is the row's own: it starts under the face, which is 58 down --
    44 on the two rows that are buttons, 40 on the one that is not. Every other
-   line is passing through and runs the whole height. */
+   line is passing through and runs the whole height.
+
+   WHICH COLUMN a line stands in is not written here. It was four classes,
+   `.prail0`..`.prail3`, which is the depth in the stylesheet and a fifth step
+   nothing could draw; thColX() in www/sns.js works it out and the row carries
+   it as `left`. What is left here is what a line LOOKS like. */
 .prail{position:absolute;top:0;bottom:0;width:1px;background:var(--line)}
-.prail0{left:36px}
-.prail1{left:76px}
-.prail2{left:116px}
-.prail3{left:156px}
 .prail.pfrom{top:58px}
 /* Drawn letters stand at their full height on this line, so 1.45 put the
    rows of a two-line post against each other. 「ここつまりすぎてる」 */
@@ -1286,13 +1287,8 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
    screen. --vvtop is visualViewport.offsetTop, so the screen stays where it
    is whether the keyboard is up or down, and the bar does not move when it
    goes down. 「上のポストと戻るボタンは画面上部に固定で動かない」 */
-/* The height is --vvmin -- the smallest the visible part has been, which is
-   what it is with the keyboard UP -- and not --vvh. A screen laid out to
-   --vvh is re-laid-out every time the keyboard goes down: the field takes the
-   room the keyboard gave back, and the meaning and the row of pictures slide
-   to the foot of the phone. 「キーボードをおろしても位置は動かない」 With
-   --vvmin the screen is the same screen either way; with the keyboard down
-   there is simply black under it. */
+/* How TALL it is is not said here any more -- the r4-sns block at the foot of
+   this file says it, and says why. */
 /* THE DOCUMENT DOES NOT MOVE WHILE A ONE-SCREEN FORM IS OPEN. www/shell.js
    § tabPaint puts this on, and the whole of why is written there: a drag
    rubber-bands the layout viewport, `--vvtop` chases it one event behind, and
@@ -1301,26 +1297,17 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
    the overflow are what stop an ordinary scroll under it. */
 html.fitlock, html.fitlock body{height:100%;overflow:hidden;overscroll-behavior:none}
 .view.fit{position:fixed;left:0;right:0;top:var(--vvtop,0px);
-   height:var(--vvmin,55vh);
    display:flex;flex-direction:column;overflow:hidden}
-/* AND THE OTHER KIND OF ONE SCREEN: the whole phone 「キーボードかんがえない
-   でいいから。画面全部にしてほしい」 OWNER 2026-09-05, about the note.
-
-   `--vvmin` above is what the phone has with the keyboard UP, and on a 390x844
-   it never falls below the 55% guess -- so a form laid out to it is 464 of an
-   844 phone and stops just past halfway, whether or not a keyboard is there.
-   That is the right number for the composer, which has a bar and a row of
-   pictures under the field and must not let them slide when the keyboard
-   goes. A note has nothing under the body, so a keyboard covers the foot of a
-   page and covers nothing anybody was reading -- and 「下まで行かない」 is
-   what the owner saw instead.
+/* AND THE OTHER KIND OF ONE SCREEN, which is now a difference of ONE LINE.
+   「キーボードかんがえないでいいから。画面全部にしてほしい」 OWNER 2026-09-05,
+   about the note. Both kinds are the whole phone -- the r4-sns block at the
+   foot of this file says why the composer became one too -- so the height is
+   not restated here. What is left is the foot: a note has nothing under the
+   body, so it keeps no room for a row of tools it does not have and lets the
+   keyboard cover a page nobody was reading at the bottom of.
 
    www/home.js § openForm is where a form says which of the two it is; nothing
-   here decides it. 100vh first and 100dvh after, the way .ob already does it:
-   an old WKWebView takes the first and every phone gets a full screen. */
-.view.fit.fitfull{height:100vh;height:100dvh}
-/* And no room kept at the foot for a bar this kind of screen does not have --
-   the 53px below is .pwbar's, and it was 53px of nothing under the note. */
+   here decides it. */
 .view.fit.fitfull .body{padding-bottom:env(safe-area-inset-bottom,0px)}
 /* No room left at the foot for the bar of tabs, because there is no bar of
    tabs: a screen that is one screen has nowhere else to be, and where you
@@ -1351,8 +1338,13 @@ html.fitlock, html.fitlock body{height:100%;overflow:hidden;overscroll-behavior:
 
    The two halves of `.pwbar`'s height are declared together below, so the 53
    here is those two added up and nothing else. */
+/* AND THE KEYBOARD ITSELF, which is the r4-sns block at the foot of this file:
+   the box is the whole phone now, so what the flow has to clear is the row AND
+   whatever the keyboard is covering. It used to be the row alone, because the
+   box was already cut short to a guess at a keyboard. */
 .view.fit .body{flex:1;min-height:0;display:flex;flex-direction:column;
-   padding-bottom:calc(53px + max(0px, calc(env(safe-area-inset-bottom,0px) - var(--vvkb,0px))));
+   padding-bottom:calc(var(--vvkb,0px) + 53px +
+     max(0px, calc(env(safe-area-inset-bottom,0px) - var(--vvkb,0px))));
    overflow:hidden}
 /* ⑩ 「なんか空白がきもい」 OWNER 2026-08-28、実機ビルド #106、写真つき。
    バーの下から、プロフィール画像と一行目の行までが空いていました。`.body` の
@@ -1418,7 +1410,12 @@ html.fitlock, html.fitlock body{height:100%;overflow:hidden;overscroll-behavior:
    44 and this 100 -- the line and the meaning both whole, neither of them
    behind the row of pictures -- and 402x874 gives the quote its whole 76 and
    this 298. */
-.view.fit .pwscroll{flex:1;min-width:0;min-height:104px;overflow:auto;
+/* AND IT DOES NOT SCROLL. 「意味とかタップすると動く」 OWNER 2026-09-06:
+   pressing the meaning could carry the whole column up under the bar, because
+   this was the one box on the screen that could move. Nothing here has to
+   scroll now -- the flow stops at the row of tools (the padding above), so
+   what is in it is what fits. */
+.view.fit .pwscroll{flex:1;min-width:0;min-height:104px;overflow:hidden;
    display:flex;flex-direction:column}
 .view.fit .pwqs{flex:0 1 auto;min-height:0}
 .view.fit .pwtop{flex:1 1 auto;min-height:0}
@@ -3771,6 +3768,45 @@ textarea.ntbody.grow{min-height:0;height:auto;overflow:hidden;resize:none}
 /* 目次の、まだ書いていない章 (www/phases.js § stListHTML)。字を薄くするだけ ──
    行の高さも大きさも動かさない: 一つの一覧の行は一つの高さ。 */
 .strow.pale .stt,.strow.pale .stn{color:var(--txm)}
+
+/* ---- r4-sns ---- */
+/* THE WAY INTO A ROW, on the thread. `.prail` above is a column standing
+   through a row; this is the one that ARRIVES: it comes down the column of
+   the post being answered, turns at the top of this row's face, and runs
+   across to this row's own column. Two sides of a box, which is a line
+   twice and not a box -- 「上の投稿から自分へ、全部の深さで」.
+
+   `left` and `width` come from the row, because which column is the row's
+   business and not the stylesheet's: thColX()/thRails() in www/sns.js. What
+   is here is the shape -- 10 down to the top of a face, the same 10 the
+   post's own padding puts above it, and a width of nothing where the answer
+   stands in its parent's column. */
+.pjoin{position:absolute;top:0;height:10px;
+       border-left:1px solid var(--line);border-bottom:1px solid var(--line)}
+/* THE COMPOSER IS THE WHOLE PHONE, AND ONLY THE ROW OF TOOLS FOLLOWS THE
+   KEYBOARD. 「投稿画面は画像3枚目の位置で固定して。意味とかタップすると動く
+   し…縦書きでも横書きでもその位置固定で。Twitterの投稿画面は動きません」
+   OWNER 2026-09-06.
+
+   It was `--vvmin` tall -- the smallest the visible part had ever been, which
+   is what the phone has with its TALLEST keyboard up. Two keyboards are two
+   heights, and the box was laid out to one of them: measured on a 390x844,
+   the roman keyboard's top is at 508 and the box ended at 464, so there were
+   44px of screen that belonged to neither, with the row of tools hanging
+   outside the box it was the last child of. Switch to the Japanese keyboard
+   and the numbers meet; switch back and they part again.
+
+   So the box is the phone. It is one number, it is the same number with a
+   keyboard up and with one down, and nothing in it moves when a keyboard
+   changes size. What has to move is the row of tools, because it sits ON the
+   keyboard, and it does that already: `bottom:var(--vvkb)` reads the live
+   height. The FLOW stops where that row starts and nothing in it scrolls, and
+   both of those are said where they were already said -- `.view.fit .body`'s
+   padding and `.view.fit .pwscroll`'s overflow, up the file. One selector says
+   a thing once, so the height is the only line that belongs here.
+   「日本語キーボードで意味の行が隠れるなら、道具の行の上に意味の行も一緒に
+   寄せる」 */
+.view.fit{height:100vh;height:100dvh}
 </style>
 </head>
 <body>

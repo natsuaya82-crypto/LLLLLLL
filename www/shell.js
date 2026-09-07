@@ -1525,36 +1525,23 @@ document.addEventListener('click',       slideEat,   true);
    viewport, so with the keyboard up it is behind the keyboard and there is
    nothing to leave room for -- leaving it anyway costs sixty points of a
    screen that has just lost half its height. */
-/* The smallest the visible part has been on this phone, this launch -- which
-   is what it is with the keyboard up. A form that is one screen is laid out
-   to THIS and not to --vvh, because a layout that follows --vvh is a layout
-   that moves every time the keyboard goes down: the field stretches, and the
-   meaning and the row of pictures under it slide to the foot of the phone.
-   「キーボードをおろしても位置は動かない」「キーボード開いてない時に写真とかが
-   下の位置にある」
+/* THERE IS NO 「the smallest the visible part has been」 ANY MORE, and that is
+   the whole of what changed here. A one-screen form used to be laid out to
+   it -- a guess of 55% of the phone, only ever lowered -- and the guess is a
+   height no keyboard has: measured on a 390x844, a roman keyboard leaves 508
+   and the box was 464, so 44px belonged to neither and the row of tools hung
+   outside the box it was the last child of. A phone has more than one
+   keyboard and they are not the same height, so there is no one number a
+   screen can be laid out to.
 
-   Until a keyboard has actually been up there is nothing to measure, so it
-   starts as a guess -- 55% of the phone, which is about what is left over an
-   iPhone's kana keyboard and its accessory bar.
+   The composer is the whole phone now (`.view.fit` in index.html, the r4-sns
+   block), and the only thing that follows the keyboard is the row of tools,
+   through `--vvkb` below. 「投稿画面は動かない」 OWNER 2026-09-06.
 
-   THE GUESS IS ONLY EVER LOWERED, so on most phones it is never replaced,
-   and the sentence that used to stand here -- "the first time one opens, the
-   guess is replaced by the truth and the composer settles" -- was true only
-   where the keyboard covers more than 45% of the screen. Measured
-   2026-08-27, one value per phone, the keyboard fully up:
-
-     390x844, keyboard 336   visible 508   --vvmin stays at the guess, 464
-     375x667, keyboard 300   visible 367   --vvmin 367, the same by accident
-     320x568, keyboard 260   visible 308   --vvmin 308, the truth
-
-   So on a 390x844 the composer is laid out to 464 while it has 508, and the
-   44 it does not use is under the row over the keyboard. Nothing is broken by
-   it and nothing is hidden -- the row has a background and stands on the
-   keyboard either way -- so it is left exactly as it is: making the box taller
-   moves a screen that was laid out by measurement (the 162 floor, the two
-   fields of a reply) and that is somebody's to look at on a phone first.
-   docs/BACKLOG.md carries it. */
-var vvMin=0, vvWas=0, vvKbMax=0;
+   `vvWas` is still the screen this was measured on and `vvKbMax` is still the
+   deepest keyboard seen here, which is what puts the row in the right place on
+   the frame a field is focused. */
+var vvWas=0, vvKbMax=0;
 /* Is there a keyboard, or is one on its way? Nothing on a phone answers that
    in advance -- `visualViewport` says how much is hidden AFTER iOS has
    finished moving it, and a field being focused is what brought the keyboard
@@ -1574,7 +1561,7 @@ function vvFit(){
   var d=document.documentElement.style;
   /* A phone that turned, or a window somebody dragged, is a different screen
      and the old smallest means nothing on it. */
-  if(window.innerHeight!==vvWas){ vvWas=window.innerHeight; vvMin=0; vvKbMax=0; }
+  if(window.innerHeight!==vvWas){ vvWas=window.innerHeight; vvKbMax=0; }
   /* AND WHAT THIS PHONE'S KEYBOARD WAS LAST TIME. 「返信の画面固定してるはず
      なのに鬼動くけど？」 OWNER 2026-09-01.
 
@@ -1590,13 +1577,8 @@ function vvFit(){
      only when that matches: a phone that turned, or the app in a window
      somebody dragged, is a different screen and last night's number means
      nothing on it. That is the same test the line above already makes. */
-  if(!vvMin && SET.vvkb && SET.vvkb.on===window.innerHeight){
-    if(SET.vvkb.min) vvMin=SET.vvkb.min;
-    if(SET.vvkb.kb) vvKbMax=SET.vvkb.kb;
-  }
-  if(!vvMin) vvMin=Math.round(window.innerHeight*0.55);
-  if(h<vvMin) vvMin=h;
-  d.setProperty('--vvmin', vvMin+'px');
+  if(!vvKbMax && SET.vvkb && SET.vvkb.on===window.innerHeight && SET.vvkb.kb)
+    vvKbMax=SET.vvkb.kb;
   d.setProperty('--vvh', h+'px');
   /* Where the visible part STARTS. iOS scrolls the layout viewport to lift a
      focused field clear of the keyboard, and a screen pinned to the document
@@ -1608,9 +1590,9 @@ function vvFit(){
      フォルダのマークでやって欲しい」 OWNER 2026-08-25, with a picture of
      Twitter's row.
 
-     The row was the last child of a box `--vvmin` tall, so it sat on the foot
-     of THAT -- which is where the keyboard was the last time one was up, and
-     is not the keyboard. What is left over below the visible part is the
+     The row was the last child of a box laid out to a guess, so it sat on the
+     foot of THAT -- which is where the keyboard was the last time one was up,
+     and is not the keyboard. What is left over below the visible part is the
      keyboard itself, and a row pinned to that rides up and down with it.
 
      WHAT IS MEASURED IS NOT WHAT IS TRUE WHILE THE KEYBOARD IS MOVING, and
@@ -1665,8 +1647,8 @@ function vvFit(){
    keyboard is moving. Two numbers and the screen they were measured on. */
 function vvKeep(){
   var was=SET.vvkb;
-  if(was && was.on===window.innerHeight && was.kb===vvKbMax && was.min===vvMin) return;
-  SET.vvkb={on:window.innerHeight, kb:vvKbMax, min:vvMin};
+  if(was && was.on===window.innerHeight && was.kb===vvKbMax) return;
+  SET.vvkb={on:window.innerHeight, kb:vvKbMax};
   save();
 }
 function vvMount(){
@@ -1848,10 +1830,31 @@ function swEnd(e){
    The composer is the exception and asks the same question pwKeepKb() asks,
    in the same words -- two places saying "am I the composer" that must not
    drift, which is why neither invents its own test. */
-function kbLetGo(e){
+/* THE ONE PLACE A KEYBOARD GOES DOWN, and it is one line: the keyboard on an
+   iPhone belongs to whatever has focus, so blurring that is the whole of it.
+
+   What matters is WHEN, and that is what was missing. A keyboard put up by a
+   field that is no longer on the page cannot be put down by anything at all:
+   `render()` replaces `#app` whole, the field goes with it, `activeElement`
+   becomes BODY -- and WKWebView leaves the keyboard standing over a screen
+   that has nothing to blur. Measured: focus the search field, call render(),
+   and activeElement is BODY with the field out of the document. From that
+   moment kbLetGo below returned at its first line and tapping the paper did
+   nothing, which is 「投稿以外のキーボードは別の場所タップしたら普通に下ろせる
+   ようにして」 OWNER 2026-09-06 said a second time about a build that already
+   had the tap.
+
+   So the two callers are the two moments: a thumb on the paper, and a screen
+   being thrown away. One function, because it is one act -- a second way to
+   put a keyboard down is a second answer to when it is down. */
+function kbLower(){
   var a=document.activeElement;
-  if(!a) return;
-  if(a.nodeName!=='INPUT' && a.nodeName!=='TEXTAREA' && !a.isContentEditable) return;
+  if(!a) return false;
+  if(a.nodeName!=='INPUT' && a.nodeName!=='TEXTAREA' && !a.isContentEditable) return false;
+  a.blur();
+  return true;
+}
+function kbLetGo(e){
   if(here().r==='form' && here().a==='post:') return;
   var t=e.target, n;
   while(t && t!==document && t.nodeName!=='BODY'){
@@ -1861,7 +1864,7 @@ function kbLetGo(e){
     if(t.getAttribute && t.getAttribute('data-do')) return;
     t=t.parentNode;
   }
-  a.blur();
+  kbLower();
 }
 function swMount(){
   document.addEventListener('pointerdown', kbLetGo, {passive:true});

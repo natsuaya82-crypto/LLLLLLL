@@ -1369,17 +1369,6 @@ function pwHTML(){
       /* Read-only when it is the day's sentence. Not disabled: a disabled
          field is greyed out and unselectable, and this one is the thing you
          are reading while you write. */
-      /* THE SAME FIELD AS THE LINE ABOVE IT, and it was an <input>.
-         「全部改行して画面内に文字が収まるようにして欲しい。」 OWNER
-         2026-08-27. An <input> cannot wrap -- there is no CSS for it -- so a
-         meaning longer than the column scrolled off the side and what was
-         typed first stopped being on the screen. The line above it was fixed
-         for this exact complaint 「改行されないせいで画面が今でいく」 and
-         lnField() has been the one place ever since; the meaning never got
-         it, so one column had a field that wraps sitting on a field that does
-         not. It grows with its text (lnGrow), same as the line. */
-      lnField('pw-mn', pwMn() || t('post.mn'),
-        (PW.pr? ' readonly' : '')+IN('pwSetMn'), PW.mn, 'pwmn')+
       /* Editing is the line and the meaning. There is nothing to add a
          photograph or a voice to -- the post already has whatever it has --
          so the row that adds them is not there rather than there and
@@ -1400,6 +1389,24 @@ function pwHTML(){
          which is what pressing under the last line of anything you are
          writing does. */
       '<div class="pwrest"' + DO('pwFocusLn') + '></div>'+
+      /* THE SAME FIELD AS THE LINE ABOVE IT, and it was an <input>.
+         「全部改行して画面内に文字が収まるようにして欲しい。」 OWNER
+         2026-08-27. An <input> cannot wrap -- there is no CSS for it -- so a
+         meaning longer than the column scrolled off the side and what was
+         typed first stopped being on the screen. The line above it was fixed
+         for this exact complaint 「改行されないせいで画面が今でいく」 and
+         lnField() has been the one place ever since; the meaning never got
+         it, so one column had a field that wraps sitting on a field that does
+         not. It grows with its text (lnGrow), same as the line.
+
+         AND IT SITS AT THE FOOT OF THE COLUMN, under the glass rather than
+         over it. 「投稿画面は画像3枚目の位置で固定して」 OWNER 2026-09-06:
+         the line runs from the top down to the row before this one, this row
+         is next, and the tools are under it on the keyboard. It used to be
+         directly under the line with the whole of the rest of the screen
+         below it, which is the same three things in a different order. */
+      lnField('pw-mn', pwMn() || t('post.mn'),
+        (PW.pr? ' readonly' : '')+IN('pwSetMn'), PW.mn, 'pwmn')+
       '</div></div>'+
     '</div>'+
     /* The bar. It is the last thing in the form and the only thing that does
