@@ -34,16 +34,40 @@
    stand. They are here rather than in SET from 2026-08-25 -- see
    migrateGramLang() below -- because they are the language's, not the
    phone's. Empty means nobody has answered and the default stands. */
-var STG={done:{}, notes:{}, set:{}, extra:[], rules:{}, ex:{}, fm:[], order:'', gpos:{}};
-/* How far the open language has got. Empty first: see langRead() in core.js. */
+/* WHAT A LANGUAGE'S GRAMMAR HOLDS, AND IT IS WRITTEN DOWN ONCE. The same nine
+   fields were written three times -- the value STG starts as, the same value
+   again inside stRead(), and a line per field copying it out of storage -- so
+   a tenth field added to two of the three is read back empty on every launch,
+   with nothing throwing and every screen right. That is the fault this
+   repository keeps finding under another name: a list of keys, written by
+   hand, that nobody remembered to add to (docs/DATA_SAFETY.md, and lsWipeAcct
+   in www/core.js, which was rewritten for it).
+
+   Each row is the field and what an UNANSWERED one is, which is the only
+   thing the three copies were ever saying. Adding a field is this line and
+   nothing else. */
+var STG_DEF={done:{}, notes:{}, set:{}, extra:[], rules:{}, ex:{}, fm:[], order:'', gpos:{}};
+function stBlank(){
+  var out={}, k, v;
+  for(k in STG_DEF) if(Object.prototype.hasOwnProperty.call(STG_DEF, k)){
+    v=STG_DEF[k];
+    out[k]=(typeof v==='string')? v : (Array.isArray(v)? [] : {});
+  }
+  return out;
+}
+var STG=stBlank();
+/* How far the open language has got. Empty first: see langRead() in core.js.
+   What is on the disk and nothing else: a field this build has never heard of
+   is left where it is rather than read into a shape nothing understands --
+   slWr writes STG whole, so what is not read is not written either, and that
+   is the one thing that could quietly drop somebody's work on an older
+   build. docs/BACKLOG.md carries it. */
 function stRead(){
-  STG={done:{}, notes:{}, set:{}, extra:[], rules:{}, ex:{}, fm:[], order:'', gpos:{}};
+  STG=stBlank();
   try{
-    var stgs=JSON.parse(slRd(langKey('phases'))||'null');
-    if(stgs){ STG.done=stgs.done||{}; STG.notes=stgs.notes||{}; STG.set=stgs.set||{};
-              STG.extra=stgs.extra||[]; STG.rules=stgs.rules||{}; STG.ex=stgs.ex||{};
-              STG.fm=stgs.fm||[];
-              STG.order=stgs.order||''; STG.gpos=stgs.gpos||{}; }
+    var stgs=JSON.parse(slRd(langKey('phases'))||'null'), k;
+    if(stgs) for(k in STG_DEF)
+      if(Object.prototype.hasOwnProperty.call(STG_DEF, k) && stgs[k]) STG[k]=stgs[k];
   }catch(e){}
 }
 /* ---- the word order and the three positions belong to the LANGUAGE -------
