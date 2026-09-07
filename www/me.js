@@ -710,15 +710,35 @@ function profileOpen(h){
     netPop(d, s, m, function(){ profileOpen(h); });
   }
   if(mine){
-    /* No `no` on these three: pullRun() owns the pop for everything on that
-       table, and a second one here would be the same failure said twice. */
-    left++; pullWait('mine', one);
-    left++; pullWait('langs', one);
-    left++; pullWait('myposts', one);
+    left++; profileReady(one);
   }else{
     left++; whoWait(h, one, no);
     left++; pfPosts(h, one, no);
   }
+  one();
+}
+/* WHAT YOUR OWN PAGE IS MADE OF, in one place, because two things wait for
+   it: the press above, and the SPLASH.
+   -------------------------------------------------------------------------
+   The app OPENS on the profile, so at a launch the screen it is 「pressed
+   from」 is the splash, and holding that is the same sentence at the one door
+   with no previous screen behind it. www/boot.js is the other caller.
+
+   Measured 2026-09-07, with the press already waiting: at a launch the page
+   was still up at 155ms carrying 0 and 0 under the two words, the numbers
+   moved at 161ms and 非公開 arrived at 309ms -- 「0 と出て1秒後に1に変わる」
+   at the one door that was not covered.
+
+   No `bad`: pullRun() owns the pop for everything on that table, and a second
+   one here would be the same failure said twice. What a failure does here is
+   stop the waiting, which is what lets the splash go up rather than sitting
+   over a screen nothing is coming to. */
+function profileReady(done){
+  var left=1;
+  function one(){ left--; if(left<=0) done(); }
+  left++; pullWait('mine', one);
+  left++; pullWait('mylangs', one);
+  left++; pullWait('myposts', one);
   one();
 }
 function whoOf(h){

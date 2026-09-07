@@ -610,6 +610,20 @@ function pullHad(r){
    only one of the eight that did. */
 function pullForget(){
   PULL_GOT={};
+  /* AND THE ASKS THAT ARE STILL IN THE AIR ARE THE LAST SESSION'S TOO.
+     PULL_OUT refuses a second ask while one is out, and a request made as
+     somebody who has just signed out is never coming back -- so the mark
+     stayed up and the NEXT person to sign in was refused every question this
+     table asks. Found by acct-check 27 (「入り直したその場で、自分の言語が
+     降りてくる」) the day the languages joined this table: the road it walks
+     is a sign-out with the launch's requests still out.
+
+     The answers those requests carry cannot land on the new session either:
+     pullRun()'s callbacks write PULL_GOT and render, and both would be about
+     the person who has gone. Clearing the flag is what lets the new one ask.
+     PULL_WAIT is cleared with it -- a waiter is somebody holding a screen
+     for an answer to a question that is not being asked any more. */
+  PULL_OUT={}; PULL_WAIT={};
   DAY=null; DAY_GOT=false;
 }
 /* And ONE answer forgotten, for the one thing that can go stale without the
@@ -729,7 +743,13 @@ pullOn('drafts',  askDrafts);
 pullOn('day',     askDay,     dayGot);
 pullOn('mine',    askMine);
 pullOn('blocks',  askBlocks,  netBlockedGot);
-pullOn('langs',   askLangs);
+/* `mylangs` AND NOT `langs`, BECAUSE `langs` IS A ROUTE. Every key on this
+   table that happens to name a screen is a screen somebody can pull, and
+   there is one rule about which those are: 「引っ張って更新は SNS だけ」
+   OWNER 2026-09-06. Calling it `langs` made the list of languages -- which is
+   on the making side -- a screen that pulls, silently. again-check counts
+   them and said so. */
+pullOn('mylangs', askLangs);
 pullOn('myposts', askMyPosts);
 pullOn('saved',   askSaved);
 pullOn('recent',  askRecent);
@@ -779,7 +799,7 @@ pullOn('recent',  askRecent);
    belong to the open exactly as the timeline's do; asking for them from the
    screen that shows them is what 「1秒遅れ」 is. */
 var PULL_OPEN=['feed', 'notif', 'day', 'mine', 'blocks', 'saved', 'recent',
-               'drafts', 'langs', 'myposts'];
+               'drafts', 'mylangs', 'myposts'];
 /* Fired by netTook() (www/net.js), which is the one place that knows a
    session ARRIVED -- a launch through netResume(), or somebody signing in an
    hour later through the door. Every one of these is asked AS somebody, so
@@ -1074,9 +1094,18 @@ function askBlocks(ok, bad){
 
    `bad` is handed through rather than left to netLangsDown()'s own netPop(),
    for the reason every other entry here has one: ［再接続］ runs pullRun()'s
-   own question again, which is one road back rather than two. */
+   own question again, which is one road back rather than two.
+
+   THE DOWN ROAD ONLY. netLangSync() -- what this phone has and the server has
+   not, going UP -- stays at the LAUNCH, in www/boot.js, waiting on this
+   answer. It is not the same question: this one is 「what does this account
+   have」 and is asked whenever a session arrives, and that one WRITES, and
+   what it writes is whatever language happens to be open. Firing it at every
+   arrival meant a sign-in put the language on the screen up under whoever had
+   just walked in, before langForAcct() had re-pointed it -- acct-check 9,
+   which is the one thing in this area that loses somebody's work. */
 function askLangs(ok, bad){
-  netLangsDown(function(){ netLangSync(); ok(1); }, bad);
+  netLangsDown(function(){ ok(1); }, bad);
 }
 /* WHAT ONE PERSON HAS WRITTEN, and it is the one place a profile's list of
    posts is asked for. Three roads wanted it -- the open, a pull, and the
