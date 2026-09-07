@@ -671,6 +671,50 @@ assert.equal(e.morphology.derive(derStem, derStem.words[1], 'ADJECTIVE').surface
    means adding it to this sentence. */
 
 
+/* ---- C15 コピュラ・存在 -----------------------------------------------------
+   「「〜です」「〜がある」の語と位置」 OWNER 2026-09-07.
+
+   The two WORDS are the chapter's; the POSITION is the CMP card on the word
+   order board, because where a copula stands is a place in a sentence and
+   that board is what says where the places are. Putting a complement where an
+   object goes would be a guess about somebody's language rather than
+   something they said, and the assertions below are written to show the card
+   really is what decides. */
+const COPW=[['mi','I','PRONOUN'],['sensei','teacher','NOUN'],['yama','mountain','NOUN'],
+            ['desu','be','VERB'],['aru','there is','VERB']];
+const COPIR=e.semanticIR({roles:{SUBJECT:'I', COMPLEMENT:'teacher', PREDICATE:'be'}});
+/* 主語・補語・動詞 ── 「私 先生 です」. The order is a LIST here and not the
+   six-letter string: 'SOV' is three cards that happen to be one letter each,
+   and model.js splits a string one character at a time, so a card with a name
+   longer than one letter has to arrive as a list -- which is what the board
+   stores (orderSeq in www/grammar.js). */
+assert.equal(e.translate.fromSemantic(lang('CP',['S','CMP','V'],COPW),COPIR).text,'mi sensei desu');
+/* and a language that puts the copula in the middle writes the same meaning
+   as 「私 です 先生」 */
+assert.equal(e.translate.fromSemantic(lang('CP2',['S','V','CMP'],COPW),COPIR).text,'mi desu sensei');
+/* THE CARD LEFT OFF THE BOARD. A role the board has no place for still
+   follows the sentence -- nothing is dropped, which is the one thing this
+   must not do -- and the sentence is the shorter for it rather than wrong. */
+const copOff=e.translate.fromSemantic(lang('CP3','SOV',COPW),COPIR);
+assert.equal(copOff.complete,true);
+assert.ok(copOff.text.indexOf('sensei')>=0,'the complement was dropped');
+/* 存在 ── 「山 が ある」. Nothing new: the existential word is the sentence's
+   verb, found by what it is, so a subject and a predicate is the whole of it. */
+assert.equal(e.translate.fromSemantic(lang('CP4','SOV',COPW),
+  e.semanticIR({roles:{SUBJECT:'mountain', PREDICATE:'there is'}})).text,'yama aru');
+/* A LANGUAGE THAT USES NO WORD AT ALL. Russian says 「я учитель」 with nothing
+   between them, and the chapter left empty is exactly that: the copula is a
+   gap and the two words that ARE there still stand where the board says. */
+const copBare=e.translate.fromSemantic(lang('CP5',['S','CMP','V'],
+  [['mi','I','PRONOUN'],['sensei','teacher','NOUN']]),COPIR);
+assert.equal(copBare.complete,false);
+assert.equal(copBare.gaps.join('|'),'be');
+assert.equal(copBare.text,'mi sensei be');
+/* and the card is one of the cards -- a word order written before it existed
+   is read back unchanged */
+assert.equal(e.wordOrder('SOV').join(','),'SUBJECT,OBJECT,VERB');
+assert.equal(e.wordOrder(['S','CMP','V']).join(','),'SUBJECT,COMPLEMENT,VERB');
+
 /* ---- C10 人称・数 ── what a form LABEL means, in one place -----------------
    「私／君／彼・彼女／私たち／君たち／彼ら で動詞がどう変わるか。規則の形は
    既存の fmr と同じ：語尾」 OWNER 2026-09-07.
@@ -1168,4 +1212,6 @@ console.log('Grammar Engine: derivation applies, a case MARK carries a role, the
             'which is the one place that says it, and every form label this app supplies ' +
             'means something the engine can be asked for -- the six person forms ' +
             'among them, as one feature with six values, and the five moods as one ' +
-            'feature with five');
+            'feature with five, and a copular sentence stands where the CMP card on the ' +
+            'word order board says -- with the copula itself a gap where a language ' +
+            'uses no word for it');

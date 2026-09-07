@@ -28,7 +28,14 @@
    every language on every phone already carries, and the letters of it are
    three of these. model.js's wordOrder() is the one place that turns them into
    what the engine calls a role, so ADV means ADVERB in exactly one file. */
-var ROLES=['S','O','V','ADV','ADP','NEG','Q'];
+/* CMP is the COMPLEMENT -- what a copular sentence says the subject IS.
+   「コピュラ・存在 ──「〜です」「〜がある」の語と位置」 OWNER 2026-09-07: the
+   two WORDS are the コピュラ chapter's, and their POSITION is here, on the
+   board that already says where every other role of a sentence stands. A
+   second picker on that chapter would be one answer in two places, and a
+   complement standing where an object stands is a guess about somebody's
+   language rather than something they said. */
+var ROLES=['S','O','V','ADV','ADP','NEG','Q','CMP'];
 /* What a sentence needs, and what stands when nobody has answered. */
 var ORDER_DEF=['S','O','V'];
 /* THE PARTS OF A NOUN PHRASE, and they are cards on a board exactly as the
@@ -1165,6 +1172,11 @@ function g2Sec(k){ return '<div class="sec">'+esc(t(k))+'</div>'; }
    the same row the 否定形 and 場所 chapters draw their words with, so a word
    made here looks and behaves exactly as one made anywhere else. */
 function g2Det(){ return chapSlotsHTML('det'); }
+/* §コピュラ・存在. The two words, and nothing else: where a copula stands is
+   the CMP card on the word order board -- 「〜です」 is heard between the
+   subject and what it is, and that is a place in a sentence, which is what
+   that board is for. */
+function g2Cop(){ return chapSlotsHTML('cop'); }
 function g2Cx(){
   return g2Sec('g2.cx.sub')+g2SidePick('cx')+
          g2Sec('g2.cx.mark')+g2SidePick('cxm')+
@@ -1684,6 +1696,7 @@ function g2Chaps(){
            {id:'cx',    body:g2Cx,    nm:t('g2.cx.t')},
            {id:'ncls',  body:g2Ncls,  nm:t('g2.ncls.t')},
            {id:'det',   body:g2Det,   nm:t('g2.det.t')},
+           {id:'cop',   body:g2Cop,   nm:t('g2.cop.t')},
            {id:'n',     body:g2Nouns, nm:posLabel('n'), pos:'n'}], i, a;
   /* The forms, one chapter each, from the one list. A chapter is drawn by
      g2FmChap() and knows its own form and its own part of speech, so nothing

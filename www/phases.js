@@ -317,6 +317,13 @@ var CHAP_SLOTS=[
      completion definition. A language may have all four, one, or none -- an
      unanswered slot is what every stage already has. */
   {id:'det',   chap:'det', slots:['a','the','this','that'], pos:'part'},
+  /* コピュラ・存在. 「〜です」「〜がある」 -- the two words, and only the
+     words: WHERE a copula stands is the CMP card on the word order board.
+     `pos:'v'` because both are the thing a sentence is built round, and the
+     engine finds a sentence's verb by what it is -- a copula written as
+     anything else would leave a copular sentence with no verb in it. A
+     language that uses no word at all leaves them empty. */
+  {id:'cop',   chap:'cop', slots:['be','exist'], pos:'v'},
   {id:'neg',   chap:'neg', slots:['not'], pos:'part'},
   {id:'ask',   chap:'q',   slots:['what','who','where','when','why','how'], pos:'pro'},
   {id:'where', chap:'adp', slots:['in','on','under','to','from','with'], pos:'part'}
@@ -794,7 +801,7 @@ function stHidHTML(){
    a line here. The tie is broken by where it was, because sort() is not
    promised to be stable on the WKWebView this runs in and two of somebody's own
    stages swapping places on a redraw is the app rearranging their work. */
-var G2TOC=['order','np','cx','n','pl','ncls','det',
+var G2TOC=['order','np','cx','n','pl','ncls','det','cop',
            'p1s','p2s','p3s','p1p','p2p','p3p',
            'prs','pst','fut','plp','prg','prf','cnd','pot','obl','des','cau','imp','pas','neg','q',
            'pron','count','greet',
