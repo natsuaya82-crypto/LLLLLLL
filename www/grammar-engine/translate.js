@@ -130,10 +130,14 @@
      which is what puts an unknown object where the object goes, in red, where
      it is the door to making that word. */
   var NOMINAL={NOUN:1, PRONOUN:1, NAME:1};
-  function kindOf(model, unit, negIds, adpIds){
+  function kindOf(model, unit, negIds, adpIds, demIds){
     if(unit.kind==='gap') return 'NOMINAL';
     if(isMarked(negIds,unit)) return 'NEGATION';
     if(isMarked(adpIds,unit)) return 'ADPOSITION';
+    /* An article or a demonstrative is a word this app was TOLD about, in the
+       chapter that makes them -- no part of speech tells `the` from any other
+       little word. Same road the negation and the adpositions take. */
+    if(isMarked(demIds,unit)) return 'DEMONSTRATIVE';
     var p=unit.word?unit.word.partOfSpeech:null;
     if(p==='VERB') return 'VERB';
     if(p==='ADJECTIVE') return 'ADJECTIVE';
@@ -184,6 +188,7 @@
   function arrange(model, units){
     var order=(model&&model.wordOrder&&model.wordOrder.length)?model.wordOrder:['SUBJECT','OBJECT','VERB'],
         negIds=markedIds(model,'NEGATION'), adpIds=markedIds(model,'ADPOSITION'),
+        demIds=markedIds(model,'DEMONSTRATIVE'),
         kinds=[], adjs=[], adps=[], advs=[], negs=[], loose=[], noms=[], verb=-1,
         np=npOrderOf(model), npOn={}, nmods=[],
         adjPos=positionOf(model,'ADJECTIVE'), adpPos=positionOf(model,'ADPOSITION'),
@@ -201,7 +206,7 @@
     for(i=0;i<order.length;i++) onBoard[order[i]]=true;
     for(i=0;i<np.length;i++) npOn[np[i]]=true;
 
-    for(i=0;i<units.length;i++) kinds.push(kindOf(model,units[i],negIds,adpIds));
+    for(i=0;i<units.length;i++) kinds.push(kindOf(model,units[i],negIds,adpIds,demIds));
     for(i=0;i<units.length;i++){
       if(kinds[i]==='NOMINAL') noms.push(i);
       else if(kinds[i]==='VERB' && verb<0) verb=i;
@@ -216,6 +221,7 @@
          board: a part the noun-phrase board does not name is not attached to
          anything, and follows the sentence as it always did. */
       else if(kinds[i]==='NUMERAL'){ j=npOn.NUMERAL? attach(kinds,i) : -1; if(j<0) loose.push(i); else nmods.push({at:i, to:j, part:'NUMERAL'}); }
+      else if(kinds[i]==='DEMONSTRATIVE'){ j=npOn.DEMONSTRATIVE? attach(kinds,i) : -1; if(j<0) loose.push(i); else nmods.push({at:i, to:j, part:'DEMONSTRATIVE'}); }
       else if(kinds[i]==='LOOSE') loose.push(i);
     }
 

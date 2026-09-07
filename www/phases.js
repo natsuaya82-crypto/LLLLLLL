@@ -306,6 +306,17 @@ var STAGES=[
    `negp` and the 否定形 chapter has no picker; docs/BACKLOG.md is where that
    goes, not a second table here. */
 var CHAP_SLOTS=[
+  /* 冠詞・指示詞. 「a／the／this／that に当たる語と位置」 OWNER 2026-09-07.
+     Four words and no decision, because the decision is already somewhere:
+     WHERE one of these stands is the DEM card on the noun-phrase board, which
+     is the one place a language says what goes in front of its nouns. Putting
+     a side here as well would be one answer in two places.
+
+     The four are ONE part of a phrase and not two, and that is the owner's
+     grouping rather than this file's: 「冠詞・指示詞」 is one chapter of the
+     completion definition. A language may have all four, one, or none -- an
+     unanswered slot is what every stage already has. */
+  {id:'det',   chap:'det', slots:['a','the','this','that'], pos:'part'},
   {id:'neg',   chap:'neg', slots:['not'], pos:'part'},
   {id:'ask',   chap:'q',   slots:['what','who','where','when','why','how'], pos:'pro'},
   {id:'where', chap:'adp', slots:['in','on','under','to','from','with'], pos:'part'}
@@ -783,7 +794,7 @@ function stHidHTML(){
    a line here. The tie is broken by where it was, because sort() is not
    promised to be stable on the WKWebView this runs in and two of somebody's own
    stages swapping places on a redraw is the app rearranging their work. */
-var G2TOC=['order','np','cx','n','pl','ncls',
+var G2TOC=['order','np','cx','n','pl','ncls','det',
            'prs','pst','fut','plp','prg','prf','cnd','cau','imp','pas','neg','q',
            'pron','count','greet',
            'adj','adp','part','conj','polite','have','when','month','wday','st'];

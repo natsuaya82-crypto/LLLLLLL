@@ -234,6 +234,12 @@ function gRules(){
   if(w) out.push(gRule('NEGATION','WORD', e.adapter.idOf(w)));
   ws=gSlotAll('where');
   for(i=0;i<ws.length;i++) out.push(gRule('ADPOSITION','WORD', e.adapter.idOf(ws[i])));
+  /* WHICH WORDS ARE THE ARTICLES AND THE DEMONSTRATIVES, said the same way the
+     negation and the adpositions are said: no part of speech can tell them
+     apart from any other little word, so the page that knows about slots names
+     them here, by id, and the engine never has to know what a slot is. */
+  ws=gSlotAll('det');
+  for(i=0;i<ws.length;i++) out.push(gRule('DEMONSTRATIVE','WORD', e.adapter.idOf(ws[i])));
   return out;
 }
 /* ---- the marks --------------------------------------------------------
@@ -1139,6 +1145,14 @@ function g2Sec(k){ return '<div class="sec">'+esc(t(k))+'</div>'; }
    things stands between them in every language anybody has written down, and
    the words themselves are the 接続詞 chapter's. The lines that show it are
    this chapter's 例文, which is what every chapter of this page ends with. */
+/* §冠詞・指示詞. The four words and nothing else: where one of them stands is
+   the DEM card on the noun-phrase board, and a second answer here would be the
+   two chapters disagreeing the first time somebody changed one of them.
+
+   www/phases.js § CHAP_SLOTS holds the slots, and stSlotRow() draws them --
+   the same row the 否定形 and 場所 chapters draw their words with, so a word
+   made here looks and behaves exactly as one made anywhere else. */
+function g2Det(){ return chapSlotsHTML('det'); }
 function g2Cx(){
   return g2Sec('g2.cx.sub')+g2SidePick('cx')+
          g2Sec('g2.cx.mark')+g2SidePick('cxm')+
@@ -1654,6 +1668,7 @@ function g2Chaps(){
            {id:'np',    body:g2Board, nm:t('g2.np.t')},
            {id:'cx',    body:g2Cx,    nm:t('g2.cx.t')},
            {id:'ncls',  body:g2Ncls,  nm:t('g2.ncls.t')},
+           {id:'det',   body:g2Det,   nm:t('g2.det.t')},
            {id:'n',     body:g2Nouns, nm:posLabel('n'), pos:'n'}], i, a;
   /* The forms, one chapter each, from the one list. A chapter is drawn by
      g2FmChap() and knows its own form and its own part of speech, so nothing

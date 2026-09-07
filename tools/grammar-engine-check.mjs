@@ -1018,6 +1018,47 @@ e.translate.fromSemantic(clV,shared);
 assert.equal(shared.features.CLASS,undefined,'the IR was written into');
 assert.equal(e.translate.fromSemantic(lang('CL5','SOV',CLW),shared).text,'yama miru');
 
+/* ---- B7 冠詞・指示詞 -------------------------------------------------------
+   「a／the／this／that に当たる語と位置」 OWNER 2026-09-07. The four words are
+   this chapter's; WHERE one of them stands is the DEM card on the noun-phrase
+   board, and the assertions here are written to show that it really is the
+   board deciding -- the same language, the same words, the card moved. */
+const DETW=[['yama','mountain','NOUN'],['kono','this','PARTICLE'],
+            ['aka','red','ADJECTIVE'],['miru','see','VERB'],['mi','I','PRONOUN']];
+const DETIR=e.semanticIR({roles:{
+  OBJECT:{head:'mountain', mods:{DEMONSTRATIVE:'this', ADJECTIVE:['red']}}, PREDICATE:'see'}});
+assert.equal(e.translate.fromSemantic(withNp(lang('DT','SOV',DETW),['DEM','ADJ','N']),DETIR).text,
+  'kono aka yama miru');
+assert.equal(e.translate.fromSemantic(withNp(lang('DT2','SOV',DETW),['N','ADJ','DEM']),DETIR).text,
+  'yama aka kono miru');
+/* A LANGUAGE WITH NO WORD FOR IT. The four are slots like any other and an
+   unanswered one is a gap -- the meaning stays, and the gap is the door to
+   making that word. */
+const detGap=e.translate.fromSemantic(withNp(lang('DT3','SOV',
+  [['yama','mountain','NOUN'],['miru','see','VERB']]),['DEM','N']),DETIR);
+assert.equal(detGap.complete,false);
+assert.ok(detGap.gaps.indexOf('this')>=0);
+/* AND READING ONE BACK. No part of speech tells `this` from any other little
+   word, so the chapter names them -- the same road the negation and the
+   adpositions take -- and the word then joins its noun's phrase where the
+   board says it may. */
+const detD=[{hw:'yama', mns:['mountain'], pos:'n'},
+            {hw:'kono', mns:['this'],     pos:'part', slot:'det.this'},
+            {hw:'miru', mns:['see'],      pos:'v'},
+            {hw:'mi',   mns:['I'],        pos:'pro'}];
+const detRead=(cards, named)=>{
+  const m=e.adapter.fromLegacy('dtr',detD,{order:'SOV'});
+  if(named) m.grammarRules.push(e.grammarRule({type:'syntax',target:'DEMONSTRATIVE',feature:'WORD',value:'hw:kono'}));
+  return e.translate.line(e.translate.run(withNp(m,cards),'I see this mountain'));
+};
+assert.equal(detRead(['DEM','N'], true),'mi kono yama miru');
+/* named, but the board does not carry the card: it follows the sentence,
+   exactly as an adverb does when its own card is off the board */
+assert.equal(detRead(['ADJ','N'], true),'mi yama miru kono');
+/* and a language that has never said which words these are reads `kono` as an
+   ordinary word. That is not a failure -- it is the chapter being empty. */
+assert.equal(detRead(['DEM','N'], false),'mi yama miru kono');
+
 console.log('Grammar Engine: derivation applies, a case MARK carries a role, the ' +
             'Semantic IR goes both ways and back, the Phase 1-2 contract is clean, ' +
             'a rule may change the stem and may be for some words only, ' +
@@ -1031,4 +1072,6 @@ console.log('Grammar Engine: derivation applies, a case MARK carries a role, the
             'any of SEVEN roles -- the possessor inside a noun phrase among them, ' +
             'which no word order could ever have said, and a word may AGREE with the ' +
             'class of the noun it belongs to -- under whatever name that class ' +
-            'was given, which this engine carries and never understands');
+            'was given, which this engine carries and never understands, and the words ' +
+            'for a / the / this / that stand where the noun-phrase board says, ' +
+            'which is the one place that says it');
