@@ -40,6 +40,16 @@ OWNER 2026-09-07（リーダー経由）。返信の上に出る「@aya への�
 
 保存するものは何も変わりません。消えるものもありません。
 
+**回した検査。** post-check 21 を足して、バグを四つ戻して赤を見ました ──
+押せない字に戻すと「grey letters that did nothing」、padding を外すと
+「44x23」、行き先を変えると「explore: and not profile:aya」、本文だけ別の道に
+すると「Two roads to one mark」。press は緑で
+`buttons pressed: 14722 → 14830`、名前は **269 → 270**（増えたのは `snsAtGo`
+の一つ）。＋108 は、返信を持つ画面それぞれに @ が一つずつ増えたぶんです。
+assets・es5・dead・sides・face・box・store・act・i18n も緑。
+
+**実機では未確認です。**
+
 ### 2026-09-07 縦書きの欄で、ローマ字が一字ずつ縦に積まれていた（OWNER 実機 142）
 
 英語のUIで、縦書きの言語の投稿画面を開くと、欄の placeholder が一字ずつ縦に
