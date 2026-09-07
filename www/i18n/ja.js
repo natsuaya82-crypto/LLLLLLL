@@ -476,8 +476,6 @@ defLang('ja', (function(){
       'toc.gram'        : '文法',
       /* what the app proposes */
       /* the grammar, in stages */
-      'stg.grp.rule'     : '規則で作る形',
-      'stg.grp.chap'     : '章',
       'stg.words'        : '必要な単語',
       'stg.rules'        : '規則',
       'stg.rules.ph'     : '　',
@@ -502,6 +500,9 @@ defLang('ja', (function(){
       'stg.part.subj'    : '主語',
       'stg.part.obj'     : '目的語',
       'stg.part.rec'     : '渡す相手',
+      'gram.eg.subj'     : '<b>私は</b>山を見る',
+      'gram.eg.obj'      : '私は<b>山を</b>見る',
+      'gram.eg.rec'      : '私は<b>友達に</b>本をあげる',
       'stg.polite.t'     : '敬語',
       'stg.polite.d'     : 'ていねいに言うときの形',
       'stg.where.t'      : '場所',
@@ -606,6 +607,8 @@ defLang('ja', (function(){
       'fmr.title'        : "規則で作る形",
       'fmr.add'          : "付ける文字",
       'g2.fm.add'          : "規則を足す",
+      'g2.rule.end'        : "{0}の末尾に {1}",
+      'g2.rule.start'      : "{0}の先頭に {1}",
       'fmr.end'          : "後ろに",
       'fmr.start'        : "前に",
       'fmr.sel' : '選択',

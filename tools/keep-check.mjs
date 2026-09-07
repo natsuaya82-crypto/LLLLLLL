@@ -540,7 +540,11 @@ const more = await pg.evaluate(() => {
   var gb = function(){ return document.querySelector('.navtop [data-do="keepPress"]'); };
   out.gordBtn = !!gb();
   out.gordGrey = !!gb() && !gb().classList.contains('navon');
-  var gc = document.querySelector('[data-gord="on"] [data-gr]');
+  /* A CARD OUT OF THE TRAY, because that is the first move there is: the board
+     opens with nothing on it for a language nobody has answered for
+     (「最初から主語と動詞とかが入ってるせいでわかりにくい」 OWNER 2026-09-06),
+     so pressing something on the board is a move no arriving screen offers. */
+  var gc = document.querySelector('[data-gord="off"] [data-gr]');
   if(gc) gc.click();
   out.gordGold = !!gb() && gb().classList.contains('navon');
   out.gordUnwritten = JSON.stringify(STG.order);

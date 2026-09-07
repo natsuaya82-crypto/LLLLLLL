@@ -335,6 +335,44 @@ await pg.evaluate(`window.rowOf = function(b){
            side: (ps.length > 1)? ps[0].textContent : '',
            to: ps.length? ps[ps.length - 1].textContent : '',
            go: b.getAttribute('data-do'), a: b.getAttribute('data-a') };
+};
+/* AND THE TWO HALVES A CHAPTER IS NOW. 「文法書にしてくれ」 OWNER 2026-09-06:
+   the rule is a SENTENCE at the top of the page (「動詞の末尾に -ta」) and what
+   it makes of this language's own words is the TABLE under it. Reading one of
+   them for the other is how a page that says the rule but makes nothing of it
+   would pass.
+
+   A rule row is read by the door it opens rather than by which spans it
+   happens to have: openFmr is where a rule is written, and that is what makes
+   a row a rule. */
+window.ruleRows = function(){
+  return Array.prototype.map.call(
+    document.querySelectorAll('#app .stslot[data-do="openFmr"]'),
+    function(b){ return { lab: b.querySelector('.psm').textContent,
+                          go: b.getAttribute('data-do') }; });
+};
+window.tabRows = function(){
+  return Array.prototype.map.call(document.querySelectorAll('#app .gtabr'),
+    function(b){ return { from: b.querySelector('.gtw').textContent,
+                          to: b.querySelector('.gtm').textContent,
+                          go: b.getAttribute('data-do') }; });
+};
+window.chapPage = function(id){
+  window.route = 'gram'; NAV = [{ r:'gram', a:'v2:' + id }]; render();
+  return { rules: ruleRows(), tab: tabRows(),
+           /* the rows that are a WORD of this language rather than a rule --
+              the marks the 助詞 stage made, which the noun chapter draws */
+           marks: Array.prototype.filter.call(
+             document.querySelectorAll('#app .stslot'),
+             function(b){ return !!b.querySelector('.psi'); }).map(rowOf) };
+};
+window.chapSays = function(id){
+  var p = chapPage(id);
+  return p.rules.map(function(r){ return r.lab; }).join(' | ');
+};
+window.chapMakes = function(id){
+  var p = chapPage(id);
+  return p.tab.map(function(r){ return r.from + ':' + r.to; }).join(' ');
 };`);
 const g = await pg.evaluate(() => {
   const lit = () => Array.prototype.map.call(
@@ -822,46 +860,52 @@ const g2n = await pg.evaluate(() => {
        shown in either of these */
     { id:'p3', pos:'v', fm:'pst', at:'end', drop:0, add:sp('ka'), when:'' }
   ];
-  const read = (id) => {
-    window.route = 'gram'; NAV = [{ r:'gram', a:'v2:' + id }]; render();
-    return Array.prototype.filter.call(
-        document.querySelectorAll('#app .stslot'), (b) => !!b.querySelector('.psi'))
-      .map(rowOf);
-  };
-  const rows = read('pl'), marks = read('n');
+  const pl = chapPage('pl'), n = chapPage('n');
+  const says = pl.rules.map((r) => r.lab);
+  const makes = pl.tab.map((r) => r.from + ':' + r.to);
   WORDS.length = wl;
   STG.fm = JSON.parse(wasFm);
   if (!wasPart) delete STG.set.part;
-  return { n: rows.length, rows: rows, marks: marks.length,
-           pl: rows.filter((r) => r.to.indexOf('mi') >= 0)[0] || null,
-           other: rows.filter((r) => r.from === '-zz')[0] || null,
-           mark: marks.filter((r) => r.to.indexOf(' ') >= 0)[0] || null,
-           tense: rows.concat(marks).filter((r) => r.to.indexOf('ka') >= 0).length };
+  return { n: pl.rules.length, says: says, makes: makes,
+           marks: n.marks.length, go: (pl.rules[0] || {}).go,
+           cellGo: (pl.tab[0] || {}).go,
+           mi: says.filter((x) => x.indexOf('-mi') >= 0).join(' | '),
+           zz: says.filter((x) => x.indexOf('-zz') >= 0).join(' | '),
+           zzMade: makes.filter((x) => x.indexOf('zz') >= 0).length,
+           mark: n.marks.filter((r) => r.to.indexOf(' ') >= 0)[0] || null,
+           tense: says.concat(makes).join(' ').indexOf('ka') >= 0 ? 1 : 0 };
 });
 
 want('the plural chapter draws every rule this language wrote for it', g2n.n, 2);
-/* THE ROW IS THE RULE, and the example is what is added to it. 「規則で作る形
-   の>>-分かりにくすぎない？意味わからないから」 OWNER 2026-09-05: the row used
-   to be the example alone -- the word and what the rule made of it -- so a rule
-   that makes nothing of this language's word, and a rule with no letters on it
-   yet, both drew a row with nothing in it. What it says now is the letters and
-   which end they go on, which is the whole of what the rule's own screen
-   writes; what came out is added where there is something to add. */
+/* THE RULE IS A SENTENCE AND THE WORDS ARE A TABLE. 「文法のページを開いたら
+   文法書が見れないと作ってる価値ねえだろ」「文法書にしてくれ」 OWNER 2026-09-06:
+   the row was ❶ › › – -- four marks round a gap -- and what it said about the
+   rule had to be read out of the spans it happened to have. It says the rule
+   out loud now, in the part of speech and the letters and the end they go on,
+   and what the rule MAKES of this language's own words is the table under it.
+
+   The two are asked apart on purpose. A page that says the rule and makes
+   nothing of it, and a page that makes the words with nothing saying why,
+   are two different failures and used to be one claim. */
+want('the rule is a sentence with the letters in it', g2n.mi,
+     'noun: -mi on the end');
 want('a rule that says nothing about this word still says what it adds',
-     g2n.other && g2n.other.from, '-zz');
-want('and shows nothing as the form it makes',
-     g2n.other && g2n.other.to, '');
+     g2n.zz, 'noun: -zz on the end');
+want('and makes nothing in the table', g2n.zzMade, 0);
 want('and the tense is drawn in neither of these chapters', g2n.tense, 0);
 
 /* `tuf` is the first noun of the language this check opens -- the chapter
    shows the language's own word, not one the check invented, which is the
    point. */
+/* Written as the app writes it, which is wOut() -- this language's own
+   writing system, the same road every other word on every other screen takes.
+   `zpokomi` comes out `zpocomi` because that is what this fixture's script does
+   with those letters, and a table that spelled it any other way would be the
+   grammar book disagreeing with the dictionary. */
 want('the plural is the word this language really makes',
-     g2n.pl && g2n.pl.to, 'tufmi');
-want('and the row says the letters that make it', g2n.pl && g2n.pl.from, '-mi');
-want('and which end they go on, in words', g2n.pl && g2n.pl.side, 'On the end');
-want('and pressing it goes to where that rule is written',
-     g2n.pl && g2n.pl.go, 'openFmr');
+     g2n.makes.join(' '), 'tuf:tufmi zpoko:zpocomi');
+want('and pressing the rule goes to where it is written', g2n.go, 'openFmr');
+want('and pressing a word of the table opens that word', g2n.cellGo, 'openWord');
 
 want('the noun chapter is the marks and only the marks', g2n.marks, 1);
 want('the mark stands apart, which is how this app writes one',
@@ -891,25 +935,23 @@ const g2v = await pg.evaluate(() => {
     /* the negation is the next chapter's and must not be drawn here */
     { id:'v3', pos:'v', fm:'neg', at:'end',   drop:0, add:sp('nn'), when:'' },
     /* and a plural is the nouns' */
-    { id:'n1', pos:'n', fm:'pl',  at:'end',   drop:0, add:sp('mi'), when:'' }
+    { id:'n1', pos:'n', fm:'pl',  at:'end',   drop:0, add:sp('mi'), when:'' },
+    /* A rule with NO letters on it yet. There is no sentence to write about
+       one, so it is what the numerals are for, and that is the one row this
+       chapter still numbers. */
+    { id:'v4', pos:'v', fm:'imp', at:'end',   drop:0, add:[],       when:'' }
   ];
   /* A chapter is a PAGE now, so this walks the pages rather than reading
      headings down one screen. That is the claim it always meant: what a
      chapter draws is its own, and what it does not draw is somewhere else. */
-  const on = (id) => {
-    window.route = 'gram'; NAV = [{ r:'gram', a:'v2:' + id }]; render();
-    /* Only the rows that ARE a form. A chapter also lists what this language
-       has not said yet, and those rows carry 作成 rather than a word -- they
-       are an invitation, not something the language does. */
-    return Array.prototype.filter.call(document.querySelectorAll('#app .stslot'),
-        (b) => !!b.querySelector('.psi'))
-      .map((b) => rowOf(b).lab + ':' + rowOf(b).to);
-  };
-  const chaps = {};
-  g2Chaps().forEach((c) => { chaps[c.id] = on(c.id); });
+  /* A chapter is TWO things now -- what it says and what it makes -- so both
+     are collected for every one of them and the claims below ask whichever
+     they are about. */
+  const chaps = {}, makes = {};
+  g2Chaps().forEach((c) => { chaps[c.id] = chapSays(c.id); makes[c.id] = chapMakes(c.id); });
   WORDS.length = wl;
   STG.fm = JSON.parse(wasFm);
-  return { chaps: chaps, ids: g2Chaps().map((c) => c.id) };
+  return { chaps: chaps, makes: makes, ids: g2Chaps().map((c) => c.id) };
 });
 
 /* Eighteen, because A FORM IS A CHAPTER. There was one chapter called 動詞
@@ -921,19 +963,23 @@ want('the page is a list of chapters, each one its own', g2v.ids.length, 18);
 /* The nouns chapter is the MARKS and nothing else now. A plural is a form, so
    it has a chapter of its own, and drawing it here as well would be the same
    rule on two pages -- which is the bug this file's §65-70 counts. */
-want('the nouns chapter holds only what is not a form', g2v.chaps.n.join(' '), '');
-want('a plural is its own chapter', g2v.chaps.pl.join(' '), '\u2776:tufmi');
+want('the nouns chapter holds only what is not a form', g2v.chaps.n, '');
+want('a plural is its own chapter', g2v.makes.pl, 'tuf:tufmi');
 /* Past and passive, each in its own chapter, and NOT in each other's. */
-want('the past chapter shows the ending this language gives a verb',
-     g2v.chaps.pst.join(' '), '\u2776:zlumaka');
-want('a rule that goes on the front comes out on the front',
-     g2v.chaps.pas.join(' '), '\u2776:ezluma');
+want('the past chapter says what this language does to a verb',
+     g2v.chaps.pst, 'verb: -ka on the end');
+want('and shows it done to the verb this language has',
+     g2v.makes.pst, 'zluma:zlumaka');
+want('a rule that goes on the front says so',
+     g2v.chaps.pas, 'verb: e- on the front');
+want('and comes out on the front', g2v.makes.pas, 'zluma:ezluma');
 want('the negation is drawn in the negation chapter',
-     g2v.chaps.neg.join(' '), '\u2776:zlumann');
-want('and nowhere else', g2v.chaps.pst.join(' ').indexOf('nn'), -1);
-/* Numbered rather than named, because every rule in a chapter makes the same
-   form: naming them would be one name printed five times. */
-want('the rules of a chapter are numbered', g2v.chaps.pst[0].split(':')[0], '\u2776');
+     g2v.makes.neg, 'zluma:zlumann');
+want('and nowhere else', (g2v.chaps.pst + g2v.makes.pst).indexOf('nn'), -1);
+/* A rule with nothing written on it yet has no sentence to be, so it is ❶ --
+   which is what this list has always numbered by. Everything else says what it
+   does, because a number says nothing at all. */
+want('a rule with no letters on it yet is still a row', g2v.chaps.imp, '\u2776');
 
 /* ---- 57-64: negation, and the three ways a language may write one --------
    docs/GRAMMAR-V2-SPEC.md §4: 「ただし『必ず PREFIX になる』と決めつけない」.
@@ -963,13 +1009,11 @@ const neg = (fm) => pg.evaluate((fm) => {
   STG.fm = fm.map((r) => ({ id:r.id, pos:r.pos, fm:r.fm, at:r.at, drop:0,
                             add:sp(r.add), when:r.when || '',
                             wend:r.wend? sp(r.wend) : [] }));
-  window.route = 'gram'; NAV = [{ r:'gram', a:'v2:neg' }]; render();
-  const rows = Array.prototype.filter.call(
-      document.querySelectorAll('#app .stslot'), (b) => !!b.querySelector('.psi'))
-    .map((b) => ({
-      lab: rowOf(b).lab, from: rowOf(b).from, to: rowOf(b).to,
-      side: rowOf(b).side,
-      go: b.getAttribute('data-do') }));
+  const p = chapPage('neg');
+  const rows = p.rules.map((r, i) => ({ lab: r.lab, go: r.go,
+    /* the word this rule makes, off the table under the sentences: the rules
+       are in the order they were written and so are the rows they make */
+    to: (p.tab[i] || {}).to || '' }));
   WORDS.length = wl;
   STG.fm = JSON.parse(wasFm);
   return rows;
@@ -986,12 +1030,12 @@ want('a negation written as an ending goes on the verb',
 want('one written as a beginning goes in front of the verb',
      nPre[0] && nPre[0].to, 'unzluma');
 /* And the hyphen stands where the word goes, which is how every dictionary
-   writes an affix: `un-` in front, `-nn` on the end. */
-want('and the row says the letters it puts in front',
-     nPre[0] && nPre[0].from, 'un-');
-want('with the end it goes on said in words',
-     nPre[0] && nPre[0].side, 'On the front');
-want('and the other one the other way round', nEnd[0] && nEnd[0].from, '-nn');
+   writes an affix: `un-` in front, `-nn` on the end. It is in the sentence the
+   chapter opens with now rather than in a span of its own. */
+want('and the sentence says the letters it puts in front',
+     nPre[0] && nPre[0].lab, 'verb: un- on the front');
+want('and the other one the other way round',
+     nEnd[0] && nEnd[0].lab, 'verb: -nn on the end');
 want('pressing it goes to where that rule is written',
      nEnd[0] && nEnd[0].go, 'openFmr');
 
@@ -1013,8 +1057,9 @@ want('the one for verbs ending in a is the one that ends in a',
      nTwo.filter((x) => x.to === 'zlumaxx').length, 1);
 want('and the other row is the OTHER rule, not the same word twice',
      nTwo.filter((x) => x.to === 'zlumayy').length, 1);
-want('and they are numbered, not named the same thing twice',
-     nTwo.map((x) => x.lab).join(''), '\u2776\u2777');
+want('and each says its own rule, not the same thing twice',
+     nTwo.map((x) => x.lab).join(' | '),
+     'verb: -xx on the end | verb: -yy on the end');
 
 /* 3. a word of its own, which is not a rule at all. Where it goes is what this
    language answered -- STG.gpos.negp, which has no page of its own since the
@@ -1073,14 +1118,14 @@ const chap = await pg.evaluate(() => {
   const seen = {};
   g2Chaps().forEach((c) => {
     window.route = 'gram'; NAV = [{ r:'gram', a:'v2:' + c.id }]; render();
-    Array.prototype.forEach.call(document.querySelectorAll('#app .stslot'), (el) => {
-      if (!el.querySelector('.psi')) return;   /* a make row, not a form */
-      const to = rowOf(el).to;
-      kinds.forEach((k) => {
-        if (to.indexOf(k.add) < 0) return;
-        if (!seen[k.fm]) seen[k.fm] = [];
-        if (seen[k.fm].indexOf(c.id) < 0) seen[k.fm].push(c.id);
-      });
+    /* What the chapter SAYS, which is the sentence carrying the ending. The
+       table underneath carries it too, and either would do -- the sentence is
+       the one a chapter with no word in the dictionary still has. */
+    const said = ruleRows().map((r) => r.lab).join(' ');
+    kinds.forEach((k) => {
+      if (said.indexOf(k.add) < 0) return;
+      if (!seen[k.fm]) seen[k.fm] = [];
+      if (seen[k.fm].indexOf(c.id) < 0) seen[k.fm].push(c.id);
     });
   });
   WORDS.length = wl;
@@ -1147,10 +1192,7 @@ const adj = await pg.evaluate(() => {
      that makes a PLURAL, and a form is a chapter -- so it is drawn in 複数形,
      on a word of its own part of speech, and NOT here beside the arrangement.
      One rule, one chapter. */
-  show('pl');
-  const form = Array.prototype.filter.call(
-      document.querySelectorAll('#app .stslot'), (b) => !!b.querySelector('.psi'))
-    .map((b) => rowOf(b).lab + ':' + rowOf(b).to)
+  const form = chapMakes('pl').split(' ')
     .filter((x) => x.indexOf('si') >= 0).join(',');
 
   /* ACROSS THE PAGES. The sentence chapter is a board of cards carried with a
@@ -1192,7 +1234,7 @@ want('and that is what the language now holds', adj.side, 'after');
 want('the sentence above it did not move', adj.order, adj.wasOrder);
 
 want('a describing word that changes is drawn in the chapter of that form',
-     adj.form, '\u2776:zruasi');
+     adj.form, 'zrua:zruasi');
 
 want('the board is on the sentence chapter', adj.cross.board, 2);
 want('and on no other', adj.cross.noBoard, 0);
@@ -1340,10 +1382,12 @@ const mk = await pg.evaluate(() => {
   const open = (id) => { window.route = 'gram';
     NAV = [{ r:'gram', a:'v2:' + id }]; render(); };
   /* Found by what it WRITES rather than by what it is called: this check runs
-     in English and the label is whatever the interface language says. */
-  const adds = () => Array.prototype.filter.call(
-    document.querySelectorAll('#app .stslot'),
-    (b) => b.getAttribute('data-do') === 'fmrNew');
+     in English and the label is whatever the interface language says. It is the
+     ＋ on the heading now rather than a row saying so -- 「＋◉が規定なんだから
+     それにしろ」 OWNER 2026-09-06 -- and asking for the NAME is what keeps this
+     about the act rather than about which element carries it. */
+  const adds = () => Array.prototype.slice.call(
+    document.querySelectorAll('#app [data-do="fmrNew"]'));
   const press = (id) => {
     open(id);
     const a = adds();

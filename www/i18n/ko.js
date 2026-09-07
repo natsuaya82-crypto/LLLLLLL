@@ -739,8 +739,6 @@ defLang('ko', (function(){
       "toc.gram"         : "문법",
       /* what the app proposes */
       /* the grammar, in stages */
-      "stg.grp.rule"     : "규칙",
-      "stg.grp.chap"     : "장",
       "stg.words"        : "이 단계에 필요한 낱말",
       "stg.rules"        : "규칙",
       "stg.rules.ph"     : "　",
@@ -765,6 +763,9 @@ defLang('ko', (function(){
       "stg.part.subj"    : "하는 쪽",
       "stg.part.obj"     : "당하는 쪽",
       "stg.part.rec"     : "받는 쪽",
+      "gram.eg.subj"     : "<b>내가</b> 산을 본다",
+      "gram.eg.obj"      : "나는 <b>산을</b> 본다",
+      "gram.eg.rec"      : "나는 <b>친구에게</b> 책을 준다",
       "stg.polite.t"     : "높임",
       "stg.polite.d"     : "공손할 때 말이 어떻게 달라지는지",
       "stg.where.t"      : "자리",
@@ -869,6 +870,8 @@ defLang('ko', (function(){
       "fmr.title"        : "규칙으로 만드는 형태",
       "fmr.add"          : "붙이는 글자",
       "g2.fm.add"          : "규칙 추가",
+      "g2.rule.end"        : "{0}: 끝에 {1}",
+      "g2.rule.start"      : "{0}: 앞에 {1}",
       "fmr.end"          : "뒤에",
       "fmr.start"        : "앞에",
       "fmr.sel" : "선택",

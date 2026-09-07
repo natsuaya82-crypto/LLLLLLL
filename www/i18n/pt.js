@@ -567,8 +567,6 @@ defLang('pt', (function(){
       "toc.gram"         : "Gramática",
       /* what the app proposes */
       /* the grammar, in stages */
-      "stg.grp.rule"     : "Regras",
-      "stg.grp.chap"     : "Capítulos",
       "stg.words"        : "Palavras de que esta etapa precisa",
       "stg.rules"        : "A regra",
       "stg.rules.ph"     : "　",
@@ -593,6 +591,9 @@ defLang('pt', (function(){
       "stg.part.subj"    : "quem faz",
       "stg.part.obj"     : "quem recebe",
       "stg.part.rec"     : "a quem",
+      "gram.eg.subj"     : "<b>Eu</b> vejo a montanha",
+      "gram.eg.obj"      : "Vejo <b>a montanha</b>",
+      "gram.eg.rec"      : "Dou um livro <b>ao meu amigo</b>",
       "stg.polite.t"     : "Cortesia",
       "stg.polite.d"     : "Como a língua muda ao ser cortês",
       "stg.where.t"      : "Lugar",
@@ -697,6 +698,8 @@ defLang('pt', (function(){
       "fmr.title"        : "Formas feitas por uma regra",
       "fmr.add"          : "Letras que acrescenta",
       "g2.fm.add"          : "Adicionar uma regra",
+      "g2.rule.end"        : "{0}: {1} no fim",
+      "g2.rule.start"      : "{0}: {1} no início",
       "fmr.end"          : "No fim",
       "fmr.start"        : "No início",
       "fmr.sel" : "Selecionar",

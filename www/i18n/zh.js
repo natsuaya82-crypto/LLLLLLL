@@ -568,8 +568,6 @@ defLang('zh', (function(){
       "toc.gram"         : "语法",
       /* what the app proposes */
       /* the grammar, in stages */
-      "stg.grp.rule"     : "规则",
-      "stg.grp.chap"     : "章",
       "stg.words"        : "这个阶段需要的词",
       "stg.rules"        : "规则",
       "stg.rules.ph"     : "　",
@@ -594,6 +592,9 @@ defLang('zh', (function(){
       "stg.part.subj"    : "做的",
       "stg.part.obj"     : "被做的",
       "stg.part.rec"     : "给的",
+      "gram.eg.subj"     : "<b>我</b>看见山",
+      "gram.eg.obj"      : "我看见<b>山</b>",
+      "gram.eg.rec"      : "我把书给<b>朋友</b>",
       "stg.polite.t"     : "敬语",
       "stg.polite.d"     : "客气时语言怎么变",
       "stg.where.t"      : "地点",
@@ -698,6 +699,8 @@ defLang('zh', (function(){
       "fmr.title"        : "按规则造的形式",
       "fmr.add"          : "加上的字母",
       "g2.fm.add"          : "添加规则",
+      "g2.rule.end"        : "{0}：末尾加 {1}",
+      "g2.rule.start"      : "{0}：开头加 {1}",
       "fmr.end"          : "加在后面",
       "fmr.start"        : "加在前面",
       "fmr.sel" : "选择",

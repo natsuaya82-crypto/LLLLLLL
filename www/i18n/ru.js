@@ -564,8 +564,6 @@ defLang('ru', (function(){
       "toc.gram"          : "Грамматика",
       /* что предлагает приложение */
       /* грамматика по ступеням */
-      "stg.grp.rule"       : "Правила",
-      "stg.grp.chap"       : "Главы",
       "stg.words"          : "Слова, нужные этой ступени",
       "stg.rules"          : "Правило",
       "stg.rules.ph"       : "　",
@@ -590,6 +588,9 @@ defLang('ru', (function(){
       "stg.part.subj"      : "кто делает",
       "stg.part.obj"       : "над чем",
       "stg.part.rec"       : "кому",
+      "gram.eg.subj"       : "<b>Я</b> вижу гору",
+      "gram.eg.obj"        : "Я вижу <b>гору</b>",
+      "gram.eg.rec"        : "Я даю книгу <b>другу</b>",
       "stg.polite.t"       : "Вежливость",
       "stg.polite.d"       : "Как язык меняется в вежливости",
       "stg.where.t"        : "Место",
@@ -696,6 +697,8 @@ defLang('ru', (function(){
       "fmr.title"        : "Формы по правилу",
       "fmr.add"          : "Какие буквы прибавляет",
       "g2.fm.add"          : "Добавить правило",
+      "g2.rule.end"        : "{0}: {1} в конце",
+      "g2.rule.start"      : "{0}: {1} в начале",
       "fmr.end"          : "В конце",
       "fmr.start"        : "В начале",
       "fmr.sel" : "Выбрать",

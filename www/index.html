@@ -3680,9 +3680,6 @@ textarea.ntbody.grow{min-height:0;height:auto;overflow:hidden;resize:none}
    A row of choices, then the piece of sound the choice is carried by, then
    one of your own words before and after it. The demonstration is the point,
    so the panel is built around it. */
-/* 語順の置き場 ── 置いた札がここに並ぶ (www/grammar.js § g2Board)。空のとき
-   も一行分の高さがある: 置く場所が、置くまで見えないのはおかしい。 */
-.gordput{min-height:44px}
 .gorder{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:12px 0 2px}
 .gor{font-size:.86rem;color:var(--tx)}
 .gsep{display:flex;align-items:center;color:var(--gold);opacity:.8}
@@ -3720,6 +3717,60 @@ textarea.ntbody.grow{min-height:0;height:auto;overflow:hidden;resize:none}
 .search button.lens:active{color:var(--gold)}
 .set .sv{display:flex;align-items:center;gap:6px}
 .set .sv .go,.capgo .go{opacity:.75}
+
+/* ---- r4-gram ----------------------------------------------------------
+   語順ボード (www/grammar.js § g2Board)。文を書く罫線と、その下の置き場。
+
+   THE ONE BOX THIS APP ALLOWS OUTSIDE THE PLANS PAGE. 「箱でいいよ」 OWNER
+   2026-09-06, asked about this board and about nothing else. It earns the
+   exception the same way .btn.plterm earned its own: a card is a thing you
+   PICK UP and PUT DOWN, and two rows of bare words are not two places -- the
+   board read as a heading over a second heading, which is the picture the
+   owner was looking at when they said it. Both lines are on
+   tools/box-baseline.txt; the ban stands everywhere else.
+
+   AND IT TAKES THE SCREEN. 「画面そんな広いのになんで上ちょこっとでやるの？」
+   OWNER 2026-09-06. The sentence is written on the upper half, on three ruled
+   lines drawn by the paper rather than by an element each -- 「枠の数は決めない」,
+   so what is there is lines to write on and not a row of slots to fill. The
+   tray is the lower half, in a paler ink because a card waiting to be placed
+   and a card standing in the sentence are not the same thing.
+
+   .gordrow is its own rail and never .segs: .segs is the underlined row of
+   choices this app uses everywhere, and these are not choices. */
+.gordtop{display:flex;flex-direction:column;min-height:44vh}
+/* 44 のバンドに 56 の間隔 ── 札の高さぴったりの下に線が来るので、札は線の上に
+   乗る。三本ぶんで 168。 */
+.gordput{flex:0 0 auto;display:flex;flex-wrap:wrap;align-content:flex-start;
+   gap:12px 8px;min-height:168px;
+   background-image:repeating-linear-gradient(to bottom,
+     transparent 0 44px, var(--line) 44px 45px, transparent 45px 56px)}
+.gordrow{display:flex;flex-wrap:wrap;align-content:flex-start;gap:12px 8px}
+.gordc{display:inline-flex;align-items:center;justify-content:center;
+   height:44px;min-width:44px;padding:0 15px;font-size:.94rem;line-height:1.4;
+   background:none;color:var(--tx);border:1px solid var(--line2);border-radius:9px}
+.gordc.off{color:var(--txs)}
+.gordc:active{border-color:var(--gold);color:var(--gold)}
+
+/* 章の表 ── 規則が辞書の語に効いた結果 (www/grammar.js § g2FmTable)。
+   罫線なし、字の大きさは他の行と同じ、余白は広く、色は三つ ── 元の語、
+   間の印、できた語。囲いも角丸もない。
+
+   font-size and line-height are on the ROW class and not left to the tag:
+   a <button> takes the browser's own 13.3px and the rows either side of it
+   take the body's, which is the same list coming out at two heights. */
+.gtab{margin:2px 0 22px}
+.gtabr{display:flex;align-items:center;gap:12px;width:100%;min-height:44px;
+   padding:10px 0;background:none;border:0;text-align:left;
+   font-size:.94rem;line-height:1.6;color:var(--tx)}
+.gtabr .gtw{flex:0 0 40%;color:var(--txs);overflow-wrap:anywhere}
+.gtabr .gts{flex:0 0 auto;display:flex;align-items:center;color:var(--gold);opacity:.5}
+.gtabr .gtm{flex:1 1 auto;color:var(--tx);overflow-wrap:anywhere}
+.gtabr:active .gtm{color:var(--gold)}
+
+/* 目次の、まだ書いていない章 (www/phases.js § stListHTML)。字を薄くするだけ ──
+   行の高さも大きさも動かさない: 一つの一覧の行は一つの高さ。 */
+.strow.pale .stt,.strow.pale .stn{color:var(--txm)}
 </style>
 </head>
 <body>

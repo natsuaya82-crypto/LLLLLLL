@@ -41,18 +41,31 @@ var ORDER_DEF=['S','O','V'];
    A card nobody knows is dropped and a card written twice is kept once: the
    value is arranged by a finger and the engine reads it as places in a row, so
    the same role standing in two of them is one role with two places. */
-function orderSeq(v){
+function orderKeep(v){
   var out=[], i, c;
   if(typeof v==='string') v=v.split('');
-  if(!v || !v.length) return ORDER_DEF.slice();
+  if(!v) return out;
   for(i=0;i<v.length;i++){
     c=String(v[i]);
     if(ROLES.indexOf(c)>=0 && out.indexOf(c)<0) out.push(c);
   }
+  return out;
+}
+function orderSeq(v){
+  var out=orderKeep(v);
   /* A board carried empty is the three back again. There is no such thing as
      a language that puts nothing anywhere, and the alternative is the engine
      quietly falling back to its own default while the screen shows nothing --
-     one answer in two places. */
+     one answer in two places.
+
+     WHAT IS SAVED AND WHAT IS ON THE BOARD ARE TWO QUESTIONS, and this line is
+     why they had to be split. A sentence has to be arranged somehow, so this
+     answers with the three where nothing has been saved -- and the board was
+     opened from it, so a language nobody had answered for came up with 主語
+     目的語 動詞 already placed, reading as an answer somebody had given.
+     「最初から主語と動詞とかが入ってるせいでわかりにくい」 OWNER 2026-09-06.
+     orderKeep() above is the same read WITHOUT the default, and the board opens
+     from that. */
   return out.length? out : ORDER_DEF.slice();
 }
 /* The word order is the LANGUAGE's and is filed under langKey('phases') with
@@ -472,7 +485,7 @@ function gWordOf(pos, not){
 
    What decides a side now is g2Adj() and g2Adp() below, and each draws the
    pair ITSELF -- g2Side(), two of this language's words you MOVE rather than
-   two buttons you read. The board and the sentence under it are g2Sent()'s.
+   two buttons you read. The board and the sentence under it are g2Board()'s.
    One fact, one place, which is what taking the stages out was for. */
 
 /* ====================================================================
@@ -567,15 +580,21 @@ function g2KeepKey(){ return keepKey(); }
    a buffer already here leaves it exactly as it is -- somebody has been
    arranging. The list travels as a comma-joined string because a buffer holds
    strings (keepPut), and orderSeq() is what turns it back into the list. */
+/* WHAT THIS LANGUAGE HAS ACTUALLY SAVED, which is what the board opens with.
+   Empty is a real answer here and means nobody has arranged anything yet -- so
+   the sentence line starts blank and every card is in the tray, which is what
+   an exercise of this shape looks like everywhere it exists.
+   「最初から主語と動詞とかが入ってるせいでわかりにくい」 OWNER 2026-09-06. */
+function g2Stored(){ return orderKeep(STG && STG.order); }
 function g2KeepOn(){
-  keepOn(g2KeepKey(), {seq:orderDef().seq.join(',')},
+  keepOn(g2KeepKey(), {seq:g2Stored().join(',')},
          /* Split before it is handed on: setOrder() takes the list of cards
             or the old six-letter string, and a comma-joined string is
             neither -- orderSeq() would read 'O,V,S,ADV' one character at a
             time and keep the three single letters. The buffer holds strings
             (keepPut); this is where it stops being one. */
          function(v, done){
-           var s=v.hasOwnProperty('seq')? String(v.seq) : orderDef().seq.join(',');
+           var s=v.hasOwnProperty('seq')? String(v.seq) : g2Stored().join(',');
            setOrder(s? s.split(',') : []);
            done(true);
          });
@@ -609,21 +628,41 @@ function g2Take(i){
    the button as a NAME, the way every button here carries one -- and
    tools/gramlang-check.mjs asks the board by it, so its claims are about the
    roles rather than about ten translations of them. */
-function g2Card(r, act, arg){
-  return '<button class="seg" data-gr="'+esc(r)+'"' + DO(act, arg) + '>'+
-    esc(t('gram.role.'+r))+'</button>';
+/* A CARD IS A BOX. 「箱でいいよ」 OWNER 2026-09-06 -- two rows of bare words
+   read as a heading over a second heading, and nothing about them said one
+   could be picked up. `off` is the tray's, in a paler ink, because a card
+   waiting to be placed and a card standing in the sentence are not the same
+   thing and looked identical. www/index.html § r4-gram carries both, and
+   tools/box-baseline.txt carries the corner. */
+function g2Card(r, act, arg, cls){
+  return '<button class="gordc'+(cls||'')+'" data-gr="'+esc(r)+'"' +
+    DO(act, arg) + '>'+esc(t('gram.role.'+r))+'</button>';
 }
+/* THE WHOLE SCREEN, not a strip at the top of one.
+   「画面そんな広いのになんで上ちょこっとでやるの？」 OWNER 2026-09-06.
+
+   The sentence is written on RULED LINES -- the upper half of the screen, three
+   of them, so a sentence that runs past one carries on to the next and the
+   place to put a card is visible before there is a card in it. The line under
+   this language's own words comes directly beneath them, which is where the
+   sentence being built is; it used to sit under the TRAY, two rows further
+   down, so the words and the cards that arranged them were not next to each
+   other at all.
+
+   The lines are drawn by the stylesheet rather than by an element each: they
+   are the paper, not a list of slots, and 「枠の数は決めない」 -- a card lands
+   on the end of what is there and the lines are what it is written on. */
 function g2Board(){
   g2KeepOn();
   var seq=g2Seq(), i, on='', off='';
-  for(i=0;i<seq.length;i++) on+=g2Card(seq[i], 'g2Take', [i]);
+  for(i=0;i<seq.length;i++) on+=g2Card(seq[i], 'g2Take', [i], '');
   for(i=0;i<ROLES.length;i++)
-    if(seq.indexOf(ROLES[i])<0) off+=g2Card(ROLES[i], 'g2Put', [ROLES[i]]);
-  /* The board keeps a row's height with nothing on it: an empty rail that
-     collapses to its own line is a place to put something that does not look
-     like one, and the board starts empty the first time somebody clears it. */
-  return '<div class="segs gordput" data-gord="on">'+on+'</div>'+
-         '<div class="segs" data-gord="off">'+off+'</div>';
+    if(seq.indexOf(ROLES[i])<0) off+=g2Card(ROLES[i], 'g2Put', [ROLES[i]], ' off');
+  return '<div class="gordtop">'+
+           '<div class="gordput" data-gord="on">'+on+'</div>'+
+           g2Demo()+
+         '</div>'+
+         '<div class="gordrow" data-gord="off">'+off+'</div>';
 }
 /* This language's own words, in the order the board says. gLay() runs the real
    engine, so this is what a sentence would actually come out as and not a
@@ -636,15 +675,6 @@ function g2Demo(){
   if(!w) return '';
   for(i=0;i<w.length;i++) out+='<span class="gor">'+esc(wOut(w[i].hw))+'</span>';
   return '<div class="gorder">'+out+'</div>';
-}
-/* §14 Sentence Structure. The board, then this language's own words in the
-   order it says. gOrderLine() drew the same role names with chevrons between
-   them and is not here: the cards ARE that line now, and the same fact twice
-   on one screen is the thing this repository is most often bitten by. The
-   語順 stage that drew it a second way is gone -- 「重複はいらない」 OWNER
-   2026-09-06 -- so this is the one place the board is. */
-function g2Sent(){
-  return g2Board()+g2Demo();
 }
 /* §14 Nouns. 「ユーザーが『りんご』『りんごたち』などを実際の言語で作る。
    例えば poko / poko-mi。ユーザーが差分を定義する」
@@ -679,6 +709,11 @@ function g2Sent(){
    different things. They are separate spans because they are separate faces:
    one is this language and one is the interface.
 
+   `lab` is HTML and not text, the way secAdd()'s label is. The two callers are
+   this file's own: the noun chapter's rows are a sentence of the interface with
+   one word in bold (gEg above), and a form chapter's are the numerals ❶❷❸.
+   Nothing anybody typed reaches it.
+
    `id` is the rule's id where the row IS a rule, and it is what the row is
    CHOSEN by -- 「プラスとかプロなのに消す時も勝手に ui 足すのやめて。今まで
    ある選択とかスライドとかで消すようにして」 OWNER 2026-09-05. There was a ⊖
@@ -696,7 +731,7 @@ function g2Row(lab, add, side, from, to, act, arg, id){
         ' role="button" aria-label="'+esc(t('fmr.sel.row'))+'">'+
         (on? ICON_DOT : ICON_RING)+'</span>'+
       '<button class="stslot has"' + DO('g2SelTap', [id]) + '>'+
-      '<span class="psm">'+esc(lab)+'</span>'+
+      '<span class="psm">'+lab+'</span>'+
       (add? '<span class="psw">'+sfontHTML(add)+'</span>' : '')+
       (side? '<span class="psi">'+esc(side)+'</span>' : '')+
       ((to || side)? '<span class="psi">'+esc(to)+'</span>' : '')+
@@ -704,7 +739,7 @@ function g2Row(lab, add, side, from, to, act, arg, id){
   }
   return '<div class="fmmk">'+
     '<button class="stslot has"' + DO(act, arg) + '>'+
-    '<span class="psm">'+esc(lab)+'</span>'+
+    '<span class="psm">'+lab+'</span>'+
     (add? '<span class="psw">'+sfontHTML(add)+'</span>' : '')+
     (side? '<span class="psi">'+esc(side)+'</span>' : '')+
     (from? '<span class="psw">'+sfontHTML(from)+'</span>'+
@@ -766,9 +801,6 @@ function g2ChapBar(c){
     return navDo(t('fmr.sel'), 'g2SelOn', null, true);
   return helpQ('g2.'+c.id);
 }
-/* Which end the letters go on, as the word the rule's own screen is set with.
-   Asked here rather than written out, so there is one name for each end. */
-function gFmSide(r){ return t((r && r.at==='start')? 'fmr.start' : 'fmr.end'); }
 /* And the same fact in the shape every dictionary in the world writes an affix
    in: the hyphen stands where the word goes. It is the app's mark and not a
    letter of anybody's language, so with the drawn font on it falls back the way
@@ -814,6 +846,24 @@ function g2Chap(r){
    opens the word where the stage has one and the sheet that writes it where
    it has not, so a row that is there and a row that is not are one press with
    one answer. */
+/* WHAT A ROW OF THIS CHAPTER IS CALLED, and not one word of grammar in it.
+   「名詞の主語という記載…何それ？になるのを無くしたい」「格の渡すとか言われても
+   全く分かりません」 OWNER 2026-09-06. The rows said 主語 / 目的語 / 渡す相手,
+   which are the names of the three roles a mark takes a word out of the queue
+   for -- true, and the kind of word somebody has to have been taught before it
+   says anything at all.
+
+   So a row is a SENTENCE of the interface language with the word in question in
+   bold: 「<b>私は</b>山を見る」. Nobody has to know what a subject is called to
+   see which word is meant. It is the interface's own line and never this
+   language's, which is why it is a translated string rather than anything the
+   dictionary makes -- a language with no verb in it yet still has to be able to
+   read the row.
+
+   The 助詞 stage's own list still says 主語 / 目的語 / 渡す相手 (stg.part.*), and
+   that is not one fact said twice: there a row NAMES the mark being made, here
+   it SHOWS where the mark would stand. */
+function gEg(k){ return t('gram.eg.'+k); }
 function g2Nouns(){
   var p=(typeof stBy==='function')? stBy('part') : null;
   var a=(p && p.slots) || [], n=gWordOf('n'), m=null, out='', i, k, w, made;
@@ -824,12 +874,12 @@ function g2Nouns(){
     w=stWordFor(p, k);
     if(!w){
       out+='<button class="stslot"' + DO('openSlot', ['part', k]) + '>'+
-        '<span class="psm">'+esc(stSlotLabel(p, k))+'</span>'+
+        '<span class="psm">'+gEg(k)+'</span>'+
         '<span class="psn">'+t('stg.make')+'</span>'+ICON_GO+'</button>';
       continue;
     }
     made=m? g2MadeBy(m, 'slot', k) : '';
-    out+=g2Row(stSlotLabel(p, k), '', '', made? wOut(n.hw) : '',
+    out+=g2Row(gEg(k), '', '', made? wOut(n.hw) : '',
                made || wOut(w.hw), 'openSlot', ['part', k], '');
   }
   return out;
@@ -1105,40 +1155,129 @@ function g2MadeBy(m, key, val){
   }
   return '';
 }
+/* ====================================================================
+   A CHAPTER IS A PAGE OF THIS LANGUAGE'S GRAMMAR BOOK
+   「文法のページを開いたら文法書が見れないと作ってる価値ねえだろ」
+   「文法書にしてくれ」「wiki に見せるかどうかは今はしないけど見せれるくらい
+   美しくしてくれ」 OWNER 2026-09-06.
+
+   What a chapter showed was its rules and nothing else -- 過去形 read
+   「規則を足す ›」 and stopped, on a language with six words in it. A list of
+   rules is not a grammar. A grammar is the rule, what it does to the words this
+   language actually has, and the line somebody wrote to show it, so a chapter
+   is those three down the page:
+
+     a  the rule as a SENTENCE      g2FmSent()   「動詞の末尾に -ta」
+     b  the words it MAKES          g2FmTable()  kano › kanota
+     c  the LINES written for it    g2ChapEx()   the same store a stage's are in
+
+   and then the words the chapter itself asks for, which is chapSlotsHTML() and
+   is unchanged.
+
+   NOT ONE OF THE THREE IS A SECOND PLACE FOR ANYTHING. The sentence is read
+   off the rule the editor writes (`at` and `add`, which is the whole of that
+   screen); the table is fmrMake(), the one function that says what a rule makes
+   of a word; the lines are stEx(), which stages have written into since they
+   had examples at all.
+   ==================================================================== */
 /* The rules this language has for one form, in the order they were written.
    Asked of STG.fm rather than of the engine, because a rule that did not travel
    is still a rule somebody wrote and a chapter that hid it would be the app
-   forgetting what it was told. */
+   forgetting what it was told.
+
+   ONE PLACE. The chapter's rows, its table and whether the list draws it faint
+   are three questions about the same set, and each of them walked STG.fm for
+   itself until this was pulled out. */
+function g2RulesOf(fm){
+  var a=(STG && STG.fm) || [], out=[], i;
+  for(i=0;i<a.length;i++) if(a[i] && String(a[i].fm)===String(fm)) out.push(a[i]);
+  return out;
+}
+/* THE RULE, AS ONE LINE OF A GRAMMAR BOOK. 「規則を一行の文にしたもの」
+   -- 「動詞の末尾に -ta」. It used to be ❶ › › –, four marks round a gap, and
+   the owner asked what it meant twice.
+
+   The part of speech is the rule's own where it names one and the chapter's
+   where it does not, which is the same reading g2FmRows has always taken. The
+   letters are the ones somebody drew, so they go through sfontHTML().
+
+   WHAT IT DOES NOT SAY is a condition. `when` and `drop` are on rules written
+   before the editor was cut back to the two fields (www/wordsheet.js
+   § fmrFormHTML) and no screen can write another; a sentence claiming such a
+   rule always applies would be a lie, so it says the affix and the end, and
+   the table underneath shows exactly which words it reached. docs/BACKLOG.md
+   carries it. */
+function g2FmSent(r, pos){
+  var a=gFmAffix(r);
+  if(!a) return '';
+  return t((r && r.at==='start')? 'g2.rule.start' : 'g2.rule.end',
+           esc(posLabel(r.pos || pos)), sfontHTML(a));
+}
 function g2FmRows(c){
-  var a=(STG && STG.fm) || [], out='', i, r, id, n=0, w, m, made;
+  var a=g2RulesOf(c.fm), out='', i, id;
   for(i=0;i<a.length;i++){
-    r=a[i];
-    if(!r || String(r.fm)!==c.fm) continue;
-    /* Asked of the rule's OWN part of speech, and of the chapter's only where
-       the rule names none. A rule written for any word -- `pos` empty, which
-       is what the editor leaves when nobody narrowed it -- belongs to the form
-       it makes and to no other chapter, and matching the chapter's part of
-       speech instead hid every one of them: they were in a chapter nowhere,
-       which is the quieter half of being in two. */
-    w=gWordOf(r.pos || c.pos);
-    id=String(r.id||'');
-    made='';
-    if(w){ m=gModel([w]); made=g2MadeBy(m, 'rule', id); }
-    out+=g2Row(g2Num(n++), gFmAffix(r), gFmSide(r), '', made, 'openFmr', [id], id);
+    id=String(a[i].id||'');
+    /* The numerals are what a rule with no letters on it yet is called: there
+       is no sentence to write, and ❶ is what this list has always numbered by.
+       Everything else says what it does. */
+    out+=g2Row(g2FmSent(a[i], c.pos) || g2Num(i), '', '', '', '',
+               'openFmr', [id], id);
   }
   return out;
 }
+/* THE TABLE: what these rules make of the words this language really has.
+   「辞書の実際の語で作った表（kano → kanota、tir → tirta …）」
+
+   fmrMake() is asked, which is the one place that says what a rule makes of a
+   word -- so a condition on an old rule is obeyed here without this knowing
+   what a condition is, and a word the rule does not reach is simply not on the
+   table. A word a rule MADE is left out for the reason fmrTodo() leaves it out:
+   a plural of a plural is not a word in anybody's language.
+
+   wordsSeen() and not WORDS. What a plan hides from the dictionary it hides
+   here too -- the same one place decides, so the two screens cannot come out
+   saying different things about which words there are.
+
+   A cell opens the word it is made of. Nothing is written from this table: it
+   is what the rules WOULD make, drawn fresh on every render, so the book is
+   right the day the dictionary grows and there is no copy to go stale. */
+function g2Cell(w, made){
+  return '<button class="gtabr"' + DO('openWord', [w.hw]) + '>'+
+    '<span class="gtw">'+sfontHTML(wOut(w.hw))+'</span>'+
+    '<span class="gts">'+ICON_GO+'</span>'+
+    '<span class="gtm">'+sfontHTML(wOut(made))+'</span></button>';
+}
+function g2FmTable(c){
+  var rules=g2RulesOf(c.fm), seen=wordsSeen(), out='', i, j, w, m;
+  for(j=0;j<rules.length;j++)
+    for(i=0;i<seen.length;i++){
+      w=seen[i];
+      if(w.fm) continue;
+      m=fmrMake(w, rules[j]);
+      if(m) out+=g2Cell(w, m.hw);
+    }
+  if(!out) return '';
+  return '<div class="sec">'+esc(t('g2.words'))+'</div>'+
+    '<div class="gtab">'+out+'</div>';
+}
 /* And the way to write another, which is on the chapter always. A form is not
    one rule: 「過去形でもいろんな規則作れるよね？」 -- so this is never hidden
-   because the language already has one. */
+   because the language already has one.
+
+   IT IS THE ＋ ON THE HEADING, not a row saying what it does.
+   「＋◉が規定なんだからそれにしろ」 OWNER 2026-09-06. secAdd() is the one
+   place that shape is written -- the example lines on a stage add with it, and
+   so does the word sheet -- so the chapter's rules are added the way every
+   other list in this app adds one more, and the heading names the list at the
+   same time. What the button says out loud is still `g2.fm.add`: it is the
+   aria-label now rather than the face of a row. */
 function g2FmAdd(c){
-  return '<button class="stslot"' + DO('fmrNew', [c.pos, c.fm]) + '>'+
-    '<span class="psm">'+esc(t('g2.fm.add'))+'</span>'+ICON_GO+'</button>';
+  return secAdd(esc(t('stg.rules')), DO('fmrNew', [c.pos, c.fm]), t('g2.fm.add'));
 }
 /* And the words this chapter's own stage used to ask for, where there was
    one: 否定形 wants the word for "not" and 疑問形 the six question words.
    chapSlotsHTML() draws nothing for the eleven chapters that have none. */
-function g2FmChap(c){ return g2FmRows(c)+g2FmAdd(c)+chapSlotsHTML(c.id); }
+function g2FmChap(c){ return g2FmAdd(c)+g2FmRows(c)+g2FmTable(c)+chapSlotsHTML(c.id); }
 /* What is behind the `?`. 「説明禁止の代わりに？を儲けてるからね？」 OWNER
    2026-09-05 -- so a chapter says nothing about itself on the screen and the
    whole of what it means is one press away. The two lines are the app's own
@@ -1186,7 +1325,7 @@ function g2Chaps(){
      counts a mention as the name against a bracket, a comma or a semicolon,
      so a function that is the LAST thing in an object literal is followed by
      `}` and reads as unused. Eight of them did. */
-  var out=[{id:'order', body:g2Sent,  nm:t('stg.order.t')},
+  var out=[{id:'order', body:g2Board, nm:t('stg.order.t')},
            {id:'n',     body:g2Nouns, nm:posLabel('n'), pos:'n'}], i, a;
   /* The forms, one chapter each, from the one list. A chapter is drawn by
      g2FmChap() and knows its own form and its own part of speech, so nothing
@@ -1227,8 +1366,33 @@ function g2ChapName(id){
    where there is no number to write. Names and nothing else otherwise -- a
    row that explained what a chapter was for would be the thing
    「無駄に説明をするやつ」 names. */
+/* WHETHER THIS LANGUAGE HAS SAID ANYTHING IN THIS CHAPTER YET. The contents
+   draws a chapter faint until it has -- 「まだ書いていない章は薄い字」 OWNER
+   2026-09-06 -- which is what a contents page is for: how far the book has got,
+   without having to open every chapter to find out.
+
+   ASKED OF WHAT IS STORED and never of what the page draws. Calling a chapter's
+   own body from the list would run g2Board(), which arms this screen's KEEP
+   buffer, so drawing the contents would have told the Save that a board had
+   been opened.
+
+   Five things a chapter can hold, in one place, so a chapter that gains a
+   sixth is a line here rather than a sixth answer somewhere else. */
+function g2Said(c){
+  var p;
+  if(stEx(c.id).length) return true;
+  p=chapSlotsOf(c.id);
+  if(p && stSlotsDone(p)) return true;
+  if(c.fm) return g2RulesOf(c.fm).length>0;
+  if(c.id==='order') return stTouched('order');
+  if(c.id==='n'){ p=stBy('part'); return !!p && !!stSlotsDone(p); }
+  if(c.id==='adj' || c.id==='adp') return stTouched(c.id);
+  /* この言語について counts what this language has and is never empty. */
+  return true;
+}
 function g2ChapRow(c, n){
-  return '<button class="strow"' + DO('go', ['gram', 'v2:'+c.id]) + '>'+
+  return '<button class="strow'+(g2Said(c)? '' : ' pale')+'"' +
+    DO('go', ['gram', 'v2:'+c.id]) + '>'+
     '<span class="stn">'+n+'</span>'+
     '<span class="stt">'+esc(c.nm)+'</span>'+
     '<span class="lead"></span>'+
@@ -1238,8 +1402,22 @@ function g2ChapRow(c, n){
 /* One chapter's page. It is handed the chapter rather than the argument now:
    vGram() looks it up, because it is vGram() that has to fall back to the
    list when the argument names no chapter. */
+/* THE LINES WRITTEN FOR THIS CHAPTER. 「その章の例文（言語の一行＋訳）」 --
+   the same stEx() a stage's examples have always been in, keyed by the chapter's
+   own id, drawn by the same exRowHTML() and added with the same ＋ on the
+   heading. Nothing new is stored and nothing new decides anything: what a
+   chapter had to have was somewhere to put the line that shows the rule.
+
+   この言語について is the one page without it. It is three counts of what this
+   language has, not a chapter of the book, and a place to write an example of a
+   count is a slot nobody can fill. */
+function g2ChapEx(id){
+  return secAdd(ICON_LINE+t('stg.ex'), DO('stExOpen', [id]), t('word.mn.add'))+
+    stExHTML(id);
+}
 function g2Page(c){
-  return c.body(c)+g2Add(c.id)+g2MakeAll(c.id);
+  return c.body(c)+g2Add(c.id)+g2MakeAll(c.id)+
+    (c.id==='st'? '' : g2ChapEx(c.id));
 }
 
 /* ---- the screen -------------------------------------------------------- */
