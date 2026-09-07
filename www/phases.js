@@ -269,7 +269,15 @@ var STAGES=[
   /* The numbers are numerals, which read the same in every language on the
      list, so they are the one set of labels that needs no translating. */
   {id:'count', slots:['1','2','3','4','5','6','7','8','9','10'], pos:'num'},
-  {id:'conj',  slots:['and','or','but','because','if','then'], pos:'conj'},
+  /* `rel` is the word a relative clause is marked with -- 「私が見た山」の
+     「〜が」ではなく、英語の that / which に当たる語。It is here rather than
+     on the 複文 chapter because a mark is a WORD in this app and every other
+     conjunction of this language is made on this stage: 「印の語は章の語の欄
+     （接続詞の章と一本化：二つの場所に同じ語を置かない）」 OWNER 2026-09-07.
+     A language that marks it with nothing leaves the slot empty, which is
+     what an unanswered slot already is everywhere else -- and Japanese is
+     that language. */
+  {id:'conj',  slots:['and','or','but','because','if','then','rel'], pos:'conj'},
   {id:'polite',slots:[], pos:'x'},
   /* Particles. It sat in a list of its own, off the chapter until somebody
      pressed a row at the foot -- 「助詞は最初から出せ」 OWNER 2026-09-01, so
@@ -763,7 +771,7 @@ function stHidHTML(){
    a line here. The tie is broken by where it was, because sort() is not
    promised to be stable on the WKWebView this runs in and two of somebody's own
    stages swapping places on a redraw is the app rearranging their work. */
-var G2TOC=['order','np','n','pl',
+var G2TOC=['order','np','cx','n','pl',
            'prs','pst','fut','plp','prg','prf','cnd','cau','imp','pas','neg','q',
            'pron','count','greet',
            'adj','adp','part','conj','polite','have','when','month','wday','st'];

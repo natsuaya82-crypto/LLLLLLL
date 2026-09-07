@@ -396,18 +396,83 @@
      has no word for is a gap and stays as the meaning, for the same reason
      lexicon.cut() leaves one: inventing the word would be worse than showing
      that it is missing, and the gap is the door to making it. */
-  function fromSemantic(model, ir){
+  /* ---- a sentence inside a sentence ---------------------------------------
+     「複文 ── 従属節（〜とき／〜ので／〜なら／〜と言う）の位置と印、関係節
+     （「私が見た山」）の位置と印、並列」 OWNER 2026-09-07.
+
+     A subordinate clause is A SENTENCE, so it is written by the same function
+     that writes a sentence -- this one, called again on the inner IR. That is
+     why it is recursion and not a second writer: a clause obeys this
+     language's word order, its case marks and its verb endings exactly as the
+     main clause does, and a writer of its own would be a second answer to all
+     three.
+
+     `depth` is the one thing recursion needs and the IR cannot promise: an IR
+     that carries itself, or two that carry each other, would otherwise be a
+     phone that stops. Past the limit the clause is written as its own marker
+     and nothing else, which is a short sentence rather than a wrong one. */
+  var CLAUSE_DEEP=8;
+  /* Where the clause and its mark stand, and both are one answer for the
+     whole language, heard in every sentence that uses them -- which is the
+     test this app has always applied to giving something a button. */
+  function clauseMark(model, marker, gaps){
+    var found;
+    if(marker===undefined||marker===null||String(marker)==='') return '';
+    found=lexFind(model, marker);
+    if(found.length) return String(found[0].lemma||'');
+    gaps.push(String(marker));
+    return String(marker);
+  }
+  /* One clause, with its mark on the side this language puts it. An empty
+     mark is a language that marks it with nothing, which is a real answer and
+     not a gap -- Japanese writes 私が見た山 with no word between them. */
+  function clauseText(model, rel, gaps, depth, side){
+    var inner=fromSemantic(model, (rel&&rel.ir)||null, depth+1), mk, parts=[];
+    for(var i=0;i<inner.gaps.length;i++) gaps.push(inner.gaps[i]);
+    mk=clauseMark(model, rel&&rel.marker, gaps);
+    if(mk && positionOf(model, side)==='before') parts.push(mk);
+    if(inner.text) parts.push(inner.text);
+    if(mk && positionOf(model, side)!=='before') parts.push(mk);
+    return parts.join(' ');
+  }
+  /* Every clause hanging off this sentence, in the order they were written.
+     `relations` has been on semanticIR() since Phase 1 with nothing reading
+     it; this is what it is for. */
+  function clausesOf(model, ir, gaps, depth){
+    var rels=(ir&&ir.relations)||[], out=[], i, r;
+    for(i=0;i<rels.length;i++){ r=rels[i];
+      if(!r || !r.ir) continue;
+      out.push(clauseText(model, r, gaps, depth, 'CLAUSEMARK'));
+    }
+    return out;
+  }
+  function fromSemantic(model, ir, depth){
     var order=(model&&model.wordOrder&&model.wordOrder.length)?model.wordOrder:['SUBJECT','OBJECT','VERB'],
         roles=(ir&&ir.roles)||{}, features=(ir&&ir.features)||{},
-        seen={}, queue=[], out=[], gaps=[], i, k, role, slot;
+        seen={}, queue=[], out=[], gaps=[], subs=[], main, i, k, role, slot;
+    depth=Math.max(0, parseInt(depth,10)||0);
     /* the order this language puts roles in, then anything it has no place for */
     for(i=0;i<order.length;i++){ slot=(order[i]==='VERB')?'PREDICATE':order[i]; if(!seen[slot]){ seen[slot]=true; queue.push(slot); } }
     for(k in roles) if(Object.prototype.hasOwnProperty.call(roles,k)&&!seen[k]){ seen[k]=true; queue.push(k); }
     for(i=0;i<queue.length;i++){ role=queue[i];
       if(!Object.prototype.hasOwnProperty.call(roles,role)) continue;
-      out.push(pieceFor(model, role, roles[role], features, gaps));
+      out.push(pieceFor(model, role, roles[role], features, gaps, depth));
     }
-    return {ok:true, text:surfaces(out).join(' '), pieces:out, gaps:gaps, complete:gaps.length===0};
+    main=surfaces(out).join(' ');
+    if(depth<CLAUSE_DEEP) subs=clausesOf(model, ir, gaps, depth);
+    return {ok:true, text:cxJoin(model, main, subs), pieces:out, gaps:gaps,
+            clauses:subs, complete:gaps.length===0};
+  }
+  /* The main clause and what hangs off it, on the side this language says.
+     Nothing said is the main clause alone, which is what every sentence
+     written before this chapter existed is. */
+  function cxJoin(model, main, subs){
+    var parts=[], i;
+    if(!subs.length) return main;
+    if(positionOf(model,'CLAUSE')==='before'){ for(i=0;i<subs.length;i++) parts.push(subs[i]); }
+    if(main) parts.push(main);
+    if(positionOf(model,'CLAUSE')!=='before'){ for(i=0;i<subs.length;i++) parts.push(subs[i]); }
+    return parts.join(' ');
   }
 
   /* ---- a role that is a NOUN PHRASE ---------------------------------------
@@ -431,11 +496,26 @@
      list is what somebody meant. A meaning this language has no word for is a
      gap here exactly as it is for a head -- it stays as the meaning, and the
      gap is the door to making that word. */
-  function modWords(model, v, gaps){
+  function modWords(model, v, gaps, depth){
     var out=[], list, i, found;
+    /* HOW DEEP IN is read here as well as passed in, and that is not belt and
+       braces: a caller that forgot the argument made `depth < CLAUSE_DEEP`
+       compare undefined, which is false, and every relative clause was
+       dropped in silence. A missing depth is the top of the sentence. */
+    depth=Math.max(0, parseInt(depth,10)||0);
     if(v===undefined || v===null) return out;
     list=Array.isArray(v)? v : [v];
     for(i=0;i<list.length;i++){
+      /* A RELATIVE CLAUSE IS A SENTENCE hanging on a noun -- 「私が見た山」 --
+         so a modifier that carries an `ir` is written by the same writer the
+         main clause is, with its own mark on the side this language puts it.
+         Where the clause stands relative to the NOUN is not decided here: it
+         is the REL card on the noun-phrase board, which is the one place that
+         answers it. */
+      if(list[i] && typeof list[i]==='object' && list[i].ir){
+        if(depth<CLAUSE_DEEP) out.push(clauseText(model, list[i], gaps, depth, 'RELATIVE'));
+        continue;
+      }
       found=lexFind(model, list[i]);
       if(found.length) out.push(String(found[0].lemma||''));
       else { gaps.push(String(list[i])); out.push(String(list[i])); }
@@ -447,35 +527,35 @@
      adjective on the side its own chapter gives, everything else after the
      noun -- so a chapter nobody has filled in leaves that part OUT of the
      ordering rather than out of the sentence. */
-  function npWrite(model, value, headSurface, gaps){
+  function npWrite(model, value, headSurface, gaps, depth){
     var order=npOrderOf(model), mods=(isPhrase(value) && value.mods)||{},
         out=[], said={}, i, part;
     if(order.length){
       for(i=0;i<order.length;i++){ part=order[i]; said[part]=1;
         if(part==='NOUN') out.push(headSurface);
-        else out=out.concat(modWords(model, mods[part], gaps));
+        else out=out.concat(modWords(model, mods[part], gaps, depth));
       }
       if(!said.NOUN) out.push(headSurface);
-      for(i=0;i<NP_PARTS.length;i++) if(!said[NP_PARTS[i]]) out=out.concat(modWords(model, mods[NP_PARTS[i]], gaps));
+      for(i=0;i<NP_PARTS.length;i++) if(!said[NP_PARTS[i]]) out=out.concat(modWords(model, mods[NP_PARTS[i]], gaps, depth));
       return out;
     }
-    out=(positionOf(model,'ADJECTIVE')==='before')? modWords(model, mods.ADJECTIVE, gaps) : [];
+    out=(positionOf(model,'ADJECTIVE')==='before')? modWords(model, mods.ADJECTIVE, gaps, depth) : [];
     out.push(headSurface);
-    if(positionOf(model,'ADJECTIVE')!=='before') out=out.concat(modWords(model, mods.ADJECTIVE, gaps));
-    for(i=0;i<NP_PARTS.length;i++) if(NP_PARTS[i]!=='ADJECTIVE') out=out.concat(modWords(model, mods[NP_PARTS[i]], gaps));
+    if(positionOf(model,'ADJECTIVE')!=='before') out=out.concat(modWords(model, mods.ADJECTIVE, gaps, depth));
+    for(i=0;i<NP_PARTS.length;i++) if(NP_PARTS[i]!=='ADJECTIVE') out=out.concat(modWords(model, mods[NP_PARTS[i]], gaps, depth));
     return out;
   }
 
   /* One role of an IR, as this language writes it. The verb takes the
      sentence's features; a nominal takes this language's mark for its role,
      when this language has one, and whatever its own phrase carries. */
-  function pieceFor(model, role, value, features, gaps){
+  function pieceFor(model, role, value, features, gaps, depth){
     var meaning=isPhrase(value)? value.head : value,
         own=(isPhrase(value) && value.features)||{},
         found=lexFind(model, meaning), word, made, cv, marked, k;
     if(!found.length){
       gaps.push(String(meaning));
-      return {role:role, surface:npWrite(model, value, String(meaning), gaps).join(' '), word:null, gap:true};
+      return {role:role, surface:npWrite(model, value, String(meaning), gaps, depth).join(' '), word:null, gap:true};
     }
     word=found[0];
     if(role==='PREDICATE'){ made=api.morphology.inflect(model, word, features); return {role:role, surface:made.surface, word:word, gap:false}; }
@@ -484,7 +564,7 @@
     cv=caseFor(model, role);
     if(cv!==null) marked.CASE=cv;
     made=api.morphology.inflect(model, word, marked);
-    return {role:role, surface:npWrite(model, value, made.surface, gaps).join(' '), word:word, gap:false};
+    return {role:role, surface:npWrite(model, value, made.surface, gaps, depth).join(' '), word:word, gap:false};
   }
 
   function surfaces(pieces){ var out=[], i; for(i=0;i<pieces.length;i++) out.push(pieces[i].surface); return out; }

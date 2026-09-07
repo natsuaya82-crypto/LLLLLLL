@@ -828,11 +828,87 @@ assert.equal(npRead(['NUM','ADJ','N']),'mi futa aka yama miru');
    number follows the sentence, exactly as it did before this board existed */
 assert.equal(npRead(null),'mi yama aka miru futa');
 
+/* ---- A3 複文 ── a sentence inside a sentence -------------------------------
+   「複文 ── 従属節（〜とき／〜ので／〜なら／〜と言う）の位置と印、関係節
+   （「私が見た山」）の位置と印、並列（と／か／しかし）」 OWNER 2026-09-07.
+
+   A clause is A SENTENCE, so the same writer writes it: this is recursion and
+   not a second writer, and the assertions below are about exactly that -- the
+   inner clause obeys this language's word order, its marks and its endings,
+   because it went through the same function. */
+function withPos(model, target, side){
+  model.grammarRules.push(e.grammarRule({type:'syntax',target:target,feature:'POSITION',value:side}));
+  return model;
+}
+const CXW=[['mi','I','PRONOUN'],['yama','mountain','NOUN'],['miru','see','VERB'],
+           ['iku','go','VERB'],['node','because','CONJUNCTION'],['ga','that','CONJUNCTION']];
+const INNER=e.semanticIR({roles:{SUBJECT:'I',OBJECT:'mountain',PREDICATE:'see'}});
+const CXIR=e.semanticIR({roles:{SUBJECT:'I',PREDICATE:'go'},
+  relations:[{type:'SUBORDINATE', marker:'because', ir:INNER}]});
+/* the inner sentence after the main one, its mark opening it: 'mi iku node mi yama miru' */
+let cx=lang('CX','SOV',CXW);
+withPos(cx,'CLAUSE','after'); withPos(cx,'CLAUSEMARK','before');
+assert.equal(e.translate.fromSemantic(cx,CXIR).text,'mi iku node mi yama miru');
+/* the other way round on both counts, which is Japanese: the inner sentence
+   first, and its mark at the end of it */
+cx=lang('CX2','SOV',CXW);
+withPos(cx,'CLAUSE','before'); withPos(cx,'CLAUSEMARK','after');
+assert.equal(e.translate.fromSemantic(cx,CXIR).text,'mi yama miru node mi iku');
+/* THE INNER SENTENCE OBEYS THIS LANGUAGE'S WORD ORDER, which is the whole
+   reason it is written by the same writer. SVO moves the verb in BOTH. */
+cx=lang('CX3','SVO',CXW);
+withPos(cx,'CLAUSE','after'); withPos(cx,'CLAUSEMARK','before');
+assert.equal(e.translate.fromSemantic(cx,CXIR).text,'mi iku node mi miru yama');
+/* A LANGUAGE THAT MARKS IT WITH NOTHING. An empty marker is a real answer and
+   not a gap -- 私が見た山 has no word between them -- so the clause is written
+   and nothing is reported missing. */
+cx=lang('CX4','SOV',CXW);
+withPos(cx,'CLAUSE','before');
+const cxBare=e.translate.fromSemantic(cx,e.semanticIR({roles:{SUBJECT:'I',PREDICATE:'go'},
+  relations:[{type:'SUBORDINATE', ir:INNER}]}));
+assert.equal(cxBare.text,'mi yama miru mi iku');
+assert.equal(cxBare.complete,true);
+/* THE CHAPTER LEFT EMPTY. No relation on the IR is the main sentence alone,
+   which is every sentence written before this chapter existed. */
+assert.equal(e.translate.fromSemantic(lang('CX5','SOV',CXW),
+  e.semanticIR({roles:{SUBJECT:'I',PREDICATE:'go'}})).text,'mi iku');
+/* a mark this language has no word for is a gap, and the clause still stands */
+const cxGap=e.translate.fromSemantic(lang('CX6','SOV',CXW),
+  e.semanticIR({roles:{SUBJECT:'I',PREDICATE:'go'},
+                relations:[{type:'SUBORDINATE', marker:'although', ir:INNER}]}));
+assert.equal(cxGap.complete,false);
+assert.equal(cxGap.gaps.join('|'),'although');
+
+/* A RELATIVE CLAUSE HANGS ON A NOUN, and where it stands against that noun is
+   the REL card on the noun-phrase board -- not a second answer here. The mark
+   inside it is this chapter's. 「私が見た山」 is REL before N. */
+const REL={marker:'that', ir:e.semanticIR({roles:{SUBJECT:'I',PREDICATE:'see'}})};
+let rel=withNp(lang('RL','SOV',CXW),['REL','N']);
+withPos(rel,'RELATIVE','after');
+assert.equal(e.translate.fromSemantic(rel,e.semanticIR({roles:{
+  SUBJECT:'I', OBJECT:{head:'mountain', mods:{RELATIVE:REL}}, PREDICATE:'see'}})).text,
+  'mi mi miru ga yama miru');
+/* and a language that puts it after the noun with the mark opening it */
+rel=withNp(lang('RL2','SOV',CXW),['N','REL']);
+withPos(rel,'RELATIVE','before');
+assert.equal(e.translate.fromSemantic(rel,e.semanticIR({roles:{
+  SUBJECT:'I', OBJECT:{head:'mountain', mods:{RELATIVE:REL}}, PREDICATE:'see'}})).text,
+  'mi yama ga mi miru miru');
+/* AN IR THAT CARRIES ITSELF is a phone that stops, and it must not be. The
+   depth limit answers with a short sentence rather than a wrong one. */
+const loop=e.semanticIR({roles:{SUBJECT:'I',PREDICATE:'go'}});
+loop.relations=[{type:'SUBORDINATE', marker:'because', ir:loop}];
+const looped=e.translate.fromSemantic(lang('CX7','SOV',CXW),loop);
+assert.equal(looped.ok,true);
+assert.ok(looped.text.length<4000,'an IR that carries itself was written out without end');
+
 console.log('Grammar Engine: derivation applies, a case MARK carries a role, the ' +
             'Semantic IR goes both ways and back, the Phase 1-2 contract is clean, ' +
             'a rule may change the stem and may be for some words only, ' +
             'the line a meaning makes is held, a line of this language is ' +
             "said in the reader's own words and the reader's own order, " +
-            'and a role of an IR may be a NOUN PHRASE, written in the order ' +
+            'a role of an IR may be a NOUN PHRASE, written in the order ' +
             'the noun-phrase board says (and in the order every other chapter ' +
-            'already said, where that board is empty)');
+            'already said, where that board is empty), and a SENTENCE INSIDE A ' +
+            "SENTENCE is written by the same writer, so it obeys this language's " +
+            'own order, with its mark where this language puts one');

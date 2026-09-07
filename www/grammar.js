@@ -136,7 +136,17 @@ function setNpOrder(v){ STG.np=npKeep(v); stMarkSet('np'); render(); }
    and nothing else does. None of them asks whether the language marks
    something, and none asks you to invent a piece of sound: the word already
    exists, made in the stage that needed it. */
-var GPOS_DEF={adj:'after', negp:'after', adp:'after'};
+/* And three more of them, which are the 複文 chapter's: where a subordinate
+   clause stands against the main one, where the mark of such a clause stands
+   inside it, and where the mark of a relative clause stands inside that.
+
+   A MARK OPENS ITS CLAUSE until somebody says otherwise, and that is not a
+   guess about anybody's language: all ten of the interface languages do it,
+   and it is what stands where nobody has answered -- stTouched() is the
+   question "was this chosen" and always was. Where the clause itself stands is
+   left at the same 'after' the three above take. */
+var GPOS_DEF={adj:'after', negp:'after', adp:'after',
+              cx:'after', cxm:'before', relm:'before'};
 /* The language's, beside the word order and for the same reason. Reading one
    does not write it: the old pair put the default into the person's settings
    the first time a stage was drawn, so a value existed for three decisions
@@ -151,7 +161,11 @@ function setGPos(id, v){
 }
 /* Which side, and of what. "Before" on its own is not a label: before the
    noun and before the verb are different facts. */
-var GPOS_OF={adj:'n', negp:'v', adp:'n'};
+/* Which side, and of what. "Before" on its own is not a label, and the three
+   clause decisions are two different "of": a subordinate clause stands before
+   or after THE MAIN SENTENCE, and a mark stands before or after THE CLAUSE it
+   belongs to. */
+var GPOS_OF={adj:'n', negp:'v', adp:'n', cx:'main', cxm:'cl', relm:'cl'};
 function gPosLab(id, o){ return t('gram.pos.'+o+'.'+(GPOS_OF[id]||'n')); }
 
 /* ---- reading the words the stages made --------------------------------- */
@@ -204,6 +218,12 @@ function gRules(){
   out.push(gRule('ADJECTIVE',  'POSITION', gPos('adj')));
   out.push(gRule('NEGATION',   'POSITION', gPos('negp')));
   out.push(gRule('ADPOSITION', 'POSITION', gPos('adp')));
+  /* 複文. The clause against the sentence, and each of the two marks inside
+     its own clause. Three answers, each heard in every sentence that uses it,
+     which is the test this app applies to giving something a button. */
+  out.push(gRule('CLAUSE',     'POSITION', gPos('cx')));
+  out.push(gRule('CLAUSEMARK', 'POSITION', gPos('cxm')));
+  out.push(gRule('RELATIVE',   'POSITION', gPos('relm')));
   w=gSlot('neg','not');
   if(w) out.push(gRule('NEGATION','WORD', e.adapter.idOf(w)));
   ws=gSlotAll('where');
@@ -1051,6 +1071,43 @@ function g2Adj(){
   return g2Side('adj', gWordOf('adj'), gWordOf('n'));
 }
 
+/* A HEADING OVER A DECISION, and it is the same `.sec` every chapter of this
+   page already puts over its words and its table. A chapter that takes three
+   answers has to say which of the three each row is; that is a label, not an
+   explanation, and it is written once here rather than three times below. */
+function g2Sec(k){ return '<div class="sec">'+esc(t(k))+'</div>'; }
+/* §複文. 「従属節（〜とき／〜ので／〜なら／〜と言う）の位置と印、関係節
+   （「私が見た山」）の位置と印、並列（と／か／しかし）」 OWNER 2026-09-07.
+
+   Three answers and no words. That is deliberate on both counts.
+
+   THE WORDS ARE THE 接続詞 CHAPTER'S. 「印の語は章の語の欄（接続詞の章と一本化：
+   二つの場所に同じ語を置かない）」 -- so 〜ので and 〜なら and 〜と are made
+   where every other conjunction of this language is made, and the word for a
+   relative clause is one more slot on that same stage. Drawing them here as
+   well would be one list saying 接続詞 twice, which is what took seven stages
+   off this page on 2026-09-06.
+
+   AND THE POSITION OF A RELATIVE CLAUSE IS NOT HERE EITHER. It is the REL card
+   on the noun-phrase board, because that is where a language says what stands
+   in front of its nouns. What is left for this chapter is the MARK.
+
+   IT IS A PAIR OF LABELLED BUTTONS AND NOT A PAIR OF WORDS. The 形容詞 and 場所
+   chapters replaced their buttons with the two words themselves -- 「単に
+   before / after だけにしない」 -- because there were two words of this
+   language to move. A clause is not a word: there is nothing to pick up, so
+   the honest shape is the two answers, named.
+
+   並列 -- と / か / しかし -- has nothing to decide. A word that joins two
+   things stands between them in every language anybody has written down, and
+   the words themselves are the 接続詞 chapter's. The lines that show it are
+   this chapter's 例文, which is what every chapter of this page ends with. */
+function g2Cx(){
+  return g2Sec('g2.cx.sub')+g2SidePick('cx')+
+         g2Sec('g2.cx.mark')+g2SidePick('cxm')+
+         g2Sec('g2.cx.rel')+g2SidePick('relm');
+}
+
 /* §14 Adpositions / Location. 「現在の adp の位置設定だけではなく、場所を
    どう表現するかを定義できるようにする」
 
@@ -1420,6 +1477,7 @@ function g2Chaps(){
      `}` and reads as unused. Eight of them did. */
   var out=[{id:'order', body:g2Board, nm:t('stg.order.t')},
            {id:'np',    body:g2Board, nm:t('g2.np.t')},
+           {id:'cx',    body:g2Cx,    nm:t('g2.cx.t')},
            {id:'n',     body:g2Nouns, nm:posLabel('n'), pos:'n'}], i, a;
   /* The forms, one chapter each, from the one list. A chapter is drawn by
      g2FmChap() and knows its own form and its own part of speech, so nothing
@@ -1481,6 +1539,9 @@ function g2Said(c){
   if(c.id==='order' || c.id==='np') return stTouched(c.id);
   if(c.id==='n'){ p=stBy('part'); return !!p && !!stSlotsDone(p); }
   if(c.id==='adj' || c.id==='adp') return stTouched(c.id);
+  /* Three decisions in one chapter, so any one of them is the chapter having
+     been written in. */
+  if(c.id==='cx') return stTouched('cx') || stTouched('cxm') || stTouched('relm');
   /* この言語について counts what this language has and is never empty. */
   return true;
 }
