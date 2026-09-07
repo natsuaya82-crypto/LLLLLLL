@@ -390,7 +390,6 @@ defLang('de', (function(){
       'wld.public.d' : "Andere können deine Sprachseite öffnen und lesen.",
       'wld.dl'       : "Herunterladen erlauben",
       'wld.dl.d'     : "Wer deine Sprachseite öffnen kann, darf deine Zeichen und Wörter herunterladen und in der eigenen Sprache verwenden.",
-      'wld.hidden'            : "Privat",
       'wld.secs'              : "Abschnitte",
       'wld.ov.v.ph'              : "Was dasteht",
       'wld.ov.del'              : "Diesen Eintrag entfernen",

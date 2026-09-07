@@ -581,7 +581,6 @@ defLang('ko', (function(){
       'wld.public.d' : "다른 사람이 당신의 언어 페이지를 열어 읽을 수 있습니다.",
       'wld.dl'       : "내려받기 허용",
       'wld.dl.d'     : "당신의 언어 페이지를 열 수 있는 사람이 문자와 단어를 내려받아 자기 언어에 쓸 수 있습니다.",
-      'wld.hidden'            : "비공개",
       'wld.secs'              : "섹션",
       'wld.ov.v.ph'              : "내용",
       'wld.ov.del'              : "이 항목 지우기",

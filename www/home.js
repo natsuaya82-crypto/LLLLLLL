@@ -1108,34 +1108,6 @@ function wldSecSet(r, k, v){
   saveWld(); render();
 }
 function setWldSecDl(r, v){ wldSecSet(r, 'dl', v); }
-/* The row on the profile, in place of the small tag that used to sit beside
-   the handle. 「linguaパッチの代わり。Lingua > みたいになってて」 */
-function wldRow(){
-  /* A LANGUAGE WITH NO NAME YET STILL HAS A ROW, and it says so.
-     「未設定って出てくればいいよ。プロフィールにね。」OWNER 2026-09-02.
-     It returned nothing at all, so a language nobody had named had no row on
-     the profile and therefore no way in to its article from here -- and the
-     article was the one screen that would have let them name it. */
-  var lnm=langNameSaid(langName);
-  /* PRIVATE IS A STATE OF THE PAGE AND NOT A LOCK ON ITS OWNER.
-     「ホームの自分の言語の wiki ページを非公開にすると開けなくなり、編集も
-     再公開もできない」 OWNER 2026-09-06, on a phone.
-
-     It stopped being a button while it was private -- 「そもそも非公開なら
-     プロフィールから飛べないんだって」 OWNER 2026-08-25 -- and that was true
-     of the door somebody ELSE comes through. This row is on your own profile,
-     the page behind it is yours, and it was the only way to it: the switch
-     that put it there is on that page, and the one that used to stand beside
-     it in the settings went on 2026-08-26. So a language turned private was
-     a language nobody could open, edit, or make public again.
-
-     The row is a button. What private means here is the word beside the name,
-     which is the row saying which state it is in rather than a shut door. */
-  return '<button class="wldrow"' + DO('go', ["about"]) + '>'+
-    '<span class="wldnm">'+esc(lnm)+'</span>'+
-    (wldHidden()? '<span class="wldoff">'+esc(t('wld.hidden'))+'</span>' : '')+
-    ICON_GO+'</button>';
-}
 /* ---- a section of the article opens and shuts -------------------------
    「概要　▽ / 話してる場所 / 〇〇 みたいにして欲しい」 OWNER 2026-08-25, over a
    screenshot of ja.wikipedia.org, where every section of a mobile article is
