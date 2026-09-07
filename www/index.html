@@ -3827,6 +3827,28 @@ textarea.ntbody.grow{min-height:0;height:auto;overflow:hidden;resize:none}
 .secnm{min-height:44px;min-width:44px;margin:-10px 0;padding:0;
    background:none;border:0;font:inherit;color:inherit;text-align:left}
 .secnm:active{color:var(--gold)}
+/* ---- r6-post ----------------------------------------------------------
+   縦書きの欄で、ローマ字が一字ずつ縦に積まれていた（OWNER 実機 142、写真つき）。
+   ここより上には触っていない。
+
+   欄が着る `.dir-ttb-rl` / `.dir-ttb-lr` は `text-orientation:upright` を
+   宣言している。それは一文字ずつ立てるという意味で、日本語には正しく、
+   ローマ字には「a / l / i / n / e」と縦に積むことになる。英語のUIでは
+   placeholder がそれで、二列目に折れて切れていた。
+
+   測った（390x844、字は 1.2rem、列の高さ 444）:
+     upright   "a line in your language"  幅 58px = 2列 ／ 「あなたの言語で一行」 29px = 1列
+     mixed     "a line in your language"  幅 29px = 1列 ／ 「あなたの言語で一行」 29px = 1列
+
+   `sideways` は日本語も横に倒すので採らない ── 「日本語は今のまま縦」。
+   `mixed` はローマ字だけを横に倒し、日本語は立てたままにする指定で、
+   オーナーの言った二つを一つの指定が両方満たす。
+
+   欄だけ。人の投稿の行（`.pline`）は触っていない ── そこは書いた人の言語の
+   ことで、報告は欄のことだった。新規と返信は同じ `pwHTML()` が描くので、
+   この一箇所が両方に届く。 */
+.lnin.dir-ttb-rl,
+.lnin.dir-ttb-lr{-webkit-text-orientation:mixed;text-orientation:mixed}
 </style>
 </head>
 <body>

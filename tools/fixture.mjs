@@ -1572,6 +1572,17 @@ export function halfDone(){
         openPost(); const h = vForm();
         PW = pwBlank();
         SCRIPT.dir = wasDir; SET.plan = wasPlan; return h; }],
+    /* AND THE SAME COLUMN WHILE ANSWERING SOMEBODY. 返信は新規と同じ
+       `pwHTML()` が描き、上に相手の投稿が乗るだけ ── 二つの機構は無い。
+       その「同じ」を撮れる状態がどこにも無かった：縦書きの面は新規だけ、
+       返信の面は横書きだけで、二つが交わる所を歩いたものが無い。
+       OWNER 実機 142 の二つ目はここのことなので、ここに置く。 */
+    ['a column written while replying to somebody', () => {
+        const wasPlan = SET.plan, wasDir = SCRIPT.dir;
+        SET.plan = 'pro'; SCRIPT.dir = 'ttb-rl';
+        PW = pwBlank(); PW.to = 'p1'; openPost('reply');
+        const h = vForm(); PW = pwBlank();
+        SCRIPT.dir = wasDir; SET.plan = wasPlan; return h; }],
     /* And the same line in a timeline, where the direction is the post's own
        and not the reader's: a post says which way it was written and carries
        it, because rule 8 is that what somebody wrote is shown the way they
