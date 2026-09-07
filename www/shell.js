@@ -1636,10 +1636,28 @@ function vvFit(){
      its top is 296 up from the foot of the page. Remembering the number with
      the scroll already taken out of it would have frozen the row 40 clear of
      the keyboard for as long as iOS held the page up. */
+  /* THE LIVE HEIGHT WHERE THERE IS ONE, and the remembered one only for the
+     moment before there is. 「道具の行だけはキーボードの直上に live で追随」
+     OWNER 2026-09-06 through the leader.
+
+     It was the remembered one for the whole of the time a field had focus,
+     and the remembered one is the DEEPEST this launch -- so a phone has two
+     keyboards and the row was placed against the taller of them. Measured,
+     390x844, one focus session: roman 336 puts the row at 455..508 and the
+     keyboard's top edge is 508, right; the Japanese keyboard 380 puts it at
+     411..464 against 464, right; going back to roman leaves it at 411..464
+     against 508 -- 44px of nothing under it, for the rest of the session.
+
+     `kb` is 0 both when there is no keyboard and while one is on its way up,
+     which is the whole reason the memory exists: on the frame a field is
+     focused there is nothing to read, and a row at 0 would sit under the
+     keyboard and then leap. So the memory answers exactly that window and
+     nothing else, and the moment iOS says a number the row follows it. */
   var off=(v? v.offsetTop : 0);
   var kb=Math.max(0, window.innerHeight - h);
   if(kb>vvKbMax){ vvKbMax=kb; vvKeep(); }
-  d.setProperty('--vvkb', Math.max(0,(vvTyping()? vvKbMax : kb) - off)+'px');
+  d.setProperty('--vvkb',
+    Math.max(0,(kb>0? kb : (vvTyping()? vvKbMax : 0)) - off)+'px');
   d.setProperty('--tabgap', up? '10px' : 'calc(var(--tabh) + 10px)');
 }
 /* Written when the number GROWS and not on every event: this runs on every
