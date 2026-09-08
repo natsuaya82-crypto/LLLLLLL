@@ -3827,6 +3827,49 @@ textarea.ntbody.grow{min-height:0;height:auto;overflow:hidden;resize:none}
 .secnm{min-height:44px;min-width:44px;margin:-10px 0;padding:0;
    background:none;border:0;font:inherit;color:inherit;text-align:left}
 .secnm:active{color:var(--gold)}
+/* ---- r6-post ----------------------------------------------------------
+   縦書きの欄で、ローマ字が一字ずつ縦に積まれていた（OWNER 実機 142、写真つき）。
+   ここより上には触っていない。
+
+   欄が着る `.dir-ttb-rl` / `.dir-ttb-lr` は `text-orientation:upright` を
+   宣言している。それは一文字ずつ立てるという意味で、日本語には正しく、
+   ローマ字には「a / l / i / n / e」と縦に積むことになる。英語のUIでは
+   placeholder がそれで、二列目に折れて切れていた。
+
+   測った（390x844、字は 1.2rem、列の高さ 444）:
+     upright   "a line in your language"  幅 58px = 2列 ／ 「あなたの言語で一行」 29px = 1列
+     mixed     "a line in your language"  幅 29px = 1列 ／ 「あなたの言語で一行」 29px = 1列
+
+   `sideways` は日本語も横に倒すので採らない ── 「日本語は今のまま縦」。
+   `mixed` はローマ字だけを横に倒し、日本語は立てたままにする指定で、
+   オーナーの言った二つを一つの指定が両方満たす。
+
+   欄だけ。人の投稿の行（`.pline`）は触っていない ── そこは書いた人の言語の
+   ことで、報告は欄のことだった。新規と返信は同じ `pwHTML()` が描くので、
+   この一箇所が両方に届く。 */
+.lnin.dir-ttb-rl,
+.lnin.dir-ttb-lr{-webkit-text-orientation:mixed;text-orientation:mixed}
+/* 「@aya への返信」の @aya は押せる（OWNER 2026-09-07）。着るのは `.ptag`
+   ── 本文中のタグと同じ、青い字だけの形で、角丸も枠線も無い。
+
+   `.ptag` の 44pt は上下 10px の padding と、それを相殺する -10px の margin で
+   取ってあり、そこに書いてある通り「文字が 24 ある」ことを当てにしている。
+   この行の字は `.pto` の .84rem なので行は 23 で、10+23+10 = 43 ── 測った：
+   38x43、1px 足りない。同じ規則をこの字の大きさで書き直すだけで、新しい規則
+   ではない：11+23+11 = 45、margin が同じ 11 を戻すので `.pto` の高さは 23 の
+   まま動かない（文は押し広げない ── 「タグは本文中に。」と同じ理由）。
+
+   横は `min-width` で取る。`.ptag` は `display:inline` で、それは本文の行末に
+   来たタグが折り返すためにわざとそうしてある（`.ptag` にその話が書いてある）
+   ── `inline` に `min-width` は効かない。この行は `white-space:nowrap` の
+   一行のラベルで、折り返す先が無いので `inline-block` にしても失うものが無い。
+   字は左のまま（`.ptag` の `text-align:inherit`）で、余りは右に出る。測った：
+   44x45、行は 23 のまま。
+
+   本文の中の `@` は `#` とまったく同じ形のまま ── 同じ字の大きさ、同じ
+   `.ptag`、同じ折り返し。一方だけ広げたら、一つの文の中で同じ marks が二つの
+   形になる。 */
+.pto .ptag{display:inline-block;min-width:44px;padding:11px 0;margin:-11px 0}
 </style>
 </head>
 <body>

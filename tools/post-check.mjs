@@ -42,6 +42,15 @@
         what the line MEANS, then everything the post carries -- the
         photographs and the voice. 投稿 / 翻訳 / そのた
 
+    21  the @handle over a reply is a thing you PRESS, and it stands you on
+        that person's page. The @ in a body goes through the same one place
+
+    20  a roman line in a VERTICAL field lies on its side and runs down one
+        column -- placeholder and typed line both. Stacked a letter at a time
+        it folds into a second column, which is what OWNER 実機 142
+        photographed. And the composer answering somebody is the SAME composer
+        as the one writing a new post, element for element
+
     18  THE FACE IS DECIDED ONCE. 「最初の文字になるのはいいけど、それはオン
         ボーディングを通ってかいたもじだけで、それ以降は勝手に変えないで」
         OWNER 2026-09-05. postAvatar() walked LETTERS every call and answered
@@ -2249,6 +2258,173 @@ const R = await pg.evaluate(async () => {
     try { closeSheet(); } catch (e) {}
   }
 
+  /* ---- 20. 縦書きの欄と、返信の欄 -------------------------------------
+     OWNER 実機 142（2026-09-07、写真つき）。英語のUIで縦書きの投稿画面を
+     開くと、欄の placeholder が一字ずつ縦に積まれ、二列目に折れて切れて
+     いました。ローマ字は横に倒して一列に、日本語は立てたまま。
+
+     二つ訊きます。
+
+     一つ目は本物の欄そのものに訊きます。長いローマ字を入れた欄が、一文字
+     だけ入れた欄より広くない ── 縦書きでは幅が「列がどこまで来たか」なので、
+     広くなったならそれは折り返しです。lnFit() が実際に付けた幅を読むので、
+     どこにも計算のやり直しがありません。
+
+     二つ目は placeholder で、これは欄の中にあってDOMには無いので、欄の
+     computed style（writing-mode・text-orientation・字と行）と欄の高さを
+     そのまま借りた測り台に置いて測ります。バグはその computed style そのもの
+     だったので、訊いているのは本物です。
+
+     三つ目は返信の欄で、新規と同じ pwHTML() が描いているという主張です。
+     第二の機構が生えたらここが赤くなります ── 引用の投稿（.pwqs）は
+     `.pwscroll` の外にあるので、中身は新規と一文字も違いません。 */
+  {
+    const app = document.getElementById('app');
+    const wasPW = PW, wasPlan = SET.plan, wasDir = SCRIPT.dir;
+    const wasRoute = window.route, wasNav = NAV.slice();
+
+    /* how many columns a string takes, in the field's own style */
+    const colsOf = (f, txt) => {
+      const cs = getComputedStyle(f);
+      const one = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize);
+      const d = document.createElement('div');
+      d.style.cssText = 'position:absolute;top:0;left:0;visibility:hidden;white-space:' +
+        cs.whiteSpace + ';font:' + cs.font + ';writing-mode:' + cs.writingMode +
+        ';text-orientation:' + cs.textOrientation +
+        ';height:' + f.getBoundingClientRect().height + 'px';
+      d.textContent = txt;
+      document.body.appendChild(d);
+      const w = d.getBoundingClientRect().width;
+      d.remove();
+      return Math.max(1, Math.round(w / one));
+    };
+    const openIn = (dir, to) => {
+      SET.plan = 'pro'; SCRIPT.dir = dir;
+      PW = pwBlank(); if (to) PW.to = to;
+      try { closeSheet(); } catch (e) {}
+      openPost(to ? 'reply' : undefined);
+      render();
+      return document.getElementById('pw-ln');
+    };
+    const widthWith = (f, v) => {
+      f.value = v; PW.ln = v;
+      f.dispatchEvent(new Event('input', { bubbles: true }));
+      const g = document.getElementById('pw-ln');
+      return Math.round(g.getBoundingClientRect().width);
+    };
+
+    /* a post that is still here to answer -- 'p1' is the fixture's, and the
+       claims above delete posts, so it is asked for rather than written in */
+    const answerable = (POSTS.filter(p => !p.del && !p.hid)[0] || POSTS[0] || {}).id;
+    if (!answerable)
+      fails.push('there is no post left to answer, so nothing about the reply ' +
+                 'composer below this is a test of anything');
+
+    ['ttb-rl', 'ttb-lr'].forEach((dir) => {
+      [null, answerable].forEach((to) => {
+        const where = dir + (to ? ', replying' : '');
+        const f = openIn(dir, to);
+        if (!f) { fails.push('the composer written ' + dir + ' has no line to ' +
+                             'type into, so nothing below this is a test of anything');
+                  return; }
+        const n = colsOf(f, f.placeholder);
+        if (n !== 1)
+          fails.push('the placeholder of a column (' + where + ') takes ' + n +
+                     ' columns. A roman line in a vertical field lies on its ' +
+                     'side and runs down one column; stacked a letter at a time ' +
+                     'it folds, and the second column is what the owner ' +
+                     'photographed');
+        const one = widthWith(f, 'a');
+        const many = widthWith(document.getElementById('pw-ln'),
+                               'a line in your language');
+        if (many > one)
+          fails.push('a roman line typed into a column (' + where + ') made the ' +
+                     'field ' + many + 'px wide where one letter makes it ' + one +
+                     'px. In a vertical field the WIDTH is how far the columns ' +
+                     'have got, so wider is a second column');
+      });
+    });
+
+    /* 返信と新規は同じ一本 */
+    const shapeOf = () => {
+      const s = app.querySelector('.pwscroll');
+      if (!s) return null;
+      return Array.prototype.map.call(s.querySelectorAll('*'),
+        (e) => e.tagName + '.' + String(e.className || '')).join('|');
+    };
+    openIn('ltr', null);        const plain = shapeOf();
+    openIn('ltr', answerable);  const reply = shapeOf();
+    if (plain === null || reply === null)
+      fails.push('the composer has no .pwscroll, so nothing about the two ' +
+                 'composers being one was tested');
+    else if (plain !== reply)
+      fails.push('the composer answering somebody is built out of different ' +
+                 'elements from the composer writing a new post. There is one ' +
+                 'pwHTML() and the post being answered sits ABOVE the scroll; ' +
+                 'two shapes here is a second composer');
+    if (reply !== null && !app.querySelector('.pwqs'))
+      fails.push('the composer answering somebody does not carry the post it ' +
+                 'answers');
+
+    PW = wasPW; SET.plan = wasPlan; SCRIPT.dir = wasDir;
+    window.route = wasRoute; NAV = wasNav;
+    try { closeSheet(); } catch (e) {}
+  }
+
+  /* ---- 21. 返信の行の @ を押すと、その人のページに立つ -----------------
+     「リプライング to @〇〇 の @〇〇 をタップしたらその人のページ飛べる
+     ように」 OWNER 2026-09-07（リーダー経由）。
+
+     本物の @ を押します。ボタンの引数は画面が書いたもので、そこを読んで
+     自分で go() を呼ぶのは自分の答えを訊き返すだけになる。着いた先は
+     here() ── 画面が実際に立っている所であって、押した文字ではありません。
+
+     二つ目は本文の @ で、同じ一箇所（atHTML）を通っているという主張です。
+     ここが分かれたら、一つの文の中で同じ marks が二つの意味になります。 */
+  {
+    const app = document.getElementById('app');
+    const wasRoute = window.route, wasNav = NAV.slice();
+    const reply = POSTS.filter(p => p.to && postToWho(p))[0];
+    if (!reply)
+      fails.push('the fixture has no reply carrying a handle, so nothing ' +
+                 'below this is a test of anything');
+    else {
+      const who = postToWho(reply);
+      window.route = 'thread'; NAV = [{ r: 'feed' }, { r: 'thread', a: reply.id }];
+      render();
+      const line = app.querySelector('.pto');
+      const at = line && line.querySelector('button');
+      if (!line)
+        fails.push('a reply in a thread does not say whom it answers');
+      else if (!at)
+        fails.push('the @' + who + ' over a reply is not a thing you can ' +
+                   'press. It is where a reader asks who that is, and it was ' +
+                   'grey letters that did nothing');
+      else {
+        const r = at.getBoundingClientRect();
+        if (r.height < 44)
+          fails.push('the @ over a reply is ' + Math.round(r.width) + 'x' +
+                     Math.round(r.height) + ', under the 44pt a thumb needs');
+        at.click();
+        if (window.route !== 'profile' || String(here().a || '') !== who)
+          fails.push('pressing the @ over a reply stood you on ' +
+                     window.route + ':' + String(here().a || '') +
+                     ' and not profile:' + who);
+      }
+
+      /* 本文の @ は同じ一箇所を通る */
+      const body = tagHTML('to @' + who + ' and #tag');
+      if (body.indexOf(atHTML(who)) < 0)
+        fails.push('an @handle in what somebody WROTE is not drawn by the ' +
+                   'same atHTML() the line over a reply uses. Two roads to ' +
+                   'one mark is the same character meaning two things on one ' +
+                   'screen');
+    }
+
+    window.route = wasRoute; NAV = wasNav;
+    try { closeSheet(); } catch (e) {}
+  }
+
   return { fails, mid: (nowLight * 100).toFixed(1), corner: (wasLight * 100).toFixed(1),
            bytes: Math.round(String(out[0] || '').length / 1024),
            thumb: Math.round(small.length / 1024), full: Math.round(big.length / 1024),
@@ -2309,4 +2485,13 @@ console.log('post: a letter placed on a black photograph is IN the file that goe
             '      one naming one still opens that person.\n' +
             '      The + on somebody else\u2019s page opens with their handle in\n' +
             '      the line, your own opens empty, and neither writes over a\n' +
-            '      line somebody had already typed.');
+            '      line somebody had already typed.\n' +
+            '      A roman line in a vertical field lies on its side and runs\n' +
+            '      down ONE column -- the placeholder and the line somebody\n' +
+            '      types, written downward from the right and from the left, new\n' +
+            '      and replying. And the composer answering somebody is the same\n' +
+            '      composer as the one writing a new post, element for element,\n' +
+            '      with the post being answered above it.\n' +
+            '      The @handle over a reply is a thing you press, it is 44pt,\n' +
+            '      and it stands you on that person\u2019s page; the @ in what\n' +
+            '      somebody wrote goes through the same one place.');
