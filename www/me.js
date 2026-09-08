@@ -1141,9 +1141,10 @@ function whoMore(h){
    would be that same question answered twice, and the two would part company
    the day meHandle() changed under one of them.
 
-   www/sns.js still writes this out by hand. That file belongs to another
-   session today, so its copy is theirs to fold into this call; it is the same
-   sentence in two places until they do. */
+   AND IT IS THE ONLY COPY NOW. snsWhoRow() (www/sns.js) wrote the same span
+   out by hand and this comment said so -- that file belonged to another
+   session on the day it was written. It calls this instead, so the label's
+   place moved on both screens in one edit rather than in two. */
 /* WHERE SOMEBODY IS AND THEIR ADDRESS, in one line under what they say about
    themselves. ONE FUNCTION, because it is one row and it is on two pages --
    your own card and somebody else's -- and a row written out twice is two
@@ -1209,11 +1210,21 @@ function whoCard(h){
       /* AND THE MARK, in the slot your own card puts it in. It was on your
          own name and on nobody else's, which is the same fault postBadge()
          is about one screen over: 「相手の画面にパッチ映らない」. */
-      '<div class="pname">'+esc(postWho(p))+postBadge(p)+'</div>'+
-      /* AND WHETHER THEY FOLLOW YOU, beside the handle. whoBackTag() above
-         is the whole of it -- the question and the shape. */
-      '<div class="mehr"><span class="phandle">@'+esc(h)+'</span>'+
-        whoBackTag(h)+'</div>'+
+      /* AND WHETHER THEY FOLLOW YOU, BESIDE THE NAME. whoBackTag() above is
+         the whole of it -- the question and the shape -- and where it goes is
+         the name's row, not the handle's. 「Follows you は @ の横ではなく
+         名前の横」 OWNER 2026-09-08, 実機 143, 写真つき: on the handle line it
+         sat between @iri and the language's name and ran into both.
+
+         `.mehr` is the flex row `.pname` and `.whyou` are already written for
+         -- `.pname` is `flex:0 1 auto` with an ellipsis and `.whyou` is
+         `flex:0 0 auto`, so a long name gives way and the label stays whole.
+         Inside `.pname` it would be ellipsised away with the name. */
+      '<div class="mehr">'+
+        '<div class="pname">'+esc(postWho(p))+postBadge(p)+'</div>'+
+        whoBackTag(h)+
+      '</div>'+
+      '<div class="mehr"><span class="phandle">@'+esc(h)+'</span></div>'+
     '</div>'+
     /* FOLLOW, IN THE SLOT ON THE NAME ROW -- the same slot your own card
        puts Edit in, because it is the same thing: the one action this page

@@ -2044,18 +2044,29 @@ function snsGo(){
    Your own row has neither: you cannot follow yourself, and the chevron is
    not needed to say where your own name goes. */
 function snsWhoRow(p, full){
-  var h=String(p.hd||''), on=meFollows(h), back=full && meFollowers().indexOf(h)>=0;
+  var h=String(p.hd||''), on=meFollows(h);
   var inner='<span class="pav">'+postFace(p)+'</span>'+
     '<span class="whb">'+
-      '<span class="pname">'+esc(postWho(p))+'</span>'+
+      /* 「フォローされています」の札は**名前の行**、@ の行ではありません。
+         「Follows you は @ の横ではなく名前の横」OWNER 2026-09-08、実機 143。
+
+         札を作るのは whoBackTag()（www/me.js）**一箇所だけ**です。ここには
+         同じ span が手で書いてあり、プロフィールの札と二か所になっていた
+         ── 置き場所を動かすのに二か所直す形でした。問いも形も向こうにあり、
+         残っているのは `full` だけ: これは「この人が自分を追っているか」の
+         二つ目の答えではなく、**どの一覧の行か**です（検索の結果には自己
+         紹介も札も出さない）。 */
+      /* 一覧の行は名前・言語の名前・フォローのボタンが一本に並ぶので、
+         名前の行にはプロフィールほどの幅がありません。折り返しを許して
+         あるのはそのため ── 許さないと `.pname` が縮んで**名前が消え**、
+         札だけが残ります（測りました。「Iri」が一画になった）。
+         プロフィールの側は幅が足りるので一行のままです。 */
+      '<span class="whh" style="flex-wrap:wrap">'+
+        '<span class="pname">'+esc(postWho(p))+'</span>'+
+        (full? whoBackTag(h) : '')+
+      '</span>'+
       '<span class="whh">'+
         '<span class="phandle">@'+esc(h)+'</span>'+
-        /* 「フォローされています」の小さい札。相手が自分を追っているか
-           だけの話なので meFollowers() で答えが出る -- サーバーへの問いは
-           増えない。角丸でも枠でもない小さな字にしてある: 規則18 は
-           「新しいものに角丸・枠・塗りを付けない」で、リーダーが名指しで
-           許したのは右のボタンひとつだけ。X の見本では灰色の丸い札です。 */
-        (back? '<span class="whyou">'+esc(t('me.follows.you'))+'</span>' : '')+
       '</span>'+
       /* 一行の自己紹介。**いまは誰の分も空になります** -- `profile` に
          `bio` の列が無く（netWho() のコメントがそう書いている）、投稿も
