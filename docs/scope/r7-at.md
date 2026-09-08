@@ -33,6 +33,24 @@
 （`popAsk()`、画面中央の `.pop`）と別の形をしています。一つにします ──
 `backQHTML()`・`.bkq*` の CSS・`BACKQ`・`backStay` は削除。別のコミット。
 
+## 三つ目：#今日のお題 の札を、読む人の表示言語で
+
+「なんで英語なのに#今日のお題やねん」「#今日のお題 は #todays prompt みたいに、
+言語が変わったら誰の投稿でもそこが変わるように」OWNER 2026-09-08。
+**保存は一つの綴りのまま**（`DAY_TAG`、過去のデータを書き換えない）。**描く時**
+に読む人の言語へ。`dayTagShow()`／`dayTagStore()` の二関数一か所。別コミット。
+
+追加で触るもの：`www/sns.js`（`DAY_TAG` の周りと `tagHTML`）、`www/card.js`
+（`cardSrc`）、`tools/find-check.mjs` 13、`tools/i18n-check.mjs` の
+`DAY_TAG` の除外、`docs/FEATURE_RULES.md` の決定ログ。
+
+## 四つ目：写真 4 枚の投稿で横に送れない
+
+「フォト4枚投稿した時にフォトをスライドして次の画像にいけない」OWNER 実機 143。
+`vPhoto()` は一枚だけを描き、横に動かす仕組みが無い。帯（`.pvrail`）にする。
+別コミット。追加で触るもの：`www/sns.js` の `vPhoto`、`www/index.html` の
+`.pview`/`.pvrail` の CSS。
+
 ## 触らないと決めたこと
 
 - 投稿への返信（`PW.to`）の画面。OWNER 2026-08-28
