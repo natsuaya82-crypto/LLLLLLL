@@ -66,7 +66,6 @@ function viewReset(){
   pfTab='posts';                       /* which list the profile shows */
   snsTab='rec';                        /* and which timeline the feed shows */
   PMENU='';                            /* the ... open beside a post */
-  BACKQ=0;                             /* and the one hanging off the back arrow */
   WMENU=false;                         /* and the one on somebody's page */
   kbWob=false;                         /* and whether the keys are wobbling */
   obTour=0;                            /* how far the walk through the app has got */
@@ -264,34 +263,29 @@ function backDraftKept(){
      daySay(), so asking would be asking whether to keep words nobody wrote --
      which is how you teach somebody to press No without reading. */
   if(!pwHas(PW.ln) && !(!PW.pr && String(PW.mn||'').trim())) return false;
-  /* THREE ANSWERS IN ONE BOX. OWNER 2026-08-25「下書きに保存しますか？
-     はい　いいえ　キャンセル」and, when told window.confirm has two buttons,
-     「なんでまず作らないの？早くやれよ」.
+  /* AND IT IS ASKED IN THE ONE THING THIS APP ASKS IN.
+     「投稿の時の下書き入れる時のポップを合わせて欲しい」 OWNER 2026-09-08.
 
-     It was two window.confirm calls in a row, because three answers do not
-     fit in a box with two buttons. Two boxes for one question is the app
-     asking twice about one thing, and the second one arrives with no way to
-     tell what pressing it means until you read it.
+     It was a box of its own, drawn under the back arrow -- its own markup,
+     its own five classes, its own ✕ -- while every other question in the app
+     is popAsk() in the middle of the screen. One question asked in two
+     shapes is the app saying the same thing two ways, and the one somebody
+     meets least often is the one that looks wrong.
 
-     It is NOT a new shape. `.pmenu` is what the ... on a post already opens:
-     a list of choices, in place, hanging off the thing you pressed. Every
-     class here is that menu's own -- no corner, no border and no panel is
-     ADDED, which is what rule 18 is about, and it is not a sheet sliding up
-     over where you were either. The only new rule is `.pmq`, which is the
-     question, and it is a line of text with no box around it. */
-  BACKQ = 1; render(); window.scrollTo(0,0);
+     The ✕ went with the box and nothing replaced it: pressing the dark
+     outside the popup is what leaves a question unanswered everywhere else
+     (closeSheet -> popOff), and it is what leaves this one unanswered too.
+     Dismissing is not the No, which is the sentence popAsk() has carried
+     since 2026-09-03. */
+  popAsk(t('post.back.q'), backKeep, t('post.back.keep'),
+         t('post.back.drop'), backDrop);
   return true;
 }
-/* Whether the back arrow has asked. It is where you are STANDING rather than
-   anything the language owns, so viewReset() forgets it -- arriving on another
-   screen with a question still hanging off the arrow would be a question about
-   a post that is no longer in front of you. */
-var BACKQ=0;
-/* The three answers. What each one DOES is what the two confirms did; only
-   the asking changed. */
+/* The two answers. What each one DOES has not changed since the day it was
+   two window.confirm calls; only the asking has. There is no third: leaving
+   the question unanswered is the scrim, and popOff() is what that reaches. */
 function backKeep(){ backAnswer(true); }
 function backDrop(){ backAnswer(false); }
-function backStay(){ BACKQ = 0; render(); }
 function backAnswer(keep){
   /* Where back was going, taken before draftKeep() runs: it ends by going to
      the feed, which is what the Save-a-draft button does. Back is not that
@@ -300,35 +294,9 @@ function backAnswer(keep){
      still in the composer is the same post in two places, and one that was
      not kept was not kept. 「残ってほしくない」 */
   var to=NAV.slice(0, NAV.length-1);
-  BACKQ = 0;
   if(keep) draftKeep(); else PW=pwBlank();
   NAV=to.length? to : [{r:'profile'}];
   route=here().r; render(); window.scrollTo(0,0);
-}
-/* The box itself, drawn under the back arrow it is about.
-
-   TWO answers and a way out, not three answers. OWNER 2026-08-25:
-   「下書きとして保存しますか？／保存する　破棄する／ポップ自体に❌つければ
-   いいんじゃない？」-- and before that, of the three-row version:
-   「何そのゴミ見みたいなボタン」.
-
-   The third row was the problem. "Cancel" is not a third thing to DO with the
-   post; it is not doing any of them, and putting it in the list made three
-   rows that read as three equal choices when two of them act on the draft and
-   one does not. The ✕ says the same thing in the place every ✕ already says
-   it, and the two rows left are the two answers. */
-function backQHTML(){
-  return '<span class="bkq">'+
-    '<span class="bkqq">'+esc(t('post.back.q'))+'</span>'+
-    '<span class="bkqr">'+
-      '<button class="bkqb keep"' + DO('backKeep') + '>'+
-        esc(t('post.back.keep'))+'</button>'+
-      '<button class="bkqb drop"' + DO('backDrop') + '>'+
-        esc(t('post.back.drop'))+'</button>'+
-      '</span>'+
-    '<button class="bkqx"' + DO('backStay') +
-      ' aria-label="'+esc(t('post.back.stay'))+'">'+ICON_CROSS+'</button>'+
-    '</span>';
 }
 /* ---- what has been TYPED and not saved yet -----------------------------
    OWNER DECISION 2026-09-03:
@@ -734,7 +702,6 @@ function backGo(){
   route=here().r; render(); window.scrollTo(0,0);
 }
 function back(){
-  if(BACKQ){ BACKQ = 0; render(); return; }
   if(backDraftKept()) return;
   if(keepAsked()) return;
   backGo();
@@ -1086,10 +1053,7 @@ function navTop(count, right){
        buffer has no fields and gets nothing. */
     (right||'')+
     keepBtnHTML()+
-    '</div>'+
-    /* Under the bar and across the page, not hanging off the arrow. It is
-       about leaving this screen, which is what the whole bar is about. */
-    (BACKQ? backQHTML() : '');
+    '</div>';
 }
 /* NOTHING HERE, in the box every screen says it in. Nine screens were
    writing `.empty` with an `.eb` inside it out by hand, and five of them

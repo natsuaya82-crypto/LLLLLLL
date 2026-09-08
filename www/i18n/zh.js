@@ -1194,7 +1194,6 @@ defLang('zh', (function(){
       'post.back.q'           : "保存为草稿吗？",
       'post.back.keep'        : "保存",
       'post.back.drop'        : "丢弃",
-      'post.back.stay'        : "关闭",
       'post.editplan'         : "编辑动态是 Plus 方案的功能",
       'post.save'             : "保存",
       'post.edited'           : "已编辑",

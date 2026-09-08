@@ -1118,17 +1118,22 @@ export function halfDone(){
     /* The composer, for somebody who has been ejected. Every write they make
        is refused by the server, and the line saying so is on no screen
        otherwise -- NET_BANNED is empty for everybody else. */
-    /* Backing out of a half-written post, with the question up. BACKQ is 0
-       everywhere else, so `.bkq` and the two answers are on no screen without
-       this -- press reported five classes and act-check three names, all of
-       them real and all of them this one state.
+    /* Backing out of a half-written post, with the question up. It is the
+       app's own popup since 2026-09-08 (「投稿の時の下書き入れる時のポップを
+       合わせて欲しい」 OWNER), so it is `#pop` rather than anything the view
+       returns -- the same shape as 'the popup, asking' above, and the reason
+       is the same: nothing at rest shows it, so without this face its two
+       answers belong to no screen.
 
-       It is set rather than reached by pressing: back() would ALSO run, and a
-       face is a screen rather than a sequence. What the three answers DO is
-       draft-check's, over the real back(). */
+       The real back() is what opens it, because that is the one thing that
+       asks this question -- and back() only asks when there is something to
+       lose, which is what the two lines above it put there. What the answers
+       DO is draft-check's. */
     ['a half-written post, asked about on the way out', () => {
         PW = pwBlank(); openPost(); pwSetLn('kano mos'); pwSetMn('a hill');
-        BACKQ = 1; const h = vForm(); BACKQ = 0; PW = pwBlank(); return h; }],
+        back();
+        const h = document.getElementById('pop').outerHTML;
+        popOff(); PW = pwBlank(); return h; }],
     ['the composer, for somebody stopped', () => { NET_BANNED = 'spam';
         PW = pwBlank(); openPost(); const h = vForm();
         NET_BANNED = ''; PW = pwBlank(); return h; }],

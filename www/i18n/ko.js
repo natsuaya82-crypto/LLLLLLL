@@ -1364,7 +1364,6 @@ defLang('ko', (function(){
       'post.back.q'           : "임시 보관함에 저장할까요?",
       'post.back.keep'        : "저장",
       'post.back.drop'        : "삭제",
-      'post.back.stay'        : "닫기",
       'post.editplan'         : "글 편집은 Plus 플랜부터입니다",
       'post.save'             : "저장",
       'post.edited'           : "편집됨",

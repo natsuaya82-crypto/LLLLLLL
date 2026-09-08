@@ -1149,7 +1149,6 @@ defLang('es', (function(){
       'post.back.q'           : "¿Guardar esto como borrador?",
       'post.back.keep'        : "Guardar",
       'post.back.drop'        : "Descartar",
-      'post.back.stay'        : "Cerrar",
       'post.editplan'         : "Editar una publicación es del plan Plus",
       'post.save'             : "Guardar",
       'post.edited'           : "Editado",

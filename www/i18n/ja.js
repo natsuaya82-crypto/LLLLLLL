@@ -1105,7 +1105,6 @@ defLang('ja', (function(){
       'post.back.q'           : "下書きとして保存しますか？",
       'post.back.keep'        : "保存する",
       'post.back.drop'        : "破棄する",
-      'post.back.stay'        : "閉じる",
       'post.editplan'         : "投稿の編集はPlusプランからです",
       'post.save'             : "保存",
       'post.edited'           : "編集済み",

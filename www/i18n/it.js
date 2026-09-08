@@ -1189,7 +1189,6 @@ defLang('it', (function(){
       'post.back.q'           : "Salvare come bozza?",
       'post.back.keep'        : "Salva",
       'post.back.drop'        : "Elimina",
-      'post.back.stay'        : "Chiudi",
       'post.editplan'         : "Modificare un post è del piano Plus",
       'post.save'             : "Salva",
       'post.edited'           : "Modificato",

@@ -754,48 +754,9 @@ canvas.pkc{width:34px;height:34px;display:block}
 .pmi svg{flex:0 0 auto;color:var(--txm)}
 .pmi:active{background:var(--sf)}
 .pmi.bad,.pmi.bad svg{color:var(--bad)}
-/* The question the back arrow asks, at the head of the same menu the ... on a
-   post opens. A line of text: no corner, no border and no panel of its own --
-   the box around it is `.pmenu`, which was already there and is on the
-   baseline. Rule 18 is about what is ADDED, and this adds neither.
-   OWNER 2026-08-25「下書きに保存しますか？はい　いいえ　キャンセル」 */
-/* Asking whether a half-written post is kept. It is NOT the ... menu's box --
-   that was tried and 「何そのゴミ見みたいなボタン」. What is left is the shape
-   the rest of this app is: a line of text, a line under it, and the words in
-   the colours they mean. OWNER 2026-08-25:
-     「縦にはいいいえが並ぶボタンないだろ　横だろ」
-     「同じ色じゃわからない」
-     「ばつはせんとかぶるくらいの外側やろ」 */
-.bkq{position:relative;display:block;padding:10px 24px 12px;
-     border-bottom:1px solid var(--line);text-align:center}
-.bkqq{display:block;font-size:.9rem;color:var(--txs);margin-bottom:2px}
-/* SIDE BY SIDE. Two answers to one question are read across, not down -- down
-   is a list of things to do and this is one thing with two ends. */
-/* Centred. OWNER 2026-08-25「下書きを保存するは中央寄せして」 */
-.bkqr{display:flex;align-items:center;justify-content:center;gap:36px}
-/* 44 on BOTH sides. `press` measured 39x44 on the shorter of the two words --
-   a word is as wide as the word is, and a thumb is not. */
-.bkqb{flex:0 0 auto;min-width:44px;min-height:44px;padding:0;
-      background:none;border:0;font-family:inherit;font-size:1rem}
-/* And they are not the same colour, because they are not the same kind of
-   answer: one keeps what was written and one throws it away. Gold is what
-   everything pressable is; --bad is what this app already uses for the press
-   that destroys, on the bin in the ... menu. */
-.bkqb.keep{color:var(--gold)}
-.bkqb.drop{color:var(--bad)}
-.bkqb:active{opacity:.5}
-/* The ✕ sits OUTSIDE, over the line rather than inside the block -- it is not
-   a third answer, it is the way out, and it is not in the row with them. */
-/* 44 here too -- it was 32x32, which `press` caught. The ✕ inside it stays
-   the size it was; what grew is what a thumb lands on. `right` is pulled in
-   by the same amount so the mark itself has not moved. */
-.bkqx{position:absolute;right:8px;bottom:-22px;
-      min-width:44px;min-height:44px;border:0;border-radius:0;
-      background:var(--bg);color:var(--txm);
-      display:inline-flex;align-items:center;justify-content:center}
-.bkqx:active{color:var(--tx)}
-/* The arrow's own place in the bar. The question is no longer hung off it --
-   it is a band across the page under the bar -- so this is just the arrow. */
+/* The arrow's own place in the bar. What it asks about a half-written post
+   is popAsk() in the middle of the screen, the same as every other question
+   here, so this is just the arrow. */
 .bkw{display:inline-flex;flex:0 0 auto}
 /* Who a reply answers. Grey, small, above the line -- it is a label on the
    post, not part of what was said. */

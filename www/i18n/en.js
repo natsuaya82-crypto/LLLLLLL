@@ -1104,7 +1104,6 @@ defLang('en', (function(){
       'post.back.q'           : "Save this as a draft?",
       'post.back.keep'        : "Save",
       'post.back.drop'        : "Discard",
-      'post.back.stay'        : "Close",
       'post.editplan'         : "Editing a post is on the Plus plan",
       'post.save'             : "Save",
       'post.edited'           : "Edited",

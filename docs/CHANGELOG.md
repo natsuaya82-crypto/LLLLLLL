@@ -27,9 +27,24 @@ where it starts.
 **`popAsk()` に寄せ、古い方は削除しました。**残していません ── `backQHTML()`、
 `.bkq` `.bkqq` `.bkqr` `.bkqb` `.bkqx` の CSS、`BACKQ`（と `viewReset()` の
 一行、バーの `(BACKQ? backQHTML() : '')`、`back()` の先頭の逃げ道）、
-`backStay()`、`act-map` の `backStay`、`tools/box-baseline.txt` の `.bkq` の
-二行（角丸と枠 ── 減るのは進歩）。i18n の `post.back.stay`（✕ の
-`aria-label` だった鍵）を 10 言語から削除しました。
+`backStay()`。i18n の `post.back.stay`（✕ の `aria-label` だった鍵）を
+10 言語から削除しました。`tools/box-baseline.txt` に `.bkq` の行はありません
+でした ── あの箱の枠は `border-bottom` の一辺で、角丸は `border-radius:0` だった
+ため、どちらも数えられていなかったからです。
+
+**`act-map` の `backKeep` と `backDrop` も削除しました。**リーダーの指示は
+「残る」でしたが、`act-check` が「誰の画面も名指さない項目」として赤くしました
+── 正しい。あの二つが act の名前だったのは、問いが自前の `DO()` を持つ箱
+だったからで、今は `popAsk()` に関数として渡ります。画面が言う名前は
+`popYes` と `popNo` で、それはアプリの他の問いと同じです。
+
+**`tools/draft-check.mjs` と `tools/post-check.mjs` 11f と `tools/fixture.mjs`
+と `tools/del-check.mjs` も同じコミットで直しました。**受け持ちの外でしたが、
+この変更が直接嘘にするものです。前の三つは `BACKQ` を読んでいたので、訊く先を
+`popOn()` に、✕ を押していた所をスクリム（`closeSheet`）にしました。
+`del-check` は `backDrop` を「消える形の名前」として答えを書いていましたが、
+act-map から外れたので、その行は何も指さない行になりました ── 削除。他の枝は
+どれもこの四つに触っていません。
 
 **答えは今までどおり二つです。**保存 → 下書きに入れて投稿画面は空、破棄 →
 空。どちらも戻り先は一つ前の画面（`backAnswer()` の中身は変えていません）。
@@ -40,7 +55,8 @@ where it starts.
 **保存されるものは変わっていません。プランは関わりません。**
 
 **検査。**`post-check` に一本 ── 投稿画面で戻ると `.pop.on` が立ち、`.bkq` は
-どこにも無いこと。`act-check` は `backStay` の両方向を見ます。
+どこにも無いこと。二つ目が要るのは、`popAsk` を足して古い箱を残す、が
+「直った」の一番ありそうな形だからです。
 
 **実機未確認。**
 

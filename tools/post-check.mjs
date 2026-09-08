@@ -1453,13 +1453,16 @@ const R = await pg.evaluate(async () => {
      Driven: the real back() is pressed on the real composer, and what is
      asked is whether the arrow was taken over. */
   {
-    const wasPW = PW, wasNav = NAV.slice(), wasQ = BACKQ;
+    const wasPW = PW, wasNav = NAV.slice();
+    /* 訊いたかどうかは popOn() ── アプリ自身の答えです。2026-09-08 まで
+       これは戻る矢印だけの箱（BACKQ）で、今はアプリの問いと同じポップに
+       なりました。 */
     const asks = () => {
-      BACKQ = 0;
+      popOff();
       openPost();
       back();
-      const q = !!BACKQ;
-      BACKQ = 0;
+      const q = popOn();
+      popOff();
       return q;
     };
 
@@ -1483,7 +1486,7 @@ const R = await pg.evaluate(async () => {
     if (!asks())
       fails.push('a line typed is thrown away by the back arrow without asking');
 
-    BACKQ = wasQ; NAV = wasNav; PW = wasPW;
+    popOff(); NAV = wasNav; PW = wasPW;
   }
 
   /* ---- 12. the timeline is sent the small copy, not the photograph ----
@@ -2943,6 +2946,48 @@ const R = await pg.evaluate(async () => {
         }
       }
       SET.plan = wasPlan2; SCRIPT.dir = wasDir2;
+      try { closeSheet(); } catch (e) {}
+    }
+
+    /* ---- 戻るの問いは、アプリの問いと同じ形 ---------------------------
+       「投稿の時の下書き入れる時のポップを合わせて欲しい」 OWNER
+       2026-09-08。
+
+       これは投げません。古い箱（`.bkq`）は描かれるし、押せるし、答えも
+       正しく効きます ── 違っているのは形だけで、それを見るのは画面を見る
+       人だけです。だから画面に訊きます：本物の back() を呼んで、popAsk() の
+       ポップが立っていること、そして `.bkq` がどこにも無いこと。二つ目が
+       要るのは、popAsk を足して古い箱を残す、が「直った」の一番ありそうな
+       形だからです（規則：書き換えであってパッチではない）。 */
+    {
+      PW = pwBlank();
+      window.route = 'feed'; NAV = [{ r:'feed' }];
+      openPost();
+      render();
+      const f4 = document.getElementById('pw-ln');
+      if (f4) f4.value = 'kano tir';
+      pwSetLn('kano tir');
+      back();
+      if (!popOn())
+        fails.push('backing out of a half-written post asks in something ' +
+                   'that is not the app\u2019s own popup. One question in two ' +
+                   'shapes is the app saying the same thing two ways');
+      if (document.querySelector('.bkq'))
+        fails.push('the old box under the back arrow (`.bkq`) is still drawn. ' +
+                   'A new mechanism covering the old one\u2019s gap is the one ' +
+                   'thing that must not happen -- the old one is deleted, not ' +
+                   'left standing beside it');
+      /* そして答えは今までどおり二つ。破棄すると投稿画面は空になり、戻り先は
+         一つ前の画面です。 */
+      if (popOn()) {
+        popNo();
+        if (String(PW.ln || ''))
+          fails.push('throwing a half-written post away left "' + PW.ln +
+                     '" in the composer');
+        if (here().r === 'form')
+          fails.push('answering the question left you standing on the ' +
+                     'composer. Back goes back');
+      }
       try { closeSheet(); } catch (e) {}
     }
 
