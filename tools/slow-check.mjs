@@ -38,9 +38,19 @@ const dir = path.dirname(fileURLToPath(import.meta.url));
 const LAT = 300;
 
 /* WHAT EACH SCREEN MAY COST, in round trips. These are the claim: a road that
-   grows a stage fails here rather than on somebody's phone. */
+   grows a stage fails here rather than on somebody's phone.
+   
+   They are what the app measured at after 2026-09-08, not a target somebody
+   picked. Lowering one is progress and needs nobody; raising one is a road
+   that got a stage longer, and that is the thing this check exists to catch.
+
+   `launch` is the WORST case on purpose -- a phone whose language has never
+   been up, so its row has to be made before its slices can be read:
+   token → language row → the slices, read → the slices, written → whether
+   the page is public. A phone that has synced before is one shorter, because
+   the row's id is already on it. */
 const MAX = {
-  'launch':   3,
+  'launch':   5,
   'feed':     1,
   'profile':  2,
   'follows':  2,

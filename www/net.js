@@ -1795,17 +1795,33 @@ function netSaveUpGo(done){
     /* Only the slices that moved, and only those, so a save costs one small
        read and one small write rather than the whole language. */
     netSlices(sid, function(there){
-      var at=0;
-      function step(){
-        if(at>=kinds.length){ NET_SYNCING=false; if(done) done(true); return; }
-        var kind=kinds[at]; at++;
-        /* A slice that did not land stops the save. The ones already up
-           stay up -- they arrived -- and the record says so, so pressing
-           again sends only what is still missing. */
-        netSlice1(id, sid, kind, there[kind], function(){ step(); },
-                  function(d, st){ no(d, st, ''); });
+      /* ---- THE SLICES THAT MOVED GO TOGETHER --------------------------
+         「なんか全体的に遅くない？」 OWNER 2026-09-08 (143). This was a walk
+         too: one slice up, wait, the next. A save that touched three of them
+         was three round trips one after another and measured four deep with
+         the read in front of it (tools/slow-check.mjs). None of the three
+         needed either of the others' answers -- netLangSync1() above has the
+         whole of why.
+
+         A SLICE THAT DID NOT LAND STILL DOES NOT AGREE. It used to stop the
+         ones behind it as well; they are already in the air now, and each
+         still records its own agreement or does not -- so pressing save again
+         sends what is still missing, exactly as before. What a PERSON is told
+         is one pop and not three: the first fall is the answer and the rest
+         are the same network. */
+      var left=kinds.length, fell=false, i;
+      function one(){
+        if(fell || --left) return;
+        NET_SYNCING=false;
+        if(done) done(true);
       }
-      step();
+      function stop(d, st){
+        if(fell) return;
+        fell=true;
+        no(d, st, '');
+      }
+      for(i=0;i<kinds.length;i++)
+        netSlice1(id, sid, kinds[i], there[kinds[i]], one, stop);
     }, no, kinds);
   }, no);
 }
@@ -1856,38 +1872,57 @@ function netLangSync(then){
 function netLangSync1(id, done){
   netLangRow(id, function(sid){
     netSlices(sid, function(there){
-      var i=0, moved=false;
-      function step(){
-        var kind, mine, got, put, was;
-        if(i>=SLICES.length){
-          if(moved && id===langId){
-            /* Something came back, so what the screens are holding is older
-               than what is in storage. Read it in the way langOpen() does
-               rather than patching each global by hand.
-               ONLY for the open one: the globals are 「the language in front
-               of me」, and filling them from another language is that language
-               appearing on the screen somebody is standing on. */
-            langLoad();
-            render();
-          }
-          /* And the one fact about this language that is a COLUMN rather than
-             a slice: whether its page may be read by anybody else. Sent here,
-             once a launch, after the slices have been merged -- so it is the
-             switch as it stands after the sync rather than before it.
+      /* ---- ALL TWELVE AT ONCE, NOT ONE AFTER ANOTHER --------------------
+         「なんか全体的に遅くない？」 OWNER 2026-09-08 (143). This was a walk:
+         slice one went up, and only when its answer came back did slice two
+         go. Measured with tools/slow-check.mjs, that made a launch EIGHT
+         round trips deep and a save four -- and not one of the twelve
+         questions needed any of the others' answers.
 
-             This is what makes a failed toggle correct itself. setWldHide()
-             sends it on the press and does not wait; if that request never
-             arrived, the phone would say private while the server went on
-             saying published, and THAT direction is a leak rather than a
-             nuisance. One small write on the next launch closes it.
-             Asked of the open language only, because wldHidden() reads WLD --
-             the open one's -- and sending it for another language would be
-             this language's switch written onto that one. */
-          if(id===langId) netLangPublic(!wldHidden());
-          done(moved); return;
+         They are independent by construction. Each one merges what this
+         phone has against what the server has for THAT kind, writes its own
+         key, and records its own agreement; nothing in netSlice1() reads
+         another slice. So the order was never load-bearing -- it was a `for`
+         loop that happened to be written with a callback in it.
+
+         WHAT A FAILURE MEANS IS UNCHANGED. It stopped the walk before, so
+         the ones already up stayed up and the rest were not sent; now the
+         rest are already in the air, and each one still records its own
+         agreement or does not. Either way the next save sends what is still
+         missing, which is what netAgreed() is for. */
+      var left=SLICES.length, moved=false, i;
+      function step(){
+        /* The last one in is the one that goes on. Each of the twelve calls
+           this exactly once, whichever way it went. */
+        if(--left) return;
+        if(moved && id===langId){
+          /* Something came back, so what the screens are holding is older
+             than what is in storage. Read it in the way langOpen() does
+             rather than patching each global by hand.
+             ONLY for the open one: the globals are 「the language in front
+             of me」, and filling them from another language is that language
+             appearing on the screen somebody is standing on. */
+          langLoad();
+          render();
         }
-        kind=SLICES[i]; i++;
-        netSlice1(id, sid, kind, there[kind], function(m){
+        /* And the one fact about this language that is a COLUMN rather than
+           a slice: whether its page may be read by anybody else. Sent here,
+           once a launch, after the slices have been merged -- so it is the
+           switch as it stands after the sync rather than before it.
+
+           This is what makes a failed toggle correct itself. setWldHide()
+           sends it on the press and does not wait; if that request never
+           arrived, the phone would say private while the server went on
+           saying published, and THAT direction is a leak rather than a
+           nuisance. One small write on the next launch closes it.
+           Asked of the open language only, because wldHidden() reads WLD --
+           the open one's -- and sending it for another language would be
+           this language's switch written onto that one. */
+        if(id===langId) netLangPublic(!wldHidden());
+        done(moved);
+      }
+      for(i=0;i<SLICES.length;i++)
+        netSlice1(id, sid, SLICES[i], there[SLICES[i]], function(m){
           if(m) moved=true;
           step();
         }, /* A LAUNCH WALKS ON, and it did before `bad` existed too -- this
@@ -1898,8 +1933,6 @@ function netLangSync1(id, done){
               slices are the only thing that fails. Whoever presses that
               decides it. */
            function(){ step(); });
-      }
-      step();
     }, function(){ done(false); });
   }, function(){ done(false); });
 }
