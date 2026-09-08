@@ -164,27 +164,57 @@ function kbId(){ KB_SEQ++; return 'k'+Date.now()+'_'+KB_SEQ; }
    times they are read. A board that already has one keeps it: this is not a
    repair and compares nothing.
 
-   SAME CONTENTS TWICE IS NOT ONE BOARD. Two blank boards of one pattern hash
-   alike, and letting them share an id would be syPut() told they are one row
-   -- a board somebody made, gone. So the second one and every one after it is
-   marked by its turn in the array, which both copies count the same way. */
+   AND TWO COPIES OF ONE BOARD ARE NOT TWO BOARDS.
+   「消していい。そもそも増殖させるな」 OWNER 2026-09-07. A phone that has
+   already been through the launches above is holding the same keyboard eight
+   times, and an id decided by the board stops the ninth without taking one of
+   the eight away. So the copies are joined here, at the same moment and by
+   the same answer: the SIGNATURE below is what makes two boards one, and the
+   id put on a board that has none is that signature hashed. One question,
+   asked once.
+
+   WHAT IS JOINED IS ONLY WHAT IS BYTE FOR BYTE THE SAME BOARD -- every field
+   but the id, so a name typed on one of them, a key moved, a layer added is
+   a board somebody made and it stays. docs/CHANGELOG.md 2026-09-07 carries
+   the DELETE REVIEW.
+
+   Reading only, as the stamping above is: nothing is written here, so a
+   launch with no signal joins the copy in memory and stops. The write comes
+   with the next save.
+
+   AND WHICH BOARD IS APPLIED FOLLOWS THE ONE THAT IS KEPT. `at` is an index
+   into the list with the free QWERTY in front of it (migrateKbFree), and
+   `v` is what says whether that migration has run -- so it is turned into an
+   index into `kbs`, moved with the board it names, and turned back. Without
+   that, joining a copy in front of the applied board silently makes its
+   neighbour the keyboard on the phone. */
+function kbSig(b){
+  var ks=[], o=[], k, i;
+  for(k in b) if(Object.prototype.hasOwnProperty.call(b, k) && k!=='id') ks.push(k);
+  ks.sort();
+  for(i=0;i<ks.length;i++) o.push([ks[i], b[ks[i]]]);
+  try{ return JSON.stringify(o); }catch(e){ return ''; }
+}
 function kbHash(b){
-  var s, i, h=0;
-  try{ s=JSON.stringify([b.nm||'', b.pat||'', b.lay||[]]); }
-  catch(e){ s=String(b&&b.nm); }
+  var s=kbSig(b), i, h=0;
   for(i=0;i<s.length;i++) h=((h<<5)-h+s.charCodeAt(i))|0;
   return 'b'+(h>>>0).toString(36)+'_'+s.length;
 }
 function kbIded(k){
-  var kbs=k.kbs||[], taken={}, i, id;
-  for(i=0;i<kbs.length;i++) if(kbs[i] && kbs[i].id) taken['i'+kbs[i].id]=1;
+  var kbs=k.kbs||[], out=[], at={}, put=[], i, b, s, off, idx;
   for(i=0;i<kbs.length;i++){
-    if(!kbs[i] || kbs[i].id) continue;
-    id=kbHash(kbs[i]);
-    while(taken['i'+id]) id=id+'+';
-    taken['i'+id]=1;
-    kbs[i].id=id;
+    b=kbs[i];
+    /* not a board at all: kept exactly where it was and asked nothing */
+    if(!b || typeof b!=='object'){ put.push(out.length); out.push(b); continue; }
+    s='g'+kbSig(b);
+    if(!b.id) b.id=kbHash(b);
+    if(Object.prototype.hasOwnProperty.call(at, s)){ put.push(at[s]); continue; }
+    at[s]=out.length; put.push(out.length); out.push(b);
   }
+  k.kbs=out;
+  off=((parseInt(k.v, 10)||0)>=2)? 1 : 0;
+  idx=(parseInt(k.at, 10)||0)-off;
+  if(idx>=0 && idx<put.length) k.at=put[idx]+off;
   return k;
 }
 kbRead();

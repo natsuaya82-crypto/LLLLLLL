@@ -4050,15 +4050,26 @@ const kbPrep = await pg2.evaluate(({ s }) => {
   const oldBody = JSON.stringify(old);
   localStorage.setItem(langKey('kb'), oldBody);
   const ids = (b) => kbBoardsOf(JSON.parse(b)).kbs.map((x) => x.id).join(',');
-  /* 同じ中身の板が二枚。まとめてはいけない ── 人が作ったものです。 */
-  const two = JSON.stringify({ kbs: [{ nm:'', pat:'qwerty', lay: old.kbs[0].lay },
-                                     { nm:'', pat:'qwerty', lay: old.kbs[0].lay }], at:0 });
+  /* 同じ中身の板が三枚 ── この不具合が作った写しです。「消していい。そもそも
+     増殖させるな」OWNER 2026-09-07。一枚になり、適用していた三枚目はその一枚を
+     指し直します（at は無料 QWERTY を頭に置いた番号なので 3 が三枚目）。 */
+  const one = { nm:'', pat:'qwerty', lay: old.kbs[0].lay };
+  const three = JSON.stringify({ kbs: [one, one, one], at:3, v:2 });
+  /* 少しでも違えば二枚のまま。名前が一文字ちがうだけの板です。 */
+  const diff = JSON.stringify({ kbs: [one, { nm:'あ', pat:'qwerty', lay: old.kbs[0].lay }],
+                                at:0, v:2 });
+  const kept = kbBoardsOf(JSON.parse(three));
+  /* 新しく作る板の id は時計から ── 読むのは同じ板、作るのは新しい板。 */
+  const madeA = kbId(), madeB = kbId();
   return {
     /* サーバーが持っているのは、この版が一度上げたあとの写し */
     srvBody: JSON.stringify(kbBoardsOf(JSON.parse(oldBody))),
     uid: SESS.uid, name: langName,
     once: ids(oldBody), twice: ids(oldBody),
-    dupIds: ids(two), dupN: JSON.parse(two).kbs.length
+    threeN: kept.kbs.length, threeAt: kept.at,
+    diffN: kbBoardsOf(JSON.parse(diff)).kbs.length,
+    diffIds: ids(diff),
+    madeA: madeA, madeB: madeB
   };
 }, { s: seed.toString() });
 
@@ -4080,30 +4091,65 @@ async function kbLaunch(){
     let up = null;
     for (const row of S.slice) if (row.kind === 'kb' && row.language === 'srv1') up = row.body;
     let n = 0; try { n = (JSON.parse(up).kbs || []).length; } catch (e) {}
-    return { onServer: n, srv: JSON.stringify({ lang:S.lang, slice:S.slice }) };
+    /* そして人が数える枚数 ── 画面の一覧です。無料 QWERTY が頭にいるので
+       kbStored() が人の作った板の数。 */
+    kbRead();
+    return { onServer: n, onScreen: kbStored().length,
+             srv: JSON.stringify({ lang:S.lang, slice:S.slice }) };
   }, { srvJs: KB_SRV, saved: JSON.stringify(kbSrv) });
   kbSrv = JSON.parse(out.srv);
-  return out.onServer;
+  return out;
 }
-const kbOne = await kbLaunch();
-const kbTwo = await kbLaunch();
+const kbOne = (await kbLaunch()).onServer;
+const kbTwo = (await kbLaunch()).onServer;
+/* そして、すでに増えてしまった端末 ── オーナーの実機の姿です。ディスクには
+   id 無しの写し一枚、サーバーには同じ板が四枚、前の版のランダムな id を着て
+   並んでいる。三度立ち上げて、人が数える枚数は一枚。 */
+const srvDup = await pg2.evaluate(() => {
+  const k = JSON.parse(localStorage.getItem(langKey('kb')));
+  const one = k.kbs[0]; delete one.id;
+  localStorage.setItem(langKey('kb'), JSON.stringify({ kbs: [one], at: 0, v: 2 }));
+  const four = [], i = { n: 0 };
+  for (i.n = 0; i.n < 4; i.n++)
+    four.push(JSON.parse(JSON.stringify({ nm:one.nm, pat:one.pat, lay:one.lay,
+                                          id:'k17887' + i.n + '_' + i.n })));
+  return JSON.stringify({ kbs: four, at: 1, v: 2 });
+});
+kbSrv = { lang: [{ id:'srv1', owner:kbPrep.uid, name:kbPrep.name, published_at:null }],
+          slice: [{ language:'srv1', kind:'kb', body:srvDup, no:1 }] };
+const dupOne = await kbLaunch();
+const dupTwo = await kbLaunch();
+const dupThree = await kbLaunch();
 await br2.close();
 
 console.log('');
 say(kbPrep.once === kbPrep.twice && kbPrep.once.indexOf(',') > 0,
     'a board with no id read twice gets the same id both times, so the phone’s copy '
     + 'and the server’s are one board [' + kbPrep.once + '] [' + kbPrep.twice + ']');
-say(kbPrep.dupN === 2 && kbPrep.dupIds.split(',').length === 2 &&
-    kbPrep.dupIds.split(',')[0] !== kbPrep.dupIds.split(',')[1],
-    'and two boards of the same contents are still two, with two ids — the same id '
-    + 'would be syPut() told they are one row, and a board somebody made gone ['
-    + kbPrep.dupIds + ']');
+say(kbPrep.threeN === 1 && kbPrep.threeAt === 1,
+    'and three copies of one board read back as one board — 「消していい。そもそも'
+    + '増殖させるな」 — with the applied one pointing at the copy that was kept ('
+    + kbPrep.threeN + ' boards, at ' + kbPrep.threeAt + ')');
+say(kbPrep.diffN === 2 && kbPrep.diffIds.split(',')[0] !== kbPrep.diffIds.split(',')[1],
+    'while two boards that differ by one character of a name are still two, with two '
+    + 'ids — what is joined is byte for byte the same board and nothing else ['
+    + kbPrep.diffIds + ']');
+say(kbPrep.madeA !== kbPrep.madeB && kbPrep.madeA.charAt(0) === 'k',
+    'and a board being MADE still takes its id off the clock, so two new boards of one '
+    + 'pattern are two boards [' + kbPrep.madeA + '] [' + kbPrep.madeB + ']');
 say(kbOne === 2,
     'a launch that reads the id-less copy off the disk and merges it with the '
     + 'server’s does not grow the language: ' + kbOne + ' boards');
 say(kbTwo === kbOne,
     'and launching again does not either — the disk copy is read a second time and '
     + 'answers with the same ids: ' + kbTwo + ' boards');
+say(dupOne.onScreen === 1 && dupTwo.onScreen === 1 && dupThree.onScreen === 1,
+    'and a phone the doubling already reached — one board on the disk, four copies of '
+    + 'it on the server wearing the old random ids — counts ONE keyboard on every one '
+    + 'of three launches: ' + [dupOne, dupTwo, dupThree].map((x) => x.onScreen).join(', '));
+say(dupTwo.onServer <= dupOne.onServer && dupThree.onServer <= dupTwo.onServer,
+    'and the copies on the server stop multiplying rather than growing by one a launch: '
+    + [dupOne, dupTwo, dupThree].map((x) => x.onServer).join(', ') + ' rows');
 
 if (bad.length){ console.error('\nkb-check: ' + bad.length + ' FAILED'); process.exit(1); }
 console.log('\nkb: pressing a row number or a column letter SELECTS it and lights it up;\n' +
