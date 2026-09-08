@@ -8,6 +8,34 @@ refactor, a feature and a rename never arrive in the same diff.
 The order is the order to do them in.
 
 
+## `NET_STAFF` を読んで描くものが一つも無い ── 通報に辿り着けるのは @lingua だけ（2026-09-08）
+
+E（七回叩く扉）を測っているときに出てきました。`grep -rn "NET_STAFF" www/*.js`
+は `www/net.js` しか返しません ── 立てて、`ok(NET_STAFF)` で返して、**画面は
+一つも読んでいない**。
+
+`www/boot.js` にあったコメントは「設定の一覧の足に行が出るかを決める」と書いて
+いました。その行はもうありません。`tools/fixture.mjs` には
+「the settings list, for whoever answers the reports」という顔が残っていて、
+`NET_STAFF = true` にして `vSettings()` を呼びますが、撮ると**ふつうの設定の
+一覧**が出ます（`shots/half-the-settings-list-for-whoever-answers-the-reports-ja.png`）。
+`box-check` がベースラインについて言っている「何にも当たらなくなった行」と
+同じ形で、顔の名前だけが残っています。
+
+そして通報の画面へ行く道は一本だけです。`goMod` を名指しているのは
+`www/mod.js` 379 の `adminRow('admin.reports', …)` ── **管理画面の中**で、
+そこは `NET_ADMIN`（@lingua）でないと開きません。つまり **staff にされた人は
+通報に辿り着けません**。サーバーの側は違っていて、`report` の select は
+`is_staff()` を訊きます。権限は在るのに扉が無い状態です。
+
+`dead-check` は捕まえません ── `NET_STAFF` は `net.js` 自身が読み返すので
+「自分の宣言以外の場所で名指しされている」を満たします。CLAUDE.md 規則5 の
+「書かれて読まれない」の一歩先で、片端の外れた配線です。
+
+**訊くこと。** staff の人はどこから通報を読むのか。設定の足に行を戻すのか、
+別の道にするのか。行を増やすのは画面の話なのでオーナーのものです。
+（`claude/r7-acct`、E を測っているときに見つけた。E そのものは直してあります。）
+
 ## 「この言語は非公開か」の答えが二か所にある ── **オーナーの決めごと**（2026-09-08）
 
 実機 143 で「非公開にしていたのに、ログアウト→ログインで公開に戻っていた」
