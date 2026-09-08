@@ -136,11 +136,10 @@ function bootSession(){
      red the moment the two were joined. Waiting on the answer rather than
      being called by it is the same order in one line. */
   pullWait('mylangs', netLangSync);
-  /* And whether this account is the one that answers the reports, which is
-     one column on one profile and decides whether a row exists at the foot of
-     the settings list. Asked after the session is resumed because it is asked
-     AS somebody, and not waited for: the row appears when the answer does. */
-  netStaff(function(yes){ if(yes) render(); });
+  /* Whether this account answers the reports was asked here and is asked in
+     netTook() (www/net.js) now -- the one place that knows a session arrived.
+     This call was the whole of it, so a launch made signed out never asked and
+     the door somebody then came in through never asked either. */
   /* And the face on the profile row, which nothing updated after the account
      was made: a notice could draw a face somebody had not worn for a month.
      It asks the server nothing on a launch where the face has not moved --

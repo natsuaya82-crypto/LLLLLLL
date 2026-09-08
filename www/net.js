@@ -599,6 +599,25 @@ function netTook(d){
      A token refresh comes through here too and asks for nothing: pullNeed()
      is refused the moment a thing has its answer, which is the same guard
      netLangBack() keeps for itself one line up. */
+  /* AND WHETHER THIS ACCOUNT ANSWERS THE REPORTS, AND WHETHER IT DECIDES WHO
+     DOES. Here for the reason meFor(), planFor() and langForAcct() are here:
+     this is the one place that knows a session ARRIVED.
+
+     IT WAS IN www/boot.js AND ONLY THERE -- one call, on the launch, inside
+     netResume()'s answer. So a launch made SIGNED OUT never asked, and the
+     door a person then came in through never asked either: signing in as
+     @lingua after that left NET_ADMIN false, and seven taps on the settings
+     heading opened nothing at all. 「設定7回タップしても管理画面開かんくなった」
+     OWNER 2026-09-08, 実機 143, having signed out and back in that day.
+
+     Measured before it was believed: signed in through the launch it answered
+     `admin`; signed out, relaunched, then in through the door it stayed on
+     `settings`.
+
+     A token refresh comes through here too and asks for nothing -- netStaff()
+     keeps the same guard netLangBack() one line up does, and netOut() is what
+     clears it, which is the half that was missing. */
+  netStaff(function(yes){ if(yes) render(); });
   if(typeof pullBoot==='function') pullBoot();
   return true;
 }
@@ -641,6 +660,12 @@ function netOut(){
      person to sign in on this phone must ask for their own. */
   netBlockedDrop();
   if(typeof pullForget==='function') pullForget();
+  /* AND WHETHER THIS ACCOUNT ANSWERS THE REPORTS, WHICH IS THE SAME SENTENCE.
+     NET_STAFF, NET_ADMIN and NET_BANNED are three facts about the account that
+     has just gone, and nothing here put them down -- so the seven taps on the
+     settings heading stayed armed for whoever signed in next.
+     netStaffForget() is the one place that says so. */
+  netStaffForget();
   /* THE LANGUAGE IS NOT TOUCHED HERE, AND THAT IS THE SAFE DIRECTION.
      A slice is in memory now (CLAUDE.md rule 22), so it was tempting to empty
      the store on the way out -- 「what this phone is holding is the signed-in
@@ -2406,7 +2431,20 @@ var NET_STAFF=false, NET_ADMIN=false, NET_BANNED='';
    follows every new account to (OB_LINGUA) -- it is the account's NAME, so it
    is written out rather than asked for. */
 var ADMIN_HANDLE='lingua';
-/* Asked once, at launch, and remembered. A screen that asked every time it
+/* WHICH ACCOUNT THE THREE ABOVE ARE ABOUT, so that asking again costs
+   nothing and signing in as somebody else does not.
+
+   The comment below has said 「asked once and remembered」 since it was
+   written and there was nothing keeping either half of it: the once was one
+   call site in www/boot.js, and the remembering was three variables nobody
+   ever put down. netOut() clears this, so the same account signing back in
+   ASKS AGAIN -- which is what a guard keyed on the uid alone would refuse,
+   and refusing it is the bug this was written for. */
+var NET_STAFF_UID='';
+function netStaffForget(){
+  NET_STAFF=false; NET_ADMIN=false; NET_BANNED=''; NET_STAFF_UID='';
+}
+/* Asked once a session, and remembered. A screen that asked every time it
    was drawn would put a request behind every render. */
 /* One request, because it is one row and the app wants three things off it:
    whether this account answers the reports, whether it decides who does, and
@@ -2415,7 +2453,10 @@ var ADMIN_HANDLE='lingua';
    no" is not a sentence anybody can act on. */
 function netStaff(ok){
   ok=ok||function(){};
-  if(!netSignedIn()){ NET_STAFF=false; NET_ADMIN=false; NET_BANNED=''; ok(false); return; }
+  if(!netSignedIn()){ netStaffForget(); ok(false); return; }
+  /* Already answered for this account, this session. */
+  if(NET_STAFF_UID===String(SESS.uid)){ ok(NET_STAFF); return; }
+  NET_STAFF_UID=String(SESS.uid);
   netGet('/rest/v1/profile?select=staff,handle,banned_at,banned_why&limit=1&id=eq.'+
          encodeURIComponent(SESS.uid),
     function(d){
@@ -2443,7 +2484,10 @@ function netStaff(ok){
       NET_BANNED=(r && r.banned_at)? (String(r.banned_why||'') || ' ') : '';
       ok(NET_STAFF);
     },
-    function(){ NET_STAFF=false; NET_ADMIN=false; NET_BANNED=''; ok(false); });
+    /* No answer is not 「this account is nobody」. The mark goes with it, so
+       the next thing that asks asks the server rather than reading a false
+       this call never got. */
+    function(){ netStaffForget(); ok(false); });
 }
 /* Making somebody staff, and unmaking them. By handle, because a handle is
    the only name this app has for a person: an address lives in auth.users,
