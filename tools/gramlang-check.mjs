@@ -1336,47 +1336,15 @@ want('and that is what the language now holds', adp.side, 'after');
 want('the describing word is still where it was', adp.adjSide, 'before');
 want('and its row is still drawn on its own page', adp.adjN, 2);
 
-/* ---- 85-90: what this language has -------------------------------------
-   docs/GRAMMAR-V2-SPEC.md §14's last block, and §24's argument for the whole
-   page: 「作り込むほど Words + Inflections + Derivations が蓄積され、その結果
-   精度が上がる」. So the numbers have to be the ones the ENGINE was handed --
-   a panel counting what somebody typed, rather than what crossed over, would
-   say the language is fuller than the translation can see.
-
-   Which is exactly the failure this page was built to end. A rule this side
-   cannot express is COUNTED and not sent (the sound conditions), so a panel
-   reading STG.fm would say 3 where the engine has 2. */
-const stat = await pg.evaluate(() => {
-  const sp = (w) => w.split('').map((u) => ({ l:'', u:u }));
-  const wasFm = JSON.stringify(STG.fm || []), wl = WORDS.length;
-  const wasPart = !!STG.set.part;
-  WORDS.push({ hw:'zluma', pos:'v', mns:['eat'], at:1 });
-  WORDS.push({ hw:'ga', pos:'part', mns:['subject'], at:1, slot:'part.subj' });
-  stMarkSet('part');
-  STG.fm = [
-    { id:'v1', pos:'v', fm:'pst', at:'end', drop:0, add:sp('ka'), when:'' },
-    { id:'d1', pos:'n', fm:'adj', at:'end', drop:0, add:sp('li'), when:'' },
-    /* about SOUND, so it cannot cross and must not be counted as if it had */
-    { id:'v2', pos:'v', fm:'pl', at:'end', drop:0, add:sp('zz'), when:'v' }
-  ];
-  window.route = 'gram'; NAV = [{ r:'gram', a:'v2:st' }]; render();
-  const rows = {}, secs = document.querySelectorAll('#app .gside');
-  Array.prototype.forEach.call(secs, (el) => {
-    rows[el.querySelector('.gsl').textContent] = el.querySelector('.gsw').textContent;
-  });
-  const words = WORDS.length;
-  WORDS.length = wl;
-  STG.fm = JSON.parse(wasFm);
-  if (!wasPart) delete STG.set.part;
-  return { rows: rows, n: secs.length, words: words };
-});
-
-want('the panel has a row for each thing that can be counted', stat.n, 3);
-want('the words are this dictionary', stat.rows['Words'], String(stat.words));
-/* One inflection wrote a tense, one wrote a mark, and the third is about
-   sound and did not cross. */
-want('the forms are the ones the engine was handed', stat.rows['Forms'], '2');
-want('and the word formation is too', stat.rows['Word formation'], '1');
+/* ---- 85: what this language has is not a chapter of this list ----------
+   「この言語については非表示にしてよ 文法ページ」 OWNER 2026-09-08. The last
+   chapter of the grammar list counted three things -- the words, the forms and
+   the word formation -- and 目次 already carries a chapter of that name. It is
+   deleted, and what is left to hold is that it does not come back: the list is
+   asked for its ids, and `st` is not one of them. */
+const stIds = await pg.evaluate(() => g2Chaps().map((c) => c.id));
+want('the list has no chapter counting what this language has',
+     stIds.indexOf('st'), -1);
 
 /* ---- 91-98: a chapter is where a rule is made ---------------------------
    「新しい規則は＋とかで作ればいいやん」 OWNER 2026-08-27, and
@@ -1713,8 +1681,8 @@ console.log('          A describing word is put on the side this language puts i
 console.log('          and one that changes is drawn where it can be seen.');
 console.log('          A place word stands where this language puts it, and the');
 console.log('          two rows that arrange a pair do not move each other.');
-console.log('          What this language HAS is counted off what the engine was');
-console.log('          handed, not off what somebody typed.');
+console.log('          What this language HAS is no longer a chapter of this');
+console.log('          list -- 目次 is where that is said.');
 console.log('          A chapter is where a rule is made, and the row pressed is');
 console.log('          the answer to both what and of what.');
 console.log('          The words a chapter\'s rules make are made from that chapter,');
