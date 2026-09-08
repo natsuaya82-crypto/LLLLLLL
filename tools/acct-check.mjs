@@ -2288,13 +2288,14 @@ const R = await pg.evaluate(async () => {
       if (p.indexOf('/rest/v1/follow?select=followed') === 0) return [{ followed: { handle: 'iri' } }];
       if (p.indexOf('/rest/v1/follow?select=follower') === 0) return [{ follower: { handle: 'veth' } }];
       if (p.indexOf('/rest/v1/profile?select=id') === 0) return [{ id: SESS.uid }];
-      if (p.indexOf('/rest/v1/language?select=id,name&owner=') === 0)
-        return [{ id: SID59, name: 'Shango' }];
-      /* 非公開は **サーバーから来る** ── ここで WLD に直に代入したら、
-         「印が描けるか」を訊くだけの検査になり、印が出なかった本当の理由
-         （wld のスライスがまだ来ていない）を跨いでしまう。 */
-      if (p.indexOf('/rest/v1/slice?select=') === 0)
-        return [{ kind: 'wld', body: JSON.stringify({ hide: true }), no: 1 }];
+      /* 非公開は **サーバーから来る** ── ここで直に代入したら、「印が描ける
+         か」を訊くだけの検査になり、印が出なかった本当の理由（答えがまだ来て
+         いない）を跨いでしまう。2026-09-08 まではその答えが `wld` スライスの
+         `hide` で、今は `language` の行の `published_at` です
+         （OWNER「端末に hide の存在があるわけないやろ」）。null が非公開。 */
+      if (p.indexOf('/rest/v1/language?select=id,name,published_at&owner=') === 0)
+        return [{ id: SID59, name: 'Shango', published_at: null }];
+      if (p.indexOf('/rest/v1/slice?select=') === 0) return [];
       return [];
     };
     /* 何も答えていない状態に戻す ── PULL の表も、言語も、印も。
@@ -2304,6 +2305,9 @@ const R = await pg.evaluate(async () => {
     LANGS[langId] = { name: 'Shango', mine: true, sid: SID59, uid: SESS.uid };
     slRm(langKey('wld'));
     WLD = {};
+    /* 何も聞いていない状態。LPUB は記憶の中の答えで、この端末が持つ意見では
+       ありません（www/home.js § wldPubGot）。 */
+    LPUB = {};
     NAV = [{ r: 'feed' }]; window.route = 'feed'; render();
     const wasFeed = document.getElementById('app').innerHTML;
 
@@ -2353,7 +2357,7 @@ const R = await pg.evaluate(async () => {
     }
     render = realRender59;
     netSend = realSend59; netGet = realGet59; netSend1 = realSend159;
-    delete WLD.hide;
+    wldPubGot(langId, true);
     NAV = [{ r: 'profile' }]; window.route = 'profile';
   }
 

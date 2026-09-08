@@ -136,7 +136,7 @@ export function seed(){
   SND = ['k','t','m','n','s','r','a','i','u','e','o'];
   /* What the language is FOR. Seeded because it is a slice like the others,
      and because NOT seeding it made one button unreachable: `setWldHide`
-     writes WLD.hide and press rebuilds the screen before every press, so the
+     used to write WLD.hide and press rebuilds the screen before every press, so the
      first press of it hid the row under it -- setWldDl -- for the rest of the
      run. press then reported that button as never pressed, which was true and
      was not what it meant. The walk was narrowing the app as it went, which is
@@ -165,6 +165,13 @@ export function seed(){
             becomes, and it is drawn as a paragraph rather than as a fact. */
          ovs:[{id:'O1', k:'Older name', v:'Shangolu'},
               {id:'O2', k:'', v:'It has no word for the sea.'}]};
+  /* この言語のページが開いているか ── **サーバーの答え**です（www/home.js
+     § wldPubGot、OWNER 2026-09-08「端末に hide の存在があるわけないやろ」）。
+     種はサーバーに行のある言語なので、答えは「開いている」。これを播かないと
+     「この言語について」も、プロフィールの言語の行も、答えを待っている顔に
+     なります ── 第三の状態は画面に出さないのが決まりなので、walk はどれも
+     待ちの印しか見なくなる。「非公開の言語」の顔は halfDone にあります。 */
+  wldPubGot(langId, true);
   NOTES = [{t:'note', b:'body'}];
   ME = {name:'Aya', handle:'aya', bio:'Building a language for a place that does not exist.',
         fo:['iri','veth'], fr:['iri']};
@@ -950,8 +957,10 @@ export function halfDone(){
         return h; }],
     ['the profile, the language private', () => {
         window.route='profile'; NAV=[{r:'profile'}];
-        WLD.hide = true;
-        const h=vProfile(); delete WLD.hide; return h; }],
+        /* 非公開かはサーバーの答えです。`WLD.hide` を立てていたのが 2026-09-08
+           までの形で、今それを立てても画面は何も変わりません。 */
+        wldPubGot(langId, false);
+        const h=vProfile(); wldPubGot(langId, true); return h; }],
     /* ---- the timeline read by somebody who did not write it -------------
        Three states off the owner's phone on 2026-09-04. None of them is a
        route: each is a fact about what has arrived, and each was the one
@@ -2522,10 +2531,18 @@ export function halfDone(){
        sentence above says the same thing, and this cost one round of looking
        at a public page and being told it was the hidden one. seed() runs
        before each face and is what puts it back. */
-    ['the language nobody may open', () => { WLD.hide = true;
+    /* まだ聞いていない ── 「開いている」でも「閉じている」でもない第三の
+       状態で、これが画面に出る唯一の姿です（OWNER 2026-09-08、答えはサーバー
+       のもの）。電波の無い起動と、行が降りてくる前の一瞬がこれ。撮れる所が
+       無いと、誰も見ないまま出ていく一枚になります。 */
+    ['the article, before the answer has come down', () => {
+       LPUB = {};
+       window.route = 'about'; NAV = [{ r:'about' }];
+       const h = vAbout(); wldPubGot(langId, true); return h; }],
+    ['the language nobody may open', () => { wldPubGot(langId, false);
                                          window.route = 'about'; NAV = [{ r:'about' }];
                                          return vAbout(); }],
-    ['writing on a page nobody may open', () => { WLD.hide = true;
+    ['writing on a page nobody may open', () => { wldPubGot(langId, false);
                                          window.route = 'world'; NAV = [{ r:'world' }];
                                          return vWorld(); }],
     /* A language with a keyboard somebody BUILT, and three of its four
@@ -2571,12 +2588,12 @@ export function halfDone(){
           these two render no section at all and prove nothing -- which is how
           they were first written, and act-check went on reporting the three
           buttons inside a section as named by no screen. */
-       WLD.hide = false;
+       wldPubGot(langId, true);
        wldSecs().forEach(function(sec){ ABOPEN[sec.r] = true; });
        window.route = 'about'; NAV = [{ r:'about' }];
        return vAbout(); }],
     ['writing with every section open', () => {
-       WLD.hide = false;
+       wldPubGot(langId, true);
        wldSecs().forEach(function(sec){ ABOPEN[sec.r] = true; });
        window.route = 'world'; NAV = [{ r:'world' }];
        return vWorld(); }],

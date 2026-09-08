@@ -218,6 +218,43 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### 「この言語は非公開か」の答えはサーバーの `published_at` 一つ
+- Date: 2026-09-08
+- Area: 言語のページの公開（`www/home.js` の `wldHidden`／`wldPubGot`、
+  `www/net.js` の `netLangPublic`／`netLangsDown`／`netLangBack`、
+  `supabase/schema.sql` の `language.published_at`）
+- Decision:
+
+  ```
+  端末に hide の存在があるわけないやろ。全部オンラインだって言ってるけど
+  ```
+
+  - 答えは **`language.published_at` 一つ**。端末は意見を持たない
+  - `wld` スライスの `hide` は**読まない・書かない**。既に入っている値は
+    消しも書き換えもしない（過去のデータは触らない）
+  - スイッチは `netLangPublic()` を呼ぶだけ。**答えが返ってから**画面が
+    変わる（先に変えて後から送る、はしない）
+  - 「まだ聞いていない」は第三の状態で、**画面には出さない**。行が降りて
+    くるまで「この言語について」もプロフィールの言語の行も開かない
+    （r6-prof の「揃ってから開く」に乗る）
+- Reason: 実機 143 の「非公開にしていたのに、ログアウト→ログインで公開に
+  戻る」。答えが二か所にあり、画面が読むのは端末側の `hide` だった。
+  スライスはメモリにしか無い（規則 22）ので、起動しなおした端末は「まだ
+  聞いていない」を「公開」と答えていた ──「無い」と「公開」が同じ枝。
+- Affected features: 言語のページの公開／非公開、人の言語のページ
+- Affected data: `wld` スライスの `hide` は**読まれなくなった。消していない**。
+  新しく保存されるものは無い
+- Affected docs: `docs/CHANGELOG.md`（2026-09-08）、`docs/BACKLOG.md`（「二か所
+  にある」の項を削除）、`CLAUDE.md`（リーダーが書く）
+- Implementation status: IMPLEMENTED、`tools/again-check.mjs` 三本＋
+  `tools/world-check.mjs`／`tools/acct-check.mjs` 60。実機未確認
+
+  **既定は「公開」のまま**、これは 2026-08-25 の決めごと（`hide` が無ければ
+  公開）です。端末が起動ごとに「公開」を送っていたのがそれを保っていたので、
+  送るのをやめた今は `netLangRow()` が行を作るときに `published_at` を入れて
+  います。`supabase/schema.sql` の列の既定にしなかったのは、`npm run rls` の
+  六本が「日付を入れずに入れた行は非公開」の上に立っているからです。
+
 ### 段はサーバーが決め、購入は買ったアカウントに束縛される
 - Date: 2026-09-06
 - Area: 課金（`plan` 表、`purchase` 表、`LinguaStore.swift`、`www/store.js`、

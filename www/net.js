@@ -1205,11 +1205,29 @@ function netLangRow(id, ok, bad){
     return;
   }
   nm=(id===langId)? (langName||'') : (L.name||'');
-  netPost('/rest/v1/language', {owner:me, name:nm}, SESS.at,
+  /* AND ITS PAGE IS OPEN FROM THE MOMENT IT EXISTS, which is the default the
+     owner chose. 「非公開の印」 was a flag whose ABSENCE meant public
+     (www/home.js, until 2026-09-08), and every language made so far has been
+     public because the phone sent 「公開」 up on its first launch.
+
+     That send is gone -- the phone holds no opinion about this any more
+     (「端末に hide の存在があるわけないやろ」 OWNER 2026-09-08) -- so the
+     default has to be said where the row is MADE, or every language made from
+     today would arrive private, which is a different decision from the one the
+     owner made. Here and not as the column's default in supabase/schema.sql:
+     six claims of `npm run rls` are built on 「a row inserted without a date is
+     private」, and moving the default under them would be widening what
+     publishing means in order to say what a new language is. */
+  netPost('/rest/v1/language',
+          {owner:me, name:nm, published_at:(new Date()).toISOString()}, SESS.at,
     function(d){
       var sid=(d && d.length)? d[0].id : '';
       if(!sid){ bad(d, 0); return; }
       L.sid=sid; L.uid=me; langStore();
+      /* The row is here and it says so -- www/home.js § wldPubGot. Without
+         this the article of a language just made is a page waiting for an
+         answer that has already arrived. */
+      wldPubGot(id, true);
       ok(sid);
     }, bad);
 }
@@ -1284,17 +1302,28 @@ function netLangDrop(id, ok, bad){
    switch back writes null and the door shuts -- nothing is destroyed, and the
    page comes back exactly as it was left.
 
-   Fired and not waited on, like netFollow(): the switch has already moved on
-   the screen. netLangSync() sends it again on the next launch, which is what
-   makes a request that never arrived correct itself. */
+   AND IT IS WAITED ON. It used to be fired and forgotten, like netFollow(),
+   because the switch had already moved on the screen -- the phone kept its own
+   `hide` and this was the phone telling the server about it. There is no
+   phone's answer any more (www/home.js § wldPubGot), so this IS the switch:
+   nothing moves until the server has taken it, and a request that did not
+   arrive leaves the page saying what is true.
+   「保存するタイミングでエラーが起きるなら、保存されないし」 OWNER 2026-09-05.
+
+   `netLangSync()` used to send this again on every launch to mend a toggle
+   that never arrived. It does not any more and there is nothing to mend: the
+   launch READS the row now, so a press that failed is simply a press that did
+   not happen. */
 function netLangPublic(on){
   if(!netSignedIn()) return;
+  var at=on? new Date().toISOString() : null;
   /* The switch is on the OPEN language's page, so that is the one it is about. */
   netLangRow(langId, function(sid){
     netSend('PATCH', '/rest/v1/language?id=eq.'+encodeURIComponent(sid),
-            {published_at: on? new Date().toISOString() : null},
-            SESS.at, function(){}, function(){});
-  }, function(){});
+            {published_at: at}, SESS.at,
+            function(){ wldPubGot(langId, at); render(); },
+            function(d, st, m){ netPop(d, st, m, function(){ netLangPublic(on); }); });
+  }, function(d, st, m){ netPop(d, st, m, function(){ netLangPublic(on); }); });
 }
 /* EVERY LANGUAGE THIS PERSON MADE, BACK ONTO A PHONE THAT HAS NONE.
    -------------------------------------------------------------------------
@@ -1361,7 +1390,8 @@ function netLangBack(then){
         var r=rows[at]||{}; at++;
         var sid=String(r.id||'');
         if(!sid || knows(sid)){ next(); return; }
-        netLangBack1(sid, String(r.name||''), function(m){ if(m) got=true; next(); });
+        netLangBack1(sid, String(r.name||''), r.published_at,
+                     function(m){ if(m) got=true; next(); });
       }
       next();
     },
@@ -1376,7 +1406,8 @@ function netLangBack(then){
    The local id IS the server's, the same as a language that is only read:
    this phone has never named this language, and the server already has. It
    also makes `knows()` above exact rather than a guess. */
-function netLangBack1(sid, name, done){
+function netLangBack1(sid, name, at, done){
+  wldPubGot(sid, at);
   netSlices(sid, function(there){
     var i, kind, o, wrote=false;
     if(!LANGS[sid]){ LANGS[sid]={ name:name, mine:true, sid:sid }; wrote=true; }
@@ -1537,7 +1568,8 @@ function netLangsDown(then, bad){
   for(id in LANGS)
     if(Object.prototype.hasOwnProperty.call(LANGS, id) && LANGS[id] && LANGS[id].sid)
       here[String(LANGS[id].sid)]=1;
-  netGet('/rest/v1/language?select=id,name&owner=eq.'+encodeURIComponent(SESS.uid),
+  netGet('/rest/v1/language?select=id,name,published_at&owner=eq.'+
+         encodeURIComponent(SESS.uid),
     function(d){
       /* WHAT CAME BACK IS A LIST OR IT IS NOT AN ANSWER. netLangBack() above
          has said so since it was written -- 「it did not answer」 and 「there
@@ -1578,6 +1610,11 @@ function netLangsDown(then, bad){
         if(!here[String(row.id)]) made++;
         here[String(row.id)]=1;
         langStore();
+        /* AND WHETHER ITS PAGE IS OPEN, which is the one fact about a language
+           that is a COLUMN rather than a slice. This is the road that answers
+           it (www/home.js § wldPubGot): until it has, the article does not
+           draw, because 「まだ聞いていない」 is not 「公開」. */
+        wldPubGot(nid, row.published_at);
         netSlices(row.id, function(there){
           var k;
           for(k in there){
@@ -1921,20 +1958,11 @@ function netLangSync1(id, done){
             langLoad();
             render();
           }
-          /* And the one fact about this language that is a COLUMN rather than
-             a slice: whether its page may be read by anybody else. Sent here,
-             once a launch, after the slices have been merged -- so it is the
-             switch as it stands after the sync rather than before it.
-
-             This is what makes a failed toggle correct itself. setWldHide()
-             sends it on the press and does not wait; if that request never
-             arrived, the phone would say private while the server went on
-             saying published, and THAT direction is a leak rather than a
-             nuisance. One small write on the next launch closes it.
-             Asked of the open language only, because wldHidden() reads WLD --
-             the open one's -- and sending it for another language would be
-             this language's switch written onto that one. */
-          if(id===langId) netLangPublic(!wldHidden());
+          /* Whether this language's page may be read by anybody else USED TO
+             BE SENT FROM HERE, once a launch, out of the phone's own `hide`.
+             It is not sent at all any more: the answer is the server's column
+             and this road only ever READS it (netLangsDown, netLangBack).
+             「端末に hide の存在があるわけないやろ」 OWNER 2026-09-08. */
           done(moved); return;
         }
         kind=SLICES[i]; i++;
