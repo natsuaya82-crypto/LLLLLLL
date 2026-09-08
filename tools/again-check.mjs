@@ -36,7 +36,14 @@ await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
 
 /* ---- a server made of two arrays, behind the one transport -------------- */
 const SERVER = `
-  window.__SRV = { lang:[], slice:[], n:0, down:false, sent:[], tried:[] };
+  window.__SRV = { lang:[], slice:[], n:0, down:false, sent:[], tried:[],
+                   /* WHAT IS IN THE AIR RIGHT NOW, by name. NET_OUT is a
+                      COUNT and a count cannot say which request is the one
+                      still out -- which is the only thing worth printing when
+                      「the mark did not come down」. Pushed when the request
+                      goes out and taken off when either half answers, which
+                      is the same pair of moments netOn()/netOff() are. */
+                   air:[] };
   netSend = function(method, p, body, tok, ok, bad){
     var S = window.__SRV;
     /* A WIRE SAYS HOW MANY REQUESTS IT IS HOLDING, and this stands in for the
@@ -48,9 +55,16 @@ const SERVER = `
        the stamp will do. */
     var wire = {};
     netOn(wire);
+    var name = method + ' ' + p;
+    S.air.push(name);
+    function landed(){
+      var k = S.air.indexOf(name);
+      if (k >= 0) S.air.splice(k, 1);
+      netOff(wire);
+    }
     var realOk = ok, realBad = bad;
-    ok = function(v){ netOff(wire); realOk(v); };
-    bad = function(d, st, m){ netOff(wire); realBad(d, st, m); };
+    ok = function(v){ landed(); realOk(v); };
+    bad = function(d, st, m){ landed(); realBad(d, st, m); };
     /* WHAT WAS ASKED, before it is decided whether it is answered. S.sent is
        written inside each route and so records only what got through -- which
        is the right list for 「did this arrive」 and the wrong one for 「did
@@ -1075,6 +1089,25 @@ const pop = await pg.evaluate(async ({ s, srv }) => {
   LANGS[id].uid = 'me3'; LANGS[id].mine = true;
   LANGS[id].sid = 'srv-known'; langStore();
   var out = {};
+  /* ---- 待つのは、時間ではなく起きること ---------------------------------
+     ここは固定の待ち（300ms・600ms）でした。答えは `setTimeout(0)` で返る
+     ので速いのですが、道は何段もあり、答えのたびに render() が走ります ──
+     測ると、［再接続］のあとマークが降りるまで **330ms**（暇な機械で）。
+     ゲートは検査を四本同時に回すので、その 330ms は 600ms を越えます。
+     枝ごとに緑で、取り込んだゲートでだけ赤くなったのはそれでした。
+
+     時間を延ばすのは同じ賭けを長くするだけなので、**条件を待ちます**。
+     「待つものが空になった」は NET_OUT が 0 になることで、それは印が降りる
+     条件そのもの（www/net.js § netIdle）── 訊きたいことをそのまま待つ形に
+     なります。天井は 8 秒で、そこまでに空にならなければそれが不具合です。 */
+  function till(f, ms){
+    var end = Date.now() + (ms || 8000);
+    return (function step(){
+      if (f()) return Promise.resolve(true);
+      if (Date.now() > end) return Promise.resolve(false);
+      return wait(10).then(step);
+    })();
+  }
   window.__SRV.down = true;
   /* 三つの別の画面が、それぞれ自分のものを訊いて、落ちる。タイムライン、
      言語を作る画面、通知 ── 昔は三本の別々の関数でした。 */
@@ -1082,7 +1115,7 @@ const pop = await pg.evaluate(async ({ s, srv }) => {
   go('feed'); render();     pullGo('feed');
   go('letters'); render();  pullGo('letters');
   pullGo('notif');
-  await wait(300);
+  await till(function(){ return popOn(); });
   out.fellTried = window.__SRV.tried.length;
   out.pops = document.querySelectorAll('#pop.on').length;
   out.popUp = popOn();
@@ -1094,16 +1127,26 @@ const pop = await pg.evaluate(async ({ s, srv }) => {
   out.popAfterPress = popOn();
   out.spinAfterPress = document.getElementById('netspin').className.indexOf('on') >= 0;
   out.inTheAir = NET_OUT;
-  await wait(300);
+  await till(function(){ return popOn(); });
   /* 通らなかったので、またポップ。そしてマークは止まっている。 */
   out.againTried = window.__SRV.tried.length;
   out.popAgain = popOn();
   out.spinAgain = document.getElementById('netspin').className.indexOf('on') >= 0;
-  /* 通れば、マークは自分で降りる。 */
+  /* 通れば、マークは自分で降りる ── **待つものが空になったとき**。空に
+     なるのを待ってから訊くので、遅いか降りないかは別のこととして出ます：
+     `emptied` が false なら要求がまだ空に在り（その名前が `left`）、true で
+     マークが回ったままなら netIdle() が呼ばれていない ── 別の不具合です。 */
   window.__SRV.down = false;
   var y2 = document.querySelector('#pop [data-do="popYes"]');
   if (y2) y2.click();
-  await wait(600);
+  var t0 = Date.now();
+  out.emptied = await till(function(){ return NET_OUT === 0; });
+  /* 印を降ろすのは netOff() が積んだ一手あと（www/net.js § netIdle）。 */
+  await till(function(){
+    return document.getElementById('netspin').className.indexOf('on') < 0;
+  }, 1000);
+  out.emptyMs = Date.now() - t0;
+  out.left = window.__SRV.air.slice();
   out.spinAfterUp = document.getElementById('netspin').className.indexOf('on') >= 0;
   out.popAfterUp = popOn();
   return out;
@@ -1122,10 +1165,13 @@ say(pop.againTried >= pop.fellTried && pop.popAgain && !pop.spinAgain,
     '**通らなければ、またポップ** ── ためた道が全部もう一度出て（' +
     pop.againTried + ' 件、落ちたときは ' + pop.fellTried + ' 件）、' +
     'ポップが戻り、マークは止まる');
-say(!pop.spinAfterUp && !pop.popAfterUp,
-    'そして通れば、マークは自分で降りる ── 待つものが空になったとき（マーク ' +
+say(pop.emptied && !pop.spinAfterUp && !pop.popAfterUp,
+    'そして通れば、マークは自分で降りる ── 待つものが空になったとき（' +
+    (pop.emptied ? pop.emptyMs + 'ms で空' : '**空にならない**') + '、マーク ' +
     (pop.spinAfterUp ? '**回ったまま**' : '止まった') + '、ポップ ' +
-    (pop.popAfterUp ? '**あり**' : 'なし') + '）');
+    (pop.popAfterUp ? '**あり**' : 'なし') +
+    (pop.left.length ? '、空に残っているのは **' + pop.left.join(' / ') + '**'
+                     : '') + '）');
 
 
 /* ---- 非公開にした言語は、ログアウト→ログインで公開に戻らない ------------
