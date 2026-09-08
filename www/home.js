@@ -1012,23 +1012,51 @@ function vWldArt(){
    here writes, and「他の人が使えるようになる」is the server's half and is
    not started. What is here is the shape: the article, and under it every
    section of the language with what it is open to. */
-function wldHidden(w){ return !!(w||world()).hide; }
-/* From the settings, and it writes the LANGUAGE rather than SET: whether this
-   language has a page is about this language, and SET is the person's. The
-   flag is `hide`, so absent is public -- which is the default the owner chose,
-   and a default that is the absence of a field is one no migration can get
-   wrong. */
-/* The switch, and the one thing about a language that is not a slice.
-   `hide` is this phone's copy; `language.published_at` on the server is what
-   actually decides whether anybody else may read the page (slice_read in
-   supabase/schema.sql). Both move together or the two disagree, and the
-   direction that disagrees badly is the server still saying published after
-   somebody has turned it off here. */
+/* WHETHER A LANGUAGE'S PAGE IS OPEN, AND THE ANSWER IS THE SERVER'S.
+   -------------------------------------------------------------------------
+   「端末に hide の存在があるわけないやろ。全部オンラインだって言ってるけど」
+   OWNER 2026-09-08.
+
+   There is one answer and it is `language.published_at`. There used to be two:
+   this phone kept `WLD.hide` in the `wld` slice and the screen read that, so a
+   phone that had not been told yet answered 「公開」 -- 「無い」 and 「公開」
+   sharing one branch, which is what the owner was looking at on build 143
+   after signing out and back in.
+
+   IT IS IN MEMORY AND NOT ON THE DISK, the same as a slice (CLAUDE.md rule
+   22): it is what the server has said this session, not something this phone
+   holds an opinion about. netLangsDown() and netLangBack() write it as the
+   rows come down and netLangPublic() writes it when the server has taken the
+   switch; nothing else may.
+
+   THREE STATES AND NOT TWO. 「開いている」「閉じている」「まだ聞いていない」 --
+   wldPubKnown() is the third, and the page does not draw until it is true.
+   That is r6-prof's 「揃ってから開く」 and it is the whole reason this rewrite
+   is a rewrite: a two-state answer cannot say 「まだ聞いていない」, and every
+   way of making it say so is a phone deciding.
+
+   THE VALUE LEFT IN THE `wld` SLICE IS NOT TOUCHED. Nothing reads `hide` any
+   more and nothing writes it; what somebody's file already holds stays exactly
+   where it is (docs/DATA_SAFETY.md -- a migration copies and never removes). */
+var LPUB={};
+function wldPubGot(id, at){ LPUB[String(id||'')]=at? 1 : 0; }
+function wldPubKnown(id){
+  return Object.prototype.hasOwnProperty.call(LPUB, String(id||''));
+}
+function wldPubOf(id){ return LPUB[String(id||'')]===1; }
+/* Asked of the BUNDLE and not of a world any more -- wldOpen() answers for the
+   open language out of LPUB above, wldSeenOf() answers for somebody else's out
+   of the `language_seen` row that came down with their page. One question, two
+   places it can be answered from, and neither of them is this phone's. */
+function wldHidden(L){ return !(L||wldOpen()).pub(); }
+/* The switch. It writes nothing here: it asks the server, and the screen moves
+   when the server has answered.
+   「保存するタイミングでエラーが起きるなら、保存されないし」 OWNER 2026-09-05 --
+   a switch that moved first and sent afterwards is a screen saying a thing
+   that has not happened, and it is what let the two answers come apart at all.
+   netLangPublic() renders when it lands and pops when it does not. */
 function setWldHide(v){
-  world().hide=!!v;
-  saveWld();
   netLangPublic(!v);
-  render();
 }
 /* Whether anybody may take the letters and the words away and use them.
    A different question from whether the page can be OPENED: somebody can
@@ -1716,6 +1744,11 @@ function wldSeenOf(lid){
        and a page saying a language is empty would be saying something it was
        never told. */
     here:    function(){ return !!m; },
+    /* `language_seen` refuses a language that is not published outright, so a
+       row that came back at all is a page that is open. netLangSeen() carries
+       the day it was opened as `pub` and this reads it rather than assuming:
+       a row with no date is a state this file does not get to invent. */
+    pub:     function(){ return !!(seen && seen.pub); },
     w:       function(){ return wldSliceOf(m, 'wld', {}); },
     letters: function(){ return wldSliceOf(m, 'letters', []); },
     name:    function(){ return seen? seen.name : ''; },
@@ -1764,8 +1797,13 @@ function vWorld(){
    render byte-for-byte identically before and after. */
 function wldOpen(){
   return {
-    /* Always. The one in front of you needs nothing off a network. */
-    here:    function(){ return true; },
+    /* NOT ALWAYS ANY MORE. The one in front of you needs nothing off a network
+       to be DRAWN -- every word of it is here -- but whether its page is open
+       is the server's answer and this page says so on its first line. Until
+       that row has come down there is no answer, and a page that guessed one
+       is the bug this was rewritten for. */
+    here:    function(){ return wldPubKnown(langId); },
+    pub:     function(){ return wldPubOf(langId); },
     w:       function(){ return world(); },
     letters: function(){ return LETTERS; },
     name:    function(){ return langName; },
@@ -1828,9 +1866,9 @@ function wldPage(ed, L, lid){
   body+='<h1 class="abth">'+esc(langNameSaid(L.name()))+'</h1>';
   /* Whether the page exists for anybody else at all. Only while writing:
      a state with no way to change it does not belong on the reading face. */
-  if(ed) body+='<button class="set"' + DO('setWldHide', [!wldHidden()]) + '>'+
+  if(ed) body+='<button class="set"' + DO('setWldHide', [!wldHidden(L)]) + '>'+
     '<span class="sl">'+esc(t('wld.shown'))+'</span>'+
-    swtHTML(!wldHidden())+'</button>';
+    swtHTML(!wldHidden(L))+'</button>';
   /* And a page nobody may open is the NAME and nothing else --
      「非公開にする場合は言語名しか表示されない」「非公開にしたら編集画面が全部
      非表示になる感じ」 OWNER 2026-08-25. That is what a language says to
@@ -1849,7 +1887,7 @@ function wldPage(ed, L, lid){
      Nothing is deleted and nothing is unset. `hide` is one flag, the sections
      keep their own answers, and every word is where it was: turning the
      switch back on brings the whole page back exactly as it was left. */
-  if(wldHidden(w) && !mine) return '<div class="view">'+wldFrame(body, ed, mine)+'</div>';
+  if(wldHidden(L) && !mine) return '<div class="view">'+wldFrame(body, ed, mine)+'</div>';
   wldSecs(w).forEach(function(sec){
     var inner='', extra='';
     /* Two of the sections do not reach the writing face at all, and both are

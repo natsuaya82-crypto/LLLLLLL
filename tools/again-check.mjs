@@ -1131,20 +1131,22 @@ say(!pop.spinAfterUp && !pop.popAfterUp,
 /* ---- 非公開にした言語は、ログアウト→ログインで公開に戻らない ------------
    「言語を非公開にしていたのに、ログアウトしてログインしたら公開に戻ってた」
    OWNER 2026-09-08（実機、ビルド 143）。
+   「端末に hide の存在があるわけないやろ。全部オンラインだって言ってるけど」
+   OWNER 2026-09-08 ── これが決めごとです。
 
-   「非公開か」の答えは二つある ── 端末の `wld` スライスの `hide` と、サーバー
-   の `language.published_at` です。画面が読むのは前者だけで、`wldHidden()` は
-   **無い WLD を「公開」と答えます**（`!!(world()).hide`）。スライスはメモリに
-   しか無い（rule 22）ので、起動しなおした端末の WLD は、サーバーから降りて
-   くるまで空 ── その一瞬に画面を読めば公開です。
+   **「この言語は非公開か」の答えは `language.published_at` 一つ。** 端末は
+   意見を持ちません。2026-09-08 まで答えは二つあり、画面が読んでいたのは端末の
+   `wld` スライスの `hide` のほうで、スライスはメモリにしか無い（rule 22）ので
+   起動しなおした端末は「まだ聞いていない」を「公開」と答えていました。
 
-   なので訊くのは一つ、**人が見る順番そのまま**: 非公開にして、ログアウトして、
-   端末を立ち上げなおして、ログインして、画面が何と言うか。ここは「起動して、
-   また起動する」を持っている唯一の check なので、この道はここにあります。
+   三本とも `published_at` から答えることを訊きます:
+   1. スイッチを押した瞬間 ── サーバーへ PATCH が飛び、**答えが戻ってから**
+      画面が非公開になる（先に変えて後から送る、はしない）
+   2. ログアウトして立ち上げなおしてログインしても非公開
+   3. 端末の写しが一つも無く、サーバーだけが答えるとき
 
-   赤を見た形（2026-09-08）: `netLangsDown()` が降ろすスライスから `wld` を
-   外すと ── docs/DATA_SAFETY.md の「手で書いたキーの一覧に足し忘れる」と同じ
-   形 ── ログインした端末は `hide=false`、つまり画面は「公開」と言います。   */
+   赤を見た形（2026-09-08）: `wldHidden()` を `world().hide` に戻すと、3 が
+   赤になります ── サーバーは非公開と言っているのに、画面は公開。            */
 await pg.reload();
 await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
 const hid = await pg.evaluate(async ({ s, srv }) => {
@@ -1158,37 +1160,42 @@ const hid = await pg.evaluate(async ({ s, srv }) => {
   for (id in LANGS)
     if (Object.prototype.hasOwnProperty.call(LANGS, id)) LANGS[id].uid = SESS.uid;
   langStore(); netSave();
-  /* この人の言語はもうサーバーにある ── fixture は `sid` を打ってあるので
-     netLangRow() は行を作りません。作らないほうが実機に近い（人は言語を
-     作った次の日に非公開にする）ので、その行のほうをここに置きます。 */
+  /* この人の言語はもうサーバーにあり、公開されている ── 人は言語を作った次の
+     日に非公開にする。fixture が `sid` を打ってあるので netLangRow() は行を
+     作りません。 */
   window.__SRV.lang = [{ id:LANGS[langId].sid, owner:SESS.uid,
-                         name:langName, published_at:null }];
+                         name:langName, published_at:'2026-09-07T00:00:00Z' }];
+  wldPubGot(langId, true);
   await new Promise(function(f){ netLangSync(function(){ f(); }); });
   await wait(150);
-  /* 人が押すのはこれ一つ ── 画面の公開スイッチ */
+
+  /* 人が押すのはこれ一つ。押した「瞬間」に画面が変わってはいけません ──
+     答えが戻ってからです。stub は setTimeout(0) で答えるので、押した直後の
+     同じ tick で読めばそれが分かります。 */
   setWldHide(true);
-  await wait(100);
-  await new Promise(function(f){ netSaveNow(function(){ f(); }); });
+  var atOnce = wldHidden();
   await wait(300);
-  var S = window.__SRV, sid = (LANGS[langId] || {}).sid, q, upHide = null;
-  for (q = 0; q < S.slice.length; q++)
-    if (S.slice[q].language === sid && S.slice[q].kind === 'wld')
-      { try { upHide = JSON.parse(S.slice[q].body).hide; } catch (e) { upHide = 'BAD'; } }
-  return { hide: wldHidden(), sid: sid, wldUp: upHide,
+  var S = window.__SRV;
+  return { atOnce: atOnce, hide: wldHidden(),
            pub: S.lang.map(function(r){ return r.published_at; }),
+           /* スライスに残っている hide は触られていないこと ── 過去のデータは
+              読まなくなるだけで、消しも書き換えもしない。 */
+           slice: (function(){ var w=slMine(langKey('wld')); 
+                    try{ return JSON.parse(w||'{}').hide; }catch(e){ return 'BAD'; } })(),
            srv: JSON.stringify({ lang:S.lang, slice:S.slice }) };
 }, { s: seed.toString(), srv: SERVER });
 
-/* 「サーバーに一本も無い」は「どの行も公開されていない」でもあるので、
-   行があることを先に訊きます ── every() は空の配列に true と答えます。 */
-say(hid.hide === true && hid.pub.length > 0 &&
-    hid.pub.every(function(p){ return p === null; }) && hid.wldUp === true,
-    '非公開にした瞬間、端末もサーバーも非公開 ── 画面は ' + hid.hide +
-    '、サーバーの published_at は ' + JSON.stringify(hid.pub) +
-    '、上がった wld の hide は ' + hid.wldUp);
+say(hid.atOnce === false && hid.hide === true && hid.pub.length > 0 &&
+    hid.pub.every(function(p){ return p === null; }),
+    '**スイッチは答えが戻ってから動く** ── 押した瞬間はまだ ' +
+    (hid.atOnce ? '非公開（先に変えている）' : '公開') + '、答えが戻ったあとは ' +
+    (hid.hide ? '非公開' : '**公開のまま**') + '、サーバーの published_at は ' +
+    JSON.stringify(hid.pub));
+say(hid.slice === undefined,
+    'そして `wld` スライスには hide を書かない ── 端末は意見を持たない（' +
+    JSON.stringify(hid.slice) + '）');
 
-/* ログアウトして、アプリを立ち上げなおして、ログインする。スライスはメモリ
-   なので、この端末は言語の中身を何も持たずに立ち上がります。 */
+/* ログアウトして、アプリを立ち上げなおして、ログインする。 */
 await pg.evaluate(async () => { netOut(); await new Promise(f => setTimeout(f, 150)); });
 await pg.reload();
 await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
@@ -1198,23 +1205,22 @@ const still = await pg.evaluate(async ({ srv, saved }) => {
   var S = window.__SRV, keep = JSON.parse(saved);
   S.lang = keep.lang; S.slice = keep.slice;
   function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
+  var before = wldPubKnown(langId);
   netTook({ access_token:'t', refresh_token:'r', user:{ id:'wld1' } });
   await wait(1200);
-  return { hide: wldHidden(), wld: JSON.stringify(WLD).slice(0, 60),
+  return { before: before, known: wldPubKnown(langId), hide: wldHidden(),
            pub: S.lang.map(function(r){ return r.published_at; }) };
 }, { srv: SERVER, saved: hid.srv });
 
-say(still.hide === true,
-    '**ログアウトして立ち上げなおしてログインしても、非公開のまま** ── 画面は ' +
-    still.hide + '（WLD は ' + still.wld + '）');
-say(still.pub.length > 0 && still.pub.every(function(p){ return p === null; }),
-    'そしてサーバーの公開列も動かない ── published_at は ' +
+say(still.before === false && still.known === true && still.hide === true &&
+    still.pub.length > 0 && still.pub.every(function(p){ return p === null; }),
+    '**ログアウトして立ち上げなおしてログインしても、非公開のまま** ── ' +
+    '起動直後は答えを持たず（' + still.before + '）、降りてきてから ' +
+    (still.hide ? '非公開' : '**公開**') + '、サーバーの published_at は ' +
     JSON.stringify(still.pub));
 
-/* そしてもう一度、**電波の無い起動のために取ってある写し（slGot）を消して**。
-   上の一本は写しでも降りてきた分でも緑になります ── 二つの道があって、赤に
-   したいのは降りてくるほうです。写しはディスクにあり、端末を入れ直した人にも
-   領域を回収された人にも無いので、これが「サーバーだけが答える」姿です。 */
+/* そして端末に写しが一本も無い状態で。ここが本命です ── 上の一本は端末が
+   何を持っていても緑になり得ますが、これはサーバーの答えだけが残ります。 */
 await pg.evaluate(() => {
   var i, k, doomed = [];
   for (i = 0; i < localStorage.length; i++){
@@ -1232,18 +1238,18 @@ const only = await pg.evaluate(async ({ srv, saved }) => {
   var S = window.__SRV, keep = JSON.parse(saved);
   S.lang = keep.lang; S.slice = keep.slice;
   function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
-  var before = wldHidden();
+  var before = wldPubKnown(langId);
   netTook({ access_token:'t', refresh_token:'r', user:{ id:'wld1' } });
   await wait(1200);
-  return { before: before, hide: wldHidden(),
+  return { before: before, hide: wldHidden(), slice: slMine(langKey('wld')),
            pub: S.lang.map(function(r){ return r.published_at; }) };
 }, { srv: SERVER, saved: hid.srv });
 
-say(only.hide === true && only.pub.length > 0 &&
+say(only.before === false && only.hide === true && only.pub.length > 0 &&
     only.pub.every(function(p){ return p === null; }),
-    '**写しも無い端末では、サーバーから降りてきた分が非公開だと言う** ── ' +
-    'ログイン前は ' + only.before + '（何も無いので「公開」と答える）、' +
-    'ログイン後は ' + only.hide + '、サーバーの published_at は ' +
+    '**写しも無い端末では、サーバーだけが答える** ── ログイン前は答えを持たず' +
+    '（' + only.before + '）、ログイン後は ' +
+    (only.hide ? '非公開' : '**公開**') + '、サーバーの published_at は ' +
     JSON.stringify(only.pub));
 
 /* ---- 起動しても、キーボードの枚数は増えない ------------------------------

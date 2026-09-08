@@ -97,6 +97,11 @@ const r = await pg.evaluate(({s}) => {
     abToggle(out.arrive[0].r);
     out.beforeSwitch = heads().filter(function(h){ return !h.shut; }).length;
     LANGS['LZW'] = { name:'Zeth', mine:true }; langStore();
+    /* その言語のページが開いているかもサーバーの答えで、答えの無い言語の
+       頁は「待っている」一枚です（www/home.js § wldPubKnown）。ここには
+       サーバーが無いので、行が降りてきたことにします ── この節が測るのは
+       ABOPEN であって、答えの有る無しではない。 */
+    wldPubGot('LZW', true);
     langOpen('LZW');
     stand('about');
     out.afterSwitch = heads().filter(function(h){ return !h.shut; })
@@ -183,7 +188,8 @@ const r = await pg.evaluate(({s}) => {
   }
   var TRI = [{pts:[[112,112],[688,112],[400,688]]}];
   var BAR = [{pts:[[150,400],[650,400]]}];
-  WLD_HAVE['LX'] = { name:'Ishu', words:2, letters:2, at:'2026-09-03' };
+  WLD_HAVE['LX'] = { name:'Ishu', words:2, letters:2, at:'2026-09-03',
+                     pub:'2026-09-03T00:00:00Z' };
   WLDS_HAVE['LX'] = {
     wld:     { body: JSON.stringify({ secs:{} }) },
     letters: { body: JSON.stringify([
@@ -219,7 +225,13 @@ const r = await pg.evaluate(({s}) => {
      back. */
   langOpen(langId);
   stand('about');
-  setWldHide(true);
+  /* 非公開にする。**答えはサーバーのもの**なので（www/home.js § wldPubGot、
+     OWNER 2026-09-08「端末に hide の存在があるわけないやろ」）、押した先に
+     あるのは `netLangPublic()` ── ここにはサーバーが無いので、その答えが
+     返ったときに書かれるものを直に置きます。`setWldHide()` を呼んでも
+     署名が無ければ何も起きず、この節は「押しても変わらない」を測るだけの
+     ものになります。押す道そのものは again-check が持っています。 */
+  wldPubGot(langId, false);
   stand('profile');
   var prow = document.querySelector('#app .wldrow');
   out.hidRow = prow ? prow.getAttribute('data-do') : '';
@@ -230,13 +242,15 @@ const r = await pg.evaluate(({s}) => {
   out.hidEdSecs = heads().length;
   out.hidEdSwitch = /data-do="setWldHide"/.test(document.getElementById('app').innerHTML);
   /* and the switch is the way back */
-  setWldHide(false);
+  wldPubGot(langId, true);
   out.hidBack = !wldHidden();
 
   /* AND SOMEBODY ELSE'S PRIVATE PAGE IS STILL THE NAME AND NOTHING ELSE.
      「非公開にする場合は言語名しか表示されない」 OWNER 2026-08-25 is about the
      face a reader gets, and that is the half this must not have widened. */
-  WLDS_HAVE['LX'].wld = { body: JSON.stringify({ hide:true, secs:{} }) };
+  /* 人の非公開の頁は `language_seen` が行ごと拒むので、`pub` が空なのが
+     その姿です ── スライスの中の `hide` ではありません。 */
+  WLD_HAVE['LX'] = { name:'Ishu', words:2, letters:2, at:'2026-09-03', pub:'' };
   stand('about', 'LX');
   out.seenHidSecs = heads().length;
 
