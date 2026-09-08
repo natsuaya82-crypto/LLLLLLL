@@ -1619,6 +1619,17 @@ export function halfDone(){
         PW = pwBlank(); PW.to = 'p1'; openPost('reply');
         const h = vForm(); PW = pwBlank();
         SCRIPT.dir = wasDir; SET.plan = wasPlan; return h; }],
+    /* 縦書きの言語で、宛先のある投稿画面。「向きがあるからさ そこは
+       Replying to 〇〇にしないと」 OWNER 2026-09-08 ── 本文の欄だけが縦で、
+       その上の宛先の行は横のまま、というのがこの画面です。横書きの同じ画面
+       （二つ上）とは別の面で、どちらも歩かせないと、行に向きが付いても緑の
+       まま出ます。 */
+    ['a column written to somebody', () => {
+        const wasPlan = SET.plan, wasDir = SCRIPT.dir;
+        SET.plan = 'pro'; SCRIPT.dir = 'ttb-rl';
+        PW = pwBlank(); openPost('new', 'jjj'); pwSetLn('kano tir');
+        const h = vForm(); PW = pwBlank();
+        SCRIPT.dir = wasDir; SET.plan = wasPlan; return h; }],
     /* And the same line in a timeline, where the direction is the post's own
        and not the reader's: a post says which way it was written and carries
        it, because rule 8 is that what somebody wrote is shown the way they

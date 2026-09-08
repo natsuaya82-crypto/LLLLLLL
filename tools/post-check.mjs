@@ -2835,6 +2835,117 @@ const R = await pg.evaluate(async () => {
                    'answers the post that was pressed');
     }
 
+    /* ---- 宛先は「翻訳」にも「向き」にも出ない -------------------------
+       「向きがあるからさ そこは Replying to 〇〇にしないと。本文に＠入れ
+       ちゃうと翻訳にも出ちゃうやん？だから固定にしたいの」 OWNER
+       2026-09-08。
+
+       二つあって、どちらも投げません。
+
+       一つ目は向き。宛先の行は本文の外に在るので、言語が縦書きでも右から
+       でも横のまま ── 縦になる直し方はいくらでもあり（欄を囲う箱に
+       dirClass() を付ける、行そのものに付ける）、どれも一行で書けてどれも
+       赤くならずに通ってしまいます。ページに訊きます。
+
+       二つ目は翻訳。意味の欄が空のとき、そこに出るのは pwMn() ── 本文を
+       読者の言葉で言い直したもの ── で、送るときに落とす意味も同じ関数の
+       ものです。宛先が本文の文字だった頃は、その @lingua が訳に混ざって
+       画面に出ていました（OWNER 実機 143 の写真）。本文に @ が無いことと
+       訳に @ が無いことは別の主張です：本文から取れていても、宛先を訳に
+       足す一行があれば戻ってきます。ink（PWRAW）も同じ理由で訊きます。 */
+    {
+      const wasPlan2 = SET.plan, wasDir2 = SCRIPT.dir;
+      SET.plan = 'pro'; SCRIPT.dir = 'ttb-rl';
+      PW = pwBlank();
+      openPost('new', 'lingua');
+      render();
+      const f2 = document.getElementById('pw-ln');
+      if (f2) f2.value = 'kano tir';
+      pwSetLn('kano tir');
+      const wm2 = (e) => e ? String(getComputedStyle(e).writingMode || '') : '';
+      const to2 = document.getElementById('pw-to');
+      const ln2 = document.getElementById('pw-ln');
+      if (wm2(ln2).indexOf('vertical') !== 0)
+        fails.push('the composer of a language written downward is drawn ' +
+                   wm2(ln2) + ', so nothing about the line over it is a test ' +
+                   'of anything');
+      if (!to2 || !to2.innerHTML)
+        fails.push('a composer addressed to somebody, in a language written ' +
+                   'downward, says nowhere whom it is for');
+      else {
+        if (wm2(to2).indexOf('vertical') === 0)
+          fails.push('the line saying whom the composer is for is drawn ' +
+                     wm2(to2) + ' when the language is written downward. ' +
+                     '「向きがあるからさ そこは Replying to 〇〇にしないと」 ' +
+                     'What runs down the page is what somebody WROTE');
+        const b2 = to2.querySelector('button');
+        if (b2 && wm2(b2).indexOf('vertical') === 0)
+          fails.push('the @handle over the composer is drawn ' + wm2(b2) +
+                     ' when the language is written downward');
+      }
+      /* 訳・意味に @ が無い。欄の placeholder は本物の pwMn() が入れます。 */
+      if (String(pwMn()).indexOf('@') >= 0)
+        fails.push('the translation under the composer reads "' + pwMn() +
+                   '", with the addressee in it. 「本文に＠入れちゃうと翻訳' +
+                   'にも出ちゃうやん？」 The handle is whom the post is FOR ' +
+                   'and is not a word anybody wrote');
+      const mnf = document.getElementById('pw-mn');
+      if (mnf && String(mnf.getAttribute('placeholder') || '').indexOf('@') >= 0)
+        fails.push('the meaning field under the composer offers "' +
+                   mnf.getAttribute('placeholder') + '", with the addressee ' +
+                   'in it');
+      /* そして送った投稿の意味にも。 */
+      const nV = POSTS.length;
+      pwSend();
+      if (POSTS.length === nV + 1) {
+        const v = POSTS[POSTS.length - 1];
+        if (String(v.mn || '').indexOf('@') >= 0)
+          fails.push('the post came out meaning "' + v.mn + '", with the ' +
+                     'addressee inside what it MEANS');
+      }
+
+      /* ---- そして ink にも出ない。
+         ink は「書いた人の文字で切った一行」で、切る元は PWRAW ── 欄に
+         入っていた生の文字です。ローマ字で打つと描いた字が一つも無いので
+         ink は null になり、そこに @ が無いという主張は何も言っていません。
+         なので Lingua キーボードが入れるもの、つまり PUA を打たせます。 */
+      {
+        const ord = ltPuaOrder();
+        if (ord.length < 3)
+          fails.push('the fixture\u2019s language has ' + ord.length +
+                     ' drawn letters, so nothing about a post\u2019s ink is a ' +
+                     'test of anything');
+        else {
+          const typed = ltPua(0) + ltPua(1) + ltPua(2);
+          PW = pwBlank();
+          openPost('new', 'lingua');
+          render();
+          const f3 = document.getElementById('pw-ln');
+          if (f3) f3.value = typed;
+          pwSetLn(typed);
+          const nI = POSTS.length;
+          pwSend();
+          if (POSTS.length !== nI + 1)
+            fails.push('a line of drawn letters made no post, so nothing about ' +
+                       'its ink is a test of anything');
+          else {
+            const w = POSTS[POSTS.length - 1];
+            if (!w.ink || !w.ink.g || !w.ink.g.length)
+              fails.push('a line of drawn letters came out with no ink on it, ' +
+                         'so nothing about what is IN the ink is a test of ' +
+                         'anything');
+            else if (JSON.stringify(w.ink).indexOf('@') >= 0)
+              fails.push('the addressee was cut into the post\u2019s ink (' +
+                         JSON.stringify(w.ink.s) + '). The ink is the line ' +
+                         'already cut into letters, and a reader would see the ' +
+                         'handle drawn into what somebody wrote');
+          }
+        }
+      }
+      SET.plan = wasPlan2; SCRIPT.dir = wasDir2;
+      try { closeSheet(); } catch (e) {}
+    }
+
     /* ＋ を押すと宛先も落ちる。`to` が落ちるのと同じ理由で、一時間前の
        書きかけがいつの間にか誰か宛てになっているのは、その人の投稿では
        ありません。 */
