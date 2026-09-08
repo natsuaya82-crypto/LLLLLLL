@@ -113,17 +113,29 @@ function bootSession(){
      So the up road waits for the down road, which is one line rather than a
      second thing that watches for duplicates -- a phone that has just been
      told everything this account has is a phone that knows what is missing.
-     Everything else here is unchanged: still not waited for by the app, which
-     has already opened on what is on the phone. */
-  netLangsDown(function(){
-    /* And the language, which belongs to this account and exists twice. Read,
-       merged and written back -- both ways, so a phone that has been offline
-       for a week arrives holding the week rather than replacing it.
+     Everything else here is unchanged.
 
-       After the session and not before: it is done AS somebody, and there is
-       always somebody now. */
-    netLangSync();
-  });
+     AND IT IS NOT ASKED FOR HERE ANY MORE. Both roads are askLangs() in
+     www/sns.js § WHAT EACH SCREEN ASKS FOR, and `langs` is on PULL_OPEN --
+     so the question goes out from netTook(), which is the one place that
+     knows a session ARRIVED, and covers a launch and somebody signing in an
+     hour later with one line instead of three (this one, and www/onboard.js
+     § obIn).
+
+     What that buys is the answer being WRITTEN DOWN. 「the language has come
+     down」 is `pullHad('mylangs')` now, so the profile can wait for it instead
+     of drawing itself without it: the row and the word beside a private
+     language come out of the `wld` slice, and a slice lives in memory
+     (rule 22). 「非公開の文字も出ない」 OWNER 2026-09-07.
+
+     THE UP ROAD IS STILL HERE, AND STILL AFTER THE DOWN ONE. It is a LAUNCH's
+     and not a session's: it writes, and what it writes is whichever language
+     is open, so firing it every time a session arrived would put the language
+     on the screen up under somebody who had just signed in -- before
+     langForAcct() has re-pointed it. acct-check 9 is that case and it went
+     red the moment the two were joined. Waiting on the answer rather than
+     being called by it is the same order in one line. */
+  pullWait('mylangs', netLangSync);
   /* And whether this account is the one that answers the reports, which is
      one column on one profile and decides whether a row exists at the foot of
      the settings list. Asked after the session is resumed because it is asked
@@ -181,4 +193,25 @@ render();
    needs to hear before they look at a list that is suddenly a hundred long.
    After render(), because it opens a sheet and a sheet is a screen. */
 capLapse();
-if(window.splashDone) splashDone();
+/* AND THE SPLASH COMES DOWN WHEN THE SCREEN UNDER IT IS WHOLE.
+   「プロフィールは、出す物を全部読み込んでから開く」「押してから読み込みが
+   終わるまで前の画面のままで、揃った瞬間にプロフィールが出る」 OWNER
+   2026-09-07.
+
+   The app opens ON the profile, so the splash is that screen's 「前の画面」 --
+   the one door into it with nothing behind it. profileReady() (www/me.js) is
+   the same three answers the press waits for, asked in one place so the two
+   roads cannot come to differ.
+
+   IT CAN ONLY MAKE THE SPLASH LATER THAN 900ms AND NEVER LATER THAN 4000.
+   www/index.html holds both ends: splashDone() shuts it on the LATER of the
+   call and 900ms, and a timer shuts it at 4000 whatever happens. So a phone
+   with no signal waits four seconds at the outside and then opens on what is
+   here, which is the same thing it did before.
+
+   Signed out there is nothing to wait for -- the app opens on the door, and
+   www/onboard.js draws it. */
+if(window.splashDone){
+  if(here().r==='profile' && netSignedIn()) profileReady(splashDone);
+  else splashDone();
+}

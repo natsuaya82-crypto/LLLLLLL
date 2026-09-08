@@ -2182,6 +2182,105 @@ const R = await pg.evaluate(async () => {
   }
   say('58: 管理の欄に＠を打って押すと、staff_add の呼び出しが一回だけ出る');
 
+  /* ---- 59-60. プロフィールは、出す物を全部読み込んでから開く --------------
+     「開いた時フォロー中の横に数字でない。非公開の文字も出ない。全部読み込ん
+     でから開くんじゃないの？」 OWNER 2026-09-07、実機 142。
+
+     測った形がそのまま主張になっています。答えを全部わざと遅らせ、
+     profileOpen('') を呼び、**最初にプロフィールが描かれた瞬間**の DOM を
+     見る。そこにフォロー数と非公開の印が既に無ければ赤 ── 後から差し替えて
+     いるということだからです。
+
+     描画を数えるのではなく最初の一枚を捕まえるのは、後から入れる作りでも
+     「最後には在る」は真になるからで、それは直る前の姿でもあります。
+     直る前はここが空でした: 数字は 172ms、非公開は 330ms、画面は 164ms。
+
+     `render` を包んで最初の一回を控えます。押した側が go() を呼ぶまで
+     render は走らないので、これは「開いた時」そのものです。 */
+  {
+    const realSend59 = netSend, realGet59 = netGet, realSend159 = netSend1;
+    /* どれ一つ答えないまま溜める ── 待っているのに開いたなら、それが赤です。
+       一本ずつではなく列で持つのは、一つの答えが次の問いを出すからです
+       （whose id を訊いてからフォローを訊く、など）。 */
+    const waiting = [];
+    netSend1 = function (m, p, b, t, ok) { waiting.push(function () { ok(fed(p), 200); }); };
+    netSend = function (m, p, b, t, ok, bad, up) { netSend1(m, p, b, t, ok, bad, up, true); };
+    netGet = function (p, ok, bad) { netSend('GET', p, null, '', ok, bad); };
+    const SID59 = 'aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa';
+    const fed = (p) => {
+      p = String(p);
+      if (p.indexOf('/rest/v1/follow?select=followed') === 0) return [{ followed: { handle: 'iri' } }];
+      if (p.indexOf('/rest/v1/follow?select=follower') === 0) return [{ follower: { handle: 'veth' } }];
+      if (p.indexOf('/rest/v1/profile?select=id') === 0) return [{ id: SESS.uid }];
+      if (p.indexOf('/rest/v1/language?select=id,name&owner=') === 0)
+        return [{ id: SID59, name: 'Shango' }];
+      /* 非公開は **サーバーから来る** ── ここで WLD に直に代入したら、
+         「印が描けるか」を訊くだけの検査になり、印が出なかった本当の理由
+         （wld のスライスがまだ来ていない）を跨いでしまう。 */
+      if (p.indexOf('/rest/v1/slice?select=') === 0)
+        return [{ kind: 'wld', body: JSON.stringify({ hide: true }), no: 1 }];
+      return [];
+    };
+    /* 何も答えていない状態に戻す ── PULL の表も、言語も、印も。
+       この言語はサーバーに在る（sid）が、この端末はスライスを一つも
+       持っていない ── 起動直後そのもの（規則 22、スライスは記憶の中）。 */
+    PULL_GOT = {}; PULL_OUT = {}; PULL_WAIT = {};
+    LANGS[langId] = { name: 'Shango', mine: true, sid: SID59, uid: SESS.uid };
+    slRm(langKey('wld'));
+    WLD = {};
+    NAV = [{ r: 'feed' }]; window.route = 'feed'; render();
+    const wasFeed = document.getElementById('app').innerHTML;
+
+    let first = null;
+    const realRender59 = render;
+    render = function () {
+      const r = realRender59.apply(this, arguments);
+      if (first === null && here().r === 'profile')
+        first = document.getElementById('app').innerHTML;
+      return r;
+    };
+    profileOpen('');
+    const movedEarly = (document.getElementById('app').innerHTML !== wasFeed);
+    /* 揃うまで画面は動かない。答えは一本も返していないので、ここで
+       プロフィールに変わっていたら「読み込む前に開いた」ということ。 */
+    if (movedEarly || first !== null)
+      no('59: 答えが一本も返っていないのにプロフィールが開いた ── ' +
+         '「押してから読み込みが終わるまで前の画面のまま」OWNER 2026-09-07');
+    else say('59: 答えが返るまで、押した画面のまま動かない');
+
+    /* そして揃った瞬間。溜めた答えを順に解く ── 解いた先で新しい問いが
+       出れば、それも列の後ろに付く。 */
+    for (let n = 0; n < 60 && first === null && waiting.length; n++) waiting.shift()();
+    if (first === null)
+      no('60: 答えが全部返ってもプロフィールが開かない');
+    else {
+      /* 「フォロー中」の横の数字と、言語の行の「非公開」の印。どちらも
+         最初の一枚に在ること ── そして数字は **落ち着いたあとと同じ** で
+         あること。「在る」だけを訊くと 0 が通ってしまい、0 と出て 1 に
+         変わるのがこの一件そのものです。 */
+      const nums = (h) => (String(h).match(/<b>\d+<\/b>/g) || []).join(',');
+      const settled = nums(document.getElementById('app').innerHTML);
+      if (!nums(first))
+        no('60: 最初に描かれたプロフィールにフォローの数字が無い ── ' +
+           '後から差し替えている。「開いた時フォロー中の横に数字でない」');
+      else if (nums(first) !== settled)
+        no('60: 最初の数字が落ち着いたあとと違う ── ' + nums(first) + ' → ' +
+           settled + '。「0 と出て1秒後に1に変わる、をしない」');
+      else if (settled !== '<b>1</b>,<b>1</b>')
+        no('60: サーバーが答えた数（1 と 1）になっていない ── ' + settled +
+           '。fo=' + JSON.stringify(ME.fo) + '（前回の値がそのまま出ていれば、' +
+           'この頁は mine を待っていない）');
+      else if (first.indexOf('wldoff') < 0)
+        no('60: 最初に描かれたプロフィールに非公開の印が無い ── ' +
+           'wld のスライスがまだ来ていない。「非公開の文字も出ない」');
+      else say('60: 最初に描かれた一枚に、フォローの数字も非公開の印も既に在る');
+    }
+    render = realRender59;
+    netSend = realSend59; netGet = realGet59; netSend1 = realSend159;
+    delete WLD.hide;
+    NAV = [{ r: 'profile' }]; window.route = 'profile';
+  }
+
   return out;
 });
 

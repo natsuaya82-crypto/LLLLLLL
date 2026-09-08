@@ -44,9 +44,10 @@ function snsWaitHTML(){
 }
 /* THE SAME MARK AT THE SIZE OF A WORD, for the places where what is waited
    for is one line inside a row rather than a screenful. `.numwait` in
-   www/index.html is what draws it, and it was written for the counts under a
-   profile; the day's sentence needs the same thing for the same reason, and a
-   second copy of three tags is how the two would come to differ.
+   www/index.html is what draws it. It was written for the counts under a
+   profile and there is nothing to wait for there any more -- that page is not
+   drawn until every answer is in (www/me.js § profileOpen). What is left is
+   the day's sentence, which needed the same thing for the same reason.
 
    IT IS A WORD AND NOT A SCREEN BECAUSE THE ROW MUST NOT MOVE. snsWaitHTML()
    carries 48px of padding, so a row wearing it stands three times its own
@@ -609,6 +610,20 @@ function pullHad(r){
    only one of the eight that did. */
 function pullForget(){
   PULL_GOT={};
+  /* AND THE ASKS THAT ARE STILL IN THE AIR ARE THE LAST SESSION'S TOO.
+     PULL_OUT refuses a second ask while one is out, and a request made as
+     somebody who has just signed out is never coming back -- so the mark
+     stayed up and the NEXT person to sign in was refused every question this
+     table asks. Found by acct-check 27 (「入り直したその場で、自分の言語が
+     降りてくる」) the day the languages joined this table: the road it walks
+     is a sign-out with the launch's requests still out.
+
+     The answers those requests carry cannot land on the new session either:
+     pullRun()'s callbacks write PULL_GOT and render, and both would be about
+     the person who has gone. Clearing the flag is what lets the new one ask.
+     PULL_WAIT is cleared with it -- a waiter is somebody holding a screen
+     for an answer to a question that is not being asked any more. */
+  PULL_OUT={}; PULL_WAIT={};
   DAY=null; DAY_GOT=false;
 }
 /* And ONE answer forgotten, for the one thing that can go stale without the
@@ -618,6 +633,38 @@ function pullForget(){
    screen on the mark for ever -- pullNeed() is refused by PULL_GOT, and
    nothing else would ever set it back. www/shell.js § langWipe. */
 function pullDrop(r){ PULL_GOT[r]=0; }
+/* ---- AND SOMEBODY WAITING FOR ONE OF THESE ANSWERS TO COME IN ------------
+   「プロフィールは、出す物を全部読み込んでから開く」 OWNER 2026-09-07.
+
+   A screen that must not be drawn until its answers are in needs a third
+   thing beside 「ask」 and 「have you got it」: 「tell me when」. It is here
+   rather than at each caller because pullRun() below is already the one
+   place that knows when an asking ENDED, and it knows it whichever way it
+   went.
+
+   ONE CALLBACK AND NOT TWO. An answer that came back empty is an answer, and
+   a request that could not be made is already netPop()'s -- pullRun() puts
+   the pop up and ［再接続］ runs the same question again. So there is
+   nothing left for a waiter to do about a failure except stop waiting, and
+   telling it apart here would be a second place deciding what a failure
+   means.
+
+   Nothing to ask is nothing to wait for: signed out, or a name this table
+   does not carry, answers at once. */
+var PULL_WAIT={};
+function pullWait(r, done){
+  if(pullHad(r) || !PULL_ON[r] || !netSignedIn()){ done(); return; }
+  if(!PULL_WAIT[r]) PULL_WAIT[r]=[];
+  PULL_WAIT[r].push(done);
+  pullNeed(r);
+}
+/* The list is taken FIRST, so a waiter that asks again from inside its own
+   callback starts a new list rather than being woken by this one. */
+function pullWoke(r){
+  var ws=PULL_WAIT[r];
+  PULL_WAIT[r]=null;
+  return ws || [];
+}
 function pullRun(r, person){
   var ask=PULL_ON[r], hav=PULL_HAS[r];
   /* Signed out there is nothing to ask for: the three screens are the door. */
@@ -628,17 +675,25 @@ function pullRun(r, person){
   if(!person && (hav? hav() : PULL_GOT[r])) return;
   PULL_OUT[r]=1;
   ask(function(got){
+    var ws, i;
     PULL_OUT[r]=0;
     /* The mark stops turning when the asking is over, whatever came back. A
        render takes it out by itself; the road where nothing came back does
        not render, and that is the one this line is for. */
     pullSpinOff();
-    if(!got) return;
-    PULL_GOT[r]=1;
-    render();
+    if(got) PULL_GOT[r]=1;
+    /* And whoever is waiting for this one, BEFORE the render: an answer that
+       came back empty is still an answer, so both roads out of here wake
+       them. */
+    ws=pullWoke(r);
+    for(i=0;i<ws.length;i++) ws[i]();
+    if(got) render();
   }, function(d, s, m){
+    var ws, i;
     PULL_OUT[r]=0;
     pullSpinOff();
+    ws=pullWoke(r);
+    for(i=0;i<ws.length;i++) ws[i]();
     /* 通信が落ちたら何も進まない ── netPop() (www/net.js)。［再接続］が
        走らせるのはこの画面の同じ問いで、それは人が押したのと同じ道です。 */
     netPop(d, s, m, function(){ pullRun(r, true); });
@@ -688,6 +743,14 @@ pullOn('drafts',  askDrafts);
 pullOn('day',     askDay,     dayGot);
 pullOn('mine',    askMine);
 pullOn('blocks',  askBlocks,  netBlockedGot);
+/* `mylangs` AND NOT `langs`, BECAUSE `langs` IS A ROUTE. Every key on this
+   table that happens to name a screen is a screen somebody can pull, and
+   there is one rule about which those are: 「引っ張って更新は SNS だけ」
+   OWNER 2026-09-06. Calling it `langs` made the list of languages -- which is
+   on the making side -- a screen that pulls, silently. again-check counts
+   them and said so. */
+pullOn('mylangs', askLangs);
+pullOn('myposts', askMyPosts);
 pullOn('saved',   askSaved);
 pullOn('recent',  askRecent);
 /* ---- AND WHAT AN OPEN ASKS FOR -------------------------------------------
@@ -726,7 +789,17 @@ pullOn('recent',  askRecent);
    and what fills them the first time is whoPull() and folPull() in www/me.js,
    asked once per handle. That is not the fault being fixed here: nobody was
    looking at that person's page a second before they pressed their name. */
-var PULL_OPEN=['feed', 'notif', 'day', 'mine', 'blocks', 'saved', 'recent', 'drafts'];
+/* AND THE THREE THE PROFILE IS MADE OF ARE ON IT.
+   「開いた時フォロー中の横に数字でない。非公開の文字も出ない。全部読み込んで
+   から開くんじゃないの？」 OWNER 2026-09-07, on a phone.
+
+   `mine` was already here and is the two counts. `langs` is the language --
+   its row, and the word beside it when it is private. `myposts` is what you
+   have written. The profile is the screen the app OPENS on, so all three
+   belong to the open exactly as the timeline's do; asking for them from the
+   screen that shows them is what 「1秒遅れ」 is. */
+var PULL_OPEN=['feed', 'notif', 'day', 'mine', 'blocks', 'saved', 'recent',
+               'drafts', 'mylangs', 'myposts'];
 /* Fired by netTook() (www/net.js), which is the one place that knows a
    session ARRIVED -- a launch through netResume(), or somebody signing in an
    hour later through the door. Every one of these is asked AS somebody, so
@@ -953,11 +1026,7 @@ function askThread(ok, bad){
 function askWho(ok, bad){
   var h=pfWho() || meHandle();
   meAgain(h);
-  netPostsBy(h, function(ps){
-    if(!ps){ ok(0); return; }
-    postTake(ps);
-    ok(1);
-  }, bad);
+  pfPosts(h, ok, bad);
 }
 /* And the list behind one of those counts, which is the same ask without the
    posts. 「フォロワーとかタップしても見れないし」 was the door; this is the
@@ -1008,6 +1077,52 @@ function askMine(ok, bad){
 function askBlocks(ok, bad){
   netBlockedRead(function(){ ok(0); }, bad);
 }
+/* THE LANGUAGES THIS ACCOUNT HAS, AND THE OPEN ONE PUT BACK TOGETHER.
+   -------------------------------------------------------------------------
+   Two roads that go in order, and www/boot.js says why: what the server has
+   and this phone has not comes DOWN, and only then does what this phone has
+   and the server has not go UP.
+
+   It is a name on this table because a SCREEN draws part of it. The profile
+   carries the language's row and the word beside it when the language is
+   private, and both come out of the `wld` slice -- which lives in memory
+   (rule 22) and arrives only when netLangsDown() answers. This was a call in
+   www/boot.js with its answer written down nowhere, so nothing could ask
+   whether it was in: the profile was drawn with WLD still empty and the word
+   appeared 160ms later. Measured, 2026-09-07: 非公開 at 330ms on a page that
+   was on the screen at 164ms. 「非公開の文字も出ない」 OWNER 2026-09-07.
+
+   `bad` is handed through rather than left to netLangsDown()'s own netPop(),
+   for the reason every other entry here has one: ［再接続］ runs pullRun()'s
+   own question again, which is one road back rather than two.
+
+   THE DOWN ROAD ONLY. netLangSync() -- what this phone has and the server has
+   not, going UP -- stays at the LAUNCH, in www/boot.js, waiting on this
+   answer. It is not the same question: this one is 「what does this account
+   have」 and is asked whenever a session arrives, and that one WRITES, and
+   what it writes is whatever language happens to be open. Firing it at every
+   arrival meant a sign-in put the language on the screen up under whoever had
+   just walked in, before langForAcct() had re-pointed it -- acct-check 9,
+   which is the one thing in this area that loses somebody's work. */
+function askLangs(ok, bad){
+  netLangsDown(function(){ ok(1); }, bad);
+}
+/* WHAT ONE PERSON HAS WRITTEN, and it is the one place a profile's list of
+   posts is asked for. Three roads wanted it -- the open, a pull, and the
+   press that walks onto somebody's page -- and a request made three ways is
+   three answers waiting to differ. */
+function pfPosts(h, ok, bad){
+  netPostsBy(h, function(ps){
+    if(!ps){ ok(0); return; }
+    postTake(ps);
+    ok(1);
+  }, bad);
+}
+/* YOUR OWN PAGE'S POSTS, asked at the open with everything else the profile
+   is made of. The profile is where the app opens, so its list arriving after
+   the screen does is the same 「1秒遅れ」 as the rest of § WHAT AN OPEN ASKS
+   FOR. */
+function askMyPosts(ok, bad){ pfPosts(meHandle(), ok, bad); }
 /* `mine` NAMES NO hav() ON PURPOSE, and that is the whole of what was wrong
    with the counts. PULL_GOT is 「answered THIS SESSION」; ME.fo is 「this
    phone has a list」, and a phone that has been opened before always has one.
@@ -1898,8 +2013,8 @@ function snsWhoRow(p, full){
     (p.lname? '<span class="plangtag">'+esc(p.lname)+'</span>' : '');
   return '<div class="whrow">'+
     (p.mine
-      ? '<button class="whgo"' + DO('goTab', ["profile"]) + '>'+inner+'</button>'
-      : '<button class="whgo"' + DO('go', ["profile", h]) + '>'+inner+'</button>')+
+      ? '<button class="whgo"' + DO('profileOpen', [""]) + '>'+inner+'</button>'
+      : '<button class="whgo"' + DO('profileOpen', [h]) + '>'+inner+'</button>')+
     (p.mine? ''
       : '<button class="whfo'+(on? ' on' : '')+'"' + DO('meFollow', [h]) + '>'+
           esc(t(on? 'me.unfollow' : 'me.follow'))+'</button>')+
@@ -2547,10 +2662,10 @@ function notGo(n){
        and a list of one is a screen you would have to press twice. */
     ps=notPeople(n);
     if(ps.length>1) return DO('go', ["notfo", ps.join(',')]);
-    return h? DO('go', ["profile", h]) : '';
+    return h? DO('profileOpen', [h]) : '';
   }
   if(n.id) return DO('postOpen', [String(n.id)]);
-  return h? DO('go', ["profile", h]) : '';
+  return h? DO('profileOpen', [h]) : '';
 }
 function notRow(n){
   var k=String(n.kind||''), p=postById(n.id), pics=p? postPics(p) : [], ic=

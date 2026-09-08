@@ -1334,7 +1334,12 @@ function tabBar(){
        The name is still said -- as the button's aria-label, because a button
        whose whole content is an aria-hidden drawing has nothing to be called
        by otherwise, and pageName() stays the one place that names a tab. */
-    out+='<button class="tab'+(cur===r?' on':'')+'"' + DO('goTab', [r]) +
+    /* THE PROFILE IS THE ONE TAB THAT IS NOT goTab(). It is not drawn until
+       everything on it has answered -- www/me.js § profileOpen -- and that
+       is the whole of 「全部読み込んでから開く」. Everything else on this bar
+       draws out of what is already here. */
+    out+='<button class="tab'+(cur===r?' on':'')+'"' +
+      (r==='profile'? DO('profileOpen', [""]) : DO('goTab', [r])) +
       (r==='profile'? ' data-hold="1"' : '')+
       ' aria-label="'+esc(pageName(r))+'">'+TAB_ICON[r]+
       /* A NUMBER AND NOT A DISC. Rule 18 -- nothing new gets a corner radius,

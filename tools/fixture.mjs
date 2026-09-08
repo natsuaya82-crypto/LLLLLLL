@@ -910,6 +910,16 @@ export function halfDone(){
     ['the profile, likes', () => { pfTab='li'; const p=postById('p2'); p.lime=1; p.li=1;
         window.route='profile'; NAV=[{r:'profile'}];
         const h=vProfile(); delete p.lime; p.li=0; pfTab='posts'; return h; }],
+    /* AND THE LANGUAGE'S ROW WHEN THE LANGUAGE IS PRIVATE, which is the word
+       beside its name and was in no picture and on no walk.
+       「非公開の文字も出ない」 OWNER 2026-09-07, on a phone: the row draws
+       out of the `wld` slice, the slice lives in memory (rule 22), and the
+       page was going up before it had come down. The row is the thing the
+       owner was looking at, so it is a face. */
+    ['the profile, the language private', () => {
+        window.route='profile'; NAV=[{r:'profile'}];
+        WLD.hide = true;
+        const h=vProfile(); delete WLD.hide; return h; }],
     /* ---- the timeline read by somebody who did not write it -------------
        Three states off the owner's phone on 2026-09-04. None of them is a
        route: each is a fact about what has arrived, and each was the one
@@ -935,13 +945,10 @@ export function halfDone(){
         const h = vFollows();
         delete FOL_HAVE['ers:iri']; delete FOL_ASKED['ers:iri'];
         POSTS.push.apply(POSTS, was); return h; }],
-    /* And a profile whose two counts nobody has answered for yet, which is
-       what stands there instead of a 0 that jumps.
-       「0 と出て1秒後に1に変わる、をしない」 */
-    ['a profile before the counts have arrived', () => {
-        const fo = ME.fo, fr = ME.fr; delete ME.fo; delete ME.fr;
-        window.route='profile'; NAV=[{r:'profile'}];
-        const h = vProfile(); ME.fo = fo; ME.fr = fr; return h; }],
+    /* A PROFILE BEFORE THE COUNTS HAVE ARRIVED IS NOT A STATE ANY MORE.
+       「プロフィールは、出す物を全部読み込んでから開く」 OWNER 2026-09-07 --
+       the page waits on `mine` before it opens (www/me.js § profileOpen), so
+       there is no face where the two words stand without their numbers.
     /* ---- a tag, and what pressing one gives ------------------------------
        「タグは青く光るからタップしたらタグの検索になる。」 OWNER 2026-09-04.
        Two faces, because the fault is nearly always in the one nobody
@@ -1149,16 +1156,12 @@ export function halfDone(){
                              bio:'', fo:2, fr:3, out:false };
         window.route='profile'; NAV=[{r:'profile', a:'iri'}];
         const h = vProfile(); NAV=[{r:'profile'}]; ME.fo = ['iri','veth']; return h; }],
-    /* AND THE FACE BEFORE THE SERVER HAS ANSWERED. 「他の人のプロフィール
-       いく時、フォロー中とフォロワーがくるくるするけど、そこじゃなくて
-       その人の画面がくるくるして欲しい」 OWNER 2026-09-05 -- vProfile()
-       spins the whole screen in place of the card while WHO_HAVE[h] is
-       still empty, and every fixture above now seeds it so the card itself
-       stays walked. 'kai' carries no seed anywhere in this file and no post
-       of their own, so this is the one face that is left turning. */
-    ['somebody else\'s profile, waiting on the server', () => {
-        window.route='profile'; NAV=[{r:'profile', a:'kai'}];
-        const h = vProfile(); NAV=[{r:'profile'}]; return h; }],
+    /* THE FACE BEFORE THE SERVER HAS ANSWERED IS GONE, and so is the state.
+       「プロフィールは、出す物を全部読み込んでから開く」「くるくるも出さない」
+       OWNER 2026-09-07: the page is not drawn until every answer is in
+       (www/me.js § profileOpen), so there is no such thing as a profile
+       waiting on the server. A face for a state the app cannot be in is six
+       screens walked in a shape nobody can reach. */
     /* A post kept to yourself, which is the lock beside the time, and the
        composer while it is going to be one -- the button says so. */
     ['a post kept to yourself', () => { const p = postById('p1'); p.pv = 1;
