@@ -660,21 +660,28 @@ const R = await pg.evaluate(async () => {
      `language` の列（`id` と `published_at`）で、訊いていなかっただけです。 */
   start();
   netOut(); arrive(A);
-  let langPath = '';
+  let who22Path = '';
+  let langAsked = 0;
   netGet = (path, ok) => {
-    if (path.indexOf('/rest/v1/language') === 0) langPath = path;
-    if (path.indexOf('/rest/v1/profile_seen') === 0)
-      return ok([{ id: B, handle: 'iri', display: 'Iri', av: null, bio: '' }]);
-    if (path.indexOf('/rest/v1/language') === 0)
-      return ok([{ id: 'lang-id-1', owner: B, name: 'むこうの言語',
-                   published_at: '2026-08-30T00:00:00Z' }]);
+    if (path.indexOf('/rest/v1/language') === 0) langAsked++;
+    if (path.indexOf('/rest/v1/profile_seen') === 0) {
+      who22Path = path;
+      return ok([{ id: B, handle: 'iri', display: 'Iri', av: null, bio: '',
+                   lang_id: 'lang-id-1', lang_name: 'むこうの言語',
+                   lang_pub: true }]);
+    }
     return ok([]);
   };
   let w2 = null;
   netWho('iri', (w) => { w2 = w; }, () => {});
   netGet = realGet;
-  if (langPath.indexOf('published_at') < 0)
-    no('22: 言語を published_at 抜きで訊いている — ' + langPath);
+  /* 同じ行で来る ── 言語のために二本目を出さない。
+     「なんか全体的に遅くない？」OWNER 2026-09-08、supabase/schema.sql の
+     profile_seen が繋いでいます。 */
+  if (who22Path.indexOf('lang_pub') < 0)
+    no('22: 人の行に扉の印を訊いていない — ' + who22Path);
+  if (langAsked)
+    no('22: 言語をもう一往復して訊いている — ' + langAsked + ' 本');
   if (!w2) no('22: 人が返ってこなかった');
   else {
     if (w2.lname !== 'むこうの言語') no('22: 言語の名前が壊れた — ' + JSON.stringify(w2.lname));
@@ -688,9 +695,9 @@ const R = await pg.evaluate(async () => {
   netOut(); arrive(A);
   netGet = (path, ok) => {
     if (path.indexOf('/rest/v1/profile_seen') === 0)
-      return ok([{ id: B, handle: 'iri', display: 'Iri', av: null, bio: '' }]);
-    if (path.indexOf('/rest/v1/language') === 0)
-      return ok([{ id: 'lang-id-2', owner: B, name: '非公開', published_at: null }]);
+      return ok([{ id: B, handle: 'iri', display: 'Iri', av: null, bio: '',
+                   lang_id: 'lang-id-2', lang_name: '非公開',
+                   lang_pub: false }]);
     return ok([]);
   };
   let w3 = null;
@@ -1049,10 +1056,10 @@ const R = await pg.evaluate(async () => {
     asked2.push(path);
     if (path.indexOf('/rest/v1/profile?select=id') === 0)
       return ok([{ id: B }]);
-    if (path.indexOf('/rest/v1/follow?select=followed(handle)') === 0)
-      return ok([{ followed: { handle: 'kai' } }]);
-    if (path.indexOf('/rest/v1/follow?select=follower(handle)') === 0)
-      return ok([{ follower: { handle: 'veth' } }]);
+    if (path.indexOf('/rest/v1/follow_seen?select=followed_handle') === 0)
+      return ok([{ followed_handle: 'kai' }]);
+    if (path.indexOf('/rest/v1/follow_seen?select=follower_handle') === 0)
+      return ok([{ follower_handle: 'veth' }]);
     return ok([]);
   };
 
@@ -1069,17 +1076,25 @@ const R = await pg.evaluate(async () => {
   let hisFo = null;
   netFollowing((r) => { hisFo = r; }, () => {}, 'iri');
   const j2 = asked2.join('\n');
-  if (j2.indexOf('handle=eq.iri') < 0) no('30: ハンドルから人を引いていない');
-  if (j2.indexOf('follower=eq.' + B) < 0)
-    no('30: 人のフォロー中を、その人の uid で訊いていない — ' + j2);
+  /* ハンドルのまま訊く ── uuid を引き当てる一往復が先にあったのを、
+     `follow_seen`（supabase/schema.sql）で消しました。
+     「なんか全体的に遅くない？」OWNER 2026-09-08。 */
+  if (j2.indexOf('follower_handle=eq.iri') < 0)
+    no('30: 人のフォロー中を、その人のハンドルで訊いていない — ' + j2);
+  if (j2.indexOf('/rest/v1/follow_seen?select=followed_handle') < 0)
+    no('30: フォロー中が follow_seen から来ていない — ' + j2);
   if (!hisFo || hisFo[0] !== 'kai') no('30: 人のフォロー中が返らない');
 
   asked2 = [];
   let hisFr = null;
   netFollowers((r) => { hisFr = r; }, () => {}, 'iri');
-  if (asked2.join('\n').indexOf('followed=eq.' + B) < 0)
-    no('30: 人のフォロワーを、その人の uid で訊いていない');
+  if (asked2.join('\n').indexOf('followed_handle=eq.iri') < 0)
+    no('30: 人のフォロワーを、その人のハンドルで訊いていない');
   if (!hisFr || hisFr[0] !== 'veth') no('30: 人のフォロワーが返らない');
+  /* 二本は同時に出る ── 一覧と「その人は居るのか」。前の答えを待ってから
+     次を出していないこと。 */
+  if (asked2.length !== 2)
+    no('30: 人のフォロワーが二本で訊かれていない — ' + asked2.length + ' 本');
 
   /* 居ない人は空ではなく「訊けなかった」。空の一覧と、そんな人は居ない、は
      別のことです。 */
@@ -1141,10 +1156,10 @@ const R = await pg.evaluate(async () => {
     foSeen.push(path);
     if (path.indexOf('/rest/v1/profile?select=id') === 0)
       return ok([{ id: B }]);
-    if (path.indexOf('/rest/v1/follow?select=follower(handle)') === 0)
-      return ok([{ follower: { handle: 'noor' } }, { follower: { handle: 'sela' } }]);
-    if (path.indexOf('/rest/v1/follow?select=followed(handle)') === 0)
-      return ok([{ followed: { handle: 'tavi' } }]);
+    if (path.indexOf('/rest/v1/follow_seen?select=follower_handle') === 0)
+      return ok([{ follower_handle: 'noor' }, { follower_handle: 'sela' }]);
+    if (path.indexOf('/rest/v1/follow_seen?select=followed_handle') === 0)
+      return ok([{ followed_handle: 'tavi' }]);
     return ok([]);
   };
 
@@ -2214,8 +2229,8 @@ const R = await pg.evaluate(async () => {
     const SID59 = 'aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa';
     const fed = (p) => {
       p = String(p);
-      if (p.indexOf('/rest/v1/follow?select=followed') === 0) return [{ followed: { handle: 'iri' } }];
-      if (p.indexOf('/rest/v1/follow?select=follower') === 0) return [{ follower: { handle: 'veth' } }];
+      if (p.indexOf('/rest/v1/follow_seen?select=followed') === 0) return [{ followed_handle: 'iri' }];
+      if (p.indexOf('/rest/v1/follow_seen?select=follower') === 0) return [{ follower_handle: 'veth' }];
       if (p.indexOf('/rest/v1/profile?select=id') === 0) return [{ id: SESS.uid }];
       if (p.indexOf('/rest/v1/language?select=id,name&owner=') === 0)
         return [{ id: SID59, name: 'Shango' }];

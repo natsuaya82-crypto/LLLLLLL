@@ -992,11 +992,77 @@ create or replace view language_seen as
    where l.published_at is not null or l.owner = auth.uid();
 grant select on language_seen to anon, authenticated;
 
+-- AND THE LANGUAGE BESIDE THE PERSON, IN THE SAME ANSWER.
+-- 「他人のフォロー／フォロワーとか見る時すんごいくるくる回ってるけど、なんか
+--  全体的に遅くない？」 OWNER 2026-09-08 (143).
+--
+-- It was a SECOND request. netLangNames() in www/net.js asked `language` by
+-- owner once the people had come back, so every screen that draws a list of
+-- people paid two round trips one after the other -- and a round trip on a
+-- phone is 100-300ms whatever is in it. Measured with tools/slow-check.mjs:
+-- somebody else's follower list was four round trips deep and this was the
+-- last of them.
+--
+-- It could not be an embed and still cannot: `language.owner` points at
+-- auth.users and `profile.id` is its own key, so there is no foreign key for
+-- PostgREST to travel and asking for `language(name)` answers PGRST200 for
+-- everybody. What there IS is the same uuid on both sides, and joining on it
+-- is a thing SQL can do perfectly well -- it is only PostgREST that needed a
+-- key to follow. So the join is made here, once, and the view is what the
+-- phone asks for.
+--
+-- THROUGH language_seen AND NOT `language`, so the rule about which languages
+-- a stranger may see is written in one place: `published_at is not null or
+-- owner = auth.uid()`, which is the same policy netLangNames() asked with.
+--
+-- WHICH ONE, when somebody has several: the OLDEST, by `created_at`, which is
+-- what netLangNames() picked and for the reason it gave -- an unordered pick
+-- gives a person a different tag every time somebody looks at them. It is not
+-- a decision about which language represents somebody; nothing has asked
+-- that.
+-- ---- who follows whom, by the name one person knows another by -------------
+-- 「他人のフォロー／フォロワーとか見る時すんごいくるくる回ってる」 OWNER
+-- 2026-09-08 (143).
+--
+-- `follow` is keyed by uuid on both sides, and the app has never held anybody
+-- else's uuid: every screen in it speaks handles. So asking for somebody's
+-- follow list took TWO round trips -- one to turn the handle into a uuid
+-- (netWhoseId in www/net.js), and then the real one -- and the first was pure
+-- waiting. Measured with tools/slow-check.mjs: somebody else's follower list
+-- was four round trips deep and this was the first of them.
+--
+-- The join is made here so the phone can ask its question in the words it
+-- already has. Both keys are on it: a person's own list is asked by uuid,
+-- because that is what a session carries and a phone that has not been given
+-- a handle yet still has one.
+--
+-- `follow_read` is `using (true)` -- who follows whom is public the way it is
+-- in every timeline -- so this view shows exactly what that policy already
+-- shows and adds nothing.
+create or replace view follow_seen as
+  select f.follower, f.followed,
+         a.handle as follower_handle,
+         b.handle as followed_handle
+    from follow f
+    join profile a on a.id = f.follower
+    join profile b on b.id = f.followed;
+grant select on follow_seen to anon, authenticated;
+
 create or replace view profile_seen as
   select p.id, p.handle, p.display, p.av, p.bio, p.banned_at,
          (select count(*) from follow f where f.follower = p.id) as fo,
-         (select count(*) from follow f where f.followed = p.id) as fr
-    from profile p;
+         (select count(*) from follow f where f.followed = p.id) as fr,
+         l.id                          as lang_id,
+         l.name                        as lang_name,
+         (l.published_at is not null)  as lang_pub
+    from profile p
+    left join lateral (
+      select ls.id, ls.name, ls.published_at
+        from language_seen ls
+       where ls.owner = p.id
+       order by ls.created_at asc
+       limit 1
+    ) l on true;
 grant select on profile_seen to anon, authenticated;
 
 create or replace view post_seen as

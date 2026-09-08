@@ -377,6 +377,11 @@ const r = await pg.evaluate(({ s }) => {
      through a door that gets the lot in ONE request before the screen opens
      (www/me.js § whoNeed, followsOpen, notfoOpen).
 
+     ONE REQUEST AND NOT TWO. It was two until 2026-09-08: the people, and
+     then their languages' names, asked one after the other. The language is
+     a column of `profile_seen` now (supabase/schema.sql), so that second
+     round trip is gone -- 「なんか全体的に遅くない？」 OWNER 2026-09-08.
+
      The requests are counted at the WIRE, not at netWhoMany(): what is
      claimed is how many times this phone speaks, and a check that counted
      calls to the function under test would be counting the thing it is
@@ -608,10 +613,11 @@ if (r.folQ !== 0 || r.ntfQ !== 0)
   say('the first drawing of a list of people carries 「?」 faces (follows ' +
       r.folQ + ', the people on a notice ' + r.ntfQ + '), which become names ' +
       'a moment later. 「？になってあとで表示される」 OWNER 2026-09-07.');
-if (r.folReq !== 2 || r.ntfReq !== 2)
+if (r.folReq !== 1 || r.ntfReq !== 1)
   say('a list of two people costs ' + r.folReq + ' and ' + r.ntfReq +
-      ' request(s). It is two whoever is on it — the people, and their ' +
-      'languages\u2019 names — and never one per row. 「毎回1読み込みだろ？」');
+      ' request(s). It is ONE whoever is on it — the people, with their ' +
+      'language on the same row — and never one per row, and never a second ' +
+      'round trip for the language. 「毎回1読み込みだろ？」');
 
 console.log('nobody is a 「?」 that becomes a name: a post carries its writer ' +
             '(feed and thread ask about nobody), and a list of people is ' +

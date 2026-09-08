@@ -77,6 +77,19 @@ https://raw.githubusercontent.com/natsuaya82-crypto/LLLLLLL/master/supabase/sche
 | Table Editor → `profile` | 列に `av` がある |
 | Storage | `post-media` があり、**Public** になっている |
 | Database → Functions | `notices` と `account_delete` と `is_member` |
+| Database → Views | `follow_seen` `profile_seen` `post_seen` `language_seen` |
+
+### 2026-09-08 以降、**もう一度流し直してください**
+
+実機 143「なんか全体的に遅くない？」で、人の一覧が往復四回になっていたのを
+二回にしました。そのために `schema.sql` の view を二つ触っています ──
+`follow_seen`（新）と、`profile_seen`（言語の三列が増えた）。
+
+**流し直すまで、アプリは人の一覧と検索で 404 を受け取ります。**「くるくる
+回ったまま」ではなく、はっきり「接続できません」が出ます。
+
+やることは上と同じで、**`schema.sql` を全部貼って Run**。表もデータも作り
+直しません（`create or replace view` と `create table if not exists` だけ）。
 
 ### エラーが出たら
 

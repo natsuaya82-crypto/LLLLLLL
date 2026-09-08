@@ -79,7 +79,9 @@ function fakeNet(lat){
   for (var i = 0; i < HANDLES.length; i++) {
     WHO[HANDLES[i]] = { id: 'U-' + HANDLES[i], handle: HANDLES[i],
                         display: 'Name ' + HANDLES[i], av: null,
-                        bio: 'hello', banned_at: null, fo: 2, fr: 5 };
+                        bio: 'hello', banned_at: null, fo: 2, fr: 5,
+                        lang_id: 'L-' + HANDLES[i], lang_name: 'Vethi',
+                        lang_pub: true };
   }
 
   function qs(u, k) {
@@ -105,13 +107,14 @@ function fakeNet(lat){
       for (j = 0; j < hs.length; j++) if (WHO[hs[j]]) rows.push(WHO[hs[j]]);
       return rows;
     }
-    if (p === '/rest/v1/follow') {
+    if (p === '/rest/v1/follow_seen') {
+      /* Whichever side was asked for, five people on it. */
       sel = qs(u, 'select');
-      side = sel.indexOf('follower(') === 0 ? 'follower' : 'followed';
+      side = sel.indexOf('follower') === 0 ? 'follower_handle' : 'followed_handle';
       rows = [];
       for (j = 1; j <= 5; j++) {
         var r = {};
-        r[side] = { handle: 'p' + j };
+        r[side] = 'p' + j;
         rows.push(r);
       }
       return rows;
