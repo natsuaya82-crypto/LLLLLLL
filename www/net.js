@@ -2704,36 +2704,98 @@ function netLangNames(ids, done){
    column and no follower count on `profile` at all -- what somebody writes
    about themselves lives on their own phone (www/me.js). whoCard() already
    draws neither rather than drawing a zero. */
+/* WHAT COLUMNS A PERSON IS, and one place says so, because two requests ask
+   for them: one person by handle, and many people at once. A `select=` written
+   out twice is two lists that come to differ, and the one that differs is the
+   one nobody is looking at. */
+var NET_WHO_SEL='/rest/v1/profile_seen?select=id,handle,display,av,bio,banned_at,fo,fr';
+/* And one place turns a row into a person, for the same reason. */
+function netWhoRow(r){
+  r=r||{};
+  return {who:String(r.display||''), hd:String(r.handle||''),
+          av:r.av||null, lname:'',
+          bio:String(r.bio||''),
+          fo:(r.fo===undefined || r.fo===null)? undefined : (Number(r.fo)||0),
+          fr:(r.fr===undefined || r.fr===null)? undefined : (Number(r.fr)||0),
+          out:!!r.banned_at};
+}
+/* MANY PEOPLE, IN ONE REQUEST.
+   -------------------------------------------------------------------------
+   「ユーザーもアイコンとか？になってあとで表示されるけど、なんで？毎回1読み込み
+   だろ？」 OWNER 2026-09-07, on a phone.
+
+   Measured the same day: a follow list of two people put out TWO requests,
+   one per person, and drew two '?' faces until they came back. A list of
+   twenty is twenty requests. It was netWho() called once per row from inside
+   a RENDER, which is the only shape that was ever available -- there was no
+   way to ask about more than one person.
+
+   `handle=in.(...)` is that way. A handle is [a-z0-9_] (supabase/schema.sql),
+   so a comma is a safe join and nothing has to be escaped back out; the
+   encode is here anyway, because 「it cannot contain one」 is a fact about the
+   server that this file should not be built on.
+
+   The language names are ONE more request for the lot of them, not one each:
+   netLangNames() has taken a list since it was written and was only ever
+   handed one id. So a screenful of people is two requests whatever the
+   screenful is.
+
+   It answers with a map from handle to person, and a handle nobody has a row
+   for is simply not in it -- 「nobody by that name」 is an answer and it is
+   the same one netWho() gives. */
+function netWhoMany(handles, ok, bad){
+  var want=[], seen={}, i, h;
+  for(i=0;i<(handles||[]).length;i++){
+    h=String(handles[i]||'');
+    if(h && !seen[h]){ seen[h]=1; want.push(encodeURIComponent(h)); }
+  }
+  if(!want.length){ ok({}); return; }
+  netGet(NET_WHO_SEL+'&handle=in.('+want.join(',')+')&limit='+want.length,
+    function(d){
+      var by={}, ids=[], j, r, who;
+      for(j=0;j<(d||[]).length;j++){
+        r=d[j]||{};
+        who=netWhoRow(r);
+        if(!who.hd) continue;
+        by[who.hd]=who;
+        who.uid=String(r.id||'');
+        ids.push(who.uid);
+      }
+      netLangNames(ids, function(byId){
+        var k, p, L;
+        for(k in by){
+          if(!Object.prototype.hasOwnProperty.call(by, k)) continue;
+          p=by[k];
+          L=p.uid? byId[p.uid] : null;
+          if(L){ p.lname=L.name; p.lid=L.id; p.lpub=L.pub; }
+          /* The account's uuid was needed to ask about the language and is
+             not part of what a person IS on this side of the app -- every
+             screen reads a handle. netFindWho() keeps it beside the answer
+             for the same reason; here it is taken off again. */
+          delete p.uid;
+        }
+        ok(by);
+      });
+    }, bad);
+}
 function netWho(handle, ok, bad){
   var h=String(handle||'');
   if(!h){ bad(null, 0); return; }
   /* `profile_seen` and not `profile`: it is the same row with the two numbers
      a page is made of counted beside it -- see supabase/schema.sql. */
-  netGet('/rest/v1/profile_seen?select=id,handle,display,av,bio,banned_at,fo,fr'+
-         '&limit=1&handle=eq.'+encodeURIComponent(h),
+  netGet(NET_WHO_SEL+'&limit=1&handle=eq.'+encodeURIComponent(h),
     function(d){
       var r, who;
       if(!d || !d.length){ ok(null); return; }
       r=d[0]||{};
-      who={who:String(r.display||''), hd:String(r.handle||''),
-           av:r.av||null, lname:'',
-           /* The line they wrote about themselves. It is SHOWN and there is
-              no switch -- 「自己紹介を見せないって選択肢を俺はいつ与えた？」
-              OWNER 2026-09-01. It used to be on the phone and only there, so
-              a page about somebody else drew an empty one however much they
-              had written. */
-           bio:String(r.bio||''),
-           /* How many they follow and how many follow them. Both were 0 on
-              every page for everybody: `follow` was read back only about
-              YOURSELF, so somebody else's two numbers had nowhere to come
-              from. Absent rather than zero when the server did not say --
-              「0 followers」 and 「nobody has said」 are different things. */
-           fo:(r.fo===undefined || r.fo===null)? undefined : (Number(r.fo)||0),
-           fr:(r.fr===undefined || r.fr===null)? undefined : (Number(r.fr)||0),
-           /* Frozen. Off `banned_at`, which is the same fact `author_out`
-              carries onto a post -- one column, asked of the person here and
-              answered about the writer there. */
-           out:!!r.banned_at};
+      /* WHAT A PERSON IS, out of the one place that says so -- netWhoRow()
+         above. The line they wrote about themselves is SHOWN and there is no
+         switch (「自己紹介を見せないって選択肢を俺はいつ与えた？」 OWNER
+         2026-09-01); the two counts are `undefined` rather than 0 where the
+         server did not say, because 「0 followers」 and 「nobody has said」 are
+         different things; and `out` is `banned_at`, the same fact
+         `author_out` carries onto a post. */
+      who=netWhoRow(r);
       netLangNames([r.id], function(by){
         var id=String(r.id||''), L=id? by[id] : null;
         if(L){

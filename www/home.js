@@ -1595,7 +1595,7 @@ function abField(k, v){
    language with no words in it.
 
    Asked once per language. Only a request that could not be MADE is asked
-   again, which is the shape whoPull() already takes. */
+   again, which is the shape whoAsk() already takes. */
 var WLD_HAVE={}, WLD_ASKED={};
 function wldSeenPull(lid){
   var id=String(lid||'');

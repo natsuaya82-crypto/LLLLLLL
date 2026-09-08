@@ -786,8 +786,8 @@ pullOn('recent',  askRecent);
    else's page are ABOUT one post or one person, and which one is not known
    until the door is opened -- there is nothing to ask for at a launch. They
    are in the table (`thread`, `profile`, `follows`) so a pull refreshes them,
-   and what fills them the first time is whoPull() and folPull() in www/me.js,
-   asked once per handle. That is not the fault being fixed here: nobody was
+   and what fills them the first time is the door onto each -- profileOpen()
+   and followsOpen() in www/me.js, which ask before the screen opens. That is not the fault being fixed here: nobody was
    looking at that person's page a second before they pressed their name. */
 /* AND THE THREE THE PROFILE IS MADE OF ARE ON IT.
    「開いた時フォロー中の横に数字でない。非公開の文字も出ない。全部読み込んで
@@ -1016,7 +1016,7 @@ function askThread(ok, bad){
   }, bad);
 }
 /* A PERSON'S PAGE: what they have written, who they are, and the two counts.
-   All three were asked once and never again -- whoPull() keeps WHO_ASKED per
+   All three were asked once and never again -- WHO_ASKED holds a person per
    handle, the two follow pulls keep one flag each for the session, and their
    posts were only ever whatever the timeline had swept up.
 
@@ -2661,7 +2661,7 @@ function notGo(n){
        One person is unchanged: a row about one person goes to that person,
        and a list of one is a screen you would have to press twice. */
     ps=notPeople(n);
-    if(ps.length>1) return DO('go', ["notfo", ps.join(',')]);
+    if(ps.length>1) return DO('notfoOpen', [ps.join(',')]);
     return h? DO('profileOpen', [h]) : '';
   }
   if(n.id) return DO('postOpen', [String(n.id)]);
@@ -2718,14 +2718,23 @@ function notRow(n){
    by snsWhoRow() exactly as vFollows() draws its rows. Two lists showing the
    same thing drawn twice is how they drift apart (www/me.js § vFollows).
 
-   NOTHING IS ASKED OF THE SERVER ABOUT THE LIST ITSELF. The handles came in
-   the route's argument, off the row that was pressed, so this screen is never
-   waiting for it -- what it waits for is each PERSON, which whoPull() asks
-   once per handle and whoOf() answers with the copy in the meantime, exactly
-   as the follows list does.
+   NOTHING IS ASKED HERE AT ALL. The handles came in the route's argument, off
+   the row that was pressed, and the people were asked for in ONE request
+   before this screen was opened -- notfoOpen() below, which is followsOpen()'s
+   own shape (www/me.js) and the same sentence. It was one ask per row from
+   inside this render: three people on a grouped notice were three requests
+   and three '?' faces that became names a moment later.
+   「ユーザーもアイコンとか？になってあとで表示されるけど、なんで？毎回1読み込み
+   だろ？」 OWNER 2026-09-07.
 
    A handle is [a-z0-9_] (supabase/schema.sql), so a comma can be the join and
    nothing has to be escaped out of it again. */
+function notfoOpen(a){
+  a=String(a||'');
+  whoNeed(a? a.split(',') : [],
+    function(){ go('notfo', a); },
+    function(d, s, m){ netPop(d, s, m, function(){ notfoOpen(a); }); });
+}
 function vNotfo(){
   var a=String(here().a||''), hs=a? a.split(',') : [];
   return '<div class="view">'+navTop()+'<div class="body">'+
@@ -2733,7 +2742,6 @@ function vNotfo(){
       ? hs.map(function(h){
           var p;
           h=String(h);
-          whoPull(h);
           p=whoOf(h);
           /* 自分の行は「フォローする」を出さない -- 相手のフォロワー一覧に
              自分が入っているのと同じ理由（www/me.js § vFollows）。 */

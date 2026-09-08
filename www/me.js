@@ -585,9 +585,9 @@ function meCard(){
        they come from somewhere else they come from somewhere else HERE and
        nowhere else. */
     '<div class="pfstats">'+
-      '<button class="pfst"' + DO('go', ["follows", "ing"]) + '>'+
+      '<button class="pfst"' + DO('followsOpen', ["ing"]) + '>'+
         meCount(meNFollowing())+esc(t('me.following'))+'</button>'+
-      '<button class="pfst"' + DO('go', ["follows", "ers"]) + '>'+
+      '<button class="pfst"' + DO('followsOpen', ["ers"]) + '>'+
         meCount(meNFollowers())+esc(t('me.followers'))+'</button>'+
     '</div>'+
     '</div>';
@@ -639,15 +639,48 @@ function whoAsk(h, ok, bad){
     if(bad) bad(d, s, m);
   });
 }
-/* The same ask put ONCE per handle, which is what a RENDER wants: a page
-   draws constantly and a question per draw is a question per frame. The flag
-   is read here and written by whoAsk() alone. One screen still asks this way
-   and it is the right way for it -- the two follow lists are a page of many
-   people, each row a handle this phone may not know, and each answer redraws
-   the row it belongs to (vFollows below). */
-function whoPull(h){
-  if(WHO_ASKED[String(h||'')]) return;
-  whoAsk(h);
+/* MANY PEOPLE, ASKED FOR IN ONE REQUEST, AND THE SCREEN WAITS FOR THEM.
+   -------------------------------------------------------------------------
+   「ユーザーもアイコンとか？になってあとで表示されるけど、なんで？毎回1読み込み
+   だろ？」 OWNER 2026-09-07, on a phone.
+
+   This replaces whoPull() -- the same ask put once per handle, from inside a
+   RENDER, by every screen that draws a list of people. Measured 2026-09-07: a
+   follow list of two people put out two requests and drew two '?' faces until
+   they came back; the people on a grouped notice were three requests and one
+   '?'. A list of twenty was twenty requests, which is 「毎回1読み込み」
+   exactly.
+
+   ONE REQUEST FOR THE LOT (netWhoMany, www/net.js), and the screen is not
+   drawn until it has answered -- the same sentence as the profile
+   (profileOpen above) and the same reason: there is no honest face for
+   「まだ訊いていない」, and a '?' that becomes a name is a screen that moved
+   under somebody's eye.
+
+   ONLY THE ONES THIS PHONE HAS NOT GOT are asked about. WHO_HAVE is the
+   answer kept for as long as the app is open, so walking back into a list is
+   not a second request. Everything already here answers at once, which is why
+   a list of people you have just seen opens with no pause. */
+function whoNeed(hs, ok, bad){
+  var want=[], i, h;
+  for(i=0;i<(hs||[]).length;i++){
+    h=String(hs[i]||'');
+    if(!h || h===meHandle() || WHO_HAVE[h]) continue;
+    want.push(h);
+  }
+  if(!want.length){ ok(); return; }
+  netWhoMany(want, function(by){
+    var k;
+    for(k in by){
+      if(!Object.prototype.hasOwnProperty.call(by, k)) continue;
+      WHO_HAVE[k]=by[k];
+      /* Asked, and answered. A handle with no row is not in the answer and
+         is marked asked all the same: 「nobody by that name」 is an answer
+         and there is nothing to ask again, which is whoAsk()'s rule. */
+    }
+    for(k=0;k<want.length;k++) WHO_ASKED[want[k]]=1;
+    ok();
+  }, bad);
 }
 /* AND ONE PERSON'S PAGE WAITS FOR IT INSTEAD OF DRAWING WITHOUT IT. The same
    ask again -- whoAsk() is still the only place this phone asks who somebody
@@ -746,7 +779,7 @@ function whoOf(h){
   h=String(h||'');
   /* YOU ARE THE ONE PERSON THIS PHONE ALREADY KNOWS, AND NOTHING READ IT.
      ---------------------------------------------------------------------
-     whoPull() refuses to ask the server for your own handle and says why in
+     whoAsk() refuses to ask the server for your own handle and says why in
      as many words -- 「that is ME, it is on this phone」. It was right and it
      was only half a sentence: nothing here ever went and got ME, so your own
      handle fell past WHO_HAVE, past the POSTS below, and out of the end as
@@ -1208,9 +1241,9 @@ function whoCard(h){
        holds many posts, and one of them needs an id. `.pfstats` carries the
        `position:relative` the box hangs off now; it was `.metop`. */
     '<div class="pfstats">'+
-      '<button class="pfst"' + DO('go', ["follows", 'ing:'+String(h)]) + '>'+
+      '<button class="pfst"' + DO('followsOpen', ['ing:'+String(h)]) + '>'+
         meCount(p.fo)+esc(t('me.following'))+'</button>'+
-      '<button class="pfst"' + DO('go', ["follows", 'ers:'+String(h)]) + '>'+
+      '<button class="pfst"' + DO('followsOpen', ['ers:'+String(h)]) + '>'+
         meCount(p.fr)+esc(t('me.followers'))+'</button>'+
       '<button class="pmore"' + DO('whoMore', [String(h)]) + ' aria-label="'+
         esc(t('post.more'))+'">'+ICON_DOTS+'</button>'+
@@ -1386,18 +1419,27 @@ FORM_OPEN.me=function(){ openMe(); };
    needs no account. */
 var FOL_HAVE={}, FOL_ASKED={};
 function folKey(ers, h){ return (ers? 'ers:' : 'ing:') + String(h||''); }
-function folPull(ers, h){
+function folPull(ers, h, ok, bad){
   var k=folKey(ers, h);
   h=String(h||'');
-  if(!h || FOL_ASKED[k]) return;
+  if(!h){ if(ok) ok(); return; }
   FOL_ASKED[k]=1;
   (ers? netFollowers : netFollowing)(function(hs){
     /* Nobody by that name. It stays asked -- there is nothing to ask again,
-       which is whoPull()'s rule and the same reason. */
-    if(!hs) return;
-    FOL_HAVE[k]=hs;
-    render();
-  }, function(){ FOL_ASKED[k]=0; }, h);
+       which is whoAsk()'s rule and the same reason. */
+    if(hs) FOL_HAVE[k]=hs;
+    if(ok) ok(); else render();
+  }, function(d, s, m){
+    FOL_ASKED[k]=0;
+    if(bad) bad(d, s, m);
+  }, h);
+}
+/* And the list waited for rather than asked from a render, which is what
+   followsOpen() below wants: a list already here answers at once, and one
+   that is not is asked for once. */
+function folWait(ers, h, ok, bad){
+  if(folGot(ers, h) || FOL_ASKED[folKey(ers, h)]){ ok(); return; }
+  folPull(ers, h, ok, bad);
 }
 function folGot(ers, h){ return !!FOL_HAVE[folKey(ers, h)]; }
 function folOf(ers, h){ return FOL_HAVE[folKey(ers, h)] || []; }
@@ -1410,19 +1452,46 @@ function folOf(ers, h){ return FOL_HAVE[folKey(ers, h)] || []; }
    It was worked out inside vFollows() and nowhere else, which was right until
    the pull needed the same answer -- and a second reading of one argument is
    two answers waiting to disagree. */
-function folWho(){
-  var a=String(here().a||''), c=a.indexOf(':');
+/* The argument is taken rather than read where one is handed in, because
+   followsOpen() below asks these two about an argument the app has not
+   arrived at yet -- the whole point of it is that the screen is not there. */
+function folWho(a){
+  a=String(a===undefined? (here().a||'') : a);
+  var c=a.indexOf(':');
   return (c<0)? '' : a.slice(c+1);
 }
-function folErs(){
-  var a=String(here().a||''), c=a.indexOf(':');
+function folErs(a){
+  a=String(a===undefined? (here().a||'') : a);
+  var c=a.indexOf(':');
   return a.slice(0, c<0? a.length : c)==='ers';
 }
-/* ASK AGAIN. Everything about a person is asked ONCE -- whoPull() reads
-   WHO_ASKED per handle so a name that has been deleted is not asked about
-   for ever, and the two follow pulls keep one flag each for the whole
-   session. That is right for a render, which happens constantly, and wrong
-   for a PULL, which is a person saying 「もう一度聞け」.
+/* ---- AND THE DOOR ONTO A LIST OF PEOPLE --------------------------------
+   「ユーザーもアイコンとか？になってあとで表示されるけど」 OWNER 2026-09-07.
+   The same shape as profileOpen() above and for the same sentence: what is on
+   the screen is asked for BEFORE the screen, and the one that was pressed
+   from stays up until it is all in.
+
+   TWO REQUESTS AND NEVER MORE, whoever is on the list: the handles (one, and
+   none at all for your own two lists -- those came down when the session
+   began), and then the people, which is whoNeed() and is one request for the
+   lot of them. It was one per row, from inside the render, and the rows drew
+   '?' until each came back. */
+function followsOpen(a){
+  a=String(a||'');
+  var ers=folErs(a), who=folWho(a), mine=(!who || who===meHandle());
+  function no(d, s, m){ netPop(d, s, m, function(){ followsOpen(a); }); }
+  function people(){
+    whoNeed(mine? (ers? meFollowers() : meFollowing()) : folOf(ers, who),
+            function(){ go('follows', a); }, no);
+  }
+  /* No `no` on the pull table: pullRun() owns the pop for everything on it. */
+  if(mine) pullWait('mine', people); else folWait(ers, who, people, no);
+}
+/* ASK AGAIN. Everything about a person is asked ONCE -- WHO_ASKED holds a
+   handle so a name that has been deleted is not asked about for ever, and the
+   two follow pulls keep one flag each for the whole session. That is right
+   for a door, which opens once, and wrong for a PULL, which is a person
+   saying 「もう一度聞け」.
 
    「他の人の画面でも更新できるようにしたい」 OWNER 2026-09-04. It is the same
    sentence as the counts one screen up: somebody who followed you while the
@@ -1472,7 +1541,6 @@ function vFollows(){
     got=pullHad('mine');
   }
   else {
-    folPull(ers, who);
     list=folOf(ers, who);
     got=folGot(ers, who);
   }
@@ -1486,11 +1554,11 @@ function vFollows(){
       ? list.map(function(h){
           /* Who this handle IS. The list is handles and nothing else, so
              every row was `@name` and no face, no name and nothing to press.
-             whoPull() asks the server once per handle and renders again when
-             it answers; whoOf() hands back the copy in the meantime. */
+             THIS SCREEN ASKS FOR NOTHING: followsOpen() above got the list
+             and the people before it went anywhere, in two requests, so
+             whoOf() has every one of them by the time this runs. */
           var p;
           h=String(h);
-          whoPull(h);
           p=whoOf(h);
           /* Your own row would otherwise offer to follow yourself, and on
              somebody else's list that is not a spare comparison: you are in

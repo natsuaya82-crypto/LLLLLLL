@@ -1148,9 +1148,13 @@ const R = await pg.evaluate(async () => {
     return ok([]);
   };
 
-  /* 人のフォロワー。 */
-  NAV = [{ r: 'follows', a: 'ers:iri' }];
-  let seenHtml = vFollows();
+  /* 人のフォロワー。**扉から入ります** ── 一覧も人も、画面が開く前に
+     取りに行く道になったので（www/me.js § followsOpen、OWNER 2026-09-07
+     「全部読み込んでから開く」）、vFollows() を直に呼ぶのは押した人が
+     通らない道を測ることになります。 */
+  NAV = [{ r: 'feed' }]; window.route = 'feed';
+  followsOpen('ers:iri');
+  let seenHtml = document.getElementById('app').innerHTML;
   if (foSeen.join('\n').indexOf('handle=eq.iri') < 0)
     no('30c: 画面が、その人のハンドルで訊いていない');
   if (seenHtml.indexOf('noor') < 0 || seenHtml.indexOf('sela') < 0)
@@ -1162,8 +1166,9 @@ const R = await pg.evaluate(async () => {
        JSON.stringify([ME.fo, ME.fr]));
 
   /* 人のフォロー中 ── 同じ画面、引数のもう半分。 */
-  NAV = [{ r: 'follows', a: 'ing:iri' }];
-  seenHtml = vFollows();
+  NAV = [{ r: 'feed' }]; window.route = 'feed';
+  followsOpen('ing:iri');
+  seenHtml = document.getElementById('app').innerHTML;
   if (seenHtml.indexOf('tavi') < 0) no('30c: その人のフォロー中が出ない');
   if (seenHtml.indexOf('kai') >= 0)
     no('30c: 人の画面に自分のフォロー中が出ている');
