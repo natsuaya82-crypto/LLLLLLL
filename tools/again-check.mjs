@@ -1127,6 +1127,63 @@ say(!pop.spinAfterUp && !pop.popAfterUp,
     (pop.spinAfterUp ? '**回ったまま**' : '止まった') + '、ポップ ' +
     (pop.popAfterUp ? '**あり**' : 'なし') + '）');
 
+
+/* ---- 起動しても、キーボードの枚数は増えない ------------------------------
+   「アップデートするたびにキーボード増殖してる。トリガーわからんけど毎回
+   増えてる」 OWNER 2026-09-07（実機、ビルド 142）。
+
+   この節は「起動して、また起動する」を持っている唯一の check なので、増える
+   ものがあるかを訊くのはここです。板の id の話は kb-check が持っています ──
+   ここが訊くのは一つだけ、**同じ端末を二度立ち上げて、人が数える枚数が同じ
+   か**。ディスクに古い版が書いた id 無しの写しを置き、サーバーにはその板が
+   前の版のランダムな id を着て載っている ── それが実機の姿です。 */
+const kbGrow = await pg.evaluate(async ({ s, srv }) => {
+  localStorage.clear();
+  eval('(' + s + ')()');
+  SET.done = true; SET.plan = 'pro'; setKeep();
+  eval(srv);
+  SESS = { at:'t', rt:'r', uid:'kb1', anon:false };
+  LANGS[langId].sid = 'srvkb'; LANGS[langId].uid = SESS.uid; langStore(); netSave();
+  var lay = kbFixed().lay; lay[0].rows = lay[0].rows.slice(0, 3);
+  var board = { nm:'', pat:'qwerty', lay:lay };
+  /* 古いビルドがディスクに残した写し ── id が無く、slWr はメモリにしか書か
+     ないので、これは起動のたびに同じものが読まれます。 */
+  localStorage.setItem(langKey('kb'), JSON.stringify({ kbs:[board], at:1, v:2 }));
+  var withId = JSON.parse(JSON.stringify(board)); withId.id = 'k1788700000_1';
+  window.__SRV.lang = [{ id:'srvkb', owner:'kb1', name:langName, published_at:null }];
+  window.__SRV.slice = [{ language:'srvkb', kind:'kb',
+                          body:JSON.stringify({ kbs:[withId], at:1, v:2 }), no:1 }];
+  return JSON.stringify({ lang:window.__SRV.lang, slice:window.__SRV.slice });
+}, { s: seed.toString(), srv: SERVER });
+
+async function kbBoot(saved){
+  await pg.reload();
+  await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
+  return await pg.evaluate(async ({ srv, keep }) => {
+    eval(srv);
+    var k = JSON.parse(keep);
+    window.__SRV.lang = k.lang; window.__SRV.slice = k.slice;
+    netTook({ access_token:'t', refresh_token:'r', user:{ id:'kb1' } });
+    await new Promise(function(f){ setTimeout(f, 900); });
+    /* そして人がこの端末で何か保存する ── 一度でも保存すれば、読み込みで
+       id を打たれた板がサーバーへ上がります。増えるのはそこからで、保存の
+       ない起動では起きません（測ってから書いています）。 */
+    saveKb();
+    await new Promise(function(f){ setTimeout(f, 1800); });
+    kbRead();
+    return { n: kbStored().length,
+             srv: JSON.stringify({ lang:window.__SRV.lang, slice:window.__SRV.slice }) };
+  }, { srv: SERVER, keep: saved });
+}
+const kbA = await kbBoot(kbGrow);
+const kbB = await kbBoot(kbA.srv);
+const kbC = await kbBoot(kbB.srv);
+
+say(kbA.n === 1 && kbB.n === 1 && kbC.n === 1,
+    '**起動してもキーボードは増えない** ── 同じ端末を三度立ち上げて、人が数える '
+    + '枚数は ' + [kbA.n, kbB.n, kbC.n].join(', ') + '（ディスクの id 無しの写しと '
+    + 'サーバーの id 付きの写しは同じ一枚）');
+
 await br.close();
 if (bad.length){
   console.log('\nagain: ' + bad.length + ' problem' + (bad.length > 1 ? 's' : '') + '.\n');

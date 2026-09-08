@@ -142,12 +142,79 @@ function kbBoardsOf(k){
    with the next save, the way every other field of a board does. */
 var KB_SEQ=0;
 function kbId(){ KB_SEQ++; return 'k'+Date.now()+'_'+KB_SEQ; }
-/* A board that has one keeps it. This is not a repair and does not compare
-   anything: a board with no id has never been named, and a board with one is
-   already answered for. */
+/* AND THE ONE PUT ON A BOARD THAT PREDATES THIS IS NOT THAT ONE, because it
+   is put on the SAME BOARD MORE THAN ONCE.
+   「アップデートするたびにキーボード増殖してる。トリガーわからんけど毎回
+   増えてる」 OWNER 2026-09-07.
+
+   kbId() answers with the clock, so it is a different id every time it is
+   asked -- which is right for a board being MADE, and wrong for a board being
+   read. Every phone that has had this app since before 2026-09-04 still has
+   `lingua.<id>.kb` on its disk (rule 22's migration: slRd() falls back to it
+   and never removes it), and that copy has no ids on it. So each launch read
+   it, stamped it with ids nothing had ever seen, and handed syKeyOf() two
+   boards that were the same board: the server's copy carried last launch's
+   ids and mine carried this launch's, so 「両方残す」 fired and the language
+   came back holding two more boards. The disk copy never changes, so it fired
+   again on the next launch, and the next. Measured before it was written:
+   2 boards on the disk against 2 on the server gave 4, then 6, then 8.
+
+   So an id put on here is decided BY THE BOARD -- its name, its pattern and
+   its layout -- and two copies of one board arrive at one id however many
+   times they are read. A board that already has one keeps it: this is not a
+   repair and compares nothing.
+
+   AND TWO COPIES OF ONE BOARD ARE NOT TWO BOARDS.
+   「消していい。そもそも増殖させるな」 OWNER 2026-09-07. A phone that has
+   already been through the launches above is holding the same keyboard eight
+   times, and an id decided by the board stops the ninth without taking one of
+   the eight away. So the copies are joined here, at the same moment and by
+   the same answer: the SIGNATURE below is what makes two boards one, and the
+   id put on a board that has none is that signature hashed. One question,
+   asked once.
+
+   WHAT IS JOINED IS ONLY WHAT IS BYTE FOR BYTE THE SAME BOARD -- every field
+   but the id, so a name typed on one of them, a key moved, a layer added is
+   a board somebody made and it stays. docs/CHANGELOG.md 2026-09-07 carries
+   the DELETE REVIEW.
+
+   Reading only, as the stamping above is: nothing is written here, so a
+   launch with no signal joins the copy in memory and stops. The write comes
+   with the next save.
+
+   AND WHICH BOARD IS APPLIED FOLLOWS THE ONE THAT IS KEPT. `at` is an index
+   into the list with the free QWERTY in front of it (migrateKbFree), and
+   `v` is what says whether that migration has run -- so it is turned into an
+   index into `kbs`, moved with the board it names, and turned back. Without
+   that, joining a copy in front of the applied board silently makes its
+   neighbour the keyboard on the phone. */
+function kbSig(b){
+  var ks=[], o=[], k, i;
+  for(k in b) if(Object.prototype.hasOwnProperty.call(b, k) && k!=='id') ks.push(k);
+  ks.sort();
+  for(i=0;i<ks.length;i++) o.push([ks[i], b[ks[i]]]);
+  try{ return JSON.stringify(o); }catch(e){ return ''; }
+}
+function kbHash(b){
+  var s=kbSig(b), i, h=0;
+  for(i=0;i<s.length;i++) h=((h<<5)-h+s.charCodeAt(i))|0;
+  return 'b'+(h>>>0).toString(36)+'_'+s.length;
+}
 function kbIded(k){
-  var kbs=k.kbs||[], i;
-  for(i=0;i<kbs.length;i++) if(kbs[i] && !kbs[i].id) kbs[i].id=kbId();
+  var kbs=k.kbs||[], out=[], at={}, put=[], i, b, s, off, idx;
+  for(i=0;i<kbs.length;i++){
+    b=kbs[i];
+    /* not a board at all: kept exactly where it was and asked nothing */
+    if(!b || typeof b!=='object'){ put.push(out.length); out.push(b); continue; }
+    s='g'+kbSig(b);
+    if(!b.id) b.id=kbHash(b);
+    if(Object.prototype.hasOwnProperty.call(at, s)){ put.push(at[s]); continue; }
+    at[s]=out.length; put.push(out.length); out.push(b);
+  }
+  k.kbs=out;
+  off=((parseInt(k.v, 10)||0)>=2)? 1 : 0;
+  idx=(parseInt(k.at, 10)||0)-off;
+  if(idx>=0 && idx<put.length) k.at=put[idx]+off;
   return k;
 }
 kbRead();

@@ -3958,6 +3958,199 @@ say(r.pullAl && r.pullAlStep && r.pullAlOnly,
     'and an alignment takes every row of it, in one step, leaving the row under'
     + ' it alone [' + [r.pullAl, r.pullAlStep, r.pullAlOnly].join(' ') + ']');
 
+/* ---- 起動しても板は増えない -------------------------------------------
+   「アップデートするたびにキーボード増殖してる。トリガーわからんけど毎回
+   増えてる」 OWNER 2026-09-07（実機、ビルド 142）。
+
+   板に id がついた（2026-09-06）あとも増え続けた道はこれです。id を持たない
+   古い写しが `lingua.<id>.kb` としてディスクに残っていて、rule 22 の移行で
+   `slRd()` は今もそれを読む。読むたびに `kbIded()` が id を打つので、その id
+   が読むたびに違えば、サーバーの写しと突き合わない ── `syKeyOf()` は別物と
+   答え、`syPut()` が両方残し、起動のたびに板が足される。
+
+   ここは起動の道を本物で走らせます。`bootSession()`（www/boot.js のもの）→
+   `netLangsDown()` → `netLangSync()` → `netSlice1()` → `syMerge()`。差し替え
+   るのは `netSend()` ひとつだけで、上は全部本物です。同じ端末をもう一度立ち
+   上げる（reload）ので、LSL は消えてディスクの写しだけが残る ── それが実機の
+   アップデートの初回起動です。 */
+const KB_SRV = `
+  window.__SRV = { lang:[], slice:[], n:0 };
+  netSend = function(method, p, body, tok, ok, bad){
+    var S = window.__SRV;
+    var wire = {}; netOn(wire);
+    var realOk = ok, realBad = bad;
+    ok = function(v){ netOff(wire); realOk(v); };
+    bad = function(d, st, m){ netOff(wire); realBad(d, st, m); };
+    function answer(v){ setTimeout(function(){ ok(v); }, 0); }
+    function arg(k){
+      var m = new RegExp('[?&]' + k + '=eq\\\\.([^&]*)').exec(p);
+      return m ? decodeURIComponent(m[1]) : '';
+    }
+    if (method === 'POST' && p.indexOf('/rest/v1/language') === 0){
+      var id = 'srv' + (++S.n);
+      S.lang.push({ id:id, owner:body.owner, name:body.name || '', published_at:null });
+      return answer([{ id:id }]);
+    }
+    if (method === 'PATCH' && p.indexOf('/rest/v1/language') === 0) return answer([]);
+    if (method === 'POST' && p.indexOf('/rest/v1/slice') === 0){
+      var rows = (body instanceof Array) ? body : [body], k, r2, f, hit;
+      for (k = 0; k < rows.length; k++){
+        r2 = rows[k]; hit = null;
+        for (f = 0; f < S.slice.length; f++)
+          if (S.slice[f].language === r2.language && S.slice[f].kind === r2.kind) hit = S.slice[f];
+        if (hit){ hit.body = r2.body; hit.no = r2.no; }
+        else S.slice.push({ language:r2.language, kind:r2.kind, body:r2.body, no:r2.no });
+      }
+      return answer([]);
+    }
+    if (method === 'GET' && p.indexOf('/rest/v1/slice') === 0){
+      var want = arg('language'), out = [], q;
+      for (q = 0; q < S.slice.length; q++) if (S.slice[q].language === want)
+        out.push({ kind:S.slice[q].kind, body:S.slice[q].body, no:S.slice[q].no });
+      return answer(out);
+    }
+    if (method === 'GET' && p.indexOf('/rest/v1/language') === 0){
+      var own = arg('owner'), o2 = [], z;
+      for (z = 0; z < S.lang.length; z++) if (S.lang[z].owner === own)
+        o2.push({ id:S.lang[z].id, owner:S.lang[z].owner, name:S.lang[z].name,
+                  published_at:S.lang[z].published_at });
+      return answer(o2);
+    }
+    return setTimeout(function(){ bad(null, 404, 'no route ' + method + ' ' + p); }, 0);
+  };
+`;
+
+/* 上の browser はもう閉じています。ここは起動を二度するので、その端末を
+   自分で開きます。 */
+const br2 = await chromium.launch(LAUNCH);
+const pg2 = await br2.newPage({ viewport: { width: 390, height: 844 } });
+/* 偽サーバーを入れるまで本物の transport は黙る。起動の道が勝手に半分だけ
+   走ると、測っているものが走るたびに変わります。 */
+await pg2.addInitScript(() => {
+  window.XMLHttpRequest = function (){
+    this.open = function (){}; this.setRequestHeader = function (){};
+    this.send = function (){}; this.abort = function (){};
+    this.readyState = 1; this.status = 0;
+  };
+});
+await pg2.goto('file://' + path.join(dir, '..', 'www', 'index.html'));
+await pg2.waitForSelector('#splash', { state: 'detached', timeout: 20000 });
+
+const kbPrep = await pg2.evaluate(({ s }) => {
+  localStorage.clear();
+  eval('(' + s + ')()');
+  SET.done = true; SET.plan = 'pro'; setKeep();
+  LANGS[langId].sid = 'srv1'; LANGS[langId].uid = SESS.uid; langStore(); netSave();
+  KB = { kbs: [], at: 0 };
+  kbAdd('qwerty'); kbAdd('flick');
+  /* 古いビルドがディスクに書いた写し ── id が無い。これは書き換わらない
+     (slWr はメモリだけ) ので、起動のたびに同じものが読まれます。 */
+  const old = JSON.parse(JSON.stringify(KB)), i = { n: 0 };
+  for (i.n = 0; i.n < old.kbs.length; i.n++) delete old.kbs[i.n].id;
+  const oldBody = JSON.stringify(old);
+  localStorage.setItem(langKey('kb'), oldBody);
+  const ids = (b) => kbBoardsOf(JSON.parse(b)).kbs.map((x) => x.id).join(',');
+  /* 同じ中身の板が三枚 ── この不具合が作った写しです。「消していい。そもそも
+     増殖させるな」OWNER 2026-09-07。一枚になり、適用していた三枚目はその一枚を
+     指し直します（at は無料 QWERTY を頭に置いた番号なので 3 が三枚目）。 */
+  const one = { nm:'', pat:'qwerty', lay: old.kbs[0].lay };
+  const three = JSON.stringify({ kbs: [one, one, one], at:3, v:2 });
+  /* 少しでも違えば二枚のまま。名前が一文字ちがうだけの板です。 */
+  const diff = JSON.stringify({ kbs: [one, { nm:'あ', pat:'qwerty', lay: old.kbs[0].lay }],
+                                at:0, v:2 });
+  const kept = kbBoardsOf(JSON.parse(three));
+  /* 新しく作る板の id は時計から ── 読むのは同じ板、作るのは新しい板。 */
+  const madeA = kbId(), madeB = kbId();
+  return {
+    /* サーバーが持っているのは、この版が一度上げたあとの写し */
+    srvBody: JSON.stringify(kbBoardsOf(JSON.parse(oldBody))),
+    uid: SESS.uid, name: langName,
+    once: ids(oldBody), twice: ids(oldBody),
+    threeN: kept.kbs.length, threeAt: kept.at,
+    diffN: kbBoardsOf(JSON.parse(diff)).kbs.length,
+    diffIds: ids(diff),
+    madeA: madeA, madeB: madeB
+  };
+}, { s: seed.toString() });
+
+let kbSrv = { lang: [{ id:'srv1', owner:kbPrep.uid, name:kbPrep.name, published_at:null }],
+              slice: [{ language:'srv1', kind:'kb', body:kbPrep.srvBody, no:1 }] };
+async function kbLaunch(){
+  await pg2.reload();
+  await pg2.waitForSelector('#splash', { state: 'detached', timeout: 20000 });
+  const out = await pg2.evaluate(async ({ srvJs, saved }) => {
+    eval(srvJs);
+    const S = window.__SRV, keep = JSON.parse(saved);
+    S.lang = keep.lang; S.slice = keep.slice;
+    /* 起動より前に走った netSaveUp が、黙った transport の答えを待ったまま
+       NET_SYNCING を立てています。本物の電波ならその要求は返ってくるので、
+       返ってきた状態から起動の道を走らせます。 */
+    NET_SYNCING = false;
+    bootSession();
+    await new Promise((f) => setTimeout(f, 2500));
+    let up = null;
+    for (const row of S.slice) if (row.kind === 'kb' && row.language === 'srv1') up = row.body;
+    let n = 0; try { n = (JSON.parse(up).kbs || []).length; } catch (e) {}
+    /* そして人が数える枚数 ── 画面の一覧です。無料 QWERTY が頭にいるので
+       kbStored() が人の作った板の数。 */
+    kbRead();
+    return { onServer: n, onScreen: kbStored().length,
+             srv: JSON.stringify({ lang:S.lang, slice:S.slice }) };
+  }, { srvJs: KB_SRV, saved: JSON.stringify(kbSrv) });
+  kbSrv = JSON.parse(out.srv);
+  return out;
+}
+const kbOne = (await kbLaunch()).onServer;
+const kbTwo = (await kbLaunch()).onServer;
+/* そして、すでに増えてしまった端末 ── オーナーの実機の姿です。ディスクには
+   id 無しの写し一枚、サーバーには同じ板が四枚、前の版のランダムな id を着て
+   並んでいる。三度立ち上げて、人が数える枚数は一枚。 */
+const srvDup = await pg2.evaluate(() => {
+  const k = JSON.parse(localStorage.getItem(langKey('kb')));
+  const one = k.kbs[0]; delete one.id;
+  localStorage.setItem(langKey('kb'), JSON.stringify({ kbs: [one], at: 0, v: 2 }));
+  const four = [], i = { n: 0 };
+  for (i.n = 0; i.n < 4; i.n++)
+    four.push(JSON.parse(JSON.stringify({ nm:one.nm, pat:one.pat, lay:one.lay,
+                                          id:'k17887' + i.n + '_' + i.n })));
+  return JSON.stringify({ kbs: four, at: 1, v: 2 });
+});
+kbSrv = { lang: [{ id:'srv1', owner:kbPrep.uid, name:kbPrep.name, published_at:null }],
+          slice: [{ language:'srv1', kind:'kb', body:srvDup, no:1 }] };
+const dupOne = await kbLaunch();
+const dupTwo = await kbLaunch();
+const dupThree = await kbLaunch();
+await br2.close();
+
+console.log('');
+say(kbPrep.once === kbPrep.twice && kbPrep.once.indexOf(',') > 0,
+    'a board with no id read twice gets the same id both times, so the phone’s copy '
+    + 'and the server’s are one board [' + kbPrep.once + '] [' + kbPrep.twice + ']');
+say(kbPrep.threeN === 1 && kbPrep.threeAt === 1,
+    'and three copies of one board read back as one board — 「消していい。そもそも'
+    + '増殖させるな」 — with the applied one pointing at the copy that was kept ('
+    + kbPrep.threeN + ' boards, at ' + kbPrep.threeAt + ')');
+say(kbPrep.diffN === 2 && kbPrep.diffIds.split(',')[0] !== kbPrep.diffIds.split(',')[1],
+    'while two boards that differ by one character of a name are still two, with two '
+    + 'ids — what is joined is byte for byte the same board and nothing else ['
+    + kbPrep.diffIds + ']');
+say(kbPrep.madeA !== kbPrep.madeB && kbPrep.madeA.charAt(0) === 'k',
+    'and a board being MADE still takes its id off the clock, so two new boards of one '
+    + 'pattern are two boards [' + kbPrep.madeA + '] [' + kbPrep.madeB + ']');
+say(kbOne === 2,
+    'a launch that reads the id-less copy off the disk and merges it with the '
+    + 'server’s does not grow the language: ' + kbOne + ' boards');
+say(kbTwo === kbOne,
+    'and launching again does not either — the disk copy is read a second time and '
+    + 'answers with the same ids: ' + kbTwo + ' boards');
+say(dupOne.onScreen === 1 && dupTwo.onScreen === 1 && dupThree.onScreen === 1,
+    'and a phone the doubling already reached — one board on the disk, four copies of '
+    + 'it on the server wearing the old random ids — counts ONE keyboard on every one '
+    + 'of three launches: ' + [dupOne, dupTwo, dupThree].map((x) => x.onScreen).join(', '));
+say(dupTwo.onServer <= dupOne.onServer && dupThree.onServer <= dupTwo.onServer,
+    'and the copies on the server stop multiplying rather than growing by one a launch: '
+    + [dupOne, dupTwo, dupThree].map((x) => x.onServer).join(', ') + ' rows');
+
 if (bad.length){ console.error('\nkb-check: ' + bad.length + ' FAILED'); process.exit(1); }
 console.log('\nkb: pressing a row number or a column letter SELECTS it and lights it up;\n' +
   'the bin takes it away and the three alignments say where a row is short from,\n' +

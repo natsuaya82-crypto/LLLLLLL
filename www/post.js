@@ -1620,7 +1620,56 @@ function pwSend(){
      into localStorage. */
   pwBake(function(pics){ pwSendWith(ln, pics, PW.vo||null); });
 }
+/* A post that BEGINS by naming somebody is a post TO them. 「@したらもう勝手に
+   ツイートがこの形式になるようにしたい」 OWNER 2026-09-07 -- the same thing
+   Twitter does, and the road the + on somebody's page already walks: it opens
+   the composer with `@jjj ` in the line (openPost), and this is what turns
+   that into a post addressed to jjj.
+
+   WHAT A HANDLE LOOKS LIKE IS ASKED, NOT WRITTEN AGAIN. AT_RE (www/sns.js) is
+   the one place, and it is the server's own shape; a second spelling here
+   would be a second answer to what a name is, and the two would drift.
+
+   It answers with BOTH halves at once, because the handle and what is left of
+   the line are one decision -- reading the line twice is two decisions that
+   can disagree.
+
+   Nothing here is asked on the READING side. Who a post is for is put on it
+   at the moment of writing (rule 13); a timeline that parsed the words again
+   would be re-deciding what somebody meant, on every render, on every
+   phone. */
+function pwAtHead(s){
+  var x=String(s||''), m, rest;
+  AT_RE.lastIndex=0;
+  m=AT_RE.exec(x);
+  if(!m || m.index!==0) return null;
+  rest=x.slice(m[0].length);
+  /* AND A SPACE AFTER IT. `@jjj` on its own is the whole of what somebody
+     wrote -- taking the name would leave an empty post, which is the app
+     deleting the only thing they typed. Same sentence one line down: a name
+     with nothing behind it is not a name with a post behind it. */
+  if(!/^\s/.test(rest)) return null;
+  rest=rest.replace(/^\s+/, '');
+  if(!rest) return null;
+  return {hd:netHandleOf(m[0]), at:m[0], ln:rest};
+}
 function pwSendWith(ln, pics, vo){
+  /* Whom this is for, worked out ONCE, before anything is built out of the
+     line. Not while a post is already answering one: `to` is a post somebody
+     pressed reply on, and a name typed at the front of that is a name in
+     what they wrote. */
+  var head=PW.to? null : pwAtHead(ln);
+  if(head){
+    ln=head.ln;
+    /* And the RAW line loses the same characters, because that is what the
+       ink is cut from -- shapes for words that are no longer on the post is
+       rule 12 arriving from the other end. The prefix is the same on both:
+       puaRoman() leaves anything that is not a drawn letter exactly as it
+       was, and a handle is [a-z0-9_]. It is taken only when it is actually
+       there, rather than by counting characters off the other string. */
+    if(String(PWRAW||'').indexOf(head.at)===0)
+      PWRAW=String(PWRAW).slice(head.at.length).replace(/^\s+/, '');
+  }
   /* Everything a reader needs is put ON the post, now, because the reader may
      not be here and may not have this language: who wrote it, what they are
      called, what it is written in, and a face. A timeline that asks the open
@@ -1661,6 +1710,11 @@ function pwSendWith(ln, pics, vo){
        it while the side that knows still exists. */
     if(up){ up.re=(up.re||0)+1; mine.toh=up.hd||''; }
   }
+  /* A post that named somebody at the front carries WHO and no `to`: there is
+     no post being answered, so there is nothing to count a reply on and
+     nothing for reply_to to hold. postToWho() asks the handle first, so the
+     line over it reads the same as a reply's. */
+  else if(head) mine.toh=head.hd;
   POSTS.push(mine);
   savePosts();
   /* It has stopped being a draft, so the row goes -- AFTER the post is
@@ -2967,8 +3021,14 @@ function postVoHTML(p){
    and nothing else. */
 function postToWho(p){
   var up;
-  if(!p || !p.to) return '';
+  if(!p) return '';
+  /* WHOM DOES THIS ANSWER, and that is the question rather than "does it
+     point at a post". The two came apart when a post could begin by naming
+     somebody with no post to answer at all (OWNER 2026-09-07): the handle is
+     on it, and asking about `to` first said no about a post that says who it
+     is for on its face. The first line is rewritten, not conditioned. */
   if(p.toh) return String(p.toh);
+  if(!p.to) return '';
   /* A reply written before a reply carried the handle. The parent is asked
      when the parent is here, and the line is left off when it is not --
      which is the truth about it. Nothing is invented and nothing is
@@ -3084,6 +3144,20 @@ function postAvHTML(p){
    files, put on by the app, sitting outside anything anybody wrote. A tag is
    characters in the body now, and tagHTML() in www/sns.js is what makes one
    blue and pressable wherever those characters are drawn. */
+/* 「@aya への返信」, with the @aya a thing you press. 「リプライング to
+   @〇〇 の @〇〇 をタップしたらその人のページ飛べるように」 OWNER 2026-09-07.
+
+   The sentence is still one key with one `{0}` in it, so it stays one thing
+   for a translator to move: the handle goes in as a mark no keyboard makes,
+   the whole sentence is escaped, and the mark is then the one place the
+   button lands. Handing HTML to t() would work today and would break the day
+   somebody wraps a `{0}` in `<b>`.
+
+   atHTML() (www/sns.js) is the one place a handle becomes pressable and the
+   @ in a body goes through it too, so both @ on a post are the same road. */
+function ptoHTML(hd){
+  return esc(t('post.re.to', '\u0001')).replace('\u0001', atHTML(hd));
+}
 function postRow(p){
   var foc=(postFocus()===p.id), to=postToWho(p);
   return '<div class="post'+(foc? ' pfoc':'')+'"'+(foc? '' : DO('postOpen', [p.id]))+'>'+
@@ -3208,7 +3282,7 @@ function postRow(p){
          replies in it -- a reply sitting between two posts that have nothing
          to do with it has to say what it is, and the id it carries says
          nothing to anybody's eye. */
-      (to? '<div class="pto">'+esc(t('post.re.to', '@'+to))+'</div>' : '')+
+      (to? '<div class="pto">'+ptoHTML(to)+'</div>' : '')+
       /* It used to be text wearing MY font, and only ever on my own post,
          because my font is the font of MY language and putting it on
          somebody else's line drew their words in my shapes. Now the shapes

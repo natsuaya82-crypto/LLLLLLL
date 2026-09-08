@@ -214,6 +214,7 @@ act('kbSelDel', kbSelDel);
 /* A tag in what somebody wrote. 「タップしたらタグの検索になる」 OWNER
    2026-09-04 -- it is the ordinary search with those characters in the box. */
 act('snsTagGo', snsTagGo);
+act('snsAtGo', snsAtGo);
 act('snsSetFil', snsSetFil);
 act('snsSetSort', snsSetSort);
 act('snsSaveQ', snsSaveQ);
