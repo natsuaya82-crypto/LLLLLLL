@@ -1128,6 +1128,124 @@ say(!pop.spinAfterUp && !pop.popAfterUp,
     (pop.popAfterUp ? '**あり**' : 'なし') + '）');
 
 
+/* ---- 非公開にした言語は、ログアウト→ログインで公開に戻らない ------------
+   「言語を非公開にしていたのに、ログアウトしてログインしたら公開に戻ってた」
+   OWNER 2026-09-08（実機、ビルド 143）。
+
+   「非公開か」の答えは二つある ── 端末の `wld` スライスの `hide` と、サーバー
+   の `language.published_at` です。画面が読むのは前者だけで、`wldHidden()` は
+   **無い WLD を「公開」と答えます**（`!!(world()).hide`）。スライスはメモリに
+   しか無い（rule 22）ので、起動しなおした端末の WLD は、サーバーから降りて
+   くるまで空 ── その一瞬に画面を読めば公開です。
+
+   なので訊くのは一つ、**人が見る順番そのまま**: 非公開にして、ログアウトして、
+   端末を立ち上げなおして、ログインして、画面が何と言うか。ここは「起動して、
+   また起動する」を持っている唯一の check なので、この道はここにあります。
+
+   赤を見た形（2026-09-08）: `netLangsDown()` が降ろすスライスから `wld` を
+   外すと ── docs/DATA_SAFETY.md の「手で書いたキーの一覧に足し忘れる」と同じ
+   形 ── ログインした端末は `hide=false`、つまり画面は「公開」と言います。   */
+await pg.reload();
+await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
+const hid = await pg.evaluate(async ({ s, srv }) => {
+  localStorage.clear();
+  eval('(' + s + ')()');
+  SET.done = true;
+  eval(srv);
+  SESS = { at:'t', rt:'r', uid:'wld1', anon:false };
+  function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
+  var id;
+  for (id in LANGS)
+    if (Object.prototype.hasOwnProperty.call(LANGS, id)) LANGS[id].uid = SESS.uid;
+  langStore(); netSave();
+  /* この人の言語はもうサーバーにある ── fixture は `sid` を打ってあるので
+     netLangRow() は行を作りません。作らないほうが実機に近い（人は言語を
+     作った次の日に非公開にする）ので、その行のほうをここに置きます。 */
+  window.__SRV.lang = [{ id:LANGS[langId].sid, owner:SESS.uid,
+                         name:langName, published_at:null }];
+  await new Promise(function(f){ netLangSync(function(){ f(); }); });
+  await wait(150);
+  /* 人が押すのはこれ一つ ── 画面の公開スイッチ */
+  setWldHide(true);
+  await wait(100);
+  await new Promise(function(f){ netSaveNow(function(){ f(); }); });
+  await wait(300);
+  var S = window.__SRV, sid = (LANGS[langId] || {}).sid, q, upHide = null;
+  for (q = 0; q < S.slice.length; q++)
+    if (S.slice[q].language === sid && S.slice[q].kind === 'wld')
+      { try { upHide = JSON.parse(S.slice[q].body).hide; } catch (e) { upHide = 'BAD'; } }
+  return { hide: wldHidden(), sid: sid, wldUp: upHide,
+           pub: S.lang.map(function(r){ return r.published_at; }),
+           srv: JSON.stringify({ lang:S.lang, slice:S.slice }) };
+}, { s: seed.toString(), srv: SERVER });
+
+/* 「サーバーに一本も無い」は「どの行も公開されていない」でもあるので、
+   行があることを先に訊きます ── every() は空の配列に true と答えます。 */
+say(hid.hide === true && hid.pub.length > 0 &&
+    hid.pub.every(function(p){ return p === null; }) && hid.wldUp === true,
+    '非公開にした瞬間、端末もサーバーも非公開 ── 画面は ' + hid.hide +
+    '、サーバーの published_at は ' + JSON.stringify(hid.pub) +
+    '、上がった wld の hide は ' + hid.wldUp);
+
+/* ログアウトして、アプリを立ち上げなおして、ログインする。スライスはメモリ
+   なので、この端末は言語の中身を何も持たずに立ち上がります。 */
+await pg.evaluate(async () => { netOut(); await new Promise(f => setTimeout(f, 150)); });
+await pg.reload();
+await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
+
+const still = await pg.evaluate(async ({ srv, saved }) => {
+  eval(srv);
+  var S = window.__SRV, keep = JSON.parse(saved);
+  S.lang = keep.lang; S.slice = keep.slice;
+  function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
+  netTook({ access_token:'t', refresh_token:'r', user:{ id:'wld1' } });
+  await wait(1200);
+  return { hide: wldHidden(), wld: JSON.stringify(WLD).slice(0, 60),
+           pub: S.lang.map(function(r){ return r.published_at; }) };
+}, { srv: SERVER, saved: hid.srv });
+
+say(still.hide === true,
+    '**ログアウトして立ち上げなおしてログインしても、非公開のまま** ── 画面は ' +
+    still.hide + '（WLD は ' + still.wld + '）');
+say(still.pub.length > 0 && still.pub.every(function(p){ return p === null; }),
+    'そしてサーバーの公開列も動かない ── published_at は ' +
+    JSON.stringify(still.pub));
+
+/* そしてもう一度、**電波の無い起動のために取ってある写し（slGot）を消して**。
+   上の一本は写しでも降りてきた分でも緑になります ── 二つの道があって、赤に
+   したいのは降りてくるほうです。写しはディスクにあり、端末を入れ直した人にも
+   領域を回収された人にも無いので、これが「サーバーだけが答える」姿です。 */
+await pg.evaluate(() => {
+  var i, k, doomed = [];
+  for (i = 0; i < localStorage.length; i++){
+    k = localStorage.key(i);
+    if (k && k.indexOf('lingua.') === 0 && k.indexOf('.got') === k.length - 4) doomed.push(k);
+  }
+  for (i = 0; i < doomed.length; i++) localStorage.removeItem(doomed[i]);
+  return doomed.length;
+});
+await pg.reload();
+await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
+
+const only = await pg.evaluate(async ({ srv, saved }) => {
+  eval(srv);
+  var S = window.__SRV, keep = JSON.parse(saved);
+  S.lang = keep.lang; S.slice = keep.slice;
+  function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
+  var before = wldHidden();
+  netTook({ access_token:'t', refresh_token:'r', user:{ id:'wld1' } });
+  await wait(1200);
+  return { before: before, hide: wldHidden(),
+           pub: S.lang.map(function(r){ return r.published_at; }) };
+}, { srv: SERVER, saved: hid.srv });
+
+say(only.hide === true && only.pub.length > 0 &&
+    only.pub.every(function(p){ return p === null; }),
+    '**写しも無い端末では、サーバーから降りてきた分が非公開だと言う** ── ' +
+    'ログイン前は ' + only.before + '（何も無いので「公開」と答える）、' +
+    'ログイン後は ' + only.hide + '、サーバーの published_at は ' +
+    JSON.stringify(only.pub));
+
 /* ---- 起動しても、キーボードの枚数は増えない ------------------------------
    「アップデートするたびにキーボード増殖してる。トリガーわからんけど毎回
    増えてる」 OWNER 2026-09-07（実機、ビルド 142）。
