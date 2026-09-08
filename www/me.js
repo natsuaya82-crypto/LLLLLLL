@@ -725,15 +725,29 @@ function whoWait(h, ok, bad){
 function profileOpen(h){
   var mine, left=1, fell=false;
   h=String(h||'');
+  /* TWO QUESTIONS, AND THEY ARE NOT THE SAME ONE.
+     WHOSE page it is decides what has to be in before it opens: your own is
+     the two counts, the language and your posts (§ profileReady), somebody
+     else's is who they are and what they wrote.
+     HOW you arrive is a different question and is answered by whether a
+     handle was handed in at all. No handle is the TAB and your own face on a
+     post -- both of those mean 「my page」 and throw the trail away, which is
+     what a tab does (www/shell.js § goTab). A handle is a link somebody
+     pressed inside a page -- an @ in a line, a name in a list -- and that
+     WALKS, so the arrow goes back to where they were reading.
+
+     They were one condition, and a handle that happens to be your own was
+     therefore a tab: pressing 「@aya への返信」 in a thread, on the phone
+     belonging to @aya, threw the thread away and stood you on the profile
+     tab with no way back. pfMine() already reads `here().a === meHandle()`
+     as your own page, so what is drawn is right either way -- what was wrong
+     was only the trail. Found by post-check 21. */
   mine=(!h || h===meHandle());
   function one(){
     if(fell) return;
     left--;
     if(left>0) return;
-    /* Your own is a TAB and somebody else's is a page you walked to, which
-       is the difference between throwing the trail away and pushing onto it.
-       www/shell.js § goTab. */
-    if(mine) goTab('profile'); else go('profile', h);
+    if(h) go('profile', h); else goTab('profile');
   }
   /* 揃わなかったら画面は動かない ── netPop() (www/net.js)。［再接続］が
      走らせるのは同じ問いで、それは名前を押したのと同じ道です。 */

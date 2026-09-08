@@ -2486,11 +2486,100 @@ const R = await pg.evaluate(async () => {
         if (r.height < 44)
           fails.push('the @ over a reply is ' + Math.round(r.width) + 'x' +
                      Math.round(r.height) + ', under the 44pt a thumb needs');
+        /* AND THE ANSWERS ARE LET BACK AFTER THE PRESS. A profile is not
+           drawn until everything on it has answered (www/me.js §
+           profileOpen -- OWNER 2026-09-07 「全部読み込んでから開く」), so a
+           press with nothing answering lands nowhere and the @ reads as a
+           mark that does nothing. It is not: it is a door that is waiting.
+           § 11e and § 18 above are pressed the same way. */
+        const realS1_21 = netSend1, realS_21 = netSend, realG_21 = netGet;
+        const wasWho21 = WHO_HAVE, wasAsk21 = WHO_ASKED;
+        const held21 = [];
+        netSend1 = function (m, p2, b, t, ok) {
+          p2 = String(p2);
+          held21.push(function () {
+            ok(p2.indexOf('/rest/v1/profile_seen?') === 0
+                 ? [{ id:'u21', handle:who, display:who, av:null, fo:0, fr:0 }]
+                 : [], 200);
+          });
+        };
+        netSend = function (m, p2, b, t, ok, bad, up) { netSend1(m, p2, b, t, ok, bad, up, true); };
+        netGet = function (p2, ok, bad) { netSend('GET', p2, null, '', ok, bad); };
+        WHO_HAVE = {}; WHO_ASKED = {};
         at.click();
-        if (window.route !== 'profile' || String(here().a || '') !== who)
+        for (let n = 0; n < 20 && here().r !== 'profile' && held21.length; n++)
+          held21.shift()();
+        const landed = { r: here().r, a: String(here().a || '') };
+        netSend1 = realS1_21; netSend = realS_21; netGet = realG_21;
+        WHO_HAVE = wasWho21; WHO_ASKED = wasAsk21;
+        if (landed.r !== 'profile' || landed.a !== who)
           fails.push('pressing the @ over a reply stood you on ' +
-                     window.route + ':' + String(here().a || '') +
-                     ' and not profile:' + who);
+                     landed.r + ':' + landed.a + ' and not profile:' + who);
+      }
+
+      /* AND THE PAGE IT STANDS YOU ON IS WHOLE. Landing on `profile` is not
+         the claim -- `go('profile', h)` lands there too, and lands there with
+         nothing on it: no name, no face, a '?' where the person goes, and the
+         real one a moment later. That is the road profileOpen() exists to
+         replace, and a check that only reads here() cannot tell the two
+         apart. It was written that way and stayed green while an @ walked
+         straight onto the route (www/sns.js § snsAtGo, found 2026-09-08).
+
+         So it is asked of somebody this phone has never heard of -- the one
+         case where the two roads look different -- and what is read is the
+         first drawing of their page. */
+      {
+        const wasPosts21 = POSTS.slice();
+        const realS1b = netSend1, realSb = netSend, realGb = netGet;
+        const wasWhoB = WHO_HAVE, wasAskB = WHO_ASKED;
+        const heldB = [];
+        netSend1 = function (m, p2, b, t, ok) {
+          p2 = String(p2);
+          heldB.push(function () {
+            ok(p2.indexOf('/rest/v1/profile_seen?') === 0
+                 ? [{ id:'u22', handle:'sora', display:'Sora', av:null, fo:0, fr:0 }]
+                 : [], 200);
+          });
+        };
+        netSend = function (m, p2, b, t, ok, bad, up) { netSend1(m, p2, b, t, ok, bad, up, true); };
+        netGet = function (p2, ok, bad) { netSend('GET', p2, null, '', ok, bad); };
+        WHO_HAVE = {}; WHO_ASKED = {};
+        POSTS.push({ id:'ST-1', at: Date.now(), lang: reply.lang, lname:'Shango',
+                     ln:'zz', mn:'zz', who:'Aya', hd: meHandle(), mine:true,
+                     to:'ST-0', toh:'sora' });
+        window.route = 'thread'; NAV = [{ r:'feed' }, { r:'thread', a:'ST-1' }];
+        render();
+        let first21 = null;
+        const realRender21 = window.render;
+        window.render = function () {
+          const rr = realRender21.apply(this, arguments);
+          if (first21 === null && here().r === 'profile')
+            first21 = app.innerHTML;
+          return rr;
+        };
+        const at2 = app.querySelector('.pto button');
+        if (at2) {
+          at2.click();
+          for (let n = 0; n < 20 && first21 === null && heldB.length; n++)
+            heldB.shift()();
+        }
+        window.render = realRender21;
+        netSend1 = realS1b; netSend = realSb; netGet = realGb;
+        WHO_HAVE = wasWhoB; WHO_ASKED = wasAskB;
+        POSTS = wasPosts21; savePosts();
+        if (!at2)
+          fails.push('a reply naming somebody this phone does not know draws ' +
+                     'no @ to press, so nothing here is a test of anything');
+        else if (first21 === null)
+          fails.push('pressing the @ of somebody this phone does not know ' +
+                     'never stands you on their page at all');
+        else if (first21.indexOf('>Sora<') < 0 ||
+                 (first21.match(/class="bch">\?/g) || []).length)
+          fails.push('pressing the @ of somebody this phone does not know ' +
+                     'stands you on a page with 「?」 where they go and their ' +
+                     'name arriving a moment later. It walked onto the route ' +
+                     'instead of going through the one door onto a profile ' +
+                     '(www/me.js § profileOpen) 「全部読み込んでから開く」');
       }
 
       /* 本文の @ は同じ一箇所を通る */
