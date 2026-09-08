@@ -420,7 +420,7 @@ const R = await pg.evaluate(async () => {
   start();
   netOut(); arrive(A);
   /* 端末には一つ、A の言語がある（sid つき）。サーバはそれと、もう一つ返す。 */
-  LANGS[langId] = { name: 'いまの言語', mine: true, sid: 'here-already', uid: A };
+  LANGS[langId] = { mine: true, sid: 'here-already', uid: A };
   langStore();
   const keepId = langId;
   /* THIS LANGUAGE ALREADY HAS ITS WORDS AND HAS NO NAME SLICE, which is the
@@ -451,8 +451,12 @@ const R = await pg.evaluate(async () => {
 
   if (made !== 1) no('13: 降ろした数が 1 でない — ' + made + '（既にある言語まで作った？）');
   if (langId !== keepId) no('13: 開いている言語が動いた — 立っていた場所が変わる');
-  if (LANGS[keepId].name !== 'いまの言語')
-    no('13: 既にある言語の名前が上書きされた — ' + JSON.stringify(LANGS[keepId].name));
+  /* 名前は列の答えなので、降りてきた行が言うとおりになります（www/core.js
+     § LNAME）── ここで「埋めて止まる」のはスライス、つまり人の仕事のほう。
+     名前は人の仕事ではなく、サーバーが一つ持っている値です。 */
+  if (langNameOf(keepId) !== '上書きされてはいけない')
+    no('13: 既にある言語の名前が、降りてきた行のとおりになっていない — ' +
+       JSON.stringify(langNameOf(keepId)));
   if (slRd(langKeyOf(keepId, 'words')) !== keepWords)
     no('13: 既にある言語の単語が上書きされた ── これが「勝つ」ほう。前 ' +
        JSON.stringify(String(keepWords).slice(0,40)) + ' → 後 ' +
@@ -1467,17 +1471,19 @@ const R = await pg.evaluate(async () => {
   netOut(); arrive(A);
   const keepL2 = LANGS, keepId2 = langId, keepNm2 = langName;
   LANGS = {};
-  LANGS['La'] = { name: '自分の', mine: true, uid: A };
-  LANGS['Lb'] = { name: '他人の1', mine: true, uid: B };
-  LANGS['Lc'] = { name: '他人の2', mine: true, uid: B };
+  LANGS['La'] = { mine: true, uid: A };
+  LANGS['Lb'] = { mine: true, uid: B };
+  LANGS['Lc'] = { mine: true, uid: B };
   langId = 'La';
-  /* langRow() draws the OPEN language from the live `langName` and every
-     other from the index, so both have to say the same thing here or the
-     test is about the fixture rather than about the filter. */
-  langName = '自分の';
+  /* 名前は `language.name` です（www/core.js § LNAME）── 開いている一つも、
+     開いていない二つも、langRow() は同じ langNameOf() で訊きます。索引に
+     `name` を書いても、もう誰も読みません。 */
+  langNameGot('La', '自分の');
+  langNameGot('Lb', '他人の1');
+  langNameGot('Lc', '他人の2');
   const asA2 = vLangs();
   netOut(); arrive(B);
-  langId = 'Lb'; langName = '他人の1';
+  langId = 'Lb';
   const asB2 = vLangs();
   LANGS = keepL2; langId = keepId2; langName = keepNm2;
 
@@ -1496,8 +1502,8 @@ const R = await pg.evaluate(async () => {
   /* そして隠すものが無いときは言わない。数えていない一覧は、0 件を
      「0 件かくしています」と言い出します。 */
   netOut(); arrive(A);
-  LANGS = { 'La': { name: '自分の', mine: true, uid: A } };
-  langId = 'La'; langName = '自分の';
+  LANGS = { 'La': { mine: true, uid: A } };
+  langId = 'La'; langNameGot('La', '自分の');
   const noneHidden = vLangs();
   if (noneHidden.indexOf(t('cap.hid', 0)) >= 0)
     no('32: 隠すものが無いのに件数を言っている');

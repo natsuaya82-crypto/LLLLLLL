@@ -120,7 +120,10 @@ export function seed(){
        language has are the ones its words are wearing. */
     {hw:'tirok',ph:['t','i','r','o','k'], mn:'lookout', mns:['lookout'], pos:'n', from:'tir', fm:'d~見張り', at:10}
   ];
-  langName = 'Shango';
+  /* 名前はサーバーの `language.name` です（www/core.js § LNAME）。降りてきた
+     行がそれを言うので、写しを持った端末はこの一行で表せます ── `langName`
+     への直書きは、答えを持たないまま画面にだけ名前がある状態でした。 */
+  langNameGot(langId, 'Shango');
   /* The person's settings, back to what a fresh install has. A press that
      writes SET.x -- a theme, a reading mode, a writing system -- was
      otherwise still in force on every screen built after it, so the walk was
@@ -2729,7 +2732,7 @@ export function halfDone(){
        答えていて、その答えが出る画面はこの一枚しかない。戻さないのは他の面と
        同じ理由で、次の面の前に seed() がもう一度走るから。 */
     ['a language with no name -- 名前を空にした言語の設定', () => {
-       langName = '';
+       langNameGot(langId, '');
        window.route = 'set'; NAV = [{ r:'set', a:'lang' }];
        return vSet(); }],
     /* The NOUN chapter with a mark made, which is the row that says what the

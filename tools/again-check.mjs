@@ -92,8 +92,13 @@ const SERVER = `
     }
     if (method === 'PATCH' && p.indexOf('/rest/v1/language') === 0){
       var lid = arg('id'), j;
-      for (j = 0; j < S.lang.length; j++) if (S.lang[j].id === lid)
-        S.lang[j].published_at = body.published_at;
+      /* 送られた欄だけを書きます。両方を毎回書くと、名前の PATCH が
+         published_at を undefined で消し、公開が黙って落ちます ── これは
+         PostgREST の実際のふるまいでもあります。 */
+      for (j = 0; j < S.lang.length; j++) if (S.lang[j].id === lid){
+        if (body && body.published_at !== undefined) S.lang[j].published_at = body.published_at;
+        if (body && body.name !== undefined) S.lang[j].name = body.name;
+      }
       return answer([]);
     }
     if (method === 'POST' && p.indexOf('/rest/v1/slice') === 0){
@@ -143,11 +148,15 @@ const up = await pg.evaluate(async ({ s, srv }) => {
   /* the one the fixture made is open; a second one beside it, written and
      then LEFT — which is the ordinary state of a person's other language */
   var first = langId;
-  langName = 'Vaska'; save();
+  /* 名前は `language.name` です（www/core.js § LNAME）。langNameGot() は
+     行が上がるとき・降りてくるときに書かれる一つの道で、ここは「この端末は
+     この言語をこう呼んでいる」を置いているだけ ── `langName` への直書きは
+     開いている言語しか動かせず、開いていない方の名前は誰も言えません。 */
+  langNameGot(first, 'Vaska'); save();
   var second = langMint(); langStore();
   var was = langId;
   langOpen(second);
-  langName = 'Toko';
+  langNameGot(second, 'Toko');
   WORDS = [{ hw:'sula', ph:['s','u','l','a'], mn:'star', mns:['star'], pos:'n', at:1 }];
   save();
   langOpen(was);
@@ -218,7 +227,7 @@ const came = await pg.evaluate(async ({ srv, saved }) => {
   await wait(400);
   var ids = Object.keys(LANGS), i, out = [];
   for (i = 0; i < ids.length; i++)
-    out.push({ id:ids[i], name:LANGS[ids[i]].name, mine:LANGS[ids[i]].mine,
+    out.push({ id:ids[i], name:langNameOf(ids[i]), mine:LANGS[ids[i]].mine,
                words:(slRd(langKeyOf(ids[i], 'words')) || '').length });
   return { before: before, after: ids.length, langs: out };
 }, { srv: SERVER, saved: up.srv });
@@ -1353,6 +1362,136 @@ say(kbA.n === 1 && kbB.n === 1 && kbC.n === 1,
     '**起動してもキーボードは増えない** ── 同じ端末を三度立ち上げて、人が数える '
     + '枚数は ' + [kbA.n, kbB.n, kbC.n].join(', ') + '（ディスクの id 無しの写しと '
     + 'サーバーの id 付きの写しは同じ一枚）');
+
+/* ---- 言語の名前は `language.name` 一本 ------------------------------------
+   「言語の名前もサーバーでしょ。wiki もそうなんだから」 OWNER 2026-09-08。
+
+   答えは列一つです。2026-09-08 まで三つありました ── `lang` スライス、索引の
+   `LANGS[id].name`、そして列。**改名が届くのは前の二つだけ**で、列は行を作った
+   日の名前のまま。列は他人が読む唯一の半分なので、公開した言語の記事は古い名前
+   を出していました。何も投げません。
+
+   四本訊きます:
+   1. 改名で列に PATCH が飛び、**答えが戻ってから**画面の名前が動く
+   2. `lang` スライスへは一文字も書かない（端末は意見を持たない）
+   3. ログアウトして立ち上げなおして、写しが一本も無くても、名前は列から出る
+   4. 列が空の古い言語は、スライスの名前で**埋める**（あるものは書き換えない）
+
+   赤を見た形（2026-09-08）: `saveName()` を `langName=v; save();` に戻すと 1 と
+   3 が赤 ── サーバーの列は古い名前のまま、写しを消した端末は 未設定。 */
+await pg.reload();
+await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
+const nmA = await pg.evaluate(async ({ s, srv }) => {
+  localStorage.clear();
+  eval('(' + s + ')()');
+  SET.done = true;
+  eval(srv);
+  SESS = { at:'t', rt:'r', uid:'nm1', anon:false };
+  function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
+  var id;
+  for (id in LANGS)
+    if (Object.prototype.hasOwnProperty.call(LANGS, id)) LANGS[id].uid = SESS.uid;
+  langStore(); netSave();
+  window.__SRV.lang = [{ id:LANGS[langId].sid, owner:SESS.uid,
+                         name:'ときの語', published_at:null }];
+  langNameGot(langId, 'ときの語');
+  var S = window.__SRV;
+  S.sent = [];
+
+  /* 人が押すのはこれ一つ ── **画面の保存ボタン**です。netLangRename() を直に
+     呼ぶと、押す道（saveName）が端末に書いて済ませていても緑になります。
+     ここは screen を通します。押した「瞬間」に名前が変わってはいけません。 */
+  editName();
+  await wait(60);
+  var box = document.getElementById('ln-nm');
+  if (!box) return { err:'ln-nm が無い ── 改名の欄が開いていない' };
+  box.value = 'リングア語';
+  saveName();
+  var atOnce = langNameOf(langId);
+  await wait(300);
+  return { err:'', atOnce: atOnce, now: langNameOf(langId), global: langName,
+           col: S.lang.map(function(r){ return r.name; }),
+           /* スライスは一文字も書かれない */
+           slice: slMine(langKey('lang')),
+           sentLang: S.sent.filter(function(x){ return x.indexOf(':lang') > 0; }),
+           srv: JSON.stringify({ lang:S.lang, slice:S.slice }) };
+}, { s: seed.toString(), srv: SERVER });
+
+say(!nmA.err, '改名の欄が開く ── ' + (nmA.err || 'ln-nm があり、そこに打てる'));
+say(!nmA.err && nmA.atOnce === 'ときの語' && nmA.now === 'リングア語' &&
+    nmA.global === 'リングア語' && nmA.col.length > 0 &&
+    nmA.col.every(function(n){ return n === 'リングア語'; }),
+    '**改名は答えが戻ってから動く** ── 押した瞬間は ' +
+    JSON.stringify(nmA.atOnce) + '、戻ったあとは ' + JSON.stringify(nmA.now) +
+    '、サーバーの language.name は ' + JSON.stringify(nmA.col));
+say(!nmA.err && nmA.slice === null && nmA.sentLang.length === 0,
+    'そして `lang` スライスには書かないし、上げもしない ── 端末は意見を持たない（' +
+    JSON.stringify(nmA.slice) + '、' + JSON.stringify(nmA.sentLang) + '）');
+
+/* ログアウトして、写しを一本残らず消して、立ち上げなおしてログインする。 */
+await pg.evaluate(async () => { netOut(); await new Promise(f => setTimeout(f, 150)); });
+await pg.evaluate(() => {
+  var i, k, doomed = [];
+  for (i = 0; i < localStorage.length; i++){
+    k = localStorage.key(i);
+    if (k && k.indexOf('lingua.') === 0 && k.indexOf('.got') === k.length - 4) doomed.push(k);
+  }
+  for (i = 0; i < doomed.length; i++) localStorage.removeItem(doomed[i]);
+  return doomed.length;
+});
+await pg.reload();
+await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
+
+const nmB = await pg.evaluate(async ({ srv, saved }) => {
+  eval(srv);
+  var S = window.__SRV, keep = JSON.parse(saved);
+  S.lang = keep.lang; S.slice = keep.slice;
+  function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
+  var before = langNameOf(langId);
+  netTook({ access_token:'t', refresh_token:'r', user:{ id:'nm1' } });
+  await wait(1200);
+  return { before: before, now: langNameOf(langId), global: langName };
+}, { srv: SERVER, saved: nmA.srv });
+
+say(nmB.before === '' && nmB.now === 'リングア語' && nmB.global === 'リングア語',
+    '**写しも無い端末では、サーバーだけが名前を答える** ── ログイン前は ' +
+    JSON.stringify(nmB.before) + '、降りてきてから ' + JSON.stringify(nmB.now));
+
+/* 古い言語 ── 列が空で、名前は `lang` スライスにしか無い。 */
+await pg.reload();
+await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
+const nmC = await pg.evaluate(async ({ s, srv }) => {
+  localStorage.clear();
+  eval('(' + s + ')()');
+  SET.done = true;
+  eval(srv);
+  function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
+  var S = window.__SRV;
+  S.lang = [{ id:'srvold', owner:'nm2', name:'', published_at:null },
+            { id:'srvnew', owner:'nm2', name:'あとからの名', published_at:null }];
+  S.slice = [{ language:'srvold', kind:'lang', body:'古い名', no:1 },
+             { language:'srvnew', kind:'lang', body:'スライスの古い名', no:1 }];
+  netTook({ access_token:'t', refresh_token:'r', user:{ id:'nm2' } });
+  await wait(1500);
+  function nameOfSid(sid){
+    var id;
+    for (id in LANGS)
+      if (Object.prototype.hasOwnProperty.call(LANGS, id) && LANGS[id].sid === sid)
+        return langNameOf(id);
+    return '(no entry)';
+  }
+  return { col: S.lang.map(function(r){ return r.name; }),
+           slice: S.slice.filter(function(r){ return r.kind === 'lang'; })
+                         .map(function(r){ return r.body; }),
+           shown: [nameOfSid('srvold'), nameOfSid('srvnew')] };
+}, { s: seed.toString(), srv: SERVER });
+
+say(nmC.col[0] === '古い名' && nmC.col[1] === 'あとからの名' &&
+    nmC.shown[0] === '古い名' && nmC.shown[1] === 'あとからの名' &&
+    nmC.slice[0] === '古い名' && nmC.slice[1] === 'スライスの古い名',
+    '**空の列は古いスライスから埋め、埋まっている列は触らない** ── ' +
+    'language.name は ' + JSON.stringify(nmC.col) + '、画面は ' + JSON.stringify(nmC.shown) +
+    '、スライスは一字も変わらない ' + JSON.stringify(nmC.slice));
 
 await br.close();
 if (bad.length){

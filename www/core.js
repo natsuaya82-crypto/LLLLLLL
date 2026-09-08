@@ -172,9 +172,13 @@ var SLICES=['words','lines','lang','script','letters','notes','phases','talk','s
    that is gone is red the same way. **Adding a slice means adding its line,
    and nothing else anywhere.**
 
-   TWO OF THE TWELVE HAVE NO GLOBAL, and saying so is the point of writing
+   THREE OF THE TWELVE HAVE NO GLOBAL, and saying so is the point of writing
    them down rather than leaving them out:
 
+     lang    the language's NAME, which is the `language.name` column now
+             (2026-09-08, www/core.js § LNAME). Nothing in www/ reads or
+             writes this slice and it is NOT deleted -- what an older version
+             of this app wrote is left exactly where it is
      talk    a chapter that closed. Nothing in www/ reads or writes it, and it
              is NOT deleted -- somebody's may be in it and that is the owner's
              to decide (docs/DATA_SAFETY.md § 4)
@@ -187,11 +191,11 @@ var SLICES=['words','lines','lang','script','letters','notes','phases','talk','s
    `saveKb` do not exist yet when this object is built, and they do by the
    time anything calls it. */
 var LANG_IO={
-  /* four slices, one pair -- the dictionary, the lines, the language and the
-     writing are read and written together and always have been */
+  /* three slices, one pair -- the dictionary, the lines and the writing are
+     read and written together and always have been. `lang` was the fourth
+     and is below with the two that have no global */
   words:  { rd:function(){ langRead(); }, wr:function(){ save(); } },
   lines:  { rd:function(){ langRead(); }, wr:function(){ save(); } },
-  lang:   { rd:function(){ langRead(); }, wr:function(){ save(); } },
   script: { rd:function(){ langRead(); }, wr:function(){ save(); } },
   letters:{ rd:function(){ ltRead(); },   wr:function(){ saveLetters(); } },
   notes:  { rd:function(){ ntRead(); },   wr:function(){ saveNotes(); } },
@@ -199,6 +203,7 @@ var LANG_IO={
   snd:    { rd:function(){ sndRead(); },  wr:function(){ saveSnd(); } },
   kb:     { rd:function(){ kbRead(); },   wr:function(){ saveKb(); } },
   wld:    { rd:function(){ wldRead(); },  wr:function(){ saveWld(); } },
+  lang:   { why:'the name, and it is the `language.name` column now (www/core.js § LNAME). Nothing here reads or writes this slice and it is not deleted -- what is in it is what an older version of this app put there' },
   talk:   { why:'a chapter that closed. Nothing reads or writes it, and it is not deleted' },
   gram2:  { why:'read by language id on demand in www/grammar-engine/adapter.js; there is no global copy' }
 };
@@ -224,8 +229,14 @@ function langSaveAll(){
     did.push(io.wr); io.wr();
   }
 }
-/* id -> { name, mine, sid, uid }: the index says which languages are here, and
+/* id -> { mine, sid, uid }: the index says which languages are here, and
    the language's own keys hold what it is.
+
+   `name` STOOD HERE AND IS GONE (2026-09-08). What a language is called is
+   `language.name` on the server and langNameOf() is how it is asked -- the
+   index carrying a second copy is what let a rename move one and not the
+   other. Nothing removed what is already written down: an entry made by an
+   older version still carries the field, and nothing reads it.
 
    It said `{ name, mine } and nothing more`, and there were three. `sid` is
    the server's id for the language, put on by netLangRow() (www/net.js) the
@@ -261,6 +272,50 @@ var WORDS=[], LINES=[], langName='', SET=setDefaults();
    It takes the name rather than reading `langName`, because a post carries the
    name it was written with and the reader is the one who has to say it. */
 function langNameSaid(nm){ return String(nm||'') || t('langs.untitled'); }
+/* AND WHAT IT IS CALLED, WHICH IS THE SERVER'S ANSWER AND NOTHING ELSE.
+   -------------------------------------------------------------------------
+   「言語の名前もサーバーでしょ。wiki もそうなんだから」 OWNER 2026-09-08.
+
+   There is one answer and it is the `language.name` column. There were three:
+   the `lang` slice, `LANGS[id].name` in the index, and the column -- and the
+   column is the only one anybody ELSE can see, while it was the only one a
+   rename never reached. `netLangRow()` wrote it once, when the row was made;
+   `PATCH /rest/v1/language` wrote `published_at` and nothing else. So renaming
+   a language moved what this phone said and left the column holding the name
+   the language was made with, and the article somebody else opened said the
+   old one. Nothing threw.
+
+   IT IS IN MEMORY, the same as a slice (CLAUDE.md rule 22): it is what the
+   server has said this session, not an opinion this phone holds.
+   netLangRow(), netLangBack1(), netLangsDown() and netLangRename() are the
+   four that write it -- as a row goes up, or comes down, or a rename lands --
+   and nothing else may.
+
+   AND WHAT REACHES THE DISK IS A PICTURE, on no road up.
+   「前に読み込んだ分は出て欲しい」 OWNER 2026-09-05: with no signal the languages
+   never come down, so a list with no picture behind it is a list of 未設定.
+   It goes through slGot(), the one writer of `lingua.<id>.<...>.got`, and it
+   is kept out of every road up by the same mechanism the slices are: slWr()
+   is never called on this key, so slMine() cannot see it and netSaveUpGo(),
+   netSlice1() and both 「fills in and stops」 reads never find it. */
+var LNAME={};
+function langNameKey(id){ return langKeyOf(String(id||''), 'name'); }
+function langNameGot(id, nm){
+  var k=String(id||''), v=String(nm||'');
+  if(!k) return;
+  LNAME[k]=v;
+  slGot(langNameKey(k), v);
+  /* the open language's name is a global the screens read, exactly the way
+     WORDS is: one thing seen from many places, not a second answer */
+  if(k===langId) langName=v;
+}
+function langNameOf(id){
+  var k=String(id||''), p;
+  if(!k) return '';
+  if(Object.prototype.hasOwnProperty.call(LNAME, k)) return LNAME[k];
+  p=slRd(langNameKey(k));
+  return p===null? '' : String(p);
+}
 /* What a person's settings are before they touch anything. A function rather
    than a literal because it is needed twice -- here, and when everything is
    wiped -- and the second copy was written out by hand and did not have the
@@ -484,7 +539,7 @@ function langStore(){
 function langMint(){
   var id='L'+(new Date()).getTime().toString(36), n=0;
   while(LANGS[id]){ n++; id='L'+(new Date()).getTime().toString(36)+n.toString(36); }
-  LANGS[id]={ name:'', mine:true };
+  LANGS[id]={ mine:true };
   return id;
 }
 /* A LANGUAGE THAT IS ONLY READ, in the index and nowhere else yet.
@@ -521,8 +576,12 @@ function langMint(){
 function langSeenAdd(sid, name){
   var id=String(sid||'');
   if(!id) return '';
-  if(!LANGS[id]) LANGS[id]={ name:String(name||''), mine:false, sid:id };
-  else if(name && !LANGS[id].name) LANGS[id].name=String(name);
+  if(!LANGS[id]) LANGS[id]={ mine:false, sid:id };
+  /* and what the server said it is called. It used to be filled in only when
+     the index had nothing, so a second download could not rename a language
+     somebody was reading; the name is the server's answer now and a fresher
+     one of those is not a rename. */
+  if(name) langNameGot(id, name);
   if(!LANGS[id].uid && typeof SESS!=='undefined' && SESS && SESS.uid)
     LANGS[id].uid=String(SESS.uid);
   langStore();
@@ -583,7 +642,7 @@ function langRead(){
   WORDS=[]; LINES=[]; langName=''; SCRIPT={g:{}, extra:[]};
   try{ var a=JSON.parse(slRd(langKey('words'))||'[]'); if(Array.isArray(a)) WORDS=a; }catch(e){}
   try{ var l=JSON.parse(slRd(langKey('lines'))||'[]'); if(Array.isArray(l)) LINES=l; }catch(e){}
-  try{ langName=slRd(langKey('lang'))||''; }catch(e){}
+  langName=langNameOf(langId);
   try{
     var gg=JSON.parse(slRd(langKey('script'))||'null');
     if(gg && gg.g){ SCRIPT.g=gg.g; SCRIPT.extra=gg.extra||[]; }
@@ -801,12 +860,8 @@ function save(){
   saveTry(function(){
     slWr(langKey('words'),JSON.stringify(WORDS));
     slWr(langKey('lines'),JSON.stringify(LINES));
-    slWr(langKey('lang'),langName);
     slWr(langKey('script'),JSON.stringify(SCRIPT));
     localStorage.setItem(LS_S,JSON.stringify(setOnDisk()));
-    /* the index carries the name so a list of languages can be shown without
-       opening each one to find out what it is called */
-    if(LANGS[langId]) LANGS[langId].name=langName;
     langStore();
   });
 }

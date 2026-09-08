@@ -118,7 +118,9 @@ const r = await pg.evaluate(async ({ s, sid }) => {
   /* ---- and now: storage --------------------------------------------- */
   out.landed = slRd(langKeyOf(sid, 'letters'));
   out.wanted = THEIRS.letters.body;
-  out.row = LANGS[sid] ? { name: LANGS[sid].name, mine: LANGS[sid].mine } : null;
+  /* 名前は `language.name` です（www/core.js § LNAME）── 索引ではなく
+     langNameOf() が答えます。降りてきた `language_seen` の行が言ったもの。 */
+  out.row = LANGS[sid] ? { name: langNameOf(sid), mine: LANGS[sid].mine } : null;
   out.mineUntouched = (function(){
     for (var k = 0; k < SLICES.length; k++)
       if (slRd(langKeyOf(mineId, SLICES[k])) !== before[SLICES[k]]) return SLICES[k];

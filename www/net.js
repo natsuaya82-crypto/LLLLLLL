@@ -1204,7 +1204,7 @@ function netLangRow(id, ok, bad){
       }, bad);
     return;
   }
-  nm=(id===langId)? (langName||'') : (L.name||'');
+  nm=(id===langId)? String(langName||'') : langNameOf(id);
   /* AND ITS PAGE IS OPEN FROM THE MOMENT IT EXISTS, which is the default the
      owner chose. 「非公開の印」 was a flag whose ABSENCE meant public
      (www/home.js, until 2026-09-08), and every language made so far has been
@@ -1224,6 +1224,11 @@ function netLangRow(id, ok, bad){
       var sid=(d && d.length)? d[0].id : '';
       if(!sid){ bad(d, 0); return; }
       L.sid=sid; L.uid=me; langStore();
+      /* AND WHAT IT IS CALLED, from the row that has just been made. This is
+         the walk's one window closing: the name was typed before there was an
+         account to send it to, and here is where it becomes the column
+         (www/core.js § LNAME). */
+      langNameGot(id, nm);
       /* The row is here and it says so -- www/home.js § wldPubGot. Without
          this the article of a language just made is a page waiting for an
          answer that has already arrived. */
@@ -1325,6 +1330,36 @@ function netLangPublic(on){
             function(d, st, m){ netPop(d, st, m, function(){ netLangPublic(on); }); });
   }, function(d, st, m){ netPop(d, st, m, function(){ netLangPublic(on); }); });
 }
+/* AND WHAT THIS LANGUAGE IS CALLED.
+   -------------------------------------------------------------------------
+   「言語の名前もサーバーでしょ。wiki もそうなんだから」 OWNER 2026-09-08.
+
+   The rename, and until today there was no such request in this file: the
+   name went into the `lang` slice and into the index, both of which are this
+   phone's, and `language.name` -- the one thing anybody else reads -- was
+   written once when the row was made and never again.
+
+   IT IS THE SAME SHAPE AS netLangPublic() ABOVE and for the same sentence:
+   nothing moves on the screen until the server has taken it.
+   「保存するタイミングでエラーが起きるなら、保存されないし」 OWNER 2026-09-05.
+   A rename that did not arrive is a rename that did not happen, the box stays
+   open with what was typed in it, and ［再接続］ sends the same one again.
+
+   Signed out is netLangRow()'s answer and not a branch here: it says
+   `langrow −`, which netPop() shows, so 「電波が無い」 does not arrive as
+   silence. */
+function netLangNamePut(sid, nm, ok, bad){
+  netSend('PATCH', '/rest/v1/language?id=eq.'+encodeURIComponent(sid),
+          {name:String(nm||'')}, SESS && SESS.at, ok, bad);
+}
+function netLangRename(nm, then){
+  var v=String(nm||'');
+  netLangRow(langId, function(sid){
+    netLangNamePut(sid, v,
+      function(){ langNameGot(langId, v); if(then) then(); },
+      function(d, st, m){ netPop(d, st, m, function(){ netLangRename(v, then); }); });
+  }, function(d, st, m){ netPop(d, st, m, function(){ netLangRename(v, then); }); });
+}
 /* EVERY LANGUAGE THIS PERSON MADE, BACK ONTO A PHONE THAT HAS NONE.
    -------------------------------------------------------------------------
    `netOut()` drops the session and nothing else, so on the SAME phone signing
@@ -1408,9 +1443,10 @@ function netLangBack(then){
    also makes `knows()` above exact rather than a guess. */
 function netLangBack1(sid, name, at, done){
   wldPubGot(sid, at);
+  langNameGot(sid, name);
   netSlices(sid, function(there){
     var i, kind, o, wrote=false;
-    if(!LANGS[sid]){ LANGS[sid]={ name:name, mine:true, sid:sid }; wrote=true; }
+    if(!LANGS[sid]){ LANGS[sid]={ mine:true, sid:sid }; wrote=true; }
     for(i=0;i<SLICES.length;i++){
       kind=SLICES[i];
       o=there[kind];
@@ -1555,7 +1591,6 @@ function nidFor(row, here){
   id=langMint();
   LANGS[id].sid=sid;
   LANGS[id].uid=String(SESS.uid||'');
-  LANGS[id].name=String(row.name||'');
   return id;
 }
 /* `bad` is for a caller that puts its own pop up, whose ［再接続］ has to run
@@ -1615,6 +1650,9 @@ function netLangsDown(then, bad){
            it (www/home.js § wldPubGot): until it has, the article does not
            draw, because 「まだ聞いていない」 is not 「公開」. */
         wldPubGot(nid, row.published_at);
+        /* AND WHAT IT IS CALLED, which is the other column (www/core.js §
+           LNAME). Same road, same reason: 「まだ聞いていない」 is not 未設定. */
+        langNameGot(nid, row.name);
         netSlices(row.id, function(there){
           var k;
           for(k in there){
@@ -1634,6 +1672,22 @@ function netLangsDown(then, bad){
             netAgreed(nid, k, there[k].body);
             if(nid===langId) filled=true;
           }
+          /* AND A COLUMN THAT NOBODY EVER WROTE IS FILLED FROM THE SLICE.
+             Every language made before today has its name in the `lang`
+             slice, and a language made before netLangRow() sent one has an
+             EMPTY column -- so the name is on the server twice over and the
+             half everybody else reads says nothing.
+
+             IT FILLS IN WHAT IS MISSING AND STOPS -- docs/DATA_SAFETY.md rule
+             2. A column that already says something is left exactly as it is,
+             even where the slice says otherwise: the two disagreeing is a
+             rename that never reached the column, and which of the two wins
+             is a conflict, which is the owner's (docs/FEATURE_RULES.md §
+             Deciding). docs/BACKLOG.md carries it. */
+          if(!String(row.name||'') && there.lang && there.lang.body)
+            netLangNamePut(row.id, there.lang.body, function(){
+              langNameGot(nid, there.lang.body); render();
+            }, function(){});
           step();
         }, step);
       }

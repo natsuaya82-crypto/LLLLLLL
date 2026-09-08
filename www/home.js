@@ -1541,12 +1541,10 @@ function wldGet(lid, r){
   try{
     for(i=0;i<got.length;i++) slWr(langKeyOf(id, got[i][0]), got[i][1]);
   }catch(e){ return; }
-  /* And the language's own name where a language keeps it, so the one in the
-     index and the one in the language cannot drift. `lang` is a slice like
-     any other and langRead() is what reads it. */
-  if(seen && seen.name){
-    slWr(langKeyOf(id, 'lang'), seen.name);
-  }
+  /* Its name came down with the row and langSeenAdd() above has already
+     recorded it. It used to be written into the `lang` slice as well, so that
+     the index and the language could not drift; there is one answer now and
+     it is `language.name` (www/core.js § LNAME). */
   render();
 }
 /* A heading that folds, and it is the only kind this page has now. It used to
@@ -2216,7 +2214,12 @@ function saveName(){
   /* 空は未設定 -- OWNER 2026-09-06. Emptying the box takes the name off, and
      what every screen then says is langNameSaid()'s. It used to be thrown
      away here, so the box closed and the old name stayed with nothing said. */
-  langName=v; save(); closeSheet({target:{id:'sbg'}}); render();
+  /* THE NAME IS THE SERVER'S (www/core.js § LNAME). It used to be written
+     here and saved into the `lang` slice, which is this phone's, so the
+     `language.name` column -- the half anybody else reads -- kept the name
+     the language was made with. The box closes when the server has taken it
+     and stays open when it has not. */
+  netLangRename(v, function(){ closeSheet({target:{id:'sbg'}}); render(); });
 }
 
 /* =========================================================================
@@ -2226,12 +2229,12 @@ function saveName(){
    by WORDS. Pressing a row is the only way to change that. */
 function langRow(id){
   var l=LANGS[id]||{}, isOpen=(id===langId);
-  /* The index carries a name so a row can be drawn without opening the
-     language to find out what it is called. For the one that IS open, langName
-     is the live answer and the index is a copy of it made at the last save --
-     so renaming a language and looking at this list before anything saved
-     showed the old name here and the new one everywhere else. */
-  var nm = isOpen? langName : l.name;
+  /* One question, one answer, and it is the server's -- `language.name`
+     through langNameOf() (www/core.js § LNAME). It used to be two: the index
+     carried a copy made at the last save, and the open language answered with
+     `langName`, so renaming a language and looking at this list before
+     anything saved showed the old name here and the new one everywhere else. */
+  var nm = langNameOf(id);
   /* A language that is only READ is a row and not a button. langOpen()
      refuses it -- opening is what writes, and 「dl言語は編集はできない」
      (OWNER 2026-09-01) -- so a button here would be a door that answers

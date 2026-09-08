@@ -98,7 +98,7 @@ break.
 |---|---|---|---|
 | `words` | `WORDS` | the dictionary | array |
 | `lines` | `LINES` | saved lines | array |
-| `lang` | `langName` | the language's name | text |
+| `lang` | — | the language's name, and **nothing in `www/` reads or writes it** since 2026-09-08. What a language is called is the `language.name` column on the server; `langNameOf()` in `www/core.js` is how it is asked, `LNAME` holds what the server has said this session, and `lingua.<id>.name.got` is the picture a launch with no signal draws from. The slice stays in `SLICES` and is not deleted — what an older version wrote is left exactly where it is | text |
 | `script` | `SCRIPT` | roman → strokes, letters no word uses yet, and **which way the language is written** (`dir`) | object |
 | `letters` | `LETTERS` | the alphabet | array |
 | `notes` | `NOTES` | the notebook | array |
@@ -290,7 +290,7 @@ which one every global on the making side means.
 
 | key | written by | what it is |
 |---|---|---|
-| `name` | `langMigrate()`, `langMint()`, `bkRestore()`, and `save()` on the open one | a copy of the language's name, so a row can be drawn without opening the language to find out what it is called. For the OPEN language `langName` is the live answer and this is the copy made at the last save |
+| `name` | **nothing, since 2026-09-08** | a copy of the language's name. It was written by `langMint()` and by `save()` on the open one, and it is what let a rename move the phone's answer and leave `language.name` — the half anybody else reads — holding the name the language was made with. What a language is called is that column now (`langNameOf()`, `www/core.js` § LNAME). **An entry written by an older version still carries this field and nothing reads it**; nothing removes it, because a migration copies |
 | `mine` | `langMigrate()`, `langMint()`, `bkRestore()`, `netLangsDown()` write **true**; `langSeenAdd()` (`www/core.js`) writes **false** | whether this is a language you are MAKING or one you are only READING. It is about this handset and **not** about an account — `uid` is that, one row down, and the two words both sound like ownership |
 | `sid` | `netLangRow()` (`www/net.js`) | the server's id for this language, the same way a post carries one. **A language with no `sid` has never been up.** Added after the entry is made, and `langStore()`d on the spot. A downloaded language is filed UNDER its `sid`, so a second download of it lands in the same place |
 | `uid` | `netLangRow()`, `langSeenAdd()`, `bkTake()`, `langMigStamp()` | the ACCOUNT the language belongs to. 「違うアカウントでログインしてんのに前のやつ出てくるんだけど？」 OWNER 2026-08-31 — `LANGS` is the handset's index and survives signing out, so an entry with nothing saying whose it was became whoever signed in next. **An entry with no `uid` has never been through a door**, which is a real state: the onboarding makes a language before there is an account |
