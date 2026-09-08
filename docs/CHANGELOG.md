@@ -15,6 +15,37 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-08 プロフィールのリンクと場所が、どこにも出ていなかった
+
+実機 143 の写真。自己紹介は出ているのに、その下にリンクも場所も無い。
+
+打つ欄は 2026-08-25 の決めごと（**両方とも自由入力**）のとおり在り、
+`ME.link` と `ME.loc` に入って `saveMe()` で端末に残っていました。無かった
+のは二つです。**描く所が無い** ── 自分の頁（`meCard`）も他人の頁
+（`whoCard`）も `bio` までしか描いていませんでした。そして**サーバーへ行って
+いない** ── `netMyProfile()` の `select` も `netMakeProfile()` の body も
+`bio` まで、`profile` 表にも `profile_seen` にも列がありませんでした。
+書いた本人の端末にしか無い、`docs/DATA_SAFETY.md` の言う「端末のもの」に
+なっていた状態です。
+
+**新しく保存されるもの: `profile.link` と `profile.loc`。** どちらも `text`
+で、`ME_MAX` に合わせた長さの check 付き（link 100、loc 30）。`bio` と同じ
+形で `alter table … add column if not exists` を足し、`profile_seen`、
+`grant update`、`grant insert` の三つの並びにも入れました ── 列を足しても
+その三行に書かなければ、誰も書けず、誰も読めず、しかも何も投げません。
+
+**消えるものはありません。** 端末に既にある `ME.link` / `ME.loc` はそのまま
+で、`netProfSync()` が「サーバーに無くて端末に在る」ものを上げます
+（`netBioSync()` と同じ規則 ── 無いほうを埋めて止まる）。
+
+**オーナーのやること。** Supabase のダッシュボードで `supabase/schema.sql`
+を流し直すまで、この二つは上がりません。流すまでは今までどおり端末にだけ
+残り、画面には自分の分だけが出ます。
+
+**検査。**`acct-check` に一本 ── リンクと場所を入れて保存すると、自分の頁と
+他人の頁の両方に出て、空なら行ごと出ず、サーバーへ出て行く body に入って
+いること。赤を見ました。
+
 ### 2026-09-08 @ を押す道がプロフィールの扉を通っていなかった
 
 `snsAtGo()`（`www/sns.js`）── 返信の上の「@〇〇 への返信」と、本文の中の

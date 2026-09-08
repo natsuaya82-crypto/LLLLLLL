@@ -927,6 +927,27 @@ export function halfDone(){
        out of the `wld` slice, the slice lives in memory (rule 22), and the
        page was going up before it had come down. The row is the thing the
        owner was looking at, so it is a face. */
+    /* ---- リンクと場所が在る頁と、無い頁 -----------------------------------
+       「プロフィールにリンクと場所が出ない」OWNER 2026-09-08、実機 143。
+       欄は在って端末に残っていて、描く所が無かった。**両方の状態を顔にして
+       あります** ── 直したのは「出る」ほうですが、間違いはたいてい誰も写真を
+       撮らなかったほう、つまり空のときに空の行が出る形で起きます。
+       種の ME にはどちらも入っていないので、上の 「the profile」 が空のほう
+       です。ここは在るほう。 */
+    ['the profile, a link and a place', () => {
+        window.route='profile'; NAV=[{r:'profile'}];
+        const wasL = ME.link, wasC = ME.loc;
+        ME.link = 'tokinets.com'; ME.loc = '谷の上';
+        const h = vProfile(); ME.link = wasL; ME.loc = wasC; return h; }],
+    ['somebody else\'s profile, a link and a place', () => {
+        window.route='profile'; NAV=[{r:'profile', a:'iri'}];
+        WHO_HAVE['iri'] = { who:'Iri', hd:'iri', av:{ch:'Ж'}, lname:'Vethi',
+                             bio:'', link:'iri.example', loc:'海のそば',
+                             fo:2, fr:3, out:false };
+        const h = vProfile(); NAV=[{r:'profile'}];
+        WHO_HAVE['iri'] = { who:'Iri', hd:'iri', av:{ch:'Ж'}, lname:'Vethi',
+                             bio:'', fo:2, fr:3, out:false };
+        return h; }],
     ['the profile, the language private', () => {
         window.route='profile'; NAV=[{r:'profile'}];
         WLD.hide = true;
