@@ -8,6 +8,20 @@ refactor, a feature and a rename never arrive in the same diff.
 The order is the order to do them in.
 
 
+## iPhone への通知（いいね・フォロー・返信）── リリース後、オーナーの保留（2026-09-08）
+
+「いいねされました」「フォローされました」が iPhone に届いてアプリが開く、だけが
+頼まれたこと。今は何も無い：`ios/` に APNs のコードも `aps-environment` も無く、
+通知はアプリ内の一覧（`notices()` RPC）だけ。
+
+作るなら Apple 直（他社なし）で三つ：`LinguaPush.swift` が token を受け取って
+`device` 表へ上げる／`react`・`follow`・返信の `post` の insert で Edge Function
+`push` を叩き APNs へ送る／`npm run rls` に `device` の行。オーナーの手が要るのは
+App ID の Push capability・APNs キー .p8・Function の secrets・SQL の流し直し。
+
+**「めんどいからリリース後にやる一旦保留して」OWNER 2026-09-08。**
+セッション `claude/r7-push` は宣言の前に止めたので、枝には何も無い。
+
 ## 空の板を二枚作ったときに一枚になる ── オーナーの判断待ち（2026-09-07）
 
 `kbIded()` は id を除いた中身が一バイト違わない板を一枚にします（増殖した
