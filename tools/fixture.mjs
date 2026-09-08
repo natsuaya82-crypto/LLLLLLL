@@ -976,6 +976,19 @@ export function halfDone(){
        (「？になってあとで表示される」 OWNER 2026-09-07). Seeding WHO_HAVE is
        what stands in for that door here; without it the picture shows a '?'
        nobody would ever see. */
+    /* AND THE SAME LIST WITH NOBODY ON IT. 「人のプロフィールからフォロワー
+       見ようとするとずっとくるくるするんだって」 OWNER 2026-09-08: the mark
+       that turned for ever is gone from this screen, so what a person with no
+       followers looks like is a thing somebody has to be able to LOOK at.
+       An empty list is an ANSWER -- the door does not open until it is in
+       (www/me.js § followsOpen) -- which is why this face seeds an empty
+       array rather than nothing at all. */
+    ['somebody else\u2019s followers list with nobody on it', () => {
+        FOL_HAVE['ers:iri'] = []; FOL_ASKED['ers:iri'] = 1;
+        window.route='follows'; NAV=[{r:'follows', a:'ers:iri'}];
+        const h = vFollows();
+        delete FOL_HAVE['ers:iri']; delete FOL_ASKED['ers:iri'];
+        return h; }],
     ['your own row on somebody else\u2019s followers list', () => {
         const was = POSTS.slice(); POSTS.length = 0;
         FOL_HAVE['ers:iri'] = [meHandle(), 'veth']; FOL_ASKED['ers:iri'] = 1;

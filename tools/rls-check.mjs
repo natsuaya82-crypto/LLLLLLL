@@ -78,6 +78,7 @@ const N3 = 'a0000000-0000-4000-8000-0000000000e3';  /* renamed thirteen days ago
    watch what a new account is given. A and B are made before it on purpose:
    they are everybody who was already here, and nothing is written onto them. */
 const F = 'f0000000-0000-4000-8000-00000000000f';   /* somebody starting today */
+const LS = 'c0000000-0000-4000-8000-00000000005f';  /* a language B has not published */
 /* Two drafts. A's, which B tries every way there is to reach, and one more
    for the two attempts that are about a row ARRIVING rather than a row that
    is already there -- reusing A's id would be refused by the primary key,
@@ -633,6 +634,49 @@ const CASES = [
   /* And it is not a second way at what profile keeps back. */
   ['profile_seen hands out no staff flag',    'denied', B, 0,
     `select 1 from profile_seen where id='${E}' and staff`],
+
+  /* --- AND THE LANGUAGE THAT NOW RIDES ON THAT ROW -----------------------
+     「なんか全体的に遅くない？」 OWNER 2026-09-08 (143). The language beside
+     a person used to be a second request, and it went through `language_seen`
+     -- which hides an unpublished language from everybody but its owner. Now
+     it is three columns of `profile_seen`, and a wider view is a new place
+     for the same secret to come out of. So the line somebody would use
+     against it is written down: B, reading A's row, must not learn the name
+     of a language A has not published.
+
+     B's own row is the other half -- what a person may see about THEMSELVES
+     is unchanged, and a check that only asked the first half would pass on a
+     view that showed nobody anything. */
+  ['B makes a language and does not publish it', 'ok',    B, 0,
+    `insert into language(id,owner,name) values ('${LS}','${B}','Sono')`],
+  ['it is on B\u2019s own row',                              'ok',      B, 0,
+    `select 1 from profile_seen where id='${B}' and lang_name='Sono'`],
+  ['A cannot read its name off B\u2019s row',                'denied',  A, 0,
+    `select 1 from profile_seen where id='${B}' and lang_name='Sono'`],
+  ['nor can somebody with no account',                       'denied',  A, 1,
+    `select 1 from profile_seen where id='${B}' and lang_name='Sono'`],
+  ['but B\u2019s row is still there to read',                'ok',      A, 0,
+    `select 1 from profile_seen where id='${B}' and lang_name is null`],
+  ['B takes it away again',                    'ok',     B, 0,
+    `delete from language where id='${LS}'`],
+
+  /* --- and who follows whom, asked by the name one person knows another by
+     `follow_seen` is `follow` with a handle on each side, and `follow_read`
+     is `using (true)` -- so it shows what that policy already shows and adds
+     nothing. Both directions, and somebody with no account, because that is
+     what「public」has to mean for the view to be no wider than the table. */
+  ['A follows F again, for the view',         'ok',     A, 0,
+    `insert into follow(follower,followed) values ('${A}','${F}')`],
+  ['follow_seen names both sides by handle',  'ok',     A, 0,
+    `select 1 from follow_seen where follower_handle='aya' and followed_handle='veth'`],
+  ['and B reads it, being nobody\u2019s business but public', 'ok',   B, 0,
+    `select 1 from follow_seen where follower_handle='aya'`],
+  ['and somebody with no account reads it',   'ok',     B, 1,
+    `select 1 from follow_seen where followed_handle='veth'`],
+  ['A unfollows F again',                     'ok',     A, 0,
+    `delete from follow where follower='${A}' and followed='${F}'`],
+  ['and the view forgets it too',             'denied', A, 0,
+    `select 1 from follow_seen where follower_handle='aya' and followed_handle='veth'`],
 
   /* --- and the count comes BACK, which is the half that was missing -------
      「当たり前だけどsnsとして機能してない」OWNER 2026-09-01. Liking was
@@ -1593,6 +1637,24 @@ const SHAPE = [
      )) q`, '0'],
   ['and nothing older than the window is in it', `
      select count(*) from feed_hot(500) where body ? 'old'`, '0'],
+  /* AND NOT ONE REPLY. 「おすすめにリプライ出てくるのやめよう」 OWNER
+     2026-09-08. It was said on the phone (snsList() in www/sns.js) and
+     nowhere here, so the server handed over fifty rows and the phone drew
+     thirty of them -- the filtering was not wrong, it was in the wrong place,
+     and what it cost was the length of the page.
+
+     There IS a reply in this database, written before the tick, and 「an
+     answer outranks a boost」 above is what proves the score still counts it:
+     that claim is only true because F's reply to H2 is worth five. So these
+     two together say the sentence the owner asked for -- a reply is off this
+     list and is not off the reckoning. */
+  ['and not one reply is on it', `
+     select count(*) from feed_hot(500) where reply_to is not null`, '0'],
+  /* And it is still there to be read, which is the half a filter can quietly
+     take away: 「フォロー中」, a thread and a person's own page all show it. */
+  ['but the reply is still there to read', `
+     select count(*) from (select 1 where not exists (
+       select 1 from post_seen where reply_to is not null)) q`, '0'],
   /* Both of the private tables, in one statement. The reason is written over
      draft's: the three attempts above CANNOT catch a widened update or delete
      on their own, because PostgreSQL makes an UPDATE or a DELETE with a WHERE

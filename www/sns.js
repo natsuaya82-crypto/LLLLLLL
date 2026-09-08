@@ -170,7 +170,15 @@ function snsMine(p){
 
    Asked of the post -- `to` is what makes it an answer, and it is on the post
    the moment it is written (pwSend, rule 13) -- rather than of the server, so
-   it is the same sentence on a phone with no signal. */
+   it is the same sentence on a phone with no signal.
+
+   AND THE SERVER SAYS IT TOO, WHICH IS NOT THE SAME SENTENCE TWICE.
+   「おすすめにリプライ出てくるのやめよう」 OWNER 2026-09-08: feed_hot() in
+   supabase/schema.sql leaves replies out of what it HANDS OVER, because a
+   phone that asks for fifty and hides twenty is a phone showing a page of
+   thirty. This line is about the list in front of somebody, which holds
+   posts the server has never seen -- the reply written a second ago, and
+   everything on a phone with no signal. Neither covers the other's half. */
 function snsList(){
   var all=postAll();
   if(snsTab==='fo') return all.filter(snsMine);
