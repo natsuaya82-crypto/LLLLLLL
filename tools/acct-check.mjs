@@ -1091,17 +1091,19 @@ const R = await pg.evaluate(async () => {
   if (asked2.join('\n').indexOf('followed_handle=eq.iri') < 0)
     no('30: 人のフォロワーを、その人のハンドルで訊いていない');
   if (!hisFr || hisFr[0] !== 'veth') no('30: 人のフォロワーが返らない');
-  /* 二本は同時に出る ── 一覧と「その人は居るのか」。前の答えを待ってから
-     次を出していないこと。 */
-  if (asked2.length !== 2)
-    no('30: 人のフォロワーが二本で訊かれていない — ' + asked2.length + ' 本');
+  /* 一本 ── 一覧そのものだけ。「その人は居るのか」を別に訊いていたのを
+     やめました（30e）。 */
+  if (asked2.length !== 1)
+    no('30: 人のフォロワーが一本で訊かれていない — ' + asked2.length + ' 本');
 
-  /* 居ない人は空ではなく「訊けなかった」。空の一覧と、そんな人は居ない、は
-     別のことです。 */
+  /* 答えは二つしかありません ── 一覧か、落ちたか。「居ない人」に三つ目を
+     割り当てていたのが、永遠にくるくるの元でした（30e）。居ないハンドルを
+     フォローしている人は居ないので、空の一覧は正しい答えです。 */
   netGet = (path, ok) => ok([]);
   let gone2 = 'untouched';
   netFollowers((r) => { gone2 = r; }, () => {}, 'nobody');
-  if (gone2 !== null) no('30: 居ない人のフォロワーが「空の一覧」で返った — ' + JSON.stringify(gone2));
+  if (!gone2 || gone2.length !== 0)
+    no('30: 居ないハンドルのフォロワーが空の一覧で返らない — ' + JSON.stringify(gone2));
   netGet = realGet;
   say('30: フォロー中／フォロワーは、人のぶんも訊ける（自分のぶんは今までどおり）');
 
@@ -1196,19 +1198,90 @@ const R = await pg.evaluate(async () => {
      二つの数がもう止めた動きと同じです。答えが来るまでは印、来てからが
      一覧 ── PULL_GOT('mine') がその一つの記録（www/sns.js § pullRun）。 */
   NAV = [{ r: 'follows', a: 'ing' }];
-  PULL_GOT.mine = 0;
-  if (vFollows().indexOf('kai') >= 0)
-    no('30c: 答えが来る前に、前回の自分のフォロー中を出している');
   PULL_GOT.mine = 1;
   if (vFollows().indexOf('kai') < 0) no('30c: 自分のフォロー中が出なくなった');
 
-  /* 答えが来る前は「まだ誰もいない」と言わない。 */
+  /* 答えが来る前にこの画面は無い ── 描き分けではなく、扉が開かないこと。
+     「押してから読み込みが終わるまで前の画面のままで、揃った瞬間に出る」
+     OWNER 2026-09-07。前は vFollows() が「まだ来ていない」用の印を描いて
+     いて、それが 30e のくるくるの正体でした。 */
+  PULL_GOT.mine = 0; PULL_OUT.mine = 0;
   netGet = () => {};
-  NAV = [{ r: 'follows', a: 'ers:zoya' }];
-  const waiting = vFollows();
-  if (waiting.indexOf(t('me.followers.none')) >= 0)
-    no('30c: 答えが来る前に「まだ誰もいない」と言っている');
+  NAV = [{ r: 'feed' }]; window.route = 'feed';
+  followsOpen('ing');
+  if (here().r === 'follows')
+    no('30c: 自分のぶんの答えが来ていないのに一覧が開いた');
+  PULL_GOT.mine = 1;
   say('30c: 人のフォロー中／フォロワーの一覧が画面に出る ── 自分のぶんは一行も動かない');
+
+  /* ---- 30e. 人のフォロワーが、永遠にくるくるしない --------------------
+     「人のプロフィールからフォロワー見ようとするとずっとくるくるするんだって」
+     OWNER 2026-09-08。
+
+     訊く道には答えが**三つ**ありました ── 一覧、空、そして `null`。
+     `netWhoseId()` がハンドルを uuid に直せなかったとき、要求が落ちたのも
+     「そんな人は居ない」のも同じ `ok(null)` になり、folPull() は何も書かず、
+     訊いたという印だけを残しました。だから画面は開いて、印が回り続け、
+     入り直しても folWait() が即答するので**一本も訊きません**。
+     測りました（2026-09-08、本物の道を通して）：開いた、回った、ポップ無し、
+     二度目の要求は 0 本。
+
+     答えは二つです。一覧（空を含む）か、落ちたか。 */
+  start();
+  netOut(); arrive(A);
+  const seen30e = [];
+  const goFol = (h) => {
+    WHO_HAVE = {}; WHO_ASKED = {}; FOL_HAVE = {}; FOL_ASKED = {};
+    popOff(); NET_AGAIN = [];
+    NAV = [{ r: 'feed' }]; window.route = 'feed'; render();
+    followsOpen('ers:' + h);
+    return document.getElementById('app').innerHTML;
+  };
+
+  /* 落ちたとき ── 印ではなくポップ。そしてもう一度訊ける。 */
+  netGet = (p, ok, bad) => { seen30e.push(p); bad(null, 0, 'follow_seen 0'); };
+  goFol('iri');
+  if (here().r === 'follows') no('30e: 落ちたのに一覧が開いた');
+  if (document.getElementById('app').innerHTML.indexOf('snswait') >= 0)
+    no('30e: 落ちたのにくるくるが出ている');
+  if (!popOn()) no('30e: 落ちたのにポップが出ない ──「もう一度」の行き先が無い');
+  {
+    const was = seen30e.length;
+    popOff();
+    followsOpen('ers:iri');
+    if (seen30e.length === was)
+      no('30e: 落ちたあと、入り直しても一本も訊いていない ── 永遠にくるくる');
+  }
+
+  /* 答えて 0 人 ── 空の一覧が開く。「空」と「壊れた」は別。 */
+  netGet = (p, ok) => { seen30e.push(p); return ok([]); };
+  {
+    const h0 = goFol('iri');
+    if (here().r !== 'follows') no('30e: 0 人の一覧が開かない');
+    if (h0.indexOf('snswait') >= 0) no('30e: 0 人でくるくるが出ている');
+    if (h0.indexOf(t('me.followers.none')) < 0)
+      no('30e: 0 人なのに「まだ誰もいない」と言わない');
+  }
+
+  /* 2 人 ── 二行、印なし。 */
+  netGet = (p, ok) => {
+    seen30e.push(p);
+    if (p.indexOf('/rest/v1/follow_seen') === 0)
+      return ok([{ follower_handle: 'noor' }, { follower_handle: 'sela' }]);
+    if (p.indexOf('/rest/v1/profile_seen') === 0)
+      return ok([{ id: 'x1', handle: 'noor', display: 'Noor', av: null, bio: '', fo: 1, fr: 1 },
+                 { id: 'x2', handle: 'sela', display: 'Sela', av: null, bio: '', fo: 1, fr: 1 }]);
+    return ok([]);
+  };
+  {
+    const h2 = goFol('iri');
+    if (here().r !== 'follows') no('30e: 2 人の一覧が開かない');
+    if (h2.indexOf('snswait') >= 0) no('30e: 2 人でくるくるが出ている');
+    if (h2.indexOf('noor') < 0 || h2.indexOf('sela') < 0)
+      no('30e: 2 人が一覧に出ない');
+  }
+  netGet = realGet;
+  say('30e: 人のフォロワー ── 落ちたらポップ（もう一度訊ける）、0 人なら空の一覧、2 人なら二行。くるくるは無い');
 
   /* ---- 30d. 言語を一つ消すのは、その一つだけ ----------------------------
      「この言語を削除で言語の制作のものは全部なくなるってずっと言ってんだろ」

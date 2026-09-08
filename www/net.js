@@ -2244,49 +2244,44 @@ function netWhoseId(handle, ok, bad){
     }, bad);
 }
 function netFollowRows(want, by, ok, bad, handle){
-  var h=String(handle||''), list=null, here=null, left, fell=false;
-  function rows(d){
-    var out=[], i, hd;
-    for(i=0;i<(d||[]).length;i++){
-      hd=(d[i] && d[i][want+'_handle']) || '';
-      if(hd) out.push(String(hd));
-    }
-    return out;
-  }
-  if(!h){
-    if(!netSignedIn()){ ok(null); return; }
-    netGet('/rest/v1/follow_seen?select='+want+'_handle'+
-           '&'+by+'=eq.'+encodeURIComponent(SESS.uid),
-      function(d){ ok(rows(d)); }, bad);
-    return;
-  }
-  /* ---- AND 「NOBODY BY THAT NAME」 IS NOT 「NOBODY FOLLOWS THEM」 ---------
-     Both answer with no rows, and they are different things: an empty list is
-     a list, and a handle with no account behind it is a question that could
-     not be asked. netWhoseId() used to draw that line for free, because a
-     handle it could not turn into a uuid was `null` -- and it drew it by
-     costing a round trip that carried nothing else.
+  var h=String(handle||''), q;
+  /* WHOSE, and it is the identifier that is in hand. Somebody else's list is
+     asked by handle -- the only thing one person knows another by; your own
+     by the uuid in the session, because that is what a session carries and a
+     phone whose handle has not come down yet still has one. Neither is a
+     second road: the same view, the same filter. */
+  if(h) q='&'+by+'_handle=eq.'+encodeURIComponent(h);
+  else if(netSignedIn()) q='&'+by+'=eq.'+encodeURIComponent(SESS.uid);
+  else { bad(null, 0, 'whose −'); return; }
+  /* ---- AND THERE ARE TWO ANSWERS, NOT THREE -----------------------------
+     「人のプロフィールからフォロワー見ようとするとずっとくるくるするんだって」
+     OWNER 2026-09-08.
 
-     So the two questions go out TOGETHER and the answer waits for both. It is
-     one round trip, not two, which is the whole of this change; and it is the
-     same line in the same place, which is why the answer is still `null`. */
-  left=2;
-  function done(){
-    if(fell || --left) return;
-    ok(here? list : null);
-  }
-  /* One fall, one report: two requests in the air is still one question, and
-     the pop that a failure puts up is the screen's, not each request's. */
-  function no(d, st, m){
-    if(fell) return;
-    fell=true;
-    bad(d, st, m);
-  }
-  netGet('/rest/v1/follow_seen?select='+want+'_handle'+
-         '&'+by+'_handle=eq.'+encodeURIComponent(h),
-    function(d){ list=rows(d); done(); }, no);
-  netGet('/rest/v1/profile?select=id&limit=1&handle=eq.'+encodeURIComponent(h),
-    function(d){ here=!!(d && d.length); done(); }, no);
+     There was a third. `netWhoseId()` turned the handle into a uuid before
+     this could be asked at all, and when it could not, BOTH its failures --
+     the request falling over, and the handle having no row -- came back here
+     as `ok(null)`: neither an answer nor a fall. folPull() (www/me.js) wrote
+     nothing down for it and left the ask marked as MADE, so the screen opened
+     on a mark that turned for ever and never asked again. Measured
+     2026-09-08 through the real road: the screen opened, the mark turned, no
+     pop, and walking back into it made ZERO requests.
+
+     A list is `[]` or longer, and anything else falls -- which is the pop
+     with ［再更新］ behind it, and folPull() unmarks the ask so it CAN be
+     asked again. THE EMPTY LIST IS AN ANSWER AND IS DRAWN AS ONE: nobody
+     follows a handle that has no account, which is also true and is what the
+     row of the list already says. Nothing here asks whether that person
+     exists -- it is a second request for a sentence this app does not have,
+     and the screen was reached by pressing their name. */
+  netGet('/rest/v1/follow_seen?select='+want+'_handle'+q,
+    function(d){
+      var out=[], i, hd;
+      for(i=0;i<(d||[]).length;i++){
+        hd=(d[i] && d[i][want+'_handle']) || '';
+        if(hd) out.push(String(hd));
+      }
+      ok(out);
+    }, bad);
 }
 function netFollowing(ok, bad, handle){
   netFollowRows('followed', 'follower', ok, bad, handle);

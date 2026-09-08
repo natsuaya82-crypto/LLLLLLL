@@ -962,20 +962,19 @@ function meFollows(h){ return meFollowing().indexOf(String(h||''))>=0; }
    naming this function in the table directly would read it before it
    exists. */
 function meFollowsPull(ok, bad){
-  var left=2, fell=false, made=true, was=meFollowing().join(',');
-  /* `null` IS NOT AN ANSWER AND IS NOT A FALL EITHER. It is what these two
-     say when the account could not be looked up at all, and writing it down
-     would nail both counts to 0 for the session; handing it to `bad` would
-     put the pop up over a request that did not fail. `ok(0)` is the third
-     thing: nothing to draw, nothing written down, and the road stays askable
-     -- which is exactly what pullRun() does with it. */
-  function one(hs){
+  var left=2, fell=false, was=meFollowing().join(',');
+  /* EVERY ANSWER IS A LIST. There used to be a third one -- `null`, 「the
+     account could not be looked up at all」 -- and it was carried here as
+     「nothing to draw, nothing written down」. It is gone (www/net.js §
+     netFollowRows): a list is `[]` or longer and anything else falls, so the
+     pop with ［再更新］ behind it is what a person gets instead of two counts
+     nailed to nothing for the rest of the session. */
+  function one(){
     if(fell) return;
-    if(!hs) made=false;
     left--;
     if(left) return;
-    if(made) saveMe();
-    ok(made? 1 : 0);
+    saveMe();
+    ok(1);
   }
   function no(d, s, m){
     if(fell) return;
@@ -987,15 +986,15 @@ function meFollowsPull(ok, bad){
        than this answer and netFollow() has already carried it to the server,
        so writing the older list over it would take it off the screen and
        leave the server holding the right one. */
-    if(hs && meFollowing().join(',')===was) ME.fo=hs;
-    one(hs);
+    if(meFollowing().join(',')===was) ME.fo=hs;
+    one();
   }, no);
   /* No press can move this one, which is the difference from the list above:
      being followed is something somebody ELSE does, so there is no local
      change to protect and the answer is simply written down. */
   netFollowers(function(hs){
-    if(hs) ME.fr=hs;
-    one(hs);
+    ME.fr=hs;
+    one();
   }, no);
 }
 /* Who you have blocked, as handles, beside who you follow -- both are the
@@ -1438,10 +1437,23 @@ function folPull(ers, h, ok, bad){
   h=String(h||'');
   if(!h){ if(ok) ok(); return; }
   FOL_ASKED[k]=1;
+  /* AN ANSWER IS WRITTEN DOWN, AND EVERY ANSWER IS A LIST.
+     「人のプロフィールからフォロワー見ようとするとずっとくるくるするんだって」
+     OWNER 2026-09-08. This used to read `if(hs) FOL_HAVE[k]=hs;` -- because
+     the ask had a THIRD answer, `null`, meaning 「could not be looked up」.
+     Nothing was written down for it, the ask stayed marked as made, and
+     vFollows() below drew a mark that turned for ever: folWait() answers at
+     once for anything already asked, so walking back in asked nothing.
+     Measured 2026-09-08 -- the screen opened, the mark turned, no pop, zero
+     requests on the second visit.
+
+     There is no third answer any more (www/net.js § netFollowRows): a list is
+     `[]` or longer, and anything else falls, which puts the pop up with
+     ［再更新］ behind it and unmarks the ask so it CAN be asked again. So an
+     empty list is written down like any other -- 「まだ誰もいない」 is a thing
+     the server said. */
   (ers? netFollowers : netFollowing)(function(hs){
-    /* Nobody by that name. It stays asked -- there is nothing to ask again,
-       which is whoAsk()'s rule and the same reason. */
-    if(hs) FOL_HAVE[k]=hs;
+    FOL_HAVE[k]=hs || [];
     if(ok) ok(); else render();
   }, function(d, s, m){
     FOL_ASKED[k]=0;
@@ -1542,29 +1554,29 @@ function vFollows(){
   var ers=folErs();
   var who=folWho();
   var mine=(!who || who===meHandle());
-  var list, got;
-  if(mine){
-    /* Both lists are one ask and it went out when the session began; this
-       screen asks for nothing on the way in, and a pull on it asks again. */
-    list=ers? meFollowers() : meFollowing();
-    /* AND WHETHER IT HAS BEEN ANSWERED, which used to be `true` because the
-       list is on this phone. It is on this phone from LAST time: a stored
-       copy drawn while this session's answer is in the air is a list that
-       changes under somebody's eye, which is the same fault as the number
-       above it. The mark until the server has spoken. */
-    got=pullHad('mine');
-  }
-  else {
-    list=folOf(ers, who);
-    got=folGot(ers, who);
-  }
+  /* Your own two lists are one ask that went out when the session began;
+     somebody else's is the one followsOpen() made on the way in. Either way
+     the door waited for it, so what is here is what the server said. */
+  var list=mine? (ers? meFollowers() : meFollowing()) : folOf(ers, who);
   return '<div class="view">'+navTop()+'<div class="body">'+
-    /* WAITING IS NOT EMPTY. 「snsで一瞬何も出ないとかあり得んやろ」 OWNER
-       2026-09-02 -- and 「まだ誰もいない」 said before the server has answered
-       is a statement about the server made before it spoke. One place draws
-       it (www/sns.js). */
-    (!got? snsWaitHTML()
-      : list.length
+    /* NOTHING TURNS ON THIS SCREEN, AND THERE IS NOTHING TO WAIT FOR.
+       「人のプロフィールからフォロワー見ようとするとずっとくるくるするんだって」
+       OWNER 2026-09-08 -- and 「押してから読み込みが終わるまで前の画面のままで、
+       揃った瞬間に出る」「くるくるも出さない」 OWNER 2026-09-07, which is the
+       profile's shape (profileOpen above) and is this screen's now too.
+
+       It used to draw a mark while `got` was false, which was the honest
+       thing to do when a screen could be reached before its answer was in.
+       No screen can: followsOpen() is the one door, every button into
+       `follows` goes through it (www/act-map.js), and it does not go until
+       the list AND the people are here. A mark here could therefore only ever
+       be drawn over an answer that was never coming -- which is exactly what
+       it was doing, for ever, and what a failure now puts a pop up for.
+
+       So `got` is not read. 「まだ誰もいない」 said before the server has
+       spoken is a statement about the server made before it spoke, and this
+       screen is never drawn before it has spoken. */
+    (list.length
       ? list.map(function(h){
           /* Who this handle IS. The list is handles and nothing else, so
              every row was `@name` and no face, no name and nothing to press.
