@@ -1149,7 +1149,6 @@ defLang('es', (function(){
       'post.back.q'           : "¿Guardar esto como borrador?",
       'post.back.keep'        : "Guardar",
       'post.back.drop'        : "Descartar",
-      'post.back.stay'        : "Cerrar",
       'post.editplan'         : "Editar una publicación es del plan Plus",
       'post.save'             : "Guardar",
       'post.edited'           : "Editado",
@@ -1213,6 +1212,7 @@ defLang('es', (function(){
          from the server, one row a day, in every interface language. */
       "day.k"  : "Hoy",
       "day.ask"          : "¿En tu propia lengua?",
+      "day.tag"          : "#TemaDeHoy",
       /* The world's names for the twelve months and the seven days. What
          the slot is CALLED is the world's; what goes in it is the
          language's. Sunday first -- that is where a calendar's week

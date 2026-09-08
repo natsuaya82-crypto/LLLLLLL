@@ -82,7 +82,6 @@ const DELETES = {
                 why: '「一覧から右にスワイプして削除。標準アプリと同じ作りにして」 OWNER 2026-09-05 — the swipe is the two-step press this app asks with a popup everywhere else: left to uncover 削除, then press it. A confirm on top of that is not what the standard app does, and the form’s own delete button (which did ask) is gone with it' },
 
   /* ---- nothing stored is removed ------------------------------------- */
-  backDrop:   { takes: null, asks: false },
   clearSearch: { takes: null, asks: false },
   snsClearQ:  { takes: null, asks: false },
   geClear:    { takes: null, asks: false },

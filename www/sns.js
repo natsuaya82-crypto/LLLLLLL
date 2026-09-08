@@ -1447,26 +1447,72 @@ function dayMap(id){
 }
 /* ---- THE TAG ------------------------------------------------------------
    「投稿する時にタグを入れられるようにしろよ」「本文に#つけられるようにしろよ」
-   「タグは本文中に。」「翻訳はいらんから」 OWNER 2026-09-04.
+   「タグは本文中に。」 OWNER 2026-09-04.
 
    A TAG IS CHARACTERS SOMEBODY TYPED, and that is the whole of it. It was a
-   ROW drawn beside the post out of `t('day.tag')` -- ten words in ten
-   language files, put on by the app, sitting outside what anybody wrote and
-   impossible to type. The owner has replaced it: the `#` goes in the body,
-   a person puts it there, and there is one spelling of it.
+   ROW drawn beside the post out of `t('day.tag')` -- put on by the app,
+   sitting outside what anybody wrote and impossible to type. The owner
+   replaced it: the `#` goes in the body, a person puts it there.
 
-   ONE SPELLING AND NO TRANSLATION. 「翻訳はいらんから」. A tag that is said
-   ten ways is ten tags, and the search that finds them is a text search --
-   so the ten would never meet. `DAY_TAG` is the day's, in the one form it
-   has, and it is not a word in any language file because it is not
-   interface: it is put into a field somebody can then edit.
+   ---- and the day's tag is the one that is STORED once and SHOWN ten ways.
+   「なんで英語なのに#今日のお題やねん」「#今日のお題 は #todays prompt
+   みたいに、言語が変わったら誰の投稿でもそこが変わるように」 OWNER
+   2026-09-08.
+
+   TWO DIFFERENT QUESTIONS, and until that day they had one answer. What is
+   STORED must be one spelling: a tag said ten ways is ten tags, the search
+   that finds them is a text search, and the ten would never meet -- which is
+   the whole of 「翻訳はいらんから」 (2026-09-04) and it still holds. What is
+   SHOWN is the app's own words about a day everybody shares, so it is the
+   READER's language, the same as every other word this app puts on a screen:
+   「今日のお題だけ、毎回その人の表示言語になるようにできないの？…全員共通
+   なんだから」.
+
+   So `DAY_TAG` is the MARK -- the one form that is written down, the one
+   form a search asks for, and the form already sitting in the body of every
+   post made before today. Nothing is migrated and nothing is rewritten.
+   `t('day.tag')` is what a reader SEES, and the two are swapped at the
+   mouths by the pair below.
 
    The LINK is still the column. `post.pr` gathers the day's answers and
    cannot be edited away 「繋がりはハッシュタグではなく列」 (OWNER DECISION
    2026-08-23 #6, still in force). The tag is the same fact written where a
-   person can see it, delete it, and press it -- which is what 「投稿の本文に
-   タグの文字が入る」 in the decision of 2026-09-04 already said. */
+   person can see it, delete it, and press it. */
 var DAY_TAG='#今日のお題';
+/* The two mouths, and they are the only two places that know the swap.
+
+   `dayTagShow` is on the way OUT of storage: tagHTML() for anything drawn as
+   HTML (the timeline, a thread, the quote over a reply, a notice, a search
+   result -- every one of them draws a body through that one function) and
+   cardSrc() for the canvas, which cannot inherit anything and is the other
+   road a post is drawn down (rule 12). The composer's field is the third,
+   because a field is a thing somebody reads while they type into it.
+
+   `dayTagStore` is on the way IN: sending, and keeping a draft. It maps back
+   from EVERY language rather than from the current one, because somebody can
+   change the interface language with a half-written post in front of them --
+   the field would then hold last language's word, and a mark that came back
+   as ordinary characters is a post that has quietly left the day. Ten passes
+   over one short string, once per send.
+
+   `LANG` is the table `t()` itself reads (www/core.js § strOf). Nothing here
+   asks a screen and nothing here is a second list of languages. */
+function dayTagShow(s){
+  var x=String(s||''), w=t('day.tag');
+  if(!w || w==='day.tag' || w===DAY_TAG) return x;
+  return x.split(DAY_TAG).join(w);
+}
+function dayTagStore(s){
+  var x=String(s||''), c, d, w;
+  for(c in LANG){
+    if(!Object.prototype.hasOwnProperty.call(LANG, c)) continue;
+    d=(LANG[c] && LANG[c].str) || {};
+    w=d['day.tag'];
+    if(!w || w===DAY_TAG) continue;
+    x=x.split(w).join(DAY_TAG);
+  }
+  return x;
+}
 /* What a tag looks like: the mark, then anything that is not a space and not
    another mark. Both spellings of the hash, for the reason netAtOff() takes
    both of the `@` -- 「＃」 is what a Japanese keyboard gives -- and the marks
@@ -1542,8 +1588,15 @@ function tagHTML(s){
     m=(!tg? ah : (!ah? tg : (tg.index<ah.index? tg : ah)));
     if(!m) break;
     out+=esc(x.slice(at, m.index));
+    /* WHAT IT SAYS AND WHAT IT IS ARE DIFFERENT FOR ONE TAG, and the day's
+       is that one: the mark is what is stored and what a search asks for,
+       and the reader's own word is what is drawn on it (§ THE TAG above).
+       So the press carries `m[0]` -- the characters actually in the body --
+       and only the letters between the tags change. Every other tag is
+       somebody's own word and dayTagShow() leaves it exactly as it is. */
     out+=(m===tg
-      ? '<button class="ptag"'+DO('snsTagGo', [m[0]])+'>'+esc(m[0])+'</button>'
+      ? '<button class="ptag"'+DO('snsTagGo', [m[0]])+'>'+
+          esc(dayTagShow(m[0]))+'</button>'
       : atHTML(m[0]));
     at=m.index+m[0].length;
   }
@@ -1836,16 +1889,71 @@ function vThread(){
    carries up to four and "the photograph" is not a thing a post has. A post
    that is gone, or an index it does not have, is the same answer the rest of
    the app gives: the thing you came back for is gone. */
+/* A POST'S PHOTOGRAPHS ARE ONE THING YOU SWIPE THROUGH, not four screens.
+   「フォト4枚投稿した時にフォトをスライドして次の画像にいけない」 OWNER
+   実機 143, 2026-09-08.
+
+   It drew ONE picture -- the nth -- and put 「2/4」 in the bar over it, so the
+   bar said there were four and nothing on the screen could reach the other
+   three. Nothing threw and the count was right: it was a feature that had
+   not been built, and it looked exactly like one that had.
+
+   All of them are laid out side by side and the finger does the rest. It is
+   `.plrail`'s shape (www/index.html § .plrail, the plans) and not a new one:
+   a row that scrolls sideways with a snap on each page. Nothing is animated
+   by hand, nothing counts pixels, and there are no arrows -- a phone already
+   knows how to do this and the whole of the fix is not standing in its way.
+
+   The route still names ONE picture (`photo:<pid>:<n>`), because that is
+   what was pressed and it is where the rail is put on arrival (pvMount).
+   Going back is unchanged. */
 function vPhoto(){
   var a=String(here().a||''), i=a.indexOf(':'),
       p=postById(i<0? a : a.slice(0, i)),
       n=parseInt(i<0? '0' : a.slice(i+1), 10)||0,
-      pics=postPics(p);
+      pics=postPics(p), out='', k;
   if(!p || !pics[n]) return viewGone();
+  for(k=0;k<pics.length;k++)
+    out+='<div class="pvpage"><img class="pvimg" src="'+esc(pics[k])+'" alt=""></div>';
   return '<div class="view">'+navTop(pics.length>1? String(n+1)+'/'+pics.length : '')+
     '<div class="body">'+
-      '<div class="pview"><img class="pvimg" src="'+esc(pics[n])+'" alt=""></div>'+
+      '<div class="pview"><div class="pvrail" id="pv-rail" data-at="'+n+'">'+
+        out+'</div></div>'+
     '</div></div>';
+}
+/* Where the rail starts, and what the bar says while it moves.
+
+   Both are things no markup can say, so they are done from renderMount()
+   beside every other canvas and measurement on this app's screens
+   (www/glyph.js § renderMount). The listener is added here rather than
+   written into the markup, because JavaScript in markup is banned (rule 3)
+   -- and `scroll` does not bubble, so the one delegated listener in
+   www/act.js cannot carry it either.
+
+   The bar's count is patched rather than re-rendered: rebuilding the screen
+   under a finger that is mid-swipe takes the swipe with it. `.navc` is the
+   span navTop() puts a count in and it is asked of the page, so nothing here
+   restates what that bar is made of. */
+function pvMount(){
+  var r=document.getElementById('pv-rail'), n, w;
+  if(!r) return;
+  n=parseInt(r.getAttribute('data-at'), 10)||0;
+  w=r.clientWidth;
+  if(w) r.scrollLeft=n*w;
+  r.addEventListener('scroll', pvScroll);
+}
+function pvScroll(e){
+  var r=e && e.currentTarget, c=document.querySelector('.navc'), w, at;
+  if(!r || !c) return;
+  w=r.clientWidth;
+  if(!w) return;
+  /* Which page is under the middle of the window, so the number turns over
+     when the next picture is the one being looked at rather than when its
+     first pixel arrives. */
+  at=Math.round(r.scrollLeft/w);
+  if(at<0) at=0;
+  if(at>=r.children.length) at=r.children.length-1;
+  c.textContent=String(at+1)+'/'+r.children.length;
 }
 /* ---- searching ---------------------------------------------------------
    Posts and people, not your own language -- THAT search is in the build tab,

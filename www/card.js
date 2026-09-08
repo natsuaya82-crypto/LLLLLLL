@@ -1095,9 +1095,26 @@ function cardOfPost(po){
      the only shape a card had was 1920 by 1080 and a column has nowhere to go
      in a band that wide. The card has three shapes now, so it no longer has
      to misspell somebody's writing to fit one of them. */
-  return {kind:'p', line:String(po.ln||''), mn:String(po.mn||''),
+  /* AND THE DAY'S TAG IS SAID IN THE READER'S OWN WORDS. It is stored as one
+     mark and shown ten ways (www/sns.js § THE TAG), and this is the canvas's
+     one mouth for that -- a canvas inherits nothing, so the swap that
+     tagHTML() does for every screen cannot reach here. It is done on a COPY:
+     `ink.s` carries the text runs that were never drawn, and the post itself
+     is never touched. */
+  return {kind:'p', line:dayTagShow(String(po.ln||'')), mn:String(po.mn||''),
           hd:String(po.hd||''), nm:langNameSaid(po.lname),
-          ink:postInkOK(po.ink)? po.ink : null, dir:postDir(po)};
+          ink:postInkOK(po.ink)? cardInkShown(po.ink) : null, dir:postDir(po)};
+}
+/* The same ink with the day's mark said in the reader's words. A copy: the
+   strokes are shared (nothing draws on them) and only the text runs are
+   rewritten, so the post keeps exactly what it was written with. */
+function cardInkShown(ink){
+  var s=[], i, x;
+  for(i=0;i<ink.s.length;i++){
+    x=ink.s[i];
+    s.push(typeof x==='number'? x : dayTagShow(String(x)));
+  }
+  return {g:ink.g, s:s};
 }
 /* The post's line as things to draw, in the shapes cardInk() already knows:
    a shape, a character, or the gap between two words. A text run may be

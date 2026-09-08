@@ -32,11 +32,14 @@ act('abScale', abScale);
 act('addOne', addOne);
 act('addFmDrop', addFmDrop);
 act('back', back);
-/* The three answers the back arrow asks for when a post is half-written.
-   OWNER 2026-08-25「下書きに保存しますか？はい　いいえ　キャンセル」 */
-act('backKeep', backKeep);
-act('backDrop', backDrop);
-act('backStay', backStay);
+/* backKeep and backDrop are NOT here. The two answers the back arrow asks
+   for when a post is half-written go to popAsk() as functions
+   (www/shell.js § backDraftKept), the way every other question in this app
+   hands over its answer -- the names a screen says there are popYes and
+   popNo. They were entries here while the question was a box of its own with
+   its own DO()s; that box is gone, and an entry no screen names is a button
+   that used to exist. 「投稿の時の下書き入れる時のポップを合わせて欲しい」
+   OWNER 2026-09-08. */
 act('plPick', plPick);
 act('plBuy', plBuy);
 act('goMod', goMod);

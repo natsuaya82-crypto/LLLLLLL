@@ -1194,7 +1194,6 @@ defLang('zh', (function(){
       'post.back.q'           : "保存为草稿吗？",
       'post.back.keep'        : "保存",
       'post.back.drop'        : "丢弃",
-      'post.back.stay'        : "关闭",
       'post.editplan'         : "编辑动态是 Plus 方案的功能",
       'post.save'             : "保存",
       'post.edited'           : "已编辑",
@@ -1258,6 +1257,7 @@ defLang('zh', (function(){
          from the server, one row a day, in every interface language. */
       "day.k"  : "今日",
       "day.ask"          : "用你自己的语言？",
+      "day.tag"          : "#今日话题",
       /* The world's names for the twelve months and the seven days. What
          the slot is CALLED is the world's; what goes in it is the
          language's. Sunday first -- that is where a calendar's week

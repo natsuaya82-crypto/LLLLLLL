@@ -87,10 +87,14 @@ const R = await pg.evaluate(() => {
      so there is nothing to stub: the box is in the page and the answer is a
      press, exactly like every other choice in this app.
 
-     `asked` therefore means "is the box open", 0 or 1, and it is read off
-     BACKQ -- the app's own flag -- rather than counted here. The three
-     answers are pressed by name: the same names www/act-map.js registers,
-     so a rename that misses one fails here as well as in act-check. */
+     `asked` therefore means "is the question up", 0 or 1, and it is read off
+     popOn() -- the app's own answer -- rather than counted here. The box was
+     the back arrow's own until 2026-09-08; it is the app's own popup now
+     (「投稿の時の下書き入れる時のポップを合わせて欲しい」 OWNER), so what is
+     read is popOn() and the way out is the scrim rather than a ✕ of its own.
+     The answers are pressed by name: the same names www/act-map.js
+     registers, so a rename that misses one fails here as well as in
+     act-check. */
   let asked = 0;
   const realConfirm = window.confirm;
   /* Nothing may reach the OS dialog any more. If anything does, the box was
@@ -114,7 +118,7 @@ const R = await pg.evaluate(() => {
   const opened = JSON.stringify(here());
   write();
   back();                                    /* opens the box */
-  asked = BACKQ ? 1 : 0;
+  asked = popOn() ? 1 : 0;
   backKeep();                                /* はい */
   const kept = DRAFTS[DRAFTS.length - 1] || null;
   out.said.push('a post half written, then back: asked ' + asked +
@@ -160,21 +164,21 @@ const R = await pg.evaluate(() => {
   openPost();
   write();
   back();                                    /* opens the box */
-  asked = BACKQ ? 1 : 0;
-  backStay();                                /* ✕ ── 書き続ける */
-  out.said.push('and pressing the cross: asked ' + asked + ', drafts ' + DRAFTS.length +
+  asked = popOn() ? 1 : 0;
+  closeSheet({ target: { id: 'sbg' } });      /* ポップの外 ── 書き続ける */
+  out.said.push('and leaving it unanswered: asked ' + asked + ', drafts ' + DRAFTS.length +
     ', still on ' + JSON.stringify(here()));
   if (asked !== 1)
-    out.fails.push('pressing the cross: the box opened ' + asked + ' time(s), and it has to open exactly once');
-  if (BACKQ)
-    out.fails.push('pressing the cross left the box open');
+    out.fails.push('leaving it unanswered: the question opened ' + asked + ' time(s), and it has to open exactly once');
+  if (popOn())
+    out.fails.push('pressing outside the popup left the question up');
   if (DRAFTS.length !== 0)
-    out.fails.push('pressing the cross put ' + DRAFTS.length + ' thing(s) in the drafts');
+    out.fails.push('pressing outside the popup put ' + DRAFTS.length + ' thing(s) in the drafts');
   if (JSON.stringify(here()) !== '{"r":"form","a":"post:"}')
-    out.fails.push('pressing the cross left the composer anyway -- it is now on ' +
+    out.fails.push('pressing outside the popup left the composer anyway -- it is now on ' +
       JSON.stringify(here()));
   if (PW.ln !== LN)
-    out.fails.push('pressing the cross threw away the line: ' + JSON.stringify(PW.ln));
+    out.fails.push('pressing outside the popup threw away the line: ' + JSON.stringify(PW.ln));
 
   /* ---- no: not kept, and not left in the composer either -----------------
      OWNER DECISION 2026-08-25:「いいえは保存せず1画面戻る」. Nothing goes to
@@ -186,14 +190,14 @@ const R = await pg.evaluate(() => {
   openPost();
   write();
   back();                                    /* opens the box */
-  asked = BACKQ ? 1 : 0;
+  asked = popOn() ? 1 : 0;
   backDrop();                                /* いいえ */
   out.said.push('and answering no: asked ' + asked + ', drafts ' + DRAFTS.length +
     ', composer left ' + (PW.ln ? JSON.stringify(PW.ln) : 'empty') +
     ', landed on ' + JSON.stringify(here()));
   if (asked !== 1)
     out.fails.push('answering no: the box opened ' + asked + ' time(s)');
-  if (BACKQ)
+  if (popOn())
     out.fails.push('answering no left the box open');
   if (DRAFTS.length !== 0)
     out.fails.push('answering no put ' + DRAFTS.length + ' thing(s) in the drafts');
@@ -216,7 +220,7 @@ const R = await pg.evaluate(() => {
   pwMarkOpen(0);
   const onMarks = JSON.stringify(here());
   back();
-  asked = BACKQ ? 1 : 0;                                  /* what .mkr and .mkdone do */
+  asked = popOn() ? 1 : 0;                                /* what .mkr and .mkdone do */
   const afterDone = JSON.stringify(here());
   out.said.push('Done on the photograph editor: asked ' + asked + ', drafts ' +
     DRAFTS.length + ', landed on ' + afterDone);
@@ -244,7 +248,7 @@ const R = await pg.evaluate(() => {
   start();
   openPost();
   back();
-  asked = BACKQ ? 1 : 0;
+  asked = popOn() ? 1 : 0;
   out.said.push('an empty composer backed out of: asked ' + asked + ', drafts ' +
     DRAFTS.length);
   if (asked !== 0)
@@ -266,7 +270,7 @@ const R = await pg.evaluate(() => {
     postEdit(mine.id);
     const onEdit = JSON.stringify(here());
     back();
-    asked = BACKQ ? 1 : 0;
+    asked = popOn() ? 1 : 0;
     out.said.push('backing out of an edit: asked ' + asked + ', drafts ' +
       DRAFTS.length);
     if (onEdit !== '{"r":"form","a":"post:"}')
@@ -289,7 +293,7 @@ const R = await pg.evaluate(() => {
   IMP = impBlank(); IMP.rows = [{ a: 1 }];
   NAV = [{ r: 'letters' }, { r: 'letter', a: 'x' }]; window.route = 'letter';
   back();
-  asked = BACKQ ? 1 : 0;
+  asked = popOn() ? 1 : 0;
   out.said.push('a letter name typed and a list being read in survive back: ' +
     ((ltDraft === 'a letter name typed' && IMP && IMP.rows && IMP.rows.length === 1)
       ? 'both' : 'NO') + ', asked ' + asked);

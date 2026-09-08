@@ -2929,6 +2929,7 @@ function renderMount(){
      instead, which is the same fix the onboarding's canvas got above: they
      find nothing and do nothing on a screen that has none. */
   geTiles(); phkMount(); postFaces(); postLines(); pwHoldMount(); numWidMount();
+  pvMount();
   /* and somebody else's alphabet, whose letters are not in LETTERS to be
      looked up -- www/home.js hands the shapes over instead */
   abInkMount();

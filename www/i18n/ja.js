@@ -1105,7 +1105,6 @@ defLang('ja', (function(){
       'post.back.q'           : "下書きとして保存しますか？",
       'post.back.keep'        : "保存する",
       'post.back.drop'        : "破棄する",
-      'post.back.stay'        : "閉じる",
       'post.editplan'         : "投稿の編集はPlusプランからです",
       'post.save'             : "保存",
       'post.edited'           : "編集済み",
@@ -1169,6 +1168,7 @@ defLang('ja', (function(){
          from the server, one row a day, in every interface language. */
       "day.k"  : "お題",
       "day.ask"          : "自分の言語で",
+      "day.tag"          : "#今日のお題",
       /* The world's names for the twelve months and the seven days. What
          the slot is CALLED is the world's; what goes in it is the
          language's. Sunday first -- that is where a calendar's week

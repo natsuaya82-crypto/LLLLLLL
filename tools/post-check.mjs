@@ -44,9 +44,10 @@
 
     22  the line saying whom a reply answers stays HORIZONTAL in a language
         written downward. What runs down the page is what somebody wrote
-    23  a post whose line BEGINS with @handle is a post addressed to that
-        person -- said on the post at the moment of writing, with the handle
-        drawn over it and no longer in the line
+    23  WHOM A POST IS FOR IS NOT IN THE LINE. The + on somebody's page and
+        an @handle typed at the front both put it on `PW.toh`, drawn as a
+        line OVER the field; the line, the ring and `maxlength` are what
+        somebody wrote and nothing else. 「文字数に含ませたくないのよ」
 
     21  the @handle over a reply is a thing you PRESS, and it stands you on
         that person's page. The @ in a body goes through the same one place
@@ -1452,13 +1453,16 @@ const R = await pg.evaluate(async () => {
      Driven: the real back() is pressed on the real composer, and what is
      asked is whether the arrow was taken over. */
   {
-    const wasPW = PW, wasNav = NAV.slice(), wasQ = BACKQ;
+    const wasPW = PW, wasNav = NAV.slice();
+    /* 訊いたかどうかは popOn() ── アプリ自身の答えです。2026-09-08 まで
+       これは戻る矢印だけの箱（BACKQ）で、今はアプリの問いと同じポップに
+       なりました。 */
     const asks = () => {
-      BACKQ = 0;
+      popOff();
       openPost();
       back();
-      const q = !!BACKQ;
-      BACKQ = 0;
+      const q = popOn();
+      popOff();
       return q;
     };
 
@@ -1482,7 +1486,7 @@ const R = await pg.evaluate(async () => {
     if (!asks())
       fails.push('a line typed is thrown away by the back arrow without asking');
 
-    BACKQ = wasQ; NAV = wasNav; PW = wasPW;
+    popOff(); NAV = wasNav; PW = wasPW;
   }
 
   /* ---- 12. the timeline is sent the small copy, not the photograph ----
@@ -1896,6 +1900,35 @@ const R = await pg.evaluate(async () => {
     if (rawD.indexOf('v-draft-1.m4a') < 0)
       fails.push('a draft does not carry the voice FILE at all, so the ' +
                  'recording is lost when the draft is opened again');
+    /* AND IT CARRIES WHOM IT IS FOR. The addressee stopped being characters
+       at the front of the line on 2026-09-08, so a draft that keeps only the
+       line comes back as a post to nobody -- silently, with the composer
+       looking perfectly correct. Both ends are asked: what went on the phone
+       and what went up, and then what comes back out of draftOpen(). */
+    {
+      const wasN = DRAFTS.length;
+      PW = pwBlank(); PW.ln = 'kano'; PW.toh = 'jjj';
+      dsent = [];
+      draftKeep();
+      const raw2 = localStorage.getItem('lingua.drafts') || '';
+      if (raw2.indexOf('"toh":"jjj"') < 0)
+        fails.push('a draft addressed to somebody does not carry the ' +
+                   'addressee on this phone, so opening it again is a post ' +
+                   'to nobody');
+      if (JSON.stringify(dsent).indexOf('jjj') < 0)
+        fails.push('a draft addressed to somebody went up without the ' +
+                   'addressee, so the phone it comes down on has lost it');
+      if (DRAFTS.length === wasN + 1) {
+        draftOpen(DRAFTS.length - 1);
+        if (PW.toh !== 'jjj')
+          fails.push('a draft opened again is addressed to "' +
+                     String(PW.toh || '') + '" and not jjj');
+        if (String(PW.ln || '').indexOf('@') >= 0)
+          fails.push('a draft opened again put the handle back in the LINE ("' +
+                     PW.ln + '"), which is the ring counting it again');
+        PW = pwBlank();
+      }
+    }
     if (JSON.stringify(dsent).indexOf('b64') >= 0)
       fails.push('the recording itself went up inside the draft body');
     /* AND THROWING THE DRAFT AWAY TAKES ITS RECORDING WITH IT.
@@ -2280,16 +2313,19 @@ const R = await pg.evaluate(async () => {
     NOTES_HAVE = wasNotes; window.route = wasRoute; NAV = wasNav;
   }
 
-  /* ---- 19. the + on somebody else's page opens with their handle -------
+  /* ---- 19. the + on somebody else's page opens ADDRESSED to them -------
      「他人のプロフィールの右下 ＋ → 投稿画面が『@そのhandle 』を本文の先頭に
      入れた状態で開く」 OWNER 2026-09-07 ── Twitter のメンションと同じ。
+     そして 「リプライング to @〇〇 ってこともだよ？ 文字数に含ませたくない
+     のよ」 OWNER 2026-09-08、実機 143 ── 宛先は本文ではなく `PW.toh`。
 
      本物の ＋ を押します。ボタンが持っている引数は画面が書いたもので、そこを
      読んで自分で openPost() を呼ぶのは自分の答えを訊き返すだけになる。
+     欄の上の行と輪については 23 が訊きます。
 
      三つ目と四つ目が、この手の直しの壊れ方です。自分のページの ＋ が
-     「@自分」で開く（自分に宛てた投稿）のと、打ちかけの一行の前に handle が
-     割り込む（このボタンが人の文を書き換える）の二つ。 */
+     「自分宛て」で開く（自分に宛てた投稿）のと、打ちかけの一行が誰か宛てに
+     なる（このボタンが人の書きかけを宛て先付きにする）の二つ。 */
   {
     const app = document.getElementById('app');
     const wasPW = PW, wasRoute = window.route, wasNav = NAV.slice();
@@ -2301,28 +2337,36 @@ const R = await pg.evaluate(async () => {
       const f = app.querySelector('.fab');
       if (!f) return null;
       f.click();
-      return String(PW.ln || '');
+      return { ln: String(PW.ln || ''), toh: String(PW.toh || '') };
     };
 
     const other = plus('profile', 'jjj');
     if (other === null)
       fails.push('somebody else\u2019s profile has no + on it, so nothing ' +
                  'below this is a test of anything');
-    else if (other !== '@jjj ')
-      fails.push('the + on somebody else\u2019s profile opened with "' + other +
-                 '" in the line and not "@jjj ". Pressing + on a page about a ' +
-                 'person is how you answer that person');
+    else {
+      if (other.toh !== 'jjj')
+        fails.push('the + on somebody else\u2019s profile opened addressed to "' +
+                   other.toh + '" and not jjj. Pressing + on a page about a ' +
+                   'person is how you answer that person');
+      if (other.ln !== '')
+        fails.push('the + on somebody else\u2019s profile put "' + other.ln +
+                   '" in the LINE. The addressee is not what somebody wrote, ' +
+                   'and the ring over the line counts what somebody wrote');
+    }
 
     const mine = plus('profile', undefined);
-    if (mine !== '' && mine !== null)
-      fails.push('the + on your OWN profile opened with "' + mine + '" in the ' +
-                 'line. You cannot mention yourself, and an empty composer is ' +
-                 'what that button has always opened');
+    if (mine && (mine.ln !== '' || mine.toh !== ''))
+      fails.push('the + on your OWN profile opened with "' + mine.ln +
+                 '" in the line, addressed to "' + mine.toh + '". You cannot ' +
+                 'mention yourself, and an empty composer is what that button ' +
+                 'has always opened');
 
     const feed = plus('feed', undefined);
-    if (feed !== '' && feed !== null)
-      fails.push('the + on the timeline opened with "' + feed + '" in the ' +
-                 'line. It is not on anybody\u2019s page');
+    if (feed && (feed.ln !== '' || feed.toh !== ''))
+      fails.push('the + on the timeline opened with "' + feed.ln +
+                 '" in the line, addressed to "' + feed.toh +
+                 '". It is not on anybody\u2019s page');
 
     PW = pwBlank(); PW.ln = 'kano tir';
     try { closeSheet(); } catch (e) {}
@@ -2334,6 +2378,11 @@ const R = await pg.evaluate(async () => {
       fails.push('a half-written line became "' + PW.ln + '" when + was ' +
                  'pressed on somebody\u2019s page. PW outlives the composer on ' +
                  'purpose, and this button is not an edit of what somebody typed');
+    if (String(PW.toh || ''))
+      fails.push('a half-written post about something else became a post to ' +
+                 PW.toh + ' when + was pressed on their page. There is no way ' +
+                 'to take an addressee off a composer (docs/BACKLOG.md), so ' +
+                 'that is a sentence somebody cannot send to nobody');
 
     PW = wasPW; window.route = wasRoute; NAV = wasNav;
     try { closeSheet(); } catch (e) {}
@@ -2642,80 +2691,548 @@ const R = await pg.evaluate(async () => {
     SET.plan = wasPlan; window.route = wasRoute; NAV = wasNav;
   }
 
-  /* ---- 23. @〇〇 で始めた投稿は、その人への投稿になる -------------------
+  /* ---- 23. 宛先の @〇〇 は本文に入らない ------------------------------
      「@したらもう勝手にツイートがこの形式になるようにしたい」 OWNER
-     2026-09-07。本物の pwSend() を通します。
+     2026-09-07、そして 「リプライング to @〇〇 ってこともだよ？ 文字数に
+     含ませたくないのよ」 OWNER 2026-09-08、実機 143。
 
-     二つ訊きます。行に「@jjj への返信」が出ること、そして本文の先頭に @jjj が
-     もう無いこと ── 同じ名前が一つの投稿に二度出るのは、この直しが半分だけ
-     効いたときの形です。
+     宛先は `PW.toh` が持ちます。本物の openPost() / pwSetLn() / pwSend() を
+     通します ── 打つのは pwSetLn() で、そこが宛先を決める一箇所だからです。
 
-     三つ目は取らない場合で、これがこの手の直しの壊れ方です：`@jjj` だけの
-     投稿から名前を取ると、本文が空の投稿が残る。 */
+     壊れ方はどれも投げません。半分だけ効いたときの形が、同じ名前が一つの
+     投稿に二度出ること・輪が本文以外を数えること・送った投稿の本文に @ が
+     残ること、の三つです。 */
   {
     const app = document.getElementById('app');
     const wasPW = PW, wasRoute = window.route, wasNav = NAV.slice();
     const wasN = POSTS.length;
 
-    PW = pwBlank(); PW.ln = '@jjj kano tir'; PW.mn = 'a mountain';
+    /* 宛先のある投稿画面：欄の上に行が出て、輪は満ちている。宛先がそこに
+       着くこと自体は 19 が本物の ＋ で訊いています。 */
+    PW = pwBlank();
+    openPost('new', 'jjj');
+    {
+      const h = vForm();
+      const m = String(h).match(/id="pw-left"[^>]*>([\s\S]*?)<\/span>\s*<\/div>/);
+      if (!m)
+        fails.push('the composer draws no ring at all, so nothing about what ' +
+                   'it counts is a test of anything');
+      else if (/pwleft/.test(m[1]))
+        fails.push('the ring on a composer opened from somebody\u2019s page is ' +
+                   'already counting down with nothing typed. 「文字数に' +
+                   '含ませたくないのよ」');
+      /* そして「Replying to @jjj」が欄の上に出ていること */
+      if (String(h).indexOf('id="pw-to"') < 0 || String(h).indexOf('>@jjj<') < 0)
+        fails.push('the composer opened from somebody\u2019s page says nowhere ' +
+                   'whom it is for. The handle came out of the line; if it is ' +
+                   'not drawn over the field it is simply gone');
+      /* 同じ文言・同じ押せる @ を通っていること */
+      if (String(h).indexOf(ptoHTML('jjj')) < 0)
+        fails.push('the line over the composer is not the one the timeline ' +
+                   'draws over a reply (ptoHTML). Two wordings for one thing, ' +
+                   'and an @ that is pressable on one screen and not the other');
+    }
+
+    /* 本文の頭に「@lingua 」と打つ：その場で宛先へ移る */
+    PW = pwBlank();
+    openPost();
+    render();
+    /* 打鍵と同じ順で：欄にその文字が在って、そこから pwSetLn() が呼ばれる
+       （www/post.js § IN('pwSetLn')）。先に欄を埋めておかないと「欄が
+       追いついていない」の主張が、欄が空だから赤い、になります。 */
+    {
+      const f0 = document.getElementById('pw-ln');
+      if (!f0)
+        fails.push('the composer has no line field, so nothing below this is ' +
+                   'a test of anything');
+      else f0.value = '@lingua kano tir';
+    }
+    pwSetLn('@lingua kano tir');
+    if (String(PW.ln || '') !== 'kano tir')
+      fails.push('typing "@lingua kano tir" left the line as "' + PW.ln +
+                 '". The handle at the front is whom the post is for and is ' +
+                 'moved off the line as it is typed');
+    if (PW.toh !== 'lingua')
+      fails.push('typing "@lingua kano tir" addressed the post to "' +
+                 String(PW.toh || '') + '" and not lingua');
+    {
+      const f = document.getElementById('pw-ln');
+      if (f && f.value !== 'kano tir')
+        fails.push('the field still reads "' + f.value + '" after the handle ' +
+                   'was taken off the line. This screen is not redrawn while ' +
+                   'somebody is typing, so the glass and the post disagree');
+      const to = document.getElementById('pw-to');
+      if (!to || to.textContent.indexOf('@lingua') < 0)
+        fails.push('typing a handle at the front drew no line saying whom the ' +
+                   'post is for (' + (to ? '"' + to.textContent + '"' : 'no line') + ')');
+      /* 輪は本文だけ */
+      const left = document.getElementById('pw-left');
+      const want = String(POST_MAX - 'kano tir'.length);
+      if (left && /pwleft/.test(left.innerHTML) && left.textContent.indexOf(want) < 0)
+        fails.push('the ring counts something other than the line');
+    }
+
+    /* 送った投稿は toh を持ち、本文に @ が無い */
+    PW.mn = 'a mountain';
     pwSend();
     const p = POSTS[POSTS.length - 1];
     if (POSTS.length !== wasN + 1)
-      fails.push('a line beginning with @jjj made ' + (POSTS.length - wasN) +
+      fails.push('a line beginning with @lingua made ' + (POSTS.length - wasN) +
                  ' posts, so nothing below this is a test of anything');
     else {
-      if (postToWho(p) !== 'jjj')
-        fails.push('a post written as "@jjj kano tir" says it is for "' +
-                   postToWho(p) + '" and not jjj. Naming somebody at the front ' +
-                   'is how a post is addressed to them');
+      if (postToWho(p) !== 'lingua')
+        fails.push('a post written as "@lingua kano tir" says it is for "' +
+                   postToWho(p) + '" and not lingua. Naming somebody at the ' +
+                   'front is how a post is addressed to them');
       if (String(p.ln || '') !== 'kano tir')
-        fails.push('a post written as "@jjj kano tir" kept its line as "' +
+        fails.push('a post written as "@lingua kano tir" kept its line as "' +
                    p.ln + '". The name is drawn over the post now, so leaving ' +
                    'it in the line is the same handle twice on one post');
       if (p.to)
         fails.push('a post that named somebody carries to=' + p.to +
                    ', but it answers no post. `to` is what a reply pressed');
 
-      window.route = 'thread'; NAV = [{ r: 'feed' }, { r: 'thread', a: p.id }];
+      window.route = 'thread'; NAV = [{ r: 'thread', a: p.id }];
       render();
       const to = app.querySelector('.pto');
-      if (!to || to.textContent.indexOf('@jjj') < 0)
+      if (!to || to.textContent.indexOf('@lingua') < 0)
         fails.push('a post that named somebody draws no line saying so (' +
                    (to ? '"' + to.textContent + '"' : 'no line at all') + ')');
       const ln = app.querySelector('.pline');
-      if (ln && ln.textContent.indexOf('@jjj') >= 0)
+      if (ln && ln.textContent.indexOf('@lingua') >= 0)
         fails.push('the line of that post still reads "' + ln.textContent +
-                   '", so @jjj is on the screen twice');
+                   '", so @lingua is on the screen twice');
     }
 
     /* a name with nothing behind it stays what somebody wrote */
     const n2 = POSTS.length;
-    PW = pwBlank(); PW.ln = '@jjj';
+    PW = pwBlank(); openPost(); render();
+    pwSetLn('@jjj');
+    if (PW.toh)
+      fails.push('typing only "@jjj" addressed the post to jjj and left the ' +
+                 'line empty. Taking the name leaves an empty post, and what ' +
+                 'somebody typed is the whole of what they typed');
     pwSend();
     if (POSTS.length === n2 + 1) {
       const q = POSTS[POSTS.length - 1];
       if (String(q.ln || '') !== '@jjj')
-        fails.push('a post that is only "@jjj" came out as "' + q.ln +
-                   '". Taking the name leaves an empty post, and what somebody ' +
-                   'typed is the whole of what they typed');
+        fails.push('a post that is only "@jjj" came out as "' + q.ln + '"');
     }
 
     /* and a real reply keeps what was typed in it */
     const n3 = POSTS.length;
-    PW = pwBlank(); PW.ln = '@bob yes'; PW.to = POSTS[0].id;
+    PW = pwBlank(); PW.to = POSTS[0].id; openPost('reply'); render();
+    pwSetLn('@bob yes');
+    if (String(PW.ln || '') !== '@bob yes')
+      fails.push('a REPLY beginning with @bob lost it from the line ("' +
+                 PW.ln + '"). That post already says whom it answers; a name ' +
+                 'typed inside it is a name in what somebody wrote');
     pwSend();
     if (POSTS.length === n3 + 1) {
       const r = POSTS[POSTS.length - 1];
       if (String(r.ln || '') !== '@bob yes')
-        fails.push('a REPLY beginning with @bob lost it from the line ("' +
-                   r.ln + '"). That post already says whom it answers; a name ' +
-                   'typed inside it is a name in what somebody wrote');
+        fails.push('a REPLY beginning with @bob lost it from the post ("' +
+                   r.ln + '")');
       if (postToWho(r) === 'bob')
         fails.push('a reply beginning with @bob says it answers bob. It ' +
                    'answers the post that was pressed');
     }
 
+    /* ---- 宛先は「翻訳」にも「向き」にも出ない -------------------------
+       「向きがあるからさ そこは Replying to 〇〇にしないと。本文に＠入れ
+       ちゃうと翻訳にも出ちゃうやん？だから固定にしたいの」 OWNER
+       2026-09-08。
+
+       二つあって、どちらも投げません。
+
+       一つ目は向き。宛先の行は本文の外に在るので、言語が縦書きでも右から
+       でも横のまま ── 縦になる直し方はいくらでもあり（欄を囲う箱に
+       dirClass() を付ける、行そのものに付ける）、どれも一行で書けてどれも
+       赤くならずに通ってしまいます。ページに訊きます。
+
+       二つ目は翻訳。意味の欄が空のとき、そこに出るのは pwMn() ── 本文を
+       読者の言葉で言い直したもの ── で、送るときに落とす意味も同じ関数の
+       ものです。宛先が本文の文字だった頃は、その @lingua が訳に混ざって
+       画面に出ていました（OWNER 実機 143 の写真）。本文に @ が無いことと
+       訳に @ が無いことは別の主張です：本文から取れていても、宛先を訳に
+       足す一行があれば戻ってきます。ink（PWRAW）も同じ理由で訊きます。 */
+    {
+      const wasPlan2 = SET.plan, wasDir2 = SCRIPT.dir;
+      SET.plan = 'pro'; SCRIPT.dir = 'ttb-rl';
+      PW = pwBlank();
+      openPost('new', 'lingua');
+      render();
+      const f2 = document.getElementById('pw-ln');
+      if (f2) f2.value = 'kano tir';
+      pwSetLn('kano tir');
+      const wm2 = (e) => e ? String(getComputedStyle(e).writingMode || '') : '';
+      const to2 = document.getElementById('pw-to');
+      const ln2 = document.getElementById('pw-ln');
+      if (wm2(ln2).indexOf('vertical') !== 0)
+        fails.push('the composer of a language written downward is drawn ' +
+                   wm2(ln2) + ', so nothing about the line over it is a test ' +
+                   'of anything');
+      if (!to2 || !to2.innerHTML)
+        fails.push('a composer addressed to somebody, in a language written ' +
+                   'downward, says nowhere whom it is for');
+      else {
+        if (wm2(to2).indexOf('vertical') === 0)
+          fails.push('the line saying whom the composer is for is drawn ' +
+                     wm2(to2) + ' when the language is written downward. ' +
+                     '「向きがあるからさ そこは Replying to 〇〇にしないと」 ' +
+                     'What runs down the page is what somebody WROTE');
+        const b2 = to2.querySelector('button');
+        if (b2 && wm2(b2).indexOf('vertical') === 0)
+          fails.push('the @handle over the composer is drawn ' + wm2(b2) +
+                     ' when the language is written downward');
+      }
+      /* 訳・意味に @ が無い。欄の placeholder は本物の pwMn() が入れます。 */
+      if (String(pwMn()).indexOf('@') >= 0)
+        fails.push('the translation under the composer reads "' + pwMn() +
+                   '", with the addressee in it. 「本文に＠入れちゃうと翻訳' +
+                   'にも出ちゃうやん？」 The handle is whom the post is FOR ' +
+                   'and is not a word anybody wrote');
+      const mnf = document.getElementById('pw-mn');
+      if (mnf && String(mnf.getAttribute('placeholder') || '').indexOf('@') >= 0)
+        fails.push('the meaning field under the composer offers "' +
+                   mnf.getAttribute('placeholder') + '", with the addressee ' +
+                   'in it');
+      /* そして送った投稿の意味にも。 */
+      const nV = POSTS.length;
+      pwSend();
+      if (POSTS.length === nV + 1) {
+        const v = POSTS[POSTS.length - 1];
+        if (String(v.mn || '').indexOf('@') >= 0)
+          fails.push('the post came out meaning "' + v.mn + '", with the ' +
+                     'addressee inside what it MEANS');
+      }
+
+      /* ---- そして ink にも出ない。
+         ink は「書いた人の文字で切った一行」で、切る元は PWRAW ── 欄に
+         入っていた生の文字です。ローマ字で打つと描いた字が一つも無いので
+         ink は null になり、そこに @ が無いという主張は何も言っていません。
+         なので Lingua キーボードが入れるもの、つまり PUA を打たせます。 */
+      {
+        const ord = ltPuaOrder();
+        if (ord.length < 3)
+          fails.push('the fixture\u2019s language has ' + ord.length +
+                     ' drawn letters, so nothing about a post\u2019s ink is a ' +
+                     'test of anything');
+        else {
+          const typed = ltPua(0) + ltPua(1) + ltPua(2);
+          PW = pwBlank();
+          openPost('new', 'lingua');
+          render();
+          const f3 = document.getElementById('pw-ln');
+          if (f3) f3.value = typed;
+          pwSetLn(typed);
+          const nI = POSTS.length;
+          pwSend();
+          if (POSTS.length !== nI + 1)
+            fails.push('a line of drawn letters made no post, so nothing about ' +
+                       'its ink is a test of anything');
+          else {
+            const w = POSTS[POSTS.length - 1];
+            if (!w.ink || !w.ink.g || !w.ink.g.length)
+              fails.push('a line of drawn letters came out with no ink on it, ' +
+                         'so nothing about what is IN the ink is a test of ' +
+                         'anything');
+            else if (JSON.stringify(w.ink).indexOf('@') >= 0)
+              fails.push('the addressee was cut into the post\u2019s ink (' +
+                         JSON.stringify(w.ink.s) + '). The ink is the line ' +
+                         'already cut into letters, and a reader would see the ' +
+                         'handle drawn into what somebody wrote');
+          }
+        }
+      }
+      SET.plan = wasPlan2; SCRIPT.dir = wasDir2;
+      try { closeSheet(); } catch (e) {}
+    }
+
+    /* ---- 戻るの問いは、アプリの問いと同じ形 ---------------------------
+       「投稿の時の下書き入れる時のポップを合わせて欲しい」 OWNER
+       2026-09-08。
+
+       これは投げません。古い箱（`.bkq`）は描かれるし、押せるし、答えも
+       正しく効きます ── 違っているのは形だけで、それを見るのは画面を見る
+       人だけです。だから画面に訊きます：本物の back() を呼んで、popAsk() の
+       ポップが立っていること、そして `.bkq` がどこにも無いこと。二つ目が
+       要るのは、popAsk を足して古い箱を残す、が「直った」の一番ありそうな
+       形だからです（規則：書き換えであってパッチではない）。 */
+    {
+      PW = pwBlank();
+      window.route = 'feed'; NAV = [{ r:'feed' }];
+      openPost();
+      render();
+      const f4 = document.getElementById('pw-ln');
+      if (f4) f4.value = 'kano tir';
+      pwSetLn('kano tir');
+      back();
+      if (!popOn())
+        fails.push('backing out of a half-written post asks in something ' +
+                   'that is not the app\u2019s own popup. One question in two ' +
+                   'shapes is the app saying the same thing two ways');
+      if (document.querySelector('.bkq'))
+        fails.push('the old box under the back arrow (`.bkq`) is still drawn. ' +
+                   'A new mechanism covering the old one\u2019s gap is the one ' +
+                   'thing that must not happen -- the old one is deleted, not ' +
+                   'left standing beside it');
+      /* そして答えは今までどおり二つ。破棄すると投稿画面は空になり、戻り先は
+         一つ前の画面です。 */
+      if (popOn()) {
+        popNo();
+        if (String(PW.ln || ''))
+          fails.push('throwing a half-written post away left "' + PW.ln +
+                     '" in the composer');
+        if (here().r === 'form')
+          fails.push('answering the question left you standing on the ' +
+                     'composer. Back goes back');
+      }
+      try { closeSheet(); } catch (e) {}
+    }
+
+    /* ＋ を押すと宛先も落ちる。`to` が落ちるのと同じ理由で、一時間前の
+       書きかけがいつの間にか誰か宛てになっているのは、その人の投稿では
+       ありません。 */
+    PW = pwBlank(); PW.toh = 'jjj';
+    openPost('new');
+    if (PW.toh)
+      fails.push('pressing + left the composer addressed to ' + PW.toh +
+                 '. + is an ordinary post, and there is no way to take an ' +
+                 'addressee off one (docs/BACKLOG.md)');
+
     PW = wasPW; window.route = wasRoute; NAV = wasNav;
+    try { closeSheet(); } catch (e) {}
+  }
+
+  /* ---- 24. お題の札は、保存は一つ・見せるのは読む人の言葉 -------------
+     「なんで英語なのに#今日のお題やねん」「#今日のお題 は #todays prompt
+     みたいに、言語が変わったら誰の投稿でもそこが変わるように」 OWNER
+     2026-09-08、写真つき。
+
+     これは投げません。日本語の札は英語の画面で完全に描かれ、押せて、検索も
+     当たります ── 違っているのは読む人にとって何語かだけです。
+
+     そして半分だけ効いたときの形が二つあり、どちらも画面は正しく見えます：
+     見せ方を直したついでに保存も直してしまう（過去の投稿の本文を書き換える
+     ことになり、文字検索が二つに割れる）、そして投稿画面の欄だけ直して送る
+     ときに戻し忘れる（その投稿だけ誰の検索にも当たらない）。両方訊きます。 */
+  {
+    const app = document.getElementById('app');
+    const wasPW = PW, wasRoute = window.route, wasNav = NAV.slice();
+    const wasPosts = POSTS.slice(), wasUi = SET.ui;
+
+    SET.ui = 'ja';
+    const mark = DAY_TAG, jaWord = t('day.tag');
+    SET.ui = 'en';
+    const enWord = t('day.tag');
+    if (enWord === mark || enWord.indexOf(' ') >= 0)
+      fails.push('the word an English reader sees for the day\u2019s tag is "' +
+                 enWord + '". A tag runs from the # to the next space, so a ' +
+                 'word with a space in it is cut in half; and if it is the ' +
+                 'mark itself nothing below this is a test of anything');
+
+    /* ja で書かれた投稿を、en で読む。 */
+    POSTS = [{ id:'DT-1', at: Date.now(), lang: langId, lname:'Shango',
+               who:'Aya', hd:'aya', mine:true, ui:'ja', pr:7,
+               ln: mark + ' kano tir', mn:'a mountain' }];
+    const bodyIn = (ui) => {
+      SET.ui = ui;
+      window.route = 'thread'; NAV = [{ r:'thread', a:'DT-1' }];
+      render();
+      const e = app.querySelector('.pline');
+      return e ? e.textContent : '';
+    };
+    const en = bodyIn('en'), ja = bodyIn('ja');
+    if (en.indexOf(enWord) < 0)
+      fails.push('a post written in Japanese reads "' + en + '" to an English ' +
+                 'reader. The day\u2019s tag is the app\u2019s own words about a ' +
+                 'day everybody shares, so it is said in the reader\u2019s ' +
+                 'language 「言語が変わったら誰の投稿でもそこが変わるように」');
+    if (en.indexOf(mark) >= 0)
+      fails.push('the Japanese mark is still on the screen in English ("' + en +
+                 '"), so the tag is there twice or was never swapped');
+    if (ja.indexOf(jaWord) < 0)
+      fails.push('the same post reads "' + ja + '" in Japanese, which is not ' +
+                 'the tag at all');
+    /* そして保存されたものは動いていない。 */
+    if (String(POSTS[0].ln) !== mark + ' kano tir')
+      fails.push('reading the post changed what is STORED on it ("' +
+                 POSTS[0].ln + '"). Drawing is not writing, and a body ' +
+                 'rewritten on a render is somebody\u2019s post edited by ' +
+                 'somebody else\u2019s language setting');
+    /* 押す先も綴りのまま ── そうでないと誰の投稿にも当たりません。 */
+    SET.ui = 'en';
+    window.route = 'thread'; NAV = [{ r:'thread', a:'DT-1' }];
+    render();
+    const tagBtn = app.querySelector('.pline button.ptag');
+    if (!tagBtn)
+      fails.push('the day\u2019s tag is not a thing you press');
+    else if (String(tagBtn.getAttribute('data-a') || '').indexOf(mark) < 0)
+      fails.push('pressing the tag on an English screen searches for ' +
+                 tagBtn.getAttribute('data-a') + '. A search is a text ' +
+                 'search, and every post carries the mark');
+
+    /* 英語の投稿画面から送った投稿も、保存されるのは綴り。 */
+    POSTS = [];
+    SET.ui = 'en';
+    PW = pwBlank();
+    DAY = { id: 7, on_day: '2026-09-08', text: 'hot',
+            says: { en: 'hot', ja: 'あつい' } };
+    openPost('day');
+    if (String(PW.ln || '').indexOf(enWord) !== 0)
+      fails.push('the composer opened from the day put "' + PW.ln + '" in the ' +
+                 'field on an English screen. A field is something somebody ' +
+                 'reads while they type into it');
+    render();
+    const fD = document.getElementById('pw-ln');
+    const typed = String(PW.ln || '') + 'kano tir';
+    if (fD) fD.value = typed;
+    pwSetLn(typed);
+    const nD = POSTS.length;
+    pwSend();
+    if (POSTS.length !== nD + 1)
+      fails.push('the day\u2019s composer made no post, so nothing below this ' +
+                 'is a test of anything');
+    else {
+      const d = POSTS[POSTS.length - 1];
+      if (String(d.ln || '').indexOf(mark) !== 0)
+        fails.push('a post written on an English screen was STORED as "' +
+                   d.ln + '". One spelling is written down, or a search finds ' +
+                   'one language\u2019s answers and not the other\u2019s');
+      if (String(d.ln || '').indexOf(enWord) >= 0)
+        fails.push('the English word went into what is stored ("' + d.ln +
+                   '"), so this post meets no other answer to the same day');
+    }
+
+    /* 下書きも同じ道。 */
+    {
+      const wasD = DRAFTS.slice();
+      DRAFTS = [];
+      SET.ui = 'en';
+      PW = pwBlank(); PW.ln = enWord + ' kano';
+      draftKeep();
+      const kept = DRAFTS[DRAFTS.length - 1];
+      if (!kept || String(kept.ln || '').indexOf(mark) !== 0)
+        fails.push('a draft written on an English screen keeps "' +
+                   (kept ? kept.ln : 'nothing') + '". A draft is stored the ' +
+                   'way a post is');
+      else {
+        DRAFTS.push(kept);
+        draftOpen(DRAFTS.length - 1);
+        if (String(PW.ln || '').indexOf(enWord) !== 0)
+          fails.push('a draft opened again on an English screen shows "' +
+                     PW.ln + '" in the field');
+      }
+      DRAFTS = wasD;
+    }
+
+    SET.ui = wasUi; POSTS = wasPosts; savePosts();
+    PW = wasPW; window.route = wasRoute; NAV = wasNav;
+    try { closeSheet(); } catch (e) {}
+  }
+
+  /* ---- 25. 写真は横に送って次へ行ける ---------------------------------
+     「フォト4枚投稿した時にフォトをスライドして次の画像にいけない」 OWNER
+     実機 143、2026-09-08。
+
+     これは投げません ── 一枚だけ描いてバーに「2/4」と出す画面は、正しく
+     描かれ、正しい数を言い、他の三枚に行けません。できている機能と見分けが
+     つかないのはそこです。
+
+     ページに訊きます：四枚の投稿の一枚目を開いて、帯に四枚あること、開いた
+     位置が一枚目であること、そして帯を二枚目まで動かすとバーが 2/4 になる
+     こと。動かすのは本物の scrollLeft で、読むのは本物の `.navc` です。 */
+  {
+    const app = document.getElementById('app');
+    const wasRoute = window.route, wasNav = NAV.slice();
+    const wasPosts = POSTS.slice();
+    const four = ['#111', '#222', '#333', '#444'].map((c) => {
+      const cv = document.createElement('canvas');
+      cv.width = 40; cv.height = 40;
+      const x = cv.getContext('2d');
+      x.fillStyle = c; x.fillRect(0, 0, 40, 40);
+      return cv.toDataURL('image/png');
+    });
+    POSTS = [{ id:'PH-1', at: Date.now(), lang: langId, lname:'Shango',
+               who:'Aya', hd:'aya', mine:true, ln:'kano', mn:'a mountain',
+               pics: four }];
+    window.route = 'photo'; NAV = [{ r:'photo', a:'PH-1:0' }];
+    render();
+    /* 写真が decode されるまで、帯には幅がありません ── そこで測ると
+       「送れない」が出て、それは画像がまだ来ていないだけです。実機では
+       来ています。 */
+    const shown = async (el) => {
+      for (let z = 0; z < 60; z++) {
+        const im = el.querySelectorAll('img');
+        let all = im.length > 0;
+        for (let y = 0; y < im.length; y++) if (!im[y].complete) all = false;
+        if (all) return true;
+        await new Promise((r) => setTimeout(r, 20));
+      }
+      return false;
+    };
+    const rail = document.getElementById('pv-rail');
+    if (rail && !(await shown(rail)))
+      fails.push('the four photographs never arrived in the rail, so nothing ' +
+                 'about sending it sideways is a test of anything');
+    if (!rail)
+      fails.push('the photograph screen has no rail on it, so a post with ' +
+                 'four pictures shows one and the other three are on no ' +
+                 'screen at all 「スライドして次の画像にいけない」');
+    else {
+      if (rail.children.length !== 4)
+        fails.push('a post with four photographs opens a rail carrying ' +
+                   rail.children.length + '. The bar says 1/4 either way, ' +
+                   'which is what made this look like a screen that worked');
+      const w = rail.clientWidth;
+      if (!w)
+        fails.push('the rail has no width, so nothing about scrolling it is ' +
+                   'a test of anything');
+      else {
+        /* 四枚が一画面ずつ、横に並んでいること。これが「送れる」の中身です
+           ── 帯の幅ではなく、どこに在るかを訊きます。 */
+        const at = [];
+        for (let z = 0; z < rail.children.length; z++)
+          at.push(rail.children[z].offsetLeft);
+        if (at.join(',') !== [0, w, w * 2, w * 3].join(','))
+          fails.push('the four photographs sit at ' + at.join(',') +
+                     ' and not one window apart (' + w + '). They are one ' +
+                     'thing you send sideways, not four screens');
+        if (rail.scrollWidth <= w)
+          fails.push('the rail is not wider than its window (' +
+                     rail.scrollWidth + ' in ' + w + '), so there is nothing ' +
+                     'to send sideways');
+        const nav = () => {
+          const c = app.querySelector('.navc');
+          return c ? c.textContent : '';
+        };
+        if (nav() !== '1/4')
+          fails.push('opening the first of four says "' + nav() + '"');
+        rail.scrollLeft = w;
+        rail.dispatchEvent(new Event('scroll'));
+        if (nav() !== '2/4')
+          fails.push('sending the rail on one picture leaves the bar saying "' +
+                     nav() + '". The number over the pictures is which one is ' +
+                     'in front of you');
+        rail.scrollLeft = w * 3;
+        rail.dispatchEvent(new Event('scroll'));
+        if (nav() !== '4/4')
+          fails.push('the last of four says "' + nav() + '"');
+      }
+      /* そして押された一枚から開く ── route が名指すのはその一枚です。 */
+      window.route = 'photo'; NAV = [{ r:'photo', a:'PH-1:2' }];
+      render();
+      const r3 = document.getElementById('pv-rail');
+      const w3 = r3 ? r3.clientWidth : 0;
+      if (r3 && w3 && Math.round(r3.scrollLeft / w3) !== 2)
+        fails.push('pressing the third photograph opened the rail on number ' +
+                   (Math.round(r3.scrollLeft / w3) + 1) +
+                   '. What was pressed is what you are looking at');
+    }
+
+    POSTS = wasPosts; savePosts();
+    window.route = wasRoute; NAV = wasNav;
     try { closeSheet(); } catch (e) {}
   }
 
@@ -2777,9 +3294,10 @@ console.log('post: a letter placed on a black photograph is IN the file that goe
             '      where it is.\n' +
             '      A notice naming two people opens the list of those two, and\n' +
             '      one naming one still opens that person.\n' +
-            '      The + on somebody else\u2019s page opens with their handle in\n' +
-            '      the line, your own opens empty, and neither writes over a\n' +
-            '      line somebody had already typed.\n' +
+            '      The + on somebody else\u2019s page opens ADDRESSED to them\n' +
+            '      with an empty line, your own opens with neither, and\n' +
+            '      neither writes over a line somebody had already typed nor\n' +
+            '      addresses it to anybody.\n' +
             '      A roman line in a vertical field lies on its side and runs\n' +
             '      down ONE column -- the placeholder and the line somebody\n' +
             '      types, written downward from the right and from the left, new\n' +
@@ -2790,8 +3308,9 @@ console.log('post: a letter placed on a black photograph is IN the file that goe
             '      and it stands you on that person\u2019s page; the @ in what\n' +
             '      somebody wrote goes through the same one place.\n' +
             '      That line stays horizontal in a language written downward --\n' +
-            '      what runs down the page is what somebody WROTE. And a line\n' +
-            '      that begins by naming somebody makes a post addressed to\n' +
-            '      them, with the handle over the post and out of the line; a\n' +
+            '      what runs down the page is what somebody WROTE. And whom a\n' +
+            '      post is for is never in the line: the + and an @ typed at\n' +
+            '      the front both put it OVER the field, the ring counts what\n' +
+            '      somebody wrote, and a draft carries it there and back. A\n' +
             '      name with nothing behind it, and a name typed inside a real\n' +
             '      reply, are both left exactly as they were typed.');

@@ -754,53 +754,18 @@ canvas.pkc{width:34px;height:34px;display:block}
 .pmi svg{flex:0 0 auto;color:var(--txm)}
 .pmi:active{background:var(--sf)}
 .pmi.bad,.pmi.bad svg{color:var(--bad)}
-/* The question the back arrow asks, at the head of the same menu the ... on a
-   post opens. A line of text: no corner, no border and no panel of its own --
-   the box around it is `.pmenu`, which was already there and is on the
-   baseline. Rule 18 is about what is ADDED, and this adds neither.
-   OWNER 2026-08-25「下書きに保存しますか？はい　いいえ　キャンセル」 */
-/* Asking whether a half-written post is kept. It is NOT the ... menu's box --
-   that was tried and 「何そのゴミ見みたいなボタン」. What is left is the shape
-   the rest of this app is: a line of text, a line under it, and the words in
-   the colours they mean. OWNER 2026-08-25:
-     「縦にはいいいえが並ぶボタンないだろ　横だろ」
-     「同じ色じゃわからない」
-     「ばつはせんとかぶるくらいの外側やろ」 */
-.bkq{position:relative;display:block;padding:10px 24px 12px;
-     border-bottom:1px solid var(--line);text-align:center}
-.bkqq{display:block;font-size:.9rem;color:var(--txs);margin-bottom:2px}
-/* SIDE BY SIDE. Two answers to one question are read across, not down -- down
-   is a list of things to do and this is one thing with two ends. */
-/* Centred. OWNER 2026-08-25「下書きを保存するは中央寄せして」 */
-.bkqr{display:flex;align-items:center;justify-content:center;gap:36px}
-/* 44 on BOTH sides. `press` measured 39x44 on the shorter of the two words --
-   a word is as wide as the word is, and a thumb is not. */
-.bkqb{flex:0 0 auto;min-width:44px;min-height:44px;padding:0;
-      background:none;border:0;font-family:inherit;font-size:1rem}
-/* And they are not the same colour, because they are not the same kind of
-   answer: one keeps what was written and one throws it away. Gold is what
-   everything pressable is; --bad is what this app already uses for the press
-   that destroys, on the bin in the ... menu. */
-.bkqb.keep{color:var(--gold)}
-.bkqb.drop{color:var(--bad)}
-.bkqb:active{opacity:.5}
-/* The ✕ sits OUTSIDE, over the line rather than inside the block -- it is not
-   a third answer, it is the way out, and it is not in the row with them. */
-/* 44 here too -- it was 32x32, which `press` caught. The ✕ inside it stays
-   the size it was; what grew is what a thumb lands on. `right` is pulled in
-   by the same amount so the mark itself has not moved. */
-.bkqx{position:absolute;right:8px;bottom:-22px;
-      min-width:44px;min-height:44px;border:0;border-radius:0;
-      background:var(--bg);color:var(--txm);
-      display:inline-flex;align-items:center;justify-content:center}
-.bkqx:active{color:var(--tx)}
-/* The arrow's own place in the bar. The question is no longer hung off it --
-   it is a band across the page under the bar -- so this is just the arrow. */
+/* The arrow's own place in the bar. What it asks about a half-written post
+   is popAsk() in the middle of the screen, the same as every other question
+   here, so this is just the arrow. */
 .bkw{display:inline-flex;flex:0 0 auto}
 /* Who a reply answers. Grey, small, above the line -- it is a label on the
    post, not part of what was said. */
 .pto{font-size:.84rem;color:var(--txm);margin-top:1px;
      overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* 投稿画面の宛先の行も同じもので、そこでは中身が入っていないことがあります
+   ── pwToPaint() が打っている最中に埋めるので、器は先に置いてあります
+   （www/post.js § pwHTML）。空の器が一行ぶんの余白として残らないように。 */
+.pto:empty{display:none}
 /* ---------- a report, read ----------
    One card per report, and the reason is the small grey line: what a person
    reading these is looking at is what was SAID, not the five words the app
@@ -2589,6 +2554,19 @@ a.set{text-decoration:none}
    is the screen and the picture is inside it, whole. */
 .pview{display:flex;align-items:center;justify-content:center;
        min-height:70vh;margin:0 -24px}
+/* 一つの投稿の写真は、横に並んだ一本の帯です ── 四枚の投稿で次の写真に
+   行けなかった（OWNER 実機 143、2026-09-08）。形は `.plrail`（プラン）と
+   同じで、新しいものではありません：横にスクロールして一枚ずつ止まる。
+   `.pview` の margin が画面の端まで出しているので、隣の一枚が覗いて
+   「もう一枚ある」ことが見えます。矢印も点も足しません。
+   枠なし・角丸なし・塗りなし。 */
+.pvrail{display:flex;width:100%;overflow-x:auto;scroll-snap-type:x mandatory;
+        -webkit-overflow-scrolling:touch;scrollbar-width:none}
+.pvrail::-webkit-scrollbar{display:none}
+/* 一枚が窓いっぱい。`flex:0 0 100%` が「一枚で一画面」で、その中で写真は
+   contain のまま ── 縦長でも横長でも、切れずに全部見えます。 */
+.pvpage{flex:0 0 100%;display:flex;align-items:center;justify-content:center;
+        scroll-snap-align:center;scroll-snap-stop:always}
 .pvimg{display:block;max-width:100%;max-height:80vh;width:auto;height:auto;
        object-fit:contain}
 /* ---------- letters placed on the photograph ----------

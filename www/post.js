@@ -213,7 +213,13 @@ function postById(id){
 
 /* ---- writing one -------------------------------------------------------- */
 var PW={ln:'', mn:''};
-function pwBlank(){ return {ln:'', mn:'', to:'', pics:[], pr:0}; }
+/* `toh` is WHOM this post is for, and it is not part of the line.
+   「リプライング to @〇〇 ってこともだよ？ 文字数に含ませたくないのよ」
+   OWNER 2026-09-08, 実機 143. It used to be characters at the front of
+   `ln` -- so the ring counted it, `maxlength` counted it, and a post to
+   somebody started eight characters short. It is a field of its own now
+   and the line is what somebody wrote. */
+function pwBlank(){ return {ln:'', mn:'', to:'', toh:'', pics:[], pr:0}; }
 /* ---- who a post is for -------------------------------------------------
    「自分専用の日記みたいなポストとみんなに公開するポストカード選べるように」
    「誰に向けて後悔するかでしょ。自分or公開で」「公開（推奨）」
@@ -341,7 +347,7 @@ function openPost(from, at){
             that one was typed. */
   if(from==='new'){
     if(PW.ed) PW=pwBlank();
-    else { PW.to=''; if(PW.pr){ PW.pr=0; PW.mn=''; } }
+    else { PW.to=''; PW.toh=''; if(PW.pr){ PW.pr=0; PW.mn=''; } }
   }
   /* Opened from the day's sentence, and that is the only OTHER argument this
      takes.
@@ -373,27 +379,36 @@ function openPost(from, at){
        deleting it is deleting it. The post still gathers under `pr`, which
        is a column and cannot be edited away -- so a tag somebody removes
        costs them the word and not the day. */
-    PW.ln=DAY_TAG+' ';
+    /* IN THE READER'S OWN WORDS, and stored as the mark. What goes in a
+       field is what somebody reads while they type into it, so it is
+       `t('day.tag')`; pwSend() and draftKeep() put it back to the mark
+       (www/sns.js § THE TAG). 「なんで英語なのに#今日のお題やねん」 OWNER
+       2026-09-08. */
+    PW.ln=dayTagShow(DAY_TAG)+' ';
   }
-  /* AND WHOSE PAGE THE + WAS ON, put in front of what they are about to
-     write. 「他人のプロフィールの右下 ＋ → 投稿画面が『@そのhandle 』を本文の
-     先頭に入れた状態で開く」 OWNER 2026-09-07.
+  /* AND WHOSE PAGE THE + WAS ON, said OVER the field and not inside it.
+     「他人のプロフィールの右下 ＋ → 投稿画面が『@そのhandle 』を本文の先頭に
+     入れた状態で開く」 OWNER 2026-09-07, and then 「リプライング to @〇〇 って
+     こともだよ？ 文字数に含ませたくないのよ」 OWNER 2026-09-08, 実機 143.
 
-     In the LINE, which is the one field somebody types into, and beside the
-     day's tag above for the same reason: it is put IN rather than printed
-     round the edge of the screen, so it can be read, moved and deleted. A
-     mention somebody takes out is taken out.
+     It WAS characters at the front of the line, and that is the whole of what
+     was wrong with it: the line is what somebody wrote, and the ring over it
+     counts what somebody wrote. A handle the app put there was counted, so a
+     post to a long handle opened already spent -- and nothing on the screen
+     said why. `toh` is a field of its own now (pwBlank), pwHTML() draws it as
+     a line above the field, and the ring never sees it.
 
-     ONLY INTO AN EMPTY ONE. PW outlives the composer on purpose (the comment
-     at the head of this function), so half a post written an hour ago is
-     still in that field -- and putting a handle in front of it would be this
-     button editing somebody's sentence. With something already there the
-     composer opens as it was, which is what + has always done.
+     ONLY INTO AN EMPTY ONE, and the reason moved with it. It is no longer
+     about editing somebody's sentence -- nothing is put in the sentence. It
+     is that there is no way to take an addressee OFF a composer
+     (docs/BACKLOG.md), so a half-written post about something else must not
+     silently become a post to whoever's page the + happened to be on. With
+     something already there the composer opens as it was, which is what +
+     has always done.
 
      `at` is a handle, [a-z0-9_] (supabase/schema.sql), so nothing here has to
-     escape it and nothing is parsed back out of it later: what goes in is
-     characters in a field, exactly as the tag is. */
-  if(from==='new' && at && !PW.ln) PW.ln='@'+at+' ';
+     escape it and nothing is parsed back out of it later. */
+  if(from==='new' && at && !PW.ln) PW.toh=netHandleOf(at);
   /* A post has a writer. Nothing on the timeline is reachable signed out --
      snsLocked() is what the three tabs answer with -- but a form is a route
      and a route can be come back to, so the composer says so itself rather
@@ -494,17 +509,23 @@ draftsRead();
    which is what netOut() does for the same reason. */
 postFor(SESS && SESS.uid);
 draftsName();
-/* Saved as it stands: the line, the meaning, whom it answers, the pictures
-   with their letters still placed on them, the recording, and whether it was
-   going to be private. Not baked -- a draft is not a post, and baking is what
-   sending does. */
+/* Saved as it stands: the line, the meaning, whom it answers, WHOM IT IS FOR,
+   the pictures with their letters still placed on them, the recording, and
+   whether it was going to be private. Not baked -- a draft is not a post, and
+   baking is what sending does.
+
+   `toh` is what a draft gained on 2026-09-08: the addressee stopped being
+   characters at the front of `ln`, so a draft that carried only the line
+   would have come back as a post to nobody. A draft written before that day
+   opens with none, which is a composer with no addressee -- exactly the
+   screen it was written on. Nothing is removed and nothing is migrated. */
 function draftKeep(){
   if(!PW.ln && !pwPics().length && !(PW.vo && PW.vo.f)){ toast(t('post.none')); return; }
   /* The name it already had, if this is one that was opened again. Reusing it
      is what stops a draft opened and put back becoming two rows -- one on the
      server nobody can reach and one in front of them. */
-  var d={id:PW.did || netUUID(), at:Date.now(), ln:PW.ln, mn:PW.mn, to:PW.to,
-         pr:PW.pr||0, pics:pwPics(), vo:PW.vo||null, pv:!!PW.pv};
+  var d={id:PW.did || netUUID(), at:Date.now(), ln:dayTagStore(PW.ln), mn:PW.mn, to:PW.to,
+         toh:PW.toh||'', pr:PW.pr||0, pics:pwPics(), vo:PW.vo||null, pv:!!PW.pv};
   DRAFTS.push(d);
   /* The phone FIRST and always, whatever the network is doing. A draft is on
      this phone the moment it is written, and it is written by somebody who
@@ -530,7 +551,7 @@ function draftOpen(i){
   draftsSave();
   if(here().r==='drafts') back();
   PW=pwBlank();
-  PW.ln=d.ln||''; PW.mn=d.mn||''; PW.to=d.to||''; PW.pr=d.pr||0;
+  PW.ln=dayTagShow(d.ln||''); PW.mn=d.mn||''; PW.to=d.to||''; PW.toh=d.toh||''; PW.pr=d.pr||0;
   PW.pics=d.pics||[]; PW.pv=!!d.pv;
   /* A draft written before the voice became a file carries the recording
      itself (`b64`). It is put on the disk now and the draft's copy is
@@ -1366,6 +1387,27 @@ function pwHTML(){
     '<div class="pwtop"><div class="pav">'+
       postFace({who:meName(), lname:langName, av:postAvatar()})+'</div>'+
     '<div class="pwfield">'+
+      /* WHOM THIS IS FOR, over the field and not inside it.
+         「リプライング to @〇〇 ってこともだよ？ 文字数に含ませたくないのよ」
+         OWNER 2026-09-08, 実機 143.
+
+         The same sentence the timeline draws over a reply, from the same key
+         and through the same ptoHTML() -- one wording, one road, one @ that
+         can be pressed. A second sentence written here would be the app
+         saying the same thing two ways on two screens.
+
+         It is text and nothing else: no corner, no border, no fill
+         (CLAUDE.md § NO ROUNDED BOX). `.pto` is the timeline's own class and
+         nothing new is styled. It is not inside the field, so a language
+         written downward leaves it alone -- what runs down the page is what
+         somebody wrote, and this is a label the app put there.
+         「そこは縦書きでも縦書きにしないでね」 OWNER 2026-09-07.
+
+         The container is always here, empty when there is nobody, because
+         pwToPaint() fills it while somebody is typing and this screen is not
+         redrawn then. `.pto:empty` is display:none, so an empty one is not a
+         line of nothing. */
+      '<div class="pto" id="pw-to">'+(PW.toh? ptoHTML(PW.toh) : '')+'</div>'+
       /* The field runs the way the language does, and is set in the letters
          somebody drew. It was neither: flat, in roman, above a post that
          came out in columns of drawn shapes -- so what you were writing and
@@ -1493,6 +1535,19 @@ function pwKbGuard(){
 }
 function pwSetLn(v){
   PW.ln=String(v||'');
+  /* A line that BEGINS by naming somebody is a post TO them, and it is
+     decided HERE -- once, as it is typed, in the one place the line changes.
+     「@したらもう勝手にツイートがこの形式になるようにしたい」 OWNER
+     2026-09-07.
+
+     It used to be decided at the moment of sending, inside pwSendWith(),
+     which meant the screen showed a line with `@jjj ` in it and a ring
+     counting those five characters right up until the post left. Two places
+     answering 「whom is this for」 -- the field and the send -- and the field
+     was the one somebody was looking at. Deciding it as it is typed is the
+     same decision made once, and the screen is the answer.
+     「文字数に含ませたくないのよ」 OWNER 2026-09-08. */
+  pwAtLift();
   var m=document.getElementById('pw-mn');
   if(m) m.setAttribute('placeholder', pwMn());
   lnGrow('pw-ln');
@@ -1504,6 +1559,37 @@ function pwSetLn(v){
      openPost(), which rebuilds the bar, so they need nothing here. */
   navDoPaint('pwSend', pwOn());
   pwFresh();
+}
+/* Taking the handle off the front of the line and putting it on the post.
+   Only where there is no post being answered: `to` is a post somebody pressed
+   reply on, and a name typed inside that is a name in what they wrote.
+
+   The FIELD is put in step, not only PW: this screen is not redrawn while
+   somebody is typing into it (pwSetLn's comment), so the characters would
+   otherwise stay on the glass with the model already without them. The caret
+   goes to the end, which is where it already was -- the head is only ever
+   lifted by the character that was just typed after it. */
+function pwAtLift(){
+  var h, e;
+  if(PW.to) return;
+  h=pwAtHead(PW.ln);
+  if(!h) return;
+  PW.toh=h.hd;
+  PW.ln=h.ln;
+  e=document.getElementById('pw-ln');
+  if(e && e.value!==PW.ln){
+    e.value=PW.ln;
+    if(e.setSelectionRange){
+      try{ e.setSelectionRange(PW.ln.length, PW.ln.length); }catch(err){}
+    }
+  }
+  pwToPaint();
+}
+/* And the line over the field, patched by hand for the same reason the ring
+   is: nothing redraws this screen while it is being typed into. */
+function pwToPaint(){
+  var e=document.getElementById('pw-to');
+  if(e) e.innerHTML=PW.toh? ptoHTML(PW.toh) : '';
 }
 /* How long a post may be. There was no answer at all: the field was one row
    of an input, so a line ran off the side of the phone and kept going for as
@@ -1594,12 +1680,16 @@ function pwSend(){
      private use code points and they go no further than the field: a post
      carries the roman spelling and its ink, and a code point nobody else's
      font has would be a square box on somebody else's phone. */
-  var ln=puaRoman(String(PW.ln||'')).trim();
+  /* And the day's tag goes back to the ONE spelling that is stored. The
+     field showed the reader's own word (openPost); what is written down is
+     the mark, because a search is a text search and ten spellings never meet
+     (www/sns.js § THE TAG). */
+  var ln=dayTagStore(puaRoman(String(PW.ln||'')).trim());
   /* The line as typed, kept for the ink cut below: what the Lingua keyboard
      put there is the language, and what any other keyboard put there is not.
      It is read again inside the callbacks the bake and the voice run through,
      by which time PW may already be the next post. */
-  PWRAW=String(PW.ln||'').trim();
+  PWRAW=dayTagStore(String(PW.ln||'').trim());
   if(!pwHas(ln)){ toast(t('post.none')); return; }
   /* A recording still running is a recording somebody meant to make -- the
      press that sends the post is not the press that throws it away. */
@@ -1622,9 +1712,13 @@ function pwSend(){
 }
 /* A post that BEGINS by naming somebody is a post TO them. 「@したらもう勝手に
    ツイートがこの形式になるようにしたい」 OWNER 2026-09-07 -- the same thing
-   Twitter does, and the road the + on somebody's page already walks: it opens
-   the composer with `@jjj ` in the line (openPost), and this is what turns
-   that into a post addressed to jjj.
+   Twitter does. pwSetLn() is the one caller: this reads the line, and that
+   moves the handle onto `PW.toh` the moment it is typed.
+
+   The + on somebody's page does NOT come through here. It was written to,
+   back when it put `@jjj ` in the line (openPost) for this to take out again;
+   it sets `PW.toh` directly now, because it already knows the handle and
+   spelling it into a field to parse it back out is two answers to one thing.
 
    WHAT A HANDLE LOOKS LIKE IS ASKED, NOT WRITTEN AGAIN. AT_RE (www/sns.js) is
    the one place, and it is the server's own shape; a second spelling here
@@ -1651,25 +1745,16 @@ function pwAtHead(s){
   if(!/^\s/.test(rest)) return null;
   rest=rest.replace(/^\s+/, '');
   if(!rest) return null;
-  return {hd:netHandleOf(m[0]), at:m[0], ln:rest};
+  return {hd:netHandleOf(m[0]), ln:rest};
 }
 function pwSendWith(ln, pics, vo){
-  /* Whom this is for, worked out ONCE, before anything is built out of the
-     line. Not while a post is already answering one: `to` is a post somebody
-     pressed reply on, and a name typed at the front of that is a name in
-     what they wrote. */
-  var head=PW.to? null : pwAtHead(ln);
-  if(head){
-    ln=head.ln;
-    /* And the RAW line loses the same characters, because that is what the
-       ink is cut from -- shapes for words that are no longer on the post is
-       rule 12 arriving from the other end. The prefix is the same on both:
-       puaRoman() leaves anything that is not a drawn letter exactly as it
-       was, and a handle is [a-z0-9_]. It is taken only when it is actually
-       there, rather than by counting characters off the other string. */
-    if(String(PWRAW||'').indexOf(head.at)===0)
-      PWRAW=String(PWRAW).slice(head.at.length).replace(/^\s+/, '');
-  }
+  /* Nothing here reads the line to find out whom the post is for. That was
+     the shape until 2026-09-08 and it was the same question answered twice:
+     pwSetLn() takes the handle off the front as it is typed, so by the time
+     anything is sent the line has not got one and `PW.toh` has. The block
+     that sliced it off `ln` and off `PWRAW` is deleted rather than left
+     standing -- what is read is obeyed, and two roads to one answer is the
+     one thing that must not be here. */
   /* Everything a reader needs is put ON the post, now, because the reader may
      not be here and may not have this language: who wrote it, what they are
      called, what it is written in, and a face. A timeline that asks the open
@@ -1710,11 +1795,11 @@ function pwSendWith(ln, pics, vo){
        it while the side that knows still exists. */
     if(up){ up.re=(up.re||0)+1; mine.toh=up.hd||''; }
   }
-  /* A post that named somebody at the front carries WHO and no `to`: there is
-     no post being answered, so there is nothing to count a reply on and
-     nothing for reply_to to hold. postToWho() asks the handle first, so the
-     line over it reads the same as a reply's. */
-  else if(head) mine.toh=head.hd;
+  /* A post that named somebody carries WHO and no `to`: there is no post
+     being answered, so there is nothing to count a reply on and nothing for
+     reply_to to hold. postToWho() asks the handle first, so the line over it
+     reads the same as a reply's. */
+  else if(PW.toh) mine.toh=PW.toh;
   POSTS.push(mine);
   savePosts();
   /* It has stopped being a draft, so the row goes -- AFTER the post is
