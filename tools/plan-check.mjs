@@ -231,9 +231,14 @@ const r = await pg.evaluate(({ s }) => {
      unstamped one seeded here is not in this person's ceiling at all --
      which is the thing this claim is about. */
   LANGS['l_other'] = { nm: 'Other', uid: 'u' };
+  /* そして向こうの二枚は違う板でなければならない。id 以外が一バイト違わない
+     板は 2026-09-07 から一枚です（www/keyboard.js § kbIded、「消していい。
+     そもそも増殖させるな」OWNER）── ここが同じ板を二枚置いていたので、この
+     主張は「二枚ぶん埋まる」と言いながら一枚ぶんを数えていました。プールは
+     人が作った keyboard の数なので、違う二枚で訊きます。 */
   slWr(langKeyOf('l_other', 'kb'), JSON.stringify(
-    { kbs: [{ nm:'', pat:'qwerty', lay: kbFixed().lay },
-            { nm:'', pat:'qwerty', lay: kbFixed().lay }], at: 0 }));
+    { kbs: [{ nm:'A', pat:'qwerty', lay: kbFixed().lay },
+            { nm:'B', pat:'qwerty', lay: kbFixed().lay }], at: 0 }));
   out.kbPool = kbCount();                        /* 3 */
   out.kbRoomPool = kbRoomKb();                   /* 1 + 3 < 4 -> no */
   out.kbPoolTop = (SET.plan = 'pro', kbRoomKb());/* no ceiling -> yes */
