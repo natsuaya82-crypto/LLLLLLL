@@ -44,9 +44,10 @@
 
     22  the line saying whom a reply answers stays HORIZONTAL in a language
         written downward. What runs down the page is what somebody wrote
-    23  a post whose line BEGINS with @handle is a post addressed to that
-        person -- said on the post at the moment of writing, with the handle
-        drawn over it and no longer in the line
+    23  WHOM A POST IS FOR IS NOT IN THE LINE. The + on somebody's page and
+        an @handle typed at the front both put it on `PW.toh`, drawn as a
+        line OVER the field; the line, the ring and `maxlength` are what
+        somebody wrote and nothing else. 「文字数に含ませたくないのよ」
 
     21  the @handle over a reply is a thing you PRESS, and it stands you on
         that person's page. The @ in a body goes through the same one place
@@ -1896,6 +1897,35 @@ const R = await pg.evaluate(async () => {
     if (rawD.indexOf('v-draft-1.m4a') < 0)
       fails.push('a draft does not carry the voice FILE at all, so the ' +
                  'recording is lost when the draft is opened again');
+    /* AND IT CARRIES WHOM IT IS FOR. The addressee stopped being characters
+       at the front of the line on 2026-09-08, so a draft that keeps only the
+       line comes back as a post to nobody -- silently, with the composer
+       looking perfectly correct. Both ends are asked: what went on the phone
+       and what went up, and then what comes back out of draftOpen(). */
+    {
+      const wasN = DRAFTS.length;
+      PW = pwBlank(); PW.ln = 'kano'; PW.toh = 'jjj';
+      dsent = [];
+      draftKeep();
+      const raw2 = localStorage.getItem('lingua.drafts') || '';
+      if (raw2.indexOf('"toh":"jjj"') < 0)
+        fails.push('a draft addressed to somebody does not carry the ' +
+                   'addressee on this phone, so opening it again is a post ' +
+                   'to nobody');
+      if (JSON.stringify(dsent).indexOf('jjj') < 0)
+        fails.push('a draft addressed to somebody went up without the ' +
+                   'addressee, so the phone it comes down on has lost it');
+      if (DRAFTS.length === wasN + 1) {
+        draftOpen(DRAFTS.length - 1);
+        if (PW.toh !== 'jjj')
+          fails.push('a draft opened again is addressed to "' +
+                     String(PW.toh || '') + '" and not jjj');
+        if (String(PW.ln || '').indexOf('@') >= 0)
+          fails.push('a draft opened again put the handle back in the LINE ("' +
+                     PW.ln + '"), which is the ring counting it again');
+        PW = pwBlank();
+      }
+    }
     if (JSON.stringify(dsent).indexOf('b64') >= 0)
       fails.push('the recording itself went up inside the draft body');
     /* AND THROWING THE DRAFT AWAY TAKES ITS RECORDING WITH IT.
@@ -2280,16 +2310,19 @@ const R = await pg.evaluate(async () => {
     NOTES_HAVE = wasNotes; window.route = wasRoute; NAV = wasNav;
   }
 
-  /* ---- 19. the + on somebody else's page opens with their handle -------
+  /* ---- 19. the + on somebody else's page opens ADDRESSED to them -------
      「他人のプロフィールの右下 ＋ → 投稿画面が『@そのhandle 』を本文の先頭に
      入れた状態で開く」 OWNER 2026-09-07 ── Twitter のメンションと同じ。
+     そして 「リプライング to @〇〇 ってこともだよ？ 文字数に含ませたくない
+     のよ」 OWNER 2026-09-08、実機 143 ── 宛先は本文ではなく `PW.toh`。
 
      本物の ＋ を押します。ボタンが持っている引数は画面が書いたもので、そこを
      読んで自分で openPost() を呼ぶのは自分の答えを訊き返すだけになる。
+     欄の上の行と輪については 23 が訊きます。
 
      三つ目と四つ目が、この手の直しの壊れ方です。自分のページの ＋ が
-     「@自分」で開く（自分に宛てた投稿）のと、打ちかけの一行の前に handle が
-     割り込む（このボタンが人の文を書き換える）の二つ。 */
+     「自分宛て」で開く（自分に宛てた投稿）のと、打ちかけの一行が誰か宛てに
+     なる（このボタンが人の書きかけを宛て先付きにする）の二つ。 */
   {
     const app = document.getElementById('app');
     const wasPW = PW, wasRoute = window.route, wasNav = NAV.slice();
@@ -2301,28 +2334,36 @@ const R = await pg.evaluate(async () => {
       const f = app.querySelector('.fab');
       if (!f) return null;
       f.click();
-      return String(PW.ln || '');
+      return { ln: String(PW.ln || ''), toh: String(PW.toh || '') };
     };
 
     const other = plus('profile', 'jjj');
     if (other === null)
       fails.push('somebody else\u2019s profile has no + on it, so nothing ' +
                  'below this is a test of anything');
-    else if (other !== '@jjj ')
-      fails.push('the + on somebody else\u2019s profile opened with "' + other +
-                 '" in the line and not "@jjj ". Pressing + on a page about a ' +
-                 'person is how you answer that person');
+    else {
+      if (other.toh !== 'jjj')
+        fails.push('the + on somebody else\u2019s profile opened addressed to "' +
+                   other.toh + '" and not jjj. Pressing + on a page about a ' +
+                   'person is how you answer that person');
+      if (other.ln !== '')
+        fails.push('the + on somebody else\u2019s profile put "' + other.ln +
+                   '" in the LINE. The addressee is not what somebody wrote, ' +
+                   'and the ring over the line counts what somebody wrote');
+    }
 
     const mine = plus('profile', undefined);
-    if (mine !== '' && mine !== null)
-      fails.push('the + on your OWN profile opened with "' + mine + '" in the ' +
-                 'line. You cannot mention yourself, and an empty composer is ' +
-                 'what that button has always opened');
+    if (mine && (mine.ln !== '' || mine.toh !== ''))
+      fails.push('the + on your OWN profile opened with "' + mine.ln +
+                 '" in the line, addressed to "' + mine.toh + '". You cannot ' +
+                 'mention yourself, and an empty composer is what that button ' +
+                 'has always opened');
 
     const feed = plus('feed', undefined);
-    if (feed !== '' && feed !== null)
-      fails.push('the + on the timeline opened with "' + feed + '" in the ' +
-                 'line. It is not on anybody\u2019s page');
+    if (feed && (feed.ln !== '' || feed.toh !== ''))
+      fails.push('the + on the timeline opened with "' + feed.ln +
+                 '" in the line, addressed to "' + feed.toh +
+                 '". It is not on anybody\u2019s page');
 
     PW = pwBlank(); PW.ln = 'kano tir';
     try { closeSheet(); } catch (e) {}
@@ -2334,6 +2375,11 @@ const R = await pg.evaluate(async () => {
       fails.push('a half-written line became "' + PW.ln + '" when + was ' +
                  'pressed on somebody\u2019s page. PW outlives the composer on ' +
                  'purpose, and this button is not an edit of what somebody typed');
+    if (String(PW.toh || ''))
+      fails.push('a half-written post about something else became a post to ' +
+                 PW.toh + ' when + was pressed on their page. There is no way ' +
+                 'to take an addressee off a composer (docs/BACKLOG.md), so ' +
+                 'that is a sentence somebody cannot send to nobody');
 
     PW = wasPW; window.route = wasRoute; NAV = wasNav;
     try { closeSheet(); } catch (e) {}
@@ -2642,78 +2688,162 @@ const R = await pg.evaluate(async () => {
     SET.plan = wasPlan; window.route = wasRoute; NAV = wasNav;
   }
 
-  /* ---- 23. @〇〇 で始めた投稿は、その人への投稿になる -------------------
+  /* ---- 23. 宛先の @〇〇 は本文に入らない ------------------------------
      「@したらもう勝手にツイートがこの形式になるようにしたい」 OWNER
-     2026-09-07。本物の pwSend() を通します。
+     2026-09-07、そして 「リプライング to @〇〇 ってこともだよ？ 文字数に
+     含ませたくないのよ」 OWNER 2026-09-08、実機 143。
 
-     二つ訊きます。行に「@jjj への返信」が出ること、そして本文の先頭に @jjj が
-     もう無いこと ── 同じ名前が一つの投稿に二度出るのは、この直しが半分だけ
-     効いたときの形です。
+     宛先は `PW.toh` が持ちます。本物の openPost() / pwSetLn() / pwSend() を
+     通します ── 打つのは pwSetLn() で、そこが宛先を決める一箇所だからです。
 
-     三つ目は取らない場合で、これがこの手の直しの壊れ方です：`@jjj` だけの
-     投稿から名前を取ると、本文が空の投稿が残る。 */
+     壊れ方はどれも投げません。半分だけ効いたときの形が、同じ名前が一つの
+     投稿に二度出ること・輪が本文以外を数えること・送った投稿の本文に @ が
+     残ること、の三つです。 */
   {
     const app = document.getElementById('app');
     const wasPW = PW, wasRoute = window.route, wasNav = NAV.slice();
     const wasN = POSTS.length;
 
-    PW = pwBlank(); PW.ln = '@jjj kano tir'; PW.mn = 'a mountain';
+    /* 宛先のある投稿画面：欄の上に行が出て、輪は満ちている。宛先がそこに
+       着くこと自体は 19 が本物の ＋ で訊いています。 */
+    PW = pwBlank();
+    openPost('new', 'jjj');
+    {
+      const h = vForm();
+      const m = String(h).match(/id="pw-left"[^>]*>([\s\S]*?)<\/span>\s*<\/div>/);
+      if (!m)
+        fails.push('the composer draws no ring at all, so nothing about what ' +
+                   'it counts is a test of anything');
+      else if (/pwleft/.test(m[1]))
+        fails.push('the ring on a composer opened from somebody\u2019s page is ' +
+                   'already counting down with nothing typed. 「文字数に' +
+                   '含ませたくないのよ」');
+      /* そして「Replying to @jjj」が欄の上に出ていること */
+      if (String(h).indexOf('id="pw-to"') < 0 || String(h).indexOf('>@jjj<') < 0)
+        fails.push('the composer opened from somebody\u2019s page says nowhere ' +
+                   'whom it is for. The handle came out of the line; if it is ' +
+                   'not drawn over the field it is simply gone');
+      /* 同じ文言・同じ押せる @ を通っていること */
+      if (String(h).indexOf(ptoHTML('jjj')) < 0)
+        fails.push('the line over the composer is not the one the timeline ' +
+                   'draws over a reply (ptoHTML). Two wordings for one thing, ' +
+                   'and an @ that is pressable on one screen and not the other');
+    }
+
+    /* 本文の頭に「@lingua 」と打つ：その場で宛先へ移る */
+    PW = pwBlank();
+    openPost();
+    render();
+    /* 打鍵と同じ順で：欄にその文字が在って、そこから pwSetLn() が呼ばれる
+       （www/post.js § IN('pwSetLn')）。先に欄を埋めておかないと「欄が
+       追いついていない」の主張が、欄が空だから赤い、になります。 */
+    {
+      const f0 = document.getElementById('pw-ln');
+      if (!f0)
+        fails.push('the composer has no line field, so nothing below this is ' +
+                   'a test of anything');
+      else f0.value = '@lingua kano tir';
+    }
+    pwSetLn('@lingua kano tir');
+    if (String(PW.ln || '') !== 'kano tir')
+      fails.push('typing "@lingua kano tir" left the line as "' + PW.ln +
+                 '". The handle at the front is whom the post is for and is ' +
+                 'moved off the line as it is typed');
+    if (PW.toh !== 'lingua')
+      fails.push('typing "@lingua kano tir" addressed the post to "' +
+                 String(PW.toh || '') + '" and not lingua');
+    {
+      const f = document.getElementById('pw-ln');
+      if (f && f.value !== 'kano tir')
+        fails.push('the field still reads "' + f.value + '" after the handle ' +
+                   'was taken off the line. This screen is not redrawn while ' +
+                   'somebody is typing, so the glass and the post disagree');
+      const to = document.getElementById('pw-to');
+      if (!to || to.textContent.indexOf('@lingua') < 0)
+        fails.push('typing a handle at the front drew no line saying whom the ' +
+                   'post is for (' + (to ? '"' + to.textContent + '"' : 'no line') + ')');
+      /* 輪は本文だけ */
+      const left = document.getElementById('pw-left');
+      const want = String(POST_MAX - 'kano tir'.length);
+      if (left && /pwleft/.test(left.innerHTML) && left.textContent.indexOf(want) < 0)
+        fails.push('the ring counts something other than the line');
+    }
+
+    /* 送った投稿は toh を持ち、本文に @ が無い */
+    PW.mn = 'a mountain';
     pwSend();
     const p = POSTS[POSTS.length - 1];
     if (POSTS.length !== wasN + 1)
-      fails.push('a line beginning with @jjj made ' + (POSTS.length - wasN) +
+      fails.push('a line beginning with @lingua made ' + (POSTS.length - wasN) +
                  ' posts, so nothing below this is a test of anything');
     else {
-      if (postToWho(p) !== 'jjj')
-        fails.push('a post written as "@jjj kano tir" says it is for "' +
-                   postToWho(p) + '" and not jjj. Naming somebody at the front ' +
-                   'is how a post is addressed to them');
+      if (postToWho(p) !== 'lingua')
+        fails.push('a post written as "@lingua kano tir" says it is for "' +
+                   postToWho(p) + '" and not lingua. Naming somebody at the ' +
+                   'front is how a post is addressed to them');
       if (String(p.ln || '') !== 'kano tir')
-        fails.push('a post written as "@jjj kano tir" kept its line as "' +
+        fails.push('a post written as "@lingua kano tir" kept its line as "' +
                    p.ln + '". The name is drawn over the post now, so leaving ' +
                    'it in the line is the same handle twice on one post');
       if (p.to)
         fails.push('a post that named somebody carries to=' + p.to +
                    ', but it answers no post. `to` is what a reply pressed');
 
-      window.route = 'thread'; NAV = [{ r: 'feed' }, { r: 'thread', a: p.id }];
+      window.route = 'thread'; NAV = [{ r: 'thread', a: p.id }];
       render();
       const to = app.querySelector('.pto');
-      if (!to || to.textContent.indexOf('@jjj') < 0)
+      if (!to || to.textContent.indexOf('@lingua') < 0)
         fails.push('a post that named somebody draws no line saying so (' +
                    (to ? '"' + to.textContent + '"' : 'no line at all') + ')');
       const ln = app.querySelector('.pline');
-      if (ln && ln.textContent.indexOf('@jjj') >= 0)
+      if (ln && ln.textContent.indexOf('@lingua') >= 0)
         fails.push('the line of that post still reads "' + ln.textContent +
-                   '", so @jjj is on the screen twice');
+                   '", so @lingua is on the screen twice');
     }
 
     /* a name with nothing behind it stays what somebody wrote */
     const n2 = POSTS.length;
-    PW = pwBlank(); PW.ln = '@jjj';
+    PW = pwBlank(); openPost(); render();
+    pwSetLn('@jjj');
+    if (PW.toh)
+      fails.push('typing only "@jjj" addressed the post to jjj and left the ' +
+                 'line empty. Taking the name leaves an empty post, and what ' +
+                 'somebody typed is the whole of what they typed');
     pwSend();
     if (POSTS.length === n2 + 1) {
       const q = POSTS[POSTS.length - 1];
       if (String(q.ln || '') !== '@jjj')
-        fails.push('a post that is only "@jjj" came out as "' + q.ln +
-                   '". Taking the name leaves an empty post, and what somebody ' +
-                   'typed is the whole of what they typed');
+        fails.push('a post that is only "@jjj" came out as "' + q.ln + '"');
     }
 
     /* and a real reply keeps what was typed in it */
     const n3 = POSTS.length;
-    PW = pwBlank(); PW.ln = '@bob yes'; PW.to = POSTS[0].id;
+    PW = pwBlank(); PW.to = POSTS[0].id; openPost('reply'); render();
+    pwSetLn('@bob yes');
+    if (String(PW.ln || '') !== '@bob yes')
+      fails.push('a REPLY beginning with @bob lost it from the line ("' +
+                 PW.ln + '"). That post already says whom it answers; a name ' +
+                 'typed inside it is a name in what somebody wrote');
     pwSend();
     if (POSTS.length === n3 + 1) {
       const r = POSTS[POSTS.length - 1];
       if (String(r.ln || '') !== '@bob yes')
-        fails.push('a REPLY beginning with @bob lost it from the line ("' +
-                   r.ln + '"). That post already says whom it answers; a name ' +
-                   'typed inside it is a name in what somebody wrote');
+        fails.push('a REPLY beginning with @bob lost it from the post ("' +
+                   r.ln + '")');
       if (postToWho(r) === 'bob')
         fails.push('a reply beginning with @bob says it answers bob. It ' +
                    'answers the post that was pressed');
     }
+
+    /* ＋ を押すと宛先も落ちる。`to` が落ちるのと同じ理由で、一時間前の
+       書きかけがいつの間にか誰か宛てになっているのは、その人の投稿では
+       ありません。 */
+    PW = pwBlank(); PW.toh = 'jjj';
+    openPost('new');
+    if (PW.toh)
+      fails.push('pressing + left the composer addressed to ' + PW.toh +
+                 '. + is an ordinary post, and there is no way to take an ' +
+                 'addressee off one (docs/BACKLOG.md)');
 
     PW = wasPW; window.route = wasRoute; NAV = wasNav;
     try { closeSheet(); } catch (e) {}
@@ -2777,9 +2907,10 @@ console.log('post: a letter placed on a black photograph is IN the file that goe
             '      where it is.\n' +
             '      A notice naming two people opens the list of those two, and\n' +
             '      one naming one still opens that person.\n' +
-            '      The + on somebody else\u2019s page opens with their handle in\n' +
-            '      the line, your own opens empty, and neither writes over a\n' +
-            '      line somebody had already typed.\n' +
+            '      The + on somebody else\u2019s page opens ADDRESSED to them\n' +
+            '      with an empty line, your own opens with neither, and\n' +
+            '      neither writes over a line somebody had already typed nor\n' +
+            '      addresses it to anybody.\n' +
             '      A roman line in a vertical field lies on its side and runs\n' +
             '      down ONE column -- the placeholder and the line somebody\n' +
             '      types, written downward from the right and from the left, new\n' +
@@ -2790,8 +2921,9 @@ console.log('post: a letter placed on a black photograph is IN the file that goe
             '      and it stands you on that person\u2019s page; the @ in what\n' +
             '      somebody wrote goes through the same one place.\n' +
             '      That line stays horizontal in a language written downward --\n' +
-            '      what runs down the page is what somebody WROTE. And a line\n' +
-            '      that begins by naming somebody makes a post addressed to\n' +
-            '      them, with the handle over the post and out of the line; a\n' +
+            '      what runs down the page is what somebody WROTE. And whom a\n' +
+            '      post is for is never in the line: the + and an @ typed at\n' +
+            '      the front both put it OVER the field, the ring counts what\n' +
+            '      somebody wrote, and a draft carries it there and back. A\n' +
             '      name with nothing behind it, and a name typed inside a real\n' +
             '      reply, are both left exactly as they were typed.');

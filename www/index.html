@@ -801,6 +801,10 @@ canvas.pkc{width:34px;height:34px;display:block}
    post, not part of what was said. */
 .pto{font-size:.84rem;color:var(--txm);margin-top:1px;
      overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* 投稿画面の宛先の行も同じもので、そこでは中身が入っていないことがあります
+   ── pwToPaint() が打っている最中に埋めるので、器は先に置いてあります
+   （www/post.js § pwHTML）。空の器が一行ぶんの余白として残らないように。 */
+.pto:empty{display:none}
 /* ---------- a report, read ----------
    One card per report, and the reason is the small grey line: what a person
    reading these is looking at is what was SAID, not the five words the app
