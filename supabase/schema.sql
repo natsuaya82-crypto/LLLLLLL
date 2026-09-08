@@ -1707,6 +1707,22 @@ language sql stable as $$
    where v.created_at >  feed_slot() - interval '48 hours'
      and v.created_at <= feed_slot()
      and v.hidden_at is null
+     /* AND NOT A REPLY. 「おすすめにリプライ出てくるのやめよう」 OWNER
+        2026-09-08. This list is the one nobody asked to be on -- 「リプライは
+        おすすめ並ぶことないでしょ？基本」 OWNER 2026-09-04 -- and it was said
+        on the PHONE (snsList() in www/sns.js) and nowhere here. A phone that
+        asks for fifty and then hides the answers is a phone showing a page
+        of thirty: the filtering is not wrong, it is in the wrong place, and
+        what it costs is the length of the page.
+
+        It is left out of the RESULT and not out of the scoring: `a.pts`
+        above counts the replies TO a post, which is most of what makes a
+        post go round, and that is unchanged.
+
+        The other two lists are untouched. 「フォロー中」 is the people
+        somebody chose to read and a thread is theirs to say; feed_fo() below
+        keeps them, and so does the day's list. */
+     and v.reply_to is null
    order by ((k.pts + a.pts) * feed_weight(v.author)) desc, v.created_at desc
    limit lim offset off
 $$;

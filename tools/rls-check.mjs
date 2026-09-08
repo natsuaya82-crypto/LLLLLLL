@@ -1637,6 +1637,24 @@ const SHAPE = [
      )) q`, '0'],
   ['and nothing older than the window is in it', `
      select count(*) from feed_hot(500) where body ? 'old'`, '0'],
+  /* AND NOT ONE REPLY. 「おすすめにリプライ出てくるのやめよう」 OWNER
+     2026-09-08. It was said on the phone (snsList() in www/sns.js) and
+     nowhere here, so the server handed over fifty rows and the phone drew
+     thirty of them -- the filtering was not wrong, it was in the wrong place,
+     and what it cost was the length of the page.
+
+     There IS a reply in this database, written before the tick, and 「an
+     answer outranks a boost」 above is what proves the score still counts it:
+     that claim is only true because F's reply to H2 is worth five. So these
+     two together say the sentence the owner asked for -- a reply is off this
+     list and is not off the reckoning. */
+  ['and not one reply is on it', `
+     select count(*) from feed_hot(500) where reply_to is not null`, '0'],
+  /* And it is still there to be read, which is the half a filter can quietly
+     take away: 「フォロー中」, a thread and a person's own page all show it. */
+  ['but the reply is still there to read', `
+     select count(*) from (select 1 where not exists (
+       select 1 from post_seen where reply_to is not null)) q`, '0'],
   /* Both of the private tables, in one statement. The reason is written over
      draft's: the three attempts above CANNOT catch a widened update or delete
      on their own, because PostgreSQL makes an UPDATE or a DELETE with a WHERE
