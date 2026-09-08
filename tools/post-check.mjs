@@ -3005,6 +3005,133 @@ const R = await pg.evaluate(async () => {
     try { closeSheet(); } catch (e) {}
   }
 
+  /* ---- 24. お題の札は、保存は一つ・見せるのは読む人の言葉 -------------
+     「なんで英語なのに#今日のお題やねん」「#今日のお題 は #todays prompt
+     みたいに、言語が変わったら誰の投稿でもそこが変わるように」 OWNER
+     2026-09-08、写真つき。
+
+     これは投げません。日本語の札は英語の画面で完全に描かれ、押せて、検索も
+     当たります ── 違っているのは読む人にとって何語かだけです。
+
+     そして半分だけ効いたときの形が二つあり、どちらも画面は正しく見えます：
+     見せ方を直したついでに保存も直してしまう（過去の投稿の本文を書き換える
+     ことになり、文字検索が二つに割れる）、そして投稿画面の欄だけ直して送る
+     ときに戻し忘れる（その投稿だけ誰の検索にも当たらない）。両方訊きます。 */
+  {
+    const app = document.getElementById('app');
+    const wasPW = PW, wasRoute = window.route, wasNav = NAV.slice();
+    const wasPosts = POSTS.slice(), wasUi = SET.ui;
+
+    SET.ui = 'ja';
+    const mark = DAY_TAG, jaWord = t('day.tag');
+    SET.ui = 'en';
+    const enWord = t('day.tag');
+    if (enWord === mark || enWord.indexOf(' ') >= 0)
+      fails.push('the word an English reader sees for the day\u2019s tag is "' +
+                 enWord + '". A tag runs from the # to the next space, so a ' +
+                 'word with a space in it is cut in half; and if it is the ' +
+                 'mark itself nothing below this is a test of anything');
+
+    /* ja で書かれた投稿を、en で読む。 */
+    POSTS = [{ id:'DT-1', at: Date.now(), lang: langId, lname:'Shango',
+               who:'Aya', hd:'aya', mine:true, ui:'ja', pr:7,
+               ln: mark + ' kano tir', mn:'a mountain' }];
+    const bodyIn = (ui) => {
+      SET.ui = ui;
+      window.route = 'thread'; NAV = [{ r:'thread', a:'DT-1' }];
+      render();
+      const e = app.querySelector('.pline');
+      return e ? e.textContent : '';
+    };
+    const en = bodyIn('en'), ja = bodyIn('ja');
+    if (en.indexOf(enWord) < 0)
+      fails.push('a post written in Japanese reads "' + en + '" to an English ' +
+                 'reader. The day\u2019s tag is the app\u2019s own words about a ' +
+                 'day everybody shares, so it is said in the reader\u2019s ' +
+                 'language 「言語が変わったら誰の投稿でもそこが変わるように」');
+    if (en.indexOf(mark) >= 0)
+      fails.push('the Japanese mark is still on the screen in English ("' + en +
+                 '"), so the tag is there twice or was never swapped');
+    if (ja.indexOf(jaWord) < 0)
+      fails.push('the same post reads "' + ja + '" in Japanese, which is not ' +
+                 'the tag at all');
+    /* そして保存されたものは動いていない。 */
+    if (String(POSTS[0].ln) !== mark + ' kano tir')
+      fails.push('reading the post changed what is STORED on it ("' +
+                 POSTS[0].ln + '"). Drawing is not writing, and a body ' +
+                 'rewritten on a render is somebody\u2019s post edited by ' +
+                 'somebody else\u2019s language setting');
+    /* 押す先も綴りのまま ── そうでないと誰の投稿にも当たりません。 */
+    SET.ui = 'en';
+    window.route = 'thread'; NAV = [{ r:'thread', a:'DT-1' }];
+    render();
+    const tagBtn = app.querySelector('.pline button.ptag');
+    if (!tagBtn)
+      fails.push('the day\u2019s tag is not a thing you press');
+    else if (String(tagBtn.getAttribute('data-a') || '').indexOf(mark) < 0)
+      fails.push('pressing the tag on an English screen searches for ' +
+                 tagBtn.getAttribute('data-a') + '. A search is a text ' +
+                 'search, and every post carries the mark');
+
+    /* 英語の投稿画面から送った投稿も、保存されるのは綴り。 */
+    POSTS = [];
+    SET.ui = 'en';
+    PW = pwBlank();
+    DAY = { id: 7, on_day: '2026-09-08', text: 'hot',
+            says: { en: 'hot', ja: 'あつい' } };
+    openPost('day');
+    if (String(PW.ln || '').indexOf(enWord) !== 0)
+      fails.push('the composer opened from the day put "' + PW.ln + '" in the ' +
+                 'field on an English screen. A field is something somebody ' +
+                 'reads while they type into it');
+    render();
+    const fD = document.getElementById('pw-ln');
+    const typed = String(PW.ln || '') + 'kano tir';
+    if (fD) fD.value = typed;
+    pwSetLn(typed);
+    const nD = POSTS.length;
+    pwSend();
+    if (POSTS.length !== nD + 1)
+      fails.push('the day\u2019s composer made no post, so nothing below this ' +
+                 'is a test of anything');
+    else {
+      const d = POSTS[POSTS.length - 1];
+      if (String(d.ln || '').indexOf(mark) !== 0)
+        fails.push('a post written on an English screen was STORED as "' +
+                   d.ln + '". One spelling is written down, or a search finds ' +
+                   'one language\u2019s answers and not the other\u2019s');
+      if (String(d.ln || '').indexOf(enWord) >= 0)
+        fails.push('the English word went into what is stored ("' + d.ln +
+                   '"), so this post meets no other answer to the same day');
+    }
+
+    /* 下書きも同じ道。 */
+    {
+      const wasD = DRAFTS.slice();
+      DRAFTS = [];
+      SET.ui = 'en';
+      PW = pwBlank(); PW.ln = enWord + ' kano';
+      draftKeep();
+      const kept = DRAFTS[DRAFTS.length - 1];
+      if (!kept || String(kept.ln || '').indexOf(mark) !== 0)
+        fails.push('a draft written on an English screen keeps "' +
+                   (kept ? kept.ln : 'nothing') + '". A draft is stored the ' +
+                   'way a post is');
+      else {
+        DRAFTS.push(kept);
+        draftOpen(DRAFTS.length - 1);
+        if (String(PW.ln || '').indexOf(enWord) !== 0)
+          fails.push('a draft opened again on an English screen shows "' +
+                     PW.ln + '" in the field');
+      }
+      DRAFTS = wasD;
+    }
+
+    SET.ui = wasUi; POSTS = wasPosts; savePosts();
+    PW = wasPW; window.route = wasRoute; NAV = wasNav;
+    try { closeSheet(); } catch (e) {}
+  }
+
   return { fails, mid: (nowLight * 100).toFixed(1), corner: (wasLight * 100).toFixed(1),
            bytes: Math.round(String(out[0] || '').length / 1024),
            thumb: Math.round(small.length / 1024), full: Math.round(big.length / 1024),

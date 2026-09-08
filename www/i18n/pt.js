@@ -1259,6 +1259,7 @@ defLang('pt', (function(){
          from the server, one row a day, in every interface language. */
       "day.k"  : "Hoje",
       "day.ask"          : "Na sua própria língua?",
+      "day.tag"          : "#TemaDeHoje",
       /* The world's names for the twelve months and the seven days. What
          the slot is CALLED is the world's; what goes in it is the
          language's. Sunday first -- that is where a calendar's week

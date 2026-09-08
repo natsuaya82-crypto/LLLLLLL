@@ -29,6 +29,10 @@ const dir = path.dirname(fileURLToPath(import.meta.url));
 
 const bad = [];
 function say(ok, line){ console.log('  ' + (ok ? '' : 'FAILED  ') + line); if (!ok) bad.push(line); }
+/* One word out of the page's own language table, so a claim about what a
+   reader sees is not this file writing the answer down a second time. The
+   walk runs in English, which is what `t()` in the page answers with. */
+const t0 = (k) => pg.evaluate((kk) => t(kk), k);
 
 const br = await chromium.launch(LAUNCH);
 const pg = await br.newPage({ viewport:{ width:390, height:844 } });
@@ -650,8 +654,16 @@ say(zero.after.rows === 0 && zero.after.note && dead.bad &&
    検索は `netFindPrompt()` で**その日のぶんしか**出ませんでした。
    ここが押さえるのは新しい四つです。
 
-   1. **翻訳しない。**`day.tag` の鍵は十言語すべてから消えていて、
-      `dayTag()` も `dayTagId()` も無い。一つのタグに綴りは一つ。
+   1. **保存される綴りは一つ。**`DAY_TAG` がそれで、`dayTag()` も
+      `dayTagId()` も無い ── 投稿の横に一行を描いていた仕組みは消えたまま。
+      綴りが一つなのは、集めるのが文字合わせだからです（下の 4）。
+
+      **見せ方はここに入りません。**2026-09-08 の決定で、読む人が見る札は
+      `t('day.tag')` の十言語ぶんになりました（`dayTagShow`／`dayTagStore`、
+      OWNER「言語が変わったら誰の投稿でもそこが変わるように」）。前の版の
+      この行は「`day.tag` の鍵は十言語すべてから消えている」でした ── その
+      文はこの決定が嘘にしたので、削除しました。保存と見せ方は別の問いで、
+      この検査が押さえるのは**保存される方**です。
    2. **タグは本文の文字で、青くて、押せる。**投稿が持っている文字だけが
       タグになる ── アプリが足す行はもう無い。
    3. **押したらそのタグの検索になる。**箱にその文字が入り、答えは
@@ -690,10 +702,36 @@ const gone = await pg.evaluate(() => {
 });
 say(gone.fns.length === 0,
     '翻訳されたタグの仕組みは消えている (' + (gone.fns.join(',') || '無し') + ')');
-say(gone.keys.length === 0,
-    'day.tag の鍵は十言語すべてから消えている (' + (gone.keys.join(',') || '無し') + ')');
+say(gone.keys.length === 10,
+    '読む人が見る札は十言語ぶんある (' + gone.keys.length + '/10)');
 say(gone.one === '#今日のお題',
-    'タグの綴りは一つ (' + gone.one + ')');
+    '保存される綴りは一つ (' + gone.one + ')');
+/* そして保存される方は、どの言語で見ていても動かない。見せ方だけが動く、
+   というのがこの決定の全部です。 */
+const swap = await pg.evaluate(() => {
+  var was = SET.ui, out = {}, i, ls = ['en','ja','ru'];
+  out.marks = [];
+  for (i = 0; i < ls.length; i++){
+    SET.ui = ls[i];
+    out.marks.push(DAY_TAG);
+    if (ls[i] === 'en') out.shownEn = dayTagShow('a ' + DAY_TAG + ' b');
+    if (ls[i] === 'ja') out.shownJa = dayTagShow('a ' + DAY_TAG + ' b');
+  }
+  /* 英語で見せた札を、日本語に切り替えてから戻せるか ── 書きかけのまま
+     表示言語を変える人のための道です。 */
+  SET.ui = 'ja';
+  out.back = dayTagStore(out.shownEn);
+  SET.ui = was;
+  return out;
+});
+say(swap.marks.join('|') === '#今日のお題|#今日のお題|#今日のお題',
+    '保存される綴りは表示言語で動かない (' + swap.marks.join('|') + ')');
+say(swap.shownEn.indexOf('#今日のお題') < 0 && swap.shownEn.indexOf('#') >= 0,
+    '英語で読むと札は英語 (' + swap.shownEn + ')');
+say(swap.shownJa === 'a #今日のお題 b',
+    '日本語で読むと札は綴りのまま (' + swap.shownJa + ')');
+say(swap.back === 'a #今日のお題 b',
+    '表示言語を変えても札は綴りに戻せる (' + swap.back + ')');
 
 /* 2. 本文の文字が青くて押せる。アプリが足す行は無い。 */
 const drawn = await pg.evaluate(() => {
@@ -714,8 +752,13 @@ const drawn = await pg.evaluate(() => {
   out.none = e.querySelectorAll('button.ptag').length;
   return out;
 });
-say(drawn.n === 1 && drawn.text === '#今日のお題',
-    '本文の中のタグが一つ、押せる形で出る (' + drawn.n + ' / ' + drawn.text + ')');
+/* 見える字は読む人の言語、押す先は綴り ── その二つが別だというのが
+   2026-09-08 の決定です。前の版はどちらも綴りを見ていました。 */
+const dayWord = await t0('day.tag');
+say(drawn.n === 1 && drawn.text === dayWord,
+    '本文の中のタグが一つ、読む人の言葉で出る (' + drawn.n + ' / ' + drawn.text + ')');
+say(String(drawn.arg || '').indexOf('#今日のお題') >= 0,
+    'そのタグを押すと、検索にかかるのは保存された綴り (' + drawn.arg + ')');
 say(drawn.does === 'snsTagGo' && drawn.arg.indexOf('#今日のお題') !== -1,
     '押すとそのタグの検索になる (' + drawn.does + ' ' + drawn.arg + ')');
 say(drawn.none === 0,
@@ -754,8 +797,8 @@ const composed = await pg.evaluate(() => {
   PW = pwBlank();
   return out;
 });
-say(composed.ln.indexOf('#今日のお題') === 0,
-    'お題から書き始めると本文にタグが入っている (' +
+say(composed.ln.indexOf(dayWord) === 0,
+    'お題から書き始めると欄に読む人の言葉の札が入っている (' +
     JSON.stringify(composed.ln) + ')');
 say(composed.after === '' ,
     'そのタグは外せる (' + JSON.stringify(composed.after) + ')');

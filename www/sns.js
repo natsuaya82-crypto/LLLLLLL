@@ -1447,26 +1447,72 @@ function dayMap(id){
 }
 /* ---- THE TAG ------------------------------------------------------------
    「投稿する時にタグを入れられるようにしろよ」「本文に#つけられるようにしろよ」
-   「タグは本文中に。」「翻訳はいらんから」 OWNER 2026-09-04.
+   「タグは本文中に。」 OWNER 2026-09-04.
 
    A TAG IS CHARACTERS SOMEBODY TYPED, and that is the whole of it. It was a
-   ROW drawn beside the post out of `t('day.tag')` -- ten words in ten
-   language files, put on by the app, sitting outside what anybody wrote and
-   impossible to type. The owner has replaced it: the `#` goes in the body,
-   a person puts it there, and there is one spelling of it.
+   ROW drawn beside the post out of `t('day.tag')` -- put on by the app,
+   sitting outside what anybody wrote and impossible to type. The owner
+   replaced it: the `#` goes in the body, a person puts it there.
 
-   ONE SPELLING AND NO TRANSLATION. 「翻訳はいらんから」. A tag that is said
-   ten ways is ten tags, and the search that finds them is a text search --
-   so the ten would never meet. `DAY_TAG` is the day's, in the one form it
-   has, and it is not a word in any language file because it is not
-   interface: it is put into a field somebody can then edit.
+   ---- and the day's tag is the one that is STORED once and SHOWN ten ways.
+   「なんで英語なのに#今日のお題やねん」「#今日のお題 は #todays prompt
+   みたいに、言語が変わったら誰の投稿でもそこが変わるように」 OWNER
+   2026-09-08.
+
+   TWO DIFFERENT QUESTIONS, and until that day they had one answer. What is
+   STORED must be one spelling: a tag said ten ways is ten tags, the search
+   that finds them is a text search, and the ten would never meet -- which is
+   the whole of 「翻訳はいらんから」 (2026-09-04) and it still holds. What is
+   SHOWN is the app's own words about a day everybody shares, so it is the
+   READER's language, the same as every other word this app puts on a screen:
+   「今日のお題だけ、毎回その人の表示言語になるようにできないの？…全員共通
+   なんだから」.
+
+   So `DAY_TAG` is the MARK -- the one form that is written down, the one
+   form a search asks for, and the form already sitting in the body of every
+   post made before today. Nothing is migrated and nothing is rewritten.
+   `t('day.tag')` is what a reader SEES, and the two are swapped at the
+   mouths by the pair below.
 
    The LINK is still the column. `post.pr` gathers the day's answers and
    cannot be edited away 「繋がりはハッシュタグではなく列」 (OWNER DECISION
    2026-08-23 #6, still in force). The tag is the same fact written where a
-   person can see it, delete it, and press it -- which is what 「投稿の本文に
-   タグの文字が入る」 in the decision of 2026-09-04 already said. */
+   person can see it, delete it, and press it. */
 var DAY_TAG='#今日のお題';
+/* The two mouths, and they are the only two places that know the swap.
+
+   `dayTagShow` is on the way OUT of storage: tagHTML() for anything drawn as
+   HTML (the timeline, a thread, the quote over a reply, a notice, a search
+   result -- every one of them draws a body through that one function) and
+   cardSrc() for the canvas, which cannot inherit anything and is the other
+   road a post is drawn down (rule 12). The composer's field is the third,
+   because a field is a thing somebody reads while they type into it.
+
+   `dayTagStore` is on the way IN: sending, and keeping a draft. It maps back
+   from EVERY language rather than from the current one, because somebody can
+   change the interface language with a half-written post in front of them --
+   the field would then hold last language's word, and a mark that came back
+   as ordinary characters is a post that has quietly left the day. Ten passes
+   over one short string, once per send.
+
+   `LANG` is the table `t()` itself reads (www/core.js § strOf). Nothing here
+   asks a screen and nothing here is a second list of languages. */
+function dayTagShow(s){
+  var x=String(s||''), w=t('day.tag');
+  if(!w || w==='day.tag' || w===DAY_TAG) return x;
+  return x.split(DAY_TAG).join(w);
+}
+function dayTagStore(s){
+  var x=String(s||''), c, d, w;
+  for(c in LANG){
+    if(!Object.prototype.hasOwnProperty.call(LANG, c)) continue;
+    d=(LANG[c] && LANG[c].str) || {};
+    w=d['day.tag'];
+    if(!w || w===DAY_TAG) continue;
+    x=x.split(w).join(DAY_TAG);
+  }
+  return x;
+}
 /* What a tag looks like: the mark, then anything that is not a space and not
    another mark. Both spellings of the hash, for the reason netAtOff() takes
    both of the `@` -- 「＃」 is what a Japanese keyboard gives -- and the marks
@@ -1542,8 +1588,15 @@ function tagHTML(s){
     m=(!tg? ah : (!ah? tg : (tg.index<ah.index? tg : ah)));
     if(!m) break;
     out+=esc(x.slice(at, m.index));
+    /* WHAT IT SAYS AND WHAT IT IS ARE DIFFERENT FOR ONE TAG, and the day's
+       is that one: the mark is what is stored and what a search asks for,
+       and the reader's own word is what is drawn on it (§ THE TAG above).
+       So the press carries `m[0]` -- the characters actually in the body --
+       and only the letters between the tags change. Every other tag is
+       somebody's own word and dayTagShow() leaves it exactly as it is. */
     out+=(m===tg
-      ? '<button class="ptag"'+DO('snsTagGo', [m[0]])+'>'+esc(m[0])+'</button>'
+      ? '<button class="ptag"'+DO('snsTagGo', [m[0]])+'>'+
+          esc(dayTagShow(m[0]))+'</button>'
       : atHTML(m[0]));
     at=m.index+m[0].length;
   }

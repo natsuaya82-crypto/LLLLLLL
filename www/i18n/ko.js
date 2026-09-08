@@ -1427,6 +1427,7 @@ defLang('ko', (function(){
          from the server, one row a day, in every interface language. */
       "day.k"  : "오늘",
       "day.ask"          : "당신의 언어로?",
+      "day.tag"          : "#오늘의주제",
       /* The world's names for the twelve months and the seven days. What
          the slot is CALLED is the world's; what goes in it is the
          language's. Sunday first -- that is where a calendar's week

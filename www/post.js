@@ -379,7 +379,12 @@ function openPost(from, at){
        deleting it is deleting it. The post still gathers under `pr`, which
        is a column and cannot be edited away -- so a tag somebody removes
        costs them the word and not the day. */
-    PW.ln=DAY_TAG+' ';
+    /* IN THE READER'S OWN WORDS, and stored as the mark. What goes in a
+       field is what somebody reads while they type into it, so it is
+       `t('day.tag')`; pwSend() and draftKeep() put it back to the mark
+       (www/sns.js § THE TAG). 「なんで英語なのに#今日のお題やねん」 OWNER
+       2026-09-08. */
+    PW.ln=dayTagShow(DAY_TAG)+' ';
   }
   /* AND WHOSE PAGE THE + WAS ON, said OVER the field and not inside it.
      「他人のプロフィールの右下 ＋ → 投稿画面が『@そのhandle 』を本文の先頭に
@@ -519,7 +524,7 @@ function draftKeep(){
   /* The name it already had, if this is one that was opened again. Reusing it
      is what stops a draft opened and put back becoming two rows -- one on the
      server nobody can reach and one in front of them. */
-  var d={id:PW.did || netUUID(), at:Date.now(), ln:PW.ln, mn:PW.mn, to:PW.to,
+  var d={id:PW.did || netUUID(), at:Date.now(), ln:dayTagStore(PW.ln), mn:PW.mn, to:PW.to,
          toh:PW.toh||'', pr:PW.pr||0, pics:pwPics(), vo:PW.vo||null, pv:!!PW.pv};
   DRAFTS.push(d);
   /* The phone FIRST and always, whatever the network is doing. A draft is on
@@ -546,7 +551,7 @@ function draftOpen(i){
   draftsSave();
   if(here().r==='drafts') back();
   PW=pwBlank();
-  PW.ln=d.ln||''; PW.mn=d.mn||''; PW.to=d.to||''; PW.toh=d.toh||''; PW.pr=d.pr||0;
+  PW.ln=dayTagShow(d.ln||''); PW.mn=d.mn||''; PW.to=d.to||''; PW.toh=d.toh||''; PW.pr=d.pr||0;
   PW.pics=d.pics||[]; PW.pv=!!d.pv;
   /* A draft written before the voice became a file carries the recording
      itself (`b64`). It is put on the disk now and the draft's copy is
@@ -1675,12 +1680,16 @@ function pwSend(){
      private use code points and they go no further than the field: a post
      carries the roman spelling and its ink, and a code point nobody else's
      font has would be a square box on somebody else's phone. */
-  var ln=puaRoman(String(PW.ln||'')).trim();
+  /* And the day's tag goes back to the ONE spelling that is stored. The
+     field showed the reader's own word (openPost); what is written down is
+     the mark, because a search is a text search and ten spellings never meet
+     (www/sns.js § THE TAG). */
+  var ln=dayTagStore(puaRoman(String(PW.ln||'')).trim());
   /* The line as typed, kept for the ink cut below: what the Lingua keyboard
      put there is the language, and what any other keyboard put there is not.
      It is read again inside the callbacks the bake and the voice run through,
      by which time PW may already be the next post. */
-  PWRAW=String(PW.ln||'').trim();
+  PWRAW=dayTagStore(String(PW.ln||'').trim());
   if(!pwHas(ln)){ toast(t('post.none')); return; }
   /* A recording still running is a recording somebody meant to make -- the
      press that sends the post is not the press that throws it away. */

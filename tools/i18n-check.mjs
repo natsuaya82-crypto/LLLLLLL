@@ -185,14 +185,17 @@ function checkSource(){
       const where = rel + ' line ' + (i + 1);
       if (rel === 'ipa.js' && /^var IPA_IN\s*=/.test(l)) inTable = true;
       else if (inTable && /^\};/.test(l)) inTable = false;
-      /* AND ONE TAG, which is a word people TYPE rather than a word this app
-         says. 「翻訳はいらんから」 OWNER 2026-09-04, replacing ten language
-         keys with one spelling: a tag said ten ways is ten tags, and the
-         search that finds them is a text search, so the ten would never
-         meet. It goes into a field somebody can then edit, which is what
-         makes it data and not interface -- the same argument IPA_IN is named
-         for one table up. Named, and bounded to its own declaration, so a
-         Japanese string anywhere else in sns.js still fails. */
+      /* AND ONE TAG, which is STORED DATA rather than a word this app says.
+         `DAY_TAG` is the one spelling the day's tag is written down as -- in
+         the body of every post that answers a day, and in what a search asks
+         for -- because a tag said ten ways is ten tags and the search that
+         finds them is a text search (www/sns.js § THE TAG). What a READER
+         sees is `t('day.tag')`, which is in all ten language files and is
+         asked for during the walk, so the interface half is held the ordinary
+         way; this line is about the mark those ten are swapped for, and a
+         mark is data, the same argument IPA_IN is named for one table up.
+         Named, and bounded to its own declaration, so a Japanese string
+         anywhere else in sns.js still fails. */
       if (rel === 'sns.js' && /^var DAY_TAG\s*=/.test(l)) return;
       if (FOREIGN.test(l) && !inTable) {
         fail('source', where + ' carries text in another script: ' + raw[i].trim().slice(0, 70));
