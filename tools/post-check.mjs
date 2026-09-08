@@ -1375,24 +1375,72 @@ const R = await pg.evaluate(async () => {
     const theirs = { id: 902, mine: false, hd: 'shiro', who: 'Shiro', ln: 'a' };
     const older  = { id: 903, mine: false, hd: '',      who: 'Old',   ln: 'a' };
 
-    const rMine = postRow(mine), rTheirs = postRow(theirs), rOld = postRow(older);
+    /* PRESSED, AND WHERE IT LANDS IS THE ANSWER -- not what name the button
+       carries. It asked for `data-do="go"` with `["profile", h]` written out,
+       and that stopped being true the day the profile started waiting for its
+       answers before it opened (www/me.js § profileOpen, OWNER 2026-09-07
+       「全部読み込んでから開く」): the door is a different name now, and the
+       press does not arrive until the server has spoken. A check spelling out
+       the markup fails on a rename and says the face is not a door, which is
+       what it did.
 
-    /* Built with DO() rather than grepped for a word: the handle is on the row
-       in three other places, so 'shiro' appearing somewhere is not the face
-       being a door -- which is exactly how the first version of this passed
-       with the bug in. */
-    const doorTo = (h) => '<button class="pav pavb"' + DO('go', ['profile', h]);
-    if (rTheirs.indexOf(doorTo('shiro')) < 0)
+       So the row goes into #app and the face is clicked for real, act.js's one
+       listener decides where it goes, and the answers are let back afterwards.
+       That is the same shape § 18 below already had. */
+    const wasNav11e = NAV.slice(), wasRoute11e = window.route;
+    const wasGot11e = PULL_GOT, wasWho11e = WHO_HAVE, wasAsk11e = WHO_ASKED;
+    const realS1 = netSend1, realS = netSend, realG = netGet;
+    const app11e = document.getElementById('app');
+    const held11e = [];
+    netSend1 = function (m, p2, b, t, ok) {
+      p2 = String(p2);
+      held11e.push(function () {
+        ok(p2.indexOf('/rest/v1/profile_seen?') === 0
+             ? [{ id:'u9', handle:'shiro', display:'Shiro', av:null, fo:0, fr:0 }]
+             : [], 200);
+      });
+    };
+    netSend = function (m, p2, b, t, ok, bad, up) { netSend1(m, p2, b, t, ok, bad, up, true); };
+    netGet = function (p2, ok, bad) { netSend('GET', p2, null, '', ok, bad); };
+
+    const pressFace = (post) => {
+      PULL_GOT = { mine:1, mylangs:1, myposts:1 };
+      WHO_HAVE = {}; WHO_ASKED = {};
+      window.route = 'feed'; NAV = [{ r:'feed' }];
+      app11e.innerHTML = postRow(post);
+      const f = app11e.querySelector('button.pav.pavb');
+      if (!f) return { face: false };
+      held11e.length = 0;
+      f.click();
+      for (let n = 0; n < 20 && here().r !== 'profile' && held11e.length; n++)
+        held11e.shift()();
+      return { face: true, r: here().r, a: String(here().a || '') };
+    };
+
+    const gTheirs = pressFace(theirs);
+    if (!gTheirs.face || gTheirs.r !== 'profile' || gTheirs.a !== 'shiro')
       fails.push('somebody else’s face on the timeline is not a way to them: ' +
-                 'the only place a person can be opened from is the search');
-    if (rMine.indexOf('<button class="pav pavb"' + DO('goTab', ['profile'])) < 0)
-      fails.push('your own face on the timeline does not go to your profile');
-    if (rMine.indexOf(doorTo('me')) >= 0)
-      fails.push('your own face is opened as if you were somebody else');
+                 'pressing it lands on ' +
+                 (gTheirs.face ? gTheirs.r + ':' + gTheirs.a : 'no face at all') +
+                 '. The only place a person can be opened from is the search');
+    const gMine = pressFace(mine);
+    if (!gMine.face || gMine.r !== 'profile' || gMine.a)
+      fails.push('your own face on the timeline does not go to your profile: ' +
+                 'pressing it lands on ' +
+                 (gMine.face ? gMine.r + ':' + gMine.a : 'no face at all') +
+                 (gMine.a ? '. Your own face is opened as if you were ' +
+                            'somebody else' : ''));
+
+    window.route = 'feed'; NAV = [{ r:'feed' }];
+    const rOld = postRow(older);
     if (rOld.indexOf('<button class="pav') >= 0)
       fails.push('a post with no handle on it draws a face you can press, and ' +
                  'it opens nobody. Everything written before posts carried a ' +
                  'handle is in that state');
+
+    netSend1 = realS1; netSend = realS; netGet = realG;
+    PULL_GOT = wasGot11e; WHO_HAVE = wasWho11e; WHO_ASKED = wasAsk11e;
+    NAV = wasNav11e; window.route = wasRoute11e;
   }
 
   /* ---- 11f. backing out asks about anything somebody typed ------------
@@ -2160,12 +2208,37 @@ const R = await pg.evaluate(async () => {
       { kind:'follow', at: Date.now() - 2000, hd:'veth', who:'Veth', av:null,
         id:'', n:1, more:[] }];
     PULL_GOT.notif = 1;
+    /* AND THE ANSWERS ARE LET BACK AFTER THE PRESS. Both doors off this row
+       ask who these people are before they open anything (www/me.js §
+       whoNeed, § notfoOpen -- OWNER 2026-09-07 「全部読み込んでから開く」),
+       so a press with nothing answering lands nowhere and the row reads as a
+       door that does not work. It is not: it is a door that is waiting. */
+    const wasWho18 = WHO_HAVE, wasAsk18 = WHO_ASKED;
+    const realS1_18 = netSend1, realS_18 = netSend, realG_18 = netGet;
+    const held18 = [];
+    netSend1 = function (m, p2, b, t, ok) {
+      p2 = String(p2);
+      held18.push(function () {
+        ok(p2.indexOf('/rest/v1/profile_seen?') === 0
+             ? [{ id:'u1', handle:'jj',      display:'jj',      av:null, fo:0, fr:0 },
+                { id:'u2', handle:'linguaa', display:'linguaa', av:null, fo:0, fr:0 },
+                { id:'u3', handle:'veth',    display:'Veth',    av:null, fo:0, fr:0 }]
+             : [], 200);
+      });
+    };
+    netSend = function (m, p2, b, t, ok, bad, up) { netSend1(m, p2, b, t, ok, bad, up, true); };
+    netGet = function (p2, ok, bad) { netSend('GET', p2, null, '', ok, bad); };
     const pressRow = (i) => {
+      WHO_HAVE = {}; WHO_ASKED = {};
+      PULL_GOT.mine = 1; PULL_GOT.mylangs = 1; PULL_GOT.myposts = 1;
       window.route = 'notif'; NAV = [{ r:'notif' }];
       app.innerHTML = vNotif();
       const rows = app.querySelectorAll('.ntf');
       if (rows.length !== 2) return { rows: rows.length };
+      held18.length = 0;
       rows[i].click();
+      for (let n = 0; n < 20 && here().r === 'notif' && held18.length; n++)
+        held18.shift()();
       return { rows: rows.length, r: here().r, a: String(here().a || '') };
     };
 
@@ -2202,6 +2275,8 @@ const R = await pg.evaluate(async () => {
                  ' and not to that person. A list of one is a screen you have ' +
                  'to press twice to reach somebody');
 
+    netSend1 = realS1_18; netSend = realS_18; netGet = realG_18;
+    WHO_HAVE = wasWho18; WHO_ASKED = wasAsk18;
     NOTES_HAVE = wasNotes; window.route = wasRoute; NAV = wasNav;
   }
 
