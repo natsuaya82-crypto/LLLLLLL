@@ -364,6 +364,17 @@ export function seed(){
      `feed` is not in here: SNS_GOT is the timeline's own record, per tab, and
      the walks that want an answered timeline set that themselves. */
   PULL_GOT = { saved:1, recent:1, drafts:1, notif:1, mine:1, day:1, blocks:1 };
+  /* AND THE PEOPLE THIS ACCOUNT FOLLOWS ARE KNOWN, because the door onto a
+     list of people gets them all in one request before the screen opens
+     (www/me.js § followsOpen, whoNeed). A walk renders a ROUTE, not a door,
+     so without this the follow list is drawn in a state the app can no
+     longer be in -- a row with '?' where a name goes, waiting for an answer
+     that the screen is not allowed to be waiting for.
+     「ユーザーもアイコンとか？になってあとで表示されるけど」 OWNER 2026-09-07. */
+  WHO_HAVE.iri  = { who:'Iri',  hd:'iri',  av:{ch:'\u0416'}, lname:'Vethi',
+                    bio:'', fo:2, fr:3, out:false };
+  WHO_HAVE.veth = { who:'Veth', hd:'veth', av:{ch:'\u0424'}, lname:'Vethi',
+                    bio:'', fo:1, fr:1, out:false };
 }
 
 /* The steps of the onboarding that have a second face: the writing systems to
@@ -938,12 +949,22 @@ export function halfDone(){
         const h = vThread(); POSTS.pop(); delete mine.sid; return h; }],
     /* YOUR OWN ROW, on somebody else's followers list, on a phone holding no
        post of yours to take a name off. 「ここも？になるの謎だし」 */
+    /* AND EVERYBODY ON IT IS KNOWN, because followsOpen() (www/me.js) got
+       the people in one request before this screen opened -- a row waiting
+       for its own name is not a state the app can be in any more
+       (「？になってあとで表示される」 OWNER 2026-09-07). Seeding WHO_HAVE is
+       what stands in for that door here; without it the picture shows a '?'
+       nobody would ever see. */
     ['your own row on somebody else\u2019s followers list', () => {
         const was = POSTS.slice(); POSTS.length = 0;
         FOL_HAVE['ers:iri'] = [meHandle(), 'veth']; FOL_ASKED['ers:iri'] = 1;
+        const hadVeth = WHO_HAVE['veth'];
+        WHO_HAVE['veth'] = { who:'Veth', hd:'veth', av:{ch:'\u0416'},
+                             lname:'Vethi', bio:'', fo:1, fr:1, out:false };
         window.route='follows'; NAV=[{r:'follows', a:'ers:iri'}];
         const h = vFollows();
         delete FOL_HAVE['ers:iri']; delete FOL_ASKED['ers:iri'];
+        if (hadVeth) WHO_HAVE['veth'] = hadVeth; else delete WHO_HAVE['veth'];
         POSTS.push.apply(POSTS, was); return h; }],
     /* A PROFILE BEFORE THE COUNTS HAVE ARRIVED IS NOT A STATE ANY MORE.
        「プロフィールは、出す物を全部読み込んでから開く」 OWNER 2026-09-07 --

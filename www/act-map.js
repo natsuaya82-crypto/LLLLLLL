@@ -103,6 +103,8 @@ act('popNo', popNo);
 act('keepPress', keepPress);
 act('goTab', goTab);
 act('profileOpen', profileOpen);
+act('followsOpen', followsOpen);
+act('notfoOpen', notfoOpen);
 act('kbAddLay', kbAddLay);
 act('kbDropLay', kbDropLay);
 act('kbDelKey', kbDelKey);

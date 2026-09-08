@@ -29,14 +29,16 @@
 
 ## 触ったもの
 
-- `www/me.js` ── `profileOpen`・`profileReady`・`whoWait`、前の値を見せる道の削除
+- `www/me.js` ── `profileOpen`・`profileReady`・`whoWait`・`whoNeed`・`followsOpen`、
+  前の値を見せる道と `whoPull` の削除
 - `www/sns.js` ── `PULL_ON` の表（`mylangs`・`myposts`）、`pullWait`、`pullForget`
 - `www/home.js` ── `vProfile`（くるくるの道と `whoPull` の削除）
 - `www/post.js`・`www/shell.js` ── プロフィールへの入口をその一か所に向けた
 - `www/boot.js`・`www/onboard.js` ── 起動とサインインもその一か所を通る
-- `www/net.js` ── `netLangsDown()` が答えでないものを行として読む一行だけ
+- `www/net.js` ── `netLangsDown()` の一行、`netWhoMany()`／`netWhoRow()`
+- `www/sns.js` ── `notfoOpen`、通知の行の入口
 - `www/act-map.js`
-- `tools/acct-check.mjs`（59・60）・`tools/fixture.mjs`
+- `tools/acct-check.mjs`（59・60、30c は扉から）・`tools/tl-check.mjs`・`tools/fixture.mjs`
 - `docs/CHANGELOG.md`
 
 ## 触らないもの

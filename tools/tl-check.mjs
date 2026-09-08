@@ -358,6 +358,91 @@ const r = await pg.evaluate(({ s }) => {
   PULL_GOT.mine = 1; PULL_OUT.mine = 0;
   ME.fr = heldPair.fr; ME.fo = heldPair.fo;
 
+  /* ---- 8: NOBODY IS A '?' THAT BECOMES A NAME ---------------------------
+     「ユーザーもアイコンとか？になってあとで表示されるけど、なんで？毎回1
+     読み込みだろ？」 OWNER 2026-09-07, on a phone.
+
+     Two halves and they are two. postFace() draws the first letter of
+     whoever wrote a post and falls through to '?' when it has no name at
+     all -- so 「there is a '?' on the first drawing」 is the question, asked
+     of what the screen actually rendered. And 「毎回1読み込み」 is the
+     other: a list of people used to be one request PER ROW, put from inside
+     the render, so twenty people were twenty requests and twenty '?' that
+     became names one at a time.
+
+     THE FEED AND THE THREAD WERE ALREADY RIGHT and are held so they stay
+     that way: a post carries its writer (rule 8), so those two screens ask
+     about nobody at all. The two that were wrong are the lists of people --
+     the follow lists, and the people on a grouped notice -- and both go
+     through a door that gets the lot in ONE request before the screen opens
+     (www/me.js § whoNeed, followsOpen, notfoOpen).
+
+     The requests are counted at the WIRE, not at netWhoMany(): what is
+     claimed is how many times this phone speaks, and a check that counted
+     calls to the function under test would be counting the thing it is
+     asking about. The language names are the second request and are one for
+     the lot of them too -- so a screenful of people is two, whatever the
+     screenful is. */
+  {
+    const wire = [];
+    const held = [];
+    const realS1 = netSend1, realS = netSend, realG = netGet;
+    netSend1 = function (m, p, b, t, ok) {
+      p = String(p); wire.push(p);
+      held.push(function () {
+        ok(p.indexOf('/rest/v1/profile_seen?') === 0
+             ? [{ id:'u1', handle:'kai', display:'Kai', av:null, fo:1, fr:2 },
+                { id:'u2', handle:'noa', display:'Noa', av:null, fo:0, fr:0 }]
+             : [], 200);
+      });
+    };
+    netSend = function (m, p, b, t, ok, bad, up) { netSend1(m, p, b, t, ok, bad, up, true); };
+    netGet = function (p, ok, bad) { netSend('GET', p, null, '', ok, bad); };
+
+    const qOf = (h) => (String(h).match(/class="bch">\?/g) || []).length;
+    const app = document.getElementById('app');
+
+    /* the feed, drawn as it stands: a post carries its writer */
+    NAV = [{ r:'feed' }]; window.route = 'feed';
+    wire.length = 0; render();
+    out.feedQ = qOf(app.innerHTML);
+    out.feedReq = wire.length;
+
+    /* and a thread */
+    NAV = [{ r:'thread', a:'p1' }]; window.route = 'thread';
+    wire.length = 0; render();
+    out.thrQ = qOf(app.innerHTML);
+    out.thrReq = wire.length;
+
+    /* a list of people, entered the way a thumb enters it */
+    const walk = (name, fn) => {
+      WHO_HAVE = {}; WHO_ASKED = {};
+      NAV = [{ r:'feed' }]; window.route = 'feed'; render();
+      const wasFeed = app.innerHTML;
+      wire.length = 0; held.length = 0;
+      let first = null;
+      const realRender = window.render;
+      window.render = function () {
+        const rr = realRender.apply(this, arguments);
+        if (first === null && here().r !== 'feed') first = app.innerHTML;
+        return rr;
+      };
+      fn();
+      out[name + 'Early'] = app.innerHTML !== wasFeed;
+      for (let n = 0; n < 20 && first === null && held.length; n++) held.shift()();
+      window.render = realRender;
+      out[name + 'Q'] = first === null ? -1 : qOf(first);
+      out[name + 'Req'] = wire.length;
+    };
+    ME.fo = ['kai', 'noa'];
+    walk('fol', () => followsOpen('ing'));
+    walk('ntf', () => notfoOpen('kai,noa'));
+    ME.fo = heldPair.fo;
+    WHO_HAVE = {}; WHO_ASKED = {};
+    netSend1 = realS1; netSend = realS; netGet = realG;
+    NAV = [{ r:'feed' }]; window.route = 'feed';
+  }
+
   return out;
 }, { s: seed.toString() });
 
@@ -509,6 +594,30 @@ console.log('「フォローされています」: on the card of somebody who d
             'no screen asks on the way in');
 console.log('either half of the one follow ask falling over puts up ' +
             '「接続できません」, and 再接続 goes back for it');
+if (r.feedQ || r.thrQ)
+  say('a post is drawn with 「?」 where its writer\u2019s name goes (feed ' +
+      r.feedQ + ', thread ' + r.thrQ + '). A post carries its writer (rule 8) ' +
+      'and there is nothing to wait for.');
+if (r.feedReq || r.thrReq)
+  say('the feed or the thread asks the server about the people on it (' +
+      r.feedReq + ' + ' + r.thrReq + ' request(s)). It has them already.');
+if (r.folEarly || r.ntfEarly)
+  say('a list of people opened before the people were in. 「全部読み込んで' +
+      'から開く」 OWNER 2026-09-07.');
+if (r.folQ !== 0 || r.ntfQ !== 0)
+  say('the first drawing of a list of people carries 「?」 faces (follows ' +
+      r.folQ + ', the people on a notice ' + r.ntfQ + '), which become names ' +
+      'a moment later. 「？になってあとで表示される」 OWNER 2026-09-07.');
+if (r.folReq !== 2 || r.ntfReq !== 2)
+  say('a list of two people costs ' + r.folReq + ' and ' + r.ntfReq +
+      ' request(s). It is two whoever is on it — the people, and their ' +
+      'languages\u2019 names — and never one per row. 「毎回1読み込みだろ？」');
+
+console.log('nobody is a 「?」 that becomes a name: a post carries its writer ' +
+            '(feed and thread ask about nobody), and a list of people is ' +
+            'asked for in one request before the screen opens (' +
+            r.folReq + ' at the wire for two people, ' + r.ntfReq +
+            ' for the people on a notice)');
 console.log('the pull answers on: ' + r.pullRoutes + ' — a thread asks about ' +
             'every post drawn on it, a person’s page for what they wrote, ' +
             'and a list that is asked once a session is asked again');
