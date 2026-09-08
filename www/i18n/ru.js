@@ -569,8 +569,6 @@ defLang('ru', (function(){
       "stg.rules.ph"       : "　",
       "stg.ex"             : "Строки",
       "g2.words"           : "Слова",
-      "g2.forms"           : "Формы",
-      "g2.der"             : "Словообразование",
       "stg.ex.lb.ph"       : "",
       "stg.neg.not"        : "не",
       "stg.ask.why"        : "почему",

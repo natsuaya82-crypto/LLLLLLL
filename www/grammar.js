@@ -1367,32 +1367,6 @@ function g2Adp(){
    to be written, which is not decided here and is not papered over.
    docs/BACKLOG.md carries what is missing, with what each would need. */
 
-/* §14 Language Engine Status. 「ユーザーが Lingua で言語を作り込むほど、
-   Words + Morphemes + Derivations + Inflections + ... が蓄積され、その結果
-   Parser / Generator / Translation の精度が上がる」(§24)
-
-   So the last block of the page is what this language HAS. It is a count and
-   not a report: a number is a state, and the rest of the page is where each
-   of them can be seen one at a time.
-
-   Three rows and not the seven §14 draws. `Morphemes` is always nought --
-   nothing in this app writes one, because a rule carries its own letters --
-   and a row that can only ever say nought is a slot nobody can fill, which is
-   the shape this page has spent all day taking OUT. `Grammar rules` counts
-   what this file builds for the engine rather than anything somebody wrote.
-   Parser and generator coverage are drawn in §14 as `...` and are not a
-   number anybody has defined yet. Those four arrive when they can be true. */
-function g2Stat(lab, n){
-  return '<div class="gside"><span class="gsl">'+esc(lab)+'</span>'+
-    '<span class="gsw">'+esc(String(n))+'</span></div>';
-}
-function g2Status(){
-  var m=gModel([]);
-  return g2Stat(t('g2.words'), WORDS.length)+
-    g2Stat(t('g2.forms'), m.inflections.length)+
-    g2Stat(t('g2.der'), m.derivations.length);
-}
-
 /* ---- what a chapter can still be told ----------------------------------
    「新しい規則は＋とかで作ればいいやん」 OWNER 2026-08-27.
 
@@ -1734,7 +1708,6 @@ function g2Chaps(){
   }
   out.push({id:'adj', body:g2Adj,    nm:posLabel('adj'), pos:'adj'});
   out.push({id:'adp', body:g2Adp,    nm:t('stg.where.t')});
-  out.push({id:'st',  body:g2Status, nm:t('wld.about')});
   return out;
 }
 function g2ChapBy(id){

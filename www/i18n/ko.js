@@ -744,8 +744,6 @@ defLang('ko', (function(){
       "stg.rules.ph"     : "　",
       "stg.ex"           : "예문",
       "g2.words"         : "단어",
-      "g2.forms"         : "어형",
-      "g2.der"           : "조어",
       "stg.ex.lb.ph"     : "",
       "stg.neg.not"      : "아니다",
       "stg.ask.why"      : "왜",

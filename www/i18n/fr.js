@@ -613,8 +613,6 @@ defLang('fr', (function(){
       "stg.rules.ph"     : "　",
       "stg.ex"           : "Phrases",
       "g2.words"         : "Mots",
-      "g2.forms"         : "Formes",
-      "g2.der"           : "Formation des mots",
       "stg.ex.lb.ph"     : "",
       "stg.neg.not"      : "ne pas",
       "stg.ask.why"      : "pourquoi",
