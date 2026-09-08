@@ -10,10 +10,13 @@
 ## 触るファイル
 
 - `www/post.js`
-- `www/index.html`（投稿画面の CSS のみ）
+- `www/shell.js`
+- `www/act-map.js`
+- `www/index.html`（投稿画面と戻るの問いの CSS のみ）
 - `www/i18n/*.js`
 - `tools/post-check.mjs`
 - `tools/fixture.mjs`
+- `tools/box-baseline.txt`
 - `shots/`
 - `docs/CHANGELOG.md`
 - `docs/BACKLOG.md`
@@ -22,6 +25,13 @@
 
 上に無いものすべて。ほかの枝のファイル、`supabase/`、`ios/`、
 `tools/gate.mjs`、ほかの検査。
+
+## 二つ目：戻るの問いを `popAsk` に揃える
+
+「投稿の時の下書き入れる時のポップを合わせて欲しい」OWNER 2026-09-08。
+投稿画面で戻ると出る「下書きとして保存しますか？」が、アプリの他の問い
+（`popAsk()`、画面中央の `.pop`）と別の形をしています。一つにします ──
+`backQHTML()`・`.bkq*` の CSS・`BACKQ`・`backStay` は削除。別のコミット。
 
 ## 触らないと決めたこと
 
