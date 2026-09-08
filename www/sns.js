@@ -1514,10 +1514,21 @@ function atHTML(hd){
   if(!h) return '';
   return '<button class="ptag"'+DO('snsAtGo', [h])+'>@'+esc(h)+'</button>';
 }
-/* And pressing one stands you on that person's page. The route takes a
-   HANDLE -- pfWho() reads here().a and pfList() matches p.hd against it -- so
-   what travels is the name, not an id. */
-function snsAtGo(hd){ go('profile', netHandleOf(hd)); }
+/* And pressing one stands you on that person's page -- THROUGH THE ONE DOOR
+   ONTO A PROFILE, which is www/me.js § profileOpen.
+
+   It was `go('profile', ...)`, which is a second road onto a screen that has
+   one: the profile is not drawn until everything on it has answered (OWNER
+   2026-09-07 「プロフィールは、出す物を全部読み込んでから開く」), and a road
+   that walks straight onto the route arrives at a page with none of it --
+   no counts, no 非公開, and a '?' where the person's face goes. Every other
+   door in the app was moved that day; this one was written the same day, on
+   another branch, and the two met at the merge. Nothing threw: the screen
+   renders, and it renders wrong, which is why it is said here.
+
+   The route takes a HANDLE -- pfWho() reads here().a and pfList() matches
+   p.hd against it -- so what travels is the name, not an id. */
+function snsAtGo(hd){ profileOpen(netHandleOf(hd)); }
 function tagHTML(s){
   var x=String(s||''), out='', at=0, m, tg, ah;
   TAG_RE.lastIndex=0; AT_RE.lastIndex=0;
