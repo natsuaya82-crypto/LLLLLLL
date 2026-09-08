@@ -553,8 +553,6 @@ defLang('de', (function(){
       "stg.rules.ph"     : "　",
       "stg.ex"           : "Sätze",
       "g2.words"         : "Wörter",
-      "g2.forms"         : "Formen",
-      "g2.der"           : "Wortbildung",
       "stg.ex.lb.ph"     : "",
       "stg.neg.not"      : "nicht",
       "stg.ask.why"      : "warum",

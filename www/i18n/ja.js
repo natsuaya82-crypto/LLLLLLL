@@ -481,8 +481,6 @@ defLang('ja', (function(){
       'stg.rules.ph'     : '　',
       'stg.ex'           : '例文',
       'g2.words'         : '単語',
-      'g2.forms'         : '語形',
-      'g2.der'           : '語形成',
       'stg.ex.lb.ph'     : '肯定 / 否定',
       'stg.neg.not'      : 'ない',
       'stg.ask.why'      : 'なぜ',

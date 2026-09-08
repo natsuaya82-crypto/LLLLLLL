@@ -572,8 +572,6 @@ defLang('pt', (function(){
       "stg.rules.ph"     : "　",
       "stg.ex"           : "Frases",
       "g2.words"         : "Palavras",
-      "g2.forms"         : "Formas",
-      "g2.der"           : "Formação de palavras",
       "stg.ex.lb.ph"     : "",
       "stg.neg.not"      : "não",
       "stg.ask.why"      : "por que",

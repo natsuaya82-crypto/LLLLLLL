@@ -573,8 +573,6 @@ defLang('zh', (function(){
       "stg.rules.ph"     : "　",
       "stg.ex"           : "例句",
       "g2.words"         : "单词",
-      "g2.forms"         : "词形",
-      "g2.der"           : "构词",
       "stg.ex.lb.ph"     : "",
       "stg.neg.not"      : "不",
       "stg.ask.why"      : "为什么",

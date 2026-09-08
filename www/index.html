@@ -3218,11 +3218,10 @@ button.spbig{display:block;width:100%;background:none;border:0;padding:0;font:in
    script shows the half that exists instead of nothing at all. */
 html[data-script="on"] .hw,
 html[data-script="on"] .psw,
-html[data-script="on"] .whw,
-html[data-script="on"] .gsw{font-family:var(--face-script);letter-spacing:0}
-/* The declaration is on .gsw because .gsw is the last of them, and it went
-   missing once for exactly that reason: the two selectors under it -- .seq
-   and .st-seq -- were dropped when the screen that wore them was deleted, and
+html[data-script="on"] .whw{font-family:var(--face-script);letter-spacing:0}
+/* The declaration is on .whw because .whw is the last of them, and it went
+   missing once for exactly that reason: the selectors under it were dropped
+   when the screen that wore them was deleted, and
    the block came away with them. What was left was four selectors ending in a
    comma, which a browser reads as the head of the NEXT rule: every headword,
    every proposed word and every word under a grammar stage was set in
@@ -3658,16 +3657,11 @@ textarea.ntbody.grow{min-height:0;height:auto;overflow:hidden;resize:none}
 .gorder{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:12px 0 2px}
 .gor{font-size:.86rem;color:var(--tx)}
 .gsep{display:flex;align-items:center;color:var(--gold);opacity:.8}
-/* .gdemo, .gsi, .gsg and .gsp went with the demonstration they dressed:
-   gSide() and gPosDemo() in www/grammar.js were reachable only from the
-   grammar STAGES, and those stages are gone (「重複はいらない」 OWNER
-   2026-09-06). What still wears .gside is g2Stat() -- the count of what this
-   language has, at the foot of この言語について -- and it wears .gsl and .gsw
-   and nothing else, so nothing on any screen looks different. */
-.gside{display:flex;align-items:baseline;gap:10px;padding:11px 14px;border-top:1px solid var(--line2);flex-wrap:wrap}
-.gside:first-child{border-top:0}
-.gside .gsl{flex:0 0 auto;font-size:.82rem;letter-spacing:.13em;text-transform:uppercase;color:var(--txm);min-width:50px}
-.gside .gsw{font-family:var(--face-caps);font-size:1.04rem;color:var(--tx);word-break:break-word}
+/* .gdemo, .gsi, .gsg, .gsp, .gside, .gsl and .gsw went with what they
+   dressed: gSide() and gPosDemo() went with the grammar STAGES
+   (「重複はいらない」 OWNER 2026-09-06), and g2Stat() went with この言語について
+   at the foot of the grammar list (「この言語については非表示にしてよ 文法
+   ページ」 OWNER 2026-09-08). Nothing wears them now. */
 
 /* ---------- nothing tappable smaller than a thumb ----------
    Apple's floor is 44px and a phone has nothing finer to point with. These

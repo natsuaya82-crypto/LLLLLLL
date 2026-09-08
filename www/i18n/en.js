@@ -469,8 +469,6 @@ defLang('en', (function(){
       'stg.rules.ph'     : '　',
       'stg.ex'           : 'Lines',
       'g2.words'         : 'Words',
-      'g2.forms'         : 'Forms',
-      'g2.der'           : 'Word formation',
       'stg.ex.lb.ph'     : '',
       'stg.neg.not'      : 'not',
       'stg.ask.why'      : 'why',
