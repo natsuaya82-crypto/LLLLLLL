@@ -2554,6 +2554,19 @@ a.set{text-decoration:none}
    is the screen and the picture is inside it, whole. */
 .pview{display:flex;align-items:center;justify-content:center;
        min-height:70vh;margin:0 -24px}
+/* 一つの投稿の写真は、横に並んだ一本の帯です ── 四枚の投稿で次の写真に
+   行けなかった（OWNER 実機 143、2026-09-08）。形は `.plrail`（プラン）と
+   同じで、新しいものではありません：横にスクロールして一枚ずつ止まる。
+   `.pview` の margin が画面の端まで出しているので、隣の一枚が覗いて
+   「もう一枚ある」ことが見えます。矢印も点も足しません。
+   枠なし・角丸なし・塗りなし。 */
+.pvrail{display:flex;width:100%;overflow-x:auto;scroll-snap-type:x mandatory;
+        -webkit-overflow-scrolling:touch;scrollbar-width:none}
+.pvrail::-webkit-scrollbar{display:none}
+/* 一枚が窓いっぱい。`flex:0 0 100%` が「一枚で一画面」で、その中で写真は
+   contain のまま ── 縦長でも横長でも、切れずに全部見えます。 */
+.pvpage{flex:0 0 100%;display:flex;align-items:center;justify-content:center;
+        scroll-snap-align:center;scroll-snap-stop:always}
 .pvimg{display:block;max-width:100%;max-height:80vh;width:auto;height:auto;
        object-fit:contain}
 /* ---------- letters placed on the photograph ----------

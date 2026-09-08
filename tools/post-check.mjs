@@ -3132,6 +3132,110 @@ const R = await pg.evaluate(async () => {
     try { closeSheet(); } catch (e) {}
   }
 
+  /* ---- 25. 写真は横に送って次へ行ける ---------------------------------
+     「フォト4枚投稿した時にフォトをスライドして次の画像にいけない」 OWNER
+     実機 143、2026-09-08。
+
+     これは投げません ── 一枚だけ描いてバーに「2/4」と出す画面は、正しく
+     描かれ、正しい数を言い、他の三枚に行けません。できている機能と見分けが
+     つかないのはそこです。
+
+     ページに訊きます：四枚の投稿の一枚目を開いて、帯に四枚あること、開いた
+     位置が一枚目であること、そして帯を二枚目まで動かすとバーが 2/4 になる
+     こと。動かすのは本物の scrollLeft で、読むのは本物の `.navc` です。 */
+  {
+    const app = document.getElementById('app');
+    const wasRoute = window.route, wasNav = NAV.slice();
+    const wasPosts = POSTS.slice();
+    const four = ['#111', '#222', '#333', '#444'].map((c) => {
+      const cv = document.createElement('canvas');
+      cv.width = 40; cv.height = 40;
+      const x = cv.getContext('2d');
+      x.fillStyle = c; x.fillRect(0, 0, 40, 40);
+      return cv.toDataURL('image/png');
+    });
+    POSTS = [{ id:'PH-1', at: Date.now(), lang: langId, lname:'Shango',
+               who:'Aya', hd:'aya', mine:true, ln:'kano', mn:'a mountain',
+               pics: four }];
+    window.route = 'photo'; NAV = [{ r:'photo', a:'PH-1:0' }];
+    render();
+    /* 写真が decode されるまで、帯には幅がありません ── そこで測ると
+       「送れない」が出て、それは画像がまだ来ていないだけです。実機では
+       来ています。 */
+    const shown = async (el) => {
+      for (let z = 0; z < 60; z++) {
+        const im = el.querySelectorAll('img');
+        let all = im.length > 0;
+        for (let y = 0; y < im.length; y++) if (!im[y].complete) all = false;
+        if (all) return true;
+        await new Promise((r) => setTimeout(r, 20));
+      }
+      return false;
+    };
+    const rail = document.getElementById('pv-rail');
+    if (rail && !(await shown(rail)))
+      fails.push('the four photographs never arrived in the rail, so nothing ' +
+                 'about sending it sideways is a test of anything');
+    if (!rail)
+      fails.push('the photograph screen has no rail on it, so a post with ' +
+                 'four pictures shows one and the other three are on no ' +
+                 'screen at all 「スライドして次の画像にいけない」');
+    else {
+      if (rail.children.length !== 4)
+        fails.push('a post with four photographs opens a rail carrying ' +
+                   rail.children.length + '. The bar says 1/4 either way, ' +
+                   'which is what made this look like a screen that worked');
+      const w = rail.clientWidth;
+      if (!w)
+        fails.push('the rail has no width, so nothing about scrolling it is ' +
+                   'a test of anything');
+      else {
+        /* 四枚が一画面ずつ、横に並んでいること。これが「送れる」の中身です
+           ── 帯の幅ではなく、どこに在るかを訊きます。 */
+        const at = [];
+        for (let z = 0; z < rail.children.length; z++)
+          at.push(rail.children[z].offsetLeft);
+        if (at.join(',') !== [0, w, w * 2, w * 3].join(','))
+          fails.push('the four photographs sit at ' + at.join(',') +
+                     ' and not one window apart (' + w + '). They are one ' +
+                     'thing you send sideways, not four screens');
+        if (rail.scrollWidth <= w)
+          fails.push('the rail is not wider than its window (' +
+                     rail.scrollWidth + ' in ' + w + '), so there is nothing ' +
+                     'to send sideways');
+        const nav = () => {
+          const c = app.querySelector('.navc');
+          return c ? c.textContent : '';
+        };
+        if (nav() !== '1/4')
+          fails.push('opening the first of four says "' + nav() + '"');
+        rail.scrollLeft = w;
+        rail.dispatchEvent(new Event('scroll'));
+        if (nav() !== '2/4')
+          fails.push('sending the rail on one picture leaves the bar saying "' +
+                     nav() + '". The number over the pictures is which one is ' +
+                     'in front of you');
+        rail.scrollLeft = w * 3;
+        rail.dispatchEvent(new Event('scroll'));
+        if (nav() !== '4/4')
+          fails.push('the last of four says "' + nav() + '"');
+      }
+      /* そして押された一枚から開く ── route が名指すのはその一枚です。 */
+      window.route = 'photo'; NAV = [{ r:'photo', a:'PH-1:2' }];
+      render();
+      const r3 = document.getElementById('pv-rail');
+      const w3 = r3 ? r3.clientWidth : 0;
+      if (r3 && w3 && Math.round(r3.scrollLeft / w3) !== 2)
+        fails.push('pressing the third photograph opened the rail on number ' +
+                   (Math.round(r3.scrollLeft / w3) + 1) +
+                   '. What was pressed is what you are looking at');
+    }
+
+    POSTS = wasPosts; savePosts();
+    window.route = wasRoute; NAV = wasNav;
+    try { closeSheet(); } catch (e) {}
+  }
+
   return { fails, mid: (nowLight * 100).toFixed(1), corner: (wasLight * 100).toFixed(1),
            bytes: Math.round(String(out[0] || '').length / 1024),
            thumb: Math.round(small.length / 1024), full: Math.round(big.length / 1024),

@@ -8,6 +8,18 @@ refactor, a feature and a rename never arrive in the same diff.
 The order is the order to do them in.
 
 
+## 写真の帯と、左端からの戻るスワイプが喧嘩しないか測っていません（2026-09-08）
+
+一つの投稿の写真は横に並んだ帯になりました（`.pvrail`）。この app には左端から
+引くと前の画面に戻るジェスチャがあり（`www/shell.js` の slide*/pull*、
+`www/sns.js` の pull）、帯の横スクロールと同じ方向です。
+
+**測っていません。**headless で `touch` を出して、帯の中の横送りが戻るに
+取られないこと・戻るが帯に取られないことを見るところまでは行っていません。
+`press-check` の左端スワイプの検査が形の手本になります。
+
+実機でしか分からない部分もあります（`docs/TESTING.md`）。
+
 ## お題の札は、検索の箱では綴りのまま ── 保存の話なので決まっていません（2026-09-08）
 
 投稿の本文と投稿画面の欄では、札は読む人の表示言語で出ます（`dayTagShow`）。

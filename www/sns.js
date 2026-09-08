@@ -1889,16 +1889,71 @@ function vThread(){
    carries up to four and "the photograph" is not a thing a post has. A post
    that is gone, or an index it does not have, is the same answer the rest of
    the app gives: the thing you came back for is gone. */
+/* A POST'S PHOTOGRAPHS ARE ONE THING YOU SWIPE THROUGH, not four screens.
+   「フォト4枚投稿した時にフォトをスライドして次の画像にいけない」 OWNER
+   実機 143, 2026-09-08.
+
+   It drew ONE picture -- the nth -- and put 「2/4」 in the bar over it, so the
+   bar said there were four and nothing on the screen could reach the other
+   three. Nothing threw and the count was right: it was a feature that had
+   not been built, and it looked exactly like one that had.
+
+   All of them are laid out side by side and the finger does the rest. It is
+   `.plrail`'s shape (www/index.html § .plrail, the plans) and not a new one:
+   a row that scrolls sideways with a snap on each page. Nothing is animated
+   by hand, nothing counts pixels, and there are no arrows -- a phone already
+   knows how to do this and the whole of the fix is not standing in its way.
+
+   The route still names ONE picture (`photo:<pid>:<n>`), because that is
+   what was pressed and it is where the rail is put on arrival (pvMount).
+   Going back is unchanged. */
 function vPhoto(){
   var a=String(here().a||''), i=a.indexOf(':'),
       p=postById(i<0? a : a.slice(0, i)),
       n=parseInt(i<0? '0' : a.slice(i+1), 10)||0,
-      pics=postPics(p);
+      pics=postPics(p), out='', k;
   if(!p || !pics[n]) return viewGone();
+  for(k=0;k<pics.length;k++)
+    out+='<div class="pvpage"><img class="pvimg" src="'+esc(pics[k])+'" alt=""></div>';
   return '<div class="view">'+navTop(pics.length>1? String(n+1)+'/'+pics.length : '')+
     '<div class="body">'+
-      '<div class="pview"><img class="pvimg" src="'+esc(pics[n])+'" alt=""></div>'+
+      '<div class="pview"><div class="pvrail" id="pv-rail" data-at="'+n+'">'+
+        out+'</div></div>'+
     '</div></div>';
+}
+/* Where the rail starts, and what the bar says while it moves.
+
+   Both are things no markup can say, so they are done from renderMount()
+   beside every other canvas and measurement on this app's screens
+   (www/glyph.js § renderMount). The listener is added here rather than
+   written into the markup, because JavaScript in markup is banned (rule 3)
+   -- and `scroll` does not bubble, so the one delegated listener in
+   www/act.js cannot carry it either.
+
+   The bar's count is patched rather than re-rendered: rebuilding the screen
+   under a finger that is mid-swipe takes the swipe with it. `.navc` is the
+   span navTop() puts a count in and it is asked of the page, so nothing here
+   restates what that bar is made of. */
+function pvMount(){
+  var r=document.getElementById('pv-rail'), n, w;
+  if(!r) return;
+  n=parseInt(r.getAttribute('data-at'), 10)||0;
+  w=r.clientWidth;
+  if(w) r.scrollLeft=n*w;
+  r.addEventListener('scroll', pvScroll);
+}
+function pvScroll(e){
+  var r=e && e.currentTarget, c=document.querySelector('.navc'), w, at;
+  if(!r || !c) return;
+  w=r.clientWidth;
+  if(!w) return;
+  /* Which page is under the middle of the window, so the number turns over
+     when the next picture is the one being looked at rather than when its
+     first pixel arrives. */
+  at=Math.round(r.scrollLeft/w);
+  if(at<0) at=0;
+  if(at>=r.children.length) at=r.children.length-1;
+  c.textContent=String(at+1)+'/'+r.children.length;
 }
 /* ---- searching ---------------------------------------------------------
    Posts and people, not your own language -- THAT search is in the build tab,
