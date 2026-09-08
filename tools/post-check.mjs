@@ -42,6 +42,12 @@
         what the line MEANS, then everything the post carries -- the
         photographs and the voice. 投稿 / 翻訳 / そのた
 
+    22  the line saying whom a reply answers stays HORIZONTAL in a language
+        written downward. What runs down the page is what somebody wrote
+    23  a post whose line BEGINS with @handle is a post addressed to that
+        person -- said on the post at the moment of writing, with the handle
+        drawn over it and no longer in the line
+
     21  the @handle over a reply is a thing you PRESS, and it stands you on
         that person's page. The @ in a body goes through the same one place
 
@@ -2425,6 +2431,130 @@ const R = await pg.evaluate(async () => {
     try { closeSheet(); } catch (e) {}
   }
 
+  /* ---- 22. 「@〇〇 への返信」の行は、縦書きの言語でも横のまま ----------
+     「そこは縦書きでも縦書きにしないでね」 OWNER 2026-09-07。縦になるのは
+     本文の一行だけ。
+
+     今はもうそうなっている（dirClass() が付くのは `.pline` と composer の欄
+     だけ）。それでも訊くのは、これが縦になる直し方がいくらでもあるから ──
+     行に dirClass() を付ける、投稿の外側に付ける、どちらも一行で書けて、
+     どちらも赤くならずに通ってしまう。
+
+     ページに訊きます：投稿を縦書きにして描き、getComputedStyle で本文の一行
+     と、その上の行と、その中のボタンを測る。 */
+  {
+    const app = document.getElementById('app');
+    const wasRoute = window.route, wasNav = NAV.slice(), wasPlan = SET.plan;
+    const wasDirs = POSTS.map(p => p.dir);
+    const reply = POSTS.filter(p => p.to && postToWho(p))[0];
+    if (!reply)
+      fails.push('the fixture has no reply, so nothing about the line over ' +
+                 'one is a test of anything');
+    else {
+      SET.plan = 'pro';
+      POSTS.forEach(p => { p.dir = 'ttb-rl'; });
+      window.route = 'thread'; NAV = [{ r: 'feed' }, { r: 'thread', a: reply.id }];
+      render();
+      const wm = (e) => e ? String(getComputedStyle(e).writingMode || '') : '';
+      const line = app.querySelector('.pline'), to = app.querySelector('.pto');
+      if (wm(line).indexOf('vertical') !== 0)
+        fails.push('a post written downward is drawn ' + wm(line) +
+                   ', so nothing below this is a test of anything');
+      if (!to)
+        fails.push('a reply in a thread does not say whom it answers');
+      else {
+        if (wm(to).indexOf('vertical') === 0)
+          fails.push('the line saying whom a reply answers is drawn ' + wm(to) +
+                     ' when the language is written downward. What runs down ' +
+                     'the page is what somebody WROTE; this is a label the app ' +
+                     'put on the post');
+        const b = to.querySelector('button');
+        if (b && wm(b).indexOf('vertical') === 0)
+          fails.push('the @handle over a reply is drawn ' + wm(b) +
+                     ' when the language is written downward');
+      }
+    }
+    POSTS.forEach((p, i) => { p.dir = wasDirs[i]; });
+    SET.plan = wasPlan; window.route = wasRoute; NAV = wasNav;
+  }
+
+  /* ---- 23. @〇〇 で始めた投稿は、その人への投稿になる -------------------
+     「@したらもう勝手にツイートがこの形式になるようにしたい」 OWNER
+     2026-09-07。本物の pwSend() を通します。
+
+     二つ訊きます。行に「@jjj への返信」が出ること、そして本文の先頭に @jjj が
+     もう無いこと ── 同じ名前が一つの投稿に二度出るのは、この直しが半分だけ
+     効いたときの形です。
+
+     三つ目は取らない場合で、これがこの手の直しの壊れ方です：`@jjj` だけの
+     投稿から名前を取ると、本文が空の投稿が残る。 */
+  {
+    const app = document.getElementById('app');
+    const wasPW = PW, wasRoute = window.route, wasNav = NAV.slice();
+    const wasN = POSTS.length;
+
+    PW = pwBlank(); PW.ln = '@jjj kano tir'; PW.mn = 'a mountain';
+    pwSend();
+    const p = POSTS[POSTS.length - 1];
+    if (POSTS.length !== wasN + 1)
+      fails.push('a line beginning with @jjj made ' + (POSTS.length - wasN) +
+                 ' posts, so nothing below this is a test of anything');
+    else {
+      if (postToWho(p) !== 'jjj')
+        fails.push('a post written as "@jjj kano tir" says it is for "' +
+                   postToWho(p) + '" and not jjj. Naming somebody at the front ' +
+                   'is how a post is addressed to them');
+      if (String(p.ln || '') !== 'kano tir')
+        fails.push('a post written as "@jjj kano tir" kept its line as "' +
+                   p.ln + '". The name is drawn over the post now, so leaving ' +
+                   'it in the line is the same handle twice on one post');
+      if (p.to)
+        fails.push('a post that named somebody carries to=' + p.to +
+                   ', but it answers no post. `to` is what a reply pressed');
+
+      window.route = 'thread'; NAV = [{ r: 'feed' }, { r: 'thread', a: p.id }];
+      render();
+      const to = app.querySelector('.pto');
+      if (!to || to.textContent.indexOf('@jjj') < 0)
+        fails.push('a post that named somebody draws no line saying so (' +
+                   (to ? '"' + to.textContent + '"' : 'no line at all') + ')');
+      const ln = app.querySelector('.pline');
+      if (ln && ln.textContent.indexOf('@jjj') >= 0)
+        fails.push('the line of that post still reads "' + ln.textContent +
+                   '", so @jjj is on the screen twice');
+    }
+
+    /* a name with nothing behind it stays what somebody wrote */
+    const n2 = POSTS.length;
+    PW = pwBlank(); PW.ln = '@jjj';
+    pwSend();
+    if (POSTS.length === n2 + 1) {
+      const q = POSTS[POSTS.length - 1];
+      if (String(q.ln || '') !== '@jjj')
+        fails.push('a post that is only "@jjj" came out as "' + q.ln +
+                   '". Taking the name leaves an empty post, and what somebody ' +
+                   'typed is the whole of what they typed');
+    }
+
+    /* and a real reply keeps what was typed in it */
+    const n3 = POSTS.length;
+    PW = pwBlank(); PW.ln = '@bob yes'; PW.to = POSTS[0].id;
+    pwSend();
+    if (POSTS.length === n3 + 1) {
+      const r = POSTS[POSTS.length - 1];
+      if (String(r.ln || '') !== '@bob yes')
+        fails.push('a REPLY beginning with @bob lost it from the line ("' +
+                   r.ln + '"). That post already says whom it answers; a name ' +
+                   'typed inside it is a name in what somebody wrote');
+      if (postToWho(r) === 'bob')
+        fails.push('a reply beginning with @bob says it answers bob. It ' +
+                   'answers the post that was pressed');
+    }
+
+    PW = wasPW; window.route = wasRoute; NAV = wasNav;
+    try { closeSheet(); } catch (e) {}
+  }
+
   return { fails, mid: (nowLight * 100).toFixed(1), corner: (wasLight * 100).toFixed(1),
            bytes: Math.round(String(out[0] || '').length / 1024),
            thumb: Math.round(small.length / 1024), full: Math.round(big.length / 1024),
@@ -2494,4 +2624,10 @@ console.log('post: a letter placed on a black photograph is IN the file that goe
             '      with the post being answered above it.\n' +
             '      The @handle over a reply is a thing you press, it is 44pt,\n' +
             '      and it stands you on that person\u2019s page; the @ in what\n' +
-            '      somebody wrote goes through the same one place.');
+            '      somebody wrote goes through the same one place.\n' +
+            '      That line stays horizontal in a language written downward --\n' +
+            '      what runs down the page is what somebody WROTE. And a line\n' +
+            '      that begins by naming somebody makes a post addressed to\n' +
+            '      them, with the handle over the post and out of the line; a\n' +
+            '      name with nothing behind it, and a name typed inside a real\n' +
+            '      reply, are both left exactly as they were typed.');

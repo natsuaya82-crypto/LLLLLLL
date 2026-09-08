@@ -1601,6 +1601,18 @@ export function halfDone(){
        その「同じ」を撮れる状態がどこにも無かった：縦書きの面は新規だけ、
        返信の面は横書きだけで、二つが交わる所を歩いたものが無い。
        OWNER 実機 142 の二つ目はここのことなので、ここに置く。 */
+    /* A POST THAT NAMED SOMEBODY AND ANSWERS NOTHING. 「@したらもう勝手に
+       ツイートがこの形式になるようにしたい」 OWNER 2026-09-07 ── `toh` は
+       載っていて `to` は無い、という組み合わせがどの面にも無かった。返信は
+       両方持っているので、返信を歩いても postToWho() の新しい一行目は
+       一度も通らない。 */
+    ['a post addressed to somebody, answering nothing', () => {
+        const keep = POSTS;
+        POSTS = [Object.assign({}, keep[0], { id:'pat', to:'', toh:'jjj',
+                                              ln:'kano tir', mn:'a mountain' })]
+                  .concat(keep);
+        window.route = 'feed'; NAV = [{ r:'feed' }];
+        const h = vFeed(); POSTS = keep; return h; }],
     ['a column written while replying to somebody', () => {
         const wasPlan = SET.plan, wasDir = SCRIPT.dir;
         SET.plan = 'pro'; SCRIPT.dir = 'ttb-rl';
