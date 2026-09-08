@@ -1229,10 +1229,11 @@ create policy recent_drop on recent_search for delete using (is_member() and aut
 -- READING IS NOT `using (true)` and that is the whole reason this is not a
 -- column on `profile`. What somebody pays is theirs. A tier is not a handle.
 --
--- Writing is the owner's, which stops the attack this file can stop: B
--- cannot make themselves Pro on A's account, and B cannot read what A pays.
--- It does NOT stop somebody setting their own -- see the comment over the
--- table, and docs/scope/claude-acct2.md for the decision that would.
+-- WRITING IS NOBODY'S through the API since 2026-09-06. B cannot make
+-- themselves Pro on A's account, B cannot read what A pays, and A cannot set
+-- their own either -- the owner of a row is a phone, and a phone does not say
+-- what it has paid. supabase/functions/verify-plan writes with the service
+-- role, which policies do not apply to; see the comment over the table.
 --
 -- There is no delete policy and that is deliberate rather than an omission.
 -- A plan row is not somebody's work; it is a fact about their account, and
@@ -2108,11 +2109,11 @@ create trigger profile_rename before update of handle on profile
 -- プロに」 OWNER 2026-09-05. The staff screen is the whole of the list: being
 -- on it IS being Pro, and there is no second place that says so.
 --
--- Here and not in www/, because www/ is a suggestion -- a phone with the app
--- closed can PATCH /rest/v1/plan through plan_edit, which is its own account's
--- row and is allowed. So the tier is held where the row is written rather than
--- where the screen is drawn, and it holds against every road at once: the app,
--- the dashboard, and a request nobody wrote a screen for.
+-- Here and not in www/, because www/ is a suggestion. There is no road into
+-- this table from a phone any more, but the service role has one and the
+-- dashboard has one, and neither of those is a screen either. So the tier is
+-- held where the row is written rather than where it is drawn, and it holds
+-- against every road at once.
 --
 -- Two triggers because there are two moments, and they are one mechanism seen
 -- from each end: a plan row being WRITTEN for somebody who is already staff,

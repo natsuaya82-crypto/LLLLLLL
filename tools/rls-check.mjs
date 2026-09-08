@@ -792,22 +792,29 @@ const CASES = [
      becoming staff. */
   ['and B is Pro because of it',              'ok',     B, 0,
     `select 1 from plan where id='${B}' and plan='pro'`],
-  /* And the half a screen cannot hold. plan_edit lets an account write its
-     own row, so the app -- or a PATCH sent with the app closed -- can set it
-     to free, and free is what it would be from then on if this were held
-     anywhere but where the row lands. The write is ALLOWED and the row does
-     not move, which is why the two are asked separately: a refusal here would
-     be a screen saying no, and what is wanted is a tier that does not budge. */
-  ['and setting it back to free is allowed',  'ok',     B, 0,
+  /* And the road a screen cannot hold, which is CLOSED since 2026-09-06.
+     `plan_edit` let the owner of a row write it, and the owner of a row is a
+     phone -- so the app, or a PATCH sent with the app closed, could set the
+     tier back to free. That policy is gone, so the write is refused before
+     the trigger is reached and the tier is held twice over: once by there
+     being no road in at all, and once by plan_staff_hold() on the row that
+     comes through the service role. Both are asked, because a refusal on its
+     own is also what a row that was never written would give. */
+  ['B cannot set their own plan back to free', 'denied', B, 0,
     `update plan set plan='free' where id='${B}'`],
   ['and it is still Pro afterwards',          'ok',     B, 0,
     `select 1 from plan where id='${B}' and plan='pro'`],
-  /* And nobody else was swept up in it. A trigger that made every plan row
-     pro would pass all three above. */
-  ['somebody who is not staff writes free',   'ok',     F, 0,
+  /* And nobody else was swept up in it. Becoming staff writes a plan row for
+     THAT account, and a trigger reaching further would hand one to somebody
+     who never went on the list. F is an ordinary account, is not staff, and
+     cannot write the row themselves either -- so a row under F is a row the
+     trigger planted. The second is zero rows rather than a refusal: plan_read
+     lets an account read its OWN row, so nothing coming back is nothing being
+     there. */
+  ['nor can somebody who is not staff write one', 'denied', F, 0,
     `insert into plan(id,plan) values ('${F}','free')`],
-  ['and it stays free',                       'ok',     F, 0,
-    `select 1 from plan where id='${F}' and plan='free'`],
+  ['and F has no plan row at all',            'denied', F, 0,
+    `select 1 from plan where id='${F}'`],
   ['and can take it away again',              'ok',     E, 0,
     `select staff_drop('iri')`],
   ['and B is not staff any more',             'denied', E, 0,

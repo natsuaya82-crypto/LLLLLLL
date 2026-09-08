@@ -395,6 +395,47 @@ keep / again / token / migrate / draft が緑であることまでです。
 CONNECT を 403 で拒むため、実サーバーに対する往復は一本も測れていません。
 300ms は置いた値です。`follow_seen` と `profile_seen` の SQL は
 `npm run rls` で本物の PostgreSQL に当てて確かめます。
+### 2026-09-08 `plan` は誰も書けない ── rls-check の三つの主張を今の仕様へ
+
+`npm run rls` が master で三本落ちていました。どれも「スタッフはずっと
+Pro」の段のもので、`plan` への insert / update が **通る**ことを期待して
+います。
+
+```
+  and setting it back to free is allowed
+  somebody who is not staff writes free
+  and it stays free
+```
+
+2026-09-07（r4-verify）で `plan_make` と `plan_edit` が削除され、`plan` は
+API から読み取り専用になりました ── 書くのは Edge Function `verify-plan`
+の service role だけです。**policy は既に閉じている**ので穴ではなく、
+期待の側が古い仕様のまま残っていたものです。三つを書き換えました。
+
+```
+  B cannot set their own plan back to free       denied
+  nor can somebody who is not staff write one    denied
+  and F has no plan row at all                   denied
+```
+
+三つ目は「スタッフになった人にだけ行が書かれ、他の誰にも書かれない」を
+言い続けるための形です。書く道が無いので「F が free を書いて free のまま」
+は問えません。代わりに、F は行を作れず、行も無い ── `plan_read` は本人の
+行を読ませるので、返って来ないことは無いことです。
+
+**保存されるものは変わりません。**`tools/rls-check.mjs` と
+`supabase/schema.sql` のコメント二か所だけで、policy も表も動いていません。
+`schema.sql` の二か所は `plan_edit` がまだ在ると言っていたもので、
+CLAUDE.md の「決定が規則を置き換えたら同じコミットで規則を直す」に従って
+同じコミットで直しました。`supabase/setup.md` に流し直しの行は要りません。
+
+CASES の数は **305 のまま**動いていません（三本を三本に書き換えたため）。
+SHAPE は 50。`plan_edit` と `plan_make` を schema に戻して赤を一度見て
+います ── 三本とも、加えて既存の `nor can A change the one that is there`
+と SHAPE の `a plan is read-only through the API` も赤になりました。
+
+CODE CONFIRMED（`npm run rls` 緑）。DEVICE 不要 ── 端末に出るものは
+ありません。
 
 ### 2026-09-08 @ を押す道がプロフィールの扉を通っていなかった
 
