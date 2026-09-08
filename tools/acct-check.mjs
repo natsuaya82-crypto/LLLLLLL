@@ -619,37 +619,108 @@ const R = await pg.evaluate(async () => {
   say('20: 人のページに、その人の自己紹介が載る');
 
   /* 21. 端末に無ければアカウントのを取り、端末にあれば上げる。
-     どちらの向きも何も壊しません ── 埋めるか、送るか。 */
+     どちらの向きも何も壊しません ── 埋めるか、送るか。
+
+     **三つとも**。ここは `bio` だけを訊いていて、`netProfSync()` になった今も
+     `bio` だけを訊いていれば緑のままです ── リンクと場所が端末から一歩も
+     出ないまま（実機 143）。欄ごとに向きが違う形で訊きます: 端末が持って
+     いるのはリンクだけ、アカウントが持っているのは自己紹介と場所。片方ずつ
+     正しく動かないと通りません。 */
   start();
   netOut(); arrive(A);
-  ME.bio = ''; saveMe();
+  const PROF_SEL = '/rest/v1/profile?select=bio,link,loc';
+  ME.bio = ''; ME.link = ''; ME.loc = ''; saveMe();
   netGet = (path, ok) => {
-    if (path.indexOf('/rest/v1/profile?select=bio') === 0)
-      return ok([{ bio: 'アカウントに書いてあった一行' }]);
+    if (path.indexOf(PROF_SEL) === 0)
+      return ok([{ bio: 'アカウントに書いてあった一行',
+                   link: 'tokinets.com', loc: '谷' }]);
     return ok([]);
   };
-  netBioSync();
+  netProfSync();
   netGet = realGet;
   if (ME.bio !== 'アカウントに書いてあった一行')
     no('21: 端末に無いのにアカウントの自己紹介を取っていない — ' + JSON.stringify(ME.bio));
+  if (ME.link !== 'tokinets.com')
+    no('21: 端末に無いのにアカウントのリンクを取っていない — ' + JSON.stringify(ME.link));
+  if (ME.loc !== '谷')
+    no('21: 端末に無いのにアカウントの場所を取っていない — ' + JSON.stringify(ME.loc));
 
-  ME.bio = 'この端末で書いた一行'; saveMe();
-  let patched = '';
+  ME.bio = 'この端末で書いた一行'; ME.link = 'lingua.example'; ME.loc = '';
+  saveMe();
+  let patched = null;
   const realSend = netSend;
   netGet = (path, ok) => {
-    if (path.indexOf('/rest/v1/profile?select=bio') === 0) return ok([{ bio: '' }]);
+    if (path.indexOf(PROF_SEL) === 0)
+      return ok([{ bio: '', link: '', loc: 'サーバーだけが持っている場所' }]);
     return ok([]);
   };
   netSend = (method, path, body, tok, ok2, bad2) => {
-    if (method === 'PATCH') patched = String(body && body.bio || '');
+    if (method === 'PATCH') patched = body || {};
   };
-  netBioSync();
+  netProfSync();
   netGet = realGet; netSend = realSend;
-  if (patched !== 'この端末で書いた一行')
+  if (!patched || patched.bio !== 'この端末で書いた一行')
     no('21: 端末の自己紹介がアカウントに上がらない — ' + JSON.stringify(patched));
-  if (ME.bio !== 'この端末で書いた一行')
+  if (!patched || patched.link !== 'lingua.example')
+    no('21: 端末のリンクがアカウントに上がらない — ' + JSON.stringify(patched));
+  if (patched && patched.loc !== undefined)
+    no('21: 端末が持っていない場所を上げて、サーバーのものを空で消しにいった — ' +
+       JSON.stringify(patched));
+  if (ME.loc !== 'サーバーだけが持っている場所')
+    no('21: 同じ一回で、サーバーにしかない場所を取れていない — ' + JSON.stringify(ME.loc));
+  if (ME.bio !== 'この端末で書いた一行' || ME.link !== 'lingua.example')
     no('21: 上げるついでに端末のものを消した');
-  say('21: 端末に無ければアカウントのを取り、端末にあれば上げる（両方向）');
+  say('21: 端末に無ければアカウントのを取り、端末にあれば上げる（両方向、三欄それぞれ）');
+
+  /* ---- 21b. そしてそれが画面に出る --------------------------------------
+     「プロフィールにリンクと場所が出ない」OWNER 2026-09-08、実機 143。
+
+     打つ欄はあり、`ME.link`/`ME.loc` に入り、端末に残っていました。**描く所が
+     無かった**だけです ── 自分の頁も他人の頁も `bio` までしか描いていません
+     でした。上の 21 は「サーバーへ行くか」で、これは「見えるか」。二つは別の
+     主張で、片方が緑でももう片方は赤になり得ます（実機がそうでした）。
+
+     空なら行ごと出ないことも一緒に訊きます ── 「何も無い」に空の行を描くのは
+     アプリが言われていないことを言うことなので。 */
+  start();
+  netOut(); arrive(A);
+  ME.link = ''; ME.loc = ''; saveMe();
+  const bare = meCard();
+  /* 空の `<div class="pbio"></div>` を探します ── 「行が出ていない」は
+     `<span>` や `<a>` が無いことではなく、**行そのものが無い**ことなので。
+     中身で訊くと、空の行が出ていても緑になります（赤を見て直しました）。 */
+  const bareHit = /<div class="pbio">\s*<\/div>/.exec(bare);
+  if (bareHit)
+    no('21b: 空なのに場所とリンクの行が出ている — ' +
+       JSON.stringify(bare.slice(Math.max(0, bareHit.index - 30),
+                                 bareHit.index + bareHit[0].length + 10)));
+  ME.link = 'tokinets.com'; ME.loc = '谷の上'; saveMe();
+  const mine21 = meCard();
+  if (mine21.indexOf('谷の上') < 0)
+    no('21b: 自分の頁に場所が出ない');
+  if (mine21.indexOf('tokinets.com') < 0)
+    no('21b: 自分の頁にリンクが出ない');
+  if (mine21.indexOf('href="https://tokinets.com"') < 0)
+    no('21b: 自分の頁のリンクが押せない（Safari へ渡す href が無い）');
+  if (mine21.indexOf('border-radius') >= 0)
+    no('21b: 角丸を足している');
+
+  /* 他人の頁。netWhoRow() が降ろした二つを whoCard() が描くか。 */
+  WHO_HAVE['むこう'] = netWhoRow({ display: 'むこうの人', handle: 'むこう',
+                                   bio: 'あちらの一行',
+                                   link: 'https://elsewhere.example',
+                                   loc: '海のそば' });
+  const theirs21 = whoCard('むこう');
+  if (theirs21.indexOf('海のそば') < 0)
+    no('21b: 人の頁に場所が出ない');
+  if (theirs21.indexOf('elsewhere.example') < 0)
+    no('21b: 人の頁にリンクが出ない');
+  if (netWhoRow({ link: 'x' }).link !== 'x')
+    no('21b: netWhoRow がリンクを落としている');
+  if (NET_WHO_SEL.indexOf('link') < 0 || NET_WHO_SEL.indexOf('loc') < 0)
+    no('21b: 人を訊く select に link と loc が無い — ' + NET_WHO_SEL);
+  delete WHO_HAVE['むこう'];
+  say('21b: リンクと場所が、自分の頁にも人の頁にも出る（空なら行ごと出ない）');
 
   /* ---- 22. 人の言語に、住所と、扉が開いているかが付く ------------------
      「当たり前だけどsnsとして機能してない」OWNER 2026-09-01
@@ -2284,6 +2355,77 @@ const R = await pg.evaluate(async () => {
     netSend = realSend59; netGet = realGet59; netSend1 = realSend159;
     delete WLD.hide;
     NAV = [{ r: 'profile' }]; window.route = 'profile';
+  }
+
+  /* ---- 61. 設定の見出しを七回叩く扉は、ログインし直しても開く -------------
+     「設定7回タップしても管理画面開かんくなった」OWNER 2026-09-08、実機 143。
+     @lingua でログイン中、その日にログアウト→ログインをしている。
+
+     扉が見ているのは `NET_ADMIN`（www/mod.js § adminTap）で、それを立てるのは
+     `netStaff()` ただ一つ。呼んでいたのは **www/boot.js の起動一回だけ**でした。
+     だからサインアウトのまま立ち上げた起動は一度も訊かず、そのあとドアから
+     入っても誰も訊き直さない ── @lingua で入っているのに七回叩いても設定の
+     ままです。測ってから直しました（起動から入れば `admin`、ドアから入れば
+     `settings`）。
+
+     訊くのは三つ。**七回叩いて着いた所**で訊きます ── `NET_ADMIN` を読むのは
+     扉が見ているものを読み直すことで、扉そのものを通っていない。 */
+  start();
+  {
+    const realGetAd = netGet, realSendAd = netSend;
+    let handle = 'lingua';
+    netGet = (path, ok) => {
+      if (String(path).indexOf('/rest/v1/profile?select=staff') === 0)
+        return ok([{ staff: true, handle: handle, banned_at: null, banned_why: null }]);
+      return ok([]);
+    };
+    netSend = () => {};
+    const tap7 = () => {
+      window.route = 'settings'; NAV = [{ r: 'settings' }];
+      ADMIN_TAPS = 0;
+      for (let i = 0; i < 7; i++) adminTap();
+      return String(window.route);
+    };
+
+    /* 入るのは B です。start() が A で入ったあと ── stub を置く前、本物の
+       netGet が答えないまま ── なので、A で入り直すと「この人はもう訊いた」の
+       印に当たり、どのバグを戻しても最初の主張が赤くなって**どれが原因かを
+       言えなくなる**。別の人で入れば印は当たらず、下の三つはそれぞれ別の穴を
+       指します（戻して確かめました）。 */
+    netOut(); arrive(B);
+    const fromBoot = tap7();
+    if (fromBoot !== 'admin')
+      no('61: @lingua で入って七回叩いても管理画面に立たない — ' + fromBoot);
+
+    /* ログアウト。三つの答えは前のアカウントのものなので、置いていかない。 */
+    netOut();
+    if (NET_ADMIN || NET_STAFF || NET_BANNED)
+      no('61: ログアウトしても管理の答えが残っている — NET_ADMIN=' + NET_ADMIN +
+         ' NET_STAFF=' + NET_STAFF + ' NET_BANNED=' + JSON.stringify(NET_BANNED));
+    const afterOut = tap7();
+    if (afterOut === 'admin')
+      no('61: サインアウトしているのに七回で管理画面が開く');
+
+    /* そして入り直す ── 同じアカウントで。ここが実機の道で、ここが赤でした。 */
+    arrive(B);
+    const again61 = tap7();
+    if (again61 !== 'admin')
+      no('61: ログアウトして入り直すと七回叩いても開かない — ' + again61);
+
+    /* 別の人。同じ七回で何も起きない。 */
+    netOut();
+    handle = 'aya';
+    arrive(A);
+    const other = tap7();
+    if (other === 'admin')
+      no('61: @lingua でない人が七回で管理画面に入れる');
+    if (NET_ADMIN)
+      no('61: @lingua でない人に NET_ADMIN が立っている');
+
+    netGet = realGetAd; netSend = realSendAd;
+    netOut(); arrive(A);
+    say('61: 七回叩く扉は、起動から入っても、ログアウトして入り直しても開き、' +
+        'サインアウト中と別の人には開かない');
   }
 
   return out;

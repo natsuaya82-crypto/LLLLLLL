@@ -87,6 +87,29 @@ alter table profile add column if not exists av jsonb;
 alter table profile add column if not exists bio text
   check (bio is null or length(bio) <= 160);
 
+-- Where somebody is, and their address on the rest of the internet. Both are
+-- FREE TEXT and neither has a format.
+-- 「自由入力です。」「だって自分の国入れたい人だっているやん」
+-- OWNER DECISION 2026-08-25 -- not the phone's position, not a country code,
+-- no list to pick from, and no check on the shape of the link. A check
+-- constraint on the form of either would be this file overturning that
+-- decision, so what is here is a ceiling on the length and nothing else.
+--
+-- They existed on the phone and only there, exactly as `bio` did before it was
+-- added above: www/me.js wrote `ME.link` and `ME.loc`, kept them and never
+-- sent them, so what somebody typed was invisible to every other person and
+-- was gone the day the phone was. 「そもそも端末に保存するもんはないぞほとんど」
+-- OWNER 2026-09-01.
+--
+-- 100 AND 30 ARE `ME_MAX.link` AND `ME_MAX.loc` IN www/me.js AND THE THREE
+-- NUMBERS MUST MOVE TOGETHER. Same sentence `bio`'s 160 is under, for the same
+-- reason: SQL cannot read that file, and a text column with no ceiling is one
+-- somebody puts a megabyte in.
+alter table profile add column if not exists link text
+  check (link is null or length(link) <= 100);
+alter table profile add column if not exists loc text
+  check (loc is null or length(loc) <= 30);
+
 -- Whoever answers the reports. It is set by hand in the Supabase dashboard and
 -- by nothing else: no policy below writes it, and the column is taken out of
 -- what an account may update at the foot of this file. An app that could make
@@ -993,7 +1016,7 @@ create or replace view language_seen as
 grant select on language_seen to anon, authenticated;
 
 create or replace view profile_seen as
-  select p.id, p.handle, p.display, p.av, p.bio, p.banned_at,
+  select p.id, p.handle, p.display, p.av, p.bio, p.link, p.loc, p.banned_at,
          (select count(*) from follow f where f.follower = p.id) as fo,
          (select count(*) from follow f where f.followed = p.id) as fr
     from profile p;
@@ -2164,7 +2187,7 @@ create trigger profile_follows after insert on profile
 -- Said after the tables and the policies because the columns have to exist.
 -- ---------------------------------------------------------------------------
 revoke update on profile from anon, authenticated;
-grant  update (handle, display, av, bio) on profile to anon, authenticated;
+grant  update (handle, display, av, bio, link, loc) on profile to anon, authenticated;
 
 -- And the same sentence about INSERT, which is not the same statement.
 --
@@ -2188,7 +2211,7 @@ grant  update (handle, display, av, bio) on profile to anon, authenticated;
 -- `handle` IS in the UPDATE grant, and with is_admin() reading the handle
 -- that is the road somebody would take. profile_rename() closes it.
 revoke insert on profile from anon, authenticated;
-grant  insert (id, handle, display, av, bio) on profile to anon, authenticated;
+grant  insert (id, handle, display, av, bio, link, loc) on profile to anon, authenticated;
 
 -- ---------------------------------------------------------------------------
 -- And the question that is no longer asked

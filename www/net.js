@@ -599,6 +599,25 @@ function netTook(d){
      A token refresh comes through here too and asks for nothing: pullNeed()
      is refused the moment a thing has its answer, which is the same guard
      netLangBack() keeps for itself one line up. */
+  /* AND WHETHER THIS ACCOUNT ANSWERS THE REPORTS, AND WHETHER IT DECIDES WHO
+     DOES. Here for the reason meFor(), planFor() and langForAcct() are here:
+     this is the one place that knows a session ARRIVED.
+
+     IT WAS IN www/boot.js AND ONLY THERE -- one call, on the launch, inside
+     netResume()'s answer. So a launch made SIGNED OUT never asked, and the
+     door a person then came in through never asked either: signing in as
+     @lingua after that left NET_ADMIN false, and seven taps on the settings
+     heading opened nothing at all. 「設定7回タップしても管理画面開かんくなった」
+     OWNER 2026-09-08, 実機 143, having signed out and back in that day.
+
+     Measured before it was believed: signed in through the launch it answered
+     `admin`; signed out, relaunched, then in through the door it stayed on
+     `settings`.
+
+     A token refresh comes through here too and asks for nothing -- netStaff()
+     keeps the same guard netLangBack() one line up does, and netOut() is what
+     clears it, which is the half that was missing. */
+  netStaff(function(yes){ if(yes) render(); });
   if(typeof pullBoot==='function') pullBoot();
   return true;
 }
@@ -641,6 +660,12 @@ function netOut(){
      person to sign in on this phone must ask for their own. */
   netBlockedDrop();
   if(typeof pullForget==='function') pullForget();
+  /* AND WHETHER THIS ACCOUNT ANSWERS THE REPORTS, WHICH IS THE SAME SENTENCE.
+     NET_STAFF, NET_ADMIN and NET_BANNED are three facts about the account that
+     has just gone, and nothing here put them down -- so the seven taps on the
+     settings heading stayed armed for whoever signed in next.
+     netStaffForget() is the one place that says so. */
+  netStaffForget();
   /* THE LANGUAGE IS NOT TOUCHED HERE, AND THAT IS THE SAFE DIRECTION.
      A slice is in memory now (CLAUDE.md rule 22), so it was tempting to empty
      the store on the way out -- 「what this phone is holding is the signed-in
@@ -843,7 +868,7 @@ function netSetPass(pass, ok, bad){
    ago. */
 function netMyProfile(ok, bad){
   if(!netSignedIn()){ bad(null, 0, 'profile −'); return; }
-  netGet('/rest/v1/profile?select=handle,display,bio,av&limit=1&id=eq.'+
+  netGet('/rest/v1/profile?select=handle,display,bio,link,loc,av&limit=1&id=eq.'+
          encodeURIComponent(SESS.uid),
          function(d){
            var p=d && d.length? d[0] : null;
@@ -878,11 +903,12 @@ function netMakeProfile(h, name, ok, bad){
   var av=postAvatar();
   netPost('/rest/v1/profile',
           {id:SESS.uid, handle:h, display:name, av:av,
-           /* And the line about themselves, which is the account's and not the
-              phone's. schema.sql names it in the INSERT grant beside the
-              other four; a column not named there is one nothing can ever
-              write, with no error to say so. */
-           bio:String(ME.bio||'')},
+           /* And the three a person writes about themselves, which are the
+              account's and not the phone's. schema.sql names them in the
+              INSERT grant beside the other four; a column not named there is
+              one nothing can ever write, with no error to say so. */
+           bio:String(ME.bio||''),
+           link:String(ME.link||''), loc:String(ME.loc||'')},
           SESS.at,
           /* what was sent, so netAvSync() does not send it again on the
              next launch for a face that has not moved */
@@ -914,9 +940,21 @@ function netMakeProfile(h, name, ok, bad){
    Fired and not waited for, like everything else in bootSession(): the little
    face being a launch behind is not worth making the app open slower, and
    there is nothing on screen that depends on the answer. */
-/* The line about themselves, kept the same on both sides.
+/* What a person writes about themselves, kept the same on both sides.
    「そもそも端末に保存するもんはないぞほとんど」 OWNER 2026-09-01 -- the
    server is the record and the phone is the copy that works with no signal.
+
+   THREE FIELDS AND NOT ONE, and that is the whole of the change here. This
+   was netBioSync() and carried `bio` alone, so the line somebody wrote about
+   themselves travelled and the two beside it -- where they are and their
+   address on the rest of the internet -- were written on the phone, kept on
+   the phone, and gone the day the phone was. 「プロフィールにリンクと場所が
+   出ない」 OWNER 2026-09-08, 実機 143.
+
+   PROF_MINE names them, once, and the walk below is the same walk `bio` was
+   already getting. A fourth field is a name on that list and nothing else --
+   which is the half that was missing: the old function said `bio` in five
+   places, so adding a field meant finding all five.
 
    It ASKS before it writes, where netAvSync() below compares against a mark
    it keeps locally (`ME.avSent`). Two reasons, and the second is the one that
@@ -926,31 +964,44 @@ function netMakeProfile(h, name, ok, bad){
    never match. Asking the server costs one small request on a launch and
    cannot go stale.
 
-   WHICH SIDE WINS when they differ, and nothing here destroys anything:
+   WHICH SIDE WINS when they differ, and nothing here destroys anything. Asked
+   OF EACH FIELD and not of the row: a phone holding a link and no location
+   must send the one and take the other, and a row-shaped answer would make
+   one of the two lose.
 
      the phone has none    -> take the account's. A second phone arrives
                               holding what was written on the first
      the account has none  -> send the phone's up
-     both, and different   -> the PHONE's goes up. This is where a bio is
+     both, and different   -> the PHONE's goes up. This is where they are
                               edited (www/me.js is the only editor), and it
                               is syMerge()'s last line for a plain value --
                               「the phone's own is kept」
 
    Fired and not waited for. Nothing on screen depends on it. */
-function netBioSync(){
+var PROF_MINE=['bio', 'link', 'loc'];
+function netProfSync(){
   if(!netSignedIn() || !SESS || !SESS.uid) return;
-  netGet('/rest/v1/profile?select=bio&limit=1&id=eq.'+encodeURIComponent(SESS.uid),
+  netGet('/rest/v1/profile?select='+PROF_MINE.join(',')+'&limit=1&id=eq.'+
+         encodeURIComponent(SESS.uid),
     function(d){
-      var there=(d && d.length)? String((d[0] && d[0].bio) || '') : '',
-          mine=String(ME.bio||'');
-      if(there===mine) return;
-      if(!mine){
-        /* Absent here, written there. Fill it in and stop -- the same rule a
-           restore obeys (docs/DATA_SAFETY.md rule 2). */
-        ME.bio=there; saveMe(); render(); return;
+      var row=(d && d.length)? (d[0]||{}) : {}, put=null, drew=false, i, k, there, mine;
+      for(i=0;i<PROF_MINE.length;i++){
+        k=PROF_MINE[i];
+        there=String(row[k]||'');
+        mine=String(ME[k]||'');
+        if(there===mine) continue;
+        if(!mine){
+          /* Absent here, written there. Fill it in and stop -- the same rule a
+             restore obeys (docs/DATA_SAFETY.md rule 2). */
+          ME[k]=there; drew=true; continue;
+        }
+        if(!put) put={};
+        put[k]=mine;
       }
-      netSend('PATCH', '/rest/v1/profile?id=eq.'+encodeURIComponent(SESS.uid),
-              {bio:mine}, SESS.at, function(){}, function(){});
+      if(drew){ saveMe(); render(); }
+      if(put)
+        netSend('PATCH', '/rest/v1/profile?id=eq.'+encodeURIComponent(SESS.uid),
+                put, SESS.at, function(){}, function(){});
     }, function(){});
 }
 function netAvSync(){
@@ -2380,7 +2431,20 @@ var NET_STAFF=false, NET_ADMIN=false, NET_BANNED='';
    follows every new account to (OB_LINGUA) -- it is the account's NAME, so it
    is written out rather than asked for. */
 var ADMIN_HANDLE='lingua';
-/* Asked once, at launch, and remembered. A screen that asked every time it
+/* WHICH ACCOUNT THE THREE ABOVE ARE ABOUT, so that asking again costs
+   nothing and signing in as somebody else does not.
+
+   The comment below has said 「asked once and remembered」 since it was
+   written and there was nothing keeping either half of it: the once was one
+   call site in www/boot.js, and the remembering was three variables nobody
+   ever put down. netOut() clears this, so the same account signing back in
+   ASKS AGAIN -- which is what a guard keyed on the uid alone would refuse,
+   and refusing it is the bug this was written for. */
+var NET_STAFF_UID='';
+function netStaffForget(){
+  NET_STAFF=false; NET_ADMIN=false; NET_BANNED=''; NET_STAFF_UID='';
+}
+/* Asked once a session, and remembered. A screen that asked every time it
    was drawn would put a request behind every render. */
 /* One request, because it is one row and the app wants three things off it:
    whether this account answers the reports, whether it decides who does, and
@@ -2389,7 +2453,10 @@ var ADMIN_HANDLE='lingua';
    no" is not a sentence anybody can act on. */
 function netStaff(ok){
   ok=ok||function(){};
-  if(!netSignedIn()){ NET_STAFF=false; NET_ADMIN=false; NET_BANNED=''; ok(false); return; }
+  if(!netSignedIn()){ netStaffForget(); ok(false); return; }
+  /* Already answered for this account, this session. */
+  if(NET_STAFF_UID===String(SESS.uid)){ ok(NET_STAFF); return; }
+  NET_STAFF_UID=String(SESS.uid);
   netGet('/rest/v1/profile?select=staff,handle,banned_at,banned_why&limit=1&id=eq.'+
          encodeURIComponent(SESS.uid),
     function(d){
@@ -2417,7 +2484,10 @@ function netStaff(ok){
       NET_BANNED=(r && r.banned_at)? (String(r.banned_why||'') || ' ') : '';
       ok(NET_STAFF);
     },
-    function(){ NET_STAFF=false; NET_ADMIN=false; NET_BANNED=''; ok(false); });
+    /* No answer is not 「this account is nobody」. The mark goes with it, so
+       the next thing that asks asks the server rather than reading a false
+       this call never got. */
+    function(){ netStaffForget(); ok(false); });
 }
 /* Making somebody staff, and unmaking them. By handle, because a handle is
    the only name this app has for a person: an address lives in auth.users,
@@ -2708,13 +2778,16 @@ function netLangNames(ids, done){
    for them: one person by handle, and many people at once. A `select=` written
    out twice is two lists that come to differ, and the one that differs is the
    one nobody is looking at. */
-var NET_WHO_SEL='/rest/v1/profile_seen?select=id,handle,display,av,bio,banned_at,fo,fr';
+var NET_WHO_SEL='/rest/v1/profile_seen?select=id,handle,display,av,bio,link,loc,banned_at,fo,fr';
 /* And one place turns a row into a person, for the same reason. */
 function netWhoRow(r){
   r=r||{};
   return {who:String(r.display||''), hd:String(r.handle||''),
           av:r.av||null, lname:'',
           bio:String(r.bio||''),
+          /* And the two beside it. A phone whose server does not answer with
+             them yet gets '' and draws no row, exactly as it does today. */
+          link:String(r.link||''), loc:String(r.loc||''),
           fo:(r.fo===undefined || r.fo===null)? undefined : (Number(r.fo)||0),
           fr:(r.fr===undefined || r.fr===null)? undefined : (Number(r.fr)||0),
           out:!!r.banned_at};

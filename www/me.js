@@ -294,8 +294,8 @@ function meWas(){
 function meTyped(f){ return keepVal(ME_KEY, f); }
 /* Writing the five down. `v` is only the fields somebody actually touched, so
    a field nobody typed into is not written over -- which matters here because
-   netBioSync() can fill the bio in from the account while this screen is
-   open. */
+   netProfSync() can fill the bio, the link and the location in from the
+   account while this screen is open. */
 function meKeepPut(v){
   if(v.hasOwnProperty('name')) ME.name=String(v.name);
   if(v.hasOwnProperty('handle')) ME.handle=String(v.handle);
@@ -569,6 +569,8 @@ function meCard(){
     '<button class="meedit edit"' + DO('openMe') + '>'+esc(t('me.edit'))+'</button>'+
     '</div>'+
     (ME.bio? '<div class="pbio">'+esc(ME.bio)+'</div>' : '')+
+    /* And where they are and their address, in the row meWhereRow() is. */
+    meWhereRow(ME.link, ME.loc)+
     /* The language, between what somebody says about themselves and how many
        people are reading them. It was a small tag beside the handle, which is
        where a timeline puts an affiliation and is exactly the wrong size for
@@ -813,7 +815,9 @@ function whoOf(h){
      everybody else and is fresher than any of them. */
   if(h===meHandle())
     return {who:meName(), hd:h, av:postAvatar(), lname:langName||'', id:'me',
-            bio:String(ME.bio||''), fo:meFollowing().length,
+            bio:String(ME.bio||''),
+            link:String(ME.link||''), loc:String(ME.loc||''),
+            fo:meFollowing().length,
             fr:meFollowers().length, out:false,
             /* AND IT SAYS SO. `mine` means 「this is the reader's own」 and it
                is what postBadge() asks -- so leaving it off took the mark off
@@ -880,7 +884,13 @@ function whoOf(h){
 
                Undefined where the server said nothing, which is not 0 and is
                the same distinction postNLike() makes in www/post.js. */
-            bio:got.bio||'', fo:got.fo, fr:got.fr, out:!!got.out};
+            bio:got.bio||'',
+            /* AND WHERE THEY ARE AND THEIR ADDRESS, passed through for the
+               reason `bio` above is: what somebody wrote about themselves is
+               shown, and a phone whose net.js does not answer with them yet
+               gets '' and draws no row (meWhereRow). */
+            link:got.link||'', loc:got.loc||'',
+            fo:got.fo, fr:got.fr, out:!!got.out};
   /* And until it answers, the copy: a post of theirs, if this phone has one.
      Better than an empty page for the moment the request is out, and it is
      where the whole page came from before there was anywhere else. */
@@ -1131,9 +1141,52 @@ function whoMore(h){
    would be that same question answered twice, and the two would part company
    the day meHandle() changed under one of them.
 
-   www/sns.js still writes this out by hand. That file belongs to another
-   session today, so its copy is theirs to fold into this call; it is the same
-   sentence in two places until they do. */
+   AND IT IS THE ONLY COPY NOW. snsWhoRow() (www/sns.js) wrote the same span
+   out by hand and this comment said so -- that file belonged to another
+   session on the day it was written. It calls this instead, so the label's
+   place moved on both screens in one edit rather than in two. */
+/* WHERE SOMEBODY IS AND THEIR ADDRESS, in one line under what they say about
+   themselves. ONE FUNCTION, because it is one row and it is on two pages --
+   your own card and somebody else's -- and a row written out twice is two
+   rows that come to differ (CLAUDE.md § One place, not fifteen).
+
+   Both are FREE TEXT and neither has a format 「自由入力です。」
+   OWNER DECISION 2026-08-25, so what is drawn is what somebody typed. Nothing
+   is parsed, nothing is corrected, and a location is text and never a link.
+
+   Empty means no row at all rather than an empty one: 「何も無い」 is a state
+   and drawing a blank line for it is the app saying something it was not told.
+
+   No corner, no border, no panel (CLAUDE.md rule 18). `.pbio` is the plain
+   block of words directly above this and this row is the same kind of thing;
+   the address is an `<a>` for the reason docRows() in www/settings.js is one
+   -- that is this app's one way to hand an address to Safari, and a second
+   would be a second mechanism for one act.
+
+   THE SCHEME IS ADDED WHERE SOMEBODY DID NOT TYPE ONE, and only there. An
+   href with no scheme is read as a path inside the app, so 「example.com」
+   would open nothing at all -- which is the field existing and not working.
+   What is SHOWN is still exactly what they typed. */
+function meLinkHref(v){
+  var s=String(v||'');
+  return /^https?:\/\//i.test(s)? s : 'https://'+s;
+}
+function meWhereRow(link, loc){
+  var lk=String(link||''), lc=String(loc||''), out='';
+  if(!lk && !lc) return '';
+  if(lc) out+='<span>'+esc(lc)+'</span>';
+  if(lc && lk) out+='<span class="docdot" style="margin:0 8px">\u00b7</span>';
+  /* THE COLOUR EVERYTHING PRESSABLE IS, and the underline off. A browser's own
+     blue link is the one thing on this screen that belongs to no theme -- it
+     is the same colour in the dark one, and it is not a colour this app has.
+     `--gold` and not a literal: 「the views only ever touch the variables」,
+     the sentence over the two theme blocks in www/index.html. The address is
+     the only thing in this row anybody presses, so it is the only thing
+     wearing it. */
+  if(lk) out+='<a href="'+esc(meLinkHref(lk))+'" target="_blank" rel="noopener"'+
+              ' style="color:var(--gold);text-decoration:none">'+esc(lk)+'</a>';
+  return '<div class="pbio">'+out+'</div>';
+}
 function whoBackTag(h){
   if(meFollowers().indexOf(String(h||''))<0) return '';
   return '<span class="whyou">'+esc(t('me.follows.you'))+'</span>';
@@ -1157,11 +1210,21 @@ function whoCard(h){
       /* AND THE MARK, in the slot your own card puts it in. It was on your
          own name and on nobody else's, which is the same fault postBadge()
          is about one screen over: 「相手の画面にパッチ映らない」. */
-      '<div class="pname">'+esc(postWho(p))+postBadge(p)+'</div>'+
-      /* AND WHETHER THEY FOLLOW YOU, beside the handle. whoBackTag() above
-         is the whole of it -- the question and the shape. */
-      '<div class="mehr"><span class="phandle">@'+esc(h)+'</span>'+
-        whoBackTag(h)+'</div>'+
+      /* AND WHETHER THEY FOLLOW YOU, BESIDE THE NAME. whoBackTag() above is
+         the whole of it -- the question and the shape -- and where it goes is
+         the name's row, not the handle's. 「Follows you は @ の横ではなく
+         名前の横」 OWNER 2026-09-08, 実機 143, 写真つき: on the handle line it
+         sat between @iri and the language's name and ran into both.
+
+         `.mehr` is the flex row `.pname` and `.whyou` are already written for
+         -- `.pname` is `flex:0 1 auto` with an ellipsis and `.whyou` is
+         `flex:0 0 auto`, so a long name gives way and the label stays whole.
+         Inside `.pname` it would be ellipsised away with the name. */
+      '<div class="mehr">'+
+        '<div class="pname">'+esc(postWho(p))+postBadge(p)+'</div>'+
+        whoBackTag(h)+
+      '</div>'+
+      '<div class="mehr"><span class="phandle">@'+esc(h)+'</span></div>'+
     '</div>'+
     /* FOLLOW, IN THE SLOT ON THE NAME ROW -- the same slot your own card
        puts Edit in, because it is the same thing: the one action this page
@@ -1178,6 +1241,9 @@ function whoCard(h){
       esc(t(on? 'me.unfollow' : 'me.follow'))+'</button>'+
     '</div>'+
     (p.bio? '<div class="pbio">'+esc(p.bio)+'</div>' : '')+
+    /* And where they are and their address -- the same row, drawn by the same
+       function, off what netWhoRow() carried down. */
+    meWhereRow(p.link, p.loc)+
     /* THE NAME, AND NOT A WAY THROUGH.
        「この言語についてで人のをタップしても自分のが出る」 OWNER.
 
