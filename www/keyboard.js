@@ -164,30 +164,40 @@ function kbId(){ KB_SEQ++; return 'k'+Date.now()+'_'+KB_SEQ; }
    times they are read. A board that already has one keeps it: this is not a
    repair and compares nothing.
 
-   AND TWO COPIES OF ONE BOARD ARE NOT TWO BOARDS.
-   「消していい。そもそも増殖させるな」 OWNER 2026-09-07. A phone that has
-   already been through the launches above is holding the same keyboard eight
-   times, and an id decided by the board stops the ninth without taking one of
-   the eight away. So the copies are joined here, at the same moment and by
-   the same answer: the SIGNATURE below is what makes two boards one, and the
-   id put on a board that has none is that signature hashed. One question,
-   asked once.
+   SAME CONTENTS TWICE IS NOT ONE BOARD.
+   「ダメに決まってんだろ」 OWNER 2026-09-09. Pressing + twice makes two boards,
+   and `kbAdd` makes them `{id, nm:'', pat, lay:kbBlank(...)}` -- so two blank
+   boards of one pattern are the same board in every field but the id, and for
+   two days they were read back as ONE. What a person pressed twice is two
+   things, whatever the bytes say.
 
-   WHAT IS JOINED IS ONLY WHAT IS BYTE FOR BYTE THE SAME BOARD -- every field
-   but the id, so a name typed on one of them, a key moved, a layer added is
-   a board somebody made and it stays. docs/CHANGELOG.md 2026-09-07 carries
-   the DELETE REVIEW.
+   So nothing here compares contents. Two id-less boards of one content hash
+   alike, and letting them SHARE an id would be syKeyOf() told they are one
+   row -- a board somebody made, gone -- so the second one and every one after
+   it is marked by its turn in the array, which every read counts the same
+   way. Stable and distinct, which is the whole of what stops the growth.
+
+   ONE ID IS ONE BOARD, and that is the only thing joined here: two entries
+   carrying the same id are not two copies, they are the same board written
+   down twice, and the server can only hold one row for them anyway. Nothing
+   is decided by looking at what is on a board.
+
+   Joining by contents is deleted. It existed to take the copies the growth
+   above had already made off a phone (docs/CHANGELOG.md 2026-09-07), and it
+   could not tell that copy from somebody's second empty board -- both are the
+   same bytes. The growth is stopped at its source instead, which is where
+   「そもそも増殖させるな」 OWNER 2026-09-07 asks for it to be stopped.
 
    Reading only, as the stamping above is: nothing is written here, so a
-   launch with no signal joins the copy in memory and stops. The write comes
+   launch with no signal stamps the copy in memory and stops. The write comes
    with the next save.
 
    AND WHICH BOARD IS APPLIED FOLLOWS THE ONE THAT IS KEPT. `at` is an index
    into the list with the free QWERTY in front of it (migrateKbFree), and
    `v` is what says whether that migration has run -- so it is turned into an
    index into `kbs`, moved with the board it names, and turned back. Without
-   that, joining a copy in front of the applied board silently makes its
-   neighbour the keyboard on the phone. */
+   that, dropping a same-id twin in front of the applied board silently makes
+   its neighbour the keyboard on the phone. */
 function kbSig(b){
   var ks=[], o=[], k, i;
   for(k in b) if(Object.prototype.hasOwnProperty.call(b, k) && k!=='id') ks.push(k);
@@ -201,15 +211,22 @@ function kbHash(b){
   return 'b'+(h>>>0).toString(36)+'_'+s.length;
 }
 function kbIded(k){
-  var kbs=k.kbs||[], out=[], at={}, put=[], i, b, s, off, idx;
+  var kbs=k.kbs||[], out=[], seen={}, taken={}, put=[], i, b, id, off, idx;
+  /* every id already on a board, before one is minted -- a hash landing on an
+     id a LATER board is wearing would make that board a twin of this one */
+  for(i=0;i<kbs.length;i++)
+    if(kbs[i] && typeof kbs[i]==='object' && kbs[i].id) taken['i'+kbs[i].id]=1;
   for(i=0;i<kbs.length;i++){
     b=kbs[i];
     /* not a board at all: kept exactly where it was and asked nothing */
     if(!b || typeof b!=='object'){ put.push(out.length); out.push(b); continue; }
-    s='g'+kbSig(b);
-    if(!b.id) b.id=kbHash(b);
-    if(Object.prototype.hasOwnProperty.call(at, s)){ put.push(at[s]); continue; }
-    at[s]=out.length; put.push(out.length); out.push(b);
+    if(!b.id){
+      id=kbHash(b);
+      while(taken['i'+id]) id=id+'+';
+      taken['i'+id]=1; b.id=id;
+    }
+    if(Object.prototype.hasOwnProperty.call(seen, 'i'+b.id)){ put.push(seen['i'+b.id]); continue; }
+    seen['i'+b.id]=out.length; put.push(out.length); out.push(b);
   }
   k.kbs=out;
   off=((parseInt(k.v, 10)||0)>=2)? 1 : 0;
