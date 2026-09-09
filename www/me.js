@@ -356,13 +356,49 @@ function meKeepPut(v){
    the same decision the timer made and the one place it is kept. */
 function meKeepSave(v, done){
   var h=v.hasOwnProperty('handle')? String(v.handle) : String(ME.handle||'');
-  if(h===String(ME.handle||'')){ meKeepPut(v); done(true); return; }
+  if(h===String(ME.handle||'')){ meProfPut(v, done); return; }
   if(h.length<2 || h.length>ME_MAX.handle){ toast(t('net.badhandle')); done(false); return; }
-  if(typeof netSignedIn!=='function' || !netSignedIn()){ meKeepPut(v); done(true); return; }
+  if(typeof netSignedIn!=='function' || !netSignedIn()){ meProfPut(v, done); return; }
   netHandleFree(h, function(free){
     if(!free){ toast(t('net.handle.taken')); done(false); return; }
-    meKeepPut(v); done(true);
-  }, function(){ meKeepPut(v); done(true); });
+    meProfPut(v, done);
+  }, function(){ meProfPut(v, done); });
+}
+/* THE LINE ABOUT YOURSELF, THE LINK AND WHERE YOU ARE, WRITTEN ON THE SERVER
+   FIRST.
+   -------------------------------------------------------------------------
+   「端末に残すものないんですけど。サーバーで同じ機能になるように代替して」
+   OWNER 2026-09-08.
+
+   These three used to be written here and carried up on the NEXT LAUNCH by
+   netProfSync(), which asked both sides and let the phone win where they
+   differed. Two phones therefore held two different lines about one person,
+   and the one that launched last wrote over the other with nobody able to say
+   which had won.
+
+   `profile.bio`, `.link` and `.loc` are the answer, so the press waits for
+   them: the PATCH goes, and ME is written when the server has taken it.
+   A refusal writes nothing at all -- not the bio, and not the name beside it,
+   because Save is one press and half a save is not a save -- and the form
+   stays open with what was typed still in it. ［再接続］ presses it again.
+
+   Nothing to send is not a failure: a name typed with the three untouched is
+   this phone's own to write, and it is written at once, exactly as before. */
+function meProfPut(v, done){
+  var send=null, i, k;
+  for(i=0;i<PROF_MINE.length;i++){
+    k=PROF_MINE[i];
+    if(v.hasOwnProperty(k) && String(v[k])!==String(ME[k]||'')){
+      if(!send) send={};
+      send[k]=String(v[k]);
+    }
+  }
+  if(!send || typeof netProfPut!=='function'){ meKeepPut(v); done(true); return; }
+  netProfPut(send, function(){ meKeepPut(v); done(true); },
+    function(d, st, m){
+      netPop(d, st, m, function(){ meProfPut(v, function(){}); });
+      done(false);
+    });
 }
 /* Each of these makes its box as tall as what is in it. Nothing here calls
    render() -- a profile that redrew on every letter would take the keyboard's

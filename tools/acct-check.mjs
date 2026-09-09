@@ -628,14 +628,20 @@ const R = await pg.evaluate(async () => {
     no('20: 人のページに自己紹介が載らない — ' + JSON.stringify(who && who.bio));
   say('20: 人のページに、その人の自己紹介が載る');
 
-  /* 21. 端末に無ければアカウントのを取り、端末にあれば上げる。
-     どちらの向きも何も壊しません ── 埋めるか、送るか。
+  /* 21. 自己紹介・リンク・場所は `profile` の三列だけが答え。
+     「端末に残すものないんですけど。サーバーで同じ機能になるように代替して」
+     OWNER 2026-09-08。
 
-     **三つとも**。ここは `bio` だけを訊いていて、`netProfSync()` になった今も
-     `bio` だけを訊いていれば緑のままです ── リンクと場所が端末から一歩も
-     出ないまま（実機 143）。欄ごとに向きが違う形で訊きます: 端末が持って
-     いるのはリンクだけ、アカウントが持っているのは自己紹介と場所。片方ずつ
-     正しく動かないと通りません。 */
+     `netProfSync()` は欄ごとに両側を訊いて、**食い違えば端末を上げて**いま
+     した。だから二台が別々の一行を持ち、あとで起動したほうが相手のを黙って
+     上書きし、どちらが勝ったかは誰にも言えませんでした ── 規則 22 の例外が
+     一つ、木に立っていた形です。
+
+     四本訊きます:
+     1. 行が言うとおりになる ── 端末が違うことを持っていても
+     2. この道は一本も送らない（PATCH ゼロ）
+     3. 行が無ければ何も書き換えない（「行が無い」は「空の自己紹介」ではない）
+     4. 編集は PATCH が通ってから ME に入り、落ちれば一字も入らない */
   start();
   netOut(); arrive(A);
   const PROF_SEL = '/rest/v1/profile?select=bio,link,loc';
@@ -649,38 +655,71 @@ const R = await pg.evaluate(async () => {
   netProfSync();
   netGet = realGet;
   if (ME.bio !== 'アカウントに書いてあった一行')
-    no('21: 端末に無いのにアカウントの自己紹介を取っていない — ' + JSON.stringify(ME.bio));
+    no('21: アカウントの自己紹介を取っていない — ' + JSON.stringify(ME.bio));
   if (ME.link !== 'tokinets.com')
-    no('21: 端末に無いのにアカウントのリンクを取っていない — ' + JSON.stringify(ME.link));
+    no('21: アカウントのリンクを取っていない — ' + JSON.stringify(ME.link));
   if (ME.loc !== '谷')
-    no('21: 端末に無いのにアカウントの場所を取っていない — ' + JSON.stringify(ME.loc));
+    no('21: アカウントの場所を取っていない — ' + JSON.stringify(ME.loc));
 
+  /* 端末が違うことを持っていても、行が勝つ。そして一本も送らない。 */
   ME.bio = 'この端末で書いた一行'; ME.link = 'lingua.example'; ME.loc = '';
   saveMe();
-  let patched = null;
-  const realSend = netSend;
+  let patched21 = null;
+  const realSend21 = netSend;
   netGet = (path, ok) => {
     if (path.indexOf(PROF_SEL) === 0)
-      return ok([{ bio: '', link: '', loc: 'サーバーだけが持っている場所' }]);
+      return ok([{ bio: 'サーバーの一行', link: '', loc: 'サーバーの場所' }]);
     return ok([]);
   };
-  netSend = (method, path, body, tok, ok2, bad2) => {
-    if (method === 'PATCH') patched = body || {};
-  };
+  netSend = (method, path, body) => { if (method === 'PATCH') patched21 = body || {}; };
   netProfSync();
-  netGet = realGet; netSend = realSend;
-  if (!patched || patched.bio !== 'この端末で書いた一行')
-    no('21: 端末の自己紹介がアカウントに上がらない — ' + JSON.stringify(patched));
-  if (!patched || patched.link !== 'lingua.example')
-    no('21: 端末のリンクがアカウントに上がらない — ' + JSON.stringify(patched));
-  if (patched && patched.loc !== undefined)
-    no('21: 端末が持っていない場所を上げて、サーバーのものを空で消しにいった — ' +
-       JSON.stringify(patched));
-  if (ME.loc !== 'サーバーだけが持っている場所')
-    no('21: 同じ一回で、サーバーにしかない場所を取れていない — ' + JSON.stringify(ME.loc));
-  if (ME.bio !== 'この端末で書いた一行' || ME.link !== 'lingua.example')
-    no('21: 上げるついでに端末のものを消した');
-  say('21: 端末に無ければアカウントのを取り、端末にあれば上げる（両方向、三欄それぞれ）');
+  netGet = realGet; netSend = realSend21;
+  if (patched21)
+    no('21: 起動の読み込みが端末のものを上げにいった — ' + JSON.stringify(patched21));
+  if (ME.bio !== 'サーバーの一行' || ME.loc !== 'サーバーの場所' || ME.link !== '')
+    no('21: 行の言うとおりになっていない — ' +
+       JSON.stringify([ME.bio, ME.link, ME.loc]));
+
+  /* 行が無い ── まだ扉の最後の一段の前。空の自己紹介ではないので、
+     写しは一字も触らない。 */
+  ME.bio = '前からある一行'; ME.link = 'a.example'; ME.loc = 'どこか'; saveMe();
+  netGet = (path, ok) => ok([]);
+  netProfSync();
+  netGet = realGet;
+  if (ME.bio !== '前からある一行' || ME.link !== 'a.example' || ME.loc !== 'どこか')
+    no('21: 行が無いのを「空の自己紹介」と読んで、写しを消した — ' +
+       JSON.stringify([ME.bio, ME.link, ME.loc]));
+
+  /* 編集。通ってから入り、落ちれば一字も入らない。 */
+  let sent21 = null, letGo21 = null;
+  netSend = (method, path, body, tok, ok2) => {
+    if (method === 'PATCH'){ sent21 = body || {}; letGo21 = () => ok2([]); }
+  };
+  let saved21 = 'まだ';
+  meKeepSave({ bio: '打った一行' }, (okk) => { saved21 = okk; });
+  if (!sent21 || sent21.bio !== '打った一行')
+    no('21: 編集が PATCH を出していない — ' + JSON.stringify(sent21));
+  if (ME.bio !== '前からある一行')
+    no('21: 答えが戻る前に写しへ入った — ' + JSON.stringify(ME.bio));
+  if (letGo21) letGo21();
+  if (ME.bio !== '打った一行')
+    no('21: 通ったのに写しへ入っていない — ' + JSON.stringify(ME.bio));
+  if (saved21 !== true) no('21: 通ったのに保存が済んだと言っていない');
+
+  netSend = (method, path, body, tok, ok2, bad2) => {
+    if (method === 'PATCH') bad2(null, 0, 'down');
+  };
+  saved21 = 'まだ';
+  meKeepSave({ bio: '落ちる一行', name: 'この名前も入らない' },
+             (okk) => { saved21 = okk; });
+  if (ME.bio !== '打った一行')
+    no('21: 落ちたのに自己紹介が入った — ' + JSON.stringify(ME.bio));
+  if (ME.name === 'この名前も入らない')
+    no('21: 落ちたのに隣の名前だけ入った ── 保存は一回の押下で、半分の保存は保存ではない');
+  if (saved21 !== false) no('21: 落ちたのに保存が済んだと言っている');
+  netSend = realSend21;
+  say('21: 自己紹介・リンク・場所は profile の三列だけ ── 起動の読み込みは' +
+      '一本も送らず、行が無ければ写しを触らず、編集は通ってから入る');
 
   /* ---- 21b. そしてそれが画面に出る --------------------------------------
      「プロフィールにリンクと場所が出ない」OWNER 2026-09-08、実機 143。

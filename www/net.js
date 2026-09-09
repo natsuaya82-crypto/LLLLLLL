@@ -969,18 +969,21 @@ function netMakeProfile(h, name, ok, bad){
    never match. Asking the server costs one small request on a launch and
    cannot go stale.
 
-   WHICH SIDE WINS when they differ, and nothing here destroys anything. Asked
-   OF EACH FIELD and not of the row: a phone holding a link and no location
-   must send the one and take the other, and a row-shaped answer would make
-   one of the two lose.
+   THERE IS NO SIDE THAT WINS ANY MORE, BECAUSE THERE IS ONE SIDE.
+   「端末に残すものないんですけど。サーバーで同じ機能になるように代替して」
+   OWNER 2026-09-08.
 
-     the phone has none    -> take the account's. A second phone arrives
-                              holding what was written on the first
-     the account has none  -> send the phone's up
-     both, and different   -> the PHONE's goes up. This is where they are
-                              edited (www/me.js is the only editor), and it
-                              is syMerge()'s last line for a plain value --
-                              「the phone's own is kept」
+   This asked each field of both and, where the two differed, **sent the
+   phone's up** -- 「the phone's own is kept」. Two phones with two different
+   lines about the same person meant the one that launched last wrote over
+   the other, silently, with nobody able to say which had won. It was rule
+   22's own exception standing in the tree.
+
+   `profile.bio`, `profile.link` and `profile.loc` are the answer. This road
+   is one way now: what the row says is what ME holds. Nothing is destroyed by
+   that -- the editor (www/me.js § meProfPut) does not write ME until the
+   server has taken the change, so there is never a line here that the server
+   has not got.
 
    Fired and not waited for. Nothing on screen depends on it. */
 var PROF_MINE=['bio', 'link', 'loc'];
@@ -989,25 +992,31 @@ function netProfSync(){
   netGet('/rest/v1/profile?select='+PROF_MINE.join(',')+'&limit=1&id=eq.'+
          encodeURIComponent(SESS.uid),
     function(d){
-      var row=(d && d.length)? (d[0]||{}) : {}, put=null, drew=false, i, k, there, mine;
+      var row=(d && d.length)? (d[0]||{}) : {}, drew=false, i, k, there;
+      /* NO ROW IS NOT AN EMPTY PROFILE. An account whose row has not been
+         made yet -- the door's last step is still in front of them -- is not
+         somebody whose line about themselves is blank, and writing three
+         empty strings over the copy would be this road taking something away
+         rather than bringing it. */
+      if(!(d && d.length)) return;
       for(i=0;i<PROF_MINE.length;i++){
         k=PROF_MINE[i];
         there=String(row[k]||'');
-        mine=String(ME[k]||'');
-        if(there===mine) continue;
-        if(!mine){
-          /* Absent here, written there. Fill it in and stop -- the same rule a
-             restore obeys (docs/DATA_SAFETY.md rule 2). */
-          ME[k]=there; drew=true; continue;
-        }
-        if(!put) put={};
-        put[k]=mine;
+        if(there===String(ME[k]||'')) continue;
+        ME[k]=there; drew=true;
       }
       if(drew){ saveMe(); render(); }
-      if(put)
-        netSend('PATCH', '/rest/v1/profile?id=eq.'+encodeURIComponent(SESS.uid),
-                put, SESS.at, function(){}, function(){});
     }, function(){});
+}
+/* AND THE ONE PLACE THOSE THREE ARE WRITTEN. The editor waits for it: what
+   somebody typed reaches ME when the server has taken it and not before
+   (www/me.js § meProfPut), which is the same sentence as the 公開 switch and
+   the heart. 「保存するタイミングでエラーが起きるなら、保存されないし」
+   OWNER 2026-09-05. */
+function netProfPut(fields, ok, bad){
+  if(!netSignedIn() || !SESS || !SESS.uid){ bad(null, 0, 'prof \u2212'); return; }
+  netSend('PATCH', '/rest/v1/profile?id=eq.'+encodeURIComponent(SESS.uid),
+          fields, SESS.at, ok, bad);
 }
 function netAvSync(){
   if(!netSignedIn() || !SESS || !SESS.uid) return;
