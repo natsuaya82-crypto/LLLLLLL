@@ -426,13 +426,25 @@ function pfList(){
      timeline and still here, which is the whole of what a page is for.
      「ツイートは自己責任で見れるようにする」 */
   var mine=postKept().filter(of);
-  if(pfTab==='re')   return mine.filter(function(p){ return !!p.to; });
+  /* WHAT A REPLY IS, and it is one question: postToWho(p) -- whom does this
+     answer. 「返信にだけ出して」 OWNER 2026-09-09.
+
+     It was `!!p.to`, which asks whether the post points at another POST, and
+     the two came apart when a post could begin by naming somebody with no
+     post to answer (2026-09-07): that post carries `toh` and no `to`, so it
+     sat in 投稿. The line is rewritten rather than given a second condition
+     -- `postToWho()` is already the one place that says whom a post answers
+     (www/post.js), and it reads both halves. */
+  if(pfTab==='re')   return mine.filter(function(p){ return !!postToWho(p); });
   /* What THIS person has liked. Your own is what you pressed; somebody
      else's arrives with them, and until it does the list is empty rather than
      absent -- the same three lists on everybody's page.
      「他人のプロフィールは基本自分が見えてるのと同じ感じ」 */
   if(pfTab==='li')   return pfMine()? postAll().filter(function(p){ return !!p.lime; }) : [];
-  mine=mine.filter(function(p){ return !p.to; });
+  /* And the other side of the same question -- 投稿 is what is not a reply,
+     asked the one way. Two lists asking two different questions is how one
+     post came to be on both. */
+  mine=mine.filter(function(p){ return !postToWho(p); });
   mine.sort(function(a, b){ return (b.pin?1:0)-(a.pin?1:0); });
   return mine;
 }

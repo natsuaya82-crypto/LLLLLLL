@@ -943,11 +943,26 @@ export function halfDone(){
                                                 SET.plan = 'free'; return h; }],
     /* The profile's other two lists. Each is empty on a fresh fixture, and an
        empty list draws neither a row nor anything a row carries. */
+    /* AND A POST THAT BEGINS @名前 IS ON THE 返信 SIDE, not the 投稿 side.
+       「返信にだけ出して」 OWNER 2026-09-09. It carries `toh` and no `to`
+       (2026-09-07), so 「what a reply is」 is postToWho() and not `to`.
+       **両方の状態が顔になっています** ── 返信の側に在ることと、投稿の側に
+       無いこと。間違いはたいてい誰も写真を撮らなかったほうで、ここでは
+       「投稿の側から消えたか」がそれです。 */
     ['the profile, replies', () => { pfTab='re'; POSTS.push({id:'pre', at:1, lang:langId,
         lname:'Shango', ln:'ke', who:'Aya', hd:'aya', mine:true, to:'p2',
-        mn:'what?', ui:'en'});
+        mn:'what?', ui:'en'},
+        {id:'pat1', at:2, lang:langId, lname:'Shango', ln:'kano tir',
+         who:'Aya', hd:'aya', mine:true, to:'', toh:'iri',
+         mn:'a mountain', ui:'en'});
         window.route='profile'; NAV=[{r:'profile'}];
-        const h=vProfile(); POSTS.pop(); pfTab='posts'; return h; }],
+        const h=vProfile(); POSTS.pop(); POSTS.pop(); pfTab='posts'; return h; }],
+    ['the profile, posts, with one addressed to somebody', () => { pfTab='posts';
+        POSTS.push({id:'pat1', at:2, lang:langId, lname:'Shango', ln:'kano tir',
+                    who:'Aya', hd:'aya', mine:true, to:'', toh:'iri',
+                    mn:'a mountain', ui:'en'});
+        window.route='profile'; NAV=[{r:'profile'}];
+        const h=vProfile(); POSTS.pop(); return h; }],
     ['the profile, likes', () => { pfTab='li'; const p=postById('p2'); p.lime=1; p.li=1;
         window.route='profile'; NAV=[{r:'profile'}];
         const h=vProfile(); delete p.lime; p.li=0; pfTab='posts'; return h; }],
