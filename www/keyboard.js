@@ -183,6 +183,20 @@ function kbId(){ KB_SEQ++; return 'k'+Date.now()+'_'+KB_SEQ; }
    made, and there is no id on it to tell them apart with. `again-check`
    holds it: the same phone launched three times counts one keyboard.
 
+   AND A BOARD WEARING THE ID THIS READER MINTED IS STILL THAT BOARD, which
+   is the half the first version got wrong. On the real launch the two never
+   meet while one of them is bare: kbRead() stamps the disk copy, saveKb()
+   writes the stamped one into LSL, and netSlice1()'s slMine() hands syMerge()
+   THAT -- so both sides carry an id by the time they are in one array, and
+   the join above could not fire. Measured, not read: `(none)` on the disk,
+   `bfzcp3y_1714` after kbRead(), the same after saveKb(), and two boards out
+   of the merge. kbMinted() is what tells the two kinds of id apart, and it
+   asks a board about ITSELF rather than comparing it with anything: an id
+   that is this board's own kbHash (with a '+' for each twin ahead of it) is
+   a stand-in this reader wrote, not a name anybody gave. A board made here
+   takes its id off the clock (kbId), so 「+ を二回押した」 never answers yes
+   to this and two of those are never joined.
+
    Two id-less boards of one content are still two. They hash alike, and
    letting them SHARE an id would be syKeyOf() told they are one row -- a
    board somebody made, gone -- so the second one and every one after it is
@@ -211,16 +225,31 @@ function kbHash(b){
   for(i=0;i<s.length;i++) h=((h<<5)-h+s.charCodeAt(i))|0;
   return 'b'+(h>>>0).toString(36)+'_'+s.length;
 }
+/* Whether this board's id is one THIS READER wrote for it -- its own kbHash,
+   with a '+' for each twin ahead of it in the array. It asks the board about
+   itself and compares it with nothing. A board made in the app takes its id
+   off the clock, so it never answers yes. */
+function kbMinted(b){
+  var h, i;
+  if(!b || !b.id) return false;
+  h=kbHash(b);
+  if(b.id.length<h.length || b.id.slice(0, h.length)!==h) return false;
+  for(i=h.length;i<b.id.length;i++) if(b.id.charAt(i)!=='+') return false;
+  return true;
+}
 function kbIded(k){
   var kbs=k.kbs||[], out=[], seen={}, taken={}, byId={}, put=[], i, b, s, id, off, idx;
-  /* what the boards that ALREADY have ids look like -- read before one is
-     minted, because the id-less copy comes first in the array and the row it
-     belongs to comes after it. `taken` is the same pass: a hash landing on an
-     id a LATER board is wearing would make that board a twin of this one. */
+  /* what the boards wearing a NAME look like -- read before one is minted,
+     because the copy that has none comes first in the array and the row it
+     belongs to comes after it. A stand-in this reader wrote is not a name and
+     is left out, or the migration below would have nothing to join to.
+     `taken` is the same pass and takes both kinds: a hash landing on an id a
+     LATER board is wearing would make that board a twin of this one. */
   for(i=0;i<kbs.length;i++){
     b=kbs[i];
     if(!b || typeof b!=='object' || !b.id) continue;
     taken['i'+b.id]=1;
+    if(kbMinted(b)) continue;
     s='g'+kbSig(b);
     if(!Object.prototype.hasOwnProperty.call(byId, s)) byId[s]=b.id;
   }
@@ -228,11 +257,11 @@ function kbIded(k){
     b=kbs[i];
     /* not a board at all: kept exactly where it was and asked nothing */
     if(!b || typeof b!=='object'){ put.push(out.length); out.push(b); continue; }
-    if(!b.id){
+    if(!b.id || kbMinted(b)){
       s='g'+kbSig(b);
-      /* the migration: this is that board, before boards had ids */
+      /* the migration: this is that board, from before boards had ids */
       if(Object.prototype.hasOwnProperty.call(byId, s)) b.id=byId[s];
-      else {
+      else if(!b.id){
         id=kbHash(b);
         while(taken['i'+id]) id=id+'+';
         taken['i'+id]=1; b.id=id;

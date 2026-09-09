@@ -4080,6 +4080,22 @@ const kbPrep = await pg2.evaluate(({ s }) => {
   const srvOne = JSON.parse(JSON.stringify(oldOne)); srvOne.id = 'k1788700000_1';
   const pair = kbBoardsOf(JSON.parse(JSON.stringify({ kbs: [oldOne, srvOne], at:0, v:2 })));
   const pairN = pair.kbs.length, pairId = pair.kbs[0].id;
+  /* そして実機の道では、二枚が出会うときには写しのほうにもう id が打たれて
+     います ── kbRead() が打ち、saveKb() がそれを LSL に書き、netSlice1() の
+     slMine() がその版を syMerge() に渡すからです（測りました：ディスク (none)、
+     kbRead のあと bfzcp3y_1714、saveKb のあとも同じ）。読み手が打った id は
+     名前ではなく立て替えなので、そのときも同じ組として一枚になります。
+     kbMinted() が二種類の id を見分ける一か所で、板に自分自身のことだけを
+     訊きます。again-check 1432 が実機の道でこれを持っています。 */
+  const mintOne = JSON.parse(JSON.stringify(oldOne)); mintOne.id = kbHash(oldOne);
+  const late = kbBoardsOf(JSON.parse(JSON.stringify(
+    { kbs: [mintOne, srvOne], at:0, v:2 })));
+  const lateN = late.kbs.length, lateId = late.kbs[0].id;
+  /* 一方、時計から取った id を着た板は二枚とも人が作ったもので、まとまりません。 */
+  const madeTwo = kbBoardsOf(JSON.parse(JSON.stringify(
+    { kbs: [{ nm:'', pat:'qwerty', lay: old.kbs[0].lay, id:'k1788700001_1' },
+            { nm:'', pat:'qwerty', lay: old.kbs[0].lay, id:'k1788700002_2' }], at:0, v:2 })));
+  const madeTwoN = madeTwo.kbs.length;
   /* 人が＋を二回押した空の板は二枚。「ダメに決まってんだろ」OWNER 2026-09-09。
      本物の道 ── kbAdd() 二回、saveKb()、そして slRd() で読み直す。 */
   KB = { kbs: [], at: 0 };
@@ -4099,6 +4115,7 @@ const kbPrep = await pg2.evaluate(({ s }) => {
     madeA: madeA, madeB: madeB,
     twinA: twinA, twinB: twinB, twinN: twinN,
     pairN: pairN, pairId: pairId,
+    lateN: lateN, lateId: lateId, madeTwoN: madeTwoN,
     twoN: twoN, twoIds: twoIds
   };
 }, { s: seed.toString() });
@@ -4177,6 +4194,14 @@ say(kbPrep.pairN === 1 && kbPrep.pairId === 'k1788700000_1',
     + 'as IS that board — written down twice, once from before boards had ids — so it '
     + 'takes that id and the two are one (' + kbPrep.pairN + ' board, ' + kbPrep.pairId
     + ')');
+say(kbPrep.lateN === 1 && kbPrep.lateId === 'k1788700000_1',
+    'and it is still that board once THIS READER has stamped it — the launch stamps '
+    + 'the disk copy and saves it before it ever meets the server’s row, so an id that '
+    + 'is a board’s own kbHash is a stand-in and not a name (' + kbPrep.lateN
+    + ' board, ' + kbPrep.lateId + ')');
+say(kbPrep.madeTwoN === 2,
+    'while two boards wearing ids off the CLOCK are two boards somebody made, joined '
+    + 'by nothing, whatever is on them (' + kbPrep.madeTwoN + ' boards)');
 say(kbPrep.twinN === 2 && kbPrep.twinA === kbPrep.twinB
     && kbPrep.twinA.split(',')[0] !== kbPrep.twinA.split(',')[1],
     'and two id-less boards of one content, with no id-carrying row beside them to be '
