@@ -125,6 +125,22 @@ https://raw.githubusercontent.com/natsuaya82-crypto/LLLLLLL/master/supabase/sche
    **`language_seen` の作り直しと、関数への `grant execute` が含まれます**
    （`anon` にも要ります ── 公開された言語の文字は account の無い人も読むので）。
 
+5. **`slice_hist` 表と trigger と RPC 二つ**（新、同日あとから）──
+   「運営が治せる仕様は欲しい。ユーザーが問い合わせてきた時に、アカウントの
+   復旧ができるようにしたい、管理画面で」「3 で実装して」OWNER 2026-09-09。
+   `slice` が書き換わる／消える**直前**の中身を `slice_hist` に一行残し、
+   同じ (language, kind) で **3 版**を超えたら一番古い行を消します
+   （trigger `slice_hist_keep()`、`security definer`）。**これが唯一の自動
+   削除で、DELETE REVIEW は `docs/CHANGELOG.md` 2026-09-09 にあります。**
+   読めるのは `is_staff()` だけ、insert / update / delete の policy は一つも
+   ありません。戻す道は `admin_hist(handle)` と
+   `admin_restore(language, kind, at)` の二つで、どちらも中で `is_staff()` を
+   訊きます。**版は流した時点より後の書き込みから積まれます** ── 流した直後は
+   版ゼロで、それは正しい状態です。アプリ側は一行も変わっていません
+   （`netSlicePut()` はそのまま）。**この項目だけはアプリが 404 を受け取る
+   類のものではありません** ── 流さなくても今までどおり動き、復旧の画面だけが
+   空で返ります。
+
 **流し直すまで、アプリは言語の一覧・記事・ダウンロードで 404 を受け取ります**
 （新しい列を選ぶ GET が PGRST で断られます）。「くるくる回ったまま」ではなく、
 はっきり「接続できません」が出ます。**先に SQL、それからビルドです。**

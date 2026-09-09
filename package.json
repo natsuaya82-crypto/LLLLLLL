@@ -42,6 +42,7 @@
     "acct": "node tools/acct-check.mjs",
     "dl": "node tools/dl-check.mjs",
     "again": "node tools/again-check.mjs",
+    "hist": "node tools/hist-check.mjs",
     "page": "node tools/page-check.mjs",
     "find": "node tools/find-check.mjs",
     "slow": "node tools/slow-check.mjs",

@@ -4307,3 +4307,55 @@ function netNotices(ok, bad){
       ok(out);
     }, bad);
 }
+/* ---- the operator putting somebody's language back ----------------------
+   「運営が治せる仕様は欲しい。ユーザーが問い合わせてきた時に、アカウントの
+   復旧ができるようにしたい、管理画面で」「3 で実装して」 OWNER 2026-09-09.
+
+   Two calls and they are the whole of it, in the shape netStaffAdd() and
+   netStaffDrop() above are: the door is admin_hist() and admin_restore() in
+   supabase/schema.sql, which ask is_staff() inside themselves, and these are
+   a screen for that door rather than the door.
+
+   NO BODY EVER COMES DOWN. A version of a 5000-word dictionary is 685 KB and
+   the screen shows a part's name and a date -- the operator is restoring on
+   what the person told them, not reading their language. So what comes back
+   is (language, kind, at), and a restore is told which of those to put back.
+
+   AND THERE IS NO NEW ROAD DOWN TO THE PERSON'S PHONE. A restore lands on
+   `slice` and reaches them the way everything on `slice` reaches them:
+   netLangsWalk() on their next launch, which fills in what this phone is not
+   holding. The slices are in memory (rule 22), so an app that has been closed
+   is holding nothing and the restored version is simply what comes down. An
+   app left OPEN is holding the old one and will not take it -- 「アプリを
+   一度閉じて開き直してください」 is what the operator says, and it is one
+   road rather than two. */
+function netHist(handle, ok, bad){
+  ok=ok||function(){}; bad=bad||function(){};
+  if(!netSignedIn() || !handle){ bad(null, 0); return; }
+  netSend('POST', '/rest/v1/rpc/admin_hist', {handle:netHandleOf(handle)},
+    SESS.at,
+    function(d){
+      var i, r, langs=[], hist=[],
+          ls=(d && d.langs)? d.langs : [], hs=(d && d.hist)? d.hist : [];
+      for(i=0;i<ls.length;i++){
+        r=ls[i];
+        if(r && r.id) langs.push({id:String(r.id), name:String(r.name||'')});
+      }
+      for(i=0;i<hs.length;i++){
+        r=hs[i];
+        if(r && r.language && r.kind)
+          hist.push({sid:String(r.language), kind:String(r.kind),
+                     at:String(r.at||''), ms:Date.parse(r.at)||0});
+      }
+      /* 「そんな人はいません」 and 「その人には版がありません」 are two
+         states and do not share a branch: `who` is null only for the first. */
+      ok({who:(d && d.who)? String(d.who) : '', langs:langs, hist:hist});
+    }, bad);
+}
+function netRestore(sid, kind, at, ok, bad){
+  ok=ok||function(){}; bad=bad||function(){};
+  if(!netSignedIn() || !sid || !kind || !at){ bad(null, 0); return; }
+  netSend('POST', '/rest/v1/rpc/admin_restore',
+          {language:sid, kind:kind, at:at}, SESS.at,
+          function(){ ok(); }, bad);
+}

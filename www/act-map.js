@@ -58,6 +58,9 @@ act('adminGo', adminGo);
    asked again by pulling it down -- www/sns.js § WHICH SCREENS ANSWER A
    PULL, and modAsk() in www/mod.js is what it asks. */
 act('adminStaffAdd', adminStaffAdd);
+/* 運営がその人の言語を前の版に戻す道 (OWNER 2026-09-09) */
+act('adRecFind', adRecFind);
+act('adRecPick', adRecPick);
 act('adminStaffDrop', adminStaffDrop);
 act('modDown', modDown);
 act('modUp', modUp);
@@ -329,6 +332,7 @@ actIn('kbSetNm', kbSetNm);
 actIn('meSetName', meSetName);
 actIn('adminSet', adminSet);
 actIn('adminStaffSet', adminStaffSet);
+actIn('adRecSet', adRecSet);
 /* The two the profile grew. They could not be written down before
    claude/me2 came in: this file registers the FUNCTION and not its name, so a
    line here pointing at something www/me.js does not have yet stops the app on
