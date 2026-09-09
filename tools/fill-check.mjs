@@ -34,7 +34,7 @@ await pg.waitForSelector('#splash', { state:'detached', timeout:10000 });
 
 const r = await pg.evaluate(async ({s}) => {
   eval('(' + s + ')()');
-  SET.done = true; SET.theme = 'light'; SET.myfont = true;
+  SET.walked = true; SET.theme = 'light'; SET.myfont = true;
   function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
   /* A WIRE THAT ANSWERS. The Save in the bar is not saved until it is up
      (www/shell.js § keepSave -> netSaveNow), so a press with nothing on the

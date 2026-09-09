@@ -233,7 +233,7 @@ const R = await pg.evaluate(() => {
   };
 
   pairs.forEach(([w0, bn, stand]) => {
-    SET.wsys = w0;
+    langWsysGot(langId, w0);
     stand();
     const w = w0 + ' on ' + bn;
     /* Claim 8 on both plans. The free QWERTY is what BOTH type on, so it is
@@ -398,10 +398,10 @@ const R = await pg.evaluate(() => {
 
   /* 9. a writing system NOBODY CHOSE adds no face.
 
-     Every pair above sets SET.wsys before it looks, which is the case where
-     somebody went to the writing-system screen and said "syllabary". It is
-     not the only case: wsys() falls through to wsGuess() when SET.wsys is
-     unset, and wsGuess() reads 'syll' off one letter that happens to write
+     Every pair above sets the language's own `wsys` before it looks, which is
+     the case where somebody went to the writing-system screen and said
+     "syllabary". It is not the only case: wsys() falls through to wsGuess()
+     when the column is empty, and wsGuess() reads 'syll' off one letter that happens to write
      two sounds. So the claims above were all being made about the road
      the app takes when it is TOLD, and the road it takes when it GUESSES had
      never been walked at all -- which is how a keyboard somebody built one
@@ -412,7 +412,7 @@ const R = await pg.evaluate(() => {
      fixture's language ever stops guessing a converting system, the claim
      below would hold for the wrong reason, and this says so instead. */
   const guessFails = [];
-  delete SET.wsys;
+  langWsysGot(langId, '');
   KB = { kbs: [{ nm: '', pat: 'qwerty', lay: kbFixed().lay }], at: 1, v: 2 };
   kbShow = 1;
   const guessed = wsys();

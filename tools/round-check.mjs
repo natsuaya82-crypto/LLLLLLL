@@ -39,7 +39,7 @@ await pg.waitForSelector('#splash', { state:'detached', timeout:10000 });
 
 const r = await pg.evaluate(({s}) => {
   eval('(' + s + ')()');
-  SET.done = true;
+  SET.walked = true;
   var o = GGRID.inset, D = geStep(), P = function(i,j){ return [o+i*D, o+j*D]; };
   var l = LETTERS[0], out = {};
 

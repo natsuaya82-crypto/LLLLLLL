@@ -16,7 +16,7 @@
    a different screen, and both are worth looking at.
 
    `ob` is the exception, because the onboarding is the one screen with no
-   route -- it is what the app is until SET.done, not a place you go. It is
+   route -- it is what the app is until SET.walked, not a place you go. It is
    also the screen that gets rebuilt most often, and it was the only one
    nobody could ask for a picture of. `ob` is every step; `ob:2` is one. The
    steps with a second face -- borrowing, the sound offered again -- come from
@@ -119,7 +119,7 @@ await pg.evaluate('window.HALF = (' + halfDone.toString() + ')()');
 await pg.evaluate(({ ui, dk, pd, mf }) => {
   window.__shot = { ui: ui, dark: dk, paid: pd, myfont: mf };
   window.__dress = function () {
-    SET.done = true;                 /* past the onboarding, unless it is what was asked for */
+    SET.walked = true;                 /* past the onboarding, unless it is what was asked for */
     SET.ui = window.__shot.ui;
     if (window.__shot.paid) SET.plan = 'pro';    /* --paid: the faces the free plan does not show */
     if (window.__shot.myfont) SET.myfont = true; /* --myfont: the app in the letters somebody drew */
@@ -211,7 +211,7 @@ for (const spec of shots) {
              it is for and what act-check and press already do with it. The
              shell is painted first so the bar and the tab bar are there, then
              the face's own body replaces #app. */
-          SET.done = true;
+          SET.walked = true;
           window.__seed();
           /* AND THE LANGUAGE AND THE THEME AGAIN. The seed sets `SET.ui` to
              English -- every walk is built on that -- and it is re-run HERE,
@@ -241,8 +241,8 @@ for (const spec of shots) {
     ? await pg.evaluate(({ n, face }) => {
         try {
           /* The onboarding is not somewhere you go: it is what render() shows
-             while SET.done is false, so that is how it is asked for. */
-          SET.done = false;
+             while SET.walked is false, so that is how it is asked for. */
+          SET.walked = false;
           SET.obback = null;      /* the door is shown for this, not for a step */
           window.ob.step = n; window.ob.mode = ''; window.ob.lid = '';
           if (face) OB_STATES[n][1]();   /* sets ob.* and returns the html render() rebuilds */
@@ -251,7 +251,7 @@ for (const spec of shots) {
         } catch (e) { return String(e && e.message || e); }
       }, { n: Number(ob[1]), face: spec.charAt(2) === '@' })
     : await pg.evaluate(({ r, a }) => {
-        try { SET.done = true; go(r, a === undefined ? undefined : a); render(); return null; }
+        try { SET.walked = true; go(r, a === undefined ? undefined : a); render(); return null; }
         catch (e) { return String(e && e.message || e); }
       }, { r, a });
   if (err) { console.error(`  ${spec} threw: ${err}`); continue; }

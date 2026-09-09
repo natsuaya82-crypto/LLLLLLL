@@ -106,7 +106,7 @@ async function boot(){
     var id;
     window.__SRV.lang = []; window.__SRV.slice = []; window.__SRV.n = 0;
     window.__SRV.log = [];
-    SET.done = true;
+    SET.walked = true;
     SESS = { at:'t', rt:'r', uid:'me', anon:false };
     NET_SYNCING = false;
     for (id in LANGS){

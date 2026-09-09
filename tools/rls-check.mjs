@@ -1140,6 +1140,35 @@ const CASES = [
   ['and an empty one is not a search',        'denied', A, 0,
     `insert into recent_search(author,q) values ('${A}','')`],
 
+  /* --- WHICH OF SOMEBODY ELSE'S LANGUAGES AN ACCOUNT HAS TAKEN ------------
+     「端末に残すものないんですけど。サーバーで同じ機能になるように代替して」
+     OWNER 2026-09-08. This was `LANGS[id].uid` on the phone -- the index row
+     of a downloaded language, carrying whoever TOOK it -- and the ceiling on
+     downloads counted it, so on a second phone the number started at nought.
+
+     It is nobody else's business who has taken what: this is what a ceiling
+     counts, and there is no screen anywhere that shows it. So the read is
+     locked to the account the same way a draft's is, and B is refused all
+     three ways -- reading A's rows, writing one onto A, and deleting one of
+     A's. A `using (true)` here would hand anybody with the publishable key a
+     list of everything every account has downloaded. */
+  ['A takes a language',                      'ok',     A, 0,
+    `insert into language_take(uid,language) values ('${A}','${L}')`],
+  ['and reads it back',                       'ok',     A, 0,
+    `select 1 from language_take where uid='${A}' and language='${L}'`],
+  ['B cannot read what A has taken',          'denied', B, 0,
+    `select 1 from language_take where uid='${A}'`],
+  ['B cannot write a take onto A',            'denied', B, 0,
+    `insert into language_take(uid,language) values ('${A}','${LS}')`],
+  ['B cannot delete one of A\u2019s',          'denied', B, 0,
+    `delete from language_take where uid='${A}' and language='${L}'`],
+  ['nor can somebody with no account read one', 'denied', D, 1,
+    `select 1 from language_take where uid='${A}'`],
+  /* And it is still A's after all of that -- a refusal that took the row
+     with it would be the same failure the other way round. */
+  ['and A still has it',                      'ok',     A, 0,
+    `select 1 from language_take where uid='${A}' and language='${L}'`],
+
   /* --- a draft, which is the one thing here that is nobody else's ---------
      Every other table in this file is either already public or on its way to
      being public, and their select policies say so. `draft` is what somebody

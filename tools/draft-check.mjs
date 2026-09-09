@@ -73,10 +73,22 @@ const R = await pg.evaluate(() => {
   /* Signed in, because the composer sends you to the feed if you are not --
      openPost() says so itself rather than trusting the trail. The drafts are
      emptied too: they are read off the disk at load and this counts them. */
+  /* 下書きは 2026-09-09 から **行が出来てから**手元に入ります
+     （www/post.js § draftKeep）。だからここにサーバーが要ります ── 無いと、
+     この検査は「保存できなかった」を測っているだけになります。
+     同期で答えます: 押した直後に読む主張が下にあるので。 */
+  let srvSaw = [], srvDown = false;
   const start = () => {
-    window.__seed(); SET.done = true; SET.plan = 'pro';
-    SESS = { rt: 'a refresh token' };
+    window.__seed(); SET.walked = true; SET.plan = 'pro';
+    SESS = { at: 'a token', rt: 'a refresh token', uid: 'me' };
     DRAFTS.length = 0;
+    srvSaw = []; srvDown = false;
+    netSend = (method, path, body, tok, ok2, bad2) => {
+      srvSaw.push(method + ' ' + path);
+      if (srvDown) return bad2(null, 0, 'down');
+      return ok2(method === 'PATCH' ? [{ id: 'row' }] : []);
+    };
+    netGet = (path, ok2) => ok2([]);
     NAV = [{ r: 'profile' }]; window.route = 'profile';
   };
   /* Every case counts what it was asked and what it answered. "asked nothing"
@@ -305,6 +317,75 @@ const R = await pg.evaluate(() => {
       JSON.stringify(ltDraft));
   if (!IMP || !IMP.rows || IMP.rows.length !== 1)
     out.fails.push('pressing back threw away a list being read in');
+
+  /* ---- 下書きはサーバーの `draft` 表が唯一 ------------------------------
+     「端末に残すものないんですけど。サーバーで同じ機能になるように代替して」
+     OWNER 2026-09-08。
+
+     `lingua.drafts` は読み専用の写しになりました。前は端末に先に書いて
+     あとから送り、引くときに「サーバーが持っていないもの」を全部上げて
+     いたので、**もう一台で消した下書きがこちらから戻って**いました ──
+     永遠に、消す手立て無しで。
+
+     四本訊きます:
+     1. 保存は行が出来てから ── 落ちれば何も入らず、打ったものは欄に残る
+     2. 引いたら、サーバーに無い（＝向こうで消された）下書きは手元からも消える
+     3. サーバーに行ったことの無い古い下書きは、消さずに送る
+     4. 開いている下書きは、引いても触らない
+
+     赤を見た形（2026-09-09）: `draftKeep()` を「端末に先に書く」形に戻すと 1、
+     `draftsPull()` を「持っていないものを全部上げる」形に戻すと 2 が赤。 */
+  start();
+  srvDown = true;
+  write();
+  const before7 = DRAFTS.length;
+  draftKeep();
+  if (DRAFTS.length !== before7)
+    out.fails.push('通らなかったのに下書きに入った — ' + DRAFTS.length + ' 件');
+  if (PW.ln !== LN)
+    out.fails.push('通らなかったのに打ったものが欄から消えた — ' + JSON.stringify(PW.ln));
+  if (!srvSaw.length)
+    out.fails.push('保存を押したのにサーバーへ一本も出ていない');
+  srvDown = false;
+  draftKeep();
+  if (DRAFTS.length !== before7 + 1)
+    out.fails.push('通ったのに下書きに入らない — ' + DRAFTS.length + ' 件');
+  if (PW.ln)
+    out.fails.push('通ったのに欄が空になっていない');
+  out.said.push('保存は行が出来てから入る ── 落ちれば何も入らず、打ったものは欄に残る');
+
+  /* もう一台で消した下書き。こちらは「送った」印を持っている（up）ので、
+     サーバーに無いのは向こうで消されたということ。 */
+  start();
+  DRAFTS.push({ id: 'gone-elsewhere', at: 1, ln: '向こうで消した', up: 1 });
+  DRAFTS.push({ id: 'never-up', at: 2, ln: 'サーバーに行ったことがない', up: 0 });
+  draftsSave();
+  netGet = (path, ok2) => ok2([]);
+  let pulled = 0;
+  draftsPull((n) => { pulled = n; }, () => {});
+  if (draftById('gone-elsewhere'))
+    out.fails.push('もう一台で消した下書きが手元に残っている ── 次の pull で戻る道');
+  if (!draftById('never-up'))
+    out.fails.push('サーバーに行ったことの無い下書きが消えた ── これは送るほう');
+  if (!srvSaw.some(x => x.indexOf('/rest/v1/draft') >= 0))
+    out.fails.push('サーバーに行ったことの無い下書きが送られていない — ' +
+                   JSON.stringify(srvSaw));
+  const upNow = draftById('never-up');
+  if (upNow && !upNow.up)
+    out.fails.push('送ったのに「送った」印が付いていない');
+  out.said.push('引いたらサーバーの一覧になる ── 向こうで消したものは戻らず、' +
+                '行ったことの無いものは消さずに送る');
+
+  /* 開いている下書きは触らない。 */
+  start();
+  DRAFTS.push({ id: 'open-now', at: 3, ln: 'いま開いている', up: 1 });
+  draftsSave();
+  PW = pwBlank(); PW.did = 'open-now';
+  netGet = (path, ok2) => ok2([]);
+  draftsPull(() => {}, () => {});
+  if (!draftById('open-now'))
+    out.fails.push('いま開いている下書きが、引いたときに消えた');
+  out.said.push('いま開いている下書きは、引いても触らない');
 
   window.confirm = realConfirm;
   return out;

@@ -746,7 +746,7 @@ var route='profile';
 /* ---- what the app IS, before any route is drawn ------------------------
    Three states, and this is the only place that says which one the app is in.
    It was written out three times -- render() in glyph.js, tabPaint() below,
-   and vOb() in onboard.js each carried their own copy of `SET.done` and
+   and vOb() in onboard.js each carried their own copy of the flag and
    obTourOn() -- and the third state was missing from all three.
 
    OWNER DECISION 2026-08-26:
@@ -760,7 +760,7 @@ var route='profile';
    language screens open to somebody with no account. A list of screens to
    guard is a list that is one short the day a screen is added.
 
-   'ob'   the onboarding, which is the app until SET.done
+   'ob'   the onboarding, which is the app until SET.walked
    'door' the door and nothing else -- finished, and signed out of
    'app'  a route, a view, and the bar at the foot
 
@@ -780,10 +780,10 @@ var route='profile';
    What was missing is that NOT SIGNED IN IS TWO DIFFERENT PEOPLE, and only
    one of them belongs at the door:
 
-     SET.done false   has not been through the onboarding -- and the sign-in
+     SET.walked false has not been through the onboarding -- and the sign-in
                       is the LAST STEP OF IT, so sending them to the door is
                       sending them to the end of a walk they have not started
-     SET.done true    has been through it and signed out -- the door, and
+     SET.walked true  has been through it and signed out -- the door, and
                       nothing else, which is 2026-08-26 and is untouched
 
    The paragraph that used to be here said "signed out is the same KIND of
@@ -794,7 +794,7 @@ var route='profile';
 
    tools/act-check.mjs asks appIs() for all three, and it asks what wipeHere()
    leaves behind. The reason nothing caught this is that the check beside it
-   sets SET.done = true before it walks, so every case in this file was about
+   sets SET.walked = true before it walks, so every case in this file was about
    the second person. */
 function appIs(){
   /* The walk through the app IS the app -- the real screens, dimmed, with one
@@ -808,12 +808,27 @@ function appIs(){
      their first letter into.
 
      The three answers below are unchanged and this line changes none of them:
-     obTourOn() is `!SET.done && ob.step===OB_TOUR`, so it is false for every
+     obTourOn() is `!SET.walked && ob.step===OB_TOUR`, so it is false for every
      phone that has finished the onboarding, and false for one that has not
      started the walk. tools/open-check.mjs holds all four by reading what is
      on the screen. */
   if(obTourOn()) return 'app';
-  if(!SET.done) return 'ob';
+  /* THE ONE THING ABOUT THE ONBOARDING THAT IS STILL THIS HANDSET'S, and the
+     owner put it here (2026-09-09, choice A). It answers 「which screen does a
+     phone with NO SESSION open on」 -- the walk, or the door -- and nothing on
+     a server can: signed out there is nobody to ask, and after an account is
+     deleted the row is gone. Two written decisions turn on it
+     （「ログアウトしたら普通にログイン画面だけ出せばいいやろ」 OWNER
+     2026-08-26、「アカウント削除した後オンボーディングから始まるのはなぜ？」
+     OWNER 2026-09-03）. It was `SET.done`, which also answered 「has this
+     ACCOUNT been through」 -- that half is the `profile` row now, three lines
+     down. This line is the only place `walked` is read. */
+  if(!SET.walked) return 'ob';
+  /* THE DOOR, OPENED FROM SOMEWHERE INSIDE THE APP. obDoor() used to take the
+     flag above away to get here, so the lie and the note saying it was a lie
+     were two facts that could come apart; there is one now and it is the note
+     (www/onboard.js § obDoor). */
+  if(typeof obPending==='function' && obPending()) return 'door';
   if(typeof netSignedIn!=='function' || !netSignedIn()) return 'door';
   /* AND AN ACCOUNT WITH NO NAME IS STILL AT THE DOOR.
      「アカウントがないならGoogleで続けてもidと@は先に決めないでどうすんの？」
@@ -823,7 +838,7 @@ function appIs(){
      the mail all end at obIn() (www/onboard.js), which asks the server
      whether this account has a profile row and, when it has none, puts up the
      screen that asks for a name and a handle. That screen was never drawn on
-     a phone where SET.done is true: this line answered 'app' the moment there
+     a phone where SET.walked is true: this line answered 'app' the moment there
      was a session, so the walk went straight past it. The account then had no
      row on the server at all -- not a bad handle, no row -- so nobody could
      find, follow or answer them, and meHandle() invented something out of the
@@ -831,14 +846,18 @@ function appIs(){
 
      It is a phone that has been through the onboarding, which is most of
      them, and it is every phone that has just deleted an account: that lands
-     on the door by leaving SET.done true (www/settings.js § wipeHere).
+     on the door by leaving SET.walked true (www/settings.js § wipeHere).
 
      `ME.handle` and not OBM.mode: ME is kept per account (meFor() in
      www/me.js), so an empty handle means THIS ACCOUNT has not been named on
      this phone -- which is what the door's last step is for. A person coming
      back, or arriving on a second phone, has it: obIn() writes it from the
      row the moment the answer lands, and it is in storage from then on. */
-  if(typeof ME!=='undefined' && ME && !ME.handle) return 'door';
+  /* AND IT IS THE SERVER THAT SAYS SO. `ME.handle` was the test and it is the
+     COPY of the row; meRowHas() (www/me.js) is the row itself, and it falls
+     back to that copy while the answer is still out -- a phone with no signal
+     must not be told it has no account. OWNER 2026-09-09 (choice A). */
+  if(typeof meRowHas==='function' && !meRowHas()) return 'door';
   return 'app';
 }
 

@@ -89,7 +89,14 @@ const MINE = [
      in another costume. postDir() reads the post; scriptDir() is the making
      side's and belongs above the line. */
   'SCRIPT', 'scriptDir',
-  'langName', 'langId', 'langKey',
+  /* AND THE ONE PLACE A LANGUAGE'S NAME IS ASKED FOR (www/core.js § LNAME).
+     It answers for a language THIS PHONE knows about, which is the making
+     side wearing a name instead of a global -- a post carries the name it
+     was written with (`lname`) and the reader is the one who has to say it,
+     which is what langNameSaid() is for. Rule 10's ltPuaOrder() is the same
+     sentence: a function that reads the making side is a way to reach the
+     making side, and giving it a new name is not a way to stop being one. */
+  'langName', 'langId', 'langKey', 'langNameOf', 'langNameGot', 'langNameKey',
   'findWord', 'spOf', 'wMns', 'wPh', 'addedSnd', 'exGloss',
   'myFontOn', 'ltById', 'ltMain', 'ltHasShape', 'wsStrokes', 'chOf', 'inkOf',
   'ME', 'meName', 'meHandle', 'postAvatar', 'postGloss', 'postGlossLine',

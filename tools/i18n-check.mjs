@@ -466,7 +466,7 @@ const R = await pg.evaluate(() => {
        for a step number now, so the note is cleared before the steps and
        after the faces -- one left behind hides every step of every language
        after it. */
-    SET.done = false;
+    SET.walked = false;
     SET.obback = null;
     for (let s = 0; s < OB_STEPS; s++) { ob.step = s; try { vOb(); } catch (e) { out.miss.push(c + ' vOb step ' + s + ' threw: ' + e.message); } }
     /* and every face a step has, which is the door's five and the borrow
@@ -476,7 +476,7 @@ const R = await pg.evaluate(() => {
       try { run(); } catch (e) { out.miss.push(c + ' ob "' + label + '" threw: ' + e.message); }
     });
     ob.step = 0; ob.mode = 'draw'; ob.pick = ''; OBM.mode = 'in'; SET.obback = null;
-    SET.done = true;
+    SET.walked = true;
 
     /* every screen, under every plan and every reading mode, empty and full */
     ['free','pro'].forEach(p => {
@@ -686,13 +686,13 @@ const R = await pg.evaluate(() => {
     while ((a = ATTRS.exec(raw))) words(where, a[1], 'has an attribute reading');
   }
 
-  SET.ui = 'zz'; SET.done = false; SET.obback = null;
+  SET.ui = 'zz'; SET.walked = false; SET.obback = null;
   for (let s = 0; s < OB_STEPS; s++){ ob.step = s; try { look('vOb step ' + s, vOb()); } catch (e) {} }
   window.__obStates().forEach(([label, run]) => {
     try { look('ob "' + label + '"', run()); } catch (e) {}
   });
   ob.step = 0; ob.mode = 'draw'; ob.pick = ''; OBM.mode = 'in'; SET.obback = null;
-  SET.done = true;
+  SET.walked = true;
   ['free','pro'].forEach(p => {
     SET.plan = p;
     [false, true].forEach(empty => {

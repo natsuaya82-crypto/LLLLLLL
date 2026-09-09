@@ -478,10 +478,17 @@ function draftsSave(){
    drafts, and a name made on one must not be a name made on the other.
    www/net.js is loaded before this file (www/index.html), which is why this
    can run where it does. */
+/* AND WHETHER IT HAS EVER BEEN ON THE SERVER, which is what tells 「written
+   before there was a server」 from 「the row was deleted on the other phone」.
+   Both are a draft with a name and no row, and they want opposite things done
+   about them: the first goes up, the second goes off this phone.
+   `up` is written when netDraftUp() lands and by nothing else -- the same
+   thing `lingua.<id>.<slice>.was` is for a slice. A draft made from today
+   reaches the server before it reaches this list, so it is always 1. */
 function draftsName(){
   var i, n=0;
   for(i=0;i<DRAFTS.length;i++)
-    if(DRAFTS[i] && !DRAFTS[i].id){ DRAFTS[i].id=netUUID(); n++; }
+    if(DRAFTS[i] && !DRAFTS[i].id){ DRAFTS[i].id=netUUID(); DRAFTS[i].up=0; n++; }
   if(n) draftsSave();
 }
 function draftById(id){
@@ -526,20 +533,26 @@ function draftKeep(){
      server nobody can reach and one in front of them. */
   var d={id:PW.did || netUUID(), at:Date.now(), ln:dayTagStore(PW.ln), mn:PW.mn, to:PW.to,
          toh:PW.toh||'', pr:PW.pr||0, pics:pwPics(), vo:PW.vo||null, pv:!!PW.pv};
-  DRAFTS.push(d);
-  /* The phone FIRST and always, whatever the network is doing. A draft is on
-     this phone the moment it is written, and it is written by somebody who
-     may be in a tunnel: 「書いたものが signal 無しで消えるのは駄目」. The
-     server is where it lives; this is the copy that works without one. */
-  draftsSave();
-  /* And then up. Not waited on and its failure is not said: nothing on the
-     screen depends on the answer, the draft is already safe on the phone, and
-     the next time the drafts are opened draftsPull() sends up anything the
-     server has not got. */
-  netDraftUp(d);
-  PW=pwBlank();
-  toast(t('post.draft.kept'));
-  goTab('feed');
+  /* THE SERVER FIRST, AND THE LIST WHEN IT HAS LANDED.
+     「端末に残すものないんですけど」 OWNER 2026-09-08, and
+     「保存するタイミングでエラーが起きるなら、保存されないし」 OWNER
+     2026-09-05.
+
+     This wrote the phone first and sent afterwards without waiting, so a draft
+     written in a tunnel sat here as the only copy -- and `lingua.drafts` is a
+     copy that must not travel back (rule 22), which made that draft one this
+     app could never put anywhere. The keep does not happen now; what was
+     typed stays in the composer, on the screen, and ［再接続］ presses Keep
+     again. Nothing of anybody's is thrown away by a failure: the composer is
+     untouched until the row is there. */
+  netDraftUp(d, function(){
+    d.up=1;
+    DRAFTS.push(d);
+    draftsSave();
+    PW=pwBlank();
+    toast(t('post.draft.kept'));
+    goTab('feed');
+  }, function(dd, st, m){ netPop(dd, st, m, draftKeep); });
 }
 /* Opening one takes it out of the list: it is the composer again, and a draft
    that is open in two places at once is a draft about to be duplicated. */
@@ -572,14 +585,30 @@ function draftOpen(i){
   PW.did=d.id||'';
   openPost();
 }
-function draftDropGo(i){
-  var d=DRAFTS[i];
+/* THE ROW FIRST, AND THE COPY WHEN IT HAS GONE.
+   A draft LIVES on the server, so taking it off this phone and leaving the
+   row is not deleting it -- the next pull brings it back, and 「gone, then
+   back」 is not gone. It is netLangDrop()'s sentence said about a draft.
+
+   A draft that has never been up (`up` false -- written before there was a
+   server, and never sent) has no row to take away, and that is done rather
+   than failed: it is netDrop()'s own `if(!sid)`.
+
+   `i` was an index and is a DRAFT now: the row goes first, so by the time
+   this phone's list is touched the index it was given may name a different
+   draft. dfSelDelGo() below hands the drafts themselves for the same reason. */
+function draftDropGo(d){
+  if(typeof d==='number') d=DRAFTS[d];
+  if(!d) return;
+  if(!d.id || !d.up || !netSignedIn()){ draftDropHere(d); return; }
+  netDraftDrop(d.id, function(){ draftDropHere(d); },
+    function(dd, st, m){ netPop(dd, st, m, function(){ draftDropGo(d); }); });
+}
+function draftDropHere(d){
+  var i=DRAFTS.indexOf(d);
+  if(i<0) return;
   DRAFTS.splice(i, 1);
   draftsSave();
-  /* And off the server, because that is where it lived. A user action behind
-     a confirm, naming the one row it was given -- nothing here walks the
-     table asking what is stale (docs/DATA_SAFETY.md § DELETE REVIEW). */
-  if(d && d.id) netDraftDrop(d.id);
   /* AND THE RECORDING THAT WAS ONLY THIS DRAFT'S.
      「声は投稿上で再生できるよね？下書き消した時にはいらなくない？」 OWNER
      2026-09-03. The file is written when the recording ends (www/rec.js §
@@ -613,7 +642,7 @@ function draftsPull(ok, bad){
   var done=ok || function(){};
   if(!netSignedIn()){ done(0); return; }
   netDrafts(function(rows){
-    var i, k, r, b, d, seen={}, got=0;
+    var i, k, r, b, d, seen={}, keep=[], moved=false;
     for(i=0;i<(rows||[]).length;i++){
       r=rows[i];
       if(!r || !r.id) continue;
@@ -622,21 +651,45 @@ function draftsPull(ok, bad){
          it was opened, and putting it back is the same post in two places,
          which is the thing tools/draft-check.mjs holds. */
       if(PW && PW.did===r.id) continue;
-      if(draftById(r.id)) continue;
+      d=draftById(r.id);
+      if(d){ keep.push(d); continue; }
       d={}; b=r.body || {};
       for(k in b) if(Object.prototype.hasOwnProperty.call(b, k)) d[k]=b[k];
-      d.id=r.id;
+      d.id=r.id; d.up=1;
       if(!d.at) d.at=Date.parse(r.updated_at) || Date.now();
-      DRAFTS.push(d);
-      got++;
+      keep.push(d);
+      moved=true;
     }
-    if(got) draftsSave();
-    /* And what the server has not got. Not waited on and not counted: each
-       one answers for itself, and one that does not go up is still on this
-       phone and is tried again the next time this runs. */
-    for(i=0;i<DRAFTS.length;i++)
-      if(DRAFTS[i] && DRAFTS[i].id && !seen[DRAFTS[i].id]) netDraftUp(DRAFTS[i]);
-    done(got? 1 : 0);
+    /* AND WHAT THIS PHONE HAS THAT THE SERVER DOES NOT, WHICH IS TWO
+       DIFFERENT THINGS.
+       「もう一台で消した下書きが戻ってくる」 -- this used to send every one of
+       them up, so a draft deleted on the other phone was put back by this one,
+       for ever, and there was no way to be rid of it.
+
+       `up` is what tells them apart. A draft this phone has SENT and the
+       server has not got is a row somebody deleted somewhere else: the copy
+       catches up and it goes off this phone. A draft that has never been up
+       -- written before there was a server -- has never been anywhere else,
+       so it is sent, once, and joins the rest.
+
+       Nothing of anybody's is lost either way: the first is something they
+       deleted, and the second is on its way to where it lives. */
+    for(i=0;i<DRAFTS.length;i++){
+      d=DRAFTS[i];
+      if(!d || !d.id || seen[d.id]) continue;
+      if(PW && PW.did===d.id){ keep.push(d); continue; }
+      if(d.up){ moved=true; continue; }
+      keep.push(d);
+      netDraftUp(d, (function(one){
+        return function(){ one.up=1; draftsSave(); };
+      })(d));
+    }
+    if(moved || keep.length!==DRAFTS.length){
+      DRAFTS=keep;
+      draftsSave();
+      moved=true;
+    }
+    done(moved? 1 : 0);
   }, bad || function(){});
 }
 /* THE SECOND ROAD IS GONE. This was draftsPullOnce(): once for the account
@@ -687,9 +740,15 @@ function dfSelDel(){
    knife. And through draftDropGo(), which is the one place a draft goes -- it
    is what tells the server. */
 function dfSelDelGo(){
-  var ids=dfSelList().sort(function(a, b){ return b-a; }), i;
+  var ids=dfSelList(), ds=[], i;
   DFSEL=null;
-  for(i=0;i<ids.length;i++) draftDropGo(ids[i]);
+  /* The drafts and not their places in the list. Each one waits for its own
+     row to go, so by the time the second answer lands the list has moved
+     under the numbers -- which is how an index-shaped delete takes the wrong
+     draft. Sorting highest-first was the answer while this was immediate; it
+     is not one now. */
+  for(i=0;i<ids.length;i++) if(DRAFTS[ids[i]]) ds.push(DRAFTS[ids[i]]);
+  for(i=0;i<ds.length;i++) draftDropGo(ds[i]);
   render();
 }
 function vDrafts(){
@@ -1116,24 +1175,33 @@ function postFresh(p){
   put('down'); put('out');
   return moved;
 }
-/* HOW MANY, AND WHETHER YOU ARE ONE OF THEM.
+/* HOW MANY, AND WHETHER YOU ARE ONE OF THEM. THE SERVER COUNTS AND NOTHING
+   HERE DOES.
    -------------------------------------------------------------------------
-   Two answers to each question and one of them is the record. The server
-   counts (`post_seen` carries `likes`/`boosts`/`replies` and
-   `i_like`/`i_boost` since claude/acct2's 8fab549); the phone keeps `li`/`bo`
-   /`re` and `lime`/`bome` so a press shows at once and so a post written with
-   no signal has something to draw at all.
+   「端末に残すものないんですけど。サーバーで同じ機能になるように代替して」
+   OWNER 2026-09-08.
 
-   The server's answer wins where there IS one, and `undefined` is what "there
-   is not" looks like -- a post from before these existed, or one this phone
-   wrote and has not sent. Reading `0` as "no answer" would be the bug the
-   net.js comment warns about from the other side: a post with genuinely no
-   likes would fall back to a stale local number for ever. */
-function postNLike(p){ return (p && p.nlike!==undefined)? p.nlike : ((p && p.li)||0); }
-function postNBoost(p){ return (p && p.nboost!==undefined)? p.nboost : ((p && p.bo)||0); }
-function postNReply(p){ return (p && p.nreply!==undefined)? p.nreply : ((p && p.re)||0); }
-function postILike(p){ return (p && p.ilike!==undefined)? !!p.ilike : !!(p && p.lime); }
-function postIBoost(p){ return (p && p.iboost!==undefined)? !!p.iboost : !!(p && p.bome); }
+   `post_seen` carries `likes`/`boosts`/`replies` and `i_like`/`i_boost`, and
+   they are the answer. There were two: the phone kept `li`/`bo`/`re` and
+   `lime`/`bome` as well, and read them wherever the server had not spoken --
+   so a post the server could not answer for (one that has never gone up, one
+   from before those columns) showed a number this handset had worked out on
+   its own, for ever, and another phone showed a different one.
+
+   **NO ANSWER IS NOUGHT, and that is not the same as reading `0` as no
+   answer.** A post nobody has liked and a post the server has not been asked
+   about look the same on the screen, and they should: neither is 「somebody
+   liked this」. What must never happen is the phone ANSWERING -- a number of
+   its own, kept across launches, that nothing can correct.
+
+   WHAT IS ALREADY IN THE COPY IS NOT TOUCHED. `li`, `bo`, `re`, `lime` and
+   `bome` are still in `lingua.posts` on every phone that has this app; they
+   are not read, not written and not removed (docs/DATA_SAFETY.md). */
+function postNLike(p){ return (p && p.nlike!==undefined)? p.nlike : 0; }
+function postNBoost(p){ return (p && p.nboost!==undefined)? p.nboost : 0; }
+function postNReply(p){ return (p && p.nreply!==undefined)? p.nreply : 0; }
+function postILike(p){ return !!(p && p.ilike); }
+function postIBoost(p){ return !!(p && p.iboost); }
 /* Where the server keeps it. Written when a push comes back and read for two
    things: whether this post has gone up at all, and what to point a reply at.
 
@@ -1198,7 +1266,14 @@ function postSend(p, ok, bad){
      next attempt sends one file instead of four. Kept here rather than after
      every upload: one write at the end of a send, against one per file, on a
      key that carries the photographs themselves. */
-  netPush(p, function(sid){ delete POST_SENDING[id]; savePosts(); ok(sid); },
+  netPush(p, function(sid){ delete POST_SENDING[id]; savePosts();
+             /* AND THE POST IT ANSWERS, WHICH HAS ONE MORE REPLY NOW. The
+                server counted it the moment the row landed; this is where the
+                phone finds out, and it is the only moment it can -- a reply
+                sent from the composer and a reply caught up hours later both
+                come through here. */
+             if(p.to) postCountsPull(p.to);
+             ok(sid); },
              function(d, s){ delete POST_SENDING[id]; savePosts(); bad(d, s); });
 }
 var POST_CATCH=4;
@@ -1793,7 +1868,11 @@ function pwSendWith(ln, pics, vo){
        never arrived here at all. Same sentence as the name, the shapes and
        the language's name already on every post: what a reader needs goes ON
        it while the side that knows still exists. */
-    if(up){ up.re=(up.re||0)+1; mine.toh=up.hd||''; }
+    /* The reply COUNT is not touched here. It is `post_seen.replies` and the
+       server adds it up; this phone adding one to a copy of it is the second
+       answer that 2026-09-08 took out. postSend() asks again when the reply
+       has actually reached the server. */
+    if(up) mine.toh=up.hd||'';
   }
   /* A post that named somebody carries WHO and no `to`: there is no post
      being answered, so there is nothing to count a reply on and nothing for
@@ -1874,7 +1953,7 @@ function pwSendPost(p){
    old walk over LETTERS is what it is wearing today -- so that is adopted,
    once, and meAvSet() refuses every call after it. It fills in what is
    MISSING and stops (docs/DATA_SAFETY.md rule 2); it never writes over a face
-   that exists, and nothing here removes one. SET.done keeps it out of the
+   that exists, and nothing here removes one. The `profile` row keeps it out of the
    walk, where the letters are still being made and obFinish() has not
    decided yet. */
 function postAvatar(){
@@ -1883,7 +1962,7 @@ function postAvatar(){
      for the same reason: whoever reads it has neither this person's camera
      roll nor their alphabet. */
   if(ME.pic) return {pic:ME.pic};
-  if(!ME.av && SET.done){
+  if(!ME.av && meRowHas()){
     av=null;
     for(i=0;i<LETTERS.length && !av;i++) av=meAvOf(LETTERS[i]);
     meAvSet(av);
@@ -3457,37 +3536,54 @@ function postRow(p){
       '</div>'+
     '</div></div>';
 }
-/* A like is a like on this phone. It is kept and counted, and it is the first
-   thing that will have somewhere else to go when there is a server. */
+/* WHAT A POST'S NUMBERS ARE, ASKED AGAIN AFTER SOMEBODY MOVED ONE.
+   -------------------------------------------------------------------------
+   One place, because three presses want it -- the heart, the boost and a
+   reply reaching the post it answers -- and each of them working it out for
+   itself is the phone doing the server's arithmetic three times.
+
+   It writes through postFresh(), which is the one place that says what an
+   answer is allowed to change under a post this phone is holding. A post
+   with no `sid` has never been up: there is nothing to ask and nothing is
+   asked. A refusal changes nothing at all and says nothing -- somebody
+   pressing the heart has already been told by the press itself
+   (www/post.js § postLike), and a second pop about the number under it would
+   be the same failure said twice. */
+function postCountsPull(id){
+  var p=postById(id), sid=p && p.sid;
+  if(!sid || typeof netPostCounts!=='function' || !netSignedIn()) return;
+  netPostCounts(sid, function(r){
+    if(r && postFresh(r)){ savePosts(); render(); }
+  }, function(){});
+}
+/* A LIKE IS THE SERVER'S ROW, AND THE THUMB MOVES WHEN THE SERVER HAS IT.
+   -------------------------------------------------------------------------
+   「保存するタイミングでエラーが起きるなら、保存されないし」 OWNER 2026-09-05,
+   and it is the shape the 公開 switch already has (www/home.js § setWldHide).
+
+   This used to move the number and the heart first and send afterwards, on
+   the grounds that a press should show at once. What that is, with no signal,
+   is a screen saying a thing that did not happen: the heart stayed filled,
+   the number stayed up, and nothing had reached anybody. Now the press sends,
+   and what comes back moves the screen -- so a like that did not arrive is a
+   like that did not happen, and ［再接続］ presses it again.
+
+   NOT A NUMBER OF ITS OWN EITHER. netMark() sends whether it is liked, and
+   the count is asked for rather than added up here: two phones each adding
+   one to their own copy is how a number goes backwards. */
 function postLike(id){
   var p=postById(id);
   if(!p || !postMay()) return;
-  /* Off what is ON THE SCREEN, which is the server's number where there is
-     one. Toggling the local copy alone made the thumb argue with the figure
-     above it: pressing a post showing the server's 12 set `li` to 1. */
-  var on=!postILike(p);
-  p.lime=on;
-  p.li=Math.max(0, postNLike(p)+(on? 1 : -1));
-  /* Both copies move together, so the number changes under the thumb rather
-     than on the next pull. The next answer overwrites them, and it is the
-     record -- this is the moment in between. */
-  if(p.nlike!==undefined) p.nlike=p.li;
-  p.ilike=on;
-  savePosts(); render();
-  /* Whether it is liked, not what the count is: a count is the server's to
-     add up, and two phones sending counts is how a number goes backwards. */
-  netMark(id, 'like', !!p.lime, function(){}, function(){});
+  netMark(id, 'like', !postILike(p),
+    function(){ postCountsPull(id); },
+    function(d, st, m){ netPop(d, st, m, function(){ postLike(id); }); });
 }
 function postBoost(id){
   var p=postById(id);
   if(!p || !postMay()) return;
-  var on=!postIBoost(p);
-  p.bome=on;
-  p.bo=Math.max(0, postNBoost(p)+(on? 1 : -1));
-  if(p.nboost!==undefined) p.nboost=p.bo;
-  p.iboost=on;
-  savePosts(); render();
-  netMark(id, 'boost', !!p.bome, function(){}, function(){});
+  netMark(id, 'boost', !postIBoost(p),
+    function(){ postCountsPull(id); },
+    function(d, st, m){ netPop(d, st, m, function(){ postBoost(id); }); });
 }
 /* Replying opens the same screen a post is written on, holding on to what it
    is a reply TO. */
@@ -3688,7 +3784,7 @@ function postDelGo(id){
   });
 }
 function postDelDone(gone){
-  var i, up, to=gone.to||'';
+  var i, to=gone.to||'';
   for(i=0;i<POSTS.length;i++) if(POSTS[i]===gone){ POSTS.splice(i, 1); break; }
   /* Under both names, for the reason postTake() gives about `have`: this
      phone knows it as the id it wrote, and the timeline hands it back wearing
@@ -3698,17 +3794,11 @@ function postDelDone(gone){
      holds. */
   POST_GONE[gone.id]=1;
   if(gone.sid) POST_GONE[gone.sid]=1;
-  /* A reply counted one on the post it answered, and deleting it never took
-     that one back -- so a post somebody replied to and then deleted the reply
-     from said "1" forever, pointing at nothing.
-     「リプライ消したのに数字1のまま」
-     pwSendWith() is the one place that adds it, and this is the one place
-     that takes it away. Floored at zero: a count that has already been wrong
-     must not be made negative by putting it right. */
-  if(to){
-    up=postById(to);
-    if(up) up.re=Math.max(0, (up.re||0)-1);
-  }
+  /* 「リプライ消したのに数字1のまま」 was this phone keeping the count. It
+     does not keep one now -- `post_seen.replies` is the answer and the row
+     has just gone -- so the post that was answered is asked again rather than
+     having one taken off a copy. */
+  if(to) postCountsPull(to);
   savePosts();
   if(gone.vo && gone.vo.f) voDropFile(gone.vo.f);
   toast(t('post.del.ok'));

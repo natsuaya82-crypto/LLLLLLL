@@ -44,7 +44,7 @@ await pg.waitForSelector('#splash', { state:'detached', timeout:10000 });
 
 const r = await pg.evaluate(({s}) => {
   eval('(' + s + ')()');
-  SET.done = true; SET.theme = 'light'; SET.myfont = true;
+  SET.walked = true; SET.theme = 'light'; SET.myfont = true;
   var out = {};
 
   function sq(a, b){ return [[a,a],[b,a],[b,b],[a,b]]; }

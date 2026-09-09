@@ -41,7 +41,7 @@ const r = await pg.evaluate(({ s }) => {
      with no letters on it is not the page anybody buys from. */
   eval('(' + s + ')()');
   var out = {};
-  SET.done = true;
+  SET.walked = true;
 
   /* The real screen, reached the way a person reaches it, and rendered by the
      app rather than by this file: go() then render() is what a press does. */

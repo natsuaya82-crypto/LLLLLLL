@@ -31,7 +31,7 @@ await pg.waitForSelector('#splash', { state: 'detached', timeout: 10000 });
 
 const r = await pg.evaluate(({ s }) => {
   eval('(' + s + ')()');
-  SET.done = true; SET.plan = 'pro';
+  SET.walked = true; SET.plan = 'pro';
   var out = {}, i, j;
 
   /* A board of this person's own, on the screen it is edited on. Board 0 is
@@ -3233,7 +3233,7 @@ await small.goto('file://' + path.join(dir, '..', 'www', 'index.html'));
 await small.waitForSelector('#splash', { state: 'detached', timeout: 10000 });
 const SM = await small.evaluate(({ s }) => {
   eval('(' + s + ')()');
-  SET.done = true; SET.plan = 'pro';
+  SET.walked = true; SET.plan = 'pro';
   KB = null; kbShow = 0; kbAdd('abc'); kbLay = 0;
   var lay = kbEdit().lay[0], i, j, r;
   lay.rows = [];
@@ -4039,7 +4039,7 @@ await pg2.waitForSelector('#splash', { state: 'detached', timeout: 20000 });
 const kbPrep = await pg2.evaluate(({ s }) => {
   localStorage.clear();
   eval('(' + s + ')()');
-  SET.done = true; SET.plan = 'pro'; setKeep();
+  SET.walked = true; SET.plan = 'pro'; setKeep();
   LANGS[langId].sid = 'srv1'; LANGS[langId].uid = SESS.uid; langStore(); netSave();
   KB = { kbs: [], at: 0 };
   kbAdd('qwerty'); kbAdd('flick');

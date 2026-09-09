@@ -617,7 +617,10 @@ function sfontHTML(txt){
 function setMyFont(v){
   SET.myfont=!!v;
   if(SET.myfont && !SFONT.built) installScriptFont();
-  save(); render();
+  /* AND IT GOES WITH THE ACCOUNT (www/core.js § SET_PREFS, 2026-09-09). It
+     was 「how this handset is set up」, so a second phone showed somebody the
+     roman letters after they had turned them off on the first. */
+  save(); netPrefsPut(); render();
 }
 
 /* ---- the letter grid ----------------------------------------------------
@@ -1609,7 +1612,7 @@ function geKeep(){
      this, so every letter drawn in the letters chapter went into a font that
      nothing had been told to use -- which is 「単語に自作文字出てこない」. */
   if(keep.length) SET.myfont=true;
-  save();
+  save(); netPrefsPut();
   installScriptFont();
   return keep;
 }
@@ -2951,7 +2954,7 @@ function renderMount(){
      has to be on the page before this line runs.
      obTourAt() reads where the app landed, so pressing the lit thing is what
      moves the tour on -- it does what it really does. */
-  if(!SET.done){
+  if(!SET.walked){
     obTourAt();
     app.insertAdjacentHTML('beforeend', obTourHTML());
   }

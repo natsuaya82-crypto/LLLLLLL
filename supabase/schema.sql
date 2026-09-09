@@ -199,6 +199,30 @@ alter table profile add column if not exists banned_why text;
 -- read, and this is not on it.
 alter table profile add column if not exists handle_at timestamptz;
 
+-- ---- HOW THIS ACCOUNT HAS THE APP SET UP ------------------------------
+-- 「端末ごとにやることなんてねえよ」「アカウントごとってずっと言ってるよな？」
+-- OWNER 2026-09-03, and 「端末に残すものないんですけど。サーバーで同じ機能に
+-- なるように代替して」 OWNER 2026-09-08.
+--
+-- The theme, the interface language, whether the drawn font is used on screen,
+-- whether the drawn letters are shown rather than the roman ones, and whether
+-- the keyboard shows its roman face. Every one of them was a field of
+-- `lingua.set` on the handset and named in SET_PHONE as 「how this handset is
+-- set up」 -- so signing in on a second phone gave somebody the app arranged
+-- the way that phone happened to be, not the way they arrange it.
+--
+-- ONE COLUMN AND NOT FIVE. What SET holds is www/core.js's to say (SET_PREFS),
+-- and five columns here would be that list written down a second time, in
+-- another language, for a server that never looks inside. Adding a sixth
+-- setting is a name on that list and nothing here.
+--
+-- jsonb and not text: it is an object either way, and jsonb is what the rest
+-- of this file already uses for `av`. The server does not read it.
+--
+-- IT IS NOT IN `profile_seen`. This is how somebody has their own app set up
+-- and is nobody else's business -- the view is what other people may read.
+alter table profile add column if not exists prefs jsonb not null default '{}'::jsonb;
+
 -- ---- what ------------------------------------------------------------------
 -- A language. Published or not; a language nobody published is a private
 -- backup of what is on the phone.
@@ -235,11 +259,64 @@ create table if not exists language (
 -- exists` above did nothing at all. Named rather than left to the default so
 -- that dropping it says which one; `if exists` on both halves so this file
 -- goes on being applied twice in a row by npm run rls.
+-- ---- AND HOW THE LANGUAGE IS WRITTEN ----------------------------------
+-- 「端末に残すものないんですけど。サーバーで同じ機能になるように代替して」
+-- OWNER 2026-09-08.
+--
+-- This was `SET.wsys` -- a field of the PERSON's settings, on the handset,
+-- named in SET_PHONE. tools/store-check.mjs wrote GAP against it in its own
+-- words: 「言語のものなのに人の設定に入っているので、公開した言語は書記体系を
+-- 見せられない」. It is the language's, so it is a column on the language:
+-- somebody with two languages had one answer for both, and a published
+-- language could not say whether it was written as an alphabet, a syllabary,
+-- an abugida or a logography.
+--
+-- Empty is not a fifth kind. It means nobody has SAID, and www/wsys.js
+-- answers for that by looking at the language (wsGuess) -- the same sentence
+-- `published_at`'s absence carries: a state, not a value.
+--
+-- No check constraint. What the five kinds are is www/wsys.js's list (WSYS),
+-- and a constraint here would be that list written down a second time, in
+-- another language, for a server that never looks inside a slice either.
+alter table language add column if not exists wsys text not null default '';
+
 alter table language drop constraint if exists language_owner_fkey;
 alter table language add  constraint language_owner_fkey
   foreign key (owner) references auth.users(id) on delete cascade;
 create index if not exists language_owner_idx on language(owner);
 create index if not exists language_published_idx on language(published_at) where published_at is not null;
+
+-- ---- AND WHICH OF SOMEBODY ELSE'S LANGUAGES AN ACCOUNT HAS TAKEN -------
+-- 「端末に残すものないんですけど。サーバーで同じ機能になるように代替して」
+-- OWNER 2026-09-08.
+--
+-- Downloading a chapter of somebody else's language put a row in the PHONE's
+-- index carrying `uid` -- and `LANGS[id].uid` on a downloaded language is not
+-- `language.owner` at all: the owner is who WROTE it, and this is who TOOK
+-- it. Two different facts wearing one field. `dlCount()` counts this one --
+-- the ceiling on downloads is per account (「plusは1つproは3つ」 OWNER
+-- 2026-09-02) -- so on a second phone the number started at nought and the
+-- ceiling was one ceiling per handset.
+--
+-- ONE ROW PER (ACCOUNT, LANGUAGE) and nothing else on it. What was taken is
+-- the `slice` rows the phone already holds; this says only that this account
+-- took this language, which is what a ceiling counts and what a list of
+-- 「languages I am reading」 is drawn from.
+--
+-- BOTH SIDES CASCADE. The account going takes its rows (nobody is counting
+-- for a person who is not there); the LANGUAGE going takes them too, because
+-- a row naming a language that no longer exists counts towards a ceiling for
+-- something nobody can open.
+--
+-- IT IS NOT A COPY OF THE LANGUAGE. Reading what was taken is `slice_read`
+-- and `slice_dl()` below, unchanged: this row opens no door that was shut.
+create table if not exists language_take (
+  uid       uuid not null references auth.users(id) on delete cascade,
+  language  uuid not null references language(id)   on delete cascade,
+  at        timestamptz not null default now(),
+  primary key (uid, language)
+);
+create index if not exists language_take_uid_idx on language_take(uid);
 
 -- ---- what a language is made of ---------------------------------------
 -- Eleven slices -- words, lines, lang, script, letters, notes, phases, talk,
@@ -685,6 +762,7 @@ alter table report add constraint report_actor_fkey
 -- ---------------------------------------------------------------------------
 alter table profile     enable row level security;
 alter table language    enable row level security;
+alter table language_take enable row level security;
 alter table publication enable row level security;
 alter table post        enable row level security;
 alter table quote       enable row level security;
@@ -805,6 +883,22 @@ create policy language_edit on language for update
 drop policy if exists language_drop on language;
 create policy language_drop on language for delete
   using (is_member() and owner = auth.uid());
+
+-- language_take: your own rows and nobody else's, in all three directions.
+-- Who has taken a language is not something the app shows anybody -- it is
+-- what a ceiling counts -- so there is no 「published」 half here the way
+-- `language_read` has one. B may not read A's rows, may not write one for A,
+-- and may not delete one of A's.
+drop policy if exists take_read on language_take;
+create policy take_read on language_take for select
+  using (uid = auth.uid());
+drop policy if exists take_make on language_take;
+create policy take_make on language_take for insert
+  with check (is_member() and uid = auth.uid());
+drop policy if exists take_drop on language_take;
+create policy take_drop on language_take for delete
+  using (is_member() and uid = auth.uid());
+grant select, insert, delete on language_take to authenticated;
 
 -- slice: published means published, and the rest stays its owner's.
 --
@@ -1006,7 +1100,7 @@ exception when others then
 end $$;
 
 create or replace view language_seen as
-  select l.id, l.owner, l.name, l.license, l.published_at, l.created_at,
+  select l.id, l.owner, l.name, l.license, l.published_at, l.created_at, l.wsys,
          slice_count((select s.body from slice s
                        where s.language = l.id and s.kind = 'words'))   as nwords,
          slice_count((select s.body from slice s

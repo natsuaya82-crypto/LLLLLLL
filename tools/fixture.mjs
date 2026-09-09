@@ -77,13 +77,17 @@ export function seed(){
      carries no `uid` -- and on a real phone netLangRow() puts one on the
      first time it goes up. Nothing here goes up, so without this line the
      walks run inside a language that belongs to NOBODY: langOwned() answers
-     false once SET.done is true, langCount() goes to 0, and every screen
+     false once SET.walked is true, langCount() goes to 0, and every screen
      above a language disappears. That is what made act, plan and dl go red
      together on 2026-09-02, and it was read as the rule being wrong rather
      than as the fixture being a phone that had never once synced. */
   for (var __k in LANGS)
-    if (Object.prototype.hasOwnProperty.call(LANGS, __k) && !LANGS[__k].uid)
-      LANGS[__k].uid = 'u';
+    if (Object.prototype.hasOwnProperty.call(LANGS, __k) && !langOwnOf(__k))
+      langOwnGot(__k, 'u');
+  /* AND WHAT THIS ACCOUNT HAS TAKEN, which is nothing. `null` is 「まだ
+     訊いていない」 and dlStop() waits at it, so a walk without this line
+     cannot press the ↓ at all (www/core.js § LTAKE, 2026-09-09). */
+  langTookGot([]);
   langStore();
   /* anon:false is the half that matters. There is a session from the first
      launch now whether or not anybody has said who they are, so a fixture
@@ -120,14 +124,19 @@ export function seed(){
        language has are the ones its words are wearing. */
     {hw:'tirok',ph:['t','i','r','o','k'], mn:'lookout', mns:['lookout'], pos:'n', from:'tir', fm:'d~見張り', at:10}
   ];
-  langName = 'Shango';
+  /* 名前はサーバーの `language.name` です（www/core.js § LNAME）。降りてきた
+     行がそれを言うので、写しを持った端末はこの一行で表せます ── `langName`
+     への直書きは、答えを持たないまま画面にだけ名前がある状態でした。 */
+  langNameGot(langId, 'Shango');
   /* The person's settings, back to what a fresh install has. A press that
      writes SET.x -- a theme, a reading mode, a writing system -- was
      otherwise still in force on every screen built after it, so the walk was
      covering one arrangement of the app and calling it all of them. */
-  SET.theme='system'; SET.plan='free'; SET.done=true; SET.order='SOV';
+  SET.theme='system'; SET.plan='free'; SET.walked=true; SET.order='SOV';
   SET.read='both'; SET.voice=''; SET.ui='en'; SET.script=false;
-  SET.myfont=false; SET.wsys=''; SET.gpos=''; SET.myfont=false;
+  SET.myfont=false; SET.gpos=''; SET.myfont=false;
+  /* 書記体系は言語のもの ── `language.wsys`（www/core.js § LWSYS、2026-09-09）。 */
+  langWsysGot(langId, '');
   /* Two saved searches, for the same reason `WLD` is seeded below: with none
      saved, the row that lists them never renders, so `snsPickSaved` was an
      entry no screen ever named -- true, and not what it meant. A saved search
@@ -173,8 +182,11 @@ export function seed(){
      待ちの印しか見なくなる。「非公開の言語」の顔は halfDone にあります。 */
   wldPubGot(langId, true);
   NOTES = [{t:'note', b:'body'}];
-  ME = {name:'Aya', handle:'aya', bio:'Building a language for a place that does not exist.',
-        fo:['iri','veth'], fr:['iri']};
+  ME = {name:'Aya', handle:'aya', bio:'Building a language for a place that does not exist.'};
+  /* 誰をフォローしているか・誰にされているかは `follow` 表の答えで、
+     FOL_HAVE がその置き場です（www/me.js § meFollowing、2026-09-09）。
+     `ME.fo`/`ME.fr` には置きません ── もう誰も読みません。 */
+  folPut(false, 'aya', ['iri','veth']); folPut(true, 'aya', ['iri']);
   /* Two posts, and the second one is the whole reason the timeline is written
      the way it is: it is by somebody else, in a language this phone does not
      have, and every word of it is unknown to the dictionary above. A walk
@@ -193,6 +205,17 @@ export function seed(){
               them, and the space between the words is text. */
            {id:'p2', at:Date.now()-7200000, lang:'other', lname:'Vethi', ln:'qel dross',
             who:'Iri', hd:'iri', mine:false, av:{ch:'Ж'},
+            /* AND THE NUMBERS THE SERVER COUNTED. 「端末に残すものないんです
+               けど」 OWNER 2026-09-08 ── 数は `post_seen` のもので、端末は
+               一つも持ちません。だからサーバーが答えた投稿だけが数を出せる。
+               ここに一つ無いと、歩きは埋まった心も数字も一度も描かず、
+               「まだ訊いていない」しかどの検査にも出てきません。
+
+               `sid` は付けません ── 付けると、描かれている投稿を訊き直す道
+               （netPostsSeen）が実際に一本出て行き、サーバーの無い歩きでは
+               そのたびに「接続できません」が画面の上に立ちます。ここで要る
+               のは数を持った投稿であって、サーバーに在る投稿ではありません。 */
+            nlike:12, nboost:3, nreply:1, ilike:true, iboost:false,
             ink:{g:[[{pts:[[150,650],[400,150],[650,650]]}],
                     [{pts:[[200,200],[600,200]]}, {pts:[[400,200],[400,640]]}]],
                  s:[0, 1, 0, ' ', 1, 0, 1, 1, 0]},
@@ -431,7 +454,7 @@ export function obStates(){
        the foot -- and the bar is the shell, outside #app, so what the picture
        showed was the making screen with nothing lit on it at all. */
     ['the walk: the making screen, with the keyboard lit', () => {
-        SET.done = false; ob.step = OB_TOUR; obTour = 1; ob.mode = '';
+        SET.walked = false; ob.step = OB_TOUR; obTour = 1; ob.mode = '';
         window.route = 'build'; NAV = [{ r: 'build', a: '' }];
         var h = vBuild();
         document.getElementById('app').innerHTML = h;
@@ -443,13 +466,13 @@ export function obStates(){
        so the state the owner was looking at on a phone was a state no picture
        was ever taken of. The stop numbers are OB_TOUR_STOPS' own order. */
     ['the walk: the row that opens the keyboard', () => {
-        SET.done = false; ob.step = OB_TOUR; obTour = 2; ob.mode = '';
+        SET.walked = false; ob.step = OB_TOUR; obTour = 2; ob.mode = '';
         window.route = 'kb'; NAV = [{ r: 'build', a: '' }, { r: 'kb', a: '' }];
         var h = vKb();
         document.getElementById('app').innerHTML = h;
         return h + obTourHTML(); }],
     ['the walk: the key the letter went on', () => {
-        SET.done = false; ob.step = OB_TOUR; obTour = 3; ob.mode = '';
+        SET.walked = false; ob.step = OB_TOUR; obTour = 3; ob.mode = '';
         /* The letter the walk lights is the one the person DREW, and the
            drawing step draws `a` (obSlot() in www/onboard.js) -- so the face
            lights a and not whichever letter the seed happens to list first,
@@ -465,7 +488,7 @@ export function obStates(){
        there -- and a grey screen with nothing on it to press would be an app
        somebody cannot leave. The keyboard itself is what is lit then. */
     ['the walk: the key that is not there', () => {
-        SET.done = false; ob.step = OB_TOUR; obTour = 3; ob.mode = '';
+        SET.walked = false; ob.step = OB_TOUR; obTour = 3; ob.mode = '';
         ob.lid = '';
         window.route = 'kb';
         NAV = [{ r: 'build', a: '' }, { r: 'kb', a: '' }, { r: 'kb', a: '0' }];
@@ -476,7 +499,7 @@ export function obStates(){
        has come back to the list by itself and the hand is on the back arrow.
        「戻る矢印に手」 */
     ['the walk: the arrow back out of the keyboard', () => {
-        SET.done = false; ob.step = OB_TOUR; obTour = 4; ob.mode = '';
+        SET.walked = false; ob.step = OB_TOUR; obTour = 4; ob.mode = '';
         window.route = 'kb'; NAV = [{ r: 'build', a: '' }, { r: 'kb', a: '' }];
         var h = vKb();
         document.getElementById('app').innerHTML = h;
@@ -486,7 +509,7 @@ export function obStates(){
        the same parts the real one does, inside the onboarding's scrolling
        box, with pointer-events off. It is a face of vOb(). */
     ['the walk: the timeline, before there is an account',
-        () => { SET.done = false; SET.obback = null; ob.step = OB_SNS;
+        () => { SET.walked = false; SET.obback = null; ob.step = OB_SNS;
                 ob.mode = ''; return vOb(); }],
     ['naming the language',      () => { SET.obback = null; ob.step = OB_NAME; ob.mode = ''; return vOb(); }],
     /* The door's other three faces. None is reachable from a screen at rest,
@@ -556,7 +579,7 @@ export function obStates(){
        somewhere, OR this is the walk's last step」, and the middle one is what
        every face above has. What the real signed-out phone does is held by
        tools/open-check.mjs § 2c, which boots one. */
-    ['the code, no way back to', () => { SET.obback = null; SET.done = true;
+    ['the code, no way back to', () => { SET.obback = null; SET.walked = true;
                                          ob.step = OB_IN;
                                          OBM.mode = 'code'; OBM.busy = false;
                                          OBM.em = 'a@b.c'; return vOb(); }]
@@ -844,15 +867,15 @@ export function halfDone(){
                                                 const h=vSpell(); spQ='';
                                                 SET.plan='free'; return h; }],
     ['the abugida editor',     () => { window.route='abugida'; NAV=[{r:'abugida'}];
-                                       SET.wsys='abugida'; abVow = 'a';
-                                       const h = vAbugida(); SET.wsys=''; return h; }],
+                                       langWsysGot(langId, 'abugida'); abVow = 'a';
+                                       const h = vAbugida(); langWsysGot(langId, ''); return h; }],
     /* The letters chapter of a language that IS an abugida. The row that opens
        the bench only exists there, so a fixture whose language is an alphabet
        walks a chapter with no way to reach it -- which is indistinguishable,
        from outside, from a bench nothing can reach at all. */
     ['the letters chapter of an abugida', () => { window.route='letters'; NAV=[{r:'letters'}];
-                                       SET.wsys='abugida';
-                                       const h = vLetters(); SET.wsys=''; return h; }],
+                                       langWsysGot(langId, 'abugida');
+                                       const h = vLetters(); langWsysGot(langId, ''); return h; }],
     /* An alphabet with a letter nobody has given a reading yet: the line
        saying how many only exists then, and only on that one of the three. */
     ['the alphabet with a letter unread', () => { window.route='ltset';
@@ -1218,13 +1241,13 @@ export function halfDone(){
            was not: the seed already follows 'iri', so both faces drew
            「フォロー中」 and the gold button the owner is talking about was
            in no picture. */
-        const was = ME.fo; ME.fo = [];
-        const h = vProfile(); ME.fo = was; NAV=[{r:'profile'}]; return h; }],
-    ['somebody else\'s profile, followed', () => { ME.fo = ['iri'];
+        const was = folOf(false, 'aya'); folPut(false, 'aya', []);
+        const h = vProfile(); folPut(false, 'aya', was); NAV=[{r:'profile'}]; return h; }],
+    ['somebody else\'s profile, followed', () => { folPut(false, 'aya', ['iri']);
         WHO_HAVE['iri'] = { who:'Iri', hd:'iri', av:{ch:'Ж'}, lname:'Vethi',
                              bio:'', fo:2, fr:3, out:false };
         window.route='profile'; NAV=[{r:'profile', a:'iri'}];
-        const h = vProfile(); NAV=[{r:'profile'}]; ME.fo = ['iri','veth']; return h; }],
+        const h = vProfile(); NAV=[{r:'profile'}]; folPut(false, 'aya', ['iri','veth']); return h; }],
     /* THE FACE BEFORE THE SERVER HAS ANSWERED IS GONE, and so is the state.
        「プロフィールは、出す物を全部読み込んでから開く」「くるくるも出さない」
        OWNER 2026-09-07: the page is not drawn until every answer is in
@@ -1399,11 +1422,11 @@ export function halfDone(){
     /* Somebody already followed: Follow and Following are two states of one
        button and only one of them is drawn at a time. */
     ['a person already followed', () => { snsQ = 'ir';
-        const was = ME.fo; ME.fo = ['iri'];
+        const was = folOf(false, 'aya'); folPut(false, 'aya', ['iri']);
         snsHits = { q:'ir', who:[{ who:'Iri', hd:'iri', av:{ch:'\u0416'},
                                    lname:'Vethi', mine:false }], posts:[] };
         window.route='explore'; NAV=[{r:'explore'}];
-        const h = vExplore(); ME.fo = was; snsQ = ''; snsHits = null; return h; }],
+        const h = vExplore(); folPut(false, 'aya', was); snsQ = ''; snsHits = null; return h; }],
     ['posts found by searching', () => { snsQ = 'kano';
         snsHits = { q:'kano', who:[], posts:POSTS.slice(0, 2) };
         window.route='explore'; NAV=[{r:'explore'}];
@@ -1525,9 +1548,9 @@ export function halfDone(){
         window.route='feed'; NAV=[{r:'feed'}];
         const h = vFeed(); snsTab = 'rec'; return h; }],
     ['the timeline, following nobody', () => { snsTab = 'fo';
-        const keep = ME.fo; ME.fo = [];
+        const keep = folOf(false, 'aya'); folPut(false, 'aya', []);
         window.route='feed'; NAV=[{r:'feed'}];
-        const h = vFeed(); ME.fo = keep; snsTab = 'rec'; return h; }],
+        const h = vFeed(); folPut(false, 'aya', keep); snsTab = 'rec'; return h; }],
     /* More than one photograph, which is a different thing from one: a strip
        that scrolls sideways. Nothing in the fixture carried two, so `.ppics.many`
        had never been rendered by anything -- and it was the rule doing the
@@ -2193,12 +2216,12 @@ export function halfDone(){
     /* The letters chapter with everything open: the keyboard's door, and the
        abugida bench's -- which is the only way to that screen, and only
        exists while the writing is an abugida, which is itself paid. */
-    ['the letters chapter, on the paid plan', () => { SET.plan = 'pro'; SET.wsys = 'abugida';
+    ['the letters chapter, on the paid plan', () => { SET.plan = 'pro'; langWsysGot(langId, 'abugida');
         window.route = 'letters'; NAV = [{r:'letters'}];
-        const h = vLetters(); SET.plan = 'free'; SET.wsys = ''; return h; }],
-    ['the abugida bench', () => { SET.plan = 'pro'; SET.wsys = 'abugida';
+        const h = vLetters(); SET.plan = 'free'; langWsysGot(langId, ''); return h; }],
+    ['the abugida bench', () => { SET.plan = 'pro'; langWsysGot(langId, 'abugida');
         window.route = 'abugida'; NAV = [{r:'abugida'}];
-        const h = vAbugida(); SET.plan = 'free'; SET.wsys = ''; return h; }],
+        const h = vAbugida(); SET.plan = 'free'; langWsysGot(langId, ''); return h; }],
     ['the five kinds of writing', () => { SET.plan = 'pro';
         window.route = 'wsys'; NAV = [{r:'wsys'}];
         const h = vWsys(); SET.plan = 'free'; return h; }],
@@ -2382,12 +2405,12 @@ export function halfDone(){
                                                 if (was === undefined) delete w.hide;
                                                 else w.hide = was;
                                                 return h; }],
-    ['an abugida being placed',  () => { SET.wsys='abugida';
+    ['an abugida being placed',  () => { langWsysGot(langId, 'abugida');
                                          LETTERS.push({id:'lv', st:[{pts:[[200,200],[600,600]]}],
                                                        ch:'', nm:'', snd:['a']});
                                          window.route='abugida'; NAV=[{r:'abugida'}];
                                          abVow='a';
-                                         const h=vAbugida(); SET.wsys='alpha'; return h; }],
+                                         const h=vAbugida(); langWsysGot(langId, 'alpha'); return h; }],
     ['a letter wearing a borrowed character', () => { editGlyph('t'); GE.ch='Ϙ';
                                                       window.route='glyph';
                                                       NAV=[{r:'glyph', a:GE.lid}];
@@ -2729,7 +2752,7 @@ export function halfDone(){
        答えていて、その答えが出る画面はこの一枚しかない。戻さないのは他の面と
        同じ理由で、次の面の前に seed() がもう一度走るから。 */
     ['a language with no name -- 名前を空にした言語の設定', () => {
-       langName = '';
+       langNameGot(langId, '');
        window.route = 'set'; NAV = [{ r:'set', a:'lang' }];
        return vSet(); }],
     /* The NOUN chapter with a mark made, which is the row that says what the

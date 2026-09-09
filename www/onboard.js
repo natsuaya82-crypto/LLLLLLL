@@ -1,4 +1,4 @@
-/* Lingua — onboarding, which is the app until SET.done (chapter 5)
+/* Lingua — onboarding, which is the app until SET.walked (chapter 5)
    Loaded by www/index.html as a plain script, in the order listed there.
    ES5 only: this runs in an old WKWebView. tools/es5-check.mjs enforces it. */
 
@@ -103,7 +103,7 @@ var ob={step:0, name:'', mode:'draw', pick:'', strokes:null, ch:'', lid:''};
    where the owner put it: somebody draws a letter and sees where it landed,
    and is asked to sign in once there is something to sign in for.
 
-   That is why makeNeed() does not fire while SET.done is false -- the walk
+   That is why makeNeed() does not fire while this account has no `profile` row -- the walk
    below is the one place making happens without a name on the account, and
    step 7 is where the account is asked for.
 
@@ -229,7 +229,7 @@ var OB_TOUR_STOPS=[
 ];
 /* Where the tour has got to. Where you are standing, so viewReset() drops it. */
 var obTour=0;
-function obTourOn(){ return !SET.done && ob.step===OB_TOUR; }
+function obTourOn(){ return !SET.walked && ob.step===OB_TOUR; }
 function obTourStop(){ return OB_TOUR_STOPS[Math.min(obTour, OB_TOUR_STOPS.length-1)]; }
 /* The route the tour wants to be on. render() sends the app there rather than
    drawing a picture of it. */
@@ -711,7 +711,7 @@ function obBack(){
   if(ob.step===OB_SNS){ ob.step=OB_TOUR; GE=null; obTourGo(); return; }
   if(ob.step>0) obGo(ob.step-1);
 }
-function obLang(v){ SET.ui=v; save(); render(); }
+function obLang(v){ SET.ui=v; save(); netPrefsPut(); render(); }
 
 /* ---- the door, which is not a step ------------------------------------ */
 /* Signing in is the LAST step of the onboarding and the app does not open on
@@ -930,7 +930,7 @@ function obIn(){
 
          The profile is what the account IS -- the name, the face, the handle
          that have just come back down -- so it is the screen to open on. */
-      if(SET.done){ goTab('profile'); return; }
+      if(SET.walked){ goTab('profile'); return; }
       /* A profile row means this account has been used. It cannot be a
          first launch, whatever SET.done on THIS phone says -- signing out
          and back in used to land somebody in the onboarding here.
@@ -1064,11 +1064,19 @@ function obAgainTick(){
    stays wherever the onboarding left it, so opening the door in the same
    session somebody finished the onboarding in showed them the naming
    screen. */
+/* AND IT DOES NOT TAKE THE WALK'S FLAG AWAY ANY MORE. It used to put
+   `SET.done` back to false, because that was the only way to make appIs()
+   answer 「the onboarding」 and draw the door. `SET.walked` is about the
+   HANDSET now (OWNER 2026-09-09 choice A) and taking it away would send
+   somebody who has been through the app back to drawing their first letter.
+   What appIs() reads instead is the note itself -- obPending() -- so the two
+   halves of 「the door is open from somewhere」 are one fact and cannot come
+   apart the way the flag and its note used to. */
 function obDoor(r, a){
   SET.obback={r:r, a:a};
   ob.step=0; ob.mode=''; GE=null;
   OBM.mode='in'; OBM.msg=''; OBM.busy=false;
-  SET.done=false; save();
+  save();
   render(); window.scrollTo(0,0);
 }
 /* And the question every one of them is asking. Anything other people would
@@ -1104,7 +1112,16 @@ function obNeed(){
    the onboarding" is four chances to leave it out, and the one left out is
    the screen nobody can get past. */
 function makeNeed(){
-  if(!SET.done) return true;
+  /* THE WALK, ASKED OF THE ONE PLACE THAT SAYS WHAT THE APP IS. It was
+     `!SET.done` here and `!SET.done` again in appIs() -- one question written
+     down twice, which is what came apart when the flag was split
+     (OWNER 2026-09-09 choice A): 「no profile row」 is true of somebody signed
+     OUT as well, and asking that here let a signed-out press make a language.
+
+     appIs() is www/shell.js's and answers three states; 'ob' is the walk, and
+     the walk is the one place something is made before there is an account to
+     make it for. Everything else asks. */
+  if(typeof appIs==='function' && appIs()==='ob') return true;
   return obNeed();
 }
 function obPending(){ return (SET.obback && SET.obback.r)? SET.obback : null; }
@@ -1113,7 +1130,7 @@ function obPending(){ return (SET.obback && SET.obback.r)? SET.obback : null; }
 function obReturn(){
   var b=obPending();
   if(!b) return false;
-  SET.obback=null; SET.done=true; save();
+  SET.obback=null; save();
   go(b.r, b.a);
   /* AND IT DRAWS, WHICH go() ON ITS OWN DOES NOT.
      「途中でやめるとログインを求められる」 OWNER 2026-09-06.
@@ -1867,7 +1884,7 @@ function obFinish(){
      BEFORE SET.done, so the line in postAvatar() that adopts a face for an
      account older than this field can never fire during the walk. */
   meAvSet(meAvOf(ltById(ob.lid)));
-  SET.done=true; save();
+  SET.walked=true; save();
   /* And what was made on the way here goes up. The door is the LAST step, so
      the letter, the alphabet and the language's name were all made before
      this account existed -- 「制作はオフラインでも可能次つながった時に更新
@@ -1881,7 +1898,22 @@ function obFinish(){
      rather than overwrites, and it is safe to call twice. So this is a call
      and not a condition -- nothing here re-states what that file already
      says. */
+  /* AND THE ACCOUNT GOES ON WHAT THE WALK MADE, HERE, BEFORE IT IS SENT.
+     「言語はアカウントないと作れないです」 -- the walk is the one place
+     something is made before there is one, and this is the door it comes out
+     of. Without this line the language has no owner recorded and no `sid`,
+     which is the state www/core.js § langMine refuses on purpose: it is the
+     shape of A's un-uploaded language on a phone B has just signed in to
+     (acct-check 10 and 35), and netLangSync() would not carry it up. */
+  if(typeof SESS!=='undefined' && SESS && SESS.uid && langId)
+    langOwnGot(langId, SESS.uid);
   if(typeof netLangSync==='function') netLangSync();
+  /* AND HOW THE WALK LEFT THE APP SET UP. The drawing turned `myfont` on and
+     borrowing a character turned `showScript` on, both before there was an
+     account to put them under (www/core.js § SET_PREFS). This is the same
+     moment the language goes up and for the same reason: the door is the last
+     step, so it is the first time there is anywhere to send them. */
+  if(typeof netPrefsPut==='function') netPrefsPut();
   route='profile'; RENDERED=null; render(); window.scrollTo(0,0);
 }
 

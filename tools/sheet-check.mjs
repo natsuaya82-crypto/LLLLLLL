@@ -52,7 +52,7 @@ await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
 const build = ({ names, s, DPI, deg, blur, grain, lit, damage }) => {
   if (typeof shBlank === 'undefined') return null;
   eval('(' + s + ')()');
-  SET.done = true;
+  SET.walked = true;
   /* THE SHEET IS A PAID CHAPTER, so everything below is walked as somebody
      who has it. docs/PAID_FEATURES.md: 「letters written on paper and brought
      back in」 is Pro, and the free plan is 「your own shapes for a-z and

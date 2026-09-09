@@ -93,9 +93,19 @@ function wsGuess(){
    normally read with -- most of which the language has not taken up on the
    chart, which is exactly what wsGuess reads as a syllabary. So the guess
    was answering a question that only has one answer here. */
+/* WHICH OF THE FIVE THIS LANGUAGE IS WRITTEN AS, AND THE ANSWER IS THE
+   LANGUAGE'S -- `language.wsys` (www/core.js § LWSYS).
+   「端末に残すものないんですけど。サーバーで同じ機能になるように代替して」
+   OWNER 2026-09-08.
+
+   It was `SET.wsys`, a field of the person's settings on this handset, so
+   somebody with two languages had ONE answer for both of them and nobody else
+   could be told which of the five a published language was --
+   tools/store-check.mjs had written GAP against it in exactly those words. */
 function wsys(){
   if(!can('wsys')) return 'alpha';
-  return WSYS.indexOf(SET.wsys)>=0 ? SET.wsys : wsGuess();
+  var w=langWsysOf(langId);
+  return WSYS.indexOf(w)>=0 ? w : wsGuess();
 }
 function setWsys(k){
   /* The ceiling, met on the press. 「+を押したらそのまま課金のポップが出る
@@ -112,9 +122,15 @@ function setWsys(k){
      for word, and a route arrived at from anywhere or a plan that ended
      while one of the other four was set meets it there. Written twice, the
      second one can never run. */
-  SET.wsys=k; save();
-  installScriptFont();
-  render();
+  /* THE SERVER FIRST. The screen moves when the column has it -- the same
+     sentence the 公開 switch and the heart carry
+     （「保存するタイミングでエラーが起きるなら、保存されないし」 OWNER
+     2026-09-05）. A choice that did not arrive is a choice that did not
+     happen, and ［再接続］ presses it again. */
+  netLangWsys(k, function(){
+    installScriptFont();
+    render();
+  });
 }
 /* An abugida is the only one that builds a letter out of two drawings, so it
    is the only one that has two kinds of thing to draw. */

@@ -44,7 +44,7 @@ await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
 
 const r = await pg.evaluate(async ({ s, sid }) => {
   eval('(' + s + ')()');
-  SET.done = true;
+  SET.walked = true;
   /* ON PLUS, WHICH IS THE RUNG. 「plusからです」OWNER 2026-09-02, replacing
      「Downloading a keyboard or an alphabet is free」(docs/FEATURES.md § 4,
      2026-08-19). This line used to say `free`, deliberately, and its own
@@ -73,9 +73,21 @@ const r = await pg.evaluate(async ({ s, sid }) => {
   };
   var calls = [];
   netSlices = function(id, ok){ calls.push(['slices', id]); setTimeout(function(){ ok(THEIRS); }, 0); };
+  /* `owner` は「書いた人」で、2026-09-09 から行に載っています
+     （supabase/schema.sql § language_seen）。これが無いと、降ろした言語は
+     「まだ誰の物か聞いていない」になって画面に出ません。 */
   netLangSeen = function(id, ok){ calls.push(['seen', id]);
-    setTimeout(function(){ ok({ id:id, name:'Shango', license:'', pub:'2026-08-01',
+    setTimeout(function(){ ok({ id:id, owner:'them-uid', name:'Shango',
+                                license:'', pub:'2026-08-01',
                                 nwords:12, nletters:5 }); }, 0); };
+  /* そして「取った言語」の表。行は `language_take` で（www/net.js §
+     netTakes）、数はサーバーが数えます ── `null` は「まだ訊いていない」で、
+     dlStop() はそこで待ちます。ここは訊いた結果を置いておく形。 */
+  var TOOK = [];
+  netTakes = function(ok){ langTookGot(TOOK.slice()); if(ok) ok(TOOK.slice()); };
+  netTakePut = function(sid2, ok){ if(TOOK.indexOf(sid2) < 0) TOOK.push(sid2);
+                                   netTakes(ok); };
+  netTakes();
   /* and the language's own page says its chapters may be taken */
   netSignedIn = function(){ return true; };
 
@@ -118,7 +130,9 @@ const r = await pg.evaluate(async ({ s, sid }) => {
   /* ---- and now: storage --------------------------------------------- */
   out.landed = slRd(langKeyOf(sid, 'letters'));
   out.wanted = THEIRS.letters.body;
-  out.row = LANGS[sid] ? { name: LANGS[sid].name, mine: LANGS[sid].mine } : null;
+  /* 名前は `language.name` です（www/core.js § LNAME）── 索引ではなく
+     langNameOf() が答えます。降りてきた `language_seen` の行が言ったもの。 */
+  out.row = LANGS[sid] ? { name: langNameOf(sid), mine: LANGS[sid].mine } : null;
   out.mineUntouched = (function(){
     for (var k = 0; k < SLICES.length; k++)
       if (slRd(langKeyOf(mineId, SLICES[k])) !== before[SLICES[k]]) return SLICES[k];
@@ -229,7 +243,7 @@ const r = await pg.evaluate(async ({ s, sid }) => {
   out.syncRefused = await new Promise(function(f){
     var wasId = langId;
     /* uid, the way langSeenAdd() puts one on: a language with no stamp
-       belongs to nobody once SET.done is true, so dlCount() would not see it
+       belongs to nobody once SET.walked is true, so dlCount() would not see it
        and the ceiling this claim is about would never be reached. */
     LANGS[sid] = LANGS[sid] || { name:'Shango', mine:false, uid:'u' };
     langId = sid;

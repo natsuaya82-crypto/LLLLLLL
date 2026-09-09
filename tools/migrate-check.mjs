@@ -117,7 +117,7 @@ const REPORT = () => ({
   sound: !!STG.done.sound,
   snd: addedSnd().join(','),
   script: Object.keys(SCRIPT.g).join(','),
-  theme: SET.theme, done: SET.done, plan: SET.plan,
+  theme: SET.theme, done: SET.walked, plan: SET.plan,
   langs: Object.keys(LANGS).length, id: langId,
   mine: !!(LANGS[langId] && LANGS[langId].mine),
   indexName: LANGS[langId] && LANGS[langId].name,

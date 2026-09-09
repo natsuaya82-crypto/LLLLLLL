@@ -74,7 +74,7 @@ const br = await chromium.launch(LAUNCH);
 const pg = await br.newPage({ viewport: { width: 390, height: 844 } });
 await pg.goto(`http://localhost:${PORT}/`);
 await pg.waitForSelector('#splash', { state: 'detached', timeout: 10000 });
-await pg.evaluate((s) => { eval('(' + s + ')()'); SET.done = true; SET.ui = 'en'; },
+await pg.evaluate((s) => { eval('(' + s + ')()'); SET.walked = true; SET.ui = 'en'; },
                   seed.toString());
 
 const R = await pg.evaluate(() => {

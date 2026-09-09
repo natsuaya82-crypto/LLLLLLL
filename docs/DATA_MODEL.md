@@ -98,7 +98,18 @@ break.
 |---|---|---|---|
 | `words` | `WORDS` | the dictionary | array |
 | `lines` | `LINES` | saved lines | array |
-| `lang` | `langName` | the language's name | text |
+**And three things about a language are COLUMNS rather than slices**, because
+they are what somebody else's page has to be able to say: `language.name`,
+`language.published_at` and — since 2026-09-09 — `language.wsys`, which of the
+five writing systems it is written as. That last one was `SET.wsys`, a field of
+the person's settings on the handset, so somebody with two languages had one
+answer for both and a published language could not say which it was.
+`langNameOf()` and `langWsysOf()` in `www/core.js` are how the two are asked;
+each keeps the server's answer in memory and a picture on the disk
+(`lingua.<id>.name.got`, `lingua.<id>.wsys.got`) with no road up. Empty `wsys`
+is **nobody has said**, not a fifth kind, and `wsGuess()` answers for it.
+
+| `lang` | — | the language's name, and **nothing in `www/` reads or writes it** since 2026-09-08. What a language is called is the `language.name` column on the server; `langNameOf()` in `www/core.js` is how it is asked, `LNAME` holds what the server has said this session, and `lingua.<id>.name.got` is the picture a launch with no signal draws from. The slice stays in `SLICES` and is not deleted — what an older version wrote is left exactly where it is | text |
 | `script` | `SCRIPT` | roman → strokes, letters no word uses yet, and **which way the language is written** (`dir`) | object |
 | `letters` | `LETTERS` | the alphabet | array |
 | `notes` | `NOTES` | the notebook | array |
@@ -127,7 +138,23 @@ saying that flag is temporary has to be written to the same place at the same
 moment. It was a variable, and a reload between the two left a phone claiming
 the onboarding was unfinished with nothing left saying otherwise. Cleared by
 `obReturn()`; it is a pending move, not a preference, and it is the one thing
-in `SET` that is meant to be short-lived. `lingua.me` (`ME`) is the person — the copy of their `profile` row.
+in `SET` that is meant to be short-lived. **How this account has the app set up is `profile.prefs`**, since 2026-09-09:
+one jsonb column carrying exactly `SET_PREFS` in `www/core.js` — the theme, the
+interface language, and the three switches about the drawn letters. All five
+were in `SET_PHONE` as 「how this handset is set up」, and that sentence was
+wrong about all five: signing in on a second phone gave somebody the app
+arranged the way that phone happened to be. `lingua.set` still holds them as
+the copy, filed under the account by `setFor()`, and what is left in
+`SET_PHONE` is `planUid`, `wldMoved`, `vvkb`, `planV`, and `done`/`obback`
+pending the decision in `docs/reports/r8-item2-2026-09-08.md`.
+
+`lingua.me` (`ME`) is the person — the copy of their `profile` row. **Who they
+follow and who follows them are not in it**, since 2026-09-09: `ME.fo` and
+`ME.fr` are neither read nor written (and not removed — what a phone already
+holds stays). The `follow` table is the answer, and both lists live in
+`FOL_HAVE` in `www/me.js`, keyed by handle, where everybody else's already
+did — memory, written only by an answer from the server, dropped by
+`folForget()` when the session goes.
 `lingua.sess` (`SESS`) is the session — the token pair, and one mark; **a
 password is never held, stored or logged.** The mark is `end`, written by
 `netEnding()` in `www/net.js` when somebody presses 「アカウントを削除」 and
@@ -160,10 +187,17 @@ posted recording in Storage at `<uid>/<pid>/vo.m4a` and writes the path onto
 `row.body.vu`, and `voRemote()` (`www/rec.js`) tells one on this phone from one
 on the server by whether the name holds a slash. The drafts went up on
 **2026-08-28**: `draft` in `supabase/schema.sql`, one row per draft, `body`
-holding what the composer held. `lingua.drafts` stays and is the copy that
-works with no signal — written FIRST and always, whatever the network is doing,
-because what somebody wrote must not depend on a signal — and it is no longer
-where a draft lives.
+holding what the composer held. `lingua.drafts` stays and is a **read-only
+copy** since 2026-09-09: the row goes first and the copy follows. Keeping a
+draft waits for `netDraftUp()`, deleting one waits for the DELETE, and a pull
+makes the copy match the server — a draft this phone had SENT and the server no
+longer has is one somebody deleted on another phone, and it goes. A draft that
+has never been up (`up` false — written before there was a server) is sent
+rather than dropped. The copy never travels back, which is what the old road
+did: it re-sent every draft the server did not have, so a draft deleted on the
+other phone was put back by this one, for ever. `up` on a draft is the mark
+that says which of the two a row-less draft is, and it is `.was`'s job said
+about a draft.
 
 A draft is read back by `draftsPull()` (`www/post.js`), which **fills in what
 this phone is missing and never writes over what is here** — § 2 of
@@ -290,10 +324,10 @@ which one every global on the making side means.
 
 | key | written by | what it is |
 |---|---|---|
-| `name` | `langMigrate()`, `langMint()`, `bkRestore()`, and `save()` on the open one | a copy of the language's name, so a row can be drawn without opening the language to find out what it is called. For the OPEN language `langName` is the live answer and this is the copy made at the last save |
-| `mine` | `langMigrate()`, `langMint()`, `bkRestore()`, `netLangsDown()` write **true**; `langSeenAdd()` (`www/core.js`) writes **false** | whether this is a language you are MAKING or one you are only READING. It is about this handset and **not** about an account — `uid` is that, one row down, and the two words both sound like ownership |
+| `name` | **nothing, since 2026-09-08** | a copy of the language's name. It was written by `langMint()` and by `save()` on the open one, and it is what let a rename move the phone's answer and leave `language.name` — the half anybody else reads — holding the name the language was made with. What a language is called is that column now (`langNameOf()`, `www/core.js` § LNAME). **An entry written by an older version still carries this field and nothing reads it**; nothing removes it, because a migration copies |
+| `mine` | `langMint()` and `netLangsDown()` write **true**; `langSeenAdd()` (`www/core.js`) writes **false** | whether the entry was made as a language you are MAKING or one you are only READING. **What decides that now is `language.owner`** (`langMine()`), and this is read in exactly one place: a language that has been up (`sid`) whose owner the server has not answered for yet — the migration reading, for the languages already on every phone, and never after an answer arrives |
 | `sid` | `netLangRow()` (`www/net.js`) | the server's id for this language, the same way a post carries one. **A language with no `sid` has never been up.** Added after the entry is made, and `langStore()`d on the spot. A downloaded language is filed UNDER its `sid`, so a second download of it lands in the same place |
-| `uid` | `netLangRow()`, `langSeenAdd()`, `bkTake()`, `langMigStamp()` | the ACCOUNT the language belongs to. 「違うアカウントでログインしてんのに前のやつ出てくるんだけど？」 OWNER 2026-08-31 — `LANGS` is the handset's index and survives signing out, so an entry with nothing saying whose it was became whoever signed in next. **An entry with no `uid` has never been through a door**, which is a real state: the onboarding makes a language before there is an account |
+| `uid` | **nothing, since 2026-09-09** | it answered TWO questions with one field: on a language somebody made it was who MADE it, and on a downloaded one it was who TOOK it (`langSeenAdd()`'s own comment said so). The two come apart the moment a language moves between people, and `dlCount()` counted the second — so the ceiling on downloads was per handset. They are two questions now and both are the server's: **who wrote it** is `language.owner` (`langOwnOf()`, `www/core.js` § LOWN) and **that this account took it** is a `language_take` row (`langTookHas()`). An entry written by an older version still carries this field and nothing reads it |
 | `mig` | `langMigrate()` (`www/core.js`), removed by `langMigStamp()` | the mark that this entry came out of the eight flat keys and is still waiting for an account to be stamped on it. `langMigrate()` runs while `core.js` is loading, before `SESS` is even declared, so there is nothing to stamp with at the moment it is made and `netRead()` does it eighteen lines later |
 
 **Count them off the writers above and off `www/core.js`, not off a number
@@ -457,10 +491,17 @@ The one piece of **frozen** data in the app.
   ink?, tr?, pics?, pic?, pin?, pv?, vo?, ed?, to?, toh?, sid? }
 ```
 
-`li`, `bo` and `re` are the counts — likes, boosts, replies — and they are the
-one part of a post that is **not** frozen: `postNLike()` and its two neighbours
-in `www/post.js` prefer `nlike`/`nboost`/`nreply` when the server has answered
-and fall back to these. `pr` is the id of the prompt this was written to, if it
+`li`, `bo` and `re` were the counts — likes, boosts, replies — and **nothing
+reads or writes them since 2026-09-09.** The counts are the server's:
+`post_seen` carries `likes`/`boosts`/`replies` and `i_like`/`i_boost`, netRow()
+puts them on as `nlike`/`nboost`/`nreply`/`ilike`/`iboost`, and `postNLike()`
+and its four neighbours in `www/post.js` read those and nothing else — no
+answer is **0**, because「nobody has pressed this」and「this phone has not
+asked」look the same on a screen and neither of them is「somebody pressed it」.
+They are the one part of a post that is **not** frozen, and they are not on the
+post at all now: they arrive with the row and are replaced by the next answer
+(`postFresh()`). The old fields are still in `lingua.posts` on every phone that
+has this app and are not removed. `pr` is the id of the prompt this was written to, if it
 was written to one; the words of the prompt are not on the post. `sid` is the
 post's row on the server, put on by `postSid()` after it goes up — a post with
 no `sid` has never been up, the same sentence `LANGS[id].sid` carries.

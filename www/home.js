@@ -351,7 +351,7 @@ FORM_OPEN.pick=function(x){ openPick(x); };
    letter can have, so taking one is setting that letter's shape. */
 function ltTakeChar(lid, ch){
   ltSetChar(lid, ch);
-  SET.showScript=true; save(); installScriptFont();
+  SET.showScript=true; save(); netPrefsPut(); installScriptFont();
   if(here().r==='form') back(); else render();
 }
 function takeOwn(){
@@ -1537,16 +1537,22 @@ function wldGet(lid, r){
   /* The index row FIRST, so a slice can never be in storage under a language
      the index does not know -- that is a set of keys nothing can find, which
      is the leftovers bug langKeyOf() exists to prevent. */
-  langSeenAdd(id, seen? seen.name : '');
+  langSeenAdd(id, seen? seen.name : '', seen? seen.owner : '');
   try{
     for(i=0;i<got.length;i++) slWr(langKeyOf(id, got[i][0]), got[i][1]);
   }catch(e){ return; }
-  /* And the language's own name where a language keeps it, so the one in the
-     index and the one in the language cannot drift. `lang` is a slice like
-     any other and langRead() is what reads it. */
-  if(seen && seen.name){
-    slWr(langKeyOf(id, 'lang'), seen.name);
-  }
+  /* AND THAT THIS ACCOUNT TOOK IT, which is a row on the server and not a
+     stamp on this phone's index (www/net.js § netTakePut). The ceiling on
+     downloads counts those rows, so a phone that wrote its own stamp counted
+     per handset: the same account on a second phone started at nought.
+     Fired and not waited for -- the chapter is already here and the count
+     it moves is asked for again by the answer. */
+  if(seen && seen.owner && typeof netTakePut==='function')
+    netTakePut(id, function(){ render(); }, function(){});
+  /* Its name came down with the row and langSeenAdd() above has already
+     recorded it. It used to be written into the `lang` slice as well, so that
+     the index and the language could not drift; there is one answer now and
+     it is `language.name` (www/core.js § LNAME). */
   render();
 }
 /* A heading that folds, and it is the only kind this page has now. It used to
@@ -1732,10 +1738,13 @@ function wldSliceOf(m, kind, fb){
    else's is here once its slices are, and the one page decides what a page
    that is not here yet looks like.
 
-   Not one of the eight reaches the open language. `ws` answers with nothing,
-   because the writing system is `SET.wsys` -- the PERSON's settings, not the
-   language's -- so it is on no server and there is nothing to say; the field
-   is left off rather than filled in with mine. */
+   Not one of the eight reaches the open language. `ws` is the language's own
+   `wsys` column since 2026-09-09 (www/core.js § LWSYS) and comes down with the
+   row, so somebody else's page can say which of the five it is written as.
+   It was `SET.wsys` -- the PERSON's settings, on this handset, on no server --
+   and this answered with nothing because there was nothing to say. An empty
+   answer still means nobody has said, and the section is left off rather than
+   filled in with mine. */
 function wldSeenOf(lid){
   var m=WLDS_HAVE[String(lid||'')], seen=wldSeen(lid);
   return {
@@ -1752,7 +1761,7 @@ function wldSeenOf(lid){
     w:       function(){ return wldSliceOf(m, 'wld', {}); },
     letters: function(){ return wldSliceOf(m, 'letters', []); },
     name:    function(){ return seen? seen.name : ''; },
-    ws:      function(){ return ''; },
+    ws:      function(){ return seen? String(seen.wsys||'') : ''; },
     snd:     function(){ return wldSliceOf(m, 'snd', []); },
     /* Off their `script` slice, which is one of the five slice_read opens.
        DIRS is the list of the four; anything else, or nothing, is ltr. */
@@ -2216,7 +2225,12 @@ function saveName(){
   /* 空は未設定 -- OWNER 2026-09-06. Emptying the box takes the name off, and
      what every screen then says is langNameSaid()'s. It used to be thrown
      away here, so the box closed and the old name stayed with nothing said. */
-  langName=v; save(); closeSheet({target:{id:'sbg'}}); render();
+  /* THE NAME IS THE SERVER'S (www/core.js § LNAME). It used to be written
+     here and saved into the `lang` slice, which is this phone's, so the
+     `language.name` column -- the half anybody else reads -- kept the name
+     the language was made with. The box closes when the server has taken it
+     and stays open when it has not. */
+  netLangRename(v, function(){ closeSheet({target:{id:'sbg'}}); render(); });
 }
 
 /* =========================================================================
@@ -2226,12 +2240,12 @@ function saveName(){
    by WORDS. Pressing a row is the only way to change that. */
 function langRow(id){
   var l=LANGS[id]||{}, isOpen=(id===langId);
-  /* The index carries a name so a row can be drawn without opening the
-     language to find out what it is called. For the one that IS open, langName
-     is the live answer and the index is a copy of it made at the last save --
-     so renaming a language and looking at this list before anything saved
-     showed the old name here and the new one everywhere else. */
-  var nm = isOpen? langName : l.name;
+  /* One question, one answer, and it is the server's -- `language.name`
+     through langNameOf() (www/core.js § LNAME). It used to be two: the index
+     carried a copy made at the last save, and the open language answered with
+     `langName`, so renaming a language and looking at this list before
+     anything saved showed the old name here and the new one everywhere else. */
+  var nm = langNameOf(id);
   /* A language that is only READ is a row and not a button. langOpen()
      refuses it -- opening is what writes, and 「dl言語は編集はできない」
      (OWNER 2026-09-01) -- so a button here would be a door that answers
@@ -2326,7 +2340,20 @@ function vLangs(){
   var ids=Object.keys(LANGS), mine=[], reading=[], other=0, i, id;
   for(i=0;i<ids.length;i++){
     id=ids[i];
-    if(!LANGS[id].mine){ reading.push(id); continue; }
+    /* NOT ASKED YET IS NOT DRAWN. A language that has been up (`sid`) and
+       whose owner the server has not said is neither list's -- putting it in
+       one is this phone choosing, and both choices are wrong: 「mine」 shows
+       somebody else's language under your name, 「theirs」 hides your own.
+       The row is asked for at the open (www/sns.js § askLangs) and the count
+       at the foot says how many are not shown, which is what
+       docs/DATA_SAFETY.md § a shorter list is not a deletion asks for.
+       「揃ってから開く」 OWNER 2026-09-07, said about a list. */
+    if(LANGS[id].sid && !langOwnKnown(id)){ other++; continue; }
+    /* MADE OR ONLY READ, asked of `language.owner` (www/core.js § LOWN)
+       rather than of a boolean this phone wrote. `mine` on the index still
+       says which the entry was made as and is what langSeenAdd() writes; what
+       decides the two lists is whose language it is. */
+    if(!langMine(id)){ reading.push(id); continue; }
     /* WHOSE ACCOUNT, and not just whose phone.
        「あと違うアカウントでログインしてんのに前のやつ出てくるんだけど？」
        OWNER 2026-08-31. `LANGS` is the PHONE's -- it survives signing out --
