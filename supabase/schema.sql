@@ -318,6 +318,35 @@ create table if not exists language_take (
 );
 create index if not exists language_take_uid_idx on language_take(uid);
 
+-- AND IT IS THE ONE THING AN UNPUBLISHED LANGUAGE IS STILL READ THROUGH.
+-- 「非公開にしたら新規 dl だけできないだけ」 OWNER 2026-09-09
+-- (docs/FEATURE_RULES.md § DL 言語の四つ).
+--
+-- `slice_read` was 「the owner, or published」, so the moment somebody took a
+-- language away from the page the people who had already taken it opened it on
+-- the next launch to nothing at all -- the row would not come down either, so
+-- not even its name. That is not what unpublishing was decided to be: it stops
+-- a NEW download and nothing else. Somebody who took a chapter keeps reading
+-- the chapter they took.
+--
+-- WHAT IT DOES NOT DO IS WIDEN WHAT THEY MAY READ. It stands in for the
+-- published test and for nothing else, so the dictionary and the grammar still
+-- ask the owner's own switch (`slice_dl`) beside it: a language whose words
+-- were never offered does not start offering them by going private.
+--
+-- `security definer` for the reason email_taken() is: `language_take` is
+-- readable by `authenticated` and by nobody else, and a policy naming the
+-- table would be evaluated for `anon` too -- who may read a published
+-- language's letters, and whose ask would fail on the privilege rather than
+-- on the policy. It answers about auth.uid() and about nothing else, so the
+-- most it can tell anybody is what they themselves took; with nobody signed
+-- in auth.uid() is null and it is false.
+create or replace function language_took(lang uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from language_take t
+                  where t.uid = auth.uid() and t.language = lang) $$;
+grant execute on function language_took(uuid) to anon, authenticated;
+
 -- ---- what a language is made of ---------------------------------------
 -- Eleven slices -- words, lines, lang, script, letters, notes, phases, talk,
 -- snd, kb, wld -- and they are SLICES here for the same reason they are
@@ -873,7 +902,13 @@ create policy profile_edit on profile for update using (is_member() and id = aut
 -- what publishing one MEANS.
 drop policy if exists language_read on language;
 create policy language_read on language for select
-  using (published_at is not null or owner = auth.uid());
+  using (published_at is not null or owner = auth.uid()
+         -- AND SOMEBODY WHO TOOK IT, whatever it says now. The launch asks
+         -- `language?id=in.(…)` for the rows of what this account has taken
+         -- (netTakenDown in www/net.js), so a row refused here is a language
+         -- with no name, no writing system and nothing said about it -- and
+         -- that is what a taker saw the day the owner unpublished it.
+         or language_took(id));
 drop policy if exists language_make on language;
 create policy language_make on language for insert
   with check (is_member() and owner = auth.uid());
@@ -893,8 +928,17 @@ drop policy if exists take_read on language_take;
 create policy take_read on language_take for select
   using (uid = auth.uid());
 drop policy if exists take_make on language_take;
+-- AND ONLY A LANGUAGE THAT IS PUBLISHED RIGHT NOW MAY BE TAKEN.
+-- 「非公開にしたら新規 dl だけできないだけ」 OWNER 2026-09-09. This is the half
+-- of that sentence that closes: the reading half is language_took() above,
+-- which keeps the people who already took it. The article is not drawn for an
+-- unpublished language, so there is no ↓ to press -- and a door that exists
+-- only in the app is a door, so it is refused here as well.
 create policy take_make on language_take for insert
-  with check (is_member() and uid = auth.uid());
+  with check (is_member() and uid = auth.uid()
+              and exists (select 1 from language l
+                           where l.id = language_take.language
+                             and l.published_at is not null));
 drop policy if exists take_drop on language_take;
 create policy take_drop on language_take for delete
   using (is_member() and uid = auth.uid());
@@ -965,18 +1009,27 @@ create policy slice_read on slice for select
              where l.id = language and l.owner = auth.uid())
     -- What the ARTICLE is drawn from. Open on a published language, because
     -- the page cannot be read otherwise.
+    --
+    -- AND SOMEBODY WHO TOOK IT KEEPS READING IT, published or not
+    -- (language_took() above): 「非公開にしたら新規 dl だけできないだけ」
+    -- OWNER 2026-09-09.
     or (kind in ('wld', 'script', 'snd', 'letters', 'kb')
         and exists (select 1 from language l
-                     where l.id = language and l.published_at is not null))
+                     where l.id = language
+                       and (l.published_at is not null or language_took(l.id))))
     -- And what may be TAKEN: 「あとdlは単語文字文法キーボード全部のはずだよね？」
     -- OWNER 2026-09-02. The dictionary and the grammar were refused to everybody
     -- but their owner, so two of the four ↓ could never have landed. They are
     -- open now on a published language AND only where its owner's own switch
     -- says so -- WLD_DL_KIND in www/home.js is the other half of this list, and
     -- the grammar is two slices because a grammar is.
+    -- The taker keeps these two on the SAME second answer and not on a wider
+    -- one: a language whose dictionary was never offered does not start
+    -- offering it by going private.
     or (kind in ('words', 'phases', 'gram2')
         and exists (select 1 from language l
-                     where l.id = language and l.published_at is not null)
+                     where l.id = language
+                       and (l.published_at is not null or language_took(l.id)))
         and slice_dl(language,
                      case kind when 'words' then 'words' else 'gram' end))
   );
@@ -1106,7 +1159,12 @@ create or replace view language_seen as
          slice_count((select s.body from slice s
                        where s.language = l.id and s.kind = 'letters')) as nletters
     from language l
-   where l.published_at is not null or l.owner = auth.uid();
+   -- `language_read`'s sentence, and that includes somebody who took it
+   -- (language_took() above): the article a taker opens is drawn off this
+   -- view, so a row withheld here is the same empty screen the policy was
+   -- opened to stop.
+   where l.published_at is not null or l.owner = auth.uid()
+      or language_took(l.id);
 grant select on language_seen to anon, authenticated;
 
 -- AND THE LANGUAGE BESIDE THE PERSON, IN THE SAME ANSWER.

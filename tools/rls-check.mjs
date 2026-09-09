@@ -1169,6 +1169,72 @@ const CASES = [
   ['and A still has it',                      'ok',     A, 0,
     `select 1 from language_take where uid='${A}' and language='${L}'`],
 
+  /* --- AND NON-PUBLIC STOPS A NEW DOWNLOAD AND NOTHING ELSE --------------
+     「非公開にしたら新規 dl だけできないだけ」 OWNER 2026-09-09
+     (docs/FEATURE_RULES.md § DL 言語の四つ).
+
+     `slice_read` was 「the owner, or published」, so unpublishing a language
+     emptied it for everybody who had already taken it -- on their next launch
+     the row would not come down either, so not even its name. Nothing threw:
+     the app asked, the server answered with no rows, and the person opened a
+     language they had taken to find nothing in it.
+
+     Both halves are here and they pull opposite ways, which is why neither
+     alone is the claim: somebody who TOOK it keeps reading it, and somebody
+     who has not may no longer take it. F is the second one and takes it while
+     it is published first -- otherwise the refusal further down would be
+     about F rather than about the language.
+
+     AND IT IS NOT A WIDER DOOR. The dictionary still asks the owner's own
+     switch (`slice_dl`), so a language whose words were never offered does
+     not start offering them by going private. */
+  ['B takes A\u2019s published language',      'ok',     B, 0,
+    `insert into language_take(uid,language) values ('${B}','${L}')`],
+  ['and reads the letters it was taken for',  'ok',     B, 0,
+    `select 1 from slice where language='${L}' and kind='letters'`],
+  /* Somebody with no account reads them too, and that is the line
+     language_took() has to survive: it is named in this policy, and
+     `language_take` is readable by `authenticated` alone -- so without
+     `security definer` and the grant beside it this ask would fail on the
+     privilege rather than on the policy, for every reader of every published
+     language. */
+  ['and somebody with no account may too',    'ok',     F, 1,
+    `select 1 from slice where language='${L}' and kind='letters'`],
+  ['F, who has not taken it, may take it while it is published', 'ok', F, 0,
+    `insert into language_take(uid,language) values ('${F}','${L}')`],
+  ['and lets go of it again',                 'ok',     F, 0,
+    `delete from language_take where uid='${F}' and language='${L}'`],
+  ['A unpublishes it',                        'ok',     A, 0,
+    `update language set published_at=null where id='${L}'`],
+  ['B, who took it, still reads the letters', 'ok',     B, 0,
+    `select 1 from slice where language='${L}' and kind='letters'`],
+  /* The row as well as the slices. The launch asks `language?id=in.(…)` for
+     what this account has taken (netTakenDown in www/net.js), so a row
+     refused here is a language with no name and no writing system. */
+  ['and the row, so it still has a name',     'ok',     B, 0,
+    `select 1 from language where id='${L}'`],
+  ['and off language_seen, which the article is drawn from', 'ok', B, 0,
+    `select 1 from language_seen where id='${L}'`],
+  ['but the dictionary is still on A\u2019s own switch', 'denied', B, 0,
+    `select 1 from slice where language='${L}' and kind='words'`],
+  ['F reads nothing of it now',               'denied', F, 0,
+    `select 1 from slice where language='${L}' and kind='letters'`],
+  ['nor its row',                             'denied', F, 0,
+    `select 1 from language where id='${L}'`],
+  ['nor may F take it now',                   'denied', F, 0,
+    `insert into language_take(uid,language) values ('${F}','${L}')`],
+  ['nor may somebody with no account read it', 'denied', F, 1,
+    `select 1 from slice where language='${L}' and kind='letters'`],
+  /* AND LETTING GO IS STILL THEIRS TO DO. A take that could not be deleted
+     once the language went private would be a row counting towards a ceiling
+     with no way to clear it. */
+  ['B may still let go of it',                'ok',     B, 0,
+    `delete from language_take where uid='${B}' and language='${L}'`],
+  ['and then B reads nothing of it either',   'denied', B, 0,
+    `select 1 from slice where language='${L}' and kind='letters'`],
+  ['A publishes it again',                    'ok',     A, 0,
+    `update language set published_at=now() where id='${L}'`],
+
   /* --- a draft, which is the one thing here that is nobody else's ---------
      Every other table in this file is either already public or on its way to
      being public, and their select policies say so. `draft` is what somebody
