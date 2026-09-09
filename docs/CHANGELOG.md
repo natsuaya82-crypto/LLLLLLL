@@ -15,6 +15,113 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-09 DL した言語を、切り替えの行をスライドして返す（DELETE REVIEW あり）
+
+「言語変更画面をスライドで消せる、メモしといて」OWNER 2026-09-09、翌の問いに
+「はい」（`docs/FEATURE_RULES.md` 決定ログ「画面で訊いて答えの出た十一」1）。
+
+**返す道がありませんでした。** `language_take` の行はダウンロードで入り、
+アカウントか言語が消えれば cascade で消えます。人が「この言語はもういい」と
+言う道は**一本も無く**、plus は 1 つなので、一度取ると一生埋まったままでした。
+
+**言語切り替え（`vLangs`、プロフィール長押し）の `mine:false` の行だけ**が
+左にスライドし、右端に「削除」が出ます。自分の言語の行はスライドしません
+── 自分の言語を消すのは設定の真ん中の行（`wipeLangsGo`）で、前からそこです。
+**iOS の一覧のスライド削除と同じ動き**で、標準ダイアログは出ません
+（規則「標準は使わねえ」）。**確認は訊きません** ── 元が公開していれば記事の
+↓ でもう一度取れるので、取り消しは「もう一度取る」です。
+
+**サーバーが先です。** `netTakeDrop()`（`www/net.js`）が `language_take` の
+自分の行を DELETE し、**通ってから**端末の写しを落とします。落ちなければ
+一バイトも消えず `netPop` が出ます ── 「保存できなければ保存しない、そして
+そう言う」（規則 11）と同じ形です。
+
+**落とす道は一本です。** `netTakeGone()`（`www/net.js`）── 「答えに無い取った
+言語は端末からも消える」を既にやっている関数で、人が消したのも「取った行が
+無くなった」の一つです。二つ目の削除関数は書いていません（規則「一つのことは
+一つの仕組み」）。DELETE が通ったら `netTakes()` で**サーバーに残っている
+take を訊き直し**、その答えを `netTakeGone()` に渡します ── 何を落とすかを
+ここで計算しません。
+
+```
+DELETE REVIEW
+  who deletes        user action ── 切り替えの行を左にスライドして「削除」
+  when               サーバーの DELETE が通った直後、netTakes() の答えを
+                     netTakeGone() に渡したとき。通らなければ何も起きない
+  what exactly       サーバー：language_take の (自分, その言語) の行 一行。
+                     端末：その言語の SLICES 十二本（slRm、メモリと、古い版が
+                     ディスクに書いた写しと、圏外用の写し）、その十二本の
+                     langWasKey、索引の行（delete LANGS[id]）、langStore()。
+                     **元の language 行にも slice 行にも触りません** ──
+                     他人の言語で、こちらは印を外すだけ
+  why                「言語変更画面をスライドで消せる」OWNER 2026-09-09。
+                     返す道が無いと plus の 1 枠が一生埋まる
+  recoverable?       はい ── 元が公開していれば記事の ↓ でもう一度取れます。
+                     取り消しは「もう一度取る」で、それが道です。元が非公開に
+                     していれば取り直せません（`take_make` が公開中だけを
+                     通すため）。作ったものは一つも消えません ── 端末から
+                     落ちるのは他人の言語の写しだけです
+  is it still on the server?
+                     元の言語はそのまま。消えるのは「この人が取った」という
+                     印の一行だけ
+  anything to do with the plan?    no ── 数える上限（dlCap）が一つ空きますが、
+                     開くボタンが変わるだけで、何が在るかは変わりません
+  migration / rollback
+                     移行なし。ロールバックはこの一節を戻すだけ
+```
+
+**落とさない場合。**
+
+- **DELETE が通らなかったとき。**索引の行もスライスも一バイトも動かさず、
+  `netPop` の［再接続］が同じ問いをもう一度撃ちます。**「消えたように見えて
+  消えていない」も「消していないのに消えた」も作りません。**
+- **自分の言語。**「削除」はそもそも出ません（`mine:false` の行だけ）。
+  `netTakeDrop()` に自分の言語の sid を渡しても、`take_drop` は
+  `uid = auth.uid()` なので消えるのは自分の take の行だけで、`language` 表には
+  触りません。
+- **`netTakes()` が落ちたとき。**`netTakeGone()` は呼ばれません ── 「無い」と
+  「訊けていない」は別の状態です（CLAUDE.md § Data）。DELETE は通っているので、
+  次の起動で落ちます。
+- **開いていた言語だったとき。**`netTakeGone()` が `langForAcct(true)` で自分の
+  言語へ移します（前からある一行）。
+
+- `www/net.js` ── `netTakeDrop()`
+- `www/home.js` ── `langRow()` のスライド、`langDrop()`、指の三本
+- `www/index.html` ── `.lgsw` `.lgdel`（角丸も枠も塗りも無し、規則18。
+  `tools/box-baseline.txt` は増えていません）
+- `www/act-map.js` ── `langDrop`
+- `www/i18n/*.js` ×10 ── `langs.drop`
+- `tools/dl-check.mjs` ── 主張五本
+
+### 2026-09-09 起動の二本の道を一本にした（同じ言語が切り替えに二行並ばない）
+
+「起動で同じ言語が切り替えに 2 行並ぶ」「ならばないようにして」OWNER
+2026-09-09（`docs/BACKLOG.md` の同じ日の項）。
+
+`netTook()` は**この人の言語を降ろして埋める道を二本**撃っていました ──
+`netLangBack()` を直に、`pullBoot()` 越しに `netLangsDown()` を。同じ問い
+（`language?owner=eq.<自分>`）で、どちらも索引の行を**作ります**。
+`netLangBack1()` はスライスを先に訊いて答えの中で `LANGS[sid]` を作り、
+`netLangsWalk()` は行を先に `langMint()` の id で作るので、同時に走ると
+netLangBack1() の答えが返る頃には `LANGS[sid]` はまだ空 ── **同じ言語に
+二つ目の行**ができます。何も throw せず、切り替えの一覧に二つ並びます。
+
+**二本目を条件で止めたのではなく、消しました**（CLAUDE.md § Simple ──
+「直すじゃなくて書き換え」）。`netLangBack()`・`netLangBack1()`・`NET_BACK` は
+削除。行を作って埋めるのは `netLangsWalk()` 一本だけです ── そちらの方が
+広く、`netLangBack1()` がしていないこと（書記体系の列、誰が書いたかの列、
+`netAgreed()`、名前の列が空のときのスライスからの穴埋め、取った言語）まで
+やります。
+
+`netLangBack()` が持っていた「降りてきたら `langForAcct(true)`」は、
+`pullWait('mylangs', …)` に移しました ── `www/boot.js` が `netLangSync` を
+待たせているのと同じ仕掛けで、答えが来ても落ちても呼ばれるところまで同じです。
+**保存されるものは何も変わりません。**
+
+- `www/net.js` ── `netLangBack` / `netLangBack1` / `NET_BACK` を削除、
+  `netTook()` の一行を `pullWait('mylangs', …)` へ
+- `tools/again-check.mjs` ── 主張 2b（sid ごとに一行）
+
 ### 2026-09-09 元が消えた DL 言語は端末からも消える（DELETE REVIEW あり）／非公開は新規 DL を止めるだけ
 
 「空で残さないで。消えたら消えるのよ。」「非公開にしたら新規 dl だけできない
