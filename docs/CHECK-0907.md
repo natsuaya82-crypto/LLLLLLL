@@ -168,7 +168,7 @@ master 0c459682。ゲート 43 本緑。**実機未確認**（headless のみ）
 master b7f49f60（145）→ a223b3ba（146、DL した言語が起動で戻る）。ゲート 43 本緑、`npm run rls` 緑。**実機未確認**（headless のみ）。
 
 ## 0. 先に一回だけ
-- [ ] **Supabase の SQL を流し直す**（`supabase/schema.sql` 丸ごと）。増えたもの：`language.wsys` 列、`profile.prefs` 列、`language_take` 表（+ RLS 3 本）、`language_seen` の作り直し。144 の分（`profile.link`・`profile.loc`・`profile_seen` の言語の列・`feed_hot`）が未実行ならそれも同じ一回で入る。**流すまで言語の一覧・記事・ダウンロードは「接続できません」**。手順は `supabase/setup.md` の 2026-09-09 の節。
+- [ ] **Supabase の SQL を流し直す**（`supabase/schema.sql` 丸ごと）。増えたもの：`language.wsys` 列、`profile.prefs` 列、`language_take` 表（+ RLS 3 本）、`language_took()` 関数と `slice_read`／`language_read`／`take_make` の書き換え（r9、非公開でも取った人は読める）、`language_seen` の作り直し。144 の分（`profile.link`・`profile.loc`・`profile_seen` の言語の列・`feed_hot`）が未実行ならそれも同じ一回で入る。**流すまで言語の一覧・記事・ダウンロードは「接続できません」**。手順は `supabase/setup.md` の 2026-09-09 の節。
 - schema: https://github.com/natsuaya82-crypto/LLLLLLL/blob/master/supabase/schema.sql （raw: https://raw.githubusercontent.com/natsuaya82-crypto/LLLLLLL/master/supabase/schema.sql ）
 
 ## 1. 言語（サーバー一本になった 9 つ）
@@ -176,6 +176,8 @@ master b7f49f60（145）→ a223b3ba（146、DL した言語が起動で戻る�
 - [ ] オンボーディングを終えた端末で アカウントを削除 → 同じ端末で別アカウントにサインイン → その人の profile 行が無ければ**その人の**オンボーディング、有れば飛ばす（`SET.walked` は「この端末は歩いた」だけ）。
 - [ ] 他人の言語をダウンロード → 上限（plus 1・pro 3）は**二台目でも続きから**数える（`language_take`）。自分の言語は上限に入らない。
 - [ ] （146）他人の言語を ↓ で取る → アプリを**完全に閉じて開き直す** → 切り替え（プロフィール長押し）にその言語が残っていて、開くと文字・キーボードなど**中身がある**。自分の言語は一バイトも動いていない。起動は遅くなっていない（直列 4 段）。
+- [ ] （r9）**元が消したら端末からも消える** ── 二台（または二アカウント）で。A の言語を B が ↓ で取る → A が「この言語を削除」→ B がアプリを閉じて開き直す → 切り替えにその行が**無い**（空の行が残らない）。B の自分の言語はそのまま。**機内モードで開き直したときは消えない**（答えが来ていないので）。
+- [ ] （r9）**非公開は新規 DL を止めるだけ** ── A が言語を非公開にする → 既に取っている B は開き直しても**文字・キーボードが見える**（名前も出る）→ 取っていない C の記事からは見えず ↓ も無い。※ **SQL を流し直してから**。
 - [ ] 書記体系（アルファベット／音節／abugida／表語）を変える → ログアウト → ログイン → 同じ。二つ言語を持つと別々に持てる（`language.wsys`）。
 - [ ] テーマ・表示言語・自作フォント・自作文字・キーボードのローマ字面 → 二台目でサインインすると同じ設え（`profile.prefs`）。答えが戻る前は端末の色のまま、戻ったら切り替わる。
 

@@ -242,8 +242,10 @@ the reasoning — a reason can be re-derived, a decision cannot.
   要る**。3・4 はデータ無し。
 - Affected docs: `docs/FEATURES.md`「Reading a downloaded language」、
   `docs/BACKLOG.md`、`docs/CHECK-0907.md`、`supabase/setup.md`
-- Implementation status: 1・2 は `claude/r9-dl` で作業中（2026-09-09）。
-  3 は IMPLEMENTED（今の形）。4 は BACKLOG。
+- Implementation status: 1・2 は IMPLEMENTED（`claude/r9-dl`、2026-09-09、
+  実機未確認）── 1 は `netTakeGone()`（`www/net.js`、`again-check` 四本）、
+  2 は `language_took()`（`supabase/schema.sql`、`npm run rls`、**SQL の流し
+  直しが要る**）。3 は IMPLEMENTED（今の形）。4 は BACKLOG。
 
 ### DL した言語は「印」── 元が消えれば取った側からも消える
 - Date: 2026-09-09
@@ -261,14 +263,15 @@ the reasoning — a reason can be re-derived, a decision cannot.
   → 消える、で確定。
 - Affected features: DL、言語切り替え、アカウント削除、言語削除
 - Affected data: **サーバーは今のまま**（`language_take` は `language` の
-  削除で cascade、`schema.sql:315`）。**端末の索引の行は今は残る**：
-  起動の walk は「無いものを埋めて止まる」ので、サーバーから消えた言語の
-  `mine:false` の行が切り替えに空のまま残る。それを消すのは端末側の削除
-  なので DELETE REVIEW が要る（BACKLOG 2026-09-09）。
+  削除で cascade、`schema.sql`）。**端末の索引の行も落ちる**：起動の
+  `netTakeGone()`（`www/net.js`）が、`language_take` の答えに無くなった
+  `mine:false` の行と slice を落とす。DELETE REVIEW は `docs/CHANGELOG.md`
+  2026-09-09。答えが来ていない起動（`LTAKE===null`）では何も落とさない。
 - Affected docs: `docs/FEATURES.md`「Reading a downloaded language」、
   `docs/BACKLOG.md`、`docs/CHECK-0907.md`
-- Implementation status: サーバー側 IMPLEMENTED（cascade）。端末の索引の行を
-  落とす道は **BACKLOG**（DELETE REVIEW 待ち）。
+- Implementation status: IMPLEMENTED ── サーバー側は cascade、端末の索引の
+  行は `netTakeGone()`（`claude/r9-dl`、2026-09-09、実機未確認）。元が
+  **非公開**にしたときは同日の決定「DL 言語の四つ」の 2 で決まった。
 
 ### お題の札は、保存は一つの綴り・見せるのは読む人の表示言語
 - Date: 2026-09-08

@@ -1961,6 +1961,11 @@ function netTakenDown(took){
   if(!netSignedIn() || !SESS || !SESS.uid) return;
   if(NET_TAKEN===String(SESS.uid)) return;
   NET_TAKEN=String(SESS.uid);
+  /* AND THE ONES THAT ARE NOT IN THE ANSWER ANY MORE ARE GONE FROM HERE TOO.
+     Before the ask and before the line below, because 「nothing taken」 is the
+     answer that takes everything: an early return there is what left them
+     standing. netTakeGone() is the whole of it. */
+  netTakeGone(ids);
   /* Nothing taken is an answer and not a reason to ask. */
   if(!ids.length) return;
   netGet('/rest/v1/language?select=id,name,published_at,wsys,owner&id=in.('+
@@ -1970,6 +1975,79 @@ function netTakenDown(took){
        came down on the road above, and a phone that did not hear about the
        ones it took is a phone that hears about them on the next launch. */
     function(){ NET_TAKEN=''; });
+}
+/* AND A TAKEN LANGUAGE THAT IS NOT IN THE ANSWER IS GONE FROM THIS PHONE.
+   -------------------------------------------------------------------------
+   「空で残さないで。消えたら消えるのよ。」 OWNER 2026-09-09
+   (docs/FEATURE_RULES.md § DL 言語の四つ, decision 1; the DELETE REVIEW is in
+   docs/CHANGELOG.md under the same date).
+
+   A DOWNLOAD IS A MARK AND NOT A COPY, so when the person who wrote the
+   language deletes it -- or deletes their account -- the `language_take` row
+   goes with it (`on delete cascade`, supabase/schema.sql). The walk above
+   fills in what the answer HAS; nothing looked at what the answer no longer
+   has, so a `mine:false` row sat in the switcher for a language nobody can
+   open, with the picture kept for a launch with no signal still on the disk
+   beside it. Pressing it opened a language of somebody else's that does not
+   exist any more.
+
+   FOUR THINGS ARE NOT DROPPED, and each of them is a state rather than a gap:
+
+     the answer never came -- netTakes() failed, so this is not called at all
+       and LTAKE stays `null` (www/core.js § LTAKE). 「無い」 and 「not asked」
+       are different states and must not share a branch: a launch with no
+       signal would otherwise delete every language this account had taken.
+     a language of this person's OWN -- `mine` is not false, and not one byte
+       of one is touched here. It is the other ask's to fill and nobody's to
+       remove.
+     a row with no `sid` -- langSeenAdd() is the only thing that writes
+       `mine:false` and it always writes `sid`, so a row without one did not
+       come from a take and cannot be matched against the answer. What cannot
+       be matched is left alone.
+     the server -- netLangDrop() is NOT called. The row is somebody else's
+       language and this phone has no business writing to it; and there is
+       nothing to drop, because the reason it is not in the answer is that it
+       is already gone.
+
+   The road back is the road in: if it is published again, the ↓ on the
+   article takes it again. */
+function netTakeGone(ids){
+  var list=(ids && typeof ids.length==='number')? ids : [], gone=[],
+      id, L, sid, i, j, k, moved=false;
+  for(id in LANGS){
+    if(!Object.prototype.hasOwnProperty.call(LANGS, id)) continue;
+    L=LANGS[id];
+    /* Somebody else's, taken -- langSeenAdd() (www/core.js) is the one place
+       that writes this and langMint() writes true. */
+    if(!L || L.mine!==false) continue;
+    sid=String(L.sid||'');
+    if(!sid) continue;
+    for(i=0;i<list.length;i++) if(String(list[i])===sid) break;
+    if(i<list.length) continue;
+    gone.push(id);
+  }
+  if(!gone.length) return;
+  for(k=0;k<gone.length;k++){
+    id=gone[k];
+    /* SLICES and the same pair of keys wipeLangsHere() takes for one language
+       (www/settings.js): the slice, and what this phone and the server last
+       agreed it was. Walked rather than listed -- a slice added tomorrow goes
+       the day it is added. slRm() takes the memory, what an older version
+       wrote to the disk, and the picture kept for a launch with no signal. */
+    for(j=0;j<SLICES.length;j++){
+      slRm(langKeyOf(id, SLICES[j]));
+      slRm(langWasKey(id, SLICES[j]));
+    }
+    delete LANGS[id];
+    if(langId===id){ langId=''; moved=true; }
+  }
+  langStore();
+  /* And where you are standing, if you were standing in one of them.
+     langForAcct(true) is the one place that answers 「which language is this
+     account's to be in」 -- wipeLangsHere() reaches it the same way, with the
+     same two lines in front of it. It draws; nothing else does. */
+  if(moved) langForAcct(true);
+  else render();
 }
 /* The open language and its copy, put together. Read, merge, write back
    whatever moved -- in that order, so a phone that has been offline for a
