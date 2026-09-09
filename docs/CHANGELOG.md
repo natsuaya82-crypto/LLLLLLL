@@ -15,6 +15,74 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-09 元が消えた DL 言語は端末からも消える（DELETE REVIEW あり）／非公開は新規 DL を止めるだけ
+
+「空で残さないで。消えたら消えるのよ。」「非公開にしたら新規 dl だけできない
+だけ」OWNER 2026-09-09（`docs/FEATURE_RULES.md` § DL 言語の四つ）。
+
+**一。空の行が切り替えに残っていました。** DL は写しではなく印なので、元が
+言語を削除するかアカウントを消すと `language_take` の行は cascade で消えます
+（`supabase/schema.sql`）。起動の `netTakenDown()`（`www/net.js`）は答えに
+**在る**言語を埋めるだけで、答えから**消えた**言語の索引の行には何もしていま
+せんでした ── `mine:false` の行が切り替えに残り、開くと一語も無い言語です。
+
+同じ道が落とします。道は増えていません：`netTakes()` の答えが来たところ、
+`netLangsWalk()` に渡す前です。
+
+```
+DELETE REVIEW
+  who deletes        automatic ── 起動一回、netTakes() の答えが来た時
+  when               language_take の答えに、索引の mine:false の行の sid が
+                     無かったとき。元が言語を削除した／アカウントを消した／
+                     取った人が別の端末で自分の take を消した、の三つ
+  what exactly       その言語の SLICES 十二本（slRm、メモリとディスクの写し）、
+                     その十二本の langWasKey、索引の行（delete LANGS[id]）、
+                     langStore()。ほかは一バイトも触らない
+  why                「空で残さないで。消えたら消えるのよ。」OWNER 2026-09-09。
+                     元が消えた言語の空の行は、押しても何も無い切り替えの行
+  recoverable?       いいえ ── 元がもう持っていないので、戻す先がありません。
+                     元がまた公開していれば記事の ↓ でもう一度取れます（それが
+                     戻す道）。取った人が自分で消した場合も同じ
+  is it still on the server?
+                     いいえ。元の language 行も slice 行も language_take の行も
+                     もう無い（cascade）。**この道はサーバーへ一度も行きません**
+                     ── netLangDrop() は呼びません。他人の行は触らないため
+  anything to do with the plan?    no
+  migration / rollback
+                     移行なし。ロールバックはこの一節を戻すだけ ── 落とすのは
+                     端末の写しで、サーバーには何も書いていません
+```
+
+**落とさない場合を数えました。**
+
+- **答えが来ていないとき。**`netTakes()` が落ちれば `LTAKE` は `null` で
+  （`www/core.js` § LTAKE）、`netTakenDown()` は呼ばれません。圏外の起動で
+  取った言語を消してはいけない ── 「無い」と「訊けていない」は別の状態です
+  （CLAUDE.md § Data）。
+- **自分の言語。**`mine:false` の行だけを見ます。`mine:true` は一バイトも
+  触りません。
+- **`sid` の無い行。**索引に `mine:false` を書くのは `langSeenAdd()` だけで、
+  そこは必ず `sid` を打ちます。`sid` が無い行は take から来ていないので、
+  答えと突き合わせられません ── 突き合わせられないものは落としません。
+- **サインインしていないとき。**`netTakenDown()` の一行目が返します。
+
+**二。非公開にされても、取った人は読み続けます。**「非公開にしたら新規 dl だけ
+できないだけ」。`slice_read` は「持ち主、または公開中」だったので、元が非公開に
+した次の起動で取った人の言語は空になっていました。`language_took()` を足して、
+`slice_read`・`language_read`・`language_seen` の三つが**取った人にも**答えます
+── 起動は `language?id=in.(…)` で行を引くので、行が来なければ名前も書記体系も
+来ません。`take_make` には「公開中」が付きました：**新しく取る**のは公開中の
+言語だけです。**データは消えません**（サーバーの行は一つも動きません）。
+
+**SQL の流し直しが要ります** ── `supabase/setup.md` 2026-09-09 の項。
+
+- `www/net.js` ── `netTakenDown()` に落とす半分（`netTakeGone()`）
+- `supabase/schema.sql` ── `language_took()`、`slice_read`、`language_read`、
+  `language_seen`、`take_make`
+- `tools/again-check.mjs` ── 主張四本（消える・null では消えない・自分のは
+  動かない・サーバーへ行かない）
+- `tools/rls-check.mjs` ── CASES 五本
+
 ### 2026-09-09 取った言語は、アプリを閉じて開いても中身ごと戻る
 
 「DLしたやつがなくなるって意味がわからん」OWNER 2026-09-09（実機）。
