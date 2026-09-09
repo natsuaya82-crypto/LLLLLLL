@@ -7,6 +7,35 @@ refactor, a feature and a rename never arrive in the same diff.
 
 The order is the order to do them in.
 
+## `language_take` を起動で二度訊いています（2026-09-09、`www/sns.js` は別の受け持ち）
+
+取った言語の中身を起動で埋めるために `netLangsDown()`（`www/net.js`）が
+`netTakes()` に訊くようになりました。`askLangs()`（`www/sns.js`）は今までどおり
+`netLangsDown()` と `netTakes()` を並べて撃つので、**起動のたびに
+`language_take` の GET が二本**出ます。仕組みは一つ（`netTakes()` が取った
+言語を言う唯一の場所）で、増えているのは往復だけです。
+
+直すなら `askLangs()` を `netLangsDown()` 一本にする（`netLangsDown()` の中で
+`netTakes()` が答えを `LTAKE` に入れるので、数え上げはそれで足ります）。
+`www/sns.js` はこのセッションの受け持ちではないので触っていません。
+
+## 起動の二本の道が競争して、同じ言語が索引に二行入ることがあります（2026-09-09）
+
+`netTook()` は `netLangBack()` と、`pullBoot()` 越しに `netLangsDown()` の
+**両方**を撃ちます。どちらも「この人の言語を降ろして埋める」で、`netLangBack1()`
+は `sid` をそのまま local id にし、`netLangsDown()` は `langMint()` で新しい
+id を作ります。先に相手の行が索引に入っていれば二本目は見つけて止まりますが、
+**同時に走ると両方が行を作り**、同じ言語が切り替えの一覧に二つ並びます。
+
+`again-check` の二節目がそれを踏んでいました ── 「中身ごと戻る」を
+「words が 2 バイトを超える言語が二つ以上」で数えていて、緑にしていたのは
+**同じ言語が二重に数えられていたこと**でした（開いていた方は `words` が空）。
+主張は言語ごとに、全スライスで数えるように直してあります。
+
+道が二本あること自体は直していません ── 「一つのことは一つの仕組み」
+（`CLAUDE.md`）に反しており、どちらを残すかは読んで決める仕事で、この
+セッションの受け持ち（取った言語）の外です。
+
 ## 圏外で作って一度も上げていない古い言語は、サインインすると誰のものでもありません（2026-09-09、オーナーの判断が要ります）
 
 `language.owner` が答えになった日（`e44d3a65`）から、**印の無い言語は誰のもの
