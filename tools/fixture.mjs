@@ -2189,6 +2189,17 @@ export function halfDone(){
         saveStg();
         window.route = 'gram'; NAV = [{ r: 'gram', a: 'v2:pst' }];
         return vGram(); }],
+    /* THE SAME CHAPTER, with a rule that has a CONDITION on it. The sentence
+       says the condition since 2026-09-09 (www/grammar.js § g2FmWhen), so
+       this is the other state of the face above: 「y で終わるとき、末尾の 1
+       文字を落として、動詞の末尾に -ied」 against 「動詞の末尾に -ta」. The
+       fault in a pair is nearly always in the one nobody photographed. */
+    ['a chapter of the grammar book, with a rule that has a condition', () => {
+        STG.fm = [{ id: 'fr-cond', pos: 'v', fm: 'pst', at: 'end',
+                    add: spType('ied'), drop: 1, when: 'x', wend: spType('y') }];
+        saveStg();
+        window.route = 'gram'; NAV = [{ r: 'gram', a: 'v2:pst' }];
+        return vGram(); }],
     /* A rule written on the OLD editor -- it drops a letter and fires only on
        words ending in one. The screen is two fields now and cannot write
        another like it, and this face is what proves the ones somebody already

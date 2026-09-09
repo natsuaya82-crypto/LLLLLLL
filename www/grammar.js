@@ -1637,17 +1637,49 @@ function g2RulesOf(fm){
    where it does not, which is the same reading g2FmRows has always taken. The
    letters are the ones somebody drew, so they go through sfontHTML().
 
-   WHAT IT DOES NOT SAY is a condition. `when` and `drop` are on rules written
-   before the editor was cut back to the two fields (www/wordsheet.js
-   § fmrFormHTML) and no screen can write another; a sentence claiming such a
-   rule always applies would be a lie, so it says the affix and the end, and
-   the table underneath shows exactly which words it reached. docs/BACKLOG.md
-   carries it. */
+   AND IT SAYS THE CONDITION. 「はい」 OWNER 2026-09-09. `when` and `drop` are
+   on rules written before the editor was cut back to the two fields
+   (www/wordsheet.js § fmrFormHTML) and no screen can write another -- but they
+   still work, so a sentence that said only the affix read as a rule that
+   always fires. It said 「動詞の末尾に -ta」 about a rule that only touches
+   words ending in a vowel. Three clauses, in the order they happen: what has
+   to be true, what comes off first, and what goes on.
+
+   ONE PLACE, still: the clause is built here and nowhere else, and the table
+   underneath is unchanged -- it goes on showing exactly which words the rule
+   reached, which is the half a sentence can never say. */
 function g2FmSent(r, pos){
-  var a=gFmAffix(r);
+  var a=gFmAffix(r), c;
   if(!a) return '';
-  return t((r && r.at==='start')? 'g2.rule.start' : 'g2.rule.end',
-           esc(posLabel(r.pos || pos)), sfontHTML(a));
+  c=g2FmWhen(r);
+  /* THE CONDITION IS ITS OWN LINE, and that is a measurement rather than
+     taste. The row's label is `.psm`, which is `flex:0 0 auto` (www/index.html)
+     -- it never shrinks, so a label wider than the phone widens the PAGE and
+     the whole screen scrolls sideways. Measured: 「y で終わるとき、末尾の 1
+     文字を落として、動詞の末尾に -ied」 took the screenshot from 390 to 461.
+     Broken in two, each line fits. The break is here and not in the ten
+     translations, so no translator can lose it. */
+  return (c? c+'<br>' : '')+
+    t((r && r.at==='start')? 'g2.rule.start' : 'g2.rule.end',
+      esc(posLabel(r.pos || pos)), sfontHTML(a));
+}
+/* The conditions a rule can carry, as the clauses that go in front of it.
+   Nothing is written for a rule that has none, which is most of them: a
+   sentence with an empty clause pasted on the front would be the app saying
+   something about every rule in the book.
+
+   `x` names the letters a word has to END in and those are letters somebody
+   drew, so they go through sfontHTML() exactly as the affix does. `v` and `c`
+   are about SOUND and have nothing of this language in them to draw. */
+function g2FmWhen(r){
+  var out='', n;
+  if(r && r.when==='v') out+=t('g2.rule.when.v');
+  else if(r && r.when==='c') out+=t('g2.rule.when.c');
+  else if(r && r.when==='x' && (r.wend||[]).length)
+    out+=t('g2.rule.when.x', sfontHTML(spWord(r.wend)));
+  n=Math.max(0, parseInt(r && r.drop, 10) || 0);
+  if(n) out+=t('g2.rule.drop', String(n));
+  return out;
 }
 function g2FmRows(c){
   var a=g2RulesOf(c.fm), out='', i, id;

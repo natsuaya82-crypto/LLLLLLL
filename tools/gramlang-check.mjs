@@ -877,10 +877,12 @@ const g2n = await pg.evaluate(() => {
        RULE hands both rows the same answer -- the same word, under two
        different numbers, both looking right.
 
-       The one that says nothing about this word says what it ADDS instead. A
-       row showing an unchanged word would be the app claiming a form the
-       language has not got, and no row at all would be a rule somebody wrote
-       that they cannot see. */
+       The one that says nothing about this word says what it ADDS instead, and
+       since 2026-09-09 it says WHEN it applies as well -- 「ends in q」 is on
+       the sentence, so a rule that reaches none of these words does not read
+       as one that always fires. A row showing an unchanged word would be the
+       app claiming a form the language has not got, and no row at all would be
+       a rule somebody wrote that they cannot see. */
     { id:'p2', pos:'n', fm:'pl', at:'end', drop:0, add:sp('zz'), when:'x',
       wend:sp('q') },
     /* and a rule about VERBS, which is the past chapter's and must not be
@@ -916,8 +918,8 @@ want('the plural chapter draws every rule this language wrote for it', g2n.n, 2)
    are two different failures and used to be one claim. */
 want('the rule is a sentence with the letters in it', g2n.mi,
      'noun: -mi on the end');
-want('a rule that says nothing about this word still says what it adds',
-     g2n.zz, 'noun: -zz on the end');
+want('a rule that says nothing about this word still says what it adds, and says its condition',
+     g2n.zz, 'ends in q, noun: -zz on the end');
 want('and makes nothing in the table', g2n.zzMade, 0);
 want('and the tense is drawn in neither of these chapters', g2n.tense, 0);
 
@@ -1095,9 +1097,9 @@ want('the one for verbs ending in a is the one that ends in a',
      nTwo.filter((x) => x.to === 'zlumaxx').length, 1);
 want('and the other row is the OTHER rule, not the same word twice',
      nTwo.filter((x) => x.to === 'zlumayy').length, 1);
-want('and each says its own rule, not the same thing twice',
+want('and each says its own rule, not the same thing twice -- condition and all',
      nTwo.map((x) => x.lab).join(' | '),
-     'verb: -xx on the end | verb: -yy on the end');
+     'ends in a, verb: -xx on the end | verb: -yy on the end');
 
 /* 3. a word of its own, which is not a rule at all. Where it goes is what this
    language answered -- STG.gpos.negp, which has no page of its own since the
@@ -1915,3 +1917,10 @@ console.log('          The noun chapter names every role the 助詞 stage has,')
 console.log('          written or not, and with no words in the dictionary at all.');
 console.log('          A rule is deleted by the Select every other list here has,');
 console.log('          and what is chosen is chosen by id, not by where it sits.');
+console.log('          A kind of noun can be deleted: its name, the record on every');
+console.log('          noun that was in it, and its rules -- and the numbers of the');
+console.log('          classes after it do not move.');
+console.log('          Which side the negation word stands is a row on the word');
+console.log('          order chapter, and pressing it comes out in the sentence.');
+console.log('          A rule that has a condition says it, and one that has none');
+console.log('          reads exactly as it did.');
