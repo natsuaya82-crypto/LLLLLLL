@@ -297,6 +297,7 @@ act('g2Take', g2Take);
 act('nclsNew', nclsNew);
 act('nclsOpen', nclsOpen);
 act('nclsSave', nclsSave);
+act('nclsDel', nclsDel);
 act('nclsPut', nclsPut);
 act('stAddOwn', stAddOwn);
 act('stDelEx', stDelEx);

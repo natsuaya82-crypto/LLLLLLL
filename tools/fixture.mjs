@@ -1804,6 +1804,40 @@ export function halfDone(){
     /* And naming one, which is a form and is therefore reached by nothing the
        walk would otherwise take. */
     ['naming a noun class', () => { nclsNew(); return vForm(); }],
+    /* THE OTHER SIDE OF THE NEGATION ROW. The word order chapter says which
+       side the word for 「not」 stands, and the row is two words: the fault
+       in a pair is nearly always in the side nobody photographed. */
+    ['the negation word before the verb', () => {
+        const was = STG.gpos && STG.gpos.negp;
+        if (!STG.gpos) STG.gpos = {};
+        STG.gpos.negp = 'before';
+        window.route = 'gram'; NAV = [{ r:'gram', a:'v2:order' }];
+        const h = vGram();
+        if (was) STG.gpos.negp = was; else delete STG.gpos.negp;
+        return h; }],
+    /* And a class that EXISTS, which is a different face of the same form:
+       the name is filled in and the way out of the class is on it. A new one
+       has no way out -- there is nothing yet to delete. */
+    ['a noun class that exists', () => {
+        const was = STG.ncls;
+        STG.ncls = { names:['ka','mi'], of:{} };
+        nclsOpen(0);
+        const h = vForm();
+        STG.ncls = was;
+        return h; }],
+    /* And the other state of that screen: the one question it asks. There is
+       no undo behind this one, which is why it asks -- CLAUDE.md § 19. The
+       popup's own markup is what is returned, the way every other asking face
+       in this file does it: render() takes a popup down, so a face that left
+       one standing would photograph the screen underneath. */
+    ['a noun class being deleted, asking', () => {
+        const was = STG.ncls;
+        STG.ncls = { names:['ka','mi'], of:{} };
+        nclsDel(0);
+        const h = document.getElementById('pop').outerHTML;
+        popOff();
+        STG.ncls = was;
+        return h; }],
     /* And the list with the door on it, which is the only place the way in
        exists. Everything else walks with the stage off the list, so this is
        the one face that renders that button. */
@@ -2152,6 +2186,17 @@ export function halfDone(){
                     add: spType('ta'), drop: 0, when: '' }];
         STG.ex = STG.ex || {};
         STG.ex.pst = [{ lb: '', ln: 'ke tirta', gl: 'I saw it' }];
+        saveStg();
+        window.route = 'gram'; NAV = [{ r: 'gram', a: 'v2:pst' }];
+        return vGram(); }],
+    /* THE SAME CHAPTER, with a rule that has a CONDITION on it. The sentence
+       says the condition since 2026-09-09 (www/grammar.js § g2FmWhen), so
+       this is the other state of the face above: 「y で終わるとき、末尾の 1
+       文字を落として、動詞の末尾に -ied」 against 「動詞の末尾に -ta」. The
+       fault in a pair is nearly always in the one nobody photographed. */
+    ['a chapter of the grammar book, with a rule that has a condition', () => {
+        STG.fm = [{ id: 'fr-cond', pos: 'v', fm: 'pst', at: 'end',
+                    add: spType('ied'), drop: 1, when: 'x', wend: spType('y') }];
         saveStg();
         window.route = 'gram'; NAV = [{ r: 'gram', a: 'v2:pst' }];
         return vGram(); }],

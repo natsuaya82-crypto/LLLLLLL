@@ -52,6 +52,7 @@ const DELETES = {
   kbDropLay:  { takes: 'one layout of the keyboard being edited', asks: true },
   kbSelDel:   { takes: 'the keys, rows or columns that are selected, out of the keyboard being edited', asks: true },
   stDelOwn:   { takes: 'one grammar stage somebody wrote, out of STG', asks: true },
+  nclsDel:    { takes: 'one kind of noun: its name in STG.ncls.names (the slot is emptied, never closed up), the record on every noun that was in it (STG.ncls.of -- removed, not written over with なし), and its agreement rules in STG.fm. The nouns themselves are untouched', asks: true },
 
   /* ---- the timeline: asked first ------------------------------------- */
   postDel:    { takes: 'one post, its row on the server, its files in post-media, and its voice file in Documents', asks: true },
