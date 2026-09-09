@@ -2565,7 +2565,7 @@ export function halfDone(){
        window.route='langs'; NAV=[{r:'langs'}];
        const app=document.getElementById('app');
        app.innerHTML=vLangs();
-       const w=app.querySelector('.lgsw[data-lgs="L_other"]');
+       const w=app.querySelector('.swipe[data-lgs="L_other"]');
        if(w){ const r=w.getBoundingClientRect();
               langSwDown({ target:w.querySelector('.lgrow')||w,
                            touches:[{clientX:r.right-20, clientY:r.top+r.height/2}] });

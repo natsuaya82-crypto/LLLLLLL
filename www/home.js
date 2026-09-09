@@ -2290,7 +2290,7 @@ function langRow(id){
      comment named the writers as the protection from the day it was written
      and only three of them were asking; opening this door is what finished
      that sentence. */
-  var row='<button class="lgrow'+(isOpen?' on':'')+'"' + DO('langOpen', [id]) +
+  var row='<button class="lgrow'+(langMine(id)?'':' swrow')+(isOpen?' on':'')+'"' + DO('langOpen', [id]) +
     (isOpen? ' aria-label="'+esc(t('langs.open'))+'"' : '') + '>'+
     '<span class="pav lgav">'+esc(mk)+'</span>'+
     '<span class="lgn">'+esc(langNameSaid(nm))+'</span>'+
@@ -2305,15 +2305,20 @@ function langRow(id){
      the same question vLangs() above asked to decide which list it goes in,
      not a second one.
 
+     THE SAME ONE THE NOTEBOOK HAS, and that is the whole of what is written
+     here. 「メモと同じ形って伝えたよね」 OWNER 2026-09-09: this row had a
+     second set of rules of its own -- gold, 96px, 1.02rem -- against the
+     notebook's red 76px, and two answers to 「how does a row slide open」 is
+     one too many. `.swipe` / `.swrow` / `.swdel` / `.swopen` are written once
+     (www/index.html § a row deleted by sliding it); nothing about the shape
+     is said again here.
+
      The 削除 is BESIDE the row and not on top of it, so the row is still the
-     button it was and the press that opens a language is untouched. It is
-     off the right edge until the row slides -- .lgsw is `overflow:hidden`
-     (www/index.html) -- and it is .btn.ghost, the words on their own, because
-     a corner or a fill here is 規則18. */
+     button it was and the press that opens a language is untouched. */
   if(langMine(id)) return row;
-  return '<div class="lgsw" data-lgs="'+esc(id)+'">'+row+
-    '<button class="btn ghost lgdel"'+DO('langDrop', [id])+'>'+
-    esc(t('langs.drop'))+'</button></div>';
+  return '<div class="swipe" data-lgs="'+esc(id)+'">'+row+
+    '<span class="swdel"'+DO('langDrop', [id])+'>'+
+    esc(t('langs.drop'))+'</span></div>';
 }
 /* GIVING ONE BACK, WHICH IS A DELETE AND IS WRITTEN DOWN AS ONE.
    docs/CHANGELOG.md 2026-09-09 carries the DELETE REVIEW.
@@ -2351,14 +2356,19 @@ function langDrop(id){
    (www/shell.js) exists to do for the screens that DO keep a variable. One
    row at a time, the way a list of this shape behaves. */
 var LGSW=null;
+/* BY `data-lgs` AND NOT BY THE CLASS. `.swipe` is the notebook's row as well
+   now, and a handler that reached for the class would take a note's row on
+   the notes screen -- which is the price of sharing a name and is paid here
+   in one line. `data-lgs` is what this row already carried and it says which
+   language, so it is the same question asked once. */
 function langSwAt(el){
-  while(el && el!==document && (!el.className ||
-        String(el.className).indexOf('lgsw')<0)) el=el.parentNode;
-  return (el && el.className && String(el.className).indexOf('lgsw')>=0)? el : null;
+  while(el && el!==document &&
+        !(el.getAttribute && el.getAttribute('data-lgs'))) el=el.parentNode;
+  return (el && el.getAttribute && el.getAttribute('data-lgs'))? el : null;
 }
 function langSwShut(){
-  var all=document.querySelectorAll('.lgsw'), i;
-  for(i=0;i<all.length;i++) all[i].className='lgsw';
+  var all=document.querySelectorAll('[data-lgs] .swopen'), i;
+  for(i=0;i<all.length;i++) all[i].classList.remove('swopen');
 }
 function langSwDown(e){
   var p=e.touches? e.touches[0] : e, el=langSwAt(e.target);
@@ -2374,7 +2384,8 @@ function langSwMove(e){
   if(dx<12 || dx<dy) return;
   LGSW.on=true;
   langSwShut();
-  LGSW.el.className='lgsw on';
+  var r=LGSW.el.querySelector('.lgrow');
+  if(r) r.classList.add('swopen');
   if(e.cancelable && e.preventDefault) e.preventDefault();
 }
 function langSwUp(){

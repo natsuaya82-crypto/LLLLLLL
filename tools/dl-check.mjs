@@ -439,7 +439,7 @@ say(r.capBack && r.capBack.own === 3 && r.capBack.read === 3,
    `zc*` the ceiling claims made), and this plan holds ONE -- so langsSeen()
    cut the language this section is about off the end of the list and every
    claim below was red about a row that was simply not drawn. Measured before
-   it was fixed: the one `.lgsw` on screen carried `data-lgs="srv-lang-0001"`.
+   it was fixed: the one `.swipe` on screen carried `data-lgs="srv-lang-0001"`.
    again-check clears storage between its sections for the same reason. */
 await pg.evaluate(() => localStorage.clear());
 await pg.reload();
@@ -453,7 +453,7 @@ const gone = await pg.evaluate(async ({ s }) => {
      `language.owner` -- so it falls into the READING list, and on plus that
      list holds one: the download this section is about was cut off the end of
      it and the whole thing was green for the wrong reason. Measured before it
-     was believed (the page reported `mineIsMine:false`, one `.lgsw` on screen,
+     was believed (the page reported `mineIsMine:false`, one `.swipe` on screen,
      and it was the seed's). */
   SESS = { at:'t', rt:'r', uid:String(langOwnOf(langId) || 'me'), anon:false };
   netSignedIn = function(){ return true; };
@@ -496,8 +496,12 @@ const gone = await pg.evaluate(async ({ s }) => {
   /* ---- the screen, and the finger ------------------------------------- */
   go('langs'); render(); await wait(30);
 
-  function rowOf(id){ return document.querySelector('#app .lgsw[data-lgs="' + id + '"]'); }
-  function delIn(id){ var w = rowOf(id); return w ? w.querySelector('.lgdel') : null; }
+  /* `.swipe` / `.swdel` / `.swopen`, which is the notebook's shape and is now
+     the only one -- 「メモと同じ形って伝えたよね」 OWNER 2026-09-09. `data-lgs`
+     is what tells this row from a note's, here as in the app. */
+  function rowOf(id){ return document.querySelector('#app .swipe[data-lgs="' + id + '"]'); }
+  function delIn(id){ var w = rowOf(id); return w ? w.querySelector('.swdel') : null; }
+  function openIn(id){ var w = rowOf(id); return !!(w && w.querySelector('.lgrow.swopen')); }
   /* the three events a thumb makes, handed to the app's own handlers */
   function swipe(id){
     var w = rowOf(id), r;
@@ -520,14 +524,14 @@ const gone = await pg.evaluate(async ({ s }) => {
      this went to a debug script because these four numbers were not here. */
   out.saw = { route:window.route, uid:SESS.uid, mineIsMine:langMine(mineId),
               theirsIsMine:langMine(sid), dlCap:dlCap(),
-              sw:document.querySelectorAll('#app .lgsw').length,
+              sw:document.querySelectorAll('#app .swipe').length,
               rows:document.querySelectorAll('#app .lgrow').length,
-              dels:document.querySelectorAll('#app .lgdel').length,
+              dels:document.querySelectorAll('#app .swdel').length,
               sid:sid, keys:Object.keys(LANGS).join(','),
-              swHTML:(document.querySelector('#app .lgsw')||{outerHTML:''}).outerHTML.slice(0,140) };
-  out.shutAtFirst = !!rowOf(sid) && rowOf(sid).className.indexOf('on') < 0;
+              swHTML:(document.querySelector('#app .swipe')||{outerHTML:''}).outerHTML.slice(0,140) };
+  out.shutAtFirst = !!rowOf(sid) && !openIn(sid);
   out.swiped = swipe(sid);
-  out.openNow = !!rowOf(sid) && rowOf(sid).className.indexOf('on') >= 0;
+  out.openNow = openIn(sid);
   out.delUp = !!delIn(sid);
 
   /* ---- and a DELETE that does not land takes nothing ------------------- */

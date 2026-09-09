@@ -174,15 +174,21 @@ function delNoteGo(i){
 /* ---- deleting a row by swiping it, the way the standard app does it ------
    「メモの編集のところに削除ボタンやめて。一覧から右にスワイプして削除。
    標準アプリと同じ作りにして」 OWNER 2026-09-05. Left on the row uncovers
-   `.ntdel` sitting under it; past halfway it stays open for a press, short
+   `.swdel` sitting under it; past halfway it stays open for a press, short
    of that it springs back -- the same two-state shape www/shell.js's own
    back-swipe (`swMove`/`swEnd`) already uses for the same reason: a real
    thumb does not aim for a pixel.
 
    `ntSwipeAt` is which row is open, so opening a second one closes the
    first the way it does in every app that has ever done this. Nothing
-   round or bordered or filled -- .ntdel is red text and nothing else
-   (CLAUDE.md § NO ROUNDED BOX). */
+   round or bordered or filled -- .swdel is red text and nothing else
+   (CLAUDE.md § NO ROUNDED BOX).
+
+   The classes are `.swipe` / `.swrow` / `.swdel` / `.swopen` and not `nt*`:
+   the languages you have taken slide the same way (www/home.js § vLangs),
+   and a row of languages wearing a class called 「the notebook's」 is a name
+   that is not telling the truth. www/index.html § a row deleted by sliding
+   it is the one place the shape is written. */
 var NTDEL_W=76;
 var ntSwOn=false, ntSwLive=false, ntSwX=0, ntSwY=0, ntSwI=-1, ntSwEl=null;
 var ntSwipeAt=-1;
@@ -297,9 +303,9 @@ function vNotes(){
       return;
     }
     var swOpen=(ntSwipeAt===i);
-    rows+='<div class="ntswipe">'+
-      (langLocked()? '' : '<span class="ntdel"'+DO('delNoteGo', [i])+'>'+esc(t('notes.del'))+'</span>')+
-      '<button class="ntrow'+(swOpen? ' swopen':'')+'" data-nti="'+i+'"'+
+    rows+='<div class="swipe">'+
+      (langLocked()? '' : '<span class="swdel"'+DO('delNoteGo', [i])+'>'+esc(t('notes.del'))+'</span>')+
+      '<button class="ntrow swrow'+(swOpen? ' swopen':'')+'" data-nti="'+i+'"'+
         (swOpen? DO('ntSwTapClose', [i]) : DO('openNote', [i]))+'>'+
         '<span class="nth">'+esc(ntHead(NOTES[i]))+'</span>'+
         (ntBody(NOTES[i])? '<span class="ntb">'+esc(ntBody(NOTES[i]))+'</span>' : '')+

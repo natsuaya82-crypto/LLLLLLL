@@ -15,6 +15,36 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-09 スライドして削除が、アプリの中で一つの形になる
+
+「メモと同じ形って伝えたよね」 OWNER 2026-09-09、実機のスクリーンショットを
+見て。行を左に滑らせて削除する作りが**二つ**ありました ── メモの一覧
+（`.ntswipe` / `.ntdel`、赤 `var(--bad)`、76px、.92rem）と、言語切り替えの
+「読んでいる言語」の行（`.lgsw` / `.lgdel`、金の `.btn.ghost`、96px、
+1.02rem）。同じことを二通りに書いていたので、二つが違って見えていました。
+
+**言語の側を消して、メモの側に寄せました。**名前は両方が着る一つに一度だけ
+改名しています ── `.ntswipe`→`.swipe`、`.ntdel`→`.swdel`、滑る行に `.swrow`、
+開いた行は `.swopen` のまま。`.lgsw` `.lgsw .lgrow` `.lgsw.on .lgrow`
+`.lgsw .lgdel` の四つは消えました。形は `www/index.html` § a row deleted by
+sliding it の一箇所だけに書かれています。
+
+- **人が気づくこと**: 言語切り替えで行を滑らせたときの「削除」が、金の太字
+  96px から、メモと同じ赤の 76px になります。行が滑る幅も 96px → 76px。
+  メモの一覧は見た目が変わりません。
+- **保存されるものは何も変わりません。** `localStorage` にもサーバーにも
+  鍵は増えず、減らず、消える経路も `langDrop()` のままです。
+- **文言は触っていません。** `langs.drop` は ja で既に「削除」で、メモの
+  `notes.del` と同じです。en の "Remove"（取ったものを返す）を "Delete" に
+  揃えるかは言葉の判断なのでオーナーのもの（`docs/FEATURE_RULES.md` § Deciding）。
+- **JS は二本のままです。** メモの `ntSwStart`/`ntSwMove`/`ntSwEnd` は
+  `here().r!=='notes'` で始まる作りで、一本にするにはその門を書き換えることに
+  なります。今回のスコープは class の共通化までなので、`docs/BACKLOG.md` に
+  上げるべき残りとして報告に書いています。
+- **押さえたもの**: `dl-check`（既存の主張のまま、掴む名前だけ移した ──
+  `swopen` を付けない状態で赤を見てから）、`press`、`box-check`（baseline に
+  一行も足していません）。
+
 ### 2026-09-09 起動が、同じ言語を二度降ろさなくなる
 
 `docs/reports/cost-2026-09-09.md` 二。5,000 語の人の起動一回 1.87 MB のうち

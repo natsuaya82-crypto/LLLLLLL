@@ -2426,44 +2426,16 @@ a.set{text-decoration:none}
 .lgrow.on .lgn{font-weight:700}
 .lgck{flex:0 0 auto;width:28px;text-align:center;color:var(--gold)}
 /* And a language you only TOOK is given back by sliding its row.
-   「言語変更画面をスライドで消せる」OWNER 2026-09-09. iOS's own list, so the
-   削除 sits BESIDE the row and is off the right edge until the row moves --
-   `overflow:hidden` is the whole of the hiding, and it is why the row can be
-   dragged rather than swapped for something else.
+   「言語変更画面をスライドで消せる」OWNER 2026-09-09,
+   「メモと同じ形って伝えたよね」OWNER 2026-09-09.
 
-   NO CORNER, NO FRAME, NO PANEL (規則18). `.btn.ghost` is the words on their
-   own and that is all this is; the line under the row moves to the wrapper so
-   it stays put while the row slides, and a single side is the shape the rule
-   asks FOR -- 「基本下線だけ」. It is not on tools/box-baseline.txt because
-   nothing here is a box.
-
-   The width is what 削除 needs and never less than a thumb: 96px against the
-   44 press-check asks for, and the row keeps its own 68px. */
-.lgsw{position:relative;overflow:hidden;border-bottom:1px solid var(--line)}
-/* THE BUTTON DOES NOT MOVE. THE ROW SLIDES OFF IT, which is what iOS's own
-   list does and is the only shape that fits inside the box: the 削除 sits at
-   the right end, the row lies on top of it with the page's own background,
-   and dragging the row left uncovers it. Nothing overflows, so nothing has to
-   be excused.
-
-   Two goes at this were wrong and both were caught by something looking
-   rather than by reading. `right:0` with the button ON TOP left it in plain
-   sight on every shut row -- seen in the screenshot, which is what the
-   picture is taken for. Moving it OUT to `left:100%` hid it and made the
-   wrapper 450 wide inside a 354 phone: `overflow:hidden` clips the paint and
-   press-check reads `scrollWidth`, which cannot tell a button parked off the
-   edge from a sentence swallowed in silence -- 「lgsw 450 in 354」.
-
-   `.lgsw .lgdel` and not `.lgdel`: `.btn` is one selector too and is written
-   500 lines further down, so it won on order and put `flex:1` and 15px of
-   padding back. Same trap `.sfont` carries `!important` for. */
-.lgsw .lgrow{border-bottom:0;background:var(--bg);position:relative;z-index:1;
-             transition:transform .18s ease}
-.lgsw.on .lgrow{transform:translateX(-96px)}
-.lgsw .lgdel{position:absolute;right:0;top:0;height:100%;width:96px;
-             min-height:44px;flex:0 0 auto;
-             display:flex;align-items:center;justify-content:center;
-             font-size:1.02rem;padding:0}
+   THERE IS NOTHING HERE. A row deleted by sliding it is ONE thing in this app
+   and it is written once, further down this file (§ a row deleted by sliding
+   it) -- `.swipe`, `.swrow`, `.swdel`, `.swopen`. This screen wears those.
+   The four rules that used to sit here were a second answer to the same
+   question and came out gold, 96px and 1.02rem where the notebook's is red,
+   76 and .92; the owner stood the two screens next to each other and read
+   them. */
 .ntrow.ntrowq{display:flex;flex-direction:row;align-items:center;gap:12px}
 /* `flex-direction` and not only `display`: .ntrow is a COLUMN (a heading over
    a line of the note), and this pair of classes was overriding the display and
@@ -3630,19 +3602,31 @@ html[data-script="on"] .whw{font-family:var(--face-script);letter-spacing:0}
    with the box: rows in one list sit against each other. */
 .ntlist{display:flex;flex-direction:column}
 /* The row sits over its own delete label and slides to show it -- 標準アプリ
-   と同じ作り, www/notes.js § deleting a row by swiping it. .ntswipe clips
-   what slides past its own width; .ntrow needs an actual ground under it
-   (not `none`) or the label it is meant to be hiding would show through at
-   rest, which is why this is the one row background in the app that is not
-   `none` -- the colour is the same either way, only opaque now. */
-.ntswipe{position:relative;overflow:hidden}
-.ntdel{position:absolute;top:0;right:0;bottom:0;width:76px;display:flex;
-  align-items:center;justify-content:center;color:var(--bad);font-size:.92rem;cursor:pointer}
+   と同じ作り, www/notes.js § deleting a row by swiping it. */
 .ntrow{display:flex;flex-direction:column;gap:4px;width:100%;text-align:left;padding:14px 2px;
-  border:0;border-bottom:1px solid var(--line);background:var(--bg);color:inherit;font:inherit;
-  cursor:pointer;transition:transform .18s;position:relative}
+  border:0;border-bottom:1px solid var(--line);color:inherit;font:inherit;cursor:pointer}
 .ntrow:active{transform:scale(.995)}
-.ntrow.swopen{transform:translateX(-76px)}
+/* ---------- a row deleted by sliding it ----------
+   ONE PLACE, AND TWO LISTS WEAR IT: the notebook (www/notes.js) and the
+   languages you have taken (www/home.js § vLangs). 「メモと同じ形って
+   伝えたよね」OWNER 2026-09-09 -- the second list had a second set of
+   rules saying the same thing differently, and what the owner saw was a
+   gold 96px 削除 beside a red 76px one.
+
+   `.swipe` clips what slides past its own width; `.swrow` is the row that
+   slides and needs an actual ground under it (not `none`) or the label it is
+   meant to be hiding would show through at rest -- the colour is the same
+   either way, only opaque. It comes after `.ntrow` and `.lgrow` on purpose:
+   one selector each, so order is what decides the ground.
+
+   `.swipe .swopen` and not `.swopen`: `.ntrow:active` is two selectors and
+   would otherwise put the row back while a thumb is on it. NO CORNER, NO
+   FRAME, NO PANEL (規則18) -- the word in `var(--bad)` and nothing else. */
+.swipe{position:relative;overflow:hidden}
+.swdel{position:absolute;top:0;right:0;bottom:0;width:76px;display:flex;
+  align-items:center;justify-content:center;color:var(--bad);font-size:.92rem;cursor:pointer}
+.swrow{background:var(--bg);position:relative;z-index:1;transition:transform .18s}
+.swipe .swopen{transform:translateX(-76px)}
 /* The title is the row: what a note IS. 「題名の方が少し文字でかくしてほしい」
    OWNER 2026-09-02 -- it sat at .95 with the line under it at .88, which is
    not enough between them to read as a heading and its line. */
