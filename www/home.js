@@ -1730,10 +1730,13 @@ function wldSliceOf(m, kind, fb){
    else's is here once its slices are, and the one page decides what a page
    that is not here yet looks like.
 
-   Not one of the eight reaches the open language. `ws` answers with nothing,
-   because the writing system is `SET.wsys` -- the PERSON's settings, not the
-   language's -- so it is on no server and there is nothing to say; the field
-   is left off rather than filled in with mine. */
+   Not one of the eight reaches the open language. `ws` is the language's own
+   `wsys` column since 2026-09-09 (www/core.js § LWSYS) and comes down with the
+   row, so somebody else's page can say which of the five it is written as.
+   It was `SET.wsys` -- the PERSON's settings, on this handset, on no server --
+   and this answered with nothing because there was nothing to say. An empty
+   answer still means nobody has said, and the section is left off rather than
+   filled in with mine. */
 function wldSeenOf(lid){
   var m=WLDS_HAVE[String(lid||'')], seen=wldSeen(lid);
   return {
@@ -1750,7 +1753,7 @@ function wldSeenOf(lid){
     w:       function(){ return wldSliceOf(m, 'wld', {}); },
     letters: function(){ return wldSliceOf(m, 'letters', []); },
     name:    function(){ return seen? seen.name : ''; },
-    ws:      function(){ return ''; },
+    ws:      function(){ return seen? String(seen.wsys||'') : ''; },
     snd:     function(){ return wldSliceOf(m, 'snd', []); },
     /* Off their `script` slice, which is one of the five slice_read opens.
        DIRS is the list of the four; anything else, or nothing, is ltr. */

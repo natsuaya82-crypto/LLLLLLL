@@ -325,12 +325,19 @@ function shareConv(t){
    further out: a keyboard with no editor grew a second face out of a setting
    somewhere else, and a setting nobody set is the worst version of that.
 
-   The plan is asked for the reason wsys() asks it: SET.wsys survives a plan
-   ending, so a language that chose a syllabary on Plus must not go on
-   shipping a roman face after it comes back down to a plan where the writing
-   system is an alphabet and there is nothing to convert. */
+   The plan is asked for the reason wsys() asks it: what a language chose
+   survives a plan ending, so one that chose a syllabary on Plus must not go
+   on shipping a roman face after it comes back down to a plan where the
+   writing system is an alphabet and there is nothing to convert.
+
+   It reads the language's own answer and NOT wsys(), which is the ninth claim
+   of tools/conv-check.mjs: the roman layer appears where somebody CHOSE a
+   writing system and never where wsGuess() merely guessed one. That answer is
+   `language.wsys` since 2026-09-09 (www/core.js § LWSYS); it was `SET.wsys`,
+   the person's settings on this handset, so somebody with two languages
+   shipped the same face with both. */
 function shareRoman(){
-  var w=SET.wsys;
+  var w=langWsysOf(langId);
   if(!can('wsys')) return false;
   if(WSYS.indexOf(w)<0) return false;
   return w==='syll' || w==='abugida' || w==='logo';

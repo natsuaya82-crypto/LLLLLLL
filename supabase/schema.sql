@@ -235,6 +235,27 @@ create table if not exists language (
 -- exists` above did nothing at all. Named rather than left to the default so
 -- that dropping it says which one; `if exists` on both halves so this file
 -- goes on being applied twice in a row by npm run rls.
+-- ---- AND HOW THE LANGUAGE IS WRITTEN ----------------------------------
+-- 「端末に残すものないんですけど。サーバーで同じ機能になるように代替して」
+-- OWNER 2026-09-08.
+--
+-- This was `SET.wsys` -- a field of the PERSON's settings, on the handset,
+-- named in SET_PHONE. tools/store-check.mjs wrote GAP against it in its own
+-- words: 「言語のものなのに人の設定に入っているので、公開した言語は書記体系を
+-- 見せられない」. It is the language's, so it is a column on the language:
+-- somebody with two languages had one answer for both, and a published
+-- language could not say whether it was written as an alphabet, a syllabary,
+-- an abugida or a logography.
+--
+-- Empty is not a fifth kind. It means nobody has SAID, and www/wsys.js
+-- answers for that by looking at the language (wsGuess) -- the same sentence
+-- `published_at`'s absence carries: a state, not a value.
+--
+-- No check constraint. What the five kinds are is www/wsys.js's list (WSYS),
+-- and a constraint here would be that list written down a second time, in
+-- another language, for a server that never looks inside a slice either.
+alter table language add column if not exists wsys text not null default '';
+
 alter table language drop constraint if exists language_owner_fkey;
 alter table language add  constraint language_owner_fkey
   foreign key (owner) references auth.users(id) on delete cascade;
@@ -1006,7 +1027,7 @@ exception when others then
 end $$;
 
 create or replace view language_seen as
-  select l.id, l.owner, l.name, l.license, l.published_at, l.created_at,
+  select l.id, l.owner, l.name, l.license, l.published_at, l.created_at, l.wsys,
          slice_count((select s.body from slice s
                        where s.language = l.id and s.kind = 'words'))   as nwords,
          slice_count((select s.body from slice s

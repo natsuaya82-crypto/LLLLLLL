@@ -130,7 +130,9 @@ export function seed(){
      covering one arrangement of the app and calling it all of them. */
   SET.theme='system'; SET.plan='free'; SET.done=true; SET.order='SOV';
   SET.read='both'; SET.voice=''; SET.ui='en'; SET.script=false;
-  SET.myfont=false; SET.wsys=''; SET.gpos=''; SET.myfont=false;
+  SET.myfont=false; SET.gpos=''; SET.myfont=false;
+  /* 書記体系は言語のもの ── `language.wsys`（www/core.js § LWSYS、2026-09-09）。 */
+  langWsysGot(langId, '');
   /* Two saved searches, for the same reason `WLD` is seeded below: with none
      saved, the row that lists them never renders, so `snsPickSaved` was an
      entry no screen ever named -- true, and not what it meant. A saved search
@@ -861,15 +863,15 @@ export function halfDone(){
                                                 const h=vSpell(); spQ='';
                                                 SET.plan='free'; return h; }],
     ['the abugida editor',     () => { window.route='abugida'; NAV=[{r:'abugida'}];
-                                       SET.wsys='abugida'; abVow = 'a';
-                                       const h = vAbugida(); SET.wsys=''; return h; }],
+                                       langWsysGot(langId, 'abugida'); abVow = 'a';
+                                       const h = vAbugida(); langWsysGot(langId, ''); return h; }],
     /* The letters chapter of a language that IS an abugida. The row that opens
        the bench only exists there, so a fixture whose language is an alphabet
        walks a chapter with no way to reach it -- which is indistinguishable,
        from outside, from a bench nothing can reach at all. */
     ['the letters chapter of an abugida', () => { window.route='letters'; NAV=[{r:'letters'}];
-                                       SET.wsys='abugida';
-                                       const h = vLetters(); SET.wsys=''; return h; }],
+                                       langWsysGot(langId, 'abugida');
+                                       const h = vLetters(); langWsysGot(langId, ''); return h; }],
     /* An alphabet with a letter nobody has given a reading yet: the line
        saying how many only exists then, and only on that one of the three. */
     ['the alphabet with a letter unread', () => { window.route='ltset';
@@ -2210,12 +2212,12 @@ export function halfDone(){
     /* The letters chapter with everything open: the keyboard's door, and the
        abugida bench's -- which is the only way to that screen, and only
        exists while the writing is an abugida, which is itself paid. */
-    ['the letters chapter, on the paid plan', () => { SET.plan = 'pro'; SET.wsys = 'abugida';
+    ['the letters chapter, on the paid plan', () => { SET.plan = 'pro'; langWsysGot(langId, 'abugida');
         window.route = 'letters'; NAV = [{r:'letters'}];
-        const h = vLetters(); SET.plan = 'free'; SET.wsys = ''; return h; }],
-    ['the abugida bench', () => { SET.plan = 'pro'; SET.wsys = 'abugida';
+        const h = vLetters(); SET.plan = 'free'; langWsysGot(langId, ''); return h; }],
+    ['the abugida bench', () => { SET.plan = 'pro'; langWsysGot(langId, 'abugida');
         window.route = 'abugida'; NAV = [{r:'abugida'}];
-        const h = vAbugida(); SET.plan = 'free'; SET.wsys = ''; return h; }],
+        const h = vAbugida(); SET.plan = 'free'; langWsysGot(langId, ''); return h; }],
     ['the five kinds of writing', () => { SET.plan = 'pro';
         window.route = 'wsys'; NAV = [{r:'wsys'}];
         const h = vWsys(); SET.plan = 'free'; return h; }],
@@ -2399,12 +2401,12 @@ export function halfDone(){
                                                 if (was === undefined) delete w.hide;
                                                 else w.hide = was;
                                                 return h; }],
-    ['an abugida being placed',  () => { SET.wsys='abugida';
+    ['an abugida being placed',  () => { langWsysGot(langId, 'abugida');
                                          LETTERS.push({id:'lv', st:[{pts:[[200,200],[600,600]]}],
                                                        ch:'', nm:'', snd:['a']});
                                          window.route='abugida'; NAV=[{r:'abugida'}];
                                          abVow='a';
-                                         const h=vAbugida(); SET.wsys='alpha'; return h; }],
+                                         const h=vAbugida(); langWsysGot(langId, 'alpha'); return h; }],
     ['a letter wearing a borrowed character', () => { editGlyph('t'); GE.ch='Ϙ';
                                                       window.route='glyph';
                                                       NAV=[{r:'glyph', a:GE.lid}];

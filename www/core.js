@@ -316,6 +316,39 @@ function langNameOf(id){
   p=slRd(langNameKey(k));
   return p===null? '' : String(p);
 }
+/* AND HOW IT IS WRITTEN, WHICH IS THE LANGUAGE'S AND NOT THE PERSON'S.
+   -------------------------------------------------------------------------
+   「端末に残すものないんですけど。サーバーで同じ機能になるように代替して」
+   OWNER 2026-09-08.
+
+   This was `SET.wsys`, a field of the PERSON's settings on this handset --
+   and tools/store-check.mjs had written GAP against it in its own words:
+   「言語のものなのに人の設定に入っているので、公開した言語は書記体系を
+   見せられない」. Somebody with two languages had one answer for both, and
+   nobody else could ever be told which of the five a published language was.
+
+   `language.wsys` is the answer, and this is the same shape LNAME above is:
+   memory for what the server has said this session, a picture on the disk so
+   a launch with no signal draws something, and no road up at all -- slWr() is
+   never called on the key, so slMine() cannot see it.
+
+   EMPTY IS NOT A FIFTH KIND. It means nobody has said, and www/wsys.js
+   answers for that by looking at the language. */
+var LWSYS={};
+function langWsysKey(id){ return langKeyOf(String(id||''), 'wsys'); }
+function langWsysGot(id, w){
+  var k=String(id||''), v=String(w||'');
+  if(!k) return;
+  LWSYS[k]=v;
+  slGot(langWsysKey(k), v);
+}
+function langWsysOf(id){
+  var k=String(id||''), p;
+  if(!k) return '';
+  if(Object.prototype.hasOwnProperty.call(LWSYS, k)) return LWSYS[k];
+  p=slRd(langWsysKey(k));
+  return p===null? '' : String(p);
+}
 /* What a person's settings are before they touch anything. A function rather
    than a literal because it is needed twice -- here, and when everything is
    wiped -- and the second copy was written out by hand and did not have the
@@ -1469,7 +1502,7 @@ function planKeep(id){
    against each other -- a name here has to be one it calls the handset's, and
    a field it puts on a road to the server may not appear here at all. */
 var SET_PHONE=['theme','ui','planUid','planV','done','obback','myfont',
-               'showScript','kbrom','vvkb','wldMoved','wsys',
+               'showScript','kbrom','vvkb','wldMoved',
                'order','read','voice','script'];
 /* The fields of `SET` that are a PERSON's, counted rather than named. Asked of
    a parked copy as well as of `SET` itself: a field this account has and this

@@ -2666,6 +2666,74 @@ const R = await pg.evaluate(async () => {
         '押した瞬間は動かず、戻ってきた数になり、落ちれば何も動かない');
   }
 
+  /* ---- 63. 書記体系は言語のもの ------------------------------------------
+     「端末に残すものないんですけど。サーバーで同じ機能になるように代替して」
+     OWNER 2026-09-08。
+
+     `SET.wsys` は**人の設定**の一欄でした。`tools/store-check.mjs` が自分の
+     言葉で GAP と書いていたとおり ──「言語のものなのに人の設定に入っている
+     ので、公開した言語は書記体系を見せられない」。二つ言語を持っている人は、
+     **両方に一つの答え**しか持てませんでした。
+
+     四本訊きます:
+     1. 選んだら列へ PATCH が飛び、**答えが戻ってから**画面が動く
+     2. 言語ごとに違う ── 別の言語を開けば別の答え
+     3. 落ちれば何も動かない
+     4. `SET.wsys` には一字も書かない
+
+     赤を見た形（2026-09-09）: `setWsys()` を `SET.wsys=k; save();` に戻すと
+     1・2・4 が赤。 */
+  start();
+  netOut(); arrive(A);
+  {
+    SET.plan = 'pro'; SET.planWas = 'pro'; save();
+    const realSend63 = netSend;
+    const keepL63 = LANGS, keepId63 = langId;
+    LANGS = { 'Lw': { mine:true, uid:A, sid:'srv-w' },
+              'Lx': { mine:true, uid:A, sid:'srv-x' } };
+    langId = 'Lw';
+    langWsysGot('Lw', ''); langWsysGot('Lx', 'logo');
+    delete SET.wsys;
+    let sent63 = null, letGo63 = null;
+    netSend = (method, path, body, tok, ok2) => {
+      if (method === 'PATCH'){ sent63 = body || {}; letGo63 = () => ok2([]); }
+    };
+    setWsys('syll');
+    if (!sent63 || sent63.wsys !== 'syll')
+      no('63: 選んでも列へ PATCH が出ていない — ' + JSON.stringify(sent63));
+    if (langWsysOf('Lw') === 'syll')
+      no('63: 答えが戻る前に決まったことになっている');
+    if (letGo63) letGo63();
+    if (langWsysOf('Lw') !== 'syll')
+      no('63: 答えが戻っても決まっていない — ' + JSON.stringify(langWsysOf('Lw')));
+    if (wsys() !== 'syll')
+      no('63: 開いている言語の書記体系がその答えになっていない — ' + wsys());
+    /* 言語ごとに違う。 */
+    if (langWsysOf('Lx') !== 'logo')
+      no('63: もう一つの言語の書記体系まで動いた — ' + JSON.stringify(langWsysOf('Lx')));
+    langId = 'Lx';
+    if (wsys() !== 'logo')
+      no('63: 言語を開き替えても前の言語の答えが出ている — ' + wsys());
+    langId = 'Lw';
+    /* 落ちれば何も動かない。 */
+    netSend = (method, path, body, tok, ok2, bad2) => {
+      if (method === 'PATCH') bad2(null, 0, 'down');
+    };
+    setWsys('abugida');
+    if (langWsysOf('Lw') !== 'syll')
+      no('63: 落ちたのに書記体系が動いた — ' + JSON.stringify(langWsysOf('Lw')));
+    /* 人の設定には一字も入らない。 */
+    if (SET.wsys !== undefined)
+      no('63: 人の設定に書記体系を書いた — ' + JSON.stringify(SET.wsys));
+    if (SET_PHONE.indexOf('wsys') >= 0)
+      no('63: SET_PHONE がまだ書記体系をこの端末の設えだと言っている');
+    netSend = realSend63;
+    LANGS = keepL63; langId = keepId63;
+    SET.plan = 'free'; SET.planWas = 'free'; save();
+    say('63: 書記体系は言語のもの ── 列へ書き、答えが戻ってから動き、' +
+        '言語ごとに違い、人の設定には入らない');
+  }
+
   return out;
 });
 

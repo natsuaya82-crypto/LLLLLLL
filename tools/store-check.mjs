@@ -226,14 +226,13 @@ const FIELDS = {
   kbrom:    { phone: 'whether the keyboard shows its roman face' },
   vvkb:     { phone: 'how much of THIS screen the phone\'s own keyboard covers. A measurement of one handset and meaningless on another' },
   wldMoved: { phone: 'the mark that 「what the language is for」 has been moved out of the settings and into the language. A migration mark' },
-  /* NAMED AS A GAP RATHER THAN BLESSED. www/home.js says it in its own words:
-     「the writing system is SET.wsys -- the PERSON's settings, not the
-     language's -- so it is on no server and there is nothing to say」, which
-     is why somebody else's language page cannot show one. A writing system is
-     part of a language. It is here because that is where the code keeps it
-     today, and it is written down so the gap is visible rather than covered
-     by 「the settings」. */
-  wsys:     { phone: 'the writing system. www/home.js names this as a GAP: it belongs to the language and is in the settings, so it is on no server and a published language cannot show one' },
+  /* `wsys` STOOD HERE AS A GAP AND IS GONE (2026-09-09). It was named rather
+     than blessed -- 「言語のものなのに人の設定に入っているので、公開した言語は
+     書記体系を見せられない」 -- and that is what closed: it is
+     `language.wsys`, a column, read through langWsysOf() (www/core.js §
+     LWSYS). Somebody with two languages had one answer for both of them
+     until today. The field is not written any more and this check is what
+     said so: 「FIELDS names SET.wsys and nothing writes it any more」. */
 
   /* --- and the four `setDefaults()` mints that nothing assigns ----------
      Every one of these is written to `lingua.set` on the first save of a

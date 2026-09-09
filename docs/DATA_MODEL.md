@@ -98,6 +98,17 @@ break.
 |---|---|---|---|
 | `words` | `WORDS` | the dictionary | array |
 | `lines` | `LINES` | saved lines | array |
+**And three things about a language are COLUMNS rather than slices**, because
+they are what somebody else's page has to be able to say: `language.name`,
+`language.published_at` and — since 2026-09-09 — `language.wsys`, which of the
+five writing systems it is written as. That last one was `SET.wsys`, a field of
+the person's settings on the handset, so somebody with two languages had one
+answer for both and a published language could not say which it was.
+`langNameOf()` and `langWsysOf()` in `www/core.js` are how the two are asked;
+each keeps the server's answer in memory and a picture on the disk
+(`lingua.<id>.name.got`, `lingua.<id>.wsys.got`) with no road up. Empty `wsys`
+is **nobody has said**, not a fifth kind, and `wsGuess()` answers for it.
+
 | `lang` | — | the language's name, and **nothing in `www/` reads or writes it** since 2026-09-08. What a language is called is the `language.name` column on the server; `langNameOf()` in `www/core.js` is how it is asked, `LNAME` holds what the server has said this session, and `lingua.<id>.name.got` is the picture a launch with no signal draws from. The slice stays in `SLICES` and is not deleted — what an older version wrote is left exactly where it is | text |
 | `script` | `SCRIPT` | roman → strokes, letters no word uses yet, and **which way the language is written** (`dir`) | object |
 | `letters` | `LETTERS` | the alphabet | array |

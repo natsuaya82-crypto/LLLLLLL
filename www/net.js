@@ -1233,7 +1233,8 @@ function netLangRow(id, ok, bad){
      private」, and moving the default under them would be widening what
      publishing means in order to say what a new language is. */
   netPost('/rest/v1/language',
-          {owner:me, name:nm, published_at:(new Date()).toISOString()}, SESS.at,
+          {owner:me, name:nm, wsys:langWsysOf(id),
+           published_at:(new Date()).toISOString()}, SESS.at,
     function(d){
       var sid=(d && d.length)? d[0].id : '';
       if(!sid){ bad(d, 0); return; }
@@ -1374,6 +1375,21 @@ function netLangRename(nm, then){
       function(d, st, m){ netPop(d, st, m, function(){ netLangRename(v, then); }); });
   }, function(d, st, m){ netPop(d, st, m, function(){ netLangRename(v, then); }); });
 }
+/* AND HOW THIS LANGUAGE IS WRITTEN.
+   -------------------------------------------------------------------------
+   「端末に残すものないんですけど」 OWNER 2026-09-08. The same shape as
+   netLangRename() above and for the same sentence: nothing moves on the
+   screen until the server has taken it. The five kinds are www/wsys.js's
+   list; this only carries the word. */
+function netLangWsys(k, then){
+  var v=String(k||'');
+  netLangRow(langId, function(sid){
+    netSend('PATCH', '/rest/v1/language?id=eq.'+encodeURIComponent(sid),
+            {wsys:v}, SESS.at,
+            function(){ langWsysGot(langId, v); if(then) then(); },
+            function(d, st, m){ netPop(d, st, m, function(){ netLangWsys(v, then); }); });
+  }, function(d, st, m){ netPop(d, st, m, function(){ netLangWsys(v, then); }); });
+}
 /* EVERY LANGUAGE THIS PERSON MADE, BACK ONTO A PHONE THAT HAS NONE.
    -------------------------------------------------------------------------
    `netOut()` drops the session and nothing else, so on the SAME phone signing
@@ -1410,7 +1426,7 @@ function netLangBack(then){
      well as on a sign-in, and this is a whole account's languages. */
   if(NET_BACK===SESS.uid){ done(false); return; }
   NET_BACK=SESS.uid;
-  netGet('/rest/v1/language?select=id,name,published_at&order=created_at.asc'+
+  netGet('/rest/v1/language?select=id,name,published_at,wsys&order=created_at.asc'+
          '&owner=eq.'+encodeURIComponent(SESS.uid),
     function(d){
       /* AN ANSWER THAT IS NOT A LIST IS NOT A LIST OF NO LANGUAGES. PostgREST
@@ -1439,6 +1455,7 @@ function netLangBack(then){
         var r=rows[at]||{}; at++;
         var sid=String(r.id||'');
         if(!sid || knows(sid)){ next(); return; }
+        langWsysGot(sid, r.wsys);
         netLangBack1(sid, String(r.name||''), r.published_at,
                      function(m){ if(m) got=true; next(); });
       }
@@ -1502,14 +1519,14 @@ function netLangBack1(sid, name, at, done){
 function netLangSeen(lid, ok, bad){
   var id=String(lid||'');
   if(!id){ bad(null, 0, 'lang \u2212'); return; }
-  netGet('/rest/v1/language_seen?select=id,name,license,published_at,nwords,nletters'+
+  netGet('/rest/v1/language_seen?select=id,name,license,published_at,nwords,nletters,wsys'+
          '&limit=1&id=eq.'+encodeURIComponent(id),
     function(d){
       var r;
       if(!d || !d.length){ ok(null); return; }
       r=d[0]||{};
       ok({ id:String(r.id||''), name:String(r.name||''),
-           license:String(r.license||''),
+           license:String(r.license||''), wsys:String(r.wsys||''),
            pub:r.published_at? String(r.published_at) : '',
            nwords:Number(r.nwords)||0, nletters:Number(r.nletters)||0 });
     }, bad);
@@ -1617,7 +1634,7 @@ function netLangsDown(then, bad){
   for(id in LANGS)
     if(Object.prototype.hasOwnProperty.call(LANGS, id) && LANGS[id] && LANGS[id].sid)
       here[String(LANGS[id].sid)]=1;
-  netGet('/rest/v1/language?select=id,name,published_at&owner=eq.'+
+  netGet('/rest/v1/language?select=id,name,published_at,wsys&owner=eq.'+
          encodeURIComponent(SESS.uid),
     function(d){
       /* WHAT CAME BACK IS A LIST OR IT IS NOT AN ANSWER. netLangBack() above
@@ -1667,6 +1684,10 @@ function netLangsDown(then, bad){
         /* AND WHAT IT IS CALLED, which is the other column (www/core.js §
            LNAME). Same road, same reason: 「まだ聞いていない」 is not 未設定. */
         langNameGot(nid, row.name);
+        /* AND HOW IT IS WRITTEN, which is the third column (www/core.js §
+           LWSYS). It was `SET.wsys` -- one answer for all of somebody's
+           languages, on this handset, invisible to everybody else. */
+        langWsysGot(nid, row.wsys);
         netSlices(row.id, function(there){
           var k;
           for(k in there){
