@@ -426,13 +426,25 @@ function pfList(){
      timeline and still here, which is the whole of what a page is for.
      「ツイートは自己責任で見れるようにする」 */
   var mine=postKept().filter(of);
-  if(pfTab==='re')   return mine.filter(function(p){ return !!p.to; });
+  /* WHAT A REPLY IS, and it is one question: postToWho(p) -- whom does this
+     answer. 「返信にだけ出して」 OWNER 2026-09-09.
+
+     It was `!!p.to`, which asks whether the post points at another POST, and
+     the two came apart when a post could begin by naming somebody with no
+     post to answer (2026-09-07): that post carries `toh` and no `to`, so it
+     sat in 投稿. The line is rewritten rather than given a second condition
+     -- `postToWho()` is already the one place that says whom a post answers
+     (www/post.js), and it reads both halves. */
+  if(pfTab==='re')   return mine.filter(function(p){ return !!postToWho(p); });
   /* What THIS person has liked. Your own is what you pressed; somebody
      else's arrives with them, and until it does the list is empty rather than
      absent -- the same three lists on everybody's page.
      「他人のプロフィールは基本自分が見えてるのと同じ感じ」 */
   if(pfTab==='li')   return pfMine()? postAll().filter(function(p){ return !!p.lime; }) : [];
-  mine=mine.filter(function(p){ return !p.to; });
+  /* And the other side of the same question -- 投稿 is what is not a reply,
+     asked the one way. Two lists asking two different questions is how one
+     post came to be on both. */
+  mine=mine.filter(function(p){ return !postToWho(p); });
   mine.sort(function(a, b){ return (b.pin?1:0)-(a.pin?1:0); });
   return mine;
 }
@@ -2278,12 +2290,104 @@ function langRow(id){
      comment named the writers as the protection from the day it was written
      and only three of them were asking; opening this door is what finished
      that sentence. */
-  return '<button class="lgrow'+(isOpen?' on':'')+'"' + DO('langOpen', [id]) +
+  var row='<button class="lgrow'+(isOpen?' on':'')+'"' + DO('langOpen', [id]) +
     (isOpen? ' aria-label="'+esc(t('langs.open'))+'"' : '') + '>'+
     '<span class="pav lgav">'+esc(mk)+'</span>'+
     '<span class="lgn">'+esc(langNameSaid(nm))+'</span>'+
     '<span class="lgck">'+(isOpen?ICON_TICK:'')+'</span></button>';
+  /* AND A LANGUAGE YOU ONLY TOOK CAN BE GIVEN BACK, by sliding the row.
+     「言語変更画面をスライドで消せる、メモしといて」 OWNER 2026-09-09.
+
+     ONLY somebody else's. Your own language is deleted from the middle row of
+     the settings (wipeLangsGo, www/settings.js) and has been since there was
+     one; two roads to that would be two answers to 「how is a language
+     deleted」. langMine() is the one place that says which kind this is --
+     the same question vLangs() above asked to decide which list it goes in,
+     not a second one.
+
+     The 削除 is BESIDE the row and not on top of it, so the row is still the
+     button it was and the press that opens a language is untouched. It is
+     off the right edge until the row slides -- .lgsw is `overflow:hidden`
+     (www/index.html) -- and it is .btn.ghost, the words on their own, because
+     a corner or a fill here is 規則18. */
+  if(langMine(id)) return row;
+  return '<div class="lgsw" data-lgs="'+esc(id)+'">'+row+
+    '<button class="btn ghost lgdel"'+DO('langDrop', [id])+'>'+
+    esc(t('langs.drop'))+'</button></div>';
 }
+/* GIVING ONE BACK, WHICH IS A DELETE AND IS WRITTEN DOWN AS ONE.
+   docs/CHANGELOG.md 2026-09-09 carries the DELETE REVIEW.
+
+   Nothing is asked first. What stands behind it is the road back rather than
+   a dialog -- 「もう一度取る」: the ↓ on the article takes it again, so long
+   as the source still has it published. That is the same shape the keyboard's
+   bin has (CLAUDE.md rule 19), and iOS's own box is banned anyway.
+
+   The SERVER is first and this phone drops nothing until it has answered.
+   netTakeDrop() (www/net.js) is the whole of it -- what comes off this phone
+   comes off through netTakeGone(), the one place that does. A refusal leaves
+   every byte where it was and puts the pop up, whose ［再接続］ is this same
+   press. */
+function langDrop(id){
+  var L=LANGS[id]||{}, sid=String(L.sid||'');
+  /* A row with no `sid` never came from a take and there is nothing on the
+     server to drop -- the same one of netTakeGone()'s four that is left
+     alone. */
+  if(!sid) return;
+  netTakeDrop(sid, function(){},
+    function(d, s, m){ netPop(d, s, m, function(){ langDrop(id); }); });
+}
+/* ---- and the finger that opens the row ---------------------------------
+   iOS's own list, and nothing else in this app slides sideways -- the slide
+   in shell.js runs DOWN a list choosing rows, and holding a row to carry it
+   is wldDragDown() above. So this is a third gesture and it is told from
+   those two by the one thing that makes it this one: it has to travel
+   SIDEWAYS further than it travels down, or a thumb scrolling the list would
+   open every row it passed.
+
+   THE OPEN ROW IS IN THE DOM AND NOWHERE ELSE. No variable holds it, so
+   nothing has to remember to forget it: render() rebuilds #app and the row is
+   shut, which is what leaving the screen should do and is what viewReset()
+   (www/shell.js) exists to do for the screens that DO keep a variable. One
+   row at a time, the way a list of this shape behaves. */
+var LGSW=null;
+function langSwAt(el){
+  while(el && el!==document && (!el.className ||
+        String(el.className).indexOf('lgsw')<0)) el=el.parentNode;
+  return (el && el.className && String(el.className).indexOf('lgsw')>=0)? el : null;
+}
+function langSwShut(){
+  var all=document.querySelectorAll('.lgsw'), i;
+  for(i=0;i<all.length;i++) all[i].className='lgsw';
+}
+function langSwDown(e){
+  var p=e.touches? e.touches[0] : e, el=langSwAt(e.target);
+  if(!p){ LGSW=null; return; }
+  LGSW=el? { el:el, x:p.clientX, y:p.clientY, on:false } : null;
+}
+function langSwMove(e){
+  var p=e.touches? e.touches[0] : e, dx, dy;
+  if(!LGSW || !p) return;
+  dx=LGSW.x-p.clientX; dy=Math.abs(LGSW.y-p.clientY);
+  /* Sideways, and further sideways than down: a list is still a list you have
+     to get to the bottom of. */
+  if(dx<12 || dx<dy) return;
+  LGSW.on=true;
+  langSwShut();
+  LGSW.el.className='lgsw on';
+  if(e.cancelable && e.preventDefault) e.preventDefault();
+}
+function langSwUp(){
+  /* A tap that never travelled shuts whatever was open, which is what tapping
+     away from an open row does everywhere this shape is used. The row's own
+     tap still runs -- it is a button and this is not eating the click. */
+  if(LGSW && !LGSW.on) langSwShut();
+  LGSW=null;
+}
+document.addEventListener('touchstart', langSwDown, false);
+document.addEventListener('touchmove', langSwMove, {passive:false});
+document.addEventListener('touchend', langSwUp, false);
+document.addEventListener('touchcancel', langSwUp, false);
 /* The way to make another one, at the foot of the list -- where "add an
    account" sits in the app this is modelled on. 「アカウントが変わるイメージ。
    実際の sns はアカウント切り替えボタンあるやん？あれが言語切り替えになるって

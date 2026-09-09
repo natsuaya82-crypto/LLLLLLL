@@ -317,6 +317,35 @@ longer part of this question**: nothing writes it since the backup file went
 it goes with the rest of that account's keys. **It is with the owner** —
 `docs/scope/aud-data.md` § オーナーに訊くこと, Q1 to Q3.
 
+## 直前の三版 ── `slice_hist`（サーバーだけ、運営だけ）
+
+「運営が治せる仕様は欲しい。ユーザーが問い合わせてきた時に、アカウントの復旧が
+できるようにしたい、管理画面で」「3 で実装して」OWNER 2026-09-09。
+
+| | |
+|---|---|
+| どこに | サーバーだけ（`supabase/schema.sql`）。**端末には一行も来ません** |
+| 誰の | その言語の。`language` を指していて、言語が消えれば cascade で消えます |
+| 誰が読めるか | `is_staff()` だけ。**本人にも見えません** ── 日付の並びは、その人がいつ考えを変えたかの記録で、アプリのどの画面にも出しません（`docs/STATE.md` § 4a 四の勧め「見せない」のとおり） |
+| 誰が書けるか | 誰も。insert / update / delete の policy が一つもなく、trigger（definer）が唯一の道です |
+| いつ増えるか | `slice` の行が update / delete される直前。中身が本当に変わったときだけです（`netSlice1()` は送るものが無ければ送らないので） |
+| いつ消えるか | **4 版目が積まれた瞬間、一番古い版が消えます。**これがこのファイルで唯一の自動削除で、DELETE REVIEW は `docs/CHANGELOG.md` 2026-09-09 |
+| 戻す道 | RPC `admin_restore(language, kind, at)`。update なので trigger がその瞬間の「今」を版に写します ── **戻すのを戻せます** |
+
+`at` は**その版が「今」でなくなった時刻**で、書かれた時刻ではありません。
+`slice` 自身の `at` を使っていたときは、平の `update` がその列に触らないので
+四つの版が同じ時刻を持ち、天井が「新しい三つ」を選べませんでした ── 戻した版が
+一番古い時刻で入り、同じ文の中で消えていました（`npm run rls` で見えます）。
+
+**本人の端末に届く道は増えていません。**戻した版は `slice` に載り、その人の
+次の起動の `netLangsWalk()`（`www/net.js`）が「無いものを埋める」ので入ります
+── スライスはメモリなので（規則 22）、アプリを閉じて開けば端末は何も持って
+おらず、サーバーの答えがそのまま入ります。**アプリを開いたままだと届きません**
+（端末が持っているものは書き換えない ── それが一分前のタイピングを守る側の
+規則です）。運営はその人に「一度閉じて開き直してください」と言うことになります。
+`tools/hist-check.mjs` がその道を、`npm run rls` が表と天井と誰が読めるかを
+押さえています。
+
 ## The index of languages, and what is actually in it
 
 `lingua.langs` (`LANGS`) is `id -> { … }`, and `lingua.cur` (`langId`) says

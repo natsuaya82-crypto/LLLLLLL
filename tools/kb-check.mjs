@@ -4050,9 +4050,10 @@ const kbPrep = await pg2.evaluate(({ s }) => {
   const oldBody = JSON.stringify(old);
   localStorage.setItem(langKey('kb'), oldBody);
   const ids = (b) => kbBoardsOf(JSON.parse(b)).kbs.map((x) => x.id).join(',');
-  /* 同じ中身の板が三枚 ── この不具合が作った写しです。「消していい。そもそも
-     増殖させるな」OWNER 2026-09-07。一枚になり、適用していた三枚目はその一枚を
-     指し直します（at は無料 QWERTY を頭に置いた番号なので 3 が三枚目）。 */
+  /* id を持たない板が三枚、中身は同じ ── 三枚のままです。「ダメに決まってん
+     だろ」OWNER 2026-09-09。id 無しの板が id を取るのは、中身の同じ **id 付き**
+     の板に出会ったときだけで、ここには一枚もありません。適用していた三枚目は
+     三枚目のまま（at は無料 QWERTY を頭に置いた番号なので 3 が三枚目）。 */
   const one = { nm:'', pat:'qwerty', lay: old.kbs[0].lay };
   const three = JSON.stringify({ kbs: [one, one, one], at:3, v:2 });
   /* 少しでも違えば二枚のまま。名前が一文字ちがうだけの板です。 */
@@ -4061,6 +4062,32 @@ const kbPrep = await pg2.evaluate(({ s }) => {
   const kept = kbBoardsOf(JSON.parse(three));
   /* 新しく作る板の id は時計から ── 読むのは同じ板、作るのは新しい板。 */
   const madeA = kbId(), madeB = kbId();
+  /* 増殖の元 ── ディスクに残る id 無しの写し（`lingua.<id>.kb`、rule 22 の
+     移行で slRd() が今も読む・書き換えない）。読むたびに違う id が打たれると
+     サーバーの行と突き合わず、syKeyOf() が別物と答え、syPut() が両方残して
+     起動ごとに板が足されます。中身の同じ板が二枚あっても、読むたび同じ id で、
+     二枚のままでなければならない ── まとめて一枚にするのは、増殖を止める
+     こととは別の話です。 */
+  const blank = { nm:'', pat:'qwerty', lay: old.kbs[0].lay };
+  const twin = JSON.stringify({ kbs: [blank, blank], at:0, v:2 });
+  const twinA = ids(twin), twinB = ids(twin);
+  const twinN = kbBoardsOf(JSON.parse(twin)).kbs.length;
+  /* 移行の一組 ── ディスクの id 無しの写しが、中身の同じ **id 付き** の板と
+     一つの配列で出会ったとき。それは「id が生まれる前に書かれた同じ板」で、
+     見分けるものが他にありません。id 付きのほうの id を取って一枚になります。
+     ここが中身を見る唯一の場所で、`again-check` 1432 が実機の道で持っています。 */
+  const oldOne = { nm:'', pat:'qwerty', lay: old.kbs[0].lay };
+  const srvOne = JSON.parse(JSON.stringify(oldOne)); srvOne.id = 'k1788700000_1';
+  const pair = kbBoardsOf(JSON.parse(JSON.stringify({ kbs: [oldOne, srvOne], at:0, v:2 })));
+  const pairN = pair.kbs.length, pairId = pair.kbs[0].id;
+  /* 人が＋を二回押した空の板は二枚。「ダメに決まってんだろ」OWNER 2026-09-09。
+     本物の道 ── kbAdd() 二回、saveKb()、そして slRd() で読み直す。 */
+  KB = { kbs: [], at: 0 };
+  kbAdd('qwerty'); kbAdd('qwerty');
+  saveKb();
+  const back2 = kbBoardsOf(JSON.parse(slRd(langKey('kb')) || 'null'));
+  const twoN = back2 ? back2.kbs.length : 0;
+  const twoIds = back2 ? back2.kbs.map((x) => x.id).join(',') : '';
   return {
     /* サーバーが持っているのは、この版が一度上げたあとの写し */
     srvBody: JSON.stringify(kbBoardsOf(JSON.parse(oldBody))),
@@ -4069,7 +4096,10 @@ const kbPrep = await pg2.evaluate(({ s }) => {
     threeN: kept.kbs.length, threeAt: kept.at,
     diffN: kbBoardsOf(JSON.parse(diff)).kbs.length,
     diffIds: ids(diff),
-    madeA: madeA, madeB: madeB
+    madeA: madeA, madeB: madeB,
+    twinA: twinA, twinB: twinB, twinN: twinN,
+    pairN: pairN, pairId: pairId,
+    twoN: twoN, twoIds: twoIds
   };
 }, { s: seed.toString() });
 
@@ -4104,7 +4134,9 @@ const kbOne = (await kbLaunch()).onServer;
 const kbTwo = (await kbLaunch()).onServer;
 /* そして、すでに増えてしまった端末 ── オーナーの実機の姿です。ディスクには
    id 無しの写し一枚、サーバーには同じ板が四枚、前の版のランダムな id を着て
-   並んでいる。三度立ち上げて、人が数える枚数は一枚。 */
+   並んでいる。三度立ち上げて、人が数える枚数は一枚 ── ディスクの id 無しの
+   写しは、中身の同じ id 付きの板に出会うとその id を取ります。中身を見るのは
+   ここだけで、id を持つ板どうしは決してまとめません。 */
 const srvDup = await pg2.evaluate(() => {
   const k = JSON.parse(localStorage.getItem(langKey('kb')));
   const one = k.kbs[0]; delete one.id;
@@ -4126,17 +4158,31 @@ console.log('');
 say(kbPrep.once === kbPrep.twice && kbPrep.once.indexOf(',') > 0,
     'a board with no id read twice gets the same id both times, so the phone’s copy '
     + 'and the server’s are one board [' + kbPrep.once + '] [' + kbPrep.twice + ']');
-say(kbPrep.threeN === 1 && kbPrep.threeAt === 1,
-    'and three copies of one board read back as one board — 「消していい。そもそも'
-    + '増殖させるな」 — with the applied one pointing at the copy that was kept ('
+say(kbPrep.threeN === 3 && kbPrep.threeAt === 3,
+    'and three boards of one content read back as THREE boards — nothing here decides '
+    + 'by looking at what is on a board — with the applied one still the third ('
     + kbPrep.threeN + ' boards, at ' + kbPrep.threeAt + ')');
 say(kbPrep.diffN === 2 && kbPrep.diffIds.split(',')[0] !== kbPrep.diffIds.split(',')[1],
-    'while two boards that differ by one character of a name are still two, with two '
-    + 'ids — what is joined is byte for byte the same board and nothing else ['
-    + kbPrep.diffIds + ']');
+    'and two boards that differ by one character of a name are two, each with an id '
+    + 'of its own [' + kbPrep.diffIds + ']');
 say(kbPrep.madeA !== kbPrep.madeB && kbPrep.madeA.charAt(0) === 'k',
     'and a board being MADE still takes its id off the clock, so two new boards of one '
     + 'pattern are two boards [' + kbPrep.madeA + '] [' + kbPrep.madeB + ']');
+say(kbPrep.twoN === 2 && kbPrep.twoIds.split(',')[0] !== kbPrep.twoIds.split(',')[1],
+    'two empty boards of one pattern, made by pressing + twice and read back off '
+    + 'storage, are still two boards — 「ダメに決まってんだろ」 OWNER 2026-09-09 ('
+    + kbPrep.twoN + ' boards) [' + kbPrep.twoIds + ']');
+say(kbPrep.pairN === 1 && kbPrep.pairId === 'k1788700000_1',
+    'while an id-less board meeting the id-carrying board it is byte for byte the same '
+    + 'as IS that board — written down twice, once from before boards had ids — so it '
+    + 'takes that id and the two are one (' + kbPrep.pairN + ' board, ' + kbPrep.pairId
+    + ')');
+say(kbPrep.twinN === 2 && kbPrep.twinA === kbPrep.twinB
+    && kbPrep.twinA.split(',')[0] !== kbPrep.twinA.split(',')[1],
+    'and two id-less boards of one content, with no id-carrying row beside them to be '
+    + 'the same board as, read back as two boards with the same two ids every time — '
+    + 'stable, so nothing grows, and distinct, so neither is taken away ['
+    + kbPrep.twinA + '] [' + kbPrep.twinB + ']');
 say(kbOne === 2,
     'a launch that reads the id-less copy off the disk and merges it with the '
     + 'server’s does not grow the language: ' + kbOne + ' boards');

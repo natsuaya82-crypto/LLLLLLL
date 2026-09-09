@@ -302,9 +302,9 @@ var STAGES=[
    six to 場所. Words only: what a chapter decides is the chapter's, and the
    two that decide a side -- 形容詞 and 場所 -- ask g2Side() on their own page.
 
-   The negation's own side has nowhere left to be set. It was this stage's
-   `negp` and the 否定形 chapter has no picker; docs/BACKLOG.md is where that
-   goes, not a second table here. */
+   The negation's own side is not here either, and it has a home now: it is a
+   row on the 語順 board (g2Board), asked with the same g2Side() the other two
+   use. 「はい」 OWNER 2026-09-09. Words only here, still. */
 var CHAP_SLOTS=[
   /* 冠詞・指示詞. 「a／the／this／that に当たる語と位置」 OWNER 2026-09-07.
      Four words and no decision, because the decision is already somewhere:
@@ -921,10 +921,11 @@ function stDetailHTML(p){
    drew (gOrderLine, gOrderDemo, gPosDemo, gSide, gPairOf, gNeedWords in
    www/grammar.js) went with them rather than being left standing unreachable.
 
-   THE NEGATION'S OWN SIDE HAS NOWHERE LEFT TO BE SET. `STG.gpos.negp` is still
-   read by gRules() and still travels; nothing writes it any more, because the
-   否定形 chapter has no picker and putting one there is not this session's to
-   decide. docs/BACKLOG.md carries it. */
+   THE NEGATION'S OWN SIDE IS A ROW ON THE 語順 BOARD. 「はい」 OWNER
+   2026-09-09, asked where it should go. `STG.gpos.negp` was read by gRules()
+   and travelled with the language for three days with nothing able to write
+   it; g2Board() asks g2Side('negp', ...) now, which is the same row the
+   describing word and the place word are arranged with. */
 function vGram(){
   var gOpen=gOpenOf();
   var p;

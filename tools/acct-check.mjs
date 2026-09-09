@@ -2643,14 +2643,23 @@ const R = await pg.evaluate(async () => {
      言っていない投稿ではそちらを読んでいました。だから**この端末が自分で
      出した数が、直しようもなく画面に残り**、別の端末は違う数を出します。
 
-     四本訊きます:
+     **2 は 2026-09-09 に上書きされました。**「Twitter もその仕様なはず。
+     ハート押して 1 つくやん？サーバー飛んでないならハートが消えるでいいん
+     じゃない？」OWNER。♡ は**押した瞬間に点いて数が 1 動き**、届かなければ
+     消えて数が戻ります。何も言いません。動くのは**画面だけ**で、端末の写し
+     には一バイトも書きません ── そこが 1 と喧嘩しない所です：写しは今も
+     読まれず、書かれず、「押したか」の二つ目の答えは端末に無い（`PMARK` は
+     走っているあいだのメモリで、答えが来た瞬間に消えます）。
+
+     五本訊きます:
      1. 写しの中の数は読まない ── `li:99 lime:true` を持つ投稿が 0 と空の心
-     2. 押した瞬間は動かない ── 答えが戻ってから動く
-     3. 戻ってきたら、サーバーが数えた数になる（自分で足さない）
-     4. 落ちたら何も動かない。そして写しの欄は書き換えも削除もされない
+     2. 押した瞬間に♡が点いて数が 1 動く
+     3. 戻ってきたら、サーバーが数えた数になる（自分で足したままにしない）
+     4. 落ちたら押す前に戻る。そして写しの欄は書き換えも削除もされない
+     5. 押しているあいだも、端末の写しには何も書かれていない
 
      赤を見た形（2026-09-09）: `postNLike()` に `: ((p && p.li)||0)` を戻すと
-     1 が赤（99 が出る）。`postLike()` を先に動かす形に戻すと 2 が赤。 */
+     1 が赤（99 が出る）。`postLike()` を答え待ちの形に戻すと 2 が赤。 */
   start();
   netOut(); arrive(A);
   {
@@ -2685,8 +2694,16 @@ const R = await pg.evaluate(async () => {
     const atOnceN = postNLike(postById('q1')), atOnceI = postILike(postById('q1'));
     if (!sent.length || sent[0].indexOf('/rest/v1/react') < 0)
       no('62: 押しても react に行が出ていない — ' + JSON.stringify(sent));
-    if (atOnceN !== 0 || atOnceI)
-      no('62: 答えが戻る前に画面が動いた — ' + atOnceN + '、' + atOnceI);
+    if (atOnceN !== 1 || !atOnceI)
+      no('62: 押した瞬間に♡が点かず数も動かない — ' + atOnceN + '、' + atOnceI +
+         '（「ハート押して 1 つくやん？」OWNER 2026-09-09）');
+    /* 押しているあいだも、端末の写しは触られていない。動くのは画面だけ。 */
+    {
+      const mid = postById('q1');
+      if (mid.nlike !== undefined || mid.ilike !== undefined)
+        no('62: 押した瞬間に写しへ書いた — ' +
+           JSON.stringify({ nlike:mid.nlike, ilike:mid.ilike }));
+    }
     if (release) release();
     const nowN = postNLike(postById('q1')), nowI = postILike(postById('q1'));
     if (asked.indexOf('post_seen') < 0 || asked.indexOf('likes') < 0)
@@ -2698,6 +2715,14 @@ const R = await pg.evaluate(async () => {
     /* 落ちたとき。何も動かず、写しの欄も触られない。 */
     netSend = (m, path, body, tok, ok2, bad2) => { bad2(null, 0, 'down'); };
     netGet = (path, ok2) => ok2([]);
+    /* 落ちた♡は、押す前に戻る ── 数もサーバーの 12 のまま。 */
+    postLike('q1');
+    {
+      const f62 = postById('q1');
+      if (postNLike(f62) !== 12 || !postILike(f62))
+        no('62: 落ちた♡が押す前に戻っていない — ' + postNLike(f62) + '、' +
+           postILike(f62));
+    }
     postBoost('q1');
     const q62 = postById('q1');
     if (postNBoost(q62) !== 0 || postIBoost(q62))
@@ -2708,7 +2733,8 @@ const R = await pg.evaluate(async () => {
 
     netSend = realSend62; netGet = realGet62;
     say('62: 投稿の数と自分が押したかはサーバーのもの ── 写しの数は読まず、' +
-        '押した瞬間は動かず、戻ってきた数になり、落ちれば何も動かない');
+        '♡は押した瞬間に点いて数が動き、戻ってきたらサーバーが数えた数になり、' +
+        '落ちれば押す前に戻る（写しには一バイトも書かない）');
   }
 
   /* ---- 63. 書記体系は言語のもの ------------------------------------------

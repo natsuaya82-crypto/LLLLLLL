@@ -58,6 +58,9 @@ act('adminGo', adminGo);
    asked again by pulling it down -- www/sns.js § WHICH SCREENS ANSWER A
    PULL, and modAsk() in www/mod.js is what it asks. */
 act('adminStaffAdd', adminStaffAdd);
+/* 運営がその人の言語を前の版に戻す道 (OWNER 2026-09-09) */
+act('adRecFind', adRecFind);
+act('adRecPick', adRecPick);
 act('adminStaffDrop', adminStaffDrop);
 act('modDown', modDown);
 act('modUp', modUp);
@@ -135,6 +138,7 @@ act('kbSlot', kbSlot);
 act('kbLtTap', kbLtTap);
 act('kbLtPut', kbLtPut);
 act('langOpen', langOpen);
+act('langDrop', langDrop);
 act('langNew', langNew);
 act('ltDropChar', ltDropChar);
 act('newLetter', newLetter);
@@ -246,6 +250,7 @@ act('pwMarkInk', pwMarkInk);
 act('pwTool', pwToolSet);
 act('pwCutDo', pwCutDo);
 act('pwCutAll', pwCutAll);
+act('pwToOff', pwToOff);
 act('pwSend', pwSend);
 act('pwFocusLn', pwFocusLn);
 act('draftKeep', draftKeep);
@@ -297,6 +302,7 @@ act('g2Take', g2Take);
 act('nclsNew', nclsNew);
 act('nclsOpen', nclsOpen);
 act('nclsSave', nclsSave);
+act('nclsDel', nclsDel);
 act('nclsPut', nclsPut);
 act('stAddOwn', stAddOwn);
 act('stDelEx', stDelEx);
@@ -329,6 +335,7 @@ actIn('kbSetNm', kbSetNm);
 actIn('meSetName', meSetName);
 actIn('adminSet', adminSet);
 actIn('adminStaffSet', adminStaffSet);
+actIn('adRecSet', adRecSet);
 /* The two the profile grew. They could not be written down before
    claude/me2 came in: this file registers the FUNCTION and not its name, so a
    line here pointing at something www/me.js does not have yet stops the app on

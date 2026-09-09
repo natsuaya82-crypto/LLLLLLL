@@ -126,6 +126,33 @@ const r = await pg.evaluate(({ s }) => {
   out.profileReplies = pfList().filter((p) => !!p.to).length;
   pfTab = 'posts';
 
+  /* ---- 4c: @名前 で始めた投稿は「返信」の側 ------------------------------
+     「返信にだけ出して」 OWNER 2026-09-09.
+
+     本文が `@x ` で始まる投稿は、その人への投稿になりました（2026-09-07）。
+     答えている投稿が無いので `to` は空で、持っているのは `toh` だけです。
+     「返信」を `!!p.to` で選んでいるあいだ、その投稿は「投稿」の側に並んで
+     いました。
+
+     何を「返信」と呼ぶかの答えは一つ ── `postToWho(p)`、返信先の人が
+     いるかどうか。二つの欄はその一つの問いの表と裏なので、両方訊きます:
+     @ 始まりは返信に在って投稿に無い、ふつうの投稿はその逆。片方だけだと、
+     どちらの欄にも出る（あるいは消える）状態が緑のまま通ります。 */
+  POSTS.push({ id:'AT-1', at:Date.now()-5, lang:mine.lang, lname:'Vethi',
+               ln:'atline', mn:'atline', who:'Aya', hd:meHandle(),
+               mine:true, to:'', toh:'iri' });
+  POSTS.push({ id:'PL-1', at:Date.now()-4, lang:mine.lang, lname:'Vethi',
+               ln:'plain', mn:'plain', who:'Aya', hd:meHandle(),
+               mine:true, to:'', toh:'' });
+  NAV = [{ r:'profile', a:'' }];
+  const ids = (k) => { pfTab = k;
+    return pfList().map((p) => p.id); };
+  out.atInRe    = ids('re').indexOf('AT-1') >= 0;
+  out.atInPosts = ids('posts').indexOf('AT-1') >= 0;
+  out.plainInRe    = ids('re').indexOf('PL-1') >= 0;
+  out.plainInPosts = ids('posts').indexOf('PL-1') >= 0;
+  pfTab = 'posts';
+
   /* ---- 4b: and the third list is one day's ------------------------------
      「絞り込みに「#今日のお題」を足す。その行を選ぶと、その日のお題に答えた
      投稿だけ」 OWNER 2026-09-06.
@@ -486,6 +513,20 @@ if (!r.foReplies)
 if (!r.profileReplies)
   say('a person’s 返信 tab lost its replies. One list was asked about, ' +
       'not the post.');
+
+if (!r.atInRe)
+  say('a post that begins @x is not in the 返信 tab. 「返信にだけ出して」 ' +
+      'OWNER 2026-09-09 — it carries `toh` and no `to`, and 返信 must be ' +
+      'one question: postToWho(p).');
+if (r.atInPosts)
+  say('a post that begins @x is ALSO in the 投稿 tab. 「返信にだけ出して」 ' +
+      '— the two lists are one question’s two sides, so taking it into 返信 ' +
+      'means taking it out of 投稿.');
+if (r.plainInRe)
+  say('an ordinary post is in the 返信 tab. The question widened past what ' +
+      'a reply is.');
+if (!r.plainInPosts)
+  say('an ordinary post left the 投稿 tab.');
 
 if (r.ownFollowing.indexOf('aya') >= 0 || r.ownFollowers.indexOf('aya') >= 0)
   say('your own handle is in your own follow lists. `follow` in ' +

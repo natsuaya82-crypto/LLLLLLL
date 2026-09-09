@@ -943,11 +943,26 @@ export function halfDone(){
                                                 SET.plan = 'free'; return h; }],
     /* The profile's other two lists. Each is empty on a fresh fixture, and an
        empty list draws neither a row nor anything a row carries. */
+    /* AND A POST THAT BEGINS @名前 IS ON THE 返信 SIDE, not the 投稿 side.
+       「返信にだけ出して」 OWNER 2026-09-09. It carries `toh` and no `to`
+       (2026-09-07), so 「what a reply is」 is postToWho() and not `to`.
+       **両方の状態が顔になっています** ── 返信の側に在ることと、投稿の側に
+       無いこと。間違いはたいてい誰も写真を撮らなかったほうで、ここでは
+       「投稿の側から消えたか」がそれです。 */
     ['the profile, replies', () => { pfTab='re'; POSTS.push({id:'pre', at:1, lang:langId,
         lname:'Shango', ln:'ke', who:'Aya', hd:'aya', mine:true, to:'p2',
-        mn:'what?', ui:'en'});
+        mn:'what?', ui:'en'},
+        {id:'pat1', at:2, lang:langId, lname:'Shango', ln:'kano tir',
+         who:'Aya', hd:'aya', mine:true, to:'', toh:'iri',
+         mn:'a mountain', ui:'en'});
         window.route='profile'; NAV=[{r:'profile'}];
-        const h=vProfile(); POSTS.pop(); pfTab='posts'; return h; }],
+        const h=vProfile(); POSTS.pop(); POSTS.pop(); pfTab='posts'; return h; }],
+    ['the profile, posts, with one addressed to somebody', () => { pfTab='posts';
+        POSTS.push({id:'pat1', at:2, lang:langId, lname:'Shango', ln:'kano tir',
+                    who:'Aya', hd:'aya', mine:true, to:'', toh:'iri',
+                    mn:'a mountain', ui:'en'});
+        window.route='profile'; NAV=[{r:'profile'}];
+        const h=vProfile(); POSTS.pop(); return h; }],
     ['the profile, likes', () => { pfTab='li'; const p=postById('p2'); p.lime=1; p.li=1;
         window.route='profile'; NAV=[{r:'profile'}];
         const h=vProfile(); delete p.lime; p.li=0; pfTab='posts'; return h; }],
@@ -1181,6 +1196,42 @@ export function halfDone(){
         window.route='admin'; NAV=[{r:'admin'}];
         const h = vAdmin();
         ADMIN_OK = false; ADMINN = keepN; ADMINS = keepS; MODS = keep; return h; }],
+    /* THE FACE THAT PUTS SOMEBODY'S LANGUAGE BACK, and both halves of it.
+       「運営が治せる仕様は欲しい…管理画面で」 OWNER 2026-09-09. It is a face
+       of the `admin` route rather than a route of its own, and the walk gets
+       there only past the door -- which is shut on the fixture's account, the
+       way it is on everybody's. Without these two, every button on the
+       recovery screen is 「an entry no screen names」, which is true and is
+       not what anybody meant. */
+    ['the admin screen, the recovery face', () => {
+        const keep = ADREC, keepH = ADREC_H;
+        ADMIN_OK = true;
+        ADREC_H = 'veth';
+        ADREC = { who:'u1',
+                  langs:[{ id:'L1', name:'Kano' }, { id:'L2', name:'Nen' }],
+                  hist:[] };
+        window.route='admin'; NAV=[{r:'admin'},{r:'admin',a:'rec'}];
+        const h = vAdmin();
+        ADMIN_OK = false; ADREC = keep; ADREC_H = keepH; return h; }],
+    /* And one language's parts, which is where the versions are. Two parts and
+       three versions of one of them, because the ceiling is three and a face
+       holding one row would not show that the newest is on top. */
+    ['the admin screen, one language’s versions', () => {
+        const keep = ADREC, keepH = ADREC_H;
+        ADMIN_OK = true;
+        ADREC_H = 'veth';
+        ADREC = { who:'u1', langs:[{ id:'L1', name:'Kano' }],
+                  hist:[{ sid:'L1', kind:'words', at:'2026-09-09T04:20:00Z',
+                          ms: Date.UTC(2026,8,9,4,20) },
+                        { sid:'L1', kind:'words', at:'2026-09-09T03:10:00Z',
+                          ms: Date.UTC(2026,8,9,3,10) },
+                        { sid:'L1', kind:'words', at:'2026-09-08T22:05:00Z',
+                          ms: Date.UTC(2026,8,8,22,5) },
+                        { sid:'L1', kind:'kb',    at:'2026-09-07T11:00:00Z',
+                          ms: Date.UTC(2026,8,7,11,0) }] };
+        window.route='admin'; NAV=[{r:'admin'},{r:'admin',a:'rec:L1'}];
+        const h = vAdmin();
+        ADMIN_OK = false; ADREC = keep; ADREC_H = keepH; return h; }],
     /* The composer, for somebody who has been ejected. Every write they make
        is refused by the server, and the line saying so is on no screen
        otherwise -- NET_BANNED is empty for everybody else. */
@@ -1272,7 +1323,18 @@ export function halfDone(){
        その画面で、入っていないのは別の画面です ── どちらも歩かせないと、
        前を書き足す一行が消えても緑のまま出ます。 */
     ['the composer, opened from somebody\u2019s page', () => {
-        PW = pwBlank(); openPost('new', 'jjj');
+        PW = pwBlank(); openPost('new', 'jjj'); pwSetLn('kano tir');
+        const h = vForm(); PW = pwBlank(); return h; }],
+    /* AND THE SAME SCREEN WITH THE ✕ PRESSED. 「いいよ」 OWNER 2026-09-09.
+       宛先の行には二つの状態があり、間違いはたいてい誰も写真を撮らなかった
+       ほうで起きます ── ここでは「外したあと本文が残っているか」がそれです。 */
+    ['the composer, the addressee taken off', () => {
+        PW = pwBlank(); openPost('new', 'jjj'); pwSetLn('kano tir');
+        pwToOff();
+        /* この画面は打っている間 描き直されないので、`FORM.html` は開いた
+           ときのままです ── ✕ が消すのは画面のほう（pwToPaint）。写真は
+           押したあとの composer なので、同じ pwHTML() から組み直します。 */
+        FORM.html = pwHTML();
         const h = vForm(); PW = pwBlank(); return h; }],
     ['the composer, replying to somebody', () => {
         PW = pwBlank(); PW.to = 'p1'; openPost('reply');
@@ -1672,6 +1734,15 @@ export function halfDone(){
        その「同じ」を撮れる状態がどこにも無かった：縦書きの面は新規だけ、
        返信の面は横書きだけで、二つが交わる所を歩いたものが無い。
        OWNER 実機 142 の二つ目はここのことなので、ここに置く。 */
+    /* ♡ を押した瞬間 ── 答えが戻る前の画面。「ハート押して 1 つくやん？」
+       OWNER 2026-09-09。走っているあいだのメモリ（`PMARK`）だけの状態なので、
+       種にも写しにも無く、どの面も歩いていませんでした。素の `feed` が
+       押す前で、これが押した直後です。 */
+    ['a post whose \u2661 has just been pressed', () => {
+        const p = POSTS[0], k = String(p.id) + '|like';
+        PMARK[k] = { i: true, n: postNLike(p) + 1 };
+        window.route = 'feed'; NAV = [{ r:'feed' }];
+        const h = vFeed(); delete PMARK[k]; return h; }],
     /* A POST THAT NAMED SOMEBODY AND ANSWERS NOTHING. 「@したらもう勝手に
        ツイートがこの形式になるようにしたい」 OWNER 2026-09-07 ── `toh` は
        載っていて `to` は無い、という組み合わせがどの面にも無かった。返信は
@@ -1804,6 +1875,40 @@ export function halfDone(){
     /* And naming one, which is a form and is therefore reached by nothing the
        walk would otherwise take. */
     ['naming a noun class', () => { nclsNew(); return vForm(); }],
+    /* THE OTHER SIDE OF THE NEGATION ROW. The word order chapter says which
+       side the word for 「not」 stands, and the row is two words: the fault
+       in a pair is nearly always in the side nobody photographed. */
+    ['the negation word before the verb', () => {
+        const was = STG.gpos && STG.gpos.negp;
+        if (!STG.gpos) STG.gpos = {};
+        STG.gpos.negp = 'before';
+        window.route = 'gram'; NAV = [{ r:'gram', a:'v2:order' }];
+        const h = vGram();
+        if (was) STG.gpos.negp = was; else delete STG.gpos.negp;
+        return h; }],
+    /* And a class that EXISTS, which is a different face of the same form:
+       the name is filled in and the way out of the class is on it. A new one
+       has no way out -- there is nothing yet to delete. */
+    ['a noun class that exists', () => {
+        const was = STG.ncls;
+        STG.ncls = { names:['ka','mi'], of:{} };
+        nclsOpen(0);
+        const h = vForm();
+        STG.ncls = was;
+        return h; }],
+    /* And the other state of that screen: the one question it asks. There is
+       no undo behind this one, which is why it asks -- CLAUDE.md § 19. The
+       popup's own markup is what is returned, the way every other asking face
+       in this file does it: render() takes a popup down, so a face that left
+       one standing would photograph the screen underneath. */
+    ['a noun class being deleted, asking', () => {
+        const was = STG.ncls;
+        STG.ncls = { names:['ka','mi'], of:{} };
+        nclsDel(0);
+        const h = document.getElementById('pop').outerHTML;
+        popOff();
+        STG.ncls = was;
+        return h; }],
     /* And the list with the door on it, which is the only place the way in
        exists. Everything else walks with the stage off the list, so this is
        the one face that renders that button. */
@@ -2155,6 +2260,17 @@ export function halfDone(){
         saveStg();
         window.route = 'gram'; NAV = [{ r: 'gram', a: 'v2:pst' }];
         return vGram(); }],
+    /* THE SAME CHAPTER, with a rule that has a CONDITION on it. The sentence
+       says the condition since 2026-09-09 (www/grammar.js § g2FmWhen), so
+       this is the other state of the face above: 「y で終わるとき、末尾の 1
+       文字を落として、動詞の末尾に -ied」 against 「動詞の末尾に -ta」. The
+       fault in a pair is nearly always in the one nobody photographed. */
+    ['a chapter of the grammar book, with a rule that has a condition', () => {
+        STG.fm = [{ id: 'fr-cond', pos: 'v', fm: 'pst', at: 'end',
+                    add: spType('ied'), drop: 1, when: 'x', wend: spType('y') }];
+        saveStg();
+        window.route = 'gram'; NAV = [{ r: 'gram', a: 'v2:pst' }];
+        return vGram(); }],
     /* A rule written on the OLD editor -- it drops a letter and fires only on
        words ending in one. The screen is two fields now and cannot write
        another like it, and this face is what proves the ones somebody already
@@ -2418,9 +2534,45 @@ export function halfDone(){
     ['the free plan out of room', () => { SET.plan='free'; SET.aiDay='';
                                           SET.aiN=999; openAdd();
                                           const h=vForm(); SET.aiN=0; return h; }],
-    ['a language somebody else is reading', () => { LANGS.L_other={name:'Necwe', mine:false};
+    /* `sid` because a taken language has one -- langSeenAdd() is the only
+       thing that writes `mine:false` and it always writes one -- and because
+       the 削除 that slides out of this row needs something to drop
+       (www/home.js § langDrop). Without it the row is the one case
+       netTakeGone() leaves alone, so the walk was pressing a button that
+       returned on its first line. */
+    /* ON PLUS, AND IT HAS TO BE. 「読んでいる言語」 is cut to dlCap(), which is
+       NOUGHT on free -- the walk's plan -- so this face has been drawing a
+       heading with no row under it since the day it was written, and nothing
+       said so. CLAUDE.md § what the free plan is: a paid face needs the plan
+       flipped here and put back. */
+    ['a language somebody else is reading', () => { const wasP=SET.plan; SET.plan='plus';
+                                                     LANGS.L_other={name:'Necwe', mine:false, sid:'srv-other-1'};
+                                                     langOwnGot('L_other', 'somebody-else');
                                                      window.route='langs'; NAV=[{r:'langs'}];
-                                                     const h=vLangs(); delete LANGS.L_other; return h; }],
+                                                     const h=vLangs(); delete LANGS.L_other;
+                                                     SET.plan=wasP; return h; }],
+    /* AND THE SAME ROW SLID OPEN, which is the state the 削除 is IN. The row
+       is shut in the face above and the button is off the right edge of it,
+       so a picture of that face says nothing about what the slide reveals --
+       and 「両方の状態を見せる」 is what an owner reads a screenshot for.
+
+       Driven by the app's own handlers on the live page rather than by a
+       class written in here: a fixture that put the class on would be a copy
+       of langSwMove() and would agree with it whatever it did. */
+    ['a language you took, slid open', () => { const wasP=SET.plan; SET.plan='plus';
+       LANGS.L_other={name:'Necwe', mine:false, sid:'srv-other-1'};
+       langOwnGot('L_other', 'somebody-else');
+       window.route='langs'; NAV=[{r:'langs'}];
+       const app=document.getElementById('app');
+       app.innerHTML=vLangs();
+       const w=app.querySelector('.lgsw[data-lgs="L_other"]');
+       if(w){ const r=w.getBoundingClientRect();
+              langSwDown({ target:w.querySelector('.lgrow')||w,
+                           touches:[{clientX:r.right-20, clientY:r.top+r.height/2}] });
+              langSwMove({ touches:[{clientX:r.right-140, clientY:r.top+r.height/2}],
+                           cancelable:true, preventDefault:function(){} });
+              langSwUp({}); }
+       const h=app.innerHTML; delete LANGS.L_other; SET.plan=wasP; return h; }],
     ['a mark in the editor',   () => { editLetter('l4'); window.route='glyph';
                                        NAV=[{r:'glyph', a:GE.lid}]; return vGlyph(); }],
     /* A list being read in has three faces and they share no buttons: the
