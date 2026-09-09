@@ -3623,8 +3623,14 @@ html[data-script="on"] .whw{font-family:var(--face-script);letter-spacing:0}
    would otherwise put the row back while a thumb is on it. NO CORNER, NO
    FRAME, NO PANEL (規則18) -- the word in `var(--bad)` and nothing else. */
 .swipe{position:relative;overflow:hidden}
+/* THE WORD IS A 「−」. 「メモもマイナス」 OWNER 2026-09-09 -- it said 削除 in
+   both lists and the owner asked for the sign instead; the word stays as the
+   `aria-label`, through t() in all ten, because a screen reader has nothing
+   to read off a dash. Big enough to BE a minus and not a hyphen: at .92rem
+   it was three pixels of red. Still no corner, no frame, no fill. */
 .swdel{position:absolute;top:0;right:0;bottom:0;width:76px;display:flex;
-  align-items:center;justify-content:center;color:var(--bad);font-size:.92rem;cursor:pointer}
+  align-items:center;justify-content:center;color:var(--bad);font-size:1.5rem;
+  line-height:1;cursor:pointer}
 .swrow{background:var(--bg);position:relative;z-index:1;transition:transform .18s}
 .swipe .swopen{transform:translateX(-76px)}
 /* The title is the row: what a note IS. 「題名の方が少し文字でかくしてほしい」

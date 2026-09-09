@@ -50,10 +50,12 @@
 `.lgsw` `.lgsw .lgrow` `.lgsw.on .lgrow` `.lgsw .lgdel` の四つは消えます。
 `box-check` の baseline には一行も足しません（角丸も枠も無い）。
 
-**文言は触りません。** ja では `langs.drop` も `notes.del` も既に「削除」で、
-中身は同じです。en は "Remove"（取ったものを返す）と "Delete" で違いますが、
-**言葉はオーナーのもの**（CLAUDE.md § Deciding）なので、揃えるかどうかは
-訊いてから。
+**見える字は「−」です。** 「メモもマイナス」 OWNER 2026-09-09（この作業の
+途中で届いた変更） ── 両方の一覧が同じ赤い「−」で、「削除」の語は
+`aria-label` に残ります（`notes.del` と `langs.drop`、10 言語）。i18n-check の
+mirror は a-z しか見ないので記号は素通りし、読み上げの側は t() を通ります。
+en の "Remove"（取ったものを返す）を "Delete" に揃えるかは言葉の判断なので
+**オーナーのもの**（CLAUDE.md § Deciding）で、訊いてから。
 
 **JS は一本になりません。** メモの `ntSwStart`/`ntSwMove`/`ntSwEnd`（`www/notes.js`）
 は `here().r!=='notes'` で始まり `ntSwipeAt` と `render()` で開きます。

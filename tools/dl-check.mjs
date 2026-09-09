@@ -576,7 +576,7 @@ say(gone.theirsHasRow && gone.mineHasNoRow,
     'to your own — 自分の言語は設定の真ん中の行から: ' +
     JSON.stringify(gone.saw));
 say(gone.shutAtFirst && gone.swiped && gone.openNow && gone.delUp,
-    'and a thumb dragged left across it opens it, with a 削除 at the right end');
+    'and a thumb dragged left across it opens it, with the 「−」 at the right end');
 say(gone.downTried && gone.downKeptRow && gone.downKeptSlice !== null &&
     gone.downKeptTake === gone.dlBefore,
     'a DELETE that does not land takes NOTHING — the row, the slice and the ' +

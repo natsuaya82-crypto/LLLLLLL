@@ -2317,8 +2317,8 @@ function langRow(id){
      button it was and the press that opens a language is untouched. */
   if(langMine(id)) return row;
   return '<div class="swipe" data-lgs="'+esc(id)+'">'+row+
-    '<span class="swdel"'+DO('langDrop', [id])+'>'+
-    esc(t('langs.drop'))+'</span></div>';
+    '<span class="swdel"'+DO('langDrop', [id])+
+    ' role="button" aria-label="'+esc(t('langs.drop'))+'">−</span></div>';
 }
 /* GIVING ONE BACK, WHICH IS A DELETE AND IS WRITTEN DOWN AS ONE.
    docs/CHANGELOG.md 2026-09-09 carries the DELETE REVIEW.

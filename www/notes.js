@@ -304,7 +304,8 @@ function vNotes(){
     }
     var swOpen=(ntSwipeAt===i);
     rows+='<div class="swipe">'+
-      (langLocked()? '' : '<span class="swdel"'+DO('delNoteGo', [i])+'>'+esc(t('notes.del'))+'</span>')+
+      (langLocked()? '' : '<span class="swdel"'+DO('delNoteGo', [i])+
+        ' role="button" aria-label="'+esc(t('notes.del'))+'">−</span>')+
       '<button class="ntrow swrow'+(swOpen? ' swopen':'')+'" data-nti="'+i+'"'+
         (swOpen? DO('ntSwTapClose', [i]) : DO('openNote', [i]))+'>'+
         '<span class="nth">'+esc(ntHead(NOTES[i]))+'</span>'+
