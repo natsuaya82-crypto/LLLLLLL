@@ -307,10 +307,21 @@ function netSend1(method, path, body, tok, ok, bad, up, may){
      Asked for here rather than at netDrop(), because it is the same sentence
      the two lines above are: a write that changed nothing must never read as
      a write that worked. */
+  /* EXCEPT THE SLICE, WHICH IS SOMEBODY'S DICTIONARY COMING STRAIGHT BACK.
+     A slice write is a POST that upserts, so there is no 「matched no row」
+     to tell apart -- that is what the three paragraphs above are about and
+     none of them is about this one. 2xx IS 「the server took it」, which is
+     the whole of what netSlicePut()'s `ok` has ever read: it takes no
+     argument and never has. Asking for the row back doubles every save --
+     872 KB up and the same 872 KB down again on a 5,000-word language, a
+     quarter of everything that account sends in a month.
+     docs/reports/cost-2026-09-09.md 一. */
   if((method==='POST' || method==='PATCH' || method==='DELETE') &&
      path.indexOf('/rest/v1/')===0)
     x.setRequestHeader('Prefer',
-      'return=representation'+(up? ', resolution=merge-duplicates' : ''));
+      (path.indexOf('/rest/v1/slice')===0
+         ? 'return=minimal' : 'return=representation')+
+      (up? ', resolution=merge-duplicates' : ''));
   else if(up) x.setRequestHeader('Prefer', 'resolution=merge-duplicates');
   x.onreadystatechange=function(){
     if(x.readyState!==4) return;
@@ -1644,13 +1655,24 @@ function netInList(xs){
    the network each time they add a word. Written here rather than as a second
    function, because 「どのスライスを訊くか」 is this question with an answer,
    not a different question. */
-function netSlices(sid, ok, bad, kinds){
-  netGet('/rest/v1/slice?select=kind,body,no&language=eq.'+encodeURIComponent(sid)+
+/* AND `cols` IS WHICH COLUMNS, which is the same question one step in: a save
+   asks 「いつ最後に書かれたか」 and does not want the dictionary to answer it.
+   Leaving it out is all four, which is what a launch wants and what this asked
+   for always. The body is put on the answer ONLY where it was asked for --
+   「訊かなかった中身」 and 「空の中身」 are two states and must not share a
+   branch (docs/DATA_SAFETY.md rule 3). */
+function netSlices(sid, ok, bad, kinds, cols){
+  netGet('/rest/v1/slice?select='+(cols || 'kind,body,no,at')+
+         '&language=eq.'+encodeURIComponent(sid)+
          ((kinds && kinds.length)
             ? '&kind=in.('+netInList(kinds)+')' : ''),
     function(d){
-      var out={}, i;
-      for(i=0;i<(d||[]).length;i++) out[d[i].kind]={body:String(d[i].body||''), no:d[i].no||0};
+      var out={}, i, r;
+      for(i=0;i<(d||[]).length;i++){
+        r=d[i];
+        out[r.kind]={no:r.no||0, at:String(r.at||'')};
+        if(r.body!==undefined && r.body!==null) out[r.kind].body=String(r.body);
+      }
       ok(out);
     }, bad);
 }
@@ -1662,10 +1684,16 @@ function netSlicePut(sid, kind, body, no, ok, bad){
      person's work actually goes up in, and it used to open its own
      XMLHttpRequest, outside the token renewal. 「保存押せば起動されないの？」
      -- it did not, and this is the line that answers it. */
+  /* THE STAMP IS BUILT HERE AND HANDED BACK, because there is nowhere else it
+     could come from: the row does not return any more (`return=minimal`
+     above), so what the server holds for this slice is exactly the string
+     this line sent. netSlice1() gives it to netAgreed(), and the next save
+     compares against it rather than reading the dictionary back. */
+  var at=(new Date()).toISOString();
   netSend('POST', '/rest/v1/slice',
           {language:sid, kind:kind, body:String(body||''),
-           no:(no||0)+1, at:(new Date()).toISOString()},
-          SESS && SESS.at, function(){ ok(); },
+           no:(no||0)+1, at:at},
+          SESS && SESS.at, function(){ ok(at); },
           function(d, st){ bad(null, st||0); }, true);
 }
 /* EVERY LANGUAGE THIS ACCOUNT HAS, BROUGHT DOWN TO THE PHONE.
@@ -1810,7 +1838,40 @@ function netLangsWalk(d, done){
     /* AND WHO WROTE IT -- www/core.js § LOWN, where 「not asked」 is neither
        side and is what langMine() waits for. */
     langOwnGot(nid, own);
-    netSlices(row.id, function(there){
+    /* ---- THE MARKS FIRST, AND THEN ONLY THE BODIES THIS PHONE LACKS ----
+       This read all twelve bodies and then threw most of them away: the loop
+       below fills in what is MISSING and stops (docs/DATA_SAFETY.md rule 2),
+       so every slice this phone was already holding came down the wire to be
+       skipped on the next line. On a launch where the phone has just minted
+       its own language that is nearly all of them -- 898 KB carried and
+       discarded, and then the launch's own sync read the same 898 KB again
+       to merge it. That is 「起動一回で言語ぜんぶを二度読む」,
+       docs/reports/cost-2026-09-09.md 二.
+
+       WHICH ONES ARE MISSING IS KNOWN BEFORE THE BODIES ARE ASKED FOR --
+       `slMine()` is a question about this phone. So the marks come first
+       (`kind,no,at`), and the ask is narrowed to the kinds that will
+       actually be written. Nothing about WHAT is written changes: the guard
+       below still stands, and a kind the server has that this app has never
+       heard of is still walked, because the list comes off the server's own
+       answer and not off SLICES.
+
+       The `lang` slice is asked for as well where the name column is empty,
+       because the column is filled from the SERVER's copy whether or not
+       this phone is holding one of its own. */
+    netSlices(row.id, function(st){
+      var want=[], has={}, k;
+      for(k in st){
+        if(!Object.prototype.hasOwnProperty.call(st, k)) continue;
+        if(slMine(langKeyOf(nid, k))!==null) continue;
+        want.push(k); has[k]=1;
+      }
+      if(own===String(SESS.uid||'') && !String(row.name||'') &&
+         st.lang && !has.lang) want.push('lang');
+      if(!want.length){ fill({}); return; }
+      netSlices(row.id, fill, step, want);
+    }, step, null, 'kind,no,at');
+    function fill(there){
       var k;
       for(k in there){
         if(!Object.prototype.hasOwnProperty.call(there, k)) continue;
@@ -1826,7 +1887,10 @@ function netLangsWalk(d, done){
         slWr(langKeyOf(nid, k), there[k].body);
         /* and what the two sides agree it is, so the first thing removed after
            this is understood as a removal */
-        netAgreed(nid, k, there[k].body);
+        /* AND THE MARK ON THAT AGREEMENT. Without it the launch's own sync,
+           a moment later, reads all twelve bodies back to merge them against
+           what it has just written -- netGotFor() above. */
+        netAgreed(nid, k, there[k].body, there[k].at);
         if(nid===langId) filled=true;
       }
       /* AND A COLUMN THAT NOBODY EVER WROTE IS FILLED FROM THE SLICE. Every
@@ -1852,7 +1916,7 @@ function netLangsWalk(d, done){
           langNameGot(nid, there.lang.body); render();
         }, function(){});
       step();
-    }, step);
+    }
   }
   step();
 }
@@ -2052,12 +2116,110 @@ function netKeeps(mine, put){
    OWNER 2026-09-05. slGot() in www/core.js says what it may and may not be
    read for -- it is on no road back up, and slMine() below is what keeps it
    off one. */
-function netAgreed(id, kind, body){
+function netAgreed(id, kind, body, at){
   try{
     if(body==='') slRm(langWasKey(id, kind));
     else slWr(langWasKey(id, kind), body);
     slGot(langKeyOf(id, kind), body);
   }catch(e){}
+  netAtSet(id, kind, at);
+}
+/* ---- AND WHICH VERSION OF THE SERVER'S THAT AGREEMENT WAS ----------------
+   `langWasKey` is the body the two sides last agreed on. This is the
+   SERVER'S mark on that same moment -- `slice.at` -- and it exists so that a
+   save does not have to read the dictionary back to find out whether anybody
+   else has written since. Mark unmoved means the server is still holding
+   `langWasKey`, and this phone already has that.
+
+   IT IS IN MEMORY AND IT IS NOBODY'S BELONGINGS. Losing it costs one read:
+   a fresh launch starts empty and the first save reads bodies exactly as it
+   always did. It is not written to localStorage, because a key there is a
+   thing store-check rightly asks 「which account is this」 of, and this is
+   not a thing that should have to answer (rule 22).
+
+   「知らない」 is not 「同じ」. No record means read. */
+var NET_AT={};
+function netAtKey(id, kind){ return String(id)+'.'+kind; }
+function netAtSet(id, kind, at){
+  var k=netAtKey(id, kind);
+  if(at) NET_AT[k]=String(at); else delete NET_AT[k];
+}
+function netAtHas(id, kind){ return !!NET_AT[netAtKey(id, kind)]; }
+function netAtSame(id, kind, row){
+  var k=netAtKey(id, kind);
+  return !!(row && row.at && NET_AT[k] && String(row.at)===NET_AT[k]);
+}
+/* ---- WHAT THE SERVER IS HOLDING FOR THESE SLICES, WITHOUT CARRYING BACK
+   THE ONES IT ALREADY AGREES WITH -----------------------------------------
+   Both roads that put a slice up -- a save (netSaveUpGo) and a launch
+   (netLangSync1) -- have to hand netSlice1() what the server has, and both
+   read every BODY to do it. That is 877 KB to add one word of 0.14 KB, and
+   at a launch it is the whole language read a SECOND time, right behind
+   netLangsWalk() reading it once. docs/reports/cost-2026-09-09.md 一・二.
+
+   WHAT THE READ IS FOR IS syMerge() AND THAT STAYS. It is the only thing
+   that keeps what a SECOND PHONE added when this one writes --
+   「そりゃあ両方足すだろ」 -- because `slice`'s primary key is
+   (language, kind) and an unmerged write simply wins. What changes is WHICH
+   BODIES are read, and nothing else.
+
+   The marks come first (`kind,no,at`, about a tenth of a kilobyte), and a
+   body only where its mark has MOVED since this phone last agreed. Where it
+   has not moved, the server is holding `langWasKey` -- which is already
+   here, so there is nothing to fetch.
+
+   SO A SECOND PHONE IS ALWAYS READ. Two phones writing send two different
+   marks, so whichever landed second leaves a mark the other does not know,
+   and the loser reads and merges on its next save. A phone with no record
+   reads -- 「知らない」 is not 「同じ」.
+
+   ONE FUNCTION BECAUSE IT IS ONE QUESTION. Two copies of this would be two
+   answers to 「サーバーは今なにを持っているか」, and the wrong one would be
+   the one nobody is reading. */
+function netGotFor(id, sid, kinds, ok, bad){
+  var know=[], dunno=[], got={}, st={}, left=0, fell=false, i, k;
+  /* A MARK THIS PHONE HAS NEVER RECORDED ANSWERS NOTHING, so its body is
+     asked for outright -- and the two asks go out TOGETHER, because neither
+     needs the other's answer. One stage, whatever the mixture is. Sending
+     everything down the body road because one slice's mark is unknown would
+     drag the dictionary along for company; asking the marks first for a
+     slice with no record would be a round trip spent to learn nothing.
+     tools/slow-check.mjs holds the depth and the bytes. */
+  for(i=0;i<kinds.length;i++){
+    k=kinds[i];
+    if(netAtHas(id, k)) know.push(k); else dunno.push(k);
+  }
+  if(!know.length && !dunno.length){ ok({}); return; }
+  function bail(d, s2){ if(fell) return; fell=true; bad(d, s2); }
+  function step(){
+    if(fell || --left) return;
+    /* Of the ones this phone has a record for, the bodies of any whose mark
+       has MOVED -- somebody else has written those and they have to be
+       merged. The rest are `langWasKey`, which is here. */
+    var need=[], j, kk, was;
+    for(j=0;j<know.length;j++){
+      kk=know[j];
+      if(!netAtSame(id, kk, st[kk])){ need.push(kk); continue; }
+      was=slMine(langWasKey(id, kk));
+      got[kk]={body:(was===null? '' : was), no:st[kk].no, at:st[kk].at};
+    }
+    if(!need.length){ ok(got); return; }
+    netSlices(sid, function(there){
+      var n;
+      for(n=0;n<need.length;n++) got[need[n]]=there[need[n]];
+      ok(got);
+    }, bail, need);
+  }
+  if(dunno.length) left++;
+  if(know.length) left++;
+  if(dunno.length)
+    netSlices(sid, function(there){
+      var n;
+      for(n=0;n<dunno.length;n++) got[dunno[n]]=there[dunno[n]];
+      step();
+    }, bail, dunno);
+  if(know.length)
+    netSlices(sid, function(rows){ st=rows; step(); }, bail, know, 'kind,no,at');
 }
 var NET_SHRANK=[];
 var NET_SYNCING=false;
@@ -2118,17 +2280,24 @@ function netSlice1(id, sid, kind, got, done, bad){
     /* Both sides are holding the same string now, so that is what they
        agreed. Recorded here rather than after the write, because there is
        nothing to write. */
-    if(got && put===got.body){ netAgreed(id, kind, put); done(true); return; }
+    if(got && put===got.body){ netAgreed(id, kind, put, got.at); done(true); return; }
     netSlicePut(sid, kind, put, got? got.no : 0,
-                function(){ netAgreed(id, kind, put); done(true); },
+                function(at){ netAgreed(id, kind, put, at); done(true); },
                 /* A write that did not land agreed nothing, and the record
                    stays as it was. What happens next is the caller's. */
                 function(d, st){ bad(d, st); });
     return;
   }
-  if(put==='' || (got && put===got.body)){ netAgreed(id, kind, put); done(false); return; }
+  /* The stamp only where the server is KNOWN to be holding `put`. An empty
+     merge over a server that holds something is not an agreement about that
+     something, and recording a mark there would tell the next save to skip a
+     read it needs. */
+  if(put==='' || (got && put===got.body)){
+    netAgreed(id, kind, put, (got && put===got.body)? got.at : '');
+    done(false); return;
+  }
   netSlicePut(sid, kind, put, got? got.no : 0,
-              function(){ netAgreed(id, kind, put); done(false); },
+              function(at){ netAgreed(id, kind, put, at); done(false); },
               function(d, st){ bad(d, st); });
 }
 /* ---- and the moment a save reaches the server --------------------------
@@ -2231,37 +2400,41 @@ function netSaveUpGo(done){
   if(!kinds.length){ none(); return; }
   NET_SYNCING=true;
   netLangRow(id, function(sid){
-    /* Only the slices that moved, and only those, so a save costs one small
-       read and one small write rather than the whole language. */
-    netSlices(sid, function(there){
-      /* ---- THE SLICES THAT MOVED GO TOGETHER --------------------------
-         「なんか全体的に遅くない？」 OWNER 2026-09-08 (143). This was a walk
-         too: one slice up, wait, the next. A save that touched three of them
-         was three round trips one after another and measured four deep with
-         the read in front of it (tools/slow-check.mjs). None of the three
-         needed either of the others' answers -- netLangSync1() above has the
-         whole of why.
+    /* Only the slices that moved, and of those only the bodies the server
+       has changed since this phone last agreed -- netGotFor() above is the
+       one place that decides which those are, and the launch road asks it
+       the same question. */
+    netGotFor(id, sid, kinds, send, no);
 
-         A SLICE THAT DID NOT LAND STILL DOES NOT AGREE. It used to stop the
-         ones behind it as well; they are already in the air now, and each
-         still records its own agreement or does not -- so pressing save again
-         sends what is still missing, exactly as before. What a PERSON is told
-         is one pop and not three: the first fall is the answer and the rest
-         are the same network. */
+    /* ---- THE SLICES THAT MOVED GO TOGETHER --------------------------
+       「なんか全体的に遅くない？」 OWNER 2026-09-08 (143). This was a walk
+       too: one slice up, wait, the next. A save that touched three of them
+       was three round trips one after another and measured four deep with
+       the read in front of it (tools/slow-check.mjs). None of the three
+       needed either of the others' answers -- netLangSync1() above has the
+       whole of why.
+
+       A SLICE THAT DID NOT LAND STILL DOES NOT AGREE. It used to stop the
+       ones behind it as well; they are already in the air now, and each
+       still records its own agreement or does not -- so pressing save again
+       sends what is still missing, exactly as before. What a PERSON is told
+       is one pop and not three: the first fall is the answer and the rest
+       are the same network. */
+    function send(there){
       var left=kinds.length, fell=false, i;
       function one(){
         if(fell || --left) return;
         NET_SYNCING=false;
         if(done) done(true);
       }
-      function stop(d, st){
+      function stop(d, s2){
         if(fell) return;
         fell=true;
-        no(d, st, '');
+        no(d, s2, '');
       }
       for(i=0;i<kinds.length;i++)
         netSlice1(id, sid, kinds[i], there[kinds[i]], one, stop);
-    }, no, kinds);
+    }
   }, no);
 }
 /* EVERY LANGUAGE THIS PERSON MADE, and it used to be the one that happened to
@@ -2310,7 +2483,14 @@ function netLangSync(then){
    that may not be the open one, which is the whole of the change. */
 function netLangSync1(id, done){
   netLangRow(id, function(sid){
-    netSlices(sid, function(there){
+    /* THE SECOND READ OF THE WHOLE LANGUAGE, and it is on every launch.
+       netLangsWalk() has just brought this language down and recorded what
+       the two sides agreed; this then read all twelve bodies again to merge
+       them against themselves -- 1.75 MB of a 1.87 MB launch on a 5,000-word
+       language, half of it for nothing. docs/reports/cost-2026-09-09.md 二.
+       netGotFor() asks the marks first, so a slice the two sides already
+       agree on costs nothing here. */
+    netGotFor(id, sid, SLICES, function(there){
       /* ---- ALL TWELVE AT ONCE, NOT ONE AFTER ANOTHER --------------------
          「なんか全体的に遅くない？」 OWNER 2026-09-08 (143). This was a walk:
          slice one went up, and only when its answer came back did slice two

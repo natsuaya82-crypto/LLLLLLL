@@ -113,16 +113,22 @@ const SERVER = `
         r = rows[k]; hit = null;
         for (f = 0; f < S.slice.length; f++)
           if (S.slice[f].language === r.language && S.slice[f].kind === r.kind) hit = S.slice[f];
-        if (hit){ hit.body = r.body; hit.no = r.no; }
-        else S.slice.push({ language:r.language, kind:r.kind, body:r.body, no:r.no });
+        if (hit){ hit.body = r.body; hit.no = r.no; hit.at = r.at; }
+        else S.slice.push({ language:r.language, kind:r.kind, body:r.body,
+                            no:r.no, at:r.at });
         S.sent.push('slice:' + r.language + ':' + r.kind);
       }
       return answer([]);
     }
     if (method === 'GET' && p.indexOf('/rest/v1/slice') === 0){
+      /* at を返します ── サーバーがその slice を最後に書いた印で、保存が
+         中身を読まずに済ませられるかはこれで決まります（www/net.js
+         § netAtSame）。返さない偽サーバーは「印を知らない」端末を作るので、
+         いつまでも中身を読む道しか歩かれません。 */
       var want = arg('language'), out = [], q;
       for (q = 0; q < S.slice.length; q++) if (S.slice[q].language === want)
-        out.push({ kind:S.slice[q].kind, body:S.slice[q].body, no:S.slice[q].no });
+        out.push({ kind:S.slice[q].kind, body:S.slice[q].body,
+                   no:S.slice[q].no, at:S.slice[q].at });
       return answer(out);
     }
     /* 取った言語の表 ── language_take。この人の行だけ（take_read は
@@ -822,6 +828,37 @@ const up2 = await pg.evaluate(async ({ s, srv }) => {
   await settle();
   out.sentBurst = window.__SRV.sent.slice();
 
+  /* 五. 二台目が同じ言語を書いていたら、中身を読みに行く。
+     ここを間違えると片方の単語が黙って消えます ── 保存が中身を読まなくなった
+     のは「印が動いていなければサーバーは合意した中身を持っている」からで、
+     動いていれば読まなければなりません。相手の行を直に書き換えて、印を
+     別の文字列にします（二台が同時に書けば印は必ず別の文字列です）。 */
+  window.__SRV.sent = [];
+  window.__SRV.asked = [];
+  (function(){
+    var S = window.__SRV, sid = LANGS[id].sid, i, o;
+    for (i = 0; i < S.slice.length; i++)
+      if (S.slice[i].language === sid && S.slice[i].kind === 'words'){
+        o = JSON.parse(S.slice[i].body);
+        o.push({ hw:'mikka', gl:'a word the SECOND phone added' });
+        S.slice[i].body = JSON.stringify(o);
+        S.slice[i].at = '2099-01-01T00:00:00.000Z';
+      }
+  })();
+  WORDS.push({ hw:'yonka', gl:'a word THIS phone added' });
+  save();
+  await settle();
+  out.askedTwo = window.__SRV.asked.slice();
+  out.bothOnServer = (function(){
+    var S = window.__SRV, sid = LANGS[id].sid, i, b;
+    for (i = 0; i < S.slice.length; i++)
+      if (S.slice[i].language === sid && S.slice[i].kind === 'words'){
+        b = S.slice[i].body;
+        return b.indexOf('mikka') >= 0 && b.indexOf('yonka') >= 0;
+      }
+    return false;
+  })();
+
   /* 四. 署名が無ければ何も送らない。そして何も失わない ── 言語はこの iPhone に
      そのまま在る。「電波が無いときはログインできない」はオーナーの決定だが、
      それは画面の話で、書いたものが消えてよいという意味ではない。 */
@@ -844,9 +881,19 @@ say(up2.onServer,
     'そして足した単語がサーバーの行に入っている');
 say(up2.sentAfter.length === 1 && up2.sentAfter[0].indexOf(':words') > 0,
     '送るのは動いた欄だけ ── 十二本ではなく一本: ' + JSON.stringify(up2.sentAfter));
-say(up2.asked.length === 1 && up2.asked[0].indexOf('kind=in.(words)') > 0,
-    'そして訊くのも動いた欄だけ ── 全部降ろすと大きい言語で毎回 685 KB: ' +
-    JSON.stringify(up2.asked));
+say(up2.asked.length === 1 && up2.asked[0].indexOf('kind=in.(words)') > 0 &&
+    up2.asked[0].indexOf('select=kind,no,at') > 0,
+    'そして訊くのは動いた欄の**印だけ** ── 中身は訊かない。全部降ろすと ' +
+    '大きい言語で毎回 685 KB、動いた欄の中身でも 877 KB ' +
+    '（docs/reports/cost-2026-09-09.md 一）: ' + JSON.stringify(up2.asked));
+say(up2.askedTwo.length === 2 &&
+    up2.askedTwo[0].indexOf('select=kind,no,at') > 0 &&
+    up2.askedTwo[1].indexOf('body') > 0,
+    'でも二台目が書いていたら中身を読みに行く ── 印が動いていれば読む: ' +
+    JSON.stringify(up2.askedTwo));
+say(up2.bothOnServer,
+    'そして二台の単語が両方サーバーに残る ── 片方が消えない' +
+    (up2.bothOnServer ? '' : '**片方が消えた**'));
 say(up2.sentIdle.length === 0,
     '何も動いていない保存は、何も送らない: ' + JSON.stringify(up2.sentIdle));
 say(up2.sentBurst.length === 1,
