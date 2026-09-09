@@ -218,6 +218,31 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### DL した言語は「印」── 元が消えれば取った側からも消える
+- Date: 2026-09-09
+- Area: ダウンロードした言語（`language_take`、`www/net.js` § netTakenDown /
+  netLangsWalk、`www/home.js` § wldGet、`supabase/schema.sql`）
+- Decision: 「dl元が言語を削除したり、アカウントを消してその言語自体が消えた
+  場合は、dlユーザーからも削除される」。DL は**写しではなく印**：サーバーに
+  複製は持たず、取った人は元の slice をそのまま読む。元の言語が無くなれば
+  `language_take` の行も無くなり（cascade）、取った人の切り替えからも消える。
+  DL した言語は「削除するまで一生保持」── 取った人がアカウントを消すまで。
+  元が**編集**したとき取った側が次の起動で新しい方になるのは、この形の
+  帰結（別に決めていない）。元が**非公開**にしたときは未決。
+- Reason: 「DLしたら複製されて、いろんな人が使えるんだよね？…それは削除する
+  までは一生保持されるよね？ちなみに、dl元が言語を削除した場合は消えますよね？」
+  → 消える、で確定。
+- Affected features: DL、言語切り替え、アカウント削除、言語削除
+- Affected data: **サーバーは今のまま**（`language_take` は `language` の
+  削除で cascade、`schema.sql:315`）。**端末の索引の行は今は残る**：
+  起動の walk は「無いものを埋めて止まる」ので、サーバーから消えた言語の
+  `mine:false` の行が切り替えに空のまま残る。それを消すのは端末側の削除
+  なので DELETE REVIEW が要る（BACKLOG 2026-09-09）。
+- Affected docs: `docs/FEATURES.md`「Reading a downloaded language」、
+  `docs/BACKLOG.md`、`docs/CHECK-0907.md`
+- Implementation status: サーバー側 IMPLEMENTED（cascade）。端末の索引の行を
+  落とす道は **BACKLOG**（DELETE REVIEW 待ち）。
+
 ### お題の札は、保存は一つの綴り・見せるのは読む人の表示言語
 - Date: 2026-09-08
 - Area: お題のタグ（`www/sns.js` § DAY_TAG、`tagHTML`、`www/card.js` §
