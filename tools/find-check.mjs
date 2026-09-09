@@ -846,6 +846,64 @@ say(found.ask.indexOf('prompt=eq.') === -1,
 say(found.ask.indexOf('body->>mn') !== -1,
     '当たるのは本文の文字 (' + (found.ask.indexOf('body->>mn') !== -1) + ')');
 
+/* ---- 13b. 札を押して開く検索の箱も、読む人の言葉 -----------------------
+   「そのままでいいわけない」 OWNER 2026-09-09.
+
+   13 が押さえたのは**保存**です ── 綴りは一つ、`DAY_TAG`。**見せ方**は
+   2026-09-08 の決定で読む人の表示言語になり、投稿の本文（`tagHTML`）と
+   投稿画面の欄（`openPost('day')`）はそうなりました。**札を押して開いた
+   検索の箱だけが綴りのまま**残っていて、それがこの節です。
+
+   割るのは「箱に見える字」と「検索語」の二つで、二つ目の判定は作りません
+   ── `dayTagShow` / `dayTagStore` の二つの口が既にその判定です。箱に描く
+   ときに `dayTagShow`、打たれたものを受けるときに `dayTagStore`。だから
+   `snsQ` はいつでも綴りで、検索も `snsRecentAdd()` も何も変わりません。
+
+   四つ訊きます。英語で札を押したときの箱の字、そのとき保存された履歴、
+   履歴の行に見える字、そして日本語に戻したら箱も行も綴りに戻ること。
+   最後の一つが要るのは、**表示言語を変えても保存は動かない**というのが
+   2026-09-08 の決定そのものだからです。 */
+const dayBox = await pg.evaluate(() => {
+  var was = SET.ui, out = {};
+  function box(){
+    var e = document.createElement('div');
+    e.innerHTML = snsFieldHTML();
+    var f = e.querySelector('#sns-q');
+    return f ? f.value : '(箱が無い)';
+  }
+  function row(){
+    var e = document.createElement('div'), a;
+    e.innerHTML = snsRecentHTML();
+    a = e.querySelectorAll('.whrow .sl');
+    return a.length ? a[0].textContent : '(行が無い)';
+  }
+  PULL_GOT.recent = 1;
+  SET.recent = []; snsQ = ''; snsHits = null; snsFil = null;
+  SET.ui = 'en';
+  /* 押す。snsTagGo() は箱に入れて explore へ行き、snsGo() が履歴に入れます。 */
+  snsTagGo(DAY_TAG);
+  snsGo();
+  out.enBox = box();
+  out.enRow = row();
+  out.enSaved = (SET.recent || []).slice(0);
+  out.enQ = snsQ;
+  SET.ui = 'ja';
+  out.jaBox = box();
+  out.jaRow = row();
+  SET.ui = was;
+  return out;
+});
+say(dayBox.enBox === dayWord,
+    '英語で札を押すと箱の字は英語 (' + dayBox.enBox + ')');
+say(dayBox.enQ === '#今日のお題',
+    '検索語は綴りのまま (' + dayBox.enQ + ')');
+say(dayBox.enSaved.length === 1 && dayBox.enSaved[0] === '#今日のお題',
+    '履歴に入るのは綴り (' + JSON.stringify(dayBox.enSaved) + ')');
+say(dayBox.enRow === dayWord,
+    '履歴の行に見える字は英語 (' + dayBox.enRow + ')');
+say(dayBox.jaBox === '#今日のお題' && dayBox.jaRow === '#今日のお題',
+    '日本語に戻すと箱も行も綴り (' + dayBox.jaBox + ' / ' + dayBox.jaRow + ')');
+
 /* ---- 絞り込みに #今日のお題 の行が一つ ---------------------------------
    「絞り込み（おすすめ／フォロー中）に「#今日のお題」を足す」 OWNER
    2026-09-06。**この行は 2026-09-04 の「そこに出せなんて頼んでないけど」を

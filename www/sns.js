@@ -2023,8 +2023,26 @@ function pvScroll(e){
    pressing mean another; this one makes them the same thing. The 🔍 and the
    return key still have a job and it is the history -- snsGo() below. */
 var snsQ='', snsHits=null, snsSort='new';
+/* AND THE DAY'S TAG IS SHOWN THE WAY IT IS SHOWN EVERYWHERE ELSE.
+   「そのままでいいわけない」 OWNER 2026-09-09.
+
+   `snsQ` is the SEARCH -- what goes to the server, what the star keeps, what
+   the history stores -- so it holds the MARK and nothing here changes that
+   (§ THE TAG, and the decision of 2026-09-08 it is written under). What the
+   box SHOWS is the reader's own word, the same as the body of a post and the
+   composer's field.
+
+   THE TWO MOUTHS ARE THE ONES THAT ALREADY EXIST. Nothing here asks a second
+   time whether a query is the day's tag: `dayTagStore` is on the way in from
+   the field and `dayTagShow` on the way out to it, exactly as they are on the
+   way in from the composer and out to a post. A mark of its own saying "this
+   search came from the tag" would be a second answer to a question that has
+   one, and it would be wrong for somebody who typed the word themselves.
+
+   `dayTagStore` maps back from all ten languages, so the word typed by hand
+   in any of them is the same search as the word arriving off a press. */
 function snsSetQ(v){
-  snsQ=String(v||'');
+  snsQ=dayTagStore(String(v||''));
   lnGrow('sns-q');
   snsFind(snsQ, snsGot);
   var x=document.getElementById('sns-x');
@@ -2510,8 +2528,11 @@ function snsRecentHTML(){
   return '<div class="sec">'+esc(t('sns.recent'))+'</div>'+
     a.map(function(q){
       return '<div class="whrow">'+
+        /* The word is what was SEARCHED FOR and the row is what a person
+           reads, so the day's tag is drawn in their language here too. The
+           press still carries the stored word: it is the search. */
         '<button class="whgo"' + DO('snsPickRecent', [q]) + '>'+
-          '<span class="sl">'+esc(q)+'</span></button>'+
+          '<span class="sl">'+esc(dayTagShow(q))+'</span></button>'+
         '<button class="pmore"' + DO('snsDropRecent', [q]) + ' aria-label="'+
           esc(t('sns.recent.drop'))+'">'+ICON_CROSS+'</button>'+
       '</div>';
@@ -2634,7 +2655,7 @@ function snsFieldHTML(){
      rather than a class, because "saved" is a filled star and "not saved" is
      an outline of one, and that is the whole difference. It is only there when
      there is something to keep. */
-  return searchBox('sns', t('sns.search'), 'snsSetQ', snsQ, {
+  return searchBox('sns', t('sns.search'), 'snsSetQ', dayTagShow(snsQ), {
     attrs: ' enterkeyhint="search"' + KD('snsGo'),
     /* Its own, because emptying this one puts the answer away as well */
     clear: 'snsClearQ',

@@ -943,11 +943,26 @@ export function halfDone(){
                                                 SET.plan = 'free'; return h; }],
     /* The profile's other two lists. Each is empty on a fresh fixture, and an
        empty list draws neither a row nor anything a row carries. */
+    /* AND A POST THAT BEGINS @名前 IS ON THE 返信 SIDE, not the 投稿 side.
+       「返信にだけ出して」 OWNER 2026-09-09. It carries `toh` and no `to`
+       (2026-09-07), so 「what a reply is」 is postToWho() and not `to`.
+       **両方の状態が顔になっています** ── 返信の側に在ることと、投稿の側に
+       無いこと。間違いはたいてい誰も写真を撮らなかったほうで、ここでは
+       「投稿の側から消えたか」がそれです。 */
     ['the profile, replies', () => { pfTab='re'; POSTS.push({id:'pre', at:1, lang:langId,
         lname:'Shango', ln:'ke', who:'Aya', hd:'aya', mine:true, to:'p2',
-        mn:'what?', ui:'en'});
+        mn:'what?', ui:'en'},
+        {id:'pat1', at:2, lang:langId, lname:'Shango', ln:'kano tir',
+         who:'Aya', hd:'aya', mine:true, to:'', toh:'iri',
+         mn:'a mountain', ui:'en'});
         window.route='profile'; NAV=[{r:'profile'}];
-        const h=vProfile(); POSTS.pop(); pfTab='posts'; return h; }],
+        const h=vProfile(); POSTS.pop(); POSTS.pop(); pfTab='posts'; return h; }],
+    ['the profile, posts, with one addressed to somebody', () => { pfTab='posts';
+        POSTS.push({id:'pat1', at:2, lang:langId, lname:'Shango', ln:'kano tir',
+                    who:'Aya', hd:'aya', mine:true, to:'', toh:'iri',
+                    mn:'a mountain', ui:'en'});
+        window.route='profile'; NAV=[{r:'profile'}];
+        const h=vProfile(); POSTS.pop(); return h; }],
     ['the profile, likes', () => { pfTab='li'; const p=postById('p2'); p.lime=1; p.li=1;
         window.route='profile'; NAV=[{r:'profile'}];
         const h=vProfile(); delete p.lime; p.li=0; pfTab='posts'; return h; }],
@@ -1272,7 +1287,18 @@ export function halfDone(){
        その画面で、入っていないのは別の画面です ── どちらも歩かせないと、
        前を書き足す一行が消えても緑のまま出ます。 */
     ['the composer, opened from somebody\u2019s page', () => {
-        PW = pwBlank(); openPost('new', 'jjj');
+        PW = pwBlank(); openPost('new', 'jjj'); pwSetLn('kano tir');
+        const h = vForm(); PW = pwBlank(); return h; }],
+    /* AND THE SAME SCREEN WITH THE ✕ PRESSED. 「いいよ」 OWNER 2026-09-09.
+       宛先の行には二つの状態があり、間違いはたいてい誰も写真を撮らなかった
+       ほうで起きます ── ここでは「外したあと本文が残っているか」がそれです。 */
+    ['the composer, the addressee taken off', () => {
+        PW = pwBlank(); openPost('new', 'jjj'); pwSetLn('kano tir');
+        pwToOff();
+        /* この画面は打っている間 描き直されないので、`FORM.html` は開いた
+           ときのままです ── ✕ が消すのは画面のほう（pwToPaint）。写真は
+           押したあとの composer なので、同じ pwHTML() から組み直します。 */
+        FORM.html = pwHTML();
         const h = vForm(); PW = pwBlank(); return h; }],
     ['the composer, replying to somebody', () => {
         PW = pwBlank(); PW.to = 'p1'; openPost('reply');
@@ -1672,6 +1698,15 @@ export function halfDone(){
        その「同じ」を撮れる状態がどこにも無かった：縦書きの面は新規だけ、
        返信の面は横書きだけで、二つが交わる所を歩いたものが無い。
        OWNER 実機 142 の二つ目はここのことなので、ここに置く。 */
+    /* ♡ を押した瞬間 ── 答えが戻る前の画面。「ハート押して 1 つくやん？」
+       OWNER 2026-09-09。走っているあいだのメモリ（`PMARK`）だけの状態なので、
+       種にも写しにも無く、どの面も歩いていませんでした。素の `feed` が
+       押す前で、これが押した直後です。 */
+    ['a post whose \u2661 has just been pressed', () => {
+        const p = POSTS[0], k = String(p.id) + '|like';
+        PMARK[k] = { i: true, n: postNLike(p) + 1 };
+        window.route = 'feed'; NAV = [{ r:'feed' }];
+        const h = vFeed(); delete PMARK[k]; return h; }],
     /* A POST THAT NAMED SOMEBODY AND ANSWERS NOTHING. 「@したらもう勝手に
        ツイートがこの形式になるようにしたい」 OWNER 2026-09-07 ── `toh` は
        載っていて `to` は無い、という組み合わせがどの面にも無かった。返信は

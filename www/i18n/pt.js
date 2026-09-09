@@ -1221,6 +1221,7 @@ defLang('pt', (function(){
       'post.gone'             : "Essa publicação já não existe",
       'post.thread'           : "Tópico",
       'post.re.to'            : "Respondendo a {0}",
+      'post.re.off'            : 'Remover destinatário',
       "word.edit"        : "Editar",
       "word.del"         : "Apagar a palavra",
       "confirm.del"      : "Apagar {0}?",

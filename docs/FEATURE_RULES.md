@@ -254,7 +254,9 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected features: ♡、古い言語、管理画面
 - Affected data: ♡は保存されるものが増えない（画面の一時状態だけ）。復旧は
   サーバーに前の版が積まれる（作る時に DATA_MODEL を書く）。
-- Implementation status: ♡は `claude/r10-sns` に追加。古い言語は BACKLOG に
+- Implementation status: ♡は **IMPLEMENTED**（`claude/r10-sns`、2026-09-09 ──
+  `postLike()` と `PMARK`、`www/post.js`。押さえるのは `acct-check` 62、
+  「押した瞬間は動かず」の claim を書き換えた）。古い言語は BACKLOG に
   「作らない」。復旧は BACKLOG（リリース後、日数待ち）。
 
 ### 2026-09-09 の午後、画面で訊いて答えの出た十一

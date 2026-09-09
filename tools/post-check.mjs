@@ -2832,6 +2832,51 @@ const R = await pg.evaluate(async () => {
                    '", so @lingua is on the screen twice');
     }
 
+    /* ---- 23b. 宛先は外せる ---------------------------------------------
+       「いいよ」 OWNER 2026-09-09、「投稿画面の「Replying to @〇〇」に ✕ を
+       付けて外せるようにする」に対して。
+
+       行が出たあと、それを取り消す道がありませんでした。宛先は本文の外の
+       `PW.toh` なので、本文を消しても残ります（`docs/BACKLOG.md` 2026-09-08、
+       この commit で消しました）。回り道は「送る」か「下書きにする」しか
+       無く、どちらも投稿を一つ作ります。
+
+       押すのは本物の ✕ です ── DOM から拾って click() を投げるので、
+       `act-map.js` に名前が無ければここで止まります。四つ訊きます：✕ が在る
+       こと、押すと `PW.toh` が空になること、行が消えること、そして**本文が
+       残ること**。最後の一つが要るのは、宛先と本文を一緒に消す直し方が
+       一行で書けて、何も投げないからです。 */
+    {
+      const wasPW2 = PW;
+      PW = pwBlank();
+      openPost('new', 'jjj');
+      pwSetLn('kano tir');
+      render();
+      const row = document.getElementById('pw-to');
+      const off = row ? row.querySelector('[data-do="pwToOff"]') : null;
+      if (!off)
+        fails.push('the composer\u2019s 「Replying to @jjj」 line carries no ' +
+                   '\u2715. 「いいよ」 OWNER 2026-09-09 \u2014 there is no way ' +
+                   'to take the addressee off without sending or drafting ' +
+                   'the post (' + (row ? '"' + row.textContent + '"' : 'no line') + ')');
+      else {
+        off.click();
+        if (String(PW.toh || ''))
+          fails.push('pressing the \u2715 left the composer addressed to ' +
+                     PW.toh);
+        const row2 = document.getElementById('pw-to');
+        if (row2 && row2.innerHTML)
+          fails.push('pressing the \u2715 emptied PW.toh and left the line on ' +
+                     'the glass ("' + row2.textContent + '"). This screen is ' +
+                     'not redrawn while somebody is typing, so the line is ' +
+                     'painted by hand \u2014 pwToPaint()');
+        if (String(PW.ln || '') !== 'kano tir')
+          fails.push('pressing the \u2715 took the line with it ("' + PW.ln +
+                     '"). It takes the addressee and nothing else');
+      }
+      PW = wasPW2;
+    }
+
     /* a name with nothing behind it stays what somebody wrote */
     const n2 = POSTS.length;
     PW = pwBlank(); openPost(); render();

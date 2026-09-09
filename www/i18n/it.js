@@ -1214,6 +1214,7 @@ defLang('it', (function(){
       'post.gone'             : "Quel post non c’è più",
       'post.thread'           : "Conversazione",
       'post.re.to'            : "In risposta a {0}",
+      'post.re.off'            : 'Rimuovi destinatario',
       "word.edit"        : "Modifica",
       "word.del"         : "Cancellare la parola",
       "confirm.del"      : "Eliminare {0}?",

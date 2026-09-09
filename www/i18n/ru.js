@@ -1227,6 +1227,7 @@ defLang('ru', (function(){
       'post.gone'             : "Этой записи больше нет",
       'post.thread'           : "Ветка",
       'post.re.to'            : "В ответ {0}",
+      'post.re.off'            : 'Убрать получателя',
       "word.edit"         : "Изменить",
       "word.del"          : "Удалить слово",
       "confirm.del"       : "Удалить {0}?",
