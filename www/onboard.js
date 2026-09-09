@@ -711,7 +711,7 @@ function obBack(){
   if(ob.step===OB_SNS){ ob.step=OB_TOUR; GE=null; obTourGo(); return; }
   if(ob.step>0) obGo(ob.step-1);
 }
-function obLang(v){ SET.ui=v; save(); render(); }
+function obLang(v){ SET.ui=v; save(); netPrefsPut(); render(); }
 
 /* ---- the door, which is not a step ------------------------------------ */
 /* Signing in is the LAST step of the onboarding and the app does not open on
@@ -1882,6 +1882,12 @@ function obFinish(){
      and not a condition -- nothing here re-states what that file already
      says. */
   if(typeof netLangSync==='function') netLangSync();
+  /* AND HOW THE WALK LEFT THE APP SET UP. The drawing turned `myfont` on and
+     borrowing a character turned `showScript` on, both before there was an
+     account to put them under (www/core.js § SET_PREFS). This is the same
+     moment the language goes up and for the same reason: the door is the last
+     step, so it is the first time there is anywhere to send them. */
+  if(typeof netPrefsPut==='function') netPrefsPut();
   route='profile'; RENDERED=null; render(); window.scrollTo(0,0);
 }
 

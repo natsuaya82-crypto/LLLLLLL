@@ -7,6 +7,22 @@ refactor, a feature and a rename never arrive in the same diff.
 
 The order is the order to do them in.
 
+## `SET` に残った四つ（`order` `read` `voice` `script`）と `planV` は動かしていません（2026-09-09）
+
+設えの五つ（テーマ・表示言語・自作フォント・自作文字・キーボードのローマ字面）は
+`profile.prefs` へ移りました。`SET_PHONE` に残っているうち、次の五つは
+**別の質問**なので触っていません。
+
+- `order` `script` ── 移行の**元**です。`phases.js` と `letters.js` が読んで
+  言語の中へ写し、そのまま立たせてあります（`docs/DATA_SAFETY.md` 第2則）。
+  動かす前に「移行が全部済んだか」を言えるようにする必要があります。
+- `read` `voice` ── `store-check` が GAP と書いているとおり、**`www/` の
+  どこも読んでいません**。消すなら DELETE REVIEW です。
+- `planV` ── 段の側。段は `plan` 表と verify-plan が答えていて、そこは
+  この枝の受け持ちではありません。
+
+`done` と `obback` は 2 番の保留待ちです（`docs/reports/r8-item2-2026-09-08.md`）。
+
 ## 前から `SET.wsys` に入っていた書記体系を、言語の列へ写すかどうか（2026-09-09）
 
 書記体系は `language.wsys` になりました。`SET.wsys` に入っていた値を列へ

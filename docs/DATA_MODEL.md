@@ -138,7 +138,17 @@ saying that flag is temporary has to be written to the same place at the same
 moment. It was a variable, and a reload between the two left a phone claiming
 the onboarding was unfinished with nothing left saying otherwise. Cleared by
 `obReturn()`; it is a pending move, not a preference, and it is the one thing
-in `SET` that is meant to be short-lived. `lingua.me` (`ME`) is the person — the copy of their `profile` row. **Who they
+in `SET` that is meant to be short-lived. **How this account has the app set up is `profile.prefs`**, since 2026-09-09:
+one jsonb column carrying exactly `SET_PREFS` in `www/core.js` — the theme, the
+interface language, and the three switches about the drawn letters. All five
+were in `SET_PHONE` as 「how this handset is set up」, and that sentence was
+wrong about all five: signing in on a second phone gave somebody the app
+arranged the way that phone happened to be. `lingua.set` still holds them as
+the copy, filed under the account by `setFor()`, and what is left in
+`SET_PHONE` is `planUid`, `wldMoved`, `vvkb`, `planV`, and `done`/`obback`
+pending the decision in `docs/reports/r8-item2-2026-09-08.md`.
+
+`lingua.me` (`ME`) is the person — the copy of their `profile` row. **Who they
 follow and who follows them are not in it**, since 2026-09-09: `ME.fo` and
 `ME.fr` are neither read nor written (and not removed — what a phone already
 holds stays). The `follow` table is the answer, and both lists live in

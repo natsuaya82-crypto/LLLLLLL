@@ -389,7 +389,7 @@ function setLookCard(th){
     '<span class="thnm">'+t('theme.'+th)+'</span>'+
     '<span class="thtick">'+ICON_TICK+'</span></button>';
 }
-function setTheme(v){ SET.theme=v; save(); applyTheme(); render(); }
+function setTheme(v){ SET.theme=v; save(); netPrefsPut(); applyTheme(); render(); }
 /* Following the phone, or not. Turning it off has to land on one of the two
    cards, and the honest one is whichever the phone was already showing --
    otherwise the screen changes colour at the moment somebody says "stop
@@ -399,7 +399,7 @@ function setAuto(on){
   var dark=!!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
   setTheme(dark? 'dark' : 'light');
 }
-function setUi(l){ SET.ui=l; save(); render(); }
+function setUi(l){ SET.ui=l; save(); netPrefsPut(); render(); }
 /* Delete account: everything this phone holds, and the tokens with it.
 
    It used to empty the words, the sentences and the name and stop there, so

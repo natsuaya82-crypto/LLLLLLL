@@ -219,11 +219,17 @@ const FIELDS = {
   notAt:    { phone: 'how far down the notices somebody has read. THE SERVER HOLDS NO READ MARKER and that is a decision — 「サーバーの既読の表は要りません」, www/sns.js' },
   done:     { phone: 'whether the walk has been finished on this install. It is what tells the onboarding from the app' },
   obback:   { phone: 'where to come back to after the door, held between two screens of one journey' },
-  ui:       { phone: 'which of the ten interface languages this handset reads in' },
-  theme:    { phone: 'light or dark' },
-  myfont:   { phone: 'whether the font built from the drawn letters is used on screen' },
-  showScript: { phone: 'whether the drawn letters are shown rather than the roman ones' },
-  kbrom:    { phone: 'whether the keyboard shows its roman face' },
+  /* THE FIVE THAT WENT WITH THE ACCOUNT ON 2026-09-09. Every one of them
+     said 「this handset」 above this line until then, and that sentence was
+     wrong about all five: signing in on a second phone gave somebody the app
+     arranged the way that PHONE happened to be, not the way they arrange it.
+     `SET_PREFS` in www/core.js is the list and `profile.prefs` is the one
+     jsonb column that carries it. 「アカウントごとってずっと言ってるよな？」 */
+  ui:       { to: 'netPrefsPut' },
+  theme:    { to: 'netPrefsPut' },
+  myfont:   { to: 'netPrefsPut' },
+  showScript: { to: 'netPrefsPut' },
+  kbrom:    { to: 'netPrefsPut' },
   vvkb:     { phone: 'how much of THIS screen the phone\'s own keyboard covers. A measurement of one handset and meaningless on another' },
   wldMoved: { phone: 'the mark that 「what the language is for」 has been moved out of the settings and into the language. A migration mark' },
   /* `wsys` STOOD HERE AS A GAP AND IS GONE (2026-09-09). It was named rather
@@ -255,7 +261,14 @@ const SET_LOADER = {
      name it has just read out of the parked copy, so there is no field here
      that FIELDS does not already answer for -- what could be parked is what
      `SET` held, and every one of those is in the table. */
-  'core.js:SET[k]=got[k]': true
+  'core.js:SET[k]=got[k]': true,
+  /* netPrefsPull() handing this account back how it has the app set up.
+     The names it writes are `SET_PREFS` in www/core.js and nothing else --
+     it walks that list -- so every field it can touch is one FIELDS answers
+     for below, each with `netPrefsPut` as its road. Writing the five out by
+     name here would be that list a second time, which is the fault the list
+     exists to end. */
+  'net.js:SET[k]=p[k]': true
 };
 
 /* Comments carry `SET.x` in prose all over www/, so they come off first --

@@ -149,6 +149,10 @@ function bootSession(){
      「自己紹介を見せないって選択肢を俺はいつ与えた？」 It asks before it
      writes and takes the account's when this phone has none. */
   netProfSync();
+  /* And how this account has the app set up -- the theme, the interface
+     language and the three switches about the drawn letters
+     (www/core.js § SET_PREFS). */
+  netPrefsPull();
 }
 /* A session that is still good comes back here and nothing is asked. What
    used to be in the `bad` half was netAnon(): no session, so make one, without

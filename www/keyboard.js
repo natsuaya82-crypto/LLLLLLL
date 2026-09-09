@@ -3786,7 +3786,7 @@ function kbSetPatGo(pat){
    than about what the keyboard IS. On by default, because the day it matters
    is the first one. */
 function kbRomOn(){ return SET.kbrom!==false; }
-function setKbRom(){ SET.kbrom=!kbRomOn(); save(); render(); }
+function setKbRom(){ SET.kbrom=!kbRomOn(); save(); netPrefsPut(); render(); }
 /* How the keyboard gets onto the phone, behind the `?` in the bar.
    「ここの説明とボタンも嫌だ」
 

@@ -1985,7 +1985,7 @@ const R = await pg.evaluate(async () => {
     localStorage.setItem('lingua.me.d46b', '{"name":"B"}');
     localStorage.setItem('lingua.posts.d46b', '[{"id":"pb"}]');
   }catch(e){}
-  SET.theme = 'dark'; SET.ui = 'ja'; save();
+  SET.theme = 'dark'; SET.ui = 'ja'; SET.wldMoved = true; save();
   var wasConfirm = window.confirm; window.confirm = function(){ return true; };
   try{ wipeHere(); }catch(e){ no('46: 削除が投げた ── ' + e.message); }
   window.confirm = wasConfirm;
@@ -1996,7 +1996,11 @@ const R = await pg.evaluate(async () => {
   if (!slRd(langKeyOf('Lb46','words'))) no('46: 別のアカウントの単語が消えた');
   if (!localStorage.getItem('lingua.me.d46b')) no('46: 別のアカウントのプロフィールが消えた');
   if (!localStorage.getItem('lingua.posts.d46b')) no('46: 別のアカウントの投稿が消えた');
-  if (SET.theme !== 'dark') no('46: この端末の設え（テーマ）まで消した');
+  /* テーマと表示言語はアカウントのものになりました（2026-09-09、
+     www/core.js § SET_PREFS）。だから消したアカウントと一緒に落ちるのが
+     正しい ── ここで見るのは、**この端末の設え**として残るもののほうです。
+     `wldMoved` は移行の印で、どのアカウントのものでもありません。 */
+  if (SET.wldMoved !== true) no('46: この端末の移行の印まで消した');
   if (SET.plan !== 'free') no('46: 消したアカウントの段が残っている');
   say('46: アカウント削除は、そのアカウントの言語・単語・投稿・段だけ ── '
     + '別のアカウントのものは一つも動かず、端末の設えも残る');
@@ -2342,12 +2346,15 @@ const R = await pg.evaluate(async () => {
   if (SET.__later57 !== 'この端末で作られた、明日の欄')
     no('57: 足したばかりの欄が、本人が戻っても返ってこない ── ' + JSON.stringify(SET.__later57));
   delete SET.__later57;
-  /* そして逆向き ── この端末の設えは、誰が来ても動かない。 */
-  SET.theme = 'dark'; SET.ui = 'ja'; save();
+  /* そして逆向き ── **この端末の**設えは、誰が来ても動かない。テーマと
+     表示言語は 2026-09-09 からアカウントのものなので、ここではない
+     （64 番がそちらを持っています）。残っているのは移行の印とこの画面の
+     測りだけです。 */
+  SET.wldMoved = true; SET.vvkb = 260; save();
   netOut(); arrive(B);
-  if (SET.theme !== 'dark' || SET.ui !== 'ja')
-    no('57: この端末の設え（テーマ・表示言語）が、人が変わって動いた ── ' +
-       SET.theme + ' / ' + SET.ui);
+  if (SET.wldMoved !== true || SET.vvkb !== 260)
+    no('57: この端末の設え（移行の印・この画面の測り）が、人が変わって動いた ── ' +
+       SET.wldMoved + ' / ' + SET.vvkb);
   say('57: 一覧は数えていて並べていない ── 明日足す欄もその人のもの、端末の設えだけが残る');
 
   /* ---- 58. スタッフの @ を打って押すと、呼び出しが一回出る ---------------
@@ -2732,6 +2739,74 @@ const R = await pg.evaluate(async () => {
     SET.plan = 'free'; SET.planWas = 'free'; save();
     say('63: 書記体系は言語のもの ── 列へ書き、答えが戻ってから動き、' +
         '言語ごとに違い、人の設定には入らない');
+  }
+
+  /* ---- 64. アプリの設えはアカウントのもの --------------------------------
+     「端末ごとにやることなんてねえよ」「アカウントごとってずっと言ってるよな？」
+     OWNER 2026-09-03、そして「端末に残すものないんですけど。サーバーで同じ
+     機能になるように代替して」 OWNER 2026-09-08。
+
+     テーマ・表示言語・自作フォントを使うか・自作文字を出すか・キーボードの
+     ローマ字面。五つとも `SET_PHONE` に「この端末の設え」として入っていて、
+     その一文が五つとも間違いでした ── **二台目にサインインすると、その端末が
+     たまたまなっている形**でアプリが開きます。
+
+     四本訊きます:
+     1. 一つ変えると `profile.prefs` へ PATCH が飛び、五つとも載る
+     2. サインインで行が降りてきて、画面がその形になる
+     3. 行が無ければ写しを触らない（「行が無い」は「何も選んでいない」ではない）
+     4. `SET_PHONE` はもうこの五つを「この端末の設え」と言っていない
+
+     赤を見た形（2026-09-09）: `SET_PREFS` を空にすると 1 と 2 が赤、
+     五つを `SET_PHONE` へ戻すと 4 が赤。 */
+  start();
+  netOut(); arrive(A);
+  {
+    const realSend64 = netSend, realGet64 = netGet;
+    let put64 = null;
+    netSend = (method, path, body) => {
+      if (method === 'PATCH' && path.indexOf('/rest/v1/profile') === 0 &&
+          body && body.prefs) put64 = body.prefs;
+    };
+    SET.theme = 'dark'; SET.myfont = false; SET.showScript = false;
+    SET.kbrom = true;
+    setUi('ja');
+    if (!put64) no('64: 設えを変えても profile.prefs へ出ていない');
+    else {
+      if (put64.ui !== 'ja') no('64: 変えた欄が載っていない — ' + JSON.stringify(put64));
+      for (let z = 0; z < SET_PREFS.length; z++)
+        if (!Object.prototype.hasOwnProperty.call(put64, SET_PREFS[z]))
+          no('64: 五つのうち ' + SET_PREFS[z] + ' が載っていない — ' +
+             JSON.stringify(put64));
+    }
+    /* 降りてくる。 */
+    SET.theme = 'system'; SET.ui = 'en'; SET.myfont = false;
+    SET.showScript = false; SET.kbrom = true; setKeep();
+    netGet = (path, ok) => {
+      if (path.indexOf('/rest/v1/profile?select=prefs') === 0)
+        return ok([{ prefs: { theme:'dark', ui:'ja', myfont:true,
+                              showScript:true, kbrom:false } }]);
+      return ok([]);
+    };
+    netPrefsPull();
+    if (SET.theme !== 'dark' || SET.ui !== 'ja' || SET.myfont !== true ||
+        SET.showScript !== true || SET.kbrom !== false)
+      no('64: サインインで降りてきた設えが画面に入っていない — ' +
+         JSON.stringify([SET.theme, SET.ui, SET.myfont, SET.showScript, SET.kbrom]));
+    /* 行が無ければ触らない。 */
+    netGet = (path, ok) => ok([]);
+    netPrefsPull();
+    if (SET.theme !== 'dark' || SET.ui !== 'ja')
+      no('64: 行が無いのを「何も選んでいない」と読んで、写しを消した — ' +
+         JSON.stringify([SET.theme, SET.ui]));
+    /* この端末の設えの一覧から外れている。 */
+    for (let z = 0; z < SET_PREFS.length; z++)
+      if (SET_PHONE.indexOf(SET_PREFS[z]) >= 0)
+        no('64: SET_PHONE がまだ ' + SET_PREFS[z] + ' をこの端末の設えだと言っている');
+    netSend = realSend64; netGet = realGet64;
+    SET.theme = 'system'; SET.ui = 'en'; setKeep();
+    say('64: アプリの設えはアカウントのもの ── profile.prefs へ上がり、' +
+        'サインインで降り、行が無ければ触らない');
   }
 
   return out;

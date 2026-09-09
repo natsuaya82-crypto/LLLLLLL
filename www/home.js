@@ -351,7 +351,7 @@ FORM_OPEN.pick=function(x){ openPick(x); };
    letter can have, so taking one is setting that letter's shape. */
 function ltTakeChar(lid, ch){
   ltSetChar(lid, ch);
-  SET.showScript=true; save(); installScriptFont();
+  SET.showScript=true; save(); netPrefsPut(); installScriptFont();
   if(here().r==='form') back(); else render();
 }
 function takeOwn(){

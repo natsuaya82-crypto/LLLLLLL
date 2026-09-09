@@ -1018,6 +1018,64 @@ function netProfPut(fields, ok, bad){
   netSend('PATCH', '/rest/v1/profile?id=eq.'+encodeURIComponent(SESS.uid),
           fields, SESS.at, ok, bad);
 }
+/* HOW THIS ACCOUNT HAS THE APP SET UP, BOTH WAYS.
+   -------------------------------------------------------------------------
+   「端末ごとにやることなんてねえよ」「アカウントごとってずっと言ってるよな？」
+   OWNER 2026-09-03.
+
+   `SET_PREFS` in www/core.js is the list -- the theme, the interface
+   language, and the three switches about the drawn letters -- and
+   `profile.prefs` is one jsonb column holding exactly it. This file carries
+   the object and looks inside it for nothing.
+
+   DOWN AT A SIGN-IN AND UP WHEN ONE MOVES. A setting has to move on the
+   screen the moment it is pressed -- a theme that waits for a server is a
+   screen somebody presses twice -- so the press writes the copy and sends,
+   and the ROW is what the next sign-in reads. That is netAvSync()'s shape and
+   not the 公開 switch's, and the difference is what is at stake: nothing
+   anybody made is here, and the worst a send that did not land can cost is
+   the theme being what it was on the phone that last spoke.
+
+   NO ROW IS NOT AN EMPTY SETUP -- the same sentence netProfSync() carries one
+   function up. An account whose row has not been made yet has not chosen
+   anything, and writing five defaults over the copy would be this road taking
+   something away rather than bringing it. */
+function netPrefsPull(){
+  if(!netSignedIn() || !SESS || !SESS.uid) return;
+  netGet('/rest/v1/profile?select=prefs&limit=1&id=eq.'+
+         encodeURIComponent(SESS.uid),
+    function(d){
+      var row=(d && d.length)? (d[0]||{}) : null, p, i, k, drew=false;
+      if(!row) return;
+      p=row.prefs;
+      if(!p || typeof p!=='object') return;
+      for(i=0;i<SET_PREFS.length;i++){
+        k=SET_PREFS[i];
+        if(!Object.prototype.hasOwnProperty.call(p, k)) continue;
+        if(SET[k]===p[k]) continue;
+        SET[k]=p[k]; drew=true;
+      }
+      if(drew){
+        setKeep();
+        /* The theme is painted rather than drawn: applyTheme() writes the
+           attribute the stylesheet's two blocks hang off, and render() alone
+           would leave the page in the last one. */
+        if(typeof applyTheme==='function') applyTheme();
+        if(typeof installScriptFont==='function') installScriptFont();
+        render();
+      }
+    }, function(){});
+}
+function netPrefsPut(){
+  if(!netSignedIn() || !SESS || !SESS.uid) return;
+  var o={}, i, k;
+  for(i=0;i<SET_PREFS.length;i++){
+    k=SET_PREFS[i];
+    if(SET[k]!==undefined) o[k]=SET[k];
+  }
+  netSend('PATCH', '/rest/v1/profile?id=eq.'+encodeURIComponent(SESS.uid),
+          {prefs:o}, SESS.at, function(){}, function(){});
+}
 function netAvSync(){
   if(!netSignedIn() || !SESS || !SESS.uid) return;
   var av=postAvatar(), now=JSON.stringify(av||null);

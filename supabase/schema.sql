@@ -199,6 +199,30 @@ alter table profile add column if not exists banned_why text;
 -- read, and this is not on it.
 alter table profile add column if not exists handle_at timestamptz;
 
+-- ---- HOW THIS ACCOUNT HAS THE APP SET UP ------------------------------
+-- 「端末ごとにやることなんてねえよ」「アカウントごとってずっと言ってるよな？」
+-- OWNER 2026-09-03, and 「端末に残すものないんですけど。サーバーで同じ機能に
+-- なるように代替して」 OWNER 2026-09-08.
+--
+-- The theme, the interface language, whether the drawn font is used on screen,
+-- whether the drawn letters are shown rather than the roman ones, and whether
+-- the keyboard shows its roman face. Every one of them was a field of
+-- `lingua.set` on the handset and named in SET_PHONE as 「how this handset is
+-- set up」 -- so signing in on a second phone gave somebody the app arranged
+-- the way that phone happened to be, not the way they arrange it.
+--
+-- ONE COLUMN AND NOT FIVE. What SET holds is www/core.js's to say (SET_PREFS),
+-- and five columns here would be that list written down a second time, in
+-- another language, for a server that never looks inside. Adding a sixth
+-- setting is a name on that list and nothing here.
+--
+-- jsonb and not text: it is an object either way, and jsonb is what the rest
+-- of this file already uses for `av`. The server does not read it.
+--
+-- IT IS NOT IN `profile_seen`. This is how somebody has their own app set up
+-- and is nobody else's business -- the view is what other people may read.
+alter table profile add column if not exists prefs jsonb not null default '{}'::jsonb;
+
 -- ---- what ------------------------------------------------------------------
 -- A language. Published or not; a language nobody published is a private
 -- backup of what is on the phone.

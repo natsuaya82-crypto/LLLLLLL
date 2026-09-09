@@ -1501,8 +1501,37 @@ function planKeep(id){
    behind are handed to a stranger. tools/store-check.mjs holds the two halves
    against each other -- a name here has to be one it calls the handset's, and
    a field it puts on a road to the server may not appear here at all. */
-var SET_PHONE=['theme','ui','planUid','planV','done','obback','myfont',
-               'showScript','kbrom','vvkb','wldMoved',
+/* HOW THIS ACCOUNT HAS THE APP SET UP, and it goes with the account.
+   -------------------------------------------------------------------------
+   「端末ごとにやることなんてねえよ」「アカウントごとってずっと言ってるよな？」
+   OWNER 2026-09-03, and 「端末に残すものないんですけど。サーバーで同じ機能に
+   なるように代替して」 OWNER 2026-09-08.
+
+   These five sat in SET_PHONE as 「how this handset is set up」, beside the
+   theme, and that sentence was wrong about all of them: signing in on a
+   second phone gave somebody the app arranged the way that PHONE happened to
+   be. `profile.prefs` is one jsonb column carrying exactly this list --
+   netPrefsPut() sends it, netPrefsPull() brings it back at a sign-in, and
+   adding a sixth setting is a name here and nothing else.
+
+   THE COPY IS STILL ON THE PHONE and is filed under the account by setFor(),
+   the way `lingua.me` is: with no signal the app is arranged the way it was
+   last seen, which is what a copy is for. What changed is which of the two is
+   the RECORD. */
+var SET_PREFS=['theme','ui','myfont','showScript','kbrom'];
+/* WHAT IS LEFT IS THIS HANDSET'S SETUP, AND THERE IS VERY LITTLE OF IT.
+   `planUid` says which account's settings are live here; `wldMoved` is a
+   migration mark; `vvkb` is a MEASUREMENT of this screen and is meaningless
+   on another phone. `done` and `obback` are the onboarding's, and they are
+   here under protest -- 「セッションが無い」 cannot tell a phone out of the box
+   from one somebody signed out of, and after an account is deleted there is no
+   server left to ask (docs/reports/r8-item2-2026-09-08.md). The owner is
+   deciding that one.
+
+   `planV`, `order`, `read`, `voice` and `script` are NOT in this list and are
+   not settled either: they are the plan's and the language-making side's, and
+   moving them is a different question from this one. docs/BACKLOG.md. */
+var SET_PHONE=['planUid','planV','done','obback','vvkb','wldMoved',
                'order','read','voice','script'];
 /* The fields of `SET` that are a PERSON's, counted rather than named. Asked of
    a parked copy as well as of `SET` itself: a field this account has and this
