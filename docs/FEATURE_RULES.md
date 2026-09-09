@@ -218,6 +218,33 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### DL 言語の四つ ── 空で残さない・非公開は新規 DL を止めるだけ・↓ は切り替えない・返す道はスライド
+- Date: 2026-09-09（同日の「印」の決定の続き）
+- Area: ダウンロードした言語（`www/net.js` § netTakenDown、`www/home.js`
+  § 言語切り替え・wldGet、`supabase/schema.sql` の slice_read / take_make）
+- Decision:
+  1. **元が消えた DL 言語は端末からも消える。**「空で残さないで。消えたら
+     消えるのよ。」切り替えの行も slice も、`language_take` の答えに無くなった
+     時に落ちる。「答えが来ていない」（null）では何も落とさない。
+  2. **非公開は新規 DL を止めるだけ。**「非公開にしたら新規 dl だけできない
+     だけ」── 既に取った人は読み続ける（サーバーの `slice_read` が取った人に
+     開く）。新しく取る道は閉じる（記事が描かれない＋`take_make` が断る）。
+  3. **↓ はその言語に切り替えない。**「6 切り替えなくていい。」記事に留まる
+     （今の形で確定、`dl-check` の「開いたまま」の claim がそれ）。
+  4. **DL 言語を返す道は、言語切り替え画面の行をスライドして消す**（メモ、
+     まだ作らない）。「言語変更画面をスライドで消せる、メモしといて」。作る
+     日は DELETE REVIEW。
+- Reason: オーナーの言葉そのまま（上）。
+- Affected features: DL、言語切り替え、公開 / 非公開、記事
+- Affected data: 1 は**端末の索引の行と slice を消す**（DELETE REVIEW を
+  `docs/CHANGELOG.md` に先に書く）。2 は **schema.sql**（`slice_read` に
+  「取った人」を足す、`take_make` に「公開中」を足す）── **SQL の流し直しが
+  要る**。3・4 はデータ無し。
+- Affected docs: `docs/FEATURES.md`「Reading a downloaded language」、
+  `docs/BACKLOG.md`、`docs/CHECK-0907.md`、`supabase/setup.md`
+- Implementation status: 1・2 は `claude/r9-dl` で作業中（2026-09-09）。
+  3 は IMPLEMENTED（今の形）。4 は BACKLOG。
+
 ### DL した言語は「印」── 元が消えれば取った側からも消える
 - Date: 2026-09-09
 - Area: ダウンロードした言語（`language_take`、`www/net.js` § netTakenDown /
