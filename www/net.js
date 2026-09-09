@@ -2993,6 +2993,31 @@ function netFindWho(q, ok, bad, more){
    and the search already use, so what comes back is a post like any other and
    nothing here decides what one looks like. Reading needs no account --
    `post_read` in schema.sql is `using (true)`. */
+/* HOW MANY, AND WHETHER YOU ARE ONE OF THEM -- ONE POST, ASKED AGAIN.
+   -------------------------------------------------------------------------
+   「端末に残すものないんですけど。サーバーで同じ機能になるように代替して」
+   OWNER 2026-09-08.
+
+   The numbers under a post are the server's arithmetic and nothing else
+   (www/post.js § postNLike). Pressing the heart used to move a number this
+   phone was keeping and send the flag afterwards; there is no number here any
+   more, so the press sends and then ASKS -- and what comes back is what the
+   thumb moves to.
+
+   It is the five columns and nothing else: the body, the author and the rest
+   of the post are already on the phone and are not the server's to change
+   (netRow's own sentence). One small row, on a press somebody made.
+
+   `post_seen` and netRow() again, so what a count means is written in one
+   place and this is not a second reader of the same view. */
+function netPostCounts(sid, ok, bad){
+  var id=String(sid||'');
+  if(!id){ bad(null, 0, 'post \u2212'); return; }
+  netGet('/rest/v1/post_seen?select=id,author,created_at,reply_to,body,hidden_at,author_out'+
+         ',likes,boosts,replies,i_like,i_boost'+
+         '&id=eq.'+encodeURIComponent(id)+'&limit=1',
+    function(d){ ok((d && d.length)? netRow(d[0]) : null); }, bad);
+}
 function netPostById(id, ok, bad){
   netGet('/rest/v1/post_seen?select=id,author,created_at,reply_to,body,hidden_at,author_out'+
          '&id=eq.'+encodeURIComponent(String(id||''))+'&limit=1',

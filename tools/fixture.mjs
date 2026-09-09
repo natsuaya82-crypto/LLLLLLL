@@ -196,6 +196,17 @@ export function seed(){
               them, and the space between the words is text. */
            {id:'p2', at:Date.now()-7200000, lang:'other', lname:'Vethi', ln:'qel dross',
             who:'Iri', hd:'iri', mine:false, av:{ch:'Ж'},
+            /* AND THE NUMBERS THE SERVER COUNTED. 「端末に残すものないんです
+               けど」 OWNER 2026-09-08 ── 数は `post_seen` のもので、端末は
+               一つも持ちません。だからサーバーが答えた投稿だけが数を出せる。
+               ここに一つ無いと、歩きは埋まった心も数字も一度も描かず、
+               「まだ訊いていない」しかどの検査にも出てきません。
+
+               `sid` は付けません ── 付けると、描かれている投稿を訊き直す道
+               （netPostsSeen）が実際に一本出て行き、サーバーの無い歩きでは
+               そのたびに「接続できません」が画面の上に立ちます。ここで要る
+               のは数を持った投稿であって、サーバーに在る投稿ではありません。 */
+            nlike:12, nboost:3, nreply:1, ilike:true, iboost:false,
             ink:{g:[[{pts:[[150,650],[400,150],[650,650]]}],
                     [{pts:[[200,200],[600,200]]}, {pts:[[400,200],[400,640]]}]],
                  s:[0, 1, 0, ' ', 1, 0, 1, 1, 0]},

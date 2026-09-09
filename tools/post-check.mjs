@@ -414,37 +414,65 @@ const R = await pg.evaluate(async () => {
     fails.push('a post with no row on the server could not be deleted');
   netSend = wasSend;
 
-  /* ---- 8. a reply that is deleted stops being counted ---------------- */
-  /* 「リプライ消したのに数字1のまま」 -- pwSendWith() adds one to the post
-     being answered and nothing ever took it back, so a post whose only reply
-     was deleted said 1 forever, pointing at nothing. */
+  /* ---- 8. 返信の数は端末が数えない ------------------------------------
+     「端末に残すものないんですけど。サーバーで同じ機能になるように代替して」
+     OWNER 2026-09-08。
+
+     「リプライ消したのに数字1のまま」は、**端末が数を持っていたから**起きた
+     ことでした。`pwSendWith()` が答えた投稿に 1 足し、消しても戻らない。
+     戻すほうを足しても、二台目では合いません ── 数はサーバーの
+     `post_seen.replies` で、端末は一つも数えません。
+
+     三本訊きます:
+     1. 返信を送っても、端末の中の数（`re`）は一つも動かない
+     2. 返信が**サーバーに届いたら**、答えた投稿を訊き直す
+     3. 返信を消したときも訊き直す（1 引くのではなく）
+
+     赤を見た形（2026-09-09）: `pwSendWith()` に `up.re=(up.re||0)+1` を戻すと
+     1 が赤。`postSend()` の `postCountsPull(p.to)` を外すと 2 が赤。 */
   const host = POSTS.filter(x => !x.to)[0];
-  const wasRe = (host && host.re) || 0;
+  host.sid = host.sid || 'srv-host-1';
+  const wasRe = (host.re || 0);
+  const wasSend8 = netSend, wasGet8 = netGet;
+  const sent8 = [], got8 = [];
+  netSend = function (method, path, body, tok, ok2) {
+    sent8.push(method + ' ' + path);
+    setTimeout(function () { ok2([{ id: 'srv-reply-1' }]); }, 0);
+  };
+  netGet = function (path, ok2) {
+    got8.push(path);
+    setTimeout(function () {
+      ok2([{ id: host.sid, author: 'someone-else',
+             created_at: '2026-09-01T00:00:00Z', body: { ln: 'host' },
+             likes: 0, boosts: 0, replies: 4, i_like: false, i_boost: false }]);
+    }, 0);
+  };
   PW = pwBlank(); PW.to = host.id; PW.ln = 'sar';
   pwSend();
-  await new Promise(r => setTimeout(r, 200));
-  if (((host.re) || 0) !== wasRe + 1)
-    fails.push('a reply did not count on the post it answered, so nothing ' +
-               'below this is a test of taking it back');
+  await new Promise(r => setTimeout(r, 400));
+  if ((host.re || 0) !== wasRe)
+    fails.push('a reply was sent and the PHONE counted it: `re` went ' + wasRe +
+               ' -> ' + host.re + '. The count is post_seen.replies and this ' +
+               'handset keeps none — a number it works out itself is the one ' +
+               'nothing can correct');
+  if (!got8.some(x => x.indexOf('post_seen') >= 0 && x.indexOf(host.sid) >= 0))
+    fails.push('a reply reached the server and the post it answers was not ' +
+               'asked about again: ' + JSON.stringify(got8));
+  if (postNReply(host) !== 4)
+    fails.push('the post does not show the number the server counted — ' +
+               postNReply(host) + ', not 4');
+
   const reply = POSTS.filter(x => x.to === host.id).pop();
+  got8.length = 0;
   postDel(reply ? reply.id : '');
   if (popOn()) popYes();
-  if (((host.re) || 0) !== wasRe)
-    fails.push('the post says ' + host.re + ' replies and its reply was ' +
-               'deleted. A count of something that is gone points at nothing, ' +
-               'and there is no way to press it and find out');
-  /* And it must not go under: a count that was already wrong is not put right
-     by being made negative. */
-  host.re = 0;
-  PW = pwBlank(); PW.to = host.id; PW.ln = 'mos';
-  pwSend();
-  await new Promise(r => setTimeout(r, 200));
-  const r2 = POSTS.filter(x => x.to === host.id).pop();
-  host.re = 0;
-  postDel(r2 ? r2.id : '');
-  if (popOn()) popYes();
-  if (((host.re) || 0) < 0)
-    fails.push('deleting a reply took a count below zero');
+  await new Promise(r => setTimeout(r, 400));
+  if ((host.re || 0) !== wasRe)
+    fails.push('deleting a reply moved the phone\'s own count: ' + host.re);
+  if (!got8.some(x => x.indexOf('post_seen') >= 0 && x.indexOf(host.sid) >= 0))
+    fails.push('a reply was deleted and the post it answered was not asked ' +
+               'about again: ' + JSON.stringify(got8));
+  netSend = wasSend8; netGet = wasGet8;
 
   /* ---- 8b. today's prompt is read in the READER's language -----------
      「今日のお題だけ、毎回その人の表示言語になるようにできないの？…今日のお題

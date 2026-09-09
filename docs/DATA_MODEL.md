@@ -457,10 +457,17 @@ The one piece of **frozen** data in the app.
   ink?, tr?, pics?, pic?, pin?, pv?, vo?, ed?, to?, toh?, sid? }
 ```
 
-`li`, `bo` and `re` are the counts — likes, boosts, replies — and they are the
-one part of a post that is **not** frozen: `postNLike()` and its two neighbours
-in `www/post.js` prefer `nlike`/`nboost`/`nreply` when the server has answered
-and fall back to these. `pr` is the id of the prompt this was written to, if it
+`li`, `bo` and `re` were the counts — likes, boosts, replies — and **nothing
+reads or writes them since 2026-09-09.** The counts are the server's:
+`post_seen` carries `likes`/`boosts`/`replies` and `i_like`/`i_boost`, netRow()
+puts them on as `nlike`/`nboost`/`nreply`/`ilike`/`iboost`, and `postNLike()`
+and its four neighbours in `www/post.js` read those and nothing else — no
+answer is **0**, because「nobody has pressed this」and「this phone has not
+asked」look the same on a screen and neither of them is「somebody pressed it」.
+They are the one part of a post that is **not** frozen, and they are not on the
+post at all now: they arrive with the row and are replaced by the next answer
+(`postFresh()`). The old fields are still in `lingua.posts` on every phone that
+has this app and are not removed. `pr` is the id of the prompt this was written to, if it
 was written to one; the words of the prompt are not on the post. `sid` is the
 post's row on the server, put on by `postSid()` after it goes up — a post with
 no `sid` has never been up, the same sentence `LANGS[id].sid` carries.

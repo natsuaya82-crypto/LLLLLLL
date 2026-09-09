@@ -2526,6 +2526,83 @@ const R = await pg.evaluate(async () => {
         'サインアウト中と別の人には開かない');
   }
 
+  /* ---- 62. 投稿の数と、自分が押したかは、サーバーのもの ------------------
+     「端末に残すものないんですけど。サーバーで同じ機能になるように代替して」
+     OWNER 2026-09-08。
+
+     答えは `post_seen` の五つの列です。2026-09-08 まで二つありました ──
+     端末が `li`/`bo`/`re` と `lime`/`bome` を持っていて、サーバーが何も
+     言っていない投稿ではそちらを読んでいました。だから**この端末が自分で
+     出した数が、直しようもなく画面に残り**、別の端末は違う数を出します。
+
+     四本訊きます:
+     1. 写しの中の数は読まない ── `li:99 lime:true` を持つ投稿が 0 と空の心
+     2. 押した瞬間は動かない ── 答えが戻ってから動く
+     3. 戻ってきたら、サーバーが数えた数になる（自分で足さない）
+     4. 落ちたら何も動かない。そして写しの欄は書き換えも削除もされない
+
+     赤を見た形（2026-09-09）: `postNLike()` に `: ((p && p.li)||0)` を戻すと
+     1 が赤（99 が出る）。`postLike()` を先に動かす形に戻すと 2 が赤。 */
+  start();
+  netOut(); arrive(A);
+  {
+    const realSend62 = netSend, realGet62 = netGet;
+    /* 古い版がこの端末に残した数。人の仕事ではなく、この端末の足し算です。 */
+    POSTS = [{ id:'q1', sid:'S1', at:1, who:'B', hd:'b', ln:'むこうの投稿',
+               li:99, bo:88, re:77, lime:true, bome:true }];
+    savePosts();
+
+    let p62 = postById('q1');
+    if (postNLike(p62) !== 0)
+      no('62: 写しの中の数を読んでいる — いいね ' + postNLike(p62));
+    if (postNBoost(p62) !== 0 || postNReply(p62) !== 0)
+      no('62: 写しの中の数を読んでいる — リポスト ' + postNBoost(p62) +
+         '、返信 ' + postNReply(p62));
+    if (postILike(p62) || postIBoost(p62))
+      no('62: 写しの中の「押した」を読んでいる');
+
+    /* 押す。返事は握っておいて、押した瞬間の画面を読みます。 */
+    let sent = [], asked = '', release = null;
+    netSend = (m, path, body, tok, ok2, bad2) => {
+      sent.push(m + ' ' + path);
+      release = () => ok2([]);
+    };
+    netGet = (path, ok2) => {
+      asked = path;
+      ok2([{ id:'S1', author:B, created_at:'2026-08-30T00:00:00Z',
+             body:{ ln:'むこうの投稿' }, likes:12, boosts:0, replies:0,
+             i_like:true, i_boost:false }]);
+    };
+    postLike('q1');
+    const atOnceN = postNLike(postById('q1')), atOnceI = postILike(postById('q1'));
+    if (!sent.length || sent[0].indexOf('/rest/v1/react') < 0)
+      no('62: 押しても react に行が出ていない — ' + JSON.stringify(sent));
+    if (atOnceN !== 0 || atOnceI)
+      no('62: 答えが戻る前に画面が動いた — ' + atOnceN + '、' + atOnceI);
+    if (release) release();
+    const nowN = postNLike(postById('q1')), nowI = postILike(postById('q1'));
+    if (asked.indexOf('post_seen') < 0 || asked.indexOf('likes') < 0)
+      no('62: 答えのあとに post_seen を訊いていない — ' + asked);
+    if (nowN !== 12 || !nowI)
+      no('62: サーバーが数えた数になっていない — ' + nowN + '、' + nowI +
+         '（自分で 1 足していないか）');
+
+    /* 落ちたとき。何も動かず、写しの欄も触られない。 */
+    netSend = (m, path, body, tok, ok2, bad2) => { bad2(null, 0, 'down'); };
+    netGet = (path, ok2) => ok2([]);
+    postBoost('q1');
+    const q62 = postById('q1');
+    if (postNBoost(q62) !== 0 || postIBoost(q62))
+      no('62: 落ちたのにリポストが動いた — ' + postNBoost(q62));
+    if (q62.li !== 99 || q62.lime !== true || q62.bo !== 88 || q62.re !== 77)
+      no('62: 写しの中の欄が書き換えられた（消しも書き換えもしない） — ' +
+         JSON.stringify({ li:q62.li, lime:q62.lime, bo:q62.bo, re:q62.re }));
+
+    netSend = realSend62; netGet = realGet62;
+    say('62: 投稿の数と自分が押したかはサーバーのもの ── 写しの数は読まず、' +
+        '押した瞬間は動かず、戻ってきた数になり、落ちれば何も動かない');
+  }
+
   return out;
 });
 

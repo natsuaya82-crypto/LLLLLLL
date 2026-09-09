@@ -1116,24 +1116,33 @@ function postFresh(p){
   put('down'); put('out');
   return moved;
 }
-/* HOW MANY, AND WHETHER YOU ARE ONE OF THEM.
+/* HOW MANY, AND WHETHER YOU ARE ONE OF THEM. THE SERVER COUNTS AND NOTHING
+   HERE DOES.
    -------------------------------------------------------------------------
-   Two answers to each question and one of them is the record. The server
-   counts (`post_seen` carries `likes`/`boosts`/`replies` and
-   `i_like`/`i_boost` since claude/acct2's 8fab549); the phone keeps `li`/`bo`
-   /`re` and `lime`/`bome` so a press shows at once and so a post written with
-   no signal has something to draw at all.
+   「端末に残すものないんですけど。サーバーで同じ機能になるように代替して」
+   OWNER 2026-09-08.
 
-   The server's answer wins where there IS one, and `undefined` is what "there
-   is not" looks like -- a post from before these existed, or one this phone
-   wrote and has not sent. Reading `0` as "no answer" would be the bug the
-   net.js comment warns about from the other side: a post with genuinely no
-   likes would fall back to a stale local number for ever. */
-function postNLike(p){ return (p && p.nlike!==undefined)? p.nlike : ((p && p.li)||0); }
-function postNBoost(p){ return (p && p.nboost!==undefined)? p.nboost : ((p && p.bo)||0); }
-function postNReply(p){ return (p && p.nreply!==undefined)? p.nreply : ((p && p.re)||0); }
-function postILike(p){ return (p && p.ilike!==undefined)? !!p.ilike : !!(p && p.lime); }
-function postIBoost(p){ return (p && p.iboost!==undefined)? !!p.iboost : !!(p && p.bome); }
+   `post_seen` carries `likes`/`boosts`/`replies` and `i_like`/`i_boost`, and
+   they are the answer. There were two: the phone kept `li`/`bo`/`re` and
+   `lime`/`bome` as well, and read them wherever the server had not spoken --
+   so a post the server could not answer for (one that has never gone up, one
+   from before those columns) showed a number this handset had worked out on
+   its own, for ever, and another phone showed a different one.
+
+   **NO ANSWER IS NOUGHT, and that is not the same as reading `0` as no
+   answer.** A post nobody has liked and a post the server has not been asked
+   about look the same on the screen, and they should: neither is 「somebody
+   liked this」. What must never happen is the phone ANSWERING -- a number of
+   its own, kept across launches, that nothing can correct.
+
+   WHAT IS ALREADY IN THE COPY IS NOT TOUCHED. `li`, `bo`, `re`, `lime` and
+   `bome` are still in `lingua.posts` on every phone that has this app; they
+   are not read, not written and not removed (docs/DATA_SAFETY.md). */
+function postNLike(p){ return (p && p.nlike!==undefined)? p.nlike : 0; }
+function postNBoost(p){ return (p && p.nboost!==undefined)? p.nboost : 0; }
+function postNReply(p){ return (p && p.nreply!==undefined)? p.nreply : 0; }
+function postILike(p){ return !!(p && p.ilike); }
+function postIBoost(p){ return !!(p && p.iboost); }
 /* Where the server keeps it. Written when a push comes back and read for two
    things: whether this post has gone up at all, and what to point a reply at.
 
@@ -1198,7 +1207,14 @@ function postSend(p, ok, bad){
      next attempt sends one file instead of four. Kept here rather than after
      every upload: one write at the end of a send, against one per file, on a
      key that carries the photographs themselves. */
-  netPush(p, function(sid){ delete POST_SENDING[id]; savePosts(); ok(sid); },
+  netPush(p, function(sid){ delete POST_SENDING[id]; savePosts();
+             /* AND THE POST IT ANSWERS, WHICH HAS ONE MORE REPLY NOW. The
+                server counted it the moment the row landed; this is where the
+                phone finds out, and it is the only moment it can -- a reply
+                sent from the composer and a reply caught up hours later both
+                come through here. */
+             if(p.to) postCountsPull(p.to);
+             ok(sid); },
              function(d, s){ delete POST_SENDING[id]; savePosts(); bad(d, s); });
 }
 var POST_CATCH=4;
@@ -1793,7 +1809,11 @@ function pwSendWith(ln, pics, vo){
        never arrived here at all. Same sentence as the name, the shapes and
        the language's name already on every post: what a reader needs goes ON
        it while the side that knows still exists. */
-    if(up){ up.re=(up.re||0)+1; mine.toh=up.hd||''; }
+    /* The reply COUNT is not touched here. It is `post_seen.replies` and the
+       server adds it up; this phone adding one to a copy of it is the second
+       answer that 2026-09-08 took out. postSend() asks again when the reply
+       has actually reached the server. */
+    if(up) mine.toh=up.hd||'';
   }
   /* A post that named somebody carries WHO and no `to`: there is no post
      being answered, so there is nothing to count a reply on and nothing for
@@ -3457,37 +3477,54 @@ function postRow(p){
       '</div>'+
     '</div></div>';
 }
-/* A like is a like on this phone. It is kept and counted, and it is the first
-   thing that will have somewhere else to go when there is a server. */
+/* WHAT A POST'S NUMBERS ARE, ASKED AGAIN AFTER SOMEBODY MOVED ONE.
+   -------------------------------------------------------------------------
+   One place, because three presses want it -- the heart, the boost and a
+   reply reaching the post it answers -- and each of them working it out for
+   itself is the phone doing the server's arithmetic three times.
+
+   It writes through postFresh(), which is the one place that says what an
+   answer is allowed to change under a post this phone is holding. A post
+   with no `sid` has never been up: there is nothing to ask and nothing is
+   asked. A refusal changes nothing at all and says nothing -- somebody
+   pressing the heart has already been told by the press itself
+   (www/post.js § postLike), and a second pop about the number under it would
+   be the same failure said twice. */
+function postCountsPull(id){
+  var p=postById(id), sid=p && p.sid;
+  if(!sid || typeof netPostCounts!=='function' || !netSignedIn()) return;
+  netPostCounts(sid, function(r){
+    if(r && postFresh(r)){ savePosts(); render(); }
+  }, function(){});
+}
+/* A LIKE IS THE SERVER'S ROW, AND THE THUMB MOVES WHEN THE SERVER HAS IT.
+   -------------------------------------------------------------------------
+   「保存するタイミングでエラーが起きるなら、保存されないし」 OWNER 2026-09-05,
+   and it is the shape the 公開 switch already has (www/home.js § setWldHide).
+
+   This used to move the number and the heart first and send afterwards, on
+   the grounds that a press should show at once. What that is, with no signal,
+   is a screen saying a thing that did not happen: the heart stayed filled,
+   the number stayed up, and nothing had reached anybody. Now the press sends,
+   and what comes back moves the screen -- so a like that did not arrive is a
+   like that did not happen, and ［再接続］ presses it again.
+
+   NOT A NUMBER OF ITS OWN EITHER. netMark() sends whether it is liked, and
+   the count is asked for rather than added up here: two phones each adding
+   one to their own copy is how a number goes backwards. */
 function postLike(id){
   var p=postById(id);
   if(!p || !postMay()) return;
-  /* Off what is ON THE SCREEN, which is the server's number where there is
-     one. Toggling the local copy alone made the thumb argue with the figure
-     above it: pressing a post showing the server's 12 set `li` to 1. */
-  var on=!postILike(p);
-  p.lime=on;
-  p.li=Math.max(0, postNLike(p)+(on? 1 : -1));
-  /* Both copies move together, so the number changes under the thumb rather
-     than on the next pull. The next answer overwrites them, and it is the
-     record -- this is the moment in between. */
-  if(p.nlike!==undefined) p.nlike=p.li;
-  p.ilike=on;
-  savePosts(); render();
-  /* Whether it is liked, not what the count is: a count is the server's to
-     add up, and two phones sending counts is how a number goes backwards. */
-  netMark(id, 'like', !!p.lime, function(){}, function(){});
+  netMark(id, 'like', !postILike(p),
+    function(){ postCountsPull(id); },
+    function(d, st, m){ netPop(d, st, m, function(){ postLike(id); }); });
 }
 function postBoost(id){
   var p=postById(id);
   if(!p || !postMay()) return;
-  var on=!postIBoost(p);
-  p.bome=on;
-  p.bo=Math.max(0, postNBoost(p)+(on? 1 : -1));
-  if(p.nboost!==undefined) p.nboost=p.bo;
-  p.iboost=on;
-  savePosts(); render();
-  netMark(id, 'boost', !!p.bome, function(){}, function(){});
+  netMark(id, 'boost', !postIBoost(p),
+    function(){ postCountsPull(id); },
+    function(d, st, m){ netPop(d, st, m, function(){ postBoost(id); }); });
 }
 /* Replying opens the same screen a post is written on, holding on to what it
    is a reply TO. */
@@ -3688,7 +3725,7 @@ function postDelGo(id){
   });
 }
 function postDelDone(gone){
-  var i, up, to=gone.to||'';
+  var i, to=gone.to||'';
   for(i=0;i<POSTS.length;i++) if(POSTS[i]===gone){ POSTS.splice(i, 1); break; }
   /* Under both names, for the reason postTake() gives about `have`: this
      phone knows it as the id it wrote, and the timeline hands it back wearing
@@ -3698,17 +3735,11 @@ function postDelDone(gone){
      holds. */
   POST_GONE[gone.id]=1;
   if(gone.sid) POST_GONE[gone.sid]=1;
-  /* A reply counted one on the post it answered, and deleting it never took
-     that one back -- so a post somebody replied to and then deleted the reply
-     from said "1" forever, pointing at nothing.
-     「リプライ消したのに数字1のまま」
-     pwSendWith() is the one place that adds it, and this is the one place
-     that takes it away. Floored at zero: a count that has already been wrong
-     must not be made negative by putting it right. */
-  if(to){
-    up=postById(to);
-    if(up) up.re=Math.max(0, (up.re||0)-1);
-  }
+  /* 「リプライ消したのに数字1のまま」 was this phone keeping the count. It
+     does not keep one now -- `post_seen.replies` is the answer and the row
+     has just gone -- so the post that was answered is asked again rather than
+     having one taken off a copy. */
+  if(to) postCountsPull(to);
   savePosts();
   if(gone.vo && gone.vo.f) voDropFile(gone.vo.f);
   toast(t('post.del.ok'));
