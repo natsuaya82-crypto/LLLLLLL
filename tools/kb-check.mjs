@@ -4050,8 +4050,9 @@ const kbPrep = await pg2.evaluate(({ s }) => {
   const oldBody = JSON.stringify(old);
   localStorage.setItem(langKey('kb'), oldBody);
   const ids = (b) => kbBoardsOf(JSON.parse(b)).kbs.map((x) => x.id).join(',');
-  /* 同じ中身の板が三枚 ── 三枚のままです。「ダメに決まってんだろ」OWNER
-     2026-09-09。中身で一枚にまとめる道はもう無いので、適用していた三枚目は
+  /* id を持たない板が三枚、中身は同じ ── 三枚のままです。「ダメに決まってん
+     だろ」OWNER 2026-09-09。id 無しの板が id を取るのは、中身の同じ **id 付き**
+     の板に出会ったときだけで、ここには一枚もありません。適用していた三枚目は
      三枚目のまま（at は無料 QWERTY を頭に置いた番号なので 3 が三枚目）。 */
   const one = { nm:'', pat:'qwerty', lay: old.kbs[0].lay };
   const three = JSON.stringify({ kbs: [one, one, one], at:3, v:2 });
@@ -4071,6 +4072,14 @@ const kbPrep = await pg2.evaluate(({ s }) => {
   const twin = JSON.stringify({ kbs: [blank, blank], at:0, v:2 });
   const twinA = ids(twin), twinB = ids(twin);
   const twinN = kbBoardsOf(JSON.parse(twin)).kbs.length;
+  /* 移行の一組 ── ディスクの id 無しの写しが、中身の同じ **id 付き** の板と
+     一つの配列で出会ったとき。それは「id が生まれる前に書かれた同じ板」で、
+     見分けるものが他にありません。id 付きのほうの id を取って一枚になります。
+     ここが中身を見る唯一の場所で、`again-check` 1432 が実機の道で持っています。 */
+  const oldOne = { nm:'', pat:'qwerty', lay: old.kbs[0].lay };
+  const srvOne = JSON.parse(JSON.stringify(oldOne)); srvOne.id = 'k1788700000_1';
+  const pair = kbBoardsOf(JSON.parse(JSON.stringify({ kbs: [oldOne, srvOne], at:0, v:2 })));
+  const pairN = pair.kbs.length, pairId = pair.kbs[0].id;
   /* 人が＋を二回押した空の板は二枚。「ダメに決まってんだろ」OWNER 2026-09-09。
      本物の道 ── kbAdd() 二回、saveKb()、そして slRd() で読み直す。 */
   KB = { kbs: [], at: 0 };
@@ -4089,6 +4098,7 @@ const kbPrep = await pg2.evaluate(({ s }) => {
     diffIds: ids(diff),
     madeA: madeA, madeB: madeB,
     twinA: twinA, twinB: twinB, twinN: twinN,
+    pairN: pairN, pairId: pairId,
     twoN: twoN, twoIds: twoIds
   };
 }, { s: seed.toString() });
@@ -4124,9 +4134,9 @@ const kbOne = (await kbLaunch()).onServer;
 const kbTwo = (await kbLaunch()).onServer;
 /* そして、すでに増えてしまった端末 ── オーナーの実機の姿です。ディスクには
    id 無しの写し一枚、サーバーには同じ板が四枚、前の版のランダムな id を着て
-   並んでいる。三度立ち上げて、枚数は動かない ── 減りもしません。中身で一枚に
-   まとめる道は 2026-09-09 の決定で消えたので、すでに増えた写しはそこに残り
-   ます。止まっているのは増えることのほうで、それがこの検査の主張です。 */
+   並んでいる。三度立ち上げて、人が数える枚数は一枚 ── ディスクの id 無しの
+   写しは、中身の同じ id 付きの板に出会うとその id を取ります。中身を見るのは
+   ここだけで、id を持つ板どうしは決してまとめません。 */
 const srvDup = await pg2.evaluate(() => {
   const k = JSON.parse(localStorage.getItem(langKey('kb')));
   const one = k.kbs[0]; delete one.id;
@@ -4162,24 +4172,27 @@ say(kbPrep.twoN === 2 && kbPrep.twoIds.split(',')[0] !== kbPrep.twoIds.split(','
     'two empty boards of one pattern, made by pressing + twice and read back off '
     + 'storage, are still two boards — 「ダメに決まってんだろ」 OWNER 2026-09-09 ('
     + kbPrep.twoN + ' boards) [' + kbPrep.twoIds + ']');
+say(kbPrep.pairN === 1 && kbPrep.pairId === 'k1788700000_1',
+    'while an id-less board meeting the id-carrying board it is byte for byte the same '
+    + 'as IS that board — written down twice, once from before boards had ids — so it '
+    + 'takes that id and the two are one (' + kbPrep.pairN + ' board, ' + kbPrep.pairId
+    + ')');
 say(kbPrep.twinN === 2 && kbPrep.twinA === kbPrep.twinB
     && kbPrep.twinA.split(',')[0] !== kbPrep.twinA.split(',')[1],
-    'and the disk copy the doubling came out of — two id-less boards of one content — '
-    + 'reads back as two boards with the same two ids every time, which is what stops '
-    + 'the growth without taking one of them away [' + kbPrep.twinA + '] ['
-    + kbPrep.twinB + ']');
+    'and two id-less boards of one content, with no id-carrying row beside them to be '
+    + 'the same board as, read back as two boards with the same two ids every time — '
+    + 'stable, so nothing grows, and distinct, so neither is taken away ['
+    + kbPrep.twinA + '] [' + kbPrep.twinB + ']');
 say(kbOne === 2,
     'a launch that reads the id-less copy off the disk and merges it with the '
     + 'server’s does not grow the language: ' + kbOne + ' boards');
 say(kbTwo === kbOne,
     'and launching again does not either — the disk copy is read a second time and '
     + 'answers with the same ids: ' + kbTwo + ' boards');
-say(dupOne.onScreen === dupTwo.onScreen && dupTwo.onScreen === dupThree.onScreen,
+say(dupOne.onScreen === 1 && dupTwo.onScreen === 1 && dupThree.onScreen === 1,
     'and a phone the doubling already reached — one board on the disk, four copies of '
-    + 'it on the server wearing the old random ids — counts the SAME number of '
-    + 'keyboards on every one of three launches, so nothing is growing and nothing a '
-    + 'person made is taken away either: '
-    + [dupOne, dupTwo, dupThree].map((x) => x.onScreen).join(', '));
+    + 'it on the server wearing the old random ids — counts ONE keyboard on every one '
+    + 'of three launches: ' + [dupOne, dupTwo, dupThree].map((x) => x.onScreen).join(', '));
 say(dupTwo.onServer <= dupOne.onServer && dupThree.onServer <= dupTwo.onServer,
     'and the copies on the server stop multiplying rather than growing by one a launch: '
     + [dupOne, dupTwo, dupThree].map((x) => x.onServer).join(', ') + ' rows');

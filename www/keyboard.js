@@ -171,33 +171,34 @@ function kbId(){ KB_SEQ++; return 'k'+Date.now()+'_'+KB_SEQ; }
    two days they were read back as ONE. What a person pressed twice is two
    things, whatever the bytes say.
 
-   So nothing here compares contents. Two id-less boards of one content hash
-   alike, and letting them SHARE an id would be syKeyOf() told they are one
-   row -- a board somebody made, gone -- so the second one and every one after
-   it is marked by its turn in the array, which every read counts the same
-   way. Stable and distinct, which is the whole of what stops the growth.
+   SO TWO BOARDS THAT BOTH CARRY AN ID ARE NEVER JOINED HERE, whatever is on
+   them. An id is what says which board this is, and two of them is two.
 
-   ONE ID IS ONE BOARD, and that is the only thing joined here: two entries
-   carrying the same id are not two copies, they are the same board written
-   down twice, and the server can only hold one row for them anyway. Nothing
-   is decided by looking at what is on a board.
+   THE ONE JOIN LEFT IS THE MIGRATION, and it is the only thing contents are
+   ever looked at for: a board with NO id, beside a board that HAS one and is
+   otherwise byte for byte the same, is that same board written down twice --
+   the disk copy this chapter's growth came out of, met with the row the
+   server is holding for it. It takes that board's id and the two become one.
+   That is a board arriving from before boards had ids, not a board somebody
+   made, and there is no id on it to tell them apart with. `again-check`
+   holds it: the same phone launched three times counts one keyboard.
 
-   Joining by contents is deleted. It existed to take the copies the growth
-   above had already made off a phone (docs/CHANGELOG.md 2026-09-07), and it
-   could not tell that copy from somebody's second empty board -- both are the
-   same bytes. The growth is stopped at its source instead, which is where
-   「そもそも増殖させるな」 OWNER 2026-09-07 asks for it to be stopped.
+   Two id-less boards of one content are still two. They hash alike, and
+   letting them SHARE an id would be syKeyOf() told they are one row -- a
+   board somebody made, gone -- so the second one and every one after it is
+   marked by its turn in the array, which every read counts the same way.
+   Stable and distinct, which is the whole of what stops the growth.
 
    Reading only, as the stamping above is: nothing is written here, so a
-   launch with no signal stamps the copy in memory and stops. The write comes
+   launch with no signal joins the copy in memory and stops. The write comes
    with the next save.
 
    AND WHICH BOARD IS APPLIED FOLLOWS THE ONE THAT IS KEPT. `at` is an index
    into the list with the free QWERTY in front of it (migrateKbFree), and
    `v` is what says whether that migration has run -- so it is turned into an
    index into `kbs`, moved with the board it names, and turned back. Without
-   that, dropping a same-id twin in front of the applied board silently makes
-   its neighbour the keyboard on the phone. */
+   that, joining a copy in front of the applied board silently makes its
+   neighbour the keyboard on the phone. */
 function kbSig(b){
   var ks=[], o=[], k, i;
   for(k in b) if(Object.prototype.hasOwnProperty.call(b, k) && k!=='id') ks.push(k);
@@ -211,19 +212,31 @@ function kbHash(b){
   return 'b'+(h>>>0).toString(36)+'_'+s.length;
 }
 function kbIded(k){
-  var kbs=k.kbs||[], out=[], seen={}, taken={}, put=[], i, b, id, off, idx;
-  /* every id already on a board, before one is minted -- a hash landing on an
-     id a LATER board is wearing would make that board a twin of this one */
-  for(i=0;i<kbs.length;i++)
-    if(kbs[i] && typeof kbs[i]==='object' && kbs[i].id) taken['i'+kbs[i].id]=1;
+  var kbs=k.kbs||[], out=[], seen={}, taken={}, byId={}, put=[], i, b, s, id, off, idx;
+  /* what the boards that ALREADY have ids look like -- read before one is
+     minted, because the id-less copy comes first in the array and the row it
+     belongs to comes after it. `taken` is the same pass: a hash landing on an
+     id a LATER board is wearing would make that board a twin of this one. */
+  for(i=0;i<kbs.length;i++){
+    b=kbs[i];
+    if(!b || typeof b!=='object' || !b.id) continue;
+    taken['i'+b.id]=1;
+    s='g'+kbSig(b);
+    if(!Object.prototype.hasOwnProperty.call(byId, s)) byId[s]=b.id;
+  }
   for(i=0;i<kbs.length;i++){
     b=kbs[i];
     /* not a board at all: kept exactly where it was and asked nothing */
     if(!b || typeof b!=='object'){ put.push(out.length); out.push(b); continue; }
     if(!b.id){
-      id=kbHash(b);
-      while(taken['i'+id]) id=id+'+';
-      taken['i'+id]=1; b.id=id;
+      s='g'+kbSig(b);
+      /* the migration: this is that board, before boards had ids */
+      if(Object.prototype.hasOwnProperty.call(byId, s)) b.id=byId[s];
+      else {
+        id=kbHash(b);
+        while(taken['i'+id]) id=id+'+';
+        taken['i'+id]=1; b.id=id;
+      }
     }
     if(Object.prototype.hasOwnProperty.call(seen, 'i'+b.id)){ put.push(seen['i'+b.id]); continue; }
     seen['i'+b.id]=out.length; put.push(out.length); out.push(b);
