@@ -239,8 +239,30 @@ function meNotMe(hs){
   for(i=0;i<hs.length;i++) if(String(hs[i])!==me) out.push(hs[i]);
   return out;
 }
-function meFollowing(){ return meNotMe((ME.fo && ME.fo.length)? ME.fo : []); }
-function meFollowers(){ return meNotMe((ME.fr && ME.fr.length)? ME.fr : []); }
+/* WHO THIS ACCOUNT FOLLOWS, AND WHO FOLLOWS IT -- THE `follow` TABLE AND
+   NOTHING ELSE.
+   -------------------------------------------------------------------------
+   「端末に残すものないんですけど。サーバーで同じ機能になるように代替して」
+   OWNER 2026-09-08.
+
+   These were `ME.fo` and `ME.fr`, two arrays in `lingua.me` on this handset.
+   `meFollow()` pushed a handle in on a press and told the server afterwards,
+   so a press that never arrived left this phone showing a follow nobody else
+   had -- and the copy outlived the session, so it was still there next
+   launch, still wrong, with nothing able to correct it.
+
+   They are the SAME memory FOL_HAVE keeps everybody else's lists in, under
+   this account's own handle: one mechanism, written only by an answer from
+   the server (folPull / meFollowsPull), gone when the session goes
+   (folForget). A list somebody else's page shows and a list your own page
+   shows are the same question asked about a different handle, and there is
+   no reason for two answers to it.
+
+   WHAT IS IN THE COPY IS NOT TOUCHED. `ME.fo` and `ME.fr` are still in
+   `lingua.me` on every phone that has this app; they are not read, not
+   written and not removed (docs/DATA_SAFETY.md). */
+function meFollowing(){ return meNotMe(folOf(false, meHandle())); }
+function meFollowers(){ return meNotMe(folOf(true, meHandle())); }
 /* HOW MANY. 「サーバーに聞く前にロードを挟み、遅れて数字が動くことを絶対に
    無くす。0 と出て1秒後に1に変わる、をしない。」 OWNER 2026-09-04.
 
@@ -983,7 +1005,8 @@ function meFollowsPull(ok, bad){
     if(fell) return;
     left--;
     if(left) return;
-    saveMe();
+    /* Nothing is saved. The two lists are the server's answer and live where
+       every other account's does -- FOL_HAVE, in memory (rule 22). */
     ok(1);
   }
   function no(d, s, m){
@@ -992,18 +1015,19 @@ function meFollowsPull(ok, bad){
     bad(d, s, m);
   }
   netFollowing(function(hs){
-    /* Somebody pressed Follow while this was in the air. That press is newer
-       than this answer and netFollow() has already carried it to the server,
-       so writing the older list over it would take it off the screen and
-       leave the server holding the right one. */
-    if(meFollowing().join(',')===was) ME.fo=hs;
+    /* Somebody pressed Follow while this was in the air, and the server has
+       already taken it (meFollow() below does not move anything until it
+       has). That press is newer than this answer, so writing the older list
+       over it would take it off the screen while the server holds the right
+       one. */
+    if(meFollowing().join(',')===was) folPut(false, meHandle(), hs);
     one();
   }, no);
   /* No press can move this one, which is the difference from the list above:
      being followed is something somebody ELSE does, so there is no local
      change to protect and the answer is simply written down. */
   netFollowers(function(hs){
-    ME.fr=hs;
+    folPut(true, meHandle(), hs);
     one();
   }, no);
 }
@@ -1056,36 +1080,40 @@ function meBlock(h){
 /* Following and unfollowing, in one place. The list is what this phone knows
    and netFollow() is what the server is told -- not waited on, the way a like
    is not waited on: the button has already changed. */
+/* FOLLOWING AND UNFOLLOWING, AND THE BUTTON MOVES WHEN THE SERVER HAS IT.
+   -------------------------------------------------------------------------
+   「保存するタイミングでエラーが起きるなら、保存されないし」 OWNER 2026-09-05,
+   and it is the shape the 公開 switch and the heart already have.
+
+   This used to push the handle into `ME.fo`, add one to their follower count
+   on this phone, draw, and tell the server afterwards without waiting. With
+   no signal that is a screen saying a thing that did not happen: the button
+   said Following, the number under their name had gone up, and there was no
+   row anywhere. Now the row goes first.
+
+   AND THEIR COUNT IS ASKED FOR RATHER THAN ADDED UP. 「フォローしたのにその
+   人のフォロワーにすぐ出ないよ？」 OWNER 2026-09-02 was answered by this
+   phone doing the arithmetic; the answer is `profile_seen.fr` and whoAsk()
+   is the one place that asks for it. Two phones each adding one to their own
+   copy is how a number goes backwards. */
 function meFollow(h){
-  var fo=meFollowing(), i;
+  var on;
   h=String(h||'');
   if(!h || h===meHandle()) return;
   if(!obNeed()) return;
-  i=fo.indexOf(h);
-  if(i>=0) fo.splice(i, 1); else fo.push(h);
-  ME.fo=fo;
-  /* AND THEIR COUNT MOVES WITH THE BUTTON. 「フォローしたのにその人のフォロワー
-     にすぐ出ないよ？」 OWNER 2026-09-02. The button changed on the press, the
-     way a like does -- and the number under it did not, because it comes off
-     `profile_seen` and nothing asks again until the page is opened afresh.
-     One press, two things on screen, and only one of them moved.
-
-     The same shape as postNLike() in www/post.js: the count this phone shows
-     is what it knows, moved by what this person just did, and the server's own
-     answer replaces it whole the next time netWho() lands. Undefined stays
-     undefined -- a number nobody has taken is not a 0 to add to. */
-  meFollowCount(h, i<0? 1 : -1);
-  saveMe();
-  render();
-  netFollow(h, i<0, function(){}, function(){});
-}
-/* Their follower count, moved by one. The copy only -- nothing is stored: it
-   is replaced whole by the server's next answer, which is the one that
-   counts. */
-function meFollowCount(h, d){
-  var p=WHO_HAVE[String(h||'')];
-  if(!p || typeof p.fr!=='number') return;
-  p.fr=Math.max(0, p.fr+d);
+  on=!meFollows(h);
+  netFollow(h, on, function(){
+    /* The row is there, or it is gone, and that is the server's answer about
+       this one handle -- the same thing `i_like` is for a post. The list is
+       moved by it rather than being asked for again. */
+    var fo=folOf(false, meHandle()).slice(), i=fo.indexOf(h);
+    if(on){ if(i<0) fo.push(h); }
+    else if(i>=0) fo.splice(i, 1);
+    folPut(false, meHandle(), fo);
+    /* and what their page says about them, which includes the number */
+    whoAsk(h);
+    render();
+  }, function(d, st, m){ netPop(d, st, m, function(){ meFollow(h); }); });
 }
 /* The same card as your own, in the same order, with Follow where Edit is.
    「他人のプロフィールは基本自分が見えてるのと同じ感じ」
@@ -1498,6 +1526,27 @@ FORM_OPEN.me=function(){ openMe(); };
    needs no account. */
 var FOL_HAVE={}, FOL_ASKED={};
 function folKey(ers, h){ return (ers? 'ers:' : 'ing:') + String(h||''); }
+/* An answer, written down. One place, because three write here now -- the
+   pull for somebody else's list, the pull for this account's two, and a
+   Follow the server has taken. */
+function folPut(ers, h, hs){
+  var k=folKey(ers, h);
+  FOL_HAVE[k]=hs || [];
+  FOL_ASKED[k]=1;
+}
+/* AND EVERY ONE OF THEM IS THE SIGNED-IN ACCOUNT'S. netOut() (www/net.js)
+   calls this beside netBlockedDrop() and pullForget(), and for the same
+   sentence: these are answers the server gave THIS account, and the next
+   person to sign in on this phone must ask for their own.
+
+   It matters more since 2026-09-09 than it did before, because this account's
+   own two lists are in here now -- keyed by handle, and a handle is not an
+   account. Without it, signing in as somebody else and opening your own page
+   would draw the last person's following list under your name. */
+function folForget(){
+  FOL_HAVE={}; FOL_ASKED={};
+  WHO_HAVE={}; WHO_ASKED={};
+}
 function folPull(ers, h, ok, bad){
   var k=folKey(ers, h);
   h=String(h||'');
@@ -1519,7 +1568,7 @@ function folPull(ers, h, ok, bad){
      empty list is written down like any other -- 「まだ誰もいない」 is a thing
      the server said. */
   (ers? netFollowers : netFollowing)(function(hs){
-    FOL_HAVE[k]=hs || [];
+    folPut(ers, h, hs);
     if(ok) ok(); else render();
   }, function(d, s, m){
     FOL_ASKED[k]=0;

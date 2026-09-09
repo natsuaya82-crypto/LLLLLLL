@@ -176,8 +176,11 @@ export function seed(){
      待ちの印しか見なくなる。「非公開の言語」の顔は halfDone にあります。 */
   wldPubGot(langId, true);
   NOTES = [{t:'note', b:'body'}];
-  ME = {name:'Aya', handle:'aya', bio:'Building a language for a place that does not exist.',
-        fo:['iri','veth'], fr:['iri']};
+  ME = {name:'Aya', handle:'aya', bio:'Building a language for a place that does not exist.'};
+  /* 誰をフォローしているか・誰にされているかは `follow` 表の答えで、
+     FOL_HAVE がその置き場です（www/me.js § meFollowing、2026-09-09）。
+     `ME.fo`/`ME.fr` には置きません ── もう誰も読みません。 */
+  folPut(false, 'aya', ['iri','veth']); folPut(true, 'aya', ['iri']);
   /* Two posts, and the second one is the whole reason the timeline is written
      the way it is: it is by somebody else, in a language this phone does not
      have, and every word of it is unknown to the dictionary above. A walk
@@ -1232,13 +1235,13 @@ export function halfDone(){
            was not: the seed already follows 'iri', so both faces drew
            「フォロー中」 and the gold button the owner is talking about was
            in no picture. */
-        const was = ME.fo; ME.fo = [];
-        const h = vProfile(); ME.fo = was; NAV=[{r:'profile'}]; return h; }],
-    ['somebody else\'s profile, followed', () => { ME.fo = ['iri'];
+        const was = folOf(false, 'aya'); folPut(false, 'aya', []);
+        const h = vProfile(); folPut(false, 'aya', was); NAV=[{r:'profile'}]; return h; }],
+    ['somebody else\'s profile, followed', () => { folPut(false, 'aya', ['iri']);
         WHO_HAVE['iri'] = { who:'Iri', hd:'iri', av:{ch:'Ж'}, lname:'Vethi',
                              bio:'', fo:2, fr:3, out:false };
         window.route='profile'; NAV=[{r:'profile', a:'iri'}];
-        const h = vProfile(); NAV=[{r:'profile'}]; ME.fo = ['iri','veth']; return h; }],
+        const h = vProfile(); NAV=[{r:'profile'}]; folPut(false, 'aya', ['iri','veth']); return h; }],
     /* THE FACE BEFORE THE SERVER HAS ANSWERED IS GONE, and so is the state.
        「プロフィールは、出す物を全部読み込んでから開く」「くるくるも出さない」
        OWNER 2026-09-07: the page is not drawn until every answer is in
@@ -1413,11 +1416,11 @@ export function halfDone(){
     /* Somebody already followed: Follow and Following are two states of one
        button and only one of them is drawn at a time. */
     ['a person already followed', () => { snsQ = 'ir';
-        const was = ME.fo; ME.fo = ['iri'];
+        const was = folOf(false, 'aya'); folPut(false, 'aya', ['iri']);
         snsHits = { q:'ir', who:[{ who:'Iri', hd:'iri', av:{ch:'\u0416'},
                                    lname:'Vethi', mine:false }], posts:[] };
         window.route='explore'; NAV=[{r:'explore'}];
-        const h = vExplore(); ME.fo = was; snsQ = ''; snsHits = null; return h; }],
+        const h = vExplore(); folPut(false, 'aya', was); snsQ = ''; snsHits = null; return h; }],
     ['posts found by searching', () => { snsQ = 'kano';
         snsHits = { q:'kano', who:[], posts:POSTS.slice(0, 2) };
         window.route='explore'; NAV=[{r:'explore'}];
@@ -1539,9 +1542,9 @@ export function halfDone(){
         window.route='feed'; NAV=[{r:'feed'}];
         const h = vFeed(); snsTab = 'rec'; return h; }],
     ['the timeline, following nobody', () => { snsTab = 'fo';
-        const keep = ME.fo; ME.fo = [];
+        const keep = folOf(false, 'aya'); folPut(false, 'aya', []);
         window.route='feed'; NAV=[{r:'feed'}];
-        const h = vFeed(); ME.fo = keep; snsTab = 'rec'; return h; }],
+        const h = vFeed(); folPut(false, 'aya', keep); snsTab = 'rec'; return h; }],
     /* More than one photograph, which is a different thing from one: a strip
        that scrolls sideways. Nothing in the fixture carried two, so `.ppics.many`
        had never been rendered by anything -- and it was the rule doing the

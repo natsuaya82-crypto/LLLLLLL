@@ -127,7 +127,13 @@ saying that flag is temporary has to be written to the same place at the same
 moment. It was a variable, and a reload between the two left a phone claiming
 the onboarding was unfinished with nothing left saying otherwise. Cleared by
 `obReturn()`; it is a pending move, not a preference, and it is the one thing
-in `SET` that is meant to be short-lived. `lingua.me` (`ME`) is the person — the copy of their `profile` row.
+in `SET` that is meant to be short-lived. `lingua.me` (`ME`) is the person — the copy of their `profile` row. **Who they
+follow and who follows them are not in it**, since 2026-09-09: `ME.fo` and
+`ME.fr` are neither read nor written (and not removed — what a phone already
+holds stays). The `follow` table is the answer, and both lists live in
+`FOL_HAVE` in `www/me.js`, keyed by handle, where everybody else's already
+did — memory, written only by an answer from the server, dropped by
+`folForget()` when the session goes.
 `lingua.sess` (`SESS`) is the session — the token pair, and one mark; **a
 password is never held, stored or logged.** The mark is `end`, written by
 `netEnding()` in `www/net.js` when somebody presses 「アカウントを削除」 and

@@ -125,8 +125,11 @@ const R = await pg.evaluate(async () => {
     ME.name = 'Lingua'; ME.handle = 'lingua2';
     ME.bio = 'a line only this phone has'; ME.pic = PIC;
     ME.link = 'example.com'; ME.loc = 'どこか';
-    ME.fo = ['someone', 'someone-else'];
     saveMe();
+    /* フォローはサーバーの答えで、`follow` 表から降りてくる場所に置きます
+       （www/me.js § meFollowing、2026-09-09）。`ME.fo` は書きません ──
+       もう誰も読みません。 */
+    folPut(false, 'lingua2', ['someone', 'someone-else']);
   };
 
   const wipeParked = () => {
@@ -179,7 +182,10 @@ const R = await pg.evaluate(async () => {
   if (ME.pic !== PIC) no('2: 顔が消えている');
   if (ME.link !== 'example.com') no('2: リンクが消えている');
   if (ME.loc !== 'どこか') no('2: 居るところが消えている');
-  if (meFollowing().length !== 2) no('2: フォローが消えている — ' + meFollowing().length + '人');
+  /* フォローはこの一覧に入りません。2026-09-09 から `follow` 表が唯一の
+     答えで、入り直せばサーバーに訊き直します ── 「この端末にしか無い」の
+     反対側に移りました。1 番（前の人が一人も残らない）が押さえているのは
+     そちらで、そこは folForget() が持っています。 */
   say('2: 同じ人が入り直すと、書いたものは全部そこにある');
 
   /* ---- 3. the two of them do not become one ----------------------------
@@ -1192,24 +1198,42 @@ const R = await pg.evaluate(async () => {
 
      数えていない数は 0 ではない。誰も取っていない数に 1 を足すと、取った
      ことになる ── whoOf() が undefined を undefined のまま残すのと同じ話。 */
-  const realFollow = netFollow;
-  netFollow = () => {};
+  const realFollow = netFollow, realWho30 = netWho;
+  /* 返事は握っておきます ── 押した「瞬間」の画面はここでしか読めません。 */
+  let letGo = null, askedWho = 0;
+  netFollow = (h, on, ok2) => { letGo = () => ok2(); };
+  netWho = (h, ok2) => { askedWho++;
+    ok2({ who:'Iri', hd:h, av:null, lname:'Vethi', bio:'', fo:0, fr:4, out:false }); };
   WHO_HAVE['iri'] = { who:'Iri', hd:'iri', av:null, lname:'Vethi', bio:'',
                       fo:0, fr:3, out:false };
-  ME.fo = [];
+  folPut(false, meHandle(), []);
   meFollow('iri');
-  if (WHO_HAVE['iri'].fr !== 4)
-    no('30b: フォローしても、その人のフォロワーが動かない — ' + WHO_HAVE['iri'].fr);
-  meFollow('iri');
+  if (meFollows('iri'))
+    no('30b: 答えが戻る前にフォローしたことになっている');
   if (WHO_HAVE['iri'].fr !== 3)
-    no('30b: 外しても戻らない — ' + WHO_HAVE['iri'].fr);
-  WHO_HAVE['nemo'] = { who:'N', hd:'nemo', av:null, lname:'', bio:'',
-                       fo:undefined, fr:undefined, out:false };
-  meFollow('nemo');
-  if (WHO_HAVE['nemo'].fr !== undefined)
-    no('30b: 誰も数えていない数に足した — ' + WHO_HAVE['nemo'].fr);
-  netFollow = realFollow;
-  say('30b: 押した瞬間にその人のフォロワーも動く（数えていない数は数えないまま）');
+    no('30b: 答えが戻る前に相手のフォロワーが動いた — ' + WHO_HAVE['iri'].fr);
+  if (letGo) letGo();
+  if (!meFollows('iri'))
+    no('30b: 答えが戻ってもフォローになっていない');
+  if (!askedWho)
+    no('30b: 答えのあとに相手を訊き直していない ── 数はサーバーが数える');
+  if (WHO_HAVE['iri'].fr !== 4)
+    no('30b: 相手のフォロワーがサーバーの答えになっていない — ' + WHO_HAVE['iri'].fr);
+  /* 外す。同じ形で、戻ってから外れる。 */
+  letGo = null;
+  meFollow('iri');
+  if (!meFollows('iri')) no('30b: 答えが戻る前に外れた');
+  if (letGo) letGo();
+  if (meFollows('iri')) no('30b: 答えが戻っても外れていない');
+  /* 落ちたら何も動かない。 */
+  netFollow = (h, on, ok2, bad2) => { bad2(null, 0, 'down'); };
+  const wasFo30 = meFollowing().join(',');
+  meFollow('kai');
+  if (meFollowing().join(',') !== wasFo30)
+    no('30b: 落ちたのにフォローが動いた — ' + meFollowing().join(','));
+  netFollow = realFollow; netWho = realWho30;
+  say('30b: Follow は答えが戻ってから動き、相手の数はサーバーに訊き直す ── ' +
+      '落ちれば何も動かない');
 
   /* ---- 30c. その画面が、人のぶんを出す ----------------------------------
      「フォロワーとかタップしても見れないし」OWNER 2026-09-03。
@@ -1227,7 +1251,7 @@ const R = await pg.evaluate(async () => {
      送るもの）、そして答えが来る前に「まだ誰もいない」と言わないこと。 */
   start();
   netOut(); arrive(A);
-  ME.fo = ['kai']; ME.fr = ['veth']; saveMe();
+  folPut(false, meHandle(), ['kai']); folPut(true, meHandle(), ['veth']);
   const foSeen = [];
   netGet = (path, ok) => {
     foSeen.push(path);
@@ -1253,9 +1277,9 @@ const R = await pg.evaluate(async () => {
     no('30c: その人のフォロワーが画面に出ない');
   if (seenHtml.indexOf('veth') >= 0)
     no('30c: 人の画面に自分のフォロワーが出ている');
-  if ((ME.fo || []).join(',') !== 'kai' || (ME.fr || []).join(',') !== 'veth')
+  if (meFollowing().join(',') !== 'kai' || meFollowers().join(',') !== 'veth')
     no('30c: 人の一覧が自分の一覧を書き換えた ── ' +
-       JSON.stringify([ME.fo, ME.fr]));
+       JSON.stringify([meFollowing(), meFollowers()]));
 
   /* 人のフォロー中 ── 同じ画面、引数のもう半分。 */
   NAV = [{ r: 'feed' }]; window.route = 'feed';

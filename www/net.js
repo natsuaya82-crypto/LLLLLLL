@@ -660,6 +660,11 @@ function netOut(){
      person to sign in on this phone must ask for their own. */
   netBlockedDrop();
   if(typeof pullForget==='function') pullForget();
+  /* AND WHO FOLLOWS WHOM, WHICH SINCE 2026-09-09 INCLUDES THIS ACCOUNT'S OWN
+     TWO LISTS (www/me.js § folForget). They are keyed by handle and a handle
+     is not an account, so leaving them would draw the last person's following
+     list under the next person's name. */
+  if(typeof folForget==='function') folForget();
   /* AND WHETHER THIS ACCOUNT ANSWERS THE REPORTS, WHICH IS THE SAME SENTENCE.
      NET_STAFF, NET_ADMIN and NET_BANNED are three facts about the account that
      has just gone, and nothing here put them down -- so the seven taps on the
