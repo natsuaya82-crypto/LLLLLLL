@@ -18,10 +18,12 @@
 `netLangsDown()` が **walk する行の集合を「自分の + 取った」にする**。owner 行
 の walk と slice 埋めは既にあるので、二つ目の関数は作らない。
 
-- 行は `netTakes()` が返す sid を `language` の問い合わせに足して一度で引く
-  （`or=(owner.eq.<自分>,id.in.(…))`）。`language_read` は
-  `published_at is not null or owner = auth.uid()` なので公開された他人の言語は
-  そのまま読める。
+- 自分の行の ask は今までどおり `owner=eq.<自分>` ですぐに出す。取った言語の
+  行は、起動の頭で既に出ている `language_take` の答えが**来た時に**
+  `id=in.(…)` で引き、同じ walk に流す ── 待つのではなく、来た時に。直列に
+  すると起動が一段長くなる（`slow-check`、launch は 5 段まで）。
+  `language_read` は `published_at is not null or owner = auth.uid()` なので
+  公開された他人の言語はそのまま読める。
 - 索引の行は `langSeenAdd()`（`mine:false`）。自分の行は今まで通り `langMint()`。
 - `wldPubGot` / `langNameGot` / `langWsysGot` / `langOwnGot(nid, その行の owner)`。
 - slice は `netSlices(sid)` で **無い slice だけ埋めて止まる**
@@ -64,4 +66,5 @@
 ## 検査
 
 `npm test` はリーダーが回す。押さえる一本（`npm run again`）だけ、赤を見てから
-緑にする。
+緑にする。`npm run slow` も回す ── 起動の段（launch は 5 まで）はこの変更が
+一番踏みやすいところで、実際に一度踏んだ（6/5、2026-09-09）。

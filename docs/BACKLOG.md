@@ -7,18 +7,6 @@ refactor, a feature and a rename never arrive in the same diff.
 
 The order is the order to do them in.
 
-## `language_take` を起動で二度訊いています（2026-09-09、`www/sns.js` は別の受け持ち）
-
-取った言語の中身を起動で埋めるために `netLangsDown()`（`www/net.js`）が
-`netTakes()` に訊くようになりました。`askLangs()`（`www/sns.js`）は今までどおり
-`netLangsDown()` と `netTakes()` を並べて撃つので、**起動のたびに
-`language_take` の GET が二本**出ます。仕組みは一つ（`netTakes()` が取った
-言語を言う唯一の場所）で、増えているのは往復だけです。
-
-直すなら `askLangs()` を `netLangsDown()` 一本にする（`netLangsDown()` の中で
-`netTakes()` が答えを `LTAKE` に入れるので、数え上げはそれで足ります）。
-`www/sns.js` はこのセッションの受け持ちではないので触っていません。
-
 ## 起動の二本の道が競争して、同じ言語が索引に二行入ることがあります（2026-09-09）
 
 `netTook()` は `netLangBack()` と、`pullBoot()` 越しに `netLangsDown()` の

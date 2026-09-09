@@ -27,12 +27,18 @@ where it starts.
 切り替えで開くと空の言語です。`netTakes()` は id の一覧を `LTAKE` に入れる
 だけで、誰もその言語のスライスを引いていませんでした。
 
-**道は増えていません。同じ walk が歩く行の集合が「自分の + 取った」に
-なっただけです。** `netLangsDown()` は先に `netTakes()`（取った言語を言う
-唯一の場所）に訊き、その id を同じ問い合わせに足します ──
-`or=(owner.eq.<自分>,id.in.(…))`。`language_read` は
+**道は増えていません。同じ walk（`netLangsWalk()`）を二つの ask が使う
+だけです。** 自分の行は今までどおり `owner=eq.<自分>` ですぐに出ます。取った
+言語の行は、起動の頭で既に出ている `language_take` の答えが**来た時に**
+`id=in.(…)` で訊き、同じ walk・同じスライス埋めに流れます ── 待つのでは
+なく、来た時に。`language_read` は
 `published_at is not null or owner = auth.uid()` なので、公開された他人の
 言語はこの表からそのまま読めます。**サーバーは何も変わっていません。**
+
+最初に書いた形は `netTakes()` を先に、行の ask を後にする直列でした。それは
+**この人の言語まで一往復ぶん遠くなり**、起動が 6 段（許されるのは 5）に
+なりました（`slow-check`、2026-09-09）。今は `language` と `language_take` が
+どちらも一段目で、`language_take` は一回です。
 
 - 索引の行は他人のものなら `langSeenAdd()`（`mine:false`）、自分のものなら
   今まで通り `langMint()`。誰が書いたかは行の `owner` 列で、`owner` が空の

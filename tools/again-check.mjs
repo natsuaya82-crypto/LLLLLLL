@@ -129,22 +129,19 @@ const SERVER = `
       return answer(tout);
     }
     if (method === 'GET' && p.indexOf('/rest/v1/language') === 0){
-      /* language_read: your own, or anybody's that is PUBLISHED. 起動は二つの
-         半分を一度に訊きます ── 取ったものが無ければ owner=eq.<自分>、
-         あれば or=(owner.eq.<自分>,id.in.(…))。取った言語でも公開されて
-         いなければ来ない、というのがこの表の規則です。 */
-      var own = arg('owner'), ids = null, mo, o2 = [], z, L;
-      mo = /[?&]or=\\(owner\\.eq\\.([^,]*),id\\.in\\.\\(([^)]*)\\)\\)/.exec(p);
-      if (mo){
-        own = decodeURIComponent(mo[1]);
-        ids = mo[2] ? mo[2].split(',').map(function(x){ return decodeURIComponent(x); }) : [];
-      }
+      /* language_read: 自分のもの、または誰のでも **公開されている** もの。
+         起動は二度訊きます ── 自分の行は owner=eq.<自分> ですぐに、取った
+         言語の行は language_take の答えが来た時に id=in.(…) で。取った言語
+         でも公開されていなければ来ない、というのがこの表の規則です。 */
+      var own = arg('owner'), ids = null, mi, o2 = [], z, L;
+      mi = /[?&]id=in\\.\\(([^)]*)\\)/.exec(p);
+      if (mi) ids = mi[1] ? mi[1].split(',').map(function(x){ return decodeURIComponent(x); }) : [];
       for (z = 0; z < S.lang.length; z++){
         L = S.lang[z];
-        if (L.owner !== own){
-          if (!ids || ids.indexOf(L.id) < 0) continue;
-          if (!L.published_at) continue;
-        }
+        if (ids){
+          if (ids.indexOf(L.id) < 0) continue;
+          if (L.owner !== own && !L.published_at) continue;
+        } else if (L.owner !== own) continue;
         o2.push({ id:L.id, owner:L.owner, name:L.name, wsys:L.wsys || '',
                   published_at:L.published_at });
       }
@@ -1570,14 +1567,16 @@ say(nmC.col[0] === '古い名' && nmC.col[1] === 'あとからの名' &&
    language?owner=eq.<自分> しか引いていなかったので、**索引の行だけ残って
    中身が来ない** ── 切り替えで開くと空の言語。
 
-   直った形は道が一本増えたのではなく、**同じ walk が歩く行の集合が
-   「自分の + 取った」になった**だけ。だから訊くことも三つ:
+   直った形は道が一本増えたのではなく、**同じ walk（netLangsWalk）を二つの
+   ask が使う**だけ。自分の行はすぐ、取った行は language_take の答えが来た時に
+   ── 待つのではなく、来た時に（slow-check、起動の段を増やさない）。だから
+   訊くことも三つ:
    1. 取った言語が一覧にあり、開くと letters/kb がサーバーのバイトそのまま
    2. 自分の言語のスライスは一バイトも動かない
    3. language_take に無い他人の言語（公開されていても）は来ない
 
-   赤を見た形（2026-09-09）: netLangsDown() の問い合わせを owner=eq.<自分> に
-   戻すと 1 が赤 ── 索引には居るのに letters は null。                      */
+   赤を見た形（2026-09-09）: netTakes() から netTakenDown() の一行を外すと
+   1 が赤 ── 索引には居るのに letters は null。                            */
 await pg.reload();
 await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
 
