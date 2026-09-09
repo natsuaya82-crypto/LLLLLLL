@@ -1698,6 +1698,15 @@ export function halfDone(){
        その「同じ」を撮れる状態がどこにも無かった：縦書きの面は新規だけ、
        返信の面は横書きだけで、二つが交わる所を歩いたものが無い。
        OWNER 実機 142 の二つ目はここのことなので、ここに置く。 */
+    /* ♡ を押した瞬間 ── 答えが戻る前の画面。「ハート押して 1 つくやん？」
+       OWNER 2026-09-09。走っているあいだのメモリ（`PMARK`）だけの状態なので、
+       種にも写しにも無く、どの面も歩いていませんでした。素の `feed` が
+       押す前で、これが押した直後です。 */
+    ['a post whose \u2661 has just been pressed', () => {
+        const p = POSTS[0], k = String(p.id) + '|like';
+        PMARK[k] = { i: true, n: postNLike(p) + 1 };
+        window.route = 'feed'; NAV = [{ r:'feed' }];
+        const h = vFeed(); delete PMARK[k]; return h; }],
     /* A POST THAT NAMED SOMEBODY AND ANSWERS NOTHING. 「@したらもう勝手に
        ツイートがこの形式になるようにしたい」 OWNER 2026-09-07 ── `toh` は
        載っていて `to` は無い、という組み合わせがどの面にも無かった。返信は

@@ -1199,10 +1199,41 @@ function postFresh(p){
    WHAT IS ALREADY IN THE COPY IS NOT TOUCHED. `li`, `bo`, `re`, `lime` and
    `bome` are still in `lingua.posts` on every phone that has this app; they
    are not read, not written and not removed (docs/DATA_SAFETY.md). */
-function postNLike(p){ return (p && p.nlike!==undefined)? p.nlike : 0; }
+
+/* AND A PRESS THE SERVER HAS NOT ANSWERED YET.
+   「Twitter もその仕様なはず。ハート押して 1 つくやん？サーバー飛んでないなら
+   ハートが消えるでいいんじゃない？」 OWNER 2026-09-09.
+
+   The ♡ lights and the number moves the moment it is pressed; if it did not
+   reach anybody the ♡ goes out and the number comes back, and nothing is
+   said. **This supersedes 「押した瞬間は動かず」 of 2026-09-08** -- that
+   decision is about where the ANSWER lives and it is untouched: the count is
+   still the server's, and the phone still adds nothing up that outlives a
+   press.
+
+   `PMARK` is that press and nothing else. It is a key in memory, not a field
+   on a post: nothing is written to `lingua.posts`, nothing survives the app
+   closing, and it goes the moment the server has answered -- whatever the
+   answer was. So there is no SECOND answer to 「did I press this」 anywhere
+   on this phone; there is the server's row, and a press still in the air.
+
+   It is read HERE, in the one place that says what the ♡ and the number are,
+   because a screen drawing the pending press itself would be that second
+   answer written out again. */
+var PMARK={};
+function pmOf(p, kind){
+  return (p && PMARK[String(p.id)+'|'+kind]) || null;
+}
+function postNLike(p){
+  var m=pmOf(p, 'like');
+  return m? m.n : ((p && p.nlike!==undefined)? p.nlike : 0);
+}
 function postNBoost(p){ return (p && p.nboost!==undefined)? p.nboost : 0; }
 function postNReply(p){ return (p && p.nreply!==undefined)? p.nreply : 0; }
-function postILike(p){ return !!(p && p.ilike); }
+function postILike(p){
+  var m=pmOf(p, 'like');
+  return m? m.i : !!(p && p.ilike);
+}
 function postIBoost(p){ return !!(p && p.iboost); }
 /* Where the server keeps it. Written when a push comes back and read for two
    things: whether this post has gone up at all, and what to point a reply at.
@@ -3584,34 +3615,54 @@ function postRow(p){
    pressing the heart has already been told by the press itself
    (www/post.js § postLike), and a second pop about the number under it would
    be the same failure said twice. */
-function postCountsPull(id){
+function postCountsPull(id, done){
   var p=postById(id), sid=p && p.sid;
-  if(!sid || typeof netPostCounts!=='function' || !netSignedIn()) return;
+  /* `done` is「the ask is over」and it runs on every road out of here,
+     including the ones that never ask: a press waiting on an answer that is
+     never going to come is a ♡ left lit on a post nobody can see. */
+  if(!sid || typeof netPostCounts!=='function' || !netSignedIn()){
+    if(done){ done(); render(); }
+    return;
+  }
   netPostCounts(sid, function(r){
-    if(r && postFresh(r)){ savePosts(); render(); }
-  }, function(){});
+    if(r && postFresh(r)) savePosts();
+    if(done) done();
+    render();
+  }, function(){ if(done){ done(); render(); } });
 }
-/* A LIKE IS THE SERVER'S ROW, AND THE THUMB MOVES WHEN THE SERVER HAS IT.
+/* A LIKE LIGHTS AT ONCE, AND GOES OUT IF IT DID NOT ARRIVE.
    -------------------------------------------------------------------------
-   「保存するタイミングでエラーが起きるなら、保存されないし」 OWNER 2026-09-05,
-   and it is the shape the 公開 switch already has (www/home.js § setWldHide).
+   「Twitter もその仕様なはず。ハート押して 1 つくやん？サーバー飛んでないなら
+   ハートが消えるでいいんじゃない？」 OWNER 2026-09-09.
 
-   This used to move the number and the heart first and send afterwards, on
-   the grounds that a press should show at once. What that is, with no signal,
-   is a screen saying a thing that did not happen: the heart stayed filled,
-   the number stayed up, and nothing had reached anybody. Now the press sends,
-   and what comes back moves the screen -- so a like that did not arrive is a
-   like that did not happen, and ［再接続］ presses it again.
+   The press shows immediately -- ♡ and the number, on the SCREEN (PMARK
+   above; nothing is stored) -- and the server is asked. When it answers, the
+   count is the server's, asked for rather than added up here: two phones each
+   adding one to their own copy is how a number goes backwards. When it does
+   not, the ♡ and the number are what they were before it was pressed and
+   NOTHING IS SAID -- the ♡ going out is what the person is told. There was a
+   ［再接続］ pop here; it is gone, because a press somebody can simply make
+   again is not a failure to stop them with.
 
-   NOT A NUMBER OF ITS OWN EITHER. netMark() sends whether it is liked, and
-   the count is asked for rather than added up here: two phones each adding
-   one to their own copy is how a number goes backwards. */
+   **This replaces the shape of 2026-09-05, and only for the ♡.** That one
+   sent first and moved the screen on the answer, so a like that did not
+   arrive was a like that never showed. Both readings are about the same
+   thing -- a screen must not say what did not happen -- and the owner has
+   chosen which one the ♡ is.
+
+   One press at a time on one ♡: pressing again while the first is in the air
+   would send a second row about a state nobody has agreed on yet. */
 function postLike(id){
-  var p=postById(id);
+  var p=postById(id), k, on;
   if(!p || !postMay()) return;
-  netMark(id, 'like', !postILike(p),
-    function(){ postCountsPull(id); },
-    function(d, st, m){ netPop(d, st, m, function(){ postLike(id); }); });
+  k=String(id)+'|like';
+  if(PMARK[k]) return;
+  on=!postILike(p);
+  PMARK[k]={i:on, n:Math.max(0, postNLike(p)+(on? 1 : -1))};
+  render();
+  netMark(id, 'like', on,
+    function(){ postCountsPull(id, function(){ delete PMARK[k]; }); },
+    function(){ delete PMARK[k]; render(); });
 }
 function postBoost(id){
   var p=postById(id);
