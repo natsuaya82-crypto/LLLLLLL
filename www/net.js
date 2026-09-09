@@ -564,21 +564,33 @@ function netTook(d){
      refresh -- and netPlanSync(), a moment later, renders when the account's
      answer moves the plan again. */
   planFor(SESS.uid);
-  /* AND THE LANGUAGES THIS ACCOUNT MADE, onto a phone that may never have
-     seen them. Here rather than at the five call sites for the same reason
-     `anon` and meFor() are here: this is the one place that knows a session
-     arrived. It fills in what is missing and stops, so a phone that already
-     has everything does one request and writes nothing.
-     Guarded to once per account per launch inside netLangBack(), because a
-     token refresh comes through here too. */
   /* AND THE LANGUAGE ON SCREEN. `meFor()` above swapped who the phone says
      it is; this swaps what it is showing. Twice, and the two are different
      moments -- see langForAcct() in www/core.js. Now, without minting,
      because this account's languages may be on their way down; and again
      when they have arrived or failed to, where a phone holding nothing of
-     theirs gets a fresh language. */
+     theirs gets a fresh language.
+
+     AND THE SECOND MOMENT WAITS ON THE ONE ROAD THAT BRINGS THEM DOWN.
+     There were TWO, and they raced: netLangBack() straight from here, and
+     netLangsDown() through pullBoot() below -- the same question
+     (`language?owner=eq.<me>`), and both of them MAKING the index row.
+     netLangBack1() asked for the slices first and made its entry inside the
+     answer, keyed by the `sid`; netLangsWalk() makes its entry first, keyed
+     by a fresh langMint() id -- so `LANGS[sid]` was still undefined when the
+     first answer came back and the same language got a SECOND row. Nothing
+     threw; it was found by somebody opening the switcher and seeing their
+     language twice. 「起動で同じ言語が切り替えに 2 行並ぶ」「ならばないように
+     して」 OWNER 2026-09-09.
+
+     The second road is DELETED rather than stopped by a condition (CLAUDE.md
+     § Simple), so `mylangs` is the whole of it -- www/sns.js § askLangs, on
+     PULL_OPEN, fired by pullBoot() at the foot of this function. pullWait()
+     is www/boot.js's own idiom for 「when the languages have come down」 and
+     it runs its waiter whether the answer arrived or was refused, which is
+     exactly what netLangBack() did with `done(false)`. */
   langForAcct(false);
-  if(typeof netLangBack==='function') netLangBack(function(){
+  if(typeof pullWait==='function') pullWait('mylangs', function(){
     if(langForAcct(true)) render();
   });
   /* AND EVERYTHING THE APP READS OFF THE SERVER, ASKED HERE, ONCE.
@@ -1526,125 +1538,30 @@ function netLangWsys(k, then){
             function(d, st, m){ netPop(d, st, m, function(){ netLangWsys(v, then); }); });
   }, function(d, st, m){ netPop(d, st, m, function(){ netLangWsys(v, then); }); });
 }
-/* EVERY LANGUAGE THIS PERSON MADE, BACK ONTO A PHONE THAT HAS NONE.
+/* THIS ACCOUNT'S OWN LANGUAGES COME DOWN ONE ROAD, AND IT IS netLangsDown().
    -------------------------------------------------------------------------
-   `netOut()` drops the session and nothing else, so on the SAME phone signing
-   back in finds every slice still in localStorage and the app looks whole.
-   On a NEW phone it was not: nothing in `www/` had ever read a `language` row
-   back, `LANGS` came up empty, and `netLangRow()` therefore made a SECOND row
-   on the server for a language that already had one. The first stayed there
-   with nothing pointing at it.
-   「基本は全部サーバー管理」「アカウント消したら残るわけがない」 OWNER 2026-08-26.
+   `netLangBack()` and `netLangBack1()` stood here and asked the same question
+   netLangsDown() below asks -- `language?owner=eq.<me>`, the row, and the
+   slices this phone does not have -- and BOTH of them made the index row. The
+   launch fired both at once (netTook() straight to this one, pullBoot() to
+   the other), so they raced: this one asked for the slices FIRST and made its
+   entry inside the answer keyed by the `sid`, while netLangsWalk() makes its
+   entry FIRST keyed by a fresh langMint() id. By the time this one's answer
+   came back `LANGS[sid]` was still undefined, and the same language got a
+   SECOND row -- 「起動で同じ言語が切り替えに 2 行並ぶ」 OWNER 2026-09-09.
 
-   `language_read` in supabase/schema.sql is `published_at is not null or
-   owner = auth.uid()`, so a person can ask for their own by owner and nothing
-   on the server had to change.
+   Deleted rather than guarded (CLAUDE.md § Simple -- 「直すじゃなくて書き換え」):
+   a second mechanism covering the first one's gap is the thing that must not
+   happen, because from then on nobody can say which of the two is deciding.
+   netLangsWalk() is the wider of the two anyway -- it writes the writing
+   system and the owner columns, calls netAgreed(), fills an empty name column
+   out of the `lang` slice, and walks the languages this account TOOK as well.
 
-   IT FILLS IN WHAT IS MISSING AND STOPS. That is `docs/DATA_SAFETY.md`'s rule
-   for a restore and it is the whole shape of this: a language already in the
-   index is left exactly as it is -- name, `sid`, slices, every byte -- and a
-   slice already in storage is not written over. **The way a backup destroys
-   somebody's work is by winning.** What comes down is what this phone does
-   not have.
-
-   A SERVER THAT DOES NOT ANSWER CHANGES NOTHING. 「it did not answer」 and
-   「there is nothing there」 are different states and never share a branch: a
-   refusal ends this function and leaves the phone as it was.
-
-   Fired and never waited for, the way netLangSync() is. Nothing on screen
-   depends on it -- a phone with no languages is on the onboarding, and one
-   with languages is already drawing them. */
-var NET_BACK='';
-function netLangBack(then){
-  var done=then || function(){};
-  if(!netSignedIn() || !SESS.uid){ done(false); return; }
-  /* Once per account per launch. netTook() runs on every token refresh as
-     well as on a sign-in, and this is a whole account's languages. */
-  if(NET_BACK===SESS.uid){ done(false); return; }
-  NET_BACK=SESS.uid;
-  netGet('/rest/v1/language?select=id,name,published_at,wsys&order=created_at.asc'+
-         '&owner=eq.'+encodeURIComponent(SESS.uid),
-    function(d){
-      /* AN ANSWER THAT IS NOT A LIST IS NOT A LIST OF NO LANGUAGES. PostgREST
-         answers a select with an array; anything else -- an error object, a
-         session, a body this code has never seen -- is a request that did not
-         mean what this one asked, and walking it as rows reads `undefined` as
-         a length and never stops. Same sentence as everywhere else in this
-         file: 「it did not answer」 and 「there is nothing there」 are two
-         states and must not share a branch. */
-      var rows=(d && typeof d.length==='number')? d : [], at=0, got=false;
-      /* Which of them this phone has never heard of. A language is known by
-         its `sid` -- the server's name for it -- and NOT by its local id: the
-         same language has a different local id on a phone it was made on and
-         on one it came back to, and matching on the local id would make a
-         second copy of every language on the second phone. */
-      function knows(sid){
-        var id;
-        for(id in LANGS){
-          if(!Object.prototype.hasOwnProperty.call(LANGS, id)) continue;
-          if(LANGS[id].sid===sid) return id;
-        }
-        return '';
-      }
-      function next(){
-        if(at>=rows.length){ done(got); return; }
-        var r=rows[at]||{}; at++;
-        var sid=String(r.id||''), had;
-        if(!sid){ next(); return; }
-        /* AND WHO WROTE IT, FOR EVERY ROW AND NOT ONLY THE NEW ONES. This
-           road asks `owner=eq.<me>`, so every row it gets is this account's --
-           and a language the phone already knows is exactly the one that
-           needs saying so: langForAcct() runs the moment this answers, and
-           with nothing recorded it finds nothing of this account's and MINTS
-           a language somebody did not ask for (measured 2026-09-09,
-           again-check: the open language came back as a fresh empty one and
-           the name never arrived). www/core.js § LOWN. */
-        had=knows(sid);
-        if(had){ langOwnGot(had, SESS.uid); next(); return; }
-        langWsysGot(sid, r.wsys);
-        netLangBack1(sid, String(r.name||''), r.published_at,
-                     function(m){ if(m) got=true; next(); });
-      }
-      next();
-    },
-    /* No answer is not an empty account. */
-    function(){ NET_BACK=''; done(false); });
-}
-/* One language, down. The index row is written FIRST and the slices under it,
-   so a language can never have keys in storage that the index does not know
-   about -- that is a set of keys nothing can find, which is the leftovers bug
-   langKeyOf() exists to prevent.
-
-   The local id IS the server's, the same as a language that is only read:
-   this phone has never named this language, and the server already has. It
-   also makes `knows()` above exact rather than a guess. */
-function netLangBack1(sid, name, at, done){
-  wldPubGot(sid, at);
-  langNameGot(sid, name);
-  langOwnGot(sid, SESS && SESS.uid);
-  netSlices(sid, function(there){
-    var i, kind, o, wrote=false;
-    if(!LANGS[sid]){ LANGS[sid]={ mine:true, sid:sid }; wrote=true; }
-    for(i=0;i<SLICES.length;i++){
-      kind=SLICES[i];
-      o=there[kind];
-      if(!o || !o.body) continue;
-      /* FILLS IN AND STOPS. A slice this phone already has is left alone --
-         netLangSync() is what puts the two together, and it MERGES; this one
-         only ever adds what is not here. slMine() for the reason
-         netLangsDown() gives: the picture is not something this phone is
-         holding, it is the last answer this one gave. */
-      if(slMine(langKeyOf(sid, kind))!==null) continue;
-      slWr(langKeyOf(sid, kind), o.body);
-      /* and what the two sides now agree it is, so a removal made after this
-         is told apart from a slice this phone has not heard about */
-      netAgreed(sid, kind, o.body);
-      wrote=true;
-    }
-    if(wrote) langStore();
-    done(wrote);
-  }, function(){ done(false); });
-}
+   What this one carried that the other did not is the moment AFTER: 「the
+   languages have come down, so a phone holding nothing of this account's may
+   have one made for it」. That is `pullWait('mylangs', ...)` in netTook()
+   above, which is the same idiom www/boot.js already waits on and runs its
+   waiter on a refusal exactly as `done(false)` did here. */
 /* SOMEBODY ELSE'S LANGUAGE, ASKED ABOUT.
    「言語の詳細は？」 OWNER 2026-09-01. `language_seen` in supabase/schema.sql
    answers with a published language or one of your own, and with nothing at

@@ -272,7 +272,7 @@ const came = await pg.evaluate(async ({ srv, saved }) => {
       if (v.length > 2){ n++; b += v.length; }
     }
     out.push({ id:ids[i], name:langNameOf(ids[i]), mine:LANGS[ids[i]].mine,
-               slices:n, bytes:b });
+               sid:String(LANGS[ids[i]].sid || ''), slices:n, bytes:b });
   }
   return { before: before, after: ids.length, langs: out };
 }, { srv: SERVER, saved: up.srv });
@@ -289,6 +289,33 @@ say(cameBy['Vaska'] >= 1 && cameBy['Toko'] >= 1,
     JSON.stringify(came.langs.map(l => l.name + ' ' + l.slices + ' slices ' + l.bytes + 'B')));
 say(came.langs.every(l => l.mine === true),
     'and both are the person’s own');
+
+/* ---- 2b. AND ONE ROW PER LANGUAGE, NOT TWO ------------------------------
+   「起動で同じ言語が切り替えに 2 行並ぶ。ならばないようにして」 OWNER 2026-09-09.
+
+   `netTook()` fired TWO roads that each bring this account's languages down
+   and each MAKE the index row: `netLangBack()` straight from it, and
+   `netLangsDown()` through `pullBoot()`. They raced. `netLangBack1()` asked
+   the slices FIRST and made its entry in the answer, keyed by the `sid`;
+   `netLangsWalk()` made its entry FIRST, keyed by a fresh `langMint()` id --
+   so by the time netLangBack1()'s answer came back, `LANGS[sid]` was still
+   undefined and it made a SECOND entry for a language that was already there.
+
+   Nothing throws and nothing is lost. It is found by somebody opening the
+   switcher and seeing their language twice (docs/BACKLOG.md 2026-09-09).
+
+   ASKED OF THE SID AND NOT OF THE NAME. Two entries for one language carry
+   one `sid` between them, and that is the whole of the claim -- a count of
+   rows would also be moved by a language legitimately arriving, and a count
+   of NAMES would be green for two rows whose name column had not come down
+   yet. */
+const bySid = {};
+came.langs.forEach(l => { if (l.sid) bySid[l.sid] = (bySid[l.sid] || 0) + 1; });
+const twice = Object.keys(bySid).filter(k => bySid[k] > 1);
+say(twice.length === 0,
+    'and the launch made ONE row per language — the two roads that each ' +
+    'brought this account’s languages down are one road now: ' +
+    JSON.stringify(came.langs.map(l => l.name + ' [' + l.sid + ']')));
 
 /* ---- 3. it FILLS IN, and never wins ------------------------------------- */
 const holds = await pg.evaluate(async ({ srv, saved }) => {
