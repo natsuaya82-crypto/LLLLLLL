@@ -21,7 +21,7 @@ The rest of `docs/` is the working detail behind the rules at the head of
 | `RECOVERY.md` | バグで人のものが消えたときに運営側で戻す案。三つ並べてある。**まだ決まっていません** |
 | `DUPLICATES.md` | 同じものが二箇所以上に直書きされている所の一覧。食い違っているものが八件、まだ一致しているものが十二件 |
 
-**§ 0 was written on 2026-09-05 and § 0-a re-read that night. Every other section was read
+**The 2026-09-09 section was written that day. § 0 was written on 2026-09-05 and § 0-a re-read that night. Every other section was read
 on 2026-09-03 and has not been re-read since.** Where a claim can go stale it
 carries the command that re-checks it. **Run the command; do not believe the
 sentence.**
@@ -32,7 +32,39 @@ un-re-read.
 
 ---
 
-## 2026-09-06 の夜 ── ビルド 140（一番新しい）
+## 2026-09-09 ── ビルド 146（一番新しい）
+
+`master` = `a223b3ba`、ゲート 43/43 緑（`slow-check` が増えて 43）、`npm run rls`
+緑（324 attempts）。ビルド 143（run 34201348003）→ 144（34263543210）→ 145
+（34309539693、master `b7f49f60`）→ 146（master `a223b3ba`、オーナーが通過を
+確認）。実機で見る場所は `docs/CHECK-0907.md`（143 / 144 / 145・146 の節）。
+**実機確認は全部まだ**（headless のみ）。
+
+入ったもの、順に：
+- **r6**（143）：投稿画面・プロフィール・キーボードの指摘。
+- **r7**（144）：宛先は本文の外の「Replying to @x」行、下書きのポップは popAsk、
+  写真 4 枚の帯、お題の札は一つの綴りで保存し表示言語で見せる、link / loc、
+  Follows you の位置、フォロワー一覧の永遠くるくる、非公開は `published_at`
+  だけ、管理の 7 回タップ、おすすめから返信を除く（`feed_hot`）、起動 8 段 →
+  5 段、文法の「この言語について」削除、rls-check の plan の書き換え。
+- **r8-server**（145）：「端末に残すものはない」の 9 つ ── 言語の名前は
+  `language.name`、済みはサーバーの profile 行（端末は `SET.walked` 一つ）、誰の
+  言語かは `language.owner` + `language_take`、投稿の数、フォロー、bio / link /
+  loc、下書きは `draft` 表だけ、書記体系は `language.wsys`、設えは
+  `profile.prefs`。**SQL の流し直しが要る**（`supabase/setup.md` 2026-09-09）。
+- **r8-take**（146）：取った言語が起動で降りてくる（`netLangsWalk` 一本、
+  `netTakenDown` は `language_take` の答えが来た時の二つ目の ask）。起動は直列
+  4 段。
+
+**決まったこと**（`docs/FEATURE_RULES.md` の決定ログ）：DL は「印」── 複製は
+持たず、元が消えれば取った側からも消える（サーバーは cascade で済み、端末の
+索引の行を落とすのは DELETE REVIEW 待ち、BACKLOG）。
+
+**待っている判断**：↓ で直接その言語に切り替えるか／元が非公開にした時の
+取った側／DL 言語を「返す」道（plus は 1 つなので、返せないと一生埋まる）／
+古い `lang` 鍵をいつ読まなくするか。iPhone の通知はリリース後（保留）。
+
+## 2026-09-06 の夜 ── ビルド 140
 
 `master` = `5484f390`、ゲート 41/41 緑、ビルド 140 = run 34055280829。三回目の実機
 指摘 22 件（キーボード 8・単語と文法とメモ 7・SNS と設定 6・取り込み 1）が全部
