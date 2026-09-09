@@ -1537,10 +1537,18 @@ function wldGet(lid, r){
   /* The index row FIRST, so a slice can never be in storage under a language
      the index does not know -- that is a set of keys nothing can find, which
      is the leftovers bug langKeyOf() exists to prevent. */
-  langSeenAdd(id, seen? seen.name : '');
+  langSeenAdd(id, seen? seen.name : '', seen? seen.owner : '');
   try{
     for(i=0;i<got.length;i++) slWr(langKeyOf(id, got[i][0]), got[i][1]);
   }catch(e){ return; }
+  /* AND THAT THIS ACCOUNT TOOK IT, which is a row on the server and not a
+     stamp on this phone's index (www/net.js § netTakePut). The ceiling on
+     downloads counts those rows, so a phone that wrote its own stamp counted
+     per handset: the same account on a second phone started at nought.
+     Fired and not waited for -- the chapter is already here and the count
+     it moves is asked for again by the answer. */
+  if(seen && seen.owner && typeof netTakePut==='function')
+    netTakePut(id, function(){ render(); }, function(){});
   /* Its name came down with the row and langSeenAdd() above has already
      recorded it. It used to be written into the `lang` slice as well, so that
      the index and the language could not drift; there is one answer now and
@@ -2332,7 +2340,20 @@ function vLangs(){
   var ids=Object.keys(LANGS), mine=[], reading=[], other=0, i, id;
   for(i=0;i<ids.length;i++){
     id=ids[i];
-    if(!LANGS[id].mine){ reading.push(id); continue; }
+    /* NOT ASKED YET IS NOT DRAWN. A language that has been up (`sid`) and
+       whose owner the server has not said is neither list's -- putting it in
+       one is this phone choosing, and both choices are wrong: 「mine」 shows
+       somebody else's language under your name, 「theirs」 hides your own.
+       The row is asked for at the open (www/sns.js § askLangs) and the count
+       at the foot says how many are not shown, which is what
+       docs/DATA_SAFETY.md § a shorter list is not a deletion asks for.
+       「揃ってから開く」 OWNER 2026-09-07, said about a list. */
+    if(LANGS[id].sid && !langOwnKnown(id)){ other++; continue; }
+    /* MADE OR ONLY READ, asked of `language.owner` (www/core.js § LOWN)
+       rather than of a boolean this phone wrote. `mine` on the index still
+       says which the entry was made as and is what langSeenAdd() writes; what
+       decides the two lists is whose language it is. */
+    if(!langMine(id)){ reading.push(id); continue; }
     /* WHOSE ACCOUNT, and not just whose phone.
        「あと違うアカウントでログインしてんのに前のやつ出てくるんだけど？」
        OWNER 2026-08-31. `LANGS` is the PHONE's -- it survives signing out --

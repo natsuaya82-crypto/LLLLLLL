@@ -119,6 +119,11 @@ const SERVER = `
         out.push({ kind:S.slice[q].kind, body:S.slice[q].body, no:S.slice[q].no });
       return answer(out);
     }
+    /* 取った言語の表。この検査の人は誰の言語も取っていないので空 ── 空の
+       一覧は答えで、「まだ訊いていない」ではありません
+       （www/core.js § LTAKE、2026-09-09）。 */
+    if (method === 'GET' && p.indexOf('/rest/v1/language_take') === 0)
+      return answer([]);
     if (method === 'GET' && p.indexOf('/rest/v1/language') === 0){
       /* language_read: your own, or anybody's that is published. This asks
          with owner=eq., which is the half a person asks about themselves. */
@@ -153,7 +158,11 @@ const up = await pg.evaluate(async ({ s, srv }) => {
      この言語をこう呼んでいる」を置いているだけ ── `langName` への直書きは
      開いている言語しか動かせず、開いていない方の名前は誰も言えません。 */
   langNameGot(first, 'Vaska'); save();
-  var second = langMint(); langStore();
+  /* 素の mint ── langNew() は上限とアカウントを訊くので、ここでは通しません。
+     そのぶん、langNew() が打つ「誰が書いたか」の印はここで打ちます
+     （www/core.js § LOWN、2026-09-09）。無いと save() が langLocked() で
+     断られ、この言語には一文字も入りません。 */
+  var second = langMint(); langOwnGot(second, SESS.uid); langStore();
   var was = langId;
   langOpen(second);
   langNameGot(second, 'Toko');
@@ -168,11 +177,15 @@ const up = await pg.evaluate(async ({ s, srv }) => {
      up, and langMint() is the bare mint rather than langNew(), which is what
      stamps on the real road. Both of those are why this is here rather than
      in the fixture. */
+  /* 誰が書いたかはサーバーの列で、`langOwnOf()` が訊きます
+     （www/core.js § LOWN、2026-09-09）。索引の `uid` はもう読みません ──
+     この検査はここで別のアカウントとしてサインインするので、fixture が
+     打った印を、いまサインインしている人のものに置き換えます。 */
   for (var __i in LANGS)
-    if (Object.prototype.hasOwnProperty.call(LANGS, __i)) LANGS[__i].uid = SESS.uid;
+    if (Object.prototype.hasOwnProperty.call(LANGS, __i)) langOwnGot(__i, SESS.uid);
   langStore();
   /* and a language that is only READ, which must never go up */
-  langSeenAdd('theirs-1', 'Shango');
+  langSeenAdd('theirs-1', 'Shango', 'somebody-else');
   slWr(langKeyOf('theirs-1', 'letters'), '[{"id":"x"}]');
 
   await new Promise(function(f){ netLangSync(function(){ f(); }); });
@@ -313,11 +326,33 @@ const safe = await pg.evaluate(async ({ srv, saved }) => {
   eval(srv);
   var S = window.__SRV, keep = JSON.parse(saved), out = {};
   S.lang = keep.lang; S.slice = keep.slice;
+  /* WHAT IS MEASURED IS WHAT SOMEBODY MADE, AND THE PICTURE IS NOT THAT.
+     `lingua.<id>.<slice>.got` is what the SERVER last said (www/core.js §
+     slGot) -- it is written by netAgreed() every time the two sides agree, so
+     it changes size whenever the app speaks to the server at all, and a
+     shrink there means the server's answer got shorter, not that anybody lost
+     anything. Measured 2026-09-09: this fired on a picture catching up with a
+     word the phone was already holding, with `slMine()` byte for byte the
+     same on both sides of it.
+
+     So the picture is watched for GOING (a key that disappeared is still a
+     loss) and not for shrinking, and what is watched for shrinking is the
+     rest -- the index, the session, the settings, the posts, and every body
+     the phone itself is holding, which is `slMine()` and is in MEMORY rather
+     than on the disk (rule 22). Without that last part this would be
+     measuring less than it did before, not more. */
   function snap(){
-    var m = {}, i, k;
+    var m = {}, i, k, id, j;
     for (i = 0; i < localStorage.length; i++){
       k = localStorage.key(i);
       m[k] = String(localStorage.getItem(k) || '').length;
+    }
+    for (id in LANGS){
+      if (!Object.prototype.hasOwnProperty.call(LANGS, id)) continue;
+      for (j = 0; j < SLICES.length; j++){
+        var v = slMine(langKeyOf(id, SLICES[j]));
+        if (v !== null) m['HOLDS ' + id + '.' + SLICES[j]] = String(v).length;
+      }
     }
     return m;
   }
@@ -326,6 +361,7 @@ const safe = await pg.evaluate(async ({ srv, saved }) => {
     for (k in was){
       if (!Object.prototype.hasOwnProperty.call(was, k)) continue;
       if (!(k in now)) { gone.push(k + ' GONE'); continue; }
+      if (k.indexOf('.got') === k.length - 4) continue;
       if (now[k] < was[k]) gone.push(k + ' ' + was[k] + '→' + now[k]);
     }
     return gone;
@@ -594,7 +630,7 @@ const del = await pg.evaluate(async ({ s, srv }) => {
   SESS = { at:'t', rt:'r', uid:'me', anon:false };
   function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
   for (var i in LANGS)
-    if (Object.prototype.hasOwnProperty.call(LANGS, i)) LANGS[i].uid = SESS.uid;
+    if (Object.prototype.hasOwnProperty.call(LANGS, i)) langOwnGot(i, SESS.uid);
   langStore();
   /* On the disk before anything is sent. The seed fills the globals; a slice
      is what localStorage holds, and the sync reads it from there. */
@@ -681,7 +717,7 @@ const up2 = await pg.evaluate(async ({ s, srv }) => {
   const settle = () => wait(NET_UPMS + 400);
 
   var id = langId;
-  LANGS[id].uid = 'me2'; LANGS[id].mine = true; langStore();
+  LANGS[id].mine = true; langOwnGot(id, 'me2'); langStore();
   langName = 'Save Now'; save();
 
   /* まず一度合わせて、両者が同じものを持っている所から始める。ここから先の
@@ -791,7 +827,7 @@ async function pressSave(how){
     SESS = { at:'t', rt:'r', uid:'me3', anon:false };
     function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
     var id = langId;
-    LANGS[id].uid = 'me3'; LANGS[id].mine = true;
+    LANGS[id].mine = true; langOwnGot(id, 'me3');
     /* この言語はもうサーバーに欄がある ── 一度でも保存した iPhone がそうです。
        欄が無い状態だけを見ると、落ちるのは POST /language になり、その人の
        作ったものを運ぶ POST は一度も試されません。 */
@@ -927,7 +963,7 @@ const seenUp = await pg.evaluate(async ({ s, srv }) => {
   ME.name = 'Aya'; ME.handle = 'aya'; saveMe();
   function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
   var id = langId;
-  LANGS[id].uid = 'me3'; LANGS[id].mine = true; langStore();
+  LANGS[id].mine = true; langOwnGot(id, 'me3'); langStore();
   langName = 'Kela';
   WORDS.push({ hw:'kelasu', gl:'a word that was on the screen before the signal went' });
   save();
@@ -1095,7 +1131,7 @@ const pop = await pg.evaluate(async ({ s, srv }) => {
   SESS = { at:'t', rt:'r', uid:'me3', anon:false };
   function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
   var id = langId;
-  LANGS[id].uid = 'me3'; LANGS[id].mine = true;
+  LANGS[id].mine = true; langOwnGot(id, 'me3');
   LANGS[id].sid = 'srv-known'; langStore();
   var out = {};
   /* ---- 待つのは、時間ではなく起きること ---------------------------------
@@ -1213,7 +1249,7 @@ const hid = await pg.evaluate(async ({ s, srv }) => {
   function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
   var id;
   for (id in LANGS)
-    if (Object.prototype.hasOwnProperty.call(LANGS, id)) LANGS[id].uid = SESS.uid;
+    if (Object.prototype.hasOwnProperty.call(LANGS, id)) langOwnGot(id, SESS.uid);
   langStore(); netSave();
   /* この人の言語はもうサーバーにあり、公開されている ── 人は言語を作った次の
      日に非公開にする。fixture が `sid` を打ってあるので netLangRow() は行を
@@ -1322,7 +1358,7 @@ const kbGrow = await pg.evaluate(async ({ s, srv }) => {
   SET.done = true; SET.plan = 'pro'; setKeep();
   eval(srv);
   SESS = { at:'t', rt:'r', uid:'kb1', anon:false };
-  LANGS[langId].sid = 'srvkb'; LANGS[langId].uid = SESS.uid; langStore(); netSave();
+  LANGS[langId].sid = 'srvkb'; langOwnGot(langId, SESS.uid); langStore(); netSave();
   var lay = kbFixed().lay; lay[0].rows = lay[0].rows.slice(0, 3);
   var board = { nm:'', pat:'qwerty', lay:lay };
   /* 古いビルドがディスクに残した写し ── id が無く、slWr はメモリにしか書か
@@ -1390,7 +1426,7 @@ const nmA = await pg.evaluate(async ({ s, srv }) => {
   function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
   var id;
   for (id in LANGS)
-    if (Object.prototype.hasOwnProperty.call(LANGS, id)) LANGS[id].uid = SESS.uid;
+    if (Object.prototype.hasOwnProperty.call(LANGS, id)) langOwnGot(id, SESS.uid);
   langStore(); netSave();
   window.__SRV.lang = [{ id:LANGS[langId].sid, owner:SESS.uid,
                          name:'ときの語', published_at:null }];

@@ -1113,7 +1113,21 @@ function askBlocks(ok, bad){
    just walked in, before langForAcct() had re-pointed it -- acct-check 9,
    which is the one thing in this area that loses somebody's work. */
 function askLangs(ok, bad){
-  netLangsDown(function(){ ok(1); }, bad);
+  /* THE ROWS AND WHAT THIS ACCOUNT HAS TAKEN, in one ask. Which languages
+     this account WROTE is netLangsDown(); which of somebody else's it TOOK is
+     `language_take` (www/net.js § netTakes), and the ceiling on downloads
+     counts the second. They came apart on the phone -- `LANGS[id].uid` was
+     both -- and they are two questions here, answered together because the
+     list of languages is drawn from both.
+
+     BOTH BEFORE EITHER IS DRAWN, the way meFollowsPull()'s two lists are: one
+     of them landing first would draw a list with a ceiling that has not been
+     told what it is counting. */
+  var left=2, fell=false;
+  function one(){ if(fell) return; left--; if(!left) ok(1); }
+  function no(d, s, m){ if(fell) return; fell=true; bad(d, s, m); }
+  netLangsDown(one, no);
+  netTakes(one, no);
 }
 /* WHAT ONE PERSON HAS WRITTEN, and it is the one place a profile's list of
    posts is asked for. Three roads wanted it -- the open, a pull, and the

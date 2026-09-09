@@ -78,6 +78,7 @@ https://raw.githubusercontent.com/natsuaya82-crypto/LLLLLLL/master/supabase/sche
 | Storage | `post-media` があり、**Public** になっている |
 | Database → Functions | `notices` と `account_delete` と `is_member` |
 | Database → Views | `follow_seen` `profile_seen` `post_seen` `language_seen` |
+| Database → Tables | `language_take`（2026-09-09 に増えました） |
 
 ### 2026-09-08 以降、**もう一度流し直してください**
 
@@ -94,6 +95,32 @@ https://raw.githubusercontent.com/natsuaya82-crypto/LLLLLLL/master/supabase/sche
 
 やることは上と同じで、**`schema.sql` を全部貼って Run**。表もデータも作り
 直しません（`create or replace view` と `create table if not exists` だけ）。
+
+### 2026-09-09 以降、**もう一度流し直してください**
+
+この日、「端末に残すものはない」の続きで `schema.sql` を三箇所触っています。
+
+1. **`language.wsys` 列**（書記体系）── 言語がどの書記体系で書かれているかは
+   人の設定（`SET.wsys`）に入っていて、二つ言語を持つ人は両方に一つの答えしか
+   持てず、公開した言語は五つのどれかを言えませんでした。`language_seen` も
+   `l.wsys` を返すようになったので、**view の作り直しが含まれます**。
+2. **`profile.prefs` 列**（jsonb）── テーマ・表示言語・自作フォント・自作文字・
+   キーボードのローマ字面。全部「この端末の設え」に入っていて、二台目に
+   サインインするとその端末がたまたまなっている形でアプリが開きました。
+   **`profile_seen` には入れていません** ── 自分のアプリの設えで、他人が
+   見るものではないので。
+3. **`language_take` 表**（新）── どのアカウントがどの言語をダウンロードしたか。
+   ダウンロードの上限（plus 1・pro 3）が端末の索引を数えていたので、同じ
+   アカウントの二台目は 0 から数え直していました。RLS は本人だけ
+   select / insert / delete で、**誰が何を取ったかは誰にも見せません**。
+
+**流し直すまで、アプリは言語の一覧・記事・ダウンロードで 404 を受け取ります**
+（新しい列を選ぶ GET が PGRST で断られます）。「くるくる回ったまま」ではなく、
+はっきり「接続できません」が出ます。**先に SQL、それからビルドです。**
+
+やることは上と同じで、**`schema.sql` を全部貼って Run**。表もデータも作り
+直しません（`alter table … add column if not exists`、
+`create table if not exists`、`create or replace view` だけ）。
 
 ### エラーが出たら
 

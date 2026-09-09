@@ -7,6 +7,21 @@ refactor, a feature and a rename never arrive in the same diff.
 
 The order is the order to do them in.
 
+## ダウンロードした言語を返す道がありません（2026-09-09）
+
+`language_take` の行はダウンロードで入り、アカウントか言語が消えれば
+cascade で消えます。**人が「この言語はもういい」と言う道はありません** ──
+前からありません（`wipeLangsGo()` は `langLocked()` で他人の言語を断ります）。
+
+だから `netTakeDrop()` は書いていません。呼ぶ人の無い関数は `dead-check` が
+断り、それは正しい ── 読む人がその関数を生きていると思ってしまうので。
+**表の DELETE ポリシーは在り、`npm run rls` が押さえています**（B は A の行を
+消せない）。その道を作る日に、この表へ書く二つ目のやり方を作らないためです。
+
+作るなら：言語一覧の「読んでいる」側の行に、返す道を一つ。行の DELETE が先で、
+通ってから端末の写しを落とす（下書きと同じ形）。**削除に触るので
+DELETE REVIEW が要ります。**
+
 ## `SET` に残った四つ（`order` `read` `voice` `script`）と `planV` は動かしていません（2026-09-09）
 
 設えの五つ（テーマ・表示言語・自作フォント・自作文字・キーボードのローマ字面）は

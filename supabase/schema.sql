@@ -286,6 +286,38 @@ alter table language add  constraint language_owner_fkey
 create index if not exists language_owner_idx on language(owner);
 create index if not exists language_published_idx on language(published_at) where published_at is not null;
 
+-- ---- AND WHICH OF SOMEBODY ELSE'S LANGUAGES AN ACCOUNT HAS TAKEN -------
+-- 「端末に残すものないんですけど。サーバーで同じ機能になるように代替して」
+-- OWNER 2026-09-08.
+--
+-- Downloading a chapter of somebody else's language put a row in the PHONE's
+-- index carrying `uid` -- and `LANGS[id].uid` on a downloaded language is not
+-- `language.owner` at all: the owner is who WROTE it, and this is who TOOK
+-- it. Two different facts wearing one field. `dlCount()` counts this one --
+-- the ceiling on downloads is per account (「plusは1つproは3つ」 OWNER
+-- 2026-09-02) -- so on a second phone the number started at nought and the
+-- ceiling was one ceiling per handset.
+--
+-- ONE ROW PER (ACCOUNT, LANGUAGE) and nothing else on it. What was taken is
+-- the `slice` rows the phone already holds; this says only that this account
+-- took this language, which is what a ceiling counts and what a list of
+-- 「languages I am reading」 is drawn from.
+--
+-- BOTH SIDES CASCADE. The account going takes its rows (nobody is counting
+-- for a person who is not there); the LANGUAGE going takes them too, because
+-- a row naming a language that no longer exists counts towards a ceiling for
+-- something nobody can open.
+--
+-- IT IS NOT A COPY OF THE LANGUAGE. Reading what was taken is `slice_read`
+-- and `slice_dl()` below, unchanged: this row opens no door that was shut.
+create table if not exists language_take (
+  uid       uuid not null references auth.users(id) on delete cascade,
+  language  uuid not null references language(id)   on delete cascade,
+  at        timestamptz not null default now(),
+  primary key (uid, language)
+);
+create index if not exists language_take_uid_idx on language_take(uid);
+
 -- ---- what a language is made of ---------------------------------------
 -- Eleven slices -- words, lines, lang, script, letters, notes, phases, talk,
 -- snd, kb, wld -- and they are SLICES here for the same reason they are
@@ -730,6 +762,7 @@ alter table report add constraint report_actor_fkey
 -- ---------------------------------------------------------------------------
 alter table profile     enable row level security;
 alter table language    enable row level security;
+alter table language_take enable row level security;
 alter table publication enable row level security;
 alter table post        enable row level security;
 alter table quote       enable row level security;
@@ -850,6 +883,22 @@ create policy language_edit on language for update
 drop policy if exists language_drop on language;
 create policy language_drop on language for delete
   using (is_member() and owner = auth.uid());
+
+-- language_take: your own rows and nobody else's, in all three directions.
+-- Who has taken a language is not something the app shows anybody -- it is
+-- what a ceiling counts -- so there is no 「published」 half here the way
+-- `language_read` has one. B may not read A's rows, may not write one for A,
+-- and may not delete one of A's.
+drop policy if exists take_read on language_take;
+create policy take_read on language_take for select
+  using (uid = auth.uid());
+drop policy if exists take_make on language_take;
+create policy take_make on language_take for insert
+  with check (is_member() and uid = auth.uid());
+drop policy if exists take_drop on language_take;
+create policy take_drop on language_take for delete
+  using (is_member() and uid = auth.uid());
+grant select, insert, delete on language_take to authenticated;
 
 -- slice: published means published, and the rest stays its owner's.
 --

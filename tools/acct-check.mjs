@@ -146,6 +146,11 @@ const R = await pg.evaluate(async () => {
     wipeParked();
     netOut();
     arrive(A); beA();
+    /* そして fixture の言語は、いまサインインしている人が書いたもの ──
+       どの案件もそこから始まります。「誰が書いたか」はサーバーの答えで
+       （www/core.js § LOWN）、案件をまたいで残る写しなので、案件のほうで
+       「まだ聞いていない」を測りたいときは、そこで一行落とします（12番）。 */
+    langOwnGot(langId, A);
   };
 
   /* ---- 1. somebody else signs in ---------------------------------------
@@ -333,7 +338,8 @@ const R = await pg.evaluate(async () => {
   /* 9. A が上げた言語に、B が触れない。 */
   start();
   wire(); posted = []; getted = [];
-  LANGS[langId] = { name: 'A の言語', mine: true, sid: 'A-lang', uid: A };
+  LANGS[langId] = { name: 'A の言語', mine: true, sid: 'A-lang' };
+  langOwnGot(langId, A);
   const id9 = langId;
   langStore();
   netOut(); arrive(B);
@@ -350,7 +356,8 @@ const R = await pg.evaluate(async () => {
      `owner: SESS.uid` で新しい行を作り、A の中身が B のものになります。 */
   start();
   wire(); posted = []; getted = [];
-  LANGS[langId] = { name: 'A の言語', mine: true, uid: A };
+  LANGS[langId] = { name: 'A の言語', mine: true };
+  langOwnGot(langId, A);
   const id10 = langId;
   langStore();
   netOut(); arrive(B);
@@ -367,7 +374,8 @@ const R = await pg.evaluate(async () => {
      両方向を見ます ── 閉じすぎると自分の言語が上がらなくなります。 */
   start();
   wire(); posted = []; getted = [];
-  LANGS[langId] = { name: '自分の言語', mine: true, uid: A };
+  LANGS[langId] = { name: '自分の言語', mine: true };
+  langOwnGot(langId, A);
   langStore();
   netOut(); arrive(A);
   let r11 = askRow();
@@ -390,6 +398,9 @@ const R = await pg.evaluate(async () => {
      言語を開きます。`askRow()` を素で呼ぶと、その B の新しい言語について
      訊くことになる ── 9 番と 10 番が前から名指ししているのと同じ理由です。 */
   const id12 = langId;
+  /* まだ誰も聞いていない状態にします ── start() のサインインで
+     netLangsDown() が答えを書いているので、それを落としてから。 */
+  langOwnGot(id12, '');
   netOut(); arrive(B);
   netGet = (path, ok) => { getted.push(path); ok([]); };     /* 持ち主ではない */
   let r12 = askRow(id12);
@@ -397,7 +408,7 @@ const R = await pg.evaluate(async () => {
   if (!getted.length) no('12: uid が無いのにサーバへ訊かなかった');
   if (!r12.refused) no('12: サーバが行を返さないのに通した');
   if (posted.length) no('12: 断ったあとで行を作りに行った');
-  if (LANGS[id12].uid) no('12: 持ち主でないのに uid を書いた');
+  if (langOwnOf(id12)) no('12: 持ち主でないのに書いた人を書いた');
   say('12: uid の無い言語は、サーバが持ち主を答える（他人なら断る）');
 
   /* そして持ち主なら通り、そのとき uid が端末に残る ── 次からは訊かない。 */
@@ -406,13 +417,14 @@ const R = await pg.evaluate(async () => {
   LANGS[langId] = { name: '前からある言語', mine: true, sid: 'old-lang' };
   langStore();
   const id12b = langId;
+  langOwnGot(id12b, '');
   netOut(); arrive(A);
   netGet = (path, ok) => { getted.push(path); ok([{ id: 'old-lang' }]); };
   let r12b = askRow(id12b);
   unwire();
   if (r12b.refused) no('12: 持ち主が自分の言語を断られた');
   if (r12b.got !== 'old-lang') no('12: 持ち主に sid が渡らなかった');
-  if (LANGS[id12b].uid !== A) no('12: 通ったのに uid が端末に残っていない');
+  if (langOwnOf(id12b) !== A) no('12: 通ったのに書いた人が残っていない');
   say('12: 持ち主なら通り、uid が残るので次からは訊かない');
 
   /* ---- 13-14. 自分の言語が、サーバから降りてくる ------------------------
@@ -426,7 +438,8 @@ const R = await pg.evaluate(async () => {
   start();
   netOut(); arrive(A);
   /* 端末には一つ、A の言語がある（sid つき）。サーバはそれと、もう一つ返す。 */
-  LANGS[langId] = { mine: true, sid: 'here-already', uid: A };
+  LANGS[langId] = { mine: true, sid: 'here-already' };
+  langOwnGot(langId, A);
   langStore();
   const keepId = langId;
   /* THIS LANGUAGE ALREADY HAS ITS WORDS AND HAS NO NAME SLICE, which is the
@@ -480,7 +493,7 @@ const R = await pg.evaluate(async () => {
   for (const k in LANGS) if (LANGS[k] && LANGS[k].sid === 'far-lang') far = k;
   if (!far) no('14: サーバにあった言語が端末に作られなかった');
   else {
-    if (LANGS[far].uid !== A) no('14: 降ろした言語に uid が付いていない');
+    if (langOwnOf(far) !== A) no('14: 降ろした言語に書いた人が付いていない');
     if (!LANGS[far].mine) no('14: 降ろした言語が自分のものになっていない');
     if (slRd(langKeyOf(far, 'words')) !== '[{"hw":"むこうの単語"}]')
       no('14: 降ろした言語の単語が入っていない');
@@ -583,9 +596,12 @@ const R = await pg.evaluate(async () => {
   start();
   netOut(); arrive(A);
   LANGS = {};
-  LANGS['La'] = { name: 'A の1', mine: true, uid: A };
-  LANGS['Lb'] = { name: 'A の2', mine: true, uid: A };
-  LANGS['Lc'] = { name: 'B の1', mine: true, uid: B };
+  LANGS['La'] = { name: 'A の1', mine: true };
+  langOwnGot('La', A);
+  LANGS['Lb'] = { name: 'A の2', mine: true };
+  langOwnGot('Lb', A);
+  LANGS['Lc'] = { name: 'B の1', mine: true };
+  langOwnGot('Lc', B);
   LANGS['Ld'] = { name: '印の無い言語', mine: true };
   langStore();
   const asA = langCount();
@@ -1444,9 +1460,9 @@ const R = await pg.evaluate(async () => {
     if (ok) ok([{ id: 'srv' }]);
   };
   LANGS = {
-    'Lgo':   { name: '消すほう',   mine: true, uid: A, sid: 'srv-go' },
-    'Lstay': { name: '残るほう',   mine: true, uid: A, sid: 'srv-stay' },
-    'Lb':    { name: 'B のもの',   mine: true, uid: B, sid: 'srv-b' }
+    'Lgo':   { name: '消すほう',   mine: true, sid: 'srv-go' },
+    'Lstay': { name: '残るほう',   mine: true, sid: 'srv-stay' },
+    'Lb':    { name: 'B のもの',   mine: true, sid: 'srv-b' }
   };
   langStore();
   const w30d = [{ hw: 'kano', ph: ['k'], mn: 'hill', mns: ['hill'], pos: 'n' }];
@@ -1508,8 +1524,9 @@ const R = await pg.evaluate(async () => {
   netOut(); arrive(A);
   const keepKbLangs = LANGS, keepKbId = langId;
   LANGS = {};
-  LANGS['Lmine']  = { name: '自分', mine: true, uid: A };
-  LANGS['Ltheirs']= { name: '他人', mine: true, uid: B };
+  LANGS['Lmine']  = { name: '自分', mine: true };
+  LANGS['Ltheirs']= { name: '他人', mine: true };
+  langOwnGot('Lmine', A); langOwnGot('Ltheirs', B);
   langId = 'Lmine';
   slWr(langKeyOf('Lmine', 'kb'),
     JSON.stringify({ kbs: [{ rows: [] }] }));
@@ -1534,9 +1551,12 @@ const R = await pg.evaluate(async () => {
   netOut(); arrive(A);
   const keepL2 = LANGS, keepId2 = langId, keepNm2 = langName;
   LANGS = {};
-  LANGS['La'] = { mine: true, uid: A };
-  LANGS['Lb'] = { mine: true, uid: B };
-  LANGS['Lc'] = { mine: true, uid: B };
+  LANGS['La'] = { mine: true };
+  langOwnGot('La', A);
+  LANGS['Lb'] = { mine: true };
+  langOwnGot('Lb', B);
+  LANGS['Lc'] = { mine: true };
+  langOwnGot('Lc', B);
   langId = 'La';
   /* 名前は `language.name` です（www/core.js § LNAME）── 開いている一つも、
      開いていない二つも、langRow() は同じ langNameOf() で訊きます。索引に
@@ -1565,7 +1585,7 @@ const R = await pg.evaluate(async () => {
   /* そして隠すものが無いときは言わない。数えていない一覧は、0 件を
      「0 件かくしています」と言い出します。 */
   netOut(); arrive(A);
-  LANGS = { 'La': { mine: true, uid: A } };
+  LANGS = { 'La': { mine: true } }; langOwnGot('La', A);
   langId = 'La'; langNameGot('La', '自分の');
   const noneHidden = vLangs();
   if (noneHidden.indexOf(t('cap.hid', 0)) >= 0)
@@ -1588,8 +1608,9 @@ const R = await pg.evaluate(async () => {
      消さないことも一緒に見る: 前のアカウントの言語も、その単語も、その場に
      残っていて、戻れば戻る。 */
   netOut();
-  LANGS = { 'La': { name: 'A の言語', mine: true, uid: A },
-            'Lb': { name: 'B の言語', mine: true, uid: B } };
+  LANGS = { 'La': { name: 'A の言語', mine: true },
+            'Lb': { name: 'B の言語', mine: true } };
+  langOwnGot('La', A); langOwnGot('Lb', B);
   langId = 'La'; langName = 'A の言語';
   try { slWr(langKeyOf('La', 'words'),
     JSON.stringify([{ hw: 'aaa', ph: ['a'], mn: 'A のことば', mns: ['A のことば'], pos: 'n' }])); } catch (e) {}
@@ -1609,15 +1630,15 @@ const R = await pg.evaluate(async () => {
      「訊いた人のもの」と読まれるので（langOwned）、A が戻ったときに A 自身の
      言語より先にそれが見つかります。 */
   netOut();
-  LANGS = { 'La': { name: 'A の言語', mine: true, uid: A } };
+  LANGS = { 'La': { name: 'A の言語', mine: true } }; langOwnGot('La', A);
   langId = 'La'; langName = 'A の言語';
   arrive(B);
   langForAcct(true);
   const madeForB = langId;
   if (madeForB === 'La') no('33: 何も持っていない B に A の言語が開いたまま');
-  if (!LANGS[madeForB] || String(LANGS[madeForB].uid || '') !== B)
+  if (!LANGS[madeForB] || langOwnOf(madeForB) !== B)
     no('33: B のために作った言語に B の印が無い（uid=' +
-       JSON.stringify(LANGS[madeForB] && LANGS[madeForB].uid) + '）');
+       JSON.stringify(langOwnOf(madeForB)) + '）');
   netOut(); arrive(A); langForAcct(true);
   if (langId !== 'La')
     no('33: A が戻ったのに、B のために作った言語のほうが開いた（' + langId + '）');
@@ -1642,14 +1663,14 @@ const R = await pg.evaluate(async () => {
   start();
   SET.plan = 'pro'; SET.planWas = 'pro'; save();
   const keepL34 = LANGS, keepId34 = langId, keepNm34 = langName;
-  LANGS = { 'La': { name: '自分の', mine: true, uid: A } };
+  LANGS = { 'La': { name: '自分の', mine: true } }; langOwnGot('La', A);
   langId = 'La'; langName = '自分の';
   langNew();
   const made34 = langId;
   if (made34 === 'La') no('34: ＋ を押したのに新しい言語が開いていない');
-  else if (String((LANGS[made34] || {}).uid || '') !== A)
+  else if (langOwnOf(made34) !== A)
     no('34: ＋ で作った言語に、押した人の印が無い（uid=' +
-       JSON.stringify((LANGS[made34] || {}).uid) + '）');
+       JSON.stringify(langOwnOf(made34)) + '）');
   /* そして印が付いたぶん、その言語はちゃんとその人のものとして数えられる。
      印の無い言語は 35 番で「誰のものでもない」になるので、この二つは
      同じ一つの穴の両側です。 */
@@ -1692,12 +1713,22 @@ const R = await pg.evaluate(async () => {
   netOut(); SET.done = false;
   if (!langOwned('Lu')) no('35: 歩きの途中で、作ったものが自分のでない');
 
-  /* 扉。サインインは済んだが obFinish() はまだ ── ここも歩きの内側。 */
+  /* 扉。サインインは済んで、まだ obFinish() を通っていない ── ここで
+     印の無い言語は**もう誰のものでもありません**。2026-09-09 から、扉を通る
+     その瞬間に obFinish() が `language.owner` になる印を書き、netLangSync()
+     がそれを上げます（www/onboard.js）。だから「サインインしたのにまだ歩きの
+     内側」という状態は無くなりました ── あったときは、A がこの端末で作って
+     一度も上げていない言語が B のものになる形でした。 */
   arrive(B);
-  if (!langOwned('Lu')) no('35: オンボーディングの扉で、歩きが作ったものが拾われない');
+  if (langOwned('Lu'))
+    no('35: サインインしただけで、印の無い言語が拾われた');
+  /* そして扉を通れば、その人のものとして上がる ── obFinish() が書く印。 */
+  langOwnGot('Lu', B);
+  if (!langOwned('Lu')) no('35: 扉が印を書いても、その人のものにならない');
+  langOwnGot('Lu', '');
 
-  /* 扉を出たら印が付いています。付いていない言語はもう誰のものでもない ──
-     端末の一人目という覚え方はしません。 */
+  /* 印の付いていない言語はもう誰のものでもない ── 端末の一人目という
+     覚え方はしません。 */
   SET.done = true;
   if (langOwned('Lu')) no('35: 印の無い言語が、アプリの中で訊いた人のものになっている');
   if (langAcct('Lu')) no('35: 印の無い言語が、訊いた人の一覧に出る');
@@ -1712,7 +1743,8 @@ const R = await pg.evaluate(async () => {
     no('35: 印の無い言語の単語が消えた ── 隠すのであって消すのではない');
 
   /* 印のある言語は持ち主には見え、他人には見えない。 */
-  LANGS['Lb'] = { name: 'A の言語', mine: true, uid: A };
+  LANGS['Lb'] = { name: 'A の言語', mine: true };
+  langOwnGot('Lb', A);
   if (!langOwned('Lb')) no('35: 自分の印が付いた言語が自分のものでない');
   netOut(); arrive(B);
   if (langOwned('Lb')) no('35: 他人の印が付いた言語が自分のものになっている');
@@ -1740,7 +1772,7 @@ const R = await pg.evaluate(async () => {
   start();
   SET.plan = 'pro'; SET.planWas = 'pro'; save();
   const keepL36 = LANGS, keepId36 = langId, keepNm36 = langName;
-  LANGS = { 'La': { name: '自分の', mine: true, uid: A } };
+  LANGS = { 'La': { name: '自分の', mine: true } }; langOwnGot('La', A);
   langId = 'La'; langName = '自分の';
   netOut();                                   /* サインアウトした人 */
   if (langStop()) no('36: 上限のほうで止まっている ── この検査が測りたいものではない');
@@ -1976,8 +2008,9 @@ const R = await pg.evaluate(async () => {
      あとも読み直されていなかった。 */
   start();
   netOut(); arrive('d46a');
-  LANGS = { La46: { name:'A の言語', mine:true, uid:'d46a' },
-            Lb46: { name:'B の言語', mine:true, uid:'d46b' } };
+  LANGS = { La46: { name:'A の言語', mine:true },
+            Lb46: { name:'B の言語', mine:true } };
+  langOwnGot('La46', 'd46a'); langOwnGot('Lb46', 'd46b');
   langId = 'La46'; langStore();
   try{
     slWr(langKeyOf('La46','words'), '[{"hw":"a"}]');
@@ -2047,7 +2080,7 @@ const R = await pg.evaluate(async () => {
   const seedD49 = () => {
     start();
     netOut(); arrive(D);
-    LANGS.Ld47 = { name: 'D の言語', mine: true, uid: D };
+    LANGS.Ld47 = { name: 'D の言語', mine: true }; langOwnGot('Ld47', D);
     langId = 'Ld47'; langStore();
     try{ slWr(langKeyOf('Ld47','words'), '[{"hw":"d"}]'); }catch(e){}
   };
@@ -2219,7 +2252,7 @@ const R = await pg.evaluate(async () => {
   const U53 = '66666666-6666-4666-8666-666666666666';
   netOut(); arrive(U53);
   LANGS[langId] = LANGS[langId] || { name: '消される言語', mine: true };
-  LANGS[langId].uid = U53; LANGS[langId].mine = true; langStore();
+  LANGS[langId].mine = true; langOwnGot(langId, U53); langStore();
   KB = kbBoardsOf({ kbs:[{ nm:'消される人のキーボード', pat:'qwerty',
                            lay:[{ rows:[['a']] }] }], at:0 });
   saveKb();
@@ -2696,8 +2729,9 @@ const R = await pg.evaluate(async () => {
     SET.plan = 'pro'; SET.planWas = 'pro'; save();
     const realSend63 = netSend;
     const keepL63 = LANGS, keepId63 = langId;
-    LANGS = { 'Lw': { mine:true, uid:A, sid:'srv-w' },
-              'Lx': { mine:true, uid:A, sid:'srv-x' } };
+    LANGS = { 'Lw': { mine:true, sid:'srv-w' },
+              'Lx': { mine:true, sid:'srv-x' } };
+    langOwnGot('Lw', A); langOwnGot('Lx', A);
     langId = 'Lw';
     langWsysGot('Lw', ''); langWsysGot('Lx', 'logo');
     delete SET.wsys;
@@ -2807,6 +2841,75 @@ const R = await pg.evaluate(async () => {
     SET.theme = 'system'; SET.ui = 'en'; setKeep();
     say('64: アプリの設えはアカウントのもの ── profile.prefs へ上がり、' +
         'サインインで降り、行が無ければ触らない');
+  }
+
+  /* ---- 65. 誰の言語かはサーバーの二つの列 --------------------------------
+     「端末に残すものないんですけど。サーバーで同じ機能になるように代替して」
+     OWNER 2026-09-08。
+
+     `LANGS[id].uid` は**二つの事実を一つの欄で**答えていました ── 作った
+     言語では書いた人、ダウンロードした言語では**取った人**（langSeenAdd
+     自身のコメントが「AND IT CARRIES WHOEVER TOOK IT」と言っていた）。
+     二つは、言語が人の間を移った瞬間にだけ食い違い、そこだけが問題になる
+     ところです。`dlCount()` は後者を数えていたので、**上限は端末ごと**でした
+     ── 同じアカウントの二台目は 0 から数え直します。
+
+     いまは二つの問いで、どちらもサーバーのものです:
+     書いた人は `language.owner`（`language_seen.owner`）、取ったことは
+     `language_take` の行。
+
+     四本訊きます:
+     1. 索引に `uid` を書かない（もう二つの事実を一つの欄に入れない）
+     2. ダウンロードの上限は `language_take` の行数（端末の索引ではない）
+     3. まだ訊いていない言語は、どちらの側にも落とさず**描かない**
+     4. アカウントを消すと、書いた言語も**取った言語**も端末から消える
+
+     赤を見た形（2026-09-09）: `dlCount()` を索引を歩く形に戻すと 2 が赤、
+     `langOwned()` の「訊いていない」を true に倒すと 3 が赤。 */
+  start();
+  netOut(); arrive(A);
+  {
+    const keepL65 = LANGS, keepId65 = langId;
+    LANGS = { 'Lmade':  { mine:true,  sid:'srv-made' },
+              'Ltook':  { mine:false, sid:'srv-took' },
+              'Lasked': { mine:true,  sid:'srv-asked' } };
+    langId = 'Lmade';
+    langOwnGot('Lmade', A);          /* A が書いた */
+    langOwnGot('Ltook', B);          /* B が書いたものを A が取った */
+    langOwnGot('Lasked', '');        /* まだ聞いていない */
+    langTookGot(['srv-took']);
+    langStore();
+
+    if (LANGS.Lmade.uid || LANGS.Ltook.uid)
+      no('65: 索引にまだ uid を書いている ── ' +
+         JSON.stringify([LANGS.Lmade.uid, LANGS.Ltook.uid]));
+    if (dlCount() !== 1)
+      no('65: 取った数がサーバーの行数になっていない — ' + dlCount());
+    if (!langMine('Lmade')) no('65: 自分が書いた言語が自分のものでない');
+    if (langMine('Ltook'))  no('65: 他人が書いた言語が自分のものになっている');
+    if (langOwned('Lasked'))
+      no('65: まだ聞いていない言語を「自分の」に倒した');
+    if (vLangs().indexOf('Lasked') >= 0)
+      no('65: まだ聞いていない言語を画面に描いた ── 揃ってから開く');
+    /* 訊いていない数は 0 ではない。 */
+    langTookGot(null);
+    if (dlCount() !== null)
+      no('65: 訊いていない取得数が 0 になっている — ' + dlCount());
+    langTookGot(['srv-took']);
+
+    /* アカウントを消すと、書いた言語も取った言語も端末から消える。 */
+    try{ slWr(langKeyOf('Lmade','words'), '[{"hw":"m"}]'); }catch(e){}
+    try{ slWr(langKeyOf('Ltook','words'), '[{"hw":"t"}]'); }catch(e){}
+    lsWipeAcct(A);
+    if (LANGS.Lmade)  no('65: 消したアカウントが書いた言語が残っている');
+    if (LANGS.Ltook)  no('65: 消したアカウントが取った言語が残っている ── ' +
+                          '書いたのは他人なので「誰の」では見つからない');
+    if (slRd(langKeyOf('Lmade','words')) || slRd(langKeyOf('Ltook','words')))
+      no('65: 消したアカウントの単語が残っている');
+
+    LANGS = keepL65; langId = keepId65; langStore();
+    say('65: 誰の言語かは language.owner と language_take の二つ ── ' +
+        '索引に uid は書かず、上限はサーバーの行を数え、聞いていない言語は描かない');
   }
 
   return out;

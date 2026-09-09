@@ -65,9 +65,15 @@ var LS_LANGS='lingua.langs', LS_CUR='lingua.cur', LS_S='lingua.set';
    so the caller can drop those backups and no others. */
 function lsWipeAcct(uid){
   var me=String(uid||''), ids=[], doomed=[], keys, id, i, k, j;
+  /* WHOSE, AND IT IS TWO QUESTIONS. A language this account WROTE is
+     `language.owner` (langOwnOf), and one it TOOK is a `language_take` row
+     (langTookHas) -- two facts that `LANGS[id].uid` used to answer with one
+     field, which is what came apart the day a language moved between people.
+     Both go: the account is being deleted, and its copies of what it pulled
+     down are as much its own as what it wrote. */
   for(id in LANGS)
     if(Object.prototype.hasOwnProperty.call(LANGS, id) && LANGS[id] &&
-       String(LANGS[id].uid||'')===me) ids.push(id);
+       (langOwnOf(id)===me || langTookHas(LANGS[id].sid))) ids.push(id);
   /* The slices are in MEMORY now (LSL above), so they are dropped rather than
      removed from storage -- and the record of what was last agreed with them,
      which is filed beside each one. */
@@ -349,6 +355,63 @@ function langWsysOf(id){
   p=slRd(langWsysKey(k));
   return p===null? '' : String(p);
 }
+/* AND WHO WROTE IT, WHICH IS `language.owner` AND NOTHING THIS PHONE DECIDES.
+   -------------------------------------------------------------------------
+   「端末に残すものないんですけど。サーバーで同じ機能になるように代替して」
+   OWNER 2026-09-08.
+
+   `LANGS[id].uid` used to answer this and it was TWO facts in one field: on a
+   language somebody made it was who made it, and on a downloaded one it was
+   who TOOK it -- langSeenAdd()'s own comment said 「AND IT CARRIES WHOEVER
+   TOOK IT」. The two come apart the moment a language moves between people,
+   which is the only time either matters.
+
+   They are two questions now and both are the server's. This is the first:
+   who WROTE it, `language.owner`, which comes down with the row (owner=eq.me
+   for your own) or off `language_seen.owner` for somebody else's. The second
+   -- who took it -- is the `language_take` table and langTook() below.
+
+   THREE STATES AND NOT TWO, the same as wldPubGot(): known to be mine, known
+   to be somebody else's, and NOT ASKED YET. The third is not drawn -- the
+   list waits, exactly as the article and the profile wait
+   （「全部読み込んでから開く」 OWNER 2026-09-07）-- because falling to either
+   side is wrong: to 「mine」 lets a save reach somebody else's language, and
+   to 「theirs」 hides a language from the person who made it. */
+var LOWN={};
+function langOwnKey(id){ return langKeyOf(String(id||''), 'owner'); }
+function langOwnGot(id, uid){
+  var k=String(id||''), v=String(uid||'');
+  if(!k) return;
+  LOWN[k]=v;
+  slGot(langOwnKey(k), v);
+}
+function langOwnOf(id){
+  var k=String(id||''), p;
+  if(!k) return '';
+  if(Object.prototype.hasOwnProperty.call(LOWN, k)) return LOWN[k];
+  p=slRd(langOwnKey(k));
+  return p===null? '' : String(p);
+}
+function langOwnKnown(id){ return !!langOwnOf(id); }
+/* AND HOW MANY OF SOMEBODY ELSE'S THIS ACCOUNT HAS TAKEN -- the `language_take`
+   table, counted on the server and kept here as the number it answered with.
+   `null` is 「not asked」 and is not nought: a ceiling measured against a
+   number nobody has given is a ceiling that refuses the first download of the
+   session or lets through the fourth. netTakes() (www/net.js) is what fills
+   it and dlStop() is what waits for it. */
+var LTAKE=null;
+function langTookGot(ids){ LTAKE=(ids && typeof ids.length==='number')? ids : null; }
+function langTook(){ return LTAKE? LTAKE.length : null; }
+/* Whether THIS account took this language, asked by the server's id for it.
+   lsWipeAcct() is what wants it: a downloaded language is written by somebody
+   else, so 「whose is it」 cannot find it, and deleting an account has to take
+   the copies that account pulled down. */
+function langTookHas(sid){
+  var k=String(sid||''), i;
+  if(!k || !LTAKE) return false;
+  for(i=0;i<LTAKE.length;i++) if(String(LTAKE[i])===k) return true;
+  return false;
+}
 /* What a person's settings are before they touch anything. A function rather
    than a literal because it is needed twice -- here, and when everything is
    wiped -- and the second copy was written out by hand and did not have the
@@ -606,7 +669,7 @@ function langMint(){
    as many chapters as it liked and the number at the foot of the list would
    go on saying nought. langNew() puts the same three lines on a language
    somebody MAKES; this is the reading side of it. */
-function langSeenAdd(sid, name){
+function langSeenAdd(sid, name, owner){
   var id=String(sid||'');
   if(!id) return '';
   if(!LANGS[id]) LANGS[id]={ mine:false, sid:id };
@@ -615,8 +678,12 @@ function langSeenAdd(sid, name){
      somebody was reading; the name is the server's answer now and a fresher
      one of those is not a rename. */
   if(name) langNameGot(id, name);
-  if(!LANGS[id].uid && typeof SESS!=='undefined' && SESS && SESS.uid)
-    LANGS[id].uid=String(SESS.uid);
+  /* AND WHO WROTE IT. It used to stamp whoever was signed in -- 「whoever
+     took it」 -- into the same field a language's own maker went into, so one
+     word answered two questions and the two came apart exactly here. Who
+     wrote it is `language_seen.owner` and comes in with the row; that this
+     account TOOK it is a `language_take` row and netTakePut() writes it. */
+  if(owner) langOwnGot(id, owner);
   langStore();
   return id;
 }
@@ -631,8 +698,34 @@ function langSeenAdd(sid, name){
    language not being backed up, which is what the owner asked for anyway
    (「入らん」). So the doubt falls toward yours. */
 function langMine(id){
-  var L=LANGS[String(id||'')];
-  return !L || L.mine!==false;
+  var k=String(id||''), L=LANGS[k], me, own;
+  if(!L) return true;
+  me=(typeof SESS!=='undefined' && SESS && SESS.uid)? String(SESS.uid) : '';
+  /* NOBODY SIGNED IN IS THE WALK, and it is the one answer that needs no
+     server: there is nobody to compare with, the phone is holding one
+     language, and it is the one being made. This is the branch `SET.done`
+     used to be asked for -- it asks the SESSION now, which is what the door
+     being last makes true. */
+  if(!me) return true;
+  own=langOwnOf(k);
+  if(own) return own===me;
+  /* Signed in, nothing said, and never been up: it is somebody's, and this
+     phone cannot say whose. A language made in the app carries the account
+     that made it from the moment it exists (langNew), and the walk's is
+     stamped at the door (obFinish) -- so what is left here is A's language
+     on a phone B signed in to, which is the one that must not be adopted.
+     acct-check 10 and 35. */
+  if(!L.sid) return false;
+  /* NOT ASKED YET, AND WHAT ANSWERS IS WHAT AN OLDER VERSION WROTE. `mine` on
+     the index is that: this app has written it since there were downloads,
+     and it is read HERE ONLY -- until the server says who wrote the language,
+     and never after. It is the migration reading, the same shape slMine()
+     falls back to the disk with: a phone that has this app on it today is
+     full of languages whose owner no road has ever asked about, and refusing
+     them all would stop netLangSync() ever asking. The screens do not draw an
+     unanswered language (www/home.js § vLangs); this is what keeps the road
+     to the answer open. */
+  return L.mine!==false;
 }
 /* AND THE OPEN LANGUAGE, ASKED BY EVERY WRITER OF ONE. True means the caller
    must stop -- upStop()'s shape, and for the same reason: a rule that lives in
@@ -880,9 +973,17 @@ function langOpen(id){
 function langNew(){
   if(!makeNeed()) return;
   if(langStop()) return;
+  /* AND WHO WROTE IT, which is not a guess: `language_make` in
+     supabase/schema.sql is `owner = auth.uid()`, so the row this language
+     gets can say nothing else. It is written where the language is MADE
+     rather than where the row is, because between the two is a phone that may
+     be in a tunnel for a week -- and an un-uploaded language with nobody on
+     it is the one A made and B signs in and takes (acct-check 10).
+
+     langFirst() and langMint() do not: they run before there is an account,
+     which is the walk, and the door is where what it made gets one. */
   var id=langMint();
-  if(typeof SESS!=='undefined' && SESS && SESS.uid)
-    LANGS[id].uid=String(SESS.uid);
+  if(typeof SESS!=='undefined' && SESS && SESS.uid) langOwnGot(id, SESS.uid);
   langStore();
   langOpen(id);
 }
@@ -1190,12 +1291,20 @@ function langOwned(id){
      deleted either -- it stays in the index, in
      storage and in the backup, and www/home.js counts it among the ones it is
      not showing. */
-  if(!L.uid) return !SET.done;
-  return String(L.uid)===me;
+  /* WHO WROTE IT, and the three states langMine() above sets out. It was
+     `!SET.done` -- a fact about the handset -- which is what handed one
+     person's language to the next one; it asks the language now. */
+  var own=langOwnOf(id);
+  if(own) return own===me;
+  /* Never been up and nobody claimed it: not this account's. The walk's own
+     language is stamped at the door before anything asks. */
+  if(!L.sid) return false;
+  /* Been up and not asked about yet. Neither side is drawn -- www/home.js §
+     vLangs leaves it out and says how many it is not showing. */
+  return false;
 }
 function langAcct(id){
-  var L=LANGS[id];
-  return !!(L && L.mine) && langOwned(id);
+  return langMine(id) && langOwned(id);
 }
 function langCount(){
   var n=0, id;
@@ -1260,18 +1369,24 @@ function dlCap(){
    account. langAcct() is the making side's question and this is its opposite
    half -- `mine` false rather than true, with the same account test, so
    signing in as somebody else does not hand you their downloads either. */
-function dlCount(){
-  var n=0, id;
-  for(id in LANGS)
-    if(Object.prototype.hasOwnProperty.call(LANGS, id) &&
-       LANGS[id] && !LANGS[id].mine && langOwned(id)) n++;
-  return n;
-}
+/* AND IT IS THE SERVER'S COUNT. It walked this phone's index -- entries with
+   `mine` false carrying this account's stamp -- and that stamp was 「who took
+   it」 kept on one handset, so the same account on a second phone counted
+   nought and the ceiling was one ceiling per handset rather than per account.
+   `language_take` is the table and netTakes() (www/net.js) is what asks.
+   `null` is 「not asked」 and dlStop() is what waits for it. */
+function dlCount(){ return langTook(); }
 /* The ceiling on downloads, met. langStop()'s shape exactly, and the same
    sentence: 「全部確認して飛ぶ」. Somebody already holding the biggest ceiling
    there is gets one line and no dialog, because there is nothing to fly to. */
 function dlStop(){
-  if(dlCount()<dlCap()) return false;
+  var n=dlCount();
+  /* NOT ASKED YET IS NOT NOUGHT AND IS NOT FULL. Nothing is refused and
+     nothing is let through on a number nobody has given: the button waits,
+     and netTakes() puts one there. The screen that presses this has already
+     asked (www/home.js § wldGet). */
+  if(n===null){ toast(t('net.offline')); return true; }
+  if(n<dlCap()) return false;
   if(dlCap()<PRO_DL) popAsk(t('up.need'), function(){ go('plans'); });
   /* toast() and not alert(): iOS's own box is banned outright
      （「標準は使わねえって言ってるだろこれも禁止や」OWNER 2026-09-01）and
@@ -1328,8 +1443,7 @@ function langForAcct(mayMint){
      true -- the person would watch the language they were just given
      disappear. */
   var nid=langMint();
-  if(typeof SESS!=='undefined' && SESS && SESS.uid)
-    LANGS[nid].uid=String(SESS.uid);
+  if(typeof SESS!=='undefined' && SESS && SESS.uid) langOwnGot(nid, SESS.uid);
   langStore();
   langOpen(nid);
   return true;

@@ -230,7 +230,9 @@ const r = await pg.evaluate(({ s }) => {
      no uid belongs to nobody once SET.done is true (langOwned), so an
      unstamped one seeded here is not in this person's ceiling at all --
      which is the thing this claim is about. */
-  LANGS['l_other'] = { nm: 'Other', uid: 'u' };
+  /* 誰が書いたかはサーバーの列で、`langOwnOf()` が訊きます
+     （www/core.js § LOWN、2026-09-09）。索引の `uid` はもう読みません。 */
+  LANGS['l_other'] = { nm: 'Other', mine: true }; langOwnGot('l_other', 'u');
   /* そして向こうの二枚は違う板でなければならない。id 以外が一バイト違わない
      板は 2026-09-07 から一枚です（www/keyboard.js § kbIded、「消していい。
      そもそも増殖させるな」OWNER）── ここが同じ板を二枚置いていたので、この
@@ -439,7 +441,7 @@ const r = await pg.evaluate(({ s }) => {
     var got = [], realSend = netSend, realRow = netLangRow, realSlices = netSlices;
     SET.plan = p; save();
     SESS = { at:'t', rt:'r', uid:'planner', anon:false };
-    LANGS[langId].uid = 'planner'; LANGS[langId].mine = true;
+    LANGS[langId].mine = true; langOwnGot(langId, 'planner');
     netLangRow = function(id, ok){ ok('sid-plan'); };
     netSlices = function(sid, ok){ ok({}); };
     /* the ok half has to be called: netSlicePut() steps to the next slice
@@ -658,6 +660,7 @@ const r = await pg.evaluate(({ s }) => {
   /* A language being READ is not one of yours. Counting it would make looking
      at the timeline fill up a ceiling. */
   LANGS['l_read'] = { name: 'Somebody else\'s', mine: false };
+  langOwnGot('l_read', 'somebody-else');
   out.langCountReading = langCount();          /* still 1 -- the open one */
   delete LANGS['l_read'];
 

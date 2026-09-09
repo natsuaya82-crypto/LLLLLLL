@@ -82,8 +82,12 @@ export function seed(){
      together on 2026-09-02, and it was read as the rule being wrong rather
      than as the fixture being a phone that had never once synced. */
   for (var __k in LANGS)
-    if (Object.prototype.hasOwnProperty.call(LANGS, __k) && !LANGS[__k].uid)
-      LANGS[__k].uid = 'u';
+    if (Object.prototype.hasOwnProperty.call(LANGS, __k) && !langOwnOf(__k))
+      langOwnGot(__k, 'u');
+  /* AND WHAT THIS ACCOUNT HAS TAKEN, which is nothing. `null` is 「まだ
+     訊いていない」 and dlStop() waits at it, so a walk without this line
+     cannot press the ↓ at all (www/core.js § LTAKE, 2026-09-09). */
+  langTookGot([]);
   langStore();
   /* anon:false is the half that matters. There is a session from the first
      launch now whether or not anybody has said who they are, so a fixture

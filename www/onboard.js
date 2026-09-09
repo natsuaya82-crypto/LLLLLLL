@@ -1881,6 +1881,15 @@ function obFinish(){
      rather than overwrites, and it is safe to call twice. So this is a call
      and not a condition -- nothing here re-states what that file already
      says. */
+  /* AND THE ACCOUNT GOES ON WHAT THE WALK MADE, HERE, BEFORE IT IS SENT.
+     「言語はアカウントないと作れないです」 -- the walk is the one place
+     something is made before there is one, and this is the door it comes out
+     of. Without this line the language has no owner recorded and no `sid`,
+     which is the state www/core.js § langMine refuses on purpose: it is the
+     shape of A's un-uploaded language on a phone B has just signed in to
+     (acct-check 10 and 35), and netLangSync() would not carry it up. */
+  if(typeof SESS!=='undefined' && SESS && SESS.uid && langId)
+    langOwnGot(langId, SESS.uid);
   if(typeof netLangSync==='function') netLangSync();
   /* AND HOW THE WALK LEFT THE APP SET UP. The drawing turned `myfont` on and
      borrowing a character turned `showScript` on, both before there was an

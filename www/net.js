@@ -1259,7 +1259,11 @@ function netPlanVerify(list, then){
 function netLangRow(id, ok, bad){
   var L=LANGS[String(id||'')], own, me, nm;
   if(!netSignedIn() || !L || L.mine===false){ bad(null, 0, 'langrow −'); return; }
-  own=L.uid? String(L.uid) : '';
+  /* WHO WROTE IT, off `language.owner` and not off this phone's index
+     (www/core.js § LOWN). `LANGS[id].uid` answered two questions with one
+     field -- who made it, and on a downloaded language who TOOK it -- and the
+     two come apart exactly where a language moves between people. */
+  own=langOwnOf(String(id||''));
   me=String(SESS.uid||'');
   /* Somebody else's. Not sent, not read, not minted -- and said with its own
      mark, so 「接続できません」 does not stand in for it (case 6 of
@@ -1271,7 +1275,7 @@ function netLangRow(id, ok, bad){
     netGet('/rest/v1/language?select=id&id=eq.'+encodeURIComponent(L.sid),
       function(d){
         if(!(d && d.length)){ bad(null, 0, 'langrow ≠'); return; }
-        L.uid=me; langStore();
+        langOwnGot(id, me);
         ok(L.sid);
       }, bad);
     return;
@@ -1296,7 +1300,8 @@ function netLangRow(id, ok, bad){
     function(d){
       var sid=(d && d.length)? d[0].id : '';
       if(!sid){ bad(d, 0); return; }
-      L.sid=sid; L.uid=me; langStore();
+      L.sid=sid; langStore();
+      langOwnGot(id, me);
       /* AND WHAT IT IS CALLED, from the row that has just been made. This is
          the walk's one window closing: the name was typed before there was an
          account to send it to, and here is where it becomes the column
@@ -1433,6 +1438,62 @@ function netLangRename(nm, then){
       function(d, st, m){ netPop(d, st, m, function(){ netLangRename(v, then); }); });
   }, function(d, st, m){ netPop(d, st, m, function(){ netLangRename(v, then); }); });
 }
+/* WHICH OF SOMEBODY ELSE'S LANGUAGES THIS ACCOUNT HAS TAKEN.
+   -------------------------------------------------------------------------
+   「端末に残すものないんですけど。サーバーで同じ機能になるように代替して」
+   OWNER 2026-09-08.
+
+   `language_take` in supabase/schema.sql -- one row per (account, language),
+   readable and writable by that account and by nobody else. It was
+   `LANGS[id].uid` on a downloaded language, which is the PHONE's index, so
+   the ceiling on downloads (「plusは1つproは3つ」 OWNER 2026-09-02) counted
+   per handset: the same account on a second phone started at nought.
+
+   THE IDS AND NOT A COUNT. dlCount() wants the number and lsWipeAcct()
+   (www/core.js) wants to know whether a given language is one of them --
+   deleting an account has to take the copies it pulled down, and those are
+   written by somebody else, so 「whose is it」 cannot find them.
+
+   Asked once a session, on the road that already knows a session arrived.
+   A refusal leaves the answer at `null`, which is 「not asked」 and is what
+   dlStop() waits for -- it is not nought, and a ceiling measured against a
+   number nobody gave refuses the first download or lets through the fourth. */
+function netTakes(ok, bad){
+  if(!netSignedIn() || !SESS || !SESS.uid){ if(bad) bad(null, 0, 'take −'); return; }
+  netGet('/rest/v1/language_take?select=language&uid=eq.'+
+         encodeURIComponent(SESS.uid),
+    function(d){
+      var rows=(d && typeof d.length==='number')? d : [], out=[], i;
+      for(i=0;i<rows.length;i++) if(rows[i] && rows[i].language)
+        out.push(String(rows[i].language));
+      langTookGot(out);
+      if(ok) ok(out);
+    }, function(d, st, m){ if(bad) bad(d, st, m); });
+}
+/* Taking one. The row goes up and the count moves when it has -- a ceiling
+   that moved on the press would be this phone doing the server's arithmetic,
+   which is what it was doing. `on conflict` is not needed: taking a second
+   chapter of a language already taken is the same (uid, language), and the
+   primary key refuses it -- which is the right answer, because it is not
+   another language. That refusal must not read as a failure, so a 409 is
+   taken as 「already there」 and the count is asked for again either way. */
+function netTakePut(sid, ok, bad){
+  var id=String(sid||'');
+  if(!netSignedIn() || !SESS || !SESS.uid || !id){ if(bad) bad(null, 0, 'take −'); return; }
+  netSend('POST', '/rest/v1/language_take', {uid:SESS.uid, language:id}, SESS.at,
+    function(){ netTakes(ok, bad); },
+    function(d, st, m){
+      if(st===409){ netTakes(ok, bad); return; }
+      if(bad) bad(d, st, m);
+    });
+}
+/* THERE IS NO ROAD THAT GIVES A DOWNLOADED LANGUAGE BACK, so there is no
+   function here that deletes one of these rows. `take_drop` in
+   supabase/schema.sql exists and npm run rls holds it -- B may not delete
+   one of A's -- because the day that road is built it must not invent a
+   second way to write this table. docs/BACKLOG.md carries it. Both sides
+   cascade meanwhile: the account going takes its rows and so does the
+   language. */
 /* AND HOW THIS LANGUAGE IS WRITTEN.
    -------------------------------------------------------------------------
    「端末に残すものないんですけど」 OWNER 2026-09-08. The same shape as
@@ -1504,15 +1565,25 @@ function netLangBack(then){
         var id;
         for(id in LANGS){
           if(!Object.prototype.hasOwnProperty.call(LANGS, id)) continue;
-          if(LANGS[id].sid===sid) return true;
+          if(LANGS[id].sid===sid) return id;
         }
-        return false;
+        return '';
       }
       function next(){
         if(at>=rows.length){ done(got); return; }
         var r=rows[at]||{}; at++;
-        var sid=String(r.id||'');
-        if(!sid || knows(sid)){ next(); return; }
+        var sid=String(r.id||''), had;
+        if(!sid){ next(); return; }
+        /* AND WHO WROTE IT, FOR EVERY ROW AND NOT ONLY THE NEW ONES. This
+           road asks `owner=eq.<me>`, so every row it gets is this account's --
+           and a language the phone already knows is exactly the one that
+           needs saying so: langForAcct() runs the moment this answers, and
+           with nothing recorded it finds nothing of this account's and MINTS
+           a language somebody did not ask for (measured 2026-09-09,
+           again-check: the open language came back as a fresh empty one and
+           the name never arrived). www/core.js § LOWN. */
+        had=knows(sid);
+        if(had){ langOwnGot(had, SESS.uid); next(); return; }
         langWsysGot(sid, r.wsys);
         netLangBack1(sid, String(r.name||''), r.published_at,
                      function(m){ if(m) got=true; next(); });
@@ -1533,6 +1604,7 @@ function netLangBack(then){
 function netLangBack1(sid, name, at, done){
   wldPubGot(sid, at);
   langNameGot(sid, name);
+  langOwnGot(sid, SESS && SESS.uid);
   netSlices(sid, function(there){
     var i, kind, o, wrote=false;
     if(!LANGS[sid]){ LANGS[sid]={ mine:true, sid:sid }; wrote=true; }
@@ -1577,13 +1649,14 @@ function netLangBack1(sid, name, at, done){
 function netLangSeen(lid, ok, bad){
   var id=String(lid||'');
   if(!id){ bad(null, 0, 'lang \u2212'); return; }
-  netGet('/rest/v1/language_seen?select=id,name,license,published_at,nwords,nletters,wsys'+
+  netGet('/rest/v1/language_seen?select=id,owner,name,license,published_at,nwords,nletters,wsys'+
          '&limit=1&id=eq.'+encodeURIComponent(id),
     function(d){
       var r;
       if(!d || !d.length){ ok(null); return; }
       r=d[0]||{};
-      ok({ id:String(r.id||''), name:String(r.name||''),
+      ok({ id:String(r.id||''), owner:String(r.owner||''),
+           name:String(r.name||''),
            license:String(r.license||''), wsys:String(r.wsys||''),
            pub:r.published_at? String(r.published_at) : '',
            nwords:Number(r.nwords)||0, nletters:Number(r.nletters)||0 });
@@ -1746,6 +1819,10 @@ function netLangsDown(then, bad){
            LWSYS). It was `SET.wsys` -- one answer for all of somebody's
            languages, on this handset, invisible to everybody else. */
         langWsysGot(nid, row.wsys);
+        /* AND WHO WROTE IT. This road asks `owner=eq.<me>`, so every row it
+           gets is this account's -- and saying so is what lets langMine()
+           answer at all (www/core.js § LOWN): 「not asked」 is neither side. */
+        langOwnGot(nid, SESS.uid);
         netSlices(row.id, function(there){
           var k;
           for(k in there){

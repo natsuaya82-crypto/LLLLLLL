@@ -1685,6 +1685,17 @@ the answer. The session, the settings, the timeline's copy, the profile's,
 and the parked copies of each are the rest. `store-check` prints the count on
 every run; read it there.
 
+**And the index says which and not what.** On 2026-09-08 and 09 the four
+things it was still answering moved to columns: what a language is CALLED is
+`language.name`, whether its page is open is `published_at`, how it is WRITTEN
+is `language.wsys`, and who WROTE it is `language.owner` — with 「which of
+somebody else's this account has taken」 a row in `language_take`, because
+`LANGS[id].uid` had been answering that and 「who made it」 with one field.
+Each is asked through one function in `www/core.js` (`langNameOf`,
+`wldPubOf`, `langWsysOf`, `langOwnOf`), each keeps the server's answer in
+memory and a picture on the disk with no road up, and each has THREE states:
+mine, somebody else's, and **not asked yet** — which is drawn as neither.
+
 **And every key of that copy belongs to an ACCOUNT.**
 「端末ごとにやることなんてねえよ」 OWNER 2026-09-03. This section used to end
 with a list of three things that were 「the phone's own」 -- a backup file, an

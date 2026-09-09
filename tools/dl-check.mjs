@@ -73,9 +73,21 @@ const r = await pg.evaluate(async ({ s, sid }) => {
   };
   var calls = [];
   netSlices = function(id, ok){ calls.push(['slices', id]); setTimeout(function(){ ok(THEIRS); }, 0); };
+  /* `owner` は「書いた人」で、2026-09-09 から行に載っています
+     （supabase/schema.sql § language_seen）。これが無いと、降ろした言語は
+     「まだ誰の物か聞いていない」になって画面に出ません。 */
   netLangSeen = function(id, ok){ calls.push(['seen', id]);
-    setTimeout(function(){ ok({ id:id, name:'Shango', license:'', pub:'2026-08-01',
+    setTimeout(function(){ ok({ id:id, owner:'them-uid', name:'Shango',
+                                license:'', pub:'2026-08-01',
                                 nwords:12, nletters:5 }); }, 0); };
+  /* そして「取った言語」の表。行は `language_take` で（www/net.js §
+     netTakes）、数はサーバーが数えます ── `null` は「まだ訊いていない」で、
+     dlStop() はそこで待ちます。ここは訊いた結果を置いておく形。 */
+  var TOOK = [];
+  netTakes = function(ok){ langTookGot(TOOK.slice()); if(ok) ok(TOOK.slice()); };
+  netTakePut = function(sid2, ok){ if(TOOK.indexOf(sid2) < 0) TOOK.push(sid2);
+                                   netTakes(ok); };
+  netTakes();
   /* and the language's own page says its chapters may be taken */
   netSignedIn = function(){ return true; };
 
