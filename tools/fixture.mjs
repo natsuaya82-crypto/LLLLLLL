@@ -1196,6 +1196,42 @@ export function halfDone(){
         window.route='admin'; NAV=[{r:'admin'}];
         const h = vAdmin();
         ADMIN_OK = false; ADMINN = keepN; ADMINS = keepS; MODS = keep; return h; }],
+    /* THE FACE THAT PUTS SOMEBODY'S LANGUAGE BACK, and both halves of it.
+       「運営が治せる仕様は欲しい…管理画面で」 OWNER 2026-09-09. It is a face
+       of the `admin` route rather than a route of its own, and the walk gets
+       there only past the door -- which is shut on the fixture's account, the
+       way it is on everybody's. Without these two, every button on the
+       recovery screen is 「an entry no screen names」, which is true and is
+       not what anybody meant. */
+    ['the admin screen, the recovery face', () => {
+        const keep = ADREC, keepH = ADREC_H;
+        ADMIN_OK = true;
+        ADREC_H = 'veth';
+        ADREC = { who:'u1',
+                  langs:[{ id:'L1', name:'Kano' }, { id:'L2', name:'Nen' }],
+                  hist:[] };
+        window.route='admin'; NAV=[{r:'admin'},{r:'admin',a:'rec'}];
+        const h = vAdmin();
+        ADMIN_OK = false; ADREC = keep; ADREC_H = keepH; return h; }],
+    /* And one language's parts, which is where the versions are. Two parts and
+       three versions of one of them, because the ceiling is three and a face
+       holding one row would not show that the newest is on top. */
+    ['the admin screen, one language’s versions', () => {
+        const keep = ADREC, keepH = ADREC_H;
+        ADMIN_OK = true;
+        ADREC_H = 'veth';
+        ADREC = { who:'u1', langs:[{ id:'L1', name:'Kano' }],
+                  hist:[{ sid:'L1', kind:'words', at:'2026-09-09T04:20:00Z',
+                          ms: Date.UTC(2026,8,9,4,20) },
+                        { sid:'L1', kind:'words', at:'2026-09-09T03:10:00Z',
+                          ms: Date.UTC(2026,8,9,3,10) },
+                        { sid:'L1', kind:'words', at:'2026-09-08T22:05:00Z',
+                          ms: Date.UTC(2026,8,8,22,5) },
+                        { sid:'L1', kind:'kb',    at:'2026-09-07T11:00:00Z',
+                          ms: Date.UTC(2026,8,7,11,0) }] };
+        window.route='admin'; NAV=[{r:'admin'},{r:'admin',a:'rec:L1'}];
+        const h = vAdmin();
+        ADMIN_OK = false; ADREC = keep; ADREC_H = keepH; return h; }],
     /* The composer, for somebody who has been ejected. Every write they make
        is refused by the server, and the line saying so is on no screen
        otherwise -- NET_BANNED is empty for everybody else. */
