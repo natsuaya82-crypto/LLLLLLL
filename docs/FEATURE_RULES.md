@@ -218,6 +218,18 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### 同じものを何度も運ばない ── 保存の写しを返さない・送る前の読みを無くす・起動の二度読みを一度に
+- Date: 2026-09-09
+- Area: 保存の道（`netSlicePut` / `netSaveUp`）、起動の道
+- Decision: `docs/reports/cost-2026-09-09.md` の三つを直す「これもやって」。
+  5,000 語の人の保存一回 2.6 MB → 0.9 MB 以下、起動一回 1.9 MB → 1.0 MB 以下。
+  $25 で 763 人 → 1,846 人。**二台目が同じ言語を編集した時に片方が消える形には
+  しない**（規則 6・22 はそのまま）。
+- Reason: 「$25 でどこまで対応できんの？」→ 測った → 同じものを三度運んでいた。
+- Affected features: 保存、起動
+- Affected data: 保存されるものは増えも減りもしない。流れる量が減る。
+- Implementation status: `claude/r10-wire` で作業中。
+
 ### ♡は押した瞬間に点き、届かなければ消える／古い言語の件は作らない／運営が戻せる画面が欲しい
 - Date: 2026-09-09（午後、続き）
 - Area: 投稿の♡、古い言語、運営画面
