@@ -301,7 +301,12 @@ lacks('nor A\'s letters', B1.letterIds, 'aA,aB,aC');
 want('nor A\'s notes', B1.notes, 0);
 want('nor A\'s conversation', B1.talk, 0);
 want('nor how far A had got', B1.sound, false);
-want('nor A\'s name', B1.name, '');
+/* B's own name and never A's. It was '' -- B had no name anywhere, so
+   「not A's」 and 「nothing」 were the same string and only one of them was
+   the claim. B carries one in the index, which is where an older version of
+   this app wrote it, and langNameOld() (www/core.js) is what shows it while
+   the column has said nothing. 'Vaska' here is the bug this line is for. */
+want("B's own name and not A's", B1.name, 'Toko');
 want('nor A\'s drawn script', B1.script, '');
 /* B gets its own set rather than A's -- this is the one that would have been
    invisible: the sounds looked right because they were somebody's. */
@@ -580,7 +585,12 @@ const f1 = await flatSeen();
 want('a phone carrying the eight flat keys gets one language', f1.langs, 1);
 want('and it is EMPTY -- the flat keys were not read', f1.words, 0);
 want('it is not the old language by name', f1.name, '');
-want('nor in the index', f1.indexName, '');
+/* The index holds no name AT ALL any more: what a language is called is
+   `language.name` on the server (www/core.js § LNAME) and the index says
+   WHICH languages are here, not what they are. This said '' -- 「the flat
+   key's name did not leak into the index」 -- and the field being absent is
+   that, one step further out. */
+want('nor in the index', f1.indexName, undefined);
 want('nothing of the notes came across', f1.notes, 0);
 want('nor the drawn script', f1.script, '');
 want('and not one word of the old language is under its id', f1.carried, '');

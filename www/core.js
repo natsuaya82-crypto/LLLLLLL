@@ -182,9 +182,10 @@ var SLICES=['words','lines','lang','script','letters','notes','phases','talk','s
    them down rather than leaving them out:
 
      lang    the language's NAME, which is the `language.name` column now
-             (2026-09-08, www/core.js § LNAME). Nothing in www/ reads or
-             writes this slice and it is NOT deleted -- what an older version
-             of this app wrote is left exactly where it is
+             (2026-09-08, www/core.js § LNAME). Nothing writes it. It is READ
+             in one place -- langNameOld(), where the column has said nothing
+             yet and what an older version of this app wrote is the only name
+             this phone has -- and it is NOT deleted
      talk    a chapter that closed. Nothing in www/ reads or writes it, and it
              is NOT deleted -- somebody's may be in it and that is the owner's
              to decide (docs/DATA_SAFETY.md § 4)
@@ -209,7 +210,7 @@ var LANG_IO={
   snd:    { rd:function(){ sndRead(); },  wr:function(){ saveSnd(); } },
   kb:     { rd:function(){ kbRead(); },   wr:function(){ saveKb(); } },
   wld:    { rd:function(){ wldRead(); },  wr:function(){ saveWld(); } },
-  lang:   { why:'the name, and it is the `language.name` column now (www/core.js § LNAME). Nothing here reads or writes this slice and it is not deleted -- what is in it is what an older version of this app put there' },
+  lang:   { why:'the name, and it is the `language.name` column now (www/core.js § LNAME). Nothing writes it; langNameOld() reads it where the column has said nothing yet, and it is not deleted -- what is in it is what an older version of this app put there' },
   talk:   { why:'a chapter that closed. Nothing reads or writes it, and it is not deleted' },
   gram2:  { why:'read by language id on demand in www/grammar-engine/adapter.js; there is no global copy' }
 };
@@ -242,7 +243,8 @@ function langSaveAll(){
    `language.name` on the server and langNameOf() is how it is asked -- the
    index carrying a second copy is what let a rename move one and not the
    other. Nothing removed what is already written down: an entry made by an
-   older version still carries the field, and nothing reads it.
+   older version still carries the field, and langNameOld() READS it, where
+   the column has said nothing yet and this is the only name the phone has.
 
    It said `{ name, mine } and nothing more`, and there were three. `sid` is
    the server's id for the language, put on by netLangRow() (www/net.js) the
@@ -315,12 +317,35 @@ function langNameGot(id, nm){
      WORDS is: one thing seen from many places, not a second answer */
   if(k===langId) langName=v;
 }
+/* AND WHAT AN OLDER VERSION OF THIS APP LEFT ON THIS PHONE, which is READ and
+   never written, never merged and never sent -- CLAUDE.md rule 22's migration,
+   the same shape slRd() falls back to the disk with.
+
+   Before the column there were two: the `lang` slice and `LANGS[id].name`,
+   and every phone carrying this app has one or both of them. Reading neither
+   is a phone whose own languages are a list of 未設定 -- the language opens,
+   the words are all there, and nothing on the screen says what it is.
+   「前に読み込んだ分は出て欲しい」 OWNER 2026-09-05.
+
+   IT RUNS ONLY WHERE THERE IS NO ANSWER. 「答えが無い」 and 「空」 are not the
+   same state and do not share a branch: a column the server has said is empty
+   is LNAME's own answer and is returned above, and this is reached only when
+   nobody has said anything at all. The moment the row comes down,
+   langNameGot() writes the answer and the picture, and this is never asked
+   again. Nothing here writes either one, so a name shown from an older
+   version's key cannot become the language's answer. */
+function langNameOld(id){
+  var s=slRd(langKeyOf(id, 'lang')), L=LANGS[id];
+  if(s!==null && String(s)!=='') return String(s);
+  return (L && L.name)? String(L.name) : '';
+}
 function langNameOf(id){
   var k=String(id||''), p;
   if(!k) return '';
   if(Object.prototype.hasOwnProperty.call(LNAME, k)) return LNAME[k];
   p=slRd(langNameKey(k));
-  return p===null? '' : String(p);
+  if(p!==null) return String(p);
+  return langNameOld(k);
 }
 /* AND HOW IT IS WRITTEN, WHICH IS THE LANGUAGE'S AND NOT THE PERSON'S.
    -------------------------------------------------------------------------
