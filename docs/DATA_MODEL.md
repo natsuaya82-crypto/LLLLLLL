@@ -166,10 +166,17 @@ posted recording in Storage at `<uid>/<pid>/vo.m4a` and writes the path onto
 `row.body.vu`, and `voRemote()` (`www/rec.js`) tells one on this phone from one
 on the server by whether the name holds a slash. The drafts went up on
 **2026-08-28**: `draft` in `supabase/schema.sql`, one row per draft, `body`
-holding what the composer held. `lingua.drafts` stays and is the copy that
-works with no signal — written FIRST and always, whatever the network is doing,
-because what somebody wrote must not depend on a signal — and it is no longer
-where a draft lives.
+holding what the composer held. `lingua.drafts` stays and is a **read-only
+copy** since 2026-09-09: the row goes first and the copy follows. Keeping a
+draft waits for `netDraftUp()`, deleting one waits for the DELETE, and a pull
+makes the copy match the server — a draft this phone had SENT and the server no
+longer has is one somebody deleted on another phone, and it goes. A draft that
+has never been up (`up` false — written before there was a server) is sent
+rather than dropped. The copy never travels back, which is what the old road
+did: it re-sent every draft the server did not have, so a draft deleted on the
+other phone was put back by this one, for ever. `up` on a draft is the mark
+that says which of the two a row-less draft is, and it is `.was`'s job said
+about a draft.
 
 A draft is read back by `draftsPull()` (`www/post.js`), which **fills in what
 this phone is missing and never writes over what is here** — § 2 of

@@ -3135,11 +3135,17 @@ const R = await pg.evaluate(async () => {
 
     /* 下書きも同じ道。 */
     {
-      const wasD = DRAFTS.slice();
+      const wasD = DRAFTS.slice(), wasSendD = netSend, wasSessD = SESS;
       DRAFTS = [];
       SET.ui = 'en';
+      /* 下書きは 2026-09-09 から行が出来てから手元に入ります
+         （www/post.js § draftKeep）。サーバーが要る ── 無いと、ここは
+         「保存できなかった」を測っているだけになります。 */
+      SESS = { at:'t', rt:'r', uid:'me' };
+      netSend = (m, path, body, tok, ok2) => ok2(m === 'PATCH' ? [{ id:'row' }] : []);
       PW = pwBlank(); PW.ln = enWord + ' kano';
       draftKeep();
+      netSend = wasSendD; SESS = wasSessD;
       const kept = DRAFTS[DRAFTS.length - 1];
       if (!kept || String(kept.ln || '').indexOf(mark) !== 0)
         fails.push('a draft written on an English screen keeps "' +

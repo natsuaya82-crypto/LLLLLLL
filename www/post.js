@@ -478,10 +478,17 @@ function draftsSave(){
    drafts, and a name made on one must not be a name made on the other.
    www/net.js is loaded before this file (www/index.html), which is why this
    can run where it does. */
+/* AND WHETHER IT HAS EVER BEEN ON THE SERVER, which is what tells 「written
+   before there was a server」 from 「the row was deleted on the other phone」.
+   Both are a draft with a name and no row, and they want opposite things done
+   about them: the first goes up, the second goes off this phone.
+   `up` is written when netDraftUp() lands and by nothing else -- the same
+   thing `lingua.<id>.<slice>.was` is for a slice. A draft made from today
+   reaches the server before it reaches this list, so it is always 1. */
 function draftsName(){
   var i, n=0;
   for(i=0;i<DRAFTS.length;i++)
-    if(DRAFTS[i] && !DRAFTS[i].id){ DRAFTS[i].id=netUUID(); n++; }
+    if(DRAFTS[i] && !DRAFTS[i].id){ DRAFTS[i].id=netUUID(); DRAFTS[i].up=0; n++; }
   if(n) draftsSave();
 }
 function draftById(id){
@@ -526,20 +533,26 @@ function draftKeep(){
      server nobody can reach and one in front of them. */
   var d={id:PW.did || netUUID(), at:Date.now(), ln:dayTagStore(PW.ln), mn:PW.mn, to:PW.to,
          toh:PW.toh||'', pr:PW.pr||0, pics:pwPics(), vo:PW.vo||null, pv:!!PW.pv};
-  DRAFTS.push(d);
-  /* The phone FIRST and always, whatever the network is doing. A draft is on
-     this phone the moment it is written, and it is written by somebody who
-     may be in a tunnel: 「書いたものが signal 無しで消えるのは駄目」. The
-     server is where it lives; this is the copy that works without one. */
-  draftsSave();
-  /* And then up. Not waited on and its failure is not said: nothing on the
-     screen depends on the answer, the draft is already safe on the phone, and
-     the next time the drafts are opened draftsPull() sends up anything the
-     server has not got. */
-  netDraftUp(d);
-  PW=pwBlank();
-  toast(t('post.draft.kept'));
-  goTab('feed');
+  /* THE SERVER FIRST, AND THE LIST WHEN IT HAS LANDED.
+     「端末に残すものないんですけど」 OWNER 2026-09-08, and
+     「保存するタイミングでエラーが起きるなら、保存されないし」 OWNER
+     2026-09-05.
+
+     This wrote the phone first and sent afterwards without waiting, so a draft
+     written in a tunnel sat here as the only copy -- and `lingua.drafts` is a
+     copy that must not travel back (rule 22), which made that draft one this
+     app could never put anywhere. The keep does not happen now; what was
+     typed stays in the composer, on the screen, and ［再接続］ presses Keep
+     again. Nothing of anybody's is thrown away by a failure: the composer is
+     untouched until the row is there. */
+  netDraftUp(d, function(){
+    d.up=1;
+    DRAFTS.push(d);
+    draftsSave();
+    PW=pwBlank();
+    toast(t('post.draft.kept'));
+    goTab('feed');
+  }, function(dd, st, m){ netPop(dd, st, m, draftKeep); });
 }
 /* Opening one takes it out of the list: it is the composer again, and a draft
    that is open in two places at once is a draft about to be duplicated. */
@@ -572,14 +585,30 @@ function draftOpen(i){
   PW.did=d.id||'';
   openPost();
 }
-function draftDropGo(i){
-  var d=DRAFTS[i];
+/* THE ROW FIRST, AND THE COPY WHEN IT HAS GONE.
+   A draft LIVES on the server, so taking it off this phone and leaving the
+   row is not deleting it -- the next pull brings it back, and 「gone, then
+   back」 is not gone. It is netLangDrop()'s sentence said about a draft.
+
+   A draft that has never been up (`up` false -- written before there was a
+   server, and never sent) has no row to take away, and that is done rather
+   than failed: it is netDrop()'s own `if(!sid)`.
+
+   `i` was an index and is a DRAFT now: the row goes first, so by the time
+   this phone's list is touched the index it was given may name a different
+   draft. dfSelDelGo() below hands the drafts themselves for the same reason. */
+function draftDropGo(d){
+  if(typeof d==='number') d=DRAFTS[d];
+  if(!d) return;
+  if(!d.id || !d.up || !netSignedIn()){ draftDropHere(d); return; }
+  netDraftDrop(d.id, function(){ draftDropHere(d); },
+    function(dd, st, m){ netPop(dd, st, m, function(){ draftDropGo(d); }); });
+}
+function draftDropHere(d){
+  var i=DRAFTS.indexOf(d);
+  if(i<0) return;
   DRAFTS.splice(i, 1);
   draftsSave();
-  /* And off the server, because that is where it lived. A user action behind
-     a confirm, naming the one row it was given -- nothing here walks the
-     table asking what is stale (docs/DATA_SAFETY.md § DELETE REVIEW). */
-  if(d && d.id) netDraftDrop(d.id);
   /* AND THE RECORDING THAT WAS ONLY THIS DRAFT'S.
      「声は投稿上で再生できるよね？下書き消した時にはいらなくない？」 OWNER
      2026-09-03. The file is written when the recording ends (www/rec.js §
@@ -613,7 +642,7 @@ function draftsPull(ok, bad){
   var done=ok || function(){};
   if(!netSignedIn()){ done(0); return; }
   netDrafts(function(rows){
-    var i, k, r, b, d, seen={}, got=0;
+    var i, k, r, b, d, seen={}, keep=[], moved=false;
     for(i=0;i<(rows||[]).length;i++){
       r=rows[i];
       if(!r || !r.id) continue;
@@ -622,21 +651,45 @@ function draftsPull(ok, bad){
          it was opened, and putting it back is the same post in two places,
          which is the thing tools/draft-check.mjs holds. */
       if(PW && PW.did===r.id) continue;
-      if(draftById(r.id)) continue;
+      d=draftById(r.id);
+      if(d){ keep.push(d); continue; }
       d={}; b=r.body || {};
       for(k in b) if(Object.prototype.hasOwnProperty.call(b, k)) d[k]=b[k];
-      d.id=r.id;
+      d.id=r.id; d.up=1;
       if(!d.at) d.at=Date.parse(r.updated_at) || Date.now();
-      DRAFTS.push(d);
-      got++;
+      keep.push(d);
+      moved=true;
     }
-    if(got) draftsSave();
-    /* And what the server has not got. Not waited on and not counted: each
-       one answers for itself, and one that does not go up is still on this
-       phone and is tried again the next time this runs. */
-    for(i=0;i<DRAFTS.length;i++)
-      if(DRAFTS[i] && DRAFTS[i].id && !seen[DRAFTS[i].id]) netDraftUp(DRAFTS[i]);
-    done(got? 1 : 0);
+    /* AND WHAT THIS PHONE HAS THAT THE SERVER DOES NOT, WHICH IS TWO
+       DIFFERENT THINGS.
+       「もう一台で消した下書きが戻ってくる」 -- this used to send every one of
+       them up, so a draft deleted on the other phone was put back by this one,
+       for ever, and there was no way to be rid of it.
+
+       `up` is what tells them apart. A draft this phone has SENT and the
+       server has not got is a row somebody deleted somewhere else: the copy
+       catches up and it goes off this phone. A draft that has never been up
+       -- written before there was a server -- has never been anywhere else,
+       so it is sent, once, and joins the rest.
+
+       Nothing of anybody's is lost either way: the first is something they
+       deleted, and the second is on its way to where it lives. */
+    for(i=0;i<DRAFTS.length;i++){
+      d=DRAFTS[i];
+      if(!d || !d.id || seen[d.id]) continue;
+      if(PW && PW.did===d.id){ keep.push(d); continue; }
+      if(d.up){ moved=true; continue; }
+      keep.push(d);
+      netDraftUp(d, (function(one){
+        return function(){ one.up=1; draftsSave(); };
+      })(d));
+    }
+    if(moved || keep.length!==DRAFTS.length){
+      DRAFTS=keep;
+      draftsSave();
+      moved=true;
+    }
+    done(moved? 1 : 0);
   }, bad || function(){});
 }
 /* THE SECOND ROAD IS GONE. This was draftsPullOnce(): once for the account
@@ -687,9 +740,15 @@ function dfSelDel(){
    knife. And through draftDropGo(), which is the one place a draft goes -- it
    is what tells the server. */
 function dfSelDelGo(){
-  var ids=dfSelList().sort(function(a, b){ return b-a; }), i;
+  var ids=dfSelList(), ds=[], i;
   DFSEL=null;
-  for(i=0;i<ids.length;i++) draftDropGo(ids[i]);
+  /* The drafts and not their places in the list. Each one waits for its own
+     row to go, so by the time the second answer lands the list has moved
+     under the numbers -- which is how an index-shaped delete takes the wrong
+     draft. Sorting highest-first was the answer while this was immediate; it
+     is not one now. */
+  for(i=0;i<ids.length;i++) if(DRAFTS[ids[i]]) ds.push(DRAFTS[ids[i]]);
+  for(i=0;i<ds.length;i++) draftDropGo(ds[i]);
   render();
 }
 function vDrafts(){
