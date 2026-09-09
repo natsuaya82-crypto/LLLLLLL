@@ -64,6 +64,8 @@ const DELETES = {
   wipeAll:    { takes: 'the account: its row on the server and, on this handset, everything lsWipeAcct() names (docs/DATA_MODEL.md § what an account deletion actually takes)', asks: true },
 
   /* ---- taken without asking, and each of these is a decision ---------- */
+  langDrop:   { takes: 'a language this account only TOOK: its row in `language_take` on the server, then its twelve slices and its row in LANGS on this phone. The source\u2019s own language and its slice rows are not touched \u2014 what comes off is the mark', asks: false,
+                why: 'the row of somebody else\u2019s language, slid left in the switcher, with a 削除 at the end of it \u2014 iOS\u2019s own list. A confirm on every one would make giving a download back a conversation, and what stands behind it is the road back rather than a dialog: the \u2193 on the article takes it again （「もう一度取る」）. Nothing anybody MADE goes, and the server is asked first \u2014 a DELETE that does not land drops nothing at all. DELETE REVIEW in docs/CHANGELOG.md 2026-09-09' },
   sndDrop:    { takes: 'one sound out of SND', asks: false,
                 why: 'it refuses while any letter still reads that sound and says which letters, so nothing that is in use can go — and a sound nothing reads is a row in a list rather than something somebody made' },
   wldOvDel:   { takes: 'one row of what the language is for, out of WLD', asks: false,

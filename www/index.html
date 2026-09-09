@@ -2425,6 +2425,45 @@ a.set{text-decoration:none}
      overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lgrow.on .lgn{font-weight:700}
 .lgck{flex:0 0 auto;width:28px;text-align:center;color:var(--gold)}
+/* And a language you only TOOK is given back by sliding its row.
+   「言語変更画面をスライドで消せる」OWNER 2026-09-09. iOS's own list, so the
+   削除 sits BESIDE the row and is off the right edge until the row moves --
+   `overflow:hidden` is the whole of the hiding, and it is why the row can be
+   dragged rather than swapped for something else.
+
+   NO CORNER, NO FRAME, NO PANEL (規則18). `.btn.ghost` is the words on their
+   own and that is all this is; the line under the row moves to the wrapper so
+   it stays put while the row slides, and a single side is the shape the rule
+   asks FOR -- 「基本下線だけ」. It is not on tools/box-baseline.txt because
+   nothing here is a box.
+
+   The width is what 削除 needs and never less than a thumb: 96px against the
+   44 press-check asks for, and the row keeps its own 68px. */
+.lgsw{position:relative;overflow:hidden;border-bottom:1px solid var(--line)}
+/* THE BUTTON DOES NOT MOVE. THE ROW SLIDES OFF IT, which is what iOS's own
+   list does and is the only shape that fits inside the box: the 削除 sits at
+   the right end, the row lies on top of it with the page's own background,
+   and dragging the row left uncovers it. Nothing overflows, so nothing has to
+   be excused.
+
+   Two goes at this were wrong and both were caught by something looking
+   rather than by reading. `right:0` with the button ON TOP left it in plain
+   sight on every shut row -- seen in the screenshot, which is what the
+   picture is taken for. Moving it OUT to `left:100%` hid it and made the
+   wrapper 450 wide inside a 354 phone: `overflow:hidden` clips the paint and
+   press-check reads `scrollWidth`, which cannot tell a button parked off the
+   edge from a sentence swallowed in silence -- 「lgsw 450 in 354」.
+
+   `.lgsw .lgdel` and not `.lgdel`: `.btn` is one selector too and is written
+   500 lines further down, so it won on order and put `flex:1` and 15px of
+   padding back. Same trap `.sfont` carries `!important` for. */
+.lgsw .lgrow{border-bottom:0;background:var(--bg);position:relative;z-index:1;
+             transition:transform .18s ease}
+.lgsw.on .lgrow{transform:translateX(-96px)}
+.lgsw .lgdel{position:absolute;right:0;top:0;height:100%;width:96px;
+             min-height:44px;flex:0 0 auto;
+             display:flex;align-items:center;justify-content:center;
+             font-size:1.02rem;padding:0}
 .ntrow.ntrowq{display:flex;flex-direction:row;align-items:center;gap:12px}
 /* `flex-direction` and not only `display`: .ntrow is a COLUMN (a heading over
    a line of the note), and this pair of classes was overriding the display and

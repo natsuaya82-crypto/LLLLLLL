@@ -889,6 +889,7 @@ defLang('ru', (function(){
       "langs.untitled"    : "Без названия",
       "langs.open"        : "Открыт",
       "langs.none"        : "Пока ничего",
+      "langs.drop"        : "Убрать",
       "langs.new"        : "Новый язык",
       "plans.title"       : "Тарифы",
       "plan.cur"          : "текущий",

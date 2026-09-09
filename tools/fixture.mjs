@@ -2534,9 +2534,45 @@ export function halfDone(){
     ['the free plan out of room', () => { SET.plan='free'; SET.aiDay='';
                                           SET.aiN=999; openAdd();
                                           const h=vForm(); SET.aiN=0; return h; }],
-    ['a language somebody else is reading', () => { LANGS.L_other={name:'Necwe', mine:false};
+    /* `sid` because a taken language has one -- langSeenAdd() is the only
+       thing that writes `mine:false` and it always writes one -- and because
+       the 削除 that slides out of this row needs something to drop
+       (www/home.js § langDrop). Without it the row is the one case
+       netTakeGone() leaves alone, so the walk was pressing a button that
+       returned on its first line. */
+    /* ON PLUS, AND IT HAS TO BE. 「読んでいる言語」 is cut to dlCap(), which is
+       NOUGHT on free -- the walk's plan -- so this face has been drawing a
+       heading with no row under it since the day it was written, and nothing
+       said so. CLAUDE.md § what the free plan is: a paid face needs the plan
+       flipped here and put back. */
+    ['a language somebody else is reading', () => { const wasP=SET.plan; SET.plan='plus';
+                                                     LANGS.L_other={name:'Necwe', mine:false, sid:'srv-other-1'};
+                                                     langOwnGot('L_other', 'somebody-else');
                                                      window.route='langs'; NAV=[{r:'langs'}];
-                                                     const h=vLangs(); delete LANGS.L_other; return h; }],
+                                                     const h=vLangs(); delete LANGS.L_other;
+                                                     SET.plan=wasP; return h; }],
+    /* AND THE SAME ROW SLID OPEN, which is the state the 削除 is IN. The row
+       is shut in the face above and the button is off the right edge of it,
+       so a picture of that face says nothing about what the slide reveals --
+       and 「両方の状態を見せる」 is what an owner reads a screenshot for.
+
+       Driven by the app's own handlers on the live page rather than by a
+       class written in here: a fixture that put the class on would be a copy
+       of langSwMove() and would agree with it whatever it did. */
+    ['a language you took, slid open', () => { const wasP=SET.plan; SET.plan='plus';
+       LANGS.L_other={name:'Necwe', mine:false, sid:'srv-other-1'};
+       langOwnGot('L_other', 'somebody-else');
+       window.route='langs'; NAV=[{r:'langs'}];
+       const app=document.getElementById('app');
+       app.innerHTML=vLangs();
+       const w=app.querySelector('.lgsw[data-lgs="L_other"]');
+       if(w){ const r=w.getBoundingClientRect();
+              langSwDown({ target:w.querySelector('.lgrow')||w,
+                           touches:[{clientX:r.right-20, clientY:r.top+r.height/2}] });
+              langSwMove({ touches:[{clientX:r.right-140, clientY:r.top+r.height/2}],
+                           cancelable:true, preventDefault:function(){} });
+              langSwUp({}); }
+       const h=app.innerHTML; delete LANGS.L_other; SET.plan=wasP; return h; }],
     ['a mark in the editor',   () => { editLetter('l4'); window.route='glyph';
                                        NAV=[{r:'glyph', a:GE.lid}]; return vGlyph(); }],
     /* A list being read in has three faces and they share no buttons: the

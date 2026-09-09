@@ -138,6 +138,7 @@ act('kbSlot', kbSlot);
 act('kbLtTap', kbLtTap);
 act('kbLtPut', kbLtPut);
 act('langOpen', langOpen);
+act('langDrop', langDrop);
 act('langNew', langNew);
 act('ltDropChar', ltDropChar);
 act('newLetter', newLetter);

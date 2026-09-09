@@ -789,6 +789,7 @@ defLang('en', (function(){
       'langs.untitled'  : "Untitled",
       'langs.open'      : "Open",
       'langs.none'      : "Nothing yet",
+      'langs.drop'      : "Remove",
       'langs.new'      : 'New language',
       /* plans */
       'plans.title'     : "Plans",

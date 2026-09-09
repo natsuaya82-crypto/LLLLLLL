@@ -836,6 +836,7 @@ defLang('es', (function(){
       "langs.untitled"   : "Sin título",
       "langs.open"       : "Abierto",
       "langs.none"       : "Nada todavía",
+      "langs.drop"       : "Quitar",
       "langs.new"       : "Idioma nuevo",
       "plans.title"      : "Planes",
       "plan.cur"         : "actual",

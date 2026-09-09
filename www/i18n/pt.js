@@ -883,6 +883,7 @@ defLang('pt', (function(){
       "langs.untitled"   : "Sem título",
       "langs.open"       : "Aberto",
       "langs.none"       : "Nada ainda",
+      "langs.drop"       : "Remover",
       "langs.new"       : "Novo idioma",
       "plans.title"      : "Planos",
       "plan.cur"         : "atual",
