@@ -1516,13 +1516,44 @@ function netTakePut(sid, ok, bad){
       if(bad) bad(d, st, m);
     });
 }
-/* THERE IS NO ROAD THAT GIVES A DOWNLOADED LANGUAGE BACK, so there is no
-   function here that deletes one of these rows. `take_drop` in
-   supabase/schema.sql exists and npm run rls holds it -- B may not delete
-   one of A's -- because the day that road is built it must not invent a
-   second way to write this table. docs/BACKLOG.md carries it. Both sides
-   cascade meanwhile: the account going takes its rows and so does the
-   language. */
+/* GIVING ONE BACK. 「言語変更画面をスライドで消せる、メモしといて」 OWNER
+   2026-09-09, and 「はい」 to the question the next day.
+   -------------------------------------------------------------------------
+   There was no road out for two weeks and the CEILING is why one had to be
+   built: plus holds one downloaded language and pro three, so a ↓ pressed by
+   mistake filled the only slot there was for ever. The row goes in with
+   netTakePut() above and comes out here -- the same table, and `take_drop` in
+   supabase/schema.sql (`is_member() and uid = auth.uid()`) is what keeps it
+   to this account's own rows, which npm run rls holds against B.
+
+   THE SERVER IS FIRST, AND WHAT THIS PHONE DROPS IS READ BACK OFF IT. The
+   DELETE lands; then the takes are ASKED FOR AGAIN and that answer is handed
+   to netTakeGone() -- the one place that takes a downloaded language off this
+   phone. Nothing here works out what to drop. 「the row is gone」 is the
+   server's sentence, and it is the same sentence netTakenDown() hears on a
+   launch, so a person pressing 削除 and a source deleting their language are
+   one road and not two (CLAUDE.md § Simple -- a second function that deleted
+   by id would be a second answer to 「which languages has this account
+   taken」). The DELETE REVIEW is in docs/CHANGELOG.md under the same date.
+
+   A REFUSAL DROPS NOTHING AND SAYS SO. The row stays, the slices stay, the
+   ceiling stays where it was, and the caller puts the pop up -- the shape
+   rule 11 asks for on the other direction: 「保存できなければ保存しない、
+   そしてそう言う」. Pressing again is a delete that can land.
+
+   AND NOTHING GOES TO THE LANGUAGE ITSELF. netLangDrop() is not called and
+   must not be: the language is somebody else's and this phone has no business
+   writing to it. What comes off is the mark. */
+function netTakeDrop(sid, ok, bad){
+  var id=String(sid||'');
+  if(!netSignedIn() || !SESS || !SESS.uid || !id){ if(bad) bad(null, 0, 'take \u2212'); return; }
+  netSend('DELETE', '/rest/v1/language_take?uid=eq.'+encodeURIComponent(SESS.uid)+
+          '&language=eq.'+encodeURIComponent(id), null, SESS.at,
+    function(){
+      netTakes(function(left){ netTakeGone(left); if(ok) ok(left); }, bad);
+    },
+    function(d, st, m){ if(bad) bad(d, st, m); });
+}
 /* AND HOW THIS LANGUAGE IS WRITTEN.
    -------------------------------------------------------------------------
    「端末に残すものないんですけど」 OWNER 2026-09-08. The same shape as

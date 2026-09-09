@@ -1045,6 +1045,7 @@ defLang('ko', (function(){
       "langs.untitled"   : "제목 없음",
       "langs.open"       : "열림",
       "langs.none"       : "아직 없어요",
+      "langs.drop"       : "삭제",
       "langs.new"       : "새 언어",
       "plans.title"      : "요금제",
       "plan.cur"         : "현재",

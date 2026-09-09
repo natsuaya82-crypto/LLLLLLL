@@ -859,6 +859,7 @@ defLang('de', (function(){
       "langs.untitled"   : "Unbenannt",
       "langs.open"       : "Geöffnet",
       "langs.none"       : "Noch nichts",
+      "langs.drop"       : "Entfernen",
       "langs.new"       : "Neue Sprache",
       "plans.title"      : "Tarife",
       "plan.cur"         : "aktuell",

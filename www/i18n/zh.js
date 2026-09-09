@@ -875,6 +875,7 @@ defLang('zh', (function(){
       "langs.untitled"   : "未命名",
       "langs.open"       : "已打开",
       "langs.none"       : "还没有",
+      "langs.drop"       : "移除",
       "langs.new"       : "新建语言",
       "plans.title"      : "方案",
       "plan.cur"         : "当前",

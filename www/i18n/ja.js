@@ -786,6 +786,7 @@ defLang('ja', (function(){
       'langs.untitled'  : '未設定',
       'langs.open'      : '開いている',
       'langs.none'      : 'まだありません',
+      'langs.drop'      : '削除',
       'langs.new'      : '言語を追加',
       'plans.title'     : 'プラン',
       'plan.cur'        : 'いま',

@@ -918,6 +918,7 @@ defLang('fr', (function(){
       "langs.untitled"   : "Sans titre",
       "langs.open"       : "Ouverte",
       "langs.none"       : "Rien pour l'instant",
+      "langs.drop"       : "Retirer",
       "langs.new"       : "Nouvelle langue",
       "plans.title"      : "Formules",
       "plan.cur"         : "actuelle",

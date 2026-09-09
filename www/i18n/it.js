@@ -870,6 +870,7 @@ defLang('it', (function(){
       "langs.untitled"   : "Senza titolo",
       "langs.open"       : "Aperta",
       "langs.none"       : "Ancora niente",
+      "langs.drop"       : "Rimuovi",
       "langs.new"       : "Nuova lingua",
       "plans.title"      : "Piani",
       "plan.cur"         : "attuale",
