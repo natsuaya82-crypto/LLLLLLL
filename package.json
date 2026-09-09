@@ -19,6 +19,7 @@
     "box": "node tools/box-check.mjs",
     "css-once": "node tools/css-once-check.mjs",
     "css-snap": "node tools/css-snap.mjs",
+    "measure": "node tools/measure-cost.mjs",
     "press": "node tools/press.mjs",
     "dead": "node tools/dead-check.mjs",
     "migrate": "node tools/migrate-check.mjs",
