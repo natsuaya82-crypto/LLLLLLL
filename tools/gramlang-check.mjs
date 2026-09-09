@@ -1664,6 +1664,214 @@ want('what was chosen goes, and the other chapter’s rule stays',
      sel.left, 's2,s3');
 want('and the list stops being one you choose from', sel.after, null);
 
+/* ---- 107-116: a kind of noun is deleted, and 「なし」 is never written ------
+   「なしじゃなくて消して」 OWNER 2026-09-09. The chapter could make a class and
+   rename one and had no way out of one, because what deleting should do to the
+   nouns in it was not decided (docs/BACKLOG.md). It is decided, and three
+   things go with the class: its name, the record on every noun that was in it,
+   and its agreement rules.
+
+   THE NUMBERS DO NOT MOVE. A rule wears `ncls~<i>` and a noun holds `<i>`, so
+   closing the gap would silently re-point every class after the one deleted --
+   one press, and two classes that were never touched mean something else. So
+   the slot is emptied and stays, and what is asked here is the class AFTER the
+   deleted one: its name, its number, its rule and its noun all exactly where
+   they were.
+
+   And the nouns: `nclsOf()` answers -1 for a noun with no record and -1 for a
+   noun somebody put in なし by hand, which is the same answer to two different
+   questions -- so the record itself is asked for, off STG.ncls.of. Writing
+   「なし」 in place of the class is the bug this claim exists to catch, and it
+   passes every screen-shaped test there is. */
+const nclsDel = await pg.evaluate(() => {
+  const sp = (w) => w.split('').map((u) => ({ l:'', u:u }));
+  const wasNcls = JSON.stringify(STG.ncls || {});
+  const wasFm = JSON.stringify(STG.fm || []);
+  const wl = WORDS.length;
+  WORDS.push({ hw:'zapa', pos:'n', mns:['apple'], at:1 });
+  WORDS.push({ hw:'zbee', pos:'n', mns:['bee'], at:1 });
+  STG.ncls = { names:['ka', 'mi', 'so'], of:{ zapa:0, zbee:2 } };
+  STG.fm = [{ id:'x0', pos:'', fm:'ncls~0', at:'end', drop:0, add:sp('aa'), when:'' },
+            { id:'x2', pos:'', fm:'ncls~2', at:'end', drop:0, add:sp('bb'), when:'' },
+            { id:'xp', pos:'v', fm:'pst',   at:'end', drop:0, add:sp('cc'), when:'' }];
+  const show = () => { window.route = 'gram'; NAV = [{ r:'gram', a:'v2:ncls' }];
+                       render(); };
+  const named = (name) => Array.prototype.map.call(
+    document.querySelectorAll('#app [data-do="' + name + '"]'),
+    (b) => b.textContent).join(' ');
+  /* The chips are read by the NUMBER each one puts a noun in -- data-a is
+     [headword, class] -- and never by the label on them: なし is a translated
+     word and the claim is about which classes are offered. */
+  const chips = () => Array.prototype.map.call(
+    document.querySelectorAll('#app [data-do="nclsPut"]'), (b) => {
+      let a = null;
+      try { a = JSON.parse(b.getAttribute('data-a') || '[]'); } catch (e) {}
+      return a ? a[0] + '/' + a[1] : '?';
+    }).join(' ');
+  show();
+  const listBefore = named('nclsOpen');
+  const chipsBefore = chips();
+
+  /* Through the screen, not by calling the function: the way in is the class's
+     own page, which is what pressing its name opens. */
+  const open = document.querySelectorAll('#app [data-do="nclsOpen"]')[0];
+  if (open) open.click();
+  const btn = document.querySelector('#app [data-do="nclsDel"]');
+  const had = !!btn;
+  if (btn) btn.click();
+  /* And it asks once, in the app's own popup -- 「標準は使わねえって言ってるだろ」 */
+  const asked = !!document.querySelector('#pop.on [data-do="popYes"]');
+  const yes = document.querySelector('#pop [data-do="popYes"]');
+  if (yes) yes.click();
+
+  show();
+  const of = (STG.ncls && STG.ncls.of) || {};
+  const out = {
+    had: had, asked: asked,
+    listBefore: listBefore, listAfter: named('nclsOpen'),
+    chipsBefore: chipsBefore, chipsAfter: chips(),
+    /* the record, not the answer: `zapa` must have no line at all */
+    apaHas: Object.prototype.hasOwnProperty.call(of, 'zapa'),
+    apaNone: nclsOf('zapa'),
+    /* the class after it did not move: same number, same name, same noun */
+    beeIn: nclsOf('zbee'), soName: nclsName(2),
+    /* Says what it found rather than dying on `undefined is not a function`:
+       a check that throws prints a stack trace instead of the claim it was
+       making, and the reader is sent to the wrong file. */
+    soLive: (typeof nclsLive === 'function') ? nclsLive().join(',') : 'no nclsLive',
+    names: JSON.stringify((STG.ncls && STG.ncls.names) || []),
+    /* the rules: its own gone, the other class's and the verb's untouched */
+    rules: (STG.fm || []).map((r) => r.id + ':' + r.fm).join(' '),
+    /* and the noun itself is still a word of this language */
+    apaWord: !!findWord('zapa')
+  };
+  WORDS.length = wl;
+  STG.ncls = JSON.parse(wasNcls);
+  STG.fm = JSON.parse(wasFm);
+  return out;
+});
+
+want('the class has a way out of it', nclsDel.had, true);
+want('and it asks once, in the app’s own popup', nclsDel.asked, true);
+want('three classes were there', nclsDel.listBefore, 'ka mi so');
+want('and the one deleted is off the list', nclsDel.listAfter, 'mi so');
+/* `tuf` is this check's own language, seeded at the top of the file: every
+   noun of the dictionary gets a row, so it is on both sides of this. */
+want('a noun could be put in any of them', nclsDel.chipsBefore,
+     'tuf/-1 tuf/0 tuf/1 tuf/2 zapa/-1 zapa/0 zapa/1 zapa/2 ' +
+     'zbee/-1 zbee/0 zbee/1 zbee/2');
+want('and the deleted one is not offered any more', nclsDel.chipsAfter,
+     'tuf/-1 tuf/1 tuf/2 zapa/-1 zapa/1 zapa/2 zbee/-1 zbee/1 zbee/2');
+want('the noun that was in it has no class RECORD, not a written なし',
+     nclsDel.apaHas, false);
+want('so it reads as being in none', nclsDel.apaNone, -1);
+want('and the noun itself is untouched', nclsDel.apaWord, true);
+want('the class after it keeps its number', nclsDel.beeIn, 2);
+want('and its name', nclsDel.soName, 'so');
+want('the slot is left empty rather than closed up',
+     nclsDel.names, JSON.stringify(['', 'mi', 'so']));
+want('and what the chapter draws is the numbers that are left',
+     nclsDel.soLive, '1,2');
+want('the deleted class’s agreement rule is gone, and no other rule is',
+     nclsDel.rules, 'x2:ncls~2 xp:pst');
+
+/* ---- 117-121: which side the negation word stands -------------------------
+   `STG.gpos.negp` has been the language's since the move onto it (claim 1
+   above) and gRules() has always read it -- and there has been nowhere to
+   WRITE it since the 否定 stage went (docs/BACKLOG.md). A value nobody can
+   answer is a decision the app makes for everybody: `after`, silently.
+
+   It is one row on the word order chapter, drawn by g2Side() -- the same
+   function the describing word and the place word are arranged with. Two
+   words of this language, and moving one says which side; the row is asked
+   for by the name it carries rather than by where it sits. */
+const negSide = await pg.evaluate(() => {
+  const wl = WORDS.length, was = STG.gpos && STG.gpos.negp;
+  WORDS.push({ hw:'zluma', pos:'v', mns:['eat'], at:1 });
+  WORDS.push({ hw:'znak', pos:'part', mns:['not'], at:1, slot:'neg.not' });
+  if (!STG.gpos) STG.gpos = {};
+  /* Written down as `after` FIRST, so that "it is saved" is about this press
+     and not about the value the seed already carried -- which is green with
+     nothing wired up at all. */
+  STG.gpos.negp = 'after'; saveStg();
+  window.route = 'gram'; NAV = [{ r:'gram', a:'v2:order' }]; g2Lift = ''; render();
+  const row = () => Array.prototype.filter.call(
+    document.querySelectorAll('#app .segs .seg'), (x) => {
+      let a = null;
+      try { a = JSON.parse(x.getAttribute('data-a') || '[]'); } catch (e) {}
+      return !!a && a[0] === 'negp';
+    });
+  const say = () => row().map((x) => x.textContent).join(' ');
+  const n = row().length, before = say();
+  if (n >= 2) { row()[0].click(); row()[1].click(); }
+  const after = say(), side = gPos('negp');
+  /* AND IN A SENTENCE. The row is two words; a line is what the engine does
+     with the answer, which is the half a drawing could fake. */
+  const line = gLay([findWord('tuf'), findWord('zluma'), gSlot('neg', 'not')])
+    .map((w) => w.hw).join(' ');
+  /* and it is saved: the phases slice this language is filed under says so */
+  let stored = null;
+  try { stored = JSON.parse(slRd(langKey('phases')) || '{}').gpos.negp; } catch (e) {}
+  WORDS.length = wl;
+  if (was) STG.gpos.negp = was; else delete STG.gpos.negp;
+  g2Lift = '';
+  return { n: n, before: before, after: after, side: side, line: line,
+           stored: stored };
+});
+
+want('the negation word is arranged beside the verb', negSide.n, 2);
+want('on the side this language put it', negSide.before, 'zluma znak');
+want('moving it says the other side', negSide.after, 'znak zluma');
+want('and that is what the language now holds', negSide.side, 'before');
+want('a sentence comes out with the negation before the verb',
+     negSide.line, 'tuf znak zluma');
+want('and it is saved where this language keeps it', negSide.stored, 'before');
+
+/* ---- 122-126: a rule’s sentence says its condition -------------------------
+   docs/BACKLOG.md 「文法書の章 ── ① 規則の一文が、条件を言いません」. The
+   sentence said 「動詞の末尾に -ta」 for every rule, and `when` and `drop` are
+   on rules written before the editor was cut back to two fields -- so a rule
+   that fires on half the dictionary read as one that always fires.
+
+   g2FmSent() is the one place a rule becomes a sentence, and the claim is in
+   two halves: a rule that HAS a condition says it, and a rule that has none
+   reads exactly as it did. The second half is what stops a condition clause
+   being pasted onto every rule in the book. */
+const sent = await pg.evaluate(() => {
+  const sp = (w) => w.split('').map((u) => ({ l:'', u:u }));
+  /* IN ONE LANGUAGE, said out loud. A sentence is the thing under test, so it
+     is written out here rather than composed from the same keys the code uses
+     -- a check that builds the string it is checking is a copy of it and
+     always agrees. Japanese because the decision was written in it; i18n-check
+     is what holds the other nine answering the same keys. */
+  const wasUi = SET.ui; SET.ui = 'ja';
+  const one = (r) => g2FmSent(Object.assign({ pos:'v', fm:'pst', at:'end',
+    drop:0, add:sp('ta'), when:'' }, r), 'v').replace(/<[^>]*>/g, '');
+  const out = {
+    plain: one({}),
+    vowel: one({ when:'v' }),
+    cons:  one({ when:'c' }),
+    ends:  one({ when:'x', wend:sp('y') }),
+    drop:  one({ drop:1 }),
+    both:  one({ when:'x', wend:sp('y'), drop:1 }),
+    front: one({ at:'start' })
+  };
+  SET.ui = wasUi;
+  return out;
+});
+
+want('a rule with no condition reads exactly as it did',
+     sent.plain, '動詞の末尾に -ta');
+want('and one on the front too', sent.front, '動詞の先頭に ta-');
+want('after a vowel is said', sent.vowel, '母音のあとのとき、動詞の末尾に -ta');
+want('after a consonant is said', sent.cons, '子音のあとのとき、動詞の末尾に -ta');
+want('and the letters a word has to end in', sent.ends,
+     'y で終わるとき、動詞の末尾に -ta');
+want('what is dropped first is said', sent.drop,
+     '末尾の 1 文字を落として、動詞の末尾に -ta');
+want('and a rule with both says both', sent.both,
+     'y で終わるとき、末尾の 1 文字を落として、動詞の末尾に -ta');
+
 await br.close();
 srv.close();
 

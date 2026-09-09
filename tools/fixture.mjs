@@ -1804,6 +1804,29 @@ export function halfDone(){
     /* And naming one, which is a form and is therefore reached by nothing the
        walk would otherwise take. */
     ['naming a noun class', () => { nclsNew(); return vForm(); }],
+    /* And a class that EXISTS, which is a different face of the same form:
+       the name is filled in and the way out of the class is on it. A new one
+       has no way out -- there is nothing yet to delete. */
+    ['a noun class that exists', () => {
+        const was = STG.ncls;
+        STG.ncls = { names:['ka','mi'], of:{} };
+        nclsOpen(0);
+        const h = vForm();
+        STG.ncls = was;
+        return h; }],
+    /* And the other state of that screen: the one question it asks. There is
+       no undo behind this one, which is why it asks -- CLAUDE.md § 19. The
+       popup's own markup is what is returned, the way every other asking face
+       in this file does it: render() takes a popup down, so a face that left
+       one standing would photograph the screen underneath. */
+    ['a noun class being deleted, asking', () => {
+        const was = STG.ncls;
+        STG.ncls = { names:['ka','mi'], of:{} };
+        nclsDel(0);
+        const h = document.getElementById('pop').outerHTML;
+        popOff();
+        STG.ncls = was;
+        return h; }],
     /* And the list with the door on it, which is the only place the way in
        exists. Everything else walks with the stage off the list, so this is
        the one face that renders that button. */

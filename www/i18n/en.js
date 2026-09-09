@@ -699,6 +699,7 @@ defLang('en', (function(){
       'g2.ncls.name'        : "Call it",
       'g2.ncls.add'         : "Add a kind",
       'g2.ncls.need'        : "Give it a name",
+      'g2.ncls.del'        : "Delete",
       'g2.ncls.words'       : "Nouns",
       'g2.det.t'          : "A, the, this, that",
       'stg.det.a'         : "a",

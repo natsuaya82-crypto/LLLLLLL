@@ -839,6 +839,7 @@ defLang('fr', (function(){
       "g2.ncls.name"         : "Appelle-le",
       "g2.ncls.add"          : "Ajouter un genre",
       "g2.ncls.need"         : "Donne-lui un nom",
+      "g2.ncls.del"         : "Supprimer",
       "g2.ncls.words"        : "Noms",
       "g2.det.t"           : "Un, le, ce, celui-là",
       "stg.det.a"          : "un",

@@ -781,6 +781,7 @@ defLang('pt', (function(){
       "g2.ncls.name"         : "Chama-lhe",
       "g2.ncls.add"          : "Adicionar uma classe",
       "g2.ncls.need"         : "Dá-lhe um nome",
+      "g2.ncls.del"         : "Eliminar",
       "g2.ncls.words"        : "Nomes",
       "g2.det.t"           : "Um, o, este, aquele",
       "stg.det.a"          : "um",

@@ -707,6 +707,7 @@ defLang('ja', (function(){
       'g2.ncls.name'        : '呼び名',
       'g2.ncls.add'         : '種類を足す',
       'g2.ncls.need'        : '名前を書いてください',
+      'g2.ncls.del'        : '削除',
       'g2.ncls.words'       : '名詞',
       'g2.det.t'          : '冠詞・指示詞',
       'stg.det.a'         : '一つの',

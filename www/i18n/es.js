@@ -734,6 +734,7 @@ defLang('es', (function(){
       "g2.ncls.name"         : "Llámala",
       "g2.ncls.add"          : "Añadir una clase",
       "g2.ncls.need"         : "Ponle un nombre",
+      "g2.ncls.del"         : "Eliminar",
       "g2.ncls.words"        : "Nombres",
       "g2.det.t"           : "Un, el, este, aquel",
       "stg.det.a"          : "un",

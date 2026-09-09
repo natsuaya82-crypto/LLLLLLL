@@ -966,6 +966,7 @@ defLang('ko', (function(){
       "g2.ncls.name"         : "이름",
       "g2.ncls.add"          : "종류 추가",
       "g2.ncls.need"         : "이름을 적어 주세요",
+      "g2.ncls.del"         : "삭제",
       "g2.ncls.words"        : "명사",
       "g2.det.t"           : "하나의, 그, 이, 저",
       "stg.det.a"          : "하나의",

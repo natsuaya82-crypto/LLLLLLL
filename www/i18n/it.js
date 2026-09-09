@@ -791,6 +791,7 @@ defLang('it', (function(){
       "g2.ncls.name"         : "Chiamalo",
       "g2.ncls.add"          : "Aggiungi un genere",
       "g2.ncls.need"         : "Dagli un nome",
+      "g2.ncls.del"         : "Elimina",
       "g2.ncls.words"        : "Nomi",
       "g2.det.t"           : "Un, il, questo, quello",
       "stg.det.a"          : "un",

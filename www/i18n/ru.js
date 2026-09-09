@@ -804,6 +804,7 @@ defLang('ru', (function(){
       "g2.ncls.name"          : "Название",
       "g2.ncls.add"           : "Добавить род",
       "g2.ncls.need"          : "Дайте ему название",
+      "g2.ncls.del"          : "Удалить",
       "g2.ncls.words"         : "Существительные",
       "g2.det.t"            : "Один, этот, тот",
       "stg.det.a"           : "один",

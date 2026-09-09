@@ -241,8 +241,9 @@ function gRules(){
      "which words are the negation" already takes. The engine never has to know
      what a class is: it is handed a name and a list of words, and a rule
      asking for CLASS/<that name> fires on those words and no others. */
-  np=nclsAll();
-  for(i=0;i<np.length;i++) out.push(gRule('CLASS', String(np[i]), nclsWordIds(i)));
+  np=nclsLive();
+  for(i=0;i<np.length;i++)
+    out.push(gRule('CLASS', nclsName(np[i]), nclsWordIds(np[i])));
   w=gSlot('neg','not');
   if(w) out.push(gRule('NEGATION','WORD', e.adapter.idOf(w)));
   ws=gSlotAll('where');
@@ -1226,12 +1227,37 @@ function g2Cx(){
    may agree on its adjectives, on its verbs, or on both, and asking which
    before there is a rule is a question nobody can answer yet.
 
-   RENAMING IS HERE. DELETING IS NOT, and that is not an oversight: what
-   deleting a class should do to the nouns that are in it is a decision about
-   somebody's data, and docs/FEATURE_RULES.md § Deciding says deletion is not
-   decided by a session. docs/BACKLOG.md carries it. */
+   RENAMING IS HERE AND SO IS DELETING. 「なしじゃなくて消して」 OWNER
+   2026-09-09. Three things go with a class -- its name, the record on every
+   noun that was in it, and its agreement rules -- and the record is REMOVED
+   rather than set to なし, because なし is an answer somebody can give and
+   「this class is gone」 is not the same fact.
+
+   THE NUMBER IS NOT REUSED AND THE GAP IS NOT CLOSED. A rule wears
+   `ncls~<i>` and a noun holds `<i>`, so closing the gap would re-point every
+   class after the one deleted: one press, and two classes nobody touched
+   would mean something else. The slot is emptied and stays empty, and
+   nclsLive() below is the one place that says which numbers a language
+   actually has. docs/CHANGELOG.md 2026-09-09 carries the DELETE REVIEW. */
 function nclsAll(){ return (STG && STG.ncls && STG.ncls.names) || []; }
-function nclsName(i){ var a=nclsAll(); return (a[i]===undefined)? '' : String(a[i]); }
+/* A slot a class was deleted out of is EMPTY, and it may come back as either
+   of the two ways an empty slot is written: '' from nclsDelGo() below, and
+   null from a hole that has been through JSON. Both read as no name, which is
+   the one thing a live class can never have -- nclsSave() refuses one. */
+function nclsName(i){
+  var a=nclsAll(), v=a[i];
+  return (v===undefined || v===null)? '' : String(v);
+}
+/* WHICH CLASSES THIS LANGUAGE HAS, as the numbers they are filed under. The
+   numbers are the language's own -- a rule says `ncls~2` and a noun says 2 --
+   so a list of classes is a list of NUMBERS and never a re-indexed copy.
+   Every list that draws them asks here: the chapter, the chips on a noun, the
+   rules handed to the engine, and whether the chapter has been written in. */
+function nclsLive(){
+  var a=nclsAll(), out=[], i;
+  for(i=0;i<a.length;i++) if(nclsName(i)) out.push(i);
+  return out;
+}
 /* Which class a word is in, by the headword -- which is what the dictionary
    files a word under and what everything else in this app points at a word
    with (adapter.idOf). A word renamed loses its class, the same way a rule
@@ -1277,7 +1303,13 @@ function nclsForm(i){
     '<div class="field"><label>'+t('g2.ncls.name')+'</label>'+
       lnField('ncls-n', t('g2.ncls.name'), nclsName(i), '')+'</div>'+
     '<button class="btn" style="width:100%;margin-top:6px"' + DO('nclsSave', [i]) + '>'+
-      t(i<0? 'g2.ncls.add' : 'form.save')+'</button>');
+      t(i<0? 'g2.ncls.add' : 'form.save')+'</button>'+
+    /* And the way out, which only a class that exists has. Words in the
+       colour everything pressable is and no box round them -- CLAUDE.md
+       § NO ROUNDED BOX. */
+    (i<0? '' :
+      '<button class="btn ghost"' + DO('nclsDel', [i]) + '>'+
+        esc(t('g2.ncls.del'))+'</button>'));
 }
 function nclsSave(i){
   var a=document.getElementById('ncls-n'), v;
@@ -1290,6 +1322,38 @@ function nclsSave(i){
   if(i<0) STG.ncls.names.push(v); else STG.ncls.names[i]=v;
   stMarkSet('ncls');
   closeSheet({target:{id:'sbg'}});
+  render();
+}
+/* DELETING ONE. It asks once, in the app's own popup -- 「標準は使わねえって
+   言ってるだろこれも禁止や」 OWNER 2026-09-01 -- and there is no undo behind
+   it, which is why it asks. The question is `confirm.del`, the one this app
+   already asks about a word and a letter: one sentence, not a second one
+   saying the same thing. */
+function nclsDel(i){
+  var nm=nclsName(Number(i));
+  if(!nm) return;
+  popAsk(t('confirm.del', nm), function(){ nclsDelGo(Number(i)); }, t('pop.yes'));
+}
+/* THE THREE THINGS THAT GO, and the DELETE REVIEW is in docs/CHANGELOG.md
+   under 2026-09-09. The order is written down because the last of them reads
+   the first: the rules are found by the label the number makes. */
+function nclsDelGo(i){
+  var of=(STG.ncls && STG.ncls.of) || {}, lab=nclsFm(i),
+      a=(STG && STG.fm) || [], k, j;
+  if(!nclsName(i)) return;
+  /* ① the name. The slot is emptied, never spliced out: see nclsLive(). */
+  STG.ncls.names[i]='';
+  /* ② the record on every noun that was in it. REMOVED, not written over
+     with なし -- なし is an answer somebody gave and this is the absence of
+     one. The noun itself is not touched. */
+  for(k in of) if(of.hasOwnProperty(k) && Number(of[k])===Number(i)) delete of[k];
+  /* ③ its agreement rules, which are ordinary rules wearing this class's
+     label. Backwards, because the list is being cut while it is walked. */
+  for(j=a.length-1;j>=0;j--) if(a[j] && String(a[j].fm)===lab) a.splice(j,1);
+  saveStg();
+  /* The screen you are standing on is that class's, and it has just stopped
+     being a class -- www/shell.js § navDrop, the same step delWord takes. */
+  navDrop('nclsr:'+i);
   render();
 }
 /* A form is a ROUTE, so both ways in are registered -- and they are asked for
@@ -1307,25 +1371,26 @@ if(typeof FORM_OPEN!=='undefined'){
    that are in none of them. Pressing a chip IS the answer; there is nothing
    to save. */
 function nclsRow(w){
-  var a=nclsAll(), now=nclsOf(w.hw), i,
+  var a=nclsLive(), now=nclsOf(w.hw), i,
       out='<button class="seg'+(now<0? ' on':'')+'"'+DO('nclsPut', [w.hw, -1])+'>'+
           esc(t('word.none'))+'</button>';
   for(i=0;i<a.length;i++)
-    out+='<button class="seg'+(now===i? ' on':'')+'"'+DO('nclsPut', [w.hw, i])+'>'+
-      esc(String(a[i]))+'</button>';
+    out+='<button class="seg'+(now===a[i]? ' on':'')+'"'+DO('nclsPut', [w.hw, a[i]])+'>'+
+      esc(nclsName(a[i]))+'</button>';
   return '<div class="nclsw"><span class="nclsn">'+sfontHTML(wOut(w.hw))+'</span>'+
     '<div class="segs">'+out+'</div></div>';
 }
 function g2Ncls(){
-  var a=nclsAll(), seen=wordsSeen(), out='', i, w;
+  var a=nclsLive(), seen=wordsSeen(), out='', i, w;
   out+=secAdd(esc(t('g2.ncls.t')), DO('nclsNew'), t('g2.ncls.add'));
   for(i=0;i<a.length;i++){
     /* The name is a button so it can be written over, and the ＋ beside it
        adds an agreement rule for this class. Two acts on one heading, which
        is what a chapter of a grammar book's own section is. */
-    out+=secAdd('<button class="secnm"'+DO('nclsOpen', [i])+'>'+esc(String(a[i]))+'</button>',
-                DO('fmrNew', ['', nclsFm(i)]), t('g2.fm.add'))+
-         g2FmRows({fm:nclsFm(i), pos:''});
+    out+=secAdd('<button class="secnm"'+DO('nclsOpen', [a[i]])+'>'+
+                  esc(nclsName(a[i]))+'</button>',
+                DO('fmrNew', ['', nclsFm(a[i])]), t('g2.fm.add'))+
+         g2FmRows({fm:nclsFm(a[i]), pos:''});
   }
   if(!a.length) return out;
   out+='<div class="sec">'+esc(t('g2.ncls.words'))+'</div>';
@@ -1763,7 +1828,7 @@ function g2Said(c){
   if(c.id==='cx') return stTouched('cx') || stTouched('cxm') || stTouched('relm');
   /* A language with a class in it has said something here, whether or not any
      noun is in one yet. */
-  if(c.id==='ncls') return nclsAll().length>0;
+  if(c.id==='ncls') return nclsLive().length>0;
   /* この言語について counts what this language has and is never empty. */
   return true;
 }

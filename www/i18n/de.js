@@ -762,6 +762,7 @@ defLang('de', (function(){
       "g2.ncls.name"         : "Nenne sie",
       "g2.ncls.add"          : "Eine Art hinzufügen",
       "g2.ncls.need"         : "Gib ihr einen Namen",
+      "g2.ncls.del"         : "Löschen",
       "g2.ncls.words"        : "Substantive",
       "g2.det.t"           : "Ein, der, dieser, jener",
       "stg.det.a"          : "ein",

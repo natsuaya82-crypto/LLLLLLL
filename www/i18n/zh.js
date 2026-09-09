@@ -795,6 +795,7 @@ defLang('zh', (function(){
       "g2.ncls.name"         : "叫作",
       "g2.ncls.add"          : "添加一种",
       "g2.ncls.need"         : "请写下名字",
+      "g2.ncls.del"         : "删除",
       "g2.ncls.words"        : "名词",
       "g2.det.t"           : "一个、这个、那个",
       "stg.det.a"          : "一个",
