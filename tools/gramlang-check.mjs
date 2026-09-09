@@ -127,7 +127,23 @@ const OLD = {
   'lingua.LB.lang': 'Tosk',
   'lingua.set': JSON.stringify({ theme: 'dark', plan: 'free', done: true,
                                  order: 'OSV',
-                                 gpos: { adj: 'before', negp: 'before', adp: 'after' } })
+                                 gpos: { adj: 'before', negp: 'before', adp: 'after' } }),
+  /* AND WHOSE THE TWO LANGUAGES ARE, which the app began asking on 2026-09-08.
+     A language belongs to the account its stamp names -- `language.owner`,
+     and langOwnOf() is the one road to it (www/core.js). An UNSTAMPED
+     language is nobody's: langMine() answers false, so langLocked() stops
+     every writer, ltStart() tops nothing up and the letters are not there to
+     re-spell a word with. That is the decision (OWNER 2026-09-02 / 09-03,
+     tools/acct-check.mjs 10 and 35) and it is held there, not here.
+
+     So the seed says it. These are the pictures netLangsDown() leaves --
+     `lingua.<id>.owner.got`, what the server said last time this phone
+     asked -- which is what a phone whose languages have been down carries.
+     Without them this file seeds a phone that is signed in and holds two
+     languages nobody owns, and three of its claims read 「the grammar did
+     not move」 for the wrong reason: the language was locked. */
+  'lingua.LA.owner.got': 'u',
+  'lingua.LB.owner.got': 'u'
 };
 
 /* Read out of storage rather than off the globals, because that is where a
