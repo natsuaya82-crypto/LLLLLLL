@@ -955,7 +955,7 @@ defLang('ko', (function(){
       "gram.role.NEG"    : "아니",
       "gram.role.Q"      : "물음",
       "gram.role.CMP"    : "무엇인가",
-      "gram.role.STD"  : "무엇보다",
+      "gram.role.STD"  : "무엇보다 나은지",
       "g2.cop.t"         : "이다・있다",
       "stg.cop.be"       : "이다 (나는 선생이다)",
       "stg.cop.exist"    : "있다 (산이 있다)",

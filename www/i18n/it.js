@@ -780,7 +780,7 @@ defLang('it', (function(){
       "gram.role.NEG"    : "non",
       "gram.role.Q"      : "domanda",
       "gram.role.CMP"    : "ciò che è",
-      "gram.role.STD"  : "che cosa supera",
+      "gram.role.STD"  : "ciò che supera",
       "g2.cop.t"         : "Essere, e c’è",
       "stg.cop.be"       : "essere (sono maestro)",
       "stg.cop.exist"    : "c’è (c’è una montagna)",

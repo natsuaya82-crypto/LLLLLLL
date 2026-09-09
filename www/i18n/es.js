@@ -723,7 +723,7 @@ defLang('es', (function(){
       "gram.role.NEG"    : "no",
       "gram.role.Q"      : "pregunta",
       "gram.role.CMP"    : "lo que es",
-      "gram.role.STD"  : "a qué supera",
+      "gram.role.STD"  : "lo que supera",
       "g2.cop.t"         : "Ser, y hay",
       "stg.cop.be"       : "ser (soy maestro)",
       "stg.cop.exist"    : "hay (hay una montaña)",

@@ -793,7 +793,7 @@ defLang('ru', (function(){
       "gram.role.NEG"     : "не",
       "gram.role.Q"       : "вопрос",
       "gram.role.CMP"     : "что это",
-      "gram.role.STD"   : "чего превосходит",
+      "gram.role.STD"   : "что превосходит",
       "g2.cop.t"          : "Быть, и есть",
       "stg.cop.be"        : "быть (я учитель)",
       "stg.cop.exist"     : "есть (есть гора)",

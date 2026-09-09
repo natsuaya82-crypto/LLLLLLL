@@ -770,7 +770,7 @@ defLang('pt', (function(){
       "gram.role.NEG"    : "não",
       "gram.role.Q"      : "pergunta",
       "gram.role.CMP"    : "o que é",
-      "gram.role.STD"  : "a que supera",
+      "gram.role.STD"  : "o que supera",
       "g2.cop.t"         : "Ser, e há",
       "stg.cop.be"       : "ser (sou professor)",
       "stg.cop.exist"    : "há (há uma montanha)",
