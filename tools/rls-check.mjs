@@ -771,6 +771,97 @@ const CASES = [
   ['the one above staff can',                 'ok',     E, 0,
     `select admin_counts()`],
 
+  /* --- the versions the operator restores from --------------------------
+     「運営が治せる仕様は欲しい。ユーザーが問い合わせてきた時に、アカウントの
+     復旧ができるようにしたい、管理画面で」「3 で実装して」 OWNER 2026-09-09.
+
+     `slice_hist` is the one table in this file that NOBODY may write and only
+     staff may read -- a person's own previous versions are not theirs to see
+     (docs/STATE.md § 4a 四: the recovery screen is the operator's alone), and
+     the rows arrive from a trigger running as definer rather than through the
+     API at all. So every question below is asked of a table with no insert,
+     no update and no delete policy on it whatsoever.
+
+     A is writing over its own slice five times. The first write has no
+     previous version to keep, so four are kept and the ceiling drops one. */
+  ['A writes a keyboard onto its own language', 'ok', A, 0,
+    `insert into slice(language,kind,body) values ('${LD}','kb','["v1"]')`],
+  ['and writes over it, four times',          'ok',     A, 0,
+    `update slice set body='["v2"]' where language='${LD}' and kind='kb'`],
+  ['…again',                                  'ok',     A, 0,
+    `update slice set body='["v3"]' where language='${LD}' and kind='kb'`],
+  ['…again',                                  'ok',     A, 0,
+    `update slice set body='["v4"]' where language='${LD}' and kind='kb'`],
+  ['…and again',                              'ok',     A, 0,
+    `update slice set body='["v5"]' where language='${LD}' and kind='kb'`],
+  /* THE ONLY AUTOMATIC DELETION IN THIS FILE, and it is the one the DELETE
+     REVIEW is about (docs/CHANGELOG.md 2026-09-09). Four previous versions
+     were kept and the ceiling is three, so the oldest is gone -- and asking
+     for the count alone would pass on a trigger that kept the WRONG three. */
+  ['staff sees three versions and no more', 'ok',       C, 0,
+    `select 1 where (select count(*) from slice_hist
+                      where language='${LD}' and kind='kb') = 3`],
+  ['and the oldest one is gone',              'denied', C, 0,
+    `select 1 from slice_hist where language='${LD}' and kind='kb' and body='["v1"]'`],
+  ['and the three that are there are the three before now', 'ok', C, 0,
+    `select 1 where (select count(*) from slice_hist
+                      where language='${LD}' and kind='kb'
+                        and body in ('["v2"]','["v3"]','["v4"]')) = 3`],
+  /* AND NOBODY BUT STAFF READS THEM. The author's own previous versions are
+     the operator's to see and not the author's -- a date beside every version
+     is a record of when that person changed their mind, and no screen in the
+     app shows it. */
+  ['A cannot read its own previous versions', 'denied', A, 0,
+    `select 1 from slice_hist where language='${LD}'`],
+  ['B cannot read A’s previous versions',    'denied', B, 0,
+    `select 1 from slice_hist where language='${LD}'`],
+  ['nor can somebody with no account at all', 'denied', B, 1,
+    `select 1 from slice_hist where language='${LD}'`],
+  /* AND NOBODY WRITES THEM AT ALL, staff included. The trigger is the only
+     road in; a policy would be a second one, and a second road into a table
+     of previous versions is a way to forge one. */
+  ['nobody puts a version in by hand',        'denied', C, 0,
+    `insert into slice_hist(language,kind,body) values ('${LD}','kb','["forged"]')`],
+  ['nor rewrites one',                        'denied', C, 0,
+    `update slice_hist set body='["forged"]' where language='${LD}'`],
+  ['nor deletes one',                         'denied', C, 0,
+    `delete from slice_hist where language='${LD}'`],
+  ['and A cannot either',                     'denied', A, 0,
+    `delete from slice_hist where language='${LD}'`],
+  /* AND WHO MAY LOOK ONE UP AND PUT ONE BACK. Same shape as post_hide():
+     security definer, is_staff() asked inside, so the definer rights are not
+     a way in. */
+  ['B cannot list somebody’s versions',      'denied', B, 0,
+    `select admin_hist('iri')`],
+  ['nor can somebody with no account',        'denied', B, 1,
+    `select admin_hist('iri')`],
+  ['B cannot put a version back',             'denied', B, 0,
+    `select admin_restore('${LD}','kb',
+       (select max(at) from slice where language='${LD}' and kind='kb'))`],
+  ['nor can somebody with no account',        'denied', B, 1,
+    `select admin_restore('${LD}','kb', now())`],
+  /* AND STAFF CAN, WHICH IS THE WHOLE FEATURE. */
+  ['staff lists them',                        'ok',     C, 0,
+    `select admin_hist('iri')`],
+  ['staff puts the oldest kept version back', 'ok',     C, 0,
+    `select admin_restore('${LD}','kb',
+       (select min(at) from slice_hist
+         where language='${LD}' and kind='kb'))`],
+  /* Asked as A and not as staff: staff may read the VERSIONS and has no
+     business reading somebody's unpublished language, which is what the two
+     claims a hundred lines above already say. */
+  ['and the slice IS that version now',       'ok',     A, 0,
+    `select 1 from slice where language='${LD}' and kind='kb' and body='["v2"]'`],
+  /* AND UNDOING THE UNDO. Putting a version back is an update, so the trigger
+     kept what was there a moment before -- the operator can walk it back. */
+  ['and what was there before the restore is a version now', 'ok', C, 0,
+    `select 1 from slice_hist where language='${LD}' and kind='kb' and body='["v5"]'`],
+  /* AND A LANGUAGE GOING TAKES ITS VERSIONS. */
+  ['A deletes that language',                 'ok',     A, 0,
+    `delete from language where id='${LD}'`],
+  ['and its versions went with it',           'denied', C, 0,
+    `select 1 from slice_hist where language='${LD}'`],
+
   /* --- and who may make somebody staff ----------------------------------
      The whole reason there are two tiers. A staff account that could make
      another staff account is one account away from every account being one,

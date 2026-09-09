@@ -15,6 +15,75 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-09 運営が復旧できる ── 部分ごとに直前 3 版（DELETE REVIEW あり）
+
+「運営が治せる仕様は欲しい。ユーザーが問い合わせてきた時に、アカウントの復旧が
+できるようにしたい、管理画面で」「3 で実装して」OWNER 2026-09-09。**残し方は
+回数です ── 部分（slice）ごとに直前 3 版。日数ではありません。**
+
+**なぜ要るのか。** サーバーには言語一本につき**いまの姿が一つあるだけ**で、
+上書きされた瞬間に前の姿は消えていました（`docs/STATE.md` § 4a 二）。だから
+「単語が全部消えた」と言ってこられても、運営に返せるものが何もありませんでした。
+
+**新しく保存されるもの。** `slice_hist(language, kind, body, at)`
+（`supabase/schema.sql`）。`slice` の行が **update / delete される直前**に、
+その時点の `body` が一行として写ります。写すのは Postgres の trigger 一本
+（`slice_hist_keep()`、`security definer`）で、**アプリ側は一行も変わりません**
+── `netSlicePut()` はそのままです。言語が消えれば cascade で消えます。
+
+**誰のものか。** その言語のものです（`language` を指しています）。**本人には
+見えません。**`slice_hist` を select できるのは `is_staff()` だけで、insert /
+update / delete は誰にもできません（policy が一つも無い）。
+
+**戻す道。** RPC 二つ、どちらも `security definer` で中で `is_staff()` を訊き
+ます（`post_hide()` と同じ形）：`admin_hist(handle)` がその人の言語と版の一覧、
+`admin_restore(language, kind, at)` がその版を `slice` に書き戻します。書き戻し
+は update なので **trigger がその瞬間の「今」を版に写します ── 戻すのを戻せ
+ます。**
+
+**画面。** 設定の見出し 7 回タップの管理画面（`vAdmin`、`www/mod.js`、@lingua
+だけ）に「復旧」の行。handle → その人の言語 → 部分ごとに直前の版が最大 3 行
+（日時付き）→ 一行押すと `popAsk()`。**本人の設定には何も増えません**
+（`docs/STATE.md` § 4a 四の勧めのとおり）。
+
+**本人の端末に届く道。** 増えていません。起動の `netLangsWalk()`
+（`www/net.js`）が「無いものを埋める」一本のままです ── アプリを閉じてから
+開き直せば、スライスはメモリなので何も持っておらず、サーバーの答えがそのまま
+入ります。**アプリを開いたままだと届きません**（`slMine()` が非 null なので
+飛ばされます）。運営はその人に「アプリを一度閉じて開き直してください」と言う
+ことになります。**二つ目の同期は作っていません。**
+
+```
+DELETE REVIEW
+  who deletes         automatic (Postgres trigger `slice_hist_keep()`)
+  when                slice の行が update / delete される時、写した直後
+  what exactly        同じ (language, kind) の `slice_hist` の行が 3 を超えた
+                      とき、`at` が一番古い行。3 版はいつも残ります
+  why                 オーナーの決定「3 で実装して」(2026-09-09)。回数で
+                      決めるのは、5000 語の言語なら一版 685 KB あり、
+                      無制限に積むと置き場が効いてくるからです
+                      (`docs/RECOVERY.md` 案A の実測)
+  recoverable?        いいえ。4 版目が積まれた瞬間、一番古い版はどこにも
+                      ありません。**本人の作ったものではありません** ──
+                      消えるのは「前の姿の控え」であって、いまの姿
+                      (`slice`) は一行も触りません
+  is it still on the server?   いいえ。`slice_hist` から消えます。`slice` は
+                      無傷です
+  anything to do with the plan?   no
+  migration / rollback  流し直しで表と trigger が入るだけ。既にある `slice`
+                      は一行も動きません。版は**これから**の書き込みから
+                      積まれます ── 流した時点より前の姿はどこにもないので、
+                      流した直後は版ゼロです
+```
+
+**SQL の流し直しが要ります**（`supabase/setup.md` 2026-09-09）。
+
+**赤を見てから緑:** `npm run rls`（4 件足しました ── B は A の `slice_hist` を
+読めない／B は `admin_restore` を呼べない／staff は読めて戻せる／3 版を超えない）、
+`npm run hist`（`tools/hist-check.mjs`、新）。
+
+---
+
 ### 2026-09-09 元が消えた DL 言語は端末からも消える（DELETE REVIEW あり）／非公開は新規 DL を止めるだけ
 
 「空で残さないで。消えたら消えるのよ。」「非公開にしたら新規 dl だけできない
