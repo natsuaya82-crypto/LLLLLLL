@@ -74,7 +74,16 @@ const MAX = {
    they hold is the SHAPE. `save` is one write of the words slice plus a mark
    read of about a tenth of a kilobyte; put either of the other two copies
    back and it roughly triples. Only the screens whose cost is a claim are in
-   this table; a screen not named here is not measured for bytes. */
+   this table; a screen not named here is not measured for bytes.
+
+   **`launch` IS NOT IN IT AND THAT IS SAID HERE SO SILENCE IS NOT READ AS A
+   CHECK.** The launch's own copy of this fault -- the whole language read
+   twice, docs/reports/cost-2026-09-09.md 二 -- cannot be measured from this
+   file: the server here holds no slices when the page opens, so a launch
+   that downloads the dictionary and a launch that downloads nothing weigh
+   the same. It was measured with `node tools/measure-cost.mjs`, whose fake
+   server remembers what was put up, and nothing in the gate holds it.
+   docs/BACKLOG.md carries it. */
 const MAXB = {
   'save':  6000
 };

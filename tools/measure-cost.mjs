@@ -460,7 +460,7 @@ console.log('  声: ' + JSON.stringify(OUT.media.vo));
    「二度読み」が本物か偽サーバーの作り物かは、これで一本ずつ確かめました。 */
 if (process.env.URLS) for (const n of Object.keys(OUT.launch))
   for (const r of OUT.launch[n].launch)
-    if (/slice/.test(r.u)) console.log(n + '  ' + r.m + ' ' + r.u.replace(/^[a-z]+:\/\/[^/]*/, '').slice(0,50) + '  down ' + r.down + '\n     ' + String(r.st||'').split('\n').slice(1,9).map(x=>x.trim().split(' ')[1]).join(' < '));
+    if (/slice/.test(r.u)) console.log(n + '  ' + r.m + ' ' + r.u.replace(/^[a-z]+:\/\/[^/]*/, '').slice(0,120) + '  down ' + r.down + '\n     ' + String(r.st||'').split('\n').slice(1,9).map(x=>x.trim().split(' ')[1]).join(' < '));
 
 await br.close();
 if (ERR.length) console.log('\n画面のエラー: ' + ERR.slice(0, 5).join(' | '));
@@ -518,17 +518,19 @@ const R5 = OUT.launch[5000];
 function mb(b){ return (b / M).toFixed(1) + ' MB'; }
 function heads(t){ return Math.floor(PRO.egress * G / t); }
 console.log('');
-console.log('== 五 ── 直したら（5000 語の人の、ひと月） ==');
-const echo = sum(R5.one, 'up') * MO.save;
-const twice = 877.2 * 1024 * MO.launch;
-const pre = 877.5 * 1024 * MO.save;
-const lad = [['いまのまま', P5.T],
-             ['受け取りの写しを止める', P5.T - echo],
-             ['＋ 起動の二度読みを一度に', P5.T - echo - twice],
-             ['＋ 送る前の読みも要らなくする', P5.T - echo - twice - pre]];
+console.log('== 五 ── 三つを直す前と、直したあと（5000 語の人の、ひと月） ==');
+/* 2026-09-09 に三つとも直しました（docs/CHANGELOG.md、`claude/r10-wire`）ので、
+   ここは「直したら」ではなく「直した」の表です。**上の三行は測った数字では
+   なく、直す前に測った値を書き留めたもの**です ── 直す前のコードはもう木に
+   無いので、ここで測り直すことはできません。下の一行だけが今日の測定です。
+   docs/reports/cost-2026-09-09.md がその日の測り方です。 */
+const WAS = { save: 2624.6 * 1024, launch: 1866.3 * 1024 };
+const wasT = WAS.launch * MO.launch + WAS.save * MO.save + P5.F + P5.P;
+const lad = [['直す前（2026-09-09 に測った）', wasT],
+             ['いま', P5.T]];
 for (const [nm, t] of lad)
   console.log('  ' + nm.padEnd(30) + mb(t).padStart(10) +
-    '  （' + Math.round((t / P5.T) * 100 - 100) + '%）  $25 で ' +
+    '  （' + Math.round((t / wasT) * 100 - 100) + '%）  $25 で ' +
     heads(t) + ' 人');
 console.log('');
 console.log('== 六 ── 人数ごとの、ひと月の請求 ==');

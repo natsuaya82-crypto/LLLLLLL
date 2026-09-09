@@ -1838,7 +1838,40 @@ function netLangsWalk(d, done){
     /* AND WHO WROTE IT -- www/core.js § LOWN, where 「not asked」 is neither
        side and is what langMine() waits for. */
     langOwnGot(nid, own);
-    netSlices(row.id, function(there){
+    /* ---- THE MARKS FIRST, AND THEN ONLY THE BODIES THIS PHONE LACKS ----
+       This read all twelve bodies and then threw most of them away: the loop
+       below fills in what is MISSING and stops (docs/DATA_SAFETY.md rule 2),
+       so every slice this phone was already holding came down the wire to be
+       skipped on the next line. On a launch where the phone has just minted
+       its own language that is nearly all of them -- 898 KB carried and
+       discarded, and then the launch's own sync read the same 898 KB again
+       to merge it. That is 「起動一回で言語ぜんぶを二度読む」,
+       docs/reports/cost-2026-09-09.md 二.
+
+       WHICH ONES ARE MISSING IS KNOWN BEFORE THE BODIES ARE ASKED FOR --
+       `slMine()` is a question about this phone. So the marks come first
+       (`kind,no,at`), and the ask is narrowed to the kinds that will
+       actually be written. Nothing about WHAT is written changes: the guard
+       below still stands, and a kind the server has that this app has never
+       heard of is still walked, because the list comes off the server's own
+       answer and not off SLICES.
+
+       The `lang` slice is asked for as well where the name column is empty,
+       because the column is filled from the SERVER's copy whether or not
+       this phone is holding one of its own. */
+    netSlices(row.id, function(st){
+      var want=[], has={}, k;
+      for(k in st){
+        if(!Object.prototype.hasOwnProperty.call(st, k)) continue;
+        if(slMine(langKeyOf(nid, k))!==null) continue;
+        want.push(k); has[k]=1;
+      }
+      if(own===String(SESS.uid||'') && !String(row.name||'') &&
+         st.lang && !has.lang) want.push('lang');
+      if(!want.length){ fill({}); return; }
+      netSlices(row.id, fill, step, want);
+    }, step, null, 'kind,no,at');
+    function fill(there){
       var k;
       for(k in there){
         if(!Object.prototype.hasOwnProperty.call(there, k)) continue;
@@ -1854,7 +1887,10 @@ function netLangsWalk(d, done){
         slWr(langKeyOf(nid, k), there[k].body);
         /* and what the two sides agree it is, so the first thing removed after
            this is understood as a removal */
-        netAgreed(nid, k, there[k].body);
+        /* AND THE MARK ON THAT AGREEMENT. Without it the launch's own sync,
+           a moment later, reads all twelve bodies back to merge them against
+           what it has just written -- netGotFor() above. */
+        netAgreed(nid, k, there[k].body, there[k].at);
         if(nid===langId) filled=true;
       }
       /* AND A COLUMN THAT NOBODY EVER WROTE IS FILLED FROM THE SLICE. Every
@@ -1880,7 +1916,7 @@ function netLangsWalk(d, done){
           langNameGot(nid, there.lang.body); render();
         }, function(){});
       step();
-    }, step);
+    }
   }
   step();
 }
@@ -2103,13 +2139,87 @@ function netAgreed(id, kind, body, at){
 
    「知らない」 is not 「同じ」. No record means read. */
 var NET_AT={};
+function netAtKey(id, kind){ return String(id)+'.'+kind; }
 function netAtSet(id, kind, at){
-  var k=String(id)+'.'+kind;
+  var k=netAtKey(id, kind);
   if(at) NET_AT[k]=String(at); else delete NET_AT[k];
 }
+function netAtHas(id, kind){ return !!NET_AT[netAtKey(id, kind)]; }
 function netAtSame(id, kind, row){
-  var k=String(id)+'.'+kind;
+  var k=netAtKey(id, kind);
   return !!(row && row.at && NET_AT[k] && String(row.at)===NET_AT[k]);
+}
+/* ---- WHAT THE SERVER IS HOLDING FOR THESE SLICES, WITHOUT CARRYING BACK
+   THE ONES IT ALREADY AGREES WITH -----------------------------------------
+   Both roads that put a slice up -- a save (netSaveUpGo) and a launch
+   (netLangSync1) -- have to hand netSlice1() what the server has, and both
+   read every BODY to do it. That is 877 KB to add one word of 0.14 KB, and
+   at a launch it is the whole language read a SECOND time, right behind
+   netLangsWalk() reading it once. docs/reports/cost-2026-09-09.md 一・二.
+
+   WHAT THE READ IS FOR IS syMerge() AND THAT STAYS. It is the only thing
+   that keeps what a SECOND PHONE added when this one writes --
+   「そりゃあ両方足すだろ」 -- because `slice`'s primary key is
+   (language, kind) and an unmerged write simply wins. What changes is WHICH
+   BODIES are read, and nothing else.
+
+   The marks come first (`kind,no,at`, about a tenth of a kilobyte), and a
+   body only where its mark has MOVED since this phone last agreed. Where it
+   has not moved, the server is holding `langWasKey` -- which is already
+   here, so there is nothing to fetch.
+
+   SO A SECOND PHONE IS ALWAYS READ. Two phones writing send two different
+   marks, so whichever landed second leaves a mark the other does not know,
+   and the loser reads and merges on its next save. A phone with no record
+   reads -- 「知らない」 is not 「同じ」.
+
+   ONE FUNCTION BECAUSE IT IS ONE QUESTION. Two copies of this would be two
+   answers to 「サーバーは今なにを持っているか」, and the wrong one would be
+   the one nobody is reading. */
+function netGotFor(id, sid, kinds, ok, bad){
+  var know=[], dunno=[], got={}, st={}, left=0, fell=false, i, k;
+  /* A MARK THIS PHONE HAS NEVER RECORDED ANSWERS NOTHING, so its body is
+     asked for outright -- and the two asks go out TOGETHER, because neither
+     needs the other's answer. One stage, whatever the mixture is. Sending
+     everything down the body road because one slice's mark is unknown would
+     drag the dictionary along for company; asking the marks first for a
+     slice with no record would be a round trip spent to learn nothing.
+     tools/slow-check.mjs holds the depth and the bytes. */
+  for(i=0;i<kinds.length;i++){
+    k=kinds[i];
+    if(netAtHas(id, k)) know.push(k); else dunno.push(k);
+  }
+  if(!know.length && !dunno.length){ ok({}); return; }
+  function bail(d, s2){ if(fell) return; fell=true; bad(d, s2); }
+  function step(){
+    if(fell || --left) return;
+    /* Of the ones this phone has a record for, the bodies of any whose mark
+       has MOVED -- somebody else has written those and they have to be
+       merged. The rest are `langWasKey`, which is here. */
+    var need=[], j, kk, was;
+    for(j=0;j<know.length;j++){
+      kk=know[j];
+      if(!netAtSame(id, kk, st[kk])){ need.push(kk); continue; }
+      was=slMine(langWasKey(id, kk));
+      got[kk]={body:(was===null? '' : was), no:st[kk].no, at:st[kk].at};
+    }
+    if(!need.length){ ok(got); return; }
+    netSlices(sid, function(there){
+      var n;
+      for(n=0;n<need.length;n++) got[need[n]]=there[need[n]];
+      ok(got);
+    }, bail, need);
+  }
+  if(dunno.length) left++;
+  if(know.length) left++;
+  if(dunno.length)
+    netSlices(sid, function(there){
+      var n;
+      for(n=0;n<dunno.length;n++) got[dunno[n]]=there[dunno[n]];
+      step();
+    }, bail, dunno);
+  if(know.length)
+    netSlices(sid, function(rows){ st=rows; step(); }, bail, know, 'kind,no,at');
 }
 var NET_SHRANK=[];
 var NET_SYNCING=false;
@@ -2290,39 +2400,11 @@ function netSaveUpGo(done){
   if(!kinds.length){ none(); return; }
   NET_SYNCING=true;
   netLangRow(id, function(sid){
-    /* ---- THE MARK, AND NOT THE DICTIONARY ----------------------------
-       Only the slices that moved is true and was not the expensive half.
-       This read their BODIES: 877 KB to add one word of 0.14 KB, a copy of
-       somebody's dictionary coming down the wire before every save.
-       docs/reports/cost-2026-09-09.md 一.
-
-       WHY IT READ AT ALL IS syMerge(), AND THAT STAYS. It is the only thing
-       that keeps what a SECOND PHONE added when this one writes --
-       「そりゃあ両方足すだろ」 -- because `slice`'s primary key is
-       (language, kind) and an unmerged write simply wins. What changes is
-       WHEN the body is read, and nothing else.
-
-       The server's mark on a slice (`slice.at`) is what netSlicePut() sent
-       the last time either side wrote it. Where it still equals the mark
-       this phone recorded when the two last AGREED, the server is holding
-       `langWasKey` -- which is already here, so there is nothing to fetch.
-       Where it differs, somebody has written: the body is read and merged
-       exactly as before.
-
-       SO A SECOND PHONE IS ALWAYS READ. Two phones writing at the same
-       moment send two different marks, so whichever landed second leaves a
-       mark the other one does not know, and the loser reads and merges on
-       its next save. A phone with no record reads -- 「知らない」 is not
-       「同じ」. */
-    netSlices(sid, function(st){
-      var need=[], skip={}, i, k;
-      for(i=0;i<kinds.length;i++){
-        k=kinds[i];
-        if(netAtSame(id, k, st[k])) skip[k]=1; else need.push(k);
-      }
-      if(!need.length){ send({}, st, skip); return; }
-      netSlices(sid, function(there){ send(there, st, skip); }, no, need);
-    }, no, kinds, 'kind,no,at');
+    /* Only the slices that moved, and of those only the bodies the server
+       has changed since this phone last agreed -- netGotFor() above is the
+       one place that decides which those are, and the launch road asks it
+       the same question. */
+    netGotFor(id, sid, kinds, send, no);
 
     /* ---- THE SLICES THAT MOVED GO TOGETHER --------------------------
        「なんか全体的に遅くない？」 OWNER 2026-09-08 (143). This was a walk
@@ -2338,8 +2420,8 @@ function netSaveUpGo(done){
        sends what is still missing, exactly as before. What a PERSON is told
        is one pop and not three: the first fall is the answer and the rest
        are the same network. */
-    function send(there, st, skip){
-      var left=kinds.length, fell=false, i, k, was, got;
+    function send(there){
+      var left=kinds.length, fell=false, i;
       function one(){
         if(fell || --left) return;
         NET_SYNCING=false;
@@ -2350,19 +2432,8 @@ function netSaveUpGo(done){
         fell=true;
         no(d, s2, '');
       }
-      for(i=0;i<kinds.length;i++){
-        k=kinds[i];
-        if(skip[k]){
-          /* The row netSlices() would have returned, built rather than
-             fetched. It is not a guess: the mark being unmoved is the
-             server saying it is still holding what the two sides agreed,
-             and that is `langWasKey`. netSlice1() below is given exactly
-             what it was given before. */
-          was=slMine(langWasKey(id, k));
-          got={body:(was===null? '' : was), no:st[k].no, at:st[k].at};
-        } else got=there[k];
-        netSlice1(id, sid, k, got, one, stop);
-      }
+      for(i=0;i<kinds.length;i++)
+        netSlice1(id, sid, kinds[i], there[kinds[i]], one, stop);
     }
   }, no);
 }
@@ -2412,7 +2483,14 @@ function netLangSync(then){
    that may not be the open one, which is the whole of the change. */
 function netLangSync1(id, done){
   netLangRow(id, function(sid){
-    netSlices(sid, function(there){
+    /* THE SECOND READ OF THE WHOLE LANGUAGE, and it is on every launch.
+       netLangsWalk() has just brought this language down and recorded what
+       the two sides agreed; this then read all twelve bodies again to merge
+       them against themselves -- 1.75 MB of a 1.87 MB launch on a 5,000-word
+       language, half of it for nothing. docs/reports/cost-2026-09-09.md 二.
+       netGotFor() asks the marks first, so a slice the two sides already
+       agree on costs nothing here. */
+    netGotFor(id, sid, SLICES, function(there){
       /* ---- ALL TWELVE AT ONCE, NOT ONE AFTER ANOTHER --------------------
          「なんか全体的に遅くない？」 OWNER 2026-09-08 (143). This was a walk:
          slice one went up, and only when its answer came back did slice two
