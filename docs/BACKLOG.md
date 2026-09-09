@@ -38,6 +38,8 @@ The order is the order to do them in.
 一度も開いていない端末だけ**です。データは消えません（規則 22 の写しと古い鍵は
 そのまま）。
 
+**OWNER 2026-09-09「いらん」── 作らない。**
+
 
 ## `SET` に残った四つ（`order` `read` `voice` `script`）と `planV` は動かしていません（2026-09-09）
 
