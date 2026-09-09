@@ -36,7 +36,7 @@ await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
 
 /* ---- a server made of two arrays, behind the one transport -------------- */
 const SERVER = `
-  window.__SRV = { lang:[], slice:[], n:0, down:false, sent:[], tried:[],
+  window.__SRV = { lang:[], slice:[], take:[], n:0, down:false, sent:[], tried:[],
                    /* WHAT IS IN THE AIR RIGHT NOW, by name. NET_OUT is a
                       COUNT and a count cannot say which request is the one
                       still out -- which is the only thing worth printing when
@@ -119,18 +119,35 @@ const SERVER = `
         out.push({ kind:S.slice[q].kind, body:S.slice[q].body, no:S.slice[q].no });
       return answer(out);
     }
-    /* 取った言語の表。この検査の人は誰の言語も取っていないので空 ── 空の
-       一覧は答えで、「まだ訊いていない」ではありません
-       （www/core.js § LTAKE、2026-09-09）。 */
-    if (method === 'GET' && p.indexOf('/rest/v1/language_take') === 0)
-      return answer([]);
+    /* 取った言語の表 ── language_take。この人の行だけ（take_read は
+       uid = auth.uid()）。空の一覧は答えで、「まだ訊いていない」では
+       ありません（www/core.js § LTAKE、2026-09-09）。 */
+    if (method === 'GET' && p.indexOf('/rest/v1/language_take') === 0){
+      var tk = arg('uid'), tout = [], t;
+      for (t = 0; t < S.take.length; t++) if (S.take[t].uid === tk)
+        tout.push({ language:S.take[t].language });
+      return answer(tout);
+    }
     if (method === 'GET' && p.indexOf('/rest/v1/language') === 0){
-      /* language_read: your own, or anybody's that is published. This asks
-         with owner=eq., which is the half a person asks about themselves. */
-      var own = arg('owner'), o2 = [], z;
-      for (z = 0; z < S.lang.length; z++) if (S.lang[z].owner === own)
-        o2.push({ id:S.lang[z].id, owner:S.lang[z].owner, name:S.lang[z].name,
-                  published_at:S.lang[z].published_at });
+      /* language_read: your own, or anybody's that is PUBLISHED. 起動は二つの
+         半分を一度に訊きます ── 取ったものが無ければ owner=eq.<自分>、
+         あれば or=(owner.eq.<自分>,id.in.(…))。取った言語でも公開されて
+         いなければ来ない、というのがこの表の規則です。 */
+      var own = arg('owner'), ids = null, mo, o2 = [], z, L;
+      mo = /[?&]or=\\(owner\\.eq\\.([^,]*),id\\.in\\.\\(([^)]*)\\)\\)/.exec(p);
+      if (mo){
+        own = decodeURIComponent(mo[1]);
+        ids = mo[2] ? mo[2].split(',').map(function(x){ return decodeURIComponent(x); }) : [];
+      }
+      for (z = 0; z < S.lang.length; z++){
+        L = S.lang[z];
+        if (L.owner !== own){
+          if (!ids || ids.indexOf(L.id) < 0) continue;
+          if (!L.published_at) continue;
+        }
+        o2.push({ id:L.id, owner:L.owner, name:L.name, wsys:L.wsys || '',
+                  published_at:L.published_at });
+      }
       return answer(o2);
     }
     return setTimeout(function(){ bad(null, 404, 'no route ' + method + ' ' + p); }, 0);
@@ -238,10 +255,22 @@ const came = await pg.evaluate(async ({ srv, saved }) => {
   /* signing in is netTook() -- the one place that knows a session arrived */
   netTook({ access_token:'t', refresh_token:'r', user:{ id:'me' } });
   await wait(400);
-  var ids = Object.keys(LANGS), i, out = [];
-  for (i = 0; i < ids.length; i++)
+  var ids = Object.keys(LANGS), i, j, out = [], v, n, b;
+  for (i = 0; i < ids.length; i++){
+    /* WHAT CAME BACK, MEASURED OVER EVERY SLICE AND NOT OVER `words`.
+       ここは `words` の長さだけを数えて「2 本以上が 2 バイトを超えている」と
+       訊いていました。開いていた方の言語は `words` が空なので、緑にしていた
+       のは **同じ言語が索引に二つ入っていたこと** です（起動の二本の道が
+       競争して両方が langMint() していた）。数えるものを言語ごとに直し、
+       名前で引くようにしたので、二重の行では緑になりません。 */
+    n = 0; b = 0;
+    for (j = 0; j < SLICES.length; j++){
+      v = slRd(langKeyOf(ids[i], SLICES[j])) || '';
+      if (v.length > 2){ n++; b += v.length; }
+    }
     out.push({ id:ids[i], name:langNameOf(ids[i]), mine:LANGS[ids[i]].mine,
-               words:(slRd(langKeyOf(ids[i], 'words')) || '').length });
+               slices:n, bytes:b });
+  }
   return { before: before, after: ids.length, langs: out };
 }, { srv: SERVER, saved: up.srv });
 
@@ -249,9 +278,12 @@ const names = came.langs.map(l => l.name).sort().join(',');
 say(names.indexOf('Vaska') >= 0 && names.indexOf('Toko') >= 0,
     'on a phone with an empty storage, signing in brings both back by name: ' +
     (names || 'nothing'));
-say(came.langs.filter(l => l.words > 2).length >= 2,
-    'and with what was in them, not just their names: ' +
-    JSON.stringify(came.langs.map(l => l.name + ' ' + l.words + 'B')));
+const cameBy = {};
+came.langs.forEach(l => { cameBy[l.name] = Math.max(cameBy[l.name] || 0, l.slices); });
+say(cameBy['Vaska'] >= 1 && cameBy['Toko'] >= 1,
+    'and with what was in them, not just their names — asked of each language ' +
+    'by name, over every slice: ' +
+    JSON.stringify(came.langs.map(l => l.name + ' ' + l.slices + ' slices ' + l.bytes + 'B')));
 say(came.langs.every(l => l.mine === true),
     'and both are the person’s own');
 
@@ -1528,6 +1560,131 @@ say(nmC.col[0] === '古い名' && nmC.col[1] === 'あとからの名' &&
     '**空の列は古いスライスから埋め、埋まっている列は触らない** ── ' +
     'language.name は ' + JSON.stringify(nmC.col) + '、画面は ' + JSON.stringify(nmC.shown) +
     '、スライスは一字も変わらない ' + JSON.stringify(nmC.slice));
+
+/* ---- 取った言語は、起動しなおしても中身ごと戻る ---------------------------
+   「DLしたやつがなくなるって意味がわからん」 OWNER 2026-09-09。
+
+   記事の ↓ は wldGet()（www/home.js）── スライスをメモリ（LSL、規則 22）に
+   書き、索引に mine:false の行を足し、サーバーの language_take に行を立てる。
+   アプリを閉じて開くと LSL は空で、起動の netLangsDown() は
+   language?owner=eq.<自分> しか引いていなかったので、**索引の行だけ残って
+   中身が来ない** ── 切り替えで開くと空の言語。
+
+   直った形は道が一本増えたのではなく、**同じ walk が歩く行の集合が
+   「自分の + 取った」になった**だけ。だから訊くことも三つ:
+   1. 取った言語が一覧にあり、開くと letters/kb がサーバーのバイトそのまま
+   2. 自分の言語のスライスは一バイトも動かない
+   3. language_take に無い他人の言語（公開されていても）は来ない
+
+   赤を見た形（2026-09-09）: netLangsDown() の問い合わせを owner=eq.<自分> に
+   戻すと 1 が赤 ── 索引には居るのに letters は null。                      */
+await pg.reload();
+await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
+
+const tookA = await pg.evaluate(async ({ s, srv }) => {
+  localStorage.clear();
+  eval('(' + s + ')()');
+  SET.walked = true;
+  eval(srv);
+  SESS = { at:'t', rt:'r', uid:'tk1', anon:false };
+  function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
+  var id;
+  for (id in LANGS)
+    if (Object.prototype.hasOwnProperty.call(LANGS, id)) langOwnGot(id, SESS.uid);
+  langStore();
+  /* 自分の言語に一語入れて上げます ── あとで「一バイトも動いていない」を
+     訊くので、空のスライスでは訊いたことになりません。 */
+  WORDS = [{ hw:'sula', ph:['s','u','l','a'], mn:'star', mns:['star'], pos:'n', at:1 }];
+  save();
+  await new Promise(function(f){ netLangSync(function(){ f(); }); });
+  await wait(250);
+  /* この人の言語の行がサーバーに在ること ── fixture が `sid` を打っていれば
+     netLangRow() は行を作らないので、無ければここで置きます。行が無いと
+     「自分の言語に一バイトも触っていない」は、**何も降りてこなかったこと**を
+     測るだけの主張になります。 */
+  var S = window.__SRV, mySid = LANGS[langId].sid, q, hit = null;
+  for (q = 0; q < S.lang.length; q++) if (S.lang[q].id === mySid) hit = S.lang[q];
+  if (!hit){ hit = { id:mySid, published_at:null }; S.lang.push(hit); }
+  hit.owner = SESS.uid; hit.name = 'Vaska'; hit.wsys = 'alpha';
+  /* 取った言語 ── 他人の、公開されている。 */
+  S.lang.push({ id:'far-1', owner:'somebody-else', name:'Shango',
+                wsys:'abjad', published_at:'2026-09-07T00:00:00Z' });
+  /* 取っていない他人の言語。公開されていても来てはいけません。 */
+  S.lang.push({ id:'far-2', owner:'somebody-else', name:'Neru',
+                wsys:'alpha', published_at:'2026-09-07T00:00:00Z' });
+  S.slice.push({ language:'far-1', kind:'letters', body:'[{"id":"sh1"}]', no:4 });
+  S.slice.push({ language:'far-1', kind:'kb',      body:'{"boards":[1]}',  no:2 });
+  S.slice.push({ language:'far-2', kind:'letters', body:'[{"id":"nr1"}]', no:1 });
+  S.take = [{ uid:SESS.uid, language:'far-1' }];
+  /* そして記事の ↓ を押したあとの状態そのもの: 索引に mine:false の行があり、
+     スライスはメモリにある。ここでアプリを閉じます ── slWr() は disk へ
+     行かない（規則 22）ので、開き直すと索引の行だけが残ります。 */
+  langSeenAdd('far-1', 'Shango', 'somebody-else');
+  slWr(langKeyOf('far-1', 'letters'), '[{"id":"sh1"}]');
+  slWr(langKeyOf('far-1', 'kb'), '{"boards":[1]}');
+  return { lid: langId, sid: mySid, mineWords: slMine(langKey('words')),
+           srv: JSON.stringify({ lang:S.lang, slice:S.slice, take:S.take }) };
+}, { s: seed.toString(), srv: SERVER });
+
+/* アプリを閉じて、開く。 */
+await pg.reload();
+await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
+
+const tookB = await pg.evaluate(async ({ srv, saved, lid }) => {
+  eval(srv);
+  var S = window.__SRV, keep = JSON.parse(saved);
+  S.lang = keep.lang; S.slice = keep.slice; S.take = keep.take;
+  function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
+  /* 開き直した直後 ── 索引に行はあるが、中身はどこにも無い。これがバグの姿。 */
+  var was = { row: !!LANGS['far-1'],
+              letters: slMine(langKeyOf('far-1', 'letters')) };
+  netTook({ access_token:'t', refresh_token:'r', user:{ id:'tk1' } });
+  await wait(1500);
+  /* 自分の言語は、この端末が閉じる前に立っていた言語そのもの。索引は disk に
+     残るので local id は生き残ります ── `sid` で引くと、行がサーバーに無い
+     ときに何も見つからず、主張が「見つからなかった」で緑になります。 */
+  var mine = LANGS[lid] ? lid : '';
+  return {
+    was: was,
+    /* 1. 切り替えの一覧に居て、中身がサーバーのバイトそのまま */
+    row: !!LANGS['far-1'], mine: LANGS['far-1'] && LANGS['far-1'].mine,
+    name: langNameOf('far-1'), wsys: langWsysOf('far-1'),
+    own: langOwnOf('far-1'), theirs: langMine('far-1') === false,
+    letters: slMine(langKeyOf('far-1', 'letters')),
+    kb: slMine(langKeyOf('far-1', 'kb')),
+    /* 2. 自分の言語 */
+    mineWords: mine ? slMine(langKeyOf(mine, 'words')) : '(no entry)',
+    mineName: mine ? langNameOf(mine) : '',
+    /* 3. 取っていない他人の言語 */
+    far2row: !!LANGS['far-2'],
+    far2letters: slMine(langKeyOf('far-2', 'letters')),
+    /* そして誰の言語にも書きに行っていないこと */
+    wrote: S.tried.filter(function(x){ return x.indexOf('far-') >= 0 &&
+                                              x.indexOf('GET') !== 0; })
+  };
+}, { srv: SERVER, saved: tookA.srv, lid: tookA.lid });
+
+say(tookB.was.row === true && tookB.was.letters === null,
+    '（前提）開き直した直後は索引の行だけで中身は無い ── 行 ' + tookB.was.row +
+    '、letters ' + JSON.stringify(tookB.was.letters));
+say(tookB.row === true && tookB.letters === '[{"id":"sh1"}]' &&
+    tookB.kb === '{"boards":[1]}',
+    '**取った言語は起動しなおすと中身ごと戻る** ── 一覧に ' +
+    JSON.stringify(tookB.name) + '、letters は ' + JSON.stringify(tookB.letters) +
+    '、kb は ' + JSON.stringify(tookB.kb) + '（サーバーのバイトそのまま）');
+say(tookB.mine === false && tookB.own === 'somebody-else' && tookB.theirs === true &&
+    tookB.wsys === 'abjad' && tookB.wrote.length === 0,
+    'そして他人のもののまま ── mine ' + tookB.mine + '、owner ' +
+    JSON.stringify(tookB.own) + '、書記体系は列から ' + JSON.stringify(tookB.wsys) +
+    '、書きに行った回数 ' + tookB.wrote.length);
+say(tookB.mineWords === tookA.mineWords && tookB.mineName === 'Vaska',
+    '**自分の言語には一バイトも触っていない** ── words は ' +
+    JSON.stringify(String(tookB.mineWords || '').slice(0, 40)) + '（前と同じ ' +
+    (tookB.mineWords === tookA.mineWords) + '）、名前は ' +
+    JSON.stringify(tookB.mineName));
+say(tookB.far2row === false && tookB.far2letters === null,
+    'そして language_take に無い他人の言語は、公開されていても来ない ── ' +
+    '索引 ' + tookB.far2row + '、letters ' + JSON.stringify(tookB.far2letters));
 
 await br.close();
 if (bad.length){

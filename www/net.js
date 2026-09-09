@@ -1750,13 +1750,24 @@ function netSlicePut(sid, kind, body, no, ok, bad){
    is a phone somebody is still writing a language on. */
 /* The entry for a server row: the one already carrying that sid, or a new
    one. Written out here because netLangsDown() below asks it inside a loop
-   and the answer decides whether anything was MADE. */
-function nidFor(row, here){
+   and the answer decides whether anything was MADE.
+
+   `own` is who WROTE this row, and it is what decides which kind of entry
+   gets made -- langMint() for one this account wrote, langSeenAdd() for one
+   it TOOK. There is no third kind and no new one here: those two are the
+   only ways an entry has ever been made, and a taken language arriving on
+   the launch road is the same entry the article's ↓ makes. */
+function nidFor(row, here, own){
   var sid=String(row.id), id;
   for(id in LANGS)
     if(Object.prototype.hasOwnProperty.call(LANGS, id) && LANGS[id] &&
        String(LANGS[id].sid||'')===sid) return id;
   if(here[sid]) return '';
+  /* SOMEBODY ELSE'S, AND THE INDEX HAS TO SAY SO. `mine:false` is what
+     langMine() reads, and it is what keeps every write road off it: a taken
+     language minted as this account's own would be saved back up under
+     somebody else's row. */
+  if(own!==String(SESS.uid||'')) return langSeenAdd(sid, String(row.name||''), own);
   /* The entry first, so a sync that fails halfway leaves a language that is
      HERE and empty rather than slices under an id nothing names. Empty and
      broken are different states -- docs/DATA_SAFETY.md rule 3 -- and an empty
@@ -1776,110 +1787,147 @@ function netLangsDown(then, bad){
   for(id in LANGS)
     if(Object.prototype.hasOwnProperty.call(LANGS, id) && LANGS[id] && LANGS[id].sid)
       here[String(LANGS[id].sid)]=1;
-  netGet('/rest/v1/language?select=id,name,published_at,wsys&owner=eq.'+
-         encodeURIComponent(SESS.uid),
-    function(d){
-      /* WHAT CAME BACK IS A LIST OR IT IS NOT AN ANSWER. netLangBack() above
-         has said so since it was written -- 「it did not answer」 and 「there
-         is nothing there」 are two states and must not share a branch -- and
-         this one read `d` as rows without asking. Anything without a length
-         (an error body, a single row, `null`) left `i >= undefined` false for
-         ever: step() called itself until the stack ran out. Nothing on a
-         phone would say why -- the languages simply never arrived.
-         Measured 2026-09-07, act-check: `Maximum call stack size exceeded`,
-         every frame `step`. */
-      var rows=(d && typeof d.length==='number')? d : [], i=0, made=0;
-      function step(){
-        var row, nid;
-        if(i>=rows.length){
-          if(made) langStore();
-          /* The OPEN language's slices came down, so what the screens are
-             holding is older than what is in the store. Read it in the way
-             langOpen() does rather than patching each global by hand. */
-          if(filled) langLoad();
-          if(made || filled) render();
-          done(made); return;
-        }
-        row=rows[i]; i++;
-        if(!row || !row.id){ step(); return; }
-        /* THE ENTRY MAY ALREADY BE HERE, AND ITS SLICES ARE NOT.
-           This skipped a language whose id was already in the index, and that
-           was right for as long as a slice survived a launch: the copy was on
-           the phone, so there was nothing to fetch. **The slices are in memory
-           now** (LSL in www/core.js), so on every launch there is an index
-           full of languages and not one word in any of them -- and skipping
-           by id would be the app showing somebody an empty dictionary and
-           calling it theirs.
+  /* THE ROWS THIS ACCOUNT HAS, AND THAT IS ITS OWN **AND** WHAT IT TOOK.
+     -----------------------------------------------------------------------
+     「DLしたやつがなくなるって意味がわからん」 OWNER 2026-09-09. This asked
+     `owner=eq.<me>` and nothing else, so a language taken off somebody's
+     article came back as the index row and NOTHING IN IT: the slices are in
+     memory (rule 22), the take is a `language_take` row, and no road brought
+     the second one's slices down. Opening it showed an empty language.
 
-           So the entry is made only when it is new, and the slices are asked
-           for either way. */
-        nid=nidFor(row, here);
-        if(nid===''){ step(); return; }
-        if(!here[String(row.id)]) made++;
-        here[String(row.id)]=1;
-        langStore();
-        /* AND WHETHER ITS PAGE IS OPEN, which is the one fact about a language
-           that is a COLUMN rather than a slice. This is the road that answers
-           it (www/home.js § wldPubGot): until it has, the article does not
-           draw, because 「まだ聞いていない」 is not 「公開」. */
-        wldPubGot(nid, row.published_at);
-        /* AND WHAT IT IS CALLED, which is the other column (www/core.js §
-           LNAME). Same road, same reason: 「まだ聞いていない」 is not 未設定. */
-        langNameGot(nid, row.name);
-        /* AND HOW IT IS WRITTEN, which is the third column (www/core.js §
-           LWSYS). It was `SET.wsys` -- one answer for all of somebody's
-           languages, on this handset, invisible to everybody else. */
-        langWsysGot(nid, row.wsys);
-        /* AND WHO WROTE IT. This road asks `owner=eq.<me>`, so every row it
-           gets is this account's -- and saying so is what lets langMine()
-           answer at all (www/core.js § LOWN): 「not asked」 is neither side. */
-        langOwnGot(nid, SESS.uid);
-        netSlices(row.id, function(there){
-          var k;
-          for(k in there){
-            if(!Object.prototype.hasOwnProperty.call(there, k)) continue;
-            if(!there[k] || there[k].body==='') continue;
-            /* FILLS IN AND STOPS -- docs/DATA_SAFETY.md rule 2. A slice this
-               phone is already holding is left exactly as it is, because it
-               may be a minute of somebody's typing that has not gone up yet.
-               slMine() and not slRd(): the picture kept for a launch with no
-               signal is not somebody's typing, and asking about it here is
-               what would let the picture win over the answer that has just
-               come back. 「サーバーの答えが来たら、そちらが勝ちます」 */
-            if(slMine(langKeyOf(nid, k))!==null) continue;
-            slWr(langKeyOf(nid, k), there[k].body);
-            /* and what the two sides agree it is, so the first thing removed
-               after this is understood as a removal */
-            netAgreed(nid, k, there[k].body);
-            if(nid===langId) filled=true;
+     One road and not two. The walk below and the slice fill below are what a
+     language coming back IS, and a taken one is a language coming back -- so
+     what changed is the SET OF ROWS this walks, not what it does with a row.
+     `netTakes()` is still the one place that says which were taken, and its
+     answer goes into the same ask: `language_read` is 「published or mine」,
+     so a taken language is readable through this table exactly as it is
+     through `language_seen`.
+
+     A REFUSAL ON THE TAKES IS NOT AN EMPTY LIST, and it must not take this
+     account's own languages down with it: the ask goes on with what it has,
+     which is what it asked for before today. */
+  netTakes(function(took){ ask(took); }, function(){ ask([]); });
+  function ask(took){
+    netGet('/rest/v1/language?select=id,name,published_at,wsys,owner&'+
+           ((took && took.length)
+              ? 'or=(owner.eq.'+encodeURIComponent(SESS.uid)+
+                ',id.in.('+netInList(took)+'))'
+              : 'owner=eq.'+encodeURIComponent(SESS.uid)),
+      function(d){
+        /* WHAT CAME BACK IS A LIST OR IT IS NOT AN ANSWER. netLangBack() above
+           has said so since it was written -- 「it did not answer」 and 「there
+           is nothing there」 are two states and must not share a branch -- and
+           this one read `d` as rows without asking. Anything without a length
+           (an error body, a single row, `null`) left `i >= undefined` false for
+           ever: step() called itself until the stack ran out. Nothing on a
+           phone would say why -- the languages simply never arrived.
+           Measured 2026-09-07, act-check: `Maximum call stack size exceeded`,
+           every frame `step`. */
+        var rows=(d && typeof d.length==='number')? d : [], i=0, made=0;
+        function step(){
+          var row, nid, own;
+          if(i>=rows.length){
+            if(made) langStore();
+            /* The OPEN language's slices came down, so what the screens are
+               holding is older than what is in the store. Read it in the way
+               langOpen() does rather than patching each global by hand. */
+            if(filled) langLoad();
+            if(made || filled) render();
+            done(made); return;
           }
-          /* AND A COLUMN THAT NOBODY EVER WROTE IS FILLED FROM THE SLICE.
-             Every language made before today has its name in the `lang`
-             slice, and a language made before netLangRow() sent one has an
-             EMPTY column -- so the name is on the server twice over and the
-             half everybody else reads says nothing.
+          row=rows[i]; i++;
+          if(!row || !row.id){ step(); return; }
+          /* THE ENTRY MAY ALREADY BE HERE, AND ITS SLICES ARE NOT.
+             This skipped a language whose id was already in the index, and that
+             was right for as long as a slice survived a launch: the copy was on
+             the phone, so there was nothing to fetch. **The slices are in memory
+             now** (LSL in www/core.js), so on every launch there is an index
+             full of languages and not one word in any of them -- and skipping
+             by id would be the app showing somebody an empty dictionary and
+             calling it theirs.
 
-             IT FILLS IN WHAT IS MISSING AND STOPS -- docs/DATA_SAFETY.md rule
-             2. A column that already says something is left exactly as it is,
-             even where the slice says otherwise: the two disagreeing is a
-             rename that never reached the column, and which of the two wins
-             is a conflict, which is the owner's (docs/FEATURE_RULES.md §
-             Deciding). docs/BACKLOG.md carries it. */
-          if(!String(row.name||'') && there.lang && there.lang.body)
-            netLangNamePut(row.id, there.lang.body, function(){
-              langNameGot(nid, there.lang.body); render();
-            }, function(){});
-          step();
-        }, step);
-      }
-      step();
-    }, function(d, s, m){
-      /* 起動の道の二つ目で、人が気づくのはこちら ── この人の言語は一本も
-         来ていない。［再接続］はこの道をもう一度。 */
-      if(bad){ bad(d, s, m); return; }
-      netPop(d, s, m, function(){ netLangsDown(then); });
-      done(0);
-    });
+             So the entry is made only when it is new, and the slices are asked
+             for either way. */
+          /* WHO WROTE IT, off the row's own column and not off who is asking.
+             This road used to be 「mine, all of them」 by construction; it is
+             two lists now, so the column is the only thing that can say which
+             of the two a row came from. A row with no `owner` at all is this
+             account's -- the doubt falls toward yours, www/core.js § langMine,
+             and the one shape of ask that can answer without it is the one that
+             asked `owner=eq.<me>`. */
+          own=String(row.owner||SESS.uid||'');
+          nid=nidFor(row, here, own);
+          if(nid===''){ step(); return; }
+          if(!here[String(row.id)]) made++;
+          here[String(row.id)]=1;
+          langStore();
+          /* AND WHETHER ITS PAGE IS OPEN, which is the one fact about a language
+             that is a COLUMN rather than a slice. This is the road that answers
+             it (www/home.js § wldPubGot): until it has, the article does not
+             draw, because 「まだ聞いていない」 is not 「公開」. */
+          wldPubGot(nid, row.published_at);
+          /* AND WHAT IT IS CALLED, which is the other column (www/core.js §
+             LNAME). Same road, same reason: 「まだ聞いていない」 is not 未設定. */
+          langNameGot(nid, row.name);
+          /* AND HOW IT IS WRITTEN, which is the third column (www/core.js §
+             LWSYS). It was `SET.wsys` -- one answer for all of somebody's
+             languages, on this handset, invisible to everybody else. */
+          langWsysGot(nid, row.wsys);
+          /* AND WHO WROTE IT -- www/core.js § LOWN, where 「not asked」 is
+             neither side and is what langMine() waits for. */
+          langOwnGot(nid, own);
+          netSlices(row.id, function(there){
+            var k;
+            for(k in there){
+              if(!Object.prototype.hasOwnProperty.call(there, k)) continue;
+              if(!there[k] || there[k].body==='') continue;
+              /* FILLS IN AND STOPS -- docs/DATA_SAFETY.md rule 2. A slice this
+                 phone is already holding is left exactly as it is, because it
+                 may be a minute of somebody's typing that has not gone up yet.
+                 slMine() and not slRd(): the picture kept for a launch with no
+                 signal is not somebody's typing, and asking about it here is
+                 what would let the picture win over the answer that has just
+                 come back. 「サーバーの答えが来たら、そちらが勝ちます」 */
+              if(slMine(langKeyOf(nid, k))!==null) continue;
+              slWr(langKeyOf(nid, k), there[k].body);
+              /* and what the two sides agree it is, so the first thing removed
+                 after this is understood as a removal */
+              netAgreed(nid, k, there[k].body);
+              if(nid===langId) filled=true;
+            }
+            /* AND A COLUMN THAT NOBODY EVER WROTE IS FILLED FROM THE SLICE.
+               Every language made before today has its name in the `lang`
+               slice, and a language made before netLangRow() sent one has an
+               EMPTY column -- so the name is on the server twice over and the
+               half everybody else reads says nothing.
+
+               IT FILLS IN WHAT IS MISSING AND STOPS -- docs/DATA_SAFETY.md rule
+               2. A column that already says something is left exactly as it is,
+               even where the slice says otherwise: the two disagreeing is a
+               rename that never reached the column, and which of the two wins
+               is a conflict, which is the owner's (docs/FEATURE_RULES.md §
+               Deciding). docs/BACKLOG.md carries it. */
+            /* AND ONLY ON A LANGUAGE THIS ACCOUNT WROTE. `language_edit` is
+               `owner = auth.uid()`, so this PATCH on somebody else's is a
+               request the server refuses -- and what it would be asking for is
+               the app writing a column of a language it does not own. */
+            if(own===String(SESS.uid||'') &&
+               !String(row.name||'') && there.lang && there.lang.body)
+              netLangNamePut(row.id, there.lang.body, function(){
+                langNameGot(nid, there.lang.body); render();
+              }, function(){});
+            step();
+          }, step);
+        }
+        step();
+      }, function(d, s, m){
+        /* 起動の道の二つ目で、人が気づくのはこちら ── この人の言語は一本も
+           来ていない。［再接続］はこの道をもう一度。 */
+        if(bad){ bad(d, s, m); return; }
+        netPop(d, s, m, function(){ netLangsDown(then); });
+        done(0);
+      });
+  }
 }
 /* The open language and its copy, put together. Read, merge, write back
    whatever moved -- in that order, so a phone that has been offline for a
