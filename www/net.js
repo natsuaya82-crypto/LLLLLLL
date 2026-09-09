@@ -1783,27 +1783,6 @@ function nidFor(row, here, own){
   LANGS[id].uid=String(SESS.uid||'');
   return id;
 }
-/* `bad` is for a caller that puts its own pop up, whose ［再接続］ has to run
-   that caller's own question again rather than this function on its own.
-   Where none is handed in this behaves exactly as it did: the pop is put up
-   here and the caller is told nothing came. */
-/* WHAT IS ALREADY HERE, BY THE SERVER'S NAME FOR IT, AND ONE MAP FOR BOTH
-   ROADS. The two asks below -- this account's own rows, and the rows it TOOK
-   -- are one walk answered twice, and each of them makes an index entry for a
-   row that has none. Two maps would be two answers to 「is this language
-   already here」, and the second walk would mint an entry the first had just
-   made. Built once per account: langMint() inside the walk adds to it, so a
-   row arriving on either road is known to the other. */
-var LDOWN_HERE=null, LDOWN_UID='';
-function netHere(){
-  var id, me=String((SESS && SESS.uid)||'');
-  if(LDOWN_HERE && LDOWN_UID===me) return LDOWN_HERE;
-  LDOWN_UID=me; LDOWN_HERE={};
-  for(id in LANGS)
-    if(Object.prototype.hasOwnProperty.call(LANGS, id) && LANGS[id] && LANGS[id].sid)
-      LDOWN_HERE[String(LANGS[id].sid)]=1;
-  return LDOWN_HERE;
-}
 /* ONE WALK, AND WHAT COMES OFF THE WIRE IS THE ONLY THING THAT DIFFERS.
    -------------------------------------------------------------------------
    A row is a row: the entry, the four columns, and the slices this phone does
@@ -1819,8 +1798,21 @@ function netLangsWalk(d, done){
      itself until the stack ran out. Nothing on a phone would say why -- the
      languages simply never arrived. Measured 2026-09-07, act-check:
      `Maximum call stack size exceeded`, every frame `step`. */
-  var rows=(d && typeof d.length==='number')? d : [], here=netHere(),
-      i=0, made=0, filled=false;
+  /* WHAT IS ALREADY HERE, BY THE SERVER'S NAME FOR IT, READ OFF `LANGS` EVERY
+     TIME. It was kept in a map beside it, once per account, and that made two
+     answers to 「is this language already here」 -- LANGS, and a picture of
+     LANGS taken earlier. A language added to the index between one walk and
+     the next was in one and not the other, so the walk minted a SECOND entry
+     for a language that was already there (acct-check 13, measured
+     2026-09-09: 「降ろした数が 1 でない ── 2」). `LANGS` is the answer;
+     langMint() writes it, so two walks running at once see each other's
+     entries through it, and nidFor() looks for the sid there rather than
+     here. This map is only 「a row already answered for in THIS walk」. */
+  var rows=(d && typeof d.length==='number')? d : [], here={},
+      i=0, made=0, filled=false, id;
+  for(id in LANGS)
+    if(Object.prototype.hasOwnProperty.call(LANGS, id) && LANGS[id] && LANGS[id].sid)
+      here[String(LANGS[id].sid)]=1;
   function step(){
     var row, nid, own;
     if(i>=rows.length){
@@ -1920,10 +1912,13 @@ function netLangsWalk(d, done){
    that caller's own question again rather than this function on its own.
    Where none is handed in this behaves exactly as it did: the pop is put up
    here and the caller is told nothing came. */
+/* `bad` is for a caller that puts its own pop up, whose ［再接続］ has to run
+   that caller's own question again rather than this function on its own.
+   Where none is handed in this behaves exactly as it did: the pop is put up
+   here and the caller is told nothing came. */
 function netLangsDown(then, bad){
   var done=then || function(){};
   if(!netSignedIn()){ done(0); return; }
-  netHere();
   netGet('/rest/v1/language?select=id,name,published_at,wsys,owner&owner=eq.'+
          encodeURIComponent(SESS.uid),
     function(d){ netLangsWalk(d, done); },
@@ -1968,7 +1963,6 @@ function netTakenDown(took){
   NET_TAKEN=String(SESS.uid);
   /* Nothing taken is an answer and not a reason to ask. */
   if(!ids.length) return;
-  netHere();
   netGet('/rest/v1/language?select=id,name,published_at,wsys,owner&id=in.('+
          netInList(ids)+')',
     function(d){ netLangsWalk(d, function(){}); },
