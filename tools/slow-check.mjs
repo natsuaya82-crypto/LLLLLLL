@@ -59,6 +59,26 @@ const MAX = {
   'save':     2
 };
 
+/* AND WHAT EACH SCREEN MAY CARRY, in bytes on the wire, same shape and same
+   rule as the table above: lowering one is progress and needs nobody, raising
+   one is the app carrying something it did not carry before.
+
+   Depth is what a person FEELS and bytes are what the account PAYS, and the
+   two move independently -- 「同じものを何度も運ぶ」 costs nothing in round
+   trips and was three quarters of a month's traffic
+   (docs/reports/cost-2026-09-09.md). A save used to send the whole dictionary,
+   get the whole dictionary back as a receipt, and read the whole dictionary
+   before either: three copies for one word. Nothing here could see that.
+
+   The fixture's language is a small one, so these are small numbers -- what
+   they hold is the SHAPE. `save` is one write of the words slice plus a mark
+   read of about a tenth of a kilobyte; put either of the other two copies
+   back and it roughly triples. Only the screens whose cost is a claim are in
+   this table; a screen not named here is not measured for bytes. */
+const MAXB = {
+  'save':  6000
+};
+
 /* ---- the server, which is a delay ---------------------------------------
    Installed before a line of the app runs, so the launch is measured too.  */
 function fakeNet(lat){
@@ -106,7 +126,8 @@ function fakeNet(lat){
     return [];
   }
 
-  function answer(m, u) {
+  var SL = [];
+  function answer(m, u, body) {
     var p = u.split('?')[0].replace(/^[a-z]+:\/\/[^/]*/, '');
     var j, hs, sel, side, rows;
     if (p === '/auth/v1/token')
@@ -140,19 +161,57 @@ function fakeNet(lat){
                     published_at: '2026-01-01' });
       return rows;
     }
-    if (p === '/rest/v1/slice') return [];
+    /* THE ONE ROUTE THAT REMEMBERS. It used to answer every slice question
+       with 「there is nothing」, which costs no bytes whichever road the app
+       takes -- so a save reading the dictionary back and a save reading a
+       mark measured the same. It keeps what was written now, and answers the
+       way PostgREST does: only the columns `select` asked for. */
+    if (p === '/rest/v1/slice') {
+      if (m === 'POST') {
+        var rw = (body instanceof Array) ? body : [body], q, r, f, hit;
+        for (q = 0; q < rw.length; q++) {
+          r = rw[q]; hit = null;
+          for (f = 0; f < SL.length; f++)
+            if (SL[f].language === r.language && SL[f].kind === r.kind) hit = SL[f];
+          if (hit) { hit.body = r.body; hit.no = r.no; hit.at = r.at; }
+          else SL.push({ language: r.language, kind: r.kind,
+                         body: r.body, no: r.no, at: r.at });
+        }
+        return SL;
+      }
+      var want = asked(qs(u, 'language'))[0] || '';
+      var kinds = asked(qs(u, 'kind'));
+      var cols = (qs(u, 'select') || 'kind,body,no').split(',');
+      rows = [];
+      for (j = 0; j < SL.length; j++) {
+        if (SL[j].language !== want) continue;
+        if (kinds.length && kinds.indexOf(SL[j].kind) < 0) continue;
+        var row = {}, c;
+        for (c = 0; c < cols.length; c++) row[cols[c]] = SL[j][cols[c]];
+        rows.push(row);
+      }
+      return rows;
+    }
     return m === 'GET' ? [] : {};
   }
 
   function Fake() { this.readyState = 0; this.status = 0; this.responseText = ''; }
   Fake.prototype.open = function (m, u) { this.__m = m; this.__u = u; };
-  Fake.prototype.setRequestHeader = function () {};
+  Fake.prototype.setRequestHeader = function (k, v) {
+    if (String(k).toLowerCase() === 'prefer') this.__pref = String(v || '');
+  };
   Fake.prototype.abort = function () {};
   Fake.prototype.getResponseHeader = function () { return null; };
-  Fake.prototype.send = function () {
-    var self = this;
+  function bytes(x) {
+    if (x == null) return 0;
+    if (typeof x !== 'string') return x.byteLength || x.length || 0;
+    return new Blob([x]).size;
+  }
+  Fake.prototype.send = function (d) {
+    var self = this, parsed = null;
+    try { parsed = typeof d === 'string' ? JSON.parse(d) : null; } catch (e) {}
     var rec = { m: self.__m, u: String(self.__u || ''),
-                t0: performance.now(), t1: 0 };
+                t0: performance.now(), t1: 0, up: bytes(d), down: 0 };
     log.push(rec);
     out++;
     setTimeout(function () {
@@ -160,8 +219,17 @@ function fakeNet(lat){
       rec.t1 = performance.now();
       self.readyState = 4;
       self.status = 200;
-      try { self.responseText = JSON.stringify(answer(self.__m, rec.u)); }
+      /* 憶えるのは先、返すのは後 ── PostgREST は `return=minimal` と言われても
+         書きます。返さないだけです。 */
+      try {
+        var a = answer(self.__m, rec.u, parsed);
+        self.responseText =
+          (self.__m !== 'GET' &&
+           String(self.__pref || '').indexOf('return=minimal') >= 0)
+            ? '' : JSON.stringify(a);
+      }
       catch (e) { self.responseText = 'null'; }
+      rec.down = bytes(self.responseText);
       if (self.onreadystatechange) self.onreadystatechange();
     }, lat);
   };
@@ -261,7 +329,7 @@ async function measure(name, run) {
     ms = Date.now() - t1;
   }
   const log = await pg.evaluate(() => window.__NET.log.map(
-    (r) => ({ m: r.m, u: r.u, t0: r.t0, t1: r.t1 })));
+    (r) => ({ m: r.m, u: r.u, t0: r.t0, t1: r.t1, up: r.up, down: r.down })));
   const stalls = await pg.evaluate(() => window.__NET.stalls.slice());
   const lv = levels(log);
   const d = lv.length ? Math.max.apply(null, lv) : 0;
@@ -278,7 +346,8 @@ async function measure(name, run) {
     ? Math.round(Math.max.apply(null, log.map((r) => r.t1)) -
                  Math.min.apply(null, log.map((r) => r.t0))) : 0;
   const busy = stalls.reduce((a, b) => a + b, 0);
-  rows.push({ name, n: log.length, d, ms, netMs, busy,
+  const wire = log.reduce((a, r) => a + (r.up || 0) + (r.down || 0), 0);
+  rows.push({ name, n: log.length, d, ms, netMs, busy, wire,
               worst: stalls.length ? Math.max.apply(null, stalls) : 0,
               splashMs: run ? 0 : splashMs, stage });
   await pg.close();
@@ -344,19 +413,22 @@ await br.close();
 let bad = 0;
 console.log('slow-check — one round trip = ' + LAT + 'ms');
 console.log('');
-console.log('screen    requests  serial  wire ms  wall ms  allowed');
-console.log('--------  --------  ------  -------  -------  -------');
+console.log('screen    requests  serial  wire ms  wall ms  allowed   bytes  allowed');
+console.log('--------  --------  ------  -------  -------  -------  ------  -------');
 for (const r of rows) {
-  const m = MAX[r.name];
-  const ok = r.d <= m;
+  const m = MAX[r.name], mb = MAXB[r.name];
+  const ok = r.d <= m, okb = mb === undefined || r.wire <= mb;
   if (!ok) bad++;
+  if (!okb) bad++;
   console.log(
     r.name.padEnd(10) +
     String(r.n).padStart(6) + '    ' +
     String(r.d).padStart(4) + '    ' +
     String(r.netMs).padStart(7) + '  ' +
     String(r.ms).padStart(7) + '  ' +
-    String(m).padStart(7) + (ok ? '' : '  !'));
+    String(m).padStart(7) + (ok ? '  ' : ' !') +
+    String(r.wire).padStart(7) + '  ' +
+    String(mb === undefined ? '-' : mb).padStart(7) + (okb ? '' : '  !'));
 }
 console.log('');
 /* And what each stage waited for the one above it to answer. */
@@ -368,10 +440,14 @@ for (const r of rows) {
     console.log('  ' + (i + 1) + '. ' + r.stage[i].join('  '));
 }
 console.log('');
-for (const r of rows)
+for (const r of rows) {
   if (r.d > MAX[r.name])
     console.log('FAIL ' + r.name + ': ' + r.d + ' round trips in a row, ' +
                 MAX[r.name] + ' allowed');
+  if (MAXB[r.name] !== undefined && r.wire > MAXB[r.name])
+    console.log('FAIL ' + r.name + ': ' + r.wire + ' bytes on the wire, ' +
+                MAXB[r.name] + ' allowed — 同じものを二度運んでいないか');
+}
 if (errs.length) { bad++; errs.forEach((e) => console.log('FAIL ' + e)); }
 console.log(rows.length + ' screens measured, ' +
             (bad ? bad + ' over' : 'all within') + ' the allowance');
