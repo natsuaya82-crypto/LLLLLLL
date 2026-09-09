@@ -114,7 +114,9 @@ const r = await pg.evaluate(({ s }) => {
   out.recReplies = snsList().filter((p) => !!p.to).length;
   out.recPosts   = snsList().length;
   snsTab = 'fo';
-  ME.fo = ['iri'];
+  /* フォローは `follow` 表の答えで、FOL_HAVE がその置き場です
+     （www/me.js § meFollowing、2026-09-09）。 */
+  folPut(false, meHandle(), ['iri']);
   out.foReplies = snsList().filter((p) => !!p.to).length;
   snsTab = 'rec';
   /* a person's own page still shows their answers -- the 返信 tab is what it
@@ -157,8 +159,8 @@ const r = await pg.evaluate(({ s }) => {
   snsTab = wasTab;
 
   /* ---- 2: yourself, out of your own two lists -------------------------- */
-  ME.fo = [meHandle(), 'iri'];
-  ME.fr = [meHandle(), 'veth'];
+  folPut(false, meHandle(), [meHandle(), 'iri']);
+  folPut(true, meHandle(), [meHandle(), 'veth']);
   out.ownFollowing = meFollowing();
   out.ownFollowers = meFollowers();
   NAV = [{ r:'follows', a:'ing' }];
@@ -253,21 +255,23 @@ const r = await pg.evaluate(({ s }) => {
      waits, not the card that hides. Without this line the check stands in a
      state where the old road would have been right too, and would go green
      with it put back. */
-  const wasFo = ME.fo, wasFr = ME.fr, wasGot = PULL_GOT.mine;
+  const wasFo = folOf(false, meHandle()), wasFr = folOf(true, meHandle()),
+        wasGot = PULL_GOT.mine;
   PULL_GOT.mine = 0;
   NAV = [{ r:'profile', a:'' }];
   /* Two names in one list and one in the other, neither of them yours: the
      count is what these say and there is nothing for meNotMe() to take out
      of them, so the number expected here is written down rather than worked
      out again from the lists. */
-  ME.fo = ['iri', 'veth']; ME.fr = ['iri'];
+  folPut(false, meHandle(), ['iri', 'veth']); folPut(true, meHandle(), ['iri']);
   out.meWaits = (meCard().match(/numwait/g) || []).length;
   /* and what stands there is the count */
   out.meHeldLast = meCard().indexOf('<b>2</b>') >= 0 &&
                    meCard().indexOf('<b>1</b>') >= 0;
-  ME.fo = []; ME.fr = [];
+  folPut(false, meHandle(), []); folPut(true, meHandle(), []);
   out.meZeroIsZero = meCard().indexOf('<b>0</b>') >= 0;
-  ME.fo = wasFo; ME.fr = wasFr; PULL_GOT.mine = wasGot;
+  folPut(false, meHandle(), wasFo); folPut(true, meHandle(), wasFr);
+  PULL_GOT.mine = wasGot;
   /* and somebody else's card, whose numbers are the server's */
   delete WHO_HAVE['iri'];
   NAV = [{ r:'profile', a:'iri' }];
@@ -288,14 +292,14 @@ const r = await pg.evaluate(({ s }) => {
      「空」と「まだ誰も訊いていない」は別 (CLAUDE.md § Data). That is the
      half a screenshot cannot tell apart, so it is asked here as a REQUEST:
      what is read is whether the question went out at all. */
-  const heldFr = ME.fr;
+  const heldFr = folOf(true, meHandle());
   WHO_HAVE.veth = { who:'Veth', hd:'veth', fo:1, fr:1 };
-  ME.fr = ['iri'];
+  folPut(true, meHandle(), ['iri']);
   out.backOnCard  = whoCard('iri').indexOf('whyou') >= 0;
   out.backOnOther = whoCard('veth').indexOf('whyou') >= 0;
   /* and never on your own name -- meFollowers() is the list with you taken
      out of it, and this is the screen that would say 「you follow you」 */
-  ME.fr = [meHandle(), 'iri'];
+  folPut(true, meHandle(), [meHandle(), 'iri']);
   out.backOnSelf = whoCard(meHandle()).indexOf('whyou') >= 0;
 
   /* AND THE QUESTION IS PUT, ON A ROAD THAT DOES NOT DEPEND ON WHICH SCREEN
@@ -311,14 +315,16 @@ const r = await pg.evaluate(({ s }) => {
   const wasFollowers = netFollowers;
   let followerAsks = 0;
   netFollowers = function (ok) { followerAsks++; ok([]); };
-  delete ME.fr;
+  /* 「まだ誰も訊いていない」は、答えが無いこと ── FOL_HAVE にその鍵が
+     無いことです（www/me.js § folGot）。 */
+  delete FOL_HAVE[folKey(true, meHandle())];
   out.mineOnOpen = PULL_OPEN.indexOf('mine') >= 0;
   PULL_GOT.mine = 0; PULL_OUT.mine = 0;
   pullBoot();
   out.askedOnTheirs = followerAsks;
   netFollowers = wasFollowers;
   PULL_GOT.mine = 1; PULL_OUT.mine = 0;
-  ME.fr = heldFr;
+  folPut(true, meHandle(), heldFr);
 
   /* ---- 8: a request that falls over says so, and 再接続 goes back for it -
      「通信エラーなら進むわけねえだろ全部」「エラーになったらエラー用のポップ
@@ -333,7 +339,8 @@ const r = await pg.evaluate(({ s }) => {
      could not see that. Silence is the worse half here: with no ME.fr the
      screen draws 「nobody follows you」 and the person is shown nothing at
      all about what happened. */
-  const heldPair = { fr:ME.fr, fo:ME.fo, ers:netFollowers, ing:netFollowing };
+  const heldPair = { fr:folOf(true, meHandle()), fo:folOf(false, meHandle()),
+                     ers:netFollowers, ing:netFollowing };
   const fell = () => {
     popOff();
     NET_AGAIN = [];
@@ -356,7 +363,7 @@ const r = await pg.evaluate(({ s }) => {
   NET_AGAIN = [];
   netFollowers = heldPair.ers; netFollowing = heldPair.ing;
   PULL_GOT.mine = 1; PULL_OUT.mine = 0;
-  ME.fr = heldPair.fr; ME.fo = heldPair.fo;
+  folPut(true, meHandle(), heldPair.fr); folPut(false, meHandle(), heldPair.fo);
 
   /* ---- 8: NOBODY IS A '?' THAT BECOMES A NAME ---------------------------
      「ユーザーもアイコンとか？になってあとで表示されるけど、なんで？毎回1
@@ -439,10 +446,10 @@ const r = await pg.evaluate(({ s }) => {
       out[name + 'Q'] = first === null ? -1 : qOf(first);
       out[name + 'Req'] = wire.length;
     };
-    ME.fo = ['kai', 'noa'];
+    folPut(false, meHandle(), ['kai', 'noa']);
     walk('fol', () => followsOpen('ing'));
     walk('ntf', () => notfoOpen('kai,noa'));
-    ME.fo = heldPair.fo;
+    folPut(false, meHandle(), heldPair.fo);
     WHO_HAVE = {}; WHO_ASKED = {};
     netSend1 = realS1; netSend = realS; netGet = realG;
     NAV = [{ r:'feed' }]; window.route = 'feed';
