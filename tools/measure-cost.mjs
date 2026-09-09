@@ -105,8 +105,16 @@ function meter(cfg){
       var lid = asked(qs(u, 'language'))[0] || '';
       rows = [];
       var bag = SL[lid] || {};
-      for (k in bag) if (Object.prototype.hasOwnProperty.call(bag, k))
-        rows.push({ kind:bag[k].kind, body:bag[k].body, no:bag[k].no });
+      /* 訊かれた欄だけ返す ── PostgREST の select はそういうものです。
+         中身を訊いていない読みが中身のぶん重く見えたら、測る意味がない。 */
+      var cols = (qs(u, 'select') || 'kind,body,no').split(',');
+      var kinds = asked(qs(u, 'kind'));
+      for (k in bag) if (Object.prototype.hasOwnProperty.call(bag, k)){
+        if (kinds.length && kinds.indexOf(k) < 0) continue;
+        var row = {}, c;
+        for (c = 0; c < cols.length; c++) row[cols[c]] = bag[k][cols[c]];
+        rows.push(row);
+      }
       return rows;
     }
     if (p === '/rest/v1/rpc/feed_hot' || p === '/rest/v1/rpc/feed_fo' ||
@@ -129,7 +137,9 @@ function meter(cfg){
 
   function Fake(){ this.readyState = 0; this.status = 0; this.responseText = ''; }
   Fake.prototype.open = function(m, u){ this.__m = m; this.__u = u; };
-  Fake.prototype.setRequestHeader = function(){};
+  Fake.prototype.setRequestHeader = function(k, v){
+    if (String(k).toLowerCase() === 'prefer') this.__pref = String(v || '');
+  };
   Fake.prototype.abort = function(){};
   Fake.prototype.getResponseHeader = function(){ return null; };
   Fake.prototype.send = function(d){
@@ -141,7 +151,16 @@ function meter(cfg){
     setTimeout(function(){
       out--;
       self.readyState = 4; self.status = 200;
-      try { self.responseText = JSON.stringify(answer(self.__m, rec.u, parsed)); }
+      /* 憶えるのは先、返すのは後 ── PostgREST は `return=minimal` と
+         言われても書きます。返さないだけです。ここが読まなければ
+         「返る写しを止めた」が数字に出ません。 */
+      try {
+        var a = answer(self.__m, rec.u, parsed);
+        self.responseText =
+          (self.__m !== 'GET' &&
+           String(self.__pref || '').indexOf('return=minimal') >= 0)
+            ? '' : JSON.stringify(a);
+      }
       catch (e) { self.responseText = 'null'; }
       rec.down = bytes(self.responseText);
       if (self.onreadystatechange) self.onreadystatechange();

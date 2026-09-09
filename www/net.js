@@ -307,10 +307,21 @@ function netSend1(method, path, body, tok, ok, bad, up, may){
      Asked for here rather than at netDrop(), because it is the same sentence
      the two lines above are: a write that changed nothing must never read as
      a write that worked. */
+  /* EXCEPT THE SLICE, WHICH IS SOMEBODY'S DICTIONARY COMING STRAIGHT BACK.
+     A slice write is a POST that upserts, so there is no 「matched no row」
+     to tell apart -- that is what the three paragraphs above are about and
+     none of them is about this one. 2xx IS 「the server took it」, which is
+     the whole of what netSlicePut()'s `ok` has ever read: it takes no
+     argument and never has. Asking for the row back doubles every save --
+     872 KB up and the same 872 KB down again on a 5,000-word language, a
+     quarter of everything that account sends in a month.
+     docs/reports/cost-2026-09-09.md 一. */
   if((method==='POST' || method==='PATCH' || method==='DELETE') &&
      path.indexOf('/rest/v1/')===0)
     x.setRequestHeader('Prefer',
-      'return=representation'+(up? ', resolution=merge-duplicates' : ''));
+      (path.indexOf('/rest/v1/slice')===0
+         ? 'return=minimal' : 'return=representation')+
+      (up? ', resolution=merge-duplicates' : ''));
   else if(up) x.setRequestHeader('Prefer', 'resolution=merge-duplicates');
   x.onreadystatechange=function(){
     if(x.readyState!==4) return;

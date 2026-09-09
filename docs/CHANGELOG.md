@@ -15,6 +15,27 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-09 保存した slice が、そのまま返ってこなくなる（`Prefer: return=minimal`）
+
+`docs/reports/cost-2026-09-09.md` 一。5,000 語の人が単語を一つ足して保存すると
+2.6 MB 流れ、そのうち **872 KB は上げたものがそのまま返ってきていた**ぶんです。
+`netSend1()`（`www/net.js`）は `/rest/v1/` へのすべての POST・PATCH・DELETE に
+`Prefer: return=representation` を付けており、slice の書きもその中にありました。
+
+**slice の書きだけ `return=minimal` にします。**理由は `return=representation`
+が付いている理由の裏返しです ── あれは「一行も当たらなかった PATCH と、当たった
+PATCH を見分ける」ためのもので、slice の書きは upsert する POST なので
+見分けるものがありません。`netSlicePut()` の `ok` は引数を取らず、取ったことが
+ありません。**2xx が「サーバーが受け取った」です。**
+
+- **何が流れなくなるか**: 保存一回 2624.6 KB → 1747.0 KB（5,000 語、
+  `node tools/measure-cost.mjs`）。
+- **何は変わらないか**: 保存されるもの、端末に残るもの、失敗の伝わり方。
+  書き込み自体は同じで、返事の本体が空になるだけです。他の表への書き
+  （`language`・`profile`・`draft` ほか）は `return=representation` のままです ──
+  返る行を読んでいる所があるので、触っていません。
+
+
 ### 2026-09-09 元が消えた DL 言語は端末からも消える（DELETE REVIEW あり）／非公開は新規 DL を止めるだけ
 
 「空で残さないで。消えたら消えるのよ。」「非公開にしたら新規 dl だけできない
