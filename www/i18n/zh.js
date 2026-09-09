@@ -1213,6 +1213,7 @@ defLang('zh', (function(){
       'post.gone'             : "这条动态已经没有了",
       'post.thread'           : "对话",
       'post.re.to'            : "回复 {0}",
+      'post.re.off'            : '移除收件人',
       "word.edit"        : "编辑",
       "word.del"         : "删除词",
       "confirm.del"      : "删除 {0}？",

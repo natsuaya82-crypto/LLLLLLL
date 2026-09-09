@@ -1123,6 +1123,7 @@ defLang('en', (function(){
       'post.gone'             : "That post is gone",
       'post.thread'           : "Thread",
       'post.re.to'            : "Replying to {0}",
+      'post.re.off'            : 'Remove the addressee',
       'word.edit'       : 'Edit',
       'word.del'        : "Delete word",
       'confirm.del'     : "Delete {0}?",

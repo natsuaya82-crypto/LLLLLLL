@@ -400,11 +400,13 @@ function openPost(from, at){
 
      ONLY INTO AN EMPTY ONE, and the reason moved with it. It is no longer
      about editing somebody's sentence -- nothing is put in the sentence. It
-     is that there is no way to take an addressee OFF a composer
-     (docs/BACKLOG.md), so a half-written post about something else must not
-     silently become a post to whoever's page the + happened to be on. With
-     something already there the composer opens as it was, which is what +
-     has always done.
+     is that a half-written post about something else must not silently
+     become a post to whoever's page the + happened to be on. With something
+     already there the composer opens as it was, which is what + has always
+     done. There IS a way off one now -- the ✕ on the line (pwToRow, OWNER
+     2026-09-09) -- and that is not a reason to widen this: an addressee
+     somebody has to notice and remove is still one they were never asked
+     about.
 
      `at` is a handle, [a-z0-9_] (supabase/schema.sql), so nothing here has to
      escape it and nothing is parsed back out of it later. */
@@ -1482,7 +1484,7 @@ function pwHTML(){
          pwToPaint() fills it while somebody is typing and this screen is not
          redrawn then. `.pto:empty` is display:none, so an empty one is not a
          line of nothing. */
-      '<div class="pto" id="pw-to">'+(PW.toh? ptoHTML(PW.toh) : '')+'</div>'+
+      '<div class="pto" id="pw-to">'+pwToRow()+'</div>'+
       /* The field runs the way the language does, and is set in the letters
          somebody drew. It was neither: flat, in roman, above a post that
          came out in columns of drawn shapes -- so what you were writing and
@@ -1660,11 +1662,44 @@ function pwAtLift(){
   }
   pwToPaint();
 }
+/* WHAT THAT LINE HOLDS, and it is one place because two screens draw it:
+   pwHTML() when the composer is built, and pwToPaint() while somebody is
+   typing into it. It was `PW.toh? ptoHTML(PW.toh) : ''` written out twice,
+   which was two copies of one sentence the moment the sentence grew a second
+   half.
+
+   THE SECOND HALF IS THE ✕. 「いいよ」 OWNER 2026-09-09, to 「投稿画面の
+   「Replying to @〇〇」に ✕ を付けて外せるようにする」. Until then the line
+   appeared and there was no way off it: the addressee is `PW.toh` and not
+   characters in the line, so emptying the field left it standing, and the
+   only roads that cleared it were sending the post and keeping it as a draft
+   (`docs/BACKLOG.md`, 2026-09-08).
+
+   It wears `.ptag`, which is what the @ beside it wears, and `.pto .ptag` in
+   index.html is already 44pt on this row without making the row taller --
+   padding 11 and a margin of -11 that gives it back (the rule says so where
+   it is written). No corner, no border, no fill: CLAUDE.md § NO ROUNDED BOX.
+   It sits directly after the handle rather than out at the right margin,
+   because pinning it there is a flex rule in index.html and that file is
+   another branch's today. */
+function pwToRow(){
+  if(!PW.toh) return '';
+  return ptoHTML(PW.toh)+
+    '<button class="ptag"'+DO('pwToOff')+' aria-label="'+
+      esc(t('post.re.off'))+'">'+ICON_CROSS+'</button>';
+}
+/* And pressing it takes the addressee and NOTHING else. The line is what
+   somebody wrote and is not touched -- taking both is one line to write and
+   throws nothing, which is why post-check asks about the line as well. */
+function pwToOff(){
+  PW.toh='';
+  pwToPaint();
+}
 /* And the line over the field, patched by hand for the same reason the ring
    is: nothing redraws this screen while it is being typed into. */
 function pwToPaint(){
   var e=document.getElementById('pw-to');
-  if(e) e.innerHTML=PW.toh? ptoHTML(PW.toh) : '';
+  if(e) e.innerHTML=pwToRow();
 }
 /* How long a post may be. There was no answer at all: the field was one row
    of an input, so a line ran off the side of the phone and kept going for as

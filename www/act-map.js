@@ -246,6 +246,7 @@ act('pwMarkInk', pwMarkInk);
 act('pwTool', pwToolSet);
 act('pwCutDo', pwCutDo);
 act('pwCutAll', pwCutAll);
+act('pwToOff', pwToOff);
 act('pwSend', pwSend);
 act('pwFocusLn', pwFocusLn);
 act('draftKeep', draftKeep);

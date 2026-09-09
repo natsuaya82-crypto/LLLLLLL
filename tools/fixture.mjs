@@ -1287,7 +1287,18 @@ export function halfDone(){
        その画面で、入っていないのは別の画面です ── どちらも歩かせないと、
        前を書き足す一行が消えても緑のまま出ます。 */
     ['the composer, opened from somebody\u2019s page', () => {
-        PW = pwBlank(); openPost('new', 'jjj');
+        PW = pwBlank(); openPost('new', 'jjj'); pwSetLn('kano tir');
+        const h = vForm(); PW = pwBlank(); return h; }],
+    /* AND THE SAME SCREEN WITH THE ✕ PRESSED. 「いいよ」 OWNER 2026-09-09.
+       宛先の行には二つの状態があり、間違いはたいてい誰も写真を撮らなかった
+       ほうで起きます ── ここでは「外したあと本文が残っているか」がそれです。 */
+    ['the composer, the addressee taken off', () => {
+        PW = pwBlank(); openPost('new', 'jjj'); pwSetLn('kano tir');
+        pwToOff();
+        /* この画面は打っている間 描き直されないので、`FORM.html` は開いた
+           ときのままです ── ✕ が消すのは画面のほう（pwToPaint）。写真は
+           押したあとの composer なので、同じ pwHTML() から組み直します。 */
+        FORM.html = pwHTML();
         const h = vForm(); PW = pwBlank(); return h; }],
     ['the composer, replying to somebody', () => {
         PW = pwBlank(); PW.to = 'p1'; openPost('reply');
