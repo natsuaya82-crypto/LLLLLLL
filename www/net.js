@@ -665,6 +665,9 @@ function netOut(){
      is not an account, so leaving them would draw the last person's following
      list under the next person's name. */
   if(typeof folForget==='function') folForget();
+  /* And whether the account that has just gone had a profile row. It is that
+     account's answer and the next person must not be read by it. */
+  if(typeof meRowForget==='function') meRowForget();
   /* AND WHETHER THIS ACCOUNT ANSWERS THE REPORTS, WHICH IS THE SAME SENTENCE.
      NET_STAFF, NET_ADMIN and NET_BANNED are three facts about the account that
      has just gone, and nothing here put them down -- so the seven taps on the
@@ -877,6 +880,11 @@ function netMyProfile(ok, bad){
          encodeURIComponent(SESS.uid),
          function(d){
            var p=d && d.length? d[0] : null;
+           /* AND WHETHER THIS ACCOUNT HAS BEEN HERE AT ALL, which is what a
+              row IS (www/me.js § ME_ROW). It was `SET.done` on the handset
+              until 2026-09-09, and a flag about the phone cannot answer a
+              question about the account. */
+           meRowGot(!!p);
            /* The face, read back same as the name and the handle -- signing
               in on a second phone used to leave ME.av empty until a letter
               was drawn or redrawn here, so the account's own icon never
@@ -993,6 +1001,9 @@ function netProfSync(){
          encodeURIComponent(SESS.uid),
     function(d){
       var row=(d && d.length)? (d[0]||{}) : {}, drew=false, i, k, there;
+      /* AND THE SAME ANSWER THIS ASK ALREADY CARRIES: a row means this
+         account has been through the walk (www/me.js § ME_ROW). */
+      meRowGot(!!(d && d.length));
       /* NO ROW IS NOT AN EMPTY PROFILE. An account whose row has not been
          made yet -- the door's last step is still in front of them -- is not
          somebody whose line about themselves is blank, and writing three

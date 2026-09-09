@@ -39,7 +39,7 @@
         page               name and looked like nothing was wrong; a view with
                            no route simply stopped being reachable. vOb is the
                            one exception -- the onboarding is what the app is
-                           until SET.done, not somewhere you navigate to --
+                           until SET.walked, not somewhere you navigate to --
                            and it is exempt by name so a second one cannot
                            quietly join it
 
@@ -176,7 +176,7 @@ const R = await pg.evaluate(() => {
   /* Onboarding, every step -- and the steps that have a second face: the
      writing systems to choose from, the sounds offered again, the characters
      on offer to borrow. */
-  SET.done = false;
+  SET.walked = false;
   /* The door is not one of them any more -- it is shown for SET.obback, not
      for a step number -- so the note has to be off for a step to be seen at
      all, and the door's own faces come out of obStates() below. */
@@ -191,7 +191,7 @@ const R = await pg.evaluate(() => {
   });
   ob.mode = 'draw';
   SET.obback = null;
-  SET.done = true;
+  SET.walked = true;
 
   /* A screen that takes an argument is a different screen for each argument:
      a settings room, a grammar stage, a letter in the editor. A walk that
@@ -377,14 +377,14 @@ const R = await pg.evaluate(() => {
      outside every view, so no view's HTML could ever carry it, and 「それ以外
      は表示させるな」 is about the bar too. */
   {
-    const wasS = SESS, wasR = window.route, wasN = NAV, wasDone = SET.done,
+    const wasS = SESS, wasR = window.route, wasN = NAV, wasDone = SET.walked,
           wasBack = SET.obback, wasStep = ob.step;
     const app = document.getElementById('app'), tabs = document.getElementById('tabs');
     SESS = null;
     /* Finished, and standing wherever the tour left ob.step -- which is the
        state a person who signs out is actually in, and the one that used to
        show them the app. */
-    SET.done = true; SET.obback = null; ob.step = OB_NAME;
+    SET.walked = true; SET.obback = null; ob.step = OB_NAME;
     Object.keys(PAGES).forEach(r => {
       window.route = r; NAV = [{ r: r }];
       try { render(); } catch (e) { out.doors.push(r + ' threw: ' + e.message); return; }
@@ -419,7 +419,7 @@ const R = await pg.evaluate(() => {
       [401, { msg:'Unauthorized' }],
       [0,   null],
     ];
-    SESS = null; SET.done = true; SET.obback = null; ob.step = OB_IN;
+    SESS = null; SET.walked = true; SET.obback = null; ob.step = OB_IN;
     window.route = 'profile'; NAV = [{ r:'profile' }];
     REFUSALS.forEach(([code, body]) => {
       window.XMLHttpRequest = function(){
@@ -481,12 +481,12 @@ const R = await pg.evaluate(() => {
       code: !!app.querySelector('#ob-code'), pw: !!app.querySelector('#ob-pw') });
 
     /* Standing where obDoor() puts somebody: it is the one way to this
-       screen and it takes SET.done away, which is what keeps the app on the
+       screen and it takes SET.walked away, which is what keeps the app on the
        door. Without that, the moment the server accepts the code the session
        arrives, appIs() answers 'app', and render() draws a route instead --
        which is what the first run of this check actually did, and it said so
        by failing rather than by passing. */
-    SESS = null; SET.done = false; SET.obback = { r:'set', a:'acct' };
+    SESS = null; SET.walked = false; SET.obback = { r:'set', a:'acct' };
     OBM.mode = 'reset'; OBM.em = 'a@b.c'; OBM.code = '000000'; OBM.pw = ''; OBM.msg = '';
     OBM.busy = false; render();
     const step1 = seen();
@@ -527,7 +527,7 @@ const R = await pg.evaluate(() => {
     if (!OBM.msg) out.doors.push('an empty new password said nothing');
 
     window.XMLHttpRequest = RealXHR;
-    SESS = null; SET.done = true; SET.obback = null;
+    SESS = null; SET.walked = true; SET.obback = null;
     OBM.mode = 'in'; OBM.em = ''; OBM.pw = ''; OBM.code = ''; OBM.msg = ''; OBM.busy = false;
 
     /* ---- 6b. and the OTHER kind of signed out --------------------------
@@ -535,7 +535,7 @@ const R = await pg.evaluate(() => {
        時はログイン画面から動かさない」 -- two sentences, and they are about
        two different people.
 
-       Everything above this point sets `SET.done = true` before it walks, so
+       Everything above this point sets `SET.walked = true` before it walks, so
        all of it is asking about the second one: somebody who finished and
        then signed out. **Nobody had ever asked about the first.** A brand new
        phone is not signed in either, and appIs() answered 'door' to it on the
@@ -552,13 +552,13 @@ const R = await pg.evaluate(() => {
        about markup when the claim is about a choice. */
     {
       const three = [
-        /* SET.done, signed in, what appIs() must answer, and who that is */
+        /* SET.walked, signed in, what appIs() must answer, and who that is */
         [false, false, 'ob',   '新品の端末 ── まだ済ませていない人'],
         [true,  false, 'door', '済ませたのにサインアウトした人'],
         [true,  true,  'app',  '両方済んだ人'],
       ];
       three.forEach(([done, inn, want, who]) => {
-        SET.done = done; SET.obback = null; ob.step = OB_NAME;
+        SET.walked = done; SET.obback = null; ob.step = OB_NAME;
         SESS = inn ? { rt: 'a refresh token' } : null;
         let got;
         try { got = appIs(); } catch (e) { got = 'threw: ' + e.message; }
@@ -591,7 +591,7 @@ const R = await pg.evaluate(() => {
         out.doors.push('アカウント削除のあと: door のはずが ' + wiped);
     }
 
-    SESS = wasS; window.route = wasR; NAV = wasN; SET.done = wasDone;
+    SESS = wasS; window.route = wasR; NAV = wasN; SET.walked = wasDone;
     SET.obback = wasBack; ob.step = wasStep;
     try { render(); } catch (e) { out.doors.push('and back again threw: ' + e.message); }
   }

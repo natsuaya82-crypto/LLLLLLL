@@ -1953,7 +1953,7 @@ function pwSendPost(p){
    old walk over LETTERS is what it is wearing today -- so that is adopted,
    once, and meAvSet() refuses every call after it. It fills in what is
    MISSING and stops (docs/DATA_SAFETY.md rule 2); it never writes over a face
-   that exists, and nothing here removes one. SET.done keeps it out of the
+   that exists, and nothing here removes one. The `profile` row keeps it out of the
    walk, where the letters are still being made and obFinish() has not
    decided yet. */
 function postAvatar(){
@@ -1962,7 +1962,7 @@ function postAvatar(){
      for the same reason: whoever reads it has neither this person's camera
      roll nor their alphabet. */
   if(ME.pic) return {pic:ME.pic};
-  if(!ME.av && SET.done){
+  if(!ME.av && meRowHas()){
     av=null;
     for(i=0;i<LETTERS.length && !av;i++) av=meAvOf(LETTERS[i]);
     meAvSet(av);

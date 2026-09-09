@@ -417,7 +417,7 @@ function langTookHas(sid){
    wiped -- and the second copy was written out by hand and did not have the
    same keys in it. */
 function setDefaults(){
-  return {theme:'system', plan:'free', planUid:'', done:false, order:'SOV', read:'both',
+  return {theme:'system', plan:'free', planUid:'', walked:false, order:'SOV', read:'both',
           voice:'', ui:'', script:false};
 }
 /* The writing system. `g` maps a romanisation to the strokes drawn for it;
@@ -874,6 +874,32 @@ if(PLAN_NATIVE){
    be able to recognise. Absent means "written before the rename", which is
    the only signal there is. A fresh install runs this once over `free`,
    changes nothing, and writes the mark. */
+/* AND THE FLAG THAT USED TO ANSWER TWO QUESTIONS, MOVED TO THE ONE IT KEEPS.
+   -------------------------------------------------------------------------
+   OWNER 2026-09-09 (choice A). `SET.done` was 「the onboarding is finished」
+   and it was read as both 「this ACCOUNT has been through」 -- which is the
+   `profile` row on the server, and is asked there now -- and 「this HANDSET
+   has been past the walk」, which is the only half nothing on a server can
+   answer: signed out there is nobody to ask, and after an account is deleted
+   the row is gone.
+
+   So the flag keeps the second question and is named for it. This copies the
+   old value across ONCE, on the launch after the update, and takes the old
+   name away so nothing can read it again -- what is copied is the same fact
+   under the name that says which fact it is. A phone that has never had the
+   old field is untouched: absent is not false, it is 「there was nothing to
+   move」, and setDefaults() answers for a fresh install.
+
+   Beside planMigrate() and in its shape, for the same reason: a settings
+   field that changed meaning is moved once, on this phone, before anything
+   reads it. */
+function walkedMigrate(){
+  if(SET.done===undefined) return;
+  if(SET.walked===undefined || SET.walked===false) SET.walked=!!SET.done;
+  delete SET.done;
+  setKeep();
+}
+walkedMigrate();
 var PLAN_V=2;
 function planMigrate(){
   if(SET.planV===PLAN_V) return;
@@ -1642,10 +1668,22 @@ var SET_PREFS=['theme','ui','myfont','showScript','kbrom'];
    server left to ask (docs/reports/r8-item2-2026-09-08.md). The owner is
    deciding that one.
 
+   `walked` is the ONE thing about the onboarding that is left here, and it is
+   here because the OWNER put it here (2026-09-09, choice A). `SET.done`
+   answered two questions with one flag: 「has this ACCOUNT been through the
+   walk」, which is the `profile` row on the server and is asked there now, and
+   「which screen does a phone with NO SESSION open on」, which nothing can
+   answer -- signed out there is nobody to ask, and after an account is
+   deleted the row is gone. Two written decisions turn on that second one
+   (「ログアウトしたら普通にログイン画面だけ出せばいいやろ」 OWNER 2026-08-26,
+   「アカウント削除した後オンボーディングから始まるのはなぜ？」 OWNER
+   2026-09-03), so it stays -- named for what it actually says, read by ONE
+   line (appIs in www/shell.js) and written by two (the door, and wipeHere).
+
    `planV`, `order`, `read`, `voice` and `script` are NOT in this list and are
    not settled either: they are the plan's and the language-making side's, and
    moving them is a different question from this one. docs/BACKLOG.md. */
-var SET_PHONE=['planUid','planV','done','obback','vvkb','wldMoved',
+var SET_PHONE=['planUid','planV','walked','obback','vvkb','wldMoved',
                'order','read','voice','script'];
 /* The fields of `SET` that are a PERSON's, counted rather than named. Asked of
    a parked copy as well as of `SET` itself: a field this account has and this

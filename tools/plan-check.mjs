@@ -32,7 +32,7 @@ await pg.waitForSelector('#splash', { state: 'detached', timeout: 10000 });
 
 const r = await pg.evaluate(({ s }) => {
   eval('(' + s + ')()');
-  SET.done = true;
+  SET.walked = true;
   var out = {};
 
   /* Everything this language is, as bytes, exactly as localStorage holds it.
@@ -227,7 +227,7 @@ const r = await pg.evaluate(({ s }) => {
   out.kbHere = kbCount();                        /* 1, in the open language */
   out.kbRoomHere = kbRoomKb();                   /* 1 + 1 < 4 -> yes */
   /* uid, for the reason tools/fixture.mjs stamps its own: a language with
-     no uid belongs to nobody once SET.done is true (langOwned), so an
+     no uid belongs to nobody once SET.walked is true (langOwned), so an
      unstamped one seeded here is not in this person's ceiling at all --
      which is the thing this claim is about. */
   /* 誰が書いたかはサーバーの列で、`langOwnOf()` が訊きます

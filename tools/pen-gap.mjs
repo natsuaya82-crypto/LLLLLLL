@@ -25,7 +25,7 @@ await pg.waitForSelector('#splash', { state:'detached', timeout:10000 });
 
 const out = await pg.evaluate(({s}) => {
   eval('(' + s + ')()');
-  SET.done = true; SET.theme = 'light';
+  SET.walked = true; SET.theme = 'light';
   if (typeof applyTheme === 'function') applyTheme();
 
   var o = GGRID.inset, D = geStep(), S = 3;     /* dpr 3, an actual phone */

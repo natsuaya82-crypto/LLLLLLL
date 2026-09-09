@@ -142,7 +142,7 @@ const R = await pg.evaluate(async () => {
   };
 
   const start = () => {
-    window.__seed(); SET.done = true;
+    window.__seed(); SET.walked = true;
     wipeParked();
     netOut();
     arrive(A); beA();
@@ -608,7 +608,7 @@ const R = await pg.evaluate(async () => {
   netOut(); arrive(B);
   const asB = langCount();
   /* 印の無い `Ld` は誰の数にも入りません。オンボーディングの歩きの途中
-     （`SET.done` が偽）だけが印の無い言語を自分のものと答える場所で、ここは
+     （`SET.walked` が偽）だけが印の無い言語を自分のものと答える場所で、ここは
      アプリの中です ── 案件 35 がその両側を押さえます。 */
   if (asA !== 2) no('19: A から見た数が 2 でない（A の2つ）— ' + asA);
   if (asB !== 1) no('19: B から見た数が 1 でない（B の1つだけ）— ' + asB);
@@ -1691,7 +1691,7 @@ const R = await pg.evaluate(async () => {
      B の言語として並ぶ。何も throw しません。
 
      **言語はその印が指すアカウントのものです。**印の無い言語を自分のものと
-     答える場所は一つだけ ── オンボーディングの歩きの途中、まだ `SET.done` が
+     答える場所は一つだけ ── オンボーディングの歩きの途中、まだ `SET.walked` が
      偽のあいだ。そこは、アカウントができる前に物を作る唯一の場所だからです。
      扉を出た `obFinish()` が `netLangSync()` を呼び、そこで印が付きます。
 
@@ -1710,7 +1710,7 @@ const R = await pg.evaluate(async () => {
 
   /* 歩きの途中 ── まだ誰もサインインしていない。訊く相手がいないので、
      作ったものはその場の人のもの。 */
-  netOut(); SET.done = false;
+  netOut(); SET.walked = false;
   if (!langOwned('Lu')) no('35: 歩きの途中で、作ったものが自分のでない');
 
   /* 扉。サインインは済んで、まだ obFinish() を通っていない ── ここで
@@ -1729,7 +1729,7 @@ const R = await pg.evaluate(async () => {
 
   /* 印の付いていない言語はもう誰のものでもない ── 端末の一人目という
      覚え方はしません。 */
-  SET.done = true;
+  SET.walked = true;
   if (langOwned('Lu')) no('35: 印の無い言語が、アプリの中で訊いた人のものになっている');
   if (langAcct('Lu')) no('35: 印の無い言語が、訊いた人の一覧に出る');
   if (vLangs().indexOf('A が圏外で作った') >= 0)
@@ -1766,7 +1766,7 @@ const R = await pg.evaluate(async () => {
      **Pro で、上限に余裕がある状態**で訊きます。止めているのが上限では
      ないことを見るためです。
 
-     `makeNeed()` はオンボーディングの最中は素通りします（`SET.done`）。
+     `makeNeed()` はオンボーディングの最中は素通りします（`SET.walked`）。
      歩きは口座ができる前で、そこで訊くのはサインインする理由ができる前に
      訊くことなので ── 扉は歩きの最後です。 */
   start();
@@ -1782,10 +1782,15 @@ const R = await pg.evaluate(async () => {
     no('36: サインアウトしているのに ＋ で言語ができた');
   if (langId !== 'La') no('36: サインアウトしているのに ＋ で言語が切り替わった');
   /* 断るだけではなく、扉へ送ること。断って何も起きない＋は、原因も出口も
-     無い画面です。`obDoor()` が `SET.done` を下ろして戻り先を憶えます。 */
-  if (SET.done) no('36: ＋ が断っただけで、扉を開いていない');
+     無い画面です。`obDoor()` は戻り先を憶え、**それが扉が開いている印**
+     です ── 2026-09-09（オーナーの A）まで `SET.done` を下ろして扉を出して
+     いましたが、`SET.walked` はこの端末が歩きを済ませたかで、下ろすと
+     文字を描く画面へ送ることになります。印は一つになりました。 */
   if (!SET.obback) no('36: 扉から戻る先を憶えていない');
-  SET.done = true; SET.obback = null; save();
+  if (!obPending()) no('36: ＋ が断っただけで、扉を開いていない');
+  if (appIs() !== 'door') no('36: 扉が開いていない — appIs()=' + appIs());
+  if (!SET.walked) no('36: 扉を出すために、この端末の「歩きを済ませた」を下ろした');
+  SET.obback = null; save();
   /* そしてサインインしていれば、＋ は今までどおり通る（34番の裏返し）。 */
   arrive(A);
   langNew();
@@ -2177,7 +2182,7 @@ const R = await pg.evaluate(async () => {
      再送信も同じで、押したときに呼ぶものだけが違いました。だから六十秒を
      足すと、片方にだけ入って、入らなかったほうは誰も見ません。扉が一日で
      四回形を変えて、そのたびに前の道が残った、その残りです。 */
-  start(); SET.done = true;
+  start(); SET.walked = true;
   obDoor('set', 'acct');
 
   /* 51. 送った直後は断り、残りが出て、六十秒経てば押せる。
@@ -2230,7 +2235,7 @@ const R = await pg.evaluate(async () => {
   }
   say('52: コードを打つ画面は一枚 ── 登録の道も再設定の道も、そこに来る');
 
-  SET.done = true; SET.obback = null;
+  SET.walked = true; SET.obback = null;
 
   /* ---- 53. 消したアカウントのキーボードと世界が、次の言語に書き込まれる ----
      「アカウント削除で残るものねえって言ってんだろ何回言わせんだよ全部消えんだよ。」

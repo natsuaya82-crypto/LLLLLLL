@@ -145,7 +145,7 @@ const SERVER = `
 /* ---- 1. two languages, one of them not open ----------------------------- */
 const up = await pg.evaluate(async ({ s, srv }) => {
   eval('(' + s + ')()');
-  SET.done = true;
+  SET.walked = true;
   eval(srv);
   SESS = { at:'t', rt:'r', uid:'me', anon:false };
   function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
@@ -170,7 +170,7 @@ const up = await pg.evaluate(async ({ s, srv }) => {
   save();
   langOpen(was);
   /* AND BOTH OF THEM BELONG TO THE ACCOUNT THAT IS SIGNED IN HERE. A language
-     with no `uid` belongs to nobody once SET.done is true (langOwned), so it
+     with no `uid` belongs to nobody once SET.walked is true (langOwned), so it
      is in no list, in no count, and -- what this file is about -- in nothing
      langMineIds() hands to netLangSync(). The fixture stamps its own with the
      uid IT signs in as; this check signs in as somebody else two dozen lines
@@ -453,7 +453,7 @@ const W = await pg.evaluate(async () => {
      last step of the door and it is why a new Google account can no longer
      walk straight into the app. A phone with a timeline on it is past that,
      so this one is too. */
-  SET.done = true;
+  SET.walked = true;
   ME.name = 'Aya'; ME.handle = 'aya'; saveMe();
   POSTS = []; SNS_GOT = {}; snsTab = 'fo';
   window.route = 'feed'; NAV = [{ r:'feed' }]; render();
@@ -558,7 +558,7 @@ const V = await pg.evaluate(() => {
   const out = {};
   function markOn(){ return !!document.querySelector('#app .snswait .pullrule'); }
   function noteOn(){ return !!document.querySelector('#app .note'); }
-  SET.done = true;
+  SET.walked = true;
   ME.name = 'Aya'; ME.handle = 'aya'; saveMe();
 
   /* THE SEARCH, with a word typed and the answer still out. */
@@ -625,7 +625,7 @@ await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
 
 const del = await pg.evaluate(async ({ s, srv }) => {
   eval('(' + s + ')()');
-  SET.done = true;
+  SET.walked = true;
   eval(srv);
   SESS = { at:'t', rt:'r', uid:'me', anon:false };
   function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
@@ -707,7 +707,7 @@ say(del.afterSync.length === del.afterDelete.length,
    `netSlices` も本物が走る。 */
 const up2 = await pg.evaluate(async ({ s, srv }) => {
   eval('(' + s + ')()');
-  SET.done = true;
+  SET.walked = true;
   eval(srv);
   SESS = { at:'t', rt:'r', uid:'me2', anon:false };
   function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
@@ -822,7 +822,7 @@ say(up2.sentOut.length === 0 && up2.keptOut,
 async function pressSave(how){
   const set = await pg.evaluate(async ({ s, srv, how }) => {
     eval('(' + s + ')()');
-    SET.done = true;
+    SET.walked = true;
     eval(srv);
     SESS = { at:'t', rt:'r', uid:'me3', anon:false };
     function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
@@ -957,7 +957,7 @@ await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
    無いと二番目は「言語が出ない」ではなく「扉が出た」で赤くなる。 */
 const seenUp = await pg.evaluate(async ({ s, srv }) => {
   eval('(' + s + ')()');
-  SET.done = true; setKeep();
+  SET.walked = true; setKeep();
   eval(srv);
   SESS = { at:'t', rt:'r', uid:'me3', anon:false };
   ME.name = 'Aya'; ME.handle = 'aya'; saveMe();
@@ -1072,7 +1072,7 @@ say(road.words.filter(w => w === 'newer').length === 1,
    そして引くルートの顔ぶれがこの決定のとおりであること。 */
 const one = await pg.evaluate(({ s, srv }) => {
   eval('(' + s + ')()');
-  SET.done = true;
+  SET.walked = true;
   eval(srv);
   SESS = { at:'t', rt:'r', uid:'me3', anon:false };
   var out = {}, r, pulls = [], build = [];
@@ -1126,7 +1126,7 @@ say(one.wait === 20000 && one.storeWait === one.wait,
    あることと、［再接続］がその三つとも出し直すことを見ます。 */
 const pop = await pg.evaluate(async ({ s, srv }) => {
   eval('(' + s + ')()');
-  SET.done = true;
+  SET.walked = true;
   eval(srv);
   SESS = { at:'t', rt:'r', uid:'me3', anon:false };
   function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
@@ -1243,7 +1243,7 @@ await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
 const hid = await pg.evaluate(async ({ s, srv }) => {
   localStorage.clear();
   eval('(' + s + ')()');
-  SET.done = true;
+  SET.walked = true;
   eval(srv);
   SESS = { at:'t', rt:'r', uid:'wld1', anon:false };
   function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
@@ -1355,7 +1355,7 @@ say(only.before === false && only.hide === true && only.pub.length > 0 &&
 const kbGrow = await pg.evaluate(async ({ s, srv }) => {
   localStorage.clear();
   eval('(' + s + ')()');
-  SET.done = true; SET.plan = 'pro'; setKeep();
+  SET.walked = true; SET.plan = 'pro'; setKeep();
   eval(srv);
   SESS = { at:'t', rt:'r', uid:'kb1', anon:false };
   LANGS[langId].sid = 'srvkb'; langOwnGot(langId, SESS.uid); langStore(); netSave();
@@ -1420,7 +1420,7 @@ await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
 const nmA = await pg.evaluate(async ({ s, srv }) => {
   localStorage.clear();
   eval('(' + s + ')()');
-  SET.done = true;
+  SET.walked = true;
   eval(srv);
   SESS = { at:'t', rt:'r', uid:'nm1', anon:false };
   function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
@@ -1499,7 +1499,7 @@ await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
 const nmC = await pg.evaluate(async ({ s, srv }) => {
   localStorage.clear();
   eval('(' + s + ')()');
-  SET.done = true;
+  SET.walked = true;
   eval(srv);
   function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
   var S = window.__SRV;

@@ -30,7 +30,7 @@
    view, and no view that no page shows.
 
    vOb is not here. The onboarding is not somewhere you navigate to — it is
-   what the app is until SET.done, and render() returns on it before any of
+   what the app is until SET.walked, and render() returns on it before any of
    this is reached. It is the one view with no route, and act-check knows it
    by name so that the next one cannot slip in beside it. */
 

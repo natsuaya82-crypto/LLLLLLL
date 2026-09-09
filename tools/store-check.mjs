@@ -217,7 +217,15 @@ const FIELDS = {
      there is no Keychain and it stays here, exactly as the plan does. */
   planUid:  { phone: 'the account that bought the plan this phone is holding. A mark about WHOSE the copy above is, not a second place the plan lives — and the one thing here that a handset can be asked and an account cannot' },
   notAt:    { phone: 'how far down the notices somebody has read. THE SERVER HOLDS NO READ MARKER and that is a decision — 「サーバーの既読の表は要りません」, www/sns.js' },
-  done:     { phone: 'whether the walk has been finished on this install. It is what tells the onboarding from the app' },
+  /* THE ONE THING ABOUT THE ONBOARDING THAT IS THIS HANDSET'S, and the owner
+     put it here (2026-09-09, choice A). It was `done` and answered two
+     questions: 「has this ACCOUNT been through」, which is the `profile` row on
+     the server and is asked there now (www/me.js § ME_ROW), and this one --
+     「which screen does a phone with NO SESSION open on」. Nothing on a server
+     can answer that: signed out there is nobody to ask, and after an account
+     is deleted the row is gone. Read by ONE line (appIs, www/shell.js),
+     written by two (the door and wipeHere). */
+  walked:   { phone: 'whether this HANDSET has been past the walk. It decides one thing and nothing else: a phone with no session opens on the door rather than on the drawing screen — 「ログアウトしたら普通にログイン画面だけ出せばいいやろ」 OWNER 2026-08-26 and 「アカウント削除した後オンボーディングから始まるのはなぜ？」 OWNER 2026-09-03' },
   obback:   { phone: 'where to come back to after the door, held between two screens of one journey' },
   /* THE FIVE THAT WENT WITH THE ACCOUNT ON 2026-09-09. Every one of them
      said 「this handset」 above this line until then, and that sentence was

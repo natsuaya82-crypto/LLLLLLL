@@ -87,7 +87,7 @@ await pg.waitForSelector('#splash', { state:'detached', timeout:10000 });
 
 const r = await pg.evaluate(({ s }) => {
   eval('(' + s + ')()');
-  SET.done = true;
+  SET.walked = true;
   const out = {};
 
   /* ---- 1: the two names ------------------------------------------------

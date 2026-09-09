@@ -674,6 +674,30 @@ function meCard(){
    that name" is an answer and has to stop the asking. Only a request that
    could not be MADE clears it, so a phone that went through a tunnel tries
    again and a handle that has been deleted is asked about once. */
+/* WHETHER THIS ACCOUNT HAS BEEN THROUGH THE WALK, AND THE ANSWER IS THE
+   SERVER'S: it has a `profile` row.
+   -------------------------------------------------------------------------
+   OWNER 2026-09-09 (choice A). `SET.done` on the handset used to answer this,
+   and that is what made signing out and back in on a second phone land
+   somebody in the onboarding: the flag was about the PHONE and the question
+   is about the ACCOUNT. A row means this account has been here -- obIn()
+   (www/onboard.js) has read it that way since it was written; what is new is
+   that everything else reads the same answer instead of a flag.
+
+   THREE STATES. Yes, no, and NOT ASKED -- the third falls back to `ME.handle`,
+   which is the copy of that row kept per account (meFor). A phone with no
+   signal must not be told it has no account, and a handle it is already
+   holding is the row it last saw.
+
+   Written by the two roads that fetch the row (netMyProfile at the door,
+   netProfSync at a launch) and by nothing else. */
+var ME_ROW=null;
+function meRowGot(v){ ME_ROW=v? 1 : 0; }
+function meRowHas(){
+  if(ME_ROW!==null) return ME_ROW===1;
+  return !!(typeof ME!=='undefined' && ME && ME.handle);
+}
+function meRowForget(){ ME_ROW=null; }
 var WHO_HAVE={}, WHO_ASKED={};
 /* Asked for by the page that draws them, the way the timeline and the notices
    ask for theirs. Never for your own: that is ME, it is on this phone, and a

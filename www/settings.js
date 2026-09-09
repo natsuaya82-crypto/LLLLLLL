@@ -725,7 +725,7 @@ function wipeHere(uid){
      A phone with nothing on it still opens on the walk; that is a different
      phone and tools/open-check.mjs § 1 holds it. This is the one that has
      been through it. */
-  SET.done=true;
+  SET.walked=true;
   netOut();
   /* and the twenty-eight slots, for a language that is empty now and on a
      plan that adds no letters of its own */

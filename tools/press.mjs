@@ -523,7 +523,7 @@ const R = await pg.evaluate(async () => {
 
      The screen is put into the page by hand rather than by calling render().
      render() dispatches on the route, and its first act is to send everything
-     to the onboarding while SET.done is false -- so a walk that trusted it
+     to the onboarding while SET.walked is false -- so a walk that trusted it
      would press the same two onboarding buttons a thousand times and report a
      thousand presses. Asking the view for its own HTML says what screen this
      is with no way to be quietly redirected. The press itself is still the
@@ -541,7 +541,7 @@ const R = await pg.evaluate(async () => {
   for (let s = 0; s < OB_STEPS; s++) {
     screens.push({
       label: 'vOb step ' + s,
-      build: () => { window.__seed(); SET.done = false; SET.obback = null;
+      build: () => { window.__seed(); SET.walked = false; SET.obback = null;
                      ob.step = s; show(vOb()); }
     });
   }
@@ -554,7 +554,7 @@ const R = await pg.evaluate(async () => {
       argsOf(r).forEach(a => {
         screens.push({
           label: v + (a ? ':' + a : '') + ' (' + plan + ')',
-          build: () => { window.__seed(); SET.done = true; SET.plan = plan;
+          build: () => { window.__seed(); SET.walked = true; SET.plan = plan;
                          window.route = r; NAV = [{ r: r, a: a }]; show(window[v]()); }
         });
       });
@@ -566,7 +566,7 @@ const R = await pg.evaluate(async () => {
      also where act-check gets them. */
   window.__obStates().forEach(([label, run]) => {
     screens.push({ label: 'ob: ' + label,
-      build: () => { window.__seed(); SET.done = false; show(run()); } });
+      build: () => { window.__seed(); SET.walked = false; show(run()); } });
   });
   /* Under three standings, not one. A button can exist only for somebody who
      has not paid, and one of them -- the offer to upgrade -- appears only once
@@ -580,7 +580,7 @@ const R = await pg.evaluate(async () => {
   standings.forEach(([who, stand]) => {
     window.__halfDone().forEach(([label, run]) => {
       screens.push({ label: label + ' (' + who + ')',
-        build: () => { window.__seed(); SET.done = true; stand(); show(run()); } });
+        build: () => { window.__seed(); SET.walked = true; stand(); show(run()); } });
     });
   });
 
@@ -590,7 +590,7 @@ const R = await pg.evaluate(async () => {
      else does: the point is that each of the five names resolves and runs. */
   screens.push({
     label: 'the tab bar',
-    build: () => { window.__seed(); SET.done = true;
+    build: () => { window.__seed(); SET.walked = true;
                    window.route = 'feed'; NAV = [{ r: 'feed' }]; show(tabBar()); }
   });
 
@@ -609,7 +609,7 @@ const R = await pg.evaluate(async () => {
   opens.forEach(o => {
     screens.push({
       label: o,
-      build: () => { window.__seed(); SET.done = true; SET.plan = 'pro';
+      build: () => { window.__seed(); SET.walked = true; SET.plan = 'pro';
                      window.route = 'words'; NAV = [{ r: 'words' }];
                      window[o].length ? window[o]('kano') : window[o]();
                      show((typeof FORM !== 'undefined' && FORM && FORM.html)
@@ -681,7 +681,7 @@ const R = await pg.evaluate(async () => {
     Object.keys(PAGES).forEach(function(id){
       argsOf(id).forEach(function(a){
         try {
-          window.__seed(); SET.done = true; SET.plan = plan;
+          window.__seed(); SET.walked = true; SET.plan = plan;
           window.route = id; NAV = [{ r: id, a: a }];
           render();
           collectClasses();
@@ -692,7 +692,7 @@ const R = await pg.evaluate(async () => {
       });
     });
   });
-  try { window.__seed(); SET.done = false; render(); collectClasses(); } catch (e) {}
+  try { window.__seed(); SET.walked = false; render(); collectClasses(); } catch (e) {}
   /* AND ONE REAL RENDER OF A ONE-SCREEN FORM. Everything above puts a view's
      HTML into #app, so render() -- and tabPaint() with it -- never runs for a
      form that is `fit`. What that misses is the class the DOCUMENT wears
@@ -702,7 +702,7 @@ const R = await pg.evaluate(async () => {
      reported here as a rule nothing wears, which is the check saying "add the
      seed" -- this is the seed. */
   try {
-    window.__seed(); SET.done = true; SET.plan = 'pro';
+    window.__seed(); SET.walked = true; SET.plan = 'pro';
     PW = pwBlank(); openPost(); render(); collectClasses();
     back(); render();
   } catch (e) {}
@@ -713,13 +713,13 @@ const R = await pg.evaluate(async () => {
      worn by states, not by screens, and a walk that only presses never
      stands in either. */
   try {
-    window.__seed(); SET.done = true;
+    window.__seed(); SET.walked = true;
     POSTS = []; SNS_GOT = {}; snsTab = 'fo';
     window.route = 'feed'; NAV = [{ r:'feed' }];
     render(); collectClasses();
   } catch (e) {}
   try {
-    window.__seed(); SET.done = true;
+    window.__seed(); SET.walked = true;
     /* Two screens deep, so there is one to come back to, and render() has
        kept the one being left -- swPrev() answers with it. */
     go('feed'); render(); go('notes'); render();
@@ -796,7 +796,7 @@ const HELDR = await pg.evaluate(async () => {
     T(a, 'touchend', rb.left + rb.width / 2, rb.top + rb.height / 2);
     if (now === was) out.push(what + ': held and carried and it did not move');
   };
-  window.__seed(); SET.done = true; SET.plan = 'pro';
+  window.__seed(); SET.walked = true; SET.plan = 'pro';
   go('ltset', 'alpha');
   await carry('a letter of the alphabet', '#ltgrid', '.ltc', 0, 2);
   go('kb');
@@ -871,7 +871,7 @@ const HELDR = await pg.evaluate(async () => {
     for (let i = 0; i < els.length; i++) {
       /* the screen is put back between gestures: a hold that WORKED walked
          off to another route, and the next one would be thrown at nothing */
-      const fresh = () => { window.__seed(); SET.done = true; SET.plan = 'pro';
+      const fresh = () => { window.__seed(); SET.walked = true; SET.plan = 'pro';
                             go(where); render();
                             return document.querySelectorAll('[data-hold]')[i]; };
       let el = fresh(); if (!el) break;
@@ -907,7 +907,7 @@ const HELDR = await pg.evaluate(async () => {
   };
   let holdsFound = 0;
   for (const r of ['words', 'build', 'feed', 'profile']) {
-    window.__seed(); SET.done = true; SET.plan = 'pro';
+    window.__seed(); SET.walked = true; SET.plan = 'pro';
     go(r); render();
     holdsFound += await held(r);
   }
@@ -946,7 +946,7 @@ const POPR = await pg.evaluate(async () => {
   const click = (el) => el.dispatchEvent(
     new MouseEvent('click', { bubbles: true, cancelable: true }));
   const btn = (name) => document.querySelector('#pop [data-do="' + name + '"]');
-  window.__seed(); SET.done = true; SET.plan = 'free';
+  window.__seed(); SET.walked = true; SET.plan = 'free';
   go('feed'); render();
 
   let said = 0, meant = 0;
@@ -1010,7 +1010,7 @@ const POPR = await pg.evaluate(async () => {
      elementFromPoint answers with IT rather than with the row underneath. */
   const sp = document.getElementById('splash');
   if (sp && sp.parentNode) sp.parentNode.removeChild(sp);
-  window.__seed(); SET.done = true; SET.plan = 'pro';
+  window.__seed(); SET.walked = true; SET.plan = 'pro';
   window.route = 'words'; NAV = [{ r: 'words' }];
   wSel = {}; render();
   const marks = [].slice.call(document.querySelectorAll('#app .ltck[data-sel]'));
@@ -1062,7 +1062,7 @@ const BARR = await pg.evaluate(async () => {
   const rs = Object.keys(PAGES);
   for (let i = 0; i < rs.length; i++) {
     const r = rs[i];
-    window.__seed(); SET.done = true; SET.plan = 'pro';
+    window.__seed(); SET.walked = true; SET.plan = 'pro';
     goTab(r);
     await new Promise((f) => setTimeout(f, 0));
     /* `.tabbar` and not `#tabs`: the host is a zero-height div at the end of
@@ -1192,7 +1192,7 @@ const SWR = await (async () => {
   const stand = (js) => pg.evaluate(js);
 
   /* 1. from the left edge, with the screen behind kept by render() */
-  await stand(`window.__seed(); SET.done = true; SET.plan = 'pro';
+  await stand(`window.__seed(); SET.walked = true; SET.plan = 'pro';
                goTab('build'); go('words');`);
   let g = await pull(6, 318);
   if (g.cancel && !g.live)
@@ -1218,7 +1218,7 @@ const SWR = await (async () => {
         from somewhere else: NAVBK is left holding the screen that press left,
         which is the state the old branch fired on. Nothing is arranged for
         the question. */
-  await stand(`window.__seed(); SET.done = true; go('words'); goTab('build');`);
+  await stand(`window.__seed(); SET.walked = true; go('words'); goTab('build');`);
   g = await pull(6, 318);
   if (g.at !== 'build')
     out.push('a drag from the left edge on the screen a bottom tab puts you ' +
@@ -1230,7 +1230,7 @@ const SWR = await (async () => {
 
   /* 3. and a thumb that starts in the MIDDLE is not this. A gesture that
         fires anywhere is a page you cannot scroll sideways. */
-  await stand(`window.__seed(); SET.done = true; goTab('build'); go('words');`);
+  await stand(`window.__seed(); SET.walked = true; goTab('build'); go('words');`);
   g = await pull(200, 380);
   if (g.at !== 'words')
     out.push('a drag starting in the middle of the screen went back. The ' +
@@ -1300,7 +1300,7 @@ const KDR = await (async () => {
 
   /* The screen the owner photographed: the name and the @ are lnField()'s,
      and the line about yourself is not. */
-  await stand(`window.__seed(); SET.done = true; SET.plan = 'pro';
+  await stand(`window.__seed(); SET.walked = true; SET.plan = 'pro';
                openMe(); render();`);
   ask('me-nm',  await enter('me-nm'),  false);
   ask('me-hd',  await enter('me-hd'),  false);
@@ -1308,7 +1308,7 @@ const KDR = await (async () => {
 
   /* And a second screen, because what is being held is the SHAPE lnField()
      makes and not this one page. The search box is the same field. */
-  await stand(`window.__seed(); SET.done = true; SET.plan = 'pro';
+  await stand(`window.__seed(); SET.walked = true; SET.plan = 'pro';
                go('find'); render();`);
   ask('f-q', await enter('f-q'), false);
 

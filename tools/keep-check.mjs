@@ -76,7 +76,7 @@ await pg.waitForSelector('#splash', { state: 'detached', timeout: 10000 });
 
 const r = await pg.evaluate(({ s }) => {
   eval('(' + s + ')()');
-  SET.done = true; SET.plan = 'pro';
+  SET.walked = true; SET.plan = 'pro';
   var out = { screens: [], fails: [] };
 
   /* ---- THE WIRE, ANSWERING --------------------------------------------

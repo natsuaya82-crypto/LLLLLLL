@@ -77,7 +77,7 @@ export function seed(){
      carries no `uid` -- and on a real phone netLangRow() puts one on the
      first time it goes up. Nothing here goes up, so without this line the
      walks run inside a language that belongs to NOBODY: langOwned() answers
-     false once SET.done is true, langCount() goes to 0, and every screen
+     false once SET.walked is true, langCount() goes to 0, and every screen
      above a language disappears. That is what made act, plan and dl go red
      together on 2026-09-02, and it was read as the rule being wrong rather
      than as the fixture being a phone that had never once synced. */
@@ -132,7 +132,7 @@ export function seed(){
      writes SET.x -- a theme, a reading mode, a writing system -- was
      otherwise still in force on every screen built after it, so the walk was
      covering one arrangement of the app and calling it all of them. */
-  SET.theme='system'; SET.plan='free'; SET.done=true; SET.order='SOV';
+  SET.theme='system'; SET.plan='free'; SET.walked=true; SET.order='SOV';
   SET.read='both'; SET.voice=''; SET.ui='en'; SET.script=false;
   SET.myfont=false; SET.gpos=''; SET.myfont=false;
   /* 書記体系は言語のもの ── `language.wsys`（www/core.js § LWSYS、2026-09-09）。 */
@@ -454,7 +454,7 @@ export function obStates(){
        the foot -- and the bar is the shell, outside #app, so what the picture
        showed was the making screen with nothing lit on it at all. */
     ['the walk: the making screen, with the keyboard lit', () => {
-        SET.done = false; ob.step = OB_TOUR; obTour = 1; ob.mode = '';
+        SET.walked = false; ob.step = OB_TOUR; obTour = 1; ob.mode = '';
         window.route = 'build'; NAV = [{ r: 'build', a: '' }];
         var h = vBuild();
         document.getElementById('app').innerHTML = h;
@@ -466,13 +466,13 @@ export function obStates(){
        so the state the owner was looking at on a phone was a state no picture
        was ever taken of. The stop numbers are OB_TOUR_STOPS' own order. */
     ['the walk: the row that opens the keyboard', () => {
-        SET.done = false; ob.step = OB_TOUR; obTour = 2; ob.mode = '';
+        SET.walked = false; ob.step = OB_TOUR; obTour = 2; ob.mode = '';
         window.route = 'kb'; NAV = [{ r: 'build', a: '' }, { r: 'kb', a: '' }];
         var h = vKb();
         document.getElementById('app').innerHTML = h;
         return h + obTourHTML(); }],
     ['the walk: the key the letter went on', () => {
-        SET.done = false; ob.step = OB_TOUR; obTour = 3; ob.mode = '';
+        SET.walked = false; ob.step = OB_TOUR; obTour = 3; ob.mode = '';
         /* The letter the walk lights is the one the person DREW, and the
            drawing step draws `a` (obSlot() in www/onboard.js) -- so the face
            lights a and not whichever letter the seed happens to list first,
@@ -488,7 +488,7 @@ export function obStates(){
        there -- and a grey screen with nothing on it to press would be an app
        somebody cannot leave. The keyboard itself is what is lit then. */
     ['the walk: the key that is not there', () => {
-        SET.done = false; ob.step = OB_TOUR; obTour = 3; ob.mode = '';
+        SET.walked = false; ob.step = OB_TOUR; obTour = 3; ob.mode = '';
         ob.lid = '';
         window.route = 'kb';
         NAV = [{ r: 'build', a: '' }, { r: 'kb', a: '' }, { r: 'kb', a: '0' }];
@@ -499,7 +499,7 @@ export function obStates(){
        has come back to the list by itself and the hand is on the back arrow.
        「戻る矢印に手」 */
     ['the walk: the arrow back out of the keyboard', () => {
-        SET.done = false; ob.step = OB_TOUR; obTour = 4; ob.mode = '';
+        SET.walked = false; ob.step = OB_TOUR; obTour = 4; ob.mode = '';
         window.route = 'kb'; NAV = [{ r: 'build', a: '' }, { r: 'kb', a: '' }];
         var h = vKb();
         document.getElementById('app').innerHTML = h;
@@ -509,7 +509,7 @@ export function obStates(){
        the same parts the real one does, inside the onboarding's scrolling
        box, with pointer-events off. It is a face of vOb(). */
     ['the walk: the timeline, before there is an account',
-        () => { SET.done = false; SET.obback = null; ob.step = OB_SNS;
+        () => { SET.walked = false; SET.obback = null; ob.step = OB_SNS;
                 ob.mode = ''; return vOb(); }],
     ['naming the language',      () => { SET.obback = null; ob.step = OB_NAME; ob.mode = ''; return vOb(); }],
     /* The door's other three faces. None is reachable from a screen at rest,
@@ -579,7 +579,7 @@ export function obStates(){
        somewhere, OR this is the walk's last step」, and the middle one is what
        every face above has. What the real signed-out phone does is held by
        tools/open-check.mjs § 2c, which boots one. */
-    ['the code, no way back to', () => { SET.obback = null; SET.done = true;
+    ['the code, no way back to', () => { SET.obback = null; SET.walked = true;
                                          ob.step = OB_IN;
                                          OBM.mode = 'code'; OBM.busy = false;
                                          OBM.em = 'a@b.c'; return vOb(); }]

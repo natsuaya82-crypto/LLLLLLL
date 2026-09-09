@@ -101,7 +101,7 @@ const pg = await br.newPage({ viewport: { width: 800, height: 400 } });
 await pg.goto(`http://localhost:${PORT}/`);
 await pg.evaluate((s) => {
   eval('(' + s + ')()');
-  SET.done = true;
+  SET.walked = true;
   /* The fixture's alphabet is three letters, which is honest about a
      half-built language and useless for looking at a line. Give every sound
      a drawn letter -- invented shapes, but the app's real letter records,

@@ -44,7 +44,7 @@ await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
 
 const r = await pg.evaluate(async ({ s, sid }) => {
   eval('(' + s + ')()');
-  SET.done = true;
+  SET.walked = true;
   /* ON PLUS, WHICH IS THE RUNG. 「plusからです」OWNER 2026-09-02, replacing
      「Downloading a keyboard or an alphabet is free」(docs/FEATURES.md § 4,
      2026-08-19). This line used to say `free`, deliberately, and its own
@@ -243,7 +243,7 @@ const r = await pg.evaluate(async ({ s, sid }) => {
   out.syncRefused = await new Promise(function(f){
     var wasId = langId;
     /* uid, the way langSeenAdd() puts one on: a language with no stamp
-       belongs to nobody once SET.done is true, so dlCount() would not see it
+       belongs to nobody once SET.walked is true, so dlCount() would not see it
        and the ceiling this claim is about would never be reached. */
     LANGS[sid] = LANGS[sid] || { name:'Shango', mine:false, uid:'u' };
     langId = sid;

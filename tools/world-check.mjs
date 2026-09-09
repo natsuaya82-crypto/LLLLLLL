@@ -40,7 +40,7 @@ await pg.waitForSelector('#splash', { state:'detached', timeout:10000 });
 
 const r = await pg.evaluate(({s}) => {
   eval('(' + s + ')()');
-  SET.done = true; SET.plan = 'pro';
+  SET.walked = true; SET.plan = 'pro';
   var out = {};
 
   /* Every heading that CAN fold, and whether it arrived shut. A heading with

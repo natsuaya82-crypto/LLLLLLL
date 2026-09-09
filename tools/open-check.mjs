@@ -90,9 +90,10 @@ async function boot(pre, drive) {
     const app = document.getElementById('app');
     const has = (s) => !!(app && app.querySelector(s));
     return {
+      mig: window.__mig || null,
       is: (typeof appIs === 'function') ? appIs() : '(no appIs)',
       step: (typeof ob === 'object' && ob) ? ob.step : null,
-      done: !!(typeof SET === 'object' && SET && SET.done),
+      done: !!(typeof SET === 'object' && SET && SET.walked),
       inS: (typeof netSignedIn === 'function') ? netSignedIn() : null,
       /* The onboarding and the door are one view -- vOb() -- so the wrapper
          says "one of the two" and the buttons say which. */
@@ -407,7 +408,7 @@ const SESS = JSON.stringify({ at: 'not a jwt', rt: 'a refresh token',
                        /* ob.step === OB_IN is the walk's last step, which is
                           what obAtDoor() answers to with a session in hand and
                           no obback: signed in and done, appIs() is the app. */
-                       () => { SET.done = false; SET.obback = null; ob.step = OB_IN;
+                       () => { SET.walked = false; SET.obback = null; ob.step = OB_IN;
                                OBM.mode = 'newpw'; OBM.fresh = true; render(); });
   const f = (r.back || {}).newpw || {};
   if (!f.chev)
@@ -428,7 +429,7 @@ const SESS = JSON.stringify({ at: 'not a jwt', rt: 'a refresh token',
    it in front of them.
 
    Both halves are measured, because each was broken on its own: where the
-   press LANDS, and what is on the screen after it. obReturn() puts SET.done
+   press LANDS, and what is on the screen after it. obReturn() puts SET.walked
    back and calls go(), and go() is a no-op when it is handed the screen
    already on the trail -- which this always is, since the door was opened
    from it -- so the door stayed drawn over an app that had come back. */
@@ -453,7 +454,7 @@ const SESS = JSON.stringify({ at: 'not a jwt', rt: 'a refresh token',
                             the fault in. `__landed` is where the chevron
                             LANDS, which is this. */
                          window.__landed = {
-                           is: appIs(), done: !!SET.done, inS: netSignedIn(),
+                           is: appIs(), done: !!SET.walked, inS: netSignedIn(),
                            door: !!document.querySelector('#app .ob')
                          };
                        });
@@ -464,7 +465,7 @@ const SESS = JSON.stringify({ at: 'not a jwt', rt: 'a refresh token',
   if (!L.inS)
     no('and the session is gone — 「やめたら元のセッションのまま設定へ戻る」.');
   if (!L.done)
-    no('and SET.done is still false, so the app is the onboarding.');
+    no('and SET.walked is still false, so the app is the onboarding.');
   if (L.door)
     no('and the door is still what is DRAWN, the moment the press ends: ' +
        'obReturn() put the app back and nothing rendered it, so the reset ' +
@@ -608,14 +609,14 @@ const SESS = JSON.stringify({ at: 'not a jwt', rt: 'a refresh token',
      Apple, Google and the mail all end at obIn() (www/onboard.js), which asks
      the server whether this account has a profile row and, finding none, puts
      up the screen that asks for a name and a handle. On a phone where
-     SET.done is true that screen was never DRAWN: appIs() answered 'app' the
+     SET.walked is true that screen was never DRAWN: appIs() answered 'app' the
      moment there was a session, so the app opened over it. The account then
      had no row on the server at all -- nobody could find, follow or answer
      them -- and meHandle() invented an @ out of the language's name.
 
      It is most phones (anyone who has been through the walk) and it is every
      phone that has just deleted an account: that lands on the door by
-     leaving SET.done true. */
+     leaving SET.walked true. */
   const r = await boot({ 'lingua.set': JSON.stringify({ done: true }), 'lingua.sess': SESS });
   say('signed in with no name yet: appIs()=' + r.is +
       '  screen=' + JSON.stringify(r.text));
@@ -837,6 +838,54 @@ const SESS = JSON.stringify({ at: 'not a jwt', rt: 'a refresh token',
     if (D.busy) no('the door: the sheet came back with nothing and the spinner is still turning');
     say('the door: nothing back is not a session, and the spinner stops');
   }
+}
+
+/* ---- 5. 歩きを済ませてサインアウトした端末は、扉で開く -----------------
+   OWNER 2026-09-09（選択肢 A）、そして二つの書かれた決定 ──
+   「ログアウトしたら普通にログイン画面だけ出せばいいやろ。それ以外は表示
+   させるな。」 OWNER 2026-08-26、「アカウント削除した後オンボーディングから
+   始まるのはなぜ？」 OWNER 2026-09-03。
+
+   `SET.done` は二つの質問に答えていました。「このアカウントは歩きを通ったか」
+   はサーバーの `profile` 行になり（www/me.js § ME_ROW）、残ったのは
+   「セッションの無いこの端末はどの画面で開くか」だけ ── これはサーバーに
+   訊けません。サインアウトすれば `lingua.sess` は消え、アカウントを消せば
+   行そのものがありません。だから `SET.walked` としてこの端末に残ります。
+
+   三本訊きます:
+   1. 歩きを済ませてサインアウトした端末は**扉**で開く（文字を描く画面ではない）
+   2. 古い `done` は一度きり `walked` へ写され、`done` は消える
+   3. 新品の端末は今までどおり歩きで開く（1 番の裏 ── 上の § 1 が持っています）
+
+   赤を見た形（2026-09-09）: `appIs()` の `if(!SET.walked) return 'ob'` を
+   消すと 1 が赤（歩きで開く）。`walkedMigrate()` を消すと 2 が赤。 */
+{
+  /* 歩きを済ませ、サインアウトした端末 ── セッションは無く、`walked` は在る。 */
+  const r = await boot({ 'lingua.set': JSON.stringify({ walked: true }) });
+  say('歩きを済ませてサインアウトした端末: appIs()=' + r.is +
+      '  screen=' + JSON.stringify(String(r.text).slice(0, 60)));
+  if (r.is !== 'door')
+    no('歩きを済ませてサインアウトした端末が扉で開かない — appIs()=' + r.is +
+       '。「ログアウトしたら普通にログイン画面だけ出せばいいやろ」OWNER 2026-08-26');
+  if (r.draw)
+    no('歩きを済ませた端末が、文字を描く画面から始まっている');
+}
+{
+  /* 古い版が書いた `done`。一度きり写して、古い名前は消える。 */
+  const r = await boot({ 'lingua.set': JSON.stringify({ done: true }) },
+                       () => { window.__mig = { walked: SET.walked,
+                                                done: SET.done,
+                                                onDisk: localStorage.getItem('lingua.set') }; });
+  const m = r.mig || {};
+  if (m.walked !== true)
+    no('古い `done` が `walked` へ写っていない — ' + JSON.stringify(m.walked));
+  if (m.done !== undefined)
+    no('写したのに古い `done` が残っている — ' + JSON.stringify(m.done));
+  if (String(m.onDisk || '').indexOf('"done"') >= 0)
+    no('ディスクにも古い `done` が残っている — ' + m.onDisk);
+  if (r.is !== 'door')
+    no('古い `done` を持つ端末が扉で開かない — appIs()=' + r.is);
+  say('古い `done` は一度きり `walked` へ写り、古い名前は端末から消える');
 }
 
 await br.close();
