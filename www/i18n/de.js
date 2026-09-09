@@ -570,6 +570,7 @@ defLang('de', (function(){
       "g2.cx.sub"        : "Wohin der innere Satz kommt",
       "g2.cx.mark"       : "Wohin sein Zeichen kommt",
       "g2.cx.rel"        : "Wohin das Zeichen von „das, was ich sah“ kommt",
+      "g2.order.neg"        : "Wo das Verneinungswort steht",
       "gram.pos.before.main" : "Vor dem Hauptsatz",
       "gram.pos.after.main" : "Nach dem Hauptsatz",
       "gram.pos.before.cl" : "Vor dem inneren Satz",

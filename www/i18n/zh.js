@@ -590,6 +590,7 @@ defLang('zh', (function(){
       "g2.cx.sub"        : "里面的句子放在哪",
       "g2.cx.mark"       : "它的标记放在哪",
       "g2.cx.rel"        : "「我看见的那个」的标记放在哪",
+      "g2.order.neg"        : "否定词放在哪里",
       "gram.pos.before.main" : "主句之前",
       "gram.pos.after.main" : "主句之后",
       "gram.pos.before.cl" : "里面的句子之前",

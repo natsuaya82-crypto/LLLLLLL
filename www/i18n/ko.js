@@ -761,6 +761,7 @@ defLang('ko', (function(){
       "g2.cx.sub"        : "안쪽 문장은 어디에",
       "g2.cx.mark"       : "그 표시는 어디에",
       "g2.cx.rel"        : "「내가 본 산」의 표시는 어디에",
+      "g2.order.neg"        : "부정어는 어디에",
       "gram.pos.before.main" : "주절 앞",
       "gram.pos.after.main" : "주절 뒤",
       "gram.pos.before.cl" : "안쪽 문장 앞",

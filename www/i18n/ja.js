@@ -498,6 +498,7 @@ defLang('ja', (function(){
       'g2.cx.sub'        : '中の文はどこに',
       'g2.cx.mark'       : 'その印はどこに',
       'g2.cx.rel'        : '「私が見た山」の印はどこに',
+      'g2.order.neg'        : '否定の語はどこに',
       'gram.pos.before.main' : '主文の前',
       'gram.pos.after.main' : '主文の後',
       'gram.pos.before.cl' : '中の文の前',

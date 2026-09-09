@@ -486,6 +486,7 @@ defLang('en', (function(){
       'g2.cx.sub'        : 'Where the inner sentence goes',
       'g2.cx.mark'       : 'Where its mark goes',
       'g2.cx.rel'        : 'Where the mark of “the one I saw” goes',
+      'g2.order.neg'        : 'Where the not-word goes',
       'gram.pos.before.main' : 'Before the main sentence',
       'gram.pos.after.main' : 'After the main sentence',
       'gram.pos.before.cl' : 'Before the inner sentence',

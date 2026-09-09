@@ -582,6 +582,7 @@ defLang('it', (function(){
       "g2.cx.sub"        : "Dove va la frase interna",
       "g2.cx.mark"       : "Dove va il suo segno",
       "g2.cx.rel"        : "Dove va il segno di «quello che ho visto»",
+      "g2.order.neg"        : "Dove sta la parola di negazione",
       "gram.pos.before.main" : "Prima della frase principale",
       "gram.pos.after.main" : "Dopo la frase principale",
       "gram.pos.before.cl" : "Prima della frase interna",

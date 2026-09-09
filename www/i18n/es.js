@@ -542,6 +542,7 @@ defLang('es', (function(){
       "g2.cx.sub"        : "Dónde va la frase interior",
       "g2.cx.mark"       : "Dónde va su marca",
       "g2.cx.rel"        : "Dónde va la marca de «el que vi»",
+      "g2.order.neg"        : "Dónde va la palabra de negación",
       "gram.pos.before.main" : "Antes de la frase principal",
       "gram.pos.after.main" : "Después de la frase principal",
       "gram.pos.before.cl" : "Antes de la frase interior",

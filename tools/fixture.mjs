@@ -1804,6 +1804,17 @@ export function halfDone(){
     /* And naming one, which is a form and is therefore reached by nothing the
        walk would otherwise take. */
     ['naming a noun class', () => { nclsNew(); return vForm(); }],
+    /* THE OTHER SIDE OF THE NEGATION ROW. The word order chapter says which
+       side the word for 「not」 stands, and the row is two words: the fault
+       in a pair is nearly always in the side nobody photographed. */
+    ['the negation word before the verb', () => {
+        const was = STG.gpos && STG.gpos.negp;
+        if (!STG.gpos) STG.gpos = {};
+        STG.gpos.negp = 'before';
+        window.route = 'gram'; NAV = [{ r:'gram', a:'v2:order' }];
+        const h = vGram();
+        if (was) STG.gpos.negp = was; else delete STG.gpos.negp;
+        return h; }],
     /* And a class that EXISTS, which is a different face of the same form:
        the name is filled in and the way out of the class is on it. A new one
        has no way out -- there is nothing yet to delete. */

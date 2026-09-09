@@ -832,7 +832,21 @@ function g2Board(c){
            '<div class="gordput" data-gord="on">'+on+'</div>'+
            b.demo()+
          '</div>'+
-         '<div class="gordrow" data-gord="off">'+off+'</div>';
+         '<div class="gordrow" data-gord="off">'+off+'</div>'+
+         /* AND WHICH SIDE THE NEGATION WORD STANDS, on the sentence board and
+            not on the noun phrase's -- a word for 「not」 has nothing to do
+            with 「red house」. 「はい」 OWNER 2026-09-09, asked where it
+            should go: `STG.gpos.negp` is the language's and gRules() has
+            always read it, and there has been nowhere to WRITE it since the
+            否定 stage went (docs/BACKLOG.md). A value nobody can answer is
+            the app deciding for everybody, silently, that it comes after.
+
+            g2Side() and nothing new: the describing word and the place word
+            are arranged with the same function, so this is a third row of a
+            shape that already exists rather than a second way of asking. */
+         (b.id==='order'?
+           g2Sec('g2.order.neg')+g2Side('negp', gSlotAny('neg'), gWordOf('v'))
+           : '');
 }
 /* This language's own words, in the order the board says. gLay() runs the real
    engine, so this is what a sentence would actually come out as and not a

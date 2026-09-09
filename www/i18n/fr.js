@@ -630,6 +630,7 @@ defLang('fr', (function(){
       "g2.cx.sub"        : "Où va la phrase intérieure",
       "g2.cx.mark"       : "Où va sa marque",
       "g2.cx.rel"        : "Où va la marque de « celui que j’ai vu »",
+      "g2.order.neg"        : "Où se place le mot de négation",
       "gram.pos.before.main" : "Avant la phrase principale",
       "gram.pos.after.main" : "Après la phrase principale",
       "gram.pos.before.cl" : "Avant la phrase intérieure",
