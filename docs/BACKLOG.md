@@ -436,7 +436,8 @@ lnField('ncls-n', t('g2.ncls.name'), nclsName(i), '')
 ## シート（章 26）の門は `can('file')` で、専用の名前がありません
 
 2026-09-03。用紙で文字を取り込む道は Pro（OWNER 2026-08-23）で、
-`shInFileHTML()` と `shTakeIn()`（`www/sheet.js`）が `can('file')` を訊きます。
+`fileInHTML()`（`www/shell.js` ── 二つの画面が一つで描かれています）と
+`shTakeIn()`（`www/sheet.js`）が `can('file')` を訊きます。
 `file` は Pro なので、今日はそれで決定どおりの段に居ます。
 
 **将来 `file` を Plus に下ろすと、用紙も黙って一緒に下ります。**一つの門が

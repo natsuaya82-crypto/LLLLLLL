@@ -409,7 +409,8 @@ the app does not charge.
 **no ceiling at all**, so it is Pro. Plus's thousand is a NUMBER and lives in
 `wordCap()`, which asks `can('words')` once and `has('plus')` after it.
 
-`file` is the sheet's gate as well as the paste's — `shInFileHTML()` and
+`file` is the sheet's gate as well as the paste's — `fileInHTML()`
+(`www/shell.js`, the one file control both screens are drawn by) and
 `shTakeIn()` in `www/sheet.js` both ask it. That puts chapter 26 on Pro, which
 is OWNER DECISION 2026-08-23, and it is why there is no separate `write`.
 

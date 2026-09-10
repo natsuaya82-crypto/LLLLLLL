@@ -263,11 +263,36 @@ makes one」と自分で言っていて、それを持っているものは何�
 `netFollowing`/`netFollowers` と `netSearchSaved`/`netRecent`。
 **`www/net.js` は別のセッションのものです。**
 
-## 18. ファイルを取り込むボタンが二箇所 ── **開いている**
+## 18. ファイルを取り込むボタンが二箇所 ── **閉じた**
 
-`www/import.js` の `impFileHTML` と `www/sheet.js` の `shInFileHTML`。
-`www/sheet.js` の注記が「文字が違うから共有していない」と自分で書いています。
-文字は引数で渡せます。**どちらも別のセッションのものです。**
+**一箇所は `fileInHTML(cls, inner, id, accept)`（`www/shell.js`）です。**
+`impFileHTML()`（`www/import.js`）と `shInFileHTML()`（`www/sheet.js`）は
+**両方消しました** ── 呼び側（`impGetHTML()` と `shInHTML()`）が直に呼びます。
+片方だけ残すと 8番 で消したのと同じ「二つ目の名前」になります。
+
+`www/sheet.js` の注記が書いていた「文字が違うから共有していない」は消えて
+います。**違っていたのは四つで、四つとも引数です**:
+
+```
+  cls      set impfile / btn ghost shfile ── 一覧の行か、絵の下のボタンか
+  inner    <span class="sl">…</span> か、裸の文字か（着る class が決める）
+  id       f-file / wr-file
+  accept   辞書が受けるもの / PDF
+```
+
+**形は一つです。**無料は訊くボタン（`upFile` → `upStop()`、その場に立つ）、
+有料は同じ文字の上に native の file input を透明で重ねた `<label>`。
+`can('file')` はこの中で一度訊かれ、`shTakeIn()` がファイルの着く所でもう
+一度訊きます（画面に描いたものは門ではないので）。
+
+**返り値は一字も変わりません**（`npm run press` は `buttons pressed: 15687`
+で据え置き）。
+
+**名前を書いていた文書も同じ commit で直しました** ── `docs/FEATURES.md`
+（二箇所）`docs/PAID_FEATURES.md` `docs/BACKLOG.md` `docs/HIDEFREE.md`
+（二箇所、うち一つは「一つの関数にはしていません」という、この直しが嘘に
+した文）。`docs/CHANGELOG.md` と `docs/reports/` `docs/scope/` は、その日
+何が本当だったかの記録なので書き換えていません。
 
 ## 19. 文字を行に折る所が二つ ── **待ち（読む人の判断）**
 
@@ -302,9 +327,9 @@ makes one」と自分で言っていて、それを持っているものは何�
 
 | | 数 |
 |---|---|
-| 閉じた | 17（1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 20 21） |
+| 閉じた | 18（1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 18 20 21） |
 | 半分 | 0 |
-| 開いている | 3（14 17 18） |
+| 開いている | 2（14 17 ── どちらも `www/net.js`） |
 | 待ち | 1（19 読む人の判断） |
 
 **残っている九件のうち八件は、`www/net.js` `www/post.js` `www/mod.js`

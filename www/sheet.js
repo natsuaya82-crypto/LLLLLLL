@@ -1223,7 +1223,37 @@ function openWrIn(){
    shInMount() hands it the box's rings. */
 function shInHTML(){
   var s = shState(), out = '', i, g, n;
-  out = shInFileHTML();
+  /* THE ONE CONTROL, and whether this plan has it.
+
+     The sheet is a paid chapter -- docs/PAID_FEATURES.md: 「letters written
+     on paper and brought back in」 -- and the free plan is one sentence,
+     「your own shapes for a-z and 0-9」, with nothing on it that adds a
+     letter, deletes one or renames one. That is what lets kbFixed() be a
+     QWERTY wearing the drawn letters: the names are a-z, `!` and `?` and
+     cannot change. A sheet that adds `zz` to a free alphabet takes that away,
+     and this file asked no plan at all.
+
+     The door is DRAWN rather than missing: 「だいたい無料で使えないやつは表示
+     させていいよ。課金させる動線を減らしたくない」 OWNER 2026-08-25. What the
+     press DOES is the pop -- 「ポップだって。その古いのは消して」 OWNER
+     2026-09-05, and 「無料はタップすると課金ページに飛ばされる」 is gone with
+     it. upStop() in www/core.js is that pop, and there is only the one. All
+     of that is fileInHTML() in www/shell.js now, which the dictionary's file
+     button is drawn by too: the comment that used to stand here said the two
+     were「not shared because they say different things on the button」, and
+     the words are an argument.
+
+     `can('file')` -- 「a list brought in as a file rather than a paste」, and
+     a sheet handed back is a file brought in. It is asked inside
+     fileInHTML(); shTakeIn() asks it again where the file arrives, because a
+     control drawn on a screen is not the gate. docs/PAID_FEATURES.md also
+     names a capability `write` at the same rung for this chapter and `CAN`
+     does not have one; www/core.js is not this session's file.
+
+     `.btn.ghost` rather than a row, and its words are bare: this is a button
+     under a picture, not a line of a list. */
+  out = fileInHTML('btn ghost shfile', esc(t('wr.in')),
+                   'wr-file', 'application/pdf,.pdf');
   if(s.why) return out + '<div class="note">'+esc(s.why)+'</div>';
   if(!s.got) return out;
   out += '<div class="mini" style="margin-top:14px">'+esc(s.from)+'</div>';
@@ -1273,45 +1303,6 @@ function shTakeCount(got){
   var n = 0, i;
   for(i = 0; i < got.length; i++) if(got[i].sh.length) n++;
   return n;
-}
-/* THE ONE CONTROL, and whether this plan has it.
-
-   The sheet is a paid chapter -- docs/PAID_FEATURES.md: 「letters written on
-   paper and brought back in」 -- and the free plan is one sentence,
-   「your own shapes for a-z and 0-9」, with nothing on it that adds a letter,
-   deletes one or renames one. That is what lets kbFixed() be a QWERTY wearing
-   the drawn letters: the names are a-z, `!` and `?` and cannot change. A sheet
-   that adds `zz` to a free alphabet takes that away, and this file asked no
-   plan at all.
-
-   The door is DRAWN rather than missing: 「だいたい無料で使えないやつは表示
-   させていいよ。課金させる動線を減らしたくない」 OWNER 2026-08-25. What the
-   press DOES is the pop -- 「ポップだって。その古いのは消して」 OWNER
-   2026-09-05, and 「無料はタップすると課金ページに飛ばされる」 is gone with
-   it: a wall is answerable with "no" and nobody is carried off the screen
-   they are standing on unless they say yes. upStop() in www/core.js is that
-   pop, and there is only the one.
-   Same shape and same words as impFileHTML() in www/import.js,
-   which is the other file control in this app; it is not shared with it
-   because the two say different things on the button.
-
-   `can('file')` -- 「a list brought in as a file rather than a paste」, and a
-   sheet handed back is a file brought in. docs/PAID_FEATURES.md also names a
-   capability `write` at the same rung for this chapter and `CAN` does not
-   have one; www/core.js is not this session's file. */
-function shInFileHTML(){
-  /* THE SAME BUTTON ON EVERY PLAN, WITH THE SAME WORDS ON IT -- and the same
-     sentence impFileHTML() in www/import.js is written under, said here
-     because the two say different words on the button and share no code.
-     「できないことは、有料と同じ画面に同じ形で出す。押したら有料へ」 OWNER
-     2026-09-04: 「PDF を選ぶ」 and 「アップグレード」 ran together into one
-     word on the free plan. The press is what says the rest, and what it says
-     is the pop: 「ポップだって」 OWNER 2026-09-05. */
-  if(!can('file'))
-    return '<button class="btn ghost shfile"' + DO('upFile') + '>'+
-      esc(t('wr.in'))+'</button>';
-  return '<label class="btn ghost shfile">'+esc(t('wr.in'))+
-    '<input type="file" id="wr-file" accept="application/pdf,.pdf"></label>';
 }
 /* The file input is the one control in the app that cannot go through the
    action tables -- they hand a listener the element's value, and a file

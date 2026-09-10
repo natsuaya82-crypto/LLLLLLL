@@ -1123,6 +1123,42 @@ function capWarnHTML(text){
   return '<button class="capwarn" style="margin:14px 0 0"' + DO('go', ["plans"]) + '>'+
     text+'<span class="capgo">'+t('up.cta')+ICON_GO+'</span></button>';
 }
+/* A FILE BROUGHT IN, ON EVERY PLAN, AND THE NATIVE CONTROL OVER IT.
+
+   THE SAME BUTTON ON EVERY PLAN, WITH THE SAME WORDS ON IT.
+   「できないことは、有料と同じ画面に同じ形で出す。押したら有料へ」 OWNER
+   2026-09-04. The free plan used to get `up.cta` welded onto the end of the
+   button's own words with nothing between them, so 「ファイルを選ぶ」 and
+   「アップグレード」 ran together into one unreadable word -- a button whose
+   text a person cannot read is worse than one they cannot press. What the
+   tail was for is said by the press, and what the press says is the pop:
+   「ポップだって。その古いのは消して」 OWNER 2026-09-05. It used to jump to
+   the price list -- 「扉は押したら飛ぶ」 (OWNER 2026-09-03) -- and the flight
+   is now the "yes" inside upStop() (www/core.js) rather than the press itself.
+
+   Two screens have one: the dictionary's list (www/import.js) and the sheet
+   of letters written on paper (www/sheet.js). Each said all of that in its
+   own words, and the comment over the second one gave the reason they were
+   not shared -- 「the two say different things on the button」. The words are
+   an argument. So is the class each screen dresses it in, the id the native
+   control answers to, and what it will accept; the shape is one shape:
+
+     free   a button that ASKS -- upFile, which is upStop() and stays here
+     paid   a <label> with the file input laid invisibly over the same words,
+            because a file input cannot be styled and a hidden one cannot be
+            pressed. `.impfile input` and `.shfile input` in index.html are
+            that laying-over, and they are the only half that is the paid
+            face's alone.
+
+   `inner` is markup, not words: a `.set` row wears its label in a `<span
+   class="sl">` and a `.btn.ghost` does not, and which of the two a screen is
+   is the screen's to say. Whatever goes in is already escaped by the caller. */
+function fileInHTML(cls, inner, id, accept){
+  if(!can('file'))
+    return '<button class="'+cls+'"' + DO('upFile') + '>'+inner+'</button>';
+  return '<label class="'+cls+'">'+inner+
+    '<input type="file" id="'+id+'" accept="'+accept+'"></label>';
+}
 /* Coming back to a screen for a thing that is no longer there -- a word that
    was deleted, a form that was closed, a letter that is gone. Five screens
    said this, in the same nine words, in four files. */

@@ -53,7 +53,7 @@ Marked separately, because they are not the same question:
 | Keyboard: any letter on any key, any position, rows and layers | shipped | — | `kb` | slice `kb` | decided |
 | Font built on the device (OTF) | shipped | yes | — | none (derived) | decided |
 | Import a word list | shipped | paste | `file`: a file | slice `words` | decided |
-| **write — letters brought in on a sheet** | **in progress** — the road is in (`www/sheet.js`, ch 26, `npm run sheet`) and **so is the plan gate**; the drawing is not | — | **Pro**, and it is `file` that says so — `shInFileHTML()` and `shTakeIn()` both ask `can('file')`, which is Pro. There is no `write` capability and there is not going to be one | slice `letters`: `lt.sh` and `lt.via` | partial |
+| **write — letters brought in on a sheet** | **in progress** — the road is in (`www/sheet.js`, ch 26, `npm run sheet`) and **so is the plan gate**; the drawing is not | — | **Pro**, and it is `file` that says so — the door (`fileInHTML()` in `www/shell.js`) and `shTakeIn()` both ask `can('file')`, which is Pro. There is no `write` capability and there is not going to be one | slice `letters`: `lt.sh` and `lt.via` | partial |
 | Export CSV | shipped | — | `data` | none | decided |
 | Backup to Documents | shipped | **yes, on every plan** | — | the file | decided |
 | Restore from Documents | shipped | **yes, on every plan** | — | fills in what is missing | decided |
@@ -770,8 +770,9 @@ and `2` are all still there afterwards.
 
 **The plan gate is `can('file')`.** The road is Pro (OWNER DECISION 2026-08-23)
 and `file` sits at `pro` in `CAN`, so asking it puts chapter 26 exactly where
-the decision put it. `shInFileHTML()` draws the door and sends a press to the
-plans screen; `shTakeIn()` refuses again, because the action tables reach it by
+the decision put it. `fileInHTML()` (`www/shell.js`) draws the door and sends a
+press to the plans screen — it is the one file control in this app and the
+dictionary's list is drawn by it too; `shTakeIn()` refuses again, because the action tables reach it by
 name and a button is not the only way in. **There is no `write` capability** —
 「a list brought in as a file rather than a paste」 is what a sheet handed back
 is, and a second name at the same rung would be two answers to one question.
