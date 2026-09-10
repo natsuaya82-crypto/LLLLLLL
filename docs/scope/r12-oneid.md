@@ -106,3 +106,29 @@ docs は **`docs/CHANGELOG.md`**（コードより先）、**`docs/DATA_MODEL.md
 **触らない**：`www/index.html`、`supabase/schema.sql`、`www/post.js`
 `www/sns.js` `www/mod.js`（そこの `.sid` は投稿の番号で別物）、ほかの枝。
 ゲート（`npm test`）は回しません ── リーダーが回します。
+
+### 宣言の外に出た file と、その理由（2026-09-10）
+
+上の欄に無い file を八つ触りました。どれも**アプリではなく検査**で、どれも
+「言語には番号が二つある」を書き込んでいたものです。番号が一本になった以上、
+直さなければ赤のまま残ります。何をしたかは一行ずつ:
+
+- `tools/store-check.mjs` ── 移行が `localStorage` に書く鍵（`core.js:dst`）を
+  `ROADS` に足しました。**この check 自身が要求すること**です（規則 22 ──
+  新しい鍵は、どちらの側か書かれるまで赤）。書いたのは「同じ鍵を、その言語の
+  番号の下へ写すだけ。種類は増えない」。
+- `tools/twice-check.mjs` `tools/kb-check.mjs` ── 偽サーバーの
+  `POST /rest/v1/language` が自分で `srv<n>` を打っていました。送られた `id` を
+  使うように直しています（本物の PostgREST がそうする形）。`twice-check` の
+  「同じ言語に入れ物が二つ」は、鍵が番号そのものになったので**サーバーの行**を
+  数える形へ書き直しました。
+- `tools/hist-check.mjs` `tools/keep-check.mjs` `tools/gramlang-check.mjs`
+  `tools/pull-table.mjs` `tools/slow-check.mjs` ── `LANGS[id].sid` を読み書き
+  していた所。「行が在る」は `langRowGot()`（`LROW`）に、「サーバーの番号」は
+  id そのものに。
+- `tools/dl-check.mjs` ── 取った言語の種から `sid:` の欄を落としました（鍵が
+  既にその番号なので、二つ目の番号でした）。
+
+`tools/measure-cost.mjs` は**触っていません** ── ゲートの check ではなく測る
+道具で、偽サーバーが自分で `L-<n>` を打ちます。番号が一本の今、そこが測る
+通信量は本物とずれます。リーダーの判断待ちとして残します。
