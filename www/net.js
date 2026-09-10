@@ -3667,19 +3667,33 @@ function netFindPosts(q, ok, bad, more){
    words ARE the name of the row -- which is why dropping one takes the words
    and not an id. The phone has the words in its hand; asking what their id
    was first would be a request to find out something it already knows. */
-function netSearchSaved(ok, bad){
+/* A PAGE OF WORDS SOMEBODY LOOKED FOR, AND WHICH TABLE IS THE ARGUMENT.
+   The star and the history are two tables on purpose (the note under
+   netRecent() below says why, and supabase/schema.sql says it again), and
+   the READING of them was written out twice with nothing between them but
+   the table's name and which column says when. Both answer the same three
+   fields, because both lists are drawn by the same rows on the same screen.
+
+   `when` is a column name and goes into the path, so it is this file's own
+   literal at each call and never anything a person typed.
+
+   Signed out is `[]` and not a fall: there is no account to have starred or
+   typed anything, which is an answer. */
+function netWordRows(tab, when, ok, bad){
   if(!netSignedIn()){ ok([]); return; }
-  netGet('/rest/v1/saved_search?select=id,q,created_at&order=created_at.desc'+
+  netGet('/rest/v1/'+tab+'?select=id,q,'+when+'&order='+when+'.desc'+
          '&limit='+NET_PAGE,
     function(d){
       var out=[], i, r;
       for(i=0;i<(d||[]).length;i++){
         r=d[i]||{};
-        out.push({id:r.id||'', q:String(r.q||''),
-                  at:Date.parse(r.created_at)||0});
+        out.push({id:r.id||'', q:String(r.q||''), at:Date.parse(r[when])||0});
       }
       ok(out);
     }, bad || function(){});
+}
+function netSearchSaved(ok, bad){
+  netWordRows('saved_search', 'created_at', ok, bad);
 }
 function netSearchSave(q, ok, bad){
   var w=String(q||'').replace(/^\s+|\s+$/g, '');
@@ -3710,17 +3724,7 @@ function netSearchDrop(q, ok, bad){
    MOVES the row rather than making a second one. `at` is when it was last
    searched for, which is the thing the list is in the order of. */
 function netRecent(ok, bad){
-  if(!netSignedIn()){ ok([]); return; }
-  netGet('/rest/v1/recent_search?select=id,q,at&order=at.desc'+
-         '&limit='+NET_PAGE,
-    function(d){
-      var out=[], i, r;
-      for(i=0;i<(d||[]).length;i++){
-        r=d[i]||{};
-        out.push({id:r.id||'', q:String(r.q||''), at:Date.parse(r.at)||0});
-      }
-      ok(out);
-    }, bad || function(){});
+  netWordRows('recent_search', 'at', ok, bad);
 }
 /* ONE WRITE, AND THERE IS NO MIDDLE OF IT.
    `unique (author, q)` refuses a second row for words that are already there,

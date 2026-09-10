@@ -929,6 +929,31 @@ say(tagRows.length === 1 && tagRows[0] === rows.say,
     '絞り込みの #今日のお題 は一本で、その言葉は言語ファイルのもの (' +
     rows.rows.join(' / ') + ')');
 
+/* ---- 星と履歴は一つの読み方で、どの表かは引数 -------------------------
+   `netSearchSaved()` と `netRecent()` は行を読む所が一字も違わず二回書いて
+   あり、`netWordRows()` 一つになりました（`docs/DUPLICATES.md` 17）。表の
+   名前と、いつを言う列とが、その場の literal から**位置引数**になったので、
+   取り違えても何も投げません ── `recent_search` に `created_at` を訊けば
+   PostgREST は 400 を返し、画面は「履歴なし」になって、そこには理由が何も
+   書かれません。星が履歴を読んでも同じです。
+
+   **線の上で**訊きます。二つを呼んで、出ていった path をそのまま読みます。 */
+const asked = await pg.evaluate(() => new Promise(function(done){
+  window.__ASK = [];
+  netSearchSaved(function(){
+    netRecent(function(){ done(window.__ASK.slice()); }, function(){ done(window.__ASK.slice()); });
+  }, function(){ done(window.__ASK.slice()); });
+}));
+const wantSaved = '/rest/v1/saved_search?select=id,q,created_at&order=created_at.desc';
+const wantRecent = '/rest/v1/recent_search?select=id,q,at&order=at.desc';
+const gotSaved = asked.filter((p) => p.indexOf('/rest/v1/saved_search') === 0)[0] || '';
+const gotRecent = asked.filter((p) => p.indexOf('/rest/v1/recent_search') === 0)[0] || '';
+say(gotSaved.indexOf(wantSaved) === 0,
+    '星の一覧は saved_search を created_at の順で訊く (' + gotSaved + ')');
+say(gotRecent.indexOf(wantRecent) === 0,
+    '履歴の一覧は recent_search を at の順で訊く ── 同じ関数、違う引数 (' +
+    gotRecent + ')');
+
 await br.close();
 console.log(bad.length ? '\nfind: FAILED ' + bad.length : '\nfind: 一つの箱に打てば人も投稿も出る。途中の言葉でも出て、出ていない投稿は出ない');
 process.exit(bad.length ? 1 : 0);
