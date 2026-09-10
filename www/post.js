@@ -876,20 +876,45 @@ var POST_THUMB=300;
    moment the picture goes up and exists only in Storage. A picture already
    smaller than POST_THUMB has no small copy -- '' rather than a second file
    of the same bytes -- and postThumbs() draws the photograph for it. */
-function postThumb(u, ok){
+/* ONE PHOTOGRAPH BROUGHT DOWN TO A LONG EDGE, and the cap is the argument.
+   It was written out twice -- once for what goes UP (POST_PIC) and once for
+   the copy the timeline scrolls (POST_THUMB) -- and the two differed by the
+   constant and by nothing else: the same k, the same rounding, the same
+   canvas, the same POST_PICQ. Only the long edge is brought down; nothing is
+   cropped.
+
+   `ok(out, whole)` has three answers, not two, because the two callers answer
+   them differently and folding them together would change what a failure does:
+
+     out  the JPEG
+     ''   the canvas refused it -- a picture the composer says so about
+     null the photograph never loaded, which is where a batch goes ON
+
+   `whole` says the picture was already inside the cap. The caller decides
+   what that means: the small copy is not made (there is nothing to gain by
+   storing the same bytes twice), and a picture going UP is re-encoded all the
+   same, because it may not be a JPEG yet and POST_PICQ is what fits it inside
+   POST_BYTES. So this always draws, and postThumb() throws that draw away for
+   a picture already under 300 across -- one canvas, at the moment a picture
+   is sent, and never on a screen. */
+function postShrink(url, cap, ok){
   var im=new Image();
   im.onload=function(){
-    var k=Math.min(1, POST_THUMB/Math.max(im.width, im.height)), c, x, out='';
-    if(k>=1){ ok(''); return; }
+    var k=Math.min(1, cap/Math.max(im.width, im.height)), c, x, out='';
     c=document.createElement('canvas');
     c.width=Math.round(im.width*k); c.height=Math.round(im.height*k);
     x=c.getContext('2d');
     x.drawImage(im, 0, 0, c.width, c.height);
     try{ out=c.toDataURL('image/jpeg', POST_PICQ); }catch(e){ out=''; }
-    ok(out);
+    ok(out, k>=1);
   };
-  im.onerror=function(){ ok(''); };
-  im.src=String(u||'');
+  im.onerror=function(){ ok(null, false); };
+  im.src=String(url||'');
+}
+function postThumb(u, ok){
+  postShrink(u, POST_THUMB, function(out, whole){
+    ok(whole? '' : (out||''));
+  });
 }
 /* What the timeline may take up. localStorage is one allowance shared by the
 /* What the timeline may take up. localStorage is one allowance shared by the
@@ -973,22 +998,18 @@ function pwPicKeepAll(list, i){
    were never going to be seen; a post shows the picture, so what was taken is
    what goes up. Only the long edge is brought down. */
 function pwPicKeep(url, then){
-  var im=new Image();
-  im.onload=function(){
-    var k=Math.min(1, POST_PIC/Math.max(im.width, im.height));
-    var c=document.createElement('canvas'), x, out;
-    c.width=Math.round(im.width*k); c.height=Math.round(im.height*k);
-    x=c.getContext('2d');
-    x.drawImage(im, 0, 0, c.width, c.height);
-    try{ out=c.toDataURL('image/jpeg', POST_PICQ); }
-    catch(e){ toast(t('post.pic.bad')); return; }
+  postShrink(url, POST_PIC, function(out){
+    /* The photograph never loaded. A batch goes on to the next one; a single
+       one says so. */
+    if(out===null){ if(then) then(); else toast(t('post.pic.bad')); return; }
+    /* The canvas refused it. This one stops, batch or not: it is a picture
+       this phone cannot read at all, and walking on would say nothing. */
+    if(!out){ toast(t('post.pic.bad')); return; }
     if(!pwPicRoom(out)){ toast(t('post.pic.full')); return; }
     if(pwPics().length>=POST_PICS){ toast(t('post.pic.many', POST_PICS)); return; }
     pwPics().push({u:out, marks:[]});
     if(then) then(); else openPost();
-  };
-  im.onerror=function(){ if(then) then(); else toast(t('post.pic.bad')); };
-  im.src=url;
+  });
 }
 /* The letters go with the picture. They are placed ON it -- a mark with no
    photograph under it is a position on nothing -- so they are on the same

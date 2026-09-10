@@ -1548,6 +1548,23 @@ const R = await pg.evaluate(async () => {
     fails.push('a picture already smaller than POST_THUMB was given a small ' +
                'copy of itself, which is a second file for nothing');
 
+  /* ---- AND THE PHOTOGRAPH ITSELF GOES UP AT THE OTHER CAP ---------------
+     The two are one function now, and the cap is its argument (DUPLICATES
+     15): postShrink() in www/post.js, asked for POST_THUMB by postThumb()
+     and for POST_PIC by pwPicKeep(). Nothing here asked what the composer
+     KEEPS, so the two claims above stayed green with the wrong constant
+     handed in -- watched, with pwPicKeep() shrinking to 300, and every one
+     of them passed. A picture 300 across where 900 was meant is a photograph
+     nobody can open, and it is the half a screenshot cannot show. */
+  PW = pwBlank();
+  await new Promise((res) => pwPicKeep(window.__fixPic(1800, 1200), res));
+  const capPic = pwPics()[0];
+  const capWH = capPic ? await sizeOf(capPic.u) : '';
+  if (capWH !== '900x600')
+    fails.push('a 1800x1200 photograph put in the composer is kept at ' +
+               JSON.stringify(capWH) + ' and POST_PIC is ' + POST_PIC);
+  PW = pwBlank();
+
   /* And what each of the two screens is handed. Per picture, because `pt` is
      allowed to have a hole in it: a small copy that failed to go up must fall
      back to the photograph IN ITS OWN PLACE. A list that closed the hole
