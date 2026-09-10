@@ -2135,6 +2135,110 @@ say(goneC.mineRow === true && goneC.mineWords === goneA.mineWords,
     'そのときも自分の言語は動かない ── 行 ' + goneC.mineRow +
     '、words は前と同じ ' + (goneC.mineWords === goneA.mineWords));
 
+/* ---- 写しの無い端末で保存しても、サーバーの文字は増えない ------------------
+   「サーバーの文字は増やさないでくれ。原因特定しても穴埋めるみたいな治し方を
+     するからそうなるでしょう。しっかり特定してコードごと直して」OWNER 2026-09-10。
+
+   **索引はあるが写しの無い端末**（入れ直した iPhone、写しが reclaim された
+   iPhone）で起動すると、ltStart() が空の文字表に無料の三十八枠を作ります ──
+   起動の降ろしは「持っているものは飛ばす」ので、サーバーの三十九はもう降りて
+   きません。そこで保存を押すと、端末の 38 とサーバーの 39 が合流します。
+
+   **その合流が 42 を返していました。**「この文字はどの枠か」を二箇所が別々に
+   答えていたからです ── ltStart() は名前（ltName）で、ltSlotKey() は `l.ab`
+   だけで。`ab` を持たない文字（一覧から入れた・紙から読んだ・オンボーディング
+   で描いた・音から作った）は、片方には「k の枠」で、もう片方には「枠ではない
+   別の文字」でした。`k` が二行、`t` が二行、`?` が二行、サーバーに、ずっと。
+
+   **三つ訊きます。増えない・減らない・描いた形は残る。**数だけでは足りません:
+   40 でも 38 でも赤にならなければいけないし、「39 のまま」は中身を捨てた 39
+   でも真になります。だから同じ名前の行が二つ無いことと、描いてある行が一つも
+   減っていないことを並べて訊きます。 */
+await pg.reload();
+await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
+
+const lt42A = await pg.evaluate(({ s }) => {
+  /* 前の場面が索引に残した言語ごと片づける ── ここが測るのは一つの言語です。 */
+  localStorage.clear();
+  eval('(' + s + ')()');
+  SET.walked = true;
+  var id2;
+  for (id2 in LANGS)
+    if (Object.prototype.hasOwnProperty.call(LANGS, id2)) langOwnGot(id2, 'me42');
+  langStore(); save();
+  /* サーバーが持っている本文は、一台目が上げたそのもの ── ここでは手で置きます。
+     netLangSync() を通して置くと、起動の sync と競って NET_SYNCING で黙って
+     戻る日があり、測る前提そのものが揺れます。**前提は測るものではありません。** */
+  var body = slMine(langKeyOf(langId, 'letters')) || '[]', L = JSON.parse(body);
+  return { id: langId, name: langNameOf(langId) || 'Vaska', body: body, n: L.length,
+           /* どの行に線が載っているか ── 数ではなく id で。数だけだと、
+              この検査が一文字描く分と、消えた一行とが打ち消し合います。 */
+           drawn: L.filter(function(l){ return ltDrawn(l); })
+                   .map(function(l){ return l.id; }) };
+}, { s: seed.toString() });
+
+/* 索引とセッションだけ残す ── 写し（`.got`）も、古い版がディスクに書いた鍵も
+   無い端末。localStorage.clear() のあと索引を戻すのが、その端末そのものです。 */
+await pg.evaluate(() => {
+  var a = localStorage.getItem('lingua.langs'), b = localStorage.getItem('lingua.cur'),
+      c = localStorage.getItem('lingua.set');
+  localStorage.clear();
+  if (a) localStorage.setItem('lingua.langs', a);
+  if (b) localStorage.setItem('lingua.cur', b);
+  if (c) localStorage.setItem('lingua.set', c);
+});
+await pg.reload();
+await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
+
+const lt42B = await pg.evaluate(async ({ srv, a }) => {
+  eval(srv);
+  var S = window.__SRV;
+  S.lang = [{ id:a.id, owner:'me42', name:a.name, wsys:'alpha', published_at:null }];
+  S.slice = [{ language:a.id, kind:'letters', body:a.body, no:1, at:'a1' }];
+  function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
+  function srvL(){
+    var q, row = null;
+    for (q = 0; q < S.slice.length; q++)
+      if (S.slice[q].language === a.id && S.slice[q].kind === 'letters') row = S.slice[q];
+    return row ? JSON.parse(row.body) : [];
+  }
+  netTook({ access_token:'t', refresh_token:'r', user:{ id:'me42' } });
+  await wait(900);
+  var boot = LETTERS.length;
+  langOpen(a.id);
+  /* 一文字に線を引いて保存 ── 人がやる道と同じ（saveLetters → bkTouch →
+     netSaveUp）。溜め（NET_UPMS）より長く待ちます。 */
+  if (LETTERS[0]) LETTERS[0].st = [{ pts:[[200,600],[400,200],[600,600]] }];
+  saveLetters();
+  await wait(NET_UPMS + 1200);
+  var end = srvL(), names = {}, dup = [], i, nm;
+  for (i = 0; i < end.length; i++){
+    nm = String(ltName(end[i]) || '');
+    if (!nm) continue;
+    if (names[nm]) dup.push(nm); else names[nm] = 1;
+  }
+  var lost = [], w;
+  for (w = 0; w < a.drawn.length; w++){
+    var still = null, y;
+    for (y = 0; y < end.length; y++) if (end[y].id === a.drawn[w]) still = end[y];
+    if (!still || !ltDrawn(still)) lost.push(a.drawn[w]);
+  }
+  return { boot: boot, n: end.length, dup: dup, lost: lost,
+           drawn: end.filter(function(l){ return ltDrawn(l); }).length,
+           sent: S.sent.filter(function(x){ return x.indexOf(':letters') >= 0; }).length };
+}, { srv: SERVER, a: lt42A });
+
+say(lt42B.sent > 0 && lt42B.n === lt42A.n,
+    '**写しの無い端末で保存しても、サーバーの文字は増えも減えもしない** ── ' +
+    '起動で端末は ' + lt42B.boot + ' 文字、保存のあとサーバーは ' + lt42A.n +
+    ' → ' + lt42B.n + '（送信 ' + lt42B.sent + ' 回）');
+say(lt42B.dup.length === 0,
+    'そして同じ名前の文字は二つ並ばない ── 「どの枠か」は ltSlotKey() 一箇所が' +
+    '答える（重なった名前: ' + (lt42B.dup.join(' ') || 'なし') + '）');
+say(lt42B.lost.length === 0,
+    'そして描いた形はどれも残る ── サーバーが持っていた ' + lt42A.drawn.length +
+    ' 行のうち、線を落としたもの ' + (lt42B.lost.join(' ') || 'なし'));
+
 await br.close();
 if (bad.length){
   console.log('\nagain: ' + bad.length + ' problem' + (bad.length > 1 ? 's' : '') + '.\n');
