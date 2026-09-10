@@ -343,42 +343,22 @@ function saveKb(){
   kbVFix(); kbWayOff(); kbNoted(); bkTouch();
   if(!KB) slRm(langKey('kb'));
   else slWr(langKey('kb'), JSON.stringify(KB));
-  kbKeepLay();
 }
 /* The layout, said once as a string. Three things ask whether it has moved --
    the step-back, the buffer the editor opened with, and the write below. */
 function kbLaySig(b){ return JSON.stringify(b.lay); }
-/* AND THE BAR IS TOLD. 「保存する箇所が出たなら金色になって」 OWNER
-   2026-09-05. The editor registers its buffer with the layout it arrived with
-   (kbKeepOn), so writing the layout here is what makes the Save in the corner
-   gold -- one road, www/shell.js § KEEP, and no dirty flag of this chapter's
-   own.
+/* WHY THERE IS NOTHING HERE TELLING THE BAR. This used to end in a
+   kbKeepLay() that pushed the layout into the buffer, so that the Save in the
+   corner would light -- and the shape of that was a line every writer had to
+   pass through, which is a line somebody eventually does not. The buffer is
+   ASKED now, by kbNow() below, every time the button is drawn, so the layout
+   reaches the corner without anybody saying so and there is no key to get
+   wrong. That was rule 20's old fault as well: this wrote `kb|1` while the
+   bar read `kb|2` after a keyboard was deleted, and a row really came out of
+   the layout with the corner still grey. There is one answer to which board
+   is on the screen now, and it is the route.
 
-   THE KEY IS THE BOARD'S PAGE, AND IT IS THE SAME STRING keepKey() ANSWERS
-   WITH while that page is the screen. It has to be the board rather than the
-   screen, because saveKb() runs from langSaveAll(), from the slice writer in
-   core.js and from the key's own sheet, where the screen in front of somebody
-   is not this one -- and a change made on the sheet has to reach the buffer
-   the page behind it will read.
-
-   That leaves ONE thing to hold, and it is the whole of rule 20's fault:
-   which board is on the screen is written in the route, and `kbShow` is the
-   same fact read back. Deleting a keyboard slid `kbShow` and left the route
-   naming the one it had, so from then on this wrote `kb|1` while the bar read
-   `kb|2` -- a row really came out of the layout and the Save stayed grey, and
-   the arrow asked nothing on the way out. Both deletes land on the board they
-   end on now (kbDropGo, kbDelSel), so the two cannot come apart. `keep-check`
-   holds it.
-
-   Board 0 is asked and answered here rather than at the call: it is the free
-   QWERTY, built from LETTERS and stored nowhere, so kbEdit() answers null and
-   there is no layout to write down. */
-function kbKeepLay(){
-  var b=kbEdit();
-  if(!b) return;
-  keepPut(keepKeyOf('kb', kbShow), 'lay', kbLaySig(b));
-}
-
+   www/shell.js § keepOn, OWNER 2026-09-10. */
 /* The four directions a finger can leave a key by, in the order they are
    stored. Written once because the editor, the renderer and the flick all
    count on the same order. */
@@ -956,16 +936,31 @@ function kbName(i){
    `kbKeepOn()` is what registers the buffer, and it is called from the editor
    face in vKb() rather than from here: a name is typed on a screen, and the
    screen is what knows which board is in front of somebody. */
+function kbNow(){
+  var b=kbEdit();
+  if(!b) return {};
+  return {nm:b.nm||'', lay:kbLaySig(b), at:(KB && KB.at)||0};
+}
 function kbKeepOn(){
   var b=kbEdit();
   /* Not in somebody else's language: saveKb() refuses one (langLocked, in
      www/core.js), so a buffer here would put a Save in the bar that could not
      write. */
   if(!b || langLocked()) return;
-  /* The name AND the layout. What the screen opened with is what changed is
-     measured against, so a keyboard arrived at and left alone shows a grey
-     Save and asks nothing on the way out. */
-  keepOn(keepKey(), {nm:String(b.nm||''), lay:kbLaySig(b)}, kbKeepSave);
+  /* The name, the layout, AND which board goes to the phone. What the screen
+     is holding is asked every time the button is drawn (www/shell.js
+     § keepOn), so a keyboard arrived at and left alone shows a grey Save and
+     asks nothing on the way out, and every road that changes the layout
+     lights it without having to say so.
+
+     `at` is here because it was the one change on this screen that did not:
+     kbApply() moves KB.at and calls saveKb(), and the layout signature is one
+     board's keys, so 「which keyboard my thumb gets」 changed with the corner
+     still grey (docs/scope/r14-keep.md § A).
+
+     `kbrom` is NOT here. It is SET -- this person's setting, on every
+     language -- and netPrefsPut() sends it on the press. § D. */
+  keepOn(keepKey(), kbNow, kbKeepSave);
 }
 /* `lay` is not written here and must not be: the layout is already on this
    phone by the time the button is gold -- every mutator on the sheet ends in
@@ -3618,7 +3613,7 @@ function kbNoted(){
    is the other way to arrive somewhere else without leaving the screen.
 
    AND THE BUFFER THE SAVE READS, for the same sentence a third time. It is
-   filed under the board's PAGE (kbKeepLay above), so a board deleted out from
+   filed under the board's PAGE (kbKeepOn below), so a board deleted out from
    under a page leaves what it opened with sitting there as what the next
    board's change is measured against -- and the Save came up gold on a
    keyboard nobody had touched. Every one of them goes, not the page you are

@@ -345,11 +345,44 @@ var KEEP={};
    reached twice is one. */
 function keepKeyOf(r, a){ return String(r)+'|'+String(a||''); }
 function keepKey(){ return keepKeyOf(here().r, here().a); }
-/* A screen saying "these are my fields". Called from the view, so it runs on
-   every render of that screen: finding a buffer already here means somebody
-   has been typing into it, and it is left exactly as it is. Only `save` is
-   taken again, because it is a fresh closure over a screen that may have been
-   rebuilt around it. */
+/* ---- ONE FUNCTION PER SCREEN, AND IT ANSWERS 「WHAT AM I HOLDING」 -------
+   OWNER 2026-09-10: 「書き換えてもセーブボタン光らないとこ多いからこれも
+   一本化してね」.
+
+   A screen used to hand its state over TWICE: once as `was`, a value taken
+   when it opened, and again from every place that changed anything, as a
+   keepPut(). The second half is the one that goes wrong, because it is a line
+   somebody has to remember to write in every handler on the screen -- and it
+   was missing from eleven of them, measured on 2026-09-10 and written out in
+   docs/scope/r14-keep.md: the drawn letter's ROUND, its fill, its clear, its
+   step back and its step forward; a row of the article added or deleted, a
+   section added, a section's 「may this be taken away」; the word order's
+   swap; which keyboard goes to the phone; the meaning field on a word's
+   sheet. Every one of those changed the language and left the Save in the
+   corner grey, and the arrow then asked nothing on the way out.
+
+   So a screen hands over ONE FUNCTION -- `now`, what it is holding at this
+   moment -- and it is ASKED rather than telling. It is called once as the
+   screen registers, and that answer is what changed is measured against; it
+   is called again every time the button is drawn or repainted. Nothing on the
+   screen has to say anything, and a handler written tomorrow is covered the
+   day it is written.
+
+   TWO KINDS OF FIELD, AND THE LINE BETWEEN THEM IS WHETHER IT IS WRITTEN
+   DOWN. `now()` says what the screen HAS written down -- the letter's
+   strokes, the article's rows, the layout. `b.v` says what has been changed
+   and NOT written down, which is what typing is: a field writes nothing until
+   the button is pressed, and that is the whole of the decision of 2026-09-03.
+   keepSet() is the one road into `b.v` and it is the field's own event, so it
+   is not a line that can be left out the way a keepPut() in a handler was --
+   without it the field does not take a keystroke at all. What is on the
+   screen is the two merged, `b.v` over the top, which is keepNow() below.
+
+   Called from the view, so it runs on every render of that screen: finding a
+   buffer already here means somebody has been typing into it, and what was
+   typed and the mark it is measured from are both left exactly as they are.
+   Only the three functions are taken again, because each is a fresh closure
+   over a screen that may have been rebuilt around it. */
 /* `landed` is for the one screen that has something to DO once the save is
    up, and it is not a second answer to where a save ends -- backGo() below is
    still the only one, and 「保存しました」 is keepSave()'s one line for all
@@ -357,44 +390,85 @@ function keepKey(){ return keepKeyOf(here().r, here().a); }
    may not happen while the send is still out:
    「通信エラーなら進むわけねえだろ全部」. It is optional; eight of the nine
    screens hand nothing. */
-function keepOn(key, was, save, landed){
+function keepOn(key, now, save, landed){
   var k=String(key);
-  if(KEEP[k]){ KEEP[k].save=save; KEEP[k].landed=landed; return; }
-  KEEP[k]={was:was, v:{}, save:save, landed:landed};
+  if(KEEP[k]){ KEEP[k].now=now; KEEP[k].save=save; KEEP[k].landed=landed; return; }
+  KEEP[k]={was:keepRead(now), now:now, v:{}, save:save, landed:landed};
 }
-/* What goes in the field: what has been typed, or what it held when the
-   screen opened. */
+/* `now()` answered as strings, which is the only thing ever compared. A
+   screen hands back plain values -- a name, a note, a layout said once as
+   JSON -- and they are flattened here rather than at thirteen call sites. */
+function keepRead(now){
+  var o={}, n, f;
+  n=now? now() : {};
+  for(f in n){
+    if(!Object.prototype.hasOwnProperty.call(n, f)) continue;
+    o[f]=(n[f]===null || n[f]===undefined)? '' : String(n[f]);
+  }
+  return o;
+}
+/* WHAT IS ON THE SCREEN NOW: what has been written down, with what has been
+   typed over the top of it. One answer, and everything below asks it -- what
+   goes in a field, whether the button is gold, and what a save that landed
+   levels to. */
+function keepNow(key){
+  var b=KEEP[String(key)], o, f;
+  if(!b) return {};
+  o=keepRead(b.now);
+  for(f in b.v) if(Object.prototype.hasOwnProperty.call(b.v, f)) o[f]=String(b.v[f]);
+  return o;
+}
+/* What goes in the field: what has been typed, or what the screen holds. */
 function keepVal(key, f){
-  var b=KEEP[String(key)];
-  if(!b) return '';
-  return b.v.hasOwnProperty(f)? String(b.v[f]) : String(b.was[f]||'');
+  var o=keepNow(key);
+  return Object.prototype.hasOwnProperty.call(o, f)? String(o[f]) : '';
 }
 /* Typed into. The screen you are on is the buffer it goes in -- a field can
    only be typed into while it is on the screen. A screen that normalises what
    it takes (the @ keeps the characters that survive being typed after one)
    does that before handing it here, so what is compared is what the field
-   means rather than what was pressed. */
-function keepSet(f, v){ keepPut(keepKey(), f, v); }
-/* The same, said about a named screen. A field on a screen is typed into while
-   that screen is in front of somebody, which is what keepSet() above is about;
-   this is for the one place that is not typing at all -- the word sheet, whose
-   buffer is not a set of fields but the sheet said once, and which is put here
-   as the sheet is built. */
-function keepPut(key, f, v){
-  var b=KEEP[String(key)];
+   means rather than what was pressed.
+
+   It repaints where it stands because typing does NOT redraw these screens
+   and must not: a field being typed into loses the keyboard the moment the
+   page under it is replaced. Everything else on a screen ends in render(),
+   which builds the bar through keepBtnHTML() and therefore asks `now()`
+   again by itself. */
+function keepSet(f, v){
+  var b=KEEP[keepKey()];
   if(!b) return;
-  b.v[f]=String(v);
+  b.v[String(f)]=String(v);
   keepBtnPaint();
 }
-/* Anything different from what it opened with. */
+/* Anything different from what the screen opened with. */
 function keepDirty(key){
-  var b=KEEP[String(key)], f;
+  var b=KEEP[String(key)], o, f;
   if(!b) return false;
-  for(f in b.v){
-    if(!b.v.hasOwnProperty(f)) continue;
-    if(String(b.v[f])!==String(b.was[f]||'')) return true;
+  o=keepNow(key);
+  for(f in o){
+    if(!Object.prototype.hasOwnProperty.call(o, f)) continue;
+    if(String(o[f])!==keepWas(b, f)) return true;
+  }
+  /* And a field that WAS there and is gone. A row of the article deleted is
+     not a field that changed, it is a field that stopped existing, and the
+     loop above alone would call that screen untouched. */
+  for(f in b.was){
+    if(!Object.prototype.hasOwnProperty.call(b.was, f)) continue;
+    if(!Object.prototype.hasOwnProperty.call(o, f) && String(b.was[f])!=='') return true;
   }
   return false;
+}
+function keepWas(b, f){
+  return Object.prototype.hasOwnProperty.call(b.was, f)? String(b.was[f]) : '';
+}
+/* Every screen's mark taken again. What is on the phone has just gone up, so
+   what each screen is holding IS what it opened with now. */
+function keepLevel(){
+  var k;
+  for(k in KEEP){
+    if(!Object.prototype.hasOwnProperty.call(KEEP, k)) continue;
+    KEEP[k].was=keepNow(k);
+  }
 }
 /* Let go of. It is a buffer and nothing else: no slice is written, nothing
    stored moves. docs/DATA_SAFETY.md -- 「いいえ」 discards what was being
@@ -486,7 +560,7 @@ function keepBack(snap){
   langLoad();
 }
 function keepSave(key, done){
-  var b=KEEP[String(key)], f, snap;
+  var b=KEEP[String(key)], snap;
   if(!b || !b.save){ if(done) done(true); return; }
   if(KEEP_BUSY) return;
   KEEP_BUSY=true;
@@ -530,11 +604,25 @@ function keepSave(key, done){
          what the screen opened with now, so there is nothing left to ask about
          and nothing left to show a button for -- and the screen is still in
          front of somebody, with these fields still on it. Dropping it here
-         would leave the next keystroke with nowhere to go. */
+         would leave the next keystroke with nowhere to go.
+
+         The mark is taken from keepNow(), which is the whole screen, and not
+         from what was typed alone: a screen's changes are not all typed any
+         more (§ keepOn above), so levelling the typed half would leave the
+         Save gold over a keyboard that had just been written down. */
       if(up && KEEP[String(key)]===b){
-        for(f in b.v){ if(b.v.hasOwnProperty(f)) b.was[f]=String(b.v[f]); }
         b.v={};
+        b.was=keepNow(key);
       }
+      /* AND EVERY OTHER SCREEN'S MARK WITH IT. netSaveNow() sends the slices
+         that moved, all of them -- it is not this screen's send, it is the
+         phone's -- so once it has landed there is nothing anywhere left
+         unsent, and a buffer still holding the mark it took an hour ago would
+         put a gold Save on a screen with nothing to save. Only the marks
+         move: `b.v` is what somebody typed and did not press, on a screen
+         they may still be standing on, and it is not this function's to
+         throw away. */
+      if(up) keepLevel();
       /* AND A SAVE THAT LANDED ENDS ON THE SCREEN BEFORE IT.
          「保存したらホーム戻って。単語なら単語保存したら単語一覧に戻る」
          「保存したら一個前のページ。戻るは変更せず戻る 保存とか確定は変更して

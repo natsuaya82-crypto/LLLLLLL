@@ -638,7 +638,9 @@ function stKeepOn(id){
   /* Not in somebody else's language: saveStg() refuses one. */
   if(langLocked()) return;
   keepOn(keepKey(),
-         {rules:String(stRules(id)||''), note:String((STG.notes && STG.notes[id])||'')},
+         function(){
+           return {rules:stRules(id), note:(STG.notes && STG.notes[id])||''};
+         },
          function(v, done){ stKeepSave(id, v); done(true); });
 }
 function stKeepSave(id, v){
@@ -706,7 +708,7 @@ function stExHTML(id){
 function stRuleKeepOn(id){
   if(langLocked()) return;
   keepOn(keepKeyOf('form', 'strule:'+id),
-         {rules:String(stRules(id)||'')},
+         function(){ return {rules:stRules(id)}; },
          function(v, done){ stKeepSave(id, v); done(true); });
 }
 function openStRules(id){

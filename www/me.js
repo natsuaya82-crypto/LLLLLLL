@@ -1451,7 +1451,7 @@ function openMe(){
      § KEEP、OWNER DECISION 2026-09-03。この画面に着くたびに通るので、
      打ちかけを持ったまま出て戻ってきたら、その打ちかけが基準ごと残る
      （keepOn は既に在る buffer に触らない）。 */
-  keepOn(ME_KEY, meWas(), meKeepSave);
+  keepOn(ME_KEY, meWas, meKeepSave);
   /* Named after the page it is the settings for, through the one function
      that names a page. */
   /* The picture first, then the name, the handle and the bio -- OWNER

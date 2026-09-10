@@ -684,6 +684,25 @@ export function halfDone(){
                        ja: '今日はめちゃくちゃ暑い。' } };
        PW = pwBlank(); openPost('day');
        return vForm(); }],
+    /* THE SAVE IN THE CORNER, GREY AND GOLD, ON ONE SCREEN.
+       「見た目を変えたものは必ずスクショで提示する」 OWNER 2026-09-04, and
+       what changed on 2026-09-10 is the MOMENT that button lights: a change
+       made by pressing used to leave it grey (docs/scope/r14-keep.md § A).
+       A colour that only appears after a press is a state no picture had, and
+       the fault is nearly always in the one nobody photographed.
+
+       Both return nothing, so the REAL render() stands -- the bar is what is
+       being looked at here, and a face that replaced #app would take it off
+       the picture. */
+    ['the article, as it opens', () => {
+       goTab('profile'); go('world');
+       if (abShut('wldov')) abToggle('wldov');
+       return ''; }],
+    ['the article, one row added', () => {
+       goTab('profile'); go('world');
+       if (abShut('wldov')) abToggle('wldov');
+       wldOvAdd();
+       return ''; }],
     /* Opened THE WAY A THUMB OPENS IT -- the word's page, then 編集 in its
        corner -- because the back arrow is part of this screen and what it
        says is read off the trail. Opened straight onto the sheet the trail is

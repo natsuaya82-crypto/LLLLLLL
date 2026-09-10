@@ -770,7 +770,10 @@ function ltKeepOn(id){
      here would put a Save in the bar that could not write. */
   if(!l || langLocked()) return;
   keepOn(keepKeyOf('letter', id),
-         {ab:String(ltBoxed(l)||''), nt:String(l.nt||'')},
+         function(){
+           var one=ltById(id);
+           return one? {ab:ltBoxed(one), nt:one.nt} : {ab:'', nt:''};
+         },
          function(v, done){ ltSave(id, v); done(true); });
 }
 /* The box is as tall as what is in it. Nothing here calls render() -- the
