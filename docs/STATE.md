@@ -32,7 +32,7 @@ un-re-read.
 
 ---
 
-## 2026-09-09 ── ビルド 151（一番新しい）
+## 2026-09-09 ── ビルド 152（一番新しい）
 
 `master` = `a223b3ba`、ゲート 43/43 緑（`slow-check` が増えて 43）、`npm run rls`
 緑（324 attempts）。ビルド 143（run 34201348003）→ 144（34263543210）→ 145
@@ -82,6 +82,13 @@ un-re-read.
   `langsOneId()` が新しい番号へ写す（索引の鍵 `L…` だけ消える ── DELETE REVIEW、
   ディスクの slice 鍵は残る）。検査 8 本が二番号前提だったので直した
   （`r12-fix`：gramlang と slow の種）。実機は `docs/CHECK-0907.md` の 151 節。
+- **r13-dup**（152、master `982ae856`、2026-09-10）：「直書きは今直して」。
+  `docs/DUPLICATES.md` の開いていた 8 件を一箇所に（`capWarnHTML` `emptyBox`
+  `modListHTML` `netPairRow` `netWordRows` `postShrink` `fileInHTML`、`goPlans`
+  は削除）。19 は読んで「分かれていてよい」。見た目が変わるのは 2 画面
+  （目次の帯、通報の空表示）。実機は `docs/CHECK-0907.md` の 152 節。
+- 進行中：`claude/r14-keep`（保存ボタンが光らない ── 測ってから変更の道を
+  一本に）。待ち：否定の範囲、課金の引き継ぎをいつやるか、段の副題 4 本。
 - `press` の横幅の揺れが 2026-09-09 にも一回（数字の面 406/402、同じコードで
   回し直すと緑）── `docs/BACKLOG.md` の項に足してある。
 
