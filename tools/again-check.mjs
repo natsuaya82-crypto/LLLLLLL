@@ -1685,6 +1685,99 @@ say(nmC.col[0] === '古い名' && nmC.col[1] === 'あとからの名' &&
     'language.name は ' + JSON.stringify(nmC.col) + '、画面は ' + JSON.stringify(nmC.shown) +
     '、スライスは一字も変わらない ' + JSON.stringify(nmC.slice));
 
+/* ---- 前からの言語が、切り替えに二行にならない ------------------------------
+   「アルファベット無料の a-z とか消えてない？なんで？あと、保存できないけど
+   文字」 OWNER 2026-09-10（実機、ビルド 148/149、前からのアカウント、切り替えに
+   二行、保存を押しても何も起きない）。
+
+   147 までの `netLangBack1()`（削除済み）は、降ろした言語の索引の行を
+   **サーバーの id そのものをキーにして**作っていました。それ以前の版は `sid`
+   欄も書いていません。148 で残った `nidFor()` は `LANGS[*].sid === row.id` で
+   しか探さないので、その行を見つけられず**二つ目を mint** します。古い行は
+   `sid` も印も無いまま残り、切り替えでそれを押すと `langMine()` が偽 ──
+   `ltStart()` が足さず、`saveLetters()` が黙って止まります。
+
+   ここが訊くのは三つ。行は一つになるか。開いた言語は自分のものか（a〜z が
+   入り、保存が飛ぶか）。そして**もう二行できてしまった端末**が、起動しなおすと
+   一行に戻り、**中身を持っている方が残る**か。
+
+   落とすのは索引の行だけで、slice を持つ行は落としません
+   （docs/CHANGELOG.md 2026-09-10 の DELETE REVIEW）。 */
+await pg.reload();
+await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
+const idsA = await pg.evaluate(async ({ s, srv }) => {
+  localStorage.clear();
+  eval('(' + s + ')()');
+  SET.walked = true; SET.plan = 'free';
+  eval(srv);
+  function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
+  var S = window.__SRV;
+  S.lang = [{ id:'srvid', owner:'idm', name:'Vaska', published_at:null }];
+  S.slice = [{ language:'srvid', kind:'letters',
+               body:JSON.stringify([{id:'lt.a', ab:'a'}, {id:'lt.b', ab:'b'}]),
+               no:1, at:'2026-09-01T00:00:00.000Z' }];
+  /* 147 までが書いた索引 ── local id がサーバーの id そのもの、`sid` 欄なし */
+  LANGS = { srvid: { mine:true } };
+  langId = 'srvid';
+  langStore();
+  netTook({ access_token:'t', refresh_token:'r', user:{ id:'idm' } });
+  await wait(1600);
+  S.tried = [];
+  if (LETTERS.length) LETTERS[0].g = [[[0,0],[1,1]]];
+  saveLetters();
+  await wait(NET_UPMS + 600);
+  return { n: Object.keys(LANGS).length,
+           rows: Object.keys(LANGS).map(function(k){
+             return k + '/' + String(LANGS[k].sid || '-'); }),
+           open: langId, mine: langMine(langId), lock: langLocked(),
+           letters: LETTERS.length,
+           sent: S.tried.filter(function(t){ return t.indexOf('POST /rest/v1/slice') === 0; }).length };
+}, { s: seed.toString(), srv: SERVER });
+
+say(idsA.n === 1 && idsA.rows[0].indexOf('srvid/srvid') === 0,
+    '**前からの言語は一行のまま** ── 索引の id がサーバーの id そのもので ' +
+    '`sid` 欄が無くても、同じ言語として見つかる: ' + JSON.stringify(idsA.rows));
+say(idsA.mine === true && !idsA.lock && idsA.letters >= 38 && idsA.sent > 0,
+    'そして開いた言語は自分のもの ── a〜z が入り、保存がサーバーへ飛ぶ（文字 ' +
+    idsA.letters + '、locked ' + idsA.lock + '、送った slice ' + idsA.sent + ' 件）');
+
+/* もう二行できてしまった端末。中身を持っているのは mint された方です ──
+   148 はそちらへ降ろしていたので、残すのは「slice を持っている方」。 */
+await pg.reload();
+await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
+const idsB = await pg.evaluate(async ({ s, srv }) => {
+  localStorage.clear();
+  eval('(' + s + ')()');
+  SET.walked = true; SET.plan = 'free';
+  eval(srv);
+  function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
+  var S = window.__SRV;
+  S.lang = [{ id:'srvid', owner:'idm', name:'Vaska', published_at:null }];
+  S.slice = [{ language:'srvid', kind:'letters',
+               body:JSON.stringify([{id:'lt.a', ab:'a'}, {id:'lt.b', ab:'b'}]),
+               no:1, at:'2026-09-01T00:00:00.000Z' }];
+  LANGS = { srvid: { mine:true },                  /* 古い、空の行 */
+            Lmint1: { mine:true, sid:'srvid' } };  /* 148 が作った行 */
+  slWr(langKeyOf('Lmint1', 'letters'),
+       JSON.stringify([{id:'lt.a', ab:'a'}, {id:'lt.b', ab:'b'}]));
+  langId = 'srvid';
+  langStore();
+  netTook({ access_token:'t', refresh_token:'r', user:{ id:'idm' } });
+  await wait(1600);
+  return { n: Object.keys(LANGS).length,
+           rows: Object.keys(LANGS).map(function(k){
+             return k + '/' + String(LANGS[k].sid || '-') + '/' +
+                    ((slMine(langKeyOf(k, 'letters')) || '').length > 2 ? '中身あり' : '空'); }),
+           open: langId, mine: langMine(langId), letters: LETTERS.length };
+}, { s: seed.toString(), srv: SERVER });
+
+say(idsB.n === 1 && idsB.rows[0].indexOf('中身あり') > 0,
+    '**二行になった端末は、起動しなおすと一行に戻る** ── 残るのは中身を持って ' +
+    'いる方で、空の行だけが落ちる: ' + JSON.stringify(idsB.rows));
+say(idsB.mine === true && idsB.letters >= 2,
+    'そして立っているのは残った方 ── 自分のもので、文字が入っている（文字 ' +
+    idsB.letters + '、mine ' + idsB.mine + '）');
+
 /* ---- 取った言語は、起動しなおしても中身ごと戻る ---------------------------
    「DLしたやつがなくなるって意味がわからん」 OWNER 2026-09-09。
 
