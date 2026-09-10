@@ -83,3 +83,26 @@ id をそのまま `LANGS` の鍵にしている（「ITS ID IS THE SERVER'S」�
 
 CODE CONFIRMED / DEVICE CONFIRMED / OWNER CONFIRMED を分けて。消えた関数の
 名前、写した鍵、赤を見た形、動かなかった check。ゲートはリーダーが回す。
+
+## この枝が触る file ── `claude/r12-oneid` の宣言（2026-09-10）
+
+`integ-0905`（`7e6066cc`）から切りました。触るのは上の「触っていい file」の欄
+だけです。**`www/core.js`** ── `langMint()` を uuid v4 に書き直し、`LANGS` の
+`sid` 欄を落とし（`langSeenAdd`・`langMine`・`langOwned`・`lsWipeAcct` の
+`L.sid` は `id` になります）、`239-262` の索引の説明文を新しい形に直します。
+**`www/net.js`** ── `netLangRow()` が `id` を入れて `POST` し、`L.sid` を貼る
+行が消えます。`nidFor()` `nidHolds()` `nidDrop()` を削除し、起動の walk は
+「`row.id` が `LANGS` に在るか」だけを訊きます。`netLangDrop` `netTakeGone`
+`netSlices` の呼び手が渡す番号も `id` になります。**`www/home.js`** ──
+`2337`（`langDrop`）と `2466`（`vLangs` の「まだ訊いていない」）の二行だけ。
+移行は `www/core.js` の索引を読む所に一つだけ置き、**写すだけで消しません**。
+
+検査は **`tools/migrate-check.mjs`**（古い索引三通りを seed）、
+**`tools/again-check.mjs`**（150 の 4 claim を幹の形の問いに書き直す）、
+**`tools/acct-check.mjs`** と **`tools/fixture.mjs`**（`sid` を書いている所）。
+docs は **`docs/CHANGELOG.md`**（コードより先）、**`docs/DATA_MODEL.md`**、
+この file。
+
+**触らない**：`www/index.html`、`supabase/schema.sql`、`www/post.js`
+`www/sns.js` `www/mod.js`（そこの `.sid` は投稿の番号で別物）、ほかの枝。
+ゲート（`npm test`）は回しません ── リーダーが回します。
