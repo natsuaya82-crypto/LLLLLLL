@@ -96,9 +96,9 @@ act('geHintShow', geHintShow);
 act('go', go);
 act('goIn', goIn);
 act('openHelp', openHelp);
-act('goPlans', goPlans);
 /* A door drawn on the free plan, pressed. It asks upStop() and stays where it
-   is; `goPlans` above is for a button whose own words already say upgrade.
+   is; a button whose own words already say upgrade says `go` with `plans`,
+   which is the one road to the price list and has no second name on it.
    「ポップだって。その古いのは消して」 OWNER 2026-09-05. */
 act('upFile', upFile);
 act('upData', upData);

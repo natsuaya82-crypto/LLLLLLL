@@ -79,19 +79,27 @@ grep -n "capStop\|capOK" www/wordsheet.js      capOK は出ない
 呼び側が先にシートを閉じても緑のまま通ります。`tools/plan-check.mjs` に
 「上限のポップを出した後も同じ画面に立っている」を足すのが本筋です。
 
-## 8. プラン画面への行き方が二通り。片方はシートを閉じない ── **半分**
+## 8. プラン画面への行き方が二通り。片方はシートを閉じない ── **閉じた**
 
-同じ決定で決まります（「後ろを閉じない」）。`goPlans()` から `closeSheet()`
-を消したので、**道は一本**になりました。プランから戻ると、押したその画面に
-立ちます。
+**一箇所は `go('plans')` です。**二つ目の名前だった `goPlans()`
+（`www/wordsheet.js`）と `act-map.js` の行を消し、`DO('goPlans')` を書いて
+いた五箇所 ── `www/settings.js` `www/words.js` `www/keyboard.js`
+`www/phases.js` `www/sound.js` ── を `DO('go', ["plans"])` にしました。
+`www/wsys.js` にあったのは注記だけです。前の版がこの一覧に挙げていた四つの
+うち二つ（`settings.js` `words.js`）は数え落としで、五箇所ありました。
 
-**残っているのは名前だけです。**`goPlans()` の中身は `go('plans')` 一行なので、
-いまは同じ道に付いた二つ目の名前です。消すには `DO('goPlans')` を書いている
-`www/keyboard.js` `www/phases.js` `www/sound.js` と、直に呼んでいる
-`www/wsys.js` が要ります。
+**巻き添えが一つ ── `tools/kb-check.mjs`。**
+`out.freeNoUpsell = vKb().indexOf('goPlans') < 0` と、`helpGoNames` の
+`.filter(n !== 'goPlans')` が名前で書かれていました。名前を消すと前者は
+**バグを戻しても緑**になり、後者は何にも当たらない除外 ── `box-check` が
+「腐った baseline は許可になる」と言うあれです。主張の方を残して書き直しました:
+無料のキーボード画面のどの control も `go` を `plans` で言わない、と
+**描いたものに訊きます**。バグ（`vKb()` に `go plans` のボタンを足す）を
+戻して赤を見てから直しています。除外は消しました。
 
 ```
-grep -rn "goPlans" www/*.js
+grep -rn "goPlans" www/ tools/          何も出ない
+npm run kb                              「no Upgrade stands under it」
 ```
 
 ## 9. 上限の警告ボタンが四箇所。うち一つだけ形が違う ── **開いている**
@@ -209,8 +217,8 @@ makes one」と自分で言っていて、それを持っているものは何�
 
 | | 数 |
 |---|---|
-| 閉じた | 12（1 2 3 4 5 6 7 11 13 16 20 21） |
-| 半分 | 2（8 名前だけ／10 五箇所） |
+| 閉じた | 13（1 2 3 4 5 6 7 8 11 13 16 20 21） |
+| 半分 | 1（10 五箇所） |
 | 開いている | 6（9 12 14 15 17 18） |
 | 待ち | 1（19 読む人の判断） |
 

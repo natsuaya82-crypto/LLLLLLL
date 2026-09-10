@@ -679,7 +679,7 @@ function ltKindOf(l){
 function ltHidHTML(k){
   var n=ltHidden(k);
   if(!n) return '';
-  return '<button class="capwarn" style="margin:14px 0 0"' + DO('goPlans') + '>'+
+  return '<button class="capwarn" style="margin:14px 0 0"' + DO('go', ["plans"]) + '>'+
     t('cap.hid', n)+'<span class="capgo">'+t('up.cta')+ICON_GO+'</span></button>';
 }
 function ltSeen(){

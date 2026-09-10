@@ -1675,9 +1675,8 @@ FORM_OPEN.word=function(hw){ openWord(hw); };
    pressed on the sound keyboard is a step whose letter is whichever letter
    writes it, or none at all if nothing does yet. */
 function wdSync(){ wEdit.seq=spPh(wEdit.sp||[]); }
-/* Three things that were written as code inside a button: a route and two
-   assignments. Each is one line now, in a file a checker can read. */
-function goPlans(){ go('plans'); }
+/* An assignment that was written as code inside a button. It is one line now,
+   in a file a checker can read. */
 function wdSetNt(v){ wEdit.nt=v; wdKeepTouch(); }
 /* A subclass belongs UNDER a part of speech, so a part of speech that MOVES
    leaves the old one standing under a heading it was never about -- 自動詞 on

@@ -784,7 +784,7 @@ function stRow(p, n){
 function stHidHTML(){
   var n=stHidden();
   if(!n) return '';
-  return '<button class="capwarn" style="margin:14px 0 0"' + DO('goPlans') + '>'+
+  return '<button class="capwarn" style="margin:14px 0 0"' + DO('go', ["plans"]) + '>'+
     t('cap.hid', n)+'<span class="capgo">'+t('up.cta')+ICON_GO+'</span></button>';
 }
 /* THE ORDER OF THE CONTENTS, and it is a grammar book's rather than the app's.

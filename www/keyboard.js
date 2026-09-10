@@ -3934,7 +3934,7 @@ HELP.kb=function(){
     (can('kb') ? '' :
       '<div class="note" style="margin-top:16px">'+esc(t('kb.free.no'))+'</div>'+
       '<div class="note">'+esc(t('kb.free.up'))+'</div>'+
-      '<button class="btn ghost" style="width:100%;margin:12px 0 4px"' + DO('goPlans') + '>'+
+      '<button class="btn ghost" style="width:100%;margin:12px 0 4px"' + DO('go', ["plans"]) + '>'+
         esc(t('kb.up.go'))+'</button>')};
 };
 /* What is left on the screen: the one line that is a setting rather than an

@@ -1898,11 +1898,26 @@ const r = await pg.evaluate(({ s }) => {
        because kbNew() is a door and kbAdd() is the act that writes.
 
        Asked of BOTH faces now. It used to be asked of whichever screen the
-       block above happened to have left standing, which was one of the two. */
+       block above happened to have left standing, which was one of the two.
+
+       Asked of what the screen OFFERS rather than of a name. It used to read
+       `vKb().indexOf('goPlans') < 0`, and `goPlans` is gone -- one more name
+       on the one road to the price list, deleted with DUPLICATES 8 -- so that
+       line would have gone on being green with the button put back on the
+       screen. What the price list is reached by is `go` carrying `plans`,
+       which is what this asks of every control on the page. */
+    function toPlans(html){
+      var d = document.createElement('div'), n, i;
+      d.innerHTML = html;
+      n = d.querySelectorAll('[data-do="go"]');
+      for (i = 0; i < n.length; i++)
+        if ((n[i].getAttribute('data-a') || '').indexOf('plans') >= 0) return true;
+      return false;
+    }
     NAV = [{ r: 'kb' }];
-    out.freeNoUpsell = vKb().indexOf('goPlans') < 0;
+    out.freeNoUpsell = !toPlans(vKb());
     NAV = [{ r: 'kb', a: '0' }];
-    out.freeNoUpsell = out.freeNoUpsell && vKb().indexOf('goPlans') < 0;
+    out.freeNoUpsell = out.freeNoUpsell && !toPlans(vKb());
 
     /* ---- THE SECOND FRAME GOES TO THE PLANS SCREEN ----------------------
        「二つ目以降は押すとプランへ」 OWNER 2026-09-03, pressed as a finger
@@ -1956,7 +1971,6 @@ const r = await pg.evaluate(({ s }) => {
     out.helpSteps = steps.length;
     out.helpGoNames = [].slice.call(hs.querySelectorAll('.kbstep [data-do]'))
       .map(function (b){ return b.getAttribute('data-do'); })
-      .filter(function (n){ return n !== 'goPlans'; })
       .join(' ');
     out.helpGoIn = steps.map(function (s){
       return s.querySelectorAll('[data-do="kbSettings"]').length;
