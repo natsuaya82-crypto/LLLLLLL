@@ -406,8 +406,10 @@ await measure('thread', () => {
 
 await measure('save', () => {
   /* A language already up, which is what a save on a phone that has been
-     open for a minute is: netLangRow() answers with no request at all. */
-  LANGS[langId].sid = 'L-u';
+     open for a minute is: netLangRow() answers with no request at all.
+     「the row is there」 is www/core.js § LROW (2026-09-10) -- it was the
+     `sid` field on the index while a language had two numbers. */
+  langRowGot(langId);
   LANGS[langId].uid = 'u';
   /* One word typed and saved, which is the road every write takes:
      save() → bkTouch() → netSaveUp(), with the wait taken off it. */

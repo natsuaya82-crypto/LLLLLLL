@@ -2534,19 +2534,20 @@ export function halfDone(){
     ['the free plan out of room', () => { SET.plan='free'; SET.aiDay='';
                                           SET.aiN=999; openAdd();
                                           const h=vForm(); SET.aiN=0; return h; }],
-    /* `sid` because a taken language has one -- langSeenAdd() is the only
-       thing that writes `mine:false` and it always writes one -- and because
-       the 削除 that slides out of this row needs something to drop
-       (www/home.js § langDrop). Without it the row is the one case
-       netTakeGone() leaves alone, so the walk was pressing a button that
-       returned on its first line. */
+    /* `mine:false` because that is what a taken language IS -- langSeenAdd()
+       is the only thing that writes it -- and because the 削除 that slides
+       out of this row needs something to drop (www/home.js § langDrop).
+       Without it the row is the one case netTakeGone() leaves alone, so the
+       walk was pressing a button that returned on its first line. It carried
+       a `sid` beside it while a language had two numbers; the row's own id is
+       the server's now (2026-09-10). */
     /* ON PLUS, AND IT HAS TO BE. 「読んでいる言語」 is cut to dlCap(), which is
        NOUGHT on free -- the walk's plan -- so this face has been drawing a
        heading with no row under it since the day it was written, and nothing
        said so. CLAUDE.md § what the free plan is: a paid face needs the plan
        flipped here and put back. */
     ['a language somebody else is reading', () => { const wasP=SET.plan; SET.plan='plus';
-                                                     LANGS.L_other={name:'Necwe', mine:false, sid:'srv-other-1'};
+                                                     LANGS.L_other={name:'Necwe', mine:false};
                                                      langOwnGot('L_other', 'somebody-else');
                                                      window.route='langs'; NAV=[{r:'langs'}];
                                                      const h=vLangs(); delete LANGS.L_other;
@@ -2560,7 +2561,7 @@ export function halfDone(){
        class written in here: a fixture that put the class on would be a copy
        of langSwMove() and would agree with it whatever it did. */
     ['a language you took, slid open', () => { const wasP=SET.plan; SET.plan='plus';
-       LANGS.L_other={name:'Necwe', mine:false, sid:'srv-other-1'};
+       LANGS.L_other={name:'Necwe', mine:false};
        langOwnGot('L_other', 'somebody-else');
        window.route='langs'; NAV=[{r:'langs'}];
        const app=document.getElementById('app');

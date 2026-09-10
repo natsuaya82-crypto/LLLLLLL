@@ -1386,7 +1386,7 @@ const mk = await pg.evaluate(() => {
   /* ONE WINDOW IS FAKED and everything over it runs for real, which is what
      keep-check does for the same reason: a save is not saved until it is up
      (www/shell.js § keepSave) and there is no server behind this file. */
-  LANGS[langId].sid = 'srv-known'; langStore();
+  langRowGot(langId); langStore();
   netSend = function (method, path, body, tok, ok, bad) {
     ok(String(path).indexOf('/rest/v1/language?') === 0 ? [{ id: 'srv-known' }] : []);
   };

@@ -3986,8 +3986,12 @@ const KB_SRV = `
       var m = new RegExp('[?&]' + k + '=eq\\\\.([^&]*)').exec(p);
       return m ? decodeURIComponent(m[1]) : '';
     }
+    /* THE ID COMES IN THE INSERT (2026-09-10). A language has one number and
+       the phone writes it, so the column's default only fires where nothing
+       was sent -- which is what PostgREST does with a primary key. A stub that
+       minted its own here would be a server that ignores what it was sent. */
     if (method === 'POST' && p.indexOf('/rest/v1/language') === 0){
-      var id = 'srv' + (++S.n);
+      var id = String((body && body.id) || ('srv' + (++S.n)));
       S.lang.push({ id:id, owner:body.owner, name:body.name || '', published_at:null });
       return answer([{ id:id }]);
     }
@@ -4040,7 +4044,7 @@ const kbPrep = await pg2.evaluate(({ s }) => {
   localStorage.clear();
   eval('(' + s + ')()');
   SET.walked = true; SET.plan = 'pro'; setKeep();
-  LANGS[langId].sid = 'srv1'; LANGS[langId].uid = SESS.uid; langStore(); netSave();
+  langRowGot(langId); LANGS[langId].uid = SESS.uid; langStore(); netSave();
   KB = { kbs: [], at: 0 };
   kbAdd('qwerty'); kbAdd('flick');
   /* 古いビルドがディスクに書いた写し ── id が無い。これは書き換わらない

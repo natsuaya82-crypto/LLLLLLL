@@ -56,8 +56,12 @@ await pg.evaluate(() => {
       var m = new RegExp('[?&]' + k + '=eq\\.([^&]*)').exec(p);
       return m ? decodeURIComponent(m[1]) : '';
     }
+    /* THE ID COMES IN THE INSERT (2026-09-10). A language has one number and
+       the phone writes it, so `language.id`'s default only fires where nothing
+       was sent -- which is what PostgREST does with a primary key. A stub that
+       minted its own here would be a server that ignores what it was sent. */
     if (method === 'POST' && p.indexOf('/rest/v1/language') === 0){
-      var id = 'srv' + (++S.n);
+      var id = String((body && body.id) || ('srv' + (++S.n)));
       S.lang.push({ id:id, owner:body.owner, name:body.name || '' });
       return answer([{ id:id }]);
     }
@@ -111,7 +115,6 @@ async function boot(){
     NET_SYNCING = false;
     for (id in LANGS){
       if (!Object.prototype.hasOwnProperty.call(LANGS, id)) continue;
-      delete LANGS[id].sid;
       LANGS[id].uid = 'me';
       LANGS[id].mine = true;
     }
@@ -120,14 +123,17 @@ async function boot(){
     for (id in LANGS) if (Object.prototype.hasOwnProperty.call(LANGS, id)) before++;
     bootSession();
     setTimeout(function(){
-      var here = [], sids = {}, twice = 0, k;
+      /* 同じ言語に入れ物が二つ、は「同じ番号の行が二つ」でした。番号が一本に
+         なったので（2026-09-10）、索引の鍵がその番号そのもの ── 一つの鍵に
+         二つは入らないので、ここが数えるのは**サーバーの行**のほうです。 */
+      var here = [], sids = {}, twice = 0, k, z;
       for (k in LANGS){
         if (!Object.prototype.hasOwnProperty.call(LANGS, k)) continue;
-        here.push(k + (LANGS[k].sid ? ':' + LANGS[k].sid : ':-'));
-        if (LANGS[k].sid){
-          if (sids[LANGS[k].sid]) twice++;
-          sids[LANGS[k].sid] = 1;
-        }
+        here.push(k);
+      }
+      for (z = 0; z < window.__SRV.lang.length; z++){
+        if (sids[window.__SRV.lang[z].id]) twice++;
+        sids[window.__SRV.lang[z].id] = 1;
       }
       done({ before:before, after:here.length, here:here, twice:twice,
              rows:window.__SRV.lang.length, log:window.__SRV.log.slice() });
@@ -143,7 +149,8 @@ say(r.after === 1,
     '起動のあとも、この iPhone の言語は一つ ── 二つに増えない (' +
     r.after + ': ' + r.here.join(' ') + ')');
 say(r.twice === 0,
-    '同じ sid を持つ入れ物は二つ無い (重なり ' + r.twice + ')');
+    '一つの言語にサーバーの行は一つ ── 同じ番号の行が二つ立っていない (重なり ' +
+    r.twice + ')');
 
 /* ---- 降ろし終わってから上げる ------------------------------------------
    上の四本は「そうなっている」ことしか言いません。**なぜそうなるか**は

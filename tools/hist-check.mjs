@@ -247,13 +247,11 @@ const road = await pg.evaluate(async ({ srv }) => {
   await new Promise(function(f){ netLangsDown(function(){ f(); }); });
   await wait(300);
 
-  /* THE ID ON THIS PHONE IS NOT THE ID ON THE SERVER, and a check that used
-     the server's would be asking about a language nobody has. langMint()
-     gives the arriving row a local id and files the server's beside it as
-     `sid`; langKeyOf() takes the local one. */
-  let nid = '';
-  for (const i in LANGS)
-    if (LANGS[i] && String(LANGS[i].sid) === 'L1') nid = i;
+  /* THE ID ON THIS PHONE IS THE ID ON THE SERVER (2026-09-10). A language has
+     one number and the row arriving is filed under its own, so this used to
+     hunt the index for the row carrying `L1` as `sid` and now simply asks
+     whether `L1` is there. */
+  const nid = LANGS['L1'] ? 'L1' : '';
   out.nid = !!nid;
   const k = nid ? langKeyOf(nid, 'words') : '';
   out.cold = !!nid && (slRd(k) || '').indexOf('restored') >= 0;
@@ -284,7 +282,7 @@ const road = await pg.evaluate(async ({ srv }) => {
 }, { srv: SERVER });
 
 console.log('\n  本人の端末に届く道');
-say(road.nid, 'サーバーの id ではなく、この端末が振った id で入る（langMint）');
+say(road.nid, 'サーバーの id そのもので索引に入る ── 番号は一本（2026-09-10）');
 say(road.cold, 'アプリを開き直すと戻った中身が出る ── 起動の netLangsWalk 一本');
 say(road.open, 'アプリを開いたままだと届かない ── 端末が持っているものは' +
     '書き換えない（規則：無いものを埋めて止まる）。運営はその人に' +
