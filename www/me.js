@@ -1289,7 +1289,7 @@ function whoCard(h){
      A freeze can be lifted, so nothing here is destroyed and the page comes
      back by itself. */
   if(p.out)
-    return '<div class="empty"><div class="eb">'+esc(t('who.out'))+'</div></div>';
+    return emptyBox(t('who.out'));
   return '<div class="mecard">'+
     '<div class="metop">'+
     '<div class="pav">'+postFace(p)+'</div>'+

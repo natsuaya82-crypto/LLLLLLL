@@ -1083,14 +1083,27 @@ function navTop(count, right){
    yet" and "nobody you follow has written yet" are different facts. It is
    only the box they are said in.
 
-   NOT the one place yet, and that is written here so silence is not read as a
-   check: www/sns.js (three), www/me.js and www/notes.js still write the
-   markup out. Those three files belong to another session. www/notes.js is
-   also the only screen with a SECOND line under the first (`.empty .es`), so
-   the argument for it goes in the day that file comes through here -- putting
-   one in now would be a branch no caller takes. */
-function emptyBox(text){
-  return '<div class="empty"><div class="eb">'+esc(text)+'</div></div>';
+   IT IS THE ONE PLACE NOW. www/sns.js (three), www/me.js, www/notes.js and
+   www/mod.js all wrote the markup out; none of them does. Three arguments
+   came with them and every one has a caller, because a branch nobody takes is
+   a branch nobody would notice breaking:
+
+     sub    a second line under the first (`.empty .es`) -- the notebook, and
+            the frozen timeline
+     more   what goes under both, as markup rather than words -- the one
+            screen with a way out on it (the appeal link on the freeze)
+     bad    the same box saying it could not ASK rather than that there is
+            nothing -- the reports screen and the operator's. 「空」 and
+            「読めていない」 are different states and the words are the
+            screen's; this is only which of the two colours the box is in.
+            `.bad` is already in index.html and is what makes it red.
+
+   The reports screen wore `.mnone` for this -- its own smaller, muted box, so
+   the one screen a report is answered on looked like no other screen in the
+   app. That class is gone from the stylesheet. */
+function emptyBox(text, sub, more, bad){
+  return '<div class="empty'+(bad? ' bad':'')+'"><div class="eb">'+esc(text)+'</div>'+
+    (sub? '<div class="es">'+esc(sub)+'</div>' : '')+(more||'')+'</div>';
 }
 /* THE CEILING, SAID AT THE FOOT OF THE THING IT IS ABOUT, and the way past
    it on the same row. Four screens said it: the contents (「あと N 語です」,

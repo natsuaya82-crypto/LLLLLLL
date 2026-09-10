@@ -19,10 +19,10 @@
 /* Nothing here yet, said once. The timeline says it too, on the day the
    account is new, and it has to say the same thing. */
 function snsNone(){
-  return '<div class="empty"><div class="eb">'+esc(t('sns.none'))+'</div></div>';
+  return emptyBox(t('sns.none'));
 }
 function snsNoneFo(){
-  return '<div class="empty"><div class="eb">'+esc(t('sns.none.fo'))+'</div></div>';
+  return emptyBox(t('sns.none.fo'));
 }
 /* ---- waiting is not empty ------------------------------------------------
    「snsで一瞬何も出ないとかあり得んやろ」 OWNER 2026-09-02.
@@ -1312,7 +1312,7 @@ function vFeed(){
        frozen shuts is shut by is_member() in supabase/schema.sql whether or
        not anything on screen says so; this is the saying so. */
     (!postMay()
-      ? '<div class="empty"><div class="eb">'+esc(t('post.out'))+'</div>'+
+      ? emptyBox(t('post.out'),
           /* The one place in this app that explains itself, and it is here
              because not knowing is worse than being told: somebody who finds
              the buttons gone and no sentence anywhere has to guess whether
@@ -1321,10 +1321,9 @@ function vFeed(){
 
              Two lines. What is off, and the way to say it is wrong -- a
              freeze can be lifted, so there has to be somewhere to write. */
-          '<div class="es">'+esc(t('out.what'))+'</div>'+
+          t('out.what'),
           '<a class="btn ghost outapp" href="'+esc(APPEAL)+'">'+
-            esc(t('out.appeal'))+'</a>'+
-        '</div>'
+            esc(t('out.appeal'))+'</a>')
       /* A word chosen from the filter. The same rows the search draws,
          because it is the same answer to the same question -- and the three
          states of it are three: the mark turning while it is still in the air

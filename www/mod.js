@@ -193,9 +193,9 @@ function modRow(r){
    is only said once an answer has actually come back (`MODS` set, not busy,
    and no error). */
 function modListHTML(rows){
-  return (MODERR? '<div class="mnone bad">'+esc(MODERR)+'</div>' : '')+
+  return (MODERR? emptyBox(MODERR, '', '', true) : '')+
     ((!MODBUSY && !MODERR && MODS && !rows.length)
-      ? '<div class="mnone">'+esc(t('mod.none'))+'</div>' : '')+
+      ? emptyBox(t('mod.none')) : '')+
     rows.map(modRow).join('');
 }
 function vMod(){
@@ -442,7 +442,7 @@ function adRecParts(sid){
     out+='<div class="set"><span class="sl">'+esc(t('sl.'+k))+'</span></div>'+
          rows.map(adRecVerRow).join('');
   }
-  return out || '<div class="mnone">'+esc(t('admin.rec.none'))+'</div>';
+  return out || emptyBox(t('admin.rec.none'));
 }
 /* THE WHOLE OF THE RECOVERY FACE, as a fragment: vAdmin() is what returns the
    page, so this route still has one drawer. `a` is 'rec' or 'rec:<language>'. */
@@ -452,13 +452,13 @@ function adRecBody(a){
   return '<div class="field">'+
       lnField('adrec-h', t('admin.rec.ph'), ' autocapitalize="none"' +
         IN('adRecSet', ['h']), ADREC_H)+'</div>'+
-    (ADREC_ERR? '<div class="mnone bad">'+esc(ADREC_ERR)+'</div>' : '')+
+    (ADREC_ERR? emptyBox(ADREC_ERR, '', '', true) : '')+
     '<button class="btn ghost"' + DO('adRecFind') +
       (ADREC_BUSY? ' disabled':'') + '>'+esc(t('admin.rec.find'))+'</button>'+
     (ADREC
       ? ((ADREC.langs && ADREC.langs.length)
           ? ADREC.langs.map(adRecLangRow).join('')
-          : '<div class="mnone">'+esc(t('admin.rec.none'))+'</div>')
+          : emptyBox(t('admin.rec.none')))
       : '');
 }
 /* ---- what Apple counted -- GONE 2026-09-02 -------------------------------
@@ -517,7 +517,7 @@ function vAdmin(){
        far end of the page from the thing that was typed -- so a handle nobody
        has emptied the field and said nothing anybody saw. One message, in the
        one place a failure on this screen can come from. */
-    (ADMIN_ERR? '<div class="mnone bad">'+esc(ADMIN_ERR)+'</div>' : '')+
+    (ADMIN_ERR? emptyBox(ADMIN_ERR, '', '', true) : '')+
     '<button class="btn ghost"' + DO('adminStaffAdd') +
       (ADMIN_BUSY? ' disabled':'') + '>'+esc(t('admin.staff.add'))+'</button>'+
     /* And the reports themselves, drawn by the one function the reports

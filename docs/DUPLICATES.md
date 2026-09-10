@@ -127,22 +127,53 @@ grep -rn "capwarn" www/*.js      www/shell.js の一行だけ
 この枝が「動かないこと」で示している他の番号が読めなくなるからです。
 **恒久的に足すかはリーダーの決めごとで、`docs/BACKLOG.md` にありません。**
 
-## 10. 「まだ何も無い」の空表示が九箇所 ── **半分**
+## 10. 「まだ何も無い」の空表示が九箇所 ── **閉じた**
 
-`emptyBox(text)`（`www/shell.js`）が箱です。寄せたのは四箇所:
-`goneBox()` `fResultsHTML()` `fPickedHTML()` `wordsBodyHTML()`。
+**一箇所は `emptyBox(text, sub, more, bad)`（`www/shell.js`）です。**残って
+いた五箇所 ── `www/sns.js`（`snsNone` `snsNoneFo` と凍結の表示）`www/me.js`
+`www/notes.js` ── を寄せ、`www/mod.js` の `.mnone` 六箇所も同じ箱にしました。
+`.mnone` の CSS 二行は `www/index.html` から消えています。
 
-**残る五箇所は持ち主が違います** ── `www/sns.js`（三つ）`www/me.js`
-`www/notes.js`。`www/notes.js` だけは二行目（`.empty .es`）を持つので、
-その引数はそのファイルが回ってきた日に足すもの。いま足すと誰も通らない枝に
-なります。
-
-`www/mod.js` の `.mnone` は**別の見た目の空表示**で、まだ `.empty` と
-違います（余白 24px 対 54px、書体も大きさも継承）。通報の画面だけ他のどの
-画面とも違って見えます。
+**引数は三つ増え、三つとも呼ぶ人がいます**（誰も通らない枝は作っていません）:
 
 ```
-grep -rn 'class="empty"' www/*.js
+  sub    二行目（.empty .es） ── メモの一覧と、凍結されたタイムライン
+  more   その下に入る markup ── 凍結の異議申し立てリンク一箇所
+  bad    同じ箱を「読めなかった」の側で言う ── 通報と運営の三箇所。
+         赤は www/index.html に既にある .bad が付ける（CSS は足していない）
+```
+
+**通報と運営の画面だけ見た目が変わります。**`.mnone` は余白 24px・書体も
+大きさも継承でしたが、`.empty` は 54px・見出しの書体・1.3rem。他のどの画面
+とも違って見えていたのが、同じになりました。前後のスクショ:
+
+```
+  shots/dup10-reports-none-before-ja.png    通報が無い
+  shots/dup10-reports-none-after-ja.png
+  shots/dup10-reports-error-before-ja.png   通報が読めなかった（赤）
+  shots/dup10-reports-error-after-ja.png
+  shots/dup10-recovery-none-before-ja.png   復旧、見つからない
+  shots/dup10-recovery-none-after-ja.png
+  shots/dup10-recovery-error-before-ja.png  復旧、読めなかった（赤）
+  shots/dup10-recovery-error-after-ja.png
+```
+
+**残り五箇所は一バイトも変わりません。**`www/sns.js` `www/me.js`
+`www/notes.js` は同じ markup を組み立てます（`npm run press` は
+`buttons pressed: 15687` で据え置き）。
+
+`www/sns.js` の `.empty.snswait` は寄せていません ── 中身が文ではなく
+回っている印で、「まだ何も無い」ではなく「まだ答えが来ていない」という
+別の状態だからです（`snsWaitHTML()` の注記がその理由を書いています）。
+
+**`.mnone` の六箇所と、赤い三つは、どの walk も通りません。**
+`tools/fixture.mjs` に `MODERR` も `ADREC_ERR` も `admin.rec.none` も無い
+ので、写真は面を五つ足して撮り、**足した面は commit していません**（9番 と
+同じ理由）。
+
+```
+grep -rn "mnone" www/                  注記一行だけ
+grep -rn 'class="empty' www/*.js       shell.js の箱と snswait だけ
 ```
 
 ## 11. 単語の行が一つの関数の中で二回 ── **閉じた**（`wEntryLines()`）
@@ -248,8 +279,8 @@ makes one」と自分で言っていて、それを持っているものは何�
 
 | | 数 |
 |---|---|
-| 閉じた | 15（1 2 3 4 5 6 7 8 9 11 12 13 16 20 21） |
-| 半分 | 1（10 五箇所） |
+| 閉じた | 16（1 2 3 4 5 6 7 8 9 10 11 12 13 16 20 21） |
+| 半分 | 0 |
 | 開いている | 4（14 15 17 18） |
 | 待ち | 1（19 読む人の判断） |
 
