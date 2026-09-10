@@ -297,7 +297,20 @@ export function seed(){
              /* a mark: a letter that reads something with no sound in it */
              {id:'l4', st:[{pts:[[200,200],[600,300],[400,600]]}], ch:'', nm:'', snd:['?']},
              /* a digit: a letter with a value instead of a reading */
-             {id:'l5', st:[{pts:[[300,150],[300,650]]}], ch:'', nm:'', snd:[], val:1}];
+             {id:'l5', st:[{pts:[[300,150],[300,650]]}], ch:'', nm:'', snd:[], val:1},
+             /* THE THIRTY-NINTH -- a letter beyond the slots, which is the
+                only kind that can be renamed or deleted. Its name is `th`,
+                which is two characters and therefore no slot: ltSlotKey() in
+                www/letters.js answers with the NAME now (2026-09-10,
+                docs/scope/r15-letters42.md), so every letter above that reads
+                a-z, ! or ? is one of the thirty-eight and wears no name field
+                and no delete. Without a letter of this kind in here the name
+                field (ltDraftName) is on no screen at all and act-check said
+                so. `ab` is deliberately absent: a letter that came in on a
+                list, off a sheet or out of the onboarding has none, which is
+                the shape the whole of r15 was about. */
+             {id:'l6', st:[{pts:[[150,200],[650,200]]}, {pts:[[400,200],[400,650]]}],
+              ch:'', nm:'', snd:['th']}];
   /* And the twenty-eight slots the free plan puts there. boot.js already ran
      it, against an empty language, before this file replaced LETTERS -- so
      without this line every check and every screenshot was looking at a
@@ -2360,6 +2373,12 @@ export function halfDone(){
     ['the five kinds of writing', () => { SET.plan = 'pro';
         window.route = 'wsys'; NAV = [{r:'wsys'}];
         const h = vWsys(); SET.plan = 'free'; return h; }],
+    /* THE THIRTY-NINTH, OPENED -- the only letter with a name field on it
+       (ltAbField, www/sound.js) and the only one with a delete. l1 above is
+       the letter `k`, which is one of the thirty-eight and has neither. */
+    ['a letter beyond the thirty-eight, on the paid plan', () => { SET.plan = 'pro';
+        window.route='letter'; NAV=[{r:'letter', a:'l6'}];
+        const h = vLetter(); SET.plan = 'free'; return h; }],
     ['one letter, opened',     () => { window.route='letter'; NAV=[{r:'letter', a:'l1'}];
                                        return vLetter(); }],
     ['a mark, opened',          () => { window.route='letter'; NAV=[{r:'letter', a:'l4'}];
