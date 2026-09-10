@@ -96,7 +96,7 @@ uuid（`LANGS[id].sid`、`slice.language_id`、`language_take`）。その二つ
   `again-check` の 150 の 4 claim を「古い索引の端末が起動して一行、a–z 38、
   保存が飛ぶ」という幹の形の問いに書き直したもの。
 
-### 2026-09-10 直書きされていた同じ要素を一箇所に（`docs/DUPLICATES.md` 8 9 10 12 15 18）
+### 2026-09-10 直書きされていた同じ要素を一箇所に（`docs/DUPLICATES.md` 8〜18）
 
 オーナー 2026-09-10「直書きは今直して」。**保存の仕方も、置き場所も、消える
 ものも一つもありません。**変わるのは二つの画面の見た目だけです。
@@ -125,16 +125,29 @@ uuid（`LANGS[id].sid`、`slice.language_id`、`language_take`）。その二つ
  12   modListHTML(rows)     mod.js       通報の一覧のエラーと空、二回
  15   postShrink(url,cap,ok) post.js     写真を縮める計算、二回（上限は引数）
  18   fileInHTML(cls,inner,id,accept) shell.js  ファイルを取り込むボタン二箇所
+ 14   netPairRow(tab,mine,theirs,…) net.js  follow と block の handle→id と行
+ 17   netWordRows(tab,when,ok,bad)  net.js  星と履歴の一覧を読む所
 ```
 
-**検査を二つ直しています。**`tools/kb-check.mjs` の `freeNoUpsell` は
+**14番 と 17番（`www/net.js`）は `claude/r12-oneid` が `integ-0905` に
+入ったあと、リーダーの許しを得て同じ枝で閉じました。**サーバーへ行く道も、
+送る中身も、送る順も変わっていません ── 変わったのは、その二列と表の名前が
+その場の literal から引数になったことだけです。
+
+**残っているのは 19番 だけで、直す件ではありません**（`cardSplit` と
+`cardWrap` は分かれていてよい、と読みました。決めるのは別）。
+
+**検査を四つ直しています。**`tools/kb-check.mjs` の `freeNoUpsell` は
 `goPlans` という名前で書かれていたので、名前を消した瞬間バグを戻しても緑に
 なりました ── 描いたものに訊く形に書き換え、赤を見てから直しています。
 `tools/post-check.mjs` には主張を一つ足しました ── 小さい写しの上限は
 押さえられていましたが、composer が KEEP する写真の上限は誰も訊いておらず、
 `pwPicKeep` に `POST_THUMB` を渡しても全部緑のまま通りました。
-
-**14番 と 17番（`www/net.js`）は手付かずです。**別の枝が書き直し中のため。
+`tools/tl-check.mjs` と `tools/find-check.mjs` にも主張を二つずつ足しました
+── follow と block の二列、星と履歴の表と時の列は、どれも位置引数になった
+のに**何も押さえていませんでした**。取り違えても投げず、画面にも出ません
+（向きが逆のフォロー、理由の出ない「履歴なし」）。どれも線の上で訊き、
+バグを戻して赤を見てから直しています。
 
 ### 2026-09-10 前からの言語が切り替えに二行並び、古い方は空で保存もできない
 
