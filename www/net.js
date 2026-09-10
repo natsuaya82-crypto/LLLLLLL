@@ -2950,31 +2950,53 @@ function netFollowing(ok, bad, handle){
 function netFollowers(ok, bad, handle){
   netFollowRows('follower', 'followed', ok, bad, handle);
 }
+/* ---- ONE ROW JOINING YOU TO SOMEBODY, BY HANDLE -------------------------
+   A follow and a block are the same shape and were written out twice, 1100
+   lines apart, with the second of them carrying the comment 「the uuid is
+   looked up here exactly as netFollow() does」 -- which is the duplication
+   naming itself.
+
+   A handle and not an id, because a handle is what one person knows another
+   by. The table and its two columns are the argument: `follow` is
+   (follower, followed), `block` is (actor, blocked). `on` is whether the row
+   is there afterwards.
+
+   Not waited on: the button has already changed, the same way a like has.
+
+   A handle with no account behind it is `ok()` and not a fall -- there is no
+   row to make and nothing went wrong -- while a request that FELL falls, so
+   the screen can say so. That is why netWhoseId() above is not asked for the
+   uuid even though it sends this very query: it answers both of those with
+   the same `bad`, so a follow whose request fell over would come back here
+   as a handle nobody has, and the button would report a success that never
+   happened. Three places send `profile?select=id&handle=eq.` and this is
+   two of them; docs/DUPLICATES.md 14 says so rather than leaving it here. */
+function netPairRow(tab, mine, theirs, handle, on, ok, bad){
+  if(!netSignedIn() || !handle){ ok(); return; }
+  netGet('/rest/v1/profile?select=id&limit=1&handle=eq.'+encodeURIComponent(handle),
+    function(d){
+      var who=(d && d.length)? d[0].id : '', row;
+      if(!who){ ok(); return; }
+      if(on){
+        row={};
+        row[mine]=SESS.uid; row[theirs]=who;
+        netSend('POST', '/rest/v1/'+tab, row, SESS.at, function(){ ok(); }, bad);
+        return;
+      }
+      netSend('DELETE', '/rest/v1/'+tab+'?'+mine+'=eq.'+encodeURIComponent(SESS.uid)+
+              '&'+theirs+'=eq.'+encodeURIComponent(who), null, SESS.at,
+              function(){ ok(); }, bad);
+    }, bad);
+}
 /* ---- keeping somebody away from you ------------------------------------
    A block one phone knows about is not a block: the other person's posts have
    to stop arriving, so it is a row on the server and the timeline asks about
    it. `block_read` in schema.sql answers with YOUR rows only -- being blocked
-   is not something a person is told.
-
-   By handle, because a handle is what one person knows another by; the uuid
-   is looked up here exactly as netFollow() does. */
+   is not something a person is told. */
 function netBlock(handle, on, ok, bad){
   /* The copy above is now wrong whichever way this goes. */
   netBlockedDrop();
-  if(!netSignedIn() || !handle){ ok(); return; }
-  netGet('/rest/v1/profile?select=id&limit=1&handle=eq.'+encodeURIComponent(handle),
-    function(d){
-      var who=(d && d.length)? d[0].id : '';
-      if(!who){ ok(); return; }
-      if(on){
-        netSend('POST', '/rest/v1/block', {actor:SESS.uid, blocked:who},
-                SESS.at, function(){ ok(); }, bad);
-        return;
-      }
-      netSend('DELETE', '/rest/v1/block?actor=eq.'+encodeURIComponent(SESS.uid)+
-              '&blocked=eq.'+encodeURIComponent(who), null, SESS.at,
-              function(){ ok(); }, bad);
-    }, bad);
+  netPairRow('block', 'actor', 'blocked', handle, on, ok, bad);
 }
 /* The uuids you have blocked, for the one thing that needs uuids: keeping
    their posts out of a timeline. Signed out there is nobody to have blocked
@@ -4397,25 +4419,10 @@ function netEndMe(ok, bad){
 }
 
 /* One row in `follow`, or one row gone. `on` is whether you follow them now.
-   Not waited on: the button has already changed, the same way a like has.
-
-   A handle and not an id, because a handle is what one person knows another
-   by. The id is looked up here, once, in the one place that has to. */
+   The row and the handle it is looked up by are netPairRow() above, which the
+   block is drawn by too. */
 function netFollow(handle, on, ok, bad){
-  if(!netSignedIn() || !handle){ ok(); return; }
-  netGet('/rest/v1/profile?select=id&limit=1&handle=eq.'+encodeURIComponent(handle),
-    function(d){
-      var who=(d && d.length)? d[0].id : '';
-      if(!who){ ok(); return; }
-      if(on){
-        netSend('POST', '/rest/v1/follow', {follower:SESS.uid, followed:who},
-                SESS.at, function(){ ok(); }, bad);
-        return;
-      }
-      netSend('DELETE', '/rest/v1/follow?follower=eq.'+encodeURIComponent(SESS.uid)+
-              '&followed=eq.'+encodeURIComponent(who),
-              null, SESS.at, function(){ ok(); }, bad);
-    }, bad);
+  netPairRow('follow', 'follower', 'followed', handle, on, ok, bad);
 }
 /* NOTIF_SEAM — who liked, answered, boosted or followed, newest first, as
    { kind, at, hd, who, av, id, n, more }. `kind` is 'like' | 'boost' |

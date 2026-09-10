@@ -482,6 +482,43 @@ const r = await pg.evaluate(({ s }) => {
     NAV = [{ r:'feed' }]; window.route = 'feed';
   }
 
+  /* ---- A FOLLOW AND A BLOCK ARE ONE ROW, AND THE COLUMNS ARE THE ARGUMENT
+     netFollow() and netBlock() were written out twice, 1100 lines apart, and
+     are netPairRow() once now (docs/DUPLICATES.md 14). Their two columns used
+     to be literals AT each site; they are positional arguments, so a swapped
+     pair writes 「they follow you」 where 「you follow them」 was meant, with
+     nothing thrown, nothing on screen, and no check anywhere the wiser --
+     tl-check stubs netFollowers()/netFollowing() and has never driven these
+     two at all.
+
+     Asked at the WIRE and per column, because the counts agreeing while the
+     pairing is shifted is the only way this breaks. Both directions: the row
+     made, and the row taken away by the same two columns in the same roles. */
+  {
+    const sent = [];
+    const realS1 = netSend1, realS = netSend, realG = netGet;
+    netSend1 = function (m, p, b, t, ok) {
+      p = String(p);
+      /* The handle turned into an account. Not counted -- it is the lookup
+         the two share and not the row either of them writes. */
+      if (p.indexOf('/rest/v1/profile?select=id') === 0) { ok([{ id:'them' }], 200); return; }
+      sent.push({ m: m, p: p, b: b });
+      ok([], 200);
+    };
+    netSend = function (m, p, b, t, ok, bad, up) { netSend1(m, p, b, t, ok, bad, up, true); };
+    netGet = function (p, ok, bad) { netSend('GET', p, null, '', ok, bad); };
+    const one = (fn) => { sent.length = 0; fn(); return sent[0] || {}; };
+    const nop = function () {};
+    const fOn = one(() => netFollow('iri', true, nop, nop));
+    const bOn = one(() => netBlock('iri', true, nop, nop));
+    const fOff = one(() => netFollow('iri', false, nop, nop));
+    const bOff = one(() => netBlock('iri', false, nop, nop));
+    out.pairOn = fOn.m + ' ' + fOn.p + ' ' + JSON.stringify(fOn.b) + ' | ' +
+                 bOn.m + ' ' + bOn.p + ' ' + JSON.stringify(bOn.b);
+    out.pairOff = fOff.m + ' ' + fOff.p + ' | ' + bOff.m + ' ' + bOff.p;
+    netSend1 = realS1; netSend = realS; netGet = realG;
+  }
+
   return out;
 }, { s: seed.toString() });
 
@@ -667,6 +704,26 @@ if (r.folReq !== 1 || r.ntfReq !== 1)
       'language on the same row — and never one per row, and never a second ' +
       'round trip for the language. 「毎回1読み込みだろ？」');
 
+const PAIR_ON =
+  'POST /rest/v1/follow {"follower":"u","followed":"them"} | ' +
+  'POST /rest/v1/block {"actor":"u","blocked":"them"}';
+const PAIR_OFF =
+  'DELETE /rest/v1/follow?follower=eq.u&followed=eq.them | ' +
+  'DELETE /rest/v1/block?actor=eq.u&blocked=eq.them';
+if (r.pairOn !== PAIR_ON)
+  say('following and blocking somebody by handle writes\n    ' + r.pairOn +
+      '\n  and it has to be\n    ' + PAIR_ON +
+      '\n  One function writes both rows and the table and its two columns ' +
+      'are the argument, so the pairing is what breaks and nothing throws ' +
+      'when it does.');
+if (r.pairOff !== PAIR_OFF)
+  say('unfollowing and unblocking somebody by handle asks\n    ' + r.pairOff +
+      '\n  and it has to be\n    ' + PAIR_OFF +
+      '\n  The same two columns in the same roles, or the row taken away is ' +
+      'somebody else\u2019s.');
+
+console.log('a follow and a block are one row written by one function, and ' +
+            'the columns are its argument: ' + r.pairOn);
 console.log('nobody is a 「?」 that becomes a name: a post carries its writer ' +
             '(feed and thread ask about nobody), and a list of people is ' +
             'asked for in one request before the screen opens (' +
