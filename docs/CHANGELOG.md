@@ -15,6 +15,46 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-10 直書きされていた同じ要素を一箇所に（`docs/DUPLICATES.md` 8 9 10 12 15 18）
+
+オーナー 2026-09-10「直書きは今直して」。**保存の仕方も、置き場所も、消える
+ものも一つもありません。**変わるのは二つの画面の見た目だけです。
+
+**見た目が変わるもの、二つ。**
+
+- **目次の「あと N 語です」の帯**に余白が付きました（`margin:14px 0 0`）。
+  同じ帯を出す他の三画面（単語・文法・アルファベット）が元から持っていた
+  余白で、目次だけが帯の下にぴったり付いていました。
+  `shots/dup9-contents-{before,after}-ja.png`。
+- **通報の画面と運営の画面**の「ありません」と赤いエラーが、アプリの他の
+  画面と同じ空表示になりました。`.mnone`（余白 24px・書体も大きさも継承）
+  から `.empty`（54px・見出しの書体・1.3rem）へ。この二画面だけ他のどの画面
+  とも違って見えていました。`.mnone` の CSS 二行は `www/index.html` から
+  消えています。`shots/dup10-*-{before,after}-ja.png`。
+
+**残りは返り値が一字も変わりません。**`npm run press` の
+`buttons pressed` は六つの直しの前後で 15687 のまま動いていません。
+
+**一箇所になったもの。**
+
+```
+  8   go('plans')                        goPlans() という二つ目の名前を消した
+  9   capWarnHTML(text)     shell.js     上限の警告ボタン四箇所
+ 10   emptyBox(t,sub,more,bad) shell.js  空表示の残り五箇所と mod.js の .mnone
+ 12   modListHTML(rows)     mod.js       通報の一覧のエラーと空、二回
+ 15   postShrink(url,cap,ok) post.js     写真を縮める計算、二回（上限は引数）
+ 18   fileInHTML(cls,inner,id,accept) shell.js  ファイルを取り込むボタン二箇所
+```
+
+**検査を二つ直しています。**`tools/kb-check.mjs` の `freeNoUpsell` は
+`goPlans` という名前で書かれていたので、名前を消した瞬間バグを戻しても緑に
+なりました ── 描いたものに訊く形に書き換え、赤を見てから直しています。
+`tools/post-check.mjs` には主張を一つ足しました ── 小さい写しの上限は
+押さえられていましたが、composer が KEEP する写真の上限は誰も訊いておらず、
+`pwPicKeep` に `POST_THUMB` を渡しても全部緑のまま通りました。
+
+**14番 と 17番（`www/net.js`）は手付かずです。**別の枝が書き直し中のため。
+
 ### 2026-09-10 前からの言語が切り替えに二行並び、古い方は空で保存もできない
 
 **実機（ビルド 148/149、オーナー 2026-09-10）**:
