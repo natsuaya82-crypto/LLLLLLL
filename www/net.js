@@ -1379,10 +1379,15 @@ function netLangRow(id, ok, bad){
    `on delete cascade` -- so this one row is the whole of it.
 
    A language that has never been up has no row, and there is nothing on the
-   server to take away: that is `ok()` and not a failure. www/core.js § LROW
-   is what says so -- it was `LANGS[id].sid` while a language had two numbers.
-   It is the one road here that does not ask the server anything, and it is
-   netDrop()'s own `if(!sid)` said about a language instead of a post.
+   server to take away: that is `ok()` and not a failure. That used to be
+   read off `LANGS[id].sid` and SKIP the request, and with one number there is
+   nothing on the phone that durably says a row was made -- www/core.js § LROW
+   is a memory of what the server has said THIS session. So the request goes
+   either way and the mark only decides how to read 「it took nothing away」:
+   a row we were told about and cannot delete is `∅`, and one we were never
+   told about was never there. Skipping on the mark alone would leave the row
+   on the server on any launch whose walk had not run -- and 「gone, then
+   back」 is what the paragraph below is about.
 
    AND WHAT CAME BACK IS COUNTED, which is netDrop()'s other sentence. A DELETE
    that matched NO ROW answers exactly like one that matched -- so a row
@@ -1404,13 +1409,19 @@ function netLangRow(id, ok, bad){
    going was decided by the person pressing; asking the server to confirm it
    would be a second answer to a question that has one. */
 function netLangDrop(id, ok, bad){
-  var sid=String(id||'');
+  var sid=String(id||''), knew=langRowUp(sid);
   ok=ok||function(){}; bad=bad||function(){};
-  if(!sid || !langRowUp(sid)){ ok(); return; }
-  if(!netSignedIn()){ bad(null, 200, 'language ∅'); return; }
+  if(!sid){ ok(); return; }
+  /* Nobody to ask, and the same fact answers it: a row this session was told
+     about is still standing, which is `∅`; one nobody ever mentioned was
+     never there, and a language that has never been up is not a failure. */
+  if(!netSignedIn()){ if(knew) bad(null, 200, 'language ∅'); else ok(); return; }
   netSend('DELETE', '/rest/v1/language?id=eq.'+encodeURIComponent(sid),
           null, SESS.at, function(d){
-            if(!d || !d.length){ bad(d, 200, 'language ∅'); return; }
+            if(!d || !d.length){
+              if(!knew){ ok(d); return; }
+              bad(d, 200, 'language ∅'); return;
+            }
             ok(d);
           }, bad);
 }

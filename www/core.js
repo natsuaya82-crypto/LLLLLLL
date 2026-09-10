@@ -718,30 +718,39 @@ function langsOneId(){
   for(i=0;i<ids.length;i++){
     id=ids[i]; L=LANGS[id];
     if(!L || typeof L!=='object') continue;
-    if(langsOwnId(id)){
-      /* Already the language's own number. The field beside it is what a
-         version that had two of them wrote; the row it says exists is said
-         once, here, and then the field goes. */
-      if(L.sid!==undefined){ langRowGot(id); delete L.sid; moved=true; }
-      continue;
-    }
-    to=String(L.sid||'');
+    /* THE OTHER NUMBER, WHERE THE ENTRY CARRIES ONE. That field was written
+       at the moment the row was made and at no other moment, so it says both
+       which number the row has and that the row EXISTS. */
+    to=String((L.sid===undefined? '' : L.sid) || '');
     if(to) langRowGot(to);
-    else to=uuid4();
+    /* and the second number itself goes, wherever the row ends up */
+    if(L.sid!==undefined){ delete L.sid; moved=true; }
+    /* NO ROW YET, AND A NUMBER THE OLD MINT WROTE: it gets one now, and the
+       row is made with it the first time it goes. Which numbers those are is
+       langsOldId() below and nowhere else. */
+    if(!to && langsOldId(id)) to=uuid4();
+    /* already where it belongs, or nothing this app minted */
+    if(!to || to===id) continue;
     langsCarry(id, to, L);
     delete LANGS[id];
     moved=true;
   }
   if(moved) langStore();
 }
-/* Whether an id is the language's own number -- a uuid, which is what both
-   the server and langMint() write -- or one an older version minted, which
-   is `L` and a base-36 millisecond and never has a dash in it. */
-function langsOwnId(id){
-  var s=String(id||'');
-  return s.length===36 && s.charAt(8)==='-' && s.charAt(13)==='-' &&
-         s.charAt(18)==='-' && s.charAt(23)==='-';
-}
+/* WHETHER THIS NUMBER WAS MINTED BY THE OLD APP, and it is asked of the one
+   thing that separates the two beyond doubt: A NUMBER THE SERVER WROTE HAS
+   DASHES IN IT. `gen_random_uuid()` writes 8-4-4-4-12 and cannot write
+   anything else; the old langMint() wrote `L` and a base-36 millisecond and
+   never wrote a dash. So a key with no dash is one this app minted, and one
+   with a dash is a language's own number -- a language somebody TOOK is keyed
+   by the server's id and has been since downloads were built, and nothing
+   here may rename that.
+
+   Asked this way round rather than as 「does this look like a uuid」 because
+   the two are not the same question at the edges, and the edge is the one
+   that matters: a shape test that says 「not a uuid, so rename it」 renames
+   anything the server calls a language by some other name. */
+function langsOldId(id){ return String(id||'').indexOf('-') < 0; }
 /* ONE LANGUAGE, FROM THE NUMBER IT WAS FILED UNDER TO ITS OWN.
    The keys are COUNTED and not listed: `lingua.<id>.` is the whole prefix,
    so the slices, what this phone and the server last agreed each of them was
@@ -753,8 +762,12 @@ function langsCarry(from, to, L){
   var T, k, pre='lingua.'+from+'.', keys=[], i, kk, dst, v, w;
   if(!LANGS[to]) LANGS[to]={};
   T=LANGS[to];
+  /* every field the old row carried, where the new one has nothing to say.
+     The second number is already off it -- langsOneId() takes that field
+     before it gets here, which is the one place that says it does not
+     travel. */
   for(k in L){
-    if(!Object.prototype.hasOwnProperty.call(L, k) || k==='sid') continue;
+    if(!Object.prototype.hasOwnProperty.call(L, k)) continue;
     if(!Object.prototype.hasOwnProperty.call(T, k)) T[k]=L[k];
   }
   try{
