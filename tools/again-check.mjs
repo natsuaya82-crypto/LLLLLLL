@@ -90,8 +90,19 @@ const SERVER = `
       var m = new RegExp('[?&]' + k + '=eq\\\\.([^&]*)').exec(p);
       return m ? decodeURIComponent(m[1]) : '';
     }
+    /* THE ID COMES IN THE INSERT AND THE COLUMN'S DEFAULT ONLY FIRES WHERE
+       NOTHING WAS SENT -- which is what PostgREST does with a primary key,
+       and what the whole of 2026-09-10 is about (a language has ONE number
+       and the phone writes it). A stub that minted its own here would be a
+       server that ignores what it was sent, and the check would be measuring
+       an app nobody ships.
+       AND A SECOND ROW UNDER ONE ID IS A 409, because the id is the primary
+       key. netLangRow() reads that as 「it is already here」. */
     if (method === 'POST' && p.indexOf('/rest/v1/language') === 0){
-      var id = 'srv' + (++S.n);
+      var id = String((body && body.id) || ('srv' + (++S.n))), g;
+      for (g = 0; g < S.lang.length; g++) if (S.lang[g].id === id){
+        setTimeout(function(){ bad(null, 409, 'language 409'); }, 0); return;
+      }
       S.lang.push({ id:id, owner:body.owner, name:body.name || '', published_at:null });
       S.sent.push('language:' + id);
       return answer([{ id:id }]);
@@ -221,10 +232,14 @@ const up = await pg.evaluate(async ({ s, srv }) => {
   return {
     first: first, second: second,
     rows: S.lang.length, names: names,
-    sids: [LANGS[first] && LANGS[first].sid, LANGS[second] && LANGS[second].sid],
+    /* THE ROWS THE SERVER HAS, BY ID. A language has one number and the phone
+       writes it (2026-09-10), so the row's id IS the id the index is keyed by
+       -- this used to read `LANGS[x].sid` and put the two side by side. */
+    sids: [S.lang.filter(function(r){ return r.id === first; }).length,
+           S.lang.filter(function(r){ return r.id === second; }).length],
     /* every slice that went up, by language */
-    upFirst: S.slice.filter(function(r){ return r.language === (LANGS[first]||{}).sid; }).length,
-    upSecond: S.slice.filter(function(r){ return r.language === (LANGS[second]||{}).sid; }).length,
+    upFirst: S.slice.filter(function(r){ return r.language === first; }).length,
+    upSecond: S.slice.filter(function(r){ return r.language === second; }).length,
     theirsSent: S.sent.filter(function(x){ return x.indexOf('theirs-1') >= 0; }).length,
     theirsRow: !!LANGS['theirs-1'] && LANGS['theirs-1'].mine === false,
     srv: JSON.stringify({ lang:S.lang, slice:S.slice })
@@ -234,9 +249,9 @@ const up = await pg.evaluate(async ({ s, srv }) => {
 console.log('');
 say(up.rows === 2, 'both of a person’s languages are on the server, the open one ' +
     'and the one they are not looking at: ' + up.rows + ' rows (' + up.names.join(', ') + ')');
-say(!!up.sids[0] && !!up.sids[1] && up.sids[0] !== up.sids[1],
-    'and each carries the server’s id for it, so nothing makes a second row later: ' +
-    JSON.stringify(up.sids));
+say(up.sids[0] === 1 && up.sids[1] === 1,
+    'and each row is under the number the phone already calls that language by, ' +
+    'so nothing makes a second row later: ' + JSON.stringify(up.sids) + ' rows each');
 say(up.upFirst > 0 && up.upSecond > 0,
     'with the slices of both: ' + up.upFirst + ' and ' + up.upSecond);
 say(up.theirsRow && up.theirsSent === 0,
@@ -278,7 +293,7 @@ const came = await pg.evaluate(async ({ srv, saved }) => {
       if (v.length > 2){ n++; b += v.length; }
     }
     out.push({ id:ids[i], name:langNameOf(ids[i]), mine:LANGS[ids[i]].mine,
-               sid:String(LANGS[ids[i]].sid || ''), slices:n, bytes:b });
+               sid:String(ids[i]), slices:n, bytes:b });
   }
   return { before: before, after: ids.length, langs: out };
 }, { srv: SERVER, saved: up.srv });
@@ -707,7 +722,7 @@ const del = await pg.evaluate(async ({ s, srv }) => {
   /* 1. the dictionary goes up, so the server is holding it */
   await new Promise(function(f){ netLangSync(function(){ f(); }); });
   await wait(150);
-  var S = window.__SRV, sid = (LANGS[langId] || {}).sid;
+  var S = window.__SRV, sid = langId;
   function onServer(){
     var r = S.slice.filter(function(x){ return x.language === sid && x.kind === 'words'; })[0];
     try { return r ? JSON.parse(r.body).map(function(w){ return String(w.hw); }) : []; }
@@ -809,7 +824,7 @@ const up2 = await pg.evaluate(async ({ s, srv }) => {
   out.sentAfter = window.__SRV.sent.slice();
   out.asked = window.__SRV.asked.slice();
   out.onServer = (function(){
-    var S = window.__SRV, sid = LANGS[id].sid, i;
+    var S = window.__SRV, sid = id, i;
     for (i = 0; i < S.slice.length; i++)
       if (S.slice[i].language === sid && S.slice[i].kind === 'words')
         return S.slice[i].body.indexOf('nyala') >= 0;
@@ -836,7 +851,7 @@ const up2 = await pg.evaluate(async ({ s, srv }) => {
   window.__SRV.sent = [];
   window.__SRV.asked = [];
   (function(){
-    var S = window.__SRV, sid = LANGS[id].sid, i, o;
+    var S = window.__SRV, sid = id, i, o;
     for (i = 0; i < S.slice.length; i++)
       if (S.slice[i].language === sid && S.slice[i].kind === 'words'){
         o = JSON.parse(S.slice[i].body);
@@ -850,7 +865,7 @@ const up2 = await pg.evaluate(async ({ s, srv }) => {
   await settle();
   out.askedTwo = window.__SRV.asked.slice();
   out.bothOnServer = (function(){
-    var S = window.__SRV, sid = LANGS[id].sid, i, b;
+    var S = window.__SRV, sid = id, i, b;
     for (i = 0; i < S.slice.length; i++)
       if (S.slice[i].language === sid && S.slice[i].kind === 'words'){
         b = S.slice[i].body;
@@ -887,7 +902,7 @@ const up2 = await pg.evaluate(async ({ s, srv }) => {
   await settle();
   out.askedNoWas = window.__SRV.asked.slice();
   out.keptAllThree = (function(){
-    var S = window.__SRV, sid = LANGS[id].sid, i, b;
+    var S = window.__SRV, sid = id, i, b;
     for (i = 0; i < S.slice.length; i++)
       if (S.slice[i].language === sid && S.slice[i].kind === 'words'){
         b = S.slice[i].body;
@@ -986,8 +1001,9 @@ async function pressSave(how){
     LANGS[id].mine = true; langOwnGot(id, 'me3');
     /* この言語はもうサーバーに欄がある ── 一度でも保存した iPhone がそうです。
        欄が無い状態だけを見ると、落ちるのは POST /language になり、その人の
-       作ったものを運ぶ POST は一度も試されません。 */
-    LANGS[id].sid = 'srv-known'; langStore();
+       作ったものを運ぶ POST は一度も試されません。「行が在る」を言うのは
+       `LROW`（www/core.js）── 番号が一本になる前は `sid` の欄でした。 */
+    langRowGot(id); langStore();
     var l = LETTERS[0];
     /* **文字の編集に入る道は editLetter() で、go('glyph', id) ではありません。**
        GE を作るのは editLetter()/editGlyph() のほうで、go() だけで入ると
@@ -1288,7 +1304,7 @@ const pop = await pg.evaluate(async ({ s, srv }) => {
   function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
   var id = langId;
   LANGS[id].mine = true; langOwnGot(id, 'me3');
-  LANGS[id].sid = 'srv-known'; langStore();
+  langRowGot(id); langStore();
   var out = {};
   /* ---- 待つのは、時間ではなく起きること ---------------------------------
      ここは固定の待ち（300ms・600ms）でした。答えは `setTimeout(0)` で返る
@@ -1410,7 +1426,7 @@ const hid = await pg.evaluate(async ({ s, srv }) => {
   /* この人の言語はもうサーバーにあり、公開されている ── 人は言語を作った次の
      日に非公開にする。fixture が `sid` を打ってあるので netLangRow() は行を
      作りません。 */
-  window.__SRV.lang = [{ id:LANGS[langId].sid, owner:SESS.uid,
+  window.__SRV.lang = [{ id:langId, owner:SESS.uid,
                          name:langName, published_at:'2026-09-07T00:00:00Z' }];
   wldPubGot(langId, true);
   await new Promise(function(f){ netLangSync(function(){ f(); }); });
@@ -1514,15 +1530,15 @@ const kbGrow = await pg.evaluate(async ({ s, srv }) => {
   SET.walked = true; SET.plan = 'pro'; setKeep();
   eval(srv);
   SESS = { at:'t', rt:'r', uid:'kb1', anon:false };
-  LANGS[langId].sid = 'srvkb'; langOwnGot(langId, SESS.uid); langStore(); netSave();
+  langRowGot(langId); langOwnGot(langId, SESS.uid); langStore(); netSave();
   var lay = kbFixed().lay; lay[0].rows = lay[0].rows.slice(0, 3);
   var board = { nm:'', pat:'qwerty', lay:lay };
   /* 古いビルドがディスクに残した写し ── id が無く、slWr はメモリにしか書か
      ないので、これは起動のたびに同じものが読まれます。 */
   localStorage.setItem(langKey('kb'), JSON.stringify({ kbs:[board], at:1, v:2 }));
   var withId = JSON.parse(JSON.stringify(board)); withId.id = 'k1788700000_1';
-  window.__SRV.lang = [{ id:'srvkb', owner:'kb1', name:langName, published_at:null }];
-  window.__SRV.slice = [{ language:'srvkb', kind:'kb',
+  window.__SRV.lang = [{ id:langId, owner:'kb1', name:langName, published_at:null }];
+  window.__SRV.slice = [{ language:langId, kind:'kb',
                           body:JSON.stringify({ kbs:[withId], at:1, v:2 }), no:1 }];
   return JSON.stringify({ lang:window.__SRV.lang, slice:window.__SRV.slice });
 }, { s: seed.toString(), srv: SERVER });
@@ -1584,7 +1600,7 @@ const nmA = await pg.evaluate(async ({ s, srv }) => {
   for (id in LANGS)
     if (Object.prototype.hasOwnProperty.call(LANGS, id)) langOwnGot(id, SESS.uid);
   langStore(); netSave();
-  window.__SRV.lang = [{ id:LANGS[langId].sid, owner:SESS.uid,
+  window.__SRV.lang = [{ id:langId, owner:SESS.uid,
                          name:'ときの語', published_at:null }];
   langNameGot(langId, 'ときの語');
   var S = window.__SRV;
@@ -1665,12 +1681,10 @@ const nmC = await pg.evaluate(async ({ s, srv }) => {
              { language:'srvnew', kind:'lang', body:'スライスの古い名', no:1 }];
   netTook({ access_token:'t', refresh_token:'r', user:{ id:'nm2' } });
   await wait(1500);
+  /* 索引の鍵はその行の id そのものです（2026-09-10、幹一本）── 突き合わせる
+     ものがないので、探すのではなく引きます。 */
   function nameOfSid(sid){
-    var id;
-    for (id in LANGS)
-      if (Object.prototype.hasOwnProperty.call(LANGS, id) && LANGS[id].sid === sid)
-        return langNameOf(id);
-    return '(no entry)';
+    return LANGS[sid] ? langNameOf(sid) : '(no entry)';
   }
   return { col: S.lang.map(function(r){ return r.name; }),
            slice: S.slice.filter(function(r){ return r.kind === 'lang'; })
@@ -1685,110 +1699,121 @@ say(nmC.col[0] === '古い名' && nmC.col[1] === 'あとからの名' &&
     'language.name は ' + JSON.stringify(nmC.col) + '、画面は ' + JSON.stringify(nmC.shown) +
     '、スライスは一字も変わらない ' + JSON.stringify(nmC.slice));
 
-/* ---- 前からの言語が、切り替えに二行にならない ------------------------------
-   「アルファベット無料の a-z とか消えてない？なんで？あと、保存できないけど
-   文字」 OWNER 2026-09-10（実機、ビルド 148/149、前からのアカウント、切り替えに
-   二行、保存を押しても何も起きない）。
+/* ---- 前からの索引が、起動で一本の番号に写る --------------------------------
+   「スパゲッティみたいにするのやめて欲しい」「太い幹を分岐させて欲しい」 OWNER
+   2026-09-10 → `docs/scope/r12-oneid.md`。
 
-   147 までの `netLangBack1()`（削除済み）は、降ろした言語の索引の行を
-   **サーバーの id そのものをキーにして**作っていました。それ以前の版は `sid`
-   欄も書いていません。148 で残った `nidFor()` は `LANGS[*].sid === row.id` で
-   しか探さないので、その行を見つけられず**二つ目を mint** します。古い行は
-   `sid` も印も無いまま残り、切り替えでそれを押すと `langMine()` が偽 ──
-   `ltStart()` が足さず、`saveLetters()` が黙って止まります。
+   ここは 150 の四つが立っていた場所です。150 が訊いていたのは「**二行になる道**」
+   ── 端末の番号とサーバーの番号を突き合わせる `nidFor()` が見つけ損ねて同じ言語に
+   二つ目の行を作る、その道でした。番号が一本になったのでその道は**無い**ので、
+   問いを幹の形に書き直してあります: 古い索引の端末が起動して、行はその言語の
+   本当の番号一つになるか。古い鍵は残るか。開いた言語は自分のもので、無料の
+   a〜z が入り、保存が飛ぶか。
 
-   ここが訊くのは三つ。行は一つになるか。開いた言語は自分のものか（a〜z が
-   入り、保存が飛ぶか）。そして**もう二行できてしまった端末**が、起動しなおすと
-   一行に戻り、**中身を持っている方が残る**か。
-
-   落とすのは索引の行だけで、slice を持つ行は落としません
-   （docs/CHANGELOG.md 2026-09-10 の DELETE REVIEW）。 */
+   索引は `localStorage` に置いてから **reload** します ── 写すのは
+   `langsOneId()`（`www/core.js`）で、core.js が読まれるその場で走るからです。
+   ページが立ってから `LANGS` に代入しても、それは移行が済んだあとの世界です。 */
+const OLDU = '8b1f0c2e-7a34-4c19-9d55-0a1b2c3d4e5f';
+await pg.evaluate(({ u }) => {
+  localStorage.clear();
+  /* 147 までが書いた索引 ── 鍵は端末の番号、サーバーの番号は `sid` の欄に。
+     二つ目は一度も上がっていない言語（`sid` が無い）。 */
+  localStorage.setItem('lingua.langs', JSON.stringify({
+    Lold1: { mine:true, name:'Vaska', sid:u },
+    Lold2: { mine:true, name:'Toko' } }));
+  localStorage.setItem('lingua.cur', 'Lold1');
+  localStorage.setItem('lingua.Lold1.words', '[{"hw":"tuf"}]');
+  localStorage.setItem('lingua.Lold2.words', '[{"hw":"kef"}]');
+}, { u: OLDU });
 await pg.reload();
 await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
-const idsA = await pg.evaluate(async ({ s, srv }) => {
-  localStorage.clear();
-  eval('(' + s + ')()');
+/* 起動しただけの姿を先に読みます ── `seed()` は開いている言語に fixture の
+   言語をそのまま書くので、それを走らせたあとでは「写されたものが読める」の
+   写しではなく fixture を見ることになります。 */
+const oneA = await pg.evaluate(({ u }) => ({
+  rows: Object.keys(LANGS),
+  open: langId, cur: localStorage.getItem('lingua.cur'),
+  word0: WORDS[0] && WORDS[0].hw,
+  upWords: slRd('lingua.' + u + '.words'),
+  old1: localStorage.getItem('lingua.Lold1.words'),
+  old2: localStorage.getItem('lingua.Lold2.words'),
+}), { u: OLDU });
+/* そして、その言語のまま起動を歩き、保存を押す。fixture は呼びません ──
+   要るのはセッションと偽の線だけで、fixture の言語はこの節が見ているものを
+   上書きします。 */
+const oneC = await pg.evaluate(async ({ srv, u }) => {
   SET.walked = true; SET.plan = 'free';
   eval(srv);
   function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
   var S = window.__SRV;
-  S.lang = [{ id:'srvid', owner:'idm', name:'Vaska', published_at:null }];
-  S.slice = [{ language:'srvid', kind:'letters',
-               body:JSON.stringify([{id:'lt.a', ab:'a'}, {id:'lt.b', ab:'b'}]),
-               no:1, at:'2026-09-01T00:00:00.000Z' }];
-  /* 147 までが書いた索引 ── local id がサーバーの id そのもの、`sid` 欄なし */
-  LANGS = { srvid: { mine:true } };
-  langId = 'srvid';
-  langStore();
+  S.lang = [{ id:u, owner:'idm', name:'Vaska', published_at:null }];
+  S.slice = [];
   netTook({ access_token:'t', refresh_token:'r', user:{ id:'idm' } });
   await wait(1600);
   S.tried = [];
   if (LETTERS.length) LETTERS[0].g = [[[0,0],[1,1]]];
   saveLetters();
   await wait(NET_UPMS + 600);
-  var out = { n: Object.keys(LANGS).length,
-              rows: Object.keys(LANGS).map(function(k){
-                return k + '/' + String(LANGS[k].sid || '-'); }),
-              open: langId, mine: langMine(langId), lock: langLocked(),
-              letters: LETTERS.length,
+  var out = { mine: langMine(langId), lock: langLocked(),
+              open: langId, letters: LETTERS.length,
               sent: S.tried.filter(function(t){ return t.indexOf('POST /rest/v1/slice') === 0; }).length };
-  /* AND THE PHONE IS LEFT WITH NOTHING ON IT. Every section here clears the
-     storage at the TOP of its own evaluate, which is after the page has
-     already booted on whatever the section before it left -- a session, an
-     index, a language to open. Boot then signs in, tops a free alphabet up
-     and schedules a save, and that save lands in the middle of the next
-     section. Measured 2026-09-10: this section left a session behind and
-     「自分の言語には一バイトも触っていない」 two sections later went red,
-     while the same section on its own was green. */
+  /* 次の節のために、この節が置いたものは持ち出さない（下の節と同じ理由）。 */
   localStorage.clear();
   return out;
-}, { s: seed.toString(), srv: SERVER });
+}, { srv: SERVER, u: OLDU });
 
-say(idsA.n === 1 && idsA.rows[0].indexOf('srvid/srvid') === 0,
-    '**前からの言語は一行のまま** ── 索引の id がサーバーの id そのもので ' +
-    '`sid` 欄が無くても、同じ言語として見つかる: ' + JSON.stringify(idsA.rows));
-say(idsA.mine === true && !idsA.lock && idsA.letters > 0 && idsA.sent > 0,
-    'そして開いた言語は自分のもの ── サーバーの文字が入り、保存が飛ぶ（文字 ' +
-    idsA.letters + '、locked ' + idsA.lock + '、送った slice ' + idsA.sent + ' 件）');
+const uuidish = (x) => String(x).length === 36 && String(x).charAt(8) === '-';
+say(oneA.rows.length === 2 && oneA.rows.indexOf(OLDU) >= 0 &&
+    oneA.rows.every(uuidish) && oneA.open === OLDU && oneA.cur === OLDU,
+    '**古い索引は起動で一本の番号になる** ── 行は言語の数だけ、鍵はその言語の' +
+    '本当の番号、上がったことのない方も番号をもらう: ' + JSON.stringify(oneA.rows) +
+    '、開いているのは ' + JSON.stringify(oneA.open));
+/* 古い鍵は**一字も変わらない**ので厳密に。新しい番号の下は「その単語が読める」
+   ── 起動が開いている言語を読み直して書き戻すので、字面まで同じとは限らず、
+   同じであることを要求すると保存の書き方を測る主張になります。 */
+say(oneA.old1 === '[{"hw":"tuf"}]' && oneA.old2 === '[{"hw":"kef"}]' &&
+    String(oneA.upWords || '').indexOf('tuf') >= 0 && oneA.word0 === 'tuf',
+    'そして古い鍵は一つも消えない ── 写しであって移動ではなく、新しい番号の' +
+    '下で同じ単語が読める（古い鍵 ' + JSON.stringify(oneA.old1) + ' と ' +
+    JSON.stringify(oneA.old2) + '、新しい番号の下 ' +
+    JSON.stringify(String(oneA.upWords || '').slice(0, 40)) +
+    '、開いている言語の一語目 ' + JSON.stringify(oneA.word0) + '）');
+say(oneC.mine === true && !oneC.lock && oneC.letters === 38,
+    'そして開いた言語は自分のもの ── 無料の a〜z と ！？と数字で 38（文字 ' +
+    oneC.letters + '、locked ' + oneC.lock + '、mine ' + oneC.mine + '）');
+say(oneC.sent > 0,
+    'そして保存が飛ぶ ── 送った slice ' + oneC.sent + ' 件');
 
-/* もう二行できてしまった端末。中身を持っているのは mint された方です ──
-   148 はそちらへ降ろしていたので、残すのは「slice を持っている方」。 */
+/* もう二行できてしまった端末 ── 148 が作った行（端末の番号＋`sid`）と、
+   それ以前が残した行（鍵がサーバーの番号）が並んでいる状態。150 は「持って
+   いない方を落とす」を足して直しました。番号が一本になると落とすものはあり
+   ません: 二つは**同じ番号へ写る**ので、そこで一行になります。鍵は空でない
+   方が残り、空と空なら空です。 */
+await pg.evaluate(({ u }) => {
+  localStorage.clear();
+  localStorage.setItem('lingua.langs', JSON.stringify({
+    Lmint1: { mine:true, name:'Vaska', sid:u },   /* 148 が作った行、中身あり */
+    [u]:    { mine:true } }));                    /* それ以前が残した空の行 */
+  localStorage.setItem('lingua.cur', u);
+  localStorage.setItem('lingua.Lmint1.letters',
+    JSON.stringify([{ id:'lt.a', ab:'a' }, { id:'lt.b', ab:'b' }]));
+}, { u: OLDU });
 await pg.reload();
 await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
-const idsB = await pg.evaluate(async ({ s, srv }) => {
+const oneB = await pg.evaluate(({ u }) => {
+  var out = { rows: Object.keys(LANGS), open: langId,
+              letters: (localStorage.getItem('lingua.' + u + '.letters') || ''),
+              kept: localStorage.getItem('lingua.Lmint1.letters') };
   localStorage.clear();
-  eval('(' + s + ')()');
-  SET.walked = true; SET.plan = 'free';
-  eval(srv);
-  function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
-  var S = window.__SRV;
-  S.lang = [{ id:'srvid', owner:'idm', name:'Vaska', published_at:null }];
-  S.slice = [{ language:'srvid', kind:'letters',
-               body:JSON.stringify([{id:'lt.a', ab:'a'}, {id:'lt.b', ab:'b'}]),
-               no:1, at:'2026-09-01T00:00:00.000Z' }];
-  LANGS = { srvid: { mine:true },                  /* 古い、空の行 */
-            Lmint1: { mine:true, sid:'srvid' } };  /* 148 が作った行 */
-  slWr(langKeyOf('Lmint1', 'letters'),
-       JSON.stringify([{id:'lt.a', ab:'a'}, {id:'lt.b', ab:'b'}]));
-  langId = 'srvid';
-  langStore();
-  netTook({ access_token:'t', refresh_token:'r', user:{ id:'idm' } });
-  await wait(1600);
-  var out2 = { n: Object.keys(LANGS).length,
-               rows: Object.keys(LANGS).map(function(k){
-                 return k + '/' + String(LANGS[k].sid || '-') + '/' +
-                        ((slMine(langKeyOf(k, 'letters')) || '').length > 2 ? '中身あり' : '空'); }),
-               open: langId, mine: langMine(langId), letters: LETTERS.length };
-  localStorage.clear();   /* 上と同じ理由 */
-  return out2;
-}, { s: seed.toString(), srv: SERVER });
+  return out;
+}, { u: OLDU });
 
-say(idsB.n === 1 && idsB.rows[0].indexOf('中身あり') > 0,
-    '**二行になった端末は、起動しなおすと一行に戻る** ── 残るのは中身を持って ' +
-    'いる方で、空の行だけが落ちる: ' + JSON.stringify(idsB.rows));
-say(idsB.mine === true && idsB.letters >= 2,
-    'そして立っているのは残った方 ── 自分のもので、文字が入っている（文字 ' +
-    idsB.letters + '、mine ' + idsB.mine + '）');
+say(oneB.rows.length === 1 && oneB.rows[0] === OLDU && oneB.open === OLDU,
+    '**二行になっていた端末は一行になる** ── 落とすのではなく、二つが同じ番号へ' +
+    '写って重なる: ' + JSON.stringify(oneB.rows));
+say(oneB.letters.indexOf('lt.a') >= 0 && oneB.kept !== null,
+    'そして中身を持っている方の鍵が残り、古い鍵もそのまま ── 空の行が' +
+    '中身を上書きすることはない');
 
 /* ---- 取った言語は、起動しなおしても中身ごと戻る ---------------------------
    「DLしたやつがなくなるって意味がわからん」 OWNER 2026-09-09。
@@ -1833,7 +1858,7 @@ const tookA = await pg.evaluate(async ({ s, srv }) => {
      netLangRow() は行を作らないので、無ければここで置きます。行が無いと
      「自分の言語に一バイトも触っていない」は、**何も降りてこなかったこと**を
      測るだけの主張になります。 */
-  var S = window.__SRV, mySid = LANGS[langId].sid, q, hit = null;
+  var S = window.__SRV, mySid = langId, q, hit = null;
   for (q = 0; q < S.lang.length; q++) if (S.lang[q].id === mySid) hit = S.lang[q];
   if (!hit){ hit = { id:mySid, published_at:null }; S.lang.push(hit); }
   hit.owner = SESS.uid; hit.name = 'Vaska'; hit.wsys = 'alpha';
@@ -1956,7 +1981,7 @@ const goneA = await pg.evaluate(async ({ s, srv }) => {
   save();
   await new Promise(function(f){ netLangSync(function(){ f(); }); });
   await wait(250);
-  var S = window.__SRV, mySid = LANGS[langId].sid, q, hit = null;
+  var S = window.__SRV, mySid = langId, q, hit = null;
   for (q = 0; q < S.lang.length; q++) if (S.lang[q].id === mySid) hit = S.lang[q];
   if (!hit){ hit = { id:mySid, published_at:null }; S.lang.push(hit); }
   hit.owner = SESS.uid; hit.name = 'Vaska'; hit.wsys = 'alpha';
@@ -2084,8 +2109,13 @@ await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
 const goneC = await pg.evaluate(async ({ srv, saved, lid }) => {
   eval(srv);
   var S = window.__SRV, keep = JSON.parse(saved);
-  S.lang = keep.lang.filter(function(L){ return String(L.id).indexOf('-1') < 0; });
-  S.slice = keep.slice.filter(function(r){ return String(r.language).indexOf('-1') < 0; });
+  /* 取った二つだけを落とします。ここは「'-1' を含む id」で切っていました ──
+     自分の言語の番号は uuid なので（2026-09-10）、たまたま '-1' を含むと
+     自分の行まで消え、下の「自分の言語は動かない」がその日だけ赤くなります。
+     名指しは二つで済みます。 */
+  var TOOK2 = ['gone-1', 'stay-1'];
+  S.lang = keep.lang.filter(function(L){ return TOOK2.indexOf(String(L.id)) < 0; });
+  S.slice = keep.slice.filter(function(r){ return TOOK2.indexOf(String(r.language)) < 0; });
   S.take = [];
   function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
   var was = !!LANGS['stay-1'];

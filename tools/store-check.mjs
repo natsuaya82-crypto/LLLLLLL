@@ -93,6 +93,15 @@ const ROADS = {
      drawn and can never be merged, sent, or preferred to an answer that has
      just arrived. */
   'core.js:slGotKey(k)': { phone: 'what the server last said this slice was, kept so a launch with no signal draws the language instead of nothing. It belongs to the account the slice does -- filed under `lingua.<id>.<slice>`, so wipeLangsGo() takes it with the language and lsWipeAcct(), which counts the namespace, takes it with the account. It has no road UP and must not be given one: `slMine()` in www/core.js is what keeps it out of netSlice1(), netSaveUpGo() and both of the 「fills in and stops」 reads' },
+  /* AND ONE WRITE THAT ADDS NO KEY EITHER, for the opposite reason: it is a
+     key this phone already has, written down again under the language's own
+     number. langsCarry() in www/core.js is the 2026-09-10 migration -- a
+     language had two numbers and has one now, so everything filed under the
+     old one is copied to the new one and nothing under the old one is
+     removed. The destination is `lingua.<id>.<something>` with the id being
+     the same language's server id, so every key it can write is a key ROADS
+     already names above; what it copies keeps the road the original had. */
+  'core.js:dst': { phone: 'the same keys under the language\'s own number, written by the 2026-09-10 migration (langsCarry, www/core.js). It copies and removes nothing, and a key already holding something is never written over, so this adds no kind of key and no road: `lingua.<id>.<slice>` and its `.was` and the pictures beside them are each on the road their own row above names' },
   /* AND ONE WRITE THAT ADDS NO KEY, because it is the same keys put back.
      keepSave() in www/shell.js takes a copy of the `lingua.` namespace before
      a save writes anything and writes it back when the send does not land

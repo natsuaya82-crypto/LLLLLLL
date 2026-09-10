@@ -73,7 +73,7 @@ function lsWipeAcct(uid){
      down are as much its own as what it wrote. */
   for(id in LANGS)
     if(Object.prototype.hasOwnProperty.call(LANGS, id) && LANGS[id] &&
-       (langOwnOf(id)===me || langTookHas(LANGS[id].sid))) ids.push(id);
+       (langOwnOf(id)===me || langTookHas(id))) ids.push(id);
   /* The slices are in MEMORY now (LSL above), so they are dropped rather than
      removed from storage -- and the record of what was last agreed with them,
      which is filed beside each one. */
@@ -236,8 +236,22 @@ function langSaveAll(){
     did.push(io.wr); io.wr();
   }
 }
-/* id -> { mine, sid, uid }: the index says which languages are here, and
-   the language's own keys hold what it is.
+/* id -> { mine, uid }: the index says which languages are here, and the
+   language's own keys hold what it is.
+
+   THE ID IS THE SERVER'S ID AND THERE IS NO OTHER NUMBER (2026-09-10).
+   「スパゲッティみたいにするのやめて欲しい」「太い幹を分岐させて欲しい」 OWNER.
+   A language used to have two numbers: `L<ms36>`, minted here, and the uuid
+   the `language` row was given by `gen_random_uuid()`, kept beside it as
+   `sid`. Everything that had to put the two side by side -- nidFor(),
+   nidHolds(), nidDrop() in www/net.js, all deleted with this -- was a bridge
+   between them, and 148 is what happens when a bridge comes loose: the same
+   language stood twice in the switcher and the row somebody was standing in
+   was the empty one. langMint() below writes a uuid now and netLangRow()
+   sends it, so the phone and the server say the same number from the moment
+   the language exists. A language somebody TOOK has been this shape from the
+   day downloads were built -- langSeenAdd() keys it by the server's id --
+   and this is the making side arriving where the reading side already was.
 
    `name` STOOD HERE AND IS GONE (2026-09-08). What a language is called is
    `language.name` on the server and langNameOf() is how it is asked -- the
@@ -245,11 +259,6 @@ function langSaveAll(){
    other. Nothing removed what is already written down: an entry made by an
    older version still carries the field, and langNameOld() READS it, where
    the column has said nothing yet and this is the only name the phone has.
-
-   It said `{ name, mine } and nothing more`, and there were three. `sid` is
-   the server's id for the language, put on by netLangRow() (www/net.js) the
-   first time the language goes up and langStore()'d on the spot: an entry
-   with no `sid` has never been up.
 
    `uid` is the ACCOUNT the language belongs to, written by netLangRow() at
    the same moment and for a bug that had no other place to be fixed:
@@ -418,6 +427,25 @@ function langOwnOf(id){
   return p===null? '' : String(p);
 }
 function langOwnKnown(id){ return !!langOwnOf(id); }
+/* ---- LROW: WHETHER THE SERVER HAS A ROW FOR THIS LANGUAGE ---------------
+   `LANGS[id].sid` answered two questions with one field, and only one of them
+   was a number. The number is the id now (§ langMint); this is the other
+   half -- 「has the `language` row been made」 -- which netLangRow() has to
+   know or it cannot tell a language of yours that has never been up from one
+   that is already there.
+
+   IN MEMORY, like everything else the server has said this session (rule 22).
+   A launch fills it from netLangsWalk(), which only ever walks rows that
+   exist; a language minted with no signal is not in it, and the insert is
+   what finds out -- a 409 is the server saying 「it is already here」.
+
+   langsOneId() below writes it too, and that is the migration reading rather
+   than the server speaking: an entry an older version left carrying a `sid`
+   is an entry whose row was made, because `sid` was written at the moment
+   netLangRow() made it and at no other moment. */
+var LROW={};
+function langRowGot(id){ LROW[String(id||'')]=1; }
+function langRowUp(id){ return LROW[String(id||'')]===1; }
 /* AND HOW MANY OF SOMEBODY ELSE'S THIS ACCOUNT HAS TAKEN -- the `language_take`
    table, counted on the server and kept here as the number it answered with.
    `null` is 「not asked」 and is not nought: a ceiling measured against a
@@ -646,6 +674,123 @@ function langStore(){
     localStorage.setItem(LS_CUR, langId);
   });
 }
+/* ---- THE ONE NUMBER, ON A PHONE THAT WAS HERE BEFORE IT ------------------
+   2026-09-10. Until today a language had two numbers -- `L<ms36>`, minted on
+   the phone and used as the key of this index and of every key under it, and
+   the uuid the `language` row was given, kept beside it as `sid`. The id is
+   the row's id now (§ langMint), so every index an older version wrote is in
+   a shape nothing reads.
+
+   IT COPIES AND IT REMOVES NOTHING -- docs/DATA_SAFETY.md rule 2. What is
+   filed under the old number stays exactly where it is, byte for byte; what
+   the new number needs is written beside it. The index row is the one thing
+   that MOVES, and it has to: two rows for one language is the switcher
+   showing it twice, which is the fault of 148 arriving after it was fixed.
+   Nothing about it is a judgement -- the row is the same row under the
+   language's real number, and every field it carried goes with it.
+
+   Three shapes arrive here and the third is not touched:
+
+     { 'L…': { sid: U } }  it has been up. The row's number is U, so that is
+                           where it goes, and § LROW is told the row exists --
+                           `sid` was written at the moment netLangRow() made
+                           the row and at no other moment.
+     { 'L…': { } }         it has never been up. It gets a number now, and
+                           the row is made with that number the first time it
+                           goes. Nothing is told about a row, because there
+                           is none.
+     { U: { } }            already one number. Left alone.
+
+   WHERE THE FIRST AND THE THIRD ARE THE SAME LANGUAGE -- the two rows 150
+   was written for -- they land on one row here, because they land on the
+   same number. The index row is one; a key under it is whichever of the two
+   is not empty, and where both are empty it is empty. Nothing is chosen
+   between two things somebody made: a key already holding something is never
+   written over.
+
+   It runs on every launch and there is nothing to remember: after it, every
+   number in the index is the language's own, so the next launch finds nothing
+   to do. */
+function langsOneId(){
+  var ids=[], id, L, to, i, moved=false;
+  for(id in LANGS)
+    if(Object.prototype.hasOwnProperty.call(LANGS, id)) ids.push(id);
+  for(i=0;i<ids.length;i++){
+    id=ids[i]; L=LANGS[id];
+    if(!L || typeof L!=='object') continue;
+    /* THE OTHER NUMBER, WHERE THE ENTRY CARRIES ONE. That field was written
+       at the moment the row was made and at no other moment, so it says both
+       which number the row has and that the row EXISTS. */
+    to=String((L.sid===undefined? '' : L.sid) || '');
+    if(to) langRowGot(to);
+    /* and the second number itself goes, wherever the row ends up */
+    if(L.sid!==undefined){ delete L.sid; moved=true; }
+    /* NO ROW YET, AND A NUMBER THE OLD MINT WROTE: it gets one now, and the
+       row is made with it the first time it goes. Which numbers those are is
+       langsOldId() below and nowhere else. */
+    if(!to && langsOldId(id)) to=uuid4();
+    /* already where it belongs, or nothing this app minted */
+    if(!to || to===id) continue;
+    langsCarry(id, to, L);
+    delete LANGS[id];
+    moved=true;
+  }
+  if(moved) langStore();
+}
+/* WHETHER THIS NUMBER WAS MINTED BY THE OLD APP, and it is asked of the one
+   thing that separates the two beyond doubt: A NUMBER THE SERVER WROTE HAS
+   DASHES IN IT. `gen_random_uuid()` writes 8-4-4-4-12 and cannot write
+   anything else; the old langMint() wrote `L` and a base-36 millisecond and
+   never wrote a dash. So a key with no dash is one this app minted, and one
+   with a dash is a language's own number -- a language somebody TOOK is keyed
+   by the server's id and has been since downloads were built, and nothing
+   here may rename that.
+
+   Asked this way round rather than as 「does this look like a uuid」 because
+   the two are not the same question at the edges, and the edge is the one
+   that matters: a shape test that says 「not a uuid, so rename it」 renames
+   anything the server calls a language by some other name. */
+function langsOldId(id){ return String(id||'').indexOf('-') < 0; }
+/* ONE LANGUAGE, FROM THE NUMBER IT WAS FILED UNDER TO ITS OWN.
+   The keys are COUNTED and not listed: `lingua.<id>.` is the whole prefix,
+   so the slices, what this phone and the server last agreed each of them was
+   (`.was`), and the pictures of the three columns all go, and so does a key
+   added tomorrow. lsWipeAcct() above counts the namespace for the same
+   reason -- 「a list of keys, written by hand, that nobody remembered to add
+   to」 is one bug this file has had more than once. */
+function langsCarry(from, to, L){
+  var T, k, pre='lingua.'+from+'.', keys=[], i, kk, dst, v, w;
+  if(!LANGS[to]) LANGS[to]={};
+  T=LANGS[to];
+  /* every field the old row carried, where the new one has nothing to say.
+     The second number is already off it -- langsOneId() takes that field
+     before it gets here, which is the one place that says it does not
+     travel. */
+  for(k in L){
+    if(!Object.prototype.hasOwnProperty.call(L, k)) continue;
+    if(!Object.prototype.hasOwnProperty.call(T, k)) T[k]=L[k];
+  }
+  try{
+    for(i=0;i<localStorage.length;i++){
+      kk=localStorage.key(i);
+      if(kk && kk.indexOf(pre)===0) keys.push(kk);
+    }
+  }catch(e){}
+  for(i=0;i<keys.length;i++){
+    kk=keys[i];
+    dst='lingua.'+to+'.'+kk.slice(pre.length);
+    v=null; w=null;
+    try{ v=localStorage.getItem(kk); }catch(e){}
+    try{ w=localStorage.getItem(dst); }catch(e){}
+    /* nothing to carry, or the new number is already holding something --
+       and what it is holding is never written over */
+    if(v===null || v==='' || (w!==null && w!=='')) continue;
+    saveTry(function(){ localStorage.setItem(dst, v); });
+  }
+  /* and where somebody is standing */
+  if(langId===from) langId=to;
+}
+langsOneId();
 /* A new language of this person's, in the index and nowhere else yet. Its
    slices do not exist until something writes one, which is what an empty
    language IS -- langRead() below puts the globals back to empty when it
@@ -655,13 +800,44 @@ function langStore(){
    ends: langFirst() is the first run, where there is no language to leave,
    and langNew() is the button, where there is one and it has to be written
    out first. Minting the id twice would be two answers to what a language id
-   looks like. The loop is not superstition -- getTime() is a millisecond and
-   a check can press a button twice inside one. */
+   looks like.
+
+   IT IS THE SERVER'S NUMBER AND THE PHONE IS THE ONE THAT WRITES IT DOWN.
+   This used to mint `L<ms36>` and the `language` row got a uuid of its own
+   from `gen_random_uuid()`, so one language had two numbers and something
+   had to hold them together. A uuid minted here IS the row's id --
+   netLangRow() sends it in the insert, and the column's default only fires
+   where nothing was sent. Nothing else changes: the id is still made before
+   there is an account, which is what the onboarding needs, and the number
+   the walk makes is the number the row is given at the door. */
 function langMint(){
-  var id='L'+(new Date()).getTime().toString(36), n=0;
-  while(LANGS[id]){ n++; id='L'+(new Date()).getTime().toString(36)+n.toString(36); }
+  var id=uuid4();
+  while(LANGS[id]) id=uuid4();
   LANGS[id]={ mine:true };
   return id;
+}
+/* A UUID V4, AND THIS IS THE ONE PLACE ONE IS MADE.
+   crypto.getRandomValues where there is one, which is every WKWebView this
+   app runs in. The fallback is not a security decision -- nothing is guarded
+   by this number; it is a name that must not collide with another name made
+   on another phone in the same second.
+
+   It is HERE and not in www/net.js, where netUUID() used to hold it, because
+   a language is named before net.js has been loaded: langsOneId() below runs
+   while this file is still being read. netUUID() is this function under the
+   name www/post.js calls it by. */
+function uuid4(){
+  var b, i, h='', c=window.crypto || window.msCrypto;
+  b=new Uint8Array(16);
+  if(c && c.getRandomValues) c.getRandomValues(b);
+  else for(i=0;i<16;i++) b[i]=Math.floor(Math.random()*256);
+  b[6]=(b[6] & 0x0f) | 0x40;      /* version 4 */
+  b[8]=(b[8] & 0x3f) | 0x80;      /* variant   */
+  for(i=0;i<16;i++){
+    h+=(b[i]<16? '0':'')+b[i].toString(16);
+    if(i===3 || i===5 || i===7 || i===9) h+='-';
+  }
+  return h;
 }
 /* A LANGUAGE THAT IS ONLY READ, in the index and nowhere else yet.
    ------------------------------------------------------------------
@@ -679,11 +855,6 @@ function langMint(){
    time -- 「いや一つづつdlでいいよ」 OWNER 2026-09-01 -- so the letters today
    and the keyboard tomorrow have to land in one language.
 
-   `sid` is put on for the same reason it is put on a language of the
-   person's own: it is the server's name for this thing. Nothing ever sends
-   this one up -- netLangSync() refuses a language that is not yours -- so it
-   is there to say where it came from.
-
    The NAME is only filled in if there is not one already: the row is made
    the first time a chapter is taken and a later download must not rename a
    language somebody is reading. */
@@ -697,7 +868,7 @@ function langMint(){
 function langSeenAdd(sid, name, owner){
   var id=String(sid||'');
   if(!id) return '';
-  if(!LANGS[id]) LANGS[id]={ mine:false, sid:id };
+  if(!LANGS[id]) LANGS[id]={ mine:false };
   /* and what the server said it is called. It used to be filled in only when
      the index had nothing, so a second download could not rename a language
      somebody was reading; the name is the server's answer now and a fresher
@@ -734,13 +905,6 @@ function langMine(id){
   if(!me) return true;
   own=langOwnOf(k);
   if(own) return own===me;
-  /* Signed in, nothing said, and never been up: it is somebody's, and this
-     phone cannot say whose. A language made in the app carries the account
-     that made it from the moment it exists (langNew), and the walk's is
-     stamped at the door (obFinish) -- so what is left here is A's language
-     on a phone B signed in to, which is the one that must not be adopted.
-     acct-check 10 and 35. */
-  if(!L.sid) return false;
   /* NOT ASKED YET, AND WHAT ANSWERS IS WHAT AN OLDER VERSION WROTE. `mine` on
      the index is that: this app has written it since there were downloads,
      and it is read HERE ONLY -- until the server says who wrote the language,
@@ -749,7 +913,18 @@ function langMine(id){
      full of languages whose owner no road has ever asked about, and refusing
      them all would stop netLangSync() ever asking. The screens do not draw an
      unanswered language (www/home.js § vLangs); this is what keeps the road
-     to the answer open. */
+     to the answer open.
+
+     A SECOND BRANCH STOOD IN FRONT OF THIS AND IT WAS `sid` (2026-09-10).
+     `if(!L.sid) return false` -- 「never been up, so this phone cannot say
+     whose it is」 -- and there is no `sid` to ask any more: under one number
+     a language has its id from the moment it is minted, whether or not a row
+     was ever made. What refuses A's language on B's phone is the owner stamp
+     above, which every road that makes a language now writes (langNew,
+     langForAcct, langSeenAdd, obFinish at the door, netLangsWalk) --
+     acct-check 10 and 35 are stamped and stay refused. What is left
+     unstamped is what an older version left in the index, which is exactly
+     the migration reading this line is about. */
   return L.mine!==false;
 }
 /* AND THE OPEN LANGUAGE, ASKED BY EVERY WRITER OF ONE. True means the caller
@@ -1347,11 +1522,13 @@ function langOwned(id){
      person's language to the next one; it asks the language now. */
   var own=langOwnOf(id);
   if(own) return own===me;
-  /* Never been up and nobody claimed it: not this account's. The walk's own
-     language is stamped at the door before anything asks. */
-  if(!L.sid) return false;
-  /* Been up and not asked about yet. Neither side is drawn -- www/home.js §
-     vLangs leaves it out and says how many it is not showing. */
+  /* Nobody claimed it: not this account's. The walk's own language is
+     stamped at the door before anything asks, and a language that HAS been
+     up and has not been asked about yet is not drawn on either side either
+     -- www/home.js § vLangs leaves it out and says how many it is not
+     showing. Both of those used to be written out, either side of
+     `if(!L.sid)`, and both answered false; with one number there is no `sid`
+     to tell them apart and there never was a difference to tell. */
   return false;
 }
 function langAcct(id){

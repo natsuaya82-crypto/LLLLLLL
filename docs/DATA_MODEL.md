@@ -351,11 +351,26 @@ it goes with the rest of that account's keys. **It is with the owner** —
 `lingua.langs` (`LANGS`) is `id -> { … }`, and `lingua.cur` (`langId`) says
 which one every global on the making side means.
 
+**その `id` は `language.id` そのものです（2026-09-10）。**言語の番号は一つ
+だけで、端末が uuid v4 を打ち（`langMint()`、`www/core.js`）、`netLangRow()`
+（`www/net.js`）はそれを insert に**入れて**送ります ── 列は
+`default gen_random_uuid()` なので、送れば送った値になります。それまでは
+番号が二つあり、`sid` がサーバー側のもう一つでした。二つを突き合わせていた
+`nidFor()` `nidHolds()` `nidDrop()` は削除。**取った言語はダウンロードが
+できた日からこの形です**（`langSeenAdd()` はサーバーの id をそのまま鍵に
+します）── 作る側が読む側に追いついたということです。
+
+古い索引は `langsOneId()`（`www/core.js`）が起動時に**写します**。
+`{ 'L…': { sid: U } }` は `U` へ、`sid` の無い `'L…'` は新しい uuid へ、
+`{ U: … }` は触りません。`lingua.L….*` の鍵は**一つも消しません**
+（`docs/DATA_SAFETY.md` 第2則）── 索引の行だけが、その言語の本当の番号の
+下へ移ります。
+
 | key | written by | what it is |
 |---|---|---|
 | `name` | **nothing, since 2026-09-08** | a copy of the language's name. It was written by `langMint()` and by `save()` on the open one, and it is what let a rename move the phone's answer and leave `language.name` — the half anybody else reads — holding the name the language was made with. What a language is called is that column now (`langNameOf()`, `www/core.js` § LNAME). **An entry written by an older version still carries this field and nothing reads it**; nothing removes it, because a migration copies |
-| `mine` | `langMint()` and `netLangsDown()` write **true**; `langSeenAdd()` (`www/core.js`) writes **false** | whether the entry was made as a language you are MAKING or one you are only READING. **What decides that now is `language.owner`** (`langMine()`), and this is read in exactly one place: a language that has been up (`sid`) whose owner the server has not answered for yet — the migration reading, for the languages already on every phone, and never after an answer arrives |
-| `sid` | `netLangRow()` (`www/net.js`) | the server's id for this language, the same way a post carries one. **A language with no `sid` has never been up.** Added after the entry is made, and `langStore()`d on the spot. A downloaded language is filed UNDER its `sid`, so a second download of it lands in the same place |
+| `mine` | `langMint()` and `netLangsDown()` write **true**; `langSeenAdd()` (`www/core.js`) writes **false** | whether the entry was made as a language you are MAKING or one you are only READING. **What decides that now is `language.owner`** (`langMine()`), and this is read in exactly one place: a language whose owner the server has not answered for yet — the migration reading, for the languages already on every phone, and never after an answer arrives |
+| `sid` | **nothing, since 2026-09-10** | the server's id for this language, back when a language had two numbers. The id IS that number now, so there is nothing to keep beside it. `langsOneId()` (`www/core.js`) reads this field once, on the launch that moves the entry to it, and it is the last thing that ever does — it also says the `language` row EXISTS, because `netLangRow()` wrote it at the moment it made the row and at no other moment (`LROW`, `www/core.js`) |
 | `uid` | **nothing, since 2026-09-09** | it answered TWO questions with one field: on a language somebody made it was who MADE it, and on a downloaded one it was who TOOK it (`langSeenAdd()`'s own comment said so). The two come apart the moment a language moves between people, and `dlCount()` counted the second — so the ceiling on downloads was per handset. They are two questions now and both are the server's: **who wrote it** is `language.owner` (`langOwnOf()`, `www/core.js` § LOWN) and **that this account took it** is a `language_take` row (`langTookHas()`). An entry written by an older version still carries this field and nothing reads it |
 | `mig` | `langMigrate()` (`www/core.js`), removed by `langMigStamp()` | the mark that this entry came out of the eight flat keys and is still waiting for an account to be stamped on it. `langMigrate()` runs while `core.js` is loading, before `SESS` is even declared, so there is nothing to stamp with at the moment it is made and `netRead()` does it eighteen lines later |
 
@@ -366,8 +381,8 @@ written here.**
 
 **It exists.** `LANGS[id].mine` is what says a language is not yours, and
 `langSeenAdd()` (`www/core.js`) is what writes it false — the index row for a
-language taken off somebody else's page, filed under that language's `sid` so
-a second download of it lands in the same place and does not make a second
+language taken off somebody else's page, filed under that language's own id
+so a second download of it lands in the same place and does not make a second
 copy. 「ダウンロードボタン押しても言語追加されないけど？」「いつまでもfalseだった
 とかやめてね。」 OWNER 2026-09-01 is the sentence that closed the gap.
 

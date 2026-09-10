@@ -300,7 +300,7 @@ const r = await pg.evaluate(async ({ s, sid }) => {
   SET.plan = 'pro'; save();
   var b1 = langMint(), b2 = langMint();
   ['zc1','zc2','zc3'].forEach(function(z){
-    LANGS[z] = { name:z, mine:false, sid:z, uid:'u' }; });
+    LANGS[z] = { name:z, mine:false, uid:'u' }; });
   langStore();
   langId = b2;                                  /* the SECOND one is open */
   /* Every key that was there, by NAME. Not the count: an ordinary save() adds

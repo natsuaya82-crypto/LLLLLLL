@@ -656,6 +656,8 @@ Supabase には認証メールの送信そのものを自分の関数に渡す�
 
 ## `press` の横幅が一度だけ落ちて、再現しません
 
+**2026-09-10 に三回目。** integ `f11bbb88` のゲートで同じ行（「the digits, counted in three (free): the page 406 wide in 402」）。同じコミットで `npm test` を回し直して緑（44/44）。三回とも数字の面、三回とも回し直しで緑。原因は未特定。**四回目が出たら、揺れそのものを測る枝を立てる**（数字の面を百回描いて幅を記録する）。
+
 **2026-09-09 にもう一回。** integ `6d7ad665` のゲートで「off the side: the digits, counted in three (out of room): the page 406 wide in 402」。見た目のファイルはその日一つも動いていない。`npm run press` を同じコミットで回し直すと緑（1003 画面）、ゲート全体も緑。原因は未特定のまま。
 
 

@@ -97,7 +97,7 @@ const r = await pg.evaluate(({ s }) => {
 
      The language is given a row, or the first thing the stub would be asked
      is netLangRow() minting one. */
-  LANGS[langId].sid = 'srv-known'; langStore();
+  langRowGot(langId); langStore();
   window.WIRE = true;
   netSend = function(method, path, body, tok, ok, bad){
     if(!window.WIRE){ bad(null, 0, 'no wire'); return; }

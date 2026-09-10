@@ -44,11 +44,19 @@ const LAT = 300;
    picked. Lowering one is progress and needs nobody; raising one is a road
    that got a stage longer, and that is the thing this check exists to catch.
 
-   `launch` is the WORST case on purpose -- a phone whose language has never
-   been up, so its row has to be made before its slices can be read:
-   token → language row → the slices, read → the slices, written → whether
-   the page is public. A phone that has synced before is one shorter, because
-   the row's id is already on it. */
+   `launch` is a phone whose language the server already holds, which is
+   every launch after the first: token → the languages → the slices, read →
+   the slices, written. It reads as one road because a language is filed
+   under the server's own number now (CLAUDE.md rule 22), so the row that
+   comes down IS this phone's language and there is nothing to make.
+
+   **THE FIRST LAUNCH OF ALL IS ONE LONGER AND IS NOT MEASURED HERE, AND
+   THAT IS SAID OUT LOUD SO SILENCE IS NOT READ AS A CHECK.** A language
+   whose row has never been made costs one more stage -- the row, before its
+   slices can be written -- and this file cannot ask for it: the server here
+   answers the launch's own question with the phone's own language, which is
+   what a real server does for every launch but the one. The allowance stays
+   at 5 because that is the road's ceiling; what is measured is the 4. */
 const MAX = {
   'launch':   5,
   'feed':     1,
@@ -162,11 +170,22 @@ function fakeNet(lat){
     if (p === '/rest/v1/language') {
       /* Only the 「whose language is this」 question answers with rows: the
          others are a launch's, and inventing languages there would make this
-         a check about netLangsDown() instead. */
+         a check about netLangsDown() instead.
+
+         AND THE ROW IT ANSWERS WITH IS THIS PHONE'S OWN LANGUAGE. A language
+         is filed under the server's own number now (CLAUDE.md rule 22,
+         2026-09-10), so a row carrying some other id is a DIFFERENT language:
+         answering `L-u` told the launch that this account has a language it
+         has never seen, and the walk added it -- then the phone's own
+         language had no row, so netLangRow() made one and put all eight
+         slices up behind it. Seven round trips for a launch, and not one of
+         them a road the app takes against a real server, which holds the row
+         for the language the phone is holding. `langId` is that language,
+         asked of the page at the moment it asks. */
       hs = asked(qs(u, 'owner'));
       rows = [];
       for (j = 0; j < hs.length; j++)
-        rows.push({ id: 'L-' + hs[j], owner: hs[j], name: 'Vethi',
+        rows.push({ id: langId, owner: hs[j], name: 'Vethi',
                     published_at: '2026-01-01' });
       return rows;
     }
@@ -406,8 +425,10 @@ await measure('thread', () => {
 
 await measure('save', () => {
   /* A language already up, which is what a save on a phone that has been
-     open for a minute is: netLangRow() answers with no request at all. */
-  LANGS[langId].sid = 'L-u';
+     open for a minute is: netLangRow() answers with no request at all.
+     「the row is there」 is www/core.js § LROW (2026-09-10) -- it was the
+     `sid` field on the index while a language had two numbers. */
+  langRowGot(langId);
   LANGS[langId].uid = 'u';
   /* One word typed and saved, which is the road every write takes:
      save() → bkTouch() → netSaveUp(), with the wait taken off it. */

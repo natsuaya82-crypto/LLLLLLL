@@ -113,18 +113,34 @@ const SESSION = JSON.stringify({
    a Google account arrives with a session and no @ yet, and that is the door.
    Without this line every screen in this file renders the door, `.segs .seg`
    matches nothing, and the claims read the app for what the seed did. */
+/* THE NUMBERS THE THREE LANGUAGES ARE FILED UNDER, and every one of them
+   carries dashes on purpose. A language's number IS the server's number
+   (CLAUDE.md rule 22, docs/scope/r12-oneid.md, 2026-09-10), and on the first
+   launch langsOneId() in www/core.js CARRIES any index key with no dash in it
+   -- which is what the old mint wrote -- to a fresh uuid, keys and all.
+   Seeded as `LA` and `LB` this file was handing the app an old phone: every
+   key it had written was carried to a number nothing here knew, slRd() came
+   back undefined, and thirteen claims read 「the grammar did not arrive」 for
+   the migration doing exactly what it is for. Fixed values rather than minted
+   ones, so the keys below can still be written out and a failure names the
+   same number on every run. */
+const LA = '11111111-1111-4111-8111-000000000001';
+const LB = '11111111-1111-4111-8111-000000000002';
+const LC = '11111111-1111-4111-8111-000000000003';
+const IDS = { LA: LA, LB: LB, LC: LC };
+
 const OLD = {
   'lingua.sess': SESSION,
   'lingua.me': JSON.stringify({ name: 'Aya', handle: 'aya', bio: '', pic: '',
                                 link: '', loc: '', avSent: '' }),
-  'lingua.langs': JSON.stringify({ LA: { name: 'Vaska', mine: true },
-                                   LB: { name: 'Tosk', mine: true } }),
-  'lingua.cur': 'LA',
-  'lingua.LA.words': JSON.stringify([{ hw: 'tuf', mns: ['hello'], pos: 'n' }]),
-  'lingua.LA.lang': 'Vaska',
-  'lingua.LA.phases': JSON.stringify(LA_PHASES),
-  'lingua.LB.words': JSON.stringify([{ hw: 'ark', mns: ['fish'], pos: 'n' }]),
-  'lingua.LB.lang': 'Tosk',
+  'lingua.langs': JSON.stringify({ [LA]: { name: 'Vaska', mine: true },
+                                   [LB]: { name: 'Tosk', mine: true } }),
+  'lingua.cur': LA,
+  ['lingua.' + LA + '.words']: JSON.stringify([{ hw: 'tuf', mns: ['hello'], pos: 'n' }]),
+  ['lingua.' + LA + '.lang']: 'Vaska',
+  ['lingua.' + LA + '.phases']: JSON.stringify(LA_PHASES),
+  ['lingua.' + LB + '.words']: JSON.stringify([{ hw: 'ark', mns: ['fish'], pos: 'n' }]),
+  ['lingua.' + LB + '.lang']: 'Tosk',
   'lingua.set': JSON.stringify({ theme: 'dark', plan: 'free', done: true,
                                  order: 'OSV',
                                  gpos: { adj: 'before', negp: 'before', adp: 'after' } }),
@@ -142,8 +158,8 @@ const OLD = {
      Without them this file seeds a phone that is signed in and holds two
      languages nobody owns, and three of its claims read 「the grammar did
      not move」 for the wrong reason: the language was locked. */
-  'lingua.LA.owner.got': 'u',
-  'lingua.LB.owner.got': 'u'
+  ['lingua.' + LA + '.owner.got']: 'u',
+  ['lingua.' + LB + '.owner.got']: 'u'
 };
 
 /* Read out of storage rather than off the globals, because that is where a
@@ -161,14 +177,14 @@ const OLD = {
 
    `lingua.set`, `lingua.langs` and `lingua.cur` are NOT slices -- the person's
    settings and the index -- and stay on the disk in both directions. */
-const REPORT = () => {
+const REPORT = (ids) => {
   const slice = (id) => {
     const raw = slRd('lingua.' + id + '.phases');
     let o = null;
     try { o = JSON.parse(raw); } catch (e) { o = null; }
     return { raw: raw, o: o };
   };
-  const a = slice('LA'), b = slice('LB');
+  const a = slice(ids.LA), b = slice(ids.LB);
   let set = null;
   try { set = JSON.parse(localStorage.getItem('lingua.set') || 'null'); } catch (e) {}
   return {
@@ -211,7 +227,7 @@ await pg.evaluate((old) => {
   Object.keys(old).forEach((k) => localStorage.setItem(k, old[k]));
 }, OLD);
 await pg.reload();
-const a = await pg.evaluate(REPORT);
+const a = await pg.evaluate(REPORT, IDS);
 
 want('the worked-on language carries the word order', a.aOrder, 'OSV');
 want('and the language with no stage of its own carries it too', a.bOrder, 'OSV');
@@ -234,7 +250,7 @@ want('and nothing new was marked as chosen', a.touchedAdp, false);
 
 /* ---- 4: the next launch, and every launch after it ---------------------- */
 await pg.reload();
-const b = await pg.evaluate(REPORT);
+const b = await pg.evaluate(REPORT, IDS);
 want('a second launch leaves the word order where it is', b.aOrder, 'OSV');
 want('and the other language too', b.bOrder, 'OSV');
 want('and does not mark a decision as chosen', b.touchedAdp, false);
@@ -264,19 +280,20 @@ want('and the default position with it', d.negpReads, 'after');
 
 /* ---- 6: wreckage is left exactly as it is ------------------------------- */
 const WRECK = '[[[not json';
-await pg.evaluate((old) => {
+await pg.evaluate((seed) => {
+  const old = seed.old, ids = seed.ids;
   localStorage.clear();
   Object.keys(old).forEach((k) => localStorage.setItem(k, old[k]));
   const langs = JSON.parse(localStorage.getItem('lingua.langs'));
-  langs.LC = { name: 'Broken', mine: true };
+  langs[ids.LC] = { name: 'Broken', mine: true };
   localStorage.setItem('lingua.langs', JSON.stringify(langs));
-  localStorage.setItem('lingua.LC.phases', '[[[not json');
-}, OLD);
+  localStorage.setItem('lingua.' + ids.LC + '.phases', '[[[not json');
+}, { old: OLD, ids: IDS });
 await pg.reload();
-const e = await pg.evaluate(() => ({
-  wreck: slRd('lingua.LC.phases'),
-  aOrder: (JSON.parse(slRd('lingua.LA.phases') || 'null') || {}).order
-}));
+const e = await pg.evaluate((ids) => ({
+  wreck: slRd('lingua.' + ids.LC + '.phases'),
+  aOrder: (JSON.parse(slRd('lingua.' + ids.LA + '.phases') || 'null') || {}).order
+}), IDS);
 want('the unreadable slice is exactly as it was', e.wreck, WRECK);
 want('and the languages beside it still arrive', e.aOrder, 'OSV');
 
@@ -288,27 +305,27 @@ await pg.evaluate((old) => {
   Object.keys(old).forEach((k) => localStorage.setItem(k, old[k]));
 }, OLD);
 await pg.reload();
-const f = await pg.evaluate(() => {
-  langOpen('LB');
+const f = await pg.evaluate((ids) => {
+  langOpen(ids.LB);
   setOrder('VOS');
   setGPos('negp', 'after');
   const bReads = orderDef().id, bNegp = gPos('negp');
-  langOpen('LA');
+  langOpen(ids.LA);
   let aSet = null;
-  try { aSet = JSON.parse(slRd('lingua.LA.phases') || 'null'); } catch (e) {}
+  try { aSet = JSON.parse(slRd('lingua.' + ids.LA + '.phases') || 'null'); } catch (e) {}
   let person = null;
   try { person = JSON.parse(localStorage.getItem('lingua.set') || 'null'); } catch (e) {}
   return {
     bReads: bReads, bNegp: bNegp,
     aReads: orderDef().id, aNegp: gPos('negp'),
     aStored: aSet && aSet.order, aStoredNegp: aSet && aSet.gpos && aSet.gpos.negp,
-    bStored: (JSON.parse(slRd('lingua.LB.phases') || '{}')).order,
+    bStored: (JSON.parse(slRd('lingua.' + ids.LB + '.phases') || '{}')).order,
     /* And the person's settings are not written to any more: they still say
        what they said before the move, and nothing goes back through them. */
     personOrder: person && person.order,
     aTouched: !!STG.set.order, aTouchedAdj: !!STG.set.adj
   };
-});
+}, IDS);
 want('the language that was changed says the new order', f.bReads, 'VOS');
 want('and the new position', f.bNegp, 'after');
 /* And what is written down is the CARDS -- a list of roles, because the board
@@ -1386,7 +1403,7 @@ const mk = await pg.evaluate(() => {
   /* ONE WINDOW IS FAKED and everything over it runs for real, which is what
      keep-check does for the same reason: a save is not saved until it is up
      (www/shell.js § keepSave) and there is no server behind this file. */
-  LANGS[langId].sid = 'srv-known'; langStore();
+  langRowGot(langId); langStore();
   netSend = function (method, path, body, tok, ok, bad) {
     ok(String(path).indexOf('/rest/v1/language?') === 0 ? [{ id: 'srv-known' }] : []);
   };

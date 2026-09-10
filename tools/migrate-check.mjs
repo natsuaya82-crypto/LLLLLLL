@@ -264,7 +264,15 @@ want('and it is the one that is open', c.id, await pg.evaluate(() => langId));
    survive when it does. A is somebody's real language; B is the empty one
    they just started, which is the case that matters -- the emptiness has to
    arrive along with it, or A's words are still sitting in WORDS when B is
-   saved. */
+   saved.
+
+   THE IDS IT SEEDS ARE THE OLD SHAPE AND THE APP MOVES THEM (2026-09-10). A
+   language has one number now and it is the server's, so `langsOneId()` in
+   www/core.js copies an index an older version wrote onto that number the
+   moment core.js is read. Everything below therefore asks the app which
+   number each language ended up under rather than writing 'LA' out again --
+   which is also the point: what a person opens has to be the same language
+   it was before the numbers moved. Case 9 below is the migration itself. */
 await pg.evaluate(() => {
   localStorage.clear();
   var A = 'LA', B = 'LB';
@@ -287,15 +295,30 @@ await pg.evaluate(() => {
 });
 await pg.reload();
 
+/* which number each of the two ended up under -- asked of the app, by the
+   name the old index carried */
+const N5 = await pg.evaluate(() => {
+  var out = { A:'', B:'' }, id;
+  for (id in LANGS){
+    if (!Object.prototype.hasOwnProperty.call(LANGS, id) || !LANGS[id]) continue;
+    if (LANGS[id].name === 'Vaska') out.A = id;
+    if (LANGS[id].name === 'Toko')  out.B = id;
+  }
+  return out;
+});
+want('the language an older version filed as LA is here under one number',
+     !!N5.A && N5.A !== 'LA', true);
+want('and so is the one it filed as LB', !!N5.B && N5.B !== 'LB', true);
+
 const A1 = await pg.evaluate(REPORT);
 want('A opens as itself', A1.word0, 'tuf');
 keeps('with its letters', A1.letterIds, 'aA,aB,aC');
 
 /* over to B */
-await pg.evaluate(() => langOpen('LB'));
+await pg.evaluate((b) => langOpen(b), N5.B);
 const B1 = await pg.evaluate(REPORT);
-want('B is open now', B1.id, 'LB');
-want('and localStorage agrees', B1.cur, 'LB');
+want('B is open now', B1.id, N5.B);
+want('and localStorage agrees', B1.cur, N5.B);
 want('B has no words of A\'s', B1.words, 0);
 lacks('nor A\'s letters', B1.letterIds, 'aA,aB,aC');
 want('nor A\'s notes', B1.notes, 0);
@@ -314,12 +337,12 @@ want('nor A\'s sounds', B1.snd.indexOf('t,u,f'), -1);
 
 /* saving B is what makes a leak permanent, so do it before going back */
 await pg.evaluate(() => { save(); saveLetters(); saveNotes(); saveStg(); });
-const leaked = await pg.evaluate(() =>
-  (localStorage.getItem('lingua.LB.words') || '').indexOf('tuf') >= 0);
+const leaked = await pg.evaluate((b) =>
+  (localStorage.getItem('lingua.' + b + '.words') || '').indexOf('tuf') >= 0);
 want('and B did not save them under its own id', leaked, false);
 
 /* and back */
-await pg.evaluate(() => langOpen('LA'));
+await pg.evaluate((a) => langOpen(a), N5.A);
 const A2 = await pg.evaluate(REPORT);
 want('A is still A', A2.word0, 'tuf');
 want('with all of its words', A2.words, 3);
@@ -779,15 +802,28 @@ const GLANGS = (setJson, phasesA) => pg.evaluate(([sj, pa]) => {
   localStorage.setItem('lingua.set', sj);
 }, [setJson, phasesA === undefined ? null : phasesA]);
 
-const gramOf = () => pg.evaluate(() => ({
+/* WHICH NUMBER EACH OF THE TWO ENDED UP UNDER. `langsOneId()` (www/core.js,
+   2026-09-10) moves an index an older version wrote onto the language's own
+   number the moment core.js is read, so 'LA' and 'LG' are what this seeded
+   and not what the app is holding. Asked by NAME, which is the one thing
+   about them that does not move. */
+const gid = (nm) => pg.evaluate((n) => {
+  var id;
+  for (id in LANGS)
+    if (Object.prototype.hasOwnProperty.call(LANGS, id) && LANGS[id] &&
+        LANGS[id].name === n) return id;
+  return '';
+}, nm);
+
+const gramOf = async () => pg.evaluate(([ida, idg]) => ({
   /* slRd() and not localStorage: a slice is in the MEMORY store now
      (LSL in www/core.js, 2026-09-04), and slRd() is the one thing that
      answers 「what is this slice」 -- it looks there first and falls back to
      what an older version of the app left on the disk. Asking localStorage
      alone is asking half the question, and it answers null for everything
      this migration writes. */
-  a: slRd('lingua.LA.phases'),
-  g: slRd('lingua.LG.phases'),
+  a: slRd('lingua.' + ida + '.phases'),
+  g: slRd('lingua.' + idg + '.phases'),
   /* the settings are READ and never removed -- docs/DATA_SAFETY.md rule 2 */
   setOrder: (JSON.parse(localStorage.getItem('lingua.set') || '{}') || {}).order,
   /* and what the open language's screen answers with, off the app's own
@@ -800,10 +836,10 @@ const gramOf = () => pg.evaluate(() => ({
      2026-09-04). What is left is the question netLangBack1() actually asks,
      which is PRESENCE and always was: a slice already here is stepped over,
      and one that is not here is filled in from the server. */
-  aThere: slRd('lingua.LA.phases')!==null,
+  aThere: slRd('lingua.' + ida + '.phases')!==null,
   name: langName,
   mark: SET.gramLang === 1 ? 'set' : 'unset'
-}));
+}), [await gid('Aya'), await gid('Gora')]);
 
 const twice = async () => { await pg.reload(); await settle();
                             await pg.reload(); await settle(); };
@@ -863,10 +899,10 @@ want('where the modifiers sit is copied on its own', g3.a, '{"gpos":{"adj":"befo
 /* 4. a language that already has a phases slice keeps every word of it. */
 await GLANGS(JSON.stringify({ order: 'VSO' }), '{"done":{"a":1},"order":"SOV"}');
 await twice();
-const g4 = await pg.evaluate(() => {
-  const o = JSON.parse(localStorage.getItem('lingua.LA.phases') || 'null') || {};
+const g4 = await pg.evaluate((ida) => {
+  const o = JSON.parse(localStorage.getItem('lingua.' + ida + '.phases') || 'null') || {};
   return { order: o.order, done: o.done && o.done.a };
-});
+}, await gid('Aya'));
 want('a language that already answered keeps its own order', g4.order, 'SOV');
 want('and everything else that was in there', g4.done, 1);
 
@@ -876,6 +912,90 @@ await GLANGS(JSON.stringify({ order: 'VSO' }), '[[[not json');
 await twice();
 const g5 = await gramOf();
 want('a phases slice that will not parse is left alone', g5.a, '[[[not json');
+
+/* ---- 9: the two numbers become one -------------------------------------
+   2026-09-10. A language used to have two numbers -- `L<ms36>`, minted on the
+   phone and used as the key of the index and of every key under it, and the
+   uuid the `language` row was given, kept beside it as `sid`. It has one now
+   and the phone writes it (`langMint()`, `www/core.js`), so every index an
+   older version wrote is in a shape nothing reads. `langsOneId()` copies it
+   onto the language's own number while core.js is still being read.
+
+   Three shapes arrive and this seeds all three at once, because the third is
+   the one that has to be LEFT ALONE and the only way to say so is to have it
+   sitting beside the two that move:
+
+     Lold + sid        it has been up: it goes to the number the row has
+     Lold, no sid      it never has: it gets one now
+     the uuid itself   already one number: untouched
+
+   And the first and the third being the SAME language is the two rows 150 was
+   written for. They land on one row here because they land on one number --
+   nothing is dropped and nothing is chosen between: a key already holding
+   something is never written over.
+
+   THE OLD KEYS ARE STILL THERE AFTERWARDS. That is the half a migration is
+   judged on (docs/DATA_SAFETY.md rule 2), and it is the half that cannot be
+   put back if it is wrong. */
+const U1 = 'a1b2c3d4-1111-4aaa-8bbb-000000000001';   /* has been up */
+const U2 = 'a1b2c3d4-2222-4aaa-8bbb-000000000002';   /* the pair 150 saw */
+await pg.evaluate(({ u1, u2 }) => {
+  localStorage.clear();
+  const ix = { Lold1: { mine: true, name: 'Vaska', sid: u1 },
+               Lold2: { mine: true, name: 'Toko' },
+               Lold3: { mine: true, name: 'Kano', sid: u2 } };
+  ix[u2] = { mine: true, name: 'Kano' };            /* 既に一本の形の行 */
+  localStorage.setItem('lingua.langs', JSON.stringify(ix));
+  localStorage.setItem('lingua.cur', 'Lold1');
+  localStorage.setItem('lingua.Lold1.words', '[{"hw":"tuf"}]');
+  localStorage.setItem('lingua.Lold1.letters', '[{"id":"aA"}]');
+  localStorage.setItem('lingua.Lold2.words', '[{"hw":"kef"}]');
+  localStorage.setItem('lingua.Lold3.words', '[{"hw":"geb"}]');
+  /* the row that is already one number is EMPTY, which is what 150 met */
+}, { u1: U1, u2: U2 });
+await pg.reload();
+await settle();
+const one = await pg.evaluate(({ u1, u2 }) => {
+  const ids = Object.keys(LANGS), by = {};
+  ids.forEach((k) => { by[(LANGS[k] || {}).name || ''] = k; });
+  return {
+    ids: ids, byName: by, cur: localStorage.getItem('lingua.cur'), open: langId,
+    word0: WORDS[0] && WORDS[0].hw,
+    upWords: slRd('lingua.' + u1 + '.words'),
+    tokWords: (function(){ var k; for (k in LANGS)
+      if ((LANGS[k]||{}).name === 'Toko') return slRd('lingua.' + k + '.words');
+      return null; })(),
+    pairWords: slRd('lingua.' + u2 + '.words'),
+    old1: localStorage.getItem('lingua.Lold1.words'),
+    old1L: localStorage.getItem('lingua.Lold1.letters'),
+    old2: localStorage.getItem('lingua.Lold2.words'),
+    old3: localStorage.getItem('lingua.Lold3.words'),
+  };
+}, { u1: U1, u2: U2 });
+
+const isUuid = (x) => String(x).length === 36 && String(x).charAt(8) === '-';
+want('an old index comes up with one row per language', one.ids.length, 3);
+want('and every one of them is under the language\'s own number',
+     one.ids.every(isUuid), true);
+want('the one that had been up is under the number its row has', one.byName.Vaska, U1);
+want('the one that never had gets a number of its own',
+     isUuid(one.byName.Toko) && one.byName.Toko !== U1 && one.byName.Toko !== U2, true);
+want('and the pair 150 was written for is ONE row, not two', one.byName.Kano, U2);
+/* 「読める」で、字面ではありません ── 開いている言語は起動が読み直して書き
+   戻すので、写しの字面まで同じであることを求めると、移行ではなく保存の書き方を
+   測る主張になります。開いていない二つは触られないので、そちらは字面で。 */
+want('the slices are readable under the new number',
+     String(one.upWords || '').indexOf('"hw":"tuf"') >= 0, true);
+want('including the one that had never been up', one.tokWords, '[{"hw":"kef"}]');
+want('and the empty row of the pair takes the other half\'s words',
+     one.pairWords, '[{"hw":"geb"}]');
+want('where somebody was standing moves with it', one.cur, U1);
+want('and that is the language that is open', one.word0, 'tuf');
+/* and the half that cannot be undone */
+want('the old keys are still there, byte for byte', one.old1, '[{"hw":"tuf"}]');
+want('all of them, not just the ones the new shape needed', one.old1L, '[{"id":"aA"}]');
+want('including the language that had never been up', one.old2, '[{"hw":"kef"}]');
+want('and the one whose number was already taken', one.old3, '[{"hw":"geb"}]');
 
 await br.close();
 srv.close();

@@ -32,7 +32,7 @@ un-re-read.
 
 ---
 
-## 2026-09-09 ── ビルド 150（一番新しい）
+## 2026-09-09 ── ビルド 151（一番新しい）
 
 `master` = `a223b3ba`、ゲート 43/43 緑（`slow-check` が増えて 43）、`npm run rls`
 緑（324 attempts）。ビルド 143（run 34201348003）→ 144（34263543210）→ 145
@@ -76,6 +76,12 @@ un-re-read.
   `docs/CHANGELOG.md` に DELETE REVIEW）。原因は 8 通りの端末状態を 147 と
   149 で流して測った（`docs/scope/r11-letters.md`）。実機は
   `docs/CHECK-0907.md` の 150 節。
+- **r12-oneid**（151、master `f11bbb88`、2026-09-10）：「スパゲッティやめろ、
+  太い幹を分岐させろ」。言語の番号を一本に ── 端末が uuid を打ち、サーバーの
+  行の id もそれ。`sid`・`nidFor`・`nidHolds`・`nidDrop` は削除。古い索引は起動時
+  `langsOneId()` が新しい番号へ写す（索引の鍵 `L…` だけ消える ── DELETE REVIEW、
+  ディスクの slice 鍵は残る）。検査 8 本が二番号前提だったので直した
+  （`r12-fix`：gramlang と slow の種）。実機は `docs/CHECK-0907.md` の 151 節。
 - `press` の横幅の揺れが 2026-09-09 にも一回（数字の面 406/402、同じコードで
   回し直すと緑）── `docs/BACKLOG.md` の項に足してある。
 
