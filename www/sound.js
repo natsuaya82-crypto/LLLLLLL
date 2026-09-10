@@ -77,7 +77,9 @@ function wsKeepOn(){
   /* Not in somebody else's language: save() refuses one, so a buffer here
      would put a Save in the bar that could not write. */
   if(langLocked()) return;
-  keepOn(keepKey(), {ws:wsys(), dir:scriptDir()}, wsKeepSave);
+  keepOn(keepKey(),
+         function(){ return {ws:wsys(), dir:scriptDir()}; },
+         wsKeepSave);
 }
 /* What the ticks read: what has been chosen, or what the language holds. */
 function wsKept(f){ return keepVal(keepKey(), f); }

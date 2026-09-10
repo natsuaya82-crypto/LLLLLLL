@@ -62,6 +62,29 @@
         Save still in the bar AND STILL GOLD -- nothing is thrown away without
         somebody having said so
 
+   AND THEN EVERY SCREEN THAT HAS A SAVE, ASKED OF THE PAGE. Everything above
+   is about eight screens named in a list and about the one thing TYPED on
+   each, and that list is why the fault the owner reported on 2026-09-10 was
+   invisible for as long as it was: a change made by PRESSING is on none of
+   those fields. 「書き換えてもセーブボタン光らないとこ多いからこれも一本化
+   してね」. The walk at the foot of this file stands on every route in PAGES
+   with every argument it takes and on every open* form, keeps the ones that
+   put a Save in the bar, and presses everything on them -- five more claims,
+   and not one screen or button named:
+
+    17  a screen with a Save answers with a FUNCTION (www/shell.js § keepOn)
+    18  press a button: if the screen stays and its own now() has MOVED, the
+        Save is GOLD
+    19  and if now() has not moved, the Save is GREY -- which is every
+        selection on every screen, asked without naming one
+    20  a press that changes the LANGUAGE moves now(). 18 alone goes green on
+        the exact bug this was written after: setGPos() wrote STG and the
+        board's now() did not carry it, so nothing moved, the corner stayed
+        grey, and the wiring was perfect. One named exception, held both ways
+    21  a field wired to keepSet() writes a name its screen's now() already
+        answers -- otherwise what the language holds never reaches the box,
+        and both halves of 18/19 stay green through it
+
    Run: node tools/keep-check.mjs                                        */
 import { seed } from './fixture.mjs';
 import { fileURLToPath } from 'url';
@@ -690,6 +713,265 @@ const more = await pg.evaluate(() => {
   return out;
 });
 
+/* ---- EVERY SCREEN WITH A SAVE, AND EVERYTHING THAT CAN BE CHANGED ON IT --
+   OWNER 2026-09-10: 「書き換えてもセーブボタン光らないとこ多いからこれも
+   一本化してね」.
+
+   Everything above this line walks EIGHT screens, named in a list, and asks
+   about the one thing that is TYPED on each. That list is why the fault the
+   owner is describing was invisible: a change made by PRESSING -- a row of
+   the article added, a section, 「may this be taken away」, the word order's
+   swap, which keyboard goes to the phone, ROUND on a drawn letter -- is on
+   none of those eight fields, and eleven of them left the Save grey with the
+   language changed under it (docs/scope/r14-keep.md, measured 2026-09-10).
+
+   So this asks the PAGE instead. Every route in PAGES with every argument it
+   takes, and every open* form, is stood on for real; the ones that put a Save
+   in the bar are the screens this is about, and every button on each of them
+   is pressed. Nothing is named here, so a screen written tomorrow is walked
+   the day it is written -- which is the one fault docs/DATA_SAFETY.md names
+   by name: a list of keys, written by hand, that nobody remembered to add to.
+
+   THREE CLAIMS, AND THE FIRST TWO ARE THE PAIR.
+
+     A  every screen with a Save answers with a FUNCTION. A screen that hands
+        over a value instead is one whose Save can never light for anything
+        but typing, which is the shape this replaced
+     B  press a button. If the screen stays and what its own now() answers has
+        MOVED, the Save is GOLD; if now() has not moved, the Save is GREY.
+        Both directions and no list: a selection -- a row of the keyboard, a
+        folded section, a card lifted -- does not move now() and therefore has
+        to stay grey, and that is C in the table asked without naming one of
+        them
+     C  and a press that changes the LANGUAGE moves now(). B alone would go
+        green on exactly the bug this was written after: setGPos() wrote STG
+        and the board's now() did not carry it, so nothing moved, the button
+        stayed grey, and the wiring was perfect
+
+   WHY B IS NOT A COPY OF keepDirty(). This takes its own reading of the
+   screen's now() before and after, and then asks what COLOUR the button in
+   the bar is. What is between those two is everything that actually broke:
+   whether the buffer is filed under the screen in front of somebody (the
+   keyboard's kbShow against its route), whether the bar was repainted at all
+   (the word sheet's wdPaint, which rebuilt the sheet and left the corner as
+   it was), and whether the screen registered a buffer in the first place.
+   keepDirty()'s own comparison is what the eight-screen walk above holds.
+
+   THE ONE NAMED EXCEPTION TO C, and it is a baseline in box-check's sense:
+   an entry that stops being true FAILS, so the list cannot rot into
+   permission. setMyFont writes SET -- this person's setting, the same on
+   every language -- and netPrefsPut() sends it on the press, so it has a road
+   of its own and a Save that lit for it would be offering to send a thing
+   that has already gone. docs/scope/r14-keep.md § D.
+
+   AND THE FIELDS, ASKED THE SAME WAY. Every [data-in] on every one of those
+   screens: type into it and the Save goes gold, put back what it held and it
+   goes grey again. The second half is the one worth having -- it is false
+   exactly when the screen's now() does not answer that field, so a field
+   somebody wires to keepSet() and forgets to put in now() is caught here
+   rather than by a person noticing the Save never goes out again. */
+const walk = await pg.evaluate(({ s }) => {
+  eval('window.__seed = (' + s + ')');
+  const seedAgain = window.__seed;
+  seedAgain();
+  SET.walked = true; SET.plan = 'pro';
+  const out = { stands: [], fails: [], fields: 0, presses: 0, gold: 0, refused: 0 };
+
+  langRowGot(langId); langStore();
+  netSend = function(method, path, body, tok, ok){
+    ok(String(path).indexOf('/rest/v1/language?') === 0 ? [{ id: 'srv-known' }] : []);
+  };
+
+  /* A change to the LANGUAGE, and to nothing else. slMine() is the app's own
+     answer to 「what is this phone holding」 (www/core.js). */
+  function all(){
+    var keys = [], i, k, acc = '';
+    for(i = 0; i < localStorage.length; i++) keys.push(localStorage.key(i));
+    for(k in LSL) if(Object.prototype.hasOwnProperty.call(LSL, k) && keys.indexOf(k) < 0) keys.push(k);
+    keys.sort();
+    for(i = 0; i < keys.length; i++) acc += keys[i] + '=' + slMine(keys[i]) + ';';
+    return acc;
+  }
+  function saveBtn(){ return document.querySelector('.navtop [data-do="keepPress"]'); }
+  function saveOn(){ var b = saveBtn(); return !!b && b.classList.contains('navon'); }
+  function whereAmI(){ return here().r + '|' + (here().a === undefined ? '' : here().a); }
+  function nowSig(){ try { return JSON.stringify(keepNow(keepKey())); } catch(e){ return 'threw'; } }
+  function acts(){
+    var a = document.getElementById('app'), sh = document.getElementById('sheet'), l;
+    l = a ? Array.prototype.slice.call(a.querySelectorAll('[data-do],[data-ch]')) : [];
+    if(sh && sh.className.indexOf('on') >= 0)
+      l = l.concat(Array.prototype.slice.call(sh.querySelectorAll('[data-do],[data-ch]')));
+    return l;
+  }
+  function fields(){
+    var a = document.getElementById('app');
+    return a ? Array.prototype.slice.call(a.querySelectorAll('[data-in]')) : [];
+  }
+
+  /* Every route and every argument it takes, asked of the page. The three
+     that are read off the app rather than guessed are the same three
+     act-check and i18n-check read. */
+  const argsOf = (r) =>
+    r === 'set'  ? [null].concat(SETS.map(x => x.id)) :
+    r === 'gram' ? [null].concat(gramArgs()) :
+    r === 'fm'   ? ['tira'] :
+    [null];
+  const lid = LETTERS[0].id, hw = WORDS[0].hw;
+  const opens = Object.keys(window).filter(k =>
+    /^open[A-Z]/.test(k) && typeof window[k] === 'function' && k !== 'openForm');
+
+  const STANDS = [];
+  Object.keys(PAGES).forEach(function(r){
+    argsOf(r).forEach(function(a){
+      var arg = a;
+      if(arg === null){ if(r === 'letter') arg = lid; if(r === 'word') arg = hw; }
+      STANDS.push([r + (arg ? ':' + arg : ''),
+                   function(){ go(r, arg === null ? undefined : arg); }]);
+    });
+  });
+  /* The four screens a route alone does not reach: a keyboard needs one to
+     have been built, a section of the article needs a section, a stage's rule
+     page needs a stage, and a form rule needs a draft. */
+  STANDS.push(['kb:1', function(){
+    if(kbBoards().length < 2){ KB = null; kbShow = 0; kbAdd('qwerty'); }
+    goTab('build'); go('kb', '1'); }]);
+  STANDS.push(['wldart', function(){
+    wldArtAdd(); goTab('profile'); go('world');
+    go('wldart', wldArts()[wldArts().length - 1].id); }]);
+  STANDS.push(['form strule', function(){ goTab('build'); go('gram', 'greet'); openStRules('greet'); }]);
+  STANDS.push(['form fmr', function(){ goTab('build'); go('words'); fmrNew('v', 'pst'); }]);
+  opens.forEach(function(o){
+    STANDS.push(['form ' + o, function(){ window[o].length ? window[o](hw) : window[o](); }]);
+  });
+
+  /* WRITTEN DOWN FIRST, and before the screen is stood on. The fixture builds
+     WORDS and SET in memory, so the first save() of a run flushes all of it --
+     and a press that merely CALLS save() then looks exactly like a press that
+     changed something. Claim C is about what changed, so the phone starts
+     each press already holding everything. */
+  function flush(){ try { save(); langSaveAll(); } catch(e){} }
+  function stand(go1){
+    seedAgain(); SET.walked = true; SET.plan = 'pro';
+    langRowGot(langId); langStore();
+    flush();
+    try { popOff(); } catch(e){}
+    try { closeSheet({ target: { id: 'sbg' } }); } catch(e){}
+    try { goTab('build'); go1(); } catch(e){ return false; }
+    try { render(); } catch(e){ return false; }
+    return true;
+  }
+
+  /* A change with a road of its own, which therefore writes the phone and
+     leaves the Save grey. A BASELINE in box-check's sense: an entry that has
+     stopped being true fails below, so this cannot rot into permission. */
+  const OWN_ROAD = { setMyFont: 'SET.myfont -- netPrefsPut() sends it on the press' };
+  const roadSeen = {};
+  /* WHICH FIELD A KEYSTROKE WENT INTO. Taken from the real keepSet() rather
+     than worked out from the handler's name, which is a mapping this file
+     would have to keep -- and a check that recomputes the thing under test is
+     a copy of it. */
+  const keepSetSaw = [];
+  const realKeepSet = keepSet;
+  window.keepSet = function(f, v){ keepSetSaw.push(String(f)); return realKeepSet(f, v); };
+
+  for(var i = 0; i < STANDS.length; i++){
+    var lab = STANDS[i][0], go1 = STANDS[i][1];
+    if(!stand(go1)) continue;
+    if(!saveBtn()) continue;                       /* no Save: not this screen */
+    var b = KEEP[keepKey()], rec = { n: lab, key: whereAmI(), fields: 0, presses: 0 };
+
+    /* A -- it answers with a function */
+    if(!b || typeof b.now !== 'function')
+      out.fails.push(lab + ': a Save in the bar over a screen that hands no now()');
+    if(saveOn()) out.fails.push(lab + ': a GOLD Save on arrival');
+
+    /* the fields, from the page */
+    var fs = fields();
+    for(var f = 0; f < fs.length; f++){
+      if(!stand(go1)) break;
+      var ff = fields(); if(f >= ff.length) break;
+      var was = String(ff[f].value || ''), nm = ff[f].getAttribute('data-in');
+      var saw0 = keepSetSaw.length;
+      ff[f].value = was + 'zq'; ff[f].dispatchEvent(new Event('input', { bubbles: true }));
+      /* A FIELD MAY REFUSE THE KEYSTROKE, and one does: the link on the
+         profile puts back what it held for anything that is not the shape of
+         a URL (www/me.js § meSetLink), 「通らなかった打鍵は無かったことに
+         する」. Nothing was typed, so there is nothing here to claim -- and
+         it is counted rather than skipped in silence, because a field that
+         starts refusing everything would otherwise leave this walk looking
+         exactly as green as it does now. */
+      if(String(ff[f].value || '') === was){ out.refused++; continue; }
+      /* AND WHAT IT WROTE IS A FIELD now() ALREADY ANSWERS. keepSet() is the
+         one road into the half that is not written down (www/shell.js
+         § keepOn), and the two halves are merged by name -- so a field wired
+         to keepSet() under a name now() does not carry is a field whose value
+         is never read back out of the language. What somebody sees is an
+         empty box on a letter that has a note on it, and BOTH assertions
+         below stay green through it: the box arrives empty, typing turns the
+         Save gold, and emptying it again turns it grey. Watched: with `nt`
+         taken out of the letter's now() this walk was green until this
+         claim was written. */
+      /* only what THIS keystroke wrote: a field whose handler does not go
+         through keepSet at all (the word sheet writes wEdit and repaints)
+         pushes nothing, and reading the last name pushed would be reading
+         some other screen's */
+      var wrote1 = keepSetSaw.length > saw0 ? keepSetSaw[keepSetSaw.length - 1] : '';
+      if(wrote1 && !Object.prototype.hasOwnProperty.call(keepRead(KEEP[keepKey()].now), wrote1))
+        out.fails.push(lab + ': ' + nm + ' writes the field 「' + wrote1 + '」 and now() does not ' +
+                       'answer it -- what the language holds would never reach the box');
+      var lit = saveOn();
+      var ff2 = fields();
+      if(f < ff2.length){
+        ff2[f].value = was; ff2[f].dispatchEvent(new Event('input', { bubbles: true }));
+      }
+      var backGrey = !saveOn();
+      if(!lit) out.fails.push(lab + ': typing into ' + nm + ' left the Save grey');
+      if(!backGrey) out.fails.push(lab + ': ' + nm + ' put back the way it was and the Save stayed gold' +
+                                   ' -- now() does not answer that field');
+      rec.fields++; out.fields++;
+    }
+
+    /* the buttons, from the page */
+    var n = acts().length;
+    for(var j = 0; j < n; j++){
+      if(!stand(go1)) break;
+      var els = acts(); if(j >= els.length) break;
+      var name = els[j].getAttribute('data-do') || els[j].getAttribute('data-ch');
+      if(name === 'keepPress' || name === 'back') continue;
+      flush();
+      var sigWas = nowSig(), allWas = all(), whereWas = whereAmI();
+      try { els[j].click(); } catch(e){ try { popOff(); } catch(e2){} continue; }
+      if(whereAmI() !== whereWas){ try { popOff(); } catch(e){} continue; }  /* it went somewhere */
+      if(typeof popOn === 'function' && popOn()){ popOff(); continue; }      /* it asked first */
+      var moved = nowSig() !== sigWas, gold = saveOn(), wrote = all() !== allWas;
+      rec.presses++; out.presses++;
+      if(moved) out.gold++;
+      /* B, both ways */
+      if(moved && !gold)
+        out.fails.push(lab + ' -> ' + name + ': the screen changed and the Save stayed grey');
+      if(!moved && gold)
+        out.fails.push(lab + ' -> ' + name + ': the Save went gold and the screen is what it was');
+      /* C */
+      if(wrote && !moved){
+        if(!OWN_ROAD[name])
+          out.fails.push(lab + ' -> ' + name + ': it wrote the phone and the screen says nothing changed' +
+                         ' -- now() does not carry what it changed');
+        else roadSeen[name] = 1;
+      }
+      try { popOff(); } catch(e){}
+    }
+    out.stands.push(rec);
+  }
+  /* the baseline both ways: an entry nothing reaches any more is a line that
+     outlived what it described */
+  for(var k in OWN_ROAD){
+    if(!roadSeen[k])
+      out.fails.push('OWN_ROAD names ' + k + ' (' + OWN_ROAD[k] + ') and nothing on any screen ' +
+                     'writes the phone through it any more -- delete the line');
+  }
+  return out;
+}, { s: seed.toString() });
+
 await br.close();
 
 const fails = r.fails.slice();
@@ -769,6 +1051,13 @@ if(more.ntReadKey === more.ntEditKey)
 if(!more.deadStayed) fails.push('a save with no wire went back anyway');
 if(!more.deadSaid) fails.push('a save with no wire went nowhere and said nothing');
 if(more.deadTyped !== 'written in a tunnel') fails.push('a save with no wire threw away what was typed: ' + JSON.stringify(more.deadTyped));
+
+walk.fails.forEach((m) => fails.push(m));
+console.log('every screen with a Save (' + walk.stands.length + '), asked of the page: ' +
+            walk.fields + ' fields typed into and put back (' + walk.refused +
+            ' refused the keystroke), ' + walk.presses + ' buttons pressed, ' +
+            walk.gold + ' of them changed the screen and every one turned the corner gold -- ' +
+            'and every press that left it as it was left the Save grey');
 
 r.screens.forEach((s) => {
   console.log('  ' + s.n + ' (' + s.key + ')');

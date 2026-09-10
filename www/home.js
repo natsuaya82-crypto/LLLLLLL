@@ -840,26 +840,59 @@ function world(){ return WLD; }
    typed into a box. */
 function wldKeyOv(id, f){ return 'ov.'+String(id)+'.'+f; }
 function wldKeyArt(id){ return 'art.'+String(id)+'.b'; }
-function wldKeepOn(){
-  var w, was;
-  /* Not in somebody else's language: saveWld() refuses one. */
-  if(langLocked()) return;
-  w=world(); was={where:String(w.where||''), who:String(w.who||'')};
+/* WHAT THIS PAGE IS HOLDING. The two fixed facts, every row of the overview,
+   every section's body -- and, because they are changes to this language made
+   by pressing rather than by typing, WHICH rows there are, WHICH sections
+   there are and which of them may be taken away.
+
+   Those last three were the fault. Adding a row, deleting one, adding a
+   section and answering 「may this be taken」 each write the language through
+   saveWld() and each left the Save in the corner grey (docs/scope/r14-keep.md
+   § A). Nothing here says so and nothing has to: the answer is read off the
+   language every time the button is drawn, so a row put in is a field that
+   was not there a moment ago and a row taken out is one that has gone --
+   which is the second loop in keepDirty() (www/shell.js § keepOn).
+
+   `hide` is NOT here. 「公開」 sends on the press, through netLangPublic(),
+   and pops when it does not land -- OWNER 2026-09-05 -- so it has a road of
+   its own and a Save that lit for it would be offering to send a thing that
+   has already gone. docs/scope/r14-keep.md § D. */
+function wldNow(){
+  var w=world(), o={where:w.where||'', who:w.who||''}, secs=w.secs, rows=[];
   wldOvs().forEach(function(row){
     if(!row) return;
-    was[wldKeyOv(row.id, 'k')]=String(row.k||'');
-    was[wldKeyOv(row.id, 'v')]=String(row.v||'');
+    rows.push('ov:'+row.id);
+    o[wldKeyOv(row.id, 'k')]=String(row.k||'');
+    o[wldKeyOv(row.id, 'v')]=String(row.v||'');
   });
   wldArts().forEach(function(one){
     if(!one) return;
-    was[wldKeyArt(one.id)]=String(one.b||'');
+    rows.push('art:'+one.id+':'+String(one.t||''));
+    o[wldKeyArt(one.id)]=String(one.b||'');
   });
-  keepOn(keepKeyOf('world', ''), was, wldKeepSave);
+  /* WHICH rows there are, said once. A row added with nothing in it is two
+     empty fields, and two empty fields read exactly like two fields that were
+     never there -- so the page that had just grown a row said it was
+     unchanged. What changed is the LIST, and this is it. */
+  o.rows=rows.join('|');
+  o.dl=JSON.stringify((secs && typeof secs==='object' && !(secs instanceof Array))? secs : {});
+  return o;
 }
+function wldKeepOn(){
+  /* Not in somebody else's language: saveWld() refuses one. */
+  if(langLocked()) return;
+  keepOn(keepKeyOf('world', ''), wldNow, wldKeepSave);
+}
+/* `v` is what was TYPED and not written down -- the rows and the sections
+   themselves are already on the language by the time the button is gold, the
+   way a keyboard's layout is (www/keyboard.js § kbKeepSave). `dl` and the
+   section titles are in wldNow() so that the button lights for them, and are
+   not written here because there is nothing left to write. */
 function wldKeepSave(v, done){
   var f, m;
   for(f in v){
     if(!v.hasOwnProperty(f)) continue;
+    if(f==='dl' || f==='rows') continue;
     if(f==='where' || f==='who'){ world()[f]=String(v[f]); continue; }
     m=/^ov\.(.+)\.([kv])$/.exec(f);
     if(m){ wldOvPut(m[1], m[2], String(v[f])); continue; }
@@ -943,7 +976,10 @@ function wldArtSet(id, v){ keepSet(wldKeyArt(id), String(v||'')); }
 function wldArtKeepOn(one){
   if(langLocked()) return;
   keepOn(keepKeyOf('wldart', one.id),
-         {t:String(one.t||''), b:String(one.b||'')},
+         function(){
+           var a=wldArtBy(one.id);
+           return a? {t:a.t, b:a.b} : {t:'', b:''};
+         },
          function(v, done){
            if(v.hasOwnProperty('t')) wldArtPut(one.id, 't', v.t);
            if(v.hasOwnProperty('b')) wldArtPut(one.id, 'b', v.b);

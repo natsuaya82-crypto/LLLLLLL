@@ -1020,11 +1020,10 @@ async function pressSave(how){
        せん。そして l1 が最初から持っている三角とは別の形にする ── 同じ形だと
        「書いた線が載った」と「元から載っていた」が見分けられません。 */
     GE.st = [{ pts:[[112,688],[400,400],[688,688],[400,112],[112,400]] }];
-    /* **描いたものは buffer に置く。**線は www/shell.js § KEEP の預かりに
-       なっていて、指が一本引くたび geKeepPut() が呼ばれます（www/glyph.js）。
-       GE.st に載せるだけでは buffer は空のままで、バーの保存は「変わって
-       いない画面」を押したことになります。 */
-    geKeepPut();
+    /* GE.st に載せればそれが「今この画面が持っているもの」です。画面は
+       geNow() 一つで答え、KEEP はそれを開いた時と比べます
+       （www/shell.js § keepOn、www/glyph.js § geNow）。buffer に押し込む
+       geKeepPut() は無くなりました。 */
     render();
     await wait(50);
     window.__SRV.down = (how === 'down');

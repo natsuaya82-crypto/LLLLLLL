@@ -740,7 +740,7 @@ function g2Bd(id){
 /* Called from the view, so it runs on every render of this screen and finding
    a buffer already here leaves it exactly as it is -- somebody has been
    arranging. The list travels as a comma-joined string because a buffer holds
-   strings (keepPut), and orderSeq() is what turns it back into the list. */
+   strings (keepSet), and orderSeq() is what turns it back into the list. */
 /* WHAT THIS LANGUAGE HAS ACTUALLY SAVED, which is what the board opens with.
    Empty is a real answer here and means nobody has arranged anything yet -- so
    the sentence line starts blank and every card is in the tray, which is what
@@ -748,12 +748,25 @@ function g2Bd(id){
    「最初から主語と動詞とかが入ってるせいでわかりにくい」 OWNER 2026-09-06. */
 function g2Stored(){ return orderKeep(STG && STG.order); }
 function g2KeepOn(b){
-  keepOn(g2KeepKey(), {seq:b.stored().join(',')},
+  keepOn(g2KeepKey(),
+         /* WHAT THIS PAGE IS HOLDING. The cards, which are not written down
+            until the button is pressed and therefore live in the buffer; and
+            the rows of TWO under them, which are, because g2Move() on one of
+            those is a swap and setGPos() writes it where it lives. That
+            second half was the fault: a side swapped changed the language
+            with the corner still grey (docs/scope/r14-keep.md § A).
+
+            All of STG.gpos and not the rows this page happens to show. The
+            mark is taken as the page opens, so a side set on another screen
+            is already in it and does not light this one; naming the rows
+            here would be a list somebody has to remember to add to. */
+         function(){ return {seq:b.stored().join(','),
+                             gpos:JSON.stringify((STG && STG.gpos)||{})}; },
          /* Split before it is handed on: setOrder() takes the list of cards
             or the old six-letter string, and a comma-joined string is
             neither -- orderSeq() would read 'O,V,S,ADV' one character at a
             time and keep the three single letters. The buffer holds strings
-            (keepPut); this is where it stops being one. */
+            (keepSet); this is where it stops being one. */
          function(v, done){
            var s=v.hasOwnProperty('seq')? String(v.seq) : b.stored().join(',');
            b.save(s? s.split(',') : []);
@@ -766,7 +779,12 @@ function g2Seq(){
   var s=keepVal(g2KeepKey(), 'seq');
   return s? s.split(',') : [];
 }
-function g2Set(a){ keepPut(g2KeepKey(), 'seq', a.join(',')); render(); }
+/* THE ONE ENTRANCE. The cards are not written down until the button is
+   pressed, so where they stand is the buffer itself -- the same kind of thing
+   a half-typed field is (www/shell.js § keepOn) -- and keepSet() is the one
+   road into it. `g2KeepKey()` is `keepKey()`, which is what keepSet() writes
+   under, so this is that road and not a second one. */
+function g2Set(a){ keepSet('seq', a.join(',')); render(); }
 /* From the tray onto the end of the board 「下の札を押すと上の列の末尾に入り」.
    A role already on the board is not put on twice: the tray only ever shows
    what is off it, so this can only be reached by a screen that has gone

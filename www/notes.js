@@ -136,7 +136,7 @@ FORM_OPEN.ntedit=function(i){ openNoteEdit(parseInt(i,10)); };
    being made are two of them and cannot be confused for each other. */
 function ntKeepOn(k, n){
   keepOn(keepKeyOf('form', 'ntedit:'+k),
-         {t:String(n.t||''), b:String(n.b||'')},
+         function(){ return {t:n.t, b:n.b}; },
          function(v, done){ saveNote(v); done(true); });
 }
 function ntTyped(k, f){ return keepVal(keepKeyOf('form', 'ntedit:'+k), f); }

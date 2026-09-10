@@ -543,10 +543,18 @@ function wdKidsHTML(){
 function wdPaint(){
   var b=document.getElementById('wd-body'); if(!b) return;
   b.innerHTML=wdFormHTML(); phkMount(); geTiles();
-  /* The sheet is repainted and the bar is not, so the button in the corner is
-     brought with it -- letters go onto the spelling here and nowhere else.
-     www/shell.js § navDo. */
+  /* The sheet is repainted and the bar is not, so the buttons in the corner
+     are brought with it -- letters go onto the spelling here and nowhere
+     else. www/shell.js § navDo.
+
+     THIS IS THE SHEET'S ONE ENTRANCE and that is why the Save is here rather
+     than in each handler: everything that moves anything on this sheet ends
+     in wdPaint(), so asking once here covers the meaning deleted, the tag
+     cut, the subclass chosen and whatever is added tomorrow. wdKeepTouch()
+     is the same notice said by a field being typed into, which does not come
+     through here -- typing must not rebuild the sheet. */
   navDoPaint('addOne', wdAddOn());
+  wdKeepTouch();
 }
 /* ---- four things an entry carries, beyond what it means -----------------
    A dictionary is not a list of meanings. Which of two words for the same
@@ -1102,15 +1110,16 @@ function fmrSig(r){ return JSON.stringify([(r && r.add)||[], (r && r.at)||'end']
    behind a Save would be changing a screen nobody asked to have changed. */
 function fmrKeepOn(){
   if(!fmrDraft || fmrOpen!==fmrDraft.id || langLocked()) return;
-  keepOn(keepKeyOf('form', 'fmr:'+fmrOpen), {r:fmrSig(fmrDraft)},
+  keepOn(keepKeyOf('form', 'fmr:'+fmrOpen),
+         function(){ return {r:fmrSig(fmrDraft)}; },
          function(v, done){ done(fmrDraftWrite()); });
 }
-/* And the draft said again into it, from the one place a change to a rule
-   goes through, so the Save in the corner lights on the first letter typed
-   and the way out asks. */
+/* The draft IS what this screen is holding, and the buffer asks it (above),
+   so nothing has to be said into it. What is left is the repaint: the letters
+   are typed and typing does not redraw the page. */
 function fmrKeepTouch(){
   if(!fmrDraft || fmrOpen!==fmrDraft.id) return;
-  keepPut(keepKeyOf('form', 'fmr:'+fmrOpen), 'r', fmrSig(fmrDraft));
+  keepBtnPaint();
 }
 /* THE ONE PLACE A NEW RULE JOINS THE CHAPTER. Nothing else pushes onto
    fmRules(), so a rule that was never saved is a rule that never existed. */
@@ -1474,30 +1483,33 @@ function wdSigEdit(){
   return wdSig(wEdit.sp, wEdit.mns, wEdit.pos, wEdit.sub, wEdit.reg,
                wEdit.tags, wEdit.ety, wEdit.nt);
 }
-function wdSigWord(w){
-  return wdSig(spOf(w), wMns(w), w.pos, subOf(w), w.reg||'',
-               (w.tags||[]).slice(), w.ety||'', w.nt||'');
-}
+/* THE SHEET, SAID ONCE. It is asked rather than told: whatever is on wEdit
+   at this moment is what the screen is holding, so a meaning added, a tag
+   cut, an etymology changed or a spelling retyped all reach the corner
+   without a line of their own. Adding the meaning field wrote wEdit and said
+   nothing, so the Save was grey over a sheet that had grown a row
+   (docs/scope/r14-keep.md § A). www/shell.js § keepOn. */
+/* AND THE MARK IS TAKEN FROM THE SAME FUNCTION. It used to be taken off the
+   WORD, by a wdSigWord() of its own, while everything after it was measured
+   off wEdit -- 「so that the two being equal is a fact rather than an
+   assumption」 -- and that is one screen answering 「what am I holding」 with
+   two functions, which is the shape this whole change exists to remove. wEdit
+   is built out of the word one line before the sheet is opened and there is
+   nothing in between. */
+function wdNow(){ return {w:wdSigEdit()}; }
 function wdKeepOn(){
   if(!wEdit || !openHw || addW || langLocked()) return;
-  keepOn(keepKeyOf('form', 'edit:'+openHw), {w:wdSigOpen},
+  keepOn(keepKeyOf('form', 'edit:'+openHw), wdNow,
          function(v, done){ done(wdWrite()); });
-  wdKeepTouch();
 }
-/* The sheet, said again into the buffer. Two roads reach it and they are two
-   because one is not enough: the sheet being BUILT (wdKeepOn above, through
-   relDirty), and a field being TYPED into -- which does not rebuild the sheet
-   and must not, because a field being typed into loses the keyboard the
-   moment the page under it is replaced. Without the second, the Save in the
-   bar would not appear until something else redrew the screen. */
+/* A field being TYPED into does not rebuild the sheet and must not -- a field
+   being typed into loses the keyboard the moment the page under it is
+   replaced -- so the one thing left to say is that the button should be
+   repainted where it stands. It asks wdNow() itself. */
 function wdKeepTouch(){
   if(!wEdit || !openHw || addW || langLocked()) return;
-  keepPut(keepKeyOf('form', 'edit:'+openHw), 'w', wdSigEdit());
+  keepBtnPaint();
 }
-/* What the word was when the sheet was opened. Taken there and nowhere else:
-   it is the mark everything after it is measured from, and a mark taken again
-   later is a mark that has moved. */
-var wdSigOpen='';
 /* ---- a word, read -------------------------------------------------------
    Opening a word used to open its editor: every field live, a Save at the
    foot, the delete button under it. That is the wrong answer to "what does
@@ -1660,10 +1672,6 @@ function openEdit(hw){
   wEdit={seq:wPh(w).slice(), sp:JSON.parse(JSON.stringify(spOf(w))), mns:wMns(w).slice(),
          pos:w.pos, sub:subOf(w), reg:w.reg||'', tags:(w.tags||[]).slice(),
          ety:w.ety||'', nt:w.nt||''};
-  /* The mark this sheet's changes are measured from, taken before anything is
-     drawn out of wEdit. Off the WORD and not off wEdit, so that the two being
-     equal is a fact rather than an assumption. */
-  wdSigOpen=wdSigWord(w);
   /* No button in the corner. navTop() puts one there when something on the
      sheet has been changed and not before -- www/shell.js § KEEP. */
   openForm('edit:'+w.hw, wOut(w.hw), '<div id="wd-body">'+wdFormHTML()+'</div>',

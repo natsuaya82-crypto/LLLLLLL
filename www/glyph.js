@@ -1599,12 +1599,18 @@ function geKeepOn(){
      langLocked() refuses, so a buffer here would put a Save in the bar that
      could not write. */
   if(langLocked()) return;
-  keepOn(keepKey(), {ink:GE.was}, geKeepSave, geKeepSaid);
+  keepOn(keepKey(), geNow, geKeepSave, geKeepSaid);
 }
-function geKeepPut(){
-  if(!GE) return;
-  keepPut(keepKey(), 'ink', JSON.stringify(geInk(GE.st)));
-}
+/* WHAT IS ON THE PAPER, asked rather than pushed. geKeepPut() used to say it
+   from geTools(), which is the rail being painted as a stroke is drawn -- so
+   ROUND, the fill, the bin, the step back and the step forward all changed
+   the letter with the Save in the corner still grey, and the arrow then asked
+   nothing on the way out (docs/scope/r14-keep.md § A). The comment over that
+   line said 「geHist() and geClear() call render() and are answered there」
+   and it was not true: render() reads keepDirty(), and keepDirty() read the
+   very buffer only geKeepPut() ever wrote. Nothing held it because nothing
+   was there to hold. www/shell.js § keepOn, OWNER 2026-09-10. */
+function geNow(){ return GE? {ink:JSON.stringify(geInk(GE.st))} : {ink:''}; }
 function geKeep(){
   var keep=geInk(GE.st);
   ltSetStrokes(GE.lid, keep);
@@ -2458,13 +2464,16 @@ function geTools(){
   /* The Save in the bar is a control too, so it is brought up to date here
      with the rest of them: undo, redo and the bin already say whether they
      have anything behind them. Drawing does not redraw this screen -- the
-     canvas is painted, not rendered -- so this is the road. geHist() and
-     geClear() call render() and are answered there. */
-  /* The Save in the bar is a control too, and what it is told is the drawing
-     itself -- one buffer, so grey and gold are the same question KEEP asks of
-     every other screen (www/shell.js § KEEP). keepPut() repaints the button
-     where it stands, which is what this line was for. */
-  geKeepPut();
+     canvas is painted, not rendered -- so this is the road for a stroke.
+     Everything else on this screen ends in render(), which builds the bar and
+     therefore asks geNow() by itself.
+
+     It is keepBtnPaint() and not a line of this chapter's own. The thing that
+     used to stand here pushed the drawing into the buffer, and the only
+     places that pushed were the ones somebody remembered -- so ROUND, the
+     fill and the bin did not. Nothing is pushed now; the button is repainted
+     and it asks (www/shell.js § keepOn). */
+  keepBtnPaint();
   /* querySelectorAll and not querySelector, though there is one rail again.
      For a day there were two and this answered only the first of them, so
      fill, round and clear stayed frozen at whatever they were when the
