@@ -181,13 +181,27 @@ function modRow(r){
       esc(t('mod.drop'))+'</button>'+
     '</div>';
 }
+/* THE REPORTS, WHEREVER THEY ARE SHOWN, and the two things that stand in
+   their place. It is drawn on two screens -- the reports screen and the one
+   screen with everything on it -- and it was written out twice, four lines
+   that did not differ by a character. Two lists of the same thing that could
+   disagree about what a report looks like is what modRow() already refuses;
+   this is the same sentence about the list AROUND the rows.
+
+   Three states and not two: what could not be asked, nothing to show, and the
+   reports. 「空」 and 「読めていない」 do not share a branch -- an empty list
+   is only said once an answer has actually come back (`MODS` set, not busy,
+   and no error). */
+function modListHTML(rows){
+  return (MODERR? '<div class="mnone bad">'+esc(MODERR)+'</div>' : '')+
+    ((!MODBUSY && !MODERR && MODS && !rows.length)
+      ? '<div class="mnone">'+esc(t('mod.none'))+'</div>' : '')+
+    rows.map(modRow).join('');
+}
 function vMod(){
   var rows=MODS||[];
   return '<div class="view">'+navTop('')+'<div class="body">'+
-    (MODERR? '<div class="mnone bad">'+esc(MODERR)+'</div>' : '')+
-    ((!MODBUSY && !MODERR && MODS && !rows.length)
-      ? '<div class="mnone">'+esc(t('mod.none'))+'</div>' : '')+
-    rows.map(modRow).join('')+
+    modListHTML(rows)+
     '</div></div>';
 }
 
@@ -506,13 +520,10 @@ function vAdmin(){
     (ADMIN_ERR? '<div class="mnone bad">'+esc(ADMIN_ERR)+'</div>' : '')+
     '<button class="btn ghost"' + DO('adminStaffAdd') +
       (ADMIN_BUSY? ' disabled':'') + '>'+esc(t('admin.staff.add'))+'</button>'+
-    /* And the reports themselves, drawn by the row the reports screen draws
-       them with. Two lists of the same thing that could disagree about what a
-       report looks like is the second state this chapter refuses to keep. */
-    (MODERR? '<div class="mnone bad">'+esc(MODERR)+'</div>' : '')+
-    ((!MODBUSY && !MODERR && MODS && !rows.length)
-      ? '<div class="mnone">'+esc(t('mod.none'))+'</div>' : '')+
-    rows.map(modRow).join('')+
+    /* And the reports themselves, drawn by the one function the reports
+       screen draws them with -- the rows and the two things that stand in
+       their place. */
+    modListHTML(rows)+
     '</div></div>';
 }
 /* Not named vSomething: tools/act-check.mjs reads every `v[A-Z]` in the app
