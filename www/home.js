@@ -2334,11 +2334,13 @@ function langRow(id){
    every byte where it was and puts the pop up, whose ［再接続］ is this same
    press. */
 function langDrop(id){
-  var L=LANGS[id]||{}, sid=String(L.sid||'');
-  /* A row with no `sid` never came from a take and there is nothing on the
-     server to drop -- the same one of netTakeGone()'s four that is left
-     alone. */
-  if(!sid) return;
+  var L=LANGS[id]||{}, sid=String(id||'');
+  /* A language of this account's own never came from a take and there is
+     nothing in `language_take` to drop -- the same one of netTakeGone()'s
+     four that is left alone. It was `if(!L.sid)` while a language had two
+     numbers; `mine` is the thing langSeenAdd() writes and the question this
+     was always asking. */
+  if(!sid || L.mine!==false) return;
   netTakeDrop(sid, function(){},
     function(d, s, m){ netPop(d, s, m, function(){ langDrop(id); }); });
 }
@@ -2455,7 +2457,8 @@ function vLangs(){
   var ids=Object.keys(LANGS), mine=[], reading=[], other=0, i, id;
   for(i=0;i<ids.length;i++){
     id=ids[i];
-    /* NOT ASKED YET IS NOT DRAWN. A language that has been up (`sid`) and
+    /* NOT ASKED YET IS NOT DRAWN. A language that has been up
+       (www/core.js § LROW, which is what `sid` being there used to say) and
        whose owner the server has not said is neither list's -- putting it in
        one is this phone choosing, and both choices are wrong: 「mine」 shows
        somebody else's language under your name, 「theirs」 hides your own.
@@ -2463,7 +2466,7 @@ function vLangs(){
        at the foot says how many are not shown, which is what
        docs/DATA_SAFETY.md § a shorter list is not a deletion asks for.
        「揃ってから開く」 OWNER 2026-09-07, said about a list. */
-    if(LANGS[id].sid && !langOwnKnown(id)){ other++; continue; }
+    if(langRowUp(id) && !langOwnKnown(id)){ other++; continue; }
     /* MADE OR ONLY READ, asked of `language.owner` (www/core.js § LOWN)
        rather than of a boolean this phone wrote. `mine` on the index still
        says which the entry was made as and is what langSeenAdd() writes; what
