@@ -16,8 +16,7 @@ function capBanner(){
   if(can('words')) return '';
   var left=wordCap()-WORDS.length;
   if(left>20 || left<0) return '';
-  return '<button class="capwarn"' + DO('go', ["plans"]) + '>'+t('cap.warn', left)+
-    '<span class="capgo">'+t('up.cta')+ICON_GO+'</span></button>';
+  return capWarnHTML(t('cap.warn', left));
 }
 
 /* ---- the book's contents, once -----------------------------------------

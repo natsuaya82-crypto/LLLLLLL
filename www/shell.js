@@ -1092,6 +1092,24 @@ function navTop(count, right){
 function emptyBox(text){
   return '<div class="empty"><div class="eb">'+esc(text)+'</div></div>';
 }
+/* THE CEILING, SAID AT THE FOOT OF THE THING IT IS ABOUT, and the way past
+   it on the same row. Four screens said it: the contents (「あと N 語です」,
+   before the ceiling is reached), the dictionary, the grammar list and a room
+   of the alphabet (「N が表示されていません」, after it). Four buttons, one
+   shape -- and the contents' one had no margin, so the same button sat tight
+   under the bar on one screen and clear of the list on the other three.
+
+   The sentence is the screen's, because "ten words left" and "twelve letters
+   are not shown" are different facts. The button is not. `up.cta` and the
+   chevron are the way past, and there is exactly one road to the price list
+   (`go` with `plans` -- DUPLICATES 8), so it is written here once.
+
+   Not esc()'d: what goes in is t()'s own answer, and rule 2 says `<br>` and
+   `<b>` in a translation have to survive. */
+function capWarnHTML(text){
+  return '<button class="capwarn" style="margin:14px 0 0"' + DO('go', ["plans"]) + '>'+
+    text+'<span class="capgo">'+t('up.cta')+ICON_GO+'</span></button>';
+}
 /* Coming back to a screen for a thing that is no longer there -- a word that
    was deleted, a form that was closed, a letter that is gone. Five screens
    said this, in the same nine words, in four files. */

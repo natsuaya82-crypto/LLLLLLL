@@ -784,8 +784,7 @@ function stRow(p, n){
 function stHidHTML(){
   var n=stHidden();
   if(!n) return '';
-  return '<button class="capwarn" style="margin:14px 0 0"' + DO('go', ["plans"]) + '>'+
-    t('cap.hid', n)+'<span class="capgo">'+t('up.cta')+ICON_GO+'</span></button>';
+  return capWarnHTML(t('cap.hid', n));
 }
 /* THE ORDER OF THE CONTENTS, and it is a grammar book's rather than the app's.
    「1 語順 2 名詞 3 動詞（時制・否定・疑問）4 代名詞 5 数 6 挨拶…」 OWNER
