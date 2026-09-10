@@ -2383,18 +2383,27 @@ export function halfDone(){
                                        return vLetter(); }],
     ['a mark, opened',          () => { window.route='letter'; NAV=[{r:'letter', a:'l4'}];
                                        return vLetter(); }],
-    /* TWO LETTERS FOR ONE SOUND, which is c and k and is allowed --
-       「全部入力で被ったら赤字」. The field goes red and the line under it says
-       which letter already reads it. Nothing else here reaches that state:
-       every letter in this alphabet reads its own sound, so `.ltdup` was
-       styled and worn by nothing and press said so. */
-    ['a letter whose sound another letter already reads', () => {
-        const a = ltById('l1'), b = ltById('l2');
+    /* TWO LETTERS WITH ONE NAME, which is what the red line is about --
+       「何で音で決めんの？文字の名前で決めろよ」 OWNER 2026-09-03. It is shown and not
+       refused, because c and k are two letters and one sound and a language
+       being built is allowed to be halfway through.
+
+       It used to give l2 the sound l1 reads, and that stopped reaching this
+       state on 2026-09-10: a letter reading `k` IS the k slot now
+       (ltSlotKey(), www/letters.js, docs/scope/r15-letters42.md), and a slot
+       wears no name field at all -- so the field the red line hangs off was
+       not drawn, and press reported that nothing wears `.ltdup`. Two letters
+       can only share a name BEYOND the thirty-eight, so the pair is l6, which
+       reads `th`, and l3, which reads nothing until this face gives it that
+       same name. */
+    ['two letters with one name', () => { SET.plan = 'pro';
+        const b = ltById('l3');
         const was = b ? JSON.parse(JSON.stringify(b.snd || [])) : null;
-        if (a && b) b.snd = (a.snd || []).slice();
-        window.route='letter'; NAV=[{r:'letter', a:'l2'}];
+        if (b) b.snd = ['th'];
+        window.route='letter'; NAV=[{r:'letter', a:'l3'}];
         const h = vLetter();
-        if (b && was) b.snd = was;
+        if (b) b.snd = was || [];
+        SET.plan = 'free';
         return h; }],
     /* A digit: a letter with a value instead of a reading. The row of values
        is on every letter, but only one of them is on. */
