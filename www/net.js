@@ -1739,11 +1739,96 @@ function netSlicePut(sid, kind, body, no, ok, bad){
    it TOOK. There is no third kind and no new one here: those two are the
    only ways an entry has ever been made, and a taken language arriving on
    the launch road is the same entry the article's ↓ makes. */
+/* WHETHER A ROW OF THE INDEX IS HOLDING ANY OF THIS LANGUAGE ITSELF.
+   `slMine()` and not `slRd()`, and that is the whole of what makes the drop
+   below safe: slMine() is 「what is this phone holding that the server may not
+   have been told about」, so a row it answers for may be carrying a minute of
+   somebody's typing. The picture slGot() keeps for a launch with no signal is
+   NOT in it -- a picture is written only where both sides already agreed, so a
+   row whose only content is a picture is holding nothing that is not also on
+   the server. */
+function nidHolds(id){
+  var i, v;
+  for(i=0;i<SLICES.length;i++){
+    v=slMine(langKeyOf(id, SLICES[i]));
+    if(v!==null && v!=='') return true;
+  }
+  return false;
+}
+/* ONE OF TWO ROWS FOR ONE LANGUAGE, TAKEN OUT. docs/CHANGELOG.md 2026-09-10
+   carries the DELETE REVIEW; nidFor() below is the only caller and it only
+   ever hands over a row nidHolds() answered false for.
+
+   What goes is the index row and the keys under its id -- the picture, and
+   what an older version left on the disk. The LANGUAGE is not touched: it is
+   on the server, and the row that stays is the same language. Somebody
+   standing in the row that goes is moved onto the one that stays, which is
+   where they already thought they were. */
+function nidDrop(id, keep){
+  var i;
+  for(i=0;i<SLICES.length;i++){
+    slRm(langKeyOf(id, SLICES[i]));
+    slRm(langWasKey(id, SLICES[i]));
+  }
+  delete LANGS[id];
+  if(langId===id){
+    langId=keep;
+    /* langLoad() and not langOpen(): langOpen() runs ltStart(), which on a
+       free language WRITES thirty-eight blank slots -- and this runs before
+       the walk has filled this row, so those blanks would be here when
+       fill() asks slMine() and the alphabet on the server would never come
+       down. Reading is all that is wanted. */
+    langLoad();
+  }
+}
 function nidFor(row, here, own){
-  var sid=String(row.id), id;
-  for(id in LANGS)
-    if(Object.prototype.hasOwnProperty.call(LANGS, id) && LANGS[id] &&
-       String(LANGS[id].sid||'')===sid) return id;
+  var sid=String(row.id), hit=[], id, i, keep, k;
+  /* TWO SHAPES ANSWER TO ONE LANGUAGE, AND ONLY ONE OF THEM WAS ASKED ABOUT.
+     -------------------------------------------------------------------------
+     「アルファベット無料の a-z とか消えてない？なんで？あと、保存できないけど
+     文字」 OWNER 2026-09-10, 実機 148/149, a language from before that build.
+
+     This asked `LANGS[*].sid === row.id` and nothing else. That is one of the
+     two shapes the index has ever worn: netLangBack1() -- deleted with
+     netLangBack() in 148 -- wrote the row under **the server's own id**
+     (`LANGS[sid] = {mine:true, sid:sid}`), and the versions before it did not
+     write the `sid` field at all. So a language downloaded by any of those
+     builds was not found here, a SECOND row was minted for it, and the old
+     one stayed with no `sid` and no owner stamp. Press it in the switcher and
+     langMine() is false: ltStart() returns without giving the free plan its
+     thirty-eight slots, and every writer -- saveLetters() among them -- is
+     stopped by langLocked(). Measured 2026-09-10: 「言語=2、開=srv1、
+     mine=false、lock=true、LETTERS=0、保存の要求=0」.
+
+     So the SEARCH is rewritten rather than given a second question after it:
+     a row is this language when it carries the server's name for it OR when
+     its own id IS that name. One question, one answer.
+
+     AND WHERE BOTH SHAPES ARE HERE, ONE OF THEM GOES. A phone that has
+     already been through 148 has the two rows standing side by side, and
+     leaving them is leaving the fault on the screen after it is fixed. The
+     one that STAYS is the one holding the language; the one that goes is the
+     one holding none of it, and if both are holding something neither goes
+     (docs/CHANGELOG.md 2026-09-10, DELETE REVIEW). */
+  for(id in LANGS){
+    if(!Object.prototype.hasOwnProperty.call(LANGS, id) || !LANGS[id]) continue;
+    if(String(LANGS[id].sid||'')===sid || id===sid) hit.push(id);
+  }
+  if(hit.length){
+    keep=hit[0];
+    for(i=1;i<hit.length;i++)
+      if(!nidHolds(keep) && nidHolds(hit[i])) keep=hit[i];
+    for(i=0;i<hit.length;i++){
+      k=hit[i];
+      if(k===keep || nidHolds(k)) continue;
+      nidDrop(k, keep);
+    }
+    /* and the row that stays carries the server's name for it from now on,
+       which is what the old shape was missing */
+    LANGS[keep].sid=sid;
+    langStore();
+    return keep;
+  }
   if(here[sid]) return '';
   /* SOMEBODY ELSE'S, AND THE INDEX HAS TO SAY SO. `mine:false` is what
      langMine() reads, and it is what keeps every write road off it: a taken
