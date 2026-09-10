@@ -15,6 +15,59 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-10 言語の番号を一本にする（端末が uuid を打つ。写すだけで消さない）
+
+OWNER 2026-09-10「スパゲッティみたいにするのやめて欲しい」「太い幹を分岐させて
+欲しい」。`docs/scope/r12-oneid.md` が測った形の全部です。
+
+**今までの形。** 一つの言語に番号が二つありました ── 端末が打つ `L<ms36>`
+（`LANGS` の鍵、`langKeyOf()` の鍵）と、サーバーが `gen_random_uuid()` で打つ
+uuid（`LANGS[id].sid`、`slice.language_id`、`language_take`）。その二つを
+照らし合わせるのが `nidFor()` / `nidHolds()` / `nidDrop()` で、148 で照らし
+合わせが外れて切り替えが二行になり、150 は「持っていない方を落とす」を足しま
+した。それが後付けです。DL した言語は最初から幹一本でした ──
+`langSeenAdd()` はサーバーの id をそのまま索引の鍵にしています。
+
+**これからの形。番号はサーバーの番号だけで、端末がその番号を打ちます。**
+`langMint()` が uuid v4 を打ち（`crypto.getRandomValues`、無ければ
+`Math.random`）、`netLangRow()` は `POST /rest/v1/language` に `id` を**入れて**
+送ります。列は `default gen_random_uuid()` なので、入れれば入れた値になります
+（`supabase/schema.sql` は**変えていません**。insert の policy は
+`is_member() and owner = auth.uid()` で id を見ていません）。`LANGS[id].sid`
+という欄は**無くなります**。`nidFor()` `nidHolds()` `nidDrop()` は**削除**し、
+起動の walk が訊くのは「`row.id` が `LANGS` に在るか」だけ ── DL 言語に対して
+ずっと訊いてきたのと同じ一つの問いです。
+
+**移行 ── 写します。何も消しません。**
+
+端末に残っている古い索引を、起動時に一度だけ新しい形へ**写します**
+（`langsOneId()`、`www/core.js`、索引を読んだ直後）。
+
+1. `{ 'L…': { sid: U, … } }` → `{ U: { … } }` に写す。ディスクに残る
+   `lingua.L….<slice>`（rule 22 の fallback が読む鍵）と `.was` を
+   `lingua.U.<slice>` に**写す**。`lingua.cur` が `L…` なら `U` にする。
+2. `{ 'L…': { sid 無し } }`（一度も上がっていない）→ uuid を打って同じく写す。
+   上がるときはその uuid で行ができます。
+3. `{ U: { sid 無し } }`（148 以降）は既に幹一本の形。**触りません。**
+   1 と 3 が同じ言語だったとき（150 が二行として直したもの）は、索引の行は
+   一つにまとめ、slice の鍵は**空でない方**を採ります。空と空なら空です。
+
+- **古い鍵は残します。** `lingua.L….<slice>` も `lingua.langs` の古い行が
+  持っていた欄も、**一バイトも削りません**。写した先が読まれるだけです。
+- **削除の道が一つ減ります。** 150 の DELETE REVIEW（索引の行を一つ落とす、
+  下の項）が実行する `nidDrop()` は**削除**され、この枝のあとは索引の行を
+  落とす道がありません。二行になっていた端末は、1 と 3 が同じ `U` に写る
+  ことで一行になります ── 落とすのではなく、**同じ番号に重なる**ためです。
+- **`lingua.` の下に増える鍵**: `lingua.<uuid>.<slice>` と
+  `lingua.<uuid>.<slice>.was`（写し先）。`store-check` の表では
+  `lingua.<id>.<slice>` の行そのままで、種類は増えません。
+- **サーバーは変わりません。** 表も列も policy も同じで、`schema.sql` は
+  触っていません。`npm run rls` を流し直す理由はありません。
+- **押さえるもの**: `migrate-check` に 1・2・3 の索引を seed した節、
+  `again-check` の 150 の 4 claim を「古い索引の端末が起動して一行、a–z 38、
+  保存が飛ぶ」という幹の形の問いに書き直したもの。
+
+
 ### 2026-09-10 前からの言語が切り替えに二行並び、古い方は空で保存もできない
 
 **実機（ビルド 148/149、オーナー 2026-09-10）**:
