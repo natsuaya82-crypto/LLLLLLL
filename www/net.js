@@ -2165,8 +2165,10 @@ function netAtSame(id, kind, row){
 
    The marks come first (`kind,no,at`, about a tenth of a kilobyte), and a
    body only where its mark has MOVED since this phone last agreed. Where it
-   has not moved, the server is holding `langWasKey` -- which is already
-   here, so there is nothing to fetch.
+   has not moved AND this phone still holds `langWasKey`, that is what the
+   server is holding -- it is already here, so there is nothing to fetch. Both
+   halves, because the mark says WHEN the two sides agreed and the record says
+   WHAT they agreed on; a mark with no record behind it answers nothing.
 
    SO A SECOND PHONE IS ALWAYS READ. Two phones writing send two different
    marks, so whichever landed second leaves a mark the other does not know,
@@ -2199,9 +2201,17 @@ function netGotFor(id, sid, kinds, ok, bad){
     var need=[], j, kk, was;
     for(j=0;j<know.length;j++){
       kk=know[j];
-      if(!netAtSame(id, kk, st[kk])){ need.push(kk); continue; }
       was=slMine(langWasKey(id, kk));
-      got[kk]={body:(was===null? '' : was), no:st[kk].no, at:st[kk].at};
+      /* THE MARK ALONE DOES NOT ANSWER IT. 「サーバーは何を持っているか」 is
+         answered without a read only when BOTH halves are here: the mark has
+         not moved, AND this phone still holds the body the two sides agreed
+         on. A missing `langWasKey` is 「知らない」 and it was written down as
+         `''`, which is the string syMerge() reads as 「サーバーは何も持って
+         いない」 -- the same 「空」と「知らない」を同じ枝に入れる fault
+         CLAUDE.md 規則 11 is about. Where either half is missing this reads
+         the body, which is what it did before any of this existed. */
+      if(was===null || !netAtSame(id, kk, st[kk])){ need.push(kk); continue; }
+      got[kk]={body:was, no:st[kk].no, at:st[kk].at};
     }
     if(!need.length){ ok(got); return; }
     netSlices(sid, function(there){

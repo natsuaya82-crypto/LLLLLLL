@@ -859,6 +859,43 @@ const up2 = await pg.evaluate(async ({ s, srv }) => {
     return false;
   })();
 
+  /* 六. 合意の控えを無くした端末は、中身を読みに行く。
+     「控えが無い」は「サーバーは空」ではありません ── `langWasKey` はこの
+     端末とサーバーが最後に同じ文字列を持った時の**控え**で、それが無いのは
+     「知らない」です。netGotFor() はそこを `''` にしていました。`''` は
+     syMerge() が「サーバーは何も持っていない」と読む値なので、片側が空の
+     まま突き合わせに入ります ── この端末が何も持っていない欄なら、結果は
+     「両方とも空」で、サーバーが持っている中身は読まれも降りもしません。
+     CLAUDE.md 規則 11「『空』と『壊れている』は違う状態」と同じ一文です。
+
+     印（NET_AT）は残し、控えだけを落とします。この二つは netAgreed() が
+     一緒に書くので普段は揃っていますが、揃っていることに寄りかかった枝が
+     あるかどうかが、ここで訊いていることです。 */
+  window.__SRV.sent = [];
+  window.__SRV.asked = [];
+  /* 五の突き合わせで store は増えましたが、WORDS は増えていません ── 保存の
+     道は merge のあと langLoad() を呼ばないからです（起動の道は呼びます）。
+     ここが訊いているのは控えの話なので、その一つを持ち込まないように読み
+     直します。**保存が merge のあと globals を読み直さないこと自体は別の
+     欠陥で、docs/BACKLOG.md にあります。** */
+  langLoad();
+  slRm(langWasKey(id, 'words'));
+  out.markKept = netAtHas(id, 'words');
+  out.wasGone = slMine(langWasKey(id, 'words')) === null;
+  WORDS.push({ hw:'gonka', gl:'a word added after the record was lost' });
+  save();
+  await settle();
+  out.askedNoWas = window.__SRV.asked.slice();
+  out.keptAllThree = (function(){
+    var S = window.__SRV, sid = LANGS[id].sid, i, b;
+    for (i = 0; i < S.slice.length; i++)
+      if (S.slice[i].language === sid && S.slice[i].kind === 'words'){
+        b = S.slice[i].body;
+        return b.indexOf('mikka') >= 0 && b.indexOf('yonka') >= 0 && b.indexOf('gonka') >= 0;
+      }
+    return false;
+  })();
+
   /* 四. 署名が無ければ何も送らない。そして何も失わない ── 言語はこの iPhone に
      そのまま在る。「電波が無いときはログインできない」はオーナーの決定だが、
      それは画面の話で、書いたものが消えてよいという意味ではない。 */
@@ -894,6 +931,16 @@ say(up2.askedTwo.length === 2 &&
 say(up2.bothOnServer,
     'そして二台の単語が両方サーバーに残る ── 片方が消えない' +
     (up2.bothOnServer ? '' : '**片方が消えた**'));
+say(up2.markKept && up2.wasGone && up2.askedNoWas.length === 2 &&
+    up2.askedNoWas[0].indexOf('select=kind,no,at') > 0 &&
+    up2.askedNoWas[1].indexOf('body') > 0,
+    '控えを無くした端末も中身を読みに行く ── 「控えが無い」は「サーバーは空」' +
+    'ではない（印 ' + (up2.markKept ? 'あり' : '**無し**') + '、控え ' +
+    (up2.wasGone ? '無し' : '**あり**') + '、訊いた道 ' +
+    JSON.stringify(up2.askedNoWas) + '）');
+say(up2.keptAllThree,
+    'そして三つの単語がすべてサーバーに残る ── 二台目のも、この端末のも、' +
+    '控えを無くしたあとのも' + (up2.keptAllThree ? '' : '**消えた**'));
 say(up2.sentIdle.length === 0,
     '何も動いていない保存は、何も送らない: ' + JSON.stringify(up2.sentIdle));
 say(up2.sentBurst.length === 1,
