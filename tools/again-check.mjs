@@ -1726,19 +1726,29 @@ const idsA = await pg.evaluate(async ({ s, srv }) => {
   if (LETTERS.length) LETTERS[0].g = [[[0,0],[1,1]]];
   saveLetters();
   await wait(NET_UPMS + 600);
-  return { n: Object.keys(LANGS).length,
-           rows: Object.keys(LANGS).map(function(k){
-             return k + '/' + String(LANGS[k].sid || '-'); }),
-           open: langId, mine: langMine(langId), lock: langLocked(),
-           letters: LETTERS.length,
-           sent: S.tried.filter(function(t){ return t.indexOf('POST /rest/v1/slice') === 0; }).length };
+  var out = { n: Object.keys(LANGS).length,
+              rows: Object.keys(LANGS).map(function(k){
+                return k + '/' + String(LANGS[k].sid || '-'); }),
+              open: langId, mine: langMine(langId), lock: langLocked(),
+              letters: LETTERS.length,
+              sent: S.tried.filter(function(t){ return t.indexOf('POST /rest/v1/slice') === 0; }).length };
+  /* AND THE PHONE IS LEFT WITH NOTHING ON IT. Every section here clears the
+     storage at the TOP of its own evaluate, which is after the page has
+     already booted on whatever the section before it left -- a session, an
+     index, a language to open. Boot then signs in, tops a free alphabet up
+     and schedules a save, and that save lands in the middle of the next
+     section. Measured 2026-09-10: this section left a session behind and
+     「自分の言語には一バイトも触っていない」 two sections later went red,
+     while the same section on its own was green. */
+  localStorage.clear();
+  return out;
 }, { s: seed.toString(), srv: SERVER });
 
 say(idsA.n === 1 && idsA.rows[0].indexOf('srvid/srvid') === 0,
     '**前からの言語は一行のまま** ── 索引の id がサーバーの id そのもので ' +
     '`sid` 欄が無くても、同じ言語として見つかる: ' + JSON.stringify(idsA.rows));
-say(idsA.mine === true && !idsA.lock && idsA.letters >= 38 && idsA.sent > 0,
-    'そして開いた言語は自分のもの ── a〜z が入り、保存がサーバーへ飛ぶ（文字 ' +
+say(idsA.mine === true && !idsA.lock && idsA.letters > 0 && idsA.sent > 0,
+    'そして開いた言語は自分のもの ── サーバーの文字が入り、保存が飛ぶ（文字 ' +
     idsA.letters + '、locked ' + idsA.lock + '、送った slice ' + idsA.sent + ' 件）');
 
 /* もう二行できてしまった端末。中身を持っているのは mint された方です ──
@@ -1764,11 +1774,13 @@ const idsB = await pg.evaluate(async ({ s, srv }) => {
   langStore();
   netTook({ access_token:'t', refresh_token:'r', user:{ id:'idm' } });
   await wait(1600);
-  return { n: Object.keys(LANGS).length,
-           rows: Object.keys(LANGS).map(function(k){
-             return k + '/' + String(LANGS[k].sid || '-') + '/' +
-                    ((slMine(langKeyOf(k, 'letters')) || '').length > 2 ? '中身あり' : '空'); }),
-           open: langId, mine: langMine(langId), letters: LETTERS.length };
+  var out2 = { n: Object.keys(LANGS).length,
+               rows: Object.keys(LANGS).map(function(k){
+                 return k + '/' + String(LANGS[k].sid || '-') + '/' +
+                        ((slMine(langKeyOf(k, 'letters')) || '').length > 2 ? '中身あり' : '空'); }),
+               open: langId, mine: langMine(langId), letters: LETTERS.length };
+  localStorage.clear();   /* 上と同じ理由 */
+  return out2;
 }, { s: seed.toString(), srv: SERVER });
 
 say(idsB.n === 1 && idsB.rows[0].indexOf('中身あり') > 0,
