@@ -1820,7 +1820,13 @@ function nidFor(row, here, own){
       if(!nidHolds(keep) && nidHolds(hit[i])) keep=hit[i];
     for(i=0;i<hit.length;i++){
       k=hit[i];
-      if(k===keep || nidHolds(k)) continue;
+      /* AND ONLY THE PRE-148 SHAPE GOES. A row carrying a `sid` field is one
+         THIS app wrote -- langMint() through nidFor(), or langSeenAdd() for a
+         language somebody took -- and none of those is the leftover this is
+         about. What goes is the row with no `sid` at all, which is the shape
+         netLangBack1() and the versions before it left behind, and only where
+         it is holding none of the language. */
+      if(k===keep || String(LANGS[k].sid||'') || nidHolds(k)) continue;
       nidDrop(k, keep);
     }
     /* and the row that stays carries the server's name for it from now on,
