@@ -111,8 +111,13 @@ nothing on that copy ever travels back to the server (rule 22).
 **The onboarding is the one place making happens before there is an account,
 and that is the order the owner asked for** 「オンボーディング→最後にログイン」.
 Somebody draws a letter, is walked through the app, and names what they are
-making; the door is the LAST step, and `obFinish()` calls `netLangSync()` the
-moment they are through it, so what they made goes up as they arrive. **That
+making; the door is the LAST step, and the session arriving is what sends it:
+`netTook()` (`www/net.js`) puts what is on this phone up and only then asks
+what the account HAS, so what the walk made goes up as they arrive and the
+answer that comes back already has it in. **Sending first is the order and it
+is load-bearing** — the two ran side by side until 2026-09-11 and the door
+made a SECOND language, the typed name on the empty one and the drawn letters
+on the nameless one. **That
 walk is the one window where work is on this phone and nowhere else** — a
 slice is in memory (rule 22), so an app closed mid-walk loses the letters that
 were drawn. It is the price of the door staying last, and it is in
@@ -141,8 +146,9 @@ yet**: it is minted at the top of `www/core.js`, which `index.html` loads before
 `net.js` exists, so it cannot ask anything about a session — and it is minted
 for somebody who has not reached the door yet, which is the paragraph above
 rather than a hole. What closes it is that the door is on the way out:
-nothing made in the walk stays account-less past `obFinish()`. `claude/admin`
-has the rest. 「最初からオンライン前提で作れ」 → `docs/FEATURE_RULES.md`
+nothing made in the walk stays account-less past the door — the row the send
+makes carries `owner`, and that column is the only thing that ever says whose
+a language is (`langOwnOf()`, rule 22). `claude/admin` has the rest. 「最初からオンライン前提で作れ」 → `docs/FEATURE_RULES.md`
 
 **Shape.** Four things are banned outright: a row of round chips you scroll
 sideways (if there are more than a few, it is a **list**); the thing being

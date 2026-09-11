@@ -3474,7 +3474,28 @@ function postRow(p){
                this one place -- so its rule came out of index.html in the same
                commit, or `press` would report a class nothing wears. */
             '<div class="pheadm">'+
-            '<span class="phandle">@'+esc(p.hd||'')+'</span>'+
+            /* WHOSE POST IT IS, and it is the road to them. 「投稿している人の
+               顔や @〇〇 を押しても、その人のプロフィールに飛ばない」 OWNER
+               2026-09-11, on a phone.
+
+               It was `<span class="phandle">`, carrying no name at all, so the
+               press fell through to the `.post` around it (DO('postOpen') at
+               the head of this function) and OPENED THE THREAD. Nothing threw
+               and a correct screen arrived -- the wrong one -- so `act-check`
+               and `press` both went on saying the post was pressable. Neither
+               of them asks where a press LANDS.
+
+               There were two @ on one post and only one was a road: the one in
+               what somebody WROTE went through atHTML() and stood you on their
+               page, and the one in the head, six pixels away, did not. A
+               reader pressing a handle is doing the same act either time.
+
+               atHTML() (www/sns.js) is THE ONE PLACE a handle becomes a thing
+               you press -- the same call `ptoHTML` above makes for 「@aya への
+               返信」 -- so this is that road and not a second one written out
+               again here. It carries the 44pt with it (`.ptag`), and a post
+               with no handle draws nothing rather than a bare `@`. */
+            atHTML(p.hd)+
             /* WHEN, after the handle. OWNER 2026-08-28:
                「名前 バッチ @ハンドル 時刻」 It sat on the name's line, put
                there when this head was two fixed lines and the lower one had

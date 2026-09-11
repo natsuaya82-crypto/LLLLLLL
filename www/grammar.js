@@ -1078,7 +1078,7 @@ function g2ChapBar(c){
   if(G2SEL)
     return (g2SelList().length? navDel(t('fmr.sel.del'), 'g2SelDel') : '')+
       navDo(t('fmr.sel.done'), 'g2SelOff', null, true);
-  if(c && c.fm && g2FmRows(c) && !langLocked())
+  if(c && c.fms && g2SecRules(c).length && !langLocked())
     return navDo(t('fmr.sel'), 'g2SelOn', null, true);
   return helpQ('g2.'+c.id);
 }
@@ -1710,7 +1710,7 @@ function g2PolRow(c, on){
    stopped drawing those would be the app quietly holding what somebody wrote
    and never showing it to them again -- docs/DATA_SAFETY.md. */
 function g2PolChap(c){
-  var head=String(c.id).split(':')[0], old=g2FmRows(c);
+  var head=String(c.id).split(':')[0], old=g2FmRows(c.fms[0], c.pos);
   return chapSlotsHTML(head)+
     (old? g2Sec('stg.rules')+old+g2FmTable(c) : '')+
     g2ChapEx(head);
@@ -2014,7 +2014,7 @@ function g2Ncls(){
     out+=secAdd('<button class="secnm"'+DO('nclsOpen', [a[i]])+'>'+
                   esc(nclsName(a[i]))+'</button>',
                 DO('fmrNew', ['', nclsFm(a[i])]), t('g2.fm.add'))+
-         g2FmRows({fm:nclsFm(a[i]), pos:''});
+         g2FmRows(nclsFm(a[i]), '');
   }
   if(!a.length) return out;
   out+='<div class="sec">'+esc(t('g2.ncls.words'))+'</div>';
@@ -2081,10 +2081,11 @@ function g2PosTarget(pos){
 function g2FmsOf(id){
   var c=g2ChapBy(id), out=[], i, f, g;
   if(!c || !c.pos) return out;
-  /* A chapter that IS a form is about that form and no other, and it draws its
-     own way to add one -- g2FmAdd() -- so there is nothing for g2Add() to
-     offer. What is left for g2MakeAll() is the words those rules would make. */
-  if(c.fm) return [c.fm];
+  /* A SECTION is about its own forms and no others, and it draws its own way
+     to add one on each of their headings -- g2FmSec() -- so there is nothing
+     for g2Add() to offer. What is left for g2MakeAll() is the words those
+     rules would make, which is every form of the section at once. */
+  if(c.fms) return c.fms;
   if(typeof FM_INF==='undefined') return out;
   for(i=0;i<FM_INF.length;i++){
     f=FM_INF[i]; g=GFM_FEAT[f];
@@ -2131,51 +2132,57 @@ function g2MakeAll(id){
 }
 function g2Add(id){
   var c=g2ChapBy(id), fms=g2FmsOf(id), i, out='';
-  if(!c || !c.pos || c.fm) return '';
+  if(!c || !c.pos || c.fms) return '';
   for(i=0;i<fms.length;i++){
     if(g2HasFm(c.pos, fms[i])) continue;
-    out+='<button class="stslot"' + DO('fmrNew', [c.pos, fms[i]]) + '>'+
-      '<span class="psm">'+esc(fmLabel(fms[i]))+'</span>'+
-      '<span class="psn">'+t('stg.make')+'</span>'+ICON_GO+'</button>';
+    out+=g2FmSlot(c.pos, fms[i]);
   }
   return out;
 }
 
 /* ====================================================================
-   A FORM IS A CHAPTER
-   「過去形タップしたら❶みたいに並べたほうがいいんじゃないの？」
-   「過去形でもいろんな規則作れるよね？」 OWNER 2026-09-05.
+   A SECTION IS A CHAPTER, AND A FORM IS A HEADING INSIDE IT
+   「開いたらそんな分け方してるの意味わからない。人称でまとめて設定できれば
+   いいやん」 OWNER 2026-09-11.
 
-   There was one chapter called 動詞 holding eleven forms, and pressing it gave
-   a row per form saying 作成 -- so a language wanting two ways of making a past
-   tense had one row to press and nowhere for the second to go. Each form is its
-   own chapter now, and inside it is the list of the rules this language has for
-   it, numbered, with the way to write another under them.
+   A form was a chapter of its own, so opening 動詞 gave twenty-one doors --
+   一人称単数, 二人称単数, 三人称単数, 一人称複数 … one page each, and a person
+   who wanted to say how their verbs change for who is doing them had to walk
+   six of them and write the same kind of rule in each. The unit is the SECTION
+   now: 人称変化 is ONE page with the six forms down it.
 
-   ONE FUNCTION DRAWS ALL OF THEM. They differ in the `fm` label they are about
-   and the part of speech they are written on, and in nothing else -- a chapter
-   per form written out eleven times is eleven places to fix the twelfth time
-   something moves. 「基本言語にあるのは際限なく増やしていいよ」: adding one is
-   a line in G2FM_CHAPS.
+   ONE FUNCTION DRAWS ALL OF THEM, and there is no special case for a section
+   that happens to have one form -- 複数形 and 比較 go through exactly the same
+   code as 人称変化 does. What differs is the row of this table, which is the
+   only place any of it is written down.
 
-   The label is the app's own `word.fm.<f>`, which the word sheet has always
-   used, so a chapter and the form row on a word cannot come out with two names
-   for one thing. What goes behind the `?` is the same `.d` and `.e` those
-   labels already carry.
+   THIS TABLE REPLACED TWO. It was the list of forms here and the group
+   headings in www/phases.js § G2BOOK -- 「どこからどこまでが一つの話か」 said
+   once as a heading over a run of chapters and once as the run itself. A
+   heading over a list of doors and the page those doors led to were the same
+   thought at two levels, and the heading is the PAGE now.
+
+   `nm` is the key the section is named by, and it is a key rather than a
+   string because the name is a fact of the interface language. 否定 and 疑問
+   are named by the form label they always were -- 否定形 / 疑問形 -- so those
+   two rows do not change; giving them a second key would be one name written
+   in two places.
    ==================================================================== */
-/* The form, and the part of speech it is written on. Order is the order of
-   the list. `que` is the question chapter and `neg` the negation one -- the ids
-   they already had, because those two are named after what they DO rather than
-   after a form of a word. */
+/* A section: what it is called, the part of speech its rules are written on,
+   and the forms it is made of, in the order they are drawn. Order is the order
+   of the book. `side` is the one extra a section may carry and one does --
+   g2FmChap() below. */
 var G2FM_CHAPS=[
-  ['p1s','p1s','v'], ['p2s','p2s','v'], ['p3s','p3s','v'],
-  ['p1p','p1p','v'], ['p2p','p2p','v'], ['p3p','p3p','v'],
-  ['pot','pot','v'], ['obl','obl','v'], ['des','des','v'],
-  ['cmp','cmp','adj','than'], ['sup','sup','adj'],
-  ['pst','pst','v'], ['prs','prs','v'], ['fut','fut','v'], ['plp','plp','v'],
-  ['prg','prg','v'], ['prf','prf','v'], ['cnd','cnd','v'], ['cau','cau','v'],
-  ['imp','imp','v'], ['pas','pas','v'], ['neg','neg','v'], ['q','que','v'],
-  ['pl','pl','n']
+  {id:'person', nm:'g2.g.person', pos:'v',
+   fms:['p1s','p2s','p3s','p1p','p2p','p3p']},
+  {id:'tense',  nm:'g2.g.tense',  pos:'v',
+   fms:['prs','pst','fut','plp','prg','prf']},
+  {id:'mood',   nm:'g2.g.mood',   pos:'v',   fms:['imp','cnd','pot','obl','des']},
+  {id:'voice',  nm:'g2.g.voice',  pos:'v',   fms:['pas','cau']},
+  {id:'neg',    nm:'word.fm.neg', pos:'v',   fms:['neg']},
+  {id:'q',      nm:'word.fm.que', pos:'v',   fms:['que']},
+  {id:'pl',     nm:'word.fm.pl',  pos:'n',   fms:['pl']},
+  {id:'degree', nm:'g2.g.degree', pos:'adj', fms:['cmp','sup'], side:'than'}
 ];
 /* ❶❷❸, which is what was asked for and is also the only thing a row of this
    list can be called: every rule in a chapter makes the same form, so naming
@@ -2239,6 +2246,18 @@ function g2RulesOf(fm){
   for(i=0;i<a.length;i++) if(a[i] && String(a[i].fm)===String(fm)) out.push(a[i]);
   return out;
 }
+/* AND THE RULES OF A WHOLE SECTION, which is the same question one level out:
+   every form of it, in the order the table puts them. The page's Select, the
+   contents' faint字 and the table under the rules all ask it, so a section that
+   has been written in cannot be three different answers. */
+function g2SecRules(c){
+  var out=[], fms=(c && c.fms) || [], i, j, a;
+  for(i=0;i<fms.length;i++){
+    a=g2RulesOf(fms[i]);
+    for(j=0;j<a.length;j++) out.push(a[j]);
+  }
+  return out;
+}
 /* THE RULE, AS ONE LINE OF A GRAMMAR BOOK. 「規則を一行の文にしたもの」
    -- 「動詞の末尾に -ta」. It used to be ❶ › › –, four marks round a gap, and
    the owner asked what it meant twice.
@@ -2291,17 +2310,55 @@ function g2FmWhen(r){
   if(n) out+=t('g2.rule.drop', String(n));
   return out;
 }
-function g2FmRows(c){
-  var a=g2RulesOf(c.fm), out='', i, id;
+/* The rows of ONE form. It took the chapter while a chapter was one form; a
+   section is several, so what it is about is said outright. */
+function g2FmRows(fm, pos){
+  var a=g2RulesOf(fm), out='', i, id;
   for(i=0;i<a.length;i++){
     id=String(a[i].id||'');
     /* The numerals are what a rule with no letters on it yet is called: there
        is no sentence to write, and ❶ is what this list has always numbered by.
        Everything else says what it does. */
-    out+=g2Row(g2FmSent(a[i], c.pos) || g2Num(i), '', '', '', '',
+    out+=g2Row(g2FmSent(a[i], pos) || g2Num(i), '', '', '', '',
                'openFmr', [id], id);
   }
   return out;
+}
+/* 作成 -- one form of this section that this language has not written yet.
+   ONE PLACE: the chapters whose rows are forms of a word draw it from here and
+   so does g2Add(), which is the same row asked for a chapter that is not a
+   section. It says the form and it says 作成, which is what every row in this
+   app says where the thing is not made. */
+function g2FmSlot(pos, fm){
+  return '<button class="stslot"' + DO('fmrNew', [pos, fm]) + '>'+
+    '<span class="psm">'+esc(fmLabel(fm))+'</span>'+
+    '<span class="psn">'+t('stg.make')+'</span>'+ICON_GO+'</button>';
+}
+/* ONE FORM ON A SECTION'S PAGE, and it is the rules this language wrote for
+   that form or the one row that says it has not written any.
+
+   A FORM WITH NO RULE IS THE 作成 ROW AND NOTHING ELSE. The row already says
+   the form's name and says 作成 beside it, so a heading over it is that name
+   printed twice, one line apart -- which is the same 「↑これは説明だろ」 the
+   book's own group headings were cut back for. It is also the only door to
+   fmrNew() there, where a ＋ on a heading would be a second one beside it.
+
+   A FORM THAT HAS RULES TAKES A HEADING, because the rows under it are
+   sentences about the rule and none of them says which form it makes. The ＋
+   rides on that heading -- secAdd() is the one place that shape is written --
+   so a second rule is added the way every other list in this app adds one.
+
+   AND THE HEADING SAYS WHAT THE PAGE DOES NOT SAY ALREADY. A section of one
+   form is drawn by this same function, and naming that form here would print
+   the bar's own title a second line down -- 複数形 over 複数形 -- so it says
+   規則 there, which is the heading that page has always had. Same rule as the
+   book's own groups (www/phases.js § G2BOOK): a title only where the run is
+   more than one thing. */
+function g2FmSec(c, fm){
+  var rows=g2FmRows(fm, c.pos);
+  if(!rows) return g2FmSlot(c.pos, fm);
+  return secAdd(esc((c.fms.length>1)? fmLabel(fm) : t('stg.rules')),
+                DO('fmrNew', [c.pos, fm]), t('g2.fm.add'))+rows;
 }
 /* THE TABLE: what these rules make of the words this language really has.
    「辞書の実際の語で作った表（kano → kanota、tir → tirta …）」
@@ -2319,54 +2376,80 @@ function g2FmRows(c){
    A cell opens the word it is made of. Nothing is written from this table: it
    is what the rules WOULD make, drawn fresh on every render, so the book is
    right the day the dictionary grows and there is no copy to go stale. */
+/* ONE ROW IS ONE WORD, AND A COLUMN IS A FORM. 「表を頁に一つ、列＝形
+   （kano → kano-mi｜kano-ta…）」 2026-09-11. It was one row per rule, which
+   was right while a page was one form and puts the same word down six times on
+   a section that has six.
+
+   The columns are the forms this section has a rule for, in the table's own
+   order, and they are the SAME columns on every row -- a word a form does not
+   reach is an empty cell rather than a missing one, so the second column means
+   the second form all the way down. `.gtm` is `flex:1 1 auto` and there are as
+   many of them as there are forms, so the columns line up with no new rule in
+   the stylesheet.
+
+   A form that reaches this word with more than one rule says both, in the one
+   cell: two rules making the same form are two ways of making it and the
+   column is what they are both about. */
 function g2Cell(w, made){
+  var out='', i;
+  for(i=0;i<made.length;i++)
+    out+='<span class="gtm">'+(made[i]? sfontHTML(made[i]) : '')+'</span>';
   return '<button class="gtabr"' + DO('openWord', [w.hw]) + '>'+
     '<span class="gtw">'+sfontHTML(wOut(w.hw))+'</span>'+
-    '<span class="gts">'+ICON_GO+'</span>'+
-    '<span class="gtm">'+sfontHTML(wOut(made))+'</span></button>';
+    '<span class="gts">'+ICON_GO+'</span>'+out+'</button>';
+}
+/* The forms of this section that have a rule at all. A column for a form
+   nobody has written is a column of nothing, all the way down. */
+function g2FmCols(c){
+  var out=[], i;
+  for(i=0;i<c.fms.length;i++) if(g2RulesOf(c.fms[i]).length) out.push(c.fms[i]);
+  return out;
+}
+/* What one form makes of one word: every rule of it that reaches the word,
+   as the app writes a word (wOut). */
+function g2FmMade(w, fm){
+  var a=g2RulesOf(fm), out=[], i, m;
+  for(i=0;i<a.length;i++){ m=fmrMake(w, a[i]); if(m) out.push(wOut(m.hw)); }
+  return out.join(' ');
 }
 function g2FmTable(c){
-  var rules=g2RulesOf(c.fm), seen=wordsSeen(), out='', i, j, w, m;
-  for(j=0;j<rules.length;j++)
-    for(i=0;i<seen.length;i++){
-      w=seen[i];
-      if(w.fm) continue;
-      m=fmrMake(w, rules[j]);
-      if(m) out+=g2Cell(w, m.hw);
+  var cols=g2FmCols(c), seen=wordsSeen(), out='', i, j, w, made, any;
+  if(!cols.length) return '';
+  for(i=0;i<seen.length;i++){
+    w=seen[i];
+    if(w.fm) continue;
+    made=[]; any=false;
+    for(j=0;j<cols.length;j++){
+      made.push(g2FmMade(w, cols[j]));
+      if(made[j]) any=true;
     }
+    if(any) out+=g2Cell(w, made);
+  }
   if(!out) return '';
   return '<div class="sec">'+esc(t('g2.words'))+'</div>'+
     '<div class="gtab">'+out+'</div>';
 }
-/* And the way to write another, which is on the chapter always. A form is not
-   one rule: 「過去形でもいろんな規則作れるよね？」 -- so this is never hidden
-   because the language already has one.
-
-   IT IS THE ＋ ON THE HEADING, not a row saying what it does.
-   「＋◉が規定なんだからそれにしろ」 OWNER 2026-09-06. secAdd() is the one
-   place that shape is written -- the example lines on a stage add with it, and
-   so does the word sheet -- so the chapter's rules are added the way every
-   other list in this app adds one more, and the heading names the list at the
-   same time. What the button says out loud is still `g2.fm.add`: it is the
-   aria-label now rather than the face of a row. */
-function g2FmAdd(c){
-  return secAdd(esc(t('stg.rules')), DO('fmrNew', [c.pos, c.fm]), t('g2.fm.add'));
-}
 /* And the words this chapter's own stage used to ask for, where there was
    one: 否定形 wants the word for "not" and 疑問形 the six question words.
-   chapSlotsHTML() draws nothing for the eleven chapters that have none. */
-/* A FORM CHAPTER MAY ALSO TAKE A SIDE, and one of them does: 比較級 has a word
-   for 「〜より」 and a side for it, which no other form chapter has and which is
-   the only position in a comparison this app does not already answer somewhere
+   chapSlotsHTML() draws nothing for the sections that have none. */
+/* A SECTION MAY ALSO TAKE A SIDE, and one of them does: 比較 has a word for
+   「〜より」 and a side for it, which no other section has and which is the
+   only position in a comparison this app does not already answer somewhere
    else (where the adjective itself stands is §2's board and the 形容詞
    chapter's). `side` is the key gPos() holds it under, named in G2FM_CHAPS
-   beside the form -- a string and not a function, because a chapter is a row
+   beside the forms -- a string and not a function, because a section is a row
    of a table and a table of functions is a table nothing can check. */
-/* And 否定 / 疑問 where this form is one of the four things they can be about,
-   which is 命令 and nothing else today. g2PolAt() draws nothing for the rest. */
+/* And 否定 / 疑問 where this section is one of the four things they can be
+   about, which is 命令 and nothing else today -- and 命令 is a FORM inside
+   法 now, so it is asked of the forms rather than of the section's id.
+   g2PolAt() draws nothing for the rest. */
 function g2FmChap(c){
-  return (c.side? g2Side(c.side, gSlotAny(c.side), gWordOf('n')) : '')+
-         g2FmAdd(c)+g2FmRows(c)+g2FmTable(c)+chapSlotsHTML(c.id)+g2PolAt(c.id);
+  var out=(c.side? g2Side(c.side, gSlotAny(c.side), gWordOf('n')) : ''), i;
+  for(i=0;i<c.fms.length;i++) out+=g2FmSec(c, c.fms[i]);
+  out+=g2FmTable(c)+chapSlotsHTML(c.id);
+  for(i=0;i<c.fms.length;i++) out+=g2PolAt(c.fms[i]);
+  return out;
 }
 /* What is behind the `?`. 「説明禁止の代わりに？を儲けてるからね？」 OWNER
    2026-09-05 -- so a chapter says nothing about itself on the screen and the
@@ -2374,17 +2457,26 @@ function g2FmChap(c){
    `.d` and `.e` for that label: what the form is, and one example of it in the
    interface language. Registered from the list rather than one at a time so a
    chapter added to G2FM_CHAPS arrives with its `?` already on it. */
-function g2HelpOf(fm){
+function g2HelpOf(sec){
   return function(){
-    return {t:fmLabel(fm),
-            h:'<div class="note">'+esc(t('word.fm.'+fm+'.d'))+'</div>'+
-              '<div class="note">'+esc(t('word.fm.'+fm+'.e'))+'</div>'};
+    var h='', i, f;
+    for(i=0;i<sec.fms.length;i++){
+      f=sec.fms[i];
+      /* The form's own name over its two lines, where the section is made of
+         several -- otherwise six pairs of sentences run together and nobody
+         can tell which is about which. A section of one form is that one form
+         and the title already says it. */
+      if(sec.fms.length>1) h+='<div class="sec">'+esc(fmLabel(f))+'</div>';
+      h+='<div class="note">'+esc(t('word.fm.'+f+'.d'))+'</div>'+
+         '<div class="note">'+esc(t('word.fm.'+f+'.e'))+'</div>';
+    }
+    return {t:t(sec.nm), h:h};
   };
 }
 function g2HelpReg(){
   var i;
   for(i=0;i<G2FM_CHAPS.length;i++)
-    HELP['g2.'+G2FM_CHAPS[i][0]]=g2HelpOf(G2FM_CHAPS[i][1]);
+    HELP['g2.'+G2FM_CHAPS[i].id]=g2HelpOf(G2FM_CHAPS[i]);
 }
 /* `HELP` is www/home.js's, and www/index.html loads that file first, so in the
    app it is here. THIS FILE IS ALSO READ ON ITS OWN: tools/grammar-engine-check
@@ -2422,9 +2514,9 @@ function g2Chaps(){
            {id:'det',   body:g2Det,   nm:t('g2.det.t')},
            {id:'cop',   body:g2Cop,   nm:t('g2.cop.t')},
            {id:'n',     body:g2Nouns, nm:posLabel('n'), pos:'n'}], i, a;
-  /* The forms, one chapter each, from the one list. A chapter is drawn by
-     g2FmChap() and knows its own form and its own part of speech, so nothing
-     here is written thirteen times. */
+  /* The sections, one chapter each, from the one list. A chapter is drawn by
+     g2FmChap() and knows its own forms and its own part of speech, so nothing
+     here is written eight times. */
   for(i=0;i<G2FM_CHAPS.length;i++){
     a=G2FM_CHAPS[i];
     /* 否定形 and 疑問形 are forms of a word AND two of the four things
@@ -2432,8 +2524,8 @@ function g2Chaps(){
        -- so they keep their place on this list, their name and their `?`.
        What they have not got is a page: their four targets are their pages
        (g2ChapBy below), each opened from the section it belongs to. */
-    out.push({id:a[0], body:g2FmChap,
-              nm:fmLabel(a[1]), pos:a[2], fm:a[1], side:a[3]});
+    out.push({id:a.id, body:g2FmChap,
+              nm:t(a.nm), pos:a.pos, fms:a.fms, side:a.side});
   }
   out.push({id:'adj', body:g2Adj,    nm:posLabel('adj'), pos:'adj'});
   out.push({id:'adp', body:g2Adp,    nm:t('stg.where.t')});
@@ -2513,7 +2605,7 @@ function g2Said(c){
      fmr rule an older build left on them. Either is this chapter having been
      written in. */
   if(gPolFeat(c.id) && gPolSaidAny(gPolFeat(c.id))) return true;
-  if(c.fm) return g2RulesOf(c.fm).length>0;
+  if(c.fms) return g2SecRules(c).length>0;
   if(c.id==='order' || c.id==='np') return stTouched(c.id);
   if(c.id==='n'){ p=stBy('part'); return !!p && !!stSlotsDone(p); }
   /* The same question the chapter's own page asks, and for the same reason:
@@ -2530,13 +2622,46 @@ function g2Said(c){
   /* この言語について counts what this language has and is never empty. */
   return true;
 }
+/* WHETHER THIS LANGUAGE HAS A RULE FOR ONE FORM OF A SECTION. `STG.fm` holds
+   them for every form but 否定 and 疑問, whose rules are a shape of their own
+   and live in `STG.gr` -- so this is where the form's rules are KEPT rather
+   than a second answer to which forms there are.
+
+   It is not g2Said(), and the two are different questions. That one is 「has
+   this section been written in at all」 and counts an example or a word the
+   section asks for; this one counts RULES, because that is what the number on
+   the row is about. A section whose example is written and whose rules are not
+   is not pale and says 0. */
+function g2FmSaid(c, fm){
+  var f=gPolFeat(c.id);
+  return f? gPolSaidAny(f) : g2RulesOf(fm).length>0;
+}
+/* THE RIGHT END OF A SECTION'S ROW: how many of the things it is made of have
+   been answered, out of how many. 「章の中の節の行は答えた後も右端が「—」の
+   まま（薄さだけが変わる）」 2026-09-11 -- a section said 時制 and — whether
+   this language had written six rules in it or none, so the only thing the
+   contents of a chapter said was pale or not.
+
+   IT IS THE SENTENCE EVERY OTHER ROW IN THIS APP ALREADY SAYS, one level
+   down: a stage says how many of its slots are filled (www/phases.js § stRow),
+   a chapter of the book says how many of its sections are written
+   (g2BookRow), and a section says how many of its forms are. A row with
+   nothing to count says — , which is what those two already do -- 語順 and
+   です／ある are one decision each and there is no 1/1 to write about a thing
+   that is not made of parts. */
+function g2ChapVal(c){
+  var i, done=0;
+  if(!c.fms) return '—';
+  for(i=0;i<c.fms.length;i++) if(g2FmSaid(c, c.fms[i])) done++;
+  return done+' / '+c.fms.length;
+}
 function g2ChapRow(c, n){
   return '<button class="strow'+(g2Said(c)? '' : ' pale')+'"' +
     DO('go', ['gram', 'v2:'+c.id]) + '>'+
     '<span class="stn">'+n+'</span>'+
     '<span class="stt">'+esc(c.nm)+'</span>'+
     '<span class="lead"></span>'+
-    '<span class="stv">—</span>'+
+    '<span class="stv">'+esc(g2ChapVal(c))+'</span>'+
     ICON_GO+'</button>';
 }
 /* One chapter's page. It is handed the chapter rather than the argument now:

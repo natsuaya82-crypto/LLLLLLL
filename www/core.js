@@ -1240,6 +1240,19 @@ function langNew(){
   if(typeof SESS!=='undefined' && SESS && SESS.uid) langOwnGot(id, SESS.uid);
   langStore();
   langOpen(id);
+  /* AND IT GOES UP AS IT IS MADE. A language LIVES on the server (CLAUDE.md
+     § Online) and a slice is in memory (rule 22), so a language that is made
+     and not sent is a language that is gone when the app closes. Measured
+     2026-09-11 (hunt #12): the row only appeared on the NEXT launch, out of
+     www/boot.js -- so 「言語を追加」 and then closing the app lost it, with
+     nothing on screen to say so.
+
+     netLangSync() is the one road that puts a language up and it decides
+     everything itself -- nothing without a session, nothing without a
+     language, safe to call twice -- which is why this is a call and not a
+     condition. It is the same line the door runs (www/net.js § netTook), at
+     the other moment something is made. */
+  if(typeof netLangSync==='function') netLangSync();
 }
 
 function save(){
@@ -1506,9 +1519,9 @@ function langCap(){
    as B's own, with nothing thrown.
 
    The onboarding is the one place something is made before there is an
-   account to make it for, and the door is on the way out of it: obFinish()
-   calls netLangSync() the moment somebody is through, which is where the
-   account goes on. So the walk is the only moment a session may adopt what
+   account to make it for, and the door is on the way out of it: netTook()
+   (www/net.js) sends what the walk made the moment the session arrives, and
+   the row it makes is where the account goes on. So the walk is the only moment a session may adopt what
    it finds, and `SET.done` is what tells the walk from the app -- the same
    question makeNeed() asks in www/onboard.js, in the same words, for the
    same reason.
@@ -1664,42 +1677,57 @@ function dlStop(){
    letters and the keyboard on screen were that person's, while the switcher
    said 「N 件表示していません」 about them. Nothing threw.
 
-   `mayMint` is the difference between the two moments this is asked. At the
-   sign-in it is false: this account's languages may still be on their way
-   down (netLangBack), and minting one there would leave an empty language
-   beside the three that arrive a second later. When the fetch has finished it
-   is true, and a phone with nothing of this account's on it gets a fresh
-   language -- which is what a new account on a new phone gets anyway.
+   IT ASKS THE SERVER AND NOTHING ELSE.
+   -------------------------------------------------------------------------
+   「印も何も全部保存とかサーバーでやってるんじゃないの？」 OWNER 2026-09-11 --
+   docs/FEATURE_RULES.md § 端末は何も決めない.
 
-   It never deletes and never renames. The other account's language stays in
-   the index, in storage, in its backup, and comes back the moment they sign
-   in again -- which is `langAcct()`'s whole shape (docs/DATA_SAFETY.md). */
-/* WHILE THIS ACCOUNT'S LANGUAGES ARE STILL COMING DOWN.
-   「前の人の言語が出るくらいならローディング入れればいいやん」OWNER
-   2026-09-02, and it is the right answer to the hole I left: the alternative
-   was minting a language on the spot, which leaves an empty one beside the
-   three that arrive a second later. Nothing is made and nothing of the
-   previous account is shown -- the screen says it is waiting, and render()
-   is what draws that (www/glyph.js). */
+   It used to ask `langAcct()`, which is `langMine() && langOwned()`, and both
+   of those answer out of THIS PHONE when the server has not spoken: `mine` on
+   the index, and 「nobody has claimed it, so it is yours」. That is what made
+   the door mint a second language -- the walk's language had not been sent
+   yet, so nothing on the phone could say whose it was, and the phone answered
+   anyway (docs/scope/r24-lang.md).
+
+   `langOwnOf()` is the `language.owner` column and has three states: this
+   account's, somebody else's, and NOT ASKED YET (www/core.js § LOWN). Only
+   the first is a yes here. The third is not a maybe that this function
+   resolves -- it is a language the server has not answered about, and the
+   caller's job is to ask before calling: netTook() sends what is here and
+   waits for `mylangs` before this runs at all.
+
+   `mayMint` is gone with it. It existed to say 「the list may still be on its
+   way」, which is a question about when this is CALLED and not about what it
+   answers; netTook() holds the waiting now (LANG_WAIT) and every caller
+   reaches this with the server's answer already in.
+
+   It never deletes and never renames. Another account's language stays in the
+   index, in storage, and comes back the moment they sign in again. */
 var LANG_WAIT=false;
-function langForAcct(mayMint){
-  var id;
-  if(langAcct(langId)){ LANG_WAIT=false; return false; }
-  for(id in LANGS)
-    if(Object.prototype.hasOwnProperty.call(LANGS, id) && langAcct(id)){
-      LANG_WAIT=false; langOpen(id); return true;
-    }
-  if(!mayMint){ LANG_WAIT=true; return true; }
+function langForAcct(){
+  var id, nid, me=(typeof SESS!=='undefined' && SESS && SESS.uid)? String(SESS.uid) : '';
   LANG_WAIT=false;
-  /* AND IT IS STAMPED WITH WHOEVER IT IS FOR. langMint() leaves `uid` off,
-     because it is also the onboarding's road and there is nobody to name
-     there yet. Here there is: this language is being made because the phone
-     held nothing of this account's, so it is that account's from the moment
-     it exists. Unstamped it would be nobody's the instant `SET.done` is
-     true -- the person would watch the language they were just given
-     disappear. */
-  var nid=langMint();
-  if(typeof SESS!=='undefined' && SESS && SESS.uid) langOwnGot(nid, SESS.uid);
+  /* Nobody signed in: there is no account to be standing in a language of. */
+  if(!me) return false;
+  if(langOwnOf(langId)===me) return false;
+  for(id in LANGS)
+    if(Object.prototype.hasOwnProperty.call(LANGS, id) && langOwnOf(id)===me){
+      langOpen(id); return true;
+    }
+  /* AND 「THE SERVER HAS NOT ANSWERED」 IS NOT 「THE ACCOUNT HAS NONE」.
+     `pullHad('mylangs')` (www/sns.js) is true only when the list actually
+     came down. With no signal it is false, and nothing is made: the screen
+     waits, which is what an online app does -- 「電波が無ければ接続できません」
+     (docs/FEATURE_RULES.md § 端末は何も決めない). Minting on a send that did
+     not land is the same second language this whole change is about, in a
+     different coat. */
+  if(typeof pullHad!=='function' || !pullHad('mylangs')){ LANG_WAIT=true; return true; }
+  /* The server says this account has none. `language_make` in
+     supabase/schema.sql is `owner = auth.uid()`, so the row this one gets can
+     say nothing else -- which is why the owner is written here rather than
+     waited for: it is the server's answer, known before the round trip. */
+  nid=langMint();
+  langOwnGot(nid, me);
   langStore();
   langOpen(nid);
   return true;

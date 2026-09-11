@@ -538,6 +538,10 @@ function netTook(d){
      -- the mail door, the code, Apple and Google -- reports it the way
      it already reports a reply with no access token at all. */
   if(!d || !d.access_token || !d.refresh_token) return false;
+  /* WHETHER THIS IS A SESSION ARRIVING OR THE ONE THAT IS ALREADY HERE.
+     Read before SESS is written over, because that is the only moment it can
+     be. Nothing is stored: it is a fact about the reply in hand. */
+  var netCame=!(SESS && SESS.rt);
   SESS={ at:d.access_token, rt:d.refresh_token,
          uid:(d.user && d.user.id) || (SESS && SESS.uid) || '',
          /* Whether this one has a name on it, decided here because this is
@@ -600,10 +604,59 @@ function netTook(d){
      is www/boot.js's own idiom for 「when the languages have come down」 and
      it runs its waiter whether the answer arrived or was refused, which is
      exactly what netLangBack() did with `done(false)`. */
-  langForAcct(false);
-  if(typeof pullWait==='function') pullWait('mylangs', function(){
-    if(langForAcct(true)) render();
-  });
+  /* SEND WHAT IS ON THIS PHONE, AND ONLY THEN ASK WHAT THERE IS.
+     -------------------------------------------------------------------------
+     「印も何も全部保存とかサーバーでやってるんじゃないの？ 全部サーバーで
+     やってんじゃねえの？」 OWNER 2026-09-11, and the decision it settled --
+     docs/FEATURE_RULES.md § 端末は何も決めない.
+
+     TWO THINGS HAPPEN WHEN A SESSION ARRIVES and they are not the same
+     question: what is on this phone has to reach the server, and what the
+     account HAS has to come down. They used to run side by side, and the
+     order they came out in decided the answer: measured on 2026-09-11
+     (docs/scope/r24-lang.md) the walk's language had not been sent when the
+     coming-down road asked whether this account had one, the answer was no,
+     and the door made a SECOND language -- the typed name on the empty one
+     and the drawn letters on the nameless one. hunt 道1・道10・道11 are all
+     that one split.
+
+     So it is one road with the sending first. Nothing is stopped by a
+     condition and nothing is asked twice: netLangSync() sends what is here,
+     and only when it has answered does `mylangs` get asked and langForAcct()
+     decide where to stand. By then the walk's language is a row with this
+     account's name on it, and the server's list has it.
+
+     netLangSync() decides everything itself -- nothing without a session,
+     nothing without a language, safe to call twice -- so this is a call and
+     not a condition. www/onboard.js § obFinish used to make the same call one
+     step later; that one is gone, because this is the same road and it is
+     the earlier of the two.
+
+     THERE IS NO 「WHILE WE WAIT」 BRANCH ANY MORE. `langForAcct(false)` stood
+     here to point the screen away from the last account's language before the
+     list arrived, and it was the phone deciding: with the sending first, the
+     only thing between a session arriving and the list coming down is the
+     round mark www/glyph.js already draws for LANG_WAIT.
+
+     AND IT IS THE DOOR AND ONLY THE DOOR. `netCame` above is 「there was no
+     session here a moment ago」, which is what coming through the door IS: a
+     launch resumes a session this phone already had (netRead() put it back
+     before this), and the hour running out renews the one that is running. A
+     launch sends on its own road, after the list -- www/boot.js § bootSession,
+     `pullWait('mylangs', netLangSync)` -- and what moves while the app is open
+     goes up on netSaveUp()'s. This is the moment neither of those covers, and
+     it is the one the walk needs.
+
+     Without it the hour running out re-sent all twelve slices of every
+     language: tools/token-check.mjs counted 7 writes where the claim is 2. */
+  if(netCame){
+    LANG_WAIT=true;
+    netLangSync(function(){
+      if(typeof pullWait==='function') pullWait('mylangs', function(){
+        langForAcct(); render();
+      });
+    });
+  }
   /* AND EVERYTHING THE APP READS OFF THE SERVER, ASKED HERE, ONCE.
      「最初の起動の一回の更新で全部取得してその後それぞれをプルトゥーリフレッシュ
      とかで更新して取得するじゃダメなの？」 OWNER 2026-09-05.
@@ -936,19 +989,40 @@ function netHandleFree(h, ok, bad){
    no face draws no face and nothing throws. */
 function netMakeProfile(h, name, ok, bad){
   if(!netSignedIn()){ bad(null, 0, 'mkprofile −'); return; }
-  var av=postAvatar();
-  netPost('/rest/v1/profile',
-          {id:SESS.uid, handle:h, display:name, av:av,
-           /* And the three a person writes about themselves, which are the
-              account's and not the phone's. schema.sql names them in the
-              INSERT grant beside the other four; a column not named there is
-              one nothing can ever write, with no error to say so. */
-           bio:String(ME.bio||''),
-           link:String(ME.link||''), loc:String(ME.loc||'')},
-          SESS.at,
+  var av=postAvatar(), row={id:SESS.uid, av:av},
+      typed={name:String(name||''), handle:String(h||'')}, i, k;
+  /* THE ROW IS MADE OF WHAT § PROF_MINE SAYS A PROFILE IS, and that list is
+     read here rather than written out again. It was written out -- handle,
+     display, bio, link, loc, one literal each -- so 「which columns is a
+     person's profile」 had two answers, and the day the save road grew the
+     name and the @ (2026-09-11) only one of the two had them. `av` is not on
+     it: nobody types a face, and the road that keeps it level is netAvSync()
+     below. */
+  for(i=0;i<PROF_MINE.length;i++){
+    k=PROF_MINE[i][0];
+    row[PROF_MINE[i][1]]=Object.prototype.hasOwnProperty.call(typed, k)?
+      typed[k] : String(ME[k]||'');
+  }
+  netPost('/rest/v1/profile', row, SESS.at,
           /* what was sent, so netAvSync() does not send it again on the
              next launch for a face that has not moved */
-          function(d){ ME.avSent=JSON.stringify(av||null); saveMe(); ok(d); },
+          function(d){
+            ME.avSent=JSON.stringify(av||null); saveMe();
+            /* AND THE ROW EXISTS NOW, WHICH NOTHING WROTE DOWN.
+               `meRowHas()` (www/me.js § ME_ROW) is 「does this account have a
+               profile row」 and appIs() (www/shell.js) answers 'door' while it
+               is false -- so the last 「次へ」 of the walk made the account,
+               made the row, said 「ログインしました」 and then drew the
+               sign-in screen over the app. Measured 2026-09-11 (hunt #1):
+               SET.walked true, route 'profile', netSignedIn() true,
+               meRowHas() FALSE. It came right on the next launch, which is
+               why it happened once and looked like a flicker.
+               Only netMyProfile() and netProfSync() ever wrote that answer,
+               and both of them ASK; this is the one place that MAKES the row,
+               so it is the one place that knows without asking. */
+            if(typeof meRowGot==='function') meRowGot(true);
+            ok(d);
+          },
           bad);
 }
 /* The face on the profile row, kept level with the face on the phone.
@@ -992,6 +1066,25 @@ function netMakeProfile(h, name, ok, bad){
    which is the half that was missing: the old function said `bio` in five
    places, so adding a field meant finding all five.
 
+   AND IT IS FIVE, AND IT NAMES THE COLUMN AS WELL AS THE FIELD.
+   -------------------------------------------------------------------------
+   The list held three and the editor walked it to decide what to send, so a
+   name and a handle somebody typed reached this phone and stopped there:
+   measured on 2026-09-11 (docs/scope/r24-lang.md, hunt 道7) the whole of a
+   save was `PATCH /rest/v1/profile {"bio":"..."}` while the screen said the
+   new name and the new @. Nothing threw, because the send was not empty.
+
+   The two that were missing are the two whose column is NOT called what the
+   phone calls them -- `name` is `profile.display` -- and that is why they
+   could not simply be added: a list of field names cannot say that. So each
+   entry is a pair, `[what ME calls it, what the column is called]`, and both
+   the road up (www/me.js § meProfPut) and the road down below read the same
+   pair. A sixth field is one line here and nothing else, still.
+
+   `handle` travels like the rest and the server is what refuses it: the
+   fortnight and @lingua are `profile_rename()` in supabase/schema.sql, which
+   answers with an exception, which arrives here as a refusal like any other.
+
    It ASKS before it writes, where netAvSync() below compares against a mark
    it keeps locally (`ME.avSent`). Two reasons, and the second is the one that
    decided it: a mark would be a new field on ME, and the shape of ME is
@@ -1017,10 +1110,17 @@ function netMakeProfile(h, name, ok, bad){
    has not got.
 
    Fired and not waited for. Nothing on screen depends on it. */
-var PROF_MINE=['bio', 'link', 'loc'];
+var PROF_MINE=[['name','display'], ['handle','handle'], ['bio','bio'],
+               ['link','link'], ['loc','loc']];
+/* The columns, for a `select` and for nothing else. */
+function profCols(){
+  var out=[], i;
+  for(i=0;i<PROF_MINE.length;i++) out.push(PROF_MINE[i][1]);
+  return out.join(',');
+}
 function netProfSync(){
   if(!netSignedIn() || !SESS || !SESS.uid) return;
-  netGet('/rest/v1/profile?select='+PROF_MINE.join(',')+'&limit=1&id=eq.'+
+  netGet('/rest/v1/profile?select='+profCols()+'&limit=1&id=eq.'+
          encodeURIComponent(SESS.uid),
     function(d){
       var row=(d && d.length)? (d[0]||{}) : {}, drew=false, i, k, there;
@@ -1034,8 +1134,8 @@ function netProfSync(){
          rather than bringing it. */
       if(!(d && d.length)) return;
       for(i=0;i<PROF_MINE.length;i++){
-        k=PROF_MINE[i];
-        there=String(row[k]||'');
+        k=PROF_MINE[i][0];
+        there=String(row[PROF_MINE[i][1]]||'');
         if(there===String(ME[k]||'')) continue;
         ME[k]=there; drew=true;
       }
@@ -2083,10 +2183,10 @@ function netTakeGone(ids){
   }
   langStore();
   /* And where you are standing, if you were standing in one of them.
-     langForAcct(true) is the one place that answers 「which language is this
+     langForAcct() is the one place that answers 「which language is this
      account's to be in」 -- wipeLangsHere() reaches it the same way, with the
      same two lines in front of it. It draws; nothing else does. */
-  if(moved) langForAcct(true);
+  if(moved) langForAcct();
   else render();
 }
 /* The open language and its copy, put together. Read, merge, write back

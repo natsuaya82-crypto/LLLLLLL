@@ -1701,12 +1701,28 @@ function tagHTML(s){
 
    snsGo() is what a person pressing the search does, and this is a person
    searching. */
+/* ONE PRESS IS ONE QUESTION, and this asked TWO. `goTab('explore')` draws,
+   and vExplore() asks whenever there is a word with no answer under it -- so
+   by the time `snsGo()` ran, the question was already out. `snsGo()` then
+   render()ed a second time, `snsHits` was still null because the first answer
+   had not landed, and the same two requests went out again.
+
+   Nothing threw and nothing looked wrong: two answers to one question are the
+   same answer, and the second landed on a screen that already had it. What it
+   costs is the server, doubled by however many people are searching, and it
+   is visible to nobody. Measured 2026-09-11: one press of `#さくら` put out
+   two profile_seen and two post_seen.
+
+   snsGo()'s own comment says it -- *「One place asks and it is vExplore()」* --
+   and this was the road running beside it. So the render is goTab()'s alone
+   and what is left here is the two things a press of a tag actually is: the
+   word, and the history 「タップしたらタグの検索になる」. */
 function snsTagGo(q){
   snsQ=String(q||'');
   snsHits=null;
   snsFil=null;
+  snsRecentAdd(snsQ);
   goTab('explore');
-  snsGo();
 }
 /* Which day this sentence is FOR, drawn. 「日付ないし」
 
@@ -2567,22 +2583,51 @@ function snsDropRecent(q){
    put through snsSetQ() rather than set here, because that is the one place
    that says what typing into this field does -- writing it out again would
    be a second copy of it, and what would drift first is which questions get
-   asked. */
-function snsPickRecent(q){
+   asked.
+
+   EITHER LIST UNDER THE EMPTY FIELD, which is why it is not called Recent any
+   more: a word kept and a word merely typed are two lists and one press
+   (§ snsSearchesHTML). snsPickSaved() below is a different act on a different
+   screen -- it filters the timeline from the chooser -- and the two must not
+   be made one. */
+function snsPickWord(q){
   var k=String(q||'').trim();
   if(!k) return;
   snsSetQ(k);
   render();
 }
-/* The list, under an EMPTY field. With something typed, the answer is what
-   the screen is about and the history would be sitting on top of it.
+/* ---- ONE LIST OF WORDS UNDER AN EMPTY FIELD, DRAWN ONCE -----------------
+   The words somebody KEPT and the words they have TYPED are two lists and one
+   drawing. This was the history alone, and the star's list was written out a
+   second time inside vFilter() -- so the star on a search put the word
+   somewhere the screen it was pressed on could not show it, and the only road
+   to it was the corner of the timeline. Nothing threw: the star lit, the row
+   went up, the next launch read it back, and the list was simply not on the
+   screen that made it. This function's own comment already called itself
+   「保存した検索」の同じ形 while there was no 「保存した検索」 here for it to
+   be the same shape as.
+
+   WHAT THE TWO SHARE IS EVERYTHING BUT TWO THINGS. The row is the same row and
+   the press is the same press -- a word under this field is a search to make
+   again, whichever list it came off. What differs is the name over it, and the
+   cross that takes one off, which is the HISTORY's alone:
+   「1件づつ消せるでいいよ」 OWNER 2026-09-03, and a star comes off by the star
+   in the field. A second way to remove one is a deletion nobody has asked for
+   -- docs/FEATURE_RULES.md § Deciding.
 
    The heading is a NAME and not a sentence about what the list is
-   (CLAUDE.md § Explaining), the same shape as 「保存した検索」 above it. No
-   corner, no border, no panel: `.whrow` is a row with a hairline under it and
-   `.pmore` is the small trailing control a post's row already wears. */
-function snsRecentHTML(){
-  var a=snsRecent();
+   (CLAUDE.md § Explaining). No corner, no border, no panel: `.whrow` is a row
+   with a hairline under it and `.pmore` is the small trailing control a post's
+   row already wears.
+
+   `drop` is the name the cross says, or nothing where there is no cross.
+
+   `r` IS THE ROUTE AND NOT A YES/NO. It was `had` -- `pullHad(r)` worked out
+   by each caller and handed in -- and that stopped carrying enough on
+   2026-09-11, when the table gained 「訊けなかった」 (§ pullSay): a boolean
+   cannot say which of the two 「no」s it is. The route is what both callers
+   already had, so nothing is derived here that was not derived there. */
+function snsSearchesHTML(name, a, r, drop){
   /* An empty list and a list that has not come back are two different facts,
      AND SO IS A LIST FROM LAST TIME. It drew this phone's stored copy while
      this session's answer was in the air, so a history that had changed on
@@ -2591,18 +2636,20 @@ function snsRecentHTML(){
      there is a copy underneath it. netSignedIn() because the ask does not go
      without somebody to ask for -- a mark turning on a question nobody is
      asking is a lie. */
-  if(netSignedIn() && !pullHad('recent')) return snsEmpty('recent', '');
+  if(netSignedIn() && !pullHad(r)) return snsEmpty(r, '');
   if(!a.length) return '';
-  return '<div class="sec">'+esc(t('sns.recent'))+'</div>'+
+  return '<div class="sec">'+esc(t(name))+'</div>'+
     a.map(function(q){
       return '<div class="whrow">'+
         /* The word is what was SEARCHED FOR and the row is what a person
            reads, so the day's tag is drawn in their language here too. The
            press still carries the stored word: it is the search. */
-        '<button class="whgo"' + DO('snsPickRecent', [q]) + '>'+
+        '<button class="whgo"' + DO('snsPickWord', [q]) + '>'+
           '<span class="sl">'+esc(dayTagShow(q))+'</span></button>'+
-        '<button class="pmore"' + DO('snsDropRecent', [q]) + ' aria-label="'+
-          esc(t('sns.recent.drop'))+'">'+ICON_CROSS+'</button>'+
+        (drop
+          ? '<button class="pmore"' + DO(drop, [q]) + ' aria-label="'+
+              esc(t('sns.recent.drop'))+'">'+ICON_CROSS+'</button>'
+          : '')+
       '</div>';
     }).join('');
 }
@@ -2689,8 +2736,11 @@ function snsAnsHTML(q, r){
    -- a history under a live answer is a second list on a screen that is
    already about one thing. */
 function snsHitsHTML(){
-  if(!snsQ.trim()) return snsRecentHTML();
-  return snsAnsHTML(snsQ, snsHits);
+  if(snsQ.trim()) return snsAnsHTML(snsQ, snsHits);
+  /* Kept first, typed second: one is a list somebody chose and the other is
+     what they happen to have done lately. */
+  return snsSearchesHTML('sns.saved', snsSaved(), 'saved', null)+
+         snsSearchesHTML('sns.recent', snsRecent(), 'recent', 'snsDropRecent');
 }
 function vExplore(){
   if(!netSignedIn()) return snsLocked('explore');

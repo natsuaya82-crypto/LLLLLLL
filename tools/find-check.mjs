@@ -280,6 +280,10 @@ async function blank(){
   await pg.evaluate(() => {
     window.__MODE='ok'; window.__ASK=[];
     SET.recent = []; PULL_GOT.recent = 1; snsQ = ''; snsHits = null;
+    /* 星も空に。この節が訊いているのは履歴で、星の言葉も同じ空欄の下に出る
+       ようになったので（§ 7c）、空にしておかないと行の数が両方の合計に
+       なります。星そのものは 7c が訊きます。 */
+    SET.saved = []; PULL_GOT.saved = 1;
     go('explore');
   });
   await pg.waitForTimeout(80);
@@ -374,7 +378,7 @@ await pg.evaluate(() => { snsQ = 'aya'; snsHits = { q:'aya', who:[], posts:[] };
 await pg.waitForTimeout(120);
 const shown = await pg.evaluate(() => {
   var e = document.getElementById('sns-hits');
-  return e ? e.innerHTML.indexOf('snsPickRecent') !== -1 : true;
+  return e ? e.innerHTML.indexOf('snsPickWord') !== -1 : true;
 });
 say(!shown, '文字が入っているときは履歴を出さない');
 
@@ -386,6 +390,89 @@ const star = await pg.evaluate(() => {
 });
 say(star.saved.length === 1 && star.saved[0] === 'hoshi' && star.recent.length === 0,
     '履歴を消しても星は残る (星と履歴は別の仕組み)');
+
+/* ---- 7c. ★で保存した言葉は、押したその画面に出る ------------------------
+   道8（`origin/claude/r21-hunt`、2026-09-11）。検索で ★ を押すと
+   `saved_search` に行が入り、`netSearchSaved()` は読み戻せるのに、**押した
+   その画面には出ませんでした。**星の一覧は絞り込み（`vFilter`）の中に別の
+   描き方で直書きされていて、そこへ行く道はタイムラインの角だけ。空の検索欄
+   の下に出るのは履歴だけ ── ★を押した人は、押した結果の置き場へ行けません。
+
+   何も投げません。★は光り、サーバーには行き、次の起動でも読み戻せて、
+   画面は完全に正しく描けます。**無いのは行だけ**なので、人が押して探す以外
+   に見つける道がありませんでした。
+
+   直しは**一つの描き方**です ── 見出しと言葉の行を作る関数が一つあり、星の
+   一覧と履歴の一覧がそれを呼ぶ。だから訊くのは「出るか」だけではなく
+   **「同じ行か」**で、それが二つ目の claim です。違ってよいのは二つだけ：
+   見出しの名前と、一件ずつ消せる × が履歴の行にだけ付くこと
+   （「1件づつ消せるでいいよ」OWNER 2026-09-03 ── 星を外すのは欄の★）。 */
+const under = await pg.evaluate(() => {
+  SET.saved = ['hoshi', 'umi']; SET.recent = ['rireki'];
+  PULL_GOT.saved = 1; PULL_GOT.recent = 1;
+  snsQ = ''; snsHits = null; snsFil = null;
+  go('explore'); render();
+  var e = document.getElementById('sns-hits');
+  var rows = [].slice.call(e ? e.querySelectorAll('.whrow') : []);
+  return {
+    heads: [].slice.call(e ? e.querySelectorAll('.sec') : [])
+             .map(function(x){ return x.textContent; }),
+    words: rows.map(function(r){
+      var w = r.querySelector('.sl');
+      return w ? w.textContent : '(字が無い)';
+    }),
+    /* 行そのもの ── 何の class を着て、押すと何の名前を言うか。 */
+    wear: rows.map(function(r){
+      var w = r.querySelector('.whgo');
+      return r.className + '/' + (w ? w.className + '/' + w.getAttribute('data-do')
+                                    : '(押す所が無い)');
+    }),
+    drops: rows.map(function(r){
+      var d = r.querySelector('[data-do="snsDropRecent"]');
+      return d ? 1 : 0;
+    }),
+    saveHead: t('sns.saved'), recentHead: t('sns.recent') };
+});
+say(under.words.join(',') === 'hoshi,umi,rireki',
+    '空の検索欄の下に、星の二つと履歴が出る (' + JSON.stringify(under.words) + ')');
+say(under.heads.length === 2 &&
+    under.heads[0] === under.saveHead && under.heads[1] === under.recentHead,
+    '見出しは「' + under.saveHead + '」が先で「' + under.recentHead +
+    '」が後 (' + JSON.stringify(under.heads) + ')');
+say(under.wear.length === 3 &&
+    under.wear[0] === under.wear[1] && under.wear[1] === under.wear[2],
+    '星の行と履歴の行は同じ作り ── 同じ class、同じ press (' +
+    JSON.stringify(under.wear.filter(function(x, i, a){ return a.indexOf(x) === i; })) + ')');
+say(under.drops.join(',') === '0,0,1',
+    '一件ずつ消せる × は履歴の行にだけ付く (星:' + under.drops.slice(0, 2).join(',') +
+    ' 履歴:' + under.drops[2] + ')');
+
+/* 押すと、その言葉が欄に入って検索し直される ── 履歴の行と同じことです。
+   「絞り込みから選ぶとその言葉で検索し直す」OWNER 2026-08-28 と同じ答えを、
+   検索の画面の側で。絞り込みの行（`snsPickSaved`）は別物で、あちらは
+   タイムラインを絞るので、この画面にそれが居たら戻る先がありません。 */
+const pick = await pg.evaluate(() => {
+  var e = document.getElementById('sns-hits');
+  var b = e ? e.querySelector('.whrow .whgo') : null;
+  if (!b) return { none: true };
+  b.click();
+  return { none: false, q: snsQ, where: here().r,
+           filtered: !!snsFil };
+});
+say(!pick.none && pick.q === 'hoshi' && pick.where === 'explore' && !pick.filtered,
+    '星の行を押すとその言葉が欄に入り、検索の画面のまま (' +
+    JSON.stringify(pick) + ')');
+
+/* 星が一つも無ければ、見出しも空白も出ない。 */
+const nostar = await pg.evaluate(() => {
+  SET.saved = []; PULL_GOT.saved = 1;
+  snsQ = ''; snsHits = null; render();
+  var e = document.getElementById('sns-hits');
+  return { heads: [].slice.call(e ? e.querySelectorAll('.sec') : [])
+                    .map(function(x){ return x.textContent; }) };
+});
+say(nostar.heads.length === 1 && nostar.heads[0] === under.recentHead,
+    '星が無ければ見出しも出ない (' + JSON.stringify(nostar.heads) + ')');
 
 /* ---- 7b. 同じ言葉をもう一度 ── 一番上へ動くのは一回の書き込み ---------
    履歴が黙って一つ減ることがありました。同じ言葉をもう一度検索すると一番上
@@ -739,7 +826,11 @@ const drawn = await pg.evaluate(() => {
   e.innerHTML = postRow({ id:'t1', at:Date.now(), who:'Iri', hd:'iri',
                           ln:'qel', mn:'あついね #今日のお題 でした',
                           ui:'ja', mine:false });
-  b = e.querySelectorAll('button.ptag');
+  /* **本文の中だけ**数えます。2026-09-11 から投稿の頭の @ も `.ptag` を着て
+     いる ── その人への道になったので（www/post.js § postRow、OWNER 実機）。
+     頭の @ は「アプリが足した行」でも「本文の中のタグ」でもないので、ここの
+     二つの主張のどちらの数にも入りません。 */
+  b = e.querySelectorAll('.pline .ptag, .pmn .ptag');
   out.n = b.length;
   out.text = b.length ? b[0].textContent : '';
   out.does = b.length ? b[0].getAttribute('data-do') : '';
@@ -749,7 +840,7 @@ const drawn = await pg.evaluate(() => {
   e.innerHTML = postRow({ id:'t2', at:Date.now(), who:'Aya', hd:'aya',
                           ln:'mos', mn:'nothing here', ui:'en', pr:7,
                           mine:true });
-  out.none = e.querySelectorAll('button.ptag').length;
+  out.none = e.querySelectorAll('.pline .ptag, .pmn .ptag').length;
   return out;
 });
 /* 見える字は読む人の言語、押す先は綴り ── その二つが別だというのが
@@ -873,16 +964,20 @@ const dayBox = await pg.evaluate(() => {
   }
   function row(){
     var e = document.createElement('div'), a;
-    e.innerHTML = snsRecentHTML();
+    /* 履歴の一覧そのもの。空欄の下は星と履歴の二つを同じ関数で描くので
+       （`www/sns.js` § snsSearchesHTML）、ここは履歴の側を名指します。 */
+    e.innerHTML = snsSearchesHTML('sns.recent', snsRecent(), true, 'snsDropRecent');
     a = e.querySelectorAll('.whrow .sl');
     return a.length ? a[0].textContent : '(行が無い)';
   }
   PULL_GOT.recent = 1;
   SET.recent = []; snsQ = ''; snsHits = null; snsFil = null;
   SET.ui = 'en';
-  /* 押す。snsTagGo() は箱に入れて explore へ行き、snsGo() が履歴に入れます。 */
+  /* 押す。snsTagGo() が箱に入れ、履歴に入れ、explore へ行きます ── 一本。
+     2026-09-11 まではここで snsGo() も呼んでいて、履歴に入れるのはそちら
+     でした。goTab() の描画と snsGo() の描画で、一回の押しが二回の問いに
+     なっていた（下の「一回の押しは一回の問い」）。 */
   snsTagGo(DAY_TAG);
-  snsGo();
   out.enBox = box();
   out.enRow = row();
   out.enSaved = (SET.recent || []).slice(0);
@@ -903,6 +998,41 @@ say(dayBox.enRow === dayWord,
     '履歴の行に見える字は英語 (' + dayBox.enRow + ')');
 say(dayBox.jaBox === '#今日のお題' && dayBox.jaRow === '#今日のお題',
     '日本語に戻すと箱も行も綴り (' + dayBox.jaBox + ' / ' + dayBox.jaRow + ')');
+
+/* ---- タグを一度押すのは、サーバーへ一度訊くこと ------------------------
+   「#〇〇 を押しても、そのタグの付いた投稿の一覧に飛ばない」OWNER
+   2026-09-11 を測っていて出てきたものです。飛びます ── ただし **一回の押し
+   で二度訊いて**いました。`snsTagGo()` が `goTab('explore')` と `snsGo()` を
+   両方呼び、goTab が描いた時点で vExplore() が訊き、その答が着く前に snsGo()
+   の render() がもう一度訊く。
+
+   何も投げず、二つの答は同じなので画面は正しく見えます。見えるのは検索して
+   いる人数だけ倍になるサーバーの負荷で、**誰にも見えません**。だから訊くのは
+   画面ではなく、出ていった要求の数です。
+
+   snsFind() を数えるのではなく **path を数えます** ── 一回の問いは人と投稿の
+   二本で、それは正しい。二回の問いは四本になります。 */
+const tagOnce = await pg.evaluate(() => new Promise(function(done){
+  PULL_GOT.recent = 1;
+  SET.recent = []; snsQ = ''; snsHits = null; snsFil = null;
+  window.__ASK = [];
+  snsTagGo('#今日のお題');
+  /* 答が着くまで待つ ── 二本目の問いは一本目の答より先には出ないので、
+     着地を待たずに数えると二度訊く形でも緑になります。 */
+  setTimeout(function(){
+    done({ route: here().r, box: snsQ,
+           who: window.__ASK.filter(function(s){
+             return s.indexOf('/rest/v1/profile_seen') === 0; }).length,
+           posts: window.__ASK.filter(function(s){
+             return s.indexOf('/rest/v1/post_seen') === 0; }).length });
+  }, 200);
+}));
+say(tagOnce.route === 'explore' && tagOnce.box === '#今日のお題',
+    'タグを押すと、その語を箱に入れて explore に立つ (' +
+    tagOnce.route + ' / ' + tagOnce.box + ')');
+say(tagOnce.who === 1 && tagOnce.posts === 1,
+    '一回の押しは一回の問い ── 人に一本、投稿に一本 (人 ' + tagOnce.who +
+    ' 本、投稿 ' + tagOnce.posts + ' 本)');
 
 /* ---- 絞り込みに #今日のお題 の行が一つ ---------------------------------
    「絞り込み（おすすめ／フォロー中）に「#今日のお題」を足す」 OWNER
