@@ -446,14 +446,22 @@ function gramArgs(){
   out.push('v2');
   a=(typeof g2Chaps==='function')? g2Chaps() : [];
   for(i=0;i<a.length;i++){
-    out.push('v2:'+a[i].id);
     /* AND EVERY TARGET OF THE TWO CHAPTERS THAT HAVE THEM. A page reached
        only as an argument OF an argument is still a page: it is asked of
        gPolFeat() and GPOL_ON rather than written out, so a fifth thing that
-       can be negated is walked the day it is added. */
-    if(typeof gPolFeat==='function' && gPolFeat(a[i].id))
+       can be negated is walked the day it is added.
+
+       THOSE TWO HAVE NO BARE PAGE. The four rows that chose between the
+       targets are gone (OWNER 2026-09-11) and `v2:neg` draws nothing, so
+       walking it would be walking the contents under another name. */
+    if(typeof gPolFeat==='function' && gPolFeat(a[i].id)){
       for(j=0;j<GPOL_ON.length;j++) out.push('v2:'+a[i].id+':'+GPOL_ON[j]);
+      continue;
+    }
+    out.push('v2:'+a[i].id);
   }
+  /* And every chapter of the book, which is what the contents opens. */
+  for(i=0;i<G2BOOK.length;i++) out.push('book:'+G2BOOK[i].id);
   return out;
 }
 function stBy(id){
@@ -858,82 +866,133 @@ function stHidHTML(){
   if(!n) return '';
   return capWarnHTML(t('cap.hid', n));
 }
-/* THE ORDER OF THE CONTENTS, and it is a grammar book's rather than the app's.
-   「1 語順 2 名詞 3 動詞（時制・否定・疑問）4 代名詞 5 数 6 挨拶…」 OWNER
-   2026-09-06, and A→E OWNER 2026-09-07 -- 文の骨格、名詞、動詞、修飾、語用.
-   The second is the first said again with the chapters that were missing on
-   the day it was written, so it replaces it rather than arguing with it: the
-   verb's own chapters are grouped as 人称・時制・法・態・否定 rather than being
-   one heading called 動詞, because each of them is a chapter now.
+/* THE BOOK, AND ITS CHAPTERS ARE A GRAMMAR BOOK'S.
+   「否定形単体じゃなくて、文法書なんだから動詞とかのページに作るべき。項目
+   増やすよりも一つ一つ厚みを増やして。多少は分けていいけど、文法の教科書
+   みたいなのを見て章分けを決めてくれ」 OWNER 2026-09-11.
 
-   The list was two lists with a name over each -- the chapters that say what a
-   word turns into, then the stages -- and the split was true of the code and of
-   nothing anybody opens the page to find out. A grammar book has ONE contents
-   page: word order, then the noun and what happens to it, then the verb and
-   everything that happens to that, then the pronouns, the numbers, the
-   greetings, and the rest.
+   It was 43 rows down one page. They were in a grammar book's ORDER and had no
+   chapters over them, so 人称の六つ, 時制の六つ and 法の五つ each stood beside
+   あいさつ as an equal of it -- which is a contents page you scroll to find out
+   what is on it. A book has chapters and a chapter has sections. This is the
+   chapters, and every row of that flat list is a SECTION inside one.
 
-   A CHAPTER NOT NAMED HERE STILL APPEARS. It goes to the foot in the order it
-   was in, which is what a stage somebody added themselves is, and is also why
-   this can never hide one: a thirteenth form added to G2FM_CHAPS lands on the
-   list the day it is added, at the end, and moving it into the book's order is
-   a line here. The tie is broken by where it was, because sort() is not
-   promised to be stable on the WKWebView this runs in and two of somebody's own
-   stages swapping places on a redraw is the app rearranging their work. */
-var G2TOC=[/* A 文の骨格 -- 語順、名詞句の並び、複文（とその印の語） */
-           'order','np','cx','conj',
-           /* B 名詞 -- 格、その印を作る段、複数、種類、冠詞・指示詞、所有、
-              代名詞、数詞 */
-           'n','part','pl','ncls','det','have','pron','count',
-           /* C 動詞 -- 人称・数、時制・相、法、態、否定・疑問、コピュラ・存在 */
-           'p1s','p2s','p3s','p1p','p2p','p3p',
-           'prs','pst','fut','plp','prg','prf',
-           'imp','cnd','pot','obl','des',
-           'pas','cau','neg','q','cop',
-           /* D 修飾 -- 形容詞の側、比較、前置詞／後置詞 */
-           'adj','cmp','sup','adp',
-           /* E 語用 -- 敬語、あいさつ、時、月、曜日。最後にこの言語について */
-           'polite','greet','when','month','wday','st'];
-function stTocAt(id){
-  var i=G2TOC.indexOf(String(id));
-  return (i<0)? G2TOC.length : i;
+   A SECTION NOT NAMED HERE STILL APPEARS, at the foot of the appendix, in the
+   order it was in -- which is what a stage somebody added themselves is, and is
+   why this table can never hide one: a twenty-fifth form added to G2FM_CHAPS
+   lands in the appendix the day it is added, and moving it into its chapter is
+   a line here.
+
+   語形成 IS EMPTY ON PURPOSE. 「まだ無ければ空の章として目次に薄く出る。
+   作らない」 -- the contents says the book has a chapter nobody has written yet,
+   which is what docs/GRAMMAR-V2-SPEC.md § 完成の定義 means by 「空の章は薄い字
+   で目次に出る」.
+
+   否定 and 疑問 are `neg:v` and `q:v`: sections of the verb, not chapters of
+   their own. The other three targets of each are opened from the section they
+   belong to -- www/grammar.js § g2PolAt. */
+var G2BOOK=[
+  /* 1 文. 場所と時の位置は語順の板の中なので、節にはならない。 */
+  {id:'snt',  has:['order','np','cop']},
+  /* 2 名詞. 冠詞・指示詞がどこに立つかは名詞句の板の中。 */
+  {id:'noun', has:['ncls','pl','n','part','det','have']},
+  {id:'pro',  has:['pron']},
+  {id:'num',  has:['count']},
+  /* 5 動詞. 人称と数、時制と相、法、態、否定、疑問。 */
+  {id:'verb', has:['p1s','p2s','p3s','p1p','p2p','p3p',
+                   'prs','pst','fut','plp','prg','prf',
+                   'imp','cnd','pot','obl','des',
+                   'pas','cau','neg:v','q:v']},
+  {id:'mod',  has:['adj','cmp','sup']},
+  {id:'pp',   has:['adp']},
+  {id:'sub',  has:['cx','conj']},
+  {id:'wf',   has:[]},
+  /* 付録. 語用と、人が足した段。`st` はまだどこにも無い章で、行は出ない。 */
+  {id:'app',  has:['greet','polite','when','month','wday','st']}
+];
+/* EVERY SECTION OF THE BOOK, whichever half of the app it comes from: a chapter
+   of the rule-made group (www/grammar.js § g2Chaps) or a stage. One place,
+   because the contents, a chapter's page and both walks ask the same question.
+
+   否定 and 疑問 come through as their FIRST target. They have no page of their
+   own any more -- g2ChapBy() answers null for a bare `neg` -- so a section that
+   named one would be a row with nothing behind it. */
+function g2Secs(){
+  var g=(typeof g2Chaps==='function')? g2Chaps() : [], a=stAll(), out=[], i, id;
+  for(i=0;i<g.length;i++){
+    id=(typeof gPolFeat==='function' && gPolFeat(g[i].id))?
+       (g[i].id+':'+GPOL_ON[0]) : g[i].id;
+    out.push({id:id, c:g2ChapBy(id)});
+  }
+  for(i=0;i<a.length;i++) out.push({id:a[i].id, p:a[i]});
+  return out;
 }
+function g2BookBy(id){
+  var i, s=String(id||'');
+  for(i=0;i<G2BOOK.length;i++) if(G2BOOK[i].id===s) return G2BOOK[i];
+  return null;
+}
+/* Whether any chapter names this section. The appendix takes the ones nothing
+   does, so this is asked once and the answer is used in one place. */
+function g2BookNamed(id){
+  var i, j, s=String(id||'');
+  for(i=0;i<G2BOOK.length;i++)
+    for(j=0;j<G2BOOK[i].has.length;j++) if(G2BOOK[i].has[j]===s) return true;
+  return false;
+}
+function g2BookSecs(id){
+  var all=g2Secs(), b=g2BookBy(id), out=[], i, j;
+  if(!b) return out;
+  for(j=0;j<b.has.length;j++)
+    for(i=0;i<all.length;i++) if(all[i].id===b.has[j]) out.push(all[i]);
+  if(b.id===G2BOOK[G2BOOK.length-1].id)
+    for(i=0;i<all.length;i++) if(!g2BookNamed(all[i].id)) out.push(all[i]);
+  return out;
+}
+/* What a chapter of the book is called. One place, so the contents and the bar
+   over the chapter's page cannot disagree -- www/shell.js § pageName. */
+function g2BookName(id){ return t('g2.book.'+id+'.t'); }
+/* Whether this language has written in one section. A chapter of the rule-made
+   group answers it itself (g2Said); a stage has always answered it with how
+   many of its slots are filled. */
+function g2BookSaid(s){ return s.c? g2Said(s.c) : stFilled(s.p)>0; }
+/* ONE CHAPTER ON THE CONTENTS. Faint until this language has written in one of
+   its sections -- 「まだ書いていない章は薄い字」 OWNER 2026-09-06 -- and the
+   number is how many of them it has. A chapter with no sections says —, which
+   is what every row on this list with nothing to count already says. */
+function g2BookRow(b, n){
+  var a=g2BookSecs(b.id), i, done=0;
+  for(i=0;i<a.length;i++) if(g2BookSaid(a[i])) done++;
+  return '<button class="strow'+(done? '' : ' pale')+'"' +
+    DO('go', ['gram', 'book:'+b.id]) + '>'+
+    '<span class="stn">'+n+'</span>'+
+    '<span class="stt">'+esc(g2BookName(b.id))+'</span>'+
+    '<span class="lead"></span>'+
+    '<span class="stv">'+(a.length? (done+' / '+a.length) : '—')+'</span>'+
+    ICON_GO+'</button>';
+}
+/* THE CONTENTS: ten rows and nothing else. */
 function stListHTML(){
-  var g=g2Chaps(), a=stAll(), all=[], i, n=0, out='';
-  for(i=0;i<g.length;i++) all.push({id:g[i].id, c:g[i], at:all.length});
-  for(i=0;i<a.length;i++) all.push({id:a[i].id, p:a[i], at:all.length});
-  all.sort(function(x, y){
-    return (stTocAt(x.id)-stTocAt(y.id)) || (x.at-y.at); });
-  for(i=0;i<all.length;i++)
-    out+= all[i].c? g2ChapRow(all[i].c, ++n) : stRow(all[i].p, ++n);
-  /* The rules that make a form out of a word were at the head of this list.
-     They are not a stage of the grammar and they are about the dictionary, so
-     they are behind the ... in the dictionary's bar -- wordsMore(). */
-  return '<div class="stlist">'+out+'</div>'+
-    stHidHTML()+
-    /* The fifteen are free and are the whole of the chapter there. They ask
-       for forty-six words between them, which is most of what a free
-       dictionary is for; a stage of your own is the sixteenth and past that
-       is what can('gram') buys. Deleting one is gated as well -- see
-       stDelOwn: a language that came down from a paid plan still owns what it
-       made, and cannot throw it away from a plan that cannot make another. */
-    /* The way IN to the one stage that is not on the list. It is off the list
-       on purpose -- English has no particles and opening the chapter with a
-       page for them is the app saying a language has something it may well
-       not -- but a page with no door is the trap rule 19 is written about,
-       and 「好きに書かせて幅広げた方が良くねえか」 is an argument for being
-       able to say yes, not for being asked. So it is at the FOOT, next to
-       the stage somebody adds themselves, and it is gone once the stage is
-       on the list above. The stage names itself; nothing here explains it. */
-    /* THE SAME + AS EVERYWHERE ELSE. 「丸い＋一つ（辞書と同じ）」 OWNER
-       2026-09-01 -- .fab is what the dictionary, the alphabet, the composer
-       and the notebook add with. Drawn on every plan: openOwnPhase() answers
-       on the press with the popup.
+  var out='', i;
+  for(i=0;i<G2BOOK.length;i++) out+=g2BookRow(G2BOOK[i], i+1);
+  return '<div class="stlist">'+out+'</div>';
+}
+/* ONE CHAPTER'S PAGE: its sections, each drawn by the row it has always been
+   drawn by, so a row in one list is one height. There is no heading -- the bar
+   over this page already says the chapter's name, through the same
+   g2BookName() this list is built from.
 
-       The particles row that used to sit beside it is gone: 「文法ページに◉+
-       あるのに下までいくと助詞+って二重になってる。◉＋だけにして、助詞は最初
-       から出せ」 OWNER 2026-09-01. It turned on a stage the book already knows,
-       which is now on the list from the start (STAGES above). */
+   THE ＋ AND THE HIDDEN COUNT ARE ON THE APPENDIX and not on the contents. A
+   stage somebody adds themselves lands in the appendix (G2BOOK above), so a ＋
+   on the contents would be a press that changes nothing on the screen in front
+   of them. Same ICON_ADD .fab as the dictionary, the alphabet and the notebook
+   -- 「丸い＋一つ（辞書と同じ）」 OWNER 2026-09-01. */
+function g2BookPage(b){
+  var a=g2BookSecs(b.id), out='', i;
+  for(i=0;i<a.length;i++) out+= a[i].c? g2ChapRow(a[i].c, i+1) : stRow(a[i].p, i+1);
+  out='<div class="stlist">'+out+'</div>';
+  if(b.id!==G2BOOK[G2BOOK.length-1].id) return out;
+  return out+stHidHTML()+
     (langLocked()? '' :
      '<button class="fab"' + DO('openOwnPhase') + ' aria-label="'+esc(t('stg.own.add.btn'))+'">'+
       ICON_ADD+'</button>');
@@ -1010,6 +1069,13 @@ function vGram(){
      list used to open, or a chapter that has gone -- falls through to the
      list rather than to a blank page. */
   var c=(gOpen && gOpen.indexOf('v2:')===0)? g2ChapBy(gOpen.slice(3)) : null;
+  /* A CHAPTER OF THE BOOK, which is a list of its sections and nothing else.
+     An argument that names none -- a chapter that has gone -- falls through to
+     the contents, exactly as an unknown `v2:` does. */
+  var b=(gOpen && gOpen.indexOf('book:')===0)? g2BookBy(gOpen.slice(5)) : null;
+  if(b)
+    return '<div class="view">'+navTop()+
+      '<div class="body">'+g2BookPage(b)+'</div></div>';
   /* The `?` in the bar, and the whole of what a chapter has to say is behind
      it -- 「説明禁止の代わりに？を儲けてるからね？」 OWNER 2026-09-05.
      helpQ() draws nothing for a chapter that has registered none, so the

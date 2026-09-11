@@ -218,6 +218,27 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### 文法は 9 章＋付録の文法書。否定と疑問は動詞の章の節
+- Date: 2026-09-11
+- Area: 文法の頁（`www/phases.js` § G2BOOK、`www/grammar.js`）
+- Decision: 「否定形単体じゃなくて、文法書なんだから動詞とかのページに作るべき。
+  項目増やすよりも一つ一つ厚みを増やして。多少は分けていいけど、文法の教科書
+  みたいなのを見て章分けを決めてくれ」→ リーダーが記述文法書の目次に沿って
+  分け、オーナーが「それでやって。中身もできたら見せて」。**43 行の平らな一覧を
+  やめ、9 章＋付録にする。今の項目は章の頁の中の節。**否定と疑問は章ではなく
+  動詞の章の節で、**四つから選ぶだけの頁は消す** ── 四つの対象はそれぞれ属する
+  節から開く。**肯定の文と否定の文を並べて規則を出す作り方は変えない。**
+- Reason: 人称の六つも時制の六つも法の五つも、あいさつと同じ高さの行だった。
+  どこまでが動詞の話なのかは並び順でしか分からず、「否定形」だけが四つの対象を
+  選ぶ頁を一枚余分に持っていた。
+- Affected features: 文法（目次・章の頁・否定・疑問）
+- Affected data: **なし。**`STG.gr` `STG.fm` `STG.extra` `STG.set` `WORDS.slot`
+  はそのまま。移行なし。消えたのは描く関数だけ
+- Affected docs: `docs/GRAMMAR-V2-SPEC.md` § 完成の定義（表を書き換え）、
+  `docs/CHANGELOG.md`
+- Implementation status: `claude/r20-book`。CODE CONFIRMED（`act` `i18n`
+  `gramlang` `press` 緑）。DEVICE 未確認、OWNER 未確認
+
 ### 同じものを何度も運ばない ── 保存の写しを返さない・送る前の読みを無くす・起動の二度読みを一度に
 - Date: 2026-09-09
 - Area: 保存の道（`netSlicePut` / `netSaveUp`）、起動の道

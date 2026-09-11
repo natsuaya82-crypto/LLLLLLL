@@ -1959,14 +1959,29 @@ export function halfDone(){
         const h = vGram();
         if (was) STG.gpos.adj = was; else delete STG.gpos.adj;
         return h; }],
-    /* §4.4 否定. The chapter is the four things that can be negated, and a
-       TARGET is its own page: two sentences somebody made, and the rule this
-       reads off the difference between them. Three faces, because the page is
-       three different screens -- nothing written yet, the two sentences with
-       words in them, and the word being chosen on its own screen. */
-    ['what can be negated', () => {
-        window.route = 'gram'; NAV = [{ r:'gram', a:'v2:neg' }];
+    /* §4.4 否定. Four things can be negated and asked about, and each is its
+       own page: two sentences somebody made, and the rule this reads off the
+       difference between them. The page that stood in front of the four and
+       asked which one you meant is gone (OWNER 2026-09-11) -- two of them are
+       opened from です／ある, which is this face, and the other two from the
+       verb chapter and from 命令. */
+    ['is and there is, with the negation and the question of each', () => {
+        window.route = 'gram'; NAV = [{ r:'gram', a:'v2:cop' }];
         return vGram(); }],
+    /* ONE CHAPTER OF THE BOOK: its sections, each with what this language has
+       said in it. The contents is the face above; this is what a row of it
+       opens, and the verb is the chapter with the most in it -- 人称と数, 時制
+       と相, 法, 態, 否定, 疑問. */
+    ['a chapter of the book', () => {
+        window.route = 'gram'; NAV = [{ r:'gram', a:'book:verb' }];
+        return vGram(); }],
+    /* And the appendix, which is the one chapter carrying the ＋ that adds a
+       stage of your own -- a stage somebody adds lands here, so the ＋ is
+       here and not on the contents. */
+    ['the appendix of the book, paid', () => {
+        SET.plan = 'pro';
+        window.route = 'gram'; NAV = [{ r:'gram', a:'book:app' }];
+        const h = vGram(); SET.plan = 'free'; return h; }],
     ['a negation nobody has written yet', () => {
         const was = STG.gr;
         STG.gr = [];

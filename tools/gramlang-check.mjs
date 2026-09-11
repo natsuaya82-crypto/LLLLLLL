@@ -393,8 +393,18 @@ window.tabRows = function(){
                           to: b.querySelector('.gtm').textContent,
                           go: b.getAttribute('data-do') }; });
 };
+/* WHICH PAGE A CHAPTER HAS. 否定 and 疑問 have no page of their own since
+   2026-09-11 -- their four targets are their pages, and what belongs to the
+   chapter rather than to one target is on the FIRST of them (www/grammar.js
+   § g2PolChap). Asked of the app's own gPolFeat() and GPOL_ON rather than
+   written out here, so a third chapter of that shape is walked the day it is
+   added. */
+window.chapArg = function(id){
+  return (gPolFeat(id) && String(id).indexOf(':') < 0)?
+    (id + ':' + GPOL_ON[0]) : id;
+};
 window.chapPage = function(id){
-  window.route = 'gram'; NAV = [{ r:'gram', a:'v2:' + id }]; render();
+  window.route = 'gram'; NAV = [{ r:'gram', a:'v2:' + chapArg(id) }]; render();
   return { rules: ruleRows(), tab: tabRows(),
            /* the rows that are a WORD of this language rather than a rule --
               the marks the 助詞 stage made, which the noun chapter draws */
@@ -1214,11 +1224,12 @@ const chap = await pg.evaluate(() => {
      ones drew each ending. The answer has to be one, every time. */
   const seen = {};
   g2Chaps().forEach((c) => {
-    window.route = 'gram'; NAV = [{ r:'gram', a:'v2:' + c.id }]; render();
     /* What the chapter SAYS, which is the sentence carrying the ending. The
        table underneath carries it too, and either would do -- the sentence is
-       the one a chapter with no word in the dictionary still has. */
-    const said = ruleRows().map((r) => r.lab).join(' ');
+       the one a chapter with no word in the dictionary still has. chapSays()
+       is asked so that the two chapters whose page is their first target are
+       opened the way the app opens them. */
+    const said = chapSays(c.id);
     kinds.forEach((k) => {
       if (said.indexOf(k.add) < 0) return;
       if (!seen[k.fm]) seen[k.fm] = [];
@@ -1844,10 +1855,18 @@ want('the deleted class’s agreement rule is gone, and no other rule is',
    with an ending, or with two words at once, or differently when the sentence
    is 「〜ではない」 -- and it never said WHICH word.
 
-   So the chapter is the four things that can be negated, each its own page,
-   and a page is two sentences somebody makes out of their own words. Every
-   press below is a real one, through the real screens, because a check that
-   called gPolDiff() itself would be a copy of the act rather than the act. */
+   So there are four things that can be negated, each its own page, and a page
+   is two sentences somebody makes out of their own words. Every press below is
+   a real one, through the real screens, because a check that called gPolDiff()
+   itself would be a copy of the act rather than the act.
+
+   AND THE PAGE IN FRONT OF THE FOUR IS GONE. 「今の「否定形」の頁（動詞の文／
+   名詞の文／命令／存在の 4 行を選ぶ頁）は消す。4 つの対象頁はそれぞれ属する節
+   から開く」 OWNER 2026-09-11 -- so each of the four is opened from the section
+   the thing being negated already is, and a bare `v2:neg` draws the contents
+   like any argument naming no chapter. That is asked of the real pages below:
+   a door that moved to a screen nobody opens is the same silence as a door
+   that was never built. */
 const polar = await pg.evaluate(() => {
   const wl = WORDS.length, wasGr = JSON.stringify(STG.gr || []), wasGrm = STG.grm;
   WORDS.push({ hw:'zke',   pos:'pro',  mns:['I'],   at:1 });
@@ -1889,11 +1908,22 @@ const polar = await pg.evaluate(() => {
                        return n? n.textContent : ''; };
   const ruleNow = () => JSON.parse(JSON.stringify(gPolFind('NEGATION', 'VERB') || null));
 
-  /* THE CHAPTER IS THE FOUR THINGS THAT CAN BE NEGATED. */
-  open('v2:neg');
-  const targets = Array.prototype.map.call(
+  /* WHERE THE FOUR ARE OPENED FROM. The doors on one page that lead to a
+     negation or a question rule, in the order the page draws them. */
+  const polDoors = (a) => { open(a);
+    return Array.prototype.map.call(
+      document.querySelectorAll('#app [data-do="go"]'), (b) => arg(b, 1))
+      .filter((x) => /^v2:(neg|q):/.test(String(x || ''))).join(' '); };
+  const vDoors = polDoors('book:verb');
+  const impDoors = polDoors('v2:imp');
+  const copDoors = polDoors('v2:cop');
+  /* And the chooser that used to stand in front of them: `v2:neg` names no
+     chapter now, so it is the contents, which is the ten chapters of the
+     book. */
+  const negBare = polDoors('v2:neg');
+  const negBareIs = Array.prototype.map.call(
     document.querySelectorAll('#app [data-do="go"]'), (b) => arg(b, 1))
-    .filter((a) => String(a || '').indexOf('v2:neg:') === 0);
+    .filter((x) => String(x || '').indexOf('book:') === 0).length;
 
   /* A WORD IN FRONT OF THE VERB. Two sentences, and the difference between
      them is the rule. */
@@ -1958,14 +1988,21 @@ const polar = await pg.evaluate(() => {
   window.netSaveNow = realNet;
   WORDS.length = wl;
   STG.gr = JSON.parse(wasGr); STG.grm = wasGrm; G2POL = { at:'', a:[], b:[] };
-  return { targets: targets.join(' '), startGold: startGold, wordGold: wordGold,
+  return { vDoors: vDoors, impDoors: impDoors, copDoors: copDoors,
+           negBare: negBare, negBareIs: negBareIs,
+           startGold: startGold, wordGold: wordGold,
            wordSaid: wordSaid, wordRule: wordRule, wordLine: wordLine,
            endRule: endRule, preRule: preRule, bothRule: bothRule,
            nounRule: nounRule, verbKept: verbKept, nounGone: nounGone };
 });
 
-want('the chapter is the four things that can be negated',
-     polar.targets, 'v2:neg:v v2:neg:n v2:neg:imp v2:neg:ex');
+want('the verb chapter opens the verb sentence’s negation and question',
+     polar.vDoors, 'v2:neg:v v2:q:v');
+want('a command carries its own two', polar.impDoors, 'v2:neg:imp v2:q:imp');
+want('and です／ある carries the noun sentence’s and existence’s',
+     polar.copDoors, 'v2:neg:n v2:q:n v2:neg:ex v2:q:ex');
+want('the page that chose between the four is gone', polar.negBare, '');
+want('and what is there instead is the contents', polar.negBareIs > 0, true);
 want('a page nobody has written on has nothing to save', polar.startGold, false);
 want('two sentences that differ have', polar.wordGold, true);
 /* WHAT THE RULE IS, in the shape §5 asks for. Every field, because a rule that
