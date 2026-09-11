@@ -2498,8 +2498,14 @@ function snsDropRecent(q){
    put through snsSetQ() rather than set here, because that is the one place
    that says what typing into this field does -- writing it out again would
    be a second copy of it, and what would drift first is which questions get
-   asked. */
-function snsPickRecent(q){
+   asked.
+
+   EITHER LIST UNDER THE EMPTY FIELD, which is why it is not called Recent any
+   more: a word kept and a word merely typed are two lists and one press
+   (§ snsSearchesHTML). snsPickSaved() below is a different act on a different
+   screen -- it filters the timeline from the chooser -- and the two must not
+   be made one. */
+function snsPickWord(q){
   var k=String(q||'').trim();
   if(!k) return;
   snsSetQ(k);
@@ -2547,7 +2553,7 @@ function snsSearchesHTML(name, a, had, drop){
         /* The word is what was SEARCHED FOR and the row is what a person
            reads, so the day's tag is drawn in their language here too. The
            press still carries the stored word: it is the search. */
-        '<button class="whgo"' + DO('snsPickRecent', [q]) + '>'+
+        '<button class="whgo"' + DO('snsPickWord', [q]) + '>'+
           '<span class="sl">'+esc(dayTagShow(q))+'</span></button>'+
         (drop
           ? '<button class="pmore"' + DO(drop, [q]) + ' aria-label="'+

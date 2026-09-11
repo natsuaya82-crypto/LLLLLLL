@@ -378,7 +378,7 @@ await pg.evaluate(() => { snsQ = 'aya'; snsHits = { q:'aya', who:[], posts:[] };
 await pg.waitForTimeout(120);
 const shown = await pg.evaluate(() => {
   var e = document.getElementById('sns-hits');
-  return e ? e.innerHTML.indexOf('snsPickRecent') !== -1 : true;
+  return e ? e.innerHTML.indexOf('snsPickWord') !== -1 : true;
 });
 say(!shown, '文字が入っているときは履歴を出さない');
 
