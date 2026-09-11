@@ -365,8 +365,28 @@ export function newServer(){
     const rows = TABLE[name]();
     const key = KEYS[name] || ['id'];
 
-    if (m === 'GET')
-      return { status: 200, text: JSON.stringify(pick(keep(rows, par), par.select)) };
+    /* ---- 読める行だけ返す ------------------------------------------------
+       supabase/schema.sql の読みの policy と同じ形。これを入れる前は、
+       別のアカウントでサインインした端末に前のアカウントの下書きと検索履歴が
+       出ていた ── サーバーが全部返していただけで、アプリのせいではなかった。
+       持ち主で切るのはここ一箇所。 */
+    const MINE = { draft: 'author', saved_search: 'author', recent_search: 'author',
+                   block: 'actor', plan: 'uid', language_take: 'uid' };
+    if (m === 'GET'){
+      let see = rows;
+      if (MINE[name]) see = rows.filter(r => r[MINE[name]] === uid);
+      if (name === 'language') see = rows.filter(l =>
+        l.published_at != null || l.owner === uid ||
+        db.language_take.some(t => t.uid === uid && t.language === l.id));
+      if (name === 'slice') see = rows.filter(sl => {
+        const l = db.language.find(x => x.id === sl.language);
+        return l && (l.owner === uid || l.published_at != null ||
+          db.language_take.some(t => t.uid === uid && t.language === l.id));
+      });
+      if (name === 'report') see = rows.filter(r =>
+        r.reporter === uid || (db.profile.find(p => p.id === uid) || {}).staff);
+      return { status: 200, text: JSON.stringify(pick(keep(see, par), par.select)) };
+    }
 
     if (m === 'POST'){
       const put = Array.isArray(body) ? body : [body];
@@ -1510,6 +1530,208 @@ WALKS['9'] = async (br, srv) => {
   say('  after relaunch: theme=' + await a.pg.evaluate(() => SET.theme) +
       ' ui=' + JSON.stringify(await a.pg.evaluate(() => SET.ui)) +
       '  rows=' + JSON.stringify((await a.buttons()).filter(b => /set","(look|ui)/.test(b))));
+  return a;
+};
+
+/* ---- 10. 二台 ------------------------------------------------------------ */
+WALKS['10'] = async (br, srv) => {
+  say('--- 10. two handsets, one account ---');
+  const a = await new Dev(br, srv, 'A').open();
+  await arrive(a, AYA, false);
+  await a.reload();
+  /* A で語を三つ */
+  for (const w of [['kano', '山'], ['sar', '川'], ['tir', '見る']]){
+    await a.goRoute('words');
+    await a.tapDo('openAdd');
+    await a.type('#wd-ln', w[0]); await a.type('#wd-mn', w[1]);
+    await a.tapDo('addOne');
+  }
+  await a.settle();
+  await a.goRoute('words');
+  await a.shot('two-A-words');
+  say('  A: WORDS=' + await a.pg.evaluate(() => WORDS.length) +
+      '  server words slices=' + JSON.stringify(srv.db.slice.filter(x => x.kind === 'words')
+        .map(x => { try { return JSON.parse(x.body).length; } catch (e) { return '?'; } })));
+
+  /* B は同じアカウントでサインイン */
+  const b = await new Dev(br, srv, 'B').open();
+  await signIn(b, AYA);
+  await b.shot('two-B-arrived');
+  say('  B: appIs=' + await b.pg.evaluate(() => appIs()) +
+      '  LANGS=' + await b.pg.evaluate(() => JSON.stringify(
+        Object.keys(LANGS).map(k => k.slice(0, 8) + '=' + langNameOf(k)))));
+  await b.goRoute('words');
+  await b.shot('two-B-words');
+  say('  B: WORDS=' + await b.pg.evaluate(() => WORDS.length) +
+      '  rows=' + await b.pg.evaluate(() =>
+        document.querySelectorAll('#app [data-do^="openWord"]').length));
+
+  /* B で一語足す */
+  await b.goRoute('words');
+  await b.tapDo('openAdd');
+  await b.type('#wd-ln', 'mos'); await b.type('#wd-mn', '高い');
+  await b.tapDo('addOne');
+  await b.settle();
+  await b.goRoute('words');
+  await b.shot('two-B-added');
+  say('  B after adding mos: WORDS=' + await b.pg.evaluate(() => WORDS.length));
+
+  /* A を読み込み直す ── B の語が来るか、A の語が消えないか */
+  await a.reload();
+  await a.goRoute('words');
+  await a.shot('two-A-after-B');
+  say('  A after reloading: WORDS=' + await a.pg.evaluate(() => WORDS.length) +
+      '  list=' + await a.pg.evaluate(() => JSON.stringify(WORDS.map(w => w.hw))));
+
+  /* 両方で同時に書く */
+  await a.goRoute('words');
+  await a.tapDo('openAdd'); await a.type('#wd-ln', 'aaa'); await a.type('#wd-mn', 'A から');
+  await b.goRoute('words');
+  await b.tapDo('openAdd'); await b.type('#wd-ln', 'bbb'); await b.type('#wd-mn', 'B から');
+  await a.tapDo('addOne'); await b.tapDo('addOne');
+  await a.settle(); await b.settle();
+  await a.reload(); await b.reload();
+  await a.goRoute('words'); await b.goRoute('words');
+  await a.shot('two-A-final'); await b.shot('two-B-final');
+  say('  A finally: ' + await a.pg.evaluate(() => JSON.stringify(WORDS.map(w => w.hw))));
+  say('  B finally: ' + await b.pg.evaluate(() => JSON.stringify(WORDS.map(w => w.hw))));
+  say('  server words slices: ' + JSON.stringify(srv.db.slice.filter(x => x.kind === 'words')
+    .map(x => { try { return JSON.parse(x.body).map(w => w.hw); } catch (e) { return '?'; } })));
+  say('  server languages: ' + JSON.stringify(srv.db.language.map(l =>
+    ({ id: l.id.slice(0, 8), name: l.name }))));
+  /* 言語を切り替える画面に何行出るか ── 「二つのデータが出る」はここに出る */
+  await a.goRoute('settings');
+  await a.tapArg('go', ['set', 'lang']);
+  await a.shot('two-A-langroom');
+  say('  A の「自分の言語」の部屋: ' + JSON.stringify(await a.buttons()));
+  await a.tapArg('go', ['langs']);
+  await a.shot('two-A-langs');
+  say('  A の「言語」の一覧: ' + JSON.stringify(await a.buttons()) +
+      '\n   画面の字: ' + JSON.stringify((await a.text()).split('\n').filter(Boolean)));
+  /* 有料にすると、隠れていたものが出てくる */
+  srv.db.planIs = 'pro';
+  await a.pg.evaluate(() => planTook('pro'));
+  await a.quiet(); await a.popShut();
+  await a.goRoute('langs');
+  await a.shot('two-A-langs-pro');
+  say('  有料にしたあとの「言語」の一覧: ' +
+      JSON.stringify((await a.text()).split('\n').filter(Boolean)));
+  say('  A の LANGS: ' + await a.pg.evaluate(() => JSON.stringify(
+    Object.keys(LANGS).map(k => k.slice(0, 8) + '="' + langNameOf(k) + '"'))));
+  await b.goRoute('settings');
+  await b.tapArg('go', ['set', 'lang']);
+  await b.shot('two-B-langroom');
+  say('  B の「自分の言語」の部屋: ' + JSON.stringify(await b.buttons()));
+  await b.close();
+  return a;
+};
+
+/* ---- 11. 二アカウント ----------------------------------------------------- */
+WALKS['11'] = async (br, srv) => {
+  say('--- 11. two accounts on one handset ---');
+  const a = await new Dev(br, srv, 'A').open();
+  await arrive(a, AYA, false);
+  await a.reload();
+  /* アヤの持ち物をいくつか作る */
+  await a.goRoute('words');
+  await a.tapDo('openAdd');
+  await a.type('#wd-ln', 'kano'); await a.type('#wd-mn', '山');
+  await a.tapDo('addOne');
+  await a.tapArg('goTab', ['explore']);
+  await a.type('#sns-q', 'kano');
+  await a.pg.locator('#sns-q').press('Enter');
+  await a.quiet(400);
+  await a.tapArg('goTab', ['feed']);
+  await a.tapDo('openPost');
+  await a.type('#pw-ln', 'kano'); await a.type('#pw-mn', 'やま');
+  await a.tapDo('draftKeep');
+  await a.settle();
+  await a.shot('acc-A-set-up');
+  say('  A: words=' + await a.pg.evaluate(() => WORDS.length) +
+      ' langs=' + await a.pg.evaluate(() => Object.keys(LANGS).length) +
+      ' recents=' + await a.pg.evaluate(() => JSON.stringify((SET.recent || []))) +
+      ' drafts on server=' + srv.db.draft.length);
+
+  /* ログアウト */
+  await a.goRoute('set', 'acct');
+  await a.shot('acc-account-room');
+  say('  account room: ' + JSON.stringify(await a.buttons()));
+  await a.tapDo('setSignOut');
+  await a.shot('acc-signout-ask');
+  say('  sign out pop: "' + await a.pop() + '"');
+  await a.tapDo('popYes');
+  await a.quiet(800);
+  await a.shot('acc-signed-out');
+  say('  after signing out: appIs=' + await a.pg.evaluate(() => appIs()) +
+      '  where=' + await a.where());
+
+  /* ベニで新しくアカウントを作る */
+  await a.tapArg('obMailGo', ['up']);
+  await a.type('#ob-em', BENI.email);
+  await a.tapDo('obMailUp');
+  await a.type('#ob-code', '12345678');
+  await a.tapDo('obMailCode');
+  await a.type('#ob-pw', BENI.pw);
+  await a.tapDo('obNewPwGo');
+  await a.type('#ob-hd', BENI.handle);
+  await a.type('#ob-nm', BENI.name);
+  await a.tapDo('obWhoGo');
+  await a.pg.waitForTimeout(2000); await a.quiet();
+  await a.reload();
+  await a.shot('acc-B-arrived');
+  say('  as beni: handle=' + await a.pg.evaluate(() => String(ME.handle)) +
+      '  words=' + await a.pg.evaluate(() => WORDS.length) +
+      '  langs=' + await a.pg.evaluate(() => JSON.stringify(
+        Object.keys(LANGS).map(k => langNameOf(k)))) +
+      '  recents=' + await a.pg.evaluate(() => JSON.stringify(SET.recent || [])));
+  await a.goRoute('words');
+  await a.shot('acc-B-words');
+  await a.tapArg('goTab', ['explore']);
+  await a.shot('acc-B-search');
+  say('  beni sees on the search screen: ' +
+      JSON.stringify((await a.buttons()).filter(b => /snsPick/.test(b))));
+  await a.tapArg('goTab', ['feed']);
+  await a.tapDo('openPost');
+  await a.tapArg('go', ['drafts']);
+  await a.shot('acc-B-drafts');
+  say('  beni sees drafts: ' + JSON.stringify((await a.buttons()).filter(b => /draftOpen/.test(b))));
+  await a.goRoute('langs');
+  await a.shot('acc-B-langs');
+  say('  beni の言語一覧: ' + JSON.stringify((await a.text()).split('\n').filter(Boolean)) +
+      '\n   rows: ' + JSON.stringify((await a.buttons()).filter(b => /langOpen/.test(b))));
+
+  /* アヤに戻る */
+  await a.goRoute('set', 'acct');
+  await a.tapDo('setSignOut');
+  await a.tapDo('popYes');
+  await a.quiet(800);
+  await signIn(a, AYA);
+  await a.reload();
+  await a.shot('acc-back-to-A');
+  say('  back as aya: handle=' + await a.pg.evaluate(() => String(ME.handle)) +
+      '  words=' + await a.pg.evaluate(() => WORDS.length) +
+      '  langs=' + await a.pg.evaluate(() => JSON.stringify(
+        Object.keys(LANGS).map(k => langNameOf(k)))) +
+      '  recents=' + await a.pg.evaluate(() => JSON.stringify(SET.recent || [])));
+  await a.goRoute('words');
+  await a.shot('acc-back-words');
+  say('  aya word rows: ' + await a.pg.evaluate(() =>
+    document.querySelectorAll('#app [data-do^="openWord"]').length) +
+    '  langId=' + await a.pg.evaluate(() => String(langId).slice(0, 8)) +
+    ' (' + await a.pg.evaluate(() => langNameOf(langId)) + ')');
+  say('  server languages: ' + JSON.stringify(srv.db.language.map(l =>
+    ({ id: l.id.slice(0, 8), name: l.name, owner: l.owner.slice(0, 8) }))));
+  say('  server words slices: ' + JSON.stringify(srv.db.slice
+    .filter(x => x.kind === 'words').map(x => ({ lang: x.language.slice(0, 8),
+      n: (() => { try { return JSON.parse(x.body).length; } catch (e) { return '?'; } })() }))));
+  say('  server drafts: ' + JSON.stringify(srv.db.draft.map(d => d.author.slice(0, 8))));
+  say('  server recent_search: ' + JSON.stringify(srv.db.recent_search.map(r =>
+    ({ q: r.q, author: r.author.slice(0, 8) }))));
+  say('  uids: aya=' + JSON.stringify(srv.db.users.map(u =>
+    ({ e: u.email, id: u.id.slice(0, 8) }))));
+  await a.goRoute('langs');
+  await a.shot('acc-back-langs');
+  say('  aya の言語一覧: ' + JSON.stringify((await a.text()).split('\n').filter(Boolean)));
   return a;
 };
 

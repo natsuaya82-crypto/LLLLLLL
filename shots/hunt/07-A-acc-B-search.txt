@@ -1,0 +1,6 @@
+# 07 A acc-B-search
+route: {"r":"explore"}
+
+最新
+--- 打ち込み欄 ---
+  [sns-q] = ""  (ph: さがす　@で人)
