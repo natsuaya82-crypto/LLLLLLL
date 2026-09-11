@@ -730,6 +730,65 @@ const R = await pg.evaluate(() => {
     out.fails.push('the arrow off the edit sheet says ' + JSON.stringify(arrow) +
       ' -- the screen behind it is the word, not a tab');
 
+  /* ---- and a LETTER that has just been deleted ---------------------------
+     The same sentence as the two above, on the other side of the app. A
+     letter's page is a route and an id (`letter:l7`), the id is the only name
+     it has, and deleting the letter is how that name stops being anything --
+     which is exactly what navDrop() is for. Nothing was telling it.
+
+     What it looked like: press 「文字の削除」 on a letter's own page, answer
+     yes, and the toast says 「ng の字を外しました」 over the deleted letter's
+     page, with 「入力内容を保存しますか」 on top of it. Nothing threw. The
+     letter was removed perfectly; the screen you were standing on was still
+     that letter's, and the SAVE BUFFER beside it was still holding the name
+     that letter had -- so back() read the buffer against a letter that no
+     longer answers, called the screen changed, and put the question up
+     instead of leaving.
+
+     The name is what makes it fail: a letter with nothing typed on its page
+     has an empty buffer and leaves quietly, which is why press-check and the
+     walks never saw it. So this one is NAMED. */
+  start();
+  goTab('build'); go('letters');
+  const lt = ltNew({});
+  lt.ab = 'ng'; saveLetters();
+  go('letter', lt.id);
+  screen();
+  const ltKey = keepKeyOf('letter', lt.id);
+  const ltStood = here().r + (here().a ? ':' + here().a : '');
+  const ltBuf = !!KEEP[ltKey];
+  ltDeleteGo(lt.id);
+  const ltAt = here().r + (here().a ? ':' + here().a : '');
+  const ltTrail = NAV.map((n) => n.r + (n.a ? ':' + n.a : '')).join(' > ');
+  const ltPop = (() => {
+    const p = document.getElementById('pop');
+    return !!(p && /(^|\s)on(\s|$)/.test(p.className));
+  })();
+  const ltLeft = !!KEEP[ltKey];
+  const ltGone = !ltById(lt.id);
+  out.said.push('a letter named "ng" deleted from ' + ltStood +
+    ' (buffer armed: ' + ltBuf + '): the letter is gone: ' + ltGone +
+    ', you are standing on ' + ltAt + ', the trail is "' + ltTrail +
+    '", a pop is up: ' + ltPop + ', and its buffer is still held: ' + ltLeft);
+  if (!ltBuf)
+    out.fails.push('the letter page armed no save buffer, so this claim asked ' +
+      'nothing -- www/letters.js § ltKeepOn');
+  if (!ltGone)
+    out.fails.push('the letter was not deleted, so this claim asked nothing');
+  if (ltPop)
+    out.fails.push('deleting a letter puts 「入力内容を保存しますか」 up -- the ' +
+      'screen being asked about is the deleted letter\'s own page');
+  if (ltAt !== 'letters')
+    out.fails.push('a letter was deleted and you are standing on ' + ltAt +
+      ' -- the page of a letter that is gone is not a page to be put back ' +
+      'down on');
+  if (ltTrail.indexOf('letter:' + lt.id) >= 0)
+    out.fails.push('the deleted letter is still on the trail ("' + ltTrail +
+      '") -- 戻る walks back onto a page with nothing to show');
+  if (ltLeft)
+    out.fails.push('the deleted letter\'s save buffer is still held -- it is ' +
+      'measuring what somebody typed against a letter that no longer answers');
+
   return out;
 });
 
