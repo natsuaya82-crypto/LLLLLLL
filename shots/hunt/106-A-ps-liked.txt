@@ -1,5 +1,5 @@
 # 106 A ps-liked
-route: {"r":"thread","a":"p1789144816894_0"}
+route: {"r":"thread","a":"p1789145882284_0"}
 
 スレッド
 ア

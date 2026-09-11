@@ -197,6 +197,10 @@ export function newServer(){
     plan: () => db.plan, react: () => db.react, follow: () => db.follow,
     block: () => db.block, report: () => db.report, prompt: () => db.prompt
   };
+  /* schema.sql で `id` の列を持つ表 */
+  const HAS_ID = { profile:1, language:1, slice:0, post:1, draft:1,
+                   saved_search:1, recent_search:1, plan:0, react:0,
+                   follow:0, block:0, report:1, prompt:1 };
   const KEYS = {
     profile: ['id'], language: ['id'], language_take: ['uid', 'language'],
     slice: ['language', 'kind'], post: ['id'], draft: ['id'],
@@ -394,7 +398,12 @@ export function newServer(){
       put.forEach(r => {
         const row = Object.assign({}, r);
         if (name === 'profile' && !row.id) row.id = uid;
-        if (!row.id && key[0] === 'id') row.id = name === 'report' ? db.report.length + 1 : uuid();
+        /* id を持つ表は、鍵が id でなくても id を打つ ── 本物は
+           `id uuid primary key default gen_random_uuid()` なので、
+           null の id を返すと本物には無い状態を作ってしまう。
+           `report.id` だけ bigint。 */
+        if (!row.id && HAS_ID[name])
+          row.id = name === 'report' ? db.report.length + 1 : uuid();
         if (name === 'post' || name === 'react' || name === 'follow' ||
             name === 'block' || name === 'report' || name === 'saved_search')
           if (!row.created_at) row.created_at = now();
@@ -444,6 +453,7 @@ export function newServer(){
 
   const serve2 = (m, url, bodyText, prefer, auth, n) => {
     const r = serve(m, url, bodyText, prefer, auth, n);
+    db.log[db.log.length - 1].ans = String(r.text).slice(0, 80);
     if (r.status < 200 || r.status >= 300)
       db.log[db.log.length - 1].bad = r.status + ' ' + String(r.text).slice(0, 120);
     return r;
@@ -834,6 +844,114 @@ WALKS['1'] = async (br, srv) => {
   return a;
 };
 
+
+
+/* ---- 1b. 言語は、いつ二本になるのか ---------------------------------------
+   リーダーの問い「偽サーバーだからそうなるだけでは？」に答えるための道。
+   門をくぐるまで、この端末は一度もサーバーに触りません（オンボーディングは
+   アカウントより前です）。そこで LANGS を段ごとに数えます ── ここで
+   二本になっていれば、サーバーは関係ありません。 */
+WALKS['1b'] = async (br, srv) => {
+  say('--- 1b. when does the language become two? ---');
+  const a = await new Dev(br, srv, 'A').open();
+  /* langMint() が呼ばれた瞬間を捕まえる。何回目の要求のあとか、どこから
+     呼ばれたかを、ページの中で記録する。 */
+  await a.pg.evaluate(() => {
+    window.__mints = [];
+    const was = window.langMint;
+    window.langMint = function(){
+      let st = ''; try { throw new Error('x'); } catch (e) { st = String(e.stack || ''); }
+      const id = was.apply(this, arguments);
+      window.__mints.push({ id: String(id).slice(0, 8), out: window.__seen || 0,
+        from: st.split('\n').slice(1, 5).map(x => x.replace(/^\s*at\s*/, '')
+          .replace(/\s*\(file:[^)]*\)/, '').trim()).join(' < ') });
+      return id;
+    };
+    const net = window.__net;
+    window.__seen = 0;
+    window.__netlog = [];
+    window.__net = function(m, u){
+      window.__seen++;
+      window.__netlog.push(window.__seen + ' ' + m + ' ' +
+        String(u).replace(/^[a-z]+:\/\/[^/]*/, '').split('?')[0]);
+      return net.apply(this, arguments);
+    };
+  });
+  const count = async (when) => {
+    const n = await a.pg.evaluate(() => JSON.stringify(
+      Object.keys(LANGS).map(k => k.slice(0, 8) + '="' + langNameOf(k) + '"')));
+    const reqs = srv.db.log.length;
+    say('  ' + when.padEnd(34) + ' LANGS=' + n +
+        '   langId=' + (await a.pg.evaluate(() => String(langId).slice(0, 8))) +
+        '   サーバーへの要求 ' + reqs + ' 回');
+  };
+  await count('①アプリを開いた直後');
+
+  const box = await a.pg.locator('canvas').first().boundingBox();
+  if (box){
+    const cx = box.x + box.width / 2, cy = box.y + box.height / 2;
+    await a.pg.mouse.move(cx - 40, cy - 60);
+    await a.pg.mouse.down();
+    for (let i = 0; i <= 10; i++)
+      await a.pg.mouse.move(cx - 40 + i * 8, cy - 60 + i * 12);
+    await a.pg.mouse.up();
+    await a.quiet();
+  }
+  await count('②字を一つ描いた');
+  await a.tapDo('obDone');
+  await count('③完了を押した（案内が始まる）');
+
+  for (let i = 0; i < 60; i++){
+    const st = await a.pg.evaluate(() => (typeof ob === 'object' && ob) ? ob.step : -1);
+    if (st !== 4) break;
+    if (!(await a.tapDo('obTourNext'))) await a.pg.waitForTimeout(600);
+    await a.quiet();
+  }
+  await count('④案内を歩き終えた');
+  await a.tapDo('obSnsGo');
+  await count('⑤SNS の段を抜けた');
+  await a.type('#ob-name', 'シャンゴ');
+  await a.tapDo('obName');
+  await count('⑥言語に名前を付けた（門の手前）');
+
+  /* ここまでで一度もサーバーに触っていないことを、要求の数で示す */
+  say('  ここまでにサーバーへ出た要求：' + srv.db.log.length + ' 回' +
+      (srv.db.log.length ? ' ── ' + JSON.stringify(srv.db.log.map(l => l.m + ' ' + l.p)) : ''));
+
+  await a.tapArg('obMailGo', ['up']);
+  await a.type('#ob-em', AYA.email);
+  await a.tapDo('obMailUp');
+  await a.type('#ob-code', '12345678');
+  await a.tapDo('obMailCode');
+  await a.type('#ob-pw', AYA.pw);
+  await a.tapDo('obNewPwGo');
+  await count('⑦門でアカウントを作った（handle の手前）');
+  await a.type('#ob-hd', AYA.handle);
+  await a.type('#ob-nm', AYA.name);
+  await a.tapDo('obWhoGo');
+  await a.pg.waitForTimeout(2500); await a.quiet();
+  await count('⑧門を抜けた');
+
+  say('  langMint() が呼ばれたところ：');
+  (await a.pg.evaluate(() => JSON.stringify(window.__mints))) &&
+    JSON.parse(await a.pg.evaluate(() => JSON.stringify(window.__mints)))
+      .forEach(m => say('    id=' + m.id + '  要求 ' + m.out + ' 回目のあと  ← ' + m.from));
+  const nl = JSON.parse(await a.pg.evaluate(() => JSON.stringify(window.__netlog)));
+  const at = JSON.parse(await a.pg.evaluate(() => JSON.stringify(window.__mints)))
+    .map(m => m.out);
+  say('  mint より前に出た要求と、偽サーバーが返したもの：');
+  const first = Math.min.apply(null, at);
+  srv.db.log.slice(0, first).forEach((l, i) =>
+    say('    ' + String(i + 1).padStart(2) + ' ' + l.m + ' ' + l.p +
+        '  → ' + String(l.ans === undefined ? '?' : l.ans).slice(0, 60)));
+  say('  ドアで描いた字がどちらに乗ったか：' + await a.pg.evaluate(() =>
+    JSON.stringify(Object.keys(LANGS).map(k => k.slice(0, 8) + ' letters=' +
+      ((slRd(langKeyOf(k, 'letters')) || '[]').length > 2 ? 'あり' : 'なし')))));
+  say('  サーバーへ出た POST /rest/v1/language の body：');
+  srv.db.log.filter(l => l.m === 'POST' && l.p === '/rest/v1/language')
+    .forEach(l => say('    ' + l.b));
+  return a;
+};
 
 /* ---- 2. 文字 ------------------------------------------------------------ */
 WALKS['2'] = async (br, srv) => {
@@ -1431,6 +1549,10 @@ WALKS['7'] = async (br, srv) => {
         { nm: ME.name, hd: ME.handle, bio: ME.bio, link: ME.link, loc: ME.loc })) +
       '\n   server profile: ' + JSON.stringify(srv.db.profile.map(x =>
         ({ h: x.handle, d: x.display, bio: x.bio, link: x.link, loc: x.loc }))));
+  say('  プロフィールへ出て行った書き込み（本文そのまま）：');
+  srv.db.log.filter(l => (l.m === 'PATCH' || l.m === 'POST') &&
+                          l.p.indexOf('/rest/v1/profile') === 0)
+    .forEach(l => say('    ' + l.m + ' ' + l.p + '\n      ' + l.b));
   await a.reload();
   await a.tapArg('goTab', ['profile']);
   await a.shot('pf-relaunch');
@@ -1486,6 +1608,10 @@ WALKS['8'] = async (br, srv) => {
   await a.shot('se-relaunch');
   say('  saved searches after relaunch: ' +
       JSON.stringify((await a.buttons()).filter(b => /snsPick/.test(b))));
+  say('  ★ を押したあとに出て行った要求と、返ってきたもの：');
+  srv.db.log.filter(l => l.p.indexOf('saved_search') >= 0)
+    .forEach(l => say('    ' + l.m + ' ' + l.p + (l.b ? ' body ' + l.b : '') +
+                      '  → ' + String(l.ans || '').slice(0, 80)));
   say('  saved_search requests the app made: ' + JSON.stringify(
     srv.db.log.filter(l => l.p.indexOf('saved_search') >= 0).map(l => l.m)));
   say('  saved_search rows the server holds: ' + JSON.stringify(srv.db.saved_search));
