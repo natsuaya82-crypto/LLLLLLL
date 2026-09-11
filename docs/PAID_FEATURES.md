@@ -693,6 +693,15 @@ Where the plan is kept is the Keychain, not the settings file. See
 `ios/App/App/LinguaPlan.swift` for what that closes and what it leaves open, and
 case 6 of `tools/migrate-check.mjs` for the two things it has to keep meaning.
 
+**AND NOT THE PARKED SETTINGS FILE EITHER**, which was the third place until
+2026-09-11. `setFor()` parks one account's settings under `lingua.set.<uid>`
+while another is signed in, and the plan was in that bag -- written from `SET`
+directly, past the line that keeps it out of the settings file. `SET_PLAN` in
+`www/core.js` is the one line that says the plan is not one of the settings,
+and `planWas` goes with it: a plan that comes back from the Keychain while
+`planWas` comes back from a file is 「your subscription ended」 said to somebody
+who never subscribed. `acct-check` 40b.
+
 ## Not built yet
 
 **The receipt is not verified anywhere.** The plan reaches the account — the

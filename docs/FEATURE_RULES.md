@@ -2131,9 +2131,42 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected data: Keychain に、段と一緒に「買ったアカウントの uid」が入る。
   uid が合わないセッションは、サーバーの答えが来るまで free から始める。
 - Affected docs: `docs/PAID_FEATURES.md`、`docs/scope/claude-login-billing.md`
-- Implementation status: **未実装。** `claude/login-billing-code-review-ovfsxa`
-  のもの。実装は 1（トークンの更新）と 2（解約が起動で戻る）のあと。
-  それまでは、いま有る動きのまま ── 引き継いでしまう。
+- Implementation status: **IMPLEMENTED**（2026-09-11、`claude/r18-plan`）。
+  `planFor()`（`www/core.js`）が比較する一箇所で、枝は二つ ── 同じ人なら端末の
+  写し、それ以外は free から始めてサーバーに訊く。Keychain には書き戻さないので
+  買った本人のものは残る。`acct-check` 37・38・39・40・40b・40c・41・42 が持つ。
+  赤を見た。
+  実機は未確認（Keychain の往復は実機でしか見られない）。
+
+### 1アカウントに1課金。印の無い端末も例外にしない
+- Date: 2026-09-11
+- Area: 段の持ち主（`planFor()`、`SET.planUid`、`SET_PLAN`、`www/core.js`）
+- Decision:
+
+  ```
+  1アカウントに1課金ですけど。他のアカウントについてくるわけねえだろ
+  ```
+
+  段はサインインしているアカウントのもの。**例外は無い。**段の持ち主が
+  書かれていない端末（この章より前の端末）も同じで、「誰が買ったか誰も
+  言えない段」は、そこにいる人の買ったものではない。
+
+- Reason: 2026-09-02 の決定の実装に、一つだけ枝が残っていた ── 「持ち主が空なら
+  名前を書き留めるだけで段は動かさない」。空を「この端末を持っている人の段」と
+  読む枝で、測ると印の無い端末に残った `pro` が次に入ったアカウントに付き、
+  `planWas` も一緒なので `capLapse()` は何も言わなかった。表は
+  `docs/scope/r18-plan.md`。
+- Affected features: 課金全体。2026-09-02 の決定の **Implementation status を
+  置き換える**（その決定を置き換えるのではなく、例外なしで実装する）。
+- Affected data: 端末から消えるものは二つで、どちらも人が作ったものではない ──
+  印の無い端末の段が別の人の画面に出ていた分、および `lingua.set.<uid>` の
+  預け写しが `plan` と `planWas` を運ぶ道。既に書かれている語は消さない。
+  DELETE REVIEW は `docs/CHANGELOG.md` 2026-09-11。
+- Affected docs: この項目、`docs/STATE.md`、`docs/PAID_FEATURES.md`、
+  `docs/CHANGELOG.md`、`docs/scope/r18-plan.md`
+- Implementation status: IMPLEMENTED。`acct-check` 40（印の無い端末も例外で
+  ない）・40b（段は預け写しに乗らない）・40c（戻ってきたらサーバーが答える）。
+  三つとも赤を見た。実機は未確認。
 
 ### ダウンロードは Plus から。上限は make と別で、Plus 1・Pro 3
 - Date: 2026-09-02
