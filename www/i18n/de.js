@@ -792,6 +792,7 @@ defLang('de', (function(){
       "gram.np.N"        : "das Ding",
       "g2.np.t"          : "Reihenfolge um das Substantiv",
       "g2.ncls.t"            : "Arten von Substantiv",
+      "g2.n.mark"            : "Subjekt- und Objektmarker",
       "g2.ncls.h"            : "Eine Art Substantiv",
       "g2.ncls.name"         : "Nenne sie",
       "g2.ncls.add"          : "Eine Art hinzufügen",

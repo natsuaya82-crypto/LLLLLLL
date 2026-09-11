@@ -729,6 +729,7 @@ defLang('en', (function(){
       'gram.np.N'       : "the thing",
       'g2.np.t'         : "Order around a noun",
       'g2.ncls.t'           : "Kinds of noun",
+      'g2.n.mark'           : "Subject and object marks",
       'g2.ncls.h'           : "A kind of noun",
       'g2.ncls.name'        : "Call it",
       'g2.ncls.add'         : "Add a kind",

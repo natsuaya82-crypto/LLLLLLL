@@ -2513,7 +2513,15 @@ function g2Chaps(){
            {id:'ncls',  body:g2Ncls,  nm:t('g2.ncls.t')},
            {id:'det',   body:g2Det,   nm:t('g2.det.t')},
            {id:'cop',   body:g2Cop,   nm:t('g2.cop.t')},
-           {id:'n',     body:g2Nouns, nm:posLabel('n'), pos:'n'}], i, a;
+           /* AND WHAT IT IS CALLED IS NOT 「名詞」. The section is the case
+              marks -- subject, object, the one given to, whose, where, with
+              what, together with (`part` in www/phases.js) -- and it was
+              named posLabel('n'), which is the word the CHAPTER round it is
+              already called: 「名詞 › 格 › 名詞」, three rows deep and the
+              first and last the same word. posLabel() is what a word's part
+              of speech is called on six other screens and is not renamed;
+              this section says what it is. */
+           {id:'n',     body:g2Nouns, nm:t('g2.n.mark'), pos:'n'}], i, a;
   /* The sections, one chapter each, from the one list. A chapter is drawn by
      g2FmChap() and knows its own forms and its own part of speech, so nothing
      here is written eight times. */

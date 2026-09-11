@@ -737,6 +737,7 @@ defLang('ja', (function(){
       'gram.np.N'       : 'もの',
       'g2.np.t'         : '名詞句の並び',
       'g2.ncls.t'           : '名詞の種類',
+      'g2.n.mark'           : '主語・目的語の印',
       'g2.ncls.h'           : '名詞の種類',
       'g2.ncls.name'        : '呼び名',
       'g2.ncls.add'         : '種類を足す',

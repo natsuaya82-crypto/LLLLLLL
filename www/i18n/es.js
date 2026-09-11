@@ -764,6 +764,7 @@ defLang('es', (function(){
       "gram.np.N"        : "la cosa",
       "g2.np.t"          : "Orden alrededor del nombre",
       "g2.ncls.t"            : "Clases de nombre",
+      "g2.n.mark"            : "Marcas de sujeto y objeto",
       "g2.ncls.h"            : "Una clase de nombre",
       "g2.ncls.name"         : "Llámala",
       "g2.ncls.add"          : "Añadir una clase",

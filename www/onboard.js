@@ -930,17 +930,32 @@ function obIn(){
 
          The profile is what the account IS -- the name, the face, the handle
          that have just come back down -- so it is the screen to open on. */
-      if(SET.walked){ goTab('profile'); return; }
-      /* A profile row means this account has been used. It cannot be a
-         first launch, whatever SET.done on THIS phone says -- signing out
-         and back in used to land somebody in the onboarding here.
+      /* A PROFILE ROW MEANS THIS ACCOUNT HAS BEEN USED, and that is the
+         server's answer rather than a mark on this handset.
          「ログアウトした後にログインしたらオンボーディング出ないようにも
          してね」 The walk is for a phone with nobody on it, and there is
          somebody on this one.
 
-         It is also the last step of the walk for somebody who IS new, and
-         both roads end the same way: the walk is over and the app opens. */
-      obFinish(); return;
+         TWO ARMS STOOD HERE AND `SET.walked` CHOSE BETWEEN THEM -- goTab()
+         for a phone that had already walked, obFinish() for one that had not
+         -- and that is this phone's mark deciding a question the server has
+         just answered, one line up (docs/FEATURE_RULES.md § 端末は何も決め
+         ない, OWNER 2026-09-11). The row is here, so the walk is over
+         whichever the mark says, and there is one arm.
+
+         It is not obFinish(). That is the END OF THE WALK -- it takes the
+         name typed in it, the face from the letter drawn in it, and pushes
+         this handset's prefs up with netPrefsPut(). None of those is
+         somebody signing back in, and the last would write this phone's
+         setup over the account's own, which meFor() has just brought down.
+         What is left of it here is the two things that ARE true: the walk is
+         over, and the app opens on the profile
+         （「開く画面はプロフィール画面であって設定画面じゃない」 OWNER
+         2026-09-06). `SET.walked` is written and not read -- the owner keeps
+         it as this handset's own (2026-09-09, choice A), because a phone with
+         nobody signed in has nobody to ask. */
+      SET.walked=true; save();
+      goTab('profile'); return;
     }
     /* No profile row for this account means this account is new -- that is
        what "no row" IS, and netMyProfile() asking by SESS.uid is what makes
@@ -1034,18 +1049,19 @@ function obAgainTick(){
 /* Where to go when the account screen is done, for somebody who did not
    arrive here by starting the app.
 
-   The onboarding is what the app IS until SET.done -- that is the whole of
-   how render() decides -- so the only way to show the sign-in screen to
-   somebody already past it is to put SET.done back to false. Settings does
-   exactly that. Without this, signing in then carried on into the onboarding
+   The onboarding is what the app IS until the walk is over -- appIs()
+   (www/shell.js) is the whole of how render() decides -- so the door shown to
+   somebody already past it is the door opened from SOMEWHERE, and the note
+   saying where is what makes appIs() draw it. Settings writes that note. Without this, signing in then carried on into the onboarding
    proper: step 1 is drawing an alphabet, and a person who already had one
    was made to sit through it again. 「ログアウト→ログインでもまた文字書こう
    みたいな画面が出る」
 
    Null means the app really did start here and the onboarding is the app. */
-/* It is in SET, beside the SET.done it undoes, and NOT in a variable.
-   Settings takes the onboarding's own flag away in order to show the door and
-   writes that to storage; the note saying the flag is a lie lived in memory.
+/* It is in SET and NOT in a variable.
+   Settings used to take the onboarding's own flag away in order to show the
+   door and write that to storage; the note saying the flag is a lie lived in
+   memory.
    So anything that reloads the page between opening the sign-in screen and
    finishing with it -- the app killed, WKWebView reclaimed, coming back an
    hour later -- left a phone claiming the onboarding was unfinished with
@@ -1065,8 +1081,8 @@ function obAgainTick(){
    session somebody finished the onboarding in showed them the naming
    screen. */
 /* AND IT DOES NOT TAKE THE WALK'S FLAG AWAY ANY MORE. It used to put
-   `SET.done` back to false, because that was the only way to make appIs()
-   answer 「the onboarding」 and draw the door. `SET.walked` is about the
+   the walk's own flag back to false, because that was the only way to make
+   appIs() answer 「the onboarding」 and draw the door. `SET.walked` is about the
    HANDSET now (OWNER 2026-09-09 choice A) and taking it away would send
    somebody who has been through the app back to drawing their first letter.
    What appIs() reads instead is the note itself -- obPending() -- so the two
@@ -1105,8 +1121,8 @@ function obNeed(){
    Not while the onboarding is running. The onboarding IS somebody drawing
    their first letter, and asking there would be asking before there is
    anything to sign in FOR -- the door comes at the end of it, after the
-   letter is drawn and the keyboard has been seen. SET.done is what says
-   which of the two this is.
+   letter is drawn and the keyboard has been seen. appIs() is what says which
+   of the two this is.
 
    One place, because four call sites each remembering to add "and not during
    the onboarding" is four chances to leave it out, and the one left out is
@@ -1125,8 +1141,9 @@ function makeNeed(){
   return obNeed();
 }
 function obPending(){ return (SET.obback && SET.obback.r)? SET.obback : null; }
-/* Done with the account, and there was somewhere to go back to. Puts back
-   the SET.done that the door had to take away. */
+/* Done with the account, and there was somewhere to go back to. Clears
+   the note that made the door open, and goes back to where it was opened
+   from. */
 function obReturn(){
   var b=obPending();
   if(!b) return false;
@@ -1139,7 +1156,7 @@ function obReturn(){
      (www/shell.js § go) -- and coming back from the door is nearly always
      exactly that, because the door was opened FROM the screen it goes back
      to: Settings' password room presses 「forgot」 and SET.obback is that
-     room. So the session came back, SET.done came back, and what stayed on
+     room. So the session came back, the walk's flag came back, and what stayed on
      the screen was the door, until something else in the app happened to
      render. What changed here is not where somebody is standing, it is what
      the app IS, and go() cannot know that. */
@@ -1889,8 +1906,8 @@ function obFinish(){
      redrawing that letter later does not move the face; meAvSet()
      (www/me.js) is the only writer and refuses every call after the first.
 
-     BEFORE SET.done, so the line in postAvatar() that adopts a face for an
-     account older than this field can never fire during the walk. */
+     BEFORE the walk is marked over, so the line in postAvatar() that adopts a
+     face for an account older than that mark can never fire during the walk. */
   meAvSet(meAvOf(ltById(ob.lid)));
   SET.walked=true; save();
   /* WHAT THE WALK MADE IS ALREADY ON THE SERVER. It was sent from here, and
@@ -1957,7 +1974,11 @@ function obCoach(n){
    This is geTools() for the two things the STEP owns, called from the same
    place, and the words are obCoachSay()'s in both. */
 function obDrawTick(){
-  if(SET.done || ob.step!==OB_DRAW) return;
+  /* `SET.done` stood in front of this and was always `undefined`:
+     walkedMigrate() (www/core.js) deletes it while core.js is still being
+     read, so the branch was dead and read as though the old field were still
+     alive. What decides is the step. */
+  if(ob.step!==OB_DRAW) return;
   var n=obStrokes(),
       p=document.querySelector('.ob .obsub'),
       b=document.querySelector('.ob [data-do="obDone"]');
@@ -2004,7 +2025,7 @@ function obDrawHTML(){
        there is still no way round it (OWNER 2026-08-26, and act-check holds
        it -- signed out, all 37 routes are the door). Signing in from there
        ends the onboarding exactly as it does at the end of the walk, because
-       obIn() calls obFinish() whenever SET.done is false.
+       obIn() calls obFinish() at the end of the walk.
 
        Here and nowhere else. This is the FIRST screen, which is where somebody
        decides they do not want the walk; the name step already reaches the
@@ -2084,8 +2105,12 @@ function vOb(){
     /* The dots count the onboarding, and signing in is the last step of it --
        so the door shows them when it IS that step, and shows none when it was
        opened from Settings or from a timeline. obPending() is what tells the
-       two apart: a door opened from somewhere remembers where. */
-    '<div class="obtop">'+((obPending() || SET.done)? '' : obDots().map(function(i){
+       two apart: a door opened from somewhere remembers where.
+
+       `SET.done` stood beside it and was always `undefined` -- walkedMigrate()
+       (www/core.js) deletes it during the load -- so it decided nothing and
+       read as though the old field were still alive. */
+    '<div class="obtop">'+(obPending()? '' : obDots().map(function(i){
       return '<div class="dot'+(i<=s?' on':'')+'"></div>'; }).join(''))+'</div>'+
     '<select class="oblang" aria-label="'+esc(t('ob.lang.a'))+'"' + CH('obLang') + '>'+
       UI_LANGS.map(function(c){

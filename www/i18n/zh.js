@@ -825,6 +825,7 @@ defLang('zh', (function(){
       "gram.np.N"        : "东西",
       "g2.np.t"          : "名词周围的顺序",
       "g2.ncls.t"            : "名词的种类",
+      "g2.n.mark"            : "主语和宾语的标记",
       "g2.ncls.h"            : "名词的一种",
       "g2.ncls.name"         : "叫作",
       "g2.ncls.add"          : "添加一种",

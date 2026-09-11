@@ -3318,6 +3318,52 @@ const R = await pg.evaluate(async () => {
         'アプリが開く（訊きに行くのを待たない）');
   }
 
+  /* ---- 69. 入り直したら、この端末の印ではなくサーバーの答えで進む -------
+     「端末の物で分岐して、作る・消す・送る・見せる／見せない・数える を
+     決める行は全部消す」OWNER 2026-09-11。
+
+     `profile` の行が返ってきた**直後**に、`obIn()` は `SET.walked` を読んで
+     行き先を選んでいました ── サーバーの答えが手元にあるその瞬間に、端末の
+     印で分岐している唯一の場所です（`docs/reports/mixed-2026-09-11.md` #51）。
+
+     行があるなら、この端末の印が何と言おうと歩きは終わっています。腕は一本
+     です ── 歩きを済みにして、プロフィールを開く
+     （「開く画面はプロフィール画面であって設定画面じゃない」OWNER
+     2026-09-06）。
+
+     **`obFinish()` ではありません。**あれは歩きの終いで、歩きで打った名前と
+     描いた字の顔を取り、`netPrefsPut()` でこの端末の設えを上げます ── 入り
+     直した人のものではなく、最後のは `meFor()` が降ろしたばかりのアカウント
+     の設えを、この端末の物で上書きします。
+
+     赤を見た形（2026-09-11）: `SET.walked=true; save(); goTab('profile');`
+     を `if(SET.walked){ goTab('profile'); return; } obFinish();` に戻すと
+     「入り直しでこの端末の設えを上げた（1 回）」が赤。印の方は
+     `obFinish()` 自身が立てるので緑のまま ── 二本の腕が同じ所へ着くので、
+     **違いが出るのは道中に何をしたか**です。 */
+  start();
+  {
+    netOut(); arrive(A);
+    const keepProf69 = netMyProfile, keepPrefs69 = netPrefsPut;
+    let prefsUp69 = 0;
+    netMyProfile = (ok2) => ok2({ handle: 'lingua9', display: 'Lingua' });
+    netPrefsPut = () => { prefsUp69++; };
+    /* この端末は歩いていない ── 二台目、あるいはサインアウトしたあと。 */
+    SET.walked = false; SET.obback = null; save();
+    window.route = 'ob'; NAV = [{ r: 'ob' }];
+    obIn();
+    netMyProfile = keepProf69; netPrefsPut = keepPrefs69;
+    if (!SET.walked)
+      no('69: 行のあるアカウントで入り直したのに、歩きが済みになっていない');
+    if (window.route !== 'profile')
+      no('69: 入り直した先がプロフィールでない — route=' + window.route);
+    if (prefsUp69)
+      no('69: 入り直しでこの端末の設えを上げた ── アカウントの設えを上書きする（' +
+         prefsUp69 + ' 回）');
+    say('69: 入り直しは profile の行で決まる ── 端末の印を読まず、歩きは済みに' +
+        'なり、プロフィールが開き、この端末の設えは上がらない');
+  }
+
   return out;
 });
 

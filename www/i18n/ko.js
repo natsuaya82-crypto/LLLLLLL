@@ -996,6 +996,7 @@ defLang('ko', (function(){
       "gram.np.N"        : "것",
       "g2.np.t"          : "명사 주위의 순서",
       "g2.ncls.t"            : "명사의 종류",
+      "g2.n.mark"            : "주어·목적어 표지",
       "g2.ncls.h"            : "명사의 한 종류",
       "g2.ncls.name"         : "이름",
       "g2.ncls.add"          : "종류 추가",

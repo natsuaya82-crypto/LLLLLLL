@@ -869,6 +869,7 @@ defLang('fr', (function(){
       "gram.np.N"        : "la chose",
       "g2.np.t"          : "Ordre autour du nom",
       "g2.ncls.t"            : "Genres de nom",
+      "g2.n.mark"            : "Marques de sujet et d’objet",
       "g2.ncls.h"            : "Un genre de nom",
       "g2.ncls.name"         : "Appelle-le",
       "g2.ncls.add"          : "Ajouter un genre",
