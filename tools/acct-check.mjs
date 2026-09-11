@@ -3364,6 +3364,111 @@ const R = await pg.evaluate(async () => {
         'なり、プロフィールが開き、この端末の設えは上がらない');
   }
 
+  /* ---- 70. 名前も @ も profile の行から。作り出さない ------------------
+     「誰の物か・あるか無いか・名前・公開か・段 ── 答えは全部サーバー」
+     OWNER 2026-09-11。
+
+     `meName()` は名前が無ければ **`langName`** ── 言語の名前、作る側の
+     グローバル ── を返し、`meHandle()` はそれを小文字にして英数以外を
+     落とし、**誰も選んでいない @ を作り出して**いました。その作られた @ が
+     「この行は自分か」（`www/sns.js`）「このプロフィール頁は自分のか」
+     （`www/home.js` § pfMine）「自分のフォロー一覧の鍵」の三つを決めます。
+
+     CLAUDE.md 規則 8 の線を越えた形です ── 作る側のグローバルが読む側の
+     答えになっている。**同じ言語名の二人は、その三つにとって同じ人**でした。
+
+     行が無ければ空。当てずっぽうも、代わりの字も置きません
+     （`appIs()` が扉を出すので、画面が困ることはありません）。 */
+  start();
+  {
+    netOut(); arrive(A);
+    const keepNm70 = langName;
+    langName = 'Shango';
+    ME.name = ''; ME.handle = ''; saveMe();
+    if (meName() !== '')
+      no('70: 名前が無いのに、言語の名前が自分の名前として返る — ' +
+         JSON.stringify(meName()));
+    if (meHandle() !== '')
+      no('70: @ が無いのに、@ が作り出されている — ' +
+         JSON.stringify(meHandle()));
+    /* そして行が答えたら、その通りに返る。 */
+    ME.name = 'アヤ'; ME.handle = 'aya'; saveMe();
+    if (meName() !== 'アヤ' || meHandle() !== 'aya')
+      no('70: 行が答えても、その名前と @ にならない — ' +
+         JSON.stringify([meName(), meHandle()]));
+    /* 作り出した @ で「自分か」を決めていた三つのうち、一つを押さえます ──
+       他人のプロフィール頁が、言語名から作った @ と同じだと自分の頁に
+       見えていました。
+
+       赤を見た形（2026-09-11）: `ME.name || langName` と
+       `String(meName()).toLowerCase().replace(/[^a-z0-9]+/g,'')` を戻すと
+       三つとも赤。 */
+    ME.name = ''; ME.handle = ''; saveMe();
+    window.route = 'profile'; NAV = [{ r: 'profile', a: 'shango' }];
+    if (pfMine())
+      no('70: 他人のプロフィール頁が自分の頁と読まれた ── 言語名から @ を作っている');
+    NAV = [{ r: 'profile' }];
+    langName = keepNm70;
+    say('70: 名前も @ も profile の行から ── 言語の名前から作り出さない');
+  }
+
+  /* ---- 71. ブロックした一覧はサーバーの `block` 一本 --------------------
+     「NOTHING IS THE PHONE'S. EVERYTHING IS THE ACCOUNT'S.」
+
+     `ME.bl` は**押した時にしか書かれず**、サーバーから埋め直す道がありません
+     でした。二台目では空です ── タイムラインは `block` を訊くので正しく
+     除きますが、… の menu は「ブロックする」と出ます。同じ問いに二つの答えが
+     あって、画面が見せていたのは間違っている方でした。`ME.fo` / `ME.fr` は
+     2026-09-09 に同じ理由で外れ、これだけ残っていました。
+
+     押さえるのは三つ：**一つの road で降りること**、**handle と uuid が同じ
+     答えの二つの形であること**、そして **`lingua.me` の `ME.bl` を一バイトも
+     読まないこと**。
+
+     赤を見た形（2026-09-11）: `meBlocking()` を `ME.bl` に戻すと三つ赤。 */
+  start();
+  {
+    netOut(); arrive(A);
+    /* 前の案件の `arrive()` が本物の XHR を出していて、答えが来ないまま
+       `NET_BL_WAIT` が立っています ── 立っていると netBlockedRead() は列に
+       並ぶだけで戻るので、この案件が測りたい road に入れません（30d と
+       `NET_SYNCING` の同じ形）。 */
+    netBlockedDrop(); NET_BL_WAIT = null;
+    const keepGet71 = netGet;
+    const asked71 = [];
+    netGet = (path, ok2) => {
+      asked71.push(String(path));
+      if (String(path).indexOf('/rest/v1/block') === 0)
+        return ok2([{ blocked: 'uid-of-iri' }]);
+      if (String(path).indexOf('/rest/v1/profile_seen') === 0)
+        return ok2([{ id: 'uid-of-iri', handle: 'iri' }]);
+      return ok2([]);
+    };
+    /* 端末の古い写しは、読まれてはいけない方に置きます。 */
+    ME.bl = ['nokori']; saveMe();
+    let got71 = null;
+    netBlockedRead((ids) => { got71 = ids; }, () => { got71 = 'FAILED'; });
+    netGet = keepGet71;
+    if (!got71 || got71 === 'FAILED' || got71.indexOf('uid-of-iri') < 0)
+      no('71: block の行が降りてこない — ' + JSON.stringify(got71));
+    if (!asked71.filter((p) => p.indexOf('/rest/v1/profile_seen') === 0).length)
+      no('71: 降りた uuid の handle を訊いていない ── 画面は handle で人を知る');
+    if (!meBlocks('iri'))
+      no('71: サーバーがブロックと言っているのに、画面が知らない');
+    if (meBlocks('nokori'))
+      no('71: 端末の古い写し（ME.bl）をまだ読んでいる');
+    if (meBlocking().indexOf('nokori') >= 0)
+      no('71: 一覧に端末の古い写しが混ざっている — ' + JSON.stringify(meBlocking()));
+    /* 訊いていないうちは「ブロックしていない」── この端末が、サーバーの
+       言っていないことを言わない。 */
+    netBlockedDrop();
+    if (meBlocks('iri'))
+      no('71: まだ訊いていないのに、ブロックしていると言っている');
+    ME.bl = []; saveMe();
+    say('71: ブロックした一覧はサーバーの block 一本 ── uuid と handle は同じ' +
+        '答えの二つの形で、端末の写しは一バイトも読まない');
+  }
+
   return out;
 });
 

@@ -3166,8 +3166,27 @@ function netBlock(handle, on, ok, bad){
    or not, which is the same distinction everything else on this branch makes.
    Not asked yet, this falls back to asking -- so a timeline reached before
    the open's answer lands is still right, it is only slower. */
-var NET_BL=null, NET_BL_WAIT=null;
+/* AND THE SAME ANSWER IN THE FORM A SCREEN ASKS IN. `block` is keyed by uuid
+   -- that is what a row about an account IS -- and the timeline needs uuids,
+   because a post carries its author's id. A SCREEN knows a person by their
+   HANDLE: 「this person, blocked or not」 is what the ... menu asks to decide
+   which word goes on the row.
+
+   It was `ME.bl` on the phone, written only when somebody pressed the row and
+   with no road to fill it from the server -- so on a second phone it was
+   empty, and the menu offered to block somebody who was already blocked while
+   the timeline correctly kept them out. 「NOTHING IS THE PHONE'S. EVERYTHING
+   IS THE ACCOUNT'S.」
+
+   The handles come off `profile_seen`, asked for the ids that just came back,
+   and the two are set TOGETHER in netBlockedRead() below: one road, one
+   answer, two forms of it. `null` is 「not asked」 for both. */
+var NET_BL=null, NET_BL_HD=null, NET_BL_WAIT=null;
 function netBlockedGot(){ return !!NET_BL; }
+/* The handles, for a screen. `null` (not asked) answers as none: a button
+   that said 「blocked」 before the list came down would be this phone saying
+   something the server has not said. */
+function netBlockedHandles(){ return NET_BL_HD || []; }
 /* ONE REQUEST, HOWEVER MANY ARE WAITING ON IT. The open asks for this list
    and the timeline asks for it in the same moment -- feed_hot and this go out
    together -- so without somewhere to wait, the second caller found `NET_BL`
@@ -3178,7 +3197,7 @@ function netBlockedGot(){ return !!NET_BL; }
    everybody holding a place in it is answered from the one reply. */
 function netBlockedRead(ok, bad){
   var i, who;
-  if(!netSignedIn()){ NET_BL=[]; ok([]); return; }
+  if(!netSignedIn()){ NET_BL=[]; NET_BL_HD=[]; ok([]); return; }
   if(NET_BL_WAIT){ NET_BL_WAIT.push({ok:ok, bad:bad}); return; }
   NET_BL_WAIT=[{ok:ok, bad:bad}];
   /* WHO IT WAS ASKED FOR, held while the answer is out. Signing out with this
@@ -3187,13 +3206,38 @@ function netBlockedRead(ok, bad){
      postFor() against, one file over. The waiters are still answered, with
      none, because a caller left hanging is worse than a caller told nothing. */
   who=SESS.uid;
+  /* Both forms land in one place, so 「asked」 is one fact rather than two
+     that can come apart. */
+  function done(ids, hd){
+    var w=NET_BL_WAIT, j;
+    NET_BL_WAIT=null;
+    if(netSignedIn() && SESS.uid===who){ NET_BL=ids; NET_BL_HD=hd; }
+    else ids=[];
+    for(j=0;j<w.length;j++) w[j].ok(ids);
+  }
   netGet('/rest/v1/block?select=blocked&actor=eq.'+encodeURIComponent(who),
     function(d){
-      var out=[], w=NET_BL_WAIT;
-      NET_BL_WAIT=null;
+      var out=[];
       for(i=0;i<(d||[]).length;i++) if(d[i] && d[i].blocked) out.push(d[i].blocked);
-      if(netSignedIn() && SESS.uid===who) NET_BL=out; else out=[];
-      for(i=0;i<w.length;i++) w[i].ok(out);
+      /* AND WHAT THOSE IDS ARE CALLED. The uuid is what the timeline filters
+         on and the handle is what a screen knows a person by, and asking the
+         server for both is what makes the second one the account's rather
+         than this handset's. `profile_seen` is the row a person is drawn
+         from everywhere else in this file.
+
+         The waiters are answered either way. A handle that does not come back
+         -- a deleted account, a row a policy refuses -- is one this app
+         cannot name, and the block is still a block: the uuid is in the list
+         and the posts stay out. */
+      if(!out.length){ done(out, []); return; }
+      netGet('/rest/v1/profile_seen?select=id,handle&id=in.('+netInList(out)+')',
+        function(pd){
+          var hd=[], j;
+          for(j=0;j<(pd||[]).length;j++)
+            if(pd[j] && pd[j].handle) hd.push(String(pd[j].handle));
+          done(out, hd);
+        },
+        function(){ done(out, []); });
     },
     function(d, s, m){
       var w=NET_BL_WAIT;
@@ -3204,7 +3248,7 @@ function netBlockedRead(ok, bad){
 /* Blocking or unblocking somebody makes the copy wrong, and it is the one
    thing that can. Dropped rather than re-asked: netBlock() below already
    renders when the row lands, and the next timeline fetches it. */
-function netBlockedDrop(){ NET_BL=null; }
+function netBlockedDrop(){ NET_BL=null; NET_BL_HD=null; }
 function netBlocked(ok){
   if(NET_BL){ ok(NET_BL); return; }
   netBlockedRead(ok, function(){ ok([]); });

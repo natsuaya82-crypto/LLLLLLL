@@ -286,10 +286,31 @@ function meNFollowers(){ return meFollowers().length; }
 function meCount(n){
   return '<b>'+esc(String(Number(n)||0))+'</b> ';
 }
-function meName(){ return ME.name || langName || ''; }
-function meHandle(){
-  return ME.handle || String(meName()).toLowerCase().replace(/[^a-z0-9]+/g, '');
-}
+/* ---- WHO YOU ARE IS THE `profile` ROW, AND NOTHING IS INVENTED FOR IT ----
+   「誰の物か・あるか無いか・名前・公開か・段 ── 答えは全部サーバー」 OWNER
+   2026-09-11 (docs/FEATURE_RULES.md § 端末は何も決めない).
+
+   These two MADE SOMEBODY UP. `meName()` fell to `langName` -- the LANGUAGE's
+   name, a global of the making side -- so a person with no display name was
+   called whatever their conlang was called; and `meHandle()` took that,
+   lower-cased it and threw away everything that was not a letter or a digit,
+   so an @ nobody had ever chosen was invented out of it. That invented @ then
+   decided 「is this row me」 (meRowIsMe, www/sns.js), 「is this profile page
+   mine」 (www/home.js § pfMine) and which key your own follow lists are kept
+   under -- three answers about WHO YOU ARE, resting on a string made out of a
+   language's name.
+
+   It is CLAUDE.md rule 8's line, crossed: a global of the making side became
+   the reading side's answer. Two people with the same language name were the
+   same person to every one of those three.
+
+   `profile.display` and `profile.handle` are the answers, and they arrive
+   through meRowGot()/meFor() (§ ME_ROW). No row, or a row with nothing in the
+   column, is EMPTY -- not a guess, not a stand-in. Nothing on a screen has to
+   cope with that: appIs() (www/shell.js) draws the door for an account with
+   no row, and meRowHas() is the question it asks. */
+function meName(){ return ME.name || ''; }
+function meHandle(){ return ME.handle || ''; }
 /* ---- the profile is TYPED and then SAVED --------------------------------
    OWNER DECISION 2026-09-03: 「プロフィールも何か変えたら保存ボタン欲しい右上
    ／自分のポップで／入力内容を保存しますか？はいいいえ／ではいなら保存　いいえ
@@ -1102,32 +1123,47 @@ function meFollowsPull(ok, bad){
     one();
   }, no);
 }
-/* Who you have blocked, as handles, beside who you follow -- both are the
-   account's and neither is a language's. The uuids the timeline needs are the
-   server's answer (netBlocked); this is what a screen asks so a button can
-   say which state it is in without a request. */
-function meBlocking(){ return (ME.bl && ME.bl.length)? ME.bl : []; }
+/* ---- WHO YOU HAVE BLOCKED, AND IT IS THE `block` TABLE ------------------
+   「端末の物で分岐して…見せる／見せない…を決める行は全部消す」 OWNER
+   2026-09-11 (docs/FEATURE_RULES.md § 端末は何も決めない).
+
+   This was `ME.bl` in `lingua.me`: a list written ONLY when somebody pressed
+   the row, with no road to fill it from the server. So on a second phone it
+   was empty -- the timeline correctly kept the blocked person out, because
+   THAT asks `block` (netBlocked), and the ... menu offered to block them
+   again, because this asked the phone. Two answers to one question, and the
+   one a screen showed was the wrong one. `ME.fo` and `ME.fr` went the same
+   way on 2026-09-09 and left this behind.
+
+   netBlockedHandles() (www/net.js) is the answer now -- the same road, the
+   same moment, the same 「not asked」 -- so a button says blocked when the
+   server says so and on every phone this account signs in on.
+
+   `ME.bl` IS NOT REMOVED FROM ANYBODY'S PHONE. It is in `lingua.me` on every
+   handset that has this app; it is not read, not written and not deleted
+   (docs/DATA_SAFETY.md rule 2). */
+function meBlocking(){
+  return (typeof netBlockedHandles==='function')? netBlockedHandles() : [];
+}
 function meBlocks(h){ return meBlocking().indexOf(String(h||''))>=0; }
 /* Blocking somebody stops following them. Keeping a follow to somebody you
    have blocked is a list that says two opposite things, and the one the
    timeline reads would decide which is true. */
+/* AND THE ROW GOES FIRST. 「保存するタイミングでエラーが起きるなら、保存され
+   ないし」 OWNER 2026-09-05 -- meFollow() below is the same shape, and it has
+   to be the same here now that the list is the server's: there is nothing on
+   this phone left to move ahead of it, so a screen drawn before the answer
+   would be drawn out of the OLD list and put itself back one frame later.
+
+   A refusal puts the pop up and changes nothing, and its ［再接続］ is this
+   same press. */
 function meBlock(h){
-  var bl=meBlocking(), i;
   h=String(h||'');
   if(!h || h===meHandle()) return;
   /* Blocking is a row on the server with your uid on it, so it asks who you
-     are first. Kept on this phone as well and shown as blocked either way --
-     but a block the server has never heard of is not a block, and a list
-     that filled up before anybody signed in would be a promise the timeline
-     could not keep. */
+     are first. */
   if(!obNeed()) return;
-  i=bl.indexOf(h);
-  if(i>=0) bl.splice(i, 1);
-  else {
-    bl.push(h);
-    if(meFollows(h)) meFollow(h);
-  }
-  ME.bl=bl;
+  var on=!meBlocks(h);
   /* And the menu this was pressed from, closed the way every other row that
      ENDS a menu closes it -- postPin(), postDel() and openReport() each do it
      in their own first lines. Blocking takes every post of theirs out of the
@@ -1144,9 +1180,16 @@ function meBlock(h){
      timeline and a person's on their page, never both, and postMenuTook()
      already closes the two as one pair. */
   PMENU=''; WMENU=false;
-  saveMe();
   render();
-  netBlock(h, i<0, function(){}, function(){});
+  netBlock(h, on, function(){
+    /* The list this phone was holding is gone (netBlock() drops it), so the
+       screen has nothing to draw from until it is asked again. One road, and
+       it is the one the open uses. */
+    netBlockedRead(function(){
+      if(on && meFollows(h)) meFollow(h);
+      render();
+    }, function(){ render(); });
+  }, function(d, s, m){ netPop(d, s, m, function(){ meBlock(h); }); });
 }
 /* Following and unfollowing, in one place. The list is what this phone knows
    and netFollow() is what the server is told -- not waited on, the way a like

@@ -1157,10 +1157,14 @@ export function halfDone(){
     ['what you can do about somebody else', () => { window.route='feed'; NAV=[{r:'feed'}];
                               postMore('p2');
                               const h = vFeed(); PMENU = ''; return h; }],
-    ['and the same, already blocked', () => { const was = ME.bl; ME.bl = ['iri'];
+    /* ブロックしている一覧はサーバーの `block` です（2026-09-11）── `ME.bl`
+       ではありません。`NET_BL_HD` は netBlockedRead() が降ろす handle の側で、
+       この検査は網を張らないので押します。 */
+    ['and the same, already blocked', () => { const was = NET_BL_HD;
+                              NET_BL_HD = ['iri'];
                               window.route='feed'; NAV=[{r:'feed'}];
                               postMore('p2');
-                              const h = vFeed(); ME.bl = was; PMENU = ''; return h; }],
+                              const h = vFeed(); NET_BL_HD = was; PMENU = ''; return h; }],
     /* The five reasons. It is a form and nothing walks to it. */
     ['saying what is wrong with a post', () => { openReport('p2', 'iri');
                               const h = vForm(); rpFor = null; return h; }],
