@@ -3046,6 +3046,129 @@ const R = await pg.evaluate(async () => {
         '索引に uid は書かず、上限はサーバーの行を数え、聞いていない言語は描かない');
   }
 
+
+  /* ---- 66. 登録の最後に、言語は一本 -------------------------------------
+     hunt 道1（2026-09-11）: 門をくぐると `language` が**二本** POST される。
+     一つは打った名前つきで中身が空、もう一つは名前が無くて歩きで描いた字が
+     入っている。道10 の「一アカウントで三本」も道11 の「名前の無い空の言語が
+     開く」も、この一本目が割れたことの続きでした。
+
+     測った原因（docs/scope/r24-lang.md）: 二本目を作るのは
+     `langForAcct(true)`（www/core.js）で、`netTook()` が
+     `pullWait('mylangs')` に登録した方から走ります。`langForAcct()` の
+     最初の問いは `langAcct(langId)` ＝「この言語はこのアカウントのものか」で、
+     **歩きの言語にはまだ印が無い**。印を書くのは `obFinish()` で、それは
+     扉を出たあと ── 順番の競争で、勝つのは印を書かない方でした。
+
+     ここで歩くのは扉そのものです: 歩きの言語を一本だけ持った、まだ扉を
+     通っていない端末 → `netTook()`（＝ `arrive`）→ `mylangs` の答えが
+     戻った（＝ 待っている人を起こす）→ `obFinish()`。
+
+     赤を見た形（2026-09-11、直す前）:
+       「66: 索引の言語が 2 本になった ── 歩きは一本しか作っていない」
+       「66: 開いているのが歩きの言語ではない」
+       「66: 打った名前が、歩きが作った言語に付いていない」
+       「66: 歩きで描いた字が、開いている言語の中に無い」 */
+  {
+    window.__seed();
+    wipeParked();
+    netOut();
+    /* まだ扉を通っていない端末。歩きが作った言語が一本あり、印は無い ──
+       印を書くのは扉だからです。 */
+    SET.walked = false; save();
+    const keepL66 = LANGS, keepId66 = langId, keepNm66 = langName;
+    const keepOb66 = ob.name, keepLid66 = ob.lid;
+    LANGS = { 'walk-lang': { mine: true } };
+    langId = 'walk-lang'; langName = '';
+    langStore();
+    /* 歩きで描いた字。これが最後にどの言語の中に居るかが、この案件の芯です。 */
+    try { slWr(langKeyOf('walk-lang', 'letters'),
+                JSON.stringify([{ id: 'l1', ab: 'a', name: 'a' }])); } catch (e) {}
+    ob.name = 'シャンゴ'; ob.lid = '';
+
+    arrive(A);
+    /* サーバーの一覧が戻ってきた。`pullRun()` が答えの有無にかかわらず
+       待っている人を起こすのと同じ一行です（www/sns.js）。 */
+    { const ws = pullWoke('mylangs'); for (let i = 0; i < ws.length; i++) ws[i](); }
+    obFinish();
+
+    /* 本数は索引で数えます ── 「このアカウントのもの」で数えると、扉で
+       生えた方にだけ印が付いた状態が 1 本と出て、割れているのが見えません。 */
+    const n66 = Object.keys(LANGS).length;
+    if (n66 !== 1)
+      no('66: 索引の言語が ' + n66 + ' 本になった ── 歩きは一本しか作っていない');
+    if (langId !== 'walk-lang')
+      no('66: 開いているのが歩きの言語ではない — langId=' + langId);
+    if (langNameOf('walk-lang') !== 'シャンゴ')
+      no('66: 打った名前が、歩きが作った言語に付いていない — ' +
+         JSON.stringify(langNameOf('walk-lang')));
+    if (String(slRd(langKey('letters')) || '').indexOf('l1') < 0)
+      no('66: 歩きで描いた字が、開いている言語の中に無い');
+    /* そして歩きの言語は、扉を出た時点でこのアカウントのもの。 */
+    if (!langAcct('walk-lang'))
+      no('66: 扉を出ても、歩きが作った言語がこのアカウントのものになっていない');
+
+    LANGS = keepL66; langId = keepId66; langName = keepNm66;
+    ob.name = keepOb66; ob.lid = keepLid66;
+    SET.walked = true; save(); langStore();
+    say('66: 登録の最後に言語は一本 ── 打った名前も描いた字もその一本の中、' +
+        '開いているのもそれ');
+  }
+
+
+  /* ---- 67. 名前と @ も、同じ保存でサーバーへ行く -------------------------
+     hunt 道7（2026-09-11）: 名前と handle を変えて保存しても、サーバーの
+     `profile` 行は前のまま。bio・link・loc は同じ保存でちゃんと上がり、
+     断りのトーストも出ない。
+
+     測った（docs/scope/r24-lang.md）:
+       PATCH /rest/v1/profile  {"bio":"ここに一行"}
+     `meProfPut()`（www/me.js）が `PROF_MINE` **だけ**を歩いて送る物を組んで
+     いて、その一覧は bio・link・loc の三つでした。名前と @ はそこに無いので
+     送られる先が無く、`meKeepPut()` が端末に書いて終わり。空の送信では
+     ないので（bio が入っている）、断りも出ません。
+
+     ここで押さえるのは「保存は一本の道で全項目を送る」ことだけです。列の名前
+     （名前は `display`）も一緒に押さえます ── 端末の欄名で PATCH しても
+     サーバーは黙って無視するので、何も throw せずに同じ所へ戻ります。
+
+     赤を見た形（2026-09-11、直す前）:
+       「67: 保存で name が送られていない」「67: 保存で handle が送られていない」 */
+  start();
+  {
+    const sentAt = [];
+    const keepPut = netProfPut, keepFree = netHandleFree;
+    netProfPut = (fields, ok) => { sentAt.push(fields); ok({}); };
+    netHandleFree = (h, ok) => ok(true);
+    ME.name = 'アヤ'; ME.handle = 'aya'; ME.bio = ''; saveMe();
+    meKeepSave({ name: 'アヤ改', handle: 'ayaka', bio: 'ここに一行' }, () => {});
+    const sent = sentAt.length ? sentAt[0] : {};
+    if (sentAt.length !== 1)
+      no('67: 保存が一本の道で送っていない ── 送信 ' + sentAt.length + ' 回');
+    if (sent.display !== 'アヤ改')
+      no('67: 保存で name が送られていない — ' + JSON.stringify(sent));
+    if (sent.handle !== 'ayaka')
+      no('67: 保存で handle が送られていない — ' + JSON.stringify(sent));
+    if (sent.bio !== 'ここに一行')
+      no('67: 保存で bio が送られていない — ' + JSON.stringify(sent));
+    /* 動いていない欄は送らない ── PATCH は動いた分だけ。 */
+    sentAt.length = 0;
+    meKeepSave({ name: 'アヤ改', handle: 'ayaka', bio: '二行目' }, () => {});
+    const sent2 = sentAt.length ? sentAt[0] : {};
+    if (sent2.hasOwnProperty('display') || sent2.hasOwnProperty('handle'))
+      no('67: 動いていない名前と @ まで送っている — ' + JSON.stringify(sent2));
+    /* 送れなかったら端末にも書かない ── 保存は半分では済まない。 */
+    netProfPut = (fields, ok, bad) => bad(null, 0, 'prof −');
+    ME.name = 'アヤ改'; ME.handle = 'ayaka'; saveMe();
+    meKeepSave({ name: 'もどらない', handle: 'nope' }, () => {});
+    if (ME.name !== 'アヤ改' || ME.handle !== 'ayaka')
+      no('67: 送れなかったのに端末の名前と @ が書き換わった — ' +
+         ME.name + ' / ' + ME.handle);
+    netProfPut = keepPut; netHandleFree = keepFree;
+    say('67: 名前と @ も同じ保存でサーバーへ行く ── 列は display と handle、' +
+        '動いた分だけ送り、送れなければ端末にも書かない');
+  }
+
   return out;
 });
 
