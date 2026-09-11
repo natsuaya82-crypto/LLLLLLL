@@ -3046,6 +3046,65 @@ const R = await pg.evaluate(async () => {
         '索引に uid は書かず、上限はサーバーの行を数え、聞いていない言語は描かない');
   }
 
+  /* ---- 66. アカウントを消したら、その言語の鍵は一つも残らない -------------
+     「アカウント削除で残るものねえって言ってんだろ何回言わせんだよ全部消えん
+       だよ。」 OWNER 2026-08-27。
+
+     2026-09-11 に測ったら残っていました ── サーバーが `users=0 profile=0
+     language=0 slice=0` になったあとの端末に
+     `lingua.<id>.name.got` と `lingua.<id>.owner.got` が二つ。
+     `lsWipeAcct()` がその言語の鍵を **`SLICES` を歩いて**消していたからで、
+     `name`・`wsys`・`owner` は `language` 行の**列**であってスライスではなく、
+     このループより後に生まれました。CLAUDE.md がこの形を名前で呼んでいます
+     ── **「a list of keys, written by hand, that nobody remembered to add
+     to」**。
+
+     だからこの claim も**名前を挙げません**。訊くのは一つだけ ──
+     消したあと、`lingua.<その言語の番号>.` で始まる鍵が、ディスクにも記憶
+     （`LSL`）にも**一つも無い**こと。明日足される鍵も、書いた日から
+     この claim が見ます。
+
+     赤を見た形（2026-09-11）: `lsWipeAcct()` の一掃を `SLICES` 歩きに戻すと
+     `name.got` `wsys.got` `owner.got` `.was` の四つを挙げて赤。 */
+  start();
+  netOut(); arrive(A);
+  {
+    const keepL66 = LANGS, keepId66 = langId;
+    const ID66 = 'lang-66';
+    LANGS = { [ID66]: { mine:true } };
+    langId = ID66;
+    /* スライスと、サーバーと合意した印。 */
+    slWr(langKeyOf(ID66, 'words'), '[{"hw":"nokori"}]');
+    slWr(langWasKey(ID66, 'words'), '[{"hw":"nokori"}]');
+    slGot(langKeyOf(ID66, 'words'), '[{"hw":"nokori"}]');
+    /* そして `language` 行の列 ── 名前・書記体系・書いた人。スライスでは
+       ないので `SLICES` には居ません。 */
+    langNameGot(ID66, '消される言語');
+    langWsysGot(ID66, 'abugida');
+    langOwnGot(ID66, A);
+
+    lsWipeAcct(A);
+
+    const pre66 = 'lingua.' + ID66 + '.';
+    const left66 = [];
+    try{
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.indexOf(pre66) === 0) left66.push(k);
+      }
+    }catch(e){}
+    for (const k of Object.keys(LSL)) if (k.indexOf(pre66) === 0) left66.push(k + ' (LSL)');
+    if (left66.length)
+      no('66: **消したアカウントの言語の鍵が端末に残っている** ── ' +
+         left66.sort().join(' ') +
+         '。名前を挙げて消しているので、挙げ忘れたものが残ります');
+    if (LANGS[ID66]) no('66: 消したアカウントの言語が索引に残っている');
+
+    LANGS = keepL66; langId = keepId66; langStore();
+    say('66: アカウントを消したら lingua.<言語の番号>. で始まる鍵は一つも' +
+        '残らない ── 挙げるのではなく数えている（列も、明日足す鍵も）');
+  }
+
   return out;
 });
 

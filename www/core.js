@@ -64,7 +64,7 @@ var LS_LANGS='lingua.langs', LS_CUR='lingua.cur', LS_S='lingua.set';
    Returns the language ids it took,
    so the caller can drop those backups and no others. */
 function lsWipeAcct(uid){
-  var me=String(uid||''), ids=[], doomed=[], keys, id, i, k, j;
+  var me=String(uid||''), ids=[], doomed=[], keys, id, i, k, j, pre;
   /* WHOSE, AND IT IS TWO QUESTIONS. A language this account WROTE is
      `language.owner` (langOwnOf), and one it TOOK is a `language_take` row
      (langTookHas) -- two facts that `LANGS[id].uid` used to answer with one
@@ -74,14 +74,39 @@ function lsWipeAcct(uid){
   for(id in LANGS)
     if(Object.prototype.hasOwnProperty.call(LANGS, id) && LANGS[id] &&
        (langOwnOf(id)===me || langTookHas(id))) ids.push(id);
-  /* The slices are in MEMORY now (LSL above), so they are dropped rather than
-     removed from storage -- and the record of what was last agreed with them,
-     which is filed beside each one. */
+  /* EVERYTHING FILED UNDER THIS LANGUAGE, COUNTED RATHER THAN NAMED -- which
+     is the same rewrite the uid half of this function was given below, one
+     level in.
+
+     It walked `SLICES` and took each slice, its `.was` and its `.got`. Every
+     key added after that loop was written therefore stayed on the phone, and
+     four of them were: `name`, `wsys`, `owner` and the pictures slGot() keeps
+     beside them. Those are COLUMNS OF THE `language` ROW rather than slices
+     (§ langNameOf, § langWsysOf, § langOwnOf, 2026-09-08 and 09), so they were
+     never in `SLICES` and nobody remembered them here. Measured on 2026-09-11:
+     an account deleted with the server left holding `users=0 profile=0
+     language=0 slice=0`, and `lingua.<id>.name.got` and two
+     `lingua.<id>.owner.got` still on the handset. 「アカウント削除で残るもの
+     ねえって言ってんだろ何回言わせんだよ全部消えんだよ。」 OWNER 2026-08-27,
+     and it is the same bug that sentence was said about: **a list of keys,
+     written by hand, that nobody remembered to add to.**
+
+     So there is no list. `lingua.<id>.` -- the dot included, so one id is
+     never the head of another's -- is what a thing of this language's IS, in
+     memory and on the disk alike, and a key written under it tomorrow is taken
+     the day it is written. The disk ones join `doomed` and go out in the one
+     pass below. */
   for(i=0;i<ids.length;i++){
-    for(j=0;j<SLICES.length;j++){
-      slRm(langKeyOf(ids[i], SLICES[j]));
-      slRm(langWasKey(ids[i], SLICES[j]));
-    }
+    pre='lingua.'+ids[i]+'.';
+    for(k in LSL)
+      if(Object.prototype.hasOwnProperty.call(LSL, k) && k.indexOf(pre)===0)
+        delete LSL[k];
+    try{
+      for(j=0;j<localStorage.length;j++){
+        k=localStorage.key(j);
+        if(k && k.indexOf(pre)===0) doomed.push(k);
+      }
+    }catch(e){}
     delete LANGS[ids[i]];
   }
   /* AND EVERY OTHER KEY THIS ACCOUNT PUT ITS NAME ON, counted rather than

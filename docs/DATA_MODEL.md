@@ -108,6 +108,22 @@ answer for both and a published language could not say which it was.
 each keeps the server's answer in memory and a picture on the disk
 (`lingua.<id>.name.got`, `lingua.<id>.wsys.got`) with no road up. Empty `wsys`
 is **nobody has said**, not a fifth kind, and `wsGuess()` answers for it.
+`language.owner` — who WROTE it — is a fourth of the same shape
+(`langOwnOf()`, `lingua.<id>.owner.got`).
+
+**Whose those pictures are, said here because the answer is not written on
+them.** A key `lingua.<id>.…` is that LANGUAGE's, and a language is an
+account's (CLAUDE.md § NOTHING IS THE PHONE'S), so it goes when that account's
+language goes and when the account goes. **It is not asked of a list.**
+Deleting an account walked `SLICES` until 2026-09-11, and these four are not
+slices — they are columns, and they were born after that loop — so
+`lingua.<id>.name.got` and `lingua.<id>.owner.got` stayed on the handset after
+an account was deleted (measured; `docs/CHANGELOG.md` 2026-09-11).
+`lsWipeAcct()` counts the `lingua.<id>.` namespace now, in memory and on the
+disk alike, so a key written under a language tomorrow is taken the day it is
+written. `acct-check` 66 holds it. **Two other places still walk `SLICES` for
+the same job** — 「この言語を削除」 and the sweep of a DL language whose
+original is gone — and `docs/BACKLOG.md` carries them.
 
 | `lang` | — | the language's name, and **nothing in `www/` reads or writes it** since 2026-09-08. What a language is called is the `language.name` column on the server; `langNameOf()` in `www/core.js` is how it is asked, `LNAME` holds what the server has said this session, and `lingua.<id>.name.got` is the picture a launch with no signal draws from. The slice stays in `SLICES` and is not deleted — what an older version wrote is left exactly where it is | text |
 | `script` | `SCRIPT` | roman → strokes, letters no word uses yet, and **which way the language is written** (`dir`) | object |

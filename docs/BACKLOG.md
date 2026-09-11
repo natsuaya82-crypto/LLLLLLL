@@ -7,6 +7,28 @@ refactor, a feature and a rename never arrive in the same diff.
 
 The order is the order to do them in.
 
+## 言語の鍵を `SLICES` で挙げて消している所が、あと二つ（2026-09-11）
+
+`lsWipeAcct()`（`www/core.js`）は 2026-09-11 に**数える**形へ書き換えました
+（`docs/CHANGELOG.md` の DELETE REVIEW、`acct-check` 66）。同じ仕事をしている所は
+あと二つあり、**二つとも同じ三つを置いていきます** ── `lingua.<id>.name.got`、
+`lingua.<id>.wsys.got`、`lingua.<id>.owner.got`。`language` 行の列であって
+スライスではないからで、`SLICES` を歩く限り、明日足す列もまた置いていきます。
+
+| 所 | 何の削除か | 今日の持ち主 |
+|---|---|---|
+| `wipeLangsHere()` `www/settings.js` | 「この言語を削除」 | 他の枝 |
+| 取った言語の掃除 `www/net.js`（`netTakenDown` の道） | 元が消えた DL 言語 | `claude/r24-lang` |
+
+直し方は一つで、`lsWipeAcct()` が今やっているのと同じです ── `lingua.<id>.`
+で始まる鍵を、記憶（`LSL`）からもディスクからも数えて取る。三箇所が同じ一行を
+書くより、**その一行を一つの関数にして三箇所が呼ぶ**方が正しく、それは
+「一箇所で持つ」の形ですが、file の持ち主が三人に分かれている日にやることでは
+ありません。**リーダーへ** ── 三つを一人に渡してください。
+
+重さ：消したものが残るだけで、人の作ったものは失われません。残るのは名前と
+書記体系と持ち主の**写し**で、上への道は持ちません。
+
 ## `integ-0905` で `again-check`「起動してもキーボードは増えない」が赤です（2026-09-09、この枝のものではありません）
 
 `b91a70a4`（`claude/r10-measure` を取り込んだところ）では緑で、`caf6a6a6`

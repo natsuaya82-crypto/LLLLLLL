@@ -92,7 +92,7 @@ const ROADS = {
      `slMine()` for everything that sends, which does not -- so it can be
      drawn and can never be merged, sent, or preferred to an answer that has
      just arrived. */
-  'core.js:slGotKey(k)': { phone: 'what the server last said this slice was, kept so a launch with no signal draws the language instead of nothing. It belongs to the account the slice does -- filed under `lingua.<id>.<slice>`, so wipeLangsGo() takes it with the language and lsWipeAcct(), which counts the namespace, takes it with the account. It has no road UP and must not be given one: `slMine()` in www/core.js is what keeps it out of netSlice1(), netSaveUpGo() and both of the 「fills in and stops」 reads' },
+  'core.js:slGotKey(k)': { phone: 'what the server last said this slice was, kept so a launch with no signal draws the language instead of nothing. It belongs to the account the slice does -- filed under `lingua.<id>.<slice>`, so wipeLangsGo() takes it with the language and lsWipeAcct(), which counts the `lingua.<id>.` namespace rather than walking SLICES, takes it with the account (acct-check 66; until 2026-09-11 it walked SLICES and left the `name`/`wsys`/`owner` pictures behind, because those are columns of the `language` row and were born after that loop). It has no road UP and must not be given one: `slMine()` in www/core.js is what keeps it out of netSlice1(), netSaveUpGo() and both of the 「fills in and stops」 reads' },
   /* AND ONE WRITE THAT ADDS NO KEY EITHER, for the opposite reason: it is a
      key this phone already has, written down again under the language's own
      number. langsCarry() in www/core.js is the 2026-09-10 migration -- a
