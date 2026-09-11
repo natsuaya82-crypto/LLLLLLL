@@ -538,7 +538,14 @@ const W = await pg.evaluate(async () => {
      so this one is too. */
   SET.walked = true;
   ME.name = 'Aya'; ME.handle = 'aya'; saveMe();
-  POSTS = []; SNS_GOT = {}; snsTab = 'fo';
+  /* 「NOBODY HAS ASKED YET」 IS THE WHOLE TABLE AND NOT ONE FLAG. It was
+     `SNS_GOT = {}` alone, and that stopped being the whole of it on
+     2026-09-11, when the table gained 「訊けなかった」 (www/sns.js § pullSay):
+     every request this page has made has fallen -- there is no server behind
+     `file://` -- so the feed was quite correctly saying ［接続できません］ and
+     this claim read it as 「said empty」. pullForget() is the app's own one
+     place for 「this phone has been told nothing」 and it is what is meant. */
+  POSTS = []; SNS_GOT = {}; snsTab = 'fo'; pullForget();
   window.route = 'feed'; NAV = [{ r:'feed' }]; render();
   out.markTurns = !!document.querySelector('#app .snswait .pullrule');
   out.saidNoneWaiting = document.querySelector('#app .empty .eb') !== null;
@@ -546,6 +553,20 @@ const W = await pg.evaluate(async () => {
   SNS_GOT['fo'] = 1; render();
   out.saysNoneAfter = document.querySelector('#app .empty .eb') !== null;
   out.markGone = !document.querySelector('#app .snswait');
+  /* ---- AND THE THIRD FACE: 訊けなかった ---------------------------------
+     「全部サーバーでやってる。電波なしならクルクル回るやろ」 OWNER 2026-09-11.
+     An answer of 0 from ten minutes ago is not a statement about a server this
+     phone cannot reach now, so 「まだ何もない」 may not stand after a fall.
+     It is the sentence netPop() already puts up, drawn in the body. */
+  PULL_OFF['feed'] = 1; render();
+  out.offSaysOffline = ((document.querySelector('#app .empty .eb') || {}).textContent
+                          === t('net.offline'));
+  out.offMarkGone = !document.querySelector('#app .snswait');
+  /* And an answer coming back is the end of it, without anybody clearing a
+     second flag by hand. */
+  PULL_OFF['feed'] = 0; render();
+  out.backToNone = ((document.querySelector('#app .empty .eb') || {}).textContent
+                      === t('sns.none.fo'));
   /* ---- AND THE DAY'S SENTENCE, WHICH IS THREE FACES AND ONE ROAD ---------
      「お題も1秒遅れ表示」 OWNER 2026-09-05.
 
@@ -612,6 +633,13 @@ say(W.popOnFall && W.asks > W.asksBeforeAgain && W.gotDay,
     'and 再接続 is what asks again (' + (W.popOnFall ? 'pop' : 'NO POP') + ', ' +
     W.asksBeforeAgain + ' then ' + W.asks + ' asks, ' +
     (W.gotDay ? 'got it' : 'NEVER GOT IT') + ')');
+say(W.offSaysOffline && W.offMarkGone,
+    'そして訊けなかったときは「まだ何もない」ではなく［接続できません］── ' +
+    'サーバーについて言えないことは言わない（' +
+    (W.offSaysOffline ? '接続できません' : 'SAID SOMETHING ELSE') + '、' +
+    (W.offMarkGone ? 'mark gone' : 'AND THE MARK KEPT TURNING') + '）');
+say(W.backToNone,
+    'そして答えが戻れば元の一文に戻る ── 旗を手で下ろす人は要らない');
 say(W.plainAfterNone,
     'and a day the writer missed is the plain row again, not the mark left ' +
     'turning: an answer with no sentence in it is still an answer');
@@ -655,17 +683,27 @@ const V = await pg.evaluate(() => {
   out.findMarkGone = !markOn();
 
   /* THE WORDS THIS ACCOUNT HAS TYPED, under an empty field. */
-  snsQ = ''; snsHits = null; SET.recent = []; PULL_GOT.recent = 0; render();
+  /* pullDrop() rather than `PULL_GOT.x = 0`: 「forget what was answered」 is
+     one act and the table answers it in one place -- since 2026-09-11 that
+     record has three values, not two, and a route whose last ask FELL is not
+     a route nobody has asked (www/sns.js § pullSay). Every request on this
+     page has fallen. */
+  snsQ = ''; snsHits = null; SET.recent = []; pullDrop('recent'); render();
   out.recentTurns = markOn();
   PULL_GOT.recent = 1; render();
   out.recentMarkGone = !markOn();
+  /* And the third face, on this screen too. */
+  pullDrop('recent'); PULL_OFF.recent = 1; render();
+  out.recentOffline = !!document.querySelector('#app .empty .eb');
 
   /* THE WORDS IT HAS KEPT, on the screen that lists them. */
   window.route = 'filter'; NAV = [{ r:'filter' }];
-  SET.saved = []; PULL_GOT.saved = 0; render();
+  SET.saved = []; pullDrop('saved'); render();
   out.savedTurns = markOn();
   PULL_GOT.saved = 1; render();
   out.savedMarkGone = !markOn();
+  pullDrop('saved'); PULL_OFF.saved = 1; render();
+  out.savedOffline = !!document.querySelector('#app .empty .eb');
   return out;
 });
 say(V.findTurns && !V.findSaidNone,
@@ -681,6 +719,9 @@ say(V.recentTurns && V.recentMarkGone,
 say(V.savedTurns && V.savedMarkGone,
     'and so do the words it has kept (' + (V.savedTurns ? 'mark' : 'NO MARK') +
     ', ' + (V.savedMarkGone ? 'then gone' : 'AND KEPT TURNING') + ')');
+say(V.recentOffline && V.savedOffline,
+    'そしてその二つも、訊けなかったときは黙らず［接続できません］と言う ── ' +
+    '一箇所（snsEmpty）に乗っているので、面が三つに増えても書き足す所は無い');
 
 /* ---- a word somebody deleted stays deleted -------------------------------
    docs/RISK.md item 4. This file already holds the other direction -- that

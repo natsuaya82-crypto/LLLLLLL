@@ -344,7 +344,7 @@ function vFilter(){
          「has not been told yet」, and the second is the one a new phone is in
          every time. netSignedIn() is the ask's own condition: no question, no
          mark. */
-      : (netSignedIn() && !pullHad('saved'))? snsWaitHTML() : '')+
+      : (netSignedIn() && !pullHad('saved'))? snsEmpty('saved', '') : '')+
     '</div></div>';
 }
 /* Chosen, and then you are back on the thing it is about. The same shape as
@@ -553,7 +553,22 @@ var PULL_R=0.5, PULL_GO=64, PULL_MAX=96;
    lists behind the counts are asked for ONCE a session (`mine`), so somebody
    who followed you while the app was open was in neither the number nor the
    list until it was killed and opened again. */
-var PULL_ON={}, PULL_HAS={}, PULL_OUT={}, PULL_GOT={};
+/* FOUR COLUMNS AND NOT FOUR MECHANISMS: one route is one row across all of
+   them. `PULL_ON` is what it asks, `PULL_HAS` is where its answer lives,
+   `PULL_OUT` is 「a question is in the air」, `PULL_GOT` is 「the server has
+   answered」 -- and `PULL_OFF` is the fifth and is a DIFFERENT FACT from the
+   fourth: 「the last question could not be put」.
+
+   It is a column of its own because the two cannot be one value. A screen
+   holding an answer from ten minutes ago, whose pull has just fallen, is both
+   「answered」 and 「out of touch」 -- and each half is read by somebody. The
+   answer is what keeps the drafts and the notices on the screen with no signal
+   (「前に読み込んだ分は出て欲しい」 OWNER 2026-09-04); the fall is what stops
+   the app saying 「まだ何もない」 about a server it never reached.
+
+   Both are read through ONE question by everything that draws: pullSay()
+   below. Nothing outside this file keeps a record of either. */
+var PULL_ON={}, PULL_HAS={}, PULL_OUT={}, PULL_GOT={}, PULL_OFF={};
 function pullOn(r, ask, hav){ PULL_ON[r]=ask; if(hav) PULL_HAS[r]=hav; }
 /* ---- AND ONE ROAD THROUGH ALL OF THEM ------------------------------------
    「エラーになったらエラー用のポップ出して再更新とかおさせればいいやんそれ
@@ -608,6 +623,53 @@ function pullHad(r){
   var h=PULL_HAS[r];
   return h? !!h() : !!PULL_GOT[r];
 }
+/* ---- AND THE WHOLE OF WHAT CAN BE SAID ABOUT ONE ROUTE --------------------
+   「全部サーバーでやってる。電波なしならクルクル回るやろ」 OWNER 2026-09-11.
+
+   pullHad() above answers ONE of the three things a body needs to know, and
+   for a year that was read as though it answered all three: had an answer, or
+   had not. So 「電波が無い」 came out as 「まだ訊いていない」 -- a mark turning
+   with nothing in the air -- and, where an answer had come in before the
+   signal went, as 「まだ何もない」, which is a statement about a server this
+   phone had not reached. Measured on 2026-09-11: a pull with no signal put
+   ［接続できません］ up and left 「まだ何もない」 standing underneath it.
+   CLAUDE.md § Data: 「Empty and broken are different states and must not share
+   a branch.」
+
+   THREE, AND THIS IS THE ONE PLACE THEY ARE DECIDED:
+
+      0   まだ何も言えない -- 訊いている最中か、まだ訊いていない
+      1   サーバーが答えた
+     -1   訊けなかった
+
+   THE ORDER IS THE POINT. A question in the air outranks everything: something
+   IS happening, so the mark is the truth. Then the fall, because it is the
+   NEWEST thing that happened on this road -- an answer from before the signal
+   went does not make the server reachable now. The answer is last.
+
+   What it does NOT do is hide a list. Everything that draws asks 「have I rows
+   to show」 first and comes here only with none, so a timeline somebody loaded
+   an hour ago is still on the screen with the radio off. 規則 22. */
+function pullSay(r){
+  if(PULL_OUT[r]) return 0;
+  if(PULL_OFF[r]) return -1;
+  return pullHad(r)? 1 : 0;
+}
+/* AND THE SENTENCE THAT COMES OUT OF IT, SAID ONCE. Four screens are drawn
+   this way -- the timeline, the notices, the kept searches and the recent ones
+   -- and a three-way written out on each of them is four places for the fourth
+   screen's to be missing, which is how this file's own comment describes every
+   rule it holds. `none` is what THIS screen says when the server answered and
+   there is nothing: 「まだ何もない」 on some, nothing at all on others.
+
+   ［接続できません］ is t('net.offline') -- the sentence netPop() already puts
+   up over this same screen. There is no second wording and no new part: the
+   box is emptyBox(), the mark is snsWaitHTML(). */
+function snsEmpty(r, none){
+  var s=pullSay(r);
+  if(!s) return snsWaitHTML();
+  return s>0? (none||'') : emptyBox(t('net.offline'));
+}
 /* AND EVERY ANSWER IS FORGOTTEN WHEN THE SESSION IS. netOut() (www/net.js)
    is the one place a session ends, and what these answers are is 「what the
    server told THIS account」 -- the drafts, the follows, the kept words. Left
@@ -617,7 +679,7 @@ function pullHad(r){
    `drafts` kept this for itself, keyed on the uid (DRAFTS_FOR), and was the
    only one of the eight that did. */
 function pullForget(){
-  PULL_GOT={};
+  PULL_GOT={}; PULL_OFF={};
   /* AND THE ASKS THAT ARE STILL IN THE AIR ARE THE LAST SESSION'S TOO.
      PULL_OUT refuses a second ask while one is out, and a request made as
      somebody who has just signed out is never coming back -- so the mark
@@ -640,7 +702,7 @@ function pullForget(){
    what was answered without clearing that it was answered would leave the
    screen on the mark for ever -- pullNeed() is refused by PULL_GOT, and
    nothing else would ever set it back. www/shell.js § langWipe. */
-function pullDrop(r){ PULL_GOT[r]=0; }
+function pullDrop(r){ PULL_GOT[r]=0; PULL_OFF[r]=0; }
 /* ---- AND SOMEBODY WAITING FOR ONE OF THESE ANSWERS TO COME IN ------------
    「プロフィールは、出す物を全部読み込んでから開く」 OWNER 2026-09-07.
 
@@ -689,7 +751,10 @@ function pullRun(r, person){
        render takes it out by itself; the road where nothing came back does
        not render, and that is the one this line is for. */
     pullSpinOff();
-    if(got) PULL_GOT[r]=1;
+    /* An answer is the road working, so it is also the end of 「訊けなかった」.
+       Only where one actually came back: an ask that had nothing to send went
+       nowhere near the server and says nothing about it. */
+    if(got){ PULL_GOT[r]=1; PULL_OFF[r]=0; }
     /* And whoever is waiting for this one, BEFORE the render: an answer that
        came back empty is still an answer, so both roads out of here wake
        them. */
@@ -700,6 +765,10 @@ function pullRun(r, person){
     var ws, i;
     PULL_OUT[r]=0;
     pullSpinOff();
+    /* 訊けなかった、と書き残す一箇所。ポップは消せるし、消えたあとも
+       「サーバーに届いていない」は本当のままなので、本文がそれを言えなければ
+       画面は「まだ何もない」に戻ってしまう。 */
+    PULL_OFF[r]=1;
     ws=pullWoke(r);
     for(i=0;i<ws.length;i++) ws[i]();
     /* 通信が落ちたら何も進まない ── netPop() (www/net.js)。［再接続］が
@@ -1337,10 +1406,10 @@ function vFeed(){
          started; nothing HERE, with posts on the other tab, is a person who
          has not followed anybody yet, and telling them "nothing has been
          written" would be the app being wrong about its own contents. */
-      : SNS_GOT[snsTab]
-      ? (snsTab==='fo'? snsNoneFo() : snsNone())
-      /* Nothing has come back yet, so nothing is said about what is there. */
-      : snsWaitHTML())+
+      /* Nothing to show, and WHY is three different facts -- snsEmpty()
+         above is the one place they are told apart. Nothing is said about
+         what is on the server until the server has said it. */
+      : snsEmpty('feed', snsTab==='fo'? snsNoneFo() : snsNone()))+
     '</div>'+
     snsFab()+
     '</div>';
@@ -2522,7 +2591,7 @@ function snsRecentHTML(){
      there is a copy underneath it. netSignedIn() because the ask does not go
      without somebody to ask for -- a mark turning on a question nobody is
      asking is a lie. */
-  if(netSignedIn() && !pullHad('recent')) return snsWaitHTML();
+  if(netSignedIn() && !pullHad('recent')) return snsEmpty('recent', '');
   if(!a.length) return '';
   return '<div class="sec">'+esc(t('sns.recent'))+'</div>'+
     a.map(function(q){
@@ -3002,7 +3071,6 @@ function vNotif(){
        何も描かないのと、何も無いのは別の状態で、どちらも同じ空白に見える。
        「一瞬消えたりが嫌だからローディングで誤魔化してほしい」OWNER
        2026-09-02。タイムラインが待つときと同じ印です。 */
-    (ns.length? ns.map(notRow).join('')
-              : (got? snsNone() : snsWaitHTML()))+
+    (ns.length? ns.map(notRow).join('') : snsEmpty('notif', snsNone()))+
     '</div></div>';
 }
