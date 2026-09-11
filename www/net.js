@@ -1442,15 +1442,22 @@ function netLangRow(id, ok, bad){
       }, bad);
     return;
   }
-  /* WHAT THIS PHONE MADE, AND NEVER THE COPY IT WAS SENT. `langNameOf()`
-     starts from the server's own answer -- LNAME in memory, then the picture
-     of it on the disk -- and a row built out of that is the read-only copy
-     travelling back up, which CLAUDE.md rule 22 says is the one road that
-     does not exist. The open language answers with `langName`, the value in
-     front of the person; any other answers with what this phone WROTE and
-     has never sent: the `lang` slice, and the name an older version left in
-     the index (langNameOld(), www/core.js). Neither is a `.got`. */
-  nm=(key===langId)? String(langName||'') : langNameOld(key);
+  /* THE NAME THIS PHONE WOULD SHOW FOR IT, and that is not the copy
+     travelling back up. The open language answers with `langName`, the value
+     in front of the person. Any other answers with langNameOf(), which starts
+     from LNAME -- and a language with an LNAME has a ROW, because
+     langNameGot() is written at exactly two moments and both of them are a
+     row (the walk bringing one down, and this function's own ok). This line
+     is only ever reached when there is no row, so what it can find there is
+     what this phone WROTE: the `lang` slice, or the name an older version
+     left in the index.
+
+     Measured 2026-09-11: narrowing it to langNameOld() -- the phone's own
+     data alone -- put an EMPTY name on the row of a language the app had
+     only ever been told the name of, and `again-check` lost 「Toko」. A row
+     that does exist is a 409 (below), which goes back to the top and reads
+     the server's own answer, so nothing here can overwrite a name either. */
+  nm=(key===langId)? String(langName||'') : langNameOf(key);
   /* AND ITS PAGE IS OPEN FROM THE MOMENT IT EXISTS, which is the default the
      owner chose. 「非公開の印」 was a flag whose ABSENCE meant public
      (www/home.js, until 2026-09-08), and every language made so far has been

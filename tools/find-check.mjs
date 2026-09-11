@@ -963,14 +963,28 @@ const dayBox = await pg.evaluate(() => {
     return f ? f.value : '(箱が無い)';
   }
   function row(){
-    var e = document.createElement('div'), a;
-    /* 履歴の一覧そのもの。空欄の下は星と履歴の二つを同じ関数で描くので
-       （`www/sns.js` § snsSearchesHTML）、ここは履歴の側を名指します。 */
-    e.innerHTML = snsSearchesHTML('sns.recent', snsRecent(), true, 'snsDropRecent');
+    var e = document.createElement('div'), a, wasQ = snsQ;
+    /* 空欄の下に出るものは `snsHitsHTML()` 一つが描きます（`www/sns.js`
+       § snsHitsHTML）。ここはその呼び出しを**書き写して**いて、それが
+       2026-09-11 の赤でした ── r26-small (dbf19f32) が作った
+       `snsSearchesHTML(name, a, had, drop)` の三つ目を r27-off が真偽値
+       `had` から route `r` に変え（`www/sns.js` § snsSearchesHTML、
+       「boolean cannot say which of the two 「no」s it is」）、二つが
+       出会った merge 9b7190b1 で www 側だけが route になり、写しは `true`
+       のまま残った。`pullHad(true)` は false なので、履歴は一行も描かれ
+       ないまま「(行が無い)」を返し、**画面は正しいのに check が赤**。
+
+       だから写しを持ちません。一つの場所を通れば、次に引数が変わっても
+       ここは黙って古くなりようがない。星は空なので `.whrow` は履歴の行
+       だけです。箱の字は別に訊くので、綴りは戻して出ます。 */
+    snsQ = '';
+    e.innerHTML = snsHitsHTML();
+    snsQ = wasQ;
     a = e.querySelectorAll('.whrow .sl');
     return a.length ? a[0].textContent : '(行が無い)';
   }
-  PULL_GOT.recent = 1;
+  PULL_GOT.recent = 1; PULL_GOT.saved = 1;
+  SET.saved = [];
   SET.recent = []; snsQ = ''; snsHits = null; snsFil = null;
   SET.ui = 'en';
   /* 押す。snsTagGo() が箱に入れ、履歴に入れ、explore へ行きます ── 一本。

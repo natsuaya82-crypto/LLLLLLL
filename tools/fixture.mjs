@@ -1609,6 +1609,28 @@ export function halfDone(){
        A post was a LINE or nothing until 「文字無しでもポストできるように
        できない？」, so every walk before this had a line on every post and
        the empty case had never been drawn. */
+    /* THE TIMELINE WITH NO SIGNAL, which is not the timeline with nothing on
+       it. Until 2026-09-11 the two were one screen: an ask that fell left the
+       table saying 「まだ訊いていない」, so the body either turned the mark
+       for ever or repeated 「まだ何もない」 about a server it had not reached.
+       `PULL_OFF` is 「訊けなかった」 (www/sns.js § pullSay) and this is the
+       face it draws. */
+    ['a timeline with no signal', () => {
+        const keepP = POSTS, keepG = SNS_GOT;
+        POSTS = []; SNS_GOT = {}; PULL_OFF.feed = 1;
+        window.route='feed'; NAV=[{r:'feed'}];
+        const h = vFeed();
+        POSTS = keepP; SNS_GOT = keepG; PULL_OFF.feed = 0; return h; }],
+    /* And the same screen with nothing answered and nothing fallen: the mark,
+       turning, which is what an app that IS asking looks like. The two are
+       next to each other on purpose -- the fault they were written after is
+       that they used to be one picture. */
+    ['a timeline that has not been answered yet', () => {
+        const keepP = POSTS, keepG = SNS_GOT;
+        POSTS = []; SNS_GOT = {}; PULL_OFF.feed = 0; PULL_GOT.feed = 0;
+        window.route='feed'; NAV=[{r:'feed'}];
+        const h = vFeed();
+        POSTS = keepP; SNS_GOT = keepG; return h; }],
     ['a post that is only a photograph', () => {
         POSTS.push({id:'pz', at:Date.now(), lang:langId, lname:'Shango', ln:'',
                     who:'Aya', hd:'aya', mine:true, mn:'', ui:'en',

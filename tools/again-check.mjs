@@ -86,6 +86,13 @@ const SERVER = `
       setTimeout(function(){ bad(null, 0, 'down'); }, 0); return;
     }
     function answer(v){ setTimeout(function(){ ok(v); }, 0); }
+    /* AND WHAT THIS ACCOUNT PAYS. The door asks \`verify-plan\` now
+       (www/net.js § netTook, 2026-09-11), and until it answers this app has
+       no plan at all -- ltStart() does not write the free alphabet, and every
+       ceiling says 「接続できません」 (www/core.js § PLAN). A real server
+       answers \`free\` for somebody who has bought nothing, which is every
+       account in this file. */
+    if (p.indexOf('/functions/v1/verify-plan') >= 0) return answer({ plan:'free' });
     function arg(k){
       var m = new RegExp('[?&]' + k + '=eq\\\\.([^&]*)').exec(p);
       return m ? decodeURIComponent(m[1]) : '';
@@ -543,7 +550,14 @@ const W = await pg.evaluate(async () => {
      so this one is too. */
   SET.walked = true;
   ME.name = 'Aya'; ME.handle = 'aya'; saveMe();
-  POSTS = []; SNS_GOT = {}; snsTab = 'fo';
+  /* 「NOBODY HAS ASKED YET」 IS THE WHOLE TABLE AND NOT ONE FLAG. It was
+     `SNS_GOT = {}` alone, and that stopped being the whole of it on
+     2026-09-11, when the table gained 「訊けなかった」 (www/sns.js § pullSay):
+     every request this page has made has fallen -- there is no server behind
+     `file://` -- so the feed was quite correctly saying ［接続できません］ and
+     this claim read it as 「said empty」. pullForget() is the app's own one
+     place for 「this phone has been told nothing」 and it is what is meant. */
+  POSTS = []; SNS_GOT = {}; snsTab = 'fo'; pullForget();
   window.route = 'feed'; NAV = [{ r:'feed' }]; render();
   out.markTurns = !!document.querySelector('#app .snswait .pullrule');
   out.saidNoneWaiting = document.querySelector('#app .empty .eb') !== null;
@@ -551,6 +565,20 @@ const W = await pg.evaluate(async () => {
   SNS_GOT['fo'] = 1; render();
   out.saysNoneAfter = document.querySelector('#app .empty .eb') !== null;
   out.markGone = !document.querySelector('#app .snswait');
+  /* ---- AND THE THIRD FACE: 訊けなかった ---------------------------------
+     「全部サーバーでやってる。電波なしならクルクル回るやろ」 OWNER 2026-09-11.
+     An answer of 0 from ten minutes ago is not a statement about a server this
+     phone cannot reach now, so 「まだ何もない」 may not stand after a fall.
+     It is the sentence netPop() already puts up, drawn in the body. */
+  PULL_OFF['feed'] = 1; render();
+  out.offSaysOffline = ((document.querySelector('#app .empty .eb') || {}).textContent
+                          === t('net.offline'));
+  out.offMarkGone = !document.querySelector('#app .snswait');
+  /* And an answer coming back is the end of it, without anybody clearing a
+     second flag by hand. */
+  PULL_OFF['feed'] = 0; render();
+  out.backToNone = ((document.querySelector('#app .empty .eb') || {}).textContent
+                      === t('sns.none.fo'));
   /* ---- AND THE DAY'S SENTENCE, WHICH IS THREE FACES AND ONE ROAD ---------
      「お題も1秒遅れ表示」 OWNER 2026-09-05.
 
@@ -617,6 +645,13 @@ say(W.popOnFall && W.asks > W.asksBeforeAgain && W.gotDay,
     'and 再接続 is what asks again (' + (W.popOnFall ? 'pop' : 'NO POP') + ', ' +
     W.asksBeforeAgain + ' then ' + W.asks + ' asks, ' +
     (W.gotDay ? 'got it' : 'NEVER GOT IT') + ')');
+say(W.offSaysOffline && W.offMarkGone,
+    'そして訊けなかったときは「まだ何もない」ではなく［接続できません］── ' +
+    'サーバーについて言えないことは言わない（' +
+    (W.offSaysOffline ? '接続できません' : 'SAID SOMETHING ELSE') + '、' +
+    (W.offMarkGone ? 'mark gone' : 'AND THE MARK KEPT TURNING') + '）');
+say(W.backToNone,
+    'そして答えが戻れば元の一文に戻る ── 旗を手で下ろす人は要らない');
 say(W.plainAfterNone,
     'and a day the writer missed is the plain row again, not the mark left ' +
     'turning: an answer with no sentence in it is still an answer');
@@ -660,17 +695,27 @@ const V = await pg.evaluate(() => {
   out.findMarkGone = !markOn();
 
   /* THE WORDS THIS ACCOUNT HAS TYPED, under an empty field. */
-  snsQ = ''; snsHits = null; SET.recent = []; PULL_GOT.recent = 0; render();
+  /* pullDrop() rather than `PULL_GOT.x = 0`: 「forget what was answered」 is
+     one act and the table answers it in one place -- since 2026-09-11 that
+     record has three values, not two, and a route whose last ask FELL is not
+     a route nobody has asked (www/sns.js § pullSay). Every request on this
+     page has fallen. */
+  snsQ = ''; snsHits = null; SET.recent = []; pullDrop('recent'); render();
   out.recentTurns = markOn();
   PULL_GOT.recent = 1; render();
   out.recentMarkGone = !markOn();
+  /* And the third face, on this screen too. */
+  pullDrop('recent'); PULL_OFF.recent = 1; render();
+  out.recentOffline = !!document.querySelector('#app .empty .eb');
 
   /* THE WORDS IT HAS KEPT, on the screen that lists them. */
   window.route = 'filter'; NAV = [{ r:'filter' }];
-  SET.saved = []; PULL_GOT.saved = 0; render();
+  SET.saved = []; pullDrop('saved'); render();
   out.savedTurns = markOn();
   PULL_GOT.saved = 1; render();
   out.savedMarkGone = !markOn();
+  pullDrop('saved'); PULL_OFF.saved = 1; render();
+  out.savedOffline = !!document.querySelector('#app .empty .eb');
   return out;
 });
 say(V.findTurns && !V.findSaidNone,
@@ -686,6 +731,9 @@ say(V.recentTurns && V.recentMarkGone,
 say(V.savedTurns && V.savedMarkGone,
     'and so do the words it has kept (' + (V.savedTurns ? 'mark' : 'NO MARK') +
     ', ' + (V.savedMarkGone ? 'then gone' : 'AND KEPT TURNING') + ')');
+say(V.recentOffline && V.savedOffline,
+    'そしてその二つも、訊けなかったときは黙らず［接続できません］と言う ── ' +
+    '一箇所（snsEmpty）に乗っているので、面が三つに増えても書き足す所は無い');
 
 /* ---- a word somebody deleted stays deleted -------------------------------
    docs/RISK.md item 4. This file already holds the other direction -- that
@@ -1907,7 +1955,7 @@ const tookB = await pg.evaluate(async ({ srv, saved, lid }) => {
   return {
     was: was,
     /* 1. 切り替えの一覧に居て、中身がサーバーのバイトそのまま */
-    row: !!LANGS['far-1'], mine: LANGS['far-1'] && LANGS['far-1'].mine,
+    row: !!LANGS['far-1'], whose: langWhose('far-1'),
     name: langNameOf('far-1'), wsys: langWsysOf('far-1'),
     own: langOwnOf('far-1'), theirs: langMine('far-1') === false,
     letters: slMine(langKeyOf('far-1', 'letters')),
@@ -1932,11 +1980,13 @@ say(tookB.row === true && tookB.letters === '[{"id":"sh1"}]' &&
     '**取った言語は起動しなおすと中身ごと戻る** ── 一覧に ' +
     JSON.stringify(tookB.name) + '、letters は ' + JSON.stringify(tookB.letters) +
     '、kb は ' + JSON.stringify(tookB.kb) + '（サーバーのバイトそのまま）');
-say(tookB.mine === false && tookB.own === 'somebody-else' && tookB.theirs === true &&
+/* 誰の物かは `langWhose()` 一箇所です（2026-09-11）── 索引の `mine` では
+   なく、`language.owner`（書いた人）と `language_take`（取ったか）の二つ。 */
+say(tookB.whose === 'read' && tookB.own === 'somebody-else' && tookB.theirs === true &&
     tookB.wsys === 'abjad' && tookB.wrote.length === 0,
-    'そして他人のもののまま ── mine ' + tookB.mine + '、owner ' +
-    JSON.stringify(tookB.own) + '、書記体系は列から ' + JSON.stringify(tookB.wsys) +
-    '、書きに行った回数 ' + tookB.wrote.length);
+    'そして他人のもののまま ── langWhose ' + JSON.stringify(tookB.whose) +
+    '、owner ' + JSON.stringify(tookB.own) + '、書記体系は列から ' +
+    JSON.stringify(tookB.wsys) + '、書きに行った回数 ' + tookB.wrote.length);
 say(tookB.mineWords === tookA.mineWords && tookB.mineName === 'Vaska',
     '**自分の言語には一バイトも触っていない** ── words は ' +
     JSON.stringify(String(tookB.mineWords || '').slice(0, 40)) + '（前と同じ ' +
@@ -2243,6 +2293,128 @@ say(lt42B.dup.length === 0,
 say(lt42B.lost.length === 0,
     'そして描いた形はどれも残る ── サーバーが持っていた ' + lt42A.drawn.length +
     ' 行のうち、線を落としたもの ' + (lt42B.lost.join(' ') || 'なし'));
+
+/* ---- 電波なしで押した「追加」は、画面を進めない ------------------------
+   「全部サーバーでやってる。電波なしならクルクル回るやろ」 OWNER 2026-09-11,
+   and 「通信エラーなら進むわけねえだろ全部」 2026-09-05 about the same press.
+
+   測った形（2026-09-11、`tools/hunt.mjs` 道14）: 電波を切って単語を足すと
+   `WORDS=2`、語の頁が開き、ポップは「接続できません」── そして読み込み直すと
+   `WORDS=1`。断りは出ているのに画面が先へ進んでいました。CLAUDE.md 規則 11
+   は「保存しないのが仕様、保存して黙るのはだめ」で、これはその二つが同時に
+   起きている形です。
+
+   訊くのは三つ、そして**逆向きも**訊きます ── 届いたときは進むこと。進まない
+   だけの check は、ボタンを壊せば緑になります。 */
+const addOff = await pg.evaluate(async ({ s, srv }) => {
+  eval('(' + s + ')()');
+  SET.walked = true;
+  eval(srv);
+  SESS = { at:'t', rt:'r', uid:'me3', anon:false };
+  function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
+  const settle = () => wait(NET_UPMS + 600);
+  const out = {};
+  var id = langId;
+  LANGS[id].mine = true; langOwnGot(id, 'me3'); langStore();
+  await new Promise(function(f){ netLangSync(f); });
+
+  /* 紙を開いて一語打つ。画面から打つのと同じ道 ── openAdd() が紙を立て、
+     綴りは wEdit.sp に入る。 */
+  function paper(hw){
+    go('words'); openAdd('');
+    /* 綴りは文字の並び。その言語の a-z はもう在るので、名前で引いて置く ──
+       画面でキーを押したときと同じ形（www/letters.js § spWord）。 */
+    wEdit.sp = hw.split('').map(function(c){
+      var l = null, i;
+      for (i = 0; i < LETTERS.length; i++)
+        if (String(ltName(LETTERS[i]) || '') === c) l = LETTERS[i];
+      return l ? { l: l.id } : { u: c };
+    });
+    wEdit.mns = ['やま'];
+    render();
+  }
+  /* 起動のあとの普通の状態 ── 単語は LSL に在ります（保存が書く一箇所）。
+     fixture は大域へ直に置くので、ここで一度そこを通します。 */
+  save();
+  var before = WORDS.length;
+
+  /* 一. 電波なし。押しても、足りず、進まず、紙はそのまま。 */
+  var pops = 0, realPop = netPop;
+  netPop = function(d, st, m, ag){ pops++; return realPop(d, st, m, ag); };
+  var saves = [], realNow = netSaveNow;
+  netSaveNow = function(dn){ return realNow(function(up){ saves.push(up); dn(up); }); };
+  window.__SRV.down = true;
+  paper('tupira');
+  addOne();
+  await settle();
+  out.words = WORDS.length;
+  out.where = JSON.stringify(here());
+  out.pop = popOn();
+  out.pops = pops;
+  out.saves = saves.slice();
+  out.paperStill = !!(addW && wEdit && wEdit.sp && wEdit.sp.length === 6);
+  out.onServer = (function(){
+    var S = window.__SRV, i;
+    for (i = 0; i < S.slice.length; i++)
+      if (S.slice[i].language === id && S.slice[i].kind === 'words')
+        return S.slice[i].body.indexOf('tupira') >= 0;
+    return false;
+  })();
+  /* 端末にも残っていないこと ── 画面が進まないだけで記憶に残っていたら、
+     次の保存がそれを連れて上がります。 */
+  out.inStore = (slRd(langKeyOf(id, 'words')) || '').indexOf('tupira') >= 0;
+
+  /* 二. 電波が戻る。同じ紙、同じ押しかたで、今度は進む。 */
+  if (popOn()) popNo();
+  window.__SRV.down = false;
+  addOne();
+  await settle();
+  out.words2 = WORDS.length;
+  out.where2 = JSON.stringify(here());
+  out.onServer2 = (function(){
+    var S = window.__SRV, i;
+    for (i = 0; i < S.slice.length; i++)
+      if (S.slice[i].language === id && S.slice[i].kind === 'words')
+        return S.slice[i].body.indexOf('tupira') >= 0;
+    return false;
+  })();
+  /* 三. 関係のある語 ── 「追加」は紙を片付ける前に関係を書きます。片付ける
+     場所が後ろへ動いたので、両端が書かれることを訊いておきます
+     （www/wordsheet.js § addOne、wRelToggle は見出し語で引くので、引かれるのは
+     いま押し込んだ語であって紙ではありません）。 */
+  var other = WORDS[0].hw;
+  paper('mekova');
+  addW.syn = [other];
+  addOne();
+  await settle();
+  var made3 = findWord('mekova'), oth3 = findWord(other);
+  out.relBoth = !!(made3 && oth3 &&
+                   (made3.syn || []).indexOf(other) >= 0 &&
+                   (oth3.syn || []).indexOf('mekova') >= 0);
+  out.paperGone = !addW;
+
+  out.before = before;
+  return out;
+}, { s: seed.toString(), srv: SERVER });
+
+say(addOff.words === addOff.before && !addOff.inStore && !addOff.onServer,
+    '電波なしで押した「追加」は、単語を足さない ── ' + addOff.before + ' 語のまま ' +
+    addOff.words + ' 語（端末の欄 ' + (addOff.inStore ? 'に残った' : 'にも無い') +
+    '、サーバー ' + (addOff.onServer ? 'に行った' : 'にも無い') + '）');
+say(addOff.where.indexOf('"form"') >= 0 && addOff.pop && addOff.paperStill,
+    'そして画面は進まず、紙は打ったまま、［接続できません］が出ている ── ' +
+    addOff.where + '、ポップ ' + (addOff.pop ? 'あり' : 'なし') + '、紙 ' +
+    (addOff.paperStill ? 'あり' : 'NO PAPER'));
+say(addOff.relBoth && addOff.paperGone,
+    'そして「追加」が書く関係は両端のまま ── 紙を片付けるのを答えの後ろへ' +
+    '動かしても、引かれるのは押し込んだ語で紙ではない（両端 ' +
+    (addOff.relBoth ? 'あり' : 'ONE-ENDED') + '、届いたあとの紙 ' +
+    (addOff.paperGone ? '片付いた' : 'STILL THERE') + '）');
+say(addOff.words2 === addOff.before + 1 && addOff.onServer2 &&
+    addOff.where2.indexOf('word:tupira') >= 0,
+    'そして電波が戻れば、同じ押しかたで足りて語の頁へ進む ── ' + addOff.words2 +
+    ' 語、サーバー ' + (addOff.onServer2 ? 'にも在る' : 'に行っていない') + '、' +
+    addOff.where2);
 
 await br.close();
 if (bad.length){

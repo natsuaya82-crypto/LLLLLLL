@@ -239,9 +239,17 @@ the reasoning — a reason can be re-derived, a decision cannot.
   `claude/r29-mixed`）が出てから、消す物を名指しで DELETE REVIEW
 - Affected docs: CLAUDE.md（規則 22）、`docs/DATA_MODEL.md`、`docs/ARCHITECTURE.md`
   ── 一覧が出てから、消す行と一緒に
-- Implementation status: **OWNER DECISION**。直しはオーナーの「勝手に修正しないで」
-  で止めてある（`claude/r24-lang` `claude/r27-off` は測った結果のみ）。一覧 →
-  オーナーが消す物を見る → 書き直し、の順
+- Implementation status: **OWNER DECISION**。止めは同じ日の夜に解かれています ──
+  「全部直してゲートまで終わらせてビルド出してくれ」（OWNER 2026-09-11、リーダー
+  経由）。**「勝手に修正しないで」はこの一文に置き換わりました。**
+  `claude/r27-off` はそれを受けて、この決定が名指ししている電波なしの一文を含む
+  三件を直してあります（`docs/CHANGELOG.md` 2026-09-11 の三項）── 電波が無い
+  ときは「接続できません」であって「まだ何もない」ではない（`pullSay()`、
+  `www/sns.js`）、届かなかった保存は画面を進めない（`www/wordsheet.js`）、
+  アカウント削除で `.got` の写しも取る（`www/core.js`、DELETE REVIEW 済み）。
+  **端末の印で分岐する百か所の書き直しはまだです** ── そちらは「Affected data:
+  決めるまでなし」のままで、一覧（`docs/reports/mixed-2026-09-11.md`、
+  `claude/r29-mixed`）→ オーナーが消す物を見る → 書き直し、の順
 ### 文法の頁の単位は「形」ではなく「節」。行の名は学校文法の用語
 - Date: 2026-09-11
 - Area: 文法の章の頁（`www/grammar.js` § G2FM_CHAPS、`www/phases.js` § G2BOOK）
