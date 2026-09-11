@@ -254,6 +254,101 @@ const r = await pg.evaluate(({ s }) => {
       });
     });
   });
+
+  /* ---- 5a. A BOARD MADE FROM A PATTERN ARRIVES WEARING THE LETTERS ------
+     「型を選んだ時点で、無料の QWERTY と同じく文字を載せる」 OWNER 2026-09-11,
+     on docs/reports/hunt-2026-09-11.md #13 -- 「キーボードを追加」で型を選ぶと
+     形は QWERTY なのにキーの字が全部「·」.
+
+     A pattern used to be blanked on the way in, so the board somebody made
+     was the arrangement with every letter taken off it. QWERTY and ABC順 are
+     names for WHICH LETTER GOES WHERE, so a blank one is not a shape waiting
+     to be filled -- it is the name saying nothing.
+
+     Asked of the board kbAdd() STORES, not of kbPatLay(). The builders were
+     laying the letters on the whole time; what was wrong was what happened to
+     their answer between there and the disk, and a claim made about the
+     builder is green with that bug in. Watched going red with kbBlank() put
+     back, all five.
+
+     The chart is the one that arrives empty here and that is the CHART's
+     answer, not something stripping it: its keys are the letters that write
+     each 子音 x 母音, and this language is an alphabet, so there are none to
+     put on. It is held the same way as the other four -- what kbAdd() stored
+     is what kbPatLay() built, letter for letter -- rather than by a count,
+     which would have to be rewritten the day the fixture grows a syllabary.
+
+     SAID OUT LOUD SO SILENCE IS NOT READ AS A CHECK: the chart's own claim is
+     VACUOUS on this fixture. Nothing fills it and nothing strips it, so it was
+     green with kbBlank() in place while the other four went red. What it holds
+     is the shape -- the day this language can write a 子音 x 母音 it bites,
+     and until then the four beside it are what is being watched. */
+  function ltsOf(lay){
+    var out = [];
+    lay.forEach(function (face){ face.rows.forEach(function (rw){ rw.forEach(function (k){
+      if (k.k === 'lt') out.push(k.v + '<' + (k.f || []).join(',') + '>');
+    }); }); });
+    return out;
+  }
+  function madeFrom(pat){
+    KB = null; kbShow = 0; kbAdd(pat);
+    return KB.kbs[0].lay;
+  }
+  out.patLts = [];
+  KB_PATS.forEach(function (p){
+    var built = ltsOf(kbPatLay(p)), made = ltsOf(madeFrom(p)), full = 0, slots = 0, i, j;
+    for (i = 0; i < made.length; i++){
+      if (made[i].charAt(0) !== '<') full += 1;
+      j = made[i].indexOf('<');
+      made[i].slice(j + 1, -1).split(',').forEach(function (f){ if (f) slots += 1; });
+    }
+    out.patLts.push({ pat: p, keys: made.length, full: full, slots: slots,
+                      kept: made.join(' ') === built.join(' ') });
+  });
+  /* and the three the owner named, by NAME rather than by a count: q is on the
+     q key, ABC順 starts where the alphabet starts, and a flick key flicks. */
+  var qLay = madeFrom('qwerty');
+  out.qwertyQ = (function (){
+    var want = kbNamed('q'), i, j, k;
+    for (i = 0; i < qLay[0].rows.length; i++)
+      for (j = 0; j < qLay[0].rows[i].length; j++){
+        k = qLay[0].rows[i][j];
+        if (k.k === 'lt' && k.v === want && want) return true;
+      }
+    return false;
+  })();
+  out.qwertyQIs = kbNamed('q');
+  /* THE SAME QWERTY THEY WERE TYPING ON, key for key -- which is the decision
+     itself and not a paraphrase of it. */
+  out.qwertySame = ltsOf(qLay).join(' ') === ltsOf(kbFixed().lay).join(' ');
+  out.abcFirst = (function (){
+    var lay = madeFrom('abc'), ls = ltOrder(ltOfKind('alpha')), i, j;
+    for (i = 0; i < lay[0].rows.length; i++)
+      for (j = 0; j < lay[0].rows[i].length; j++)
+        if (lay[0].rows[i][j].k === 'lt')
+          return !!ls.length && lay[0].rows[i][j].v === ls[0].id;
+    return false;
+  })();
+  /* ---- and a board already stored is not touched -----------------------
+     Somebody put an empty board there on purpose while they were empty, and
+     filling it in behind them is docs/DATA_SAFETY.md. Only the moment one is
+     MADE puts letters on. */
+  KB = null; kbShow = 0; kbAdd('qwerty');
+  (function (){
+    var lay = KB.kbs[0].lay, i, j;
+    for (i = 0; i < lay[0].rows.length; i++)
+      for (j = 0; j < lay[0].rows[i].length; j++)
+        if (lay[0].rows[i][j].k === 'lt'){ lay[0].rows[i][j].v = ''; lay[0].rows[i][j].t = ''; }
+  })();
+  saveKb();
+  kbGo(1); render();
+  out.keptEmpty = ltsOf(kbBoards()[1].lay).every(function (x){ return x.charAt(0) === '<'; });
+  /* ---- and the OTHER road to choosing a type answers the same ----------
+     kbRepat()'s own comment: 「the only difference between choosing one here
+     and choosing one for a new keyboard is which name the press carries」. */
+  KB = null; kbShow = 0; kbAdd('qwerty');
+  kbShow = 1; kbSetPatGo('abc');
+  out.repatLts = ltsOf(KB.kbs[0].lay).join(' ') === ltsOf(kbPatLay('abc')).join(' ');
   /* ---- 5b. a pattern that does not fit is more FACES ------------------
      「パターンから作った盤に、段の上限が効いていない」 LEADER, 2026-08-27.
 
@@ -1028,10 +1123,13 @@ const r = await pg.evaluate(({ s }) => {
 
   /* and the key beside it joins the two */
   fresh();
-  /* TWO DIFFERENT LETTERS, put on by hand. A pattern blanks every key it
-     makes, so both of these carry '' and "the left one's letter survived"
-     is true of a join that kept the right one's. Watched staying green with
-     that bug in before it was written this way. */
+  /* TWO DIFFERENT LETTERS, put on by hand, and NAMES this check chose. A
+     pattern lays the language's own letters on every key it makes, so the two
+     that happen to be there are whatever the alphabet put there -- and
+     "the left one's letter survived" has to be a claim about a letter this
+     check can name, not one it read off the board a moment earlier. Watched
+     staying green with a join that kept the right one's before it was written
+     this way. */
   kbLayer().rows[0][2].v = 'aa'; kbLayer().rows[0][3].v = 'bb';
   saveKb();
   var w2Was = kbU(kbLayer().rows[0][2].w) + kbU(kbLayer().rows[0][3].w);
@@ -1595,9 +1693,11 @@ const r = await pg.evaluate(({ s }) => {
      and that is the pair a ragged merge is refused on. */
   fresh();
   var vr = kbLayer().rows;
-  /* A LETTER on both, and two different ones. Patterns blank every key, so a
-     claim about which letter survives is vacuous on the board as it arrives --
-     which is how this check passed once with the wrong key kept. */
+  /* A LETTER on both, and two different ones this check names. A pattern lays
+     the language's letters on, so the pair that happens to be here is whatever
+     the alphabet put there -- and a claim about which letter survives has to
+     be about one named from here. This check passed once with the wrong key
+     kept, on a board where both of them said ''. */
   vr[0][3].v = 'aa'; vr[0][3].f = ['u', 'r', 'd', 'l'];
   vr[1][3].v = 'bb';
   /* recorded BEFORE the mark the step back is measured from, or the undo
@@ -3378,6 +3478,27 @@ say(r.phones.every((p) => p.pct <= 50),
 say(r.ceilCols === 20,
     'and ' + (r.ceilCols / 2) + ' keys across, which IS a number: the narrowest iPhone');
 say(r.patsFit, 'and every pattern the app builds is inside it as it is built');
+
+/* ---- a board made from a pattern arrives wearing the letters -------------
+   「型を選んだ時点で、無料の QWERTY と同じく文字を載せる」 OWNER 2026-09-11. */
+r.patLts.forEach((x) => {
+  say(x.kept,
+      'a board made from ' + x.pat + ' is what that pattern built, letter for letter: ' +
+      x.full + ' of its ' + x.keys + ' letter keys carry a letter and ' + x.slots +
+      ' flick slots are filled — nothing strips them between the pattern and the board');
+});
+say(r.qwertyQ,
+    'and the q key of a QWERTY board carries the letter named q (' + r.qwertyQIs + ')');
+say(r.qwertySame,
+    'and the whole board is the free QWERTY they were already typing on, key for key');
+say(r.abcFirst,
+    'and an ABC順 board starts on the first letter of the alphabet, which is what that name says');
+say(r.keptEmpty,
+    'while a board ALREADY STORED empty is still empty after a save and a render — ' +
+    'only the moment one is made puts letters on');
+say(r.repatLts,
+    'and ⋯ → 並びを変える answers the same as ＋ does: choosing a type is one act ' +
+    'however it was pressed');
 say(r.sizes5.every((x) => x.over === 0),
     'and at 26 / 60 / 105 / 150 / 300 letters too -- no face over the ceiling' +
     (r.sizes5.filter((x) => x.over).length

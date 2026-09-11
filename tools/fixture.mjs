@@ -2138,6 +2138,25 @@ export function halfDone(){
                                               kbAdd('flick'); kbLay = 0;
                                               const h = vKb(); KB = null; kbShow = 0;
                                               SET.plan = 'free'; return h; }],
+    /* A BOARD THE MOMENT IT IS MADE, wearing the letters.
+       「型を選んだ時点で、無料の QWERTY と同じく文字を載せる」 OWNER
+       2026-09-11. Both of the two the owner named, because QWERTY and ABC順
+       are names for WHICH LETTER GOES WHERE and the fault they were written
+       after is a letter missing -- which is a thing only a picture shows. The
+       flick above is the third and was already here.
+
+       Every other face of this chapter arrives at a board through an act that
+       then changes it -- a row selected, a key held, a column cut -- so none
+       of them is the board as it arrives, which is the one state this
+       decision is about. */
+    ['a QWERTY keyboard, just made', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
+                                             kbAdd('qwerty'); kbLay = 0;
+                                             const h = vKb(); KB = null; kbShow = 0;
+                                             SET.plan = 'free'; return h; }],
+    ['an ABC keyboard, just made', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
+                                           kbAdd('abc'); kbLay = 0;
+                                           const h = vKb(); KB = null; kbShow = 0;
+                                           SET.plan = 'free'; return h; }],
     /* THE SAVE IN THE CORNER, GOLD, on the keyboard being built. It is the
        one thing on this screen the change of 2026-09-05 moves and it is a
        COLOUR, so both states have to be photographed or the fault is in the
