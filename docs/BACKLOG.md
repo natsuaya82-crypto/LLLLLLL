@@ -7,6 +7,26 @@ refactor, a feature and a rename never arrive in the same diff.
 
 The order is the order to do them in.
 
+## 文字列の当たりで主張を訊いている所が、あと二つ（2026-09-11）
+
+`tools/post-check.mjs:1950` が `/b64/.test(rawD)` ── 「`lingua.drafts` の文字の
+どこかに b64 の三文字」── で下書きの声を訊いていて、下書きの id が小文字 16 進
+の v4 UUID なので、**アプリが正しいまま 1.18% の走りが赤**でした（測: 200 万本
+のうち 0.594% の id が `b64` を含む）。直してあります。**同じ形が二つ残ります。**
+
+1. `tools/post-check.mjs` § 6、`String(JSON.stringify(v)).indexOf('AAEC')`。
+   `AAEC` は base64 の四文字で、その投稿は今は写真を持たないので当たりません
+   ── **今日は安全で、写真の付いた投稿をこの節が見るようになった日に赤**に
+   なります。隣に `v.vo.b64 !== undefined` という本物の判定があるので、
+   直し方は「消す」か「`hasBytes()` を通す」かのどちらか。
+2. `tools/fixture.mjs:2877`、`PW.vo = {b64:'AA', mime:'audio/mp4', ms:7000}`。
+   `www/rec.js` § voTook は「no base64 is held anywhere after this function
+   returns」と書いていて、**この面はアプリがもう取れない状態を歩いています**
+   ── `wdMode` と同じ形（CLAUDE.md 規則 5）。直すと `press` と `act` の数が
+   動くので、数を動かす commit を単独で立てる話です。
+
+どちらも赤を出していないので、今日の枝では触っていません。
+
 ## 「接続できません」が二つの形で描かれています（2026-09-11、リーダーへ）
 
 同じ一文が、同じ画面の隣り合う二箇所で違う形になっています。

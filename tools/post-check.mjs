@@ -1894,6 +1894,29 @@ const R = await pg.evaluate(async () => {
      costs somebody something if it is wrong. */
   const realSend2 = netSend;
   let dsent = [];
+  /* THE BYTES, ASKED FOR AS BYTES.
+     The claim under § 14 is 「no recording is in the draft, anywhere」, and it
+     was asked as `/b64/.test(rawD)` -- the three letters ANYWHERE in the text
+     of the key. A draft's id is a v4 UUID (`uuid4()`, www/core.js), which is
+     lower-case hex, and `b64` is three characters a hex id can simply BE.
+     Measured over 2,000,000 ids: 11,878 carry it, 0.594%, and a run keeps two
+     drafts -- so 1.18% of runs went red on an app that was doing exactly the
+     right thing, with a message naming the one thing that was not wrong.
+     Watched on 2026-09-11 by fixing one id to `9e3ab64c-...`: the leader's
+     red came out of a tree with nothing wrong in it.
+
+     CLAUDE.md § rule 3 wrote this fault down already -- a check built on
+     something that is often true when the cause is present gives the right
+     answer for the wrong reason until the day it does not. So the bytes are
+     asked for as bytes: a `b64` KEY on the draft, at any depth. At any depth
+     rather than at `vo.b64`, because the rule is about the draft and not
+     about where the bug happened to be. */
+  const hasBytes = (x) => {
+    if (!x || typeof x !== 'object') return false;
+    if (Object.prototype.toString.call(x) === '[object Array]')
+      return x.some(hasBytes);
+    return Object.keys(x).some((k) => k === 'b64' || hasBytes(x[k]));
+  };
   netSend = function (method, path, body, tok, ok, bad) {
     if (String(path).indexOf('/rest/v1/draft') === 0) {
       dsent.push({ method, path, body });
@@ -1947,13 +1970,26 @@ const R = await pg.evaluate(async () => {
     dsent = [];
     draftKeep();
     const rawD = localStorage.getItem('lingua.drafts') || '';
-    if (/b64/.test(rawD))
+    let gotD = null;
+    try { gotD = JSON.parse(rawD); } catch (e) { gotD = null; }
+    if (rawD && gotD === null)
+      fails.push('lingua.drafts will not parse, so nothing under this is ' +
+                 'reading a draft at all');
+    if (hasBytes(gotD))
       fails.push('a draft carries the recording itself into localStorage ' +
-                 '(`b64` is in lingua.drafts). Thirty seconds of audio, in a ' +
-                 'key whose save swallows its own failure');
+                 '(a `b64` key on a draft in lingua.drafts). Thirty seconds ' +
+                 'of audio, in a key whose save swallows its own failure');
     if (rawD.indexOf('v-draft-1.m4a') < 0)
       fails.push('a draft does not carry the voice FILE at all, so the ' +
                  'recording is lost when the draft is opened again');
+    /* AND THE OTHER PLACE THE BYTES USED TO REACH: what went up. Beside the
+       draft it is about, and not below the block under this one -- it sat
+       there, and that block opens with `dsent = []`, so this had stopped
+       asking about the voice draft at all and was reading the requests of a
+       draft that has no voice on it. A claim measuring nothing is what
+       CLAUDE.md says a stale baseline line becomes: permission. */
+    if (dsent.some((r) => hasBytes(r.body)))
+      fails.push('the recording itself went up inside the draft body');
     /* AND IT CARRIES WHOM IT IS FOR. The addressee stopped being characters
        at the front of the line on 2026-09-08, so a draft that keeps only the
        line comes back as a post to nobody -- silently, with the composer
@@ -1983,8 +2019,6 @@ const R = await pg.evaluate(async () => {
         PW = pwBlank();
       }
     }
-    if (JSON.stringify(dsent).indexOf('b64') >= 0)
-      fails.push('the recording itself went up inside the draft body');
     /* AND THROWING THE DRAFT AWAY TAKES ITS RECORDING WITH IT.
        「声は投稿上で再生できるよね？下書き消した時にはいらなくない？」 OWNER
        2026-09-03. The file is written when the recording ends, so a draft
