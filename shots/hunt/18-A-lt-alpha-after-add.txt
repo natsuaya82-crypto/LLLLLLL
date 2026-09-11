@@ -1,0 +1,64 @@
+# 18 A lt-alpha-after-add
+route: {"r":"ltset","a":"alpha"}
+
+アルファベット
+すべて
+並べた順
+a
+/a/
+b
+/b/
+c
+/k/
+d
+/d/
+e
+/e/
+f
+/f/
+g
+/ɡ/
+h
+/h/
+i
+/i/
+j
+/j/
+k
+/k/
+l
+/l/
+m
+/m/
+n
+/n/
+ng
+/ŋ/
+o
+/o/
+p
+/p/
+q
+/k/
+r
+/r/
+s
+/s/
+t
+/t/
+u
+/u/
+v
+/v/
+w
+/w/
+x
+/k/
+y
+/j/
+z
+/z/
+--- 打ち込み欄 ---
+  [lt-q] = ""
+--- トースト ---
+保存しました

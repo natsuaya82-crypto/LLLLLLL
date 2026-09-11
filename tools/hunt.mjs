@@ -66,7 +66,8 @@ export function newServer(){
     react: [], follow: [], block: [], report: [], prompt: [],
     storage: {},         /* path -> bytes */
     log: [],             /* every request */
-    otp: {}              /* email -> code */
+    otp: {},             /* email -> code */
+    planIs: 'free'       /* verify-plan がこれを返す */
   };
 
   const now = () => new Date().toISOString();
@@ -336,7 +337,8 @@ export function newServer(){
       return { status: 200, text: JSON.stringify({ id: u.id }) };
     }
     if (p === '/auth/v1/logout') return { status: 204, text: '' };
-    if (p === '/functions/v1/verify-plan') return { status: 200, text: '{"plan":"free"}' };
+    if (p === '/functions/v1/verify-plan')
+      return { status: 200, text: JSON.stringify({ plan: db.planIs || 'free' }) };
 
     /* --- storage --- */
     if (p.indexOf('/storage/v1/object/') === 0){
@@ -381,7 +383,13 @@ export function newServer(){
           if (row.published_at === undefined) row.published_at = null;
           if (!row.owner) row.owner = uid;
         }
-        if (name === 'slice' && !row.at) row.at = now();
+        if (name === 'slice'){
+          if (!row.at) row.at = now();
+          let n = '?';
+          try { const v = JSON.parse(row.body); n = Array.isArray(v) ? v.length : 'obj'; } catch (e) {}
+          db.sliceLog = db.sliceLog || [];
+          db.sliceLog.push(String(row.language).slice(0, 8) + ' ' + row.kind + ' n=' + n);
+        }
         if (name === 'language_take' && !row.at) row.at = now();
         const hit = rows.find(x => key.every(k => String(x[k]) === String(row[k])));
         if (hit){
@@ -470,6 +478,7 @@ function wire(){
 
 let SHOT = 0;
 const NOTE = [];
+const KEEP = {};
 
 export class Dev {
   constructor(br, srv, name){ this.br = br; this.srv = srv; this.name = name; }
@@ -501,7 +510,10 @@ export class Dev {
     await this.pg.waitForSelector('#splash', { state: 'detached', timeout: 25000 }).catch(() => {});
     await this.quiet();
   }
-  async reload(){ await this.go(); }
+  async reload(){ await this.settle(); await this.go(); }
+  /* 保存は打ち終わって 1.2 秒後に出て行く（net.js NET_UPMS）。
+     それより早く読み込み直すと「保存されなかった」を自分で作ってしまう。 */
+  async settle(){ await this.pg.waitForTimeout(1800); await this.quiet(); }
   async quiet(ms){
     let idle = 0;
     for (let i = 0; i < 300; i++){
@@ -523,6 +535,15 @@ export class Dev {
                (e.value || '') + '"' + (e.placeholder ? '  (ph: ' + e.placeholder + ')' : ''));
       });
       if (f.length) t += '\n--- 打ち込み欄 ---\n' + f.join('\n');
+      const tz = document.getElementById('toast');
+      if (tz && tz.className.indexOf('on') >= 0 && tz.textContent)
+        t += '\n--- トースト ---\n' + tz.textContent;
+      const pz = document.getElementById('pop');
+      if (pz && pz.className.indexOf('on') >= 0 && pz.innerText.trim())
+        t += '\n--- ポップ ---\n' + pz.innerText.replace(/\n{2,}/g, '\n');
+      const sh = document.getElementById('sheet');
+      if (sh && sh.className.indexOf('on') >= 0 && sh.innerText.trim())
+        t += '\n--- シート ---\n' + sh.innerText.slice(0, 400);
       return t.length > 3200 ? t.slice(0, 3200) + '\n…(切った)' : t;
     });
   }
@@ -569,7 +590,13 @@ export class Dev {
   }
   async type(sel, s){
     const el = this.pg.locator(sel).first();
-    if (!(await el.count())){ console.log('    ! no field ' + sel); return false; }
+    if (!(await el.count())){
+      console.log('    ! no field ' + sel + '   (on screen: ' +
+        (await this.pg.evaluate(() => Array.prototype.map.call(
+          document.querySelectorAll('#app input,#app textarea'),
+          e => '#' + (e.id || e.className)).join(' '))) + ')');
+      return false;
+    }
     await el.click({ timeout: 3000 }).catch(() => {});
     await el.fill(String(s)).catch(e => console.log('    ! fill ' + e.message.split('\n')[0]));
     await el.dispatchEvent('input').catch(() => {});
@@ -578,6 +605,35 @@ export class Dev {
     const got = await el.inputValue().catch(() => '?');
     if (got !== String(s)) console.log('    ! typed "' + s + '" but field holds "' + got + '"');
     return true;
+  }
+  /* この画面にある押せるものを、名前と文字で。歩きながら道を決めるために。 */
+  async buttons(){
+    return this.pg.evaluate(() => {
+      const out = [];
+      document.querySelectorAll('#app [data-do]').forEach(e => {
+        out.push((e.getAttribute('data-do') || '') +
+                 (e.getAttribute('data-a') ? e.getAttribute('data-a') : '') +
+                 ' «' + String(e.innerText || e.getAttribute('aria-label') || '').replace(/\s+/g, ' ').slice(0, 18) + '»');
+      });
+      return out;
+    });
+  }
+  async goRoute(r, a){
+    await this.pg.evaluate(x => go(x[0], x[1]), [r, a === undefined ? '' : a]);
+    await this.quiet();
+  }
+  /* 出ているポップの文。無ければ空。 */
+  async pop(){
+    return this.pg.evaluate(() => {
+      const z = document.getElementById('pop');
+      /* class 'on' が付いている時だけが「出ている」。popOff() は innerHTML を
+         消さないので、中身だけ読むと閉じたポップを読んでしまう。 */
+      return (z && z.className.indexOf('on') >= 0)
+        ? z.innerText.replace(/\s+/g, ' ').trim() : '';
+    });
+  }
+  async popShut(){
+    if (await this.pop()){ await this.tapDo('popNo'); await this.quiet(); }
   }
   async run(fn, arg){ const r = await this.pg.evaluate(fn, arg); await this.quiet(); return r; }
   async offline(on){ await this.pg.evaluate(v => { window.__OFFLINE = v; }, !!on); }
@@ -595,13 +651,10 @@ function seedLS(kv){
 const WALKS = {};
 const say = (s) => console.log(s);
 
-/* ---- 1. 新規：オンボーディングを最初から最後まで ------------------------- */
-WALKS['1'] = async (br, srv) => {
-  say('--- 1. onboarding, from an empty phone ---');
-  const a = await new Dev(br, srv, 'A').open();
-  await a.shot('ob-open');
-
-  /* 字を一つ描く。指で引く。 */
+/* ---- 門をくぐる。道1はこれを写真つきで、ほかの道は黙って通る。 -------- */
+async function arrive(a, who, shots){
+  const pic = (n) => shots ? a.shot(n) : Promise.resolve();
+  await pic('ob-open');
   const box = await a.pg.locator('canvas').first().boundingBox();
   if (box){
     const cx = box.x + box.width / 2, cy = box.y + box.height / 2;
@@ -612,53 +665,89 @@ WALKS['1'] = async (br, srv) => {
     await a.pg.mouse.up();
     await a.quiet();
   }
-  await a.shot('ob-drew');
+  await pic('ob-drew');
   await a.tapDo('obDone');
-  await a.shot('ob-tour-1');
 
-  /* 案内を最後まで。次へを押せなくなるまで。 */
   /* OB_DRAW=0, OB_SNS=1, OB_NAME=2, OB_IN=3, OB_TOUR=4。止まりは 9 つ。 */
   let seen = -1;
   for (let i = 0; i < 60; i++){
     const st = await a.pg.evaluate(() => [ (typeof ob === 'object' && ob) ? ob.step : -1,
                                            typeof obTour === 'number' ? obTour : -1 ]);
     if (st[0] !== 4) break;
-    if (st[1] !== seen){ seen = st[1]; await a.shot('ob-tour-' + (seen + 1)); }
+    if (st[1] !== seen){ seen = st[1]; await pic('ob-tour-' + (seen + 1)); }
     if (!(await a.tapDo('obTourNext'))) await a.pg.waitForTimeout(600);
     await a.quiet();
   }
-  await a.shot('ob-after-tour');
+  await pic('ob-after-tour');
+  if (await a.tapDo('obSnsGo')) await pic('ob-after-sns');
 
-  /* SNS の段 */
-  if (await a.tapDo('obSnsGo')) await a.shot('ob-after-sns');
-
-  /* 名前を付ける */
-  await a.type('#ob-name', 'シャンゴ');
-  await a.shot('ob-name-typed');
+  await a.type('#ob-name', who.lang);
+  await pic('ob-name-typed');
   await a.tapDo('obName');
-  await a.shot('ob-after-name');
+  await pic('ob-after-name');
 
-  /* 門。メールでアカウントを作る。 */
   await a.tapArg('obMailGo', ['up']);
-  await a.shot('ob-signup');
-  await a.type('#ob-em', 'aya@example.com');
-  await a.shot('ob-signup-typed');
+  await pic('ob-signup');
+  await a.type('#ob-em', who.email);
+  await pic('ob-signup-typed');
   await a.tapDo('obMailUp');
-  await a.shot('ob-code');
+  await pic('ob-code');
   await a.type('#ob-code', '12345678');
   await a.tapDo('obMailCode');
-  await a.shot('ob-after-code');
-  /* パスワードを決める */
-  await a.type('#ob-pw', 'hunter22pw');
+  await pic('ob-after-code');
+  await a.type('#ob-pw', who.pw);
   await a.tapDo('obNewPwGo');
-  await a.shot('ob-after-pw');
-  /* handle と名前 */
-  await a.type('#ob-hd', 'aya');
-  await a.type('#ob-nm', 'アヤ');
-  await a.shot('ob-who-typed');
+  await pic('ob-after-pw');
+  await a.type('#ob-hd', who.handle);
+  await a.type('#ob-nm', who.name);
+  await pic('ob-who-typed');
   await a.tapDo('obWhoGo');
-  await a.shot('ob-after-who');
-  await a.pg.waitForTimeout(2500); await a.quiet();
+  await pic('ob-after-who');
+  await a.pg.waitForTimeout(2000); await a.quiet();
+  return a;
+}
+
+/* すでにアカウントがある端末で、門からサインインする。 */
+async function signIn(a, who){
+  await a.pg.waitForTimeout(200);
+  /* まだ歩いていない端末なら、歩かずに門へ出る道を使う。 */
+  const at = await a.pg.evaluate(() => appIs());
+  if (at === 'ob'){
+    await a.tapDo('obSkipAll').catch(() => {});
+    await a.pg.evaluate(() => { SET.walked = true; save(); render(); });
+    await a.quiet();
+  }
+  await a.tapArg('obMailGo', ['in']).catch(() => {});
+  await a.type('#ob-em', who.email);
+  await a.type('#ob-pw', who.pw);
+  await a.tapDo('obMailIn');
+  await a.pg.waitForTimeout(1500); await a.quiet();
+  return a;
+}
+
+const AYA  = { email:'aya@example.com',  pw:'hunter22pw', handle:'aya',  name:'アヤ',  lang:'シャンゴ' };
+const BENI = { email:'beni@example.com', pw:'hunter33pw', handle:'beni', name:'ベニ', lang:'ロレン' };
+
+/* 画面にある押せるものを並べて見る道具（道を書くときだけ使う） */
+WALKS['probe'] = async (br, srv) => {
+  const a = await new Dev(br, srv, 'A').open();
+  await arrive(a, AYA, false);
+  await a.reload();
+  if (process.env.HUNT_PLAN) await a.pg.evaluate(x => planTook(x), process.env.HUNT_PLAN);
+  for (const r0 of String(process.env.HUNT_R || 'letters,words,gram,kb,build,feed,me,set').split(',')){
+    const r = r0.trim().split(':');
+    await a.goRoute(r[0], r[1] || '');
+    say('== ' + r0 + ' == ' + (await a.where()));
+    (await a.buttons()).forEach(b => say('   ' + b));
+  }
+  return a;
+};
+
+/* ---- 1. 新規：オンボーディングを最初から最後まで ------------------------- */
+WALKS['1'] = async (br, srv) => {
+  say('--- 1. onboarding, from an empty phone ---');
+  const a = await new Dev(br, srv, 'A').open();
+  await arrive(a, AYA, true);
   await a.shot('ob-arrived');
   say('  LANGS: ' + await a.pg.evaluate(() => JSON.stringify(
     Object.keys(LANGS).map(k => ({ id: k.slice(0, 8), name: langNameOf(k),
@@ -671,6 +760,146 @@ WALKS['1'] = async (br, srv) => {
       '  ME.handle=' + await a.pg.evaluate(() => String(ME.handle)));
   await a.reload();
   await a.shot('ob-relaunch');
+  say('  server languages: ' + JSON.stringify(srv.db.language.map(l => l.name)));
+  KEEP.A = a;
+  return a;
+};
+
+
+/* ---- 2. 文字 ------------------------------------------------------------ */
+WALKS['2'] = async (br, srv) => {
+  say('--- 2. letters ---');
+  const a = await new Dev(br, srv, 'A').open();
+  await arrive(a, AYA, false);
+  await a.reload();
+
+  await a.tapArg('goTab', ['build']);
+  await a.shot('lt-contents');
+  await a.tapArg('go', ['letters']);
+  await a.shot('lt-rooms');
+  const rooms = await a.pg.evaluate(() => ltKinds().map(k => k + ':' + ltOfKind(k).length + '/' + ltOfKindIn(LETTERS, k).length));
+  say('  rooms as the app counts them: ' + JSON.stringify(rooms));
+
+  await a.tapArg('go', ['ltset', 'alpha']);
+  await a.shot('lt-alpha');
+  const n1 = await a.pg.evaluate(() => document.querySelectorAll('#app [data-do^="ltGo"]').length);
+  say('  alphabet rows on screen: ' + n1 +
+      '   LETTERS total: ' + await a.pg.evaluate(() => LETTERS.length));
+
+  /* 一つ開いて描く */
+  await a.tapArg('ltGo', ['lt.c']);
+  await a.shot('lt-c-open');
+  await a.tapArg('editLetter', ['lt.c']);
+  await a.shot('lt-c-edit');
+  const box = await a.pg.locator('canvas').first().boundingBox();
+  if (box){
+    const cx = box.x + box.width / 2, cy = box.y + box.height / 2;
+    await a.pg.mouse.move(cx - 50, cy - 50); await a.pg.mouse.down();
+    for (let i = 0; i <= 10; i++) await a.pg.mouse.move(cx - 50 + i * 10, cy + 50 - i * 6);
+    await a.pg.mouse.up(); await a.quiet();
+  }
+  await a.shot('lt-c-drawn');
+  await a.tapDo('keepPress');
+  await a.shot('lt-c-saved');
+
+  /* 音を選ぶ */
+  await a.tapArg('openSnd', ['lt.c']);
+  await a.shot('lt-c-snd');
+  const first = (await a.buttons()).filter(b => b.indexOf('ltTakeSnd') === 0)[0];
+  say('  first sound on the sheet: ' + first);
+  if (first) await a.tapDo('ltTakeSnd');
+  await a.shot('lt-c-snd-taken');
+  await a.tapDo('back');
+  await a.shot('lt-after-snd');
+
+  /* 名前を変える ── 無料では出ないはず */
+  say('  free: editName on screen? ' +
+      (await a.buttons()).some(b => b.indexOf('editName') === 0));
+  /* 消す ── 無料では出ないはず */
+  say('  free: ltDelete on screen? ' +
+      (await a.buttons()).some(b => b.indexOf('ltDelete') === 0));
+
+  /* 無料で「文字の追加」を押すと何が出るか */
+  await a.tapDo('back');
+  await a.shot('lt-back-to-alpha');
+  await a.popShut();
+  say('  free: plan=' + await a.pg.evaluate(() => plan()) +
+      ' can(letters)=' + await a.pg.evaluate(() => String(can('letters'))));
+  const n0 = await a.pg.evaluate(() => LETTERS.length);
+  await a.tapArg('newLetter', ['alpha']);
+  await a.shot('lt-free-add');
+  say('  free: pressed 文字の追加 -> LETTERS ' + n0 + ' -> ' +
+      await a.pg.evaluate(() => LETTERS.length) +
+      '  where=' + await a.where() + '  pop="' + await a.pop() + '"');
+  await a.popShut();
+
+  /* 有料にして、足す・名前を変える・消す */
+  srv.db.planIs = 'pro';
+  await a.pg.evaluate(() => planTook('pro'));
+  await a.quiet();
+  await a.popShut();
+  await a.goRoute('ltset', 'alpha');
+  await a.shot('lt-alpha-pro');
+  say('  pro: plan=' + await a.pg.evaluate(() => plan()) +
+      ' can(letters)=' + await a.pg.evaluate(() => String(can('letters'))));
+  const before = await a.pg.evaluate(() => LETTERS.length);
+  say('  pro: pop BEFORE the press = "' + await a.pop() + '"');
+  await a.tapArg('newLetter', ['alpha']);
+  await a.shot('lt-added');
+  say('  pro: pressed 文字の追加 -> LETTERS ' + before + ' -> ' +
+      await a.pg.evaluate(() => LETTERS.length) +
+      '  where=' + await a.where() + '  pop="' + await a.pop() + '"');
+  await a.popShut();
+
+  const last = await a.pg.evaluate(() => LETTERS[LETTERS.length - 1].id);
+  await a.goRoute('letter', last);
+  await a.shot('lt-new-open');
+  say('  new letter page fields: ' + JSON.stringify(await a.buttons()));
+  await a.type('#lt-rom', 'ng');
+  await a.shot('lt-name-typed');
+  await a.tapDo('keepPress');
+  await a.shot('lt-saved');
+  say('  after 保存: ' + await a.pg.evaluate(x =>
+    JSON.stringify(LETTERS.filter(l => l.id === x)
+      .map(l => ({ ch: l.ch || '', name: l.name || '', ph: l.ph || '' }))), last) +
+    '  where=' + await a.where());
+
+  /* 一覧に何行出ているか */
+  await a.goRoute('ltset', 'alpha');
+  await a.shot('lt-alpha-after-add');
+  say('  alphabet rows now: ' +
+      await a.pg.evaluate(() => document.querySelectorAll('#app [data-do^="ltGo"]').length) +
+      '  ltOfKind(alpha)=' + await a.pg.evaluate(() => ltOfKind('alpha').length));
+
+  /* 消す */
+  await a.goRoute('letter', last);
+  await a.tapArg('ltDelete', [last]);
+  await a.shot('lt-delete-ask');
+  say('  delete pop: "' + await a.pop() + '"');
+  await a.tapDo('popYes');
+  await a.shot('lt-deleted');
+  say('  LETTERS after delete: ' + await a.pg.evaluate(() => LETTERS.length) +
+      '  where: ' + await a.where() + '  second pop: "' + await a.pop() + '"');
+  /* 消したあとに出てくる二つ目のポップで「はい」を押したらどうなるか */
+  if (await a.pop()){
+    await a.tapDo('popYes');
+    await a.shot('lt-deleted-then-yes');
+    say('  after はい on the second pop: LETTERS=' +
+        await a.pg.evaluate(() => LETTERS.length) + '  where=' + await a.where());
+  }
+  await a.reload();
+  await a.shot('lt-relaunch');
+  say('  langId now: ' + await a.pg.evaluate(() => String(langId).slice(0, 8)) +
+      '  LANGS: ' + await a.pg.evaluate(() => JSON.stringify(
+        Object.keys(LANGS).map(k => k.slice(0, 8) + '=' + langNameOf(k)))));
+  say('  server letters slices: ' + JSON.stringify(srv.db.slice
+    .filter(x => x.kind === 'letters')
+    .map(x => ({ lang: x.language.slice(0, 8), n: (() => { try { return JSON.parse(x.body).length; } catch (e) { return '?'; } })() }))));
+  say('  slice writes, in order:\n    ' +
+      (srv.db.sliceLog || []).filter(x => x.indexOf('letters') > 0).join('\n    '));
+  say('  LETTERS after relaunch: ' + await a.pg.evaluate(() => LETTERS.length) +
+      '  server letters slice: ' + (srv.db.slice.filter(x => x.kind === 'letters')
+        .map(x => { try { return JSON.parse(x.body).length; } catch (e) { return '?'; } }).join(',')));
   return a;
 };
 
