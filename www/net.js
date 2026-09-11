@@ -1018,6 +1018,25 @@ function netMakeProfile(h, name, ok, bad){
    which is the half that was missing: the old function said `bio` in five
    places, so adding a field meant finding all five.
 
+   AND IT IS FIVE, AND IT NAMES THE COLUMN AS WELL AS THE FIELD.
+   -------------------------------------------------------------------------
+   The list held three and the editor walked it to decide what to send, so a
+   name and a handle somebody typed reached this phone and stopped there:
+   measured on 2026-09-11 (docs/scope/r24-lang.md, hunt 道7) the whole of a
+   save was `PATCH /rest/v1/profile {"bio":"..."}` while the screen said the
+   new name and the new @. Nothing threw, because the send was not empty.
+
+   The two that were missing are the two whose column is NOT called what the
+   phone calls them -- `name` is `profile.display` -- and that is why they
+   could not simply be added: a list of field names cannot say that. So each
+   entry is a pair, `[what ME calls it, what the column is called]`, and both
+   the road up (www/me.js § meProfPut) and the road down below read the same
+   pair. A sixth field is one line here and nothing else, still.
+
+   `handle` travels like the rest and the server is what refuses it: the
+   fortnight and @lingua are `profile_rename()` in supabase/schema.sql, which
+   answers with an exception, which arrives here as a refusal like any other.
+
    It ASKS before it writes, where netAvSync() below compares against a mark
    it keeps locally (`ME.avSent`). Two reasons, and the second is the one that
    decided it: a mark would be a new field on ME, and the shape of ME is
@@ -1043,10 +1062,17 @@ function netMakeProfile(h, name, ok, bad){
    has not got.
 
    Fired and not waited for. Nothing on screen depends on it. */
-var PROF_MINE=['bio', 'link', 'loc'];
+var PROF_MINE=[['name','display'], ['handle','handle'], ['bio','bio'],
+               ['link','link'], ['loc','loc']];
+/* The columns, for a `select` and for nothing else. */
+function profCols(){
+  var out=[], i;
+  for(i=0;i<PROF_MINE.length;i++) out.push(PROF_MINE[i][1]);
+  return out.join(',');
+}
 function netProfSync(){
   if(!netSignedIn() || !SESS || !SESS.uid) return;
-  netGet('/rest/v1/profile?select='+PROF_MINE.join(',')+'&limit=1&id=eq.'+
+  netGet('/rest/v1/profile?select='+profCols()+'&limit=1&id=eq.'+
          encodeURIComponent(SESS.uid),
     function(d){
       var row=(d && d.length)? (d[0]||{}) : {}, drew=false, i, k, there;
@@ -1060,8 +1086,8 @@ function netProfSync(){
          rather than bringing it. */
       if(!(d && d.length)) return;
       for(i=0;i<PROF_MINE.length;i++){
-        k=PROF_MINE[i];
-        there=String(row[k]||'');
+        k=PROF_MINE[i][0];
+        there=String(row[PROF_MINE[i][1]]||'');
         if(there===String(ME[k]||'')) continue;
         ME[k]=there; drew=true;
       }

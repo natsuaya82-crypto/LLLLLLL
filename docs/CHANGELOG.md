@@ -15,6 +15,32 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-11 名前と @ を変えて保存しても、サーバーに行っていなかった
+
+hunt 道7。**プロフィールの名前と handle を変えて保存しても `profile` の行は
+前のまま**で、断りも出ませんでした。bio・link・loc は同じ保存で上がります。
+
+**測った原因。** `meProfPut()`（`www/me.js`）が `PROF_MINE`（`www/net.js`、
+`['bio','link','loc']`）だけを歩いて送る物を組んでいて、名前と @ はその一覧に
+無く、端末に書かれて終わり。送信が空ではない（bio が入っている）ので、
+断りも出ませんでした。実際に出ていたのは
+`PATCH /rest/v1/profile {"bio":"..."}` だけです。
+
+**直し方。** `PROF_MINE` を **欄と列の対の一覧**に書き直しました ── 名前の列は
+`profile.display` で、端末の欄名とは違うので、名前の一覧では言えませんでした。
+上り（`meProfPut`）も下り（`netProfSync`）も同じ対を読みます。
+
+**保存されるものの変化。** 名前（`profile.display`）と @（`profile.handle`）が
+**保存のたびにサーバーへ行き、起動の読み込みで降りてくる**ようになりました。
+今まで名前と @ は扉（`netMyProfile`）でしか降りてきませんでした。
+**送れなければ端末にも書きません**（保存は一回の押下で、半分の保存は保存では
+ない ── 既にあった規則が、この二つにも効くようになりました）。
+@ の十四日と @lingua は `profile_rename()`（`supabase/schema.sql`）のまま、
+断りは例外で戻ってポップになります。SQL は一行も触っていません。
+
+押さえているもの: `tools/acct-check.mjs` 67。21 番は列が三つから五つに
+なったので書き直しました。
+
 ### 2026-09-11 登録の最後に、言語が二本できていた
 
 hunt 道1（`origin/claude/r21-hunt`）で出たもの。**新規登録の扉をくぐると
