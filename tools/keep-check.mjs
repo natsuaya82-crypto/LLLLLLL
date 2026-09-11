@@ -710,6 +710,59 @@ const more = await pg.evaluate(() => {
                                return e ? String(e.value || '') : ''; })();
   window.WIRE = true;
   popOff(); viewReset();
+
+  /* ---- THE OTHER BUTTON IN THAT CORNER ---------------------------------
+     「なにもない時は薄い灰色、何か打ったら金にする」「これが決定ボタンの
+     ルール」 OWNER 2026-09-03, and that is said of the BUTTON rather than of
+     one spelling of it. A sheet that CHANGES a word carries the Save the walk
+     at the foot of this file holds; a sheet that MAKES one carries 「追加」,
+     which is not a save and says so (www/wordsheet.js § wdSaveBtn). The walk
+     keeps a screen by finding `keepPress` in its bar, so nothing in this file
+     had ever looked at the other one.
+
+     IT WAS GREY ON EVERY KEYSTROKE. wdKeepTouch() is the one notice a field
+     being typed into gives -- typing must not rebuild the sheet, because a
+     field being typed into loses the keyboard the moment the page under it is
+     replaced -- and it returned early on `addW`, which IS the sheet that
+     makes a word. So the one field that decides whether 「追加」 can be
+     pressed was the one field the button said nothing about, and a render put
+     the grey one back as well: what a form has in its corner is a string
+     taken when the form was OPENED (FORM.right, www/home.js § openForm).
+
+     NAMED HERE RATHER THAN FOLDED INTO THE WALK, and that is measured rather
+     than preferred. Widening the walk's test from 「a Save」 to 「any .navdo
+     in the bar」 keeps nine more screens, and on seven of them the corner
+     button is an ACTION -- 編集, ＋, a word added, a keyboard added -- which
+     is gold from the moment it is drawn, correctly, and the rule above is not
+     about it. No class tells a decision from an action.
+     docs/scope/r17-keep2.md carries that measurement. */
+  function addBtnOn(){
+    var e = document.querySelector('.navtop [data-do="addOne"]');
+    return !e ? 'gone' : (e.classList.contains('navon') ? 'gold' : 'grey');
+  }
+  goTab('build'); openAdd(''); render();
+  out.addArrive = addBtnOn();
+  var wln = document.getElementById('wd-ln');
+  wln.value = 'ka'; wln.dispatchEvent(new Event('input', { bubbles: true }));
+  out.addTyped = addBtnOn();
+  /* What the screen's own answer is, so the two are compared rather than the
+     colour being asserted on its own: a button that was gold for a reason
+     that is not this one would pass that. */
+  out.addWould = !!wdAddOn();
+  /* AND A RENDER LEAVES IT WHERE IT IS. The corner of a form is not rebuilt
+     by render(), so a paint that happened and a paint that survives are two
+     claims, and the second is the one somebody actually sees. */
+  render();
+  out.addRendered = addBtnOn();
+  wln = document.getElementById('wd-ln');
+  wln.value = ''; wln.dispatchEvent(new Event('input', { bubbles: true }));
+  out.addRubbed = addBtnOn();
+  out.addWouldNot = !!wdAddOn();
+  /* AND IT WROTE NOTHING. 「打ったら覚える、ボタンが書く」 -- a word typed
+     onto a sheet that makes one is not a word until 「追加」 is pressed. */
+  out.addMade = !!findWord('ka');
+  closeSheet({ target: { id: 'sbg' } });
+
   return out;
 });
 
@@ -1076,6 +1129,13 @@ if(more.glAsked !== 1) fails.push('back off a changed drawing asked ' + more.glA
 if(!more.glStayed) fails.push('back off a changed drawing left the screen while the question was up');
 if(!more.glNoLeft) fails.push('No did not leave the drawing screen');
 if(more.glNoWrote) fails.push('No wrote the drawing onto the letter');
+if(more.addArrive !== 'grey') fails.push('the sheet that makes a word opened with 追加 ' + more.addArrive);
+if(!more.addWould) fails.push('a spelling typed onto a new word sheet and addOne() would still refuse it');
+if(more.addTyped !== 'gold') fails.push('a spelling typed onto a new word sheet left 追加 ' + more.addTyped);
+if(more.addRendered !== 'gold') fails.push('a render put 追加 back to ' + more.addRendered + ' over a sheet holding a word');
+if(more.addWouldNot) fails.push('the spelling was rubbed out and addOne() would still take it');
+if(more.addRubbed !== 'grey') fails.push('the spelling rubbed out left 追加 ' + more.addRubbed);
+if(more.addMade) fails.push('typing a spelling onto a new word sheet wrote the word');
 if(more.glAfterNo !== 1) fails.push('No did not let the drawing go: ' + more.glAfterNo + ' strokes came back');
 if(more.glAfterNoBtn !== 'grey') fails.push('after No the Save was ' + more.glAfterNoBtn);
 if(!more.glYesLeft) fails.push('Yes did not leave the drawing screen');
@@ -1131,6 +1191,8 @@ if(!more.deadSaid) fails.push('a save with no wire went nowhere and said nothing
 if(more.deadTyped !== 'written in a tunnel') fails.push('a save with no wire threw away what was typed: ' + JSON.stringify(more.deadTyped));
 
 walk.fails.forEach((m) => fails.push(m));
+console.log('the sheet that makes a word: 追加 grey on arrival, gold on a spelling typed, ' +
+            'gold still after a render, grey again when it is rubbed out, and no word written');
 console.log('every screen with a Save (' + walk.stands.length + '), asked of the page: ' +
             walk.fields + ' fields typed into and put back (' + walk.lit +
             ' of them changed what the screen holds and turned the corner gold; ' + walk.refused +

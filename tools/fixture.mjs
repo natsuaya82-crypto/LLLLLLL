@@ -967,6 +967,25 @@ export function halfDone(){
        openAdd() keeps what is on it when it is reopened by its own redraw or
        on the way back from the picker, which is the whole point of it, and a
        fixture that lands on the form twice gets the second of those. */
+    /* THE SHEET THAT MAKES A WORD, BOTH STATES OF ITS CORNER. 「追加」 is
+       grey until there is a spelling to add and gold the moment there is
+       (www/wordsheet.js § wdAddOn) -- 「なにもない時は薄い灰色、何か打ったら
+       金にする」 OWNER 2026-09-03 -- and it was grey through both for as long
+       as the sheet has existed. The fault is nearly always in the state
+       nobody photographed, so both are here.
+
+       openAdd() is called TWICE on purpose, exactly as the synonym face
+       below does it: what a form has in its corner is a string taken when
+       the form OPENED, so the second call is what rebuilds that string out
+       of the spelling put on in between. It is not fresh the second time and
+       keeps the draft. */
+    ['the new word sheet, as it opens', () => { window.route='words'; NAV=[{r:'words'}];
+                                                openAdd(''); const h = vForm();
+                                                addW = null; return h; }],
+    ['the new word sheet, with a spelling typed', () => { window.route='words'; NAV=[{r:'words'}];
+                                                openAdd(''); wEdit.sp = spType('ka'); wdSync();
+                                                openAdd(''); const h = vForm();
+                                                addW = null; return h; }],
     ['the new word sheet, with a synonym', () => { window.route='words'; NAV=[{r:'words'}];
                                                    openAdd(''); addW.syn = ['kano'];
                                                    addW.ant = ['tir']; addW.ex = [{ln:'kano tir', gl:'sees it'}];
