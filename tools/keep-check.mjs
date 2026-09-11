@@ -813,6 +813,33 @@ const more = await pg.evaluate(() => {
   out.slotMade = !!findWord('to');
   closeSheet({ target: { id: 'sbg' } });
 
+  /* ---- AN EXAMPLE ADDED TO A GRAMMAR STAGE, WHICH IS ENTER --------------
+     The three boxes an example is written in are not there until the ＋ on
+     the heading is pressed, and the walk rebuilds the screen before every
+     press -- so it can open them or press something, never both. And what
+     commits the line is ENTER in the box, which is not a press at all. The
+     ✕ beside a line the walk does reach; this is the other half.
+
+     It used to push the line onto the stage and save, with no Save in the
+     corner to press and an arrow that asked nothing. */
+  popOff(); viewReset();
+  var stid = stAll()[0].id;
+  goTab('build'); stExNew = ''; openStEx(stid); render();
+  out.exArrive = navOn();
+  out.exWas = stEx(stid).length;
+  stExOpen(stid); render();
+  var exl = document.getElementById('sx-ln'), exg = document.getElementById('sx-gl');
+  if(exl){ exl.value = 'kano tir'; }
+  if(exg){ exg.value = 'it sees'; }
+  if(exl) exl.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+  out.exOnPage = (document.querySelectorAll('#app .exlist .exrow') || []).length;
+  out.exGold = navOn();
+  /* 「打ったら覚える、ボタンが書く」 -- Enter wrote nothing onto the stage. */
+  out.exOnPress = stEx(stid).length;
+  keepPress();
+  out.exOnSave = stEx(stid).length;
+  popOff();
+
   return out;
 });
 
@@ -953,13 +980,20 @@ const walk = await pg.evaluate(({ s }) => {
 
      A LIST OF WHICH OPENER WANTS WHICH IS THE FAULT docs/DATA_SAFETY.md NAMES
      BY NAME -- a list of keys somebody has to remember to add to. So it is
-     asked instead: try the word, and where no form came up, try the letter. */
+     asked instead: there are three kinds of thing in this app that carry an
+     id an opener takes, and each is tried in turn until a form comes up. The
+     third is a grammar STAGE, which the examples page wants and which is
+     neither of the other two -- so that page was skipped for the same reason
+     the other two were, one kind further along. */
+  var stid = (typeof stAll === 'function' && stAll()[0]) ? stAll()[0].id : '';
   opens.forEach(function(o){
     STANDS.push(['form ' + o, function(){
       if(!window[o].length){ window[o](); return; }
       window[o](hw);
       if(here().r === 'form') return;
       window[o](lid);
+      if(here().r === 'form') return;
+      if(stid) window[o](stid);
     }]);
   });
 
@@ -1189,6 +1223,13 @@ if(more.slotArrive !== 'grey') fails.push("a grammar slot's sheet opened with �
 if(more.slotTyped !== 'gold') fails.push("a spelling typed onto a grammar slot's sheet left 追加 " + more.slotTyped);
 if(more.slotRendered !== 'gold') fails.push('a render put 追加 back to ' + more.slotRendered + " over a grammar slot's sheet holding a word");
 if(more.slotMade) fails.push("typing a spelling onto a grammar slot's sheet wrote the word");
+if(more.exArrive !== 'grey') fails.push("a stage's examples opened with its Save " + more.exArrive);
+if(more.exOnPage !== more.exWas + 1) fails.push('an example typed and entered put ' + more.exOnPage +
+    ' lines on the page and the stage had ' + more.exWas);
+if(more.exGold !== 'gold') fails.push('an example added left the Save ' + more.exGold);
+if(more.exOnPress !== more.exWas) fails.push('an example added wrote it onto the stage before anybody saved');
+if(more.exOnSave !== more.exWas + 1) fails.push('the Save left the stage holding ' + more.exOnSave +
+    ' examples and the page was showing ' + more.exOnPage);
 if(more.pkArrive !== 'grey') fails.push('the character picker opened with its Save ' + more.pkArrive);
 if(more.pkWas !== '') fails.push('the letter the picker opened on already wore a character: ' + more.pkWas);
 if(!more.pkHadStrokes) fails.push('the letter the picker opened on was not drawn, so there is nothing for a borrowed character to replace');
@@ -1257,6 +1298,9 @@ walk.fails.forEach((m) => fails.push(m));
 console.log('the character picker: the Save grey on arrival, gold on a character pressed, ' +
             'the letter untouched and the screen still there until it was pressed, and then 「' +
             more.pkWroteOnSave + '」 on the letter in place of what was drawn');
+console.log("a stage's examples: the Save grey on arrival, an example entered shows on the page " +
+            'and turns it gold, the stage untouched until it was pressed, and then ' +
+            more.exOnSave + ' of them on the stage');
 console.log('the sheet that makes a word, from the dictionary and from a grammar slot: ' +
             '追加 grey on arrival, gold on a spelling typed, gold still after a render, ' +
             'grey again when it is rubbed out, and no word written');

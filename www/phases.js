@@ -665,8 +665,17 @@ function stKeepOn(id){
          function(v, done){ stKeepSave(id, v); done(true); });
 }
 function stKeepSave(id, v){
+  var ex;
   if(v.hasOwnProperty('rules')){ if(!STG.rules) STG.rules={}; STG.rules[id]=String(v.rules); }
   if(v.hasOwnProperty('note')){ if(!STG.notes) STG.notes={}; STG.notes[id]=String(v.note); }
+  /* The examples, said once as JSON -- see stExKeepOn() below. Written here
+     with the other two because this is the one place any of them reaches STG,
+     which is what keeps 「what the row saves」 and 「what the page saves」 from
+     being able to differ. */
+  if(v.hasOwnProperty('ex')){
+    try{ ex=JSON.parse(String(v.ex)); }catch(e){ ex=null; }
+    if(ex && ex.length!==undefined){ if(!STG.ex) STG.ex={}; STG.ex[id]=ex; }
+  }
   saveStg();
 }
 function stNote(v){ keepSet('note', String(v||'')); }
@@ -674,6 +683,43 @@ function stNote(v){ keepSet('note', String(v||'')); }
 function stRules(id){ if(!STG.rules) STG.rules={}; return STG.rules[id]||''; }
 function stSetRules(v){ keepSet('rules', String(v||'')); }
 function stEx(id){ if(!STG.ex) STG.ex={}; if(!STG.ex[id]) STG.ex[id]=[]; return STG.ex[id]; }
+/* ---- ADDING AND REMOVING AN EXAMPLE CHOOSES; THE BAR SAVES -------------
+   OWNER 2026-09-11: 「保存ボタンないところは直して」, and the sentence it is
+   the other half of, OWNER 2026-09-03: 「打ったら覚える、ボタンが書く」
+   「保存ボタン必要なとこ全部」.
+
+   This page wrote the language on the press. Enter in the box pushed a line
+   onto the stage and saved; the ✕ beside a line took it off and saved. There
+   was no Save in the corner, so there was nothing to press and the arrow
+   asked nothing -- and a line removed by a thumb was removed.
+
+   ONE FIELD. `ex` is the whole list said once as JSON, the same shape wdSig()
+   uses for the word sheet and for the same reason: a list of lines is not a
+   handful of strings, and flattening it into several would be the stage
+   written down twice.
+
+   WHAT IS TYPED INTO THE THREE BOXES IS NOT IN IT. Those are one more example
+   being written, and Enter is what makes it one -- exactly as the meaning and
+   the example on the word sheet work. It is the list that this page holds. */
+function stExKeepOn(id){
+  /* Not in somebody else's language: saveStg() refuses one, so a buffer here
+     would put a Save in the bar that could not write. */
+  if(!stBy(id) || langLocked()) return;
+  keepOn(keepKeyOf('form', 'stex:'+id),
+         function(){ return {ex:JSON.stringify(stEx(id))}; },
+         function(v, done){ stKeepSave(id, v); done(true); });
+}
+/* The lines on the page: what has been added and taken off, or what the stage
+   holds. There is no buffer in somebody else's language, and `ex` is never
+   empty where there is one -- an empty list is 「[]」 -- so the one test says
+   both. */
+function stExKept(id){
+  var s=keepVal(keepKeyOf('form', 'stex:'+id), 'ex'), a;
+  if(!s) return stEx(id);
+  try{ a=JSON.parse(s); }catch(e){ a=null; }
+  return (a && a.length!==undefined)? a : stEx(id);
+}
+function stExPut(id, a){ keepSet('ex', JSON.stringify(a)); openStEx(id); }
 function stAddEx(id){
   var a=document.getElementById('sx-lb'), b=document.getElementById('sx-ln'),
       c=document.getElementById('sx-gl');
@@ -686,10 +732,14 @@ function stAddEx(id){
   var gl=String((c&&c.value)||'').trim();
   var ln=gExLine(String(b.value||''), gl);
   if(!ln){ toast(t('word.ex.need')); return; }
-  stEx(id).push({lb:String((a&&a.value)||'').trim(), ln:ln, gl:gl});
-  saveStg(); openStEx(id);
+  stExPut(id, stExKept(id).concat([
+    {lb:String((a&&a.value)||'').trim(), ln:ln, gl:gl}]));
 }
-function stDelEx(id, i){ stEx(id).splice(i,1); saveStg(); openStEx(id); }
+function stDelEx(id, i){
+  var a=stExKept(id).slice();
+  a.splice(i,1);
+  stExPut(id, a);
+}
 /* Two lines side by side is the whole of comparing: a label on each says what
    the pair is a pair of -- 肯定 / 否定 -- and the two read as one thought. */
 /* The same as the word sheet's: the field for one more appears when the `+`
@@ -697,7 +747,7 @@ function stDelEx(id, i){ stEx(id).splice(i,1); saveStg(); openStEx(id); }
 var stExNew='';
 function stExOpen(id){ stExNew=id; openStEx(id); }
 function stExHTML(id){
-  var a=stEx(id);
+  var a=stExKept(id);
   return (a.length
     ? '<div class="exlist">'+a.map(function(e,i){
         return exRowHTML(e, exSeq(e.ln),
@@ -743,6 +793,9 @@ function openStRules(id){
 FORM_OPEN.strule=function(a){ openStRules(String(a||'')); };
 function openStEx(id){
   if(!stBy(id)) return;
+  /* The buffer before the form, so navTop()'s keepBtnHTML() has one to draw
+     a Save from -- www/shell.js § KEEP. */
+  stExKeepOn(id);
   openForm('stex:'+id, t('stg.ex'),
     secAdd(ICON_LINE+t('stg.ex'), DO('stExOpen', [id]), t('word.mn.add'))+stExHTML(id));
 }
