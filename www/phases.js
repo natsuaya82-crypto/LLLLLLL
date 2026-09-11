@@ -460,8 +460,10 @@ function gramArgs(){
     }
     out.push('v2:'+a[i].id);
   }
-  /* And every chapter of the book, which is what the contents opens. */
-  for(i=0;i<G2BOOK.length;i++) out.push('book:'+G2BOOK[i].id);
+  /* And every chapter of the book that IS a page. One with no sections is a
+     row on the contents and no door, so there is nothing there to walk. */
+  for(i=0;i<G2BOOK.length;i++)
+    if(g2BookSecs(G2BOOK[i].id).length) out.push('book:'+G2BOOK[i].id);
   return out;
 }
 function stBy(id){
@@ -958,18 +960,30 @@ function g2BookName(id){ return t('g2.book.'+id+'.t'); }
 function g2BookSaid(s){ return s.c? g2Said(s.c) : stFilled(s.p)>0; }
 /* ONE CHAPTER ON THE CONTENTS. Faint until this language has written in one of
    its sections -- 「まだ書いていない章は薄い字」 OWNER 2026-09-06 -- and the
-   number is how many of them it has. A chapter with no sections says —, which
-   is what every row on this list with nothing to count already says. */
+   number is how many of them it has.
+
+   A CHAPTER WITH NO SECTIONS IS NOT A DOOR. 語形成 is 「まだ無ければ空の章と
+   して目次に薄く出る。作らない」 OWNER 2026-09-11: it is in the book and there
+   is nothing behind it, so it is a row rather than a button and carries no
+   chevron. Pressing it opened a page with a bar and an empty body, which is
+   the trap rule 19 is written about, arrived at from the other side.
+
+   It is the same `.strow` either way and that is what keeps the list one
+   height: the class sets `font:inherit` and every span in it carries its own
+   size, so a div and a button come out at the same 56. */
 function g2BookRow(b, n){
-  var a=g2BookSecs(b.id), i, done=0;
+  var a=g2BookSecs(b.id), i, done=0, in1, in2;
   for(i=0;i<a.length;i++) if(g2BookSaid(a[i])) done++;
-  return '<button class="strow'+(done? '' : ' pale')+'"' +
-    DO('go', ['gram', 'book:'+b.id]) + '>'+
+  in1=a.length? ('<button class="strow'+(done? '' : ' pale')+'"' +
+                 DO('go', ['gram', 'book:'+b.id]) + '>')
+              : '<div class="strow pale">';
+  in2=a.length? (ICON_GO+'</button>') : '</div>';
+  return in1+
     '<span class="stn">'+n+'</span>'+
     '<span class="stt">'+esc(g2BookName(b.id))+'</span>'+
     '<span class="lead"></span>'+
     '<span class="stv">'+(a.length? (done+' / '+a.length) : '—')+'</span>'+
-    ICON_GO+'</button>';
+    in2;
 }
 /* THE CONTENTS: ten rows and nothing else. */
 function stListHTML(){
@@ -1073,6 +1087,7 @@ function vGram(){
      An argument that names none -- a chapter that has gone -- falls through to
      the contents, exactly as an unknown `v2:` does. */
   var b=(gOpen && gOpen.indexOf('book:')===0)? g2BookBy(gOpen.slice(5)) : null;
+  if(b && !g2BookSecs(b.id).length) b=null;
   if(b)
     return '<div class="view">'+navTop()+
       '<div class="body">'+g2BookPage(b)+'</div></div>';

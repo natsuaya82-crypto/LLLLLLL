@@ -1975,6 +1975,19 @@ export function halfDone(){
     ['a chapter of the book', () => {
         window.route = 'gram'; NAV = [{ r:'gram', a:'book:verb' }];
         return vGram(); }],
+    /* A SECTION THAT IS FINISHED, which is `.strow.done` -- the title goes
+       quiet and the count goes gold. Nothing else in this file reaches it:
+       every stage of the seeded language has slots left to fill, and 所有 is
+       the one with none, so saying what it does is the whole of finishing it.
+       It was drawn on the flat list before 2026-09-11 and is drawn on the
+       chapter's page now; press said so the day the list became a book. */
+    ['a chapter of the book with a section finished', () => {
+        const was = STG.rules ? STG.rules.have : undefined;
+        stKeepSave('have', { rules: 'a possessor stands in front of what it has' });
+        window.route = 'gram'; NAV = [{ r:'gram', a:'book:noun' }];
+        const h = vGram();
+        if (was === undefined) delete STG.rules.have; else STG.rules.have = was;
+        return h; }],
     /* And the appendix, which is the one chapter carrying the ＋ that adds a
        stage of your own -- a stage somebody adds lands here, so the ＋ is
        here and not on the contents. */

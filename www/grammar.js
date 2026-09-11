@@ -1300,9 +1300,7 @@ function g2Det(){ return chapSlotsHTML('det'); }
    on. Each heading is the target's name, because the two rows under it are 否定
    and 疑問. */
 function g2Cop(){
-  return chapSlotsHTML('cop')+
-         g2Sec('g2.on.n')+g2PolAt('n')+
-         g2Sec('g2.on.ex')+g2PolAt('ex');
+  return chapSlotsHTML('cop')+g2PolAt('n')+g2PolAt('ex');
 }
 function g2Cx(){
   return g2Sec('g2.cx.sub')+g2SidePick('cx')+
@@ -1668,11 +1666,12 @@ function gPolOrderSay(form){
    the verb chapter names (www/phases.js § G2BOOK), and the other three are
    drawn here, on the page of the section they belong to.
 
-   ONE ROW SAYS WHAT IT IS AND THE PAGE SAYS WHAT IT IS ABOUT. The row's name
-   is the chapter's -- 否定 / 疑問 -- because the page under it is 命令 or
-   です／ある and naming the target again on the row would be the page said
-   twice. On です／ある the two targets are both there, so each pair sits under
-   a heading that names it. */
+   ONE ROW SAYS WHAT IT IS AND THE HEADING SAYS WHAT IT IS ABOUT. The row's
+   name is the chapter's -- 否定形 / 疑問形 -- and the heading over the pair is
+   the KIND OF SENTENCE being negated: 名詞の文, 存在, 命令. です／ある carries
+   two of those kinds, so the heading is what tells the two pairs apart; 命令形
+   carries one, and the heading is what stops the pair reading as two more of
+   the rules above it, which is what they looked like without one. */
 function g2PolAt(on){
   var out='', i, c;
   /* Nothing at all for a page that is not one of the four things a language
@@ -1682,7 +1681,7 @@ function g2PolAt(on){
     c=g2ChapBy(GPOL_FEAT[i].id+':'+on);
     if(c) out+=g2PolRow(c, on);
   }
-  return out;
+  return out? g2Sec('g2.on.'+on)+out : '';
 }
 function g2PolRow(c, on){
   var r=gPolFind(gPolFeat(c.id), gPolTarget(on)), ops=gPolOps(r),
