@@ -482,16 +482,60 @@ function openSnd(lid){
   var l=ltById(lid);
   if(!l) return;
   sndFor=lid;
+  /* The buffer before the form, so navTop()'s keepBtnHTML() has one to draw
+     a Save from -- www/shell.js § KEEP. */
+  sndKeepOn(lid);
   openForm('snd:'+lid, ltName(l)||t('lt.untitled'),
-    ipaPickHTML('ltTakeSnd', l.snd||[]));
+    ipaPickHTML('ltTakeSnd', sndKept(lid)));
 }
 FORM_OPEN.snd=function(lid){ openSnd(lid); };
+/* ---- PRESSING A SYMBOL CHOOSES; THE BAR SAVES --------------------------
+   OWNER 2026-09-11: 「保存ボタンないところは直して」, and the sentence it is
+   the other half of, OWNER 2026-09-03: 「打ったら覚える、ボタンが書く」
+   「保存ボタン必要なとこ全部」.
+
+   This chart wrote the letter on the press. A thumb landing on a symbol
+   joined it to the letter, put it in the inventory, switched `chose` on --
+   which detaches the sound from the letter's own name for good -- rebuilt the
+   font and wrote the language, with nothing between the touch and the change
+   and no way back but pressing it again. It is the same thing wsPick() was on
+   the writing system and ltDraftName() is on the letter's name, said about a
+   chart of symbols: what is pressed moves the tick, the Save in the corner
+   turns gold, and the letter moves when it is pressed.
+
+   ONE FIELD. `snd` is the letter's whole list said once, space-separated,
+   because that is what is compared -- a list of symbols is not a handful of
+   strings and flattening it into several would be the letter written down
+   twice (the same argument wdSig() makes about the word sheet). */
+function sndKeepOn(lid){
+  var l=ltById(lid);
+  /* Not in somebody else's language: saveLetters() refuses one, so a buffer
+     here would put a Save in the bar that could not write. */
+  if(!l || langLocked()) return;
+  keepOn(keepKeyOf('form', 'snd:'+lid),
+         function(){
+           var one=ltById(lid);
+           return {snd:((one && one.snd)||[]).join(' ')};
+         },
+         function(v, done){ sndKeepSave(lid, v); done(true); });
+}
+/* What the ticks read: what has been chosen, or what the letter holds.
+
+   The second clause is the one screen there is no buffer for. Somebody else's
+   language has nothing to choose -- and the chart still has to mark what
+   their letter reads, which is most of what looking at it is for. */
+function sndKept(lid){
+  var s=keepVal(keepKeyOf('form', 'snd:'+lid), 'snd'), one;
+  if(s) return s.split(' ');
+  one=ltById(lid);
+  return (langLocked() && one && one.snd)? one.snd : [];
+}
 /* Pressed on the chart, on the proposal, anywhere a symbol is shown in that
    sheet. A sound the letter does not read yet joins it, and joins the
    language if it was not in it -- a letter reading a sound the inventory
    has never heard of is the one state the spelling engine cannot hold. */
 function ltTakeSnd(sym){
-  var l=ltById(sndFor);
+  var l=ltById(sndFor), list, i;
   if(!l) return;
   /* Where the free plan stops, and it is the press rather than the door --
      see openSnd above. go() and not a toast: this is a symbol pressed on
@@ -505,18 +549,32 @@ function ltTakeSnd(sym){
      ltSetRoman worked out, and switching it on here would detach `b` from its
      own name for good -- and SND does not grow. */
   if(upStop(can('snd'))) return;
-  if(!l.snd) l.snd=[];
-  var i=l.snd.indexOf(sym);
-  if(i>=0) l.snd.splice(i, 1);
-  else{
-    l.snd.push(sym);
-    if(addedSnd().indexOf(sym)<0){ SND=asOrder(addedSnd().concat([sym])); saveSnd(); }
-  }
+  list=sndKept(sndFor).slice();
+  i=list.indexOf(sym);
+  if(i>=0) list.splice(i, 1); else list.push(sym);
+  keepSet('snd', list.join(' '));
+  /* Said out loud on the press, because that is what pressing a symbol is
+     for -- it is not a write and there is nothing to take back. */
+  sayOne(sym);
+  openSnd(sndFor);
+}
+/* And the write, which is everything the press used to do. It is reached from
+   one place, keepSave() in www/shell.js, and that is the Save in the corner. */
+function sndKeepSave(lid, v){
+  var l=ltById(lid), list, add=[], i;
+  if(!l) return;
+  list=String(v.hasOwnProperty('snd')? v.snd : ((l.snd)||[]).join(' '));
+  l.snd=list? list.split(' ') : [];
+  /* A letter reading a sound the inventory has never heard of is the one
+     state the spelling engine cannot hold. Nothing is taken OUT of SND -- a
+     symbol another letter reads is still read by it (docs/DATA_SAFETY.md). */
+  for(i=0;i<l.snd.length;i++)
+    if(addedSnd().indexOf(l.snd[i])<0 && add.indexOf(l.snd[i])<0) add.push(l.snd[i]);
+  if(add.length){ SND=asOrder(addedSnd().concat(add)); saveSnd(); }
   /* Chosen, not guessed -- so renaming the letter leaves this alone. It is the
      one thing that tells the app's reading of a name apart from an answer. */
   l.chose=1;
-  saveLetters(); installScriptFont(); sayOne(sym);
-  openSnd(sndFor);
+  saveLetters(); installScriptFont();
 }
 /* ---- the sounds a language is built from --------------------------------
    「音韻を細かく決めたい人だっているだろ。plusで復活」

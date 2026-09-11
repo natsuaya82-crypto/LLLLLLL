@@ -933,7 +933,22 @@ export function halfDone(){
        Nothing reaches either by walking the routes. And once with something
        in the search, because a search that matches nothing leaves the page
        with no tiles at all. */
-    ['the sounds, for one letter', () => { openSnd(LETTERS[0].id); return vForm(); }],
+    ['the sounds, for one letter', () => { keepDrop(keepKeyOf('form', 'snd:' + LETTERS[0].id));
+                                          openSnd(LETTERS[0].id); return vForm(); }],
+    /* AND A SYMBOL PRESSED. The chart holds what has been chosen and the Save
+       in the corner writes it (www/sound.js § PRESSING A SYMBOL CHOOSES), so
+       there are two states here and the fault is nearly always in the one
+       nobody photographed: the tick has to move and the corner has to go
+       gold. The plan is flipped because choosing a sound is what can('snd')
+       buys, and the walks run on the free plan. */
+    ['the sounds, one pressed', () => { const was = SET.plan; SET.plan = 'pro';
+                                        keepDrop(keepKeyOf('form', 'snd:' + LETTERS[0].id));
+                                        openSnd(LETTERS[0].id); ltTakeSnd('t');
+                                        /* The press says the sound out loud, and with no wire
+                                           behind this the voice puts 「接続できません」 over the
+                                           picture. It is not part of this screen. */
+                                        popOff();
+                                        const h = vForm(); SET.plan = was; return h; }],
     ['the sounds, searched', () => { ipaQ = 'a'; openSnd(LETTERS[0].id);
                                      const h = vForm(); ipaQ = ''; return h; }],
     /* What one sound IS, which is a page of its own behind the ? on a tile.
@@ -952,6 +967,25 @@ export function halfDone(){
        openAdd() keeps what is on it when it is reopened by its own redraw or
        on the way back from the picker, which is the whole point of it, and a
        fixture that lands on the form twice gets the second of those. */
+    /* THE SHEET THAT MAKES A WORD, BOTH STATES OF ITS CORNER. 「追加」 is
+       grey until there is a spelling to add and gold the moment there is
+       (www/wordsheet.js § wdAddOn) -- 「なにもない時は薄い灰色、何か打ったら
+       金にする」 OWNER 2026-09-03 -- and it was grey through both for as long
+       as the sheet has existed. The fault is nearly always in the state
+       nobody photographed, so both are here.
+
+       openAdd() is called TWICE on purpose, exactly as the synonym face
+       below does it: what a form has in its corner is a string taken when
+       the form OPENED, so the second call is what rebuilds that string out
+       of the spelling put on in between. It is not fresh the second time and
+       keeps the draft. */
+    ['the new word sheet, as it opens', () => { window.route='words'; NAV=[{r:'words'}];
+                                                openAdd(''); const h = vForm();
+                                                addW = null; return h; }],
+    ['the new word sheet, with a spelling typed', () => { window.route='words'; NAV=[{r:'words'}];
+                                                openAdd(''); wEdit.sp = spType('ka'); wdSync();
+                                                openAdd(''); const h = vForm();
+                                                addW = null; return h; }],
     ['the new word sheet, with a synonym', () => { window.route='words'; NAV=[{r:'words'}];
                                                    openAdd(''); addW.syn = ['kano'];
                                                    addW.ant = ['tir']; addW.ex = [{ln:'kano tir', gl:'sees it'}];
@@ -2506,6 +2540,15 @@ export function halfDone(){
        A slot that is ALREADY filled is not a form at all: openSlot() sends
        you to the word, and the word screen is walked elsewhere. */
     ['a slot\'s word being made', () => { openSlot('greet','yes'); return vForm(); }],
+    /* AND WITH A SPELLING ON IT. It is the same sheet the dictionary opens, so
+       it carries the same 「追加」 -- grey until there is a word to add and
+       gold the moment there is. openSlot() is called twice for the reason the
+       new word sheet's pair is: a form's corner is a string taken when the
+       form OPENED, and the second call rebuilds it out of what was typed in
+       between (it is not fresh the second time and keeps the draft). */
+    ['a slot\'s word being made, with a spelling typed', () => {
+        openSlot('greet','yes'); wEdit.sp = spType('to'); wdSync();
+        openSlot('greet','yes'); return vForm(); }],
     ['synonyms to choose from',  () => { window.route='relate'; NAV=[{r:'relate', a:'syn:kano'}];
                                          return vRelate(); }],
     /* One of them is the letter's own, which is the only state that wears
@@ -2593,6 +2636,32 @@ export function halfDone(){
         stKeepSave(p.id, { rules: 'a name is a word that stands for a thing' });
         window.route = 'about'; NAV = [{ r:'about' }];
         const h = vAbout(); stKeepSave(p.id, { rules: was }); return h; }],
+    /* THE CHARACTER PICKER, BOTH STATES OF IT. Pressing a character chooses
+       it and the Save in the corner writes it (www/home.js § PRESSING A
+       CHARACTER CHOOSES) -- it used to write the letter and take the screen
+       away under the thumb. So: opened, with the Save grey and no tile
+       marked, and a tile pressed, with the tile marked, the box holding it
+       and the Save gold. The fold is opened first because the grid is not
+       drawn until a script is chosen. Both put the buffer back, so the two
+       faces do not read each other's.
+
+       THE BUFFER IS LET GO OF ON THE WAY IN AND NOT ON THE WAY OUT. A face
+       returns its html and the shell is rendered around it afterwards; a
+       buffer dropped before that render is a bar with no Save in it, put
+       over a page that has one. Both pictures came out that way once. */
+    ['the character picker, as it opens', () => {
+        /* 「接続できません」 from a face before this one rides on the scrim and
+           is not part of this screen. */
+        popOff();
+        pkScript = WORLD_SCRIPTS[0].id;
+        keepDrop(keepKeyOf('form', 'pick:l1'));
+        openPick('l1'); return vForm(); }],
+    ['the character picker, one character pressed', () => {
+        popOff();
+        const w = WORLD_SCRIPTS[0]; pkScript = w.id;
+        keepDrop(keepKeyOf('form', 'pick:l1'));
+        openPick('l1'); ltTakeChar('l1', w.ch.split(' ')[0]);
+        return vForm(); }],
     /* A character another letter has already taken. The picker dims it rather
        than hiding it, because which letter has it is worth seeing -- and
        chTaken() is empty in a language that has borrowed nothing, so the dim
@@ -2781,7 +2850,23 @@ export function halfDone(){
        opens as, and with it out, because the three fields and the Enter on
        them exist only while it is out. */
     ['what a stage says its rule is', () => { openStRules('greet'); return vForm(); }],
-    ['the examples of a stage', () => { stExNew=''; openStEx('greet'); return vForm(); }],
+    ['the examples of a stage', () => { popOff(); keepDrop(keepKeyOf('form', 'stex:greet'));
+                                        stExNew=''; openStEx('greet'); return vForm(); }],
+    /* AND ONE JUST ADDED. Enter in the box puts the line on the page and the
+       Save in the corner writes it onto the stage (www/phases.js § ADDING AND
+       REMOVING AN EXAMPLE CHOOSES) -- it used to write on the Enter, with no
+       Save to press. Both states, because the fault is nearly always in the
+       one nobody photographed: the line has to be on the page and the corner
+       has to be gold. The buffer is let go of on the way IN only -- a face
+       returns its html and the shell is rendered round it afterwards, so a
+       buffer dropped after that is a bar with no Save over a page that has
+       one. */
+    ['the examples of a stage, one just added', () => {
+        popOff(); keepDrop(keepKeyOf('form', 'stex:greet'));
+        stExNew=''; openStEx('greet');
+        stExPut('greet', stExKept('greet').concat(
+          [{lb:'', ln:'kano tir', gl:'it sees the mountain'}]));
+        return vForm(); }],
     ['an example being written', () => {
         stExOpen('greet');
         const h=vForm(); stExNew=''; return h; }],

@@ -359,7 +359,6 @@ defLang('de', (function(){
       "set.signout.done" : "Abgemeldet",
       "ob.tagline"                : "Verleih deinen Worten neue Farben.",
       "script.own.ph"             : "Zeichen einfügen oder tippen",
-      "script.set"                : "Setzen",
       "up.cta"                    : "Upgraden",
       "up.need"                   : "Für diese Funktion ist ein Upgrade erforderlich",
       "pop.no"                  : "Schließen",

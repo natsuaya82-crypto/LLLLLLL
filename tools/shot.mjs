@@ -263,6 +263,13 @@ for (const spec of shots) {
      Taken down the way the No takes it down, so nothing is drawn that the app
      would not draw. */
   await pg.evaluate(() => { if (typeof popOff === 'function') popOff(); });
+  /* AND IT FADES. popOff() starts the pop going rather than removing it, so a
+     screenshot taken in the same turn catches it half gone -- a ghost of
+     「接続できません」 over the middle of the picture, faint enough to read as
+     a rendering fault in the screen itself. Waited out rather than removed by
+     hand: what is wanted is the app with no pop on it, not the app with the
+     pop cut out of it. */
+  await pg.waitForTimeout(260);
   const covered = await pg.evaluate(() => !!document.getElementById('splash') ||
                                           !document.getElementById('app') ||
                                           !document.getElementById('app').innerHTML.trim());

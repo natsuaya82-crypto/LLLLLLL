@@ -378,7 +378,6 @@ defLang('pt', (function(){
       "set.signout.done" : "Você saiu",
       "ob.tagline"                : "Dê novas cores às suas palavras.",
       "script.own.ph"             : "Cole ou digite um caractere",
-      "script.set"                : "Usar",
       "up.cta"                    : "Fazer upgrade",
       "up.need"                   : "Esta funcionalidade requer um plano superior",
       "pop.no"                  : "Fechar",

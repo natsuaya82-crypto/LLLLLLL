@@ -710,6 +710,136 @@ const more = await pg.evaluate(() => {
                                return e ? String(e.value || '') : ''; })();
   window.WIRE = true;
   popOff(); viewReset();
+
+  /* ---- THE CHARACTER PICKER, WHICH THE WALK CANNOT REACH ---------------
+     The grid of a world's characters is folded away until a script is chosen
+     (pkSwitch), and the walk at the foot of this file rebuilds the screen
+     before every press -- so it can open that fold or press a tile, never
+     both, and the press this screen is ABOUT was reached by nothing. It is
+     two presses, so it is written here.
+
+     What it used to do on the tile: give the letter the character, throw away
+     the strokes it had been drawn with, switch the person's 「show the
+     script」 on, send that, rebuild the font, and LEAVE the screen
+     (www/home.js § PRESSING A CHARACTER CHOOSES). */
+  popOff(); viewReset();
+  goTab('build'); pkScript = ''; openPick(LETTERS[0].id); render();
+  out.pkArrive = navOn();
+  out.pkWas = String(ltById(LETTERS[0].id).ch || '');
+  out.pkHadStrokes = !!(ltById(LETTERS[0].id).st || []).length;
+  pkSwitch(WORLD_SCRIPTS[0].id);
+  var pkt = document.querySelector('#pk-chars .pkch');
+  out.pkTile = pkt ? String(pkt.textContent || '') : '';
+  if(pkt) pkt.click();
+  out.pkGold = navOn();
+  /* 「打ったら覚える、ボタンが書く」 -- the tile wrote nothing. */
+  out.pkWroteOnPress = String(ltById(LETTERS[0].id).ch || '');
+  out.pkStrokesOnPress = !!(ltById(LETTERS[0].id).st || []).length;
+  out.pkStayed = whereAmI2() === 'form|pick:' + LETTERS[0].id;
+  keepPress();
+  out.pkWroteOnSave = String(ltById(LETTERS[0].id).ch || '');
+  out.pkStrokesOnSave = !!(ltById(LETTERS[0].id).st || []).length;
+
+  /* ---- THE OTHER BUTTON IN THAT CORNER ---------------------------------
+     「なにもない時は薄い灰色、何か打ったら金にする」「これが決定ボタンの
+     ルール」 OWNER 2026-09-03, and that is said of the BUTTON rather than of
+     one spelling of it. A sheet that CHANGES a word carries the Save the walk
+     at the foot of this file holds; a sheet that MAKES one carries 「追加」,
+     which is not a save and says so (www/wordsheet.js § wdSaveBtn). The walk
+     keeps a screen by finding `keepPress` in its bar, so nothing in this file
+     had ever looked at the other one.
+
+     IT WAS GREY ON EVERY KEYSTROKE. wdKeepTouch() is the one notice a field
+     being typed into gives -- typing must not rebuild the sheet, because a
+     field being typed into loses the keyboard the moment the page under it is
+     replaced -- and it returned early on `addW`, which IS the sheet that
+     makes a word. So the one field that decides whether 「追加」 can be
+     pressed was the one field the button said nothing about, and a render put
+     the grey one back as well: what a form has in its corner is a string
+     taken when the form was OPENED (FORM.right, www/home.js § openForm).
+
+     NAMED HERE RATHER THAN FOLDED INTO THE WALK, and that is measured rather
+     than preferred. Widening the walk's test from 「a Save」 to 「any .navdo
+     in the bar」 keeps nine more screens, and on seven of them the corner
+     button is an ACTION -- 編集, ＋, a word added, a keyboard added -- which
+     is gold from the moment it is drawn, correctly, and the rule above is not
+     about it. No class tells a decision from an action.
+     docs/scope/r17-keep2.md carries that measurement. */
+  function navOn(){
+    var e = document.querySelector('.navtop [data-do="keepPress"]');
+    return !e ? 'gone' : (e.classList.contains('navon') ? 'gold' : 'grey');
+  }
+  function whereAmI2(){ return here().r + '|' + (here().a === undefined ? '' : here().a); }
+  function addBtnOn(){
+    var e = document.querySelector('.navtop [data-do="addOne"]');
+    return !e ? 'gone' : (e.classList.contains('navon') ? 'gold' : 'grey');
+  }
+  goTab('build'); openAdd(''); render();
+  out.addArrive = addBtnOn();
+  var wln = document.getElementById('wd-ln');
+  wln.value = 'ka'; wln.dispatchEvent(new Event('input', { bubbles: true }));
+  out.addTyped = addBtnOn();
+  /* What the screen's own answer is, so the two are compared rather than the
+     colour being asserted on its own: a button that was gold for a reason
+     that is not this one would pass that. */
+  out.addWould = !!wdAddOn();
+  /* AND A RENDER LEAVES IT WHERE IT IS. The corner of a form is not rebuilt
+     by render(), so a paint that happened and a paint that survives are two
+     claims, and the second is the one somebody actually sees. */
+  render();
+  out.addRendered = addBtnOn();
+  wln = document.getElementById('wd-ln');
+  wln.value = ''; wln.dispatchEvent(new Event('input', { bubbles: true }));
+  out.addRubbed = addBtnOn();
+  out.addWouldNot = !!wdAddOn();
+  /* AND IT WROTE NOTHING. 「打ったら覚える、ボタンが書く」 -- a word typed
+     onto a sheet that makes one is not a word until 「追加」 is pressed. */
+  out.addMade = !!findWord('ka');
+  closeSheet({ target: { id: 'sbg' } });
+
+  /* AND THE SAME SHEET OPENED ON A SLOT OF THE GRAMMAR. It is the word sheet
+     (www/phases.js § openSlot) with the two things the slot already knows
+     written in, so it carries the same 「追加」 -- and it kept its own copy of
+     the mount, which is what the corner is repainted from. Both sheets, or
+     the day one of the three openers is written afresh the corner goes stale
+     on that one alone and every claim above stays green. */
+  goTab('build'); openSlot(stAll()[0].id, undefined); render();
+  out.slotArrive = addBtnOn();
+  var sln = document.getElementById('wd-ln');
+  sln.value = 'to'; sln.dispatchEvent(new Event('input', { bubbles: true }));
+  out.slotTyped = addBtnOn();
+  render();
+  out.slotRendered = addBtnOn();
+  out.slotMade = !!findWord('to');
+  closeSheet({ target: { id: 'sbg' } });
+
+  /* ---- AN EXAMPLE ADDED TO A GRAMMAR STAGE, WHICH IS ENTER --------------
+     The three boxes an example is written in are not there until the ＋ on
+     the heading is pressed, and the walk rebuilds the screen before every
+     press -- so it can open them or press something, never both. And what
+     commits the line is ENTER in the box, which is not a press at all. The
+     ✕ beside a line the walk does reach; this is the other half.
+
+     It used to push the line onto the stage and save, with no Save in the
+     corner to press and an arrow that asked nothing. */
+  popOff(); viewReset();
+  var stid = stAll()[0].id;
+  goTab('build'); stExNew = ''; openStEx(stid); render();
+  out.exArrive = navOn();
+  out.exWas = stEx(stid).length;
+  stExOpen(stid); render();
+  var exl = document.getElementById('sx-ln'), exg = document.getElementById('sx-gl');
+  if(exl){ exl.value = 'kano tir'; }
+  if(exg){ exg.value = 'it sees'; }
+  if(exl) exl.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+  out.exOnPage = (document.querySelectorAll('#app .exlist .exrow') || []).length;
+  out.exGold = navOn();
+  /* 「打ったら覚える、ボタンが書く」 -- Enter wrote nothing onto the stage. */
+  out.exOnPress = stEx(stid).length;
+  keepPress();
+  out.exOnSave = stEx(stid).length;
+  popOff();
+
   return out;
 });
 
@@ -775,7 +905,7 @@ const walk = await pg.evaluate(({ s }) => {
   const seedAgain = window.__seed;
   seedAgain();
   SET.walked = true; SET.plan = 'pro';
-  const out = { stands: [], fails: [], fields: 0, presses: 0, gold: 0, refused: 0 };
+  const out = { stands: [], fails: [], fields: 0, presses: 0, gold: 0, refused: 0, lit: 0 };
 
   langRowGot(langId); langStore();
   netSend = function(method, path, body, tok, ok){
@@ -840,8 +970,31 @@ const walk = await pg.evaluate(({ s }) => {
     go('wldart', wldArts()[wldArts().length - 1].id); }]);
   STANDS.push(['form strule', function(){ goTab('build'); go('gram', 'greet'); openStRules('greet'); }]);
   STANDS.push(['form fmr', function(){ goTab('build'); go('words'); fmrNew('v', 'pst'); }]);
+  /* AN OPENER TAKES WHAT IT TAKES, AND THE PAGE SAYS WHICH. Every one of
+     these was handed the WORD, and the ones that want a LETTER -- the sound
+     chart, the borrowed character -- were handed a headword, said ltById()
+     knows no such letter, and opened nothing. The stand then had no Save in
+     its bar and was skipped, in silence, by a walk whose whole argument is
+     that it names no screen: two of the six screens the owner reported on
+     2026-09-11 were invisible here for that reason alone.
+
+     A LIST OF WHICH OPENER WANTS WHICH IS THE FAULT docs/DATA_SAFETY.md NAMES
+     BY NAME -- a list of keys somebody has to remember to add to. So it is
+     asked instead: there are three kinds of thing in this app that carry an
+     id an opener takes, and each is tried in turn until a form comes up. The
+     third is a grammar STAGE, which the examples page wants and which is
+     neither of the other two -- so that page was skipped for the same reason
+     the other two were, one kind further along. */
+  var stid = (typeof stAll === 'function' && stAll()[0]) ? stAll()[0].id : '';
   opens.forEach(function(o){
-    STANDS.push(['form ' + o, function(){ window[o].length ? window[o](hw) : window[o](); }]);
+    STANDS.push(['form ' + o, function(){
+      if(!window[o].length){ window[o](); return; }
+      window[o](hw);
+      if(here().r === 'form') return;
+      window[o](lid);
+      if(here().r === 'form') return;
+      if(stid) window[o](stid);
+    }]);
   });
 
   /* WRITTEN DOWN FIRST, and before the screen is stood on. The fixture builds
@@ -861,10 +1014,33 @@ const walk = await pg.evaluate(({ s }) => {
     return true;
   }
 
-  /* A change with a road of its own, which therefore writes the phone and
-     leaves the Save grey. A BASELINE in box-check's sense: an entry that has
-     stopped being true fails below, so this cannot rot into permission. */
-  const OWN_ROAD = { setMyFont: 'SET.myfont -- netPrefsPut() sends it on the press' };
+  /* ---- EVERY PRESS THAT WRITES THE PHONE, AND WHY --------------------
+     「打ったら覚える、ボタンが書く」 OWNER 2026-09-03. On a screen that has a
+     Save, a press is meant to remember and the Save is meant to write, so
+     this list is the exceptions and it is a BASELINE in box-check's sense:
+     each line says which of the two kinds it is, an entry nothing reaches any
+     more fails below, and a NEW name fails until somebody writes down which
+     it is. Taking a line out is progress and needs nobody.
+
+     There are two kinds and the second is not permission:
+
+       its own road -- the press is RIGHT to write, because what it changes
+       is not what this screen's Save writes. The Save stays grey and
+       docs/scope/r14-keep.md § D is the measurement.
+
+       not moved yet -- the press writes the language AND now() carries it,
+       so the corner does go gold and nothing is lost. It is still two roads
+       to one change where the owner asked for one 「打ったら覚える、ボタンが
+       書く」, and r14 stopped at making the corner light. Each of these is a
+       screen still to be moved onto the buffer. */
+  const OWN_ROAD = {
+    setMyFont:    'its own road -- SET.myfont, netPrefsPut() sends it on the press',
+    wldOvAdd:     'not moved yet -- a row of the article is written on the press (r14 § A)',
+    setWldSecDl:  'not moved yet -- 「may this section be taken away」 is written on the press (r14 § A)',
+    kbUndo:       'not moved yet -- the step back writes the layout (r14 § B)',
+    kbRedo:       'not moved yet -- the step forward writes the layout (r14 § B)',
+    kbAddLay:     'not moved yet -- a layer is written on the press (r14 § B)'
+  };
   const roadSeen = {};
   /* WHICH FIELD A KEYSTROKE WENT INTO. Taken from the real keepSet() rather
      than worked out from the handler's name, which is a mapping this file
@@ -892,6 +1068,8 @@ const walk = await pg.evaluate(({ s }) => {
       var ff = fields(); if(f >= ff.length) break;
       var was = String(ff[f].value || ''), nm = ff[f].getAttribute('data-in');
       var saw0 = keepSetSaw.length;
+      flush();
+      var sig0 = nowSig(), allF = all();
       ff[f].value = was + 'zq'; ff[f].dispatchEvent(new Event('input', { bubbles: true }));
       /* A FIELD MAY REFUSE THE KEYSTROKE, and one does: the link on the
          profile puts back what it held for anything that is not the shape of
@@ -919,15 +1097,35 @@ const walk = await pg.evaluate(({ s }) => {
       if(wrote1 && !Object.prototype.hasOwnProperty.call(keepRead(KEEP[keepKey()].now), wrote1))
         out.fails.push(lab + ': ' + nm + ' writes the field 「' + wrote1 + '」 and now() does not ' +
                        'answer it -- what the language holds would never reach the box');
-      var lit = saveOn();
+      /* GOLD IFF now() MOVED -- the same sentence the buttons below are
+         asked, said about a field. It used to be 「every field turns the Save
+         gold」, which is a statement that every box on a screen with a Save is
+         a box of the thing being saved. That was true of twenty-four screens
+         because not one of them had a SEARCH box on it, and it stopped being
+         true the day the sound chart got a Save: the chart is a hundred and
+         sixty tiles and a box to find one with, and what is typed in that box
+         is not the letter. A claim that is true of every screen for a reason
+         that is not the claim is a lying proxy, and it fails on the first
+         screen that is merely different. */
+      var moved1 = nowSig() !== sig0, lit = saveOn();
       var ff2 = fields();
       if(f < ff2.length){
         ff2[f].value = was; ff2[f].dispatchEvent(new Event('input', { bubbles: true }));
       }
-      var backGrey = !saveOn();
-      if(!lit) out.fails.push(lab + ': typing into ' + nm + ' left the Save grey');
-      if(!backGrey) out.fails.push(lab + ': ' + nm + ' put back the way it was and the Save stayed gold' +
-                                   ' -- now() does not answer that field');
+      var backSig = nowSig(), backGold = saveOn();
+      if(moved1 && !lit) out.fails.push(lab + ': typing into ' + nm + ' changed what the screen holds' +
+                                        ' and left the Save grey');
+      if(!moved1 && lit) out.fails.push(lab + ': typing into ' + nm + ' turned the Save gold and the' +
+                                        ' screen holds what it held');
+      if(moved1 && backSig === sig0 && backGold)
+        out.fails.push(lab + ': ' + nm + ' put back the way it was and the Save stayed gold' +
+                       ' -- now() does not answer that field');
+      /* AND A FIELD THAT WRITES THE LANGUAGE ON THE KEYSTROKE, which is claim
+         C below asked of a box instead of a button. 「打ったら覚える、ボタンが
+         書く」 OWNER 2026-09-03: a keystroke writes nothing, ever. */
+      if(all() !== allF)
+        out.fails.push(lab + ': typing into ' + nm + ' wrote the phone -- a keystroke writes nothing');
+      if(moved1) out.lit++;
       rec.fields++; out.fields++;
     }
 
@@ -951,11 +1149,27 @@ const walk = await pg.evaluate(({ s }) => {
         out.fails.push(lab + ' -> ' + name + ': the screen changed and the Save stayed grey');
       if(!moved && gold)
         out.fails.push(lab + ' -> ' + name + ': the Save went gold and the screen is what it was');
-      /* C */
-      if(wrote && !moved){
+      /* C -- AND A PRESS WRITES NOTHING. 「打ったら覚える、ボタンが書く」
+         OWNER 2026-09-03, said about a button instead of a box.
+
+         This asked 「wrote the phone AND now() says nothing changed」, and
+         that is half of it: a press that writes the language AND carries it
+         in now() turns the corner gold and reads, from here, exactly like a
+         press that merely remembered. Watched -- with ltTakeSnd put back to
+         the way it wrote the letter on the touch, every claim in this file
+         was green, because now() reads the letter and the letter had indeed
+         moved. A Save over a screen that has already written is a button
+         with nothing left to do and an arrow with nothing left to ask.
+
+         OWN_ROAD is what a press that writes is allowed to be, and it is a
+         baseline in box-check's sense: named, held both ways, and a line
+         that stops being reached fails below. */
+      if(wrote){
         if(!OWN_ROAD[name])
-          out.fails.push(lab + ' -> ' + name + ': it wrote the phone and the screen says nothing changed' +
-                         ' -- now() does not carry what it changed');
+          out.fails.push(lab + ' -> ' + name + ': it wrote the phone' +
+                         (moved ? ' -- a press on a screen with a Save remembers; the Save writes'
+                                : ' and the screen says nothing changed' +
+                                  ' -- now() does not carry what it changed'));
         else roadSeen[name] = 1;
       }
       try { popOff(); } catch(e){}
@@ -998,6 +1212,34 @@ if(more.glAsked !== 1) fails.push('back off a changed drawing asked ' + more.glA
 if(!more.glStayed) fails.push('back off a changed drawing left the screen while the question was up');
 if(!more.glNoLeft) fails.push('No did not leave the drawing screen');
 if(more.glNoWrote) fails.push('No wrote the drawing onto the letter');
+if(more.addArrive !== 'grey') fails.push('the sheet that makes a word opened with 追加 ' + more.addArrive);
+if(!more.addWould) fails.push('a spelling typed onto a new word sheet and addOne() would still refuse it');
+if(more.addTyped !== 'gold') fails.push('a spelling typed onto a new word sheet left 追加 ' + more.addTyped);
+if(more.addRendered !== 'gold') fails.push('a render put 追加 back to ' + more.addRendered + ' over a sheet holding a word');
+if(more.addWouldNot) fails.push('the spelling was rubbed out and addOne() would still take it');
+if(more.addRubbed !== 'grey') fails.push('the spelling rubbed out left 追加 ' + more.addRubbed);
+if(more.addMade) fails.push('typing a spelling onto a new word sheet wrote the word');
+if(more.slotArrive !== 'grey') fails.push("a grammar slot's sheet opened with 追加 " + more.slotArrive);
+if(more.slotTyped !== 'gold') fails.push("a spelling typed onto a grammar slot's sheet left 追加 " + more.slotTyped);
+if(more.slotRendered !== 'gold') fails.push('a render put 追加 back to ' + more.slotRendered + " over a grammar slot's sheet holding a word");
+if(more.slotMade) fails.push("typing a spelling onto a grammar slot's sheet wrote the word");
+if(more.exArrive !== 'grey') fails.push("a stage's examples opened with its Save " + more.exArrive);
+if(more.exOnPage !== more.exWas + 1) fails.push('an example typed and entered put ' + more.exOnPage +
+    ' lines on the page and the stage had ' + more.exWas);
+if(more.exGold !== 'gold') fails.push('an example added left the Save ' + more.exGold);
+if(more.exOnPress !== more.exWas) fails.push('an example added wrote it onto the stage before anybody saved');
+if(more.exOnSave !== more.exWas + 1) fails.push('the Save left the stage holding ' + more.exOnSave +
+    ' examples and the page was showing ' + more.exOnPage);
+if(more.pkArrive !== 'grey') fails.push('the character picker opened with its Save ' + more.pkArrive);
+if(more.pkWas !== '') fails.push('the letter the picker opened on already wore a character: ' + more.pkWas);
+if(!more.pkHadStrokes) fails.push('the letter the picker opened on was not drawn, so there is nothing for a borrowed character to replace');
+if(!more.pkTile) fails.push('the character grid had no tile to press');
+if(more.pkGold !== 'gold') fails.push('a character pressed left the Save ' + more.pkGold);
+if(more.pkWroteOnPress !== '') fails.push('a character pressed wrote it onto the letter: ' + more.pkWroteOnPress);
+if(!more.pkStrokesOnPress) fails.push('a character pressed threw away the strokes the letter was drawn with');
+if(!more.pkStayed) fails.push('a character pressed took the screen away before anybody saved');
+if(more.pkWroteOnSave !== more.pkTile) fails.push('the Save wrote 「' + more.pkWroteOnSave + '」 and the tile pressed said 「' + more.pkTile + '」');
+if(more.pkStrokesOnSave) fails.push('the Save gave the letter a borrowed character and kept the strokes it was drawn with');
 if(more.glAfterNo !== 1) fails.push('No did not let the drawing go: ' + more.glAfterNo + ' strokes came back');
 if(more.glAfterNoBtn !== 'grey') fails.push('after No the Save was ' + more.glAfterNoBtn);
 if(!more.glYesLeft) fails.push('Yes did not leave the drawing screen');
@@ -1053,8 +1295,18 @@ if(!more.deadSaid) fails.push('a save with no wire went nowhere and said nothing
 if(more.deadTyped !== 'written in a tunnel') fails.push('a save with no wire threw away what was typed: ' + JSON.stringify(more.deadTyped));
 
 walk.fails.forEach((m) => fails.push(m));
+console.log('the character picker: the Save grey on arrival, gold on a character pressed, ' +
+            'the letter untouched and the screen still there until it was pressed, and then 「' +
+            more.pkWroteOnSave + '」 on the letter in place of what was drawn');
+console.log("a stage's examples: the Save grey on arrival, an example entered shows on the page " +
+            'and turns it gold, the stage untouched until it was pressed, and then ' +
+            more.exOnSave + ' of them on the stage');
+console.log('the sheet that makes a word, from the dictionary and from a grammar slot: ' +
+            '追加 grey on arrival, gold on a spelling typed, gold still after a render, ' +
+            'grey again when it is rubbed out, and no word written');
 console.log('every screen with a Save (' + walk.stands.length + '), asked of the page: ' +
-            walk.fields + ' fields typed into and put back (' + walk.refused +
+            walk.fields + ' fields typed into and put back (' + walk.lit +
+            ' of them changed what the screen holds and turned the corner gold; ' + walk.refused +
             ' refused the keystroke), ' + walk.presses + ' buttons pressed, ' +
             walk.gold + ' of them changed the screen and every one turned the corner gold -- ' +
             'and every press that left it as it was left the Save grey');

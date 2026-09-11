@@ -371,7 +371,6 @@ defLang('it', (function(){
       "set.signout.done" : "Uscito",
       "ob.tagline"                : "Dai nuovi colori alle tue parole.",
       "script.own.ph"             : "Incolla o scrivi un carattere",
-      "script.set"                : "Usa",
       "up.cta"                    : "Passa a Plus",
       "up.need"                   : "Questa funzione richiede un piano superiore",
       "pop.no"                  : "Chiudi",

@@ -78,7 +78,7 @@ function openAdd(from){
   openForm('add:'+addFrom,
     (addFrom? t('add.title.from', addFrom) : t('add.title')),
     '<div id="wd-body">'+wdFormHTML()+'</div>',
-    function(){ phkMount(); geTiles(); }, wdSaveBtn());
+    wdMount, wdSaveBtn());
 }
 FORM_OPEN.add=function(from){ openAdd(from||''); };
 function addOne(){
@@ -540,21 +540,32 @@ function wdKidsHTML(){
     (addW? '' : '<button class="btn ghost" style="width:100%;margin-top:10px"' +
       DO('wdDerive') + '>'+t('word.derive')+'</button>');
 }
+/* ---- WHAT EVERY RENDER OF THE SHEET HAS TO DO AGAIN --------------------
+   Three openers said `phkMount(); geTiles();` and each was one place that
+   would have to be found again. It is one thing -- the sheet, mounted -- and
+   the corner is in it, which is the part that could not be left to the
+   openers at all.
+
+   A FORM'S CORNER IS A STRING TAKEN WHEN THE FORM WAS OPENED (FORM.right,
+   www/home.js § openForm), and render() puts that same string back. So a
+   button painted on the keystroke is painted over by the next render, and
+   「追加」 went grey again over a sheet with a word on it. formMount()
+   (www/glyph.js § renderMount) runs this after every render of a form, which
+   is the one moment there is to say it again. */
+function wdMount(){ phkMount(); geTiles(); wdKeepTouch(); }
 function wdPaint(){
   var b=document.getElementById('wd-body'); if(!b) return;
-  b.innerHTML=wdFormHTML(); phkMount(); geTiles();
-  /* The sheet is repainted and the bar is not, so the buttons in the corner
-     are brought with it -- letters go onto the spelling here and nowhere
-     else. www/shell.js § navDo.
+  b.innerHTML=wdFormHTML(); wdMount();
+  /* The sheet is repainted and the bar is not, so the button in the corner is
+     brought with it -- letters go onto the spelling here and nowhere else.
+     www/shell.js § navDo.
 
-     THIS IS THE SHEET'S ONE ENTRANCE and that is why the Save is here rather
-     than in each handler: everything that moves anything on this sheet ends
-     in wdPaint(), so asking once here covers the meaning deleted, the tag
-     cut, the subclass chosen and whatever is added tomorrow. wdKeepTouch()
+     THIS IS THE SHEET'S ONE ENTRANCE and that is why the corner is here
+     rather than in each handler: everything that moves anything on this sheet
+     ends in wdPaint(), so asking once here covers the meaning deleted, the
+     tag cut, the subclass chosen and whatever is added tomorrow. wdKeepTouch()
      is the same notice said by a field being typed into, which does not come
      through here -- typing must not rebuild the sheet. */
-  navDoPaint('addOne', wdAddOn());
-  wdKeepTouch();
 }
 /* ---- four things an entry carries, beyond what it means -----------------
    A dictionary is not a list of meanings. Which of two words for the same
@@ -1504,10 +1515,31 @@ function wdKeepOn(){
 }
 /* A field being TYPED into does not rebuild the sheet and must not -- a field
    being typed into loses the keyboard the moment the page under it is
-   replaced -- so the one thing left to say is that the button should be
-   repainted where it stands. It asks wdNow() itself. */
+   replaced -- so the one thing left to say is that the button in the corner
+   should be repainted where it stands. It asks wdNow() itself.
+
+   ONE CORNER AND TWO BUTTONS IN IT. A sheet that CHANGES a word carries the
+   Save www/shell.js § KEEP draws; a sheet that MAKES one carries 「追加」,
+   which is not a save and says so (wdSaveBtn above). Both stand in the same
+   corner, both are grey until the sheet holds a word, and both are painted
+   from here.
+
+   ONLY THE SAVE WAS, and the guard above said so outright: `addW` -- the
+   sheet that MAKES a word -- returned before the paint. So typing a spelling
+   into a new word's sheet left 「追加」 grey while wdAddOn() said true, and
+   render() left it grey too, because what a form has in its corner is a
+   string taken when the form was opened (FORM.right, www/home.js § openForm)
+   and nothing rebuilt it. Measured on 2026-09-11: typed 「ka」, wdAddOn()
+   true, the button grey through the keystroke and through a render.
+   「なにもない時は薄い灰色、何か打ったら金にする」「これが決定ボタンの
+   ルール」 OWNER 2026-09-03 -- and the one field that decides whether that
+   press can land is the one the button said nothing about.
+
+   navDoPaint() finds nothing and does nothing where the other button is in
+   that corner, so neither line needs to ask which sheet this is. */
 function wdKeepTouch(){
-  if(!wEdit || !openHw || addW || langLocked()) return;
+  if(!wEdit || langLocked()) return;
+  navDoPaint('addOne', wdAddOn());
   keepBtnPaint();
 }
 /* ---- a word, read -------------------------------------------------------
@@ -1675,7 +1707,7 @@ function openEdit(hw){
   /* No button in the corner. navTop() puts one there when something on the
      sheet has been changed and not before -- www/shell.js § KEEP. */
   openForm('edit:'+w.hw, wOut(w.hw), '<div id="wd-body">'+wdFormHTML()+'</div>',
-           function(){ phkMount(); geTiles(); });
+           wdMount);
 }
 FORM_OPEN.edit=function(hw){ openEdit(hw); };
 FORM_OPEN.word=function(hw){ openWord(hw); };
