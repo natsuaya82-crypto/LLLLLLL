@@ -18,6 +18,8 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
 import { chromium, LAUNCH } from './browser.mjs';
 
 const dir = path.dirname(fileURLToPath(import.meta.url));
@@ -476,6 +478,39 @@ function wire(){
   window.XMLHttpRequest = Fake;
 }
 
+/* 240x240 の PNG。一色でよい ── 「出ているか」と「どの大きさで出ているか」
+   の両方が写真で読めればよい。 */
+const FAKE_PIC = (() => {
+  const z = require('zlib');
+  const W = 240, H = 240, raw = Buffer.alloc((W * 3 + 1) * H);
+  for (let y = 0; y < H; y++){
+    raw[y * (W * 3 + 1)] = 0;
+    for (let x = 0; x < W; x++){
+      const o = y * (W * 3 + 1) + 1 + x * 3;
+      raw[o] = 90 + ((x + y) % 90); raw[o + 1] = 130; raw[o + 2] = 160;
+    }
+  }
+  const crcT = [];
+  for (let n = 0; n < 256; n++){ let c = n;
+    for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    crcT[n] = c >>> 0; }
+  const crc = (b) => { let c = 0xFFFFFFFF;
+    for (const x of b) c = crcT[(c ^ x) & 0xFF] ^ (c >>> 8);
+    return (c ^ 0xFFFFFFFF) >>> 0; };
+  const chunk = (t, d) => {
+    const len = Buffer.alloc(4); len.writeUInt32BE(d.length);
+    const body = Buffer.concat([Buffer.from(t, 'ascii'), d]);
+    const c = Buffer.alloc(4); c.writeUInt32BE(crc(body));
+    return Buffer.concat([len, body, c]);
+  };
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(W, 0); ihdr.writeUInt32BE(H, 4);
+  ihdr[8] = 8; ihdr[9] = 2;
+  return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
+                        chunk('IHDR', ihdr), chunk('IDAT', z.deflateSync(raw)),
+                        chunk('IEND', Buffer.alloc(0))]);
+})();
+
 let SHOT = 0;
 const NOTE = [];
 const KEEP = {};
@@ -499,9 +534,10 @@ export class Dev {
     await this.pg.route('https://fonts.googleapis.com/**',
       r => r.fulfill({ status: 200, contentType: 'text/css', body: '' }));
     await this.pg.route('https://fonts.gstatic.com/**', r => r.abort());
+    /* 本物の大きさの写真を返す。1x1 を返すと「写真が出ていない」を自分で
+       作ってしまう（道6で一度そう見えた）。 */
     await this.pg.route('**/storage/v1/object/public/**',
-      r => r.fulfill({ status: 200, contentType: 'image/gif',
-        body: Buffer.from('R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==', 'base64') }));
+      r => r.fulfill({ status: 200, contentType: 'image/png', body: FAKE_PIC }));
     await this.go();
     return this;
   }
@@ -572,12 +608,13 @@ export class Dev {
     return true;
   }
   /* 名前と引数で押す ── data-a が JSON で載っている */
-  async tapArg(name, args){
+  async tapArg(name, args, at){
     const sel = '[data-do="' + name + '"][data-a=' +
       JSON.stringify(JSON.stringify([].concat(args))) + ']';
     const el = this.pg.locator(sel).first();
     if (!(await el.count())) return false;
-    await el.click({ timeout: 4000 }).catch(() => {});
+    await el.click(Object.assign({ timeout: 4000 }, at ? { position: at } : {}))
+      .catch(() => {});
     await this.quiet();
     return true;
   }
@@ -744,6 +781,7 @@ WALKS['probe'] = async (br, srv) => {
     for (const nm of process.env.HUNT_PRESS.split(',')){
       const t = nm.trim().split('|');
       if (t[1]) await a.tapArg(t[0], JSON.parse(t[1])); else await a.tapDo(t[0]);
+      await a.pg.waitForTimeout(200);
       say('== after ' + nm + ' == ' + (await a.where()));
       (await a.buttons()).forEach(b => say('   ' + b));
       say('   fields: ' + JSON.stringify(await a.pg.evaluate(() =>
@@ -1142,51 +1180,325 @@ WALKS['5'] = async (br, srv) => {
   await a.pg.evaluate(() => planTook('pro'));
   await a.quiet(); await a.popShut();
 
+  const rowsNow = () => a.pg.evaluate(() => {
+    const b = kbBoards();
+    return JSON.stringify(b.map(x => (x.lay || []).map(l =>
+      (l.r || l.rows || l || []).map(r => (r || []).length))));
+  });
+  const keysOf = (i, lay) => a.pg.evaluate(x => {
+    const b = kbBoards()[x[0]];
+    const l = (b.lay || [])[x[1]];
+    const rows = l.r || l.rows || l || [];
+    return JSON.stringify(rows.map(r => (r || []).map(k =>
+      (k && (k.k || k.lt || k.ch || k.t)) || '·').join(' ')));
+  }, [i, lay]);
+
   await a.tapArg('goTab', ['build']);
   await a.tapArg('go', ['kb']);
   await a.shot('kb-list');
   say('  boards: ' + JSON.stringify((await a.buttons()).filter(b => /kbGoBoard|kbNew/.test(b))));
+  say('  layouts: ' + await rowsNow());
 
   await a.tapDo('kbNew');
   await a.shot('kb-new');
-  say('  after 新規: where=' + await a.where() + '  KB boards=' +
-      await a.pg.evaluate(() => (typeof KB === 'object' && KB && KB.b ? KB.b.length : -1)));
-  await a.popShut();
-  /* どの型にするか訊かれたら一つ選ぶ */
-  const pats = (await a.buttons()).filter(b => b.indexOf('kbSetPat') === 0);
-  if (pats.length){ say('  patterns: ' + JSON.stringify(pats)); await a.tapDo('kbSetPat'); await a.shot('kb-pattern'); }
+  say('  after 追加: where=' + await a.where() +
+      '  patterns=' + JSON.stringify((await a.buttons()).filter(b => b.indexOf('kbAdd') === 0)));
+  /* 五つの型を全部作って、キーに何が乗るかを見る */
+  for (const pat of ['qwerty', 'flick', 'tap', 'chart', 'abc']){
+    const n = await a.pg.evaluate(() => kbBoards().length);
+    if (n > 1){ await a.goRoute('kb'); await a.tapDo('kbNew'); }
+    await a.tapArg('kbAdd', [pat]);
+    await a.shot('kb-made-' + pat);
+    say('  型「' + pat + '」で作った板 ' + n + ': ' +
+      await a.pg.evaluate(x => {
+        const b = kbBoards()[x]; if (!b) return '(none)';
+        const rows = b.lay[0].rows || b.lay[0];
+        return JSON.stringify(rows.map(r => r.map(k =>
+          k.k === 'lt' ? (k.t || '·') : ('[' + k.k + ']')).join(' ')));
+      }, n));
+  }
+  await a.goRoute('kb', '1');
+  await a.shot('kb-made');
+  say('  after choosing QWERTY: where=' + await a.where() +
+      '  layouts=' + await rowsNow());
 
+  say('  board 0 (free QWERTY) keys: ' + await keysOf(0, 0));
+  say('  board 1 (just made)  keys: ' + await keysOf(1, 0));
+  say('  board 0 shape: ' + await a.pg.evaluate(() => {
+    const b = kbBoards()[0]; const l = b.lay[0];
+    return Object.keys(l).join(',') + ' || row1=' + JSON.stringify((l.r||l.rows||l)[1]).slice(0, 260); }));
+  say('  board 1 shape: ' + await a.pg.evaluate(() => {
+    const b = kbBoards()[1]; const l = b.lay[0];
+    return Object.keys(l).join(',') + ' || row1=' + JSON.stringify((l.r||l.rows||l)[1]).slice(0, 260); }));
   await a.shot('kb-editor');
-  say('  editor buttons: ' + JSON.stringify((await a.buttons()).slice(0, 26)));
-  const rows0 = await a.pg.evaluate(() => JSON.stringify(kbOf().map(r => r.length)));
-  say('  rows: ' + rows0);
+  say('  editor buttons: ' + JSON.stringify((await a.buttons()).slice(0, 30)));
+  const was = await rowsNow();
 
   /* 列の頭を押して選び、ゴミ箱で消す */
   await a.tapArg('kbHeadCol', [2]);
   await a.shot('kb-col-picked');
+  say('  after picking column 2: buttons=' +
+      JSON.stringify((await a.buttons()).filter(b => /kbCut|kbAlign|kbJoinSel|kbOpenSel/.test(b))));
   await a.tapDo('kbCut');
   await a.shot('kb-col-cut');
-  say('  rows after cutting a column: ' +
-      await a.pg.evaluate(() => JSON.stringify(kbOf().map(r => r.length))));
+  say('  layouts after 削除: ' + await rowsNow());
   await a.tapDo('kbUndo');
   await a.shot('kb-undone');
-  say('  rows after undo: ' +
-      await a.pg.evaluate(() => JSON.stringify(kbOf().map(r => r.length))) +
-      '   (was ' + rows0 + ')');
+  say('  layouts after 戻す:  ' + await rowsNow() + '\n   (before it all: ' + was + ')');
+  await a.tapDo('kbRedo');
+  await a.shot('kb-redone');
+  say('  layouts after やり直し: ' + await rowsNow());
+  await a.tapDo('kbUndo');
+  await a.quiet();
 
   /* 二つ目の面 */
   await a.tapDo('kbAddLay');
   await a.shot('kb-layer2');
-  say('  layers: ' + await a.pg.evaluate(() => {
-    const b = kbBoard ? kbBoard() : null;
-    return b ? JSON.stringify((b.lay || []).length) : '?';
-  }).catch(() => '?'));
+  say('  after 面を追加: where=' + await a.where() + '  layouts=' + await rowsNow() +
+      '  layer buttons=' + JSON.stringify((await a.buttons()).filter(b => /kbGoLay|kbDropLay/.test(b))));
+
+  await a.tapDo('keepPress');
+  await a.shot('kb-saved');
+  say('  after 保存: where=' + await a.where());
   await a.reload();
   await a.tapArg('goTab', ['build']);
   await a.tapArg('go', ['kb']);
   await a.shot('kb-relaunch');
   say('  boards after relaunch: ' +
-      JSON.stringify((await a.buttons()).filter(b => b.indexOf('kbGoBoard') === 0)));
+      JSON.stringify((await a.buttons()).filter(b => b.indexOf('kbGoBoard') === 0)) +
+      '\n   layouts: ' + await rowsNow());
+  return a;
+};
+
+/* ---- 6. 投稿 ------------------------------------------------------------ */
+WALKS['6'] = async (br, srv) => {
+  say('--- 6. posting ---');
+  const a = await new Dev(br, srv, 'A').open();
+  await arrive(a, AYA, false);
+  await a.reload();
+  await a.tapArg('goTab', ['feed']);
+  await a.shot('ps-feed-empty');
+
+  await a.tapDo('openPost');
+  await a.shot('ps-composer');
+  await a.type('#pw-ln', 'kano tir sar');
+  await a.type('#pw-mn', '山から川を見た');
+  await a.shot('ps-typed');
+
+  /* 写真 ── ライブラリの file 欄に一枚入れる */
+  const jpg = path.join(SHOTS, '_a-photo.png');
+  fs.writeFileSync(jpg, FAKE_PIC);
+  const fin = a.pg.locator('#pw-cam');
+  if (await fin.count()){
+    await fin.setInputFiles(jpg).catch(e => say('    ! photo: ' + e.message.split('\n')[0]));
+    await a.quiet(400);
+  }
+  await a.shot('ps-photo');
+  say('  after putting a photograph in: pics on the composer=' +
+      await a.pg.evaluate(() => document.querySelectorAll('#app .pwpic, #app [data-do^="pwDropPic"]').length));
+
+  /* 声 */
+  await a.tapDo('voStart');
+  await a.pg.waitForTimeout(1200);
+  await a.shot('ps-voice-on');
+  await a.tapDo('voStop');
+  await a.quiet(500);
+  await a.shot('ps-voice-off');
+  say('  after 声: buttons=' + JSON.stringify((await a.buttons()).filter(b => /vo/.test(b))));
+  await a.tapDo('pwSend');
+  await a.settle();
+  await a.shot('ps-sent');
+  say('  after 投稿する: where=' + await a.where() +
+      '  posts on server=' + srv.db.post.length);
+
+  await a.tapArg('goTab', ['feed']);
+  await a.shot('ps-feed');
+  say('  rows on the timeline: ' + await a.pg.evaluate(() =>
+    document.querySelectorAll('#app [data-do^="postOpen"]').length));
+
+  /* 開いて、いいね、返信 */
+  say('  feed buttons: ' + JSON.stringify((await a.buttons()).slice(0, 12)));
+  const pid = await a.pg.evaluate(() => {
+    const e = document.querySelector('#app [data-do="postOpen"]');
+    try { return JSON.parse(e.getAttribute('data-a'))[0]; } catch (x) { return ''; }
+  });
+  say('  id on the screen: ' + pid + '   id on the server: ' +
+      (srv.db.post[0] ? srv.db.post[0].id : '(none)'));
+  /* 行の左上を押す ── 真ん中は写真で、写真には写真の押し方がある */
+  await a.tapArg('postOpen', [pid], { x: 300, y: 40 });
+  await a.shot('ps-thread');
+  say('  post page: ' + JSON.stringify((await a.buttons()).slice(0, 14)));
+  await a.tapArg('postLike', [pid]);
+  await a.settle();
+  await a.shot('ps-liked');
+  say('  likes on server: ' + srv.db.react.length +
+      '  i_like on screen? ' + await a.pg.evaluate(() =>
+        !!document.querySelector('#app .on[data-do^="postLike"], #app [data-do^="postLike"].on')));
+
+  await a.tapArg('postReply', [pid]);
+  await a.shot('ps-reply-form');
+  await a.type('#pw-ln', 'mos');
+  await a.type('#pw-mn', 'たかい');
+  await a.tapDo('pwSend');
+  await a.settle();
+  await a.shot('ps-replied');
+  say('  posts on server after the reply: ' + srv.db.post.length +
+      '  replies: ' + srv.db.post.filter(p => p.reply_to).length);
+
+  await a.tapArg('goTab', ['feed']);
+  await a.shot('ps-feed-2');
+  say('  timeline rows now: ' + await a.pg.evaluate(() =>
+    document.querySelectorAll('#app [data-do^="postOpen"]').length));
+
+  /* 消す */
+  await a.tapArg('postOpen', [pid], { x: 300, y: 40 });
+  await a.tapArg('postMore', [pid]);
+  await a.shot('ps-more');
+  say('  more sheet: ' + JSON.stringify((await a.buttons()).filter(b => /postDel|postPin|postEdit/.test(b))));
+  await a.tapArg('postDel', [pid]);
+  await a.shot('ps-del-ask');
+  say('  delete pop: "' + await a.pop() + '"');
+  await a.tapDo('popYes');
+  await a.settle();
+  await a.shot('ps-deleted');
+  say('  after delete: where=' + await a.where() + '  posts on server=' + srv.db.post.length);
+  await a.reload();
+  await a.tapArg('goTab', ['feed']);
+  await a.shot('ps-relaunch');
+  say('  timeline after relaunch: ' + await a.pg.evaluate(() =>
+    document.querySelectorAll('#app [data-do^="postOpen"]').length) + ' rows');
+  return a;
+};
+
+/* ---- 7. プロフィール ------------------------------------------------------ */
+WALKS['7'] = async (br, srv) => {
+  say('--- 7. profile ---');
+  const a = await new Dev(br, srv, 'A').open();
+  await arrive(a, AYA, false);
+  await a.reload();
+  await a.tapArg('goTab', ['profile']);
+  await a.shot('pf-mine');
+  await a.tapDo('openMe');
+  await a.shot('pf-edit');
+  say('  edit fields: ' + JSON.stringify(await a.pg.evaluate(() =>
+    Array.prototype.map.call(document.querySelectorAll('#app input,#app textarea'),
+      e => '#' + (e.id || e.className) + ':' + (e.placeholder || '')))));
+  const ids = await a.pg.evaluate(() =>
+    Array.prototype.map.call(document.querySelectorAll('#app input,#app textarea'),
+      e => e.id).filter(Boolean));
+  const put = { 'me-nm': 'アヤ改', 'me-hd': 'ayaka', 'me-bio': '言語をつくっています',
+                'me-lk': 'https://example.com', 'me-lc': '東京' };
+  for (const k of ids) if (put[k]) await a.type('#' + k, put[k]);
+  await a.shot('pf-typed');
+  await a.tapDo('keepPress');
+  await a.settle();
+  await a.shot('pf-saved');
+  say('  after 保存: where=' + await a.where() +
+      '\n   ME: ' + await a.pg.evaluate(() => JSON.stringify(
+        { nm: ME.name, hd: ME.handle, bio: ME.bio, link: ME.link, loc: ME.loc })) +
+      '\n   server profile: ' + JSON.stringify(srv.db.profile.map(x =>
+        ({ h: x.handle, d: x.display, bio: x.bio, link: x.link, loc: x.loc }))));
+  await a.reload();
+  await a.tapArg('goTab', ['profile']);
+  await a.shot('pf-relaunch');
+  say('  after relaunch: ' + await a.pg.evaluate(() => JSON.stringify(
+    { nm: ME.name, hd: ME.handle, bio: ME.bio })));
+  return a;
+};
+
+/* ---- 8. 検索・通知・保存した検索 ------------------------------------------- */
+WALKS['8'] = async (br, srv) => {
+  say('--- 8. search and notices ---');
+  const a = await new Dev(br, srv, 'A').open();
+  await arrive(a, AYA, false);
+  await a.reload();
+  /* 何か一つ書いておく */
+  await a.tapArg('goTab', ['feed']);
+  await a.tapDo('openPost');
+  await a.type('#pw-ln', 'kano');
+  await a.type('#pw-mn', 'やま');
+  await a.tapDo('pwSend');
+  await a.settle();
+
+  await a.tapArg('goTab', ['explore']);
+  await a.shot('se-explore');
+  say('  explore buttons: ' + JSON.stringify((await a.buttons()).slice(0, 12)));
+  const q = await a.pg.evaluate(() => {
+    const e = document.querySelector('#app input');
+    return e ? '#' + (e.id || e.className) : '';
+  });
+  say('  search field: ' + q);
+  if (q){
+    await a.type(q, 'kano');
+    await a.pg.locator(q).press('Enter');
+    await a.quiet(600);
+  }
+  await a.shot('se-searched');
+  say('  after searching "kano": where=' + await a.where() +
+      '  rows=' + await a.pg.evaluate(() =>
+        document.querySelectorAll('#app [data-do^="postOpen"]').length) +
+      '  recent on server=' + srv.db.recent_search.length);
+  await a.tapDo('snsSaveQ');
+  await a.settle();
+  await a.shot('se-saved');
+  say('  after ★: saved on server=' + srv.db.saved_search.length +
+      '  buttons=' + JSON.stringify((await a.buttons()).filter(b => /snsSaveQ|snsPick|snsDrop/.test(b))));
+  await a.tapDo('snsClearQ');
+  await a.shot('se-cleared');
+  say('  after clearing: ' + JSON.stringify((await a.buttons()).filter(b => /snsPick/.test(b))));
+
+  await a.tapArg('goTab', ['notif']);
+  await a.shot('se-notif');
+  say('  notices: ' + JSON.stringify((await a.buttons()).slice(0, 10)) +
+      '  text=' + JSON.stringify((await a.text()).split('\n').filter(Boolean).slice(0, 6)));
+  await a.reload();
+  await a.tapArg('goTab', ['explore']);
+  await a.shot('se-relaunch');
+  say('  saved searches after relaunch: ' +
+      JSON.stringify((await a.buttons()).filter(b => /snsPick/.test(b))));
+  return a;
+};
+
+/* ---- 9. 設定 -------------------------------------------------------------- */
+WALKS['9'] = async (br, srv) => {
+  say('--- 9. settings ---');
+  const a = await new Dev(br, srv, 'A').open();
+  await arrive(a, AYA, false);
+  await a.reload();
+  await a.tapArg('goTab', ['profile']);
+  await a.tapArg('go', ['settings']);
+  await a.shot('st-settings');
+  say('  settings rows: ' + JSON.stringify(await a.buttons()));
+
+  await a.tapArg('setTheme', ['dark']);
+  await a.shot('st-dark');
+  say('  theme now: ' + await a.pg.evaluate(() => SET.theme) +
+      '  root: ' + await a.pg.evaluate(() =>
+        document.documentElement.getAttribute('data-theme') || '(none)'));
+  await a.tapArg('setTheme', ['light']);
+  await a.shot('st-light');
+
+  await a.tapArg('setUi', ['en']);
+  await a.quiet(300);
+  await a.shot('st-english');
+  say('  ui now: ' + await a.pg.evaluate(() => SET.ui) +
+      '  heading: ' + JSON.stringify((await a.text()).split('\n').filter(Boolean).slice(0, 4)));
+  await a.tapArg('setUi', ['ja']);
+  await a.quiet(300);
+  await a.shot('st-japanese');
+
+  await a.tapArg('go', ['plans']);
+  await a.shot('st-plans');
+  say('  plans page: ' + JSON.stringify(await a.buttons()));
+  await a.tapDo('back');
+  await a.shot('st-back');
+  say('  where after back: ' + await a.where());
+  await a.reload();
+  await a.tapArg('goTab', ['profile']);
+  await a.tapArg('go', ['settings']);
+  await a.shot('st-relaunch');
+  say('  after relaunch: theme=' + await a.pg.evaluate(() => SET.theme) +
+      ' ui=' + await a.pg.evaluate(() => SET.ui));
   return a;
 };
 
@@ -1196,7 +1508,11 @@ WALKS['5'] = async (br, srv) => {
 async function main(){
   const want = process.argv.slice(2).filter(x => !x.startsWith('-'));
   const keys = want.length ? want : Object.keys(WALKS);
-  const br = await chromium.launch(LAUNCH);
+  /* 声は MediaRecorder を通るので、偽のマイクを付けて開く。 */
+  const br = await chromium.launch(Object.assign({}, LAUNCH, {
+    args: (LAUNCH.args || []).concat([
+      '--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'])
+  }));
   const srv = newServer();
   for (const k of keys){
     if (!WALKS[k]){ say('no walk ' + k); continue; }
