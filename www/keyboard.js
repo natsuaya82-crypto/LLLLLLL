@@ -42,6 +42,34 @@
    Editing does not move that. You can build the next keyboard without
    disturbing the one you are typing on, and press Apply when it is ready. */
 var KB=null;
+/* WHAT SHAPE THE STORED KEYBOARD IS IN, and the one place the number is said.
+
+   `v` is what tells a KB written by THIS app from one written before board 0
+   left storage, and two things read it: migrateKbFree(), which moves the old
+   editable copy of the free QWERTY out of the array, and kbIded(), which
+   reads `at` on the old indexing when it is missing.
+
+   IT WAS WRITTEN BY THE MIGRATION AND BY NOBODY ELSE, so a KB this app had
+   just MADE carried no `v` at all and was read as one from before any of
+   this -- by both of them. kbIded() then moved `at` by one, which is the
+   keyboard on the phone silently becoming its neighbour: the very thing
+   migrateKbFree()'s own comment warns about, happening to it. That was true
+   of all five patterns before a letter was ever laid on one.
+
+   And the day a made board came out character for character the free QWERTY
+   -- which is what 「型を選んだ時点で、無料の QWERTY と同じく文字を載せる」
+   asks for -- migrateKbFree() read it as the copy and kbs.shift() TOOK IT
+   AWAY. Measured: one stored board, zero after the next launch.
+
+   So a KB is born stamped. Not a condition added to either reader: they are
+   both right about what `v` means, and what was wrong is that nothing put it
+   on. Storage written by older versions is untouched -- no `v` still means
+   migrate, and a `v` already there still means done. */
+var KB_V=2;
+/* An empty one, with the version on it. Three places used to write
+   `{kbs:[], at:0}` out by hand, which is three places to remember a field in
+   and three that did not. */
+function kbMint(){ return {kbs:[], at:0, v:KB_V}; }
 /* How many keyboards this person has BUILT, across every language they have.
 
    KB_MAX was a constant here and a per-language one: three in this language,
@@ -166,10 +194,13 @@ function kbId(){ KB_SEQ++; return 'k'+Date.now()+'_'+KB_SEQ; }
 
    SAME CONTENTS TWICE IS NOT ONE BOARD.
    「ダメに決まってんだろ」 OWNER 2026-09-09. Pressing + twice makes two boards,
-   and `kbAdd` makes them `{id, nm:'', pat, lay:kbBlank(...)}` -- so two blank
-   boards of one pattern are the same board in every field but the id, and for
-   two days they were read back as ONE. What a person pressed twice is two
-   things, whatever the bytes say.
+   and `kbAdd` makes them `{id, nm:'', pat, lay:kbPatLay(pat)}` -- so two boards
+   of one pattern are the same board in every field but the id, and for two
+   days they were read back as ONE. What a person pressed twice is two things,
+   whatever the bytes say. (They were BLANK boards when this was written: the
+   pattern was emptied on the way in. They carry the letters now, which changes
+   the bytes and changes nothing about the argument -- two boards of one
+   pattern are still identical in every field but the id.)
 
    SO TWO BOARDS THAT BOTH CARRY AN ID ARE NEVER JOINED HERE, whatever is on
    them. An id is what says which board this is, and two of them is two.
@@ -271,7 +302,7 @@ function kbIded(k){
     seen['i'+b.id]=out.length; put.push(out.length); out.push(b);
   }
   k.kbs=out;
-  off=((parseInt(k.v, 10)||0)>=2)? 1 : 0;
+  off=((parseInt(k.v, 10)||0)>=KB_V)? 1 : 0;
   idx=(parseInt(k.at, 10)||0)-off;
   if(idx>=0 && idx<put.length) k.at=put[idx]+off;
   return k;
@@ -306,11 +337,11 @@ function kbSameLay(a, b){
    take the person's own first board out of the array as though it were the
    copy. */
 function migrateKbFree(){
-  if(!KB || (parseInt(KB.v, 10)||0)>=2) return;
+  if(!KB || (parseInt(KB.v, 10)||0)>=KB_V) return;
   var kbs=KB.kbs||[], at=parseInt(KB.at, 10)||0;
   if(kbs.length && kbSameLay(kbs[0].lay, kbFixed().lay)) kbs.shift();
   else if(kbs.length) at=at+1;
-  KB.kbs=kbs; KB.at=at; KB.v=2;
+  KB.kbs=kbs; KB.at=at; KB.v=KB_V;
   saveKb();
 }
 /* NO KEYBOARD AND A BROKEN KEYBOARD ARE DIFFERENT STATES, and this line put
@@ -723,50 +754,42 @@ function kbPatLay(pat){
   if(pat==='abc')    return kbLinkFaces(kbAbcLay());
   return kbLinkFaces(kbTapLay());
 }
-/* The shape without the letters.
-   「それ以外2つ目作るときは形だけ」
+/* A PATTERN ARRIVES WEARING THE LETTERS, and kbPatLay() above is the one
+   place that puts them there.
+   「型を選んだ時点で、無料の QWERTY と同じく文字を載せる」 OWNER 2026-09-11.
 
-   A pattern is an ARRANGEMENT -- how many keys, how wide, WHICH CARRY A
-   FLICK, where the space and the delete sit. Which letter goes on which key
-   is the other half and it is the person's.
+   There used to be a kbBlank() here, between kbPatLay() and the board, that
+   emptied every letter key and every flick slot the pattern had just filled.
+   So a board made from QWERTY came out with the shape of a QWERTY and a `·`
+   on all thirty-eight keys, and the same for ABC順 -- and both of those names
+   are names for WHICH LETTER GOES WHERE, so an empty one is the name saying
+   nothing. `docs/reports/hunt-2026-09-11.md` #13 is the screen.
 
-   The flick slots are part of the arrangement and this emptied them, which
-   made choosing Flick produce twelve keys with nothing to flick to -- a tap
-   keyboard wearing another name. 「フリックにしたのにフリックできない」 A
-   slot that the pattern put there stays there and stays EMPTY, which is a
-   slot waiting for a letter and is what the editor draws as a dashed square.
+   It was DELETED rather than given a condition. Nothing had to be added to
+   put the letters on: measured in the real app, kbPatLay() was already laying
+   38/38 on a QWERTY, 40/40 on a tap, 28/28 on ABC順 and 22 flick slots on a
+   flick. One mechanism, and the one that fought it is gone.
 
-   The first board is the exception and is not made here: it is the QWERTY
-   they already had, letters and all. Everything after it starts empty.
+   The chart is the pattern that can still come out empty, and that is its own
+   answer rather than anything stripping it: its keys are the letters that
+   write each 子音 x 母音, so a language that has drawn none of those has none
+   to put on. kbChartLay() says so where it builds them.
 
-   The layer keys keep what they do, and the space and the delete keep being
-   themselves. Safe to write into: every kbPatLay() builds its rows fresh. */
-function kbBlank(lay){
-  var i, j, k, key, d;
-  for(i=0;i<lay.length;i++)
-    for(j=0;j<lay[i].rows.length;j++)
-      for(k=0;k<lay[i].rows[j].length;k++){
-        key=lay[i].rows[j][k];
-        if(key.k!=='lt') continue;
-        key.v='';
-        key.t='';
-        /* Emptied, never removed. `''` is a slot with no letter in it yet;
-           taking the array away is a key that can never have one. */
-        if(key.f) for(d=0;d<key.f.length;d++) key.f[d]='';
-      }
-  return lay;
-}
+   A board ALREADY STORED is untouched -- letters go on at the moment one is
+   made, and an empty board somebody left empty stays that way. */
 /* Whether this board's keys flick at all. A pattern that laid four
    directions on a key means them, and one that did not means that too -- a
    QWERTY has no flick and the editor must not offer four empty squares
    around every one of its thirty keys.
    「qwartyで追加してるのに、行追加後に設定しようとしたらフリックになるのなに？」
 
-   Both what it WAS made from and what it holds NOW. The layout alone cannot
-   answer it: a flick board that nobody has put a letter on yet has four empty
-   slots on every key, which is indistinguishable from a QWERTY -- and that is
-   exactly the board somebody has just made and is looking at. `pat` is the
-   intent and the keys are the fact, and either is enough. */
+   Both what it WAS made from and what it holds NOW, and either is enough.
+   `pat` is the intent and the keys are the fact. A flick board arrives with
+   its slots filled, so the keys answer for one straight away -- but a board
+   somebody has since emptied slot by slot is still a flick board, and that is
+   what `pat` is there to say. The other direction is the one that cannot be
+   dropped: a board built before there was a `pat` on it, or one whose slots
+   were filled by hand on another pattern, is answered for by the keys. */
 function kbHasFlick(){
   var b=kbBoard(), i, j, k, key, d;
   if(b.pat==='flick') return true;
@@ -791,8 +814,8 @@ function kbAdd(pat){
   if(kbCapStop()) return;
   /* Storage holds only the ones the person built. The free QWERTY is board 0
      and is not among them, so the first one made here is the SECOND board. */
-  if(!KB) KB={kbs:[], at:0};
-  KB.kbs.push({id:kbId(), nm:'', pat:pat, lay:kbBlank(kbPatLay(pat))});
+  if(!KB) KB=kbMint();
+  KB.kbs.push({id:kbId(), nm:'', pat:pat, lay:kbPatLay(pat)});
   kbShow=kbBoards().length-1; kbLay=0; kbSel=null;
   kbForget();
   saveKb();
@@ -856,7 +879,7 @@ function kbApply(i){
   if(!bs.length) return;
   /* KB is null until something is built, and board 0 is appliable before
      then -- it is the keyboard already on the phone. */
-  if(!KB) KB={kbs:[], at:0};
+  if(!KB) KB=kbMint();
   KB.at=kbClamp(i, bs.length);
   saveKb(); render();
 }
@@ -1247,7 +1270,7 @@ function kbEdit(){
      mutator below asks here and stops on null -- one place saying no, rather
      than thirty places each remembering to. */
   if(kbIsFree(kbShow)) return null;
-  if(!KB) KB={kbs:[], at:0};
+  if(!KB) KB=kbMint();
   kbShow=kbClamp(kbShow, kbBoards().length);
   if(kbIsFree(kbShow)) return null;
   return KB.kbs[kbShow-1] || null;
@@ -3804,7 +3827,7 @@ function kbSetPat(pat){
 function kbSetPatGo(pat){
   var x=KB.kbs[kbShow-1];
   if(!x) return;
-  x.pat=pat; x.lay=kbBlank(kbPatLay(pat));
+  x.pat=pat; x.lay=kbPatLay(pat);
   kbLay=0; kbSel=null;
   saveKb();
   /* Back onto the keyboard whose arrangement this just changed, which is the

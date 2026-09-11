@@ -816,17 +816,17 @@ export function halfDone(){
         window.route='gram'; NAV=[{r:'gram', a:'ownfix'}];
         const h = vGram();
         STG.extra.pop(); SET.plan = 'free'; return h; }],
-    /* CHOOSING RULES TO DELETE, both ways round. The chapter's list deletes
+    /* CHOOSING RULES TO DELETE, both ways round. The section's list deletes
        the way every other list in this app does -- Select in the corner, a ◉
        on each row, Delete beside Done -- and none of those four buttons is
        drawn until somebody has pressed Select, so without these faces
        act-check reports three of them as entries no screen names. Two,
        because Delete is only in the bar once something is chosen. */
-    ['the rules of a chapter, choosing', () => {
+    ['the rules of a section, choosing', () => {
         window.route='gram'; NAV=[{r:'gram', a:'v2:pl'}];
         G2SEL = {};
         const h = vGram(); G2SEL = null; return h; }],
-    ['the rules of a chapter, one chosen', () => {
+    ['the rules of a section, one chosen', () => {
         window.route='gram'; NAV=[{r:'gram', a:'v2:pl'}];
         G2SEL = { fr1: 1 };
         const h = vGram(); G2SEL = null; return h; }],
@@ -2138,6 +2138,38 @@ export function halfDone(){
                                               kbAdd('flick'); kbLay = 0;
                                               const h = vKb(); KB = null; kbShow = 0;
                                               SET.plan = 'free'; return h; }],
+    /* A BOARD THE MOMENT IT IS MADE, wearing the letters.
+       「型を選んだ時点で、無料の QWERTY と同じく文字を載せる」 OWNER
+       2026-09-11. Both of the two the owner named, because QWERTY and ABC順
+       are names for WHICH LETTER GOES WHERE and the fault they were written
+       after is a letter missing -- which is a thing only a picture shows. The
+       flick above is the third and was already here.
+
+       Every other face of this chapter arrives at a board through an act that
+       then changes it -- a row selected, a key held, a column cut -- so none
+       of them is the board as it arrives, which is the one state this
+       decision is about. */
+    /* A KEY WITH NOTHING ON IT YET, which is the state that wears the dashed
+       square and the + inside it (`.kbe.non`, `.kbsx`). It used to be every
+       key of every board made from a pattern, so any face here reached it by
+       accident. A pattern arrives wearing the letters now (OWNER 2026-09-11),
+       so the state is real and narrower: the chart is the one pattern that
+       lays out cells the language has not drawn a letter for, and a slot
+       somebody has cleared is the other. press said so the day the letters
+       went on -- 「nothing wears .kbsx」 -- and the seed is the fix it asks
+       for rather than a baseline over the gap. */
+    ['a key with no letter on it yet', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
+                                               kbAdd('chart'); kbLay = 0; kbPick(0, 0);
+                                               const h = vForm(); KB = null; kbShow = 0;
+                                               SET.plan = 'free'; return h; }],
+    ['a QWERTY keyboard, just made', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
+                                             kbAdd('qwerty'); kbLay = 0;
+                                             const h = vKb(); KB = null; kbShow = 0;
+                                             SET.plan = 'free'; return h; }],
+    ['an ABC keyboard, just made', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
+                                           kbAdd('abc'); kbLay = 0;
+                                           const h = vKb(); KB = null; kbShow = 0;
+                                           SET.plan = 'free'; return h; }],
     /* THE SAVE IN THE CORNER, GOLD, on the keyboard being built. It is the
        one thing on this screen the change of 2026-09-05 moves and it is a
        COLOUR, so both states have to be photographed or the fault is in the
@@ -2383,34 +2415,35 @@ export function halfDone(){
         openAdd('');
         wdSetLn('tirek');
         return sheet('<div id="wd-body">'+wdFormHTML()+'</div>'); }],
-    /* 文法書の一ページ ── a chapter with a rule on it. The base seed has no
-       rules at all, so every form chapter drew its heading, its + and nothing
+    /* 文法書の一ページ ── a section with a rule on it. The base seed has no
+       rules at all, so every section drew its headings, their + and nothing
        else: the sentence, the table of what the rule makes of this language's
        own verbs, and the lines written under it had no face to be walked or
-       photographed on. One plain rule, of the kind the two-field editor writes
+       photographed on. 時制 is the section 過去形 is a form of since
+       2026-09-11 (www/grammar.js § G2FM_CHAPS). One plain rule, of the kind the two-field editor writes
        (www/wordsheet.js § fmrFormHTML), on the two verbs the seed has.
 
        Left in place for the reason the face below it is: press-check rebuilds
        the screen before every press, and a rule that only existed while the
        HTML was being made is a rule the row cannot open. */
-    ['a chapter of the grammar book, with a rule in it', () => {
+    ['a section of the grammar book, with a rule in it', () => {
         STG.fm = [{ id: 'fr-ta', pos: 'v', fm: 'pst', at: 'end',
                     add: spType('ta'), drop: 0, when: '' }];
         STG.ex = STG.ex || {};
-        STG.ex.pst = [{ lb: '', ln: 'ke tirta', gl: 'I saw it' }];
+        STG.ex.tense = [{ lb: '', ln: 'ke tirta', gl: 'I saw it' }];
         saveStg();
-        window.route = 'gram'; NAV = [{ r: 'gram', a: 'v2:pst' }];
+        window.route = 'gram'; NAV = [{ r: 'gram', a: 'v2:tense' }];
         return vGram(); }],
     /* THE SAME CHAPTER, with a rule that has a CONDITION on it. The sentence
        says the condition since 2026-09-09 (www/grammar.js § g2FmWhen), so
        this is the other state of the face above: 「y で終わるとき、末尾の 1
        文字を落として、動詞の末尾に -ied」 against 「動詞の末尾に -ta」. The
        fault in a pair is nearly always in the one nobody photographed. */
-    ['a chapter of the grammar book, with a rule that has a condition', () => {
+    ['a section of the grammar book, with a rule that has a condition', () => {
         STG.fm = [{ id: 'fr-cond', pos: 'v', fm: 'pst', at: 'end',
                     add: spType('ied'), drop: 1, when: 'x', wend: spType('y') }];
         saveStg();
-        window.route = 'gram'; NAV = [{ r: 'gram', a: 'v2:pst' }];
+        window.route = 'gram'; NAV = [{ r: 'gram', a: 'v2:tense' }];
         return vGram(); }],
     /* A rule written on the OLD editor -- it drops a letter and fires only on
        words ending in one. The screen is two fields now and cannot write
@@ -2488,6 +2521,19 @@ export function halfDone(){
     ['a letter beyond the thirty-eight, on the paid plan', () => { SET.plan = 'pro';
         window.route='letter'; NAV=[{r:'letter', a:'l6'}];
         const h = vLetter(); SET.plan = 'free'; return h; }],
+    /* AND THE MOMENT AFTER IT IS DELETED. The page of a letter that has just
+       gone is not a page to be put back down on (www/letters.js § ltDeleteGo,
+       CLAUDE.md rule 14), and until 2026-09-11 it was: the deleted letter's
+       own page stayed on the screen with 「入力内容を保存しますか」 over it.
+       The letter is NAMED here because that is what made it fail -- an empty
+       page leaves a buffer with nothing in it and walks away quietly.
+       tools/word-check.mjs holds it; this is the picture of where it lands. */
+    ['a letter deleted from its own page', () => { SET.plan = 'pro';
+        const l = ltById('l6'); if (l) l.ab = 'ng';
+        window.route='letter'; NAV=[{r:'letters'}, {r:'letter', a:'l6'}];
+        vLetter();                       /* arms the save buffer, as the page does */
+        ltDeleteGo('l6');
+        const h = vLetters(); SET.plan = 'free'; return h; }],
     ['one letter, opened',     () => { window.route='letter'; NAV=[{r:'letter', a:'l1'}];
                                        return vLetter(); }],
     ['a mark, opened',          () => { window.route='letter'; NAV=[{r:'letter', a:'l4'}];
