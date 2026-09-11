@@ -3223,8 +3223,34 @@ const R = await pg.evaluate(async () => {
       no('67: 送れなかったのに端末の名前と @ が書き換わった — ' +
          ME.name + ' / ' + ME.handle);
     netProfPut = keepPut; netHandleFree = keepFree;
+    /* そして行を**作る**所も同じ一覧を読みます。`netMakeProfile()` は列を
+       一つずつ書き下していたので、「人の profile はどの列か」に**二つの
+       答え**がありました ── 保存の road が名前と @ を持った日に、片方だけが
+       持っている形です。
+
+       **訊き方が要点です。**「五つ載っているか」を訊いても、書き下した方も
+       同じ五つを載せるので緑のまま ── 二つの一覧が今日たまたま一致している
+       ことしか言えません。だから**一覧に六つ目を足して**訊きます: 一覧を
+       読んでいるなら六つ目も載り、書き下しているなら載りません。それが
+       「一箇所」の中身そのものです。 */
+    const keepCols67 = PROF_MINE;
+    PROF_MINE = PROF_MINE.concat([['loc', 'a_sixth_column']]);
+    let made67 = null;
+    const keepPost67 = netPost;
+    netPost = (path, body, tok, ok) => { made67 = body; ok([body]); };
+    ME.bio = 'ここに一行'; ME.link = 'a.example'; ME.loc = 'どこか'; saveMe();
+    netMakeProfile('ayaka', 'アヤ改', () => {}, () => {});
+    netPost = keepPost67;
+    PROF_MINE = keepCols67;
+    for (const [f, c, want] of [['name', 'display', 'アヤ改'], ['handle', 'handle', 'ayaka'],
+                                ['bio', 'bio', 'ここに一行'], ['link', 'link', 'a.example'],
+                                ['loc', 'loc', 'どこか'],
+                                ['六つ目', 'a_sixth_column', 'どこか']])
+      if (!made67 || made67[c] !== want)
+        no('67: 作る行が一覧を読んでいない ── ' + f + '（列 ' + c + '）が無い — ' +
+           JSON.stringify(made67));
     say('67: 名前と @ も同じ保存でサーバーへ行く ── 列は display と handle、' +
-        '動いた分だけ送り、送れなければ端末にも書かない');
+        '動いた分だけ送り、送れなければ端末にも書かない。行を作る所も同じ一覧');
   }
 
   return out;

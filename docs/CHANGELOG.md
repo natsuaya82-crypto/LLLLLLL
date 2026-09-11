@@ -38,6 +38,12 @@ hunt 道7。**プロフィールの名前と handle を変えて保存しても 
 @ の十四日と @lingua は `profile_rename()`（`supabase/schema.sql`）のまま、
 断りは例外で戻ってポップになります。SQL は一行も触っていません。
 
+**そして行を作る所も同じ一覧を読みます。** `netMakeProfile()`（`www/net.js`）は
+handle・display・bio・link・loc を一つずつ書き下していたので、「人の profile は
+どの列か」に**二つの答え**がありました ── 保存の road が名前と @ を持った日に、
+片方だけが持っている形です。行は `PROF_MINE` から組み立てます（`av` はその
+一覧に無い ── 顔は打つものではなく、`netAvSync()` が別に持ちます）。
+
 押さえているもの: `tools/acct-check.mjs` 67。21 番は列が三つから五つに
 なったので書き直しました。
 

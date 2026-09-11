@@ -989,16 +989,21 @@ function netHandleFree(h, ok, bad){
    no face draws no face and nothing throws. */
 function netMakeProfile(h, name, ok, bad){
   if(!netSignedIn()){ bad(null, 0, 'mkprofile −'); return; }
-  var av=postAvatar();
-  netPost('/rest/v1/profile',
-          {id:SESS.uid, handle:h, display:name, av:av,
-           /* And the three a person writes about themselves, which are the
-              account's and not the phone's. schema.sql names them in the
-              INSERT grant beside the other four; a column not named there is
-              one nothing can ever write, with no error to say so. */
-           bio:String(ME.bio||''),
-           link:String(ME.link||''), loc:String(ME.loc||'')},
-          SESS.at,
+  var av=postAvatar(), row={id:SESS.uid, av:av},
+      typed={name:String(name||''), handle:String(h||'')}, i, k;
+  /* THE ROW IS MADE OF WHAT § PROF_MINE SAYS A PROFILE IS, and that list is
+     read here rather than written out again. It was written out -- handle,
+     display, bio, link, loc, one literal each -- so 「which columns is a
+     person's profile」 had two answers, and the day the save road grew the
+     name and the @ (2026-09-11) only one of the two had them. `av` is not on
+     it: nobody types a face, and the road that keeps it level is netAvSync()
+     below. */
+  for(i=0;i<PROF_MINE.length;i++){
+    k=PROF_MINE[i][0];
+    row[PROF_MINE[i][1]]=Object.prototype.hasOwnProperty.call(typed, k)?
+      typed[k] : String(ME[k]||'');
+  }
+  netPost('/rest/v1/profile', row, SESS.at,
           /* what was sent, so netAvSync() does not send it again on the
              next launch for a face that has not moved */
           function(d){ ME.avSent=JSON.stringify(av||null); saveMe(); ok(d); },
