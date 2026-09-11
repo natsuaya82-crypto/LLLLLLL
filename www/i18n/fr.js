@@ -419,7 +419,6 @@ defLang('fr', (function(){
       "set.signout.done" : "Déconnecté",
       "ob.tagline"                : "Donnez de nouvelles couleurs à vos mots.",
       "script.own.ph"             : "Collez ou saisissez un caractère",
-      "script.set"                : "Choisir",
       "up.cta"                    : "Passer à Plus",
       "up.need"                   : "Cette fonctionnalité nécessite un forfait supérieur",
       "pop.no"                  : "Fermer",

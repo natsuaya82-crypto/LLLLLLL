@@ -324,20 +324,27 @@ function pkCharsHTML(){
      Found by press-check reporting that nothing wears `.cur`: the plans
      screen wore the same class on something else until today, and a second
      wearer somewhere else masks this exactly. */
-  var l=ltById(pkFor), cur=(l && l.ch)||'', taken=chTaken();
+  var cur=pkKept(pkFor), taken=chTaken();
   return w.ch.split(' ').map(function(ch){
     var used=taken[ch] && taken[ch]!==pkFor;
     return '<button class="pkch'+(used?' had':'')+(ch===cur?' cur':'')+'"' + DO('ltTakeChar', [pkFor, ch]) + '>'+esc(ch)+'</button>';
   }).join('');
 }
 function openPick(lid){
-  pkFor=lid;
   var l=ltById(lid);
-  var cur=(l && l.ch)||'';
+  /* No such letter, no picker. openSnd() has said this since it was written
+     and this had not: it opened a page headed 「A character for ""」 over a
+     grid that chose a character for nobody, and registered no buffer, so the
+     bar had no Save either. A door onto nothing is viewGone()'s to answer. */
+  if(!l) return;
+  pkFor=lid;
+  /* The buffer before the form, so navTop()'s keepBtnHTML() has one to draw
+     a Save from -- www/shell.js § KEEP. */
+  pkKeepOn(lid);
+  var cur=pkKept(lid);
   openForm('pick:'+lid, t('ch.for', ltName(l)||t('lt.untitled')),
     '<div class="pkown"><input class="scin own" id="own-ch" maxlength="4" value="'+esc(cur)+'" placeholder="'+esc(t('script.own.ph'))+'" autocomplete="off" '+
-      '' + KD('takeOwn') + '>'+
-    '<button class="btn"' + DO('takeOwn') + '>'+t('script.set')+'</button></div>'+
+      '' + IN('pkSetCh') + '></div>'+
     (cur? '<button class="pkclear"' + DO('ltTakeChar', [lid, ""]) + '>'+t('ch.clear')+'</button>':'')+
     '<div class="pktabs">'+WORLD_SCRIPTS.map(function(w){
       return '<button class="pktab'+(w.id===pkScript?' on':'')+'" data-id="'+w.id+'"' + DO('pkSwitch', [w.id]) + '>'+
@@ -346,16 +353,73 @@ function openPick(lid){
     '<div class="pkchars" id="pk-chars">'+pkCharsHTML()+'</div>');
 }
 FORM_OPEN.pick=function(x){ openPick(x); };
-/* pkFor is a letter's id. A borrowed character is one of the two shapes a
-   letter can have, so taking one is setting that letter's shape. */
-function ltTakeChar(lid, ch){
-  ltSetChar(lid, ch);
-  SET.showScript=true; save(); netPrefsPut(); installScriptFont();
-  if(here().r==='form') back(); else render();
+/* ---- PRESSING A CHARACTER CHOOSES; THE BAR SAVES ----------------------
+   OWNER 2026-09-11: 「保存ボタンないところは直して」, and the sentence it is
+   the other half of, OWNER 2026-09-03: 「打ったら覚える、ボタンが書く」
+   「保存ボタン必要なとこ全部」.
+
+   This screen wrote the letter on the press AND LEFT. A thumb landing on a
+   tile gave the letter that character, threw away the strokes it had been
+   drawn with (ltSetChar), switched the person's 「show the script」 setting
+   on, sent that setting, rebuilt the font, and took the screen away -- so
+   there was no moment at which the choice was visible and not yet made, and
+   nothing to press to undo it. The box beside it was the same write said a
+   second way: type a character, press 「Use」, and it was done.
+
+   ONE FIELD AND ONE ROAD. `ch` is what this screen is choosing, and the box,
+   the tiles and 「No character」 all set it. The 「Use」 button is gone with
+   the write it was -- a box that remembers what is typed in it has nothing
+   for a second button to do, and two buttons that both write is the shape
+   this replaces. The Save in the corner is what writes.
+
+   THE STROKES ARE NOT THROWN AWAY UNTIL IT IS PRESSED, which is the part of
+   this worth having: a letter has one shape, drawn or borrowed, so choosing
+   a borrowed one deletes what was drawn (ltSetChar, www/letters.js). That
+   used to happen under a thumb. */
+function pkKeepOn(lid){
+  var l=ltById(lid);
+  /* Not in somebody else's language: saveLetters() refuses one, so a buffer
+     here would put a Save in the bar that could not write. */
+  if(!l || langLocked()) return;
+  keepOn(keepKeyOf('form', 'pick:'+lid),
+         function(){
+           var one=ltById(lid);
+           return {ch:(one && one.ch)||''};
+         },
+         function(v, done){ pkKeepSave(lid, v); done(true); });
 }
-function takeOwn(){
-  var e=document.getElementById('own-ch'); if(!e) return;
-  ltTakeChar(pkFor, e.value);
+/* What the box holds and which tile is marked: what has been chosen, or what
+   the letter wears. The second clause is the one screen there is no buffer
+   for -- somebody else's language, where there is nothing to choose and the
+   character their letter wears still has to be shown. */
+function pkKept(lid){
+  var s=keepVal(keepKeyOf('form', 'pick:'+lid), 'ch'), one;
+  if(s) return s;
+  one=ltById(lid);
+  return (langLocked() && one && one.ch)? one.ch : '';
+}
+/* Typed into the box. It does not rebuild the screen -- a field being typed
+   into loses the keyboard the moment the page under it is replaced -- so the
+   mark under the tiles catches up on the next render and the corner catches
+   up now, which keepSet() does by itself. */
+function pkSetCh(v){ keepSet('ch', String(v||'')); }
+/* pkFor is a letter's id. A borrowed character is one of the two shapes a
+   letter can have, so taking one is choosing that letter's shape. The empty
+   string is 「No character」 and is the same choice said the other way. */
+function ltTakeChar(lid, ch){
+  pkFor=String(lid);
+  keepSet('ch', String(ch||''));
+  openPick(pkFor);
+}
+/* And the write, which is everything the press used to do. It is reached
+   from one place, keepSave() in www/shell.js, and that is the Save.
+
+   `showScript` is this person's setting rather than the language's and has a
+   road of its own up (netPrefsPut) -- it is here because choosing a character
+   and not showing it is choosing nothing, and it was here before. */
+function pkKeepSave(lid, v){
+  ltSetChar(lid, String(v.hasOwnProperty('ch')? v.ch : ''));
+  SET.showScript=true; save(); netPrefsPut(); installScriptFont();
 }
 /* Characters already spoken for, so the palette can grey them out. */
 /* Characters already spoken for, so the palette can grey them out. Two

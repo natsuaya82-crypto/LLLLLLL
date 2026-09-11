@@ -711,6 +711,35 @@ const more = await pg.evaluate(() => {
   window.WIRE = true;
   popOff(); viewReset();
 
+  /* ---- THE CHARACTER PICKER, WHICH THE WALK CANNOT REACH ---------------
+     The grid of a world's characters is folded away until a script is chosen
+     (pkSwitch), and the walk at the foot of this file rebuilds the screen
+     before every press -- so it can open that fold or press a tile, never
+     both, and the press this screen is ABOUT was reached by nothing. It is
+     two presses, so it is written here.
+
+     What it used to do on the tile: give the letter the character, throw away
+     the strokes it had been drawn with, switch the person's 「show the
+     script」 on, send that, rebuild the font, and LEAVE the screen
+     (www/home.js § PRESSING A CHARACTER CHOOSES). */
+  popOff(); viewReset();
+  goTab('build'); pkScript = ''; openPick(LETTERS[0].id); render();
+  out.pkArrive = navOn();
+  out.pkWas = String(ltById(LETTERS[0].id).ch || '');
+  out.pkHadStrokes = !!(ltById(LETTERS[0].id).st || []).length;
+  pkSwitch(WORLD_SCRIPTS[0].id);
+  var pkt = document.querySelector('#pk-chars .pkch');
+  out.pkTile = pkt ? String(pkt.textContent || '') : '';
+  if(pkt) pkt.click();
+  out.pkGold = navOn();
+  /* 「打ったら覚える、ボタンが書く」 -- the tile wrote nothing. */
+  out.pkWroteOnPress = String(ltById(LETTERS[0].id).ch || '');
+  out.pkStrokesOnPress = !!(ltById(LETTERS[0].id).st || []).length;
+  out.pkStayed = whereAmI2() === 'form|pick:' + LETTERS[0].id;
+  keepPress();
+  out.pkWroteOnSave = String(ltById(LETTERS[0].id).ch || '');
+  out.pkStrokesOnSave = !!(ltById(LETTERS[0].id).st || []).length;
+
   /* ---- THE OTHER BUTTON IN THAT CORNER ---------------------------------
      「なにもない時は薄い灰色、何か打ったら金にする」「これが決定ボタンの
      ルール」 OWNER 2026-09-03, and that is said of the BUTTON rather than of
@@ -736,6 +765,11 @@ const more = await pg.evaluate(() => {
      is gold from the moment it is drawn, correctly, and the rule above is not
      about it. No class tells a decision from an action.
      docs/scope/r17-keep2.md carries that measurement. */
+  function navOn(){
+    var e = document.querySelector('.navtop [data-do="keepPress"]');
+    return !e ? 'gone' : (e.classList.contains('navon') ? 'gold' : 'grey');
+  }
+  function whereAmI2(){ return here().r + '|' + (here().a === undefined ? '' : here().a); }
   function addBtnOn(){
     var e = document.querySelector('.navtop [data-do="addOne"]');
     return !e ? 'gone' : (e.classList.contains('navon') ? 'gold' : 'grey');
@@ -1136,6 +1170,16 @@ if(more.addRendered !== 'gold') fails.push('a render put 追加 back to ' + more
 if(more.addWouldNot) fails.push('the spelling was rubbed out and addOne() would still take it');
 if(more.addRubbed !== 'grey') fails.push('the spelling rubbed out left 追加 ' + more.addRubbed);
 if(more.addMade) fails.push('typing a spelling onto a new word sheet wrote the word');
+if(more.pkArrive !== 'grey') fails.push('the character picker opened with its Save ' + more.pkArrive);
+if(more.pkWas !== '') fails.push('the letter the picker opened on already wore a character: ' + more.pkWas);
+if(!more.pkHadStrokes) fails.push('the letter the picker opened on was not drawn, so there is nothing for a borrowed character to replace');
+if(!more.pkTile) fails.push('the character grid had no tile to press');
+if(more.pkGold !== 'gold') fails.push('a character pressed left the Save ' + more.pkGold);
+if(more.pkWroteOnPress !== '') fails.push('a character pressed wrote it onto the letter: ' + more.pkWroteOnPress);
+if(!more.pkStrokesOnPress) fails.push('a character pressed threw away the strokes the letter was drawn with');
+if(!more.pkStayed) fails.push('a character pressed took the screen away before anybody saved');
+if(more.pkWroteOnSave !== more.pkTile) fails.push('the Save wrote 「' + more.pkWroteOnSave + '」 and the tile pressed said 「' + more.pkTile + '」');
+if(more.pkStrokesOnSave) fails.push('the Save gave the letter a borrowed character and kept the strokes it was drawn with');
 if(more.glAfterNo !== 1) fails.push('No did not let the drawing go: ' + more.glAfterNo + ' strokes came back');
 if(more.glAfterNoBtn !== 'grey') fails.push('after No the Save was ' + more.glAfterNoBtn);
 if(!more.glYesLeft) fails.push('Yes did not leave the drawing screen');
@@ -1191,6 +1235,9 @@ if(!more.deadSaid) fails.push('a save with no wire went nowhere and said nothing
 if(more.deadTyped !== 'written in a tunnel') fails.push('a save with no wire threw away what was typed: ' + JSON.stringify(more.deadTyped));
 
 walk.fails.forEach((m) => fails.push(m));
+console.log('the character picker: the Save grey on arrival, gold on a character pressed, ' +
+            'the letter untouched and the screen still there until it was pressed, and then 「' +
+            more.pkWroteOnSave + '」 on the letter in place of what was drawn');
 console.log('the sheet that makes a word: 追加 grey on arrival, gold on a spelling typed, ' +
             'gold still after a render, grey again when it is rubbed out, and no word written');
 console.log('every screen with a Save (' + walk.stands.length + '), asked of the page: ' +

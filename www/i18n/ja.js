@@ -287,7 +287,6 @@ defLang('ja', (function(){
       "set.signout.done" : "ログアウトしました",
       "ob.tagline"                : '自分のことばを、つくる。',
       "script.own.ph"             : "字を入力または貼り付け",
-      "script.set"                : "これにする",
       "up.cta"                    : "アップグレード",
       "up.need"                   : "この機能を使うにはアップグレードが必要です",
       "pop.no"                  : "閉じる",

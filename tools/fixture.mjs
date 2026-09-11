@@ -2580,6 +2580,32 @@ export function halfDone(){
         stKeepSave(p.id, { rules: 'a name is a word that stands for a thing' });
         window.route = 'about'; NAV = [{ r:'about' }];
         const h = vAbout(); stKeepSave(p.id, { rules: was }); return h; }],
+    /* THE CHARACTER PICKER, BOTH STATES OF IT. Pressing a character chooses
+       it and the Save in the corner writes it (www/home.js § PRESSING A
+       CHARACTER CHOOSES) -- it used to write the letter and take the screen
+       away under the thumb. So: opened, with the Save grey and no tile
+       marked, and a tile pressed, with the tile marked, the box holding it
+       and the Save gold. The fold is opened first because the grid is not
+       drawn until a script is chosen. Both put the buffer back, so the two
+       faces do not read each other's.
+
+       THE BUFFER IS LET GO OF ON THE WAY IN AND NOT ON THE WAY OUT. A face
+       returns its html and the shell is rendered around it afterwards; a
+       buffer dropped before that render is a bar with no Save in it, put
+       over a page that has one. Both pictures came out that way once. */
+    ['the character picker, as it opens', () => {
+        /* 「接続できません」 from a face before this one rides on the scrim and
+           is not part of this screen. */
+        popOff();
+        pkScript = WORLD_SCRIPTS[0].id;
+        keepDrop(keepKeyOf('form', 'pick:l1'));
+        openPick('l1'); return vForm(); }],
+    ['the character picker, one character pressed', () => {
+        popOff();
+        const w = WORLD_SCRIPTS[0]; pkScript = w.id;
+        keepDrop(keepKeyOf('form', 'pick:l1'));
+        openPick('l1'); ltTakeChar('l1', w.ch.split(' ')[0]);
+        return vForm(); }],
     /* A character another letter has already taken. The picker dims it rather
        than hiding it, because which letter has it is worth seeing -- and
        chTaken() is empty in a language that has borrowed nothing, so the dim

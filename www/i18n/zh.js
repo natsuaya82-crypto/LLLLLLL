@@ -379,7 +379,6 @@ defLang('zh', (function(){
       "set.signout.done" : "已退出",
       "ob.tagline"                : "为你的语言添上新的色彩。",
       "script.own.ph"             : "粘贴或输入一个字",
-      "script.set"                : "使用",
       "up.cta"                    : "升级",
       "up.need"                   : "使用此功能需要升级套餐",
       "pop.no"                  : "关闭",

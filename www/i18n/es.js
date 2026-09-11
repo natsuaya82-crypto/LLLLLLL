@@ -331,7 +331,6 @@ defLang('es', (function(){
       "set.signout.done" : "Sesión cerrada",
       "ob.tagline"                : "Dale nuevos colores a tus palabras.",
       "script.own.ph"             : "Pega o escribe un carácter",
-      "script.set"                : "Usar",
       "up.cta"                    : "Mejorar",
       "up.need"                   : "Necesitas mejorar tu plan para usar esta función",
       "pop.no"                  : "Cerrar",

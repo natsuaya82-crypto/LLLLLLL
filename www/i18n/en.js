@@ -271,7 +271,6 @@ defLang('en', (function(){
       "set.signout.done" : "Signed out",
       "ob.tagline"                : "Make a language of your own.",
       "script.own.ph"             : "Paste or type a character",
-      "script.set"                : "Use",
       "up.cta"                    : "Upgrade",
       "up.need"                   : "You need to upgrade to use this feature",
       "pop.no"                  : "Close",
