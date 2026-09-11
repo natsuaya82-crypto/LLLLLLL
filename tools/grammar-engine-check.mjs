@@ -515,6 +515,20 @@ for(const file of ['www/grammar-engine/lexicon.js','www/grammar-engine/translate
    touch (that is tools/gramlang-check.mjs, in a real browser); this only has
    to let the file finish loading. */
 const app=vm.createContext({console, LinguaGrammarEngine:e, WORDS:[], SET:{}, STG:{}, langId:'demo',
+                            /* www/phases.js's list of stages. migrateNeg()
+                               asks whether it exists before it goes looking
+                               for a word through a stage -- at boot that file
+                               reads its own slice several pages above the line
+                               that builds this, so the first pass of the app's
+                               life has to do nothing. Here the stages are
+                               stubbed by stage() below, so the list only has
+                               to BE there. */
+                            STAGES:[],
+                            /* www/phases.js's, and the only one migrateNeg()
+                               needs: a rule copied out of the old gpos is
+                               written into STG and saved, and there is no
+                               phone here to save to. */
+                            saveStg(){},
                             document:{addEventListener(){}}});
 vm.runInContext(fs.readFileSync('www/grammar.js','utf8'),app,{filename:'www/grammar.js'});
 /* `lang` is the word order and the three positions. It goes into STG and not
@@ -538,6 +552,12 @@ function stage(words,lang,slots){
     app.stWordFor=(p,k)=>{ const hw=slots[p.id][k]; let f=null;
       for(const w of app.WORDS) if(w.hw===hw) f=w; return f; };
   } else { app.stSlotsBy=undefined; app.stBy=undefined; app.stWordFor=undefined; }
+  /* AND THE ONE THING A LANGUAGE ARRIVES THROUGH. §16 Migration: a language
+     written before 2026-09-11 says where its negation word stands in
+     `gpos.negp`, and that is one operation of one rule now -- so every
+     language staged here arrives the way a real one does, through
+     migrateNeg(), rather than through a second road this file invented. */
+  if(typeof app.migrateNeg==='function') app.migrateNeg();
 }
 const DICT=[{hw:'mi',mns:['I','me'],pos:'pro'},{hw:'poko',mns:['fish'],pos:'n'},
             {hw:'suli',mns:['big'],pos:'adj'},{hw:'luma',mns:['eat'],pos:'v'},
@@ -1252,6 +1272,127 @@ assert.equal(detRead(['ADJ','N'], true),'mi yama miru kono');
    ordinary word. That is not a failure -- it is the chapter being empty. */
 assert.equal(detRead(['DEM','N'], false),'mi yama miru kono');
 
+/* ---- C14 否定・疑問 --------------------------------------------------------
+   docs/GRAMMAR-V2-SPEC.md §4.4「ただし『必ず PREFIX になる』と決めつけない」
+   §4.5「方法は言語によって違う ── suffix / prefix / separate word / word order
+   / particle / combination」 OWNER 2026-09-10「否定は結構細かく作れるように
+   して」.
+
+   A rule arrives as: target NEGATION or QUESTION, feature the KIND of sentence
+   it is about (VERB / NOUN / IMPERATIVE / EXISTENTIAL), value the operations.
+   Every claim below is about the SENTENCE THAT CAME OUT, because nothing here
+   throws: a rule read the wrong way round still writes a sentence, and it is
+   simply not this language's. */
+const NW=[['mi','I','PRONOUN'],['poko','fish','NOUN'],['luma','eat','VERB'],
+          ['sensei','teacher','NOUN'],['desu','be','VERB'],['aru','there is','VERB']];
+const negRule=(kind,ops)=>e.grammarRule({type:'syntax',target:'NEGATION',feature:kind,
+                                         operation:(ops.length>1?'combine':ops[0].operation),
+                                         value:{ops}});
+const askRule=(kind,ops)=>e.grammarRule({type:'syntax',target:'QUESTION',feature:kind,
+                                         operation:(ops.length>1?'combine':ops[0].operation),
+                                         value:{ops}});
+function negLang(order,rules,words){
+  const m=lang('NEG'+String(Math.random()).slice(2,7),order||['S','O','V'],words||NW);
+  m.grammarRules=rules||[];
+  return m;
+}
+const NEGIR=e.semanticIR({roles:{SUBJECT:'I',OBJECT:'fish',PREDICATE:'eat'},
+                          features:{NEGATION:true}});
+const saying=(m,ir)=>e.translate.fromSemantic(m,ir||NEGIR).text;
+
+/* A language with nothing said about negation writes the sentence it already
+   had. The chapter being empty makes the sentence shorter, not wrong --
+   「中途半端でも壊れない」. */
+assert.equal(saying(negLang()),'mi poko luma');
+/* LETTERS ON THE VERB, either end. §4.4's own example is a prefix and the
+   sentence right under it is a suffix, which is the whole of why this is not
+   one answer. */
+assert.equal(saying(negLang(null,[negRule('VERB',[{operation:'prefix',form:'na'}])])),
+             'mi poko naluma');
+assert.equal(saying(negLang(null,[negRule('VERB',[{operation:'suffix',form:'nai'}])])),
+             'mi poko lumanai');
+/* A WORD, IN EACH OF THE FOUR PLACES IT CAN STAND. The last two are the ends
+   of the sentence and are read on a language whose verb is in the middle --
+   with the verb last, "after the verb" and "at the end" are the same picture
+   and a check written on it would pass with the two swapped. */
+assert.equal(saying(negLang(null,[negRule('VERB',[{operation:'word',form:'nai',at:'before'}])])),
+             'mi poko nai luma');
+assert.equal(saying(negLang(['S','V','O'],[negRule('VERB',[{operation:'word',form:'nai',at:'after'}])])),
+             'mi luma nai poko');
+assert.equal(saying(negLang(['S','V','O'],[negRule('VERB',[{operation:'word',form:'nai',at:'head'}])])),
+             'nai mi luma poko');
+assert.equal(saying(negLang(['S','V','O'],[negRule('VERB',[{operation:'word',form:'nai',at:'tail'}])])),
+             'mi luma poko nai');
+/* A COMBINATION IS ONE RULE. 「組み合わせ（語＋接辞、フランス語の ne…pas）も
+   一つの規則として持てる」 -- two words round the verb, and a word with an
+   ending on the verb. */
+assert.equal(saying(negLang(null,[negRule('VERB',[{operation:'word',form:'ne',at:'before'},
+                                                  {operation:'word',form:'pas',at:'after'}])])),
+             'mi poko ne luma pas');
+assert.equal(saying(negLang(null,[negRule('VERB',[{operation:'word',form:'ne',at:'before'},
+                                                  {operation:'suffix',form:'pa'}])])),
+             'mi poko ne lumapa');
+/* WHAT IS BEING NEGATED DECIDES WHICH RULE. A noun sentence (「〜ではない」) is
+   its own rule, and the ENGINE is what picks it -- no screen says so.
+   「無ければ動詞の文のものを使う、とエンジンが判断」 */
+const COPNEG=e.semanticIR({roles:{SUBJECT:'I',COMPLEMENT:'teacher',PREDICATE:'be'},
+                           features:{NEGATION:true}});
+const NRULES=[negRule('VERB',[{operation:'suffix',form:'nai'}]),
+              negRule('NOUN',[{operation:'word',form:'dewanai',at:'after'}])];
+assert.equal(saying(negLang(['S','CMP','V'],NRULES),COPNEG),'mi sensei desu dewanai');
+/* and the verb sentence of that same language is untouched by it */
+assert.equal(saying(negLang(['S','O','V'],NRULES)),'mi poko lumanai');
+/* A COMMAND (「〜するな」), which is a mood and not a word. */
+const IMPNEG=e.semanticIR({roles:{SUBJECT:'I',OBJECT:'fish',PREDICATE:'eat'},
+                           features:{NEGATION:true, MOOD:'IMPERATIVE'}});
+assert.equal(saying(negLang(null,[negRule('VERB',[{operation:'suffix',form:'nai'}]),
+                                  negRule('IMPERATIVE',[{operation:'word',form:'na',at:'after'}])]),
+                    IMPNEG),'mi poko luma na');
+/* EXISTENCE (「〜が無い」). Which word means "there is" is not something a part
+   of speech can say, so the chapter names it by id exactly as the negation and
+   the adpositions are named. */
+const EXIR=e.semanticIR({roles:{SUBJECT:'fish',PREDICATE:'there is'},
+                         features:{NEGATION:true}});
+const exModel=negLang(['S','V'],null);
+exModel.grammarRules=[e.grammarRule({type:'syntax',target:'EXISTENTIAL',feature:'WORD',
+                                     value:exModel.words[5].id}),
+                      negRule('VERB',[{operation:'suffix',form:'nai'}]),
+                      negRule('EXISTENTIAL',[{operation:'word',form:'nashi',at:'after'}])];
+assert.equal(saying(exModel,EXIR),'poko aru nashi');
+/* AND THE FALLBACK IS THE ENGINE'S. A language that has answered only for a
+   verb sentence says a command the same way -- nothing is left unsaid and no
+   screen had to offer four answers. */
+assert.equal(saying(negLang(null,[negRule('VERB',[{operation:'suffix',form:'nai'}])]),IMPNEG),
+             'mi poko lumanai');
+
+/* ---- and a question is the same shape ------------------------------------
+   §4.5. The feature is MOOD/INTERROGATIVE, which is what this app's own `que`
+   label has always meant (www/grammar.js § GFM_FEAT), so nothing new decides
+   what a question IS. */
+const ASKIR=e.semanticIR({roles:{SUBJECT:'I',OBJECT:'fish',PREDICATE:'eat'},
+                          features:{MOOD:'INTERROGATIVE'}});
+assert.equal(saying(negLang(),ASKIR),'mi poko luma');
+assert.equal(saying(negLang(null,[askRule('VERB',[{operation:'suffix',form:'ka'}])]),ASKIR),
+             'mi poko lumaka');
+assert.equal(saying(negLang(null,[askRule('VERB',[{operation:'word',form:'ka',at:'tail'}])]),ASKIR),
+             'mi poko luma ka');
+/* 語順 ── the verb to the front, which is how eight of the ten interface
+   languages ask. The roles are named, so what moves is the role and not
+   whichever word happened to be standing there. */
+assert.equal(saying(negLang(['S','V','O'],
+  [askRule('VERB',[{operation:'order',form:'VERB,SUBJECT,OBJECT'}])]),ASKIR),
+  'luma mi poko');
+/* and a role the rule does not name keeps its place behind the ones it does */
+assert.equal(saying(negLang(['S','V','O'],
+  [askRule('VERB',[{operation:'order',form:'VERB'}])]),ASKIR),
+  'luma mi poko');
+/* A NEGATIVE QUESTION IS BOTH, AND THE TWO DO NOT STAND ON EACH OTHER. */
+const BOTH=e.semanticIR({roles:{SUBJECT:'I',OBJECT:'fish',PREDICATE:'eat'},
+                         features:{NEGATION:true, MOOD:'INTERROGATIVE'}});
+assert.equal(saying(negLang(null,[negRule('VERB',[{operation:'suffix',form:'nai'}]),
+                                  askRule('VERB',[{operation:'word',form:'ka',at:'tail'}])]),BOTH),
+             'mi poko lumanai ka');
+
 console.log('Grammar Engine: derivation applies, a case MARK carries a role, the ' +
             'Semantic IR goes both ways and back, the Phase 1-2 contract is clean, ' +
             'a rule may change the stem and may be for some words only, ' +
@@ -1273,4 +1414,10 @@ console.log('Grammar Engine: derivation applies, a case MARK carries a role, the
             'feature with five, and a copular sentence stands where the CMP card on the ' +
             'word order board says -- with the copula itself a gap where a language ' +
             'uses no word for it, and a comparison carries the word its standard is ' +
-            'measured with, on the side that chapter says');
+            'measured with, on the side that chapter says, and a language says NO ' +
+            'in whichever of the four ways it says it -- letters on either end of ' +
+            'the verb, a word in any of four places, the words in another order, ' +
+            'or more than one of those as ONE rule -- with a rule of its own for a ' +
+            'noun sentence, a command and existence, and the verb sentence\'s where ' +
+            'a kind has none, which the ENGINE decides and no screen explains, and ' +
+            'a question is the same shape again');

@@ -420,7 +420,7 @@ Parser / Generator / Grammar Checker / Translation の精度が上がる。
 | 11 | 時制・相 ── 過去・現在・未来・大過去・進行・完了 | ある |
 | 12 | 法 ── 命令・条件はある。**可能・義務・願望**を足す | **出来た**（`MOOD` が五つ） |
 | 13 | 態 ── 受身・使役 | ある |
-| 14 | 否定・疑問 ── 疑問詞の位置は語順の板 | ある |
+| 14 | 否定・疑問 ── 疑問詞の位置は語順の板 | **出来た**（`STG.gr` の Rule ── 接辞／語／語順／組み合わせ、否定する相手ごとに一本。`polarWrite()`） |
 | 15 | **コピュラ・存在** ── 「〜です」「〜がある」の語と位置 | **出来た**（`CHAP_SLOTS.cop`・位置は語順の板の `CMP`） |
 
 ## D 修飾
@@ -484,7 +484,7 @@ Parser / Generator / Grammar Checker / Translation の精度が上がる。
 |---|---|
 | §15 Phase 1-8 内部モデル | **ほぼ出来ている**（`model` `morphology` `lexicon` `translate` `adapter` の5本） |
 | §23 最初のゴール | **通る**（上） |
-| §5 Rule として保存 | 形はある。**人が書ける場所がほぼ無い** |
+| §5 Rule として保存 | 形はある。否定と疑問は**人が書ける**（章の相手ごとのページで、文を二つ作る）。ほかは**書ける場所がほぼ無い** |
 | §7 Morpheme | 枠はある。`rule.form` があれば読まれないので**空のまま**。助詞は三つの枠（主語・目的語・渡す相手）で作れて `gInfl()` がエンジンに渡す |
 | §11 Semantic IR | ある。言語固有情報は入っていない |
 | §12 Parser / §13 Generator | ある（`parseSentence` / `fromSemantic`） |
@@ -493,7 +493,7 @@ Parser / Generator / Grammar Checker / Translation の精度が上がる。
 | §1 語順をドラッグで導出 | **出来た。**語を動かして並べる。六択は誰にも訊かれない |
 | §3 動詞の活用を人が定義 | **繋がった。**`gFmRules()` が `STG.fm` をエンジンの `inflection`/`derivation` にする。`zmi luma` → `zmi lumaka` |
 | §8 例文を構造として保存 | `STG.ex` は文字列。構造では持っていない |
-| §16 Migration | `SET.order` → `STG.order` はある。**Grammar Rule への変換はしていない** |
+| §16 Migration | `SET.order` → `STG.order` はある。`gpos.negp` → 否定の Rule も（`migrateNeg()`、写すだけ）。ほかの `gpos` は **Grammar Rule への変換をしていない** |
 | §18 Repository 層 | **無い**。`adapter.load/save` が直接 localStorage |
 | §21 責務分離 | 5本のまま（`derivation`/`inflection`/`parser`/`generator`/`sentence` は `morphology`と`translate`の中） |
 
