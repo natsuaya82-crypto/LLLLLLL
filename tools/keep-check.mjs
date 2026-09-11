@@ -985,7 +985,6 @@ const walk = await pg.evaluate(({ s }) => {
        screen still to be moved onto the buffer. */
   const OWN_ROAD = {
     setMyFont:    'its own road -- SET.myfont, netPrefsPut() sends it on the press',
-    g2Move:       'not moved yet -- setGPos() writes STG on the drop (r14 § A)',
     wldOvAdd:     'not moved yet -- a row of the article is written on the press (r14 § A)',
     setWldSecDl:  'not moved yet -- 「may this section be taken away」 is written on the press (r14 § A)',
     kbUndo:       'not moved yet -- the step back writes the layout (r14 § B)',
