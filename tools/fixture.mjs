@@ -2488,6 +2488,19 @@ export function halfDone(){
     ['a letter beyond the thirty-eight, on the paid plan', () => { SET.plan = 'pro';
         window.route='letter'; NAV=[{r:'letter', a:'l6'}];
         const h = vLetter(); SET.plan = 'free'; return h; }],
+    /* AND THE MOMENT AFTER IT IS DELETED. The page of a letter that has just
+       gone is not a page to be put back down on (www/letters.js § ltDeleteGo,
+       CLAUDE.md rule 14), and until 2026-09-11 it was: the deleted letter's
+       own page stayed on the screen with 「入力内容を保存しますか」 over it.
+       The letter is NAMED here because that is what made it fail -- an empty
+       page leaves a buffer with nothing in it and walks away quietly.
+       tools/word-check.mjs holds it; this is the picture of where it lands. */
+    ['a letter deleted from its own page', () => { SET.plan = 'pro';
+        const l = ltById('l6'); if (l) l.ab = 'ng';
+        window.route='letter'; NAV=[{r:'letters'}, {r:'letter', a:'l6'}];
+        vLetter();                       /* arms the save buffer, as the page does */
+        ltDeleteGo('l6');
+        const h = vLetters(); SET.plan = 'free'; return h; }],
     ['one letter, opened',     () => { window.route='letter'; NAV=[{r:'letter', a:'l1'}];
                                        return vLetter(); }],
     ['a mark, opened',          () => { window.route='letter'; NAV=[{r:'letter', a:'l4'}];

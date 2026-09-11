@@ -1137,11 +1137,26 @@ function ltDeleteGo(id){
   ltDel(id);
   if(GE && GE.lid===id) GE=null;
   save(); installScriptFont();
-  /* From the corner mark the alphabet is already on screen and the wobble
-     stays on -- somebody taking one letter off is usually taking two. From
-     the letter's own page there is a page to leave. The same sentence
-     kbDelKey makes. */
-  if(here().r==='letter') back(); else render();
+  /* THE PAGE OF THE LETTER THAT HAS JUST GONE COMES OFF THE TRAIL, AND ITS
+     SAVE BUFFER WITH IT -- the same step delWordGo() takes for a word
+     (www/wordsheet.js, www/shell.js § navDrop, CLAUDE.md rule 14). The trail
+     names letters and a letter can stop being anything at all.
+
+     It was back(), and back() asks the screen you are standing ON whether to
+     save first -- which is this letter's page, whose buffer answers `now()`
+     out of ltById(id). With the letter gone that answer is empty where the
+     buffer opened holding the name, so a letter that had been named made the
+     screen read as CHANGED: 「入力内容を保存しますか」 stood over the deleted
+     letter's own page and back() returned without moving. A screen that is
+     gone is not a screen to be asked about.
+
+     One road for both doors now. From the corner mark on the alphabet there
+     is no page of this letter on the trail, so the two lines do nothing and
+     the render is the whole of it -- and the wobble stays on, which is what
+     that road wanted: somebody taking one letter off is usually taking two. */
+  keepDrop(keepKeyOf('letter', id));
+  navDrop(id, 'letter');
+  render();
   toast(t('glyph.deleted', nm));
 }
 /* The storage half, and the one place a letter leaves LETTERS. Three roads

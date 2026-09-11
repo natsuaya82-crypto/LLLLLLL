@@ -812,13 +812,26 @@ function navRename(a, to){
   var i;
   for(i=0;i<NAV.length;i++) if(NAV[i].r==='form' && NAV[i].a===a) NAV[i].a=to;
 }
-/* And a name can stop being anything at all. A form whose argument names a
+/* And a name can stop being anything at all. A screen whose argument names a
    thing that has been deleted is not a screen to be put back down on, so it
    comes out of the trail entirely -- every occurrence, because you can reach
-   one word from another and be standing on it twice. */
-function navDrop(a){
-  var out=[], i;
-  for(i=0;i<NAV.length;i++) if(!(NAV[i].r==='form' && NAV[i].a===a)) out.push(NAV[i]);
+   one word from another and be standing on it twice.
+
+   A SCREEN IS A ROUTE AND ITS ARGUMENT, which is what keepKeyOf() and go()
+   both already say. This asked the argument alone and took `form` as read, so
+   the one screen in the app that is not a form could not be named here at
+   all: a letter's page is `letter` and the letter's id, and deleting a letter
+   from its own page therefore left that page standing on the trail with its
+   save buffer beside it -- back() measured the buffer against a letter that
+   no longer answers, called the screen changed, and put 「入力内容を保存
+   しますか」 over the letter that had just gone.
+
+   `r` is the route. The four callers that name a form leave it out, because
+   www/grammar.js is another branch's today; docs/BACKLOG.md carries lining
+   the four up behind (r, a) with everything else. */
+function navDrop(a, r){
+  var out=[], i, want=r||'form';
+  for(i=0;i<NAV.length;i++) if(!(NAV[i].r===want && NAV[i].a===a)) out.push(NAV[i]);
   NAV=out.length? out : [{r:'words'}];
   route=here().r;
 }
