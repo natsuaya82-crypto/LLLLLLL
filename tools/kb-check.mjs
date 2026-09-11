@@ -349,6 +349,37 @@ const r = await pg.evaluate(({ s }) => {
   KB = null; kbShow = 0; kbAdd('qwerty');
   kbShow = 1; kbSetPatGo('abc');
   out.repatLts = ltsOf(KB.kbs[0].lay).join(' ') === ltsOf(kbPatLay('abc')).join(' ');
+  /* ---- and the board is still there on the next launch -----------------
+     THE ONE THING THE LETTERS COULD HAVE COST. migrateKbFree() tells the old
+     editable COPY of the free QWERTY from a board somebody made by asking
+     whether it is still character for character kbFixed() -- which was a safe
+     question only while nothing a person made could be. A QWERTY board now
+     IS that, key for key, ON PURPOSE: it is the whole of what the owner
+     asked for. So the board made a moment ago read as the copy and
+     kbs.shift() took it away, silently, on the next launch. Measured before
+     it was written: 1 stored board became 0.
+
+     What was actually wrong is older than the letters and this only made it
+     bite. Three places minted `{kbs:[], at:0}` with no `v` on it, so a KB
+     this version of the app had just created was read as one from before the
+     migration existed -- by migrateKbFree(), and by kbIded(), which reads
+     `at` on the old indexing when `v` is missing and moves which keyboard is
+     on the phone. A KB is born stamped now, in one place.
+
+     The launch, as the app does it: what is on the disk, read back, then the
+     two that run over it. */
+  function launch(){
+    kbRead();
+    migrateKbFree();
+    return KB ? KB.kbs.length : 0;
+  }
+  out.survives = [];
+  KB_PATS.forEach(function (p){
+    KB = null; kbShow = 0; kbAdd(p); saveKb();
+    var was = KB.kbs.length, at = KB.at;
+    out.survives.push({ pat: p, was: was, now: launch(), at: at,
+                        atNow: KB ? KB.at : -1 });
+  });
   /* ---- 5b. a pattern that does not fit is more FACES ------------------
      「パターンから作った盤に、段の上限が効いていない」 LEADER, 2026-08-27.
 
@@ -3499,6 +3530,13 @@ say(r.keptEmpty,
 say(r.repatLts,
     'and ⋯ → 並びを変える answers the same as ＋ does: choosing a type is one act ' +
     'however it was pressed');
+r.survives.forEach((x) => {
+  say(x.now === x.was && x.atNow === x.at,
+      'and a board made from ' + x.pat + ' is still there on the NEXT LAUNCH — ' +
+      x.was + ' stored, ' + x.now + ' after the disk is read and the migration runs, ' +
+      'and KB.at is still ' + x.atNow + ' (' + x.at + '), so the keyboard on the phone ' +
+      'has not become its neighbour');
+});
 say(r.sizes5.every((x) => x.over === 0),
     'and at 26 / 60 / 105 / 150 / 300 letters too -- no face over the ceiling' +
     (r.sizes5.filter((x) => x.over).length

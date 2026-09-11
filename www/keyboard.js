@@ -42,6 +42,34 @@
    Editing does not move that. You can build the next keyboard without
    disturbing the one you are typing on, and press Apply when it is ready. */
 var KB=null;
+/* WHAT SHAPE THE STORED KEYBOARD IS IN, and the one place the number is said.
+
+   `v` is what tells a KB written by THIS app from one written before board 0
+   left storage, and two things read it: migrateKbFree(), which moves the old
+   editable copy of the free QWERTY out of the array, and kbIded(), which
+   reads `at` on the old indexing when it is missing.
+
+   IT WAS WRITTEN BY THE MIGRATION AND BY NOBODY ELSE, so a KB this app had
+   just MADE carried no `v` at all and was read as one from before any of
+   this -- by both of them. kbIded() then moved `at` by one, which is the
+   keyboard on the phone silently becoming its neighbour: the very thing
+   migrateKbFree()'s own comment warns about, happening to it. That was true
+   of all five patterns before a letter was ever laid on one.
+
+   And the day a made board came out character for character the free QWERTY
+   -- which is what 「型を選んだ時点で、無料の QWERTY と同じく文字を載せる」
+   asks for -- migrateKbFree() read it as the copy and kbs.shift() TOOK IT
+   AWAY. Measured: one stored board, zero after the next launch.
+
+   So a KB is born stamped. Not a condition added to either reader: they are
+   both right about what `v` means, and what was wrong is that nothing put it
+   on. Storage written by older versions is untouched -- no `v` still means
+   migrate, and a `v` already there still means done. */
+var KB_V=2;
+/* An empty one, with the version on it. Three places used to write
+   `{kbs:[], at:0}` out by hand, which is three places to remember a field in
+   and three that did not. */
+function kbMint(){ return {kbs:[], at:0, v:KB_V}; }
 /* How many keyboards this person has BUILT, across every language they have.
 
    KB_MAX was a constant here and a per-language one: three in this language,
@@ -274,7 +302,7 @@ function kbIded(k){
     seen['i'+b.id]=out.length; put.push(out.length); out.push(b);
   }
   k.kbs=out;
-  off=((parseInt(k.v, 10)||0)>=2)? 1 : 0;
+  off=((parseInt(k.v, 10)||0)>=KB_V)? 1 : 0;
   idx=(parseInt(k.at, 10)||0)-off;
   if(idx>=0 && idx<put.length) k.at=put[idx]+off;
   return k;
@@ -309,11 +337,11 @@ function kbSameLay(a, b){
    take the person's own first board out of the array as though it were the
    copy. */
 function migrateKbFree(){
-  if(!KB || (parseInt(KB.v, 10)||0)>=2) return;
+  if(!KB || (parseInt(KB.v, 10)||0)>=KB_V) return;
   var kbs=KB.kbs||[], at=parseInt(KB.at, 10)||0;
   if(kbs.length && kbSameLay(kbs[0].lay, kbFixed().lay)) kbs.shift();
   else if(kbs.length) at=at+1;
-  KB.kbs=kbs; KB.at=at; KB.v=2;
+  KB.kbs=kbs; KB.at=at; KB.v=KB_V;
   saveKb();
 }
 /* NO KEYBOARD AND A BROKEN KEYBOARD ARE DIFFERENT STATES, and this line put
@@ -786,7 +814,7 @@ function kbAdd(pat){
   if(kbCapStop()) return;
   /* Storage holds only the ones the person built. The free QWERTY is board 0
      and is not among them, so the first one made here is the SECOND board. */
-  if(!KB) KB={kbs:[], at:0};
+  if(!KB) KB=kbMint();
   KB.kbs.push({id:kbId(), nm:'', pat:pat, lay:kbPatLay(pat)});
   kbShow=kbBoards().length-1; kbLay=0; kbSel=null;
   kbForget();
@@ -851,7 +879,7 @@ function kbApply(i){
   if(!bs.length) return;
   /* KB is null until something is built, and board 0 is appliable before
      then -- it is the keyboard already on the phone. */
-  if(!KB) KB={kbs:[], at:0};
+  if(!KB) KB=kbMint();
   KB.at=kbClamp(i, bs.length);
   saveKb(); render();
 }
@@ -1242,7 +1270,7 @@ function kbEdit(){
      mutator below asks here and stops on null -- one place saying no, rather
      than thirty places each remembering to. */
   if(kbIsFree(kbShow)) return null;
-  if(!KB) KB={kbs:[], at:0};
+  if(!KB) KB=kbMint();
   kbShow=kbClamp(kbShow, kbBoards().length);
   if(kbIsFree(kbShow)) return null;
   return KB.kbs[kbShow-1] || null;
