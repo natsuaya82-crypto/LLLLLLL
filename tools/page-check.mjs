@@ -97,7 +97,7 @@ const r = await pg.evaluate(({ s }) => {
   eval('(' + s + ')()');
   /* The paid plan, so the paid screens are pages rather than locked doors --
      the same thing act-check and world-check do for the same reason. */
-  SET.walked = true; SET.plan = 'pro';
+  SET.walked = true; planGot('pro');
 
   var out = { rows: [], doors: 0, err: [] };
   /* Asked of the table, not written out here: a route added tomorrow is

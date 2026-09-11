@@ -158,7 +158,7 @@ const R = await pg.evaluate(() => {
   /* Every screen, under both plans and with and without a dictionary, because
      a button that only exists when there is nothing yet is still a button. */
   ['free','pro'].forEach(plan => {
-    SET.plan = plan;
+    planGot(plan);
     [false, true].forEach(empty => {
       const keep = WORDS;
       if (empty) WORDS = [];
@@ -171,7 +171,7 @@ const R = await pg.evaluate(() => {
       WORDS = keep;
     });
   });
-  SET.plan = 'free';
+  planGot('free');
 
   /* Onboarding, every step -- and the steps that have a second face: the
      writing systems to choose from, the sounds offered again, the characters
@@ -207,7 +207,7 @@ const R = await pg.evaluate(() => {
   /* The data room only offers its rows on the paid plan; on the free one it
      offers the lock instead, and both are screens with buttons on them. */
   ['free','pro'].forEach(pl => {
-    SET.plan = pl;
+    planGot(pl);
     walkArg('set', vSet, SETS.map(x => x.id), 'vSet ' + pl);
   });
   /* Both plans here too, for the same reason the settings rooms need both:
@@ -219,17 +219,17 @@ const R = await pg.evaluate(() => {
      stage of somebody's own comes from and a walk that could not see one
      would be walking a shorter app than exists. */
   ['free','pro'].forEach(pl => {
-    SET.plan = pl;
+    planGot(pl);
     walkArg('gram', vGram, gramArgs(), 'vGram ' + pl);
   });
-  SET.plan = 'free';
+  planGot('free');
   /* The keyboard chapter is a list and each keyboard is a page. Board 0 is
      the free QWERTY and has no editor; the others have one, and the two are
      different screens. */
-  SET.plan = 'pro';
+  planGot('pro');
   KB = { kbs: [{ nm: '', pat: 'qwerty', lay: kbFixed().lay }], at: 0, v: 2 };
   walkArg('kb', vKb, ['0', '1'], 'vKb');
-  KB = null; kbShow = 0; SET.plan = 'free';
+  KB = null; kbShow = 0; planGot('free');
   /* The letters chapter is three lists now and they share no buttons:
      only the digits page carries the base, only the alphabet counts the
      ones with no reading. */

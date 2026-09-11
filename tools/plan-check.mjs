@@ -52,7 +52,7 @@ const r = await pg.evaluate(({ s }) => {
      still in storage. This is the fault the whole file is about: the two are
      one line apart in words.js and nothing else in the app would look wrong
      if the wrong one were kept. */
-  SET.plan = 'pro'; save();
+  planGot('pro');
   var n = WORDS.length, i;
   for (i = n; i < 500; i++) WORDS.push({ id: 'w_cap_' + i, hw: 'kata' + i, mn: ['a word'] });
   save();                        /* core.js's save() is what writes WORDS */
@@ -60,7 +60,7 @@ const r = await pg.evaluate(({ s }) => {
   out.paidShown = wordsSeen().length;
   var wasBytes = bytes();
 
-  SET.plan = 'free'; save();
+  planGot('free');
   /* The LIST is asked for first and what is HELD is read after it, in that
      order and not the other way round: the way this fails is a list that
      trims the thing it is listing, and reading the count before anything has
@@ -81,7 +81,7 @@ const r = await pg.evaluate(({ s }) => {
 
      Held for real: made on the paid plan, counted on free, and counted again
      in LETTERS/STG so that hidden is hidden and never removed. */
-  SET.plan = 'pro'; save();
+  planGot('pro');
   var ltWas = LETTERS.length, extraLt = ltNew({ nm:'zzq' });
   var stWas = (STG.extra ? STG.extra.length : 0);
   STG.extra.push({ id:'own_plan_check', title:'a stage of my own',
@@ -99,7 +99,7 @@ const r = await pg.evaluate(({ s }) => {
   };
   out.ltPaidSeen = seenHas(extraLt.id);
   out.stPaidSeen = stageHas('own_plan_check');
-  SET.plan = 'free'; save();
+  planGot('free');
   out.ltFreeSeen = seenHas(extraLt.id);
   out.stFreeSeen = stageHas('own_plan_check');
   out.ltFreeHeld = !!ltById(extraLt.id);
@@ -113,9 +113,9 @@ const r = await pg.evaluate(({ s }) => {
 
   /* ---- 2. the ceiling refuses, and refuses in one place ---------------- */
   out.capOKfree = capOK(1);              /* 500 words on free: no room */
-  SET.plan = 'pro'; save();
+  planGot('pro');
   out.capOKpaid = capOK(1);
-  SET.plan = 'free'; save();
+  planGot('free');
 
   /* capStop() must not move anybody. Somebody halfway through typing a word
      had the screen taken off them and was put on a price list once. */
@@ -125,28 +125,31 @@ const r = await pg.evaluate(({ s }) => {
   out.capStayed = here().r === whereWas;
 
   /* ---- 3. the plan being unknown is not the same as having no data -----
-     A receipt that fails, a network that is down, a Keychain that answers
-     nothing: each of those makes the app the free plan for the moment. None
-     of them may take the same branch as an empty phone. */
+     A receipt that fails, a network that is down, an answer that has not come
+     back yet: each of those leaves this app with no plan for the moment. None
+     of them may take the same branch as an empty phone.
+
+     `planGot()` is the one writer (www/core.js § PLAN, 2026-09-11) and it
+     takes the word `verify-plan` answered with. Anything that is not one of
+     the three it knows is `free` -- the quiet way round. What NOBODY has
+     answered is a state of its own and is asked for under 12 below. */
   out.emptyPlan = true; out.unknownWords = true; out.unknownCan = true;
   ['', null, undefined, 0].forEach(function(v){
-    SET.plan = v;
+    planGot(v);
     /* nothing there at all reads as the word free */
     out.emptyPlan = out.emptyPlan && plan() === 'free';
   });
-  /* And a plan that is a WORD nobody knows is a different sentence, because
-     plan() hands it back as it found it: `SET.plan='garbage'` is 'garbage',
-     not 'free'. That is right and is not what protects anybody -- has() is a
-     list of one, so anything that is not the word plus buys nothing, and
-     that is the claim worth holding. A plan read as free would be a second
-     answer to the same question. */
+  /* And a plan that is a WORD nobody knows buys nothing. planGot() writes
+     `free` for it -- the one writer refuses what it was not told -- and has()
+     stands behind that anyway: anything that is not on the ladder meets no
+     level. Two walls, and they point the same way. */
   ['', null, undefined, 0, 'garbage', 'pro ', 'PRO', 'basic', 'studio'].forEach(function(v){
-    SET.plan = v;
+    planGot(v);
     out.unknownWords = out.unknownWords && WORDS.length === 500;
     out.unknownCan = out.unknownCan && can('kb') === false && has('pro') === false;
     try { has('pro'); capOK(1); wordsSeen(); } catch (e) { out.unknownThrew = String(e); }
   });
-  SET.plan = 'free'; save();
+  planGot('free');
 
   /* ---- 4. can() and the table ------------------------------------------
      Every capability the table names answers on both plans, and a name that
@@ -156,9 +159,9 @@ const r = await pg.evaluate(({ s }) => {
   var names = [], k;
   for (k in CAN) if (Object.prototype.hasOwnProperty.call(CAN, k)) names.push(k);
   out.canCount = names.length;
-  SET.plan = 'free';
+  planGot('free');
   out.freeAll = names.every(function(c){ return can(c) === false; });
-  SET.plan = 'pro';
+  planGot('pro');
   out.paidAll = names.every(function(c){ return can(c) === true; });
   try { can('nosuchthing'); out.canTypo = false; } catch (e) { out.canTypo = true; }
 
@@ -171,15 +174,15 @@ const r = await pg.evaluate(({ s }) => {
      capability moved between rungs is walked on the day it moves. */
   out.rungs = {};
   ['free', 'plus', 'pro'].forEach(function(p){
-    SET.plan = p;
+    planGot(p);
     out.rungs[p] = names.filter(function(c){ return can(c); }).sort().join(' ');
   });
-  SET.plan = 'plus';
+  planGot('plus');
   out.midUp = has('plus') === true;
   out.midNotTop = has('pro') === false;
-  SET.plan = 'pro';
+  planGot('pro');
   out.topHasMid = has('plus') === true;   /* the rung below is included */
-  SET.plan = 'free';
+  planGot('free');
   out.freeNoMid = has('plus') === false;
 
   /* ---- 4c. the word ceiling is the plan's, and it is a number ----------
@@ -187,14 +190,14 @@ const r = await pg.evaluate(({ s }) => {
      what the list actually shows, because those are two things and the fault
      this file exists for is them disagreeing. */
   var capWas = WORDS.length;
-  out.capFree = (SET.plan = 'free', wordCap());
-  out.capMid = (SET.plan = 'plus', wordCap());
-  out.capTop = (SET.plan = 'pro', wordCap());
-  SET.plan = 'plus'; save();
+  out.capFree = (planGot('free'), wordCap());
+  out.capMid = (planGot('plus'), wordCap());
+  out.capTop = (planGot('pro'), wordCap());
+  planGot('plus');
   out.midShows = wordsSeen().length;        /* 500 words, ceiling 1000 */
   out.midHolds = WORDS.length;
   out.midRoom = capOK(1) === true;
-  SET.plan = 'free'; save();
+  planGot('free');
   out.freeShows2 = wordsSeen().length;
   out.freeHolds2 = WORDS.length === capWas;
 
@@ -210,18 +213,18 @@ const r = await pg.evaluate(({ s }) => {
      CAN.kb was 'pro': plus bought a card that said four and got none, and
      pro's "no limit" was three. A paid screen promising what the app cannot
      do is the app lying to somebody who is about to pay.                  */
-  out.kbFree = (SET.plan = 'free', kbCap());
-  out.kbMid  = (SET.plan = 'plus', kbCap());
-  out.kbTop  = (SET.plan = 'pro',  kbCap());
-  out.kbDoor = (SET.plan = 'free', can('kb')) === false &&
-               (SET.plan = 'plus', can('kb')) === true &&
-               (SET.plan = 'pro',  can('kb')) === true;
+  out.kbFree = (planGot('free'), kbCap());
+  out.kbMid  = (planGot('plus'), kbCap());
+  out.kbTop  = (planGot('pro'),  kbCap());
+  out.kbDoor = (planGot('free'), can('kb')) === false &&
+               (planGot('plus'), can('kb')) === true &&
+               (planGot('pro'),  can('kb')) === true;
 
   /* The pool. A second language is written straight into localStorage the
      way another language on this phone would be, with two keyboards in it,
      and then this language is asked whether it has room. On plus the answer
      has to be no: one QWERTY plus two over there plus one here is four. */
-  SET.plan = 'plus'; save();
+  planGot('plus');
   KB = { kbs: [{ nm:'', pat:'qwerty', lay: kbFixed().lay }], at: 0 };
   saveKb();
   out.kbHere = kbCount();                        /* 1, in the open language */
@@ -243,7 +246,7 @@ const r = await pg.evaluate(({ s }) => {
             { nm:'B', pat:'qwerty', lay: kbFixed().lay }], at: 0 }));
   out.kbPool = kbCount();                        /* 3 */
   out.kbRoomPool = kbRoomKb();                   /* 1 + 3 < 4 -> no */
-  out.kbPoolTop = (SET.plan = 'pro', kbRoomKb());/* no ceiling -> yes */
+  out.kbPoolTop = (planGot('pro'), kbRoomKb());/* no ceiling -> yes */
   /* A language stored in the older single-keyboard shape is one keyboard and
      not nothing: kbBoardsOf() reads either shape, and counting only the new
      one would hand somebody a free keyboard for every language they made
@@ -254,7 +257,7 @@ const r = await pg.evaluate(({ s }) => {
   delete LANGS['l_other'];
   slRm(langKeyOf('l_other', 'kb'));
   KB = null; saveKb();
-  SET.plan = 'free'; save();
+  planGot('free');
 
   /* ---- 4e. editing a post you have sent, and the mark beside a name ----
      Two capabilities that were in the app before they were in CAN.
@@ -276,7 +279,7 @@ const r = await pg.evaluate(({ s }) => {
      を減らしたくない」 OWNER DECISION 2026-08-25. Hiding it is the older shape
      and the one this must not drift back to, so it is asked of the free
      plan's own menu markup. */
-  SET.plan = 'free'; save();
+  planGot('free');
   PMENU = 'p_plan';
   out.penOnFree = postMenuHTML(myPost).indexOf('postEdit') !== -1;
 
@@ -324,7 +327,7 @@ const r = await pg.evaluate(({ s }) => {
                      postById('p_plan').ed === 12345;
 
   /* Pressed on plus: it opens, carrying the post it was pressed on. */
-  SET.plan = 'plus'; save();
+  planGot('plus');
   PW = pwBlank();
   postEdit('p_plan');
   out.editPlusOpens = PW.ed === 'p_plan' && PW.ln === 'kano mos';
@@ -334,13 +337,13 @@ const r = await pg.evaluate(({ s }) => {
      post whatever plan they are on, because this phone can only answer the
      question for the person holding it. */
   var theirs = { id: 'p_them', at: 1, mine: false, hd: 'iri', who: 'Iri', ln: 'x' };
-  SET.plan = 'free'; out.bdgFree = postBadge(myPost);
-  SET.plan = 'plus'; out.bdgMid  = postBadge(myPost);
-  SET.plan = 'pro';  out.bdgTop  = postBadge(myPost);
+  planGot('free'); out.bdgFree = postBadge(myPost);
+  planGot('plus'); out.bdgMid  = postBadge(myPost);
+  planGot('pro');  out.bdgTop  = postBadge(myPost);
   out.bdgTheirs = postBadge(theirs);
   /* The price list is the other question and keeps answering it: the Pro row
      carries the mark for everybody, including somebody reading it on free. */
-  SET.plan = 'free';
+  planGot('free');
   out.bdgRowPro = planBadge('pro');
   out.bdgRowFree = planBadge('free');
 
@@ -362,7 +365,7 @@ const r = await pg.evaluate(({ s }) => {
   var boughtId = '';
   var realBuy = window.storeBuy;
   window.storeBuy = function(id){ boughtId = String(id||''); return true; };
-  SET.plan = 'pro'; save();
+  planGot('pro');
   PLPICK = { id:'plus', yr:false };
   plBuy();
   out.dblBought = boughtId;
@@ -380,7 +383,7 @@ const r = await pg.evaluate(({ s }) => {
      setPlan() writes the plan itself (storeOn() is false); what is asked is
      therefore the plan, which is the same thing the phone ends up with. */
   boughtId = '';
-  SET.plan = 'plus'; save();
+  planGot('plus');
   PLPICK = { id:'pro', yr:false };
   plBuy();
   out.upPlan = plan();
@@ -392,29 +395,29 @@ const r = await pg.evaluate(({ s }) => {
      no is still a button. What is left for somebody on the top rung is
      restore and Apple's own sheet, which are the two rows under it. */
   window.route = 'plans'; NAV = [{ r:'plans' }];
-  SET.plan = 'pro'; save();
+  planGot('pro');
   PLPICK = { id:'plus', yr:false };
   out.buyOnHeld = vPlans().indexOf('plbuy') !== -1;
   PLPICK = { id:'pro', yr:false };
   out.buyOnSame = vPlans().indexOf('plbuy') !== -1;
-  SET.plan = 'plus'; save();
+  planGot('plus');
   PLPICK = { id:'pro', yr:false };
   out.buyOnUp = vPlans().indexOf('plbuy') !== -1;
-  SET.plan = 'free'; save();
+  planGot('free');
   PLPICK = { id:'plus', yr:false };
   out.buyOnFree = vPlans().indexOf('plbuy') !== -1;
   /* and the two rows that are not a purchase are still there for them */
-  SET.plan = 'pro'; save();
+  planGot('pro');
   var held = vPlans();
   out.heldRestore = held.indexOf('storeRestore') !== -1;
   out.heldManage  = held.indexOf('storeManage') !== -1;
 
   PLPICK = null;
-  SET.plan = 'free'; save();
+  planGot('free');
 
   POSTS = POSTS.filter(function(x){ return x.id !== 'p_plan'; });
   savePosts();
-  SET.plan = 'free'; save();
+  planGot('free');
 
   /* ---- 5. what goes UP does not know what a plan is --------------------
      Saved on the free plan, and it is the same twelve slices the paid plan
@@ -439,7 +442,7 @@ const r = await pg.evaluate(({ s }) => {
   });
   function sentOn(p){
     var got = [], realSend = netSend, realRow = netLangRow, realSlices = netSlices;
-    SET.plan = p; save();
+    planGot(p);
     SESS = { at:'t', rt:'r', uid:'planner', anon:false };
     LANGS[langId].mine = true; langOwnGot(langId, 'planner');
     netLangRow = function(id, ok){ ok('sid-plan'); };
@@ -462,60 +465,63 @@ const r = await pg.evaluate(({ s }) => {
   /* every slice core.js knows about goes up, on the free plan */
   out.bkHasSlices = SLICES.every(function(sl){ return out.bkFreeKeys.indexOf(sl) >= 0; });
 
-  /* ---- 6. where the plan is kept ---------------------------------------
-     On a phone it is in the Keychain, and a second copy in an editable file
-     would be the copy that decides: the next save would put it back over the
-     top. In a browser there is no Keychain and the file is all there is.
-     Both directions, because keeping it in neither is the failure that put
-     Plus back to free at the next launch on a real phone. */
-  /* AND WHOSE PURCHASE IT IS goes exactly the same way, for a stronger
-     reason. `SET.planUid` names the account that bought the plan, and an
-     owner written in a file that goes into a PC backup is an owner anybody
-     with a cable can put their own name in -- which is not a way to raise
-     your own plan, it is a way to take somebody else's. */
-  SET.plan = 'pro'; SET.planUid = 'a-uid';
-  var wasNative = PLAN_NATIVE, kept, dropped, dk;
-  PLAN_NATIVE = false;
-  kept = setOnDisk();
-  out.diskHasPlan = Object.prototype.hasOwnProperty.call(kept, 'plan');
-  out.diskHasUid = Object.prototype.hasOwnProperty.call(kept, 'planUid');
-  PLAN_NATIVE = true;
-  kept = setOnDisk();
-  out.nativeHidesPlan = !Object.prototype.hasOwnProperty.call(kept, 'plan');
-  out.nativeHidesUid = !Object.prototype.hasOwnProperty.call(kept, 'planUid');
-  /* AND NOTHING ELSE IS DROPPED ALONG WITH THEM, said by NAMING the two
-     rather than by counting to two. This was `length === length - 1`, and a
-     count is a lying proxy for the sentence it stands in for: it says 「one
-     went」 and goes on saying it when the one that went is the wrong one.
-     backup-check made the same correction about slices for the same reason.
-     Adding a third field to this list is a deliberate change to what a
-     handset keeps, and it belongs in a diff of this line. */
-  dropped = [];
+  /* ---- 6. the plan is NOWHERE ON THIS PHONE ----------------------------
+     「オンラインで 1 端末に 1 アカウント…段 ── 答えは全部サーバー」 OWNER
+     2026-09-11 (docs/FEATURE_RULES.md § 端末は何も決めない).
+
+     This used to hold the opposite half of one arrangement: on a phone the
+     plan lived in the Keychain and setOnDisk() kept it OUT of the settings
+     file, because that file is in the backup a PC makes; in a browser there
+     was no Keychain and the file was all there was. Both copies are gone.
+     `verify-plan` answers and the answer is in memory (www/core.js § PLAN).
+
+     So the claim is the simple one now, asked of every field: **nothing in
+     `lingua.set` is about money, on any build**. It is asked by NAME rather
+     than by counting, which is the correction this section already carried
+     about its old shape: a count says 「one went」 and goes on saying it when
+     the one that went is the wrong one. */
+  planGot('pro');
+  var kept = setOnDisk(), dk;
+  out.diskPlanFields = [];
+  for (dk in kept)
+    if (Object.prototype.hasOwnProperty.call(kept, dk) &&
+        /^plan/.test(dk)) out.diskPlanFields.push(dk);
+  out.diskPlanFields = out.diskPlanFields.join(' ');
+  /* AND THE FILE IS WHAT `SET` IS, with nothing held back. Two lines stood
+     here dropping `plan` and `planUid` on a phone; there is nothing to drop,
+     so a field missing from the file is a bug rather than a policy. */
+  var dropped = [];
   for (dk in SET)
     if (Object.prototype.hasOwnProperty.call(SET, dk) &&
         !Object.prototype.hasOwnProperty.call(kept, dk)) dropped.push(dk);
-  dropped.sort();
-  out.diskDropped = dropped.join(' ');
-  out.diskKeepsRest = out.diskDropped === 'plan planUid';
-  PLAN_NATIVE = wasNative;
+  out.diskDropped = dropped.sort().join(' ');
+  /* AND THE WORD IS NOT WRITTEN OUT AT ALL. planGot() above set the plan to
+     pro; the settings that then go to the disk must not have grown one. */
+  save();
+  out.diskFileHasPlan = /\"plan/.test(String(localStorage.getItem('lingua.set') || ''));
 
-  /* ---- 7. the day a plan ends is said once, and says nothing else ------
-     capLapse() compares the plan with the plan it last saw, so it does not
-     care HOW the plan changed. What it may never do is touch a slice. */
+  /* ---- 7. 「プランが終了しました」 IS NOT SAID, AND THE SERVER IS WHY ----
+     capLapse() compared `plan()` with `SET.planWas` -- the word this handset
+     last showed, in `lingua.set` -- and that is a see / do-not-see decision
+     made out of a word on a phone. It is deleted with the word.
+
+     `supabase/schema.sql` § plan is `(id, plan, at)`: no previous plan, no
+     history beside it, so the server cannot answer 「what was it before」.
+     **It is the owner's** -- docs/scope/r31-server.md § オーナーへ.
+
+     What is held here is that nothing says it and nothing tries: the sheet
+     is not opened by a plan moving, and the words are still there for the day
+     the column lands (openCapLapse, www/settings.js, reached by
+     `FORM_OPEN.lapse`). */
   var said = 0, realOpen = window.openCapLapse;
   window.openCapLapse = function(){ said++; };
-  SET.plan = 'pro'; SET.planWas = undefined; save();
-  capLapse();                       /* first run of all: records, says nothing */
-  out.lapseQuietFirst = said === 0 && SET.planWas === 'pro';
   var beforeLapse = bytes();
-  SET.plan = 'free'; save();
-  capLapse();
-  out.lapseSaid = said === 1;
-  capLapse(); capLapse();
-  out.lapseOnce = said === 1;       /* once, not once per render */
+  planGot('pro');
+  planTook('free');                 /* a lapse arriving from the server */
+  out.lapseQuiet = said === 0;
   out.lapseKeptBytes = same(beforeLapse, bytes());
-  SET.plan = 'pro'; save(); capLapse();
-  out.lapseUpQuiet = said === 1;    /* going UP says nothing */
+  out.lapseGone = typeof window.capLapse !== 'function';
+  out.lapseWordsKept = typeof window.openCapLapse === 'function';
   window.openCapLapse = realOpen;
 
   /* ---- 8. the App Store, and the browser that is not one ---------------
@@ -527,7 +533,7 @@ const r = await pg.evaluate(({ s }) => {
      and storeOn() is the whole of the difference. */
   out.storeOff = storeOn() === false;
   out.storeRefuses = storeBuy('com.tokinets.lingua.pro.monthly') === false;
-  SET.plan = 'free'; save();
+  planGot('free');
   setPlan('pro');
   out.byHand = plan() === 'pro';
   setPlan('free');
@@ -541,15 +547,14 @@ const r = await pg.evaluate(({ s }) => {
     return storeId(p, false) + ' ' + storeId(p, true);
   }).join(' ');
 
-  /* ONE PLACE WRITES THE PLAN DOWN, and since 2026-09-06 it is this side.
-     planTook() is it: SET, the Keychain, capLapse() and a redraw, together,
-     whichever road the word came from. LinguaStore.swift used to write the
-     Keychain as well, which was two answers to 「what plan is this」; it
-     writes nothing now. */
-  var kept = [], realKeep = window.planKeep;
-  window.planKeep = function(p){ kept.push(p); };
+  /* ONE PLACE TAKES THE ANSWER, and since 2026-09-11 there is nowhere for it
+     to write it down. planTook() is it: the word into memory (PLAN), the free
+     alphabet topped up if it was waiting on the plan, and a redraw, whichever
+     road the word came from. planKeep() wrote the Keychain beside it and is
+     deleted with the copy -- there is no word on this handset to protect from
+     a PC backup. */
+  out.keepGone = typeof window.planKeep !== 'function';
   planTook('plus');
-  out.tookKeeps = kept.join(',');
   out.tookTakesAnswer = plan() === 'plus';
 
   /* AND IT MAY GO DOWN, which is the change of 2026-09-06 and is the
@@ -562,16 +567,15 @@ const r = await pg.evaluate(({ s }) => {
      has ever verified for this account and stored (supabase/schema.sql §
      purchase). `free` there means every one of them has run out or been
      refunded -- which is a lapse, and a lapse has to be able to land. */
-  SET.plan = 'pro'; save();
+  planGot('pro');
   planTook('free');
   out.tookLowers = plan();
 
   /* A WORD NOBODY SELLS IS NOT A PLAN. The one thing between a typo on the
      server and every door in CAN swinging open is this line. */
-  SET.plan = 'pro'; save();
+  planGot('pro');
   planTook('studio');
   out.tookRefusesJunk = plan();
-  window.planKeep = realKeep;
 
   /* AND AN ANSWER THAT NEVER ARRIVED WRITES NOTHING. That is where the old
      rule went: it is netPlanVerify()'s failing half rather than a rule about
@@ -580,7 +584,7 @@ const r = await pg.evaluate(({ s }) => {
      `free` written there is the fault that cost the owner their plan.
      「今課金したのに（仮）フリーになりましたって出たんだけど」 OWNER
      2026-09-01. */
-  SET.plan = 'pro'; save();
+  planGot('pro');
   var realSend = window.netSend, saidTo = '';
   window.netSend = function(m, path, body, tok, ok, bad){
     saidTo = path;
@@ -599,7 +603,7 @@ const r = await pg.evaluate(({ s }) => {
   out.verifyTook = plan();
   window.netSend = realSend;
 
-  SET.plan = 'free'; save();
+  planGot('free');
 
   /* ---- 7b. a ceiling met is a way to the plans screen, not a dead end ---
      「そのプランでできることできないことで UI 自体に変更がない方が良くない？」
@@ -607,7 +611,7 @@ const r = await pg.evaluate(({ s }) => {
      toast and stopped, which is a sentence about a plan with no way to the
      thing it is about. capStop() was already the right shape; this is the
      other one. */
-  SET.plan = 'plus'; save();
+  planGot('plus');
   KB = { kbs: [], at: 0 };
   /* BOUNDED, and the bound is not tidiness -- it is the difference between a
      check that FAILS and a check that says nothing at all.
@@ -641,7 +645,7 @@ const r = await pg.evaluate(({ s }) => {
   yesPop(function(){ kbAdd('qwerty'); });
   out.kbSaidYes = here().r === 'plans' && kbBoards().length === kbWas;
   KB = null; saveKb();
-  SET.plan = 'free'; save();
+  planGot('free');
 
   /* ---- 8. how many languages, and what happens to the ones already here --
      Last, because making one SWITCHES which language is open and everything
@@ -652,17 +656,18 @@ const r = await pg.evaluate(({ s }) => {
      can find somebody already over it, so most of what is asked here is what
      happens to them: they keep every language, see every language, and are
      refused only the next one. 「ボタンは減る、言葉は減らない」 */
-  out.langFree = (SET.plan = 'free', langCap());
-  out.langMid  = (SET.plan = 'plus', langCap());
-  out.langTop  = (SET.plan = 'pro',  langCap());
-  SET.plan = 'free'; save();
+  out.langFree = (planGot('free'), langCap());
+  out.langMid  = (planGot('plus'), langCap());
+  out.langTop  = (planGot('pro'),  langCap());
+  planGot('free');
 
   /* A language being READ is not one of yours. Counting it would make looking
      at the timeline fill up a ceiling. */
-  LANGS['l_read'] = { name: 'Somebody else\'s', mine: false };
+  LANGS['l_read'] = {};
   langOwnGot('l_read', 'somebody-else');
+  langTookGot(['l_read']);
   out.langCountReading = langCount();          /* still 1 -- the open one */
-  delete LANGS['l_read'];
+  delete LANGS['l_read']; langTookGot([]);
 
   /* The door is drawn on the plan that cannot press it. 「だいたい無料で
      使えないやつは表示させていいよ」 OWNER DECISION 2026-08-25. */
@@ -700,10 +705,10 @@ const r = await pg.evaluate(({ s }) => {
 
   /* Pressed on pro, where there is room: it is made AND opened, which is what
      the account switcher does. */
-  SET.plan = 'pro'; save();
+  planGot('pro');
   langNew();
   out.proMade = langCount() === wasCount + 1;
-  out.proOpened = langId !== wasLang && !!LANGS[langId] && LANGS[langId].mine;
+  out.proOpened = langId !== wasLang && langWhose(langId) === LW_MINE;
   /* and it arrived empty rather than carrying the last language's words */
   out.proEmpty = WORDS.length === 0;
 
@@ -712,14 +717,14 @@ const r = await pg.evaluate(({ s }) => {
   langNew();
   out.threeMade = langCount() === 3;
   var threeIds = [], id0;
-  for (id0 in LANGS) if (LANGS[id0] && LANGS[id0].mine) threeIds.push(id0);
+  for (id0 in LANGS) if (langWhose(id0) === LW_MINE) threeIds.push(id0);
   /* written out first: a language made a moment ago has no slices in storage
      until something saves it, so measuring before that would be comparing an
      unwritten language with a written one and calling the difference damage */
   save();
   var bytesThree = bytes();
 
-  SET.plan = 'free'; save();
+  planGot('free');
   out.freeStillHolds = langCount() === 3;
   out.freeStillHasAll = threeIds.every(function(x){ return !!LANGS[x]; });
   /* the LIST is asked for and read after, the same order section 1 uses: the
@@ -751,7 +756,7 @@ const r = await pg.evaluate(({ s }) => {
      pop, because there is nothing to fly to. The sentence itself is the one
      every ceiling says（「この機能を使用するにはアップグレードしてください」
      OWNER 2026-09-06). */
-  SET.plan = 'pro'; save();
+  planGot('pro');
   go('langs');
   toastClear();
   langNew();
@@ -984,7 +989,7 @@ const nowl = await pg.evaluate(async () => {
   /* ---- A. Apple has answered, with a date ----------------------------- */
   apple('pro', at);
   reset();
-  SET.plan = 'free'; save();
+  planGot('free');
   PLPICK = { id: 'pro', yr: false };
   /* Before the answer lands the screen is the waiting mark, and there is no
      date on it. 「期限が分からない」 is not 「期限が無い」 and it is certainly
@@ -1012,7 +1017,7 @@ const nowl = await pg.evaluate(async () => {
   out.lowNotPlus = low.indexOf(t('plan.now', planName('plus'), '10/04/2026')) === -1;
 
   /* ---- C. the rung above still has its button ------------------------- */
-  SET.plan = 'plus'; save();
+  planGot('plus');
   PLPICK = { id: 'pro', yr: false };
   var up = vPlans();
   out.upBuy = up.indexOf('plbuy') !== -1;
@@ -1021,7 +1026,7 @@ const nowl = await pg.evaluate(async () => {
   /* ---- D. Apple answered and gave no date ----------------------------- */
   apple('pro', 0);
   reset();
-  SET.plan = 'free'; save();
+  planGot('free');
   PLPICK = { id: 'pro', yr: false };
   vPlans();
   await tick(); await tick();
@@ -1036,9 +1041,9 @@ const nowl = await pg.evaluate(async () => {
      does not. A date kept on its own would be printed beside a plan it was
      never about, and nothing on the screen could tell. */
   STORE_UNTIL = { plan: 'plus', at: at };
-  SET.plan = 'plus'; save();
+  planGot('plus');
   out.mineAt = storeUntil();                   /* the date -- it is Plus's */
-  SET.plan = 'pro'; save();
+  planGot('pro');
   out.movedAt = storeUntil();                  /* 0 -- it is not Pro's */
   PLPICK = { id: 'pro', yr: false };
   out.movedNoDate = vPlans().indexOf('10/04/2026') === -1;
@@ -1046,7 +1051,7 @@ const nowl = await pg.evaluate(async () => {
   delete window.Capacitor;
   window.netPlanVerify = realVerify;
   reset();
-  PLPICK = null; SET.plan = 'free'; save();
+  PLPICK = null; planGot('free');
   route = hold; NAV = [{ r: hold }];
   return out;
 });
@@ -1084,7 +1089,7 @@ const buy = await pg.evaluate(async () => {
   };
   async function press(a, had, says) {
     answer = a; said = []; srv = says;
-    SET.plan = had; save();
+    planGot(had);
     storeBuy('com.tokinets.lingua.plus.monthly');
     await new Promise(function (r) { setTimeout(r, 0); });
     return { last: said[said.length - 1], rung: plan() };
@@ -1117,28 +1122,31 @@ const buy = await pg.evaluate(async () => {
   window.toast = realToast;
   window.netPlanVerify = realVerify;
   delete window.Capacitor;
-  SET.plan = 'free'; save();
+  planGot('free');
   return out;
 });
-/* ---- the Keychain, and the difference between empty and unreadable -------
-   The plan LIVES in the Keychain on a phone -- ios/App/App/LinguaPlan.swift --
-   and www/core.js reads it out of `window.__plan`, injected before any script
-   of ours runs. Nothing after boot can put it back: this is the one read, and
-   what it decides is written straight back down.
+/* ---- THE KEYCHAIN IS NOT READ, AND A LAUNCH HOLDS NO PLAN ---------------
+   The plan USED to live in the Keychain on a phone -- ios/App/App/
+   LinguaPlan.swift -- and www/core.js read it out of `window.__plan`,
+   injected before any script of ours runs. `read()` answered the empty string
+   for BOTH 「there is nothing there」 and 「that failed」, and core.js answered
+   empty by writing `free` INTO the Keychain: one unreadable launch turned a
+   paid plan into a free one, for good.
+   「アップデートしたら勝手に無料プランになったんだけど？」 OWNER 2026-09-02.
 
-   `read()` used to answer the empty string for BOTH 「there is nothing there」
-   and 「that failed」, and core.js answered empty by writing `free` INTO the
-   Keychain. So one unreadable launch turned a paid plan into a free one, for
-   good. 「アップデートしたら勝手に無料プランになったんだけど？」 OWNER
-   2026-09-02.
+   None of that exists. 「オンラインで 1 端末に 1 アカウント…段 ── 答えは
+   全部サーバー」 OWNER 2026-09-11: a launch reads nothing, holds nothing and
+   writes nothing, and what it has is 「nobody has asked」 until `verify-plan`
+   answers. That is the same fault's cure said the other way round -- there is
+   no word for a failed read to spoil.
 
-   A fresh PAGE for each case, and the values put in with addInitScript --
-   the same moment the native side injects them, because core.js runs this
-   branch once as it loads and there is no second chance to set it up. */
+   A fresh PAGE, with the two the native side used to inject set the same way
+   and an old `lingua.set` carrying `plan: 'pro'` under them, because the one
+   thing that must not happen is either being believed. */
 const KEY = [];
 for (const c of [
-  { n: 'unreadable', plan: '', ok: 0,  had: 'pro' },
-  { n: 'empty',      plan: '', ok: 1,  had: 'pro' },
+  { n: 'unreadable', plan: '',    ok: 0, had: 'pro' },
+  { n: 'empty',      plan: '',    ok: 1, had: 'pro' },
   { n: 'holds pro',  plan: 'pro', ok: 1, had: 'free' }
 ]) {
   const kp = await br.newPage({ viewport: { width: 390, height: 844 } });
@@ -1154,7 +1162,12 @@ for (const c of [
   }, c);
   await kp.goto('file://' + path.join(dir, '..', 'www', 'index.html'));
   await kp.waitForFunction(() => typeof window.plan === 'function');
-  KEY.push(await kp.evaluate((n) => ({ n: n, plan: plan(), wrote: window.__wrote.slice() }), c.n));
+  KEY.push(await kp.evaluate((n) => ({
+    n: n, plan: plan(), known: planKnown(), wrote: window.__wrote.slice(),
+    /* and the settings file that was under it is untouched -- a migration
+       copies and never removes (docs/DATA_SAFETY.md rule 2) */
+    file: String(localStorage.getItem('lingua.set') || '')
+  }), c.n));
   await kp.close();
 }
 /* ---- the launch, and where the plan comes from at boot -------------------
@@ -1269,7 +1282,7 @@ async function boot(page, seed){
   await page.waitForTimeout(700);
   return page.evaluate(() => ({
     plan: plan(),
-    was: SET.planWas || '',
+    known: planKnown(),
     srv: window.__srv(),
     read: window.__read === undefined ? '' : window.__read,
     sent: window.__sent === undefined ? '' : window.__sent,
@@ -1457,22 +1470,25 @@ say(r.freeShows2 === 100 && r.freeHolds2,
 say(r.bkSame, 'a save on free sends the same slices up as a save on pro');
 say(r.bkHasSlices, 'and every slice core.js knows about goes up (' + r.bkFreeKeys + ')');
 
-say(r.diskHasPlan, 'in a browser the plan is in the settings file');
-say(r.nativeHidesPlan, 'on a phone it is not -- the Keychain is holding it');
-say(r.diskHasUid, 'and in a browser, so is the account that bought it');
-say(r.nativeHidesUid,
-    'on a phone that is in the Keychain too -- an owner in an editable file ' +
-    'is an owner anybody with a cable can forge, and forging it takes ' +
-    'somebody else\'s subscription');
-say(r.diskKeepsRest,
-    'and those two are the whole of what a handset drops, named rather than ' +
-    'counted (' + r.diskDropped + ')');
+say(r.diskPlanFields === '',
+    'nothing in lingua.set is about money — no field of the settings starts ' +
+    'with the word plan, on any build (' + (r.diskPlanFields || 'none') + ')');
+say(r.diskFileHasPlan === false,
+    'and the file that is written to the disk has no plan in it either');
+say(r.diskDropped === '',
+    'and the settings file is the settings, with nothing held back — two ' +
+    'lines used to drop the plan and its owner on a phone, and there is ' +
+    'nothing to drop (' + (r.diskDropped || 'none') + ')');
 
-say(r.lapseQuietFirst, 'the first launch of all records the plan and says nothing');
-say(r.lapseSaid, 'a plan ending is said out loud');
-say(r.lapseOnce, 'once, not once per render');
+say(r.lapseGone,
+    '\u300cプランが終了しました\u300d is not said: capLapse() compared the plan ' +
+    'with a word in lingua.set, and there is no word — the plan table carries ' +
+    'no previous plan, so the server cannot answer it either (the owner\'s)');
+say(r.lapseQuiet, 'so a plan arriving lower says nothing at all');
 say(r.lapseKeptBytes, 'and it touches no slice');
-say(r.lapseUpQuiet, 'going up a plan says nothing at all');
+say(r.lapseWordsKept,
+    'and the words are still there for the day the column lands — ' +
+    'openCapLapse() is reached by FORM_OPEN.lapse');
 
 say(r.storeOff, 'in a browser there is no App Store to ask');
 say(r.storeRefuses, 'and storeBuy() says so rather than pretending');
@@ -1480,7 +1496,9 @@ say(r.byHand && r.byHandBack, 'so the plans screen still sets the plan by hand t
 say(r.ids === 'com.tokinets.lingua.plus.monthly com.tokinets.lingua.plus.yearly ' +
              'com.tokinets.lingua.pro.monthly com.tokinets.lingua.pro.yearly',
     'the four product ids are the four LinguaStore.swift sells (' + r.ids + ')');
-say(r.tookKeeps === 'plus', 'one place writes the plan down, and the Keychain is part of it');
+say(r.keepGone,
+    'planKeep() is gone with the Keychain it wrote to — there is no word on ' +
+    'this handset to keep safe from a PC backup');
 say(r.tookTakesAnswer, 'and the plan is taken from the ANSWER, not from what was asked for');
 say(r.tookLowers === 'free',
     'a lapse can land — the server is what says `free` now (' + r.tookLowers + ')');
@@ -1601,27 +1619,17 @@ say(buy.cancelSaid === buy.wait && buy.cancelRung === 'plus' && buy.cancelQuiet,
     buy.cancelRung + ')');
 
 const K = {}; KEY.forEach(function (r) { K[r.n] = r; });
-say(K['unreadable'].wrote.length === 0,
-    'a Keychain read that FAILED writes nothing back — a paid plan is not ' +
-    'overwritten by a launch that could not see it (wrote ' +
-    JSON.stringify(K['unreadable'].wrote) + ')');
-say(K['unreadable'].plan === 'pro',
-    'and the screen falls back to the copy in the settings, which is the last ' +
-    'plan this phone knew (' + K['unreadable'].plan + ')');
-/* What is asked is WHAT was written, not how many times. Two roads write the
-   plan down at boot -- the branch that fills an empty Keychain, and
-   planMigrate() -- and on this seed both run and both write the same `pro`.
-   Counting them said 1 and got 2, which is the check being about the wrong
-   thing: nothing here cares how many times the right word is written, and
-   everything here cares that `free` is never one of them. */
-say(K['empty'].wrote.length > 0 &&
-    K['empty'].wrote.every(function (w) { return w === 'pro'; }),
-    'a Keychain that genuinely holds NOTHING still takes what the old settings ' +
-    'had, and every write is that — the migration road is untouched (' +
-    JSON.stringify(K['empty'].wrote) + ')');
-say(K['holds pro'].plan === 'pro',
-    'and a Keychain that holds a plan is the one that decides, over the ' +
-    'settings (' + K['holds pro'].plan + ')');
+say(KEY.every(function (r) { return r.known === false; }),
+    'a launch holds NO plan, whatever the Keychain says and whatever the old ' +
+    'settings file holds — 「nobody has asked」 until verify-plan answers (' +
+    KEY.map(function (r) { return r.n + ':' + (r.known ? r.plan : 'not asked'); }).join(' ') + ')');
+say(KEY.every(function (r) { return r.wrote.length === 0; }),
+    'and it writes nothing back — the read that FAILED could turn a paid plan ' +
+    'into a free one for good, and there is no word left for it to spoil (' +
+    JSON.stringify(KEY.map(function (r) { return r.wrote; })) + ')');
+say(K['unreadable'].file.indexOf('"plan":"pro"') !== -1,
+    'and what an older version wrote in lingua.set is still there, byte for ' +
+    'byte — nothing reads it and nothing removes it (docs/DATA_SAFETY.md)');
 
 /* ---- and the phone decides nothing about what it has paid for -----------
    「だから端末でやるわけねえだろ」 OWNER 2026-09-03,
@@ -1688,14 +1696,20 @@ say(/UUID\(uuidString: uid\)/.test(CODE) && /call\.reject\("not signed in"\)/.te
 say(/Transaction\.updates/.test(CODE) && /held\.add\(result\.jwsRepresentation\)/.test(CODE),
     'what arrives with nobody in the app is KEPT — a refund reaches the ' +
     'server no other way');
-/* The Keychain's own half, which the browser above cannot see either: the
-   value and the status are two facts, and the injection carries both. It is
-   unchanged -- what changed is who WRITES it. */
-say(/func readPlan\(\)\s*->\s*\(String,\s*OSStatus\)/.test(KEYC),
-    'LinguaPlan.readPlan() answers the plan AND whether the Keychain answered');
-say(/window\.__planok=/.test(KEYC) && /errSecItemNotFound/.test(KEYC),
-    'and the injection carries that, with \u300cthere is nothing there\u300d counted ' +
-    'as an answer and everything else as a failure');
+/* THE KEYCHAIN IS NOT READ BY `www/` AT ALL (2026-09-11). It held the plan
+   because the settings file is in the backup a PC makes; there is no word on
+   this handset now -- `verify-plan` answers and the answer is in memory
+   (www/core.js § PLAN). `ios/App/App/LinguaPlan.swift` still has its own key
+   and still injects it, and nothing looks: taking the Swift out is an iOS
+   change and docs/BACKLOG.md carries it. What is held is that the WEB side
+   does not read it. */
+const WWWALL = fs.readdirSync(path.join(dir, '..', 'www'))
+  .filter((f) => f.endsWith('.js'))
+  .map((f) => fs.readFileSync(path.join(dir, '..', 'www', f), 'utf8'))
+  .join('\n').replace(/\/\*[\s\S]*?\*\//g, ' ');
+say(WWWALL.indexOf('__plan') < 0 && WWWALL.indexOf('LinguaPlan') < 0,
+    'nothing under www/ reads the Keychain — the plan is the server\'s answer ' +
+    'and is held in memory, so there is no word on this handset to protect');
 /* The bound the test lowered. Read rather than waited on: twenty seconds in
    the gate would prove the same thing and cost twenty seconds.
 
@@ -1720,22 +1734,28 @@ say(NET.indexOf('/rest/v1/plan') < 0,
     'and nothing in www/ writes the plan table any more — the one road up is ' +
     'the function');
 
-const CORE = fs.readFileSync(path.join(dir, '..', 'www', 'core.js'), 'utf8');
-const keeps = (CORE.match(/planKeep\(/g) || []).length;
-const guarded = (CORE.match(/PLAN_READ_OK\)?\s*(&&\s*)?[^\n]*planKeep\(/g) || []).length;
-say(keeps >= 3 && guarded >= 2,
-    'and both roads that write the plan at BOOT ask PLAN_READ_OK first — the ' +
-    'branch that fills an empty Keychain and planMigrate() (' + guarded +
-    ' of ' + keeps + ' planKeep sites, the third being setPlan, which is ' +
-    'somebody pressing something)');
+/* AND THE WORD IS WRITTEN IN ONE PLACE. `planGot()` is the only thing that
+   assigns PLAN, so there is no second road for a launch, a migration or a
+   press to take. Read off the source, because at run time the second writer
+   would simply have won. */
+const CORE = fs.readFileSync(path.join(dir, '..', 'www', 'core.js'), 'utf8')
+                .replace(/\/\*[\s\S]*?\*\//g, ' ');
+/* Three: the declaration, planGot() and planForget(). A fourth is a second
+   road for a launch, a migration or a press to take. */
+const writes = (CORE.match(/(^|[^A-Za-z_$.])PLAN\s*=/gm) || []).length;
+say(writes === 3,
+    'one place writes the plan down and one forgets it — planGot() and ' +
+    'planForget(), beside the declaration, and nothing else assigns PLAN (' +
+    writes + ')');
 
 /* ---- and the launch, which takes the server's answer -------------------- */
 say(LAPSE.plan === 'free',
     'a cancellation survives the next launch — the plan is still free after ' +
     'boot has asked (' + LAPSE.plan + ')');
-say(LAPSE.wrote.indexOf('pro') < 0,
-    'and nothing writes the old plan back into the Keychain — that is what ' +
-    'made it permanent (wrote ' + JSON.stringify(LAPSE.wrote) + ')');
+say(LAPSE.wrote.length === 0,
+    'and nothing is written back to the Keychain at all — a phone holding its ' +
+    'own word is what made a cancellation permanent (wrote ' +
+    JSON.stringify(LAPSE.wrote) + ')');
 say(LAPSE.read === 'free' && LAPSE.asks === 1,
     'the launch asks the function once and takes what it says (' +
     (LAPSE.read || 'never asked') + ', ' + LAPSE.asks + ' ask)');
@@ -1745,10 +1765,11 @@ say(LAPSE.table === 0,
 say(LAPSE.sent.indexOf('jws') >= 0 && LAPSE.sent.indexOf('"plan"') < 0,
     'what goes up is the receipts and never a plan word (' + LAPSE.sent + ')');
 
-say(OFF.plan === 'free' && OFF.srv === 'pro',
-    'a launch with no signal changes nothing anywhere and ends on what this ' +
-    'phone was holding (' + OFF.plan + ', server still ' + OFF.srv + ')');
-say(OFF.wrote.indexOf('pro') < 0 && OFF.read === '',
+say(OFF.known === false && OFF.srv === 'pro',
+    'a launch with no signal changes nothing anywhere and ends on 「nobody ' +
+    'has asked」 — not on free, which is what cost the owner their plan ' +
+    '(' + (OFF.known ? OFF.plan : 'not asked') + ', server still ' + OFF.srv + ')');
+say(OFF.wrote.length === 0 && OFF.read === '',
     'and it writes nothing down — an answer that never came is not an answer ' +
     '(wrote ' + JSON.stringify(OFF.wrote) + ')');
 say(BACK.read === 'pro' && BACK.plan === 'pro',

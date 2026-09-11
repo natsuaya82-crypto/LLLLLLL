@@ -350,10 +350,10 @@ function storeHeld(){ return !storeOn() || STORE_GOT; }
    The expiry is the Apple ID's, and `localStorage` is the account's --
    CLAUDE.md 「NOTHING IS THE PHONE'S. EVERYTHING IS THE ACCOUNT'S.」 A date
    written into SET could not answer 「which account is this」, which is the
-   question a thing has to answer before it is written down. `SET.plan`
-   already cannot, and that is a known fault (docs/STATE.md: 「アカウントを
-   変えても端末の段が残る」); a second one beside it is a second thing to
-   unpick.
+   question a thing has to answer before it is written down. The plan itself
+   was that fault and it is fixed (2026-09-11): there is no word on this
+   handset at all, only `verify-plan`'s answer in memory (www/core.js §
+   PLAN).
 
    And a date that outlives the plan it belongs to is the worst thing this
    line could say. Nothing here is worth carrying across launches: `current`

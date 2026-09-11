@@ -117,15 +117,15 @@ function lsWipeAcct(uid){
      -- so the fields were written straight back under the name of the account
      that had just been deleted. Cleared here, there is nothing left to park:
      setFor('') finds no owner and returns having written nothing. */
-  if(String(SET.planUid||'')===me){
+  if(String(SET.acct||'')===me){
     keys=setAcctKeys(null);
     for(i=0;i<keys.length;i++) delete SET[keys[i]];
-    /* AND THE PLAN, WHICH `setAcctKeys()` DOES NOT ANSWER FOR. It is not one
-       of the settings -- SET_PLAN below says why -- so the two words are
-       here, and free is a value rather than an absence. Without this line a
-       deleted account's rung would still be on the screen. */
-    SET.plan='free'; SET.planWas='free';
-    delete SET.planUid;
+    /* THE PLAN IS NOT HERE. It was two more words -- `SET.plan` and
+       `SET.planWas`, set to free so a deleted account's rung was off the
+       screen -- and neither is on this phone any more: what an account pays
+       is `verify-plan`'s answer, held in memory (§ PLAN), and the session
+       going takes it (planForget()). */
+    delete SET.acct;
     setKeep();
   }
   langStore();
@@ -482,7 +482,7 @@ function langTookHas(sid){
    wiped -- and the second copy was written out by hand and did not have the
    same keys in it. */
 function setDefaults(){
-  return {theme:'system', plan:'free', planUid:'', walked:false, order:'SOV', read:'both',
+  return {theme:'system', acct:'', walked:false, order:'SOV', read:'both',
           voice:'', ui:'', script:false};
 }
 /* The writing system. `g` maps a romanisation to the strokes drawn for it;
@@ -1048,93 +1048,26 @@ try{
   var s=JSON.parse(localStorage.getItem(LS_S)||'null');
   if(s) for(var sk in s) if(Object.prototype.hasOwnProperty.call(s,sk)) SET[sk]=s[sk];
 }catch(e){}
-/* Except the plan, on a phone.
-   The settings are a file inside the app, and that file is in the backup a
-   phone makes onto a PC -- which can be opened, edited and restored with free
-   tools and no jailbreak. So the plan is in the Keychain instead, and the
-   native side has already put it in `window.__plan`: it is a script injected
-   before this one rather than an answer to a plugin call, because what a free
-   plan looks like is decided on the first frame and a call comes back after
-   it. ios/App/App/LinguaPlan.swift is the other half, and says what this does
-   not stop.
+/* ---- THE KEYCHAIN IS NOT READ, AND THERE IS NOTHING TO MIGRATE ----------
+   This is where `window.__plan`, `window.__planuid` and `window.__planok`
+   were taken off the native side and written into `SET`, and where
+   planMigrate() moved a word that was written before the tiers were renamed
+   in 2026-08-23.
 
-   In a browser, and in every check under tools/, there is no native side and
-   the settings hold the plan exactly as they always did. */
-var PLAN_NATIVE=(typeof window.__plan==='string');
-/* Whether the Keychain ANSWERED, as against what it said. See the note under
-   the branch below: this is what keeps a read that failed from being written
-   down as `free`. A build with no native side, and every check under tools/,
-   has no such thing and is not in this branch at all. */
-var PLAN_READ_OK=(window.__planok!==0 && window.__planok!=='0');
-if(PLAN_NATIVE){
-  /* Empty means the Keychain has never been written -- a fresh install, or
-     one that predates this and still has the plan in its settings. Both are
-     answered the same way: take whatever is there and put it where it now
-     belongs, once.
+   Both are gone with the copy they were about. The plan is `verify-plan`'s
+   answer, held in memory (§ PLAN); there is no word on this handset for a
+   Keychain to protect from a PC backup, no owner written down beside it, and
+   nothing from an older spelling to move -- what the server answers is
+   already in today's words. `ios/App/App/LinguaPlan.swift` still writes and
+   reads its own key and nothing in `www/` asks it; deleting that is an iOS
+   change and is not this branch's (docs/BACKLOG.md).
 
-     AND EMPTY IS NOT THE ONLY WAY TO GET NOTHING. A read that FAILED came
-     back as the same empty string, and this line answered it by writing
-     `free` into the Keychain -- over a plan somebody had paid for, in the one
-     place the plan lives. 「アップデートしたら勝手に無料プランになったんだけど？」
-     OWNER 2026-09-02. CLAUDE.md's first page says it: 「Empty」 and 「broken」
-     are different states and must not share a branch.
-
-     `window.__planok` is the native side saying which it was --
-     ios/App/App/LinguaPlan.swift § readPlan(). 0 is a read that failed, and
-     the answer to that is to write NOTHING and leave what is there. The plan
-     on screen falls back to the copy in the settings, which is the last one
-     this phone knew; the Keychain keeps whatever it has.
-
-     PLAN_READ_OK is the one place that answers it. Two roads write the plan
-     down at boot -- this one and planMigrate() below -- and both have to ask,
-     or the guard is on one door of two. */
-  if(window.__plan) SET.plan=window.__plan;
-  else if(PLAN_READ_OK) planKeep(SET.plan||'free');
-  /* AND WHOSE IT IS, out of the same read. `window.__planuid` is the account
-     that bought what `window.__plan` holds -- ios/App/App/LinguaPlan.swift --
-     and it is seeded here for the same reason the plan is: planFor() is asked
-     the moment net.js knows who is signed in, and that is one script tag
-     later. An empty one is a phone that has never written an owner down, and
-     planFor() answers that by changing nothing.
-
-     Only when the Keychain ANSWERED. A read that failed says nothing about
-     who owns this, and taking silence for 「nobody」 is how a plan gets handed
-     to whoever signs in next. */
-  if(PLAN_READ_OK) SET.planUid=String(window.__planuid||'');
-  /* Whatever copy is still in the file goes out with the next save, which
-     setOnDisk() below is what makes true. Taking it out here as well was
-     written first and did nothing: the save that boot does anyway put it
-     straight back, so the one place that decides is the save. */
-}
-/* ---- the tiers were renamed, and a saved word moved a rung ---------------
-   Free / Basic / Plus until 2026-08-23, Free / Plus / Pro since.
-   「ベーシック、プラスって名前どう思う？なんかどっちが上かわかりにくくない？」
-   Basic reads as the name of a FREE tier in most apps, so Free and Basic were
-   the confusable pair rather than Basic and Plus.
-
-   The words moved: what was called Plus is Pro, and what was called Basic is
-   Plus. A phone that already holds `plan: 'plus'` wrote it while Plus was the
-   TOP tier, and reading it now would put somebody who had everything on the
-   middle rung.
-
-   So it is moved up, ONCE -- and once is the whole difficulty, because after
-   this `plus` is a real middle tier and must be left exactly where it is.
-   `SET.planV` says which of the two worlds a value was written in; nothing
-   else can tell them apart, since both worlds spell it the same.
-
-   Nobody had bought anything -- no product existed in App Store Connect on
-   the day this ran -- so the only value this can find is one somebody set by
-   hand on the plans screen, and moving it up gives them back what they had
-   rather than more than they had.
-
-   The Keychain holds the same word on a phone and is written again here, or
-   the next launch would read the old one and this would have to run twice. */
-/* NOT in setDefaults(). The defaults are laid down first and the saved file
-   is laid over them, so a `planV` in the defaults is a `planV` every old
-   install appears to have -- and an old install is exactly what this has to
-   be able to recognise. Absent means "written before the rename", which is
-   the only signal there is. A fresh install runs this once over `free`,
-   changes nothing, and writes the mark. */
+   docs/CHANGELOG.md 2026-09-11 carries the DELETE REVIEW for the four
+   fields. */
+/* The tiers were renamed on 2026-08-23 -- Free / Basic / Plus became Free /
+   Plus / Pro -- and planMigrate() moved a word a phone had written under the
+   old spelling. There is no word on a phone; `verify-plan` answers in today's
+   names. */
 /* AND THE FLAG THAT USED TO ANSWER TWO QUESTIONS, MOVED TO THE ONE IT KEEPS.
    -------------------------------------------------------------------------
    OWNER 2026-09-09 (choice A). `SET.done` was 「the onboarding is finished」
@@ -1161,29 +1094,6 @@ function walkedMigrate(){
   setKeep();
 }
 walkedMigrate();
-var PLAN_V=2;
-function planMigrate(){
-  if(SET.planV===PLAN_V) return;
-  if(SET.plan==='plus') SET.plan='pro';
-  if(SET.planWas==='plus') SET.planWas='pro';
-  SET.planV=PLAN_V;
-  /* The settings file, written straight, and NOT through save(). This runs
-     while core.js is still loading -- it has to, because what a free plan
-     looks like is decided on the first frame -- and save() opens with
-     bkTouch(), which lives in backup.js and is not there yet. Calling it here
-     throws, core.js stops at that line, and everything below it (CAN among
-     them) is never defined: a white screen from a migration that was only
-     ever meant to move one word. Found by migrate-check, which is the only
-     check that reloads the page with an old file under it. */
-  saveTry(function(){ localStorage.setItem(LS_S, JSON.stringify(setOnDisk())); });
-  /* PLAN_READ_OK for the same reason the branch above asks it: on a launch
-     that could not read the Keychain, `SET.plan` is the settings' copy, and
-     writing that down would put a stale word over whatever the Keychain
-     actually holds. The migration is not urgent -- it runs on the next launch
-     that can read. */
-  if(PLAN_NATIVE && PLAN_READ_OK) planKeep(SET.plan);
-}
-planMigrate();
 
 /* Switch which language is open. Order matters: the language that is open
    when this is called has to be written out before langId changes, or its
@@ -1676,22 +1586,65 @@ function langStop(){
   else toast(t('up.need'));
   return true;
 }
-function plan(){ return SET.plan||'free'; }
-/* What of the settings goes to the file. Everything, except on a phone, where
-   the plan is in the Keychain and a second copy in an editable file would be
-   the copy that decides: the next save would put it back over the top. */
+/* ---- WHAT THIS ACCOUNT HAS PAID FOR, AND IT IS THE SERVER'S ANSWER ------
+   「オンラインで 1 端末に 1 アカウント…誰の物か・あるか無いか・名前・公開か・
+   段 ── 答えは全部サーバー」 OWNER 2026-09-11
+   (docs/FEATURE_RULES.md § 端末は何も決めない).
+
+   ONE WORD ON THIS PHONE DECIDED THE WHOLE OF IT. `SET.plan` was a field of
+   `lingua.set`, written from the Keychain on a phone and from the settings
+   file everywhere else, and fifteen places read it or the three fields round
+   it: every ceiling, every one of the forty-one `can()` calls, which keyboard
+   you type on, which writing system a language IS, and whether thirty-eight
+   letters get written into somebody's language. A launch that could not read
+   it answered `free`, and a person who had paid opened the app to the free
+   shape -- 「アップデートしたら勝手に無料プランになったんだけど？」 OWNER
+   2026-09-02, on a real phone.
+
+   `supabase/functions/verify-plan` is the only thing that decides a plan, and
+   this is the answer it gave, IN MEMORY (rule 22). Asked at the launch
+   (storeSync, www/boot.js) and at the door (netPlanSync, www/net.js); gone
+   when the session goes.
+
+   THREE STATES AND THE THIRD IS NOT `free`. `null` is 「nobody has asked
+   yet」 -- with no signal, or before the first answer lands -- and falling
+   from it to free is the fault above, said in code. Nothing is refused on it
+   and nothing is written on it: upStop() and capStop() below say
+   「接続できません」 instead of offering a price, and ltStart()
+   (www/letters.js) does not write. 「電波が無ければ接続できません」.
+
+   NOTHING IS ON THE DISK. `SET.plan`, `SET.planWas`, `SET.planV` and
+   `SET.planUid` are gone from `lingua.set`; docs/CHANGELOG.md 2026-09-11
+   carries the DELETE REVIEW. A phone that has them keeps them and nothing
+   reads them. */
+var PLAN=null;
+function planKnown(){ return PLAN!==null; }
+/* The one writer. verify-plan is the only thing that reaches it -- planTook()
+   below is what netPlanVerify() calls with the answer. */
+function planGot(p){
+  var v=String(p||'');
+  PLAN=(PLAN_ORDER.indexOf(v)>=0)? v : 'free';
+}
+/* And the session going takes it: a plan is an account's, so the next account
+   starts at 「nobody has asked」 rather than at the last one's rung.
+   「1アカウントに1課金ですけど。他のアカウントについてくるわけねえだろ」
+   OWNER 2026-09-11 -- and this is the whole of what planFor() used to do,
+   which was a comparison between two words on a handset. */
+function planForget(){ PLAN=null; }
+/* '' where nobody has said. Every reader goes through has() below, which is
+   where the third state is answered; this is for a screen that shows the word
+   and for planName(). */
+function plan(){ return PLAN || ''; }
+/* What of the settings goes to the file. All of it.
+
+   Two lines stood here taking the plan and its owner OUT on a phone, because
+   the settings file is in the backup a PC makes and a word in it is a word
+   anybody with a cable can edit. Neither is a setting any more: what this
+   account pays is `verify-plan`'s answer, held in memory (§ PLAN), so there
+   is nothing in this file to keep out of a backup. */
 function setOnDisk(){
   var out={}, k;
   for(k in SET) if(Object.prototype.hasOwnProperty.call(SET,k)) out[k]=SET[k];
-  if(PLAN_NATIVE) delete out.plan;
-  /* AND WHO OWNS IT, for the same reason and it is the stronger one. The
-     settings file is in the backup a phone makes onto a PC, so an owner
-     written there is an owner anybody with a cable can put their own name in
-     -- which is not a way to raise your own plan, it is a way to take
-     somebody else's. On a phone the Keychain is the only copy; in a browser
-     and in every check under tools/ there is no Keychain and this stays in
-     the settings, exactly as the plan does. */
-  if(PLAN_NATIVE) delete out.planUid;
   return out;
 }
 /* The settings, written on their own.
@@ -1700,147 +1653,23 @@ function setOnDisk(){
    entirely when the language on screen is somebody else's -- langLocked() is
    its first line, and that is right: nothing may be written into a language
    this phone is only reading. It is wrong for a field that is nobody's
-   language. `SET.planUid` is which account the plan on this handset belongs
-   to, and losing it because somebody happened to be reading a published
-   language when they signed in is losing the only record there is.
-
-   planMigrate() above already writes this key straight, for its own reason,
-   so this is that line with a name on it rather than a new road. */
+   language: the theme, the interface language and the mark that this handset
+   has been past the walk are nobody's language, and losing one because
+   somebody happened to be reading a published language when they changed it
+   is losing it for no reason. */
 function setKeep(){
   saveTry(function(){ localStorage.setItem(LS_S, JSON.stringify(setOnDisk())); });
 }
-/* Written down when somebody has just changed it, and not waited for. What
-   this session uses is the value in memory; a Keychain that refused the write
-   is a phone that answers with the old plan at the next launch, and the old
-   plan is the free side of wrong on an upgrade -- which is the side the rule
-   in docs/PAID_FEATURES.md asks for, and which StoreKit corrects the moment
-   it is asked again. */
-/* Capacitor.nativePromise, and not Capacitor.Plugins.
+/* ---- planKeep() IS GONE, AND SO IS THE KEYCHAIN IT WROTE TO -------------
+   It put the plan into the iOS Keychain, because the settings file is in the
+   backup a PC makes and a word in an editable file is a word anybody can
+   change. There is no word: what this account pays is `verify-plan`'s answer,
+   asked at every launch and at every door, held in memory (§ PLAN). Nothing
+   to keep safe and nowhere to keep it.
 
-   This asked Capacitor.Plugins for LinguaPlan and returned quietly when it
-   was not there, and it was never there: Plugins is filled by @capacitor/core,
-   which is an npm package an app with a bundler imports, and there is no
-   bundler here. www/share.js says the same thing at length and cost four
-   builds to learn. So every write was the `if(!p) return` and the Keychain
-   was never written.
-
-   That was not a quiet failure. setOnDisk() takes the plan OUT of the
-   settings file on a phone, precisely because the Keychain is meant to be
-   holding it -- so on a real device nothing held it at all and Plus came back
-   as free at the next launch. In a browser PLAN_NATIVE is false, the plan
-   stays in the file, and none of this is visible, which is why every check
-   passed.
-
-   Not waited for, as before: what this session uses is the value in memory. */
-/* AND WHOSE IT IS GOES WITH IT, when there is somebody to name. 「1アドレス
-   1アカウント」「これは絶対課金もアカウントごと言語もそう」 OWNER 2026-09-02.
-
-   Here rather than at the four call sites because this is the one place a
-   plan is written down on a phone -- the plans screen, a receipt, the boot
-   migration, and the account's own answer coming back all end here -- so the
-   owner is recorded wherever the plan moves and nowhere else.
-
-   With no session the uid is left OUT of the message rather than sent empty,
-   and LinguaPlan.swift then leaves the owner it already has alone. The two
-   callers with nobody signed in are both at boot, and neither of them knows
-   anything about an account: writing '' there would erase the owner on every
-   launch, which is the failure this whole chapter is about arriving through
-   the door built to stop it. */
-function planKeep(id){
-  var np=window.Capacitor && Capacitor.nativePromise,
-      me=(typeof SESS!=='undefined' && SESS && SESS.uid)? String(SESS.uid) : '',
-      msg={plan:String(id||'free')};
-  if(me) msg.uid=me;
-  if(!np) return;
-  try{ np('LinguaPlan', 'write', msg)['catch'](function(){}); }catch(e){}
-}
-/* WHOSE PURCHASE THE PLAN ON THIS PHONE IS, asked the moment there is an
-   account to ask about. 「Xは違うアカウントだと課金も引き継がれない」 OWNER
-   2026-09-02.
-
-   The plan arrives before the account does and it has to: window.__plan is a
-   script injected ahead of this file, because what a free plan looks like is
-   decided on the first frame, and there is no session at that point -- net.js
-   is four script tags later. So the two are put together HERE instead, from
-   www/net.js, at the two moments a uid becomes known: netRead(), which is the
-   session this phone was already holding, and netTook(), which is one
-   arriving. meFor() and langForAcct() are in netTook() for the same reason.
-
-   TWO ANSWERS, AND THERE WERE THREE UNTIL 2026-09-11.
-   「1アカウントに1課金ですけど。他のアカウントについてくるわけねえだろ」
-   OWNER 2026-09-11 -- and that is the whole specification, with no exception
-   in it.
-
-   THE SAME PERSON -- nothing to do. This is every ordinary launch and every
-   token refresh.
-
-   ANYBODY ELSE -- start from free and let the account answer. storeSync()
-   sends this device's receipts a moment later and the server answers with
-   whatever THIS account holds. Nothing is taken away from the person who DID
-   buy it: the Keychain is not written here, so their plan and their name are
-   still in it, and the launch they come back on reads them out again; mid
-   session, with no relaunch to read the Keychain, the server is what answers
-   for them, which is the same road and the only record there is.
-
-   THE THIRD WAS 「NOBODY WRITTEN DOWN YET -- record the name and MOVE
-   NOTHING」, and it was an exception for a phone with no owner on its plan.
-   It read an empty `SET.planUid` as 「the plan of whoever is holding this
-   handset」, which is the sentence the owner has just refused: a plan nobody
-   can name a buyer for is not that person's purchase. Measured before it was
-   deleted -- a phone with no stamp and `pro` on it handed `pro` to the next
-   account to sign in, with `planWas` moving too, so capLapse() said nothing
-   and the screen simply had somebody else's subscription on it.
-
-   An empty stamp is now the ordinary mismatch and takes the ordinary road:
-   free, and the server is asked.
-
-   SET.planWas MOVES WITH IT, and that is load-bearing rather than tidy.
-   capLapse() runs at the foot of www/boot.js, synchronously, and compares the
-   plan against the last one this phone saw. Left where it was, it would read
-   pro -> free as 「the subscription ended」 and do the two things that answer
-   is for: show the sheet that says so, against a plan this person never had.
-   Moved together,
-   there is nothing for it to notice.
-
-   setKeep() and not save(): save() opens with bkTouch(), and netRead() runs
-   at the moment www/net.js loads, which is three script tags before
-   www/backup.js exists. It is also the right call on its own terms -- save()
-   declines while the language on screen is somebody else's, and none of these
-   three fields is anybody's language. */
-/* THE FIELDS OF `SET` THAT ARE AN ACCOUNT'S AND NOT THIS HANDSET'S.
-   「端末ごとにやることなんてねえよ」「アカウントごとってずっと言ってるよな？」
-   OWNER 2026-09-03.
-
-   THIS WAS A LIST OF WHAT IS AN ACCOUNT'S AND IT IS NOW A LIST OF WHAT IS
-   NOT. 「アカウント消したのに検索履歴残ってたんだけどなんで？アカウント単位
-   なのにそれが残るの？全部アカウントだって言ってるやん おかしいだろお前
-   一本化しろって。」 OWNER 2026-09-04.
-
-   It named six -- plan, planWas, saved, savedUp, notAt and one more -- and
-   `recent`, the words somebody typed into the search field, was added to SET
-   on 2026-09-03 and never added here. So a person deleted their account and
-   the next screen still showed what they had searched for. That is the same
-   fault, in the same month, as the one lsWipeAcct() above was rewritten for:
-   **a list of keys, written by hand, that nobody remembered to add to.**
-   Adding `recent` to the six would fix that one field and leave the seventh
-   waiting, which is what 「一本化しろ」 refuses.
-
-   So the question is asked the other way round, and the default answer is the
-   owner's own: **EVERYTHING IN `SET` IS AN ACCOUNT'S UNLESS IT IS NAMED HERE.**
-   「全部アカウントだって言ってるやん」. What is named is how this HANDSET is
-   set up and nothing a person made: the theme and the interface language, the
-   marks that say a migration has run on this install, the measurement of this
-   handset's own keyboard, and `planUid`, which is not a setting at all -- it
-   is which account the fields beside it belong to, so it can never be one of
-   them.
-
-   A field added tomorrow is that account's the day it is added, and there is
-   nothing to keep in step. It fails toward 「this is somebody's」, which is the
-   side that loses nothing: a handset setting wrongly parked comes back the
-   moment that account signs in again, and a person's belongings wrongly left
-   behind are handed to a stranger. tools/store-check.mjs holds the two halves
-   against each other -- a name here has to be one it calls the handset's, and
-   a field it puts on a road to the server may not appear here at all. */
+   `ios/App/App/LinguaPlan.swift` still has its own key and nothing in `www/`
+   speaks to it. Taking that out is an iOS change and this branch does not
+   touch `ios/` -- docs/BACKLOG.md. */
 /* HOW THIS ACCOUNT HAS THE APP SET UP, and it goes with the account.
    -------------------------------------------------------------------------
    「端末ごとにやることなんてねえよ」「アカウントごとってずっと言ってるよな？」
@@ -1860,9 +1689,10 @@ function planKeep(id){
    the RECORD. */
 var SET_PREFS=['theme','ui','myfont','showScript','kbrom'];
 /* WHAT IS LEFT IS THIS HANDSET'S SETUP, AND THERE IS VERY LITTLE OF IT.
-   `planUid` says which account's things are live here -- the settings that
-   setFor() parks and hands back, and the plan copy beside them, which is the
-   one question a handset can be asked and an account cannot; `wldMoved` is a
+   `acct` says which account's things are live here -- the settings that
+   setFor() parks and hands back. It was `planUid`, because the plan copy sat
+   beside them; the plan is not on this handset any more (§ PLAN) and the
+   field is named for the one thing it still says. `wldMoved` is a
    migration mark; `vvkb` is a MEASUREMENT of this screen and is meaningless
    on another phone. `done` and `obback` are the onboarding's, and they are
    here under protest -- 「セッションが無い」 cannot tell a phone out of the box
@@ -1882,43 +1712,20 @@ var SET_PREFS=['theme','ui','myfont','showScript','kbrom'];
    2026-09-03), so it stays -- named for what it actually says, read by ONE
    line (appIs in www/shell.js) and written by two (the door, and wipeHere).
 
-   `planV`, `order`, `read`, `voice` and `script` are NOT in this list and are
-   not settled either: they are the plan's and the language-making side's, and
-   moving them is a different question from this one. docs/BACKLOG.md. */
-var SET_PHONE=['planUid','planV','walked','obback','vvkb','wldMoved',
+   `order`, `read`, `voice` and `script` are NOT settled: they are the
+   language-making side's, and moving them is a different question from this
+   one. docs/BACKLOG.md. `planV` was here and is gone with the plan. */
+var SET_PHONE=['acct','walked','obback','vvkb','wldMoved',
                'order','read','voice','script'];
-/* AND THE PLAN IS NEITHER OF THE TWO, WHICH IS WHY IT IS NAMED HERE.
+/* `SET_PLAN` STOOD HERE AND IS GONE (2026-09-11). It named `plan` and
+   `planWas` -- the copy of the server's last answer about this account, and
+   the word this phone last showed -- and neither is in `lingua.set` any more:
+   what an account pays is `verify-plan`'s answer, held in memory (§ PLAN).
    「1アカウントに1課金ですけど。他のアカウントについてくるわけねえだろ」
    OWNER 2026-09-11.
 
-   `SET.plan` is not how this handset is set up, so it is not in the list
-   above; and it is not one of the person's belongings that the settings park
-   and hand back, though it sat in that bag until 2026-09-11. It is the COPY
-   OF THE SERVER'S LAST ANSWER about this account -- supabase/functions/
-   verify-plan decides it, `planTook()` writes it down, and on a phone the
-   Keychain holds it (ios/App/App/LinguaPlan.swift). A copy has one road home
-   and the parked settings file was a second one.
-
-   That second road decided. `planFor()` below starts a mismatched session
-   from `free` and asks the server; `setFor()` ran a moment later and put the
-   plan back out of `lingua.set.<uid>` -- so the answer to 「what does this
-   person pay」 was whichever of the two ran last. On a phone it is worse than
-   a duplicate: `setOnDisk()` keeps the plan out of the settings file
-   precisely because that file is in the backup a PC makes, and the parked
-   copy was written from `SET` directly, past that line.
-
-   `planWas` goes with it and is not tidiness. It is what capLapse() compares
-   the plan against, so a `planWas` that comes back from a file while the plan
-   comes back from the Keychain is 「your subscription ended」 said to somebody
-   who never subscribed. The two move together or neither moves.
-
-   TWO NAMES AND NOT A LIST THAT GROWS. `SET_ACCT` was six names that had to
-   be added to whenever a setting was invented, and the seventh was forgotten
-   (see the note over SET_PHONE above). This is the plan's own two fields and
-   there is no third: a plan is a word and the word this phone last showed.
-   A field invented tomorrow is a setting, and settings travel by the road
-   above without anybody remembering. */
-var SET_PLAN=['plan','planWas'];
+   So there is no third kind of field left and setAcctKeys() below asks ONE
+   question: everything that is not this handset's setup is an account's. */
 /* The fields of `SET` that are a PERSON's, counted rather than named. Asked of
    a parked copy as well as of `SET` itself: a field this account has and this
    handset has not written yet is still theirs, and reading only the live keys
@@ -1927,17 +1734,17 @@ function setAcctKeys(park){
   var out=[], k;
   for(k in SET)
     if(Object.prototype.hasOwnProperty.call(SET,k) &&
-       SET_PHONE.indexOf(k)<0 && SET_PLAN.indexOf(k)<0 && out.indexOf(k)<0) out.push(k);
+       SET_PHONE.indexOf(k)<0 && out.indexOf(k)<0) out.push(k);
   for(k in (park||{}))
     if(Object.prototype.hasOwnProperty.call(park,k) &&
-       SET_PHONE.indexOf(k)<0 && SET_PLAN.indexOf(k)<0 && out.indexOf(k)<0) out.push(k);
+       SET_PHONE.indexOf(k)<0 && out.indexOf(k)<0) out.push(k);
   return out;
 }
 function setParkKey(uid){ return LS_S + '.' + String(uid||''); }
 /* Parked, not cleared -- the same shape as meFor() and postFor(). Signing
    back in brings them all to the screen again. */
 function setFor(uid){
-  var me=String(uid||''), was=String(SET.planUid||''), park, got=null, keys, i, k, d;
+  var me=String(uid||''), was=String(SET.acct||''), park, got=null, keys, i, k, d;
   if(was===me) return false;
   if(was){
     d={}; keys=setAcctKeys(null);
@@ -1960,29 +1767,46 @@ function setFor(uid){
          else.
 
          `plan` and `planWas` were named here and are gone with the rest of
-         the plan: SET_PLAN above takes them out of `keys`, so this function
-         no longer says the word 「plan」 anywhere. planFor() answers for them
-         and is the only thing that does. */
+         the plan: neither is in `lingua.set` at all now, so nothing about
+         money travels with the settings. */
       else delete SET[k];
     }
   }
-  SET.planUid=me;
+  SET.acct=me;
   setKeep();
   return !!was;
 }
+/* A SESSION ARRIVING, AND WHAT GOES WITH IT.
+   「1アカウントに1課金ですけど。他のアカウントについてくるわけねえだろ」
+   OWNER 2026-09-02.
+
+   This used to be two things, and the first one is gone. It COMPARED the
+   account arriving against `SET.planUid` -- the account this handset's copy
+   of the plan belonged to -- and dropped the plan to free when they differed.
+   There is no copy: what an account pays is `verify-plan`'s answer, held in
+   memory (§ PLAN), and the session that arrives asks for its own. So the
+   comparison has nothing left to compare and the drop has nothing to drop.
+
+   What is left is the settings, which ARE parked per account and handed back
+   -- setFor() above -- and the plan being FORGOTTEN, because the answer in
+   memory is about the account that has just left. Nobody signing in is a
+   sign-out and forgets it too: 「nobody has asked」 is the right state for a
+   phone with nobody on it, and free would be this phone deciding. */
 function planFor(uid){
-  var me=String(uid||'');
-  /* Nobody signing in is not a question about a plan. Signing OUT parks
-     nothing here either: the settings are parked by the next arrival
-     (setFor(), above) and the plan is not parked at all. */
-  if(!me) return false;
-  /* THE ONE COMPARISON, AND THERE IS NO SECOND BRANCH.
-     An empty `SET.planUid` is not a phone whose plan belongs to whoever is
-     holding it -- it is a phone where nobody can say who bought this, and
-     「nobody can say」 is not a purchase. 「1アカウントに1課金ですけど。」 */
-  if(String(SET.planUid||'')!==me){ SET.plan='free'; SET.planWas='free'; }
-  /* Before setFor() and not after: setFor() writes `SET.planUid=me` itself,
-     so read after it the two would always agree and this would never fire. */
+  var me=String(uid||''), was=String(SET.acct||'');
+  /* ONLY WHEN THE ACCOUNT CHANGED. netTook() is a session ARRIVING and a
+     session being REFRESHED -- the token lasts an hour, so a launch the next
+     morning renews it -- and both come through here. Forgetting on every call
+     threw away the answer storeSync() had just been given, twenty lines into
+     the same launch: measured, and the launch after a tunnel ended holding no
+     plan at all.
+
+     `SET.acct` is which account's things are live on this handset, which is
+     the same comparison setFor() below makes for the settings. It is not a
+     fact about money and it decides nothing about money: what it answers is
+     「is this a different person」, and a different person's plan is not this
+     one's. Signing OUT forgets on its own road (netOut, www/net.js). */
+  if(me!==was) planForget();
   return setFor(me);
 }
 /* The plans, cheapest first. The ORDER is what makes a ladder a ladder, and
@@ -2017,26 +1841,38 @@ var PLAN_ORDER=['free', 'plus', 'pro'];
    the server decides from every transaction it has ever verified for this
    account, so `free` here means every one of them has run out or been
    refunded -- Apple saying so rather than an empty list nobody could read.
-   A launch with no signal never reaches this at all, and the plan stays what
-   it was. 「プランは絶対におかしくしちゃいけないんだって」 OWNER 2026-09-02.
+   A launch with no signal never reaches this at all, and the plan is then
+   NOBODY-HAS-ASKED rather than free (§ PLAN): every screen that would have
+   shown less says 「接続できません」 instead.
+   「プランは絶対におかしくしちゃいけないんだって」 OWNER 2026-09-02.
 
    capLapse() is what says it out loud, and it is called from here because
    here is the one place a plan arrives. */
 function planTook(id){
   var p=String(id||'free');
   if(PLAN_ORDER.indexOf(p)<0) p='free';
-  SET.plan=p;
-  save();
-  planKeep(p);
-  capLapse();
+  planGot(p);
+  /* AND WHAT COULD NOT BE WRITTEN UNTIL NOW GOES IN. ltStart()
+     (www/letters.js) tops a free alphabet up to its slots and it REFUSES a
+     plan nobody has answered for -- 「未回答は書かせない」 -- which at every
+     launch is the moment before this one. Not a second mechanism: the same
+     call, made where the fact it waited on becomes true, and it tops up only
+     what is missing. The same shape langOwnGot() has for the language's
+     owner. */
+  if(typeof ltStart==='function') ltStart();
   render();
   return p;
 }
 function has(level){ /* level: 'plus' | 'pro' */
   var want=PLAN_ORDER.indexOf(level), got=PLAN_ORDER.indexOf(plan());
-  /* A plan nobody has heard of is not a plan. It is a Keychain that answered
-     nothing, a receipt that would not validate, a settings file somebody
-     edited -- and the free side is the side to be wrong on. */
+  /* NOBODY HAS ASKED YET IS NOT A PLAN EITHER, and it is the state this
+     answers false for rather than guesses at. False here is 「no button」 and
+     never 「no words」: upStop() and capStop() below turn it into
+     「接続できません」 rather than a price, and nothing writes on it
+     (www/letters.js § ltStart). docs/PAID_FEATURES.md.
+
+     A plan nobody has heard of lands here too -- a receipt that would not
+     validate, a word from a version that spelled them differently. */
   if(got<0) return false;
   /* And a level nobody has heard of is a typo in CAN. can() has already
      thrown on the capability by the time this runs; this is the second wall
@@ -2177,6 +2013,11 @@ function capOK(add){
    eleventh: the sentence the toast said, and the word on the upgrade button.
    A new key here would have been one sentence in English and nine holes. */
 function capStop(add){
+  /* Asked BEFORE the ceiling, because the ceiling is worked out FROM the
+     plan: a number measured against an answer nobody has given refuses
+     somebody their next word, or lets one through. upStop()'s sentence,
+     for the same reason. */
+  if(!planKnown()){ toast(t('net.offline')); return true; }
   if(capOK(add)) return false;
   popAsk(t('up.need'), function(){ go('plans'); });
   return true;
@@ -2222,6 +2063,12 @@ function capStop(add){
    name stays where a check can see it. */
 function upStop(ok){
   if(ok) return false;
+  /* NOBODY HAS ASKED WHAT THIS ACCOUNT PAYS, so there is no price to offer:
+     a phone with no signal would be told to buy something it may already
+     have. 「電波が無ければ接続できません」 (docs/FEATURE_RULES.md § 端末は何も
+     決めない) -- the same sentence dlStop() has said since the download
+     ceiling became the server's count. */
+  if(!planKnown()){ toast(t('net.offline')); return true; }
   popAsk(t('up.need'), function(){ go('plans'); });
   return true;
 }
@@ -2241,40 +2088,33 @@ function upStop(ok){
 function upFile(){ upStop(can('file')); }
 function upData(){ upStop(can('data')); }
 
-/* The day a plan ends, said out loud, once.
-
+/* ---- 「プランが終了しました」 IS NOT DRAWN, AND THE SERVER IS WHY --------
    A subscription ending puts the app back into the shape the free plan has:
    the dictionary lists a hundred, the writing is an alphabet, the keyboard is
-   the fixed QWERTY, the line runs left to right. None of that removes
-   anything -- every word, every letter, every layout is where it was, in the
-   backup and in the file in Documents -- but somebody opening the app to find
-   four thousand nine hundred words missing from a list has no way to know
-   that, and the sentence they need is the one this app has the least excuse
-   for not saying. 「バックアップには保存されてるよーって一回出せばok」
+   the fixed QWERTY. None of that removes anything -- every word, every letter
+   and every layout is where it was, and the head of docs/PAID_FEATURES.md is
+   why -- but somebody opening the app to find four thousand nine hundred
+   words missing from a list has no way to know that, and the sentence they
+   need is the one this app has the least excuse for not saying.
+   「バックアップには保存されてるよーって一回出せばok」
 
-   It compares the plan with the plan it last saw, so it does not care HOW the
-   plan changed: set by hand today, told by StoreKit tomorrow, or found to
-   have lapsed at launch. `SET.planWas` is the person's, not a language's --
-   it is a fact about the account.
+   capLapse() said it. It compared `plan()` with `SET.planWas` -- the word
+   this handset last showed, in `lingua.set` -- and that is a see / do-not-see
+   decision made out of a word on a phone: 「端末の物で分岐して…見せる／
+   見せない…を決める行は全部消す」 OWNER 2026-09-11. On a phone whose Keychain
+   read failed, that comparison told somebody who had never subscribed that
+   their plan had ended.
 
-   The first run of all only records where things stand. There is nothing to
-   announce to somebody who has never been on another plan. */
-function capLapse(){
-  var now=plan(), was=SET.planWas;
-  if(was===undefined || was===null){ SET.planWas=now; save(); return; }
-  if(was===now) return;
-  SET.planWas=now; save();
-  /* NOTHING IS SENT FROM HERE, and that is 2026-09-06. It used to call
-     netPlanUp() -- the phone telling the server what it had decided its own
-     plan was -- and that is the road that is gone: the server decides.
-     「だから端末でやるわけねえだろ」 OWNER 2026-09-03.
+   `supabase/schema.sql` § plan is `(id, plan, at)`. **There is no previous
+   plan on it and no history beside it, so the server cannot answer 「what was
+   it before」** -- and this is not drawn out of a guess. **It is the owner's**:
+   a column on `plan`, or a row per change, is a decision about what the
+   server keeps, and docs/scope/r31-server.md § オーナーへ carries it. Until
+   there is one, nothing is said.
 
-     What is left is the sentence. It is said from here because here is the
-     one place that knows the plan MOVED, whichever road moved it: the plans
-     screen in a browser, a purchase, a restore, or a launch that asked the
-     server and was told the subscription has run out. */
-  if(now==='free') openCapLapse();
-}
+   openCapLapse() (www/settings.js) still holds the words and is still reached
+   -- `FORM_OPEN.lapse` -- so nothing has to be written again the day the
+   column lands. */
 
 /* =========================================================================
    2. Theme

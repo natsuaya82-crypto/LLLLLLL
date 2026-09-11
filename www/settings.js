@@ -693,13 +693,13 @@ function wipeHere(uid){
      carried over -- not the theme, not the interface language, not the plan.
      「残るものねえ」is the whole sentence.
 
-     The plan comes back by itself at the next launch, out of the Keychain,
-     and that is correct rather than a hole: deleting an account is not
-     cancelling a subscription, and Apple has not been told anything. Money
-     decides what may be DONE and nothing about what exists -- here nothing
-     exists either way, so it protects nothing and costs nothing. */
-  /* The fields of SET that were this account's, gone with it -- the plan, the
-     searches they starred, how far down their notices they had read. setFor()
+     The plan is not on this phone at all: it is `verify-plan`'s answer about
+     the account that has just gone, and netOut() below forgets it with the
+     session (planForget(), www/core.js § PLAN). Money decides what may be
+     DONE and nothing about what exists -- here nothing exists either way, so
+     it protects nothing and costs nothing. */
+  /* The fields of SET that were this account's, gone with it -- the searches
+     they starred, how far down their notices they had read. setFor()
      in www/core.js is the list and the one place it is written down. The
      theme and the interface language are how this handset is set up and are
      not anybody's belongings, so they stay.
@@ -708,8 +708,11 @@ function wipeHere(uid){
      same call netOut() makes. */
   try{ localStorage.removeItem(setParkKey(wipeUid)); }catch(e){}
   setFor('');
-  SET.plan='free'; SET.planWas='free';
-  delete SET.planUid; delete SET.saved;
+  /* THE PLAN IS NOT ON THIS PHONE and there is nothing here to set back.
+     It was `SET.plan` and `SET.planWas` in `lingua.set`; what an account pays
+     is `verify-plan`'s answer, held in memory (www/core.js § PLAN), and
+     netOut() a few lines below forgets it with the session. */
+  delete SET.acct; delete SET.saved;
   delete SET.savedUp; delete SET.notAt;
   /* AND IT OPENS ON THE DOOR, not on the walk. 「アカウント削除した後
      オンボーディングから始まるのはなぜ？」 OWNER 2026-09-03.

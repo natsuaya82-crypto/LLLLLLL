@@ -1,11 +1,11 @@
 /* A section of somebody else's language, taken and actually LANDED.
    ---------------------------------------------------------------------
    The switch that says a chapter may be taken away has been built more than
-   once. The taking has never been built at all: `LANGS[id].mine` is written
-   in three places in www/core.js and every one of them writes `true`, so a
-   language that is not yours has never existed on a phone. What that produces
-   is a screen that looks finished -- a mark beside a heading, a row that
-   reads 「読んでいる」 -- with nothing behind it.
+   once. The taking had never been built at all: no language on a phone had
+   ever carried somebody else's `language.owner`, so a language that is not
+   yours did not exist. What that produces is a screen that looks finished --
+   a mark beside a heading, a row that reads 「読んでいる」 -- with nothing
+   behind it.
    「ダウンロードボタン押しても言語追加されないけど？」 OWNER 2026-09-01, on a
    device. 「いつまでもfalseだったとかやめてね。」
 
@@ -13,7 +13,8 @@
    real screen and then asks STORAGE:
 
      the slice is in localStorage under langKeyOf(<that language>, 'letters')
-     LANGS[<that language>].mine is false
+     langWhose(<that language>) answers READ -- somebody else's owner column,
+       and a `language_take` row for this account
      every byte of the person's OWN language is where it was
      a save does not send it up into THIS account's rows -- 「入らん」
        OWNER 2026-09-01. It used to be 「bkPack() does not carry it into the
@@ -51,7 +52,7 @@ const r = await pg.evaluate(async ({ s, sid }) => {
      comment said it was what would turn red the day a rung was put on the
      row. It did. What free and pro do about it is asked further down, in
      claims of their own. */
-  SET.plan = 'plus'; save();
+  planGot('plus'); save();
 
   /* ---- the network, and ONLY the network ------------------------------
      What the server really answers with is what supabase/schema.sql's
@@ -132,7 +133,7 @@ const r = await pg.evaluate(async ({ s, sid }) => {
   out.wanted = THEIRS.letters.body;
   /* 名前は `language.name` です（www/core.js § LNAME）── 索引ではなく
      langNameOf() が答えます。降りてきた `language_seen` の行が言ったもの。 */
-  out.row = LANGS[sid] ? { name: langNameOf(sid), mine: LANGS[sid].mine } : null;
+  out.row = LANGS[sid] ? { name: langNameOf(sid), whose: langWhose(sid) } : null;
   out.mineUntouched = (function(){
     for (var k = 0; k < SLICES.length; k++)
       if (slRd(langKeyOf(mineId, SLICES[k])) !== before[SLICES[k]]) return SLICES[k];
@@ -245,7 +246,9 @@ const r = await pg.evaluate(async ({ s, sid }) => {
     /* uid, the way langSeenAdd() puts one on: a language with no stamp
        belongs to nobody once SET.walked is true, so dlCount() would not see it
        and the ceiling this claim is about would never be reached. */
-    LANGS[sid] = LANGS[sid] || { name:'Shango', mine:false, uid:'u' };
+    LANGS[sid] = LANGS[sid] || {};
+    langOwnGot(sid, 'somebody-else'); langNameGot(sid, 'Shango');
+    langTookGot([sid]);
     langId = sid;
     var ran = [], oldPut = netSlicePut, k, snap = {};
     for (k = 0; k < SLICES.length; k++)
@@ -279,16 +282,16 @@ const r = await pg.evaluate(async ({ s, sid }) => {
   out.caps = {};
   var langsWas = JSON.parse(JSON.stringify(LANGS));
   ['free','plus','pro'].forEach(function(pl){
-    SET.plan = pl;
+    planGot(pl);
     out.caps[pl] = { door: can('dl'), cap: dlCap() };
   });
   /* And the two counts are counting different things, with a download and a
      made language both in the index at once. */
-  SET.plan = 'pro';
+  planGot('pro');
   out.madeCount = langCount();
   out.dlCount   = dlCount();
   out.dlIsNotMade = langCount() === Object.keys(LANGS).filter(function(k){
-    return LANGS[k] && LANGS[k].mine; }).length;
+    return langWhose(k) === LW_MINE; }).length;
   LANGS = langsWas;
 
   /* ---- and a ceiling met from ABOVE hides, and takes nothing away -------
@@ -296,11 +299,18 @@ const r = await pg.evaluate(async ({ s, sid }) => {
      OWNER 2026-09-02. wordsSeen()'s shape: the list is cut, the data is not.
      「開いてるものを残すでいいよ」 -- and the language you are standing in is
      always on the list, or the switcher cannot switch away from it. */
-  var wasId = langId, wasPlan = SET.plan;
-  SET.plan = 'pro'; save();
-  var b1 = langMint(), b2 = langMint();
+  var wasId = langId, wasPlan = plan();
+  planGot('pro'); save();
+  /* 作った言語は持ち主の印が要ります（2026-09-11）── `langMint()` は索引に
+     場所を取るだけで、誰の物かは `language.owner` です。本物の道では
+     `langNew()` がその場で押します。 */
+  var b1 = langMint(), b2 = langMint(), meNow = String((SESS && SESS.uid) || 'u');
+  langOwnGot(b1, meNow); langOwnGot(b2, meNow);
+  /* 「読んでいるだけ」はサーバーの二つで決まります（2026-09-11）── 書いた人が
+     `language.owner`、このアカウントが取ったことが `language_take` の行。 */
   ['zc1','zc2','zc3'].forEach(function(z){
-    LANGS[z] = { name:z, mine:false, uid:'u' }; });
+    LANGS[z] = {}; langOwnGot(z, 'somebody-else'); langNameGot(z, z); });
+  langTookGot(['zc1','zc2','zc3']);
   langStore();
   langId = b2;                                  /* the SECOND one is open */
   /* Every key that was there, by NAME. Not the count: an ordinary save() adds
@@ -310,26 +320,26 @@ const r = await pg.evaluate(async ({ s, sid }) => {
     return k.indexOf('lingua.') === 0; });
   var langsWere = Object.keys(LANGS).length;
   function ownListed(){
-    var ids = Object.keys(LANGS).filter(function(k){ return LANGS[k] && LANGS[k].mine; });
+    var ids = Object.keys(LANGS).filter(function(k){ return langWhose(k) === LW_MINE; });
     return langsSeen(ids, langCap());
   }
   function readListed(){
-    var ids = Object.keys(LANGS).filter(function(k){ return LANGS[k] && !LANGS[k].mine; });
+    var ids = Object.keys(LANGS).filter(function(k){ return langWhose(k) === LW_READ; });
     return langsSeen(ids, dlCap());
   }
   out.capPro  = { own: ownListed().length, read: readListed().length };
-  SET.plan = 'free'; save();
+  planGot('free'); save();
   out.capFree = { own: ownListed().length, read: readListed().length,
                   openOnIt: ownListed().indexOf(b2) >= 0 };
   var gone = keysWas.filter(function(k){ return localStorage.getItem(k) === null; });
   out.capNow = { langs: Object.keys(LANGS).length, langsWere: langsWere, gone: gone };
   out.capKept = out.capNow.langs === langsWere && gone.length === 0;
-  SET.plan = 'pro'; save();
+  planGot('pro'); save();
   out.capBack = { own: ownListed().length, read: readListed().length };
   langId = wasId; LANGS = langsWas; langStore();
-  SET.plan = wasPlan;
+  planGot(wasPlan);
 
-  SET.plan = 'plus'; save();
+  planGot('plus'); save();
 
   return out;
 }, { s: seed.toString(), sid: SID });
@@ -354,8 +364,9 @@ say(r.pressed, 'the ↓ for the letters is a real button and was pressed');
 say(!!r.landed && r.landed === r.wanted,
     'and the slice is in storage under langKeyOf(their id, "letters"): ' +
     (r.landed ? r.landed.length + ' bytes, byte for byte what the server sent' : 'NOTHING'));
-say(!!r.row && r.row.mine === false,
-    'and the index has a row for it with `mine` FALSE — the first time this app ' +
+say(!!r.row && r.row.whose === 'read',
+    'and langWhose() answers READ for it — somebody else wrote it and this ' +
+    'account took it; the first time this app ' +
     'has ever written one: ' + JSON.stringify(r.row));
 say(r.row && r.row.name === 'Shango', 'and it carries the language’s own name');
 say(r.langsGrewByOne, 'exactly one language was added');
@@ -447,7 +458,7 @@ await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
 
 const gone = await pg.evaluate(async ({ s }) => {
   eval('(' + s + ')()');
-  SET.walked = true; SET.plan = 'plus'; save();
+  SET.walked = true; planGot('plus'); save();
   /* AS THE PERSON WHOSE LANGUAGE THIS IS. Signing in as somebody else makes
      the seed's own language somebody else's -- langMine() asks
      `language.owner` -- so it falls into the READING list, and on plus that
@@ -604,5 +615,5 @@ if (bad.length){
   process.exit(1);
 }
 console.log('\ndl: a chapter of somebody else’s language is taken by pressing ↓ on it,\n' +
-            '    lands in storage as a language of its own with `mine` false, and\n' +
+            '    lands in storage as a language langWhose() answers READ for, and\n' +
             '    nothing of the person’s own is touched, backed up or synced with it.');

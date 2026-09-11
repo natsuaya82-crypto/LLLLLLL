@@ -1815,7 +1815,8 @@ twenty-two after an update, which is the app saying what the language sounds
 like.
 
 Because the walks run on the free plan, every paid face needs a `halfDone`
-entry in `tools/fixture.mjs` that flips `SET.plan` and puts it back — otherwise
+entry in `tools/fixture.mjs` that flips the plan with `planGot()` and puts it
+back — otherwise
 `act-check` reports its buttons as an entry no screen names, which is true and
 is not what you meant. The abugida bench needs `SET.wsys` too: it is reached
 only from a door that only exists while the writing is an abugida.

@@ -121,7 +121,7 @@ await pg.evaluate(({ ui, dk, pd, mf }) => {
   window.__dress = function () {
     SET.walked = true;                 /* past the onboarding, unless it is what was asked for */
     SET.ui = window.__shot.ui;
-    if (window.__shot.paid) SET.plan = 'pro';    /* --paid: the faces the free plan does not show */
+    if (window.__shot.paid) planGot('pro');    /* --paid: the faces the free plan does not show */
     if (window.__shot.myfont) SET.myfont = true; /* --myfont: the app in the letters somebody drew */
     SET.theme = window.__shot.dark ? 'dark' : 'light';
     /* SET.theme is what is stored; applyTheme() is what puts data-theme on the

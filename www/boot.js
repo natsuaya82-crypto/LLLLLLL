@@ -190,10 +190,12 @@ actWire(document.getElementById('sbg'));
    pinned to the bottom is above it rather than behind it */
 vpKbWire();
 render();
-/* And, if the plan has ended since the last launch, the one thing somebody
-   needs to hear before they look at a list that is suddenly a hundred long.
-   After render(), because it opens a sheet and a sheet is a screen. */
-capLapse();
+/* 「プランが終了しました」 STOOD HERE and is not said any more. capLapse()
+   compared the plan against a word in `lingua.set`, and there is no word on
+   this phone: what an account pays is `verify-plan`'s answer, in memory
+   (www/core.js § PLAN). The `plan` table carries no previous plan, so
+   nothing can say 「it ended」 -- www/core.js § 「プランが終了しました」 and
+   docs/scope/r31-server.md § オーナーへ. */
 /* AND THE SPLASH COMES DOWN WHEN THE SCREEN UNDER IT IS WHOLE.
    「プロフィールは、出す物を全部読み込んでから開く」「押してから読み込みが
    終わるまで前の画面のままで、揃った瞬間にプロフィールが出る」 OWNER

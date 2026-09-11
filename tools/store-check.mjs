@@ -37,7 +37,7 @@
    ONE line in it, answered once, years ago, with 「the settings」. Everything
    the settings CONTAIN was therefore invisible: a field added to `SET` is a
    new place to keep something, it is written to disk with every save, and
-   nothing here went red for it. `SET.plan` is the worked example and it is
+   nothing here went red for it. `plan()` is the worked example and it is
    not a small one -- what somebody PAYS sat inside a key whose whole entry
    says 「one of the three things that are the phone's」.
 
@@ -189,17 +189,13 @@ for (const k of Object.keys(ROADS))
    more, because the settings are an account's too (CLAUDE.md § Online,
    2026-09-03). The point of the table is the ones whose sentence names a gap. */
 const FIELDS = {
-  /* what somebody pays. It is the ACCOUNT's -- 「課金とアカウントとキーボードは
-     アカウントに結びつく」 -- and `SET.plan` is where the value sits on this
-     phone while it travels. */
-  /* The road is netPlanVerify(), and it goes the other way from every other
-     row in this table: what goes UP is the signed receipt, and the plan comes
-     BACK. `SET.plan` is where the answer sits on this phone until the next
-     one. 「だから端末でやるわけねえだろ」 OWNER 2026-09-03 -- there is no road
-     from here to the `plan` table any more, and `planPend`, which held what
-     this phone had not managed to tell the server, went with it: a phone that
-     holds no opinion has nothing left unsent. */
-  plan:     { to: 'netPlanVerify' },
+  /* WHAT SOMEBODY PAYS IS NOT IN THIS FILE AT ALL (2026-09-11).
+     「オンラインで 1 端末に 1 アカウント…段 ── 答えは全部サーバー」 OWNER.
+     `SET.plan` was a row here, with `netPlanVerify` as its road; the answer
+     that road brings back is held in MEMORY now (www/core.js § PLAN) and
+     never written down, so there is no key for this table to ask about.
+     A slice-shaped thing in memory is rule 22's shape, and the plan is the
+     last of the four fields that used to sit on the disk beside it. */
   /* the searches somebody starred. The server is the record and this is the
      copy the screen draws in the first frame -- www/sns.js says so. */
   saved:    { to: 'netSearchSave' },
@@ -210,21 +206,23 @@ const FIELDS = {
 
   /* --- and the phone's own, each for its own reason --------------------- */
   savedUp:  { phone: 'whether this phone has sent its starred searches up ONCE. A mark about the road above, not a thing travelling on it' },
-  planWas:  { phone: 'the plan this phone last SAW, which is the only thing capLapse() has to compare against. Not what anybody paid -- a fact about this launch and the one before it' },
-  planV:    { phone: 'which of the two worlds the plan WORD was written in, before the 2026-08-23 rename. Absent means 「written before it」, and that is the only signal there is' },
-  /* WHOSE the plan above is. It goes NOWHERE, and that is the answer rather
-     than a gap: the account already knows what it pays -- that is the `plan`
-     row this table sends `SET.plan` to -- so sending this up would be telling
-     an account its own name. What it answers is the question only a HANDSET
-     can be asked: 「is the plan sitting on me the one that was bought by the
-     person signed in now?」 On a phone the real copy is in the Keychain
-     (ios/App/App/LinguaPlan.swift) and setOnDisk() keeps this out of the
-     settings file entirely, for the reason it keeps the plan out -- an owner
-     written in a file that goes into a PC backup is an owner anybody with a
-     cable can forge, and forging it takes somebody else's subscription rather
-     than raising your own. In a browser, and in every check under tools/,
-     there is no Keychain and it stays here, exactly as the plan does. */
-  planUid:  { phone: 'the account that bought the plan this phone is holding. A mark about WHOSE the copy above is, not a second place the plan lives — and the one thing here that a handset can be asked and an account cannot' },
+  /* `plan`, `planWas`, `planV` and `planUid` STOOD HERE AND ARE GONE
+     (2026-09-11). 「オンラインで 1 端末に 1 アカウント…段 ── 答えは全部
+     サーバー」 OWNER: what an account pays is `verify-plan`'s answer and it is
+     held in MEMORY (www/core.js § PLAN), so there is no field of the settings
+     about money at all. A phone that has them keeps them and nothing reads
+     them (docs/DATA_SAFETY.md rule 2); a new one never writes one.
+
+     WHICH ACCOUNT'S THINGS ARE LIVE HERE is what is left of `planUid`, under
+     the name that says so. It goes NOWHERE, and that is the answer rather
+     than a gap: signing out parks this account's settings under its uid
+     (setFor(), www/core.js) and there has to be something on the live key
+     saying whose they are, or the next person's park would be written under
+     the last person's name. It is the one question a HANDSET can be asked
+     and an account cannot -- `lingua.sess` says which account this phone IS,
+     and it is gone the moment somebody signs out, which is exactly when this
+     is needed. */
+  acct:     { phone: 'which account\'s settings are live on this handset. Not a thing anybody owns — the mark that says whose the live copy is, so signing out parks it under the right name' },
   notAt:    { phone: 'how far down the notices somebody has read. THE SERVER HOLDS NO READ MARKER and that is a decision — 「サーバーの既読の表は要りません」, www/sns.js' },
   /* THE ONE THING ABOUT THE ONBOARDING THAT IS THIS HANDSET'S, and the owner
      put it here (2026-09-09, choice A). It was `done` and answered two
@@ -313,7 +311,7 @@ for (const f of files) {
    literal is written to `lingua.set` by the first save this app makes --
    without any `SET.x =` anywhere for the search above to find. So a field can
    be on every handset, in every export and in every backup, and be invisible
-   to a table whose whole job is that nothing is kept unnamed. `SET.plan` is
+   to a table whose whole job is that nothing is kept unnamed. `plan()` is
    the worked example one level up; these are the same fault one level further
    in, and `order` `read` `voice` `script` sat there. */
 {

@@ -117,7 +117,7 @@ const REPORT = () => ({
   sound: !!STG.done.sound,
   snd: addedSnd().join(','),
   script: Object.keys(SCRIPT.g).join(','),
-  theme: SET.theme, done: SET.walked, plan: SET.plan,
+  theme: SET.theme, done: SET.walked, plan: plan(),
   langs: Object.keys(LANGS).length, id: langId,
   mine: langWhose(langId) === LW_MINE,
   indexName: LANGS[langId] && LANGS[langId].name,
@@ -224,7 +224,14 @@ await pg.addInitScript(() => {
     const self = this, u = String(self._u || '');
     window.__sent.push(u);
     let status = 200, out = '[]';
-    if (u.indexOf('/auth/v1/signup') >= 0) out = sess(true, 'u-anon');
+    /* AND WHAT THIS ACCOUNT PAYS. The door asks `verify-plan` now
+       (www/net.js § netTook, 2026-09-11) and the answer is the only thing
+       that gives this app a plan at all -- ltStart() does not write the free
+       alphabet until one has arrived (www/letters.js), which is what the
+       a-z claims below are about. A real server answers `free` for somebody
+       who has bought nothing. */
+    if (u.indexOf('/functions/v1/verify-plan') >= 0) out = '{"plan":"free"}';
+    else if (u.indexOf('/auth/v1/signup') >= 0) out = sess(true, 'u-anon');
     else if (u.indexOf('/auth/v1/token') >= 0) {
       const m = knob().refresh;
       if (m === 'dead') { status = 400; out = '{"error":"invalid_grant"}'; }
@@ -357,16 +364,26 @@ want('and its name', A2.name, 'Vaska');
 want('and its drawn script', A2.script, 't');
 want('and its sounds', A2.snd, 't,u,f');
 
-/* ---- 6: the plan leaves the file ---------------------------------------
+/* ---- 6: the plan leaves the phone entirely ------------------------------
    `lingua.set` is inside the app, and the app is inside the backup a phone
    makes onto a PC. Opening that backup, changing one word and restoring it
-   needs no jailbreak, which made it the lowest door in the building. So the
-   plan is in the Keychain now, and these are the two things that has to mean:
-   what was already bought comes across by itself, and the file stops being
-   listened to afterwards. */
-/* Asked of the parsed file rather than of its text: lacks() above splits on
-   commas, which is right for a list of letter ids and finds nothing at all in
-   a line of JSON. */
+   needs no jailbreak, which made it the lowest door in the building. The plan
+   moved to the Keychain for that, and on 2026-09-11 it left the handset
+   altogether: 「オンラインで 1 端末に 1 アカウント…段 ── 答えは全部サーバー」
+   OWNER. `verify-plan` answers and the answer is in MEMORY (www/core.js §
+   PLAN).
+
+   So what this has to mean is one thing, and it is a stronger thing than
+   「the file stops being listened to」: **nothing on this phone is listened
+   to, and a launch that has not asked holds no plan at all.** Falling to
+   `free` there is exactly the fault the Keychain was meant to stop
+   （「アップデートしたら勝手に無料プランになったんだけど？」 OWNER 2026-09-02),
+   said from the other side.
+
+   AND WHAT IS ALREADY ON A PHONE IS NOT REMOVED. A migration copies and never
+   removes (docs/DATA_SAFETY.md rule 2); this one does not even copy, because
+   there is nowhere to copy to. The four fields stay in the file, byte for
+   byte, and nothing reads them. */
 const planInFile = () => pg.evaluate(() => {
   try {
     const f = JSON.parse(localStorage.getItem('lingua.set') || 'null');
@@ -378,45 +395,49 @@ const nativeIs = (plan, settings) => pg.evaluate(([p, st]) => {
   if (st !== null) localStorage.setItem('lingua.set', st);
 }, [plan, settings === undefined ? null : settings]);
 
-/* 6a. somebody who is already paying, on the launch after the update: the
-   Keychain has never been written, and the settings still hold the plan. */
+/* 6a. somebody who was already paying, on the launch after the update: the
+   settings still hold `plus` and the Keychain holds nothing. */
 await pg.evaluate(() => localStorage.clear());
 await nativeIs('', '{"theme":"dark","plan":"plus"}');
 await pg.reload();
-/* 'pro' and not 'plus', and that is the tier RENAME rather than a mistake:
-   Free / Basic / Plus became Free / Plus / Pro on 2026-08-23, so a file
-   written before that day says `plus` and means the top tier. planMigrate()
-   moves the word up a rung, once. A settings file this old cannot have said
-   `basic` -- there was never a way to set it. */
-want('a plan already bought comes across',
+want('a launch holds no plan until verify-plan answers',
+     await pg.evaluate(() => planKnown()), false);
+want('and it is not `free` either — that is the state, not a word',
+     await pg.evaluate(() => plan()), '');
+want('and nothing is written to the Keychain',
+     await pg.evaluate(() => (window.__wrote || []).length), 0);
+want('and what the old file holds is left exactly where it is',
+     await planInFile(), true);
+
+/* 6b. the same phone with the file edited the way a restored backup would
+   edit it. It decides nothing, which is the whole point of the move -- and
+   now there is nothing on the handset for it to compete with either. */
+await nativeIs('pro', '{"theme":"dark","plan":"plus"}');
+await pg.reload();
+want('neither the file nor the Keychain decides what the plan is',
+     await pg.evaluate(() => planKnown()), false);
+
+/* 6c. and a phone that never had one never grows one. The settings go to the
+   disk whole now -- there are no lines holding the plan back -- so what is
+   asked is that nothing WRITES the field. A phone that has the old field
+   keeps it, which is 6a, and this is the other half: it is not written again.
+
+   A fresh storage, because 6a's file still carries `plan:'plus'` and
+   docs/DATA_SAFETY.md rule 2 says that stays -- asking this of that phone
+   would be asking whether a migration removed something, which it must not. */
+await pg.evaluate(() => { localStorage.clear(); });
+await pg.reload();
+await pg.evaluate(() => { SET.theme = 'light'; planGot('pro'); save(); });
+want('a save writes no plan into the file, whatever the app was told',
+     await pg.evaluate(() => {
+       try {
+         const f = JSON.parse(localStorage.getItem('lingua.set') || 'null');
+         return Object.keys(f || {}).filter((k) => /^plan/.test(k)).join(' ');
+       } catch (e) { return 'unreadable'; }
+     }), '');
+want('while the app still knows what it was told',
      await pg.evaluate(() => plan()), 'pro');
-want('and is written where it now lives',
-     await pg.evaluate(() => (window.__wrote || []).join(',').indexOf('pro') >= 0), true);
-want('and is taken out of the file it came from', await planInFile(), false);
 
-/* 6a2. and the rename moves it ONCE. After it has run, `plus` is a real
-   middle tier: a file that already carries planV must be left exactly where
-   it is, or everybody on the middle rung is promoted at every launch. */
-await pg.evaluate(() => localStorage.clear());
-await nativeIs('', '{"theme":"dark","plan":"plus","planV":2}');
-await pg.reload();
-want('a plan written AFTER the rename is left where it is',
-     await pg.evaluate(() => plan()), 'plus');
-
-/* 6b. the same phone, with the file edited the way a restored backup would
-   edit it. This is the whole reason for the move: the answer is the Keychain's
-   'free', not the file's 'plus'. */
-await nativeIs('free', '{"theme":"dark","plan":"plus"}');
-await pg.reload();
-want('the file no longer decides what the plan is',
-     await pg.evaluate(() => plan()), 'free');
-
-/* 6c. and nothing puts it back. A save writes the settings whole, and a save
-   that carried the plan would hand the file its say again on the next load. */
-await pg.evaluate(() => { SET.theme = 'light'; save(); });
-want('and a save does not write it back into the file', await planInFile(), false);
-want('while the app still knows what it is',
-     await pg.evaluate(() => plan()), 'free');
 
 /* ---- 7: the app does NOT sign itself in --------------------------------
    It used to. boot.js called netAnon() before the first frame, so everything

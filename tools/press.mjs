@@ -554,7 +554,7 @@ const R = await pg.evaluate(async () => {
       argsOf(r).forEach(a => {
         screens.push({
           label: v + (a ? ':' + a : '') + ' (' + plan + ')',
-          build: () => { window.__seed(); SET.walked = true; SET.plan = plan;
+          build: () => { window.__seed(); SET.walked = true; planGot(plan);
                          window.route = r; NAV = [{ r: r, a: a }]; show(window[v]()); }
         });
       });
@@ -573,9 +573,9 @@ const R = await pg.evaluate(async () => {
      the free allowance is also spent. Pressing every screen as a paid account
      would never render either. */
   const standings = [
-    ['paid',        () => { SET.plan = 'pro'; }],
-    ['free',        () => { SET.plan = 'free'; }],
-    ['out of room', () => { SET.plan = 'free'; SET.aiDay = ''; SET.aiN = 999; }]
+    ['paid',        () => { planGot('pro'); }],
+    ['free',        () => { planGot('free'); }],
+    ['out of room', () => { planGot('free'); SET.aiDay = ''; SET.aiN = 999; }]
   ];
   standings.forEach(([who, stand]) => {
     window.__halfDone().forEach(([label, run]) => {
@@ -609,7 +609,7 @@ const R = await pg.evaluate(async () => {
   opens.forEach(o => {
     screens.push({
       label: o,
-      build: () => { window.__seed(); SET.walked = true; SET.plan = 'pro';
+      build: () => { window.__seed(); SET.walked = true; planGot('pro');
                      window.route = 'words'; NAV = [{ r: 'words' }];
                      window[o].length ? window[o]('kano') : window[o]();
                      show((typeof FORM !== 'undefined' && FORM && FORM.html)
@@ -681,7 +681,7 @@ const R = await pg.evaluate(async () => {
     Object.keys(PAGES).forEach(function(id){
       argsOf(id).forEach(function(a){
         try {
-          window.__seed(); SET.walked = true; SET.plan = plan;
+          window.__seed(); SET.walked = true; planGot(plan);
           window.route = id; NAV = [{ r: id, a: a }];
           render();
           collectClasses();
@@ -702,7 +702,7 @@ const R = await pg.evaluate(async () => {
      reported here as a rule nothing wears, which is the check saying "add the
      seed" -- this is the seed. */
   try {
-    window.__seed(); SET.walked = true; SET.plan = 'pro';
+    window.__seed(); SET.walked = true; planGot('pro');
     PW = pwBlank(); openPost(); render(); collectClasses();
     back(); render();
   } catch (e) {}
@@ -796,7 +796,7 @@ const HELDR = await pg.evaluate(async () => {
     T(a, 'touchend', rb.left + rb.width / 2, rb.top + rb.height / 2);
     if (now === was) out.push(what + ': held and carried and it did not move');
   };
-  window.__seed(); SET.walked = true; SET.plan = 'pro';
+  window.__seed(); SET.walked = true; planGot('pro');
   go('ltset', 'alpha');
   await carry('a letter of the alphabet', '#ltgrid', '.ltc', 0, 2);
   go('kb');
@@ -871,7 +871,7 @@ const HELDR = await pg.evaluate(async () => {
     for (let i = 0; i < els.length; i++) {
       /* the screen is put back between gestures: a hold that WORKED walked
          off to another route, and the next one would be thrown at nothing */
-      const fresh = () => { window.__seed(); SET.walked = true; SET.plan = 'pro';
+      const fresh = () => { window.__seed(); SET.walked = true; planGot('pro');
                             go(where); render();
                             return document.querySelectorAll('[data-hold]')[i]; };
       let el = fresh(); if (!el) break;
@@ -907,7 +907,7 @@ const HELDR = await pg.evaluate(async () => {
   };
   let holdsFound = 0;
   for (const r of ['words', 'build', 'feed', 'profile']) {
-    window.__seed(); SET.walked = true; SET.plan = 'pro';
+    window.__seed(); SET.walked = true; planGot('pro');
     go(r); render();
     holdsFound += await held(r);
   }
@@ -946,7 +946,7 @@ const POPR = await pg.evaluate(async () => {
   const click = (el) => el.dispatchEvent(
     new MouseEvent('click', { bubbles: true, cancelable: true }));
   const btn = (name) => document.querySelector('#pop [data-do="' + name + '"]');
-  window.__seed(); SET.walked = true; SET.plan = 'free';
+  window.__seed(); SET.walked = true; planGot('free');
   go('feed'); render();
 
   let said = 0, meant = 0;
@@ -1010,7 +1010,7 @@ const POPR = await pg.evaluate(async () => {
      elementFromPoint answers with IT rather than with the row underneath. */
   const sp = document.getElementById('splash');
   if (sp && sp.parentNode) sp.parentNode.removeChild(sp);
-  window.__seed(); SET.walked = true; SET.plan = 'pro';
+  window.__seed(); SET.walked = true; planGot('pro');
   window.route = 'words'; NAV = [{ r: 'words' }];
   wSel = {}; render();
   const marks = [].slice.call(document.querySelectorAll('#app .ltck[data-sel]'));
@@ -1062,7 +1062,7 @@ const BARR = await pg.evaluate(async () => {
   const rs = Object.keys(PAGES);
   for (let i = 0; i < rs.length; i++) {
     const r = rs[i];
-    window.__seed(); SET.walked = true; SET.plan = 'pro';
+    window.__seed(); SET.walked = true; planGot('pro');
     goTab(r);
     await new Promise((f) => setTimeout(f, 0));
     /* `.tabbar` and not `#tabs`: the host is a zero-height div at the end of
@@ -1192,7 +1192,7 @@ const SWR = await (async () => {
   const stand = (js) => pg.evaluate(js);
 
   /* 1. from the left edge, with the screen behind kept by render() */
-  await stand(`window.__seed(); SET.walked = true; SET.plan = 'pro';
+  await stand(`window.__seed(); SET.walked = true; planGot('pro');
                goTab('build'); go('words');`);
   let g = await pull(6, 318);
   if (g.cancel && !g.live)
@@ -1300,7 +1300,7 @@ const KDR = await (async () => {
 
   /* The screen the owner photographed: the name and the @ are lnField()'s,
      and the line about yourself is not. */
-  await stand(`window.__seed(); SET.walked = true; SET.plan = 'pro';
+  await stand(`window.__seed(); SET.walked = true; planGot('pro');
                openMe(); render();`);
   ask('me-nm',  await enter('me-nm'),  false);
   ask('me-hd',  await enter('me-hd'),  false);
@@ -1308,7 +1308,7 @@ const KDR = await (async () => {
 
   /* And a second screen, because what is being held is the SHAPE lnField()
      makes and not this one page. The search box is the same field. */
-  await stand(`window.__seed(); SET.walked = true; SET.plan = 'pro';
+  await stand(`window.__seed(); SET.walked = true; planGot('pro');
                go('find'); render();`);
   ask('f-q', await enter('f-q'), false);
 

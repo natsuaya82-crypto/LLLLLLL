@@ -132,7 +132,7 @@ export function seed(){
      writes SET.x -- a theme, a reading mode, a writing system -- was
      otherwise still in force on every screen built after it, so the walk was
      covering one arrangement of the app and calling it all of them. */
-  SET.theme='system'; SET.plan='free'; SET.walked=true; SET.order='SOV';
+  SET.theme='system'; planGot('free'); SET.walked=true; SET.order='SOV';
   SET.read='both'; SET.voice=''; SET.ui='en'; SET.script=false;
   SET.myfont=false; SET.gpos=''; SET.myfont=false;
   /* 書記体系は言語のもの ── `language.wsys`（www/core.js § LWSYS、2026-09-09）。 */
@@ -809,13 +809,13 @@ export function halfDone(){
        now (「課金で追加した機能は無料になったら全部隠れる」), so the delete
        on one is reachable only here. */
     ['a grammar stage somebody added', () => {
-        SET.plan = 'pro';
+        planGot('pro');
         STG.extra = (STG.extra||[]).concat([{id:'ownfix', slots:[], t:'own'}]);
         /* The PAGE of the stage, not the list: the delete is on the page and
            `p.own` is what draws it. */
         window.route='gram'; NAV=[{r:'gram', a:'ownfix'}];
         const h = vGram();
-        STG.extra.pop(); SET.plan = 'free'; return h; }],
+        STG.extra.pop(); planGot('free'); return h; }],
     /* CHOOSING RULES TO DELETE, both ways round. The section's list deletes
        the way every other list in this app does -- Select in the corner, a ◉
        on each row, Delete beside Done -- and none of those four buttons is
@@ -830,14 +830,14 @@ export function halfDone(){
         window.route='gram'; NAV=[{r:'gram', a:'v2:pl'}];
         G2SEL = { fr1: 1 };
         const h = vGram(); G2SEL = null; return h; }],
-    ['the digits, where the base is set', () => { SET.plan = 'pro';
+    ['the digits, where the base is set', () => { planGot('pro');
        window.route='ltset'; NAV=[{r:'ltset', a:'num'}];
-       const h=vLtset('num'); SET.plan='free'; return h; }],
-    ['a digit above the base', () => { SET.plan = 'pro';
+       const h=vLtset('num'); planGot('free'); return h; }],
+    ['a digit above the base', () => { planGot('pro');
        const was=STG.base; STG.base=10; ltNew({val:11});
        window.route='ltset'; NAV=[{r:'ltset', a:'num'}];
        const h=vLtset('num');
-       LETTERS = LETTERS.filter(l => l.val !== 11); STG.base=was; SET.plan='free';
+       LETTERS = LETTERS.filter(l => l.val !== 11); STG.base=was; planGot('free');
        return h; }],
     /* SOMEBODY ELSE'S LANGUAGE PAGE, with the answers in. Both are needed and
        they are two requests: `language_seen` says the language is published
@@ -890,14 +890,14 @@ export function halfDone(){
        const h=vAbout();
        ABOPEN.letters = was;
        return h; }],
-    ['the reading of a word', () => { SET.plan = 'pro'; openEdit('kano');
+    ['the reading of a word', () => { planGot('pro'); openEdit('kano');
                                       window.route='spell'; NAV=[{r:'spell'}];
-                                      const h=vSpell(); SET.plan='free'; return h; }],
-    ['the reading of a word, searched', () => { SET.plan = 'pro'; openEdit('kano');
+                                      const h=vSpell(); planGot('free'); return h; }],
+    ['the reading of a word, searched', () => { planGot('pro'); openEdit('kano');
                                                 window.route='spell'; NAV=[{r:'spell'}];
                                                 spQ='a';
                                                 const h=vSpell(); spQ='';
-                                                SET.plan='free'; return h; }],
+                                                planGot('free'); return h; }],
     ['the abugida editor',     () => { window.route='abugida'; NAV=[{r:'abugida'}];
                                        langWsysGot(langId, 'abugida'); abVow = 'a';
                                        const h = vAbugida(); langWsysGot(langId, ''); return h; }],
@@ -941,14 +941,14 @@ export function halfDone(){
        nobody photographed: the tick has to move and the corner has to go
        gold. The plan is flipped because choosing a sound is what can('snd')
        buys, and the walks run on the free plan. */
-    ['the sounds, one pressed', () => { const was = SET.plan; SET.plan = 'pro';
+    ['the sounds, one pressed', () => { const was = plan(); planGot('pro');
                                         keepDrop(keepKeyOf('form', 'snd:' + LETTERS[0].id));
                                         openSnd(LETTERS[0].id); ltTakeSnd('t');
                                         /* The press says the sound out loud, and with no wire
                                            behind this the voice puts 「接続できません」 over the
                                            picture. It is not part of this screen. */
                                         popOff();
-                                        const h = vForm(); SET.plan = was; return h; }],
+                                        const h = vForm(); planGot(was); return h; }],
     ['the sounds, searched', () => { ipaQ = 'a'; openSnd(LETTERS[0].id);
                                      const h = vForm(); ipaQ = ''; return h; }],
     /* What one sound IS, which is a page of its own behind the ? on a tile.
@@ -1001,12 +1001,12 @@ export function halfDone(){
        the plan and put it back. */
     /* Derived from a word that already exists, so the sheet opens with a
        spelling in it -- an empty sheet has no reading to change. */
-    ['the new word sheet, by sound', () => { SET.plan = 'pro'; openAdd('kano');
+    ['the new word sheet, by sound', () => { planGot('pro'); openAdd('kano');
                                              const h = vForm(); addFrom = '';
-                                             SET.plan = 'free'; return h; }],
-    ['the word being edited, by sound', () => { SET.plan = 'pro'; openEdit('kano');
+                                             planGot('free'); return h; }],
+    ['the word being edited, by sound', () => { planGot('pro'); openEdit('kano');
                                                 const h = vForm();
-                                                SET.plan = 'free'; return h; }],
+                                                planGot('free'); return h; }],
     /* The profile's other two lists. Each is empty on a fresh fixture, and an
        empty list draws neither a row nor anything a row carries. */
     /* AND A POST THAT BEGINS @名前 IS ON THE 返信 SIDE, not the 投稿 side.
@@ -1599,12 +1599,12 @@ export function halfDone(){
        and both places it shows: beside a name on a profile and beside a name
        on a post. The row that sells it is the other way round: it is there
        only while nobody has bought anything. */
-    ['the profile of somebody on Plus', () => { SET.plan = 'pro';
+    ['the profile of somebody on Plus', () => { planGot('pro');
         window.route='profile'; NAV=[{r:'profile'}];
-        const h = vProfile(); SET.plan = 'free'; return h; }],
-    ['the timeline of somebody on Plus', () => { SET.plan = 'pro';
+        const h = vProfile(); planGot('free'); return h; }],
+    ['the timeline of somebody on Plus', () => { planGot('pro');
         window.route='feed'; NAV=[{r:'feed'}];
-        const h = vFeed(); SET.plan = 'free'; return h; }],
+        const h = vFeed(); planGot('free'); return h; }],
     /* A post with no line: a photograph on its own, and a voice on its own.
        A post was a LINE or nothing until 「文字無しでもポストできるように
        できない？」, so every walk before this had a line on every post and
@@ -1773,12 +1773,12 @@ export function halfDone(){
        nothing is drawn here that the Lingua keyboard did not type -- which
        is the rule the second face exists to keep. */
     ['a line written from the right, in a font of your own', () => {
-        const wasPlan = SET.plan, wasDir = SCRIPT.dir;
-        SET.plan = 'pro'; SCRIPT.dir = 'rtl';   /* dir is 'pro' since the rename */
+        const wasPlan = plan(), wasDir = SCRIPT.dir;
+        planGot('pro'); SCRIPT.dir = 'rtl';   /* dir is 'pro' since the rename */
         SET.myfont = true; installScriptFont();
         openPost(); const h = vForm();
         PW = pwBlank(); SET.myfont = false;
-        SCRIPT.dir = wasDir; SET.plan = wasPlan; return h; }],
+        SCRIPT.dir = wasDir; planGot(wasPlan); return h; }],
     /* AND THE ONE WRITTEN DOWNWARD, THE FIRST COLUMN AT THE LEFT. Four
        directions and this is the only one no screen wore. It used to be
        reached by PRESSING it: the writing-system screen wrote the language
@@ -1794,11 +1794,11 @@ export function halfDone(){
        `dirClass(scriptDir())` on the composer's line is the whole of it, and
        `scriptDir()` (www/wsys.js) answers 'ltr' on any plan but Pro. */
     ['a line written downward, the first column at the left', () => {
-        const wasPlan = SET.plan, wasDir = SCRIPT.dir;
-        SET.plan = 'pro'; SCRIPT.dir = 'ttb-lr';
+        const wasPlan = plan(), wasDir = SCRIPT.dir;
+        planGot('pro'); SCRIPT.dir = 'ttb-lr';
         openPost(); const h = vForm();
         PW = pwBlank();
-        SCRIPT.dir = wasDir; SET.plan = wasPlan; return h; }],
+        SCRIPT.dir = wasDir; planGot(wasPlan); return h; }],
     /* AND THE SAME COLUMN WHILE ANSWERING SOMEBODY. 返信は新規と同じ
        `pwHTML()` が描き、上に相手の投稿が乗るだけ ── 二つの機構は無い。
        その「同じ」を撮れる状態がどこにも無かった：縦書きの面は新規だけ、
@@ -1826,22 +1826,22 @@ export function halfDone(){
         window.route = 'feed'; NAV = [{ r:'feed' }];
         const h = vFeed(); POSTS = keep; return h; }],
     ['a column written while replying to somebody', () => {
-        const wasPlan = SET.plan, wasDir = SCRIPT.dir;
-        SET.plan = 'pro'; SCRIPT.dir = 'ttb-rl';
+        const wasPlan = plan(), wasDir = SCRIPT.dir;
+        planGot('pro'); SCRIPT.dir = 'ttb-rl';
         PW = pwBlank(); PW.to = 'p1'; openPost('reply');
         const h = vForm(); PW = pwBlank();
-        SCRIPT.dir = wasDir; SET.plan = wasPlan; return h; }],
+        SCRIPT.dir = wasDir; planGot(wasPlan); return h; }],
     /* 縦書きの言語で、宛先のある投稿画面。「向きがあるからさ そこは
        Replying to 〇〇にしないと」 OWNER 2026-09-08 ── 本文の欄だけが縦で、
        その上の宛先の行は横のまま、というのがこの画面です。横書きの同じ画面
        （二つ上）とは別の面で、どちらも歩かせないと、行に向きが付いても緑の
        まま出ます。 */
     ['a column written to somebody', () => {
-        const wasPlan = SET.plan, wasDir = SCRIPT.dir;
-        SET.plan = 'pro'; SCRIPT.dir = 'ttb-rl';
+        const wasPlan = plan(), wasDir = SCRIPT.dir;
+        planGot('pro'); SCRIPT.dir = 'ttb-rl';
         PW = pwBlank(); openPost('new', 'jjj'); pwSetLn('kano tir');
         const h = vForm(); PW = pwBlank();
-        SCRIPT.dir = wasDir; SET.plan = wasPlan; return h; }],
+        SCRIPT.dir = wasDir; planGot(wasPlan); return h; }],
     /* And the same line in a timeline, where the direction is the post's own
        and not the reader's: a post says which way it was written and carries
        it, because rule 8 is that what somebody wrote is shown the way they
@@ -1855,17 +1855,17 @@ export function halfDone(){
        is Studio's, so on free the contents has no way in to it -- which is
        what act-check reports, correctly, unless the walk is shown the plan
        that has the door. */
-    ['the contents on Plus', () => { SET.plan = 'pro';
+    ['the contents on Plus', () => { planGot('pro');
                                        window.route = 'build'; NAV = [{r:'build'}];
-                                       const h = vBuild(); SET.plan = 'free'; return h; }],
+                                       const h = vBuild(); planGot('free'); return h; }],
     /* A grammar stage of your own: the door is on the paid plan, because the
        fifteen are the whole of the free chapter. */
-    ['a grammar stage of your own', () => { SET.plan = 'pro'; openOwnPhase();
+    ['a grammar stage of your own', () => { planGot('pro'); openOwnPhase();
                                             const h = vForm();
-                                            SET.plan = 'free'; return h; }],
-    ['the grammar list, paid', () => { SET.plan = 'pro'; window.route='gram';
+                                            planGot('free'); return h; }],
+    ['the grammar list, paid', () => { planGot('pro'); window.route='gram';
                                        NAV=[{r:'gram'}]; const h = vGram();
-                                       SET.plan = 'free'; return h; }],
+                                       planGot('free'); return h; }],
     /* ---- the chapter that is being rebuilt ------------------------------
        docs/GRAMMAR-V2-SPEC.md §14. It arrives as an argument of the `gram`
        route rather than as a route of its own -- www/shell.js's PAGES is
@@ -1996,9 +1996,9 @@ export function halfDone(){
        stage of your own -- a stage somebody adds lands here, so the ＋ is
        here and not on the contents. */
     ['the appendix of the book, paid', () => {
-        SET.plan = 'pro';
+        planGot('pro');
         window.route = 'gram'; NAV = [{ r:'gram', a:'book:app' }];
-        const h = vGram(); SET.plan = 'free'; return h; }],
+        const h = vGram(); planGot('free'); return h; }],
     ['a negation nobody has written yet', () => {
         const was = STG.gr;
         STG.gr = [];
@@ -2064,10 +2064,10 @@ export function halfDone(){
         const h = vGram();
         if (was) { stMarkSet('part'); }
         return h; }],
-    ['a stage slot, by sound', () => { SET.plan = 'pro';
+    ['a stage slot, by sound', () => { planGot('pro');
                                        openSlot(stAll()[0].id, stAll()[0].slots[0]);
                                        const h = vForm();
-                                       SET.plan = 'free'; return h; }],
+                                       planGot('free'); return h; }],
     /* The new-word sheet has two faces, and the buttons differ on each. */
     /* The keyboard the language owns, and the two sheets that build it: one
        key opened, and the alphabet being chosen from for one of its slots.
@@ -2093,36 +2093,36 @@ export function halfDone(){
        over a road with its first step missing -- it prints a name it never
        pressed and does not fail on one. A face is built by the acts now, and
        an act that stops landing takes the face with it. */
-    ['a key of the keyboard, opened', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
+    ['a key of the keyboard, opened', () => { planGot('pro'); KB = null; kbShow = 0;
                                               kbAdd('qwerty'); kbLay = 0; kbPick(0, 0);
                                               const h = vForm(); KB = null; kbShow = 0;
-                                              SET.plan = 'free'; return h; }],
+                                              planGot('free'); return h; }],
     /* THE SAME KEY WITH A LETTER CHOSEN ON IT, which is a face and not a
        state of the one above: the confirm in the bar is drawn only while
        something is chosen -- 「何も選んでいなければ出ない」 OWNER 2026-09-03 --
        so on every other face of this screen it is on no screen at all, and
        act-check said so the day it went in. Built by the act, like the rest
        of this chapter: kbLtTap() is what a finger does to a letter. */
-    ['a key with a letter chosen for it', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
+    ['a key with a letter chosen for it', () => { planGot('pro'); KB = null; kbShow = 0;
                                                   kbAdd('qwerty'); kbLay = 0; kbPick(0, 0);
                                                   const a = ltOfKind('alpha');
                                                   if (a.length) kbLtTap(0, 0, -1, a[0].id);
                                                   const h = vForm(); kbLtPick = null;
                                                   KB = null; kbShow = 0;
-                                                  SET.plan = 'free'; return h; }],
+                                                  planGot('free'); return h; }],
     /* AND THE SAME KEY WITH A DRAWN LETTER CHOSEN, which is the other state
        of one square and the one the change of 2026-09-05 is about: the shape
        goes in the square with the name small under it, and a letter with
        nothing drawn on it -- the face above -- keeps its name and nothing
        else. Both, because the fault is nearly always in the one nobody
        photographed. */
-    ['a key with a drawn letter chosen for it', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
+    ['a key with a drawn letter chosen for it', () => { planGot('pro'); KB = null; kbShow = 0;
                                                   kbAdd('qwerty'); kbLay = 0; kbPick(0, 0);
                                                   const d = ltOfKind('alpha').filter((l) => inkGeo(l));
                                                   if (d.length) kbLtTap(0, 0, -1, d[0].id);
                                                   const h = vForm(); kbLtPick = null;
                                                   KB = null; kbShow = 0;
-                                                  SET.plan = 'free'; return h; }],
+                                                  planGot('free'); return h; }],
     /* A FLICK keyboard, which is the other half of the editor and the only
        one that has corners. kbSlotsShown() is true when the board's pattern
        is 'flick' or when a key already carries something in one of its four,
@@ -2130,18 +2130,18 @@ export function halfDone(){
        with one slot in the middle and the four directions are on no screen
        at all. Four classes were unworn for that reason alone: kbeu kbel kber
        kbed, www/keyboard.js kbKeyHTML(). */
-    ['a key of a flick keyboard, opened', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
+    ['a key of a flick keyboard, opened', () => { planGot('pro'); KB = null; kbShow = 0;
                                                   kbAdd('flick'); kbLay = 0; kbPick(0, 0);
                                                   const h = vForm(); KB = null; kbShow = 0;
-                                                  SET.plan = 'free'; return h; }],
+                                                  planGot('free'); return h; }],
     /* And the board itself, where the four corners of every key are drawn on
        the key: kbFlicks(key, slots) puts a letter in a corner that has one
        and a dot in a corner that is empty -- kbf and kbfx -- and it is passed
        slots:false everywhere the keyboard is only being SHOWN. */
-    ['a flick keyboard, being built', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
+    ['a flick keyboard, being built', () => { planGot('pro'); KB = null; kbShow = 0;
                                               kbAdd('flick'); kbLay = 0;
                                               const h = vKb(); KB = null; kbShow = 0;
-                                              SET.plan = 'free'; return h; }],
+                                              planGot('free'); return h; }],
     /* A BOARD THE MOMENT IT IS MADE, wearing the letters.
        「型を選んだ時点で、無料の QWERTY と同じく文字を載せる」 OWNER
        2026-09-11. Both of the two the owner named, because QWERTY and ABC順
@@ -2162,18 +2162,18 @@ export function halfDone(){
        somebody has cleared is the other. press said so the day the letters
        went on -- 「nothing wears .kbsx」 -- and the seed is the fix it asks
        for rather than a baseline over the gap. */
-    ['a key with no letter on it yet', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
+    ['a key with no letter on it yet', () => { planGot('pro'); KB = null; kbShow = 0;
                                                kbAdd('chart'); kbLay = 0; kbPick(0, 0);
                                                const h = vForm(); KB = null; kbShow = 0;
-                                               SET.plan = 'free'; return h; }],
-    ['a QWERTY keyboard, just made', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
+                                               planGot('free'); return h; }],
+    ['a QWERTY keyboard, just made', () => { planGot('pro'); KB = null; kbShow = 0;
                                              kbAdd('qwerty'); kbLay = 0;
                                              const h = vKb(); KB = null; kbShow = 0;
-                                             SET.plan = 'free'; return h; }],
-    ['an ABC keyboard, just made', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
+                                             planGot('free'); return h; }],
+    ['an ABC keyboard, just made', () => { planGot('pro'); KB = null; kbShow = 0;
                                            kbAdd('abc'); kbLay = 0;
                                            const h = vKb(); KB = null; kbShow = 0;
-                                           SET.plan = 'free'; return h; }],
+                                           planGot('free'); return h; }],
     /* THE SAVE IN THE CORNER, GOLD, on the keyboard being built. It is the
        one thing on this screen the change of 2026-09-05 moves and it is a
        COLOUR, so both states have to be photographed or the fault is in the
@@ -2181,7 +2181,7 @@ export function halfDone(){
        A board is deleted out from under the page first, because that is the
        road the buffer used to come apart on -- the layout wrote one key and
        the bar read another, and the Save stayed grey with a row gone. */
-    ['a keyboard changed, the Save gold', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
+    ['a keyboard changed, the Save gold', () => { planGot('pro'); KB = null; kbShow = 0;
                                                   KEEP = {};
                                                   kbAdd('qwerty'); kbAdd('flick');
                                                   kbGoBoard(2); render();
@@ -2189,26 +2189,26 @@ export function halfDone(){
                                                   KBH = { k:'r', r:0, i:0 }; kbCut();
                                                   const h = vKb();
                                                   KEEP = {}; KB = null; kbShow = 0;
-                                                  SET.plan = 'free'; return h; }],
+                                                  planGot('free'); return h; }],
     /* A key that switches layers rather than typing one: which layer it goes
        to is a question only that kind of key is asked. */
-    ['a key that switches layers', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
+    ['a key that switches layers', () => { planGot('pro'); KB = null; kbShow = 0;
                                            kbAdd('qwerty'); kbLay = 0; kbSetKind(0, 0, 'lay');
                                            const h = vForm(); KB = null; kbShow = 0;
-                                           SET.plan = 'free'; return h; }],
-    ['the alphabet, for one slot of a key', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
+                                           planGot('free'); return h; }],
+    ['the alphabet, for one slot of a key', () => { planGot('pro'); KB = null; kbShow = 0;
                                                     kbAdd('qwerty'); kbLay = 0; kbSlot(0, 0, -1);
                                                     const h = vForm(); KB = null; kbShow = 0;
                                                     kbSlotFor = null;
-                                                    SET.plan = 'free'; return h; }],
+                                                    planGot('free'); return h; }],
     /* The alphabet held, the same way. Two faces, because the corner mark is
        the paid plan's -- the free twenty-eight are the alphabet and taking one
        away would leave the keyboard a key that answers to nothing -- while the
        wobble and Done are on both, since the ORDER is everybody's. */
-    ['the alphabet being held (paid)', () => { SET.plan = 'pro'; ltWob = true;
+    ['the alphabet being held (paid)', () => { planGot('pro'); ltWob = true;
                                        window.route='ltset'; NAV=[{r:'ltset', a:'alpha'}];
                                        const h = vLtset();
-                                       ltWob = false; SET.plan = 'free'; return h; }],
+                                       ltWob = false; planGot('free'); return h; }],
     ['the alphabet being held (free)', () => { ltWob = true;
                                        window.route='ltset'; NAV=[{r:'ltset', a:'alpha'}];
                                        const h = vLtset();
@@ -2218,19 +2218,19 @@ export function halfDone(){
        to add a row, to add a layer, and to put the whole thing back. */
     /* Held, the way a home screen is held: every key wobbling with a ⊖ on it
        and Done in the bar. Neither the ⊖ nor Done is on the screen at rest. */
-    ['a keyboard being held', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
+    ['a keyboard being held', () => { planGot('pro'); KB = null; kbShow = 0;
                                       kbAdd('qwerty'); kbWob = true;
                                       const h = vKb();
                                       kbWob = false; KB = null; kbShow = 0;
-                                      SET.plan = 'free'; return h; }],
+                                      planGot('free'); return h; }],
     /* A row of the sheet selected, which is a state of the editor and not a
        screen: the bin and the three alignments are only up while something is
        selected, so this is the only face that can press them. */
-    ['a row of the keyboard selected', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
+    ['a row of the keyboard selected', () => { planGot('pro'); KB = null; kbShow = 0;
                                                kbAdd('qwerty'); kbLay = 0; kbHeadRow(1);
                                                const h = vKb();
                                                KBH = null; KB = null; kbShow = 0; kbLay = 0;
-                                               SET.plan = 'free'; return h; }],
+                                               planGot('free'); return h; }],
     /* the + asking which side of the selected row a new one goes on. The two
        answers replace the alignments and the bin while it asks, so this is
        the only face they can be pressed from. */
@@ -2238,45 +2238,45 @@ export function halfDone(){
        the row ceiling -- five rows, the free QWERTY's own shape -- so the +
        is down on it and there is nothing to ask. That is the ceiling working,
        and this face is about the two answers it gives when there IS room. */
-    ['a row selected, asking where a new one goes', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
+    ['a row selected, asking where a new one goes', () => { planGot('pro'); KB = null; kbShow = 0;
                                                kbAdd('qwerty'); kbLay = 0;
                                                kbHeadRow(0); kbCut();
                                                kbHeadRow(1); kbInsAsk();
                                                const h = vKb();
                                                KBH = null; KB = null; kbShow = 0; kbLay = 0;
-                                               SET.plan = 'free'; return h; }],
+                                               planGot('free'); return h; }],
     /* A key joined to the one UNDER it -- two rows tall, with a gap standing
        in the row below where its lower half is. The only face where a merged
        cell is drawn, and where the three alignments are down on a row for a
        reason other than nothing being selected.
        「a1a2触ってキーをくっつける」 */
-    ['a keyboard with a key two rows tall', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
+    ['a keyboard with a key two rows tall', () => { planGot('pro'); KB = null; kbShow = 0;
                                                kbAdd('qwerty'); kbLay = 0; kbVJoin(0, 3);
                                                const h = vKb();
                                                KBH = null; KB = null; kbShow = 0; kbLay = 0;
-                                               SET.plan = 'free'; return h; }],
+                                               planGot('free'); return h; }],
     /* A KEY of the sheet selected. Pressing a key selects it now -- the same
        habit as the row's number and the column's letter -- and the buttons
        over the sheet act on it: joining it to the one beside it, opening its
        own page, and the bin. This is the only face they can be pressed from.
        「タップしたらそのキーが選ばれて上のゴミ箱ボタンとかくっつけるボタンとか
        押してその作業がされるようにしようよ」 */
-    ['a key of the keyboard selected', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
+    ['a key of the keyboard selected', () => { planGot('pro'); KB = null; kbShow = 0;
                                                kbAdd('qwerty'); kbLay = 0; kbTapKey(0, 2);
                                                const h = vKb();
                                                KBH = null; KB = null; kbShow = 0; kbLay = 0;
-                                               SET.plan = 'free'; return h; }],
+                                               planGot('free'); return h; }],
     /* TWO keys chosen, which is the face the join button lives on now.
        「なんで？ 結合ボタン作れよ。編集も含め全部ボタンで作業だから」
        「編集ボタンは1キー選択時のみ」 OWNER 2026-08-27 -- so the join is drawn
        here and the key's page is drawn on the face above, and neither is on
        both. Without this the walk never sees kbJoinSel at all. */
-    ['two keys of the keyboard selected', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
+    ['two keys of the keyboard selected', () => { planGot('pro'); KB = null; kbShow = 0;
                                                   kbAdd('qwerty'); kbLay = 0;
                                                   kbTapKey(0, 2); kbTapKey(0, 3);
                                                   const h = vKb();
                                                   KBH = null; KB = null; kbShow = 0; kbLay = 0;
-                                                  SET.plan = 'free'; return h; }],
+                                                  planGot('free'); return h; }],
     /* An empty FRAME of the sheet selected, which is the state the band's one
        remaining button lives in: pressing a frame selects it and the button
        over the sheet puts a key in, the width of that frame.
@@ -2285,26 +2285,26 @@ export function halfDone(){
        column comes out first to leave frames to press -- and without this face
        the walk never draws that band at all, because a frame is the only
        thing that puts it up. */
-    ['an empty frame of the keyboard selected', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
+    ['an empty frame of the keyboard selected', () => { planGot('pro'); KB = null; kbShow = 0;
                                                   kbAdd('qwerty'); kbLay = 0;
                                                   kbHeadCol(0); kbCut();
                                                   kbCellAdd(0, 0, 1);
                                                   const h = vKb();
                                                   KBH = null; KB = null; kbShow = 0; kbLay = 0;
-                                                  SET.plan = 'free'; return h; }],
+                                                  planGot('free'); return h; }],
     /* and a column, which lights up and can be cut but has no slack to align */
-    ['a column of the keyboard selected', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
+    ['a column of the keyboard selected', () => { planGot('pro'); KB = null; kbShow = 0;
                                                   kbAdd('qwerty'); kbLay = 0; kbHeadCol(2);
                                                   const h = vKb();
                                                   KBH = null; KB = null; kbShow = 0; kbLay = 0;
-                                                  SET.plan = 'free'; return h; }],
+                                                  planGot('free'); return h; }],
     /* A RUN of columns, chosen by drawing the finger along the heads.
        「キーボードaおしたら縦列選択できるけどさ、そこからabcdみたいに引っ張って
        も選択ができない」 OWNER 2026-09-05. The far end is written by the drag
        and by nothing else, so the face is built by the drag -- the real
        handlers, with elementFromPoint standing in for the finger for the
        length of one question, exactly as tools/kb-check.mjs drives it. */
-    ['a run of columns of the keyboard selected', () => { SET.plan = 'pro'; KB = null;
+    ['a run of columns of the keyboard selected', () => { planGot('pro'); KB = null;
                                                   kbShow = 0; kbAdd('qwerty'); kbLay = 0;
                                                   const hd = (n) => document.querySelector(
                                                     '#kb [data-do="kbHeadCol"][data-a="[' + n + ']"]');
@@ -2320,23 +2320,23 @@ export function halfDone(){
                                                   }
                                                   const h = vKb();
                                                   KBH = null; KB = null; kbShow = 0; kbLay = 0;
-                                                  SET.plan = 'free'; return h; }],
+                                                  planGot('free'); return h; }],
     /* the + asking which side of the selected COLUMN a new one goes on, which
        is the row face one axis over -- and it needs a column CUT first,
        because every pattern the app builds comes to the full ten and a board
        with no slack is not offered a + at all. 「最大になったら+はなし」 */
-    ['a column selected, asking where a new one goes', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
+    ['a column selected, asking where a new one goes', () => { planGot('pro'); KB = null; kbShow = 0;
                                                   kbAdd('qwerty'); kbLay = 0;
                                                   kbHeadCol(0); kbCut();
                                                   kbHeadCol(2); kbInsAsk();
                                                   const h = vKb();
                                                   KBH = null; KB = null; kbShow = 0; kbLay = 0;
-                                                  SET.plan = 'free'; return h; }],
-    ['a keyboard of two layers', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
+                                                  planGot('free'); return h; }],
+    ['a keyboard of two layers', () => { planGot('pro'); KB = null; kbShow = 0;
                                          kbAdd('qwerty'); kbAddLay();
                                          const h = vKb();
                                          KB = null; kbShow = 0; kbLay = 0;
-                                         SET.plan = 'free'; return h; }],
+                                         planGot('free'); return h; }],
     /* Board 0 on the PAID screen, which is the free QWERTY with no editor on
        it -- the same keyboard, the same face, on both plans. It is a screen
        of its own and not the free branch of vKb(): the row of keyboards, the
@@ -2346,16 +2346,16 @@ export function halfDone(){
        Same list, same drawing, a different name on the press -- so this face
        is what proves the second name is reachable at all. */
     ['the arrangement of a keyboard that already exists', () => {
-        SET.plan = 'pro'; KB = null; kbShow = 0;
+        planGot('pro'); KB = null; kbShow = 0;
         kbAdd('qwerty'); kbRepat(1);
         const h = vForm();
-        KB = null; kbShow = 0; kbLay = 0; SET.plan = 'free'; return h; }],
+        KB = null; kbShow = 0; kbLay = 0; planGot('free'); return h; }],
     ['the free QWERTY, on a plan that can build others', () => {
-        SET.plan = 'pro'; KB = null; kbShow = 0;
+        planGot('pro'); KB = null; kbShow = 0;
         kbAdd('tap'); kbShow = 0; KB.at = 1;
         kbGoBoard(0);
         const h = vKb();
-        KB = null; kbShow = 0; kbLay = 0; SET.plan = 'free'; return h; }],
+        KB = null; kbShow = 0; kbLay = 0; planGot('free'); return h; }],
     /* A language holding more than one keyboard, which is where the row of
        them, the Apply button and the way to delete one all live. Every one of
        the five patterns is built across these three faces rather than
@@ -2369,17 +2369,17 @@ export function halfDone(){
        same would render neither the Apply button nor the line that replaces
        it. */
     ['three keyboards, looking at one that is not applied', () => {
-        SET.plan = 'pro'; KB = null; kbShow = 0;
+        planGot('pro'); KB = null; kbShow = 0;
         kbAdd('flick'); kbAdd('chart');
         KB.at = 0; kbShow = 2;
         const h = vKb();
-        KB = null; kbShow = 0; kbLay = 0; SET.plan = 'free'; return h; }],
+        KB = null; kbShow = 0; kbLay = 0; planGot('free'); return h; }],
     ['the keyboard that is already applied', () => {
-        SET.plan = 'pro'; KB = null; kbShow = 0;
+        planGot('pro'); KB = null; kbShow = 0;
         kbAdd('tap');
         KB.at = 1; kbShow = 1;
         const h = vKb();
-        KB = null; kbShow = 0; kbLay = 0; SET.plan = 'free'; return h; }],
+        KB = null; kbShow = 0; kbLay = 0; planGot('free'); return h; }],
     /* A sound the language has that no letter says yet. It is a cell in the
        alphabet now rather than a row on a chapter of its own, and it only
        exists on Plus -- free cannot add a sound. Two faces, because held it
@@ -2387,15 +2387,15 @@ export function halfDone(){
        The seeded language has a letter for every sound it has, so one is
        taken off a letter here to make one. */
     ['a sound with no letter yet', () => {
-        SET.plan = 'pro'; SND.push('\u0283');
+        planGot('pro'); SND.push('\u0283');
         window.route='ltset'; NAV=[{r:'ltset', a:'alpha'}];
         const h = vLtset();
-        SND.pop(); SET.plan = 'free'; return h; }],
+        SND.pop(); planGot('free'); return h; }],
     ['a sound with no letter yet, held', () => {
-        SET.plan = 'pro'; ltWob = true; SND.push('\u0283');
+        planGot('pro'); ltWob = true; SND.push('\u0283');
         window.route='ltset'; NAV=[{r:'ltset', a:'alpha'}];
         const h = vLtset();
-        SND.pop(); ltWob = false; SET.plan = 'free'; return h; }],
+        SND.pop(); ltWob = false; planGot('free'); return h; }],
     /* The `?` sheet: how the keyboard gets onto the phone. It is a form and
        nothing walks to it -- and the button that opens iOS Settings is on it
        and nowhere else, so without this face that button belongs to no
@@ -2465,10 +2465,10 @@ export function halfDone(){
         openFmr('fr-old');
         return sheet(fmrFormHTML()); }],
     ['the two that undo a keyboard', () => {
-        SET.plan = 'pro'; KB = null; kbShow = 0;
+        planGot('pro'); KB = null; kbShow = 0;
         kbAdd('tap'); kbShow = 1; kbMore();
         const h = vForm();
-        KB = null; kbShow = 0; kbLay = 0; SET.plan = 'free'; return h; }],
+        KB = null; kbShow = 0; kbLay = 0; planGot('free'); return h; }],
     /* And the five offered, on the sheet that makes another -- which is the
        only door to them now. The chapter itself no longer has an empty face:
        the first keyboard is the one already on the phone, so what the screen
@@ -2477,54 +2477,54 @@ export function halfDone(){
        bar, a ◉ at the front of each row, Delete beside Done. Board 0 is the
        free QWERTY and gets no mark: it is not in storage and cannot go. */
     ['the keyboards, choosing, with nothing chosen yet', () => {
-        SET.plan = 'pro'; KB = null; kbShow = 0;
+        planGot('pro'); KB = null; kbShow = 0;
         kbAdd('abc'); kbAdd('qwerty');
         window.route = 'kb'; NAV = [{ r:'kb' }];
         KBSEL = {};
         const h = vKb();
-        KBSEL = null; KB = null; kbShow = 0; SET.plan = 'free'; return h; }],
+        KBSEL = null; KB = null; kbShow = 0; planGot('free'); return h; }],
     ['the keyboards, choosing, with two chosen', () => {
-        SET.plan = 'pro'; KB = null; kbShow = 0;
+        planGot('pro'); KB = null; kbShow = 0;
         kbAdd('abc'); kbAdd('qwerty');
         window.route = 'kb'; NAV = [{ r:'kb' }];
         KBSEL = { 1:1, 2:1 };
         const h = vKb();
-        KBSEL = null; KB = null; kbShow = 0; SET.plan = 'free'; return h; }],
+        KBSEL = null; KB = null; kbShow = 0; planGot('free'); return h; }],
     ['choosing another keyboard', () => {
-        SET.plan = 'pro'; KB = null; kbShow = 0;
+        planGot('pro'); KB = null; kbShow = 0;
         kbAdd('abc'); kbNew();
         const h = vForm();
-        KB = null; kbShow = 0; SET.plan = 'free'; return h; }],
+        KB = null; kbShow = 0; planGot('free'); return h; }],
     /* ---- the paid faces of the making side ----------------------------
        Four screens the free plan does not show, because on free the
        alphabet is twenty-eight slots that cannot be added to, renamed or
        deleted from. Each of these is the same screen with the plan changed,
        and without them the buttons that do those things belong to no screen
        at all. */
-    ['the alphabet, on the paid plan', () => { SET.plan = 'pro';
+    ['the alphabet, on the paid plan', () => { planGot('pro');
         window.route = 'ltset'; NAV = [{r:'ltset', a:'alpha'}];
-        const h = vLtset(); SET.plan = 'free'; return h; }],
-    ['one letter, on the paid plan', () => { SET.plan = 'pro';
+        const h = vLtset(); planGot('free'); return h; }],
+    ['one letter, on the paid plan', () => { planGot('pro');
         window.route = 'letter'; NAV = [{r:'letter', a:'l1'}];
-        const h = vLetter(); SET.plan = 'free'; return h; }],
+        const h = vLetter(); planGot('free'); return h; }],
     /* The letters chapter with everything open: the keyboard's door, and the
        abugida bench's -- which is the only way to that screen, and only
        exists while the writing is an abugida, which is itself paid. */
-    ['the letters chapter, on the paid plan', () => { SET.plan = 'pro'; langWsysGot(langId, 'abugida');
+    ['the letters chapter, on the paid plan', () => { planGot('pro'); langWsysGot(langId, 'abugida');
         window.route = 'letters'; NAV = [{r:'letters'}];
-        const h = vLetters(); SET.plan = 'free'; langWsysGot(langId, ''); return h; }],
-    ['the abugida bench', () => { SET.plan = 'pro'; langWsysGot(langId, 'abugida');
+        const h = vLetters(); planGot('free'); langWsysGot(langId, ''); return h; }],
+    ['the abugida bench', () => { planGot('pro'); langWsysGot(langId, 'abugida');
         window.route = 'abugida'; NAV = [{r:'abugida'}];
-        const h = vAbugida(); SET.plan = 'free'; langWsysGot(langId, ''); return h; }],
-    ['the five kinds of writing', () => { SET.plan = 'pro';
+        const h = vAbugida(); planGot('free'); langWsysGot(langId, ''); return h; }],
+    ['the five kinds of writing', () => { planGot('pro');
         window.route = 'wsys'; NAV = [{r:'wsys'}];
-        const h = vWsys(); SET.plan = 'free'; return h; }],
+        const h = vWsys(); planGot('free'); return h; }],
     /* THE THIRTY-NINTH, OPENED -- the only letter with a name field on it
        (ltAbField, www/sound.js) and the only one with a delete. l1 above is
        the letter `k`, which is one of the thirty-eight and has neither. */
-    ['a letter beyond the thirty-eight, on the paid plan', () => { SET.plan = 'pro';
+    ['a letter beyond the thirty-eight, on the paid plan', () => { planGot('pro');
         window.route='letter'; NAV=[{r:'letter', a:'l6'}];
-        const h = vLetter(); SET.plan = 'free'; return h; }],
+        const h = vLetter(); planGot('free'); return h; }],
     /* AND THE MOMENT AFTER IT IS DELETED. The page of a letter that has just
        gone is not a page to be put back down on (www/letters.js § ltDeleteGo,
        CLAUDE.md rule 14), and until 2026-09-11 it was: the deleted letter's
@@ -2532,12 +2532,12 @@ export function halfDone(){
        The letter is NAMED here because that is what made it fail -- an empty
        page leaves a buffer with nothing in it and walks away quietly.
        tools/word-check.mjs holds it; this is the picture of where it lands. */
-    ['a letter deleted from its own page', () => { SET.plan = 'pro';
+    ['a letter deleted from its own page', () => { planGot('pro');
         const l = ltById('l6'); if (l) l.ab = 'ng';
         window.route='letter'; NAV=[{r:'letters'}, {r:'letter', a:'l6'}];
         vLetter();                       /* arms the save buffer, as the page does */
         ltDeleteGo('l6');
-        const h = vLetters(); SET.plan = 'free'; return h; }],
+        const h = vLetters(); planGot('free'); return h; }],
     ['one letter, opened',     () => { window.route='letter'; NAV=[{r:'letter', a:'l1'}];
                                        return vLetter(); }],
     ['a mark, opened',          () => { window.route='letter'; NAV=[{r:'letter', a:'l4'}];
@@ -2555,14 +2555,14 @@ export function halfDone(){
        can only share a name BEYOND the thirty-eight, so the pair is l6, which
        reads `th`, and l3, which reads nothing until this face gives it that
        same name. */
-    ['two letters with one name', () => { SET.plan = 'pro';
+    ['two letters with one name', () => { planGot('pro');
         const b = ltById('l3');
         const was = b ? JSON.parse(JSON.stringify(b.snd || [])) : null;
         if (b) b.snd = ['th'];
         window.route='letter'; NAV=[{r:'letter', a:'l3'}];
         const h = vLetter();
         if (b) b.snd = was || [];
-        SET.plan = 'free';
+        planGot('free');
         return h; }],
     /* A digit: a letter with a value instead of a reading. The row of values
        is on every letter, but only one of them is on. */
@@ -2772,7 +2772,17 @@ export function halfDone(){
                                                       window.route='glyph';
                                                       NAV=[{r:'glyph', a:GE.lid}];
                                                       return vGlyph(); }],
-    ['the free plan out of room', () => { SET.plan='free'; SET.aiDay='';
+    /* THE PLAN BEFORE THE SERVER HAS ANSWERED, which is every launch until
+       verify-plan comes back and every launch with no signal (www/core.js §
+       PLAN, 2026-09-11). It is not a face of a screen so much as a face of
+       the APP, and it is here because the walks would otherwise never render
+       it: 「まだ訊けていない」 is the state falling to `free` used to hide,
+       and falling to free is what opened a paid phone as a free one. */
+    ['the plans screen before the server has answered',
+     () => { planForget();
+             window.route='plans'; NAV=[{r:'plans'}];
+             const h=vPlans(); planGot('free'); return h; }],
+    ['the free plan out of room', () => { planGot('free'); SET.aiDay='';
                                           SET.aiN=999; openAdd();
                                           const h=vForm(); SET.aiN=0; return h; }],
     /* WHAT MAKES A LANGUAGE 「読んでいるだけ」 IS THE SERVER'S TWO ANSWERS
@@ -2789,14 +2799,14 @@ export function halfDone(){
        heading with no row under it since the day it was written, and nothing
        said so. CLAUDE.md § what the free plan is: a paid face needs the plan
        flipped here and put back. */
-    ['a language somebody else is reading', () => { const wasP=SET.plan; SET.plan='plus';
+    ['a language somebody else is reading', () => { const wasP=plan(); planGot('plus');
                                                      LANGS.L_other={};
                                                      langOwnGot('L_other', 'somebody-else');
                                                      langNameGot('L_other', 'Necwe');
                                                      langTookGot(['L_other']);
                                                      window.route='langs'; NAV=[{r:'langs'}];
                                                      const h=vLangs(); delete LANGS.L_other;
-                                                     langTookGot([]); SET.plan=wasP; return h; }],
+                                                     langTookGot([]); planGot(wasP); return h; }],
     /* AND THE SAME ROW SLID OPEN, which is the state the 削除 is IN. The row
        is shut in the face above and the button is off the right edge of it,
        so a picture of that face says nothing about what the slide reveals --
@@ -2805,7 +2815,7 @@ export function halfDone(){
        Driven by the app's own handlers on the live page rather than by a
        class written in here: a fixture that put the class on would be a copy
        of langSwMove() and would agree with it whatever it did. */
-    ['a language you took, slid open', () => { const wasP=SET.plan; SET.plan='plus';
+    ['a language you took, slid open', () => { const wasP=plan(); planGot('plus');
        LANGS.L_other={};
        langOwnGot('L_other', 'somebody-else');
        langNameGot('L_other', 'Necwe');
@@ -2821,7 +2831,7 @@ export function halfDone(){
                            cancelable:true, preventDefault:function(){} });
               langSwUp({}); }
        const h=app.innerHTML; delete LANGS.L_other; langTookGot([]);
-       SET.plan=wasP; return h; }],
+       planGot(wasP); return h; }],
     ['a mark in the editor',   () => { editLetter('l4'); window.route='glyph';
                                        NAV=[{r:'glyph', a:GE.lid}]; return vGlyph(); }],
     /* A list being read in has three faces and they share no buttons: the
@@ -2911,9 +2921,9 @@ export function halfDone(){
         return vForm(); }],
     /* On the paid plan the file button is a real file input rather than the
        way to the plans. */
-    ['a file being chosen', () => { SET.plan = 'pro'; IMP = impBlank();
+    ['a file being chosen', () => { planGot('pro'); IMP = impBlank();
         openImport();
-        const h = vForm(); SET.plan = 'free'; return h; }],
+        const h = vForm(); planGot('free'); return h; }],
     /* The card, which is the only screen whose output leaves the app. All
        three faces: a word, one of the sentences written under a word, and a
        post. They compose the picture differently -- a word is a page out of a
@@ -3023,7 +3033,7 @@ export function halfDone(){
        was on no screen in any language.
        Board 1, because board 0 is the free QWERTY itself. */
     ['a language anybody may take away', () => {
-       SET.plan = 'plus';
+       planGot('plus');
        KB = { at: 1, kbs: [{ nm: 'Shango', pat: 'abc', lay: kbAbcLay() }] };
        WLD.secs = { letters: { dl: true }, words: { dl: true }, kb: { dl: true } };
        window.route = 'about'; NAV = [{ r:'about' }];
@@ -3120,8 +3130,8 @@ export function halfDone(){
        is thirty-eight; with the join taken out it is the owner's photograph.
        One face, both states, which is what a picture of a fix has to be. */
     ['an alphabet that had doubled, arrived at', () => {
-       const was = LETTERS, wasPlan = SET.plan, wasSeq = LT_SEQ;
-       SET.plan = 'free';
+       const was = LETTERS, wasPlan = plan(), wasSeq = LT_SEQ;
+       planGot('free');
        LT_SEQ = 0; LETTERS = []; ltStart();
        const old = JSON.parse(JSON.stringify(LETTERS));
        old.forEach((l, i) => { l.id = 'l' + (i + 1) + '_' + i + '_6'; });
@@ -3130,7 +3140,7 @@ export function halfDone(){
        ltStart();
        window.route = 'ltset'; NAV = [{ r:'ltset', a:'alpha' }];
        const h = vLtset();
-       LETTERS = was; SET.plan = wasPlan; LT_SEQ = wasSeq;
+       LETTERS = was; planGot(wasPlan); LT_SEQ = wasSeq;
        return h; }],
     /* §14 語順、A LANGUAGE THAT WAS JUST MADE, on a phone whose settings still
        carry the word order from before a language could hold one of its own.

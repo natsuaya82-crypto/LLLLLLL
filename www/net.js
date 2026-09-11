@@ -90,18 +90,19 @@ function netRead(){
     var s=JSON.parse(localStorage.getItem(LS_SESS)||'null');
     if(s && s.rt) SESS=s;
   }catch(e){}
-  /* AND WHOSE PURCHASE THE PLAN ON THIS PHONE IS. planFor() in www/core.js
-     has the whole of why; what this line is, is the FIRST of the two moments
-     a uid is known, and it is the earlier and more urgent one.
+  /* AND WHOSE SETTINGS ARE LIVE HERE. planFor() in www/core.js has the whole
+     of why; what this line is, is the FIRST of the two moments a uid is
+     known, and it is the earlier one.
 
-     The plan is already in SET by now -- window.__plan is injected ahead of
-     core.js -- and capLapse() at the foot of www/boot.js is going to compare
-     it against the last plan this phone saw, synchronously, long before
-     netResume() comes back. So a launch by somebody who is not the buyer has
-     to be answered HERE, at the moment the stored session is read, or
-     capLapse() sends the previous account's cancellation to this one's row.
-     www/net.js loads before www/boot.js, which is what makes this early
-     enough. */
+     It used to matter for the PLAN: a word was in `SET` by now -- the
+     Keychain injected it ahead of core.js -- and capLapse() compared it
+     against the last plan this phone saw, synchronously, long before
+     netResume() came back, so a launch by somebody who was not the buyer had
+     to be answered here. There is no word: the plan is `verify-plan`'s
+     answer, in memory (www/core.js § PLAN), and nobody-has-asked is where a
+     launch starts. What is left is the settings, which ARE parked per
+     account, and forgetting a plan that belonged to whoever was here
+     before. */
   planFor(SESS && SESS.uid);
 }
 netRead();
@@ -649,6 +650,21 @@ function netTook(d){
 
      Without it the hour running out re-sent all twelve slices of every
      language: tools/token-check.mjs counted 7 writes where the claim is 2. */
+  /* AND WHAT THIS ACCOUNT PAYS, ASKED HERE TOO. The launch asks
+     (storeSync(), www/boot.js § bootSession) and that used to be enough,
+     because the plan was a word on the handset and whoever signed in
+     inherited it. It is not: the plan is `verify-plan`'s answer about the
+     account that is signed in, held in memory (www/core.js § PLAN), and
+     planFor() above has just forgotten the one before it. Without this,
+     somebody signing in mid-session has no plan until they close the app --
+     every ceiling says 「接続できません」 and the free alphabet is not topped
+     up. 「段は起動とサインインで訊く」 OWNER 2026-09-11.
+
+     storeSync() and not a call of its own: it is the one road that sends this
+     device's receipts and takes the plan back, and a second way to ask would
+     be a second answer. It decides everything itself -- no App Store is an
+     empty list, which asks the server exactly what a browser asks. */
+  if(netCame && typeof storeSync==='function') storeSync();
   if(netCame){
     LANG_WAIT=true;
     netLangSync(function(){
@@ -744,6 +760,11 @@ function netOut(){
   /* And whether the account that has just gone had a profile row. It is that
      account's answer and the next person must not be read by it. */
   if(typeof meRowForget==='function') meRowForget();
+  /* AND WHAT THAT ACCOUNT PAID. `verify-plan` answered it about them, and a
+     phone with nobody on it holding a plan is 「the plan is the handset's」
+     said in one line (www/core.js § PLAN). 「まだ訊けていない」 is what a
+     signed-out phone knows, and the next person asks for their own. */
+  planForget();
   /* AND WHETHER THIS ACCOUNT ANSWERS THE REPORTS, WHICH IS THE SAME SENTENCE.
      NET_STAFF, NET_ADMIN and NET_BANNED are three facts about the account that
      has just gone, and nothing here put them down -- so the seven taps on the

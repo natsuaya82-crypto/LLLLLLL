@@ -27,7 +27,7 @@ await pg.waitForSelector('#splash', { state:'detached', timeout:10000 });
 
 const r = await pg.evaluate(({s}) => {
   eval('(' + s + ')()');
-  SET.walked = true; SET.plan = 'pro';
+  SET.walked = true; planGot('pro');
   var o = GGRID.inset, D = geStep(), out = {};
 
   out.start = numDigits().length;
@@ -63,7 +63,7 @@ const r = await pg.evaluate(({s}) => {
      that free had NO row, which is the screen being taken away rather than
      the door standing in it. What is asked now is the row plus what pressing
      it does: the popup, and the base exactly where it was. */
-  SET.plan = 'free';
+  planGot('free');
   out.freeRow = numBaseRows();
   var wasBase = numBase();
   numStepBase(1);
@@ -71,7 +71,7 @@ const r = await pg.evaluate(({s}) => {
   out.freeBase = numBase();
   out.freeWas = wasBase;
   popOff();
-  SET.plan = 'pro';
+  planGot('pro');
 
   /* ---- a slot's name does not change, on any plan ------------------------
      「無料で作ってる範囲の名前変更は無しでしょ。有料は追加できるというだけで」
@@ -171,7 +171,7 @@ const r = await pg.evaluate(({s}) => {
      anything holding that id still resolves), and a slot somebody has
      already drawn on is never overwritten -- there, both letters stay and
      the alphabet shows the duplicate. */
-  SET.plan = 'free';
+  planGot('free');
   var slotB = LETTERS.filter(function(l){
     return ltIsBase(l) && String(l.ab||'').toLowerCase() === 'b'; })[0];
   if (!slotB) { slotB = ltNew({}); slotB.ab = 'b'; saveLetters(); }
@@ -198,11 +198,11 @@ const r = await pg.evaluate(({s}) => {
     return String(l.ab||'').toLowerCase() === 'b'; }).length;
 
   /* and a plan that ADDS letters keeps both, because adding is what it buys */
-  SET.plan = 'pro';
+  planGot('pro');
   var paid = ltNew({ st: [{ pts: [[o+4*D, o+8*D], [o+12*D, o+8*D]] }] });
   out.mvPaidId = ltSetRoman(paid.id, 'e');
   out.mvPaidSame = out.mvPaidId === paid.id && !!ltById(paid.id);
-  SET.plan = 'free';
+  planGot('free');
 
   /* ---- the rooms are three and the code may not mix them ----------------
      「文字か数字か分けてるのに文字に数字が入るの意味わからないだろ」
@@ -211,7 +211,7 @@ const r = await pg.evaluate(({s}) => {
      throws when it goes wrong: a letter quietly becomes a digit and leaves
      the room somebody made it in, or a number sits among the letters, and
      every screen renders. */
-  SET.plan = 'pro';
+  planGot('pro');
   function names(nm, prep){
     go('home', '');
     var l = ltNew({}); if (prep) prep(l);
@@ -277,7 +277,7 @@ const r = await pg.evaluate(({s}) => {
 
      What a delete does to one of the thirty-eight is take the DRAWING off.
      A letter somebody ADDED is a different thing and goes whole. */
-  SET.plan = 'pro';
+  planGot('pro');
   var aLt = LETTERS.filter(function(l){ return String(l.ab || '') === 'a'; })[0];
   if (aLt) aLt.st = [{ pts: [[o + 3 * D, o + 3 * D], [o + 9 * D, o + 9 * D]] }];
   /* `qx` and not `zz`: rmPlain above already made a letter called zz, so a
@@ -298,7 +298,7 @@ const r = await pg.evaluate(({s}) => {
   out.addedCount = LETTERS.length;
   out.addedGone = !LETTERS.filter(function(l){ return String(l.ab || '') === 'qx'; }).length;
 
-  SET.plan = 'free';
+  planGot('free');
   /* ---- the first thirty-eight carry no ⊖, and every ⊖ works -------------
      「a-z 0-9 !?に1からナンバリングしてそれ以降に追加されるのは消す」
      「次に文字追加したら39になるよね？39以降は消せるんだよね？」OWNER
@@ -315,7 +315,7 @@ const r = await pg.evaluate(({s}) => {
      0-9 another, ! ? another, and the numbering runs 1 to 38 across all of
      them. ltCanDelete() asks the LETTER and not the page, so this walks every
      kind rather than trusting that. */
-  SET.plan = 'pro';
+  planGot('pro');
   var baseSeen = 0, baseMarks = 0, kindsWalked = [];
   LT_KINDS.forEach(function(k){
     goTab('build'); go('ltset', k); ltWob = true; render();
@@ -376,7 +376,7 @@ const r = await pg.evaluate(({s}) => {
      Then the MERGE, through the real syMerge() with the real slices, because
      the ids agreeing is only the reason -- what the owner is looking at is
      the count. */
-  SET.plan = 'free';
+  planGot('free');
   var wasLts = LETTERS;
   function slotIds(){
     var m = {}, i, k;

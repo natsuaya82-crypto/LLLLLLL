@@ -14,7 +14,7 @@ const pg = await br.newPage({ viewport:{ width:390, height:844 } });
 await pg.goto('file://' + path.join(dir, '..', 'www', 'index.html'));
 await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
 
-const SETUP = "(function(){\n  eval('(' + s + ')()');\n  SET.walked = true; SET.plan = 'pro';\n  SESS = { at:'t', rt:'r', uid:'me3', anon:false };\n  if (typeof ME !== 'undefined' && ME && !ME.handle) ME.handle = 'lingua';\n  LANGS[langId].uid = 'me3'; LANGS[langId].mine = true;\n  langRowGot(langId); langStore();\n  /* 一つの窓だけを偽物にする。上の netLangRow / netSlices / netSlicePut などは\n     本物のまま走る（CLAUDE.md 規則12）。 */\n  window.__ASK = [];\n  netSend = function(method, p, body, tok, ok, bad){\n    window.__ASK.push(method + ' ' + String(p).split('?')[0]);\n    setTimeout(function(){ ok([]); }, 0);\n  };\n})";
+const SETUP = "(function(){\n  eval('(' + s + ')()');\n  SET.walked = true; planGot('pro');\n  SESS = { at:'t', rt:'r', uid:'me3', anon:false };\n  if (typeof ME !== 'undefined' && ME && !ME.handle) ME.handle = 'lingua';\n  LANGS[langId].uid = 'me3'; LANGS[langId].mine = true;\n  langRowGot(langId); langStore();\n  /* 一つの窓だけを偽物にする。上の netLangRow / netSlices / netSlicePut などは\n     本物のまま走る（CLAUDE.md 規則12）。 */\n  window.__ASK = [];\n  netSend = function(method, p, body, tok, ok, bad){\n    window.__ASK.push(method + ' ' + String(p).split('?')[0]);\n    setTimeout(function(){ ok([]); }, 0);\n  };\n})";
 async function fresh(){
   await pg.reload();
   await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });

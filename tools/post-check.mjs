@@ -151,7 +151,7 @@ const R = await pg.evaluate(async () => {
 
   /* ---- a post, written the way a person writes one ------------------ */
   const before = POSTS.length;
-  SCRIPT.dir = 'rtl'; SET.plan = 'pro';        /* choosing one is Plus */
+  SCRIPT.dir = 'rtl'; planGot('pro');        /* choosing one is Plus */
   PW = pwBlank();
   PW.ln = 'kano tir';
   PW.mn = 'the mountain is seen';
@@ -160,7 +160,7 @@ const R = await pg.evaluate(async () => {
   pwSend();
   /* pwSend bakes, and a bake is an image loading. */
   await new Promise(r => setTimeout(r, 300));
-  SET.plan = 'free'; SCRIPT.dir = '';
+  planGot('free'); SCRIPT.dir = '';
 
   const p = POSTS[POSTS.length - 1];
   if (POSTS.length !== before + 1 || !p || p.ln !== 'kano tir') {
@@ -643,7 +643,7 @@ const R = await pg.evaluate(async () => {
      what these walks run on. */
   {
     const app = document.getElementById('app');
-    const wasPlan = SET.plan;
+    const wasPlan = plan();
     /* A post of this person's own THAT THE TIMELINE SHOWS. It was 「the first
        one that is mine」, and by this point in the file the first one that is
        mine is a REPLY -- the parent of the reply written above was deleted on
@@ -661,7 +661,7 @@ const R = await pg.evaluate(async () => {
     if (!own) fails.push('no post of this person\u2019s own, so the badge and the ' +
                          'fold below are tests of nothing');
     else {
-      SET.plan = 'pro';
+      planGot('pro');
       const at = (h, cls) => h.indexOf('class="' + cls);
       const h = postRow(own);
       /* The handle is asked for as the thing atHTML() draws, not as a class.
@@ -715,7 +715,7 @@ const R = await pg.evaluate(async () => {
       }
       own.who = wasWho; own.hd = wasHd;
     }
-    SET.plan = wasPlan;
+    planGot(wasPlan);
     app.innerHTML = '';
   }
 
@@ -1059,11 +1059,11 @@ const R = await pg.evaluate(async () => {
     const wasPW = PW, root = document.documentElement;
     const hadMin = root.style.getPropertyValue('--vvmin');
     const hadKb  = root.style.getPropertyValue('--vvkb');
-    const wasPlan = SET.plan, wasDir = SCRIPT.dir;
+    const wasPlan = plan(), wasDir = SCRIPT.dir;
     /* A column is what money buys (`CAN.dir` is 'pro'), so free is the one
        plan where this case cannot be reached at all. Asking for it on the
        plan the walks run on would be measuring the horizontal field twice. */
-    SET.plan = 'pro';
+    planGot('pro');
     const other = POSTS.filter(q => q.id !== p.id)[0] || p;
 
     /* 260 is the smallest a phone leaves: the extension caps a keyboard at
@@ -1121,7 +1121,7 @@ const R = await pg.evaluate(async () => {
       }
     }
 
-    SET.plan = wasPlan; SCRIPT.dir = wasDir; PW = wasPW;
+    planGot(wasPlan); SCRIPT.dir = wasDir; PW = wasPW;
     if (hadMin) root.style.setProperty('--vvmin', hadMin);
     else root.style.removeProperty('--vvmin');
     if (hadKb) root.style.setProperty('--vvkb', hadKb);
@@ -2464,7 +2464,7 @@ const R = await pg.evaluate(async () => {
      `.pwscroll` の外にあるので、中身は新規と一文字も違いません。 */
   {
     const app = document.getElementById('app');
-    const wasPW = PW, wasPlan = SET.plan, wasDir = SCRIPT.dir;
+    const wasPW = PW, wasPlan = plan(), wasDir = SCRIPT.dir;
     const wasRoute = window.route, wasNav = NAV.slice();
 
     /* how many columns a string takes, in the field's own style */
@@ -2483,7 +2483,7 @@ const R = await pg.evaluate(async () => {
       return Math.max(1, Math.round(w / one));
     };
     const openIn = (dir, to) => {
-      SET.plan = 'pro'; SCRIPT.dir = dir;
+      planGot('pro'); SCRIPT.dir = dir;
       PW = pwBlank(); if (to) PW.to = to;
       try { closeSheet(); } catch (e) {}
       openPost(to ? 'reply' : undefined);
@@ -2550,7 +2550,7 @@ const R = await pg.evaluate(async () => {
       fails.push('the composer answering somebody does not carry the post it ' +
                  'answers');
 
-    PW = wasPW; SET.plan = wasPlan; SCRIPT.dir = wasDir;
+    PW = wasPW; planGot(wasPlan); SCRIPT.dir = wasDir;
     window.route = wasRoute; NAV = wasNav;
     try { closeSheet(); } catch (e) {}
   }
@@ -2785,14 +2785,14 @@ const R = await pg.evaluate(async () => {
      と、その上の行と、その中のボタンを測る。 */
   {
     const app = document.getElementById('app');
-    const wasRoute = window.route, wasNav = NAV.slice(), wasPlan = SET.plan;
+    const wasRoute = window.route, wasNav = NAV.slice(), wasPlan = plan();
     const wasDirs = POSTS.map(p => p.dir);
     const reply = POSTS.filter(p => p.to && postToWho(p))[0];
     if (!reply)
       fails.push('the fixture has no reply, so nothing about the line over ' +
                  'one is a test of anything');
     else {
-      SET.plan = 'pro';
+      planGot('pro');
       POSTS.forEach(p => { p.dir = 'ttb-rl'; });
       window.route = 'thread'; NAV = [{ r: 'feed' }, { r: 'thread', a: reply.id }];
       render();
@@ -2816,7 +2816,7 @@ const R = await pg.evaluate(async () => {
       }
     }
     POSTS.forEach((p, i) => { p.dir = wasDirs[i]; });
-    SET.plan = wasPlan; window.route = wasRoute; NAV = wasNav;
+    planGot(wasPlan); window.route = wasRoute; NAV = wasNav;
   }
 
   /* ---- 23. 宛先の @〇〇 は本文に入らない ------------------------------
@@ -3030,8 +3030,8 @@ const R = await pg.evaluate(async () => {
        訳に @ が無いことは別の主張です：本文から取れていても、宛先を訳に
        足す一行があれば戻ってきます。ink（PWRAW）も同じ理由で訊きます。 */
     {
-      const wasPlan2 = SET.plan, wasDir2 = SCRIPT.dir;
-      SET.plan = 'pro'; SCRIPT.dir = 'ttb-rl';
+      const wasPlan2 = plan(), wasDir2 = SCRIPT.dir;
+      planGot('pro'); SCRIPT.dir = 'ttb-rl';
       PW = pwBlank();
       openPost('new', 'lingua');
       render();
@@ -3118,7 +3118,7 @@ const R = await pg.evaluate(async () => {
           }
         }
       }
-      SET.plan = wasPlan2; SCRIPT.dir = wasDir2;
+      planGot(wasPlan2); SCRIPT.dir = wasDir2;
       try { closeSheet(); } catch (e) {}
     }
 

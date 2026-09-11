@@ -96,7 +96,7 @@ const R = await pg.evaluate(() => {
   const fails = [], systems = [];
   const ROMAN_KEYS = ['rom', 'del', 'sp', 'lay', 'next'];
 
-  SET.plan = 'pro';
+  planGot('pro');
 
   /* Asked of the page, not written out here -- the same reason act-check
      asks the page for its screens rather than keeping a second list that
@@ -240,9 +240,9 @@ const R = await pg.evaluate(() => {
        walked twice on purpose -- kbFix()'s override is the same code either
        way and the two must answer alike. */
     ['free','pro'].forEach((pl) => {
-      SET.plan = pl; puaClaim(w + ' (' + pl + ')');
+      planGot(pl); puaClaim(w + ' (' + pl + ')');
     });
-    SET.plan = 'pro';
+    planGot('pro');
     const onFree = (bn === 'the free QWERTY');
     let kbd;
     try { kbd = shareKbd(); }

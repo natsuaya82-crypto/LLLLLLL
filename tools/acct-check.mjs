@@ -573,7 +573,7 @@ const R = await pg.evaluate(async () => {
      「課金とアカウントとキーボードはアカウントに結びつく。
        じゃないとアカウント変えたら無限に言語作れるやん」OWNER 2026-09-01
 
-     プランは SET.plan ── lingua.set、端末の設定 ── にあり、アカウントにも
+     プランは plan() ── lingua.set、端末の設定 ── にあり、アカウントにも
      サーバーにも紐づいていませんでした。二台目で入れば無料から始まります。 */
 
   /* 16. 段はサーバーが答え、その答えがそのまま段になる。
@@ -586,7 +586,7 @@ const R = await pg.evaluate(async () => {
      取引を送り、段は supabase/functions/verify-plan が決めます。 */
   start();
   netOut(); arrive(A);
-  SET.plan = 'free'; SET.planWas = 'free'; save();
+  planGot('free');
   let sentP = null;
   const realSendP = netSend;
   netSend = (m, path, body, tok, ok) => {
@@ -610,7 +610,7 @@ const R = await pg.evaluate(async () => {
      いないという意味しかありません。 */
   start();
   netOut(); arrive(A);
-  SET.plan = 'pro'; SET.planWas = 'pro'; save();
+  planGot('pro');
   netSend = (m, path, body, tok, ok) => ok({ plan: 'free' });
   netPlanVerify([], () => {});
   netSend = realSendP;
@@ -623,7 +623,7 @@ const R = await pg.evaluate(async () => {
      2026-09-01。 */
   start();
   netOut(); arrive(A);
-  SET.plan = 'pro'; SET.planWas = 'pro'; save();
+  planGot('pro');
   netSend = (m, path, body, tok, ok, bad) => bad(null, 0, 'no signal');
   netPlanVerify(['J1'], () => {});
   netSend = realSendP;
@@ -1720,7 +1720,7 @@ const R = await pg.evaluate(async () => {
      測った形: ＋ を押した言語の行は**次の起動**（www/boot.js）まで出来ず、
      その間に閉じれば無くなり、画面は何も言いません。 */
   start();
-  SET.plan = 'pro'; SET.planWas = 'pro'; save();
+  planGot('pro');
   const keepL34 = LANGS, keepId34 = langId, keepNm34 = langName;
   const keepSync34 = netLangSync;
   const sent34 = [];
@@ -1743,7 +1743,7 @@ const R = await pg.evaluate(async () => {
   else if (langWhose(made34) !== LW_MINE)
     no('34: ＋ で作った言語が、作った人自身の一覧に出ない');
   LANGS = keepL34; langId = keepId34; langName = keepNm34;
-  SET.plan = 'free'; SET.planWas = 'free'; save();
+  planGot('free');
   say('34: ＋ で作った言語は、押した人のアカウントのもの ── そしてその場で' +
       'サーバーへ行く（次の起動を待たない）');
 
@@ -1841,11 +1841,16 @@ const R = await pg.evaluate(async () => {
      歩きは口座ができる前で、そこで訊くのはサインインする理由ができる前に
      訊くことなので ── 扉は歩きの最後です。 */
   start();
-  SET.plan = 'pro'; SET.planWas = 'pro'; save();
+  planGot('pro');
   const keepL36 = LANGS, keepId36 = langId, keepNm36 = langName;
   LANGS = { 'La': { name: '自分の', mine: true } }; langOwnGot('La', A);
   langId = 'La'; langName = '自分の';
   netOut();                                   /* サインアウトした人 */
+  /* 段はサインアウトで忘れられる（37-43 番）ので、天井は「まだ訊けていない」で
+     止まります ── この検査が測りたいのはそこではないので、答えを置きます。
+     `pro` なのは言語の天井を三本にするためで、一本だと下の ＋ が天井の側で
+     断られ、測りたい「アカウントを訊く」に届きません。 */
+  planGot('pro');
   if (langStop()) no('36: 上限のほうで止まっている ── この検査が測りたいものではない');
   const before36 = Object.keys(LANGS).length;
   langNew();
@@ -1864,46 +1869,51 @@ const R = await pg.evaluate(async () => {
   SET.obback = null; save();
   /* そしてサインインしていれば、＋ は今までどおり通る（34番の裏返し）。 */
   arrive(A);
+  planGot('pro');
   langNew();
   if (Object.keys(LANGS).length !== before36 + 1)
     no('36: サインインしているのに ＋ で言語ができない');
   LANGS = keepL36; langId = keepId36; langName = keepNm36;
-  SET.plan = 'free'; SET.planWas = 'free'; save();
+  planGot('free');
   say('36: ＋ はアカウントを訊く ── 断らずに扉へ送る。サインインしていれば通る');
 
 
-  /* ---- 37-42. 段は買ったアカウントのもの --------------------------------
+  /* ---- 37-43. 段は買ったアカウントのもので、端末に一言も無い -----------
      「1アドレス1アカウント」「これは絶対課金もアカウントごと言語もそう」
      「Xは違うアカウントだと課金も引き継がれない」 OWNER 2026-09-02。
+     「オンラインで 1 端末に 1 アカウント…段 ── 答えは全部サーバー」 OWNER
+     2026-09-11。
 
      16-18 番は段がアカウントに **紐づく** ことを持っています。ここが持つのは
      その裏 ── 同じ端末で別のアカウントに入った人は、その端末で買った購読を
-     **引き継がない**。段は Apple ID のものでも端末のものでもありません。
+     **引き継がない**。
 
      起きていたのはこれです:
 
        A（Pro）がサインアウト → B がサインイン
-       端末の SET.plan はまだ pro（Keychain は誰のものでもない）
+       端末の plan() はまだ pro（Keychain は誰のものでもない）
        次の起動 → 端末が自分の段をサーバーに書く → B のアカウントに Pro が付く
 
-     書く道は 2026-09-06 に無くなりましたが、**端末に残った段そのもの**は
-     まだここにあり、それが B の画面に出るかどうかはこの章の話です。
+     書く道は 2026-09-06 に無くなり、**端末に残った段そのもの**も 2026-09-11 に
+     無くなりました（`www/core.js` § PLAN）。段は `verify-plan` の答えで、
+     メモリにあり、セッションが行けば消えます。だから「引き継ぐ」形が存在
+     しません ── ここが持つのは、それが本当に存在しないことです。
 
-     `SET.planUid` が持ち主で、実機では Keychain が本体です（そこは Swift なので
-     この容器では走りません ── `ios/App/App/LinguaPlan.swift`）。ブラウザには
-     Keychain が無いので、注入されてくる値は下で手で置いています。段そのものが
-     ブラウザでは設定に残るのと同じ扱いです。 */
+     **`free` ではなく「まだ訊けていない」**が、入った直後の答えです。
+     free に倒すのが、実機でオーナーの段を消した形そのもの
+     （「アップデートしたら勝手に無料プランになったんだけど？」 2026-09-02）。 */
 
-  /* 37. 別の人が買ったものは引き継がない。 */
+  /* 37. 別の人が買ったものは引き継がない ── そして free でもない。 */
   start();
-  SET.plan = 'pro'; SET.planWas = 'pro'; SET.planUid = A; save();
+  planGot('pro');
   netOut();
   arrive(B);
-  if (plan() !== 'free')
+  if (planKnown())
+    no('37: 別のアカウントが入った直後に、段の答えがある — ' + plan());
+  if (has('pro') || has('plus'))
     no('37: 別のアカウントが、この端末で買われた段を引き継いだ — ' + plan());
-  if (SET.planUid !== B)
-    no('37: 段の持ち主が入った人になっていない — ' + JSON.stringify(SET.planUid));
-  say('37: 別のアカウントは、この端末で買われた購読を引き継がない');
+  say('37: 別のアカウントは、この端末で買われた購読を引き継がない ── ' +
+      '答えは free ではなく「まだ訊けていない」');
 
   /* 38. **そして B のアカウントに pro が付かない。**2026-09-06 まで、これは
      「端末が送るものが pro でないこと」でした。送る道が無くなったので、主張は
@@ -1911,7 +1921,7 @@ const R = await pg.evaluate(async () => {
      取引だけで、それは A の appAccountToken を持っているので B には付きません
      （拒むのはサーバー、tools/verify-check.mjs）。 */
   start();
-  SET.plan = 'pro'; SET.planWas = 'pro'; SET.planUid = A; save();
+  planGot('pro');
   netOut();
   const sent38 = [];
   const realSend38 = netSend;
@@ -1931,167 +1941,118 @@ const R = await pg.evaluate(async () => {
     no('38: B の段がサーバーの答えになっていない — ' + plan());
   say('38: B のアカウントに、A が買った段は送られない ── 端末は段を言わない');
 
-  /* 39. **買った人のものは取り上げない。**Keychain には書き戻さないので、A の
-     段と名前はそこに残り、A が戻ってきた起動で読み直されます。ブラウザには
-     Keychain が無いので、注入されてくる二つを手で置いて同じ状態を作ります。 */
+  /* 39. **買った本人からも取り上げない ── 答えるのはサーバー。**
+     ここは 2026-09-11 まで「Keychain に書き戻さないので A の段はそこに残り、
+     A が戻ってきた起動で読み直される」でした。Keychain は読みません。A が
+     戻れば、段は「まだ訊けていない」から始まり、**サーバーが答えます** ──
+     取り上げているのではなく、訊きに行く先が一つになっただけです。 */
   start();
-  netOut();
-  SET.plan = 'pro'; SET.planWas = 'pro'; SET.planUid = A; save();  /* 注入された二つ */
   arrive(A);
-  if (plan() !== 'pro') no('39: 買った本人から段を取り上げた — ' + plan());
-  if (SET.planWas !== 'pro') no('39: 買った本人の planWas が動いた — ' + SET.planWas);
-  say('39: 買った本人の段は、そのまま返ってくる');
+  planGot('pro');
+  netOut();
+  arrive(B);
+  netOut();
+  arrive(A);
+  if (planKnown())
+    no('39: 端末の写しが答えた — サーバーに訊く前に ' + plan());
+  const realSend39 = netSend;
+  netSend = (m, path, body, tok, ok) => ok({ plan: 'pro' });
+  netPlanVerify([], () => {});
+  netSend = realSend39;
+  if (plan() !== 'pro')
+    no('39: 買った本人の段がサーバーから戻ってこない — ' + plan());
+  say('39: 買った本人の段は、戻ってきたときサーバーが答える ── 取り上げない');
 
   /* 40. **持ち主が書かれていない端末も、例外ではない。**
      「1アカウントに1課金ですけど。他のアカウントについてくるわけねえだろ」
      OWNER 2026-09-11。
 
-     ここは 2026-09-11 まで逆でした ── 「名前を書き留めるだけで段は動かさない」。
-     空の `SET.planUid` を「この端末を持っている人の段」と読む枝で、それが
-     オーナーの断った一文です。**誰が買ったか誰も言えない段は、その人の買った
-     ものではありません。**測ってから消しました ── 印の無い端末に `pro` が
-     残っていると、次に入ったアカウントにそれが付き、`planWas` も一緒に
-     残るので capLapse() は何も言わず、画面に他人の購読が載るだけでした。
-
-     取り上げてはいません。Keychain には書き戻さないので、買った人の段と
-     名前はそこに残ります（39番）。 */
+     ここは 2026-09-11 の朝まで `SET.planUid` の比較でした ── 空の印を
+     「この端末を持っている人の段」と読む枝があり、それがオーナーの断った
+     一文です。比較そのものが無くなりました: 段は端末に無いので、入った人は
+     **誰の段も引き継ぎようがありません。** */
   start();
   netOut();
-  SET.plan = 'pro'; SET.planWas = 'pro'; SET.planUid = ''; save();
+  planGot('pro');
   arrive(B);
-  if (plan() !== 'free')
-    no('40: 持ち主の書かれていない端末の段が、入った人に付いてきた — ' + plan());
-  if (SET.planWas !== 'free')
-    no('40: planWas が一緒に下りていない — ' + SET.planWas);
-  const said40 = [];
-  const realPop40 = window.openCapLapse;
-  window.openCapLapse = () => { said40.push('lapse'); };
-  capLapse();
-  window.openCapLapse = realPop40;
-  if (said40.length)
-    no('40: 別人の解約が知らされた — ' + JSON.stringify(said40));
+  if (planKnown())
+    no('40: 印の無い端末の段が、入った人に付いてきた — ' + plan());
   say('40: 持ち主の書かれていない端末も例外ではない ── 段は付いてこない');
 
-  /* 40b. **段は設定の預け写しに乗らない。**答えを一つにするのはこの一行です。
-     `setFor()` は別のアカウントが入るとき、この人の設定を
-     `lingua.set.<uid>` に預けます ── そこに段が入っていると、`planFor()` が
-     free から始めた直後に `setFor()` がファイルから戻し、「この人は何を
-     払っているか」の答えが**あとに走ったほうの勝ち**になります。実機では
-     もっと悪く、`setOnDisk()` が段を設定ファイルから外しているのは、その
-     ファイルが PC のバックアップに入るからで、預け写しは生の `SET` から
-     作られていたのでその一行を通っていませんでした。
-
-     `SET_PLAN`（`www/core.js`）がその一行です。`planWas` も一緒 ──
-     Keychain から段が戻り `planWas` がファイルから戻ると、capLapse() が
-     契約していない人に「解約されました」と言います。
-
-     **これは今日そこに出ている段の間違いではありません。**`planFor()` が
-     `setFor()` より先に走るので、預けられる段はいつも free です。消して
-     いるのは、段を運べるファイルと、**どちらが最後に走ったかで答えが
-     変わる形**のほうです（CLAUDE.md § Simple ── 一つの問いに二つの道）。
-     赤は見ました：`SET_PLAN` を `setAcctKeys()` に読ませないと、預け写しが
-     `plan` と `planWas` を持って出てきます。 */
+  /* 40b. **段は設定の預け写しに乗らない。**`setFor()` は別のアカウントが
+     入るとき、この人の設定を `lingua.set.<uid>` に預けます。段がそこに入る
+     ことは、もう仕組みとして起こりません（`SET` に段が無い）── **この主張は
+     それが本当にそうであることの歯止め**で、段を `SET` に戻した日に赤に
+     なります。 */
   start();
   arrive(A);
-  SET.plan = 'pro'; SET.planWas = 'pro'; save();
+  planGot('pro');
   netOut();
   arrive(B);
   let park40 = null;
   try { park40 = JSON.parse(localStorage.getItem('lingua.set.' + A) || 'null'); } catch (e) { park40 = null; }
   if (!park40) no('40b: 預け写しそのものが無い — setFor() が預けていない');
   else {
-    if (park40.plan !== undefined)
-      no('40b: 預け写しが段を運んでいる — plan=' + JSON.stringify(park40.plan));
-    if (park40.planWas !== undefined)
-      no('40b: 預け写しが planWas を運んでいる — ' + JSON.stringify(park40.planWas));
+    const money40 = Object.keys(park40).filter((k) => /^plan/.test(k));
+    if (money40.length)
+      no('40b: 預け写しが段のものを運んでいる — ' + money40.join(' '));
   }
-  say('40b: 段と planWas は設定の預け写しに乗らない ── 段の道は一本');
+  say('40b: 段は設定の預け写しに乗らない ── 端末に段の欄が一つも無い');
 
-  /* 40c. **買った本人からは何も取らない ── 戻ってきたら、サーバーが答える。**
-     39番は起動の道（Keychain が注入した二つ）です。ここはその裏で、
-     Keychain を読み直す起動が無いとき ── ブラウザ、あるいは同じ起動のうちに
-     入り直したとき ── 段は free から始まり、**答えるのはサーバー**です。
-     「A が戻れば A の段はサーバーが答える」。 */
-  start();
-  arrive(A);
-  SET.plan = 'pro'; SET.planWas = 'pro'; save();
-  netOut();
-  arrive(B);
-  netOut();
-  arrive(A);
-  if (plan() !== 'free')
-    no('40c: 端末の写しが答えた — サーバーに訊く前に ' + plan());
-  const realSend40 = netSend;
-  netSend = (m, path, body, tok, ok) => ok({ plan: 'pro' });
-  netPlanVerify([], () => {});
-  netSend = realSend40;
-  if (plan() !== 'pro')
-    no('40c: 買った本人の段がサーバーから戻ってこない — ' + plan());
-  say('40c: 買った本人の段は、戻ってきたときサーバーが答える');
-
-  /* 41. **planWas も一緒に下りる。**飾りではありません。下りないと起動時の
-     capLapse() が pro → free を「解約された」と読み、別人の段を基準にした
-     シートを B に出します。送る側は 2026-09-06 に無くなったので、残っている
-     のは**その一言**で、ここは capLapse() を本当に呼んで何も言われないことを
-     見ます。 */
-  start();
-  SET.plan = 'pro'; SET.planWas = 'pro'; SET.planUid = A; save();
-  netOut();
-  arrive(B);
-  const said41 = [];
-  const realPop41 = window.openCapLapse;
-  window.openCapLapse = () => { said41.push('lapse'); };
-  capLapse();
-  window.openCapLapse = realPop41;
-  if (said41.length)
-    no('41: B に、B のものではない解約が知らされた — ' + JSON.stringify(said41));
-  say('41: planWas も一緒に下りるので、別人の解約は言われない');
-
-  /* 42. **起動して憶えているセッションを読んだ瞬間にも訊く。**netTook() だけでは
-     遅すぎます ── netResume() は非同期で、www/boot.js の末尾の capLapse() は
-     同期で、その下を先に走ります。netRead() は www/net.js が読み込まれた瞬間で、
-     www/boot.js より三つ前です。 */
+  /* 41. **起動して憶えているセッションを読んだ瞬間に、前の人の段を忘れる。**
+     `netRead()` は `www/net.js` が読み込まれた瞬間で、`www/boot.js` より三つ
+     前です。ここで忘れないと、B の起動が A の段のまま最初の一枚を描きます。 */
   start();
   netOut();
-  SET.plan = 'pro'; SET.planWas = 'pro'; SET.planUid = A; save();
+  planGot('pro');
   localStorage.setItem('lingua.sess', JSON.stringify(
     { at: 'not a jwt', rt: 'a refresh token', uid: B }));
   netRead();
-  if (plan() !== 'free')
-    no('42: 憶えているセッションを読んだだけでは照合していない — ' + plan());
-  if (SET.planWas !== 'free')
-    no('42: netRead() の道で planWas が下りていない — ' + SET.planWas);
+  if (planKnown())
+    no('41: 憶えているセッションを読んでも、前の人の段が残っている — ' + plan());
   netOut();
-  say('42: 起動して憶えているセッションを読んだ瞬間にも訊く（capLapse より先）');
+  say('41: 起動して憶えているセッションを読んだ瞬間に、前の人の段を忘れる');
 
-  /* 43. **Keychain へ送る文に uid が乗るのは、セッションがあるときだけ。**
-     持ち主が変わるのは段が変わるときだけ、という一文が planKeep() です。
-     誰もいない起動（www/core.js の二箇所）で '' を送ると、毎回持ち主が
-     消えます ── この章が止めようとしているものが、そのために作った扉から
-     入ってきます。ここは Swift ではなく **送る文** を見ています。 */
+  /* 42. **サインアウトでも忘れる。**段はアカウントの物なので、誰もいない端末
+     が段を持っているのは「端末の物」そのものです。 */
   start();
-  const realCap43 = window.Capacitor;
-  const msgs43 = [];
-  window.Capacitor = { nativePromise: (p, m, a) => {
-    msgs43.push({ p: p, m: m, a: a });
-    return { 'catch': () => {} };
-  } };
-  netOut();
-  planKeep('pro');                       /* 誰もいない */
   arrive(A);
-  planKeep('pro');                       /* A がいる */
-  window.Capacitor = realCap43;
-  if (msgs43.length !== 2)
-    no('43: Keychain へ送っていない — ' + msgs43.length + '通');
-  if (msgs43[0] && msgs43[0].a && 'uid' in msgs43[0].a)
-    no('43: 誰もいないのに uid を送った — 既にある持ち主が消える — ' +
-       JSON.stringify(msgs43[0].a));
-  if (!msgs43[1] || !msgs43[1].a || msgs43[1].a.uid !== A)
-    no('43: サインインしているのに買った人を書いていない — ' +
-       JSON.stringify(msgs43[1] && msgs43[1].a));
-  if (msgs43[1] && msgs43[1].a && msgs43[1].a.plan !== 'pro')
-    no('43: 段そのものが送られていない — ' + JSON.stringify(msgs43[1].a));
-  say('43: Keychain へは段と一緒に買った人が乗る ── 誰もいなければ乗らない');
+  planGot('pro');
+  netOut();
+  if (planKnown())
+    no('42: サインアウトしても段が残っている — ' + plan());
+  say('42: サインアウトで段を忘れる ── 誰もいない端末は段を持たない');
+
+  /* 43. **訊けていないうちは「接続できません」で、値段の話をしない。**
+     「電波が無ければ接続できません」（`docs/FEATURE_RULES.md` § 端末は何も
+     決めない）。`upStop()` と `capStop()` がその一箇所です ── 倒して free に
+     するのではなく、待つ。値段の頁へ送るのは、**訊けた上で足りないとき**
+     だけです。 */
+  start();
+  netOut(); arrive(A);
+  planForget();
+  const said43 = [];
+  const realAsk43 = window.popAsk, realToast43 = window.toast;
+  window.popAsk = (msg) => { said43.push('ask'); };
+  window.toast = (msg) => { said43.push('toast:' + msg); };
+  const stopped43 = upStop(can('kb'));
+  window.popAsk = realAsk43; window.toast = realToast43;
+  if (!stopped43) no('43: 訊けていないのに通した');
+  if (said43.filter((x) => x === 'ask').length)
+    no('43: 訊けていないのに値段の頁を出した — ' + JSON.stringify(said43));
+  if (!said43.filter((x) => x.indexOf('toast:') === 0).length)
+    no('43: 何も言わずに止めた — ' + JSON.stringify(said43));
+  /* そして訊けた上で足りなければ、今までどおり値段の頁へ。 */
+  planGot('free');
+  const said43b = [];
+  window.popAsk = (msg) => { said43b.push('ask'); };
+  upStop(can('kb'));
+  window.popAsk = realAsk43;
+  if (!said43b.length)
+    no('43: 訊けていて足りないのに、値段の頁へ送らない');
+  say('43: 訊けていないうちは「接続できません」── 値段の話は、訊けた上で' +
+      '足りないときだけ');
+
 
   /* ---- 44. 投稿と下書きもアカウントのもの -------------------------------
      「アカウント新規作成してんのにまた前のアカウント残ってんだけど」 OWNER
@@ -2183,7 +2144,7 @@ const R = await pg.evaluate(async () => {
      正しい ── ここで見るのは、**この端末の設え**として残るもののほうです。
      `wldMoved` は移行の印で、どのアカウントのものでもありません。 */
   if (SET.wldMoved !== true) no('46: この端末の移行の印まで消した');
-  if (SET.plan !== 'free') no('46: 消したアカウントの段が残っている');
+  if (planKnown()) no('46: 消したアカウントの段が残っている — ' + plan());
   say('46: アカウント削除は、そのアカウントの言語・単語・投稿・段だけ ── '
     + '別のアカウントのものは一つも動かず、端末の設えも残る');
 
@@ -2903,7 +2864,7 @@ const R = await pg.evaluate(async () => {
   start();
   netOut(); arrive(A);
   {
-    SET.plan = 'pro'; SET.planWas = 'pro'; save();
+    planGot('pro');
     const realSend63 = netSend;
     const keepL63 = LANGS, keepId63 = langId;
     LANGS = { 'Lw': { mine:true }, 'Lx': { mine:true } };
@@ -2947,7 +2908,7 @@ const R = await pg.evaluate(async () => {
       no('63: SET_PHONE がまだ書記体系をこの端末の設えだと言っている');
     netSend = realSend63;
     LANGS = keepL63; langId = keepId63;
-    SET.plan = 'free'; SET.planWas = 'free'; save();
+    planGot('free');
     say('63: 書記体系は言語のもの ── 列へ書き、答えが戻ってから動き、' +
         '言語ごとに違い、人の設定には入らない');
   }

@@ -89,7 +89,7 @@ const ok = (name, cond, detail) => {
 /* A vocabulary that uses s, h and the digraph sh, so the ligature is exercised,
    and headwords that start with a capital, because that is how they are stored. */
 const seed = await pg.evaluate(() => {
-  SET.walked = true; SET.plan = 'free'; SET.ui = 'en'; SET.script = false;
+  SET.walked = true; planGot('free'); SET.ui = 'en'; SET.script = false;
   WORDS = [
     { hw: 'Ashi', mn: 'star', pos: 'n' },
     { hw: 'Kilt', mn: 'water', pos: 'n' },

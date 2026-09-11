@@ -82,11 +82,12 @@ The one exception is `lingua.sess`, and it is not an exception in the way it
 looks: it is not a thing somebody has, it is **which account this phone is**.
 
 **And the plan is the account's** 「課金とアカウントとキーボードはアカウントに
-結びつく」 OWNER 2026-09-01 — `SET.plan` is where the value sits on this handset
-while it travels, and `setFor()` is what stops it being handed to whoever signs
-in next — `plan` is not in `SET_PHONE`, and nothing a person has is. The real copy on a phone is in the Keychain
-(`ios/App/App/LinguaPlan.swift`). The keyboard beside it in that sentence is
-the language's.
+結びつく」 OWNER 2026-09-01 — and **this phone holds no word for it at all**
+(2026-09-11). `PLAN` in `www/core.js` is what `verify-plan` answered about the
+account that is signed in; it is asked at the launch and at the door and it is
+forgotten when the session goes. 「まだ訊けていない」 is a state of its own and
+is never `free` — falling to free is what made a paid phone open as a free one.
+The keyboard beside it in that sentence is the language's.
 
 This is the kind of file that goes on being believed after it stops being
 true, so re-check rather than trust:

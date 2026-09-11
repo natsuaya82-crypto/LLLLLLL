@@ -102,8 +102,30 @@ function wsGuess(){
    somebody with two languages had ONE answer for both of them and nobody else
    could be told which of the five a published language was --
    tools/store-check.mjs had written GAP against it in exactly those words. */
+/* AND IT IS NOT ASKED BEFORE THE SERVER HAS SAID WHAT THIS ACCOUNT PAYS.
+   「free is an alphabet; there is nothing to guess」 is written down
+   (CLAUDE.md § What the free plan is) and stays: nobody on the free plan can
+   choose one of the five, so a guess made off their letters is the app
+   telling somebody their alphabet is a syllabary. Measured 2026-09-11 with
+   the line taken out: the fixture's free language came back `syll`, and the
+   characters borrowed for it stopped being drawn.
+
+   `planKnown()` in front of it is the whole of what changed. `can()` answers
+   false for 「nobody has asked」 as readily as for 「free」 (www/core.js §
+   PLAN), and falling to `alpha` on the first is this app telling somebody who
+   PAID that their abugida is an alphabet -- on a launch with no signal, and
+   on every launch before the answer lands. That is the head of
+   docs/PAID_FEATURES.md backwards: 「No byte of anybody's language may depend
+   on payment」. Until the answer is in, the language answers for itself: the
+   `language.wsys` column the server holds, which is also what anybody reading
+   a published language is told.
+
+   Changing it is a different question and is setWsys() below --
+   `upStop(can('wsys'))`, its first line, which is the door rather than the
+   room, and which says 「接続できません」 rather than a price while nobody
+   has asked. */
 function wsys(){
-  if(!can('wsys')) return 'alpha';
+  if(planKnown() && !can('wsys')) return 'alpha';
   var w=langWsysOf(langId);
   return WSYS.indexOf(w)>=0 ? w : wsGuess();
 }

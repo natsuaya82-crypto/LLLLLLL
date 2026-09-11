@@ -48,6 +48,36 @@ OWNER 2026-09-06。「だから端末でやるわけねえだろ」OWNER 2026-09
 `www/net.js` の `netPlanVerify()` で、**答えが届かなかった時と、段の語の無い
 答えが返った時は、何も書かない**。書くのは `planTook()`（`www/core.js`）一箇所。
 
+**そして 2026-09-11 に、一つ目の原因も消えた ── 端末に段の語が無くなった。**
+「オンラインで 1 端末に 1 アカウント、そのアカウントに結びつけられる言語数が
+決まってるんだから端末でやることねえ」「段 ── 答えは全部サーバー」 OWNER
+2026-09-11（`docs/FEATURE_RULES.md` § 端末は何も決めない）。
+
+`SET.plan` `SET.planWas` `SET.planV` `SET.planUid` の四つが `lingua.set` から
+消え、Keychain は `www/` から読まれなくなった。段は `verify-plan` の答えで、
+**メモリに一つ**（`PLAN`、`www/core.js`）。起動（`storeSync()`）と扉
+（`netPlanSync()`）で訊き、セッションが行けば忘れる。
+
+**そして三つ目の状態が要る。**「まだ訊けていない」は `free` ではない。倒せば、
+それが失った日の形そのものになる ── 電波の無い起動で、払った人が無料の姿の
+アプリを開く。だから `planKnown()` が偽のあいだ：
+
+- `can()` と `has()` は偽（＝ボタンは出るが、押せば下記）
+- `upStop()` と `capStop()` は**「接続できません」**と言って止まる。値段の頁へ
+  送るのは、**訊けた上で足りないとき**だけ
+- `ltStart()`（`www/letters.js`）は**一字も書かない** ── 無料の 38 字を、
+  払った人の字の上に書くのはこの状態です。答えが届いた瞬間に `planTook()` が
+  同じ呼び出しを一度する
+- `wsys()`（`www/wsys.js`）は言語の `language.wsys` 列で答える。無料は
+  アルファベット、という規則は**訊けた上で**掛かる
+
+**「プランが終了しました」は出ない。**`capLapse()` は `SET.planWas`（端末の語）
+と比べていたので、語と一緒に消えた。`supabase/schema.sql` の `plan` 表は
+`(id, plan, at)` で、**前の段の列が無い** ── サーバーも答えられない。列を足すか
+どうかは**オーナーの決めごと**（`docs/scope/r31-server.md` § オーナーへ）。
+言葉は `openCapLapse()`（`www/settings.js`）に残っていて、列が来た日に
+書き直す物はありません。
+
 **段は下がりうる。**ここは 2026-09-02 の書き方と逆で、逆にしてよい理由は一つ
 だけある ── 語がサーバーから来るようになったこと。サーバーの `free` は「このアカ
 ウントについて検証できた取引が一つも期限内に無い」という意味しかない。失効は
@@ -60,10 +90,13 @@ OWNER 2026-09-06。「だから端末でやるわけねえだろ」OWNER 2026-09
 CLAUDE.md が禁じている三番目の規則 ── 何も止めていないのに止まるかのように書い
 たもの ── になる。書き直した。
 
-**動かして測る側**（Keychain と www）。読み取り失敗で一バイトも書かれないこと、
-本当に空なら移行の道は今までどおり動くこと、Keychain が持っていればそれが勝つ
-こと。そして `planTook()` が段を書く唯一の場所であること、売っていない語は段に
-ならないこと、**届かなかった verify が何も書かないこと**。
+**動かして測る側**（www）。**起動が段を一つも持たないこと** ── Keychain が何を
+言っていても、古い `lingua.set` が何を持っていても、`verify-plan` が答えるまでは
+「まだ訊けていない」であること。何も書き戻さないこと。`lingua.set` に
+`plan` で始まる欄が一つも無いこと。`planGot()` と `planForget()` の二つだけが
+`PLAN` に書くこと。`planTook()` が答えを取る唯一の場所であること、売っていない語
+は段にならないこと、**届かなかった verify が何も書かないこと**、そして
+**訊けていないうちは値段の話をしないこと**。
 
 **読んで形を持つ側**（App Store）。Swift は Linux でコンパイルできず、ゲートは
 `.swift` を実行できない。**が、読むことはできる** ── `sides-check` が `post.js`
@@ -127,8 +160,11 @@ And, more importantly, what it may never touch.
 follows the person to whatever phone they sign in on, the way everything else
 of theirs does. **That is built**: the `plan` table in `supabase/schema.sql`,
 written by `supabase/functions/verify-plan` with the service role and read-only
-to everybody else. `SET.plan` is still the value the app asks, and it is the
-copy that works with no signal — the same shape as every other slice.
+to everybody else. **Nothing on the handset holds it**: `plan()` reads
+`PLAN` in memory (`www/core.js`), filled by that row's answer and emptied when
+the session goes — the same shape as every slice (rule 22). With no signal
+there is no answer, and 「nobody has asked」 is a state of its own, never
+`free`.
 
 **And the receipt IS checked, since 2026-09-06.** The row holds what Apple
 signed, bound to the account that bought it (`purchase` in `schema.sql`), so it
@@ -636,7 +672,8 @@ Offline:         what happens with no network
 ```
 
 Then: add it to `CAN`, ask it with `can()`, and add a `halfDone` entry in
-`tools/fixture.mjs` that flips `SET.plan` and puts it back — otherwise
+`tools/fixture.mjs` that flips the plan with `planGot()` and puts it back —
+otherwise
 `act-check` reports the new screen's buttons as an entry no screen names, which
 is true and is not what you meant.
 
@@ -664,9 +701,10 @@ and **not one byte of any slice has moved**. Also that no plan at all reads as
 free; that any plan which is not the word `plus` buys nothing (`garbage`,
 `PLUS`, `studio`); that a backup written on the free plan holds every slice the
 paid one does; that the ceiling refuses without taking the screen off anybody;
-that the plan is in the settings file in a browser and NOT in it on a phone,
-where the Keychain has it; and that a plan ending is said once, not once per
-render, and touches nothing.
+that **a launch holds no plan at all** until `verify-plan` answers, whatever
+the Keychain says and whatever an old `lingua.set` holds, and writes nothing
+back; that no field of the settings is about money; and that **「プランが終了
+しました」 is not said**, because the `plan` table carries no previous plan.
 
 Six of those were watched failing, with three real bugs put back: a list that
 trims the thing it is listing, a slice quietly left out of a free plan's
@@ -689,18 +727,19 @@ it, how every screenshot is taken, and how a tier is tried on.
 The four subscriptions are configured in App Store Connect and are described in
 `docs/apple.md` § 4.
 
-Where the plan is kept is the Keychain, not the settings file. See
-`ios/App/App/LinguaPlan.swift` for what that closes and what it leaves open, and
-case 6 of `tools/migrate-check.mjs` for the two things it has to keep meaning.
+**WHERE THE PLAN IS KEPT IS MEMORY, AND THERE IS NO SECOND PLACE** (2026-09-11).
+There were three. `SET.plan` in the settings file; the iOS Keychain, which
+`setOnDisk()` kept the settings out of because that file is in the backup a PC
+makes; and the PARKED settings, `lingua.set.<uid>`, written from `SET` directly
+and past the line that kept the plan out of the file. Whichever ran last
+decided.
 
-**AND NOT THE PARKED SETTINGS FILE EITHER**, which was the third place until
-2026-09-11. `setFor()` parks one account's settings under `lingua.set.<uid>`
-while another is signed in, and the plan was in that bag -- written from `SET`
-directly, past the line that keeps it out of the settings file. `SET_PLAN` in
-`www/core.js` is the one line that says the plan is not one of the settings,
-and `planWas` goes with it: a plan that comes back from the Keychain while
-`planWas` comes back from a file is 「your subscription ended」 said to somebody
-who never subscribed. `acct-check` 40b.
+None of them exists. `PLAN` in `www/core.js` holds `verify-plan`'s answer about
+the account that is signed in; `planGot()` writes it and `planForget()` empties
+it, and nothing else assigns it. `ios/App/App/LinguaPlan.swift` still has its
+own key and nothing in `www/` speaks to it — taking that out is an iOS change
+(`docs/BACKLOG.md`). `plan-check` holds all of it, and `store-check` holds the
+other half: no field of `lingua.set` is about money.
 
 ## Not built yet
 

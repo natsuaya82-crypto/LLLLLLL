@@ -61,7 +61,7 @@ const build = ({ names, s, DPI, deg, blur, grain, lit, damage }) => {
      ltStart() has already laid down the free thirty-eight and this is a
      language that HAS them rather than one that never got them.
      The free plan gets its own section at the foot of this file. */
-  SET.plan = 'pro';
+  planGot('pro');
 
   /* ---- the page IS the file --------------------------------------------
      This used to draw the page itself, out of shBoxAt/shMarks/shCellAt --
@@ -543,9 +543,9 @@ const boxes = await pg.evaluate(async () => {
    what its YES does. And the take itself is refused where the rule is and
    not only on the screen, because a button is not the only way in. */
 const free = await pg.evaluate(() => {
-  var was = SET.plan, ring = [[[150,150],[650,150],[650,650],[150,650]]];
+  var was = plan(), ring = [[[150,150],[650,150],[650,650],[150,650]]];
   var lts = JSON.stringify(LETTERS);
-  SET.plan = 'free';
+  planGot('free');
   SH = shBlank();
   openWrIn();
   render();
@@ -567,7 +567,7 @@ const free = await pg.evaluate(() => {
   if (popOn()) popYes();
   out.wentToPlans = here().r === 'plans';
   /* nothing a person made is touched by a plan, either */
-  SET.plan = was;
+  planGot(was);
   out.same = JSON.stringify(LETTERS) === lts;
   LETTERS = JSON.parse(lts); saveLetters();
   render();

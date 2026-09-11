@@ -654,6 +654,18 @@ function ltStart(){
 
      It is asked FIRST now, because the line under it writes as well. */
   if(!langMine(langId)) return;
+  /* AND NOT BEFORE ANYBODY HAS ANSWERED WHAT THIS ACCOUNT PAYS. The line
+     below writes THIRTY-EIGHT LETTERS into somebody's language, and it writes
+     them because the plan is free -- so a plan nobody has asked about would
+     write them into a paid alphabet at every launch, with no signal, before
+     verify-plan had said a word. 「未回答は…書かせない」 OWNER 2026-09-11
+     (docs/FEATURE_RULES.md § 端末は何も決めない).
+
+     planTook() (www/core.js) calls this again the moment the answer lands, so
+     nothing is lost by waiting -- it is the same call at the moment the fact
+     it needs becomes true, the shape langOwnGot() has for a language's owner.
+     Above ltJoinSlots() as well: that writes too. */
+  if(!planKnown()) return;
   /* An alphabet that doubled before the ids were steady, put back to one of
      each. Above the plan, because a paid alphabet doubled the same way and
      the free plan is not what this is about. */

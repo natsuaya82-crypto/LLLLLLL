@@ -123,7 +123,7 @@ await E(() => {
       ログアウト → 扉はサインインの顔 → サインイン → プロフィール
    ======================================================================= */
 step('1 扉とパスワードの道');
-await E(() => { window.__seed(); SET.walked = true; SET.plan = 'pro';
+await E(() => { window.__seed(); SET.walked = true; planGot('pro');
                 goTab('profile'); });
 await beat();
 did('起動（署名済み・fixture）', J(await where()));
@@ -259,7 +259,7 @@ did('ポップの「はい」', J(await tap('popYes')));
    3. 単語 → 開く → 編集 → 例文の .sfont / 意味の＋ / 例文の＋ / 保存
    ======================================================================= */
 step('3 単語の編集シート');
-await E(() => { window.__seed(); SET.walked = true; SET.plan = 'pro';
+await E(() => { window.__seed(); SET.walked = true; planGot('pro');
                 SET.myfont = true; installScriptFont();
                 goTab('build'); go('words'); });
 await beat();
@@ -374,7 +374,7 @@ did('辞書に立つ（自作フォント on）',
    4. 文法 → 語順 / 過去形 / 名詞 / 一覧の順
    ======================================================================= */
 step('4 文法');
-await E(() => { window.__seed(); SET.walked = true; SET.plan = 'pro';
+await E(() => { window.__seed(); SET.walked = true; planGot('pro');
                 if (STG) delete STG.order;
                 goTab('build'); go('gram'); });
 await beat();
@@ -507,7 +507,7 @@ await beat();
    5. SNS：スレッドの線、投稿画面の focus、辞書の欄から余白へ
    ======================================================================= */
 step('5 SNS');
-await E(() => { window.__seed(); SET.walked = true; SET.plan = 'pro';
+await E(() => { window.__seed(); SET.walked = true; planGot('pro');
                 goTab('feed'); go('thread', 'p1'); });
 await beat();
 {
@@ -548,7 +548,7 @@ await beat();
   const deep = d.out.filter((x) => /pind[23]/.test(x.col));
   ok('深さ 3 の行がある（孫）', deep.length > 0, J(deep.map((x) => x.col)));
 }
-await E(() => { window.__seed(); SET.walked = true; SET.plan = 'pro';
+await E(() => { window.__seed(); SET.walked = true; planGot('pro');
                 goTab('feed'); openPost(); });
 await beat(300);
 {
@@ -576,7 +576,7 @@ await beat(300);
   ok('縦の欄の位置が変わらない',
      !!(before.mn && after.mn && before.mn.top === after.mn.top), J({ before: before.mn, after: after.mn }));
 }
-await E(() => { window.__seed(); SET.walked = true; SET.plan = 'pro';
+await E(() => { window.__seed(); SET.walked = true; planGot('pro');
                 goTab('build'); go('words'); });
 await beat();
 {
@@ -607,7 +607,7 @@ await beat();
    6. 取り込み：paste まで進めて閉じる → もう一度開くと選択画面
    ======================================================================= */
 step('6 取り込み');
-await E(() => { window.__seed(); SET.walked = true; SET.plan = 'pro';
+await E(() => { window.__seed(); SET.walked = true; planGot('pro');
                 goTab('build'); go('find'); });
 await beat();
 did('取り込みを開く', J(await E(() => { openImport(); })));
@@ -638,7 +638,7 @@ await beat();
    7. 管理：@ を打って追加 → netSend が /rpc/staff_add に一回
    ======================================================================= */
 step('7 管理（スタッフ追加）');
-await E(() => { window.__seed(); SET.walked = true; SET.plan = 'pro';
+await E(() => { window.__seed(); SET.walked = true; planGot('pro');
                 ME.handle = 'lingua'; saveMe();
                 NET_ADMIN = true; ADMIN_OK = true;
                 window.__net.length = 0;

@@ -99,7 +99,7 @@ await pg.waitForSelector('#splash', { state: 'detached', timeout: 10000 });
 
 const r = await pg.evaluate(({ s }) => {
   eval('(' + s + ')()');
-  SET.walked = true; SET.plan = 'pro';
+  SET.walked = true; planGot('pro');
   var out = { screens: [], fails: [] };
 
   /* ---- THE WIRE, ANSWERING --------------------------------------------
@@ -193,7 +193,7 @@ const r = await pg.evaluate(({ s }) => {
   var lid = LETTERS[0].id, hw = WORDS[0].hw, artId = '';
 
   function kbStand(){
-    SET.plan = 'pro';
+    planGot('pro');
     if(kbBoards().length < 2){ KB = null; kbShow = 0; kbAdd('qwerty'); }
     goTab('build'); go('kb', '1');
   }
@@ -409,7 +409,7 @@ const more = await pg.evaluate(() => {
   /* ---- 10. the keyboard's step back -------------------------------------
      kbNoted() records JSON.stringify(b.lay). A name is not in a layout, so
      typing one may not stack a step -- and one save must be one write. */
-  SET.plan = 'pro';
+  planGot('pro');
   if(kbBoards().length < 2){ KB = null; kbShow = 0; kbAdd('qwerty'); }
   goTab('build'); go('kb', '1');
   var steps0 = KBU.u.length, saves = 0, realSaveKb = saveKb;
@@ -451,7 +451,7 @@ const more = await pg.evaluate(() => {
      Asked of the real roads: make two, stand on the second, delete the first,
      read where that left you, walk into a board, then take a row out and read
      the bar. */
-  SET.plan = 'pro';
+  planGot('pro');
   KB = null; kbShow = 0; KEEP = {};
   kbAdd('qwerty'); kbAdd('flick');
   kbGoBoard(2); render();
@@ -489,7 +489,7 @@ const more = await pg.evaluate(() => {
 
      Not typed into: strokes are pushed and geTools() is what the app calls
      when the pen comes up. That is the road a finger takes. */
-  SET.plan = 'pro';
+  planGot('pro');
   var glid = LETTERS[0].id;
   function glStored(){ return JSON.stringify((ltById(glid) || {}).st || []); }
   function glDraw(){
@@ -904,7 +904,7 @@ const walk = await pg.evaluate(({ s }) => {
   eval('window.__seed = (' + s + ')');
   const seedAgain = window.__seed;
   seedAgain();
-  SET.walked = true; SET.plan = 'pro';
+  SET.walked = true; planGot('pro');
   const out = { stands: [], fails: [], fields: 0, presses: 0, gold: 0, refused: 0, lit: 0 };
 
   langRowGot(langId); langStore();
@@ -1004,7 +1004,7 @@ const walk = await pg.evaluate(({ s }) => {
      each press already holding everything. */
   function flush(){ try { save(); langSaveAll(); } catch(e){} }
   function stand(go1){
-    seedAgain(); SET.walked = true; SET.plan = 'pro';
+    seedAgain(); SET.walked = true; planGot('pro');
     langRowGot(langId); langStore();
     flush();
     try { popOff(); } catch(e){}

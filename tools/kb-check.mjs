@@ -31,7 +31,7 @@ await pg.waitForSelector('#splash', { state: 'detached', timeout: 10000 });
 
 const r = await pg.evaluate(({ s }) => {
   eval('(' + s + ')()');
-  SET.walked = true; SET.plan = 'pro';
+  SET.walked = true; planGot('pro');
   var out = {}, i, j;
 
   /* A board of this person's own, on the screen it is edited on. Board 0 is
@@ -1890,13 +1890,13 @@ const r = await pg.evaluate(({ s }) => {
      class of a row in the LIST of keyboards -- counting it loose would be a
      claim about the wrong screen. */
   (function (){
-    var wasPlan = SET.plan, wasKB = KB, wasShow = kbShow, wasNav = NAV,
+    var wasPlan = plan(), wasKB = KB, wasShow = kbShow, wasNav = NAV,
         /* render() reads the ROUTE global, not NAV -- the two are set together
            by go() and putting only one of them back leaves the next block
            drawing a screen the trail does not name. */
         wasRoute = route,
         keep = LETTERS.slice(), i;
-    SET.plan = 'free'; KB = null; kbShow = 0; kbLay = 0;
+    planGot('free'); KB = null; kbShow = 0; kbLay = 0;
     /* ON THE BOARD'S OWN PAGE, and that argument is the whole of what moved.
        The six claims below were written when the free plan had a face of its
        own -- one keyboard, no list -- so {r:'kb'} with nothing after it drew
@@ -2107,7 +2107,7 @@ const r = await pg.evaluate(({ s }) => {
       return s.querySelectorAll('[data-do="kbSettings"]').length;
     }).join(',');
 
-    SET.plan = wasPlan; KB = wasKB; kbShow = wasShow;
+    planGot(wasPlan); KB = wasKB; kbShow = wasShow;
     NAV = wasNav; route = wasRoute; KBH = null; kbSel = null;
   }());
 
@@ -2126,14 +2126,14 @@ const r = await pg.evaluate(({ s }) => {
      that writes a board and the pool it fills is the person's rather than
      the language's (kbCount()). */
   (function (){
-    var wasPlan = SET.plan, wasKB = KB, wasShow = kbShow, wasNav = NAV,
+    var wasPlan = plan(), wasKB = KB, wasShow = kbShow, wasNav = NAV,
         wasRoute = route;
     function built(n){
-      SET.plan = 'pro'; KB = null; kbShow = 0; kbLay = 0;
+      planGot('pro'); KB = null; kbShow = 0; kbLay = 0;
       for (var i = 0; i < n; i++) kbAdd('qwerty');
     }
     function list(plan){
-      SET.plan = plan; kbShow = 0; kbLay = 0;
+      planGot(plan); kbShow = 0; kbLay = 0;
       NAV = [{ r: 'kb' }]; route = 'kb';
       document.getElementById('app').innerHTML = vKb();
       return {
@@ -2176,13 +2176,13 @@ const r = await pg.evaluate(({ s }) => {
     if (pat) pat.click();
     out.proAdded = kbStored().length === 2;
 
-    SET.plan = wasPlan; KB = wasKB; kbShow = wasShow;
+    planGot(wasPlan); KB = wasKB; kbShow = wasShow;
     NAV = wasNav; route = wasRoute; KBH = null; kbSel = null;
     popOff();
   }());
 
   fresh();
-  SET.plan = 'free';
+  planGot('free');
   var kl = LETTERS.filter(function(l){ return String(l.ab||'') === 'a'; })[0];
   out.midWays = [];
   [ ['straight',    [{pts:[[400,120],[400,680]]}]],
@@ -2269,8 +2269,8 @@ const r = await pg.evaluate(({ s }) => {
        letter's ink, which free draws too. There is no editor on free (board 0
        is the QWERTY itself and kbEdit() answers null), so a carry cannot
        happen there at all and every claim below would pass by not running. */
-    var wasPlan = SET.plan;
-    SET.plan = 'pro';
+    var wasPlan = plan();
+    planGot('pro');
     fresh();
     /* in HALF COLUMNS -- kbUsed() is the app's own, and widths() above counts
        whole keys, which is a different number and was the first thing this
@@ -2571,7 +2571,7 @@ const r = await pg.evaluate(({ s }) => {
       out.pairNotUnder = JSON.stringify(kbLayer().rows.map(say)) === underWas &&
                          !!pairAt() && pairAt().whole;
     }
-    SET.plan = wasPlan;
+    planGot(wasPlan);
   }());
   (function (){
     fresh();
@@ -2713,7 +2713,7 @@ const r = await pg.evaluate(({ s }) => {
           something to press ------------------------------------------------
      Both are the same shape of fault: something was taken away and what stood
      on it was left behind. */
-  SET.plan = 'pro';
+  planGot('pro');
   fresh();
   /* fresh() leaves the read-only board 0 showing on this path, and board 0 is
      the free QWERTY -- its keys are spans and answer nothing on purpose. The
@@ -2779,7 +2779,7 @@ const r = await pg.evaluate(({ s }) => {
     seen.push(tag + ' ' + k.holes + '/' + bad.length);
     return k.holes === 0 && bad.length === 0;
   }
-  SET.plan = 'pro';
+  planGot('pro');
   fresh(); kbShow = 1; kbLay = 0; standKb();
   out.holeFresh = noHole('as built');
   /* a row made short by exactly ONE column: the row that ends half a key from
@@ -3056,7 +3056,7 @@ const r = await pg.evaluate(({ s }) => {
      under test is what a finger reaches -- the bar's button is either there
      or it is not, and only the screen can say. */
   (function (){
-    SET.plan = 'pro';
+    planGot('pro');
     function bar(){ return [].slice.call(document.querySelectorAll('.navtop .navdo')); }
     function backBtn(){ return document.querySelector('.navtop .back'); }
     function cellsOn(){ return [].slice.call(document.querySelectorAll('#lt-list .ltc')); }
@@ -3230,7 +3230,7 @@ const r = await pg.evaluate(({ s }) => {
      None of it can throw. A run that acts on one column, or on one too many,
      is a keyboard that still renders and is not the one somebody built. */
   (function (){
-    SET.plan = 'pro';
+    planGot('pro');
     function head(k, n){
       return document.querySelector(
         '#kb [data-do="' + (k === 'c' ? 'kbHeadCol' : 'kbHeadRow') + '"][data-a="[' + n + ']"]');
@@ -3378,7 +3378,7 @@ await small.goto('file://' + path.join(dir, '..', 'www', 'index.html'));
 await small.waitForSelector('#splash', { state: 'detached', timeout: 10000 });
 const SM = await small.evaluate(({ s }) => {
   eval('(' + s + ')()');
-  SET.walked = true; SET.plan = 'pro';
+  SET.walked = true; planGot('pro');
   KB = null; kbShow = 0; kbAdd('abc'); kbLay = 0;
   var lay = kbEdit().lay[0], i, j, r;
   lay.rows = [];
@@ -4216,7 +4216,7 @@ await pg2.waitForSelector('#splash', { state: 'detached', timeout: 20000 });
 const kbPrep = await pg2.evaluate(({ s }) => {
   localStorage.clear();
   eval('(' + s + ')()');
-  SET.walked = true; SET.plan = 'pro'; setKeep();
+  SET.walked = true; planGot('pro'); setKeep();
   langRowGot(langId); LANGS[langId].uid = SESS.uid; langStore(); netSave();
   KB = { kbs: [], at: 0 };
   kbAdd('qwerty'); kbAdd('flick');

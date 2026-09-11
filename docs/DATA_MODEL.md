@@ -759,9 +759,10 @@ nothing about what exists, what is saved, or what comes back.
 
 **And the plan is the ACCOUNT's, not a slice and not one of the settings**
 「課金とアカウントとキーボードはアカウントに結びつく」 OWNER 2026-09-01. It follows the
-person to whatever phone they sign in on. `SET.plan` is where the value sits
-today and that is the code, not the model — `docs/STATE.md` § 3 item 4 has the
-gap. See `docs/PAID_FEATURES.md`.
+person to whatever phone they sign in on. **Nothing on the handset holds it**
+(2026-09-11): `PLAN` in `www/core.js` is `verify-plan`'s answer, in memory, and
+`plan()` reads it. 「まだ訊けていない」 is a third state and is never `free`.
+See `docs/PAID_FEATURES.md`.
 
 **And when the plan runs to is NOT stored, deliberately.** 2026-09-03: the
 plans screen draws no buy button for a rung already paid for, so the place it
@@ -775,9 +776,8 @@ screen is opened.
 Two reasons, and either one is enough. **It could not answer 「which account
 is this」**, which is the question at the head of `CLAUDE.md` that a thing has
 to answer before it is written down — an expiry belongs to the Apple ID that
-paid, and `localStorage` is the account's. `SET.plan` already cannot answer it
-and that is a known fault (`docs/STATE.md`); a second one beside it is a second
-thing to unpick. **And a date that outlives the plan it was answered for is
+paid, and `localStorage` is the account's. The plan itself was that fault and
+it is fixed (2026-09-11): there is no word for it on this handset at all. **And a date that outlives the plan it was answered for is
 the one thing this line must never do**: it is held WITH that plan, so a plan
 that moves takes the date with it rather than leaving a date beside a plan it
 was never about. 「not known」 and 「there is no end」 are different states and

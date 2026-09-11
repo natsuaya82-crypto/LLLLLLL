@@ -79,7 +79,7 @@ const R = await pg.evaluate(() => {
      同期で答えます: 押した直後に読む主張が下にあるので。 */
   let srvSaw = [], srvDown = false;
   const start = () => {
-    window.__seed(); SET.walked = true; SET.plan = 'pro';
+    window.__seed(); SET.walked = true; planGot('pro');
     SESS = { at: 'a token', rt: 'a refresh token', uid: 'me' };
     DRAFTS.length = 0;
     srvSaw = []; srvDown = false;

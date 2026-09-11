@@ -1531,7 +1531,7 @@ say(only.before === false && only.hide === true && only.pub.length > 0 &&
 const kbGrow = await pg.evaluate(async ({ s, srv }) => {
   localStorage.clear();
   eval('(' + s + ')()');
-  SET.walked = true; SET.plan = 'pro'; setKeep();
+  SET.walked = true; planGot('pro'); setKeep();
   eval(srv);
   SESS = { at:'t', rt:'r', uid:'kb1', anon:false };
   langRowGot(langId); langOwnGot(langId, SESS.uid); langStore(); netSave();
@@ -1746,7 +1746,7 @@ const oneA = await pg.evaluate(({ u }) => ({
    要るのはセッションと偽の線だけで、fixture の言語はこの節が見ているものを
    上書きします。 */
 const oneC = await pg.evaluate(async ({ srv, u }) => {
-  SET.walked = true; SET.plan = 'free';
+  SET.walked = true; planGot('free');
   eval(srv);
   function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
   var S = window.__SRV;

@@ -259,13 +259,13 @@ const r = await pg.evaluate(({ s }) => {
      One place says whether a name wears it (postBadge), and your own card
      started asking it through whoOf() -- so whoOf() has to say the row is
      yours or the mark quietly leaves the one screen it worked on. */
-  const wasPlan = SET.plan;
-  SET.plan = 'pro';
+  const wasPlan = plan();
+  planGot('pro');
   NAV = [{ r:'profile', a:'' }];
   out.proMark = meCard().indexOf('bdgw') >= 0;
-  SET.plan = 'free';
+  planGot('free');
   out.freeMark = meCard().indexOf('bdgw') >= 0;
-  SET.plan = wasPlan;
+  planGot(wasPlan);
 
   /* ---- 5: the two counts on a card -------------------------------------
      THERE ARE NOT THREE STATES ANY MORE. There were: answered, not answered

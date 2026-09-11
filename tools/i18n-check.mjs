@@ -480,7 +480,7 @@ const R = await pg.evaluate(() => {
 
     /* every screen, under every plan and every reading mode, empty and full */
     ['free','pro'].forEach(p => {
-      SET.plan = p;
+      planGot(p);
       ['ipa','kana','both'].forEach(rm => {
         SET.read = rm;
         [false, true].forEach(empty => {
@@ -499,7 +499,7 @@ const R = await pg.evaluate(() => {
         });
       });
     });
-    SET.plan = 'free'; SET.read = 'both';
+    planGot('free'); SET.read = 'both';
 
     /* The search tab has three faces and only one of them is what a plain
        render gives you: the rest, a list of results, and what one pressed
@@ -694,7 +694,7 @@ const R = await pg.evaluate(() => {
   ob.step = 0; ob.mode = 'draw'; ob.pick = ''; OBM.mode = 'in'; SET.obback = null;
   SET.walked = true;
   ['free','pro'].forEach(p => {
-    SET.plan = p;
+    planGot(p);
     [false, true].forEach(empty => {
       const keep = WORDS, keepL = LINES;
       if (empty){ WORDS = []; LINES = []; }
