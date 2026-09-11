@@ -1632,12 +1632,28 @@ function tagHTML(s){
 
    snsGo() is what a person pressing the search does, and this is a person
    searching. */
+/* ONE PRESS IS ONE QUESTION, and this asked TWO. `goTab('explore')` draws,
+   and vExplore() asks whenever there is a word with no answer under it -- so
+   by the time `snsGo()` ran, the question was already out. `snsGo()` then
+   render()ed a second time, `snsHits` was still null because the first answer
+   had not landed, and the same two requests went out again.
+
+   Nothing threw and nothing looked wrong: two answers to one question are the
+   same answer, and the second landed on a screen that already had it. What it
+   costs is the server, doubled by however many people are searching, and it
+   is visible to nobody. Measured 2026-09-11: one press of `#さくら` put out
+   two profile_seen and two post_seen.
+
+   snsGo()'s own comment says it -- *「One place asks and it is vExplore()」* --
+   and this was the road running beside it. So the render is goTab()'s alone
+   and what is left here is the two things a press of a tag actually is: the
+   word, and the history 「タップしたらタグの検索になる」. */
 function snsTagGo(q){
   snsQ=String(q||'');
   snsHits=null;
   snsFil=null;
+  snsRecentAdd(snsQ);
   goTab('explore');
-  snsGo();
 }
 /* Which day this sentence is FOR, drawn. 「日付ないし」
 

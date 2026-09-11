@@ -739,7 +739,11 @@ const drawn = await pg.evaluate(() => {
   e.innerHTML = postRow({ id:'t1', at:Date.now(), who:'Iri', hd:'iri',
                           ln:'qel', mn:'あついね #今日のお題 でした',
                           ui:'ja', mine:false });
-  b = e.querySelectorAll('button.ptag');
+  /* **本文の中だけ**数えます。2026-09-11 から投稿の頭の @ も `.ptag` を着て
+     いる ── その人への道になったので（www/post.js § postRow、OWNER 実機）。
+     頭の @ は「アプリが足した行」でも「本文の中のタグ」でもないので、ここの
+     二つの主張のどちらの数にも入りません。 */
+  b = e.querySelectorAll('.pline .ptag, .pmn .ptag');
   out.n = b.length;
   out.text = b.length ? b[0].textContent : '';
   out.does = b.length ? b[0].getAttribute('data-do') : '';
@@ -749,7 +753,7 @@ const drawn = await pg.evaluate(() => {
   e.innerHTML = postRow({ id:'t2', at:Date.now(), who:'Aya', hd:'aya',
                           ln:'mos', mn:'nothing here', ui:'en', pr:7,
                           mine:true });
-  out.none = e.querySelectorAll('button.ptag').length;
+  out.none = e.querySelectorAll('.pline .ptag, .pmn .ptag').length;
   return out;
 });
 /* 見える字は読む人の言語、押す先は綴り ── その二つが別だというのが
@@ -880,9 +884,11 @@ const dayBox = await pg.evaluate(() => {
   PULL_GOT.recent = 1;
   SET.recent = []; snsQ = ''; snsHits = null; snsFil = null;
   SET.ui = 'en';
-  /* 押す。snsTagGo() は箱に入れて explore へ行き、snsGo() が履歴に入れます。 */
+  /* 押す。snsTagGo() が箱に入れ、履歴に入れ、explore へ行きます ── 一本。
+     2026-09-11 まではここで snsGo() も呼んでいて、履歴に入れるのはそちら
+     でした。goTab() の描画と snsGo() の描画で、一回の押しが二回の問いに
+     なっていた（下の「一回の押しは一回の問い」）。 */
   snsTagGo(DAY_TAG);
-  snsGo();
   out.enBox = box();
   out.enRow = row();
   out.enSaved = (SET.recent || []).slice(0);
@@ -903,6 +909,41 @@ say(dayBox.enRow === dayWord,
     '履歴の行に見える字は英語 (' + dayBox.enRow + ')');
 say(dayBox.jaBox === '#今日のお題' && dayBox.jaRow === '#今日のお題',
     '日本語に戻すと箱も行も綴り (' + dayBox.jaBox + ' / ' + dayBox.jaRow + ')');
+
+/* ---- タグを一度押すのは、サーバーへ一度訊くこと ------------------------
+   「#〇〇 を押しても、そのタグの付いた投稿の一覧に飛ばない」OWNER
+   2026-09-11 を測っていて出てきたものです。飛びます ── ただし **一回の押し
+   で二度訊いて**いました。`snsTagGo()` が `goTab('explore')` と `snsGo()` を
+   両方呼び、goTab が描いた時点で vExplore() が訊き、その答が着く前に snsGo()
+   の render() がもう一度訊く。
+
+   何も投げず、二つの答は同じなので画面は正しく見えます。見えるのは検索して
+   いる人数だけ倍になるサーバーの負荷で、**誰にも見えません**。だから訊くのは
+   画面ではなく、出ていった要求の数です。
+
+   snsFind() を数えるのではなく **path を数えます** ── 一回の問いは人と投稿の
+   二本で、それは正しい。二回の問いは四本になります。 */
+const tagOnce = await pg.evaluate(() => new Promise(function(done){
+  PULL_GOT.recent = 1;
+  SET.recent = []; snsQ = ''; snsHits = null; snsFil = null;
+  window.__ASK = [];
+  snsTagGo('#今日のお題');
+  /* 答が着くまで待つ ── 二本目の問いは一本目の答より先には出ないので、
+     着地を待たずに数えると二度訊く形でも緑になります。 */
+  setTimeout(function(){
+    done({ route: here().r, box: snsQ,
+           who: window.__ASK.filter(function(s){
+             return s.indexOf('/rest/v1/profile_seen') === 0; }).length,
+           posts: window.__ASK.filter(function(s){
+             return s.indexOf('/rest/v1/post_seen') === 0; }).length });
+  }, 200);
+}));
+say(tagOnce.route === 'explore' && tagOnce.box === '#今日のお題',
+    'タグを押すと、その語を箱に入れて explore に立つ (' +
+    tagOnce.route + ' / ' + tagOnce.box + ')');
+say(tagOnce.who === 1 && tagOnce.posts === 1,
+    '一回の押しは一回の問い ── 人に一本、投稿に一本 (人 ' + tagOnce.who +
+    ' 本、投稿 ' + tagOnce.posts + ' 本)');
 
 /* ---- 絞り込みに #今日のお題 の行が一つ ---------------------------------
    「絞り込み（おすすめ／フォロー中）に「#今日のお題」を足す」 OWNER
