@@ -120,7 +120,10 @@ function lsWipeAcct(uid){
   if(String(SET.planUid||'')===me){
     keys=setAcctKeys(null);
     for(i=0;i<keys.length;i++) delete SET[keys[i]];
-    /* free is a value and not an absence -- the same two setFor() names. */
+    /* AND THE PLAN, WHICH `setAcctKeys()` DOES NOT ANSWER FOR. It is not one
+       of the settings -- SET_PLAN below says why -- so the two words are
+       here, and free is a value rather than an absence. Without this line a
+       deleted account's rung would still be on the screen. */
     SET.plan='free'; SET.planWas='free';
     delete SET.planUid;
     setKeep();
@@ -1775,26 +1778,33 @@ function planKeep(id){
    session this phone was already holding, and netTook(), which is one
    arriving. meFor() and langForAcct() are in netTook() for the same reason.
 
-   Three answers, and the middle one is the one to read twice.
+   TWO ANSWERS, AND THERE WERE THREE UNTIL 2026-09-11.
+   「1アカウントに1課金ですけど。他のアカウントについてくるわけねえだろ」
+   OWNER 2026-09-11 -- and that is the whole specification, with no exception
+   in it.
 
    THE SAME PERSON -- nothing to do. This is every ordinary launch and every
    token refresh.
 
-   NOBODY WRITTEN DOWN YET -- record the name and MOVE NOTHING. An empty
-   SET.planUid is a phone from before the Keychain held an owner, and what
-   that plan is today is what this app has always said it is: the plan of
-   whoever is on this handset. Writing that answer down changes nobody's plan
-   and takes nothing from anybody; it only means tomorrow's question has an
-   answer. **What to do with an unstamped PAID phone is not settled and is
-   not decided here** -- docs/scope/claude-planacct.md lays out the two
-   directions and what each costs. This is the direction that changes nothing,
-   which is the one a session may take on its own. CLAUDE.md § Deciding.
+   ANYBODY ELSE -- start from free and let the account answer. storeSync()
+   sends this device's receipts a moment later and the server answers with
+   whatever THIS account holds. Nothing is taken away from the person who DID
+   buy it: the Keychain is not written here, so their plan and their name are
+   still in it, and the launch they come back on reads them out again; mid
+   session, with no relaunch to read the Keychain, the server is what answers
+   for them, which is the same road and the only record there is.
 
-   SOMEBODY ELSE BOUGHT IT -- start from free and let the account answer.
-   storeSync() sends this device's receipts a moment later and the server
-   answers with whatever THIS account holds. Nothing is taken away from the person who DID buy it:
-   the Keychain is not written here, so their plan and their name are still in
-   it, and the launch they come back on reads them out again.
+   THE THIRD WAS 「NOBODY WRITTEN DOWN YET -- record the name and MOVE
+   NOTHING」, and it was an exception for a phone with no owner on its plan.
+   It read an empty `SET.planUid` as 「the plan of whoever is holding this
+   handset」, which is the sentence the owner has just refused: a plan nobody
+   can name a buyer for is not that person's purchase. Measured before it was
+   deleted -- a phone with no stamp and `pro` on it handed `pro` to the next
+   account to sign in, with `planWas` moving too, so capLapse() said nothing
+   and the screen simply had somebody else's subscription on it.
+
+   An empty stamp is now the ordinary mismatch and takes the ordinary road:
+   free, and the server is asked.
 
    SET.planWas MOVES WITH IT, and that is load-bearing rather than tidy.
    capLapse() runs at the foot of www/boot.js, synchronously, and compares the
@@ -1862,7 +1872,9 @@ function planKeep(id){
    the RECORD. */
 var SET_PREFS=['theme','ui','myfont','showScript','kbrom'];
 /* WHAT IS LEFT IS THIS HANDSET'S SETUP, AND THERE IS VERY LITTLE OF IT.
-   `planUid` says which account's settings are live here; `wldMoved` is a
+   `planUid` says which account's things are live here -- the settings that
+   setFor() parks and hands back, and the plan copy beside them, which is the
+   one question a handset can be asked and an account cannot; `wldMoved` is a
    migration mark; `vvkb` is a MEASUREMENT of this screen and is meaningless
    on another phone. `done` and `obback` are the onboarding's, and they are
    here under protest -- 「セッションが無い」 cannot tell a phone out of the box
@@ -1887,6 +1899,38 @@ var SET_PREFS=['theme','ui','myfont','showScript','kbrom'];
    moving them is a different question from this one. docs/BACKLOG.md. */
 var SET_PHONE=['planUid','planV','walked','obback','vvkb','wldMoved',
                'order','read','voice','script'];
+/* AND THE PLAN IS NEITHER OF THE TWO, WHICH IS WHY IT IS NAMED HERE.
+   「1アカウントに1課金ですけど。他のアカウントについてくるわけねえだろ」
+   OWNER 2026-09-11.
+
+   `SET.plan` is not how this handset is set up, so it is not in the list
+   above; and it is not one of the person's belongings that the settings park
+   and hand back, though it sat in that bag until 2026-09-11. It is the COPY
+   OF THE SERVER'S LAST ANSWER about this account -- supabase/functions/
+   verify-plan decides it, `planTook()` writes it down, and on a phone the
+   Keychain holds it (ios/App/App/LinguaPlan.swift). A copy has one road home
+   and the parked settings file was a second one.
+
+   That second road decided. `planFor()` below starts a mismatched session
+   from `free` and asks the server; `setFor()` ran a moment later and put the
+   plan back out of `lingua.set.<uid>` -- so the answer to 「what does this
+   person pay」 was whichever of the two ran last. On a phone it is worse than
+   a duplicate: `setOnDisk()` keeps the plan out of the settings file
+   precisely because that file is in the backup a PC makes, and the parked
+   copy was written from `SET` directly, past that line.
+
+   `planWas` goes with it and is not tidiness. It is what capLapse() compares
+   the plan against, so a `planWas` that comes back from a file while the plan
+   comes back from the Keychain is 「your subscription ended」 said to somebody
+   who never subscribed. The two move together or neither moves.
+
+   TWO NAMES AND NOT A LIST THAT GROWS. `SET_ACCT` was six names that had to
+   be added to whenever a setting was invented, and the seventh was forgotten
+   (see the note over SET_PHONE above). This is the plan's own two fields and
+   there is no third: a plan is a word and the word this phone last showed.
+   A field invented tomorrow is a setting, and settings travel by the road
+   above without anybody remembering. */
+var SET_PLAN=['plan','planWas'];
 /* The fields of `SET` that are a PERSON's, counted rather than named. Asked of
    a parked copy as well as of `SET` itself: a field this account has and this
    handset has not written yet is still theirs, and reading only the live keys
@@ -1895,10 +1939,10 @@ function setAcctKeys(park){
   var out=[], k;
   for(k in SET)
     if(Object.prototype.hasOwnProperty.call(SET,k) &&
-       SET_PHONE.indexOf(k)<0 && out.indexOf(k)<0) out.push(k);
+       SET_PHONE.indexOf(k)<0 && SET_PLAN.indexOf(k)<0 && out.indexOf(k)<0) out.push(k);
   for(k in (park||{}))
     if(Object.prototype.hasOwnProperty.call(park,k) &&
-       SET_PHONE.indexOf(k)<0 && out.indexOf(k)<0) out.push(k);
+       SET_PHONE.indexOf(k)<0 && SET_PLAN.indexOf(k)<0 && out.indexOf(k)<0) out.push(k);
   return out;
 }
 function setParkKey(uid){ return LS_S + '.' + String(uid||''); }
@@ -1925,9 +1969,12 @@ function setFor(uid){
       if(got && got[k]!==undefined) SET[k]=got[k];
       /* Absent and not undefined: a field this account has never written is a
          field it does not have, and setDefaults() answers for it everywhere
-         else. `plan` is named because free is a value and not an absence. */
-      else if(k==='plan') SET.plan='free';
-      else if(k==='planWas') SET.planWas='free';
+         else.
+
+         `plan` and `planWas` were named here and are gone with the rest of
+         the plan: SET_PLAN above takes them out of `keys`, so this function
+         no longer says the word 「plan」 anywhere. planFor() answers for them
+         and is the only thing that does. */
       else delete SET[k];
     }
   }
@@ -1936,8 +1983,19 @@ function setFor(uid){
   return !!was;
 }
 function planFor(uid){
-  if(!String(uid||'')) return false;
-  return setFor(uid);
+  var me=String(uid||'');
+  /* Nobody signing in is not a question about a plan. Signing OUT parks
+     nothing here either: the settings are parked by the next arrival
+     (setFor(), above) and the plan is not parked at all. */
+  if(!me) return false;
+  /* THE ONE COMPARISON, AND THERE IS NO SECOND BRANCH.
+     An empty `SET.planUid` is not a phone whose plan belongs to whoever is
+     holding it -- it is a phone where nobody can say who bought this, and
+     「nobody can say」 is not a purchase. 「1アカウントに1課金ですけど。」 */
+  if(String(SET.planUid||'')!==me){ SET.plan='free'; SET.planWas='free'; }
+  /* Before setFor() and not after: setFor() writes `SET.planUid=me` itself,
+     so read after it the two would always agree and this would never fire. */
+  return setFor(me);
 }
 /* The plans, cheapest first. The ORDER is what makes a ladder a ladder, and
    it is written down once: a level is met by the plan that names it and by
