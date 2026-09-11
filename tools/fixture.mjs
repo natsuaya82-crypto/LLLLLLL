@@ -2138,6 +2138,38 @@ export function halfDone(){
                                               kbAdd('flick'); kbLay = 0;
                                               const h = vKb(); KB = null; kbShow = 0;
                                               SET.plan = 'free'; return h; }],
+    /* A BOARD THE MOMENT IT IS MADE, wearing the letters.
+       「型を選んだ時点で、無料の QWERTY と同じく文字を載せる」 OWNER
+       2026-09-11. Both of the two the owner named, because QWERTY and ABC順
+       are names for WHICH LETTER GOES WHERE and the fault they were written
+       after is a letter missing -- which is a thing only a picture shows. The
+       flick above is the third and was already here.
+
+       Every other face of this chapter arrives at a board through an act that
+       then changes it -- a row selected, a key held, a column cut -- so none
+       of them is the board as it arrives, which is the one state this
+       decision is about. */
+    /* A KEY WITH NOTHING ON IT YET, which is the state that wears the dashed
+       square and the + inside it (`.kbe.non`, `.kbsx`). It used to be every
+       key of every board made from a pattern, so any face here reached it by
+       accident. A pattern arrives wearing the letters now (OWNER 2026-09-11),
+       so the state is real and narrower: the chart is the one pattern that
+       lays out cells the language has not drawn a letter for, and a slot
+       somebody has cleared is the other. press said so the day the letters
+       went on -- 「nothing wears .kbsx」 -- and the seed is the fix it asks
+       for rather than a baseline over the gap. */
+    ['a key with no letter on it yet', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
+                                               kbAdd('chart'); kbLay = 0; kbPick(0, 0);
+                                               const h = vForm(); KB = null; kbShow = 0;
+                                               SET.plan = 'free'; return h; }],
+    ['a QWERTY keyboard, just made', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
+                                             kbAdd('qwerty'); kbLay = 0;
+                                             const h = vKb(); KB = null; kbShow = 0;
+                                             SET.plan = 'free'; return h; }],
+    ['an ABC keyboard, just made', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
+                                           kbAdd('abc'); kbLay = 0;
+                                           const h = vKb(); KB = null; kbShow = 0;
+                                           SET.plan = 'free'; return h; }],
     /* THE SAVE IN THE CORNER, GOLD, on the keyboard being built. It is the
        one thing on this screen the change of 2026-09-05 moves and it is a
        COLOUR, so both states have to be photographed or the fault is in the
