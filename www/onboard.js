@@ -1986,6 +1986,17 @@ function obDrawTick(){
   if(b) b.disabled=!n;
 }
 function obDrawHTML(){
+  /* AND THE LANGUAGE IS MADE HERE, because this is where somebody starts
+     making one. It was minted on every LAUNCH, in www/core.js, whether or not
+     anybody had asked -- so a phone that skipped the walk carried an empty
+     nameless language to the door and put it up as the account's second
+     (docs/scope/r24-lang.md 道10). 「端末でやることねえ」 OWNER 2026-09-11.
+
+     Beside `GE` and for the same reason: both are what this screen needs to
+     exist, and both are made once. Nothing is overwritten -- a walk that
+     comes back to this step has a language already, and langFirst() is not
+     called again. */
+  if(!langId || !LANGS[langId]) langFirst();
   if(!GE) GE=newGE('');
   var st=GE.st[GE.si], pts=0, n=obStrokes();
   GE.st.forEach(function(x){ pts+=x.pts.length; });

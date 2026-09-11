@@ -568,8 +568,17 @@ want('y is j', AZ.y, 'j');
 
    The signed-in half is asked as well, because the account stamp is where
    the old road ended: with a session on the phone there is still nothing to
-   stamp, so the language that is minted is the ordinary unstamped first one
-   and no row anywhere carries a `mig` mark. */
+   stamp, and no row anywhere carries a `mig` mark.
+
+   AND THE PHONE MAKES NO LANGUAGE AT ALL NOW (2026-09-11). It used to mint
+   one on every launch -- www/core.js § langFirst, three lines below its own
+   declaration -- and this fixture's `lingua.set` carries `done:true`, so this
+   phone has walked and is standing at the DOOR. 「オンラインで 1 端末に 1
+   アカウント、そのアカウントに結びつけられる言語数が決まってるんだから端末で
+   やることねえ」 OWNER 2026-09-11: what this account has is the server's
+   answer, and there is nothing for a launch to decide. The flat keys were
+   already never read; what changes is that there is no empty language sitting
+   in front of them either. */
 const flatSeen = async () => pg.evaluate((old) => {
   const eight = Object.keys(old).filter((k) => k !== 'lingua.set');
   return {
@@ -608,8 +617,8 @@ await pg.evaluate((old) => {
 await pg.reload();
 await settle();
 const f1 = await flatSeen();
-want('a phone carrying the eight flat keys gets one language', f1.langs, 1);
-want('and it is EMPTY -- the flat keys were not read', f1.words, 0);
+want('a phone carrying the eight flat keys makes no language of its own', f1.langs, 0);
+want('and nothing is read out of them', f1.words, 0);
 want('it is not the old language by name', f1.name, '');
 /* The index holds no name AT ALL any more: what a language is called is
    `language.name` on the server (www/core.js § LNAME) and the index says

@@ -992,15 +992,32 @@ function langMine(id){ return langWhose(id)===LW_MINE; }
    back -- which is the one-way road of CLAUDE.md rule 22 asked at the door
    every save goes through. */
 function langLocked(){ return langWhose(langId)!==LW_MINE; }
-/* Nothing here at all: a first run. The person gets one empty language of
-   their own. */
+/* ---- ONE EMPTY LANGUAGE, MADE WHERE SOMEBODY STARTS MAKING ONE ----------
+   「オンラインで 1 端末に 1 アカウント、そのアカウントに結びつけられる言語数が
+   決まってるんだから端末でやることねえ」 OWNER 2026-09-11
+   (docs/FEATURE_RULES.md § 端末は何も決めない).
+
+   THIS RAN ON EVERY LAUNCH, from this file, three lines below where it is
+   declared: 「the index is empty, so mint one」. Nobody had asked for it. A
+   phone whose walk was skipped (obSkipAll) then signed in, and that empty
+   nameless language went up as the account's SECOND -- measured in
+   docs/scope/r24-lang.md 道10.
+
+   Whether this account has a language is the SERVER's answer: netLangsDown()
+   brings down what it has, and langForAcct() makes one where it has none --
+   which is already how the app behaves for anybody who reaches the door.
+   There is nothing left for a launch to decide.
+
+   TWO CALLERS REMAIN AND BOTH ARE SOMEBODY DOING SOMETHING.
+   obDrawHTML() (www/onboard.js) is the walk arriving at the screen where a
+   letter is drawn, which is the one place something is made before there is
+   an account 「オンボーディング→最後にログイン」; and wipeAll()
+   (www/settings.js) is an account being deleted, after which this phone is a
+   phone with nothing on it. */
 function langFirst(){
   langId=langMint();
   langStore();
 }
-try{
-  if(!langId || !LANGS[langId]) langFirst();
-}catch(e){ langFirst(); }
 
 /* Read the open language into the globals the screens use.
    Called once here, and again every time a different language is opened, so

@@ -187,6 +187,13 @@ async function boot(pre, drive) {
          www/onboard.js is what draws it; render() adds it last, after the
          app's own screen is on the page, because the hole is MEASURED. */
       dim: document.querySelectorAll('[data-dim="1"]').length,
+      /* AND HOW MANY LANGUAGES THIS PHONE HAS MADE FOR ITSELF. A launch used
+         to mint one whether or not anybody had asked (www/core.js §
+         langFirst); what an account has is the server's answer now, and the
+         one place a language is made before there is an account is the walk
+         arriving at the screen where a letter is drawn. So this is 1 on the
+         screen that draws and 0 on every other opening. */
+      langs: (typeof LANGS === 'object' && LANGS) ? Object.keys(LANGS).length : -1,
       text: (app ? app.innerText : '').replace(/\s+/g, ' ').trim().slice(0, 120)
     };
   });
@@ -213,6 +220,13 @@ const SESS = JSON.stringify({ at: 'not a jwt', rt: 'a refresh token',
   if (/sign\s*in/i.test(r.text)) no('a phone with nothing on it has "Sign in" on the screen: ' +
                                     JSON.stringify(r.text));
   if (!r.draw) no('a phone with nothing on it does not open on the drawing step');
+  /* AND THE LANGUAGE IS MADE HERE, BY ARRIVING -- not by the app starting.
+     「オンラインで 1 端末に 1 アカウント、そのアカウントに結びつけられる言語数
+     が決まってるんだから端末でやることねえ」 OWNER 2026-09-11. The walk is the
+     one place something is made before there is an account to make it for
+     （「オンボーディング→最後にログイン」）, and this screen is that place. */
+  if (r.langs !== 1) no('the drawing step has no language to draw into -- ' +
+                        r.langs + ' in the index');
 }
 
 /* ---- 2. finished, and signed out --------------------------------------- */
@@ -221,6 +235,15 @@ const SESS = JSON.stringify({ at: 'not a jwt', rt: 'a refresh token',
   say('signed out: appIs()=' + r.is + '  screen=' + JSON.stringify(r.text));
   if (r.is !== 'door') no('finished then signed out: appIs() said ' + r.is + ', wanted door');
   if (!r.door) no('finished then signed out: the door is not on the screen');
+  /* AND NOTHING IS MADE. A launch minted a language on every start, so a
+     phone standing at the door carried an empty nameless one -- and signing
+     in put it up as that account's SECOND (docs/scope/r24-lang.md 道10).
+     What this account has is what the server says it has.
+
+     赤を見た形（2026-09-11）: `langFirst()` の下の起動時の呼び出しを戻すと
+     「standing at the door, this phone made itself 1 language(s)」。 */
+  if (r.langs !== 0) no('standing at the door, this phone made itself ' +
+                        r.langs + ' language(s) -- nobody asked for one');
   /* 「ログアウトした時はログイン画面から動かさない」 -- the door, and the
      onboarding's own screens are not behind it. */
   if (r.draw) no('finished then signed out: the drawing step is on the screen, not the door');
