@@ -1423,10 +1423,7 @@ WALKS['8'] = async (br, srv) => {
   await a.tapArg('goTab', ['explore']);
   await a.shot('se-explore');
   say('  explore buttons: ' + JSON.stringify((await a.buttons()).slice(0, 12)));
-  const q = await a.pg.evaluate(() => {
-    const e = document.querySelector('#app input');
-    return e ? '#' + (e.id || e.className) : '';
-  });
+  const q = '#sns-q';
   say('  search field: ' + q);
   if (q){
     await a.type(q, 'kano');
@@ -1456,6 +1453,11 @@ WALKS['8'] = async (br, srv) => {
   await a.shot('se-relaunch');
   say('  saved searches after relaunch: ' +
       JSON.stringify((await a.buttons()).filter(b => /snsPick/.test(b))));
+  say('  saved_search requests the app made: ' + JSON.stringify(
+    srv.db.log.filter(l => l.p.indexOf('saved_search') >= 0).map(l => l.m)));
+  say('  saved_search rows the server holds: ' + JSON.stringify(srv.db.saved_search));
+  say('  what netSearchSaved answers now: ' + await a.pg.evaluate(() =>
+    new Promise(r => netSearchSaved(d => r(JSON.stringify(d)), () => r('(bad)')))));
   return a;
 };
 
@@ -1470,6 +1472,9 @@ WALKS['9'] = async (br, srv) => {
   await a.shot('st-settings');
   say('  settings rows: ' + JSON.stringify(await a.buttons()));
 
+  await a.tapArg('go', ['set', 'look']);
+  await a.shot('st-look');
+  say('  look room: ' + JSON.stringify(await a.buttons()));
   await a.tapArg('setTheme', ['dark']);
   await a.shot('st-dark');
   say('  theme now: ' + await a.pg.evaluate(() => SET.theme) +
@@ -1477,7 +1482,11 @@ WALKS['9'] = async (br, srv) => {
         document.documentElement.getAttribute('data-theme') || '(none)'));
   await a.tapArg('setTheme', ['light']);
   await a.shot('st-light');
+  await a.tapDo('back');
 
+  await a.tapArg('go', ['set', 'ui']);
+  await a.shot('st-ui-room');
+  say('  ui room: ' + JSON.stringify((await a.buttons()).slice(0, 12)));
   await a.tapArg('setUi', ['en']);
   await a.quiet(300);
   await a.shot('st-english');
@@ -1486,6 +1495,7 @@ WALKS['9'] = async (br, srv) => {
   await a.tapArg('setUi', ['ja']);
   await a.quiet(300);
   await a.shot('st-japanese');
+  await a.tapDo('back');
 
   await a.tapArg('go', ['plans']);
   await a.shot('st-plans');
@@ -1498,7 +1508,8 @@ WALKS['9'] = async (br, srv) => {
   await a.tapArg('go', ['settings']);
   await a.shot('st-relaunch');
   say('  after relaunch: theme=' + await a.pg.evaluate(() => SET.theme) +
-      ' ui=' + await a.pg.evaluate(() => SET.ui));
+      ' ui=' + JSON.stringify(await a.pg.evaluate(() => SET.ui)) +
+      '  rows=' + JSON.stringify((await a.buttons()).filter(b => /set","(look|ui)/.test(b))));
   return a;
 };
 

@@ -1,0 +1,24 @@
+# 05 A st-ui-room
+route: {"r":"set","a":"ui"}
+
+表示言語
+English
+AY-leen
+Español
+AE-lin
+Português
+AE-lin
+Français
+AÉ-linne
+Deutsch
+AJEH-lien
+Italiano
+AE-lin
+Русский
+А́элин
+中文
+艾林
+한국어
+아엘린
+日本語
+アエリン
