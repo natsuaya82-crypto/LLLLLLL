@@ -1,0 +1,146 @@
+# claude/r31-server ── 端末の物で決める行を消す（`docs/reports/mixed-2026-09-11.md` の残り全部）
+
+枝：`claude/r31-server`（`integ-0905` の `772a0eb6` から）。
+
+## 仕様（OWNER 2026-09-11、`docs/FEATURE_RULES.md` § 端末は何も決めない）
+
+オンラインのみ。一端末に一アカウント（`lingua.sess`）。言語はアカウントの物で、
+何本持てるかは段が決める。**誰の物か・あるか無いか・名前・公開か・段 ── 答えは
+全部サーバー。**端末にあるのは「前に読み込んだ写し（読むだけ、電波なしで見る
+ため）」だけ。**端末の物で分岐して、作る・消す・送る・見せる／見せない・数える を
+決める行は全部消す。**電波なしは「接続できません」であって「まだ何もない」では
+ない。
+
+`claude/r24-lang` が済ませた分（扉は送ってから訊く、`langForAcct()` は
+`langOwnOf()` だけ、`PROF_MINE` 一本、`langNew()` がその場で送る）は繰り返さない。
+**この枝はその残り全部。**
+
+## 消す物 → file:line（`772a0eb6` の `www/`）
+
+番号は `docs/reports/mixed-2026-09-11.md` の一覧の番号。
+
+### 一。誰の言語か（まとまり 1／#1〜#22 の残り）
+
+| # | file:line | 今 | この枝で |
+|---|---|---|---|
+| 1 | `www/core.js:931` | `langMine()` の落ち先が `L.mine!==false`（索引、ディスク） | 消す。`langOwnOf(id)` の三状態だけ |
+| 4 | `www/core.js:1513-1548` | `langOwned()` ── 同じ問いの二本目、反対向きに落ちる | 書き直し。`langMine` と一本に |
+| 5 | `www/core.js:953` | `langLocked()` ＝ `!langMine(langId)` | 「書いてよいか」＝自分の物。未回答は書かせない |
+| 6 | `www/core.js:1550` | `langAcct()` ＝ `langMine && langOwned` | 二本が一本になれば要らない |
+| 20 | `www/home.js:2392,2417` | 行を押せるか | 三状態の一箇所を呼ぶ |
+| 21 | `www/home.js:2442` | 取った言語を返すか ── `L.mine!==false` | `langTookHas(id)` |
+| 19 | `www/home.js:2573,2583` | 一覧の左右と「隠した件数」 | 自分の／取った／未回答 の三つ（hunt #9） |
+| 22 | `www/home.js:1633` | DL の上限に当てるか ── `LANGS[id]` があるか | `langTookHas(id)` |
+| — | `www/net.js:1395,2164` | `L.mine===false` / `L.mine!==false` | 三状態の一箇所 |
+
+`LANGS[id].uid` は**既に誰も読んでいない**（2026-09-08 に `LOWN` へ移った）。
+`lingua.<id>.owner.got` は**残す** ── `langOwnOf()` がディスクに持つ写しそのもので、
+電波なしで自分の言語を開くための唯一の答え（規則 22「前に読み込んだ分は出て
+欲しい」）。消えるのは索引の `mine` 欄。
+
+読み手 12 file（`glyph` `grammar` `home` `keyboard` `letters` `notes` `phases`
+`sound` `words` `wordsheet` `settings` `net`）は**その一箇所を呼ぶだけ**にする。
+
+### 二。写しで `language` 行を作っている（#25 #26）
+
+| # | file:line | 今 |
+|---|---|---|
+| 25 | `www/net.js:1319` | insert の `name` を `langNameOf()`（`.got` の写し）から取る |
+| 26 | `www/net.js:1340` | 同じ insert の `wsys` を `langWsysOf()`（`.got` の写し）から取る |
+
+行を作る時に**今の画面の値**を送るのは正しい。**写しから作らない。**
+
+### 三。段（まとまり 3／#32〜#46）
+
+`SET.plan` `SET.planWas` `SET.planV` `SET.planUid` を**ディスクから消す**。
+段は起動とサインインで `verify-plan` を訊き、答えを**メモリ**に持つ（`PLAN` 一つ）。
+
+| # | file:line | 今 |
+|---|---|---|
+| 32 | `www/core.js:1719` | `plan()` ＝ `SET.plan` |
+| 33 | `www/core.js:2047` | `has(level)` |
+| 34 | `www/core.js:2160` | `can(what)` ── 41 箇所が呼ぶ |
+| 39 | `www/wsys.js:106` | `if(!can('wsys')) return 'alpha'` ── **サーバーの `language.wsys` を段の写しが上書き** |
+| 40 | `www/keyboard.js:1221` | `kbOf` ── どのキーボードで打つか |
+| 41 | `www/letters.js:656,661` | 無料なら 38 字を書き込み、それが上がる。`boot.js` で `storeSync()` より先に同期で走る |
+| 42 | `www/core.js:1005,1033,1045,1126` | Keychain（`window.__plan` / `__planuid` / `__planok`）── **読まない（消す）** |
+| 43 | `www/core.js:1995-2023` | `planFor()` ── 持ち主が違えば `free` へ落とす |
+| 44 | `www/core.js:1108-1111` | `SET.planV` の 2026-08-23 改名 |
+| 45 | `www/core.js:2297-2306` | 「プランが終了しました」── `SET.planWas` |
+| 46 | `www/settings.js:711-713` | アカウント削除で段を戻す |
+
+訊けていない間は **「接続できません」で待つ**（#41 は訊けるまで走らない）。
+**#45 は描けない** ── `supabase/schema.sql` の `plan` 表は `(id, plan, at)` で、
+**前の段の列が無い**。§ オーナーへ に書いて頁は出さない。
+「失敗した check は少ないボタン、少ない語ではない」（`plan-check`）は守る。
+
+### 四。歩きの印（まとまり 4）
+
+| # | file:line | 今 |
+|---|---|---|
+| 52 | `www/onboard.js:1960` | `SET.done` を読む ── `walkedMigrate()` が起動で消すので常に `undefined`。**死んだ枝** |
+| 53 | `www/onboard.js:2088` | 同上 |
+| 51 | `www/onboard.js:933` | サインイン後の行き先を `SET.walked` で決める ── `meRowHas()`（サーバーの答え）へ |
+
+`SET.walked` は**残す**（OWNER 2026-09-09 選択 A）。
+
+### 五。自分は誰か（まとまり 5／#58〜#62）
+
+| # | file:line | 今 |
+|---|---|---|
+| 58 | `www/me.js:289` | `meName()` ＝ `ME.name \|\| langName` ── **言語の名前を自分の名前として返す**（規則 8 の線を越えている） |
+| 59 | `www/me.js:290-292` | `meHandle()` ── @ が無ければ #58 から**作り出す** |
+| 60 | `www/me.js:1768` / `www/sns.js:2961` | 行が自分か |
+| 61 | `www/home.js:481-482` | プロフィール頁が自分か |
+| 62 | `www/me.js:264-265` | 自分のフォロー一覧の鍵 |
+
+`profile` 行が無ければ**空**、で一箇所。
+
+### 六。ブロック（まとまり 6）
+
+`ME.bl`（`www/me.js:1109-1130`、押した時にしか書かれず**サーバーから埋め直す道が
+無い**）を消し、`NET_BL`（`www/net.js:3122`、`block` 表）一本に。
+handle ↔ uuid の対応は profile の答えから。読み手：`www/post.js:118,3784`、
+`www/sns.js:2651,3042`、`www/me.js:1431`。
+
+### 七。写しが上がる道（まとまり 7・8・9）
+
+**測ってから**（電波を切って起動 → 一語足して保存 → 電波を戻す → `slice` の本文）。
+`www/core.js:560-604`（`slMine` / `slRd`）、`www/net.js:2434-2436`、`www/core.js:970-984`
+（`langRead()` が `slRd()` で読む＝写しがグローバルへ）。塞ぐのではなく、
+`slMine()` / `slGot()` の一方通行を**グローバルの階でも**成り立たせる形に書き直す。
+長引けば測った結果をここに書いて止め、リーダーへ。
+
+### 八。`langFirst()`
+
+`www/core.js:955-960` ── 起動ごとに索引が空なら言語を一本作る。**消す。**
+歩きが始まる時（字を描く画面に入る時）に一本作る一箇所へ。歩きを飛ばした端末は
+サーバーの一覧が答える（無ければ `langForAcct()` が作る、既にそう）。
+
+### 九。r23 の引き継ぎ
+
+`www/shell.js:2237` `posLabel('n')` ── 名詞の章の「格」の中の行が「名詞」と出る。
+「主語・目的語の印」（i18n 10 本）。
+
+## 触る file
+
+`www/` 全部（`www/index.html` も）、`tools/`、`docs/`。
+
+**触らない**：`claude/r27-off` が持っている `www/sns.js` の電波なし表示、
+`www/wordsheet.js` の追加、`www/core.js` の `lsWipeAcct`。
+
+## 規則
+
+ES5。**書き直し、後付け禁止**（条件を足して塞がない ── 決める行を消す）。
+データは消さない（DELETE REVIEW は端末の鍵・欄について。サーバーの行は触らない）。
+`store-check` の表を合わせる。claim は `acct-check` / `again-check` / `plan-check` /
+`store-check` に、**赤 → 緑**。CLAUDE.md 規則 22・「What the free plan is」・
+`docs/DATA_MODEL.md`・`docs/PAID_FEATURES.md`・`docs/ARCHITECTURE.md` の嘘になる文を
+同じ commit で書き換える。
+
+commit は一つずつ、DELETE REVIEW は CHANGELOG に先に。push は毎 commit。
+check は触った物だけ、最後に `npm run press` 一回。**ゲートは回さない。**
+
+## オーナーへ
+
+（測ってから書く）
