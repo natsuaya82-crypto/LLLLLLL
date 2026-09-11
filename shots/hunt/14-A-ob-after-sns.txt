@@ -1,0 +1,22 @@
+# 14 A ob-after-sns
+route: {"r":"build"}
+
+English
+Español
+Português
+Français
+Deutsch
+Italiano
+Русский
+中文
+한국어
+日本語
+君の言語の名前は？
+
+　
+
+次へ
+あとで決める
+あとで変更できます
+--- 打ち込み欄 ---
+  [ob-name] = ""  (ph: 例：Shango)

@@ -1,0 +1,19 @@
+# 21 A ob-after-pw
+route: {"r":"profile"}
+
+English
+Español
+Português
+Français
+Deutsch
+Italiano
+Русский
+中文
+한국어
+日本語
+ユーザー名とID
+@
+次へ
+--- 打ち込み欄 ---
+  [ob-nm] = ""  (ph: ユーザー名)
+  [ob-hd] = ""  (ph: id)
