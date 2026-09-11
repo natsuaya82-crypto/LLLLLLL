@@ -96,8 +96,11 @@ are different states and must not share a branch」。
 `shots/half-a-timeline-that-has-not-been-answered-yet-ja.png` ── 同じ画面の
 二つの顔で、**今まではこの二つが一枚でした**。
 
-**`tools/fixture.mjs` に面が二つ増えます**（上の二つ）。`press` の数と
-`act-check` の歩数がそのぶん動きます。
+**`tools/fixture.mjs` に面が二つ増えます**（上の二つ）。`press` の数は
+**15,987 → 16,005（＋18）** ── 面二つ分のタイムライン一枚ずつで、それ以外は
+動いていません。枝の出どころ（`29076d64`）でも流して突き合わせました。
+`saveName` が一度も押されないのは**この枝より前から**で、同じ流しで確かめて
+あります（`www/home.js`、他の枝の持ち物）。
 
 ### 2026-09-11 アカウントを消すと、その言語の鍵は一つも残らない ── DELETE REVIEW
 
