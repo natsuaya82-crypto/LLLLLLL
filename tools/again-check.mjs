@@ -224,6 +224,10 @@ const up = await pg.evaluate(async ({ s, srv }) => {
   /* and a language that is only READ, which must never go up */
   langSeenAdd('theirs-1', 'Shango', 'somebody-else');
   slWr(langKeyOf('theirs-1', 'letters'), '[{"id":"x"}]');
+  /* 「読んでいるだけ」はサーバーの二つで決まります（2026-09-11）── 書いた人が
+     `language.owner`、このアカウントが取ったことが `language_take` の行。
+     後者は `netTakes()` が降ろすもので、この検査は網を張らないので押します。 */
+  langTookGot(['theirs-1']);
 
   await new Promise(function(f){ netLangSync(function(){ f(); }); });
   await wait(120);
@@ -241,7 +245,7 @@ const up = await pg.evaluate(async ({ s, srv }) => {
     upFirst: S.slice.filter(function(r){ return r.language === first; }).length,
     upSecond: S.slice.filter(function(r){ return r.language === second; }).length,
     theirsSent: S.sent.filter(function(x){ return x.indexOf('theirs-1') >= 0; }).length,
-    theirsRow: !!LANGS['theirs-1'] && LANGS['theirs-1'].mine === false,
+    theirsRow: langWhose('theirs-1') === LW_READ,
     srv: JSON.stringify({ lang:S.lang, slice:S.slice })
   };
 }, { s: seed.toString(), srv: SERVER });
@@ -292,7 +296,7 @@ const came = await pg.evaluate(async ({ srv, saved }) => {
       v = slRd(langKeyOf(ids[i], SLICES[j])) || '';
       if (v.length > 2){ n++; b += v.length; }
     }
-    out.push({ id:ids[i], name:langNameOf(ids[i]), mine:LANGS[ids[i]].mine,
+    out.push({ id:ids[i], name:langNameOf(ids[i]), whose:langWhose(ids[i]),
                sid:String(ids[i]), slices:n, bytes:b });
   }
   return { before: before, after: ids.length, langs: out };
@@ -308,8 +312,9 @@ say(cameBy['Vaska'] >= 1 && cameBy['Toko'] >= 1,
     'and with what was in them, not just their names — asked of each language ' +
     'by name, over every slice: ' +
     JSON.stringify(came.langs.map(l => l.name + ' ' + l.slices + ' slices ' + l.bytes + 'B')));
-say(came.langs.every(l => l.mine === true),
-    'and both are the person’s own');
+say(came.langs.every(l => l.whose === 'mine'),
+    'and both are the person’s own: ' +
+    JSON.stringify(came.langs.map(l => l.name + ' ' + l.whose)));
 
 /* ---- 2b. AND ONE ROW PER LANGUAGE, NOT TWO ------------------------------
    「起動で同じ言語が切り替えに 2 行並ぶ。ならばないようにして」 OWNER 2026-09-09.

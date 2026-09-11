@@ -1603,8 +1603,8 @@ function wldGetRow(sec, lid){
    ------------------------------------------------------------------
    Everything before this had been built at least once: the switch that says a
    chapter may be taken, the mark that says so on the article, the 「読んでいる」
-   list waiting for a row. What had never been built is this -- so
-   `LANGS[id].mine` had never been false and the list was always empty.
+   list waiting for a row. What had never been built is this -- so no language
+   had ever carried somebody else's owner and the list was always empty.
    「ダウンロードボタン押しても言語追加されないけど？」 OWNER 2026-09-01.
    「いつまでもfalseだったとかやめてね。」
 
@@ -1630,7 +1630,13 @@ function wldGet(lid, r){
      A chapter of a language ALREADY taken does not meet the ceiling again:
      it is not another language, it is more of one that is already counted. */
   if(upStop(can('dl'))) return;
-  if(!LANGS[id] && dlStop()) return;
+  /* A language this account is ALREADY reading does not meet the ceiling
+     again: it is not another language, it is more of one already counted.
+     `LANGS[id]` -- 「is it in this phone's index」 -- said that, and the index
+     is the phone's: the last account's downloads are in it too, so their
+     languages let this one past the ceiling. langWhose() (www/core.js) is
+     the question with the server's answer in it. */
+  if(langWhose(id)!==LW_READ && dlStop()) return;
   /* Nothing to take is not a failure to report: the page is drawn from the
      same map, so a row can only be on screen when the answers are in. */
   if(!m) return;
@@ -2389,7 +2395,7 @@ function langRow(id){
      comment named the writers as the protection from the day it was written
      and only three of them were asking; opening this door is what finished
      that sentence. */
-  var row='<button class="lgrow'+(langMine(id)?'':' swrow')+(isOpen?' on':'')+'"' + DO('langOpen', [id]) +
+  var row='<button class="lgrow'+((langWhose(id)===LW_READ)?' swrow':'')+(isOpen?' on':'')+'"' + DO('langOpen', [id]) +
     (isOpen? ' aria-label="'+esc(t('langs.open'))+'"' : '') + '>'+
     '<span class="pav lgav">'+esc(mk)+'</span>'+
     '<span class="lgn">'+esc(langNameSaid(nm))+'</span>'+
@@ -2414,7 +2420,7 @@ function langRow(id){
 
      The 削除 is BESIDE the row and not on top of it, so the row is still the
      button it was and the press that opens a language is untouched. */
-  if(langMine(id)) return row;
+  if(langWhose(id)!==LW_READ) return row;
   return '<div class="swipe" data-lgs="'+esc(id)+'">'+row+
     '<span class="swdel"'+DO('langDrop', [id])+
     ' role="button" aria-label="'+esc(t('langs.drop'))+'">−</span></div>';
@@ -2433,13 +2439,14 @@ function langRow(id){
    every byte where it was and puts the pop up, whose ［再接続］ is this same
    press. */
 function langDrop(id){
-  var L=LANGS[id]||{}, sid=String(id||'');
+  var sid=String(id||'');
   /* A language of this account's own never came from a take and there is
      nothing in `language_take` to drop -- the same one of netTakeGone()'s
      four that is left alone. It was `if(!L.sid)` while a language had two
-     numbers; `mine` is the thing langSeenAdd() writes and the question this
-     was always asking. */
-  if(!sid || L.mine!==false) return;
+     numbers, and then `LANGS[id].mine`, a boolean this phone wrote; what says
+     a language is one this account is only READING is langWhose()
+     (www/core.js), off `language.owner` and `language_take`. */
+  if(!sid || langWhose(sid)!==LW_READ) return;
   netTakeDrop(sid, function(){},
     function(d, s, m){ netPop(d, s, m, function(){ langDrop(id); }); });
 }
@@ -2556,31 +2563,26 @@ function vLangs(){
   var ids=Object.keys(LANGS), mine=[], reading=[], other=0, i, id;
   for(i=0;i<ids.length;i++){
     id=ids[i];
-    /* NOT ASKED YET IS NOT DRAWN. A language that has been up
-       (www/core.js § LROW, which is what `sid` being there used to say) and
-       whose owner the server has not said is neither list's -- putting it in
-       one is this phone choosing, and both choices are wrong: 「mine」 shows
-       somebody else's language under your name, 「theirs」 hides your own.
-       The row is asked for at the open (www/sns.js § askLangs) and the count
-       at the foot says how many are not shown, which is what
-       docs/DATA_SAFETY.md § a shorter list is not a deletion asks for.
-       「揃ってから開く」 OWNER 2026-09-07, said about a list. */
-    if(langRowUp(id) && !langOwnKnown(id)){ other++; continue; }
-    /* MADE OR ONLY READ, asked of `language.owner` (www/core.js § LOWN)
-       rather than of a boolean this phone wrote. `mine` on the index still
-       says which the entry was made as and is what langSeenAdd() writes; what
-       decides the two lists is whose language it is. */
-    if(!langMine(id)){ reading.push(id); continue; }
-    /* WHOSE ACCOUNT, and not just whose phone.
-       「あと違うアカウントでログインしてんのに前のやつ出てくるんだけど？」
-       OWNER 2026-08-31. `LANGS` is the PHONE's -- it survives signing out --
-       so this list showed the last account's languages to whoever signed in
-       next, which is what that sentence was about.
+    /* THREE LISTS AND NOT TWO, and langWhose() (www/core.js) is the one
+       place that says which an entry is. This asked THREE questions in a
+       row -- 「has it been up and has nobody said whose」, 「is it mine」,
+       「is it this account's」 -- and the three did not agree, which is how a
+       language turned up on the reading side of somebody's own list.
 
-       They are NOT REMOVED and nothing is written: signing back in shows
-       them again, exactly as they were. langAcct() is the one place that
-       says whose a language is. */
-    if(langAcct(id)) mine.push(id); else other++;
+       LW_NONE is the last account's: the index is the PHONE's and survives
+       signing out 「あと違うアカウントでログインしてんのに前のやつ出てくる
+       んだけど？」 OWNER 2026-08-31. LW_WAIT is nobody having answered yet
+       -- putting it in either list is this phone choosing, and both choices
+       are wrong: 「mine」 shows somebody else's language under your name,
+       「theirs」 hides your own. 「揃ってから開く」 OWNER 2026-09-07.
+
+       Neither is REMOVED and nothing is written: signing back in, or the row
+       arriving, shows them again exactly as they were, and the count at the
+       foot says how many are not on the list -- docs/DATA_SAFETY.md § a
+       shorter list is not a deletion. */
+    if(langWhose(id)===LW_MINE){ mine.push(id); continue; }
+    if(langWhose(id)===LW_READ){ reading.push(id); continue; }
+    other++;
   }
   /* The ceiling, met on the way OUT. Both lists are cut the same way and by
      their own number: making and reading are two ceilings that never see each

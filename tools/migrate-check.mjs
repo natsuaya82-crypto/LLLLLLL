@@ -119,7 +119,7 @@ const REPORT = () => ({
   script: Object.keys(SCRIPT.g).join(','),
   theme: SET.theme, done: SET.walked, plan: SET.plan,
   langs: Object.keys(LANGS).length, id: langId,
-  mine: !!(LANGS[langId] && LANGS[langId].mine),
+  mine: langWhose(langId) === LW_MINE,
   indexName: LANGS[langId] && LANGS[langId].name,
   cur: localStorage.getItem('lingua.cur')
 });
@@ -246,6 +246,9 @@ await pg.evaluate(() => localStorage.clear());
 await pg.reload();
 const c = await pg.evaluate(REPORT);
 want('a fresh install gets one language', c.langs, 1);
+/* 誰の物かは `language.owner` で、索引の `mine` ではありません
+   （2026-09-11）。サインインしていない端末は「訊く相手がいない」ので、
+   作ったものはその場の人の物 ── 歩きの一場面そのものです。 */
 want('and it is theirs to write in', c.mine, true);
 want('with nothing in it', c.words, 0);
 /* and nothing said about how it sounds. This asked for the opposite -- that a

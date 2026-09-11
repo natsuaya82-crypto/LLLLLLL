@@ -76,9 +76,9 @@ export function seed(){
      core.js mints the first language at load, before net.js exists, so it
      carries no `uid` -- and on a real phone netLangRow() puts one on the
      first time it goes up. Nothing here goes up, so without this line the
-     walks run inside a language that belongs to NOBODY: langOwned() answers
-     false once SET.walked is true, langCount() goes to 0, and every screen
-     above a language disappears. That is what made act, plan and dl go red
+     walks run inside a language that belongs to NOBODY: langWhose() answers
+     LW_WAIT, langCount() goes to 0, and every screen above a language
+     disappears. That is what made act, plan and dl go red
      together on 2026-09-02, and it was read as the rule being wrong rather
      than as the fixture being a phone that had never once synced. */
   for (var __k in LANGS)
@@ -2771,24 +2771,28 @@ export function halfDone(){
     ['the free plan out of room', () => { SET.plan='free'; SET.aiDay='';
                                           SET.aiN=999; openAdd();
                                           const h=vForm(); SET.aiN=0; return h; }],
-    /* `mine:false` because that is what a taken language IS -- langSeenAdd()
-       is the only thing that writes it -- and because the 削除 that slides
-       out of this row needs something to drop (www/home.js § langDrop).
-       Without it the row is the one case netTakeGone() leaves alone, so the
-       walk was pressing a button that returned on its first line. It carried
-       a `sid` beside it while a language had two numbers; the row's own id is
-       the server's now (2026-09-10). */
+    /* WHAT MAKES A LANGUAGE 「読んでいるだけ」 IS THE SERVER'S TWO ANSWERS
+       (2026-09-11, www/core.js § langWhose): `language.owner` naming somebody
+       else, and a `language_take` row saying THIS account took it. Both are
+       pushed here, because neither is asked in a check with no network --
+       `langTookGot([])` in seed() above is 「asked, and none」, so the owner
+       stamp alone leaves the row on neither list. The 削除 that slides out of
+       this row also needs something to drop (www/home.js § langDrop): without
+       it the row is the one case netTakeGone() leaves alone, so the walk was
+       pressing a button that returned on its first line. */
     /* ON PLUS, AND IT HAS TO BE. 「読んでいる言語」 is cut to dlCap(), which is
        NOUGHT on free -- the walk's plan -- so this face has been drawing a
        heading with no row under it since the day it was written, and nothing
        said so. CLAUDE.md § what the free plan is: a paid face needs the plan
        flipped here and put back. */
     ['a language somebody else is reading', () => { const wasP=SET.plan; SET.plan='plus';
-                                                     LANGS.L_other={name:'Necwe', mine:false};
+                                                     LANGS.L_other={};
                                                      langOwnGot('L_other', 'somebody-else');
+                                                     langNameGot('L_other', 'Necwe');
+                                                     langTookGot(['L_other']);
                                                      window.route='langs'; NAV=[{r:'langs'}];
                                                      const h=vLangs(); delete LANGS.L_other;
-                                                     SET.plan=wasP; return h; }],
+                                                     langTookGot([]); SET.plan=wasP; return h; }],
     /* AND THE SAME ROW SLID OPEN, which is the state the 削除 is IN. The row
        is shut in the face above and the button is off the right edge of it,
        so a picture of that face says nothing about what the slide reveals --
@@ -2798,8 +2802,10 @@ export function halfDone(){
        class written in here: a fixture that put the class on would be a copy
        of langSwMove() and would agree with it whatever it did. */
     ['a language you took, slid open', () => { const wasP=SET.plan; SET.plan='plus';
-       LANGS.L_other={name:'Necwe', mine:false};
+       LANGS.L_other={};
        langOwnGot('L_other', 'somebody-else');
+       langNameGot('L_other', 'Necwe');
+       langTookGot(['L_other']);
        window.route='langs'; NAV=[{r:'langs'}];
        const app=document.getElementById('app');
        app.innerHTML=vLangs();
@@ -2810,7 +2816,8 @@ export function halfDone(){
               langSwMove({ touches:[{clientX:r.right-140, clientY:r.top+r.height/2}],
                            cancelable:true, preventDefault:function(){} });
               langSwUp({}); }
-       const h=app.innerHTML; delete LANGS.L_other; SET.plan=wasP; return h; }],
+       const h=app.innerHTML; delete LANGS.L_other; langTookGot([]);
+       SET.plan=wasP; return h; }],
     ['a mark in the editor',   () => { editLetter('l4'); window.route='glyph';
                                        NAV=[{r:'glyph', a:GE.lid}]; return vGlyph(); }],
     /* A list being read in has three faces and they share no buttons: the

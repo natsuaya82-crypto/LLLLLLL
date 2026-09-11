@@ -91,11 +91,12 @@ function kbCount(){
        やん」 OWNER 2026-09-01 -- the same sentence langCount() answers in
        www/core.js, and this counter had the same hole: LANGS is the PHONE's,
        it survives signing out, so somebody else's languages on this phone
-       filled up the pool of keyboards this person may build. langOwned() is
-       the one place that says whose a language is -- and it is that rather
-       than langAcct(), which also asks `mine`: a keyboard in a language this
-       phone has never been told is 「mine」 is still a keyboard. */
-    if(!langOwned(id)) continue;
+       filled up the pool of keyboards this person may build. langWhose()
+       (www/core.js) is the one place that says whose a language is, and a
+       keyboard in one nobody has answered for is not counted either: a
+       ceiling measured against languages the server has not spoken about
+       refuses somebody their next keyboard. */
+    if(langWhose(id)!==LW_MINE) continue;
     if(id===langId){ n+=kbStored().length; continue; }
     k=null;
     try{ k=kbBoardsOf(JSON.parse(slRd(langKeyOf(id, 'kb'))||'null')); }

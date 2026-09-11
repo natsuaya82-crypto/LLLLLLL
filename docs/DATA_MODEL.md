@@ -369,7 +369,7 @@ which one every global on the making side means.
 | key | written by | what it is |
 |---|---|---|
 | `name` | **nothing, since 2026-09-08** | a copy of the language's name. It was written by `langMint()` and by `save()` on the open one, and it is what let a rename move the phone's answer and leave `language.name` — the half anybody else reads — holding the name the language was made with. What a language is called is that column now (`langNameOf()`, `www/core.js` § LNAME). **An entry written by an older version still carries this field and nothing reads it**; nothing removes it, because a migration copies |
-| `mine` | `langMint()` and `netLangsDown()` write **true**; `langSeenAdd()` (`www/core.js`) writes **false** | whether the entry was made as a language you are MAKING or one you are only READING. **What decides that now is `language.owner`** (`langMine()`), and this is read in exactly one place: a language whose owner the server has not answered for yet — the migration reading, for the languages already on every phone, and never after an answer arrives |
+| `mine` | **nothing, since 2026-09-11** | whether the entry was made as a language you are MAKING or one you are only READING — a boolean this phone wrote. Four functions read it and fell three different ways where the server had not spoken, and `langForAcct()` read the disagreement as 「this account has no language」 and made a second one. **Whose a language is is `language.owner` and whether this account is reading somebody else's is a `language_take` row**; `langWhose()` (`www/core.js` § langWhose) is the one place both are asked. **An entry written by an older version still carries this field and nothing reads it**; nothing removes it, because a migration copies |
 | `sid` | **nothing, since 2026-09-10** | the server's id for this language, back when a language had two numbers. The id IS that number now, so there is nothing to keep beside it. `langsOneId()` (`www/core.js`) reads this field once, on the launch that moves the entry to it, and it is the last thing that ever does — it also says the `language` row EXISTS, because `netLangRow()` wrote it at the moment it made the row and at no other moment (`LROW`, `www/core.js`) |
 | `uid` | **nothing, since 2026-09-09** | it answered TWO questions with one field: on a language somebody made it was who MADE it, and on a downloaded one it was who TOOK it (`langSeenAdd()`'s own comment said so). The two come apart the moment a language moves between people, and `dlCount()` counted the second — so the ceiling on downloads was per handset. They are two questions now and both are the server's: **who wrote it** is `language.owner` (`langOwnOf()`, `www/core.js` § LOWN) and **that this account took it** is a `language_take` row (`langTookHas()`). An entry written by an older version still carries this field and nothing reads it |
 | `mig` | `langMigrate()` (`www/core.js`), removed by `langMigStamp()` | the mark that this entry came out of the eight flat keys and is still waiting for an account to be stamped on it. `langMigrate()` runs while `core.js` is loading, before `SESS` is even declared, so there is nothing to stamp with at the moment it is made and `netRead()` does it eighteen lines later |
@@ -379,11 +379,12 @@ written here.**
 
 ## A language that is only read
 
-**It exists.** `LANGS[id].mine` is what says a language is not yours, and
-`langSeenAdd()` (`www/core.js`) is what writes it false — the index row for a
-language taken off somebody else's page, filed under that language's own id
-so a second download of it lands in the same place and does not make a second
-copy. 「ダウンロードボタン押しても言語追加されないけど？」「いつまでもfalseだった
+**It exists.** `language.owner` naming somebody else is what says a language
+is not yours — `langWhose()` (`www/core.js`) answers **read** where this
+account also has a `language_take` row for it — and `langSeenAdd()`
+(`www/core.js`) is what makes the index row for a language taken off somebody
+else's page, filed under that language's own id so a second download of it
+lands in the same place and does not make a second copy. 「ダウンロードボタン押しても言語追加されないけど？」「いつまでもfalseだった
 とかやめてね。」 OWNER 2026-09-01 is the sentence that closed the gap.
 
 `wldGet()` (`www/home.js`) is the one road in: it writes the index row FIRST,
@@ -403,7 +404,7 @@ and then writes the slices it was asked for with `langKeyOf(id, kind)`.
    `SLICES` is
    unchanged — it is the list of what a language is MADE of, and that is the
    same list for every language. **`netSaveUp()` is where it is refused**
-   (`www/net.js`), on `langMine()`,
+   (`www/net.js`), on `langWhose()`,
    with `BK.dirty` cleared so every later save does not come back to be
    refused again. Nothing is deleted and nothing is moved: it is the FILE that
    does not carry it, and it is not lost by being skipped, because it came
@@ -424,13 +425,15 @@ and then writes the slices it was asked for with `langKeyOf(id, kind)`.
    「plusからです」「plusは1つproは3つ」.
 
    ```
-     langCap()  FREE_LANGS 1   PRO_LANGS 3     languages you MAKE   `mine` true
-     dlCap()    PLUS_DL    1   PRO_DL     3    languages you READ   `mine` false
+     langCap()  FREE_LANGS 1   PRO_LANGS 3    languages you MAKE   langWhose() mine
+     dlCap()    PLUS_DL    1   PRO_DL     3    languages you READ   language_take rows
    ```
 
-   `langCount()` counts `mine` and `dlCount()` counts not-`mine`, both with the
-   same account test, so signing in as somebody else hands you neither their
-   languages nor their downloads. Free is nought downloads: the plan is the
+   `langCount()` counts the ones `langWhose()` answers **mine** for and
+   `dlCount()` is the server's own count of `language_take`, so signing in as
+   somebody else hands you neither their languages nor their downloads. A
+   language nobody has answered for is in neither number — a ceiling measured
+   against an unanswered language refuses somebody their own next one. Free is nought downloads: the plan is the
    door and the ceiling is the room, asked in that order in `wldGet()`.
    **Neither ceiling removes, hides or counts down anything** — somebody who
    already has more than the number keeps and reads every one of them, and only
@@ -443,13 +446,16 @@ Everything else about a language goes to the server and comes back merged
 「トキポナに文字足したらトキポナじゃないです」 (OWNER DECISION 2026-08-25). So
 「基本は全部サーバー管理」 has exactly one exception and this is it, and it holds
 by construction: `langMineIds()` (`www/net.js`) is what `netLangSync()` walks,
-and a language that is not `mine` is not in the list at all. There is no `mine`
-test inside the sync to be forgotten.
+and a language `langWhose()` answers **read** or **none** for is not in the
+list at all. There is no second test inside the sync to be forgotten. What IS
+in the list is a language nobody has answered for yet — that is the walk's own,
+and the insert is what obtains the answer; `netLangRow()` refuses one the
+server already holds for somebody else.
 
 **And it opens.** `langOpen()` does **not** refuse one —
 「編集不可でそのアカウントに切り替えたらダウンロードした人の言語が使える」 OWNER
 2026-09-02, and `tools/migrate-check.mjs` holds `CLAUDE.md`'s rule 6 with a
-fixture whose second language is `mine:false`. What protects it is not a locked
+fixture whose second language is somebody else's. What protects it is not a locked
 door but the WRITERS, and there are more of them than the four this file used
 to name: `langLocked()` (`www/core.js`) is the one question, asked at
 `save()`, `saveLetters()`, `saveNotes()`, `saveStg()`, `saveSnd()`, `saveKb()`,

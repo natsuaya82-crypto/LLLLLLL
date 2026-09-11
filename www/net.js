@@ -1392,7 +1392,12 @@ function netPlanVerify(list, then){
    exactly where it is, on the phone, whole. */
 function netLangRow(id, ok, bad){
   var key=String(id||''), L=LANGS[key], own, me, nm;
-  if(!netSignedIn() || !L || L.mine===false){ bad(null, 0, 'langrow −'); return; }
+  /* A language this account is only READING has a row already and it is
+     somebody else's -- langWhose() (www/core.js) is what says so, off
+     `language.owner` and `language_take` rather than off `LANGS[id].mine`, a
+     boolean this phone wrote. LW_WAIT refuses for the same reason every writer does:
+     nobody has said whose it is, and an insert would be this phone deciding. */
+  if(!netSignedIn() || !L || langWhose(key)===LW_READ){ bad(null, 0, 'langrow −'); return; }
   /* WHO WROTE IT, off `language.owner` and not off this phone's index
      (www/core.js § LOWN). `LANGS[id].uid` answered two questions with one
      field -- who made it, and on a downloaded language who TOOK it -- and the
@@ -1928,23 +1933,25 @@ function netLangsWalk(d, done){
        So the entry is made only when it is new, and the slices are asked for
        either way. */
     /* WHO WROTE IT, off the row's own column and not off who is asking. One of
-       the two asks is 「mine」 by construction and the other is not, so the
-       column is the only thing that can say which of the two a row came from.
-       A row with no `owner` at all is this account's -- the doubt falls toward
-       yours, www/core.js § langMine. */
+       the two asks is this account's by construction and the other is not, so
+       the column is the only thing that can say which of the two a row came
+       from. A row with no `owner` at all came back from `owner=eq.me`, so it
+       is this account's. */
     own=String(row.owner||SESS.uid||'');
     nid=String(row.id);
     if(!LANGS[nid]){
-      /* SOMEBODY ELSE'S, AND THE INDEX HAS TO SAY SO. `mine:false` is what
-         langMine() reads, and it is what keeps every write road off it: a
-         taken language made as this account's own would be saved back up
-         under somebody else's row. */
+      /* SOMEBODY ELSE'S, AND `language.owner` IS WHAT SAYS SO. langSeenAdd()
+         stamps the owner the row carried, and langWhose() (www/core.js) reads
+         that -- it is what keeps every write road off a taken language: one
+         made as this account's own would be saved back up under somebody
+         else's row. */
       if(own!==String(SESS.uid||'')) langSeenAdd(nid, String(row.name||''), own);
       /* The entry first, so a sync that fails halfway leaves a language that
          is HERE and empty rather than slices under an id nothing names. Empty
          and broken are different states -- docs/DATA_SAFETY.md rule 3 -- and
-         an empty language is a legitimate one. */
-      else LANGS[nid]={ mine:true };
+         an empty language is a legitimate one. The entry says the language is
+         here; whose it is is the owner column, written below. */
+      else LANGS[nid]={};
       made++;
     }
     /* AND THE ROW EXISTS, WHICH IS WHAT `sid` USED TO SAY BY BEING THERE.
@@ -2126,9 +2133,9 @@ function netTakenDown(took){
    language deletes it -- or deletes their account -- the `language_take` row
    goes with it (`on delete cascade`, supabase/schema.sql). The walk above
    fills in what the answer HAS; nothing looked at what the answer no longer
-   has, so a `mine:false` row sat in the switcher for a language nobody can
-   open, with the picture kept for a launch with no signal still on the disk
-   beside it. Pressing it opened a language of somebody else's that does not
+   has, so a row for somebody else's language sat in the switcher for a
+   language nobody can open, with the picture kept for a launch with no signal
+   still on the disk beside it. Pressing it opened a language of somebody else's that does not
    exist any more.
 
    FOUR THINGS ARE NOT DROPPED, and each of them is a state rather than a gap:
@@ -2137,13 +2144,12 @@ function netTakenDown(took){
        and LTAKE stays `null` (www/core.js § LTAKE). 「無い」 and 「not asked」
        are different states and must not share a branch: a launch with no
        signal would otherwise delete every language this account had taken.
-     a language of this person's OWN -- `mine` is not false, and not one byte
-       of one is touched here. It is the other ask's to fill and nobody's to
-       remove.
-     a row with no `sid` -- langSeenAdd() is the only thing that writes
-       `mine:false` and it always writes `sid`, so a row without one did not
-       come from a take and cannot be matched against the answer. What cannot
-       be matched is left alone.
+     a language of this person's OWN -- `language.owner` is this account, and
+       not one byte of one is touched here. It is the other ask's to fill and
+       nobody's to remove.
+     a language nobody has answered for -- `language.owner` is empty, so the
+       server has not said it came from a take and it cannot be matched
+       against the answer. What cannot be matched is left alone.
      the server -- netLangDrop() is NOT called. The row is somebody else's
        language and this phone has no business writing to it; and there is
        nothing to drop, because the reason it is not in the answer is that it
@@ -2153,15 +2159,18 @@ function netTakenDown(took){
    article takes it again. */
 function netTakeGone(ids){
   var list=(ids && typeof ids.length==='number')? ids : [], gone=[],
-      id, L, i, j, k, moved=false;
+      id, own, me=String((SESS && SESS.uid)||''), i, j, k, moved=false;
   for(id in LANGS){
     if(!Object.prototype.hasOwnProperty.call(LANGS, id)) continue;
-    L=LANGS[id];
-    /* Somebody else's, taken -- langSeenAdd() (www/core.js) is the one place
-       that writes this and langMint() writes true. Its id IS the server's,
-       which is what `language_take` answers with; it was read off `L.sid`
-       while a language had two numbers. */
-    if(!L || L.mine!==false) continue;
+    /* WROTE BY SOMEBODY ELSE, which is the only way an entry got here that
+       this account did not make. It was `LANGS[id].mine`, a boolean this
+       phone wrote;
+       `language.owner` (www/core.js § LOWN) is the server's answer to the
+       same question. langWhose() is not asked here on purpose: it says
+       whether the take is STILL there, and what this loop is looking for is
+       exactly the entries whose take has just gone. */
+    own=langOwnOf(id);
+    if(!own || own===me) continue;
     for(i=0;i<list.length;i++) if(String(list[i])===String(id)) break;
     if(i<list.length) continue;
     gone.push(id);
@@ -2593,12 +2602,35 @@ function netSaveUpGo(done){
    both sides, so one pass would put something into a language somebody else
    wrote -- 「トキポナに文字足したらトキポナじゃないです」 OWNER 2026-08-25 --
    and the write half would be this phone trying to edit their rows. */
+/* NOT 「WHOSE IS IT」 BUT 「MAY THIS PHONE PUT IT UP」, and they are different
+   questions on exactly one language: the one the walk made.
+
+   `language.owner` naming SOMEBODY ELSE is the whole of the refusal, and it is
+   asked directly rather than through langWhose(): that one also answers
+   「has this account taken it」, off `language_take`, and at the door
+   netLangSync() runs before netTakes() has answered -- so a language of
+   somebody else's would be 「nobody has said」 for the length of one round
+   trip, which is exactly the round trip this walks in.
+
+   A language with NO owner at all IS sent, and that is the road to the answer
+   rather than a hole in it: it has never been anywhere, and the insert is what
+   finds out. netLangRow() above refuses one the server already holds for
+   somebody else (`own && own!==me`, and the row ask that settles it), so what
+   this cannot do is hand A's language to B.
+
+   The walk is why. A language is made before there is an account
+   「オンボーディング→最後にログイン」, so at the door the thing that has to go
+   up is precisely the one nobody has said whose it is. Asking 「is it mine」
+   here closed the only road out of that: nothing was sent, so no row was
+   made, so no owner came back, so nothing was ever sent. */
 function langMineIds(){
-  var out=[], id;
-  if(langId && langMine(langId)) out.push(langId);
+  var out=[], id, own, me=String((SESS && SESS.uid)||'');
+  if(langId && !(langOwnOf(langId) && langOwnOf(langId)!==me)) out.push(langId);
   for(id in LANGS){
     if(!Object.prototype.hasOwnProperty.call(LANGS, id)) continue;
-    if(id===langId || !langMine(id)) continue;
+    if(id===langId) continue;
+    own=langOwnOf(id);
+    if(own && own!==me) continue;
     out.push(id);
   }
   return out;

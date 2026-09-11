@@ -530,7 +530,7 @@ const R = await pg.evaluate(async () => {
   if (!far) no('14: サーバにあった言語が端末に作られなかった');
   else {
     if (langOwnOf(far) !== A) no('14: 降ろした言語に書いた人が付いていない');
-    if (!LANGS[far].mine) no('14: 降ろした言語が自分のものになっていない');
+    if (langWhose(far) !== LW_MINE) no('14: 降ろした言語が自分のものになっていない');
     if (slRd(langKeyOf(far, 'words')) !== '[{"hw":"むこうの単語"}]')
       no('14: 降ろした言語の単語が入っていない');
     if (slRd(langKeyOf(far, 'lang')) !== 'むこうの言語')
@@ -1509,11 +1509,13 @@ const R = await pg.evaluate(async () => {
   /* 鍵はその言語の番号そのもの（2026-09-10、幹一本）。三つとも一度は
      上がっているので、行が在ることを `LROW` に言っておきます ──
      netLangDrop() がそれを読んで、行の無い言語には何も送りません。 */
-  LANGS = {
-    'srv-go':   { name: '消すほう', mine: true },
-    'srv-stay': { name: '残るほう', mine: true },
-    'srv-b':    { name: 'B のもの', mine: true }
-  };
+  LANGS = { 'srv-go': {}, 'srv-stay': {}, 'srv-b': {} };
+  /* 誰の物かはサーバーの `language.owner` です（2026-09-11）── 索引の
+     `mine` ではありません。三本とも一度は上がっているので、行が在ることも
+     `LROW` に言っておきます ── netLangDrop() がそれを読んで、行の無い言語に
+     は何も送りません。 */
+  langOwnGot('srv-go', A); langOwnGot('srv-stay', A); langOwnGot('srv-b', B);
+  langTookGot([]);
   langRowGot('srv-go'); langRowGot('srv-stay'); langRowGot('srv-b');
   langStore();
   const w30d = [{ hw: 'kano', ph: ['k'], mn: 'hill', mns: ['hill'], pos: 'n' }];
@@ -1556,7 +1558,7 @@ const R = await pg.evaluate(async () => {
   /* 消したあと、立っているのはこのアカウントの言語。 */
   if (!langId) no('30d: 消したあと、どの言語にも立っていない');
   if (langId === 'srv-go') no('30d: 消した言語に立ったままになっている');
-  if (!langOwned(langId)) no('30d: 消したあと、他人の言語に立っている');
+  if (langWhose(langId) !== LW_MINE) no('30d: 消したあと、他人の言語に立っている');
 
   netSend = realSend30d;
   LANGS = keepL30d; langId = keepId30d; langName = keepNm30d; langStore();
@@ -1568,9 +1570,10 @@ const R = await pg.evaluate(async () => {
      サインアウトしても残るので、**他人の言語のキーボードで、この人が作れる
      プールが埋まります。**
 
-     langAcct() ではなく langOwned() を訊きます: 前者は `mine` も見ますが、
-     この端末が「自分のもの」と言われていない言語のキーボードも、キーボード
-     です。plan-check がそれを捕まえました。 */
+     訊くのは `langWhose()` 一箇所です（2026-09-11）── `langMine()`
+     `langOwned()` `langAcct()` の三つが同じ問いに三通りに落ちていたのを
+     一本にしました。まだ誰のものとも言われていない言語のキーボードは
+     数えません ── 答えの無い数で天井を測ると、次の一枚を断ります。 */
   start();
   netOut(); arrive(A);
   const keepKbLangs = LANGS, keepKbId = langId;
@@ -1668,7 +1671,7 @@ const R = await pg.evaluate(async () => {
   arrive(B);
   langForAcct();
   if (langId === 'La') no('33: B でサインインしたのに A の言語が開いたまま');
-  if (!langAcct(langId)) no('33: 開いた言語が B のものではない（' + langId + '）');
+  if (langWhose(langId) !== LW_MINE) no('33: 開いた言語が B のものではない（' + langId + '）');
   if (!LANGS.La) no('33: A の言語が索引から消えた');
   if (!slRd(langKeyOf('La', 'words')))
     no('33: A の単語が消えた ── 隠すのであって消すのではない');
@@ -1737,7 +1740,7 @@ const R = await pg.evaluate(async () => {
   /* そして印が付いたぶん、その言語はちゃんとその人のものとして数えられる。
      印の無い言語は 35 番で「誰のものでもない」になるので、この二つは
      同じ一つの穴の両側です。 */
-  else if (!langAcct(made34))
+  else if (langWhose(made34) !== LW_MINE)
     no('34: ＋ で作った言語が、作った人自身の一覧に出ない');
   LANGS = keepL34; langId = keepId34; langName = keepNm34;
   SET.plan = 'free'; SET.planWas = 'free'; save();
@@ -1749,7 +1752,8 @@ const R = await pg.evaluate(async () => {
      OWNER 2026-09-02。
      「アカウントごとに言語情報も違うんだって」 OWNER 2026-09-03。
 
-     `langOwned()` は印の無い言語を「訊いた人のもの」と答えていました。
+     `langOwned()` は印の無い言語を「訊いた人のもの」と答えていました
+     （2026-09-11 に `langWhose()` 一本へ ── 印が無ければ `LW_WAIT`）。
      だから **A がこの端末で作って一度も上げていない言語が、B がサインイン
      した瞬間に B のものになります。**辞書も文字もキーボードも、B の一覧に
      B の言語として並ぶ。何も throw しません。
@@ -1775,7 +1779,7 @@ const R = await pg.evaluate(async () => {
   /* 歩きの途中 ── まだ誰もサインインしていない。訊く相手がいないので、
      作ったものはその場の人のもの。 */
   netOut(); SET.walked = false;
-  if (!langOwned('Lu')) no('35: 歩きの途中で、作ったものが自分のでない');
+  if (langWhose('Lu') !== LW_MINE) no('35: 歩きの途中で、作ったものが自分のでない');
 
   /* 扉。サインインは済んで、まだ何も送っていない ── ここで印の無い言語は
      **誰のものでもありません**。**端末は誰のものかを決めません**
@@ -1787,22 +1791,22 @@ const R = await pg.evaluate(async () => {
      書く（`www/net.js`）。書いているのはサーバーが答えた `owner` であって、
      端末の判断ではありません。66番がその road を歩きます。 */
   arrive(B);
-  if (langOwned('Lu'))
-    no('35: サインインしただけで、印の無い言語が拾われた');
+  if (langWhose('Lu') !== LW_WAIT)
+    no('35: サインインしただけで、印の無い言語が拾われた ── まだ訊けていない、ではない');
   /* そしてサーバーに行が出来れば、その人のものになる。 */
   langOwnGot('Lu', B);
-  if (!langOwned('Lu')) no('35: サーバーが答えても、その人のものにならない');
+  if (langWhose('Lu') !== LW_MINE) no('35: サーバーが答えても、その人のものにならない');
   langOwnGot('Lu', '');
 
   /* 印の付いていない言語はもう誰のものでもない ── 端末の一人目という
      覚え方はしません。 */
   SET.walked = true;
-  if (langOwned('Lu')) no('35: 印の無い言語が、アプリの中で訊いた人のものになっている');
-  if (langAcct('Lu')) no('35: 印の無い言語が、訊いた人の一覧に出る');
+  if (langWhose('Lu') === LW_MINE) no('35: 印の無い言語が、アプリの中で訊いた人のものになっている');
+  if (langWhose('Lu') !== LW_WAIT) no('35: 印の無い言語が、まだ訊けていない扱いになっていない');
   if (vLangs().indexOf('A が圏外で作った') >= 0)
     no('35: 印の無い言語が、訊いた人の言語一覧に並んでいる');
   netOut(); arrive(A);
-  if (langOwned('Lu')) no('35: 印の無い言語が、次に入った人のものになっている');
+  if (langWhose('Lu') === LW_MINE) no('35: 印の無い言語が、次に入った人のものになっている');
 
   /* そして何も消えていない。 */
   if (!LANGS.Lu) no('35: 印の無い言語が索引から消えた');
@@ -1812,9 +1816,9 @@ const R = await pg.evaluate(async () => {
   /* 印のある言語は持ち主には見え、他人には見えない。 */
   LANGS['Lb'] = { name: 'A の言語', mine: true };
   langOwnGot('Lb', A);
-  if (!langOwned('Lb')) no('35: 自分の印が付いた言語が自分のものでない');
+  if (langWhose('Lb') !== LW_MINE) no('35: 自分の印が付いた言語が自分のものでない');
   netOut(); arrive(B);
-  if (langOwned('Lb')) no('35: 他人の印が付いた言語が自分のものになっている');
+  if (langWhose('Lb') === LW_MINE) no('35: 他人の印が付いた言語が自分のものになっている');
 
   LANGS = keepL35; langId = keepId35; langName = keepNm35;
   say('35: 印の無い言語を拾うのはオンボーディングの歩きだけ ── 消さず、そこに残る');
@@ -3038,7 +3042,7 @@ const R = await pg.evaluate(async () => {
      4. アカウントを消すと、書いた言語も**取った言語**も端末から消える
 
      赤を見た形（2026-09-09）: `dlCount()` を索引を歩く形に戻すと 2 が赤、
-     `langOwned()` の「訊いていない」を true に倒すと 3 が赤。 */
+     `langWhose()` の `LW_WAIT` を `LW_MINE` に倒すと 3 が赤。 */
   start();
   netOut(); arrive(A);
   {
@@ -3065,7 +3069,7 @@ const R = await pg.evaluate(async () => {
       no('65: 取った数がサーバーの行数になっていない — ' + dlCount());
     if (!langMine('srv-made')) no('65: 自分が書いた言語が自分のものでない');
     if (langMine('srv-took'))  no('65: 他人が書いた言語が自分のものになっている');
-    if (langOwned('srv-asked'))
+    if (langWhose('srv-asked') === LW_MINE)
       no('65: まだ聞いていない言語を「自分の」に倒した');
     if (vLangs().indexOf('srv-asked') >= 0)
       no('65: まだ聞いていない言語を画面に描いた ── 揃ってから開く');

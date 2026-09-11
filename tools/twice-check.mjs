@@ -102,9 +102,9 @@ await pg.evaluate(() => {
 });
 
 /* ---- 一度も上がったことのない言語を一つ持って、起動する ----------------
-   `sid` が無いのが「初めて上がる」という状態そのものです。`uid` は押します
-   ── `langOwned()` が答えないと `langMineIds()` に入らず、上げる道が
-   走りません。それはこの検査が見たい場面ではありません。 */
+   行が無いのが「初めて上がる」という状態そのものです。持ち主の印は押します
+   ── `langWhose()` が `LW_MINE` と答えないと `langMineIds()` に入らず、
+   上げる道が走りません。それはこの検査が見たい場面ではありません。 */
 async function boot(){
   return await pg.evaluate(() => new Promise(function(done){
     var id;

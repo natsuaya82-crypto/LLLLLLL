@@ -44,7 +44,8 @@ and `docs/DATA_MODEL.md` for which fields travel on a post.
 
 **DL — the third thing, and it is built.** A downloaded official asset is a
 language on the reading side that is filed like one on the making side: it sits
-in `LANGS` with `mine:false` and under `lingua.<id>.<slice>`, and it is
+in `LANGS` carrying somebody else's `language.owner` and under
+`lingua.<id>.<slice>`, and it is
 **switched to** rather than merged in (OWNER DECISION 2026-08-25,
 `docs/FEATURE_RULES.md`). It is the first language this app holds that its user
 did not write, and every global above is still 「the one in front of me」 — so
