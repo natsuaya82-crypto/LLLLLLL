@@ -7,6 +7,37 @@ refactor, a feature and a rename never arrive in the same diff.
 
 The order is the order to do them in.
 
+## 投稿の頭の `@` が 39px ── `press` が赤 8 本。直すには `www/index.html` に一行（2026-09-11、`claude/r30-sns`）
+
+**この枝が赤くしました。緑ではありません。** 頭の `@` をその人への道にした
+（`www/post.js` § postRow、OWNER 実機「@〇〇 を押しても飛ばない」）ときに、
+本文の `@` と同じ `.ptag` を着せました。**その 44pt は本文の字の大きさで
+出来ています** ── `www/index.html` の `.ptag` のコメントが自分でそう書いて
+います:「The words are 24 tall at this size」、24 + 10 + 10 = 44。
+
+投稿の頭は `.9rem` なので、行は **18.72** です。18.72 + 10 + 10 = **38.72**。
+測った値:
+
+```
+HEAD  41x39   lh=18.72px fs=14.4px pad=10px  «@aya»
+HEAD  28x39   lh=18.72px fs=14.4px pad=10px  «@iri»
+BODY 125x44   lh=24px    fs=16px   pad=10px  «#TodaysPrompt»
+```
+
+`npm run press` の赤 8 本は全部これ一つの原因です（`vOb` の SNS の段に 5、
+`vFeed`・`vProfile`・枝分かれしたスレッドに 1 ずつ）。
+
+**直すのは `www/index.html` の一行**で、頭の `@` にだけ効くもの ── 行を
+押し広げないように、足した padding と同じだけ margin で戻す形（`.ptag` が
+本文でやっているのと同じ）。数はここに書いた値を信じず、**測ってから**
+入れてください。`.pheadm .ptag` が当たる所です。
+
+**この枝は `www/index.html` を持っていません**（CLAUDE.md § Scope、
+`docs/SESSIONS.md` §1 ── 一度に一つのセッションだけが持つ、既知の危険）。
+だから直さずに書き残しました。持ち物を渡す人へ: `www/index.html` と
+`www/post.js` を一つのセッションに渡せば十分で、測り方も claim も既に
+`tools/post-check.mjs` の 21 に入っています。
+
 ## `integ-0905` で `again-check`「起動してもキーボードは増えない」が赤です（2026-09-09、この枝のものではありません）
 
 `b91a70a4`（`claude/r10-measure` を取り込んだところ）では緑で、`caf6a6a6`
