@@ -1,6 +1,0 @@
-# 05 A lt-c-edit
-route: {"r":"glyph","a":"lt.c"}
-
-c
-保存
-?

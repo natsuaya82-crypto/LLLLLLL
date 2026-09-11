@@ -735,10 +735,21 @@ WALKS['probe'] = async (br, srv) => {
   await a.reload();
   if (process.env.HUNT_PLAN) await a.pg.evaluate(x => planTook(x), process.env.HUNT_PLAN);
   for (const r0 of String(process.env.HUNT_R || 'letters,words,gram,kb,build,feed,me,set').split(',')){
-    const r = r0.trim().split(':');
-    await a.goRoute(r[0], r[1] || '');
+    const t0 = r0.trim(), c = t0.indexOf(':');
+    await a.goRoute(c < 0 ? t0 : t0.slice(0, c), c < 0 ? '' : t0.slice(c + 1));
     say('== ' + r0 + ' == ' + (await a.where()));
     (await a.buttons()).forEach(b => say('   ' + b));
+  }
+  if (process.env.HUNT_PRESS){
+    for (const nm of process.env.HUNT_PRESS.split(',')){
+      const t = nm.trim().split('|');
+      if (t[1]) await a.tapArg(t[0], JSON.parse(t[1])); else await a.tapDo(t[0]);
+      say('== after ' + nm + ' == ' + (await a.where()));
+      (await a.buttons()).forEach(b => say('   ' + b));
+      say('   fields: ' + JSON.stringify(await a.pg.evaluate(() =>
+        Array.prototype.map.call(document.querySelectorAll('#app input,#app textarea'),
+          e => '#' + (e.id || e.className) + ':' + (e.placeholder || '')))));
+    }
   }
   return a;
 };
@@ -900,6 +911,282 @@ WALKS['2'] = async (br, srv) => {
   say('  LETTERS after relaunch: ' + await a.pg.evaluate(() => LETTERS.length) +
       '  server letters slice: ' + (srv.db.slice.filter(x => x.kind === 'letters')
         .map(x => { try { return JSON.parse(x.body).length; } catch (e) { return '?'; } }).join(',')));
+  return a;
+};
+
+/* ---- 3. 辞書 ------------------------------------------------------------ */
+WALKS['3'] = async (br, srv) => {
+  say('--- 3. dictionary ---');
+  const a = await new Dev(br, srv, 'A').open();
+  await arrive(a, AYA, false);
+  await a.reload();
+  await a.tapArg('goTab', ['build']);
+  await a.tapArg('go', ['words']);
+  await a.shot('wd-empty');
+
+  const TEN = [['kano','山'],['sar','川'],['tir','見る'],['mos','高い'],['lom','落ちる'],
+               ['nak','ない'],['ke','なに'],['tira','見た'],['sela','海'],['toren','木']];
+  for (let i = 0; i < TEN.length; i++){
+    await a.goRoute('words');
+    await a.tapDo('openAdd');
+    await a.type('#wd-ln', TEN[i][0]);
+    await a.type('#wd-mn', TEN[i][1]);
+    if (i === 0) await a.shot('wd-add-typed');
+    await a.tapDo('addOne');
+    if (i === 0) await a.shot('wd-add-1');
+  }
+  await a.settle();
+  await a.shot('wd-ten');
+  say('  WORDS=' + await a.pg.evaluate(() => WORDS.length) +
+      '  rows on screen=' + await a.pg.evaluate(() =>
+        document.querySelectorAll('#app [data-do^="openWord"]').length) +
+      '  where=' + await a.where());
+
+  /* 同じ綴りをもう一度 */
+  await a.goRoute('words');
+  await a.tapDo('openAdd');
+  await a.type('#wd-ln', 'kano');
+  await a.type('#wd-mn', '髪');
+  await a.tapDo('addOne');
+  await a.shot('wd-dup');
+  say('  after adding kano twice: WORDS=' + await a.pg.evaluate(() => WORDS.length) +
+      '  kano rows=' + await a.pg.evaluate(() =>
+        WORDS.filter(w => w.hw === 'kano').length) +
+      '  pop="' + await a.pop() + '"  where=' + await a.where());
+  await a.popShut();
+
+  /* 検索 */
+  await a.goRoute('words');
+  await a.shot('wd-list');
+  await a.type('#w-q', 'ka');
+  await a.shot('wd-search-ka');
+  say('  search "ka": rows=' + await a.pg.evaluate(() =>
+    document.querySelectorAll('#app [data-do^="openWord"]').length));
+  await a.tapArg('clearSearch', ['w', 'wordsSetQ']);
+  await a.shot('wd-search-cleared');
+  say('  after clearing: rows=' + await a.pg.evaluate(() =>
+    document.querySelectorAll('#app [data-do^="openWord"]').length));
+
+  /* 並べ替え */
+  await a.tapDo('openSort');
+  await a.shot('wd-sort-sheet');
+  say('  sort sheet: ' + JSON.stringify((await a.buttons()).slice(0, 12)));
+  await a.tapDo('back');
+  await a.shot('wd-after-sort');
+
+  /* 直す ── 綴りを変えて保存 */
+  await a.goRoute('words');
+  await a.tapArg('openWord', ['sar']);
+  await a.shot('wd-open-sar');
+  say('  word page: ' + JSON.stringify(await a.buttons()));
+  await a.tapDo('openEdit');
+  await a.shot('wd-edit-sar');
+  say('  edit sheet fields: ' + JSON.stringify(await a.pg.evaluate(() =>
+    Array.prototype.map.call(document.querySelectorAll('#app input,#app textarea'),
+      e => '#' + (e.id || e.className)))));
+  await a.type('#wd-ln', 'saru');
+  await a.tapDo('keepPress');
+  await a.shot('wd-renamed');
+  say('  after rename sar->saru: where=' + await a.where() +
+      '  WORDS has sar? ' + await a.pg.evaluate(() => String(!!findWord('sar'))) +
+      '  saru? ' + await a.pg.evaluate(() => String(!!findWord('saru'))));
+
+  /* 消す */
+  await a.goRoute('words');
+  await a.tapArg('openWord', ['mos']);
+  await a.shot('wd-open-mos');
+  await a.tapArg('openEdit', ['mos']);
+  await a.shot('wd-edit-mos');
+  await a.tapDo('delWord');
+  await a.shot('wd-del-ask');
+  say('  delete pop: "' + await a.pop() + '"');
+  await a.tapDo('popYes');
+  await a.shot('wd-deleted');
+  say('  after delete: WORDS=' + await a.pg.evaluate(() => WORDS.length) +
+      '  where=' + await a.where() + '  pop="' + await a.pop() + '"');
+  await a.popShut();
+  await a.reload();
+  await a.tapArg('goTab', ['build']);
+  await a.tapArg('go', ['words']);
+  await a.shot('wd-relaunch');
+  say('  after relaunch: WORDS=' + await a.pg.evaluate(() => WORDS.length) +
+      '  rows=' + await a.pg.evaluate(() =>
+        document.querySelectorAll('#app [data-do^="openWord"]').length));
+  return a;
+};
+
+/* ---- 4. 文法 ------------------------------------------------------------ */
+WALKS['4'] = async (br, srv) => {
+  say('--- 4. grammar ---');
+  const a = await new Dev(br, srv, 'A').open();
+  await arrive(a, AYA, false);
+  await a.reload();
+  await a.tapArg('goTab', ['build']);
+  await a.tapArg('go', ['gram']);
+  await a.shot('gr-contents');
+  const rows = await a.buttons();
+  say('  stages on the contents: ' + rows.filter(b => /^(go\["gram"|stOpen)/.test(b)).length);
+
+  /* 1 語順 ── 札を並べて保存 */
+  await a.tapArg('go', ['gram', 'v2:order']);
+  await a.shot('gr-order');
+  for (const k of ['S', 'O', 'V']) await a.tapArg('g2Put', [k]);
+  await a.shot('gr-order-put');
+  say('  after S O V: buffer=' + await a.pg.evaluate(() => JSON.stringify(g2Seq())) +
+      '  STG.order=' + await a.pg.evaluate(() => JSON.stringify(STG.order || null)));
+  await a.tapDo('keepPress');
+  await a.shot('gr-order-saved');
+  say('  where after 保存: ' + await a.where() +
+      '  STG.order=' + await a.pg.evaluate(() => JSON.stringify(STG.order || null)));
+
+  /* 例文 */
+  await a.tapArg('go', ['gram', 'v2:order']);
+  say('  an unanswered row (np) class: ' + await a.pg.evaluate(() => {
+    const e = document.querySelector('#app [data-a*="v2:np"]');
+    return e ? e.className : '(none)';
+  }));
+  const hit = await a.tapArg('stExOpen', ['order']);
+  say('  pressed the ＋ beside 例文? ' + hit + '  -> where=' + await a.where());
+  await a.shot('gr-ex-form');
+  say('  example fields: ' + JSON.stringify(await a.pg.evaluate(() =>
+    Array.prototype.map.call(document.querySelectorAll('#app input,#app textarea'),
+      e => '#' + (e.id || e.className)))));
+  const f = await a.pg.evaluate(() => {
+    const e = document.querySelectorAll('#app input,#app textarea');
+    return e.length ? '#' + (e[0].id || e[0].className) : '';
+  });
+  if (f){ await a.type(f, 'kano tir sar'); await a.shot('gr-ex-typed'); }
+  await a.tapDo('keepPress');
+  await a.shot('gr-ex-saved');
+
+  /* 戻る、そして目次の 1 行目が何と言っているか */
+  await a.tapDo('back');
+  await a.shot('gr-back');
+  say('  where after back: ' + await a.where());
+  await a.goRoute('gram');
+  await a.shot('gr-contents-after');
+  say('  row 1 class now: ' + await a.pg.evaluate(() => {
+    const e = document.querySelector('#app [data-a*="v2:order"]');
+    return e ? e.className + '  |text| ' + e.innerText.replace(/\s+/g, ' ') : '(none)';
+  }));
+
+  /* もう一度、まっさらな章で ＋ を押す（前の保存の影響を外すため） */
+  await a.goRoute('gram');
+  await a.tapArg('go', ['gram', 'v2:pst']);
+  await a.shot('gr-pst');
+  const hit2 = await a.tapArg('stExOpen', ['pst']);
+  await a.shot('gr-pst-plus');
+  say('  ＋ on a fresh chapter (過去形): pressed=' + hit2 + '  where=' + await a.where() +
+      '  fields=' + JSON.stringify(await a.pg.evaluate(() =>
+        Array.prototype.map.call(document.querySelectorAll('#app input,#app textarea'),
+          e => '#' + (e.id || e.className)))) +
+      '  pop="' + await a.pop() + '"');
+
+  /* そして「段」の側（4 接続詞）の ＋ はどうか */
+  await a.goRoute('gram');
+  await a.tapArg('stOpen', ['conj']);
+  await a.shot('gr-conj');
+  say('  段 4 接続詞: where=' + await a.where() +
+      '  buttons=' + JSON.stringify((await a.buttons()).slice(0, 10)));
+  const hit3 = await a.tapArg('openStEx', ['conj']) || await a.tapArg('stExOpen', ['conj']);
+  await a.shot('gr-conj-plus');
+  say('  段の例文を開く: pressed=' + hit3 + '  where=' + await a.where() +
+      '  buttons=' + JSON.stringify(await a.buttons()));
+  await a.tapArg('stExOpen', ['conj']);
+  await a.shot('gr-conj-ex-new');
+  say('  段の例文で ＋: fields=' + JSON.stringify(await a.pg.evaluate(() =>
+        Array.prototype.map.call(document.querySelectorAll('#app input,#app textarea'),
+          e => '#' + (e.id || e.className)))));
+  await a.type('#sx-ln', 'kano tir');
+  await a.type('#sx-gl', '山を見る');
+  await a.shot('gr-conj-ex-typed');
+  /* まず「保存」だけ押したらどうなるか（打った三つの箱のまま） */
+  await a.tapDo('keepPress');
+  await a.shot('gr-conj-ex-saved-no-enter');
+  say('  typed the three boxes, pressed 保存 only: where=' + await a.where() +
+      '  examples kept=' + await a.pg.evaluate(() => stExKept('conj').length));
+  /* 次に Enter を踏んでから保存（こちらが仕様の道） */
+  await a.tapArg('openStEx', ['conj']);
+  await a.tapArg('stExOpen', ['conj']);
+  await a.type('#sx-ln', 'kano tir');
+  await a.type('#sx-gl', '山を見る');
+  await a.pg.locator('#sx-gl').press('Enter');
+  await a.quiet();
+  await a.shot('gr-conj-ex-enter');
+  say('  after Enter: rows on the page=' + await a.pg.evaluate(() =>
+    document.querySelectorAll('#app .exlist .exrow, #app .exlist > *').length));
+  await a.tapDo('keepPress');
+  await a.shot('gr-conj-ex-saved');
+  say('  after Enter then 保存: where=' + await a.where() +
+      '  examples kept=' + await a.pg.evaluate(() => stExKept('conj').length));
+
+  await a.reload();
+  await a.tapArg('goTab', ['build']);
+  await a.tapArg('go', ['gram']);
+  await a.shot('gr-relaunch');
+  say('  after relaunch, row 1: ' + await a.pg.evaluate(() => {
+    const e = document.querySelector('#app [data-a*="v2:order"]');
+    return e ? e.className + '  |text| ' + e.innerText.replace(/\s+/g, ' ') : '(none)';
+  }) +
+    '  STG.order=' + await a.pg.evaluate(() => JSON.stringify(STG.order || null)));
+  return a;
+};
+
+/* ---- 5. キーボード ------------------------------------------------------- */
+WALKS['5'] = async (br, srv) => {
+  say('--- 5. keyboard ---');
+  const a = await new Dev(br, srv, 'A').open();
+  await arrive(a, AYA, false);
+  await a.reload();
+  srv.db.planIs = 'pro';
+  await a.pg.evaluate(() => planTook('pro'));
+  await a.quiet(); await a.popShut();
+
+  await a.tapArg('goTab', ['build']);
+  await a.tapArg('go', ['kb']);
+  await a.shot('kb-list');
+  say('  boards: ' + JSON.stringify((await a.buttons()).filter(b => /kbGoBoard|kbNew/.test(b))));
+
+  await a.tapDo('kbNew');
+  await a.shot('kb-new');
+  say('  after 新規: where=' + await a.where() + '  KB boards=' +
+      await a.pg.evaluate(() => (typeof KB === 'object' && KB && KB.b ? KB.b.length : -1)));
+  await a.popShut();
+  /* どの型にするか訊かれたら一つ選ぶ */
+  const pats = (await a.buttons()).filter(b => b.indexOf('kbSetPat') === 0);
+  if (pats.length){ say('  patterns: ' + JSON.stringify(pats)); await a.tapDo('kbSetPat'); await a.shot('kb-pattern'); }
+
+  await a.shot('kb-editor');
+  say('  editor buttons: ' + JSON.stringify((await a.buttons()).slice(0, 26)));
+  const rows0 = await a.pg.evaluate(() => JSON.stringify(kbOf().map(r => r.length)));
+  say('  rows: ' + rows0);
+
+  /* 列の頭を押して選び、ゴミ箱で消す */
+  await a.tapArg('kbHeadCol', [2]);
+  await a.shot('kb-col-picked');
+  await a.tapDo('kbCut');
+  await a.shot('kb-col-cut');
+  say('  rows after cutting a column: ' +
+      await a.pg.evaluate(() => JSON.stringify(kbOf().map(r => r.length))));
+  await a.tapDo('kbUndo');
+  await a.shot('kb-undone');
+  say('  rows after undo: ' +
+      await a.pg.evaluate(() => JSON.stringify(kbOf().map(r => r.length))) +
+      '   (was ' + rows0 + ')');
+
+  /* 二つ目の面 */
+  await a.tapDo('kbAddLay');
+  await a.shot('kb-layer2');
+  say('  layers: ' + await a.pg.evaluate(() => {
+    const b = kbBoard ? kbBoard() : null;
+    return b ? JSON.stringify((b.lay || []).length) : '?';
+  }).catch(() => '?'));
+  await a.reload();
+  await a.tapArg('goTab', ['build']);
+  await a.tapArg('go', ['kb']);
+  await a.shot('kb-relaunch');
+  say('  boards after relaunch: ' +
+      JSON.stringify((await a.buttons()).filter(b => b.indexOf('kbGoBoard') === 0)));
   return a;
 };
 
