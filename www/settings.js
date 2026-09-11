@@ -538,12 +538,12 @@ function wipeLangsHere(id){
      called, because the file was named after it. There are no files
      (www/backup.js), and the row on the server went through netLangDrop()
      above. */
-  /* Where you are standing now. langForAcct(true) is the one place that
+  /* Where you are standing now. langForAcct() is the one place that
      answers 「which language is this account's to be in」 -- it opens one they
      already have, and mints one stamped with them when they have none. A
      phone that has just deleted its only language gets a new empty one, which
      is what a first run is. */
-  langForAcct(true);
+  langForAcct();
   /* Every global a language owns, put back to what an empty one looks like.
      This is langOpen()'s own line less migratePostInk(), which cuts ink onto
      posts out of the alphabet they were written in -- there is no alphabet

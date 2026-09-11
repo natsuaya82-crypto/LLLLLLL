@@ -1893,27 +1893,14 @@ function obFinish(){
      account older than this field can never fire during the walk. */
   meAvSet(meAvOf(ltById(ob.lid)));
   SET.walked=true; save();
-  /* And what was made on the way here goes up. The door is the LAST step, so
-     the letter, the alphabet and the language's name were all made before
-     this account existed -- 「制作はオフラインでも可能次つながった時に更新
-     される」, and this is that moment. Everything the walk made is on the
-     phone until this line; without it the only copy is on the phone until
-     the next launch, because boot.js is the only other place that asks and
-     it asked before there was a session to ask with.
-
-     netLangSync() is www/net.js's and decides everything itself: it does
-     nothing without a session and nothing without a language, it MERGES
-     rather than overwrites, and it is safe to call twice. So this is a call
-     and not a condition -- nothing here re-states what that file already
-     says. */
-  /* THE ACCOUNT IS ALREADY ON WHAT THE WALK MADE. It used to be written here
-     and here was too late: netTook() (www/net.js) asks which language this
-     account is to be in the moment the session arrives, which is before this
-     line, and an unstamped language made it mint a second one. The stamp is
-     written where the session arrives now -- www/net.js § netTook -- so by
-     the time netLangSync() below runs there is one language and it is this
-     account's. */
-  if(typeof netLangSync==='function') netLangSync();
+  /* WHAT THE WALK MADE IS ALREADY ON THE SERVER. It was sent from here, and
+     from here it was too late: netTook() (www/net.js) is where a session
+     arrives, and the road that asks what this account HAS ran beside this one
+     rather than after it -- so the walk's language had not been sent when the
+     question was asked, the answer was no, and a second language was made
+     (docs/scope/r24-lang.md). netTook() sends first and asks afterwards now,
+     and this call is gone rather than kept beside it: one road, and it is the
+     earlier one. */
   /* AND HOW THE WALK LEFT THE APP SET UP. The drawing turned `myfont` on and
      borrowing a character turned `showScript` on, both before there was an
      account to put them under (www/core.js § SET_PREFS). This is the same

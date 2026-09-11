@@ -99,21 +99,19 @@ function bootSession(){
      waited for, and the same language came down the first road while it was
      going up the second one.
 
-     The one language that could reach: one that has NEVER BEEN UP. It has no
-     `sid`, so netLangsDown() -- which takes its 「what is already here」 off
-     LANGS before it asks -- has nothing to match it by, and netLangRow()
-     makes its row while that question is in the air. The answer then comes
-     back carrying a row this phone has never heard of, langMint() makes a
-     second entry for it, and the same language stands twice in the list.
-     Once, on the one launch it first goes up, and it does not go away again.
+     THE REASON IT WAITS IS NOT THE ONE THAT WAS WRITTEN HERE. It was: a
+     language that has never been up has no `sid`, so the answer comes back
+     carrying a row this phone cannot match and the same language stands twice
+     in the list. **There is no `sid`** -- a language has had one number since
+     2026-09-10 (CLAUDE.md § langMint), and that number is the row's, so the
+     answer matches by id whether or not the row was made a second ago.
 
-     Nothing throws and nothing is lost: two entries, one server row, both
-     real. It is found by somebody looking at their own list of languages.
-
-     So the up road waits for the down road, which is one line rather than a
-     second thing that watches for duplicates -- a phone that has just been
-     told everything this account has is a phone that knows what is missing.
-     Everything else here is unchanged.
+     It waits because this is a LAUNCH. What is on this phone was sent by the
+     session that made it, and what has moved since goes up on netSaveUp()'s
+     road; nothing here is racing anything. The one moment where the sending
+     has to come FIRST is the door -- the walk makes a language before there
+     is an account, and www/net.js § netTook sends it there before it asks
+     what the account has. That is a session ARRIVING; this is one resuming.
 
      AND IT IS NOT ASKED FOR HERE ANY MORE. Both roads are askLangs() in
      www/sns.js § WHAT EACH SCREEN ASKS FOR, and `langs` is on PULL_OPEN --
