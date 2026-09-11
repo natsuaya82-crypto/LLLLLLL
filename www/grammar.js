@@ -251,10 +251,11 @@ function gRules(){
   out.push(gRule('ADJECTIVE',  'POSITION', gPos('adj')));
   /* WHICH SIDE OF THE VERB THE NEGATION WORD STANDS, read off the rule that
      says the negation IS a word. It was `gpos.negp`, a two-choice of its own
-     on the word order board with no word attached to it; that value is copied
-     onto the rule once, by migrateNeg(), and this is the one place that reads
-     the answer now. It is the sentence READER's half -- a sentence somebody
-     typed, arranged -- and translate.js has always asked for it here. */
+     on the word order board with no word attached to it; that value is read
+     as such a rule by gPolOld() (§16 Migration), and this is the one place
+     that reads the answer now. It is the sentence READER's half -- a
+     sentence somebody typed, arranged -- and translate.js has always asked
+     for it here. */
   out.push(gRule('NEGATION',   'POSITION', gNegSide()));
   out.push(gRule('ADPOSITION', 'POSITION', gPos('adp')));
   /* 複文. The clause against the sentence, and each of the two marks inside
@@ -1363,8 +1364,12 @@ function gPolFeat(id){ return GPOL_FEAT[String(id||'').split(':')[0]] || ''; }
 function gPolTarget(on){ return GPOL_TARGET[String(on||'')] || 'VERB'; }
 /* Every rule of this kind this language has written, and the one for one
    target. `STG.gr` is a flat list because that is what goes up as JSON; which
-   rule is which is the two fields on it. */
-function gPolAll(){ return (STG && STG.gr) || []; }
+   rule is which is the two fields on it. The old two-choice is one of them
+   until somebody writes over it -- §16 Migration, gPolOld() below. */
+function gPolAll(){
+  var a=(STG && STG.gr) || [], old=gPolOld(a);
+  return old? a.concat([old]) : a;
+}
 function gPolFind(feature, target){
   var a=gPolAll(), i;
   for(i=0;i<a.length;i++)
@@ -1377,9 +1382,18 @@ function gPolFind(feature, target){
    「how does this language say no about a verb」 with nothing to say which
    happens. */
 function gPolPut(feature, target, r){
-  var a=gPolAll(), i;
+  var a, i, old;
   if(!STG.gr) STG.gr=[];
   a=STG.gr;
+  /* §16 Migration, the other half: the copy goes DOWN here, on the one road a
+     rule is written, and never on a read. Both lines are one act -- the copy
+     into the list, and the mark saying it has been made. Putting the copy
+     down without the mark is not enough and was watched failing: a person
+     emptying the two sentences and pressing save (「この言語はそれをしない」)
+     takes the copy straight back out again, and an empty list is what an
+     untouched language looks like, so the next read said it again. */
+  old=gPolOld(a);
+  if(old){ a.push(old); STG.grm='1'; }
   for(i=0;i<a.length;i++)
     if(a[i] && a[i].feature===feature && a[i].target===target){
       if(r) a[i]=r; else a.splice(i,1);
@@ -1388,46 +1402,60 @@ function gPolPut(feature, target, r){
   if(r) a.push(r);
   saveStg();
 }
-/* ---- §16 Migration ------------------------------------------------------
+/* ---- §16 Migration -- 読むときに写す ------------------------------------
    「既存の `gpos.neg` は読んで規則に写す。消さない」
 
    `STG.gpos.negp` said which side of the verb the not-word stands, and the
-   word itself was a slot on this chapter. Between them they are exactly one
+   word itself is a slot on this chapter. Between them they are exactly one
    rule of the new shape -- NEGATION, of a verb sentence, said with a WORD,
-   standing before or after the verb -- so that is what this writes. The
+   standing before or after the verb -- so that is what this ANSWERS. The
    settings and `STG.gpos` are READ and left exactly where they are
    (docs/DATA_SAFETY.md rule 2): nothing here removes anything.
 
-   IT RUNS ONCE PER LANGUAGE AND THE MARK IS IN THE SAME SLICE. `STG.grm` is
-   in `phases`, which is what it is a mark ABOUT -- the fault rule 22 records
-   is `SET.gramLang`, a mark on the DISK about a slice held in MEMORY, so the
-   copy died with the app and the mark outlived it. A mark inside the slice
-   cannot drift from what it marks, it travels to the server with it, and it
-   is what stops a rule somebody DELETED from coming back on the next launch.
+   IT IS READ HERE AND WRITTEN WHERE A PERSON SAVES. It used to be a pass --
+   migrateNeg(), called from stRead() -- which wrote the rule and the mark
+   together. A pass that writes has to run somewhere, and where it ran was
+   EVERY READ of this slice: so a LAUNCH wrote the phases slice and sent it
+   up (the whole body read back down with it, against r10-wire), and a save
+   that did NOT land moved the phone anyway, because keepBack() puts the
+   phone back by reading it again. Both were measured rather than read off
+   the code: docs/scope/r16-fix.md.
 
-   IT WAITS FOR THE DICTIONARY. The not-word is a word, and the words are a
-   slice of their own read before this one (www/core.js § SLICES) -- but at
-   boot each file reads its own slice in index.html's order. A pass that
-   cannot see a dictionary marks nothing and does nothing; the next read does
-   it. So the mark is only ever set by a pass that could have found the word. */
-function migrateNeg(){
-  var w;
-  if(!STG || STG.grm) return;
-  if(typeof WORDS==='undefined' || !WORDS || !WORDS.length) return;
-  /* AND THE STAGES HAVE TO EXIST. www/phases.js reads its slice as it loads,
-     several pages above the line that builds STAGES, so the first stRead() of
-     the app's life happens in a file that has not finished loading -- and the
-     word is found through a stage. That pass does nothing; the foot of
-     phases.js calls this again once the stages are there. */
-  if(typeof STAGES==='undefined' || !STAGES) return;
-  if(typeof langLocked==='function' && langLocked()) return;
-  STG.grm='1';
-  w=gSlot('neg','not');
-  if(w) gPolPut('NEGATION', 'VERB',
-                gPolRule('NEGATION', 'VERB',
-                         [{operation:'word', form:String(w.hw||''),
-                           at:(gPos('negp')==='before'? 'before' : 'after')}], null));
-  else saveStg();
+   So the copy is READ here and put DOWN in gPolPut(), the one place a rule is
+   written. Reading writes nothing at all.
+
+   THE MARK STAYS AND IT IS WRITTEN WITH THE COPY. `STG.grm` says the copy has
+   been made, and it is in `phases` -- the slice it is a mark ABOUT -- because
+   the fault rule 22 records is `SET.gramLang`, a mark on the DISK about a
+   slice held in MEMORY, so the copy died with the app and the mark outlived
+   it. It cannot be dropped for the absence of a rule: a person emptying the
+   two sentences and pressing save takes the copy back out of the list, and an
+   empty list is exactly what an untouched language looks like -- so without
+   the mark a rule somebody DELETED comes back on the next read. That was
+   watched going red.
+
+   IT NEEDS THE DICTIONARY AND THE STAGES, and simply answers nothing without
+   them. The not-word is found through a stage, and at boot each file reads
+   its own slice in index.html's order -- so the first reads of the app's life
+   have neither. Nothing is marked and nothing is lost by that: the next read,
+   with the words there, answers. */
+function gPolOld(have){
+  var w, r, i;
+  if(!STG || STG.grm) return null;
+  for(i=0;i<have.length;i++)
+    if(have[i] && have[i].feature==='NEGATION' && have[i].target==='VERB') return null;
+  if(typeof STAGES==='undefined' || !STAGES) return null;
+  w=(typeof gSlot==='function')? gSlot('neg','not') : null;
+  if(!w) return null;
+  r=gPolRule('NEGATION', 'VERB',
+             [{operation:'word', form:String(w.hw||''),
+               at:(gPos('negp')==='before'? 'before' : 'after')}], null);
+  /* THE SAME RULE EVERY TIME IT IS READ. gPolRule() mints an id off the clock
+     because a rule somebody writes is made once; this one is made on every
+     read, and a fresh id each time would be a different rule each time to
+     anything holding on to one. It says where it came from instead. */
+  if(r) r.id='gr-negp';
+  return r;
 }
 /* A RULE, in the shape §5 asks for. One operation is written flat -- `type`
    `feature` `target` `operation` `form` -- and more than one becomes `parts`

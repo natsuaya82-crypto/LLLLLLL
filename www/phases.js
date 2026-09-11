@@ -51,7 +51,10 @@
    (www/grammar.js § 否定). `grm` is the one mark in this file: it says the old
    `gpos.negp` has been copied onto such a rule, and it is IN this slice
    because that is what it is about -- the fault rule 22 records is a mark on
-   the disk about a slice held in memory. */
+   the disk about a slice held in memory. Both are written by gPolPut(), where
+   a person saves a rule, and by nothing else: this file's own stRead() used
+   to write them and that is what made a launch send the slice up and a
+   failed save move the phone (www/grammar.js の §16 Migration). */
 var STG_DEF={done:{}, notes:{}, set:{}, extra:[], rules:{}, ex:{}, fm:[], order:'', np:[], gpos:{}, ncls:{}, gr:[], grm:''};
 function stBlank(){
   var out={}, k, v;
@@ -75,13 +78,6 @@ function stRead(){
     if(stgs) for(k in STG_DEF)
       if(Object.prototype.hasOwnProperty.call(STG_DEF, k) && stgs[k]) STG[k]=stgs[k];
   }catch(e){}
-  /* AND THE ONE THING THAT HAS TO HAPPEN ONCE PER LANGUAGE. §16 Migration:
-     the side the negation word stands was `gpos.negp`, a value with no word
-     attached to it, and it is one operation of one rule now. It is called
-     from here because this is where a language's phases arrive -- langLoad()
-     in www/core.js reaches it for every language somebody opens -- and it
-     copies rather than moves: `gpos` is read and left exactly where it is. */
-  if(typeof migrateNeg==='function') migrateNeg();
 }
 /* ---- the word order and the three positions belong to the LANGUAGE -------
    They belonged to the phone. SET.order and SET.gpos.{adj,negp,adp} live in
@@ -948,14 +944,6 @@ function stDetailHTML(p){
    and travelled with the language for three days with nothing able to write
    it; g2Board() asks g2Side('negp', ...) now, which is the same row the
    describing word and the place word are arranged with. */
-/* §16 Migration, for the language that is already open. stRead() above asks
-   for it too -- that is the road every OTHER language arrives by, langOpen()
-   through langLoad() -- but the first read of the app's life happens while
-   this file is still loading and STAGES is still undefined, so the pass that
-   matters for the open language is this one, at the foot of the file, with
-   everything built and www/core.js's own langRead() long since done. */
-migrateNeg();
-
 function vGram(){
   var gOpen=gOpenOf();
   var p;

@@ -1857,9 +1857,8 @@ const polar = await pg.evaluate(() => {
      is no server behind this file. */
   const realNet = window.netSaveNow;
   window.netSaveNow = (cb) => cb(true);
-  /* Nothing written yet, and the migration already done -- what this block is
-     about is the writing, and a rule copied out of the old gpos is the block
-     after it. */
+  /* Nothing written yet, and the copy of the old gpos already made -- what
+     this block is about is the writing, and the copy is the block after it. */
   STG.gr = []; STG.grm = '1'; G2POL = { at:'', a:[], b:[] };
   const open = (a) => { window.route = 'gram'; NAV = [{ r:'gram', a:a }];
                         keepDrop(keepKeyOf('gram', a)); render(); };
@@ -2006,36 +2005,53 @@ want('and the verb sentence keeps the rule it had',
 want('two sentences with no difference between them take the rule away',
      polar.nounGone, true);
 
-/* ---- §16 Migration: the old two-choice becomes a rule ---------------------
+/* ---- §16 Migration: the old two-choice IS one of the rules ----------------
    「既存の `gpos.neg` は読んで規則に写す。消さない」. A language written
    before today says where its negation word stands in `STG.gpos.negp` and
    says nothing about which word it is; between that and the 否定 chapter's
-   own slot they are exactly one rule of the new shape. It runs ONCE -- the
-   mark is in the same slice, so it cannot drift from what it marks -- and it
-   copies: the value it read is still there afterwards. */
+   own slot they are exactly one rule of the new shape.
+
+   IT IS READ, AND WRITTEN WHERE A PERSON SAVES. It was a pass -- migrateNeg(),
+   from stRead(), writing the rule and the mark together -- and a pass that
+   writes has to run somewhere: where it ran was every read of this slice, so
+   a LAUNCH wrote the phases slice and sent it up, and a save that did NOT
+   land moved the phone anyway (docs/scope/r16-fix.md; `again` and `keep` are
+   what hold those two). So four things here: reading answers the rule,
+   reading it twice is the same rule, reading writes NOTHING, and a rule
+   deleted afterwards does not come back -- the last because gPolPut(), the
+   one place a rule is written, puts the copy and the mark down before it
+   writes. */
 const negMig = await pg.evaluate(() => {
   const wl = WORDS.length, wasGr = JSON.stringify(STG.gr || []),
         wasGrm = STG.grm, wasGpos = JSON.stringify(STG.gpos || {});
   WORDS.push({ hw:'znak', pos:'part', mns:['not'], at:1, slot:'neg.not' });
   STG.gr = []; STG.grm = ''; if (!STG.gpos) STG.gpos = {};
   STG.gpos.negp = 'before';
-  migrateNeg();
+  /* What the phone is holding for this slice, before anybody reads. */
+  const wasSlice = slMine(langKey('phases'));
   const made = JSON.parse(JSON.stringify(gPolFind('NEGATION', 'VERB') || null));
-  const kept = STG.gpos.negp, marked = STG.grm;
-  /* AND IT DOES NOT RUN TWICE. A rule somebody deleted must not come back on
-     the next launch, which is the whole of why the mark exists. */
+  /* Read it again -- the same rule, not a new one each time. */
+  const twice = JSON.parse(JSON.stringify(gPolFind('NEGATION', 'VERB') || null));
+  const same = !!made && !!twice && made.id === twice.id;
+  const kept = STG.gpos.negp;
+  const wroteNothing = STG.gr.length === 0 && !STG.grm &&
+                       slMine(langKey('phases')) === wasSlice;
+  /* AND A RULE SOMEBODY DELETED DOES NOT COME BACK. Emptying the two
+     sentences and pressing save is somebody saying this language does not do
+     that, and the copy is in the list by the time the delete reaches it. */
   gPolPut('NEGATION', 'VERB', null);
-  migrateNeg();
   const again = !!gPolFind('NEGATION', 'VERB');
   WORDS.length = wl;
   STG.gr = JSON.parse(wasGr); STG.grm = wasGrm; STG.gpos = JSON.parse(wasGpos);
-  return { made: made, kept: kept, marked: !!marked, again: again };
+  return { made: made, kept: kept, same: same, wrote: wroteNothing, again: again };
 });
-want('the old side becomes a rule saying which word stands where',
+want('the old side is READ as a rule saying which word stands where',
      negMig.made && [negMig.made.operation, negMig.made.form, negMig.made.at].join(' '),
      'word znak before');
 want('and what it read is still there', negMig.kept, 'before');
-want('it marks itself done in the slice it is about', negMig.marked, true);
+want('reading it twice is the same rule', negMig.same, true);
+want('and reading it writes nothing -- not STG.gr, not the mark, not the slice',
+     negMig.wrote, true);
 want('and a rule deleted afterwards does not come back', negMig.again, false);
 
 /* ---- 122-126: a rule’s sentence says its condition -------------------------
