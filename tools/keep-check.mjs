@@ -775,7 +775,7 @@ const walk = await pg.evaluate(({ s }) => {
   const seedAgain = window.__seed;
   seedAgain();
   SET.walked = true; SET.plan = 'pro';
-  const out = { stands: [], fails: [], fields: 0, presses: 0, gold: 0, refused: 0 };
+  const out = { stands: [], fails: [], fields: 0, presses: 0, gold: 0, refused: 0, lit: 0 };
 
   langRowGot(langId); langStore();
   netSend = function(method, path, body, tok, ok){
@@ -840,8 +840,24 @@ const walk = await pg.evaluate(({ s }) => {
     go('wldart', wldArts()[wldArts().length - 1].id); }]);
   STANDS.push(['form strule', function(){ goTab('build'); go('gram', 'greet'); openStRules('greet'); }]);
   STANDS.push(['form fmr', function(){ goTab('build'); go('words'); fmrNew('v', 'pst'); }]);
+  /* AN OPENER TAKES WHAT IT TAKES, AND THE PAGE SAYS WHICH. Every one of
+     these was handed the WORD, and the ones that want a LETTER -- the sound
+     chart, the borrowed character -- were handed a headword, said ltById()
+     knows no such letter, and opened nothing. The stand then had no Save in
+     its bar and was skipped, in silence, by a walk whose whole argument is
+     that it names no screen: two of the six screens the owner reported on
+     2026-09-11 were invisible here for that reason alone.
+
+     A LIST OF WHICH OPENER WANTS WHICH IS THE FAULT docs/DATA_SAFETY.md NAMES
+     BY NAME -- a list of keys somebody has to remember to add to. So it is
+     asked instead: try the word, and where no form came up, try the letter. */
   opens.forEach(function(o){
-    STANDS.push(['form ' + o, function(){ window[o].length ? window[o](hw) : window[o](); }]);
+    STANDS.push(['form ' + o, function(){
+      if(!window[o].length){ window[o](); return; }
+      window[o](hw);
+      if(here().r === 'form') return;
+      window[o](lid);
+    }]);
   });
 
   /* WRITTEN DOWN FIRST, and before the screen is stood on. The fixture builds
@@ -861,10 +877,34 @@ const walk = await pg.evaluate(({ s }) => {
     return true;
   }
 
-  /* A change with a road of its own, which therefore writes the phone and
-     leaves the Save grey. A BASELINE in box-check's sense: an entry that has
-     stopped being true fails below, so this cannot rot into permission. */
-  const OWN_ROAD = { setMyFont: 'SET.myfont -- netPrefsPut() sends it on the press' };
+  /* ---- EVERY PRESS THAT WRITES THE PHONE, AND WHY --------------------
+     「打ったら覚える、ボタンが書く」 OWNER 2026-09-03. On a screen that has a
+     Save, a press is meant to remember and the Save is meant to write, so
+     this list is the exceptions and it is a BASELINE in box-check's sense:
+     each line says which of the two kinds it is, an entry nothing reaches any
+     more fails below, and a NEW name fails until somebody writes down which
+     it is. Taking a line out is progress and needs nobody.
+
+     There are two kinds and the second is not permission:
+
+       its own road -- the press is RIGHT to write, because what it changes
+       is not what this screen's Save writes. The Save stays grey and
+       docs/scope/r14-keep.md § D is the measurement.
+
+       not moved yet -- the press writes the language AND now() carries it,
+       so the corner does go gold and nothing is lost. It is still two roads
+       to one change where the owner asked for one 「打ったら覚える、ボタンが
+       書く」, and r14 stopped at making the corner light. Each of these is a
+       screen still to be moved onto the buffer. */
+  const OWN_ROAD = {
+    setMyFont:    'its own road -- SET.myfont, netPrefsPut() sends it on the press',
+    g2Move:       'not moved yet -- setGPos() writes STG on the drop (r14 § A)',
+    wldOvAdd:     'not moved yet -- a row of the article is written on the press (r14 § A)',
+    setWldSecDl:  'not moved yet -- 「may this section be taken away」 is written on the press (r14 § A)',
+    kbUndo:       'not moved yet -- the step back writes the layout (r14 § B)',
+    kbRedo:       'not moved yet -- the step forward writes the layout (r14 § B)',
+    kbAddLay:     'not moved yet -- a layer is written on the press (r14 § B)'
+  };
   const roadSeen = {};
   /* WHICH FIELD A KEYSTROKE WENT INTO. Taken from the real keepSet() rather
      than worked out from the handler's name, which is a mapping this file
@@ -892,6 +932,8 @@ const walk = await pg.evaluate(({ s }) => {
       var ff = fields(); if(f >= ff.length) break;
       var was = String(ff[f].value || ''), nm = ff[f].getAttribute('data-in');
       var saw0 = keepSetSaw.length;
+      flush();
+      var sig0 = nowSig(), allF = all();
       ff[f].value = was + 'zq'; ff[f].dispatchEvent(new Event('input', { bubbles: true }));
       /* A FIELD MAY REFUSE THE KEYSTROKE, and one does: the link on the
          profile puts back what it held for anything that is not the shape of
@@ -919,15 +961,35 @@ const walk = await pg.evaluate(({ s }) => {
       if(wrote1 && !Object.prototype.hasOwnProperty.call(keepRead(KEEP[keepKey()].now), wrote1))
         out.fails.push(lab + ': ' + nm + ' writes the field 「' + wrote1 + '」 and now() does not ' +
                        'answer it -- what the language holds would never reach the box');
-      var lit = saveOn();
+      /* GOLD IFF now() MOVED -- the same sentence the buttons below are
+         asked, said about a field. It used to be 「every field turns the Save
+         gold」, which is a statement that every box on a screen with a Save is
+         a box of the thing being saved. That was true of twenty-four screens
+         because not one of them had a SEARCH box on it, and it stopped being
+         true the day the sound chart got a Save: the chart is a hundred and
+         sixty tiles and a box to find one with, and what is typed in that box
+         is not the letter. A claim that is true of every screen for a reason
+         that is not the claim is a lying proxy, and it fails on the first
+         screen that is merely different. */
+      var moved1 = nowSig() !== sig0, lit = saveOn();
       var ff2 = fields();
       if(f < ff2.length){
         ff2[f].value = was; ff2[f].dispatchEvent(new Event('input', { bubbles: true }));
       }
-      var backGrey = !saveOn();
-      if(!lit) out.fails.push(lab + ': typing into ' + nm + ' left the Save grey');
-      if(!backGrey) out.fails.push(lab + ': ' + nm + ' put back the way it was and the Save stayed gold' +
-                                   ' -- now() does not answer that field');
+      var backSig = nowSig(), backGold = saveOn();
+      if(moved1 && !lit) out.fails.push(lab + ': typing into ' + nm + ' changed what the screen holds' +
+                                        ' and left the Save grey');
+      if(!moved1 && lit) out.fails.push(lab + ': typing into ' + nm + ' turned the Save gold and the' +
+                                        ' screen holds what it held');
+      if(moved1 && backSig === sig0 && backGold)
+        out.fails.push(lab + ': ' + nm + ' put back the way it was and the Save stayed gold' +
+                       ' -- now() does not answer that field');
+      /* AND A FIELD THAT WRITES THE LANGUAGE ON THE KEYSTROKE, which is claim
+         C below asked of a box instead of a button. 「打ったら覚える、ボタンが
+         書く」 OWNER 2026-09-03: a keystroke writes nothing, ever. */
+      if(all() !== allF)
+        out.fails.push(lab + ': typing into ' + nm + ' wrote the phone -- a keystroke writes nothing');
+      if(moved1) out.lit++;
       rec.fields++; out.fields++;
     }
 
@@ -951,11 +1013,27 @@ const walk = await pg.evaluate(({ s }) => {
         out.fails.push(lab + ' -> ' + name + ': the screen changed and the Save stayed grey');
       if(!moved && gold)
         out.fails.push(lab + ' -> ' + name + ': the Save went gold and the screen is what it was');
-      /* C */
-      if(wrote && !moved){
+      /* C -- AND A PRESS WRITES NOTHING. 「打ったら覚える、ボタンが書く」
+         OWNER 2026-09-03, said about a button instead of a box.
+
+         This asked 「wrote the phone AND now() says nothing changed」, and
+         that is half of it: a press that writes the language AND carries it
+         in now() turns the corner gold and reads, from here, exactly like a
+         press that merely remembered. Watched -- with ltTakeSnd put back to
+         the way it wrote the letter on the touch, every claim in this file
+         was green, because now() reads the letter and the letter had indeed
+         moved. A Save over a screen that has already written is a button
+         with nothing left to do and an arrow with nothing left to ask.
+
+         OWN_ROAD is what a press that writes is allowed to be, and it is a
+         baseline in box-check's sense: named, held both ways, and a line
+         that stops being reached fails below. */
+      if(wrote){
         if(!OWN_ROAD[name])
-          out.fails.push(lab + ' -> ' + name + ': it wrote the phone and the screen says nothing changed' +
-                         ' -- now() does not carry what it changed');
+          out.fails.push(lab + ' -> ' + name + ': it wrote the phone' +
+                         (moved ? ' -- a press on a screen with a Save remembers; the Save writes'
+                                : ' and the screen says nothing changed' +
+                                  ' -- now() does not carry what it changed'));
         else roadSeen[name] = 1;
       }
       try { popOff(); } catch(e){}
@@ -1054,7 +1132,8 @@ if(more.deadTyped !== 'written in a tunnel') fails.push('a save with no wire thr
 
 walk.fails.forEach((m) => fails.push(m));
 console.log('every screen with a Save (' + walk.stands.length + '), asked of the page: ' +
-            walk.fields + ' fields typed into and put back (' + walk.refused +
+            walk.fields + ' fields typed into and put back (' + walk.lit +
+            ' of them changed what the screen holds and turned the corner gold; ' + walk.refused +
             ' refused the keystroke), ' + walk.presses + ' buttons pressed, ' +
             walk.gold + ' of them changed the screen and every one turned the corner gold -- ' +
             'and every press that left it as it was left the Save grey');

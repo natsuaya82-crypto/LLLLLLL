@@ -933,7 +933,22 @@ export function halfDone(){
        Nothing reaches either by walking the routes. And once with something
        in the search, because a search that matches nothing leaves the page
        with no tiles at all. */
-    ['the sounds, for one letter', () => { openSnd(LETTERS[0].id); return vForm(); }],
+    ['the sounds, for one letter', () => { keepDrop(keepKeyOf('form', 'snd:' + LETTERS[0].id));
+                                          openSnd(LETTERS[0].id); return vForm(); }],
+    /* AND A SYMBOL PRESSED. The chart holds what has been chosen and the Save
+       in the corner writes it (www/sound.js § PRESSING A SYMBOL CHOOSES), so
+       there are two states here and the fault is nearly always in the one
+       nobody photographed: the tick has to move and the corner has to go
+       gold. The plan is flipped because choosing a sound is what can('snd')
+       buys, and the walks run on the free plan. */
+    ['the sounds, one pressed', () => { const was = SET.plan; SET.plan = 'pro';
+                                        keepDrop(keepKeyOf('form', 'snd:' + LETTERS[0].id));
+                                        openSnd(LETTERS[0].id); ltTakeSnd('t');
+                                        /* The press says the sound out loud, and with no wire
+                                           behind this the voice puts 「接続できません」 over the
+                                           picture. It is not part of this screen. */
+                                        popOff();
+                                        const h = vForm(); SET.plan = was; return h; }],
     ['the sounds, searched', () => { ipaQ = 'a'; openSnd(LETTERS[0].id);
                                      const h = vForm(); ipaQ = ''; return h; }],
     /* What one sound IS, which is a page of its own behind the ? on a tile.
