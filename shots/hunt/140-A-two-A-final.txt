@@ -1,0 +1,40 @@
+# 140 A two-A-final
+route: {"r":"words","a":""}
+
+II
+単語
+選択
+すべて
+アルファベット順
+A
+aaa
+/aaa/
+名詞
+A から
+B
+bbb
+/bbb/
+名詞
+B から
+K
+kano
+/kano/
+名詞
+山
+M
+mos
+/mos/
+名詞
+高い
+S
+sar
+/sar/
+名詞
+川
+T
+tir
+/tir/
+名詞
+見る
+--- 打ち込み欄 ---
+  [w-q] = ""  (ph: 検索)

@@ -1,5 +1,0 @@
-# 125 A se-notif
-route: {"r":"notif"}
-
-通知
-まだ何もない

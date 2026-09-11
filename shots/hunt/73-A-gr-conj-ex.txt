@@ -1,0 +1,6 @@
+# 73 A gr-conj-ex
+route: {"r":"form","a":"stex:conj"}
+
+例文
+保存
+例文

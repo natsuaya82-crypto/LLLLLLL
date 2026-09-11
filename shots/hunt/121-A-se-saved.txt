@@ -1,0 +1,16 @@
+# 121 A se-saved
+route: {"r":"explore"}
+
+最新
+ア
+アヤ
+@aya
+シャンゴ
+ア
+アヤ
+@aya
+今
+kano
+やま
+--- 打ち込み欄 ---
+  [sns-q] = "kano"  (ph: さがす　@で人)

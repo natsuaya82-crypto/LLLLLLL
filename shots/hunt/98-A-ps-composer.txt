@@ -1,0 +1,10 @@
+# 98 A ps-composer
+route: {"r":"form","a":"post:"}
+
+投稿
+投稿する
+ア
+--- 打ち込み欄 ---
+  [pw-ln] = ""  (ph: 自分の言語で一行)
+  [pw-mn] = ""  (ph: 意味)
+  [pw-cam] = ""

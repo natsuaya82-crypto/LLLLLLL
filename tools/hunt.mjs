@@ -1101,6 +1101,8 @@ WALKS['3'] = async (br, srv) => {
 };
 
 /* ---- 4. 文法 ------------------------------------------------------------ */
+/* 2026-09-11、master が 43 行の平らな一覧を 9 章＋付録にした（`a8329771`）。
+   章 → 節 → 頁、という今の形で歩く。 */
 WALKS['4'] = async (br, srv) => {
   say('--- 4. grammar ---');
   const a = await new Dev(br, srv, 'A').open();
@@ -1109,10 +1111,12 @@ WALKS['4'] = async (br, srv) => {
   await a.tapArg('goTab', ['build']);
   await a.tapArg('go', ['gram']);
   await a.shot('gr-contents');
-  const rows = await a.buttons();
-  say('  stages on the contents: ' + rows.filter(b => /^(go\["gram"|stOpen)/.test(b)).length);
+  say('  chapters: ' + JSON.stringify(await a.buttons()));
 
-  /* 1 語順 ── 札を並べて保存 */
+  /* 1 文 → 1 語順 */
+  await a.tapArg('go', ['gram', 'book:snt']);
+  await a.shot('gr-chapter');
+  say('  章「文」の中: ' + JSON.stringify(await a.buttons()));
   await a.tapArg('go', ['gram', 'v2:order']);
   await a.shot('gr-order');
   for (const k of ['S', 'O', 'V']) await a.tapArg('g2Put', [k]);
@@ -1124,96 +1128,78 @@ WALKS['4'] = async (br, srv) => {
   say('  where after 保存: ' + await a.where() +
       '  STG.order=' + await a.pg.evaluate(() => JSON.stringify(STG.order || null)));
 
-  /* 例文 */
-  await a.tapArg('go', ['gram', 'v2:order']);
-  say('  an unanswered row (np) class: ' + await a.pg.evaluate(() => {
-    const e = document.querySelector('#app [data-a*="v2:np"]');
-    return e ? e.className : '(none)';
-  }));
-  const hit = await a.tapArg('stExOpen', ['order']);
-  say('  pressed the ＋ beside 例文? ' + hit + '  -> where=' + await a.where());
-  await a.shot('gr-ex-form');
-  say('  example fields: ' + JSON.stringify(await a.pg.evaluate(() =>
-    Array.prototype.map.call(document.querySelectorAll('#app input,#app textarea'),
-      e => '#' + (e.id || e.className)))));
-  const f = await a.pg.evaluate(() => {
-    const e = document.querySelectorAll('#app input,#app textarea');
-    return e.length ? '#' + (e[0].id || e[0].className) : '';
-  });
-  if (f){ await a.type(f, 'kano tir sar'); await a.shot('gr-ex-typed'); }
-  await a.tapDo('keepPress');
-  await a.shot('gr-ex-saved');
+  /* 章の頁の「例文」の ＋ ── 前に何も押していない状態で */
+  await a.goRoute('gram', 'book:verb');
+  await a.tapArg('go', ['gram', 'v2:pst']);
+  await a.pg.waitForTimeout(2500);
+  await a.shot('gr-pst');
+  const html0 = await a.pg.evaluate(() => document.getElementById('app').innerHTML.length);
+  say('  過去形の頁: ' + JSON.stringify(await a.buttons()) +
+      '  toast="' + await a.pg.evaluate(() => { const t = document.getElementById('toast');
+        return (t && t.className.indexOf('on') >= 0) ? t.textContent : ''; }) + '"');
+  const hit = await a.tapArg('stExOpen', ['pst']);
+  await a.pg.waitForTimeout(600);
+  await a.shot('gr-pst-plus');
+  say('  章の頁の 例文 の ＋: pressed=' + hit + '  where=' + await a.where() +
+      '  toast="' + await a.pg.evaluate(() => { const t = document.getElementById('toast');
+        return (t && t.className.indexOf('on') >= 0) ? t.textContent : ''; }) + '"' +
+      '  pop="' + await a.pop() + '"  #app ' + html0 + ' -> ' +
+      await a.pg.evaluate(() => document.getElementById('app').innerHTML.length));
 
-  /* 戻る、そして目次の 1 行目が何と言っているか */
+  /* 段の側（接続詞）の例文 */
+  await a.goRoute('gram', 'book:snt');
+  const conj = (await a.buttons()).filter(b => b.indexOf('stOpen') === 0);
+  say('  段のある章: ' + JSON.stringify(conj));
+  await a.goRoute('gram', 'conj');
+  await a.shot('gr-conj');
+  say('  段 接続詞: where=' + await a.where() +
+      '  buttons=' + JSON.stringify((await a.buttons()).slice(0, 12)));
+  if (await a.tapArg('openStEx', ['conj'])){
+    await a.shot('gr-conj-ex');
+    await a.tapArg('stExOpen', ['conj']);
+    await a.shot('gr-conj-ex-new');
+    say('  段の例文で ＋: fields=' + JSON.stringify(await a.pg.evaluate(() =>
+      Array.prototype.map.call(document.querySelectorAll('#app input,#app textarea'),
+        e => '#' + (e.id || e.className)))));
+    if (await a.pg.locator('#sx-ln').count()){
+      await a.type('#sx-ln', 'kano tir'); await a.type('#sx-gl', '山を見る');
+      await a.shot('gr-conj-ex-typed');
+      await a.tapDo('keepPress');
+      say('  three boxes then 保存 only: kept=' +
+          await a.pg.evaluate(() => stExKept('conj').length));
+      await a.tapArg('openStEx', ['conj']);
+      await a.tapArg('stExOpen', ['conj']);
+      await a.type('#sx-ln', 'kano tir'); await a.type('#sx-gl', '山を見る');
+      await a.pg.locator('#sx-gl').press('Enter');
+      await a.quiet();
+      await a.tapDo('keepPress');
+      await a.shot('gr-conj-ex-saved');
+      say('  Enter then 保存: kept=' +
+          await a.pg.evaluate(() => stExKept('conj').length));
+    }
+  }
+
+  /* 目次に戻って、答えた章と節がどう見えるか */
   await a.tapDo('back');
   await a.shot('gr-back');
   say('  where after back: ' + await a.where());
   await a.goRoute('gram');
   await a.shot('gr-contents-after');
-  say('  row 1 class now: ' + await a.pg.evaluate(() => {
+  say('  章の一覧: ' + JSON.stringify((await a.text()).split('\n').filter(Boolean)));
+  await a.goRoute('gram', 'book:snt');
+  await a.shot('gr-chapter-after');
+  say('  節「1 語順」の行: ' + await a.pg.evaluate(() => {
     const e = document.querySelector('#app [data-a*="v2:order"]');
     return e ? e.className + '  |text| ' + e.innerText.replace(/\s+/g, ' ') : '(none)';
   }));
-
-  /* もう一度、まっさらな章で ＋ を押す（前の保存の影響を外すため） */
-  await a.goRoute('gram');
-  await a.tapArg('go', ['gram', 'v2:pst']);
-  await a.shot('gr-pst');
-  const hit2 = await a.tapArg('stExOpen', ['pst']);
-  await a.shot('gr-pst-plus');
-  say('  ＋ on a fresh chapter (過去形): pressed=' + hit2 + '  where=' + await a.where() +
-      '  fields=' + JSON.stringify(await a.pg.evaluate(() =>
-        Array.prototype.map.call(document.querySelectorAll('#app input,#app textarea'),
-          e => '#' + (e.id || e.className)))) +
-      '  pop="' + await a.pop() + '"');
-
-  /* そして「段」の側（4 接続詞）の ＋ はどうか */
-  await a.goRoute('gram');
-  await a.tapArg('stOpen', ['conj']);
-  await a.shot('gr-conj');
-  say('  段 4 接続詞: where=' + await a.where() +
-      '  buttons=' + JSON.stringify((await a.buttons()).slice(0, 10)));
-  const hit3 = await a.tapArg('openStEx', ['conj']) || await a.tapArg('stExOpen', ['conj']);
-  await a.shot('gr-conj-plus');
-  say('  段の例文を開く: pressed=' + hit3 + '  where=' + await a.where() +
-      '  buttons=' + JSON.stringify(await a.buttons()));
-  await a.tapArg('stExOpen', ['conj']);
-  await a.shot('gr-conj-ex-new');
-  say('  段の例文で ＋: fields=' + JSON.stringify(await a.pg.evaluate(() =>
-        Array.prototype.map.call(document.querySelectorAll('#app input,#app textarea'),
-          e => '#' + (e.id || e.className)))));
-  await a.type('#sx-ln', 'kano tir');
-  await a.type('#sx-gl', '山を見る');
-  await a.shot('gr-conj-ex-typed');
-  /* まず「保存」だけ押したらどうなるか（打った三つの箱のまま） */
-  await a.tapDo('keepPress');
-  await a.shot('gr-conj-ex-saved-no-enter');
-  say('  typed the three boxes, pressed 保存 only: where=' + await a.where() +
-      '  examples kept=' + await a.pg.evaluate(() => stExKept('conj').length));
-  /* 次に Enter を踏んでから保存（こちらが仕様の道） */
-  await a.tapArg('openStEx', ['conj']);
-  await a.tapArg('stExOpen', ['conj']);
-  await a.type('#sx-ln', 'kano tir');
-  await a.type('#sx-gl', '山を見る');
-  await a.pg.locator('#sx-gl').press('Enter');
-  await a.quiet();
-  await a.shot('gr-conj-ex-enter');
-  say('  after Enter: rows on the page=' + await a.pg.evaluate(() =>
-    document.querySelectorAll('#app .exlist .exrow, #app .exlist > *').length));
-  await a.tapDo('keepPress');
-  await a.shot('gr-conj-ex-saved');
-  say('  after Enter then 保存: where=' + await a.where() +
-      '  examples kept=' + await a.pg.evaluate(() => stExKept('conj').length));
 
   await a.reload();
   await a.tapArg('goTab', ['build']);
   await a.tapArg('go', ['gram']);
   await a.shot('gr-relaunch');
-  say('  after relaunch, row 1: ' + await a.pg.evaluate(() => {
-    const e = document.querySelector('#app [data-a*="v2:order"]');
-    return e ? e.className + '  |text| ' + e.innerText.replace(/\s+/g, ' ') : '(none)';
-  }) +
-    '  STG.order=' + await a.pg.evaluate(() => JSON.stringify(STG.order || null)));
+  say('  after relaunch: 章の一覧=' +
+      JSON.stringify((await a.text()).split('\n').filter(Boolean)) +
+      '  STG.order=' + await a.pg.evaluate(() => JSON.stringify(STG.order || null)));
   return a;
 };
 

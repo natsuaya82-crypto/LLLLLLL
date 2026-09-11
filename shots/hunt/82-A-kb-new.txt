@@ -1,0 +1,9 @@
+# 82 A kb-new
+route: {"r":"form","a":"kbnew"}
+
+キーボードを追加
+QWERTY
+フリック
+タップ
+音の表
+ABC順

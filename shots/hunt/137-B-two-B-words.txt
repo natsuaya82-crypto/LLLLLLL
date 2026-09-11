@@ -1,0 +1,25 @@
+# 137 B two-B-words
+route: {"r":"words","a":""}
+
+II
+単語
+選択
+すべて
+アルファベット順
+K
+kano
+/kano/
+名詞
+山
+S
+sar
+/sar/
+名詞
+川
+T
+tir
+/tir/
+名詞
+見る
+--- 打ち込み欄 ---
+  [w-q] = ""  (ph: 検索)

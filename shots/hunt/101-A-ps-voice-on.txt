@@ -1,0 +1,11 @@
+# 101 A ps-voice-on
+route: {"r":"form","a":"post:"}
+
+投稿
+投稿する
+ア
+0:01
+--- 打ち込み欄 ---
+  [pw-ln] = "kano tir sar"  (ph: 自分の言語で一行)
+  [pw-mn] = "山から川を見た"  (ph: kano tir sar)
+  [pw-cam] = ""
