@@ -50,7 +50,10 @@
         somebody wrote and nothing else. 「文字数に含ませたくないのよ」
 
     21  the @handle over a reply is a thing you PRESS, and it stands you on
-        that person's page. The @ in a body goes through the same one place
+        that person's page. The @ in a body goes through the same one place,
+        and so does THE @ IN THE HEAD OF A POST -- which was a span carrying
+        no name, so the press fell to the post around it and opened the
+        thread (OWNER 実機 2026-09-11)
 
     20  a roman line in a VERTICAL field lies on its side and runs down one
         column -- placeholder and typed line both. Stacked a letter at a time
@@ -661,8 +664,14 @@ const R = await pg.evaluate(async () => {
       SET.plan = 'pro';
       const at = (h, cls) => h.indexOf('class="' + cls);
       const h = postRow(own);
+      /* The handle is asked for as the thing atHTML() draws, not as a class.
+         It wore `.phandle` until 2026-09-11, when the head's @ became the
+         road to that person (www/post.js § postRow, OWNER 実機) -- the same
+         button the @ in a body has always been. Asking the ONE PLACE where
+         it is puts this claim about ORDER out of reach of what it is
+         WEARING, which is the half that changed. */
       const iName = at(h, 'pname"'), iBdg = at(h, 'bdgw'),
-            iHd = at(h, 'phandle"'), iWhen = at(h, 'pwhen"');
+            iHd = h.indexOf(atHTML(own.hd)), iWhen = at(h, 'pwhen"');
       if (iBdg < 0)
         fails.push('a post of this person\u2019s own on the plan that carries the ' +
                    'mark has no mark on it, so where it sits is untested');
@@ -2683,6 +2692,80 @@ const R = await pg.evaluate(async () => {
                    'same atHTML() the line over a reply uses. Two roads to ' +
                    'one mark is the same character meaning two things on one ' +
                    'screen');
+
+      /* ---- 21-b. 投稿の頭の @ も、その人への道 --------------------------
+         「投稿している人の顔や @〇〇 を押しても、その人のプロフィールに
+         飛ばない」 OWNER 2026-09-11、実機。
+
+         頭の @ は `<span class="phandle">` で、名前が載っていなかった。押しは
+         外側の `.post`（DO('postOpen')）に落ちて**スレッドが開く** ── 何も
+         throw せず、正しい画面が、間違って出る。`act-check` も `press` も
+         「押せる」と言い続けた。**どちらも押した先を訊いていない。**
+
+         だから訊くのは「ボタンか」ではなく **どこに立ったか** です。本物の
+         要素を押して here() を読む。data-a を読んで自分で go() を呼ぶのは、
+         自分の答えを訊き返すだけになる。
+
+         **顔はここで訊きません。** オーナーは顔と @ を並べて名指しました
+         が、顔は既に押さえられています ── この file の「somebody else's
+         face on the timeline is not a way to them」で、顔の道を外して赤を
+         見ました（2026-09-11）。同じ問いを二度書けば、次の人はどちらを直せ
+         ばいいのか分かりません。 */
+      {
+        const mine21c = POSTS.filter(p => !p.mine && p.hd && !p.to)[0];
+        if (!mine21c)
+          fails.push('the fixture holds no post by somebody else carrying a ' +
+                     'handle, so nothing below this is a test of anything');
+        else {
+          const realS1c = netSend1, realSc = netSend, realGc = netGet;
+          const wasWhoC = WHO_HAVE, wasAskC = WHO_ASKED;
+          netSend1 = function (m, p2, b, t, ok) {
+            p2 = String(p2);
+            ok(p2.indexOf('/rest/v1/profile_seen?') === 0
+                 ? [{ id:'u21c', handle: mine21c.hd, display:'Beni', av:null,
+                      fo:0, fr:0 }]
+                 : p2.indexOf('/rest/v1/profile?') === 0 ? [{ id:'u21c' }] : [],
+               200);
+          };
+          netSend = function (m, p2, b, t, ok, bad, up) { netSend1(m, p2, b, t, ok, bad, up, true); };
+          netGet = function (p2, ok, bad) { netSend('GET', p2, null, '', ok, bad); };
+          for (const part of [['the @handle in the head of a post',
+                               '.phead .ptag']]) {
+            WHO_HAVE = {}; WHO_ASKED = {};
+            window.route = 'feed'; NAV = [{ r: 'feed' }];
+            render();
+            const row = Array.prototype.filter.call(
+              app.querySelectorAll('.post'),
+              e => (e.getAttribute('data-a') || '').indexOf(mine21c.id) >= 0)[0];
+            const hit = row && row.querySelector(part[1]);
+            if (!hit)
+              fails.push(part[0] + ' is not a thing you can press at all ' +
+                         '(no ' + part[1] + ' on the row). It is where a ' +
+                         'reader asks who wrote this');
+            else {
+              hit.click();
+              const landed = here();
+              if (landed.r !== 'profile' || landed.a !== mine21c.hd)
+                fails.push('pressing ' + part[0] + ' stood you on ' +
+                           landed.r + ':' + landed.a + ' and not profile:' +
+                           mine21c.hd + '. A press that lands on the right ' +
+                           'kind of wrong screen is what act-check and press ' +
+                           'both call working');
+            }
+          }
+          netSend1 = realS1c; netSend = realSc; netGet = realGc;
+          WHO_HAVE = wasWhoC; WHO_ASKED = wasAskC;
+        }
+        /* そして頭の @ は、本文の @ と同じ一箇所で描かれている。上の「押した
+           先」だけだと、頭にボタンを二本目として書き足しても緑になる。 */
+        const hd21 = postRow(POSTS.filter(p => !p.mine && p.hd && !p.to)[0] ||
+                             POSTS[0]);
+        const who21 = (POSTS.filter(p => !p.mine && p.hd && !p.to)[0] || {}).hd;
+        if (who21 && hd21.indexOf(atHTML(who21)) < 0)
+          fails.push('the @handle in the head of a post is not drawn by ' +
+                     'atHTML(). A second button written out here is a second ' +
+                     'road to one mark, and the two come to differ');
+      }
     }
 
     window.route = wasRoute; NAV = wasNav;
@@ -3402,7 +3485,9 @@ console.log('post: a letter placed on a black photograph is IN the file that goe
             '      with the post being answered above it.\n' +
             '      The @handle over a reply is a thing you press, it is 44pt,\n' +
             '      and it stands you on that person\u2019s page; the @ in what\n' +
-            '      somebody wrote goes through the same one place.\n' +
+            '      somebody wrote goes through the same one place, and so does\n' +
+            '      the @ in the HEAD of a post -- pressed for real, it stands\n' +
+            '      you on that person and not on the post it sits in.\n' +
             '      That line stays horizontal in a language written downward --\n' +
             '      what runs down the page is what somebody WROTE. And whom a\n' +
             '      post is for is never in the line: the + and an @ typed at\n' +
