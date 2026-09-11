@@ -1906,15 +1906,13 @@ function obFinish(){
      rather than overwrites, and it is safe to call twice. So this is a call
      and not a condition -- nothing here re-states what that file already
      says. */
-  /* AND THE ACCOUNT GOES ON WHAT THE WALK MADE, HERE, BEFORE IT IS SENT.
-     「言語はアカウントないと作れないです」 -- the walk is the one place
-     something is made before there is one, and this is the door it comes out
-     of. Without this line the language has no owner recorded and no `sid`,
-     which is the state www/core.js § langMine refuses on purpose: it is the
-     shape of A's un-uploaded language on a phone B has just signed in to
-     (acct-check 10 and 35), and netLangSync() would not carry it up. */
-  if(typeof SESS!=='undefined' && SESS && SESS.uid && langId)
-    langOwnGot(langId, SESS.uid);
+  /* THE ACCOUNT IS ALREADY ON WHAT THE WALK MADE. It used to be written here
+     and here was too late: netTook() (www/net.js) asks which language this
+     account is to be in the moment the session arrives, which is before this
+     line, and an unstamped language made it mint a second one. The stamp is
+     written where the session arrives now -- www/net.js § netTook -- so by
+     the time netLangSync() below runs there is one language and it is this
+     account's. */
   if(typeof netLangSync==='function') netLangSync();
   /* AND HOW THE WALK LEFT THE APP SET UP. The drawing turned `myfont` on and
      borrowing a character turned `showScript` on, both before there was an

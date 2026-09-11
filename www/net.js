@@ -600,6 +600,32 @@ function netTook(d){
      is www/boot.js's own idiom for 「when the languages have come down」 and
      it runs its waiter whether the answer arrived or was refused, which is
      exactly what netLangBack() did with `done(false)`. */
+  /* AND THE LANGUAGE THE WALK MADE IS THIS ACCOUNT'S FROM HERE.
+     -------------------------------------------------------------------------
+     「オンボーディング→最後にログイン」。The walk is the one place something
+     is made before there is an account, and this is the moment the account
+     appears. So this is where what it made gets one.
+
+     IT USED TO BE ONE STEP LATER, in obFinish() (www/onboard.js), and one
+     step later is after the line below. `langForAcct()` asks 「is the open
+     language this account's」, the walk's language had no owner on it yet, and
+     the answer was no -- so the door MINTED a second language and opened it.
+     Measured on 2026-09-11 (docs/scope/r24-lang.md): one walk came out as two
+     rows on the server, the name that was typed on the empty one and the
+     letters that were drawn on the nameless one. hunt 道1・道10・道11 are all
+     that one split.
+
+     `SET.walked` is this handset's 「the door has been through」 and it is what
+     makes this the walk and not somebody else's language: a language can only
+     be made with an account (www/core.js § langNew), an account can only be
+     reached through the door, and the door sets it. So with it false the only
+     language on this phone is the one the walk is making.
+
+     It writes nothing over: a language that already says whose it is keeps
+     saying it. The refusal that keeps A's language off B's phone is
+     langOwned() and is untouched -- after the door there is no unstamped
+     language to pick up (tools/acct-check.mjs 35 and 66). */
+  if(!SET.walked && langId && !langOwnOf(langId)) langOwnGot(langId, SESS.uid);
   langForAcct(false);
   if(typeof pullWait==='function') pullWait('mylangs', function(){
     if(langForAcct(true)) render();
