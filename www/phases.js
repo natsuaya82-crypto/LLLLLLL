@@ -46,7 +46,13 @@
    Each row is the field and what an UNANSWERED one is, which is the only
    thing the three copies were ever saying. Adding a field is this line and
    nothing else. */
-var STG_DEF={done:{}, notes:{}, set:{}, extra:[], rules:{}, ex:{}, fm:[], order:'', np:[], gpos:{}, ncls:{}};
+/* `gr` is the rules of §5's shape -- 否定 and 疑問, one per (feature,
+   target), written on their own chapters out of two sentences somebody made
+   (www/grammar.js § 否定). `grm` is the one mark in this file: it says the old
+   `gpos.negp` has been copied onto such a rule, and it is IN this slice
+   because that is what it is about -- the fault rule 22 records is a mark on
+   the disk about a slice held in memory. */
+var STG_DEF={done:{}, notes:{}, set:{}, extra:[], rules:{}, ex:{}, fm:[], order:'', np:[], gpos:{}, ncls:{}, gr:[], grm:''};
 function stBlank(){
   var out={}, k, v;
   for(k in STG_DEF) if(Object.prototype.hasOwnProperty.call(STG_DEF, k)){
@@ -69,6 +75,13 @@ function stRead(){
     if(stgs) for(k in STG_DEF)
       if(Object.prototype.hasOwnProperty.call(STG_DEF, k) && stgs[k]) STG[k]=stgs[k];
   }catch(e){}
+  /* AND THE ONE THING THAT HAS TO HAPPEN ONCE PER LANGUAGE. §16 Migration:
+     the side the negation word stands was `gpos.negp`, a value with no word
+     attached to it, and it is one operation of one rule now. It is called
+     from here because this is where a language's phases arrive -- langLoad()
+     in www/core.js reaches it for every language somebody opens -- and it
+     copies rather than moves: `gpos` is read and left exactly where it is. */
+  if(typeof migrateNeg==='function') migrateNeg();
 }
 /* ---- the word order and the three positions belong to the LANGUAGE -------
    They belonged to the phone. SET.order and SET.gpos.{adj,negp,adp} live in
@@ -433,10 +446,18 @@ function stHidden(){ return can('gram')? 0 : (STG.extra? STG.extra.length : 0); 
    argsOf. A ninth chapter is walked the day it is added, and a chapter that
    nothing renders is a chapter where a hard-coded string sits forever. */
 function gramArgs(){
-  var out=stAll().map(function(p){ return p.id; }), a, i;
+  var out=stAll().map(function(p){ return p.id; }), a, i, j;
   out.push('v2');
   a=(typeof g2Chaps==='function')? g2Chaps() : [];
-  for(i=0;i<a.length;i++) out.push('v2:'+a[i].id);
+  for(i=0;i<a.length;i++){
+    out.push('v2:'+a[i].id);
+    /* AND EVERY TARGET OF THE TWO CHAPTERS THAT HAVE THEM. A page reached
+       only as an argument OF an argument is still a page: it is asked of
+       gPolFeat() and GPOL_ON rather than written out, so a fifth thing that
+       can be negated is walked the day it is added. */
+    if(typeof gPolFeat==='function' && gPolFeat(a[i].id))
+      for(j=0;j<GPOL_ON.length;j++) out.push('v2:'+a[i].id+':'+GPOL_ON[j]);
+  }
   return out;
 }
 function stBy(id){
@@ -927,6 +948,14 @@ function stDetailHTML(p){
    and travelled with the language for three days with nothing able to write
    it; g2Board() asks g2Side('negp', ...) now, which is the same row the
    describing word and the place word are arranged with. */
+/* §16 Migration, for the language that is already open. stRead() above asks
+   for it too -- that is the road every OTHER language arrives by, langOpen()
+   through langLoad() -- but the first read of the app's life happens while
+   this file is still loading and STAGES is still undefined, so the pass that
+   matters for the open language is this one, at the foot of the file, with
+   everything built and www/core.js's own langRead() long since done. */
+migrateNeg();
+
 function vGram(){
   var gOpen=gOpenOf();
   var p;

@@ -1907,16 +1907,63 @@ export function halfDone(){
     /* And naming one, which is a form and is therefore reached by nothing the
        walk would otherwise take. */
     ['naming a noun class', () => { nclsNew(); return vForm(); }],
-    /* THE OTHER SIDE OF THE NEGATION ROW. The word order chapter says which
-       side the word for 「not」 stands, and the row is two words: the fault
-       in a pair is nearly always in the side nobody photographed. */
-    ['the negation word before the verb', () => {
-        const was = STG.gpos && STG.gpos.negp;
+    /* A SIDE THIS LANGUAGE HAS ANSWERED, which is the other face of every
+       chapter that decides one. Unanswered it is the two names with neither
+       lit (www/grammar.js § g2Side, OWNER 2026-09-10「最初は何も置かれてない
+       状態」); answered it is the two WORDS, and moving one is what says which
+       side -- so this is the only face where a word of a pair can be picked
+       up at all.
+
+       It was the negation's row on the word order board. That row is gone: a
+       two-choice is the whole of what §4.4 says not to decide for anybody, and
+       where the negation word stands is one operation of one rule now. */
+    ['a describing word on the side this language puts it', () => {
+        const was = STG.gpos && STG.gpos.adj;
         if (!STG.gpos) STG.gpos = {};
-        STG.gpos.negp = 'before';
-        window.route = 'gram'; NAV = [{ r:'gram', a:'v2:order' }];
+        STG.gpos.adj = 'before';
+        window.route = 'gram'; NAV = [{ r:'gram', a:'v2:adj' }];
         const h = vGram();
-        if (was) STG.gpos.negp = was; else delete STG.gpos.negp;
+        if (was) STG.gpos.adj = was; else delete STG.gpos.adj;
+        return h; }],
+    /* §4.4 否定. The chapter is the four things that can be negated, and a
+       TARGET is its own page: two sentences somebody made, and the rule this
+       reads off the difference between them. Three faces, because the page is
+       three different screens -- nothing written yet, the two sentences with
+       words in them, and the word being chosen on its own screen. */
+    ['what can be negated', () => {
+        window.route = 'gram'; NAV = [{ r:'gram', a:'v2:neg' }];
+        return vGram(); }],
+    ['a negation nobody has written yet', () => {
+        const was = STG.gr;
+        STG.gr = [];
+        G2POL = { at:'', a:[], b:[] };
+        window.route = 'gram'; NAV = [{ r:'gram', a:'v2:neg:v' }];
+        keepDrop(keepKeyOf('gram', 'v2:neg:v'));
+        const h = vGram();
+        keepDrop(keepKeyOf('gram', 'v2:neg:v'));
+        STG.gr = was;
+        return h; }],
+    /* WITH THE TWO SENTENCES IN IT. The rule's own example is what the page
+       opens as, so this is a rule already written being looked at again --
+       and it is the only face where a word standing in a line can be pressed
+       back out of it. */
+    ['a negation written out of two sentences', () => {
+        const was = STG.gr;
+        /* THE WORDS ARE THIS FIXTURE'S OWN. `tir` is its verb and `nak` the
+           word it made for 「not」, so the sentence on the page is one this
+           dictionary can actually be read against -- a line built out of
+           words nobody has cannot say where the verb is, and the rule under
+           it would read 「動詞の後」 about a word standing in front of one. */
+        STG.gr = [{ id:'grfix', type:'inflection', feature:'NEGATION', target:'VERB',
+                    operation:'word', form:'nak', at:'before', parts:[],
+                    eg:{ a:['kano','tir'], b:['kano','nak','tir'] } }];
+        G2POL = { at:'', a:[], b:[] };
+        window.route = 'gram'; NAV = [{ r:'gram', a:'v2:neg:v' }];
+        keepDrop(keepKeyOf('gram', 'v2:neg:v'));
+        const h = vGram();
+        keepDrop(keepKeyOf('gram', 'v2:neg:v'));
+        G2POL = { at:'', a:[], b:[] };
+        STG.gr = was;
         return h; }],
     /* And a class that EXISTS, which is a different face of the same form:
        the name is filled in and the way out of the class is on it. A new one
@@ -2854,10 +2901,23 @@ export function halfDone(){
        OWNER 2026-09-06 -- so this is that chapter, which is where the board
        and the sentence under it are now. Appended at the END so no index
        above it moves. */
+    /* WITH CARDS ON IT, because the line under the board comes out after a
+       card goes on and not before -- 「文法の各段は最初は何も置かれてない状態」
+       OWNER 2026-09-10 (www/grammar.js § g2Board). It marked the decision as
+       touched and placed nothing, which drew the line anyway out of the
+       engine's own fallback: the face was a picture of the bug. The buffer is
+       dropped either side of it for the reason every other face of this board
+       says. */
     ['the word order, with the demonstration under it', () => {
+       const was = STG.order;
        STG.set['order'] = 1;
+       STG.order = ['S', 'O', 'V'];
        window.route = 'gram'; NAV = [{ r:'gram', a:'v2:order' }];
-       return vGram(); }],
+       keepDrop(keepKeyOf('gram', 'v2:order'));
+       const h = vGram();
+       STG.order = was;
+       keepDrop(keepKeyOf('gram', 'v2:order'));
+       return h; }],
     /* ---- the search boxes, with something typed in them -----------------
        The cross only exists once there is something to clear, so a box with
        an empty field says nothing about whether it has one. These are the
