@@ -710,7 +710,7 @@ function stEx(id){ if(!STG.ex) STG.ex={}; if(!STG.ex[id]) STG.ex[id]=[]; return 
 function stExKeepOn(id){
   /* Not in somebody else's language: saveStg() refuses one, so a buffer here
      would put a Save in the bar that could not write. */
-  if(!stBy(id) || langLocked()) return;
+  if(!stExOn(id) || langLocked()) return;
   keepOn(keepKeyOf('form', 'stex:'+id),
          function(){ return {ex:JSON.stringify(stEx(id))}; },
          function(v, done){ stKeepSave(id, v); done(true); });
@@ -797,8 +797,33 @@ function openStRules(id){
     IN('stSetRules') + '>'+esc(keepVal(keepKeyOf('form', 'strule:'+id), 'rules'))+'</textarea>');
 }
 FORM_OPEN.strule=function(a){ openStRules(String(a||'')); };
+/* WHERE A LINE MAY BE WRITTEN, AND IT IS ONE QUESTION.
+   「章の頁の例文の ＋ を押しても何も起きない」 -- measured 2026-09-11: the
+   chapter's ＋ says `stExOpen` and leaves you standing on `gram:v2:pst`, while
+   a stage's row goes to `form:stex:greet`. The two doors were the same door
+   and this was the gate on it: `stBy(id)`, which is 「is this a STAGE」 --
+   true of 語用 and false of every chapter and every section of the book, and
+   stEx() has been keyed by the chapter's id since a chapter had examples at
+   all (www/grammar.js § g2ChapEx, 2026-09-06).
+
+   So the gate is what the id IS: something the book has a page for. A stage,
+   or a section -- g2Secs() is the one place that says what the book is made
+   of, and it is asked of the HEAD of the id because 否定 and 疑問 carry their
+   target on theirs (`neg:v`) and their lines belong to the chapter, not to one
+   of its four targets (www/grammar.js § g2PolChap).
+
+   Nothing threw. The ＋ registered, the press ran, `stExNew` was set, and the
+   screen it was meant to open never came. */
+function stExOn(id){
+  var a=g2Secs(), s=String(id||''), i, h;
+  for(i=0;i<a.length;i++){
+    h=String(a[i].id).split(':')[0];
+    if(h===s || String(a[i].id)===s) return true;
+  }
+  return false;
+}
 function openStEx(id){
-  if(!stBy(id)) return;
+  if(!stExOn(id)) return;
   /* The buffer before the form, so navTop()'s keepBtnHTML() has one to draw
      a Save from -- www/shell.js § KEEP. */
   stExKeepOn(id);

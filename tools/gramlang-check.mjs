@@ -2136,6 +2136,54 @@ want('what is dropped first is said', sent.drop,
 want('and a rule with both says both', sent.both,
      'y で終わるとき、末尾の 1 文字を落として、動詞の末尾に -ta');
 
+/* ---- §18 THE LINES OF A CHAPTER HAVE A PAGE, AND THE + REACHES IT --------
+   「章の頁（語順・過去形など）の例文の ＋ を押しても何も起きない」 2026-09-11.
+
+   Measured before it was written: the chapter's ＋ says `stExOpen` and leaves
+   you standing on `gram:v2:pst`, while a stage's row goes to `form:stex:greet`
+   -- one door, two answers, because openStEx() asked `stBy(id)`, which is
+   「is this a STAGE」. Nothing threw: the button registered, the press ran,
+   `stExNew` was set, and the page never came.
+
+   ASKED OF WHERE YOU END UP, and of every section the book has rather than of
+   the two ids that were reported. A section added tomorrow is walked the day
+   it is added, and this is the claim that would have caught it on the day the
+   chapters were made pages.
+
+   THE WAY IN IS EITHER OF TWO NAMES and that is not the fault: a stage's
+   ROW says `openStEx` and a chapter's ＋ says `stExOpen`, which is the same
+   page opened with the field for one more already showing. Both are asked for,
+   so a section reached by only one of them is still reached. What is NOT
+   allowed is a section reached by neither. */
+const ex = await pg.evaluate(() => {
+  const where = () => here().r + ':' + (here().a || '');
+  const open = (s) => {
+    window.route = 'gram';
+    NAV = [{ r:'gram', a: s.p? s.id : ('v2:' + s.id) }];
+    render();
+  };
+  const plus = () => Array.prototype.filter.call(
+    document.querySelectorAll('#app [data-do="stExOpen"],#app [data-do="openStEx"]'),
+    () => true);
+  const out = { none: [], stuck: [], n: 0 };
+  g2Secs().forEach((s) => {
+    open(s);
+    const b = plus();
+    if (!b.length) { out.none.push(s.id); return; }
+    out.n++;
+    b[0].click();
+    if (here().r !== 'form') out.stuck.push(s.id + ' -> ' + where());
+    /* back to the chapter, so the next one opens from the list and not from
+       the form this one left standing */
+    window.route = 'gram'; NAV = [{ r:'gram', a:'v2' }]; render();
+  });
+  return out;
+});
+want('every section of the book has a way to its lines', ex.none.join(' '), '');
+want('and there are some to press', ex.n > 0, true);
+want('and pressing it opens the page, whichever kind of section it is',
+     ex.stuck.join(' | '), '');
+
 await br.close();
 srv.close();
 
@@ -2186,3 +2234,5 @@ console.log('          Which side the negation word stands is a row on the word'
 console.log('          order chapter, and pressing it comes out in the sentence.');
 console.log('          A rule that has a condition says it, and one that has none');
 console.log('          reads exactly as it did.');
+console.log('          Every section of the book reaches its own lines by the same');
+console.log('          + -- a stage, a chapter and a section are one door.');
