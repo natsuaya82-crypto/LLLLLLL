@@ -1711,13 +1711,25 @@ const R = await pg.evaluate(async () => {
 
      これは langFirst()（オンボーディング）とは違います。あちらは口座が
      できる前なので押す印がありません。ここには押す印があります。 */
+  /* AND IT GOES UP AS IT IS MADE（2026-09-11、hunt #12）。言語はサーバーに
+     住んでいて（CLAUDE.md § Online）、スライスはメモリです（規則 22）──
+     だから「作って送らない」は「アプリを閉じたら消える」と同じことです。
+     測った形: ＋ を押した言語の行は**次の起動**（www/boot.js）まで出来ず、
+     その間に閉じれば無くなり、画面は何も言いません。 */
   start();
   SET.plan = 'pro'; SET.planWas = 'pro'; save();
   const keepL34 = LANGS, keepId34 = langId, keepNm34 = langName;
+  const keepSync34 = netLangSync;
+  const sent34 = [];
+  netLangSync = (then) => { sent34.push(langId); if (then) then(false); };
   LANGS = { 'La': { name: '自分の', mine: true } }; langOwnGot('La', A);
   langId = 'La'; langName = '自分の';
   langNew();
+  netLangSync = keepSync34;
   const made34 = langId;
+  if (sent34.indexOf(made34) < 0)
+    no('34: ＋ で作った言語が、その場でサーバーへ行っていない — 送った先 ' +
+       JSON.stringify(sent34));
   if (made34 === 'La') no('34: ＋ を押したのに新しい言語が開いていない');
   else if (langOwnOf(made34) !== A)
     no('34: ＋ で作った言語に、押した人の印が無い（uid=' +
@@ -1729,7 +1741,8 @@ const R = await pg.evaluate(async () => {
     no('34: ＋ で作った言語が、作った人自身の一覧に出ない');
   LANGS = keepL34; langId = keepId34; langName = keepNm34;
   SET.plan = 'free'; SET.planWas = 'free'; save();
-  say('34: ＋ で作った言語は、押した人のアカウントのもの');
+  say('34: ＋ で作った言語は、押した人のアカウントのもの ── そしてその場で' +
+      'サーバーへ行く（次の起動を待たない）');
 
   /* ---- 35. 印の無い言語を拾うのは、オンボーディングの歩きだけ -----------
      「1アドレス1アカウント」「これは絶対課金もアカウントごと言語もそう」

@@ -1215,6 +1215,19 @@ function langNew(){
   if(typeof SESS!=='undefined' && SESS && SESS.uid) langOwnGot(id, SESS.uid);
   langStore();
   langOpen(id);
+  /* AND IT GOES UP AS IT IS MADE. A language LIVES on the server (CLAUDE.md
+     § Online) and a slice is in memory (rule 22), so a language that is made
+     and not sent is a language that is gone when the app closes. Measured
+     2026-09-11 (hunt #12): the row only appeared on the NEXT launch, out of
+     www/boot.js -- so 「言語を追加」 and then closing the app lost it, with
+     nothing on screen to say so.
+
+     netLangSync() is the one road that puts a language up and it decides
+     everything itself -- nothing without a session, nothing without a
+     language, safe to call twice -- which is why this is a call and not a
+     condition. It is the same line the door runs (www/net.js § netTook), at
+     the other moment something is made. */
+  if(typeof netLangSync==='function') netLangSync();
 }
 
 function save(){
@@ -1481,9 +1494,9 @@ function langCap(){
    as B's own, with nothing thrown.
 
    The onboarding is the one place something is made before there is an
-   account to make it for, and the door is on the way out of it: obFinish()
-   calls netLangSync() the moment somebody is through, which is where the
-   account goes on. So the walk is the only moment a session may adopt what
+   account to make it for, and the door is on the way out of it: netTook()
+   (www/net.js) sends what the walk made the moment the session arrives, and
+   the row it makes is where the account goes on. So the walk is the only moment a session may adopt what
    it finds, and `SET.done` is what tells the walk from the app -- the same
    question makeNeed() asks in www/onboard.js, in the same words, for the
    same reason.
