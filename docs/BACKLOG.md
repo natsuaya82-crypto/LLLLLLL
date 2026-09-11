@@ -7,6 +7,25 @@ refactor, a feature and a rename never arrive in the same diff.
 
 The order is the order to do them in.
 
+## 「接続できません」が二つの形で描かれています（2026-09-11、リーダーへ）
+
+同じ一文が、同じ画面の隣り合う二箇所で違う形になっています。
+
+| 所 | 何を描くか | 形 |
+|---|---|---|
+| `snsAnsHTML()` `www/sns.js` | 打った検索が訊けなかった | `<div class="note">` |
+| `snsEmpty()` `www/sns.js` | タイムライン・通知・検索の一覧が訊けなかった | `emptyBox()` |
+
+**どちらもバグではありません。** 打った検索の答え（`snsHits`）は表に載っていない
+生の問いで、`r.bad` はその答えが自分で運んでくる理由（`netWhy()` のもの）。表の
+route は `pullSay()` が答えます。**二つの問いで、二箇所ではありません。**
+
+引っかかるのは**見た目だけ**です ── 検索の箱に字が入っているかどうかで、同じ
+「接続できません」が薄い一行にも、真ん中の一文にもなります。`tools/fixture.mjs`
+の面を二つ並べて撮ると見えます（`a search that could not be asked` と
+`a timeline with no signal`）。どちらに寄せるかは**見た目の判断でオーナーのもの**
+なので、こちらでは触っていません（CLAUDE.md § Deciding）。
+
 ## `navDrop()` の呼び出し側四つを `(r, a)` に揃える（2026-09-11）
 
 `navDrop()` は画面 ── route とその引数 ── を受けるようになりましたが、route は
