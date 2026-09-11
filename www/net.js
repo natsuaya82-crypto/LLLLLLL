@@ -1006,7 +1006,23 @@ function netMakeProfile(h, name, ok, bad){
   netPost('/rest/v1/profile', row, SESS.at,
           /* what was sent, so netAvSync() does not send it again on the
              next launch for a face that has not moved */
-          function(d){ ME.avSent=JSON.stringify(av||null); saveMe(); ok(d); },
+          function(d){
+            ME.avSent=JSON.stringify(av||null); saveMe();
+            /* AND THE ROW EXISTS NOW, WHICH NOTHING WROTE DOWN.
+               `meRowHas()` (www/me.js § ME_ROW) is 「does this account have a
+               profile row」 and appIs() (www/shell.js) answers 'door' while it
+               is false -- so the last 「次へ」 of the walk made the account,
+               made the row, said 「ログインしました」 and then drew the
+               sign-in screen over the app. Measured 2026-09-11 (hunt #1):
+               SET.walked true, route 'profile', netSignedIn() true,
+               meRowHas() FALSE. It came right on the next launch, which is
+               why it happened once and looked like a flicker.
+               Only netMyProfile() and netProfSync() ever wrote that answer,
+               and both of them ASK; this is the one place that MAKES the row,
+               so it is the one place that knows without asking. */
+            if(typeof meRowGot==='function') meRowGot(true);
+            ok(d);
+          },
           bad);
 }
 /* The face on the profile row, kept level with the face on the phone.

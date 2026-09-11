@@ -3253,6 +3253,45 @@ const R = await pg.evaluate(async () => {
         '動いた分だけ送り、送れなければ端末にも書かない。行を作る所も同じ一覧');
   }
 
+
+  /* ---- 68. 行を作った瞬間に「行がある」になる ---------------------------
+     hunt #1（2026-09-11）: 門の最後の「次へ」を押すと、トーストは
+     「ログインしました」なのに**ログイン画面が出ます**。読み込み直すと普通に
+     アプリが開くので、一度きり、アカウントを作った直後にだけ出る。
+
+     測った値: `SET.walked=true`、`route='profile'`、`netSignedIn()=true`、
+     そして **`meRowHas()=false`**。`appIs()`（www/shell.js）は行が無ければ
+     'door' と答えるので、アカウントも profile 行も出来ているのに扉が描かれて
+     いました。
+
+     原因は一行の不在です。`meRowGot()` を書いていたのは `netMyProfile()` と
+     `netProfSync()` の二つだけで、**どちらも「訊く」側**。行を**作る**
+     `netMakeProfile()` は、作ったことを誰にも言っていませんでした。
+
+     赤を見た形（2026-09-11、直す前）:
+       「68: 行を作ったのに『行がある』になっていない」
+       「68: 行を作ったのに画面が扉のまま — appIs()=door」 */
+  start();
+  {
+    const keepPost68 = netPost;
+    netPost = (path, body, tok, ok) => ok([body]);
+    /* 扉の最後の一段: 歩きは済み、セッションは着いた、行はまだ無い。 */
+    SET.walked = true; SET.obback = null; save();
+    meRowForget();
+    meRowGot(false);
+    ME.handle = ''; ME.name = ''; saveMe();
+    if (appIs() !== 'door')
+      no('68: 行の無いアカウントで扉が出ていない — appIs()=' + appIs());
+    netMakeProfile('aya', 'アヤ', () => {}, () => {});
+    netPost = keepPost68;
+    if (!meRowHas())
+      no('68: 行を作ったのに「行がある」になっていない');
+    if (appIs() !== 'app')
+      no('68: 行を作ったのに画面が扉のまま — appIs()=' + appIs());
+    say('68: 行を作った瞬間に「行がある」になる ── 扉の最後の「次へ」で' +
+        'アプリが開く（訊きに行くのを待たない）');
+  }
+
   return out;
 });
 

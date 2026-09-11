@@ -15,6 +15,28 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-11 門の最後の「次へ」で、ログイン画面が出ていた
+
+hunt #1。オンボーディングを最後まで歩いて、ユーザー名と ID を入れて「次へ」を
+押すと、**ログインの画面が出ます**。トーストは「ログインしました」。読み込み
+直すと普通にアプリが開くので、**一度きり、アカウントを作った直後にだけ**
+出ていました。
+
+**測った値。** `SET.walked=true`、`route='profile'`、`netSignedIn()=true`、
+そして **`meRowHas()=false`**。`appIs()`（`www/shell.js`）は profile の行が
+無ければ `'door'` と答えるので、アカウントも行も出来ているのに扉が描かれて
+いました。
+
+**原因は一行の不在です。**「この人に profile の行があるか」を書いていたのは
+`netMyProfile()` と `netProfSync()` の二つだけで、**どちらも訊く側**。行を
+**作る** `netMakeProfile()` は、作ったことを誰にも言っていませんでした。
+作った所で `meRowGot(true)` を書きます ── 訊かずに知っている唯一の場所
+なので。
+
+**保存されるものの変化: 無し。** 画面が変わるだけです（写真
+`shots/r24-door-before` / `r24-door-after`）。押さえているもの:
+`tools/acct-check.mjs` 68。
+
 ### 2026-09-11 名前と @ を変えて保存しても、サーバーに行っていなかった
 
 hunt 道7。**プロフィールの名前と handle を変えて保存しても `profile` の行は
