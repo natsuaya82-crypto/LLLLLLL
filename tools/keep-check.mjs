@@ -797,6 +797,22 @@ const more = await pg.evaluate(() => {
   out.addMade = !!findWord('ka');
   closeSheet({ target: { id: 'sbg' } });
 
+  /* AND THE SAME SHEET OPENED ON A SLOT OF THE GRAMMAR. It is the word sheet
+     (www/phases.js § openSlot) with the two things the slot already knows
+     written in, so it carries the same 「追加」 -- and it kept its own copy of
+     the mount, which is what the corner is repainted from. Both sheets, or
+     the day one of the three openers is written afresh the corner goes stale
+     on that one alone and every claim above stays green. */
+  goTab('build'); openSlot(stAll()[0].id, undefined); render();
+  out.slotArrive = addBtnOn();
+  var sln = document.getElementById('wd-ln');
+  sln.value = 'to'; sln.dispatchEvent(new Event('input', { bubbles: true }));
+  out.slotTyped = addBtnOn();
+  render();
+  out.slotRendered = addBtnOn();
+  out.slotMade = !!findWord('to');
+  closeSheet({ target: { id: 'sbg' } });
+
   return out;
 });
 
@@ -1169,6 +1185,10 @@ if(more.addRendered !== 'gold') fails.push('a render put 追加 back to ' + more
 if(more.addWouldNot) fails.push('the spelling was rubbed out and addOne() would still take it');
 if(more.addRubbed !== 'grey') fails.push('the spelling rubbed out left 追加 ' + more.addRubbed);
 if(more.addMade) fails.push('typing a spelling onto a new word sheet wrote the word');
+if(more.slotArrive !== 'grey') fails.push("a grammar slot's sheet opened with 追加 " + more.slotArrive);
+if(more.slotTyped !== 'gold') fails.push("a spelling typed onto a grammar slot's sheet left 追加 " + more.slotTyped);
+if(more.slotRendered !== 'gold') fails.push('a render put 追加 back to ' + more.slotRendered + " over a grammar slot's sheet holding a word");
+if(more.slotMade) fails.push("typing a spelling onto a grammar slot's sheet wrote the word");
 if(more.pkArrive !== 'grey') fails.push('the character picker opened with its Save ' + more.pkArrive);
 if(more.pkWas !== '') fails.push('the letter the picker opened on already wore a character: ' + more.pkWas);
 if(!more.pkHadStrokes) fails.push('the letter the picker opened on was not drawn, so there is nothing for a borrowed character to replace');
@@ -1237,8 +1257,9 @@ walk.fails.forEach((m) => fails.push(m));
 console.log('the character picker: the Save grey on arrival, gold on a character pressed, ' +
             'the letter untouched and the screen still there until it was pressed, and then 「' +
             more.pkWroteOnSave + '」 on the letter in place of what was drawn');
-console.log('the sheet that makes a word: 追加 grey on arrival, gold on a spelling typed, ' +
-            'gold still after a render, grey again when it is rubbed out, and no word written');
+console.log('the sheet that makes a word, from the dictionary and from a grammar slot: ' +
+            '追加 grey on arrival, gold on a spelling typed, gold still after a render, ' +
+            'grey again when it is rubbed out, and no word written');
 console.log('every screen with a Save (' + walk.stands.length + '), asked of the page: ' +
             walk.fields + ' fields typed into and put back (' + walk.lit +
             ' of them changed what the screen holds and turned the corner gold; ' + walk.refused +

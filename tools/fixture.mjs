@@ -2540,6 +2540,15 @@ export function halfDone(){
        A slot that is ALREADY filled is not a form at all: openSlot() sends
        you to the word, and the word screen is walked elsewhere. */
     ['a slot\'s word being made', () => { openSlot('greet','yes'); return vForm(); }],
+    /* AND WITH A SPELLING ON IT. It is the same sheet the dictionary opens, so
+       it carries the same 「追加」 -- grey until there is a word to add and
+       gold the moment there is. openSlot() is called twice for the reason the
+       new word sheet's pair is: a form's corner is a string taken when the
+       form OPENED, and the second call rebuilds it out of what was typed in
+       between (it is not fresh the second time and keeps the draft). */
+    ['a slot\'s word being made, with a spelling typed', () => {
+        openSlot('greet','yes'); wEdit.sp = spType('to'); wdSync();
+        openSlot('greet','yes'); return vForm(); }],
     ['synonyms to choose from',  () => { window.route='relate'; NAV=[{r:'relate', a:'syn:kano'}];
                                          return vRelate(); }],
     /* One of them is the letter's own, which is the only state that wears
@@ -2842,6 +2851,7 @@ export function halfDone(){
        them exist only while it is out. */
     ['what a stage says its rule is', () => { openStRules('greet'); return vForm(); }],
     ['the examples of a stage', () => { stExNew=''; openStEx('greet'); return vForm(); }],
+
     ['an example being written', () => {
         stExOpen('greet');
         const h=vForm(); stExNew=''; return h; }],
