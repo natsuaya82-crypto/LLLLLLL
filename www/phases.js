@@ -895,22 +895,26 @@ function stHidHTML(){
    belong to -- www/grammar.js § g2PolAt. */
 var G2BOOK=[
   /* 1 文. 場所と時の位置は語順の板の中なので、節にはならない。 */
-  {id:'snt',  has:['order','np','cop']},
+  {id:'snt',  has:[{of:['order','np','cop']}]},
   /* 2 名詞. 冠詞・指示詞がどこに立つかは名詞句の板の中。 */
-  {id:'noun', has:['ncls','pl','n','part','det','have']},
-  {id:'pro',  has:['pron']},
-  {id:'num',  has:['count']},
-  /* 5 動詞. 人称と数、時制と相、法、態、否定、疑問。 */
-  {id:'verb', has:['p1s','p2s','p3s','p1p','p2p','p3p',
-                   'prs','pst','fut','plp','prg','prf',
-                   'imp','cnd','pot','obl','des',
-                   'pas','cau','neg:v','q:v']},
-  {id:'mod',  has:['adj','cmp','sup']},
-  {id:'pp',   has:['adp']},
-  {id:'sub',  has:['cx','conj']},
+  {id:'noun', has:[{of:['ncls','pl']},
+                   {t:'g2.g.case', of:['n','part']},
+                   {of:['det','have']}]},
+  {id:'pro',  has:[{of:['pron']}]},
+  {id:'num',  has:[{of:['count']}]},
+  /* 5 動詞. 二十一節あるので、どこからどこまでが一つの話かは見出しが言う。 */
+  {id:'verb', has:[{t:'g2.g.person', of:['p1s','p2s','p3s','p1p','p2p','p3p']},
+                   {t:'g2.g.tense',  of:['prs','pst','fut','plp','prg','prf']},
+                   {t:'g2.g.mood',   of:['imp','cnd','pot','obl','des']},
+                   {t:'g2.g.voice',  of:['pas','cau']},
+                   {t:'g2.g.polar',  of:['neg:v','q:v']}]},
+  {id:'mod',  has:[{of:['adj']},
+                   {t:'g2.g.degree', of:['cmp','sup']}]},
+  {id:'pp',   has:[{of:['adp']}]},
+  {id:'sub',  has:[{of:['cx','conj']}]},
   {id:'wf',   has:[]},
   /* 付録. 語用と、人が足した段。`st` はまだどこにも無い章で、行は出ない。 */
-  {id:'app',  has:['greet','polite','when','month','wday','st']}
+  {id:'app',  has:[{of:['greet','polite','when','month','wday','st']}]}
 ];
 /* EVERY SECTION OF THE BOOK, whichever half of the app it comes from: a chapter
    of the rule-made group (www/grammar.js § g2Chaps) or a stage. One place,
@@ -937,18 +941,43 @@ function g2BookBy(id){
 /* Whether any chapter names this section. The appendix takes the ones nothing
    does, so this is asked once and the answer is used in one place. */
 function g2BookNamed(id){
-  var i, j, s=String(id||'');
-  for(i=0;i<G2BOOK.length;i++)
-    for(j=0;j<G2BOOK[i].has.length;j++) if(G2BOOK[i].has[j]===s) return true;
+  var i, j, k, h, s=String(id||'');
+  for(i=0;i<G2BOOK.length;i++){
+    h=G2BOOK[i].has;
+    for(j=0;j<h.length;j++)
+      for(k=0;k<h[j].of.length;k++) if(h[j].of[k]===s) return true;
+  }
   return false;
 }
-function g2BookSecs(id){
-  var all=g2Secs(), b=g2BookBy(id), out=[], i, j;
+/* ONE CHAPTER'S SECTIONS, IN GROUPS. The groups are the table's own -- a run
+   of sections and the heading over it -- so the chapter page and this file do
+   not each decide where the breaks are. 「章の頁は見出し（.sec）で節をまとめる」
+   2026-09-11: 動詞 is twenty-one sections, and a flat twenty-one is the same
+   page it was before this chapter existed, one level down.
+
+   A GROUP WITH NO `t` DRAWS NO HEADING, and that is what keeps a heading from
+   being the row under it said twice -- 複数 over 複数形 is 「↑これは説明だろ」.
+   So the table gives a title only where the run is more than one thing and the
+   title is not one of their names.
+
+   A SECTION NOTHING NAMES lands in the appendix's last group, in the order it
+   was in -- which is what a stage somebody added themselves is. */
+function g2BookGroups(id){
+  var all=g2Secs(), b=g2BookBy(id), out=[], i, j, k, g, run;
   if(!b) return out;
-  for(j=0;j<b.has.length;j++)
-    for(i=0;i<all.length;i++) if(all[i].id===b.has[j]) out.push(all[i]);
-  if(b.id===G2BOOK[G2BOOK.length-1].id)
-    for(i=0;i<all.length;i++) if(!g2BookNamed(all[i].id)) out.push(all[i]);
+  for(j=0;j<b.has.length;j++){
+    g=b.has[j]; run=[];
+    for(k=0;k<g.of.length;k++)
+      for(i=0;i<all.length;i++) if(all[i].id===g.of[k]) run.push(all[i]);
+    if(j===b.has.length-1 && b.id===G2BOOK[G2BOOK.length-1].id)
+      for(i=0;i<all.length;i++) if(!g2BookNamed(all[i].id)) run.push(all[i]);
+    if(run.length) out.push({t:g.t||'', secs:run});
+  }
+  return out;
+}
+function g2BookSecs(id){
+  var g=g2BookGroups(id), out=[], i, j;
+  for(i=0;i<g.length;i++) for(j=0;j<g[i].secs.length;j++) out.push(g[i].secs[j]);
   return out;
 }
 /* What a chapter of the book is called. One place, so the contents and the bar
@@ -1002,9 +1031,17 @@ function stListHTML(){
    of them. Same ICON_ADD .fab as the dictionary, the alphabet and the notebook
    -- 「丸い＋一つ（辞書と同じ）」 OWNER 2026-09-01. */
 function g2BookPage(b){
-  var a=g2BookSecs(b.id), out='', i;
-  for(i=0;i<a.length;i++) out+= a[i].c? g2ChapRow(a[i].c, i+1) : stRow(a[i].p, i+1);
-  out='<div class="stlist">'+out+'</div>';
+  var g=g2BookGroups(b.id), out='', i, j, a, n=0, rows;
+  /* A GROUP IS ITS OWN LIST, with its heading over it. The numbers run on
+     through the whole chapter rather than restarting in each group -- a
+     section is the nth of this chapter, which is what a grammar book numbers
+     by. */
+  for(i=0;i<g.length;i++){
+    a=g[i].secs; rows='';
+    for(j=0;j<a.length;j++){ n++; rows+= a[j].c? g2ChapRow(a[j].c, n) : stRow(a[j].p, n); }
+    out+=(g[i].t? '<div class="sec">'+esc(t(g[i].t))+'</div>' : '')+
+         '<div class="stlist">'+rows+'</div>';
+  }
   if(b.id!==G2BOOK[G2BOOK.length-1].id) return out;
   return out+stHidHTML()+
     (langLocked()? '' :
