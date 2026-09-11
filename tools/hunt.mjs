@@ -1735,6 +1735,230 @@ WALKS['11'] = async (br, srv) => {
   return a;
 };
 
+/* ---- 12. 言語を二つ ------------------------------------------------------- */
+WALKS['12'] = async (br, srv) => {
+  say('--- 12. two languages ---');
+  const a = await new Dev(br, srv, 'A').open();
+  await arrive(a, AYA, false);
+  await a.reload();
+  srv.db.planIs = 'pro';
+  await a.pg.evaluate(() => planTook('pro'));
+  await a.quiet(); await a.popShut();
+
+  /* 一本目に語を入れる */
+  await a.goRoute('words');
+  await a.tapDo('openAdd');
+  await a.type('#wd-ln', 'kano'); await a.type('#wd-mn', '山');
+  await a.tapDo('addOne');
+  await a.settle();
+
+  await a.goRoute('langs');
+  await a.shot('lg-list');
+  say('  list: ' + JSON.stringify((await a.text()).split('\n').filter(Boolean)));
+  await a.tapDo('langNew');
+  await a.shot('lg-new');
+  say('  after 言語を追加: where=' + await a.where() +
+      '  langs=' + await a.pg.evaluate(() => JSON.stringify(
+        Object.keys(LANGS).map(k => langNameOf(k)))));
+  /* 名前を付ける */
+  await a.goRoute('set', 'lang');
+  await a.tapDo('editName');
+  await a.shot('lg-name-form');
+  say('  name form buttons: ' + JSON.stringify(await a.buttons()));
+  await a.type('#ln-nm', 'ロレン');
+  if (!(await a.tapDo('saveName'))) await a.tapDo('keepPress');
+  await a.settle();
+  await a.shot('lg-named');
+  say('  now: langId=' + await a.pg.evaluate(() => langNameOf(langId)) +
+      '  words=' + await a.pg.evaluate(() => WORDS.length));
+
+  /* 二本目に語を入れる */
+  await a.goRoute('words');
+  await a.shot('lg-B-empty');
+  say('  standing in: ' + await a.pg.evaluate(() => langNameOf(langId)) +
+      '  WORDS=' + await a.pg.evaluate(() => WORDS.length) +
+      '  LETTERS=' + await a.pg.evaluate(() => LETTERS.length) +
+      '  SND=' + await a.pg.evaluate(() => (typeof SND !== 'undefined' && SND ? SND.length : -1)));
+  const opened = await a.tapDo('openAdd');
+  say('  openAdd pressed=' + opened + ' where=' + await a.where() +
+      ' fields=' + JSON.stringify(await a.pg.evaluate(() =>
+        Array.prototype.map.call(document.querySelectorAll('#app input,#app textarea'),
+          e => '#' + (e.id || e.className)))));
+  await a.type('#wd-ln', 'zzz'); await a.type('#wd-mn', 'ロレンの語');
+  await a.shot('lg-B-typed');
+  say('  typed: wd-ln holds ' + JSON.stringify(await a.pg.evaluate(() =>
+    (document.getElementById('wd-ln') || {}).value || '')) +
+    '  addW=' + await a.pg.evaluate(() => JSON.stringify(
+      typeof addW !== 'undefined' && addW ? { hw: addW.hw, mn: addW.mn } : null)));
+  await a.tapDo('addOne');
+  await a.shot('lg-B-added');
+  say('  after 追加: where=' + await a.where() + '  WORDS=' +
+      await a.pg.evaluate(() => WORDS.length) + '  screen=' +
+      JSON.stringify((await a.text()).split('\n').filter(Boolean).slice(0, 6)));
+  await a.settle();
+  await a.goRoute('words');
+  await a.shot('lg-B-words');
+  say('  language 2 words: ' + await a.pg.evaluate(() => JSON.stringify(WORDS.map(w => w.hw))));
+
+  /* 切り替えて戻る */
+  await a.goRoute('langs');
+  await a.shot('lg-list-2');
+  const rows = (await a.buttons()).filter(b => b.indexOf('langOpen') === 0);
+  say('  rows: ' + JSON.stringify(rows));
+  const first = JSON.parse(rows[0].slice(rows[0].indexOf('['), rows[0].indexOf(']') + 1));
+  await a.tapArg('langOpen', first);
+  await a.settle();
+  await a.goRoute('words');
+  await a.shot('lg-switched');
+  say('  after switching: ' + await a.pg.evaluate(() => langNameOf(langId)) +
+      '  words=' + await a.pg.evaluate(() => JSON.stringify(WORDS.map(w => w.hw))));
+
+  /* 片方を消す */
+  await a.goRoute('set', 'acct');
+  await a.tapDo('wipeLangs');
+  await a.shot('lg-drop-ask');
+  say('  drop pop: "' + await a.pop() + '"');
+  await a.tapDo('popYes');
+  await a.settle();
+  await a.shot('lg-dropped');
+  say('  after deleting this language: where=' + await a.where() +
+      '  langs=' + await a.pg.evaluate(() => JSON.stringify(
+        Object.keys(LANGS).map(k => langNameOf(k)))) +
+      '  words=' + await a.pg.evaluate(() => JSON.stringify(WORDS.map(w => w.hw))));
+  await a.reload();
+  await a.goRoute('langs');
+  await a.shot('lg-relaunch');
+  say('  after relaunch: ' + JSON.stringify((await a.text()).split('\n').filter(Boolean)));
+  say('  server languages: ' + JSON.stringify(srv.db.language.map(l => l.name)));
+  return a;
+};
+
+/* ---- 13. アカウント削除 → 同じメールで作り直す ------------------------------ */
+WALKS['13'] = async (br, srv) => {
+  say('--- 13. delete the account, then make it again ---');
+  const a = await new Dev(br, srv, 'A').open();
+  await arrive(a, AYA, false);
+  await a.reload();
+  await a.goRoute('words');
+  await a.tapDo('openAdd');
+  await a.type('#wd-ln', 'kano'); await a.type('#wd-mn', '山');
+  await a.tapDo('addOne');
+  await a.settle();
+  say('  before: words=' + await a.pg.evaluate(() => WORDS.length) +
+      '  server langs=' + srv.db.language.length + '  slices=' + srv.db.slice.length);
+
+  await a.goRoute('set', 'acct');
+  await a.tapDo('wipeAll');
+  await a.shot('del-ask');
+  say('  delete pop: "' + await a.pop() + '"');
+  await a.tapDo('popYes');
+  await a.quiet(1200);
+  await a.shot('del-ask-2');
+  say('  second pop: "' + await a.pop() + '"');
+  if (await a.pop()){ await a.tapDo('popYes'); await a.quiet(1200); }
+  await a.shot('del-done');
+  say('  after deleting: appIs=' + await a.pg.evaluate(() => appIs()) +
+      '  where=' + await a.where() +
+      '\n   server: users=' + srv.db.users.length + ' profiles=' + srv.db.profile.length +
+      ' langs=' + srv.db.language.length + ' slices=' + srv.db.slice.length);
+  say('  what is left in localStorage: ' + JSON.stringify(
+    await a.pg.evaluate(() => Object.keys(localStorage).sort())));
+
+  /* 同じメールでもう一度 */
+  await a.reload();
+  await a.shot('del-relaunch');
+  say('  after relaunch: appIs=' + await a.pg.evaluate(() => appIs()) +
+      '  words=' + await a.pg.evaluate(() => WORDS.length) +
+      '  langs=' + await a.pg.evaluate(() => JSON.stringify(
+        Object.keys(LANGS).map(k => langNameOf(k)))));
+
+  /* 同じメールでもう一度アカウントを作る */
+  await a.tapArg('obMailGo', ['up']);
+  await a.type('#ob-em', AYA.email);
+  await a.tapDo('obMailUp');
+  await a.shot('del-again-code');
+  say('  same address again: where=' + await a.where() +
+      '  screen=' + JSON.stringify((await a.text()).split('\n')
+        .filter(x => x && !/^(English|Español|Português|Français|Deutsch|Italiano|Русский|中文|한국어|日本語)$/.test(x)).slice(0, 6)));
+  await a.type('#ob-code', '12345678');
+  await a.tapDo('obMailCode');
+  await a.type('#ob-pw', AYA.pw);
+  await a.tapDo('obNewPwGo');
+  await a.type('#ob-hd', AYA.handle);
+  await a.type('#ob-nm', AYA.name);
+  await a.tapDo('obWhoGo');
+  await a.pg.waitForTimeout(2000); await a.quiet();
+  await a.reload();
+  await a.shot('del-again-in');
+  say('  made again: handle=' + await a.pg.evaluate(() => String(ME.handle)) +
+      '  words=' + await a.pg.evaluate(() => WORDS.length) +
+      '  langs=' + await a.pg.evaluate(() => JSON.stringify(
+        Object.keys(LANGS).map(k => langNameOf(k)))) +
+      '\n   server: langs=' + JSON.stringify(srv.db.language.map(l => l.name)) +
+      ' slices=' + srv.db.slice.length + ' posts=' + srv.db.post.length);
+  await a.goRoute('langs');
+  await a.shot('del-again-langs');
+  say('  言語の一覧: ' + JSON.stringify((await a.text()).split('\n').filter(Boolean)));
+  return a;
+};
+
+/* ---- 14. 電波なし --------------------------------------------------------- */
+WALKS['14'] = async (br, srv) => {
+  say('--- 14. no signal ---');
+  const a = await new Dev(br, srv, 'A').open();
+  await arrive(a, AYA, false);
+  await a.reload();
+  await a.goRoute('words');
+  await a.tapDo('openAdd');
+  await a.type('#wd-ln', 'kano'); await a.type('#wd-mn', '山');
+  await a.tapDo('addOne');
+  await a.settle();
+
+  await a.offline(true);
+  await a.shot('off-before-reload');
+  /* 見る */
+  await a.goRoute('words');
+  await a.shot('off-words');
+  say('  offline, the dictionary: rows=' + await a.pg.evaluate(() =>
+    document.querySelectorAll('#app [data-do^="openWord"]').length));
+  await a.tapArg('goTab', ['feed']);
+  await a.shot('off-feed');
+  say('  offline, the timeline: ' +
+      JSON.stringify((await a.text()).split('\n').filter(Boolean).slice(0, 6)));
+
+  /* 書こうとする */
+  await a.goRoute('words');
+  await a.tapDo('openAdd');
+  await a.type('#wd-ln', 'sar'); await a.type('#wd-mn', '川');
+  await a.tapDo('addOne');
+  await a.pg.waitForTimeout(2500); await a.quiet();
+  await a.shot('off-added');
+  say('  offline, after adding a word: WORDS=' + await a.pg.evaluate(() => WORDS.length) +
+      '  where=' + await a.where() + '  pop="' + await a.pop() + '"' +
+      '  text=' + JSON.stringify((await a.text()).split('\n').filter(Boolean).slice(0, 4)));
+
+  await a.tapArg('goTab', ['feed']);
+  await a.tapDo('openPost');
+  await a.type('#pw-ln', 'kano'); await a.type('#pw-mn', 'やま');
+  await a.tapDo('pwSend');
+  await a.pg.waitForTimeout(2500); await a.quiet();
+  await a.shot('off-post');
+  say('  offline, after 投稿する: where=' + await a.where() +
+      '  posts on server=' + srv.db.post.length +
+      '  text=' + JSON.stringify((await a.text()).split('\n').filter(Boolean).slice(0, 6)));
+
+  /* 電波が戻る */
+  await a.offline(false);
+  await a.reload();
+  await a.goRoute('words');
+  await a.shot('off-back');
+  say('  back on: WORDS=' + await a.pg.evaluate(() => WORDS.length) +
+      '  server words=' + JSON.stringify(srv.db.slice.filter(x => x.kind === 'words')
+        .map(x => { try { return JSON.parse(x.body).length; } catch (e) { return '?'; } })) +
+      '  posts=' + srv.db.post.length);
+  return a;
+};
+
 /* ===========================================================================
    走らせる
    ======================================================================== */

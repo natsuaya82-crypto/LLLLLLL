@@ -1,4 +1,4 @@
-# 06 A acc-B-words
+# 06 A off-back
 route: {"r":"words","a":""}
 
 II
@@ -6,6 +6,10 @@ II
 選択
 すべて
 アルファベット順
-単語がまだありません
+K
+kano
+/kano/
+名詞
+山
 --- 打ち込み欄 ---
   [w-q] = ""  (ph: 検索)
