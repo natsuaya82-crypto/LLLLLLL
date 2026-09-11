@@ -1,0 +1,21 @@
+# 21 A ob-who-typed
+route: {"r":"profile"}
+
+English
+Español
+Português
+Français
+Deutsch
+Italiano
+Русский
+中文
+한국어
+日本語
+ユーザー名とID
+@
+次へ
+--- 打ち込み欄 ---
+  [ob-nm] = "アヤ"  (ph: ユーザー名)
+  [ob-hd] = "aya"  (ph: id)
+--- トースト ---
+ログインしました

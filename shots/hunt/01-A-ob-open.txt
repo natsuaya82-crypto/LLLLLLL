@@ -1,0 +1,20 @@
+# 01 A ob-open
+route: {"r":"profile"}
+
+English
+Español
+Português
+Français
+Deutsch
+Italiano
+Русский
+中文
+한국어
+日本語
+君の a を書いてみよう。
+
+指で線を引いてみて。 あとで書き直せます
+
+既存の文字から選択
+完了
+ログインへ

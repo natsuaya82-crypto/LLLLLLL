@@ -1,0 +1,58 @@
+# 54 A wd-search-cleared
+route: {"r":"words","a":""}
+
+II
+単語
+選択
+すべて
+アルファベット順
+K
+kano
+/kano/
+名詞
+山
+ke
+/ke/
+名詞
+なに
+L
+lom
+/lom/
+名詞
+落ちる
+M
+mos
+/mos/
+名詞
+高い
+N
+nak
+/nak/
+名詞
+ない
+S
+sar
+/sar/
+名詞
+川
+sela
+/sela/
+名詞
+海
+T
+tir
+/tir/
+名詞
+見る
+tira
+/tira/
+名詞
+見た
+toren
+/toren/
+名詞
+木
+--- 打ち込み欄 ---
+  [w-q] = ""  (ph: 検索)
+--- トースト ---
+すでにある語です

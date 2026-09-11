@@ -1,0 +1,7 @@
+# 02 A grb-after
+route: {"r":"gram","a":"v2:pst"}
+
+過去形
+?
+規則
+例文

@@ -1,0 +1,8 @@
+# 124 A se-cleared
+route: {"r":"explore"}
+
+最新
+最近の検索
+kano
+--- 打ち込み欄 ---
+  [sns-q] = ""  (ph: さがす　@で人)

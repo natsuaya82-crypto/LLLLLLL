@@ -1,0 +1,8 @@
+# 162 A lg-name-form
+route: {"r":"form","a":"name"}
+
+言語名
+保存
+言語名
+--- 打ち込み欄 ---
+  [ln-nm] = ""  (ph: 言語の名前)

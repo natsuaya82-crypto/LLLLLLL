@@ -1,0 +1,18 @@
+# 117 A pf-edit
+route: {"r":"form","a":"me:"}
+
+プロフィール
+保存
+ア
+名前
+ID
+自己紹介
+リンク
+場所
+--- 打ち込み欄 ---
+  [me-pic] = ""
+  [me-nm] = "アヤ"  (ph: シャンゴ)
+  [me-hd] = "aya"  (ph: aya)
+  [me-bio] = ""  (ph: 自分について一言)
+  [me-lk] = ""  (ph: https://)
+  [me-lc] = ""

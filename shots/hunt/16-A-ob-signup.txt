@@ -1,0 +1,28 @@
+# 16 A ob-signup
+route: {"r":"build"}
+
+English
+Español
+Português
+Français
+Deutsch
+Italiano
+Русский
+中文
+한국어
+日本語
+Lingua
+
+自分のことばを、つくる。
+
+アカウントを作る
+または
+Apple で続ける
+Google で続ける
+続けると、以下に同意したことになります。
+利用規約
+·
+プライバシーポリシー
+ログインはこちら
+--- 打ち込み欄 ---
+  [ob-em] = ""  (ph: you@example.com)

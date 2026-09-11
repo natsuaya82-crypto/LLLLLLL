@@ -1,0 +1,21 @@
+# 177 A del-again-code
+route: {"r":"profile"}
+
+English
+Español
+Português
+Français
+Deutsch
+Italiano
+Русский
+中文
+한국어
+日本語
+メールを確認
+
+aya@example.com に8桁のコードを送りました
+
+確認
+再送信 60
+--- 打ち込み欄 ---
+  [ob-code] = ""  (ph: 00000000)

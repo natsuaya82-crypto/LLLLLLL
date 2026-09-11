@@ -972,6 +972,33 @@ WALKS['2'] = async (br, srv) => {
   return a;
 };
 
+/* 章の「例文」の ＋ だけを、前に何も押さずに確かめる */
+WALKS['4b'] = async (br, srv) => {
+  say('--- 4b. just the ＋ beside 例文 on a chapter page ---');
+  const a = await new Dev(br, srv, 'A').open();
+  await arrive(a, AYA, false);
+  await a.reload();
+  await a.tapArg('goTab', ['build']);
+  await a.tapArg('go', ['gram']);
+  await a.tapArg('go', ['gram', 'v2:pst']);
+  await a.pg.waitForTimeout(2500);
+  await a.shot('grb-before');
+  say('  before: where=' + await a.where() + '  toast="' +
+      await a.pg.evaluate(() => { const t = document.getElementById('toast');
+        return (t && t.className.indexOf('on') >= 0) ? t.textContent : ''; }) + '"');
+  const html0 = await a.pg.evaluate(() => document.getElementById('app').innerHTML.length);
+  await a.tapArg('stExOpen', ['pst']);
+  await a.pg.waitForTimeout(600);
+  await a.shot('grb-after');
+  say('  after pressing ＋: where=' + await a.where() +
+      '  toast="' + await a.pg.evaluate(() => { const t = document.getElementById('toast');
+        return (t && t.className.indexOf('on') >= 0) ? t.textContent : ''; }) + '"' +
+      '  pop="' + await a.pop() + '"' +
+      '  #app html ' + html0 + ' -> ' +
+      await a.pg.evaluate(() => document.getElementById('app').innerHTML.length));
+  return a;
+};
+
 /* ---- 3. 辞書 ------------------------------------------------------------ */
 WALKS['3'] = async (br, srv) => {
   say('--- 3. dictionary ---');
@@ -2111,9 +2138,12 @@ async function main(){
     args: (LAUNCH.args || []).concat([
       '--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'])
   }));
-  const srv = newServer();
+  /* 道ごとに新しいサーバー。同じメールで二度アカウントを作れないので、
+     一つのサーバーを通しで使うと二本目の道が門で止まる。 */
+  let srv = newServer();
   for (const k of keys){
     if (!WALKS[k]){ say('no walk ' + k); continue; }
+    srv = newServer();
     try { await WALKS[k](br, srv); }
     catch (e) { say('WALK ' + k + ' threw: ' + (e && e.message)); NOTE.push({ walk: k, err: String(e && e.stack).split('\n').slice(0,3).join(' | ') }); }
   }
@@ -2129,6 +2159,7 @@ async function main(){
     say('  slice ' + srv.db.slice.map(x => x.kind + ':' + x.body.length).join(' '));
   }
   const bad = srv.db.log.filter(l => l.bad);
+  void 0;
   if (bad.length){
     say('\n--- server said no ---');
     bad.slice(-25).forEach(l => say('  ' + l.m + ' ' + l.p + '  -> ' + l.bad));

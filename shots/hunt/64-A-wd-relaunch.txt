@@ -1,0 +1,51 @@
+# 64 A wd-relaunch
+route: {"r":"words"}
+
+II
+単語
+選択
+すべて
+アルファベット順
+K
+kano
+/kano/
+名詞
+山
+ke
+/ke/
+名詞
+なに
+L
+lom
+/lom/
+名詞
+落ちる
+N
+nak
+/nak/
+名詞
+ない
+S
+saru
+/saru/
+名詞
+川
+sela
+/sela/
+名詞
+海
+T
+tir
+/tir/
+名詞
+見る
+tira
+/tira/
+名詞
+見た
+toren
+/toren/
+名詞
+木
+--- 打ち込み欄 ---
+  [w-q] = ""  (ph: 検索)

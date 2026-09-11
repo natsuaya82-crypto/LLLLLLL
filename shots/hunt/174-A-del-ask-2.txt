@@ -1,0 +1,26 @@
+# 174 A del-ask-2
+route: {"r":"set","a":"acct"}
+
+English
+Español
+Português
+Français
+Deutsch
+Italiano
+Русский
+中文
+한국어
+日本語
+Lingua
+
+自分のことばを、つくる。
+
+ログイン
+パスワードをお忘れですか？
+または
+Apple で続ける
+Google で続ける
+アカウント登録はこちら
+--- 打ち込み欄 ---
+  [ob-em] = ""  (ph: you@example.com)
+  [ob-pw] = ""  (ph: パスワード)
