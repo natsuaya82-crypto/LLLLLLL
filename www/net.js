@@ -1421,7 +1421,15 @@ function netLangRow(id, ok, bad){
       }, bad);
     return;
   }
-  nm=(key===langId)? String(langName||'') : langNameOf(key);
+  /* WHAT THIS PHONE MADE, AND NEVER THE COPY IT WAS SENT. `langNameOf()`
+     starts from the server's own answer -- LNAME in memory, then the picture
+     of it on the disk -- and a row built out of that is the read-only copy
+     travelling back up, which CLAUDE.md rule 22 says is the one road that
+     does not exist. The open language answers with `langName`, the value in
+     front of the person; any other answers with what this phone WROTE and
+     has never sent: the `lang` slice, and the name an older version left in
+     the index (langNameOld(), www/core.js). Neither is a `.got`. */
+  nm=(key===langId)? String(langName||'') : langNameOld(key);
   /* AND ITS PAGE IS OPEN FROM THE MOMENT IT EXISTS, which is the default the
      owner chose. 「非公開の印」 was a flag whose ABSENCE meant public
      (www/home.js, until 2026-09-08), and every language made so far has been
@@ -1441,8 +1449,15 @@ function netLangRow(id, ok, bad){
      language by, and the two sides say the same number from here on. The
      insert policy is `is_member() and owner = auth.uid()` and does not look
      at the id, so supabase/schema.sql is untouched. */
+  /* AND NOTHING IS SAID ABOUT HOW IT IS WRITTEN. This sent
+     `langWsysOf(key)`, which is `language.wsys` as the server last said it --
+     memory, then the picture on the disk -- so a row was being MADE out of
+     the copy of a row. `language.wsys` is `default ''`
+     (supabase/schema.sql), 「empty means nobody has said」, and setWsys() ->
+     netLangWsys() is the one road that ever fills it: a language being made
+     has had nobody say. */
   netPost('/rest/v1/language',
-          {id:key, owner:me, name:nm, wsys:langWsysOf(key),
+          {id:key, owner:me, name:nm,
            published_at:(new Date()).toISOString()}, SESS.at,
     function(){
       langRowGot(key);

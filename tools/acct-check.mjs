@@ -3165,6 +3165,15 @@ const R = await pg.evaluate(async () => {
     if (rows66.length && (rows66[0].id !== 'walk-lang' || rows66[0].name !== 'シャンゴ'))
       no('66: 上がった行が歩きの言語と打った名前になっていない — ' +
          JSON.stringify([rows66[0].id, rows66[0].name]));
+    /* 行を**写しから作らない**（2026-09-11）。`wsys` は
+       `langWsysOf()` ＝ サーバーが最後に言ったことの写し（メモリ →
+       ディスクの `.got`）を送っていました ── 行の写しで行を作る形です。
+       `language.wsys` は `default ''`「誰も言っていない」で、埋めるのは
+       `setWsys()` → `netLangWsys()` の一本だけ。作られる行はその問いに
+       答えません。 */
+    if (rows66.length && rows66[0].hasOwnProperty('wsys'))
+      no('66: 作る行が書記体系を持っている ── 写しで行を作っている — ' +
+         JSON.stringify(rows66[0].wsys));
     /* 本数は索引で数えます ── 「このアカウントのもの」で数えると、扉で
        生えた方にだけ印が付いた状態が 1 本と出て、割れているのが見えません。 */
     const n66 = Object.keys(LANGS).length;
