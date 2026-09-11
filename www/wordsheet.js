@@ -85,7 +85,7 @@ function addOne(){
   /* The word is what was typed, letter by letter -- not the sounds those
      letters happen to read. */
   var sp=(wEdit && wEdit.sp) || [], hw=spWord(sp), d=addW;
-  var syn, ant, w, made;
+  var syn, ant, w, made, snap;
   if(!d) return;
   if(!sp.length || !hw){ toast(t('toast.hw2')); return; }
   /* The word AND the forms going in with it. Asking for room for one and then
@@ -113,22 +113,64 @@ function addOne(){
      not an empty one -- the same rule saveWord() holds. */
   if(d.ex && d.ex.length) w.ex=d.ex;
   wdPutExtras(w);
+  /* ---- AND IT IS NOT ADDED UNTIL IT IS UP ---------------------------------
+     「通信エラーなら進むわけねえだろ全部」 OWNER 2026-09-05, and the same
+     sentence again on 2026-09-11 about this button:
+     「電波なしならクルクル回るやろ」.
+
+     This wrote the word, said 「追加しました」 and opened its page, with not
+     one request sent -- the send is bkTouch()'s 1.2-second burst, behind a
+     person who had already left. Measured with the radio off on 2026-09-11:
+     `WORDS=2` and the word's page on the screen, `WORDS=1` after a relaunch.
+     CLAUDE.md 規則 11: 「保存しないのが仕様、保存して黙るのはだめ」 -- the pop
+     was there, and the screen went on anyway, which is the app saying two
+     things at once.
+
+     IT IS THE SAME ROAD NINE SAVE BUTTONS ALREADY TAKE and not a second one:
+     netSaveNow() (www/net.js) is netSaveUp() with the wait put back on, and
+     keepSnap()/keepBack() (www/shell.js) is how this phone goes back to
+     before the press. Nothing new is written here; this button joins them.
+
+     AND THE PAPER IS NOT PUT AWAY UNTIL IT IS. 「打ったものは欄に残る」 is the
+     rule the save buttons already hold, and here it settles WHERE the five
+     lines that clear the draft go: after the answer, not before it. That also
+     means nothing has to be remembered and handed back -- the draft is never
+     taken away in the first place, so a refusal leaves this screen exactly as
+     the person left it and there is nothing to redraw.
+
+     AND NOTHING IS REDRAWN ON A REFUSAL, DELIBERATELY. render() folds the
+     popup away -- 「Any navigation takes the popup with it」, www/glyph.js §
+     render -- so a redraw here would take ［接続できません］ off the screen in
+     the same frame netPop() put it up. There is nothing to redraw anyway:
+     this screen has not moved. It is the same answer www/shell.js § keepSave
+     reached for the nine save buttons.
+
+     `addW` USED TO BE CLEARED BEFORE THE RELATIONS, and what that was for is
+     the render() inside wRelToggle(): with the draft gone the sheet cannot
+     draw itself. wRelToggle() itself does not care which way round it is --
+     given a headword it takes `findWord(hw)`, which is the word just pushed
+     and is never the draft, so the two-ended branch is the one taken either
+     way. With the draft still standing, that render draws the sheet instead
+     of falling into vForm's catch. */
+  snap=keepSnap();
   WORDS.push(w);
-  /* The draft is gone before the relations are written, so each of them is
-     an ordinary two-ended one between two words that both exist now. */
-  addW=null;
   syn.forEach(function(o){ wRelToggle(hw, 'syn', o); });
   ant.forEach(function(o){ wRelToggle(hw, 'ant', o); });
   /* And the forms, after the word they are of is in the dictionary: each of
      them points at it by name. */
   made=addFmWrite(hw);
-  addFmClear();
-  save(); addFrom=''; addSlot='';
-  /* Onto the word, read. Everything it holds was written on the way in, so
-     what is wanted now is a look at it, not another form. */
-  if(here().r==='form') back();
-  toast(made? tn('fmr.with', made) : t('toast.added.1', hw));
-  openWord(hw);
+  save();
+  netSaveNow(function(up){
+    /* 届かなかった。だから何も起きなかった。 */
+    if(!up){ keepBack(snap); return; }
+    /* 届いた。ここで初めて紙が片付く。 */
+    addW=null; addFmClear(); addFrom=''; addSlot='';
+    /* Onto the word, read. Everything it holds was written on the way in, so
+       what is wanted now is a look at it, not another form. */
+    if(here().r==='form') back();
+    toast(made? tn('fmr.with', made) : t('toast.added.1', hw));
+    openWord(hw);
+  });
 }
 function findWord(hw){
   for(var i=0;i<WORDS.length;i++){ if(String(WORDS[i].hw).toLowerCase()===String(hw).toLowerCase()) return WORDS[i]; }
