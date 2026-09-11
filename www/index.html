@@ -3869,6 +3869,28 @@ textarea.ntbody.grow{min-height:0;height:auto;overflow:hidden;resize:none}
    `.ptag`、同じ折り返し。一方だけ広げたら、一つの文の中で同じ marks が二つの
    形になる。 */
 .pto .ptag{display:inline-block;min-width:44px;padding:11px 0;margin:-11px 0}
+/* 投稿の頭の `@ハンドル` も押せる（OWNER 2026-09-11、実機「顔や @〇〇 を押しても
+   その人のプロフィールに飛ばない」）。着るのは一つ上と同じ理由で `.ptag` ──
+   本文の @ と同じ道（`atHTML()`）を通っているので、同じ字の形になる。
+
+   そして一つ上とまったく同じ足りなさが出る。`.ptag` の 44pt は「文字が 24 ある」
+   ことを当てにしていて、投稿の頭は `.pheadm` の .9rem なので行は **18.72**
+   ── 10+18.72+10 = 38.72。測った：41x39 と 28x39、どちらも 44 に届かない
+   （`npm run press` の赤 8 本がこれ一つ）。
+
+   同じ規則をこの字の大きさで書き直すだけで、新しい規則ではない：
+   13+18.72+13 = 44.72。margin が同じ 13 を戻すので `.pheadm` の行は 18.72 の
+   まま動かない ── 名前と時刻の行を押し広げない（`.pheadm` の規則が「a second
+   line here changes the post's height」と言っている、その高さを動かさない）。
+
+   横は一つ上と同じ `min-width` と `inline-block`。`@iri` は 28 しかない。
+
+   そして `.phandle` が持っていた一行の約束をここで引き継ぐ ── `white-space`
+   と `text-overflow`。`.ptag` は本文の行末で折り返すために `white-space:normal`
+   で `overflow-wrap:anywhere` なので、そのままだと長いハンドルが**二行になって
+   頭が伸びる**。頭は折り返す所ではない。 */
+.pheadm .ptag{display:inline-block;min-width:44px;padding:13px 0;margin:-13px 0;
+              white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 </style>
 </head>
 <body>

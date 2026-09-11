@@ -156,12 +156,20 @@ vExplore()」* と書いていて、`snsTagGo` はその外にある**二本目�
 | 2. 顔 | **元から飛びます。**既に `post-check` が押さえていて、道を外して赤を見て確かめました |
 | 3. `#` から一覧 | **「飛ばない」は再現せず。**一回の押しで二度訊いていたのを一度にした。`find-check` に claim、赤を見た |
 
-**この枝は `npm run press` が赤です。緑ではありません。** 赤 8 本、原因は
-一つ ── 頭の `@` が **39px** で 44 に届きません。`.ptag` の 44 は**本文の
-字の大きさ**で出来ていて（`index.html` の `.ptag` のコメント「The words are
-24 tall at this size」）、頭は `.9rem` なので 18.72 + 10 + 10 = 38.72 です。
-直すのは `www/index.html` の一行で、**この枝はその file を持っていません**。
-`docs/BACKLOG.md` の先頭に、測った値と渡し方を書きました。
+**頭の `@` の 44pt は入れました**（2026-09-11、リーダーが `www/index.html` を
+この枝に渡したので）。`.ptag` の 44 は**本文の字の大きさ**で出来ていて
+（`index.html` の `.ptag` のコメント「The words are 24 tall at this size」）、
+頭は `.9rem` なので 10+18.72+10 = 38.72 しかありませんでした。返信の行の `@`
+が 2026-09-07 に通ったのと同じ書き直しを、この字の大きさで一行:
+
+```
+.pheadm .ptag{display:inline-block;min-width:44px;padding:13px 0;margin:-13px 0;
+              white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+```
+
+測った ── 当たり判定 41x39 / 28x39 → **44x45**、`.pheadm` の行は **19 のまま**、
+投稿の高さも 315 / 409 のまま動いていません。短いハンドルの後ろが少し広がる
+のは 44 の幅を取るためで、`.pto` の前例と同じ「余りは右に出る」形です。
 
 写真（ja、走っているアプリ、偽サーバー）:
 
