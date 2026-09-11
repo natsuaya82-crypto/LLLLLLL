@@ -168,6 +168,26 @@ var GPOS_DEF={adj:'after', negp:'after', adp:'after',
 function gPos(id){
   return (STG && STG.gpos && STG.gpos[id]) || GPOS_DEF[id] || 'after';
 }
+/* AND WHETHER THIS LANGUAGE HAS ANSWERED AT ALL, which is a different question
+   from what the answer is and had nowhere to be asked. gPos() above cannot say
+   it: it answers GPOS_DEF for a side nobody has touched, and every screen that
+   drew a side therefore drew the app's own fallback as this language's answer.
+   「文法の各段は最初は何も置かれてない状態」 OWNER 2026-09-10.
+
+   IT IS THE VALUE AND NOT stTouched(). The two say the same thing about every
+   language anybody makes from now on -- setGPos() writes both in one press --
+   and they part company on exactly one kind: a language that came through
+   migrateGramLang() (www/phases.js), which COPIES the side somebody pressed on
+   the old phone-wide screen and deliberately leaves STG.set alone, because
+   nobody chose it IN THIS LANGUAGE. That language holds the value and the
+   engine arranges every sentence by it, so a screen answering stTouched() here
+   would say 「nobody has answered」 over a page whose own demonstration is
+   arranged by the answer. The value is what the engine reads and it is what
+   this asks.
+
+   GPOS_DEF is then what it always was: what stands where there is no answer.
+   Nothing writes it. */
+function gPosSaid(id){ return !!(STG && STG.gpos && STG.gpos[id]); }
 function setGPos(id, v){
   if(!STG.gpos) STG.gpos={};
   STG.gpos[id]=v; stMarkSet(id); render();
@@ -559,9 +579,22 @@ function gUnits(m, list){
    a translation writes are the same arrangement, so a language that says its
    adjective goes first cannot say it one way here and another way in a
    sentence. */
-function gLay(list){
-  var e=LinguaGrammarEngine, m=gModel(list),
-      pieces=e.translate.arrange(m, gUnits(m, list)), out=[], i, j, id;
+/* AND THE BOARD'S OWN ARRANGEMENT, where this is drawn under one. The cards
+   on a board are not written down until Save is pressed (g2KeepOn), so a
+   demonstration read off what the LANGUAGE holds is a demonstration of an
+   answer nobody has given yet: a board with three cards freshly placed on it
+   showed the engine's own SOV underneath, which is the screen drawing a
+   default as a choice. `bd` says which of the two boards and `seq` what is on
+   it; with neither, this is the language's own order and nothing moves. */
+function gLay(list, bd, seq){
+  var e=LinguaGrammarEngine, m=gModel(list), pieces, out=[], i, j, id;
+  if(seq && seq.length){
+    /* In FRONT of the language's own, because translate.js takes the first
+       rule that answers and this is the one being arranged. */
+    if(bd==='np') m.grammarRules.unshift(gRule('NOUNPHRASE', 'ORDER', seq));
+    else m.wordOrder=e.wordOrder(seq);
+  }
+  pieces=e.translate.arrange(m, gUnits(m, list));
   for(i=0;i<pieces.length;i++){
     id=pieces[i].word?String(pieces[i].word.id):'';
     for(j=0;j<list.length;j++) if(e.adapter.idOf(list[j])===id){ out.push(list[j]); break; }
@@ -654,12 +687,12 @@ var g2Lift='';
 /* The three words a sentence needs, in the order THIS language puts them.
    gLay() runs the real engine, so what is drawn is what a sentence of this
    language would actually come out as -- not a diagram of one. */
-function g2Three(){
+function g2Three(seq){
   var s=gWordOf('pro') || gWordOf('n'), v=gWordOf('v'), o;
   if(!s || !v) return null;
   o=gWordOf('n', s);
   if(!o) return null;
-  return gLay([s, v, o]);
+  return gLay([s, v, o], 'order', seq);
 }
 /* Moving one. The first press lifts a word and the second puts it where the
    other one stood -- two presses and no dragging, because a drag needs a
@@ -848,7 +881,15 @@ function g2Board(c){
     if(seq.indexOf(b.cards[i])<0) off+=g2Card(b.id, b.cards[i], 'g2Put', [b.cards[i]], ' off');
   return '<div class="gordtop">'+
            '<div class="gordput" data-gord="on">'+on+'</div>'+
-           b.demo()+
+           /* THE LINE COMES OUT AFTER A CARD GOES ON, and not before.
+              「文法の各段は最初は何も置かれてない状態」 OWNER 2026-09-10. An
+              empty board drew this language's three words underneath it
+              anyway, arranged by the engine's fallback -- so the one thing on
+              the screen that says what the order IS was answering for a
+              language whose board is empty. It is the same fault as the two
+              lit buttons on a side row, in the one place a person actually
+              reads the answer off. */
+           (seq.length? b.demo(seq) : '')+
          '</div>'+
          '<div class="gordrow" data-gord="off">'+off+'</div>'+
          /* AND WHICH SIDE THE NEGATION WORD STANDS, on the sentence board and
@@ -872,8 +913,8 @@ function g2Board(c){
    that needs a dictionary. They are read, not moved: the cards above are what
    arranges the sentence, and a second way to do it would be a second answer to
    what the order is. */
-function g2Demo(){
-  var w=g2Three(), i, out='';
+function g2Demo(seq){
+  var w=g2Three(seq), i, out='';
   if(!w) return '';
   for(i=0;i<w.length;i++) out+='<span class="gor">'+esc(wOut(w[i].hw))+'</span>';
   return '<div class="gorder">'+out+'</div>';
@@ -889,14 +930,14 @@ function g2Demo(){
    card here says where they WOULD stand. A language with neither an adjective
    nor a number in it yet has nothing to arrange, and draws nothing rather than
    a noun standing on its own. */
-function g2NpDemo(){
+function g2NpDemo(seq){
   var n=gWordOf('n'), a=gWordOf('adj'), q=gWordOf('num'), list=[], w, i, out='';
   if(!n) return '';
   if(a) list.push(a);
   if(q) list.push(q);
   if(!list.length) return '';
   list.push(n);
-  w=gLay(list);
+  w=gLay(list, 'np', seq);
   for(i=0;i<w.length;i++) out+='<span class="gor">'+esc(wOut(w[i].hw))+'</span>';
   return '<div class="gorder">'+out+'</div>';
 }
@@ -1160,16 +1201,28 @@ function g2Made(m, r){
    pair of buttons that had to be READ. */
 /* Which side, as the two words themselves when this language has two, and as
    the pair of names when it has not. The choice is the chapter and cannot wait
-   on the dictionary; only the phrase that demonstrates it can. */
+   on the dictionary; only the phrase that demonstrates it can.
+
+   AND NEITHER OF THEM UNTIL SOMEBODY HAS ANSWERED. 「文法の各段は最初は何も
+   置かれてない状態」 OWNER 2026-09-10. gPos() answers GPOS_DEF for a side
+   nobody has touched, so both roads here were drawing the app's own default as
+   the answer this language gave: the pair of names lit 「名詞の後」, and the
+   two words -- which say which side by the order they stand in -- stood in it.
+   A person who has said nothing was being shown having said something.
+
+   gPosSaid() is the question and it is asked in one place, above. The engine
+   goes on falling back -- gRules() hands it gPos() exactly as before, so a
+   sentence still comes out -- and what changes is only what this page CLAIMS
+   about who answered it. */
 function g2Side(key, w, n){
   var laid, i, out='';
-  if(!w || !n) return g2SidePick(key);
+  if(!w || !n || !gPosSaid(key)) return g2SidePick(key);
   laid=gLay([w, n]);
   for(i=0;i<laid.length;i++) out+=g2Chip(key, i, laid[i]);
   return '<div class="segs">'+out+'</div>';
 }
 function g2SidePick(key){
-  var a=['before','after'], i, now=gPos(key), out='';
+  var a=['before','after'], i, now=gPosSaid(key)? gPos(key) : '', out='';
   for(i=0;i<a.length;i++)
     out+='<button class="seg'+(a[i]===now? ' on' : '')+'"' +
       DO('setGPos', [key, a[i]]) + '>'+esc(gPosLab(key, a[i]))+'</button>';
@@ -1886,10 +1939,14 @@ function g2Said(c){
   if(c.fm) return g2RulesOf(c.fm).length>0;
   if(c.id==='order' || c.id==='np') return stTouched(c.id);
   if(c.id==='n'){ p=stBy('part'); return !!p && !!stSlotsDone(p); }
-  if(c.id==='adj' || c.id==='adp') return stTouched(c.id);
+  /* The same question the chapter's own page asks, and for the same reason:
+     a language that came through the migration holds the side and is arranged
+     by it, so this list saying the chapter is empty would be the contents and
+     the page disagreeing about one fact. */
+  if(c.id==='adj' || c.id==='adp') return gPosSaid(c.id);
   /* Three decisions in one chapter, so any one of them is the chapter having
      been written in. */
-  if(c.id==='cx') return stTouched('cx') || stTouched('cxm') || stTouched('relm');
+  if(c.id==='cx') return gPosSaid('cx') || gPosSaid('cxm') || gPosSaid('relm');
   /* A language with a class in it has said something here, whether or not any
      noun is in one yet. */
   if(c.id==='ncls') return nclsLive().length>0;

@@ -44,9 +44,12 @@
                             was. This is the measurement that started it:
                             B was changed to VOS/after and A came back VOS
                             /after with it
-     8. nobody chose it     a stage nobody has touched lights neither of its
-                            buttons. A default is not an answer, and the
-                            screen was drawing one as if it were
+     8. nobody chose it     a side this language has not answered lights
+                            neither of its buttons, and pressing one is what
+                            answers it. A default is not an answer, and the
+                            screen was drawing one as if it were. A side that
+                            came off the phone (claim 1) IS lit: somebody
+                            pressed that, and the engine arranges by it
      9. no subtitle, none   a stage whose `.d` key is gone says nothing under
                             its title -- not the key, and not the English of
                             a key the other nine no longer have
@@ -420,22 +423,43 @@ const g = await pg.evaluate(() => {
      the grammar and the stages beside them were the same chapter twice,
      「重複はいらない」 OWNER 2026-09-06 -- so the side is decided where it is
      now decided, on the chapter's own page. */
+  /* A SIDE THAT CAME THROUGH THE MIGRATION IS LIT, and that is the first
+     half. This seed is a phone that had SET.gpos on it (claim 1 above), so
+     this language holds a side somebody pressed -- on the old screen, before a
+     language could hold one of its own -- and the engine arranges every
+     sentence by it. Drawing it as unanswered would be the page and the
+     sentence under it disagreeing about one fact. */
   go('gram', 'v2:adj');
-  const on = segs(), first = lit(), stood = gPosLab('adj', gPos('adj'));
-  /* And pressing the other side is what moves it, with nothing else changing.
-     Which side it stood on to begin with is READ rather than written down
-     here: the seed is somebody else's file and a check that names the answer
-     is a second copy of it. */
+  const came = lit(), holds = gPosLab('adj', gPos('adj'));
+  /* AND THEN A LANGUAGE THAT HAS ANSWERED NOTHING, which is what the owner was
+     holding: 「文法の各段は最初は何も置かれてない状態」 OWNER 2026-09-10. The
+     value is taken off so that what is left is a side with no answer at all,
+     and GPOS_DEF is then the only thing the page could draw. */
+  /* render() and not go(): the route is already this one, and go() to where
+     you are standing draws nothing. The first version of this asked go()
+     twice and read the FIRST render's screen both times. */
+  delete STG.gpos.adj;
+  render();
+  const on = segs(), first = lit(), fell = gPosLab('adj', gPos('adj'));
+  /* And pressing one is what answers it, with nothing else changing. Which
+     side is READ rather than written down here: the seed is somebody else's
+     file and a check that names the answer is a second copy of it. */
   const other = gPos('adj') === 'before' ? 'after' : 'before';
   setGPos('adj', other);
-  go('gram', 'v2:adj');
-  return { on: on, first: first, stood: stood, moved: lit(),
-           saysOther: gPosLab('adj', other),
+  render();
+  return { on: on, came: came, holds: holds, first: first, fell: fell,
+           moved: lit(), saysOther: gPosLab('adj', other),
            was: STG.set.adj ? 'marked' : 'not marked' };
 });
 want('the chapter that decides a side has both of them on the page', g.on, 2);
-want('and lights the one this language stands on', g.first, g.stood);
-want('pressing the other moves it', g.moved, g.saysOther);
+want('a side that came off the phone is lit, because somebody pressed it', g.came, g.holds);
+/* Two claims and not one. 「文法の各段は最初は何も置かれてない状態」 OWNER
+   2026-09-10: neither button is lit, AND the thing that is not lit is the one
+   the engine falls back to -- so this cannot go green by the page having
+   drawn something else entirely. */
+want('a side nobody has answered lights neither of its buttons', g.first, '');
+want('and there is a fallback it would have lit', g.fell !== '', true);
+want('pressing one lights it', g.moved, g.saysOther);
 want('and marks it as chosen', g.was, 'marked');
 
 /* ---- 9: a stage with nothing more to say says nothing --------------------
@@ -769,7 +793,13 @@ const g2 = await pg.evaluate(() => {
      back is how two are swapped. S O V becomes O V S. */
   press('off', start[0]);
   const swapped = { on: cards('on'), stored: JSON.stringify(STG.order),
-                    set: !!STG.set.order };
+                    /* AND THE LINE UNDER IT FOLLOWS THE BOARD, not what was
+                       saved. It is the only thing on the screen that says what
+                       the order IS, and it was read off the language while the
+                       cards being arranged said something else -- so a board
+                       somebody had just rearranged demonstrated the order they
+                       were replacing. */
+                    demo: demo(), set: !!STG.set.order };
 
   /* The save is what writes it. */
   /* A save that lands ends on the screen before it (www/shell.js § keepSave,
@@ -808,6 +838,12 @@ const g2 = await pg.evaluate(() => {
   show();
   while (cards('on').length) press('on', cards('on')[0]);
   const empty = { on: cards('on').length, off: cards('off').length,
+                  /* AND NOTHING IS DEMONSTRATED, because nothing is placed.
+                     「文法の各段は最初は何も置かれてない状態」 OWNER
+                     2026-09-10: an empty board drew this language's three
+                     words anyway, in the engine's own fallback order, which is
+                     the app answering a question nobody has answered. */
+                  demo: demo(),
                   h: Math.round(document.querySelector('[data-gord="on"]')
                        .getBoundingClientRect().height) };
 
@@ -842,6 +878,8 @@ want('but the save has gone gold', g2.off1.gold, true);
 want('a card pressed in the tray goes on the END of the board',
      g2.swapped.on.join(' '), 'O V S');
 want('and that is still not written', g2.swapped.stored, '"SOV"');
+want('but the line under it is the board, not what was saved',
+     g2.swapped.demo, 'tuf ztir zke');
 want('the save is what writes it, as cards', g2.saved.stored, '["O","V","S"]');
 want('and it is a decision now', g2.saved.set, true);
 want('the words followed, because they are laid by the engine',
@@ -858,6 +896,7 @@ want('and it can be pressed back off again', g2.back.on.join(' '), 'O V S');
 want('to the tray it came from', g2.back.off.join(' '), tray('O','V','S'));
 want('leaving the three behind it', g2.back.stored, '["O","V","S"]');
 want('the board can be emptied altogether', g2.empty.on, 0);
+want('and then there is no line under it at all', g2.empty.demo, '');
 want('every role is on the tray then', g2.empty.off, g2.roles.length);
 want('and the place to put one is still a row high', g2.empty.h >= 44, true);
 

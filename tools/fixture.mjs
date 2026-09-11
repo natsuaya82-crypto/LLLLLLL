@@ -2854,10 +2854,23 @@ export function halfDone(){
        OWNER 2026-09-06 -- so this is that chapter, which is where the board
        and the sentence under it are now. Appended at the END so no index
        above it moves. */
+    /* WITH CARDS ON IT, because the line under the board comes out after a
+       card goes on and not before -- 「文法の各段は最初は何も置かれてない状態」
+       OWNER 2026-09-10 (www/grammar.js § g2Board). It marked the decision as
+       touched and placed nothing, which drew the line anyway out of the
+       engine's own fallback: the face was a picture of the bug. The buffer is
+       dropped either side of it for the reason every other face of this board
+       says. */
     ['the word order, with the demonstration under it', () => {
+       const was = STG.order;
        STG.set['order'] = 1;
+       STG.order = ['S', 'O', 'V'];
        window.route = 'gram'; NAV = [{ r:'gram', a:'v2:order' }];
-       return vGram(); }],
+       keepDrop(keepKeyOf('gram', 'v2:order'));
+       const h = vGram();
+       STG.order = was;
+       keepDrop(keepKeyOf('gram', 'v2:order'));
+       return h; }],
     /* ---- the search boxes, with something typed in them -----------------
        The cross only exists once there is something to clear, so a box with
        an empty field says nothing about whether it has one. These are the
