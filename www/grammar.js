@@ -1294,7 +1294,14 @@ function g2Det(){ return chapSlotsHTML('det'); }
    the CMP card on the word order board -- 「〜です」 is heard between the
    subject and what it is, and that is a place in a sentence, which is what
    that board is for. */
-function g2Cop(){ return chapSlotsHTML('cop'); }
+/* AND THE TWO THINGS A LANGUAGE SAYS NO ABOUT AND ASKS ABOUT HERE: 名詞の文
+   and 存在. 「名詞の文と存在→文の章の「です／ある」の節」 OWNER 2026-09-11 --
+   both are sentences built on this word, so this is the page they are written
+   on. Each heading is the target's name, because the two rows under it are 否定
+   and 疑問. */
+function g2Cop(){
+  return chapSlotsHTML('cop')+g2PolAt('n')+g2PolAt('ex');
+}
 function g2Cx(){
   return g2Sec('g2.cx.sub')+g2SidePick('cx')+
          g2Sec('g2.cx.mark')+g2SidePick('cxm')+
@@ -1353,14 +1360,21 @@ function g2Cx(){
 /* Which chapter is about which feature. The two ids are the ones those
    chapters already had (G2FM_CHAPS), so nothing anybody has bookmarked or
    walked changes name. */
-var GPOL_FEAT={neg:'NEGATION', q:'QUESTION'};
+/* IN ORDER, because the two are drawn as a pair on the command's page and on
+   です／ある -- g2PolAt() below -- and a table read with `for in` is a pair
+   whose order is whatever the engine feels like. */
+var GPOL_FEAT=[{id:'neg', f:'NEGATION'}, {id:'q', f:'QUESTION'}];
 /* WHAT IS BEING NEGATED OR ASKED. Four, in the order the owner named them,
    and the first is the one the others fall back to. */
 var GPOL_ON=['v','n','imp','ex'];
 var GPOL_TARGET={v:'VERB', n:'NOUN', imp:'IMPERATIVE', ex:'EXISTENTIAL'};
 /* A page of one target is `neg:v`, so the chapter is read off the front of
    it: one id, split in the one place that has to know it is two. */
-function gPolFeat(id){ return GPOL_FEAT[String(id||'').split(':')[0]] || ''; }
+function gPolFeat(id){
+  var s=String(id||'').split(':')[0], i;
+  for(i=0;i<GPOL_FEAT.length;i++) if(GPOL_FEAT[i].id===s) return GPOL_FEAT[i].f;
+  return '';
+}
 function gPolTarget(on){ return GPOL_TARGET[String(on||'')] || 'VERB'; }
 /* Every rule of this kind this language has written, and the one for one
    target. `STG.gr` is a flat list because that is what goes up as JSON; which
@@ -1639,36 +1653,35 @@ function gPolOrderSay(form){
   return out.join(' ');
 }
 
-/* ---- the chapter: what can be negated, and what can be asked ------------
-   Four rows, each its own page. 「選ぶ画面と変える画面を分ける」 -- which of
-   the four is a choice and is this screen; writing the rule is the screen you
-   arrive at. A row says what this language does today in its own letters, and
-   一 where it has said nothing. */
-/* Which of the two draws a chapter, as a RETURN and not a ternary: a name
-   against a colon is a key in a table as far as dead-check is concerned, and
-   correctly so -- so a function handed over that way reads as one nothing
-   reaches. */
-function g2PolBody(id){
-  if(GPOL_FEAT[id]) return g2Pol;
-  return g2FmChap;
-}
-function g2Pol(c){
-  var out='', old, i;
-  for(i=0;i<GPOL_ON.length;i++) out+=g2PolRow(c, GPOL_ON[i]);
-  /* AND ANY RULE AN OLDER BUILD LEFT HERE. 否定形 and 疑問形 were chapters of
-     fmr rules -- letters on one end of the verb, written on the rule sheet --
-     and those rules are still in STG.fm, still handed to the engine by
-     gFmRules(), and still deletable by the Select in the corner. A chapter
-     that stopped drawing them would be the app quietly holding a rule
-     somebody wrote and never showing it to them again.
+/* ---- 否定 and 疑問, on the section each belongs to ----------------------
+   「今の「否定形」の頁（動詞の文／名詞の文／命令／存在の 4 行を選ぶ頁）は消す。
+   4 つの対象頁はそれぞれ属する節から開く：動詞の文→動詞の章の「否定」、命令→
+   動詞の章の命令の節（の中に否定）、名詞と存在→文の章の「です／ある」の節。
+   疑問も同じ形」 OWNER 2026-09-11.
 
-     Nothing here ADDS one: the ＋ that wrote them is gone, because writing a
-     rule is the target's own page now and two roads to one rule is what this
-     chapter was rebuilt to stop. A language nobody wrote one in draws
-     nothing at all. */
-  old=g2FmRows(c);
-  if(old) out+=g2Sec('stg.rules')+old+g2FmTable(c);
-  return out+chapSlotsHTML(c.id);
+   There was a page in front of the four whose whole job was to ask which of
+   them you meant, and a grammar book does not have one: a command's negation
+   is written on the page about commands. So the four rows are gone and the
+   rows are where the thing being negated already is -- 動詞の文 is the section
+   the verb chapter names (www/phases.js § G2BOOK), and the other three are
+   drawn here, on the page of the section they belong to.
+
+   ONE ROW SAYS WHAT IT IS AND THE HEADING SAYS WHAT IT IS ABOUT. The row's
+   name is the chapter's -- 否定形 / 疑問形 -- and the heading over the pair is
+   the KIND OF SENTENCE being negated: 名詞の文, 存在, 命令. です／ある carries
+   two of those kinds, so the heading is what tells the two pairs apart; 命令形
+   carries one, and the heading is what stops the pair reading as two more of
+   the rules above it, which is what they looked like without one. */
+function g2PolAt(on){
+  var out='', i, c;
+  /* Nothing at all for a page that is not one of the four things a language
+     says no about, which is every other chapter that draws a form. */
+  if(!GPOL_TARGET[String(on||'')]) return '';
+  for(i=0;i<GPOL_FEAT.length;i++){
+    c=g2ChapBy(GPOL_FEAT[i].id+':'+on);
+    if(c) out+=g2PolRow(c, on);
+  }
+  return out? g2Sec('g2.on.'+on)+out : '';
 }
 function g2PolRow(c, on){
   var r=gPolFind(gPolFeat(c.id), gPolTarget(on)), ops=gPolOps(r),
@@ -1680,13 +1693,27 @@ function g2PolRow(c, on){
   /* `.stslot` and no `.fmmk` round it: the wrapper is what a row that can be
      CHOSEN wears (the ◉ beside it, www/grammar.js § g2Row), and both of them
      carry a line underneath -- so a row that cannot be chosen and wears both
-     is drawn with two. The words this chapter asks for are `.stslot` on the
-     same screen, which is the list these four have to be one height with. */
-  return '<button class="stslot has"' + DO('go', ['gram', 'v2:'+c.id+':'+on]) + '>'+
-    '<span class="psm">'+esc(t('g2.on.'+on))+'</span>'+
+     is drawn with two. The words a chapter asks for are `.stslot` on the same
+     screen, which is the list these have to be one height with. */
+  return '<button class="stslot has"' + DO('go', ['gram', 'v2:'+c.id]) + '>'+
+    '<span class="psm">'+esc(c.nm)+'</span>'+
     (letters.length? '<span class="psw">'+sfontHTML(letters.join(' '))+'</span>' : '')+
     '<span class="psi">'+esc(says.length? says.join(' ') : (r? '' : '—'))+'</span>'+
     ICON_GO+'</button>';
+}
+/* WHAT BELONGS TO THE CHAPTER RATHER THAN TO ONE TARGET, and it is on the
+   FIRST target because that is the one the other three fall back to
+   (polarRules() in www/grammar-engine/translate.js). 否定 and 疑問 had a page
+   of their own until the four rows went, and it carried three things besides
+   them: the word the chapter asks for (「〜ない」, the six question words), the
+   rules an older build left on it, and the lines written for it. A page that
+   stopped drawing those would be the app quietly holding what somebody wrote
+   and never showing it to them again -- docs/DATA_SAFETY.md. */
+function g2PolChap(c){
+  var head=String(c.id).split(':')[0], old=g2FmRows(c);
+  return chapSlotsHTML(head)+
+    (old? g2Sec('stg.rules')+old+g2FmTable(c) : '')+
+    g2ChapEx(head);
 }
 /* ---- the page where one rule is written --------------------------------
    Where somebody is standing while they write the two sentences, which is not
@@ -1724,7 +1751,8 @@ function g2PolPage(c){
          g2PolLine('a')+
          secAdd(esc(t('g2.'+head+'.b')), DO('openPolWord', ['b']), t('g2.pol.pick'))+
          g2PolLine('b')+
-         (ops.length? g2Sec('stg.rules')+'<div class="note">'+gPolSay(ops)+'</div>' : '');
+         (ops.length? g2Sec('stg.rules')+'<div class="note">'+gPolSay(ops)+'</div>' : '')+
+         ((c.on===GPOL_ON[0])? g2PolChap(c) : '');
 }
 /* One line, as the words standing in it. A card is pressed to take it out
    again, which is the board's own two presses and not a second way of moving
@@ -2334,9 +2362,11 @@ function g2FmAdd(c){
    chapter's). `side` is the key gPos() holds it under, named in G2FM_CHAPS
    beside the form -- a string and not a function, because a chapter is a row
    of a table and a table of functions is a table nothing can check. */
+/* And 否定 / 疑問 where this form is one of the four things they can be about,
+   which is 命令 and nothing else today. g2PolAt() draws nothing for the rest. */
 function g2FmChap(c){
   return (c.side? g2Side(c.side, gSlotAny(c.side), gWordOf('n')) : '')+
-         g2FmAdd(c)+g2FmRows(c)+g2FmTable(c)+chapSlotsHTML(c.id);
+         g2FmAdd(c)+g2FmRows(c)+g2FmTable(c)+chapSlotsHTML(c.id)+g2PolAt(c.id);
 }
 /* What is behind the `?`. 「説明禁止の代わりに？を儲けてるからね？」 OWNER
    2026-09-05 -- so a chapter says nothing about itself on the screen and the
@@ -2399,29 +2429,40 @@ function g2Chaps(){
     a=G2FM_CHAPS[i];
     /* 否定形 and 疑問形 are forms of a word AND two of the four things
        docs/GRAMMAR-V2-SPEC.md §4.4 and §4.5 say a language decides separately
-       -- so they keep their place on this list, their name and their `?`, and
-       draw the four targets instead of a list of fmr rules. */
-    out.push({id:a[0], body:g2PolBody(a[0]),
+       -- so they keep their place on this list, their name and their `?`.
+       What they have not got is a page: their four targets are their pages
+       (g2ChapBy below), each opened from the section it belongs to. */
+    out.push({id:a[0], body:g2FmChap,
               nm:fmLabel(a[1]), pos:a[2], fm:a[1], side:a[3]});
   }
   out.push({id:'adj', body:g2Adj,    nm:posLabel('adj'), pos:'adj'});
   out.push({id:'adp', body:g2Adp,    nm:t('stg.where.t')});
   return out;
 }
-/* A CHAPTER, AND ONE OF ITS TARGETS IS ALSO A CHAPTER. 否定形 and 疑問形 are
-   four rules each -- a verb sentence, a noun sentence, a command, existence --
-   and each is a page, reached as `neg:v`. What comes back is the chapter with
-   the target on it and its own body, made here rather than stored in the list:
-   the list is what the contents page draws and a language does not have twenty
-   chapters because one of them has four pages. */
+/* A CHAPTER, AND A TARGET OF 否定 / 疑問 IS ONE TOO. Those two are four rules
+   each -- a verb sentence, a noun sentence, a command, existence -- and each is
+   a page, reached as `neg:v`. What comes back is the chapter with the target on
+   it and its own body, made here rather than stored in the list: the list is
+   what the contents page draws and a language does not have twenty chapters
+   because one of them has four pages.
+
+   AND THOSE TWO HAVE NO PAGE OF THEIR OWN. A bare `neg` answers null, so it
+   falls to the contents: the page that used to be there was the four rows
+   choosing a target, and they are the sections those targets belong to now
+   (OWNER 2026-09-11).
+
+   THE TARGET KEEPS THE CHAPTER'S NAME -- 否定, not 動詞の文. It is the row on
+   the verb chapter and the row on 命令 and the two on です／ある, and in every
+   one of those places what the page is ABOUT is the page it was opened from.
+   Saying the target again would be that page named twice. */
 function g2ChapBy(id){
   var a=g2Chaps(), i, s=String(id||''), j=s.indexOf(':'), on='', c;
   if(j>=0){ on=s.slice(j+1); s=s.slice(0, j); }
   for(i=0;i<a.length;i++) if(a[i].id===s){
-    if(!on) return a[i];
-    if(!gPolFeat(s) || !GPOL_TARGET[on]) return null;
+    if(!gPolFeat(s)) return on? null : a[i];
+    if(!on || !GPOL_TARGET[on]) return null;
     c={}; for(j in a[i]) if(Object.prototype.hasOwnProperty.call(a[i], j)) c[j]=a[i][j];
-    c.id=s+':'+on; c.on=on; c.body=g2PolPage; c.nm=t('g2.on.'+on);
+    c.id=s+':'+on; c.on=on; c.body=g2PolPage;
     return c;
   }
   return null;
@@ -2461,9 +2502,12 @@ function g2ChapName(id){
    Five things a chapter can hold, in one place, so a chapter that gains a
    sixth is a line here rather than a sixth answer somewhere else. */
 function g2Said(c){
-  var p;
-  if(stEx(c.id).length) return true;
-  p=chapSlotsOf(c.id);
+  /* A target of 否定 / 疑問 answers for its whole chapter: the words it asks
+     for and the lines written for it are the chapter's and are stored under
+     the chapter's own id (g2PolChap above). */
+  var p, head=String(c.id).split(':')[0];
+  if(stEx(head).length) return true;
+  p=chapSlotsOf(head);
   if(p && stSlotsDone(p)) return true;
   /* 否定形 and 疑問形 have written-in rules of their own shape as well as any
      fmr rule an older build left on them. Either is this chapter having been

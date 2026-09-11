@@ -1058,6 +1058,11 @@ function pageName(r, a){
        what somebody just opened. */
     if(a.indexOf('v2:')===0 && typeof g2ChapName==='function')
       return g2ChapName(a.slice(3));
+    /* A chapter of the book names itself the same way, out of the one table
+       the contents is built from -- www/phases.js § G2BOOK. */
+    if(a.indexOf('book:')===0 && typeof g2BookSecs==='function' &&
+       g2BookSecs(a.slice(5)).length)
+      return g2BookName(a.slice(5));
     var st=(typeof stBy==='function')? stBy(a) : null;
     if(st) return stTitle(st);
   }
