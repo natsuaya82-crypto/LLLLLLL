@@ -1,4 +1,4 @@
-# 02 A off-words
+# 03 A old-words
 route: {"r":"words","a":""}
 
 II
@@ -6,10 +6,6 @@ II
 選択
 すべて
 アルファベット順
-K
-kano
-/kano/
-名詞
-山
+単語がまだありません
 --- 打ち込み欄 ---
   [w-q] = ""  (ph: 検索)

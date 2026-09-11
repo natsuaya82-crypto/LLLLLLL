@@ -1,4 +1,4 @@
-# 06 A off-back
+# 12 A pay-relaunch
 route: {"r":"words","a":""}
 
 II
@@ -6,10 +6,20 @@ II
 選択
 すべて
 アルファベット順
-K
-kano
-/kano/
+A
+aa
+/aa/
 名詞
-山
+aa
+B
+bb
+/bb/
+名詞
+bb
+C
+cc
+/kk/
+名詞
+cc
 --- 打ち込み欄 ---
   [w-q] = ""  (ph: 検索)

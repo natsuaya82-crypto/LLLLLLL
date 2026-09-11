@@ -1959,6 +1959,147 @@ WALKS['14'] = async (br, srv) => {
   return a;
 };
 
+/* ---- 15. 古い端末 -------------------------------------------------------- */
+WALKS['15'] = async (br, srv) => {
+  say('--- 15. an old phone: the shapes an earlier version left ---');
+  /* 前の形：`lingua.<id>.<slice>` がディスクに、id は `L…`、SET.plan 直書き。 */
+  /* `LANGS` は id を鍵にした object で、古い id は `L` + 36進のミリ秒で
+     ダッシュが無い（langsOldId がそこで見分ける）。配列で書くと migration が
+     何もしないので、そこは合わせる。 */
+  const old = 'Lm5k3x9q';
+  const ls = {
+    'lingua.langs': JSON.stringify({ [old]: { mine: true, nm: '古い言語' } }),
+    'lingua.cur': old,
+    'lingua.set': JSON.stringify({ walked: true, plan: 'pro', theme: 'dark',
+                                   ui: 'ja', myfont: true, recent: ['むかし'] }),
+    ['lingua.' + old + '.words']: JSON.stringify([
+      { hw: 'kano', ph: ['k', 'a', 'n', 'o'], mn: '山', mns: ['山'], pos: 'n', at: 1 },
+      { hw: 'sar', ph: ['s', 'a', 'r'], mn: '川', mns: ['川'], pos: 'n', at: 2 }]),
+    ['lingua.' + old + '.letters']: JSON.stringify([
+      { id: 'lt.a', ch: 'a', ph: 'a', st: [] },
+      { id: 'lt.k', ch: 'k', ph: 'k', st: [] }]),
+    ['lingua.' + old + '.notes']: JSON.stringify([{ t: '古いメモ', at: 1 }])
+  };
+  const a = await new Dev(br, srv, 'A').open(ls);
+  await a.shot('old-open');
+  say('  on opening: appIs=' + await a.pg.evaluate(() => appIs()) +
+      '  langs=' + await a.pg.evaluate(() => JSON.stringify(
+        Object.keys(LANGS).map(k => k + '="' + langNameOf(k) + '"'))) +
+      '\n   WORDS=' + await a.pg.evaluate(() => JSON.stringify(WORDS.map(w => w.hw))) +
+      '  LETTERS=' + await a.pg.evaluate(() => LETTERS.length) +
+      '  plan=' + await a.pg.evaluate(() => plan()) +
+      '  theme=' + await a.pg.evaluate(() => SET.theme));
+
+  /* 門をくぐる ── 古い端末の人がサインインしたら何が残るか */
+  await a.tapArg('obMailGo', ['up']);
+  await a.type('#ob-em', 'old@example.com');
+  await a.tapDo('obMailUp');
+  await a.type('#ob-code', '12345678');
+  await a.tapDo('obMailCode');
+  await a.type('#ob-pw', 'hunter44pw');
+  await a.tapDo('obNewPwGo');
+  await a.type('#ob-hd', 'old');
+  await a.type('#ob-nm', '古い人');
+  await a.tapDo('obWhoGo');
+  await a.pg.waitForTimeout(2200); await a.quiet();
+  await a.reload();
+  await a.shot('old-after-door');
+  say('  after the door: WORDS=' + await a.pg.evaluate(() => JSON.stringify(WORDS.map(w => w.hw))) +
+      '  langs=' + await a.pg.evaluate(() => JSON.stringify(
+        Object.keys(LANGS).map(k => langNameOf(k)))) +
+      '\n   server languages=' + JSON.stringify(srv.db.language.map(l => l.name)) +
+      '  words slices=' + JSON.stringify(srv.db.slice.filter(x => x.kind === 'words')
+        .map(x => { try { return JSON.parse(x.body).map(w => w.hw); } catch (e) { return '?'; } })));
+  await a.goRoute('words');
+  await a.shot('old-words');
+  say('  dictionary rows on screen: ' + await a.pg.evaluate(() =>
+    document.querySelectorAll('#app [data-do^="openWord"]').length));
+  await a.goRoute('langs');
+  await a.shot('old-langs');
+  say('  言語の一覧: ' + JSON.stringify((await a.text()).split('\n').filter(Boolean)));
+  say('  disk keys still there: ' + JSON.stringify(
+    (await a.pg.evaluate(() => Object.keys(localStorage).sort()))
+      .filter(k => k.indexOf(old) >= 0)));
+  return a;
+};
+
+/* ---- 16. 課金 ------------------------------------------------------------- */
+WALKS['16'] = async (br, srv) => {
+  say('--- 16. money ---');
+  const a = await new Dev(br, srv, 'A').open();
+  await arrive(a, AYA, false);
+  await a.reload();
+
+  /* 無料で有料のものを押す */
+  await a.goRoute('kb');
+  await a.shot('pay-kb-free');
+  say('  free, the keyboard chapter: ' + JSON.stringify(await a.buttons()));
+  await a.tapDo('kbNew');
+  await a.shot('pay-kb-new');
+  say('  free, pressed キーボードを追加: where=' + await a.where() +
+      '  pop="' + await a.pop() + '"');
+  await a.popShut();
+
+  await a.goRoute('ltset', 'alpha');
+  await a.tapArg('newLetter', ['alpha']);
+  await a.shot('pay-lt-free');
+  say('  free, pressed 文字の追加: pop="' + await a.pop() + '"');
+  await a.popShut();
+
+  /* 語の上限 */
+  say('  word ceiling: ' + await a.pg.evaluate(() => wordCap()));
+
+  /* 買う */
+  srv.db.planIs = 'pro';
+  await a.pg.evaluate(() => planTook('pro'));
+  await a.quiet(); await a.popShut();
+  await a.goRoute('kb');
+  await a.tapDo('kbNew');
+  await a.tapArg('kbAdd', ['qwerty']);
+  await a.settle();
+  await a.shot('pay-kb-pro');
+  say('  pro: boards=' + await a.pg.evaluate(() => kbBoards().length) +
+      '  word ceiling=' + await a.pg.evaluate(() => wordCap()));
+  /* 有料で語を増やす */
+  for (const w of ['aa', 'bb', 'cc']){
+    await a.goRoute('words');
+    await a.tapDo('openAdd');
+    await a.type('#wd-ln', w); await a.type('#wd-mn', w);
+    await a.tapDo('addOne');
+  }
+  await a.settle();
+  say('  pro: WORDS=' + await a.pg.evaluate(() => WORDS.length));
+
+  /* 期限が切れる */
+  srv.db.planIs = 'free';
+  await a.pg.evaluate(() => planTook('free'));
+  await a.quiet();
+  await a.shot('pay-lapsed');
+  say('  after the plan ends: where=' + await a.where() + '  pop="' + await a.pop() + '"' +
+      '  plan=' + await a.pg.evaluate(() => plan()) +
+      '  planWas=' + await a.pg.evaluate(() => String(SET.planWas || '')) +
+      '\n   screen: ' + JSON.stringify((await a.text()).split('\n').filter(Boolean).slice(0, 8)));
+  await a.popShut();
+  await a.goRoute('words');
+  await a.shot('pay-words-after');
+  say('  words still in WORDS=' + await a.pg.evaluate(() => WORDS.length) +
+      '  rows on screen=' + await a.pg.evaluate(() =>
+        document.querySelectorAll('#app [data-do^="openWord"]').length) +
+      '\n   screen says: ' + JSON.stringify((await a.text()).split('\n').filter(Boolean).slice(0, 6)));
+  await a.goRoute('kb');
+  await a.shot('pay-kb-after');
+  say('  keyboards after the plan ended: ' +
+      JSON.stringify((await a.buttons()).filter(b => /kbGoBoard|kbNew/.test(b))) +
+      '\n   screen: ' + JSON.stringify((await a.text()).split('\n').filter(Boolean).slice(0, 8)));
+  await a.reload();
+  await a.goRoute('words');
+  await a.shot('pay-relaunch');
+  say('  after relaunch: WORDS=' + await a.pg.evaluate(() => WORDS.length) +
+      '  server words=' + JSON.stringify(srv.db.slice.filter(x => x.kind === 'words')
+        .map(x => { try { return JSON.parse(x.body).length; } catch (e) { return '?'; } })));
+  return a;
+};
+
 /* ===========================================================================
    走らせる
    ======================================================================== */
