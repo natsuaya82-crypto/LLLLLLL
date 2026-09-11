@@ -1825,11 +1825,19 @@ function obIntoSlot(id){ return ltSetRoman(id, obFirst())||id; }
 
    The old road is kept for a language that somehow has no such slot: then
    there is nothing to draw onto and a letter of its own is right. */
+/* WHICH SLOT THIS IS is ltSlotKey()'s and is not worked out again here.
+   `ltIsBase(l)` and `ltName(l)` side by side WERE that function, spelled out a
+   second time -- and the two came apart on 2026-09-10, when ltSlotKey() was
+   reading `l.ab` while everything else asked the name (docs/CHANGELOG.md,
+   the same date). One question, one place. */
 function obSlot(){
-  var i, l, nm=String(obFirst()).toLowerCase();
+  var i, k, nm=String(obFirst()).toLowerCase();
   for(i=0;i<LETTERS.length;i++){
-    l=LETTERS[i];
-    if(ltIsBase(l) && String(ltName(l)||'').toLowerCase()===nm) return l;
+    k=ltSlotKey(LETTERS[i]);
+    /* `k &&` is ltIsBase() and not a second test: a letter that is no slot is
+       never the slot being asked for, whatever it is called. Without it a
+       letter with no name would answer to an empty one. */
+    if(k && k===nm) return LETTERS[i];
   }
   return null;
 }

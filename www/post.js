@@ -400,11 +400,13 @@ function openPost(from, at){
 
      ONLY INTO AN EMPTY ONE, and the reason moved with it. It is no longer
      about editing somebody's sentence -- nothing is put in the sentence. It
-     is that there is no way to take an addressee OFF a composer
-     (docs/BACKLOG.md), so a half-written post about something else must not
-     silently become a post to whoever's page the + happened to be on. With
-     something already there the composer opens as it was, which is what +
-     has always done.
+     is that a half-written post about something else must not silently
+     become a post to whoever's page the + happened to be on. With something
+     already there the composer opens as it was, which is what + has always
+     done. There IS a way off one now -- the ✕ on the line (pwToRow, OWNER
+     2026-09-09) -- and that is not a reason to widen this: an addressee
+     somebody has to notice and remove is still one they were never asked
+     about.
 
      `at` is a handle, [a-z0-9_] (supabase/schema.sql), so nothing here has to
      escape it and nothing is parsed back out of it later. */
@@ -874,20 +876,45 @@ var POST_THUMB=300;
    moment the picture goes up and exists only in Storage. A picture already
    smaller than POST_THUMB has no small copy -- '' rather than a second file
    of the same bytes -- and postThumbs() draws the photograph for it. */
-function postThumb(u, ok){
+/* ONE PHOTOGRAPH BROUGHT DOWN TO A LONG EDGE, and the cap is the argument.
+   It was written out twice -- once for what goes UP (POST_PIC) and once for
+   the copy the timeline scrolls (POST_THUMB) -- and the two differed by the
+   constant and by nothing else: the same k, the same rounding, the same
+   canvas, the same POST_PICQ. Only the long edge is brought down; nothing is
+   cropped.
+
+   `ok(out, whole)` has three answers, not two, because the two callers answer
+   them differently and folding them together would change what a failure does:
+
+     out  the JPEG
+     ''   the canvas refused it -- a picture the composer says so about
+     null the photograph never loaded, which is where a batch goes ON
+
+   `whole` says the picture was already inside the cap. The caller decides
+   what that means: the small copy is not made (there is nothing to gain by
+   storing the same bytes twice), and a picture going UP is re-encoded all the
+   same, because it may not be a JPEG yet and POST_PICQ is what fits it inside
+   POST_BYTES. So this always draws, and postThumb() throws that draw away for
+   a picture already under 300 across -- one canvas, at the moment a picture
+   is sent, and never on a screen. */
+function postShrink(url, cap, ok){
   var im=new Image();
   im.onload=function(){
-    var k=Math.min(1, POST_THUMB/Math.max(im.width, im.height)), c, x, out='';
-    if(k>=1){ ok(''); return; }
+    var k=Math.min(1, cap/Math.max(im.width, im.height)), c, x, out='';
     c=document.createElement('canvas');
     c.width=Math.round(im.width*k); c.height=Math.round(im.height*k);
     x=c.getContext('2d');
     x.drawImage(im, 0, 0, c.width, c.height);
     try{ out=c.toDataURL('image/jpeg', POST_PICQ); }catch(e){ out=''; }
-    ok(out);
+    ok(out, k>=1);
   };
-  im.onerror=function(){ ok(''); };
-  im.src=String(u||'');
+  im.onerror=function(){ ok(null, false); };
+  im.src=String(url||'');
+}
+function postThumb(u, ok){
+  postShrink(u, POST_THUMB, function(out, whole){
+    ok(whole? '' : (out||''));
+  });
 }
 /* What the timeline may take up. localStorage is one allowance shared by the
 /* What the timeline may take up. localStorage is one allowance shared by the
@@ -971,22 +998,18 @@ function pwPicKeepAll(list, i){
    were never going to be seen; a post shows the picture, so what was taken is
    what goes up. Only the long edge is brought down. */
 function pwPicKeep(url, then){
-  var im=new Image();
-  im.onload=function(){
-    var k=Math.min(1, POST_PIC/Math.max(im.width, im.height));
-    var c=document.createElement('canvas'), x, out;
-    c.width=Math.round(im.width*k); c.height=Math.round(im.height*k);
-    x=c.getContext('2d');
-    x.drawImage(im, 0, 0, c.width, c.height);
-    try{ out=c.toDataURL('image/jpeg', POST_PICQ); }
-    catch(e){ toast(t('post.pic.bad')); return; }
+  postShrink(url, POST_PIC, function(out){
+    /* The photograph never loaded. A batch goes on to the next one; a single
+       one says so. */
+    if(out===null){ if(then) then(); else toast(t('post.pic.bad')); return; }
+    /* The canvas refused it. This one stops, batch or not: it is a picture
+       this phone cannot read at all, and walking on would say nothing. */
+    if(!out){ toast(t('post.pic.bad')); return; }
     if(!pwPicRoom(out)){ toast(t('post.pic.full')); return; }
     if(pwPics().length>=POST_PICS){ toast(t('post.pic.many', POST_PICS)); return; }
     pwPics().push({u:out, marks:[]});
     if(then) then(); else openPost();
-  };
-  im.onerror=function(){ if(then) then(); else toast(t('post.pic.bad')); };
-  im.src=url;
+  });
 }
 /* The letters go with the picture. They are placed ON it -- a mark with no
    photograph under it is a position on nothing -- so they are on the same
@@ -1197,10 +1220,41 @@ function postFresh(p){
    WHAT IS ALREADY IN THE COPY IS NOT TOUCHED. `li`, `bo`, `re`, `lime` and
    `bome` are still in `lingua.posts` on every phone that has this app; they
    are not read, not written and not removed (docs/DATA_SAFETY.md). */
-function postNLike(p){ return (p && p.nlike!==undefined)? p.nlike : 0; }
+
+/* AND A PRESS THE SERVER HAS NOT ANSWERED YET.
+   「Twitter もその仕様なはず。ハート押して 1 つくやん？サーバー飛んでないなら
+   ハートが消えるでいいんじゃない？」 OWNER 2026-09-09.
+
+   The ♡ lights and the number moves the moment it is pressed; if it did not
+   reach anybody the ♡ goes out and the number comes back, and nothing is
+   said. **This supersedes 「押した瞬間は動かず」 of 2026-09-08** -- that
+   decision is about where the ANSWER lives and it is untouched: the count is
+   still the server's, and the phone still adds nothing up that outlives a
+   press.
+
+   `PMARK` is that press and nothing else. It is a key in memory, not a field
+   on a post: nothing is written to `lingua.posts`, nothing survives the app
+   closing, and it goes the moment the server has answered -- whatever the
+   answer was. So there is no SECOND answer to 「did I press this」 anywhere
+   on this phone; there is the server's row, and a press still in the air.
+
+   It is read HERE, in the one place that says what the ♡ and the number are,
+   because a screen drawing the pending press itself would be that second
+   answer written out again. */
+var PMARK={};
+function pmOf(p, kind){
+  return (p && PMARK[String(p.id)+'|'+kind]) || null;
+}
+function postNLike(p){
+  var m=pmOf(p, 'like');
+  return m? m.n : ((p && p.nlike!==undefined)? p.nlike : 0);
+}
 function postNBoost(p){ return (p && p.nboost!==undefined)? p.nboost : 0; }
 function postNReply(p){ return (p && p.nreply!==undefined)? p.nreply : 0; }
-function postILike(p){ return !!(p && p.ilike); }
+function postILike(p){
+  var m=pmOf(p, 'like');
+  return m? m.i : !!(p && p.ilike);
+}
 function postIBoost(p){ return !!(p && p.iboost); }
 /* Where the server keeps it. Written when a push comes back and read for two
    things: whether this post has gone up at all, and what to point a reply at.
@@ -1482,7 +1536,7 @@ function pwHTML(){
          pwToPaint() fills it while somebody is typing and this screen is not
          redrawn then. `.pto:empty` is display:none, so an empty one is not a
          line of nothing. */
-      '<div class="pto" id="pw-to">'+(PW.toh? ptoHTML(PW.toh) : '')+'</div>'+
+      '<div class="pto" id="pw-to">'+pwToRow()+'</div>'+
       /* The field runs the way the language does, and is set in the letters
          somebody drew. It was neither: flat, in roman, above a post that
          came out in columns of drawn shapes -- so what you were writing and
@@ -1660,11 +1714,44 @@ function pwAtLift(){
   }
   pwToPaint();
 }
+/* WHAT THAT LINE HOLDS, and it is one place because two screens draw it:
+   pwHTML() when the composer is built, and pwToPaint() while somebody is
+   typing into it. It was `PW.toh? ptoHTML(PW.toh) : ''` written out twice,
+   which was two copies of one sentence the moment the sentence grew a second
+   half.
+
+   THE SECOND HALF IS THE ✕. 「いいよ」 OWNER 2026-09-09, to 「投稿画面の
+   「Replying to @〇〇」に ✕ を付けて外せるようにする」. Until then the line
+   appeared and there was no way off it: the addressee is `PW.toh` and not
+   characters in the line, so emptying the field left it standing, and the
+   only roads that cleared it were sending the post and keeping it as a draft
+   (`docs/BACKLOG.md`, 2026-09-08).
+
+   It wears `.ptag`, which is what the @ beside it wears, and `.pto .ptag` in
+   index.html is already 44pt on this row without making the row taller --
+   padding 11 and a margin of -11 that gives it back (the rule says so where
+   it is written). No corner, no border, no fill: CLAUDE.md § NO ROUNDED BOX.
+   It sits directly after the handle rather than out at the right margin,
+   because pinning it there is a flex rule in index.html and that file is
+   another branch's today. */
+function pwToRow(){
+  if(!PW.toh) return '';
+  return ptoHTML(PW.toh)+
+    '<button class="ptag"'+DO('pwToOff')+' aria-label="'+
+      esc(t('post.re.off'))+'">'+ICON_CROSS+'</button>';
+}
+/* And pressing it takes the addressee and NOTHING else. The line is what
+   somebody wrote and is not touched -- taking both is one line to write and
+   throws nothing, which is why post-check asks about the line as well. */
+function pwToOff(){
+  PW.toh='';
+  pwToPaint();
+}
 /* And the line over the field, patched by hand for the same reason the ring
    is: nothing redraws this screen while it is being typed into. */
 function pwToPaint(){
   var e=document.getElementById('pw-to');
-  if(e) e.innerHTML=PW.toh? ptoHTML(PW.toh) : '';
+  if(e) e.innerHTML=pwToRow();
 }
 /* How long a post may be. There was no answer at all: the field was one row
    of an input, so a line ran off the side of the phone and kept going for as
@@ -3549,34 +3636,54 @@ function postRow(p){
    pressing the heart has already been told by the press itself
    (www/post.js § postLike), and a second pop about the number under it would
    be the same failure said twice. */
-function postCountsPull(id){
+function postCountsPull(id, done){
   var p=postById(id), sid=p && p.sid;
-  if(!sid || typeof netPostCounts!=='function' || !netSignedIn()) return;
+  /* `done` is「the ask is over」and it runs on every road out of here,
+     including the ones that never ask: a press waiting on an answer that is
+     never going to come is a ♡ left lit on a post nobody can see. */
+  if(!sid || typeof netPostCounts!=='function' || !netSignedIn()){
+    if(done){ done(); render(); }
+    return;
+  }
   netPostCounts(sid, function(r){
-    if(r && postFresh(r)){ savePosts(); render(); }
-  }, function(){});
+    if(r && postFresh(r)) savePosts();
+    if(done) done();
+    render();
+  }, function(){ if(done){ done(); render(); } });
 }
-/* A LIKE IS THE SERVER'S ROW, AND THE THUMB MOVES WHEN THE SERVER HAS IT.
+/* A LIKE LIGHTS AT ONCE, AND GOES OUT IF IT DID NOT ARRIVE.
    -------------------------------------------------------------------------
-   「保存するタイミングでエラーが起きるなら、保存されないし」 OWNER 2026-09-05,
-   and it is the shape the 公開 switch already has (www/home.js § setWldHide).
+   「Twitter もその仕様なはず。ハート押して 1 つくやん？サーバー飛んでないなら
+   ハートが消えるでいいんじゃない？」 OWNER 2026-09-09.
 
-   This used to move the number and the heart first and send afterwards, on
-   the grounds that a press should show at once. What that is, with no signal,
-   is a screen saying a thing that did not happen: the heart stayed filled,
-   the number stayed up, and nothing had reached anybody. Now the press sends,
-   and what comes back moves the screen -- so a like that did not arrive is a
-   like that did not happen, and ［再接続］ presses it again.
+   The press shows immediately -- ♡ and the number, on the SCREEN (PMARK
+   above; nothing is stored) -- and the server is asked. When it answers, the
+   count is the server's, asked for rather than added up here: two phones each
+   adding one to their own copy is how a number goes backwards. When it does
+   not, the ♡ and the number are what they were before it was pressed and
+   NOTHING IS SAID -- the ♡ going out is what the person is told. There was a
+   ［再接続］ pop here; it is gone, because a press somebody can simply make
+   again is not a failure to stop them with.
 
-   NOT A NUMBER OF ITS OWN EITHER. netMark() sends whether it is liked, and
-   the count is asked for rather than added up here: two phones each adding
-   one to their own copy is how a number goes backwards. */
+   **This replaces the shape of 2026-09-05, and only for the ♡.** That one
+   sent first and moved the screen on the answer, so a like that did not
+   arrive was a like that never showed. Both readings are about the same
+   thing -- a screen must not say what did not happen -- and the owner has
+   chosen which one the ♡ is.
+
+   One press at a time on one ♡: pressing again while the first is in the air
+   would send a second row about a state nobody has agreed on yet. */
 function postLike(id){
-  var p=postById(id);
+  var p=postById(id), k, on;
   if(!p || !postMay()) return;
-  netMark(id, 'like', !postILike(p),
-    function(){ postCountsPull(id); },
-    function(d, st, m){ netPop(d, st, m, function(){ postLike(id); }); });
+  k=String(id)+'|like';
+  if(PMARK[k]) return;
+  on=!postILike(p);
+  PMARK[k]={i:on, n:Math.max(0, postNLike(p)+(on? 1 : -1))};
+  render();
+  netMark(id, 'like', on,
+    function(){ postCountsPull(id, function(){ delete PMARK[k]; }); },
+    function(){ delete PMARK[k]; render(); });
 }
 function postBoost(id){
   var p=postById(id);

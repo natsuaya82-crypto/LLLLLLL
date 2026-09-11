@@ -164,19 +164,44 @@ function kbId(){ KB_SEQ++; return 'k'+Date.now()+'_'+KB_SEQ; }
    times they are read. A board that already has one keeps it: this is not a
    repair and compares nothing.
 
-   AND TWO COPIES OF ONE BOARD ARE NOT TWO BOARDS.
-   「消していい。そもそも増殖させるな」 OWNER 2026-09-07. A phone that has
-   already been through the launches above is holding the same keyboard eight
-   times, and an id decided by the board stops the ninth without taking one of
-   the eight away. So the copies are joined here, at the same moment and by
-   the same answer: the SIGNATURE below is what makes two boards one, and the
-   id put on a board that has none is that signature hashed. One question,
-   asked once.
+   SAME CONTENTS TWICE IS NOT ONE BOARD.
+   「ダメに決まってんだろ」 OWNER 2026-09-09. Pressing + twice makes two boards,
+   and `kbAdd` makes them `{id, nm:'', pat, lay:kbBlank(...)}` -- so two blank
+   boards of one pattern are the same board in every field but the id, and for
+   two days they were read back as ONE. What a person pressed twice is two
+   things, whatever the bytes say.
 
-   WHAT IS JOINED IS ONLY WHAT IS BYTE FOR BYTE THE SAME BOARD -- every field
-   but the id, so a name typed on one of them, a key moved, a layer added is
-   a board somebody made and it stays. docs/CHANGELOG.md 2026-09-07 carries
-   the DELETE REVIEW.
+   SO TWO BOARDS THAT BOTH CARRY AN ID ARE NEVER JOINED HERE, whatever is on
+   them. An id is what says which board this is, and two of them is two.
+
+   THE ONE JOIN LEFT IS THE MIGRATION, and it is the only thing contents are
+   ever looked at for: a board with NO id, beside a board that HAS one and is
+   otherwise byte for byte the same, is that same board written down twice --
+   the disk copy this chapter's growth came out of, met with the row the
+   server is holding for it. It takes that board's id and the two become one.
+   That is a board arriving from before boards had ids, not a board somebody
+   made, and there is no id on it to tell them apart with. `again-check`
+   holds it: the same phone launched three times counts one keyboard.
+
+   AND A BOARD WEARING THE ID THIS READER MINTED IS STILL THAT BOARD, which
+   is the half the first version got wrong. On the real launch the two never
+   meet while one of them is bare: kbRead() stamps the disk copy, saveKb()
+   writes the stamped one into LSL, and netSlice1()'s slMine() hands syMerge()
+   THAT -- so both sides carry an id by the time they are in one array, and
+   the join above could not fire. Measured, not read: `(none)` on the disk,
+   `bfzcp3y_1714` after kbRead(), the same after saveKb(), and two boards out
+   of the merge. kbMinted() is what tells the two kinds of id apart, and it
+   asks a board about ITSELF rather than comparing it with anything: an id
+   that is this board's own kbHash (with a '+' for each twin ahead of it) is
+   a stand-in this reader wrote, not a name anybody gave. A board made here
+   takes its id off the clock (kbId), so 「+ を二回押した」 never answers yes
+   to this and two of those are never joined.
+
+   Two id-less boards of one content are still two. They hash alike, and
+   letting them SHARE an id would be syKeyOf() told they are one row -- a
+   board somebody made, gone -- so the second one and every one after it is
+   marked by its turn in the array, which every read counts the same way.
+   Stable and distinct, which is the whole of what stops the growth.
 
    Reading only, as the stamping above is: nothing is written here, so a
    launch with no signal joins the copy in memory and stops. The write comes
@@ -200,16 +225,50 @@ function kbHash(b){
   for(i=0;i<s.length;i++) h=((h<<5)-h+s.charCodeAt(i))|0;
   return 'b'+(h>>>0).toString(36)+'_'+s.length;
 }
+/* Whether this board's id is one THIS READER wrote for it -- its own kbHash,
+   with a '+' for each twin ahead of it in the array. It asks the board about
+   itself and compares it with nothing. A board made in the app takes its id
+   off the clock, so it never answers yes. */
+function kbMinted(b){
+  var h, i;
+  if(!b || !b.id) return false;
+  h=kbHash(b);
+  if(b.id.length<h.length || b.id.slice(0, h.length)!==h) return false;
+  for(i=h.length;i<b.id.length;i++) if(b.id.charAt(i)!=='+') return false;
+  return true;
+}
 function kbIded(k){
-  var kbs=k.kbs||[], out=[], at={}, put=[], i, b, s, off, idx;
+  var kbs=k.kbs||[], out=[], seen={}, taken={}, byId={}, put=[], i, b, s, id, off, idx;
+  /* what the boards wearing a NAME look like -- read before one is minted,
+     because the copy that has none comes first in the array and the row it
+     belongs to comes after it. A stand-in this reader wrote is not a name and
+     is left out, or the migration below would have nothing to join to.
+     `taken` is the same pass and takes both kinds: a hash landing on an id a
+     LATER board is wearing would make that board a twin of this one. */
+  for(i=0;i<kbs.length;i++){
+    b=kbs[i];
+    if(!b || typeof b!=='object' || !b.id) continue;
+    taken['i'+b.id]=1;
+    if(kbMinted(b)) continue;
+    s='g'+kbSig(b);
+    if(!Object.prototype.hasOwnProperty.call(byId, s)) byId[s]=b.id;
+  }
   for(i=0;i<kbs.length;i++){
     b=kbs[i];
     /* not a board at all: kept exactly where it was and asked nothing */
     if(!b || typeof b!=='object'){ put.push(out.length); out.push(b); continue; }
-    s='g'+kbSig(b);
-    if(!b.id) b.id=kbHash(b);
-    if(Object.prototype.hasOwnProperty.call(at, s)){ put.push(at[s]); continue; }
-    at[s]=out.length; put.push(out.length); out.push(b);
+    if(!b.id || kbMinted(b)){
+      s='g'+kbSig(b);
+      /* the migration: this is that board, from before boards had ids */
+      if(Object.prototype.hasOwnProperty.call(byId, s)) b.id=byId[s];
+      else if(!b.id){
+        id=kbHash(b);
+        while(taken['i'+id]) id=id+'+';
+        taken['i'+id]=1; b.id=id;
+      }
+    }
+    if(Object.prototype.hasOwnProperty.call(seen, 'i'+b.id)){ put.push(seen['i'+b.id]); continue; }
+    seen['i'+b.id]=out.length; put.push(out.length); out.push(b);
   }
   k.kbs=out;
   off=((parseInt(k.v, 10)||0)>=2)? 1 : 0;
@@ -284,42 +343,22 @@ function saveKb(){
   kbVFix(); kbWayOff(); kbNoted(); bkTouch();
   if(!KB) slRm(langKey('kb'));
   else slWr(langKey('kb'), JSON.stringify(KB));
-  kbKeepLay();
 }
 /* The layout, said once as a string. Three things ask whether it has moved --
    the step-back, the buffer the editor opened with, and the write below. */
 function kbLaySig(b){ return JSON.stringify(b.lay); }
-/* AND THE BAR IS TOLD. 「保存する箇所が出たなら金色になって」 OWNER
-   2026-09-05. The editor registers its buffer with the layout it arrived with
-   (kbKeepOn), so writing the layout here is what makes the Save in the corner
-   gold -- one road, www/shell.js § KEEP, and no dirty flag of this chapter's
-   own.
+/* WHY THERE IS NOTHING HERE TELLING THE BAR. This used to end in a
+   kbKeepLay() that pushed the layout into the buffer, so that the Save in the
+   corner would light -- and the shape of that was a line every writer had to
+   pass through, which is a line somebody eventually does not. The buffer is
+   ASKED now, by kbNow() below, every time the button is drawn, so the layout
+   reaches the corner without anybody saying so and there is no key to get
+   wrong. That was rule 20's old fault as well: this wrote `kb|1` while the
+   bar read `kb|2` after a keyboard was deleted, and a row really came out of
+   the layout with the corner still grey. There is one answer to which board
+   is on the screen now, and it is the route.
 
-   THE KEY IS THE BOARD'S PAGE, AND IT IS THE SAME STRING keepKey() ANSWERS
-   WITH while that page is the screen. It has to be the board rather than the
-   screen, because saveKb() runs from langSaveAll(), from the slice writer in
-   core.js and from the key's own sheet, where the screen in front of somebody
-   is not this one -- and a change made on the sheet has to reach the buffer
-   the page behind it will read.
-
-   That leaves ONE thing to hold, and it is the whole of rule 20's fault:
-   which board is on the screen is written in the route, and `kbShow` is the
-   same fact read back. Deleting a keyboard slid `kbShow` and left the route
-   naming the one it had, so from then on this wrote `kb|1` while the bar read
-   `kb|2` -- a row really came out of the layout and the Save stayed grey, and
-   the arrow asked nothing on the way out. Both deletes land on the board they
-   end on now (kbDropGo, kbDelSel), so the two cannot come apart. `keep-check`
-   holds it.
-
-   Board 0 is asked and answered here rather than at the call: it is the free
-   QWERTY, built from LETTERS and stored nowhere, so kbEdit() answers null and
-   there is no layout to write down. */
-function kbKeepLay(){
-  var b=kbEdit();
-  if(!b) return;
-  keepPut(keepKeyOf('kb', kbShow), 'lay', kbLaySig(b));
-}
-
+   www/shell.js § keepOn, OWNER 2026-09-10. */
 /* The four directions a finger can leave a key by, in the order they are
    stored. Written once because the editor, the renderer and the flick all
    count on the same order. */
@@ -897,16 +936,31 @@ function kbName(i){
    `kbKeepOn()` is what registers the buffer, and it is called from the editor
    face in vKb() rather than from here: a name is typed on a screen, and the
    screen is what knows which board is in front of somebody. */
+function kbNow(){
+  var b=kbEdit();
+  if(!b) return {};
+  return {nm:b.nm||'', lay:kbLaySig(b), at:(KB && KB.at)||0};
+}
 function kbKeepOn(){
   var b=kbEdit();
   /* Not in somebody else's language: saveKb() refuses one (langLocked, in
      www/core.js), so a buffer here would put a Save in the bar that could not
      write. */
   if(!b || langLocked()) return;
-  /* The name AND the layout. What the screen opened with is what changed is
-     measured against, so a keyboard arrived at and left alone shows a grey
-     Save and asks nothing on the way out. */
-  keepOn(keepKey(), {nm:String(b.nm||''), lay:kbLaySig(b)}, kbKeepSave);
+  /* The name, the layout, AND which board goes to the phone. What the screen
+     is holding is asked every time the button is drawn (www/shell.js
+     § keepOn), so a keyboard arrived at and left alone shows a grey Save and
+     asks nothing on the way out, and every road that changes the layout
+     lights it without having to say so.
+
+     `at` is here because it was the one change on this screen that did not:
+     kbApply() moves KB.at and calls saveKb(), and the layout signature is one
+     board's keys, so 「which keyboard my thumb gets」 changed with the corner
+     still grey (docs/scope/r14-keep.md § A).
+
+     `kbrom` is NOT here. It is SET -- this person's setting, on every
+     language -- and netPrefsPut() sends it on the press. § D. */
+  keepOn(keepKey(), kbNow, kbKeepSave);
 }
 /* `lay` is not written here and must not be: the layout is already on this
    phone by the time the button is gold -- every mutator on the sheet ends in
@@ -3559,7 +3613,7 @@ function kbNoted(){
    is the other way to arrive somewhere else without leaving the screen.
 
    AND THE BUFFER THE SAVE READS, for the same sentence a third time. It is
-   filed under the board's PAGE (kbKeepLay above), so a board deleted out from
+   filed under the board's PAGE (kbKeepOn below), so a board deleted out from
    under a page leaves what it opened with sitting there as what the next
    board's change is measured against -- and the Save came up gold on a
    keyboard nobody had touched. Every one of them goes, not the page you are
@@ -3875,7 +3929,7 @@ HELP.kb=function(){
     (can('kb') ? '' :
       '<div class="note" style="margin-top:16px">'+esc(t('kb.free.no'))+'</div>'+
       '<div class="note">'+esc(t('kb.free.up'))+'</div>'+
-      '<button class="btn ghost" style="width:100%;margin:12px 0 4px"' + DO('goPlans') + '>'+
+      '<button class="btn ghost" style="width:100%;margin:12px 0 4px"' + DO('go', ["plans"]) + '>'+
         esc(t('kb.up.go'))+'</button>')};
 };
 /* What is left on the screen: the one line that is a setting rather than an

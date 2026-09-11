@@ -21,7 +21,7 @@ The rest of `docs/` is the working detail behind the rules at the head of
 | `RECOVERY.md` | バグで人のものが消えたときに運営側で戻す案。三つ並べてある。**まだ決まっていません** |
 | `DUPLICATES.md` | 同じものが二箇所以上に直書きされている所の一覧。食い違っているものが八件、まだ一致しているものが十二件 |
 
-**§ 0 was written on 2026-09-05 and § 0-a re-read that night. Every other section was read
+**The 2026-09-09 section was written that day. § 0 was written on 2026-09-05 and § 0-a re-read that night. Every other section was read
 on 2026-09-03 and has not been re-read since.** Where a claim can go stale it
 carries the command that re-checks it. **Run the command; do not believe the
 sentence.**
@@ -32,7 +32,91 @@ un-re-read.
 
 ---
 
-## 2026-09-06 の夜 ── ビルド 140（一番新しい）
+## 2026-09-09 ── ビルド 154（一番新しい）
+
+`master` = `a223b3ba`、ゲート 43/43 緑（`slow-check` が増えて 43）、`npm run rls`
+緑（324 attempts）。ビルド 143（run 34201348003）→ 144（34263543210）→ 145
+（34309539693、master `b7f49f60`）→ 146（master `a223b3ba`、オーナーが通過を
+確認）。実機で見る場所は `docs/CHECK-0907.md`（143 / 144 / 145・146 の節）。
+**実機確認は全部まだ**（headless のみ）。
+
+入ったもの、順に：
+- **r6**（143）：投稿画面・プロフィール・キーボードの指摘。
+- **r7**（144）：宛先は本文の外の「Replying to @x」行、下書きのポップは popAsk、
+  写真 4 枚の帯、お題の札は一つの綴りで保存し表示言語で見せる、link / loc、
+  Follows you の位置、フォロワー一覧の永遠くるくる、非公開は `published_at`
+  だけ、管理の 7 回タップ、おすすめから返信を除く（`feed_hot`）、起動 8 段 →
+  5 段、文法の「この言語について」削除、rls-check の plan の書き換え。
+- **r8-server**（145）：「端末に残すものはない」の 9 つ ── 言語の名前は
+  `language.name`、済みはサーバーの profile 行（端末は `SET.walked` 一つ）、誰の
+  言語かは `language.owner` + `language_take`、投稿の数、フォロー、bio / link /
+  loc、下書きは `draft` 表だけ、書記体系は `language.wsys`、設えは
+  `profile.prefs`。**SQL の流し直しが要る**（`supabase/setup.md` 2026-09-09）。
+- **r8-take**（146）：取った言語が起動で降りてくる（`netLangsWalk` 一本、
+  `netTakenDown` は `language_take` の答えが来た時の二つ目の ask）。起動は直列
+  4 段。
+
+- **r9-dl**（147）：元が消えた DL 言語は端末からも消える（DELETE REVIEW）、
+  非公開は新規 DL を止めるだけ（`language_took()`、SQL）。
+- **r10 の七本**（148、master `6d7ad665`）：DL 言語をスライドで返す＋起動の
+  二本道を一本に（`r10-dl`）；お題の札は検索の箱も表示言語・@始まりは返信欄・
+  Replying to に ×・♡は押した瞬間に点く（`r10-sns`）；名詞クラスの削除・
+  否定語の前後・規則の文に条件（`r10-gram`）；空の板は 2 枚のまま、まとめるのは
+  id の無い古い板だけ（`r10-kb`）；**運営の復旧 ── 部分ごとに直前 3 版を
+  `slice_hist` に残し管理画面から戻す**（`r10-hist`、SQL）；$25 で何人かを
+  測った `docs/reports/cost-2026-09-09.md`（`r10-measure`）；保存の写しを
+  返さない・送る前は印だけ読む・起動で同じ言語を二度降ろさない（`r10-wire`、
+  5,000 語の人の月 335 MB → 139 MB）。ゲートは 44 本。
+- **r10-fix**（149、master `00f6a6b9`）：スライドで出るのはメモも切り替えも同じ
+  作りの赤い「−」、語順の札は「補語」「比較の相手」。
+- **r11-letters**（150、master `e2d1b6ae`、2026-09-10）：148 より前の版が
+  残した一覧の行を 148 以降が自分の言語と結び付けられず、切り替えに同じ言語が
+  2 行・開いていた方が鍵つき → a–z の穴埋めが走らず保存が黙って止まる、を
+  `nidFor` の書き直しで直した（`www/net.js`、`again-check` に 4 claim、
+  `docs/CHANGELOG.md` に DELETE REVIEW）。原因は 8 通りの端末状態を 147 と
+  149 で流して測った（`docs/scope/r11-letters.md`）。実機は
+  `docs/CHECK-0907.md` の 150 節。
+- **r12-oneid**（151、master `f11bbb88`、2026-09-10）：「スパゲッティやめろ、
+  太い幹を分岐させろ」。言語の番号を一本に ── 端末が uuid を打ち、サーバーの
+  行の id もそれ。`sid`・`nidFor`・`nidHolds`・`nidDrop` は削除。古い索引は起動時
+  `langsOneId()` が新しい番号へ写す（索引の鍵 `L…` だけ消える ── DELETE REVIEW、
+  ディスクの slice 鍵は残る）。検査 8 本が二番号前提だったので直した
+  （`r12-fix`：gramlang と slow の種）。実機は `docs/CHECK-0907.md` の 151 節。
+- **r13-dup**（152、master `982ae856`、2026-09-10）：「直書きは今直して」。
+  `docs/DUPLICATES.md` の開いていた 8 件を一箇所に（`capWarnHTML` `emptyBox`
+  `modListHTML` `netPairRow` `netWordRows` `postShrink` `fileInHTML`、`goPlans`
+  は削除）。19 は読んで「分かれていてよい」。見た目が変わるのは 2 画面
+  （目次の帯、通報の空表示）。実機は `docs/CHECK-0907.md` の 152 節。
+- **r14-keep**（153、master `dfdbb77d`、2026-09-10）：「書き換えてもセーブ
+  ボタン光らないとこ多いから一本化して」。24 画面を全部押して測り、5 画面
+  11 操作が灰のままだった。`keepOn(key, now, save, landed)` ── 画面が「今の
+  値」を一つの関数で答え、`keepDirty` 一箇所で開いた時と比べる。`keepPut` と
+  glyph の `geKeepPut` は削除、`keepSet` は打った字の置き場（`b.v`）への道
+  として残る。`keep-check` は保存ボタンを持つ全画面 × 全変更を画面から取って
+  問う。実機は `docs/CHECK-0907.md` の 153 節。
+- **r15-letters42**（154、master `23ad34f5`、2026-09-10）：「サーバーの文字は
+  増やさないでくれ」。測った：`ltSlotKey()` が `l.ab` で、`ltStart()` が名前で
+  「どの枠か」を別々に答え、`ab` の無い文字（音から・一覧から・用紙から）が
+  写しの無い端末で 38 対 39 に分かれ、合流が 42 にしていた。`ltSlotKey()` を
+  名前で答える一箇所にし、`ltStart()` の名前表・`ltFreeSlot()` の二行・
+  `obSlot()` の書き下しを消した。`again-check` に三 claim。見た目：目次に
+  k・t・? が枠として並ぶ、課金でその三文字は消せない。`r15-fix`：fixture に
+  三十九番目の文字と重なりの面（`ltDraftName` と `.ltdup` が通る）。
+  既に二行で載っている言語は BACKLOG。実機は `docs/CHECK-0907.md` の 154 節。
+- 待ち：否定の範囲、段の副題 4 本、保存ボタンの
+  無い 6 画面をどうするか。次：文法の各段を最初は空に（否定の範囲と同じ枝）。
+- `press` の横幅の揺れが 2026-09-09 にも一回（数字の面 406/402、同じコードで
+  回し直すと緑）── `docs/BACKLOG.md` の項に足してある。
+
+**決まったこと**（`docs/FEATURE_RULES.md` の決定ログ）：DL は「印」── 複製は
+持たず、元が消えれば取った側からも消える（サーバーは cascade で済み、端末の
+索引の行を落とすのは DELETE REVIEW 待ち、BACKLOG）。
+
+**待っている判断**：↓ で直接その言語に切り替えるか／元が非公開にした時の
+取った側／DL 言語を「返す」道（plus は 1 つなので、返せないと一生埋まる）／
+古い `lang` 鍵をいつ読まなくするか。iPhone の通知はリリース後（保留）。
+
+## 2026-09-06 の夜 ── ビルド 140
 
 `master` = `5484f390`、ゲート 41/41 緑、ビルド 140 = run 34055280829。三回目の実機
 指摘 22 件（キーボード 8・単語と文法とメモ 7・SNS と設定 6・取り込み 1）が全部
@@ -229,7 +313,12 @@ Google と同じアドレスを打って二つ目のアカウントを立てて�
 問いを二箇所で答えることになり、設定が動いた日にアプリだけが断ります。
 アプリが持っているのは秒のほうだけ。**有効期限はまだ決まっていません。**
 
-**課金は同じ iPhone でも引き継ぎません**（決定ログ `d47a578`）。**未実装です。**
+**課金は同じ iPhone でも引き継ぎません**（決定ログ `d47a578`）。**入りました**
+（2026-09-11、`claude/r18-plan`）── `planFor()` が比較する一箇所で、**印の無い
+端末も例外ではありません**「1アカウントに1課金ですけど。他のアカウントについて
+くるわけねえだろ」OWNER 2026-09-11。段は設定の預け写しにも乗りません
+（`SET_PLAN`）。`acct-check` 40・40b・40c。**実機は未確認**（Keychain の往復は
+実機でしか見られません）。
 
 **今は iPhone だけ。**そのあと iPad、Android。
 
@@ -839,7 +928,13 @@ under `lingua.sess`.
 - **一部だけも許す** ── 細かく戻せます。ただし**三日前に無かった文字を指して
   いる単語**が残るかもしれません。**運営が気をつけることになります。**
 
-**勧め:** **まとめてだけ。**細かく戻したい場面が実際に出てから足す。
+**【2026-09-09 に決まりました ── 部分ごと】**「運営が治せる仕様は欲しい。
+ユーザーが問い合わせてきた時に、アカウントの復旧ができるようにしたい、管理画面
+で」「3 で実装して」。上の「まとめてだけ」の勧めは**超えられました**。版は
+**部分（slice）ごとに直前 3 版**、戻すのも部分ごとです。この節が心配していた
+「三日前に無かった文字を指している単語」は起こり得ます ── **運営が気をつける
+ことになります。**作ってあります（`claude/r10-hist`、`supabase/schema.sql` の
+`slice_hist`、管理画面の「復旧」）。**SQL の流し直しが要ります。**
 
 ---
 

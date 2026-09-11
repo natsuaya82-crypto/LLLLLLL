@@ -44,11 +44,19 @@ const LAT = 300;
    picked. Lowering one is progress and needs nobody; raising one is a road
    that got a stage longer, and that is the thing this check exists to catch.
 
-   `launch` is the WORST case on purpose -- a phone whose language has never
-   been up, so its row has to be made before its slices can be read:
-   token → language row → the slices, read → the slices, written → whether
-   the page is public. A phone that has synced before is one shorter, because
-   the row's id is already on it. */
+   `launch` is a phone whose language the server already holds, which is
+   every launch after the first: token → the languages → the slices, read →
+   the slices, written. It reads as one road because a language is filed
+   under the server's own number now (CLAUDE.md rule 22), so the row that
+   comes down IS this phone's language and there is nothing to make.
+
+   **THE FIRST LAUNCH OF ALL IS ONE LONGER AND IS NOT MEASURED HERE, AND
+   THAT IS SAID OUT LOUD SO SILENCE IS NOT READ AS A CHECK.** A language
+   whose row has never been made costs one more stage -- the row, before its
+   slices can be written -- and this file cannot ask for it: the server here
+   answers the launch's own question with the phone's own language, which is
+   what a real server does for every launch but the one. The allowance stays
+   at 5 because that is the road's ceiling; what is measured is the 4. */
 const MAX = {
   'launch':   5,
   'feed':     1,
@@ -57,6 +65,35 @@ const MAX = {
   'notif':    1,
   'thread':   1,
   'save':     2
+};
+
+/* AND WHAT EACH SCREEN MAY CARRY, in bytes on the wire, same shape and same
+   rule as the table above: lowering one is progress and needs nobody, raising
+   one is the app carrying something it did not carry before.
+
+   Depth is what a person FEELS and bytes are what the account PAYS, and the
+   two move independently -- 「同じものを何度も運ぶ」 costs nothing in round
+   trips and was three quarters of a month's traffic
+   (docs/reports/cost-2026-09-09.md). A save used to send the whole dictionary,
+   get the whole dictionary back as a receipt, and read the whole dictionary
+   before either: three copies for one word. Nothing here could see that.
+
+   The fixture's language is a small one, so these are small numbers -- what
+   they hold is the SHAPE. `save` is one write of the words slice plus a mark
+   read of about a tenth of a kilobyte; put either of the other two copies
+   back and it roughly triples. Only the screens whose cost is a claim are in
+   this table; a screen not named here is not measured for bytes.
+
+   **`launch` IS NOT IN IT AND THAT IS SAID HERE SO SILENCE IS NOT READ AS A
+   CHECK.** The launch's own copy of this fault -- the whole language read
+   twice, docs/reports/cost-2026-09-09.md 二 -- cannot be measured from this
+   file: the server here holds no slices when the page opens, so a launch
+   that downloads the dictionary and a launch that downloads nothing weigh
+   the same. It was measured with `node tools/measure-cost.mjs`, whose fake
+   server remembers what was put up, and nothing in the gate holds it.
+   docs/BACKLOG.md carries it. */
+const MAXB = {
+  'save':  6000
 };
 
 /* ---- the server, which is a delay ---------------------------------------
@@ -106,7 +143,8 @@ function fakeNet(lat){
     return [];
   }
 
-  function answer(m, u) {
+  var SL = [];
+  function answer(m, u, body) {
     var p = u.split('?')[0].replace(/^[a-z]+:\/\/[^/]*/, '');
     var j, hs, sel, side, rows;
     if (p === '/auth/v1/token')
@@ -132,27 +170,76 @@ function fakeNet(lat){
     if (p === '/rest/v1/language') {
       /* Only the 「whose language is this」 question answers with rows: the
          others are a launch's, and inventing languages there would make this
-         a check about netLangsDown() instead. */
+         a check about netLangsDown() instead.
+
+         AND THE ROW IT ANSWERS WITH IS THIS PHONE'S OWN LANGUAGE. A language
+         is filed under the server's own number now (CLAUDE.md rule 22,
+         2026-09-10), so a row carrying some other id is a DIFFERENT language:
+         answering `L-u` told the launch that this account has a language it
+         has never seen, and the walk added it -- then the phone's own
+         language had no row, so netLangRow() made one and put all eight
+         slices up behind it. Seven round trips for a launch, and not one of
+         them a road the app takes against a real server, which holds the row
+         for the language the phone is holding. `langId` is that language,
+         asked of the page at the moment it asks. */
       hs = asked(qs(u, 'owner'));
       rows = [];
       for (j = 0; j < hs.length; j++)
-        rows.push({ id: 'L-' + hs[j], owner: hs[j], name: 'Vethi',
+        rows.push({ id: langId, owner: hs[j], name: 'Vethi',
                     published_at: '2026-01-01' });
       return rows;
     }
-    if (p === '/rest/v1/slice') return [];
+    /* THE ONE ROUTE THAT REMEMBERS. It used to answer every slice question
+       with 「there is nothing」, which costs no bytes whichever road the app
+       takes -- so a save reading the dictionary back and a save reading a
+       mark measured the same. It keeps what was written now, and answers the
+       way PostgREST does: only the columns `select` asked for. */
+    if (p === '/rest/v1/slice') {
+      if (m === 'POST') {
+        var rw = (body instanceof Array) ? body : [body], q, r, f, hit;
+        for (q = 0; q < rw.length; q++) {
+          r = rw[q]; hit = null;
+          for (f = 0; f < SL.length; f++)
+            if (SL[f].language === r.language && SL[f].kind === r.kind) hit = SL[f];
+          if (hit) { hit.body = r.body; hit.no = r.no; hit.at = r.at; }
+          else SL.push({ language: r.language, kind: r.kind,
+                         body: r.body, no: r.no, at: r.at });
+        }
+        return SL;
+      }
+      var want = asked(qs(u, 'language'))[0] || '';
+      var kinds = asked(qs(u, 'kind'));
+      var cols = (qs(u, 'select') || 'kind,body,no').split(',');
+      rows = [];
+      for (j = 0; j < SL.length; j++) {
+        if (SL[j].language !== want) continue;
+        if (kinds.length && kinds.indexOf(SL[j].kind) < 0) continue;
+        var row = {}, c;
+        for (c = 0; c < cols.length; c++) row[cols[c]] = SL[j][cols[c]];
+        rows.push(row);
+      }
+      return rows;
+    }
     return m === 'GET' ? [] : {};
   }
 
   function Fake() { this.readyState = 0; this.status = 0; this.responseText = ''; }
   Fake.prototype.open = function (m, u) { this.__m = m; this.__u = u; };
-  Fake.prototype.setRequestHeader = function () {};
+  Fake.prototype.setRequestHeader = function (k, v) {
+    if (String(k).toLowerCase() === 'prefer') this.__pref = String(v || '');
+  };
   Fake.prototype.abort = function () {};
   Fake.prototype.getResponseHeader = function () { return null; };
-  Fake.prototype.send = function () {
-    var self = this;
+  function bytes(x) {
+    if (x == null) return 0;
+    if (typeof x !== 'string') return x.byteLength || x.length || 0;
+    return new Blob([x]).size;
+  }
+  Fake.prototype.send = function (d) {
+    var self = this, parsed = null;
+    try { parsed = typeof d === 'string' ? JSON.parse(d) : null; } catch (e) {}
     var rec = { m: self.__m, u: String(self.__u || ''),
-                t0: performance.now(), t1: 0 };
+                t0: performance.now(), t1: 0, up: bytes(d), down: 0 };
     log.push(rec);
     out++;
     setTimeout(function () {
@@ -160,8 +247,17 @@ function fakeNet(lat){
       rec.t1 = performance.now();
       self.readyState = 4;
       self.status = 200;
-      try { self.responseText = JSON.stringify(answer(self.__m, rec.u)); }
+      /* 憶えるのは先、返すのは後 ── PostgREST は `return=minimal` と言われても
+         書きます。返さないだけです。 */
+      try {
+        var a = answer(self.__m, rec.u, parsed);
+        self.responseText =
+          (self.__m !== 'GET' &&
+           String(self.__pref || '').indexOf('return=minimal') >= 0)
+            ? '' : JSON.stringify(a);
+      }
       catch (e) { self.responseText = 'null'; }
+      rec.down = bytes(self.responseText);
       if (self.onreadystatechange) self.onreadystatechange();
     }, lat);
   };
@@ -261,7 +357,7 @@ async function measure(name, run) {
     ms = Date.now() - t1;
   }
   const log = await pg.evaluate(() => window.__NET.log.map(
-    (r) => ({ m: r.m, u: r.u, t0: r.t0, t1: r.t1 })));
+    (r) => ({ m: r.m, u: r.u, t0: r.t0, t1: r.t1, up: r.up, down: r.down })));
   const stalls = await pg.evaluate(() => window.__NET.stalls.slice());
   const lv = levels(log);
   const d = lv.length ? Math.max.apply(null, lv) : 0;
@@ -278,7 +374,8 @@ async function measure(name, run) {
     ? Math.round(Math.max.apply(null, log.map((r) => r.t1)) -
                  Math.min.apply(null, log.map((r) => r.t0))) : 0;
   const busy = stalls.reduce((a, b) => a + b, 0);
-  rows.push({ name, n: log.length, d, ms, netMs, busy,
+  const wire = log.reduce((a, r) => a + (r.up || 0) + (r.down || 0), 0);
+  rows.push({ name, n: log.length, d, ms, netMs, busy, wire,
               worst: stalls.length ? Math.max.apply(null, stalls) : 0,
               splashMs: run ? 0 : splashMs, stage });
   await pg.close();
@@ -328,8 +425,10 @@ await measure('thread', () => {
 
 await measure('save', () => {
   /* A language already up, which is what a save on a phone that has been
-     open for a minute is: netLangRow() answers with no request at all. */
-  LANGS[langId].sid = 'L-u';
+     open for a minute is: netLangRow() answers with no request at all.
+     「the row is there」 is www/core.js § LROW (2026-09-10) -- it was the
+     `sid` field on the index while a language had two numbers. */
+  langRowGot(langId);
   LANGS[langId].uid = 'u';
   /* One word typed and saved, which is the road every write takes:
      save() → bkTouch() → netSaveUp(), with the wait taken off it. */
@@ -344,19 +443,22 @@ await br.close();
 let bad = 0;
 console.log('slow-check — one round trip = ' + LAT + 'ms');
 console.log('');
-console.log('screen    requests  serial  wire ms  wall ms  allowed');
-console.log('--------  --------  ------  -------  -------  -------');
+console.log('screen    requests  serial  wire ms  wall ms  allowed   bytes  allowed');
+console.log('--------  --------  ------  -------  -------  -------  ------  -------');
 for (const r of rows) {
-  const m = MAX[r.name];
-  const ok = r.d <= m;
+  const m = MAX[r.name], mb = MAXB[r.name];
+  const ok = r.d <= m, okb = mb === undefined || r.wire <= mb;
   if (!ok) bad++;
+  if (!okb) bad++;
   console.log(
     r.name.padEnd(10) +
     String(r.n).padStart(6) + '    ' +
     String(r.d).padStart(4) + '    ' +
     String(r.netMs).padStart(7) + '  ' +
     String(r.ms).padStart(7) + '  ' +
-    String(m).padStart(7) + (ok ? '' : '  !'));
+    String(m).padStart(7) + (ok ? '  ' : ' !') +
+    String(r.wire).padStart(7) + '  ' +
+    String(mb === undefined ? '-' : mb).padStart(7) + (okb ? '' : '  !'));
 }
 console.log('');
 /* And what each stage waited for the one above it to answer. */
@@ -368,10 +470,14 @@ for (const r of rows) {
     console.log('  ' + (i + 1) + '. ' + r.stage[i].join('  '));
 }
 console.log('');
-for (const r of rows)
+for (const r of rows) {
   if (r.d > MAX[r.name])
     console.log('FAIL ' + r.name + ': ' + r.d + ' round trips in a row, ' +
                 MAX[r.name] + ' allowed');
+  if (MAXB[r.name] !== undefined && r.wire > MAXB[r.name])
+    console.log('FAIL ' + r.name + ': ' + r.wire + ' bytes on the wire, ' +
+                MAXB[r.name] + ' allowed — 同じものを二度運んでいないか');
+}
 if (errs.length) { bad++; errs.forEach((e) => console.log('FAIL ' + e)); }
 console.log(rows.length + ' screens measured, ' +
             (bad ? bad + ' over' : 'all within') + ' the allowance');

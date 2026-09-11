@@ -345,11 +345,44 @@ var KEEP={};
    reached twice is one. */
 function keepKeyOf(r, a){ return String(r)+'|'+String(a||''); }
 function keepKey(){ return keepKeyOf(here().r, here().a); }
-/* A screen saying "these are my fields". Called from the view, so it runs on
-   every render of that screen: finding a buffer already here means somebody
-   has been typing into it, and it is left exactly as it is. Only `save` is
-   taken again, because it is a fresh closure over a screen that may have been
-   rebuilt around it. */
+/* ---- ONE FUNCTION PER SCREEN, AND IT ANSWERS 「WHAT AM I HOLDING」 -------
+   OWNER 2026-09-10: 「書き換えてもセーブボタン光らないとこ多いからこれも
+   一本化してね」.
+
+   A screen used to hand its state over TWICE: once as `was`, a value taken
+   when it opened, and again from every place that changed anything, as a
+   keepPut(). The second half is the one that goes wrong, because it is a line
+   somebody has to remember to write in every handler on the screen -- and it
+   was missing from eleven of them, measured on 2026-09-10 and written out in
+   docs/scope/r14-keep.md: the drawn letter's ROUND, its fill, its clear, its
+   step back and its step forward; a row of the article added or deleted, a
+   section added, a section's 「may this be taken away」; the word order's
+   swap; which keyboard goes to the phone; the meaning field on a word's
+   sheet. Every one of those changed the language and left the Save in the
+   corner grey, and the arrow then asked nothing on the way out.
+
+   So a screen hands over ONE FUNCTION -- `now`, what it is holding at this
+   moment -- and it is ASKED rather than telling. It is called once as the
+   screen registers, and that answer is what changed is measured against; it
+   is called again every time the button is drawn or repainted. Nothing on the
+   screen has to say anything, and a handler written tomorrow is covered the
+   day it is written.
+
+   TWO KINDS OF FIELD, AND THE LINE BETWEEN THEM IS WHETHER IT IS WRITTEN
+   DOWN. `now()` says what the screen HAS written down -- the letter's
+   strokes, the article's rows, the layout. `b.v` says what has been changed
+   and NOT written down, which is what typing is: a field writes nothing until
+   the button is pressed, and that is the whole of the decision of 2026-09-03.
+   keepSet() is the one road into `b.v` and it is the field's own event, so it
+   is not a line that can be left out the way a keepPut() in a handler was --
+   without it the field does not take a keystroke at all. What is on the
+   screen is the two merged, `b.v` over the top, which is keepNow() below.
+
+   Called from the view, so it runs on every render of that screen: finding a
+   buffer already here means somebody has been typing into it, and what was
+   typed and the mark it is measured from are both left exactly as they are.
+   Only the three functions are taken again, because each is a fresh closure
+   over a screen that may have been rebuilt around it. */
 /* `landed` is for the one screen that has something to DO once the save is
    up, and it is not a second answer to where a save ends -- backGo() below is
    still the only one, and 「保存しました」 is keepSave()'s one line for all
@@ -357,44 +390,85 @@ function keepKey(){ return keepKeyOf(here().r, here().a); }
    may not happen while the send is still out:
    「通信エラーなら進むわけねえだろ全部」. It is optional; eight of the nine
    screens hand nothing. */
-function keepOn(key, was, save, landed){
+function keepOn(key, now, save, landed){
   var k=String(key);
-  if(KEEP[k]){ KEEP[k].save=save; KEEP[k].landed=landed; return; }
-  KEEP[k]={was:was, v:{}, save:save, landed:landed};
+  if(KEEP[k]){ KEEP[k].now=now; KEEP[k].save=save; KEEP[k].landed=landed; return; }
+  KEEP[k]={was:keepRead(now), now:now, v:{}, save:save, landed:landed};
 }
-/* What goes in the field: what has been typed, or what it held when the
-   screen opened. */
+/* `now()` answered as strings, which is the only thing ever compared. A
+   screen hands back plain values -- a name, a note, a layout said once as
+   JSON -- and they are flattened here rather than at thirteen call sites. */
+function keepRead(now){
+  var o={}, n, f;
+  n=now? now() : {};
+  for(f in n){
+    if(!Object.prototype.hasOwnProperty.call(n, f)) continue;
+    o[f]=(n[f]===null || n[f]===undefined)? '' : String(n[f]);
+  }
+  return o;
+}
+/* WHAT IS ON THE SCREEN NOW: what has been written down, with what has been
+   typed over the top of it. One answer, and everything below asks it -- what
+   goes in a field, whether the button is gold, and what a save that landed
+   levels to. */
+function keepNow(key){
+  var b=KEEP[String(key)], o, f;
+  if(!b) return {};
+  o=keepRead(b.now);
+  for(f in b.v) if(Object.prototype.hasOwnProperty.call(b.v, f)) o[f]=String(b.v[f]);
+  return o;
+}
+/* What goes in the field: what has been typed, or what the screen holds. */
 function keepVal(key, f){
-  var b=KEEP[String(key)];
-  if(!b) return '';
-  return b.v.hasOwnProperty(f)? String(b.v[f]) : String(b.was[f]||'');
+  var o=keepNow(key);
+  return Object.prototype.hasOwnProperty.call(o, f)? String(o[f]) : '';
 }
 /* Typed into. The screen you are on is the buffer it goes in -- a field can
    only be typed into while it is on the screen. A screen that normalises what
    it takes (the @ keeps the characters that survive being typed after one)
    does that before handing it here, so what is compared is what the field
-   means rather than what was pressed. */
-function keepSet(f, v){ keepPut(keepKey(), f, v); }
-/* The same, said about a named screen. A field on a screen is typed into while
-   that screen is in front of somebody, which is what keepSet() above is about;
-   this is for the one place that is not typing at all -- the word sheet, whose
-   buffer is not a set of fields but the sheet said once, and which is put here
-   as the sheet is built. */
-function keepPut(key, f, v){
-  var b=KEEP[String(key)];
+   means rather than what was pressed.
+
+   It repaints where it stands because typing does NOT redraw these screens
+   and must not: a field being typed into loses the keyboard the moment the
+   page under it is replaced. Everything else on a screen ends in render(),
+   which builds the bar through keepBtnHTML() and therefore asks `now()`
+   again by itself. */
+function keepSet(f, v){
+  var b=KEEP[keepKey()];
   if(!b) return;
-  b.v[f]=String(v);
+  b.v[String(f)]=String(v);
   keepBtnPaint();
 }
-/* Anything different from what it opened with. */
+/* Anything different from what the screen opened with. */
 function keepDirty(key){
-  var b=KEEP[String(key)], f;
+  var b=KEEP[String(key)], o, f;
   if(!b) return false;
-  for(f in b.v){
-    if(!b.v.hasOwnProperty(f)) continue;
-    if(String(b.v[f])!==String(b.was[f]||'')) return true;
+  o=keepNow(key);
+  for(f in o){
+    if(!Object.prototype.hasOwnProperty.call(o, f)) continue;
+    if(String(o[f])!==keepWas(b, f)) return true;
+  }
+  /* And a field that WAS there and is gone. A row of the article deleted is
+     not a field that changed, it is a field that stopped existing, and the
+     loop above alone would call that screen untouched. */
+  for(f in b.was){
+    if(!Object.prototype.hasOwnProperty.call(b.was, f)) continue;
+    if(!Object.prototype.hasOwnProperty.call(o, f) && String(b.was[f])!=='') return true;
   }
   return false;
+}
+function keepWas(b, f){
+  return Object.prototype.hasOwnProperty.call(b.was, f)? String(b.was[f]) : '';
+}
+/* Every screen's mark taken again. What is on the phone has just gone up, so
+   what each screen is holding IS what it opened with now. */
+function keepLevel(){
+  var k;
+  for(k in KEEP){
+    if(!Object.prototype.hasOwnProperty.call(KEEP, k)) continue;
+    KEEP[k].was=keepNow(k);
+  }
 }
 /* Let go of. It is a buffer and nothing else: no slice is written, nothing
    stored moves. docs/DATA_SAFETY.md -- 「いいえ」 discards what was being
@@ -486,7 +560,7 @@ function keepBack(snap){
   langLoad();
 }
 function keepSave(key, done){
-  var b=KEEP[String(key)], f, snap;
+  var b=KEEP[String(key)], snap;
   if(!b || !b.save){ if(done) done(true); return; }
   if(KEEP_BUSY) return;
   KEEP_BUSY=true;
@@ -530,11 +604,25 @@ function keepSave(key, done){
          what the screen opened with now, so there is nothing left to ask about
          and nothing left to show a button for -- and the screen is still in
          front of somebody, with these fields still on it. Dropping it here
-         would leave the next keystroke with nowhere to go. */
+         would leave the next keystroke with nowhere to go.
+
+         The mark is taken from keepNow(), which is the whole screen, and not
+         from what was typed alone: a screen's changes are not all typed any
+         more (§ keepOn above), so levelling the typed half would leave the
+         Save gold over a keyboard that had just been written down. */
       if(up && KEEP[String(key)]===b){
-        for(f in b.v){ if(b.v.hasOwnProperty(f)) b.was[f]=String(b.v[f]); }
         b.v={};
+        b.was=keepNow(key);
       }
+      /* AND EVERY OTHER SCREEN'S MARK WITH IT. netSaveNow() sends the slices
+         that moved, all of them -- it is not this screen's send, it is the
+         phone's -- so once it has landed there is nothing anywhere left
+         unsent, and a buffer still holding the mark it took an hour ago would
+         put a gold Save on a screen with nothing to save. Only the marks
+         move: `b.v` is what somebody typed and did not press, on a screen
+         they may still be standing on, and it is not this function's to
+         throw away. */
+      if(up) keepLevel();
       /* AND A SAVE THAT LANDED ENDS ON THE SCREEN BEFORE IT.
          「保存したらホーム戻って。単語なら単語保存したら単語一覧に戻る」
          「保存したら一個前のページ。戻るは変更せず戻る 保存とか確定は変更して
@@ -970,6 +1058,11 @@ function pageName(r, a){
        what somebody just opened. */
     if(a.indexOf('v2:')===0 && typeof g2ChapName==='function')
       return g2ChapName(a.slice(3));
+    /* A chapter of the book names itself the same way, out of the one table
+       the contents is built from -- www/phases.js § G2BOOK. */
+    if(a.indexOf('book:')===0 && typeof g2BookSecs==='function' &&
+       g2BookSecs(a.slice(5)).length)
+      return g2BookName(a.slice(5));
     var st=(typeof stBy==='function')? stBy(a) : null;
     if(st) return stTitle(st);
   }
@@ -1083,14 +1176,81 @@ function navTop(count, right){
    yet" and "nobody you follow has written yet" are different facts. It is
    only the box they are said in.
 
-   NOT the one place yet, and that is written here so silence is not read as a
-   check: www/sns.js (three), www/me.js and www/notes.js still write the
-   markup out. Those three files belong to another session. www/notes.js is
-   also the only screen with a SECOND line under the first (`.empty .es`), so
-   the argument for it goes in the day that file comes through here -- putting
-   one in now would be a branch no caller takes. */
-function emptyBox(text){
-  return '<div class="empty"><div class="eb">'+esc(text)+'</div></div>';
+   IT IS THE ONE PLACE NOW. www/sns.js (three), www/me.js, www/notes.js and
+   www/mod.js all wrote the markup out; none of them does. Three arguments
+   came with them and every one has a caller, because a branch nobody takes is
+   a branch nobody would notice breaking:
+
+     sub    a second line under the first (`.empty .es`) -- the notebook, and
+            the frozen timeline
+     more   what goes under both, as markup rather than words -- the one
+            screen with a way out on it (the appeal link on the freeze)
+     bad    the same box saying it could not ASK rather than that there is
+            nothing -- the reports screen and the operator's. 「空」 and
+            「読めていない」 are different states and the words are the
+            screen's; this is only which of the two colours the box is in.
+            `.bad` is already in index.html and is what makes it red.
+
+   The reports screen wore `.mnone` for this -- its own smaller, muted box, so
+   the one screen a report is answered on looked like no other screen in the
+   app. That class is gone from the stylesheet. */
+function emptyBox(text, sub, more, bad){
+  return '<div class="empty'+(bad? ' bad':'')+'"><div class="eb">'+esc(text)+'</div>'+
+    (sub? '<div class="es">'+esc(sub)+'</div>' : '')+(more||'')+'</div>';
+}
+/* THE CEILING, SAID AT THE FOOT OF THE THING IT IS ABOUT, and the way past
+   it on the same row. Four screens said it: the contents (「あと N 語です」,
+   before the ceiling is reached), the dictionary, the grammar list and a room
+   of the alphabet (「N が表示されていません」, after it). Four buttons, one
+   shape -- and the contents' one had no margin, so the same button sat tight
+   under the bar on one screen and clear of the list on the other three.
+
+   The sentence is the screen's, because "ten words left" and "twelve letters
+   are not shown" are different facts. The button is not. `up.cta` and the
+   chevron are the way past, and there is exactly one road to the price list
+   (`go` with `plans` -- DUPLICATES 8), so it is written here once.
+
+   Not esc()'d: what goes in is t()'s own answer, and rule 2 says `<br>` and
+   `<b>` in a translation have to survive. */
+function capWarnHTML(text){
+  return '<button class="capwarn" style="margin:14px 0 0"' + DO('go', ["plans"]) + '>'+
+    text+'<span class="capgo">'+t('up.cta')+ICON_GO+'</span></button>';
+}
+/* A FILE BROUGHT IN, ON EVERY PLAN, AND THE NATIVE CONTROL OVER IT.
+
+   THE SAME BUTTON ON EVERY PLAN, WITH THE SAME WORDS ON IT.
+   「できないことは、有料と同じ画面に同じ形で出す。押したら有料へ」 OWNER
+   2026-09-04. The free plan used to get `up.cta` welded onto the end of the
+   button's own words with nothing between them, so 「ファイルを選ぶ」 and
+   「アップグレード」 ran together into one unreadable word -- a button whose
+   text a person cannot read is worse than one they cannot press. What the
+   tail was for is said by the press, and what the press says is the pop:
+   「ポップだって。その古いのは消して」 OWNER 2026-09-05. It used to jump to
+   the price list -- 「扉は押したら飛ぶ」 (OWNER 2026-09-03) -- and the flight
+   is now the "yes" inside upStop() (www/core.js) rather than the press itself.
+
+   Two screens have one: the dictionary's list (www/import.js) and the sheet
+   of letters written on paper (www/sheet.js). Each said all of that in its
+   own words, and the comment over the second one gave the reason they were
+   not shared -- 「the two say different things on the button」. The words are
+   an argument. So is the class each screen dresses it in, the id the native
+   control answers to, and what it will accept; the shape is one shape:
+
+     free   a button that ASKS -- upFile, which is upStop() and stays here
+     paid   a <label> with the file input laid invisibly over the same words,
+            because a file input cannot be styled and a hidden one cannot be
+            pressed. `.impfile input` and `.shfile input` in index.html are
+            that laying-over, and they are the only half that is the paid
+            face's alone.
+
+   `inner` is markup, not words: a `.set` row wears its label in a `<span
+   class="sl">` and a `.btn.ghost` does not, and which of the two a screen is
+   is the screen's to say. Whatever goes in is already escaped by the caller. */
+function fileInHTML(cls, inner, id, accept){
+  if(!can('file'))
+    return '<button class="'+cls+'"' + DO('upFile') + '>'+inner+'</button>';
+  return '<label class="'+cls+'">'+inner+
+    '<input type="file" id="'+id+'" accept="'+accept+'"></label>';
 }
 /* Coming back to a screen for a thing that is no longer there -- a word that
    was deleted, a form that was closed, a letter that is gone. Five screens

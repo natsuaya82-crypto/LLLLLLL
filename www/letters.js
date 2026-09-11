@@ -535,11 +535,29 @@ var LT_START='abcdefghijklmnopqrstuvwxyz!?';
    added. A slot is not a row in a list: it is `a`, or `?`, or the digit worth
    three, and what says which one is the NAME -- or for a digit the VALUE,
    because a digit has no name to match on and its value is the whole of what
-   it is. Never the id it happens to be wearing. */
+   it is. Never the id it happens to be wearing.
+
+   THE NAME IS ltName(), AND THAT SENTENCE IS THE WHOLE OF THIS FIX. This read
+   `l.ab` while the comment above it said NAME, and `ab` is written in exactly
+   two places -- ltStart() below, and the box somebody spells a letter in. A
+   letter that came in on a list, off a written sheet, out of the onboarding,
+   or was made for a sound has no `ab` at all, so a letter reading `k` was 「not
+   a slot」 here and 「the k slot is taken」 to ltStart(), which asked the name.
+   Two answers to one question, and this is what they cost: a phone holding no
+   copy of the language builds the thirty-eight from an empty alphabet (the
+   launch fills in what is MISSING, so the server's letters no longer come
+   down), and the merge is then handed thirty-eight slots and thirty-nine
+   letters and told they are seventy-seven things, of which it keeps 42 --
+   `k` twice, `t` twice, `?` twice, on the server, for ever.
+   「サーバーの文字は増やさないでくれ」 OWNER 2026-09-10, measured in
+   docs/scope/r15-letters42.md.
+
+   SO THERE IS ONE PLACE AND IT IS THIS ONE. ltStart()'s own name table and
+   ltFreeSlot()'s ltIsBase()+ltName() pair are gone; both ask here. */
 function ltSlotKey(l){
   if(numIsDigit(l)) return '#'+l.val;
-  var ab=String((l && l.ab)||'').toLowerCase();
-  return (ab.length===1 && LT_START.indexOf(ab)>=0)? ab : '';
+  var nm=String(ltName(l)||'').toLowerCase();
+  return (nm.length===1 && LT_START.indexOf(nm)>=0)? nm : '';
 }
 function ltIsBase(l){ return !!l && !!ltSlotKey(l); }
 /* WHETHER ANYBODY HAS MADE ANYTHING OF THIS LETTER -- a drawing, a shape that
@@ -641,8 +659,11 @@ function ltStart(){
      the free plan is not what this is about. */
   ltJoinSlots();
   if(can('letters')) return;
-  var have={}, made=0, i, c, l, read;
-  for(i=0;i<LETTERS.length;i++) have[String(ltName(LETTERS[i])||'').toLowerCase()]=1;
+  /* WHICH SLOTS ARE TAKEN, asked of ltSlotKey() and nowhere else. This built
+     its own table off ltName() -- the same question, answered a second time,
+     and the two came apart on every letter with no `ab` (ltSlotKey above). */
+  var have={}, made=0, i, c, l, read, k;
+  for(i=0;i<LETTERS.length;i++){ k=ltSlotKey(LETTERS[i]); if(k) have[k]=1; }
   for(i=0;i<LT_START.length;i++){
     c=LT_START.charAt(i);
     if(have[c]) continue;
@@ -770,7 +791,10 @@ function ltKeepOn(id){
      here would put a Save in the bar that could not write. */
   if(!l || langLocked()) return;
   keepOn(keepKeyOf('letter', id),
-         {ab:String(ltBoxed(l)||''), nt:String(l.nt||'')},
+         function(){
+           var one=ltById(id);
+           return one? {ab:ltBoxed(one), nt:one.nt} : {ab:'', nt:''};
+         },
          function(v, done){ ltSave(id, v); done(true); });
 }
 /* The box is as tall as what is in it. Nothing here calls render() -- the
@@ -1029,13 +1053,16 @@ function ltFreeSlot(l, nm0){
   if(!nm) return null;
   for(i=0;i<LETTERS.length;i++){
     s=LETTERS[i];
-    /* ltIsBase() is true of a digit as well as of a slot, and ltName() of a
-       digit is its value -- so a shape named `7` would have moved INTO the
-       digit seven and left the alphabet. Nothing reaches that today (a number
-       is refused above), and it is one line to make the slot road unable to
-       cross rooms at all rather than to rely on the order of two branches. */
-    if(s===l || numIsDigit(s) || !ltIsBase(s)) continue;
-    if(String(ltName(s)||'').toLowerCase()!==nm) continue;
+    /* ltSlotKey() is true of a digit as well as of a slot, and a digit's key
+       is its value -- so a shape named `7` would have moved INTO the digit
+       seven and left the alphabet. Nothing reaches that today (a number is
+       refused above), and it is one line to make the slot road unable to
+       cross rooms at all rather than to rely on the order of two branches.
+       WHICH SLOT THIS IS is asked of ltSlotKey() and not worked out again:
+       `ltIsBase(s)` and `ltName(s)` side by side WERE that function, spelled
+       out a second time. */
+    if(s===l || numIsDigit(s)) continue;
+    if(ltSlotKey(s)!==nm) continue;
     if(ltDrawn(s)) return null;
     return s;
   }

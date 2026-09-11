@@ -218,6 +218,159 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### 文法は 9 章＋付録の文法書。否定と疑問は動詞の章の節
+- Date: 2026-09-11
+- Area: 文法の頁（`www/phases.js` § G2BOOK、`www/grammar.js`）
+- Decision: 「否定形単体じゃなくて、文法書なんだから動詞とかのページに作るべき。
+  項目増やすよりも一つ一つ厚みを増やして。多少は分けていいけど、文法の教科書
+  みたいなのを見て章分けを決めてくれ」→ リーダーが記述文法書の目次に沿って
+  分け、オーナーが「それでやって。中身もできたら見せて」。**43 行の平らな一覧を
+  やめ、9 章＋付録にする。今の項目は章の頁の中の節。**否定と疑問は章ではなく
+  動詞の章の節で、**四つから選ぶだけの頁は消す** ── 四つの対象はそれぞれ属する
+  節から開く。**肯定の文と否定の文を並べて規則を出す作り方は変えない。**
+- Reason: 人称の六つも時制の六つも法の五つも、あいさつと同じ高さの行だった。
+  どこまでが動詞の話なのかは並び順でしか分からず、「否定形」だけが四つの対象を
+  選ぶ頁を一枚余分に持っていた。
+- Affected features: 文法（目次・章の頁・否定・疑問）
+- Affected data: **なし。**`STG.gr` `STG.fm` `STG.extra` `STG.set` `WORDS.slot`
+  はそのまま。移行なし。消えたのは描く関数だけ
+- Affected docs: `docs/GRAMMAR-V2-SPEC.md` § 完成の定義（表を書き換え）、
+  `docs/CHANGELOG.md`
+- Implementation status: `claude/r20-book`。CODE CONFIRMED（`act` `i18n`
+  `gramlang` `press` 緑）。DEVICE 未確認、OWNER 未確認
+
+### 同じものを何度も運ばない ── 保存の写しを返さない・送る前の読みを無くす・起動の二度読みを一度に
+- Date: 2026-09-09
+- Area: 保存の道（`netSlicePut` / `netSaveUp`）、起動の道
+- Decision: `docs/reports/cost-2026-09-09.md` の三つを直す「これもやって」。
+  5,000 語の人の保存一回 2.6 MB → 0.9 MB 以下、起動一回 1.9 MB → 1.0 MB 以下。
+  $25 で 763 人 → 1,846 人。**二台目が同じ言語を編集した時に片方が消える形には
+  しない**（規則 6・22 はそのまま）。
+- Reason: 「$25 でどこまで対応できんの？」→ 測った → 同じものを三度運んでいた。
+- Affected features: 保存、起動
+- Affected data: 保存されるものは増えも減りもしない。流れる量が減る。
+- Implementation status: `claude/r10-wire` で作業中。
+
+### ♡は押した瞬間に点き、届かなければ消える／古い言語の件は作らない／運営が戻せる画面が欲しい
+- Date: 2026-09-09（午後、続き）
+- Area: 投稿の♡、古い言語、運営画面
+- Decision:
+  - **♡は押した瞬間に点いて数が 1 動く。サーバーに届かなかったら♡が消えて
+    数が戻る。何も言わない。**「Twitter もその仕様なはず。ハート押して 1 つく
+    やん？サーバー飛んでないならハートが消えるでいいんじゃない？」──
+    2026-09-09 の「投稿の数と自分が押したかはサーバーのもの ── 押した瞬間は
+    動かず、戻ってきた数になる」の**「押した瞬間は動かず」を上書き**する。
+    数の答えがサーバーのものであることは変わらない：画面が先に動くだけで、
+    端末に「押した」の写しは作らない。
+  - **一度もサーバーに上がっていない古い言語をサインインした人のものにする
+    ── 作らない**「いらん」。今のまま（開けるが書けない）。
+  - **運営がアカウントを復旧できる仕様は欲しい**「ユーザーが問い合わせてきた
+    時に、アカウントの復旧ができるようにしたいけど、管理画面とかで」。
+    **残し方は回数：部分（slice）ごとに直前 3 版**「回数じゃね」「3 で
+    実装して」（2026-09-09）。日数ではない ── 人が増えても一人あたりの上限が
+    変わらないから。管理画面（7 回タップ、@lingua）に、handle で探す → その
+    人の言語 → 部分ごとの版（最大 3、日時）→ 戻す。戻すと、それまでの「今」
+    も版の一つになる。`docs/RECOVERY.md` 案A の形。**SQL の流し直しあり。**
+    合わせて「$25 で何人持つか」を測った数字で出す（`claude/r10-measure`）。
+- Affected features: ♡、古い言語、管理画面
+- Affected data: ♡は保存されるものが増えない（画面の一時状態だけ）。復旧は
+  サーバーに前の版が積まれる（作る時に DATA_MODEL を書く）。
+- Implementation status: ♡は **IMPLEMENTED**（`claude/r10-sns`、2026-09-09 ──
+  `postLike()` と `PMARK`、`www/post.js`。押さえるのは `acct-check` 62、
+  「押した瞬間は動かず」の claim を書き換えた）。古い言語は BACKLOG に
+  「作らない」。復旧は BACKLOG（リリース後、日数待ち）。
+
+### 2026-09-09 の午後、画面で訊いて答えの出た十一
+- Date: 2026-09-09
+- Area: DL、書記体系、言語の名前、投稿・検索・プロフィール、キーボード、文法
+- Decision（オーナーの言葉そのまま）:
+  1. **DL 言語は言語切り替え画面の行をスライドして消せる**「はい」。
+  2. 前から選んでいた書記体系が 145 で未設定に見える件 ──「これから変わら
+     ないようにすればいい」。自動で前の選択を入れる道は作らない。今の形で確定。
+  3. 9/8 より前に改名した言語の名前が端末で違う件 ──「古いのはいい」。このまま。
+  4. 圏外で作って一度も上がっていない古い言語 ── 訊き方が悪く、答えは出て
+     いない（下の但し書き）。
+  5. まだ届いていない自分の投稿の♡ ── 訊き方が悪く、答えは出ていない。
+  6. **お題の札を押した検索の箱も表示言語で出す**「そのままでいいわけない」。
+  7. **@名前 で始めた投稿はプロフィールの「返信」欄にだけ出す**「返信にだけ出して」。
+  8. **投稿画面の「Replying to @〇〇」に × を付けて外せるようにする**「いいよ」。
+  9. **空のキーボードを 2 枚作ったら 2 枚のまま**「ダメに決まってんだろ」。
+     一枚にまとめる道は消す（増殖は元で止める）。
+  10. **名詞クラスは消せるようにする。消したら「なし」に置き換えるのではなく
+      消す**「なしじゃなくて消して」── クラスも、そのクラスの一致の規則も。
+      その名詞はクラスを持たなくなる。
+  11. **否定語の前／後は語順の画面に足す**「はい」。
+  12. **文法書の規則の文に条件を書く**「はい」。
+  15. **起動で同じ言語が切り替えに 2 行並ぶのは起きないようにする**「ならばないようにして」。
+- Reason: 上の言葉。
+- Affected features: DL、検索、プロフィール、投稿画面、キーボード、文法
+- Affected data: 1 はサーバーの `language_take` 行の DELETE と端末の行（DELETE
+  REVIEW）。9 は「一枚にまとめる」削除を**やめる**（消えるものが減る）。10 は
+  クラスと規則の削除（DELETE REVIEW）。他は保存されるものは増えない。
+- Affected docs: `docs/BACKLOG.md` の該当項目（消す）、`docs/CHECK-0907.md`
+- Implementation status: `claude/r10-dl`（1・15・4）、`claude/r10-sns`（6・7・8）、
+  `claude/r10-gram`（10・11・12）、`claude/r10-kb`（9）で作業中。
+
+**4 の但し書き**：「圏外でログイン」の話ではない。9/4 より前の古いアプリで作って
+一度もサーバーに上がっていない言語を持つ端末で、（電波のある所で）サインイン
+した時、その言語は開けるが一文字も書けない、という件。リーダーの仮置き：
+**サインインした人の言語にする**（違えば言ってもらう）。
+
+### DL 言語の四つ ── 空で残さない・非公開は新規 DL を止めるだけ・↓ は切り替えない・返す道はスライド
+- Date: 2026-09-09（同日の「印」の決定の続き）
+- Area: ダウンロードした言語（`www/net.js` § netTakenDown、`www/home.js`
+  § 言語切り替え・wldGet、`supabase/schema.sql` の slice_read / take_make）
+- Decision:
+  1. **元が消えた DL 言語は端末からも消える。**「空で残さないで。消えたら
+     消えるのよ。」切り替えの行も slice も、`language_take` の答えに無くなった
+     時に落ちる。「答えが来ていない」（null）では何も落とさない。
+  2. **非公開は新規 DL を止めるだけ。**「非公開にしたら新規 dl だけできない
+     だけ」── 既に取った人は読み続ける（サーバーの `slice_read` が取った人に
+     開く）。新しく取る道は閉じる（記事が描かれない＋`take_make` が断る）。
+  3. **↓ はその言語に切り替えない。**「6 切り替えなくていい。」記事に留まる
+     （今の形で確定、`dl-check` の「開いたまま」の claim がそれ）。
+  4. **DL 言語を返す道は、言語切り替え画面の行をスライドして消す**（メモ、
+     まだ作らない）。「言語変更画面をスライドで消せる、メモしといて」。作る
+     日は DELETE REVIEW。
+- Reason: オーナーの言葉そのまま（上）。
+- Affected features: DL、言語切り替え、公開 / 非公開、記事
+- Affected data: 1 は**端末の索引の行と slice を消す**（DELETE REVIEW を
+  `docs/CHANGELOG.md` に先に書く）。2 は **schema.sql**（`slice_read` に
+  「取った人」を足す、`take_make` に「公開中」を足す）── **SQL の流し直しが
+  要る**。3・4 はデータ無し。
+- Affected docs: `docs/FEATURES.md`「Reading a downloaded language」、
+  `docs/BACKLOG.md`、`docs/CHECK-0907.md`、`supabase/setup.md`
+- Implementation status: 1・2 は IMPLEMENTED（`claude/r9-dl`、2026-09-09、
+  実機未確認）── 1 は `netTakeGone()`（`www/net.js`、`again-check` 四本）、
+  2 は `language_took()`（`supabase/schema.sql`、`npm run rls`、**SQL の流し
+  直しが要る**）。3 は IMPLEMENTED（今の形）。4 は BACKLOG。
+
+### DL した言語は「印」── 元が消えれば取った側からも消える
+- Date: 2026-09-09
+- Area: ダウンロードした言語（`language_take`、`www/net.js` § netTakenDown /
+  netLangsWalk、`www/home.js` § wldGet、`supabase/schema.sql`）
+- Decision: 「dl元が言語を削除したり、アカウントを消してその言語自体が消えた
+  場合は、dlユーザーからも削除される」。DL は**写しではなく印**：サーバーに
+  複製は持たず、取った人は元の slice をそのまま読む。元の言語が無くなれば
+  `language_take` の行も無くなり（cascade）、取った人の切り替えからも消える。
+  DL した言語は「削除するまで一生保持」── 取った人がアカウントを消すまで。
+  元が**編集**したとき取った側が次の起動で新しい方になるのは、この形の
+  帰結（別に決めていない）。元が**非公開**にしたときは未決。
+- Reason: 「DLしたら複製されて、いろんな人が使えるんだよね？…それは削除する
+  までは一生保持されるよね？ちなみに、dl元が言語を削除した場合は消えますよね？」
+  → 消える、で確定。
+- Affected features: DL、言語切り替え、アカウント削除、言語削除
+- Affected data: **サーバーは今のまま**（`language_take` は `language` の
+  削除で cascade、`schema.sql`）。**端末の索引の行も落ちる**：起動の
+  `netTakeGone()`（`www/net.js`）が、`language_take` の答えに無くなった
+  `mine:false` の行と slice を落とす。DELETE REVIEW は `docs/CHANGELOG.md`
+  2026-09-09。答えが来ていない起動（`LTAKE===null`）では何も落とさない。
+- Affected docs: `docs/FEATURES.md`「Reading a downloaded language」、
+  `docs/BACKLOG.md`、`docs/CHECK-0907.md`
+- Implementation status: IMPLEMENTED ── サーバー側は cascade、端末の索引の
+  行は `netTakeGone()`（`claude/r9-dl`、2026-09-09、実機未確認）。元が
+  **非公開**にしたときは同日の決定「DL 言語の四つ」の 2 で決まった。
+
 ### お題の札は、保存は一つの綴り・見せるのは読む人の表示言語
 - Date: 2026-09-08
 - Area: お題のタグ（`www/sns.js` § DAY_TAG、`tagHTML`、`www/card.js` §
@@ -1999,9 +2152,42 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected data: Keychain に、段と一緒に「買ったアカウントの uid」が入る。
   uid が合わないセッションは、サーバーの答えが来るまで free から始める。
 - Affected docs: `docs/PAID_FEATURES.md`、`docs/scope/claude-login-billing.md`
-- Implementation status: **未実装。** `claude/login-billing-code-review-ovfsxa`
-  のもの。実装は 1（トークンの更新）と 2（解約が起動で戻る）のあと。
-  それまでは、いま有る動きのまま ── 引き継いでしまう。
+- Implementation status: **IMPLEMENTED**（2026-09-11、`claude/r18-plan`）。
+  `planFor()`（`www/core.js`）が比較する一箇所で、枝は二つ ── 同じ人なら端末の
+  写し、それ以外は free から始めてサーバーに訊く。Keychain には書き戻さないので
+  買った本人のものは残る。`acct-check` 37・38・39・40・40b・40c・41・42 が持つ。
+  赤を見た。
+  実機は未確認（Keychain の往復は実機でしか見られない）。
+
+### 1アカウントに1課金。印の無い端末も例外にしない
+- Date: 2026-09-11
+- Area: 段の持ち主（`planFor()`、`SET.planUid`、`SET_PLAN`、`www/core.js`）
+- Decision:
+
+  ```
+  1アカウントに1課金ですけど。他のアカウントについてくるわけねえだろ
+  ```
+
+  段はサインインしているアカウントのもの。**例外は無い。**段の持ち主が
+  書かれていない端末（この章より前の端末）も同じで、「誰が買ったか誰も
+  言えない段」は、そこにいる人の買ったものではない。
+
+- Reason: 2026-09-02 の決定の実装に、一つだけ枝が残っていた ── 「持ち主が空なら
+  名前を書き留めるだけで段は動かさない」。空を「この端末を持っている人の段」と
+  読む枝で、測ると印の無い端末に残った `pro` が次に入ったアカウントに付き、
+  `planWas` も一緒なので `capLapse()` は何も言わなかった。表は
+  `docs/scope/r18-plan.md`。
+- Affected features: 課金全体。2026-09-02 の決定の **Implementation status を
+  置き換える**（その決定を置き換えるのではなく、例外なしで実装する）。
+- Affected data: 端末から消えるものは二つで、どちらも人が作ったものではない ──
+  印の無い端末の段が別の人の画面に出ていた分、および `lingua.set.<uid>` の
+  預け写しが `plan` と `planWas` を運ぶ道。既に書かれている語は消さない。
+  DELETE REVIEW は `docs/CHANGELOG.md` 2026-09-11。
+- Affected docs: この項目、`docs/STATE.md`、`docs/PAID_FEATURES.md`、
+  `docs/CHANGELOG.md`、`docs/scope/r18-plan.md`
+- Implementation status: IMPLEMENTED。`acct-check` 40（印の無い端末も例外で
+  ない）・40b（段は預け写しに乗らない）・40c（戻ってきたらサーバーが答える）。
+  三つとも赤を見た。実機は未確認。
 
 ### ダウンロードは Plus から。上限は make と別で、Plus 1・Pro 3
 - Date: 2026-09-02

@@ -58,6 +58,9 @@ act('adminGo', adminGo);
    asked again by pulling it down -- www/sns.js § WHICH SCREENS ANSWER A
    PULL, and modAsk() in www/mod.js is what it asks. */
 act('adminStaffAdd', adminStaffAdd);
+/* 運営がその人の言語を前の版に戻す道 (OWNER 2026-09-09) */
+act('adRecFind', adRecFind);
+act('adRecPick', adRecPick);
 act('adminStaffDrop', adminStaffDrop);
 act('modDown', modDown);
 act('modUp', modUp);
@@ -93,9 +96,9 @@ act('geHintShow', geHintShow);
 act('go', go);
 act('goIn', goIn);
 act('openHelp', openHelp);
-act('goPlans', goPlans);
 /* A door drawn on the free plan, pressed. It asks upStop() and stays where it
-   is; `goPlans` above is for a button whose own words already say upgrade.
+   is; a button whose own words already say upgrade says `go` with `plans`,
+   which is the one road to the price list and has no second name on it.
    「ポップだって。その古いのは消して」 OWNER 2026-09-05. */
 act('upFile', upFile);
 act('upData', upData);
@@ -135,6 +138,7 @@ act('kbSlot', kbSlot);
 act('kbLtTap', kbLtTap);
 act('kbLtPut', kbLtPut);
 act('langOpen', langOpen);
+act('langDrop', langDrop);
 act('langNew', langNew);
 act('ltDropChar', ltDropChar);
 act('newLetter', newLetter);
@@ -246,6 +250,7 @@ act('pwMarkInk', pwMarkInk);
 act('pwTool', pwToolSet);
 act('pwCutDo', pwCutDo);
 act('pwCutAll', pwCutAll);
+act('pwToOff', pwToOff);
 act('pwSend', pwSend);
 act('pwFocusLn', pwFocusLn);
 act('draftKeep', draftKeep);
@@ -292,17 +297,24 @@ act('dirPick', dirPick);
 act('g2Move', g2Move);
 act('g2Put', g2Put);
 act('g2Take', g2Take);
+/* 否定 と 疑問. A word goes into one of the two sentences from a screen of its
+   own, comes back out by being pressed, and the SAVE in the corner is what
+   turns the difference between them into a rule -- so there is no name here
+   for writing one down. */
+act('openPolWord', openPolWord);
+act('g2PolPutW', g2PolPutW);
+act('g2PolTake', g2PolTake);
 /* 性・名詞クラス. A class is made and named on a form, and which class a noun
    is in is one press on the chapter itself -- there is nothing to save. */
 act('nclsNew', nclsNew);
 act('nclsOpen', nclsOpen);
 act('nclsSave', nclsSave);
+act('nclsDel', nclsDel);
 act('nclsPut', nclsPut);
 act('stAddOwn', stAddOwn);
 act('stDelEx', stDelEx);
 act('stDelOwn', stDelOwn);
 act('stOpen', stOpen);
-act('takeOwn', takeOwn);
 act('cardOpen', cardOpen);
 act('cardSave', cardSave);
 act('cardSetShape', cardSetShape);
@@ -327,8 +339,10 @@ act('wipeAll', wipeAll);
 actIn('impSetRole', impSetRole);
 actIn('kbSetNm', kbSetNm);
 actIn('meSetName', meSetName);
+actIn('pkSetCh', pkSetCh);
 actIn('adminSet', adminSet);
 actIn('adminStaffSet', adminStaffSet);
+actIn('adRecSet', adRecSet);
 /* The two the profile grew. They could not be written down before
    claude/me2 came in: this file registers the FUNCTION and not its name, so a
    line here pointing at something www/me.js does not have yet stops the app on
@@ -389,6 +403,10 @@ act('fmrAdd', fmrAdd);
 act('fmrSetAt', fmrSetAt);
 act('regPick', regPick);
 actKey('fmNew', fmNew);
+/* A word the dictionary has not got, typed into the one field on the screen a
+   word is chosen on. Enter is what puts it in, the same as every other field
+   of this app that takes one line. */
+actKey('g2PolOwn', g2PolOwn);
 actIn('wdSetTags', wdSetTags);
 actIn('wdSetEty', wdSetEty);
 
@@ -397,7 +415,6 @@ actKey('obName', obName);
 actKey('snsGo', snsGo);
 actKey('stAddEx', stAddEx);
 actKey('subNew', subNew);
-actKey('takeOwn', takeOwn);
 actKey('wdAddEx', wdAddEx);
 actKey('wdAddMn', wdAddMn);
 

@@ -16,8 +16,7 @@ function capBanner(){
   if(can('words')) return '';
   var left=wordCap()-WORDS.length;
   if(left>20 || left<0) return '';
-  return '<button class="capwarn"' + DO('go', ["plans"]) + '>'+t('cap.warn', left)+
-    '<span class="capgo">'+t('up.cta')+ICON_GO+'</span></button>';
+  return capWarnHTML(t('cap.warn', left));
 }
 
 /* ---- the book's contents, once -----------------------------------------
@@ -325,20 +324,27 @@ function pkCharsHTML(){
      Found by press-check reporting that nothing wears `.cur`: the plans
      screen wore the same class on something else until today, and a second
      wearer somewhere else masks this exactly. */
-  var l=ltById(pkFor), cur=(l && l.ch)||'', taken=chTaken();
+  var cur=pkKept(pkFor), taken=chTaken();
   return w.ch.split(' ').map(function(ch){
     var used=taken[ch] && taken[ch]!==pkFor;
     return '<button class="pkch'+(used?' had':'')+(ch===cur?' cur':'')+'"' + DO('ltTakeChar', [pkFor, ch]) + '>'+esc(ch)+'</button>';
   }).join('');
 }
 function openPick(lid){
-  pkFor=lid;
   var l=ltById(lid);
-  var cur=(l && l.ch)||'';
+  /* No such letter, no picker. openSnd() has said this since it was written
+     and this had not: it opened a page headed 「A character for ""」 over a
+     grid that chose a character for nobody, and registered no buffer, so the
+     bar had no Save either. A door onto nothing is viewGone()'s to answer. */
+  if(!l) return;
+  pkFor=lid;
+  /* The buffer before the form, so navTop()'s keepBtnHTML() has one to draw
+     a Save from -- www/shell.js § KEEP. */
+  pkKeepOn(lid);
+  var cur=pkKept(lid);
   openForm('pick:'+lid, t('ch.for', ltName(l)||t('lt.untitled')),
     '<div class="pkown"><input class="scin own" id="own-ch" maxlength="4" value="'+esc(cur)+'" placeholder="'+esc(t('script.own.ph'))+'" autocomplete="off" '+
-      '' + KD('takeOwn') + '>'+
-    '<button class="btn"' + DO('takeOwn') + '>'+t('script.set')+'</button></div>'+
+      '' + IN('pkSetCh') + '></div>'+
     (cur? '<button class="pkclear"' + DO('ltTakeChar', [lid, ""]) + '>'+t('ch.clear')+'</button>':'')+
     '<div class="pktabs">'+WORLD_SCRIPTS.map(function(w){
       return '<button class="pktab'+(w.id===pkScript?' on':'')+'" data-id="'+w.id+'"' + DO('pkSwitch', [w.id]) + '>'+
@@ -347,16 +353,73 @@ function openPick(lid){
     '<div class="pkchars" id="pk-chars">'+pkCharsHTML()+'</div>');
 }
 FORM_OPEN.pick=function(x){ openPick(x); };
-/* pkFor is a letter's id. A borrowed character is one of the two shapes a
-   letter can have, so taking one is setting that letter's shape. */
-function ltTakeChar(lid, ch){
-  ltSetChar(lid, ch);
-  SET.showScript=true; save(); netPrefsPut(); installScriptFont();
-  if(here().r==='form') back(); else render();
+/* ---- PRESSING A CHARACTER CHOOSES; THE BAR SAVES ----------------------
+   OWNER 2026-09-11: 「保存ボタンないところは直して」, and the sentence it is
+   the other half of, OWNER 2026-09-03: 「打ったら覚える、ボタンが書く」
+   「保存ボタン必要なとこ全部」.
+
+   This screen wrote the letter on the press AND LEFT. A thumb landing on a
+   tile gave the letter that character, threw away the strokes it had been
+   drawn with (ltSetChar), switched the person's 「show the script」 setting
+   on, sent that setting, rebuilt the font, and took the screen away -- so
+   there was no moment at which the choice was visible and not yet made, and
+   nothing to press to undo it. The box beside it was the same write said a
+   second way: type a character, press 「Use」, and it was done.
+
+   ONE FIELD AND ONE ROAD. `ch` is what this screen is choosing, and the box,
+   the tiles and 「No character」 all set it. The 「Use」 button is gone with
+   the write it was -- a box that remembers what is typed in it has nothing
+   for a second button to do, and two buttons that both write is the shape
+   this replaces. The Save in the corner is what writes.
+
+   THE STROKES ARE NOT THROWN AWAY UNTIL IT IS PRESSED, which is the part of
+   this worth having: a letter has one shape, drawn or borrowed, so choosing
+   a borrowed one deletes what was drawn (ltSetChar, www/letters.js). That
+   used to happen under a thumb. */
+function pkKeepOn(lid){
+  var l=ltById(lid);
+  /* Not in somebody else's language: saveLetters() refuses one, so a buffer
+     here would put a Save in the bar that could not write. */
+  if(!l || langLocked()) return;
+  keepOn(keepKeyOf('form', 'pick:'+lid),
+         function(){
+           var one=ltById(lid);
+           return {ch:(one && one.ch)||''};
+         },
+         function(v, done){ pkKeepSave(lid, v); done(true); });
 }
-function takeOwn(){
-  var e=document.getElementById('own-ch'); if(!e) return;
-  ltTakeChar(pkFor, e.value);
+/* What the box holds and which tile is marked: what has been chosen, or what
+   the letter wears. The second clause is the one screen there is no buffer
+   for -- somebody else's language, where there is nothing to choose and the
+   character their letter wears still has to be shown. */
+function pkKept(lid){
+  var s=keepVal(keepKeyOf('form', 'pick:'+lid), 'ch'), one;
+  if(s) return s;
+  one=ltById(lid);
+  return (langLocked() && one && one.ch)? one.ch : '';
+}
+/* Typed into the box. It does not rebuild the screen -- a field being typed
+   into loses the keyboard the moment the page under it is replaced -- so the
+   mark under the tiles catches up on the next render and the corner catches
+   up now, which keepSet() does by itself. */
+function pkSetCh(v){ keepSet('ch', String(v||'')); }
+/* pkFor is a letter's id. A borrowed character is one of the two shapes a
+   letter can have, so taking one is choosing that letter's shape. The empty
+   string is 「No character」 and is the same choice said the other way. */
+function ltTakeChar(lid, ch){
+  pkFor=String(lid);
+  keepSet('ch', String(ch||''));
+  openPick(pkFor);
+}
+/* And the write, which is everything the press used to do. It is reached
+   from one place, keepSave() in www/shell.js, and that is the Save.
+
+   `showScript` is this person's setting rather than the language's and has a
+   road of its own up (netPrefsPut) -- it is here because choosing a character
+   and not showing it is choosing nothing, and it was here before. */
+function pkKeepSave(lid, v){
+  ltSetChar(lid, String(v.hasOwnProperty('ch')? v.ch : ''));
+  SET.showScript=true; save(); netPrefsPut(); installScriptFont();
 }
 /* Characters already spoken for, so the palette can grey them out. */
 /* Characters already spoken for, so the palette can grey them out. Two
@@ -426,13 +489,25 @@ function pfList(){
      timeline and still here, which is the whole of what a page is for.
      「ツイートは自己責任で見れるようにする」 */
   var mine=postKept().filter(of);
-  if(pfTab==='re')   return mine.filter(function(p){ return !!p.to; });
+  /* WHAT A REPLY IS, and it is one question: postToWho(p) -- whom does this
+     answer. 「返信にだけ出して」 OWNER 2026-09-09.
+
+     It was `!!p.to`, which asks whether the post points at another POST, and
+     the two came apart when a post could begin by naming somebody with no
+     post to answer (2026-09-07): that post carries `toh` and no `to`, so it
+     sat in 投稿. The line is rewritten rather than given a second condition
+     -- `postToWho()` is already the one place that says whom a post answers
+     (www/post.js), and it reads both halves. */
+  if(pfTab==='re')   return mine.filter(function(p){ return !!postToWho(p); });
   /* What THIS person has liked. Your own is what you pressed; somebody
      else's arrives with them, and until it does the list is empty rather than
      absent -- the same three lists on everybody's page.
      「他人のプロフィールは基本自分が見えてるのと同じ感じ」 */
   if(pfTab==='li')   return pfMine()? postAll().filter(function(p){ return !!p.lime; }) : [];
-  mine=mine.filter(function(p){ return !p.to; });
+  /* And the other side of the same question -- 投稿 is what is not a reply,
+     asked the one way. Two lists asking two different questions is how one
+     post came to be on both. */
+  mine=mine.filter(function(p){ return !postToWho(p); });
   mine.sort(function(a, b){ return (b.pin?1:0)-(a.pin?1:0); });
   return mine;
 }
@@ -829,26 +904,59 @@ function world(){ return WLD; }
    typed into a box. */
 function wldKeyOv(id, f){ return 'ov.'+String(id)+'.'+f; }
 function wldKeyArt(id){ return 'art.'+String(id)+'.b'; }
-function wldKeepOn(){
-  var w, was;
-  /* Not in somebody else's language: saveWld() refuses one. */
-  if(langLocked()) return;
-  w=world(); was={where:String(w.where||''), who:String(w.who||'')};
+/* WHAT THIS PAGE IS HOLDING. The two fixed facts, every row of the overview,
+   every section's body -- and, because they are changes to this language made
+   by pressing rather than by typing, WHICH rows there are, WHICH sections
+   there are and which of them may be taken away.
+
+   Those last three were the fault. Adding a row, deleting one, adding a
+   section and answering 「may this be taken」 each write the language through
+   saveWld() and each left the Save in the corner grey (docs/scope/r14-keep.md
+   § A). Nothing here says so and nothing has to: the answer is read off the
+   language every time the button is drawn, so a row put in is a field that
+   was not there a moment ago and a row taken out is one that has gone --
+   which is the second loop in keepDirty() (www/shell.js § keepOn).
+
+   `hide` is NOT here. 「公開」 sends on the press, through netLangPublic(),
+   and pops when it does not land -- OWNER 2026-09-05 -- so it has a road of
+   its own and a Save that lit for it would be offering to send a thing that
+   has already gone. docs/scope/r14-keep.md § D. */
+function wldNow(){
+  var w=world(), o={where:w.where||'', who:w.who||''}, secs=w.secs, rows=[];
   wldOvs().forEach(function(row){
     if(!row) return;
-    was[wldKeyOv(row.id, 'k')]=String(row.k||'');
-    was[wldKeyOv(row.id, 'v')]=String(row.v||'');
+    rows.push('ov:'+row.id);
+    o[wldKeyOv(row.id, 'k')]=String(row.k||'');
+    o[wldKeyOv(row.id, 'v')]=String(row.v||'');
   });
   wldArts().forEach(function(one){
     if(!one) return;
-    was[wldKeyArt(one.id)]=String(one.b||'');
+    rows.push('art:'+one.id+':'+String(one.t||''));
+    o[wldKeyArt(one.id)]=String(one.b||'');
   });
-  keepOn(keepKeyOf('world', ''), was, wldKeepSave);
+  /* WHICH rows there are, said once. A row added with nothing in it is two
+     empty fields, and two empty fields read exactly like two fields that were
+     never there -- so the page that had just grown a row said it was
+     unchanged. What changed is the LIST, and this is it. */
+  o.rows=rows.join('|');
+  o.dl=JSON.stringify((secs && typeof secs==='object' && !(secs instanceof Array))? secs : {});
+  return o;
 }
+function wldKeepOn(){
+  /* Not in somebody else's language: saveWld() refuses one. */
+  if(langLocked()) return;
+  keepOn(keepKeyOf('world', ''), wldNow, wldKeepSave);
+}
+/* `v` is what was TYPED and not written down -- the rows and the sections
+   themselves are already on the language by the time the button is gold, the
+   way a keyboard's layout is (www/keyboard.js § kbKeepSave). `dl` and the
+   section titles are in wldNow() so that the button lights for them, and are
+   not written here because there is nothing left to write. */
 function wldKeepSave(v, done){
   var f, m;
   for(f in v){
     if(!v.hasOwnProperty(f)) continue;
+    if(f==='dl' || f==='rows') continue;
     if(f==='where' || f==='who'){ world()[f]=String(v[f]); continue; }
     m=/^ov\.(.+)\.([kv])$/.exec(f);
     if(m){ wldOvPut(m[1], m[2], String(v[f])); continue; }
@@ -932,7 +1040,10 @@ function wldArtSet(id, v){ keepSet(wldKeyArt(id), String(v||'')); }
 function wldArtKeepOn(one){
   if(langLocked()) return;
   keepOn(keepKeyOf('wldart', one.id),
-         {t:String(one.t||''), b:String(one.b||'')},
+         function(){
+           var a=wldArtBy(one.id);
+           return a? {t:a.t, b:a.b} : {t:'', b:''};
+         },
          function(v, done){
            if(v.hasOwnProperty('t')) wldArtPut(one.id, 't', v.t);
            if(v.hasOwnProperty('b')) wldArtPut(one.id, 'b', v.b);
@@ -2278,12 +2389,117 @@ function langRow(id){
      comment named the writers as the protection from the day it was written
      and only three of them were asking; opening this door is what finished
      that sentence. */
-  return '<button class="lgrow'+(isOpen?' on':'')+'"' + DO('langOpen', [id]) +
+  var row='<button class="lgrow'+(langMine(id)?'':' swrow')+(isOpen?' on':'')+'"' + DO('langOpen', [id]) +
     (isOpen? ' aria-label="'+esc(t('langs.open'))+'"' : '') + '>'+
     '<span class="pav lgav">'+esc(mk)+'</span>'+
     '<span class="lgn">'+esc(langNameSaid(nm))+'</span>'+
     '<span class="lgck">'+(isOpen?ICON_TICK:'')+'</span></button>';
+  /* AND A LANGUAGE YOU ONLY TOOK CAN BE GIVEN BACK, by sliding the row.
+     「言語変更画面をスライドで消せる、メモしといて」 OWNER 2026-09-09.
+
+     ONLY somebody else's. Your own language is deleted from the middle row of
+     the settings (wipeLangsGo, www/settings.js) and has been since there was
+     one; two roads to that would be two answers to 「how is a language
+     deleted」. langMine() is the one place that says which kind this is --
+     the same question vLangs() above asked to decide which list it goes in,
+     not a second one.
+
+     THE SAME ONE THE NOTEBOOK HAS, and that is the whole of what is written
+     here. 「メモと同じ形って伝えたよね」 OWNER 2026-09-09: this row had a
+     second set of rules of its own -- gold, 96px, 1.02rem -- against the
+     notebook's red 76px, and two answers to 「how does a row slide open」 is
+     one too many. `.swipe` / `.swrow` / `.swdel` / `.swopen` are written once
+     (www/index.html § a row deleted by sliding it); nothing about the shape
+     is said again here.
+
+     The 削除 is BESIDE the row and not on top of it, so the row is still the
+     button it was and the press that opens a language is untouched. */
+  if(langMine(id)) return row;
+  return '<div class="swipe" data-lgs="'+esc(id)+'">'+row+
+    '<span class="swdel"'+DO('langDrop', [id])+
+    ' role="button" aria-label="'+esc(t('langs.drop'))+'">−</span></div>';
 }
+/* GIVING ONE BACK, WHICH IS A DELETE AND IS WRITTEN DOWN AS ONE.
+   docs/CHANGELOG.md 2026-09-09 carries the DELETE REVIEW.
+
+   Nothing is asked first. What stands behind it is the road back rather than
+   a dialog -- 「もう一度取る」: the ↓ on the article takes it again, so long
+   as the source still has it published. That is the same shape the keyboard's
+   bin has (CLAUDE.md rule 19), and iOS's own box is banned anyway.
+
+   The SERVER is first and this phone drops nothing until it has answered.
+   netTakeDrop() (www/net.js) is the whole of it -- what comes off this phone
+   comes off through netTakeGone(), the one place that does. A refusal leaves
+   every byte where it was and puts the pop up, whose ［再接続］ is this same
+   press. */
+function langDrop(id){
+  var L=LANGS[id]||{}, sid=String(id||'');
+  /* A language of this account's own never came from a take and there is
+     nothing in `language_take` to drop -- the same one of netTakeGone()'s
+     four that is left alone. It was `if(!L.sid)` while a language had two
+     numbers; `mine` is the thing langSeenAdd() writes and the question this
+     was always asking. */
+  if(!sid || L.mine!==false) return;
+  netTakeDrop(sid, function(){},
+    function(d, s, m){ netPop(d, s, m, function(){ langDrop(id); }); });
+}
+/* ---- and the finger that opens the row ---------------------------------
+   iOS's own list, and nothing else in this app slides sideways -- the slide
+   in shell.js runs DOWN a list choosing rows, and holding a row to carry it
+   is wldDragDown() above. So this is a third gesture and it is told from
+   those two by the one thing that makes it this one: it has to travel
+   SIDEWAYS further than it travels down, or a thumb scrolling the list would
+   open every row it passed.
+
+   THE OPEN ROW IS IN THE DOM AND NOWHERE ELSE. No variable holds it, so
+   nothing has to remember to forget it: render() rebuilds #app and the row is
+   shut, which is what leaving the screen should do and is what viewReset()
+   (www/shell.js) exists to do for the screens that DO keep a variable. One
+   row at a time, the way a list of this shape behaves. */
+var LGSW=null;
+/* BY `data-lgs` AND NOT BY THE CLASS. `.swipe` is the notebook's row as well
+   now, and a handler that reached for the class would take a note's row on
+   the notes screen -- which is the price of sharing a name and is paid here
+   in one line. `data-lgs` is what this row already carried and it says which
+   language, so it is the same question asked once. */
+function langSwAt(el){
+  while(el && el!==document &&
+        !(el.getAttribute && el.getAttribute('data-lgs'))) el=el.parentNode;
+  return (el && el.getAttribute && el.getAttribute('data-lgs'))? el : null;
+}
+function langSwShut(){
+  var all=document.querySelectorAll('[data-lgs] .swopen'), i;
+  for(i=0;i<all.length;i++) all[i].classList.remove('swopen');
+}
+function langSwDown(e){
+  var p=e.touches? e.touches[0] : e, el=langSwAt(e.target);
+  if(!p){ LGSW=null; return; }
+  LGSW=el? { el:el, x:p.clientX, y:p.clientY, on:false } : null;
+}
+function langSwMove(e){
+  var p=e.touches? e.touches[0] : e, dx, dy;
+  if(!LGSW || !p) return;
+  dx=LGSW.x-p.clientX; dy=Math.abs(LGSW.y-p.clientY);
+  /* Sideways, and further sideways than down: a list is still a list you have
+     to get to the bottom of. */
+  if(dx<12 || dx<dy) return;
+  LGSW.on=true;
+  langSwShut();
+  var r=LGSW.el.querySelector('.lgrow');
+  if(r) r.classList.add('swopen');
+  if(e.cancelable && e.preventDefault) e.preventDefault();
+}
+function langSwUp(){
+  /* A tap that never travelled shuts whatever was open, which is what tapping
+     away from an open row does everywhere this shape is used. The row's own
+     tap still runs -- it is a button and this is not eating the click. */
+  if(LGSW && !LGSW.on) langSwShut();
+  LGSW=null;
+}
+document.addEventListener('touchstart', langSwDown, false);
+document.addEventListener('touchmove', langSwMove, {passive:false});
+document.addEventListener('touchend', langSwUp, false);
+document.addEventListener('touchcancel', langSwUp, false);
 /* The way to make another one, at the foot of the list -- where "add an
    account" sits in the app this is modelled on. 「アカウントが変わるイメージ。
    実際の sns はアカウント切り替えボタンあるやん？あれが言語切り替えになるって
@@ -2340,7 +2556,8 @@ function vLangs(){
   var ids=Object.keys(LANGS), mine=[], reading=[], other=0, i, id;
   for(i=0;i<ids.length;i++){
     id=ids[i];
-    /* NOT ASKED YET IS NOT DRAWN. A language that has been up (`sid`) and
+    /* NOT ASKED YET IS NOT DRAWN. A language that has been up
+       (www/core.js § LROW, which is what `sid` being there used to say) and
        whose owner the server has not said is neither list's -- putting it in
        one is this phone choosing, and both choices are wrong: 「mine」 shows
        somebody else's language under your name, 「theirs」 hides your own.
@@ -2348,7 +2565,7 @@ function vLangs(){
        at the foot says how many are not shown, which is what
        docs/DATA_SAFETY.md § a shorter list is not a deletion asks for.
        「揃ってから開く」 OWNER 2026-09-07, said about a list. */
-    if(LANGS[id].sid && !langOwnKnown(id)){ other++; continue; }
+    if(langRowUp(id) && !langOwnKnown(id)){ other++; continue; }
     /* MADE OR ONLY READ, asked of `language.owner` (www/core.js § LOWN)
        rather than of a boolean this phone wrote. `mine` on the index still
        says which the entry was made as and is what langSeenAdd() writes; what

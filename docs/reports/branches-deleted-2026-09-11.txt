@@ -1,0 +1,158 @@
+ブランチ削除 2026-09-11 ── claude/r19-branches
+
+消せた: 0 本
+消せなかった: 111 本（docs/reports/branches-merged-2026-09-09.txt の全部）
+
+理由（一つだけ）
+  git push origin --delete <branch> が、このセッションの権限分類で拒まれた。
+  proxy の 403 ではない。返ってきたのはこれ:
+
+    Permission for this action was denied by the Claude Code auto mode
+    classifier. Reason: [Git Destructive].
+
+  試したのは claude/aud-claude 一本。リーダーのセッションで 403 だったものが、
+  ここでは 403 まで届かず手前で止まる。道は二つとも塞がっている。
+  force-push も空 commit も試していない（禁止）。
+
+  次に必要なのは、削除を許す設定か、削除できる人の手。
+  このセッションからは一本も消せない。
+
+確かめたこと（消せてはいないが、一覧は正しい）
+  1. .git/shallow があった。このクローンは浅く、origin/master は 92 commit しか
+     持っていなかった。その状態で git branch -r --merged origin/master に訊くと
+     111 本のうち 96 本が「取り込まれていない」と答える ── 嘘である。
+     git fetch --unshallow のあと master は 2937 commit になり、
+     111 本すべてが --merged に出た。
+
+     **浅いクローンで --merged を訊いてはいけない。**「取り込まれていない」と
+     いう答えが返り、それを信じると、消して良いものを消さずに終わるか、
+     もっと悪い向きに間違える。深さを取ってから訊く。
+
+  2. 深さを取ったあとの答え:
+       origin/master に取り込まれている remote ブランチ   215 本
+       うち一覧の 111 本                                  111 本すべて一致
+       一覧にあって取り込まれていないもの                 0 本
+     一覧は 2026-09-09 の時点でも今日の master でも正しい。111 本は消して良い。
+
+  3. claude/gatered は一覧に無い。
+     指示は「まず claude/gatered を試せ」だったが、同じ指示に
+     「一覧に無いものは消さない」とある。一覧の中の claude/aud-claude で試した。
+     gatered 自体は remote にあり master に取り込まれている（215 本のうちの一本）
+     が、111 本の一覧には入っていないので、消して良いかはオーナーのもの。
+
+  4. 一覧の外にも、master に取り込まれている remote ブランチが 104 本ある
+     （215 − 111。master 自身を除く）。2026-09-09 以降に取り込まれた分。
+     これも消して良いかは確かめ直していない ── 一覧の仕事ではない。
+
+消せなかった 111 本（docs/reports/branches-merged-2026-09-09.txt と同じ）
+  claude/aud-claude
+  claude/aud-data
+  claude/aud-pay
+  claude/aud-state
+  claude/c1
+  claude/capword
+  claude/door
+  claude/door2
+  claude/dup
+  claude/dup2
+  claude/f3
+  claude/find
+  claude/find2
+  claude/find3
+  claude/find4
+  claude/find5
+  claude/first
+  claude/flat
+  claude/force
+  claude/force2
+  claude/g1
+  claude/g3
+  claude/gate2
+  claude/gramdup
+  claude/icon
+  claude/icon2
+  claude/k1
+  claude/k3
+  claude/kbfree2
+  claude/kbfree3
+  claude/keep
+  claude/keep3
+  claude/keep4
+  claude/keysel
+  claude/lapse-text
+  claude/lapse2
+  claude/lock
+  claude/login
+  claude/m2
+  claude/m3
+  claude/me3
+  claude/n1
+  claude/n3
+  claude/nameunset
+  claude/navdo
+  claude/net2
+  claude/netfix
+  claude/obkb
+  claude/offwalk
+  claude/one
+  claude/online
+  claude/p3
+  claude/pen
+  claude/plannow
+  claude/pop
+  claude/pop2
+  claude/pos
+  claude/post3
+  claude/post4
+  claude/pressgone
+  claude/pull
+  claude/q2
+  claude/quick
+  claude/r3-import
+  claude/r3-kb
+  claude/r3-sns
+  claude/r3-words
+  claude/r4-gram
+  claude/r4-misc
+  claude/r4-priv
+  claude/r4-sns
+  claude/r4-verify
+  claude/r5-gram
+  claude/r5-sns
+  claude/r6-kb
+  claude/r6-post
+  claude/r6-prof
+  claude/r7-acct
+  claude/r7-at
+  claude/r7-gram
+  claude/r7-rls
+  claude/r7-slow
+  claude/r7-sweep
+  claude/r8-server
+  claude/r8-take
+  claude/reader-prp4br
+  claude/rules
+  claude/safety
+  claude/savefirst
+  claude/shot2
+  claude/six
+  claude/sub1
+  claude/swipe
+  claude/symerge
+  claude/tl2
+  claude/todo
+  claude/tr
+  claude/u2
+  claude/w3
+  claude/wait
+  claude/walk-141
+  claude/walkfix
+  claude/walkfix3
+  claude/walkfix4
+  claude/walkfix5
+  claude/walkfix6
+  claude/walkfix7
+  claude/walkfix8
+  claude/walkfix9
+  claude/words
+  claude/worldadd

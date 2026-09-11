@@ -624,46 +624,25 @@ function impStep(v){ IMP.step=v; impPaint(); }
 function impGetHTML(){
   return '<button class="set"' + DO('impStep', ["paste"]) + '>'+
       '<span class="sl">'+esc(t('imp.paste'))+'</span></button>'+
-    impFileHTML();
+    /* A file rather than a paste. Pasting is fine for forty words and
+       impossible for four thousand, which is the size of list this is for --
+       so this is where the paid plan starts, and the free one still gets the
+       paste. The control is fileInHTML() in www/shell.js, which the sheet's
+       own file button is drawn by too; what is this screen's is the words,
+       the row it wears and what a dictionary will accept.
+
+       `.set` because this is a row of a list, so its label goes in a `.sl`.
+       `.impfile` is the shape on BOTH plans -- block, the width of the
+       screen, its words in the middle -- and 「これも角丸だし」 OWNER
+       2026-08-27 is why it is not a filled panel with a corner on it. */
+    fileInHTML('set impfile', '<span class="sl">'+esc(t('imp.file'))+'</span>',
+               'f-file', '.csv,.tsv,.tab,.txt,.json,.db,.dic,.lex');
 }
 /* And the box, on its own screen, with the one thing to do next under it. */
 function impPasteHTML(){
   return '<div class="field"><textarea id="f-csv" placeholder="'+esc(t('csv.ph'))+'"></textarea></div>'+
     '<button class="btn ghost" style="width:100%;margin-top:12px"' + DO('impScan') + '>'+
       esc(t('imp.next'))+'</button>';
-}
-/* A file rather than a paste. Pasting is fine for forty words and impossible
-   for four thousand, which is the size of list this is for -- so this is
-   where the paid plan starts, and the free one still gets the paste.
-
-   `.btn.ghost` and not a box. 「これも角丸だし」OWNER 2026-08-27. It was a
-   filled panel with a hairline round it and a corner on it -- the shape
-   CLAUDE.md's fifth rule is about -- and the comment over `.shfile` in
-   index.html has named this button as the one still wearing it since the
-   sheet's own file control was moved off it. `.impfile` is the shape of this
-   control on BOTH plans -- block, the width of the screen, its words in the
-   middle -- and, on the paid one, what lays the native control over those
-   words: a file input cannot be styled and a hidden one cannot be pressed.
-   Only the second half is the paid face's, which is what `.impfile input`
-   says in index.html. */
-function impFileHTML(){
-  /* THE SAME BUTTON ON EVERY PLAN, WITH THE SAME WORDS ON IT.
-     「できないことは、有料と同じ画面に同じ形で出す。押したら有料へ」 OWNER
-     2026-09-04. The free plan used to get `up.cta` welded onto the end of the
-     button's own words with nothing between them, so 「ファイルを選ぶ」 and
-     「アップグレード」 ran together into one unreadable word -- a button whose
-     text a person cannot read is worse than one they cannot press. What the
-     tail was for is said by the press, and what the press says is the pop:
-     「ポップだって。その古いのは消して」 OWNER 2026-09-05. It used to jump to
-     the price list -- 「扉は押したら飛ぶ」 (OWNER 2026-09-03) -- and the flight
-     is now the "yes" inside upStop() (www/core.js) rather than the press
-     itself, which is the same sentence shInFileHTML() in www/sheet.js is
-     written under. */
-  if(!can('file'))
-    return '<button class="set impfile"' + DO('upFile') + '>'+
-      '<span class="sl">'+esc(t('imp.file'))+'</span></button>';
-  return '<label class="set impfile"><span class="sl">'+esc(t('imp.file'))+'</span>'+
-    '<input type="file" id="f-file" accept=".csv,.tsv,.tab,.txt,.json,.db,.dic,.lex"></label>';
 }
 /* The file input is the one control in the app that cannot go through the
    action tables: they hand a listener the element's value, and a file input's

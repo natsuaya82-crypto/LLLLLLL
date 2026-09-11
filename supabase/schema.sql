@@ -318,6 +318,35 @@ create table if not exists language_take (
 );
 create index if not exists language_take_uid_idx on language_take(uid);
 
+-- AND IT IS THE ONE THING AN UNPUBLISHED LANGUAGE IS STILL READ THROUGH.
+-- 「非公開にしたら新規 dl だけできないだけ」 OWNER 2026-09-09
+-- (docs/FEATURE_RULES.md § DL 言語の四つ).
+--
+-- `slice_read` was 「the owner, or published」, so the moment somebody took a
+-- language away from the page the people who had already taken it opened it on
+-- the next launch to nothing at all -- the row would not come down either, so
+-- not even its name. That is not what unpublishing was decided to be: it stops
+-- a NEW download and nothing else. Somebody who took a chapter keeps reading
+-- the chapter they took.
+--
+-- WHAT IT DOES NOT DO IS WIDEN WHAT THEY MAY READ. It stands in for the
+-- published test and for nothing else, so the dictionary and the grammar still
+-- ask the owner's own switch (`slice_dl`) beside it: a language whose words
+-- were never offered does not start offering them by going private.
+--
+-- `security definer` for the reason email_taken() is: `language_take` is
+-- readable by `authenticated` and by nobody else, and a policy naming the
+-- table would be evaluated for `anon` too -- who may read a published
+-- language's letters, and whose ask would fail on the privilege rather than
+-- on the policy. It answers about auth.uid() and about nothing else, so the
+-- most it can tell anybody is what they themselves took; with nobody signed
+-- in auth.uid() is null and it is false.
+create or replace function language_took(lang uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from language_take t
+                  where t.uid = auth.uid() and t.language = lang) $$;
+grant execute on function language_took(uuid) to anon, authenticated;
+
 -- ---- what a language is made of ---------------------------------------
 -- Eleven slices -- words, lines, lang, script, letters, notes, phases, talk,
 -- snd, kb, wld -- and they are SLICES here for the same reason they are
@@ -348,6 +377,103 @@ create table if not exists slice (
   primary key (language, kind)
 );
 create index if not exists slice_language_idx on slice(language);
+
+-- ---- slice_hist ---------------------------------------------------------
+-- The three versions before now, so that somebody who writes in and says
+-- 「単語が全部消えた」 has something to be given back.
+--
+-- 「運営が治せる仕様は欲しい。ユーザーが問い合わせてきた時に、アカウントの
+-- 復旧ができるようにしたい、管理画面で」「3 で実装して」 OWNER 2026-09-09.
+--
+-- THE NUMBER IS A COUNT AND NOT A LENGTH OF TIME. Three versions per part per
+-- language, and the fourth push drops the oldest. A period was the other way
+-- of writing this and was not chosen: a person who saves ten times in an hour
+-- and writes in the next day is the case this exists for, and a week of
+-- retention answers them with a week of nothing while a 5000-word language
+-- costs 685 KB a version (docs/RECOVERY.md 案A の実測).
+--
+-- IT IS THE OPERATOR'S AND NOT THE AUTHOR'S. Only is_staff() may read it,
+-- there is no insert, update or delete policy on it at all, and no screen in
+-- the app shows a person their own versions -- a date beside every version is
+-- a record of when somebody changed their mind (docs/STATE.md § 4a 四).
+--
+-- `body` is text for the same reason slice.body is: it is exactly the string
+-- the phone holds, and the server never looks inside it.
+create table if not exists slice_hist (
+  language   uuid not null references language(id) on delete cascade,
+  kind       text not null,
+  body       text not null,
+  at         timestamptz not null,
+  primary key (language, kind, at)
+);
+create index if not exists slice_hist_at_idx on slice_hist(language, kind, at desc);
+
+-- THE ONLY AUTOMATIC DELETION IN THIS FILE, and its DELETE REVIEW is in
+-- docs/CHANGELOG.md 2026-09-09. What it removes is a copy of a previous
+-- version; the row somebody is actually holding (`slice`) is never touched by
+-- this trigger, which only ever reads OLD.
+--
+-- BEFORE UPDATE AND BEFORE DELETE, so the version kept is the one that is
+-- about to stop existing. The app is a line lighter for it: netSlicePut() in
+-- www/net.js is unchanged and knows nothing about any of this.
+--
+-- `security definer`, because slice_hist has no write policy of any kind --
+-- the trigger is the one road in, and a policy would be a second one.
+--
+-- A LANGUAGE GOING TAKES ITS VERSIONS AND KEEPS NONE. When `language` is
+-- deleted the cascade reaches `slice`, this fires, and writing a version of a
+-- language that is on its way out would be both an FK the same statement is
+-- removing and a copy of somebody's work outliving their decision to delete
+-- it. So the row is checked for: gone means nothing is kept.
+--
+-- `at` IS WHEN THAT BODY STOPPED BEING THE CURRENT ONE, and not when it was
+-- written. It was the slice's own `at` first and that was wrong twice over:
+-- the ceiling below keeps the three NEWEST, so a column that does not move
+-- when the body does puts the versions in an order that is not the order they
+-- happened in -- and a plain `update slice set body=...` never touches it, so
+-- four versions all carried the moment the row was first inserted. Measured
+-- 2026-09-09 (npm run rls): restoring a version wrote the undo in at the
+-- OLDEST timestamp and the ceiling dropped it in the same statement, so the
+-- one thing this table promises -- 戻すのを戻せる -- was gone a microsecond
+-- after it was made. clock_timestamp() and not now(): now() is one instant
+-- for a whole transaction, and two saves in one transaction would collide.
+-- The nudge below is what is left of that collision, kept because dropping a
+-- version to satisfy a primary key is losing the thing this table is.
+create or replace function slice_hist_keep() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare v_at timestamptz;
+begin
+  if tg_op = 'DELETE'
+     and not exists (select 1 from language where id = old.language)
+  then return old; end if;
+
+  v_at := clock_timestamp();
+  while exists (select 1 from slice_hist
+                 where language = old.language and kind = old.kind and at = v_at)
+  loop v_at := v_at + interval '1 microsecond'; end loop;
+
+  insert into slice_hist(language, kind, body, at)
+       values (old.language, old.kind, old.body, v_at);
+
+  delete from slice_hist h
+   where h.language = old.language and h.kind = old.kind
+     and h.at not in (select at from slice_hist
+                       where language = old.language and kind = old.kind
+                       order by at desc limit 3);
+  /* NEW ON AN UPDATE AND OLD ON A DELETE, AND THE TWO ARE NOT INTERCHANGEABLE.
+     A BEFORE UPDATE trigger returning OLD is the row saying 「write this
+     instead」 -- so it does not refuse the update, it silently writes the row
+     back exactly as it was. Nothing throws, the statement reports one row
+     updated, and every save anybody made would have been quietly discarded
+     while the history filled with three copies of the same first version.
+     Measured 2026-09-09 (npm run rls): three rows, three timestamps, one
+     body. */
+  return case when tg_op = 'DELETE' then old else new end;
+end $$;
+
+drop trigger if exists slice_hist_before on slice;
+create trigger slice_hist_before before update or delete on slice
+  for each row execute function slice_hist_keep();
 
 -- The record that settles arguments without anybody having to judge one.
 -- Append only: no update policy and no delete policy exist for this table, so
@@ -873,7 +999,13 @@ create policy profile_edit on profile for update using (is_member() and id = aut
 -- what publishing one MEANS.
 drop policy if exists language_read on language;
 create policy language_read on language for select
-  using (published_at is not null or owner = auth.uid());
+  using (published_at is not null or owner = auth.uid()
+         -- AND SOMEBODY WHO TOOK IT, whatever it says now. The launch asks
+         -- `language?id=in.(…)` for the rows of what this account has taken
+         -- (netTakenDown in www/net.js), so a row refused here is a language
+         -- with no name, no writing system and nothing said about it -- and
+         -- that is what a taker saw the day the owner unpublished it.
+         or language_took(id));
 drop policy if exists language_make on language;
 create policy language_make on language for insert
   with check (is_member() and owner = auth.uid());
@@ -893,8 +1025,17 @@ drop policy if exists take_read on language_take;
 create policy take_read on language_take for select
   using (uid = auth.uid());
 drop policy if exists take_make on language_take;
+-- AND ONLY A LANGUAGE THAT IS PUBLISHED RIGHT NOW MAY BE TAKEN.
+-- 「非公開にしたら新規 dl だけできないだけ」 OWNER 2026-09-09. This is the half
+-- of that sentence that closes: the reading half is language_took() above,
+-- which keeps the people who already took it. The article is not drawn for an
+-- unpublished language, so there is no ↓ to press -- and a door that exists
+-- only in the app is a door, so it is refused here as well.
 create policy take_make on language_take for insert
-  with check (is_member() and uid = auth.uid());
+  with check (is_member() and uid = auth.uid()
+              and exists (select 1 from language l
+                           where l.id = language_take.language
+                             and l.published_at is not null));
 drop policy if exists take_drop on language_take;
 create policy take_drop on language_take for delete
   using (is_member() and uid = auth.uid());
@@ -930,6 +1071,7 @@ grant select, insert, delete on language_take to authenticated;
 -- Writing is unchanged and is the owner's alone. Publishing is a page being
 -- readable, never a way in.
 alter table slice enable row level security;
+alter table slice_hist enable row level security;
 
 -- Whether the OWNER of a language has said that one section of it may be taken
 -- away. 「言語ページ公開と単語や文字のdl可能は別だし」 -- publishing a page and
@@ -958,6 +1100,15 @@ exception when others then
   return false;
 end $$;
 
+-- AND THE PREVIOUS VERSIONS, WHICH ARE THE OPERATOR'S ALONE. One policy on
+-- this table and it is SELECT: no insert, no update and no delete policy
+-- exists for slice_hist, so the trigger above (definer) is the only road in
+-- and nothing signed in can forge, rewrite or drop a version -- including the
+-- person whose language it is, and including staff.
+drop policy if exists slice_hist_read on slice_hist;
+create policy slice_hist_read on slice_hist for select
+  using (is_staff());
+
 drop policy if exists slice_read on slice;
 create policy slice_read on slice for select
   using (
@@ -965,18 +1116,27 @@ create policy slice_read on slice for select
              where l.id = language and l.owner = auth.uid())
     -- What the ARTICLE is drawn from. Open on a published language, because
     -- the page cannot be read otherwise.
+    --
+    -- AND SOMEBODY WHO TOOK IT KEEPS READING IT, published or not
+    -- (language_took() above): 「非公開にしたら新規 dl だけできないだけ」
+    -- OWNER 2026-09-09.
     or (kind in ('wld', 'script', 'snd', 'letters', 'kb')
         and exists (select 1 from language l
-                     where l.id = language and l.published_at is not null))
+                     where l.id = language
+                       and (l.published_at is not null or language_took(l.id))))
     -- And what may be TAKEN: 「あとdlは単語文字文法キーボード全部のはずだよね？」
     -- OWNER 2026-09-02. The dictionary and the grammar were refused to everybody
     -- but their owner, so two of the four ↓ could never have landed. They are
     -- open now on a published language AND only where its owner's own switch
     -- says so -- WLD_DL_KIND in www/home.js is the other half of this list, and
     -- the grammar is two slices because a grammar is.
+    -- The taker keeps these two on the SAME second answer and not on a wider
+    -- one: a language whose dictionary was never offered does not start
+    -- offering it by going private.
     or (kind in ('words', 'phases', 'gram2')
         and exists (select 1 from language l
-                     where l.id = language and l.published_at is not null)
+                     where l.id = language
+                       and (l.published_at is not null or language_took(l.id)))
         and slice_dl(language,
                      case kind when 'words' then 'words' else 'gram' end))
   );
@@ -1106,7 +1266,12 @@ create or replace view language_seen as
          slice_count((select s.body from slice s
                        where s.language = l.id and s.kind = 'letters')) as nletters
     from language l
-   where l.published_at is not null or l.owner = auth.uid();
+   -- `language_read`'s sentence, and that includes somebody who took it
+   -- (language_took() above): the article a taker opens is drawn off this
+   -- view, so a row withheld here is the same empty screen the policy was
+   -- opened to stop.
+   where l.published_at is not null or l.owner = auth.uid()
+      or language_took(l.id);
 grant select on language_seen to anon, authenticated;
 
 -- AND THE LANGUAGE BESIDE THE PERSON, IN THE SAME ANSWER.
@@ -2105,6 +2270,77 @@ begin
 end $$;
 revoke all on function admin_counts() from public;
 grant execute on function admin_counts() to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- Putting somebody's language back
+--
+-- 「運営が治せる仕様は欲しい。ユーザーが問い合わせてきた時に、アカウントの
+-- 復旧ができるようにしたい、管理画面で」 OWNER 2026-09-09.
+--
+-- Two functions, and they are the whole of the road: one says what versions
+-- there are, one puts a version back. `security definer` for the reason
+-- post_hide() is -- the caller is a normal account whose own policies do not
+-- let it read somebody else's slice_hist -- and is_staff() is asked inside,
+-- so the definer rights are not a way in.
+--
+-- NO BODY EVER COMES BACK. A version of a 5000-word dictionary is 685 KB, and
+-- the screen shows a part's name and a date, never its contents: the operator
+-- is restoring on the person's word, not reading their language. So the list
+-- carries (language, kind, at) and admin_restore() is told which of those to
+-- put back.
+create or replace function admin_hist(handle text)
+returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare who uuid; out jsonb;
+begin
+  if not is_staff() then raise exception 'not staff'; end if;
+  select id into who from profile p where p.handle = admin_hist.handle;
+  if who is null then return jsonb_build_object('who', null); end if;
+  select jsonb_build_object(
+    'who',   who,
+    'langs', coalesce((select jsonb_agg(jsonb_build_object('id', l.id, 'name', l.name)
+                                        order by l.created_at)
+                         from language l where l.owner = who), '[]'::jsonb),
+    'hist',  coalesce((select jsonb_agg(jsonb_build_object(
+                                'language', h.language, 'kind', h.kind, 'at', h.at)
+                                        order by h.at desc)
+                         from slice_hist h
+                         join language l on l.id = h.language
+                        where l.owner = who), '[]'::jsonb)
+  ) into out;
+  return out;
+end $$;
+revoke all on function admin_hist(text) from public;
+grant execute on function admin_hist(text) to authenticated;
+
+-- AND PUTTING ONE BACK IS AN UPDATE, WHICH IS WHY THE UNDO IS FREE. The write
+-- below goes through the same slice_hist_before trigger as any other, so what
+-- was there a moment ago becomes a version at the moment it is replaced --
+-- the operator can walk a restore back the same way they made it. Nothing
+-- special is written and there is no second road.
+--
+-- The version is named by its timestamp because that is what the screen
+-- shows. A timestamp that names nothing restores nothing and says so.
+create or replace function admin_restore(language uuid, kind text, at timestamptz)
+returns void
+language plpgsql security definer set search_path = public as $$
+declare b text;
+begin
+  if not is_staff() then raise exception 'not staff'; end if;
+  select h.body into b from slice_hist h
+   where h.language = admin_restore.language
+     and h.kind = admin_restore.kind
+     and h.at = admin_restore.at;
+  if b is null then raise exception 'no such version'; end if;
+  update slice s set body = b, no = s.no + 1, at = now()
+   where s.language = admin_restore.language and s.kind = admin_restore.kind;
+  if not found then
+    insert into slice(language, kind, body, no, at)
+         values (admin_restore.language, admin_restore.kind, b, 1, now());
+  end if;
+end $$;
+revoke all on function admin_restore(uuid, text, timestamptz) from public;
+grant execute on function admin_restore(uuid, text, timestamptz) to authenticated;
 
 -- ---------------------------------------------------------------------------
 -- The first one, and everybody after

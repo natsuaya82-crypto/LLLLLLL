@@ -300,7 +300,7 @@ const r = await pg.evaluate(async ({ s, sid }) => {
   SET.plan = 'pro'; save();
   var b1 = langMint(), b2 = langMint();
   ['zc1','zc2','zc3'].forEach(function(z){
-    LANGS[z] = { name:z, mine:false, sid:z, uid:'u' }; });
+    LANGS[z] = { name:z, mine:false, uid:'u' }; });
   langStore();
   langId = b2;                                  /* the SECOND one is open */
   /* Every key that was there, by NAME. Not the count: an ordinary save() adds
@@ -415,6 +415,188 @@ say(r.capKept,
     ((r.capNow && r.capNow.gone.length) ? ' (gone: ' + r.capNow.gone.join(' ') + ')' : ''));
 say(r.capBack && r.capBack.own === 3 && r.capBack.read === 3,
     'paying again lists every one of them, exactly as they were');
+
+/* ---- AND THE ROAD BACK: the row is SLID and the 削除 pressed -------------
+   「言語変更画面をスライドで消せる、メモしといて」 OWNER 2026-09-09, and 「はい」
+   to the question the next day (docs/FEATURE_RULES.md 決定ログ 1).
+
+   There was no road out. A `language_take` row went in with the ↓ and came out
+   only when the SOURCE deleted their language or their account -- so on plus,
+   where the ceiling is one, a download taken by mistake filled the only slot
+   there was for ever.
+
+   NOTHING HERE RECOMPUTES THE GESTURE. The check calls the app's own touch
+   handlers with the same three events a thumb produces, asks the PAGE whether
+   a 削除 appeared, and then presses it for real. A check that added the class
+   itself would be a copy of the handler and would agree with it whatever the
+   handler did (CLAUDE.md rule 12).
+
+   Only the transport is stubbed, so netTakeDrop(), netTakes() and
+   netTakeGone() all run for real against a `language_take` table made of one
+   array. */
+/* FROM AN EMPTY PHONE, and that is not tidiness. The sections above leave
+   five downloaded languages in the index (the one they took, and the three
+   `zc*` the ceiling claims made), and this plan holds ONE -- so langsSeen()
+   cut the language this section is about off the end of the list and every
+   claim below was red about a row that was simply not drawn. Measured before
+   it was fixed: the one `.swipe` on screen carried `data-lgs="srv-lang-0001"`.
+   again-check clears storage between its sections for the same reason. */
+await pg.evaluate(() => localStorage.clear());
+await pg.reload();
+await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
+
+const gone = await pg.evaluate(async ({ s }) => {
+  eval('(' + s + ')()');
+  SET.walked = true; SET.plan = 'plus'; save();
+  /* AS THE PERSON WHOSE LANGUAGE THIS IS. Signing in as somebody else makes
+     the seed's own language somebody else's -- langMine() asks
+     `language.owner` -- so it falls into the READING list, and on plus that
+     list holds one: the download this section is about was cut off the end of
+     it and the whole thing was green for the wrong reason. Measured before it
+     was believed (the page reported `mineIsMine:false`, one `.swipe` on screen,
+     and it was the seed's). */
+  SESS = { at:'t', rt:'r', uid:String(langOwnOf(langId) || 'me'), anon:false };
+  netSignedIn = function(){ return true; };
+  function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
+
+  var mineId = langId, sid = 'srv-theirs-9';
+  var out = {};
+
+  /* somebody else's language, taken -- the entry langSeenAdd() makes and the
+     slices wldGet() puts under it */
+  langSeenAdd(sid, 'Shango', 'them-uid');
+  slWr(langKeyOf(sid, 'letters'), '[{"id":"sx1"}]');
+  slWr(langKeyOf(sid, 'kb'), '{"boards":[]}');
+  langStore();
+
+  /* what the person's OWN language is holding, before any of this */
+  var before = {}, i;
+  for (i = 0; i < SLICES.length; i++)
+    before[SLICES[i]] = slRd(langKeyOf(mineId, SLICES[i]));
+
+  /* ---- the server, behind the one transport ---------------------------- */
+  var SRV = { take:[{ uid:SESS.uid, language:sid }], hits:[], down:false };
+  netSend = function(method, p, body, tok, ok, bad){
+    SRV.hits.push(method + ' ' + p);
+    if (SRV.down){ setTimeout(function(){ bad(null, 0, 'down'); }, 0); return; }
+    if (method === 'DELETE' && p.indexOf('/rest/v1/language_take') === 0){
+      var m = /language=eq\.([^&]*)/.exec(p), want = m ? decodeURIComponent(m[1]) : '';
+      SRV.take = SRV.take.filter(function(t){ return t.language !== want; });
+      return setTimeout(function(){ ok([]); }, 0);
+    }
+    if (method === 'GET' && p.indexOf('/rest/v1/language_take') === 0)
+      return setTimeout(function(){
+        ok(SRV.take.map(function(t){ return { language:t.language }; })); }, 0);
+    return setTimeout(function(){ bad(null, 404, 'no route ' + method + ' ' + p); }, 0);
+  };
+  /* the take list this session is holding, asked for the way the launch does */
+  await new Promise(function(f){ netTakes(function(){ f(); }, function(){ f(); }); });
+  out.dlBefore = dlCount();
+
+  /* ---- the screen, and the finger ------------------------------------- */
+  go('langs'); render(); await wait(30);
+
+  /* `.swipe` / `.swdel` / `.swopen`, which is the notebook's shape and is now
+     the only one -- 「メモと同じ形って伝えたよね」 OWNER 2026-09-09. `data-lgs`
+     is what tells this row from a note's, here as in the app. */
+  function rowOf(id){ return document.querySelector('#app .swipe[data-lgs="' + id + '"]'); }
+  function delIn(id){ var w = rowOf(id); return w ? w.querySelector('.swdel') : null; }
+  function openIn(id){ var w = rowOf(id); return !!(w && w.querySelector('.lgrow.swopen')); }
+  /* the three events a thumb makes, handed to the app's own handlers */
+  function swipe(id){
+    var w = rowOf(id), r;
+    if (!w) return false;
+    r = w.getBoundingClientRect();
+    langSwDown({ target:w.querySelector('.lgrow') || w,
+                 touches:[{ clientX:r.right - 20, clientY:r.top + r.height / 2 }] });
+    langSwMove({ touches:[{ clientX:r.right - 120, clientY:r.top + r.height / 2 }],
+                 cancelable:true, preventDefault:function(){} });
+    langSwUp({});
+    return true;
+  }
+
+  /* THE ROW OF SOMEBODY ELSE'S LANGUAGE SLIDES; YOUR OWN DOES NOT. 自分の
+     言語を消すのは設定の真ん中の行で、前からそこです。 */
+  out.mineHasNoRow = !rowOf(mineId);
+  out.theirsHasRow = !!rowOf(sid);
+  /* WHAT WAS ON THE SCREEN, printed whether it passes or not. A claim that
+     says only 「no」 sends the next person to guess; the first two runs of
+     this went to a debug script because these four numbers were not here. */
+  out.saw = { route:window.route, uid:SESS.uid, mineIsMine:langMine(mineId),
+              theirsIsMine:langMine(sid), dlCap:dlCap(),
+              sw:document.querySelectorAll('#app .swipe').length,
+              rows:document.querySelectorAll('#app .lgrow').length,
+              dels:document.querySelectorAll('#app .swdel').length,
+              sid:sid, keys:Object.keys(LANGS).join(','),
+              swHTML:(document.querySelector('#app .swipe')||{outerHTML:''}).outerHTML.slice(0,140) };
+  out.shutAtFirst = !!rowOf(sid) && !openIn(sid);
+  out.swiped = swipe(sid);
+  out.openNow = openIn(sid);
+  out.delUp = !!delIn(sid);
+
+  /* ---- and a DELETE that does not land takes nothing ------------------- */
+  SRV.down = true;
+  var hitsWas = SRV.hits.length;
+  if (delIn(sid)) delIn(sid).click();
+  await wait(160);
+  SRV.down = false;
+  out.downTried = SRV.hits.length > hitsWas;
+  out.downKeptRow = !!LANGS[sid];
+  out.downKeptSlice = slRd(langKeyOf(sid, 'letters'));
+  out.downKeptTake = dlCount();
+
+  /* ---- and one that does ---------------------------------------------- */
+  render(); await wait(20);
+  swipe(sid);
+  SRV.hits = [];
+  if (delIn(sid)) delIn(sid).click();
+  await wait(200);
+  out.deletes = SRV.hits.filter(function(h){ return h.indexOf('DELETE ') === 0; });
+  out.row = !!LANGS[sid];
+  out.slices = [];
+  for (i = 0; i < SLICES.length; i++)
+    if (slRd(langKeyOf(sid, SLICES[i])) !== null) out.slices.push(SLICES[i]);
+  out.dlAfter = dlCount();
+  out.mineMoved = (function(){
+    for (var k = 0; k < SLICES.length; k++)
+      if (slRd(langKeyOf(mineId, SLICES[k])) !== before[SLICES[k]]) return SLICES[k];
+    return '';
+  })();
+  out.mineRow = !!LANGS[mineId];
+  /* AND NOTHING WENT TO THE SOURCE'S OWN LANGUAGE. `language` and `slice` are
+     somebody else's rows; what comes out is the mark, and only the mark. */
+  out.touchedTheirLang = SRV.hits.filter(function(h){
+    return h.indexOf('/rest/v1/language?') >= 0 || h.indexOf('/rest/v1/slice') >= 0; });
+  return out;
+}, { s: seed.toString() });
+
+console.log('');
+say(gone.theirsHasRow && gone.mineHasNoRow,
+    'the switcher gives a row that slides to somebody else’s language and NOT ' +
+    'to your own — 自分の言語は設定の真ん中の行から: ' +
+    JSON.stringify(gone.saw));
+say(gone.shutAtFirst && gone.swiped && gone.openNow && gone.delUp,
+    'and a thumb dragged left across it opens it, with the 「−」 at the right end');
+say(gone.downTried && gone.downKeptRow && gone.downKeptSlice !== null &&
+    gone.downKeptTake === gone.dlBefore,
+    'a DELETE that does not land takes NOTHING — the row, the slice and the ' +
+    'ceiling are all where they were (row ' + gone.downKeptRow + ', letters ' +
+    JSON.stringify(gone.downKeptSlice) + ', took ' + gone.downKeptTake + ')');
+say(gone.deletes.length === 1,
+    'pressing it sends ONE delete to the server and the server is first: ' +
+    JSON.stringify(gone.deletes));
+say(!gone.row && gone.slices.length === 0,
+    'and then the row and every slice are gone from this phone (' +
+    (gone.slices.length ? 'left: ' + gone.slices.join(',') : 'none left') + ')');
+say(gone.dlBefore === 1 && gone.dlAfter === 0,
+    'and the ceiling has a slot free again — 取った数 ' + gone.dlBefore +
+    ' → ' + gone.dlAfter + ', which is why this road had to exist on plus');
+say(gone.mineMoved === '' && gone.mineRow,
+    'with not one byte of the person’s OWN language moved' +
+    (gone.mineMoved ? ' (' + gone.mineMoved + ' changed)' : ''));
+say(gone.touchedTheirLang.length === 0,
+    'and the source’s language was never written to — what comes off is the ' +
+    'mark and only the mark: ' + JSON.stringify(gone.touchedTheirLang));
 
 await br.close();
 if (bad.length){

@@ -338,22 +338,22 @@ const R = await pg.evaluate(async () => {
   /* 9. A が上げた言語に、B が触れない。 */
   start();
   wire(); posted = []; getted = [];
-  LANGS[langId] = { name: 'A の言語', mine: true, sid: 'A-lang' };
+  LANGS[langId] = { name: 'A の言語', mine: true };
   langOwnGot(langId, A);
   const id9 = langId;
   langStore();
   netOut(); arrive(B);
   let r9 = askRow(id9);
   unwire();
-  if (!r9.refused) no('9: B が A の言語の行を受け取った — sid=' + JSON.stringify(r9.got));
+  if (!r9.refused) no('9: B が A の言語の行を受け取った — 番号=' + JSON.stringify(r9.got));
   if (posted.length)
     no('9: B のセッションで language に POST した — owner=' +
        JSON.stringify(posted[0].body && posted[0].body.owner));
   say('9: 別のアカウントは、前の人の言語をサーバへ上げない');
 
   /* 10. 一度も上がっていない言語も、前の人のものなら上げない。
-     これが本当に失われる形です ── sid が無いので netLangRow() は
-     `owner: SESS.uid` で新しい行を作り、A の中身が B のものになります。 */
+     これが本当に失われる形です ── 行がまだ無いので netLangRow() は
+     `owner: SESS.uid` で行を作り、A の中身が B のものになります。 */
   start();
   wire(); posted = []; getted = [];
   LANGS[langId] = { name: 'A の言語', mine: true };
@@ -382,8 +382,15 @@ const R = await pg.evaluate(async () => {
   unwire();
   if (r11.refused) no('11: 本人が自分の言語の行を断られた');
   if (!posted.length) no('11: 本人の言語がサーバに作られなかった');
-  if (!LANGS[langId].sid) no('11: 作った行の sid が端末に残っていない');
-  say('11: 本人の言語は、今までどおり上がる');
+  /* そして行の番号は**送った番号**です（2026-09-10、幹一本）。端末が uuid を
+     打ち、insert に id を入れて送るので、扉の前後で番号は変わりません ──
+     `sid` を貼り直す行はもうありません。 */
+  if (!posted.length || String((posted[0].body || {}).id) !== String(langId))
+    no('11: 作った行に、この言語の番号が入っていない — ' +
+       JSON.stringify(posted.length && posted[0].body && posted[0].body.id) +
+       ' / ' + JSON.stringify(langId));
+  if (r11.got !== langId) no('11: 返ってきた番号がこの言語の番号でない');
+  say('11: 本人の言語は、今までどおり上がる ── 送った番号のまま');
 
   /* 12. uid の無い、しかし一度は上がった言語 ── 今日どの端末にもあるやつ。
      ここは端末の中に答えが無いので、**サーバに訊きます。**
@@ -391,7 +398,11 @@ const R = await pg.evaluate(async () => {
      「あなたのではない」というサーバの言葉です。憶測は一つもありません。 */
   start();
   wire(); posted = []; getted = [];
-  LANGS[langId] = { name: '前からある言語', mine: true, sid: 'old-lang' };
+  /* 鍵はその言語の番号そのものです（2026-09-10、幹一本）。「一度は上がった」
+     と言うのは `LROW`（www/core.js）── `sid` の欄がそれを言っていました。 */
+  langId = 'old-lang';
+  LANGS[langId] = { name: '前からある言語', mine: true };
+  langRowGot(langId);
   langStore();
   /* 名指しします ── `langId` ではなく。印の無い言語は 35 番のとおり次に入った
      人のものにならないので、B が入った瞬間 langForAcct() が B のために別の
@@ -414,7 +425,9 @@ const R = await pg.evaluate(async () => {
   /* そして持ち主なら通り、そのとき uid が端末に残る ── 次からは訊かない。 */
   start();
   wire(); posted = []; getted = [];
-  LANGS[langId] = { name: '前からある言語', mine: true, sid: 'old-lang' };
+  langId = 'old-lang';
+  LANGS[langId] = { name: '前からある言語', mine: true };
+  langRowGot(langId);
   langStore();
   const id12b = langId;
   langOwnGot(id12b, '');
@@ -423,22 +436,25 @@ const R = await pg.evaluate(async () => {
   let r12b = askRow(id12b);
   unwire();
   if (r12b.refused) no('12: 持ち主が自分の言語を断られた');
-  if (r12b.got !== 'old-lang') no('12: 持ち主に sid が渡らなかった');
+  if (r12b.got !== 'old-lang') no('12: 持ち主にその言語の番号が渡らなかった');
   if (langOwnOf(id12b) !== A) no('12: 通ったのに書いた人が残っていない');
   say('12: 持ち主なら通り、uid が残るので次からは訊かない');
 
   /* ---- 13-14. 自分の言語が、サーバから降りてくる ------------------------
      「前のアカウント消えたんだが？」── 消えてはいなくて、戻る道が一本も
      ありませんでした。netLangSync() は **開いている** 言語しか見ず、それを
-     LANGS[langId].sid（端末のもの）から見つけるので、端末に項目の無い言語は
+     索引（端末のもの）から見つけるので、端末に項目の無い言語は
      どうやっても届きませんでした。
 
      docs/DATA_SAFETY.md 第2則 ── 無いものを埋めて、止まる。ここで押さえるのは
      その「止まる」ほうです。埋めるだけなら簡単で、危ないのは勝つほうなので。 */
   start();
   netOut(); arrive(A);
-  /* 端末には一つ、A の言語がある（sid つき）。サーバはそれと、もう一つ返す。 */
-  LANGS[langId] = { mine: true, sid: 'here-already' };
+  /* 端末には一つ、A の言語がある（番号はサーバーのもの、幹一本）。サーバは
+     それと、もう一つ返す。 */
+  langId = 'here-already';
+  LANGS[langId] = { mine: true };
+  langRowGot(langId);
   langOwnGot(langId, A);
   langStore();
   const keepId = langId;
@@ -489,8 +505,8 @@ const R = await pg.evaluate(async () => {
        '。写しがメモリになったので、起動のたびにこれが要る');
   say('13: 既にある言語は、持っているスライスを上書きされず、欠けているスライスが埋まる');
 
-  let far = '';
-  for (const k in LANGS) if (LANGS[k] && LANGS[k].sid === 'far-lang') far = k;
+  /* 降りてきた言語の鍵は、その行の id そのものです（幹一本）。 */
+  const far = LANGS['far-lang'] ? 'far-lang' : '';
   if (!far) no('14: サーバにあった言語が端末に作られなかった');
   else {
     if (langOwnOf(far) !== A) no('14: 降ろした言語に書いた人が付いていない');
@@ -503,16 +519,19 @@ const R = await pg.evaluate(async () => {
   say('14: 端末に無い自分の言語は、スライスごと降りてくる');
 
   /* 15. そして、降ろす先に既にスライスがあったら書かない。
-     `langMint()` は時計から id を作るので、**LANGS には無いのにスライスだけ
-     残っている id** ── storage が半分だけ消えた端末、索引を失った言語 ── に
-     ぶつかりうる。そこへ書けば、それは誰かの言語を消したことになります。
-     滅多に無い形なので、id を握って直接押さえます。 */
+     **索引には無いのに、その番号のスライスだけ残っている**端末 ── 索引を
+     失った、あるいは古い版が残した鍵だけが在る（規則 22 の fallback が
+     読むほう）。そこへ書けば、それは誰かの言語を消したことになります。
+
+     2026-09-10 まで、ここは `langMint()` を握って「新しい言語はこの id に
+     なる」と決めていました。番号が一本になったので握るものがありません ──
+     降りてきた行の id がそのまま鍵で、その鍵の下に既に何かが在る、という
+     のがこの形そのものです。検査が試験対象を作り直さなくなったぶん、問いは
+     素直になりました。 */
   start();
   netOut(); arrive(A);
-  const ORPH = 'Lorphan';
+  const ORPH = 'far-2';
   slWr(langKeyOf(ORPH, 'words'), '[{"hw":"残っていた単語"}]');
-  const realMint = langMint;
-  langMint = () => { LANGS[ORPH] = { name: '', mine: true }; return ORPH; };
   netGet = (path, ok) => {
     if (path.indexOf('/rest/v1/language?select=id,name') === 0)
       return ok([{ id: 'far-2', name: 'むこうの言語' }]);
@@ -522,7 +541,7 @@ const R = await pg.evaluate(async () => {
     return ok([]);
   };
   netLangsDown(() => {});
-  netGet = realGet; langMint = realMint;
+  netGet = realGet;
 
   if (slRd(langKeyOf(ORPH, 'words')) !== '[{"hw":"残っていた単語"}]')
     no('15: 端末に既にあったスライスが降りてきたもので上書きされた ── 「勝つ」ほう');
@@ -1459,23 +1478,27 @@ const R = await pg.evaluate(async () => {
     if (m === 'DELETE') drops.push(path);
     if (ok) ok([{ id: 'srv' }]);
   };
+  /* 鍵はその言語の番号そのもの（2026-09-10、幹一本）。三つとも一度は
+     上がっているので、行が在ることを `LROW` に言っておきます ──
+     netLangDrop() がそれを読んで、行の無い言語には何も送りません。 */
   LANGS = {
-    'Lgo':   { name: '消すほう',   mine: true, sid: 'srv-go' },
-    'Lstay': { name: '残るほう',   mine: true, sid: 'srv-stay' },
-    'Lb':    { name: 'B のもの',   mine: true, sid: 'srv-b' }
+    'srv-go':   { name: '消すほう', mine: true },
+    'srv-stay': { name: '残るほう', mine: true },
+    'srv-b':    { name: 'B のもの', mine: true }
   };
+  langRowGot('srv-go'); langRowGot('srv-stay'); langRowGot('srv-b');
   langStore();
   const w30d = [{ hw: 'kano', ph: ['k'], mn: 'hill', mns: ['hill'], pos: 'n' }];
   try {
-    slWr(langKeyOf('Lgo', 'words'), JSON.stringify(w30d));
-    slWr(langKeyOf('Lgo', 'kb'), '{"lay":[]}');
-    slWr(langKeyOf('Lstay', 'words'), JSON.stringify(w30d));
-    slWr(langKeyOf('Lb', 'words'), JSON.stringify(w30d));
+    slWr(langKeyOf('srv-go', 'words'), JSON.stringify(w30d));
+    slWr(langKeyOf('srv-go', 'kb'), '{"lay":[]}');
+    slWr(langKeyOf('srv-stay', 'words'), JSON.stringify(w30d));
+    slWr(langKeyOf('srv-b', 'words'), JSON.stringify(w30d));
   } catch (e) {}
   POSTS = [{ id: 'p30d', ln: 'kano', at: 1 }]; savePosts();
   DRAFTS = [{ at: 1, ln: 'a draft', mn: '', to: '', pr: 0, pics: [], vo: null, pv: false }];
   draftsSave();
-  langId = 'Lgo'; langName = '消すほう';
+  langId = 'srv-go'; langName = '消すほう';
 
   wipeLangs();
   if (typeof popOn === 'function' && popOn()) popYes();
@@ -1483,15 +1506,15 @@ const R = await pg.evaluate(async () => {
 
   /* 消した言語の作ったものは、一つも残らない。 */
   for (const sl of SLICES)
-    if (slRd(langKeyOf('Lgo', sl)))
+    if (slRd(langKeyOf('srv-go', sl)))
       no('30d: 消した言語の ' + sl + ' が残っている');
-  if (LANGS['Lgo']) no('30d: 消した言語が索引に残っている');
+  if (LANGS['srv-go']) no('30d: 消した言語が索引に残っている');
   /* そして、それ以外は一つも動かない。 */
-  if (!LANGS['Lstay']) no('30d: 同じアカウントの別の言語まで消えた');
-  if (!LANGS['Lb']) no('30d: 別のアカウントの言語まで消えた');
-  if (!slRd(langKeyOf('Lstay', 'words')))
+  if (!LANGS['srv-stay']) no('30d: 同じアカウントの別の言語まで消えた');
+  if (!LANGS['srv-b']) no('30d: 別のアカウントの言語まで消えた');
+  if (!slRd(langKeyOf('srv-stay', 'words')))
     no('30d: 同じアカウントの別の言語の単語が消えた');
-  if (!slRd(langKeyOf('Lb', 'words')))
+  if (!slRd(langKeyOf('srv-b', 'words')))
     no('30d: 別のアカウントの言語の単語が消えた ── 2026-09-03 の形');
   if (!POSTS.length) no('30d: 投稿が消えた');
   if (!DRAFTS.length) no('30d: 下書きが消えた');
@@ -1504,7 +1527,7 @@ const R = await pg.evaluate(async () => {
     no('30d: 消していない言語をサーバーから消した ── ' + drops.join(' '));
   /* 消したあと、立っているのはこのアカウントの言語。 */
   if (!langId) no('30d: 消したあと、どの言語にも立っていない');
-  if (langId === 'Lgo') no('30d: 消した言語に立ったままになっている');
+  if (langId === 'srv-go') no('30d: 消した言語に立ったままになっている');
   if (!langOwned(langId)) no('30d: 消したあと、他人の言語に立っている');
 
   netSend = realSend30d;
@@ -1871,19 +1894,92 @@ const R = await pg.evaluate(async () => {
   if (SET.planWas !== 'pro') no('39: 買った本人の planWas が動いた — ' + SET.planWas);
   say('39: 買った本人の段は、そのまま返ってくる');
 
-  /* 40. **持ち主がまだ書かれていない端末は、何も動かさない。**空の
-     `SET.planUid` はこの章より前の端末で、そこにある段が誰のものかは
-     **決まっていません**（docs/scope/claude-planacct.md）。動かさないほうが
-     今日と同じ振る舞いなので、名前を書き留めるだけです。 */
+  /* 40. **持ち主が書かれていない端末も、例外ではない。**
+     「1アカウントに1課金ですけど。他のアカウントについてくるわけねえだろ」
+     OWNER 2026-09-11。
+
+     ここは 2026-09-11 まで逆でした ── 「名前を書き留めるだけで段は動かさない」。
+     空の `SET.planUid` を「この端末を持っている人の段」と読む枝で、それが
+     オーナーの断った一文です。**誰が買ったか誰も言えない段は、その人の買った
+     ものではありません。**測ってから消しました ── 印の無い端末に `pro` が
+     残っていると、次に入ったアカウントにそれが付き、`planWas` も一緒に
+     残るので capLapse() は何も言わず、画面に他人の購読が載るだけでした。
+
+     取り上げてはいません。Keychain には書き戻さないので、買った人の段と
+     名前はそこに残ります（39番）。 */
   start();
   netOut();
   SET.plan = 'pro'; SET.planWas = 'pro'; SET.planUid = ''; save();
+  arrive(B);
+  if (plan() !== 'free')
+    no('40: 持ち主の書かれていない端末の段が、入った人に付いてきた — ' + plan());
+  if (SET.planWas !== 'free')
+    no('40: planWas が一緒に下りていない — ' + SET.planWas);
+  const said40 = [];
+  const realPop40 = window.openCapLapse;
+  window.openCapLapse = () => { said40.push('lapse'); };
+  capLapse();
+  window.openCapLapse = realPop40;
+  if (said40.length)
+    no('40: 別人の解約が知らされた — ' + JSON.stringify(said40));
+  say('40: 持ち主の書かれていない端末も例外ではない ── 段は付いてこない');
+
+  /* 40b. **段は設定の預け写しに乗らない。**答えを一つにするのはこの一行です。
+     `setFor()` は別のアカウントが入るとき、この人の設定を
+     `lingua.set.<uid>` に預けます ── そこに段が入っていると、`planFor()` が
+     free から始めた直後に `setFor()` がファイルから戻し、「この人は何を
+     払っているか」の答えが**あとに走ったほうの勝ち**になります。実機では
+     もっと悪く、`setOnDisk()` が段を設定ファイルから外しているのは、その
+     ファイルが PC のバックアップに入るからで、預け写しは生の `SET` から
+     作られていたのでその一行を通っていませんでした。
+
+     `SET_PLAN`（`www/core.js`）がその一行です。`planWas` も一緒 ──
+     Keychain から段が戻り `planWas` がファイルから戻ると、capLapse() が
+     契約していない人に「解約されました」と言います。
+
+     **これは今日そこに出ている段の間違いではありません。**`planFor()` が
+     `setFor()` より先に走るので、預けられる段はいつも free です。消して
+     いるのは、段を運べるファイルと、**どちらが最後に走ったかで答えが
+     変わる形**のほうです（CLAUDE.md § Simple ── 一つの問いに二つの道）。
+     赤は見ました：`SET_PLAN` を `setAcctKeys()` に読ませないと、預け写しが
+     `plan` と `planWas` を持って出てきます。 */
+  start();
   arrive(A);
+  SET.plan = 'pro'; SET.planWas = 'pro'; save();
+  netOut();
+  arrive(B);
+  let park40 = null;
+  try { park40 = JSON.parse(localStorage.getItem('lingua.set.' + A) || 'null'); } catch (e) { park40 = null; }
+  if (!park40) no('40b: 預け写しそのものが無い — setFor() が預けていない');
+  else {
+    if (park40.plan !== undefined)
+      no('40b: 預け写しが段を運んでいる — plan=' + JSON.stringify(park40.plan));
+    if (park40.planWas !== undefined)
+      no('40b: 預け写しが planWas を運んでいる — ' + JSON.stringify(park40.planWas));
+  }
+  say('40b: 段と planWas は設定の預け写しに乗らない ── 段の道は一本');
+
+  /* 40c. **買った本人からは何も取らない ── 戻ってきたら、サーバーが答える。**
+     39番は起動の道（Keychain が注入した二つ）です。ここはその裏で、
+     Keychain を読み直す起動が無いとき ── ブラウザ、あるいは同じ起動のうちに
+     入り直したとき ── 段は free から始まり、**答えるのはサーバー**です。
+     「A が戻れば A の段はサーバーが答える」。 */
+  start();
+  arrive(A);
+  SET.plan = 'pro'; SET.planWas = 'pro'; save();
+  netOut();
+  arrive(B);
+  netOut();
+  arrive(A);
+  if (plan() !== 'free')
+    no('40c: 端末の写しが答えた — サーバーに訊く前に ' + plan());
+  const realSend40 = netSend;
+  netSend = (m, path, body, tok, ok) => ok({ plan: 'pro' });
+  netPlanVerify([], () => {});
+  netSend = realSend40;
   if (plan() !== 'pro')
-    no('40: 持ち主の書かれていない端末で段が動いた — ' + plan());
-  if (SET.planUid !== A)
-    no('40: 持ち主を書き留めていない — ' + JSON.stringify(SET.planUid));
-  say('40: 持ち主の書かれていない端末は、名前を書き留めるだけで段は動かさない');
+    no('40c: 買った本人の段がサーバーから戻ってこない — ' + plan());
+  say('40c: 買った本人の段は、戻ってきたときサーバーが答える');
 
   /* 41. **planWas も一緒に下りる。**飾りではありません。下りないと起動時の
      capLapse() が pro → free を「解約された」と読み、別人の段を基準にした
@@ -2504,7 +2600,9 @@ const R = await pg.evaluate(async () => {
        この言語はサーバーに在る（sid）が、この端末はスライスを一つも
        持っていない ── 起動直後そのもの（規則 22、スライスは記憶の中）。 */
     PULL_GOT = {}; PULL_OUT = {}; PULL_WAIT = {};
-    LANGS[langId] = { name: 'Shango', mine: true, sid: SID59, uid: SESS.uid };
+    langId = SID59;
+    LANGS[langId] = { name: 'Shango', mine: true, uid: SESS.uid };
+    langRowGot(langId);
     slRm(langKey('wld'));
     WLD = {};
     /* 何も聞いていない状態。LPUB は記憶の中の答えで、この端末が持つ意見では
@@ -2643,14 +2741,23 @@ const R = await pg.evaluate(async () => {
      言っていない投稿ではそちらを読んでいました。だから**この端末が自分で
      出した数が、直しようもなく画面に残り**、別の端末は違う数を出します。
 
-     四本訊きます:
+     **2 は 2026-09-09 に上書きされました。**「Twitter もその仕様なはず。
+     ハート押して 1 つくやん？サーバー飛んでないならハートが消えるでいいん
+     じゃない？」OWNER。♡ は**押した瞬間に点いて数が 1 動き**、届かなければ
+     消えて数が戻ります。何も言いません。動くのは**画面だけ**で、端末の写し
+     には一バイトも書きません ── そこが 1 と喧嘩しない所です：写しは今も
+     読まれず、書かれず、「押したか」の二つ目の答えは端末に無い（`PMARK` は
+     走っているあいだのメモリで、答えが来た瞬間に消えます）。
+
+     五本訊きます:
      1. 写しの中の数は読まない ── `li:99 lime:true` を持つ投稿が 0 と空の心
-     2. 押した瞬間は動かない ── 答えが戻ってから動く
-     3. 戻ってきたら、サーバーが数えた数になる（自分で足さない）
-     4. 落ちたら何も動かない。そして写しの欄は書き換えも削除もされない
+     2. 押した瞬間に♡が点いて数が 1 動く
+     3. 戻ってきたら、サーバーが数えた数になる（自分で足したままにしない）
+     4. 落ちたら押す前に戻る。そして写しの欄は書き換えも削除もされない
+     5. 押しているあいだも、端末の写しには何も書かれていない
 
      赤を見た形（2026-09-09）: `postNLike()` に `: ((p && p.li)||0)` を戻すと
-     1 が赤（99 が出る）。`postLike()` を先に動かす形に戻すと 2 が赤。 */
+     1 が赤（99 が出る）。`postLike()` を答え待ちの形に戻すと 2 が赤。 */
   start();
   netOut(); arrive(A);
   {
@@ -2685,8 +2792,16 @@ const R = await pg.evaluate(async () => {
     const atOnceN = postNLike(postById('q1')), atOnceI = postILike(postById('q1'));
     if (!sent.length || sent[0].indexOf('/rest/v1/react') < 0)
       no('62: 押しても react に行が出ていない — ' + JSON.stringify(sent));
-    if (atOnceN !== 0 || atOnceI)
-      no('62: 答えが戻る前に画面が動いた — ' + atOnceN + '、' + atOnceI);
+    if (atOnceN !== 1 || !atOnceI)
+      no('62: 押した瞬間に♡が点かず数も動かない — ' + atOnceN + '、' + atOnceI +
+         '（「ハート押して 1 つくやん？」OWNER 2026-09-09）');
+    /* 押しているあいだも、端末の写しは触られていない。動くのは画面だけ。 */
+    {
+      const mid = postById('q1');
+      if (mid.nlike !== undefined || mid.ilike !== undefined)
+        no('62: 押した瞬間に写しへ書いた — ' +
+           JSON.stringify({ nlike:mid.nlike, ilike:mid.ilike }));
+    }
     if (release) release();
     const nowN = postNLike(postById('q1')), nowI = postILike(postById('q1'));
     if (asked.indexOf('post_seen') < 0 || asked.indexOf('likes') < 0)
@@ -2698,6 +2813,14 @@ const R = await pg.evaluate(async () => {
     /* 落ちたとき。何も動かず、写しの欄も触られない。 */
     netSend = (m, path, body, tok, ok2, bad2) => { bad2(null, 0, 'down'); };
     netGet = (path, ok2) => ok2([]);
+    /* 落ちた♡は、押す前に戻る ── 数もサーバーの 12 のまま。 */
+    postLike('q1');
+    {
+      const f62 = postById('q1');
+      if (postNLike(f62) !== 12 || !postILike(f62))
+        no('62: 落ちた♡が押す前に戻っていない — ' + postNLike(f62) + '、' +
+           postILike(f62));
+    }
     postBoost('q1');
     const q62 = postById('q1');
     if (postNBoost(q62) !== 0 || postIBoost(q62))
@@ -2708,7 +2831,8 @@ const R = await pg.evaluate(async () => {
 
     netSend = realSend62; netGet = realGet62;
     say('62: 投稿の数と自分が押したかはサーバーのもの ── 写しの数は読まず、' +
-        '押した瞬間は動かず、戻ってきた数になり、落ちれば何も動かない');
+        '♡は押した瞬間に点いて数が動き、戻ってきたらサーバーが数えた数になり、' +
+        '落ちれば押す前に戻る（写しには一バイトも書かない）');
   }
 
   /* ---- 63. 書記体系は言語のもの ------------------------------------------
@@ -2734,8 +2858,8 @@ const R = await pg.evaluate(async () => {
     SET.plan = 'pro'; SET.planWas = 'pro'; save();
     const realSend63 = netSend;
     const keepL63 = LANGS, keepId63 = langId;
-    LANGS = { 'Lw': { mine:true, sid:'srv-w' },
-              'Lx': { mine:true, sid:'srv-x' } };
+    LANGS = { 'Lw': { mine:true }, 'Lx': { mine:true } };
+    langRowGot('Lw'); langRowGot('Lx');
     langOwnGot('Lw', A); langOwnGot('Lx', A);
     langId = 'Lw';
     langWsysGot('Lw', ''); langWsysGot('Lx', 'logo');
@@ -2875,26 +2999,31 @@ const R = await pg.evaluate(async () => {
   netOut(); arrive(A);
   {
     const keepL65 = LANGS, keepId65 = langId;
-    LANGS = { 'Lmade':  { mine:true,  sid:'srv-made' },
-              'Ltook':  { mine:false, sid:'srv-took' },
-              'Lasked': { mine:true,  sid:'srv-asked' } };
-    langId = 'Lmade';
-    langOwnGot('Lmade', A);          /* A が書いた */
-    langOwnGot('Ltook', B);          /* B が書いたものを A が取った */
-    langOwnGot('Lasked', '');        /* まだ聞いていない */
+    /* 鍵はその言語の番号そのもの（2026-09-10、幹一本）── `language_take` が
+       答えるのもこの番号で、突き合わせるものはありません。 */
+    LANGS = { 'srv-made':  { mine:true },
+              'srv-took':  { mine:false },
+              'srv-asked': { mine:true } };
+    langId = 'srv-made';
+    langOwnGot('srv-made', A);       /* A が書いた */
+    langOwnGot('srv-took', B);       /* B が書いたものを A が取った */
+    langOwnGot('srv-asked', '');     /* まだ聞いていない */
+    /* 「一度は上がった、しかし持ち主を誰も訊いていない」── 描かない側に
+       落ちる一つで、それを言うのは `LROW` です（www/core.js）。 */
+    langRowGot('srv-asked');
     langTookGot(['srv-took']);
     langStore();
 
-    if (LANGS.Lmade.uid || LANGS.Ltook.uid)
+    if (LANGS['srv-made'].uid || LANGS['srv-took'].uid)
       no('65: 索引にまだ uid を書いている ── ' +
-         JSON.stringify([LANGS.Lmade.uid, LANGS.Ltook.uid]));
+         JSON.stringify([LANGS['srv-made'].uid, LANGS['srv-took'].uid]));
     if (dlCount() !== 1)
       no('65: 取った数がサーバーの行数になっていない — ' + dlCount());
-    if (!langMine('Lmade')) no('65: 自分が書いた言語が自分のものでない');
-    if (langMine('Ltook'))  no('65: 他人が書いた言語が自分のものになっている');
-    if (langOwned('Lasked'))
+    if (!langMine('srv-made')) no('65: 自分が書いた言語が自分のものでない');
+    if (langMine('srv-took'))  no('65: 他人が書いた言語が自分のものになっている');
+    if (langOwned('srv-asked'))
       no('65: まだ聞いていない言語を「自分の」に倒した');
-    if (vLangs().indexOf('Lasked') >= 0)
+    if (vLangs().indexOf('srv-asked') >= 0)
       no('65: まだ聞いていない言語を画面に描いた ── 揃ってから開く');
     /* 訊いていない数は 0 ではない。 */
     langTookGot(null);
@@ -2903,13 +3032,13 @@ const R = await pg.evaluate(async () => {
     langTookGot(['srv-took']);
 
     /* アカウントを消すと、書いた言語も取った言語も端末から消える。 */
-    try{ slWr(langKeyOf('Lmade','words'), '[{"hw":"m"}]'); }catch(e){}
-    try{ slWr(langKeyOf('Ltook','words'), '[{"hw":"t"}]'); }catch(e){}
+    try{ slWr(langKeyOf('srv-made','words'), '[{"hw":"m"}]'); }catch(e){}
+    try{ slWr(langKeyOf('srv-took','words'), '[{"hw":"t"}]'); }catch(e){}
     lsWipeAcct(A);
-    if (LANGS.Lmade)  no('65: 消したアカウントが書いた言語が残っている');
-    if (LANGS.Ltook)  no('65: 消したアカウントが取った言語が残っている ── ' +
+    if (LANGS['srv-made'])  no('65: 消したアカウントが書いた言語が残っている');
+    if (LANGS['srv-took'])  no('65: 消したアカウントが取った言語が残っている ── ' +
                           '書いたのは他人なので「誰の」では見つからない');
-    if (slRd(langKeyOf('Lmade','words')) || slRd(langKeyOf('Ltook','words')))
+    if (slRd(langKeyOf('srv-made','words')) || slRd(langKeyOf('srv-took','words')))
       no('65: 消したアカウントの単語が残っている');
 
     LANGS = keepL65; langId = keepId65; langStore();

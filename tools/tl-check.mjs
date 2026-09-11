@@ -126,6 +126,33 @@ const r = await pg.evaluate(({ s }) => {
   out.profileReplies = pfList().filter((p) => !!p.to).length;
   pfTab = 'posts';
 
+  /* ---- 4c: @名前 で始めた投稿は「返信」の側 ------------------------------
+     「返信にだけ出して」 OWNER 2026-09-09.
+
+     本文が `@x ` で始まる投稿は、その人への投稿になりました（2026-09-07）。
+     答えている投稿が無いので `to` は空で、持っているのは `toh` だけです。
+     「返信」を `!!p.to` で選んでいるあいだ、その投稿は「投稿」の側に並んで
+     いました。
+
+     何を「返信」と呼ぶかの答えは一つ ── `postToWho(p)`、返信先の人が
+     いるかどうか。二つの欄はその一つの問いの表と裏なので、両方訊きます:
+     @ 始まりは返信に在って投稿に無い、ふつうの投稿はその逆。片方だけだと、
+     どちらの欄にも出る（あるいは消える）状態が緑のまま通ります。 */
+  POSTS.push({ id:'AT-1', at:Date.now()-5, lang:mine.lang, lname:'Vethi',
+               ln:'atline', mn:'atline', who:'Aya', hd:meHandle(),
+               mine:true, to:'', toh:'iri' });
+  POSTS.push({ id:'PL-1', at:Date.now()-4, lang:mine.lang, lname:'Vethi',
+               ln:'plain', mn:'plain', who:'Aya', hd:meHandle(),
+               mine:true, to:'', toh:'' });
+  NAV = [{ r:'profile', a:'' }];
+  const ids = (k) => { pfTab = k;
+    return pfList().map((p) => p.id); };
+  out.atInRe    = ids('re').indexOf('AT-1') >= 0;
+  out.atInPosts = ids('posts').indexOf('AT-1') >= 0;
+  out.plainInRe    = ids('re').indexOf('PL-1') >= 0;
+  out.plainInPosts = ids('posts').indexOf('PL-1') >= 0;
+  pfTab = 'posts';
+
   /* ---- 4b: and the third list is one day's ------------------------------
      「絞り込みに「#今日のお題」を足す。その行を選ぶと、その日のお題に答えた
      投稿だけ」 OWNER 2026-09-06.
@@ -455,6 +482,43 @@ const r = await pg.evaluate(({ s }) => {
     NAV = [{ r:'feed' }]; window.route = 'feed';
   }
 
+  /* ---- A FOLLOW AND A BLOCK ARE ONE ROW, AND THE COLUMNS ARE THE ARGUMENT
+     netFollow() and netBlock() were written out twice, 1100 lines apart, and
+     are netPairRow() once now (docs/DUPLICATES.md 14). Their two columns used
+     to be literals AT each site; they are positional arguments, so a swapped
+     pair writes 「they follow you」 where 「you follow them」 was meant, with
+     nothing thrown, nothing on screen, and no check anywhere the wiser --
+     tl-check stubs netFollowers()/netFollowing() and has never driven these
+     two at all.
+
+     Asked at the WIRE and per column, because the counts agreeing while the
+     pairing is shifted is the only way this breaks. Both directions: the row
+     made, and the row taken away by the same two columns in the same roles. */
+  {
+    const sent = [];
+    const realS1 = netSend1, realS = netSend, realG = netGet;
+    netSend1 = function (m, p, b, t, ok) {
+      p = String(p);
+      /* The handle turned into an account. Not counted -- it is the lookup
+         the two share and not the row either of them writes. */
+      if (p.indexOf('/rest/v1/profile?select=id') === 0) { ok([{ id:'them' }], 200); return; }
+      sent.push({ m: m, p: p, b: b });
+      ok([], 200);
+    };
+    netSend = function (m, p, b, t, ok, bad, up) { netSend1(m, p, b, t, ok, bad, up, true); };
+    netGet = function (p, ok, bad) { netSend('GET', p, null, '', ok, bad); };
+    const one = (fn) => { sent.length = 0; fn(); return sent[0] || {}; };
+    const nop = function () {};
+    const fOn = one(() => netFollow('iri', true, nop, nop));
+    const bOn = one(() => netBlock('iri', true, nop, nop));
+    const fOff = one(() => netFollow('iri', false, nop, nop));
+    const bOff = one(() => netBlock('iri', false, nop, nop));
+    out.pairOn = fOn.m + ' ' + fOn.p + ' ' + JSON.stringify(fOn.b) + ' | ' +
+                 bOn.m + ' ' + bOn.p + ' ' + JSON.stringify(bOn.b);
+    out.pairOff = fOff.m + ' ' + fOff.p + ' | ' + bOff.m + ' ' + bOff.p;
+    netSend1 = realS1; netSend = realS; netGet = realG;
+  }
+
   return out;
 }, { s: seed.toString() });
 
@@ -486,6 +550,20 @@ if (!r.foReplies)
 if (!r.profileReplies)
   say('a person’s 返信 tab lost its replies. One list was asked about, ' +
       'not the post.');
+
+if (!r.atInRe)
+  say('a post that begins @x is not in the 返信 tab. 「返信にだけ出して」 ' +
+      'OWNER 2026-09-09 — it carries `toh` and no `to`, and 返信 must be ' +
+      'one question: postToWho(p).');
+if (r.atInPosts)
+  say('a post that begins @x is ALSO in the 投稿 tab. 「返信にだけ出して」 ' +
+      '— the two lists are one question’s two sides, so taking it into 返信 ' +
+      'means taking it out of 投稿.');
+if (r.plainInRe)
+  say('an ordinary post is in the 返信 tab. The question widened past what ' +
+      'a reply is.');
+if (!r.plainInPosts)
+  say('an ordinary post left the 投稿 tab.');
 
 if (r.ownFollowing.indexOf('aya') >= 0 || r.ownFollowers.indexOf('aya') >= 0)
   say('your own handle is in your own follow lists. `follow` in ' +
@@ -626,6 +704,26 @@ if (r.folReq !== 1 || r.ntfReq !== 1)
       'language on the same row — and never one per row, and never a second ' +
       'round trip for the language. 「毎回1読み込みだろ？」');
 
+const PAIR_ON =
+  'POST /rest/v1/follow {"follower":"u","followed":"them"} | ' +
+  'POST /rest/v1/block {"actor":"u","blocked":"them"}';
+const PAIR_OFF =
+  'DELETE /rest/v1/follow?follower=eq.u&followed=eq.them | ' +
+  'DELETE /rest/v1/block?actor=eq.u&blocked=eq.them';
+if (r.pairOn !== PAIR_ON)
+  say('following and blocking somebody by handle writes\n    ' + r.pairOn +
+      '\n  and it has to be\n    ' + PAIR_ON +
+      '\n  One function writes both rows and the table and its two columns ' +
+      'are the argument, so the pairing is what breaks and nothing throws ' +
+      'when it does.');
+if (r.pairOff !== PAIR_OFF)
+  say('unfollowing and unblocking somebody by handle asks\n    ' + r.pairOff +
+      '\n  and it has to be\n    ' + PAIR_OFF +
+      '\n  The same two columns in the same roles, or the row taken away is ' +
+      'somebody else\u2019s.');
+
+console.log('a follow and a block are one row written by one function, and ' +
+            'the columns are its argument: ' + r.pairOn);
 console.log('nobody is a 「?」 that becomes a name: a post carries its writer ' +
             '(feed and thread ask about nobody), and a list of people is ' +
             'asked for in one request before the screen opens (' +

@@ -263,6 +263,32 @@ for (const spec of shots) {
      Taken down the way the No takes it down, so nothing is drawn that the app
      would not draw. */
   await pg.evaluate(() => { if (typeof popOff === 'function') popOff(); });
+  /* AND IT FADES. popOff() starts the pop going rather than removing it, so a
+     screenshot taken in the same turn catches it half gone -- a ghost of
+     「接続できません」 over the middle of the picture, faint enough to read as
+     a rendering fault in the screen itself. Waited out rather than removed by
+     hand: what is wanted is the app with no pop on it, not the app with the
+     pop cut out of it. */
+  await pg.waitForTimeout(260);
+  /* AND IT ARRIVES LATE, so once is not enough. Measured 2026-09-11: the
+     requests a launch makes do not fail when they are made -- they fail when
+     whatever stands in front of this container gives up, about fifteen seconds
+     after load, two of them in the same millisecond. That lands on whichever
+     screen is being photographed at that moment, which is nearly never the
+     first, and the dismissal above is a 380ms window against a burst that can
+     arrive at any point in a run. 「接続できません」 was over the middle of one
+     picture in three.
+
+     So the screen is asked whether a pop is up -- popOn() is the app's own
+     answer -- and dismissed until it says no, with the last look immediately
+     before the shutter. Four is a bound rather than a guess: a pop that keeps
+     coming back is the app doing something worth seeing, and a loop with no end
+     would hang the run instead of showing it. */
+  for (let i = 0; i < 4; i++) {
+    if (!await pg.evaluate(() => typeof popOn === 'function' && popOn())) break;
+    await pg.evaluate(() => { if (typeof popOff === 'function') popOff(); });
+    await pg.waitForTimeout(260);
+  }
   const covered = await pg.evaluate(() => !!document.getElementById('splash') ||
                                           !document.getElementById('app') ||
                                           !document.getElementById('app').innerHTML.trim());

@@ -114,7 +114,7 @@ function setWsys(k){
 
   if(WSYS.indexOf(k)<0) return;
   /* There is no second guard under this one. It used to read
-     `if(!can('wsys') && k!=='alpha'){ goPlans(); return; }` -- the free plan
+     `if(!can('wsys') && k!=='alpha'){ go('plans'); return; }` -- the free plan
      carried off to the price list, which is the older sentence
      「無料はタップすると課金ページに飛ばされる」 and 「ポップだって。その
      古いのは消して」 OWNER 2026-09-05 is what replaced it. Said as

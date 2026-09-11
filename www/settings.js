@@ -770,7 +770,7 @@ function wipeHere(uid){
 function openCapLapse(){
   openForm('lapse:', t('cap.lapse.h'),
     '<div class="note" style="margin-bottom:18px">'+t('cap.lapse.d')+'</div>'+
-    '<button class="btn" style="width:100%"' + DO('goPlans') + '>'+
+    '<button class="btn" style="width:100%"' + DO('go', ["plans"]) + '>'+
       esc(t('up.cta'))+'</button>'+
     '<button class="btn ghost" style="width:100%;margin-top:10px"' + DO('back') + '>'+
       esc(t('cap.lapse.ok'))+'</button>');

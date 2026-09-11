@@ -79,53 +79,123 @@ grep -n "capStop\|capOK" www/wordsheet.js      capOK は出ない
 呼び側が先にシートを閉じても緑のまま通ります。`tools/plan-check.mjs` に
 「上限のポップを出した後も同じ画面に立っている」を足すのが本筋です。
 
-## 8. プラン画面への行き方が二通り。片方はシートを閉じない ── **半分**
+## 8. プラン画面への行き方が二通り。片方はシートを閉じない ── **閉じた**
 
-同じ決定で決まります（「後ろを閉じない」）。`goPlans()` から `closeSheet()`
-を消したので、**道は一本**になりました。プランから戻ると、押したその画面に
-立ちます。
+**一箇所は `go('plans')` です。**二つ目の名前だった `goPlans()`
+（`www/wordsheet.js`）と `act-map.js` の行を消し、`DO('goPlans')` を書いて
+いた五箇所 ── `www/settings.js` `www/words.js` `www/keyboard.js`
+`www/phases.js` `www/sound.js` ── を `DO('go', ["plans"])` にしました。
+`www/wsys.js` にあったのは注記だけです。前の版がこの一覧に挙げていた四つの
+うち二つ（`settings.js` `words.js`）は数え落としで、五箇所ありました。
 
-**残っているのは名前だけです。**`goPlans()` の中身は `go('plans')` 一行なので、
-いまは同じ道に付いた二つ目の名前です。消すには `DO('goPlans')` を書いている
-`www/keyboard.js` `www/phases.js` `www/sound.js` と、直に呼んでいる
-`www/wsys.js` が要ります。
-
-```
-grep -rn "goPlans" www/*.js
-```
-
-## 9. 上限の警告ボタンが四箇所。うち一つだけ形が違う ── **開いている**
-
-`capwarn` を着た「あと N 語です」のボタンが `www/words.js` `www/phases.js`
-`www/sound.js` `www/home.js` の四箇所。前の三つは名前以外一字も違わず、
-四つ目（`capBanner`）だけ余白が無い。行き方の違いは 8番で消えました。
-`www/phases.js` と `www/sound.js` は別のセッションのものです。
-
-## 10. 「まだ何も無い」の空表示が九箇所 ── **半分**
-
-`emptyBox(text)`（`www/shell.js`）が箱です。寄せたのは四箇所:
-`goneBox()` `fResultsHTML()` `fPickedHTML()` `wordsBodyHTML()`。
-
-**残る五箇所は持ち主が違います** ── `www/sns.js`（三つ）`www/me.js`
-`www/notes.js`。`www/notes.js` だけは二行目（`.empty .es`）を持つので、
-その引数はそのファイルが回ってきた日に足すもの。いま足すと誰も通らない枝に
-なります。
-
-`www/mod.js` の `.mnone` は**別の見た目の空表示**で、まだ `.empty` と
-違います（余白 24px 対 54px、書体も大きさも継承）。通報の画面だけ他のどの
-画面とも違って見えます。
+**巻き添えが一つ ── `tools/kb-check.mjs`。**
+`out.freeNoUpsell = vKb().indexOf('goPlans') < 0` と、`helpGoNames` の
+`.filter(n !== 'goPlans')` が名前で書かれていました。名前を消すと前者は
+**バグを戻しても緑**になり、後者は何にも当たらない除外 ── `box-check` が
+「腐った baseline は許可になる」と言うあれです。主張の方を残して書き直しました:
+無料のキーボード画面のどの control も `go` を `plans` で言わない、と
+**描いたものに訊きます**。バグ（`vKb()` に `go plans` のボタンを足す）を
+戻して赤を見てから直しています。除外は消しました。
 
 ```
-grep -rn 'class="empty"' www/*.js
+grep -rn "goPlans" www/ tools/          何も出ない
+npm run kb                              「no Upgrade stands under it」
+```
+
+## 9. 上限の警告ボタンが四箇所。うち一つだけ形が違う ── **閉じた**
+
+**一箇所は `capWarnHTML(text)`（`www/shell.js`）です。**`www/words.js`
+`www/phases.js` `www/sound.js` `www/home.js` の四箇所を消しました。文は
+画面のもの（「あと N 語です」と「N が表示されていません」は違う事実）、
+ボタンは違います。
+
+**四つ目の余白なしは消えました。**`capBanner()`（目次）に
+`margin:14px 0 0` が付き、他の三つと同じ位置に立ちます。**目次だけ見た目が
+変わり、残り三つは一バイトも変わりません**（スクショで前後を比べました）。
+
+```
+grep -rn "capwarn" www/*.js      www/shell.js の一行だけ
+```
+
+**押せるボタンは動きません。**`npm run press` は `buttons pressed: 15687`
+で据え置きです。
+
+**この四つはどの walk も通りません。**上限に届いた状態が
+`tools/fixture.mjs` に無いので、`press` も `act-check` も `shot.mjs` も
+この四つのボタンを一度も描いていません。写真は面を四つ足して撮り、
+**足した面は commit していません** ── 面を足すと `buttons pressed` が動き、
+この枝が「動かないこと」で示している他の番号が読めなくなるからです。
+**恒久的に足すかはリーダーの決めごとで、`docs/BACKLOG.md` にありません。**
+
+## 10. 「まだ何も無い」の空表示が九箇所 ── **閉じた**
+
+**一箇所は `emptyBox(text, sub, more, bad)`（`www/shell.js`）です。**残って
+いた五箇所 ── `www/sns.js`（`snsNone` `snsNoneFo` と凍結の表示）`www/me.js`
+`www/notes.js` ── を寄せ、`www/mod.js` の `.mnone` 六箇所も同じ箱にしました。
+`.mnone` の CSS 二行は `www/index.html` から消えています。
+
+**引数は三つ増え、三つとも呼ぶ人がいます**（誰も通らない枝は作っていません）:
+
+```
+  sub    二行目（.empty .es） ── メモの一覧と、凍結されたタイムライン
+  more   その下に入る markup ── 凍結の異議申し立てリンク一箇所
+  bad    同じ箱を「読めなかった」の側で言う ── 通報と運営の三箇所。
+         赤は www/index.html に既にある .bad が付ける（CSS は足していない）
+```
+
+**通報と運営の画面だけ見た目が変わります。**`.mnone` は余白 24px・書体も
+大きさも継承でしたが、`.empty` は 54px・見出しの書体・1.3rem。他のどの画面
+とも違って見えていたのが、同じになりました。前後のスクショ:
+
+```
+  shots/dup10-reports-none-before-ja.png    通報が無い
+  shots/dup10-reports-none-after-ja.png
+  shots/dup10-reports-error-before-ja.png   通報が読めなかった（赤）
+  shots/dup10-reports-error-after-ja.png
+  shots/dup10-recovery-none-before-ja.png   復旧、見つからない
+  shots/dup10-recovery-none-after-ja.png
+  shots/dup10-recovery-error-before-ja.png  復旧、読めなかった（赤）
+  shots/dup10-recovery-error-after-ja.png
+```
+
+**残り五箇所は一バイトも変わりません。**`www/sns.js` `www/me.js`
+`www/notes.js` は同じ markup を組み立てます（`npm run press` は
+`buttons pressed: 15687` で据え置き）。
+
+`www/sns.js` の `.empty.snswait` は寄せていません ── 中身が文ではなく
+回っている印で、「まだ何も無い」ではなく「まだ答えが来ていない」という
+別の状態だからです（`snsWaitHTML()` の注記がその理由を書いています）。
+
+**`.mnone` の六箇所と、赤い三つは、どの walk も通りません。**
+`tools/fixture.mjs` に `MODERR` も `ADREC_ERR` も `admin.rec.none` も無い
+ので、写真は面を五つ足して撮り、**足した面は commit していません**（9番 と
+同じ理由）。
+
+```
+grep -rn "mnone" www/                  注記一行だけ
+grep -rn 'class="empty' www/*.js       shell.js の箱と snswait だけ
 ```
 
 ## 11. 単語の行が一つの関数の中で二回 ── **閉じた**（`wEntryLines()`）
 
-## 12. 通報の画面のエラーと空が二回 ── **開いている**
+## 12. 通報の画面のエラーと空が二回 ── **閉じた**
 
-`www/mod.js` の二箇所。四行が一字も違わず二回。`www/mod.js` の注記は
-「二つの一覧が食い違うのをこの章は拒む」と書いていますが、共有しているのは
-`modRow` だけです。**`www/mod.js` は別のセッションのものです。**
+**一箇所は `modListHTML(rows)`（`www/mod.js`）です。**`vMod()` と `vAdmin()`
+が書いていた四行を消しました。共有していたのが `modRow` だけで、その**周り**
+の一覧が二回書かれていた、というのが元の姿です。
+
+三つの状態は三つのまま残っています ── 読めなかった・答えは来たが空・行。
+「空」と「読めていない」は枝を分けたままです。
+
+**返り値は一字も変わりません**（`npm run press` は `buttons pressed: 15687`
+で据え置き）。`page-check` も緑 ── `modListHTML` が返すのは本体だけで、
+`<div class="view">` は `vMod()` `vAdmin()` が巻くので、13番 で一度やり直した
+「一箇所にしたらページ全体を返していた」形にはなっていません。
+
+```
+grep -n "modListHTML" www/mod.js      定義一つと呼び出し二つ
+npm run page
+```
 
 ## 13. 言語の記事の Edit ボタンが二回 ── **閉じた**
 
@@ -144,20 +214,63 @@ grep -rn 'class="empty"' www/*.js
 npm run page
 ```
 
-## 14. handle から id を引き当てるのが二回 ── **開いている**
+## 14. handle から id を引き当てるのが二回 ── **閉じた**
 
-`www/net.js` の `netBlock` と `netFollow`。同じ問い合わせと同じ後始末が
-1100 行 離れて二回。**その片方の上に「in the one place that has to」と
-書いてあります。****`www/net.js` は別のセッションのものです。**
+**一箇所は `netPairRow(tab, mine, theirs, handle, on, ok, bad)`
+（`www/net.js`）です。**`netBlock` と `netFollow` の中身を消しました。
+表とその二列が引数です ── `follow` は (follower, followed)、`block` は
+(actor, blocked)。「in the one place that has to」と書いてあった注記も
+消えています。
+
+**三箇所目があり、畳んでいません。**`netWhoseId()` も
+`profile?select=id&handle=eq.` を送りますが、**失敗の意味が違います** ──
+あれは「要求が倒れた」と「その handle の行が無い」を同じ `bad` で答えます。
+`netFollow` は行が無いのを `ok()`（作る行が無いだけで、何も壊れていない）、
+倒れたのを `bad()`（画面がそう言えるように）としています。畳むと、倒れた
+follow が「そんな handle は無い」として `ok()` で返り、**ボタンが起きて
+いない成功を報告します**。だから畳んでいません。**どうするかは決めごとで、
+ここでは決めません。**
+
+**押さえるものが何も無かったので、`tools/tl-check.mjs` に主張を二つ
+足しました。**二列は元々それぞれの場所に literal で書いてあり、いまは
+位置引数です ── 入れ替わると「あなたが相手をフォロー」の代わりに
+「相手があなたをフォロー」の行が書かれ、**何も投げず、画面にも出ず、どの
+検査も気づきません**（`tl-check` は `netFollowers()`/`netFollowing()` を
+差し替えるだけで、この二つを一度も走らせていませんでした）。**線の上で**、
+列ごとに訊きます。**バグを二つ戻して赤を見ています** ── `follow` の二列を
+入れ替えたときと、`block` を `follow` の表に書いたとき。
 
 ```
-grep -n "in the one place that has to" www/net.js
+npm run tl
 ```
 
-## 15. 写真を縮める計算が二回 ── **開いている**
+## 15. 写真を縮める計算が二回 ── **閉じた**
 
-`www/post.js` の `postThumb` と `pwPicKeep`。違うのは上限の定数だけ。
-**`www/post.js` は別のセッションのものです。**
+**一箇所は `postShrink(url, cap, ok)`（`www/post.js`）で、上限は引数です。**
+`postThumb`（`POST_THUMB`）と `pwPicKeep`（`POST_PIC`）の中の計算を消しました。
+k も丸めも canvas も `POST_PICQ` も同じで、違っていたのは定数だけでした。
+
+**答えは三つで、二つではありません** ── 二つに畳むと失敗の扱いが変わります:
+
+```
+  out   JPEG
+  ''    canvas が拒んだ ── 呼び側は言う（batch でも止まる）
+  null  写真が読めなかった ── batch は次へ進む
+```
+
+`whole`（上限の内側だった）は呼び側が読みます。小さい写真に小さい写しは
+作らず、上げる方は同じ大きさでも焼き直します（JPEG でないかもしれないし、
+`POST_BYTES` に収めるのが `POST_PICQ` だから）。
+
+**`post-check` が押さえるのは半分でした。**小さい写しの側（`POST_THUMB`）は
+二つの主張が持っていましたが、**composer が KEEP する方の上限は誰も訊いて
+いませんでした** ── `pwPicKeep` に `POST_THUMB` を渡すバグを入れて回して、
+全部緑のまま通ります。主張を一つ足しました（1800×1200 を composer に入れたら
+900×600 で残る）。**赤を見てから直しています。**
+
+```
+npm run post
+```
 
 ## 16. 形から新しい語を作る所が二回 ── **閉じた。二回ではなく三回でした**
 
@@ -165,22 +278,90 @@ grep -n "in the one place that has to" www/net.js
 `addFmWrite()` の三つが呼びます。三つ目の注記は「made the way fmrAdd()
 makes one」と自分で言っていて、それを持っているものは何もありませんでした。
 
-## 17. サーバーの一覧を読む所が二組 ── **開いている**
+## 17. サーバーの一覧を読む所が二組 ── **閉じた**
 
-`netFollowing`/`netFollowers` と `netSearchSaved`/`netRecent`。
-**`www/net.js` は別のセッションのものです。**
+**一組目（`netFollowing`/`netFollowers`）は先に閉じていました** ──
+`netFollowRows(want, by, ok, bad, handle)`。この枝が読み直した時点で
+`www/net.js` に一つだけあります。
 
-## 18. ファイルを取り込むボタンが二箇所 ── **開いている**
+**二組目の一箇所は `netWordRows(tab, when, ok, bad)` です。**
+`netSearchSaved`（星）と `netRecent`（履歴）の中身を消しました。表の名前と、
+いつを言う列とが引数です。二つの表は別のままです ── 星は選んだ言葉、履歴は
+打った言葉で、一つの表にすると星を外したときに履歴が一緒に消えます
+（`supabase/schema.sql` がその理由を書いています）。**一つになったのは
+読み方だけです。**
 
-`www/import.js` の `impFileHTML` と `www/sheet.js` の `shInFileHTML`。
-`www/sheet.js` の注記が「文字が違うから共有していない」と自分で書いています。
-文字は引数で渡せます。**どちらも別のセッションのものです。**
+**押さえるものが何も無かったので、`tools/find-check.mjs` に主張を二つ
+足しました。**表も列も literal から位置引数になり、取り違えても何も投げま
+せん ── `recent_search` に `created_at` を訊けば PostgREST は 400 を返し、
+画面は「履歴なし」になって、理由はどこにも出ません。**線の上で**、出ていった
+path をそのまま読みます。**バグを二つ戻して赤を見ています** ── 履歴に
+`created_at` を渡したときと、星に `recent_search` を渡したとき。
 
-## 19. 文字を行に折る所が二つ ── **待ち（読む人の判断）**
+**同じ形がもう一組、すぐ隣にあります。直していません。**
+`netSearchDrop` と `netRecentDrop` は表の名前だけが違う DELETE で、この
+番号が言っているのは「一覧を**読む**所」です。**別の件として起こすかは
+決めごとで、ここでは決めません。**書く側（`netSearchSave` と
+`netRecentAdd`）は違います ── 履歴は `at` を body に入れ、
+`resolution=merge-duplicates` で送ります。
 
-`cardSplit` と `cardWrap`（`www/card.js`）。折る繰り返しは同じで、行数の
-上限があるか無いかだけが違う。注記に断りがあるので**分かれていてよい方に
-近い**かもしれません。**`www/card.js` は別のセッションのものです。**
+```
+npm run find
+```
+
+## 18. ファイルを取り込むボタンが二箇所 ── **閉じた**
+
+**一箇所は `fileInHTML(cls, inner, id, accept)`（`www/shell.js`）です。**
+`impFileHTML()`（`www/import.js`）と `shInFileHTML()`（`www/sheet.js`）は
+**両方消しました** ── 呼び側（`impGetHTML()` と `shInHTML()`）が直に呼びます。
+片方だけ残すと 8番 で消したのと同じ「二つ目の名前」になります。
+
+`www/sheet.js` の注記が書いていた「文字が違うから共有していない」は消えて
+います。**違っていたのは四つで、四つとも引数です**:
+
+```
+  cls      set impfile / btn ghost shfile ── 一覧の行か、絵の下のボタンか
+  inner    <span class="sl">…</span> か、裸の文字か（着る class が決める）
+  id       f-file / wr-file
+  accept   辞書が受けるもの / PDF
+```
+
+**形は一つです。**無料は訊くボタン（`upFile` → `upStop()`、その場に立つ）、
+有料は同じ文字の上に native の file input を透明で重ねた `<label>`。
+`can('file')` はこの中で一度訊かれ、`shTakeIn()` がファイルの着く所でもう
+一度訊きます（画面に描いたものは門ではないので）。
+
+**返り値は一字も変わりません**（`npm run press` は `buttons pressed: 15687`
+で据え置き）。
+
+**名前を書いていた文書も同じ commit で直しました** ── `docs/FEATURES.md`
+（二箇所）`docs/PAID_FEATURES.md` `docs/BACKLOG.md` `docs/HIDEFREE.md`
+（二箇所、うち一つは「一つの関数にはしていません」という、この直しが嘘に
+した文）。`docs/CHANGELOG.md` と `docs/reports/` `docs/scope/` は、その日
+何が本当だったかの記録なので書き換えていません。
+
+## 19. 文字を行に折る所が二つ ── **待ち。読んだ結果は「分かれていてよい」**
+
+`cardSplit` と `cardWrap`（`www/card.js`）。**直していません。決めるのも
+ここではありません**（`claude/r13-dup`、2026-09-10 に読んだだけ）。
+
+**読んだ結果を一行で: 分かれていてよい。**違うのは「行数の上限があるか無いか」
+だけではありませんでした。**三つ違い、三つとも失敗の意味です**:
+
+```
+  一語が一行より広い   cardSplit は null（入らないと言う）
+                       cardWrap  はその一語だけで一行にする
+  行数が上限を超えた   cardSplit は null            cardWrap には上限が無い
+  何も無い             cardSplit は null            cardWrap は []
+```
+
+`null` は捨てられていません ── `cardLines()` が「この大きさでは入らない、
+2pt 下げてやり直す」として読みます。つまり **`cardSplit` は行を作りながら
+「入るか」を答える試しで、`cardWrap` は折るだけ**です。一つにすると、五行の
+繰り返しに旗が三本立ち、読む人は二つの意味を同時に持つことになります。
+
+**考えを変えるとしたら**、`cardLines()` が入るかどうかを別に測るように
+なった日です。そのとき `null` が要らなくなり、残る違いは上限一つになります。
 
 ## 20. 同じ説明のコメントが十一回 ── **閉じた**（`lnField()` の頭に一度だけ）
 
@@ -209,36 +390,37 @@ makes one」と自分で言っていて、それを持っているものは何�
 
 | | 数 |
 |---|---|
-| 閉じた | 12（1 2 3 4 5 6 7 11 13 16 20 21） |
-| 半分 | 2（8 名前だけ／10 五箇所） |
-| 開いている | 6（9 12 14 15 17 18） |
+| 閉じた | 20（1〜18 と 20 21） |
+| 半分 | 0 |
+| 開いている | 0 |
 | 待ち | 1（19 読む人の判断） |
 
-**残っている九件のうち八件は、`www/net.js` `www/post.js` `www/mod.js`
-`www/sheet.js` `www/import.js` `www/card.js` `www/sns.js` `www/me.js`
-`www/notes.js` `www/phases.js` `www/sound.js` にあります。**どれも
-`claude/pop` `claude/pop2` の持ち物ではないので、この枝では触っていません。
 
-**10〜19 を読み直しました（2026-09-04、`claude/pop2`）。動かせるものは
-残っていません。**要るファイルを一件ずつ:
+**8 9 10 12 14 15 17 18 を閉じました（2026-09-10、`claude/r13-dup`）。**
+`www/net.js` の二件（14 と 17）は `claude/r12-oneid` が `integ-0905` に
+入ったあと、リーダーの許しを得て同じ枝で閉じています ── 予告どおり、一つの
+セッションが `www/net.js` を持ったら二件が同時に閉じました。
+
+**残っているのは 19 だけで、直す件ではありません:**
 
 ```
-  10  半分     残り五箇所 ── www/sns.js（三つ）www/me.js www/notes.js
-  12  開いている www/mod.js
-  14  開いている www/net.js
-  15  開いている www/post.js
-  17  開いている www/net.js
-  18  開いている www/import.js と www/sheet.js
-  19  待ち      www/card.js、かつ分けてよいかは読む人の判断
+  19  待ち  www/card.js  ── 読んだ結果は「分かれていてよい」。決めるのは別
 ```
 
-**一つのセッションが `www/net.js` を持てば 14 と 17 が同時に閉じます。**
-そこだけが二件まとまっている所です。
+**決めごととして置いたものが三つあります。**どれもこの枝では決めていません:
 
-**半分だけ寄せていません。**持ち主の違うファイルに手を伸ばして四箇所のうち
-二箇所だけを一箇所にすると、その日から**二つの仕組みが並んで走ります** ──
-CLAUDE.md「新しい仕組みが古いものの穴を覆うのは、いちばん起きてはいけない
-こと」。だから寄せずに、要るファイルの名前を置いてあります。
+```
+  14  netWhoseId() が三箇所目の handle→id。失敗の意味が違うので畳んでいない
+  17  netSearchDrop / netRecentDrop も表の名前だけが違う。読む所ではないので外した
+  9 10 上限の警告と .mnone の状態は、どの walk も通らない。fixture に面を
+      足すかどうか（足すと buttons pressed が動く）
+```
+
+**半分だけ寄せません。**四箇所のうち二箇所だけを一箇所にすると、その日から
+**二つの仕組みが並んで走ります** ── CLAUDE.md「新しい仕組みが古いものの穴を
+覆うのは、いちばん起きてはいけないこと」。2026-09-10 に閉じた六件は、どれも
+数え落としを含めて全部の呼び側を消してあります（8番 は四箇所ではなく五箇所
+でした）。
 
 # 何を直すかは決めていません
 

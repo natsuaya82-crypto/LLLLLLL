@@ -297,7 +297,20 @@ export function seed(){
              /* a mark: a letter that reads something with no sound in it */
              {id:'l4', st:[{pts:[[200,200],[600,300],[400,600]]}], ch:'', nm:'', snd:['?']},
              /* a digit: a letter with a value instead of a reading */
-             {id:'l5', st:[{pts:[[300,150],[300,650]]}], ch:'', nm:'', snd:[], val:1}];
+             {id:'l5', st:[{pts:[[300,150],[300,650]]}], ch:'', nm:'', snd:[], val:1},
+             /* THE THIRTY-NINTH -- a letter beyond the slots, which is the
+                only kind that can be renamed or deleted. Its name is `th`,
+                which is two characters and therefore no slot: ltSlotKey() in
+                www/letters.js answers with the NAME now (2026-09-10,
+                docs/scope/r15-letters42.md), so every letter above that reads
+                a-z, ! or ? is one of the thirty-eight and wears no name field
+                and no delete. Without a letter of this kind in here the name
+                field (ltDraftName) is on no screen at all and act-check said
+                so. `ab` is deliberately absent: a letter that came in on a
+                list, off a sheet or out of the onboarding has none, which is
+                the shape the whole of r15 was about. */
+             {id:'l6', st:[{pts:[[150,200],[650,200]]}, {pts:[[400,200],[400,650]]}],
+              ch:'', nm:'', snd:['th']}];
   /* And the twenty-eight slots the free plan puts there. boot.js already ran
      it, against an empty language, before this file replaced LETTERS -- so
      without this line every check and every screenshot was looking at a
@@ -684,6 +697,25 @@ export function halfDone(){
                        ja: '今日はめちゃくちゃ暑い。' } };
        PW = pwBlank(); openPost('day');
        return vForm(); }],
+    /* THE SAVE IN THE CORNER, GREY AND GOLD, ON ONE SCREEN.
+       「見た目を変えたものは必ずスクショで提示する」 OWNER 2026-09-04, and
+       what changed on 2026-09-10 is the MOMENT that button lights: a change
+       made by pressing used to leave it grey (docs/scope/r14-keep.md § A).
+       A colour that only appears after a press is a state no picture had, and
+       the fault is nearly always in the one nobody photographed.
+
+       Both return nothing, so the REAL render() stands -- the bar is what is
+       being looked at here, and a face that replaced #app would take it off
+       the picture. */
+    ['the article, as it opens', () => {
+       goTab('profile'); go('world');
+       if (abShut('wldov')) abToggle('wldov');
+       return ''; }],
+    ['the article, one row added', () => {
+       goTab('profile'); go('world');
+       if (abShut('wldov')) abToggle('wldov');
+       wldOvAdd();
+       return ''; }],
     /* Opened THE WAY A THUMB OPENS IT -- the word's page, then 編集 in its
        corner -- because the back arrow is part of this screen and what it
        says is read off the trail. Opened straight onto the sheet the trail is
@@ -901,7 +933,22 @@ export function halfDone(){
        Nothing reaches either by walking the routes. And once with something
        in the search, because a search that matches nothing leaves the page
        with no tiles at all. */
-    ['the sounds, for one letter', () => { openSnd(LETTERS[0].id); return vForm(); }],
+    ['the sounds, for one letter', () => { keepDrop(keepKeyOf('form', 'snd:' + LETTERS[0].id));
+                                          openSnd(LETTERS[0].id); return vForm(); }],
+    /* AND A SYMBOL PRESSED. The chart holds what has been chosen and the Save
+       in the corner writes it (www/sound.js § PRESSING A SYMBOL CHOOSES), so
+       there are two states here and the fault is nearly always in the one
+       nobody photographed: the tick has to move and the corner has to go
+       gold. The plan is flipped because choosing a sound is what can('snd')
+       buys, and the walks run on the free plan. */
+    ['the sounds, one pressed', () => { const was = SET.plan; SET.plan = 'pro';
+                                        keepDrop(keepKeyOf('form', 'snd:' + LETTERS[0].id));
+                                        openSnd(LETTERS[0].id); ltTakeSnd('t');
+                                        /* The press says the sound out loud, and with no wire
+                                           behind this the voice puts 「接続できません」 over the
+                                           picture. It is not part of this screen. */
+                                        popOff();
+                                        const h = vForm(); SET.plan = was; return h; }],
     ['the sounds, searched', () => { ipaQ = 'a'; openSnd(LETTERS[0].id);
                                      const h = vForm(); ipaQ = ''; return h; }],
     /* What one sound IS, which is a page of its own behind the ? on a tile.
@@ -920,6 +967,25 @@ export function halfDone(){
        openAdd() keeps what is on it when it is reopened by its own redraw or
        on the way back from the picker, which is the whole point of it, and a
        fixture that lands on the form twice gets the second of those. */
+    /* THE SHEET THAT MAKES A WORD, BOTH STATES OF ITS CORNER. 「追加」 is
+       grey until there is a spelling to add and gold the moment there is
+       (www/wordsheet.js § wdAddOn) -- 「なにもない時は薄い灰色、何か打ったら
+       金にする」 OWNER 2026-09-03 -- and it was grey through both for as long
+       as the sheet has existed. The fault is nearly always in the state
+       nobody photographed, so both are here.
+
+       openAdd() is called TWICE on purpose, exactly as the synonym face
+       below does it: what a form has in its corner is a string taken when
+       the form OPENED, so the second call is what rebuilds that string out
+       of the spelling put on in between. It is not fresh the second time and
+       keeps the draft. */
+    ['the new word sheet, as it opens', () => { window.route='words'; NAV=[{r:'words'}];
+                                                openAdd(''); const h = vForm();
+                                                addW = null; return h; }],
+    ['the new word sheet, with a spelling typed', () => { window.route='words'; NAV=[{r:'words'}];
+                                                openAdd(''); wEdit.sp = spType('ka'); wdSync();
+                                                openAdd(''); const h = vForm();
+                                                addW = null; return h; }],
     ['the new word sheet, with a synonym', () => { window.route='words'; NAV=[{r:'words'}];
                                                    openAdd(''); addW.syn = ['kano'];
                                                    addW.ant = ['tir']; addW.ex = [{ln:'kano tir', gl:'sees it'}];
@@ -943,11 +1009,26 @@ export function halfDone(){
                                                 SET.plan = 'free'; return h; }],
     /* The profile's other two lists. Each is empty on a fresh fixture, and an
        empty list draws neither a row nor anything a row carries. */
+    /* AND A POST THAT BEGINS @名前 IS ON THE 返信 SIDE, not the 投稿 side.
+       「返信にだけ出して」 OWNER 2026-09-09. It carries `toh` and no `to`
+       (2026-09-07), so 「what a reply is」 is postToWho() and not `to`.
+       **両方の状態が顔になっています** ── 返信の側に在ることと、投稿の側に
+       無いこと。間違いはたいてい誰も写真を撮らなかったほうで、ここでは
+       「投稿の側から消えたか」がそれです。 */
     ['the profile, replies', () => { pfTab='re'; POSTS.push({id:'pre', at:1, lang:langId,
         lname:'Shango', ln:'ke', who:'Aya', hd:'aya', mine:true, to:'p2',
-        mn:'what?', ui:'en'});
+        mn:'what?', ui:'en'},
+        {id:'pat1', at:2, lang:langId, lname:'Shango', ln:'kano tir',
+         who:'Aya', hd:'aya', mine:true, to:'', toh:'iri',
+         mn:'a mountain', ui:'en'});
         window.route='profile'; NAV=[{r:'profile'}];
-        const h=vProfile(); POSTS.pop(); pfTab='posts'; return h; }],
+        const h=vProfile(); POSTS.pop(); POSTS.pop(); pfTab='posts'; return h; }],
+    ['the profile, posts, with one addressed to somebody', () => { pfTab='posts';
+        POSTS.push({id:'pat1', at:2, lang:langId, lname:'Shango', ln:'kano tir',
+                    who:'Aya', hd:'aya', mine:true, to:'', toh:'iri',
+                    mn:'a mountain', ui:'en'});
+        window.route='profile'; NAV=[{r:'profile'}];
+        const h=vProfile(); POSTS.pop(); return h; }],
     ['the profile, likes', () => { pfTab='li'; const p=postById('p2'); p.lime=1; p.li=1;
         window.route='profile'; NAV=[{r:'profile'}];
         const h=vProfile(); delete p.lime; p.li=0; pfTab='posts'; return h; }],
@@ -1181,6 +1262,42 @@ export function halfDone(){
         window.route='admin'; NAV=[{r:'admin'}];
         const h = vAdmin();
         ADMIN_OK = false; ADMINN = keepN; ADMINS = keepS; MODS = keep; return h; }],
+    /* THE FACE THAT PUTS SOMEBODY'S LANGUAGE BACK, and both halves of it.
+       「運営が治せる仕様は欲しい…管理画面で」 OWNER 2026-09-09. It is a face
+       of the `admin` route rather than a route of its own, and the walk gets
+       there only past the door -- which is shut on the fixture's account, the
+       way it is on everybody's. Without these two, every button on the
+       recovery screen is 「an entry no screen names」, which is true and is
+       not what anybody meant. */
+    ['the admin screen, the recovery face', () => {
+        const keep = ADREC, keepH = ADREC_H;
+        ADMIN_OK = true;
+        ADREC_H = 'veth';
+        ADREC = { who:'u1',
+                  langs:[{ id:'L1', name:'Kano' }, { id:'L2', name:'Nen' }],
+                  hist:[] };
+        window.route='admin'; NAV=[{r:'admin'},{r:'admin',a:'rec'}];
+        const h = vAdmin();
+        ADMIN_OK = false; ADREC = keep; ADREC_H = keepH; return h; }],
+    /* And one language's parts, which is where the versions are. Two parts and
+       three versions of one of them, because the ceiling is three and a face
+       holding one row would not show that the newest is on top. */
+    ['the admin screen, one language’s versions', () => {
+        const keep = ADREC, keepH = ADREC_H;
+        ADMIN_OK = true;
+        ADREC_H = 'veth';
+        ADREC = { who:'u1', langs:[{ id:'L1', name:'Kano' }],
+                  hist:[{ sid:'L1', kind:'words', at:'2026-09-09T04:20:00Z',
+                          ms: Date.UTC(2026,8,9,4,20) },
+                        { sid:'L1', kind:'words', at:'2026-09-09T03:10:00Z',
+                          ms: Date.UTC(2026,8,9,3,10) },
+                        { sid:'L1', kind:'words', at:'2026-09-08T22:05:00Z',
+                          ms: Date.UTC(2026,8,8,22,5) },
+                        { sid:'L1', kind:'kb',    at:'2026-09-07T11:00:00Z',
+                          ms: Date.UTC(2026,8,7,11,0) }] };
+        window.route='admin'; NAV=[{r:'admin'},{r:'admin',a:'rec:L1'}];
+        const h = vAdmin();
+        ADMIN_OK = false; ADREC = keep; ADREC_H = keepH; return h; }],
     /* The composer, for somebody who has been ejected. Every write they make
        is refused by the server, and the line saying so is on no screen
        otherwise -- NET_BANNED is empty for everybody else. */
@@ -1272,7 +1389,18 @@ export function halfDone(){
        その画面で、入っていないのは別の画面です ── どちらも歩かせないと、
        前を書き足す一行が消えても緑のまま出ます。 */
     ['the composer, opened from somebody\u2019s page', () => {
-        PW = pwBlank(); openPost('new', 'jjj');
+        PW = pwBlank(); openPost('new', 'jjj'); pwSetLn('kano tir');
+        const h = vForm(); PW = pwBlank(); return h; }],
+    /* AND THE SAME SCREEN WITH THE ✕ PRESSED. 「いいよ」 OWNER 2026-09-09.
+       宛先の行には二つの状態があり、間違いはたいてい誰も写真を撮らなかった
+       ほうで起きます ── ここでは「外したあと本文が残っているか」がそれです。 */
+    ['the composer, the addressee taken off', () => {
+        PW = pwBlank(); openPost('new', 'jjj'); pwSetLn('kano tir');
+        pwToOff();
+        /* この画面は打っている間 描き直されないので、`FORM.html` は開いた
+           ときのままです ── ✕ が消すのは画面のほう（pwToPaint）。写真は
+           押したあとの composer なので、同じ pwHTML() から組み直します。 */
+        FORM.html = pwHTML();
         const h = vForm(); PW = pwBlank(); return h; }],
     ['the composer, replying to somebody', () => {
         PW = pwBlank(); PW.to = 'p1'; openPost('reply');
@@ -1672,6 +1800,15 @@ export function halfDone(){
        その「同じ」を撮れる状態がどこにも無かった：縦書きの面は新規だけ、
        返信の面は横書きだけで、二つが交わる所を歩いたものが無い。
        OWNER 実機 142 の二つ目はここのことなので、ここに置く。 */
+    /* ♡ を押した瞬間 ── 答えが戻る前の画面。「ハート押して 1 つくやん？」
+       OWNER 2026-09-09。走っているあいだのメモリ（`PMARK`）だけの状態なので、
+       種にも写しにも無く、どの面も歩いていませんでした。素の `feed` が
+       押す前で、これが押した直後です。 */
+    ['a post whose \u2661 has just been pressed', () => {
+        const p = POSTS[0], k = String(p.id) + '|like';
+        PMARK[k] = { i: true, n: postNLike(p) + 1 };
+        window.route = 'feed'; NAV = [{ r:'feed' }];
+        const h = vFeed(); delete PMARK[k]; return h; }],
     /* A POST THAT NAMED SOMEBODY AND ANSWERS NOTHING. 「@したらもう勝手に
        ツイートがこの形式になるようにしたい」 OWNER 2026-09-07 ── `toh` は
        載っていて `to` は無い、という組み合わせがどの面にも無かった。返信は
@@ -1804,6 +1941,115 @@ export function halfDone(){
     /* And naming one, which is a form and is therefore reached by nothing the
        walk would otherwise take. */
     ['naming a noun class', () => { nclsNew(); return vForm(); }],
+    /* A SIDE THIS LANGUAGE HAS ANSWERED, which is the other face of every
+       chapter that decides one. Unanswered it is the two names with neither
+       lit (www/grammar.js § g2Side, OWNER 2026-09-10「最初は何も置かれてない
+       状態」); answered it is the two WORDS, and moving one is what says which
+       side -- so this is the only face where a word of a pair can be picked
+       up at all.
+
+       It was the negation's row on the word order board. That row is gone: a
+       two-choice is the whole of what §4.4 says not to decide for anybody, and
+       where the negation word stands is one operation of one rule now. */
+    ['a describing word on the side this language puts it', () => {
+        const was = STG.gpos && STG.gpos.adj;
+        if (!STG.gpos) STG.gpos = {};
+        STG.gpos.adj = 'before';
+        window.route = 'gram'; NAV = [{ r:'gram', a:'v2:adj' }];
+        const h = vGram();
+        if (was) STG.gpos.adj = was; else delete STG.gpos.adj;
+        return h; }],
+    /* §4.4 否定. Four things can be negated and asked about, and each is its
+       own page: two sentences somebody made, and the rule this reads off the
+       difference between them. The page that stood in front of the four and
+       asked which one you meant is gone (OWNER 2026-09-11) -- two of them are
+       opened from です／ある, which is this face, and the other two from the
+       verb chapter and from 命令. */
+    ['is and there is, with the negation and the question of each', () => {
+        window.route = 'gram'; NAV = [{ r:'gram', a:'v2:cop' }];
+        return vGram(); }],
+    /* ONE CHAPTER OF THE BOOK: its sections, each with what this language has
+       said in it. The contents is the face above; this is what a row of it
+       opens, and the verb is the chapter with the most in it -- 人称と数, 時制
+       と相, 法, 態, 否定, 疑問. */
+    ['a chapter of the book', () => {
+        window.route = 'gram'; NAV = [{ r:'gram', a:'book:verb' }];
+        return vGram(); }],
+    /* A SECTION THAT IS FINISHED, which is `.strow.done` -- the title goes
+       quiet and the count goes gold. Nothing else in this file reaches it:
+       every stage of the seeded language has slots left to fill, and 所有 is
+       the one with none, so saying what it does is the whole of finishing it.
+       It was drawn on the flat list before 2026-09-11 and is drawn on the
+       chapter's page now; press said so the day the list became a book. */
+    ['a chapter of the book with a section finished', () => {
+        const was = STG.rules ? STG.rules.have : undefined;
+        stKeepSave('have', { rules: 'a possessor stands in front of what it has' });
+        window.route = 'gram'; NAV = [{ r:'gram', a:'book:noun' }];
+        const h = vGram();
+        if (was === undefined) delete STG.rules.have; else STG.rules.have = was;
+        return h; }],
+    /* And the appendix, which is the one chapter carrying the ＋ that adds a
+       stage of your own -- a stage somebody adds lands here, so the ＋ is
+       here and not on the contents. */
+    ['the appendix of the book, paid', () => {
+        SET.plan = 'pro';
+        window.route = 'gram'; NAV = [{ r:'gram', a:'book:app' }];
+        const h = vGram(); SET.plan = 'free'; return h; }],
+    ['a negation nobody has written yet', () => {
+        const was = STG.gr;
+        STG.gr = [];
+        G2POL = { at:'', a:[], b:[] };
+        window.route = 'gram'; NAV = [{ r:'gram', a:'v2:neg:v' }];
+        keepDrop(keepKeyOf('gram', 'v2:neg:v'));
+        const h = vGram();
+        keepDrop(keepKeyOf('gram', 'v2:neg:v'));
+        STG.gr = was;
+        return h; }],
+    /* WITH THE TWO SENTENCES IN IT. The rule's own example is what the page
+       opens as, so this is a rule already written being looked at again --
+       and it is the only face where a word standing in a line can be pressed
+       back out of it. */
+    ['a negation written out of two sentences', () => {
+        const was = STG.gr;
+        /* THE WORDS ARE THIS FIXTURE'S OWN. `tir` is its verb and `nak` the
+           word it made for 「not」, so the sentence on the page is one this
+           dictionary can actually be read against -- a line built out of
+           words nobody has cannot say where the verb is, and the rule under
+           it would read 「動詞の後」 about a word standing in front of one. */
+        STG.gr = [{ id:'grfix', type:'inflection', feature:'NEGATION', target:'VERB',
+                    operation:'word', form:'nak', at:'before', parts:[],
+                    eg:{ a:['kano','tir'], b:['kano','nak','tir'] } }];
+        G2POL = { at:'', a:[], b:[] };
+        window.route = 'gram'; NAV = [{ r:'gram', a:'v2:neg:v' }];
+        keepDrop(keepKeyOf('gram', 'v2:neg:v'));
+        const h = vGram();
+        keepDrop(keepKeyOf('gram', 'v2:neg:v'));
+        G2POL = { at:'', a:[], b:[] };
+        STG.gr = was;
+        return h; }],
+    /* And a class that EXISTS, which is a different face of the same form:
+       the name is filled in and the way out of the class is on it. A new one
+       has no way out -- there is nothing yet to delete. */
+    ['a noun class that exists', () => {
+        const was = STG.ncls;
+        STG.ncls = { names:['ka','mi'], of:{} };
+        nclsOpen(0);
+        const h = vForm();
+        STG.ncls = was;
+        return h; }],
+    /* And the other state of that screen: the one question it asks. There is
+       no undo behind this one, which is why it asks -- CLAUDE.md § 19. The
+       popup's own markup is what is returned, the way every other asking face
+       in this file does it: render() takes a popup down, so a face that left
+       one standing would photograph the screen underneath. */
+    ['a noun class being deleted, asking', () => {
+        const was = STG.ncls;
+        STG.ncls = { names:['ka','mi'], of:{} };
+        nclsDel(0);
+        const h = document.getElementById('pop').outerHTML;
+        popOff();
+        STG.ncls = was;
+        return h; }],
     /* And the list with the door on it, which is the only place the way in
        exists. Everything else walks with the stage off the list, so this is
        the one face that renders that button. */
@@ -2155,6 +2401,17 @@ export function halfDone(){
         saveStg();
         window.route = 'gram'; NAV = [{ r: 'gram', a: 'v2:pst' }];
         return vGram(); }],
+    /* THE SAME CHAPTER, with a rule that has a CONDITION on it. The sentence
+       says the condition since 2026-09-09 (www/grammar.js § g2FmWhen), so
+       this is the other state of the face above: 「y で終わるとき、末尾の 1
+       文字を落として、動詞の末尾に -ied」 against 「動詞の末尾に -ta」. The
+       fault in a pair is nearly always in the one nobody photographed. */
+    ['a chapter of the grammar book, with a rule that has a condition', () => {
+        STG.fm = [{ id: 'fr-cond', pos: 'v', fm: 'pst', at: 'end',
+                    add: spType('ied'), drop: 1, when: 'x', wend: spType('y') }];
+        saveStg();
+        window.route = 'gram'; NAV = [{ r: 'gram', a: 'v2:pst' }];
+        return vGram(); }],
     /* A rule written on the OLD editor -- it drops a letter and fires only on
        words ending in one. The screen is two fields now and cannot write
        another like it, and this face is what proves the ones somebody already
@@ -2225,22 +2482,37 @@ export function halfDone(){
     ['the five kinds of writing', () => { SET.plan = 'pro';
         window.route = 'wsys'; NAV = [{r:'wsys'}];
         const h = vWsys(); SET.plan = 'free'; return h; }],
+    /* THE THIRTY-NINTH, OPENED -- the only letter with a name field on it
+       (ltAbField, www/sound.js) and the only one with a delete. l1 above is
+       the letter `k`, which is one of the thirty-eight and has neither. */
+    ['a letter beyond the thirty-eight, on the paid plan', () => { SET.plan = 'pro';
+        window.route='letter'; NAV=[{r:'letter', a:'l6'}];
+        const h = vLetter(); SET.plan = 'free'; return h; }],
     ['one letter, opened',     () => { window.route='letter'; NAV=[{r:'letter', a:'l1'}];
                                        return vLetter(); }],
     ['a mark, opened',          () => { window.route='letter'; NAV=[{r:'letter', a:'l4'}];
                                        return vLetter(); }],
-    /* TWO LETTERS FOR ONE SOUND, which is c and k and is allowed --
-       「全部入力で被ったら赤字」. The field goes red and the line under it says
-       which letter already reads it. Nothing else here reaches that state:
-       every letter in this alphabet reads its own sound, so `.ltdup` was
-       styled and worn by nothing and press said so. */
-    ['a letter whose sound another letter already reads', () => {
-        const a = ltById('l1'), b = ltById('l2');
+    /* TWO LETTERS WITH ONE NAME, which is what the red line is about --
+       「何で音で決めんの？文字の名前で決めろよ」 OWNER 2026-09-03. It is shown and not
+       refused, because c and k are two letters and one sound and a language
+       being built is allowed to be halfway through.
+
+       It used to give l2 the sound l1 reads, and that stopped reaching this
+       state on 2026-09-10: a letter reading `k` IS the k slot now
+       (ltSlotKey(), www/letters.js, docs/scope/r15-letters42.md), and a slot
+       wears no name field at all -- so the field the red line hangs off was
+       not drawn, and press reported that nothing wears `.ltdup`. Two letters
+       can only share a name BEYOND the thirty-eight, so the pair is l6, which
+       reads `th`, and l3, which reads nothing until this face gives it that
+       same name. */
+    ['two letters with one name', () => { SET.plan = 'pro';
+        const b = ltById('l3');
         const was = b ? JSON.parse(JSON.stringify(b.snd || [])) : null;
-        if (a && b) b.snd = (a.snd || []).slice();
-        window.route='letter'; NAV=[{r:'letter', a:'l2'}];
+        if (b) b.snd = ['th'];
+        window.route='letter'; NAV=[{r:'letter', a:'l3'}];
         const h = vLetter();
-        if (b && was) b.snd = was;
+        if (b) b.snd = was || [];
+        SET.plan = 'free';
         return h; }],
     /* A digit: a letter with a value instead of a reading. The row of values
        is on every letter, but only one of them is on. */
@@ -2296,6 +2568,15 @@ export function halfDone(){
        A slot that is ALREADY filled is not a form at all: openSlot() sends
        you to the word, and the word screen is walked elsewhere. */
     ['a slot\'s word being made', () => { openSlot('greet','yes'); return vForm(); }],
+    /* AND WITH A SPELLING ON IT. It is the same sheet the dictionary opens, so
+       it carries the same 「追加」 -- grey until there is a word to add and
+       gold the moment there is. openSlot() is called twice for the reason the
+       new word sheet's pair is: a form's corner is a string taken when the
+       form OPENED, and the second call rebuilds it out of what was typed in
+       between (it is not fresh the second time and keeps the draft). */
+    ['a slot\'s word being made, with a spelling typed', () => {
+        openSlot('greet','yes'); wEdit.sp = spType('to'); wdSync();
+        openSlot('greet','yes'); return vForm(); }],
     ['synonyms to choose from',  () => { window.route='relate'; NAV=[{r:'relate', a:'syn:kano'}];
                                          return vRelate(); }],
     /* One of them is the letter's own, which is the only state that wears
@@ -2383,6 +2664,32 @@ export function halfDone(){
         stKeepSave(p.id, { rules: 'a name is a word that stands for a thing' });
         window.route = 'about'; NAV = [{ r:'about' }];
         const h = vAbout(); stKeepSave(p.id, { rules: was }); return h; }],
+    /* THE CHARACTER PICKER, BOTH STATES OF IT. Pressing a character chooses
+       it and the Save in the corner writes it (www/home.js § PRESSING A
+       CHARACTER CHOOSES) -- it used to write the letter and take the screen
+       away under the thumb. So: opened, with the Save grey and no tile
+       marked, and a tile pressed, with the tile marked, the box holding it
+       and the Save gold. The fold is opened first because the grid is not
+       drawn until a script is chosen. Both put the buffer back, so the two
+       faces do not read each other's.
+
+       THE BUFFER IS LET GO OF ON THE WAY IN AND NOT ON THE WAY OUT. A face
+       returns its html and the shell is rendered around it afterwards; a
+       buffer dropped before that render is a bar with no Save in it, put
+       over a page that has one. Both pictures came out that way once. */
+    ['the character picker, as it opens', () => {
+        /* 「接続できません」 from a face before this one rides on the scrim and
+           is not part of this screen. */
+        popOff();
+        pkScript = WORLD_SCRIPTS[0].id;
+        keepDrop(keepKeyOf('form', 'pick:l1'));
+        openPick('l1'); return vForm(); }],
+    ['the character picker, one character pressed', () => {
+        popOff();
+        const w = WORLD_SCRIPTS[0]; pkScript = w.id;
+        keepDrop(keepKeyOf('form', 'pick:l1'));
+        openPick('l1'); ltTakeChar('l1', w.ch.split(' ')[0]);
+        return vForm(); }],
     /* A character another letter has already taken. The picker dims it rather
        than hiding it, because which letter has it is worth seeing -- and
        chTaken() is empty in a language that has borrowed nothing, so the dim
@@ -2418,9 +2725,46 @@ export function halfDone(){
     ['the free plan out of room', () => { SET.plan='free'; SET.aiDay='';
                                           SET.aiN=999; openAdd();
                                           const h=vForm(); SET.aiN=0; return h; }],
-    ['a language somebody else is reading', () => { LANGS.L_other={name:'Necwe', mine:false};
+    /* `mine:false` because that is what a taken language IS -- langSeenAdd()
+       is the only thing that writes it -- and because the 削除 that slides
+       out of this row needs something to drop (www/home.js § langDrop).
+       Without it the row is the one case netTakeGone() leaves alone, so the
+       walk was pressing a button that returned on its first line. It carried
+       a `sid` beside it while a language had two numbers; the row's own id is
+       the server's now (2026-09-10). */
+    /* ON PLUS, AND IT HAS TO BE. 「読んでいる言語」 is cut to dlCap(), which is
+       NOUGHT on free -- the walk's plan -- so this face has been drawing a
+       heading with no row under it since the day it was written, and nothing
+       said so. CLAUDE.md § what the free plan is: a paid face needs the plan
+       flipped here and put back. */
+    ['a language somebody else is reading', () => { const wasP=SET.plan; SET.plan='plus';
+                                                     LANGS.L_other={name:'Necwe', mine:false};
+                                                     langOwnGot('L_other', 'somebody-else');
                                                      window.route='langs'; NAV=[{r:'langs'}];
-                                                     const h=vLangs(); delete LANGS.L_other; return h; }],
+                                                     const h=vLangs(); delete LANGS.L_other;
+                                                     SET.plan=wasP; return h; }],
+    /* AND THE SAME ROW SLID OPEN, which is the state the 削除 is IN. The row
+       is shut in the face above and the button is off the right edge of it,
+       so a picture of that face says nothing about what the slide reveals --
+       and 「両方の状態を見せる」 is what an owner reads a screenshot for.
+
+       Driven by the app's own handlers on the live page rather than by a
+       class written in here: a fixture that put the class on would be a copy
+       of langSwMove() and would agree with it whatever it did. */
+    ['a language you took, slid open', () => { const wasP=SET.plan; SET.plan='plus';
+       LANGS.L_other={name:'Necwe', mine:false};
+       langOwnGot('L_other', 'somebody-else');
+       window.route='langs'; NAV=[{r:'langs'}];
+       const app=document.getElementById('app');
+       app.innerHTML=vLangs();
+       const w=app.querySelector('.swipe[data-lgs="L_other"]');
+       if(w){ const r=w.getBoundingClientRect();
+              langSwDown({ target:w.querySelector('.lgrow')||w,
+                           touches:[{clientX:r.right-20, clientY:r.top+r.height/2}] });
+              langSwMove({ touches:[{clientX:r.right-140, clientY:r.top+r.height/2}],
+                           cancelable:true, preventDefault:function(){} });
+              langSwUp({}); }
+       const h=app.innerHTML; delete LANGS.L_other; SET.plan=wasP; return h; }],
     ['a mark in the editor',   () => { editLetter('l4'); window.route='glyph';
                                        NAV=[{r:'glyph', a:GE.lid}]; return vGlyph(); }],
     /* A list being read in has three faces and they share no buttons: the
@@ -2534,7 +2878,23 @@ export function halfDone(){
        opens as, and with it out, because the three fields and the Enter on
        them exist only while it is out. */
     ['what a stage says its rule is', () => { openStRules('greet'); return vForm(); }],
-    ['the examples of a stage', () => { stExNew=''; openStEx('greet'); return vForm(); }],
+    ['the examples of a stage', () => { popOff(); keepDrop(keepKeyOf('form', 'stex:greet'));
+                                        stExNew=''; openStEx('greet'); return vForm(); }],
+    /* AND ONE JUST ADDED. Enter in the box puts the line on the page and the
+       Save in the corner writes it onto the stage (www/phases.js § ADDING AND
+       REMOVING AN EXAMPLE CHOOSES) -- it used to write on the Enter, with no
+       Save to press. Both states, because the fault is nearly always in the
+       one nobody photographed: the line has to be on the page and the corner
+       has to be gold. The buffer is let go of on the way IN only -- a face
+       returns its html and the shell is rendered round it afterwards, so a
+       buffer dropped after that is a bar with no Save over a page that has
+       one. */
+    ['the examples of a stage, one just added', () => {
+        popOff(); keepDrop(keepKeyOf('form', 'stex:greet'));
+        stExNew=''; openStEx('greet');
+        stExPut('greet', stExKept('greet').concat(
+          [{lb:'', ln:'kano tir', gl:'it sees the mountain'}]));
+        return vForm(); }],
     ['an example being written', () => {
         stExOpen('greet');
         const h=vForm(); stExNew=''; return h; }],
@@ -2654,10 +3014,23 @@ export function halfDone(){
        OWNER 2026-09-06 -- so this is that chapter, which is where the board
        and the sentence under it are now. Appended at the END so no index
        above it moves. */
+    /* WITH CARDS ON IT, because the line under the board comes out after a
+       card goes on and not before -- 「文法の各段は最初は何も置かれてない状態」
+       OWNER 2026-09-10 (www/grammar.js § g2Board). It marked the decision as
+       touched and placed nothing, which drew the line anyway out of the
+       engine's own fallback: the face was a picture of the bug. The buffer is
+       dropped either side of it for the reason every other face of this board
+       says. */
     ['the word order, with the demonstration under it', () => {
+       const was = STG.order;
        STG.set['order'] = 1;
+       STG.order = ['S', 'O', 'V'];
        window.route = 'gram'; NAV = [{ r:'gram', a:'v2:order' }];
-       return vGram(); }],
+       keepDrop(keepKeyOf('gram', 'v2:order'));
+       const h = vGram();
+       STG.order = was;
+       keepDrop(keepKeyOf('gram', 'v2:order'));
+       return h; }],
     /* ---- the search boxes, with something typed in them -----------------
        The cross only exists once there is something to clear, so a box with
        an empty field says nothing about whether it has one. These are the

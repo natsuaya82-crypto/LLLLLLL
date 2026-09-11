@@ -1548,6 +1548,23 @@ const R = await pg.evaluate(async () => {
     fails.push('a picture already smaller than POST_THUMB was given a small ' +
                'copy of itself, which is a second file for nothing');
 
+  /* ---- AND THE PHOTOGRAPH ITSELF GOES UP AT THE OTHER CAP ---------------
+     The two are one function now, and the cap is its argument (DUPLICATES
+     15): postShrink() in www/post.js, asked for POST_THUMB by postThumb()
+     and for POST_PIC by pwPicKeep(). Nothing here asked what the composer
+     KEEPS, so the two claims above stayed green with the wrong constant
+     handed in -- watched, with pwPicKeep() shrinking to 300, and every one
+     of them passed. A picture 300 across where 900 was meant is a photograph
+     nobody can open, and it is the half a screenshot cannot show. */
+  PW = pwBlank();
+  await new Promise((res) => pwPicKeep(window.__fixPic(1800, 1200), res));
+  const capPic = pwPics()[0];
+  const capWH = capPic ? await sizeOf(capPic.u) : '';
+  if (capWH !== '900x600')
+    fails.push('a 1800x1200 photograph put in the composer is kept at ' +
+               JSON.stringify(capWH) + ' and POST_PIC is ' + POST_PIC);
+  PW = pwBlank();
+
   /* And what each of the two screens is handed. Per picture, because `pt` is
      allowed to have a hole in it: a small copy that failed to go up must fall
      back to the photograph IN ITS OWN PLACE. A list that closed the hole
@@ -2830,6 +2847,51 @@ const R = await pg.evaluate(async () => {
       if (ln && ln.textContent.indexOf('@lingua') >= 0)
         fails.push('the line of that post still reads "' + ln.textContent +
                    '", so @lingua is on the screen twice');
+    }
+
+    /* ---- 23b. 宛先は外せる ---------------------------------------------
+       「いいよ」 OWNER 2026-09-09、「投稿画面の「Replying to @〇〇」に ✕ を
+       付けて外せるようにする」に対して。
+
+       行が出たあと、それを取り消す道がありませんでした。宛先は本文の外の
+       `PW.toh` なので、本文を消しても残ります（`docs/BACKLOG.md` 2026-09-08、
+       この commit で消しました）。回り道は「送る」か「下書きにする」しか
+       無く、どちらも投稿を一つ作ります。
+
+       押すのは本物の ✕ です ── DOM から拾って click() を投げるので、
+       `act-map.js` に名前が無ければここで止まります。四つ訊きます：✕ が在る
+       こと、押すと `PW.toh` が空になること、行が消えること、そして**本文が
+       残ること**。最後の一つが要るのは、宛先と本文を一緒に消す直し方が
+       一行で書けて、何も投げないからです。 */
+    {
+      const wasPW2 = PW;
+      PW = pwBlank();
+      openPost('new', 'jjj');
+      pwSetLn('kano tir');
+      render();
+      const row = document.getElementById('pw-to');
+      const off = row ? row.querySelector('[data-do="pwToOff"]') : null;
+      if (!off)
+        fails.push('the composer\u2019s 「Replying to @jjj」 line carries no ' +
+                   '\u2715. 「いいよ」 OWNER 2026-09-09 \u2014 there is no way ' +
+                   'to take the addressee off without sending or drafting ' +
+                   'the post (' + (row ? '"' + row.textContent + '"' : 'no line') + ')');
+      else {
+        off.click();
+        if (String(PW.toh || ''))
+          fails.push('pressing the \u2715 left the composer addressed to ' +
+                     PW.toh);
+        const row2 = document.getElementById('pw-to');
+        if (row2 && row2.innerHTML)
+          fails.push('pressing the \u2715 emptied PW.toh and left the line on ' +
+                     'the glass ("' + row2.textContent + '"). This screen is ' +
+                     'not redrawn while somebody is typing, so the line is ' +
+                     'painted by hand \u2014 pwToPaint()');
+        if (String(PW.ln || '') !== 'kano tir')
+          fails.push('pressing the \u2715 took the line with it ("' + PW.ln +
+                     '"). It takes the addressee and nothing else');
+      }
+      PW = wasPW2;
     }
 
     /* a name with nothing behind it stays what somebody wrote */

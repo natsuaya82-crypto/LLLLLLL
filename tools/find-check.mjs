@@ -846,6 +846,64 @@ say(found.ask.indexOf('prompt=eq.') === -1,
 say(found.ask.indexOf('body->>mn') !== -1,
     '当たるのは本文の文字 (' + (found.ask.indexOf('body->>mn') !== -1) + ')');
 
+/* ---- 13b. 札を押して開く検索の箱も、読む人の言葉 -----------------------
+   「そのままでいいわけない」 OWNER 2026-09-09.
+
+   13 が押さえたのは**保存**です ── 綴りは一つ、`DAY_TAG`。**見せ方**は
+   2026-09-08 の決定で読む人の表示言語になり、投稿の本文（`tagHTML`）と
+   投稿画面の欄（`openPost('day')`）はそうなりました。**札を押して開いた
+   検索の箱だけが綴りのまま**残っていて、それがこの節です。
+
+   割るのは「箱に見える字」と「検索語」の二つで、二つ目の判定は作りません
+   ── `dayTagShow` / `dayTagStore` の二つの口が既にその判定です。箱に描く
+   ときに `dayTagShow`、打たれたものを受けるときに `dayTagStore`。だから
+   `snsQ` はいつでも綴りで、検索も `snsRecentAdd()` も何も変わりません。
+
+   四つ訊きます。英語で札を押したときの箱の字、そのとき保存された履歴、
+   履歴の行に見える字、そして日本語に戻したら箱も行も綴りに戻ること。
+   最後の一つが要るのは、**表示言語を変えても保存は動かない**というのが
+   2026-09-08 の決定そのものだからです。 */
+const dayBox = await pg.evaluate(() => {
+  var was = SET.ui, out = {};
+  function box(){
+    var e = document.createElement('div');
+    e.innerHTML = snsFieldHTML();
+    var f = e.querySelector('#sns-q');
+    return f ? f.value : '(箱が無い)';
+  }
+  function row(){
+    var e = document.createElement('div'), a;
+    e.innerHTML = snsRecentHTML();
+    a = e.querySelectorAll('.whrow .sl');
+    return a.length ? a[0].textContent : '(行が無い)';
+  }
+  PULL_GOT.recent = 1;
+  SET.recent = []; snsQ = ''; snsHits = null; snsFil = null;
+  SET.ui = 'en';
+  /* 押す。snsTagGo() は箱に入れて explore へ行き、snsGo() が履歴に入れます。 */
+  snsTagGo(DAY_TAG);
+  snsGo();
+  out.enBox = box();
+  out.enRow = row();
+  out.enSaved = (SET.recent || []).slice(0);
+  out.enQ = snsQ;
+  SET.ui = 'ja';
+  out.jaBox = box();
+  out.jaRow = row();
+  SET.ui = was;
+  return out;
+});
+say(dayBox.enBox === dayWord,
+    '英語で札を押すと箱の字は英語 (' + dayBox.enBox + ')');
+say(dayBox.enQ === '#今日のお題',
+    '検索語は綴りのまま (' + dayBox.enQ + ')');
+say(dayBox.enSaved.length === 1 && dayBox.enSaved[0] === '#今日のお題',
+    '履歴に入るのは綴り (' + JSON.stringify(dayBox.enSaved) + ')');
+say(dayBox.enRow === dayWord,
+    '履歴の行に見える字は英語 (' + dayBox.enRow + ')');
+say(dayBox.jaBox === '#今日のお題' && dayBox.jaRow === '#今日のお題',
+    '日本語に戻すと箱も行も綴り (' + dayBox.jaBox + ' / ' + dayBox.jaRow + ')');
+
 /* ---- 絞り込みに #今日のお題 の行が一つ ---------------------------------
    「絞り込み（おすすめ／フォロー中）に「#今日のお題」を足す」 OWNER
    2026-09-06。**この行は 2026-09-04 の「そこに出せなんて頼んでないけど」を
@@ -870,6 +928,31 @@ const tagRows = rows.rows.filter(function(r){ return r.indexOf('#') === 0; });
 say(tagRows.length === 1 && tagRows[0] === rows.say,
     '絞り込みの #今日のお題 は一本で、その言葉は言語ファイルのもの (' +
     rows.rows.join(' / ') + ')');
+
+/* ---- 星と履歴は一つの読み方で、どの表かは引数 -------------------------
+   `netSearchSaved()` と `netRecent()` は行を読む所が一字も違わず二回書いて
+   あり、`netWordRows()` 一つになりました（`docs/DUPLICATES.md` 17）。表の
+   名前と、いつを言う列とが、その場の literal から**位置引数**になったので、
+   取り違えても何も投げません ── `recent_search` に `created_at` を訊けば
+   PostgREST は 400 を返し、画面は「履歴なし」になって、そこには理由が何も
+   書かれません。星が履歴を読んでも同じです。
+
+   **線の上で**訊きます。二つを呼んで、出ていった path をそのまま読みます。 */
+const asked = await pg.evaluate(() => new Promise(function(done){
+  window.__ASK = [];
+  netSearchSaved(function(){
+    netRecent(function(){ done(window.__ASK.slice()); }, function(){ done(window.__ASK.slice()); });
+  }, function(){ done(window.__ASK.slice()); });
+}));
+const wantSaved = '/rest/v1/saved_search?select=id,q,created_at&order=created_at.desc';
+const wantRecent = '/rest/v1/recent_search?select=id,q,at&order=at.desc';
+const gotSaved = asked.filter((p) => p.indexOf('/rest/v1/saved_search') === 0)[0] || '';
+const gotRecent = asked.filter((p) => p.indexOf('/rest/v1/recent_search') === 0)[0] || '';
+say(gotSaved.indexOf(wantSaved) === 0,
+    '星の一覧は saved_search を created_at の順で訊く (' + gotSaved + ')');
+say(gotRecent.indexOf(wantRecent) === 0,
+    '履歴の一覧は recent_search を at の順で訊く ── 同じ関数、違う引数 (' +
+    gotRecent + ')');
 
 await br.close();
 console.log(bad.length ? '\nfind: FAILED ' + bad.length : '\nfind: 一つの箱に打てば人も投稿も出る。途中の言葉でも出て、出ていない投稿は出ない');

@@ -1898,11 +1898,26 @@ const r = await pg.evaluate(({ s }) => {
        because kbNew() is a door and kbAdd() is the act that writes.
 
        Asked of BOTH faces now. It used to be asked of whichever screen the
-       block above happened to have left standing, which was one of the two. */
+       block above happened to have left standing, which was one of the two.
+
+       Asked of what the screen OFFERS rather than of a name. It used to read
+       `vKb().indexOf('goPlans') < 0`, and `goPlans` is gone -- one more name
+       on the one road to the price list, deleted with DUPLICATES 8 -- so that
+       line would have gone on being green with the button put back on the
+       screen. What the price list is reached by is `go` carrying `plans`,
+       which is what this asks of every control on the page. */
+    function toPlans(html){
+      var d = document.createElement('div'), n, i;
+      d.innerHTML = html;
+      n = d.querySelectorAll('[data-do="go"]');
+      for (i = 0; i < n.length; i++)
+        if ((n[i].getAttribute('data-a') || '').indexOf('plans') >= 0) return true;
+      return false;
+    }
     NAV = [{ r: 'kb' }];
-    out.freeNoUpsell = vKb().indexOf('goPlans') < 0;
+    out.freeNoUpsell = !toPlans(vKb());
     NAV = [{ r: 'kb', a: '0' }];
-    out.freeNoUpsell = out.freeNoUpsell && vKb().indexOf('goPlans') < 0;
+    out.freeNoUpsell = out.freeNoUpsell && !toPlans(vKb());
 
     /* ---- THE SECOND FRAME GOES TO THE PLANS SCREEN ----------------------
        「二つ目以降は押すとプランへ」 OWNER 2026-09-03, pressed as a finger
@@ -1956,7 +1971,6 @@ const r = await pg.evaluate(({ s }) => {
     out.helpSteps = steps.length;
     out.helpGoNames = [].slice.call(hs.querySelectorAll('.kbstep [data-do]'))
       .map(function (b){ return b.getAttribute('data-do'); })
-      .filter(function (n){ return n !== 'goPlans'; })
       .join(' ');
     out.helpGoIn = steps.map(function (s){
       return s.querySelectorAll('[data-do="kbSettings"]').length;
@@ -3986,8 +4000,12 @@ const KB_SRV = `
       var m = new RegExp('[?&]' + k + '=eq\\\\.([^&]*)').exec(p);
       return m ? decodeURIComponent(m[1]) : '';
     }
+    /* THE ID COMES IN THE INSERT (2026-09-10). A language has one number and
+       the phone writes it, so the column's default only fires where nothing
+       was sent -- which is what PostgREST does with a primary key. A stub that
+       minted its own here would be a server that ignores what it was sent. */
     if (method === 'POST' && p.indexOf('/rest/v1/language') === 0){
-      var id = 'srv' + (++S.n);
+      var id = String((body && body.id) || ('srv' + (++S.n)));
       S.lang.push({ id:id, owner:body.owner, name:body.name || '', published_at:null });
       return answer([{ id:id }]);
     }
@@ -4040,7 +4058,7 @@ const kbPrep = await pg2.evaluate(({ s }) => {
   localStorage.clear();
   eval('(' + s + ')()');
   SET.walked = true; SET.plan = 'pro'; setKeep();
-  LANGS[langId].sid = 'srv1'; LANGS[langId].uid = SESS.uid; langStore(); netSave();
+  langRowGot(langId); LANGS[langId].uid = SESS.uid; langStore(); netSave();
   KB = { kbs: [], at: 0 };
   kbAdd('qwerty'); kbAdd('flick');
   /* 古いビルドがディスクに書いた写し ── id が無い。これは書き換わらない
@@ -4050,9 +4068,10 @@ const kbPrep = await pg2.evaluate(({ s }) => {
   const oldBody = JSON.stringify(old);
   localStorage.setItem(langKey('kb'), oldBody);
   const ids = (b) => kbBoardsOf(JSON.parse(b)).kbs.map((x) => x.id).join(',');
-  /* 同じ中身の板が三枚 ── この不具合が作った写しです。「消していい。そもそも
-     増殖させるな」OWNER 2026-09-07。一枚になり、適用していた三枚目はその一枚を
-     指し直します（at は無料 QWERTY を頭に置いた番号なので 3 が三枚目）。 */
+  /* id を持たない板が三枚、中身は同じ ── 三枚のままです。「ダメに決まってん
+     だろ」OWNER 2026-09-09。id 無しの板が id を取るのは、中身の同じ **id 付き**
+     の板に出会ったときだけで、ここには一枚もありません。適用していた三枚目は
+     三枚目のまま（at は無料 QWERTY を頭に置いた番号なので 3 が三枚目）。 */
   const one = { nm:'', pat:'qwerty', lay: old.kbs[0].lay };
   const three = JSON.stringify({ kbs: [one, one, one], at:3, v:2 });
   /* 少しでも違えば二枚のまま。名前が一文字ちがうだけの板です。 */
@@ -4061,6 +4080,48 @@ const kbPrep = await pg2.evaluate(({ s }) => {
   const kept = kbBoardsOf(JSON.parse(three));
   /* 新しく作る板の id は時計から ── 読むのは同じ板、作るのは新しい板。 */
   const madeA = kbId(), madeB = kbId();
+  /* 増殖の元 ── ディスクに残る id 無しの写し（`lingua.<id>.kb`、rule 22 の
+     移行で slRd() が今も読む・書き換えない）。読むたびに違う id が打たれると
+     サーバーの行と突き合わず、syKeyOf() が別物と答え、syPut() が両方残して
+     起動ごとに板が足されます。中身の同じ板が二枚あっても、読むたび同じ id で、
+     二枚のままでなければならない ── まとめて一枚にするのは、増殖を止める
+     こととは別の話です。 */
+  const blank = { nm:'', pat:'qwerty', lay: old.kbs[0].lay };
+  const twin = JSON.stringify({ kbs: [blank, blank], at:0, v:2 });
+  const twinA = ids(twin), twinB = ids(twin);
+  const twinN = kbBoardsOf(JSON.parse(twin)).kbs.length;
+  /* 移行の一組 ── ディスクの id 無しの写しが、中身の同じ **id 付き** の板と
+     一つの配列で出会ったとき。それは「id が生まれる前に書かれた同じ板」で、
+     見分けるものが他にありません。id 付きのほうの id を取って一枚になります。
+     ここが中身を見る唯一の場所で、`again-check` 1432 が実機の道で持っています。 */
+  const oldOne = { nm:'', pat:'qwerty', lay: old.kbs[0].lay };
+  const srvOne = JSON.parse(JSON.stringify(oldOne)); srvOne.id = 'k1788700000_1';
+  const pair = kbBoardsOf(JSON.parse(JSON.stringify({ kbs: [oldOne, srvOne], at:0, v:2 })));
+  const pairN = pair.kbs.length, pairId = pair.kbs[0].id;
+  /* そして実機の道では、二枚が出会うときには写しのほうにもう id が打たれて
+     います ── kbRead() が打ち、saveKb() がそれを LSL に書き、netSlice1() の
+     slMine() がその版を syMerge() に渡すからです（測りました：ディスク (none)、
+     kbRead のあと bfzcp3y_1714、saveKb のあとも同じ）。読み手が打った id は
+     名前ではなく立て替えなので、そのときも同じ組として一枚になります。
+     kbMinted() が二種類の id を見分ける一か所で、板に自分自身のことだけを
+     訊きます。again-check 1432 が実機の道でこれを持っています。 */
+  const mintOne = JSON.parse(JSON.stringify(oldOne)); mintOne.id = kbHash(oldOne);
+  const late = kbBoardsOf(JSON.parse(JSON.stringify(
+    { kbs: [mintOne, srvOne], at:0, v:2 })));
+  const lateN = late.kbs.length, lateId = late.kbs[0].id;
+  /* 一方、時計から取った id を着た板は二枚とも人が作ったもので、まとまりません。 */
+  const madeTwo = kbBoardsOf(JSON.parse(JSON.stringify(
+    { kbs: [{ nm:'', pat:'qwerty', lay: old.kbs[0].lay, id:'k1788700001_1' },
+            { nm:'', pat:'qwerty', lay: old.kbs[0].lay, id:'k1788700002_2' }], at:0, v:2 })));
+  const madeTwoN = madeTwo.kbs.length;
+  /* 人が＋を二回押した空の板は二枚。「ダメに決まってんだろ」OWNER 2026-09-09。
+     本物の道 ── kbAdd() 二回、saveKb()、そして slRd() で読み直す。 */
+  KB = { kbs: [], at: 0 };
+  kbAdd('qwerty'); kbAdd('qwerty');
+  saveKb();
+  const back2 = kbBoardsOf(JSON.parse(slRd(langKey('kb')) || 'null'));
+  const twoN = back2 ? back2.kbs.length : 0;
+  const twoIds = back2 ? back2.kbs.map((x) => x.id).join(',') : '';
   return {
     /* サーバーが持っているのは、この版が一度上げたあとの写し */
     srvBody: JSON.stringify(kbBoardsOf(JSON.parse(oldBody))),
@@ -4069,7 +4130,11 @@ const kbPrep = await pg2.evaluate(({ s }) => {
     threeN: kept.kbs.length, threeAt: kept.at,
     diffN: kbBoardsOf(JSON.parse(diff)).kbs.length,
     diffIds: ids(diff),
-    madeA: madeA, madeB: madeB
+    madeA: madeA, madeB: madeB,
+    twinA: twinA, twinB: twinB, twinN: twinN,
+    pairN: pairN, pairId: pairId,
+    lateN: lateN, lateId: lateId, madeTwoN: madeTwoN,
+    twoN: twoN, twoIds: twoIds
   };
 }, { s: seed.toString() });
 
@@ -4104,7 +4169,9 @@ const kbOne = (await kbLaunch()).onServer;
 const kbTwo = (await kbLaunch()).onServer;
 /* そして、すでに増えてしまった端末 ── オーナーの実機の姿です。ディスクには
    id 無しの写し一枚、サーバーには同じ板が四枚、前の版のランダムな id を着て
-   並んでいる。三度立ち上げて、人が数える枚数は一枚。 */
+   並んでいる。三度立ち上げて、人が数える枚数は一枚 ── ディスクの id 無しの
+   写しは、中身の同じ id 付きの板に出会うとその id を取ります。中身を見るのは
+   ここだけで、id を持つ板どうしは決してまとめません。 */
 const srvDup = await pg2.evaluate(() => {
   const k = JSON.parse(localStorage.getItem(langKey('kb')));
   const one = k.kbs[0]; delete one.id;
@@ -4126,17 +4193,39 @@ console.log('');
 say(kbPrep.once === kbPrep.twice && kbPrep.once.indexOf(',') > 0,
     'a board with no id read twice gets the same id both times, so the phone’s copy '
     + 'and the server’s are one board [' + kbPrep.once + '] [' + kbPrep.twice + ']');
-say(kbPrep.threeN === 1 && kbPrep.threeAt === 1,
-    'and three copies of one board read back as one board — 「消していい。そもそも'
-    + '増殖させるな」 — with the applied one pointing at the copy that was kept ('
+say(kbPrep.threeN === 3 && kbPrep.threeAt === 3,
+    'and three boards of one content read back as THREE boards — nothing here decides '
+    + 'by looking at what is on a board — with the applied one still the third ('
     + kbPrep.threeN + ' boards, at ' + kbPrep.threeAt + ')');
 say(kbPrep.diffN === 2 && kbPrep.diffIds.split(',')[0] !== kbPrep.diffIds.split(',')[1],
-    'while two boards that differ by one character of a name are still two, with two '
-    + 'ids — what is joined is byte for byte the same board and nothing else ['
-    + kbPrep.diffIds + ']');
+    'and two boards that differ by one character of a name are two, each with an id '
+    + 'of its own [' + kbPrep.diffIds + ']');
 say(kbPrep.madeA !== kbPrep.madeB && kbPrep.madeA.charAt(0) === 'k',
     'and a board being MADE still takes its id off the clock, so two new boards of one '
     + 'pattern are two boards [' + kbPrep.madeA + '] [' + kbPrep.madeB + ']');
+say(kbPrep.twoN === 2 && kbPrep.twoIds.split(',')[0] !== kbPrep.twoIds.split(',')[1],
+    'two empty boards of one pattern, made by pressing + twice and read back off '
+    + 'storage, are still two boards — 「ダメに決まってんだろ」 OWNER 2026-09-09 ('
+    + kbPrep.twoN + ' boards) [' + kbPrep.twoIds + ']');
+say(kbPrep.pairN === 1 && kbPrep.pairId === 'k1788700000_1',
+    'while an id-less board meeting the id-carrying board it is byte for byte the same '
+    + 'as IS that board — written down twice, once from before boards had ids — so it '
+    + 'takes that id and the two are one (' + kbPrep.pairN + ' board, ' + kbPrep.pairId
+    + ')');
+say(kbPrep.lateN === 1 && kbPrep.lateId === 'k1788700000_1',
+    'and it is still that board once THIS READER has stamped it — the launch stamps '
+    + 'the disk copy and saves it before it ever meets the server’s row, so an id that '
+    + 'is a board’s own kbHash is a stand-in and not a name (' + kbPrep.lateN
+    + ' board, ' + kbPrep.lateId + ')');
+say(kbPrep.madeTwoN === 2,
+    'while two boards wearing ids off the CLOCK are two boards somebody made, joined '
+    + 'by nothing, whatever is on them (' + kbPrep.madeTwoN + ' boards)');
+say(kbPrep.twinN === 2 && kbPrep.twinA === kbPrep.twinB
+    && kbPrep.twinA.split(',')[0] !== kbPrep.twinA.split(',')[1],
+    'and two id-less boards of one content, with no id-carrying row beside them to be '
+    + 'the same board as, read back as two boards with the same two ids every time — '
+    + 'stable, so nothing grows, and distinct, so neither is taken away ['
+    + kbPrep.twinA + '] [' + kbPrep.twinB + ']');
 say(kbOne === 2,
     'a launch that reads the id-less copy off the disk and merges it with the '
     + 'server’s does not grow the language: ' + kbOne + ' boards');

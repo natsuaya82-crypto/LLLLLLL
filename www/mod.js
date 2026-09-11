@@ -181,13 +181,27 @@ function modRow(r){
       esc(t('mod.drop'))+'</button>'+
     '</div>';
 }
+/* THE REPORTS, WHEREVER THEY ARE SHOWN, and the two things that stand in
+   their place. It is drawn on two screens -- the reports screen and the one
+   screen with everything on it -- and it was written out twice, four lines
+   that did not differ by a character. Two lists of the same thing that could
+   disagree about what a report looks like is what modRow() already refuses;
+   this is the same sentence about the list AROUND the rows.
+
+   Three states and not two: what could not be asked, nothing to show, and the
+   reports. 「空」 and 「読めていない」 do not share a branch -- an empty list
+   is only said once an answer has actually come back (`MODS` set, not busy,
+   and no error). */
+function modListHTML(rows){
+  return (MODERR? emptyBox(MODERR, '', '', true) : '')+
+    ((!MODBUSY && !MODERR && MODS && !rows.length)
+      ? emptyBox(t('mod.none')) : '')+
+    rows.map(modRow).join('');
+}
 function vMod(){
   var rows=MODS||[];
   return '<div class="view">'+navTop('')+'<div class="body">'+
-    (MODERR? '<div class="mnone bad">'+esc(MODERR)+'</div>' : '')+
-    ((!MODBUSY && !MODERR && MODS && !rows.length)
-      ? '<div class="mnone">'+esc(t('mod.none'))+'</div>' : '')+
-    rows.map(modRow).join('')+
+    modListHTML(rows)+
     '</div></div>';
 }
 
@@ -230,6 +244,20 @@ function vMod(){
    the lock is only there where there is something to unlock it with. */
 var ADMIN_OK=false, ADMIN_PW='', ADMIN_BUSY=false, ADMIN_ERR='', ADMINN=null;
 var ADMINS=null, ADMIN_H='';
+/* ---- putting somebody's language back -----------------------------------
+   「運営が治せる仕様は欲しい。ユーザーが問い合わせてきた時に、アカウントの
+   復旧ができるようにしたい、管理画面で」 OWNER 2026-09-09.
+
+   A FACE OF THIS ROUTE AND NOT A SECOND SCREEN. `admin` takes an argument
+   like every other route in PAGES -- 'rec' is the handle box and the list of
+   that person's languages, 'rec:<id>' is one language's parts and their
+   versions -- so the trail and the back button are the shell's, nothing new
+   was registered, and vAdmin() is still the one function that draws this
+   route (CLAUDE.md rule 21).
+
+   What comes back carries no bodies: a part's name and a date, which is all
+   the operator needs to pick one. netHist() in www/net.js says why. */
+var ADREC=null, ADREC_H='', ADREC_ERR='', ADREC_BUSY=false;
 
 function adminLocked(){ return !ADMIN_OK && netHow()==='email'; }
 /* Going there and reading are one press, for the same reason goMod() is. */
@@ -316,6 +344,35 @@ function adminAsk(){
   pullGo('mod');
 }
 function adminStaffSet(k, v){ if(k==='h'){ ADMIN_H=String(v||''); lnGrow('admin-h'); } }
+function adRecSet(k, v){ if(k==='h'){ ADREC_H=String(v||''); lnGrow('adrec-h'); } }
+/* WHAT CAME BACK REPLACES WHAT WAS THERE, INCLUDING THE FAILURE. A second ask
+   after a first one failed used to leave the old message under the new list,
+   which is the screen saying two things at once about one question. */
+function adRecFind(){
+  if(ADREC_BUSY || !ADREC_H) return;
+  ADREC_BUSY=true; ADREC_ERR=''; ADREC=null; render();
+  netHist(ADREC_H,
+    function(d){ ADREC_BUSY=false; ADREC=d; render(); },
+    function(){ ADREC_BUSY=false; ADREC_ERR=t('net.offline'); render(); });
+}
+/* THE APP'S OWN QUESTION AND NEVER THE SYSTEM'S. confirm() is banned outright
+   (CLAUDE.md § Shape) and tools/es5-check.mjs fails on the word. */
+function adRecPick(sid, kind, at){
+  popAsk(t('admin.rec.sure'), function(){ adRecGo(sid, kind, at); },
+         t('admin.rec.yes'));
+}
+/* AND THE LIST IS ASKED FOR AGAIN AFTERWARDS, because putting a version back
+   is an update and the trigger in supabase/schema.sql keeps what was there a
+   moment ago -- so the undo is a row on this screen the instant the restore
+   lands. Asked of the server rather than worked out here: what the versions
+   are is the server's answer and there is one place it comes from. */
+function adRecGo(sid, kind, at){
+  if(ADREC_BUSY) return;
+  ADREC_BUSY=true; ADREC_ERR=''; render();
+  netRestore(sid, kind, at,
+    function(){ ADREC_BUSY=false; adRecFind(); },
+    function(){ ADREC_BUSY=false; ADREC_ERR=t('net.offline'); render(); });
+}
 function adminStaffAdd(){
   if(ADMIN_BUSY || !ADMIN_H) return;
   ADMIN_BUSY=true; ADMIN_ERR=''; render();
@@ -350,6 +407,60 @@ function adminRow(k, n, go){
   return go? '<button class="set"' + DO(go) + '>'+body+'</button>'
            : '<div class="set">'+body+'</div>';
 }
+/* ONE LANGUAGE OF THAT PERSON'S. `.set` and nothing round it -- no corner, no
+   border, no panel (CLAUDE.md rule 18). */
+function adRecLangRow(l){
+  return '<button class="set"' + DO('go', ['admin', 'rec:'+l.id]) + '>'+
+    '<span class="sl">'+esc(l.name)+'</span><span class="sv">'+ICON_GO+'</span>'+
+    '</button>';
+}
+/* ONE VERSION. The date is plDate() -- the ORDER of the three numbers is not
+   the same in ten languages and there is one place that says it -- with the
+   clock after it, which reads the same everywhere. Three versions can share a
+   day, so the day alone would draw three rows nobody could tell apart. */
+function adRecWhen(ms){
+  var d=new Date(ms), h=d.getHours(), m=d.getMinutes();
+  return plDate(ms)+' '+(h<10?'0':'')+h+':'+(m<10?'0':'')+m;
+}
+function adRecVerRow(v){
+  return '<button class="set"' + DO('adRecPick', [v.sid, v.kind, v.at]) + '>'+
+    '<span class="sl">'+esc(adRecWhen(v.ms))+'</span></button>';
+}
+/* THE PARTS OF ONE LANGUAGE, IN `SLICES`' OWN ORDER, and only the ones that
+   have a version. Walking SLICES rather than what came back is what keeps the
+   order the same from one ask to the next; a part with nothing behind it is
+   not a row, because a row saying nothing is a row somebody presses. */
+function adRecParts(sid){
+  var out='', i, j, k, v, rows, hist=(ADREC && ADREC.hist)? ADREC.hist : [];
+  for(i=0;i<SLICES.length;i++){
+    k=SLICES[i]; rows=[];
+    for(j=0;j<hist.length;j++){
+      v=hist[j];
+      if(v.sid===sid && v.kind===k) rows.push(v);
+    }
+    if(!rows.length) continue;
+    out+='<div class="set"><span class="sl">'+esc(t('sl.'+k))+'</span></div>'+
+         rows.map(adRecVerRow).join('');
+  }
+  return out || emptyBox(t('admin.rec.none'));
+}
+/* THE WHOLE OF THE RECOVERY FACE, as a fragment: vAdmin() is what returns the
+   page, so this route still has one drawer. `a` is 'rec' or 'rec:<language>'. */
+function adRecBody(a){
+  var sid=(a.indexOf('rec:')===0)? a.slice(4) : '';
+  if(sid) return adRecParts(sid);
+  return '<div class="field">'+
+      lnField('adrec-h', t('admin.rec.ph'), ' autocapitalize="none"' +
+        IN('adRecSet', ['h']), ADREC_H)+'</div>'+
+    (ADREC_ERR? emptyBox(ADREC_ERR, '', '', true) : '')+
+    '<button class="btn ghost"' + DO('adRecFind') +
+      (ADREC_BUSY? ' disabled':'') + '>'+esc(t('admin.rec.find'))+'</button>'+
+    (ADREC
+      ? ((ADREC.langs && ADREC.langs.length)
+          ? ADREC.langs.map(adRecLangRow).join('')
+          : emptyBox(t('admin.rec.none')))
+      : '');
+}
 /* ---- what Apple counted -- GONE 2026-09-02 -------------------------------
    「lingua内ではみないって言ってるだろ」「RevenueCatで見るって話してるんだけど」
    OWNER. The takings, the months, the plans, the retention and the downloads
@@ -374,9 +485,21 @@ function vAdmin(){
 
      admin_counts() in supabase/schema.sql still counts and still sends; only
      the reports count is read off it now. Nothing was deleted on the server. */
+  /* AND THE FACE THAT PUTS SOMEBODY'S LANGUAGE BACK. A route's argument, so
+     it is this route wearing another face rather than a screen that had to be
+     registered -- and the back button is the shell's. */
+  var a=String((here()||{}).a || '');
+  if(a.indexOf('rec')===0)
+    return '<div class="view">'+navTop('')+'<div class="body">'+
+      adRecBody(a)+'</div></div>';
   var n=ADMINN||{}, rows=MODS||[];
   return '<div class="view">'+navTop('')+'<div class="body">'+
     adminRow('admin.reports', n.reports, 'goMod')+
+    /* 「運営が治せる仕様は欲しい」 OWNER 2026-09-09. A row and not a screen of
+       its own: this is the screen the operator is already standing on. */
+    '<button class="set"' + DO('go', ['admin', 'rec']) + '>'+
+      '<span class="sl">'+esc(t('admin.rec'))+'</span>'+
+      '<span class="sv">'+ICON_GO+'</span></button>'+
     /* Who answers them, and the field that adds one. Both stay here: their
        buttons exist only where they are drawn, and act-check walks this route
        with no argument -- see the head of this section. */
@@ -394,16 +517,13 @@ function vAdmin(){
        far end of the page from the thing that was typed -- so a handle nobody
        has emptied the field and said nothing anybody saw. One message, in the
        one place a failure on this screen can come from. */
-    (ADMIN_ERR? '<div class="mnone bad">'+esc(ADMIN_ERR)+'</div>' : '')+
+    (ADMIN_ERR? emptyBox(ADMIN_ERR, '', '', true) : '')+
     '<button class="btn ghost"' + DO('adminStaffAdd') +
       (ADMIN_BUSY? ' disabled':'') + '>'+esc(t('admin.staff.add'))+'</button>'+
-    /* And the reports themselves, drawn by the row the reports screen draws
-       them with. Two lists of the same thing that could disagree about what a
-       report looks like is the second state this chapter refuses to keep. */
-    (MODERR? '<div class="mnone bad">'+esc(MODERR)+'</div>' : '')+
-    ((!MODBUSY && !MODERR && MODS && !rows.length)
-      ? '<div class="mnone">'+esc(t('mod.none'))+'</div>' : '')+
-    rows.map(modRow).join('')+
+    /* And the reports themselves, drawn by the one function the reports
+       screen draws them with -- the rows and the two things that stand in
+       their place. */
+    modListHTML(rows)+
     '</div></div>';
 }
 /* Not named vSomething: tools/act-check.mjs reads every `v[A-Z]` in the app

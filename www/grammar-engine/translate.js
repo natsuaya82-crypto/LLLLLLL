@@ -494,6 +494,13 @@
       if(!Object.prototype.hasOwnProperty.call(roles,role)) continue;
       out.push(pieceFor(model, role, roles[role], (role==='PREDICATE')? vfeat : features, gaps, depth));
     }
+    /* AND WHAT THE SENTENCE DOES THAT NO SINGLE WORD CARRIES. Negation and
+       the question are features of the whole sentence, so they are written
+       after the pieces are in this language's order and before they are run
+       together: a word that is put in stands among the others, and letters
+       that go on the verb go on the verb. */
+    if(features.NEGATION) out=polarWrite(model, out, 'NEGATION', ir);
+    if(String(features.MOOD||'')==='INTERROGATIVE') out=polarWrite(model, out, 'QUESTION', ir);
     main=surfaces(out).join(' ');
     if(depth<CLAUSE_DEEP) subs=clausesOf(model, ir, gaps, depth);
     return {ok:true, text:cxJoin(model, main, subs), pieces:out, gaps:gaps,
@@ -663,6 +670,114 @@
 
   function surfaces(pieces){ var out=[], i; for(i=0;i<pieces.length;i++) out.push(pieces[i].surface); return out; }
 
+  /* ---- 否定と疑問 ---------------------------------------------------------
+     docs/GRAMMAR-V2-SPEC.md §4.4 and §4.5. A language says no in one of four
+     ways -- letters on the front of the verb, letters on the end of it, a
+     word standing somewhere, or the words coming out in another order -- and
+     it may do more than one of them at once (ne … pas). Which of them this
+     language does is written on its own chapter, out of two sentences
+     somebody made, and arrives here as a rule: target NEGATION or QUESTION,
+     feature the KIND of sentence it is about, value the operations.
+
+     WHICH RULE APPLIES IS DECIDED HERE AND NOT ON A SCREEN. 「否定する相手で
+     分ける ── 動詞の文／名詞の文／命令／存在。無ければ動詞の文のものを使う、
+     とエンジンが判断。画面は説明しない」 OWNER 2026-09-10. So a language that
+     has answered once has answered for all four, and nothing anywhere says so
+     out loud.
+
+     It is the WRITING side alone. A sentence somebody typed is read by
+     arrange() above, which finds the negation by the words this language
+     named as one -- and goes on doing exactly that. */
+  var POLAR_KIND={VERB:1, NOUN:1, IMPERATIVE:1, EXISTENTIAL:1};
+  /* What kind of sentence this meaning is, asked of the MEANING and never of
+     the language: a command is a mood, a noun sentence is one that says what
+     something IS, and existence is the language's own word for it -- named by
+     id the way the negation and the adpositions are, because no part of speech
+     tells that word from any other verb. */
+  function polarKind(model, ir, word){
+    var f=(ir&&ir.features)||{}, roles=(ir&&ir.roles)||{}, ex, i;
+    if(String(f.MOOD||'')==='IMPERATIVE') return 'IMPERATIVE';
+    if(word){
+      ex=markedIds(model,'EXISTENTIAL');
+      for(i=0;i<ex.length;i++) if(ex[i]===String(word.id)) return 'EXISTENTIAL';
+    }
+    if(Object.prototype.hasOwnProperty.call(roles,'COMPLEMENT')) return 'NOUN';
+    return 'VERB';
+  }
+  /* The rules for this kind, and the verb sentence's where this kind has
+     none. */
+  function polarRules(model, target, kind){
+    var rules=(model&&model.grammarRules)||[], mine=[], vb=[], i, r;
+    for(i=0;i<rules.length;i++){ r=rules[i];
+      if(r.type!=='syntax' || r.target!==target || !POLAR_KIND[r.feature]) continue;
+      if(r.feature===kind) mine.push(r);
+      else if(r.feature==='VERB') vb.push(r);
+    }
+    return mine.length? mine : vb;
+  }
+  /* The operations one rule is made of. A rule with `parts` is a combination
+     and is ONE rule: 「組み合わせも一つの規則として持てる」. */
+  function polarOps(rule){
+    var v=rule&&rule.value;
+    if(v && Array.isArray(v.ops)) return v.ops;
+    if(v && typeof v==='object') return [v];
+    return [];
+  }
+  function polarVerbAt(pieces){
+    var i; for(i=0;i<pieces.length;i++) if(pieces[i].role==='PREDICATE') return i;
+    return -1;
+  }
+  /* One operation, done to the sentence. Letters go on the verb; a word is
+     put where the rule says; an order is the roles read out again in the
+     order the rule gives, with anything it does not name left where it is. */
+  function polarDo(pieces, op, role){
+    var v=polarVerbAt(pieces), form=String((op&&op.form)||''),
+        kind=String((op&&op.operation)||''), at=String((op&&op.at)||'after'),
+        out=[], said={}, want, i, j;
+    if(kind==='prefix' || kind==='suffix'){
+      if(v<0 || !form) return pieces;
+      pieces[v].surface=(kind==='prefix')? form+pieces[v].surface : pieces[v].surface+form;
+      return pieces;
+    }
+    if(kind==='word'){
+      if(!form) return pieces;
+      want={role:role, surface:form, word:null, gap:false};
+      if(at==='head') pieces.unshift(want);
+      else if(at==='tail' || v<0) pieces.push(want);
+      else if(at==='before') pieces.splice(v, 0, want);
+      else pieces.splice(v+1, 0, want);
+      return pieces;
+    }
+    if(kind==='order'){
+      want=form? form.split(',') : [];
+      if(!want.length) return pieces;
+      for(i=0;i<want.length;i++)
+        for(j=0;j<pieces.length;j++)
+          if(!said[j] && (pieces[j].role===want[i] ||
+                          (want[i]==='VERB' && pieces[j].role==='PREDICATE'))){
+            said[j]=1; out.push(pieces[j]); break;
+          }
+      for(j=0;j<pieces.length;j++) if(!said[j]) out.push(pieces[j]);
+      return out;
+    }
+    return pieces;
+  }
+  /* Every rule this language has for saying it, applied in the order they
+     were written. A language with no rule at all writes the sentence it
+     already had -- which is the spec's own 「中途半端でも壊れない」: the
+     chapter says nothing, so the sentence is that much shorter and every
+     other chapter's answer is untouched. */
+  function polarWrite(model, pieces, target, ir){
+    var v=polarVerbAt(pieces),
+        kind=polarKind(model, ir, (v>=0)? pieces[v].word : null),
+        rules=polarRules(model, target, kind), ops, i, j;
+    for(i=0;i<rules.length;i++){
+      ops=polarOps(rules[i]);
+      for(j=0;j<ops.length;j++) pieces=polarDo(pieces, ops[j], target);
+    }
+    return pieces;
+  }
+
 
   /* ---- a line of this language, said in a natural one ---------------------
      OWNER 2026-09-05 「単語はその単語の意味を 文法は並び替えた単語たちが文章
@@ -764,5 +879,5 @@
     return out.join(' ');
   }
 
-  api.translate={run:run, arrange:arrange, line:line, positionOf:positionOf, markedIds:markedIds, srcOrder:srcOrder, toSemantic:toSemantic, fromSemantic:fromSemantic, toNatural:toNatural, glossLine:glossLine, npOrderOf:npOrderOf};
+  api.translate={run:run, arrange:arrange, line:line, positionOf:positionOf, markedIds:markedIds, srcOrder:srcOrder, toSemantic:toSemantic, fromSemantic:fromSemantic, toNatural:toNatural, glossLine:glossLine, npOrderOf:npOrderOf, polarRules:polarRules, polarKind:polarKind};
 }(typeof window!=='undefined'?window:this));

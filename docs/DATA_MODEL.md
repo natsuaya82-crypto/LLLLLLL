@@ -317,16 +317,60 @@ longer part of this question**: nothing writes it since the backup file went
 it goes with the rest of that account's keys. **It is with the owner** —
 `docs/scope/aud-data.md` § オーナーに訊くこと, Q1 to Q3.
 
+## 直前の三版 ── `slice_hist`（サーバーだけ、運営だけ）
+
+「運営が治せる仕様は欲しい。ユーザーが問い合わせてきた時に、アカウントの復旧が
+できるようにしたい、管理画面で」「3 で実装して」OWNER 2026-09-09。
+
+| | |
+|---|---|
+| どこに | サーバーだけ（`supabase/schema.sql`）。**端末には一行も来ません** |
+| 誰の | その言語の。`language` を指していて、言語が消えれば cascade で消えます |
+| 誰が読めるか | `is_staff()` だけ。**本人にも見えません** ── 日付の並びは、その人がいつ考えを変えたかの記録で、アプリのどの画面にも出しません（`docs/STATE.md` § 4a 四の勧め「見せない」のとおり） |
+| 誰が書けるか | 誰も。insert / update / delete の policy が一つもなく、trigger（definer）が唯一の道です |
+| いつ増えるか | `slice` の行が update / delete される直前。中身が本当に変わったときだけです（`netSlice1()` は送るものが無ければ送らないので） |
+| いつ消えるか | **4 版目が積まれた瞬間、一番古い版が消えます。**これがこのファイルで唯一の自動削除で、DELETE REVIEW は `docs/CHANGELOG.md` 2026-09-09 |
+| 戻す道 | RPC `admin_restore(language, kind, at)`。update なので trigger がその瞬間の「今」を版に写します ── **戻すのを戻せます** |
+
+`at` は**その版が「今」でなくなった時刻**で、書かれた時刻ではありません。
+`slice` 自身の `at` を使っていたときは、平の `update` がその列に触らないので
+四つの版が同じ時刻を持ち、天井が「新しい三つ」を選べませんでした ── 戻した版が
+一番古い時刻で入り、同じ文の中で消えていました（`npm run rls` で見えます）。
+
+**本人の端末に届く道は増えていません。**戻した版は `slice` に載り、その人の
+次の起動の `netLangsWalk()`（`www/net.js`）が「無いものを埋める」ので入ります
+── スライスはメモリなので（規則 22）、アプリを閉じて開けば端末は何も持って
+おらず、サーバーの答えがそのまま入ります。**アプリを開いたままだと届きません**
+（端末が持っているものは書き換えない ── それが一分前のタイピングを守る側の
+規則です）。運営はその人に「一度閉じて開き直してください」と言うことになります。
+`tools/hist-check.mjs` がその道を、`npm run rls` が表と天井と誰が読めるかを
+押さえています。
+
 ## The index of languages, and what is actually in it
 
 `lingua.langs` (`LANGS`) is `id -> { … }`, and `lingua.cur` (`langId`) says
 which one every global on the making side means.
 
+**その `id` は `language.id` そのものです（2026-09-10）。**言語の番号は一つ
+だけで、端末が uuid v4 を打ち（`langMint()`、`www/core.js`）、`netLangRow()`
+（`www/net.js`）はそれを insert に**入れて**送ります ── 列は
+`default gen_random_uuid()` なので、送れば送った値になります。それまでは
+番号が二つあり、`sid` がサーバー側のもう一つでした。二つを突き合わせていた
+`nidFor()` `nidHolds()` `nidDrop()` は削除。**取った言語はダウンロードが
+できた日からこの形です**（`langSeenAdd()` はサーバーの id をそのまま鍵に
+します）── 作る側が読む側に追いついたということです。
+
+古い索引は `langsOneId()`（`www/core.js`）が起動時に**写します**。
+`{ 'L…': { sid: U } }` は `U` へ、`sid` の無い `'L…'` は新しい uuid へ、
+`{ U: … }` は触りません。`lingua.L….*` の鍵は**一つも消しません**
+（`docs/DATA_SAFETY.md` 第2則）── 索引の行だけが、その言語の本当の番号の
+下へ移ります。
+
 | key | written by | what it is |
 |---|---|---|
 | `name` | **nothing, since 2026-09-08** | a copy of the language's name. It was written by `langMint()` and by `save()` on the open one, and it is what let a rename move the phone's answer and leave `language.name` — the half anybody else reads — holding the name the language was made with. What a language is called is that column now (`langNameOf()`, `www/core.js` § LNAME). **An entry written by an older version still carries this field and nothing reads it**; nothing removes it, because a migration copies |
-| `mine` | `langMint()` and `netLangsDown()` write **true**; `langSeenAdd()` (`www/core.js`) writes **false** | whether the entry was made as a language you are MAKING or one you are only READING. **What decides that now is `language.owner`** (`langMine()`), and this is read in exactly one place: a language that has been up (`sid`) whose owner the server has not answered for yet — the migration reading, for the languages already on every phone, and never after an answer arrives |
-| `sid` | `netLangRow()` (`www/net.js`) | the server's id for this language, the same way a post carries one. **A language with no `sid` has never been up.** Added after the entry is made, and `langStore()`d on the spot. A downloaded language is filed UNDER its `sid`, so a second download of it lands in the same place |
+| `mine` | `langMint()` and `netLangsDown()` write **true**; `langSeenAdd()` (`www/core.js`) writes **false** | whether the entry was made as a language you are MAKING or one you are only READING. **What decides that now is `language.owner`** (`langMine()`), and this is read in exactly one place: a language whose owner the server has not answered for yet — the migration reading, for the languages already on every phone, and never after an answer arrives |
+| `sid` | **nothing, since 2026-09-10** | the server's id for this language, back when a language had two numbers. The id IS that number now, so there is nothing to keep beside it. `langsOneId()` (`www/core.js`) reads this field once, on the launch that moves the entry to it, and it is the last thing that ever does — it also says the `language` row EXISTS, because `netLangRow()` wrote it at the moment it made the row and at no other moment (`LROW`, `www/core.js`) |
 | `uid` | **nothing, since 2026-09-09** | it answered TWO questions with one field: on a language somebody made it was who MADE it, and on a downloaded one it was who TOOK it (`langSeenAdd()`'s own comment said so). The two come apart the moment a language moves between people, and `dlCount()` counted the second — so the ceiling on downloads was per handset. They are two questions now and both are the server's: **who wrote it** is `language.owner` (`langOwnOf()`, `www/core.js` § LOWN) and **that this account took it** is a `language_take` row (`langTookHas()`). An entry written by an older version still carries this field and nothing reads it |
 | `mig` | `langMigrate()` (`www/core.js`), removed by `langMigStamp()` | the mark that this entry came out of the eight flat keys and is still waiting for an account to be stamped on it. `langMigrate()` runs while `core.js` is loading, before `SESS` is even declared, so there is nothing to stamp with at the moment it is made and `netRead()` does it eighteen lines later |
 
@@ -337,8 +381,8 @@ written here.**
 
 **It exists.** `LANGS[id].mine` is what says a language is not yours, and
 `langSeenAdd()` (`www/core.js`) is what writes it false — the index row for a
-language taken off somebody else's page, filed under that language's `sid` so
-a second download of it lands in the same place and does not make a second
+language taken off somebody else's page, filed under that language's own id
+so a second download of it lands in the same place and does not make a second
 copy. 「ダウンロードボタン押しても言語追加されないけど？」「いつまでもfalseだった
 とかやめてね。」 OWNER 2026-09-01 is the sentence that closed the gap.
 

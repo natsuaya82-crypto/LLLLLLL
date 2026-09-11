@@ -145,11 +145,12 @@ const r = await pg.evaluate(async ({s}) => {
      (www/shell.js § KEEP, www/glyph.js § geKeepOn): the Save stands in the
      bar and geSave() is gone. A check that calls a function goes green on the
      day the button stops being wired to it, so this stands on the screen the
-     way editLetter() puts somebody there, leaves the drawing in the buffer
-     the way a finger does (geKeepPut), and clicks what is in the corner. */
+     way editLetter() puts somebody there, leaves the drawing on the paper the
+     way a finger does, and clicks what is in the corner. The drawing IS what
+     the screen is holding -- geNow() is asked for it (www/shell.js § keepOn)
+     -- so there is nothing to push into a buffer. */
   editLetter(l.id); render();
   GE.st = [{ pts: tri, fill: true }];
-  geKeepPut();
   document.querySelector('[data-do="keepPress"]').click();
   await wait(60);
   /* not `back` -- that is the app's back arrow, and a `var back` here hoists
@@ -174,13 +175,12 @@ const r = await pg.evaluate(async ({s}) => {
      been pressed.
 
      Driven the way the app drives it: editGlyph() to get onto the screen,
-     strokes onto GE, geKeepPut() for what the finger leaves in the buffer,
-     then back(), which is what the arrow is wired to. */
+     strokes onto GE -- which is the drawing, and therefore what geNow()
+     answers with -- then back(), which is what the arrow is wired to. */
   var l2 = LETTERS[1] || LETTERS[0];
   var sq2 = [P(5,5), P(15,5), P(15,15), P(5,15)];
   editGlyph(ltName(l2) || l2.id); render();
   GE.st = [{ pts: sq2, closed: true, fill: true }];
-  geKeepPut();
   var lid2 = GE.lid;                       /* the Yes is about to let GE go */
   back();
   out.leftAsked = popOn();

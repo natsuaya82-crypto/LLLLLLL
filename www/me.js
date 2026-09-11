@@ -1289,7 +1289,7 @@ function whoCard(h){
      A freeze can be lifted, so nothing here is destroyed and the page comes
      back by itself. */
   if(p.out)
-    return '<div class="empty"><div class="eb">'+esc(t('who.out'))+'</div></div>';
+    return emptyBox(t('who.out'));
   return '<div class="mecard">'+
     '<div class="metop">'+
     '<div class="pav">'+postFace(p)+'</div>'+
@@ -1451,7 +1451,7 @@ function openMe(){
      § KEEP、OWNER DECISION 2026-09-03。この画面に着くたびに通るので、
      打ちかけを持ったまま出て戻ってきたら、その打ちかけが基準ごと残る
      （keepOn は既に在る buffer に触らない）。 */
-  keepOn(ME_KEY, meWas(), meKeepSave);
+  keepOn(ME_KEY, meWas, meKeepSave);
   /* Named after the page it is the settings for, through the one function
      that names a page. */
   /* The picture first, then the name, the handle and the bio -- OWNER

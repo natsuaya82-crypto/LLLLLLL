@@ -98,7 +98,7 @@ https://raw.githubusercontent.com/natsuaya82-crypto/LLLLLLL/master/supabase/sche
 
 ### 2026-09-09 以降、**もう一度流し直してください**
 
-この日、「端末に残すものはない」の続きで `schema.sql` を三箇所触っています。
+この日、「端末に残すものはない」の続きで `schema.sql` を四箇所触っています。
 
 1. **`language.wsys` 列**（書記体系）── 言語がどの書記体系で書かれているかは
    人の設定（`SET.wsys`）に入っていて、二つ言語を持つ人は両方に一つの答えしか
@@ -113,6 +113,33 @@ https://raw.githubusercontent.com/natsuaya82-crypto/LLLLLLL/master/supabase/sche
    ダウンロードの上限（plus 1・pro 3）が端末の索引を数えていたので、同じ
    アカウントの二台目は 0 から数え直していました。RLS は本人だけ
    select / insert / delete で、**誰が何を取ったかは誰にも見せません**。
+
+4. **非公開は新規 DL を止めるだけ**（同日、あとから）──
+   「非公開にしたら新規 dl だけできないだけ」OWNER 2026-09-09。`slice_read` は
+   「持ち主、または公開中」だったので、元が言語を非公開にすると**既に取った人が
+   次の起動で空の言語を開いていました**。`language_took()`（新しい関数）を足して、
+   `slice_read`・`language_read`・`language_seen` の三つが取った人にも答えます
+   ── 行が来ないと名前も書記体系も来ないので、三つ全部です。逆側は `take_make`
+   に「公開中」が付きました：**新しく取れるのは公開中の言語だけ**。読める範囲は
+   広がっていません ── 単語と文法は今までどおり元の人の `dl` の switch を訊きます。
+   **`language_seen` の作り直しと、関数への `grant execute` が含まれます**
+   （`anon` にも要ります ── 公開された言語の文字は account の無い人も読むので）。
+
+5. **`slice_hist` 表と trigger と RPC 二つ**（新、同日あとから）──
+   「運営が治せる仕様は欲しい。ユーザーが問い合わせてきた時に、アカウントの
+   復旧ができるようにしたい、管理画面で」「3 で実装して」OWNER 2026-09-09。
+   `slice` が書き換わる／消える**直前**の中身を `slice_hist` に一行残し、
+   同じ (language, kind) で **3 版**を超えたら一番古い行を消します
+   （trigger `slice_hist_keep()`、`security definer`）。**これが唯一の自動
+   削除で、DELETE REVIEW は `docs/CHANGELOG.md` 2026-09-09 にあります。**
+   読めるのは `is_staff()` だけ、insert / update / delete の policy は一つも
+   ありません。戻す道は `admin_hist(handle)` と
+   `admin_restore(language, kind, at)` の二つで、どちらも中で `is_staff()` を
+   訊きます。**版は流した時点より後の書き込みから積まれます** ── 流した直後は
+   版ゼロで、それは正しい状態です。アプリ側は一行も変わっていません
+   （`netSlicePut()` はそのまま）。**この項目だけはアプリが 404 を受け取る
+   類のものではありません** ── 流さなくても今までどおり動き、復旧の画面だけが
+   空で返ります。
 
 **流し直すまで、アプリは言語の一覧・記事・ダウンロードで 404 を受け取ります**
 （新しい列を選ぶ GET が PGRST で断られます）。「くるくる回ったまま」ではなく、

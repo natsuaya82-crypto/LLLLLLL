@@ -93,9 +93,9 @@ text-align:center で、中の `input` の行は有料の面だけのものな�
 **直したこと。**二と同じです ── 付け足しをやめて「PDF を選ぶ」だけにし、
 `.shfile` を無料の側も着せて幅と寄せを揃えました。
 
-**一つの関数にはしていません。**ボタンに書く言葉が違う二つで、
-`shInFileHTML()` の上のコメントが元からそう書いています。**同じ規則を、
-共有できない二箇所それぞれで言っている**形です。
+**一つの関数にしました（2026-09-10、`DUPLICATES.md` 18番）。**この日は
+「ボタンに書く言葉が違うから共有できない」と書きましたが、言葉は引数で
+渡せます。二箇所は `fileInHTML()`（`www/shell.js`）一つになりました。
 
 **スクショ。**`shots/before,after/3-wrin-{free,paid}-ja.png`。
 
@@ -178,8 +178,8 @@ OWNER 2026-09-03）、**言葉そのものではありません。**
 
 ```
 一  www/settings.js:368   （有料と同じ一行）  www/settings.js:182  （設定一覧の CSV）
-二  www/import.js:487     （impFileHTML）
-三  www/sheet.js:1298     （shInFileHTML）
+二  www/import.js         （impGetHTML ── 中身は fileInHTML、www/shell.js）
+三  www/sheet.js           （shInHTML   ── 同じ）
 四  www/wsys.js:100       （setWsys の upStop）── 押すとここが答えます
 五  www/keyboard.js       （`?` の中。直していません）
 六  www/phases.js  www/settings.js  （数。直していません）
