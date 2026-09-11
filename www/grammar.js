@@ -2622,13 +2622,46 @@ function g2Said(c){
   /* この言語について counts what this language has and is never empty. */
   return true;
 }
+/* WHETHER THIS LANGUAGE HAS A RULE FOR ONE FORM OF A SECTION. `STG.fm` holds
+   them for every form but 否定 and 疑問, whose rules are a shape of their own
+   and live in `STG.gr` -- so this is where the form's rules are KEPT rather
+   than a second answer to which forms there are.
+
+   It is not g2Said(), and the two are different questions. That one is 「has
+   this section been written in at all」 and counts an example or a word the
+   section asks for; this one counts RULES, because that is what the number on
+   the row is about. A section whose example is written and whose rules are not
+   is not pale and says 0. */
+function g2FmSaid(c, fm){
+  var f=gPolFeat(c.id);
+  return f? gPolSaidAny(f) : g2RulesOf(fm).length>0;
+}
+/* THE RIGHT END OF A SECTION'S ROW: how many of the things it is made of have
+   been answered, out of how many. 「章の中の節の行は答えた後も右端が「—」の
+   まま（薄さだけが変わる）」 2026-09-11 -- a section said 時制 and — whether
+   this language had written six rules in it or none, so the only thing the
+   contents of a chapter said was pale or not.
+
+   IT IS THE SENTENCE EVERY OTHER ROW IN THIS APP ALREADY SAYS, one level
+   down: a stage says how many of its slots are filled (www/phases.js § stRow),
+   a chapter of the book says how many of its sections are written
+   (g2BookRow), and a section says how many of its forms are. A row with
+   nothing to count says — , which is what those two already do -- 語順 and
+   です／ある are one decision each and there is no 1/1 to write about a thing
+   that is not made of parts. */
+function g2ChapVal(c){
+  var i, done=0;
+  if(!c.fms) return '—';
+  for(i=0;i<c.fms.length;i++) if(g2FmSaid(c, c.fms[i])) done++;
+  return done+' / '+c.fms.length;
+}
 function g2ChapRow(c, n){
   return '<button class="strow'+(g2Said(c)? '' : ' pale')+'"' +
     DO('go', ['gram', 'v2:'+c.id]) + '>'+
     '<span class="stn">'+n+'</span>'+
     '<span class="stt">'+esc(c.nm)+'</span>'+
     '<span class="lead"></span>'+
-    '<span class="stv">—</span>'+
+    '<span class="stv">'+esc(g2ChapVal(c))+'</span>'+
     ICON_GO+'</button>';
 }
 /* One chapter's page. It is handed the chapter rather than the argument now:

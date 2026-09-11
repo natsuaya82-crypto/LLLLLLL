@@ -2205,6 +2205,52 @@ want('and there are some to press', ex.n > 0, true);
 want('and pressing it opens the page, whichever kind of section it is',
      ex.stuck.join(' | '), '');
 
+/* ---- §19 THE RIGHT END OF A SECTION'S ROW SAYS HOW FAR IT IS ------------
+   「章の中の節の行は答えた後も右端が「—」のまま（薄さだけが変わる）」
+   2026-09-11. A section said 時制 and — whether this language had written six
+   rules in it or none, so the only thing a chapter's contents said about its
+   own sections was pale or not pale.
+
+   It says how many of its forms have a rule, out of how many -- the sentence a
+   stage's row and a chapter's row on the contents already say. A section that
+   is not made of forms has nothing to count and goes on saying —, which is
+   what 語形成 says on the contents for the same reason.
+
+   BOTH STATES, because the fault is in the one nobody looked at: the chapter
+   is read with one rule written and again with none, and the number has to
+   MOVE. A row frozen at 0/6 reads exactly as right as one frozen at —. */
+const val = await pg.evaluate(() => {
+  const sp = (w) => w.split('').map((u) => ({ l:'', u:u }));
+  const wasFm = JSON.stringify(STG.fm || []);
+  /* The right ends alone, in the order the chapter draws its sections. Not the
+     names: this file runs in English and a label is whatever the interface
+     language says, which is i18n-check's business and not this one's. */
+  const read = (b) => { window.route = 'gram'; NAV = [{ r:'gram', a:'book:' + b }];
+    render();
+    return Array.prototype.map.call(
+      document.querySelectorAll('#app .strow .stv'),
+      (v) => v.textContent).join(' | '); };
+  STG.fm = [];
+  const empty = read('verb');
+  STG.fm = [{ id:'t1', pos:'v', fm:'pst', at:'end', drop:0, add:sp('ka'), when:'' },
+            { id:'t2', pos:'v', fm:'fut', at:'end', drop:0, add:sp('mo'), when:'' }];
+  const two = read('verb');
+  /* AND A CHAPTER WHOSE SECTIONS ARE NOT FORMS. 文 is 語順・名詞句・です／ある,
+     one decision each, so there is nothing to count on any of its rows. */
+  const snt = read('snt');
+  STG.fm = JSON.parse(wasFm);
+  return { empty: empty, two: two, snt: snt };
+});
+/* The verb chapter draws 人称変化・時制・法・態・否定形・疑問形 in that order,
+   and the two rules written above are both TENSE -- so the second right end is
+   the one that moves and the first is the one that must not. */
+want('a section with no rule in it says none of its forms are written',
+     val.empty, '0 / 6 | 0 / 6 | 0 / 5 | 0 / 2 | 0 / 1 | 0 / 1');
+want('and two rules of one section move that one and no other', val.two,
+     '0 / 6 | 2 / 6 | 0 / 5 | 0 / 2 | 0 / 1 | 0 / 1');
+want('a section that is not made of forms has nothing to count',
+     val.snt.replace(/[^—]/g, '').length, 3);
+
 await br.close();
 srv.close();
 
@@ -2257,3 +2303,6 @@ console.log('          A rule that has a condition says it, and one that has non
 console.log('          reads exactly as it did.');
 console.log('          Every section of the book reaches its own lines by the same');
 console.log('          + -- a stage, a chapter and a section are one door.');
+console.log('          A section\'s row says how many of its forms are written, and');
+console.log('          the number moves when a rule is; one that is not made of');
+console.log('          forms has nothing to count and says so.');
