@@ -113,9 +113,24 @@ const R = await pg.evaluate(async () => {
      JWT and does not need to be: netClaims() cannot read it, netAnonTok()
      answers false for what it cannot read, and false is what a real account
      is. The uid is the whole point of the fixture. */
-  const arrive = (uid) => netTook({
-    access_token: 'not a jwt', refresh_token: 'a refresh token', user: { id: uid }
-  });
+  /* この検査にサーバーはありません。`netTook()` は 2026-09-11 から
+     「送ってから訊く」road を始めます（www/net.js）── 送信の答えが来ない
+     ので、そこで止まると `LANG_WAIT` が立ったままになり、どの画面も
+     「待っています」の丸になります。**答えが来なかった時と同じ所まで**
+     進めるのが `langForAcct()` の一行で、それは `netLangSync()` の失敗が
+     `done(false)` を呼び、`pullWait()` が待っている人を起こして通る道その
+     ものです。近道ではなく、電波の無い端末が実際に通る終わりです。 */
+  const arrive = (uid) => {
+    const r = netTook({
+      access_token: 'not a jwt', refresh_token: 'a refresh token', user: { id: uid }
+    });
+    /* そして一覧が降りてきた所まで。`PULL_GOT` は「サーバーが答えた」で、
+       この検査ではその答えが `start()` の `langOwnGot()` です。立てないと
+       `langForAcct()` は（正しく）何も作らずに待ちます。 */
+    PULL_GOT['mylangs'] = 1;
+    langForAcct();
+    return r;
+  };
 
   /* Somebody with a whole account on this phone: the two things the
      photograph showed, and the four that do not show but travel further --
@@ -145,6 +160,11 @@ const R = await pg.evaluate(async () => {
     window.__seed(); SET.walked = true;
     wipeParked();
     netOut();
+    /* サーバーが「この言語はこの人が書いた」と答えた所から始めます ──
+       セッションが着く前に。2026-09-11 から `langForAcct()` はサーバーの
+       答え（`langOwnOf()`）だけを読むので、答えが入っていない状態で
+       セッションが着くと、この端末には何も無いことになります。 */
+    langOwnGot(langId, A);
     arrive(A); beA();
     /* そして fixture の言語は、いまサインインしている人が書いたもの ──
        どの案件もそこから始まります。「誰が書いたか」はサーバーの答えで
@@ -672,6 +692,11 @@ const R = await pg.evaluate(async () => {
      上書きし、どちらが勝ったかは誰にも言えませんでした ── 規則 22 の例外が
      一つ、木に立っていた形です。
 
+     **列は五つで、名前と @ もその一つ**（2026-09-11）。ここは「三列」と
+     書いてありましたが、名前と @ は保存でサーバーへ行かず端末に書かれて
+     終わっていました（hunt 道7、67番）。上がる以上は降りてもきます ──
+     一方通行が二台のあいだで食い違う、というのがこの節そのものの話なので。
+
      四本訊きます:
      1. 行が言うとおりになる ── 端末が違うことを持っていても
      2. この道は一本も送らない（PATCH ゼロ）
@@ -679,7 +704,10 @@ const R = await pg.evaluate(async () => {
      4. 編集は PATCH が通ってから ME に入り、落ちれば一字も入らない */
   start();
   netOut(); arrive(A);
-  const PROF_SEL = '/rest/v1/profile?select=bio,link,loc';
+  /* 列は `PROF_MINE` が名乗ります（www/net.js）── ここで書き下すと、欄が
+     一つ増えた日にこの stub が黙って外れて、代わりに `ok([])` が返り、
+     「行が無い」の枝を測ってしまいます。 */
+  const PROF_SEL = '/rest/v1/profile?select=' + profCols();
   ME.bio = ''; ME.link = ''; ME.loc = ''; saveMe();
   netGet = (path, ok) => {
     if (path.indexOf(PROF_SEL) === 0)
@@ -753,7 +781,7 @@ const R = await pg.evaluate(async () => {
     no('21: 落ちたのに隣の名前だけ入った ── 保存は一回の押下で、半分の保存は保存ではない');
   if (saved21 !== false) no('21: 落ちたのに保存が済んだと言っている');
   netSend = realSend21;
-  say('21: 自己紹介・リンク・場所は profile の三列だけ ── 起動の読み込みは' +
+  say('21: 名前・@・自己紹介・リンク・場所は profile の五列だけ ── 起動の読み込みは' +
       '一本も送らず、行が無ければ写しを触らず、編集は通ってから入る');
 
   /* ---- 21b. そしてそれが画面に出る --------------------------------------
@@ -1638,7 +1666,7 @@ const R = await pg.evaluate(async () => {
   try { slWr(langKeyOf('La', 'words'),
     JSON.stringify([{ hw: 'aaa', ph: ['a'], mn: 'A のことば', mns: ['A のことば'], pos: 'n' }])); } catch (e) {}
   arrive(B);
-  langForAcct(true);
+  langForAcct();
   if (langId === 'La') no('33: B でサインインしたのに A の言語が開いたまま');
   if (!langAcct(langId)) no('33: 開いた言語が B のものではない（' + langId + '）');
   if (!LANGS.La) no('33: A の言語が索引から消えた');
@@ -1646,7 +1674,7 @@ const R = await pg.evaluate(async () => {
     no('33: A の単語が消えた ── 隠すのであって消すのではない');
   /* そして A に戻ると、A の言語がそのまま返る。 */
   netOut(); arrive(A);
-  langForAcct(true);
+  langForAcct();
   if (langId !== 'La') no('33: A に戻ったのに A の言語が開かない（' + langId + '）');
   /* そして B がこの端末に一つも持っていない場合。作られる新しい言語には
      そのアカウントの印が要ります ── langMint() は印を付けず、印の無い言語は
@@ -1656,13 +1684,13 @@ const R = await pg.evaluate(async () => {
   LANGS = { 'La': { name: 'A の言語', mine: true } }; langOwnGot('La', A);
   langId = 'La'; langName = 'A の言語';
   arrive(B);
-  langForAcct(true);
+  langForAcct();
   const madeForB = langId;
   if (madeForB === 'La') no('33: 何も持っていない B に A の言語が開いたまま');
   if (!LANGS[madeForB] || langOwnOf(madeForB) !== B)
     no('33: B のために作った言語に B の印が無い（uid=' +
        JSON.stringify(langOwnOf(madeForB)) + '）');
-  netOut(); arrive(A); langForAcct(true);
+  netOut(); arrive(A); langForAcct();
   if (langId !== 'La')
     no('33: A が戻ったのに、B のために作った言語のほうが開いた（' + langId + '）');
   say('33: 開いている言語はサインインした人のもの ── 前の人のは消えず、戻れば返る');
@@ -1683,13 +1711,25 @@ const R = await pg.evaluate(async () => {
 
      これは langFirst()（オンボーディング）とは違います。あちらは口座が
      できる前なので押す印がありません。ここには押す印があります。 */
+  /* AND IT GOES UP AS IT IS MADE（2026-09-11、hunt #12）。言語はサーバーに
+     住んでいて（CLAUDE.md § Online）、スライスはメモリです（規則 22）──
+     だから「作って送らない」は「アプリを閉じたら消える」と同じことです。
+     測った形: ＋ を押した言語の行は**次の起動**（www/boot.js）まで出来ず、
+     その間に閉じれば無くなり、画面は何も言いません。 */
   start();
   SET.plan = 'pro'; SET.planWas = 'pro'; save();
   const keepL34 = LANGS, keepId34 = langId, keepNm34 = langName;
+  const keepSync34 = netLangSync;
+  const sent34 = [];
+  netLangSync = (then) => { sent34.push(langId); if (then) then(false); };
   LANGS = { 'La': { name: '自分の', mine: true } }; langOwnGot('La', A);
   langId = 'La'; langName = '自分の';
   langNew();
+  netLangSync = keepSync34;
   const made34 = langId;
+  if (sent34.indexOf(made34) < 0)
+    no('34: ＋ で作った言語が、その場でサーバーへ行っていない — 送った先 ' +
+       JSON.stringify(sent34));
   if (made34 === 'La') no('34: ＋ を押したのに新しい言語が開いていない');
   else if (langOwnOf(made34) !== A)
     no('34: ＋ で作った言語に、押した人の印が無い（uid=' +
@@ -1701,7 +1741,8 @@ const R = await pg.evaluate(async () => {
     no('34: ＋ で作った言語が、作った人自身の一覧に出ない');
   LANGS = keepL34; langId = keepId34; langName = keepNm34;
   SET.plan = 'free'; SET.planWas = 'free'; save();
-  say('34: ＋ で作った言語は、押した人のアカウントのもの');
+  say('34: ＋ で作った言語は、押した人のアカウントのもの ── そしてその場で' +
+      'サーバーへ行く（次の起動を待たない）');
 
   /* ---- 35. 印の無い言語を拾うのは、オンボーディングの歩きだけ -----------
      「1アドレス1アカウント」「これは絶対課金もアカウントごと言語もそう」
@@ -1736,18 +1777,21 @@ const R = await pg.evaluate(async () => {
   netOut(); SET.walked = false;
   if (!langOwned('Lu')) no('35: 歩きの途中で、作ったものが自分のでない');
 
-  /* 扉。サインインは済んで、まだ obFinish() を通っていない ── ここで
-     印の無い言語は**もう誰のものでもありません**。2026-09-09 から、扉を通る
-     その瞬間に obFinish() が `language.owner` になる印を書き、netLangSync()
-     がそれを上げます（www/onboard.js）。だから「サインインしたのにまだ歩きの
-     内側」という状態は無くなりました ── あったときは、A がこの端末で作って
-     一度も上げていない言語が B のものになる形でした。 */
+  /* 扉。サインインは済んで、まだ何も送っていない ── ここで印の無い言語は
+     **誰のものでもありません**。**端末は誰のものかを決めません**
+     （`docs/FEATURE_RULES.md` § 端末は何も決めない、OWNER 2026-09-11）。
+
+     では歩きの言語はいつその人のものになるのか ── **サーバーに行が出来た
+     とき**です。`netTook()` が `netLangSync()` を先に走らせ、
+     `netLangRow()` が `language` の行を作り、その ok が `langOwnGot()` を
+     書く（`www/net.js`）。書いているのはサーバーが答えた `owner` であって、
+     端末の判断ではありません。66番がその road を歩きます。 */
   arrive(B);
   if (langOwned('Lu'))
     no('35: サインインしただけで、印の無い言語が拾われた');
-  /* そして扉を通れば、その人のものとして上がる ── obFinish() が書く印。 */
+  /* そしてサーバーに行が出来れば、その人のものになる。 */
   langOwnGot('Lu', B);
-  if (!langOwned('Lu')) no('35: 扉が印を書いても、その人のものにならない');
+  if (!langOwned('Lu')) no('35: サーバーが答えても、その人のものにならない');
   langOwnGot('Lu', '');
 
   /* 印の付いていない言語はもう誰のものでもない ── 端末の一人目という
@@ -3044,6 +3088,221 @@ const R = await pg.evaluate(async () => {
     LANGS = keepL65; langId = keepId65; langStore();
     say('65: 誰の言語かは language.owner と language_take の二つ ── ' +
         '索引に uid は書かず、上限はサーバーの行を数え、聞いていない言語は描かない');
+  }
+
+
+  /* ---- 66. 登録の最後に、言語は一本 -------------------------------------
+     hunt 道1（2026-09-11）: 門をくぐると `language` が**二本** POST される。
+     一つは打った名前が付いていて中身が空、もう一つは名前が無くて歩きで描いた
+     字が入っている方。道10 の「一アカウントで三本」も道11 の「名前の無い空の
+     言語が開く」も、この一本目が割れたことの続きでした。
+
+     測った原因（docs/scope/r24-lang.md）。セッションが着いたとき**二つの
+     別の問い**が並んで走っていました ── 「この端末にある物をサーバーへ」と
+     「このアカウントは何を持っているか」。後者が先に答えを出し、歩きの言語は
+     まだ送られていないので「持っていない」と読まれ、扉が二本目を作りました。
+
+     直った形は**送ってから訊く**です（`www/net.js` § netTook）。ここで歩くのは
+     その road そのもの: まだ扉を通っていない端末に歩きの言語が一本、
+     `netTook()`、そして答え。
+
+     サーバーの代わりは `netPost`／`netGet`／`netSend` の三つを置き換えて
+     その場で答えさせます ── この検査に本物のサーバーはなく、答えの**来ない**
+     road は別の claim（電波なし）だからです。`netPost` は行った body を
+     控えます: 道1 が見たのは「別々の uuid の body が二つ、一つは名前つき、
+     一つは空」で、それはここにしか出ません。
+
+     赤を見た形（2026-09-11、直す前）:
+       「66: language の行が 2 本 POST された」
+       「66: 上がった行が歩きの言語と打った名前になっていない」
+       「66: 索引の言語が 2 本になった」「66: 開いているのが歩きの言語ではない」 */
+  {
+    window.__seed();
+    wipeParked();
+    netOut();
+    /* まだ扉を通っていない端末。歩きが作った言語が一本あり、誰のものとも
+       まだ言われていない ── 言うのはサーバーで、まだ何も送っていません。 */
+    SET.walked = false; save();
+    const keepL66 = LANGS, keepId66 = langId, keepNm66 = langName;
+    const keepOb66 = ob.name, keepLid66 = ob.lid;
+    LANGS = { 'walk-lang': { mine: true } };
+    langId = 'walk-lang'; langName = 'シャンゴ';   /* obName() が打った瞬間に置く */
+    langStore();
+    /* 歩きで描いた字。これが最後にどの言語の中に居るかが、この案件の芯です。 */
+    try { slWr(langKeyOf('walk-lang', 'letters'),
+                JSON.stringify([{ id: 'l1', ab: 'a', name: 'a' }])); } catch (e) {}
+    ob.name = 'シャンゴ'; ob.lid = '';
+    PULL_GOT['mylangs'] = 0;
+    /* 前の案件の `arrive()` が本物の XHR を出していて、答えが来ないまま
+       `NET_SYNCING` が立っています ── 立っていると `netLangSync()` は
+       何もせずに戻るので、この案件が測りたい road に入れません。 */
+    NET_SYNCING = false;
+
+    const rows66 = [];
+    const keepPost66 = netPost, keepGet66 = netGet, keepSend66 = netSend;
+    netPost = (path, body, tok, ok) => {
+      if (String(path).indexOf('/rest/v1/language') === 0) rows66.push(body);
+      ok([body]);
+    };
+    netGet = (path, ok) => ok([]);
+    netSend = (m, path, body, tok, ok) => ok([]);
+    /* サーバーが一覧を返す ── 歩きの言語は今まさに上がったところなので、
+       一覧に何が居るかは `langOwnOf()` が既に持っています。 */
+    PULL_GOT['mylangs'] = 1;
+
+    netTook({ access_token: 'not a jwt', refresh_token: 'a refresh token',
+              user: { id: A } });
+    obFinish();
+    netPost = keepPost66; netGet = keepGet66; netSend = keepSend66;
+
+    if (rows66.length !== 1)
+      no('66: language の行が ' + rows66.length + ' 本 POST された — ' +
+         JSON.stringify(rows66.map(r => [String(r.id).slice(0, 9), r.name])));
+    if (rows66.length && (rows66[0].id !== 'walk-lang' || rows66[0].name !== 'シャンゴ'))
+      no('66: 上がった行が歩きの言語と打った名前になっていない — ' +
+         JSON.stringify([rows66[0].id, rows66[0].name]));
+    /* 本数は索引で数えます ── 「このアカウントのもの」で数えると、扉で
+       生えた方にだけ印が付いた状態が 1 本と出て、割れているのが見えません。 */
+    const n66 = Object.keys(LANGS).length;
+    if (n66 !== 1)
+      no('66: 索引の言語が ' + n66 + ' 本になった ── 歩きは一本しか作っていない');
+    if (langId !== 'walk-lang')
+      no('66: 開いているのが歩きの言語ではない — langId=' + langId);
+    if (langName !== 'シャンゴ')
+      no('66: 打った名前が、開いている言語のものになっていない — ' +
+         JSON.stringify(langName));
+    if (String(slRd(langKey('letters')) || '').indexOf('l1') < 0)
+      no('66: 歩きで描いた字が、開いている言語の中に無い');
+    /* そして誰のものかを答えたのはサーバーです ── 行が出来た ok が書いた
+       `owner`（www/net.js § netLangRow）。 */
+    if (langOwnOf('walk-lang') !== A)
+      no('66: 上がったのに、サーバーの答えが書かれていない — ' +
+         JSON.stringify(langOwnOf('walk-lang')));
+
+    LANGS = keepL66; langId = keepId66; langName = keepNm66;
+    ob.name = keepOb66; ob.lid = keepLid66;
+    SET.walked = true; save(); langStore();
+    say('66: 登録の最後に言語は一本 ── 送ってから訊くので、打った名前も描いた字も' +
+        'その一本の中、開いているのもそれ');
+  }
+
+
+  /* ---- 67. 名前と @ も、同じ保存でサーバーへ行く -------------------------
+     hunt 道7（2026-09-11）: 名前と handle を変えて保存しても、サーバーの
+     `profile` 行は前のまま。bio・link・loc は同じ保存でちゃんと上がり、
+     断りのトーストも出ない。
+
+     測った（docs/scope/r24-lang.md）:
+       PATCH /rest/v1/profile  {"bio":"ここに一行"}
+     `meProfPut()`（www/me.js）が `PROF_MINE` **だけ**を歩いて送る物を組んで
+     いて、その一覧は bio・link・loc の三つでした。名前と @ はそこに無いので
+     送られる先が無く、`meKeepPut()` が端末に書いて終わり。空の送信では
+     ないので（bio が入っている）、断りも出ません。
+
+     ここで押さえるのは「保存は一本の道で全項目を送る」ことだけです。列の名前
+     （名前は `display`）も一緒に押さえます ── 端末の欄名で PATCH しても
+     サーバーは黙って無視するので、何も throw せずに同じ所へ戻ります。
+
+     赤を見た形（2026-09-11、直す前）:
+       「67: 保存で name が送られていない」「67: 保存で handle が送られていない」 */
+  start();
+  {
+    const sentAt = [];
+    const keepPut = netProfPut, keepFree = netHandleFree;
+    netProfPut = (fields, ok) => { sentAt.push(fields); ok({}); };
+    netHandleFree = (h, ok) => ok(true);
+    ME.name = 'アヤ'; ME.handle = 'aya'; ME.bio = ''; saveMe();
+    meKeepSave({ name: 'アヤ改', handle: 'ayaka', bio: 'ここに一行' }, () => {});
+    const sent = sentAt.length ? sentAt[0] : {};
+    if (sentAt.length !== 1)
+      no('67: 保存が一本の道で送っていない ── 送信 ' + sentAt.length + ' 回');
+    if (sent.display !== 'アヤ改')
+      no('67: 保存で name が送られていない — ' + JSON.stringify(sent));
+    if (sent.handle !== 'ayaka')
+      no('67: 保存で handle が送られていない — ' + JSON.stringify(sent));
+    if (sent.bio !== 'ここに一行')
+      no('67: 保存で bio が送られていない — ' + JSON.stringify(sent));
+    /* 動いていない欄は送らない ── PATCH は動いた分だけ。 */
+    sentAt.length = 0;
+    meKeepSave({ name: 'アヤ改', handle: 'ayaka', bio: '二行目' }, () => {});
+    const sent2 = sentAt.length ? sentAt[0] : {};
+    if (sent2.hasOwnProperty('display') || sent2.hasOwnProperty('handle'))
+      no('67: 動いていない名前と @ まで送っている — ' + JSON.stringify(sent2));
+    /* 送れなかったら端末にも書かない ── 保存は半分では済まない。 */
+    netProfPut = (fields, ok, bad) => bad(null, 0, 'prof −');
+    ME.name = 'アヤ改'; ME.handle = 'ayaka'; saveMe();
+    meKeepSave({ name: 'もどらない', handle: 'nope' }, () => {});
+    if (ME.name !== 'アヤ改' || ME.handle !== 'ayaka')
+      no('67: 送れなかったのに端末の名前と @ が書き換わった — ' +
+         ME.name + ' / ' + ME.handle);
+    netProfPut = keepPut; netHandleFree = keepFree;
+    /* そして行を**作る**所も同じ一覧を読みます。`netMakeProfile()` は列を
+       一つずつ書き下していたので、「人の profile はどの列か」に**二つの
+       答え**がありました ── 保存の road が名前と @ を持った日に、片方だけが
+       持っている形です。
+
+       **訊き方が要点です。**「五つ載っているか」を訊いても、書き下した方も
+       同じ五つを載せるので緑のまま ── 二つの一覧が今日たまたま一致している
+       ことしか言えません。だから**一覧に六つ目を足して**訊きます: 一覧を
+       読んでいるなら六つ目も載り、書き下しているなら載りません。それが
+       「一箇所」の中身そのものです。 */
+    const keepCols67 = PROF_MINE;
+    PROF_MINE = PROF_MINE.concat([['loc', 'a_sixth_column']]);
+    let made67 = null;
+    const keepPost67 = netPost;
+    netPost = (path, body, tok, ok) => { made67 = body; ok([body]); };
+    ME.bio = 'ここに一行'; ME.link = 'a.example'; ME.loc = 'どこか'; saveMe();
+    netMakeProfile('ayaka', 'アヤ改', () => {}, () => {});
+    netPost = keepPost67;
+    PROF_MINE = keepCols67;
+    for (const [f, c, want] of [['name', 'display', 'アヤ改'], ['handle', 'handle', 'ayaka'],
+                                ['bio', 'bio', 'ここに一行'], ['link', 'link', 'a.example'],
+                                ['loc', 'loc', 'どこか'],
+                                ['六つ目', 'a_sixth_column', 'どこか']])
+      if (!made67 || made67[c] !== want)
+        no('67: 作る行が一覧を読んでいない ── ' + f + '（列 ' + c + '）が無い — ' +
+           JSON.stringify(made67));
+    say('67: 名前と @ も同じ保存でサーバーへ行く ── 列は display と handle、' +
+        '動いた分だけ送り、送れなければ端末にも書かない。行を作る所も同じ一覧');
+  }
+
+
+  /* ---- 68. 行を作った瞬間に「行がある」になる ---------------------------
+     hunt #1（2026-09-11）: 門の最後の「次へ」を押すと、トーストは
+     「ログインしました」なのに**ログイン画面が出ます**。読み込み直すと普通に
+     アプリが開くので、一度きり、アカウントを作った直後にだけ出る。
+
+     測った値: `SET.walked=true`、`route='profile'`、`netSignedIn()=true`、
+     そして **`meRowHas()=false`**。`appIs()`（www/shell.js）は行が無ければ
+     'door' と答えるので、アカウントも profile 行も出来ているのに扉が描かれて
+     いました。
+
+     原因は一行の不在です。`meRowGot()` を書いていたのは `netMyProfile()` と
+     `netProfSync()` の二つだけで、**どちらも「訊く」側**。行を**作る**
+     `netMakeProfile()` は、作ったことを誰にも言っていませんでした。
+
+     赤を見た形（2026-09-11、直す前）:
+       「68: 行を作ったのに『行がある』になっていない」
+       「68: 行を作ったのに画面が扉のまま — appIs()=door」 */
+  start();
+  {
+    const keepPost68 = netPost;
+    netPost = (path, body, tok, ok) => ok([body]);
+    /* 扉の最後の一段: 歩きは済み、セッションは着いた、行はまだ無い。 */
+    SET.walked = true; SET.obback = null; save();
+    meRowForget();
+    meRowGot(false);
+    ME.handle = ''; ME.name = ''; saveMe();
+    if (appIs() !== 'door')
+      no('68: 行の無いアカウントで扉が出ていない — appIs()=' + appIs());
+    netMakeProfile('aya', 'アヤ', () => {}, () => {});
+    netPost = keepPost68;
+    if (!meRowHas())
+      no('68: 行を作ったのに「行がある」になっていない');
+    if (appIs() !== 'app')
+      no('68: 行を作ったのに画面が扉のまま — appIs()=' + appIs());
+    say('68: 行を作った瞬間に「行がある」になる ── 扉の最後の「次へ」で' +
+        'アプリが開く（訊きに行くのを待たない）');
   }
 
   return out;

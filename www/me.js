@@ -382,15 +382,26 @@ function meKeepSave(v, done){
    because Save is one press and half a save is not a save -- and the form
    stays open with what was typed still in it. ［再接続］ presses it again.
 
-   Nothing to send is not a failure: a name typed with the three untouched is
-   this phone's own to write, and it is written at once, exactly as before. */
+   AND THE NAME AND THE @ GO THE SAME WAY. They did not: `PROF_MINE` held
+   three, this walked it to decide what to send, and the two it does not name
+   were written to the phone and nowhere else. Measured on 2026-09-11
+   (docs/scope/r24-lang.md, hunt 道7): the screen said the new name and the
+   new @, the `profile` row still said the old ones, and nothing was refused
+   -- the send was not empty, because the bio was in it.
+
+   They are on that list now, each beside the column it is (`name` is
+   `profile.display`), and nothing here knows which is which: this walks the
+   pairs. www/net.js § PROF_MINE is the one place.
+
+   Nothing to send is not a failure: pressing Save with nothing moved writes
+   what is already there, which is what it did before. */
 function meProfPut(v, done){
   var send=null, i, k;
   for(i=0;i<PROF_MINE.length;i++){
-    k=PROF_MINE[i];
+    k=PROF_MINE[i][0];
     if(v.hasOwnProperty(k) && String(v[k])!==String(ME[k]||'')){
       if(!send) send={};
-      send[k]=String(v[k]);
+      send[PROF_MINE[i][1]]=String(v[k]);
     }
   }
   if(!send || typeof netProfPut!=='function'){ meKeepPut(v); done(true); return; }
