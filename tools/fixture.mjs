@@ -816,17 +816,17 @@ export function halfDone(){
         window.route='gram'; NAV=[{r:'gram', a:'ownfix'}];
         const h = vGram();
         STG.extra.pop(); SET.plan = 'free'; return h; }],
-    /* CHOOSING RULES TO DELETE, both ways round. The chapter's list deletes
+    /* CHOOSING RULES TO DELETE, both ways round. The section's list deletes
        the way every other list in this app does -- Select in the corner, a ◉
        on each row, Delete beside Done -- and none of those four buttons is
        drawn until somebody has pressed Select, so without these faces
        act-check reports three of them as entries no screen names. Two,
        because Delete is only in the bar once something is chosen. */
-    ['the rules of a chapter, choosing', () => {
+    ['the rules of a section, choosing', () => {
         window.route='gram'; NAV=[{r:'gram', a:'v2:pl'}];
         G2SEL = {};
         const h = vGram(); G2SEL = null; return h; }],
-    ['the rules of a chapter, one chosen', () => {
+    ['the rules of a section, one chosen', () => {
         window.route='gram'; NAV=[{r:'gram', a:'v2:pl'}];
         G2SEL = { fr1: 1 };
         const h = vGram(); G2SEL = null; return h; }],
@@ -2383,34 +2383,35 @@ export function halfDone(){
         openAdd('');
         wdSetLn('tirek');
         return sheet('<div id="wd-body">'+wdFormHTML()+'</div>'); }],
-    /* 文法書の一ページ ── a chapter with a rule on it. The base seed has no
-       rules at all, so every form chapter drew its heading, its + and nothing
+    /* 文法書の一ページ ── a section with a rule on it. The base seed has no
+       rules at all, so every section drew its headings, their + and nothing
        else: the sentence, the table of what the rule makes of this language's
        own verbs, and the lines written under it had no face to be walked or
-       photographed on. One plain rule, of the kind the two-field editor writes
+       photographed on. 時制 is the section 過去形 is a form of since
+       2026-09-11 (www/grammar.js § G2FM_CHAPS). One plain rule, of the kind the two-field editor writes
        (www/wordsheet.js § fmrFormHTML), on the two verbs the seed has.
 
        Left in place for the reason the face below it is: press-check rebuilds
        the screen before every press, and a rule that only existed while the
        HTML was being made is a rule the row cannot open. */
-    ['a chapter of the grammar book, with a rule in it', () => {
+    ['a section of the grammar book, with a rule in it', () => {
         STG.fm = [{ id: 'fr-ta', pos: 'v', fm: 'pst', at: 'end',
                     add: spType('ta'), drop: 0, when: '' }];
         STG.ex = STG.ex || {};
-        STG.ex.pst = [{ lb: '', ln: 'ke tirta', gl: 'I saw it' }];
+        STG.ex.tense = [{ lb: '', ln: 'ke tirta', gl: 'I saw it' }];
         saveStg();
-        window.route = 'gram'; NAV = [{ r: 'gram', a: 'v2:pst' }];
+        window.route = 'gram'; NAV = [{ r: 'gram', a: 'v2:tense' }];
         return vGram(); }],
     /* THE SAME CHAPTER, with a rule that has a CONDITION on it. The sentence
        says the condition since 2026-09-09 (www/grammar.js § g2FmWhen), so
        this is the other state of the face above: 「y で終わるとき、末尾の 1
        文字を落として、動詞の末尾に -ied」 against 「動詞の末尾に -ta」. The
        fault in a pair is nearly always in the one nobody photographed. */
-    ['a chapter of the grammar book, with a rule that has a condition', () => {
+    ['a section of the grammar book, with a rule that has a condition', () => {
         STG.fm = [{ id: 'fr-cond', pos: 'v', fm: 'pst', at: 'end',
                     add: spType('ied'), drop: 1, when: 'x', wend: spType('y') }];
         saveStg();
-        window.route = 'gram'; NAV = [{ r: 'gram', a: 'v2:pst' }];
+        window.route = 'gram'; NAV = [{ r: 'gram', a: 'v2:tense' }];
         return vGram(); }],
     /* A rule written on the OLD editor -- it drops a letter and fires only on
        words ending in one. The screen is two fields now and cannot write

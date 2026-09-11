@@ -242,6 +242,30 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status: **OWNER DECISION**。直しはオーナーの「勝手に修正しないで」
   で止めてある（`claude/r24-lang` `claude/r27-off` は測った結果のみ）。一覧 →
   オーナーが消す物を見る → 書き直し、の順
+### 文法の頁の単位は「形」ではなく「節」。行の名は学校文法の用語
+- Date: 2026-09-11
+- Area: 文法の章の頁（`www/grammar.js` § G2FM_CHAPS、`www/phases.js` § G2BOOK）
+- Decision: 「開いたらそんな分け方してるの意味わからない。**人称でまとめて設定
+  できればいいやん**」「**日本語はちゃんとしてくれ**。主語で変わる形なんか
+  聞いたことない。私たちなんか単語で設定したら終わり、俺は文法の話をしてる」
+  → リーダーが形を節にまとめる案を出し、オーナーが「それで進めて」。
+  **頁の単位を「形」から「節」に変える。**動詞の章は 人称変化／時制／命令・条件・
+  可能・〜しなければならない・〜したい／受け身・使役／否定形・疑問形 の六行。
+  「人称変化」は一頁で、六つの形が見出しとして並ぶ。表は頁に一つ（列＝形）、
+  例文も頁に一つ、`?` は節の分。**形が一つの節も特別扱いしない。**
+  行の名は学校文法の用語 ── 一人称単数…三人称複数、`obl` は
+  「〜しなければならない」、`des` は「〜したい」。
+- Reason: 動詞を開くと二十一の扉が並び、「主語で動詞がどう変わるか」を書く人は
+  六つ歩いて同じ種類の規則を六回書くことになっていた。行の名も「私の形」
+  「君たちの形」で、文法の話をしている人に向けた語ではなかった。
+- Affected features: 文法（章の頁・節の頁・`?`・語の表・例文）
+- Affected data: **なし。**`STG.fm` の規則も、その `fm` も `id` も、`STG.gr`
+  `STG.ex` `WORDS.slot` もそのまま。移行なし。消えたのは形ごとの章
+  （`v2:p1s` 等の route arg）と、`G2BOOK` の群の見出し
+- Affected docs: `docs/GRAMMAR-V2-SPEC.md` § 完成の定義（動詞と修飾の行）、
+  `docs/CHANGELOG.md`
+- Implementation status: `claude/r23-sec`。CODE CONFIRMED（`act` `gramlang`
+  `i18n` `keep` `press` 緑）。DEVICE 未確認、OWNER 未確認
 
 ### 文法は 9 章＋付録の文法書。否定と疑問は動詞の章の節
 - Date: 2026-09-11
