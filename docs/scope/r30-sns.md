@@ -209,6 +209,23 @@ vExplore()」* と書いていて、`snsTagGo` はその外にある**二本目�
 3. **一件目** ── このコードの中に原因が見つかりません。上の二つの
    「サーバー側」と「どの人を探したか」が要ります。**勝手に直しません。**
 
+## 七。回した検査（2026-09-11、`integ-0905` を取り込んだ木で）
+
+```
+npm run press  緑  buttons pressed: 16711  (276/277)  3324 の一覧
+               「every button pressed: nothing threw, nothing went blank」
+               never pressed (1): saveName ── 取り込む前の木でも同じ
+npm run post   緑
+npm run find   緑
+npm run box / face / css-once  緑
+fast の 15 本  緑（pre-commit が毎コミット回している）
+```
+
+`press` は直前の 16318 から **16711**。差の 393 は `integ-0905` の取り込み
+（`r23-sec` `r26-small` `r28-kb` `r29-mixed`）が持ってきたもので、頭の `@` の
+ボタンは 16318 の側に既に入っています。**ゲート全部は回していません** ──
+取り込んだ人のものです（`docs/SESSIONS.md` §6）。
+
 **CODE CONFIRMED**: 上の表の測定は走っているアプリで押して取りました。
 二件とも、バグを戻して担当の check が赤くなるのを見てから緑にしています。
 **DEVICE CONFIRMED**: 無し。実機は押していません。
