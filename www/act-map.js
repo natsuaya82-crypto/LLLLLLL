@@ -297,6 +297,13 @@ act('dirPick', dirPick);
 act('g2Move', g2Move);
 act('g2Put', g2Put);
 act('g2Take', g2Take);
+/* 否定 と 疑問. A word goes into one of the two sentences from a screen of its
+   own, comes back out by being pressed, and the SAVE in the corner is what
+   turns the difference between them into a rule -- so there is no name here
+   for writing one down. */
+act('openPolWord', openPolWord);
+act('g2PolPutW', g2PolPutW);
+act('g2PolTake', g2PolTake);
 /* 性・名詞クラス. A class is made and named on a form, and which class a noun
    is in is one press on the chapter itself -- there is nothing to save. */
 act('nclsNew', nclsNew);
@@ -396,6 +403,10 @@ act('fmrAdd', fmrAdd);
 act('fmrSetAt', fmrSetAt);
 act('regPick', regPick);
 actKey('fmNew', fmNew);
+/* A word the dictionary has not got, typed into the one field on the screen a
+   word is chosen on. Enter is what puts it in, the same as every other field
+   of this app that takes one line. */
+actKey('g2PolOwn', g2PolOwn);
 actIn('wdSetTags', wdSetTags);
 actIn('wdSetEty', wdSetEty);
 
