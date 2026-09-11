@@ -108,6 +108,25 @@ QWERTY とバイト単位で同じになり、`migrateKbFree()` はその同一�
 分かっていないことを分かったとは書かない。
 
 
+## press の数 ── `29076d64` と比べて測った
+
+両方この端末で回した。**名前は動いていない（276/277）。**
+
+| | `29076d64` | この枝 |
+|---|---|---|
+| screens built | 1082 | 1091 |
+| buttons pressed | 15987 | **16500**（+513） |
+| lists measured | 3307 | 3369 |
+| styled and unworn | 3（baseline 3） | 3（baseline 3） |
+| distinct names | 276/277 | 276/277 |
+
+**+513 は `tools/fixture.mjs` に足した顔three枚**（作った直後の QWERTY 板、
+同じく ABC順 板、文字の入っていないキーを開いた面）。**盤にのった文字は
+ボタンを増やさない** ── キーの数は前と同じで、載っているものが変わっただけ。
+名前が一つも動いていないのは、新しい act を一つも足していないから。
+
+`never pressed` は `saveName` 一つで、これは前からそう。
+
 ## 触る file
 
 `www/keyboard.js` `tools/kb-check.mjs` `tools/fixture.mjs` `docs/`。
