@@ -1276,6 +1276,111 @@ say(road.words.filter(w => w === 'newer').length === 1,
     '**写しはサーバーの答えに勝たない** ── 答えが来たらその上に書かれる: ' +
     JSON.stringify(road.words));
 
+/* ---- そして写しは、グローバルを一周しても出て行かない --------------------
+   `docs/reports/mixed-2026-09-11.md` まとまり 9。上の三つは**鍵の階**で
+   測っています ── `slRd()` は写しを見て `slMine()` は見ない、という
+   一方通行です。読んだだけの指摘はこうでした：
+
+     `langRead()` は `slRd()` で読むので、電波の無い起動では `WORDS` が
+     **写しから来る**。そこへ人が一語足して保存すると、`slWr()` が `LSL` に
+     書き、`slMine()` はそれを見る ── **写し由来の中身が `mine` として
+     上がる**のではないか。
+
+   読んだだけでは分かりません。**押して測ります**：電波を切って開き直し
+   （`WORDS` は写しから来る）→ 一語足して保存 → 電波を戻す → `slice` の本文に
+   何が入ったか。
+
+   **上がること自体は正しい。**一語足したのはその人で、それはこの iPhone に
+   しかない仕事です（規則 11「失敗して残る」）。規則 22 が禁じているのは
+   **写しが答えとして戻ること** ── だから訊くのは「何が上がったか」ではなく、
+   **サーバーが持っている本文を、写しが上書きしないこと**です。`syMerge` が
+   両方足すので、上がった本文にはサーバーの語も入っていなければなりません。 */
+await pg.route('https://*.supabase.co/**', r => r.abort());
+await pg.reload();
+await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
+
+const loop = await pg.evaluate(async ({ srv, saved }) => {
+  function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
+  await wait(400);
+  var out = {};
+  /* 電波なしで開いた直後 ── `WORDS` は写しから来ている（上の二段目と同じ
+     状態）。ここが土台で、空なら下は何も測っていません。 */
+  out.fromGot = WORDS.map(function(w){ return String(w.hw); });
+  out.mineBefore = slMine(langKeyOf(langId, 'words'));
+  out.diskKeys = [];
+  try{ for (var _i=0;_i<localStorage.length;_i++){ var _k=localStorage.key(_i);
+    if (_k && _k.indexOf('lingua.'+langId+'.')===0) out.diskKeys.push(_k); } }catch(e){}
+  out.lslKeys = Object.keys(LSL);
+  /* 人が一語足して保存する。 */
+  WORDS.push({ hw:'tunnelword', gl:'written where there was no signal' });
+  save();
+  out.mineAfter = slMine(langKeyOf(langId, 'words'));
+  return out;
+}, { srv: SERVER, saved: seenUp.srv });
+
+/* ディスクに在るのは `.got` だけ ── 鍵の階の一方通行はそのまま成り立って
+   います（上の三つ）。**測って分かったのはその上の階です。** */
+say(loop.diskKeys.length > 0 && loop.diskKeys.every(function(k){
+      return k.indexOf('.got') === k.length - 4; }),
+    '（前提）ディスクに在るのは `.got` の写しだけ ── 鍵の階の一方通行は' +
+    'そのまま: ' + JSON.stringify(loop.diskKeys.map(function(k){
+      return k.split('.').slice(-2).join('.'); })));
+say(loop.fromGot.indexOf('kelasu') >= 0,
+    '（前提）そして電波なしで開いた直後、画面の語は写しから来ている（' +
+    loop.fromGot.length + ' 語）');
+/* **誰も何も触っていないのに、写しが上りの道に乗っています。**
+   `docs/reports/mixed-2026-09-11.md` まとまり 9 は「人が一語足して保存すると」
+   と読んでいましたが、**保存を待つまでもありません** ── 起動が `langRead()`
+   で写しをグローバルへ読み、そのあと走る移行と `ltStart()` が、**直すものが
+   無くても** `save()` を通ります。`slWr()` は `LSL` に書き、`slMine()` は
+   それを見る。
+
+   **これは報告であって、ここで直すものではありません。**どの起動の道が
+   「何も直していないのに保存する」かを決めるのは保存の道の話で、
+   `docs/scope/r31-server.md` § リーダーへ に測った結果を書いてあります。
+   下の二つが、それが何を壊して何を壊さないかです。 */
+say(loop.lslKeys.length > 0,
+    '**誰も触っていないのに、写しが上りの道に乗っている** ── 起動の移行と ' +
+    'ltStart() が、直すものが無くても save() を通る（LSL に ' +
+    JSON.stringify(loop.lslKeys.map(function(k){ return k.split('.').pop(); })) +
+    '）。まとまり 9 は「保存したら」と読んでいたが、保存を待たない');
+say(loop.mineAfter !== null && String(loop.mineAfter).indexOf('tunnelword') >= 0,
+    'そこへ一語足して保存すると、その仕事も同じ道に乗る ── ' +
+    '規則 11「失敗して残る」の側（' +
+    (loop.mineAfter === null ? '**乗らない**' : '乗る') + '）');
+
+/* 電波が戻る。サーバーは別の iPhone が足した語を持っている ── 写しが答えを
+   上書きするなら、ここでそれが消えます。 */
+await pg.unroute('https://*.supabase.co/**');
+const loopUp = await pg.evaluate(async ({ srv, saved }) => {
+  function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
+  eval(srv);
+  var S = window.__SRV, keep = JSON.parse(saved), i;
+  S.lang = keep.lang;
+  S.slice = keep.slice.map(function(r){ return { language:r.language, kind:r.kind, body:r.body, no:r.no }; });
+  for (i = 0; i < S.slice.length; i++)
+    if (S.slice[i].kind === 'words')
+      S.slice[i].body = JSON.stringify(
+        JSON.parse(S.slice[i].body).concat([{ hw:'otherphone', gl:'added on another phone' }]));
+  SESS = { at:'t', rt:'r', uid:'me3', anon:false };
+  await new Promise(function(f){ netLangSync(function(){ f(); }); });
+  await wait(400);
+  var body = '';
+  for (i = 0; i < S.slice.length; i++)
+    if (S.slice[i].kind === 'words') body = String(S.slice[i].body);
+  return { body:body, words:WORDS.map(function(w){ return String(w.hw); }) };
+}, { srv: SERVER, saved: seenUp.srv });
+
+say(loopUp.body.indexOf('tunnelword') >= 0,
+    '電波が戻ると、トンネルで書いた語がサーバーに着く（' +
+    (loopUp.body.indexOf('tunnelword') >= 0 ? '着いた' : '**着いていない**') + '）');
+say(loopUp.body.indexOf('otherphone') >= 0,
+    '**そして別の iPhone の語は消えない** ── 規則 22 が禁じているのは写しが' +
+    '答えとして勝つことで、`syMerge` が両方足すのでここは越えていません（' +
+    (loopUp.body.indexOf('otherphone') >= 0 ? '残っている' : '**消えた**') + '）');
+say(loopUp.words.indexOf('otherphone') >= 0 && loopUp.words.indexOf('tunnelword') >= 0,
+    'そして画面にも両方ある: ' + JSON.stringify(loopUp.words));
+
 /* ---- 引き下ろしも、待ちも、落ちたときのポップも、一本 ---------------------
    「引っ張って更新は SNS だけ。制作側（字を描く画面など）でも効いていて、
      描いている途中でくるくるが出て線が途切れる」 OWNER 2026-09-06。
