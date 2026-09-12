@@ -2521,11 +2521,37 @@ create trigger profile_rename before update of handle on profile
 -- Taking staff away does NOT take Pro away. What that account should then be
 -- paying is a decision and is nobody's to make from here; the row is left
 -- exactly as it is. → docs/FEATURE_RULES.md § Deciding.
+--
+-- AND A ROW HELD UP HERE NEVER ENDED, so the two columns that say one did are
+-- cleared in the same breath. 「スタッフは消えないんじゃねえの？」 OWNER
+-- 2026-09-12, on a phone that had just been updated.
+--
+-- `verify-plan` decides a rung from the `purchase` rows and nothing else, and
+-- a staff account has no purchase: it writes 'free' with `was` set to whatever
+-- the row said before, which for staff is 'pro'. The plan is put back here --
+-- that half has held since 2026-09-05 -- and without this the row would come
+-- out Pro with 「プランが終了しました」 written on it, so every staff launch
+-- would be told their subscription had ended. Nothing throws; it is a popup
+-- over a Pro account.
+--
+-- It is here and not in the function for the reason the whole trigger is here:
+-- 「staff はずっと Pro」 is one sentence and this is the one place it is said.
+-- A staff test inside verify-plan would be a second place, and the second
+-- place is the one that gets forgotten when a third road into this table
+-- arrives (the dashboard already is one).
+--
+-- Only when it is actually overriding, which is why the plan is compared
+-- first: `plan_lapse_seen()` updates a staff row that is already Pro -- it
+-- writes `lapse_seen_at` and nothing else -- and a clear on every write would
+-- undo it.
 create or replace function plan_staff_hold() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
-  if exists (select 1 from profile where id = new.id and staff) then
+  if exists (select 1 from profile where id = new.id and staff)
+     and new.plan <> 'pro' then
     new.plan := 'pro';
+    new.was := null;
+    new.lapse_seen_at := null;
   end if;
   return new;
 end $$;

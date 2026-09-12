@@ -162,11 +162,28 @@ Deno.serve(async (req: Request) => {
     row.was = null; row.lapse_seen_at = null;
   }
 
-  /* 書いた行を返してもらいます（`return=representation`）。答えに載せる `was` と
-     `lapse_seen` は**行が今持っているもの**で、ここで組み立て直したものでは
-     ありません ── 「同じ」の場合に何も書いていないので、組み立て直すと嘘になる
-     一箇所がここです。 */
-  const wrote = await fetch(`${url}/rest/v1/plan?select=was,lapse_seen_at`, {
+  /* 書いた行を返してもらいます（`return=representation`）。**答えに載せる段も
+     `was` も `lapse_seen` も、行が今持っているもの**で、ここで組み立て直した
+     ものではありません。
+
+     **段がそうでなければならない理由**：「スタッフは消えないんじゃねえの？」
+     OWNER 2026-09-12、実機。段は `purchase` の行から決まり、staff の人には
+     purchase がありません ── ここが決めるのは 'free' です。行は 'pro' に
+     なります（`plan_staff_hold()`、supabase/schema.sql、2026-09-05「管理の画面
+     でスタッフ設定を@でできるでしょ？そこに記載されてる人だけずっとプロに」）。
+     自分の計算を返すと、**表とトリガーが持っている事実と違う語が端末に届きます**
+     ── 156 までは端末が自分の写しを持っていたので隠れていて、答えだけを信じる
+     ようになった 156 から、staff の端末に free が届きました。
+     **段を決める場所は表とトリガーの一箇所で、この函数は自分の計算を返さない。**
+     staff の条件をここに足さないのも同じ理由です（足すと二箇所になる）。
+
+     `was` と `lapse_seen` も同じ一行から。「同じ」の場合は何も書いていないので
+     組み立て直すと嘘になり、staff の場合はトリガーが両方を落とします。
+
+     `until` だけは行にありません ── Apple の日付で、この表の列ではないので、
+     決めたものをそのまま返します。staff の 'pro' には日付が無く、それは
+     「期限が分からない」であって「期限が無い」ではない（www/store.js）。 */
+  const wrote = await fetch(`${url}/rest/v1/plan?select=plan,was,lapse_seen_at`, {
     method: 'POST',
     headers: { ...head, Prefer: 'resolution=merge-duplicates,return=representation' },
     body: JSON.stringify(row),
@@ -174,6 +191,9 @@ Deno.serve(async (req: Request) => {
   if (!wrote.ok) return said({ why: 'could not write the plan: ' + (await wrote.text()) }, 500);
   const back = await wrote.json();
   const after = back && back.length ? back[0] : {};
+  /* 行が読めなかったときだけ、決めた段に落ちます。答えを返さない道より、
+     free の側に間違える道のほうがまし ── この函数の頭の注記のとおり。 */
+  const rung = after.plan ? String(after.plan) : plan;
   const was = after.was ? String(after.was) : null;
   const lapseSeen = !!after.lapse_seen_at;
 
@@ -183,5 +203,6 @@ Deno.serve(async (req: Request) => {
   /* `was` と `lapse_seen` は端末が起動のポップを出すかどうかの全部で、端末は
      どちらも憶えません（www/settings.js § capLapseSaw）。答えに無ければ出ない
      ── free の側に間違えるのが、間違えてよい側です。 */
-  return said({ plan, until, was, lapse_seen: lapseSeen, took: took.length, left });
+  return said({ plan: rung, until, was, lapse_seen: lapseSeen,
+                took: took.length, left });
 });

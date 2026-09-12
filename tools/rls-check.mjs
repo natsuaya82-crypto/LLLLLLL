@@ -1528,6 +1528,26 @@ const SHAPE = [
      policy that exists but happens to refuse today still fails. */
   ['a plan is read-only through the API', `
      select count(*) from pg_policies where tablename='plan' and cmd<>'SELECT'`, '0'],
+  /* --- and a staff row does not end ---------------------------------------
+     「スタッフは消えないんじゃねえの？」 OWNER 2026-09-12. verify-plan works a
+     rung out of the `purchase` rows and a staff account has none, so what it
+     writes for one is 'free' with the rung it held as `was`. plan_staff_hold()
+     puts the plan back -- that half has held since 2026-09-05 -- and takes the
+     ending off with it, or the row comes out Pro carrying 「プランが終了しま
+     した」 and every staff launch is told their subscription ended.
+     The write itself is two statements further up, through the service role,
+     because that is the road it arrives on. */
+  ['a staff row a write tries to lower stays Pro', `
+     select count(*) from plan where id='${C}' and plan <> 'pro'`, '0'],
+  ['and no ending is written on it', `
+     select count(*) from plan where id='${C}'
+       and (was is not null or lapse_seen_at is not null)`, '0'],
+  /* AND NOT EVERYBODY'S, which is the mirror of it and would be 「the popup
+     never comes up for anyone」. The same statement on an account that is not
+     staff leaves both columns exactly as they were written. */
+  ['while an ordinary row keeps the ending it was given', `
+     select count(*) from plan where id='${A}'
+       and (plan <> 'free' or was is distinct from 'plus')`, '0'],
   ['a purchase is read-only through the API', `
      select count(*) from pg_policies where tablename='purchase' and cmd<>'SELECT'`, '0'],
   /* A tier nobody sells still cannot be written down, and that is the CHECK
@@ -2061,6 +2081,13 @@ const sql = [
      (${q(H3)}, ${q(F)}, 'like',  feed_slot() - interval '25 minutes');`,
   `insert into post(author,body,reply_to,created_at) values
      (${q(F)}, '{}'::jsonb, ${q(H2)}, feed_slot() - interval '25 minutes');`,
+  /* AND THE WRITE verify-plan MAKES WHEN A SUBSCRIPTION HAS RUN OUT, made here
+     because it comes through the service role and no policy applies to it --
+     which is exactly why the tier is held on the TABLE. Two accounts and the
+     same statement: C is staff, A is not.
+     「スタッフは消えないんじゃねえの？」 OWNER 2026-09-12. */
+  `update plan set plan='free', was='pro',  lapse_seen_at=null where id = ${q(C)};`,
+  `update plan set plan='free', was='plus', lapse_seen_at=null where id = ${q(A)};`,
   `\\pset format unaligned`,
   `\\pset tuples_only on`,
   /* chr(9) rather than a backslash-t: PostgreSQL string literals are standard
