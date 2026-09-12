@@ -719,6 +719,38 @@ create table if not exists plan (
   at    timestamptz not null default now()
 );
 
+-- WHAT IT WAS BEFORE, AND WHETHER THEY HAVE BEEN TOLD.
+--
+-- 「オンラインで出してね流石に」「4 起動の時に表示して ☑️今後表示しない 閉じる
+--   みたいなポップにしたくない？」 OWNER 2026-09-12.
+--
+-- 「プランが終了しました」 used to be decided on the PHONE: capLapse() compared
+-- the plan with `SET.planWas`, the word this handset last showed, and on a
+-- phone whose Keychain read failed that told somebody who had never subscribed
+-- that their subscription had ended. The word went on 2026-09-11 (rule 22) and
+-- the sentence went with it, because this table was `(id, plan, at)` and could
+-- not answer 「what was it before」 either.
+--
+-- These two are that answer, and they are here rather than on a history table
+-- because what the app needs is one fact and not a record: 「the段 that ended」.
+--
+--   was            the rung this account held until the answer that lowered
+--                  it. Written ONLY when the plan goes DOWN, and set back to
+--                  null when it goes up or stays -- 「終了」 is a fact about
+--                  coming down, so a null here is 「nothing ended」 rather
+--                  than 「nobody has looked」.
+--   lapse_seen_at  when they said 「今後表示しない」. Null while they have not,
+--                  and null again the moment `was` is written, because a
+--                  SECOND ending is a second thing to be told about.
+--
+-- The phone keeps NO mark of either. That is the whole reason they are here:
+-- a 「見せる／見せない」 decision made out of a word on a handset is the shape
+-- 2026-09-11 deleted, and putting it back under another name would be the same
+-- bug with a different spelling.
+alter table plan add column if not exists was text
+  check (was is null or was in ('free', 'plus', 'pro'));
+alter table plan add column if not exists lapse_seen_at timestamptz;
+
 -- WHICH ACCOUNT A PURCHASE BELONGS TO.
 --
 -- 「アカウントごとなんだから、違うアカウントで復元できるのおかしいだろ。
@@ -1514,6 +1546,41 @@ create policy plan_read on plan for select
 -- policy still in force, whatever this file says.
 drop policy if exists plan_make on plan;
 drop policy if exists plan_edit on plan;
+
+-- AND THE ONE THING A PERSON MAY WRITE ON THEIR OWN PLAN ROW, WHICH IS NOT A
+-- POLICY.
+--
+-- 「4 起動の時に表示して ☑️今後表示しない 閉じる みたいなポップにしたくない？」
+-- OWNER 2026-09-12. Somebody ticking that box is the one fact about a plan row
+-- that comes from the person rather than from Apple, so it needs a road up --
+-- and the road may not be an insert or an update policy, because a policy is a
+-- road to the WHOLE row and `plan` is the column somebody would set to 'pro'.
+-- That is what 2026-09-06 closed and the comment over the table is why.
+--
+-- So it is a function and not a grant: it takes no argument, it writes one
+-- column, and the row it writes is `auth.uid()`'s -- there is nothing here for
+-- a caller to name, so there is nothing for them to name somebody else with.
+-- B calling this marks B's own row and cannot reach A's.
+--
+-- security definer because the table has no update policy at all and must not
+-- grow one. `is_member()` rather than a plain `auth.uid() is not null`: it is
+-- the same sentence every write in this file asks, and it raises rather than
+-- writing nothing, so a caller with no account is REFUSED rather than quietly
+-- ignored.
+--
+-- A row that is not there is not an error. Nothing has answered for that
+-- account yet, and the launch that would show the popup is the same launch
+-- that makes the row -- so zero rows updated is the truthful answer and not a
+-- failure to report.
+create or replace function plan_lapse_seen()
+returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not is_member() then raise exception 'not a member'; end if;
+  update plan set lapse_seen_at = now() where id = auth.uid();
+end $$;
+revoke all on function plan_lapse_seen() from public;
+grant execute on function plan_lapse_seen() to authenticated;
 
 -- purchase: yours to read and nobody's to write.
 --

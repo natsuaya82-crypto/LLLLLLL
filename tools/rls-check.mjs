@@ -1438,6 +1438,32 @@ const CASES = [
     `delete from plan where id='${A}'`],
   ['A still reads their own',                 'ok',     A, 0,
     `select 1 from plan where id='${A}'`],
+  /* --- and the one column a person DOES write, which is a function ------
+     「4 起動の時に表示して ☑️今後表示しない 閉じる みたいなポップに
+       したくない？」 OWNER 2026-09-12. Ticking that box is the only fact about
+     a plan row that comes from the person, and every line above is why it may
+     not be an update policy: a policy is a road to the whole row, and `plan`
+     is the column somebody would set to 'pro'.
+
+     plan_lapse_seen() TAKES NO ARGUMENT, so there is nothing in the call for a
+     caller to name somebody else with -- B calling it marks B's row. That is
+     asked in two halves, because 「the call went through」 and 「whose row
+     moved」 are two different sentences and only the second is the attack. */
+  ['B may say they have seen it',             'ok',     B, 0,
+    `select plan_lapse_seen()`],
+  ['and A\u2019s mark is still not there',     'denied', A, 0,
+    `select 1 from plan where id='${A}' and lapse_seen_at is not null`],
+  ['nor may somebody with no account say it', 'denied', B, 1,
+    `select plan_lapse_seen()`],
+  ['A marks their own',                       'ok',     A, 0,
+    `select plan_lapse_seen()`],
+  ['and it is on A\u2019s row now',            'ok',     A, 0,
+    `select 1 from plan where id='${A}' and lapse_seen_at is not null`],
+  /* AND IT MOVED NOTHING ELSE. The function is a road into a table with no
+     update policy, so what it may touch is the whole question: the rung A pays
+     for and the rung A held before are both where they were. */
+  ['and the rung is where it was',            'ok',     A, 0,
+    `select 1 from plan where id='${A}' and plan='pro' and was is null`],
   /* --- and which account a purchase belongs to --------------------------
      「アカウントごとなんだから、違うアカウントで復元できるのおかしいだろ」
      OWNER 2026-09-06.
