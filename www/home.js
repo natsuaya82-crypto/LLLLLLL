@@ -2553,6 +2553,18 @@ function langAddRow(){
    last of the first `cap`, so the count is the count either way. */
 function langsSeen(ids, cap){
   var out;
+  /* A CEILING THAT IS NOT A NUMBER DOES NOT CUT. `null` is 「nobody has asked
+     what this account pays」 (www/core.js § langCap), which is what every
+     launch with no signal has, and folding the list on it is this phone
+     deciding from an answer it has not been given -- a person in a tunnel
+     opened the app to one language and 「2 hidden」, with everything they had
+     taken off somebody else's page gone from the list.
+     「前に読み込んだの出していいよ」 OWNER 2026-09-12.
+
+     Nothing is loosened by it: what may be MADE and what may be TAKEN are
+     langStop() and dlStop(), and both refuse with 「接続できません」 while the
+     answer is missing. This is the list, and the list shows what is here. */
+  if(cap===null) return ids;
   if(ids.length<=cap) return ids;
   out=ids.slice(0, cap);
   if(langId && ids.indexOf(langId)>=0 && out.indexOf(langId)<0 && out.length)

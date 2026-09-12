@@ -1238,6 +1238,9 @@ await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
 
 const offline = await pg.evaluate(async () => {
   function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
+  /* 言った文はトーストの中にあります（plan-check と同じ読み方）。 */
+  function toastSays(){ var e=document.getElementById('toast'); return e? String(e.textContent||'') : ''; }
+  function toastClear(){ var e=document.getElementById('toast'); if(e) e.textContent=''; }
   await wait(400);
   window.route = 'words'; NAV = [{ r:'words' }]; render();
   var app = document.getElementById('app');
@@ -1247,9 +1250,18 @@ const offline = await pg.evaluate(async () => {
            took:langTook(), whose:langWhose('theirs-9'),
            read:langWhose('theirs-9') === LW_READ,
            listed:list.indexOf('theirs-9') >= 0,
-           dlCap:dlCap(), capHid:(function(){
+           dlCap:dlCap(), langCap:langCap(),
+           /* 足の「n hidden」。畳まれた時だけ描かれるので、**無い**ことが
+              主張です ── 数える物はあるのに一覧から外した、の印。 */
+           capHid:(function(){
              var m=list.match(/class="note">([^<]*)</g);
-             return m? String(m[m.length-1]).replace(/^class="note">/, '').replace(/<$/, '') : ''; })() };
+             return m? String(m[m.length-1]).replace(/^class="note">/, '').replace(/<$/, '') : ''; })(),
+           /* そして天井の要る操作は止まったままか。押して測ります ── 一覧に
+              出す事と、作れる・取れる事は別で、緩めたら後者が壊れます。 */
+           dlStopped:(toastClear(), dlStop()),
+           dlSaid:toastSays(), dlSaidOff:toastSays() === t('net.offline'),
+           makeStopped:(toastClear(), langStop()),
+           makeSaid:toastSays(), makeSaidOff:toastSays() === t('net.offline') };
 });
 
 say(offline.words > 0 && offline.name === 'Kela',
@@ -1262,19 +1274,31 @@ say(offline.read && offline.took === 1,
     '`language_take` の写しから ' + offline.took + ' 本、「' + offline.whose +
     '」（写しは読むだけ。更新も保存もクルクル→「接続できません」で、そこは' +
     '変えていない）。写しが無ければここは「wait」で、一覧にも数にも入らない');
-/* **そして一覧にはまだ出ません。これは緑ではなく、測った結果です。**
-   `dlCap()`（www/core.js）は `has('plus')` で答えるので、段を訊けていない
-   起動では 0 です ── `langsSeen(reading, 0)` が取った言語を全部畳み、足に
-   「1 hidden」が出ます。**段はメモリにしかない**（規則 22、r31）ので、電波の
-   無い起動で段が分かることはありません。つまり「前に読み込んだの出していいよ」
-   （OWNER 2026-09-12）には壁が二枚あり、ここで外したのは一枚目です。
-   二枚目 ── 「段を訊けていない間、一覧を切るか」 ── は段の決めごとなので
-   ここでは決めません：`docs/scope/r33-owner.md` § リーダーへ と
-   `docs/BACKLOG.md`。測った値: dlCap 0 / langCap 1 / 足「1 hidden」。 */
-say(offline.listed === false && offline.capHid,
-    '（測っただけ・直していない）一覧にはまだ出ない ── 段を訊けていないので ' +
-    'dlCap() は ' + offline.dlCap + '、足は「' + offline.capHid + '」。' +
-    '壁の二枚目で、段の決めごと（docs/BACKLOG.md）');
+/* **そして一覧に出ます。壁は二枚ありました。**
+   一枚目は写しで、上の主張がそれです。二枚目は天井で、`dlCap()` は
+   `has('plus')` で答えていました ── 段を訊けていない起動では 0 なので、
+   `langsSeen(reading, 0)` が取った言語を全部畳み、足に「1 hidden」を出す。
+   **段はメモリにしかない**（規則 22）ので、電波の無い起動で段が分かることは
+   ありません。つまり一枚目だけ外しても画面は変わりませんでした。
+
+   直した形（OWNER 2026-09-12 ＋ 2026-09-11「未回答は free ではない」）：
+   **天井の一箇所が三つ目の状態を答える** ── `langCap()`／`dlCap()` は
+   `planKnown()` が偽なら `null`、`langsSeen()` は天井が数の時だけ畳む。
+   一覧の側に条件は足していません。
+
+   **そして緩んでいないことを同じ所で訊きます。**作る・取るは `langStop()`／
+   `dlStop()` が「接続できません」で止めたままで、止めなくなっていたらここが
+   赤くなります ── 一覧に出す事と作れる事を取り違えるのが、この直しの唯一の
+   壊れ方なので。 */
+say(offline.listed && offline.capHid === '',
+    '**電波が無くても、取った言語が一覧に出る** ── 段を訊けていない天井は ' +
+    JSON.stringify(offline.dlCap) + '（0 ではなく「まだ無い」）で、' +
+    'langsSeen() は畳まない。足の hidden も無い（「' + offline.capHid + '」）');
+say(offline.dlStopped && offline.dlSaidOff &&
+    offline.makeStopped && offline.makeSaidOff,
+    'そして天井は緩んでいない ── ダウンロードも「言語を追加」も止まり、' +
+    '言うのは値段ではなく「' + (offline.dlSaid || '**何も言わない**') + '」／「' +
+    (offline.makeSaid || '**何も言わない**') + '」');
 
 /* 三段目と四段目 ── 電波が戻る。
    **記憶の側を空にしてから訊く。**起動のあいだに走る移行と ltStart() は、

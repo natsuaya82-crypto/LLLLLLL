@@ -1486,7 +1486,24 @@ function kbCap(){
 
    Not Infinity anywhere: three is a real ceiling on every plan there is. */
 var FREE_LANGS=1, PRO_LANGS=3;
+/* THREE STATES AND NOT TWO, and the third is 「nobody has asked」 rather than
+   the free number. 「前に読み込んだの出していいよ。何か更新するならクルクルが
+   必要」 OWNER 2026-09-12, and 「未回答は free ではない」 OWNER 2026-09-11
+   (docs/FEATURE_RULES.md § 端末は何も決めない).
+
+   `has()` answers FALSE while nobody has asked, which is right for a BUTTON
+   and wrong for a NUMBER: a launch with no signal worked this out as the free
+   ceiling and the language list then folded away everything past it -- a
+   person in a tunnel opened the app to one language and 「2 hidden」, which is
+   this phone deciding from an answer it has not been given. The plan is in
+   memory (rule 22), so a launch with no signal never has one.
+
+   `null` is that state and it is not a number: langsSeen() (www/home.js) does
+   not cut on it, so nothing is folded away and no count is drawn. It does not
+   loosen the ceiling -- langStop() below refuses with 「接続できません」 before
+   the number is ever reached, which is capStop()'s and upStop()'s sentence. */
 function langCap(){
+  if(!planKnown()) return null;
   return has('pro')? PRO_LANGS : FREE_LANGS;
 }
 /* And what it is compared against: the languages that are THIS PERSON'S.
@@ -1564,6 +1581,10 @@ function langCount(){
    one of them and reads every one of them. Only the next one is refused. */
 var PLUS_DL=1, PRO_DL=3;
 function dlCap(){
+  /* 「nobody has asked」 is not nought, exactly as langCap() above: a launch
+     with no signal answered ZERO here and every language somebody had taken
+     off another page was folded off the list, with 「1 hidden」 at its foot. */
+  if(!planKnown()) return null;
   if(has('pro')) return PRO_DL;
   return has('plus')? PLUS_DL : 0;
 }
@@ -1583,6 +1604,13 @@ function dlCount(){ return langTook(); }
    there is gets one line and no dialog, because there is nothing to fly to. */
 function dlStop(){
   var n=dlCount();
+  /* And nobody has said what this account PAYS either, which is a second
+     unanswered question and the same sentence. It used to be reached only
+     through the count below -- with no signal there was no count at all -- and
+     the picture of the take answer (§ LTAKE, 2026-09-12) means there now is
+     one, so the plan has to be asked for in its own right or a launch with no
+     signal offers a price instead of 「接続できません」. */
+  if(!planKnown()){ toast(t('net.offline')); return true; }
   /* NOT ASKED YET IS NOT NOUGHT AND IS NOT FULL. Nothing is refused and
      nothing is let through on a number nobody has given: the button waits,
      and netTakes() puts one there. The screen that presses this has already
@@ -1666,6 +1694,12 @@ function langForAcct(){
   return true;
 }
 function langStop(){
+  /* Asked BEFORE the ceiling, which is capStop()'s and upStop()'s line and is
+     here for their reason: the ceiling is worked out FROM the plan, so a
+     number measured against an answer nobody has given refuses somebody their
+     own next language -- and what it refused them with was a PRICE, offering
+     to sell what this account may already have bought. */
+  if(!planKnown()){ toast(t('net.offline')); return true; }
   if(langCount()<langCap()) return false;
   if(langCap()<PRO_LANGS){
     popAsk(t('up.need'), function(){ go('plans'); });
