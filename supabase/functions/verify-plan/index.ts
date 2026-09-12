@@ -33,7 +33,7 @@
 // どこから取るかが書いてあります。根が無ければこの函数は誰にも段を付けません。
 // free の側に間違えるのが、間違えてよい側です。
 
-import { verifyJws, bindOf, decidePlan, b64ToBytes } from './verify.mjs';
+import { verifyJws, bindOf, decidePlan, b64ToBytes, ORDER } from './verify.mjs';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -127,15 +127,61 @@ Deno.serve(async (req: Request) => {
     revocationDate: r.revoked ? Date.parse(r.revoked) : 0,
   })), { now });
 
-  const wrote = await fetch(`${url}/rest/v1/plan`, {
+  /* そして**下がったなら、下がる前の段を行に書きます。**
+     -----------------------------------------------------------------------
+     OWNER 2026-09-12「オンラインで出してね流石に」「4 起動の時に表示して
+     ☑️今後表示しない 閉じる みたいなポップにしたくない？」。
+
+     「プランが終了しました」は端末で決めていました ── `SET.planWas`（その端末が
+     最後に見せた語）と比べる形で、Keychain の読めなかった実機では、契約したこと
+     の無い人に「解約されました」と言いました。端末の語は 2026-09-11 に消えて、
+     この表は `(id, plan, at)` だったので**誰も答えられなくなりました**。
+     ここがその答えです。
+
+     三つの場合があり、**同じ時に何も書かないのが要**です：
+
+       下がる   `was` に今の行の段、`lapse_seen_at` は null ── 新しい終了は
+                新しく知らせる物
+       上がる   両方 null ── 終了はもう終わっている
+       同じ     **この二列を body に載せない。** PostgREST の merge-duplicates は
+                載っている列だけを更新するので、行はそのまま残ります。
+                載せて null にすると、**起動が書いた知らせを、その起動の値段の頁
+                がもう一度呼んだ時に消します** ── まだ見ていない知らせが消える。
+                「☑ を付けずに閉じたら次の起動でまた出る」が要求しているのは
+                この場合に触らないことです。
+
+     段の梯子は `verify.mjs` の `ORDER` 一つ。ここで並べ直しません。 */
+  const cur = await fetch(
+    `${url}/rest/v1/plan?id=eq.${uid}&select=plan`, { headers: head });
+  const have = cur.ok ? await cur.json() : [];
+  const had = have.length ? String(have[0].plan || '') : '';
+  const row: Record<string, unknown> = { id: uid, plan, at: now.toISOString() };
+  if (had && ORDER.indexOf(plan) < ORDER.indexOf(had)) {
+    row.was = had; row.lapse_seen_at = null;
+  } else if (had && ORDER.indexOf(plan) > ORDER.indexOf(had)) {
+    row.was = null; row.lapse_seen_at = null;
+  }
+
+  /* 書いた行を返してもらいます（`return=representation`）。答えに載せる `was` と
+     `lapse_seen` は**行が今持っているもの**で、ここで組み立て直したものでは
+     ありません ── 「同じ」の場合に何も書いていないので、組み立て直すと嘘になる
+     一箇所がここです。 */
+  const wrote = await fetch(`${url}/rest/v1/plan?select=was,lapse_seen_at`, {
     method: 'POST',
-    headers: { ...head, Prefer: 'resolution=merge-duplicates' },
-    body: JSON.stringify({ id: uid, plan, at: now.toISOString() }),
+    headers: { ...head, Prefer: 'resolution=merge-duplicates,return=representation' },
+    body: JSON.stringify(row),
   });
   if (!wrote.ok) return said({ why: 'could not write the plan: ' + (await wrote.text()) }, 500);
+  const back = await wrote.json();
+  const after = back && back.length ? back[0] : {};
+  const was = after.was ? String(after.was) : null;
+  const lapseSeen = !!after.lapse_seen_at;
 
   /* `took` と `left` は数えたもので、説明ではありません ── 実機で「復元したのに
      付かない」が起きたとき、鎖が落ちたのか、別のアカウントのものだったのか、
      何も来なかったのかを分けられるのはここだけです。 */
-  return said({ plan, until, took: took.length, left });
+  /* `was` と `lapse_seen` は端末が起動のポップを出すかどうかの全部で、端末は
+     どちらも憶えません（www/settings.js § capLapseSaw）。答えに無ければ出ない
+     ── free の側に間違えるのが、間違えてよい側です。 */
+  return said({ plan, until, was, lapse_seen: lapseSeen, took: took.length, left });
 });
