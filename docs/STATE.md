@@ -32,7 +32,26 @@ un-re-read.
 
 ---
 
-## 2026-09-12 ── ビルド 157（一番新しい）
+## 2026-09-12 ── ビルド 158（一番新しい）
+
+`master` = `d390a1bd`、ゲート 44/44 緑、`npm run rls` 372 件緑。ビルドは
+2026-09-12 07:26 UTC に出した（`ios-deploy.yml`、master）。実機で見る場所は
+`docs/CHECK-0907.md`「ビルド 158」── **`supabase/schema.sql` が変わったので、
+先に Dashboard に貼り直し、`verify-plan` を deploy する**（`supabase/setup.md`
+§ 8c）。**実機確認は全部まだ**。
+
+入ったもの：`claude/r34-lapse` ── `plan` 表に `was`・`lapse_seen_at`、RPC
+`plan_lapse_seen()`、verify-plan は段が下がった時だけ `was` を書き、**書いた後の
+行の段を返す**（スタッフの pro が届く。156 から端末に free が届いていた原因）、
+`plan_staff_hold()` は `was`・`lapse_seen_at` も落とす、起動のポップ「プランが
+終了しました」（☑今後表示しない／閉じる、`#pop`、端末に印は無し）、DATA_MODEL § 5
+は「非表示で畳む」に。`claude/r35-main` ── 主言語＝一番古く作った言語
+（`language.created_at` の写し `lingua.<id>.made.got`、`langMainId()` 一箇所）、
+`langsSeen()` は古い順に天井の数、無料に落ちた瞬間とサインイン直後
+（`langForAcct()`）に開くのは主言語、決定ログ 2026-09-12 (g)(h)(i)。
+verify-plan の `index.ts` は作業側で走らせていない（Deno 無し）。
+
+## 2026-09-12 ── ビルド 157
 
 `master` = `7ab6d9f7`、ゲート 44/44 緑。ビルドは 2026-09-12 04:23 UTC に出した
 （`ios-deploy.yml`、master）。実機で見る場所は `docs/CHECK-0907.md`「ビルド 157」。
