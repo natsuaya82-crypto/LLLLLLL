@@ -1756,10 +1756,20 @@ described, which is what `box-check` says a stale baseline becomes.
 
 ## What the free plan is
 
-One sentence: **your own shapes for a-z and 0-9.** `ltStart` puts thirty-eight
-letters there the moment a free language exists — a to z, `!`, `?`, and a digit
-for every value the base has — and nothing on the free plan adds one, deletes
-one or renames one. Drawing on them is the whole of it.
+One sentence: **your own shapes for a-z and 0-9.** `ltSlotsFill` puts
+thirty-eight letters into a language the moment it is made — a to z, `!`, `?`,
+and a digit for every value the base has — and nothing on the free plan adds
+one, deletes one or renames one. Drawing on them is the whole of it.
+
+**The thirty-eight are not what the free plan is GIVEN, they are what a
+language STARTS as, on every plan.** 「文字0はアルファベットでいいやん」 OWNER
+2026-09-12: 「言語を追加」 on the paid plan made a language with no letters at
+all, so the first word typed into it came back 「つづりは2文字以上必要です」
+with nothing to spell it out of. `ltSlotsFill()` is the one place the slots are
+laid down and two moments ask it — `langNew()` (`www/core.js`), where a
+language is MADE, on any plan; and `ltStart()`, the launch, **for a free
+language only**, because a paid plan may delete and rename its letters and a
+launch that topped one up would put back what somebody took away.
 
 That is not a restriction bolted onto the app; it is what makes the rest of the
 free plan possible. Because the letters are exactly a-z, `!` and `?`, and their
@@ -1800,14 +1810,15 @@ Four places say it, and they say four different things:
 
 | where | what it says |
 |---|---|
-| `ltStart` in `letters.js` | free languages get the twenty-eight slots topped up by name, and a digit per value of the base topped up by value |
+| `ltStart` in `letters.js` | a FREE language is topped back up on every launch — the slots by name, a digit per value of the base by value. A paid one is not, and `ltSlotsFill()` beside it is what a language of any plan is made with |
 | `kbOf` in `keyboard.js` | free reads `kbFixed()` and never `KB` |
 | `wsys()` in `wsys.js` | free is an alphabet; there is nothing to guess |
 | the screens | `vLtset` `vLetter` `vLetters` `vWsys` `vKb` each drop what free cannot use |
 
-`ltStart` **tops up**: a language that already has letters keeps every one of
-them and is given only the names it is missing, so it can run on any launch and
-a paid language coming back down to free is filled in rather than rearranged.
+`ltSlotsFill` **tops up**: a language that already has letters keeps every one
+of them and is given only the names it is missing, so it can run on any launch
+and a paid language coming back down to free is filled in rather than
+rearranged.
 It does not touch the inventory — `ltSetRoman` adds a sound to `SND` when
 somebody names a letter by hand, because they said the word, and nobody said
 anything here. A language given three sounds would otherwise come back holding

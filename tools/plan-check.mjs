@@ -712,6 +712,49 @@ const r = await pg.evaluate(({ s }) => {
   /* and it arrived empty rather than carrying the last language's words */
   out.proEmpty = WORDS.length === 0;
 
+  /* AND IT ARRIVED WITH AN ALPHABET, WHICH IS NOT A PLAN QUESTION.
+     「文字0はアルファベットでいいやん」 OWNER 2026-09-12.
+
+     Measured 2026-09-11 (hunt #6): 「言語を追加」 on the paid plan made a
+     language with NO letters -- ltStart() returns at can('letters') -- so the
+     first word typed into it came back 「つづりは2文字以上必要です」 with
+     nothing to spell it out of. Three things, in the order somebody meets
+     them: the slots are there, a word can be SPELLED out of them, and a
+     letter deleted on the paid plan does NOT come back on the next launch.
+
+     The third is the half that a plan test loosened inside ltStart() would
+     break instead, and it is why the fill is a function called at the moment
+     a language is MADE rather than a condition relaxed at every launch: a
+     paid alphabet may be deleted and renamed (can('letters')), so a launch
+     that topped it up would put back what somebody took away. */
+  out.proLts = LETTERS.length;
+  var spell = 'kata', sp = [], ch, j2, hit;
+  for (j2 = 0; j2 < spell.length; j2++){
+    ch = spell.charAt(j2); hit = null;
+    LETTERS.forEach(function(l){ if (!hit && ltName(l) === ch) hit = l; });
+    if (hit) sp.push({ l: hit.id });
+  }
+  out.proSpelled = spWord(sp);
+  /* Deleted, and then the launch run again. ltStart() IS the launch --
+     www/boot.js and langOpen() call it -- so this is the road and not a
+     re-statement of it. */
+  var dropped = null;
+  LETTERS.forEach(function(l){ if (!dropped && ltName(l) === 'k') dropped = l.id; });
+  LETTERS = LETTERS.filter(function(l){ return l.id !== dropped; });
+  saveLetters();
+  out.proAfterDrop = LETTERS.length;
+  ltStart();
+  out.proDropStayed = !ltById(dropped) && LETTERS.length === out.proAfterDrop;
+  /* and a FREE language is still topped back up by that same launch, which is
+     the other half of the same sentence. */
+  var keepP = plan();
+  planGot('free');
+  LETTERS = LETTERS.filter(function(l){ return ltName(l) !== 'a'; });
+  saveLetters();
+  ltStart();
+  out.freeToppedBack = LETTERS.some(function(l){ return ltName(l) === 'a'; });
+  planGot(keepP);
+
   /* Somebody who already has three. The third is made, then the plan is taken
      away, and the question is what happened to the three. */
   langNew();
@@ -1435,6 +1478,17 @@ say(r.freeMadeNone && r.freeWent && r.freeSaidNothing,
     'and yes goes to the plans screen, still without making one');
 say(r.proMade && r.proOpened, 'pressed on pro it is made and opened');
 say(r.proEmpty, 'and it arrives empty rather than carrying the last one\'s words');
+say(r.proLts === 38,
+    '**有料で「言語を追加」した言語も、三十八の枠で始まる** ── ' + r.proLts +
+    ' 文字（a〜z・! ?・底の数だけの数字）。「文字0はアルファベットでいいやん」');
+say(r.proSpelled === 'kata',
+    'だから最初の語の綴りが打てる ── その言語自身の文字で「' +
+    (r.proSpelled || '（打てない）') + '」');
+say(r.proDropStayed,
+    'そして有料で消した文字は、次の起動で戻ってこない ── ' + r.proAfterDrop +
+    ' 文字のまま（枠を置くのは「作る」の一度で、起動の top-up は無料だけ）');
+say(r.freeToppedBack,
+    '無料の言語は今までどおり起動ごとに埋め戻される');
 
 say(r.threeMade && r.freeStillHolds && r.freeStillHasAll,
     'somebody with three keeps three when the plan ends');

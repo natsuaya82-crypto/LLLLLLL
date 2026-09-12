@@ -67,7 +67,9 @@ OWNER 2026-09-06。「だから端末でやるわけねえだろ」OWNER 2026-09
   送るのは、**訊けた上で足りないとき**だけ
 - `ltStart()`（`www/letters.js`）は**一字も書かない** ── 無料の 38 字を、
   払った人の字の上に書くのはこの状態です。答えが届いた瞬間に `planTook()` が
-  同じ呼び出しを一度する
+  同じ呼び出しを一度する。**`langNew()` から呼ぶ `ltSlotsFill()` は別で、
+  段を訊きません** ── 言語を作った時の 38 字は段の話ではないからです
+  （§ What the free plan is）
 - `wsys()`（`www/wsys.js`）は言語の `language.wsys` 列で答える。無料は
   アルファベット、という規則は**訊けた上で**掛かる
 
@@ -556,10 +558,18 @@ Plus's rung, Plus does not meet Pro's, and free meets neither.
 
 ## What the free plan is
 
-One sentence: **your own shapes for a–z and 0–9.** `ltStart` puts thirty-eight
-letters there — a to z, `!`, `?`, and a digit for every value the base has —
-and nothing on the free plan adds, deletes or renames one. Drawing on them is
-the whole of it.
+One sentence: **your own shapes for a–z and 0–9.** `ltSlotsFill` puts
+thirty-eight letters there — a to z, `!`, `?`, and a digit for every value the
+base has — and nothing on the free plan adds, deletes or renames one. Drawing
+on them is the whole of it.
+
+**それは「無料に配るもの」ではなく「言語の始まりの姿」で、段を問いません。**
+「文字0はアルファベットでいいやん」 OWNER 2026-09-12 ── 有料で「言語を追加」
+した言語は文字が一つも無く、最初の単語の綴りが打てませんでした。枠を置く一箇所
+は `ltSlotsFill()`（`www/letters.js`）で、訊く所は二つ：`langNew()`
+（`www/core.js`、言語を**作る**時、どの段でも）と、`ltStart()`（起動、**無料の
+言語だけ**）。有料は文字を消せて改名できるので、起動ごとに埋め戻すのは人が
+消したものを戻すことになります。押さえるのは `plan-check`。
 
 That is not a restriction bolted on; it is what makes the rest possible.
 Because the letters are exactly a–z and their names cannot change, the keyboard
@@ -567,7 +577,8 @@ can be a QWERTY with the drawn letters substituted in, built from `LETTERS`
 every time it is shown, stored nowhere, with nothing to set.
 
 Four places say it and they say four different things: `ltStart` in
-`letters.js`, `kbOf` in `keyboard.js`, `wsys()` in `wsys.js`, and the screens.
+`letters.js`（起動の埋め戻し、無料だけ）, `kbOf` in `keyboard.js`, `wsys()` in
+`wsys.js`, and the screens.
 
 ## The four that must never share a branch
 

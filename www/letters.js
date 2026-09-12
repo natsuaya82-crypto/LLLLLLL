@@ -642,35 +642,28 @@ function ltSlotIdFree(key){
    all thirty-eight and pressing it opened a question whose yes did nothing.
    「長押しの後から-の3個目以降に普通に反応しなくなる」 */
 function ltCanDelete(l){ return !!l && !ltIsBase(l); }
-function ltStart(){
-  /* AND NOT INTO A LANGUAGE THAT IS ONLY READ. The twenty-eight slots are
-     what the free plan gives somebody to draw their own alphabet on; a
-     language taken off somebody else's page already has the letters they
-     drew, and topping it up would write this phone's a-z over them -- through
-     saveLetters(), the moment it was opened, with nobody typing anything.
-     Measured before this line existed: the letters slice stopped being byte
-     for byte what the server sent.
-     「dl言語はへんしゅうはできないってなんかいもいわせんなよ」 OWNER 2026-09-01.
+/* THE THIRTY-EIGHT SLOTS, PUT IN WHERE THEY ARE MISSING -- a to z, ! ?, and
+   a digit for every value the base can write.
 
-     It is asked FIRST now, because the line under it writes as well. */
-  if(!langMine(langId)) return;
-  /* AND NOT BEFORE ANYBODY HAS ANSWERED WHAT THIS ACCOUNT PAYS. The line
-     below writes THIRTY-EIGHT LETTERS into somebody's language, and it writes
-     them because the plan is free -- so a plan nobody has asked about would
-     write them into a paid alphabet at every launch, with no signal, before
-     verify-plan had said a word. 「未回答は…書かせない」 OWNER 2026-09-11
-     (docs/FEATURE_RULES.md § 端末は何も決めない).
+   ONE PLACE, AND TWO MOMENTS ASK IT. ltStart() below is the launch, and it
+   asks only for a free language. langNew() (www/core.js) is the other: a
+   language that has just been MADE starts with these slots on every plan.
+   「文字0はアルファベットでいいやん」 OWNER 2026-09-12 -- 「言語を追加」 on
+   the paid plan made a language with no letters at all, so the first word
+   typed into it came back 「つづりは2文字以上必要です」 with nothing to
+   spell it out of (hunt #6).
 
-     planTook() (www/core.js) calls this again the moment the answer lands, so
-     nothing is lost by waiting -- it is the same call at the moment the fact
-     it needs becomes true, the shape langOwnGot() has for a language's owner.
-     Above ltJoinSlots() as well: that writes too. */
-  if(!planKnown()) return;
-  /* An alphabet that doubled before the ids were steady, put back to one of
-     each. Above the plan, because a paid alphabet doubled the same way and
-     the free plan is not what this is about. */
-  ltJoinSlots();
-  if(can('letters')) return;
+   The two moments are not one condition with a hole in it, and that is why
+   this is a function rather than a plan test loosened in ltStart(): MAKING a
+   language lays the slots down once, and a LAUNCH tops a free one back up
+   every time. A paid language may delete and rename its letters
+   (can('letters')), so a launch that topped it up would be putting back what
+   somebody took away.
+
+   It TOPS UP: a slot that is already there is left exactly as it is, so this
+   is safe to run over an alphabet that has been drawn on. Returns how many
+   it made. */
+function ltSlotsFill(){
   /* WHICH SLOTS ARE TAKEN, asked of ltSlotKey() and nowhere else. This built
      its own table off ltName() -- the same question, answered a second time,
      and the two came apart on every letter with no `ab` (ltSlotKey above). */
@@ -712,6 +705,38 @@ function ltStart(){
      has nothing to say about sound. */
   made+=numTopUp();
   if(made) saveLetters();
+  return made;
+}
+function ltStart(){
+  /* AND NOT INTO A LANGUAGE THAT IS ONLY READ. The twenty-eight slots are
+     what the free plan gives somebody to draw their own alphabet on; a
+     language taken off somebody else's page already has the letters they
+     drew, and topping it up would write this phone's a-z over them -- through
+     saveLetters(), the moment it was opened, with nobody typing anything.
+     Measured before this line existed: the letters slice stopped being byte
+     for byte what the server sent.
+     「dl言語はへんしゅうはできないってなんかいもいわせんなよ」 OWNER 2026-09-01.
+
+     It is asked FIRST now, because the line under it writes as well. */
+  if(!langMine(langId)) return;
+  /* AND NOT BEFORE ANYBODY HAS ANSWERED WHAT THIS ACCOUNT PAYS. The line
+     below writes THIRTY-EIGHT LETTERS into somebody's language, and it writes
+     them because the plan is free -- so a plan nobody has asked about would
+     write them into a paid alphabet at every launch, with no signal, before
+     verify-plan had said a word. 「未回答は…書かせない」 OWNER 2026-09-11
+     (docs/FEATURE_RULES.md § 端末は何も決めない).
+
+     planTook() (www/core.js) calls this again the moment the answer lands, so
+     nothing is lost by waiting -- it is the same call at the moment the fact
+     it needs becomes true, the shape langOwnGot() has for a language's owner.
+     Above ltJoinSlots() as well: that writes too. */
+  if(!planKnown()) return;
+  /* An alphabet that doubled before the ids were steady, put back to one of
+     each. Above the plan, because a paid alphabet doubled the same way and
+     the free plan is not what this is about. */
+  ltJoinSlots();
+  if(can('letters')) return;
+  ltSlotsFill();
 }
 /* What this letter reads, spelled the way a person would write it. One word
    per unit, separated by spaces, because a letter may read more than one

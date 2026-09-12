@@ -1208,6 +1208,23 @@ function langNew(){
   if(typeof SESS!=='undefined' && SESS && SESS.uid) langOwnGot(id, SESS.uid);
   langStore();
   langOpen(id);
+  /* AND IT STARTS WITH AN ALPHABET, ON EVERY PLAN.
+     「文字0はアルファベットでいいやん」 OWNER 2026-09-12.
+
+     ltSlotsFill() (www/letters.js) is the one place the thirty-eight slots
+     are laid down -- a to z, ! ?, and a digit for every value the base can
+     write -- and langOpen() above has just run ltStart(), which lays them
+     only for a FREE language: a paid plan may delete and rename its letters,
+     so a launch that topped one up would put back what somebody took away.
+     MAKING a language is the other moment, and it is not a plan question.
+     Measured 2026-09-11 (hunt #6): 「言語を追加」 on the paid plan gave a
+     language with no letters, and the first word typed into it came back
+     「つづりは2文字以上必要です」 with nothing to spell it out of.
+
+     After langOpen(), because LETTERS is the open language and this is the
+     one that has just been opened; before netLangSync() below, so the letters
+     go up with the language rather than on the next save. */
+  if(typeof ltSlotsFill==='function') ltSlotsFill();
   /* AND IT GOES UP AS IT IS MADE. A language LIVES on the server (CLAUDE.md
      § Online) and a slice is in memory (rule 22), so a language that is made
      and not sent is a language that is gone when the app closes. Measured
