@@ -24,4 +24,116 @@
 
 ## 報告
 
-（作業のあと、末尾に）
+枝 `claude/r33-owner`（`origin/integ-0905` = `ed5146bb` から。報告の前に fetch
+して、追いつく必要が無いことを確かめた ── `ed5146bb` は HEAD の祖先）。
+commit は五本、一件ずつ、毎回 push 済み。
+
+### 1. 新しい言語は文字 0 ではなく三十八の枠で始まる ── `f1c8c6f8`
+
+- **触ったもの**：`www/letters.js`（`ltStart()` を書き直して `ltSlotsFill()` を
+  出した）、`www/core.js`（`langNew()` がそれを一度呼ぶ）、`tools/plan-check.mjs`
+  （claim 四つ）、`CLAUDE.md` § What the free plan is、`docs/PAID_FEATURES.md`
+  二箇所、`docs/CHANGELOG.md`。
+- **振る舞い**：どの段で作った言語も a〜z・! ?・底の数だけの数字の三十八字で
+  始まる。有料で作った言語が文字 0 で、最初の単語の綴りが打てなかったのが直る。
+- **条件を足していません**：`ltStart()` の `if(can('letters')) return;` は一行も
+  緩めていない（緩めると「有料で消した文字が起動で戻る」が赤くなる ── その形も
+  赤を見た）。枠を置く半分を関数に出して、訊く所を二つにした。
+- **保存**：増減なし。移行なし。既にある言語には何も起きない。`letters` slice が
+  `langNew()` の `netLangSync()` で上がることを**測った**（偽サーバーの `sent` に
+  `slice:<id>:letters`）。
+- **写真**：`shots/r33-lt38-{before,after}.png`（有料で「言語を追加」→ 文字の頁、
+  0/0/0 → 26/2/10）。`tools/shot.mjs` に「有料で今作った言語」の面が無いので、
+  `fixture` を種に同じ道を走らせて撮った。
+
+### 2. 取った言語の答えの写し ── `2e6de91a`
+
+- **触ったもの**：`www/core.js`（`langTakeKey` / `langTookGot` / `langTookFor`）、
+  `www/net.js`（`netRead`・`netTook`・`netOut` の三箇所で呼ぶ）、
+  `tools/again-check.mjs`（claim 五つ、うち一つは書き換え）、
+  `tools/store-check.mjs`（road）、`CLAUDE.md` 規則 22、`docs/DATA_MODEL.md`、
+  `docs/CHANGELOG.md`、`docs/BACKLOG.md`。
+- **新しく保存する鍵が一つ**：`lingua.take.<uid>` ── `language_take` の答えの
+  写し、そのアカウントの物、上る道なし、`lsWipeAcct()` が鍵の末尾の uid で数えて
+  取る。`langOwnOf` の `.got` と同じ形。
+- **振る舞い**：電波の無い起動で、取った言語が `LW_WAIT`（＝描かない）ではなく
+  `LW_READ` として残る。別のアカウントで入ると前の人の分は読まない（8/31 の
+  再発防止）。読むだけなのは今までどおりで、更新・保存の道は一行も触っていない。
+- **書き換えた claim 一つ**：`again-check`「答えが来ていない起動では何も落ちない」
+  の `langTook()` が `null` → **2**。言っていること（0 ではない）は同じで、答えて
+  いるものが「訊けていない」から「前に聞いた答え」に変わった。写しがまだ無い
+  アカウントは今も `null`（`acct-check` 65 がそのまま見ている）。
+
+**やり残し ── 画面はまだ変わりません。リーダーへ、ここが要点です。**
+一覧に出るまでには壁が**二枚**あり、外したのは一枚目だけです。二枚目は
+`dlCap()`（`www/core.js`）が `has('plus')` で答えること ── 段を訊けていない
+起動では 0 になり、`langsSeen()` が読む側の一覧を畳んで足に「1 hidden」を出す。
+**段はメモリだけ（規則 22）なので、電波の無い起動で段が分かることはありません。**
+測った値：`langWhose('theirs-9')` は `read`、`langTook()` は 1、**`dlCap()` は 0、
+足は「1 hidden」**（`again-check` が毎回印字します）。`langCap()` も同じ形で、
+作った側の一覧は 1 本に畳まれます。
+
+ここで直さなかったのは、**「段を訊けていない間、一覧を何本出すか」が段の
+決めごと**だからです（`CLAUDE.md` § Deciding）。そして書いてあるものが二つ
+食い違っています ── `docs/DATA_MODEL.md` § 5 は「Neither ceiling removes, hides
+or counts down anything」と書いていますが `langsSeen()` は畳みます
+（`CLAUDE.md` § Code is not the specification → 報告して止める）。
+提案は `docs/BACKLOG.md` に書きました：`planKnown()` が偽のあいだは**切らない**
+（数を決めるのではなく、まだ何も言われていないので畳まない）。天井は緩みません
+── 次のダウンロードは `dlStop()` が `null` を見て「接続できません」で止めます。
+
+### 3. 動詞の章の三行目 ── `6980c6e6`
+
+`www/i18n/ja.js` の `g2.g.mood` を「命令・条件・可能・義務・願望」に。ja だけ。
+写真は `shots/r33-mood-{before,after}.png` ── 前は二行に折り返していた行が一行に
+収まる。
+
+### 4. 決定ログ ── `d99339d6`
+
+`docs/FEATURE_RULES.md` に 2026-09-12 の項、原文のまま六つ。実装の状態も項ごとに
+書いた。(a) と (d) は**既にそうなっていた**ことを読んで確かめた ──
+(a) `langOpen()` が `goTab('profile')` で終わる（`www/core.js`）、
+(d) `snsSearchesHTML('sns.saved', …, null)` で `drop` が `null` なので保存した
+検索の行に × は描かれない（× は「最近の検索」のほう）。(e)(f) は未着手、どちらも
+SQL が先。
+
+### 回した検査 ── **ゲートは回していません**
+
+| | |
+|---|---|
+| `plan-check` | 緑。赤を**二つの形**で見た（`langNew()` の呼び出しを外す／`ltStart()` の `can('letters')` を外す） |
+| `again-check` | 緑（114 本）。赤を見た ── 写しを書く一行を外すと 5 本赤 |
+| `store-check` | 緑。road を書く前は赤（それも見た） |
+| `press` | 緑。`buttons pressed: 16753 (276/277)`、`never pressed (1): saveName` |
+| 速いもの | 各 commit で `tools/pre-commit` が回している（es5・assets・dead・box・store・i18n ほか） |
+
+**`press` の数は動いていません** ── 土台（`ed5146bb`）を別の worktree に出して
+同じ検査を回し、**16753 (276/277)、never pressed も `saveName` 一つ**で同じで
+あることを確かめました。`saveName` が押されないのは前からで、`r23` `r28` `r30`
+の報告が同じことを書いています。
+
+### 確認の段
+
+```
+CODE CONFIRMED   1・2・3・4 すべて。上の表のとおり
+DEVICE 未確認    全部。実機では一つも押していません
+OWNER 未確認     全部。写真は shots/r33-*.png の四枚
+```
+
+### リーダーへ ── 指示と違っていた所
+
+1. **2 の指示が名指しした原因は本物でしたが、**それだけでは画面は変わりません。
+   壁の二枚目（`dlCap()` が段の未回答で 0）が残っていて、電波が無い限り取った
+   言語は一覧に出ません。上の § やり残し と `docs/BACKLOG.md`。決めるのは
+   オーナーです。
+2. **claim の文言を変えました。**「取った言語が一覧に出る」は今は緑にできない
+   ので（緑にするには壁の二枚目を外すしかなく、それは決めごと）、`again-check`
+   は**今そうである事**を主張します ──「この端末に残って read と答える」。
+   一覧に出ないことは、直していない測定として同じ節が毎回印字します。
+   緑を「出るようになった」と読まないでください。
+3. **`again-check` の既存 claim を一つ書き換えました**（`langTook()` が `null`
+   → 2）。写しを置いた結果そうなるのが正しいと判断しましたが、これは既にあった
+   主張なので、読んでおかしければ言ってください。
+4. `tools/again-check.mjs` の「別のアカウント」の節は**ファイルの最後**に
+   置いてあります。別アカウントで立ち上げ直す節なので、落ちた要求を積んだページ
+   を次の節へ渡すと、その節の「ポップは一つ」が赤くなります（一度赤くしました）。
