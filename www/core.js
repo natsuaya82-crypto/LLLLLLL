@@ -464,6 +464,45 @@ function langOwnOf(id){
   p=slRd(langOwnKey(k));
   return p===null? '' : String(p);
 }
+/* AND WHEN IT WAS MADE, WHICH IS `language.created_at` AND DECIDES WHICH ONE
+   IS THE MAIN ONE.
+   -------------------------------------------------------------------------
+   「そもそも最初に作った言語を主言語にして、フリーにした時に最初に表示される
+   ようにしないとダメでは？」 OWNER 2026-09-12.
+
+   THE SERVER ALREADY ANSWERS THIS QUESTION AND THIS IS THE SAME COLUMN.
+   `profile_seen.lang_id` (supabase/schema.sql) is `language_seen` ordered
+   `created_at asc limit 1` -- the language on somebody's profile is already
+   「the first one they made」. A second rule here, worked out from anything
+   else, would be the app and the server each answering 「which is the main
+   one」 and drifting apart the first time they disagreed. So the phone reads
+   the same column in the same direction and nothing here computes a date.
+
+   Same shape as LNAME, LWSYS and LOWN above: memory for what the server has
+   said this session (CLAUDE.md rule 22), a picture on the disk so a launch
+   with no signal can still put the list in order, and NO ROAD UP -- slGot()
+   is the one writer, so slMine() cannot see it and netSlice1(),
+   netSaveUpGo() and both 「fills in and stops」 reads never find it.
+
+   EMPTY IS 「NOBODY HAS SAID」 AND NOT 「OLDEST」. A language minted on this
+   phone has no row yet, so it has no date -- and it is the NEWEST thing here,
+   not the oldest. langsOld() below puts an unanswered one last for that
+   reason, and it is the one place that decides it. */
+var LMADE={};
+function langMadeKey(id){ return langKeyOf(String(id||''), 'made'); }
+function langMadeGot(id, at){
+  var k=String(id||''), v=String(at||'');
+  if(!k) return;
+  LMADE[k]=v;
+  slGot(langMadeKey(k), v);
+}
+function langMadeOf(id){
+  var k=String(id||''), p;
+  if(!k) return '';
+  if(Object.prototype.hasOwnProperty.call(LMADE, k)) return LMADE[k];
+  p=slRd(langMadeKey(k));
+  return p===null? '' : String(p);
+}
 /* ---- LROW: WHETHER THE SERVER HAS A ROW FOR THIS LANGUAGE ---------------
    `LANGS[id].sid` answered two questions with one field, and only one of them
    was a number. The number is the id now (§ langMint); this is the other
@@ -1530,6 +1569,39 @@ function langCount(){
   for(id in LANGS)
     if(Object.prototype.hasOwnProperty.call(LANGS, id) && langWhose(id)===LW_MINE) n++;
   return n;
+}
+/* ---- WHICH ONE IS THE MAIN ONE, AND IN WHAT ORDER THE LIST GOES --------
+   「無料はそもそも1つの言語しか出ないやろ。一番最初に作ってた作り込んでた言語
+   だけ表示であとは隠すだろ」「そもそも最初に作った言語を主言語にして、フリーに
+   した時に最初に表示されるようにしないとダメでは？」 OWNER 2026-09-12.
+
+   ONE RULE, AND THE SERVER ALREADY WROTE IT DOWN. `profile_seen.lang_id`
+   (supabase/schema.sql) is `language_seen` ordered `created_at asc limit 1`,
+   so the language on somebody's profile is the first one they made. This is
+   the same column read the same way, off § LMADE above -- not a second
+   opinion the phone works out for itself.
+
+   IT IS THE ORDER AND langMainId() IS ITS FIRST ELEMENT, deliberately: the
+   list that gets folded and the language that gets opened when it folds must
+   never be able to disagree, and two functions each working it out is exactly
+   how they would. langsSeen() (www/home.js) cuts what this returns.
+
+   AN UNANSWERED DATE GOES LAST. A language minted on this phone has no row
+   yet and therefore no `created_at`, and it is the NEWEST thing in the index
+   rather than the oldest -- 「答えが無い」 and 「古い」 are different states
+   and must not share a branch. The sort is otherwise stable: equal keys keep
+   the order they were handed in, which is the index's. */
+function langsOld(ids){
+  var out=(ids && typeof ids.length==='number')? ids.slice(0) : [], at={}, ord={}, i;
+  for(i=0;i<out.length;i++){ at[out[i]]=langMadeOf(out[i]); ord[out[i]]=i; }
+  out.sort(function(a, b){
+    var x=at[a], y=at[b];
+    /* 「nobody has said」 last, and two of them keep the order they came in */
+    if(!x !== !y) return x? -1 : 1;
+    if(x!==y) return x<y? -1 : 1;
+    return ord[a]-ord[b];
+  });
+  return out;
 }
 /* The ceiling on languages, met. True means the caller must stop.
 

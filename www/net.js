@@ -2033,6 +2033,11 @@ function netLangsWalk(d, done){
     /* AND WHO WROTE IT -- www/core.js § LOWN, where 「not asked」 is neither
        side and is what langMine() waits for. */
     langOwnGot(nid, own);
+    /* AND WHEN IT WAS MADE, which is the fourth column (www/core.js § LMADE).
+       It is what says which of this account's languages is the MAIN one, and
+       it is the same column `profile_seen.lang_id` is already ordered by --
+       one rule, read from the one place that holds it. */
+    langMadeGot(nid, row.created_at);
     /* ---- THE MARKS FIRST, AND THEN ONLY THE BODIES THIS PHONE LACKS ----
        This read all twelve bodies and then threw most of them away: the loop
        below fills in what is MISSING and stops (docs/DATA_SAFETY.md rule 2),
@@ -2126,7 +2131,7 @@ function netLangsWalk(d, done){
 function netLangsDown(then, bad){
   var done=then || function(){};
   if(!netSignedIn()){ done(0); return; }
-  netGet('/rest/v1/language?select=id,name,published_at,wsys,owner&owner=eq.'+
+  netGet('/rest/v1/language?select=id,name,published_at,wsys,owner,created_at&owner=eq.'+
          encodeURIComponent(SESS.uid),
     function(d){ netLangsWalk(d, done); },
     function(d, s, m){
@@ -2175,7 +2180,7 @@ function netTakenDown(took){
   netTakeGone(ids);
   /* Nothing taken is an answer and not a reason to ask. */
   if(!ids.length) return;
-  netGet('/rest/v1/language?select=id,name,published_at,wsys,owner&id=in.('+
+  netGet('/rest/v1/language?select=id,name,published_at,wsys,owner,created_at&id=in.('+
          netInList(ids)+')',
     function(d){ netLangsWalk(d, function(){}); },
     /* A refusal changes nothing and is silent: this account's own languages

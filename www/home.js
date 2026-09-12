@@ -2546,13 +2546,25 @@ function langAddRow(){
    of them exactly as they were, which is the whole reason this cuts the LIST
    and not the data. docs/DATA_SAFETY.md § a shorter list is not a deletion.
 
-   THE OPEN ONE IS ALWAYS ON IT ── 「開いてるものを残すでいいよ」OWNER
-   2026-09-02. A switcher that does not contain the language you are standing
-   in is a switcher you cannot switch away from, and the language you are
-   working in is the last one to take off the screen. It goes in place of the
-   last of the first `cap`, so the count is the count either way. */
+   IT TAKES THE ORDER IT IS HANDED AND MAKES NO ORDER OF ITS OWN. Which cap
+   languages those are is the CALLER's question -- langsList() below hands the
+   made list through langsOld() (www/core.js), so what survives a fold is the
+   oldest of them: 「一番最初に作ってた作り込んでた言語だけ表示であとは隠す」
+   OWNER 2026-09-12.
+
+   THE OPEN ONE USED TO BE SWAPPED IN HERE AND THAT LINE IS GONE
+   (2026-09-12). It put `langId` in place of the last of the first `cap`
+   ── 「開いてるものを残すでいいよ」 OWNER 2026-09-02 ── so that a switcher
+   always contained the language you were standing in. That is still true and
+   it is held somewhere else now, because the swap made the one language a
+   free plan shows 「whichever happened to be open」 rather than 「the first
+   one you made」, which is the opposite of the decision above.
+
+   What holds it instead is langMainFall() (www/core.js), called where the
+   ceiling actually moves: a plan that drops opens the main language, which is
+   on this list by construction. A language folded away has no row, so there
+   is no way to be standing in one -- and nothing here decides it twice. */
 function langsSeen(ids, cap){
-  var out;
   /* A CEILING THAT IS NOT A NUMBER DOES NOT CUT. `null` is 「nobody has asked
      what this account pays」 (www/core.js § langCap), which is what every
      launch with no signal has, and folding the list on it is this phone
@@ -2565,14 +2577,16 @@ function langsSeen(ids, cap){
      langStop() and dlStop(), and both refuse with 「接続できません」 while the
      answer is missing. This is the list, and the list shows what is here. */
   if(cap===null) return ids;
-  if(ids.length<=cap) return ids;
-  out=ids.slice(0, cap);
-  if(langId && ids.indexOf(langId)>=0 && out.indexOf(langId)<0 && out.length)
-    out[out.length-1]=langId;
-  return out;
+  return (ids.length<=cap)? ids : ids.slice(0, cap);
 }
-function vLangs(){
-  var ids=Object.keys(LANGS), mine=[], reading=[], other=0, i, id;
+/* WHAT THE LIST SHOWS, AND IT IS ASKED IN ONE PLACE.
+   vLangs() below draws this and langMainFall() (www/core.js) asks it whether
+   the open language is on it. Two functions each working the lists out for
+   themselves is two answers to 「what is on the switcher」, and the whole of
+   what langMainFall() does depends on giving the same answer this draws. */
+function langsList(){
+  var ids=Object.keys(LANGS), mine=[], reading=[], other=0, i, id,
+      mineSeen, readSeen;
   for(i=0;i<ids.length;i++){
     id=ids[i];
     /* THREE LISTS AND NOT TWO, and langWhose() (www/core.js) is the one
@@ -2598,10 +2612,22 @@ function vLangs(){
   }
   /* The ceiling, met on the way OUT. Both lists are cut the same way and by
      their own number: making and reading are two ceilings that never see each
-     other (`langCap()` and `dlCap()`, www/core.js). */
-  var mineSeen=langsSeen(mine, langCap()), readSeen=langsSeen(reading, dlCap());
-  other += mine.length-mineSeen.length;
-  var readHid = reading.length-readSeen.length;
+     other (`langCap()` and `dlCap()`, www/core.js).
+
+     AND THE MADE LIST GOES IN OLDEST FIRST, so what survives the cut is the
+     languages this account made first (www/core.js § langsOld). It went in
+     in `Object.keys(LANGS)` order, which is the order this PHONE heard about
+     them -- so signing in on a second handset put a different language at the
+     top and a free plan then showed a different one of them. */
+  mineSeen=langsSeen(langsOld(mine), langCap());
+  readSeen=langsSeen(reading, dlCap());
+  return { mine: mineSeen, reading: readSeen,
+           hid: other + (mine.length-mineSeen.length),
+           readHid: reading.length-readSeen.length };
+}
+function vLangs(){
+  var L=langsList(), mineSeen=L.mine, readSeen=L.reading,
+      other=L.hid, readHid=L.readHid;
   var body='<div class="sec">'+esc(t('langs.mine'))+'</div>'+
     /* AND A LIST WITH NOTHING ON IT IS NOT A PERSON WITH NO LANGUAGES.
        This section has never had a 「まだありません」 -- somebody standing here

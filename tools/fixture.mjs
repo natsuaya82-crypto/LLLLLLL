@@ -2869,6 +2869,39 @@ export function halfDone(){
               langSwUp({}); }
        const h=app.innerHTML; delete LANGS.L_other; langTookGot([]);
        planGot(wasP); return h; }],
+    /* ---- THREE LANGUAGES OF ONE PERSON'S, ON EACH SIDE OF THE CEILING ----
+       「無料はそもそも1つの言語しか出ないやろ。一番最初に作ってた作り込んで
+       た言語だけ表示であとは隠すだろ」 OWNER 2026-09-12. The walk's account
+       has ONE language, so neither face of the fold -- what free shows and
+       what pro shows -- was ever drawn.
+
+       EVERY ONE OF THEM IS GIVEN A `created_at`, the seed's own included.
+       It is what says which is the MAIN one (www/core.js § LMADE), and a
+       language with no answer is the newest thing in the index rather than
+       the oldest -- so leaving the seed's blank would have put the language
+       this account actually started with at the BOTTOM of its own list. */
+    ['three languages of yours on free', () => { const wasP=plan(), wasM=langMadeOf(langId);
+       planGot('free');
+       langMadeGot(langId, '2026-01-02T00:00:00Z');
+       LANGS.L_two={}; langOwnGot('L_two','u'); langNameGot('L_two','Nen');
+       langMadeGot('L_two', '2026-05-05T00:00:00Z');
+       LANGS.L_three={}; langOwnGot('L_three','u'); langNameGot('L_three','Kano');
+       langMadeGot('L_three', '2026-08-08T00:00:00Z');
+       window.route='langs'; NAV=[{r:'langs'}];
+       const h=vLangs();
+       delete LANGS.L_two; delete LANGS.L_three;
+       langMadeGot(langId, wasM); planGot(wasP); return h; }],
+    ['three languages of yours on pro', () => { const wasP=plan(), wasM=langMadeOf(langId);
+       planGot('pro');
+       langMadeGot(langId, '2026-01-02T00:00:00Z');
+       LANGS.L_two={}; langOwnGot('L_two','u'); langNameGot('L_two','Nen');
+       langMadeGot('L_two', '2026-05-05T00:00:00Z');
+       LANGS.L_three={}; langOwnGot('L_three','u'); langNameGot('L_three','Kano');
+       langMadeGot('L_three', '2026-08-08T00:00:00Z');
+       window.route='langs'; NAV=[{r:'langs'}];
+       const h=vLangs();
+       delete LANGS.L_two; delete LANGS.L_three;
+       langMadeGot(langId, wasM); planGot(wasP); return h; }],
     ['a mark in the editor',   () => { editLetter('l4'); window.route='glyph';
                                        NAV=[{r:'glyph', a:GE.lid}]; return vGlyph(); }],
     /* A list being read in has three faces and they share no buttons: the
