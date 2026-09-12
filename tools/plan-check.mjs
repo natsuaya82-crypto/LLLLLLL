@@ -761,6 +761,28 @@ const r = await pg.evaluate(({ s }) => {
   out.threeMade = langCount() === 3;
   var threeIds = [], id0;
   for (id0 in LANGS) if (langWhose(id0) === LW_MINE) threeIds.push(id0);
+  /* WHEN EACH OF THEM WAS MADE, which is what says which is the MAIN one
+     (www/core.js § LMADE). 「一番最初に作ってた作り込んでた言語だけ表示であとは
+     隠すだろ」 OWNER 2026-09-12.
+
+     Written through langMadeGot(), which is the road netLangsWalk() takes when
+     the row comes down -- not a field set by hand. THE SECOND ONE IS GIVEN THE
+     OLDEST DATE ON PURPOSE: a fold that took `Object.keys(LANGS)` order, which
+     is what this did until today, would show the first one and be green about
+     it. */
+  langMadeGot(threeIds[0], '2026-03-03T00:00:00Z');
+  langMadeGot(threeIds[1], '2026-01-01T00:00:00Z');
+  langMadeGot(threeIds[2], '2026-05-05T00:00:00Z');
+  out.mainIs     = langMainId();
+  out.mainWanted = threeIds[1];
+  /* Every slice of one language, by id. bytes() above reads the OPEN one
+     through langKey(); this is the same question asked of a language nobody
+     is standing in, which is what the fold is about. */
+  function langBytes(lid){
+    var o = {}, i3;
+    for (i3 = 0; i3 < SLICES.length; i3++) o[SLICES[i3]] = slRd(langKeyOf(lid, SLICES[i3]));
+    return JSON.stringify(o);
+  }
   /* written out first: a language made a moment ago has no slices in storage
      until something saves it, so measuring before that would be comparing an
      unwritten language with a written one and calling the difference damage */
@@ -774,7 +796,12 @@ const r = await pg.evaluate(({ s }) => {
      way this fails is a list that trims the thing it is listing */
   var lhtml = vLangs();
   out.freeShowsCap = threeIds.filter(function(x){ return lhtml.indexOf(x) !== -1; }).length;
-  out.freeShowsOpen = lhtml.indexOf(langId) !== -1;
+  /* AND WHICH ONE IT IS. 「一番最初に作ってた」 -- the one with the oldest
+     `created_at`, which here is the SECOND made. `freeShowsCap === 1` is also
+     true of a fold that shows the wrong one. */
+  out.freeShowsMain  = lhtml.indexOf(threeIds[1]) !== -1;
+  out.freeHidesRest  = lhtml.indexOf(threeIds[0]) === -1 &&
+                       lhtml.indexOf(threeIds[2]) === -1;
   out.freeStillHolds2 = langCount() === 3;
   out.threeKeptBytes = same(bytesThree, bytes());
   /* and the open one still holds every slice it held. There is no file to
@@ -806,6 +833,52 @@ const r = await pg.evaluate(({ s }) => {
   out.topRefused = langCount() === 3;
   out.topSaid = toastSays();
   out.topStayed = here().r === 'langs';
+
+  /* ---- and on pro the three are ALL drawn, oldest first ----------------
+     The other side of the same fold. A list that happened to be in the right
+     order for one plan and not the other would be two rules. */
+  planGot('pro');
+  var phtml = vLangs();
+  out.proShowsAll = threeIds.every(function(x){ return phtml.indexOf(x) !== -1; });
+  out.proAt = [threeIds[1], threeIds[0], threeIds[2]].map(function(x){
+    return phtml.indexOf(x); });
+  out.proOldestFirst = out.proAt[0] < out.proAt[1] && out.proAt[1] < out.proAt[2];
+
+  /* ---- and the moment the ceiling comes DOWN under somebody's feet ------
+     「そもそも最初に作った言語を主言語にして、フリーにした時に最初に表示される
+     ようにしないとダメでは？」 OWNER 2026-09-12.
+
+     planTook() is the road and not a re-statement of it: it is the one thing
+     that writes the plan, and langMainFall() hangs off it (www/core.js). The
+     language open here is the NEWEST of the three, so the fold takes it off
+     the list -- which is precisely the state a person is left in when a
+     subscription ends. */
+  go('langs');
+  var hidBytes = langBytes(threeIds[0]), openWas = langId;
+  planTook('free');
+  out.fellFrom   = openWas;
+  out.fellTo     = langId;
+  out.fellToMain = langId === threeIds[1];
+  /* AND THE ONES THAT WENT OFF THE LIST ARE UNTOUCHED. threeIds[0] is the one
+     nobody was standing in before or after, so nothing legitimate writes to
+     it -- 「ボタンは減る、言葉は減らない」. */
+  out.fellKeptHidden = same(hidBytes, langBytes(threeIds[0]));
+  out.fellKeptAll    = threeIds.every(function(x){ return !!LANGS[x]; });
+  out.fellCount      = langCount();
+  /* AND A CEILING GOING UP MOVES NOBODY. It cannot take a language off the
+     list, so there is nothing to be standing off the end of. */
+  var afterFall = langId;
+  planTook('pro');
+  out.roseStayed = langId === afterFall;
+  /* AND WHILE NOBODY HAS ANSWERED, nothing is folded and nobody is moved --
+     langCap() is `null` and langsSeen() does not cut on it (2026-09-12, the
+     launch with no signal). */
+  planForget();
+  var uhtml = vLangs();
+  out.unknownCap   = langCap();
+  out.unknownShows = threeIds.filter(function(x){ return uhtml.indexOf(x) !== -1; }).length;
+  out.unknownOpen  = langId;
+  planGot('pro');
 
   return out;
 }, { s: seed.toString() });
@@ -1537,15 +1610,27 @@ say(r.freeToppedBack,
 
 say(r.threeMade && r.freeStillHolds && r.freeStillHasAll,
     'somebody with three keeps three when the plan ends');
-/* THE LIST NOW SHOWS THE CEILING'S WORTH, and the language you are standing
-   in is one of them. 「減った時は隠すだけね」「開いてるものを残すでいいよ」
-   「だって単語でも文法でも同じようにやったじゃん」OWNER 2026-09-02, which
-   replaces 「the ceiling hides nothing」 that stood here. Nothing is deleted
-   by it -- the claim above still says all three are HELD -- and dl-check
-   holds the rest of the shape (paying again lists them all, no key goes). */
-say(r.freeShowsCap === 1 && r.freeShowsOpen && r.freeStillHolds2,
-    'and the list draws the ceiling\'s worth of them, the open one among them ' +
-    '(' + r.freeShowsCap + ' of 3 drawn), while all three are still held');
+/* THE LIST NOW SHOWS THE CEILING'S WORTH, AND WHICH ONES THEY ARE IS THE
+   OLDEST OF THEM. 「減った時は隠すだけね」「だって単語でも文法でも同じように
+   やったじゃん」OWNER 2026-09-02 for the fold, and 「無料はそもそも1つの言語
+   しか出ないやろ。一番最初に作ってた作り込んでた言語だけ表示であとは隠すだろ」
+   OWNER 2026-09-12 for which one. Nothing is deleted by it -- the claim above
+   still says all three are HELD -- and dl-check holds the rest of the shape
+   (paying again lists them all, no key goes).
+
+   「the open one is among them」 stood in the first line here and is gone with
+   the line in langsSeen() that made it true by swapping the open language in.
+   It made the one language free shows 「whichever was open」. What holds the
+   same thing now is langMainFall(), asked where the ceiling moves, and it has
+   its own claims below. */
+say(r.freeShowsCap === 1 && r.freeShowsMain && r.freeStillHolds2,
+    '**無料で 3 本あると、出るのは一番古い 1 本** ── ' + r.freeShowsCap +
+    ' of 3 drawn, and it is the one made first, while all three are still held');
+say(r.freeHidesRest, 'and the other two are off the list and not touched');
+say(r.mainIs === r.mainWanted,
+    'langMainId() は索引の並びではなく created_at で答える ── 二番目に作った ' +
+    'ものが一番古い日付を持っているので、それが主言語（' +
+    (r.mainIs === r.mainWanted ? 'ok' : r.mainIs + ' ≠ ' + r.mainWanted) + '）');
 say(r.threeKeptBytes, 'and not one byte of any slice moved');
 say(r.fourthRefused && r.fourthWent, 'only the fourth is refused, and it goes to the plans screen');
 say(r.fourthKeptAll && r.fourthKeptBytes,
@@ -1555,6 +1640,24 @@ say(r.topRefused && r.topStayed,
 say(r.topSaid === r.upNeed,
     'and it says the one upgrade line too -- every ceiling says the same sentence (' +
     (r.topSaid || 'nothing said') + ')');
+
+say(r.proShowsAll && r.proOldestFirst,
+    '**pro なら古い順に 3 本** ── all three drawn, oldest first (at ' +
+    (r.proAt || []).join(' ') + ')');
+say(r.fellToMain,
+    '**段が pro → free に落ちた瞬間、開いていた新しい言語から主言語に切り替わる** ' +
+    '── planTook() の道で、開いていたのは三本のうち一番新しいもの（' +
+    r.fellFrom + ' → ' + r.fellTo + '）');
+say(r.fellKeptHidden && r.fellKeptAll && r.fellCount === 3,
+    'and the ones that went off the list are untouched -- every slice of the ' +
+    'hidden one byte for byte what it was, all three still in the index (' +
+    r.fellCount + ')');
+say(r.roseStayed,
+    'and a ceiling going UP moves nobody -- it cannot take a language off the list');
+say(r.unknownCap === null && r.unknownShows === 3,
+    'and while nobody has answered what this account pays, nothing is folded ' +
+    'and nobody is moved (' + r.unknownShows + ' of 3 drawn, cap ' +
+    String(r.unknownCap) + ')');
 
 say(r.capFree === 100, 'free counts to 100 (' + r.capFree + ')');
 say(r.capMid === 1000, 'plus counts to 1000 (' + r.capMid + ')');

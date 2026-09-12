@@ -329,7 +329,17 @@ const r = await pg.evaluate(async ({ s, sid }) => {
   }
   out.capPro  = { own: ownListed().length, read: readListed().length };
   planGot('free'); save();
+  /* WHICH ONE SURVIVES THE FOLD IS THE MAIN LANGUAGE and no longer 「the one
+     you happened to have open」. 「一番最初に作ってた作り込んでた言語だけ表示
+     であとは隠すだろ」 OWNER 2026-09-12. langsSeen() used to swap `langId` in
+     over the last of the first `cap`; that line is gone and langMainFall()
+     (www/core.js) holds the same thing from the other end, where the ceiling
+     actually moves. planGot() here is the plan being set without that road
+     being walked, so the open language is NOT expected on the list -- what is
+     expected is the oldest, which with no `created_at` answered for any of
+     them is the order they were made in, and that is the seed's own. */
   out.capFree = { own: ownListed().length, read: readListed().length,
+                  isMain: ownListed()[0] === langMainId(),
                   openOnIt: ownListed().indexOf(b2) >= 0 };
   var gone = keysWas.filter(function(k){ return localStorage.getItem(k) === null; });
   out.capNow = { langs: Object.keys(LANGS).length, langsWere: langsWere, gone: gone };
@@ -418,8 +428,11 @@ say(r.capPro && r.capPro.own === 3 && r.capPro.read === 3,
 say(r.capFree && r.capFree.own === 1 && r.capFree.read === 0,
     'and a plan that ENDS cuts the list to the ceiling (' +
     (r.capFree ? r.capFree.own + ' made, ' + r.capFree.read + ' read' : '?') + ')');
-say(r.capFree && r.capFree.openOnIt,
-    'with the language you are standing in still on it — 「開いてるものを残す」');
+say(r.capFree && r.capFree.isMain && !r.capFree.openOnIt,
+    'and the one it draws is the MAIN language — the first one made, not the ' +
+    'one that happened to be open (2026-09-12). What keeps somebody off a ' +
+    'language the list no longer shows is langMainFall(), asked where the ' +
+    'ceiling moves; plan-check holds that half');
 say(r.capKept,
     'and nothing was taken away: LANGS is the same length and not one of the ' +
     'keys under `lingua.` went' +
