@@ -470,9 +470,21 @@ and then writes the slices it was asked for with `langKeyOf(id, kind)`.
    language nobody has answered for is in neither number — a ceiling measured
    against an unanswered language refuses somebody their own next one. Free is nought downloads: the plan is the
    door and the ceiling is the room, asked in that order in `wldGet()`.
-   **Neither ceiling removes, hides or counts down anything** — somebody who
-   already has more than the number keeps and reads every one of them, and only
-   the next one is refused.
+   **Neither ceiling removes or counts down anything, and the LIST FOLDS.**
+   OWNER 2026-09-12 「有料が消えて無料に残った後は非表示じゃないの？」. Somebody
+   whose plan ended keeps **every** language, byte for byte, on the server and
+   in the copy this phone is holding — and the list draws the ceiling's worth of
+   them with 「非表示 n」 under it (`langsSeen()`, `www/home.js`; the same key
+   the dictionary's foot uses, because it is the same sentence — a count, which
+   is a state and not an explanation), the one they are standing in among them.
+   Paying again draws them all and nothing has to be restored, because nothing
+   went. Only the **next** one is refused.
+
+   **A ceiling that is not a number folds nothing.** `langCap()` answers `null`
+   for 「nobody has asked what this account pays」 (rule 22: the plan is
+   `verify-plan`'s answer, in memory), and a launch with no signal shows
+   everything that is here rather than a free-sized list — 「前に読み込んだの
+   出していいよ」 OWNER 2026-09-12.
 
 **5. It is outside sync, and that is not a flag — it is the whole point.**
 Everything else about a language goes to the server and comes back merged

@@ -1556,10 +1556,18 @@ function langCount(){
    question is whether a bigger ceiling exists to buy, and that stays true the
    day the numbers move.
 
-   Nothing here removes, hides or counts down anything. Somebody who already
-   has more than this -- a plan that ended, a number that moved -- keeps every
-   one of them, sees every one of them and backs every one of them up. Only
-   the next one is refused. */
+   NOTHING HERE REMOVES OR COUNTS DOWN ANYTHING, AND THE LIST FOLDS.
+   「有料が消えて無料に残った後は非表示じゃないの？」 OWNER 2026-09-12.
+   Somebody who already has more than this -- a plan that ended, a number that
+   moved -- keeps EVERY one of them, byte for byte, on the server and in the
+   copy this phone is holding. What the LIST draws is this many, with
+   「非表示 n」 under it (langsSeen(), www/home.js) and the one they are standing
+   in among them. Paying again draws them all and nothing has to be restored,
+   because nothing went. Only the NEXT one is refused.
+
+   A ceiling that is not a number folds nothing: `null` is 「nobody has asked
+   what this account pays」 and a launch with no signal shows everything that is
+   here rather than a free-sized list. */
 /* ---- and how many you may have DOWNLOADED, which is a second number ------
    「dlはしかもplusは1つproは3つ DL言語とmake言語でそれぞれ別の最大値ね？」
    OWNER 2026-09-02.
@@ -1576,9 +1584,11 @@ function langCount(){
    Plus whatever the code happened to allow, which is neither number the owner
    said, and that has happened here once already (the keyboard's).
 
-   Nothing here removes, hides or counts down anything. Somebody who already
-   has more than this -- a plan that ended, a number that moved -- keeps every
-   one of them and reads every one of them. Only the next one is refused. */
+   NOTHING HERE REMOVES OR COUNTS DOWN ANYTHING, AND THE LIST FOLDS, exactly as
+   langCap() above says it: somebody whose plan ended keeps every language they
+   took, the list draws this many with 「非表示 n」 under it, and only the NEXT
+   download is refused. 「有料が消えて無料に残った後は非表示じゃないの？」 OWNER
+   2026-09-12. `null` folds nothing, for the same reason. */
 var PLUS_DL=1, PRO_DL=3;
 function dlCap(){
   /* 「nobody has asked」 is not nought, exactly as langCap() above: a launch

@@ -73,12 +73,17 @@ OWNER 2026-09-06。「だから端末でやるわけねえだろ」OWNER 2026-09
 - `wsys()`（`www/wsys.js`）は言語の `language.wsys` 列で答える。無料は
   アルファベット、という規則は**訊けた上で**掛かる
 
-**「プランが終了しました」は出ない。**`capLapse()` は `SET.planWas`（端末の語）
-と比べていたので、語と一緒に消えた。`supabase/schema.sql` の `plan` 表は
-`(id, plan, at)` で、**前の段の列が無い** ── サーバーも答えられない。列を足すか
-どうかは**オーナーの決めごと**（`docs/scope/r31-server.md` § オーナーへ）。
-言葉は `openCapLapse()`（`www/settings.js`）に残っていて、列が来た日に
-書き直す物はありません。
+**「プランが終了しました」はサーバーの答えで出る ── 起動のポップで一度。**
+「オンラインで出してね流石に」「4 起動の時に表示して ☑️今後表示しない 閉じる
+みたいなポップにしたくない？」OWNER 2026-09-12。`capLapse()` は `SET.planWas`
+（端末の語）と比べていたので、語と一緒に消えました ── 端末の一語で「見せる／
+見せない」を決める行です。今は `plan` 表の二列が答えます：`was`（下がる前の段。
+下がった時だけ入る）と `lapse_seen_at`（本人が「今後表示しない」と言った時刻。
+書く道は `plan_lapse_seen()` の RPC 一つ）。`verify-plan` の答えに載って届き、
+`capLapseSaw()`（`www/settings.js`）が出すかどうかを決めます。**端末には一言も
+残りません** ── ☑ を付けずに閉じたら何も書かれず、次の起動でまた出ます。
+ポップに載るのは見出し・☑・「閉じる」の三つだけ（長い説明文も
+「アップグレード」のボタンも載せない）。流す物二つは `supabase/setup.md` § 8c。
 
 **段は下がりうる。**ここは 2026-09-02 の書き方と逆で、逆にしてよい理由は一つ
 だけある ── 語がサーバーから来るようになったこと。サーバーの `free` は「このアカ
@@ -297,8 +302,11 @@ happened to allow, and that is neither number the owner said. The caller is
 **Nothing here may take a language away.** The rule at the head of this file
 covers a downloaded language the same as any other: a plan that lapses means
 fewer buttons — no new download, and the door drawn anyway — and never fewer
-languages. Somebody who downloaded three keeps three, sees three, and backs up
-three, exactly the way `langCap()`'s ceiling already hides and never deletes.
+languages. Somebody who downloaded three **keeps** three, byte for byte, and
+the list draws the ceiling's worth of them with 「非表示 n」 under it — 「有料が
+消えて無料に残った後は非表示じゃないの？」 OWNER 2026-09-12, exactly the way
+`langCap()`'s ceiling folds and never deletes. Paying again draws them all and
+nothing has to be restored, because nothing went.
 
 **The cloud is on every plan, and that is where the money actually goes.**
 OWNER DECISION 2026-08-22 「クラウドは全員で」, re-confirmed 2026-08-26 「基本は
