@@ -1348,8 +1348,32 @@ function netPlanVerify(list, then){
          するものはありません」 has four causes now. www/store.js § storeWhyNone
          is what puts it where a person can photograph it. */
       done(planTook(p), d);
+      /* AND WHETHER TO SAY THE PLAN ENDED, which is this answer's to say and
+         no word on this phone's. `was` and `lapse_seen` are two columns of the
+         `plan` row (supabase/schema.sql § plan); capLapseSaw()
+         (www/settings.js) is what decides and draws, once per run.
+         「オンラインで出してね流石に」 OWNER 2026-09-12.
+
+         After done() and not before: planTook() renders, and a popup that
+         goes up before a render is one render() takes back down. */
+      capLapseSaw(d);
     },
     function(){ done('', null); });
+}
+/* 「今後表示しない」, and it is the only thing a person writes on their own
+   plan row. One RPC and no insert or update policy -- `plan_lapse_seen()`
+   takes no argument, so there is nothing in the call to name anybody else
+   with, and what it writes is `lapse_seen_at` and nothing else
+   (supabase/schema.sql § plan_lapse_seen).
+
+   Nothing is said either way. It is not an operation somebody is waiting on:
+   the popup has already gone, and a request that failed means the next launch
+   says it again -- which is the same answer as not having ticked the box, and
+   the safe side of the two. */
+function netLapseSeen(){
+  if(!netSignedIn()) return;
+  netSend('POST', '/rest/v1/rpc/plan_lapse_seen', {}, SESS.at,
+          function(){}, function(){});
 }
 
 /* ---- a language, which belongs to the account --------------------------

@@ -2170,15 +2170,56 @@ var tt;
    which is the question going unanswered and leaves you where you are; the
    button reaches popNo(), which is an answer. */
 var POP_YES=null, POP_NO=null;
-function popAsk(msg, yes, yesWord, noWord, no){
+/* WHERE THE POPUP IS AND HOW IT COMES UP, said once.
+   `#pop` over `#sbg`, and the two classes that put them there. popAsk() below
+   is one thing drawn in it and capLapsePop() (www/settings.js) is the other --
+   the plan that ended, which is a heading, a switch and a Close rather than a
+   question with two answers. That is not a FOURTH shape: it is this one, with
+   different words in it, which is what 「ポップの見た目決めてその中の文字だけ
+   入れ替えればすぐできるでしょ」 asks for. Anything else drawing into `#pop`
+   from its own copy of these four lines would be the second place that knows
+   how this app asks.
+
+   False where there is no DOM to draw on -- a check's page with no shell, and
+   the caller's own state is not to be moved on it. */
+function popPaint(html){
   var el=document.getElementById('pop'), bg=document.getElementById('sbg');
-  if(!el || !bg){ /* no DOM to draw on: do nothing rather than act unasked */
-    return; }
-  POP_YES=yes||null; POP_NO=no||null;
-  el.innerHTML='<div class="popm">'+esc(msg)+'</div>'+
-    '<button class="btn ghost"' + DO('popYes') + '>'+esc(yesWord||t('up.cta'))+'</button>'+
-    '<button class="btn ghost popno"' + DO('popNo') + '>'+esc(noWord||t('pop.no'))+'</button>';
+  if(!el || !bg) return false;
+  el.innerHTML=html;
   bg.classList.add('on'); el.classList.add('on');
+  return true;
+}
+/* AND THE ONE POPUP THAT OUTLIVES A RENDER.
+   ---------------------------------------------------------------------------
+   Every popup until 2026-09-12 was a question ABOUT THE SCREEN UNDER IT --
+   delete this word, keep what you typed -- so a render taking it down is right:
+   「a popup that outlives the screen under it is one nobody can get rid of」.
+
+   「プランが終了しました」 is not that. It is a state of the RUN: the server
+   said this account's plan ended and nobody has been told, and what is on the
+   screen underneath has nothing to do with it. It goes up from verify-plan's
+   answer, in the middle of a launch, and the launch renders several more times
+   as the rest of the answers land -- so without this it was painted and wiped
+   before a thumb could reach it. MEASURED, not reasoned: `#pop` held the
+   buttons and had lost its `on` class, and this file is the only place that
+   class is written, so popOff() had run and render() is the only caller that
+   had not been pressed.
+
+   popTurn() is what render() calls instead of popOff(), and it is the whole of
+   the difference: a question goes, a state is painted again. Answering it --
+   the button, or the scrim -- reaches popOff(), which forgets the state, so
+   there is exactly one way this can stay up and it is 「nobody has answered
+   yet」. */
+var POP_STAY=null;
+function popStay(paint){ POP_STAY=paint; paint(); }
+function popTurn(){ if(POP_STAY) POP_STAY(); else popOff(); }
+function popAsk(msg, yes, yesWord, noWord, no){
+  if(!popPaint('<div class="popm">'+esc(msg)+'</div>'+
+    '<button class="btn ghost"' + DO('popYes') + '>'+esc(yesWord||t('up.cta'))+'</button>'+
+    '<button class="btn ghost popno"' + DO('popNo') + '>'+esc(noWord||t('pop.no'))+'</button>'))
+    /* no DOM to draw on: do nothing rather than act unasked */
+    return;
+  POP_YES=yes||null; POP_NO=no||null;
 }
 function popYes(){
   var f=POP_YES;
@@ -2198,6 +2239,10 @@ function popOff(){
   if(el) el.classList.remove('on');
   if(bg) bg.classList.remove('on');
   POP_YES=null; POP_NO=null;
+  /* and a state of the run is a state no longer, which is why the scrim ends
+     it too: dismissing 「今後表示しない」 is closing it without ticking, not
+     leaving a question unanswered (www/settings.js § capLapseShut) */
+  POP_STAY=null;
 }
 function popOn(){
   var el=document.getElementById('pop');

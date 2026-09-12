@@ -104,6 +104,12 @@ act('upFile', upFile);
 act('upData', upData);
 act('popYes', popYes);
 act('popNo', popNo);
+/* And the two on the popup the launch puts up when a plan has ended -- the box
+   that says 「今後表示しない」 and the way out. www/settings.js § capLapseSaw;
+   the tick is what sends `plan_lapse_seen`, closing without it writes nothing
+   and the next launch says it again. */
+act('capLapseTick', capLapseTick);
+act('capLapseShut', capLapseShut);
 /* Saving what has been typed into the screen you are on, from the corner of
    the bar. www/shell.js § KEEP. */
 act('keepPress', keepPress);

@@ -801,9 +801,24 @@ export function halfDone(){
       WORDS = keep.concat(Array.apply(null, {length: FREE_LIMIT})
                                .map((_, i) => ({hw:'x'+i, mns:['filler'], pos:'n', at:1})));
       const h = vWords(); WORDS = keep; return h; }],
-    /* And what it says out loud, once, on the day that happens. capLapse()
-       only fires on a plan that changed, and nothing in a walk changes one. */
-    ['the plan has ended', () => { openCapLapse(); return vForm(); }],
+    /* And what it says out loud, once, on the day that happens. It is the
+       LAUNCH's popup now -- capLapseSaw() is handed verify-plan's answer
+       (www/settings.js) -- so it is not a route, nothing at rest shows it, and
+       no walk changes a plan. Without these two faces its box and its Close
+       belong to no screen.
+
+       BOTH STATES OF THE BOX, because the fault is nearly always in the one
+       nobody drew. `CAP_LAPSE_SAID` is put back the way the plan is: the
+       popup is 「once per run」 and a run here is every face after this one. */
+    ['the plan has ended', () => {
+        capLapseSaw({ was:'plus', lapse_seen:false });
+        const h = document.getElementById('pop').outerHTML;
+        popOff(); CAP_LAPSE_SAID = false; return h; }],
+    ['the plan has ended, and the box is ticked', () => {
+        capLapseSaw({ was:'plus', lapse_seen:false });
+        capLapseTick();
+        const h = document.getElementById('pop').outerHTML;
+        popOff(); CAP_LAPSE_SAID = false; CAP_LAPSE_NEVER = false; return h; }],
     /* The reading of a word, which is the paid plan's and is reached from a
        sheet that has a word open on it. Once with the search empty and once
        with something in it: the tiles are the screen, and a search that

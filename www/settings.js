@@ -754,31 +754,89 @@ function wipeHere(uid){
 /* =========================================================================
    12. Plans
    ========================================================================= */
-/* What a person is told the day a plan ends, and it is told once -- capLapse()
-   in core.js decides when, and this is only what it says.
+/* 「プランが終了しました」、起動のポップで一度
+   ---------------------------------------------------------------------------
+   OWNER 2026-09-12「オンラインで出してね流石に」「4 起動の時に表示して
+   ☑️今後表示しない 閉じる みたいなポップにしたくない？」
 
-   A sheet rather than a toast: a toast is for something you may miss, and the
-   whole reason this exists is that the app is about to look as though work has
-   gone. It is the app's own sheet rather than the browser's alert() because
-   nothing in Lingua has ever used one, and a native dialog in the middle of
-   a launch reads as an error.
+   A subscription ending puts the app back into the shape the free plan has:
+   the dictionary lists a hundred, the writing is an alphabet, the keyboard is
+   the fixed QWERTY, and the language list folds to the ceiling with 「非表示 n」
+   under it. None of that removes anything -- every word, every letter and
+   every layout is where it was, and the head of docs/PAID_FEATURES.md is why
+   -- but somebody opening the app to find four thousand nine hundred words
+   missing from a list has no way to know that.
 
-   AND IT IS THE ONE SCREEN IN THE APP THAT EXPLAINS ITSELF, by name.
-   「みんな消えたと思うだろうし、説明禁止だけどここはちゃんと説明文書いてユーザーにわかりやすくしないと」 OWNER 2026-09-06.
-   The ban on explanatory text holds everywhere else and holds here for every
-   other sentence; `cap.lapse.d` is the exception and is not to be cut back to
-   a state with no cause. It says three things and each is why somebody would
-   otherwise think their work had gone: nothing was deleted, what the free
-   plan SHOWS is not what it keeps, and upgrading brings it all back. */
-function openCapLapse(){
-  openForm('lapse:', t('cap.lapse.h'),
-    '<div class="note" style="margin-bottom:18px">'+t('cap.lapse.d')+'</div>'+
-    '<button class="btn" style="width:100%"' + DO('go', ["plans"]) + '>'+
-      esc(t('up.cta'))+'</button>'+
-    '<button class="btn ghost" style="width:100%;margin-top:10px"' + DO('back') + '>'+
+   WHETHER TO SAY IT IS THE SERVER'S ANSWER AND NOTHING ELSE. capLapse() asked
+   `SET.planWas` -- the word this handset last showed -- and that is a
+   see / do-not-see decision made out of a word on a phone
+   (「端末の物で分岐して…見せる／見せない…を決める行は全部消す」 OWNER
+   2026-09-11): on a phone whose Keychain read failed it told somebody who had
+   never subscribed that their plan had ended. `plan.was` and
+   `plan.lapse_seen_at` are the answer now (supabase/schema.sql § plan), they
+   arrive on verify-plan's reply, and **nothing is written down here** -- no
+   field of SET, no key of this phone's own.
+
+   ONE PLACE FOR THE POPUP AND IT IS popPaint() (www/shell.js). Not openForm():
+   a page you travel to was the old shape and a plan ending is not somewhere
+   you navigate to, it is the app speaking on the way in. Not a sheet, not
+   iOS's own. And not a fourth mechanism -- the same `#pop` popAsk() uses, with
+   a heading, a switch and a Close in it instead of a question and two answers.
+
+   THE LONG SENTENCE IS GONE WITH THE PAGE. `cap.lapse.d` said three things
+   about what the free plan shows and it is not in the owner's drawing -- a
+   heading, a box to tick and a way out are. So is the Upgrade button: the
+   plans screen is two taps away in Settings and a price on a popup at launch
+   is the app selling to somebody who has just lost something.
+   「アプリ内に説明書く禁止」 */
+/* Whether it has been up this run, and whether the box is ticked. Both are
+   this RUN's -- the app closing forgets them, which is right: what survives is
+   `lapse_seen_at` on the row, and the box being ticked is only a thing the
+   popup is holding until Close is pressed. Nothing here reaches SET. */
+var CAP_LAPSE_SAID=false, CAP_LAPSE_NEVER=false;
+/* What verify-plan answered, asked once. netPlanVerify() (www/net.js) is the
+   one caller and there is no second road: the launch is the first answer of a
+   run, so this is 「at the launch」 said in the one place the answer arrives.
+   A run whose launch had no signal shows it at the first answer that does come
+   -- the launch could not ask, and 「見ていない」 is still true. */
+function capLapseSaw(d){
+  var was=(d && d.was)? String(d.was) : '';
+  if(CAP_LAPSE_SAID) return;
+  /* NOTHING IS GUESSED. No `was` on the answer is 「the server has not been
+     given the column yet」 or 「nothing ended」, and both are silence. Only
+     free is not worth saying, because coming down to free FROM free is not an
+     ending. */
+  if(was!=='plus' && was!=='pro') return;
+  if(d.lapse_seen) return;
+  CAP_LAPSE_SAID=true; CAP_LAPSE_NEVER=false;
+  /* popStay() and not popPaint(): this goes up in the middle of a launch, and
+     the launch renders again as the rest of the answers land -- a popup painted
+     once was wiped before a thumb could reach it (measured; www/shell.js § the
+     one popup that outlives a render). */
+  popStay(capLapsePop);
+}
+/* The popup itself, redrawn whole when the switch moves. swtHTML() is the
+   app's one shape for a yes-or-no (www/shell.js) and this is the box in the
+   owner's drawing; nothing new is styled and www/index.html is untouched. */
+function capLapsePop(){
+  popPaint('<div class="popm">'+esc(t('cap.lapse.h'))+'</div>'+
+    '<button class="btn ghost" style="display:flex;align-items:center;gap:12px;text-align:left"'+
+      DO('capLapseTick') + '><span>'+esc(t('cap.lapse.never'))+'</span>'+
+      swtHTML(CAP_LAPSE_NEVER)+'</button>'+
+    '<button class="btn ghost popno"' + DO('capLapseShut') + '>'+
       esc(t('cap.lapse.ok'))+'</button>');
 }
-FORM_OPEN.lapse=function(){ openCapLapse(); };
+function capLapseTick(){ CAP_LAPSE_NEVER=!CAP_LAPSE_NEVER; capLapsePop(); }
+/* Close. THE TICK IS WHAT SENDS, and closing without it writes nothing at all
+   -- so the next launch says it again, which is what an unanswered 「今後表示
+   しない」 means. The scrim reaches popOff() and not this, which is the same
+   sentence popAsk() has carried since 2026-09-03: dismissing is not an
+   answer. */
+function capLapseShut(){
+  var never=CAP_LAPSE_NEVER;
+  popOff();
+  if(never) netLapseSeen();
+}
 /* ---- the plans, side by side ------------------------------------------
    Three pages that slide, with the next one showing at the edge.
    「横並びにして。ページは上に三つあるんじゃなくてスライドで変わるタイプで

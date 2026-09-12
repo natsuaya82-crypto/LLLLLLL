@@ -500,29 +500,54 @@ const r = await pg.evaluate(({ s }) => {
   save();
   out.diskFileHasPlan = /\"plan/.test(String(localStorage.getItem('lingua.set') || ''));
 
-  /* ---- 7. 「プランが終了しました」 IS NOT SAID, AND THE SERVER IS WHY ----
+  /* ---- 7. 「プランが終了しました」 IS THE SERVER'S ANSWER AND NOT A PLAN
+     MOVING ----------------------------------------------------------------
+     Two functions used to decide this on the phone and both are gone.
      capLapse() compared `plan()` with `SET.planWas` -- the word this handset
-     last showed, in `lingua.set` -- and that is a see / do-not-see decision
-     made out of a word on a phone. It is deleted with the word.
+     last showed -- which is a see / do-not-see decision made out of a word on
+     a phone, and on a handset whose Keychain read failed it told somebody who
+     had never subscribed that their subscription had ended. openCapLapse() was
+     the page it opened, travelled to through `FORM_OPEN.lapse`.
 
-     `supabase/schema.sql` § plan is `(id, plan, at)`: no previous plan, no
-     history beside it, so the server cannot answer 「what was it before」.
-     **It is the owner's** -- docs/scope/r31-server.md § オーナーへ.
+     `plan.was` and `plan.lapse_seen_at` answer it now (supabase/schema.sql
+     § plan) and capLapseSaw() (www/settings.js) is handed them off
+     verify-plan's reply. The LAUNCHES are further down this file, against a
+     fake server holding those two columns; what is asked here is the line
+     between the two halves:
 
-     What is held here is that nothing says it and nothing tries: the sheet
-     is not opened by a plan moving, and the words are still there for the day
-     the column lands (openCapLapse, www/settings.js, reached by
-     `FORM_OPEN.lapse`). */
-  var said = 0, realOpen = window.openCapLapse;
-  window.openCapLapse = function(){ said++; };
+       a plan arriving LOWER says nothing at all. Somebody's rung moving is not
+       an ending anybody has been told about -- the answer is, and `has()` is
+       false for 「まだ訊けていない」 too, which is every launch in a tunnel.
+       Saying it from here would be that tunnel speaking.
+       an answer with no `was` on it says nothing either. A server that has not
+       been given the column, and every launch of somebody whose plan is simply
+       running, look identical from here and both are silence.
+       and it is said ONCE. 「4 起動の時に表示して」 -- a second answer in the
+       same run (the plans screen asking again) is not a second launch. */
   var beforeLapse = bytes();
   planGot('pro');
   planTook('free');                 /* a lapse arriving from the server */
-  out.lapseQuiet = said === 0;
+  out.lapseQuiet = !popOn();
   out.lapseKeptBytes = same(beforeLapse, bytes());
-  out.lapseGone = typeof window.capLapse !== 'function';
-  out.lapseWordsKept = typeof window.openCapLapse === 'function';
-  window.openCapLapse = realOpen;
+  out.lapseGone = typeof window.capLapse !== 'function' &&
+                  typeof window.openCapLapse !== 'function' &&
+                  !FORM_OPEN.lapse;
+  capLapseSaw({});
+  out.lapseNoWas = !popOn();
+  capLapseSaw({ was:'plus', lapse_seen:false });
+  out.lapseSaysIt = popOn();
+  popOff();
+  capLapseSaw({ was:'plus', lapse_seen:false });
+  out.lapseOnce = !popOn();
+  CAP_LAPSE_SAID = false; popOff();
+  /* And the words it says. `cap.lapse.d` -- three sentences about what the free
+     plan shows -- is not in the owner's drawing and is gone from all ten; t()
+     answers a key it does not have with the key itself, which is what that
+     asks. */
+  out.lapseWordsKept = t('cap.lapse.h') !== 'cap.lapse.h' &&
+                       t('cap.lapse.never') !== 'cap.lapse.never' &&
+                       t('cap.lapse.ok') !== 'cap.lapse.ok';
+  out.lapseNoEssay = t('cap.lapse.d') === 'cap.lapse.d';
 
   /* ---- 8. the App Store, and the browser that is not one ---------------
      www/store.js is the one window onto StoreKit, and in a browser there is
@@ -1251,6 +1276,22 @@ const BOOTWIRE = `
       return localStorage.getItem('__srv') || 'free';
     }
     window.__srv = srv;
+    /* THE TWO COLUMNS THE 「プランが終了しました」 POPUP IS DECIDED BY, on the
+       fake server rather than on the phone: \`plan.was\` (the rung this account
+       held until the answer that lowered it) and \`plan.lapse_seen_at\` (whether
+       they have said 「今後表示しない」). supabase/schema.sql § plan.
+       They live in localStorage here because the reload below has to find the
+       server where it left it -- that is this file's store for the SERVER's
+       state, which is what \`__srv\` already is. */
+    function sw(v){
+      if(v !== undefined) localStorage.setItem('__sw', String(v));
+      return localStorage.getItem('__sw') || '';
+    }
+    function ss(v){
+      if(v !== undefined) localStorage.setItem('__ss', String(v));
+      return localStorage.getItem('__ss') === '1';
+    }
+    window.__sw = sw; window.__ss = ss;
     window.__read = undefined;
     window.__sent = undefined;
     window.__X = { sent:[] };
@@ -1276,8 +1317,14 @@ const BOOTWIRE = `
              answer is kept because taking it is the whole claim. */
           try{ p=JSON.parse(rec.body||'null'); }catch(e){}
           if(window.__sent===undefined) window.__sent=String(rec.body||'');
-          out=JSON.stringify({ plan:srv(), until:0, took:0, left:[] });
+          out=JSON.stringify({ plan:srv(), until:0, was:(sw() || null),
+                               lapse_seen:ss(), took:0, left:[] });
           if(window.__read===undefined) window.__read=srv();
+        } else if(rec.u.indexOf('/rest/v1/rpc/plan_lapse_seen')>=0){
+          /* AND THE TICK LANDS ON THE SERVER, which is the whole reason the
+             launch after it is quiet. Answering 200 and leaving the column
+             alone would make 「次の起動では出ない」 a claim about nothing. */
+          ss('1'); out='null';
         }
         self.readyState=4; self.status=st; self.responseText=out;
         if(self.onreadystatechange) self.onreadystatechange();
@@ -1347,6 +1394,8 @@ async function boot(page, seed){
       localStorage.setItem('lingua.sess', JSON.stringify(
         { at:'OLD', rt:'r', uid:'me', anon:false }));
       localStorage.setItem('__srv', s.srv);
+      if (s.sw) localStorage.setItem('__sw', s.sw);
+      if (s.ss) localStorage.setItem('__ss', '1');
       if (s.off) localStorage.setItem('__off', '1');
     }
   }, seed);
@@ -1358,6 +1407,14 @@ async function boot(page, seed){
      A launch with no signal never gets here -- it asked, the request failed,
      and five seconds prove that rather than assume it. */
   var known = asked ? await till(page, () => planKnown()) : false;
+  /* AND A THIRD THING, waited for the same way. 「プランが終了しました」 goes up
+     from the answer (www/settings.js § capLapseSaw), in the same callback that
+     takes the plan -- so this is deterministic rather than a race, and it is
+     still waited for rather than assumed, because a launch that must NOT say
+     it has to be given the chance to. Two seconds and not five: the answer has
+     already landed by here, so what is being waited for is a line of
+     JavaScript and not a request. */
+  var pop = known ? await till(page, () => popOn(), 2000) : false;
   return page.evaluate((w) => ({
     asked: w.asked,
     /* planKnown() is read off the page rather than off the wait above, so a
@@ -1372,8 +1429,26 @@ async function boot(page, seed){
     table: window.__X.sent.filter(function(r){
       return r.u.indexOf('/rest/v1/plan') >= 0; }).length,
     asks: window.__X.sent.filter(function(r){
-      return r.u.indexOf('/functions/v1/verify-plan') >= 0; }).length
-  }), { asked: asked });
+      return r.u.indexOf('/functions/v1/verify-plan') >= 0; }).length,
+    /* AND WHETHER THE LAUNCH SAID 「プランが終了しました」. It is the WAIT's
+       answer and not a later snapshot: popOn() (www/shell.js) asked a round
+       trip afterwards is a different sentence -- render() takes the popup down
+       on any navigation, so 「it came up」 and 「it is still up a moment later」
+       are two claims and the first is this one. Counted beside it: every call
+       to the one road the tick takes. */
+    pop: w.pop,
+    seen: window.__X.sent.filter(function(r){
+      return r.u.indexOf('/rest/v1/rpc/plan_lapse_seen') >= 0; }).length,
+    /* 「端末には何も憶えさせない」. Every field of the settings about having
+       been told, which is none of them, and the file on the disk beside it.
+       `planWas` is not asked about here and that is not an oversight: boot()
+       SEEDS it, because the point of that seed is that the dead fields of
+       2026-09-11 are still sitting there being read by nothing
+       (migrate-check 6a). What must not exist is a NEW one. */
+    onPhone: Object.keys(SET).filter(function(k){
+      return /lapse/i.test(k); }).join(' '),
+    setFile: /lapse/i.test(String(localStorage.getItem('lingua.set') || ''))
+  }), { asked: asked, pop: pop });
 }
 
 const p1 = await br.newPage({ viewport:{ width:390, height:844 } });
@@ -1410,6 +1485,106 @@ await p2.close();
 const p3 = await br.newPage({ viewport:{ width:390, height:844 } });
 const UP = await boot(p3, { had:'free', was:'free', srv:'pro' });
 await p3.close();
+
+/* ---- 「プランが終了しました」, at the launch, out of the server's answer ----
+   OWNER 2026-09-12「オンラインで出してね流石に」「4 起動の時に表示して
+   ☑️今後表示しない 閉じる みたいなポップにしたくない？」
+   「有料が消えて無料に残った後は非表示じゃないの？」
+
+   It was decided on the PHONE until 2026-09-11: capLapse() compared the plan
+   with `SET.planWas`, and on a handset whose Keychain read failed it told
+   somebody who had never subscribed that their subscription had ended. The word
+   went and the sentence went with it, because the `plan` row was `(id, plan,
+   at)` and could not answer 「what was it before」.
+
+   Two columns answer it now and the phone remembers NOTHING -- `was` and
+   `lapse_seen_at` on the row (supabase/schema.sql § plan), arriving on
+   verify-plan's reply. So every one of these is a launch against a fake server
+   holding those two, and what is read is the page: is the popup up.
+
+   FOUR LAUNCHES AND A RELOAD. The pressing is a real DOM click on the button,
+   so it goes through the one delegated listener (www/act.js) rather than being
+   a call to the function by hand -- what is claimed is the road the tick takes,
+   and `capLapseTick()` called from here is not that road.
+
+   `.click()` on the element and not Playwright's, deliberately: Playwright
+   hit-tests the point, and the screen UNDER the popup is whatever the launch
+   drew -- on a launch that lands on the door, the mail field is what the centre
+   of the tick resolves to and the click is refused for thirty seconds. Whether
+   a thumb can reach these two buttons is `press`'s question and `press` asks it
+   (44pt on both sides, and the popup among the screens it walks); this one is
+   about what happens when they are pressed. */
+const p4 = await br.newPage({ viewport:{ width:390, height:844 } });
+const LAP1 = await boot(p4, { had:'free', was:'free', srv:'free',
+                              sw:'plus', ss:false });
+/* The box, then Close. `seen` is counted after, so 「一回」 is a count and not
+   a 「something was sent」. */
+await p4.evaluate(() => document.querySelector('#pop [data-do="capLapseTick"]').click());
+await p4.evaluate(() => document.querySelector('#pop [data-do="capLapseShut"]').click());
+const LAP1b = await p4.evaluate(() => ({
+  pop: popOn(),
+  seen: window.__X.sent.filter(function(r){
+    return r.u.indexOf('/rest/v1/rpc/plan_lapse_seen') >= 0; }).length,
+  srvSeen: window.__ss()
+}));
+/* AND THE LAUNCH AFTER IT. The fake server now answers `lapse_seen` true
+   because the tick reached it -- nothing on this phone was written, and
+   `window.__X` is a new log after the reload (BOOTWIRE goes in through
+   addInitScript). */
+await p4.reload();
+await p4.waitForFunction(() => typeof window.plan === 'function');
+const backA = await till(p4, () => window.__X.sent.some(function(r){
+  return r.u.indexOf('/functions/v1/verify-plan') >= 0; }));
+const backK = backA ? await till(p4, () => planKnown()) : false;
+const backP = backK ? await till(p4, () => popOn(), 2000) : false;
+const LAP2 = await p4.evaluate((w) => ({
+  asked: w.a, known: planKnown(), pop: w.p, srvSeen: window.__ss()
+}), { a: backA, p: backP });
+await p4.close();
+
+/* The same ending, closed WITHOUT the box. Nothing is written anywhere, so the
+   launch after it says it again -- which is the whole of what an unanswered
+   「今後表示しない」 means, and the case that made the server keep `was` when
+   the plan has not moved. */
+const p5 = await br.newPage({ viewport:{ width:390, height:844 } });
+const NOT1 = await boot(p5, { had:'free', was:'free', srv:'free',
+                              sw:'pro', ss:false });
+await p5.evaluate(() => document.querySelector('#pop [data-do="capLapseShut"]').click());
+const NOT1b = await p5.evaluate(() => ({
+  pop: popOn(),
+  seen: window.__X.sent.filter(function(r){
+    return r.u.indexOf('/rest/v1/rpc/plan_lapse_seen') >= 0; }).length,
+  srvSeen: window.__ss()
+}));
+await p5.reload();
+await p5.waitForFunction(() => typeof window.plan === 'function');
+const againA = await till(p5, () => window.__X.sent.some(function(r){
+  return r.u.indexOf('/functions/v1/verify-plan') >= 0; }));
+const againK = againA ? await till(p5, () => planKnown()) : false;
+const againP = againK ? await till(p5, () => popOn(), 2000) : false;
+const NOT2 = await p5.evaluate((w) => ({ asked: w.a, known: planKnown(), pop: w.p }),
+                               { a: againA, p: againP });
+await p5.close();
+
+/* A plan that has already been answered for -- `lapse_seen` true with a paid
+   `was` still on the row. Somebody said 「今後表示しない」 on another handset,
+   or on this one yesterday, and this phone holds no mark either way. */
+const p6 = await br.newPage({ viewport:{ width:390, height:844 } });
+const SEEN = await boot(p6, { had:'free', was:'free', srv:'free',
+                              sw:'plus', ss:true });
+await p6.close();
+
+/* And the two the server says nothing about. Going UP writes `was` null, and a
+   plan that has not moved leaves whatever was there -- so no `was` at all is
+   every launch of somebody whose plan is simply running, which is nearly every
+   launch there is. `free` beside it is the other half: coming down to free FROM
+   free is not an ending, and the word is not a licence to speak. */
+const p7 = await br.newPage({ viewport:{ width:390, height:844 } });
+const NONE = await boot(p7, { had:'free', was:'free', srv:'pro' });
+await p7.close();
+const p8 = await br.newPage({ viewport:{ width:390, height:844 } });
+const FREEWAS = await boot(p8, { had:'free', was:'free', srv:'free', sw:'free' });
+await p8.close();
 
 await br.close();
 
@@ -1580,14 +1755,25 @@ say(r.diskDropped === '',
     'nothing to drop (' + (r.diskDropped || 'none') + ')');
 
 say(r.lapseGone,
-    '\u300cプランが終了しました\u300d is not said: capLapse() compared the plan ' +
-    'with a word in lingua.set, and there is no word — the plan table carries ' +
-    'no previous plan, so the server cannot answer it either (the owner\'s)');
+    '\u300cプランが終了しました\u300d is decided nowhere on this phone: capLapse() ' +
+    'compared the plan with a word in lingua.set, openCapLapse() was the page it ' +
+    'opened and FORM_OPEN.lapse the road back to it — all three gone');
 say(r.lapseQuiet, 'so a plan arriving lower says nothing at all');
 say(r.lapseKeptBytes, 'and it touches no slice');
-say(r.lapseWordsKept,
-    'and the words are still there for the day the column lands — ' +
-    'openCapLapse() is reached by FORM_OPEN.lapse');
+say(r.lapseNoWas,
+    'nor does an answer with no `was` on it — a server that has not been given ' +
+    'the column and a plan that is simply running look the same from here, and ' +
+    'both are silence');
+say(r.lapseSaysIt,
+    'a paid `was` nobody has answered for IS said, in the app\'s own popup — ' +
+    'the one popAsk() draws in (\u300cオンラインで出してね流石に\u300d)');
+say(r.lapseOnce,
+    'and once: a second answer in the same run is not a second launch ' +
+    '(\u300c4 起動の時に表示して\u300d)');
+say(r.lapseWordsKept, 'the heading, the box and the way out are all three there');
+say(r.lapseNoEssay,
+    'and the three sentences about what the free plan shows are gone from all ten ' +
+    '— the owner\'s drawing is a heading, a box to tick and 閉じる');
 
 say(r.storeOff, 'in a browser there is no App Store to ask');
 say(r.storeRefuses, 'and storeBuy() says so rather than pretending');
@@ -1928,6 +2114,36 @@ say(nowl.mineAt > 0 && nowl.movedAt === 0 && nowl.movedNoDate,
     'and a date belongs to the plan it was answered for: the plan moving ' +
     'takes it away rather than leaving it beside a plan it was never about');
 
+
+/* ---- 「プランが終了しました」, four launches and two reloads ------------- */
+say(LAP1.known && LAP1.pop,
+    'a launch whose row says `was` plus, with nobody having seen it, puts the ' +
+    'popup up (' + (LAP1.known ? 'answered' : 'never answered') + ', ' +
+    (LAP1.pop ? 'up' : 'nothing') + ')');
+say(LAP1.onPhone === '' && LAP1.setFile === false,
+    'and this phone wrote nothing down about it — no field of SET, nothing in ' +
+    'lingua.set (' + (LAP1.onPhone || 'none') + ')');
+say(LAP1b.seen === 1 && !LAP1b.pop,
+    'ticking the box and closing sends plan_lapse_seen once and takes it down (' +
+    LAP1b.seen + ' sent)');
+say(LAP1b.srvSeen === true,
+    'and the mark is on the SERVER, which is the only place it is');
+say(LAP2.known && !LAP2.pop,
+    'so the launch after it is quiet — the row answers lapse_seen true, and ' +
+    'there is nothing on the phone that could have remembered');
+say(NOT1.pop && NOT1b.seen === 0 && !NOT1b.pop,
+    'closing WITHOUT the box sends nothing at all and still takes it down (' +
+    (NOT1.pop ? 'up' : 'nothing') + ', ' + NOT1b.seen + ' sent, ' +
+    (NOT1b.pop ? 'still up' : 'down') + ')');
+say(NOT1b.srvSeen === false && NOT2.known && NOT2.pop,
+    'so the launch after THAT says it again — an unanswered ' +
+    '\u300c今後表示しない\u300d is not an answer');
+say(SEEN.known && !SEEN.pop,
+    'a row already answered for says nothing, whichever handset answered it');
+say(NONE.known && !NONE.pop,
+    'and a plan that went UP says nothing (' + NONE.plan + ')');
+say(FREEWAS.known && !FREEWAS.pop,
+    'nor does `was` free — coming down to free FROM free is not an ending');
 
 if (bad.length) { console.error('\nplan: ' + bad.length + ' failed'); process.exit(1); }
 console.log('\nplan: money decides what may be DONE and nothing about what exists --\n' +

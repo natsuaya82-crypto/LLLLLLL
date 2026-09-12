@@ -198,7 +198,7 @@ defLang('fr', (function(){
       "cap.warn"                  : "{0} mots restants en Gratuit",
       "cap.hid"                   : "{0} masqués",
       "cap.lapse.h"               : "Votre forfait a pris fin",
-      "cap.lapse.d"               : "Rien n’a disparu. Vos mots, vos lettres, vos claviers et vos publications sont toujours sur votre compte.<br><br>Avec l’offre gratuite, vous voyez les 100 premiers mots, un clavier et une langue. Le reste est masqué, pas supprimé.<br><br>Réabonnez-vous et tout revient, tel quel.",
+      "cap.lapse.never"           : "Ne plus afficher",
       "cap.lapse.ok"              : "Fermer",
       "ch.clear"                  : "Aucun caractère",
       "ch.for"                    : "Un caractère pour « {0} »",

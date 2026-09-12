@@ -110,7 +110,7 @@ defLang('es', (function(){
       "cap.warn"                  : "Quedan {0} palabras en Gratis",
       "cap.hid"                   : "{0} ocultos",
       "cap.lapse.h"               : "Tu plan ha terminado",
-      "cap.lapse.d"               : "No se ha perdido nada. Tus palabras, letras, teclados y publicaciones siguen en tu cuenta.<br><br>En el plan gratuito ves las primeras 100 palabras, un teclado y un idioma. El resto está oculto, no borrado.<br><br>Al volver a suscribirte, todo vuelve tal como estaba.",
+      "cap.lapse.never"           : "No volver a mostrar",
       "cap.lapse.ok"              : "Cerrar",
       "ch.clear"                  : "Sin carácter",
       "ch.for"                    : "Un carácter para «{0}»",
