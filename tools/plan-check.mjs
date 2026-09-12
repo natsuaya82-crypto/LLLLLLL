@@ -1306,6 +1306,36 @@ const BOOTWIRE = `
    an hour old, which is what a launch the next morning IS -- and which is the
    state the fault needs, because it is what puts the plan's own write behind
    the refresh. */
+/* WAITING FOR THE THING, NOT FOR A LENGTH OF TIME.
+   This waited `700ms` after the launch and then read the plan, and that is a
+   PROXY for the claim: what is being asked is 「the launch asks again」 and
+   「the answer it gets is taken」, and 700ms is neither of those. It is what
+   the two of them usually cost on an idle machine -- so on a busy one, with
+   four checks running at once, the same correct app comes back 「まだ訊けて
+   いない」 and the claim goes red for a reason that is not about the app.
+   Measured 2026-09-12: red twice under load, green seven times beside it, on
+   both this branch and the one it was cut from.
+
+   A proxy that is usually true is the shape CLAUDE.md names in rule 3 -- a
+   check built on one gives the right answer for the wrong reason until the
+   day it does not. So the two halves are waited for and asked SEPARATELY:
+
+     asked   a verify-plan request is in the fake server's log. It is pushed
+             the moment send() is called, before the answer or the error, so
+             this is 「the launch asked」 and nothing else.
+     known   planKnown() went true. That is 「the answer came back and was
+             taken」, and it is a different sentence -- the launch with no
+             signal ASKS and is never answered, which is the whole of what
+             that case is about.
+
+   Five seconds is the ceiling on both, and reaching it is not a slow machine
+   being forgiven: `asked` false means the launch never asked, which is red.
+   `known` false is red or green depending on the case, which is why it is
+   returned rather than asserted here. */
+async function till(page, fn, ms){
+  try{ await page.waitForFunction(fn, null, { timeout: ms || 5000 }); return true; }
+  catch(e){ return false; }
+}
 async function boot(page, seed){
   await page.addInitScript(BOOTWIRE);
   await page.addInitScript((s) => {
@@ -1322,8 +1352,16 @@ async function boot(page, seed){
   }, seed);
   await page.goto('file://' + path.join(dir, '..', 'www', 'index.html'));
   await page.waitForFunction(() => typeof window.plan === 'function');
-  await page.waitForTimeout(700);
-  return page.evaluate(() => ({
+  var asked = await till(page, () => window.__X.sent.some(function(r){
+    return r.u.indexOf('/functions/v1/verify-plan') >= 0; }));
+  /* And then the answer, which is a second question and not the same one.
+     A launch with no signal never gets here -- it asked, the request failed,
+     and five seconds prove that rather than assume it. */
+  var known = asked ? await till(page, () => planKnown()) : false;
+  return page.evaluate((w) => ({
+    asked: w.asked,
+    /* planKnown() is read off the page rather than off the wait above, so a
+       wait that came back for the wrong reason cannot answer for it. */
     plan: plan(),
     known: planKnown(),
     srv: window.__srv(),
@@ -1335,7 +1373,7 @@ async function boot(page, seed){
       return r.u.indexOf('/rest/v1/plan') >= 0; }).length,
     asks: window.__X.sent.filter(function(r){
       return r.u.indexOf('/functions/v1/verify-plan') >= 0; }).length
-  }));
+  }), { asked: asked });
 }
 
 const p1 = await br.newPage({ viewport:{ width:390, height:844 } });
@@ -1351,11 +1389,18 @@ const OFF = await boot(p2, { had:'free', was:'pro', srv:'pro', off:true });
 await p2.evaluate(() => localStorage.removeItem('__off'));
 await p2.reload();
 await p2.waitForFunction(() => typeof window.plan === 'function');
-await p2.waitForTimeout(700);
-const BACK = await p2.evaluate(() => ({
+/* The same two waits as boot() above, and for the same reason -- this is the
+   launch the whole section is named after. The log is THIS launch's: BOOTWIRE
+   goes in through addInitScript, so it runs again on the reload and
+   `window.__X` is a new one. */
+const backAsked = await till(p2, () => window.__X.sent.some(function(r){
+  return r.u.indexOf('/functions/v1/verify-plan') >= 0; }));
+const backKnown = backAsked ? await till(p2, () => planKnown()) : false;
+const BACK = await p2.evaluate((w) => ({
+  asked: w.asked, known: planKnown(),
   plan: plan(), srv: window.__srv(), read: window.__read === undefined ? '' : window.__read,
   wrote: window.__wrote.slice()
-}));
+}), { asked: backAsked, known: backKnown });
 await p2.close();
 
 /* And the other direction, which is the one that must NOT change: a plan
@@ -1819,16 +1864,34 @@ say(LAPSE.table === 0,
 say(LAPSE.sent.indexOf('jws') >= 0 && LAPSE.sent.indexOf('"plan"') < 0,
     'what goes up is the receipts and never a plan word (' + LAPSE.sent + ')');
 
+/* TWO SENTENCES AND NOT ONE: a launch with no signal ASKS, and is not
+   answered. They used to be one claim resting on a fixed wait -- which cannot
+   tell 「it never asked」 from 「the answer has not landed yet」, and those are
+   the two things worth telling apart here. */
+/* MEASURED 2026-09-12, and it is not what was assumed: with no signal the
+   launch does not reach verify-plan AT ALL. The token in hand is an hour old,
+   so the first thing out is the refresh, and that is the request that fails --
+   there is no session to ask the function with. 「asked and never answered」
+   and 「never asked」 are both 「nobody has said」 to the app, and this is the
+   second one. It is asserted rather than assumed because it is the difference
+   between a launch that gave up early and one that hung waiting. */
+say(OFF.asks === 0 && OFF.asked === false,
+    'a launch with no signal never even asks — the hour-old token cannot be ' +
+    'refreshed, so there is no session to ask verify-plan with (' +
+    OFF.asks + ' ask)');
 say(OFF.known === false && OFF.srv === 'pro',
-    'a launch with no signal changes nothing anywhere and ends on 「nobody ' +
-    'has asked」 — not on free, which is what cost the owner their plan ' +
-    '(' + (OFF.known ? OFF.plan : 'not asked') + ', server still ' + OFF.srv + ')');
+    'and it ends on 「nobody has asked」 — not on free, which is what cost the ' +
+    'owner their plan (' + (OFF.known ? OFF.plan : 'not asked') +
+    ', server still ' + OFF.srv + ')');
 say(OFF.wrote.length === 0 && OFF.read === '',
     'and it writes nothing down — an answer that never came is not an answer ' +
     '(wrote ' + JSON.stringify(OFF.wrote) + ')');
-say(BACK.read === 'pro' && BACK.plan === 'pro',
-    'the launch after it asks again, and there is nothing left over from the ' +
-    'one that could not (' + BACK.plan + ')');
+say(BACK.asked,
+    'the launch after it ASKS again — waited for the request itself, not for ' +
+    'a length of time (' + (BACK.asked ? 'asked' : '**never asked in 5s**') + ')');
+say(BACK.known && BACK.read === 'pro' && BACK.plan === 'pro',
+    'and the answer is taken, with nothing left over from the one that could ' +
+    'not (' + (BACK.plan || '**nothing**') + ')');
 
 say(UP.plan === 'pro',
     'while a plan bought on ANOTHER phone still arrives on this one — the ' +
