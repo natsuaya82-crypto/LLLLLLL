@@ -173,13 +173,45 @@ grep で確認）で、押されていない `popOff()` の呼び手は `render(
 決めたので）。`docs/FEATURE_RULES.md` 決定ログ 2026-09-12 に (g)(h) を原文で。
 **code は動かしていません** ── `langsSeen()` は前から畳んでいます。
 
+### 7. verify-plan は書いた行の段を返す ── `f17a1d55`（リーダーの便、2026-09-12 05:25）
+
+オーナー実機「アプデしたら有料勝手に消えたけど？ スタッフは消えないんじゃねえの？」。
+
+- **触ったもの**：`supabase/functions/verify-plan/index.ts`、`supabase/schema.sql`
+  （`plan_staff_hold()`）、`tools/rls-check.mjs`、`docs/CHANGELOG.md`。
+- **原因**：段は `purchase` の行から決まり、staff の人には purchase が無いので、
+  函数が決めるのは 'free'。行は `plan_staff_hold()` が 'pro' に戻します
+  （2026-09-05）。函数は**自分の計算**を返していたので、端末の写しが無くなった
+  ビルド 156 から staff の端末に free が届きます。**サーバーの行は見ていません**
+  ── 読んで分かったことで、`rls-check` の上では再現しました（下）。
+- **直し**：答えに載せる `plan`・`was`・`lapse_seen` は、書いた後の**行そのもの**
+  （`return=representation`）。staff の条件は函数に足していません。`until` だけは
+  行に列が無いので決めたものを返します（staff の pro に日付は無く、それは
+  「期限が分からない」であって「期限が無い」ではない）。
+- **リーダーの便に一つだけ足しました。**便は「トリガーが pro に戻すので、staff の
+  行は下がらず `was` も付かない」と書いていますが、**`plan_staff_hold()` は
+  `new.plan` しか触っていませんでした** ── `was` の判定は「行の段（pro）」と
+  「purchase から決めた段（free）」を比べるので、staff の行に `was='pro'` が
+  書かれ、Pro のままの行に「プランが終了しました」が載って**起動ごとに出ます**。
+  押さえるのと同じトリガーで、`was` と `lapse_seen_at` も落としました ──
+  「staff はずっと Pro」を言う一箇所に、「押さえた行は終わっていない」を足した形で、
+  函数側は触っていません。**これはこの枝の判断です。違うと思ったら戻してください。**
+  （`plan_lapse_seen()` が staff の行を触る時は段が pro のままなので、条件
+  `new.plan <> 'pro'` によりこの落としは走りません。）
+- **claim 三件**（`rls-check`、service role の書き込みとして）：staff の行を
+  下げようとしても pro のまま／その行に ending は書かれない／**staff でない行は
+  書かれた ending をそのまま保つ**（逆向きの穴 ＝ 誰にもポップが出ない、を塞ぐ）。
+- **赤を見た**：落とす二行を外すと「ending は書かれない」が赤、段を押さえる行を
+  外すと「pro のまま」が赤。戻して緑（`npm run rls` 372 attempts / 55 shape）。
+- **`index.ts` は CODE 未確認のまま**（この環境で走らせる道がありません）。
+
 ## 回した check
 
 触ったものだけ。**全ゲートは回していません**（規則 2）。
 
 | check | 結果 |
 |---|---|
-| `npm run rls` | 緑（372 attempts、52 shape）。赤も二回見た |
+| `npm run rls` | 緑（372 attempts、55 shape）。赤を四回見た |
 | `node tools/plan-check.mjs` | 緑。新しい claim 十一件、赤も見た |
 | `npm run act` | 緑（10 checks） |
 | `npm run i18n` | 緑（10 言語、mirror 450 面） |
@@ -192,9 +224,11 @@ grep で確認）で、押されていない `popOff()` の呼び手は `render(
 
 ## 状態
 
-- **CODE CONFIRMED**：3・5・6（上の check）。
-- **CODE 未確認**：4（`verify-plan/index.ts`）── この環境で走らせる道が無く、
-  読んで書いただけです。**オーナーが deploy した後、実機で一度見てください。**
+- **CODE CONFIRMED**：3・5・6・7 のうちサーバーの表とトリガー（`rls-check`）。
+- **CODE 未確認**：4 と 7 の `verify-plan/index.ts` ── この環境で走らせる道が
+  無く、読んで書いただけです。**オーナーが deploy した後、実機で一度見て
+  ください。**特に 7 は実機で出た不具合の直しなので、deploy 後に staff の端末で
+  段が pro のままかを確かめてください。
 - **DEVICE 未確認**：全部。実機は一度も触っていません。
 - **OWNER 未確認**：全部。特に二つ、見てほしいものがあります。
   1. **☑ の形**。オーナーの絵は ☑ ですが、この app の on/off は前から
