@@ -42,7 +42,7 @@ where it starts.
 `lang_id` は `language_seen` を `created_at asc limit 1` で引いています
 （`supabase/schema.sql`）── 人のプロフィールに出る言語は、もう「その人が一番
 古く作った言語」です。端末側に二つ目の規則を作らず、同じ列を同じ向きで読みます。
-`langMainId()`（`www/core.js`）が一箇所で、`langsOld()` が並べる一箇所です。
+`langMainId()`（`www/core.js`）が一箇所で、`langsByAge()` が並べる一箇所です。
 
 **新しく写す物（これが唯一のデータの変更です）。**
 

@@ -1708,7 +1708,7 @@ mine, somebody else's, and **not asked yet** — which is drawn as neither.
 account's languages is the MAIN one — the oldest. It is the rule the server
 already holds rather than a second one: `profile_seen.lang_id` orders
 `language_seen` `created_at asc limit 1`, so the language on somebody's
-profile is already the first they made. `langsOld()` puts a list in that order
+profile is already the first they made. `langsByAge()` puts a list in that order
 in one place, `langMainId()` is its first element, and a language with no
 answer goes last, because one minted here and not yet sent is the newest thing
 in the index.

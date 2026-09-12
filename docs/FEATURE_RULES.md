@@ -243,7 +243,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status: `claude/r35-main`。**IMPLEMENTED**（CODE CONFIRMED）。
   端末に二つ目の規則は作っていない ── サーバーの `profile_seen.lang_id` が
   `language_seen` を `created_at asc limit 1` で引いている、その同じ列を同じ
-  向きで読む（`supabase/schema.sql`）。`langsOld()` が並べる一箇所、
+  向きで読む（`supabase/schema.sql`）。`langsByAge()` が並べる一箇所、
   `langMainId()` がその先頭、`langMainFall()` が `planTook()` から呼ばれる一箇所
   （`www/core.js`）。`plan-check` に五本、`dl-check` の「開いているものを残す」の
   claim は書き替え。**2026-09-02 の「開いてるものを残すでいいよ」は、これに

@@ -486,7 +486,7 @@ function langOwnOf(id){
 
    EMPTY IS 「NOBODY HAS SAID」 AND NOT 「OLDEST」. A language minted on this
    phone has no row yet, so it has no date -- and it is the NEWEST thing here,
-   not the oldest. langsOld() below puts an unanswered one last for that
+   not the oldest. langsByAge() below puts an unanswered one last for that
    reason, and it is the one place that decides it. */
 var LMADE={};
 function langMadeKey(id){ return langKeyOf(String(id||''), 'made'); }
@@ -1581,6 +1581,11 @@ function langCount(){
    the same column read the same way, off § LMADE above -- not a second
    opinion the phone works out for itself.
 
+   THE NAME IS NOT langsOld(). `langsOldId()` above already means 「an id an
+   older version of this app wrote」, and two names one letter apart answering
+   about two different kinds of 「old」 is the kind of pair somebody greps for
+   and gets wrong. This one is about AGE and says so.
+
    IT IS THE ORDER AND langMainId() IS ITS FIRST ELEMENT, deliberately: the
    list that gets folded and the language that gets opened when it folds must
    never be able to disagree, and two functions each working it out is exactly
@@ -1591,7 +1596,7 @@ function langCount(){
    rather than the oldest -- 「答えが無い」 and 「古い」 are different states
    and must not share a branch. The sort is otherwise stable: equal keys keep
    the order they were handed in, which is the index's. */
-function langsOld(ids){
+function langsByAge(ids){
   var out=(ids && typeof ids.length==='number')? ids.slice(0) : [], at={}, ord={}, i;
   for(i=0;i<out.length;i++){ at[out[i]]=langMadeOf(out[i]); ord[out[i]]=i; }
   out.sort(function(a, b){
@@ -1615,7 +1620,7 @@ function langMainId(){
   var mine=[], id;
   for(id in LANGS)
     if(Object.prototype.hasOwnProperty.call(LANGS, id) && langWhose(id)===LW_MINE) mine.push(id);
-  mine=langsOld(mine);
+  mine=langsByAge(mine);
   return mine.length? mine[0] : null;
 }
 /* AND WHERE THE CEILING MOVED UNDER SOMEBODY'S FEET, THEY ARE PUT BACK ON THE

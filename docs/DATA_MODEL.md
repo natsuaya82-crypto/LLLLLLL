@@ -117,7 +117,7 @@ the rule the server already wrote down rather than a second one: `profile_seen`
 picks `lang_id` by ordering `language_seen` `created_at asc limit 1`
 (`supabase/schema.sql`), so the language on somebody's profile is already the
 first one they made. The phone reads the same column in the same direction.
-`langsOld()` (`www/core.js`) is the one place that puts a list of languages in
+`langsByAge()` (`www/core.js`) is the one place that puts a list of languages in
 that order — a language with no answer goes LAST, because one minted here and
 not yet sent is the newest thing in the index — `langMainId()` is its first
 element among the ones this account WROTE, and `langMainFall()` is what opens

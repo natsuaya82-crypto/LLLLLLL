@@ -2548,7 +2548,7 @@ function langAddRow(){
 
    IT TAKES THE ORDER IT IS HANDED AND MAKES NO ORDER OF ITS OWN. Which cap
    languages those are is the CALLER's question -- langsList() below hands the
-   made list through langsOld() (www/core.js), so what survives a fold is the
+   made list through langsByAge() (www/core.js), so what survives a fold is the
    oldest of them: 「一番最初に作ってた作り込んでた言語だけ表示であとは隠す」
    OWNER 2026-09-12.
 
@@ -2615,11 +2615,11 @@ function langsList(){
      other (`langCap()` and `dlCap()`, www/core.js).
 
      AND THE MADE LIST GOES IN OLDEST FIRST, so what survives the cut is the
-     languages this account made first (www/core.js § langsOld). It went in
+     languages this account made first (www/core.js § langsByAge). It went in
      in `Object.keys(LANGS)` order, which is the order this PHONE heard about
      them -- so signing in on a second handset put a different language at the
      top and a free plan then showed a different one of them. */
-  mineSeen=langsSeen(langsOld(mine), langCap());
+  mineSeen=langsSeen(langsByAge(mine), langCap());
   readSeen=langsSeen(reading, dlCap());
   return { mine: mineSeen, reading: readSeen,
            hid: other + (mine.length-mineSeen.length),

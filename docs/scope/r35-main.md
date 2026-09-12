@@ -15,7 +15,7 @@
      段が上がる時は何もしない。
 - Owns (may change):
   - `www/core.js` ── 新しい `LMADE`（`langMadeKey`/`langMadeGot`/`langMadeOf`）、
-    新しい `langsOld()` と `langMainId()`、`planTook()`（`:1974`）の末尾に呼ぶ
+    新しい `langsByAge()` と `langMainId()`、`planTook()`（`:1974`）の末尾に呼ぶ
     一行。**`planTook()` の中身そのものと段の道は触らない**（r34 の隣）
   - `www/home.js` ── `langsSeen()`（`:2554`）と `vLangs()`（`:2574`）
   - `www/net.js` ── `netLangsDown()`（`:2126`）と `netTakenDown()` の `select=`
