@@ -15,6 +15,55 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-12 「プランが終了しました」はサーバーが答える ── `plan` 表に二列、RPC 一つ
+
+OWNER 2026-09-12「オンラインで出してね流石に」「4 起動の時に表示して ☑️今後表示
+しない 閉じる みたいなポップにしたくない？」。
+
+**何が新しく保存されるか。** `supabase/schema.sql` の `plan` 表に二列、どちらも
+`add column if not exists`:
+
+```
+  was            text  free|plus|pro     直前の段。下がった時だけ入り、上がった
+                                         時・同じ時は null に戻される
+  lapse_seen_at  timestamptz             その知らせを本人が見た時刻。下がった
+                                         時に null に戻される
+```
+
+**誰のものか。** そのアカウントのものです。`plan` 表は `id` が `auth.users` で、
+読めるのは本人だけ（`plan_read`）── 何を払っているかは handle ではないので、
+`profile` の列ではなくこの表である、という 2026-09-06 の理由がそのまま掛かります。
+
+**誰が書くか。** `was` は `verify-plan` だけ（service role）。段を決める一箇所が
+「今の行の段」と「これから書く段」を見て、**下がる時だけ**前の段を置きます。
+`lapse_seen_at` を書く道は **RPC 一つ**：`plan_lapse_seen()`（security definer、
+`update plan set lapse_seen_at = now() where id = auth.uid()`、`authenticated` に
+だけ execute）。**`plan` 表への直接の書き込みは、今までどおり誰にも在りません**
+── `plan_make` と `plan_edit` は 2026-09-06 に落ちたまま、この変更でも足しません
+（`rls-check`「a plan is read-only through the API」が policy の数を数えています）。
+
+**人の作った物か。** いいえ。アカウントについての事実で、アカウントが消えれば
+`on delete cascade` で一緒に消えます。**何も消しません** ── 二列とも足すだけで、
+既にある行は `was` が null、`lapse_seen_at` が null の状態で始まります。移行は
+ありません（既にある行の段は動きません）。
+
+**端末には一言も残りません。** `SET` に印は付きません。見たかどうかは
+`lapse_seen_at` が答えます ── 端末の語で「見せる／見せない」を決める行は
+2026-09-11 に全部消した側で、同じ物を別の名前で戻さないためです。☑ を付けずに
+閉じれば何も書かれず、**次の起動でまた出ます**。
+
+**人が見て変わる所。** 有料が終わって無料に戻った次の起動で、アプリ自身のポップが
+一度出ます ── 見出し「プランが終了しました」、☑「今後表示しない」、「閉じる」。
+長い説明文（`cap.lapse.d`）と「アップグレード」のボタンはこのポップには**載せて
+いません**（オーナーの絵に無く、説明は禁止）。`cap.lapse.d` は十言語から消えます
+（読む物が無いキーは `i18n-check` が落とします）。`openCapLapse()` と
+`FORM_OPEN.lapse` ── 旅する頁として開いていた形 ── も消えました。
+
+**流す物が二つあります**（オーナー、`supabase/setup.md` § 8c）：`schema.sql` を
+貼り直す、`npx supabase functions deploy verify-plan`。**両方やるまで `was` は
+誰にも付かず、ポップは出ません** ── 答えに `was` が無ければ出さない、が free の
+側に間違える形です。
+
 ### 2026-09-12 段を訊けていない間、言語の一覧を畳まない ── 天井が三つ目の状態を答える
 
 「前に読み込んだの出していいよ。何か更新するならクルクルが必要」OWNER
