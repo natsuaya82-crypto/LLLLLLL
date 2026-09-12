@@ -1603,6 +1603,63 @@ function langsOld(ids){
   });
   return out;
 }
+/* THE MAIN LANGUAGE: the oldest one this ACCOUNT wrote, and `null` where it
+   has none. LW_MINE and not the length of LANGS, for langCount()'s reason --
+   the index holds languages this account took and the last account's as well,
+   and neither is 「the first language you made」.
+
+   `null` is 「there is no such language」 and callers do nothing on it: it is
+   what the walk has before the door (nothing is anybody's yet), and what a
+   launch with no signal has while langWhose() is still answering LW_WAIT. */
+function langMainId(){
+  var mine=[], id;
+  for(id in LANGS)
+    if(Object.prototype.hasOwnProperty.call(LANGS, id) && langWhose(id)===LW_MINE) mine.push(id);
+  mine=langsOld(mine);
+  return mine.length? mine[0] : null;
+}
+/* AND WHERE THE CEILING MOVED UNDER SOMEBODY'S FEET, THEY ARE PUT BACK ON THE
+   LIST. 「そもそも最初に作った言語を主言語にして、フリーにした時に最初に表示
+   されるようにしないとダメでは？」 OWNER 2026-09-12.
+
+   ONE PLACE, AND IT ASKS THE LIST ITSELF. langsSeen() used to swap the open
+   language in over the last of the first `cap` so that a switcher always
+   held the language you were standing in -- which made the one language a
+   free plan shows 「whichever was open」 rather than 「the first one you
+   made」. That line is gone (www/home.js), and this is what holds the same
+   thing from the other end: the moment the ceiling actually moves, somebody
+   standing in a language the list no longer shows is moved to the main one.
+
+   IT DOES NOT WORK THE LISTS OUT AGAIN. langsList() (www/home.js) is what
+   vLangs() draws, and this asks that -- two functions each deciding 「is the
+   open language on the switcher」 is two answers to one question, and the
+   whole of what this does depends on giving the same one the screen does.
+
+   ONLY DOWNWARDS, and that falls out rather than being tested for: a ceiling
+   going UP cannot take a language off the list, so the open one is still on
+   it and nothing happens. A plan nobody has answered for is langCap() ===
+   null, which folds nothing at all, so nothing happens there either.
+
+   `null` from langMainId() is 「this account has no language of its own」 --
+   the walk before the door, and a launch where langWhose() is still waiting.
+   langOpen() is not called on it: there is nowhere to go, and inventing one
+   is what made the second empty language of 2026-09-11. */
+function langMainFall(){
+  var seen, main;
+  if(!langId) return;
+  /* AND 「NOBODY HAS SAID WHOSE THIS IS」 IS NOT 「IT IS NOT ON THE LIST」.
+     langsList() leaves an LW_WAIT language out of both lists, which is right
+     for DRAWING -- this phone is not going to put somebody else's language
+     under your name -- and is not an answer to the question here. A launch
+     that hears the plan before it hears the rows would otherwise walk the
+     person off the language they had open, because the owner column had not
+     landed yet. */
+  if(langWhose(langId)===LW_WAIT) return;
+  seen=langsList();
+  if(seen.mine.indexOf(langId)>=0 || seen.reading.indexOf(langId)>=0) return;
+  main=langMainId();
+  if(main && main!==langId) langOpen(main);
+}
 /* The ceiling on languages, met. True means the caller must stop.
 
    capStop()'s shape, exactly, and that is an owner decision rather than a
@@ -2055,6 +2112,12 @@ function planTook(id){
      what is missing. The same shape langOwnGot() has for the language's
      owner. */
   if(typeof ltStart==='function') ltStart();
+  /* AND THE LIST MAY HAVE JUST GOT SHORTER UNDER SOMEBODY'S FEET. This is the
+     one moment the language ceiling moves -- langCap() is worked out FROM the
+     plan -- so it is the one place that has to ask whether the language on the
+     screen is still on the switcher (§ langMainFall). Before render(), or the
+     screen is drawn once for the language being left. */
+  langMainFall();
   render();
   return p;
 }
