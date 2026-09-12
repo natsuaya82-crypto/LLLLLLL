@@ -155,6 +155,44 @@ DELETE REVIEW と赤を見た形を `docs/CHANGELOG.md` に書いてあります
 なので、段にも言語にも二つ目は作っていません ── 段は `planKnown()`、言語は
 `langWhose()` の `LW_WAIT` が、どちらも一変数・一関数です。
 
+## リーダーへ ── ゲートの赤 2 本（どちらも check 側）
+
+リーダーがゲートを回して出た二本。**どちらもこの枝が回していなかった check
+で、原因はどちらも「この枝が消した road に seed が寄りかかっていた」**です。
+app は仕様どおりに動いていました ── 直したのは check の側です。
+
+### `gramlang` ── seed が段をディスクの欄で置いていた
+
+**原因**：`tools/gramlang-check.mjs:147` の seed が `lingua.set` に
+`plan:'free'` を置いていました。**もう読みません**（`www/core.js` § PLAN）。
+段が「まだ訊けていない」のままなので `wsys()` が「無料はアルファベット」を
+掛けず、書記体系が letters から推測され、綴りが変わり
+（`zpocomi` → `zpokomi`）、二つの章が語を作りませんでした。
+
+**測って分かった二段目**：`planGot('free')` だけでは足りません。`ltStart()`
+は「まだ訊けていない」あいだ書かないので、答えが届いた瞬間に走る
+`planTook()` が要ります ── 字が無ければ綴り直す物がありません。
+
+**直した形**：reload のあとに `planTook('free')` を通す `boot()` 一つ。
+**アプリが本当に通る road と同じ**です（`storeSync()` → 答え → `planTook()`）。
+六箇所の `pg.reload()` がそれになりました。
+
+### `slow` ── seed が「起動が言語を一本作る」に寄りかかっていた
+
+**原因**：`tools/slow-check.mjs:432` の `LANGS[langId].uid='u'` で
+`LANGS[langId]` が undefined。`19ac48e3` で起動ごとの mint をやめたためです
+（`docs/CHANGELOG.md` 2026-09-11）。
+
+**直した所は `slow-check` ではなく `tools/fixture.mjs`**。`seed()` の下の
+行は全部 `langId` に書き込むのに、言語を作るのはアプリ任せでした ── 歩きに
+入る check は字を描く画面が mint するので今も在り、**済んだ端末を seed する
+check だけが無い**。`slow` はそれを見つけた一本です。
+`seed()` が自分で一本置く形にしました（無ければ `langMint()`）。fixture の
+世界に言語は fixture の持ち物で、消えた road に寄りかかるのが間違いでした。
+
+**確かめ直し**：`acct`・`press`・`again`・`plan`・`open`・`gramlang`・`slow`
+全部緑。
+
 ## リーダーへ ── まとまり 7・9 を測った結果
 
 **押して測りました**（`again-check`、電波を本当に落として）。手順は

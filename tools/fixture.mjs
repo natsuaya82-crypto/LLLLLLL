@@ -124,6 +124,21 @@ export function seed(){
        language has are the ones its words are wearing. */
     {hw:'tirok',ph:['t','i','r','o','k'], mn:'lookout', mns:['lookout'], pos:'n', from:'tir', fm:'d~見張り', at:10}
   ];
+  /* A LANGUAGE TO PUT ALL OF THAT IN, made here rather than leant on.
+     Every line below writes into `langId`, and until 2026-09-11 there was
+     always one: www/core.js minted a language on every LAUNCH, from the top
+     of the file, whether or not anybody had asked. That is gone -- 「端末で
+     やることねえ」 OWNER -- and the one place a language is made before there
+     is an account is the walk arriving at the screen where a letter is drawn.
+
+     Most checks boot into the walk and so still have one by the time this
+     runs. A check that seeds a finished handset does NOT, and slow-check was
+     the one that found it: `LANGS[langId].uid` on a langId naming nothing.
+
+     So the fixture makes its own. It is the fixture's world and a language is
+     part of it; leaning on the app to have minted one was a dependency on a
+     road that has deliberately gone. */
+  if(!langId || !LANGS[langId]){ langId=langMint(); langStore(); }
   /* 名前はサーバーの `language.name` です（www/core.js § LNAME）。降りてきた
      行がそれを言うので、写しを持った端末はこの一行で表せます ── `langName`
      への直書きは、答えを持たないまま画面にだけ名前がある状態でした。 */

@@ -224,12 +224,37 @@ const br = await chromium.launch(LAUNCH);
 const pg = await br.newPage();
 await pg.goto(`http://localhost:${PORT}/`);
 
+/* ---- AND WHAT THIS ACCOUNT PAYS, WHICH IS NOT ON THE DISK ---------------
+   The seed below carries `plan:'free'` inside `lingua.set`, because that is
+   where an older version of the app kept it. **Nothing reads it** (2026-09-11,
+   www/core.js § PLAN): the plan is `verify-plan`'s answer, held in memory, and
+   a launch that has not asked has NO plan -- not `free`.
+
+   That is the app behaving as specified and this file seeding through a road
+   that is gone, which is the same correction the head of this file already
+   records about the slices. Nothing here is about money: what the plan
+   decides here is `wsys()` -- 「free is an alphabet」 -- and with no answer the
+   writing system is guessed off the letters instead, so `zpokomi` came out
+   spelled a different way and two chapters made no words.
+
+   So it is said the way the app learns it, after every reload, because memory
+   does not survive one. **planTook() and not planGot()**: planGot() is the
+   one writer, but what a launch really does is `storeSync()` -> the answer ->
+   planTook(), and planTook() is what tops the free alphabet up afterwards
+   (ltStart() refuses while nobody has answered, www/letters.js). Setting the
+   word alone left the letters unwritten and the words unspelled, which is
+   half the road and reads as the app being wrong. */
+const boot = async () => {
+  await pg.reload();
+  await pg.evaluate(() => planTook('free'));
+};
+
 /* ---- 1, 2, 3: it arrives, it copies, and nothing else moves ------------- */
 await pg.evaluate((old) => {
   localStorage.clear();
   Object.keys(old).forEach((k) => localStorage.setItem(k, old[k]));
 }, OLD);
-await pg.reload();
+await boot();
 const a = await pg.evaluate(REPORT, IDS);
 
 want('the worked-on language carries the word order', a.aOrder, 'OSV');
@@ -252,7 +277,7 @@ want('all of it', a.aSetNegp, 1);
 want('and nothing new was marked as chosen', a.touchedAdp, false);
 
 /* ---- 4: the next launch, and every launch after it ---------------------- */
-await pg.reload();
+await boot();
 const b = await pg.evaluate(REPORT, IDS);
 want('a second launch leaves the word order where it is', b.aOrder, 'OSV');
 want('and the other language too', b.bOrder, 'OSV');
@@ -265,7 +290,7 @@ const c = await pg.evaluate(() => {
   localStorage.setItem('lingua.cur', id);
   return id;
 });
-await pg.reload();
+await boot();
 const d = await pg.evaluate((id) => ({
   phases: slRd('lingua.' + id + '.phases'),
   order: STG.order, negp: STG.gpos && STG.gpos.negp, open: langId,
@@ -292,7 +317,7 @@ await pg.evaluate((seed) => {
   localStorage.setItem('lingua.langs', JSON.stringify(langs));
   localStorage.setItem('lingua.' + ids.LC + '.phases', '[[[not json');
 }, { old: OLD, ids: IDS });
-await pg.reload();
+await boot();
 const e = await pg.evaluate((ids) => ({
   wreck: slRd('lingua.' + ids.LC + '.phases'),
   aOrder: (JSON.parse(slRd('lingua.' + ids.LA + '.phases') || 'null') || {}).order
@@ -307,7 +332,7 @@ await pg.evaluate((old) => {
   localStorage.clear();
   Object.keys(old).forEach((k) => localStorage.setItem(k, old[k]));
 }, OLD);
-await pg.reload();
+await boot();
 const f = await pg.evaluate((ids) => {
   langOpen(ids.LB);
   setOrder('VOS');
@@ -354,7 +379,7 @@ await pg.evaluate((old) => {
   localStorage.clear();
   Object.keys(old).forEach((k) => localStorage.setItem(k, old[k]));
 }, OLD);
-await pg.reload();
+await boot();
 /* ONE READER FOR A CHAPTER'S ROW, because g2Row() draws one row and this file
    read it in five places. A row is: the number or the role (`.psm`), what
    belongs to this LANGUAGE (`.psw` -- the affix a form rule adds, or the word
