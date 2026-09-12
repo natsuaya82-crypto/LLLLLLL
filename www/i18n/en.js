@@ -52,7 +52,7 @@ defLang('en', (function(){
       "cap.warn"                  : "{0} words left on Free",
       "cap.hid"                   : "{0} hidden",
       "cap.lapse.h"               : "Your plan has ended",
-      "cap.lapse.d"               : "Nothing is gone. Your words, letters, keyboards and posts are all still on your account.<br><br>On the free plan you see the first 100 words, one keyboard and one language. The rest is hidden, not deleted.<br><br>Upgrade and it all comes back, exactly as it was.",
+      "cap.lapse.never"           : "Don’t show this again",
       "cap.lapse.ok"              : "Close",
       "ch.clear"                  : "No character",
       "ch.for"                    : "A character for “{0}”",

@@ -564,6 +564,67 @@ curl -X POST "https://<ref>.supabase.co/functions/v1/verify-plan" \
 
 ---
 
+## 8c. 段が終わった知らせ（**8b のあと。流す物が二つあります**）
+
+「プランが終了しました」を出すのはサーバーの答えです。「オンラインで出してね
+流石に」OWNER 2026-09-12。
+
+**両方やるまで、このポップは誰にも出ません。**答えに `was` が無ければアプリは
+出さないので、途中で止まっていても嘘は言いません ── 出ないだけです。
+
+### 8c-1. schema.sql を流し直す
+
+Dashboard → SQL Editor に `supabase/schema.sql` を**丸ごと**貼って実行します。
+何度流しても同じです。この回で増えるのは三つ:
+
+- `plan` 表に **`was`**（下がる前の段。下がった時だけ入る）
+- `plan` 表に **`lapse_seen_at`**（本人が「今後表示しない」と言った時刻）
+- **`plan_lapse_seen()`**（本人がその印を書く道。引数なし、書くのは自分の行だけ）
+
+**`plan` 表への直接の書き込みは増えていません。**`plan_make` と `plan_edit` は
+8b-1 で落としたまま、この回でも足していません ── 書けるのは `verify-plan`
+（service role）と、この関数の一列だけです。
+
+### 8c-2. verify-plan を置き直す
+
+段を書く所が `was` も書くようになったので、**関数を deploy し直します**。
+コマンドは 8b-3 の三行目と同じ一行:
+
+```
+npx supabase functions deploy verify-plan
+```
+
+### 8c-3. 確かめる
+
+**SQL Editor で二つ。**列と関数が在ることだけなら、電話は要りません。
+
+```sql
+select column_name from information_schema.columns
+ where table_name='plan' order by ordinal_position;
+```
+
+| 返り | 意味 |
+|---|---|
+| `id plan at was lapse_seen_at` | 正しい |
+| `was` と `lapse_seen_at` が無い | 8c-1 がまだです |
+
+```sql
+select proname, prosecdef from pg_proc where proname='plan_lapse_seen';
+```
+
+| 返り | 意味 |
+|---|---|
+| `plan_lapse_seen  t` | 正しい（`t` = security definer） |
+| 0 行 | 8c-1 がまだです |
+
+**残りは実機です。**サンドボックスで有料を買って、期限を切らせて（あるいは
+Dashboard の SQL Editor で `update plan set plan='free', was='plus',
+lapse_seen_at=null where id='<その uid>'` と置いて）**次の起動で一度出ること**、
+「今後表示しない」を付けて閉じたら **`lapse_seen_at` に時刻が入り、次の起動では
+出ないこと**、付けずに閉じたら**また出ること**。これは電話でしか答えが出ません。
+
+---
+
 ## 9. その日の一文を、毎日ひとつ書かせる
 
 タイムラインの一番上に出る一文です。**全員が同じ文を見て、それぞれ自分の言語に

@@ -2802,8 +2802,12 @@ var RENDERED=null;
    gesture at all. */
 var RENDERED_A=null;
 function render(){
-  /* Any navigation takes the popup with it. */
-  if(typeof popOff==='function') popOff();
+  /* Any navigation takes the popup with it -- unless what is up is a state of
+     the RUN rather than a question about the screen being left, which is the
+     other half of popTurn() (www/shell.js § the one popup that outlives a
+     render): 「プランが終了しました」 goes up in the middle of a launch and the
+     launch renders again as the rest of the answers land. */
+  if(typeof popTurn==='function') popTurn();
   /* AND THE KEYBOARD, because the field holding it up is about to be thrown
      away. `#app` is replaced whole below, so a focused field stops existing
      and there is nothing left for anything to blur -- on a phone the keyboard

@@ -138,7 +138,7 @@ defLang('de', (function(){
       "cap.warn"                  : "Noch {0} Wörter in Gratis",
       "cap.hid"                   : "{0} ausgeblendet",
       "cap.lapse.h"               : "Dein Tarif ist beendet",
-      "cap.lapse.d"               : "Nichts ist weg. Deine Wörter, Buchstaben, Tastaturen und Beiträge sind alle noch in deinem Konto.<br><br>Im kostenlosen Plan siehst du die ersten 100 Wörter, eine Tastatur und eine Sprache. Der Rest ist ausgeblendet, nicht gelöscht.<br><br>Nach einem Upgrade ist alles wieder da, genau wie vorher.",
+      "cap.lapse.never"           : "Nicht mehr anzeigen",
       "cap.lapse.ok"              : "Schließen",
       "ch.clear"                  : "Kein Zeichen",
       "ch.for"                    : "Ein Zeichen für „{0}“",

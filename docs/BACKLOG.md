@@ -3224,18 +3224,3 @@ asks for them; anything that deletes gets a DELETE REVIEW first」）。しか�
 足すかどうか、1 の原因を先に測るかは、次の枝の受け持ち。オーナーに訊くものは
 ここには無い（挙動の決めごとではなく、測っていない原因が二つ）。
 
-## 天井が畳むことと「天井は何も隠さない」の食い違い ── 2026-09-12
-
-`docs/DATA_MODEL.md` § 5 は天井についてこう書いています ──「Neither ceiling
-removes, hides or counts down anything — somebody who already has more than the
-number keeps and reads every one of them, and only the next one is refused」。
-`langCap()` のコメントも同じことを言っています。**`langsSeen()`（`www/home.js`）
-は畳みます** ── 段が下がった人の一覧は天井の数で切られ、足に「n hidden」が出る。
-
-これは**別の決めごと**で、この枝は触っていません。2026-09-12 に直したのは
-「段を**訊けていない**間は畳まない」だけです（天井が `null` を答え、
-`langsSeen()` は数の時だけ畳む）。**答えが来ている時に畳むかどうか**は、
-そのままです。
-
-`CLAUDE.md` § Code is not the specification ──「code と docs が食い違ったら、
-code が現実だからという理由では勝たない。報告して訊く」。オーナーへ。
