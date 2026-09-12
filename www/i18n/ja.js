@@ -499,7 +499,7 @@ defLang('ja', (function(){
       'g2.cx.rel'        : '「私が見た山」の印はどこに',
       'g2.g.person' : '人称変化',
       'g2.g.tense'  : '時制',
-      'g2.g.mood'   : '命令・条件・可能・〜しなければならない・〜したい',
+      'g2.g.mood'   : '命令・条件・可能・義務・願望',
       'g2.g.voice'  : '受け身・使役',
       'g2.g.degree' : '比較',
       'g2.book.snt.t'   : '文',
