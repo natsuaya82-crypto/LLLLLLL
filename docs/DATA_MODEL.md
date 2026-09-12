@@ -403,6 +403,25 @@ else's page, filed under that language's own id so a second download of it
 lands in the same place and does not make a second copy. 「ダウンロードボタン押しても言語追加されないけど？」「いつまでもfalseだった
 とかやめてね。」 OWNER 2026-09-01 is the sentence that closed the gap.
 
+**そして「この端末はその答えを聞いたことがある」の写しが一枚あります** ──
+`lingua.take.<uid>`（`langTakeKey()`、`www/core.js` § LTAKE）。`language_take`
+がその起動で答えた言語の番号の並びで、**サーバーの答えの写しであって、誰かの
+作ったものではありません**。
+
+| | |
+|---|---|
+| 鍵 | `lingua.take.<uid>` ── 末尾がアカウントの名前なので `lsWipeAcct()` が数えて取る（一覧に足す必要はない） |
+| 書く | `langTookGot()` ── 答えが来た時だけ。`null`（＝訊けていない）は書かない |
+| 読む | `langTookFor()` ── **手元のアカウントの分だけ**。起動（`netRead`）と入り（`netTook`）、出る時は `''` で忘れる |
+| 上る道 | **無し。**これを送る所はどこにも無く、作ってはいけない ── 何を取ったかは `language_take` で、訊くのは `netTakes()` |
+| なぜ在るか | 「前に読み込んだの出していいよ。何か更新するならクルクルが必要」OWNER 2026-09-12。無ければ電波の無い起動で `langWhose()` が `LW_WAIT` を返し、取った言語が丸ごと消えて見える |
+
+**電波が無い起動で一覧に出るには、もう一枚壁があります。**`dlCap()` は
+`has('plus')` で答えるので、段を訊けていない起動では 0 ── `langsSeen()` が
+読む側の一覧を畳み、足に「n hidden」が出ます。段はメモリだけ（規則 22）なので
+電波の無い起動で段が分かることはありません。**これは直していません**：段の
+決めごとなので `docs/BACKLOG.md` § 段を訊けていない間、一覧を切るか。
+
 `wldGet()` (`www/home.js`) is the one road in: it writes the index row FIRST,
 so a slice can never sit in storage under a language the index does not know,
 and then writes the slices it was asked for with `langKeyOf(id, kind)`.

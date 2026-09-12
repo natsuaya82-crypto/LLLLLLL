@@ -1195,16 +1195,40 @@ const seenUp = await pg.evaluate(async ({ s, srv }) => {
   await wait(200);
   netSave();
   var S = window.__SRV, got = 0, i, k;
+  /* AND ONE OF SOMEBODY ELSE'S, TAKEN. 「前に読み込んだの出していいよ」 OWNER
+     2026-09-12: the languages this account WROTE come back out of the `owner`
+     picture, and the ones it TOOK answered 「まだ訊いていない」 on a launch
+     with no signal and were not drawn at all. Seeded on the server and asked
+     for through netTakes(), which is the real road -- it is what writes the
+     answer down and what brings the row and its slices after it. */
+  S.lang.push({ id:'theirs-9', owner:'other', name:'Somebody else',
+                published_at:'2026-09-01T00:00:00Z' });
+  S.slice.push({ language:'theirs-9', kind:'words', no:1, at:'2026-09-01T00:00:00Z',
+                 body:JSON.stringify([{ hw:'zuri', gl:'a word of theirs' }]) });
+  S.take.push({ uid:'me3', language:'theirs-9' });
+  await new Promise(function(f){ netTakes(function(){ f(); }, function(){ f(); }); });
+  await wait(300);
+  langStore();
   for (i = 0; i < localStorage.length; i++){
     k = localStorage.key(i);
     if (k && k.indexOf('.got') === k.length - 4) got++;
   }
-  return { id:id, gotKeys:got, srv:JSON.stringify({ lang:S.lang, slice:S.slice }) };
+  /* The slices handed on are THIS language's. The taken one's words are on
+     the server too now, and the stages below rebuild `S.slice` by walking it
+     for 「the words slice」 -- with two of those, they would be measuring the
+     wrong language's body. */
+  return { id:id, gotKeys:got, took:langTook(), tookRow:!!LANGS['theirs-9'],
+           pic:!!localStorage.getItem('lingua.take.me3'),
+           srv:JSON.stringify({ lang:S.lang, take:S.take,
+             slice:S.slice.filter(function(r){ return r.language === id; }) }) };
 }, { s: seed.toString(), srv: SERVER });
 
 say(seenUp.gotKeys > 0,
     'サーバーから降りた分がディスクに写してある ── これが無ければ下の三つは ' +
     '「まだ何も無い」を測っているだけになる（' + seenUp.gotKeys + ' 本）');
+say(seenUp.took === 1 && seenUp.tookRow && seenUp.pic,
+    'そして人の言語を一本取ってある ── `language_take` の答えが ' +
+    seenUp.took + ' 本、その写しもディスクにある（土台）');
 
 /* 二段目 ── アプリを閉じて、電波の無いところで開く。localStorage は消さない。
    それが「閉じた」であって「機種変」ではない（機種変は上の 2 番）。 */
@@ -1217,8 +1241,15 @@ const offline = await pg.evaluate(async () => {
   await wait(400);
   window.route = 'words'; NAV = [{ r:'words' }]; render();
   var app = document.getElementById('app');
+  var list = vLangs();
   return { words:WORDS.length, name:langName, signed:netSignedIn(),
-           onScreen:(app ? app.textContent : '').indexOf('kelasu') >= 0 };
+           onScreen:(app ? app.textContent : '').indexOf('kelasu') >= 0,
+           took:langTook(), whose:langWhose('theirs-9'),
+           read:langWhose('theirs-9') === LW_READ,
+           listed:list.indexOf('theirs-9') >= 0,
+           dlCap:dlCap(), capHid:(function(){
+             var m=list.match(/class="note">([^<]*)</g);
+             return m? String(m[m.length-1]).replace(/^class="note">/, '').replace(/<$/, '') : ''; })() };
 });
 
 say(offline.words > 0 && offline.name === 'Kela',
@@ -1226,6 +1257,24 @@ say(offline.words > 0 && offline.name === 'Kela',
     (offline.name || '名前なし') + '）');
 say(offline.onScreen,
     'そして辞書の画面に本当に並んでいる ── 変数に入っているだけではない');
+say(offline.read && offline.took === 1,
+    '**電波が無くても、取った言語はこの端末に残って「read」と答える** ── ' +
+    '`language_take` の写しから ' + offline.took + ' 本、「' + offline.whose +
+    '」（写しは読むだけ。更新も保存もクルクル→「接続できません」で、そこは' +
+    '変えていない）。写しが無ければここは「wait」で、一覧にも数にも入らない');
+/* **そして一覧にはまだ出ません。これは緑ではなく、測った結果です。**
+   `dlCap()`（www/core.js）は `has('plus')` で答えるので、段を訊けていない
+   起動では 0 です ── `langsSeen(reading, 0)` が取った言語を全部畳み、足に
+   「1 hidden」が出ます。**段はメモリにしかない**（規則 22、r31）ので、電波の
+   無い起動で段が分かることはありません。つまり「前に読み込んだの出していいよ」
+   （OWNER 2026-09-12）には壁が二枚あり、ここで外したのは一枚目です。
+   二枚目 ── 「段を訊けていない間、一覧を切るか」 ── は段の決めごとなので
+   ここでは決めません：`docs/scope/r33-owner.md` § リーダーへ と
+   `docs/BACKLOG.md`。測った値: dlCap 0 / langCap 1 / 足「1 hidden」。 */
+say(offline.listed === false && offline.capHid,
+    '（測っただけ・直していない）一覧にはまだ出ない ── 段を訊けていないので ' +
+    'dlCap() は ' + offline.dlCap + '、足は「' + offline.capHid + '」。' +
+    '壁の二枚目で、段の決めごと（docs/BACKLOG.md）');
 
 /* 三段目と四段目 ── 電波が戻る。
    **記憶の側を空にしてから訊く。**起動のあいだに走る移行と ltStart() は、
@@ -1380,6 +1429,11 @@ say(loopUp.body.indexOf('otherphone') >= 0,
     (loopUp.body.indexOf('otherphone') >= 0 ? '残っている' : '**消えた**') + '）');
 say(loopUp.words.indexOf('otherphone') >= 0 && loopUp.words.indexOf('tunnelword') >= 0,
     'そして画面にも両方ある: ' + JSON.stringify(loopUp.words));
+
+/* 「別のアカウントで入ると前の人の取った言語は出ない」は、この節ではなく
+   **ファイルの最後**にあります ── 別のアカウントで立ち上げ直すので、落ちた
+   要求を積んだページを下の節に渡してしまうからです（下は「ポップは一つ」を
+   数えます）。§ 写しは、そのアカウントのものだけ。 */
 
 /* ---- 引き下ろしも、待ちも、落ちたときのポップも、一本 ---------------------
    「引っ張って更新は SNS だけ。制作側（字を描く画面など）でも効いていて、
@@ -2197,10 +2251,16 @@ const goneNull = await pg.evaluate(async ({ srv, saved }) => {
            stay: !!LANGS['stay-1'] };
 }, { srv: SERVER, saved: goneA.srv });
 
-say(goneNull.took === null && goneNull.row === true &&
+/* `langTook()` はこの起動で **2** です。写しを置いた 2026-09-12 より前は
+   `null` で、その `null` が「0 ではない」を言っていました ── 言いたいこと
+   （**「無い」ではない**）は変わっておらず、答えているものが「訊けていない」
+   から「前に聞いた答え」に変わっただけです。落ちないことが主張の本体で、
+   それは行と写しが見ています。「本当に訊けていない端末」── 写しがまだ一枚も
+   無いアカウント ── は今も `null` で、それは `acct-check` 65 が見ています。 */
+say(goneNull.took === 2 && goneNull.row === true &&
     goneNull.got === '[{"id":"sh1"}]' && goneNull.stay === true,
     '**答えが来ていない起動では何も落ちない** ── langTook() は ' +
-    JSON.stringify(goneNull.took) + '（「無い」ではなく「訊けていない」）、' +
+    JSON.stringify(goneNull.took) + '（0 ではなく、前に聞いた答えの数）、' +
     '行 ' + goneNull.row + '、写し ' + JSON.stringify(goneNull.got));
 
 /* 1。同じ状態で、答えが来る起動。 */
@@ -2520,6 +2580,71 @@ say(addOff.words2 === addOff.before + 1 && addOff.onServer2 &&
     'そして電波が戻れば、同じ押しかたで足りて語の頁へ進む ── ' + addOff.words2 +
     ' 語、サーバー ' + (addOff.onServer2 ? 'にも在る' : 'に行っていない') + '、' +
     addOff.where2);
+
+/* ---- 写しは、そのアカウントのものだけ ------------------------------------
+   「違うアカウントでログインしてんのに前のやつ出てくるんだけど？」OWNER
+   2026-08-31。取った言語の答えの写しを一枚ディスクに置いたので（2026-09-12、
+   `lingua.take.<uid>`）、その日の形に戻る道が一本増えました ── 鍵に uid が
+   入っていて、`langTookFor()` が手元のアカウントの分しか読まない、というのが
+   それを塞いでいる全部です。読んだだけでは分からないので**押して測ります**。
+
+   **ファイルの最後に置いてあります。**別のアカウントで立ち上げ直す節なので、
+   その起動が投げて落ちた要求を積んだページを次の節へ渡してしまう ── ポップの
+   節がそれを数えるので、緑と赤が入れ替わります。ここには次がありません。 */
+await pg.evaluate(() => localStorage.clear());
+await pg.reload();
+await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
+
+const takeA = await pg.evaluate(async ({ s, srv }) => {
+  function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
+  eval('(' + s + ')()');
+  SET.walked = true; setKeep();
+  eval(srv);
+  var S = window.__SRV;
+  S.lang = [{ id:'tk-theirs', owner:'somebody-else', name:'Theirs',
+              published_at:'2026-09-01T00:00:00Z' }];
+  S.slice = [{ language:'tk-theirs', kind:'letters', body:'[{"id":"t1"}]', no:1 }];
+  S.take = [{ uid:'tk1', language:'tk-theirs' }];
+  langSeenAdd('tk-theirs', 'Theirs', 'somebody-else');
+  netTook({ access_token:'t', refresh_token:'r', user:{ id:'tk1' } });
+  await wait(1500);
+  return { took:langTook(), read:langWhose('tk-theirs') === LW_READ,
+           pic:localStorage.getItem('lingua.take.tk1') };
+}, { s: seed.toString(), srv: SERVER });
+
+say(takeA.took === 1 && takeA.read && takeA.pic === '["tk-theirs"]',
+    '（前提）取った言語が一本あって、その答えの写しがディスクに在る ── ' +
+    'langTook() ' + JSON.stringify(takeA.took) + '、写し ' +
+    JSON.stringify(takeA.pic));
+
+/* 別のアカウントで、電波の無いところで開く ── 前の人の写しが読まれるなら、
+   まさにこの起動で読まれます。 */
+await pg.route('https://*.supabase.co/**', r => r.abort());
+await pg.evaluate(() => {
+  localStorage.setItem('lingua.sess',
+    JSON.stringify({ at:'t2', rt:'r2', uid:'tk2', anon:false }));
+});
+await pg.reload();
+await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
+
+const takeB = await pg.evaluate(async () => {
+  await new Promise(function(f){ setTimeout(f, 600); });
+  return { uid:(SESS && SESS.uid) || '', took:langTook(),
+           whose:langWhose('tk-theirs'),
+           read:langWhose('tk-theirs') === LW_READ,
+           listed:vLangs().indexOf('tk-theirs') >= 0,
+           pic:!!localStorage.getItem('lingua.take.tk1') };
+});
+await pg.unroute('https://*.supabase.co/**');
+
+say(takeB.uid === 'tk2' && takeB.took === null && !takeB.read && !takeB.listed,
+    '**別のアカウントで入ると、前の人の取った言語は出ない** ── langTook() は ' +
+    JSON.stringify(takeB.took) + '（訊けていない）、「' + takeB.whose +
+    '」で一覧にも無い');
+say(takeB.pic,
+    'そして前の人の写しは消えていない ── 預けてあるだけで、戻れば戻る' +
+    '（消えるのはそのアカウントを削除したとき ── lsWipeAcct が鍵の末尾の ' +
+    'uid で数えて取る）');
 
 await br.close();
 if (bad.length){

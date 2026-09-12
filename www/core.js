@@ -490,7 +490,53 @@ function langRowUp(id){ return LROW[String(id||'')]===1; }
    session or lets through the fourth. netTakes() (www/net.js) is what fills
    it and dlStop() is what waits for it. */
 var LTAKE=null;
-function langTookGot(ids){ LTAKE=(ids && typeof ids.length==='number')? ids : null; }
+/* AND THE PICTURE OF THAT ANSWER, FILED UNDER THE ACCOUNT IT IS ABOUT.
+   「前に読み込んだの出していいよ。何か更新するならクルクルが必要」 OWNER
+   2026-09-12.
+
+   `null` means 「not asked」 and a launch with no signal never asks, so a
+   language somebody TOOK answered LW_WAIT and was not drawn -- the person
+   opened the app in a tunnel and their own languages were there (the `owner`
+   picture, § langOwnOf) while everything they had taken off somebody else's
+   page had gone. This is the same shape as those pictures and for the same
+   reason: the server's answer in memory, a picture of it on the disk, and
+   NO ROAD UP -- nothing here is ever sent, merged or preferred, it is only
+   what the last answer was.
+
+   FILED UNDER THE ACCOUNT, which is the whole of why it is safe. The key ends
+   in the uid, so lsWipeAcct() takes it by COUNTING the namespace rather than
+   by a list somebody has to remember to add to (§ lsWipeAcct), and it is read
+   for the account in hand and never for the one before it --
+   「違うアカウントでログインしてんのに前のやつ出てくるんだけど？」 OWNER
+   2026-08-31 is what reading somebody else's picture looks like.
+
+   A language that came down this way is READ and not written, exactly as it
+   was before: langWhose() answers LW_READ off it, every writer refuses, and
+   updating or saving with no signal says 「接続できません」 rather than
+   quietly working on a copy. */
+function langTakeKey(uid){ return 'lingua.take.' + String(uid||''); }
+function langTookGot(ids){
+  var got=(ids && typeof ids.length==='number')? ids : null,
+      me=(typeof SESS!=='undefined' && SESS && SESS.uid)? String(SESS.uid) : '';
+  LTAKE=got;
+  /* Only an ANSWER is drawn. `null` is 「nobody has said」, and writing that
+     down as an empty list would turn 「I have not been told」 into 「you have
+     taken nothing」 on the next launch -- the two sides langWhose() exists to
+     keep apart. Nothing is removed either: the picture that is there stays
+     there until this account's next answer replaces it or the account goes. */
+  if(got && me) try{ localStorage.setItem(langTakeKey(me), JSON.stringify(got)); }catch(e){}
+}
+/* THE ONE PLACE THE PICTURE IS READ, and it is read for the account named
+   rather than for whoever wrote it. Called where a uid becomes known -- the
+   launch (netRead) and a session arriving (netTook) -- and with '' where one
+   goes (netOut), which is the same call doing the forgetting: a phone with
+   nobody on it has not been told anything. */
+function langTookFor(uid){
+  var me=String(uid||''), p=null;
+  if(me) try{ p=localStorage.getItem(langTakeKey(me)); }catch(e){ p=null; }
+  try{ p=p? JSON.parse(p) : null; }catch(e){ p=null; }
+  LTAKE=(p && typeof p.length==='number')? p : null;
+}
 function langTook(){ return LTAKE? LTAKE.length : null; }
 /* Whether THIS account took this language, asked by the server's id for it.
    lsWipeAcct() is what wants it: a downloaded language is written by somebody

@@ -3223,3 +3223,36 @@ asks for them; anything that deletes gets a DELETE REVIEW first」）。しか�
 どちらも「保存で何が増えるか」を問う claim が `again-check` にありません。
 足すかどうか、1 の原因を先に測るかは、次の枝の受け持ち。オーナーに訊くものは
 ここには無い（挙動の決めごとではなく、測っていない原因が二つ）。
+
+## 段を訊けていない間、読む側の一覧を切るか ── 2026-09-12、`claude/r33-owner` が測った
+
+「前に読み込んだの出していいよ。何か更新するならクルクルが必要」OWNER
+2026-09-12。この決定には**壁が二枚**あり、この枝が外したのは一枚目だけです。
+
+一枚目（外した）：`language_take` の答えがメモリにしか無く、電波の無い起動では
+`langWhose()` が `LW_WAIT` を返して、取った言語が一覧にも数にも入らなかった。
+写しを `lingua.take.<uid>` に置き、起動で読むようにした（CHANGELOG 2026-09-12）。
+
+**二枚目（外していない）**：`dlCap()`（`www/core.js`）は `has('plus')` で
+答えるので、**段を訊けていない起動では 0** になり、`langsSeen(reading, 0)` が
+読む側の一覧を全部畳んで足に「n hidden」を出します。段は `verify-plan` の答えで
+メモリだけ（規則 22、`claude/r31-server`）なので、**電波の無い起動で段が分かる
+ことはありません** ── つまり電波が無い限り、取った言語は一覧に出ません。
+`langCap()` も同じ形で、作った側の一覧は 1 本に畳まれます。
+
+測った値（`again-check` の電波なしの節が毎回印字します）：
+`langWhose('theirs-9')` は `read`、`langTook()` は 1、**`dlCap()` は 0、足は
+「1 hidden」**。
+
+**なぜここで直さなかったか。** 「段を訊けていない間、一覧を何本まで出すか」は
+段の決めごとです（`CLAUDE.md` § Deciding）。そして**書いてあるものが二つ食い
+違っています**：`docs/DATA_MODEL.md` § 5 は「Neither ceiling removes, hides or
+counts down anything — somebody who already has more than the number keeps and
+reads every one of them, and only the next one is refused」と書いていますが、
+`langsSeen()` は畳みます。`CLAUDE.md` § Code is not the specification のとおり、
+**報告して止めます**。
+
+提案（決めるのはオーナー）：`planKnown()` が偽のあいだは一覧を**切らない**
+── 数を決めるのではなく、「まだ何も言われていないので畳まない」。次の
+ダウンロードは `dlStop()` が今までどおり `null` を見て「接続できません」で
+止めるので、天井は緩みません。

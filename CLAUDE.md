@@ -1684,12 +1684,14 @@ list of languages and nothing in them. It fills what is **missing** and stops
 — a slice this phone is holding is never written over, because that is the
 half that loses an afternoon. `acct-check` 13 holds both directions.
 
-**Twelve keys are left in `localStorage` and not one is a language.** The
-index (`lingua.langs`, `lingua.cur`) is which languages this account has and
-where somebody is standing — what the app asks the server WITH, rather than
-the answer. The session, the settings, the timeline's copy, the profile's,
-and the parked copies of each are the rest. `store-check` prints the count on
-every run; read it there.
+**What is left in `localStorage` is not a language, and `store-check` prints
+how many there are on every run — read it there rather than here, because the
+number written here has already been wrong twice.** The index (`lingua.langs`,
+`lingua.cur`) is which languages this account has and where somebody is
+standing — what the app asks the server WITH, rather than the answer. The
+session, the settings, the timeline's copy, the profile's, the picture of
+which of somebody else's this account has taken (`lingua.take.<uid>`), and the
+parked copies of each are the rest.
 
 **And the index says which and not what.** On 2026-09-08 and 09 the four
 things it was still answering moved to columns: what a language is CALLED is
@@ -1701,6 +1703,18 @@ Each is asked through one function in `www/core.js` (`langNameOf`,
 `wldPubOf`, `langWsysOf`, `langOwnOf`), each keeps the server's answer in
 memory and a picture on the disk with no road up, and each has THREE states:
 mine, somebody else's, and **not asked yet** — which is drawn as neither.
+
+**`language_take` is kept the same way, and it had to be.** 「前に読み込んだの
+出していいよ。何か更新するならクルクルが必要」 OWNER 2026-09-12: the answer was
+memory-only, so a launch with no signal had 「not asked」 for it, and every
+language somebody had TAKEN off another page fell to 「nobody has said」 —
+their own were on the screen, out of the pictures above, and the rest had
+gone. `langTookGot()` writes the picture and `langTookFor()` reads it, filed
+under the account it is about (`lingua.take.<uid>`), so signing in as somebody
+else reads that account's own and never the one before it
+（「違うアカウントでログインしてんのに前のやつ出てくるんだけど？」 OWNER
+2026-08-31). No road up, and a language that comes back this way is still only
+READ: updating or saving with no signal is 「接続できません」.
 
 **And every key of that copy belongs to an ACCOUNT.**
 「端末ごとにやることなんてねえよ」 OWNER 2026-09-03. This section used to end

@@ -104,6 +104,14 @@ function netRead(){
      account, and forgetting a plan that belonged to whoever was here
      before. */
   planFor(SESS && SESS.uid);
+  /* AND WHICH OF SOMEBODY ELSE'S THIS ACCOUNT HAD TAKEN, as of the last time
+     the server said so. The picture is this account's (www/core.js
+     § langTakeKey) and a launch with no signal never gets to ask, so without
+     this line every language somebody took off another page is LW_WAIT and is
+     not drawn -- their own are there, out of the `owner` picture, and the rest
+     have gone. 「前に読み込んだの出していいよ」 OWNER 2026-09-12.
+     netTakes() replaces it the moment the answer lands. */
+  langTookFor(SESS && SESS.uid);
 }
 netRead();
 function netSave(){
@@ -580,6 +588,10 @@ function netTook(d){
      refresh -- and netPlanSync(), a moment later, renders when the account's
      answer moves the plan again. */
   planFor(SESS.uid);
+  /* AND WHAT THAT ACCOUNT HAD TAKEN, by the same road and for the same
+     reason: this picture is the arriving account's, and the one before it is
+     not read. Replaced by netTakes() a moment later. */
+  langTookFor(SESS.uid);
   /* AND THE LANGUAGE ON SCREEN. `meFor()` above swapped who the phone says
      it is; this swaps what it is showing. Twice, and the two are different
      moments -- see langForAcct() in www/core.js. Now, without minting,
@@ -765,6 +777,11 @@ function netOut(){
      said in one line (www/core.js § PLAN). 「まだ訊けていない」 is what a
      signed-out phone knows, and the next person asks for their own. */
   planForget();
+  /* AND WHAT THAT ACCOUNT HAD TAKEN. The same call with nobody named, which
+     is 「this phone has not been told anything」 -- the picture itself is not
+     removed, the way meFor() parks rather than erases, so signing back in
+     shows them again. */
+  langTookFor('');
   /* AND WHETHER THIS ACCOUNT ANSWERS THE REPORTS, WHICH IS THE SAME SENTENCE.
      NET_STAFF, NET_ADMIN and NET_BANNED are three facts about the account that
      has just gone, and nothing here put them down -- so the seven taps on the
