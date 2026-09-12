@@ -1800,15 +1800,24 @@ function dlStop(){
    index, in storage, and comes back the moment they sign in again. */
 var LANG_WAIT=false;
 function langForAcct(){
-  var id, nid, me=(typeof SESS!=='undefined' && SESS && SESS.uid)? String(SESS.uid) : '';
+  var main, nid, me=(typeof SESS!=='undefined' && SESS && SESS.uid)? String(SESS.uid) : '';
   LANG_WAIT=false;
   /* Nobody signed in: there is no account to be standing in a language of. */
   if(!me) return false;
   if(langOwnOf(langId)===me) return false;
-  for(id in LANGS)
-    if(Object.prototype.hasOwnProperty.call(LANGS, id) && langOwnOf(id)===me){
-      langOpen(id); return true;
-    }
+  /* WHICH OF THEIRS IT OPENS IS THE MAIN ONE (§ langMainId), and that is one
+     rule read from one place rather than a second answer that agrees most of
+     the time. This walked `LANGS` and took the FIRST entry whose owner was
+     this account -- the order the index happens to be in, which is the order
+     this handset heard about them. On free, where the list shows one language
+     (§ langsByAge), that put somebody down in a language with no row on the
+     switcher: nothing on the screen to press, and no way back to it if they
+     left. 「一番最初に作ってた作り込んでた言語だけ表示」 OWNER 2026-09-12.
+
+     `null` is 「this account has no language」, which is the mint below and
+     not a language to fall to. */
+  main=langMainId();
+  if(main){ langOpen(main); return true; }
   /* AND 「THE SERVER HAS NOT ANSWERED」 IS NOT 「THE ACCOUNT HAS NONE」.
      `pullHad('mylangs')` (www/sns.js) is true only when the list actually
      came down. With no signal it is false, and nothing is made: the screen
