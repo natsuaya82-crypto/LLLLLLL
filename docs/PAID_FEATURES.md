@@ -500,12 +500,23 @@ deleted.** Those are two halves of one sentence and neither may be dropped.
 | the dictionary | **lists the first 100 words**, in the order they were made | `wordsSeen()`, `www/words.js` |
 | the alphabet | **lists the free thirty-eight** — a–z, `!`, `?`, a digit per value of the base | `ltSeen()`, `www/sound.js` |
 | a stage of your own | **is not on the list**; the fifteen are | `stHidden()`, `www/phases.js` |
-| languages of your own | **lists the first one**, and the open one is always on it | `langsSeen()`, `www/home.js` |
+| languages of your own | **lists the one made FIRST** — the main language (2026-09-12). The open one is not swapped in; where the ceiling comes down under somebody standing in another, `langMainFall()` opens the main one | `langsList()`/`langsSeen()`, `www/home.js`; `langsOld()`/`langMainId()`/`langMainFall()`, `www/core.js` |
 | languages downloaded | **lists none** | `langsSeen()` with `dlCap()` |
 | the writing system | an alphabet | `wsys()`, `www/wsys.js` |
 | the keyboard | the fixed QWERTY, in the app and on the phone | `kbOf()`, `www/keyboard.js` |
 | the direction | left→right | `setScriptDir()`, `www/wsys.js` |
 | CSV, file import, the sheet, the badge | gone, as they always were on free | `can()` on the press |
+
+**WHICH ONE the language row keeps is the owner's, and it is the oldest.**
+「無料はそもそも1つの言語しか出ないやろ。一番最初に作ってた作り込んでた言語だけ
+表示であとは隠すだろ」「そもそも最初に作った言語を主言語にして、フリーにした時に
+最初に表示されるようにしないとダメでは？」 OWNER 2026-09-12. It was the order
+`Object.keys(LANGS)` happened to be in — when this handset heard about each —
+so signing in on a second phone showed a different one. It is `created_at` now,
+which is the same column `profile_seen.lang_id` is already ordered by
+(`supabase/schema.sql`): one rule, not two. **Nothing is deleted by it** — the
+row above still holds, and the two rows that go off the list are byte for byte
+where they were (`plan-check`).
 
 **The first five rows are one shape and it is `wordsSeen()`'s.** 「減った時は
 隠すだけね」「だって単語でも文法でも同じようにやったじゃん」 OWNER 2026-09-02.

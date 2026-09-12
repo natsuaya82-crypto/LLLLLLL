@@ -109,7 +109,21 @@ each keeps the server's answer in memory and a picture on the disk
 (`lingua.<id>.name.got`, `lingua.<id>.wsys.got`) with no road up. Empty `wsys`
 is **nobody has said**, not a fifth kind, and `wsGuess()` answers for it.
 `language.owner` — who WROTE it — is a fourth of the same shape
-(`langOwnOf()`, `lingua.<id>.owner.got`).
+(`langOwnOf()`, `lingua.<id>.owner.got`), and `language.created_at` — WHEN it
+was made — is a fifth (`langMadeOf()`, `lingua.<id>.made.got`, 2026-09-12).
+
+**What that fifth one decides is which language is the MAIN one**, and it is
+the rule the server already wrote down rather than a second one: `profile_seen`
+picks `lang_id` by ordering `language_seen` `created_at asc limit 1`
+(`supabase/schema.sql`), so the language on somebody's profile is already the
+first one they made. The phone reads the same column in the same direction.
+`langsOld()` (`www/core.js`) is the one place that puts a list of languages in
+that order — a language with no answer goes LAST, because one minted here and
+not yet sent is the newest thing in the index — `langMainId()` is its first
+element among the ones this account WROTE, and `langMainFall()` is what opens
+it when the ceiling comes down under somebody's feet. 「そもそも最初に作った
+言語を主言語にして、フリーにした時に最初に表示されるようにしないとダメでは？」
+OWNER 2026-09-12.
 
 **Whose those pictures are, said here because the answer is not written on
 them.** A key `lingua.<id>.…` is that LANGUAGE's, and a language is an
@@ -125,6 +139,7 @@ written. `acct-check` 66 holds it. **Two other places still walk `SLICES` for
 the same job** — 「この言語を削除」 and the sweep of a DL language whose
 original is gone — and `docs/BACKLOG.md` carries them.
 
+| `made` | — | **not a slice.** `lingua.<id>.made.got` is the picture of `language.created_at` and nothing writes a `made` slice — it is listed here only so the key is not read as one | — |
 | `lang` | — | the language's name, and **nothing in `www/` reads or writes it** since 2026-09-08. What a language is called is the `language.name` column on the server; `langNameOf()` in `www/core.js` is how it is asked, `LNAME` holds what the server has said this session, and `lingua.<id>.name.got` is the picture a launch with no signal draws from. The slice stays in `SLICES` and is not deleted — what an older version wrote is left exactly where it is | text |
 | `script` | `SCRIPT` | roman → strokes, letters no word uses yet, and **which way the language is written** (`dir`) | object |
 | `letters` | `LETTERS` | the alphabet | array |

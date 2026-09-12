@@ -1703,6 +1703,15 @@ Each is asked through one function in `www/core.js` (`langNameOf`,
 `wldPubOf`, `langWsysOf`, `langOwnOf`), each keeps the server's answer in
 memory and a picture on the disk with no road up, and each has THREE states:
 mine, somebody else's, and **not asked yet** — which is drawn as neither.
+**WHEN a language was made is a fifth of exactly that shape** (`langMadeOf`,
+`language.created_at`, 2026-09-12), and what it answers is which of this
+account's languages is the MAIN one — the oldest. It is the rule the server
+already holds rather than a second one: `profile_seen.lang_id` orders
+`language_seen` `created_at asc limit 1`, so the language on somebody's
+profile is already the first they made. `langsOld()` puts a list in that order
+in one place, `langMainId()` is its first element, and a language with no
+answer goes last, because one minted here and not yet sent is the newest thing
+in the index.
 
 **`language_take` is kept the same way, and it had to be.** 「前に読み込んだの
 出していいよ。何か更新するならクルクルが必要」 OWNER 2026-09-12: the answer was

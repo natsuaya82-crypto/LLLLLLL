@@ -218,6 +218,38 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### 2026-09-12 主言語 ── 一番古く作った言語。無料はそれだけ出て、それが開く
+- Date: 2026-09-12
+- Area: 言語の一覧、段が落ちた時に開いている言語
+- Decision:（原文のまま）「無料はそもそも1つの言語しか出ないやろ。一番最初に
+  作ってた作り込んでた言語だけ表示であとは隠すだろ」「そもそも最初に作った言語を
+  主言語にして、フリーにした時に最初に表示されるようにしないとダメでは？」
+  - **主言語＝そのアカウントが一番古く作った言語。**
+  - **一覧を畳む時に残るのは、作った順に古いほうから天井の数だけ**（無料 1、
+    pro 3）。
+  - **段が無料に落ちた時、開いている言語が畳まれる側なら主言語が開く。**
+- Reason: 一覧は `Object.keys(LANGS)` の並び ── この端末がその言語の行をいつ
+  受け取ったかの順 ── で畳んでいたので、二台目で入り直すと無料で出る一本が別の
+  言語になっていた。そして「開いている物を一覧の末尾に差し替える」行
+  （2026-09-02「開いてるものを残すでいいよ」）が、無料で出る一本を「一番古い
+  言語」ではなく「たまたま開いていた言語」にしていた。
+- Affected features: 言語の一覧、段が落ちた時の切り替え
+- Affected data: **増減なし。**写す物が一つ増える ── `lingua.<id>.made.got`、
+  `language.created_at` の写し、その言語の物、上る道なし
+  （`docs/CHANGELOG.md` 2026-09-12、`docs/DATA_MODEL.md`）。畳まれた言語は
+  `LANGS` にも `lingua.` の下にも一バイトそのまま残る
+- Affected docs: `CLAUDE.md`（規則 22）、`docs/DATA_MODEL.md`、
+  `docs/PAID_FEATURES.md`、`docs/CHANGELOG.md`
+- Implementation status: `claude/r35-main`。**IMPLEMENTED**（CODE CONFIRMED）。
+  端末に二つ目の規則は作っていない ── サーバーの `profile_seen.lang_id` が
+  `language_seen` を `created_at asc limit 1` で引いている、その同じ列を同じ
+  向きで読む（`supabase/schema.sql`）。`langsOld()` が並べる一箇所、
+  `langMainId()` がその先頭、`langMainFall()` が `planTook()` から呼ばれる一箇所
+  （`www/core.js`）。`plan-check` に五本、`dl-check` の「開いているものを残す」の
+  claim は書き替え。**2026-09-02 の「開いてるものを残すでいいよ」は、これに
+  置き換わりました** ── 立っている言語が一覧から消えないことは
+  `langMainFall()` が守ります
+
 ### 2026-09-12 朝の六つ ── 言語の切り替えはプロフィールへ、電波なしは前の分を出す、新しい言語は 38 字
 - Date: 2026-09-12
 - Area: 言語の一覧と切り替え、電波なしの画面、文字、保存した検索、段、アカウント
