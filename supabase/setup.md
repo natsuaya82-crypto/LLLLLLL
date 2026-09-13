@@ -534,15 +534,29 @@ base64 -i AppleRootCA-G3.cer | tr -d '\n'
 Apple が根を更新する日が来たら、**カンマで区切って二つ書けます**（古いものと
 新しいものが並ぶ期間のため）。repo を触る必要はありません。
 
-### 8b-3. 関数を置く
+### 8b-3. 関数を置く（GitHub の Actions で。8b-2 もここが代わりにやる）
 
-パソコンのターミナルで、このリポジトリの中で:
+ターミナルは要りません（OWNER 2026-09-13「パソコンのターミナルないよ。全部
+ギットハブでなってる」）。`.github/workflows/supabase-deploy.yml` が
+8b-2 の base64 と `supabase secrets set`、それから `functions deploy` を打ちます。
 
-```
-npx supabase login
-npx supabase link --project-ref <あなたのプロジェクトの ref>
-npx supabase functions deploy verify-plan
-```
+一度だけ、鍵を一つ入れます:
+
+1. https://supabase.com/dashboard/account/tokens → **Generate new token**
+   （名前は何でも）→ 出た文字列をコピー。
+2. https://github.com/natsuaya82-crypto/LLLLLLL/settings/secrets/actions →
+   **New repository secret** → Name `SUPABASE_ACCESS_TOKEN`、Secret にその
+   文字列 → **Add secret**。
+
+置く:
+
+3. https://github.com/natsuaya82-crypto/LLLLLLL/actions/workflows/supabase-deploy.yml
+   → 右の **Run workflow** → function は `verify-plan` のまま → 緑の
+   **Run workflow**。
+4. 一分ほどで行が出る。緑なら置けた。最後の step「確かめる」に
+   `HTTP 401 {"why":"no session"}` と印字されているのが正しい形。
+
+`daily-prompt` も同じ画面で function を替えれば置けます。
 
 ### 8b-4. 確かめる
 
@@ -587,12 +601,8 @@ Dashboard → SQL Editor に `supabase/schema.sql` を**丸ごと**貼って実�
 
 ### 8c-2. verify-plan を置き直す
 
-段を書く所が `was` も書くようになったので、**関数を deploy し直します**。
-コマンドは 8b-3 の三行目と同じ一行:
-
-```
-npx supabase functions deploy verify-plan
-```
+段を書く所が `was` も書くようになったので、**関数を置き直します**。
+8b-3 の 3 と同じ ── Actions の Supabase Deploy を `verify-plan` で回すだけ。
 
 ### 8c-3. 確かめる
 
