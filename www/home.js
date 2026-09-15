@@ -2435,13 +2435,13 @@ function langRow(id){
 
    The SERVER is first and this phone drops nothing until it has answered.
    netTakeDrop() (www/net.js) is the whole of it -- what comes off this phone
-   comes off through netTakeGone(), the one place that does. A refusal leaves
+   comes off through netLangsGone(), the one place that does. A refusal leaves
    every byte where it was and puts the pop up, whose ［再接続］ is this same
    press. */
 function langDrop(id){
   var sid=String(id||'');
   /* A language of this account's own never came from a take and there is
-     nothing in `language_take` to drop -- the same one of netTakeGone()'s
+     nothing in `language_take` to drop -- the same one of netLangsGone()'s
      four that is left alone. It was `if(!L.sid)` while a language had two
      numbers, and then `LANGS[id].mine`, a boolean this phone wrote; what says
      a language is one this account is only READING is langWhose()
@@ -2619,7 +2619,17 @@ function langsList(){
      in `Object.keys(LANGS)` order, which is the order this PHONE heard about
      them -- so signing in on a second handset put a different language at the
      top and a free plan then showed a different one of them. */
-  mineSeen=langsSeen(langsByAge(mine), langCap());
+  /* THE COPY IS DRAWN AND THE COPY IS NOT COUNTED, and those are two acts.
+     「前に読み込んだの出していいよ」 OWNER 2026-09-12 says a launch with no
+     signal shows what was loaded before; 「端末で使うものなんかないだろ」
+     OWNER 2026-09-15 says nothing is DECIDED from it. Folding a list and
+     writing 「非表示 n」 under it are both deciding -- they say how many
+     languages this account has, which is the server's answer (www/core.js
+     § LMINE) and not this index's. With no answer the made list is not cut,
+     exactly as a ceiling nobody has answered for does not cut it: `null`.
+     Nothing is loosened by either -- langStop() refuses with 「接続できません」
+     before any number is reached. */
+  mineSeen=langsSeen(langsByAge(mine), langMineKnown()? langCap() : null);
   readSeen=langsSeen(reading, dlCap());
   return { mine: mineSeen, reading: readSeen,
            hid: other + (mine.length-mineSeen.length),

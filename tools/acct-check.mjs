@@ -128,6 +128,10 @@ const R = await pg.evaluate(async () => {
        この検査ではその答えが `start()` の `langOwnGot()` です。立てないと
        `langForAcct()` は（正しく）何も作らずに待ちます。 */
     PULL_GOT['mylangs'] = 1;
+    /* 「この account の言語は何か」にサーバーが答えた、という所まで
+       （www/core.js § LMINE、2026-09-15）。`langForAcct()` はこれが無いと
+       （正しく）何も作らずに待ちます ── 電波の無い端末と同じ所で。 */
+    langMineGot();
     langForAcct();
     return r;
   };
@@ -1878,12 +1882,7 @@ const R = await pg.evaluate(async () => {
   LANGS = { 'La': { name: '自分の', mine: true } }; langOwnGot('La', A);
   langId = 'La'; langName = '自分の';
   netOut();                                   /* サインアウトした人 */
-  /* 段はサインアウトで忘れられる（37-43 番）ので、天井は「まだ訊けていない」で
-     止まります ── この検査が測りたいのはそこではないので、答えを置きます。
-     `pro` なのは言語の天井を三本にするためで、一本だと下の ＋ が天井の側で
-     断られ、測りたい「アカウントを訊く」に届きません。 */
   planGot('pro');
-  if (langStop()) no('36: 上限のほうで止まっている ── この検査が測りたいものではない');
   const before36 = Object.keys(LANGS).length;
   langNew();
   if (Object.keys(LANGS).length !== before36)
@@ -1899,9 +1898,17 @@ const R = await pg.evaluate(async () => {
   if (appIs() !== 'door') no('36: 扉が開いていない — appIs()=' + appIs());
   if (!SET.walked) no('36: 扉を出すために、この端末の「歩きを済ませた」を下ろした');
   SET.obback = null; save();
-  /* そしてサインインしていれば、＋ は今までどおり通る（34番の裏返し）。 */
+  /* そしてサインインしていれば、＋ は今までどおり通る（34番の裏返し）。
+
+     段と、「この account の言語は何か」の答えを置きます ── どちらもサイン
+     アウトで忘れられ（37-43 番、www/core.js § LMINE）、天井はそこで
+     「接続できません」と断ります。この検査が測りたいのはそこではないので、
+     二つとも答えのある所から始めます。`arrive()` が § LMINE のほうを置き、
+     `pro` なのは言語の天井を三本にするためです ── 一本だと ＋ が天井の側で
+     断られ、測りたい「アカウントを訊く」に届きません。 */
   arrive(A);
   planGot('pro');
+  if (langStop()) no('36: 上限のほうで止まっている ── この検査が測りたいものではない');
   langNew();
   if (Object.keys(LANGS).length !== before36 + 1)
     no('36: サインインしているのに ＋ で言語ができない');
@@ -3521,6 +3528,221 @@ const R = await pg.evaluate(async () => {
     LANGS = keepL66; langId = keepId66; langStore();
     say('72: アカウントを消したら lingua.<言語の番号>. で始まる鍵は一つも' +
         '残らない ── 挙げるのではなく数えている（列も、明日足す鍵も）');
+  }
+
+  /* ---- 74. ログアウト→ログインで、空の言語がサーバーにできない ---------
+     「そもそも端末を使用するところがないんだから直すじゃないでしょ設計ミス
+     なんだから作り直しでしょ」 OWNER 2026-09-15。
+
+     オーナーが実機（158）で見たもの: サーバー上の名前の無い空の `language`
+     行を二本消した。そのあと 09:09:57 UTC、ログアウト→ログインした直後に、
+     また名前の無い行（slice 0）が一本できた。
+
+     読んで当てずに押して測る。端末の形は写真そのまま ── **索引にだけ在る
+     言語**。行はサーバーで消されていて、`LROW`（「行がある」）は記憶だけ
+     なので起動し直した端末では立っていない。`langMineIds()` はその言語を
+     索引から拾って `netLangSync()` に渡し、`netLangRow()` が行を作り直す。
+
+     赤を見た形（2026-09-15）: `POST /rest/v1/language` を数えて **1**。
+     消された行が、名前の無い空の行として戻ってくる。
+
+     `NET_SYNCING` を落としてから測るのは検査の都合です ── この検査には
+     サーバーが無いので、前の案件が始めた送信が終わっておらず、`netLangSync()`
+     が入口で帰ってしまう。アプリの話ではありません。 */
+  {
+    start();
+    NET_SYNCING = false;
+    /* 索引にだけ在る言語。中身は一つも持っていない ── サーバーで消された
+       行の写しが端末に残るとこの形になる（列の写し `owner.got` は残るが、
+       スライスは記憶と一緒に消えている）。 */
+    LANGS['ghost-74'] = {};
+    langOwnGot('ghost-74', A);
+    /* そして、この端末が中身を持っている言語 ── fixture の言語そのもの。
+       両側を訊くのは、片側だけだと「何も送らない」で緑になるからです：
+       持っている物が上がらなくなったら、それは人の仕事が端末に閉じ込められた
+       ということで、この直しが起こしてはいけない方の壊れ方です。 */
+    const held74 = langId;
+    const keep74 = netSend;
+    const rows74 = [];
+    netSend = function(method, path, body, tok, ok, bad, up){
+      if (String(method) === 'POST' &&
+          String(path).split('?')[0] === '/rest/v1/language') {
+        let b = body;
+        try{ b = (typeof body === 'string') ? JSON.parse(body) : body; }catch(e){}
+        const one = (b && b.length) ? b[0] : b;
+        rows74.push(String((one && one.id) || '?'));
+      }
+      return keep74(method, path, body, tok, ok, bad, up);
+    };
+    netOut();
+    arrive(A);
+    netSend = keep74;
+    if (rows74.indexOf('ghost-74') >= 0)
+      no('74: **サインインが空の言語をサーバーに作った** ── ' +
+         'POST /rest/v1/language に ghost-74 が入っています。索引にしか無い' +
+         '言語の行を作り直しました（送った id: ' + JSON.stringify(rows74) + '）');
+    if (rows74.indexOf(held74) < 0)
+      no('74: 中身を持っている言語が上がらなくなった ── ' + held74 +
+         '（送った id: ' + JSON.stringify(rows74) + '）。' +
+         '人の仕事が端末に閉じ込められます');
+    delete LANGS['ghost-74'];
+    langStore();
+    say('74: ログアウト→ログインで作られる language の行は、この端末が中身を' +
+        '持っている言語のぶんだけ ── 索引にしか無い行は上りに乗らない');
+  }
+
+  /* ---- 75. サーバーの答えに無い言語は、端末の写しから落ちる -------------
+     「端末で使うものなんかないだろ」 OWNER 2026-09-15。
+
+     消えるのは**端末の写しだけ**で、サーバーの行は一バイトも動きません
+     （`netLangDrop()` は呼ばない ── 落ちる理由が「もう無い」ことなので、
+     消す物が無い）。docs/CHANGELOG.md 2026-09-15 の DELETE REVIEW。
+
+     四つを一度に訊きます:
+       落ちる   ── 答えに無く、中身も持っていない索引の行
+       落ちない ── 中身を持っているもの（まだ上がっていないだけかもしれない）
+       落ちない ── 持ち主の答えが無いもの（答えと突き合わせようがない）
+       サーバー ── DELETE は一本も出ない
+
+     赤を見た形（2026-09-15）: `netLangsWalk()` は足りない物を埋めるだけ
+     だったので、`gone-75` が `LANGS` にも `langsList()` にも残り、
+     `langCount()` が 4 を答えた。 */
+  {
+    start();
+    NET_SYNCING = false;
+    planGot('pro');
+    const keepL75 = LANGS, keepId75 = langId;
+    LANGS = {
+      'stay-75': {},   /* 答えに在る ── のこる */
+      'gone-75': {},   /* 答えに無く、中身も無い ── 落ちる */
+      'held-75': {},   /* 答えに無いが、中身を持っている ── のこる */
+      'mute-75': {},   /* 持ち主の答えが無く、中身は持っている ── のこる */
+      'stub-75': {}    /* 持ち主の答えも中身も行も無い ── 落ちる（空の枠） */
+    };
+    langId = 'stay-75';
+    langOwnGot('stay-75', A); langNameGot('stay-75', 'のこる');
+    langOwnGot('gone-75', A); langNameGot('gone-75', '消された');
+    langOwnGot('held-75', A);
+    /* 中身 ── まだサーバーへ行っていない誰かの仕事。持ち主の答えが有るものと
+       無いもの、両方で訊きます：圏外で作った言語は答えが無いままなので、
+       そこを落とすと一番失いたくないものを落とすことになります。 */
+    slWr(langKeyOf('held-75', 'words'), '[{"hw":"mada"}]');
+    slWr(langKeyOf('mute-75', 'words'), '[{"hw":"tunnel"}]');
+    /* `stub-75` は www/core.js が読み込みで打つ最初の言語そのもの ──
+       誰も署名しておらず、一文字も描かれておらず、行も無い。 */
+    langStore();
+
+    const keepGet75 = netGet, keepDrop75 = netLangDrop;
+    const drops75 = [];
+    netLangDrop = function(id, ok, bad){ drops75.push(String(id)); if (ok) ok(); };
+    netGet = function(path, ok, bad){
+      const p = String(path);
+      if (p.indexOf('/rest/v1/language?') === 0)
+        ok([{ id: 'stay-75', owner: A, name: 'のこる', wsys: '',
+              published_at: null, created_at: '2026-01-01T00:00:00Z' }]);
+      else if (p.indexOf('/rest/v1/slice?') === 0) ok([]);
+      else ok([]);
+    };
+    let done75 = false;
+    netLangsDown(function(){ done75 = true; });
+    netGet = keepGet75; netLangDrop = keepDrop75;
+
+    if (!done75) no('75: 答えを渡したのに netLangsDown() が終わっていない');
+    if (LANGS['gone-75'])
+      no('75: **サーバーの答えに無い言語が索引に残っている** ── gone-75。' +
+         '消した行が「未設定」として一覧に並び続けます');
+    if (!LANGS['stay-75']) no('75: 答えに在る言語が落ちた ── stay-75');
+    if (!LANGS['held-75'])
+      no('75: **中身を持っている言語が落ちた** ── held-75。' +
+         'まだ上がっていない仕事が消えます');
+    if (!LANGS['mute-75'])
+      no('75: **持ち主の答えが無く、中身を持っている言語が落ちた** ── ' +
+         'mute-75。圏外で作った言語はこの形です');
+    if (LANGS['stub-75'])
+      no('75: 空の枠が索引に残っている ── stub-75。持ち主の答えも中身も行も' +
+         '無いものは言語ではなく、「未設定」として一覧に並び続けます');
+    {
+      const left75 = [];
+      try{
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (k && k.indexOf('lingua.gone-75.') === 0) left75.push(k);
+        }
+      }catch(e){}
+      for (const k of Object.keys(LSL))
+        if (k.indexOf('lingua.gone-75.') === 0) left75.push(k + ' (LSL)');
+      if (left75.length)
+        no('75: 落ちた言語の鍵が端末に残っている ── ' + left75.sort().join(' ') +
+           '。名前を挙げず、頭文字で数えて消します');
+    }
+    if (drops75.length)
+      no('75: **サーバーの行を消しに行った** ── netLangDrop(' +
+         drops75.join(', ') + ')。落ちるのは端末の写しだけです');
+    {
+      const seen75 = langsList();
+      if (seen75.mine.indexOf('gone-75') >= 0)
+        no('75: 落ちたはずの言語が一覧に出ている ── gone-75');
+      /* stay と held の二本。mute は持ち主の答えが無いので LW_WAIT で、
+         どの数にも入りません（www/core.js § langWhose）。 */
+      if (langCount() !== 2)
+        no('75: langCount() が ' + langCount() + ' ── 2（stay と held）ではない');
+      if (seen75.mine.indexOf('stub-75') >= 0)
+        no('75: 空の枠が一覧に出ている ── stub-75');
+    }
+    LANGS = keepL75; langId = keepId75; langStore(); planGot('free');
+    say('75: サーバーの答えに無い言語は端末の写しから落ちる ── ' +
+        '中身を持つものと持ち主の答えの無いものは残り、サーバーの行は動かない');
+  }
+
+  /* ---- 76. 答えが来ていないうちは「まだ訊けていない」 -------------------
+     「電波が無いときは端末の写しは眺めるためだけ。数えない・決めない」
+     OWNER 2026-09-15 の決定（`langStop()` が段を訊けていない時に断るのと
+     同じ形）。
+
+     索引はディスクに残るので、電波の無い起動には「言語が三本ある」ように
+     見えます。それを数えると、天井に当たって**自分の次の言語を断られる**
+     ── オーナーが実機で見た「アップグレードが必要です」がそれです。
+
+     赤を見た形（2026-09-15）: `langCount()` が 2 を答え、`langStop()` が
+     `up.need` のポップを出した。 */
+  {
+    start();
+    planGot('pro');
+    const keepL76 = LANGS, keepId76 = langId;
+    LANGS = { 'a-76': {}, 'b-76': {} };
+    langId = 'a-76';
+    langOwnGot('a-76', A); langOwnGot('b-76', A);
+    /* そして「この account の言語は何か」をサーバーはまだ答えていない。 */
+    langMineForget();
+    if (langCount() !== null)
+      no('76: **訊けていないのに数えている** ── langCount()=' + langCount() +
+         '。端末の索引を数えると、電波の無い起動が次の言語を断ります');
+    if (langMainId() !== null)
+      no('76: 訊けていないのに主言語を答えている ── ' + langMainId());
+    {
+      const said76 = [];
+      const keepToast76 = toast, keepPop76 = popAsk;
+      toast = function(m){ said76.push('toast:' + m); };
+      popAsk = function(m){ said76.push('pop:' + m); };
+      const stopped76 = langStop();
+      toast = keepToast76; popAsk = keepPop76;
+      if (!stopped76) no('76: 訊けていないのに言語を足させた');
+      if (said76.join(' ').indexOf(t('net.offline')) < 0)
+        no('76: 断り方が「接続できません」ではない ── ' +
+           JSON.stringify(said76) + '。段を訊けていない時と同じ文言です');
+    }
+    /* 一覧は写しを描いてよい ── 眺めるためだけ（「前に読み込んだの出して
+       いいよ」OWNER 2026-09-12）。畳まず、数も作らない。 */
+    {
+      const seen76 = langsList();
+      if (seen76.mine.length !== 2)
+        no('76: 訊けていない時に一覧が畳まれた ── ' +
+           JSON.stringify(seen76.mine) + '。眺めるぶんは出します');
+      if (seen76.hid) no('76: 訊けていないのに「非表示 n」を写しから作った');
+    }
+    LANGS = keepL76; langId = keepId76; langStore(); planGot('free');
+    say('76: 答えが来ていないうちは数えない・決めない ── ' +
+        '足すのは「接続できません」、一覧は写しを畳まずに出す');
   }
 
   return out;

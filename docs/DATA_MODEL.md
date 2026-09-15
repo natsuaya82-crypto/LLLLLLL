@@ -382,6 +382,30 @@ it goes with the rest of that account's keys. **It is with the owner** —
 `lingua.langs` (`LANGS`) is `id -> { … }`, and `lingua.cur` (`langId`) says
 which one every global on the making side means.
 
+**索引は「眺めるための写し」であって、答えではありません（2026-09-15）。**
+「端末で使うものなんかないだろ」「そもそも端末を使用するところがないんだから
+直すじゃないでしょ設計ミスなんだから作り直しでしょ」 OWNER 2026-09-15。
+
+この account の言語が何かを答えるのは `language?owner=eq.<me>` **だけ**です。
+`netLangsDown()`（`www/net.js`）はその答えで索引を**置き換えます** ── 答えに
+在るものを埋め（`netLangsWalk()`）、答えに無いものを落とす（`netLangsGone()`、
+取った言語と同じ一つの関数）。落ちるのは**この iPhone にある写しだけ**で、
+`language` の行は一バイトも動きません（`netLangDrop()` は呼びません）。中身を
+持っている自分の言語と、行があると聞いている言語は落ちません ── DELETE REVIEW
+は `docs/CHANGELOG.md` 2026-09-15。
+
+そして**数えるのも決めるのも索引ではありません**。`LMINE`（`www/core.js`）が
+「その答えが来たか」で、来ていなければ `langCount()` と `langMainId()` は
+`null`、`langStop()` は数を見る前に「接続できません」。一覧（`langsList()`、
+`www/home.js`）は写しを**描いて**よく、畳みも数えもしません ── 描くことと
+決めることは別の行いです。上りも同じで、`langMineIds()` が渡すのはこの iPhone が
+**中身を持っている**言語だけ（`langHeld()`、`slMine()` であって `slRd()` では
+ない）。索引の行だけの言語は持ち物ではないので、行を作りません。
+
+実機で起きたこと（158、2026-09-15）── サーバーで消した空の行が 設定→言語 に
+「未設定」として残り、`langCount()` がそれを数えて「言語を追加」を断り、
+ログインの一秒後に名前の無い空の行がまた一本できました。`acct-check` 74・75・76。
+
 **その `id` は `language.id` そのものです（2026-09-10）。**言語の番号は一つ
 だけで、端末が uuid v4 を打ち（`langMint()`、`www/core.js`）、`netLangRow()`
 （`www/net.js`）はそれを insert に**入れて**送ります ── 列は

@@ -587,6 +587,107 @@ function langTookHas(sid){
   for(i=0;i<LTAKE.length;i++) if(String(LTAKE[i])===k) return true;
   return false;
 }
+/* ---- LMINE: WHETHER THE SERVER HAS SAID WHICH LANGUAGES THIS ACCOUNT WROTE
+   -------------------------------------------------------------------------
+   「端末で使うものなんかないだろ」「そもそも端末を使用するところがないんだから
+   直すじゃないでしょ設計ミスなんだから作り直しでしょ」 OWNER 2026-09-15.
+
+   THE INDEX SAYS WHICH LANGUAGES THIS PHONE HAS HEARD OF. IT DOES NOT SAY
+   WHICH ONES THE ACCOUNT HAS. `lingua.langs` is on the disk and outlives
+   every launch, every sign-out and every row the server drops -- so counting
+   it is the phone answering a question only the server can answer. Measured
+   on a real phone (158, 2026-09-15): two `language` rows were deleted on the
+   server and 設定→言語 went on drawing them as 「未設定」, while
+   「言語を追加」 was refused with 「アップグレードが必要です」 -- a person
+   held off their own next language by rows that do not exist.
+
+   SO IT IS THREE STATES AND NOT TWO, exactly as LOWN, LTAKE and PLAN are.
+   `language?owner=eq.<me>` has answered, or it has not, and 「it has not」 is
+   not 「this account has none」 and not 「this account has these」.
+
+   FORGOTTEN WHERE THE ACCOUNT CHANGES, which is PLAN's shape exactly
+   (§ planForget, § planFor) and for PLAN's reason: a session ARRIVING is a
+   different person, and nobody has asked about their languages yet. netTook()
+   forgets on `netCame` -- the one fact in that file that means 「there was no
+   session here a moment ago」 -- and netOut() forgets because a phone with
+   nobody on it has been told nothing. A token being REFRESHED is not either
+   of those and does not forget, or an hour passing would blank the answer in
+   the middle of somebody's afternoon (§ planFor was measured going wrong that
+   exact way). netLangsDown() (www/net.js) is the one road that writes it,
+   because it is the one road that asks.
+
+   NOTHING ON THE DISK. A picture of this would be the phone remembering an
+   answer about an account across launches and then COUNTING it, which is the
+   bug above wearing a newer coat. The list itself may be drawn from the copy
+   with no signal -- 「前に読み込んだの出していいよ」 OWNER 2026-09-12 -- and
+   langsList() (www/home.js) is where that is said. Drawing and counting are
+   different acts and this is only ever about counting. */
+var LMINE=null;
+function langMineGot(){ LMINE=1; }
+function langMineForget(){ LMINE=null; }
+function langMineKnown(){ return LMINE!==null; }
+/* ---- AND WHETHER THIS PHONE IS HOLDING ANYTHING OF A LANGUAGE -----------
+   「オンラインは一本化ね？」 OWNER 2026-09-04, and rule 22: the copy on this
+   phone is READ-ONLY and the road is one way.
+
+   AN INDEX ENTRY IS NOT A THING SOMEBODY MADE. The index says WHICH; the
+   slices are WHAT. A language whose row the server no longer has, whose
+   slices died with the last run, is a line in a list and nothing else -- and
+   `langMineIds()` (www/net.js) was handing exactly those to the road that
+   goes UP, so `netLangRow()` made the row again. That is the nameless empty
+   `language` row the owner found at 09:09:57 on 2026-09-15, one second after
+   signing in.
+
+   slMine() AND NOT slRd(). slRd() falls back to the picture slGot() keeps
+   for a launch with no signal, and a picture is not a holding -- reading it
+   here is what would put the copy back on the road up. slMine() is the
+   memory (LSL) and what an older version wrote to the disk, which is
+   precisely what this phone HAS and is the only thing that may travel.
+
+   IT IS THE SAFE DIRECTION IN BOTH USES. What is held goes up, so nothing
+   somebody typed is stranded; and what is held is never dropped by
+   netLangsGone() (www/net.js), because 「the server does not have it」 and
+   「it has not been sent yet」 look identical from here and only one of them
+   may be acted on. */
+function langHeld(id){
+  var k=String(id||''), i;
+  if(!k) return false;
+  for(i=0;i<SLICES.length;i++)
+    if(slMine(langKeyOf(k, SLICES[i]))!==null) return true;
+  return false;
+}
+/* ---- AND EVERYTHING THIS PHONE HAS FILED UNDER ONE LANGUAGE, TAKEN ------
+   The copy goes and nothing else does. The `language` row is not touched
+   here and is not this function's business -- netLangsGone() (www/net.js)
+   says why at length.
+
+   COUNTED AND NOT NAMED. This was a walk over `SLICES`, and every key added
+   after that loop was written stayed behind: `name`, `wsys`, `owner` and
+   `made` are COLUMNS of the row rather than slices, so a dropped language
+   left `lingua.<id>.name.got` and `lingua.<id>.owner.got` on the disk and
+   the next launch read them back. CLAUDE.md calls that shape by name --
+   「a list of keys, written by hand, that nobody remembered to add to」 --
+   and lsWipeAcct() above was rewritten out of it a week earlier. So there is
+   no list: `lingua.<id>.` -- the dot included, so one id is never the head of
+   another's -- is what a thing of this language IS, and a key written under
+   it tomorrow goes the day it is written. */
+function langDropHere(id){
+  var k=String(id||''), pre, key, j, doomed=[];
+  if(!k || !LANGS[k]) return false;
+  pre='lingua.'+k+'.';
+  for(key in LSL)
+    if(Object.prototype.hasOwnProperty.call(LSL, key) && key.indexOf(pre)===0)
+      delete LSL[key];
+  try{
+    for(j=0;j<localStorage.length;j++){
+      key=localStorage.key(j);
+      if(key && key.indexOf(pre)===0) doomed.push(key);
+    }
+    for(j=0;j<doomed.length;j++) localStorage.removeItem(doomed[j]);
+  }catch(e){}
+  delete LANGS[k];
+  return true;
+}
 /* What a person's settings are before they touch anything. A function rather
    than a literal because it is needed twice -- here, and when everything is
    wiped -- and the second copy was written out by hand and did not have the
@@ -1564,8 +1665,16 @@ function langCap(){
    nothing here asks a second time. LW_WAIT is not counted -- a ceiling
    measured against languages nobody has answered for refuses a person their
    own next language, or lets through one too many. */
+/* AND `null` WHERE THE SERVER HAS NOT SAID, which is dlCount()'s shape and
+   the same sentence. The index is on the disk and outlives the rows it names,
+   so counting it with no answer in hand is this phone deciding how many
+   languages an account has -- and what that decided, on a real phone on
+   2026-09-15, was 「アップグレードが必要です」 about two rows the owner had
+   just deleted. § LMINE above. langStop() below refuses with 「接続できません」
+   before the number is ever reached. */
 function langCount(){
   var n=0, id;
+  if(!langMineKnown()) return null;
   for(id in LANGS)
     if(Object.prototype.hasOwnProperty.call(LANGS, id) && langWhose(id)===LW_MINE) n++;
   return n;
@@ -1618,6 +1727,13 @@ function langsByAge(ids){
    launch with no signal has while langWhose() is still answering LW_WAIT. */
 function langMainId(){
   var mine=[], id;
+  /* 「NOBODY HAS ASKED」 IS NOT 「THIS ACCOUNT HAS NONE」, and the two share a
+     return value here on purpose: every caller already does nothing on `null`.
+     What they must not do is act on a main language worked out from an index
+     the server has not confirmed -- langForAcct() below would open a language
+     whose row is gone, or mint a second one beside the ones it could not see.
+     § LMINE above. */
+  if(!langMineKnown()) return null;
   for(id in LANGS)
     if(Object.prototype.hasOwnProperty.call(LANGS, id) && langWhose(id)===LW_MINE) mine.push(id);
   mine=langsByAge(mine);
@@ -1826,16 +1942,16 @@ function langForAcct(){
 
      `null` is 「this account has no language」, which is the mint below and
      not a language to fall to. */
+  /* AND 「THE SERVER HAS NOT ANSWERED」 IS ASKED FIRST, not read off an empty
+     list. langMainId() answers `null` for both 「this account has none」 and
+     「nobody has said」 (§ LMINE), and only the first of those is a reason to
+     mint -- so the two are told apart here, before either is acted on. This
+     asked `pullHad('mylangs')` (www/sns.js), which is a second answer to the
+     same question kept in a second place; § LMINE is the one place now, and
+     netLangsDown() writes it because it is the road that asks. */
+  if(!langMineKnown()){ LANG_WAIT=true; return true; }
   main=langMainId();
   if(main){ langOpen(main); return true; }
-  /* AND 「THE SERVER HAS NOT ANSWERED」 IS NOT 「THE ACCOUNT HAS NONE」.
-     `pullHad('mylangs')` (www/sns.js) is true only when the list actually
-     came down. With no signal it is false, and nothing is made: the screen
-     waits, which is what an online app does -- 「電波が無ければ接続できません」
-     (docs/FEATURE_RULES.md § 端末は何も決めない). Minting on a send that did
-     not land is the same second language this whole change is about, in a
-     different coat. */
-  if(typeof pullHad!=='function' || !pullHad('mylangs')){ LANG_WAIT=true; return true; }
   /* The server says this account has none. `language_make` in
      supabase/schema.sql is `owner = auth.uid()`, so the row this one gets can
      say nothing else -- which is why the owner is written here rather than
@@ -1853,6 +1969,13 @@ function langStop(){
      own next language -- and what it refused them with was a PRICE, offering
      to sell what this account may already have bought. */
   if(!planKnown()){ toast(t('net.offline')); return true; }
+  /* AND NOBODY HAS SAID WHAT THIS ACCOUNT ALREADY HAS, which is the second
+     unanswered question and the same sentence -- dlStop() below asks its two
+     the same way. The ceiling is measured against a COUNT, and the count is
+     the server's (§ LMINE): with no answer the index is a picture of rows
+     that may not exist any more, and measuring against it is what refused
+     the owner their own next language on 2026-09-15. */
+  if(!langMineKnown()){ toast(t('net.offline')); return true; }
   if(langCount()<langCap()) return false;
   if(langCap()<PRO_LANGS){
     popAsk(t('up.need'), function(){ go('plans'); });

@@ -84,6 +84,14 @@ export function seed(){
   for (var __k in LANGS)
     if (Object.prototype.hasOwnProperty.call(LANGS, __k) && !langOwnOf(__k))
       langOwnGot(__k, 'u');
+  /* AND THE SERVER HAS SAID WHICH LANGUAGES THIS ACCOUNT WROTE -- which is
+     the ones above. `null` is 「まだ訊けていない」 and langCount() answers
+     `null` at it, so a walk without this line cannot press ＋ at all and
+     every ceiling says 「接続できません」 (www/core.js § LMINE, 2026-09-15).
+     Same reason as the take below: the fixture is a phone that HAS heard
+     from the server, not one in a tunnel. The tunnel is a face of its own
+     where a check wants it. */
+  langMineGot();
   /* AND WHAT THIS ACCOUNT HAS TAKEN, which is nothing. `null` is 「まだ
      訊いていない」 and dlStop() waits at it, so a walk without this line
      cannot press the ↓ at all (www/core.js § LTAKE, 2026-09-09). */
@@ -2916,6 +2924,26 @@ export function halfDone(){
        window.route='langs'; NAV=[{r:'langs'}];
        const h=vLangs();
        delete LANGS.L_two; delete LANGS.L_three;
+       langMadeGot(langId, wasM); planGot(wasP); return h; }],
+    /* ---- AND THE SAME THREE WITH NOBODY HAVING ANSWERED ------------------
+       「端末で使うものなんかないだろ」 OWNER 2026-09-15. A launch with no
+       signal has the index -- it is on the disk -- and no answer about it
+       (www/core.js § LMINE), and the list DRAWS the copy without folding it
+       or counting it: three rows on the free plan, and no 「非表示 n」.
+       That is 「前に読み込んだの出していいよ」 OWNER 2026-09-12 and 「数えない」
+       in one screen, and it is the state the fold used to be decided in. */
+    ['three languages, nobody has answered', () => { const wasP=plan(), wasM=langMadeOf(langId);
+       planGot('free');
+       langMadeGot(langId, '2026-01-02T00:00:00Z');
+       LANGS.L_two={}; langOwnGot('L_two','u'); langNameGot('L_two','Nen');
+       langMadeGot('L_two', '2026-05-05T00:00:00Z');
+       LANGS.L_three={}; langOwnGot('L_three','u'); langNameGot('L_three','Kano');
+       langMadeGot('L_three', '2026-08-08T00:00:00Z');
+       langMineForget();
+       window.route='langs'; NAV=[{r:'langs'}];
+       const h=vLangs();
+       delete LANGS.L_two; delete LANGS.L_three;
+       langMineGot();
        langMadeGot(langId, wasM); planGot(wasP); return h; }],
     ['a mark in the editor',   () => { editLetter('l4'); window.route='glyph';
                                        NAV=[{r:'glyph', a:GE.lid}]; return vGlyph(); }],

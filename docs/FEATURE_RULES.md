@@ -218,6 +218,30 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### 2026-09-15 自分の言語の一覧はサーバーの答えそのもの ── 端末の索引は数えない
+- Date: 2026-09-15
+- Area: 言語の一覧、天井、起動とサインインの降り／上り
+- Decision:（原文のまま）「端末で使うものなんかないだろ」「そもそも端末を使用
+  するところがないんだから直すじゃないでしょ設計ミスなんだから作り直しでしょ」
+- Reason: オーナーが実機（158）でサーバー上の名前の無い空の `language` 行を
+  二本消したあと、設定→言語 にその行が「未設定」として残り、「言語を追加」が
+  「アップグレードが必要です」で断られた。そして 09:09:57 UTC、ログアウト→
+  ログインの一秒後に名前の無い空の行がまた一本できた。どちらも端末の索引
+  `lingua.langs` を「この account の言語は何か」の答えとして使っていたため
+  （降り＝答えに無い行を落とさない、上り＝索引の行から `language` を POST する）。
+- Affected features: 言語の一覧（`vLangs`）、言語を追加、主言語、起動と
+  サインインの同期
+- Affected data: **端末の写しだけ**。`lingua.langs` の行と `lingua.<id>.` で
+  始まる鍵が、サーバーの答えに無い言語について落ちる。`language` と `slice` の
+  行は一バイトも動かない。DELETE REVIEW は `docs/CHANGELOG.md` 2026-09-15。
+- Affected docs: `CLAUDE.md` 規則 22・規則 11、`docs/DATA_MODEL.md`、
+  `docs/CHANGELOG.md`
+- Implementation status: **CODE CONFIRMED**（`claude/r36-index`）。
+  `netLangsGone()` が自分の言語と取った言語の両方を扱う一つの関数
+  （`netTakeGone()` は削除）、`LMINE` が「訊けたか」の三つ目の状態、
+  `langMineIds()` は `langHeld()` が真のものだけを上げる。
+  `acct-check` 74・75・76。**実機は未確認。**
+
 ### 2026-09-12 主言語 ── 一番古く作った言語。無料はそれだけ出て、それが開く
 - Date: 2026-09-12
 - Area: 言語の一覧、段が落ちた時に開いている言語

@@ -678,6 +678,12 @@ function netTook(d){
      empty list, which asks the server exactly what a browser asks. */
   if(netCame && typeof storeSync==='function') storeSync();
   if(netCame){
+    /* AND NOBODY HAS ASKED WHICH LANGUAGES THIS ACCOUNT HAS. `netCame` is
+       「there was no session here a moment ago」, which is a different person
+       arriving -- the last one's answer is not theirs (www/core.js § LMINE).
+       A token being REFRESHED does not come through here, so an hour passing
+       does not blank it. netLangsDown() below answers it. */
+    langMineForget();
     LANG_WAIT=true;
     netLangSync(function(){
       if(typeof pullWait==='function') pullWait('mylangs', function(){
@@ -782,6 +788,11 @@ function netOut(){
      removed, the way meFor() parks rather than erases, so signing back in
      shows them again. */
   langTookFor('');
+  /* AND WHICH LANGUAGES THAT ACCOUNT HAD. A phone with nobody on it has been
+     told nothing, and the index left on the disk is a picture to look at
+     rather than an answer to count (www/core.js § LMINE). Nothing is removed
+     -- signing back in asks again and the list comes back. */
+  langMineForget();
   /* AND WHETHER THIS ACCOUNT ANSWERS THE REPORTS, WHICH IS THE SAME SENTENCE.
      NET_STAFF, NET_ADMIN and NET_BANNED are three facts about the account that
      has just gone, and nothing here put them down -- so the seven taps on the
@@ -1755,7 +1766,7 @@ function netTakePut(sid, ok, bad){
 
    THE SERVER IS FIRST, AND WHAT THIS PHONE DROPS IS READ BACK OFF IT. The
    DELETE lands; then the takes are ASKED FOR AGAIN and that answer is handed
-   to netTakeGone() -- the one place that takes a downloaded language off this
+   to netLangsGone() -- the one place that takes a language off this
    phone. Nothing here works out what to drop. 「the row is gone」 is the
    server's sentence, and it is the same sentence netTakenDown() hears on a
    launch, so a person pressing 削除 and a source deleting their language are
@@ -1777,7 +1788,7 @@ function netTakeDrop(sid, ok, bad){
   netSend('DELETE', '/rest/v1/language_take?uid=eq.'+encodeURIComponent(SESS.uid)+
           '&language=eq.'+encodeURIComponent(id), null, SESS.at,
     function(){
-      netTakes(function(left){ netTakeGone(left); if(ok) ok(left); }, bad);
+      netTakes(function(left){ netLangsGone(false, left); if(ok) ok(left); }, bad);
     },
     function(d, st, m){ if(bad) bad(d, st, m); });
 }
@@ -2152,12 +2163,51 @@ function netLangsWalk(d, done){
    that caller's own question again rather than this function on its own.
    Where none is handed in this behaves exactly as it did: the pop is put up
    here and the caller is told nothing came. */
+/* AND THE ANSWER IS THE LIST -- NOT A TOP-UP OF ONE THIS PHONE KEEPS.
+   -------------------------------------------------------------------------
+   「端末で使うものなんかないだろ」「そもそも端末を使用するところがないんだから
+   直すじゃないでしょ設計ミスなんだから作り直しでしょ」 OWNER 2026-09-15.
+
+   netLangsWalk() below fills in what the answer HAS, and that is the right
+   half of the sentence. The other half had nobody saying it: rows the answer
+   no longer names stayed in `lingua.langs`, which is on the disk and outlives
+   them. The owner deleted two nameless rows on a real phone and 設定→言語
+   went on drawing them as 「未設定」, with 「言語を追加」 refused because
+   langCount() counted them.
+
+   So the walk and the sweep are the one answer read in its two directions,
+   and both happen inside this reply and nowhere else -- 「the answer did not
+   come」 never reaches either. netLangsGone() is the sweep and it is the same
+   function netTakenDown() uses, because it is the same sentence about the
+   other ask.
+
+   AND `langMineGot()` IS WRITTEN HERE (www/core.js § LMINE), because this is
+   the road that asks. Until it has, langCount() and langMainId() answer
+   「nobody has said」 rather than a number worked out from the copy. */
 function netLangsDown(then, bad){
   var done=then || function(){};
   if(!netSignedIn()){ done(0); return; }
   netGet('/rest/v1/language?select=id,name,published_at,wsys,owner,created_at&owner=eq.'+
          encodeURIComponent(SESS.uid),
-    function(d){ netLangsWalk(d, done); },
+    function(d){
+      var rows=(d && typeof d.length==='number')? d : [], ids=[], i;
+      for(i=0;i<rows.length;i++)
+        if(rows[i] && rows[i].id) ids.push(String(rows[i].id));
+      netLangsWalk(d, function(made){
+        /* THE ANSWER IS IN BEFORE EITHER SIDE OF IT IS ACTED ON. The sweep
+           can leave somebody standing nowhere -- langForAcct() is how it puts
+           them back -- and langForAcct() waits on exactly this
+           (www/core.js § LMINE), so writing it afterwards is the walk tidying
+           up in a state it has just said it is not in. Measured 2026-09-15:
+           again-check lost the language it was standing in.
+
+           THE SWEEP AFTER THE WALK, so an id that IS in the answer has its
+           entry before anything looks for it. Both read the same `d`. */
+        langMineGot();
+        netLangsGone(true, ids);
+        done(made);
+      });
+    },
     function(d, s, m){
       /* 起動の道の二つ目で、人が気づくのはこちら ── この人の言語は一本も
          来ていない。［再接続］はこの道をもう一度。 */
@@ -2200,8 +2250,8 @@ function netTakenDown(took){
   /* AND THE ONES THAT ARE NOT IN THE ANSWER ANY MORE ARE GONE FROM HERE TOO.
      Before the ask and before the line below, because 「nothing taken」 is the
      answer that takes everything: an early return there is what left them
-     standing. netTakeGone() is the whole of it. */
-  netTakeGone(ids);
+     standing. netLangsGone() is the whole of it. */
+  netLangsGone(false, ids);
   /* Nothing taken is an answer and not a reason to ask. */
   if(!ids.length) return;
   netGet('/rest/v1/language?select=id,name,published_at,wsys,owner,created_at&id=in.('+
@@ -2212,54 +2262,118 @@ function netTakenDown(took){
        ones it took is a phone that hears about them on the next launch. */
     function(){ NET_TAKEN=''; });
 }
-/* AND A TAKEN LANGUAGE THAT IS NOT IN THE ANSWER IS GONE FROM THIS PHONE.
+/* AND A LANGUAGE THAT IS NOT IN THE ANSWER IS GONE FROM THIS PHONE.
    -------------------------------------------------------------------------
    「空で残さないで。消えたら消えるのよ。」 OWNER 2026-09-09
-   (docs/FEATURE_RULES.md § DL 言語の四つ, decision 1; the DELETE REVIEW is in
-   docs/CHANGELOG.md under the same date).
+   「端末で使うものなんかないだろ」 OWNER 2026-09-15
+   (docs/FEATURE_RULES.md § DL 言語の四つ, decision 1; the DELETE REVIEWs are
+   in docs/CHANGELOG.md under those two dates).
 
-   A DOWNLOAD IS A MARK AND NOT A COPY, so when the person who wrote the
-   language deletes it -- or deletes their account -- the `language_take` row
-   goes with it (`on delete cascade`, supabase/schema.sql). The walk above
-   fills in what the answer HAS; nothing looked at what the answer no longer
-   has, so a row for somebody else's language sat in the switcher for a
-   language nobody can open, with the picture kept for a launch with no signal
-   still on the disk beside it. Pressing it opened a language of somebody else's that does not
-   exist any more.
+   ONE FUNCTION AND NOT TWO, and that is the whole shape of it. This was
+   netTakeGone() and it answered for languages somebody ELSE wrote; nothing
+   answered for this account's own, so `netLangsWalk()` filled in what the
+   answer HAS and left what the answer no longer has standing. On a real
+   phone on 2026-09-15 the owner deleted two `language` rows and 設定→言語
+   went on drawing them as 「未設定」, with 「言語を追加」 refused because
+   langCount() was counting them. Two kinds of language, one question, and
+   the question is the same sentence for both -- 「the answer is the list」 --
+   so writing a second mechanism beside the first is the thing CLAUDE.md
+   § Simple forbids by name. `mine` says which ask this is; nothing else
+   differs.
 
-   FOUR THINGS ARE NOT DROPPED, and each of them is a state rather than a gap:
+   A DOWNLOAD IS A MARK AND NOT A COPY, and a language of this account's is a
+   row the server holds. Either way what is on this phone is a copy of an
+   answer, and an answer that no longer names it is the whole of why it goes.
 
-     the answer never came -- netTakes() failed, so this is not called at all
-       and LTAKE stays `null` (www/core.js § LTAKE). 「無い」 and 「not asked」
-       are different states and must not share a branch: a launch with no
-       signal would otherwise delete every language this account had taken.
-     a language of this person's OWN -- `language.owner` is this account, and
-       not one byte of one is touched here. It is the other ask's to fill and
-       nobody's to remove.
-     a language nobody has answered for -- `language.owner` is empty, so the
-       server has not said it came from a take and it cannot be matched
-       against the answer. What cannot be matched is left alone.
-     the server -- netLangDrop() is NOT called. The row is somebody else's
-       language and this phone has no business writing to it; and there is
-       nothing to drop, because the reason it is not in the answer is that it
-       is already gone.
+   FIVE THINGS ARE NOT DROPPED, and each of them is a state rather than a gap:
 
-   The road back is the road in: if it is published again, the ↓ on the
-   article takes it again. */
-function netTakeGone(ids){
+     the answer never came -- this is called from inside the two answers and
+       from nowhere else. 「無い」 and 「not asked」 are different states and
+       must not share a branch: a launch with no signal would otherwise
+       delete every language the account has.
+     one of this account's OWN that this phone is holding something of --
+       langHeld() (www/core.js). It may not have been sent yet, and what is
+       held goes UP instead, on netLangSync()'s road. A TAKEN language is not
+       in this: it is read-only and has no road up at all, so what is in it is
+       a copy of an answer rather than anybody's unsent work.
+     the OTHER kind -- `mine` picks one side of `language.owner` and the
+       entries on the other side are the other ask's to fill and nobody's to
+       remove here.
+     a language nobody has answered for AND HOLDING SOMETHING -- made in a
+       tunnel, or the walk's own before the door. `language.owner` is empty so
+       it cannot be matched against the answer, and what cannot be matched is
+       left alone; netLangSync() is what gives it a row.
+     the server -- netLangDrop() is NOT called. For a taken language the row
+       is somebody else's and this phone has no business writing to it; for
+       one of this account's own there is nothing to drop, because the reason
+       it is not in the answer is that it is already gone. Not one byte of
+       any row moves.
+
+   WHAT GOES IS COUNTED AND NOT NAMED -- langDropHere() (www/core.js). This
+   walked `SLICES`, so `name`, `wsys`, `owner` and `made`, which are COLUMNS
+   of the row and were added to the app after that loop was written, were
+   left on the disk for the next launch to read back.
+
+   The road back is the road in: a taken language is taken again from the
+   article's ↓, and one of this account's own comes down on the next launch
+   if its row is there. */
+function netLangsGone(mine, ids){
   var list=(ids && typeof ids.length==='number')? ids : [], gone=[],
-      id, own, me=String((SESS && SESS.uid)||''), i, j, k, moved=false;
+      id, own, me=String((SESS && SESS.uid)||''), i, k, moved=false;
   for(id in LANGS){
     if(!Object.prototype.hasOwnProperty.call(LANGS, id)) continue;
-    /* WROTE BY SOMEBODY ELSE, which is the only way an entry got here that
-       this account did not make. It was `LANGS[id].mine`, a boolean this
-       phone wrote;
-       `language.owner` (www/core.js § LOWN) is the server's answer to the
-       same question. langWhose() is not asked here on purpose: it says
-       whether the take is STILL there, and what this loop is looking for is
-       exactly the entries whose take has just gone. */
+    /* WHO WROTE IT, off `language.owner` (www/core.js § LOWN) and not off
+       `LANGS[id].mine`, a boolean this phone wrote. langWhose() is not asked
+       here on purpose: for a taken language it says whether the take is
+       STILL there, and what this loop is looking for is exactly the entries
+       whose answer has just gone. */
+    /* SOMEBODY'S UNSENT WORK IS NOT A LANGUAGE THE SERVER HAS FORGOTTEN --
+       and that is true of this account's OWN and of nothing else. A language
+       it WROTE may be holding a minute of typing that has not gone up yet:
+       「the server does not have it」 and 「it has not been sent yet」 look
+       identical from here, and only one of them may be acted on, so the one
+       that could cost somebody an afternoon is not. netLangSync() is where it
+       goes instead.
+
+       A TAKEN LANGUAGE HAS NO SUCH STATE. It is somebody else's, this phone
+       only ever READS it, and the road back up does not exist for it (rule
+       22, and netLangRow() refuses LW_READ outright) -- so bytes of one are a
+       copy of an answer and never work waiting to be sent. Keeping a taken
+       language because there is something in it would be keeping every taken
+       language there has ever been: they all have something in them. That is
+       what 「空で残さないで。消えたら消えるのよ。」 OWNER 2026-09-09 forbids,
+       and dl-check is what said so. */
+    if(mine && langHeld(id)) continue;
     own=langOwnOf(id);
-    if(!own || own===me) continue;
+    /* AND AN ENTRY WITH NO OWNER AND NOTHING IN IT IS AN EMPTY SLOT, NOT A
+       LANGUAGE -- and only the OWN ask may say so. `owner=eq.<me>` is the one
+       answer that enumerates the whole of what this account has; the takes
+       answer enumerates takes and says nothing about anything else, so an
+       unanswered entry is left alone there.
+
+       WHAT THIS TAKES IS core.js's OWN STUB. The first language is minted at
+       the top of www/core.js, before there is a session to stamp it with
+       (CLAUDE.md § Online), and where the person drew nothing and typed no
+       name it is an index row with no owner, no name and no slice. It used to
+       be sent at the door and the server gave it a nameless row with nothing
+       in it -- the row the owner deleted twice and found back one second
+       after signing in. Not sending it (§ langMineIds) is half the answer;
+       the other half is that it does not sit in the switcher as 「未設定」
+       either, which is the same wart moved from the server to the index.
+
+       AND THE SERVER MUST NEVER HAVE MENTIONED ITS ROW. langRowUp()
+       (www/core.js § LROW) is 「this session was told the row exists」, and an
+       entry that has one is not a stub whatever its owner column says -- it
+       is a language whose `owner` answer has simply not landed, and this ask
+       cannot speak for it. The stub has no row by construction: it is minted
+       at load and netLangRow() has never run for it.
+
+       NOTHING CAN BE LOST HERE. langHeld() has already let through everything
+       this phone is holding a byte of, so what reaches this line has no
+       slice, in memory or on the disk, and no row anybody has heard of.
+       docs/CHANGELOG.md 2026-09-15 carries the DELETE REVIEW. */
+    if(!own){ if(!mine || langRowUp(id)) continue; }
+    else if(mine? (own!==me) : (own===me)) continue;
     for(i=0;i<list.length;i++) if(String(list[i])===String(id)) break;
     if(i<list.length) continue;
     gone.push(id);
@@ -2267,16 +2381,7 @@ function netTakeGone(ids){
   if(!gone.length) return;
   for(k=0;k<gone.length;k++){
     id=gone[k];
-    /* SLICES and the same pair of keys wipeLangsHere() takes for one language
-       (www/settings.js): the slice, and what this phone and the server last
-       agreed it was. Walked rather than listed -- a slice added tomorrow goes
-       the day it is added. slRm() takes the memory, what an older version
-       wrote to the disk, and the picture kept for a launch with no signal. */
-    for(j=0;j<SLICES.length;j++){
-      slRm(langKeyOf(id, SLICES[j]));
-      slRm(langWasKey(id, SLICES[j]));
-    }
-    delete LANGS[id];
+    langDropHere(id);
     if(langId===id){ langId=''; moved=true; }
   }
   langStore();
@@ -2712,12 +2817,40 @@ function netSaveUpGo(done){
    up is precisely the one nobody has said whose it is. Asking 「is it mine」
    here closed the only road out of that: nothing was sent, so no row was
    made, so no owner came back, so nothing was ever sent. */
+/* AND WHAT GOES UP IS WHAT THIS PHONE IS HOLDING, NOT WHAT THE INDEX NAMES.
+   -------------------------------------------------------------------------
+   「端末で使うものなんかないだろ」 OWNER 2026-09-15.
+
+   THE INDEX IS ON THE DISK AND THE SLICES ARE NOT (rule 22). So an entry left
+   over from a language whose row the server no longer has is a line in a list
+   with nothing behind it -- and this handed exactly those to netLangSync(),
+   which took them to netLangRow(), which could not see a row (`LROW` is
+   memory, so a relaunched phone has none) and MADE ONE. Measured on a real
+   phone on 2026-09-15: the owner deleted two nameless `language` rows, signed
+   out and in, and at 09:09:57 a nameless row with no slices was back.
+   tools/acct-check.mjs 74 is that, pressed.
+
+   langHeld() (www/core.js) is the question, and it is 「is there anything of
+   this language on this phone」 rather than 「is it in the index」. The walk's
+   language passes it -- letters drawn and a name typed are in LSL before the
+   door -- which is the one case this road exists for. A language the server
+   filled in a moment ago passes it too, and has a row already, so nothing is
+   inserted for it.
+
+   IT IS THE SAFE DIRECTION. Something held that the server has not got is
+   SENT; the mistake this cannot make is losing somebody's typing. Whether the
+   language is somebody else's is asked exactly as it was -- and a language
+   with no owner at all is still sent, because the walk is precisely the case
+   where nobody has said whose it is and the insert is the road to the answer.
+   The comment above says why at length and none of it changes. */
 function langMineIds(){
   var out=[], id, own, me=String((SESS && SESS.uid)||'');
-  if(langId && !(langOwnOf(langId) && langOwnOf(langId)!==me)) out.push(langId);
+  if(langId && langHeld(langId) &&
+     !(langOwnOf(langId) && langOwnOf(langId)!==me)) out.push(langId);
   for(id in LANGS){
     if(!Object.prototype.hasOwnProperty.call(LANGS, id)) continue;
     if(id===langId) continue;
+    if(!langHeld(id)) continue;
     own=langOwnOf(id);
     if(own && own!==me) continue;
     out.push(id);

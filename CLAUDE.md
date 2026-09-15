@@ -1040,9 +1040,10 @@ window that closed.
 
 **And a phone whose storage is reclaimed comes back from the server.**
 `netLangsDown()` at the foot of `www/boot.js` brings down every language this
-ACCOUNT has and fills in what is not here -- which is what `bkRestore()` used
-to do out of the file, with the same rule: it fills in what is **missing** and
-stops. `again-check` holds it, and holds the save arriving without a launch.
+ACCOUNT has. What it brings down it fills in and never writes over -- which is
+what `bkRestore()` used to do out of the file, with the same rule: it fills in
+what is **missing** and stops. `again-check` holds it, and holds the save
+arriving without a launch.
 
 **NOT SAVING IS THE SPEC. SAVING AND SAYING NOTHING IS NOT.**
 「Twitterとかは電波がないと開かないでしょ？…保存するタイミングでエラーが
@@ -1680,15 +1681,51 @@ takes the work with it -- rule 11 above and `saveTry()` in `www/core.js`.
 skip one whose id was in the index, which was right while a slice survived a
 launch and is the line that would silently empty everybody's dictionary now:
 the index is on disk and the slices are not, so every launch starts with a
-list of languages and nothing in them. It fills what is **missing** and stops
-— a slice this phone is holding is never written over, because that is the
-half that loses an afternoon. `acct-check` 13 holds both directions.
+list of languages and nothing in them. What it fills, it fills in where
+something is **missing** and stops — a slice this phone is holding is never
+written over, because that is the half that loses an afternoon. `acct-check`
+13 holds both directions.
+
+**AND THE ANSWER IS THE LIST, WHICH IS THE OTHER HALF OF THE SAME SENTENCE.**
+「端末で使うものなんかないだろ」「そもそも端末を使用するところがないんだから
+直すじゃないでしょ設計ミスなんだから作り直しでしょ」 OWNER 2026-09-15.
+「fills in what is missing」 was the whole of what this road did, so a row the
+answer no longer names went on sitting in the index — which is on the disk and
+outlives it. The owner deleted two nameless `language` rows on a real phone and
+設定→言語 went on drawing them as 「未設定」, with 「言語を追加」 refused
+because `langCount()` was counting them. `netLangsGone()` (`www/net.js`) is the
+sweep, it is **one function for this account's own languages and for the ones it
+took** — `netTakeGone()` is gone, because two mechanisms for one sentence is
+what `CLAUDE.md` § Simple forbids — and what it takes is the **copy on this
+phone**: not one byte of any `language` row moves, `netLangDrop()` is not
+called, and a language this phone is holding something of is never touched,
+because 「the server has forgotten it」 and 「it has not been sent yet」 look
+identical from here. `acct-check` 74・75・76 and the DELETE REVIEW in
+`docs/CHANGELOG.md` 2026-09-15.
+
+**So the index is a picture for LOOKING AT, and nothing counts from it.** How
+many languages this account has is `language?owner=eq.<me>`'s answer and
+nothing else. `LMINE` in `www/core.js` is where 「has it answered」 lives, with
+the same three states as everything else the server says: `langCount()` and
+`langMainId()` answer `null` while nobody has asked, `langStop()` refuses with
+「接続できません」 before any number is reached, and `langsList()` still DRAWS
+the copy 「前に読み込んだの出していいよ」 without folding it or counting it.
+Drawing and deciding are different acts.
+
+**And the road up does not read it either.** `langMineIds()` (`www/net.js`)
+hands `netLangSync()` the languages this phone is **holding** — `langHeld()`,
+which is `slMine()` and not `slRd()`, so the picture kept for a launch with no
+signal can never travel. An index row with nothing behind it is not a thing
+somebody made, and handing it up is what made the row: the owner signed in at
+09:09:57 on 2026-09-15 and a nameless `language` row with no slices appeared
+one second later.
 
 **What is left in `localStorage` is not a language, and `store-check` prints
 how many there are on every run — read it there rather than here, because the
 number written here has already been wrong twice.** The index (`lingua.langs`,
-`lingua.cur`) is which languages this account has and where somebody is
-standing — what the app asks the server WITH, rather than the answer. The
+`lingua.cur`) is a picture of which languages this account had when the server
+last answered, and where somebody is standing — what the app asks the server
+WITH, rather than the answer. The
 session, the settings, the timeline's copy, the profile's, the picture of
 which of somebody else's this account has taken (`lingua.take.<uid>`), and the
 parked copies of each are the rest.
