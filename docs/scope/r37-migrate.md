@@ -160,7 +160,39 @@ the language somebody already has did not survive (9):
 
 ## 回した check（単体のみ。全ゲートは回していません）
 
-（下の「回した結果」に貼ります）
+| check | 結果 |
+|---|---|
+| `migrate` | **緑**（これが赤かった本体。7f の 3 claim 込み） |
+| `acct` | **緑** ── 66〜76 全部。r36 の 74・75・76 もそのまま |
+| `again` | **緑** |
+| `dl` | **緑** |
+| `plan` | **緑** |
+| `store` | **緑** ── 14 鍵（3 上る／11 端末の物）、`lingua.set` 18 欄（7／11） |
+| `press` | **緑** ── `buttons pressed: 16798 (278/279 distinct names)` |
+| `es5` | **緑**（`www/net.js` を触ったので） |
+| `dead` | **緑** ── 2270 functions / 541 top-level vars |
+
+`press` の数は **r36 の報告と一バイト違いません**（16798、`278/279`、
+`never pressed (1) saveName`）。**この直しは押せる物を一つも動かしていない**、
+というのがこの一致の意味です。`saveName` が押されないのは r36 からの持ち越しで、
+報告であって失敗ではありません。
+
+`migrate` の緑（最後の行）：
+
+```
+migration: a new install starts with a language of its own, and a phone carrying
+           the eight flat keys does too — they are not read, not copied, and
+           not removed. The road is gone; the data is left where it is.
+           …
+           No account is made on a launch, a refused token is cleared with
+           nothing put in its place, and a session that was somebody before
+           any of this still is.
+```
+
+**`master` は取り込み済み**（`origin/master` = `890d3a75`、このブランチの根
+`5b12a3d7` = `integ-0905` の先祖。差分 0）。
+
+**回していないもの ── `npm test`（全ゲート）。リーダーが回します。**
 
 ## 見た目 ── スクショは撮れませんでした
 
