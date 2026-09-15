@@ -1117,9 +1117,13 @@ the reasoning — a reason can be re-derived, a decision cannot.
     **無限の段では輪も無し**（数える天井が無いので描く物が無い）。お題の意味は
     `readonly` なので輪は付きません。
   - **タグは 20 字 × 4**（`TAG_LEN`。十言語のお題の札で一番長いのが 14 字）。
-  - **長い投稿はタイムラインで畳み、「もっと読む」で開く**（＝その投稿の
-    スレッド。行が既に持っている道で、二本目ではありません）。**畳む行数は
-    まだ決まっていません** ── `POST_FOLD` 一箇所、3／5／8 の写真で決めます。
+  - **長い投稿はタイムラインで畳み、「もっと読む」でその場で開く。**開いて
+    いる間は「たたむ」で元に戻せます ── 一つの状態を一つの関数が反転する
+    だけです（`postUnfold()`。**スレッドへ飛ぶ形ではありません** ── 行った先は
+    取り消せないので、「もっと読むで開いたら折り畳まないとダメでは？」
+    OWNER 2026-09-15 で変わりました）。
+  - **畳むのは 5 行**。「5で」 OWNER 2026-09-16 ── 3／5／8 の写真を見て
+    選びました。`POST_FOLD` 一箇所。
   - **投稿の頭の `@handle` は素の文字**。すぐ左のアイコンがその人への扉
     （`postAvHTML()`）なので、@ は二本目の扉でした。**「@〇〇 への返信」の @ と、
     人が文の中に打った `@aya` は青のまま** ── どちらも隣にアイコンがありません。
@@ -1136,8 +1140,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected docs: この項目、`docs/CHANGELOG.md` 2026-09-15、`docs/FEATURES.md`、
   `docs/PAID_FEATURES.md`、`docs/CHECK-0907.md`「ビルド 161」
 - Implementation status: IMPLEMENTED（`claude/r39-tags`、**実機未確認**）。
-  押さえるのは `post-check` 26・27・28。**畳む行数だけオーナー待ち**
-  （写真 `shots/r39-fold-3/5/8-ja.png`）。
+  押さえるのは `post-check` 26・27・28。畳む行数は 5 で決まりました
+  （写真 `shots/r39-fold-5-ja.png`、開いた状態は `shots/r39-fold-open-ja.png`）。
 
 ### 【差し替え済み】お題のタグは、お題そのものが持っている十言語から出す
 

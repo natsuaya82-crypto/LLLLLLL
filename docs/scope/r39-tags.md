@@ -479,7 +479,8 @@ fixture 側で id を外して撮れるようにしました（`.pop` は class 
 | `shots/r39-cap-rings-ja.png` | 書く画面、無料、**輪が二つ**（左が本文、右が意味） |
 | `shots/r39-cap-over-ja.png` | 140 を超えた所 ── 左の輪が赤で **−13**、右は満ちたまま |
 | `shots/r39-cap-pop-ja.png` | 押した時のポップ（既存の文・既存の形） |
-| `shots/r39-fold-3-ja.png` / `-5-` / `-8-` | **「もっと読む」三案。オーナーが選びます** |
+| `shots/r39-fold-5-ja.png` | 5 行で畳んだ所と「もっと読む」 |
+| `shots/r39-fold-open-ja.png` | 開いた所と「たたむ」 |
 | `shots/r39-head-at-ja.png` | 投稿の頭の `@` が素の文字（アイコンが扉） |
 | `shots/r39-thread-tags-ja.png` | 「@〇〇 への返信」の @ は青のまま |
 | （タグの分） | `r39-compose-0/2/4tags`、`r39-compose-day`、`r39-feed-1tag/4tags/day` |
@@ -573,8 +574,7 @@ a free post of 141 characters went out (pops=0)
 
 ### 4. 畳む高さ
 
-**未決のままです。**今は 5。三案は fixture を直したあとに撮り直しました
-（`shots/r39-fold-3/5/8-ja.png`）。開いた状態は `shots/r39-fold-open-ja.png`。
+**5 行で決まりました**（「5で」OWNER 2026-09-16、三枚の写真から）。
 
 ### 回した check（全部緑）
 
@@ -582,4 +582,24 @@ a free post of 141 characters went out (pops=0)
 `box` `sides` `store` `css-once` `assets` `paid` `docs`。
 `press` は `nothing under 44pt: held`、`buttons pressed: 17286 (279/280)`、
 `rows in one list are one height: 3538`。
+
+---
+
+## 仕上げ ── 畳む高さは 5 行（OWNER 2026-09-16「5で」）
+
+- **決定ログ・`CHECK-0907`・`FEATURES`・`CHANGELOG`・`www/post.js` の
+  コメントから「未決」の文を全部消しました。**`POST_FOLD` は 5 のまま。
+  ついでに `FEATURES` の「もっと読むはスレッドを開く」も直しました ── その日の
+  うちに「その場で開いて、たたむ」に変わっていたので、嘘のまま残っていました。
+- **fixture の 3／5／8 の顔を一つにしました。**三つは `POST_FOLD` を書き換えて
+  いたので、**アプリが取れない高さで画面を歩かせない**ために消しました
+  （`a long post folded` 一つ、アプリそのままの高さ）。
+  `shots/r39-fold-3-ja.png` と `-8-` は `git rm`。
+- **回した**：`press` `post` `i18n`（＋ `act` `es5` `dead` `box` `sides`
+  `store` `css-once` `assets` `paid` `docs`）── **全部緑**。
+  `press` は `nothing under 44pt: held`、`buttons pressed: 17112 (279/280)`、
+  `rows in one list are one height: 3508`、`screens built: 1109`。
+
+これで r39-tags は終わりです。**DEVICE CONFIRMED はまだ**（`docs/CHECK-0907.md`
+「ビルド 161」）。
 

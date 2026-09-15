@@ -3363,11 +3363,13 @@ function postFoldable(p){
    「plusプランから無限だけど、もっと読むで開くTwitterと同じ方式で頼む。」
    OWNER 2026-09-15.
 
-   **THIS NUMBER IS NOT DECIDED.** The owner named the SHAPE (Twitter's) and
-   not the height; three pictures at 3, 5 and 8 go to them and they pick.
-   `tools/fixture.mjs` flips it for those three faces, which is why it is one
-   `var` here and written into the element rather than sitting in the
-   stylesheet: one place to move when the answer comes back.
+   **FIVE.** 「5で」 OWNER 2026-09-16, choosing from pictures at 3, 5 and 8.
+   The owner named the shape first (Twitter's) and the height afterwards, off
+   the screen rather than off a number.
+
+   It is written into the element rather than sitting in the stylesheet so
+   there is ONE place to move it, which is what let three heights be
+   photographed from the real screen instead of drawn.
 
    Nothing folds on the free plan by accident -- 140 characters is two or
    three lines on any phone -- so this is about the posts the paid plan can
