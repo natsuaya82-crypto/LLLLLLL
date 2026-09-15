@@ -15,6 +15,35 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-15 schema.sql は本物のサーバーに一回で入る ── ビューは drop してから作る／空の「未設定」を消す（DELETE REVIEW）
+
+**何が起きたか。**9/13 に貼った schema.sql は**一行も入っていませんでした**。
+`language_seen` に `wsys` 列を足した 9/9 の版を、`create or replace view` の
+まま本物（9/8 の版のビューを持つ）に当てると Postgres が
+「cannot change name of view column "nwords" to "wsys"」で止め、SQL Editor は
+全部取り消す。`profile.link` が無い（Apple の審査、ビルド 154）、`plan.was` が
+無い（verify-plan が 500、段の答えが来ず全員 free に見える）、未設定の行が残る、
+の三つは全部これ一つ。rls-check は空の DB から流すので緑のままでした。
+
+**直し。**ビュー四つ（language_seen / follow_seen / profile_seen / post_seen）を
+`drop view if exists … cascade` → `create view` にした。cascade で落ちるのは
+post_seen を読む SQL 関数三つ（notices / feed_hot / feed_fo）で、どれも下で
+作り直される。**データは一バイトも動かない**（ビューは表ではない）。
+
+**それを押さえる check。**`tools/rls-check.mjs` は 9/8 の版（`BASE`＝db93b264、
+本物が持っている一番古い形）を先に当ててから今の版を当てる。オーナーと同じ
+赤い文を出してから、直して緑（372）。`BASE` はオーナーが新しい版を貼ったと
+言った時だけ進める。
+
+**DELETE REVIEW ── 空の「未設定」言語。**OWNER 2026-09-15「今ユーザーいないから
+消していい。未設定。」前のバグ（起動ごとに空の言語を作る、156 で直し）が
+サーバーに残した `language` の行。消すのはリーダーが渡した一本の SQL で、
+条件は **name が空 かつ slice・slice_hist・post・language_take・publication・
+quote のどれからも指されていない**行だけ ── 人が作った物が一つでもある行は
+触らない。schema.sql には入れない（schema は形、これはデータ）。消した後に
+158 で「未設定」がまた現れないかを見る、が確認。
+
+
 ### 2026-09-12 主言語 ── 一番古く作った言語。無料はそれだけ出て、それが開く ── **新しく写す物が一つ**
 
 「無料はそもそも1つの言語しか出ないやろ。一番最初に作ってた作り込んでた言語

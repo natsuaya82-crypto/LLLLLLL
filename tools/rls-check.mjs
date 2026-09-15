@@ -2012,14 +2012,32 @@ const run = CASES.map(([name, want, who, anon, sql]) =>
   `select chk(${q(name)}, ${q(want)}, ${q(sql)}, ${q(who)}, ${anon ? 'true' : 'false'});`
 ).join('\n');
 
-/* TWICE. The file says at its head that the whole of it can be run again, any
-   number of times, and that claim is the reason it is safe to paste into a
-   SQL editor without remembering what was pasted last time. A `create table`
-   without `if not exists`, or a policy made without being dropped first,
-   turns the second pass red here rather than in somebody's project. */
+/* OVER THE SHAPE A REAL SERVER HOLDS, AND THEN AGAIN. The file says at its
+   head that the whole of it can be run again, any number of times, and that
+   claim is the reason it is safe to paste into a SQL editor without
+   remembering what was pasted last time. Running it twice on an empty
+   database held half of that: a `create table` without `if not exists`, or a
+   policy made without being dropped first, went red here. What it could not
+   see is the other half -- the server is never empty, it holds whatever was
+   pasted LAST time, and 2026-09-15 that was a `language_seen` without `wsys`:
+   `create or replace view` may add a column at the end and may not put one
+   in the middle, so the paste stopped at 「cannot change name of view column
+   "nwords" to "wsys"」 and NOTHING in the file landed -- no `profile.link`
+   (Apple's review fell on it), no `plan.was` (verify-plan answered 500 and
+   every phone showed free). rls-check was green throughout, because a
+   database that starts empty has no old view to refuse.
+
+   So the file is first applied AS IT WAS on `BASE`, the oldest shape any
+   live server is known to hold, and only then as it is now. `BASE` moves
+   forward only when the owner has pasted a newer one and said so; it is
+   read out of git so nothing here restates it. */
+const BASE = 'db93b264';   /* 2026-09-08, the last paste before `wsys` */
+const BASE_SQL = execFileSync('git', ['show', `${BASE}:supabase/schema.sql`],
+                              { cwd: path.join(HERE, '..'), encoding: 'utf8' });
 const SCHEMA_SQL = fs.readFileSync(SCHEMA, 'utf8');
 const sql = [
   GROUND,
+  BASE_SQL,
   SCHEMA_SQL,
   SCHEMA_SQL,
   HARNESS,
@@ -2108,7 +2126,7 @@ try {
                     '-v', 'ON_ERROR_STOP=1', '-f', file],
            { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
 } catch (e) {
-  console.error('supabase/schema.sql did not apply to an empty PostgreSQL:\n');
+  console.error(`supabase/schema.sql did not apply over its ${BASE} shape and then over itself:\n`);
   console.error(String(e.stderr || e.message).trim());
   process.exit(1);
 }

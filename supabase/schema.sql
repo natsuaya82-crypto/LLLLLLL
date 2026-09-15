@@ -1291,7 +1291,17 @@ exception when others then
   return 0;
 end $$;
 
-create or replace view language_seen as
+-- DROPPED FIRST, EVERY ONE OF THEM. `create or replace view` may add a
+-- column at the END and may not put one in the middle or rename one, and a
+-- real server holds whatever view was pasted last time: 2026-09-15 the paste
+-- stopped at 「cannot change name of view column "nwords" to "wsys"」 and not
+-- one line of this file landed. `cascade` takes the SQL-language functions
+-- that read the view with it (notices, feed_hot, feed_fo read post_seen);
+-- every one of them is made again further down, so nothing is lost and the
+-- file stays the one paste that leaves any server in today's shape.
+-- tools/rls-check.mjs applies the 2026-09-08 file first and this one over it.
+drop view if exists language_seen cascade;
+create view language_seen as
   select l.id, l.owner, l.name, l.license, l.published_at, l.created_at, l.wsys,
          slice_count((select s.body from slice s
                        where s.language = l.id and s.kind = 'words'))   as nwords,
@@ -1353,7 +1363,8 @@ grant select on language_seen to anon, authenticated;
 -- `follow_read` is `using (true)` -- who follows whom is public the way it is
 -- in every timeline -- so this view shows exactly what that policy already
 -- shows and adds nothing.
-create or replace view follow_seen as
+drop view if exists follow_seen cascade;
+create view follow_seen as
   select f.follower, f.followed,
          a.handle as follower_handle,
          b.handle as followed_handle
@@ -1362,7 +1373,8 @@ create or replace view follow_seen as
     join profile b on b.id = f.followed;
 grant select on follow_seen to anon, authenticated;
 
-create or replace view profile_seen as
+drop view if exists profile_seen cascade;
+create view profile_seen as
   select p.id, p.handle, p.display, p.av, p.bio, p.link, p.loc, p.banned_at,
          (select count(*) from follow f where f.follower = p.id) as fo,
          (select count(*) from follow f where f.followed = p.id) as fr,
@@ -1379,7 +1391,8 @@ create or replace view profile_seen as
     ) l on true;
 grant select on profile_seen to anon, authenticated;
 
-create or replace view post_seen as
+drop view if exists post_seen cascade;
+create view post_seen as
   select p.id, p.author, p.language, p.prompt, p.reply_to, p.created_at,
          p.hidden_at,
          (a.banned_at is not null) as author_out,
