@@ -15,6 +15,68 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-15 自分の言語の一覧はサーバーの答えそのもの ── 端末の索引は数えず、上りもしない（DELETE REVIEW）
+
+**何が起きたか。**オーナーが実機（158）で、サーバー上の名前の無い空の `language`
+行を二本消した。そのあとスマホの 設定→言語 には消した行がまだ「未設定」として
+並び、「言語を追加」は「アップグレードが必要です」で断られた。そして
+09:09:57 UTC、ログアウト→ログインした直後に、また名前の無い `language` 行
+（slice 0）が一本できた。
+
+**原因（読んで当てたのではなく、`acct-check` で押して測った）。二つとも同じ
+一つの設計ミス ── 端末の索引 `lingua.langs` が「この account の言語は何か」の
+答えとして使われていた。**
+
+- 降り：`netLangsDown()`→`netLangsWalk()` は「足りない物を埋めて止まる」だけで、
+  **サーバーの答えに無い行を落とさなかった**。だから消えた行が索引に残り、
+  `langCount()` がそれを数えて天井に当たった。
+- 上り：`langMineIds()`（`www/net.js`）が索引を舐めて `netLangSync()` に渡し、
+  `netLangRow()` が「行がある」（`LROW`、記憶だけ）を知らないぶんを
+  **POST し直していた**。消された行が、名前の無い空の行として作り直される。
+  測った形 ── `acct-check` 74：索引にだけ在る言語を置いてサインアウト→サイン
+  インし、`POST /rest/v1/language` を数えて **1**。
+
+**決定。**OWNER 2026-09-15「端末で使うものなんかないだろ」「そもそも端末を使用
+するところがないんだから直すじゃないでしょ設計ミスなんだから作り直しでしょ」。
+patch ではなく rewrite（CLAUDE.md § Simple, and a bug is REWRITTEN）。
+
+**作り直した形。**
+
+- **答えが一覧そのもの。**`netLangsGone(mine, ids)`（`www/net.js`）── 一つの
+  関数が、自分の言語と取った言語の両方を扱う。`netTakeGone()` は無くなり、
+  `netTakenDown()` と `netLangsDown()` が同じ一つを呼ぶ。二つの仕組みにしない。
+- **「まだ訊けていない」が三つ目の状態。**`LMINE`（`www/core.js`）は
+  `language?owner=eq.<me>` が答えたかどうかで、サインインした uid で持つ。
+  `langCount()` と `langMainId()` は答えが来ていなければ `null`、`langStop()` は
+  数を見る前に「接続できません」（`dlStop()` が段を訊く形そのまま）。
+  `langsList()` は写しを描くが、畳まない・数を作らない。
+- **上るのは、この端末が持っている物だけ。**`langHeld(id)`（`www/core.js`）が
+  `slMine()` で「中身があるか」を答え、`langMineIds()` はそれだけを渡す。
+  索引の行だけの言語は持ち物ではないので、行を作らない。
+
+**DELETE REVIEW ── 落ちるのは端末の写しだけ。**
+
+- **何が消えるか。**サーバーの答えに無い id の、この iPhone にある写し ──
+  `lingua.<id>.` で始まる鍵（記憶 `LSL` とディスクの両方、`.was` と `.got` の
+  写しも）と、索引 `lingua.langs` のその行。**名前を挙げず、その頭文字で数えて
+  消す**（CLAUDE.md「a list of keys, written by hand, that nobody remembered to
+  add to」── `netTakeGone()` は `SLICES` を歩いていて、列の `.got` を残していた）。
+- **何が消えないか。サーバーの行は一バイトも動かない。**`netLangDrop()` は
+  呼ばない ── 落ちる理由は「もう無い」ことだから、消す物が無い。
+- **中身を持っている言語は落とさない。**`langHeld(id)` が真のものは、まだ上がって
+  いないだけかもしれないので触らない。落ちるのは「中身を持たない索引の行」だけ。
+- **答えが来ていないときは一つも落ちない。**`netLangsGone()` は答えを持って呼ば
+  れる所からしか呼ばれない。「無い」と「訊けていない」は別の状態で、枝を共有
+  しない（`docs/DATA_SAFETY.md` 規則 3）。
+- **持ち主の答えの無い言語（`language.owner` が空）は落とさない。**答えと突き
+  合わせようがないものは、そのまま残す。
+- **戻る道。**サーバーに行があるものは次の起動で `netLangsWalk()` が降ろす。
+
+**それを押さえる check。**`tools/acct-check.mjs` に二本 ── 74（サインアウト→
+サインインで `POST /rest/v1/language` が 0 本）、75（答えから一本消えたら、次の
+答えのあとその id は `LANGS` にも `langsList()` にも `langCount()` にも無く、
+サーバーの行は消しに行かない）。どちらもバグを入れたまま赤を見てから直した。
+
 ### 2026-09-15 schema.sql は本物のサーバーに一回で入る ── ビューは drop してから作る／空の「未設定」を消す（DELETE REVIEW）
 
 **何が起きたか。**9/13 に貼った schema.sql は**一行も入っていませんでした**。
