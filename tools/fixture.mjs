@@ -2852,7 +2852,7 @@ export function halfDone(){
        `langTookGot([])` in seed() above is 「asked, and none」, so the owner
        stamp alone leaves the row on neither list. The 削除 that slides out of
        this row also needs something to drop (www/home.js § langDrop): without
-       it the row is the one case netTakeGone() leaves alone, so the walk was
+       it the row is the one case netLangsGone() leaves alone, so the walk was
        pressing a button that returned on its first line. */
     /* ON PLUS, AND IT HAS TO BE. 「読んでいる言語」 is cut to dlCap(), which is
        NOUGHT on free -- the walk's plan -- so this face has been drawing a
