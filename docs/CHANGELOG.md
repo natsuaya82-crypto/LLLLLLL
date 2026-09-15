@@ -15,6 +15,56 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-15 扉をくぐると、サーバーへの問いが全部やり直される ── 拒まれたトークンで起動した端末で言語が開かなかった
+
+**何が起きたか。**`migrate-check` が赤くなった（`integ-0905` = `5b12a3d7`。
+`890d3a75` では緑）。サインインした直後の端末に**文字が一つも無い** ── a から
+z まで 26 個とも「no letter」。言語が開いていない。
+
+**原因（読んで当てたのではなく、`migrate-check` に probe を入れて押して測った）。**
+
+`www/sns.js` の `PULL_GOT` は「サーバーがこの account に答えた」の記録で、
+`pullForget()` が「セッションが終われば答えも忘れる」。**その `pullForget()` は
+`netOut()` にしか無かった** ── 一つの文の半分だけ。**セッションが来る側が
+もう半分**で、そこには無かった。
+
+`netTook()` は account の物を全部忘れ直す（`meFor()`・`postFor()`・`planFor()`・
+`langTookFor()`・`langMineForget()`）。**pull の表だけが残っていた。**
+
+サインアウトを経ない道がある。**保存されたトークンをサーバーが拒む起動**だ ──
+`netRead()` が refresh の答えより先に `SESS` を戻し、`pullBoot()` がその account
+として訊き、答えが着いて `PULL_GOT` に 1 が入り、**そのあとで**セッションが
+落とされる。扉に着いた時点で「答え済み」が、一度も有効でなかったセッションの
+ぶんだけ立っている。測った形 ── `migrate-check` case 7：`mine`・`mylangs`・
+`myposts` の三つが 1 のまま扉を越えていた。
+
+**それが取ったのは言語だった。**`netTook()` は `pullWait('mylangs', …)` に
+`langForAcct()` を掛ける。`pullHad('mylangs')` が既に真なので待ち手はその場で
+発火し、`pullNeed()` も同じ記録に断られる。だから
+`language?owner=eq.<me>` を訊く唯一の道 `netLangsDown()` ── `langMineGot()`
+（`www/core.js` § LMINE）が書かれる唯一の場所 ── が**一度も走らない**。
+`langForAcct()` はそれを待つので `LANG_WAIT=true` で帰り続ける：くるくるが
+回ったまま、言語は開かず、文字は空。**何も投げない。**
+
+**直した形。**`netTook()` の `netCame`（＝直前にセッションが無かった＝扉）で
+`pullForget()` を呼ぶ。`netLangSync()` より前、足元の `pullBoot()` より前。
+条件を足したのではなく、`netOut()` にしか無かった文のもう半分を置いた。
+
+**保存される物は変わりません。**`PULL_GOT` は記憶だけで、ディスクにも
+サーバーにも無い。落とすのは「もう訊いた」という印だけで、答えそのものは
+それぞれの持ち場（`LSL`・`lingua.posts`・`lingua.take.<uid>` …）にあり、
+一バイトも動かない。**DELETE REVIEW は要りません**（人の作った物には触れない）。
+
+**振る舞いの変化。**扉をくぐった直後、アプリはサーバーへの問いを全部やり直す。
+前は、拒まれたトークンで起動した端末だけが、**前のセッションのぶんの答えを
+この account の答えとして**持ったまま進んでいた（タイムライン・下書き・保存した
+検索・通知も同じ）。
+
+**押さえている check。**`migrate-check` case 7f ── 三つの claim
+（扉が `language?owner=` を訊いたか／`LANG_WAIT` が落ちたか／
+`langMineKnown()` が真か）。**バグを戻して三つとも赤を見てから**直した。
+
+
 ### 2026-09-15 自分の言語の一覧はサーバーの答えそのもの ── 端末の索引は数えず、上りもしない（DELETE REVIEW）
 
 **何が起きたか。**オーナーが実機（158）で、サーバー上の名前の無い空の `language`

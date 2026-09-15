@@ -678,6 +678,37 @@ function netTook(d){
      empty list, which asks the server exactly what a browser asks. */
   if(netCame && typeof storeSync==='function') storeSync();
   if(netCame){
+    /* AND EVERY ANSWER THE SERVER GAVE BEFORE THIS SESSION ARRIVED.
+       -----------------------------------------------------------------------
+       www/sns.js § pullForget is 「every answer is forgotten when the session
+       is」, and it stood in netOut() alone -- one half of a sentence with two.
+       A session ARRIVING is the other half and is the same statement: what
+       PULL_GOT holds is 「the server told THIS account」, and the account it
+       told is not the one walking in. Everything else that is an account's is
+       already forgotten here -- meFor(), postFor(), planFor(), langTookFor()
+       and langMineForget() below -- and the pull table was the one thing left
+       standing.
+
+       A SIGN-OUT IS NOT THE ONLY WAY TO ARRIVE WITH ONE. netOut() clears it,
+       so signing out and back in was covered; a LAUNCH whose stored token the
+       server refuses is not. netRead() puts SESS back before the refresh
+       answers, pullBoot() asks as that account, the answers land and write
+       PULL_GOT, and only then is the session cleared -- so the door is reached
+       with 「answered」 standing for a session that was never valid. Measured
+       2026-09-15 (migrate-check case 7): `mine`, `mylangs` and `myposts` all
+       carried 1 across the door.
+
+       WHAT IT COST WAS THE LANGUAGE. pullWait('mylangs', …) below answers at
+       once out of that record and pullNeed() is refused by it, so
+       netLangsDown() -- the one road that asks `language?owner=eq.<me>` and
+       the one place langMineGot() is written (www/core.js § LMINE) -- never
+       ran. langForAcct() waits on exactly that, so it returned LANG_WAIT=true
+       for ever: the mark turning, no language open, and LETTERS empty on a
+       phone that had just signed in. Nothing threw.
+
+       BEFORE netLangSync() below, because that is what the waiter hangs off,
+       and before pullBoot() at the foot, which is what asks again. */
+    if(typeof pullForget==='function') pullForget();
     /* AND NOBODY HAS ASKED WHICH LANGUAGES THIS ACCOUNT HAS. `netCame` is
        「there was no session here a moment ago」, which is a different person
        arriving -- the last one's answer is not theirs (www/core.js § LMINE).

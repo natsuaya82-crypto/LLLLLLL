@@ -533,6 +533,38 @@ const s5 = await pg.evaluate(() => new Promise((res) => {
 }));
 want('signing in at the door makes somebody', s5.member, true);
 want('and the session is not an anonymous one', s5.anon, false);
+/* 7f. AND THE DOOR ASKS WHICH LANGUAGES THIS ACCOUNT HAS, however the launch
+   before it went. The a-z claims below are about what is IN a free language;
+   these two are about whether there is one at all, and they are here because
+   the a-z claims cannot say why they failed.
+
+   The road: netTook() (www/net.js) hangs langForAcct() off
+   pullWait('mylangs', …), and langForAcct() will not open or mint a language
+   until the server has answered (www/core.js § LMINE) -- which only
+   netLangsDown() writes. 7d above is a launch whose stored token the server
+   REFUSES: netRead() puts SESS back before the refresh answers, pullBoot()
+   asks as that account, and the answers land and write PULL_GOT. Left
+   standing across the door, that record answers pullWait() at once and
+   refuses pullNeed(), so the one road that writes langMineGot() never runs
+   and the app waits for an answer nobody is going to ask for. Nothing throws:
+   the mark turns, no language opens, and every letter below is missing.
+
+   Asked of what went over the wire and of the flag the app is holding, not of
+   the pull table: PULL_GOT is the mechanism and these are the two things a
+   person would see. */
+const DOOR = await pg.evaluate(() => {
+  const sent = window.__sent || [];
+  let i = sent.length - 1;
+  while (i >= 0 && sent[i].indexOf('/auth/v1/token') < 0) i--;
+  return {
+    asked: sent.slice(i + 1).filter((u) => u.indexOf('/rest/v1/language?') >= 0).length,
+    wait: !!LANG_WAIT,
+    known: langMineKnown(),
+  };
+});
+want('signing in asks which languages this account has', DOOR.asked > 0, true);
+want('and the answer is in, so nothing is left waiting', DOOR.wait, false);
+want('and the server is what said so', DOOR.known, true);
 /* ---- the twenty-eight slots a free language is given ---------------------
    ltStart names them a to z, ! and ?, and gives each one what its name reads.
    Every one of those readings has to be a sound the chart actually has: a
