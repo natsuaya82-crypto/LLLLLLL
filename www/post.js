@@ -219,7 +219,11 @@ var PW={ln:'', mn:''};
    `ln` -- so the ring counted it, `maxlength` counted it, and a post to
    somebody started eight characters short. It is a field of its own now
    and the line is what somebody wrote. */
-function pwBlank(){ return {ln:'', mn:'', to:'', toh:'', pics:[], pr:0}; }
+/* `tags` is the frame beside the line, and it is a field of its own for the
+   same reason `toh` is: what somebody wrote is the line, and a tag is not in
+   it any more. 「#はべつで」 OWNER 2026-09-15, replacing 「タグは本文中に。」
+   (2026-09-04). www/sns.js § A TAG IS NOT IN THE BODY ANY MORE. */
+function pwBlank(){ return {ln:'', mn:'', to:'', toh:'', pics:[], pr:0, tags:[]}; }
 /* ---- who a post is for -------------------------------------------------
    「自分専用の日記みたいなポストとみんなに公開するポストカード選べるように」
    「誰に向けて後悔するかでしょ。自分or公開で」「公開（推奨）」
@@ -346,8 +350,13 @@ function openPost(from, at){
             a post that has nothing to do with the day. The LINE still stays:
             that one was typed. */
   if(from==='new'){
+    /* And the day's TAG goes with `pr`, for the reason `mn` does: the app
+       put it in the frame, nobody typed it, and a composer that has stopped
+       being about the day must not still be filed under it. Every other tag
+       stays -- those were typed, and this button is not a delete. */
     if(PW.ed) PW=pwBlank();
-    else { PW.to=''; PW.toh=''; if(PW.pr){ PW.pr=0; PW.mn=''; } }
+    else { PW.to=''; PW.toh='';
+           if(PW.pr){ PW.pr=0; PW.mn=''; PW.tags=pwTagsNoDay(); } }
   }
   /* Opened from the day's sentence, and that is the only OTHER argument this
      takes.
@@ -366,25 +375,24 @@ function openPost(from, at){
   if(from==='day' && DAY && !PW.pr && !PW.ln && !PW.mn){
     PW.pr=DAY.id;
     PW.mn=daySay();
-    /* AND THE TAG GOES IN WHAT THEY ARE ABOUT TO WRITE. 「本文に#つけられる
-       ようにしろよ」「タグは本文中に。」 OWNER 2026-09-04.
+    /* AND THE TAG GOES IN THE FRAME, AT THE FRONT OF IT.
+       「#はべつで」 OWNER 2026-09-15.
 
-       In the LINE and not in the meaning, and that is not a preference: the
-       meaning under a prompt is readonly and holds exactly daySay() (five
-       lines up, and OWNER DECISION 2026-08-23 #5 「消せないようにしよう
-       そこからのやつは」). The line is the one field somebody types into
-       here, so it is the one place a tag can be seen and taken out again.
+       It was the first characters of the LINE until that day, under
+       「タグは本文中に。」 (2026-09-04) -- so the app's own word sat inside
+       the sentence somebody was about to write, and the ring over the field
+       counted it against their 280. The frame is beside the line now and the
+       ring never sees it.
 
-       It is put in, not printed: what is in that field is theirs, and
-       deleting it is deleting it. The post still gathers under `pr`, which
-       is a column and cannot be edited away -- so a tag somebody removes
-       costs them the word and not the day. */
-    /* IN THE READER'S OWN WORDS, and stored as the mark. What goes in a
-       field is what somebody reads while they type into it, so it is
-       `t('day.tag')`; pwSend() and draftKeep() put it back to the mark
-       (www/sns.js § THE TAG). 「なんで英語なのに#今日のお題やねん」 OWNER
-       2026-09-08. */
-    PW.ln=dayTagShow(DAY_TAG)+' ';
+       It is put in, not printed: the first slot of the frame is theirs like
+       any other, and clearing it is clearing it. The post still gathers under
+       `pr`, which is a column and cannot be edited away -- so a tag somebody
+       takes out costs them the word and not the day.
+
+       Stored as the mark, and pwTagField() shows it in the reader's own
+       language (www/sns.js § tagShow). 「なんで英語なのに#今日のお題やねん」
+       OWNER 2026-09-08. */
+    PW.tags=[tagClean(DAY_TAG)];
   }
   /* AND WHOSE PAGE THE + WAS ON, said OVER the field and not inside it.
      「他人のプロフィールの右下 ＋ → 投稿画面が『@そのhandle 』を本文の先頭に
@@ -533,8 +541,14 @@ function draftKeep(){
   /* The name it already had, if this is one that was opened again. Reusing it
      is what stops a draft opened and put back becoming two rows -- one on the
      server nobody can reach and one in front of them. */
+  /* `tags` is what a draft gained on 2026-09-15, for the reason `toh` gained
+     one on 09-08: the tags stopped being characters in `ln`, so a draft
+     carrying only the line would come back with the frame empty and the day
+     it was written for gone off it. A draft written before today opens with
+     none, which is the composer it was written on. Nothing is migrated. */
   var d={id:PW.did || netUUID(), at:Date.now(), ln:dayTagStore(PW.ln), mn:PW.mn, to:PW.to,
-         toh:PW.toh||'', pr:PW.pr||0, pics:pwPics(), vo:PW.vo||null, pv:!!PW.pv};
+         toh:PW.toh||'', pr:PW.pr||0, tags:pwTagsOut(),
+         pics:pwPics(), vo:PW.vo||null, pv:!!PW.pv};
   /* THE SERVER FIRST, AND THE LIST WHEN IT HAS LANDED.
      「端末に残すものないんですけど」 OWNER 2026-09-08, and
      「保存するタイミングでエラーが起きるなら、保存されないし」 OWNER
@@ -567,6 +581,10 @@ function draftOpen(i){
   if(here().r==='drafts') back();
   PW=pwBlank();
   PW.ln=dayTagShow(d.ln||''); PW.mn=d.mn||''; PW.to=d.to||''; PW.toh=d.toh||''; PW.pr=d.pr||0;
+  /* The frame as it was kept. tagsOf() is the one place that says what a
+     row's tags are -- the same function the timeline's row asks -- so a draft
+     and a post cannot disagree about it. */
+  PW.tags=tagsOf(d);
   PW.pics=d.pics||[]; PW.pv=!!d.pv;
   /* A draft written before the voice became a file carries the recording
      itself (`b64`). It is put on the disk now and the draft's copy is
@@ -1597,6 +1615,16 @@ function pwHTML(){
          below it, which is the same three things in a different order. */
       lnField('pw-mn', pwMn() || t('post.mn'),
         (PW.pr? ' readonly' : '')+IN('pwSetMn'), PW.mn, 'pwmn')+
+      /* AND THE TAGS, UNDER THE MEANING -- the same place the post puts them
+         (postRow), so what is being written and what was written read in one
+         order: the line, what it means, and what it is filed under.
+
+         Not while a post that already exists is being edited, for the reason
+         the strip of photographs and the whole bar are not: editing is the
+         line and the meaning, and the post already has whatever else it has.
+         Nothing of `p.tags` is read or written on that road, so a post edited
+         keeps its tags exactly as they were. */
+      (PW.ed? '' : pwTagsHTML())+
       '</div></div>'+
     '</div>'+
     /* The bar. It is the last thing in the form and the only thing that does
@@ -1752,6 +1780,101 @@ function pwToOff(){
 function pwToPaint(){
   var e=document.getElementById('pw-to');
   if(e) e.innerHTML=pwToRow();
+}
+/* ---- THE FRAME BESIDE THE LINE ------------------------------------------
+
+   「リプライトゥー@〇〇のサイズ感で翻訳の下で最大4つまで別枠で入れられると
+   かは？」 OWNER 2026-09-15. A tag is not characters in the sentence any more
+   (www/sns.js § A TAG IS NOT IN THE BODY ANY MORE); it is a frame of its own
+   under the meaning, which is where the post draws them too -- the composer
+   and the row are the same three things in the same order.
+
+   HOW MANY FIELDS ARE THERE: one more than has been typed into, until there
+   are four. That is the whole of 「5つ目は入らない」 -- there is nothing to
+   refuse and no sentence saying so, because at four the next field simply
+   does not exist. 「アプリ内に説明書くの禁止」
+
+   A field is one tag. It is not a list somebody parses out of one box: a
+   space inside a tag would have to mean something, and what it would mean is
+   a second tag, which is a second answer to what a field holds. */
+function pwTagsShown(){
+  var n=(PW.tags||[]).length;
+  return n<TAG_MAX? n+1 : TAG_MAX;
+}
+/* WHAT ACTUALLY LEAVES THE COMPOSER, and it is the one place that says so --
+   pwSendWith() and draftKeep() both ask it. Blanks in the middle are dropped
+   (a field somebody emptied is not a tag), the mark is taken off, the day's
+   word in any of the ten languages is mapped back to the one spelling, and
+   the ceiling is applied here rather than trusted to the screen. */
+function pwTagsOut(){
+  var a=PW.tags||[], out=[], i, w;
+  for(i=0;i<a.length && out.length<TAG_MAX;i++){
+    w=tagStore(a[i]);
+    if(w) out.push(w);
+  }
+  return out;
+}
+/* And the frame with the day's own tag taken out of it, which is what
+   openPost() does when a composer stops being about the day. Everything else
+   in the frame was typed by somebody and stays. */
+function pwTagsNoDay(){
+  var a=PW.tags||[], out=[], i, m=tagClean(DAY_TAG);
+  for(i=0;i<a.length;i++) if(tagStore(a[i])!==m) out.push(a[i]);
+  return out;
+}
+/* ONE FIELD, and pwHTML() and pwTagsGrow() both build it here rather than
+   each writing an <input> out -- a field that grows while somebody types and
+   a field that was there when the screen was drawn have to be the same field.
+
+   `maxlength` is POST_MAX and not a number of its own: how long a thing
+   somebody types may be is already answered on this screen, and a second
+   answer would be a second ceiling nobody decided.
+
+   It shows tagShow(), so the day's tag reads in the reader's own language
+   while what is kept is the one spelling (www/sns.js § tagShow). */
+/* THE MARK IS BESIDE THE FIELD AND NEVER IN IT. 「#はべつで」, read the
+   plainest way it can be: what is kept is the word, and the `#` is what a tag
+   LOOKS like. Typed into the field it is taken off again (tagClean), so a
+   field that carried its own would read `##neko` for as long as somebody was
+   looking at it. Printed beside it, a field with a word in it still reads as
+   a tag -- which is what the first picture of this screen did not do, because
+   the mark lived in the placeholder and went the moment anybody typed. */
+function pwTagField(i){
+  return '<label class="pwtagw"><span class="pwtagh">#</span>'+
+    '<input class="pwtag" type="text"'+
+    ' maxlength="'+POST_MAX+'" placeholder="'+esc(t('post.tag.ph'))+'"'+
+    IN('pwSetTag', [i])+
+    ' value="'+esc(tagShow(((PW.tags||[])[i])||''))+'"></label>';
+}
+function pwTagsHTML(){
+  var n=pwTagsShown(), i, out='';
+  for(i=0;i<n;i++) out+=pwTagField(i);
+  return '<div class="pwtags" id="pw-tags">'+out+'</div>';
+}
+function pwSetTag(i, v){
+  i=parseInt(i, 10)||0;
+  if(i<0 || i>=TAG_MAX) return;
+  if(!PW.tags) PW.tags=[];
+  while(PW.tags.length<i) PW.tags.push('');
+  PW.tags[i]=tagClean(v);
+  pwFresh();
+  pwTagsGrow();
+}
+/* THE NEXT EMPTY FIELD ARRIVES BY BEING ADDED, NEVER BY REDRAWING THE FRAME.
+   Nothing redraws this screen while it is being typed into -- the ring and
+   the addressee are patched by hand for the same reason -- and rewriting the
+   frame's innerHTML would take the caret out of the field under the finger on
+   the first letter of a tag.
+
+   So this only ever APPENDS. A field that has been emptied is left standing:
+   it is a field somebody is in the middle of, and pwTagsOut() is what decides
+   that an empty one is not a tag. */
+function pwTagsGrow(){
+  var e=document.getElementById('pw-tags'), n, i, have;
+  if(!e) return;
+  n=pwTagsShown();
+  have=e.getElementsByTagName('input').length;
+  for(i=have;i<n;i++) e.insertAdjacentHTML('beforeend', pwTagField(i));
 }
 /* How long a post may be. There was no answer at all: the field was one row
    of an input, so a line ran off the side of the phone and kept going for as
@@ -1940,6 +2063,14 @@ function pwSendWith(ln, pics, vo){
     tot+=String(pics[i]).length;
     if(pwPicRoom(String(tot))) keep.push(pics[i]);
   }
+  /* THE FRAME, PUT ON THE POST AT THE MOMENT IT IS WRITTEN (rule 13).
+     A reader has no composer and no account of this person's to ask, so what
+     the post is filed under travels on it, in the one spelling, with the mark
+     off. The field is not written at all when the frame was empty -- a post
+     with no tags has no `tags`, which is what every post made before today
+     also looks like, so one shape reaches the reading side. */
+  var tg=pwTagsOut();
+  if(tg.length) mine.tags=tg;
   if(keep.length) mine.pics=keep;
   if(keep.length<((pics||[]).length)) toast(t('post.pic.full'));
   /* The file's name and how long it is, and nothing else. The bytes are in
@@ -3578,6 +3709,22 @@ function postRow(p){
          it means are one thing read twice; everything else the post carries
          comes after them. */
       (postSay(p)? '<div class="pmn">'+tagHTML(postSay(p))+'</div>' : '')+
+      /* AND WHAT IT IS FILED UNDER, DIRECTLY UNDER THE TRANSLATION.
+         「リプライトゥー@〇〇のサイズ感で翻訳の下で最大4つまで別枠で入れ
+         られるとかは？」 OWNER 2026-09-15.
+
+         Under the meaning and above everything the post CARRIES, because it
+         is about what was said rather than something said alongside it --
+         the same argument that put the meaning directly under the line
+         (OWNER 2026-08-28 「投稿 / 翻訳 / そのた」).
+
+         tagsRowHTML() (www/sns.js) is the one place: it reads the post and
+         nothing else, so it is below this line by intent. A post with no
+         `tags` draws nothing here -- which is every post made before today,
+         and those keep their tags inside the line where tagHTML() still
+         draws them blue. Two shapes on one timeline is what not rewriting
+         somebody's old posts looks like. */
+      tagsRowHTML(p)+
       /* And then everything else the post carries -- the pictures first, and
          they are the one thing on a post that slides sideways.
          「画像だけ横スライドできる感じ」 One is a picture; several are a strip,

@@ -496,6 +496,7 @@ defLang('fr', (function(){
       "post.new"        : "Nouveau message",
       "post.ln.ph"      : "une phrase dans ta langue",
       "post.mn"         : "Ce que ça veut dire",
+      "post.tag.ph"      : "Motclé",
       "post.send"       : "Publier",
       "post.sent"       : "Publié",
       "post.none"       : "Rien à publier",

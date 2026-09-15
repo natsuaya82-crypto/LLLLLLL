@@ -408,6 +408,7 @@ defLang('es', (function(){
       "post.new"        : "Nueva entrada",
       "post.ln.ph"      : "una línea en tu lengua",
       "post.mn"         : "Qué significa",
+      "post.tag.ph"      : "Etiqueta",
       "post.send"       : "Publicar",
       "post.sent"       : "Publicado",
       "post.none"       : "No hay nada que publicar",

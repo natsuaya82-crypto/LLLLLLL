@@ -4059,14 +4059,32 @@ function netPostsBy(handle, ok, bad, more){
   }, function(){ ok(null); });
 }
 function netFindPosts(q, ok, bad, more){
-  var like=netLike(q);
+  var like=netLike(q),
+      /* AND THE FRAME, WHICH IS WHERE A TAG IS NOW.
+         「#はべつで」 OWNER 2026-09-15 -- a tag written today is in
+         `body.tags` and not in `body.ln` (www/sns.js § A TAG IS NOT IN THE
+         BODY ANY MORE), so a search that asked only the sentence would find
+         every post made before that day and none made after it.
+
+         `body->>tags` is the array rendered as text, so one `ilike` answers
+         it -- which is the same matching the three lines above already do,
+         rather than a second kind of question about the same box.
+
+         The MARK is taken off first and only here: what goes in the search
+         box when a tag is pressed is `#neko`, because a post from before
+         today has those characters in its sentence and that is how it is
+         found. The frame keeps the word without the mark, so the frame is
+         asked without it. tagBare() (www/sns.js) is the one place that says
+         what the mark is. Somebody who typed no `#` is unaffected -- there
+         is nothing to take off. */
+      tlike=netLike(tagBare(q));
   /* `more` is the `at` of the last post already held. Keyset and not an
      offset for the reason netFeed()'s is: posts are written while somebody
      is reading, and an offset walked over a list that has grown hands back
      one they have already read, or steps over one they have not. */
   netGet('/rest/v1/post_seen?select=id,author,created_at,reply_to,body,hidden_at,author_out'+
          '&or=(body->>ln.ilike.'+like+',body->>mn.ilike.'+like+
-         ',body->>lname.ilike.'+like+')'+
+         ',body->>lname.ilike.'+like+',body->>tags.ilike.'+tlike+')'+
          '&order=created_at.desc'+
          (more? '&created_at=lt.'+encodeURIComponent(String(more)) : '')+
          '&limit='+NET_PAGE,

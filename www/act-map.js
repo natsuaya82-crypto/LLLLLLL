@@ -362,6 +362,7 @@ actIn('ntSetB', ntSetB);
 actIn('meSetHandle', meSetHandle);
 actIn('pwSetLn', pwSetLn);
 actIn('pwSetMn', pwSetMn);
+actIn('pwSetTag', pwSetTag);
 actIn('pwSetPic', pwSetPic);
 actIn('pwMarkSize', pwMarkSize);
 actIn('pwMarkText', pwMarkText);

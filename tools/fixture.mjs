@@ -708,12 +708,50 @@ export function halfDone(){
        DAY = { id: 7, on_day: '2026-08-23', text: 'It is unbearably hot today.',
                says: { en: 'It is unbearably hot today.',
                        ja: '今日はめちゃくちゃ暑い。' } };
+       /* AND IT CARRIES THE DAY'S TAG IN ITS FRAME, which is where a tag
+          is since 2026-09-15 (www/sns.js § A TAG IS NOT IN THE BODY ANY
+          MORE). Stored as the one spelling; the row draws the reader's own
+          word on it, so this face is also where the swap shows. */
        POSTS.unshift({id:'pd', at:Date.now()-600000, lang:langId, lname:'Shango',
                       ln:'tir mos kano', who:'Aya', hd:'aya', mine:true,
                       av:{st:[{pts:[[112,112],[688,112],[400,688]]}]},
-                      mn:'It is unbearably hot today.', ui:'en', pr:7});
+                      mn:'It is unbearably hot today.', ui:'en', pr:7,
+                      tags:[tagClean(DAY_TAG)]});
        window.route = 'feed'; NAV = [{ r:'feed' }];
        const h = vFeed(); POSTS.shift(); return h; }],
+    /* ---- THE FRAME, IN BOTH PLACES AND AT BOTH ENDS OF IT ---------------
+       「リプライトゥー@〇〇のサイズ感で翻訳の下で最大4つまで別枠で入れられる
+       とかは？」 OWNER 2026-09-15, and 「見た目を変えたものは必ずスクショで
+       提示する」 (2026-09-04) -- so both states of everything that has two.
+
+       The composer with NOTHING in the frame is already photographed: it is
+       every other face of this screen, 「a post being written」 among them.
+       What is not, and what the fault would hide in, is the frame part-filled
+       and the frame FULL -- the fifth field is a field that does not exist,
+       and a picture is the only thing that says so. */
+    ['a post being written, with two tags', () => {
+       PW = pwBlank(); openPost();
+       pwSetLn('kano tir'); pwSetMn('the mountain is seen');
+       pwSetTag(0, 'neko'); pwSetTag(1, '#ame');
+       const h = vForm(); PW = pwBlank(); return h; }],
+    ['a post being written, with the frame full', () => {
+       PW = pwBlank(); openPost();
+       pwSetLn('kano tir'); pwSetMn('the mountain is seen');
+       pwSetTag(0, 'neko'); pwSetTag(1, 'ame');
+       pwSetTag(2, 'yama'); pwSetTag(3, 'sora');
+       const h = vForm(); PW = pwBlank(); return h; }],
+    ['the timeline, one post with one tag', () => {
+       const p = postById('p1'); p.tags = ['neko'];
+       window.route = 'feed'; NAV = [{ r:'feed' }];
+       const h = vFeed(); delete p.tags; return h; }],
+    ['the timeline, one post with four tags', () => {
+       const p = postById('p1'); p.tags = ['neko','ame','yama','sora'];
+       window.route = 'feed'; NAV = [{ r:'feed' }];
+       const h = vFeed(); delete p.tags; return h; }],
+    ['a thread, with tags on the post it opened on', () => {
+       const p = postById('p1'); p.tags = ['neko','ame'];
+       window.route = 'thread'; NAV = [{ r:'feed' }, { r:'thread', a:'p1' }];
+       const h = vThread(); delete p.tags; return h; }],
     ['answering the day\'s sentence', () => {
        DAY = { id: 7, on_day: '2026-08-23', text: 'It is unbearably hot today.',
                says: { en: 'It is unbearably hot today.',

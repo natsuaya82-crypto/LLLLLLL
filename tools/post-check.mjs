@@ -834,6 +834,214 @@ const R = await pg.evaluate(async () => {
     PW = pwBlank();
   }
 
+  /* ---- 24. A TAG IS NOT IN THE BODY ANY MORE --------------------------
+     「#はべつで」「リプライトゥー@〇〇のサイズ感で翻訳の下で最大4つまで別枠で
+     入れられるとかは？」 OWNER 2026-09-15, replacing 「タグは本文中に。」
+     (2026-09-04).
+
+     Nothing about getting this wrong throws. A tag that never leaves the
+     composer, a fifth that quietly rides along, a `#` in somebody's sentence
+     silently promoted to a tag, a row drawn above the translation instead of
+     under it -- every one of those renders, and every one of them is only
+     visible to somebody holding the phone. So the real pwSend() is driven
+     and the real postRow() is read.
+
+     The `#` claim is the one to watch: it is the HALF of the old decision
+     that had to stop being true. Until today the mark in a sentence WAS the
+     tag, and a post written before today still carries it there -- which is
+     why tagHTML() is untouched and why this claim is about `tags` and not
+     about the sentence, which must come out exactly as it was typed. */
+  {
+    const wasPosts24 = POSTS.slice();
+    const settle = () => new Promise(r => setTimeout(r, 60));
+    const sent = () => POSTS[POSTS.length - 1];
+
+    /* (a) what is typed in the frame reaches the post, in order, mark off */
+    PW = pwBlank();
+    PW.ln = 'kano tir';
+    PW.tags = ['#neko', 'ame'];
+    pwSend();
+    await settle();
+    const a = sent();
+    if (!a || String(a.ln) !== 'kano tir')
+      fails.push('a post with tags in the frame did not reach the timeline at ' +
+                 'all, so nothing below this is a test of anything');
+    else {
+      if (String((a.tags || []).join('|')) !== 'neko|ame')
+        fails.push('the frame held [#neko, ame] and the post carries ' +
+                   JSON.stringify(a.tags) + '. What a post is filed under is ' +
+                   'put ON it at the moment it is written -- a reader has no ' +
+                   'composer of this person\'s to ask');
+      if (String(a.ln) !== 'kano tir')
+        fails.push('sending put the tags into the line as well (' +
+                   JSON.stringify(a.ln) + '). The frame is beside the line, ' +
+                   'and the ring over the line counts what somebody wrote');
+    }
+
+    /* (b) the fifth does not go in, and there is no fifth field to put it in */
+    PW = pwBlank();
+    PW.ln = 'kano tir';
+    PW.tags = ['a1', 'a2', 'a3', 'a4', 'a5'];
+    pwSend();
+    await settle();
+    const b = sent();
+    if (!b || (b.tags || []).length !== 4 || (b.tags || []).join('|').indexOf('a5') >= 0)
+      fails.push('five tags went in and the post carries ' +
+                 JSON.stringify(b && b.tags) + '. Four is the ceiling and it is ' +
+                 'applied where the post is written, so no road can carry a fifth');
+
+    const fields = (n) => {
+      PW = pwBlank();
+      PW.tags = ['t1', 't2', 't3', 't4'].slice(0, n);
+      return (String(pwHTML()).match(/class="pwtag"/g) || []).length;
+    };
+    if (fields(0) !== 1 || fields(2) !== 3 || fields(4) !== 4)
+      fails.push('the frame offers ' + fields(0) + ' field(s) with nothing in ' +
+                 'it, ' + fields(2) + ' with two and ' + fields(4) + ' with four. ' +
+                 'One more than has been typed into, until there are four -- ' +
+                 'there is nothing to refuse and no sentence saying so, because ' +
+                 'at four the next field does not exist');
+
+    /* (c) a `#` in the SENTENCE is the sentence. 「本文に#を打ってもそれは本文」 */
+    PW = pwBlank();
+    PW.ln = 'kano #tir';
+    pwSend();
+    await settle();
+    const c = sent();
+    if (!c || c.tags !== undefined)
+      fails.push('a `#` typed in the body came out as ' +
+                 JSON.stringify(c && c.tags) + ' on the post. The mark in a ' +
+                 'sentence is a character somebody wrote; the frame is the ' +
+                 'only place a tag is made now');
+    if (!c || String(c.ln) !== 'kano #tir')
+      fails.push('the `#` was taken out of the sentence (' +
+                 JSON.stringify(c && c.ln) + '). What somebody typed is what ' +
+                 'the post says');
+
+    /* (d) `#` typed or not is one tag, and the day is the one whose shown
+       word is not its stored word (www/sns.js § tagShow) */
+    PW = pwBlank();
+    pwSetTag(0, '#neko');
+    pwSetTag(1, 'neko');
+    if ((PW.tags || []).join('|') !== 'neko|neko')
+      fails.push('`#neko` and `neko` went into two fields and came out as ' +
+                 JSON.stringify(PW.tags) + '. The mark is what a tag LOOKS ' +
+                 'like and not what it IS');
+    if (tagShow(tagClean(DAY_TAG)) !== tagBare(t('day.tag')) ||
+        tagStore(tagBare(t('day.tag'))) !== tagClean(DAY_TAG))
+      fails.push('the day\'s tag in the frame does not swap: it shows ' +
+                 JSON.stringify(tagShow(tagClean(DAY_TAG))) + ' where the ' +
+                 'reader\'s word is ' + JSON.stringify(tagBare(t('day.tag'))) +
+                 '. Stored as one spelling, shown in the reader\'s language ' +
+                 '(OWNER 2026-09-08) -- and there is one swap, not a second one');
+
+    /* (e) the day's post carries the day's tag at the HEAD of the frame, and
+       not one character of it in the sentence */
+    {
+      const wasDay24 = DAY;
+      DAY = { id: 9, on_day: '2026-08-23', text: 'It is unbearably hot today.',
+              says: 'It is unbearably hot today.' };
+      PW = pwBlank();
+      openPost('day');
+      if (tagStore((PW.tags || [])[0] || '') !== tagClean(DAY_TAG))
+        fails.push('opening the day put ' + JSON.stringify(PW.tags) + ' in the ' +
+                   'frame. The day\'s tag goes in at the front of it');
+      if (String(PW.ln || '').indexOf(tagBare(t('day.tag'))) >= 0 ||
+          String(PW.ln || '').indexOf(DAY_TAG) >= 0)
+        fails.push('opening the day still put the tag in the line (' +
+                   JSON.stringify(PW.ln) + '), so the ring over the field counts ' +
+                   'the app\'s own word against somebody\'s 280');
+      PW.ln = 'kano tir';
+      PW.tags = (PW.tags || []).concat(['mine']);
+      pwSend();
+      await settle();
+      const d = sent();
+      if (!d || (d.tags || [])[0] !== tagClean(DAY_TAG))
+        fails.push('an answer to the day carries ' + JSON.stringify(d && d.tags) +
+                   '. The day\'s tag is the first thing in the frame');
+      /* and pressing + an hour later drops the DAY's tag and keeps theirs */
+      PW = pwBlank();
+      openPost('day');
+      PW.tags = (PW.tags || []).concat(['mine']);
+      openPost('new');
+      if ((PW.tags || []).join('|') !== 'mine')
+        fails.push('pressing + left ' + JSON.stringify(PW.tags) + ' in the ' +
+                   'frame. The day\'s tag goes with `pr` because the app put ' +
+                   'it there; a tag somebody typed stays, because this button ' +
+                   'is not a delete');
+      DAY = wasDay24;
+      PW = pwBlank();
+    }
+
+    /* (f) THE ROW, UNDER THE TRANSLATION. 「翻訳の下で」
+       Asked of the real postRow(), and of a post carrying a picture too --
+       a post with nothing else on it comes out in the right order whatever
+       this function does. */
+    {
+      const base = POSTS.filter(q => postThumbs(q).length && postSay(q))[0];
+      if (!base)
+        fails.push('nothing here carries a photograph and a meaning, so where ' +
+                   'the tag row lands is a test of nothing');
+      else {
+        const withTags = Object.assign({}, base, { tags: ['neko', 'ame'] });
+        const h = postRow(withTags);
+        const iMn = h.indexOf('class="pmn"'), iTg = h.indexOf('class="ptags"'),
+              iPic = h.indexOf('class="ppics');
+        if (iTg < 0)
+          fails.push('a post carrying two tags draws no row for them at all');
+        else {
+          if (!(iMn >= 0 && iMn < iTg))
+            fails.push('the tags are drawn above what the line MEANS. ' +
+                       '「翻訳の下で」 OWNER 2026-09-15');
+          if (!(iPic < 0 || iTg < iPic))
+            fails.push('the tags are drawn after the photographs. What a post ' +
+                       'is filed under is about what was said, and everything ' +
+                       'the post CARRIES comes after it');
+          if (h.indexOf('class="ptag"') < 0)
+            fails.push('the tags in the row are not the same pressable blue ' +
+                       'word a tag inside a sentence is. One tag, two looks, ' +
+                       'on one screen');
+          if ((h.match(/data-do="snsTagGo"/g) || []).length < 2)
+            fails.push('a tag in the row does not press through to its search');
+        }
+        const none = postRow(Object.assign({}, base, { tags: [] }));
+        if (none.indexOf('class="ptags"') >= 0)
+          fails.push('a post with no tags still draws the row. An empty div ' +
+                     'under the meaning is a gap nothing explains');
+        const old = postRow(Object.assign({}, base, { tags: undefined }));
+        if (old.indexOf('class="ptags"') >= 0)
+          fails.push('a post made before today -- which has no `tags` at all -- ' +
+                     'draws the row. Those carry their tags inside the line and ' +
+                     'are not rewritten');
+      }
+    }
+
+    /* (g) AND THE SEARCH ASKS THE FRAME AS WELL AS THE SENTENCE.
+       A tag pressed puts `#neko` in the box, because a post from before today
+       has those characters in its sentence; the frame keeps the word without
+       the mark, so the frame has to be asked without it. Driven rather than
+       read: the real netFindPosts() is called and the path it builds is
+       caught. */
+    {
+      const wasGet = netGet;
+      let asked = '';
+      netGet = function (path) { asked = decodeURIComponent(String(path)); };
+      netFindPosts('#neko', function () {}, function () {});
+      netGet = wasGet;
+      if (asked.indexOf('body->>tags.ilike.*neko*') < 0)
+        fails.push('searching for `#neko` asks ' + JSON.stringify(asked) +
+                   '. It has to ask `body->>tags` with the mark taken off, or ' +
+                   'every post written from today on is unfindable by its tags');
+      if (asked.indexOf('body->>ln.ilike.*#neko*') < 0)
+        fails.push('searching for `#neko` stopped asking the SENTENCE for the ' +
+                   'mark as it was typed. That is how a post written before ' +
+                   'today is found, and those are not rewritten');
+    }
+
+    POSTS = wasPosts24; savePosts();
+    PW = pwBlank();
+  }
+
   /* ---- 11c. the drafts control is on the keyboard, beside the mic -----
      Neither of the two faces had been deleted, and neither could be found on
      a phone: they were drawn in the top bar, which is 390 points wide and
@@ -3287,13 +3495,23 @@ const R = await pg.evaluate(async () => {
     DAY = { id: 7, on_day: '2026-09-08', text: 'hot',
             says: { en: 'hot', ja: 'あつい' } };
     openPost('day');
-    if (String(PW.ln || '').indexOf(enWord) !== 0)
-      fails.push('the composer opened from the day put "' + PW.ln + '" in the ' +
-                 'field on an English screen. A field is something somebody ' +
-                 'reads while they type into it');
+    /* IN THE FRAME, NOT IN THE LINE -- 「#はべつで」 OWNER 2026-09-15. These
+       two claims used to read `PW.ln`, because until that day the day's tag
+       was the first characters of the sentence. What is asked is unchanged:
+       the FIELD says the reader's word, and what is written down is the one
+       spelling. */
     render();
+    const fT = document.querySelector('.pwtag');
+    if (!fT || String(fT.value || '') !== tagBare(enWord))
+      fails.push('the composer opened from the day put "' +
+                 (fT ? fT.value : 'no field at all') + '" in the tag frame on ' +
+                 'an English screen. A field is something somebody reads while ' +
+                 'they type into it');
+    if (String(PW.ln || ''))
+      fails.push('opening the day put "' + PW.ln + '" in the LINE. The frame ' +
+                 'is beside the line now, and the ring counts what somebody wrote');
     const fD = document.getElementById('pw-ln');
-    const typed = String(PW.ln || '') + 'kano tir';
+    const typed = 'kano tir';
     if (fD) fD.value = typed;
     pwSetLn(typed);
     const nD = POSTS.length;
@@ -3303,13 +3521,19 @@ const R = await pg.evaluate(async () => {
                  'is a test of anything');
     else {
       const d = POSTS[POSTS.length - 1];
-      if (String(d.ln || '').indexOf(mark) !== 0)
-        fails.push('a post written on an English screen was STORED as "' +
-                   d.ln + '". One spelling is written down, or a search finds ' +
-                   'one language\u2019s answers and not the other\u2019s');
-      if (String(d.ln || '').indexOf(enWord) >= 0)
-        fails.push('the English word went into what is stored ("' + d.ln +
-                   '"), so this post meets no other answer to the same day');
+      if (String((d.tags || [])[0] || '') !== tagBare(mark))
+        fails.push('a post written on an English screen was STORED under ' +
+                   JSON.stringify(d.tags) + '. One spelling is written down, ' +
+                   'or a search finds one language\u2019s answers and not the ' +
+                   'other\u2019s');
+      if (String((d.tags || []).join('|')).indexOf(tagBare(enWord)) >= 0)
+        fails.push('the English word went into what is stored (' +
+                   JSON.stringify(d.tags) + '), so this post meets no other ' +
+                   'answer to the same day');
+      if (String(d.ln || '').indexOf(mark) >= 0 ||
+          String(d.ln || '').indexOf(enWord) >= 0)
+        fails.push('the day\u2019s tag went into the sentence as well ("' +
+                   d.ln + '")');
     }
 
     /* 下書きも同じ道。 */
@@ -3528,4 +3752,15 @@ console.log('post: a letter placed on a black photograph is IN the file that goe
             '      the front both put it OVER the field, the ring counts what\n' +
             '      somebody wrote, and a draft carries it there and back. A\n' +
             '      name with nothing behind it, and a name typed inside a real\n' +
-            '      reply, are both left exactly as they were typed.');
+            '      reply, are both left exactly as they were typed.\n' +
+            '      A tag is not in the body any more: what is typed in the frame\n' +
+            '      reaches the post with the mark off and in order, a fifth goes\n' +
+            '      nowhere and there is no fifth field to put it in, a # typed in\n' +
+            '      the sentence stays a character of the sentence, and the day\u2019s\n' +
+            '      tag opens at the head of the frame and never in the line. The\n' +
+            '      row is drawn under the translation and above everything the\n' +
+            '      post carries, it presses through to its search, and a post with\n' +
+            '      no tags -- which is every post made before today -- draws no\n' +
+            '      row at all. And a search asks the frame with the mark off and\n' +
+            '      the sentence with the mark on, so both shapes come back from\n' +
+            '      one question.');

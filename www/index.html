@@ -944,6 +944,25 @@ canvas.pkc{width:34px;height:34px;display:block}
 .numcn{position:relative}
 .numsep{display:inline-block;padding:0 .1em;opacity:.55}
 .pmn{font-size:1.0rem;line-height:1.5;color:var(--txs);margin-top:8px}
+/* WHAT A POST IS FILED UNDER, under the translation.
+   「リプライトゥー@〇〇のサイズ感で翻訳の下で最大4つまで別枠で入れられると
+   かは？」 OWNER 2026-09-15 ── 字の大きさは「@〇〇 への返信」の行と同じ物、
+   つまり `.pto` の .84rem です。本文の字は変えていません
+   （「文字サイズはこのままでいい」）。
+
+   角も枠も地色もありません（CLAUDE.md § NO ROUNDED BOX）── 着ているのは
+   `.ptag` そのもの、つまり本文の中のタグと同じ青い字です。同じ物が二つの
+   見た目になるのを避けるため、ここで新しく色を決めてはいません。
+
+   横に並ぶ一行。四つまでなので端末が狭ければ折り返します ── `.ptag` は
+   `word-break` を自分で持っているので、ここで言うことはありません。 */
+.ptags{font-size:.84rem;margin-top:6px}
+/* 44pt を、行を高くせずに取る。`.pto .ptag` とまったく同じ算で、同じ .84rem
+   の行です ── 字は 23、上下 11 の padding で 45、同じ 11 を margin で戻すので
+   行の高さは 23 のまま。横は `min-width`。右の 12px はタグとタグの間で、
+   margin の一括指定の中に書いてあります（別に書くと上下の -11 を消します）。 */
+.ptags .ptag{display:inline-block;min-width:44px;padding:11px 0;
+             margin:-11px 12px -11px 0}
 /* A TAG, INSIDE WHAT SOMEBODY WROTE. 「タグは青く光るからタップしたら
    タグの検索になる。」 OWNER 2026-09-04. Blue letters and nothing else --
    no corner, no border, no fill: it is a word in a sentence, and the
@@ -1073,6 +1092,30 @@ canvas.pkc{width:34px;height:34px;display:block}
 .pwring .pwleft{margin-top:0}
 .pwring.bad .pwleft{color:var(--bad)}
 .pwmn{margin-top:10px;font-size:1.02rem !important;color:var(--txs) !important}
+/* タグの枠 ── 本文の入れ物とは別。「#はべつで」 OWNER 2026-09-15。
+   投稿の行（`.ptags`）と同じ .84rem で、同じ順（本文／翻訳／タグ）に並びます。
+
+   欄は一つに一つのタグ。打った数より一つ多く出て、四つで止まります ──
+   五つ目を断る文はありません、入れ物が増えないだけです
+   （CLAUDE.md § Explaining、www/post.js § pwTagsShown）。
+
+   `.pwfield input` は二つの selector なので、こちらも二つで書かないと
+   `width:100%` と 1.2rem に負けます。下線一本だけ ── 四辺でも角丸でもない
+   のは `index.html` が欄について前から書いている通りです
+   （「かくまるみたいなのでくくるのやめて欲しい。基本下線だけ」）。
+   `min-height:44px` は上の規則のものをそのまま着ています。 */
+.pwtags{display:flex;flex-wrap:wrap;gap:0 14px;margin-top:12px}
+/* 一つの欄 ── `#` は欄の外に印として置いてあり、中には入りません
+   （www/post.js § pwTagField）。下線は欄の分だけなので、`#` ではなくこの
+   包みが持ちます。 */
+/* 二つずつ。`flex:1 1` にすると、三つ目だけの行でその一つが幅いっぱいに
+   伸びて、同じ物が二つの幅で並びます ── 一つの並びの中で幅が揃わないのは
+   CLAUDE.md § Rows in one list are one height と同じ話です。gap が 14 なので
+   半分から 7 を引いた物が二つ入ります。 */
+.pwtagw{display:flex;align-items:center;gap:4px;flex:0 1 calc(50% - 7px);
+        min-width:88px;border-bottom:1px solid var(--line)}
+.pwtagh{font-size:.84rem;color:var(--txm)}
+.pwfield .pwtag{width:auto;flex:1 1 auto;min-width:0;font-size:.84rem}
 /* Over the feed, above the bar, under the thumb already holding the phone. */
 .fab{position:fixed;right:20px;bottom:calc(var(--tabh) + 20px);
      z-index:26;width:56px;height:56px;border-radius:50%;border:0;

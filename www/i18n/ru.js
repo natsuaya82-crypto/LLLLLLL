@@ -451,6 +451,7 @@ defLang('ru', (function(){
       "post.new"        : "Новая запись",
       "post.ln.ph"      : "строка на вашем языке",
       "post.mn"         : "Что это значит",
+      "post.tag.ph"      : "Метка",
       "post.send"       : "Опубликовать",
       "post.sent"       : "Опубликовано",
       "post.none"       : "Нечего публиковать",

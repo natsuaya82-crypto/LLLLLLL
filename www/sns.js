@@ -1603,6 +1603,89 @@ function dayTagStore(s){
   }
   return x;
 }
+/* ---- A TAG IS NOT IN THE BODY ANY MORE ----------------------------------
+
+   「#はべつで」「リプライトゥー@〇〇のサイズ感で翻訳の下で最大4つまで別枠で
+   入れられるとかは？」 OWNER 2026-09-15.
+
+   THIS REPLACES 「タグは本文中に。」 (OWNER 2026-09-04). What that day
+   decided and what is still in force is the SPELLING -- one form, never
+   translated on the way in, because a tag said ten ways is ten tags and a
+   text search never makes them meet. What it decided and what is replaced is
+   WHERE the characters go: a tag was `#` typed into the line, counted by the
+   ring over it, and mixed into the sentence it was about. It is a frame of
+   its own now, and the body is only the body.
+
+   FOUR, and the ceiling is here rather than at the field that draws them:
+   pwSend() and draftKeep() both cut to it, so a fifth cannot arrive by any
+   road even if a screen were to offer one.
+
+   Nothing is migrated. A post written before today has its tags inside
+   `ln` and tagHTML() below still draws them blue there -- that is
+   CLAUDE.md § The past, not an oversight, and it is why both shapes are
+   drawn on one timeline. */
+var TAG_MAX=4;
+/* THE MARK IS NOT PART OF THE WORD, and this is the one place that says so.
+   「`#` は打っても打たなくても同じ扱い」 -- somebody types `#neko` or `neko`
+   and the same tag is kept, because the `#` is what a tag LOOKS like and not
+   what it IS. Both spellings of the hash for the reason TAG_RE takes both:
+   「＃」 is what a Japanese keyboard gives.
+
+   The case is left exactly as it was typed. A tag is somebody's own word and
+   lower-casing it would be this app deciding how their language is spelled. */
+function tagBare(s){
+  return String(s||'').replace(/^[\s#＃]+/, '').replace(/[\s#＃]+$/, '');
+}
+/* What actually goes in the frame: the word with the mark off and nothing in
+   it that would break a tag in two. A space inside one would make a tag the
+   body's own regexp could never find, so it is closed up rather than kept. */
+function tagClean(s){
+  return tagBare(s).replace(/[\s#＃]+/g, '');
+}
+/* And the day's tag, which is the ONE tag whose shown word is not its stored
+   word (§ THE TAG above). There is no second swap here: the mark is put back
+   on, the pair above does the only swap this app knows, and what comes off is
+   the bare word again. Every other tag passes through both untouched. */
+function tagShow(w){ return tagBare(dayTagShow('#'+tagClean(w))); }
+function tagStore(w){ return tagBare(dayTagStore('#'+tagClean(w))); }
+/* WHAT TAGS A POST CARRIES, asked of the post and of nothing else.
+
+   It is below rule 8's line by intent: a post from a language this phone has
+   never seen carries its own tags, and there is nothing here to ask the open
+   language about. Blanks are dropped and the ceiling is applied on the way
+   out as well as on the way in, so a row that arrived from a server with five
+   on it draws four rather than trusting what it was handed. */
+function tagsOf(p){
+  var a=(p && p.tags) || [], out=[], i, w;
+  for(i=0;i<a.length && out.length<TAG_MAX;i++){
+    w=tagClean(a[i]);
+    if(w) out.push(w);
+  }
+  return out;
+}
+/* THE ROW, under the translation. 「翻訳の下で」 OWNER 2026-09-15.
+
+   One place, and both the timeline's row and a thread's ask it -- the same
+   argument tagHTML() makes one line down: a tag blue and pressable on one
+   screen and plain on another is the same character meaning two things.
+
+   The press is `snsTagGo` with the MARK on, exactly as a tag inside a body
+   carries it: what goes in the search box is `#neko`, so a post carrying the
+   word in its frame and a post carrying it in its sentence come back from one
+   question. What is DRAWN is tagShow(), because the day's is read in the
+   reader's own language (2026-09-08).
+
+   No row at all when there are none -- an empty div is a gap under the
+   meaning that nothing explains. */
+function tagsRowHTML(p){
+  var a=tagsOf(p), i, out='';
+  if(!a.length) return '';
+  for(i=0;i<a.length;i++){
+    out+='<button class="ptag"'+DO('snsTagGo', ['#'+a[i]])+'>#'+
+      esc(tagShow(a[i]))+'</button>';
+  }
+  return '<div class="ptags">'+out+'</div>';
+}
 /* What a tag looks like: the mark, then anything that is not a space and not
    another mark. Both spellings of the hash, for the reason netAtOff() takes
    both of the `@` -- 「＃」 is what a Japanese keyboard gives -- and the marks

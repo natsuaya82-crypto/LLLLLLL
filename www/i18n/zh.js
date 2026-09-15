@@ -456,6 +456,7 @@ defLang('zh', (function(){
       "post.new"        : "新帖",
       "post.ln.ph"      : "用你的语言写一句",
       "post.mn"         : "这句话的意思",
+      "post.tag.ph"      : "标签",
       "post.send"       : "发布",
       "post.sent"       : "已发布",
       "post.none"       : "没有可发布的内容",
