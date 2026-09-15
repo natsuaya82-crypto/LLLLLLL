@@ -2944,7 +2944,11 @@ function renderMount(){
      on them was an empty box. Both of these ask the document what is on it
      instead, which is the same fix the onboarding's canvas got above: they
      find nothing and do nothing on a screen that has none. */
-  geTiles(); phkMount(); postFaces(); postLines(); pwHoldMount(); numWidMount();
+  /* postFolds() is beside postLines() and for the same reason: whether a
+     post is longer than the timeline shows cannot be said in markup -- it is
+     measured, once, after the HTML exists (www/post.js § postFolds). */
+  geTiles(); phkMount(); postFaces(); postLines(); postFolds();
+  pwHoldMount(); numWidMount();
   pvMount();
   /* and somebody else's alphabet, whose letters are not in LETTERS to be
      looked up -- www/home.js hands the shapes over instead */

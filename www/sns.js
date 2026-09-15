@@ -1625,6 +1625,19 @@ function dayTagStore(s){
    CLAUDE.md § The past, not an oversight, and it is why both shapes are
    drawn on one timeline. */
 var TAG_MAX=4;
+/* AND HOW LONG ONE MAY BE. 「タグ上限どのくらいがいいかな」 OWNER 2026-09-15,
+   answered 20 and left there.
+
+   It wore POST_MAX until today, which was the composer's own answer to 「how
+   long may a thing somebody types be」 borrowed rather than a number anybody
+   had decided -- and four tags of 280 is 1120 characters in the one place on
+   this screen that is not a sentence.
+
+   Twenty because a tag is ONE WORD and the longest this app itself writes is
+   fourteen: `#ThemaDesTages` and `#TemaDelGiorno`, the German and the Italian
+   of the day's tag. Six to spare on the longest thing the app has ever put in
+   that field. */
+var TAG_LEN=20;
 /* THE MARK IS NOT PART OF THE WORD, and this is the one place that says so.
    「`#` は打っても打たなくても同じ扱い」 -- somebody types `#neko` or `neko`
    and the same tag is kept, because the `#` is what a tag LOOKS like and not

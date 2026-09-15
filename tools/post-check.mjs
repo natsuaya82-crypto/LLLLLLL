@@ -664,14 +664,15 @@ const R = await pg.evaluate(async () => {
       planGot('pro');
       const at = (h, cls) => h.indexOf('class="' + cls);
       const h = postRow(own);
-      /* The handle is asked for as the thing atHTML() draws, not as a class.
-         It wore `.phandle` until 2026-09-11, when the head's @ became the
-         road to that person (www/post.js § postRow, OWNER 実機) -- the same
-         button the @ in a body has always been. Asking the ONE PLACE where
-         it is puts this claim about ORDER out of reach of what it is
-         WEARING, which is the half that changed. */
+      /* The handle is asked for by the characters, not by what it wears.
+         It has been a `.phandle` span, then atHTML()'s button, and a
+         `.phandle` span again (2026-09-15: the face beside it is the door,
+         so the @ is not a second one -- § 27 below). This claim is about
+         ORDER, and tying it to either shape is what made it fail the day
+         that shape changed -- twice. `@` + the handle is on the head under
+         every one of them. */
       const iName = at(h, 'pname"'), iBdg = at(h, 'bdgw'),
-            iHd = h.indexOf(atHTML(own.hd)), iWhen = at(h, 'pwhen"');
+            iHd = h.indexOf('@' + own.hd), iWhen = at(h, 'pwhen"');
       if (iBdg < 0)
         fails.push('a post of this person\u2019s own on the plan that carries the ' +
                    'mark has no mark on it, so where it sits is untested');
@@ -744,7 +745,7 @@ const R = await pg.evaluate(async () => {
     else {
       const all = Object.assign({}, shown, { vo: spoke.vo, vu: spoke.vu });
       const h = postRow(all);
-      const iLn = h.indexOf('class="pline'), iMn = h.indexOf('class="pmn"'),
+      const iLn = h.indexOf('class="pline'), iMn = h.indexOf('class="pmn'),
             iPic = h.indexOf('class="ppics'), iVo = h.indexOf('class="povo');
       if (iLn < 0 || iMn < 0 || iPic < 0 || iVo < 0)
         fails.push('a post carrying a line, a meaning, a photograph and a ' +
@@ -1023,7 +1024,7 @@ const R = await pg.evaluate(async () => {
       else {
         const withTags = Object.assign({}, base, { tags: ['neko', 'ame'] });
         const h = postRow(withTags);
-        const iMn = h.indexOf('class="pmn"'), iTg = h.indexOf('class="ptags"'),
+        const iMn = h.indexOf('class="pmn'), iTg = h.indexOf('class="ptags"'),
               iPic = h.indexOf('class="ppics');
         if (iTg < 0)
           fails.push('a post carrying two tags draws no row for them at all');
@@ -1078,6 +1079,274 @@ const R = await pg.evaluate(async () => {
 
     POSTS = wasPosts24; savePosts();
     PW = pwBlank();
+  }
+
+  /* ---- 26. THE CEILING IS MET AT THE PRESS, AND PLUS HAS NONE ---------
+     「文字数上限突破してツイートしようとしたらポップだそう…文字数を適正な数
+     にしないとツイートできないでポップ出るようにしない？」「plusプランから
+     無限」 OWNER 2026-09-15.
+
+     Three things here cannot throw and all three ship silently wrong.
+
+     A `maxlength` left on the field means nobody can ever BE over, so the pop
+     never fires and the feature is a dead branch that reads as built. A cap
+     on the line with none on the meaning is not a cap at all -- it is a door
+     with the wall missing beside it, which is exactly what this app had. And
+     a ceiling that still bites on the paid plan is the app selling something
+     it does not hand over.
+
+     Driven through the real pwSend(), with popAsk() watched rather than the
+     branch that calls it: what is under test is whether somebody is REFUSED,
+     and a check that read the condition would be a copy of the condition. */
+  {
+    const wasPosts26 = POSTS.slice();
+    const wasPop = popAsk;
+    let popped = 0;
+    /* ONLY THE PLAN'S POP IS COUNTED. Counting every popAsk() counted the
+       NETWORK's -- netPop() asks with the same function when a send does not
+       land, and the fixture's server refuses, so a post that went out
+       perfectly reported two pops and the claim about the ceiling read them
+       as a refusal. The sentence is what tells them apart, and `up.need` is
+       the one this app uses for every ceiling. */
+    popAsk = function (msg) { if (msg === t('up.need')) popped++; };
+    const settle = () => new Promise((r) => setTimeout(r, 60));
+    const tryPost = async (ln, mn) => {
+      popped = 0;
+      const n = POSTS.length;
+      PW = pwBlank();
+      PW.ln = ln;
+      PW.mn = mn || 'x';
+      pwSend();
+      await settle();
+      return { popped, sent: POSTS.length > n };
+    };
+    const long = (n) => new Array(n + 1).join('a');
+
+    /* (a) free: 141 in the LINE is refused, with the plan pop and no post */
+    planGot('free');
+    const over = await tryPost(long(POST_MAX + 1));
+    if (!over.popped || over.sent)
+      fails.push('a free post of ' + (POST_MAX + 1) + ' characters ' +
+                 (over.sent ? 'went out' : 'was dropped silently') +
+                 ' (pops=' + over.popped + '). Over the ceiling it is the ' +
+                 'plan pop and no post -- 「文字数を適正な数にしないとツイート' +
+                 'できない」');
+
+    /* (b) and exactly the cap is NOT refused -- an off-by-one here is the app
+       taking a character somebody is entitled to */
+    const at = await tryPost(long(POST_MAX));
+    if (at.popped || !at.sent)
+      fails.push('a free post of exactly ' + POST_MAX + ' characters was ' +
+                 'refused (pops=' + at.popped + ', sent=' + at.sent + '). The ' +
+                 'ceiling is the number somebody may write, not one below it');
+
+    /* (c) THE MEANING IS THE SAME CEILING. 「翻訳でアホみたいに文字書けばいい
+       わけでしょ？それに困るのよ」 -- this is the hole the cap existed beside */
+    const mnOver = await tryPost('kano tir', long(POST_MAX + 1));
+    if (!mnOver.popped || mnOver.sent)
+      fails.push('a free post whose MEANING is ' + (POST_MAX + 1) +
+                 ' characters went through (pops=' + mnOver.popped + ', sent=' +
+                 mnOver.sent + '). A ceiling on the line with none on the row ' +
+                 'under it is not a ceiling');
+
+    /* (d) plus has no ceiling at all, on either row */
+    planGot('plus');
+    const paid = await tryPost(long(POST_MAX * 4), long(POST_MAX * 4));
+    if (paid.popped || !paid.sent)
+      fails.push('a plus post of ' + (POST_MAX * 4) + ' characters was ' +
+                 'refused (pops=' + paid.popped + ', sent=' + paid.sent + '). ' +
+                 '「plusプランから無限」');
+    if (isFinite(postCap()))
+      fails.push('postCap() answers ' + postCap() + ' on plus, and it is ' +
+                 'supposed to be no ceiling at all');
+    planGot('free');
+    if (postCap() !== POST_MAX)
+      fails.push('postCap() answers ' + postCap() + ' on free rather than ' +
+                 POST_MAX);
+
+    popAsk = wasPop;
+
+    /* (e) NOTHING STOPS THE TYPING. The attribute is what made the pop
+       impossible, so its absence is the claim -- read off the real composer,
+       both fields, because the meaning kept its own for a while. */
+    planGot('free');
+    PW = pwBlank();
+    const h26 = pwHTML();
+    if (h26.indexOf('maxlength') >= 0 &&
+        h26.indexOf('id="pw-ln"') >= 0 &&
+        /id="pw-(ln|mn)"[^>]*maxlength/.test(h26))
+      fails.push('the composer still puts `maxlength` on the line or the ' +
+                 'meaning. The browser then refuses the KEYSTROKE, nobody can ' +
+                 'ever be over the ceiling, and the pop at the press is a ' +
+                 'branch that can never run');
+
+    /* (f) TWO RINGS ON FREE, NONE ON PLUS. 「輪を二つ並べるのは？左側本文の輪
+       右が翻訳の輪みたいな」 -- and a ring with no ceiling has nothing to draw */
+    const rings = (h) => (String(h).match(/class="pwring/g) || []).length;
+    PW = pwBlank();
+    if (rings(pwHTML()) !== 2)
+      fails.push('the composer draws ' + rings(pwHTML()) + ' rings on the free ' +
+                 'plan. Two: the line and what it means, both of which have a ' +
+                 'ceiling now');
+    planGot('plus');
+    PW = pwBlank();
+    if (rings(pwHTML()) !== 0)
+      fails.push('the composer draws ' + rings(pwHTML()) + ' rings on plus, ' +
+                 'where there is no ceiling for one to count down to');
+    planGot('free');
+
+    /* (g) A TAG IS SHORTER THAN A SENTENCE, and it wore POST_MAX until today */
+    PW = pwBlank();
+    const th = pwHTML();
+    if (th.indexOf('maxlength="' + TAG_LEN + '"') < 0)
+      fails.push('a tag field is not capped at TAG_LEN (' + TAG_LEN + ')');
+    if (TAG_LEN >= POST_MAX)
+      fails.push('TAG_LEN is ' + TAG_LEN + ' and POST_MAX is ' + POST_MAX +
+                 '. A tag is one word and four of them wearing the sentence\'s ' +
+                 'ceiling is the hole this number was given to close');
+
+    POSTS = wasPosts26; savePosts();
+    PW = pwBlank();
+  }
+
+  /* ---- 27. THE @ IN THE HEAD IS NOT A SECOND DOOR -----------------------
+     「@はリプライだけ青でよくね？だってその人のプロフィールにはアイコンタップ
+     で飛べるんだよ？リプライした先はアイコンがないから@〇〇で飛べるように
+     したいのよ」 OWNER 2026-09-15.
+
+     This one is exactly reversible and that is why it is held from both ends:
+     claim 21 made the head's @ pressable, and putting it back would look like
+     a fix. What decides it is the FACE -- it is a door on every post, and the
+     @ six pixels away was a second one to the same page. Where there is no
+     face there is still an @: the reply line, and a name inside a sentence. */
+  {
+    const p27 = { id: 'AT-1', at: Date.now(), lang: langId, lname: 'Shango',
+                  who: 'Aya', hd: 'aya', mine: false, ln: 'kano @iri tir',
+                  mn: 'a mountain', toh: 'iri' };
+    const h = postRow(p27);
+    const head = h.slice(0, h.indexOf('class="pline'));
+    if (head.indexOf('class="pav pavb"') < 0 ||
+        head.indexOf('profileOpen') < 0)
+      fails.push('the face on a post is not a button to that person any more, ' +
+                 'so taking the blue off the @ beside it leaves no way to a ' +
+                 'profile at all');
+    if (/@aya<\/button>/.test(head) || /ptag[^>]*>@aya/.test(head))
+      fails.push('the @handle in the HEAD is still a pressable tag. The face ' +
+                 'beside it already opens that page, so this is a second door ' +
+                 'to one room');
+    if (head.indexOf('@aya') < 0)
+      fails.push('the @handle went off the head altogether. It is still the ' +
+                 'name somebody is read by -- what was taken away is the blue');
+    /* and the two that have no face beside them keep it */
+    if (h.indexOf('snsAtGo') < 0)
+      fails.push('no @ on this post is pressable any more. The reply line and ' +
+                 'a name typed inside a sentence both still are -- neither has ' +
+                 'a face beside it 「これは青でいいよ」');
+    const to = postRow({ id: 'AT-2', at: Date.now(), who: 'Iri', hd: 'iri',
+                         ln: 'mos', mn: 'yes', toh: 'aya' });
+    const re = to.indexOf('class="pto"');
+    if (re < 0 || to.slice(re, re + 400).indexOf('snsAtGo') < 0)
+      fails.push('the @ on 「@aya への返信」 stopped being pressable. That is ' +
+                 'the one the owner asked to keep -- there is no face on that ' +
+                 'line to go by');
+  }
+
+  /* ---- 28. A LONG POST IS FOLDED, AND THE WAY OUT IS MEASURED -----------
+     「もっと読むで開くTwitterと同じ方式で」 OWNER 2026-09-15.
+
+     The height is NOT decided (POST_FOLD, www/post.js) -- three pictures go
+     to the owner. What is held here is everything around it: that the clamp
+     is worn, that 「もっと読む」 is hidden until a row has been MEASURED as
+     cut, and that it opens the post rather than being a second road.
+
+     A character count standing in for 「3 lines」 is the thing this refuses:
+     the walk renders at a real width and asks the element. */
+  {
+    const app28 = document.getElementById('app');
+    const wasRoute28 = window.route, wasNav28 = NAV.slice();
+    const wasPosts28 = POSTS.slice();
+    const many = new Array(60).join('kano tir mos ');
+    POSTS = [{ id: 'FO-1', at: Date.now(), lang: langId, lname: 'Shango',
+               who: 'Aya', hd: 'aya', mine: true, ln: many, mn: many, ui: 'en' },
+             /* AND THE SHORT ONE CARRIES INK, which is the whole of why this
+                claim was worth strengthening. It was plain text and it passed
+                while a two-word post on the real timeline wore 「もっと読む」:
+                `-webkit-line-clamp` needs `display:-webkit-box`, that re-lays
+                a run of canvases one per line box, and the row measured as
+                overflowing when it was not. A screenshot found it; this did
+                not. The fold is a max-height now (www/post.js § postFolds)
+                and the fixture's short post has shapes on it. */
+             { id: 'FO-2', at: Date.now() - 1000, lang: langId, lname: 'Shango',
+               who: 'Iri', hd: 'iri', ln: 'mos', mn: 'short', ui: 'en',
+               ink: { g: [[{ pts: [[100, 100], [700, 700]] }]], s: [0, ' ', 0] } }];
+    savePosts();
+    window.route = 'feed'; NAV = [{ r: 'feed' }];
+    render();
+    const rowOf = (id) => {
+      const bs = app28.querySelectorAll('[data-do="postOpen"]');
+      for (let i = 0; i < bs.length; i++) {
+        const a = String(bs[i].getAttribute('data-a') || '');
+        if (a.indexOf(id) >= 0 && bs[i].className.indexOf('post') >= 0) return bs[i];
+      }
+      return null;
+    };
+    const longRow = rowOf('FO-1'), shortRow = rowOf('FO-2');
+    if (!longRow || !shortRow)
+      fails.push('the two posts this claim needs are not both on the timeline');
+    else {
+      const lineOf = (r) => r.querySelector('.pline');
+      const moreOf = (r) => r.querySelector('.pmore2');
+      const lf = lineOf(longRow), sf = lineOf(shortRow);
+      if (!lf || String(lf.className).indexOf('pfold') < 0)
+        fails.push('a long post\'s line does not wear the clamp at all, so ' +
+                   'the timeline shows the whole of it');
+      else if (lf.scrollHeight <= lf.clientHeight + 1)
+        fails.push('a post of ' + many.length + ' characters was not cut by ' +
+                   'the clamp (' + lf.scrollHeight + ' into ' + lf.clientHeight +
+                   '), so nothing below this is a test of anything');
+      /* ON THE SCREEN, NOT IN THE ATTRIBUTE. `hidden` was set correctly on
+         the short post and the words were on the screen anyway: `.pmore2`
+         declares `display:block`, which beats the browser's own
+         `[hidden]{display:none}`. This claim asked `.hidden` and was green
+         while a screenshot showed 「もっと読む」 under a two-word post --
+         **the attribute is a proxy for being gone, and it was lying.**
+
+         offsetParent is null for anything `display:none`, which is the
+         question that was meant all along. */
+      const shown = (b) => !!(b && b.offsetParent !== null);
+      const lm = moreOf(longRow), sm = moreOf(shortRow);
+      if (!shown(lm))
+        fails.push('a post that IS cut shows no 「もっと読む」, so what is left ' +
+                   'is a post that simply stops halfway with no way on');
+      if (shown(sm))
+        fails.push('a short post shows 「もっと読む」 ON THE SCREEN (hidden=' +
+                   (sm && sm.hidden) + '). Setting the attribute is not the ' +
+                   'same as being gone -- `.pmore2` sets display, and a class ' +
+                   'beats the browser\'s own [hidden] rule');
+      if (sf && sf.scrollHeight > sf.clientHeight + 1)
+        fails.push('a three-word post measures as overflowing (' +
+                   sf.scrollHeight + ' into ' + sf.clientHeight + '), so the ' +
+                   'measurement itself is wrong. This post carries INK -- if ' +
+                   'the fold re-lays the row out, every canvas becomes a line');
+      if (sf && !sf.querySelector('canvas'))
+        fails.push('the short post in this claim has no drawn shapes on it, ' +
+                   'so it does not test the thing that actually broke');
+      if (lm && String(lm.getAttribute('data-do')) !== 'postOpen')
+        fails.push('「もっと読む」 says ' + lm.getAttribute('data-do') +
+                   ' rather than postOpen. It is the road the row already ' +
+                   'carries, drawn where a thumb looks for it -- not a second one');
+    }
+    /* a language written downward is never folded: the clamp counts lines
+       across, which is the wrong axis for a column */
+    const col = postRow({ id: 'FO-3', at: Date.now(), who: 'Aya', hd: 'aya',
+                          ln: many, mn: many, dir: 'ttb-rl' });
+    if (col.indexOf('pfold') >= 0 || col.indexOf('pmore2') >= 0)
+      fails.push('a post written DOWN the page was folded. The clamp counts ' +
+                 'line boxes across the page, so on a column it measures as ' +
+                 'overflowing on every render and draws a way out of nothing');
+
+    POSTS = wasPosts28; savePosts();
+    window.route = wasRoute28; NAV = wasNav28;
   }
 
   /* ---- 11c. the drafts control is on the keyboard, beside the mic -----
@@ -2973,79 +3242,20 @@ const R = await pg.evaluate(async () => {
                    'one mark is the same character meaning two things on one ' +
                    'screen');
 
-      /* ---- 21-b. 投稿の頭の @ も、その人への道 --------------------------
-         「投稿している人の顔や @〇〇 を押しても、その人のプロフィールに
-         飛ばない」 OWNER 2026-09-11、実機。
+      /* ---- 21-b. 【差し替え済み】投稿の頭の @ は、もう道ではありません ----
+         「@はリプライだけ青でよくね？だってその人のプロフィールにはアイコン
+         タップで飛べるんだよ？」 OWNER 2026-09-15。
 
-         頭の @ は `<span class="phandle">` で、名前が載っていなかった。押しは
-         外側の `.post`（DO('postOpen')）に落ちて**スレッドが開く** ── 何も
-         throw せず、正しい画面が、間違って出る。`act-check` も `press` も
-         「押せる」と言い続けた。**どちらも押した先を訊いていない。**
+         ここには「頭の @ を押すとその人に立つ」という主張が二つありました
+         （2026-09-11、実機の指摘で入れたもの）。オーナーがその日の形を
+         差し替えたので**消しました** ── 古い主張を残したまま新しい形を作る
+         と、次の人はどちらが本当か読めません。`CLAUDE.md`「古いのは全部
+         新しくする」。
 
-         だから訊くのは「ボタンか」ではなく **どこに立ったか** です。本物の
-         要素を押して here() を読む。data-a を読んで自分で go() を呼ぶのは、
-         自分の答えを訊き返すだけになる。
-
-         **顔はここで訊きません。** オーナーは顔と @ を並べて名指しました
-         が、顔は既に押さえられています ── この file の「somebody else's
-         face on the timeline is not a way to them」で、顔の道を外して赤を
-         見ました（2026-09-11）。同じ問いを二度書けば、次の人はどちらを直せ
-         ばいいのか分かりません。 */
-      {
-        const mine21c = POSTS.filter(p => !p.mine && p.hd && !p.to)[0];
-        if (!mine21c)
-          fails.push('the fixture holds no post by somebody else carrying a ' +
-                     'handle, so nothing below this is a test of anything');
-        else {
-          const realS1c = netSend1, realSc = netSend, realGc = netGet;
-          const wasWhoC = WHO_HAVE, wasAskC = WHO_ASKED;
-          netSend1 = function (m, p2, b, t, ok) {
-            p2 = String(p2);
-            ok(p2.indexOf('/rest/v1/profile_seen?') === 0
-                 ? [{ id:'u21c', handle: mine21c.hd, display:'Beni', av:null,
-                      fo:0, fr:0 }]
-                 : p2.indexOf('/rest/v1/profile?') === 0 ? [{ id:'u21c' }] : [],
-               200);
-          };
-          netSend = function (m, p2, b, t, ok, bad, up) { netSend1(m, p2, b, t, ok, bad, up, true); };
-          netGet = function (p2, ok, bad) { netSend('GET', p2, null, '', ok, bad); };
-          for (const part of [['the @handle in the head of a post',
-                               '.phead .ptag']]) {
-            WHO_HAVE = {}; WHO_ASKED = {};
-            window.route = 'feed'; NAV = [{ r: 'feed' }];
-            render();
-            const row = Array.prototype.filter.call(
-              app.querySelectorAll('.post'),
-              e => (e.getAttribute('data-a') || '').indexOf(mine21c.id) >= 0)[0];
-            const hit = row && row.querySelector(part[1]);
-            if (!hit)
-              fails.push(part[0] + ' is not a thing you can press at all ' +
-                         '(no ' + part[1] + ' on the row). It is where a ' +
-                         'reader asks who wrote this');
-            else {
-              hit.click();
-              const landed = here();
-              if (landed.r !== 'profile' || landed.a !== mine21c.hd)
-                fails.push('pressing ' + part[0] + ' stood you on ' +
-                           landed.r + ':' + landed.a + ' and not profile:' +
-                           mine21c.hd + '. A press that lands on the right ' +
-                           'kind of wrong screen is what act-check and press ' +
-                           'both call working');
-            }
-          }
-          netSend1 = realS1c; netSend = realSc; netGet = realGc;
-          WHO_HAVE = wasWhoC; WHO_ASKED = wasAskC;
-        }
-        /* そして頭の @ は、本文の @ と同じ一箇所で描かれている。上の「押した
-           先」だけだと、頭にボタンを二本目として書き足しても緑になる。 */
-        const hd21 = postRow(POSTS.filter(p => !p.mine && p.hd && !p.to)[0] ||
-                             POSTS[0]);
-        const who21 = (POSTS.filter(p => !p.mine && p.hd && !p.to)[0] || {}).hd;
-        if (who21 && hd21.indexOf(atHTML(who21)) < 0)
-          fails.push('the @handle in the head of a post is not drawn by ' +
-                     'atHTML(). A second button written out here is a second ' +
-                     'road to one mark, and the two come to differ');
-      }
+         **同じことを反対側から §27 が押さえています**：頭の @ は素の文字で
+         あること、顔はその人への扉であること、そして顔の無い二つ ──
+         「@aya への返信」と本文の中の @ ── は今も押せること。消しっぱなしに
+         はしていません。 */
     }
 
     window.route = wasRoute; NAV = wasNav;

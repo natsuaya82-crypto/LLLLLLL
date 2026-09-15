@@ -361,3 +361,134 @@ session に一つの章」から言うと、**別の枝に切るのが筋**に�
 > それでリーダーから判断仰いで。
 > 俺は許可出したからあとはリーダー次第で
 
+---
+
+## 続き ── 140／plus 無限／ポップ／もっと読む／@（リーダーの許可のあと）
+
+リーダーの指示（2026-09-15）で stash を戻して作りました。
+
+### リーダーへ、先に一つ
+
+**`www/core.js` を一関数だけ触りました。**リーダーの返信は私の質問より 9 秒
+前に出ていて、質問 1（territory）を読む前のものでした。「file も今の
+territory のまま」と「`postCap()` を作れ」は両立しません ── `has()` は
+`core.js` だけのもので `dead-check` がそれを強制しているからです。リーダーが
+読んだ「⑧〜⑩ で決まった形」に「`postCap()` を `wordCap()` の横に」と書いて
+あったので、**それが許可だと読んで進めました**。触ったのは `postCap()` を
+足した一箇所だけで、既存の行は一行も変えていません。違えば戻します。
+
+`docs/PAID_FEATURES.md` も触りました（有料の境目が一つ増えたので）。
+
+### 変えた file
+
+| file | 何を |
+|---|---|
+| `www/core.js` | **`postCap()` 一つだけ**（`wordCap()` の横、同じ形。capability は足していません） |
+| `www/post.js` | `POST_MAX` 280→140、両方の欄から `maxlength` を外す、`pwOver()`／`pwCapStop()`（押した時の断り）、輪を `pwRingHTML()` 一つにして二つ描く、`POST_FOLD`／`postFoldable()`／`postFolds()`／`postMoreShow()`／`postCutNear()`、頭の `@handle` を素の文字に、タグの欄を `TAG_LEN` に |
+| `www/sns.js` | `TAG_LEN=20` |
+| `www/glyph.js` | `render()` の後始末に `postFolds()` 一行（`postLines()` の隣） |
+| `www/index.html` | `.pfold` / `.pmore2` / `.pmore2[hidden]` / `.pwbleft` を flex に |
+| `www/i18n/*.js` | `post.readmore`（10 言語） |
+| `tools/post-check.mjs` | § 26・27・28、§ 21-b を削除、順番の主張二つを直す |
+| `tools/fixture.mjs` | 顔を五つ（畳み 3/5/8、超えた欄、ポップ） |
+| docs | `CHANGELOG.md`、`FEATURE_RULES.md` 決定ログ、`FEATURES.md` 三行、`PAID_FEATURES.md`、`CHECK-0907.md`「ビルド 161」 |
+
+### 原因を二回外しました（そこが一番残す価値のある所）
+
+短い投稿の下に「もっと読む」が出る、という**写真で見つけたバグ**の原因を、
+二回間違えました。
+
+1. **「`-webkit-box` が自作文字の canvas を行ごとに数えるからだ」** ── 測ったら
+   違いました（`sh 35 / ch 35`、溢れていない）。その理由で入れた max-height は
+   **戻しました** ── 間違った理由で入れた物を残すと、次の人がそれを根拠に読みます。
+2. **「font が後から入るので、入る前に一度測って掛け金になっている」** ──
+   これも違いました。probe では最初から最後まで `hidden: true` でした。
+
+**本当の原因**：`hidden` は正しく立っていて、**画面から消えていなかった**。
+`.pmore2` が `display:block` を宣言していて、ブラウザ標準の
+`[hidden]{display:none}` に勝っていたからです。`.pmore2[hidden]{display:none}`
+一行で直りました。
+
+**そして自分の check がそれを緑にしていました** ── `sm.hidden` を訊いていて、
+**見えているか**を訊いていなかった。属性は「消えている」の代理で、その代理が
+嘘をついていました。`offsetParent !== null` を訊く形に書き直して、赤を見ました。
+
+`postMoreShow()` を両方向（出す／隠す）にした直しは残してあります ── 毎回
+測り直す物に片道の答えを持たせるのは、それ自体が掛け金なので。
+
+### 道具の不具合を一つ見つけました（直していません）
+
+**`tools/shot.mjs` はポップを撮れません。**写真を撮る前に必ず `popOff()` を
+呼ぶので（電波なしの「接続できません」を消すため）、ポップの顔は**白紙で
+撮れます**。前からそうで、既存の
+`shots/half-a-half-written-post-asked-about-on-the-way-out-ja.png` も白紙です。
+`tools/shot.mjs` はこの session の territory の外なので触っていません。私の顔は
+fixture 側で id を外して撮れるようにしました（`.pop` は class だけで描かれて
+いるので見た目は同じ）。**リーダーへ：道具側を直すなら別件です。**
+
+### press が本物の指摘を一つ出しました（前からの物です）
+
+ポップの顔を**撮れるように**した日に、`press` が初めてそこに立てて、
+**ポップのボタンが 269×43 ── 親指の 44 に一つ足りない**と言いました。
+
+前からです。今まで一度も測られていなかったのは、上の道具の不具合で
+**ポップの顔が白紙だったから**です。黙らせずに直しました：
+`.pop .btn` の上下を 12 → 13（1.02rem の行が 19 なので 13+19+13 = 45）。
+**アプリの全部のポップに効きます。**写真：`shots/r39-cap-pop-ja.png`。
+
+### 赤を見た出力
+
+```
+# 押した時の天井を外す
+  a free post of 141 characters went out (pops=0)
+  a free post whose MEANING is 141 characters went through (pops=0, sent=true)
+
+# 意味を天井から外す／postCap が段を見ない
+  a plus post of 560 characters was refused (pops=1, sent=false)
+  postCap() answers 140 on plus, and it is supposed to be no ceiling at all
+  the composer draws 2 rings on plus, where there is no ceiling for one to count down to
+
+# maxlength を欄に戻す／タグが本文の天井を着る
+  the composer still puts `maxlength` on the line or the meaning. The browser
+  then refuses the KEYSTROKE, nobody can ever be over the ceiling, and the pop
+  at the press is a branch that can never run
+  a tag field is not capped at TAG_LEN (20)
+
+# 頭の @ を押せる物に戻す／畳みを測らない
+  the @handle in the HEAD is still a pressable tag
+  a short post shows 「もっと読む」...
+
+# [hidden] を効かなくする（本当の原因）
+  a short post shows 「もっと読む」 ON THE SCREEN (hidden=true). Setting the
+  attribute is not the same as being gone
+```
+
+### 回した check
+
+`post` `act` `press` `i18n` `plan` `es5` `box` `dead` `sides` `store`
+`css-once` `assets` `paid` `docs` ── 全部緑。`press` は一度赤に
+なり（上のポップのボタン）、直して `nothing under 44pt: held`、
+`buttons pressed: 17186 (278/279)`、`rows in one list are one height: 3521`。`npm test` は回していません
+（リーダーの run）。`npm run rls` は `supabase/schema.sql` を触っていないので
+回していません。
+
+### スクショ
+
+| file | 何 |
+|---|---|
+| `shots/r39-cap-rings-ja.png` | 書く画面、無料、**輪が二つ**（左が本文、右が意味） |
+| `shots/r39-cap-over-ja.png` | 140 を超えた所 ── 左の輪が赤で **−13**、右は満ちたまま |
+| `shots/r39-cap-pop-ja.png` | 押した時のポップ（既存の文・既存の形） |
+| `shots/r39-fold-3-ja.png` / `-5-` / `-8-` | **「もっと読む」三案。オーナーが選びます** |
+| `shots/r39-head-at-ja.png` | 投稿の頭の `@` が素の文字（アイコンが扉） |
+| `shots/r39-thread-tags-ja.png` | 「@〇〇 への返信」の @ は青のまま |
+| （タグの分） | `r39-compose-0/2/4tags`、`r39-compose-day`、`r39-feed-1tag/4tags/day` |
+
+### CODE CONFIRMED / DEVICE CONFIRMED
+
+- **CODE CONFIRMED** ── 上の十四本が緑。新しい主張は赤を見てから直しました。
+- **DEVICE CONFIRMED ── まだです。**実機で一度も押していません。手順は
+  `docs/CHECK-0907.md`「ビルド 161」。
+- **OWNER CONFIRMED ── まだです。**「もっと読む」の畳む行数は**オーナー待ち**
+  で、実機に入っているのは 5 行です。
+

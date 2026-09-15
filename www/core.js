@@ -1591,6 +1591,30 @@ function wordCap(){
   if(can('words')) return Infinity;
   return has('plus')? PLUS_LIMIT : FREE_LIMIT;
 }
+/* HOW LONG A POST MAY BE. 「plusプランから無限だけど、もっと読むで開く
+   Twitterと同じ方式で頑む。」 OWNER 2026-09-15.
+
+   The same shape as wordCap() above, and NO CAPABILITY IS ADDED -- kbCap()
+   says why two functions down: everybody may post, and the only thing a plan
+   changes here is a NUMBER, so a capability would be a price with nothing
+   behind it.
+
+   It answers for BOTH fields of the composer, the line and what it means.
+   「文字数制限つけても翻訳でアホみたいに文字書けばいいわけでしょ？それに困るのよ」
+   -- a ceiling on one row with none on the row under it is not a ceiling, and
+   that is what this app had: POST_MAX was on the line alone and the meaning
+   had no attribute and no line in pwSetMn().
+
+   POST_MAX (www/post.js) is the free number. It is declared there because it
+   is the composer's, and this is the only place the PLAN is asked about it.
+
+   Nobody-has-answered-yet reads as free, which is has()'s own posture: false
+   is 「no button」 and never 「no words」. Nothing of anybody's is lost by it
+   -- the ceiling refuses a press, it never shortens what is already written
+   (docs/PAID_FEATURES.md, docs/DATA_SAFETY.md). */
+function postCap(){
+  return has('plus')? Infinity : POST_MAX;
+}
 /* How many keyboards this person may have, counting the fixed QWERTY as one
    of them. 「1,1+3.無制限って言わなかったっけ？」 -- OWNER DECISION,
    2026-08-23: free 1, plus 1 + 3, pro no ceiling.

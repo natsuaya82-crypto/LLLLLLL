@@ -956,6 +956,32 @@ canvas.pkc{width:34px;height:34px;display:block}
 
    横に並ぶ一行。四つまでなので端末が狭ければ折り返します ── `.ptag` は
    `word-break` を自分で持っているので、ここで言うことはありません。 */
+/* 長い投稿を、タイムラインでは畳む。「もっと読む」で全部（＝スレッドが開く）。
+   「plusプランから無限だけど、もっと読むで開くTwitterと同じ方式で頼む。」
+   OWNER 2026-09-15。
+
+   何行で畳むかは `POST_FOLD`（www/post.js）が要素に直接書きます ── まだ
+   決まっていない数で、写真を見て決めてもらうものなので、動かす所は一箇所に
+   してあります。ここには行数を書きません。
+
+   `.cut` は postFolds() が**測ってから**着せます。畳めていない行に
+   「もっと読む」は出ません。 */
+.pfold{display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}
+/* 角丸も枠線も地色も無し、青い字だけ ── タグと同じ `--tag`。
+   44pt は上下の padding で取り、同じだけ margin で戻すので行は太りません
+   （`.pto .ptag` と同じ算）。 */
+.pmore2{background:none;border:0;font:inherit;font-size:.92rem;
+        color:var(--tag);cursor:pointer;-webkit-appearance:none;appearance:none;
+        display:block;text-align:inherit;min-width:44px;
+        padding:12px 0;margin:-8px 0 -12px}
+/* そして隠れる。`display:block` を宣言した一つ上の規則は、ブラウザが持っている
+   `[hidden]{display:none}` に**特異性で勝ちます** ── class 一つ対 属性一つでは
+   なく、ここは同点で後勝ちになるため、あとから読まれるこの一行が要ります。
+
+   これが無いと `hidden` は立っているのに画面には出たままで、**測り方を疑う所**
+   になります：postFolds() は正しく測り、正しく隠し、それでも短い投稿の下に
+   「もっと読む」が出ている。原因を二回外したのはここでした。 */
+.pmore2[hidden]{display:none}
 .ptags{font-size:.84rem;margin-top:6px}
 /* 44pt を、行を高くせずに取る。`.pto .ptag` とまったく同じ算で、同じ .84rem
    の行です ── 字は 23、上下 11 の padding で 45、同じ 11 を margin で戻すので
@@ -1494,7 +1520,11 @@ html.fitlock, html.fitlock body{height:100%;overflow:hidden;overscroll-behavior:
    z-index:20;
    padding:6px 24px max(0px, calc(env(safe-area-inset-bottom,0px) - var(--vvkb,0px)));
    background:var(--bg)}
-.pwbleft{margin-left:auto;padding-right:6px;font-size:.82rem;color:var(--txm)}
+/* 輪が二つ並ぶので、この器が間を持ちます ── 「左側本文の輪右が翻訳の輪」
+   OWNER 2026-09-15。一つしか無い段（お題の意味は readonly）でも、無い段
+   （plus は天井が無いので輪も無い）でも、同じ一行で正しく出ます。 */
+.pwbleft{margin-left:auto;padding-right:6px;font-size:.82rem;color:var(--txm);
+         display:inline-flex;align-items:center;gap:14px}
 /* ---------- the letters ----------
    A letter is a cell, because there are as many letters as somebody decides
    there are. */
@@ -3074,7 +3104,12 @@ a.set{text-decoration:none}
      transition:.18s cubic-bezier(.2,.8,.2,1)}
 .pop.on{opacity:1;transform:translateY(-50%) scale(1);pointer-events:auto}
 .pop .popm{font-size:1.05rem;line-height:1.65;color:var(--tx)}
-.pop .btn{display:block;width:100%;margin-top:8px;font-size:1.02rem;padding:12px 0}
+/* 上下 13。**測って 43 だったからです** ── 1.02rem の行が 19 で、12+19+12 は
+   43、親指の 44 に一つ足りません。ポップのボタンは今まで一度も測られて
+   いませんでした：`tools/shot.mjs` が撮る前に `popOff()` を呼ぶので顔が白紙で、
+   `press` もそこに立てなかった。撮れる顔を一つ足した日に出てきた指摘です。
+   13+19+13 = 45。 */
+.pop .btn{display:block;width:100%;margin-top:8px;font-size:1.02rem;padding:13px 0}
 .pop .btn.popno{margin-top:2px;color:var(--txm)}
 .sheet{position:fixed;left:0;right:0;bottom:0;z-index:41;max-width:480px;margin:0 auto;background:var(--pane);
        border-top:1px solid var(--line);border-radius:22px 22px 0 0;

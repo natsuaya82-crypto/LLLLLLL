@@ -1570,7 +1570,20 @@ function pwHTML(){
          can stretch -- and it was, so a photograph sat under the fold and the
          line never grew. The page scrolls now, so the field is as tall as
          what is in it and everything under it moves down. */
-      lnField('pw-ln', t('post.ln.ph'), ' maxlength="'+POST_MAX+'"'+IN('pwSetLn'),
+      /* NO `maxlength`, AND THAT IS THE WHOLE OF WHY A POP CAN EXIST.
+         「文字数上限突破してツイートしようとしたらポップだそう…文字数を適正な
+         数にしないとツイートできないでポップ出るようにしない？」 OWNER
+         2026-09-15.
+
+         The attribute refused the KEYSTROKE, so nobody could ever be over the
+         ceiling and a pop at the press would have been a pop that never fires
+         -- dead code wearing the shape of a feature. The refusal moves to the
+         press (pwSend), which is where Twitter's is and where this app's other
+         four ceilings already are.
+
+         The ring is what says so before the press: past zero it counts in
+         negative numbers and goes red, in front of somebody while they type. */
+      lnField('pw-ln', t('post.ln.ph'), IN('pwSetLn'),
         PW.ln, dirClass(scriptDir())+(myFontOn()? ' tfont' : ''))+
       /* The meaning sits in the same column as the line, in the same
          borderless field, because it is the second half of the same act. */
@@ -1613,6 +1626,9 @@ function pwHTML(){
          is next, and the tools are under it on the keyboard. It used to be
          directly under the line with the whole of the rest of the screen
          below it, which is the same three things in a different order. */
+      /* The same ceiling as the line and refused in the same place, which is
+         the press. Nothing here either: postCap() is asked once, in pwSend(),
+         about both rows. */
       lnField('pw-mn', pwMn() || t('post.mn'),
         (PW.pr? ' readonly' : '')+IN('pwSetMn'), PW.mn, 'pwmn')+
       /* AND THE TAGS, UNDER THE MEANING -- the same place the post puts them
@@ -1826,9 +1842,10 @@ function pwTagsNoDay(){
    each writing an <input> out -- a field that grows while somebody types and
    a field that was there when the screen was drawn have to be the same field.
 
-   `maxlength` is POST_MAX and not a number of its own: how long a thing
-   somebody types may be is already answered on this screen, and a second
-   answer would be a second ceiling nobody decided.
+   `maxlength` is TAG_LEN (www/sns.js), which is the tag's own number and not
+   the line's: a tag is one word, and four of them wearing the sentence's
+   ceiling was 1120 characters in the one field on this screen that is not a
+   sentence.
 
    It shows tagShow(), so the day's tag reads in the reader's own language
    while what is kept is the one spelling (www/sns.js § tagShow). */
@@ -1842,7 +1859,7 @@ function pwTagsNoDay(){
 function pwTagField(i){
   return '<label class="pwtagw"><span class="pwtagh">#</span>'+
     '<input class="pwtag" type="text"'+
-    ' maxlength="'+POST_MAX+'" placeholder="'+esc(t('post.tag.ph'))+'"'+
+    ' maxlength="'+TAG_LEN+'" placeholder="'+esc(t('post.tag.ph'))+'"'+
     IN('pwSetTag', [i])+
     ' value="'+esc(tagShow(((PW.tags||[])[i])||''))+'"></label>';
 }
@@ -1880,10 +1897,24 @@ function pwTagsGrow(){
    of an input, so a line ran off the side of the phone and kept going for as
    long as somebody kept typing. 「ツイートの文字数制限決めないと無限になってる」
 
-   Two hundred and eighty, which is the number the shape of this screen was
-   borrowed from. It is a made language and its words are short; nobody has
-   met this yet and the point is that it exists. */
-var POST_MAX=280;
+   ONE HUNDRED AND FORTY, AND IT IS EVERY FIELD ON THIS SCREEN.
+   「140にしようか。」「文字数制限つけても翻訳でアホみたいに文字書けばいい
+   わけでしょ？それに困るのよ」 OWNER 2026-09-15.
+
+   It was 280, borrowed from the shape this screen was copied from, and it was
+   on the LINE alone -- the meaning had no ceiling at all, not an attribute and
+   not a line in pwSetMn(). So the cap was a door with the wall missing beside
+   it: everything somebody wanted to write went in the row underneath.
+
+   ONE NUMBER, NOT ONE PER FIELD. 「本文は140だが意味は200」 is a second thing
+   to remember and a second thing to get wrong, and nothing about these two
+   rows wants different room: a line, and what that line means.
+
+   It holds on WRITING only. A post already longer than this keeps every
+   character -- `maxlength` stops typing and never truncates a value the app
+   put there -- so an older post opened to be edited can be shortened and can
+   be left alone, and is never cut down by the app (docs/DATA_SAFETY.md). */
+var POST_MAX=140;
 /* How much room is left, as a RING that empties as you type.
    「カウントは打つほど減っていく輪、帯の中、常に出す」 OWNER 2026-08-28.
 
@@ -1905,9 +1936,26 @@ var POST_MAX=280;
    the one this function already had for when to show the count, and the
    count still appears exactly there. */
 var PW_RING=50.265;
-function pwLeftHTML(){
-  var used=String(PW.ln||'').length, left=POST_MAX-used,
-      f=left/POST_MAX;
+/* ONE RING, DRAWN ONCE PER FIELD SOMEBODY CAN TYPE IN.
+   「輪を二つ並べるのは？左側本文の輪右が翻訳の輪みたいな」 OWNER 2026-09-15.
+
+   Both fields have a ceiling now, so both say how much is left, and they say
+   it the same way -- a second shape for the second row would be two things to
+   learn about one number. Left is the line, right is what it means, which is
+   the order the two fields are in down the screen.
+
+   THE DAY'S MEANING GETS NO RING, and that is the same sentence as its
+   `readonly`: those are the app's words, nobody is spending anything, and a
+   ring counting down something nobody can type into is a state with no cause
+   and no way out. A ring for each field you can type in -- that is the whole
+   rule, and it needs no exception written anywhere else. */
+function pwRingHTML(used){
+  var cap=postCap(), left, f;
+  /* NO CEILING, NO RING. There is nothing for it to draw -- a circle that can
+     never empty says only that something is being counted, which is the one
+     thing that is not true on the plan that removed the count. */
+  if(!isFinite(cap)) return '';
+  left=cap-used; f=left/cap;
   if(f<0) f=0;
   if(f>1) f=1;
   return '<span class="pwring'+(left<=0? ' bad' : (left<=40? ' near':''))+'">'+
@@ -1919,6 +1967,38 @@ function pwLeftHTML(){
     (left<=40? '<span class="pwleft">'+left+'</span>' : '')+
     '</span>';
 }
+function pwLeftHTML(){
+  return pwRingHTML(String(PW.ln||'').length)+
+    (PW.pr? '' : pwRingHTML(String(PW.mn||'').length));
+}
+/* THE CEILING, MET AT THE PRESS. True means pwSend() must stop.
+
+   capStop() (www/core.js) is this sentence for the dictionary and it is not
+   reached from here: it measures WORDS.length against wordCap(), which is a
+   different number about a different thing. What is shared is the shape, and
+   the shape is the point -- 「いつもの課金誘導ポップ」 OWNER 2026-09-15: the
+   same popAsk(), the same one sentence, the same way to the plans screen that
+   a second language, the hundredth word, a fifth keyboard and the pencil all
+   use. There is no new string in ten languages; `up.need` is ONE sentence for
+   every ceiling and capStop()'s comment says so.
+
+   Asked BEFORE the number, exactly as capStop() does: a ceiling worked out
+   from a plan nobody has answered for would refuse somebody their post, or
+   let one through. 「接続できません」 and not a price.
+
+   BOTH ROWS, because both have the ceiling now. */
+function pwOver(){
+  var cap=postCap();
+  if(!isFinite(cap)) return false;
+  return String(PW.ln||'').length>cap ||
+    (!PW.pr && String(PW.mn||'').length>cap);
+}
+function pwCapStop(){
+  if(!pwOver()) return false;
+  if(!planKnown()){ toast(t('net.offline')); return true; }
+  popAsk(t('up.need'), function(){ go('plans'); });
+  return true;
+}
 function pwLeftPaint(){
   var e=document.getElementById('pw-left');
   if(e) e.innerHTML=pwLeftHTML();
@@ -1927,7 +2007,14 @@ function pwLeftPaint(){
    talked out of. The attribute is a rendering and a rendering can be gone --
    a screen rebuilt from a draft, a browser that ignores it -- and the day's
    meaning being editable in ANY of those is the day not working. */
-function pwSetMn(v){ if(PW.pr) return; PW.mn=String(v||''); pwFresh(); }
+function pwSetMn(v){
+  if(PW.pr) return;
+  PW.mn=String(v||'');
+  pwFresh();
+  /* The second ring, patched by hand for the reason the first one is: nothing
+     redraws this screen while it is being typed into. */
+  pwLeftPaint();
+}
 /* Posting. The meaning is what was typed, or the gloss run together if
    nothing was -- never empty, because a line nobody can read is not a post. */
 /* Whether there is anything to post. It was: a line, or nothing. So a
@@ -1976,6 +2063,11 @@ function pwSend(){
      by which time PW may already be the next post. */
   PWRAW=dayTagStore(String(PW.ln||'').trim());
   if(!pwHas(ln)){ toast(t('post.none')); return; }
+  /* AND THE CEILING, WHICH IS THE ONE THING THAT CAN BE OVER NOW.
+     「文字数を適正な数にしないとツイートできない」 OWNER 2026-09-15. Before
+     the bake and before anything is written: a post that is going to be
+     refused must not have cost somebody a photograph being re-encoded. */
+  if(pwCapStop()) return;
   /* A recording still running is a recording somebody meant to make -- the
      press that sends the post is not the press that throws it away. */
   if(REC){ toast(t('post.vo.busy')); return; }
@@ -3219,6 +3311,81 @@ function postFace(p){
 /* The strokes are drawn by the one function that draws strokes -- the same
    ink as the keyboard, the tiles and the card. What is different here is
    only where they came FROM: the post, not LETTERS. */
+/* WHETHER THIS POST MAY BE FOLDED AT ALL, asked in one place because three
+   things ask it -- the line, the meaning and the button under them -- and a
+   post folded in one of the three and not the others is a post with a way out
+   that leads nowhere, or none where it is needed.
+
+   A line running DOWN the page is never folded: the clamp counts line boxes
+   across, which is the wrong axis for a column. postFolds() would measure it
+   as overflowing on every render and draw 「もっと読む」 on a post nobody
+   needs it on. */
+function postFoldable(p){
+  var d=String((p && p.dir) || 'ltr');
+  return d==='ltr' || d==='rtl';
+}
+/* HOW MANY LINES OF A POST THE TIMELINE SHOWS BEFORE IT FOLDS.
+   「plusプランから無限だけど、もっと読むで開くTwitterと同じ方式で頼む。」
+   OWNER 2026-09-15.
+
+   **THIS NUMBER IS NOT DECIDED.** The owner named the SHAPE (Twitter's) and
+   not the height; three pictures at 3, 5 and 8 go to them and they pick.
+   `tools/fixture.mjs` flips it for those three faces, which is why it is one
+   `var` here and written into the element rather than sitting in the
+   stylesheet: one place to move when the answer comes back.
+
+   Nothing folds on the free plan by accident -- 140 characters is two or
+   three lines on any phone -- so this is about the posts the paid plan can
+   now write. */
+var POST_FOLD=5;
+/* WHETHER A POST ACTUALLY FOLDED, WHICH IS MEASURED AND NEVER GUESSED.
+   「3 lines」 is a different number of characters on every phone and in every
+   alphabet, so a character count standing in for it would draw 「もっと読む」
+   on posts that are fully visible and leave it off posts that are cut. The
+   clamp is applied to every row and then the row is ASKED whether it clamped
+   -- scrollHeight past clientHeight is the only thing that knows.
+
+   The same shape as lnGrowAll() above it in render(): a thing no markup can
+   say, done once after the HTML exists.
+
+   A line running DOWN the page is not folded at all. The clamp counts line
+   boxes across, which is the wrong axis for a column, and a column's length
+   is the page's to give -- the same sentence lnFit() makes about the field. */
+function postFolds(){
+  var xs=document.getElementsByClassName('pfold'), i, e;
+  for(i=0;i<xs.length;i++){
+    e=xs[i];
+    postMoreShow(e, e.scrollHeight>e.clientHeight+1);
+  }
+}
+/* And the way out, shown on a row that is cut and TAKEN OFF one that is not.
+
+   BOTH DIRECTIONS, and one-way is the bug this was written after. It only
+   ever unhid, on the argument that a button taken away is one somebody can
+   press in the gap -- which reads as careful and is a LATCH. The row is
+   measured on every render, and what it measures changes: the letters
+   somebody drew arrive as a font AFTER the first paint, so a two-word post
+   is briefly taller than the fold, is measured once while it is, and keeps
+   「もっと読む」 for the rest of the session with nothing behind it. It was
+   on the screenshot; the check had it green.
+
+   A measurement that can change needs an answer that can change with it. */
+function postMoreShow(e, on){
+  var b=e.parentNode && e.parentNode.getElementsByClassName('pmore2')[0];
+  if(!b) return;
+  /* Two rows share one button -- the line and the meaning -- so a row that
+     fits may not take away what the other one asked for. */
+  if(on) b.hidden=false;
+  else if(!postCutNear(e)) b.hidden=true;
+}
+/* Whether ANY folded row of this post is cut. The button belongs to the post
+   and not to the row, so this is the question it actually answers. */
+function postCutNear(e){
+  var xs=e.parentNode.getElementsByClassName('pfold'), i;
+  for(i=0;i<xs.length;i++)
+    if(xs[i].scrollHeight>xs[i].clientHeight+1) return true;
+  return false;
+}
 function postFaces(){
   inkCanvases('canvas.tcp', 40, 34, function(c){
     return PFACE[c.getAttribute('data-p')] || null;
@@ -3616,17 +3783,29 @@ function postRow(p){
                and `press` both went on saying the post was pressable. Neither
                of them asks where a press LANDS.
 
-               There were two @ on one post and only one was a road: the one in
-               what somebody WROTE went through atHTML() and stood you on their
-               page, and the one in the head, six pixels away, did not. A
-               reader pressing a handle is doing the same act either time.
+               There were two @ on one post and only one was a road, and it
+               was made one. THAT IS REPLACED: 「@はリプライだけ青でよくね？
+               だってその人のプロフィールにはアイコンタップで飛べるんだよ？
+               リプライした先はアイコンがないから@〇〇で飛べるようにしたいのよ」
+               OWNER 2026-09-15.
 
-               atHTML() (www/sns.js) is THE ONE PLACE a handle becomes a thing
-               you press -- the same call `ptoHTML` above makes for 「@aya への
-               返信」 -- so this is that road and not a second one written out
-               again here. It carries the 44pt with it (`.ptag`), and a post
-               with no handle draws nothing rather than a bare `@`. */
-            atHTML(p.hd)+
+               THE DOOR HERE IS THE FACE, six pixels to the left: postAvHTML()
+               above is a button carrying profileOpen(), on every post that has
+               a handle. So this @ was a SECOND door to the page the first one
+               already opens, and the owner took the second one off rather than
+               the first.
+
+               The blue is not gone from the app, it is gone from the one place
+               that has a face beside it. 「@aya への返信」 has none -- that is
+               the whole of the reason the owner gave -- and neither has an @
+               somebody typed inside a sentence 「これは青でいいよ」, so both of
+               those still go through atHTML(). An @ at the FRONT of a line
+               never reaches this side at all: pwAtHead() lifts it onto `toh`
+               as it is typed, and it becomes that same reply line.
+
+               A post with no handle draws nothing rather than a bare `@`,
+               which is what atHTML() did and is kept. */
+            (p.hd? '<span class="phandle">@'+esc(p.hd)+'</span>' : '')+
             /* WHEN, after the handle. OWNER 2026-08-28:
                「名前 バッチ @ハンドル 時刻」 It sat on the name's line, put
                there when this head was two fixed lines and the lower one had
@@ -3694,7 +3873,14 @@ function postRow(p){
       /* A post may have no line at all -- a photograph on its own, or a
          voice. An empty div here is a gap above the picture that nothing
          explains. 「文字無しでもポストできるようにできない？」 */
-      (p.ln? '<div class="pline '+dirClass(postDir(p))+'">'+postLnHTML(p)+'</div>' : '')+
+      /* FOLDED, WHEN THERE IS MORE THAN THE TIMELINE SHOWS.
+         The clamp is worn by every horizontal row and postFolds() then asks
+         each one whether it actually clamped -- see POST_FOLD above for why
+         it is measured rather than counted in characters, and why the number
+         is written in here instead of sitting in the stylesheet. */
+      (p.ln? '<div class="pline '+dirClass(postDir(p))+
+               (postFoldable(p)? ' pfold" style="-webkit-line-clamp:'+POST_FOLD+'"' : '"')+
+               '>'+postLnHTML(p)+'</div>' : '')+
       /* The natural language, in the reader's own if the post carries it and
          in the author's if it does not -- which is every post until the
          translator is wired up, and is not a failure. Not "always" any more:
@@ -3708,7 +3894,23 @@ function postRow(p){
          and the second one was off the bottom of the phone. The line and what
          it means are one thing read twice; everything else the post carries
          comes after them. */
-      (postSay(p)? '<div class="pmn">'+tagHTML(postSay(p))+'</div>' : '')+
+      (postSay(p)? '<div class="pmn'+
+          (postFoldable(p)? ' pfold" style="-webkit-line-clamp:'+POST_FOLD+'"' : '"')+
+          '>'+tagHTML(postSay(p))+'</div>' : '')+
+      /* THE WAY OUT OF A FOLDED POST. 「もっと読むで開く」 OWNER 2026-09-15.
+
+         `hidden` until postFolds() has measured, so a post that fits never
+         shows one for an instant.
+
+         It says `postOpen`, which is the name the whole row already carries
+         -- so this is the SAME road to the same thread, drawn where a thumb
+         is looking for it, and not a second way to open a post. act.js
+         delivers a press to the nearest name above it, so the button wins
+         over the row and both arrive in the same place. */
+      (postFoldable(p)
+        ? '<button class="pmore2" hidden'+DO('postOpen', [p.id])+'>'+
+            esc(t('post.readmore'))+'</button>'
+        : '')+
       /* AND WHAT IT IS FILED UNDER, DIRECTLY UNDER THE TRANSLATION.
          「リプライトゥー@〇〇のサイズ感で翻訳の下で最大4つまで別枠で入れ
          られるとかは？」 OWNER 2026-09-15.

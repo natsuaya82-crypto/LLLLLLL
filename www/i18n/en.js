@@ -351,6 +351,7 @@ defLang('en', (function(){
       'post.new'        : 'New post',
       'post.ln.ph'      : 'a line in your language',
       'post.mn'         : 'What it means',
+      'post.readmore'   : 'Show more',
       'post.tag.ph'      : 'Tag',
       'post.send'       : 'Post',
       'post.sent'       : 'Posted',

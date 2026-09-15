@@ -729,6 +729,61 @@ export function halfDone(){
        What is not, and what the fault would hide in, is the frame part-filled
        and the frame FULL -- the fifth field is a field that does not exist,
        and a picture is the only thing that says so. */
+    /* ---- 「もっと読む」で畳む高さ、三案 -------------------------------
+       「plusプランから無限だけど、もっと読むで開くTwitterと同じ方式で頼む。」
+       OWNER 2026-09-15 ── 形は言われていますが **行数は決まっていません**。
+       3・5・8 の写真を出して、オーナーが選びます。
+
+       畳むのは `POST_FOLD`（www/post.js）一つなので、ここはそれを動かして
+       戻すだけ。plus に上げてから描くのは、無料の 140 字はどの端末でも
+       二、三行で、畳まれないからです ── 畳みは有料が書けるようになった長さ
+       についての話。 */
+    ...[3, 5, 8].map((n) => [
+      'a long post folded at ' + n + ' lines', () => {
+        const wasFold = POST_FOLD, wasPlan = plan();
+        POST_FOLD = n;
+        planGot('plus');
+        const many = new Array(40).join('kano tir mos ');
+        POSTS.unshift({ id:'fold-'+n, at: Date.now()-120000, lang: langId,
+                        lname:'Shango', who:'Aya', hd:'aya', mine:true,
+                        av:{st:[{pts:[[112,112],[688,112],[400,688]]}]},
+                        ln: many, mn: many, ui:'en' });
+        window.route = 'feed'; NAV = [{ r:'feed' }];
+        render();
+        const h = document.getElementById('app').innerHTML;
+        POSTS.shift();
+        POST_FOLD = wasFold;
+        planGot(wasPlan);
+        return h;
+      }]),
+    /* ---- 天井：輪二つ、超えた所、そして断り ---------------------------
+       「140にしようか。」「文字数上限突破してツイートしようとしたらポップ
+       だそう…文字数を適正な数にしないとツイートできないでポップ出るように
+       しない？」 OWNER 2026-09-15。
+
+       **二つの状態は両方撮ります** ── 足りている輪と、超えて赤い輪。
+       「見た目を変えたものは必ずスクショで提示する」、そして直っていないのは
+       たいてい誰も撮らなかった方です。 */
+    ['the composer past the ceiling', () => {
+        PW = pwBlank(); openPost();
+        pwSetLn(new Array(POST_MAX + 14).join('a'));
+        pwSetMn('the mountain is seen');
+        const h = vForm(); PW = pwBlank(); return h; }],
+    /* 撮れるポップ。**id を外して返します** ── `tools/shot.mjs` は写真を撮る
+       前に必ず `popOff()` を呼び（電波なしの「接続できません」を消すため）、
+       それが `#pop` を名前で探すので、id を持ったまま返した顔は**白紙で
+       撮れます**。この repo のポップの顔は前からそうなっていました
+       （`half-a-half-written-post-asked-about-on-the-way-out-ja.png` も白紙）。
+       `.pop` は class だけで描かれているので、名前を外しても見た目は同じです。
+       道具側（`tools/shot.mjs`）の直しはこの session の territory の外なので、
+       報告に書いてあります。 */
+    ['the ceiling, met at the press', () => {
+        PW = pwBlank(); openPost();
+        pwSetLn(new Array(POST_MAX + 14).join('a'));
+        pwSend();
+        const h = document.getElementById('pop').outerHTML
+                    .replace(' id="pop"', '');
+        popOff(); PW = pwBlank(); return h; }],
     ['a post being written, with two tags', () => {
        PW = pwBlank(); openPost();
        pwSetLn('kano tir'); pwSetMn('the mountain is seen');

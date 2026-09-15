@@ -487,6 +487,26 @@ PLUS_DL      1       languages downloaded, which is a second ceiling
 PRO_DL       3
 ```
 
+**A fifth ceiling is not in that block, and that is deliberate: how long a
+post may be.** `postCap()` sits beside `wordCap()` and answers `POST_MAX` on
+free and `Infinity` from Plus — 「plusプランから無限」 OWNER 2026-09-15 — but
+`POST_MAX` is declared in `www/post.js`, because it is the composer's own
+number and the composer is where it is worn. The block above is the list
+`paid-check` reads out of `core.js`, so a constant that does not live there
+does not belong in it; a line here is what says it exists.
+
+**No capability was added for it**, for the reason `kbCap()` gives: everybody
+may post, and the only thing a plan changes is a number. A capability that is
+really a number is a price with nothing behind it.
+
+**It answers for both rows of the composer** — the line and what it means.
+「文字数制限つけても翻訳でアホみたいに文字書けばいいわけでしょ？それに困るの
+よ」 OWNER: a ceiling on one row with none on the row under it is not a
+ceiling, and until that day the meaning had no ceiling at all. Met at the
+PRESS and never by the keystroke (`pwCapStop()`), so what refuses somebody is
+`popAsk(t('up.need'))` and the plans screen — the same one sentence and the
+same shape as every other ceiling here.
+
 `kbCount()` in `www/keyboard.js`, `langCount()` and `dlCount()` in `core.js`
 are what those are compared against, and all three count **across languages**:
 the ceiling is on the ACCOUNT, not on each language and not on a phone —
