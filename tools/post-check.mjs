@@ -902,6 +902,44 @@ const R = await pg.evaluate(async () => {
                  'there is nothing to refuse and no sentence saying so, because ' +
                  'at four the next field does not exist');
 
+    /* (b2) AND THE NEXT FIELD ARRIVES WHILE SOMEBODY IS TYPING, which is the
+       half pwHTML() alone cannot say anything about: nothing redraws this
+       screen while it is being typed into, so a frame that only grows on a
+       render is a frame that never grows. Driven through a real `input`
+       event on the real field, so act.js's one listener and pwTagsGrow() are
+       both in it. */
+    {
+      const wasRoute24 = window.route, wasNav24 = NAV.slice();
+      PW = pwBlank();
+      openPost();
+      render();
+      const box = document.getElementById('pw-tags');
+      const one = box ? box.getElementsByTagName('input').length : -1;
+      if (one !== 1)
+        fails.push('the composer drew ' + one + ' tag fields with nothing in ' +
+                   'the frame, so nothing below this is a test of anything');
+      else {
+        const f = box.getElementsByTagName('input')[0];
+        f.value = 'neko';
+        f.dispatchEvent(new Event('input', { bubbles: true }));
+        const two = box.getElementsByTagName('input').length;
+        if (two !== 2)
+          fails.push('typing into the only tag field left ' + two + ' fields on ' +
+                     'the screen. The next one has to arrive while somebody is ' +
+                     'typing -- nothing redraws this screen then, so a frame ' +
+                     'that grows only on a render never grows');
+        if (document.activeElement === f && f.value !== 'neko')
+          fails.push('the field under the finger lost what was in it when the ' +
+                     'next one arrived');
+        if (String((PW.tags || [])[0]) !== 'neko')
+          fails.push('typing into the frame put ' + JSON.stringify(PW.tags) +
+                     ' on the composer');
+      }
+      PW = pwBlank();
+      window.route = wasRoute24; NAV = wasNav24;
+      try { closeSheet(); } catch (e) {}
+    }
+
     /* (c) a `#` in the SENTENCE is the sentence. 「本文に#を打ってもそれは本文」 */
     PW = pwBlank();
     PW.ln = 'kano #tir';
@@ -3758,6 +3796,8 @@ console.log('post: a letter placed on a black photograph is IN the file that goe
             '      nowhere and there is no fifth field to put it in, a # typed in\n' +
             '      the sentence stays a character of the sentence, and the day\u2019s\n' +
             '      tag opens at the head of the frame and never in the line. The\n' +
+            '      next field arrives while somebody is typing, not on a render,\n' +
+            '      and the one under the finger keeps what is in it. The\n' +
             '      row is drawn under the translation and above everything the\n' +
             '      post carries, it presses through to its search, and a post with\n' +
             '      no tags -- which is every post made before today -- draws no\n' +

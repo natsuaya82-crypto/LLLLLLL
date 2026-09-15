@@ -72,6 +72,7 @@ Marked separately, because they are not the same question:
 | Timeline | shipped, **not device confirmed** | yes | — | `post` rows on the server; `lingua.posts` is the copy that works with no signal | decided — **an account is required to read it and to post**. 「なんでログインしてないアカウントで投稿できんの？」 The making side needed none; **2026-08-26 ended that** — 「言語はアカウントないと作れないです」. It works offline and goes up on the next connection; it does not work without an account |
 | Timeline split — For you / Following | shipped, **not device confirmed** | yes | — | none new; `ME.fo` is the follow list already | decided — 「フォロー中とおススメみたいに分けたい」. For you is everything, Following is `ME.fo` plus your own, matched on the post's frozen `hd` |
 | A post carries its own shapes (`ink`) | shipped | yes | — | on the post | decided |
+| Tags on a post | shipped 2026-09-15, **not device confirmed** | yes | — | `post.body.tags` **new** — up to four, `#` off, frozen on write; `draft.body.tags` the same. `schema.sql` unchanged (`body` is jsonb) | decided — 「#はべつで」「リプライトゥー@〇〇のサイズ感で翻訳の下で最大4つまで別枠で入れられるとかは？」 OWNER 2026-09-15, **replacing** 「タグは本文中に。」 (2026-09-04). A frame beside the body, four at most, one field per tag and no fifth field; the row sits **under the translation** at the size of 「@〇〇 への返信」 and presses through to that tag's search. A `#` typed in the body stays body. **Posts written before this keep their tags inside the line** and are not rewritten — `tagHTML()` still draws those blue. The day's tag goes in the frame and no longer costs anybody 280 characters. Held by `post-check` 24 |
 | Replying, and the thread of a conversation | shipped, **not device confirmed** | yes | — | `post.to` (the id, already there), `post.toh` **new** — the handle it answers, frozen on write | decided — replies stay in the timeline carrying 「@xx への返信」; a post opens onto its thread; the indent stops at three |
 | A card — one line as a picture | shipped | yes | — | none | decided |
 | A card of a post is drawn from the post | shipped | yes | — | none | decided |
@@ -424,6 +425,11 @@ One a day, and `post.prompt` already points at it. `www/net.js` reads both the
 newest row and one by id; `supabase/functions/daily-prompt/` is what writes
 them. What has NOT been settled is the editorial half — who writes the
 sentences, how far ahead, and what happens on a day with no row.
+
+Its TAG lives in the post's frame since 2026-09-15 and no longer in the body
+(`post.body.tags`, the row under the translation). Stored as the one spelling
+`DAY_TAG`, drawn in the reader's own language. What GATHERS a day's answers is
+still the `pr` column and has never been the tag.
 
 ### 8. Sales and analytics — **RevenueCat で見る** (2026-09-02)
 
