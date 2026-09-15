@@ -409,6 +409,7 @@ defLang('es', (function(){
       "post.ln.ph"      : "una línea en tu lengua",
       "post.mn"         : "Qué significa",
       "post.readmore"   : "Ver más",
+      "post.readless"   : "Ver menos",
       "post.tag.ph"      : "Etiqueta",
       "post.send"       : "Publicar",
       "post.sent"       : "Publicado",

@@ -365,6 +365,7 @@ defLang('ja', (function(){
       'post.ln.ph'      : '自分の言語で一行',
       'post.mn'         : '意味',
       'post.readmore'   : 'もっと読む',
+      'post.readless'   : 'たたむ',
       'post.tag.ph'     : 'タグ',
       'post.send'       : '投稿する',
       'post.sent'       : '投稿しました',

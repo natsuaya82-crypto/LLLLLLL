@@ -456,6 +456,7 @@ defLang('pt', (function(){
       "post.ln.ph"      : "uma linha na tua língua",
       "post.mn"         : "O que significa",
       "post.readmore"   : "Ver mais",
+      "post.readless"   : "Ver menos",
       "post.tag.ph"      : "Etiqueta",
       "post.send"       : "Publicar",
       "post.sent"       : "Publicado",

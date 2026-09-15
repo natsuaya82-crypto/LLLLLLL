@@ -1295,7 +1295,7 @@ const R = await pg.evaluate(async () => {
       fails.push('the two posts this claim needs are not both on the timeline');
     else {
       const lineOf = (r) => r.querySelector('.pline');
-      const moreOf = (r) => r.querySelector('.pmore2');
+      const moreOf = (r) => r.querySelector('.punfold');
       const lf = lineOf(longRow), sf = lineOf(shortRow);
       if (!lf || String(lf.className).indexOf('pfold') < 0)
         fails.push('a long post\'s line does not wear the clamp at all, so ' +
@@ -1305,7 +1305,7 @@ const R = await pg.evaluate(async () => {
                    'the clamp (' + lf.scrollHeight + ' into ' + lf.clientHeight +
                    '), so nothing below this is a test of anything');
       /* ON THE SCREEN, NOT IN THE ATTRIBUTE. `hidden` was set correctly on
-         the short post and the words were on the screen anyway: `.pmore2`
+         the short post and the words were on the screen anyway: `.punfold`
          declares `display:block`, which beats the browser's own
          `[hidden]{display:none}`. This claim asked `.hidden` and was green
          while a screenshot showed 「もっと読む」 under a two-word post --
@@ -1321,7 +1321,7 @@ const R = await pg.evaluate(async () => {
       if (shown(sm))
         fails.push('a short post shows 「もっと読む」 ON THE SCREEN (hidden=' +
                    (sm && sm.hidden) + '). Setting the attribute is not the ' +
-                   'same as being gone -- `.pmore2` sets display, and a class ' +
+                   'same as being gone -- `.punfold` sets display, and a class ' +
                    'beats the browser\'s own [hidden] rule');
       if (sf && sf.scrollHeight > sf.clientHeight + 1)
         fails.push('a three-word post measures as overflowing (' +
@@ -1331,16 +1331,82 @@ const R = await pg.evaluate(async () => {
       if (sf && !sf.querySelector('canvas'))
         fails.push('the short post in this claim has no drawn shapes on it, ' +
                    'so it does not test the thing that actually broke');
-      if (lm && String(lm.getAttribute('data-do')) !== 'postOpen')
+      if (lm && String(lm.getAttribute('data-do')) !== 'postUnfold')
         fails.push('「もっと読む」 says ' + lm.getAttribute('data-do') +
-                   ' rather than postOpen. It is the road the row already ' +
-                   'carries, drawn where a thumb looks for it -- not a second one');
+                   ' rather than postUnfold. It opens the post where it ' +
+                   'stands -- and `postMore` is the ⋯ menu, which is the ' +
+                   'collision this name was moved off');
     }
+    /* AND IT OPENS WHERE IT STANDS, AND FOLDS BACK.
+       「もっと読むで開いたら折り畳まないとダメでは？」 OWNER 2026-09-15.
+
+       It used to go to the thread, and going somewhere cannot be undone --
+       the post was simply long once you were there. Pressed for real, twice,
+       because 「opens」 and 「closes again」 are one state and a check that
+       only presses once is green on a button that opens and then sticks. */
+    {
+      const rowNow = () => {
+        const bs = app28.querySelectorAll('[data-do="postOpen"]');
+        for (let i = 0; i < bs.length; i++)
+          if (String(bs[i].getAttribute('data-a') || '').indexOf('FO-1') >= 0 &&
+              bs[i].className.indexOf('post') >= 0) return bs[i];
+        return null;
+      };
+      const btn = () => { const r = rowNow(); return r && r.querySelector('.punfold'); };
+      const line = () => { const r = rowNow(); return r && r.querySelector('.pline'); };
+      const b0 = btn();
+      if (!b0) fails.push('the folded post has no button to open it');
+      else {
+        const was = here().r;
+        b0.click();
+        if (here().r !== was)
+          fails.push('「もっと読む」 moved the screen to ' + here().r +
+                     '. It opens the post where it stands now -- going ' +
+                     'somewhere is not something somebody can undo');
+        const l1 = line(), b1 = btn();
+        if (l1 && String(l1.className).indexOf('pfold') >= 0)
+          fails.push('the post still wears the clamp after 「もっと読む」, so ' +
+                     'pressing it showed nothing more');
+        if (!b1 || b1.textContent !== t('post.readless'))
+          fails.push('an opened post does not offer 「たたむ」 (it says ' +
+                     JSON.stringify(b1 && b1.textContent) + '), so there is no ' +
+                     'way to put it back');
+        if (b1) {
+          b1.click();
+          const l2 = line(), b2 = btn();
+          if (!l2 || String(l2.className).indexOf('pfold') < 0)
+            fails.push('「たたむ」 did not fold the post again. Open and shut ' +
+                       'are one state read two ways, not two things');
+          if (!b2 || b2.textContent !== t('post.readmore'))
+            fails.push('after folding, the button still says ' +
+                       JSON.stringify(b2 && b2.textContent));
+        }
+      }
+    }
+
+    /* AND NOTHING THIS FIXTURE HOLDS IS IN THE OLD SHAPE.
+       「なんでタグが翻訳の横にいるの？」 OWNER 2026-09-15, looking at a
+       screenshot -- one fixture post still carried 「#今日のお題」 inside its
+       `mn`, which is where a tag lived until that day, so every walk and
+       every picture drew a tag beside the translation.
+
+       「昔の投稿は加味しなくていい」, so the fixture is all today's shape. The
+       ROAD that draws a tag inside a body is not deleted (posts written before
+       today still carry theirs there); it simply has nothing here to draw. */
+    for (const q of POSTS) {
+      const body = String(q.ln || '') + ' ' + String(q.mn || '');
+      if (/[#＃][^\s#＃、。,.!?！？]/.test(body))
+        fails.push('the fixture post ' + q.id + ' still carries a tag inside ' +
+                   'what somebody wrote (' + JSON.stringify(body.slice(0, 60)) +
+                   '). Tags go in `tags` now, and a fixture in the old shape ' +
+                   'draws one beside the translation in every screenshot');
+    }
+
     /* a language written downward is never folded: the clamp counts lines
        across, which is the wrong axis for a column */
     const col = postRow({ id: 'FO-3', at: Date.now(), who: 'Aya', hd: 'aya',
                           ln: many, mn: many, dir: 'ttb-rl' });
-    if (col.indexOf('pfold') >= 0 || col.indexOf('pmore2') >= 0)
+    if (col.indexOf('pfold') >= 0 || col.indexOf('punfold') >= 0)
       fails.push('a post written DOWN the page was folded. The clamp counts ' +
                  'line boxes across the page, so on a column it measures as ' +
                  'overflowing on every render and draws a way out of nothing');

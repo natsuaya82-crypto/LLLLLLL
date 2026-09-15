@@ -628,6 +628,7 @@ defLang('ko', (function(){
       "post.ln.ph"      : "당신의 언어로 한 줄",
       "post.mn"         : "무슨 뜻인지",
       "post.readmore"   : "더 보기",
+      "post.readless"   : "접기",
       "post.tag.ph"      : "태그",
       "post.send"       : "올리기",
       "post.sent"       : "게시했습니다",

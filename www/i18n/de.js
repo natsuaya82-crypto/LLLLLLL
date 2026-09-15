@@ -437,6 +437,7 @@ defLang('de', (function(){
       "post.ln.ph"      : "ein Satz in deiner Sprache",
       "post.mn"         : "Was es heißt",
       "post.readmore"   : "Mehr anzeigen",
+      "post.readless"   : "Weniger anzeigen",
       "post.tag.ph"      : "Schlagwort",
       "post.send"       : "Senden",
       "post.sent"       : "Gepostet",

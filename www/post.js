@@ -3311,6 +3311,41 @@ function postFace(p){
 /* The strokes are drawn by the one function that draws strokes -- the same
    ink as the keyboard, the tiles and the card. What is different here is
    only where they came FROM: the post, not LETTERS. */
+/* WHICH POSTS ARE OPEN. 「もっと読むで開いたら折り畳まないとダメでは？」
+   OWNER 2026-09-15.
+
+   「もっと読む」 used to go to the thread, which is a road and not a state:
+   once you were there the post was simply long, and there was no way to put
+   it back. Opening is a thing that can be undone, so it is a STATE, and
+   「たたむ」 is the same state read the other way.
+
+   ONE MECHANISM, FLIPPED. postMore() is both buttons and there is no second
+   function for closing: two functions for one fact is how 「open」 and
+   「closed」 come to disagree about the same post.
+
+   **NOT `postMore`.** That name is taken -- it opens the ⋯ menu on a post
+   (below, § PMENU) -- and writing a second function under it is what this
+   check caught: JavaScript kept the later declaration, so pressing
+   「もっと読む」 opened the menu. `act-map.js` then held one name twice,
+   which act-check refuses. `postMoreShow` was renamed with it, for the same
+   reason read forwards: a name six letters from another one is a name
+   somebody will reach for by mistake.
+
+   Keyed by the post's id rather than by where it sits in the list, because
+   the list moves under somebody while they read -- a post arriving at the top
+   would otherwise open whichever post took its place.
+
+   Nothing is stored. It is where somebody is standing in the timeline, like
+   a filter or a scroll position, and a post is not a different post for
+   having been opened. */
+var PUNFOLD={};
+function postUnfolded(p){ return !!(p && PUNFOLD[p.id]); }
+/* Pressed, from either end. */
+function postUnfold(id){
+  if(PUNFOLD[id]) delete PUNFOLD[id];
+  else PUNFOLD[id]=1;
+  render();
+}
 /* WHETHER THIS POST MAY BE FOLDED AT ALL, asked in one place because three
    things ask it -- the line, the meaning and the button under them -- and a
    post folded in one of the three and not the others is a post with a way out
@@ -3355,7 +3390,7 @@ function postFolds(){
   var xs=document.getElementsByClassName('pfold'), i, e;
   for(i=0;i<xs.length;i++){
     e=xs[i];
-    postMoreShow(e, e.scrollHeight>e.clientHeight+1);
+    postFoldBtn(e, e.scrollHeight>e.clientHeight+1);
   }
 }
 /* And the way out, shown on a row that is cut and TAKEN OFF one that is not.
@@ -3370,8 +3405,8 @@ function postFolds(){
    on the screenshot; the check had it green.
 
    A measurement that can change needs an answer that can change with it. */
-function postMoreShow(e, on){
-  var b=e.parentNode && e.parentNode.getElementsByClassName('pmore2')[0];
+function postFoldBtn(e, on){
+  var b=e.parentNode && e.parentNode.getElementsByClassName('punfold')[0];
   if(!b) return;
   /* Two rows share one button -- the line and the meaning -- so a row that
      fits may not take away what the other one asked for. */
@@ -3879,7 +3914,8 @@ function postRow(p){
          it is measured rather than counted in characters, and why the number
          is written in here instead of sitting in the stylesheet. */
       (p.ln? '<div class="pline '+dirClass(postDir(p))+
-               (postFoldable(p)? ' pfold" style="-webkit-line-clamp:'+POST_FOLD+'"' : '"')+
+               (postFoldable(p) && !postUnfolded(p)
+                 ? ' pfold" style="-webkit-line-clamp:'+POST_FOLD+'"' : '"')+
                '>'+postLnHTML(p)+'</div>' : '')+
       /* The natural language, in the reader's own if the post carries it and
          in the author's if it does not -- which is every post until the
@@ -3895,21 +3931,26 @@ function postRow(p){
          it means are one thing read twice; everything else the post carries
          comes after them. */
       (postSay(p)? '<div class="pmn'+
-          (postFoldable(p)? ' pfold" style="-webkit-line-clamp:'+POST_FOLD+'"' : '"')+
+          (postFoldable(p) && !postUnfolded(p)
+            ? ' pfold" style="-webkit-line-clamp:'+POST_FOLD+'"' : '"')+
           '>'+tagHTML(postSay(p))+'</div>' : '')+
-      /* THE WAY OUT OF A FOLDED POST. 「もっと読むで開く」 OWNER 2026-09-15.
+      /* THE SAME BUTTON, READ BOTH WAYS. 「もっと読むで開いたら折り畳まないと
+         ダメでは？」 OWNER 2026-09-15.
 
-         `hidden` until postFolds() has measured, so a post that fits never
-         shows one for an instant.
+         It went to the THREAD until that sentence, and going somewhere is not
+         something you can undo: once you were there the post was simply long.
+         So it opens the post where it stands and says 「たたむ」 while it is
+         open -- one state, one function, two words.
 
-         It says `postOpen`, which is the name the whole row already carries
-         -- so this is the SAME road to the same thread, drawn where a thumb
-         is looking for it, and not a second way to open a post. act.js
-         delivers a press to the nearest name above it, so the button wins
-         over the row and both arrive in the same place. */
+         `hidden` only while it is SHUT, because a shut row does not yet know
+         whether it is cut: postFolds() measures and unhides. An OPEN one has
+         no clamp on it at all, so it is not in that collection and nothing
+         measures it -- the button is simply there, which is right, because a
+         post somebody opened is one they can always close. */
       (postFoldable(p)
-        ? '<button class="pmore2" hidden'+DO('postOpen', [p.id])+'>'+
-            esc(t('post.readmore'))+'</button>'
+        ? '<button class="punfold"'+(postUnfolded(p)? '' : ' hidden')+
+            DO('postUnfold', [p.id], true)+'>'+
+            esc(t(postUnfolded(p)? 'post.readless' : 'post.readmore'))+'</button>'
         : '')+
       /* AND WHAT IT IS FILED UNDER, DIRECTLY UNDER THE TRANSLATION.
          「リプライトゥー@〇〇のサイズ感で翻訳の下で最大4つまで別枠で入れ

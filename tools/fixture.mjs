@@ -242,12 +242,20 @@ export function seed(){
             ink:{g:[[{pts:[[150,650],[400,150],[650,650]]}],
                     [{pts:[[200,200],[600,200]]}, {pts:[[400,200],[400,640]]}]],
                  s:[0, 1, 0, ' ', 1, 0, 1, 1, 0]},
-            /* AND A TAG IN WHAT SOMEBODY WROTE. 「タグは本文中に。」 OWNER
-               2026-09-04 -- a tag is characters, not a row the app adds, so
-               the only way one is on a screen is that a post carries one.
-               Without this the blue word is in no walk and nothing presses
-               it. tagHTML() in www/sns.js. */
-            mn:'the sea has gone quiet #\u4eca\u65e5\u306e\u304a\u984c', ui:'en',
+            /* AND A TAG, IN THE FRAME. 「#はべつで」 OWNER 2026-09-15,
+               replacing 「タグは本文中に。」 (2026-09-04).
+
+               It was characters inside `mn` until then, and leaving it there
+               drew the tag BESIDE the translation on every walk and in every
+               screenshot -- which is what the owner saw and asked about
+               「なんでタグが翻訳の横にいるの？」. 「昔の投稿は加味しなくていい」,
+               so every post the fixture holds is in today's shape.
+
+               The road that draws a tag inside a body (`tagHTML()`) is NOT
+               deleted -- posts written before that day still carry theirs
+               there -- it simply has nothing in this fixture to draw. */
+            tags:[tagClean(DAY_TAG)],
+            mn:'the sea has gone quiet', ui:'en',
             /* And it runs down the page, columns right to left. A post
                carries the direction it was written in for the same reason it
                carries its shapes: this phone's language runs left to right,
@@ -764,6 +772,24 @@ export function halfDone(){
        **二つの状態は両方撮ります** ── 足りている輪と、超えて赤い輪。
        「見た目を変えたものは必ずスクショで提示する」、そして直っていないのは
        たいてい誰も撮らなかった方です。 */
+    /* 開いたあと。「もっと読むで開いたら折り畳まないとダメでは？」 OWNER
+       2026-09-15 ── 開いた状態は press にも i18n にも歩かせないと、「たたむ」
+       という言葉と、その押し心地が、どの検査にも当たりません。 */
+    ['a long post opened again', () => {
+        const wasPlan = plan();
+        planGot('plus');
+        const many = new Array(40).join('kano tir mos ');
+        POSTS.unshift({ id:'open-1', at: Date.now()-120000, lang: langId,
+                        lname:'Shango', who:'Aya', hd:'aya', mine:true,
+                        av:{st:[{pts:[[112,112],[688,112],[400,688]]}]},
+                        ln: many, mn: many, ui:'en' });
+        PUNFOLD['open-1'] = 1;
+        window.route = 'feed'; NAV = [{ r:'feed' }];
+        render();
+        const h = document.getElementById('app').innerHTML;
+        POSTS.shift(); delete PUNFOLD['open-1'];
+        planGot(wasPlan);
+        return h; }],
     ['the composer past the ceiling', () => {
         PW = pwBlank(); openPost();
         pwSetLn(new Array(POST_MAX + 14).join('a'));
@@ -781,7 +807,12 @@ export function halfDone(){
         PW = pwBlank(); openPost();
         pwSetLn(new Array(POST_MAX + 14).join('a'));
         pwSend();
-        const h = document.getElementById('pop').outerHTML
+        /* **書く画面を後ろに残したまま返します。**ポップだけ返していたら
+           写真が真っ白になり、オーナーに「背景真っ白なのはなぜ？ツイート
+           されちゃってない？」と訊かれました ── 断られた画面が写っていない
+           のだから、当然の読みです。投稿されていないことは post-check 26 が
+           「pops=1, sent=false」で押さえています。 */
+        const h = vForm() + document.getElementById('pop').outerHTML
                     .replace(' id="pop"', '');
         popOff(); PW = pwBlank(); return h; }],
     ['a post being written, with two tags', () => {

@@ -235,6 +235,7 @@ act('snsPickSaved', snsPickSaved);
 act('snsPickWord', snsPickWord);
 act('snsDropRecent', snsDropRecent);
 act('postOpen', postOpen);
+act('postUnfold', postUnfold);
 act('postPic', postPic);
 act('postReply', postReply);
 act('postDel', postDel);

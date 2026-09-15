@@ -497,6 +497,7 @@ defLang('fr', (function(){
       "post.ln.ph"      : "une phrase dans ta langue",
       "post.mn"         : "Ce que ça veut dire",
       "post.readmore"   : "Voir plus",
+      "post.readless"   : "Voir moins",
       "post.tag.ph"      : "Motclé",
       "post.send"       : "Publier",
       "post.sent"       : "Publié",

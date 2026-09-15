@@ -970,7 +970,7 @@ canvas.pkc{width:34px;height:34px;display:block}
 /* 角丸も枠線も地色も無し、青い字だけ ── タグと同じ `--tag`。
    44pt は上下の padding で取り、同じだけ margin で戻すので行は太りません
    （`.pto .ptag` と同じ算）。 */
-.pmore2{background:none;border:0;font:inherit;font-size:.92rem;
+.punfold{background:none;border:0;font:inherit;font-size:.92rem;
         color:var(--tag);cursor:pointer;-webkit-appearance:none;appearance:none;
         display:block;text-align:inherit;min-width:44px;
         padding:12px 0;margin:-8px 0 -12px}
@@ -981,7 +981,7 @@ canvas.pkc{width:34px;height:34px;display:block}
    これが無いと `hidden` は立っているのに画面には出たままで、**測り方を疑う所**
    になります：postFolds() は正しく測り、正しく隠し、それでも短い投稿の下に
    「もっと読む」が出ている。原因を二回外したのはここでした。 */
-.pmore2[hidden]{display:none}
+.punfold[hidden]{display:none}
 .ptags{font-size:.84rem;margin-top:6px}
 /* 44pt を、行を高くせずに取る。`.pto .ptag` とまったく同じ算で、同じ .84rem
    の行です ── 字は 23、上下 11 の padding で 45、同じ 11 を margin で戻すので
