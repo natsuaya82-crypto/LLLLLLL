@@ -550,14 +550,21 @@ want('and the session is not an anonymous one', s5.anon, false);
    the mark turns, no language opens, and every letter below is missing.
 
    Asked of what went over the wire and of the flag the app is holding, not of
-   the pull table: PULL_GOT is the mechanism and these are the two things a
-   person would see. */
+   the pull table: PULL_GOT is the mechanism and these three are what a person
+   would see.
+
+   FROM THE TOKEN ONWARDS, because 7d asked the same question a moment before
+   as the account whose token was about to be refused -- counting the whole run
+   would count that one and pass with the bug in. `asked` is -1 where the door
+   itself is missing from the run, so a walk that never signed in fails here
+   rather than reporting the launch's request as the door's. */
 const DOOR = await pg.evaluate(() => {
   const sent = window.__sent || [];
   let i = sent.length - 1;
   while (i >= 0 && sent[i].indexOf('/auth/v1/token') < 0) i--;
   return {
-    asked: sent.slice(i + 1).filter((u) => u.indexOf('/rest/v1/language?') >= 0).length,
+    asked: i < 0 ? -1
+      : sent.slice(i + 1).filter((u) => u.indexOf('/rest/v1/language?') >= 0).length,
     wait: !!LANG_WAIT,
     known: langMineKnown(),
   };
