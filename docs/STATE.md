@@ -32,7 +32,39 @@ un-re-read.
 
 ---
 
-## 2026-09-12 ── ビルド 158（一番新しい）
+## 2026-09-15 ── ビルド 159（一番新しい）
+
+`master` = 取り込み後の sha（ゲート緑で ff）。実機で見る場所は
+`docs/CHECK-0907.md`「ビルド 159」。**`supabase/schema.sql` は変わっていない**
+── 先に流す物は無い。**実機確認は全部まだ**。
+
+入ったもの：`claude/r36-index` ── **自分の言語の一覧はサーバーの答えそのもの**
+（「端末で使うものなんかないだろ」「設計ミスなんだから作り直し」OWNER
+2026-09-15）。端末の索引 `lingua.langs` は電波なしで眺める写しで、数えず・
+決めず・上らない。`netLangsGone(mine, ids)` 一つが、自分の言語も取った言語も
+「答えに無い行を端末から落とす」（`netTakeGone()` は削除）。`langCount()`／
+`langMainId()` は未回答なら `null`、`langStop()` は数を見る前に「接続できません」。
+ログアウト→ログインで名前の無い空の `language` 行がサーバーにできていた道
+（`langMineIds()` が索引を舐めて `netLangRow()` が insert）は、押して測った赤
+（acct-check 74）を見てから直した。`again-check` はその振る舞いを緑にしていた
+（直った）。
+
+同じ日、先に master へ：`890d3a75` ── **schema.sql が本物に一回で入る**。
+9/13 の貼り付けは一行も入っていなかった（`create or replace view` が列の増えた
+`language_seen` を拒み全部取り消し）。ビュー四つは `drop view … cascade` →
+`create view` に。`rls-check` は `BASE`（db93b264、本物が持つ一番古い形）を先に
+当ててから今の版を当てる。`supabase-deploy.yml`（949399cb）── verify-plan を
+GitHub の Actions で置く（オーナーにターミナルは無い）。verify-plan は
+2026-09-13 に初めて置かれた。サーバーの名前の無い言語 14 本はオーナーが
+2026-09-15 に SQL で消した（人の作った物は無かった：全部 38 字の枠だけ）。
+
+Apple の審査（ビルド 154、2026-09-15）：「column profile.link does not exist」と
+登録のエラー ── 両方 schema が入っていなかったことが原因。159 で登録→ログインが
+実機で通ってから出し直す。返事はリーダーが書く。
+
+---
+
+## 2026-09-12 ── ビルド 158
 
 `master` = `d390a1bd`、ゲート 44/44 緑、`npm run rls` 372 件緑。ビルドは
 2026-09-12 07:26 UTC に出した（`ios-deploy.yml`、master）。実機で見る場所は

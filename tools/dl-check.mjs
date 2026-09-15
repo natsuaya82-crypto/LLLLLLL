@@ -456,7 +456,7 @@ say(r.capBack && r.capBack.own === 3 && r.capBack.read === 3,
    handler did (CLAUDE.md rule 12).
 
    Only the transport is stubbed, so netTakeDrop(), netTakes() and
-   netTakeGone() all run for real against a `language_take` table made of one
+   netLangsGone() all run for real against a `language_take` table made of one
    array. */
 /* FROM AN EMPTY PHONE, and that is not tidiness. The sections above leave
    five downloaded languages in the index (the one they took, and the three

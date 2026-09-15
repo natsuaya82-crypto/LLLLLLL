@@ -2196,7 +2196,7 @@ say(tookB.far2row === false && tookB.far2letters === null,
    3. 答えが来ていないとき（netTakes が落ちた＝LTAKE null）は何も落ちない
    4. 自分の言語は一バイトも動かない。サーバーへは一度も行かない
 
-   赤を見た形（2026-09-09）: netTakenDown() から netTakeGone() の一行を外すと
+   赤を見た形（2026-09-09）: netTakenDown() から netLangsGone() の一行を外すと
    1・2 が赤 ── 索引に行が残り、`.got` の写しも残る。                      */
 await pg.reload();
 await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
