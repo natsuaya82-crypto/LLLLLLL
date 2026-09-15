@@ -1696,7 +1696,9 @@ function netLangPublic(on){
   netLangRow(langId, function(sid){
     netSend('PATCH', '/rest/v1/language?id=eq.'+encodeURIComponent(sid),
             {published_at: at}, SESS.at,
-            function(){ wldPubGot(langId, at); render(); },
+            /* wldPubGot() brings the screen back -- www/home.js § LPUB is
+               the one place that says so now, so this does not say it too. */
+            function(){ wldPubGot(langId, at); },
             function(d, st, m){ netPop(d, st, m, function(){ netLangPublic(on); }); });
   }, function(d, st, m){ netPop(d, st, m, function(){ netLangPublic(on); }); });
 }

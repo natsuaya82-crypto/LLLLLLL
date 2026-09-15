@@ -1149,8 +1149,35 @@ function vWldArt(){
    THE VALUE LEFT IN THE `wld` SLICE IS NOT TOUCHED. Nothing reads `hide` any
    more and nothing writes it; what somebody's file already holds stays exactly
    where it is (docs/DATA_SAFETY.md -- a migration copies and never removes). */
+/* AND THE PLACE THE ANSWER LANDS IS THE PLACE THE SCREEN IS TOLD.
+   「この言語について が一生「通信中」で進まない」 OWNER 2026-09-15, 実機 159.
+
+   The page does not draw until this has an answer, so every road that gets one
+   has to bring the screen back -- and 「every road remembers to」 is a rule
+   written out once per road, which is CLAUDE.md § One place, not fifteen.
+   There were three roads and two of them remembered: netLangsDown()'s walk
+   (its caller renders when the list lands) and netLangPublic() (which used to
+   render here itself). The third is netLangRow() -- the road that MAKES the
+   row -- and it is the one a new account walks: the server has no language of
+   theirs, langForAcct() mints one, and the only thing that ever answers for
+   that language's page is the POST that puts its row up. It wrote the answer
+   and told nobody, so the mark turned on a page whose answer was already in
+   hand. Measured 2026-09-15 (docs/scope/r38-about.md):
+
+     PROBE +6.2s   {"waiting":true, "LPUB":1, "known":true}
+     PROBE +11.2s  {"waiting":true, "LPUB":1, "known":true}
+
+   So the roads stop saying it and this says it once. A fourth road cannot
+   forget. It is the ANSWER CHANGING that draws -- an answer this phone
+   already had is nothing new to show, and netLangsWalk() writes one of these
+   per row. acct-check 77. */
 var LPUB={};
-function wldPubGot(id, at){ LPUB[String(id||'')]=at? 1 : 0; }
+function wldPubGot(id, at){
+  var k=String(id||''), v=at? 1 : 0;
+  if(Object.prototype.hasOwnProperty.call(LPUB, k) && LPUB[k]===v) return;
+  LPUB[k]=v;
+  render();
+}
 function wldPubKnown(id){
   return Object.prototype.hasOwnProperty.call(LPUB, String(id||''));
 }

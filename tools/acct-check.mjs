@@ -3745,6 +3745,86 @@ const R = await pg.evaluate(async () => {
         '足すのは「接続できません」、一覧は写しを畳まずに出す');
   }
 
+
+  /* ---- 77. 「この言語について」は、答えが着いた時に描かれる -------------
+     オーナー、実機 159（2026-09-15 21:33 JST）:
+       「設定→言語 の自分の言語 → この言語について が一生「通信中」で進まない」
+
+     読まずに押して測った（docs/scope/r38-about.md に probe の出力）。この画面は
+     `wldOpen().here()` = `wldPubKnown(langId)` を待つ ── 「この言語のページは
+     公開か」にサーバーが答えたか、です（www/home.js § LPUB）。答えは三つの道が
+     書きます。二つは書いたあとに画面へ知らせ、**行を作る道（netLangRow）だけが
+     知らせません**。だから新しい account が最初の言語を作った直後にこの画面を
+     開くと、答えが着いても丸は回ったままです。
+
+     押して測った形（バグを入れたまま）:
+       PROBE +6.2s   {"waiting":true, "LPUB":1, "known":true}
+       PROBE +11.2s  {"waiting":true, "LPUB":1, "known":true}
+     ── 答えは手元にあるのに、画面は待ちの丸。
+
+     ここは行の答えを**手で握って**離します。時間ではなく順番で測るためです。 */
+  {
+    start();
+    netOut();
+    const keepL77 = LANGS, keepId77 = langId, keepNAV77 = NAV;
+    LANGS = {}; langId = ''; langStore();
+    NET_SYNCING = false;
+    for (const k of Object.keys(LPUB)) delete LPUB[k];
+
+    const nap = (ms) => new Promise(r => setTimeout(r, ms));
+    const appIs77 = () => document.getElementById('app').innerHTML;
+    const waiting77 = () => appIs77().indexOf('snswait') >= 0;
+
+    const keep77 = netSend;
+    let rowOk77 = null;      /* POST /rest/v1/language の答え ── 手で離す */
+    netSend = function (method, p, body, tok, ok, bad) {
+      const url = String(p).split('?')[0];
+      /* 新規登録した account。サーバーに language の行は一本も無い ──
+         端末が一本 mint して、行を POST する。 */
+      if (url === '/rest/v1/language' && method === 'POST') { rowOk77 = ok; return; }
+      if (url === '/rest/v1/language') { setTimeout(() => ok([]), 0); return; }
+      if (url === '/rest/v1/slice') { setTimeout(() => ok(method === 'GET' ? [] : {}), 0); return; }
+      if (url === '/rest/v1/profile') {
+        setTimeout(() => ok([{ id: A, handle: 'aya77', display: 'Aya' }]), 0); return;
+      }
+      setTimeout(() => ok([]), 0);
+    };
+    netTook({ access_token: 'not a jwt', refresh_token: 'a refresh token', user: { id: A } });
+    /* 行の POST が出るまで ── ここまでで言語は mint されて開いています。 */
+    for (let i = 0; i < 120 && !rowOk77; i++) await nap(25);
+
+    go('about'); await nap(40);
+    /* 前提。ここが偽なら下の claim は何も言っていないので、そう言います。 */
+    const wasWaiting77 = waiting77();
+    if (!wasWaiting77)
+      no('77: (前提) 答えが出ている間にこの画面が待っていない ── ' +
+         '測りたい状態に立てていません。fixture か偽サーバーの側の話です');
+    if (!rowOk77)
+      no('77: (前提) language の行の POST が出ていない ── ' +
+         '端末は自分の最初の言語をサーバーへ出していません');
+
+    /* サーバーが「行を作った」と答える。 */
+    if (rowOk77) rowOk77({});
+    await nap(60);
+
+    if (!wldPubKnown(langId))
+      no('77: 行の答えが着いても「この言語のページは公開か」が記録されない ── ' +
+         'LPUB に ' + String(langId).slice(0, 8) + ' が入っていません');
+    else if (waiting77())
+      no('77: **答えが着いたのに「この言語について」が待ちの丸のまま** ── ' +
+         'wldPubKnown() は真、画面は snswait。答えを書いた道が画面に' +
+         '知らせていません（www/home.js § wldPubGot）');
+    if (!waiting77() && appIs77().indexOf('abth') < 0)
+      no('77: 待ちは解けたのに記事の見出しが無い ── ' +
+         appIs77().replace(/\s+/g, ' ').slice(0, 120));
+
+    netSend = keep77;
+    LANGS = keepL77; langId = keepId77; NAV = keepNAV77; langStore();
+    render();
+    say('77: 「この言語について」は答えが着いた時に描かれる ── 答えを記録する' +
+        '一箇所が画面に知らせる（道ごとに憶えているのではなく）');
+  }
+
   return out;
 });
 
