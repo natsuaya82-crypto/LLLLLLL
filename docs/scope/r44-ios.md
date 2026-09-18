@@ -147,6 +147,14 @@ fixture と post-check と rls-check の**投稿の写真**だけ）。
 これは私の scope の外なので check は書いていません。リーダーの判断で
 `docs/BACKLOG.md` へ。
 
+**そしてその穴に、この枝自身が一度落ちました。**`e8620f05` に
+`www/img/kb-full.jpg` の削除が**入っていませんでした** ── 写真を撮るために
+`git stash` で往復した時に index から外れ、そのあとの `git add` で
+`www/img/` を名指ししていなかったためです。ディスクから消えているのに
+git は持ったまま、という状態で、`assets` `es5` `dead` `act` `i18n` の
+**五本とも緑のまま通りました**。止めたのは commit hook でも check でもなく、
+`git status` です。`f8f4e83f` で削除を入れ直しました。
+
 ## DEVICE UNCONFIRMED
 
 **両方とも実機未確認です。**Linux に Swift はありません。見る所は
