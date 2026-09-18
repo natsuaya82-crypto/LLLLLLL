@@ -147,3 +147,81 @@ FAILED (2):
 「親指が当たる物は全部」に、私が自分で線を引くことになるからです
 （`box-check` の baseline が「許可」に腐る、と `CLAUDE.md` 規則 18 が言うのと
 同じ形）。**赤のまま置いてあります ── check が仕事をしている状態です。**
+
+---
+
+# 報告 2 ── `.pbio a` も 44 に（リーダーの指示、2026-09-18）
+
+> リーダー：「残った 2 本も君が直す ── 44pt は『親指が当たる物は全部』で、
+> 例外は無い（OWNER 2026-09-01）。`www/me.js` は触らなくてよい、CSS だけ」
+
+**CODE CONFIRMED のみ。実機では一度も押していません。**
+
+## 1. 赤（上の § 1 と同じ出力の、残っていた 2 本）
+
+```
+FAILED (2):
+  too small to hit: the profile, a link and a place (paid): A 91x16 -- under 44
+  too small to hit: somebody else's profile, a link and a place (paid): A 79x16 -- under 44
+```
+
+## 2. 直した ── `.pbio a`（`www/index.html`、`www/me.js` は触っていません）
+
+```css
+.pbio a{display:inline-block;padding:14px 0;margin:-14px 0}
+```
+
+16 + 14 + 14 = **44**。負の margin が行 box に padding の分を返します ──
+inline-block は **margin box** で行の高さが決まるので、当たりだけが広がり、
+bio の行間も頁の高さも動きません。角丸・枠線・色は足していません。
+
+## 3. 回した check ── 緑
+
+```
+npm run press
+  screens built: 1110
+  classes worn: 626, styled and unworn: 3 (baseline 3)
+  nothing under 44pt: held          ← 4 本とも消えた
+  rows in one list are one height: 3508 lists measured
+  buttons pressed: 17113  (279/280 distinct names)
+  every button pressed: nothing threw, nothing went blank.
+  exit 0
+
+npm run box
+  corners and borders in index.html: 104  (baseline 104)
+  set from www/*.js: 0
+  exit 0
+```
+
+`box` の baseline は **104 のまま**、一行も足していません。
+
+## 4. 写真 ── 二枚、高さは同じ
+
+**素の `profile` ではなく `hd@64`（`the profile, a link and a place`）を
+撮りました。**種の `ME` には `link` も `loc` も入っていないので、素の
+`profile` には link が一本も出ません ── 前後を撮っても link が写らない写真に
+なります。赤が出ていたのもこの顔です（`tools/fixture.mjs:1211`）。
+
+```
+node tools/shot.mjs --lang ja hd@64 hd@65
+```
+
+| | 頁の高さ |
+|---|---|
+| `shots/r42-pbio-before-ja.png` | 780 × **1688** |
+| `shots/r42-pbio-after-ja.png` | 780 × **1688** |
+| `half-somebody-else-s-profile-…`（前／後） | 780 × **1744** ／ 780 × **1744** |
+
+**前後で同じです。行間は動いていません。**「谷の上 ・ tokinets.com」の
+並びも、金の色も、字の大きさも、前後で同じに見えます。
+**オーナーに見せてください。**
+
+## 5. まだ言っていないこと
+
+- **実機では一度も押していません。**44 になったのは headless の 390×844 で
+  測った数字です。
+- ゲート（`npm test`）は回していません（規則 2）。`press`・`box`・`es5`・
+  `assets` の四本だけです。
+- `press` の「戻るスワイプ」の行が一度 `pointercancel` で「何も主張しない」に
+  なりました（機械が混んだ時に出る、`docs/BACKLOG.md` にある揺れ）。
+  回し直したら通常どおりに戻り、`nothing under 44pt: held` は両方の回で同じです。
