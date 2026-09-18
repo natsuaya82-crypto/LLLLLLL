@@ -3840,9 +3840,12 @@ const R = await pg.evaluate(async () => {
      本物の `obSocial()` を押して測ります ── 偽の plugin と偽の netSend で、
      `obSignInApple()` から `OBM.nm` まで、途中を一つも飛ばさずに。
 
-     二つの面。名前が来た時は入っていること、**来なかった時は空のまま**で
-     あること ── Apple が名前を返すのは初回の認可だけで、二度目は null で
-     来ます。そこに何かを入れるのは、名前を発明することです。 */
+     四つの面。名前が来た時は **姓→名** で入っていること（`ja` なら
+     「山田太郎」── 間の空白なし、`en` なら「Smith John」── 空白一つ、
+     OWNER 2026-09-18）、Google が `name` を丸ごと渡した時はそのままで
+     あること、そして **来なかった時は空のまま** であること ── Apple が名前を
+     返すのは初回の認可だけで、二度目は null で来ます。そこに何かを入れるのは、
+     名前を発明することです。 */
   {
     const nap78 = (ms) => new Promise(r => setTimeout(r, ms));
     const keepSend78 = netSend;
@@ -3857,10 +3860,22 @@ const R = await pg.evaluate(async () => {
       /* サーバーはこの account を知らない ── 新しい account とはそれです。 */
       setTimeout(() => ok([]), 0);
     };
-    /* 一度押す。plugin が返す profile だけが面ごとに違います。 */
-    const press78 = async (profile) => {
+    /* 一度押す。plugin が返す profile と、表示言語だけが面ごとに違います
+       ── 姓と名の間の空白は表示言語で決まるので（OWNER 2026-09-18
+       「山田太郎」）、両方の面を押します。`start()` が fixture を撒き直して
+       `SET.ui` を `en` に戻すので、ここは start() の後です。 */
+    const press78 = async (profile, ui) => {
       start();
       netOut();
+      /* **表示言語は B の預かりに置きます。**`SET.ui` は account のもの
+         （`SET_PREFS`）で、入ってくる account の `setFor(B)` が B の預かりを
+         持ってきて上書きします ── `netOut()` は `SET.acct` を A のままにする
+         ので、ここで `SET.ui` に置いた物は A の預かりへ行って捨てられます。
+         **押して measure してそう出ました**（`SET.acct` が A のまま、
+         `obGaveName()` の時には `SET.ui` が B の `en` に戻っている）。
+         B の預かりが無ければ `setFor()` は account の鍵を全部落とすので、
+         `ui` だけの預かりを作っても他は同じ落ち方をします。 */
+      localStorage.setItem(setParkKey(B), JSON.stringify({ ui: ui || 'en' }));
       OBM.nm = 'left over in memory'; OBM.hd = 'leftover'; OBM.mode = 'in';
       window.Capacitor = { Plugins: { SocialLogin: {
         initialize: () => Promise.resolve(),
@@ -3871,25 +3886,47 @@ const R = await pg.evaluate(async () => {
       obSignInApple();
       for (let i = 0; i < 300 && OBM.busy; i++) await nap78(10);
       await nap78(30);
+
     };
 
-    /* 一つ目 ── Apple が初回の認可で名前を渡してきた。 */
+    /* 一つ目 ── Apple が初回の認可で名前を渡してきた。日本語で。
+       **姓→名で、間に空白なし**：「山田太郎」OWNER 2026-09-18。 */
     await press78({ user: 'apple-sub', email: 'relay@privaterelay.appleid.com',
-                    givenName: '太郎', familyName: '山田' });
+                    givenName: '太郎', familyName: '山田' }, 'ja');
     if (OBM.mode !== 'who')
       no('78: (前提) Apple で入ったのに「名前と @」の顔に立っていない ── ' +
          'OBM.mode=' + JSON.stringify(OBM.mode) + '。測りたい状態に立てていません');
-    if (OBM.nm !== '太郎 山田')
-      no('78: **Apple が渡した名前が名前欄に入っていない** ── ' +
+    if (OBM.nm !== '山田太郎')
+      no('78: **Apple が渡した名前が「山田太郎」になっていない** ── ' +
          'OBM.nm=' + JSON.stringify(OBM.nm) + '、plugin は givenName「太郎」' +
-         'familyName「山田」を渡しています（Apple の審査 4、ビルド 161）');
+         'familyName「山田」を渡しています。姓→名で、ja なら間の空白なし' +
+         '（OWNER 2026-09-18「山田太郎」、Apple の審査 4、ビルド 161）');
     if (OBM.hd)
       no('78: @ に何か入っている ── OBM.hd=' + JSON.stringify(OBM.hd) +
          '。Apple は handle を持っていないので、ここは人が打ちます');
 
+    /* 同じ名前を、表示言語が英語の面で ── **姓→名のまま、間に空白一つ**。
+       「Smith John」を「SmithJohn」にはしません。順番は言語で変わりません
+       （変わるのは空白だけ）。 */
+    await press78({ user: 'apple-sub', email: 'relay@privaterelay.appleid.com',
+                    givenName: 'John', familyName: 'Smith' }, 'en');
+    if (OBM.nm !== 'Smith John')
+      no('78: 英語の面で「Smith John」になっていない ── ' +
+         'OBM.nm=' + JSON.stringify(OBM.nm) + '。姓→名は言語で変わらず、' +
+         '変わるのは間の空白だけです（ja／zh／ko は無し、他は一つ）');
+
+    /* Google は `name` を丸ごと渡してきます。**その時はそのまま** ──
+       並べ替える材料が無く、並べ替えるのは名前を書き換えることです。 */
+    await press78({ user: 'google-sub', email: 'somebody@example.com',
+                    name: 'Ada Lovelace', givenName: 'Ada',
+                    familyName: 'Lovelace' }, 'ja');
+    if (OBM.nm !== 'Ada Lovelace')
+      no('78: Google が丸ごと渡した name が書き換えられている ── ' +
+         'OBM.nm=' + JSON.stringify(OBM.nm) + '。`name` がある時はそのままです');
+
     /* 二つ目 ── 二度目のサインイン。Apple は名前を返しません。 */
     await press78({ user: 'apple-sub', email: 'relay@privaterelay.appleid.com',
-                    givenName: null, familyName: null });
+                    givenName: null, familyName: null }, 'ja');
     if (OBM.nm)
       no('78: 名前が来ていないのに名前欄に何か出ている ── ' +
          'OBM.nm=' + JSON.stringify(OBM.nm) + '。Apple が名前を返すのは初回の' +
@@ -3900,8 +3937,10 @@ const R = await pg.evaluate(async () => {
     netSend = keepSend78;
     OB_SL = false;
     start();
-    say('78: Apple／Google が渡した名前は「名前と @」の名前欄に入って出る ── ' +
-        '来なかった時は空のまま（Apple の審査 4、ビルド 161）');
+    say('78: Apple／Google が渡した名前は「名前と @」の名前欄に**姓→名**で ' +
+        '入って出る ── ja／zh／ko は間の空白なし「山田太郎」、他は空白一つ' +
+        '「Smith John」、Google の name は丸ごとそのまま、' +
+        '来なかった時は空のまま（OWNER 2026-09-18、Apple の審査 4）');
   }
 
   return out;

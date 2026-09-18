@@ -218,6 +218,29 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### 2026-09-18 Apple／Google がくれた名前は姓→名 ──「山田太郎」
+- Date: 2026-09-18
+- Area: オンボーディングの「名前と @」の顔、`obGaveName()`
+- Decision:（原文のまま）「山田太郎」
+- Reason: Apple は `givenName` と `familyName` を別々に渡すので、くっつける
+  順番はアプリが決めることになる。`docs/scope/r40-siwa.md` がそれを「オーナーへ
+  訊いていないこと」として残していた（当時は given + ' ' + family ＝「太郎 山田」）。
+- 間の空白はリーダーの読み: `uiLang()` が `ja`／`zh`／`ko` なら空白**なし**
+  （オーナーの例が「山田太郎」で空白が無いため）、それ以外は空白**一つ**
+  （「Smith John」を「SmithJohn」にしないため）。中国語と韓国語の名前も姓が先で
+  間を空けないので同じ扱い。**順番は言語で変わらず、変わるのは空白だけ。**
+  人が直せる欄なので、違っていればその場で直せる。
+- Google が `name`（丸ごと一つの文字列）を渡してきた時はそのまま使う ──
+  並べ替える材料が無く、並べ替えるのは名前を書き換えること。
+- Affected features: ソーシャルの扉から入った新しい account の名前欄の初期値
+- Affected data: **何も。**入力欄の初期値の組み方だけで、`localStorage` の鍵も
+  サーバーの列も送る中身も同じ（`profile.display`）。移行も削除も無い。
+- Affected docs: `docs/CHANGELOG.md`、`docs/scope/r43-namefree.md`
+- Implementation status: IMPLEMENTED（`obGaveName()` 一箇所）。
+  `tools/acct-check.mjs` claim 78 が二つの面（ja・en）と Google の `name` を
+  押して保つ。**CODE CONFIRMED のみ** ── Apple のシートは実機でしか出ない。
+
+
 ### 2026-09-15 自分の言語の一覧はサーバーの答えそのもの ── 端末の索引は数えない
 - Date: 2026-09-15
 - Area: 言語の一覧、天井、起動とサインインの降り／上り
