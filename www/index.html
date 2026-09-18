@@ -1889,7 +1889,12 @@ a.set{text-decoration:none}
    sat there looking like one. Small, side by side, quiet. */
 .docs{display:flex;align-items:center;justify-content:center;gap:10px;
       margin-top:auto;padding-top:34px;font-size:.78rem;color:var(--txm)}
-.docs a{color:var(--txm);text-decoration:none}
+/* 44pt DOWN, and nothing else changes. They were 50x21 and 127x21 -- the two
+   Apple 3.1.2 sends a reviewer to press, under the floor the owner set
+   (OWNER 2026-09-01). The padding is the whole of the fix: no corner, no
+   border, no panel, the same type size and the same colour, so what it
+   still looks like is small, side by side, quiet. */
+.docs a{color:var(--txm);text-decoration:none;display:inline-block;padding:12px 0}
 .docs a:active{color:var(--gold)}
 .docdot{opacity:.5}
 /* Deleting something, wherever it is offered. It was written out as
