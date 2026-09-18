@@ -200,7 +200,6 @@ defLang('zh', (function(){
       "kb.step1.d" : "从「设置」顶部：通用 → 键盘 → 键盘",
       "kb.step2" : "选择 Lingua",
       "kb.step3" : "在 Lingua 的设置中点按「键盘」",
-      "kb.step4" : "打开「允许完全访问」",
       "kb.sys.h"               : "键盘设置方法",
       "kb.sys.go" : "打开设置",
       "kb.sys.no" : "设置打不开",

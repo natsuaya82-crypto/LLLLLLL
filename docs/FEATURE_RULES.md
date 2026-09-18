@@ -268,6 +268,42 @@ the reasoning — a reason can be re-derived, a decision cannot.
   押して保つ。**CODE CONFIRMED のみ** ── Apple のシートは実機でしか出ない。
 
 
+### 2026-09-18 キーボードはフルアクセスを要求しない
+- Date: 2026-09-18
+- Area: iOS キーボード拡張、案内（`?`）
+- Decision: 「切っていい」── `RequestsOpenAccess` を `false` にする。案内の
+  手順 4「「フルアクセスを許可」をオンにする」は**手順ごと**消す。番号は
+  詰めない（1・2・3 がそのまま）。
+- Reason: 拡張はフルアクセスの要る API を一つも使っていない。grep 済み ──
+  `UserDefaults` 0、`URLSession` 0、`UIPasteboard` 0、`openURL` 0、App Group
+  への書き込み 0。審査 4.4.1 が逐語で *"Remain functional without full network
+  access and without requiring full access"*。取らずに済むなら理由も聞かれない。
+- Affected features: キーボード拡張、案内の四手順 → 三手順
+- Affected data: 無し。`keyboard.json` の形も書き方も読み方も同じ。
+  `localStorage` の鍵もサーバーの列も増減無し
+- Affected docs: `docs/CHANGELOG.md` 2026-09-18、`docs/keyboard-extension.md`
+  （plist の節・審査 4.4.1 の節・冒頭・プライバシーの節・実機の記録）、
+  `docs/keyboard.md`:129、`docs/CHECK-0907.md` ビルド 162
+- Implementation status: IMPLEMENTED（`claude/r44-ios`）。**DEVICE
+  UNCONFIRMED** ── Linux に Swift は無い。実機でフルアクセスを**オフのまま**
+  Lingua キーボードを開いて自作の字が出ることを見るまでは推論
+
+### 2026-09-18 向きは縦のみ
+- Date: 2026-09-18
+- Area: iOS 本体の `Info.plist`
+- Decision: 「縦のみ」── `UISupportedInterfaceOrientations` と
+  `UISupportedInterfaceOrientations~ipad` の両方を
+  `UIInterfaceOrientationPortrait` 一つだけにする。`~ipad` の
+  `PortraitUpsideDown` も落とす。
+- Reason: `docs/scope/r41-review.md` § 4.0-b が押して測った ── 844×390 で
+  `#app{max-width:480px}` の柱は崩れないが、高さが 390 しかないのでプラン画面は
+  下タブの帯が段の中身に重なる（`shots/r41-land-plans.png`）。横向きを許す必要が
+  無いなら閉じるのが安い。
+- Affected features: 画面の向き全部
+- Affected data: 無し。`www/` は一行も触っていない
+- Affected docs: `docs/CHANGELOG.md` 2026-09-18、`docs/CHECK-0907.md` ビルド 162
+- Implementation status: IMPLEMENTED（`claude/r44-ios`）。**DEVICE UNCONFIRMED**
+
 ### 2026-09-15 自分の言語の一覧はサーバーの答えそのもの ── 端末の索引は数えない
 - Date: 2026-09-15
 - Area: 言語の一覧、天井、起動とサインインの降り／上り

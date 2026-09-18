@@ -152,7 +152,6 @@ defLang('es', (function(){
       "kb.step1.d" : "Desde el inicio de Ajustes: General → Teclado → Teclados",
       "kb.step2" : "Elige Lingua",
       "kb.step3" : "En los ajustes de Lingua, toca Teclados",
-      "kb.step4" : "Activa Permitir acceso completo",
       "kb.sys.h"               : "Cómo configurar el teclado",
       "kb.sys.go" : "Abrir Ajustes",
       "kb.sys.no" : "No se pudieron abrir los Ajustes",

@@ -92,6 +92,70 @@ Google が `name`（丸ごと一つの文字列）を渡してきた時はそれ
 **十言語に新しい文字列はありません。**
 
 
+### 2026-09-18 フルアクセスのスイッチが要らなくなった
+
+**人が気づく変化。**Lingua キーボードを使うのに「フルアクセスを許可」を
+オンにする必要がなくなりました。iOS の設定で Lingua キーボードを足したら、
+**そこで終わりです。**今まではその先にもう一段あり、案内（`?`）の手順 4 が
+「「フルアクセスを許可」をオンにする」でした。**その手順ごと消えて、案内は
+三段になりました。**
+
+**「切っていい」OWNER 2026-09-18。**`docs/scope/r41-review.md`
+§ キーボード拡張が「直しの一行」として置いていったものに、決めごとが来ました。
+
+**なぜ切れるか。**拡張はフルアクセスの要る API を一つも使っていません。
+2026-09-02 にそう書いて `true` のまま残していたものを、もう一度 grep しました
+── `ios/App/LinguaKeyboard/` 六本の Swift で `UserDefaults` 0、`URLSession` 0、
+`UIPasteboard` 0、`openURL` 0、App Group への書き込み 0。import は
+`Foundation` `UIKit` `CoreGraphics` の三つだけ。App Group を**読む**のに
+フルアクセスは要らない（Apple "Configuring open access for a custom keyboard"）
+という 2026-09-02 の結論はそのままで、門はその日に外してあります。今日
+落としたのは**要求**のほうです。
+
+**2026-09-02 に `true` で残した理由は二つありました。**その②
+「`www/` のオンボーディングが『フルアクセスを許可』を手順に持っており
+（`kb.step4`）、`www/` は別のセッションのものです」を、今日消しました。
+**①（Linux に Swift は無い）は消えていません** ── 下の DEVICE UNCONFIRMED。
+
+**変えたもの。**
+
+- `ios/App/LinguaKeyboard/Info.plist` の `RequestsOpenAccess` が `false`。
+- `www/keyboard.js` の案内から**手順 4 を手ごと削除**（`kbStepHTML(4, …)` の
+  一行と、`KB_SHOTS` の `'kb-full.jpg'` の項）。番号は詰まりません ── 1・2・3
+  がそのまま残り、4 が無くなるだけです。
+- 写真 `www/img/kb-full.jpg` を削除。**人が作った物ではありません** ──
+  iOS の設定画面をこちらで撮った、案内のための一枚です。これを指していたのは
+  `www/keyboard.js` の一箇所だけで（grep 済み）、手順と一緒に消えました。
+- 十言語から `kb.step4` の行を削除。**新しい文字列はありません。**
+
+**貯まる物は一つも変わりません。**`keyboard.json` の形も、書き方も、読み方も
+同じ。`localStorage` の鍵も、サーバーの列も、一つも増えも減りもしていません。
+
+**DEVICE UNCONFIRMED。**Linux に Swift はありません。実機でフルアクセスを
+**オフのまま** Lingua キーボードを開き、自作の字が出ることを見るまでは、
+これは文書と grep に基づく推論です。見る所は `docs/CHECK-0907.md` の
+ビルド 162。
+
+### 2026-09-18 横にしても回らない
+
+**人が気づく変化。**iPhone を横にしてもアプリは回りません。縦だけです。
+iPad も同じ（そちらは `TARGETED_DEVICE_FAMILY=1` なので今は届きませんが、
+両方書いてある物なので両方直しました）。
+
+**「縦のみ」OWNER 2026-09-18。**`docs/scope/r41-review.md` § 4.0-b が押して
+測っています ── 844×390 で `#app{max-width:480px}` の柱は崩れませんが、
+高さが 390 しかないのでプラン画面は下タブの帯が段の中身に重なります
+（`shots/r41-land-plans.png`）。
+
+**変えたもの。**`ios/App/App/Info.plist` の
+`UISupportedInterfaceOrientations` と `UISupportedInterfaceOrientations~ipad`
+の両方を `UIInterfaceOrientationPortrait` 一つだけに。`~ipad` にあった
+`PortraitUpsideDown` も落ちます。
+
+**貯まる物は何も変わりません。**`www/` は一行も触っていません。
+
+**DEVICE UNCONFIRMED。**見る所は `docs/CHECK-0907.md` のビルド 162。
+
 ### 2026-09-18 Apple／Google がくれた名前を、名前欄に入れた状態で出す ── 貯まる物は増えません
 
 **Apple の審査（ビルド 161、2026-09-18、Guideline 4）。**「Sign in with Apple

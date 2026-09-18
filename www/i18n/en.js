@@ -94,7 +94,6 @@ defLang('en', (function(){
       "kb.step1.d" : "From the top of Settings: General → Keyboard → Keyboards",
       "kb.step2" : "Choose Lingua",
       "kb.step3" : "In Lingua's settings, tap Keyboards",
-      "kb.step4" : "Turn on Allow Full Access",
       "kb.sys.h"                 : "How to set up the keyboard",
       "kb.sys.go" : "Open Settings",
       "kb.sys.no" : "Settings would not open",

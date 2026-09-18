@@ -108,7 +108,6 @@ defLang('ja', (function(){
       "kb.step1.d" : "設定の一番上から　一般 → キーボード → キーボード",
       "kb.step2" : "Lingua を選ぶ",
       "kb.step3" : "Lingua の設定で「キーボード」を押す",
-      "kb.step4" : "「フルアクセスを許可」をオンにする",
       "kb.sys.h"                 : "キーボードの設定方法",
       "kb.sys.go" : "設定を開く",
       "kb.sys.no" : "設定を開けませんでした",

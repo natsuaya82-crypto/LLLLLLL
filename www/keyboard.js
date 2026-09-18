@@ -3902,9 +3902,7 @@ var KB_SHOTS={
      「キーボード設定の黄色い囲むやつLinguaのやつだけずれてる」 */
   'kb-add.jpg':  {t:89.6, h:8.8},
   /* the Keyboards row, at the foot of Lingua's own page in Settings */
-  'kb-app.jpg':  {t:88.6, h:11.0},
-  /* Allow Full Access, one page further in */
-  'kb-full.jpg': {t:50.2, h:18.4}
+  'kb-app.jpg':  {t:88.6, h:11.0}
 };
 function kbShot(name){
   if(!Object.prototype.hasOwnProperty.call(KB_SHOTS, name)) return '';
@@ -3920,12 +3918,17 @@ function kbStepHTML(n, title, body){
     '<div class="kbstept">'+esc(title)+'</div>'+body+'</div>';
 }
 HELP.kb=function(){
-  /* The four steps are the same on every plan, because the KEYBOARD is on
+  /* The three steps are the same on every plan, because the KEYBOARD is on
      every plan: free types on the QWERTY of drawn letters and has to turn it
      on in iOS exactly as anybody else does. It used to REPLACE them with
      three lines about upgrading, which left a free phone with the keyboard
      and no way to be told how to switch it on -- and it is what put
      kbSettings() where the free walk could never reach it.
+
+     There was a FOURTH step -- 「「フルアクセスを許可」をオンにする」 -- and it
+     went on 2026-09-18 with the switch it named。「切っていい」OWNER
+     2026-09-18: the extension asks for no open access, so the walk ends
+     where iOS's own list of keyboards does.
 
      The upgrade lines are kept and moved to the FOOT, after the steps:
      「無料プランのキーボードは編集ができません。／自作キーボードを作りたい
@@ -3949,7 +3952,6 @@ HELP.kb=function(){
       '<button class="btn" style="width:100%;margin-top:10px"' + DO('kbSettings') + '>'+
         esc(t('kb.sys.go'))+'</button>'+
       kbShot('kb-app.jpg'))+
-    kbStepHTML(4, t('kb.step4'), kbShot('kb-full.jpg'))+
     (can('kb') ? '' :
       '<div class="note" style="margin-top:16px">'+esc(t('kb.free.no'))+'</div>'+
       '<div class="note">'+esc(t('kb.free.up'))+'</div>'+

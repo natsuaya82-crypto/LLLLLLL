@@ -240,7 +240,6 @@ defLang('fr', (function(){
       "kb.step1.d" : "Depuis le haut de Réglages : Général → Clavier → Claviers",
       "kb.step2" : "Choisissez Lingua",
       "kb.step3" : "Dans les réglages de Lingua, touchez Claviers",
-      "kb.step4" : "Activez Autoriser l'accès complet",
       "kb.sys.h"               : "Configurer le clavier",
       "kb.sys.go" : "Ouvrir les Réglages",
       "kb.sys.no" : "Impossible d’ouvrir les Réglages",
