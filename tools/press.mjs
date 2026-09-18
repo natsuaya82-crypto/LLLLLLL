@@ -112,8 +112,16 @@ const R = await pg.evaluate(async () => {
      half a target wide. It looked fine. It always looks fine. */
   const TAP = 44;
   const seenSmall = {};
+  /* AND `<a>` IS A THUMB TARGET. The floor is「親指が当たる物は全部」and this
+     list was four tag names, none of them an anchor -- so the two documents at
+     the foot of the account room (`docRows()` in www/settings.js, which are
+     anchors because a link to a page off the phone cannot be a button) were
+     50x21 and 127x21, with every check green. They are the two Apple 3.1.2
+     sends a reviewer to press. It is the SAME measure -- the same TAP, the
+     same loop, the same seenSmall -- because a second way of measuring the
+     same floor is two answers to one question. */
   function measure(where){
-    const els = document.querySelectorAll('#app button, #app input, #app select, #app textarea');
+    const els = document.querySelectorAll('#app button, #app input, #app select, #app textarea, #app a[href]');
     for (let i = 0; i < els.length; i++) {
       const e = els[i], r = e.getBoundingClientRect();
       if (!r.width || !r.height) continue;          /* hidden is not small */
