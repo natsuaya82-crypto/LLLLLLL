@@ -7,6 +7,23 @@ refactor, a feature and a rename never arrive in the same diff.
 
 The order is the order to do them in.
 
+
+## `www/img/` を見る check がありません（2026-09-18、r44 が測った）
+
+`tools/assets-check.mjs` は `index.html` の `<script src>`／`<link href>`、
+`project.pbxproj` の Sources、`PrivacyInfo.xcprivacy`、`__NAME__`、橋、
+読み込み順を見るが、**`www/img/` は一度も見ない**（`img` という語が 0 件）。
+だから「参照の無い画像」「無い画像への参照」はどちらも緑で通る ── r44 が
+`kb-full.jpg` だけ先に消して `assets` を回し、緑のままなのを見た。そして
+r44 自身が一度そこに落ちた：`git stash` の往復で削除が index から外れ、
+ディスクに無い画像を git が持ったまま五本の check が緑だった（止めたのは
+`git status`）。
+
+直すなら `assets-check` に一節：`www/` の `.js`／`index.html` が名指しする
+`www/img/*` が git に在ること、`www/img/*` の全部がどこかから名指しされて
+いること（`kbShot()` のような関数越しの名は文字列で拾える）。**checks は
+リーダー／session のどちらが書くかを決めていないので、ここに置く。**
+
 ## 文字列の当たりで主張を訊いている所が、あと二つ（2026-09-11）
 
 `tools/post-check.mjs:1950` が `/b64/.test(rawD)` ── 「`lingua.drafts` の文字の

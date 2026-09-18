@@ -32,7 +32,49 @@ un-re-read.
 
 ---
 
-## 2026-09-15 ── ビルド 161（一番新しい）
+## 2026-09-18 ── ビルド 162（一番新しい）
+
+`master` = 取り込み後の sha（ゲート緑で ff）。実機で見る場所は
+`docs/CHECK-0907.md`「ビルド 162」。**`supabase/schema.sql` は変わっていない**。
+**実機確認は全部まだ。161 の実機確認もまだ**（オーナーは 161 を Apple に出し、
+Apple が 4 で落とした）。
+
+**Apple の審査（161、2026-09-18、Guideline 4）**：「Sign in with Apple のあとに
+名前かメールを入力させている」。原因は読んで見つけた：`obSocial()` が plugin の
+`profile`（givenName／familyName）を捨て、行の無い新しい account が
+`obWhoHTML()` に空欄で立っていた。**オーナー「まとめてレビューして欲しい」**
+→ 出す前にこちらで審査基準を全部なめた（r41）。
+
+入ったもの（五本、根は 11480dd5）：
+- `claude/r40-siwa` ── Apple／Google がくれた名前を「名前と @」の名前欄に
+  入れて出す（形 A、直せる）。`obGaveName()` が一箇所。@ は打つ。acct-check 78。
+- `claude/r41-review` ── **審査基準の総ざらい**、`docs/scope/r41-review.md`。
+  高 4（4.8 は r40／残り三つはオーナー側：審査用アカウント・schema が本物に
+  入っているか・規約とポリシーの二枚が開くか）、中 7、低は確かめて問題なし。
+  コードは一行も変えていない。
+- `claude/r42-docs44` ── 規約・ポリシーのリンク 21px → 45px、プロフィールの
+  自己紹介のリンク 16px → 44（padding＋負の margin、行間は動かない）。**`press`
+  の 44pt の測りに `a[href]` が入った**（四本赤を見てから）。
+- `claude/r43-namefree` ── **「山田太郎」**：姓→名（ja／zh／ko は空白なし、他は
+  一つ ── 空白はリーダーの読み）。**「free」**：無料の段は `$0／月` をやめて
+  その言語の「無料」の語、期間なし。plan-check に無料の段の claim 六本（それまで
+  無料の枝は誰も歩いていなかった）。
+- `claude/r44-ios` ── **「切っていい」**：`RequestsOpenAccess` false、案内の手順 4
+  「フルアクセスを許可」を手順ごと削除（`kb.step4`・`kb-full.jpg`）。
+  **「縦のみ」**：`UISupportedInterfaceOrientations` を Portrait だけに。
+  **DEVICE UNCONFIRMED**（Linux に Swift は無い）。
+
+**触っていない決めごと**：`netDay()` が「今日」を訊かず一番新しい行を出すのは
+コードのコメントが**わざと**と書いている（r41 は中と読んだ）。オーナーが言う
+まで動かさない。`kbSettings()` が設定に飛ばない件は原因未確認のまま
+（実機でしか押せない）。
+
+**オーナーの朝の三つ（これが無いと 162 も落ちる）**：審査用アカウントを
+App Review 情報に／SQL 二行で `account_delete()` と `profile.link` が本物に
+あること／iPhone の Safari で terms.html と privacy.html が開くこと。Apple への
+返事の文はリーダーの for-owner.md（scratchpad）にある。
+
+## 2026-09-15 ── ビルド 161
 
 `master` = 取り込み後の sha（ゲート緑で ff）。実機で見る場所は
 `docs/CHECK-0907.md`「ビルド 161」。**`supabase/schema.sql` は変わっていない**
