@@ -62,3 +62,105 @@ grep してそう書いていて、この枝でもう一度 grep しました（
 ## commit は種類ごとに分ける
 
 CHANGELOG が先。決定 1 と決定 2 は別の commit。docs の書き換えも別。
+
+---
+
+# 報告 ── 2026-09-18
+
+commit 六本、種類ごと。`docs/CHANGELOG.md` が先。
+
+| | |
+|---|---|
+| scope 宣言 | `d010d1e5` |
+| CHANGELOG（二件） | `285d5461` |
+| 決定 1 フルアクセス | `e8620f05` |
+| 決定 2 縦のみ | `67a2b621` |
+| docs | `133b1a1a` |
+
+## 決定 1 ── キーボードはフルアクセスを要求しない
+
+`ios/App/LinguaKeyboard/Info.plist` `RequestsOpenAccess` → `false`。
+
+**この枝でもう一度 grep しました**（`ios/App/LinguaKeyboard/` 六本の Swift）：
+
+```
+UserDefaults       0
+URLSession         0
+UIPasteboard       0
+openURL            0
+NSExtensionContext 0
+App Group への書き込み（.write( / createFile / FileManager.default.create|remove|copy|move）  0
+import             Foundation / UIKit / CoreGraphics ── 三つだけ
+```
+
+2026-09-02 の CHANGELOG と同じ答えです。
+
+`www/` 側：`www/keyboard.js` の `kbStepHTML(4, t('kb.step4'), kbShot('kb-full.jpg'))`
+を**手順ごと**削除、`KB_SHOTS` の `'kb-full.jpg'` の項とその上のコメントを削除、
+`www/img/kb-full.jpg` を削除、十言語から `kb.step4` の**行だけ**を削除
+（十 file × 一行、計 10 行。他の行は一つも触っていません）。**番号は詰めて
+いません** ── 1・2・3 がそのままで、4 が無くなるだけです。`HELP.kb` の上の
+「The four steps」というコメントも「three」に直し、四番目がいつ何故消えたかを
+そこに書きました（古い文は残していません）。
+
+**写真**（`node tools/shot.mjs --lang ja hd@195`）：
+
+| | |
+|---|---|
+| `shots/r44-kb-help-ja-before.png` | 変更前 ── 四段、手順 4 に「Allow Full Access」の写真 |
+| `shots/r44-kb-help-ja.png` | あと ── 三段、無料（足にアップグレードの二行） |
+| `shots/r44-kb-help-ja-paid.png` | あと ── 三段、有料（足に何も無い） |
+
+手順 2 の写真に灰色の帯が重なっていますが、**変更前の一枚にも同じように
+出ています** ── これではありません。`shot.mjs` がシートの上にアプリ自身の
+帯を描いている形で、私の scope の外です。直していません。
+
+## 決定 2 ── 縦のみ
+
+`ios/App/App/Info.plist` の `UISupportedInterfaceOrientations` と
+`UISupportedInterfaceOrientations~ipad` の両方を
+`UIInterfaceOrientationPortrait` 一つだけに。`~ipad` の
+`PortraitUpsideDown` も落ちました。`www/` は一行も触っていません。
+
+## 回した check
+
+`assets` `es5` `dead` `act` `i18n` ── **五本とも緑**。ゲート（`npm test`）は
+回していません（`docs/SESSIONS.md`）。
+
+## 赤は見られませんでした ── 押して確かめた結果です
+
+指示は「`kb-full.jpg` だけ先に消して `assets` が赤になるのを見る」でした。
+**やりました。`assets` は緑のままでした。**
+
+理由を測りました ── **`tools/assets-check.mjs` に `img` という語は 0 件**です。
+読んでいるのは `index.html` の `<script src>` と `<link href>`、`project.pbxproj`
+の Sources phase、`PrivacyInfo.xcprivacy` 三本、`__NAME__` の置換、ネイティブの
+橋 17 本、読み込み順 ── それだけで、**`www/img/` を一度も見ていません**。
+他の check も見ていません（`tools/*.mjs` を grep 済み。`.jpg` が出るのは
+fixture と post-check と rls-check の**投稿の写真**だけ）。
+
+**「参照の無い画像／無い画像への参照」を止めているものは、この repo に
+ありません。**片方だけ消しても何も落ちません。今回は両方一緒に消したので
+残骸はありませんが（`grep -rn "kb.step4\|kb-full" www/` → 0 件）、**次に
+画像を足したり消したりする人を止めるものは無い**ということです。
+
+これは私の scope の外なので check は書いていません。リーダーの判断で
+`docs/BACKLOG.md` へ。
+
+## DEVICE UNCONFIRMED
+
+**両方とも実機未確認です。**Linux に Swift はありません。見る所は
+`docs/CHECK-0907.md` の**ビルド 162**に二件書きました ──
+「フルアクセスをオフのまま Lingua キーボードで文字が出る」、
+「横にしても回らない」。
+
+決定 1 の ①（Linux では確かめられない）は**消えていません**。消したのは
+② の `www/` のほうだけです。フルアクセス無しで App Group が読めることは
+Apple の現行ページと 2026-09-02 の結論に基づく推論のままで、**外れていた
+場合は看板機能が全員で死にます**。162 でそこを最初に見てください。
+
+## 触っていない file
+
+`www/index.html`・`www/settings.js`・`www/onboard.js`・
+`ios/App/App.xcodeproj/project.pbxproj`。`www/i18n/*.js` は `kb.step4` の行
+だけで、`plan.price.free` には触れていません。
