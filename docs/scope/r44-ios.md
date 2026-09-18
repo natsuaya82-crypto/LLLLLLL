@@ -153,7 +153,7 @@ fixture と post-check と rls-check の**投稿の写真**だけ）。
 `www/img/` を名指ししていなかったためです。ディスクから消えているのに
 git は持ったまま、という状態で、`assets` `es5` `dead` `act` `i18n` の
 **五本とも緑のまま通りました**。止めたのは commit hook でも check でもなく、
-`git status` です。`f8f4e83f` で削除を入れ直しました。
+`git status` です。`3a767c5b` で削除を入れ直しました。
 
 ## DEVICE UNCONFIRMED
 
