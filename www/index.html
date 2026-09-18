@@ -3213,6 +3213,14 @@ a.set{text-decoration:none}
 /* The big letter is a button now: it is how the letter gets drawn. */
 button.spbig{display:block;width:100%;background:none;border:0;padding:0;font:inherit;color:inherit}
 .pbio{margin-top:5px;font-size:.88rem;line-height:1.65;color:var(--txs);white-space:pre-wrap}
+/* The address in this row is 44pt down, and the row is not one pixel taller.
+   It was 16px -- the second half of the same fault as .docs a: 「親指が当たる
+   物は全部」 and there is no exception (OWNER 2026-09-01). The padding makes
+   the target and the negative margin gives the line box back what the padding
+   took, because an inline-block's MARGIN box is what a line's height is
+   measured from. So the thumb gets 44 and the bio's line spacing and the
+   page's height do not move. No corner, no border, no colour. */
+.pbio a{display:inline-block;padding:14px 0;margin:-14px 0}
 .field textarea#me-bio{height:84px}
 /* one word, opened */
 .whd{display:flex;align-items:center;gap:12px;margin:0 2px}
