@@ -4088,9 +4088,16 @@ say(r.proFab && !r.proAsked && r.proAdded,
 
 /* ---- and the way into Settings is on the third step and nowhere else ----
    「設定のとこ 3 番だけリンクでいいよ。1 のは消して」 OWNER 2026-09-06, which
-   replaces 「１にもほしくない？」 of 2026-09-03. */
-say(r.helpGoIn === '0,0,1,0',
-    'the button into Settings is on step 3 and on no other step'
+   replaces 「１にもほしくない？」 of 2026-09-03.
+
+   THE FOURTH STEP WENT ON 2026-09-18 -- 「フルアクセスを許可」をオンにする,
+   with the switch it named。「切っていい」OWNER 2026-09-18: the extension
+   asks for no open access, so the walk ends at iOS's own list of keyboards.
+   The count is IN this claim rather than beside it -- a fourth step coming
+   back would otherwise move helpGoIn to '0,0,1,0' only if it carried the
+   button, and a silent fifth step would read the same as three. */
+say(r.helpGoIn === '0,0,1' && r.helpSteps === 3,
+    'the button into Settings is on step 3 of three and on no other step'
     + ' (steps carrying it: ' + r.helpGoIn + ' of ' + r.helpSteps + ')');
 say(r.helpGoNames === 'kbSettings',
     'and it calls the one function rather than a second of its own ('
