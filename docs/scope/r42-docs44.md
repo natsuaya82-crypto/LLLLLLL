@@ -57,3 +57,93 @@
 ## 報告
 
 下に追記する。
+
+---
+
+# 報告 ── 2026-09-18
+
+**CODE CONFIRMED のみ。実機では一度も押していません。**
+
+## 1. 赤を見た（バグのまま、check だけ入れて回した）
+
+`tools/press.mjs` の `measure()` の選び方に `#app a[href]` を足しただけの状態で
+`npm run press`：
+
+```
+nothing under 44pt: 4 FOUND
+
+FAILED (4):
+  too small to hit: vPlans (free): A 80x21 -- under 44
+  too small to hit: vPlans (free): A 85x21 -- under 44
+  too small to hit: the profile, a link and a place (paid): A 91x16 -- under 44
+  too small to hit: somebody else's profile, a link and a place (paid): A 79x16 -- under 44
+```
+
+`seenSmall` は大きさで畳むので、同じ二つが何枚の画面に出ていても一行です。
+
+## 2. 直した ── `.docs a`
+
+```css
+.docs a{color:var(--txm);text-decoration:none;display:inline-block;padding:12px 0}
+```
+
+21 + 12 + 12 = **45px**。角丸・枠線・塗りは一つも足していません。
+字の大きさ（`.78rem`）も色（`var(--txm)`）も `:active` の金も、並びも、
+`.docs` 側の `padding-top:34px` も、一行も触っていません。
+
+## 3. 回した check
+
+| check | 結果 |
+|---|---|
+| `press` | **赤 2 本**（下の § リーダーへ。規約とポリシーの 2 本は消えた） |
+| `box` | 緑 ── `corners and borders in index.html: 104 (baseline 104)`、`set from www/*.js: 0`。**baseline に一行も足していません** |
+| `es5` | 緑 |
+| `assets` | 緑 |
+
+ゲート（`npm test`）は回していません（規則 2）。
+
+## 4. 写真 ── 二枚
+
+**この二つが居るのはアカウント室ではなく、プラン画面です。**
+`docs/scope/r41-review.md` § 4.0-c は「設定の足元」と書いていますが、
+`www/settings.js:329` の通り 2026-09-01 にオーナーが移しています
+（「設定のアカウントの利用規約とプライバシーポリシー消しといて。課金の方に
+あるからいらん」）。`docRows()` を描くのは `planTerms()`（`settings.js:1108`）と
+オンボーディングの扉（`onboard.js:1486`）の二つで、アカウント室は描きません。
+**なので `node tools/shot.mjs --lang ja plans` を撮りました。**
+
+- `shots/r42-docs-before-ja.png` ── 21px。頁の高さ 2068
+- `shots/r42-docs-after-ja.png` ── 45px。頁の高さ 2116（**+48px**）
+
+見た目は「小さく、並んで、静か」のままです。**オーナーに見せてください。**
+
+## 5. リーダーへ ── `press` はまだ赤 2 本です
+
+```
+FAILED (2):
+  too small to hit: the profile, a link and a place (paid): A 91x16 -- under 44
+  too small to hit: somebody else's profile, a link and a place (paid): A 79x16 -- under 44
+```
+
+**これは規約とポリシーとは別の `<a>` です** ── プロフィールの link
+（`www/me.js:1327`、`<div class="pbio">` の中、`style="color:var(--gold)"` を
+直書きした `<a href>`）。**この session は `www/me.js` を持っていません**し、
+「`www/index.html` は `.docs a` の規則だけ」と言われています。
+
+直すなら一行で、`www/index.html` に：
+
+```css
+.pbio a{display:inline-block;padding:14px 0}
+```
+
+**勝手に足していません。**理由は二つ：
+
+1. **文の中の link です。**bio の段落の中に埋まっているので、上下に 14px 足すと
+   bio の行間と段落の高さが動きます。**見た目が変わる判断**で、オーナーの
+   ものです（`node tools/shot.mjs --lang ja profile` を前後で撮れば見えます）。
+2. **`www/me.js` が別の session の物かもしれません。**
+
+**この 2 本を「例外」として check に書くことはしていません。**
+「親指が当たる物は全部」に、私が自分で線を引くことになるからです
+（`box-check` の baseline が「許可」に腐る、と `CLAUDE.md` 規則 18 が言うのと
+同じ形）。**赤のまま置いてあります ── check が仕事をしている状態です。**
