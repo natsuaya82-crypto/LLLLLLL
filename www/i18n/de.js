@@ -180,7 +180,6 @@ defLang('de', (function(){
       "kb.step1.d" : "Von oben in Einstellungen: Allgemein → Tastatur → Tastaturen",
       "kb.step2" : "Wähle Lingua",
       "kb.step3" : "Tippe in den Lingua-Einstellungen auf Tastaturen",
-      "kb.step4" : "Aktiviere „Vollzugriff erlauben“",
       "kb.sys.h"               : "Tastatur einrichten",
       "kb.sys.go" : "Einstellungen öffnen",
       "kb.sys.no" : "Einstellungen ließen sich nicht öffnen",

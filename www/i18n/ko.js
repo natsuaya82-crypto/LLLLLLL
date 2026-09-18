@@ -371,7 +371,6 @@ defLang('ko', (function(){
       "kb.step1.d" : "설정 맨 위에서: 일반 → 키보드 → 키보드",
       "kb.step2" : "Lingua 고르기",
       "kb.step3" : "Lingua 설정에서 '키보드' 누르기",
-      "kb.step4" : "'전체 접근 허용' 켜기",
       "kb.sys.h"               : "키보드 설정 방법",
       "kb.sys.go" : "설정 열기",
       "kb.sys.no" : "설정을 열 수 없습니다",

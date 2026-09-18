@@ -192,7 +192,6 @@ defLang('it', (function(){
       "kb.step1.d" : "Dall'inizio di Impostazioni: Generali → Tastiera → Tastiere",
       "kb.step2" : "Scegli Lingua",
       "kb.step3" : "Nelle impostazioni di Lingua, tocca Tastiere",
-      "kb.step4" : "Attiva Consenti accesso completo",
       "kb.sys.h"               : "Come configurare la tastiera",
       "kb.sys.go" : "Apri Impostazioni",
       "kb.sys.no" : "Impossibile aprire Impostazioni",
