@@ -956,7 +956,7 @@ defLang('ru', (function(){
       "plan.cancel" : "Отменить подписку",
       "store.none" : "Восстанавливать нечего",
       "store.nosess" : "Вы не вошли в аккаунт",
-      "plan.price.free"   : "$0",
+      "plan.price.free"   : "Бесплатно",
       "plan.price.pro.yr"   : "$99.99",
       "plan.per.yr"   : "/ год",
       "plan.per.mo"   : "/ месяц",

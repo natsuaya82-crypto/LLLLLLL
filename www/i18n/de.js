@@ -932,7 +932,7 @@ defLang('de', (function(){
       "plan.cancel" : "Abo kündigen",
       "store.none" : "Nichts wiederherzustellen",
       "store.nosess" : "Nicht angemeldet",
-      "plan.price.free"  : "0 $",
+      "plan.price.free"  : "Kostenlos",
       "plan.price.pro.yr"  : "$99.99",
       "plan.per.yr"  : "/ Jahr",
       "plan.per.mo"  : "/ Monat",

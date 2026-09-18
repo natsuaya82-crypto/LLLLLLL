@@ -903,7 +903,7 @@ defLang('es', (function(){
       "plan.cancel" : "Cancelar la suscripción",
       "store.none" : "No hay nada que restaurar",
       "store.nosess" : "No has iniciado sesión",
-      "plan.price.free"  : "$0",
+      "plan.price.free"  : "Gratis",
       "plan.price.pro.yr"  : "$99.99",
       "plan.per.yr"  : "/ año",
       "plan.per.mo"  : "/ mes",

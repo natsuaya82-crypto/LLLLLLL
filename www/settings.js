@@ -1050,9 +1050,20 @@ function planPrice(p, free){
        walk runs in a browser, where there is no App Store and storeWas() is
        empty. The fixture face that fixes that is in the same report. */
     var was=yr? storeWas(p.id) : '';
+    /* **THE FREE RUNG HAS NO PERIOD.**「free」OWNER 2026-09-18. It read
+       `$0／月`, and a thing with no price has no month: the period is what
+       tells somebody what they are charged and how often, which is exactly
+       what Apple asks be disclosed beside a subscription (3.1.2) and exactly
+       what Free is not. The word for free is the whole of what that rung
+       says.
+
+       Here, inside term(), and not in a second function beside it: this is
+       the one place a term is drawn, and the free branch is already told
+       apart three lines down. */
     var body=(was? '<s class="pwas">'+esc(was)+'</s>' : '')+
       '<span class="pp">'+esc(cost)+'</span>'+
-      '<span class="pper">'+esc(t(yr? 'plan.per.yr' : 'plan.per.mo'))+'</span>'+
+      (free? '' :
+        '<span class="pper">'+esc(t(yr? 'plan.per.yr' : 'plan.per.mo'))+'</span>')+
       ((yr && off)? '<span class="plsave">'+esc(t('plan.off', off))+'</span>' : '');
     return free? (yr? '' : '<span class="plterm no">'+body+'</span>')
                : '<button class="btn plterm'+(plPicked(p.id, yr)? ' on':'')+'"' +

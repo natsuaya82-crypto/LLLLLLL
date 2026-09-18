@@ -859,7 +859,7 @@ defLang('ja', (function(){
       "plan.cancel" : "サブスクリプションを解除する",
       "store.none" : "復元するものはありません",
       "store.nosess" : "サインインしていません",
-      'plan.price.free' : '$0',
+      'plan.price.free' : '無料',
       'plan.price.pro.yr' : '$99.99',
       'plan.per.yr' : '／年',
       'plan.per.mo' : '／月',

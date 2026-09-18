@@ -943,7 +943,7 @@ defLang('it', (function(){
       "plan.cancel" : "Annulla l'abbonamento",
       "store.none" : "Niente da ripristinare",
       "store.nosess" : "Non hai eseguito l’accesso",
-      "plan.price.free"  : "$0",
+      "plan.price.free"  : "Gratis",
       "plan.price.pro.yr"  : "$99.99",
       "plan.per.yr"  : "/ anno",
       "plan.per.mo"  : "/ mese",
