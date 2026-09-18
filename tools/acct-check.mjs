@@ -3825,6 +3825,85 @@ const R = await pg.evaluate(async () => {
         '一箇所が画面に知らせる（道ごとに憶えているのではなく）');
   }
 
+
+  /* ---- 78. Apple がくれた名前は、名前欄に入って出る ---------------------
+     Apple の審査（ビルド 161、2026-09-18、Guideline 4）:
+       「Sign in with Apple のあとに、名前かメールを入力させている。
+         Authentication Services が既に渡している。」
+
+     plugin は名前を渡していました ── `r.result.profile` の `givenName` /
+     `familyName`（@capgo/capacitor-social-login の definitions.d.ts:688、
+     Google は `name` も）。`obSocial()` は `idToken` だけ取って profile を
+     捨てていたので、行の無い新しい account は「名前と @」の顔に名前の欄まで
+     空で立たされていました。
+
+     本物の `obSocial()` を押して測ります ── 偽の plugin と偽の netSend で、
+     `obSignInApple()` から `OBM.nm` まで、途中を一つも飛ばさずに。
+
+     二つの面。名前が来た時は入っていること、**来なかった時は空のまま**で
+     あること ── Apple が名前を返すのは初回の認可だけで、二度目は null で
+     来ます。そこに何かを入れるのは、名前を発明することです。 */
+  {
+    const nap78 = (ms) => new Promise(r => setTimeout(r, ms));
+    const keepSend78 = netSend;
+    const keepCap78 = window.Capacitor;
+    netSend = function (method, p, body, tok, ok, bad) {
+      const url = String(p).split('?')[0];
+      if (url === '/auth/v1/token') {
+        setTimeout(() => ok({ access_token: 'not a jwt', refresh_token: 'a refresh token',
+                              user: { id: B } }), 0);
+        return;
+      }
+      /* サーバーはこの account を知らない ── 新しい account とはそれです。 */
+      setTimeout(() => ok([]), 0);
+    };
+    /* 一度押す。plugin が返す profile だけが面ごとに違います。 */
+    const press78 = async (profile) => {
+      start();
+      netOut();
+      OBM.nm = 'left over in memory'; OBM.hd = 'leftover'; OBM.mode = 'in';
+      window.Capacitor = { Plugins: { SocialLogin: {
+        initialize: () => Promise.resolve(),
+        login: () => Promise.resolve({ provider: 'apple',
+                                       result: { idToken: 'an id token', profile: profile } })
+      } } };
+      OB_SL = false;                       /* initialize をこの面でも通す */
+      obSignInApple();
+      for (let i = 0; i < 300 && OBM.busy; i++) await nap78(10);
+      await nap78(30);
+    };
+
+    /* 一つ目 ── Apple が初回の認可で名前を渡してきた。 */
+    await press78({ user: 'apple-sub', email: 'relay@privaterelay.appleid.com',
+                    givenName: '太郎', familyName: '山田' });
+    if (OBM.mode !== 'who')
+      no('78: (前提) Apple で入ったのに「名前と @」の顔に立っていない ── ' +
+         'OBM.mode=' + JSON.stringify(OBM.mode) + '。測りたい状態に立てていません');
+    if (OBM.nm !== '太郎 山田')
+      no('78: **Apple が渡した名前が名前欄に入っていない** ── ' +
+         'OBM.nm=' + JSON.stringify(OBM.nm) + '、plugin は givenName「太郎」' +
+         'familyName「山田」を渡しています（Apple の審査 4、ビルド 161）');
+    if (OBM.hd)
+      no('78: @ に何か入っている ── OBM.hd=' + JSON.stringify(OBM.hd) +
+         '。Apple は handle を持っていないので、ここは人が打ちます');
+
+    /* 二つ目 ── 二度目のサインイン。Apple は名前を返しません。 */
+    await press78({ user: 'apple-sub', email: 'relay@privaterelay.appleid.com',
+                    givenName: null, familyName: null });
+    if (OBM.nm)
+      no('78: 名前が来ていないのに名前欄に何か出ている ── ' +
+         'OBM.nm=' + JSON.stringify(OBM.nm) + '。Apple が名前を返すのは初回の' +
+         '認可だけで、埋めるのは名前を発明することです');
+    if (OBM.hd) no('78: 名前が来ていない面で @ に何か入っている');
+
+    window.Capacitor = keepCap78;
+    netSend = keepSend78;
+    OB_SL = false;
+    start();
+    say('78: Apple／Google が渡した名前は「名前と @」の名前欄に入って出る ── ' +
+        '来なかった時は空のまま（Apple の審査 4、ビルド 161）');
+  }
+
   return out;
 });
 

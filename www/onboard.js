@@ -825,12 +825,28 @@ function obSocial(who, opts){
       var nn=(who==='google')? netNonce() : null;
       if(nn){ opts.nonce=nn.hash; opts.forcePrompt=true; }
       p.login({ provider:who, options:opts }).then(function(r){
-        var tok=r && r.result && r.result.idToken;
+        var tok=r && r.result && r.result.idToken, pf=r && r.result && r.result.profile;
         /* A sign-in that came back without a token is not a session and must
            not be treated as one. It is also not an error anybody can act on,
            so it closes the way closing the sheet does. */
         if(!tok){ obShrug(); return; }
-        netIdToken(who, tok, nn? nn.raw : '', obIn, obNo);
+        /* AND THE NAME THE PROVIDER ALREADY GAVE US, which this line threw
+           away until 2026-09-18. Apple refused build 161 for it (Guideline 4):
+           「Sign in with Apple のあとに、名前かメールを入力させている。
+             Authentication Services が既に渡している。」
+
+           `r.result.profile` is the plugin's own field and it is there on
+           both doors -- `givenName`/`familyName` on Apple, the same two plus
+           `name` on Google. It is handed to obIn() rather than written into
+           OBM here, because「どこから来た名前か」and「その名前をどうするか」
+           are one question and obIn() is where it is answered: it is the
+           function that knows whether this account has a profile row, and a
+           name offered to somebody who already HAS one would be this phone
+           talking over the server.
+
+           netIdToken()'s ok is called with the token payload, so the wrapper
+           is what makes the argument mean what obIn() reads. */
+        netIdToken(who, tok, nn? nn.raw : '', function(){ obIn(pf); }, obNo);
       })['catch'](obShrug);
     });
   });
@@ -891,7 +907,28 @@ function obShrug(){ OBM.busy=false; render(); }
    after this change signing in is what opens most of the app, so it is the
    half that needed saying more. 「ログインしたら下にログインしましたポップ
    つけてあげて」 */
-function obIn(){
+/* The name a social door handed over, in the one place that reads the
+   plugin's own shape. Apple gives `givenName` and `familyName` and nothing
+   else; Google gives those two and `name` as well
+   (@capgo/capacitor-social-login, definitions.d.ts). `name` wins where there
+   is one, because it is the provider's own answer to「what is this person
+   called」rather than two halves this app would be deciding an order for.
+
+   Everything it cannot read is '', which is the field being empty -- the mail
+   door, a password just set, a second Apple sign-in (the name comes at the
+   first authorisation and never again), and a plugin that grows a different
+   shape tomorrow. There is no second road that guesses one from an address. */
+function obGaveName(p){
+  var n, g, f;
+  if(!p) return '';
+  n=String(p.name||'');
+  if(!n){
+    g=String(p.givenName||''); f=String(p.familyName||'');
+    n=g+((g&&f)? ' ' : '')+f;
+  }
+  return n.replace(/^\s+|\s+$/g, '');
+}
+function obIn(prof){
   toast(t('set.signin.done'));
   OBM.busy=true; OBM.mode='who'; OBM.pw=''; OBM.msg='';
   save(); render();
@@ -959,20 +996,37 @@ function obIn(){
     }
     /* No profile row for this account means this account is new -- that is
        what "no row" IS, and netMyProfile() asking by SESS.uid is what makes
-       it about this account rather than about this phone. So the two fields
-       start empty.
+       it about this account rather than about this phone.
 
-       They used to start at ME.name and ME.handle, and on 2026-08-27 a phone
-       offered `Lingua` and `@lingua2` -- the account that had signed OUT --
-       to an Apple account that had just been made. www/me.js keeps the copy
-       per account now, so ME is already not somebody else's by the time this
-       line runs; it is written out rather than left to follow from that,
-       because this is the line the photograph was of, and "it happens to be
-       blank" and "it is blank" fail differently later.
+       THE NAME IS THE ONE THE DOOR ALREADY CARRIED, and the @ is not.
+       Apple refused build 161 over it (Guideline 4, 2026-09-18):
+       「Sign in with Apple のあとに、名前かメールを入力させている。
+         Authentication Services が既に渡している。」 `prof` is what the
+       social plugin handed obSocial() one screen ago; it is null for the
+       mail door and for a password just set, and obGaveName() answers '' for
+       all of those -- which is the empty field this line has always been.
+
+       It is put in the field rather than sent: the person can fix it, and
+       nothing goes up until they press. 「名前が来なかった時は空欄」 OWNER
+       2026-09-18, because Apple hands the name over at the FIRST
+       authorisation only and never again, and filling that in from anywhere
+       else would be inventing somebody's name.
+
+       The @ stays empty because neither provider has one. An address is not
+       a handle and Apple's is a relay, so there is nothing here to offer.
+
+       ME.name and ME.handle are what these two used to start at, and on
+       2026-08-27 a phone offered `Lingua` and `@lingua2` -- the account that
+       had signed OUT -- to an Apple account that had just been made. www/me.js
+       keeps the copy per account now, so ME is already not somebody else's by
+       the time this line runs; the field is written from `prof` and from
+       nothing else, because "it happens to be blank" and "it is blank" fail
+       differently later.
 
        Somebody signing in on a second phone does not come through here at
-       all: they have a row, and the branch above returns. */
-    OBM.nm=''; OBM.hd=''; render();
+       all: they have a row, and the branch above returns -- so a name the
+       provider handed over never talks over the name the account has. */
+    OBM.nm=obGaveName(prof); OBM.hd=''; render();
   }, function(d, s, m){
     /* The lookup failed, so we do not know whether there is a row. Asking is
        the safe half: an insert that turns out to be a duplicate is refused
@@ -1177,7 +1231,7 @@ function obMailAsk(){
 function obMailIn(){
   if(OBM.busy || !obMailAsk()) return;
   OBM.busy=true; OBM.msg=''; render();
-  netSignIn(OBM.em, OBM.pw, obIn, obNo);
+  netSignIn(OBM.em, OBM.pw, function(){ obIn(); }, obNo);
 }
 /* THE ADDRESS IS THE ACCOUNT. 「1アドレス1アカウント」「Googleでも同じアカウント
    ならメアドで入っても同じアカウントでログインさせればいいやろ」 OWNER

@@ -599,6 +599,18 @@ export function obStates(){
        it, so nothing else in this file or in shot.mjs ever renders it. */
     ['saying who you are',       () => { SET.obback = { r: 'set', a: 'acct' };
                                          OBM.mode = 'who';
+                                         OBM.nm = ''; OBM.hd = '';
+                                         OBM.busy = false; return vOb(); }],
+    /* AND THE SAME FACE WITH THE NAME ALREADY IN IT. Apple and Google hand a
+       name over with the token, and from 2026-09-18 it stands in the field
+       (Apple refused build 161 over asking for it again -- Guideline 4).
+       Both faces are here because the one nobody photographed is where the
+       fault is: an empty field and a filled one are two screens, and the
+       second is the one the reviewer sees. The @ is empty on both -- neither
+       provider has a handle to give. */
+    ['saying who you are, name given', () => { SET.obback = { r: 'set', a: 'acct' };
+                                         OBM.mode = 'who';
+                                         OBM.nm = '\u592A\u90CE \u5C71\u7530'; OBM.hd = '';
                                          OBM.busy = false; return vOb(); }],
     /* THE SAME SIX DIGITS WITH NOWHERE TO GO BACK TO, and this is the state
        the owner was standing in: signed out, creating an account, the mail
