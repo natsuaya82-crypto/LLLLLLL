@@ -917,14 +917,26 @@ function obShrug(){ OBM.busy=false; render(); }
    Everything it cannot read is '', which is the field being empty -- the mail
    door, a password just set, a second Apple sign-in (the name comes at the
    first authorisation and never again), and a plugin that grows a different
-   shape tomorrow. There is no second road that guesses one from an address. */
+   shape tomorrow. There is no second road that guesses one from an address.
+
+   **THE TWO HALVES GO FAMILY FIRST.**「山田太郎」OWNER 2026-09-18. Apple hands
+   the two over separately, so the order is this app's to decide and r40 left
+   it as the one thing it had not asked. Family + given, on every interface
+   language: the ORDER does not change with the language, only the gap does.
+
+   **The gap is one space, and none in ja / zh / ko**, which is read off the
+   owner's own example having no space in it. Those three write a family name
+   first and run it straight into the given name; everywhere else two words
+   with nothing between them is one wrong word, and「Smith John」must not come
+   out「SmithJohn」. It is the field's starting value and a person can fix it,
+   so a language this gets wrong costs a keystroke rather than a name. */
 function obGaveName(p){
-  var n, g, f;
+  var n, g, f, u;
   if(!p) return '';
   n=String(p.name||'');
   if(!n){
-    g=String(p.givenName||''); f=String(p.familyName||'');
-    n=g+((g&&f)? ' ' : '')+f;
+    g=String(p.givenName||''); f=String(p.familyName||''); u=uiLang();
+    n=f+((g&&f)? ((u==='ja'||u==='zh'||u==='ko')? '' : ' ') : '')+g;
   }
   return n.replace(/^\s+|\s+$/g, '');
 }

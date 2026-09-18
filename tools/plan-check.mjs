@@ -975,6 +975,25 @@ const st = await pg.evaluate(async () => {
   out.proOff  = storeOff('pro');               /* one term only -> nothing */
   out.freeOff = storeOff('free');
 
+  /* ---- THE FREE RUNG SAYS THE WORD, AND CARRIES NO PERIOD --------------
+     「free」OWNER 2026-09-18. It said `$0／月`: a typed dollar sign beside
+     `$4.99／月` in yen on a Japanese phone (docs/scope/r41-review.md
+     § 3.1.2-c), and a period on a thing with no price.
+
+     **Nothing held this rung at all** -- every claim above renders
+     `PLANS[1]` with `free` false, so the whole free branch of `term()` was
+     unwalked. Read off the rung's own HTML in two languages, because the
+     word is the i18n file's and the period is `term()`'s, and a count over
+     the page is answered by the paid rung beside it. */
+  out.freeWordEn = t('plan.price.free');
+  out.freeHTMLEn = planPrice(PLANS[0], true);
+  var keepUi = SET.ui;
+  SET.ui = 'ja';
+  out.freeWordJa = t('plan.price.free');
+  out.freeHTMLJa = planPrice(PLANS[0], true);
+  out.perJa = t('plan.per.mo');
+  SET.ui = keepUi;
+
   /* ---- and the year is struck through with what twelve months cost -------
      Read off the two term buttons rather than off the page, because the
      claim is about WHICH of them wears it: a count over the whole page is
@@ -1925,6 +1944,23 @@ say(st.proPage.indexOf('17% off') !== -1,
 say(st.proYr === '', 'a product not yet made says nothing rather than guessing');
 say(st.proOff === '' && st.freeOff === '',
     'and a saving needs both terms really on sale');
+
+/* ---- 「free」OWNER 2026-09-18 ------------------------------------------- */
+say(st.freeWordEn === 'Free' && st.freeWordJa === '\u7121\u6599',
+    'the free rung is the language\'s own word for free, not a typed price (' +
+    st.freeWordEn + ' / ' + st.freeWordJa + ')');
+say(st.freeHTMLEn.indexOf('$') === -1 && st.freeHTMLJa.indexOf('$') === -1,
+    'and there is no dollar sign left on it, in any language');
+say(st.freeHTMLEn.indexOf(st.freeWordEn) !== -1 &&
+    st.freeHTMLJa.indexOf(st.freeWordJa) !== -1,
+    'and the word is the thing on the screen');
+say(st.freeHTMLEn.indexOf('pper') === -1 && st.freeHTMLJa.indexOf('pper') === -1,
+    'no period beside it -- a thing with no price has no month (' +
+    st.perJa + ')');
+say(st.freeHTMLJa.indexOf(st.perJa) === -1,
+    'and not by any other road either');
+say(st.plusMoHTML.indexOf('pper') !== -1,
+    'while the rung that costs money still says its period, which is what Apple asks for (3.1.2)');
 say(st.after.indexOf('$99.99') !== -1,
     'so that term falls back to www/i18n, which is the only place a typed price may reach a screen');
 say(st.zeroOff === '' && st.dearOff === '',

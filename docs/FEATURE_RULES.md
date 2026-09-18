@@ -218,6 +218,56 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### 2026-09-18 無料の段は `$0` をやめて「無料」の語 ── 期間は付けない
+- Date: 2026-09-18
+- Area: プラン画面の無料の段（`planPrice()` の中の `term()`、`plan.price.free`）
+- Decision:（原文のまま）「free」
+- Reason: `docs/scope/r41-review.md` § 3.1.2-c。Plus と Pro の値段は App Store
+  から来る（日本なら円）のに、その隣の Free だけが十言語すべてドルの額で出て
+  いた（`$0／月` の横に `$4.99／月`）。`docs/BACKLOG.md` が三択
+  （`0`／無料という語／何も出さない）をオーナーの決めごととして残していた。
+- 語はその言語の「無料」: en `Free`、ja `無料`、es・it `Gratis`、pt `Grátis`、
+  fr `Gratuit`、de `Kostenlos`、ru `Бесплатно`、zh `免费`、ko `무료`。
+- **そして「／月」を付けない ── 値段の無い物に期間は無い。**`term()` の中の
+  一箇所で、二つ目の関数は作らない。金を取る段は今までどおり期間を言う
+  （Apple の 3.1.2 が求めている所）。
+- 自動更新の開示は動かない: あの一文・規約・プライバシーポリシー・「購入を復元」
+  はページの下に一度出る物で、段ごとの物ではない。**Free はサブスクリプション
+  ではない**ので、そこから期間を外すことは開示に触らない。
+- Affected features: プラン画面（`vPlans`）の無料の段の表示だけ
+- Affected data: **何も。**`plan.price.free` は画面に出る語。`localStorage` の
+  鍵も、サーバーの列も、`CAN` も一文字も動かない。移行も削除も無い。
+- Affected docs: `docs/CHANGELOG.md`、`docs/BACKLOG.md`（この件の節を消した）、
+  `docs/scope/r43-namefree.md`
+- Implementation status: IMPLEMENTED。`tools/plan-check.mjs` が無料の段を
+  二言語で描いて保つ（語・ドル記号が無いこと・期間が無いこと・金を取る段には
+  期間が在ること）。**それまで無料の段を描く check は一本も無かった** ──
+  上の claim は全部 `PLANS[1]` を `free` false で描いていた。
+
+
+### 2026-09-18 Apple／Google がくれた名前は姓→名 ──「山田太郎」
+- Date: 2026-09-18
+- Area: オンボーディングの「名前と @」の顔、`obGaveName()`
+- Decision:（原文のまま）「山田太郎」
+- Reason: Apple は `givenName` と `familyName` を別々に渡すので、くっつける
+  順番はアプリが決めることになる。`docs/scope/r40-siwa.md` がそれを「オーナーへ
+  訊いていないこと」として残していた（当時は given + ' ' + family ＝「太郎 山田」）。
+- 間の空白はリーダーの読み: `uiLang()` が `ja`／`zh`／`ko` なら空白**なし**
+  （オーナーの例が「山田太郎」で空白が無いため）、それ以外は空白**一つ**
+  （「Smith John」を「SmithJohn」にしないため）。中国語と韓国語の名前も姓が先で
+  間を空けないので同じ扱い。**順番は言語で変わらず、変わるのは空白だけ。**
+  人が直せる欄なので、違っていればその場で直せる。
+- Google が `name`（丸ごと一つの文字列）を渡してきた時はそのまま使う ──
+  並べ替える材料が無く、並べ替えるのは名前を書き換えること。
+- Affected features: ソーシャルの扉から入った新しい account の名前欄の初期値
+- Affected data: **何も。**入力欄の初期値の組み方だけで、`localStorage` の鍵も
+  サーバーの列も送る中身も同じ（`profile.display`）。移行も削除も無い。
+- Affected docs: `docs/CHANGELOG.md`、`docs/scope/r43-namefree.md`
+- Implementation status: IMPLEMENTED（`obGaveName()` 一箇所）。
+  `tools/acct-check.mjs` claim 78 が二つの面（ja・en）と Google の `name` を
+  押して保つ。**CODE CONFIRMED のみ** ── Apple のシートは実機でしか出ない。
+
+
 ### 2026-09-15 自分の言語の一覧はサーバーの答えそのもの ── 端末の索引は数えない
 - Date: 2026-09-15
 - Area: 言語の一覧、天井、起動とサインインの降り／上り

@@ -608,9 +608,19 @@ export function obStates(){
        fault is: an empty field and a filled one are two screens, and the
        second is the one the reviewer sees. The @ is empty on both -- neither
        provider has a handle to give. */
+    /* THE NAME IS ASKED OF `obGaveName()` RATHER THAN TYPED OUT HERE. It was
+       typed -- '\u592A\u90CE \u5C71\u7530' -- and on 2026-09-18 the owner decided
+       family first (\u300C\u5C71\u7530\u592A\u90CE\u300D), with the gap depending on the interface
+       language. A typed string is a second answer to \u300Cwhat does this field
+       say\u300D: it would have gone on photographing \u300C\u592A\u90CE \u5C71\u7530\u300D, a state the app
+       can no longer be in, and `--lang ja` and `--lang en` would have come
+       out the same. Pressing the real one means the picture is the app's
+       answer, in whatever language it is shot. */
     ['saying who you are, name given', () => { SET.obback = { r: 'set', a: 'acct' };
                                          OBM.mode = 'who';
-                                         OBM.nm = '\u592A\u90CE \u5C71\u7530'; OBM.hd = '';
+                                         OBM.nm = obGaveName({ givenName: '\u592A\u90CE',
+                                                               familyName: '\u5C71\u7530' });
+                                         OBM.hd = '';
                                          OBM.busy = false; return vOb(); }],
     /* THE SAME SIX DIGITS WITH NOWHERE TO GO BACK TO, and this is the state
        the owner was standing in: signed out, creating an account, the mail

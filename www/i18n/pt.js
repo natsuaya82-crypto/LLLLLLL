@@ -950,7 +950,7 @@ defLang('pt', (function(){
       "plan.cancel" : "Cancelar a assinatura",
       "store.none" : "Não há nada a restaurar",
       "store.nosess" : "Não tens sessão iniciada",
-      "plan.price.free"  : "$0",
+      "plan.price.free"  : "Grátis",
       "plan.price.pro.yr"  : "$99.99",
       "plan.per.yr"  : "/ ano",
       "plan.per.mo"  : "/ mês",

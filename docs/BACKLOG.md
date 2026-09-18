@@ -1301,22 +1301,18 @@ IIFE の中（字下げ）に置く:
 （この節の置き場所は当て推量です ── ファイルの頭が「順番はやる順番」と
 言っているので、リーダーが動かしてください。）
 
-## The plans screen says `$0` in every language
+## The subscription disclosure is not on this list
 
-The three things this section used to name are in: **Restore** is a button,
-**Plus** has its own card, and **Cancel** opens Apple's own sheet rather than
-setting a flag. The prices are the App Store's since 2026-08-23. One thing is
-left, and it is wording, which is not a session's to choose.
+**The `$0` above it is settled and gone** (OWNER 2026-09-18「free」): the free
+rung says the language's own word for free and carries no period, because a
+thing with no price has no month. `docs/CHANGELOG.md` and
+`docs/FEATURE_RULES.md` § Owner decision log carry it, and
+`tools/plan-check.mjs` holds it. The rest of that section was already in —
+Restore is a button, Plus has its own card, Cancel opens Apple's own sheet,
+and the paid prices have been the App Store's since 2026-08-23.
 
-**Free is not a product, so the App Store cannot be asked**, and
-`plan.price.free` is a typed string with a dollar sign in it — `$0` in all ten
-languages, standing beside a real price in yen on a Japanese phone. That is
-the same fault that made the other prices come from Apple, in the one place
-Apple has no answer. What it should say instead — `0`, the word for free, or
-nothing at all — is the owner's.
-
-**The subscription disclosure is not on this list.** An app selling an
-auto-renewing subscription must say on the purchase screen that it renews
+**The disclosure itself is answered rather than outstanding.** An app selling
+an auto-renewing subscription must say on the purchase screen that it renews
 until cancelled, and link to Terms and a privacy policy. Asked on 2026-08-23;
 the owner says it is covered elsewhere — 「利用規約は別に入れてるから大丈夫」 —
 so it is recorded here as answered rather than as work. If a review ever comes

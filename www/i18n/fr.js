@@ -991,7 +991,7 @@ defLang('fr', (function(){
       "plan.cancel" : "Résilier l'abonnement",
       "store.none" : "Rien à restaurer",
       "store.nosess" : "Non connecté",
-      "plan.price.free"  : "0 $",
+      "plan.price.free"  : "Gratuit",
       "plan.price.pro.yr"  : "$99.99",
       "plan.per.yr"  : "/ an",
       "plan.per.mo"  : "/ mois",
