@@ -91,7 +91,7 @@ Draw your script, set it as your keyboard, and post in it
 本文:
 
 ```
-Draw your letters with a finger. The phone compiles them into a real font and puts them on the keys of a keyboard.
+Draw your letters with a finger. The phone compiles them into a real font and installs it as a keyboard.
 
 Widgets put your language on the home screen — the clock in your own numerals, the calendar in your own month names.
 
@@ -111,7 +111,7 @@ Ask me anything.
 意味:
 
 ```
-文字を指で描く。端末が本物のフォントにして、キーボードのキーに並べる。
+文字を指で描く。端末が本物のフォントにして、キーボードとして入れる。
 
 ウィジェットが自分の言語をホーム画面に出す ── 時計は自分の数字、暦は自分の月名で。
 
@@ -126,13 +126,10 @@ Ask me anything.
 
 ## 写真とフレア
 
-**写真。** Reddit は動画とギャラリーを一つの投稿に混ぜられない ── どちらか一本。
-**動画を推す**（キーボードに切り替わる所とウィジェットは動いていないと伝わらない）。
-画像でいくなら実機そのままの二枚だけ ── ホーム画面のウィジェットと、キーボード。
-額と英語のコピーが付いた App Store 用の絵（「Every one of them drawn with a finger」
-「An alphabet nobody else has」）は Reddit では広告に見えるので**使わない**。
-**足りない絵が一枚**：他人の文字の投稿に返信が付いているタイムライン ── 三つ目の
-売りなのに絵がない。実機で撮る。
+**写真。** オーナーの実機の4枚を使う。順番は キーボード → ホーム画面 →
+字を描く → アルファベット。fixture から撮ったスクショは実機画面ではないので**捨てた**。
+動画（`lingua-16x9-home.mp4`）を使う場合は、Reddit は動画とギャラリーを混ぜられないので
+どちらか一本。
 
 **フレア。** この session から reddit を読めない（www.reddit.com は塞がれている）ので
 **一覧が取れない**。投稿画面のドロップダウンの候補をオーナーが貼る。modmail の
@@ -142,10 +139,9 @@ Ask me anything.
 
 - **SNS（タイムライン）が中心の売り。** 自分の文字で投稿し、投稿が字の形を
   持って行くので相手のフォントが無くても読める。全部の投稿に意味の行が付く。
-- 文字は指で描く → 端末上で本物のフォント → キーボードのキーに並ぶ。
-  **「端末のどこで打っても」「メッセージやメモで打てる」とは書かない。**
-  2026-09-22 に一度書いて叱られた ── 「キーボード拡張で誰でも使えるのが魅力」を
-  書けという許可と読んだのが誤り。**書くな、が今も生きている。**
+- 文字は指で描く → 端末上で本物のフォント → **キーボードとして入る**。拡張は売り。
+  **禁止されているのは言い回し**:「端末のどこで打っても」「メッセージやメモで
+  打てる」「設定はアプリの中でする」── どれも書かない。事実を一行で書いて止める。
 - **ウィジェットも機能**。ホーム画面に自分の文字が出る。時計は自分の数字で。
 - 辞書（意味・品詞・例文・語域・語源）、読みと IPA、音韻、44 章の文法、暦、
   メモ、CSV 取り込み。アルファベット／アブジャド／音節文字／アブギダ／表語文字、
