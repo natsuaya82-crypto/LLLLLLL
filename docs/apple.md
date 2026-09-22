@@ -22,9 +22,14 @@ CI（`.github/workflows/ios-deploy.yml`, `macos-latest`）が毎回やること:
 つまり Mac は要りません。**あなたが Apple 側でやるのは、上がってきたビルドを
 配るところから先だけ**です。
 
-バージョン（`MARKETING_VERSION`）は `1.0.0` のまま固定です。ビルド番号だけが
-毎回増えます。1.0.0 で審査に出したあとに直しを入れるときは、`1.0.1` に上げる
-必要があります（`ios/App/App.xcodeproj/project.pbxproj` の 2 か所）。
+バージョン（`MARKETING_VERSION`）は **`package.json` の `"version"` 一箇所**です。
+ios-deploy.yml がそれを pbxproj に書き、`assets-check` が repo の pbxproj も同じ値で
+あることを持ちます（上げるときは package.json と pbxproj を一緒に ── check が
+ずれを止めます）。**Apple は承認済みの版にはもうビルドを受け取りません**
+（ITMS-90186、2026-09-22 のビルド 164 は 1.0.0 のまま上げて断られた ── メールで
+一時間後に、赤い印は出ずに）。だから archive の前に `tools/version-check.mjs` が
+App Store Connect に「閉じた版の一番上」を訊き、それより上でなければ止まります。
+公開のたびに `"version"` を一つ上げるのが手順の全部です。
 
 ---
 
