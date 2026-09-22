@@ -345,7 +345,7 @@ create or replace function language_took(lang uuid) returns boolean
 language sql stable security definer set search_path = public as $$
   select exists (select 1 from language_take t
                   where t.uid = auth.uid() and t.language = lang) $$;
-grant execute on function language_took(uuid) to anon, authenticated;
+grant execute on function language_took(uuid) to authenticated;
 
 -- ---- what a language is made of ---------------------------------------
 -- Eleven slices -- words, lines, lang, script, letters, notes, phases, talk,
@@ -855,6 +855,53 @@ create table if not exists block (
 );
 create index if not exists block_actor_idx on block(actor);
 
+-- ---- where a notice goes when the app is closed ----------------------------
+-- 「通知作ろう。アップルのネイティブ通知で、フォローされた時、返信きた時みたい
+--   な感じでSNS部分であるやつ。」 OWNER 2026-09-22.
+--
+-- One row per iPhone that has been allowed to be notified: the account, and
+-- the device token Apple issued that installation of the app. It is THE
+-- ADDRESS OF A PHONE and nothing else -- no name, no setting, nothing
+-- anybody wrote.
+--
+-- One account has as many rows as it has phones, which is why the key is the
+-- pair. A token is per (app, installation, device), so the same person on two
+-- handsets is two rows and both are rung; the same handset signed in as two
+-- accounts is also two rows, and the one that is rung is the one the notice
+-- is for.
+--
+-- `(uid, token)` AND NOT `token` ALONE. Apple's token identifies an
+-- installation, not a person, so signing out of one account and into another
+-- on the same phone gives the same token under a second uid. With `token` as
+-- the key the second sign-in would take the row off the first account, and
+-- the first account would stop being notified because somebody else used
+-- that phone once. Two rows is the truthful shape; which one is rung is
+-- decided by the uid, which is what the notice is addressed to.
+--
+-- NOTHING ELSE IS ON THIS ROW. Not the model, not the iOS version, not when
+-- it last spoke -- 「端末ごとにやることなんてねえよ」. A column here that
+-- described the handset would be the phone becoming a thing the server knows
+-- about, and the server knows about accounts.
+--
+-- Deleting the account takes it, the way it takes everything else:
+-- 「アカウント削除で残るものねえって言ってんだろ何回言わせんだよ全部消える」.
+--
+-- AND THE SWITCHES ARE NOT HERE. Which of the four kinds a person wants is
+-- `profile.prefs` (`push_follow`, `push_reply`, `push_like`, `push_boost`),
+-- because it is the ACCOUNT's answer and not this handset's -- the same
+-- sentence the theme and the interface language are under. A column here
+-- would be the answer per phone, which is the thing 2026-09-03 took out of
+-- this app.
+create table if not exists device (
+  uid        uuid not null references profile(id) on delete cascade,
+  token      text not null check (token ~ '^[0-9a-fA-F]{32,200}$'),
+  created_at timestamptz not null default now(),
+  primary key (uid, token)
+);
+-- Asked one way only: supabase/functions/push-send reads every token of the
+-- ONE account a notice is for.
+create index if not exists device_uid_idx on device(uid);
+
 -- ---- saying that something is wrong ----------------------------------------
 -- A report is written and never read back by anybody using the app. It goes to
 -- whoever is looking at the dashboard, which is the whole point: a person who
@@ -969,6 +1016,7 @@ alter table react       enable row level security;
 alter table prompt      enable row level security;
 alter table follow      enable row level security;
 alter table block       enable row level security;
+alter table device      enable row level security;
 alter table report      enable row level security;
 alter table feedback    enable row level security;
 alter table draft       enable row level security;
@@ -1356,7 +1404,7 @@ create view language_seen as
    -- opened to stop.
    where l.published_at is not null or l.owner = auth.uid()
       or language_took(l.id);
-grant select on language_seen to anon, authenticated;
+grant select on language_seen to authenticated;
 
 -- AND THE LANGUAGE BESIDE THE PERSON, IN THE SAME ANSWER.
 -- 「他人のフォロー／フォロワーとか見る時すんごいくるくる回ってるけど、なんか
@@ -1413,7 +1461,7 @@ create view follow_seen as
     from follow f
     join profile a on a.id = f.follower
     join profile b on b.id = f.followed;
-grant select on follow_seen to anon, authenticated;
+grant select on follow_seen to authenticated;
 
 drop view if exists profile_seen cascade;
 create view profile_seen as
@@ -1431,7 +1479,7 @@ create view profile_seen as
        order by ls.created_at asc
        limit 1
     ) l on true;
-grant select on profile_seen to anon, authenticated;
+grant select on profile_seen to authenticated;
 
 drop view if exists post_seen cascade;
 create view post_seen as
@@ -1477,7 +1525,7 @@ create view post_seen as
                   where r.post = p.id and r.kind = 'boost'
                     and r.actor = auth.uid()) as i_boost
     from post p left join profile a on a.id = p.author;
-grant select on post_seen to anon, authenticated;
+grant select on post_seen to authenticated;
 
 -- post: everyone reads, you write as yourself.
 --
@@ -1696,6 +1744,29 @@ create policy block_make on block for insert
   with check (is_member() and actor = auth.uid());
 drop policy if exists block_drop on block;
 create policy block_drop on block for delete using (is_member() and actor = auth.uid());
+
+-- device: YOURS and nobody else's, in every direction -- the same four lines
+-- block is under, and for a harder reason.
+--
+-- A row here is the address of somebody's phone. Written by anybody else it
+-- rings a phone that is not theirs; read by anybody else it is a token that
+-- can be written into their own row and then rung on purpose. So there is no
+-- `using (true)` anywhere below, no update policy at all (a token does not
+-- change -- a new one is a new row and the old one goes), and `uid` is
+-- refused from the outside in both directions.
+--
+-- The one thing that is not the person: supabase/functions/push-send deletes
+-- a row Apple has answered `410 Unregistered` for. That runs with the service
+-- role, which no policy applies to -- and it is written down here because a
+-- row that can disappear without its owner doing anything is a thing to be
+-- able to find. docs/CHANGELOG.md 2026-09-22 carries the DELETE REVIEW.
+drop policy if exists device_read on device;
+create policy device_read on device for select using (is_member() and uid = auth.uid());
+drop policy if exists device_make on device;
+create policy device_make on device for insert
+  with check (is_member() and uid = auth.uid());
+drop policy if exists device_drop on device;
+create policy device_drop on device for delete using (is_member() and uid = auth.uid());
 
 -- report: written by anybody, read by staff. Not by the person who wrote it and
 -- not by the person it is about -- somebody who could read reports could work
@@ -2148,7 +2219,7 @@ language sql stable as $$
    order by ((k.pts + a.pts) * feed_weight(v.author)) desc, v.created_at desc
    limit lim offset off
 $$;
-grant execute on function feed_hot(int, int) to anon, authenticated;
+grant execute on function feed_hot(int, int) to authenticated;
 
 -- THE PEOPLE YOU FOLLOW, AND WHAT THEY PASSED ON.
 --
@@ -2218,7 +2289,7 @@ language sql stable as $$
    order by z.at_key desc
    limit lim
 $$;
-grant execute on function feed_fo(int, timestamptz) to anon, authenticated;
+grant execute on function feed_fo(int, timestamptz) to authenticated;
 
 -- ---------------------------------------------------------------------------
 -- Leaving
@@ -2277,7 +2348,7 @@ language sql stable security definer set search_path = public as $$
   );
 $$;
 revoke all on function email_taken(text) from public;
-grant execute on function email_taken(text) to anon, authenticated;
+grant execute on function email_taken(text) to authenticated;
 
 -- ---------------------------------------------------------------------------
 -- Answering a report
@@ -2784,8 +2855,23 @@ create trigger profile_follows after insert on profile
 -- service_role is not touched. The dashboard is where staff is set.
 -- Said after the tables and the policies because the columns have to exist.
 -- ---------------------------------------------------------------------------
+--
+-- `prefs` IS ON THIS LINE AND WAS NOT, FOR A FORTNIGHT. The column was added
+-- on 2026-09-08 -- 「端末に残すものないんですけど。サーバーで同じ機能になるよう
+-- に代替して」 -- and this grant was not touched, so `netPrefsPut()` in
+-- www/net.js sent `PATCH /rest/v1/profile {prefs:...}` and the database
+-- refused it, every time, for everybody. Nothing threw: that call's failure
+-- handler is `function(){}`, so the theme and the interface language went on
+-- working out of the copy on the handset and simply never arrived anywhere.
+-- Exactly the thing the paragraph above says this line is for -- 「a column
+-- added later is not updatable until it is added to one of these lines」 --
+-- happening to the column added the day after it was written.
+--
+-- It is not a preference any more either: the four switches that say which
+-- notices reach a phone are fields of this column (2026-09-22), and a switch
+-- that cannot be written is a switch that is always on.
 revoke update on profile from anon, authenticated;
-grant  update (handle, display, av, bio, link, loc) on profile to anon, authenticated;
+grant  update (handle, display, av, bio, link, loc, prefs) on profile to authenticated;
 
 -- And the same sentence about INSERT, which is not the same statement.
 --
@@ -2809,7 +2895,7 @@ grant  update (handle, display, av, bio, link, loc) on profile to anon, authenti
 -- `handle` IS in the UPDATE grant, and with is_admin() reading the handle
 -- that is the road somebody would take. profile_rename() closes it.
 revoke insert on profile from anon, authenticated;
-grant  insert (id, handle, display, av, bio, link, loc) on profile to anon, authenticated;
+grant  insert (id, handle, display, av, bio, link, loc) on profile to authenticated;
 
 -- ---------------------------------------------------------------------------
 -- And the question that is no longer asked
@@ -2826,7 +2912,7 @@ grant  insert (id, handle, display, av, bio, link, loc) on profile to anon, auth
 -- telling the truth -- something is still standing on it.
 drop function if exists has_account();
 revoke update on post from anon, authenticated;
-grant  update (body, language, prompt, reply_to) on post to anon, authenticated;
+grant  update (body, language, prompt, reply_to) on post to authenticated;
 
 -- And INSERT, for the same reason as profile above. The comment over
 -- hidden_at says "nobody may set these but the two functions at the foot of
@@ -2842,4 +2928,275 @@ grant  update (body, language, prompt, reply_to) on post to anon, authenticated;
 -- above already calls the author's. created_at is left out on purpose: it
 -- defaults to now() and a client that could name it could date a post.
 revoke insert on post from anon, authenticated;
-grant  insert (id, author, language, body, prompt, reply_to) on post to anon, authenticated;
+grant  insert (id, author, language, body, prompt, reply_to) on post to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- And the road OUT: three triggers that tell push-send something happened
+--
+-- 「通知作ろう。アップルのネイティブ通知で、フォローされた時、返信きた時みたい
+--   な感じでSNS部分であるやつ。」 OWNER 2026-09-22.
+--
+-- Four kinds, and they are the four `notices()` already returns -- `follow`,
+-- `reply`, `like`, `boost`. There is no fifth, and these triggers are not a
+-- second list of them: `react.kind` decides between `like` and `boost` the
+-- same way that function does, and `post.reply_to is not null` is what a
+-- reply IS there too.
+--
+-- THE TRIGGER CARRIES THE SIGNED-IN PERSON, AND NOTHING ELSE.
+-- 「サインインなしで勧めるものないけど」 OWNER 2026-09-22 -- there is nothing
+-- in this app that proceeds without a sign-in, and this road is not to be the
+-- first. A trigger fires INSIDE the REST request of the person who wrote the
+-- row, so that person's own `Authorization` is right there in
+-- `request.headers`, and `push_ping()` hands it on unchanged. push-send is
+-- deployed WITH JWT verification, so a call carrying no signature is refused
+-- before a line of it runs, and push.mjs then refuses one whose uid is not
+-- the row's own actor -- being signed in as somebody is not the same as
+-- having done the thing.
+--
+-- No secret is written down here and none could be: what travels is the
+-- caller's own token, which they already hold, and it is read at the moment
+-- of the write rather than stored.
+--
+-- WHY THIS IS OUR OWN FUNCTION AND NOT `supabase_functions.http_request()`.
+-- That is the packaged one a Database Webhook uses, and its headers are
+-- **arguments of the trigger**, which PostgreSQL fixes as string constants
+-- when the trigger is created: `create trigger ... execute function f(<any
+-- expression>)` is a syntax error, measured 2026-09-22. So the packaged road
+-- can carry a header somebody wrote down in this file and no other -- which
+-- is either a secret in the schema or an open door, and the owner has ruled
+-- out the door. `net.http_post` is what that function hands to anyway
+-- (pg_net), it arrives with the same one dashboard click, and it takes its
+-- headers as a value. One mechanism, one hop fewer.
+--
+-- IT MUST NOT BE ABLE TO STOP THE WRITE. `net.http_post` queues the request
+-- and returns; the POST happens after the transaction. A notification that
+-- cannot be sent must never cost somebody the follow, the reply or the like
+-- they actually made. Anything unexpected is swallowed for the same reason
+-- and the write stands.
+--
+-- AFTER INSERT AND NOTHING ELSE. A row that already exists has already been
+-- notified about, so nothing here ever fires for the past -- which is the
+-- whole answer to 「前からある data」 for this feature. No update trigger:
+-- un-liking and re-liking is a delete and an insert, and the insert is the
+-- notice.
+--
+-- WHY THE `do` BLOCK, and it is the only one in this file. `net` is not part
+-- of PostgreSQL and is not part of this file: pg_net arrives when somebody
+-- turns Database -> Webhooks on in the dashboard, once
+-- (supabase/setup.md § 12). Named unconditionally, a paste into a project
+-- where that click has not happened yet stops HERE -- and on 2026-09-15 a
+-- paste that stopped part-way left NOTHING behind it: no `profile.link`, no
+-- `plan.was`, an app store rejection and every phone reading free. That is
+-- the failure this guard exists to prevent, and it is why this block is the
+-- LAST thing in the file as well: everything above it has landed by the time
+-- it is reached.
+--
+-- A skipped block is not a silent one. It says so, and setup.md § 12 says to
+-- look for it -- 「空」と「壊れている」は別の状態, which is the first page of
+-- CLAUDE.md. What holds the three triggers themselves is tools/rls-check.mjs,
+-- which applies this file once WITHOUT pg_net (and asks that the rest of it
+-- still landed) and once WITH it (and asks that all three are there, and that
+-- what goes down the road carries the writer's own Authorization).
+
+-- The one place a write becomes a knock on push-send's door.
+--
+-- `security definer` because `net.http_request_queue` is not a table the app's
+-- roles may write, and the person inserting a follow is the app's role. What
+-- it is allowed to do with that power is this function's whole body: read one
+-- header, and queue one POST.
+--
+-- NO SIGNATURE, NO KNOCK. `request.headers` is set by PostgREST for the
+-- request this write is part of; a write that did not come through it -- the
+-- service role, a dashboard query, a migration -- has none, and there is
+-- nobody to send as. That is a state, not an error: the row is written and no
+-- notice goes out.
+create or replace function push_ping() returns trigger
+language plpgsql security definer set search_path = public as $f$
+declare
+  auth text;
+begin
+  begin
+    auth := nullif(current_setting('request.headers', true), '')::json ->> 'authorization';
+  exception when others then
+    auth := null;
+  end;
+  if auth is null or auth = '' then return null; end if;
+
+  begin
+    perform net.http_post(
+      url     := 'https://iimwukyyasbybfrirhsf.supabase.co/functions/v1/push-send',
+      body    := jsonb_build_object('table', TG_TABLE_NAME, 'record', to_jsonb(NEW)),
+      headers := jsonb_build_object('Content-Type', 'application/json',
+                                    'Authorization', auth),
+      timeout_milliseconds := 5000);
+  exception when others then
+    /* 通知が出ないことが、フォローや返信やいいねを落としてはいけません。 */
+    null;
+  end;
+  return null;
+end
+$f$;
+
+do $b$
+begin
+  if not exists (select 1 from pg_proc p
+                   join pg_namespace n on n.oid = p.pronamespace
+                  where n.nspname = 'net' and p.proname = 'http_post') then
+    raise notice '%', 'push-send: Database -> Webhooks has not been turned on '
+      'for this project, so the three notification triggers were NOT made. '
+      'Everything else in this file is in. See supabase/setup.md section 12, '
+      'then run this file again.';
+    return;
+  end if;
+
+  drop trigger if exists push_on_follow on follow;
+  create trigger push_on_follow after insert on follow
+    for each row execute function push_ping();
+
+  -- Only the ones that answer something. A post that answers nothing is not a
+  -- notice for anybody, and a trigger that fired for every post would put the
+  -- whole timeline through this road to be thrown away at the far end.
+  drop trigger if exists push_on_reply on post;
+  create trigger push_on_reply after insert on post
+    for each row when (new.reply_to is not null) execute function push_ping();
+
+  -- Both kinds down one trigger. `react.kind` is where like and boost are
+  -- told apart and it is told apart there for notices() as well; a second
+  -- trigger per kind would be that one fact written down twice.
+  drop trigger if exists push_on_react on react;
+  create trigger push_on_react after insert on react
+    for each row execute function push_ping();
+end
+$b$;
+
+-- ---------------------------------------------------------------------------
+-- THE WALL: nothing on this server answers anybody who has not signed in
+--
+-- 「ちがう。そもそもサインインがない状態でできることがないはずなのにそれが
+--   あることを疑って言ってんの。小さい穴だけ潰しても意味ねえだろ、大きい
+--   カバーで覆えやバカ」 OWNER 2026-09-22.
+--
+-- Not one table, one view, one function, one sequence, one bucket. This block
+-- is the whole of it, and it is a COVER rather than a list: it names no table
+-- and no function, so a table added to this file tomorrow is behind it the
+-- day it is added. Every hole this closed was a line somebody wrote by hand
+-- and a line nobody later remembered -- the same fault docs/DATA_SAFETY.md
+-- names 「a list of keys, written by hand, that nobody remembered to add to」.
+--
+-- WHAT WAS OPEN, measured on 2026-09-22 before this block existed
+-- (tools/rls-check.mjs, the run that has to go red first): 24 relations in
+-- `public`, 69 functions, 5 sequences, both of storage's tables and both
+-- buckets -- and three standing `alter default privileges` entries, so
+-- everything made afterwards would have been open too. Nobody had to find a
+-- bug: the publishable key is in www/net.js in the open, and that is all it
+-- took to read every profile, every post, every reaction, every follow, and
+-- every photograph anybody had ever put up.
+--
+-- TWO LAYERS AND THEY ANSWER DIFFERENT QUESTIONS. The grants below say
+-- **whether you are anybody at all**; the policies above say **which of the
+-- signed-in may touch which row**. A `using (true)` policy is not a hole any
+-- more -- it means「every signed-in person」, which is what it was always
+-- meant to say. This is why no policy was rewritten to add `is_member()`:
+-- that would be the same sentence said twice, in two places, and one of them
+-- would drift.
+--
+-- IT IS THE LAST THING IN THE FILE AND HAS TO BE. Everything above creates
+-- tables and views, and Supabase's default privileges hand each new one to
+-- `anon` as it is made. Revoking at the foot catches all of them; revoking at
+-- the head would catch none.
+--
+-- AND IT SURVIVES BEING PASTED TWICE, like everything else here: a revoke of
+-- something already revoked is not an error, and the default-privilege lines
+-- are a state rather than a step.
+do $w$
+declare r record;
+begin
+  /* Whoever is pasting this file is who created the tables in it, and
+     `alter default privileges` with no `for role` is about the current user
+     only. On Supabase's SQL editor that is `postgres`; on a project where
+     something else made them it is that. So it is said for every role that
+     actually HAS a standing grant to anon in this schema, read out of the
+     catalogue rather than guessed -- `for role supabase_admin` written by
+     hand fails outright on a database where that role does not exist, and a
+     statement that errors here takes the block with it. */
+  execute 'alter default privileges in schema public revoke all on tables    from anon';
+  execute 'alter default privileges in schema public revoke all on sequences from anon';
+  execute 'alter default privileges in schema public revoke all on functions from anon';
+  for r in
+    select distinct pg_get_userbyid(d.defaclrole) as who
+      from pg_default_acl d
+      join pg_namespace n on n.oid = d.defaclnamespace
+     where n.nspname in ('public', 'storage')
+       and array_to_string(d.defaclacl, ',') like '%anon=%'
+  loop
+    execute format(
+      'alter default privileges for role %I in schema public  revoke all on tables    from anon', r.who);
+    execute format(
+      'alter default privileges for role %I in schema public  revoke all on sequences from anon', r.who);
+    execute format(
+      'alter default privileges for role %I in schema public  revoke all on functions from anon', r.who);
+    execute format(
+      'alter default privileges for role %I in schema storage revoke all on tables    from anon', r.who);
+  end loop;
+end
+$w$;
+
+revoke all on all tables    in schema public from anon;
+revoke all on all sequences in schema public from anon;
+
+-- FUNCTIONS NEED THE OTHER WORD AS WELL, and this is the half a revoke of
+-- `anon` alone does not reach: PostgreSQL grants EXECUTE on every new
+-- function to PUBLIC, and PUBLIC is not a role anybody is in -- it is
+-- everybody, `anon` included. So `revoke ... from anon` on a function that
+-- was never revoked from PUBLIC changes nothing at all, and 69 of them were
+-- exactly that. Measured 2026-09-22.
+--
+-- Granting them back to `authenticated` in one line is not a widening and
+-- cannot be: PUBLIC already included `authenticated`, so every function in
+-- this schema was already theirs to run. What changes is only who else.
+revoke all on all functions in schema public from public;
+revoke all on all functions in schema public from anon;
+grant execute on all functions in schema public to authenticated;
+
+-- The files. `storage.objects` and `storage.buckets` belong to
+-- `supabase_storage_admin`, so this is wrapped for the same reason their RLS
+-- is above -- on a database where this is not ours to say, it says so and
+-- goes on.
+do $w$
+begin
+  execute 'revoke all on all tables in schema storage from anon';
+exception when insufficient_privilege then
+  raise notice '%', 'storage: not ours to revoke here -- Supabase does it';
+end
+$w$;
+
+-- A PUBLIC BUCKET IS A URL THAT NEEDS NOTHING. No policy under it is ever
+-- consulted: the object is served to whoever has the link, and the link is in
+-- every post. `post-media` has been public since the day it was made, which
+-- means every photograph and every recording anybody put up has been readable
+-- by anybody at all.
+--
+-- Every bucket and not this one by name -- the cover is the mechanism.
+update storage.buckets set public = false where public;
+
+-- And the policy over the files asks who you are, the way the other two
+-- already did. `using (bucket_id = 'post-media')` was every person alive;
+-- this is every person signed in, which is the same sentence `post_read` is
+-- under.
+drop policy if exists media_read on storage.objects;
+create policy media_read on storage.objects for select
+  using (is_member() and bucket_id = 'post-media');
+
+-- THE ONE NAME THAT STAYS OPEN, and it is the owner's.
+-- 「判断だけどこれは例外で」 OWNER DECISION 2026-09-22.
+--
+-- `email_taken()` is asked AT THE DOOR (www/net.js, with no token on it),
+-- before an account exists, so a person signing up has no session to ask it
+-- with. It is the single thing on this server a caller with no session may
+-- run, it is named here rather than counted, and tools/rls-check.mjs counts
+-- everything else as zero with this one named. An exception that is counted
+-- is an exception that grows.
+--
+-- It is here, after the revoke, because order is the whole of it: the line
+-- beside the function itself would be undone by the two lines above.
+grant execute on function email_taken(text) to anon;

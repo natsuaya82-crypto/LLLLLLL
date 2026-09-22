@@ -171,7 +171,24 @@ the onboarding was unfinished with nothing left saying otherwise. Cleared by
 `obReturn()`; it is a pending move, not a preference, and it is the one thing
 in `SET` that is meant to be short-lived. **How this account has the app set up is `profile.prefs`**, since 2026-09-09:
 one jsonb column carrying exactly `SET_PREFS` in `www/core.js` — the theme, the
-interface language, and the three switches about the drawn letters. All five
+interface language, and the three switches about the drawn letters — **and,
+from 2026-09-22, the four that say which notices reach a phone**:
+`push_follow`, `push_reply`, `push_like`, `push_boost`. **A switch that is not
+there is ON**, and that is the spec rather than a default: nobody's `prefs`
+carried these four before that day, so reading a missing one as 「切ってある」
+is every account that has ever existed getting no notifications at all, with
+nothing on any screen saying so. Off is `false` written down and nothing else.
+`supabase/functions/push-send/push.mjs` is the one place that asks
+(`pushWants`), and it is asked on the SERVER — the switch decides what is
+sent, not what a phone chooses to show.
+
+**It was not writable for a fortnight**, and that is worth keeping because it
+is the shape of the failure rather than one bug: the column was added on
+2026-09-08 and `grant update (…) on profile` in `supabase/schema.sql` was not
+touched, so `netPrefsPut()`'s `PATCH` was refused every time, by everybody,
+silently — that call's failure handler is `function(){}`. The theme and the
+interface language went on working out of the copy on the handset and simply
+never arrived. Fixed and held on 2026-09-22 (`npm run rls`, five claims). All five
 were in `SET_PHONE` as 「how this handset is set up」, and that sentence was
 wrong about all five: signing in on a second phone gave somebody the app
 arranged the way that phone happened to be. `lingua.set` still holds them as
@@ -404,6 +421,42 @@ it goes with the rest of that account's keys. **It is with the owner** —
 **なぜ `set null` で `cascade` ではないか。**`report.actor` と同じ理由です
 （下の「Reports do not go」）。退会が、運営が読むべきバグ報告を黙って取り下げる
 道になってはいけません。
+
+## 通知の宛先 ── `device`（サーバーだけ、本人だけ）
+
+「通知作ろう。アップルのネイティブ通知で、フォローされた時、返信きた時みたいな
+感じでSNS部分であるやつ。」OWNER 2026-09-22。
+
+| | |
+|---|---|
+| どこに | サーバーだけ（`supabase/schema.sql`、`block` の隣）。**端末には一行も来ません** ── slice でも `SET` でもなく、`localStorage` の鍵は一つも増えません |
+| 誰の | その iPhone を持っているアカウントの。`uid uuid references profile(id) on delete cascade` |
+| 何が | `token`（APNs がその**インストール**に出した宛先、hex）と `created_at`。主キーは `(uid, token)` |
+| 誰が読めるか | **本人だけ**（`is_member() and uid = auth.uid()`）。`using (true)` はどこにもありません ── 読める token は、他人の行に書き込んで鳴らせる token です |
+| 誰が書けるか | 本人が自分の `uid` で insert するときだけ。`npm run rls` が B の名前で書けないこと・A の行を読めないことを試します |
+| 編集 | **できません。**update の policy が一つもありません ── token は変わらず、新しいのは新しい行で、古いのは消えます |
+| いつ消えるか | 本人が消したとき（通知を切る）と、**Apple が `410 Unregistered` と答えたとき**。後者は `push-send` が service role で消します ── DELETE REVIEW は `docs/CHANGELOG.md` 2026-09-22 |
+| 退会したら | `on delete cascade` で消えます |
+
+**なぜ `(uid, token)` で `token` だけではないか。**APNs の token は
+「このアプリの、この端末への、このインストール」を指していて、**人を指して
+いません**。一台の iPhone で別のアカウントにサインインすると、同じ token が
+二つ目の uid に付きます。`token` だけを主キーにすると二人目のサインインが
+一人目の行を奪い、一人目は「その電話を誰かが一度使った」というだけの理由で
+通知が止まります。**二行あるのが本当の形**で、どちらを鳴らすかは知らせの宛先
+（uid）が決めます。
+
+**どの種類か** ── `current` です。宛先は「今どこに送れるか」で、過去形の data
+ではありません。だから古い token を残しておく意味はなく、Apple が無いと言った
+ものは消えます。
+
+**この行には端末のことが何も書いてありません** ── 機種も、iOS の版も、最後に
+喋った日も。`docs/DATA_MODEL.md` のこの表に列が増えるとしたら、それは端末が
+サーバーの知っているものになったということで、サーバーが知っているのは
+アカウントです（「端末ごとにやることなんてねえよ」OWNER 2026-09-03）。
+
+**オン／オフはここにありません。**四つのスイッチは `profile.prefs` の中で、
+アカウントの答えだからです ── この表に置くと、答えが電話ごとになります。
 
 ## The index of languages, and what is actually in it
 

@@ -68,10 +68,30 @@ https://raw.githubusercontent.com/natsuaya82-crypto/LLLLLLL/master/supabase/sche
 
 `Success. No rows returned` が出れば通っています。
 
+### 2026-09-22 以降、**もう一度流し直してください**
+
+この日、**サインインしていない人からサーバーを全部隠しました**（オーナーの決定
+「そもそもサインインがない状態でできることがないはずなのにそれがあることを疑って
+言ってんの。小さい穴だけ潰しても意味ねえだろ、大きいカバーで覆えやバカ」）。
+
+それまで、アプリが持っている publishable キーだけで、**全員の profile、全部の
+投稿といいねとフォロー、公開された言語、四つの view、公開の函数 69 本、そして
+`post-media` の写真と声が全部**読めました。今は一つもありません。
+
+**`post-media` は private になります。**流したあと、Storage の画面でそこが
+**Public ではなくなっている**ことを見てください。今まで URL だけで開けた写真は、
+これからセッションの token が要ります。
+
+**開いているのは `email_taken()` 一つだけ**です（扉で、アカウントが出来る前に
+訊くもの。OWNER DECISION 2026-09-22「判断だけどこれは例外で」）。
+
+**流し直すまで、サーバーは今までどおり誰にでも答えます。**
+
 ### 流したあとに見るところ
 
 | 見る場所 | あるべきもの |
 |---|---|
+| Storage → `post-media` | **Public ではない**（2026-09-22 から） |
 | Table Editor | `profile` `language` `publication` `prompt` `post` `quote` `react` `follow` の8つ |
 | Table Editor → `post` | 列に `reply_to` がある |
 | Table Editor → `profile` | 列に `av` がある |
@@ -947,3 +967,103 @@ SNS の分（投稿・下書き・プロフィール・フォロー）は元か�
 | 見た日 | |
 
 **この表が埋まるまで、「消えないための仕組み」は一つも完成しません。**
+
+---
+
+## 12. 通知（Database → Webhooks を一度だけ ON）
+
+**ここは一クリックです。そして、そのクリックが無いと通知は一通も出ません。**
+
+オーナーの決定（2026-09-22）：「通知作ろう。アップルのネイティブ通知で、
+フォローされた時、返信きた時みたいな感じでSNS部分であるやつ。それに加えて設定で
+個別通知のオンオフできるように。」
+
+### なぜ Dashboard でしかできないのか
+
+`supabase/schema.sql` は、フォローされた・返信された・いいね／リポストされた瞬間に
+edge function `push-send` を叩く**トリガーを三つ**作ります。その叩く道は
+**pg_net**（`net.http_post`）で、**これは PostgreSQL の物でも `schema.sql` の物でも
+ありません** ── Supabase が、Database → Webhooks を有効にした時に入れます。
+だから `mail.md` と同じで、ここが唯一の置き場所です。
+
+### やること
+
+**Dashboard → Database → Webhooks → Enable webhooks**（ボタン一つ）。
+
+画面で Webhook を**作らないでください。**要るのはこのボタンが入れる **pg_net**
+（`net` schema）だけで、トリガーは `schema.sql` が自分で作ります ── 画面で作る
+ふつうの Webhook は、呼び出し人の署名を運べません（下）。
+
+### 順番
+
+1. **先にここ（§ 12）の Enable webhooks。**
+2. そのあと **§ 2 の schema.sql を流す。**
+3. そのあと **Actions → Supabase Deploy → `push-send`**（`docs/apple.md` § 8 に、
+   その前に Apple 側でやることが順に書いてあります）。
+
+### 逆の順でやってしまったら
+
+**壊れません。もう一度 schema.sql を流すだけです。**
+
+`schema.sql` の一番最後にあるトリガーを作る所は、「`supabase_functions` があれば
+作る、無ければ飛ばす」形にしてあります。だから Webhooks が OFF のまま貼っても、
+**ファイルの残りは全部入ります** ── 2026-09-15 に、途中で止まったペーストが
+`profile.link` も `plan.was` も入れずに終わり、Apple の審査が落ちて、全部の端末が
+free と表示された、あの壊れ方をしないためです。
+
+飛ばした時は SQL Editor の出力に **NOTICE** が出ます：
+
+```
+NOTICE:  push-send: Database -> Webhooks has not been turned on for this
+project, so the three notification triggers were NOT made. Everything else in
+this file is in. See supabase/setup.md section 12, then run this file again.
+```
+
+### 入ったかどうかを見るところ
+
+**Database → Triggers**（または SQL Editor で下を実行）。三つとも在れば済みです。
+
+```sql
+select tgname, tgrelid::regclass as "表"
+  from pg_trigger
+ where tgname in ('push_on_follow', 'push_on_reply', 'push_on_react')
+ order by tgname;
+```
+
+| あるべきもの | 表 |
+|---|---|
+| `push_on_follow` | `follow` |
+| `push_on_react` | `react` |
+| `push_on_reply` | `post` |
+
+**三行出なければ、通知は出ません。**Enable webhooks をしてから、§ 2 をもう一度
+流してください。
+
+### 通知が来ないとき、どこを見るか
+
+上から順に、どれか一つで止まります。
+
+| 見るところ | 入っていなければ |
+|---|---|
+| Database → Triggers（上の三つ） | この節をやり直す |
+| Edge Functions → `push-send` → Logs | 置かれていない（Actions → Supabase Deploy） |
+| そのログの `not set: …` | Apple の鍵が入っていない（`docs/apple.md` § 8） |
+| そのログの `switched off` | その人が設定でその種類を切っている |
+| そのログの `no device` | その iPhone が通知を許可していない |
+| そのログの `their own` | 自分でやったこと（仕様 ── 自分には送りません） |
+| そのログの `no session` / HTTP 401 | 呼び出しに署名が付いていない。`request.headers` に `authorization` が来ていない可能性 |
+| そのログの `not theirs to ring` | 行の actor と、叩いた人が違う |
+
+**`push-send` はサインインした本人しか叩けません。**「サインインなしで勧める
+ものないけど」OWNER 2026-09-22。トリガーは**行を入れた人の Authorization を
+そのまま持って行き**、函数は JWT の検証ありで置かれているので、署名の無い
+呼び出しは函数が走る前に断られます。そのうえで函数は、**誰から来たかを
+Supabase 自身に訊き直し**、その人がやった行でなければ何も送りません ──
+サインインした他人が、他人の iPhone を鳴らすこともできません。
+
+**だから `supabase_functions.http_request()`（Webhooks の画面で作るふつうの
+Webhook）は使っていません。**あれの header は**トリガーの引数**で、
+PostgreSQL はそれを作成時の文字列定数にします ── 呼び出し人の token を
+入れる場所がありません。同じ一クリックで入る pg_net（`net.http_post`）は
+header を値で受け取るので、`push_ping()` がそれを使います。**画面で Webhook
+を作らないのはそのためです。**

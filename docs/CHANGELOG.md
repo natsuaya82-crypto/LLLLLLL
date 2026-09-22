@@ -76,6 +76,63 @@ where it starts.
 おらず（`docs/RISK.md` § 9）、そこは閉じていません。
 
 ### 2026-09-22 通知 ── **新しく貯まる物：`device` の行と `prefs.push_*` の二つだけ**
+### 2026-09-22 サインインしていない人には、このサーバーに一つも無い ── **貯まる物は何も変わらず、読める物が変わります**
+
+**オーナーの決定（2026-09-22）**：「ちがう。そもそもサインインがない状態で
+できることがないはずなのにそれがあることを疑って言ってんの。小さい穴だけ潰しても
+意味ねえだろ、大きいカバーで覆えやバカ」
+
+**貯まる物・消える物は一つも変わりません。**表も列も行も一バイトも動きません。
+変わるのは**誰が触れるか**だけです。
+
+**今まで、サインインしていない人に出来たこと。**アプリが持っている publishable
+キーは `www/net.js` に公開で置いてあります（そういう鍵です）。それだけで ──
+
+| | |
+|---|---|
+| 読めた | 全員の profile（@・表示名・顔・自己紹介・場所・リンク）、全部の投稿、全部の返信、全部のいいねとリポスト、誰が誰をフォローしているか、公開された言語とその slice、そして四つの view（`profile_seen` `post_seen` `follow_seen` `language_seen`） |
+| 呼べた | `feed_hot()`（おすすめのタイムラインそのもの）、`feed_fo()`、`language_took()`、`email_taken()`、そして **public の函数 69 本**（PostgreSQL は新しい函数の EXECUTE を PUBLIC に渡し、PUBLIC は anon を含みます） |
+| 取れた | **`post-media` の写真と声、全部。**バケットが `public = true` だったので、URL を知っていれば policy は一度も見られません |
+| これから作る物も | `alter default privileges` の登録が三つ立っていたので、**明日足す表も自動で同じ状態**になるところでした |
+
+数えたのは 2026-09-22、`tools/rls-check.mjs`（塞ぐ前に赤を見た実測）：
+**relation 24・函数 69・sequence 5・storage の表 2・公開バケット 2・標準権限 3。**
+
+**今は一つもありません。**`supabase/schema.sql` の一番最後に一塊。**表も函数も
+名指ししません** ── 明日足す表は明日そこに入ります。手で書いた一覧が漏れるのが
+この穴の作られ方でした。
+
+- `revoke all on all tables / sequences / functions in schema public from anon`
+- **函数は `from public` も剥がします** ── `from anon` だけでは届きません
+  （PUBLIC は anon を含む）。`to authenticated` で戻しますが、PUBLIC は既に
+  authenticated を含んでいたので**広げてはいません**。
+- `alter default privileges … revoke`（今の役割ぶんは目録から読んで回す）
+- storage の表も `from anon`
+- **バケットは全部 private に。**公開バケットは policy を一度も見ない URL です。
+- `media_read` は `is_member()` を訊きます（今までは `bucket_id` だけ）。
+
+**`using (true)` の policy は一行も書き換えていません。**あれは「サインインした
+人の中で誰が」を言う層で、anon が policy まで届かなくなった今、穴ではありません。
+同じ事を二箇所で言わせない（`CLAUDE.md` § Simple）。
+
+**一つだけ開けてあります** ── `email_taken()`。**OWNER DECISION 2026-09-22
+「判断だけどこれは例外で」。**扉で、アカウントが出来る前に訊くものなので、訊く人に
+セッションはありません。数えずに名指ししてあります（数える例外は増えます）。
+
+**アプリ側に効きます。**サインインしていない画面からサーバーを読む道は、これで
+全部断られます ── `www/net.js` の注記が「the recommended timeline works with the
+publishable key alone」と書いている所が該当します。`CLAUDE.md` は既に
+「Reading the timeline and posting to it both need an account now」と言っていて、
+サーバーがそれに追いついた形です。**写真は今後セッションの token で取ります**
+（端末側は r48）。
+
+押さえる check は `npm run rls` ── 目録からの列挙（数えるだけで一覧を持たない）と、
+**本当の `anon` ロール**で押す 16 本。後者はこの file 自身の穴で、頭に
+「as somebody with no account at all」と書きながら、`_chk()` が常に
+`authenticated` を被せていたので「no account」は匿名セッションの意味しか
+ありませんでした。
+
+### 2026-09-22 ネイティブ通知（サーバー側）── **新しく貯まる物：サーバーの表 `device`**／**DELETE REVIEW：410 が返った token**
 
 **オーナーの決定（2026-09-22）**：「通知作ろう。アップルのネイティブ通知で、
 フォローされた時、返信きた時みたいな感じでSNS部分であるやつ。それに加えて設定で
@@ -287,6 +344,109 @@ focus の選択肢で（だから `pwKeepKb()` が焦点を当てる「開いた
 直されないこと、欄が `fitin` の（＝伸びない）欄であること、押したら画面に
 `contact.sent` の字が `.on` で出ていること、立っている画面が設定であること、
 `CONT.body` が空であること。toast を外して赤を見てから戻しました。
+これは**サーバー側だけ**です。iPhone が通知を許可して token を送る所と、設定の
+オン／オフの画面は r48（アプリ側）。ここに書くのは**サーバーに何が増えて、何が
+どこへ出て行くか**。
+
+**四種類、通知タブと同じ語。**`follow`・`reply`・`like`・`boost` ──
+`schema.sql` の `notices()` が返すのと同じ四つで、五つ目はありません。
+
+**どうやって出て行くか。**`follow`・`post`（`reply_to` が非 null の行）・`react`
+に **after insert のトリガー**が付き、pg_net（`net.http_post`）で edge function
+`push-send` を叩きます。函数は **request の中身を一切信じません** ── 受け取るのは
+「どの表の、どの行か」だけで、service role でその行を読み直し、**文面に request の
+文字は一行も使いません**。行が無ければ何もしません。
+
+**そして、サインインした本人の操作でなければ何も起こりません。**
+「サインインなしで勧めるものないけど」OWNER 2026-09-22 ── このアプリに、
+サインインなしで進むものは一つもありません。トリガーは**行を入れた人の
+`Authorization` をそのまま持って行き**（`push_ping()` が `request.headers` から
+読みます）、`push-send` は JWT の検証ありで置かれるので、署名の無い呼び出しは
+函数の一行目が走る前に断られます。そのうえで函数は `/auth/v1/user` に**誰から
+来たかを訊き直し**、返ってきた uid が行の actor と違えば何もしません ──
+サインインした他人が他人の iPhone を鳴らすこともできません。publishable キーで
+叩かれた時もここで止まります（あの鍵に user の sub はありません）。
+
+**画面で作るふつうの Database Webhook は使っていません。**
+`supabase_functions.http_request()` の header は**トリガーの引数**で、
+PostgreSQL はそれを作成時の文字列定数にします（`create trigger … execute
+function f(式)` は構文エラー。2026-09-22 に測りました）。つまりあの道が運べるのは
+「`schema.sql` に書いた header」だけで、それは**schema の中の秘密か、開いた扉**の
+どちらかにしかなりません。pg_net は同じ一クリックで入り、header を**値**で
+受け取ります。**Dashboard では Webhooks を有効にするだけで、Webhook は作りません。**
+
+**署名の無い書き込みからは通知が出ません** ── service role、Dashboard の SQL、
+migration には `request.headers` が無く、送る相手ではなく**送る資格**がありません。
+行は書かれ、通知だけが出ません。これは状態であってエラーではありません。
+
+**送らない場合が四つあり、どれも黙って終わります。**自分がやったこと（自分で
+自分の投稿にいいね）は送らない。相手のスイッチが false なら送らない。相手の
+`device` の行が無ければ送らない。秘密が一つでも無ければ 500 で止まり、**何も
+送らない**。
+
+**新しく貯まる物 ── サーバーの表 `device` だけ。**
+
+| | |
+|---|---|
+| どこに | サーバーだけ（`supabase/schema.sql`、`block` の隣）。**端末には一行も貯まりません** ── `localStorage` の鍵は一つも増えず、slice でも `SET` でもありません |
+| 何が | `uid`（誰の iPhone か）・`token`（APNs の device token, hex）・`created_at`。主キーは `(uid, token)` |
+| 誰が読めるか | **本人だけ**（`is_member() and uid = auth.uid()`）。誰の物でもない行は作れません |
+| 誰が書けるか | 本人だけ。**`uid` は grant からも policy からも他人を名乗れません** ── 他人の uid で入れた行は、その人の iPhone を鳴らせる行です |
+| 誰が消せるか | 本人と、**Apple が「もう無い」と言ったとき**（下） |
+| 退会したら | `on delete cascade` で消えます（`profile` を追う ── 「アカウント削除で残るものねえって言ってんだろ」） |
+
+**オン／オフは表ではなく `profile.prefs`（jsonb）の中**です ── `push_follow`・
+`push_reply`・`push_like`・`push_boost`。**無いのはオンです**：前から居る人の
+`prefs` にはこの四つが無く、無いことを「切ってある」と読むと、**許可を出した人に
+一通も届きません**。サーバーは読むだけで、書きません。
+
+**そして `profile` の UPDATE の grant に `prefs` が入りました。これは通知とは
+別の、今日見つかったバグです。**`netPrefsPut()`（`www/net.js`）は 2026-09-08 から
+`PATCH /rest/v1/profile {prefs:…}` を送っていましたが、schema.sql の
+`grant update (handle, display, av, bio, link, loc) on profile` に `prefs` が
+無く、**その PATCH はサーバーに断られていました** ── `netPrefsPut()` の失敗は
+何も言わない形（`function(){}`）なので、何も投げず、画面は正しく、テーマも
+表示言語も端末の中でだけ動いていました。オン／オフをこの列に置く以上、書けない
+列では意味がないので同じ日に直しています。押さえる check は `rls-check` の
+「A は自分の prefs を書ける」。**バグを入れたまま赤を見てから**直しました。
+
+**DELETE REVIEW ── Apple が 410 Unregistered と答えた `device` の行。**
+
+- **何が消えるか。**APNs が `410 Unregistered` を返した `(uid, token)` の行、
+  一つだけ。**その token に送ろうとした呼び出しの中でだけ**消えます。
+- **なぜ自動で消すのか。**410 は Apple が「この token はもう存在しない」と
+  答えたということです。**アプリを消した iPhone の token** がこれで、残して
+  おくと同じ 410 を永久に叩き続け、その人が入れ直した新しい token と並んで
+  座ります。**人が作った物ではありません** ── 人が書いた言葉でも、引いた線でも、
+  設定でもなく、Apple が発行してこの表に控えただけの宛先です。
+- **何が消えないか。**その人の `profile` も、他の `device` の行も、一行も
+  動きません。**410 以外の失敗では一つも消しません** ── 400 も 429 も 500 も
+  タイムアウトも、「読めなかった」であって「無い」ではありません
+  （`CLAUDE.md` 一枚目、「空」と「壊れている」は枝を分けない）。
+- **戻る道。**その iPhone がアプリを入れ直して通知を許可すれば、新しい token で
+  行ができます。古い token に戻る道はありませんし、戻っても宛先として死んでいます。
+- **押さえる check。**`tools/push-check.mjs` ── 410 のときだけ token が落ちる／
+  それ以外のどの答えでも一つも落ちない。**バグを入れたまま赤を見てから**書きました。
+
+**十一の問い**は `docs/scope/r47-push-server.md`。要点だけ：**無料**（`can()` は
+一つも足さず、段を一度も見ません）、**今ある data への影響は無し**（既存の行は
+一行も書き換えません。トリガーは after insert だけなので、前からあるフォローも
+投稿もリアクションも一度も通りません）、**前から居る人には `device` の行が無く、
+行が無ければ何も送りません**、**通知が出ないことで元の insert は落ちません**
+（http_request は非同期）。
+
+**`supabase/schema.sql` が変わったので、オーナーが Dashboard に貼り直すまで
+通知は一通も出ません。**貼る前に **Database → Webhooks を一度有効にする**必要が
+あります（`supabase_functions` schema はそれで出来ます ── `supabase/setup.md`
+§ 13）。有効になっていない所に貼っても**ファイルの残りは全部入ります**：
+トリガーを作る所は「その函数があれば作る、無ければ `notice` を出して飛ばす」
+形にしてあります ── 2026-09-15 に、途中で止まったペーストが**何も入れずに
+終わった**からです。
+
+**Apple 側でやることの順**は `docs/apple.md` § 8。**capability を足すと配布
+プロファイルが古くなるので、作り直して `PROVISIONING_PROFILE_BASE64` を入れ直す
+必要があります。**
+
 
 ### 2026-09-22 設定に「お問い合わせ」── **新しく貯まる物：サーバーの表 `feedback`**
 

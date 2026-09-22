@@ -5,10 +5,18 @@
 
    Supabase has no server of ours in front of it. The phone talks to the
    database directly, which means anybody can send it any request they like --
-   the app is a suggestion, not a gate. The only thing standing between a
-   stranger and somebody's language is the row level security in
-   supabase/schema.sql: a paragraph of policies saying, row by row, who may
-   read and who may write.
+   the app is a suggestion, not a gate. What stands between a stranger and
+   somebody's language is supabase/schema.sql, and it is TWO WALLS answering
+   two different questions:
+
+     the grants   are you anybody at all. Since 2026-09-22 `anon` -- which is
+       what a request carrying nothing but the publishable key arrives as --
+       holds nothing: not a table, not a view, not a function, not a
+       sequence, not a bucket. One name is open by the owner's decision
+       (`email_taken`, asked at the door before an account exists).
+     the policies  which of the signed-in may touch which row. `using (true)`
+       means 「every signed-in person」 and is not a hole; it was one only
+       while anon could get as far as a policy.
 
    That is the whole of the security of this app, and it is the one part of it
    that is invisible. A policy that is too wide breaks nothing. Nothing throws,
@@ -18,8 +26,11 @@
 
    So this file is not a test of the schema. It is a second person. It stands
    up a real PostgreSQL, applies schema.sql to it unchanged, and then tries --
-   as B, and as somebody with no account at all -- to do every single thing to
-   A that the file promises cannot be done. A "denied" is either refusal the
+   as B, as an anonymous SESSION, and as the `anon` role with no claims at all
+   -- to do every single thing to A that the file promises cannot be done.
+   Those last two are not the same caller and the difference cost this file
+   its own heading for weeks: 「somebody with no account」 meant an anonymous
+   session here, with a `sub` and a role, until 2026-09-22. A "denied" is either refusal the
    database can make: an error when writing a row the policy forbids, or zero
    rows when reading or changing rows the policy hides. Both are wins; the
    distinction is printed because a claim that passes for the wrong reason is
@@ -142,6 +153,15 @@ grant all on all tables in schema storage to anon, authenticated, service_role;
 -- the POLICY rather than by a foreign key. A missing row and a closed door
 -- look identical from the outside and only one of them is the claim.
 insert into storage.buckets (id, name, public) values ('other', 'other', true);
+
+-- And this check's own notebook for what went out of the door. It is HERE and
+-- not beside the pg_net stub below on purpose: the run that has no pg_net has
+-- to get all the way to the end and answer 「nothing went out」, and a claim
+-- that cannot be ASKED reads exactly like a claim that passed. The first
+-- version of it lived with the stub, and taking the stub away made this file
+-- die instead of going red.
+create schema if not exists net;
+create table net._sent (n serial, url text, body jsonb, headers jsonb);
 `;
 
 /* Every claim schema.sql makes, as somebody trying to break it. Adding a
@@ -761,13 +781,6 @@ const CASES = [
     `select 1 from post_seen where id='${P}' and i_like`],
   ['A is told that A did not',                'ok',     A, 0,
     `select 1 from post_seen where id='${P}' and not i_like`],
-  /* NOT PROBED HERE, and said out loud so a green run is not read as more
-     than it is: a request with NO SESSION AT ALL. `chk()` takes `sub` as a
-     uuid and every "no account" case in this file is an ANONYMOUS session --
-     `is_anonymous` true, `sub` still set -- so auth.uid() is never null in
-     any of them. `i_like` is `actor = auth.uid()`, which for a null uid is
-     false for every row, but that is read off the SQL rather than watched
-     happening. docs/BACKLOG.md. */
   /* And it does not become a way to read who. A count is public on a
      timeline; the list of names behind it is not this view's to hand out. */
   ['B cannot read the likes off another\u2019s', 'denied', B, 0,
@@ -1459,6 +1472,39 @@ const CASES = [
   ['and a bio may be given on the way in',    'ok',     G4, 0,
     `insert into profile(id,handle,bio) values ('${G4}','probe4','hello')`],
 
+  /* --- HOW THIS ACCOUNT HAS THE APP SET UP -------------------------------
+     `profile.prefs` is one jsonb column holding SET_PREFS -- the theme, the
+     interface language, and the three switches about the drawn letters --
+     and from 2026-09-22 the four that say which notices reach the phone
+     (`push_follow`, `push_reply`, `push_like`, `push_boost`).
+
+     THE GRANT IS THE HALF THAT FAILS SILENTLY, and it had already failed.
+     The column was added on 2026-09-08 and was NOT put in
+     `grant update (...) on profile`, so `netPrefsPut()` -- which sends
+     `PATCH /rest/v1/profile {prefs:...}` and whose failure handler is
+     `function(){}` -- was refused by the database every single time. Nothing
+     threw, no screen was wrong, and the settings simply never left the
+     handset. Exactly what the bio block above says this pair of claims is
+     for, three columns later.
+
+     It matters twice over now: the four push switches live in this column,
+     and a switch that cannot be written is a switch that is always on. */
+  ['A writes A\u2019s own prefs',              'ok',     A, 0,
+    `update profile set prefs='{"theme":"dark"}'::jsonb where id='${A}'`],
+  ['and reads its own back',                  'ok',     A, 0,
+    `select 1 from profile where id='${A}' and prefs->>'theme'='dark'`],
+  ['B cannot write A\u2019s prefs',            'denied', B, 0,
+    `update profile set prefs='{"theme":"light"}'::jsonb where id='${A}'`],
+  ['nor can somebody with no account write them', 'denied', B, 1,
+    `update profile set prefs='{"theme":"light"}'::jsonb where id='${A}'`],
+  /* And it may be written on the way in as well, the way `bio` may: a first
+     sign-in on a second phone writes the row and the setup in one statement.
+     G4 has already made its profile above, so this is an UPDATE by the
+     account that owns it -- what is being asked is that the INSERT grant is
+     not the thing that has to carry it. */
+  ['and a switch off is kept as false',       'ok',     G4, 0,
+    `update profile set prefs='{"push_like":false}'::jsonb where id='${G4}'`],
+
   /* --- what this account has paid for -----------------------------------
      「課金とアカウントとキーボードはアカウントに結びつく」OWNER 2026-09-01.
 
@@ -1560,6 +1606,106 @@ const CASES = [
     `select 1 from purchase where uid='${A}'`],
   ['nor write one',                           'denied', B, 1,
     `insert into purchase(orig_tx,uid) values ('2000000000000010','${B}')`],
+  /* --- WHERE THE NOTICES GO --------------------------------------------
+     「通知作ろう。アップルのネイティブ通知で」 OWNER 2026-09-22.
+
+     `device` holds one row per iPhone that has been allowed to be notified:
+     the account, and the APNs token Apple issued it. It is the ADDRESS OF A
+     PHONE, and a row somebody else could write is a row that makes another
+     person's phone ring -- so `uid` is refused from the outside in both
+     directions, the way `author` is on a post.
+
+     And nobody reads anybody else's. Which phones a person carries is not on
+     `profile_seen` and is not anybody's business; a token that can be read is
+     a token that can be written into somebody else's row. */
+  ['A registers A\u2019s own iPhone',          'ok',     A, 0,
+    `insert into device(uid,token) values ('${A}','a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1')`],
+  ['B registers B\u2019s own iPhone',          'ok',     B, 0,
+    `insert into device(uid,token) values ('${B}','b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2')`],
+  ['B cannot register a phone as A',          'denied', B, 0,
+    `insert into device(uid,token) values ('${A}','b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3')`],
+  ['B cannot read A\u2019s tokens',            'denied', B, 0,
+    `select 1 from device where uid='${A}'`],
+  ['nor move A\u2019s token onto itself',      'denied', B, 0,
+    `update device set uid='${B}' where uid='${A}'`],
+  ['nor unregister A\u2019s phone',            'denied', B, 0,
+    `delete from device where uid='${A}'`],
+  ['somebody with no account cannot register one', 'denied', B, 1,
+    `insert into device(uid,token) values ('${B}','c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4')`],
+  ['nor read one',                            'denied', B, 1,
+    `select 1 from device where uid='${A}'`],
+  /* And the one thing the person themselves does: turning notifications off
+     on this handset is the row going. */
+  ['B unregisters B\u2019s own phone',         'ok',     B, 0,
+    `delete from device where uid='${B}'`],
+  /* And a token that is not one. The column is the address APNs is given, so
+     a check constraint rather than a comment: 「空」と「壊れている」は別。 */
+  ['a token that is not hex is refused',      'denied', A, 0,
+    `insert into device(uid,token) values ('${A}','not a token')`],
+
+  /* --- AND SOMEBODY WITH NO ACCOUNT AT ALL -------------------------------
+     「ちがう。そもそもサインインがない状態でできることがないはずなのにそれが
+       あることを疑って言ってんの。小さい穴だけ潰しても意味ねえだろ、大きい
+       カバーで覆えやバカ」 OWNER 2026-09-22.
+
+     **THIS FILE HAD NEVER ASKED THIS.** Its own heading says it tries
+     everything 「as B, and as somebody with no account at all」, and the
+     second half was not true: `_chk()` set the role to `authenticated` for
+     every case, so 「no account」 here meant an anonymous SESSION -- a
+     `sub`, a role, a JWT. A request carrying nothing but the publishable key
+     arrives as the `anon` ROLE with no claims, and that is the caller 400
+     attempts above never once were. The note that said so pointed at
+     docs/BACKLOG.md and stayed there; this is it being asked.
+
+     The wall in SHAPE counts every relation and every function and says none
+     of them is anon's. These are the same sentence PRESSED -- a privilege
+     that reads as absent in the catalogue and answers anyway is the kind of
+     thing only an attempt finds. */
+  ['somebody with no account reads no profile',    'denied', B, 2,
+    `select 1 from profile`],
+  ['nor any post',                                 'denied', B, 2,
+    `select 1 from post`],
+  ['nor who follows whom',                         'denied', B, 2,
+    `select 1 from follow`],
+  ['nor a like',                                   'denied', B, 2,
+    `select 1 from react`],
+  ['nor the day\u2019s sentence',                   'denied', B, 2,
+    `select 1 from prompt`],
+  ['nor a published language',                     'denied', B, 2,
+    `select 1 from language`],
+  ['nor a slice of one',                           'denied', B, 2,
+    `select 1 from slice`],
+  /* The views were the other half of the same hole: four of them were granted
+     to `anon` by name, so the columns a policy kept back were handed over by
+     a view that had no policy at all. */
+  ['nor through any of the four views',            'denied', B, 2,
+    `select 1 from profile_seen`],
+  ['nor the timeline\u2019s',                       'denied', B, 2,
+    `select 1 from post_seen`],
+  /* And the functions. `feed_hot` was reachable by name, and it is the whole
+     recommended timeline. */
+  ['nor asks for the recommended timeline',        'denied', B, 2,
+    `select 1 from feed_hot(5, 0)`],
+  ['nor for the notices',                          'denied', B, 2,
+    `select 1 from notices(5)`],
+  ['nor asks whether somebody is staff',           'denied', B, 2,
+    `select 1 where is_staff()`],
+  /* Writing, which was never possible -- `is_member()` refused it -- but was
+     refused one layer further in than it should have been. */
+  ['nor writes a profile',                         'denied', B, 2,
+    `insert into profile(id,handle) values ('${G1}','nosess')`],
+  ['nor a post',                                   'denied', B, 2,
+    `insert into post(author,body) values ('${B}','{}'::jsonb)`],
+  /* The files. A public bucket answered a URL with no policy consulted at
+     all; the table under it was anon's as well. */
+  ['nor lists anybody\u2019s photographs',          'denied', B, 2,
+    `select 1 from storage.objects where bucket_id='post-media'`],
+  /* AND THE ONE THING THAT STAYS OPEN. 「判断だけどこれは例外で」 OWNER
+     2026-09-22 -- it is asked at the door, before an account exists, so the
+     person asking it has no session by definition. */
+  ['but does ask whether an address is taken',     'ok',     B, 2,
+    `select 1 where email_taken('nobody@example.com') is not null`],
+
   /* Deleting the account takes the drafts with it. Asked by DOING it, and
      asked as the owner of the table rather than through a policy, because
      what has to hold is that the row is GONE -- a select that returns nothing
@@ -1574,6 +1720,160 @@ const CASES = [
    off is wide open no matter what its policies say, and a table with no
    update policy is append-only precisely BECAUSE the policy is missing. */
 const SHAPE = [
+  /* ---- NOTHING WITHOUT A SIGN-IN, COUNTED RATHER THAN LISTED -----------
+     「ちがう。そもそもサインインがない状態でできることがないはずなのにそれが
+       あることを疑って言ってんの。小さい穴だけ潰しても意味ねえだろ、大きい
+       カバーで覆えやバカ」 OWNER 2026-09-22.
+
+     Every other claim in this file is about ONE door somebody might get
+     through. This is the wall behind all of them, and it is asked of the
+     CATALOGUE rather than of a list somebody wrote: every relation in
+     `public`, every function in `public`, every bucket. A table added
+     tomorrow is covered tomorrow, which a hand-written list never is --
+     that is the fault docs/DATA_SAFETY.md keeps calling 「a list of keys,
+     written by hand, that nobody remembered to add to」.
+
+     Privileges and not attempts, deliberately. A `select` by anon on an
+     EMPTY table returns no rows and no error, and「no rows」reads exactly
+     like「refused」-- so what is asked is whether the privilege is THERE.
+     Column privileges are asked separately because
+     `grant insert (id, handle, ...) on profile to anon` does not show up in
+     `has_table_privilege` at all, and that is the shape two of the grants in
+     this file had. */
+  ['nothing signed out may touch any table or view', `
+     select count(*) from pg_class c
+       join pg_namespace n on n.oid = c.relnamespace
+      where n.nspname = 'public' and c.relkind in ('r','v','m','p','f')
+        and c.relname not like '\\_%'
+        and (has_table_privilege('anon', c.oid, 'SELECT')
+          or has_table_privilege('anon', c.oid, 'INSERT')
+          or has_table_privilege('anon', c.oid, 'UPDATE')
+          or has_table_privilege('anon', c.oid, 'DELETE')
+          or has_table_privilege('anon', c.oid, 'TRUNCATE')
+          or has_table_privilege('anon', c.oid, 'REFERENCES')
+          or has_table_privilege('anon', c.oid, 'TRIGGER')
+          or has_any_column_privilege('anon', c.oid, 'SELECT')
+          or has_any_column_privilege('anon', c.oid, 'INSERT')
+          or has_any_column_privilege('anon', c.oid, 'UPDATE')
+          or has_any_column_privilege('anon', c.oid, 'REFERENCES'))`, '0'],
+  /* AND THE ONE NAME THE OWNER KEPT. 「判断だけどこれは例外で」 OWNER
+     2026-09-22 -- `email_taken` is asked AT THE DOOR, before an account
+     exists, so it is the one thing a person with no session may run. It is
+     named here rather than counted, because an exception that is counted is
+     an exception that grows. */
+  ['nothing signed out may run any function but the one at the door', `
+     select count(*) from pg_proc p
+       join pg_namespace n on n.oid = p.pronamespace
+      where n.nspname = 'public'
+        and p.proname <> 'email_taken'
+        and p.proname not like '\\_%'
+        and has_function_privilege('anon', p.oid, 'EXECUTE')`, '0'],
+  ['and the one at the door is still open', `
+     select (not has_function_privilege('anon', 'email_taken(text)', 'EXECUTE'))::int`, '0'],
+  /* And that closing anon did not close the app. Everything in `public` is
+     still the signed-in person's to run -- before this cover every function
+     was executable by PUBLIC, which includes `authenticated`, so this is the
+     same set and not a smaller one. */
+  ['and everything is still the signed-in person\u2019s to run', `
+     select count(*) from pg_proc p
+       join pg_namespace n on n.oid = p.pronamespace
+      where n.nspname = 'public'
+        and p.proname not like '\\_%'
+        and not has_function_privilege('authenticated', p.oid, 'EXECUTE')`, '0'],
+  ['nothing signed out may touch any sequence', `
+     select count(*) from pg_class c
+       join pg_namespace n on n.oid = c.relnamespace
+      where n.nspname = 'public' and c.relkind = 'S'
+        and (has_sequence_privilege('anon', c.oid, 'SELECT')
+          or has_sequence_privilege('anon', c.oid, 'USAGE')
+          or has_sequence_privilege('anon', c.oid, 'UPDATE'))`, '0'],
+  ['nothing signed out may touch the files', `
+     select count(*) from pg_class c
+       join pg_namespace n on n.oid = c.relnamespace
+      where n.nspname = 'storage' and c.relkind in ('r','v','m','p')
+        and (has_table_privilege('anon', c.oid, 'SELECT')
+          or has_table_privilege('anon', c.oid, 'INSERT')
+          or has_table_privilege('anon', c.oid, 'UPDATE')
+          or has_table_privilege('anon', c.oid, 'DELETE')
+          or has_any_column_privilege('anon', c.oid, 'SELECT'))`, '0'],
+  /* A PUBLIC BUCKET IS A URL THAT NEEDS NO SESSION, and no policy below it
+     is ever consulted. Every picture anybody has ever posted was readable by
+     anyone who had the link. */
+  ['no bucket answers without a session', `
+     select count(*) from storage.buckets where public`, '0'],
+  /* And the policy over the files asks who you are now. `using (true)` on a
+     private bucket would still be every signed-in person, which is what this
+     one is; `using (bucket_id = ...)` alone was every person at all. */
+  ['and the files are only read by somebody signed in', `
+     select count(*) from pg_policies
+      where schemaname='storage' and tablename='objects' and policyname='media_read'
+        and qual not like '%is_member%'`, '0'],
+  /* AND WHAT IS LEFT FOR TOMORROW. A table made after this file was pasted
+     would be granted to anon by Supabase's own default privileges, which is
+     how every one of the rows above got there in the first place. */
+  ['and a table made tomorrow is refused too', `
+     select count(*) from pg_default_acl d
+       join pg_namespace n on n.oid = d.defaclnamespace
+      where n.nspname = 'public'
+        and array_to_string(d.defaclacl, ',') like '%anon=%'`, '0'],
+  /* THE ROAD OUT IS THERE, ALL THREE OF IT. The block at the foot of
+     schema.sql makes them only when Database -> Webhooks has been turned on,
+     and it is applied above once without that schema and once with it -- so
+     these three say both halves at once: the file survived the pass that had
+     nowhere to send anything, and the pass that did made all three. A missing
+     one is a kind of notice that silently never arrives, which is the one
+     thing about this feature no screen could ever show. */
+  ['a follow says so', `
+     select ((select count(*) from pg_trigger
+               where tgname='push_on_follow'
+                 and tgrelid='follow'::regclass) <> 1)::int`, '0'],
+  ['a reply says so', `
+     select ((select count(*) from pg_trigger
+               where tgname='push_on_reply'
+                 and tgrelid='post'::regclass) <> 1)::int`, '0'],
+  ['a like and a boost say so', `
+     select ((select count(*) from pg_trigger
+               where tgname='push_on_react'
+                 and tgrelid='react'::regclass) <> 1)::int`, '0'],
+  /* AND THE ROAD CARRIES THE PERSON. Three claims and they are one sentence:
+     exactly one of the two writes above went out, it carried the writer's own
+     Authorization, and it said which row it was about. The one with no
+     signature behind it sent nothing -- which is the door the owner closed
+     on 2026-09-22. */
+  ['one write went out and the unsigned one did not', `
+     select ((select count(*) from net._sent) <> 1)::int`, '0'],
+  ['and it carries the writer\u2019s own Authorization', `
+     select ((select count(*) from net._sent
+               where headers->>'Authorization' = 'Bearer THE-WRITERS-OWN-TOKEN')
+             <> 1)::int`, '0'],
+  ['and says which row, and nothing else about it', `
+     select ((select count(*) from net._sent
+               where body->>'table' = 'react'
+                 and body->'record'->>'actor' = '${F}'
+                 and body->'record'->>'post' = '${H4}') <> 1)::int`, '0'],
+  /* And no secret rode along. The whole point of taking the caller's token is
+     that there is nothing in this file to steal. */
+  ['and no key of ours is written into the road', `
+     select ((select count(*) from net._sent
+               where headers::text ~* '(service|secret|apikey|sb_)') <> 0)::int`, '0'],
+  /* A TOKEN IS NOT EDITED. schema.sql says so over the policies -- 「no update
+     policy at all (a token does not change -- a new one is a new row and the
+     old one goes)」 -- and an UPDATE policy added later would be the one road
+     by which somebody could point an existing row at another phone. Asked of
+     the catalogue rather than by trying, so a policy that exists and happens
+     to refuse today still fails. */
+  ['where a notice goes can never be edited', `
+     select count(*) from pg_policies where tablename='device' and cmd='UPDATE'`, '0'],
+  /* HOW SOMEBODY HAS THEIR OWN APP SET UP IS NOBODY ELSE'S. schema.sql says
+     so over the column -- 「IT IS NOT IN `profile_seen`. This is how somebody
+     has their own app set up and is nobody else's business」 -- and nothing
+     held it: `profile_seen` is `using (true)` for everybody including people
+     with no account, so a column added to that view is a column the whole
+     internet reads. The four push switches are fields of it from 2026-09-22,
+     and which notices a person has turned off is not a thing to publish. */
+  ['how an account has the app set up is not on the view somebody else reads', `
+     select count(*) from information_schema.columns
+      where table_name='profile_seen' and column_name='prefs'`, '0'],
   /* _r is this file's own scratch table and is the one thing in the schema
      that is not the schema's, so it is the one thing excluded. */
   ['row level security is on for every table', `
@@ -1846,10 +2146,14 @@ const SHAPE = [
   ['a report is edited or withdrawn through no policy', `
      select count(*) from pg_policies
       where tablename='report' and cmd in ('UPDATE','DELETE')`, '0'],
-  ['the media bucket is there and is public', `
+  /* The bucket is THERE. Whether it answers without a session is the wall's
+     claim above, and it is the opposite of what this line used to say -- it
+     asked that `post-media` be PUBLIC, which was the hole (a public bucket is
+     a URL that consults no policy at all). 「大きいカバーで覆え」 OWNER
+     2026-09-22. */
+  ['the media bucket is there', `
      select count(*) from (select 1) x
-      where not exists (select 1 from storage.buckets
-                         where id='post-media' and public)`, '0'],
+      where not exists (select 1 from storage.buckets where id='post-media')`, '0'],
   /* And what is left of A after A asked to be gone. This one is not about the
      shape of the file -- it is the last case above, read back. It is HERE
      rather than there because everything in this list is run as the owner of
@@ -2053,14 +2357,24 @@ try {
    this would pass every case and prove nothing. */
 const HARNESS = `
 create table _r(n int generated always as identity, name text, want text, got text);
-create or replace function chk(nm text, want text, stmt text, sub uuid, anon boolean)
+create or replace function _chk(nm text, want text, stmt text, sub uuid, anon boolean,
+                                who text default 'authenticated')
 returns void language plpgsql as $$
 declare c int; got text;
 begin
   begin
-    execute 'set local role authenticated';
-    perform set_config('request.jwt.claims',
-      json_build_object('sub', sub, 'is_anonymous', anon)::text, true);
+    execute format('set local role %I', who);
+    if anon is null then
+      /* NO SESSION AT ALL -- the \`anon\` role with no claims. Not the same
+         thing as an anonymous ACCOUNT, which is the row above: that one is
+         \`authenticated\` with \`is_anonymous\` true and a \`sub\` on it.
+         This is what a request carrying the publishable key and nothing else
+         arrives as, and it is what the owner is talking about. */
+      perform set_config('request.jwt.claims', '', true);
+    else
+      perform set_config('request.jwt.claims',
+        json_build_object('sub', sub, 'is_anonymous', anon)::text, true);
+    end if;
     execute stmt;
     get diagnostics c = ROW_COUNT;
     got := case when c > 0 then 'ok' else 'denied(no rows)' end;
@@ -2074,7 +2388,9 @@ end $$;
 
 const q = (s) => "'" + String(s).replace(/'/g, "''") + "'";
 const run = CASES.map(([name, want, who, anon, sql]) =>
-  `select chk(${q(name)}, ${q(want)}, ${q(sql)}, ${q(who)}, ${anon ? 'true' : 'false'});`
+  `select _chk(${q(name)}, ${q(want)}, ${q(sql)}, ${q(who)}, ` +
+  `${anon === 2 ? 'null' : (anon ? 'true' : 'false')}, ` +
+  `${q(anon === 2 ? 'anon' : 'authenticated')});`
 ).join('\n');
 
 /* OVER THE SHAPE A REAL SERVER HOLDS, AND THEN AGAIN. The file says at its
@@ -2100,10 +2416,39 @@ const BASE = 'db93b264';   /* 2026-09-08, the last paste before `wsys` */
 const BASE_SQL = execFileSync('git', ['show', `${BASE}:supabase/schema.sql`],
                               { cwd: path.join(HERE, '..'), encoding: 'utf8' });
 const SCHEMA_SQL = fs.readFileSync(SCHEMA, 'utf8');
+/* AND WHAT THE DASHBOARD MAKES, which is not PostgreSQL's and is not
+   schema.sql's. pg_net (the `net` schema) arrives when somebody turns
+   Database -> Webhooks on, once, by hand -- so a project can be pasted into
+   either before that click or after it, and BOTH have to work.
+
+   It is put BETWEEN the two applications of the file for exactly that
+   reason, and it is the cheapest honest way to ask both halves: the first
+   pass runs without it (so the guard at the foot of schema.sql has to skip
+   the triggers and let the rest of the file land -- 2026-09-15, a paste that
+   stopped part-way left nothing behind it), and the second pass runs with it
+   (so the three triggers have to be there).
+
+   The real one queues the request and returns. This one WRITES DOWN WHAT IT
+   WAS GIVEN, because that is the claim: the road out carries the writing
+   person's own `Authorization` and nothing else. 「サインインなしで勧めるもの
+   ないけど」 OWNER 2026-09-22 -- if that header is not on it, push-send is
+   reachable by anybody, and nothing on any screen would ever say so. */
+const PGNET = `
+create or replace function net.http_post(
+  url text, body jsonb default '{}'::jsonb, params jsonb default '{}'::jsonb,
+  headers jsonb default '{}'::jsonb, timeout_milliseconds int default 5000)
+returns bigint language plpgsql as $$
+begin
+  insert into net._sent(url, body, headers) values (url, body, headers);
+  return 1;
+end $$;
+`;
+
 const sql = [
   GROUND,
   BASE_SQL,
   SCHEMA_SQL,
+  PGNET,
   SCHEMA_SQL,
   HARNESS,
   'begin;',
@@ -2171,6 +2516,30 @@ const sql = [
      「スタッフは消えないんじゃねえの？」 OWNER 2026-09-12. */
   `update plan set plan='free', was='pro',  lapse_seen_at=null where id = ${q(C)};`,
   `update plan set plan='free', was='plus', lapse_seen_at=null where id = ${q(A)};`,
+  /* ---- AND WHAT ACTUALLY GOES DOWN THE ROAD -----------------------------
+     Two writes that differ in one thing: whether the person writing them came
+     through PostgREST with a signature on. Everything else -- the table, the
+     policy, the row -- is the same.
+
+     `request.headers` is what PostgREST sets for the request a write is part
+     of, and a trigger runs inside that same transaction, so `push_ping()` can
+     read it. (Measured 2026-09-22, and the other half with it: a trigger's
+     ARGUMENTS cannot be an expression, which is why the packaged
+     `supabase_functions.http_request()` could not carry this and our own
+     function does.)
+
+     Done by the owner of the table rather than through a policy on purpose:
+     what is being asked is not who may write a reaction -- 400 attempts above
+     are about that -- it is what the ROW'S OWN WRITE sends, and the header is
+     the only thing being varied. */
+  `select set_config('request.headers',
+     '{"authorization":"Bearer THE-WRITERS-OWN-TOKEN"}', true);`,
+  `insert into react(post,actor,kind) values (${q(H4)}, ${q(F)}, 'like');`,
+  /* And the same write with nobody signed in behind it. Nothing comes out --
+     there is no session to send as, and「読めなかった」と「無い」は枝を分けない
+     の逆側でもある：送る相手ではなく、送る資格が無い。 */
+  `select set_config('request.headers', '', true);`,
+  `insert into react(post,actor,kind) values (${q(H3b)}, ${q(F)}, 'like');`,
   `\\pset format unaligned`,
   `\\pset tuples_only on`,
   /* chr(9) rather than a backslash-t: PostgreSQL string literals are standard
@@ -2178,6 +2547,15 @@ const sql = [
   `select name||chr(9)||want||chr(9)||got from _r order by n;`,
   SHAPE.map(([name, s]) =>
     `select ${q('SHAPE')}||chr(9)||${q(name)}||chr(9)||(${s});`).join('\n'),
+  /* And the size of the wall, printed. Counted rather than listed, because a
+     number that moves is a question and a list is a thing to maintain. */
+  `select 'ANON'||chr(9)||
+     (select count(*) from pg_class c join pg_namespace n on n.oid=c.relnamespace
+       where n.nspname='public' and c.relkind in ('r','v','m','p','f')
+         and c.relname not like '\\_%')||chr(9)||
+     (select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+       where n.nspname='public' and p.proname not like '\\_%')||chr(9)||
+     (select count(*) from storage.buckets);`,
   'rollback;'
 ].join('\n');
 
@@ -2211,6 +2589,16 @@ for (const [a, b, c] of rows) {
   const said = shape ? c + ' found where there must be none' : (b === 'ok' ? '' : c);
   if (!ok) bad.push([name, shape ? 'none' : b, said]);
   console.log((ok ? '  ok    ' : '  FAIL  ') + name.padEnd(44) + (ok && shape ? '' : said));
+}
+
+const wall = out.split('\n').map((l) => l.split('\t'))
+                 .filter((r) => r.length === 4 && r[0] === 'ANON')[0];
+/* Printed whether the run is green or red: on a red one it is the size of
+   the hole, and that is the number somebody needs to see. */
+if (wall) {
+  console.log(`\nanon: ${wall[1]} relations, ${wall[2]} functions, ${wall[3]} buckets` +
+              (bad.length ? ' -- NOT all refused' :
+               ' -- all refused (1 allowed by name: email_taken)'));
 }
 
 console.log('');

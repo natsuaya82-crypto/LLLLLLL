@@ -22,6 +22,7 @@ on:
         options:
           - verify-plan
           - daily-prompt
+          - push-send
 
 env:
   PROJECT_REF: iimwukyyasbybfrirhsf
@@ -46,9 +47,44 @@ jobs:
           supabase secrets set "APPLE_ROOT_CA_G3=$B64" --project-ref "$PROJECT_REF"
           echo "APPLE_ROOT_CA_G3: set ($(wc -c < AppleRootCA-G3.cer) bytes)"
 
+      - name: APNs の鍵を Supabase の Secrets に入れる（push-send のみ）
+        if: inputs.function == 'push-send'
+        env:
+          APNS_KEY_ID: ${{ secrets.APNS_KEY_ID }}
+          APNS_P8: ${{ secrets.APNS_P8 }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          # 三つとも人が打つ値なので、どれが空かをここで言う。空のまま置くと
+          # 函数は 500 で止まって何も送らない（それが正しい側）が、その 500 を
+          # 後で読むより、ここで名前が出るほうが早い。
+          MISSING=
+          for n in APNS_KEY_ID APNS_P8 APPLE_TEAM_ID; do
+            eval "v=\$$n"; test -n "$v" || MISSING="$MISSING $n"
+          done
+          if [ -n "$MISSING" ]; then
+            echo "GitHub の Secrets に入っていません:$MISSING"
+            echo "docs/apple.md § 8 の手順で入れてから、もう一度この Actions を回してください。"
+            exit 1
+          fi
+          # APNS_P8 は改行のある PEM。値をそのまま渡します ── 行が潰れると
+          # importKey が落ち、函数は 500 を返して何も送りません。
+          supabase secrets set "APNS_KEY_ID=$APNS_KEY_ID" \
+                               "APPLE_TEAM_ID=$APPLE_TEAM_ID" \
+                               "APNS_P8=$APNS_P8" \
+                               --project-ref "$PROJECT_REF"
+          echo "APNS_KEY_ID / APPLE_TEAM_ID / APNS_P8: set"
+
+      # 三つとも同じ置き方です。**--no-verify-jwt はどれにも付けません** ──
+      # 「サインインなしで勧めるものないけど」 OWNER 2026-09-22。push-send を
+      # 叩くのはデータベースのトリガーで、トリガーは**行を入れた人の
+      # Authorization をそのまま持って行きます**（push_ping()、
+      # supabase/schema.sql 末尾）。署名の無い呼び出しは、函数の一行目が走る
+      # 前に Supabase が断ります。
       - name: 関数を置く
         run: supabase functions deploy "${{ inputs.function }}" --project-ref "$PROJECT_REF" --use-api
 
+      # 置かれていて、サインインしていない人を断ること。三つとも 401 です。
+      # 「通した」ではなく「そこで終わった」の確かめ。
       - name: 確かめる（サインインしていない人は 401 で断られる）
         run: |
           CODE=$(curl -s -o body.json -w '%{http_code}' -X POST \
