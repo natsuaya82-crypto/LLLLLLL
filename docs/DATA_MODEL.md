@@ -407,7 +407,8 @@ it goes with the rest of that account's keys. **It is with the owner** —
 | 何が | `kind`（`opinion` / `request` / `bug` の閉じた集合）、`body`（1〜2000 字）、`created_at` |
 | 誰が読めるか | `is_staff()` だけ（`report_read` と同じ）。**送った本人にも見えません** ── 自分の送った物を読み返す道は作っていません |
 | 誰が書けるか | サインインしている人が、自分の `author` で insert するときだけ（`is_member() and author = auth.uid()`）。`npm run rls` が B の名前で書けないことを試します |
-| いつ消えるか | **消えません。**update の policy も delete の policy も無く、`report_drop()` にあたる RPC も作っていません ── 消す道は頼まれていないからです |
+| 本文の長さ | 1〜2000 字。アプリ側は **2000 字で打ち止め**（2001 字目から入らない、OWNER 2026-09-22）、サーバーの `check` がその床です |
+| いつ消えるか | **運営が消したときだけ。**RPC `feedback_drop(id)`（`report_drop()` と同じ形、`is_staff()` は函数の中で訊く）。**自動では一つも消えません** ── 天井も保存期間も掃除もありません。DELETE REVIEW は `docs/CHANGELOG.md` 2026-09-22。**書き換える道は誰にも無い**（update の policy は作っていない） |
 | 退会したら | `author` が null になり、**本文は残ります**。admin では @ の無い行として出ます |
 
 **どの種類か** ── `current` でも `frozen` でもありません。送られた瞬間の

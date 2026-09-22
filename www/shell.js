@@ -1037,6 +1037,19 @@ function pageName(r, a){
     for(si=0;si<SETS.length;si++) if(SETS[si].id===sa) return t(SETS[si].k);
     return t('set.title');
   }
+  /* 「お問い合わせ→開いたらお問い合わせだけの画面」 OWNER 2026-09-22 -- and a
+     page whose bar says 管理 is half of that. Every face of `admin` is named
+     after what it SHOWS, which is this function's own rule three comments up
+     and is what the recovery face had never been held to: `rec` and
+     `rec:<id>` are both the recovery screen （the handle box with that
+     person's languages, and one language's versions）, so both say 復旧.
+     Bare `admin` is the menu and keeps 管理. */
+  if(r==='admin'){
+    var aa=String(a||'');
+    if(aa==='fb') return t('admin.feedback');
+    if(aa.indexOf('rec')===0) return t('admin.rec');
+    return t('admin.title');
+  }
   if(r==='relate'){
     var rk=String(a||'').split(':')[0];
     return (rk==='syn'||rk==='ant')? t('word.'+rk+'.add') : t('toc.words');
