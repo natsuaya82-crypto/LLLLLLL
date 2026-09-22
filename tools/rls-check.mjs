@@ -545,19 +545,37 @@ const CASES = [
     `insert into feedback(author,kind,body) values ('${B}','whatever','x')`],
   ['an empty message is refused',             'denied', B, 0,
     `insert into feedback(author,kind,body) values ('${B}','bug','')`],
-  /* AND NOBODY TAKES ONE OUT. There is no delete policy and no function
-     beside it, which is the whole of the decision: the owner asked to READ
-     them and nothing else, so a road that removes one is a road nobody has
-     decided on. Staff is asked as well as B, because 「staff may not」 is
-     the half that a `report_drop()`-shaped copy would have quietly broken. */
+  /* NOBODY EDITS ONE, EITHER SIDE. There is no update policy at all: reading
+     what somebody wrote and then rewriting it is not an act anybody asked
+     for, and staff is asked as well as B because that is the half a
+     `for update using (is_staff())` would have quietly opened. */
   ['B cannot edit what B sent',               'denied', B, 0,
     `update feedback set body='no' where author='${B}'`],
-  ['nor delete it',                           'denied', B, 0,
-    `delete from feedback where author='${B}'`],
   ['staff cannot edit one',                   'denied', C, 0,
     `update feedback set body='no'`],
-  ['nor delete one',                          'denied', C, 0,
-    `delete from feedback`],
+  /* AND THE ONE ROAD OUT IS THE OPERATOR'S. 「運営は消せるように。」 OWNER
+     2026-09-22. A function and not a policy, the same shape as report_drop()
+     above -- so what is asked here is the same three things: the person who
+     SENT it cannot use it, somebody with no account cannot, and staff can.
+
+     B reads no feedback at all, so the row it names comes back null and the
+     call is refused for being nobody's to make rather than for naming
+     nothing -- which is the sentence report_drop()'s own cases already
+     carry. */
+  ['B cannot delete what B sent',             'denied', B, 0,
+    `delete from feedback where author='${B}'`],
+  ['nor through the operator\u2019s own road', 'denied', B, 0,
+    `select feedback_drop((select min(id) from feedback))`],
+  ['nor can somebody with no account',        'denied', B, 1,
+    `select feedback_drop((select min(id) from feedback))`],
+  ['staff drops the one that was answered',   'ok',     C, 0,
+    `select feedback_drop((select id from feedback where kind='opinion'))`],
+  ['and that one is gone',                    'denied', C, 0,
+    `select 1 from feedback where kind='opinion'`],
+  /* And nothing else went with it -- the other two are by the same author,
+     which is the only way a delete reaching too far looks right. */
+  ['and the other two are still there',       'ok',     C, 0,
+    `select 1 from feedback where kind='bug'`],
 
   /* --- a like is yours to give and yours to take back, and nobody else's --- */
   ['B likes A\u2019s post',                    'ok',     B, 0,

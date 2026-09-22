@@ -4015,18 +4015,26 @@ const R = await pg.evaluate(async () => {
     /* そして本物の道。行を押して種類を選び、欄に打ち、送るを押す。 */
     CONT = { kind: 'opinion', body: '', busy: false };
     open79();
-    const rows79 = document.querySelectorAll('[data-do="contactKind"]');
-    if (rows79.length !== 3)
-      no('79: 種類の行が三つではない ── ' + rows79.length +
-         '（意見・要望・バグ。丸いチップの横並びは禁止なので行）');
-    if (rows79.length === 3) {
-      rows79[2].click();                      /* バグ */
+    /* 種類は wheel です。「お問い合わせの意見とか縦に並べるのきもいから
+       やめてくれ。選択肢気にしてくれ」 OWNER 2026-09-22 -- 三行ではありません。
+       本物の `<select>` に本物の change を投げます。 */
+    const sel79 = document.querySelector('[data-ch="contactKind"]');
+    if (!sel79)
+      no('79: **種類が wheel ではない** ── `<select data-ch="contactKind">` が' +
+         '画面に無い（三行に戻っていないか）');
+    else {
+      const opts79 = sel79.querySelectorAll('option');
+      if (opts79.length !== 3)
+        no('79: 選択肢が三つではない ── ' + opts79.length + '（意見・要望・バグ）');
+      /* 開いた時に一つ目が選ばれていること。「最初につけていいよ」 OWNER。 */
+      if (sel79.value !== 'opinion')
+        no('79: 開いた時に一つ目が選ばれていない ── ' +
+           JSON.stringify(sel79.value));
+      sel79.value = 'bug';
+      sel79.dispatchEvent(new Event('change', { bubbles: true }));
       if (CONT.kind !== 'bug')
-        no('79: 行を押しても種類が変わらない ── CONT.kind=' +
+        no('79: wheel を回しても種類が変わらない ── CONT.kind=' +
            JSON.stringify(CONT.kind));
-      const on79 = document.querySelectorAll('[data-do="contactKind"].on');
-      if (on79.length !== 1)
-        no('79: 押した行が一つだけ光っていない ── ' + on79.length + ' 件');
     }
     const ta79 = document.getElementById('cont-b');
     if (!ta79) no('79: 本文の欄が画面に無い');
@@ -4062,6 +4070,25 @@ const R = await pg.evaluate(async () => {
     if (here() && here().r === 'contact')
       no('79: 送れたのにお問い合わせの画面に立ったまま');
 
+    /* そして 2000 字で打ち止め。「2000文字以降は勝手に文字消えるようにして
+       いいよ」 OWNER 2026-09-22 -- 2001 字目からは入りません。本物の欄に
+       本物の input を投げて測ります（`maxlength` は付けていないので、
+       止めているのは contactSet() です）。 */
+    CONT = { kind: 'opinion', body: '', busy: false };
+    open79();
+    const long79 = document.getElementById('cont-b');
+    if (long79) {
+      long79.value = 'あ'.repeat(2500);
+      long79.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    if (CONT.body.length !== 2000)
+      no('79: **2000 字で止まっていない** ── ' + CONT.body.length +
+         ' 字入った。2001 字目からは入らない（サーバーの床は ' +
+         'length(body) between 1 and 2000）');
+    if (long79 && long79.value.length !== 2000)
+      no('79: 欄の中が切られていない ── ' + long79.value.length +
+         ' 字。打っている物と送る物が違うのは、画面が嘘をついている');
+
     netSend = keep79;
     CONT = { kind: 'opinion', body: '', busy: false };
     start();
@@ -4070,6 +4097,81 @@ const R = await pg.evaluate(async () => {
         '空でも空白だけでも送らない（OWNER 2026-09-22）');
   }
 
+
+  /* ---- 80. 運営はお問い合わせを一件消せる、消えるのはその一件だけ --------
+     「運営は消せるように。」 OWNER 2026-09-22。
+
+     削除は必ず回帰テストを持つ（`CLAUDE.md` § Tests）。サーバーの側は
+     `npm run rls` が持っています ── 本人も、アカウント無しも `feedback_drop()`
+     を通れず、staff だけが通り、隣の行は残る。ここが持つのはアプリの側で、
+     **本物の「消す」ボタンを押します**：popAsk の「消す」まで押して、
+     `feedback_drop` に**その行の id** が行くこと、そして**押した一件だけ**が
+     画面の一覧から消えること。
+
+     隣の行が消えないことを別に問うのは、行き過ぎた削除が正しく見える唯一の
+     形だからです ── 一件消えた画面と、全部消えた画面は、一件しか無ければ
+     同じ絵です。だから二件置きます。 */
+  {
+    start();
+    netOut(); arrive(A);
+    const keep80 = netSend;
+    let drop80 = null, calls80 = 0;
+    netSend = (method, path, body, tok, ok2) => {
+      if (String(path).indexOf('/rest/v1/rpc/feedback_drop') === 0) {
+        calls80++; drop80 = body;
+      }
+      if (ok2) ok2([]);
+    };
+    const keepF80 = FBK, keepE80 = FBK_ERR, keepOK80 = ADMIN_OK;
+    ADMIN_OK = true; FBK_ERR = '';
+    FBK = [{ id: 22, kind: 'bug',     by: 'veth', at: Date.now(),
+             body: 'キーボードの3行目がずれます' },
+           { id: 11, kind: 'request', by: '',     at: Date.now() - 86400000,
+             body: '文字を並べ替えられるようにしてほしい。' }];
+    window.route = 'admin'; NAV = [{ r: 'admin' }, { r: 'admin', a: 'fb' }];
+    render();
+
+    const drops80 = document.querySelectorAll('[data-do="fbkDrop"]');
+    if (drops80.length !== 2)
+      no('80: 消すボタンが二つではない ── ' + drops80.length +
+         '（一件に一つ。運営が消せるのは一件ずつ）');
+    if (drops80.length) {
+      drops80[0].click();
+      /* 一度訊きます（通報を消すのと同じ形）。訊かずに消えるのは、戻せない
+         物を押し間違いで消せるということ。 */
+      /* `#pop.on` で、`#pop` ではありません。popOff() は `.on` を外すだけで
+         markup を残すので、`#pop button` は**前の claim が閉じたポップの
+         ボタン**を拾います ── 最初そう書いて、popAsk を外しても緑のままでした。
+         生きているポップだけを指すのが `.on` です。 */
+      const yes80 = document.querySelector('#pop.on [data-do="popYes"]');
+      if (!yes80)
+        no('80: **押しても何も訊かずに消えた** ── 戻せないので一度訊く' +
+           '（通報を消すのと同じ形）');
+      else yes80.click();
+    }
+
+    if (calls80 !== 1)
+      no('80: **消すボタンを押しても feedback_drop が呼ばれない** ── ' +
+         calls80 + ' 回');
+    else if (!drop80 || drop80.f !== 22)
+      no('80: **違う行の id が行っている** ── ' + JSON.stringify(drop80) +
+         '、押したのは id 22。`f` という名前なのは feedback_drop(f bigint) で、' +
+         'report_drop(r bigint) とは別の函数です');
+
+    if (!FBK || FBK.length !== 1)
+      no('80: **消した後に残っているのが一件ではない** ── ' +
+         ((FBK || []).length) + ' 件。行き過ぎた削除は、一件しか無ければ' +
+         '正しく見えます');
+    else if (FBK[0].id !== 11)
+      no('80: **残ったのが押していない方ではない** ── 残ったのは id ' +
+         FBK[0].id + '、押したのは 22');
+
+    netSend = keep80;
+    FBK = keepF80; FBK_ERR = keepE80; ADMIN_OK = keepOK80;
+    start();
+    say('80: 運営は一件消せる ── 本物の消すボタン→一度訊く→feedback_drop に' +
+        'その行の id、消えるのは押した一件だけ（OWNER 2026-09-22）');
+  }
 
   /* ---- 81. 通知のスイッチは四つとも動いて、prefs に上がる -------------
      「それに加えて設定で個別通知のオンオフできるように。」 OWNER 2026-09-22。

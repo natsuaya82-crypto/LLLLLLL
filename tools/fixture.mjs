@@ -1495,6 +1495,34 @@ export function halfDone(){
         window.route='admin'; NAV=[{r:'admin'}];
         const h = vAdmin();
         ADMIN_OK = false; ADMINN = keepN; ADMINS = keepS; MODS = keep; return h; }],
+    /* AND THE PAGE THE FEEDBACK ROW OPENS. 「お問い合わせ→開いたらお問い合わせ
+       だけの画面」 OWNER 2026-09-22 -- a face of `admin`, so the walk reaches
+       it only past the door, and without this every button on it （the 消す
+       on each row） is 「an entry no screen names」.
+
+       Two rows and a kind each, and the second carries no @: whoever wrote it
+       has deleted their account, which is the one thing about these rows that
+       is drawn by being absent (`on delete set null` in supabase/schema.sql).
+       One row could not show that the newest is on top. */
+    ['the admin screen, what people wrote in', () => {
+        const keep = FBK, keepE = FBK_ERR;
+        ADMIN_OK = true; FBK_ERR = '';
+        FBK = [{ id:2, kind:'bug', by:'veth', at:Date.now()-300000,
+                 body:'キーボードの3行目がずれます' },
+               { id:1, kind:'request', by:'', at:Date.now()-86400000,
+                 body:'文字を並べ替えられるようにしてほしい。' }];
+        window.route='admin'; NAV=[{r:'admin'},{r:'admin',a:'fb'}];
+        const h = vAdmin();
+        ADMIN_OK = false; FBK = keep; FBK_ERR = keepE; return h; }],
+    /* And the same page with nothing on it, because 「まだ何も無い」 and
+       「読めなかった」 are two states and only one of them is drawn by the
+       list being empty. */
+    ['the admin screen, nobody has written in', () => {
+        const keep = FBK, keepE = FBK_ERR;
+        ADMIN_OK = true; FBK = []; FBK_ERR = '';
+        window.route='admin'; NAV=[{r:'admin'},{r:'admin',a:'fb'}];
+        const h = vAdmin();
+        ADMIN_OK = false; FBK = keep; FBK_ERR = keepE; return h; }],
     /* THE FACE THAT PUTS SOMEBODY'S LANGUAGE BACK, and both halves of it.
        「運営が治せる仕様は欲しい…管理画面で」 OWNER 2026-09-09. It is a face
        of the `admin` route rather than a route of its own, and the walk gets

@@ -388,7 +388,36 @@ function fbkRow(r){
     '</div>'+
     (r.by? '<div class="mhead"><span class="mby">'+esc('@'+r.by)+'</span></div>' : '')+
     '<div class="mline">'+esc(r.body)+'</div>'+
+    /* 「運営は消せるように。」 OWNER 2026-09-22. `.ghost` and not `.bad`:
+       what it takes away is the row in front of you and nothing of anybody's
+       account, which is what the red on modRow()'s two buttons is for. */
+    '<button class="btn ghost"' + DO('fbkDrop', [r.id]) + '>'+
+      esc(t('admin.fb.drop'))+'</button>'+
     '</div>';
+}
+/* It asks first, because it cannot be taken back -- the same shape and the
+   same words as modDrop() one chapter up, since it is the same act on a
+   different queue. A failure goes the road every failed request goes:
+   netPop(), with 再接続 running this same press. */
+function fbkDrop(id){
+  popAsk(t('admin.fb.sure'), function(){ fbkDropGo(id); }, t('mod.drop.yes'));
+}
+function fbkDropGo(id){
+  netFeedbackDrop(id, function(){ fbkForget(id); render(); },
+    function(d, st){ netPop(d, st, '', function(){ fbkDropGo(id); }); });
+}
+function fbkForget(id){
+  var out=[], i, fs=FBK||[];
+  for(i=0;i<fs.length;i++) if(fs[i].id!==id) out.push(fs[i]);
+  FBK=out;
+}
+/* The list, and the two things that stand in its place -- modListHTML()'s
+   sentence about a different queue. Three states and not two: what could not
+   be asked, nothing to show, and the rows. */
+function fbkListHTML(){
+  return (FBK_ERR? emptyBox(FBK_ERR, '', '', true) : '')+
+    ((!FBK_ERR && FBK && !FBK.length)? emptyBox(t('admin.fb.none')) : '')+
+    (FBK||[]).map(fbkRow).join('');
 }
 function adminAsk(){
   ADMIN_BUSY=false;
@@ -543,7 +572,25 @@ function vAdmin(){
   if(a.indexOf('rec')===0)
     return '<div class="view">'+navTop('')+'<div class="body">'+
       adRecBody(a)+'</div></div>';
-  var n=ADMINN||{}, rows=MODS||[];
+  /* AND WHAT PEOPLE HAVE WRITTEN IN, ON A PAGE OF ITS OWN.
+     「お問い合わせ→開いたらお問い合わせだけの画面」 OWNER 2026-09-22. A face
+     of this route, the way the recovery one is -- so the trail and the back
+     button are the shell's and nothing new was registered. */
+  if(a==='fb')
+    return '<div class="view">'+navTop('')+'<div class="body">'+
+      fbkListHTML()+'</div></div>';
+  /* THIS SCREEN IS A LIST OF WAYS IN, AND NOTHING ELSE.
+     「そもそもadminの画面キモすぎる。お問い合わせ→開いたらお問い合わせだけの
+     画面。通報と→開いたら通報だけの画面。最初のスタッフとかの画面はあくまで
+     選択の画面だから」 OWNER 2026-09-22.
+
+     The reports used to be drawn HERE as well, under the staff field -- the
+     same modListHTML() the reports screen is made of -- so this page was a
+     menu with one of its own destinations spilled down the bottom of it, and
+     the row above them went to a screen showing the same thing again. What is
+     left is rows: the reports, the recovery, the feedback, and who answers
+     them. Each one opens a page that is only that. */
+  var n=ADMINN||{};
   return '<div class="view">'+navTop('')+'<div class="body">'+
     adminRow('admin.reports', n.reports, 'goMod')+
     /* 「運営が治せる仕様は欲しい」 OWNER 2026-09-09. A row and not a screen of
@@ -551,6 +598,13 @@ function vAdmin(){
     '<button class="set"' + DO('go', ['admin', 'rec']) + '>'+
       '<span class="sl">'+esc(t('admin.rec'))+'</span>'+
       '<span class="sv">'+ICON_GO+'</span></button>'+
+    /* And what people have written in -- a row like the two above it, and the
+       page behind it holds nothing else. 「お問い合わせ→開いたらお問い合わせ
+       だけの画面」 OWNER 2026-09-22. The number is how many came back, which
+       is the same thing the reports row says. */
+    '<button class="set"' + DO('go', ['admin', 'fb']) + '>'+
+      '<span class="sl">'+esc(t('admin.feedback'))+'</span>'+
+      '<span class="sv">'+esc(FBK? String(FBK.length) : '')+ICON_GO+'</span></button>'+
     /* Who answers them, and the field that adds one. Both stay here: their
        buttons exist only where they are drawn, and act-check walks this route
        with no argument -- see the head of this section. */
@@ -571,16 +625,6 @@ function vAdmin(){
     (ADMIN_ERR? emptyBox(ADMIN_ERR, '', '', true) : '')+
     '<button class="btn ghost"' + DO('adminStaffAdd') +
       (ADMIN_BUSY? ' disabled':'') + '>'+esc(t('admin.staff.add'))+'</button>'+
-    /* And the reports themselves, drawn by the one function the reports
-       screen draws them with -- the rows and the two things that stand in
-       their place. */
-    modListHTML(rows)+
-    /* AND WHAT PEOPLE HAVE WRITTEN IN, under the reports. 「報告の下に」.
-       A heading like the staff one above it, then the rows newest first. */
-    '<div class="set"><span class="sl">'+esc(t('admin.feedback'))+'</span></div>'+
-    (FBK_ERR? emptyBox(FBK_ERR, '', '', true) : '')+
-    ((!FBK_ERR && FBK && !FBK.length)? emptyBox(t('admin.fb.none')) : '')+
-    (FBK||[]).map(fbkRow).join('')+
     '</div></div>';
 }
 /* Not named vSomething: tools/act-check.mjs reads every `v[A-Z]` in the app

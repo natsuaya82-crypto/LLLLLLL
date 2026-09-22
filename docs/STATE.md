@@ -44,9 +44,11 @@ un-re-read.
   null、本文は残る、`kind` は三つ、`body` 1〜2000 字）。**読めるのは staff だけ**
   （`feedback_read` = `is_staff()`）、update／delete の policy は無し（消す道は
   誰にも無い ── 決まっていないので）。admin の画面の報告の下に一覧。
-  `rls-check` 13 件、`acct-check` 79（本物のボタンを押して測る）。端末に貯まる
-  物は無し。「返信」「消す」「済みの印」「2000 字超えの文面」は決まっていない
-  （`docs/scope/r45-contact.md` § オーナーへ）。
+  `rls-check` 19 件、`acct-check` 79・80（本物のボタンを押して測る）。端末に貯まる
+  物は無し。**二周目（オーナーが r45 に直接）**：運営は一件ずつ消せる
+  （`feedback_drop()`、押すと訊く、DELETE REVIEW は CHANGELOG）、本文は 2000 で
+  打ち止め、画面はフォームの形で種類は wheel、admin は選択の画面（通報／
+  お問い合わせ／復旧）、復旧の顔の bar は「復旧」。返信の道は無い。
 - ストアの文を 10 言語で入れる（`store/<locale>.json`、`tools/store-localize.mjs`、
   Actions「Store Localize」、`docs/apple.md` § 4b）。**公開中の 1.0.1 には
   入らない ── 1.0.2（＝163）に付けて出す。**サポート URL は変えない。

@@ -3936,6 +3936,16 @@ function netShow(pid, ok, bad){
    the same kind of name however alike they read -- supabase/schema.sql at
    report_drop(). is_staff() is asked there and not here: this file is a
    suggestion and the function is the wall. */
+/* And the same for something somebody wrote in. 「運営は消せるように。」
+   OWNER 2026-09-22. `f` and not `r`, because feedback_drop() takes its own
+   name and the two functions are not interchangeable however alike they
+   read -- supabase/schema.sql at feedback_drop(). is_staff() is asked there
+   and not here: this file is a suggestion and the function is the wall. */
+function netFeedbackDrop(id, ok, bad){
+  if(!netSignedIn() || !id){ bad(null, 0); return; }
+  netSend('POST', '/rest/v1/rpc/feedback_drop', {f:id},
+          SESS.at, function(){ ok(); }, bad);
+}
 function netReportDrop(id, ok, bad){
   if(!netSignedIn() || !id){ bad(null, 0); return; }
   netSend('POST', '/rest/v1/rpc/report_drop', {r:id},
