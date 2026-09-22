@@ -1626,6 +1626,25 @@ const CASES = [
    off is wide open no matter what its policies say, and a table with no
    update policy is append-only precisely BECAUSE the policy is missing. */
 const SHAPE = [
+  /* THE ROAD OUT IS THERE, ALL THREE OF IT. The block at the foot of
+     schema.sql makes them only when Database -> Webhooks has been turned on,
+     and it is applied above once without that schema and once with it -- so
+     these three say both halves at once: the file survived the pass that had
+     nowhere to send anything, and the pass that did made all three. A missing
+     one is a kind of notice that silently never arrives, which is the one
+     thing about this feature no screen could ever show. */
+  ['a follow says so', `
+     select ((select count(*) from pg_trigger
+               where tgname='push_on_follow'
+                 and tgrelid='follow'::regclass) <> 1)::int`, '0'],
+  ['a reply says so', `
+     select ((select count(*) from pg_trigger
+               where tgname='push_on_reply'
+                 and tgrelid='post'::regclass) <> 1)::int`, '0'],
+  ['a like and a boost say so', `
+     select ((select count(*) from pg_trigger
+               where tgname='push_on_react'
+                 and tgrelid='react'::regclass) <> 1)::int`, '0'],
   /* A TOKEN IS NOT EDITED. schema.sql says so over the policies -- 「no update
      policy at all (a token does not change -- a new one is a new row and the
      old one goes)」 -- and an UPDATE policy added later would be the one road
@@ -2170,10 +2189,33 @@ const BASE = 'db93b264';   /* 2026-09-08, the last paste before `wsys` */
 const BASE_SQL = execFileSync('git', ['show', `${BASE}:supabase/schema.sql`],
                               { cwd: path.join(HERE, '..'), encoding: 'utf8' });
 const SCHEMA_SQL = fs.readFileSync(SCHEMA, 'utf8');
+/* AND WHAT THE DASHBOARD MAKES, which is not PostgreSQL's and is not
+   schema.sql's. `supabase_functions` appears when somebody turns Database ->
+   Webhooks on, once, by hand -- so a project can be pasted into either
+   before that click or after it, and BOTH have to work.
+
+   It is put BETWEEN the two applications of the file for exactly that
+   reason, and it is the cheapest honest way to ask both halves: the first
+   pass runs without the schema (so the guard at the foot of schema.sql has
+   to skip the triggers and let the rest of the file land -- 2026-09-15, a
+   paste that stopped part-way left nothing behind it), and the second pass
+   runs with it (so the three triggers have to be there, which SHAPE asks).
+
+   The real one hands the request to pg_net and returns. This one returns and
+   does nothing, because what is being tested is that the triggers EXIST and
+   that an insert still goes through with them on -- not Supabase's delivery,
+   which is not ours. */
+const WEBHOOKS = `
+create schema if not exists supabase_functions;
+create or replace function supabase_functions.http_request() returns trigger
+  language plpgsql as $$ begin return coalesce(new, old); end $$;
+`;
+
 const sql = [
   GROUND,
   BASE_SQL,
   SCHEMA_SQL,
+  WEBHOOKS,
   SCHEMA_SQL,
   HARNESS,
   'begin;',

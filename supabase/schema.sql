@@ -2906,3 +2906,92 @@ grant  update (body, language, prompt, reply_to) on post to anon, authenticated;
 -- defaults to now() and a client that could name it could date a post.
 revoke insert on post from anon, authenticated;
 grant  insert (id, author, language, body, prompt, reply_to) on post to anon, authenticated;
+
+-- ---------------------------------------------------------------------------
+-- And the road OUT: three triggers that tell push-send something happened
+--
+-- 「通知作ろう。アップルのネイティブ通知で、フォローされた時、返信きた時みたい
+--   な感じでSNS部分であるやつ。」 OWNER 2026-09-22.
+--
+-- Four kinds, and they are the four `notices()` already returns -- `follow`,
+-- `reply`, `like`, `boost`. There is no fifth, and these triggers are not a
+-- second list of them: `react.kind` decides between `like` and `boost` the
+-- same way that function does, and `post.reply_to is not null` is what a
+-- reply IS there too.
+--
+-- THE TRIGGER CARRIES NO SECRET AND NO WORDS. What goes down this road is
+-- Supabase's own webhook shape -- `{type, table, schema, record, old_record}`
+-- -- and supabase/functions/push-send does not believe a character of it:
+-- it takes the table and the row's key, reads that row back with the service
+-- role, and builds every word of the notice from what the DATABASE said. So
+-- there is nothing here to steal and nothing here to forge, which is why the
+-- headers below are one Content-Type and no Authorization. (What that costs
+-- is that the function has to be deployed without JWT verification, which is
+-- written down in docs/scope/r47-push-server.md § オーナーへ.)
+--
+-- AFTER INSERT AND NOTHING ELSE. A row that already exists has already been
+-- notified about, so nothing here ever fires for the past -- which is the
+-- whole answer to 「前からある data」 for this feature. No update trigger:
+-- un-liking and re-liking is a delete and an insert, and the insert is the
+-- notice.
+--
+-- IT MUST NOT BE ABLE TO STOP THE WRITE. `supabase_functions.http_request()`
+-- hands the request to pg_net and returns; the POST happens after the
+-- transaction. A notification that cannot be sent must never cost somebody
+-- the follow, the reply or the like they actually made.
+--
+-- WHY THIS IS WRAPPED IN A `do` BLOCK, and it is the only one in this file.
+-- `supabase_functions` is not part of PostgreSQL and is not part of this
+-- file: it appears when somebody turns Database → Webhooks on in the
+-- dashboard, once (supabase/setup.md § 13). Named unconditionally, a paste
+-- into a project where that click has not happened yet stops HERE with
+-- 「schema "supabase_functions" does not exist」 -- and on 2026-09-15 a paste
+-- that stopped part-way left NOTHING behind it: no `profile.link`, no
+-- `plan.was`, an app store rejection and every phone reading free. That is
+-- the failure this guard exists to prevent, and it is why this block is the
+-- LAST thing in the file as well: everything above it has landed by the time
+-- it is reached.
+--
+-- A skipped block is not a silent one. It says so, and setup.md § 13 says to
+-- look for it -- 「空」と「壊れている」は別の状態、which is the first page of
+-- CLAUDE.md. What holds the three triggers themselves is tools/rls-check.mjs,
+-- which applies this file once WITHOUT the schema (and asks that the rest of
+-- it still landed) and once WITH it (and asks that all three are there).
+do $b$
+declare
+  url  text := 'https://iimwukyyasbybfrirhsf.supabase.co/functions/v1/push-send';
+  args text;
+begin
+  if to_regprocedure('supabase_functions.http_request()') is null then
+    raise notice '%', 'push-send: Database -> Webhooks has not been turned on '
+      'for this project, so the three notification triggers were NOT made. '
+      'Everything else in this file is in. See supabase/setup.md section 13, '
+      'then run this file again.';
+    return;
+  end if;
+
+  args := quote_literal(url) ||
+          $a$, 'POST', '{"Content-Type":"application/json"}', '{}', '5000'$a$;
+
+  execute 'drop trigger if exists push_on_follow on follow';
+  execute 'create trigger push_on_follow after insert on follow '
+       || 'for each row execute function supabase_functions.http_request('
+       || args || ')';
+
+  -- Only the ones that answer something. A post that answers nothing is not a
+  -- notice for anybody, and a trigger that fired for every post would put the
+  -- whole timeline through this road to be thrown away at the far end.
+  execute 'drop trigger if exists push_on_reply on post';
+  execute 'create trigger push_on_reply after insert on post '
+       || 'for each row when (new.reply_to is not null) '
+       || 'execute function supabase_functions.http_request(' || args || ')';
+
+  -- Both kinds down one trigger. `react.kind` is where like and boost are
+  -- told apart and it is told apart there for notices() as well; a second
+  -- trigger per kind would be that one fact written down twice.
+  execute 'drop trigger if exists push_on_react on react';
+  execute 'create trigger push_on_react after insert on react '
+       || 'for each row execute function supabase_functions.http_request('
+       || args || ')';
+end
+$b$;
