@@ -855,6 +855,53 @@ create table if not exists block (
 );
 create index if not exists block_actor_idx on block(actor);
 
+-- ---- where a notice goes when the app is closed ----------------------------
+-- 「通知作ろう。アップルのネイティブ通知で、フォローされた時、返信きた時みたい
+--   な感じでSNS部分であるやつ。」 OWNER 2026-09-22.
+--
+-- One row per iPhone that has been allowed to be notified: the account, and
+-- the device token Apple issued that installation of the app. It is THE
+-- ADDRESS OF A PHONE and nothing else -- no name, no setting, nothing
+-- anybody wrote.
+--
+-- One account has as many rows as it has phones, which is why the key is the
+-- pair. A token is per (app, installation, device), so the same person on two
+-- handsets is two rows and both are rung; the same handset signed in as two
+-- accounts is also two rows, and the one that is rung is the one the notice
+-- is for.
+--
+-- `(uid, token)` AND NOT `token` ALONE. Apple's token identifies an
+-- installation, not a person, so signing out of one account and into another
+-- on the same phone gives the same token under a second uid. With `token` as
+-- the key the second sign-in would take the row off the first account, and
+-- the first account would stop being notified because somebody else used
+-- that phone once. Two rows is the truthful shape; which one is rung is
+-- decided by the uid, which is what the notice is addressed to.
+--
+-- NOTHING ELSE IS ON THIS ROW. Not the model, not the iOS version, not when
+-- it last spoke -- 「端末ごとにやることなんてねえよ」. A column here that
+-- described the handset would be the phone becoming a thing the server knows
+-- about, and the server knows about accounts.
+--
+-- Deleting the account takes it, the way it takes everything else:
+-- 「アカウント削除で残るものねえって言ってんだろ何回言わせんだよ全部消える」.
+--
+-- AND THE SWITCHES ARE NOT HERE. Which of the four kinds a person wants is
+-- `profile.prefs` (`push_follow`, `push_reply`, `push_like`, `push_boost`),
+-- because it is the ACCOUNT's answer and not this handset's -- the same
+-- sentence the theme and the interface language are under. A column here
+-- would be the answer per phone, which is the thing 2026-09-03 took out of
+-- this app.
+create table if not exists device (
+  uid        uuid not null references profile(id) on delete cascade,
+  token      text not null check (token ~ '^[0-9a-fA-F]{32,200}$'),
+  created_at timestamptz not null default now(),
+  primary key (uid, token)
+);
+-- Asked one way only: supabase/functions/push-send reads every token of the
+-- ONE account a notice is for.
+create index if not exists device_uid_idx on device(uid);
+
 -- ---- saying that something is wrong ----------------------------------------
 -- A report is written and never read back by anybody using the app. It goes to
 -- whoever is looking at the dashboard, which is the whole point: a person who
@@ -966,6 +1013,7 @@ alter table react       enable row level security;
 alter table prompt      enable row level security;
 alter table follow      enable row level security;
 alter table block       enable row level security;
+alter table device      enable row level security;
 alter table report      enable row level security;
 alter table feedback    enable row level security;
 alter table draft       enable row level security;
@@ -1693,6 +1741,29 @@ create policy block_make on block for insert
   with check (is_member() and actor = auth.uid());
 drop policy if exists block_drop on block;
 create policy block_drop on block for delete using (is_member() and actor = auth.uid());
+
+-- device: YOURS and nobody else's, in every direction -- the same four lines
+-- block is under, and for a harder reason.
+--
+-- A row here is the address of somebody's phone. Written by anybody else it
+-- rings a phone that is not theirs; read by anybody else it is a token that
+-- can be written into their own row and then rung on purpose. So there is no
+-- `using (true)` anywhere below, no update policy at all (a token does not
+-- change -- a new one is a new row and the old one goes), and `uid` is
+-- refused from the outside in both directions.
+--
+-- The one thing that is not the person: supabase/functions/push-send deletes
+-- a row Apple has answered `410 Unregistered` for. That runs with the service
+-- role, which no policy applies to -- and it is written down here because a
+-- row that can disappear without its owner doing anything is a thing to be
+-- able to find. docs/CHANGELOG.md 2026-09-22 carries the DELETE REVIEW.
+drop policy if exists device_read on device;
+create policy device_read on device for select using (is_member() and uid = auth.uid());
+drop policy if exists device_make on device;
+create policy device_make on device for insert
+  with check (is_member() and uid = auth.uid());
+drop policy if exists device_drop on device;
+create policy device_drop on device for delete using (is_member() and uid = auth.uid());
 
 -- report: written by anybody, read by staff. Not by the person who wrote it and
 -- not by the person it is about -- somebody who could read reports could work

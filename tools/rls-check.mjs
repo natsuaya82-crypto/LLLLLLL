@@ -1575,6 +1575,43 @@ const CASES = [
     `select 1 from purchase where uid='${A}'`],
   ['nor write one',                           'denied', B, 1,
     `insert into purchase(orig_tx,uid) values ('2000000000000010','${B}')`],
+  /* --- WHERE THE NOTICES GO --------------------------------------------
+     「通知作ろう。アップルのネイティブ通知で」 OWNER 2026-09-22.
+
+     `device` holds one row per iPhone that has been allowed to be notified:
+     the account, and the APNs token Apple issued it. It is the ADDRESS OF A
+     PHONE, and a row somebody else could write is a row that makes another
+     person's phone ring -- so `uid` is refused from the outside in both
+     directions, the way `author` is on a post.
+
+     And nobody reads anybody else's. Which phones a person carries is not on
+     `profile_seen` and is not anybody's business; a token that can be read is
+     a token that can be written into somebody else's row. */
+  ['A registers A\u2019s own iPhone',          'ok',     A, 0,
+    `insert into device(uid,token) values ('${A}','a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1')`],
+  ['B registers B\u2019s own iPhone',          'ok',     B, 0,
+    `insert into device(uid,token) values ('${B}','b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2')`],
+  ['B cannot register a phone as A',          'denied', B, 0,
+    `insert into device(uid,token) values ('${A}','b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3')`],
+  ['B cannot read A\u2019s tokens',            'denied', B, 0,
+    `select 1 from device where uid='${A}'`],
+  ['nor move A\u2019s token onto itself',      'denied', B, 0,
+    `update device set uid='${B}' where uid='${A}'`],
+  ['nor unregister A\u2019s phone',            'denied', B, 0,
+    `delete from device where uid='${A}'`],
+  ['somebody with no account cannot register one', 'denied', B, 1,
+    `insert into device(uid,token) values ('${B}','c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4')`],
+  ['nor read one',                            'denied', B, 1,
+    `select 1 from device where uid='${A}'`],
+  /* And the one thing the person themselves does: turning notifications off
+     on this handset is the row going. */
+  ['B unregisters B\u2019s own phone',         'ok',     B, 0,
+    `delete from device where uid='${B}'`],
+  /* And a token that is not one. The column is the address APNs is given, so
+     a check constraint rather than a comment: 「空」と「壊れている」は別。 */
+  ['a token that is not hex is refused',      'denied', A, 0,
+    `insert into device(uid,token) values ('${A}','not a token')`],
+
   /* Deleting the account takes the drafts with it. Asked by DOING it, and
      asked as the owner of the table rather than through a policy, because
      what has to hold is that the row is GONE -- a select that returns nothing
@@ -1589,6 +1626,14 @@ const CASES = [
    off is wide open no matter what its policies say, and a table with no
    update policy is append-only precisely BECAUSE the policy is missing. */
 const SHAPE = [
+  /* A TOKEN IS NOT EDITED. schema.sql says so over the policies -- 「no update
+     policy at all (a token does not change -- a new one is a new row and the
+     old one goes)」 -- and an UPDATE policy added later would be the one road
+     by which somebody could point an existing row at another phone. Asked of
+     the catalogue rather than by trying, so a policy that exists and happens
+     to refuse today still fails. */
+  ['where a notice goes can never be edited', `
+     select count(*) from pg_policies where tablename='device' and cmd='UPDATE'`, '0'],
   /* HOW SOMEBODY HAS THEIR OWN APP SET UP IS NOBODY ELSE'S. schema.sql says
      so over the column -- 「IT IS NOT IN `profile_seen`. This is how somebody
      has their own app set up and is nobody else's business」 -- and nothing
