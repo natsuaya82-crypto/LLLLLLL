@@ -32,7 +32,40 @@ un-re-read.
 
 ---
 
-## 2026-09-22 ── ビルド 163（一番新しい、まだ出していない）
+## 2026-09-22 夜 ── ビルド 164（integ に取り込み済み、**まだ出していない ── オーナーの Apple 側の手順待ち**）
+
+`master` = まだ 163（7873029d）。integ-0905 に下の二本が入っている。**ビルドは
+オーナーが App ID に Push Notifications を付けて配布 profile を作り直し
+`PROVISIONING_PROFILE_BASE64` を差し替えてから** ── それまで Archive で落ちる
+（`docs/apple.md` § 8、`ios/App/App/App.entitlements` の `aps-environment`）。
+**schema.sql が変わった ── 先に一回流す**（表 `device`、トリガー三つ、大きい
+カバー）。Supabase の Database → Webhooks を一度 Enable（`supabase/setup.md` § 12）。
+
+入ったもの：
+- `claude/r47-push-server` ── **ネイティブ通知のサーバー側**：表 `device(uid,
+  token)`、`follow`／`post(reply_to)`／`react` の after insert トリガー →
+  edge function `push-send`（行を読み直して APNs、410 の token は消す、DELETE
+  REVIEW は CHANGELOG）、`push-check` 90 本（gate FAST）、Supabase Deploy に
+  `push-send`。**`profile.prefs` が 9/8 から書けていなかった grant 漏れ**を直した。
+  **大きいカバー**（OWNER「サインインがない状態でできることがないはず」）：`anon`
+  にはこのサーバーの何一つも無い（表・view・関数・sequence・bucket、明日足す物も）、
+  `post-media` は非公開、edge function は三つとも JWT 検証あり、`rls-check` が
+  カタログを数えて全部を「誰でもない人」として試す（関数 69・表と view 24・
+  bucket 2）。扉の `email_taken()` だけ例外（OWNER「これは例外で」）。
+- `claude/r48-push-app` ── **アプリ側**：`LinguaPush.swift`（許可・token・押して
+  開いたら `window.pushOpened`）、`www/push.js`（第 28 章、`pushAsk()` は
+  `netTook()` から一箇所）、設定の部屋「通知」に四つのスイッチ（`profile.prefs`
+  の `push_follow/reply/like/boost`、無いのはオン）、サインアウトで自分の token
+  の行だけ落とす。`acct-check` 82〜85。**`www/net.js` はセッションが無ければ
+  一本も送らない**（扉の `email_taken` と `/auth/v1/*` だけ通す）、**写真と声は
+  `netMedia()` 一箇所がセッション付きで取って objectURL**（`netMediaURL()` は
+  消えた）。写真 `shots/r48-*`。**実機は全部まだ。**
+
+**オーナーがやること（順に）**：`docs/apple.md` § 8 の 1〜6（App ID の Push、
+profile 作り直し→Secret、APNs 鍵→`APNS_KEY_ID`/`APNS_P8`、Webhooks Enable、
+schema を流す、Supabase Deploy `push-send`）。1〜2 が済んだら 164 を出す。
+
+## 2026-09-22 ── ビルド 163（Apple へ上がった 16:56 UTC、run 35756973192）
 
 `master` = 取り込み後の sha（ゲート緑で ff）。実機で見る場所は
 `docs/CHECK-0907.md`「ビルド 163」。**`supabase/schema.sql` が変わった ──
