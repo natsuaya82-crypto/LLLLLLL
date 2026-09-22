@@ -142,6 +142,15 @@ grant all on all tables in schema storage to anon, authenticated, service_role;
 -- the POLICY rather than by a foreign key. A missing row and a closed door
 -- look identical from the outside and only one of them is the claim.
 insert into storage.buckets (id, name, public) values ('other', 'other', true);
+
+-- And this check's own notebook for what went out of the door. It is HERE and
+-- not beside the pg_net stub below on purpose: the run that has no pg_net has
+-- to get all the way to the end and answer 「nothing went out」, and a claim
+-- that cannot be ASKED reads exactly like a claim that passed. The first
+-- version of it lived with the stub, and taking the stub away made this file
+-- die instead of going red.
+create schema if not exists net;
+create table net._sent (n serial, url text, body jsonb, headers jsonb);
 `;
 
 /* Every claim schema.sql makes, as somebody trying to break it. Adding a
@@ -1663,6 +1672,27 @@ const SHAPE = [
      select ((select count(*) from pg_trigger
                where tgname='push_on_react'
                  and tgrelid='react'::regclass) <> 1)::int`, '0'],
+  /* AND THE ROAD CARRIES THE PERSON. Three claims and they are one sentence:
+     exactly one of the two writes above went out, it carried the writer's own
+     Authorization, and it said which row it was about. The one with no
+     signature behind it sent nothing -- which is the door the owner closed
+     on 2026-09-22. */
+  ['one write went out and the unsigned one did not', `
+     select ((select count(*) from net._sent) <> 1)::int`, '0'],
+  ['and it carries the writer\u2019s own Authorization', `
+     select ((select count(*) from net._sent
+               where headers->>'Authorization' = 'Bearer THE-WRITERS-OWN-TOKEN')
+             <> 1)::int`, '0'],
+  ['and says which row, and nothing else about it', `
+     select ((select count(*) from net._sent
+               where body->>'table' = 'react'
+                 and body->'record'->>'actor' = '${F}'
+                 and body->'record'->>'post' = '${H4}') <> 1)::int`, '0'],
+  /* And no secret rode along. The whole point of taking the caller's token is
+     that there is nothing in this file to steal. */
+  ['and no key of ours is written into the road', `
+     select ((select count(*) from net._sent
+               where headers::text ~* '(service|secret|apikey|sb_)') <> 0)::int`, '0'],
   /* A TOKEN IS NOT EDITED. schema.sql says so over the policies -- 「no update
      policy at all (a token does not change -- a new one is a new row and the
      old one goes)」 -- and an UPDATE policy added later would be the one road
@@ -2208,32 +2238,38 @@ const BASE_SQL = execFileSync('git', ['show', `${BASE}:supabase/schema.sql`],
                               { cwd: path.join(HERE, '..'), encoding: 'utf8' });
 const SCHEMA_SQL = fs.readFileSync(SCHEMA, 'utf8');
 /* AND WHAT THE DASHBOARD MAKES, which is not PostgreSQL's and is not
-   schema.sql's. `supabase_functions` appears when somebody turns Database ->
-   Webhooks on, once, by hand -- so a project can be pasted into either
-   before that click or after it, and BOTH have to work.
+   schema.sql's. pg_net (the `net` schema) arrives when somebody turns
+   Database -> Webhooks on, once, by hand -- so a project can be pasted into
+   either before that click or after it, and BOTH have to work.
 
    It is put BETWEEN the two applications of the file for exactly that
    reason, and it is the cheapest honest way to ask both halves: the first
-   pass runs without the schema (so the guard at the foot of schema.sql has
-   to skip the triggers and let the rest of the file land -- 2026-09-15, a
-   paste that stopped part-way left nothing behind it), and the second pass
-   runs with it (so the three triggers have to be there, which SHAPE asks).
+   pass runs without it (so the guard at the foot of schema.sql has to skip
+   the triggers and let the rest of the file land -- 2026-09-15, a paste that
+   stopped part-way left nothing behind it), and the second pass runs with it
+   (so the three triggers have to be there).
 
-   The real one hands the request to pg_net and returns. This one returns and
-   does nothing, because what is being tested is that the triggers EXIST and
-   that an insert still goes through with them on -- not Supabase's delivery,
-   which is not ours. */
-const WEBHOOKS = `
-create schema if not exists supabase_functions;
-create or replace function supabase_functions.http_request() returns trigger
-  language plpgsql as $$ begin return coalesce(new, old); end $$;
+   The real one queues the request and returns. This one WRITES DOWN WHAT IT
+   WAS GIVEN, because that is the claim: the road out carries the writing
+   person's own `Authorization` and nothing else. 「サインインなしで勧めるもの
+   ないけど」 OWNER 2026-09-22 -- if that header is not on it, push-send is
+   reachable by anybody, and nothing on any screen would ever say so. */
+const PGNET = `
+create or replace function net.http_post(
+  url text, body jsonb default '{}'::jsonb, params jsonb default '{}'::jsonb,
+  headers jsonb default '{}'::jsonb, timeout_milliseconds int default 5000)
+returns bigint language plpgsql as $$
+begin
+  insert into net._sent(url, body, headers) values (url, body, headers);
+  return 1;
+end $$;
 `;
 
 const sql = [
   GROUND,
   BASE_SQL,
   SCHEMA_SQL,
-  WEBHOOKS,
+  PGNET,
   SCHEMA_SQL,
   HARNESS,
   'begin;',
@@ -2301,6 +2337,30 @@ const sql = [
      「スタッフは消えないんじゃねえの？」 OWNER 2026-09-12. */
   `update plan set plan='free', was='pro',  lapse_seen_at=null where id = ${q(C)};`,
   `update plan set plan='free', was='plus', lapse_seen_at=null where id = ${q(A)};`,
+  /* ---- AND WHAT ACTUALLY GOES DOWN THE ROAD -----------------------------
+     Two writes that differ in one thing: whether the person writing them came
+     through PostgREST with a signature on. Everything else -- the table, the
+     policy, the row -- is the same.
+
+     `request.headers` is what PostgREST sets for the request a write is part
+     of, and a trigger runs inside that same transaction, so `push_ping()` can
+     read it. (Measured 2026-09-22, and the other half with it: a trigger's
+     ARGUMENTS cannot be an expression, which is why the packaged
+     `supabase_functions.http_request()` could not carry this and our own
+     function does.)
+
+     Done by the owner of the table rather than through a policy on purpose:
+     what is being asked is not who may write a reaction -- 400 attempts above
+     are about that -- it is what the ROW'S OWN WRITE sends, and the header is
+     the only thing being varied. */
+  `select set_config('request.headers',
+     '{"authorization":"Bearer THE-WRITERS-OWN-TOKEN"}', true);`,
+  `insert into react(post,actor,kind) values (${q(H4)}, ${q(F)}, 'like');`,
+  /* And the same write with nobody signed in behind it. Nothing comes out --
+     there is no session to send as, and「読めなかった」と「無い」は枝を分けない
+     の逆側でもある：送る相手ではなく、送る資格が無い。 */
+  `select set_config('request.headers', '', true);`,
+  `insert into react(post,actor,kind) values (${q(H3b)}, ${q(F)}, 'like');`,
   `\\pset format unaligned`,
   `\\pset tuples_only on`,
   /* chr(9) rather than a backslash-t: PostgreSQL string literals are standard

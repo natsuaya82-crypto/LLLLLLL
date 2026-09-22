@@ -2942,15 +2942,37 @@ grant  insert (id, author, language, body, prompt, reply_to) on post to anon, au
 -- same way that function does, and `post.reply_to is not null` is what a
 -- reply IS there too.
 --
--- THE TRIGGER CARRIES NO SECRET AND NO WORDS. What goes down this road is
--- Supabase's own webhook shape -- `{type, table, schema, record, old_record}`
--- -- and supabase/functions/push-send does not believe a character of it:
--- it takes the table and the row's key, reads that row back with the service
--- role, and builds every word of the notice from what the DATABASE said. So
--- there is nothing here to steal and nothing here to forge, which is why the
--- headers below are one Content-Type and no Authorization. (What that costs
--- is that the function has to be deployed without JWT verification, which is
--- written down in docs/scope/r47-push-server.md § オーナーへ.)
+-- THE TRIGGER CARRIES THE SIGNED-IN PERSON, AND NOTHING ELSE.
+-- 「サインインなしで勧めるものないけど」 OWNER 2026-09-22 -- there is nothing
+-- in this app that proceeds without a sign-in, and this road is not to be the
+-- first. A trigger fires INSIDE the REST request of the person who wrote the
+-- row, so that person's own `Authorization` is right there in
+-- `request.headers`, and `push_ping()` hands it on unchanged. push-send is
+-- deployed WITH JWT verification, so a call carrying no signature is refused
+-- before a line of it runs, and push.mjs then refuses one whose uid is not
+-- the row's own actor -- being signed in as somebody is not the same as
+-- having done the thing.
+--
+-- No secret is written down here and none could be: what travels is the
+-- caller's own token, which they already hold, and it is read at the moment
+-- of the write rather than stored.
+--
+-- WHY THIS IS OUR OWN FUNCTION AND NOT `supabase_functions.http_request()`.
+-- That is the packaged one a Database Webhook uses, and its headers are
+-- **arguments of the trigger**, which PostgreSQL fixes as string constants
+-- when the trigger is created: `create trigger ... execute function f(<any
+-- expression>)` is a syntax error, measured 2026-09-22. So the packaged road
+-- can carry a header somebody wrote down in this file and no other -- which
+-- is either a secret in the schema or an open door, and the owner has ruled
+-- out the door. `net.http_post` is what that function hands to anyway
+-- (pg_net), it arrives with the same one dashboard click, and it takes its
+-- headers as a value. One mechanism, one hop fewer.
+--
+-- IT MUST NOT BE ABLE TO STOP THE WRITE. `net.http_post` queues the request
+-- and returns; the POST happens after the transaction. A notification that
+-- cannot be sent must never cost somebody the follow, the reply or the like
+-- they actually made. Anything unexpected is swallowed for the same reason
+-- and the write stands.
 --
 -- AFTER INSERT AND NOTHING ELSE. A row that already exists has already been
 -- notified about, so nothing here ever fires for the past -- which is the
@@ -2958,34 +2980,68 @@ grant  insert (id, author, language, body, prompt, reply_to) on post to anon, au
 -- un-liking and re-liking is a delete and an insert, and the insert is the
 -- notice.
 --
--- IT MUST NOT BE ABLE TO STOP THE WRITE. `supabase_functions.http_request()`
--- hands the request to pg_net and returns; the POST happens after the
--- transaction. A notification that cannot be sent must never cost somebody
--- the follow, the reply or the like they actually made.
---
--- WHY THIS IS WRAPPED IN A `do` BLOCK, and it is the only one in this file.
--- `supabase_functions` is not part of PostgreSQL and is not part of this
--- file: it appears when somebody turns Database → Webhooks on in the
--- dashboard, once (supabase/setup.md § 12). Named unconditionally, a paste
--- into a project where that click has not happened yet stops HERE with
--- 「schema "supabase_functions" does not exist」 -- and on 2026-09-15 a paste
--- that stopped part-way left NOTHING behind it: no `profile.link`, no
+-- WHY THE `do` BLOCK, and it is the only one in this file. `net` is not part
+-- of PostgreSQL and is not part of this file: pg_net arrives when somebody
+-- turns Database -> Webhooks on in the dashboard, once
+-- (supabase/setup.md § 12). Named unconditionally, a paste into a project
+-- where that click has not happened yet stops HERE -- and on 2026-09-15 a
+-- paste that stopped part-way left NOTHING behind it: no `profile.link`, no
 -- `plan.was`, an app store rejection and every phone reading free. That is
 -- the failure this guard exists to prevent, and it is why this block is the
 -- LAST thing in the file as well: everything above it has landed by the time
 -- it is reached.
 --
 -- A skipped block is not a silent one. It says so, and setup.md § 12 says to
--- look for it -- 「空」と「壊れている」は別の状態、which is the first page of
+-- look for it -- 「空」と「壊れている」は別の状態, which is the first page of
 -- CLAUDE.md. What holds the three triggers themselves is tools/rls-check.mjs,
--- which applies this file once WITHOUT the schema (and asks that the rest of
--- it still landed) and once WITH it (and asks that all three are there).
-do $b$
+-- which applies this file once WITHOUT pg_net (and asks that the rest of it
+-- still landed) and once WITH it (and asks that all three are there, and that
+-- what goes down the road carries the writer's own Authorization).
+
+-- The one place a write becomes a knock on push-send's door.
+--
+-- `security definer` because `net.http_request_queue` is not a table the app's
+-- roles may write, and the person inserting a follow is the app's role. What
+-- it is allowed to do with that power is this function's whole body: read one
+-- header, and queue one POST.
+--
+-- NO SIGNATURE, NO KNOCK. `request.headers` is set by PostgREST for the
+-- request this write is part of; a write that did not come through it -- the
+-- service role, a dashboard query, a migration -- has none, and there is
+-- nobody to send as. That is a state, not an error: the row is written and no
+-- notice goes out.
+create or replace function push_ping() returns trigger
+language plpgsql security definer set search_path = public as $f$
 declare
-  url  text := 'https://iimwukyyasbybfrirhsf.supabase.co/functions/v1/push-send';
-  args text;
+  auth text;
 begin
-  if to_regprocedure('supabase_functions.http_request()') is null then
+  begin
+    auth := nullif(current_setting('request.headers', true), '')::json ->> 'authorization';
+  exception when others then
+    auth := null;
+  end;
+  if auth is null or auth = '' then return null; end if;
+
+  begin
+    perform net.http_post(
+      url     := 'https://iimwukyyasbybfrirhsf.supabase.co/functions/v1/push-send',
+      body    := jsonb_build_object('table', TG_TABLE_NAME, 'record', to_jsonb(NEW)),
+      headers := jsonb_build_object('Content-Type', 'application/json',
+                                    'Authorization', auth),
+      timeout_milliseconds := 5000);
+  exception when others then
+    /* 通知が出ないことが、フォローや返信やいいねを落としてはいけません。 */
+    null;
+  end;
+  return null;
+end
+$f$;
+
+do $b$
+begin
+  if not exists (select 1 from pg_proc p
+                   join pg_namespace n on n.oid = p.pronamespace
+                  where n.nspname = 'net' and p.proname = 'http_post') then
     raise notice '%', 'push-send: Database -> Webhooks has not been turned on '
       'for this project, so the three notification triggers were NOT made. '
       'Everything else in this file is in. See supabase/setup.md section 12, '
@@ -2993,28 +3049,22 @@ begin
     return;
   end if;
 
-  args := quote_literal(url) ||
-          $a$, 'POST', '{"Content-Type":"application/json"}', '{}', '5000'$a$;
-
-  execute 'drop trigger if exists push_on_follow on follow';
-  execute 'create trigger push_on_follow after insert on follow '
-       || 'for each row execute function supabase_functions.http_request('
-       || args || ')';
+  drop trigger if exists push_on_follow on follow;
+  create trigger push_on_follow after insert on follow
+    for each row execute function push_ping();
 
   -- Only the ones that answer something. A post that answers nothing is not a
   -- notice for anybody, and a trigger that fired for every post would put the
   -- whole timeline through this road to be thrown away at the far end.
-  execute 'drop trigger if exists push_on_reply on post';
-  execute 'create trigger push_on_reply after insert on post '
-       || 'for each row when (new.reply_to is not null) '
-       || 'execute function supabase_functions.http_request(' || args || ')';
+  drop trigger if exists push_on_reply on post;
+  create trigger push_on_reply after insert on post
+    for each row when (new.reply_to is not null) execute function push_ping();
 
   -- Both kinds down one trigger. `react.kind` is where like and boost are
   -- told apart and it is told apart there for notices() as well; a second
   -- trigger per kind would be that one fact written down twice.
-  execute 'drop trigger if exists push_on_react on react';
-  execute 'create trigger push_on_react after insert on react '
-       || 'for each row execute function supabase_functions.http_request('
-       || args || ')';
+  drop trigger if exists push_on_react on react;
+  create trigger push_on_react after insert on react
+    for each row execute function push_ping();
 end
 $b$;

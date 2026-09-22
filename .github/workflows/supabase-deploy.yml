@@ -74,26 +74,21 @@ jobs:
                                --project-ref "$PROJECT_REF"
           echo "APNS_KEY_ID / APPLE_TEAM_ID / APNS_P8: set"
 
-      # push-send はデータベースのトリガーが叩きます。トリガーは秘密を持って
-      # 行けない（schema に秘密は置かない）ので、JWT の検証を外して置くしか
-      # ありません。函数のほうは request の中身を一文字も信じない作りで、
-      # 行を service role で読み直します ── supabase/functions/push-send/index.ts。
+      # 三つとも同じ置き方です。**--no-verify-jwt はどれにも付けません** ──
+      # 「サインインなしで勧めるものないけど」 OWNER 2026-09-22。push-send を
+      # 叩くのはデータベースのトリガーで、トリガーは**行を入れた人の
+      # Authorization をそのまま持って行きます**（push_ping()、
+      # supabase/schema.sql 末尾）。署名の無い呼び出しは、函数の一行目が走る
+      # 前に Supabase が断ります。
       - name: 関数を置く
-        run: |
-          EXTRA=
-          if [ "${{ inputs.function }}" = "push-send" ]; then EXTRA=--no-verify-jwt; fi
-          supabase functions deploy "${{ inputs.function }}" \
-            --project-ref "$PROJECT_REF" --use-api $EXTRA
+        run: supabase functions deploy "${{ inputs.function }}" --project-ref "$PROJECT_REF" --use-api
 
-      # 置かれていて、何も持っていない POST では何も送らないこと。
-      # verify-plan と daily-prompt は 401（サインインしていない人を断る）、
-      # push-send は 400（知っている三つの表の行ではない）。どちらも
-      # 「通した」ではなく「そこで終わった」の確かめです。
-      - name: 確かめる（中身の無い POST で、何も起きない）
+      # 置かれていて、サインインしていない人を断ること。三つとも 401 です。
+      # 「通した」ではなく「そこで終わった」の確かめ。
+      - name: 確かめる（サインインしていない人は 401 で断られる）
         run: |
-          if [ "${{ inputs.function }}" = "push-send" ]; then WANT=400; else WANT=401; fi
           CODE=$(curl -s -o body.json -w '%{http_code}' -X POST \
             "https://$PROJECT_REF.supabase.co/functions/v1/${{ inputs.function }}" \
             -H "Content-Type: application/json" -d '{"jws":[]}')
-          echo "HTTP $CODE (want $WANT)"; cat body.json; echo
-          test "$CODE" = "$WANT"
+          echo "HTTP $CODE"; cat body.json; echo
+          test "$CODE" = "401"

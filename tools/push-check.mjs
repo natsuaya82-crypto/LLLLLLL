@@ -46,6 +46,7 @@ const many = (p) => (p && p.to) ? p.to.length : -1;
 
 const A = 'a0000000-0000-4000-8000-000000000001';   /* 書いた人 */
 const B = 'b0000000-0000-4000-8000-000000000002';   /* やった人 */
+const C = 'c0000000-0000-4000-8000-000000000003';   /* サインインした他人 */
 const P = 'd0000000-0000-4000-8000-000000000004';   /* その投稿 */
 const Q = 'd0000000-0000-4000-8000-000000000009';   /* その返信 */
 const TOK = 'a1'.repeat(32);
@@ -90,7 +91,7 @@ console.log('push: request が持ってきた文字は payload に混ざらな�
       JSON.stringify(ev).indexOf(EVIL), '-1');
   /* そして、**行はデータベースから**。ここで渡すのが「読み直した行」です。 */
   const aim = pushTo(ev.table, { follower: B, followed: A }, null);
-  const plan = pushPlan(aim, WHO, DEV);
+  const plan = pushPlan(aim, WHO, DEV, B);
   say('組み上がった payload にも無い',
       JSON.stringify(pay(plan)).indexOf(EVIL), '-1');
   say('それでも本物の通知にはなっている', plan.send, 'true');
@@ -126,14 +127,14 @@ console.log('push: 自分には送らない');
   /* 自分の投稿に自分でいいね。notices() が `r.actor <> auth.uid()` と書いて
      いるのと同じ一行で、こちらだけ抜けていると自分の操作で自分が鳴ります。 */
   const mine = pushTo('react', { post: P, actor: A, kind: 'like' }, { id: P, author: A }) || {};
-  const plan = pushPlan(mine, { handle: 'aya', prefs: {} }, DEV);
+  const plan = pushPlan(mine, { handle: 'aya', prefs: {} }, DEV, A);
   say('自分の投稿への自分のいいねは送らない', plan.send, 'false');
   say('理由は「自分の」', plan.why, 'their own');
   /* follow は表の check 制約が自分自身を禁じていますが、判断はここにもあります
      ── 制約はデータの形の話で、これは誰に送るかの話です。 */
   const self = pushTo('follow', { follower: A, followed: A }, null) || {};
   say('自分で自分をフォローしても送らない',
-      pushPlan(self, { handle: 'aya', prefs: {} }, DEV).send, 'false');
+      pushPlan(self, { handle: 'aya', prefs: {} }, DEV, A).send, 'false');
 }
 
 /* ---- スイッチ -------------------------------------------------------- */
@@ -155,26 +156,26 @@ say('like を切っても他の三つは生きている',
     KINDS.filter((k) => pushWants({ push_like: false }, k)).join(','),
     'follow,reply,boost');
 {
-  const off = pushPlan(lik, { handle: 'iri', prefs: { push_like: false } }, DEV);
+  const off = pushPlan(lik, { handle: 'iri', prefs: { push_like: false } }, DEV, B);
   say('切れていれば送らない', off.send, 'false');
   say('理由は「切ってある」', off.why, 'switched off');
-  const on = pushPlan(lik, { handle: 'iri', prefs: { push_boost: false } }, DEV);
+  const on = pushPlan(lik, { handle: 'iri', prefs: { push_boost: false } }, DEV, B);
   say('別の種類を切ってもいいねは届く', on.send, 'true');
 }
 
 /* ---- 宛先 ------------------------------------------------------------- */
 console.log('push: device の行が無ければ何もしない');
-say('行が一つも無ければ送らない', pushPlan(lik, WHO, []).send, 'false');
-say('理由は「宛先が無い」', pushPlan(lik, WHO, []).why, 'no device');
-say('送らないと決めた答えに payload は無い', pushPlan(lik, WHO, []).payload, 'undefined');
-say('undefined でも落ちない', pushPlan(lik, WHO, undefined).send, 'false');
-say('二台持っていれば二台とも', many(pushPlan(lik, WHO, [{ token: TOK }, { token: TOK2 }])), '2');
-say('空の token は数えない', many(pushPlan(lik, WHO, [{ token: '' }, { token: TOK }])), '1');
+say('行が一つも無ければ送らない', pushPlan(lik, WHO, [], B).send, 'false');
+say('理由は「宛先が無い」', pushPlan(lik, WHO, [], B).why, 'no device');
+say('送らないと決めた答えに payload は無い', pushPlan(lik, WHO, [], B).payload, 'undefined');
+say('undefined でも落ちない', pushPlan(lik, WHO, undefined, B).send, 'false');
+say('二台持っていれば二台とも', many(pushPlan(lik, WHO, [{ token: TOK }, { token: TOK2 }], B)), '2');
+say('空の token は数えない', many(pushPlan(lik, WHO, [{ token: '' }, { token: TOK }], B)), '1');
 
 /* ---- payload ---------------------------------------------------------- */
 console.log('push: Apple に渡す形');
 {
-  const plan = pushPlan(rep, { handle: 'iri', prefs: { ui: 'en' } }, DEV);
+  const plan = pushPlan(rep, { handle: 'iri', prefs: { ui: 'en' } }, DEV, B);
   say('alert は title と body', Object.keys(pay(plan).aps.alert).join(','), 'title,body');
   say('title は Lingua（訳さない）', pay(plan).aps.alert.title, TITLE);
   say('body は相手の言語で', line(plan), '@iri replied');
@@ -183,7 +184,7 @@ console.log('push: Apple に渡す形');
   say('開く先が載っている', pay(plan).post, Q);
   /* **無い物は載せない。**空文字の `post` は「開く先が無い」ではなく、
      「どこにも無い所を開け」です。 */
-  const f = pushPlan(fol, WHO, DEV);
+  const f = pushPlan(fol, WHO, DEV, B);
   say('follow には開く先の欄そのものが無い',
       Object.prototype.hasOwnProperty.call(pay(f), 'post'), 'false');
 }
@@ -222,6 +223,32 @@ for (const l of LANGS) {
 }
 say('知らない種類には文が無い', pushSay({ ui: 'ja' }, 'hug', 'iri'), 'null');
 
+/* ---- サインインしていない人には何も起こせない ------------------------
+   「サインインなしで勧めるものないけど」 OWNER 2026-09-22。
+
+   この口はデータベースのトリガーが叩き、トリガーは**行を入れた人の
+   Authorization をそのまま持って行きます**。だから叩いた人は必ず署名済みで、
+   `by` はその JWT を Supabase 自身に照らして返ってきた uid です。
+
+   JWT の検証だけでは足りません ── それが言えるのは「サインインしている誰か」
+   までで、サインインした他人が他人の行を指して他人の iPhone を鳴らせます。
+   **行の actor と一致して初めて、これはその人自身の操作の通知**です。 */
+console.log('push: 署名した本人の操作でなければ、何も送らない');
+say('署名が無ければ送らない', pushPlan(lik, WHO, DEV, '').send, 'false');
+say('理由は「session が無い」', pushPlan(lik, WHO, DEV, '').why, 'no session');
+say('publishable キー（user の sub が無い）も同じ',
+    pushPlan(lik, WHO, DEV, undefined).why, 'no session');
+/* サインインした**他人**。A の投稿に B がいいねした行を、C が叩く。 */
+say('サインインした他人は鳴らせない', pushPlan(lik, WHO, DEV, C).send, 'false');
+say('理由は「その人のものではない」', pushPlan(lik, WHO, DEV, C).why, 'not theirs to ring');
+say('やった本人なら送る', pushPlan(lik, WHO, DEV, B).send, 'true');
+/* 三つの表で同じこと。鳴らされる側が自分で自分の通知を起こせるわけでも
+   ありません。 */
+say('follow も本人だけ', pushPlan(fol, WHO, DEV, B).send, 'true');
+say('follow を他人が叩いても送らない', pushPlan(fol, WHO, DEV, C).send, 'false');
+say('返信も本人だけ', pushPlan(rep, WHO, DEV, B).send, 'true');
+say('返信を鳴らされる側が叩いても送らない', pushPlan(rep, WHO, DEV, A).send, 'false');
+
 /* ---- Apple が「もう無い」と答えた token ------------------------------ */
 console.log('push: 410 だけで token が落ちる');
 say('410 は落ちる', pushGone([{ token: TOK, status: 410 }]).join(','), TOK);
@@ -241,10 +268,10 @@ console.log('push: 四つの語と topic');
 say('四種類、通知タブと同じ語', KINDS.join(','), 'follow,reply,like,boost');
 say('topic は bundle id', TOPIC, 'com.tokinets.lingua');
 say('知らない種類は送らない',
-    pushPlan({ kind: 'hug', to: A, from: B, post: null }, WHO, DEV).send, 'false');
+    pushPlan({ kind: 'hug', to: A, from: B, post: null }, WHO, DEV, B).send, 'false');
 say('相手がいなければ送らない',
-    pushPlan({ kind: 'like', to: '', from: B, post: P }, WHO, DEV).send, 'false');
-say('何も無ければ送らない', pushPlan(null, WHO, DEV).send, 'false');
+    pushPlan({ kind: 'like', to: '', from: B, post: P }, WHO, DEV, B).send, 'false');
+say('何も無ければ送らない', pushPlan(null, WHO, DEV, B).send, 'false');
 
 console.log('push: ' + said + ' claims about a notice nobody would see go wrong');
 if (bad) { console.error('push-check: ' + bad + ' failed'); process.exit(1); }

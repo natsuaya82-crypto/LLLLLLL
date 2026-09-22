@@ -8,16 +8,26 @@
 // Supabase の Database Webhook と同じ道（`supabase_functions.http_request`）で
 // ここを叩きます。
 //
-// **この函数は request の中身を一文字も信じません。**受け取るのは「どの表の、
-// どの行か」だけ（`pushWhat()`）で、その行を service role で**読み直し**、文面は
-// 全部データベースが答えたものから組みます。理由は口の形です：トリガーは秘密を
-// 持って行けない（schema に秘密は置かない）ので、この函数は JWT の検証なしで
-// 置くしかなく、**誰でも叩けます**。届いた JSON から一文字でも文面に流れれば、
-// 知らない人が他人の iPhone に好きな文を出せるということになります。
+// **サインインしていない人には何も起こせません。**
+// 「サインインなしで勧めるものないけど」 OWNER 2026-09-22 ── このアプリに、
+// サインインなしで進むものは一つもありません。
 //
-// 知らない人に出来ることは、**本当に起きたことの通知をもう一度鳴らす**ことだけ
-// です。それが困るかどうかはオーナーの決めごとで、
-// docs/scope/r47-push-server.md § オーナーへ に選択肢が二つ書いてあります。
+// 扉は二枚あり、二枚とも要ります。
+//
+//   一枚目 ── Supabase の JWT 検証。この函数は `--no-verify-jwt` なしで置かれ、
+//     トリガーは**行を入れた人の Authorization をそのまま持って行きます**
+//     （`push_ping()`、supabase/schema.sql 末尾）。署名の無い呼び出しは、
+//     この行が走る前に断られます。
+//   二枚目 ── **その人がやったことか。**一枚目が言えるのは「サインインして
+//     いる誰か」までで、サインインした他人が他人の行を指して他人の iPhone を
+//     鳴らせます。だから下で `/auth/v1/user` に**誰から来たかを訊き**、返って
+//     きた uid を `push.mjs` が行の actor と突き合わせます。publishable キーで
+//     叩かれた時もここで止まります ── あの鍵に user の sub はありません。
+//
+// **それでも request の中身は一文字も信じません。**受け取るのは「どの表の、
+// どの行か」だけ（`pushWhat()`）で、その行を service role で**読み直し**、文面は
+// 全部データベースが答えたものから組みます。署名した人であることと、その人が
+// 本当のことを言っていることは、別の話です。
 //
 // 判断は一つもここにありません ── 自分には送らない、スイッチが切れていれば
 // 送らない、宛先が無ければ送らない、何と書くか、どの token を消すか、全部
@@ -81,9 +91,24 @@ Deno.serve(async (req: Request) => {
   /* 名前を挙げて返します ── 実機で「来ない」と言われた時に、どれが入っていない
      のかを分けられるのはここだけです。値は返しません。 */
   const missing = [['SUPABASE_URL', url], ['SUPABASE_SERVICE_ROLE_KEY', svc],
+                   ['SUPABASE_ANON_KEY', Deno.env.get('SUPABASE_ANON_KEY') || ''],
                    ['APNS_KEY_ID', kid], ['APPLE_TEAM_ID', team], ['APNS_P8', p8]]
     .filter(([, v]) => !v).map(([n]) => n);
   if (missing.length) return said({ why: 'not set: ' + missing.join(', ') }, 500);
+
+  /* 誰から。名乗りではなく、Supabase 自身に聞きます ── verify-plan と同じ一行で、
+     同じ理由です。この函数は service role を持っているので、uid を body から
+     取ったら誰でも誰の iPhone でも鳴らせます。
+
+     `SUPABASE_ANON_KEY` が無ければ訊けないので、その時も 401 ── 訊けないことを
+     「誰でもよい」と読まないためです。 */
+  const anon = Deno.env.get('SUPABASE_ANON_KEY') || '';
+  const auth = req.headers.get('Authorization') || '';
+  if (!anon || !/^Bearer .+/.test(auth)) return said({ why: 'no session' }, 401);
+  const who = await fetch(`${url}/auth/v1/user`, { headers: { apikey: anon, Authorization: auth } });
+  if (!who.ok) return said({ why: 'no session' }, 401);
+  const by = String(((await who.json()) || {}).id || '');
+  if (!by) return said({ why: 'no session' }, 401);
 
   let raw: unknown;
   try { raw = await req.json(); } catch { raw = null; }
@@ -144,7 +169,7 @@ Deno.serve(async (req: Request) => {
      決めた答えには `to` も `payload` もありません。三つ全部を見てから先へ
      進むのは、型を黙らせるためではなく、**片方だけ在る答えは無い**と言って
      おくためです。 */
-  const plan = pushPlan(aim, { handle: them.handle, prefs: you.prefs }, devs) as
+  const plan = pushPlan(aim, { handle: them.handle, prefs: you.prefs }, devs, by) as
     { send: boolean; why?: string; to?: string[]; payload?: unknown };
   if (!plan.send || !plan.to || !plan.payload) return said({ sent: 0, why: plan.why });
 

@@ -8,9 +8,9 @@
    写しは必ず一致します**（CLAUDE.md § 10, § 12）。
 
    ここには I/O が一つもありません。表を読むのも、Apple に送るのも index.ts。
-   ここにあるのは**判断**だけで、判断は全部ここにあります ── 自分には送らない、
-   スイッチが切れていれば送らない、宛先が無ければ送らない、何と書くか、そして
-   どの token を消すか。
+   ここにあるのは**判断**だけで、判断は全部ここにあります ── 署名した本人の
+   操作でなければ送らない、自分には送らない、スイッチが切れていれば送らない、
+   宛先が無ければ送らない、何と書くか、そしてどの token を消すか。
 
    なぜ判断を切り離すか。通知は**何も投げない種類の仕事**です。相手を間違えても、
    スイッチを裏返しに読んでも、文面が空でも、Apple は 200 を返します。壊れている
@@ -169,10 +169,24 @@ export function pushSay(prefs, kind, handle) {
    どれだったかを分けるためです（verify-plan の `left` と同じ）。
 
    `who` は `{handle, prefs}` ── `handle` はやった人の @、`prefs` は**相手の**
-   設定。`devices` は相手の token の配列。どれも DB から来ます。 */
-export function pushPlan(aim, who, devices) {
+   設定。`devices` は相手の token の配列。どれも DB から来ます。`by` は
+   **叩いた人**で、提示された JWT を Supabase に照らして返ってきた uid です。 */
+export function pushPlan(aim, who, devices, by) {
   if (!aim || !aim.kind || !aim.to || !aim.from) return { send: false, why: 'no such event' };
   if (KINDS.indexOf(aim.kind) === -1) return { send: false, why: 'no such kind' };
+  /* **サインインしていない人には何も起こせない。**
+     「サインインなしで勧めるものないけど」 OWNER 2026-09-22。
+
+     `by` は**提示された JWT を Supabase 自身に照らして返ってきた uid** で、
+     名乗りではありません（index.ts）。無ければそこで終わり ── publishable
+     キーで叩かれた時もここに来ます（あの鍵に user の sub は無い）。
+
+     そして **その人がやったことでなければ送らない**。JWT の検証だけでは
+     「サインインしている誰か」までしか言えず、サインインした他人が、他人の
+     フォローの行を指して他人の iPhone を鳴らせます。行の actor と一致して
+     初めて、これは**その人自身の操作の通知**です。 */
+  if (!by) return { send: false, why: 'no session' };
+  if (by !== aim.from) return { send: false, why: 'not theirs to ring' };
   /* 自分がやったことは自分に知らせない。notices() が
      `r.actor <> auth.uid()` と書いているのと同じ一行。 */
   if (aim.to === aim.from) return { send: false, why: 'their own' };
