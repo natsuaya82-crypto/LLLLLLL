@@ -2963,7 +2963,8 @@ const R = await pg.evaluate(async () => {
      たまたまなっている形**でアプリが開きます。
 
      四本訊きます:
-     1. 一つ変えると `profile.prefs` へ PATCH が飛び、五つとも載る
+     1. 一つ変えると `profile.prefs` へ PATCH が飛び、**この人が選んでいる欄は
+        全部載り、触っていない欄は作られない**
      2. サインインで行が降りてきて、画面がその形になる
      3. 行が無ければ写しを触らない（「行が無い」は「何も選んでいない」ではない）
      4. `SET_PHONE` はもうこの五つを「この端末の設え」と言っていない
@@ -2985,10 +2986,26 @@ const R = await pg.evaluate(async () => {
     if (!put64) no('64: 設えを変えても profile.prefs へ出ていない');
     else {
       if (put64.ui !== 'ja') no('64: 変えた欄が載っていない — ' + JSON.stringify(put64));
-      for (let z = 0; z < SET_PREFS.length; z++)
-        if (!Object.prototype.hasOwnProperty.call(put64, SET_PREFS[z]))
-          no('64: 五つのうち ' + SET_PREFS[z] + ' が載っていない — ' +
+      /* **持っている物は全部載る。**「五つとも載る」でした ── 2026-09-22 に
+         通知の四つが `SET_PREFS` に入り、その一文が嘘になりました：四つは
+         **触るまで `SET` に無く**、無いことがそのまま「オン」です（サーバーも
+         同じ読み方をします ── www/push.js § pushWants）。触っていない欄を
+         載せろと言うのは、既定を発明して上げろと言うのと同じです。
+
+         なので訊き方を二方向にします。持っている欄が落ちていないこと ──
+         これが `SET_PREFS` を空にすると赤になる半分 ── と、持っていない欄を
+         勝手に作っていないこと。 */
+      for (let z = 0; z < SET_PREFS.length; z++) {
+        const k64 = SET_PREFS[z];
+        const has64 = SET[k64] !== undefined;
+        if (has64 && !Object.prototype.hasOwnProperty.call(put64, k64))
+          no('64: この人が選んでいる ' + k64 + ' が載っていない — ' +
              JSON.stringify(put64));
+        if (!has64 && Object.prototype.hasOwnProperty.call(put64, k64))
+          no('64: **誰も触っていない ' + k64 + ' を作って上げている** — ' +
+             JSON.stringify(put64[k64]) +
+             '。無いことが答えです（既定を書き込むと、あとで既定を変えられません）');
+      }
     }
     /* 降りてくる。 */
     SET.theme = 'system'; SET.ui = 'en'; SET.myfont = false;
@@ -4051,6 +4068,241 @@ const R = await pg.evaluate(async () => {
     say('79: お問い合わせは本物のボタンを押して feedback へ ── ' +
         'author は押した人の uid、kind は押した行、body は打った物。' +
         '空でも空白だけでも送らない（OWNER 2026-09-22）');
+  }
+
+
+  /* ---- 81. 通知のスイッチは四つとも動いて、prefs に上がる -------------
+     「それに加えて設定で個別通知のオンオフできるように。」 OWNER 2026-09-22。
+
+     **本物のスイッチを押します。**部屋を描いて、`data-do="pushSw"` を持った
+     本物の行に本物の click を投げ、act.js の一本の listener を通します。
+     pushSw() を直に呼ぶと、行とこの関数を結んでいる act-map.js が外れても緑の
+     ままになります ── それは「押せる」を測っていない検査です。
+
+     **四つとも押すのが要ります。**www/push.js の pushSw() は四つを名前で
+     書き出します（`lingua.set` の中は名前で読めなければならない ──
+     tools/store-check.mjs）。一つ書き忘れても、行は描かれ、押しても何も起きず、
+     何も投げません。数えるのではなく四つ別々に押して、押した一つだけが動いた
+     ことを見ます。 */
+  {
+    start();
+    netOut(); arrive(A);
+    const keep81 = netSend;
+    let last81 = null, calls81 = 0;
+    netSend = (method, path, body, tok, ok2) => {
+      if (String(path).indexOf('/rest/v1/profile') === 0) {
+        calls81++; last81 = { method: method, body: body };
+      }
+      if (ok2) ok2([]);
+    };
+    const open81 = () => {
+      window.route = 'set'; NAV = [{ r: 'settings' }, { r: 'set', a: 'push' }];
+      render();
+      return document.querySelectorAll('[data-do="pushSw"]');
+    };
+    const rows81 = open81();
+    if (rows81.length !== PUSH_KINDS.length)
+      no('81: 通知の部屋のスイッチが ' + PUSH_KINDS.length + ' 行ではない ── ' +
+         rows81.length + ' 行');
+
+    /* まだ誰も触っていない ── 四つとも「オン」で、SET には一つも無い。 */
+    for (let i = 0; i < PUSH_KINDS.length; i++) {
+      const k = PUSH_KINDS[i];
+      if (SET['push_' + k] !== undefined)
+        no('81: 何も押していないのに SET.push_' + k + ' がある ── ' +
+           JSON.stringify(SET['push_' + k]) +
+           '。既定はサーバーと同じ「無い＝オン」で、書き込みはしません');
+      if (!pushWants(k))
+        no('81: 何も押していないのに ' + k + ' がオフ');
+    }
+
+    /* 一つずつ押して、押した一つだけが動いて、その形で上がる。 */
+    for (let i = 0; i < PUSH_KINDS.length; i++) {
+      const k = PUSH_KINDS[i];
+      const was = calls81;
+      const r = open81()[i];
+      if (!r) { no('81: ' + k + ' の行が画面に無い'); continue; }
+      r.click();
+      if (SET['push_' + k] !== false)
+        no('81: **' + k + ' のスイッチを押しても SET.push_' + k + ' が動かない** ── ' +
+           JSON.stringify(SET['push_' + k]) +
+           '。pushSw() にその名前の行がありません（www/push.js）');
+      for (let j = 0; j < PUSH_KINDS.length; j++) {
+        if (j === i) continue;
+        const o = PUSH_KINDS[j];
+        if (SET['push_' + o] === false && j > i)
+          no('81: ' + k + ' を押したら ' + o + ' まで動いた');
+      }
+      if (calls81 !== was + 1)
+        no('81: ' + k + ' を押しても prefs が上がっていない ── ' +
+           (calls81 - was) + ' 回');
+      else {
+        if (last81.method !== 'PATCH')
+          no('81: PATCH ではない ── ' + last81.method);
+        const pr = last81.body && last81.body.prefs;
+        if (!pr || pr['push_' + k] !== false)
+          no('81: **上がった prefs に push_' + k + ':false が無い** ── ' +
+             JSON.stringify(pr) +
+             '。サーバーはこの名前で読みます（`SET_PREFS`、www/core.js）');
+      }
+    }
+
+    /* そしてもう一度押せば戻る ── スイッチであって、一度きりの宣言ではない。 */
+    {
+      const r = open81()[2];                       /* いいね */
+      if (r) r.click();
+      if (SET.push_like !== true)
+        no('81: もう一度押しても戻らない ── SET.push_like=' +
+           JSON.stringify(SET.push_like));
+    }
+
+    netSend = keep81;
+    for (let i = 0; i < PUSH_KINDS.length; i++) delete SET['push_' + PUSH_KINDS[i]];
+    start();
+    say('81: 通知の四つは本物のスイッチを押して動く ── 押した一つだけが動き、' +
+        '`prefs` に `push_<kind>:false` で上がり、もう一度押せば戻る。' +
+        '何も押していない端末は四つとも「無い＝オン」（OWNER 2026-09-22）');
+  }
+
+  /* ---- 82. 扉を通ると、この端末の住所がこの account の名前で上がる -----
+     「アップルのネイティブ通知で」 OWNER 2026-09-22。
+
+     `LinguaPush` を偽物に差し替えて pushAsk() を通します。本物の Swift は
+     Linux にありません ── ここで測るのは**アプリが自分の uid と Apple の
+     token を組にして `device` へ出すか**で、Apple が token をくれるかは実機の
+     話です（docs/CHECK-0907.md）。
+
+     三つ。組の両方が載ること、許可が下りなければ一行も出ないこと、そして
+     ネイティブが無い端末（＝ブラウザ）では何も起きないこと。 */
+  {
+    start();
+    netOut(); arrive(A);
+    const keep82 = netSend, cap82 = window.Capacitor;
+    let sent82 = null, calls82 = 0;
+    netSend = (method, path, body, tok, ok2) => {
+      if (String(path).indexOf('/rest/v1/device') === 0) {
+        calls82++; sent82 = { method: method, path: path, body: body };
+      }
+      if (ok2) ok2([]);
+    };
+    const fake82 = (answer) => {
+      window.Capacitor = { nativePromise: (plug, m) => {
+        if (plug !== 'LinguaPush') return Promise.reject('wrong plugin');
+        if (m === 'status') return Promise.resolve({ status: 'denied' });
+        return answer();
+      } };
+    };
+    const settle = () => new Promise(r => setTimeout(r, 0));
+
+    /* ネイティブが無い ── ブラウザ。何も起きない。 */
+    window.Capacitor = undefined;
+    pushAsk(); await settle();
+    if (calls82 !== 0)
+      no('82: ネイティブが無いのに device へ出している ── ' + JSON.stringify(sent82));
+
+    /* 断られた。住所は無いので一行も出ない。 */
+    fake82(() => Promise.reject('denied'));
+    pushAsk(); await settle(); await settle();
+    if (calls82 !== 0)
+      no('82: **許可が無いのに device へ出している** ── ' + JSON.stringify(sent82) +
+         '。断られた端末には届ける先がありません');
+
+    /* 通った。 */
+    fake82(() => Promise.resolve({ token: 'abc123' }));
+    pushAsk(); await settle(); await settle();
+    if (calls82 !== 1)
+      no('82: **許可が下りたのに device へ POST が出ない** ── ' + calls82 +
+         ' 回。通知の届く先がどこにも登録されません');
+    else {
+      if (sent82.method !== 'POST')
+        no('82: POST ではない ── ' + sent82.method);
+      if (!sent82.body || sent82.body.uid !== SESS.uid)
+        no('82: **uid が今サインインしている人ではない** ── ' +
+           JSON.stringify(sent82.body && sent82.body.uid) + '、SESS.uid は ' + SESS.uid);
+      if (!sent82.body || sent82.body.token !== 'abc123')
+        no('82: Apple がくれた token が載っていない ── ' +
+           JSON.stringify(sent82.body && sent82.body.token));
+    }
+
+    /* サインアウトしていれば、誰の名前でも出さない。 */
+    netOut();
+    calls82 = 0;
+    pushAsk(); await settle(); await settle();
+    if (calls82 !== 0)
+      no('82: サインアウトしているのに device へ出している ── ' + JSON.stringify(sent82));
+
+    window.Capacitor = cap82; netSend = keep82;
+    start();
+    say('82: 扉を通ると端末の token が `device` へ ── uid は今サインインして' +
+        'いる人、token は Apple がくれた物。断られた端末とブラウザと' +
+        'サインアウトの三つからは一行も出ない（OWNER 2026-09-22）');
+  }
+
+  /* ---- 83. サインアウトは、この端末のこの人の行だけを落とす -----------
+     出ていく人あての通知が、この iPhone に届き続けてはいけません。
+     落とすのは**組の両方で絞った一行**で、その人の他の端末の行にも、この端末の
+     他の account の行にも触りません（docs/CHANGELOG.md 2026-09-22 の
+     DELETE REVIEW）。
+
+     **本物の行を押します** ── 設定→アカウントの「サインアウト」を押し、出てきた
+     popAsk の「はい」を押す。popAsk が無ければ即座に消える道になっていた、と
+     いうことがここで分かります。
+
+     そして DELETE は netOut() より**前**でなければ出せません ── 署名する token
+     が netOut() で消えるからです。順番が逆になったら、この claim は
+     「DELETE が出ない」で赤くなります。 */
+  {
+    start();
+    netOut(); arrive(A);
+    const keep83 = netSend, cap83 = window.Capacitor;
+    let del83 = null, dels83 = 0;
+    netSend = (method, path, body, tok, ok2) => {
+      if (String(path).indexOf('/rest/v1/device') === 0 && method === 'DELETE') {
+        dels83++; del83 = { path: path, tok: tok };
+      }
+      if (ok2) ok2([]);
+    };
+    /* まず住所を上げた端末にする ── 上げていない端末は落とす物がありません。 */
+    window.Capacitor = { nativePromise: (plug, m) =>
+      m === 'status' ? Promise.resolve({ status: 'authorized' })
+                     : Promise.resolve({ token: 'tok-this-phone' }) };
+    pushAsk();
+    await new Promise(r => setTimeout(r, 0)); await new Promise(r => setTimeout(r, 0));
+    const me83 = SESS && SESS.uid;
+
+    window.route = 'set'; NAV = [{ r: 'settings' }, { r: 'set', a: 'acct' }];
+    render();
+    const out83 = document.querySelector('[data-do="setSignOut"]');
+    if (!out83) no('83: サインアウトの行が画面に無い');
+    else {
+      out83.click();
+      const yes83 = document.querySelector('[data-do="popYes"]');
+      if (!yes83) no('83: サインアウトが訊かずに実行されている ── popAsk が出ていない');
+      else yes83.click();
+    }
+
+    if (dels83 !== 1)
+      no('83: **サインアウトしても device の行が落ちない** ── ' + dels83 +
+         ' 回。出ていった人あての通知がこの端末に届き続けます。' +
+         'netDeviceDrop() は netOut() より前でなければ token がありません');
+    else {
+      if (del83.path.indexOf('uid=eq.' + me83) < 0)
+        no('83: **uid で絞っていない** ── ' + del83.path +
+           '。この端末の他の account の行まで落ちます');
+      if (del83.path.indexOf('token=eq.tok-this-phone') < 0)
+        no('83: **token で絞っていない** ── ' + del83.path +
+           '。その人の他の端末の行まで落ちます');
+    }
+    /* そして二度目は出ない ── 落とす物はもう無い。 */
+    setSignOutGo();
+    if (dels83 !== 1)
+      no('83: もう一度サインアウトしたら二度落とした ── ' + dels83 + ' 回');
+
+    window.Capacitor = cap83; netSend = keep83;
+    start();
+    say('83: サインアウトはこの端末のこの人の `device` の行だけを落とす ── ' +
+        'uid と token の両方で絞り、netOut() より前に出す。' +
+        '落とす物が無ければ何も出さない（DELETE REVIEW、2026-09-22）');
   }
 
   return out;
