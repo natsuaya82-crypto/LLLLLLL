@@ -512,6 +512,53 @@ const CASES = [
   ['nobody signed in reports',                'denied', B, 1,
     `insert into report(actor,post,why) values ('${B}','${P}','spam')`],
 
+  /* --- what somebody says TO the operator, which is not a report ---------
+     「設定にお問合せを足して欲しい…フォームはアプリ内のadminのページで見れる
+     ようにしたい。」 OWNER 2026-09-22. The same shape as `report` above and
+     for the same reason: it is written by the person and read by whoever is
+     answering, and nobody else on either side of that gets to see it -- not
+     the person who sent it either, because the only road back that would
+     create is a road the owner has not asked for.
+
+     What is NOT here is a delete: there is no policy and no report_drop()
+     twin, so the four last claims are that neither side can take one out or
+     change what it says. */
+  ['B writes to the operator',                'ok',     B, 0,
+    `insert into feedback(author,kind,body) values ('${B}','bug','the keyboard does nothing')`],
+  ['and again, in each of the three kinds',   'ok',     B, 0,
+    `insert into feedback(author,kind,body) values ('${B}','opinion','i like it'),
+     ('${B}','request','let me rename a letter')`],
+  ['B cannot write in A\u2019s name',          'denied', B, 0,
+    `insert into feedback(author,kind,body) values ('${A}','bug','x')`],
+  ['B cannot read what B sent',               'denied', B, 0,
+    `select 1 from feedback where author='${B}'`],
+  ['nor what anybody else sent',              'denied', B, 0,
+    `select 1 from feedback`],
+  ['staff reads them',                        'ok',     C, 0,
+    `select 1 from feedback`],
+  ['nobody signed in writes to the operator', 'denied', B, 1,
+    `insert into feedback(author,kind,body) values ('${B}','bug','x')`],
+  /* The three the schema names, and nothing else -- the same argument as the
+     five reasons a report may have: a kind invented in the app would be
+     refused here, which is the right way round. */
+  ['a kind outside the three is refused',     'denied', B, 0,
+    `insert into feedback(author,kind,body) values ('${B}','whatever','x')`],
+  ['an empty message is refused',             'denied', B, 0,
+    `insert into feedback(author,kind,body) values ('${B}','bug','')`],
+  /* AND NOBODY TAKES ONE OUT. There is no delete policy and no function
+     beside it, which is the whole of the decision: the owner asked to READ
+     them and nothing else, so a road that removes one is a road nobody has
+     decided on. Staff is asked as well as B, because 「staff may not」 is
+     the half that a `report_drop()`-shaped copy would have quietly broken. */
+  ['B cannot edit what B sent',               'denied', B, 0,
+    `update feedback set body='no' where author='${B}'`],
+  ['nor delete it',                           'denied', B, 0,
+    `delete from feedback where author='${B}'`],
+  ['staff cannot edit one',                   'denied', C, 0,
+    `update feedback set body='no'`],
+  ['nor delete one',                          'denied', C, 0,
+    `delete from feedback`],
+
   /* --- a like is yours to give and yours to take back, and nobody else's --- */
   ['B likes A\u2019s post',                    'ok',     B, 0,
     `insert into react(post,actor,kind) values ('${P}','${B}','like')`],
