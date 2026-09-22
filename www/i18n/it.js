@@ -1212,6 +1212,8 @@ defLang('it', (function(){
       "admin.staff"        : "Staff",
       "admin.staff.ph"     : "@nome",
       "admin.staff.add"    : "Aggiungi",
+      "admin.feedback" : "Contatti",
+      "admin.fb.none" : "Ancora niente",
       "post.out"           : "Account sospeso",
       "post.down"          : "Ritirato",
       "post.rules"          : "Rimosso per violazione delle regole",

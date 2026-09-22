@@ -257,6 +257,21 @@ var ADMINS=null, ADMIN_H='';
 
    What comes back carries no bodies: a part's name and a date, which is all
    the operator needs to pick one. netHist() in www/net.js says why. */
+/* ---- what people have said about the app --------------------------------
+   「フォームみたいなの作ってみんなからの意見要望バグとかあればそれを見たい。
+   フォームはアプリ内のadminのページで見れるようにしたい。」 OWNER 2026-09-22.
+
+   A SECTION OF THIS SCREEN AND NOT A SCREEN. It is the queue the operator is
+   already standing in front of, one heading below the reports, and it needs
+   nothing the reports do not already have -- so it is drawn here rather than
+   registered as a route nobody would find twice.
+
+   THREE STATES AND NOT TWO, which is modListHTML()'s lesson one section up:
+   「まだ何も無い」 and 「読めなかった」 do not share a branch. FBK is null
+   until an answer has come; FBK_ERR is what came instead. A failure that drew
+   「まだありません」 would be the screen saying the app has heard from nobody,
+   about a question it never got an answer to. */
+var FBK=null, FBK_ERR='';
 var ADREC=null, ADREC_H='', ADREC_ERR='', ADREC_BUSY=false;
 
 function adminLocked(){ return !ADMIN_OK && netHow()==='email'; }
@@ -322,8 +337,8 @@ function adminLoad(){
        A list that failed to arrive is an empty list and not an error: the
        numbers above it are already up, and one refusal that stops the whole
        screen is a screen that is blank for the wrong reason. */
-    netStaffList(function(rows){ ADMINS=rows; adminAsk(); },
-                 function(){ ADMINS=[]; adminAsk(); });
+    netStaffList(function(rows){ ADMINS=rows; adminFbk(); },
+                 function(){ ADMINS=[]; adminFbk(); });
   },        function(d, st){ ADMIN_BUSY=false; ADMIN_ERR=netWhy(d, st); render(); });
 }
 /* ---- who answers the reports -------------------------------------------
@@ -339,6 +354,42 @@ function adminLoad(){
    screen. It is not asked at all now -- 「lingua内ではみないって言ってるだろ」
    OWNER 2026-09-02 -- so what is left is the reports, which is what this
    screen is for. */
+/* And what people have written in, asked for in the same press as the rest of
+   the screen. A screen with a button for each half is a screen where half of
+   it is out of date and nothing says so -- the sentence adminLoad() above is
+   already built on.
+
+   Unlike the staff list, a refusal here is NOT an empty list: see FBK_ERR at
+   the head of this section. Either way the screen is drawn, because the
+   reports above it are what it is mostly for. */
+function adminFbk(){
+  netFeedbacks(function(rows){ FBK=rows; FBK_ERR=''; adminAsk(); },
+               function(d, st){ FBK=null; FBK_ERR=netWhy(d, st); adminAsk(); });
+}
+/* One thing somebody wrote in. The kind, whose it is and when, then the words.
+   No button: there is nothing to do to one of these from here -- the schema
+   has no delete policy and no report_drop() twin, because 「what happens to
+   one after it has been read」 is not a thing anybody has decided.
+
+   `.fbk` and not `.mrep`: a card with a corner on it is the shape the owner
+   took out 「角丸やめろ」, so this is a row on a line. The reports above keep
+   theirs because they were already there the day the rule was written
+   (tools/box-baseline.txt); nothing new joins them.
+
+   An @ that is not there is drawn as nothing at all. Whoever wrote it has
+   deleted their account (`on delete set null` in supabase/schema.sql), and a
+   blank where a name goes says less than nothing -- there is nobody left to
+   answer. */
+function fbkRow(r){
+  return '<div class="fbk">'+
+    '<div class="mhead">'+
+      '<span class="mwhy">'+esc(t('contact.'+r.kind))+'</span>'+
+      '<span class="mwhen">'+esc(postWhen(r.at))+'</span>'+
+    '</div>'+
+    (r.by? '<div class="mhead"><span class="mby">'+esc('@'+r.by)+'</span></div>' : '')+
+    '<div class="mline">'+esc(r.body)+'</div>'+
+    '</div>';
+}
 function adminAsk(){
   ADMIN_BUSY=false;
   pullGo('mod');
@@ -524,6 +575,12 @@ function vAdmin(){
        screen draws them with -- the rows and the two things that stand in
        their place. */
     modListHTML(rows)+
+    /* AND WHAT PEOPLE HAVE WRITTEN IN, under the reports. 「報告の下に」.
+       A heading like the staff one above it, then the rows newest first. */
+    '<div class="set"><span class="sl">'+esc(t('admin.feedback'))+'</span></div>'+
+    (FBK_ERR? emptyBox(FBK_ERR, '', '', true) : '')+
+    ((!FBK_ERR && FBK && !FBK.length)? emptyBox(t('admin.fb.none')) : '')+
+    (FBK||[]).map(fbkRow).join('')+
     '</div></div>';
 }
 /* Not named vSomething: tools/act-check.mjs reads every `v[A-Z]` in the app

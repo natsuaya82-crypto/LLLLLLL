@@ -1225,6 +1225,8 @@ defLang('ru', (function(){
       "admin.staff"         : "Модераторы",
       "admin.staff.ph"      : "@имя",
       "admin.staff.add"     : "Добавить",
+      "admin.feedback" : "Обратная связь",
+      "admin.fb.none" : "Пока ничего",
       "post.out"            : "Аккаунт заблокирован",
       "post.down"           : "Снято",
       "post.rules"           : "Удалено за нарушение правил",

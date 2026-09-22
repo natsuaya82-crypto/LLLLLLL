@@ -1172,6 +1172,8 @@ defLang('es', (function(){
       "admin.staff"        : "Personal",
       "admin.staff.ph"     : "@usuario",
       "admin.staff.add"    : "Añadir",
+      "admin.feedback" : "Contacto",
+      "admin.fb.none" : "Nada todavía",
       "post.out"           : "Cuenta suspendida",
       "post.down"          : "Retirado",
       "post.rules"          : "Eliminado por incumplir las normas",

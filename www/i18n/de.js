@@ -1201,6 +1201,8 @@ defLang('de', (function(){
       "admin.staff"        : "Team",
       "admin.staff.ph"     : "@Name",
       "admin.staff.add"    : "Hinzufügen",
+      "admin.feedback" : "Kontakt",
+      "admin.fb.none" : "Noch nichts",
       "post.out"           : "Konto gesperrt",
       "post.down"          : "Zurückgezogen",
       "post.rules"          : "Wegen Regelverstoßes entfernt",

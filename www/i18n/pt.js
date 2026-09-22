@@ -1219,6 +1219,8 @@ defLang('pt', (function(){
       "admin.staff"        : "Equipa",
       "admin.staff.ph"     : "@utilizador",
       "admin.staff.add"    : "Adicionar",
+      "admin.feedback" : "Contacto",
+      "admin.fb.none" : "Ainda nada",
       "post.out"           : "Conta suspensa",
       "post.down"          : "Retirado",
       "post.rules"          : "Removido por violar as regras",

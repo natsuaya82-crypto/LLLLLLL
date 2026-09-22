@@ -1387,6 +1387,8 @@ defLang('ko', (function(){
       "admin.staff"        : "운영자",
       "admin.staff.ph"     : "@아이디",
       "admin.staff.add"    : "추가",
+      "admin.feedback" : "문의",
+      "admin.fb.none" : "아직 없습니다",
       "post.out"           : "계정 정지 중",
       "post.down"          : "공개 중지",
       "post.rules"          : "규정 위반으로 삭제되었습니다",

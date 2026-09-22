@@ -1127,6 +1127,8 @@ defLang('en', (function(){
       'admin.staff'       : "Staff",
       'admin.staff.ph'    : "@handle",
       'admin.staff.add'   : "Add",
+      'admin.feedback' : 'Contact',
+      'admin.fb.none' : 'Nothing yet',
       'post.out'          : "Account suspended",
       'post.down'         : "Taken down",
       'post.rules'         : 'Removed for breaking the rules',

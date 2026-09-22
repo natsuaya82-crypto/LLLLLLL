@@ -1446,6 +1446,16 @@ export function halfDone(){
         return vAdmin(); }],
     ['the admin screen', () => { const keep = MODS, keepN = ADMINN, keepS = ADMINS;
         ADMIN_OK = true;
+        /* AND WHAT PEOPLE HAVE WRITTEN IN. Two, because one row cannot show
+           that the newest is on top, and the second carries no @ -- whoever
+           wrote it has deleted their account, which is the one thing about
+           these rows that is drawn by being absent (`on delete set null` in
+           supabase/schema.sql). Two kinds as well, so the word above each is
+           not the same word twice. */
+        FBK = [{ id:2, kind:'bug', by:'veth', at:Date.now()-300000,
+                 body:'キーボードの3行目がずれます' },
+               { id:1, kind:'request', by:'', at:Date.now()-86400000,
+                 body:'文字を並べ替えられるようにしてほしい。' }];
         ADMINN = { people:1284, posts:9130, langs:412, reports:1 };
         /* Two rows and they are not the same row: the one above staff is in
            the list and cannot be taken off it, so it is the one without a

@@ -1128,6 +1128,8 @@ defLang('ja', (function(){
       'admin.staff'       : "スタッフ",
       'admin.staff.ph'    : "@ハンドル",
       'admin.staff.add'   : "追加",
+      'admin.feedback' : 'お問い合わせ',
+      'admin.fb.none' : 'まだありません',
       'post.out'          : "アカウントは凍結中",
       'post.down'         : "公開停止",
       'post.rules'         : 'ポリシー違反により削除されました',

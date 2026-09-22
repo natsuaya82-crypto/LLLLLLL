@@ -3737,6 +3737,36 @@ function netReports(ok, bad){
       ok(out);
     }, bad);
 }
+/* And the other side of THAT -- what people have said about the app, newest
+   first. 「フォームはアプリ内のadminのページで見れるようにしたい。」
+
+   `author(handle)` is read the way netReports() reads it and for the same
+   reason: the column is a foreign key to profile, and somebody who has since
+   deleted their account carries a null there (`on delete set null`), which
+   comes back as an empty handle rather than as a row that cannot be drawn.
+   An @ that is not there is the honest answer -- there is nobody left to
+   reply to.
+
+   Refused for everybody but staff, by the server. A screen that asks this as
+   an ordinary person gets an empty list, not an error, which is why it hangs
+   behind the staff wall in www/mod.js rather than relying on this. */
+function netFeedbacks(ok, bad){
+  if(!netSignedIn()){ bad(null, 0); return; }
+  netGet('/rest/v1/feedback?select=id,kind,body,created_at,author(handle)'+
+         '&order=created_at.desc&limit='+NET_PAGE,
+    function(d){
+      var out=[], i, r, by;
+      for(i=0;i<(d||[]).length;i++){
+        r=d[i]||{}; by=r.author||null;
+        out.push({ id:r.id,
+                   kind:String(r.kind||'opinion'),
+                   body:String(r.body||''),
+                   at:Date.parse(r.created_at) || 0,
+                   by:(by && by.handle) || '' });
+      }
+      ok(out);
+    }, bad);
+}
 /* Down, and back up. Two functions on the server and not an update, so that
    whoever answers the reports cannot rewrite what somebody said -- see the
    foot of supabase/schema.sql. The reason is kept beside the post: a decision

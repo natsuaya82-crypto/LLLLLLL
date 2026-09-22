@@ -1260,6 +1260,8 @@ defLang('fr', (function(){
       "admin.staff"        : "Équipe",
       "admin.staff.ph"     : "@identifiant",
       "admin.staff.add"    : "Ajouter",
+      "admin.feedback" : "Contact",
+      "admin.fb.none" : "Rien pour l’instant",
       "post.out"           : "Compte suspendu",
       "post.down"          : "Retiré",
       "post.rules"          : "Supprimé pour non-respect des règles",

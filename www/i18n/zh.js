@@ -1217,6 +1217,8 @@ defLang('zh', (function(){
       "admin.staff"        : "管理员",
       "admin.staff.ph"     : "@用户名",
       "admin.staff.add"    : "添加",
+      "admin.feedback" : "联系我们",
+      "admin.fb.none" : "还没有",
       "post.out"           : "账号已冻结",
       "post.down"          : "已下架",
       "post.rules"          : "因违反规定已删除",
