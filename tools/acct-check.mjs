@@ -4305,6 +4305,98 @@ const R = await pg.evaluate(async () => {
         '落とす物が無ければ何も出さない（DELETE REVIEW、2026-09-22）');
   }
 
+  /* ---- 84. サインインしていない人の分は、一本も線に乗らない -------------
+     「サーバーは、サインインしていない人には何も返さない」 OWNER 2026-09-22。
+
+     **`netSend` を偽物にしません。**ここで測るのは「アプリが何を送ったか」では
+     なく「**そもそも送ったか**」で、偽の netSend はまさにその一段を飛ばします。
+     なので `XMLHttpRequest.prototype.open` を包んで、実際に開かれた URL を
+     数えます ── netSend1() が握りつぶしたなら、ここには一本も来ません。
+
+     三つ。サインアウトしていれば `/rest/v1/*` は一本も開かれず、断り方は
+     アプリの持っている文（401 →「サインインし直してください」）であること。
+     扉（`email_taken` と `/auth/v1/*`）はサインアウトでも通ること。そして
+     サインインしていれば、どの一本も `Bearer <SESS.at>` を持ち、
+     Authorization に**匿名キーが載らない**こと。
+
+     赤を見た形：`netGet()` の `|| ''` を戻す（サインアウトで GET が出る）。 */
+  {
+    start();
+    const openWas = XMLHttpRequest.prototype.open;
+    const hdrWas = XMLHttpRequest.prototype.setRequestHeader;
+    let opened = [], auth = [];
+    XMLHttpRequest.prototype.open = function (m, u) {
+      opened.push({ m: m, u: String(u) });
+      return openWas.apply(this, arguments);
+    };
+    XMLHttpRequest.prototype.setRequestHeader = function (k, v) {
+      if (String(k).toLowerCase() === 'authorization')
+        auth.push({ u: (opened.length ? opened[opened.length - 1].u : ''), v: String(v) });
+      /* 実際には送りません ── この検査にサーバーは無く、開いたことと、どの
+         鍵で署名しようとしたかだけが要ります。 */
+      return hdrWas.apply(this, arguments);
+    };
+    const rest = () => opened.filter(o => o.u.indexOf('/rest/v1/') >= 0);
+
+    /* サインアウト。読みにいく道を何本か、実際に呼ぶ。 */
+    netOut();
+    opened = []; auth = [];
+    let why84 = null;
+    netGet('/rest/v1/profile?select=prefs&limit=1&id=eq.x',
+           function () { no('84: サインアウトなのに profile が答えた'); },
+           function (d, st, mk) { why84 = netWhy(d, st, mk); });
+    netPrefsPull();
+    netStaff(function () {});
+    netDevicePut('tok');
+    if (rest().length !== 0)
+      no('84: **サインアウトなのに ' + rest().length + ' 本が線に乗った** ── ' +
+         JSON.stringify(rest().map(o => o.u.split('/rest/v1/')[1]).slice(0, 6)) +
+         '。サーバーは断りますが、断られるまで行くこと自体が間違いです');
+    if (why84 !== t('net.session'))
+      no('84: 断り方がアプリの文になっていない ── ' + JSON.stringify(why84) +
+         '（欲しいのは `net.session`「' + t('net.session') + '」。' +
+         '0 は「線が落ちた」で、これは「誰もサインインしていない」）');
+
+    /* 扉は通る ── ここが閉まると、誰も入れなくなります。 */
+    opened = [];
+    netMailTaken('a@example.com', function () {}, function () {});
+    netSignIn('a@example.com', 'pw', function () {}, function () {});
+    if (!opened.some(o => o.u.indexOf('email_taken') >= 0))
+      no('84: **扉が閉まっている** ── email_taken が出ていません。' +
+         '「サインイン」と「新規作成」を出し分けられなくなります');
+    if (!opened.some(o => o.u.indexOf('/auth/v1/') >= 0))
+      no('84: **サインインそのものが出ていない** ── /auth/v1/ が一本も無い');
+
+    /* サインインしていれば、どれも本人の token で。 */
+    arrive(A);
+    opened = []; auth = [];
+    netGet('/rest/v1/profile?select=prefs&limit=1&id=eq.' + A,
+           function () {}, function () {});
+    netDevicePut('tok-84');
+    if (rest().length < 2)
+      no('84: サインインしているのに出ていない ── ' + rest().length + ' 本');
+    const restAuth = auth.filter(a => a.u.indexOf('/rest/v1/') >= 0);
+    for (let i = 0; i < restAuth.length; i++) {
+      if (restAuth[i].v !== 'Bearer ' + SESS.at)
+        no('84: **本人の token で署名していない** ── ' +
+           restAuth[i].u.split('/rest/v1/')[1] + ' が ' +
+           JSON.stringify(restAuth[i].v.slice(0, 24) + '…') +
+           '。匿名キーで行くと、その人の物ではなく誰の物でもない物を訊いたことに' +
+           'なります');
+    }
+    if (restAuth.length !== rest().length)
+      no('84: Authorization の付いていない道がある ── ' + rest().length +
+         ' 本のうち ' + restAuth.length + ' 本にしか付いていない');
+
+    XMLHttpRequest.prototype.open = openWas;
+    XMLHttpRequest.prototype.setRequestHeader = hdrWas;
+    start();
+    say('84: サインインしていなければ `/rest/v1/*` は一本も線に乗らない ── ' +
+        '断りはアプリの文（`net.session`）、扉（`email_taken` と `/auth/v1/*`）は' +
+        '通る、そしてサインインしていればどの一本も `Bearer <SESS.at>` で、' +
+        '匿名キーは Authorization に載らない（OWNER 2026-09-22）');
+  }
+
   return out;
 });
 

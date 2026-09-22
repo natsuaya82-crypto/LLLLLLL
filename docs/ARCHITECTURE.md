@@ -106,6 +106,27 @@ once. What it answered today: `profile`, `post`, `follow`, `block`, `report`,
 two copies together through `www/sync.js`, and **`boot.js` calls it on
 launch**. `quote` and `publication` really are still unused.
 
+**And every one of them goes out as somebody.** 「サーバーは、サインインして
+いない人には何も返さない」 OWNER 2026-09-22. `netSend1()` (`www/net.js`) is the
+one window, so it is the one place that asks: with no token the request is not
+sent at all, and `bad` runs with **401**, which is `netWhy()`'s
+「サインインし直してください」. 401 rather than 0 because 0 is 「the wire」 and
+this never touched one — two states, two answers.
+
+**THE DOOR IS THE EXCEPTION AND IT IS ONE LIST**, `netDoor()`, beside that
+function: `/auth/v1/*` (signing in, signing up, the six-digit code, the
+forgotten password, the hour running out) and `/rest/v1/rpc/email_taken`
+(whether an address already has an account — without it the door cannot tell
+「sign in」 from 「sign up」). Nothing else. Read `netDoor()` rather than this
+sentence; a road added to it is a road anybody can walk.
+
+This closed something that had been open since the beginning: `netGet()` handed
+`''` whenever there was no session, the header falls back to the publishable
+key, and the reading policies were `using (true)` — so signed out, every read
+in this app went to the server as `anon` and was **answered**. Nothing threw,
+every screenshot was right, and it was true for as long as the only person
+looking was the one holding the phone.
+
 So, the order:
 
 ```

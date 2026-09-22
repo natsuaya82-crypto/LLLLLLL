@@ -287,7 +287,63 @@ function netSpin(on){
 function netSend(method, path, body, tok, ok, bad, up){
   netSend1(method, path, body, tok, ok, bad, up, true);
 }
+/* ---- THE DOOR, AND IT IS THE ONLY THING THAT GOES OUT WITH NOBODY ON IT ---
+   「サーバーは、サインインしていない人には何も返さない」 OWNER 2026-09-22.
+
+   Everything this app holds is somebody's, so everything it asks for is asked
+   as somebody. The ways IN are the exception and they have to be: a person who
+   is not signed in yet is exactly who uses them.
+
+     /auth/v1/*                 signing in, signing up, the six-digit code,
+                                the forgotten password, and the hour running
+                                out. Supabase's own endpoints, which take the
+                                anon key because there is nothing else to take.
+     /rest/v1/rpc/email_taken   THE DOOR itself -- whether an address already
+                                has an account, asked while somebody is typing
+                                one. A single boolean about an address the
+                                person already has in front of them; without it
+                                the door cannot tell 「sign in」 from
+                                「sign up」.
+
+   ONE LIST, HERE, beside the one window. Every other road in this file --
+   every table, every rpc, every bucket -- goes out with the person's own token
+   or does not go out at all.
+
+   The second is still the owner's to remove; until they say so it works, and
+   it is named here rather than being a condition somewhere else, so that
+   removing it is deleting one line. */
+function netDoor(path){
+  var p=String(path||'');
+  return p.indexOf('/auth/v1/')===0 ||
+         p.indexOf('/rest/v1/rpc/email_taken')===0;
+}
 function netSend1(method, path, body, tok, ok, bad, up, may){
+  /* NOTHING GOES OUT WITH NOBODY ON IT.
+     -----------------------------------------------------------------------
+     It used to. The Authorization header below falls back to the anon key
+     when there is no token, and netGet() handed it `''` whenever there was no
+     session -- so signed out, every GET in this app went to the server as
+     `anon` and was ANSWERED, because the reading policies were `using (true)`.
+     The server side of this sentence closes those; this side stops asking.
+
+     REFUSED HERE AND NOWHERE ELSE, which is the whole reason it is in this
+     function rather than at the call sites: netSend1() is the one window onto
+     the server (CLAUDE.md § Layout), so one line here is every road at once,
+     and a caller that would forget cannot.
+
+     **401 AND NOT 0.** Status 0 is 「the wire」 and this never touched one.
+     This is 「there is nobody signed in」 -- which is exactly what the server
+     would have answered -- and netWhy() already has the sentence for it,
+     「サインインし直してください」. Two states, two answers, and neither of
+     them is invented here.
+
+     `bad` is asked for rather than assumed: several callers hand in a function
+     that does nothing, and a road that hands in none at all would die on this
+     line instead of being refused. */
+  if(!tok && !netDoor(path)){
+    if(bad) bad(null, 401, netTag(path)+' −');
+    return;
+  }
   /* Whether this went out as the person, asked now rather than when the
      answer comes back. */
   var mine=!!(tok && SESS && tok===SESS.at);
@@ -297,8 +353,11 @@ function netSend1(method, path, body, tok, ok, bad, up, may){
   x.timeout=NET_WAIT;
   x.setRequestHeader('apikey', SB_KEY);
   if(body) x.setRequestHeader('Content-Type', 'application/json');
-  /* Signed in, this is the person; signed out, it is the key again, which is
-     what PostgREST expects and how the anon role is reached. */
+  /* This is the person. The key is what is left when there is no token, and
+     since the line above there is exactly one kind of request that reaches
+     here without one: the door. 「signed out, it is the key again」 is what
+     this said until 2026-09-22 and it described the whole app -- every GET
+     went out as `anon`. Now it describes netDoor() and nothing else. */
   x.setRequestHeader('Authorization', 'Bearer '+(tok || SB_KEY));
   /* PostgREST answers an insert with 201 and an empty body unless it is asked
      not to. Asked here, once, for every write to a table -- rather than at the
@@ -365,11 +424,15 @@ function netSend1(method, path, body, tok, ok, bad, up, may){
 function netPost(path, body, tok, ok, bad){
   netSend('POST', path, body||{}, tok, ok, bad);
 }
-/* Reading is signed where there is a session and open where there is not:
-   profile_read in schema.sql is `using (true)`, because a handle has to be
-   checkable by somebody who does not have an account yet. */
+/* Reading is signed, and there is no 「open where there is not」 any more.
+   This said the opposite until 2026-09-22 -- `|| ''` -- and the sentence over
+   it named `profile_read` being `using (true)` as the reason. That is the
+   thing that closed (OWNER 2026-09-22): nothing on the server is readable
+   without a sign-in, so a GET with no session is a request that would be
+   refused, and netSend1() above does not send it. What the door needs is
+   `email_taken`, which is named in netDoor() with the rest of the door. */
 function netGet(path, ok, bad){
-  netSend('GET', path, null, (SESS && SESS.at) || '', ok, bad);
+  netSend('GET', path, null, SESS && SESS.at, ok, bad);
 }
 
 /* What Supabase says when it refuses, in the person's language where we have
@@ -970,9 +1033,12 @@ function netResume(ok, bad){
    reset face sent somebody to wait for a code that was never sent.
 
    supabase/schema.sql § email_taken() is what answers, and the comment there
-   says what it costs. Signed out, so the publishable key is what carries it. */
+   says what it costs. Signed out, so the publishable key is what carries it --
+   `null` rather than `''` since 2026-09-22, because no token at all is what
+   this is and an empty string was a token-shaped way of saying it. It is the
+   one rpc netDoor() names; everything else in this file goes out signed. */
 function netMailTaken(email, ok, bad){
-  netSend('POST', '/rest/v1/rpc/email_taken', {p:String(email||'')}, '',
+  netSend('POST', '/rest/v1/rpc/email_taken', {p:String(email||'')}, null,
           function(d){ ok(d===true || d==='true'); }, bad);
 }
 function netMailOtp(email, ok, bad){
