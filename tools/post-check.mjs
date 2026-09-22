@@ -1969,6 +1969,60 @@ const R = await pg.evaluate(async () => {
                  (lifted - flat) + ' in the page instead of 40, so it is no ' +
                  'longer on the keyboard while the page is held up');
 
+    /* ---- AND THE FOOT OF THE COLUMN IS STILL ON THE SCREEN -------------
+       「ここ入力しようとするとすぐバグるんだけどなんで？」 OWNER 2026-09-22,
+       two photographs of 新しい投稿 on build 162 with the Japanese keyboard
+       up. In the first -- the composer as it opens -- the line, the meaning,
+       the tag and the row of tools are all there. In the second, taken after
+       the owner's own tap on the line field, the caret is in the field and
+       EVERYTHING under it is gone: no meaning, no tag, black down to the
+       keyboard.
+
+       The composer auto-focuses with `preventScroll` (pwKeepKb), so the frame
+       it opens on is `offsetTop 0` and correct. A TAP goes through iOS's own
+       focus scroll instead, and that is the state nothing here had ever
+       rendered: the claim above drives offsetTop to 40 and asks only where
+       the ROW is. Nothing asked where the COLUMN went.
+
+       Measured, 390x844, a 380pt keyboard, sweeping offsetTop:
+
+         offsetTop      0    20    40    60    80   120   200
+         visible ends 464   484   504   524   544   584   664
+         pw-mn ends   350   390   430   470   510   590   750
+
+       The window comes down by N and the foot of the column comes down by
+       TWO N, so they cross: past 114 the meaning is under the keyboard, and
+       the tag with it. `.view.fit` is `top:var(--vvtop)` and `height:100dvh`
+       -- pinned to the visible part and a WHOLE PAGE tall -- so the box hangs
+       exactly `--vvtop` past the foot of the page, and everything laid out
+       against its foot hangs with it. Nothing throws, nothing is blank, and
+       on the frame the screen opens it is all correct.
+
+       Asked of the MEANING and not of the box, because the box being the
+       wrong height is the cause and what somebody loses is the row they were
+       about to write in. */
+    {
+      const seenAt = [];
+      [0, 40, 80, 120, 200].forEach((N) => {
+        fake.height = window.innerHeight - KB; fake.offsetTop = N; vvFit();
+        const e = document.getElementById('pw-mn');
+        if (!e) return;
+        const bot = Math.round(e.getBoundingClientRect().bottom);
+        const visBot = N + (window.innerHeight - KB);
+        if (bot > visBot) seenAt.push(N + ' (it ends at ' + bot +
+          ', the keyboard begins at ' + visBot + ')');
+      });
+      if (seenAt.length)
+        fails.push('iOS lifted the page to clear the focused field and the ' +
+          'meaning went under the keyboard with it, at offsetTop ' +
+          seenAt.join(', ') + '. The composer is pinned to the visible part ' +
+          '(top:var(--vvtop)) and is a whole page tall (height:100dvh), so ' +
+          'it overhangs the foot by exactly --vvtop and the foot of the ' +
+          'column -- the meaning, the tags -- goes under the keyboard. The ' +
+          'one line is .view.fit height, at the r4-sns block in ' +
+          'www/index.html: height:calc(100dvh - var(--vvtop, 0px))');
+    }
+
     if (real) Object.defineProperty(window, 'visualViewport', real);
     else delete window.visualViewport;
     const f = field(); if (f) f.blur();
