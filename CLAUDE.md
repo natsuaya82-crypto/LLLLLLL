@@ -569,14 +569,23 @@ run on a laptop in an airport. Run it whenever `supabase/schema.sql` changes —
 that is the only time it can start failing.
 
 The phone talks to Supabase directly; there is no server of ours in front of
-it, so the app is a suggestion and the row level security in `schema.sql` is
-the whole of the security. A policy that is too wide breaks nothing: nothing
-throws, every screenshot is right, and `npm test` is green, because there is
-only ever one person in a test. So `rls-check` is a second person — it applies
-`schema.sql` unchanged to an empty database and then tries, as B and as
-somebody with no account, to do every one of the things the file says cannot be
-done -- `CASES` in `tools/rls-check.mjs` is that list, and the run prints how
-many it tried. Count them off there.
+it, so the app is a suggestion and `schema.sql` is the whole of the security —
+in **two walls that answer two different questions**. The **grants** say
+whether you are anybody at all: `anon`, which is what a request carrying
+nothing but the publishable key arrives as, holds nothing — not a table, not a
+view, not a function, not a sequence, not a bucket, and nothing made tomorrow
+either. 「サインインがない状態でできることがないはず」 OWNER 2026-09-22, and
+one name is open by their decision (`email_taken`, asked at the door before an
+account exists). The **policies** then say which of the signed-in may touch
+which row; `using (true)` there means 「every signed-in person」 and is not a
+hole. A policy that is too wide breaks nothing: nothing throws, every
+screenshot is right, and `npm test` is green, because there is only ever one
+person in a test. So `rls-check` is a second person — it applies `schema.sql`
+unchanged to an empty database and then tries, as B, as an anonymous session,
+and as `anon` with no claims at all, to do every one of the things the file
+says cannot be done -- `CASES` in `tools/rls-check.mjs` is that list, and the
+run prints how many it tried, and how many relations, functions and buckets
+`anon` was refused. Count them off there.
 Adding a policy means adding the line somebody would use against it.
 
 ## The twenty-two rules the gate enforces

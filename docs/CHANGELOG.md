@@ -15,6 +15,62 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-22 サインインしていない人には、このサーバーに一つも無い ── **貯まる物は何も変わらず、読める物が変わります**
+
+**オーナーの決定（2026-09-22）**：「ちがう。そもそもサインインがない状態で
+できることがないはずなのにそれがあることを疑って言ってんの。小さい穴だけ潰しても
+意味ねえだろ、大きいカバーで覆えやバカ」
+
+**貯まる物・消える物は一つも変わりません。**表も列も行も一バイトも動きません。
+変わるのは**誰が触れるか**だけです。
+
+**今まで、サインインしていない人に出来たこと。**アプリが持っている publishable
+キーは `www/net.js` に公開で置いてあります（そういう鍵です）。それだけで ──
+
+| | |
+|---|---|
+| 読めた | 全員の profile（@・表示名・顔・自己紹介・場所・リンク）、全部の投稿、全部の返信、全部のいいねとリポスト、誰が誰をフォローしているか、公開された言語とその slice、そして四つの view（`profile_seen` `post_seen` `follow_seen` `language_seen`） |
+| 呼べた | `feed_hot()`（おすすめのタイムラインそのもの）、`feed_fo()`、`language_took()`、`email_taken()`、そして **public の函数 69 本**（PostgreSQL は新しい函数の EXECUTE を PUBLIC に渡し、PUBLIC は anon を含みます） |
+| 取れた | **`post-media` の写真と声、全部。**バケットが `public = true` だったので、URL を知っていれば policy は一度も見られません |
+| これから作る物も | `alter default privileges` の登録が三つ立っていたので、**明日足す表も自動で同じ状態**になるところでした |
+
+数えたのは 2026-09-22、`tools/rls-check.mjs`（塞ぐ前に赤を見た実測）：
+**relation 24・函数 69・sequence 5・storage の表 2・公開バケット 2・標準権限 3。**
+
+**今は一つもありません。**`supabase/schema.sql` の一番最後に一塊。**表も函数も
+名指ししません** ── 明日足す表は明日そこに入ります。手で書いた一覧が漏れるのが
+この穴の作られ方でした。
+
+- `revoke all on all tables / sequences / functions in schema public from anon`
+- **函数は `from public` も剥がします** ── `from anon` だけでは届きません
+  （PUBLIC は anon を含む）。`to authenticated` で戻しますが、PUBLIC は既に
+  authenticated を含んでいたので**広げてはいません**。
+- `alter default privileges … revoke`（今の役割ぶんは目録から読んで回す）
+- storage の表も `from anon`
+- **バケットは全部 private に。**公開バケットは policy を一度も見ない URL です。
+- `media_read` は `is_member()` を訊きます（今までは `bucket_id` だけ）。
+
+**`using (true)` の policy は一行も書き換えていません。**あれは「サインインした
+人の中で誰が」を言う層で、anon が policy まで届かなくなった今、穴ではありません。
+同じ事を二箇所で言わせない（`CLAUDE.md` § Simple）。
+
+**一つだけ開けてあります** ── `email_taken()`。**OWNER DECISION 2026-09-22
+「判断だけどこれは例外で」。**扉で、アカウントが出来る前に訊くものなので、訊く人に
+セッションはありません。数えずに名指ししてあります（数える例外は増えます）。
+
+**アプリ側に効きます。**サインインしていない画面からサーバーを読む道は、これで
+全部断られます ── `www/net.js` の注記が「the recommended timeline works with the
+publishable key alone」と書いている所が該当します。`CLAUDE.md` は既に
+「Reading the timeline and posting to it both need an account now」と言っていて、
+サーバーがそれに追いついた形です。**写真は今後セッションの token で取ります**
+（端末側は r48）。
+
+押さえる check は `npm run rls` ── 目録からの列挙（数えるだけで一覧を持たない）と、
+**本当の `anon` ロール**で押す 16 本。後者はこの file 自身の穴で、頭に
+「as somebody with no account at all」と書きながら、`_chk()` が常に
+`authenticated` を被せていたので「no account」は匿名セッションの意味しか
+ありませんでした。
+
 ### 2026-09-22 ネイティブ通知（サーバー側）── **新しく貯まる物：サーバーの表 `device`**／**DELETE REVIEW：410 が返った token**
 
 **オーナーの決定（2026-09-22）**：「通知作ろう。アップルのネイティブ通知で、

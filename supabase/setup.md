@@ -68,10 +68,30 @@ https://raw.githubusercontent.com/natsuaya82-crypto/LLLLLLL/master/supabase/sche
 
 `Success. No rows returned` が出れば通っています。
 
+### 2026-09-22 以降、**もう一度流し直してください**
+
+この日、**サインインしていない人からサーバーを全部隠しました**（オーナーの決定
+「そもそもサインインがない状態でできることがないはずなのにそれがあることを疑って
+言ってんの。小さい穴だけ潰しても意味ねえだろ、大きいカバーで覆えやバカ」）。
+
+それまで、アプリが持っている publishable キーだけで、**全員の profile、全部の
+投稿といいねとフォロー、公開された言語、四つの view、公開の函数 69 本、そして
+`post-media` の写真と声が全部**読めました。今は一つもありません。
+
+**`post-media` は private になります。**流したあと、Storage の画面でそこが
+**Public ではなくなっている**ことを見てください。今まで URL だけで開けた写真は、
+これからセッションの token が要ります。
+
+**開いているのは `email_taken()` 一つだけ**です（扉で、アカウントが出来る前に
+訊くもの。OWNER DECISION 2026-09-22「判断だけどこれは例外で」）。
+
+**流し直すまで、サーバーは今までどおり誰にでも答えます。**
+
 ### 流したあとに見るところ
 
 | 見る場所 | あるべきもの |
 |---|---|
+| Storage → `post-media` | **Public ではない**（2026-09-22 から） |
 | Table Editor | `profile` `language` `publication` `prompt` `post` `quote` `react` `follow` の8つ |
 | Table Editor → `post` | 列に `reply_to` がある |
 | Table Editor → `profile` | 列に `av` がある |

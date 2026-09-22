@@ -84,6 +84,29 @@
   違えば何もしない（`push.mjs` の `pushPlan`、`push-check` が押さえる）。
 - publishable キーもここで止まる ── あの鍵に user の `sub` は無い。
 
+## オーナーの決定（2026-09-22、三つ目）── 大きいカバー
+
+「ちがう。そもそもサインインがない状態でできることがないはずなのにそれがある
+ことを疑って言ってんの。小さい穴だけ潰しても意味ねえだろ、大きいカバーで覆えや
+バカ」
+
+**このサーバーには、サインインしていない人に答える物が一つもありません。**
+表も view も函数も sequence もバケットも。`supabase/schema.sql` の最後に一塊で、
+**表も函数も名指ししません**（明日足す表は明日そこに入る）。
+
+塞ぐ前に測った穴（`npm run rls`、赤）：**relation 24・函数 69・sequence 5・
+storage の表 2・公開バケット 2・標準権限の登録 3。**
+
+- 函数は `from anon` だけでは届かない ── PostgreSQL は EXECUTE を PUBLIC に
+  渡し、PUBLIC は anon を含む。`from public` も剥がして `to authenticated` で
+  戻す（PUBLIC は既に authenticated を含んでいたので広げていない）。
+- バケットは全部 private（公開バケットは policy を一度も見ない URL）。
+  `media_read` は `is_member()`。
+- `using (true)` の policy は一行も書き換えない ── あれは「サインインした人の
+  中で誰が」を言う層。
+- **一つだけ開けてある**：`email_taken()`、OWNER DECISION 2026-09-22
+  「判断だけどこれは例外で」。数えずに名指し。
+
 **決めていないので作っていない物**（変わらず）：通知の履歴・未読数のバッジ・
 メール・Android。
 
@@ -157,6 +180,51 @@ Vault には行っていません（それはオーナーの手順になるの�
 いなければ**通知が一通も出ません**（送る資格が無いので黙って終わる ── 安全な側に
 倒れます）。見どころは `supabase/setup.md` § 12 の表に足しました。
 
+### 三周目（大きいカバー）── 赤と、リーダーへ一つ
+
+```
+カバーを外して走らせた赤（本当の anon ロールで押した分）
+  FAIL  somebody with no account reads no profile   ok
+  FAIL  nor any post                                ok
+  FAIL  nor who follows whom                        ok
+  FAIL  nor a like                                  ok
+  FAIL  nor a published language                    ok
+  FAIL  nor a slice of one                          ok
+  FAIL  nor through any of the four views           ok
+  FAIL  nor the timeline's                          ok
+目録からの列挙
+  FAIL  nothing signed out may touch any table or view      24
+  FAIL  nothing signed out may run any function ...          69
+  FAIL  nothing signed out may touch any sequence             5
+  FAIL  nothing signed out may touch the files                2
+  FAIL  no bucket answers without a session                   2
+  FAIL  and the files are only read by somebody signed in     1
+  FAIL  and a table made tomorrow is refused too              3
+anon: 24 relations, 69 functions, 2 buckets -- NOT all refused
+```
+
+緑：`anon: 24 relations, 69 functions, 2 buckets -- all refused
+(1 allowed by name: email_taken)`、`rls: 420 attempts / 73 shape`。
+
+**リーダーへ ── case 284 は `denied` にしていません。理由は一行です。**
+この file の `anon` の欄は **匿名アカウント**（役割は `authenticated`、`sub` も
+JWT もある）で、**`anon` ロールではありませんでした。**だから 284
+（`nobody signed in reads profiles`）はカバーを入れても緑のままです ── それを
+`denied` にするには `profile_read` ほか六つの `using (true)` を書き換えるしか
+なく、同じ指示が「`using (true)` は そのまま」と言っています。**両方は立ちません。**
+
+やったのは、**本当の「誰でもない人」を初めて押すこと**です（16 本、上の赤）。
+匿名アカウントの側は今までどおり `is_member()` が書き込みを断り、読みは
+`using (true)` のまま ── Supabase の匿名サインインは Dashboard で OFF のままで、
+`supabase/setup.md` § 1 がそう書いています。**匿名アカウントの読みまで閉じるかは
+決めごとなので、閉じていません。**
+
+**もう一つ、触った所を申告します。**`CLAUDE.md` の「the row level security in
+`schema.sql` is the whole of the security」は**今日から嘘**になったので、二層の
+書き方に直しました（§ The gate）。`CLAUDE.md` は私の scope ではありませんが、
+「a change lands with every sentence it falsifies, wherever it lives」に従って
+同じ commit に入れています。**要らなければ戻してください。**
+
 ### 指示と違えた所 ── 二つ、どちらも一行
 
 1. **`supabase/setup.md` は § 13 ではなく § 12。**あのファイルの一番下が § 11
@@ -229,12 +297,14 @@ rls c  pg_net を外す            → FAIL 三本＋道の三本、**404 attemp
 
 ### rls の数
 
-`npm run rls` ── **404 attempts / 64 shape、緑**（`integ-0905` 取り込み後、扉を
-閉じたあと。この session の前は 385 / 55）。`npm run push` ── **100 claims**。
+`npm run rls` ── **420 attempts / 73 shape、緑**、そして
+`anon: 24 relations, 69 functions, 2 buckets -- all refused
+(1 allowed by name: email_taken)`。この session の前は 385 / 55。
+`npm run push` ── **100 claims**。
 
 ### 回した check
 
-`npm run push`（100 本）・`npm run rls`（404 / 64）・`npm run assets`・
+`npm run push`（100 本）・`npm run rls`（420 / 73）・`npm run assets`・
 `npm run docs`。**ゲート（`npm test`）は回していません** ── リーダーの物。
 
 ### やっていないこと

@@ -5,10 +5,18 @@
 
    Supabase has no server of ours in front of it. The phone talks to the
    database directly, which means anybody can send it any request they like --
-   the app is a suggestion, not a gate. The only thing standing between a
-   stranger and somebody's language is the row level security in
-   supabase/schema.sql: a paragraph of policies saying, row by row, who may
-   read and who may write.
+   the app is a suggestion, not a gate. What stands between a stranger and
+   somebody's language is supabase/schema.sql, and it is TWO WALLS answering
+   two different questions:
+
+     the grants   are you anybody at all. Since 2026-09-22 `anon` -- which is
+       what a request carrying nothing but the publishable key arrives as --
+       holds nothing: not a table, not a view, not a function, not a
+       sequence, not a bucket. One name is open by the owner's decision
+       (`email_taken`, asked at the door before an account exists).
+     the policies  which of the signed-in may touch which row. `using (true)`
+       means 「every signed-in person」 and is not a hole; it was one only
+       while anon could get as far as a policy.
 
    That is the whole of the security of this app, and it is the one part of it
    that is invisible. A policy that is too wide breaks nothing. Nothing throws,
@@ -18,8 +26,11 @@
 
    So this file is not a test of the schema. It is a second person. It stands
    up a real PostgreSQL, applies schema.sql to it unchanged, and then tries --
-   as B, and as somebody with no account at all -- to do every single thing to
-   A that the file promises cannot be done. A "denied" is either refusal the
+   as B, as an anonymous SESSION, and as the `anon` role with no claims at all
+   -- to do every single thing to A that the file promises cannot be done.
+   Those last two are not the same caller and the difference cost this file
+   its own heading for weeks: 「somebody with no account」 meant an anonymous
+   session here, with a `sub` and a role, until 2026-09-22. A "denied" is either refusal the
    database can make: an error when writing a row the policy forbids, or zero
    rows when reading or changing rows the policy hides. Both are wins; the
    distinction is printed because a claim that passes for the wrong reason is
