@@ -55,11 +55,8 @@
         no name, so the press fell to the post around it and opened the
         thread (OWNER 実機 2026-09-11)
 
-    20  a roman line in a VERTICAL field lies on its side and runs down one
-        column -- placeholder and typed line both. Stacked a letter at a time
-        it folds into a second column, which is what OWNER 実機 142
-        photographed. And the composer answering somebody is the SAME composer
-        as the one writing a new post, element for element
+    20  the composer answering somebody is the SAME composer as the one
+        writing a new post, element for element
 
     18  THE FACE IS DECIDED ONCE. 「最初の文字になるのはいいけど、それはオン
         ボーディングを通ってかいたもじだけで、それ以降は勝手に変えないで」
@@ -1969,60 +1966,90 @@ const R = await pg.evaluate(async () => {
                  (lifted - flat) + ' in the page instead of 40, so it is no ' +
                  'longer on the keyboard while the page is held up');
 
-    /* ---- AND THE FOOT OF THE COLUMN IS STILL ON THE SCREEN -------------
-       「ここ入力しようとするとすぐバグるんだけどなんで？」 OWNER 2026-09-22,
-       two photographs of 新しい投稿 on build 162 with the Japanese keyboard
-       up. In the first -- the composer as it opens -- the line, the meaning,
-       the tag and the row of tools are all there. In the second, taken after
-       the owner's own tap on the line field, the caret is in the field and
-       EVERYTHING under it is gone: no meaning, no tag, black down to the
-       keyboard.
+    /* ---- NOTHING ON THE COMPOSER MOVES WHEN THE FIELD IS TAPPED --------
+       「そもそも画面はスクロールできないようにして欲しいんだけど、そうすれば
+       ズレすら無くなるはずなのになんで？」「キーボードはそこで止める。入力
+       位置もタップしても動かないそれでいいやん。」 OWNER 2026-09-22, after
+       two photographs of 新しい投稿 on build 162: the composer as it opens,
+       and the same screen after the owner's own tap on the line field, with
+       everything under the field gone.
 
-       The composer auto-focuses with `preventScroll` (pwKeepKb), so the frame
-       it opens on is `offsetTop 0` and correct. A TAP goes through iOS's own
-       focus scroll instead, and that is the state nothing here had ever
-       rendered: the claim above drives offsetTop to 40 and asks only where
-       the ROW is. Nothing asked where the COLUMN went.
+       THE ANSWER TO 「なんで？」 IS THAT THE DOCUMENT WAS ALREADY LOCKED AND
+       THE THING THAT MOVES IS NOT THE DOCUMENT. `html.fitlock` puts
+       `overflow:hidden` on the page while a one-screen form is open
+       (shell.js § tabPaint), and that is what stopped the drag. A TAP is not
+       a drag: WebKit lifts the LAYOUT VIEWPORT to reveal the field it has
+       just focused, `overflow:hidden` does not forbid that, and nothing in
+       JavaScript can refuse it -- `preventScroll` is an option on a
+       programmatic focus (pwKeepKb, which is why the screen it OPENS on is
+       right), and a finger on a textarea does not go through it.
 
-       Measured, 390x844, a 380pt keyboard, sweeping offsetTop:
+       So the screen is held still by being pinned to the part that can be
+       SEEN: `.view.fit` is `position:fixed` at `top:var(--vvtop)`, and
+       `--vvtop` is that lift. What was missing is that the box's HEIGHT
+       belonged to the same sentence -- it was `100dvh`, a whole page, while
+       starting `--vvtop` down the page -- so the box hung exactly `--vvtop`
+       past the foot and everything laid out against that foot hung with it.
+       Measured, 390x844, a 380pt keyboard: the visible window came down by N
+       and the meaning came down by 2N, and past N=114 it was under the
+       keyboard, the tags with it.
 
-         offsetTop      0    20    40    60    80   120   200
-         visible ends 464   484   504   524   544   584   664
-         pw-mn ends   350   390   430   470   510   590   750
+       ASKED IN SCREEN COORDINATES, which is the only frame the owner is in.
+       A rect in the page is not an answer: the page is what moved. What has
+       to hold still is where a thing sits inside the part you can see, so
+       every reading here has the lift taken out of it.
 
-       The window comes down by N and the foot of the column comes down by
-       TWO N, so they cross: past 114 the meaning is under the keyboard, and
-       the tag with it. `.view.fit` is `top:var(--vvtop)` and `height:100dvh`
-       -- pinned to the visible part and a WHOLE PAGE tall -- so the box hangs
-       exactly `--vvtop` past the foot of the page, and everything laid out
-       against its foot hangs with it. Nothing throws, nothing is blank, and
-       on the frame the screen opens it is all correct.
-
-       Asked of the MEANING and not of the box, because the box being the
-       wrong height is the cause and what somebody loses is the row they were
-       about to write in. */
+       Asked of the FIELD, the BAR and the MEANING together: the field alone
+       staying put is what the broken screen already did -- iOS lifts the page
+       precisely so the focused field does not move -- so a check on it alone
+       would have been green with the bug in. */
     {
-      const seenAt = [];
-      [0, 40, 80, 120, 200].forEach((N) => {
-        fake.height = window.innerHeight - KB; fake.offsetTop = N; vvFit();
-        const e = document.getElementById('pw-mn');
-        if (!e) return;
-        const bot = Math.round(e.getBoundingClientRect().bottom);
-        const visBot = N + (window.innerHeight - KB);
-        if (bot > visBot) seenAt.push(N + ' (it ends at ' + bot +
-          ', the keyboard begins at ' + visBot + ')');
-      });
-      if (seenAt.length)
-        fails.push('iOS lifted the page to clear the focused field and the ' +
-          'meaning went under the keyboard with it, at offsetTop ' +
-          seenAt.join(', ') + '. The composer is pinned to the visible part ' +
-          '(top:var(--vvtop)) and is a whole page tall (height:100dvh), so ' +
-          'it overhangs the foot by exactly --vvtop and the foot of the ' +
-          'column -- the meaning, the tags -- goes under the keyboard. The ' +
-          'one line is .view.fit height, at the r4-sns block in ' +
-          'www/index.html: height:calc(100dvh - var(--vvtop, 0px))');
-    }
+      const lift = (sel) => {
+        const e = sel.charAt(0) === '#' ? document.getElementById(sel.slice(1))
+                                        : document.querySelector(sel);
+        if (!e) return null;
+        const r = e.getBoundingClientRect();
+        /* the page's own lift taken out: where it sits on the SCREEN */
+        return Math.round(r.top) - fake.offsetTop;
+      };
+      const read = () => ({ ln: lift('#pw-ln'), mn: lift('#pw-mn'),
+                            bar: lift('.pwbar') });
 
+      PW = pwBlank(); openPost(); render();
+      fake.height = window.innerHeight - KB; fake.offsetTop = 0; vvFit();
+      const before = read();
+      Object.keys(before).forEach((k) => {
+        if (before[k] === null)
+          fails.push('the composer drew no ' + k + ' to measure, so the ' +
+            'claim that it does not move is about nothing');
+      });
+      /* every lift a tap can produce, not one: WebKit hands over a different
+         number for a different field and a different keyboard, and a screen
+         that holds still at 40 and not at 200 is a screen that moves. */
+      [20, 40, 80, 120, 200, 300].forEach((N) => {
+        fake.offsetTop = N; vvFit();
+        const now = read();
+        Object.keys(before).forEach((k) => {
+          if (before[k] === null || now[k] === null) return;
+          if (now[k] !== before[k])
+            fails.push('iOS lifted the page ' + N + 'px to reveal the field ' +
+              'and the ' + k + ' moved ' + (now[k] - before[k]) + 'px on the ' +
+              'screen (' + before[k] + ' -> ' + now[k] + '). Nothing on the ' +
+              'composer may move when the field is tapped. 「入力位置も' +
+              'タップしても動かない」 OWNER 2026-09-22. .view.fit is pinned ' +
+              'to var(--vvtop) and has to be the page LESS that lift: ' +
+              'height:calc(100dvh - var(--vvtop, 0px))');
+        });
+      });
+      fake.offsetTop = 0; vvFit();
+      /* and the document itself never scrolled -- html.fitlock, the half that
+         was already there and is not the half that was broken. */
+      const st = document.scrollingElement ? document.scrollingElement.scrollTop : 0;
+      if (st !== 0)
+        fails.push('the document under the composer scrolled to ' + st +
+          '. A one-screen form locks the page (html.fitlock), so nothing ' +
+          'there may move at all');
+    }
     if (real) Object.defineProperty(window, 'visualViewport', real);
     else delete window.visualViewport;
     const f = field(); if (f) f.blur();
@@ -3161,46 +3188,22 @@ const R = await pg.evaluate(async () => {
     try { closeSheet(); } catch (e) {}
   }
 
-  /* ---- 20. 縦書きの欄と、返信の欄 -------------------------------------
-     OWNER 実機 142（2026-09-07、写真つき）。英語のUIで縦書きの投稿画面を
-     開くと、欄の placeholder が一字ずつ縦に積まれ、二列目に折れて切れて
-     いました。ローマ字は横に倒して一列に、日本語は立てたまま。
+  /* ---- 20. 返信の欄は、新規の欄と同じ一本 -----------------------------
+     新規と同じ pwHTML() が描いているという主張です。第二の機構が生えたら
+     ここが赤くなります ── 引用の投稿（.pwqs）は `.pwscroll` の外にあるので、
+     中身は新規と一文字も違いません。
 
-     二つ訊きます。
-
-     一つ目は本物の欄そのものに訊きます。長いローマ字を入れた欄が、一文字
-     だけ入れた欄より広くない ── 縦書きでは幅が「列がどこまで来たか」なので、
-     広くなったならそれは折り返しです。lnFit() が実際に付けた幅を読むので、
-     どこにも計算のやり直しがありません。
-
-     二つ目は placeholder で、これは欄の中にあってDOMには無いので、欄の
-     computed style（writing-mode・text-orientation・字と行）と欄の高さを
-     そのまま借りた測り台に置いて測ります。バグはその computed style そのもの
-     だったので、訊いているのは本物です。
-
-     三つ目は返信の欄で、新規と同じ pwHTML() が描いているという主張です。
-     第二の機構が生えたらここが赤くなります ── 引用の投稿（.pwqs）は
-     `.pwscroll` の外にあるので、中身は新規と一文字も違いません。 */
+     **ここには縦書きの列を数える主張が二つありました（OWNER 実機 142）。
+     2026-09-22 にオーナーがその決定を取り消したので、消しました**
+     ──「横にするなんか言ったことない。直して。」 欄は字を立てます。
+     今それを押さえているのは 11d-2 で、`text-orientation` を
+     `getComputedStyle` に訊きます。列が何本になるかは決定ではなく結果なので、
+     逆向きの主張は置きません（`docs/FEATURE_RULES.md` の決定ログ 2026-09-22）。 */
   {
     const app = document.getElementById('app');
     const wasPW = PW, wasPlan = plan(), wasDir = SCRIPT.dir;
     const wasRoute = window.route, wasNav = NAV.slice();
 
-    /* how many columns a string takes, in the field's own style */
-    const colsOf = (f, txt) => {
-      const cs = getComputedStyle(f);
-      const one = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize);
-      const d = document.createElement('div');
-      d.style.cssText = 'position:absolute;top:0;left:0;visibility:hidden;white-space:' +
-        cs.whiteSpace + ';font:' + cs.font + ';writing-mode:' + cs.writingMode +
-        ';text-orientation:' + cs.textOrientation +
-        ';height:' + f.getBoundingClientRect().height + 'px';
-      d.textContent = txt;
-      document.body.appendChild(d);
-      const w = d.getBoundingClientRect().width;
-      d.remove();
-      return Math.max(1, Math.round(w / one));
-    };
     const openIn = (dir, to) => {
       planGot('pro'); SCRIPT.dir = dir;
       PW = pwBlank(); if (to) PW.to = to;
@@ -3209,12 +3212,6 @@ const R = await pg.evaluate(async () => {
       render();
       return document.getElementById('pw-ln');
     };
-    const widthWith = (f, v) => {
-      f.value = v; PW.ln = v;
-      f.dispatchEvent(new Event('input', { bubbles: true }));
-      const g = document.getElementById('pw-ln');
-      return Math.round(g.getBoundingClientRect().width);
-    };
 
     /* a post that is still here to answer -- 'p1' is the fixture's, and the
        claims above delete posts, so it is asked for rather than written in */
@@ -3222,31 +3219,6 @@ const R = await pg.evaluate(async () => {
     if (!answerable)
       fails.push('there is no post left to answer, so nothing about the reply ' +
                  'composer below this is a test of anything');
-
-    ['ttb-rl', 'ttb-lr'].forEach((dir) => {
-      [null, answerable].forEach((to) => {
-        const where = dir + (to ? ', replying' : '');
-        const f = openIn(dir, to);
-        if (!f) { fails.push('the composer written ' + dir + ' has no line to ' +
-                             'type into, so nothing below this is a test of anything');
-                  return; }
-        const n = colsOf(f, f.placeholder);
-        if (n !== 1)
-          fails.push('the placeholder of a column (' + where + ') takes ' + n +
-                     ' columns. A roman line in a vertical field lies on its ' +
-                     'side and runs down one column; stacked a letter at a time ' +
-                     'it folds, and the second column is what the owner ' +
-                     'photographed');
-        const one = widthWith(f, 'a');
-        const many = widthWith(document.getElementById('pw-ln'),
-                               'a line in your language');
-        if (many > one)
-          fails.push('a roman line typed into a column (' + where + ') made the ' +
-                     'field ' + many + 'px wide where one letter makes it ' + one +
-                     'px. In a vertical field the WIDTH is how far the columns ' +
-                     'have got, so wider is a second column');
-      });
-    });
 
     /* 返信と新規は同じ一本 */
     const shapeOf = () => {
@@ -4153,10 +4125,10 @@ console.log('post: a letter placed on a black photograph is IN the file that goe
             '      with an empty line, your own opens with neither, and\n' +
             '      neither writes over a line somebody had already typed nor\n' +
             '      addresses it to anybody.\n' +
-            '      A roman line in a vertical field lies on its side and runs\n' +
-            '      down ONE column -- the placeholder and the line somebody\n' +
-            '      types, written downward from the right and from the left, new\n' +
-            '      and replying. And the composer answering somebody is the same\n' +
+            '      A column of letters STANDS UP in the field, the way it\n' +
+            '      does in a post -- both vertical directions, asked of the\n' +
+            '      computed value.\n' +
+            '      And the composer answering somebody is the same\n' +
             '      composer as the one writing a new post, element for element,\n' +
             '      with the post being answered above it.\n' +
             '      The @handle over a reply is a thing you press, it is 44pt,\n' +

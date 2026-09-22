@@ -3903,8 +3903,35 @@ textarea.ntbody.grow{min-height:0;height:auto;overflow:hidden;resize:none}
    padding and `.view.fit .pwscroll`'s overflow, up the file. One selector says
    a thing once, so the height is the only line that belongs here.
    「日本語キーボードで意味の行が隠れるなら、道具の行の上に意味の行も一緒に
-   寄せる」 */
-.view.fit{height:100vh;height:100dvh}
+   寄せる」
+
+   AND IT IS THE PAGE LESS THE LIFT, because the box STARTS at that lift.
+   「そもそも画面はスクロールできないようにして欲しいんだけど、そうすれば
+   ズレすら無くなるはずなのになんで？」「キーボードはそこで止める。入力位置も
+   タップしても動かないそれでいいやん。」 OWNER 2026-09-22.
+
+   The answer to 「なんで？」 is that the document was already locked and the
+   thing that moves is not the document. `html.fitlock` is `overflow:hidden`
+   on the page while this is open, and that is what stopped the DRAG. A TAP
+   is not a drag: WebKit lifts the LAYOUT viewport to reveal the field it has
+   just focused, `overflow:hidden` does not forbid that, and nothing in
+   JavaScript can refuse it -- `preventScroll` is an option on a PROGRAMMATIC
+   focus, which is why the frame this screen OPENS on was always right
+   (`pwKeepKb`), and a finger on a textarea does not go through it.
+
+   So the lift is not fought, it is subtracted, and in ONE place: this box is
+   pinned to `--vvtop` and is the page LESS `--vvtop`. It was `100dvh` -- a
+   whole page, beginning a lift down the page -- so it hung exactly that far
+   past the foot, and everything laid out against the foot hung with it.
+   Measured, 390x844 with a 380 keyboard: the visible window came down by the
+   lift and the MEANING came down by twice it, so past 114 the meaning was
+   under the keyboard and the tags with it. The line and the row of tools held
+   still throughout, which is why nobody saw it -- iOS lifts the page
+   precisely so the focused field does not move.
+
+   `post-check` § NOTHING ON THE COMPOSER MOVES asks it in SCREEN
+   coordinates, of the line, the row and the meaning together. */
+.view.fit{height:100vh;height:calc(100dvh - var(--vvtop, 0px))}
 
 /* ---- r5-gram ----------------------------------------------------------
    文法の章を埋める（オーナー決定 2026-09-07）。ここより上には触っていない。
