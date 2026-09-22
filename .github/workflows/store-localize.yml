@@ -1,0 +1,50 @@
+# App Store のページの文（副題・説明文・キーワード・宣伝文・新機能）を
+# store/<locale>.json から App Store Connect に入れる。オーナーにターミナルは
+# 無いので、GitHub の Actions で押す（supabase-deploy.yml と同じ形）。
+#
+# 鍵は ios-deploy.yml と同じ三つの Secrets。
+#
+# Apple の制限：公開中の版の文は触れない。version には「提出準備中」の版を
+# 入れる（無ければ create を true にして作る。ビルドを付けて提出するのは
+# App Store Connect で）。
+name: Store Localize
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: '入れる版（提出準備中のもの。例 1.0.2）'
+        required: true
+        default: '1.0.2'
+      create:
+        description: 'その版が無ければ作る'
+        required: false
+        default: false
+        type: boolean
+      skip:
+        description: '入れない locale（カンマ区切り。例 en-US）'
+        required: false
+        default: ''
+
+jobs:
+  localize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: 文の長さを先に見る（鍵なし）
+        run: node tools/store-localize.mjs --dry
+
+      - name: App Store Connect に入れる
+        env:
+          ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          ASC_KEY_ID: ${{ secrets.IOS_KEY_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.IOS_API_KEY }}
+        run: |
+          ARGS="--version ${{ inputs.version }}"
+          if [ "${{ inputs.create }}" = "true" ]; then ARGS="$ARGS --create"; fi
+          if [ -n "${{ inputs.skip }}" ]; then ARGS="$ARGS --skip ${{ inputs.skip }}"; fi
+          node tools/store-localize.mjs $ARGS

@@ -49,6 +49,7 @@
     "slow": "node tools/slow-check.mjs",
     "open": "node tools/open-check.mjs",
     "store": "node tools/store-check.mjs",
+    "store-localize": "node tools/store-localize.mjs --dry",
     "del": "node tools/del-check.mjs",
     "paid": "node tools/paid-check.mjs",
     "token": "node tools/token-check.mjs",
