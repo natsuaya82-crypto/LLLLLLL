@@ -13,16 +13,15 @@
 // --version は「提出準備中」の版を指すこと。無ければ --create で作る
 // （ビルドを付けて出すのはオーナーが App Store Connect で）。
 //
-// 依存なし。JWT の ES256 は Node の crypto で作る（dsaEncoding: ieee-p1363）。
+// 依存なし。JWT と呼び出しは tools/asc.mjs（version-check と同じ入口）。
 
 import { readFileSync, readdirSync } from 'node:fs';
-import { createSign, createPrivateKey } from 'node:crypto';
 import path from 'node:path';
+import { ascJwt, ascCall } from './asc.mjs';
 
 const ROOT = path.resolve(new URL('..', import.meta.url).pathname);
 const DIR = path.join(ROOT, 'store');
 const BUNDLE = 'com.tokinets.lingua';
-const API = 'https://api.appstoreconnect.apple.com/v1';
 
 /* Apple の上限。超えると API が 409 で断るので、送る前にここで止める。 */
 const MAX = { name: 30, subtitle: 30, description: 4000, keywords: 100,
@@ -59,29 +58,9 @@ function load(){
   return out;
 }
 
-/* ---- JWT (ES256) ---------------------------------------------------------- */
-function jwt(){
-  const iss = process.env.ASC_ISSUER_ID, kid = process.env.ASC_KEY_ID, pem = process.env.ASC_PRIVATE_KEY;
-  if (!iss || !kid || !pem) throw new Error('ASC_ISSUER_ID / ASC_KEY_ID / ASC_PRIVATE_KEY are needed');
-  const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
-  const now = Math.floor(Date.now() / 1000);
-  const head = b64({ alg: 'ES256', kid, typ: 'JWT' });
-  const body = b64({ iss, iat: now, exp: now + 15 * 60, aud: 'appstoreconnect-v1' });
-  const key = createPrivateKey(pem.includes('BEGIN') ? pem : Buffer.from(pem, 'base64').toString('utf8'));
-  const sig = createSign('SHA256').update(`${head}.${body}`).sign({ key, dsaEncoding: 'ieee-p1363' });
-  return `${head}.${body}.${sig.toString('base64url')}`;
-}
-
+/* ---- App Store Connect --------------------------------------------------- */
 let TOKEN = '';
-async function call(method, url, body){
-  const r = await fetch(url.startsWith('http') ? url : API + url, {
-    method, headers: { Authorization: `Bearer ${TOKEN}`, 'Content-Type': 'application/json' },
-    body: body ? JSON.stringify(body) : undefined });
-  const text = await r.text();
-  let j = null; try { j = JSON.parse(text); } catch { /* 204 */ }
-  if (!r.ok) throw new Error(`${method} ${url} -> ${r.status}\n${text.slice(0, 800)}`);
-  return j;
-}
+const call = (method, url, body) => ascCall(TOKEN, method, url, body);
 
 function attrs(row, fields){
   const a = {};
@@ -97,7 +76,7 @@ async function main(){
   if (DRY) { console.log('dry run: nothing sent'); return; }
   if (!VERSION) throw new Error('--version <x.y.z> is needed (the version in Prepare for Submission)');
 
-  TOKEN = jwt();
+  TOKEN = ascJwt();
   const app = (await call('GET', `/apps?filter[bundleId]=${BUNDLE}`)).data[0];
   if (!app) throw new Error(`no app with bundle id ${BUNDLE}`);
   console.log(`app ${app.id}  ${app.attributes.name}`);

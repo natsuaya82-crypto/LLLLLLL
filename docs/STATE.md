@@ -32,9 +32,9 @@ un-re-read.
 
 ---
 
-## 2026-09-22 夜 ── ビルド 164（integ に取り込み済み、**まだ出していない ── オーナーの Apple 側の手順待ち**）
+## 2026-09-22 夜 ── 通知（integ に取り込み済み、**166 で出す ── オーナーの Apple 側の手順待ち**）
 
-`master` = まだ 163（7873029d）。integ-0905 に下の二本が入っている。**ビルドは
+`master` = a451c515（165、版 1.0.2）。integ-0905 に下の二本が入っている。**ビルドは
 オーナーが App ID に Push Notifications を付けて配布 profile を作り直し
 `PROVISIONING_PROFILE_BASE64` を差し替えてから** ── それまで Archive で落ちる
 （`docs/apple.md` § 8、`ios/App/App/App.entitlements` の `aps-environment`）。
@@ -63,9 +63,20 @@ un-re-read.
 
 **オーナーがやること（順に）**：`docs/apple.md` § 8 の 1〜6（App ID の Push、
 profile 作り直し→Secret、APNs 鍵→`APNS_KEY_ID`/`APNS_P8`、Webhooks Enable、
-schema を流す、Supabase Deploy `push-send`）。1〜2 が済んだら 164 を出す。
+schema を流す、Supabase Deploy `push-send`）。1〜2 が済んだら 166 を出す。
 
-## 2026-09-22 ── ビルド 163（Apple へ上がった 16:56 UTC、run 35756973192）
+## 2026-09-22 ── ビルド 164（Apple が断った：版が 1.0.0 のまま ── 1.0.2 で 165 を出す）
+
+Actions の run 35756973192（16:52 UTC、master 7873029d）は success で上がったが、
+**Apple がメールで断った**（ITMS-90186 / ITMS-90062：`CFBundleShortVersionString`
+1.0.0 は公開済みの版と同じ）。ビルド番号は Actions の run 番号 = **164**（この日
+「163」と呼んでいた物。163 は 13:57 に途中で止めた run が消費している）。
+直し：版は `package.json` 一箇所（**1.0.2**）から workflow が pbxproj に書き、
+`assets-check` が一致を持ち、`tools/version-check.mjs` が archive 前に App Store
+Connect へ「閉じた版より上か」を訊く（`docs/apple.md`）。出し直しは **165**、
+中身は 164 と同じ（下）。
+
+## 2026-09-22 ── ビルド 164（run 35756973192、Apple が版で断った ── 上。中身は 165 と同じ）
 
 `master` = 取り込み後の sha（ゲート緑で ff）。実機で見る場所は
 `docs/CHECK-0907.md`「ビルド 163」。**`supabase/schema.sql` が変わった ──
@@ -113,7 +124,7 @@ schema を流す、Supabase Deploy `push-send`）。1〜2 が済んだら 164 �
 
 ## 2026-09-18 ── ビルド 162
 
-**App Store に出た ── 2026-09-22、1.0.1 (162)、https://apps.apple.com/us/app/lingua-conlang-builder/id6796378999**（カテゴリ 教育、13+、ストアの言語は英語のみ）。154 と 161 が落ちた
+**App Store に出た ── 2026-09-22、1.0.0 (162)（Apple のメール 2026-09-22：approved version は 1.0.0）、https://apps.apple.com/us/app/lingua-conlang-builder/id6796378999**（カテゴリ 教育、13+、ストアの言語は英語のみ）。154 と 161 が落ちた
 所（schema 未反映・SIWA の名前）は 162 で閉じた。
 
 `master` = 982197a4（ゲート緑で ff、run 35370881250）。実機で見る場所は

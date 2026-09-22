@@ -36,14 +36,32 @@ jobs:
 
       # ビルド番号(CURRENT_PROJECT_VERSION)を CIのrun番号で毎回ユニークに上書き
       # （pbxproj側に書くので、手順書の「署名/番号はpbxprojに持たせCLIに渡さない」方針と一致）
-      - name: Set build number
+      # 版(MARKETING_VERSION)は package.json の "version" 一箇所から。人が pbxproj の
+      # 五箇所を手で上げる約束は 2026-09-22 に破れた（1.0.0 のまま 164 を上げ、
+      # Apple に ITMS-90186 で断られた）。assets-check が repo の pbxproj も同じ値で
+      # あることを持つので、Xcode で手元に開いても同じ版になる。
+      - name: Set build number and version
         run: |
           BN=${{ github.run_number }}
+          MV=$(node -p "require('./package.json').version")
           sed -i '' "s/CURRENT_PROJECT_VERSION = [0-9][0-9]*;/CURRENT_PROJECT_VERSION = ${BN};/g" \
             ios/App/App.xcodeproj/project.pbxproj || \
           sed -i "s/CURRENT_PROJECT_VERSION = [0-9][0-9]*;/CURRENT_PROJECT_VERSION = ${BN};/g" \
             ios/App/App.xcodeproj/project.pbxproj
-          echo "build number = ${BN}"
+          sed -i '' "s/MARKETING_VERSION = [0-9.]*;/MARKETING_VERSION = ${MV};/g" \
+            ios/App/App.xcodeproj/project.pbxproj || \
+          sed -i "s/MARKETING_VERSION = [0-9.]*;/MARKETING_VERSION = ${MV};/g" \
+            ios/App/App.xcodeproj/project.pbxproj
+          echo "build number = ${BN}, version = ${MV}"
+
+      # Apple が閉じた版（公開済みなど）にはビルドを受け取らない。断りはメールで
+      # 一時間後に来て、ここの印は緑のまま ── だから archive の前に同じ問いを訊く。
+      - name: 版が公開中より上か（App Store Connect に訊く）
+        env:
+          ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          ASC_KEY_ID: ${{ secrets.IOS_KEY_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.IOS_API_KEY }}
+        run: node tools/version-check.mjs
 
       # Team ID をSecretからpbxprojへ差し込む（プレースホルダ __APPLE_TEAM_ID__ を置換）
       - name: Inject Team ID

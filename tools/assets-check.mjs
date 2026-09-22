@@ -431,6 +431,26 @@ for (const [name, cmd] of Object.entries(scripts)) {
          `Take the script out -- git remembers, and a name pointing at nothing ` +
          `is read as a check somebody could run.`)
 }
+/* The app's VERSION lives in package.json, once. The deploy workflow writes
+   it into project.pbxproj's MARKETING_VERSION (five build configurations),
+   and this holds that the repo's pbxproj already says the same -- so Xcode on
+   a Mac and the Actions runner build the same version, and a bump is one
+   line in one file. Before 2026-09-22 the version was a sentence in
+   docs/apple.md asking a person to raise five lines by hand; build 164 went
+   up as 1.0.0 with 1.0.0 already on the App Store and Apple refused it by
+   email (ITMS-90186), which no red tick shows. tools/version-check.mjs asks
+   Apple the other half (is it ABOVE the closed one) from the workflow. */
+{
+  const pbx = readFileSync(PBX, 'utf8')
+  const mvs = [...pbx.matchAll(/MARKETING_VERSION = ([0-9.]+);/g)].map((m) => m[1])
+  if (!mvs.length) note('project.pbxproj has no MARKETING_VERSION line at all.')
+  const off = [...new Set(mvs)].filter((v) => v !== pkg.version)
+  for (const v of off)
+    note(`project.pbxproj says MARKETING_VERSION = ${v} and package.json says ` +
+         `"version": "${pkg.version}". One place: package.json. Set every ` +
+         `MARKETING_VERSION in ios/App/App.xcodeproj/project.pbxproj to ${pkg.version}.`)
+  if (!off.length) console.log(`version: package.json ${pkg.version}, and all ${mvs.length} MARKETING_VERSION lines in pbxproj say the same`)
+}
 const gateSrc = readFileSync(join(ROOT, 'tools', 'gate.mjs'), 'utf8')
 const gateNames = [...gateSrc.matchAll(/const (?:FAST|SLOW) = \[([\s\S]*?)\]/g)]
   .flatMap((g) => [...g[1].matchAll(/'([\w.-]+)'/g)].map((x) => x[1]))

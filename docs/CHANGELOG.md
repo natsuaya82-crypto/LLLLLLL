@@ -15,6 +15,25 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-22 版は package.json 一箇所、archive 前に Apple へ「閉じた版より上か」── **貯まる物は変わりません**
+
+Apple がビルド 164 を断った（ITMS-90186 / ITMS-90062）：`MARKETING_VERSION` が
+公開済みの 1.0.0 のままだった。人が pbxproj の五箇所を手で上げる約束
+（docs/apple.md）が破れた形で、断りはメールで一時間後、Actions は緑のまま。
+
+穴ではなく面を覆う（CLAUDE.md § a hole is not PLUGGED）：
+- 版は `package.json` の `"version"` 一箇所（1.0.0 → **1.0.2**、Store Localize が
+  作る版と同じ）。`ios-deploy.yml` がそれを pbxproj の `MARKETING_VERSION` に書く
+  （ビルド番号を run 番号で書くのと同じ段）。
+- `assets-check`：repo の pbxproj の `MARKETING_VERSION` 全部が package.json と
+  同じ（赤を見てから：pbxproj 1.0.0 のまま package.json 1.0.2 で「違う」）。
+- `tools/version-check.mjs`（新）：workflow が archive の前に App Store Connect へ
+  訊き、閉じた版（READY_FOR_SALE など）の一番上より package.json が上でなければ
+  止まる。鍵の無い手元では訊けないと言って通る。入口は `tools/asc.mjs`（新、
+  store-localize から切り出し）。
+- docs/apple.md の「手で 1.0.1 に上げる」の段は削除して書き換え。
+
+アプリの中身は一バイトも変わらない。端末にもサーバーにも貯まる物は無い。
 ### 2026-09-22 サインインしていない人の分は、一本も線に乗らない ── **貯まる物の変化なし**
 
 **オーナーの決定（2026-09-22）**：サーバーは、サインインしていない人には何も
