@@ -91,7 +91,7 @@ Draw your script, set it as your keyboard, and post in it
 本文:
 
 ```
-Draw your letters with a finger. The phone compiles them into a real font and installs it as a keyboard, so your script is on the keys everywhere you type.
+Draw your letters with a finger. The phone compiles them into a real font and puts them on the keys of a keyboard.
 
 Widgets put your language on the home screen — the clock in your own numerals, the calendar in your own month names.
 
@@ -111,7 +111,7 @@ Ask me anything.
 意味:
 
 ```
-文字を指で描く。端末が本物のフォントにして、キーボードとして入れる。だから端末のどこで打っても自分の文字がキーに乗っている。
+文字を指で描く。端末が本物のフォントにして、キーボードのキーに並べる。
 
 ウィジェットが自分の言語をホーム画面に出す ── 時計は自分の数字、暦は自分の月名で。
 
@@ -142,13 +142,10 @@ Ask me anything.
 
 - **SNS（タイムライン）が中心の売り。** 自分の文字で投稿し、投稿が字の形を
   持って行くので相手のフォントが無くても読める。全部の投稿に意味の行が付く。
-- 文字は指で描く → 端末上で本物のフォント → **キーボード拡張**として入り、
-  **端末のどこで打っても自分の文字がキーに乗っている**。
-  「アプリの中でしか打てない」は誤り ── 2026-09-22 オーナー
-  「キーボード拡張で誰でも使えるのが魅力だけど」「アプリ内で設定するんだから
-  関係ないやろ」。これは 2026-09-22 以前の「メッセージやメモで打てるとは書かない」
-  を**置き換える**。`docs/keyboard-extension.md` の
-  「a Lingua-only keyboard by purpose」も古い ── 直すのはリーダー。
+- 文字は指で描く → 端末上で本物のフォント → キーボードのキーに並ぶ。
+  **「端末のどこで打っても」「メッセージやメモで打てる」とは書かない。**
+  2026-09-22 に一度書いて叱られた ── 「キーボード拡張で誰でも使えるのが魅力」を
+  書けという許可と読んだのが誤り。**書くな、が今も生きている。**
 - **ウィジェットも機能**。ホーム画面に自分の文字が出る。時計は自分の数字で。
 - 辞書（意味・品詞・例文・語域・語源）、読みと IPA、音韻、44 章の文法、暦、
   メモ、CSV 取り込み。アルファベット／アブジャド／音節文字／アブギダ／表語文字、
