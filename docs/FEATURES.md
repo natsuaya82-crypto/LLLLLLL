@@ -105,6 +105,7 @@ Marked separately, because they are not the same question:
 | Reading a downloaded language | **shipped 2026-09-02**, **not device confirmed** — the row in the language switcher is a button and `langOpen()` takes it; `langLocked()` in `core.js` is what every saver asks, so nothing writes to it. The ↓ itself stays on the article and does not switch (`wldGet`, `www/home.js`). **The launch brings it back whole (2026-09-09)**: `netLangsDown()` walks this account's own rows AND the ones `language_take` says it took, in one ask, and fills the slices that are missing — so closing the app and opening it finds the language with what the server holds for it in it. What crosses is what `slice_read` allows (`words`/`gram2` only where the owner's own switch says so). `again-check` holds it | — | — | nothing new | decided — 「ダウンロード言語にしようよ。編集不可でそのアカウントに切り替えたらダウンロードした人の言語が使える」 OWNER 2026-09-02. **A DL is a POINTER, not a copy**: 「dl元が言語を削除したり、アカウントを消してその言語自体が消えた場合は、dlユーザーからも削除される」 OWNER 2026-09-09 — the server cascades (`language_take`, `schema.sql`) and the phone's index row and slices go with it on the next launch — `netLangsGone()` in `www/net.js`, DELETE REVIEW in `docs/CHANGELOG.md` 2026-09-09, and nothing is dropped on a launch where the answer never came. ↓ does NOT switch — 「切り替えなくていい」 OWNER 2026-09-09, settled. A language the source has deleted goes from the phone too, and unpublishing only stops NEW takes — somebody who already took it keeps reading it (`language_took()` in `schema.sql`, **SQL has to be re-run**). Both decided and built 2026-09-09, `claude/r9-dl`, not device confirmed |
 | How many DL'd languages a plan holds | **shipped 2026-09-02**, **not device confirmed** | 0 | Plus 1, Pro 3 | `language_take` on the server, one row per (account, language) — `dlCount()` counts what `netTakes()` brought down, so a second phone counts from where the first left off (2026-09-09) | decided — 「dlはしかもplusは1つproは3つ DL言語とmake言語でそれぞれ別の最大値」 OWNER 2026-09-02. `dlCap()` is the number and `dlStop()` is the refusal, both in `www/core.js`; `dl-check` holds them. Two ceilings that cannot see each other: filling this one leaves `langCap()` where it was |
 | Switching language by holding the profile | **shipped**, not device confirmed | — | — | none | decided 2026-08-27 — the 08-25 conflict was put to the owner and came back 「インスタと同じようにしたから出てくる。で切り替えタップしたらその言語にいく」. Holding the profile tab opens the existing `langs` page (`vLangs()`); **the list stays in Settings too** 「せっていからでいいよ」, so it is a short way in and not a second copy. No account changes: `langOpen()` never touches `lingua.me` or `lingua.sess` |
+| **通知 — フォロー・返信・いいね・リポスト** | **shipped 2026-09-22 (app side)**, **not device confirmed** — iOS の許可、`device` に token、設定の部屋「通知」の四つのスイッチ、押して開いたらスレッドか通知タブ。**送る側（表 `device` の SQL と RLS、Apple へ投げる関数）は r47** —片方だけでは一通も届かない | **yes** — 段を一度も見ない。`can()` は一つも足していない | — | **サーバーだけ**：`device(uid, token)` の行と `profile.prefs` の `push_follow`／`push_reply`／`push_like`／`push_boost`。**端末には一つも無い** — `localStorage` の鍵も `SET` の field も増えない。**無い＝オン**（既定は書き込まない）。サインアウトで `uid` と `token` の両方で絞った一行だけ落ちる | decided — 「通知作ろう。アップルのネイティブ通知で、フォローされた時、返信きた時みたいな感じでSNS部分であるやつ。それに加えて設定で個別通知のオンオフできるように。」OWNER 2026-09-22。**バッジの数・通知の履歴・まとめ方・時間帯・メール・Android は決まっていないので作っていない** |
 | **お問い合わせ — 意見・要望・バグを運営へ** | **shipped 2026-09-22**, **not device confirmed** — 設定の行「お問い合わせ」→ route `contact`（画面へ遷移。シートではない）、種類を選ぶ行が三つと書く欄と送るボタン。読むのは admin の通報の下の節 | **yes** — 段を一度も見ない。`can()` は一つも足していない | — | **サーバーの表 `feedback` だけ**（`author` `kind` `body` `created_at`）。**端末には一行も貯まらない** ── slice でも `SET` でもなく `localStorage` の鍵も増えない。`is_staff()` だけが読める（送った本人にも見えない）、update / delete の policy は無いので**消す道は無い**、退会しても `author` が null になって本文は残る | decided — 「設定にお問合せを足して欲しい。フォームみたいなの作ってみんなからの意見要望バグとかあればそれを見たい。フォームはアプリ内のadminのページで見れるようにしたい。」OWNER 2026-09-22。**返信・削除・通知・メール送信は決まっていないので作っていない** |
 
 ### Notes on the open rows
@@ -558,7 +559,45 @@ is why the server goes first: deleting on the phone alone brings the language
 
 ### 9. Push notifications
 
-Nothing exists. The notices tab is pulled when it is looked at.
+**OWNER DECISION 2026-09-22, and the app side is built.** 「通知作ろう。アップル
+のネイティブ通知で、フォローされた時、返信きた時みたいな感じでSNS部分であるやつ。
+それに加えて設定で個別通知のオンオフできるように。」
+
+Four kinds and no more: `follow`, `reply`, `like`, `boost`. The notices tab is
+unchanged and is still pulled when it is looked at -- this is about being told
+when the app is NOT open, and nothing about the tab moved.
+
+**It is two halves and they shipped separately.** The app side (r48) asks iOS
+for permission, puts this handset's token in `device` under whoever is signed
+in, and draws the four switches; the SERVER side (r47) is the table, its RLS,
+and the function that talks to Apple. **Neither half delivers a notification on
+its own.**
+
+What the app side does, and where:
+
+- `ios/App/App/LinguaPush.swift` -- the one window onto Apple's notifications.
+  `ask()` and `status()`, and a tap handed to `window.pushOpened()` through
+  `bridge.eval`. Not `notifyListeners`: this app never loads @capacitor/core,
+  so nothing in `www/` could hear it.
+- `www/push.js` (chapter 28) -- `pushAsk()` from `netTook()` and nowhere else,
+  the four switches, and where a tapped notification lands (the post's thread,
+  or the notices tab).
+- **No mark saying 「already asked」.** iOS holds that answer and a copy of it
+  would be wrong the day somebody changes it in Settings. It also closes a
+  hole: a mark kept on the handset would leave the SECOND account on one
+  iPhone with no `device` row and no notification ever.
+
+Decided, and in: the four kinds; the switches are the ACCOUNT's
+(`profile.prefs`, so a second phone is arranged the same); **absent is ON**, on
+both sides, so nothing is minted and nobody who has never opened the room has
+any of the four; sign-out drops **this handset's row for this account** and no
+other.
+
+**Not decided, so not built**: the badge number, a notification history inside
+the app, how several of one kind are grouped, quiet hours, e-mail, Android.
+`docs/CHANGELOG.md` 2026-09-22 carries all six.
+
+**DEVICE UNCONFIRMED.**
 
 ### 10. DL — the official assets, and a language you can only read
 

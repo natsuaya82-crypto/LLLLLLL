@@ -107,4 +107,134 @@ iOS のダイアログはインストールにつき一度しか出ず、二度�
 
 ## 報告
 
-（作業が終わったらここに追記する）
+**CODE CONFIRMED / DEVICE UNCONFIRMED / OWNER UNCONFIRMED.**
+Linux に Swift はありません ── Swift は一行もコンパイルしていません。ビルドが
+通るかは `assets-check`（`project.pbxproj` の Sources phase と、plugin の method
+を `www/` が名指しているか）で見ただけです。
+
+### 触った file と、なぜ
+
+| file | なぜ |
+|---|---|
+| `ios/App/App/LinguaPush.swift`（新） | 許可を訊く・今の状態を返す・通知を押したら `www` に渡す。Apple の通知に触る唯一の窓 |
+| `ios/App/App/AppDelegate.swift` | Apple が token を返す二つの口（成功・失敗）と、`UNUserNotificationCenter` の delegate。**delegate は起動が終わる前に立っていないと、アプリを起こした通知の一件を取りこぼします** |
+| `ios/App/App/MainViewController.swift` | plugin が登録される唯一の場所（scope に書いていなかった file。ここ以外に道はありません） |
+| `ios/App/App/App.entitlements` | `aps-environment` |
+| `ios/App/App.xcodeproj/project.pbxproj` | Sources phase の一行。`assets-check` が見る |
+| `www/push.js`（新・第 28 章） | `pushAsk`・四つのスイッチ・`window.pushOpened` |
+| `www/index.html` | script tag 一行 |
+| `www/net.js` | `netDevicePut`／`netDeviceDrop`／`NET_TOK`、`netTook()` からの一箇所 |
+| `www/core.js` | `SET_PREFS` に四つ |
+| `www/settings.js` | 一覧の行、部屋の枝、サインアウトの一行 |
+| `www/act-map.js` | `pushSw`・`pushSettings` |
+| `www/i18n/*.js` | 七つの key × 十言語 |
+| `tools/store-check.mjs` | `FIELDS` に四つ（**scope に書いていなかった file** ── `SET` に field を足すと必ずここが要ります） |
+| `tools/fixture.mjs` | 通知の部屋の二つの顔 |
+| `tools/acct-check.mjs` | claim 81・82・83、と 64 の直し |
+| `docs/CHANGELOG.md`・`FEATURES.md`・`CHECK-0907.md`・この file | 記録 |
+
+**`supabase/` は一行も触っていません。**
+
+### 変わる振る舞い
+
+- 扉を通ると iOS の許可のダイアログが一度出る（iOS が一度しか出しません）。
+- 設定の一覧に行が一つ ──「通知」。「アカウント」と「データ」の間。
+- その部屋に四つのスイッチ。iPhone 側で通知が切られているときだけ、四つの上に
+  状態が一行（押すと iOS の設定）。
+- サインアウトで `device` の一行が落ちる。
+- 通知を押して開くと、その投稿のスレッドか通知タブ。
+
+### 新しく貯まる物
+
+サーバーだけ。`device(uid, token)` の行と、`profile.prefs` の
+`push_follow`／`push_reply`／`push_like`／`push_boost`。**端末には一つも
+増えていません** ── `localStorage` の鍵も、`SET` の field も。
+
+消える物はサインアウトの一行だけで、DELETE REVIEW は `docs/CHANGELOG.md`
+2026-09-22 にあります。
+
+### 赤の出力（四本、バグのままで見てから）
+
+```
+✗ 81: **like のスイッチを押しても SET.push_like が動かない** ── undefined。
+      pushSw() にその名前の行がありません（www/push.js）
+✗ 81: like を押しても prefs が上がっていない ── 0 回
+✗ 81: もう一度押しても戻らない ── SET.push_like=undefined
+      （pushSw() から like の枝を外した）
+
+✗ 82: **許可が下りたのに device へ POST が出ない** ── 0 回。
+      通知の届く先がどこにも登録されません
+✗ 83: **サインアウトしても device の行が落ちない** ── 0 回
+      （pushAsk() から netDevicePut() を外した）
+
+✗ 83: **サインアウトしても device の行が落ちない** ── 0 回。
+      netDeviceDrop() は netOut() より前でなければ token がありません
+      （netDeviceDrop() を netOut() の後ろへ動かした）
+
+✗ 64: **誰も触っていない push_follow を作って上げている** — true。
+      無いことが答えです（既定を書き込むと、あとで既定を変えられません）
+      （netPrefsPut() に undefined の欄を true で作らせた）
+```
+
+### 回した check
+
+`assets`・`es5`・`dead`・`act`・`i18n`・`press`・`store`・`acct`・`box`・`docs`
+── 全部緑。**ゲート（`npm test`）は回していません**（リーダーの物）。
+数えている物：`act` は screens walked 642・routes 40/40・names 284/284、
+`press` は buttons pressed 17221（283/284 distinct、`saveName` は前から未押下）、
+`store` は鍵 14・`lingua.set` の中 22 field、`i18n` は十言語・459 render、
+`box` は 104（baseline 104）・JS から 0。
+
+### 写真
+
+| | |
+|---|---|
+| `shots/r48-settings-ja.png` | 設定の一覧の「通知」の行 |
+| `shots/r48-set-push-ja.png` | 部屋（許可あり） |
+| `shots/r48-half-notifications-refused-on-the-phone-itself-ja.png` | 部屋（iPhone 側でオフ） |
+
+### 実機で見る所
+
+`docs/CHECK-0907.md`「ビルド 164」。**先に一回だけ要る物が二つあり、どちらも
+ブラウザでしかできません**：App ID に Push Notifications を入れること、そのあと
+配布 profile を**作り直す**こと。やらないと **Archive で落ちます**（Sign in with
+Apple と同じ形）。
+
+## リーダーへ ── 指示と違えた所・危ない所・決まっていない所
+
+1. **「聞いた」印を作りませんでした。**理由は上の節に。指示の括弧の中で
+   「この account で」と「端末ごとなので `SET_PHONE`」が両立せず、`SET_PHONE`
+   に置くと**同じ iPhone の二人目に通知が一通も来ません**。account の物にしても
+   iOS が持っている答えの写しになるので、置かない方を採りました。
+2. **`www/` の別の session と五本重なっています。**`claude/r45-contact` に
+   未取り込みの commit があり、`www/settings.js`・`www/net.js`・
+   `www/act-map.js`・`tools/fixture.mjs`・`tools/acct-check.mjs` に触っています。
+   ぶつかりにくいよう**全部追記**の形にし、`acct-check` の番号は r45 の 80 を
+   空けて **81 から**にしました。`www/settings.js` の `SETS` と `vSet()` の枝、
+   `tools/fixture.mjs` の `halfDone` 先頭は、同じ所を二人が触っています。
+3. **scope に書いていなかった file を二つ触りました。**
+   `ios/App/App/MainViewController.swift`（plugin が登録される唯一の場所 ──
+   ここを触らないと plugin は存在しないのと同じ）と
+   `tools/store-check.mjs`（`SET` に field を足すと必ず `FIELDS` が要る）。
+   どちらも他に道がありません。
+4. **iOS の設定を開く道が二箇所になりました。**`kbSettings()`（`www/keyboard.js`）
+   と `pushSettings()`（`www/push.js`）が同じ `LinguaShare.settings` を呼びます。
+   失敗したときの言葉が違う（片方はキーボードの話、片方は通知の話）ので一つに
+   畳むには rename が要り、`www/keyboard.js` はこの session の物ではありません。
+   `docs/BACKLOG.md` に入れるかはリーダーの判断です。
+5. **電波が無いときのサインアウトは `device` の行を落とせません。**サインアウト
+   自体は通します（落とせないことを理由に人を端末に閉じ込めない）。残った行は
+   次に同じ人が同じ端末でサインインしたときに上書きされますが、**その間その人
+   あての通知はこの端末に届きます**。これは穴で、`CHANGELOG` にも書きました。
+   直すなら「落とせなかった行を憶えて次に試す」で、それは端末に物を置く話に
+   なるのでここでは作っていません。
+6. **`acct-check` 64 の claim を弱めました。**「`SET_PREFS` は全部載る」→
+   「この人が選んでいる欄は全部載る／触っていない欄は作らない」。通知の四つは
+   触るまで `SET` に無いので、前の文は今日から嘘です。二方向にしたので、
+   `SET_PREFS` を空にすれば今も赤になります。
+7. **決まっていないので作っていない物**：バッジの数・通知の履歴・まとめ方・
+   時間帯・メール・Android。
+8. **通知そのものの文面は書いていません**（「〇〇さんがフォローしました」）。
+   サーバー側＝r47 の持ち物です。`www/i18n` の `notif.*` は**アプリの中の通知
+   タブの文**で、これとは別物です。
+9. **`docs/STATE.md` は触っていません**（リーダーの物）。
