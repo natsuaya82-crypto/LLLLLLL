@@ -58,6 +58,7 @@ const DELETES = {
   postDel:    { takes: 'one post, its row on the server, its files in post-media, and its voice file in Documents', asks: true },
   dfSelDel:   { takes: 'the drafts that are selected, their rows, and the voice file of each', asks: true },
   modDrop:    { takes: 'one report row on the server, and nothing else -- the post and the account it names are untouched', asks: true },
+  fbkDrop:    { takes: 'one feedback row on the server, and nothing else -- the account that wrote it, its posts and its languages are untouched', asks: true },
 
   /* ---- everything, asked first --------------------------------------- */
   wipeLangs:  { takes: 'the open language: every slice of it, its row in LANGS, its row on the server, and its backup files', asks: true },

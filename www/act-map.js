@@ -66,6 +66,7 @@ act('modDown', modDown);
 act('modUp', modUp);
 act('modOut', modOut);
 act('modDrop', modDrop);
+act('fbkDrop', fbkDrop);
 act('modIn', modIn);
 act('storeRestore', storeRestore);
 act('storeManage', storeManage);

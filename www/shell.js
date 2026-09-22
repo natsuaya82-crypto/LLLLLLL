@@ -1037,6 +1037,11 @@ function pageName(r, a){
     for(si=0;si<SETS.length;si++) if(SETS[si].id===sa) return t(SETS[si].k);
     return t('set.title');
   }
+  /* 「お問い合わせ→開いたらお問い合わせだけの画面」 OWNER 2026-09-22 -- and a
+     page whose bar says 管理 is half of that. The recovery face of the same
+     route is still named after the route and not after itself; that one is
+     not this session's to rename. */
+  if(r==='admin' && String(a||'')==='fb') return t('admin.feedback');
   if(r==='relate'){
     var rk=String(a||'').split(':')[0];
     return (rk==='syn'||rk==='ant')? t('word.'+rk+'.add') : t('toc.words');
