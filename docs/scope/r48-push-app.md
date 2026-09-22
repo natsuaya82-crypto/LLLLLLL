@@ -238,3 +238,97 @@ Apple と同じ形）。
    サーバー側＝r47 の持ち物です。`www/i18n` の `notif.*` は**アプリの中の通知
    タブの文**で、これとは別物です。
 9. **`docs/STATE.md` は触っていません**（リーダーの物）。
+
+---
+
+# 二つ目の item ── サインインしていない人の分は、一本も線に乗らない
+
+リーダーの追加（2026-09-22）。オーナーの決定「サーバーは、サインインしていない
+人には何も返さない」のアプリ側。サーバー側は r47。
+
+## 入れた物
+
+`www/net.js` の一箇所 ── `netSend1()` は token が無ければ**送らず**、`bad` を
+**401** で呼びます（`netWhy()` の「サインインし直してください」）。0 は「線が
+落ちた」で、これは線に触ってすらいないので別の答えにしました。
+
+扉は `netDoor()` の一覧だけ：`/auth/v1/*` と `/rest/v1/rpc/email_taken`。
+条件ではなく一覧なのは、オーナーが `email_taken` を消すとき一行で済むからです。
+
+`netGet()` の `|| ''` を外し、`netMailTaken()` は `''` ではなく `null` を渡す
+ようにしました。`Authorization` のコメント（「signed out, it is the key again」）
+は、app 全部の話から扉だけの話になったので書き直しました。
+
+**貯まる物・消える物・見た目は一つも変わっていません。**
+
+## 赤 ── リーダーの言う形では赤になりません
+
+リーダーは「`netGet` に `''` を戻して赤を見ろ」と書いていますが、**それでは
+緑のままです**。`''` も falsy なので `netSend1()` の門が捕まえます。効いている
+のは門であって `netGet` の既定ではありません ── 測ってから気づきました。
+
+本当の赤は門の三行を外すことで、こう出ます：
+
+```
+✗ 84: **サインアウトなのに 1 本が線に乗った** ──
+      ["profile?select=prefs&limit=1&id=eq.x"]。
+      サーバーは断りますが、断られるまで行くこと自体が間違いです
+✗ 84: 断り方がアプリの文になっていない ── null
+      （欲しいのは `net.session`「Sign in again.」。
+        0 は「線が落ちた」で、これは「誰もサインインしていない」）
+```
+
+一本しか出ないのは、`netPrefsPull()`・`netStaff()`・`netDevicePut()` が
+もともと自分で `netSignedIn()` を訊いて手前で戻るからです。それは前からある
+正しい振る舞いで、門はその外側を閉じました。
+
+`acct-check` 84 は **`netSend` を偽物にしていません** ── 測るのは「何を送ったか」
+ではなく「**そもそも送ったか**」で、偽の `netSend` はまさにその一段を飛ばします。
+`XMLHttpRequest.prototype.open` を包んで実際に開かれた URL を数えています。
+
+## 止まった所 ── 写真と声。**r47 と同じビルドに入れてはいけません**
+
+**測りました。直していません。この session の持ち物ではありません。**
+
+投稿の写真と声は、いまこう読んでいます：
+
+| | |
+|---|---|
+| 作る | `netMediaURL(path)`（`www/net.js:4367`）が `SB_URL + '/storage/v1/object/public/post-media/' + path` を**同期で文字列として**返す |
+| 使う | `postPics()`／`postThumbs()`（`www/post.js:3512・3539`）がその文字列の配列を返し、`<img src>` に入る。`voPlay()`（`www/rec.js:297`）が `audio.src` に入れる |
+| 持っているヘッダ | **一つもありません。**`<img src>` も `<audio src>` もヘッダを付けられません |
+
+**なので r47 が `post-media` を非公開にし `media_read` に `is_member()` を
+付けた瞬間、タイムラインの写真と声が全部出なくなります。**投げるものは何も
+なく、画面は壊れず、ただ絵が出ません ── この repo が一番苦手にしてきた形です。
+
+リーダーの薦める道（`/storage/v1/object/authenticated/<bucket>/<path>` を
+`netSend1` と同じ道でヘッダ付きに）を採るなら、**同期で文字列を返す形が
+なくなります**。要るのは：
+
+1. `www/net.js` に `netMediaGet(path, ok, bad)` ── `responseType='blob'` で
+   取り、`URL.createObjectURL()` を返す。
+2. `www/post.js` に path → objectURL の写しと、届いたときの再描画
+   （`STORE_P` や `WLD_HAVE` と同じ形）。`postPics()`／`postThumbs()` は
+   「まだ来ていない」を返せるようにする。
+3. `www/rec.js` の `voPlay()` は、取ってから `src` を入れる。
+4. `netMediaURL()` は消える（`dead-check`）。
+
+**`www/post.js` と `www/rec.js` はこの session に与えられていません。**
+そして 1 だけ先に入れることもできません ── 誰も呼ばない関数は `dead-check` で
+止まります。**一本の commit で三つの file を一緒に変えるしかなく、それは
+territory を決める人の判断です。**
+
+署名付き URL（signed URL）なら `<img src>` のまま直りますが、リーダーが
+「二つ目の仕掛けなので要らない」と書いているので採っていません。
+
+## 回した check（二つ目の item のあと）
+
+`es5`・`dead`・`act`・`i18n`・`press`・`store`・`acct`・`box` ── 全部緑。
+`master`（`a82d2e7b`）を取り込みました（追いつきであって取り込みではない）──
+`tools/acct-check.mjs` で一箇所ぶつかり、master の 80 とこちらの 81〜84 を
+並べて解きました。両方残っています。ゲート（`npm test`）は回していません。
+
+**写真はありません ── 見た目は変わっていません。**
+
+**CODE CONFIRMED / DEVICE CONFIRMED: no.**
