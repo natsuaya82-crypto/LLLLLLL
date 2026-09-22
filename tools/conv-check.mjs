@@ -488,6 +488,70 @@ const R = await pg.evaluate(() => {
     }
   }
 
+  /* 11. the typing face carries nothing but the range it is for.
+     ------------------------------------------------------------------
+     CLAUDE.md rule 10 says it in those words: ".tfont is set in LinguaType,
+     which carries nothing BUT that range". It was not true. LinguaFont.build
+     ALWAYS added a `space` glyph one CELL wide -- 0.800 em -- so in a .tfont
+     field every roman LETTER fell through to the ordinary font and every
+     SPACE came from LinguaType at four fifths of an em. The composer's line
+     field is .tfont, so its placeholder read
+
+         a  line  in  your  language
+
+     on a real phone. 「a line みたいなとこ空白開きすぎだし」 OWNER
+     2026-09-22, two screenshots of 新しい投稿, build 162.
+
+     A space that falls through like every other non-PUA character is the
+     whole fix: the letters already do, and the space was the one character
+     the face answered for.
+
+     LinguaScript is the other way and keeps its cell. There the space is the
+     SCRIPT's own spacing -- every drawn letter is a cell, so the gap between
+     two of them is a cell too -- and it is the only face where that sentence
+     is about anything.
+
+     Read off what the writer RETURNED, not worked out again here: an option
+     that stopped being passed would move a recomputed copy with it and this
+     would stay green, which is how a wrong answer gets a tick. Same reason
+     claim 8 above wraps LinguaFont.build rather than redoing its mapping.
+
+     It is the bytes and not the pixels because the two engines disagree:
+     headless Chromium falls back for a whole run, and the phone does not.
+     The rendering was measured separately, by photograph --
+     shots/r50-space-before.png and -after.png. */
+  {
+    const real = LinguaFont.build;
+    const faces = {};
+    LinguaFont.build = function (defs, opt) {
+      const f = real.apply(this, arguments);
+      if (opt && opt.family) faces[opt.family] = f;
+      return f;
+    };
+    try { installScriptFont(); } finally { LinguaFont.build = real; }
+
+    const type = faces['LinguaType'], script = faces['LinguaScript'];
+    if (!type || !script) {
+      fails.push('installScriptFont() built ' + Object.keys(faces).join(', ') +
+        ' -- both LinguaScript and LinguaType have to be built for the two' +
+        ' halves of this claim to be about anything');
+    } else {
+      if (type.index.space !== undefined || type.spaceAdv)
+        fails.push('LinguaType carries a space glyph (index ' +
+          type.index.space + ', ' + type.spaceAdv + ' units of ' +
+          '1000). CLAUDE.md rule 10 says that face carries nothing but the' +
+          ' private use range, and a space it answers for is one character' +
+          ' that does NOT fall through -- the .tfont line field draws its' +
+          ' roman letters in the ordinary font and its spaces at four' +
+          ' fifths of an em');
+      if (script.index.space === undefined || !script.spaceAdv)
+        fails.push('LinguaScript has no space glyph. In a square-cell script' +
+          ' the space is the script\'s own spacing and has to be one cell;' +
+          ' without it a line of drawn letters is spaced by whatever font' +
+          ' the browser fell back to');
+    }
+  }
+
   return { fails: fails, systems: systems, listedCount: list.length,
            guessed: guessed };
 });
@@ -517,7 +581,7 @@ if (R.fails.length) {
   if (R.fails.length > 40) console.error('  ...and ' + (R.fails.length - 40) + ' more');
   process.exit(1);
 }
-console.log('\nall ten claims hold, for every writing system: every map index' +
+console.log('\nall eleven claims hold, for every writing system: every map index' +
   ' resolves, max is the longest key, nothing in ink goes unreached, every' +
   ' key is lower case and unique, the roman layer appears exactly where the' +
   ' person CHOSE one and never where the app merely guessed, and wears' +
@@ -527,4 +591,8 @@ console.log('\nall ten claims hold, for every writing system: every map index' +
   ' keyboard types is drawn in the letters somebody drew, and what any other' +
   ' keyboard types is not. And nothing is cut until there is something new' +
   ' to cut: the first push cuts, two pushes with nothing changed cut once,' +
-  ' and a letter redrawn cuts again.');
+  ' and a letter redrawn cuts again. And the typing face carries nothing' +
+  ' but the range it is for: LinguaType answers for no space, so U+0020 in' +
+  ' a .tfont field falls through like every roman letter beside it, while' +
+  ' LinguaScript keeps its one-cell space, which is the drawn script\'s' +
+  ' own spacing.');

@@ -938,6 +938,13 @@ var LinguaFont = (function () {
     side: 36,
     em: 1000, base: 800, asc: 800, desc: -200,
     cell: 800, fitMargin: 0.06,
+    /* Whether this face answers for U+0020, and at one cell when it does.
+       A face of drawn letters does -- every letter is a cell, so the gap
+       between two of them is a cell. A face that is only a private use
+       range does not: a space it answered for would be the one character
+       in a .tfont field that did not fall through, at four fifths of an em
+       beside roman letters set in the ordinary font. */
+    space: true,
     mode: 'center',                                   // 'asdrawn' | 'center' | 'fit'
     pen: { width: 60, angleDeg: 0, contrast: 1.0 },
     /* A name only so that a font built without one is still a valid file.
@@ -955,6 +962,7 @@ var LinguaFont = (function () {
     o = o || {};
     var EM = opt(o, 'em'), BASE = opt(o, 'base'), ASC = opt(o, 'asc'), DESC = opt(o, 'desc');
     var CELL = opt(o, 'cell'), MARGIN = opt(o, 'fitMargin'), mode = opt(o, 'mode');
+    var SPACE = opt(o, 'space');
     var PEN = opt(o, 'pen'), ligatures = opt(o, 'ligatures');
     // Half the gap that has to sit between the ink of one letter and the ink
     // of the next. A letter's width is its own ink plus twice this, so the
@@ -1038,12 +1046,18 @@ var LinguaFont = (function () {
     });
 
     // In a square-cell script the space is one cell, like a full-width space.
-    var spaceAdv = CELL;
-    index.space = names.length;
-    addCode(cmapPairs, 32, names.length);
-    names.push('space');
-    charstrings.push(charstring([], spaceAdv));
-    advances.push({ adv: spaceAdv, lsb: 0 });
+    // That is true of a face made of drawn letters and of nothing else, so
+    // the caller says which it is building. A face that carries only a
+    // private use range answers for no space at all: U+0020 falls through to
+    // whatever font the roman letters beside it already fell through to.
+    var spaceAdv = SPACE ? CELL : 0;
+    if (SPACE) {
+      index.space = names.length;
+      addCode(cmapPairs, 32, names.length);
+      names.push('space');
+      charstrings.push(charstring([], spaceAdv));
+      advances.push({ adv: spaceAdv, lsb: 0 });
+    }
 
     if (bbox[0] === Infinity) bbox = [0, 0, 0, 0];
 

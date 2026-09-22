@@ -3167,6 +3167,17 @@ a.set{text-decoration:none}
    あとはリンクと同じ並びにして欲しい。」 OWNER 2026-08-28: this is the row
    that shape refers to, and all four of the profile's fields wear it. */
 .field.at .lnin{flex:1;min-width:0;border-bottom:0;padding-left:3px}
+/* お問い合わせの本文 ── 画面の残り全部。
+   「本文が増えたらこれ見えなくなるやろ送信右上にして本文は画面全部に広がる
+   ようにして。」 OWNER 2026-09-22。欄が中身のぶんだけ伸びる作りだったので、
+   長く書くほど送信ボタンが下へ押し出されて画面から消えていました。送信は
+   バーの隅へ行き（www/settings.js § vContact）、欄はここで残りを取って
+   **中でスクロール**します ── `.lnin` の overflow:hidden は「伸びるから隠す
+   物が無い」という前提の上にあるので、伸びなくなるここだけ auto に戻します。
+   これが効くのは `.body.tall` の中だけ（vContact がそれを着ています）。
+   足した物は枠でも角丸でもパネルでもありません。下線一本は今までどおり。 */
+.field.ctbody{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
+.field.ctbody .lnin{flex:1 1 auto;height:auto;min-height:0;overflow:auto}
 /* The box a list is pasted into takes the room that was standing empty under
    it. 「下のスペース余ってんなら上の入力欄広くしてみやすくしろよ」OWNER
    2026-08-27. `.field textarea` is worn by thirty screens, so this is by id --
@@ -3903,8 +3914,35 @@ textarea.ntbody.grow{min-height:0;height:auto;overflow:hidden;resize:none}
    padding and `.view.fit .pwscroll`'s overflow, up the file. One selector says
    a thing once, so the height is the only line that belongs here.
    「日本語キーボードで意味の行が隠れるなら、道具の行の上に意味の行も一緒に
-   寄せる」 */
-.view.fit{height:100vh;height:100dvh}
+   寄せる」
+
+   AND IT IS THE PAGE LESS THE LIFT, because the box STARTS at that lift.
+   「そもそも画面はスクロールできないようにして欲しいんだけど、そうすれば
+   ズレすら無くなるはずなのになんで？」「キーボードはそこで止める。入力位置も
+   タップしても動かないそれでいいやん。」 OWNER 2026-09-22.
+
+   The answer to 「なんで？」 is that the document was already locked and the
+   thing that moves is not the document. `html.fitlock` is `overflow:hidden`
+   on the page while this is open, and that is what stopped the DRAG. A TAP
+   is not a drag: WebKit lifts the LAYOUT viewport to reveal the field it has
+   just focused, `overflow:hidden` does not forbid that, and nothing in
+   JavaScript can refuse it -- `preventScroll` is an option on a PROGRAMMATIC
+   focus, which is why the frame this screen OPENS on was always right
+   (`pwKeepKb`), and a finger on a textarea does not go through it.
+
+   So the lift is not fought, it is subtracted, and in ONE place: this box is
+   pinned to `--vvtop` and is the page LESS `--vvtop`. It was `100dvh` -- a
+   whole page, beginning a lift down the page -- so it hung exactly that far
+   past the foot, and everything laid out against the foot hung with it.
+   Measured, 390x844 with a 380 keyboard: the visible window came down by the
+   lift and the MEANING came down by twice it, so past 114 the meaning was
+   under the keyboard and the tags with it. The line and the row of tools held
+   still throughout, which is why nobody saw it -- iOS lifts the page
+   precisely so the focused field does not move.
+
+   `post-check` § NOTHING ON THE COMPOSER MOVES asks it in SCREEN
+   coordinates, of the line, the row and the meaning together. */
+.view.fit{height:100vh;height:calc(100dvh - var(--vvtop, 0px))}
 
 /* ---- r5-gram ----------------------------------------------------------
    文法の章を埋める（オーナー決定 2026-09-07）。ここより上には触っていない。
@@ -3925,28 +3963,6 @@ textarea.ntbody.grow{min-height:0;height:auto;overflow:hidden;resize:none}
 .secnm{min-height:44px;min-width:44px;margin:-10px 0;padding:0;
    background:none;border:0;font:inherit;color:inherit;text-align:left}
 .secnm:active{color:var(--gold)}
-/* ---- r6-post ----------------------------------------------------------
-   縦書きの欄で、ローマ字が一字ずつ縦に積まれていた（OWNER 実機 142、写真つき）。
-   ここより上には触っていない。
-
-   欄が着る `.dir-ttb-rl` / `.dir-ttb-lr` は `text-orientation:upright` を
-   宣言している。それは一文字ずつ立てるという意味で、日本語には正しく、
-   ローマ字には「a / l / i / n / e」と縦に積むことになる。英語のUIでは
-   placeholder がそれで、二列目に折れて切れていた。
-
-   測った（390x844、字は 1.2rem、列の高さ 444）:
-     upright   "a line in your language"  幅 58px = 2列 ／ 「あなたの言語で一行」 29px = 1列
-     mixed     "a line in your language"  幅 29px = 1列 ／ 「あなたの言語で一行」 29px = 1列
-
-   `sideways` は日本語も横に倒すので採らない ── 「日本語は今のまま縦」。
-   `mixed` はローマ字だけを横に倒し、日本語は立てたままにする指定で、
-   オーナーの言った二つを一つの指定が両方満たす。
-
-   欄だけ。人の投稿の行（`.pline`）は触っていない ── そこは書いた人の言語の
-   ことで、報告は欄のことだった。新規と返信は同じ `pwHTML()` が描くので、
-   この一箇所が両方に届く。 */
-.lnin.dir-ttb-rl,
-.lnin.dir-ttb-lr{-webkit-text-orientation:mixed;text-orientation:mixed}
 /* 「@aya への返信」の @aya は押せる（OWNER 2026-09-07）。着るのは `.ptag`
    ── 本文中のタグと同じ、青い字だけの形で、角丸も枠線も無い。
 

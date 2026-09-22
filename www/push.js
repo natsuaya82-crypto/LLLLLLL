@@ -136,7 +136,7 @@ function pushSw(k){
      catch. Four names in the table, four names here.
 
      What that costs is a kind on PUSH_KINDS with no line here -- a switch
-     drawn and a switch that does not move. It is what acct-check 81 presses
+     drawn and a switch that does not move. It is what acct-check 82 presses
      all four of. */
   if(n==='follow')     SET.push_follow=on;
   else if(n==='reply') SET.push_reply=on;

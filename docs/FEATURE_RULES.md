@@ -69,6 +69,31 @@ Not everything that repeats is duplication. `cffNum` and `csNum` in `otf5.js`
 encode the same integers to different byte forms because that is what CFF
 specifies. Merging them would be inventing a rule, not finding one.
 
+### A hole is not plugged. The whole is looked at, and covered
+
+「基本的に穴を潰すんじゃなくて同じように全体を俯瞰して穴を覆って欲しい」
+「今までも全部そうして」「じゃないとコードががんじがらめになるし、ルールに
+追加して必ず守るように」 OWNER 2026-09-22.
+
+A fault is a hole in a SURFACE, and the work is to name the surface, not the
+hole. Before anything is written:
+
+1. **Count the surface.** What is the whole set of things this fault is one
+   of? Every table, every screen, every field, every key — read it off the
+   repository or the catalogue, never off memory.
+2. **Write the one statement that covers all of it**, in the one place that
+   governs the surface, and delete the plugs that were standing in the holes.
+3. **The check counts, it does not list.** It enumerates the surface the same
+   way (the catalogue, the page, the file) and asks the statement of every
+   member, so a member added tomorrow is asked tomorrow.
+4. **An exception is the owner's**, named in the decision log, and the check
+   counts it as the one allowed name.
+
+What was plugged before this was written is covered the same way the day that
+area is next touched; `docs/BACKLOG.md` carries the sweep. **Nothing holds
+this mechanically. A person holds it by reading the change, and the leader by
+counting the surface before dispatching (`docs/LEADER.md`).**
+
 ## Refactoring
 
 Not a goal. Do it only when one of these is true:
@@ -217,6 +242,75 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected docs:
 - Implementation status:
 ```
+
+### 2026-09-22 サインインなしでサーバーに触れる道は無い ── 穴ではなく面を覆う。扉の `email_taken()` だけ例外
+- Date: 2026-09-22
+- Area: サーバー（`supabase/schema.sql`、bucket、edge function）、`www/net.js`、そして直し方そのもの
+- Decision: 「サインインなしで勧めるものないけど」「そもそもサインインがない状態でできることがないはずなのにそれがあることを疑って言ってんの。小さい穴だけ潰しても意味ねえだろ、大きいカバーで覆えやバカ」「基本的に穴を潰すんじゃなくて同じように全体を俯瞰して穴を覆って欲しい。今までも全部そうして。じゃないとコードががんじがらめになるし、ルールに追加して必ず守るように」「判断だけどこれは例外で」
+  1. **サーバーの物は一つもサインインなしでは触れない** ── 表・view・関数・bucket・edge function の全部。`anon` には権限が無い、と一文で言い（今ある物も明日足す物も）、`rls-check` はカタログを数えて全部を「誰でもない人」として試す。名指しの一覧では持たない。
+  2. **扉の `email_taken()` だけが例外** ── アカウントができる前に訊く物なので。check はそれを「許した一つの名前」として数える。
+  3. **直し方**: 穴を潰さず、面を数えて一文で覆う。`CLAUDE.md` と § One place に書いた。
+- Reason: 通知の関数がサインインなしで叩けると分かり、それを一つ閉じる案を出したら、オーナーは「一つ」ではなく「そういう物がある事」を疑っていた。数えたら既定で全部が開いていて、RLS だけが壁だった。
+- Affected features: 通知（r47）、写真の bucket（非公開になる、アプリはセッション付きで取る）、サインインしていない画面からの読み（アプリは送らない）
+- Affected data: 無し。誰の行も動かない。**誰が読めるか**が変わる
+- Affected docs: `CLAUDE.md` § Simple の次の段、この file § One place、`docs/ARCHITECTURE.md`／`DATA_SAFETY.md` の RLS の文（r47 が書き換える）、`docs/BACKLOG.md`（過去の「穴」の掃除）
+- Implementation status: r47（サーバー）・r48（`www/net.js`）が作業中。163 には入れず、通知と一緒に 164
+
+### 2026-09-22 投稿画面は、欄をタップしても何も動かない
+- Date: 2026-09-22
+- Area: 一画面フォーム（`.view.fit`、`www/index.html` の r4-sns の節）と
+  `--vvtop`（`www/shell.js` `vvFit()`）
+- Decision:（原文のまま）「そもそも画面はスクロールできないようにして欲しい
+  んだけど、そうすればズレすら無くなるはずなのになんで？」「キーボードは
+  そこで止める。入力位置もタップしても動かないそれでいいやん。」
+- **「なんで？」への答え（測った）**：ページはもう止まっていました。
+  `html.fitlock` の `overflow:hidden` が**引っぱり**を止めていて、それは
+  効いています。動いていたのはページではなく、**WebKit が焦点の欄を見せる
+  ために持ち上げるレイアウトビューポート**で、`overflow:hidden` はそれを
+  禁じず、JavaScript からも断れません（`preventScroll` は**プログラムからの**
+  focus の選択肢で、指でのタップは通りません）。
+- Decision as implemented: 持ち上げは**引き算**する。箱は `top:var(--vvtop)`
+  で留まっているのだから、高さは**ページ引く `--vvtop`**。
+  `.view.fit{height:calc(100dvh - var(--vvtop, 0px))}`。
+- **第二の仕組みは足していません。**`--vvtop` 一つに、箱の始まりと高さの
+  両方を言わせただけです（`CLAUDE.md` § シンプル ── 書き換えであって
+  継ぎ足しではない）。`--vvtop` の読み手は今も `.view.fit` 一箇所だけです。
+- 測った（390x844、キーボード 380pt）：持ち上げ N に対し、見えている窓は N
+  下がり、**意味は 2N 下がって**いました。画面の座標では意味だけが N 動き、
+  **欄と道具の行は壊れている間も止まっていました** ── iOS はまさに焦点の欄が
+  動かないように持ち上げるので。
+- Affected features: 新しい投稿・返信・ノート（`.view.fit.fitfull` も同じ箱）
+- Affected data: **無し**
+- Affected docs: `docs/CHANGELOG.md` 2026-09-22
+- Implementation status: IMPLEMENTED（`post-check` §「NOTHING ON THE COMPOSER
+  MOVES」が画面の座標で欄・道具の行・意味を訊く。赤を見てから直した）。
+  **実機未確認**
+
+### 2026-09-22 縦書きの欄は字を立てる ── 142 の `mixed` を取り消す
+- Date: 2026-09-22
+- Area: 新しい投稿の一行目の欄、縦書きの言語（`.lnin.dir-ttb-rl` /
+  `.lnin.dir-ttb-lr`、`www/index.html` の r6-post の節）
+- Decision:（原文のまま）「横にするなんか言ったことない。直して。」
+- Reason: 実機の写真（ビルド 162、縦書きの言語）で、欄に打った「Hello」が
+  **横倒し**で出ていた。`text-orientation:mixed` はローマ字の連なりだけを
+  90 度倒す指定で、それが欄にだけ掛かっていた。
+- **2026-09-XX（ビルド 142）の r6-post の決定を取り消します。**あの節は
+  「縦書きの欄でローマ字が一字ずつ縦に積まれていた」という実機報告への
+  対応として `mixed` を入れたものですが、オーナーは今、倒すことを頼んだ
+  覚えは無いと言っています。**新しい方が勝ちます**（`CLAUDE.md` §
+  オーナーが今言ったことは仕様）。節はコメントごと**削除**しました ──
+  「歴史として」残さない（同 § 規則を直すとは消すこと）。
+- これで欄は親の `.dir-ttb-rl,.dir-ttb-lr` の `text-orientation:upright` を
+  受け継ぎ、**人の投稿の行（`.pline`）と同じ**になります。打った物と
+  投稿された物が同じ向きで立つ、というのがこの決定の中身です。
+- 測った副作用（390x844、1.2rem）：`upright` だと欄の幅が英語の placeholder
+  で 82px（二列ぶん）、日本語で 53px。**切れません** ── `lnFit()` が幅を
+  測って伸ばすので、欄が広くなるだけです。
+- Affected features: 新しい投稿・返信（同じ `pwHTML()`）
+- Affected data: **無し。**貯まる物は一バイトも変わりません
+- Affected docs: `docs/CHANGELOG.md` 2026-09-22
+- Implementation status: IMPLEMENTED（`post-check` 11d-2 が両方向を
+  `getComputedStyle` で押さえる。赤を見てから消した）。**実機未確認**
 
 ### 2026-09-18 無料の段は `$0` をやめて「無料」の語 ── 期間は付けない
 - Date: 2026-09-18

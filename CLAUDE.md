@@ -269,6 +269,30 @@ read, and what is read is obeyed. This is not about large designs; it is about
 the moment you reach to add one line. **Nothing stops this. A person holds it
 by reading the change.** → `docs/FEATURE_RULES.md`
 
+**And a hole is not PLUGGED. The whole is looked at, and COVERED.**
+「基本的に穴を潰すんじゃなくて同じように全体を俯瞰して穴を覆って欲しい」
+「今までも全部そうして」「じゃないとコードががんじがらめになるし、ルールに
+追加して必ず守るように」 OWNER 2026-09-22. When a fault is found the question
+is never 「how do I close this one」. It is 「what is the whole surface this
+belongs to, and what is the ONE statement that covers all of it」 — then that
+statement is written, the old holes' own plugs are deleted, and the check
+that holds it **counts the surface** rather than listing the holes, so a
+thing added tomorrow is covered tomorrow. The worked example is the server:
+`push-send` could be called without a sign-in, and the small fix was to close
+that one function. The surface was every table, view, function and bucket,
+and Supabase's default had given `anon` all of them with row level security
+as the only wall — so the cover is one block at the foot of `schema.sql`
+(anon has nothing) and an `rls-check` pass that enumerates the catalogue and
+tries everything as nobody. A hole closed on its own is a patch by another
+name, and code plugged hole by hole is code nobody can move in. **This holds
+for what was plugged before this was written, too**: an area found plugged is
+covered when it is touched, and `docs/BACKLOG.md` carries the sweep. The one
+exception the owner has allowed is `email_taken()` at the door
+(`docs/FEATURE_RULES.md` § Owner decision log, 2026-09-22). **Nothing stops
+this. A person holds it by reading the change — and the LEADER holds it
+before a session is dispatched, by counting the surface first
+(`docs/LEADER.md`).**
+
 **Refactoring.** Not a goal. Only for duplication that causes bugs, a spec
 change that would touch several places, something untestable, or a feature
 actually blocked. If pulling something out adds a dependency between files that

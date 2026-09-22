@@ -445,8 +445,15 @@ function contactSet(k, v){
      欄が作り直されるので（setPwSet と同じ）、切れていない時は触りません。 */
   var b=document.getElementById('cont-b');
   if(b && b.value!==txt) b.value=txt;
-  lnGrow('cont-b');
+  /* 送るボタンはバーの隅にあって、打っている間に色が変わります。画面を描き
+     直さずに、その一つだけ塗り直す ── 投稿画面の pwSetLn() が navDoPaint() を
+     呼ぶのと同じ一箇所です。lnGrow() はもう呼びません：この欄は伸びず、画面の
+     残りを取って中でスクロールします（`fitin`、www/shell.js § lnFit）。 */
+  navDoPaint('contactGo', contactOn());
 }
+/* 送れる状態かどうか。空白だけは空です（contactGo が断る物と同じ読み）。
+   送信中は押せても何も起きないので、色も消えています。 */
+function contactOn(){ return !CONT.busy && !!CONT.body.trim(); }
 /* WHAT WAS TYPED STAYS ON THE SCREEN WHEN THE SEND FAILS. 「保存するタイミング
    でエラーが起きるなら、保存されないし」「なら失敗して残るにするべき。」 OWNER
    2026-09-05 -- with no signal there is nothing to send and nothing is sent,
@@ -493,7 +500,25 @@ function vContact(){
      `.field select` is already in the stylesheet and `obLang` in the
      onboarding is already one, so nothing new is invented here and no CSS is
      added. */
-  return '<div class="view">'+navTop('')+'<div class="body">'+
+  /* AND THE SEND IS IN THE CORNER OF THE BAR, NOT UNDER THE BODY.
+     「本文が増えたらこれ見えなくなるやろ送信右上にして本文は画面全部に広がる
+     ようにして。」 OWNER 2026-09-22. It was a `.btn.ghost` at the foot of the
+     form, so it went DOWN the page as the message grew: the longer somebody
+     wrote, the further the way to send it was from the screen. The corner of
+     the bar is where every phone puts the thing that finishes what you are
+     doing, and it is the same button the composer has -- navDo()'s two
+     states, the colour and nothing else (www/shell.js § navDo).
+
+     `on` is contactOn() above and it is painted by hand while somebody types
+     (contactSet), because this screen is not redrawn on a keystroke. The word
+     is still the busy one while a send is in the air. */
+  return '<div class="view">'+
+    navTop('', navDo(t(CONT.busy? 'ob.mail.wait' : 'contact.send'),
+                     'contactGo', null, contactOn()))+
+    /* `tall` is the body that is as tall as the screen -- vSet()'s account
+       room above already wears it -- and it is what lets the field below take
+       what is left. */
+    '<div class="body tall">'+
     '<div class="field">'+
       '<label>'+esc(t('contact.kind'))+'</label>'+
       '<select id="cont-k" aria-label="'+esc(t('contact.kind'))+'"' +
@@ -511,13 +536,17 @@ function vContact(){
      No `.sfont`: what is written here is read by whoever makes the app, in
      their own letters. A message in somebody's own alphabet is a message
        nobody can answer. */
-    '<div class="field" style="margin-top:26px">'+
+    /* THE WHOLE OF WHAT IS LEFT OF THE SCREEN. 「本文は画面全部に広がるように
+       して」 OWNER 2026-09-22. `ctbody` is the field taking the slack and the
+       box scrolling inside itself; `fitin` is the mark that stops lnFit()
+       giving it a height of its own (www/shell.js), because「as tall as its
+       text」and「as tall as what is left」are two different fields and doing
+       both is the box growing back off the bottom of the phone.
+       One rule under it and nothing else -- no frame, no corner, no panel. */
+    '<div class="field ctbody" style="margin-top:26px">'+
       '<label>'+esc(t('contact.body'))+'</label>'+
-      lnField('cont-b', '', IN('contactSet', ['body']), CONT.body)+
+      lnField('cont-b', '', IN('contactSet', ['body']), CONT.body, 'fitin')+
     '</div>'+
-    '<button class="btn ghost" style="margin-top:22px"' + DO('contactGo') +
-      (CONT.busy? ' disabled':'') + '>'+
-      esc(t(CONT.busy? 'ob.mail.wait' : 'contact.send'))+'</button>'+
     '</div></div>';
 }
 /* One card: a small Lingua in that theme, its name, and a tick. The colours
