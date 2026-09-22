@@ -3533,16 +3533,23 @@ function netReport(what, why, note, ok, bad){
    `why` is one of five: a fourth invented here would be refused by the check
    constraint, which is the right way round -- the list is the server's.
 
+   WHETHER THERE IS ANYTHING TO SEND IS THE SCREEN'S QUESTION AND IS ASKED
+   ONCE. This refused an empty body as well, and two guards for one sentence
+   is the thing CLAUDE.md § Simple forbids -- it also made acct-check 79 green
+   with the screen's guard taken out, which is a check passing for the wrong
+   reason. contactGo() in www/settings.js is where 「何も書いていない」 is
+   noticed, because that is where somebody can be told; the floor under it is
+   `length(body) between 1 and 2000` in supabase/schema.sql, which is a wall
+   and not a second opinion.
+
    `author` is pushed from the session and not from anything the screen holds.
    The policy pins it to auth.uid() anyway (rls-check: 「B cannot write in
    A's name」), so this is the app agreeing with the wall rather than the app
    being the wall. */
 function netFeedbackSend(kind, body, ok, bad){
   if(!netSignedIn()){ bad(null, 0); return; }
-  var txt=String(body||'');
-  if(!txt){ bad(null, 0); return; }
   netSend('POST', '/rest/v1/feedback',
-          {author:SESS.uid, kind:String(kind||'opinion'), body:txt},
+          {author:SESS.uid, kind:String(kind||'opinion'), body:String(body||'')},
           SESS.at, function(){ ok(); }, bad);
 }
 /* ---- the other side of a report ----------------------------------------
