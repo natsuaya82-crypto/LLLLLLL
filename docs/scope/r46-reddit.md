@@ -24,16 +24,37 @@ App Store: https://apps.apple.com/us/app/lingua-conlang-builder/id6796378999 （
 
 ## r/casualconlang
 
-### modmail の「It's fine.」への返事（2026-09-22）
+### オーナーが送った modmail（2026-09-22）
 
 ```
-Thanks for checking. I'll post it today — a short video of the app, what it does, and what the free tier covers. I'll be in the comments for questions.
+Hi mods — I'm a conlanger and I built Lingua (iPhone). Every tool I tried stopped at the dictionary: you build a language and then there is nowhere to speak it. Lingua is built around that missing part.
+
+Your script. Draw each letter with your finger and the app compiles them into a real font on the phone, plus a keyboard inside the app with your letters on the keys. Alphabet, abjad, syllabary, abugida or logography, written in any direction. Digits are letters too, in whatever base you choose.
+
+Your language. A dictionary where each word has meanings, part of speech, examples, register and origin; readings and IPA; a phonology page built from what you've written; and a grammar of 44 chapters whose rules really conjugate — describe a pattern once and every word in that class follows it. A calendar with your own month and weekday names, a notebook, CSV import.
+
+The place to use it. A timeline where people post lines in their own languages, in their own letters. Each post carries its letter shapes with it, so you can read anyone's script without their font, and every post has a gloss so people can follow and reply even to a language nobody else speaks yet. Replies and threads, following, tags, a daily prompt everyone answers in their language, photos with your letters drawn on them, a 30-second voice clip, and a card that turns one line into a picture. You can also publish your language's page and let others download your alphabet or dictionary to read.
+
+Free: a full a–z + 0–9 script and one language. Paid adds more letters, keyboards and languages.
+
+I'd like to post it once in r/casualconlang with a few screenshots: drawing a letter, the dictionary in that script, and a post with a reply in someone else's letters. I'll stay in the comments and answer everything. Which flair should I use?
+
+App Store: https://apps.apple.com/us/app/lingua-conlang-builder/id6796378999
+```
+
+モデレーターの返事は **「It's fine.」** のみ。**flair の質問には答えが無い。**
+送った文には「a few screenshots」と書いてあるので、動画に変えることは断る。
+
+### 「It's fine.」への返事（2026-09-22）
+
+```
+Thanks. Posting today. One change from what I asked: it'll be a short screen recording rather than stills — the drawing and the timeline read better in motion. If there's a flair you'd rather I use, say the word and I'll set it. I'll be in the comments.
 ```
 
 意味:
 
 ```
-確認ありがとう。今日投稿します — アプリの短い動画と、何ができるか、無料でどこまでか。コメントには全部答えます。
+ありがとう。今日投稿します。一つだけ変更 — 静止画じゃなく短い画面録画にします。字を描く所とタイムラインは動いてる方が伝わるので。使ってほしい flair があれば言ってください、それで出します。コメントには出ています。
 ```
 
 ### 投稿（タイトル・本文）
