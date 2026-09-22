@@ -345,7 +345,7 @@ create or replace function language_took(lang uuid) returns boolean
 language sql stable security definer set search_path = public as $$
   select exists (select 1 from language_take t
                   where t.uid = auth.uid() and t.language = lang) $$;
-grant execute on function language_took(uuid) to anon, authenticated;
+grant execute on function language_took(uuid) to authenticated;
 
 -- ---- what a language is made of ---------------------------------------
 -- Eleven slices -- words, lines, lang, script, letters, notes, phases, talk,
@@ -1404,7 +1404,7 @@ create view language_seen as
    -- opened to stop.
    where l.published_at is not null or l.owner = auth.uid()
       or language_took(l.id);
-grant select on language_seen to anon, authenticated;
+grant select on language_seen to authenticated;
 
 -- AND THE LANGUAGE BESIDE THE PERSON, IN THE SAME ANSWER.
 -- 「他人のフォロー／フォロワーとか見る時すんごいくるくる回ってるけど、なんか
@@ -1461,7 +1461,7 @@ create view follow_seen as
     from follow f
     join profile a on a.id = f.follower
     join profile b on b.id = f.followed;
-grant select on follow_seen to anon, authenticated;
+grant select on follow_seen to authenticated;
 
 drop view if exists profile_seen cascade;
 create view profile_seen as
@@ -1479,7 +1479,7 @@ create view profile_seen as
        order by ls.created_at asc
        limit 1
     ) l on true;
-grant select on profile_seen to anon, authenticated;
+grant select on profile_seen to authenticated;
 
 drop view if exists post_seen cascade;
 create view post_seen as
@@ -1525,7 +1525,7 @@ create view post_seen as
                   where r.post = p.id and r.kind = 'boost'
                     and r.actor = auth.uid()) as i_boost
     from post p left join profile a on a.id = p.author;
-grant select on post_seen to anon, authenticated;
+grant select on post_seen to authenticated;
 
 -- post: everyone reads, you write as yourself.
 --
@@ -2219,7 +2219,7 @@ language sql stable as $$
    order by ((k.pts + a.pts) * feed_weight(v.author)) desc, v.created_at desc
    limit lim offset off
 $$;
-grant execute on function feed_hot(int, int) to anon, authenticated;
+grant execute on function feed_hot(int, int) to authenticated;
 
 -- THE PEOPLE YOU FOLLOW, AND WHAT THEY PASSED ON.
 --
@@ -2289,7 +2289,7 @@ language sql stable as $$
    order by z.at_key desc
    limit lim
 $$;
-grant execute on function feed_fo(int, timestamptz) to anon, authenticated;
+grant execute on function feed_fo(int, timestamptz) to authenticated;
 
 -- ---------------------------------------------------------------------------
 -- Leaving
@@ -2348,7 +2348,7 @@ language sql stable security definer set search_path = public as $$
   );
 $$;
 revoke all on function email_taken(text) from public;
-grant execute on function email_taken(text) to anon, authenticated;
+grant execute on function email_taken(text) to authenticated;
 
 -- ---------------------------------------------------------------------------
 -- Answering a report
@@ -2871,7 +2871,7 @@ create trigger profile_follows after insert on profile
 -- notices reach a phone are fields of this column (2026-09-22), and a switch
 -- that cannot be written is a switch that is always on.
 revoke update on profile from anon, authenticated;
-grant  update (handle, display, av, bio, link, loc, prefs) on profile to anon, authenticated;
+grant  update (handle, display, av, bio, link, loc, prefs) on profile to authenticated;
 
 -- And the same sentence about INSERT, which is not the same statement.
 --
@@ -2895,7 +2895,7 @@ grant  update (handle, display, av, bio, link, loc, prefs) on profile to anon, a
 -- `handle` IS in the UPDATE grant, and with is_admin() reading the handle
 -- that is the road somebody would take. profile_rename() closes it.
 revoke insert on profile from anon, authenticated;
-grant  insert (id, handle, display, av, bio, link, loc) on profile to anon, authenticated;
+grant  insert (id, handle, display, av, bio, link, loc) on profile to authenticated;
 
 -- ---------------------------------------------------------------------------
 -- And the question that is no longer asked
@@ -2912,7 +2912,7 @@ grant  insert (id, handle, display, av, bio, link, loc) on profile to anon, auth
 -- telling the truth -- something is still standing on it.
 drop function if exists has_account();
 revoke update on post from anon, authenticated;
-grant  update (body, language, prompt, reply_to) on post to anon, authenticated;
+grant  update (body, language, prompt, reply_to) on post to authenticated;
 
 -- And INSERT, for the same reason as profile above. The comment over
 -- hidden_at says "nobody may set these but the two functions at the foot of
@@ -2928,7 +2928,7 @@ grant  update (body, language, prompt, reply_to) on post to anon, authenticated;
 -- above already calls the author's. created_at is left out on purpose: it
 -- defaults to now() and a client that could name it could date a post.
 revoke insert on post from anon, authenticated;
-grant  insert (id, author, language, body, prompt, reply_to) on post to anon, authenticated;
+grant  insert (id, author, language, body, prompt, reply_to) on post to authenticated;
 
 -- ---------------------------------------------------------------------------
 -- And the road OUT: three triggers that tell push-send something happened
@@ -3068,3 +3068,135 @@ begin
     for each row execute function push_ping();
 end
 $b$;
+
+-- ---------------------------------------------------------------------------
+-- THE WALL: nothing on this server answers anybody who has not signed in
+--
+-- 「ちがう。そもそもサインインがない状態でできることがないはずなのにそれが
+--   あることを疑って言ってんの。小さい穴だけ潰しても意味ねえだろ、大きい
+--   カバーで覆えやバカ」 OWNER 2026-09-22.
+--
+-- Not one table, one view, one function, one sequence, one bucket. This block
+-- is the whole of it, and it is a COVER rather than a list: it names no table
+-- and no function, so a table added to this file tomorrow is behind it the
+-- day it is added. Every hole this closed was a line somebody wrote by hand
+-- and a line nobody later remembered -- the same fault docs/DATA_SAFETY.md
+-- names 「a list of keys, written by hand, that nobody remembered to add to」.
+--
+-- WHAT WAS OPEN, measured on 2026-09-22 before this block existed
+-- (tools/rls-check.mjs, the run that has to go red first): 24 relations in
+-- `public`, 69 functions, 5 sequences, both of storage's tables and both
+-- buckets -- and three standing `alter default privileges` entries, so
+-- everything made afterwards would have been open too. Nobody had to find a
+-- bug: the publishable key is in www/net.js in the open, and that is all it
+-- took to read every profile, every post, every reaction, every follow, and
+-- every photograph anybody had ever put up.
+--
+-- TWO LAYERS AND THEY ANSWER DIFFERENT QUESTIONS. The grants below say
+-- **whether you are anybody at all**; the policies above say **which of the
+-- signed-in may touch which row**. A `using (true)` policy is not a hole any
+-- more -- it means「every signed-in person」, which is what it was always
+-- meant to say. This is why no policy was rewritten to add `is_member()`:
+-- that would be the same sentence said twice, in two places, and one of them
+-- would drift.
+--
+-- IT IS THE LAST THING IN THE FILE AND HAS TO BE. Everything above creates
+-- tables and views, and Supabase's default privileges hand each new one to
+-- `anon` as it is made. Revoking at the foot catches all of them; revoking at
+-- the head would catch none.
+--
+-- AND IT SURVIVES BEING PASTED TWICE, like everything else here: a revoke of
+-- something already revoked is not an error, and the default-privilege lines
+-- are a state rather than a step.
+do $w$
+declare r record;
+begin
+  /* Whoever is pasting this file is who created the tables in it, and
+     `alter default privileges` with no `for role` is about the current user
+     only. On Supabase's SQL editor that is `postgres`; on a project where
+     something else made them it is that. So it is said for every role that
+     actually HAS a standing grant to anon in this schema, read out of the
+     catalogue rather than guessed -- `for role supabase_admin` written by
+     hand fails outright on a database where that role does not exist, and a
+     statement that errors here takes the block with it. */
+  execute 'alter default privileges in schema public revoke all on tables    from anon';
+  execute 'alter default privileges in schema public revoke all on sequences from anon';
+  execute 'alter default privileges in schema public revoke all on functions from anon';
+  for r in
+    select distinct pg_get_userbyid(d.defaclrole) as who
+      from pg_default_acl d
+      join pg_namespace n on n.oid = d.defaclnamespace
+     where n.nspname in ('public', 'storage')
+       and array_to_string(d.defaclacl, ',') like '%anon=%'
+  loop
+    execute format(
+      'alter default privileges for role %I in schema public  revoke all on tables    from anon', r.who);
+    execute format(
+      'alter default privileges for role %I in schema public  revoke all on sequences from anon', r.who);
+    execute format(
+      'alter default privileges for role %I in schema public  revoke all on functions from anon', r.who);
+    execute format(
+      'alter default privileges for role %I in schema storage revoke all on tables    from anon', r.who);
+  end loop;
+end
+$w$;
+
+revoke all on all tables    in schema public from anon;
+revoke all on all sequences in schema public from anon;
+
+-- FUNCTIONS NEED THE OTHER WORD AS WELL, and this is the half a revoke of
+-- `anon` alone does not reach: PostgreSQL grants EXECUTE on every new
+-- function to PUBLIC, and PUBLIC is not a role anybody is in -- it is
+-- everybody, `anon` included. So `revoke ... from anon` on a function that
+-- was never revoked from PUBLIC changes nothing at all, and 69 of them were
+-- exactly that. Measured 2026-09-22.
+--
+-- Granting them back to `authenticated` in one line is not a widening and
+-- cannot be: PUBLIC already included `authenticated`, so every function in
+-- this schema was already theirs to run. What changes is only who else.
+revoke all on all functions in schema public from public;
+revoke all on all functions in schema public from anon;
+grant execute on all functions in schema public to authenticated;
+
+-- The files. `storage.objects` and `storage.buckets` belong to
+-- `supabase_storage_admin`, so this is wrapped for the same reason their RLS
+-- is above -- on a database where this is not ours to say, it says so and
+-- goes on.
+do $w$
+begin
+  execute 'revoke all on all tables in schema storage from anon';
+exception when insufficient_privilege then
+  raise notice '%', 'storage: not ours to revoke here -- Supabase does it';
+end
+$w$;
+
+-- A PUBLIC BUCKET IS A URL THAT NEEDS NOTHING. No policy under it is ever
+-- consulted: the object is served to whoever has the link, and the link is in
+-- every post. `post-media` has been public since the day it was made, which
+-- means every photograph and every recording anybody put up has been readable
+-- by anybody at all.
+--
+-- Every bucket and not this one by name -- the cover is the mechanism.
+update storage.buckets set public = false where public;
+
+-- And the policy over the files asks who you are, the way the other two
+-- already did. `using (bucket_id = 'post-media')` was every person alive;
+-- this is every person signed in, which is the same sentence `post_read` is
+-- under.
+drop policy if exists media_read on storage.objects;
+create policy media_read on storage.objects for select
+  using (is_member() and bucket_id = 'post-media');
+
+-- THE ONE NAME THAT STAYS OPEN, and it is the owner's.
+-- 「判断だけどこれは例外で」 OWNER DECISION 2026-09-22.
+--
+-- `email_taken()` is asked AT THE DOOR (www/net.js, with no token on it),
+-- before an account exists, so a person signing up has no session to ask it
+-- with. It is the single thing on this server a caller with no session may
+-- run, it is named here rather than counted, and tools/rls-check.mjs counts
+-- everything else as zero with this one named. An exception that is counted
+-- is an exception that grows.
+--
+-- It is here, after the revoke, because order is the whole of it: the line
+-- beside the function itself would be undone by the two lines above.
+grant execute on function email_taken(text) to anon;
