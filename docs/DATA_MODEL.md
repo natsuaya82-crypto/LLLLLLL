@@ -377,6 +377,33 @@ it goes with the rest of that account's keys. **It is with the owner** —
 `tools/hist-check.mjs` がその道を、`npm run rls` が表と天井と誰が読めるかを
 押さえています。
 
+## お問い合わせ ── `feedback`（サーバーだけ、運営だけ）
+
+「設定にお問合せを足して欲しい。フォームみたいなの作ってみんなからの意見要望
+バグとかあればそれを見たい。フォームはアプリ内の admin のページで見れるように
+したい。」OWNER 2026-09-22。
+
+| | |
+|---|---|
+| どこに | サーバーだけ（`supabase/schema.sql`、`report` の隣）。**端末には一行も来ません** ── slice でも `SET` でもなく、`localStorage` の鍵は一つも増えません |
+| 誰の | 送った人の。`author uuid references profile(id) on delete set null` |
+| 何が | `kind`（`opinion` / `request` / `bug` の閉じた集合）、`body`（1〜2000 字）、`created_at` |
+| 誰が読めるか | `is_staff()` だけ（`report_read` と同じ）。**送った本人にも見えません** ── 自分の送った物を読み返す道は作っていません |
+| 誰が書けるか | サインインしている人が、自分の `author` で insert するときだけ（`is_member() and author = auth.uid()`）。`npm run rls` が B の名前で書けないことを試します |
+| いつ消えるか | **消えません。**update の policy も delete の policy も無く、`report_drop()` にあたる RPC も作っていません ── 消す道は頼まれていないからです |
+| 退会したら | `author` が null になり、**本文は残ります**。admin では @ の無い行として出ます |
+
+**どの種類か** ── `current` でも `frozen` でもありません。送られた瞬間の
+言葉がそのまま一行になり、**あとから何も参照しません**。`author` は id で
+持っていますが、これは過去形の data ではなく**運営の作業待ち行列**で、admin が
+出すのは今その人が名乗っている @ です（`report` が `actor(handle)` を embed
+するのと同じ）。退会して @ が消えれば、消えたことが出ます ── それが正しい：
+返事のしようが無い行だと分かる必要があります。
+
+**なぜ `set null` で `cascade` ではないか。**`report.actor` と同じ理由です
+（下の「Reports do not go」）。退会が、運営が読むべきバグ報告を黙って取り下げる
+道になってはいけません。
+
 ## The index of languages, and what is actually in it
 
 `lingua.langs` (`LANGS`) is `id -> { … }`, and `lingua.cur` (`langId`) says
