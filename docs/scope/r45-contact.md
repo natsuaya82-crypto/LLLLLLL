@@ -138,9 +138,17 @@ del     34 delete-shaped buttons — 25 take something out of storage,
 es5 / dead / box / store / assets / acct（80 まで）緑
 ```
 
-`press` は一周目の 17173 のまま回し直していません ── 二周目でボタンは増えて
-います（消すボタン、お問い合わせの行）。**リーダーが取り込みのときに回す分で
-見えます。**
+```
+press   buttons pressed: 17179  (282/283 distinct names) ・ every button pressed:
+        nothing threw, nothing went blank.（未押下 1 = saveName、www/home.js の
+        物で前からです）
+```
+一周目の 17173 から +6（お問い合わせの行、消すボタン二つ、お問い合わせの顔へ
+行く行、その顔の二面ぶん）。**一度目の press は捨てました** ── 回している最中に
+`www/shell.js` を書いたからで、browser の検査は `www/` を生で読みます
+（`docs/STATE.md` 2026-09-06「ゲートが走っている間は作業ツリーに取り込まない」）。
+同じ数が出ましたが、動いている木を測った緑は緑ではないので、落ち着いてから
+回し直した方を書いています。
 
 ### 二周目の写真
 
@@ -150,9 +158,12 @@ es5 / dead / box / store / assets / acct（80 まで）緑
 
 ### 二周目で残っている物
 
-- **復旧の顔（`admin:rec`）は bar が「管理」のまま。**お問い合わせと同じ形
-  ですが、**この session の持ち物ではないので触っていません。**直すなら
-  `pageName()` に一行です。
+- ~~復旧の顔（`admin:rec`）は bar が「管理」のまま。~~ **直しました**
+  （「それでいいよ！そのままやって」OWNER 2026-09-22）。`pageName()` 自身の
+  規則 ──「A page opened on a particular thing is named after that thing」、
+  三つ上のコメント ── に復旧の顔が一度も当てられていなかっただけでした。
+  `rec` と `rec:<id>` はどちらも復旧の画面なので両方「復旧」、引数なしの
+  `admin` は目次なので「管理」。写真：`shots/r45-admin-rec-ja.png`。
 - `supabase/schema.sql` が二度変わりました（表と `feedback_drop()`）。
   **オーナーが Dashboard に流すまでこの画面は動きません。**
 
