@@ -344,6 +344,27 @@ USD 4.99 を基準にすると日本は 1,500 円あたりになります。
 
 ---
 
+## 4b. ストアの文を 10 言語で入れる ── GitHub の Actions で（2026-09-22）
+
+ストアの「言語」は英語だけだった（1.0.1 (162) の公開時）。アプリは 10 言語で
+動くので、副題・説明文・キーワード・宣伝文・新機能を 10 言語ぶん
+`store/<locale>.json` に置き、**Actions → Store Localize** で App Store
+Connect に入れる。鍵は `ios-deploy.yml` と同じ三つの Secrets。
+
+1. GitHub → Actions → **Store Localize** → Run workflow。
+   - `version`：**提出準備中の版**（例 `1.0.2`）。公開中の 1.0.1 の文は Apple が
+     触らせない。無ければ `create` を on にすると版だけ作る。
+   - `skip`：入れない locale。今の英語を残すなら `en-US`。
+2. 終わったら App Store Connect → 1.0.2 に 10 言語が並んでいる。スクショは
+   主言語（英語）の物が自動で流用される。
+3. 版にビルド（163 以降）を付けて提出するのは App Store Connect で。
+   文だけの変更でも審査を通る（だいたい 1 日）。
+
+文を直すのは `store/<locale>.json` を直して push → もう一度 Run workflow。
+長さの上限（副題 30・キーワード 100・宣伝文 170・説明 4000）は
+`npm run store-localize` が鍵なしで見る。**`supportUrl` は
+`https://tokinets.com/lingua/` にしてある ── そのページが無ければ直すこと。**
+
 ## 5. App の情報（初回審査で必ず要るもの）
 
 App Store Connect → Lingua → **App Store** タブ:
