@@ -10,7 +10,7 @@
   進めている物は無い** ── `git rev-list --count origin/integ-0905..<枝>
   -- www/index.html` が r45〜r48 とも 0）、`tools/acct-check.mjs`（claim 81）、
   `tools/fixture.mjs`（要るなら顔を足す）、`docs/CHECK-0907.md` § 163、
-  `docs/CHANGELOG.md`、`docs/scope/r49-contact2.md`、`docs/scope/shots/r49-*.png`
+  `docs/CHANGELOG.md`、`docs/scope/r49-contact2.md`、`shots/r49-*.png`
 - **Does NOT own**: それ以外すべて。`docs/STATE.md` はリーダーの物。
   `supabase/schema.sql` は触らない（貯まる物は変わらない）。
 - **Decision it implements**: OWNER 2026-09-22（上）
@@ -38,3 +38,12 @@
 
 **変わらない。** `feedback` 表も `localStorage` も一バイトも動かない。
 画面の形だけ。
+
+## リーダーの指示と違えた所 ── 一つ
+
+写真の置き場。指示は `docs/scope/shots/r49-*.png` でしたが、**この repo の
+写真の門は `shots/` しか数えません** ── `tools/commit-msg` の
+`grep -iE '^shots/.*\.png$'` がそれで、`docs/scope/shots/` に置くと「画面を
+変えたのに写真が無い」で commit が止まります。今までの scope の写真も全部
+`shots/` に居ます（`git ls-files shots/`）。なので `shots/r49-1..3-*.png` に
+置き、`git add -f` で入れました（`shots/` は .gitignore）。
