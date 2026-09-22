@@ -362,8 +362,9 @@ Connect に入れる。鍵は `ios-deploy.yml` と同じ三つの Secrets。
 
 文を直すのは `store/<locale>.json` を直して push → もう一度 Run workflow。
 長さの上限（副題 30・キーワード 100・宣伝文 170・説明 4000）は
-`npm run store-localize` が鍵なしで見る。**`supportUrl` は
-`https://tokinets.com/lingua/` にしてある ── そのページが無ければ直すこと。**
+`npm run store-localize` が鍵なしで見る。サポート URL とマーケティング URL は
+`store/` に無い ── 今 App Store Connect にある物のまま（新しい言語には英語の
+物が写る）。
 
 ## 5. App の情報（初回審査で必ず要るもの）
 

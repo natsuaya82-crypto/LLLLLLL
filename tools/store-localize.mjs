@@ -119,8 +119,14 @@ async function main(){
   /* version localizations: description / keywords / promo / what's new */
   const have = (await call('GET', `/appStoreVersions/${ver.id}/appStoreVersionLocalizations?limit=200`)).data;
   const byLoc = Object.fromEntries(have.map((l) => [l.attributes.locale, l.id]));
+  /* The support URL and marketing URL are not in store/: they stay what the
+     owner typed (OWNER 2026-09-22「サポートurlは変えなくて良い」). A NEW locale
+     needs one, so it takes the primary locale's. */
+  const prime = have.find((l) => l.attributes.locale === 'en-US') || have[0];
+  const urls = prime ? { supportUrl: prime.attributes.supportUrl, marketingUrl: prime.attributes.marketingUrl } : {};
   for (const row of rows) {
     const a = attrs(row, VERSION_FIELDS);
+    if (!byLoc[row.locale]) for (const k of ['supportUrl', 'marketingUrl']) if (!a[k] && urls[k]) a[k] = urls[k];
     if (byLoc[row.locale]) {
       await call('PATCH', `/appStoreVersionLocalizations/${byLoc[row.locale]}`,
         { data: { type: 'appStoreVersionLocalizations', id: byLoc[row.locale], attributes: a } });
