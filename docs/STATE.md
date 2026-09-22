@@ -52,6 +52,27 @@ un-re-read.
 - ストアの文を 10 言語で入れる（`store/<locale>.json`、`tools/store-localize.mjs`、
   Actions「Store Localize」、`docs/apple.md` § 4b）。**公開中の 1.0.1 には
   入らない ── 1.0.2（＝163）に付けて出す。**サポート URL は変えない。
+- `claude/r49-contact2` ── お問い合わせの**送信は bar の右上**（打つと光る、
+  画面は描き直さない）、**本文は残りの画面全部**、送ると「送信しました」
+  （OWNER 2026-09-22）。`acct-check` 81。写真 `shots/r49-*`。
+- `claude/r50-composer` ── 新しい投稿の三つ（OWNER 2026-09-22、写真三枚）：
+  ① 打つ用の書体 `LinguaType` が空白を持たない（`LinguaFont.build` に `space`
+  の選択肢、`installTypeFont()` が `space:false`；空白だけが一マス幅だった）、
+  `conv-check`。② **欄をタップしても画面の何も動かない** ── `.view.fit` の高さを
+  `100dvh - var(--vvtop)` に（箱は `--vvtop` から始まるのに高さがページ丸ごとで、
+  持ち上げのぶん足がはみ出していた）、`post-check`「NOTHING ON THE COMPOSER
+  MOVES」。③ **縦書きの欄はローマ字も立てる** ── 142 の r6-post（`mixed`）は
+  削除、投稿の行と同じ `upright`。「入力しづらい」は測れる欠陥なし（変換・
+  カーソル・再焦点、全部正常）。写真 `shots/r50-*`。**実機は全部まだ。**
+- **規則が一つ増えた**（OWNER 2026-09-22）：穴を潰さず、面を数えて一文で覆う。
+  `CLAUDE.md` § Simple の次、`docs/FEATURE_RULES.md` § One place、`docs/LEADER.md`。
+
+**163 に入れなかったもの**：通知（`claude/r47-push-server`・`claude/r48-push-app`、
+コード完了）── r48 の `aps-environment` は、オーナーが App ID に Push を付けて
+配布 profile を作り直すまで **Archive で落ちる**ので、163 の後に取り込んで 164。
+同じ二本に「サインインなしでサーバーに触れる道は無い」の大きいカバー
+（`anon` に権限ゼロ、`rls-check` がカタログを数える、`www/net.js` はセッション
+無しで送らない、扉の `email_taken()` だけ例外）。
 
 **162 の実機（2026-09-22）**：フルアクセスをオフのままシステムキーボードに
 描いた字が出た（DEVICE CONFIRMED）。描いた直後に開いたままのキーボードには
