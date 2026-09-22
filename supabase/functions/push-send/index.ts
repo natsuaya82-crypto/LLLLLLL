@@ -140,8 +140,13 @@ Deno.serve(async (req: Request) => {
   if (!you || !them) return said({ sent: 0, why: 'no such account' });
 
   const devs = await rows(`device?select=token&uid=${eq(aim.to)}`);
-  const plan = pushPlan(aim, { handle: them.handle, prefs: you.prefs }, devs);
-  if (!plan.send) return said({ sent: 0, why: plan.why });
+  /* `push.mjs` は素の JavaScript なので、ここで形を言います ── 送らないと
+     決めた答えには `to` も `payload` もありません。三つ全部を見てから先へ
+     進むのは、型を黙らせるためではなく、**片方だけ在る答えは無い**と言って
+     おくためです。 */
+  const plan = pushPlan(aim, { handle: them.handle, prefs: you.prefs }, devs) as
+    { send: boolean; why?: string; to?: string[]; payload?: unknown };
+  if (!plan.send || !plan.to || !plan.payload) return said({ sent: 0, why: plan.why });
 
   /* ---- そして Apple へ ------------------------------------------------- */
   let jwt: string;
