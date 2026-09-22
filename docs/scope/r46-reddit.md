@@ -61,46 +61,64 @@ Thanks. Posting today. One change from what I asked: it'll be a short screen rec
 
 見せ方は**動画**。オーナーが実機で撮った `lingua-16x9-home.mp4`。
 
+**アピールの軸はこれ**（OWNER 2026-09-22）: 「自作文字を作って、それをキーボードに
+設定する。ウィジットでは自分の世界のように設定できる。作った言語は文字をそのまま
+投稿できる。繋がれる。これが lingua が求める形でしょ？」「そもそも今のコンラングには
+その機能あるアプリやサイトあるの？そこをアピールしろって」
+
+調べた結果（2026-09-22）: 手書きフォントのキーボード（Custom Font Maker Keyboard）、
+自作のキーボード配列（Keyman）、辞書と文法（PolyGlot・ConWorkShop・Vulgarlang）は
+**別々にある**。三つが一つになっていて、しかも自分の文字で投稿して相手のフォント無しで
+読まれる場所は**見つからなかった**。断定はせず「あるなら教えてほしい」と書く。
+
 タイトル:
 
 ```
-I built an iPhone app where you draw your own script and then actually post in it
+I made my conlang the keyboard on my phone, the clock on my home screen, and a feed I can post it in
 ```
 
 意味:
 
 ```
-自分の文字を描いて、実際にそれで投稿できる iPhone アプリを作った
+自作言語を、端末のキーボードにして、ホーム画面の時計にして、そのまま投稿できる場所を作った
 ```
 
 本文:
 
 ```
-Every conlang tool I tried stopped at the dictionary. You build the language and then there is nowhere to speak it. Lingua is built around that missing part.
+Three things I could never get out of a conlang tool, so I built them.
 
-You draw each letter with your finger and the phone compiles them into a real font. It installs as a keyboard, so your own letters sit on the keys anywhere you type on the phone, and widgets put your script on the home screen — the clock in your own numerals. Alphabet, abjad, syllabary, abugida or logography, written in any direction. Digits are letters too, in whatever base you pick.
+Draw your letters with a finger. The phone compiles them into a real font and installs it as a keyboard — your script is on the keys everywhere you type, not only inside one app.
 
-The dictionary holds meanings, part of speech, examples, register and origin, with readings and IPA. There is a phonology page built from what you have written, and a grammar of 44 chapters whose rules really conjugate — describe a pattern once and every word in that class follows it. Calendar with your own month and weekday names, a notebook, CSV import.
+Make the home screen your own world. Widgets put your letters on it: the clock in your own numerals, the calendar in your own month names.
 
-Then there is a timeline. People post lines in their own languages, in their own letters. Each post carries its letter shapes with it, so you can read someone's script without having their font, and every post has a gloss under it, so you can follow and reply to a language nobody else speaks yet. Replies and threads, following, tags, a daily prompt everyone answers in their own language, photos with your letters drawn onto them, thirty-second voice clips. You can publish your language's page and let people download your alphabet to read.
+Post in it, and be read. There is a timeline where people write lines in their own languages, in their own letters. Every post carries its letter shapes with it, so you can read someone's script without having their font, and every post has a gloss under it, so you can follow and reply to a language nobody else speaks yet. That part is the whole reason — a conlang usually ends up with an audience of one.
+
+The rest is what you would expect: a dictionary with meanings, part of speech, examples, register and origin, readings and IPA, a phonology page built from what you have written, 44 grammar chapters whose rules really conjugate, your own calendar, a notebook, CSV import. Alphabet, abjad, syllabary, abugida or logography, any writing direction. Digits are letters too, in whatever base you pick.
+
+I looked before I built it. Handwriting-font keyboards exist. Custom keyboard layouts exist. Lexicon and grammar tools exist. The three in one place, with somewhere to post your script and be read by people who do not have your font — I could not find it. If it exists, tell me, I want to see it.
 
 Free is a full a–z and 0–9 script, one language, 100 words, and the whole timeline. Paid adds more letters, your own keyboard layouts, more words and more languages.
 
 https://apps.apple.com/us/app/lingua-conlang-builder/id6796378999
 
-Ask me anything — I will answer everything in the comments.
+Ask me anything.
 ```
 
 意味:
 
 ```
-試した言語製作アプリはどれも辞書で止まっていた。言語を作っても、それを話す場所がない。Lingua はその足りない所を中心に作った。
+言語製作の道具から一度も得られなかった三つ。だから作った。
 
-文字は一つずつ指で描く。端末がそれを本物のフォントにする。キーボードとして入るので、端末のどこで打っても自分の文字がキーに乗っているし、ウィジェットでホーム画面にも自分の文字が出る ── 時計は自分の数字で。アルファベット、アブジャド、音節文字、アブギダ、表語文字、書く方向も自由。数字も文字で、基数も選べる。
+文字を指で描く。端末が本物のフォントにして、キーボードとして入れる ── 自分の文字が、一つのアプリの中だけでなく、端末のどこで打ってもキーに乗っている。
 
-辞書は意味・品詞・例文・語域・語源を持つ。読みと IPA も。書いた物から作られる音韻のページと、44 章の文法があって、規則は本当に活用する ── 型を一度書けば、その類の語は全部それに従う。自分の月名と曜日名の暦、メモ、CSV 取り込み。
+ホーム画面を自分の世界にする。ウィジェットが自分の文字を出す。時計は自分の数字、暦は自分の月名で。
 
-そしてタイムライン。みんな自分の言語で、自分の文字で投稿する。投稿は字の形を持って行くので、相手のフォントが無くても読める。全部の投稿に意味の行が付くので、まだ誰も知らない言語にも付いていけるし、返信もできる。返信とスレッド、フォロー、タグ、みんなが自分の言語で答える毎日のお題、自分の文字を描き込んだ写真、30 秒の音声。自分の言語のページを公開して、アルファベットを他の人にダウンロードさせることもできる。
+それで投稿する。読まれる。みんなが自分の言語で、自分の文字で書くタイムラインがある。投稿は字の形を持って行くので、相手のフォントが無くても読める。全部の投稿に意味の行が付くので、まだ誰も知らない言語にも付いていけるし、返信もできる。そこが全部の理由 ── 自作言語はたいてい読者が一人で終わる。
+
+あとは想像通り：意味・品詞・例文・語域・語源の辞書、読みと IPA、書いた物から作られる音韻のページ、本当に活用する 44 章の文法、自分の暦、メモ、CSV 取り込み。アルファベット、アブジャド、音節文字、アブギダ、表語文字、書く方向も自由。数字も文字で、基数も選べる。
+
+作る前に探した。手書きフォントのキーボードはある。自作のキーボード配列もある。辞書と文法の道具もある。その三つが一つになっていて、自分の文字で投稿してフォントを持っていない人に読まれる場所 ── それは見つからなかった。あるなら教えてほしい、見たい。
 
 無料は a〜z と 0〜9 の文字一式、言語 1 本、100 語、タイムラインは全部。有料で文字が増え、自分のキーボード配列、語数、言語数。
 ```
