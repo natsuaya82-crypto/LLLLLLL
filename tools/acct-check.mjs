@@ -3943,6 +3943,116 @@ const R = await pg.evaluate(async () => {
         '来なかった時は空のまま（OWNER 2026-09-18、Apple の審査 4）');
   }
 
+
+  /* ---- 79. お問い合わせは、押した人の名前で、打った物だけを送る ---------
+     「設定にお問合せを足して欲しい。フォームみたいなの作ってみんなからの意見
+     要望バグとかあればそれを見たい。」 OWNER 2026-09-22。
+
+     **本物のボタンを押して測ります。**種類は行を押して選び、本文は欄に打ち、
+     送るは送るボタンを押す ── どれも `data-do` を持った本物の要素への本物の
+     click／input で、act.js の一本の listener を通ります。contactGo() を
+     直接呼ぶと、ボタンとこの関数を結んでいる act-map.js の行が外れても緑の
+     ままになります。それは「押せる」を測っていない検査です。
+
+     四つ。空では送らないこと、空白だけでも送らないこと、送る時は
+     `author = SESS.uid`・押した `kind`・打った `body` が載ること、そして
+     届いたら欄が空になってこの画面を出ること。
+
+     `author` はサーバーの policy も同じことを言います（`npm run rls`
+     「B cannot write in A's name」）。ここで測るのは**アプリが自分の uid を
+     押しているか**で、嘘が通らないことはあちらです。 */
+  {
+    start();
+    netOut(); arrive(A);
+    const keep79 = netSend;
+    let sent79 = null, calls79 = 0;
+    netSend = (method, path, body, tok, ok2) => {
+      if (String(path).indexOf('/rest/v1/feedback') === 0) {
+        calls79++; sent79 = { method: method, path: path, body: body };
+      }
+      if (ok2) ok2([]);
+    };
+    const open79 = () => {
+      window.route = 'contact'; NAV = [{ r: 'settings' }, { r: 'contact' }];
+      render();
+    };
+    const go79 = () => {
+      const b = document.querySelector('[data-do="contactGo"]');
+      if (!b) { no('79: 送るボタンが画面に無い'); return false; }
+      b.click(); return true;
+    };
+
+    /* 空。押しても何も出ない。 */
+    CONT = { kind: 'opinion', body: '', busy: false };
+    open79(); go79();
+    if (calls79 !== 0)
+      no('79: **空で押したのに送っている** ── ' + JSON.stringify(sent79) +
+         '。空は toast で断って送らない（何も書いていない物が運営の列に並ぶ）');
+
+    /* 空白だけ。人から見れば空です。 */
+    CONT = { kind: 'bug', body: '   \n  ', busy: false };
+    open79(); go79();
+    if (calls79 !== 0)
+      no('79: **空白だけで押したのに送っている** ── ' + JSON.stringify(sent79));
+
+    /* そして本物の道。行を押して種類を選び、欄に打ち、送るを押す。 */
+    CONT = { kind: 'opinion', body: '', busy: false };
+    open79();
+    const rows79 = document.querySelectorAll('[data-do="contactKind"]');
+    if (rows79.length !== 3)
+      no('79: 種類の行が三つではない ── ' + rows79.length +
+         '（意見・要望・バグ。丸いチップの横並びは禁止なので行）');
+    if (rows79.length === 3) {
+      rows79[2].click();                      /* バグ */
+      if (CONT.kind !== 'bug')
+        no('79: 行を押しても種類が変わらない ── CONT.kind=' +
+           JSON.stringify(CONT.kind));
+      const on79 = document.querySelectorAll('[data-do="contactKind"].on');
+      if (on79.length !== 1)
+        no('79: 押した行が一つだけ光っていない ── ' + on79.length + ' 件');
+    }
+    const ta79 = document.getElementById('cont-b');
+    if (!ta79) no('79: 本文の欄が画面に無い');
+    else {
+      ta79.value = 'キーボードの3行目がずれます';
+      ta79.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    if (CONT.body !== 'キーボードの3行目がずれます')
+      no('79: 打った物が入っていない ── CONT.body=' + JSON.stringify(CONT.body));
+    go79();
+
+    if (calls79 !== 1)
+      no('79: **送るボタンを押しても feedback へ POST が出ない** ── ' +
+         calls79 + ' 回。設定→お問い合わせで書いた物がどこにも行きません');
+    else {
+      if (sent79.method !== 'POST')
+        no('79: POST ではない ── ' + sent79.method);
+      if (!sent79.body || sent79.body.author !== SESS.uid)
+        no('79: **author が押した人の uid ではない** ── ' +
+           JSON.stringify(sent79.body && sent79.body.author) + '、SESS.uid は ' +
+           JSON.stringify(SESS.uid));
+      if (!sent79.body || sent79.body.kind !== 'bug')
+        no('79: 押した種類が載っていない ── ' +
+           JSON.stringify(sent79.body && sent79.body.kind) + '（バグを押した）');
+      if (!sent79.body || sent79.body.body !== 'キーボードの3行目がずれます')
+        no('79: 打った本文が載っていない ── ' +
+           JSON.stringify(sent79.body && sent79.body.body));
+    }
+    /* 届いたら欄は空になり、この画面を出ます。残っていると、次に開いた人が
+       前の人の文を見て、二度送ります。 */
+    if (CONT.body !== '')
+      no('79: 送れたのに本文が残っている ── ' + JSON.stringify(CONT.body));
+    if (here() && here().r === 'contact')
+      no('79: 送れたのにお問い合わせの画面に立ったまま');
+
+    netSend = keep79;
+    CONT = { kind: 'opinion', body: '', busy: false };
+    start();
+    say('79: お問い合わせは本物のボタンを押して feedback へ ── ' +
+        'author は押した人の uid、kind は押した行、body は打った物。' +
+        '空でも空白だけでも送らない（OWNER 2026-09-22）');
+  }
+
   return out;
 });
 
