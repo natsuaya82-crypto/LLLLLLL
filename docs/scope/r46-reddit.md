@@ -71,35 +71,35 @@ Thanks. Posting today. One change from what I asked: it'll be a short screen rec
 **別々にある**。三つが一つになっていて、しかも自分の文字で投稿して相手のフォント無しで
 読まれる場所は**見つからなかった**。断定はせず「あるなら教えてほしい」と書く。
 
-**「俺が〜した」は個人すぎる**（OWNER 2026-09-22「それは個人すぎるし、皆が欲しいと
-思う投稿して欲しいのよ」）── 読む人が何を得るかで書く。
+**気持ちを書かない**（OWNER 2026-09-22「そんなきもい文章やめろ」「なんのために
+載せるの？俺のもそうだった。とかきもいから」）── 「フォルダで眠っている」
+「一番欲しかった」「読者が一人で終わる」のような行は全部消す。何ができるかだけ、
+短く、乾いた文で。
 
 タイトル:
 
 ```
-Draw your script, put it on your keyboard, and post in it somewhere people can actually read it
+Draw your script, set it as your keyboard, and post in it
 ```
 
 意味:
 
 ```
-自分の文字を描いて、キーボードに設定して、ちゃんと読まれる場所で投稿する
+自分の文字を描いて、キーボードに設定して、それで投稿する
 ```
 
 本文:
 
 ```
-Your script probably lives in a folder. Mine did. This is the app I wanted instead.
+Draw your letters with a finger. The phone compiles them into a real font and installs it as a keyboard, so your script is on the keys everywhere you type.
 
-Draw your letters with a finger. The phone compiles them into a real font and installs it as a keyboard, so your script is on the keys everywhere you type — not only inside one app.
+Widgets put your language on the home screen — the clock in your own numerals, the calendar in your own month names.
 
-Put your language on your home screen. Widgets show it there: the clock in your own numerals, the calendar in your own month names.
+A timeline where people post lines in their own languages, in their own letters. Every post carries its letter shapes with it, so you can read someone's script without having their font, and every post has a gloss under it, so you can follow and reply to a language you do not know.
 
-Then post in it, and get read. There is a timeline where people write lines in their own languages, in their own letters. Every post carries its letter shapes with it, so you can read someone's script without having their font, and every post has a gloss under it — so you can follow a language nobody else speaks yet, and reply to it. That is the part I wanted most. A conlang usually ends up with an audience of one.
+Dictionary with meanings, part of speech, examples, register and origin. Readings and IPA. A phonology page built from what you have written. 44 grammar chapters whose rules really conjugate. Your own calendar, a notebook, CSV import. Alphabet, abjad, syllabary, abugida or logography, any writing direction. Digits are letters too, in whatever base you pick.
 
-The rest is what you would expect: a dictionary with meanings, part of speech, examples, register and origin, readings and IPA, a phonology page built from what you have written, 44 grammar chapters whose rules really conjugate, your own calendar, a notebook, CSV import. Alphabet, abjad, syllabary, abugida or logography, any writing direction. Digits are letters too, in whatever base you pick.
-
-I looked before building it. Handwriting-font keyboards exist. Custom keyboard layouts exist. Lexicon and grammar tools exist. The three in one place, with somewhere your script gets read by people who do not have your font — I could not find it. If it exists, tell me, I want to see it.
+Handwriting-font keyboards exist, custom keyboard layouts exist, lexicon and grammar tools exist. The three in one place, with somewhere your script gets read by people who do not have your font — I could not find it. If it exists, tell me.
 
 Free: a full a–z and 0–9 script, one language, 100 words, and the whole timeline. Paid adds more letters, your own keyboard layouts, more words and more languages.
 
@@ -111,20 +111,32 @@ Ask me anything.
 意味:
 
 ```
-自分の文字は、たぶんフォルダの中で眠っている。俺のもそうだった。その代わりに欲しかったのがこのアプリ。
+文字を指で描く。端末が本物のフォントにして、キーボードとして入れる。だから端末のどこで打っても自分の文字がキーに乗っている。
 
-文字を指で描く。端末が本物のフォントにして、キーボードとして入れる。だから自分の文字は、一つのアプリの中だけでなく、端末のどこで打ってもキーに乗っている。
+ウィジェットが自分の言語をホーム画面に出す ── 時計は自分の数字、暦は自分の月名で。
 
-自分の言語をホーム画面に置く。ウィジェットがそこに出す。時計は自分の数字、暦は自分の月名で。
+みんなが自分の言語で、自分の文字で投稿するタイムライン。投稿は字の形を持って行くので、相手のフォントが無くても読める。全部の投稿に意味の行が付くので、知らない言語にも付いていけるし、返信もできる。
 
-そしてそれで投稿して、読まれる。みんなが自分の言語で、自分の文字で書くタイムラインがある。投稿は字の形を持って行くので、相手のフォントが無くても読める。全部の投稿に意味の行が付く ── だからまだ誰も知らない言語にも付いていけるし、返信もできる。そこが一番欲しかった所。自作言語はたいてい読者が一人で終わる。
+意味・品詞・例文・語域・語源の辞書。読みと IPA。書いた物から作られる音韻のページ。本当に活用する 44 章の文法。自分の暦、メモ、CSV 取り込み。アルファベット、アブジャド、音節文字、アブギダ、表語文字、書く方向も自由。数字も文字で、基数も選べる。
 
-あとは想像通り：意味・品詞・例文・語域・語源の辞書、読みと IPA、書いた物から作られる音韻のページ、本当に活用する 44 章の文法、自分の暦、メモ、CSV 取り込み。アルファベット、アブジャド、音節文字、アブギダ、表語文字、書く方向も自由。数字も文字で、基数も選べる。
-
-作る前に探した。手書きフォントのキーボードはある。自作のキーボード配列もある。辞書と文法の道具もある。その三つが一つになっていて、自分の文字がフォントを持っていない人に読まれる場所 ── それは見つからなかった。あるなら教えてほしい、見たい。
+手書きフォントのキーボードはある。自作のキーボード配列もある。辞書と文法の道具もある。その三つが一つになっていて、自分の文字がフォントを持っていない人に読まれる場所 ── 見つからなかった。あるなら教えてほしい。
 
 無料：a〜z と 0〜9 の文字一式、言語 1 本、100 語、タイムラインは全部。有料で文字が増え、自分のキーボード配列、語数、言語数。
 ```
+
+## 写真とフレア
+
+**写真。** Reddit は動画とギャラリーを一つの投稿に混ぜられない ── どちらか一本。
+**動画を推す**（キーボードに切り替わる所とウィジェットは動いていないと伝わらない）。
+画像でいくなら実機そのままの二枚だけ ── ホーム画面のウィジェットと、キーボード。
+額と英語のコピーが付いた App Store 用の絵（「Every one of them drawn with a finger」
+「An alphabet nobody else has」）は Reddit では広告に見えるので**使わない**。
+**足りない絵が一枚**：他人の文字の投稿に返信が付いているタイムライン ── 三つ目の
+売りなのに絵がない。実機で撮る。
+
+**フレア。** この session から reddit を読めない（www.reddit.com は塞がれている）ので
+**一覧が取れない**。投稿画面のドロップダウンの候補をオーナーが貼る。modmail の
+「It's fine.」は flair の質問に答えていないので、返事で聞き直してある。
 
 ## 書くときに間違えない所
 
