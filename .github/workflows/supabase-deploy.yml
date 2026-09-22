@@ -22,6 +22,7 @@ on:
         options:
           - verify-plan
           - daily-prompt
+          - push-send
 
 env:
   PROJECT_REF: iimwukyyasbybfrirhsf
@@ -46,13 +47,53 @@ jobs:
           supabase secrets set "APPLE_ROOT_CA_G3=$B64" --project-ref "$PROJECT_REF"
           echo "APPLE_ROOT_CA_G3: set ($(wc -c < AppleRootCA-G3.cer) bytes)"
 
-      - name: 関数を置く
-        run: supabase functions deploy "${{ inputs.function }}" --project-ref "$PROJECT_REF" --use-api
-
-      - name: 確かめる（サインインしていない人は 401 で断られる）
+      - name: APNs の鍵を Supabase の Secrets に入れる（push-send のみ）
+        if: inputs.function == 'push-send'
+        env:
+          APNS_KEY_ID: ${{ secrets.APNS_KEY_ID }}
+          APNS_P8: ${{ secrets.APNS_P8 }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
+          # 三つとも人が打つ値なので、どれが空かをここで言う。空のまま置くと
+          # 函数は 500 で止まって何も送らない（それが正しい側）が、その 500 を
+          # 後で読むより、ここで名前が出るほうが早い。
+          MISSING=
+          for n in APNS_KEY_ID APNS_P8 APPLE_TEAM_ID; do
+            eval "v=\$$n"; test -n "$v" || MISSING="$MISSING $n"
+          done
+          if [ -n "$MISSING" ]; then
+            echo "GitHub の Secrets に入っていません:$MISSING"
+            echo "docs/apple.md § 8 の手順で入れてから、もう一度この Actions を回してください。"
+            exit 1
+          fi
+          # APNS_P8 は改行のある PEM。値をそのまま渡します ── 行が潰れると
+          # importKey が落ち、函数は 500 を返して何も送りません。
+          supabase secrets set "APNS_KEY_ID=$APNS_KEY_ID" \
+                               "APPLE_TEAM_ID=$APPLE_TEAM_ID" \
+                               "APNS_P8=$APNS_P8" \
+                               --project-ref "$PROJECT_REF"
+          echo "APNS_KEY_ID / APPLE_TEAM_ID / APNS_P8: set"
+
+      # push-send はデータベースのトリガーが叩きます。トリガーは秘密を持って
+      # 行けない（schema に秘密は置かない）ので、JWT の検証を外して置くしか
+      # ありません。函数のほうは request の中身を一文字も信じない作りで、
+      # 行を service role で読み直します ── supabase/functions/push-send/index.ts。
+      - name: 関数を置く
+        run: |
+          EXTRA=
+          if [ "${{ inputs.function }}" = "push-send" ]; then EXTRA=--no-verify-jwt; fi
+          supabase functions deploy "${{ inputs.function }}" \
+            --project-ref "$PROJECT_REF" --use-api $EXTRA
+
+      # 置かれていて、何も持っていない POST では何も送らないこと。
+      # verify-plan と daily-prompt は 401（サインインしていない人を断る）、
+      # push-send は 400（知っている三つの表の行ではない）。どちらも
+      # 「通した」ではなく「そこで終わった」の確かめです。
+      - name: 確かめる（中身の無い POST で、何も起きない）
+        run: |
+          if [ "${{ inputs.function }}" = "push-send" ]; then WANT=400; else WANT=401; fi
           CODE=$(curl -s -o body.json -w '%{http_code}' -X POST \
             "https://$PROJECT_REF.supabase.co/functions/v1/${{ inputs.function }}" \
             -H "Content-Type: application/json" -d '{"jws":[]}')
-          echo "HTTP $CODE"; cat body.json; echo
-          test "$CODE" = "401"
+          echo "HTTP $CODE (want $WANT)"; cat body.json; echo
+          test "$CODE" = "$WANT"
