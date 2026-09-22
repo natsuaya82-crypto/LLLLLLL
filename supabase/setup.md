@@ -962,16 +962,17 @@ SNS の分（投稿・下書き・プロフィール・フォロー）は元か�
 
 `supabase/schema.sql` は、フォローされた・返信された・いいね／リポストされた瞬間に
 edge function `push-send` を叩く**トリガーを三つ**作ります。その叩く道は
-`supabase_functions.http_request()` という関数で、**これは PostgreSQL の物でも
-`schema.sql` の物でもありません** ── Supabase が、Database → Webhooks を有効に
-した時に作ります。だから `mail.md` と同じで、ここが唯一の置き場所です。
+**pg_net**（`net.http_post`）で、**これは PostgreSQL の物でも `schema.sql` の物でも
+ありません** ── Supabase が、Database → Webhooks を有効にした時に入れます。
+だから `mail.md` と同じで、ここが唯一の置き場所です。
 
 ### やること
 
 **Dashboard → Database → Webhooks → Enable webhooks**（ボタン一つ）。
 
-画面で Webhook を**作る必要はありません。**要るのは `supabase_functions` という
-schema が出来ることだけで、トリガーは `schema.sql` が自分で作ります。
+画面で Webhook を**作らないでください。**要るのはこのボタンが入れる **pg_net**
+（`net` schema）だけで、トリガーは `schema.sql` が自分で作ります ── 画面で作る
+ふつうの Webhook は、呼び出し人の署名を運べません（下）。
 
 ### 順番
 
@@ -1030,10 +1031,19 @@ select tgname, tgrelid::regclass as "表"
 | そのログの `switched off` | その人が設定でその種類を切っている |
 | そのログの `no device` | その iPhone が通知を許可していない |
 | そのログの `their own` | 自分でやったこと（仕様 ── 自分には送りません） |
+| そのログの `no session` / HTTP 401 | 呼び出しに署名が付いていない。`request.headers` に `authorization` が来ていない可能性 |
+| そのログの `not theirs to ring` | 行の actor と、叩いた人が違う |
 
-**`push-send` はサインインしていない人でも叩ける口です。**トリガーは秘密を持って
-行けないので、そうするしかありません。函数は届いた JSON を一文字も信じず、行を
-データベースから読み直して本物の相手にだけ送るので、知らない人に出来るのは
-**本当に起きたことの通知をもう一度鳴らす**ことだけです。塞ぐ手は二つあり、
-どちらもオーナーの決めごとで、**まだやっていません** ──
-`docs/scope/r47-push-server.md` § オーナーへ。
+**`push-send` はサインインした本人しか叩けません。**「サインインなしで勧める
+ものないけど」OWNER 2026-09-22。トリガーは**行を入れた人の Authorization を
+そのまま持って行き**、函数は JWT の検証ありで置かれているので、署名の無い
+呼び出しは函数が走る前に断られます。そのうえで函数は、**誰から来たかを
+Supabase 自身に訊き直し**、その人がやった行でなければ何も送りません ──
+サインインした他人が、他人の iPhone を鳴らすこともできません。
+
+**だから `supabase_functions.http_request()`（Webhooks の画面で作るふつうの
+Webhook）は使っていません。**あれの header は**トリガーの引数**で、
+PostgreSQL はそれを作成時の文字列定数にします ── 呼び出し人の token を
+入れる場所がありません。同じ一クリックで入る pg_net（`net.http_post`）は
+header を値で受け取るので、`push_ping()` がそれを使います。**画面で Webhook
+を作らないのはそのためです。**

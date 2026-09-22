@@ -605,7 +605,8 @@ repo には置いていません）。
 ### 5. Supabase 側 ── **`supabase/setup.md` § 12 を先に**
 
 **Dashboard → Database → Webhooks → Enable webhooks**（ボタン一つ）。
-そのあと `supabase/setup.md` § 2 で **`schema.sql` を流し直す**。
+**画面で Webhook を作らないでください** ── 要るのはそのボタンが入れる pg_net
+だけです。そのあと `supabase/setup.md` § 2 で **`schema.sql` を流し直す**。
 
 **この一クリックが無いと、通知のトリガーは作られません。**入ったかどうかの
 見かたも `setup.md` § 12 にあります。
@@ -615,7 +616,7 @@ repo には置いていません）。
 **GitHub → Actions → Supabase Deploy → Run workflow → `push-send`**
 
 4 で入れた三つを Supabase の Secrets に入れてから置きます。最後に
-「中身の無い POST が 400 で、何も送らない」ところまで確かめて緑になります。
+「サインインしていない人が 401 で断られる」ところまで確かめて緑になります。
 どれかの Secret が空なら、**その名前を言って止まります。**
 
 ### 7. アプリ側

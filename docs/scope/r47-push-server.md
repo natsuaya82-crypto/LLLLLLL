@@ -26,9 +26,11 @@
 - **オン／オフは `profile.prefs`**（jsonb）の中：`push_follow`・`push_reply`・
   `push_like`・`push_boost`。**無いのはオン**。サーバーは読むだけ。
 - **送る側**：`follow`・`post`（`reply_to` 非 null）・`react` に after insert の
-  トリガー、`supabase_functions.http_request()` で edge function `push-send` へ。
-- **`push-send`**：request の中身を信じない。service role で行を読み直す。
-  自分には送らない。スイッチ off は送らない。device が無ければ何もしない。
+  トリガー、pg_net（`net.http_post`）で edge function `push-send` へ。トリガーは
+  **行を入れた人の `Authorization` をそのまま持って行く**。
+- **`push-send`**：JWT の検証ありで置く。request の中身を信じない。service role で
+  行を読み直す。**署名した本人の操作でなければ送らない。**自分には送らない。
+  スイッチ off は送らない。device が無ければ何もしない。
   APNs は `api.push.apple.com`、JWT（ES256）、topic `com.tokinets.lingua`。
   **410 が返った token は `device` から消す**（DELETE REVIEW）。
 - **`tools/push-check.mjs`**：判断を `push.mjs` に切り出して Node から検査する
@@ -68,18 +70,22 @@
     ── 通知が出ないことがフォローや投稿を落としてはいけない。
 11. **段が変わったとき** ── 何も変わらない。段を一度も見ない。
 
-## オーナーへ ── 決めていないので作っていない物
+## オーナーの決定（2026-09-22、二つ目）
 
-- 通知の履歴、未読数のバッジ、メール、Android ── リーダーの指示どおり作らない。
-- **`push-send` はサインインしていない人でも叩ける口になります。**Database
-  Webhook から呼ぶには JWT が要らない形（`--no-verify-jwt`）で置くしかなく、
-  秘密は schema に置かない決まりなので、トリガーは何も持って行けません。
-  函数は request の中身を一切信じず、行を DB から読み直して本物の相手にだけ
-  送るので、**知らない人が作れるのは「本当に起きたことの通知をもう一度鳴らす」
-  だけ**です（嘘の文面も、別人への通知も作れません）。それが困るなら口を塞ぐ
-  方法は二つあり、どちらもオーナーの決めごとです ── 公開鍵（publishable key）を
-  トリガーの header に書いて JWT 検証を有効にする／`push-send` を叩ける回数を
-  数える表を作る。**今日はどちらもやっていません。**
+「サインインなしで勧めるものないけど」
+
+**このアプリに、サインインなしで進むものは一つもありません。この口もそうしません。**
+閉じました（commit `a922e1f0`）。
+
+- トリガーは**行を入れた人の `Authorization` をそのまま持って行く**
+  （`push_ping()` が `request.headers` から読む）。
+- `push-send` は **JWT の検証ありで置く**（`--no-verify-jwt` は付けない）。
+- 函数は `/auth/v1/user` に**誰から来たかを訊き直し**、その uid が行の actor と
+  違えば何もしない（`push.mjs` の `pushPlan`、`push-check` が押さえる）。
+- publishable キーもここで止まる ── あの鍵に user の `sub` は無い。
+
+**決めていないので作っていない物**（変わらず）：通知の履歴・未読数のバッジ・
+メール・Android。
 
 ## 報告（2026-09-22、CODE CONFIRMED。**実機は一つも押していません**）
 
@@ -88,13 +94,13 @@
 | file | 何をしたか・なぜ |
 |---|---|
 | `docs/CHANGELOG.md` | **コードより先に**書いた。新しく貯まる物（`device`）、消える物（410 の token、DELETE REVIEW）、`prefs` が grant に無かった件 |
-| `supabase/schema.sql` | ① `profile` の UPDATE の grant に `prefs`（**別のバグ、下**）② 表 `device` と policy 四行 ③ 末尾に三つのトリガー（`do` ブロックで包む） |
+| `supabase/schema.sql` | ① `profile` の UPDATE の grant に `prefs`（**別のバグ、下**）② 表 `device` と policy 四行 ③ 末尾に `push_ping()` と三つのトリガー（`do` ブロックで包む） |
 | `supabase/functions/push-send/push.mjs` | **判断だけ**。素の ESM なので Deno と Node が同じ一枚を読む（`verify.mjs` と同じ形・同じ理由） |
 | `supabase/functions/push-send/index.ts` | **I/O だけ**。行を読み直し、APNs へ送り、410 の token を落とす |
 | `tools/push-check.mjs` | 90 本。`push.mjs` をそのまま import する（検査が判断を書き直したら写しで、写しは必ず一致する） |
 | `tools/rls-check.mjs` | `prefs` 五本＋`device` 十本＋SHAPE 五本。`supabase_functions` の stub を**二回の適用の間**に挟んだ |
 | `tools/gate.mjs`・`package.json` | FAST に `push-check`、alias は `push` |
-| `.github/workflows/supabase-deploy.yml` | 選択肢に `push-send`、APNs の三つを Secrets へ、`--no-verify-jwt`、最後の確かめは 400 |
+| `.github/workflows/supabase-deploy.yml` | 選択肢に `push-send`、APNs の三つを Secrets へ。**JWT の検証は三つとも有効**、最後の確かめは 401 |
 | `supabase/setup.md` § 12 | Database → Webhooks の一クリックと、通知が来ない時にどこを見るか |
 | `docs/apple.md` § 8 | オーナーがやること七つ、順に |
 | `docs/DATA_MODEL.md` | `device` の節と、`prefs.push_*`（無いのはオン） |
@@ -117,6 +123,39 @@
 送ろうとした呼び出しの中でだけ。**410 以外では一つも消さない**（0・400・403・
 429・500・503 を `push-check` が一本ずつ押さえている）。人が作った物は一つも
 消えない。DELETE REVIEW は `docs/CHANGELOG.md` 2026-09-22。
+
+### 二周目（扉を閉じた）── 測ったこと二つと、道を変えた理由
+
+リーダーの指示は「`supabase_functions.http_request()` の呼び出しに
+`Authorization` を転送する」でした。**止まる条件（`request.headers` が読めない）
+は当たりませんでした**が、**その関数では運べません**。両方測りました
+（2026-09-22、PostgreSQL 16）：
+
+```
+1. after insert のトリガーの中から読める
+   headers={"authorization":"Bearer THE-CALLERS-TOKEN", …}
+   claims={"sub":"b0000000-…","role":"authenticated"}
+
+2. トリガーの引数は式にできない
+   create trigger t2 after insert on t for each row
+     execute function grab(current_setting('request.headers', true));
+   ERROR:  syntax error at or near "("
+```
+
+2 が効きます ── トリガーの引数は作成時の**文字列定数**（`pg_trigger.tgargs`）
+なので、`http_request(url,'POST',headers,…)` の header に呼び出し人の token を
+入れる場所がありません。あの道が運べるのは「`schema.sql` に書いた header」だけ
+で、それは**schema の中の秘密か、開いた扉**のどちらかにしかなりません。
+
+Vault には行っていません（それはオーナーの手順になるので）。**同じ一クリックで
+入る pg_net** ── `net.http_post`、`supabase_functions.http_request()` が内部で
+渡している先 ── は header を**値**で受け取るので、自前の `push_ping()` が
+`current_setting('request.headers')` から読んで渡します。**一機構、一段少ない。**
+
+**server unconfirmed が一つ。**PostgREST が `request.headers` に
+`authorization` を載せることは、本物のサーバーでしか確かめられません。載って
+いなければ**通知が一通も出ません**（送る資格が無いので黙って終わる ── 安全な側に
+倒れます）。見どころは `supabase/setup.md` § 12 の表に足しました。
 
 ### 指示と違えた所 ── 二つ、どちらも一行
 
@@ -172,14 +211,30 @@ trigger stub を外す → FAIL a follow says so / a reply says so /
 **`npm run assets`** ── `push` の alias を外すと
 `tools/push-check.mjs is in the gate and no npm script runs it on its own`。
 
+**扉を閉じたとき（二周目）**
+
+```
+push   署名が無ければ送らない / 理由は「session が無い」/ publishable キーも同じ /
+       サインインした他人は鳴らせない / 理由は「その人のものではない」/
+       follow を他人が叩いても送らない / 返信を鳴らされる側が叩いても送らない（7本）
+rls a  header を決め打ちにする  → FAIL and it carries the writer's own Authorization
+rls b  署名が無くても叩きに行く → FAIL one write went out and the unsigned one did not
+rls c  pg_net を外す            → FAIL 三本＋道の三本、**404 attempts は全部緑**
+                                  （＝ガードが効いてファイルは全部入っている）
+```
+
+**c は最初、赤ではなく検査自身の死でした** ── SHAPE が `net._sent` を参照して
+いて、stub を外すと「問えない claim」になっていた。記録用の表を `GROUND` に
+移しました。**問えない claim は、通った claim と見分けがつきません。**
+
 ### rls の数
 
-`npm run rls` ── **404 attempts / 60 shape、緑**（`integ-0905` 取り込み後。
-取り込み前は 400 / 60、この session の前は 385 / 55）。
+`npm run rls` ── **404 attempts / 64 shape、緑**（`integ-0905` 取り込み後、扉を
+閉じたあと。この session の前は 385 / 55）。`npm run push` ── **100 claims**。
 
 ### 回した check
 
-`npm run push`（90 本）・`npm run rls`（404 / 60）・`npm run assets`・
+`npm run push`（100 本）・`npm run rls`（404 / 64）・`npm run assets`・
 `npm run docs`。**ゲート（`npm test`）は回していません** ── リーダーの物。
 
 ### やっていないこと

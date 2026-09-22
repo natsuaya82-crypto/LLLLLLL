@@ -29,11 +29,32 @@ where it starts.
 `schema.sql` の `notices()` が返すのと同じ四つで、五つ目はありません。
 
 **どうやって出て行くか。**`follow`・`post`（`reply_to` が非 null の行）・`react`
-に **after insert のトリガー**が付き、Supabase の Database Webhook と同じ道
-（`supabase_functions.http_request`）で edge function `push-send` を叩きます。
-函数は **request の中身を一切信じません** ── 受け取るのは「どの表の、どの行か」
-だけで、service role でその行を読み直し、**文面に request の文字は一行も
-使いません**。行が無ければ何もしません。
+に **after insert のトリガー**が付き、pg_net（`net.http_post`）で edge function
+`push-send` を叩きます。函数は **request の中身を一切信じません** ── 受け取るのは
+「どの表の、どの行か」だけで、service role でその行を読み直し、**文面に request の
+文字は一行も使いません**。行が無ければ何もしません。
+
+**そして、サインインした本人の操作でなければ何も起こりません。**
+「サインインなしで勧めるものないけど」OWNER 2026-09-22 ── このアプリに、
+サインインなしで進むものは一つもありません。トリガーは**行を入れた人の
+`Authorization` をそのまま持って行き**（`push_ping()` が `request.headers` から
+読みます）、`push-send` は JWT の検証ありで置かれるので、署名の無い呼び出しは
+函数の一行目が走る前に断られます。そのうえで函数は `/auth/v1/user` に**誰から
+来たかを訊き直し**、返ってきた uid が行の actor と違えば何もしません ──
+サインインした他人が他人の iPhone を鳴らすこともできません。publishable キーで
+叩かれた時もここで止まります（あの鍵に user の sub はありません）。
+
+**画面で作るふつうの Database Webhook は使っていません。**
+`supabase_functions.http_request()` の header は**トリガーの引数**で、
+PostgreSQL はそれを作成時の文字列定数にします（`create trigger … execute
+function f(式)` は構文エラー。2026-09-22 に測りました）。つまりあの道が運べるのは
+「`schema.sql` に書いた header」だけで、それは**schema の中の秘密か、開いた扉**の
+どちらかにしかなりません。pg_net は同じ一クリックで入り、header を**値**で
+受け取ります。**Dashboard では Webhooks を有効にするだけで、Webhook は作りません。**
+
+**署名の無い書き込みからは通知が出ません** ── service role、Dashboard の SQL、
+migration には `request.headers` が無く、送る相手ではなく**送る資格**がありません。
+行は書かれ、通知だけが出ません。これは状態であってエラーではありません。
 
 **送らない場合が四つあり、どれも黙って終わります。**自分がやったこと（自分で
 自分の投稿にいいね）は送らない。相手のスイッチが false なら送らない。相手の
