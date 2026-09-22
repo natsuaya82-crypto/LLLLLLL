@@ -1441,6 +1441,39 @@ const CASES = [
   ['and a bio may be given on the way in',    'ok',     G4, 0,
     `insert into profile(id,handle,bio) values ('${G4}','probe4','hello')`],
 
+  /* --- HOW THIS ACCOUNT HAS THE APP SET UP -------------------------------
+     `profile.prefs` is one jsonb column holding SET_PREFS -- the theme, the
+     interface language, and the three switches about the drawn letters --
+     and from 2026-09-22 the four that say which notices reach the phone
+     (`push_follow`, `push_reply`, `push_like`, `push_boost`).
+
+     THE GRANT IS THE HALF THAT FAILS SILENTLY, and it had already failed.
+     The column was added on 2026-09-08 and was NOT put in
+     `grant update (...) on profile`, so `netPrefsPut()` -- which sends
+     `PATCH /rest/v1/profile {prefs:...}` and whose failure handler is
+     `function(){}` -- was refused by the database every single time. Nothing
+     threw, no screen was wrong, and the settings simply never left the
+     handset. Exactly what the bio block above says this pair of claims is
+     for, three columns later.
+
+     It matters twice over now: the four push switches live in this column,
+     and a switch that cannot be written is a switch that is always on. */
+  ['A writes A\u2019s own prefs',              'ok',     A, 0,
+    `update profile set prefs='{"theme":"dark"}'::jsonb where id='${A}'`],
+  ['and reads its own back',                  'ok',     A, 0,
+    `select 1 from profile where id='${A}' and prefs->>'theme'='dark'`],
+  ['B cannot write A\u2019s prefs',            'denied', B, 0,
+    `update profile set prefs='{"theme":"light"}'::jsonb where id='${A}'`],
+  ['nor can somebody with no account write them', 'denied', B, 1,
+    `update profile set prefs='{"theme":"light"}'::jsonb where id='${A}'`],
+  /* And it may be written on the way in as well, the way `bio` may: a first
+     sign-in on a second phone writes the row and the setup in one statement.
+     G4 has already made its profile above, so this is an UPDATE by the
+     account that owns it -- what is being asked is that the INSERT grant is
+     not the thing that has to carry it. */
+  ['and a switch off is kept as false',       'ok',     G4, 0,
+    `update profile set prefs='{"push_like":false}'::jsonb where id='${G4}'`],
+
   /* --- what this account has paid for -----------------------------------
      「課金とアカウントとキーボードはアカウントに結びつく」OWNER 2026-09-01.
 
@@ -1556,6 +1589,16 @@ const CASES = [
    off is wide open no matter what its policies say, and a table with no
    update policy is append-only precisely BECAUSE the policy is missing. */
 const SHAPE = [
+  /* HOW SOMEBODY HAS THEIR OWN APP SET UP IS NOBODY ELSE'S. schema.sql says
+     so over the column -- 「IT IS NOT IN `profile_seen`. This is how somebody
+     has their own app set up and is nobody else's business」 -- and nothing
+     held it: `profile_seen` is `using (true)` for everybody including people
+     with no account, so a column added to that view is a column the whole
+     internet reads. The four push switches are fields of it from 2026-09-22,
+     and which notices a person has turned off is not a thing to publish. */
+  ['how an account has the app set up is not on the view somebody else reads', `
+     select count(*) from information_schema.columns
+      where table_name='profile_seen' and column_name='prefs'`, '0'],
   /* _r is this file's own scratch table and is the one thing in the schema
      that is not the schema's, so it is the one thing excluded. */
   ['row level security is on for every table', `

@@ -2761,8 +2761,23 @@ create trigger profile_follows after insert on profile
 -- service_role is not touched. The dashboard is where staff is set.
 -- Said after the tables and the policies because the columns have to exist.
 -- ---------------------------------------------------------------------------
+--
+-- `prefs` IS ON THIS LINE AND WAS NOT, FOR A FORTNIGHT. The column was added
+-- on 2026-09-08 -- 「端末に残すものないんですけど。サーバーで同じ機能になるよう
+-- に代替して」 -- and this grant was not touched, so `netPrefsPut()` in
+-- www/net.js sent `PATCH /rest/v1/profile {prefs:...}` and the database
+-- refused it, every time, for everybody. Nothing threw: that call's failure
+-- handler is `function(){}`, so the theme and the interface language went on
+-- working out of the copy on the handset and simply never arrived anywhere.
+-- Exactly the thing the paragraph above says this line is for -- 「a column
+-- added later is not updatable until it is added to one of these lines」 --
+-- happening to the column added the day after it was written.
+--
+-- It is not a preference any more either: the four switches that say which
+-- notices reach a phone are fields of this column (2026-09-22), and a switch
+-- that cannot be written is a switch that is always on.
 revoke update on profile from anon, authenticated;
-grant  update (handle, display, av, bio, link, loc) on profile to anon, authenticated;
+grant  update (handle, display, av, bio, link, loc, prefs) on profile to anon, authenticated;
 
 -- And the same sentence about INSERT, which is not the same statement.
 --
