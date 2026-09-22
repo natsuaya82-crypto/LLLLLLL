@@ -332,3 +332,100 @@ territory を決める人の判断です。**
 **写真はありません ── 見た目は変わっていません。**
 
 **CODE CONFIRMED / DEVICE CONFIRMED: no.**
+
+---
+
+# 三つ目の item ── 写真と声もセッション付きで取る
+
+リーダーが territory を出したので（`www/post.js`・`www/rec.js`・`www/sns.js`・
+`www/card.js`）、二つ目の item で「止まった」と書いた半分をやりました。
+先に `origin/integ-0905`（`7873029d`）を取り込んでいます。
+
+## 洗った結果 ── builder は三箇所だけでした
+
+`grep post-media` と `grep /storage/v1/` を `www/` 全部に。`netMediaURL()` を
+呼んでいたのは **`www/post.js` の二箇所と `www/rec.js` の一箇所**で、
+`www/card.js` は一つも持っていませんでした（カードは canvas で、写真を読みません）。
+描く側は四箇所：`post.js` の `.ppic`、`sns.js` の `.pvimg`（写真の画面）、
+`sns.js` の `.ntfpic`（通知の行の小さい写真 ── リーダーの一覧に無かった一つ）、
+`rec.js` の `audio.src`。
+
+## 形
+
+`netMedia(path, ok)`（`www/net.js`）が一箇所 ──
+`/storage/v1/object/authenticated/post-media/<path>` を
+`Authorization: Bearer <SESS.at>` で取り、`URL.createObjectURL()` で返します。
+持っていれば同期で返し、届いたら `ok` を呼びます（写真は `ok` を使わず、
+`netMediaFill()` がその場で `src` を入れる。声は押された一つなので `ok` を使う）。
+
+**`netSend1()` は通していません。**bytes であって JSON ではないからで、これは
+新しい判断ではなく `netUp()` が既に同じ理由で書いていることです
+（「the body is bytes rather than JSON」）。読む一箇所と書く一箇所が
+`netMedia` のコメントの両側に並びます。リーダーの指示は「`netSend1` を通して」
+でしたが、通すとあの一つの窓が二つの形（JSON と blob）を持つことになります。
+
+**くるくるは回しません**（`netOn`/`netOff` を呼ばない）。タイムラインが写真を
+二十枚埋めるあいだ「通信中」の印が回り続けるのは、この app 自身が書いている
+約束（「文字は先に出て、写真は後から埋まる」）の逆です。
+
+**手放すのは二箇所だけ** ── `viewReset()`（別の言語を開いたとき）と `netOut()`。
+普通の画面移動では手放しません：投稿を開いて戻るたびに全部取り直すのは、
+公開 bucket のときより悪くなります。
+
+**取れなかった物は `0` にして、その起動のあいだは訊き直しません。**描画が
+訊くので、失敗で消すと「描く→訊く→失敗→消す→描く」が画面の写真の数だけ
+回り続けます。`netOut()` と `viewReset()` が消すので、入り直せば試します。
+
+## 赤（四本）
+
+```
+公開 URL の道に戻す：
+✗ **the <img> was given a src before the bytes arrived** — https://…/object/p
+✗ **the photograph was not fetched** — 0 requests
+✗ **the photograph never reached the <img>** — src="https://…/object/p"
+
+セッションの門を外す：
+✗ **signed out, a photograph is still fetched** —
+  ["https://…/storage/v1/object/authenticated/post-media/aaaa/bbbb/0.jpg"]
+```
+
+## 書いた claim が一本、空振りで緑でした
+
+「サインアウトでは取りに行かない」を**タイムラインを描いて**測っていましたが、
+**サインアウトの三つのタブは扉を描く**ので `<img>` が一つも無く、門を外しても
+緑のままでした。`netMediaSrc()` を直に訊くように書き直し、そこで赤を見ました。
+`CLAUDE.md` の言う proxy そのもので、書いておきます。
+
+## 回した check
+
+`es5`・`dead`・`sides`・`act`・`i18n`・`press`・`store`・`box`・`card`・
+`post`・`acct` ── 全部緑。ゲート（`npm test`）は回していません。
+`act` は screens walked 648・names 284/284、`press` は 17290、
+`i18n` は 459 render。fixture に顔を一つ足したぶん増えています。
+
+## 写真
+
+| | |
+|---|---|
+| `shots/r48-media-feed-after-ja.png` | 自分で撮った写真の投稿 ── `data:` のまま、**変わっていません** |
+| `shots/r48-media-waiting-ja.png` | サーバーの写真が届くまでの枠。`.ppic` が幅と高さを持っているので写真と同じ大きさで、届いても跳ねません。**CSS は一行も足していません** |
+
+「前」の写真は撮っていません ── 自分の写真の道は一バイトも変わっておらず、
+サーバーの写真は**この環境では前も出ませんでした**（bucket に繋がらないので）。
+出したのは「届くまでの枠」で、それが今日できた新しい状態です。
+
+## リーダーへ
+
+1. **`netSend1()` を通していません**（上の理由）。`netMedia()` が
+   「写真と声をどう署名するか」を知っている唯一の場所であることは守っています。
+2. **`sns.js` の通知の行の写真**（`.ntfpic`）が一覧に無かったので足しました。
+3. **投稿を消したとき bucket から消せなかったファイル**は、前は「URL を持って
+   いれば誰でも見られる」物でした。いまは**アカウントのある人しか読めません**
+   ── `docs/RISK.md` § 9 の危険の半分が閉じました。残ること自体は閉じていません。
+4. **声は丸ごと取ってから鳴ります。**`rec.js` の「丸ごと落とすのは待ちになる」
+   というコメントは公開 bucket の話だったので書き直しました。三十秒なので小さく、
+   二度目は取り直しません。**再生が押した瞬間の線から外れます**が、この app は
+   自分の録音でも既に非同期のコールバックから `play()` しているので、形は同じです
+   ── **実機で確かめてください**（`docs/CHECK-0907.md` ビルド 164 § 1）。
+
+**CODE CONFIRMED / DEVICE CONFIRMED: no.**
