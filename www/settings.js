@@ -159,6 +159,14 @@ function vSettings(){
         '<span class="sl">'+esc(t(x.k))+'</span>'+
         '<span class="sv">'+esc(setSummary(x.id, p))+ICON_GO+'</span></button>';
     }).join('')+
+    /* And the way to say something about the app itself, which is not a
+       setting and is a row on this list because this list is where somebody
+       goes looking for one. A page you travel to, not a sheet 「ページ遷移型
+       にせず下からひょいって出すやつ…禁止」. 「設定にお問合せを足して欲しい」
+       OWNER 2026-09-22. */
+    '<button class="set"' + DO('go', ["contact"]) + '>'+
+      '<span class="sl">'+esc(t('set.contact'))+'</span>'+
+      '<span class="sv">'+ICON_GO+'</span></button>'+
     /* The reports do NOT hang here. 「設定の通報ボタン消せ」OWNER 2026-08-26.
 
        They are still answered -- vAdmin() draws the same queue with the same
@@ -375,6 +383,79 @@ function vSet(){
      body is exactly as tall as what is in it. */
   return '<div class="view">'+navTop('', (id==='lang'? helpQ('pub') : ''))+
     '<div class="body'+(id==='acct'? ' tall' : '')+'">'+body+'</div></div>';
+}
+/* ---- saying something to whoever makes this ------------------------------
+   「設定にお問合せを足して欲しい。フォームみたいなの作ってみんなからの意見要望
+   バグとかあればそれを見たい。フォームはアプリ内のadminのページで見れるように
+   したい。」 OWNER 2026-09-22.
+
+   A ROUTE AND NOT A SHEET. Choosing is a screen and so is writing; a sheet
+   that stands in for a page you would otherwise have gone to is the third of
+   the four shapes CLAUDE.md § 形 forbids.
+
+   And the three kinds are ROWS, for the first of the four: a row of round
+   chips scrolled sideways is banned, and three of anything is a list. They
+   are the same `.set lrow` the interface languages are chosen with -- one
+   press, the chosen one marked under the tick -- because it is the same
+   sentence and this app already says it once.
+
+   Nothing here explains itself. There is no line saying what the operator
+   does with this, no line saying how long an answer takes, and none saying
+   what the three words mean: 「アプリ内に説明書くの禁止」.
+
+   `kind` starts on the first of the three rather than on none. The server
+   takes one of three and there is no fourth state for 「not said」 -- a form
+   that refuses for a reason the person cannot see on it would be the screen
+   keeping a secret. What it DOES refuse is an empty message, which is a
+   thing they can see. */
+var CONT={kind:'opinion', body:'', busy:false};
+var CONT_KINDS=['opinion', 'request', 'bug'];
+function contactKind(k){ CONT.kind=String(k||'opinion'); render(); }
+/* Stored and not rendered back: render() here would rebuild the field under
+   whoever is typing into it. setPwSet() above and adminSet() in www/mod.js
+   are the same line, and lnGrow() is what makes the box follow the words. */
+function contactSet(k, v){ if(k==='body'){ CONT.body=String(v||''); lnGrow('cont-b'); } }
+/* WHAT WAS TYPED STAYS ON THE SCREEN WHEN THE SEND FAILS. 「保存するタイミング
+   でエラーが起きるなら、保存されないし」「なら失敗して残るにするべき。」 OWNER
+   2026-09-05 -- with no signal there is nothing to send and nothing is sent,
+   and the one thing that may not happen is the work going with it. Pressing
+   again is a send that can land.
+
+   It is emptied only where it arrived, and then this screen is left --
+   back(), the way setPwGo() above leaves. `go('set')` would be vSet() with no
+   argument, which is goneBox(): 「the thing you came back for is gone」. */
+function contactGo(){
+  if(CONT.busy) return;
+  var txt=CONT.body.trim();
+  if(!txt){ toast(t('contact.need')); return; }
+  CONT.busy=true; render();
+  netFeedbackSend(CONT.kind, txt, function(){
+    CONT={kind:'opinion', body:'', busy:false};
+    back(); toast(t('contact.sent'));
+  }, function(d, st){
+    CONT.busy=false; render(); toast(netWhy(d, st));
+  });
+}
+function vContact(){
+  return '<div class="view">'+navTop('')+'<div class="body">'+
+    CONT_KINDS.map(function(k){
+      return '<button class="set lrow'+(CONT.kind===k? ' on':'')+'"' +
+        DO('contactKind', [k]) + '>'+
+        '<span class="sl">'+esc(t('contact.'+k))+'</span>'+
+        '<span class="lchk">'+(CONT.kind===k? ICON_TICK : '')+'</span></button>';
+    }).join('')+
+    /* The one place a textarea is made, so this one is the same height, the
+       same growing box and the same placeholder shape as every other. NO
+       `.sfont`: what is written here is read by whoever makes the app, in
+       their own letters, and a message in somebody's own alphabet is a
+       message nobody can answer. */
+    '<div class="field" style="margin-top:14px">'+
+      lnField('cont-b', t('contact.ph'), IN('contactSet', ['body']), CONT.body)+
+    '</div>'+
+    '<button class="btn ghost" style="margin-top:18px"' + DO('contactGo') +
+      (CONT.busy? ' disabled':'') + '>'+
+      esc(t(CONT.busy? 'ob.mail.wait' : 'contact.send'))+'</button>'+
+    '</div></div>';
 }
 /* One card: a small Lingua in that theme, its name, and a tick. The colours
    are written out rather than taken from the variables, because the light

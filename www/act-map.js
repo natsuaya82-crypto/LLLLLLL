@@ -174,6 +174,8 @@ act('setSignOut', setSignOut);
 act('setMail', setMail);
 act('setPwGo', setPwGo);
 act('setPwForgot', setPwForgot);
+act('contactKind', contactKind);
+act('contactGo', contactGo);
 act('obSkipAll', obSkipAll);
 act('obTourNext', obTourNext);
 act('obTourBack', obTourBack);
@@ -372,6 +374,7 @@ actIn('ltSetNote', ltSetNote);
 actIn('obLang', obLang);
 actIn('obMailSet', obMailSet);
 actIn('setPwSet', setPwSet);
+actIn('contactSet', contactSet);
 actIn('fSetQ', fSetQ);
 /* the names typed into the sheet (www/sheet.js, chapter 26) */
 actIn('shTyped', shTyped);

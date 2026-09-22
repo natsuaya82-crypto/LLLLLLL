@@ -1416,6 +1416,25 @@ export function halfDone(){
         popAsk(t('mod.drop.sure'), function(){}, t('mod.drop.yes'));
         const h = document.getElementById('pop').outerHTML;
         popOff(); return h; }],
+    /* SAYING SOMETHING TO WHOEVER MAKES THE APP -- three faces, because it
+       has three states and the fault is nearly always in the one nobody
+       photographed. Empty is what somebody arrives at; a kind chosen is the
+       only thing that marks a row; and something typed is the only state the
+       send button does anything from.
+
+       CONT is left as it is found, the way every entry here leaves what it
+       sets: shot.mjs calls render() afterwards, so a face that tidies up
+       photographs the screen it tidied back to. */
+    ['contact, nothing written', () => { CONT = { kind:'opinion', body:'', busy:false };
+        window.route='contact'; NAV=[{r:'settings'},{r:'contact'}];
+        return vContact(); }],
+    ['contact, a kind chosen', () => { CONT = { kind:'bug', body:'', busy:false };
+        window.route='contact'; NAV=[{r:'settings'},{r:'contact'}];
+        return vContact(); }],
+    ['contact, written', () => {
+        CONT = { kind:'request', body:'文字を並べ替えられるようにしてほしい。', busy:false };
+        window.route='contact'; NAV=[{r:'settings'},{r:'contact'}];
+        return vContact(); }],
     /* Both halves of the admin screen, because they are two screens and only
        one of them is ever on. The door is what everybody sees -- the fixture's
        account came in through `email`, so adminLocked() is true here exactly

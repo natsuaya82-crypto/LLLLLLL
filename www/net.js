@@ -3519,6 +3519,32 @@ function netReport(what, why, note, ok, bad){
   if(!row.post){ bad(null, 0); return; }
   netSend('POST', '/rest/v1/report', row, SESS.at, function(){ ok(); }, bad);
 }
+/* ---- saying something TO the operator -----------------------------------
+   「設定にお問合せを足して欲しい。フォームみたいなの作ってみんなからの意見要望
+   バグとかあればそれを見たい。」 OWNER 2026-09-22.
+
+   Not a report. A report is about somebody ELSE and carries who and which
+   post; this carries neither, because it is about the APP. What it shares
+   with netReport() above is that it is written and never read back by the
+   person who wrote it -- `feedback_read` in supabase/schema.sql is is_staff()
+   and there is no second policy.
+
+   `kind` is one of the three the schema allows, the same way netReport()'s
+   `why` is one of five: a fourth invented here would be refused by the check
+   constraint, which is the right way round -- the list is the server's.
+
+   `author` is pushed from the session and not from anything the screen holds.
+   The policy pins it to auth.uid() anyway (rls-check: 「B cannot write in
+   A's name」), so this is the app agreeing with the wall rather than the app
+   being the wall. */
+function netFeedbackSend(kind, body, ok, bad){
+  if(!netSignedIn()){ bad(null, 0); return; }
+  var txt=String(body||'');
+  if(!txt){ bad(null, 0); return; }
+  netSend('POST', '/rest/v1/feedback',
+          {author:SESS.uid, kind:String(kind||'opinion'), body:txt},
+          SESS.at, function(){ ok(); }, bad);
+}
 /* ---- the other side of a report ----------------------------------------
    Somebody has to read them, and until now nobody could: `report` had no
    select policy at all, so the only way to see one was the Supabase dashboard.

@@ -997,6 +997,10 @@ var PAGES={
 
   notes:   {tab:'build', k:'toc.notes'},
   settings:{tab:'profile',  k:'set.title'},
+  /* Saying something to whoever makes the app. A route and not a sheet:
+     writing is a screen, the way choosing is. 「設定にお問合せを足して欲しい」
+     OWNER 2026-09-22. */
+  contact: {tab:'profile', k:'set.contact'},
   set:     {tab:'profile'},
   world:   {tab:'profile', k:'wld.title'},
   /* One section of the language's article. Named after the section, not
