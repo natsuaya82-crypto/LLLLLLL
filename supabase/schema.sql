@@ -2943,7 +2943,7 @@ grant  insert (id, author, language, body, prompt, reply_to) on post to anon, au
 -- WHY THIS IS WRAPPED IN A `do` BLOCK, and it is the only one in this file.
 -- `supabase_functions` is not part of PostgreSQL and is not part of this
 -- file: it appears when somebody turns Database → Webhooks on in the
--- dashboard, once (supabase/setup.md § 13). Named unconditionally, a paste
+-- dashboard, once (supabase/setup.md § 12). Named unconditionally, a paste
 -- into a project where that click has not happened yet stops HERE with
 -- 「schema "supabase_functions" does not exist」 -- and on 2026-09-15 a paste
 -- that stopped part-way left NOTHING behind it: no `profile.link`, no
@@ -2952,7 +2952,7 @@ grant  insert (id, author, language, body, prompt, reply_to) on post to anon, au
 -- LAST thing in the file as well: everything above it has landed by the time
 -- it is reached.
 --
--- A skipped block is not a silent one. It says so, and setup.md § 13 says to
+-- A skipped block is not a silent one. It says so, and setup.md § 12 says to
 -- look for it -- 「空」と「壊れている」は別の状態、which is the first page of
 -- CLAUDE.md. What holds the three triggers themselves is tools/rls-check.mjs,
 -- which applies this file once WITHOUT the schema (and asks that the rest of
@@ -2965,7 +2965,7 @@ begin
   if to_regprocedure('supabase_functions.http_request()') is null then
     raise notice '%', 'push-send: Database -> Webhooks has not been turned on '
       'for this project, so the three notification triggers were NOT made. '
-      'Everything else in this file is in. See supabase/setup.md section 13, '
+      'Everything else in this file is in. See supabase/setup.md section 12, '
       'then run this file again.';
     return;
   end if;

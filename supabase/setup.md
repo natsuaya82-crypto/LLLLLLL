@@ -947,3 +947,93 @@ SNS の分（投稿・下書き・プロフィール・フォロー）は元か�
 | 見た日 | |
 
 **この表が埋まるまで、「消えないための仕組み」は一つも完成しません。**
+
+---
+
+## 12. 通知（Database → Webhooks を一度だけ ON）
+
+**ここは一クリックです。そして、そのクリックが無いと通知は一通も出ません。**
+
+オーナーの決定（2026-09-22）：「通知作ろう。アップルのネイティブ通知で、
+フォローされた時、返信きた時みたいな感じでSNS部分であるやつ。それに加えて設定で
+個別通知のオンオフできるように。」
+
+### なぜ Dashboard でしかできないのか
+
+`supabase/schema.sql` は、フォローされた・返信された・いいね／リポストされた瞬間に
+edge function `push-send` を叩く**トリガーを三つ**作ります。その叩く道は
+`supabase_functions.http_request()` という関数で、**これは PostgreSQL の物でも
+`schema.sql` の物でもありません** ── Supabase が、Database → Webhooks を有効に
+した時に作ります。だから `mail.md` と同じで、ここが唯一の置き場所です。
+
+### やること
+
+**Dashboard → Database → Webhooks → Enable webhooks**（ボタン一つ）。
+
+画面で Webhook を**作る必要はありません。**要るのは `supabase_functions` という
+schema が出来ることだけで、トリガーは `schema.sql` が自分で作ります。
+
+### 順番
+
+1. **先にここ（§ 12）の Enable webhooks。**
+2. そのあと **§ 2 の schema.sql を流す。**
+3. そのあと **Actions → Supabase Deploy → `push-send`**（`docs/apple.md` § 8 に、
+   その前に Apple 側でやることが順に書いてあります）。
+
+### 逆の順でやってしまったら
+
+**壊れません。もう一度 schema.sql を流すだけです。**
+
+`schema.sql` の一番最後にあるトリガーを作る所は、「`supabase_functions` があれば
+作る、無ければ飛ばす」形にしてあります。だから Webhooks が OFF のまま貼っても、
+**ファイルの残りは全部入ります** ── 2026-09-15 に、途中で止まったペーストが
+`profile.link` も `plan.was` も入れずに終わり、Apple の審査が落ちて、全部の端末が
+free と表示された、あの壊れ方をしないためです。
+
+飛ばした時は SQL Editor の出力に **NOTICE** が出ます：
+
+```
+NOTICE:  push-send: Database -> Webhooks has not been turned on for this
+project, so the three notification triggers were NOT made. Everything else in
+this file is in. See supabase/setup.md section 12, then run this file again.
+```
+
+### 入ったかどうかを見るところ
+
+**Database → Triggers**（または SQL Editor で下を実行）。三つとも在れば済みです。
+
+```sql
+select tgname, tgrelid::regclass as "表"
+  from pg_trigger
+ where tgname in ('push_on_follow', 'push_on_reply', 'push_on_react')
+ order by tgname;
+```
+
+| あるべきもの | 表 |
+|---|---|
+| `push_on_follow` | `follow` |
+| `push_on_react` | `react` |
+| `push_on_reply` | `post` |
+
+**三行出なければ、通知は出ません。**Enable webhooks をしてから、§ 2 をもう一度
+流してください。
+
+### 通知が来ないとき、どこを見るか
+
+上から順に、どれか一つで止まります。
+
+| 見るところ | 入っていなければ |
+|---|---|
+| Database → Triggers（上の三つ） | この節をやり直す |
+| Edge Functions → `push-send` → Logs | 置かれていない（Actions → Supabase Deploy） |
+| そのログの `not set: …` | Apple の鍵が入っていない（`docs/apple.md` § 8） |
+| そのログの `switched off` | その人が設定でその種類を切っている |
+| そのログの `no device` | その iPhone が通知を許可していない |
+| そのログの `their own` | 自分でやったこと（仕様 ── 自分には送りません） |
+
+**`push-send` はサインインしていない人でも叩ける口です。**トリガーは秘密を持って
+行けないので、そうするしかありません。函数は届いた JSON を一文字も信じず、行を
+データベースから読み直して本物の相手にだけ送るので、知らない人に出来るのは
+**本当に起きたことの通知をもう一度鳴らす**ことだけです。塞ぐ手は二つあり、
+どちらもオーナーの決めごとで、**まだやっていません** ──
+`docs/scope/r47-push-server.md` § オーナーへ。
