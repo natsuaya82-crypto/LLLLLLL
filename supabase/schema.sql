@@ -891,6 +891,44 @@ alter table report drop constraint if exists report_actor_fkey;
 alter table report add constraint report_actor_fkey
   foreign key (actor) references profile(id) on delete set null;
 
+-- ---- saying something TO the operator ---------------------------------------
+-- 「設定にお問合せを足して欲しい。フォームみたいなの作ってみんなからの意見要望
+-- バグとかあればそれを見たい。フォームはアプリ内のadminのページで見れるように
+-- したい。」 OWNER 2026-09-22.
+--
+-- The same shape as `report` above, and not the same thing. A report is about
+-- somebody ELSE and goes into a queue about them; this is about the APP, and
+-- the person on the other end of it is whoever is going to fix it. What the
+-- two share is the direction: written by the person, read only by whoever is
+-- answering, and read back by nobody -- including the person who sent it,
+-- because the only thing a road back would be for is a reply, and a reply is
+-- not what was asked for.
+--
+-- `kind` is a closed set for the same reason `report.why` is: three words the
+-- operator can count beat a box of free text nobody can sort. `body` is the
+-- person's own words and is the whole of the rest of it.
+--
+-- WHAT IS NOT HERE: an update policy, a delete policy, and no twin of
+-- report_drop(). Answering one is not the same act as answering a report --
+-- a report is a queue with a decision at the end of it, and this is a record
+-- of what somebody said -- and nobody has decided that the operator may clear
+-- it. So there is no road that removes one, for anybody.
+create table if not exists feedback (
+  id         bigint generated always as identity primary key,
+  -- Nullable and `set null`, exactly as `report.actor` is, and for a reason
+  -- of the same shape: deleting your own account must not quietly withdraw
+  -- the bug report the operator has not got to yet. The words survive their
+  -- author leaving; what goes is the @ beside them, which is honest -- there
+  -- is nobody left to answer.
+  author     uuid references profile(id) on delete set null,
+  kind       text not null check (kind in ('opinion','request','bug')),
+  -- A ceiling and a floor. The floor is what makes the send button's refusal
+  -- mean something on the server too, rather than only in the app.
+  body       text not null check (length(body) between 1 and 2000),
+  created_at timestamptz not null default now()
+);
+create index if not exists feedback_made_idx on feedback(created_at desc);
+
 -- ---------------------------------------------------------------------------
 -- Row level security
 --
@@ -929,6 +967,7 @@ alter table prompt      enable row level security;
 alter table follow      enable row level security;
 alter table block       enable row level security;
 alter table report      enable row level security;
+alter table feedback    enable row level security;
 alter table draft       enable row level security;
 alter table saved_search enable row level security;
 alter table recent_search enable row level security;
@@ -1679,6 +1718,23 @@ create policy report_read on report for select using (is_staff());
 drop policy if exists report_make on report;
 create policy report_make on report for insert
   with check (is_member() and actor = auth.uid());
+
+-- feedback: you write your own and read none of them; staff read them all.
+--
+-- The select side is `report_read`'s sentence with a different table under
+-- it. The insert side pins `author` to the account asking, so a phone cannot
+-- send a complaint in somebody else's name -- the app puts SESS.uid there and
+-- this is what makes that true rather than polite.
+--
+-- No update policy and no delete policy, for anybody, staff included. See the
+-- table above for why: what happens to one after it has been read is not a
+-- thing anybody has decided, and a policy written ahead of that decision is
+-- the decision.
+drop policy if exists feedback_read on feedback;
+create policy feedback_read on feedback for select using (is_staff());
+drop policy if exists feedback_make on feedback;
+create policy feedback_make on feedback for insert
+  with check (is_member() and author = auth.uid());
 
 -- follow: everyone sees who follows whom; you add and remove your own following
 drop policy if exists follow_read on follow;
